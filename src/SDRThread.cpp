@@ -98,11 +98,11 @@ wxThread::ExitCode SDRThread::Entry() {
 
         rtlsdr_read_sync(dev, buf, BUF_SIZE, &n_read);
 
-        std::cout << (n_read == BUF_SIZE) ? "." : "!";
-
         if (i % 50 == 0) {
             std::cout << std::endl;
         }
+
+        std::cout << ((n_read == BUF_SIZE) ? "." : "!");
 
         i++;
     }
