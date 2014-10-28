@@ -46,6 +46,8 @@ SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_BINARY_DIR})
 #include_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/include )
 #link_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/lib )
 
+
+
 find_package(OpenGL REQUIRED)
 
 set(wxWidgets_CONFIGURATION mswu)
@@ -55,8 +57,18 @@ include(${wxWidgets_USE_FILE})
 # include_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/include )
 # link_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/lib ${OPENGL_INCLUDE_DIR})
 
-include_directories ( ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
-link_directories (  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/x32 )
+
+if (DEFINED WIN32)
+  include_directories ( ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
+  link_directories (  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/x32 )
+else (DEFINED WIN32)
+  set(RTLSDR_INCLUDE "/opt/local/include" CACHE FILEPATH "RTL-SDR Include Path")
+  set(RTLSDR_LIB "/opt/local/lib" CACHE FILEPATH "RTL-SDR Lib Path")
+  include_directories(${RTLSDR_INCLUDE})
+  link_directories(${RTLSDR_LIB})
+endif (DEFINED WIN32)
+
+
 
 SET (cubicsdr_sources
     src/CubicSDR.cpp

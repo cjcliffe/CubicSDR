@@ -20,7 +20,7 @@ AppFrame::AppFrame() :
 
     new TestGLCanvas(this, NULL);
 
-    SetIcon(wxICON(sample));
+//    SetIcon(wxICON(sample));
 
     // Make a menubar
     wxMenu *menu = new wxMenu;

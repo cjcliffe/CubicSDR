@@ -81,11 +81,11 @@ void SDRThread::enumerate_rtl() {
 }
 
 wxThread::ExitCode SDRThread::Entry() {
-    __int8 *buf = (__int8 *) malloc(BUF_SIZE);
+    signed char *buf = (signed char *) malloc(BUF_SIZE);
 
     enumerate_rtl();
 
-    rtlsdr_open(&dev, 4);
+    rtlsdr_open(&dev, 0);
     rtlsdr_set_sample_rate(dev, 2500000);
     rtlsdr_set_center_freq(dev, 105700000);
     rtlsdr_reset_buffer(dev);
