@@ -1,4 +1,4 @@
 CubicSDR
 ========
 
-OpenGL Software Defined Radio Experiment
+OpenGL Software-Defined Radio Experiment
