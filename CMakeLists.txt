@@ -52,8 +52,8 @@ set(wxWidgets_CONFIGURATION mswu)
 find_package(wxWidgets COMPONENTS gl core base REQUIRED)
 include(${wxWidgets_USE_FILE})
  
-include_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/include )
-link_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/lib ${OPENGL_INCLUDE_DIR})
+# include_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/include )
+# link_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/lib ${OPENGL_INCLUDE_DIR})
 
 include_directories ( ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
 link_directories (  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/x32 )
@@ -61,18 +61,22 @@ link_directories (  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/x32 )
 SET (cubicsdr_sources
     src/CubicSDR.cpp
 	src/SDRThread.cpp
+	src/PrimaryGLContext.cpp
+	src/AppFrame.cpp
 )
 
 SET (cubicsdr_headers
     src/CubicSDR.h
 	src/SDRThread.h
+	src/PrimaryGLContext.h
+	src/AppFrame.h
 )
 #configure_files(${PROJECT_SOURCE_DIR}/shaders ${PROJECT_BINARY_DIR}/shaders COPYONLY)
 #configure_files(${PROJECT_SOURCE_DIR}/png ${PROJECT_BINARY_DIR}/png COPYONLY)
 
 add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers})
 
-target_link_libraries(CubicSDR cubicvr2 rtlsdr ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES})
+target_link_libraries(CubicSDR rtlsdr ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES})
 # cubicvr2 glfw ${GLFW_LIBRARIES} ${OPENAL_LIBRARY}
 
 
