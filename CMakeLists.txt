@@ -1,0 +1,81 @@
+cmake_minimum_required (VERSION 2.8)
+
+macro(configure_files srcDir destDir)
+    message(STATUS "Configuring directory ${destDir}")
+    make_directory(${destDir})
+
+    file(GLOB templateFiles RELATIVE ${srcDir} ${srcDir}/*)
+    foreach(templateFile ${templateFiles})
+        set(srcTemplatePath ${srcDir}/${templateFile})
+        if(NOT IS_DIRECTORY ${srcTemplatePath})
+#            message(STATUS "Configuring file ${templateFile}")
+            configure_file(
+                    ${srcTemplatePath}
+                    ${destDir}/${templateFile}
+                    COPYONLY)
+        endif(NOT IS_DIRECTORY ${srcTemplatePath})
+    endforeach(templateFile)
+endmacro(configure_files)
+
+
+macro(configure_files_recurse srcDir destDir)
+    message(STATUS "Configuring directory ${destDir}")
+    make_directory(${destDir})
+
+    file(GLOB_RECURSE templateFiles RELATIVE ${srcDir} ${srcDir}/*)
+    foreach(templateFile ${templateFiles})
+        set(srcTemplatePath ${srcDir}/${templateFile})
+        if(NOT IS_DIRECTORY ${srcTemplatePath})
+#            message(STATUS "Configuring file ${templateFile}")
+            configure_file(
+                    ${srcTemplatePath}
+                    ${destDir}/${templateFile}
+                    COPYONLY)
+        endif(NOT IS_DIRECTORY ${srcTemplatePath})
+    endforeach(templateFile)
+endmacro(configure_files_recurse)
+
+project (CubicSDR)
+
+SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
+SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_BINARY_DIR})
+SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_BINARY_DIR})
+
+#add_subdirectory(${PROJECT_SOURCE_DIR}/glfw-3.0.3 ${PROJECT_BINARY_DIR}/glfw/)
+#include_directories(${PROJECT_SOURCE_DIR}/glfw-3.0.3/include)
+#include_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/include )
+#link_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/lib )
+
+find_package(OpenGL REQUIRED)
+
+set(wxWidgets_CONFIGURATION mswu)
+find_package(wxWidgets COMPONENTS gl core base REQUIRED)
+include(${wxWidgets_USE_FILE})
+ 
+include_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/include )
+link_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/lib ${OPENGL_INCLUDE_DIR})
+
+include_directories ( ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
+link_directories (  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/x32 )
+
+SET (cubicsdr_sources
+    src/CubicSDR.cpp
+	src/SDRThread.cpp
+)
+
+SET (cubicsdr_headers
+    src/CubicSDR.h
+	src/SDRThread.h
+)
+#configure_files(${PROJECT_SOURCE_DIR}/shaders ${PROJECT_BINARY_DIR}/shaders COPYONLY)
+#configure_files(${PROJECT_SOURCE_DIR}/png ${PROJECT_BINARY_DIR}/png COPYONLY)
+
+add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers})
+
+target_link_libraries(CubicSDR cubicvr2 rtlsdr ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES})
+# cubicvr2 glfw ${GLFW_LIBRARIES} ${OPENAL_LIBRARY}
+
+
+
+
+
