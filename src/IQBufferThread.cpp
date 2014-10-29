@@ -1,7 +1,6 @@
 #include "IQBufferThread.h"
 #include <cstring>
 
-
 #include "wx/wxprec.h"
 
 #ifndef WX_PRECOMP
@@ -11,8 +10,6 @@
 #if !wxUSE_GLCANVAS
 #error "OpenGL required: set wxUSE_GLCANVAS to 1 and rebuild the library"
 #endif
-
-
 
 #define BUF_SIZE (16 * 32 * 512)
 
@@ -24,7 +21,7 @@ IQBufferThread::~IQBufferThread() {
 
 }
 wxThread::ExitCode IQBufferThread::Entry() {
-    unsigned char *buf = (unsigned char*) malloc(BUF_SIZE);
+    signed char *buf = (signed char*) malloc(BUF_SIZE);
 
     int n_read;
     int i = 0;
@@ -40,7 +37,7 @@ wxThread::ExitCode IQBufferThread::Entry() {
 //                iq_buffer.pop();
 //                delete old_buffer;
 //            }
-            std::cout << "#";
+//            std::cout << "#";
 //        }
         this->Sleep(100);
     }

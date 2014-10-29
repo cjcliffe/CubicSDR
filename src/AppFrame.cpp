@@ -23,7 +23,7 @@ wxEND_EVENT_TABLE()
 AppFrame::AppFrame() :
         wxFrame(NULL, wxID_ANY, wxT("CubicSDR")) {
 
-    new TestGLCanvas(this, NULL);
+    canvas = new TestGLCanvas(this, NULL);
 
 //    SetIcon(wxICON(sample));
 
@@ -57,9 +57,11 @@ void AppFrame::OnNewWindow(wxCommandEvent& WXUNUSED(event)) {
 }
 
 void AppFrame::OnEventInput(wxThreadEvent& event) {
-    std::vector<unsigned char> *new_buffer = event.GetPayload<std::vector<unsigned char> *>();
+    std::vector<signed char> *new_buffer = event.GetPayload<std::vector<signed char> *>();
 
-    std::cout << "Got IQ buffer, length: " << new_buffer->size() << std::endl;
+//    std::cout << "Got IQ buffer, length: " << new_buffer->size() << std::endl;
+
+    canvas->setData(new_buffer);
 
     delete new_buffer;
 }

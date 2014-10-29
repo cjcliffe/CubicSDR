@@ -14,5 +14,7 @@ private:
     void OnNewWindow(wxCommandEvent& event);
     void OnIdle(wxIdleEvent& event);
 
+    TestGLCanvas *canvas;
+
 wxDECLARE_EVENT_TABLE();
 };
