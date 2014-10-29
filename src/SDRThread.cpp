@@ -1,12 +1,15 @@
 #include "SDRThread.h"
+#include <vector>
 
 #define BUF_SIZE (16 * 32 * 512)
 
 
-SDRThread::SDRThread(wxApp *app) :
+//wxDEFINE_EVENT(wxEVT_COMMAND_SDRThread_INPUT, wxThreadEvent);
+
+SDRThread::SDRThread(AppFrame *frame) :
         wxThread(wxTHREAD_DETACHED) {
     dev = NULL;
-    this->handler = handler;
+    this->frame = frame;
 }
 SDRThread::~SDRThread() {
 
@@ -91,20 +94,19 @@ wxThread::ExitCode SDRThread::Entry() {
     rtlsdr_reset_buffer(dev);
 
     int n_read;
-    int i = 0;
 
     std::cout << "Sampling..";
     while (!TestDestroy()) {
 
         rtlsdr_read_sync(dev, buf, BUF_SIZE, &n_read);
+        if (!TestDestroy()) {
+            std::vector<unsigned char> *new_buffer = new std::vector<unsigned char>(buf, buf + n_read);
 
-        if (i % 50 == 0) {
-            std::cout << std::endl;
+            wxThreadEvent event(wxEVT_THREAD, EVENT_SDR_INPUT);
+            event.SetPayload(new_buffer);
+            wxQueueEvent(frame, event.Clone());
         }
-
-        std::cout << ((n_read == BUF_SIZE) ? "." : "!");
-
-        i++;
+        this->Sleep(1);
     }
     std::cout << std::endl << "Done." << std::endl << std::endl;
 
