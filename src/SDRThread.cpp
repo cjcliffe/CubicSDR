@@ -85,11 +85,19 @@ void SDRThread::enumerate_rtl() {
 wxThread::ExitCode SDRThread::Entry() {
     signed char *buf = (signed char *) malloc(BUF_SIZE);
 
+
+    int use_my_dev = 1;
+    int dev_count = rtlsdr_get_device_count();
+
+    if (use_my_dev > dev_count-1) {
+        use_my_dev = 0;
+    }
+
     enumerate_rtl();
 
-    rtlsdr_open(&dev, 0);
+    rtlsdr_open(&dev, use_my_dev);
     rtlsdr_set_sample_rate(dev, SRATE);
-    rtlsdr_set_center_freq(dev, 98000000);
+    rtlsdr_set_center_freq(dev, 105700000);
     rtlsdr_set_agc_mode(dev, 1);
     rtlsdr_set_offset_tuning(dev, 1);
     rtlsdr_reset_buffer(dev);

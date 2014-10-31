@@ -98,15 +98,15 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
         wxFULL_REPAINT_ON_RESIZE) {
 
-    int in_block_size = BUF_SIZE/2;
+    int in_block_size = BUF_SIZE / 2;
     int out_block_size = FFT_SIZE;
 
     in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * in_block_size);
     out[0] = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * out_block_size);
     out[1] = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * out_block_size);
-    plan[0] = fftw_plan_dft_1d(out_block_size, in, out[0], FFTW_FORWARD, FFTW_MEASURE);
-    plan[1] = fftw_plan_dft_1d(out_block_size, in, out[1], FFTW_BACKWARD, FFTW_MEASURE);
-  }
+    plan[0] = fftw_plan_dft_1d(out_block_size, in, out[0], FFTW_BACKWARD, FFTW_MEASURE);
+    plan[1] = fftw_plan_dft_1d(out_block_size, in, out[1], FFTW_FORWARD, FFTW_MEASURE);
+}
 
 void TestGLCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
@@ -142,11 +142,10 @@ void TestGLCanvas::OnKeyDown(wxKeyEvent& event) {
 
 void TestGLCanvas::setData(std::vector<signed char> *data) {
 
-
     if (data && data->size()) {
 
-        if (points.size() < FFT_SIZE*4) {
-            points.resize(FFT_SIZE*4);
+        if (points.size() < FFT_SIZE * 2) {
+            points.resize(FFT_SIZE * 2);
         }
 
         for (int i = 0; i < BUF_SIZE / 2; i++) {
@@ -154,47 +153,56 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
             in[i][1] = (double) (*data)[i * 2 + 1] / 127.0f;
         }
 
+
         fftw_execute(plan[0]);
         fftw_execute(plan[1]);
 
-        double result[FFT_SIZE*2];
+        double result[FFT_SIZE];
         double fft_floor, fft_ceil;
 
         for (int j = 0; j < 2; j++) {
-          for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
-              double a = out[j][i][0];
-              double b = out[j][i][1];
+            for (int i = 0, iMax = FFT_SIZE / 2; i < iMax; i++) {
+                double a = out[j][i][0];
+                double b = out[j][i][1];
 
-              double c = sqrt(a*a+b*b);
-              if (i==1) {
-                  fft_floor=fft_ceil=c;
-              } else if (i<FFT_SIZE-1) {
-                  if (c<fft_floor) {
-                      fft_floor = c;
-                  }
-                  if (c>fft_ceil) {
-                      fft_ceil = c;
-                  }
-              }
+                double c = sqrt(a * a + b * b);
+                if (i == 1) {
+                    fft_floor = fft_ceil = c;
+                } else if (i < FFT_SIZE - 1) {
+                    if (c < fft_floor) {
+                        fft_floor = c;
+                    }
+                    if (c > fft_ceil) {
+                        fft_ceil = c;
+                    }
+                }
 
-              if (j) {
-                result[FFT_SIZE*2 - 1 - i] = c;
-              } else {
-                result[FFT_SIZE*2 - 1 - (FFT_SIZE+(FFT_SIZE-1-i))] = c;
-              }
-              
-          }
+                if (!j) {
+                    result[((FFT_SIZE/2)-1) - i] = c;
+                } else {
+                    result[(FFT_SIZE/2) + i] = c;
+                }
+/*
+
+                 if (!j) {
+                    result[(FFT_SIZE/2) + ((FFT_SIZE/2)-1) - i] = c;
+                } else {
+                    result[i] = c;
+                }
+
+
+ */
+            }
         }
-        
-        if (fft_ceil-fft_floor < 1.0) {
-            fft_ceil = fft_floor + 1.0;
+
+        if (fft_ceil - fft_floor < 10.0) {
+            fft_ceil = fft_floor + 10.0;
         }
 
-        for (int i = 0, iMax = FFT_SIZE*2; i < iMax; i++) {
-            points[i * 2 + 1] = (result[i]-fft_floor)/(fft_ceil-fft_floor);
+        for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
+            points[i * 2 + 1] = (result[i] - fft_floor) / (fft_ceil - fft_floor);
             points[i * 2] = ((double) i / (double) iMax);
         }
-
     }
 }
 
