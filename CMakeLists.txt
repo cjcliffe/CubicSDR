@@ -61,11 +61,13 @@ include(${wxWidgets_USE_FILE})
 if (DEFINED WIN32)
   include_directories ( ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll32  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
   link_directories (  ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll32  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/x32 )
+  set(FFTW_LIB fftw3-3)
 else (DEFINED WIN32)
   set(RTLSDR_INCLUDE "/opt/local/include" CACHE FILEPATH "RTL-SDR Include Path")
   set(RTLSDR_LIB "/opt/local/lib" CACHE FILEPATH "RTL-SDR Lib Path")
   include_directories(${RTLSDR_INCLUDE})
   link_directories(${RTLSDR_LIB})
+  set(FFTW_LIB fftw3)
 endif (DEFINED WIN32)
 
 
@@ -91,7 +93,7 @@ SET (cubicsdr_headers
 
 add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers})
 
-target_link_libraries(CubicSDR rtlsdr fftw3 ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES})
+target_link_libraries(CubicSDR rtlsdr ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES})
 # cubicvr2 glfw ${GLFW_LIBRARIES} ${OPENAL_LIBRARY}
 
 
