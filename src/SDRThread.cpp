@@ -1,7 +1,7 @@
 #include "SDRThread.h"
+#include "CubicSDRDefs.h"
 #include <vector>
 
-#define BUF_SIZE (16 * 32 * 512)
 
 //wxDEFINE_EVENT(wxEVT_COMMAND_SDRThread_INPUT, wxThreadEvent);
 
@@ -87,14 +87,19 @@ wxThread::ExitCode SDRThread::Entry() {
 
     enumerate_rtl();
 
-    rtlsdr_open(&dev, 0);
-    rtlsdr_set_sample_rate(dev, 2500000);
-    rtlsdr_set_center_freq(dev, 105700000);
+    rtlsdr_open(&dev, 3);
+    rtlsdr_set_sample_rate(dev, SRATE);
+    rtlsdr_set_center_freq(dev, 105700000-(SRATE/2));
     rtlsdr_set_agc_mode(dev, 1);
     rtlsdr_set_offset_tuning(dev, 1);
     rtlsdr_reset_buffer(dev);
 
+    sample_rate = rtlsdr_get_sample_rate(dev);
+
+    std::cout << "Sample Rate is: " << sample_rate << std::endl;
+
     int n_read;
+    double seconds = 0.0;
 
     std::cout << "Sampling..";
     while (!TestDestroy()) {
@@ -107,9 +112,17 @@ wxThread::ExitCode SDRThread::Entry() {
                 new_buffer->push_back(buf[i] - 127);
             }
 
-            wxThreadEvent event(wxEVT_THREAD, EVENT_SDR_INPUT);
-            event.SetPayload(new_buffer);
-            wxQueueEvent(frame, event.Clone());
+            double time_slice = (double)n_read/(double)sample_rate;
+            seconds += time_slice;
+
+            std::cout << "Time Slice: " << time_slice << std::endl;
+            if (!TestDestroy()) {
+                wxThreadEvent event(wxEVT_THREAD, EVENT_SDR_INPUT);
+                event.SetPayload(new_buffer);
+                wxQueueEvent(frame, event.Clone());
+            } else {
+                delete new_buffer;
+            }
         }
         this->Sleep(1);
     }

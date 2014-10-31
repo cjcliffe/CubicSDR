@@ -11,7 +11,7 @@
 #error "OpenGL required: set wxUSE_GLCANVAS to 1 and rebuild the library"
 #endif
 
-#define BUF_SIZE (16 * 32 * 512)
+#include "CubicSDRDefs.h"
 
 IQBufferThread::IQBufferThread(wxApp *app) :
         wxThread(wxTHREAD_DETACHED) {

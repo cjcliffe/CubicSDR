@@ -4,6 +4,8 @@
 #include "wx/timer.h"
 
 #include <vector>
+#include "CubicSDRDefs.h"
+#include "fftw3.h"
 
 class PrimaryGLContext : public wxGLContext
 {
@@ -26,6 +28,9 @@ public:
 
     std::vector<float> i_points;
     std::vector<float> q_points;
+
+    fftw_complex *in, *out;
+    fftw_plan plan;
 
 private:
     void OnPaint(wxPaintEvent& event);

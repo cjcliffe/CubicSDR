@@ -32,4 +32,5 @@ public:
 protected:
 	virtual ExitCode Entry();
 	AppFrame *frame;
+	uint32_t sample_rate;
 };
