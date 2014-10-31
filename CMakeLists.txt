@@ -91,7 +91,7 @@ SET (cubicsdr_headers
 
 add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers})
 
-target_link_libraries(CubicSDR rtlsdr fftw3-3 ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES})
+target_link_libraries(CubicSDR rtlsdr fftw3 ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES})
 # cubicvr2 glfw ${GLFW_LIBRARIES} ${OPENAL_LIBRARY}
 
 

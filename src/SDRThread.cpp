@@ -87,9 +87,9 @@ wxThread::ExitCode SDRThread::Entry() {
 
     enumerate_rtl();
 
-    rtlsdr_open(&dev, 3);
+    rtlsdr_open(&dev, 0);
     rtlsdr_set_sample_rate(dev, SRATE);
-    rtlsdr_set_center_freq(dev, 105700000-(SRATE/2));
+    rtlsdr_set_center_freq(dev, 98000000);
     rtlsdr_set_agc_mode(dev, 1);
     rtlsdr_set_offset_tuning(dev, 1);
     rtlsdr_reset_buffer(dev);
@@ -105,6 +105,12 @@ wxThread::ExitCode SDRThread::Entry() {
     while (!TestDestroy()) {
 
         rtlsdr_read_sync(dev, buf, BUF_SIZE, &n_read);
+        // move around
+        long freq = 98000000+(20000000)*sin(seconds/50.0);
+        rtlsdr_set_center_freq(dev, freq);
+        
+        std::cout << "Frequency: " << freq << std::endl;
+
         if (!TestDestroy()) {
             std::vector<signed char> *new_buffer = new std::vector<signed char>();
 
@@ -115,7 +121,7 @@ wxThread::ExitCode SDRThread::Entry() {
             double time_slice = (double)n_read/(double)sample_rate;
             seconds += time_slice;
 
-            std::cout << "Time Slice: " << time_slice << std::endl;
+            // std::cout << "Time Slice: " << time_slice << std::endl;
             if (!TestDestroy()) {
                 wxThreadEvent event(wxEVT_THREAD, EVENT_SDR_INPUT);
                 event.SetPayload(new_buffer);
@@ -124,7 +130,6 @@ wxThread::ExitCode SDRThread::Entry() {
                 delete new_buffer;
             }
         }
-        this->Sleep(1);
     }
     std::cout << std::endl << "Done." << std::endl << std::endl;
 

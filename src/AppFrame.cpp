@@ -38,8 +38,8 @@ AppFrame::AppFrame() :
     SetMenuBar(menuBar);
 
     CreateStatusBar();
-
-    SetClientSize(400, 400);
+    SetClientSize(1280, 400);
+    Centre();
     Show();
 
 //    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };

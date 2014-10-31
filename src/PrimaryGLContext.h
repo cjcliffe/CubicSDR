@@ -12,7 +12,7 @@ class PrimaryGLContext : public wxGLContext
 public:
     PrimaryGLContext(wxGLCanvas *canvas);
 
-    void PlotIQ(std::vector<float> &i_points, std::vector<float> &q_points);
+    void Plot(std::vector<float> &points);
 
 private:
     // textures for the cube faces
@@ -26,11 +26,10 @@ public:
 
     void setData(std::vector<signed char> *data);
 
-    std::vector<float> i_points;
-    std::vector<float> q_points;
+    std::vector<float> points;
 
-    fftw_complex *in, *out;
-    fftw_plan plan;
+    fftw_complex *in, *out[2];
+    fftw_plan plan[2];
 
 private:
     void OnPaint(wxPaintEvent& event);
