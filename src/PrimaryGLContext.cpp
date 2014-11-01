@@ -153,7 +153,6 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
             in[i][1] = (double) (*data)[i * 2 + 1] / 127.0f;
         }
 
-
         fftw_execute(plan[0]);
         fftw_execute(plan[1]);
 
@@ -162,10 +161,14 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
 
         for (int j = 0; j < 2; j++) {
             for (int i = 0, iMax = FFT_SIZE / 2; i < iMax; i++) {
-                double a = out[j][i][0];
-                double b = out[j][i][1];
-
+                double a = out[j][j?i:((iMax-1)-i)][0];
+                double b = out[j][j?i:((iMax-1)-i)][1];
                 double c = sqrt(a * a + b * b);
+
+                double x = out[j?0:1][j?((FFT_SIZE-1)-i):((FFT_SIZE/2)+i)][0];
+                double y = out[j?0:1][j?((FFT_SIZE-1)-i):((FFT_SIZE/2)+i)][1];
+                double z = sqrt(x * x + y * y);
+
                 if (i == 1) {
                     fft_floor = fft_ceil = c;
                 } else if (i < FFT_SIZE - 1) {
@@ -178,20 +181,10 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
                 }
 
                 if (!j) {
-                    result[((FFT_SIZE/2)-1) - i] = c;
+                    result[i] = (c<z)?c:z;
                 } else {
-                    result[(FFT_SIZE/2) + i] = c;
+                    result[(FFT_SIZE/2) + i] = (c<z)?c:z;
                 }
-/*
-
-                 if (!j) {
-                    result[(FFT_SIZE/2) + ((FFT_SIZE/2)-1) - i] = c;
-                } else {
-                    result[i] = c;
-                }
-
-
- */
             }
         }
 
