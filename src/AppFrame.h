@@ -15,6 +15,9 @@ private:
     void OnIdle(wxIdleEvent& event);
 
     TestGLCanvas *canvas;
-
+    SDRThread *t_SDR;
+    IQBufferThread *t_IQBuffer;
+    wxCriticalSection m_pThreadCS;
+    
 wxDECLARE_EVENT_TABLE();
 };

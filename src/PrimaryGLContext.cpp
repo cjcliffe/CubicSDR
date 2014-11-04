@@ -156,8 +156,14 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
         fftw_execute(plan[0]);
         fftw_execute(plan[1]);
 
-        double result[FFT_SIZE];
-        double fft_floor, fft_ceil;
+        double fft_ceil = 0;
+        // fft_floor, 
+
+        if (fft_result.size()<FFT_SIZE) {
+          fft_result.resize(FFT_SIZE);
+          fft_result_ma.resize(FFT_SIZE);
+          fft_result_maa.resize(FFT_SIZE);
+        }
 
         for (int j = 0; j < 2; j++) {
             for (int i = 0, iMax = FFT_SIZE / 2; i < iMax; i++) {
@@ -168,32 +174,30 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
                 double x = out[j?0:1][j?((FFT_SIZE-1)-i):((FFT_SIZE/2)+i)][0];
                 double y = out[j?0:1][j?((FFT_SIZE-1)-i):((FFT_SIZE/2)+i)][1];
                 double z = sqrt(x * x + y * y);
-
-                if (i == 1) {
-                    fft_floor = fft_ceil = c;
-                } else if (i < FFT_SIZE - 1) {
-                    if (c < fft_floor) {
-                        fft_floor = c;
-                    }
-                    if (c > fft_ceil) {
-                        fft_ceil = c;
-                    }
-                }
+                
+                double r = (c<z)?c:z;
 
                 if (!j) {
-                    result[i] = (c<z)?c:z;
+                    fft_result[i] = r;
                 } else {
-                    result[(FFT_SIZE/2) + i] = (c<z)?c:z;
+                    fft_result[(FFT_SIZE/2) + i] = r;
                 }
             }
         }
 
-        if (fft_ceil - fft_floor < 10.0) {
-            fft_ceil = fft_floor + 10.0;
+        float time_slice = (float)SRATE/(float)(BUF_SIZE/2);
+
+        for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
+          fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i])*0.65;
+          fft_result_ma[i] += (fft_result[i] - fft_result_ma[i])*0.65;
+
+          if (fft_result_maa[i] > fft_ceil) {
+              fft_ceil = fft_result_maa[i];
+          }
         }
 
         for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
-            points[i * 2 + 1] = (result[i] - fft_floor) / (fft_ceil - fft_floor);
+            points[i * 2 + 1] = fft_result_maa[i] / fft_ceil;
             points[i * 2] = ((double) i / (double) iMax);
         }
     }

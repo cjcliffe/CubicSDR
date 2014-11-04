@@ -21,15 +21,9 @@ public:
     virtual bool OnInit();
     virtual int OnExit();
 
-    void OnEventInput(wxEvent& event) {
-        std::cout << "event !" << std::endl;
-    }
-
 private:
     PrimaryGLContext *m_glContext;
-    SDRThread *t_SDR;
-    IQBufferThread *t_IQBuffer;
-    wxCriticalSection m_pThreadCS;
+
 };
 
 DECLARE_APP(CubicSDR)

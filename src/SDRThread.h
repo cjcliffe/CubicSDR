@@ -10,6 +10,7 @@
 #include "wx/thread.h"
 
 #include "AppFrame.h"
+#include "SDRThreadQueue.h"
 
 // declare a new type of event, to be used by our SDRThread class:
 //wxDECLARE_EVENT(wxEVT_COMMAND_SDRThread_COMPLETED, wxThreadEvent);
@@ -24,13 +25,14 @@ class SDRThread: public wxThread {
 public:
 	rtlsdr_dev_t *dev;
 
-	SDRThread(AppFrame *appframe);
+	SDRThread(SDRThreadQueue* pQueue, int id=0);
 	~SDRThread();
 
 	void enumerate_rtl();
 
 protected:
 	virtual ExitCode Entry();
-	AppFrame *frame;
 	uint32_t sample_rate;
+  SDRThreadQueue* m_pQueue;
+  int m_ID;
 };

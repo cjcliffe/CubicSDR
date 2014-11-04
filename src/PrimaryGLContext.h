@@ -31,6 +31,11 @@ public:
     fftw_complex *in, *out[2];
     fftw_plan plan[2];
 
+    std::vector<float> fft_result;
+    std::vector<float> fft_result_ma;
+    std::vector<float> fft_result_maa;
+    
+
 private:
     void OnPaint(wxPaintEvent& event);
     void OnKeyDown(wxKeyEvent& event);
