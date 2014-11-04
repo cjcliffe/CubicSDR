@@ -31,6 +31,8 @@ public:
     fftw_complex *in, *out[2];
     fftw_plan plan[2];
 
+    float fft_ceil_ma, fft_ceil_maa;
+
     std::vector<float> fft_result;
     std::vector<float> fft_result_ma;
     std::vector<float> fft_result_maa;

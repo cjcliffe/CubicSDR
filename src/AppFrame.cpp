@@ -42,8 +42,9 @@ AppFrame::AppFrame() :
     Centre();
     Show();
 
+    m_pQueue = new SDRThreadQueue(this);
 
-    t_SDR = new SDRThread(appframe);
+    t_SDR = new SDRThread(m_pQueue);
     if (t_SDR->Run() != wxTHREAD_NO_ERROR) {
         wxLogError
         ("Can't create the thread!");
@@ -51,42 +52,48 @@ AppFrame::AppFrame() :
         t_SDR = NULL;
     }
 
-    t_IQBuffer = new IQBufferThread(this);
-    if (t_IQBuffer->Run() != wxTHREAD_NO_ERROR) {
-        wxLogError
-        ("Can't create the thread!");
-        delete t_IQBuffer;
+//    t_IQBuffer = new IQBufferThread(this);
+//    if (t_IQBuffer->Run() != wxTHREAD_NO_ERROR) {
+//        wxLogError
+//        ("Can't create the thread!");
+//        delete t_IQBuffer;
         t_IQBuffer = NULL;
-    }
+//    }
 
 //    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 //    wxLogStatus("Double-buffered display %s supported", wxGLCanvas::IsDisplaySupported(attribs) ? "is" : "not");
 //    ShowFullScreen(true);
 }
 
+AppFrame::~AppFrame() {
+    delete t_SDR;
+//    delete t_IQBuffer;
+    delete m_pQueue;
+}
+
 void AppFrame::OnClose(wxCommandEvent& WXUNUSED(event)) {
 
-  {
-      wxCriticalSectionLocker enter(m_pThreadCS);
-      if (t_SDR) {
-          wxMessageOutputDebug().Printf("CubicSDR: deleting thread");
-          if (t_SDR->Delete() != wxTHREAD_NO_ERROR) {
-              wxLogError
-              ("Can't delete the thread!");
-          }
-      }
-  }
+    {
+        wxCriticalSectionLocker enter(m_pThreadCS);
+        if (t_SDR) {
+            wxMessageOutputDebug().Printf("CubicSDR: deleting thread");
+            if (t_SDR->Delete() != wxTHREAD_NO_ERROR) {
+                wxLogError
+                ("Can't delete the thread!");
+            }
+        }
+    }
 
-  {
-      wxCriticalSectionLocker enter(m_pThreadCS);
-      if (t_IQBuffer) {
-          wxMessageOutputDebug().Printf("CubicSDR: deleting thread");
-          if (t_IQBuffer->Delete() != wxTHREAD_NO_ERROR) {
-              wxLogError
-              ("Can't delete the thread!");
-          }
-      }
-  }
+    {
+        wxCriticalSectionLocker enter(m_pThreadCS);
+        if (t_IQBuffer) {
+            wxMessageOutputDebug().Printf("CubicSDR: deleting thread");
+            if (t_IQBuffer->Delete() != wxTHREAD_NO_ERROR) {
+                wxLogError
+                ("Can't delete the thread!");
+            }
+        }
+    }
     // true is to force the frame to close
     Close(true);
 }

@@ -2,12 +2,12 @@
 #include "CubicSDRDefs.h"
 #include <vector>
 
-
 //wxDEFINE_EVENT(wxEVT_COMMAND_SDRThread_INPUT, wxThreadEvent);
 
-SDRThread::SDRThread(SDRThreadQueue* pQueue, int id=0) :
+SDRThread::SDRThread(SDRThreadQueue* pQueue, int id) :
         wxThread(wxTHREAD_DETACHED), m_pQueue(pQueue), m_ID(id) {
     dev = NULL;
+    sample_rate = SRATE;
 }
 SDRThread::~SDRThread() {
 
@@ -84,11 +84,10 @@ void SDRThread::enumerate_rtl() {
 wxThread::ExitCode SDRThread::Entry() {
     signed char *buf = (signed char *) malloc(BUF_SIZE);
 
-
     int use_my_dev = 1;
     int dev_count = rtlsdr_get_device_count();
 
-    if (use_my_dev > dev_count-1) {
+    if (use_my_dev > dev_count - 1) {
         use_my_dev = 0;
     }
 
@@ -111,28 +110,27 @@ wxThread::ExitCode SDRThread::Entry() {
     std::cout << "Sampling..";
     while (!TestDestroy()) {
 
-      if (m_pQueue->Stacksize()) {
-        while (m_pQueue->Stacksize()) {
-        SDRThreadTask task=m_pQueue->Pop(); // pop a task from the queue. this will block the worker thread if queue is empty
-        switch(task.m_cmd)
-        {
-        case SDRThreadTask::SDR_THREAD_EXIT: // thread should exit
-          Sleep(1000); // wait a while
-          throw SDRThreadTask::SDR_THREAD_EXIT; // confirm exit command
-        case SDRThreadTask::SDR_THREAD_JOB: // process a standard task
-          Sleep(2000);
-          m_pQueue->Report(SDRThreadTask::SDR_THREAD_JOB, wxString::Format(wxT("Task #%s done."), task.m_Arg.c_str()), m_ID); // report successful completion
-          break;
-        case SDRThreadTask::SDR_THREAD_JOBERR: // process a task that terminates with an error
-          m_pQueue->Report(SDRThreadTask::SDR_THREAD_JOB, wxString::Format(wxT("Task #%s errorneous."), task.m_Arg.c_str()), m_ID);
-          Sleep(1000);
-          throw SDRThreadTask::SDR_THREAD_EXIT; // report exit of worker thread
-          break;
-        case SDRThreadTask::SDR_THREAD_NULL: // dummy command
-        default: break; // default
-        } // switch(task.m_cmd)
-      }
-      }
+        if (m_pQueue->Stacksize()) {
+            while (m_pQueue->Stacksize()) {
+                SDRThreadTask task = m_pQueue->Pop(); // pop a task from the queue. this will block the worker thread if queue is empty
+                switch (task.m_cmd) {
+//        case SDRThreadTask::SDR_THREAD_EXIT: // thread should exit
+//          Sleep(1000); // wait a while
+//          throw SDRThreadTask::SDR_THREAD_EXIT; // confirm exit command
+//        case SDRThreadTask::SDR_THREAD_TASK: // process a standard task
+//          Sleep(2000);
+//          m_pQueue->Report(SDRThreadTask::SDR_THREAD_TASK, wxString::Format(wxT("Task #%s done."), task.m_Arg.c_str()), m_ID); // report successful completion
+//          break;
+//        case SDRThreadTask::SDR_THREAD_JOBERR: // process a task that terminates with an error
+//          m_pQueue->Report(SDRThreadTask::SDR_THREAD_TASK, wxString::Format(wxT("Task #%s errorneous."), task.m_Arg.c_str()), m_ID);
+//          Sleep(1000);
+//          throw SDRThreadTask::SDR_THREAD_EXIT; // report exit of worker thread
+//          break;
+//        case SDRThreadTask::SDR_THREAD_NULL: // dummy command
+//        default: break; // default
+                }
+            }
+        }
 
         rtlsdr_read_sync(dev, buf, BUF_SIZE, &n_read);
         // move around
@@ -147,17 +145,17 @@ wxThread::ExitCode SDRThread::Entry() {
                 new_buffer->push_back(buf[i] - 127);
             }
 
-            double time_slice = (double)n_read/(double)sample_rate;
+            double time_slice = (double) n_read / (double) sample_rate;
             seconds += time_slice;
 
             // std::cout << "Time Slice: " << time_slice << std::endl;
-            // if (!TestDestroy()) {
-                // wxThreadEvent event(wxEVT_THREAD, EVENT_SDR_INPUT);
-                // event.SetPayload(new_buffer);
-                // wxQueueEvent(frame, event.Clone());
-            // } else {
+            if (!TestDestroy()) {
+                wxThreadEvent event(wxEVT_THREAD, EVENT_SDR_INPUT);
+                event.SetPayload(new_buffer);
+                wxQueueEvent(m_pQueue->getHandler(), event.Clone());
+            } else {
                 delete new_buffer;
-            // }
+            }
         }
     }
     std::cout << std::endl << "Done." << std::endl << std::endl;

@@ -67,6 +67,8 @@ void PrimaryGLContext::Plot(std::vector<float> &points) {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
+//    glEnable(GL_LINE_SMOOTH);
+
     glPushMatrix();
     glTranslatef(-1.0f, -0.9f, 0.0f);
     glScalef(2.0f, 1.8f, 1.0f);
@@ -106,6 +108,8 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
     out[1] = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * out_block_size);
     plan[0] = fftw_plan_dft_1d(out_block_size, in, out[0], FFTW_BACKWARD, FFTW_MEASURE);
     plan[1] = fftw_plan_dft_1d(out_block_size, in, out[1], FFTW_FORWARD, FFTW_MEASURE);
+
+    fft_ceil_ma=fft_ceil_maa=1.0;
 }
 
 void TestGLCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
@@ -159,45 +163,48 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
         double fft_ceil = 0;
         // fft_floor, 
 
-        if (fft_result.size()<FFT_SIZE) {
-          fft_result.resize(FFT_SIZE);
-          fft_result_ma.resize(FFT_SIZE);
-          fft_result_maa.resize(FFT_SIZE);
+        if (fft_result.size() < FFT_SIZE) {
+            fft_result.resize(FFT_SIZE);
+            fft_result_ma.resize(FFT_SIZE);
+            fft_result_maa.resize(FFT_SIZE);
         }
 
         for (int j = 0; j < 2; j++) {
             for (int i = 0, iMax = FFT_SIZE / 2; i < iMax; i++) {
-                double a = out[j][j?i:((iMax-1)-i)][0];
-                double b = out[j][j?i:((iMax-1)-i)][1];
+                double a = out[j][j ? i : ((iMax - 1) - i)][0];
+                double b = out[j][j ? i : ((iMax - 1) - i)][1];
                 double c = sqrt(a * a + b * b);
 
-                double x = out[j?0:1][j?((FFT_SIZE-1)-i):((FFT_SIZE/2)+i)][0];
-                double y = out[j?0:1][j?((FFT_SIZE-1)-i):((FFT_SIZE/2)+i)][1];
+                double x = out[j ? 0 : 1][j ? ((FFT_SIZE - 1) - i) : ((FFT_SIZE / 2) + i)][0];
+                double y = out[j ? 0 : 1][j ? ((FFT_SIZE - 1) - i) : ((FFT_SIZE / 2) + i)][1];
                 double z = sqrt(x * x + y * y);
-                
-                double r = (c<z)?c:z;
+
+                double r = (c < z) ? c : z;
 
                 if (!j) {
                     fft_result[i] = r;
                 } else {
-                    fft_result[(FFT_SIZE/2) + i] = r;
+                    fft_result[(FFT_SIZE / 2) + i] = r;
                 }
             }
         }
 
-        float time_slice = (float)SRATE/(float)(BUF_SIZE/2);
+        float time_slice = (float) SRATE / (float) (BUF_SIZE / 2);
 
         for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
-          fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i])*0.65;
-          fft_result_ma[i] += (fft_result[i] - fft_result_ma[i])*0.65;
+            fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * 0.65;
+            fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * 0.65;
 
-          if (fft_result_maa[i] > fft_ceil) {
-              fft_ceil = fft_result_maa[i];
-          }
+            if (fft_result_maa[i] > fft_ceil) {
+                fft_ceil = fft_result_maa[i];
+            }
         }
 
+        fft_ceil_ma = fft_ceil_ma + (fft_ceil - fft_ceil_ma)*0.05;
+        fft_ceil_maa = fft_ceil_maa + (fft_ceil - fft_ceil_maa)*0.05;
+
         for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
-            points[i * 2 + 1] = fft_result_maa[i] / fft_ceil;
+            points[i * 2 + 1] = fft_result_maa[i] / fft_ceil_maa;
             points[i * 2] = ((double) i / (double) iMax);
         }
     }
