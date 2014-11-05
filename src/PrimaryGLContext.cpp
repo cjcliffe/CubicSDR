@@ -14,6 +14,7 @@
 #include "CubicSDRDefs.h"
 #include "AppFrame.h"
 #include <algorithm>
+#include "Demodulate.h"
 
 wxString glGetwxString(GLenum name) {
     const GLubyte *v = glGetString(name);
