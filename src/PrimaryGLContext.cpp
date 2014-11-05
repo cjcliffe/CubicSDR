@@ -63,7 +63,7 @@ PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas) :
     CheckGLError();
 }
 
-void PrimaryGLContext::Plot(std::vector<float> &points) {
+void PrimaryGLContext::Plot(std::vector<float> &points,std::vector<float> &points2) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glMatrixMode(GL_MODELVIEW);
@@ -71,22 +71,27 @@ void PrimaryGLContext::Plot(std::vector<float> &points) {
 
 //    glEnable(GL_LINE_SMOOTH);
 
-    glPushMatrix();
-    glTranslatef(-1.0f, -0.9f, 0.0f);
-    glScalef(2.0f, 1.8f, 1.0f);
     if (points.size()) {
+        glPushMatrix();
+        glTranslatef(-1.0f, -0.9f, 0.0f);
+        glScalef(2.0f, 1.0f, 1.0f);
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(2, GL_FLOAT, 0, &points[0]);
         glDrawArrays(GL_LINE_STRIP, 0, points.size() / 2);
         glDisableClientState(GL_VERTEX_ARRAY);
-    } else {
-        glBegin(GL_LINE_STRIP);
-        glColor3f(1.0f, 1.0f, 1.0f);
-        glVertex3f(-1.0f, 0.0f, 0.0f);
-        glVertex3f(1.0f, 0.0f, 0.0f);
-        glEnd();
+        glPopMatrix();
     }
-    glPopMatrix();
+
+    if (points2.size()) {
+        glPushMatrix();
+        glTranslatef(-1.0f, 0.5f, 0.0f);
+        glScalef(2.0f, 0.5f, 1.0f);
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glVertexPointer(2, GL_FLOAT, 0, &points2[0]);
+        glDrawArrays(GL_LINE_STRIP, 0, points2.size() / 2);
+        glDisableClientState(GL_VERTEX_ARRAY);
+        glPopMatrix();
+    }
 
     glFlush();
 
@@ -121,7 +126,7 @@ void TestGLCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     PrimaryGLContext& canvas = wxGetApp().GetContext(this);
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
-    canvas.Plot(points);
+    canvas.Plot(spectrum_points,waveform_points);
 
     SwapBuffers();
 }
@@ -157,23 +162,31 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
 
     if (data && data->size()) {
 
-        std::vector<int16_t> tmp(data->begin(),data->end());
+        std::vector<int16_t> tmp(data->begin(), data->end());
         demod.demod(tmp);
 
-        std::cout << demod.lp_len << std::endl;
+//        std::cout << demod.lp_len << std::endl;
 
-        if (points.size() < demod.lp_len*2) {
-             points.resize(demod.lp_len*2);
-         }
-
-        for (int i = 0, iMax= demod.lp_len; i < iMax; i++) {
-            points[i * 2 + 1] = (float)demod.lowpassed[i]/32767.0+0.5;
-            points[i * 2] = ((double) i / (double) iMax);
+        if (waveform_points.size() < demod.lp_len * 2) {
+            waveform_points.resize(demod.lp_len * 2);
         }
 
-        /*
-        if (points.size() < FFT_SIZE * 2) {
-            points.resize(FFT_SIZE * 2);
+        float waveform_ceil = 0;
+
+        for (int i = 0, iMax = demod.lp_len; i < iMax; i++) {
+            float v = fabs(demod.lowpassed[i]);
+            if (v>waveform_ceil) {
+                waveform_ceil = v;
+            }
+        }
+
+        for (int i = 0, iMax = demod.lp_len; i < iMax; i++) {
+            waveform_points[i * 2 + 1] = (float) demod.lowpassed[i] / waveform_ceil;
+            waveform_points[i * 2] = ((double) i / (double) iMax);
+        }
+
+        if (spectrum_points.size() < FFT_SIZE * 2) {
+            spectrum_points.resize(FFT_SIZE * 2);
         }
 
         for (int i = 0; i < BUF_SIZE / 2; i++) {
@@ -228,9 +241,9 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
         fft_ceil_maa = fft_ceil_maa + (fft_ceil - fft_ceil_maa) * 0.05;
 
         for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
-            points[i * 2 + 1] = fft_result_maa[i] / fft_ceil_maa;
-            points[i * 2] = ((double) i / (double) iMax);
-        }*/
+            spectrum_points[i * 2 + 1] = fft_result_maa[i] / fft_ceil_maa;
+            spectrum_points[i * 2] = ((double) i / (double) iMax);
+        }
     }
 }
 

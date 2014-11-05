@@ -13,7 +13,7 @@ class PrimaryGLContext: public wxGLContext {
 public:
     PrimaryGLContext(wxGLCanvas *canvas);
 
-    void Plot(std::vector<float> &points);
+    void Plot(std::vector<float> &points,std::vector<float> &points2);
 
 private:
     // textures for the cube faces
@@ -33,7 +33,8 @@ private:
     void OnIdle(wxIdleEvent &event);
 
     wxWindow *parent;
-    std::vector<float> points;
+    std::vector<float> spectrum_points;
+    std::vector<float> waveform_points;
 
     fftw_complex *in, *out[2];
     fftw_plan plan[2];
