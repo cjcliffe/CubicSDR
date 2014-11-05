@@ -21,7 +21,7 @@ EVT_IDLE(AppFrame::OnIdle)
 wxEND_EVENT_TABLE()
 
 AppFrame::AppFrame() :
-        wxFrame(NULL, wxID_ANY, wxT("CubicSDR")) {
+        wxFrame(NULL, wxID_ANY, wxT("CubicSDR")), frequency(DEFAULT_FREQ) {
 
     canvas = new TestGLCanvas(this, NULL);
 
@@ -57,7 +57,7 @@ AppFrame::AppFrame() :
 //        wxLogError
 //        ("Can't create the thread!");
 //        delete t_IQBuffer;
-        t_IQBuffer = NULL;
+    t_IQBuffer = NULL;
 //    }
 
 //    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
@@ -115,4 +115,15 @@ void AppFrame::OnEventInput(wxThreadEvent& event) {
 void AppFrame::OnIdle(wxIdleEvent& event) {
 
     event.Skip();
+}
+
+void AppFrame::setFrequency(unsigned int freq) {
+    frequency = freq;
+    SDRThreadTask task = SDRThreadTask(SDRThreadTask::SDR_THREAD_TUNING);
+    task.setUInt(freq);
+    m_pQueue->addTask(task, SDRThreadQueue::SDR_PRIORITY_HIGHEST);
+}
+
+int AppFrame::getFrequency() {
+    return frequency;
 }

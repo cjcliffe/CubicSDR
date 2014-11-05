@@ -7,8 +7,7 @@
 #include "CubicSDRDefs.h"
 #include "fftw3.h"
 
-class PrimaryGLContext : public wxGLContext
-{
+class PrimaryGLContext: public wxGLContext {
 public:
     PrimaryGLContext(wxGLCanvas *canvas);
 
@@ -19,13 +18,19 @@ private:
     GLuint m_textures[6];
 };
 
-class TestGLCanvas : public wxGLCanvas
-{
+class TestGLCanvas: public wxGLCanvas {
 public:
     TestGLCanvas(wxWindow *parent, int *attribList = NULL);
 
     void setData(std::vector<signed char> *data);
 
+private:
+    void OnPaint(wxPaintEvent& event);
+    void OnKeyDown(wxKeyEvent& event);
+
+    void OnIdle(wxIdleEvent &event);
+
+    wxWindow *parent;
     std::vector<float> points;
 
     fftw_complex *in, *out[2];
@@ -36,13 +41,6 @@ public:
     std::vector<float> fft_result;
     std::vector<float> fft_result_ma;
     std::vector<float> fft_result_maa;
-    
 
-private:
-    void OnPaint(wxPaintEvent& event);
-    void OnKeyDown(wxKeyEvent& event);
-
-    void OnIdle(wxIdleEvent &event);
-
-    wxDECLARE_EVENT_TABLE();
+wxDECLARE_EVENT_TABLE();
 };

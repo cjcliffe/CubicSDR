@@ -95,7 +95,7 @@ wxThread::ExitCode SDRThread::Entry() {
 
     rtlsdr_open(&dev, use_my_dev);
     rtlsdr_set_sample_rate(dev, SRATE);
-    rtlsdr_set_center_freq(dev, 105700000);
+    rtlsdr_set_center_freq(dev, DEFAULT_FREQ);
     rtlsdr_set_agc_mode(dev, 1);
     rtlsdr_set_offset_tuning(dev, 1);
     rtlsdr_reset_buffer(dev);
@@ -110,33 +110,27 @@ wxThread::ExitCode SDRThread::Entry() {
     std::cout << "Sampling..";
     while (!TestDestroy()) {
 
-        if (m_pQueue->Stacksize()) {
-            while (m_pQueue->Stacksize()) {
-                SDRThreadTask task = m_pQueue->Pop(); // pop a task from the queue. this will block the worker thread if queue is empty
+        if (m_pQueue->stackSize()) {
+            bool freq_changed = false;
+            float new_freq;
+
+            while (m_pQueue->stackSize()) {
+                SDRThreadTask task = m_pQueue->pop(); // pop a task from the queue. this will block the worker thread if queue is empty
                 switch (task.m_cmd) {
-//        case SDRThreadTask::SDR_THREAD_EXIT: // thread should exit
-//          Sleep(1000); // wait a while
-//          throw SDRThreadTask::SDR_THREAD_EXIT; // confirm exit command
-//        case SDRThreadTask::SDR_THREAD_TASK: // process a standard task
-//          Sleep(2000);
-//          m_pQueue->Report(SDRThreadTask::SDR_THREAD_TASK, wxString::Format(wxT("Task #%s done."), task.m_Arg.c_str()), m_ID); // report successful completion
-//          break;
-//        case SDRThreadTask::SDR_THREAD_JOBERR: // process a task that terminates with an error
-//          m_pQueue->Report(SDRThreadTask::SDR_THREAD_TASK, wxString::Format(wxT("Task #%s errorneous."), task.m_Arg.c_str()), m_ID);
-//          Sleep(1000);
-//          throw SDRThreadTask::SDR_THREAD_EXIT; // report exit of worker thread
-//          break;
-//        case SDRThreadTask::SDR_THREAD_NULL: // dummy command
-//        default: break; // default
+                case SDRThreadTask::SDR_THREAD_TUNING:
+                    std::cout << "Set frequency: " << task.getUInt() << std::endl;
+                    freq_changed = true;
+                    new_freq = task.getUInt();
+                    break;
                 }
+            }
+
+            if (freq_changed) {
+                rtlsdr_set_center_freq(dev, new_freq);
             }
         }
 
         rtlsdr_read_sync(dev, buf, BUF_SIZE, &n_read);
-        // move around
-        // long freq = 98000000+(20000000)*sin(seconds/50.0);
-        // rtlsdr_set_center_freq(dev, freq);
-        // std::cout << "Frequency: " << freq << std::endl;
 
         if (!TestDestroy()) {
             std::vector<signed char> *new_buffer = new std::vector<signed char>();

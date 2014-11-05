@@ -12,6 +12,7 @@
 
 #include "CubicSDR.h"
 #include "CubicSDRDefs.h"
+#include "AppFrame.h"
 #include <algorithm>
 
 wxString glGetwxString(GLenum name) {
@@ -98,7 +99,7 @@ wxEND_EVENT_TABLE()
 
 TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE) {
+        wxFULL_REPAINT_ON_RESIZE), parent(parent) {
 
     int in_block_size = BUF_SIZE / 2;
     int out_block_size = FFT_SIZE;
@@ -109,7 +110,7 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
     plan[0] = fftw_plan_dft_1d(out_block_size, in, out[0], FFTW_BACKWARD, FFTW_MEASURE);
     plan[1] = fftw_plan_dft_1d(out_block_size, in, out[1], FFTW_FORWARD, FFTW_MEASURE);
 
-    fft_ceil_ma=fft_ceil_maa=1.0;
+    fft_ceil_ma = fft_ceil_maa = 1.0;
 }
 
 void TestGLCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
@@ -127,10 +128,17 @@ void TestGLCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 void TestGLCanvas::OnKeyDown(wxKeyEvent& event) {
     float angle = 5.0;
 
+    unsigned int freq;
     switch (event.GetKeyCode()) {
     case WXK_RIGHT:
+        freq = ((AppFrame*) parent)->getFrequency();
+        freq += 100000;
+        ((AppFrame*) parent)->setFrequency(freq);
         break;
     case WXK_LEFT:
+        freq = ((AppFrame*) parent)->getFrequency();
+        freq -= 100000;
+        ((AppFrame*) parent)->setFrequency(freq);
         break;
     case WXK_DOWN:
         break;
@@ -200,8 +208,8 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
             }
         }
 
-        fft_ceil_ma = fft_ceil_ma + (fft_ceil - fft_ceil_ma)*0.05;
-        fft_ceil_maa = fft_ceil_maa + (fft_ceil - fft_ceil_maa)*0.05;
+        fft_ceil_ma = fft_ceil_ma + (fft_ceil - fft_ceil_ma) * 0.05;
+        fft_ceil_maa = fft_ceil_maa + (fft_ceil - fft_ceil_maa) * 0.05;
 
         for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
             points[i * 2 + 1] = fft_result_maa[i] / fft_ceil_maa;

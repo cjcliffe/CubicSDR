@@ -11,6 +11,9 @@ public:
     ~AppFrame();
     void OnEventInput(wxThreadEvent& event);
 
+    void setFrequency(unsigned int freq);
+    int getFrequency();
+
 private:
     void OnClose(wxCommandEvent& event);
     void OnNewWindow(wxCommandEvent& event);
@@ -21,6 +24,7 @@ private:
     IQBufferThread *t_IQBuffer;
     wxCriticalSection m_pThreadCS;
     SDRThreadQueue* m_pQueue;
+    unsigned int frequency;
 
 wxDECLARE_EVENT_TABLE();
 };
