@@ -7,6 +7,8 @@
 #include "CubicSDRDefs.h"
 #include "fftw3.h"
 
+#include "Demodulate.h"
+
 class PrimaryGLContext: public wxGLContext {
 public:
     PrimaryGLContext(wxGLCanvas *canvas);
@@ -41,6 +43,8 @@ private:
     std::vector<float> fft_result;
     std::vector<float> fft_result_ma;
     std::vector<float> fft_result_maa;
+
+    Demodulate demod;
 
 wxDECLARE_EVENT_TABLE();
 };

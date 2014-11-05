@@ -18,6 +18,8 @@
 static int *atan_lut = NULL;
 static int atan_lut_size = 131072; /* 512 KB */
 static int atan_lut_coef = 8;
+static uint32_t MINIMUM_RATE = 1000000;
+
 // rewrite as dynamic and thread-safe for multi demod/dongle
 #define SHARED_SIZE 6
 int16_t shared_samples[SHARED_SIZE][MAXIMUM_BUF_LENGTH];
@@ -540,30 +542,51 @@ Demodulate::Demodulate() {
     dc_avg = 0;
     output_target = &output.results[0];
     lowpassed = NULL;
-    /*
-     int capture_freq, capture_rate;
-     struct dongle_state *d = &dongle;
-     struct demod_state *dm = &demod;
-     struct controller_state *cs = &controller;
-     dm->downsample = (MINIMUM_RATE / dm->rate_in) + 1;
-     if (dm->downsample_passes) {
-     dm->downsample_passes = (int)log2(dm->downsample) + 1;
-     dm->downsample = 1 << dm->downsample_passes;
-     }
-     capture_freq = freq;
-     capture_rate = dm->downsample * dm->rate_in;
-     if (d->pre_rotate) {
-     capture_freq = freq + capture_rate/4;}
-     capture_freq += cs->edge * dm->rate_in / 2;
-     dm->output_scale = (1<<15) / (128 * dm->downsample);
-     if (dm->output_scale < 1) {
-     dm->output_scale = 1;}
-     if (dm->mode_demod == &fm_demod) {
-     dm->output_scale = 1;}
-     d->freq = (uint32_t)capture_freq;
-     d->rate = (uint32_t)capture_rate;
 
-     */
+    mode_demod = &fm_demod;
+    rate_in = SRATE;
+    rate_out = 170000;
+    rate_out2 = 32000;
+    output.rate = 32000;
+    custom_atan = 1;
+    //demod.post_downsample = 4;
+    deemph = 1;
+    squelch_level = 0;
+
+    int capture_freq;
+
+    downsample = (MINIMUM_RATE / rate_in) + 1;
+    if (downsample_passes) {
+        downsample_passes = (int) log2(downsample) + 1;
+        downsample = 1 << downsample_passes;
+    }
+
+    if (deemph) {
+        deemph_a = (int)round(1.0/((1.0-exp(-1.0/(rate_out * 75e-6)))));
+    }
+
+    capture_freq=DEFAULT_FREQ;
+
+    //capture_freq = freq;
+    //capture_rate = downsample * rate_in;
+
+    int edge = 0;
+
+//     if (d->pre_rotate) {
+//     capture_freq = freq + capture_rate/4;}
+    capture_freq += edge * rate_in / 2;
+    output_scale = (1 << 15) / (128 * downsample);
+    if (output_scale < 1) {
+        output_scale = 1;
+    }
+    if (mode_demod == &fm_demod) {
+        output_scale = 1;
+    }
+
+    custom_atan = 1;
+    //demod.post_downsample = 4;
+    deemph = 1;
+    squelch_level = 0;
 
     int r, opt;
     int dev_given = 0;
@@ -596,15 +619,7 @@ Demodulate::Demodulate() {
 //                }
 //                if (strcmp("wbfm", optarg) == 0) {
 //    controller.wb_mode = 1;
-    mode_demod = &fm_demod;
-    rate_in = SRATE; //170000
-    rate_out = SRATE; //170000
-    rate_out2 = 32000;
-    output.rate = 32000;
-    custom_atan = 1;
-    //demod.post_downsample = 4;
-    deemph = 1;
-    squelch_level = 0;
+
 //                }
 //                break;
 

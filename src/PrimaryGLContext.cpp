@@ -157,6 +157,21 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
 
     if (data && data->size()) {
 
+        std::vector<int16_t> tmp(data->begin(),data->end());
+        demod.demod(tmp);
+
+        std::cout << demod.lp_len << std::endl;
+
+        if (points.size() < demod.lp_len*2) {
+             points.resize(demod.lp_len*2);
+         }
+
+        for (int i = 0, iMax= demod.lp_len; i < iMax; i++) {
+            points[i * 2 + 1] = (float)demod.lowpassed[i]/32767.0+0.5;
+            points[i * 2] = ((double) i / (double) iMax);
+        }
+
+        /*
         if (points.size() < FFT_SIZE * 2) {
             points.resize(FFT_SIZE * 2);
         }
@@ -215,7 +230,7 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
         for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
             points[i * 2 + 1] = fft_result_maa[i] / fft_ceil_maa;
             points[i * 2] = ((double) i / (double) iMax);
-        }
+        }*/
     }
 }
 
