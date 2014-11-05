@@ -9,7 +9,9 @@
 
 #include "wx/thread.h"
 
-#include "AppFrame.h"
+#include "SDRThread.h"
+#include "IQBufferThread.h"
+#include "SDRThreadQueue.h"
 
 // declare a new type of event, to be used by our SDRThread class:
 //wxDECLARE_EVENT(wxEVT_COMMAND_SDRThread_COMPLETED, wxThreadEvent);
@@ -17,20 +19,21 @@
 //wxDECLARE_EVENT(wxEVT_COMMAND_SDRThread_INPUT, wxThreadEvent);
 
 enum {
-    EVENT_SDR_INPUT = wxID_HIGHEST+1
+    EVENT_SDR_INPUT = wxID_HIGHEST + 1
 };
 
 class SDRThread: public wxThread {
 public:
-	rtlsdr_dev_t *dev;
+    rtlsdr_dev_t *dev;
 
-	SDRThread(AppFrame *appframe);
-	~SDRThread();
+    SDRThread(SDRThreadQueue* pQueue, int id = 0);
+    ~SDRThread();
 
-	void enumerate_rtl();
+    void enumerate_rtl();
 
 protected:
-	virtual ExitCode Entry();
-	AppFrame *frame;
-	uint32_t sample_rate;
+    virtual ExitCode Entry();
+    uint32_t sample_rate;
+    SDRThreadQueue* m_pQueue;
+    int m_ID;
 };

@@ -78,6 +78,8 @@ SET (cubicsdr_sources
 	src/IQBufferThread.cpp
 	src/PrimaryGLContext.cpp
 	src/AppFrame.cpp
+	src/SDRThreadQueue.cpp
+	src/SDRThreadTask.cpp
 )
 
 SET (cubicsdr_headers
@@ -87,6 +89,8 @@ SET (cubicsdr_headers
 	src/PrimaryGLContext.h
 	src/AppFrame.h
 	src/CubicSDRDefs.h
+	src/SDRThreadQueue.h
+	src/SDRThreadTask.h
 )
 #configure_files(${PROJECT_SOURCE_DIR}/shaders ${PROJECT_BINARY_DIR}/shaders COPYONLY)
 #configure_files(${PROJECT_SOURCE_DIR}/png ${PROJECT_BINARY_DIR}/png COPYONLY)

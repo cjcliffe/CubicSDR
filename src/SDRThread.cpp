@@ -2,13 +2,12 @@
 #include "CubicSDRDefs.h"
 #include <vector>
 
-
 //wxDEFINE_EVENT(wxEVT_COMMAND_SDRThread_INPUT, wxThreadEvent);
 
-SDRThread::SDRThread(AppFrame *frame) :
-        wxThread(wxTHREAD_DETACHED) {
+SDRThread::SDRThread(SDRThreadQueue* pQueue, int id) :
+        wxThread(wxTHREAD_DETACHED), m_pQueue(pQueue), m_ID(id) {
     dev = NULL;
-    this->frame = frame;
+    sample_rate = SRATE;
 }
 SDRThread::~SDRThread() {
 
@@ -85,11 +84,10 @@ void SDRThread::enumerate_rtl() {
 wxThread::ExitCode SDRThread::Entry() {
     signed char *buf = (signed char *) malloc(BUF_SIZE);
 
-
     int use_my_dev = 1;
     int dev_count = rtlsdr_get_device_count();
 
-    if (use_my_dev > dev_count-1) {
+    if (use_my_dev > dev_count - 1) {
         use_my_dev = 0;
     }
 
@@ -97,7 +95,7 @@ wxThread::ExitCode SDRThread::Entry() {
 
     rtlsdr_open(&dev, use_my_dev);
     rtlsdr_set_sample_rate(dev, SRATE);
-    rtlsdr_set_center_freq(dev, 105700000);
+    rtlsdr_set_center_freq(dev, DEFAULT_FREQ);
     rtlsdr_set_agc_mode(dev, 1);
     rtlsdr_set_offset_tuning(dev, 1);
     rtlsdr_reset_buffer(dev);
@@ -112,12 +110,27 @@ wxThread::ExitCode SDRThread::Entry() {
     std::cout << "Sampling..";
     while (!TestDestroy()) {
 
+        if (m_pQueue->stackSize()) {
+            bool freq_changed = false;
+            float new_freq;
+
+            while (m_pQueue->stackSize()) {
+                SDRThreadTask task = m_pQueue->pop(); // pop a task from the queue. this will block the worker thread if queue is empty
+                switch (task.m_cmd) {
+                case SDRThreadTask::SDR_THREAD_TUNING:
+                    std::cout << "Set frequency: " << task.getUInt() << std::endl;
+                    freq_changed = true;
+                    new_freq = task.getUInt();
+                    break;
+                }
+            }
+
+            if (freq_changed) {
+                rtlsdr_set_center_freq(dev, new_freq);
+            }
+        }
+
         rtlsdr_read_sync(dev, buf, BUF_SIZE, &n_read);
-        // move around
-        long freq = 98000000+(20000000)*sin(seconds/50.0);
-        rtlsdr_set_center_freq(dev, freq);
-        
-        std::cout << "Frequency: " << freq << std::endl;
 
         if (!TestDestroy()) {
             std::vector<signed char> *new_buffer = new std::vector<signed char>();
@@ -126,14 +139,14 @@ wxThread::ExitCode SDRThread::Entry() {
                 new_buffer->push_back(buf[i] - 127);
             }
 
-            double time_slice = (double)n_read/(double)sample_rate;
+            double time_slice = (double) n_read / (double) sample_rate;
             seconds += time_slice;
 
             // std::cout << "Time Slice: " << time_slice << std::endl;
             if (!TestDestroy()) {
                 wxThreadEvent event(wxEVT_THREAD, EVENT_SDR_INPUT);
                 event.SetPayload(new_buffer);
-                wxQueueEvent(frame, event.Clone());
+                wxQueueEvent(m_pQueue->getHandler(), event.Clone());
             } else {
                 delete new_buffer;
             }
