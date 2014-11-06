@@ -12,22 +12,14 @@
 #define MAXIMUM_BUF_LENGTH  (MAXIMUM_OVERSAMPLE * DEFAULT_BUF_LENGTH)
 #define AUTO_GAIN   -100
 #define BUFFER_DUMP 4096
-#define MAXIMUM_RATE    2400000
+//#define MAXIMUM_RATE    2400000
 #define PI_INT  (1<<14)
 #define ONE_INT (1<<14)
 static int *atan_lut = NULL;
 static int atan_lut_size = 131072; /* 512 KB */
 static int atan_lut_coef = 8;
-static uint32_t MINIMUM_RATE = 1000000;
+//static uint32_t MINIMUM_RATE = 1000000;
 
-// rewrite as dynamic and thread-safe for multi demod/dongle
-#define SHARED_SIZE 6
-int16_t shared_samples[SHARED_SIZE][MAXIMUM_BUF_LENGTH];
-int ss_busy[SHARED_SIZE] = { 0 };
-
-/* more cond dumbness */
-#define safe_cond_signal(n, m) pthread_mutex_lock(m); pthread_cond_signal(n); pthread_mutex_unlock(m)
-#define safe_cond_wait(n, m) pthread_mutex_lock(m); pthread_cond_wait(n, m); pthread_mutex_unlock(m)
 /* {length, coef, coef, coef} and scaled by 2^15
  for now, only length 9, optimal way to get +85% bandwidth */
 #define CIC_TABLE_MAX 10
@@ -544,18 +536,18 @@ Demodulate::Demodulate() {
     lowpassed = NULL;
 
     mode_demod = &fm_demod;
-    rate_in = SRATE;
+    rate_in = 170000;
     rate_out = 170000;
     rate_out2 = 32000;
     output.rate = 32000;
     custom_atan = 1;
-    //demod.post_downsample = 4;
+//    post_downsample = 4;
     deemph = 1;
     squelch_level = 0;
 
     int capture_freq;
 
-    downsample = (MINIMUM_RATE / rate_in) + 1;
+    downsample = (SRATE / rate_in) + 1;
     if (downsample_passes) {
         downsample_passes = (int) log2(downsample) + 1;
         downsample = 1 << downsample_passes;
@@ -697,285 +689,8 @@ void Demodulate::demod(std::vector<int16_t> &buffer) {
     if (rate_out2 > 0) {
         low_pass_real(this);
     }
+
+    output_target->buf = lowpassed;
+    output_target->len = lp_len;
 }
 
-/*
- static void rtlsdr_callback(unsigned char *buf, uint32_t len, void *ctx) {
- int i;
- struct dongle_state *s = ctx;
- struct demod_state *d = s->targets[0];
- struct demod_state *d2 = s->targets[1];
- if (do_exit) {
- return;
- }
- if (!ctx) {
- return;
- }
- if (s->mute) {
- for (i = 0; i < s->mute; i++) {
- buf[i] = 127;
- }
- s->mute = 0;
- }
- if (s->pre_rotate) {
- rotate_90(buf, len);
- }
- for (i = 0; i < (int) len; i++) {
- s->buf16[i] = (int16_t) buf[i] - 127;
- }
- if (d2 != NULL) {
- pthread_rwlock_wrlock(&d2->rw);
- d2->lowpassed = mark_shared_buffer();
- memcpy(d2->lowpassed, s->buf16, 2 * len);
- d2->lp_len = len;
- pthread_rwlock_unlock(&d2->rw);
- safe_cond_signal(&d2->ready, &d2->ready_m);
- }
- pthread_rwlock_wrlock(&d->rw);
- d->lowpassed = s->buf16;
- d->lp_len = len;
- pthread_rwlock_unlock(&d->rw);
- safe_cond_signal(&d->ready, &d->ready_m);
- s->buf16 = mark_shared_buffer();
- }
-
-
- static void *demod_thread_fn(void *arg) {
- struct demod_state *d = arg;
- struct buffer_bucket *o = d->output_target;
- while (!do_exit) {
- safe_cond_wait(&d->ready, &d->ready_m);
- pthread_rwlock_wrlock(&d->rw);
- full_demod(d);
- pthread_rwlock_unlock(&d->rw);
- if (d->exit_flag) {
- do_exit = 1;
- }
- pthread_rwlock_wrlock(&o->rw);
- o->buf = d->lowpassed;
- o->len = d->lp_len;
- pthread_rwlock_unlock(&o->rw);
- if (controller.freq_len > 1 && d->squelch_level && d->squelch_hits > d->conseq_squelch) {
- unmark_shared_buffer(d->lowpassed);
- d->squelch_hits = d->conseq_squelch + 1;
- safe_cond_signal(&controller.hop, &controller.hop_m);
- continue;
- }
- safe_cond_signal(&o->ready, &o->ready_m);
- pthread_mutex_lock(&o->trycond_m);
- o->trycond = 0;
- pthread_mutex_unlock(&o->trycond_m);
- }
- return 0;
- }
-
-
- #ifndef _WIN32
- static int get_nanotime(struct timespec *ts)
- {
- int rv = ENOSYS;
- #ifdef __unix__
- rv = clock_gettime(CLOCK_MONOTONIC, ts);
- #elif __APPLE__
- struct timeval tv;
- rv = gettimeofday(&tv, NULL);
- ts->tv_sec = tv.tv_sec;
- ts->tv_nsec = tv.tv_usec * 1000L;
- #endif
- return rv;
- }
- #endif
- static void *output_thread_fn(void *arg) {
- int j, r = 0;
- struct output_state *s = arg;
- struct buffer_bucket *b0 = &s->results[0];
- struct buffer_bucket *b1 = &s->results[1];
- struct timespec start_time;
- struct timespec now_time;
- int64_t i, duration, samples, samples_now;
- samples = 0L;
- #ifndef _WIN32
- get_nanotime(&start_time);
- #endif
- while (!do_exit) {
- if (s->lrmix) {
- safe_cond_wait(&b0->ready, &b0->ready_m);
- pthread_rwlock_rdlock(&b0->rw);
- safe_cond_wait(&b1->ready, &b1->ready_m);
- pthread_rwlock_rdlock(&b1->rw);
- for (j = 0; j < b0->len; j++) {
- fwrite(b0->buf + j, 2, 1, s->file);
- fwrite(b1->buf + j, 2, 1, s->file);
- }
- unmark_shared_buffer(b1->buf);
- pthread_rwlock_unlock(&b1->rw);
- unmark_shared_buffer(b0->buf);
- pthread_rwlock_unlock(&b0->rw);
- continue;
- }
- if (!s->padded) {
- safe_cond_wait(&b0->ready, &b0->ready_m);
- pthread_rwlock_rdlock(&b0->rw);
- fwrite(b0->buf, 2, b0->len, s->file);
- unmark_shared_buffer(b0->buf);
- pthread_rwlock_unlock(&b0->rw);
- continue;
- }
- #ifndef _WIN32
- // padding requires output at constant rate
- // pthread_cond_timedwait is terrible, roll our own trycond
- // figure out how to do this with windows HPET
- usleep(2000);
- pthread_mutex_lock(&b0->trycond_m);
- r = b0->trycond;
- b0->trycond = 1;
- pthread_mutex_unlock(&b0->trycond_m);
- if (r == 0) {
- pthread_rwlock_rdlock(&b0->rw);
- fwrite(b0->buf, 2, b0->len, s->file);
- unmark_shared_buffer(b0->buf);
- samples += (int64_t)b0->len;
- pthread_rwlock_unlock(&b0->rw);
- continue;
- }
- get_nanotime(&now_time);
- duration = now_time.tv_sec - start_time.tv_sec;
- duration *= 1000000000L;
- duration += (now_time.tv_nsec - start_time.tv_nsec);
- samples_now = (duration * (int64_t)s->rate) / 1000000000L;
- if (samples_now < samples) {
- continue;}
- for (i=samples; i<samples_now; i++) {
- fputc(0, s->file);
- fputc(0, s->file);
- }
- samples = samples_now;
- #endif
- }
- return 0;
- }
-
- static void optimal_settings(int freq, int rate) {
- // giant ball of hacks
- // seems unable to do a single pass, 2:1
- int capture_freq, capture_rate;
- struct dongle_state *d = &dongle;
- struct demod_state *dm = &demod;
- struct controller_state *cs = &controller;
- dm->downsample = (MINIMUM_RATE / dm->rate_in) + 1;
- if (dm->downsample_passes) {
- dm->downsample_passes = (int) log2(dm->downsample) + 1;
- dm->downsample = 1 << dm->downsample_passes;
- }
- capture_freq = freq;
- capture_rate = dm->downsample * dm->rate_in;
- if (d->pre_rotate) {
- capture_freq = freq + capture_rate / 4;
- }
- capture_freq += cs->edge * dm->rate_in / 2;
- dm->output_scale = (1 << 15) / (128 * dm->downsample);
- if (dm->output_scale < 1) {
- dm->output_scale = 1;
- }
- if (dm->mode_demod == &fm_demod) {
- dm->output_scale = 1;
- }
- d->freq = (uint32_t) capture_freq;
- d->rate = (uint32_t) capture_rate;
- //d->pre_rotate = 0;
- //demod.rotate_enable = 1;
- //demod.rotate.angle = -0.25 * 2 * M_PI;
- //translate_init(&demod.rotate);
- }
-
- void optimal_lrmix(void) {
- double angle1, angle2;
- uint32_t freq, freq1, freq2, bw, dongle_bw, mr;
- if (controller.freq_len != 2) {
- fprintf(stderr, "error: lrmix requires two frequencies\n");
- do_exit = 1;
- exit(1);
- }
- if (output.padded) {
- fprintf(stderr, "warning: lrmix does not support padding\n");
- }
- freq1 = controller.freqs[0];
- freq2 = controller.freqs[1];
- bw = demod.rate_out;
- freq = freq1 / 2 + freq2 / 2 + bw;
- mr = (uint32_t) abs((int64_t) freq1 - (int64_t) freq2) + bw;
- if (mr > MINIMUM_RATE) {
- MINIMUM_RATE = mr;
- }
- dongle.pre_rotate = 0;
- optimal_settings(freq, bw);
- output.padded = 0;
- clone_demod(&demod2, &demod);
- //demod2 = demod;
- demod2.output_target = &output.results[1];
- dongle.targets[1] = &demod2;
- dongle_bw = dongle.rate;
- if (dongle_bw > MAXIMUM_RATE) {
- fprintf(stderr, "error: unable to find optimal settings\n");
- do_exit = 1;
- exit(1);
- }
- angle1 = ((double) freq1 - (double) freq) / (double) dongle_bw;
- demod.rotate.angle = angle1 * 2 * M_PI;
- angle2 = ((double) freq2 - (double) freq) / (double) dongle_bw;
- demod2.rotate.angle = angle2 * 2 * M_PI;
- translate_init(&demod.rotate);
- translate_init(&demod2.rotate);
- //fprintf(stderr, "a1 %f, a2 %f\n", angle1, angle2);
- }
- static void *controller_thread_fn(void *arg) {
- // thoughts for multiple dongles
- // might be no good using a controller thread if retune/rate blocks
- int i;
- struct controller_state *s = arg;
- if (s->wb_mode) {
- for (i = 0; i < s->freq_len; i++) {
- s->freqs[i] += 16000;
- }
- }
- // set up primary channel
- optimal_settings(s->freqs[0], demod.rate_in);
- demod.squelch_level = squelch_to_rms(demod.squelch_level, &dongle, &demod);
- if (dongle.direct_sampling) {
- verbose_direct_sampling(dongle.dev, dongle.direct_sampling);
- }
- if (dongle.offset_tuning) {
- verbose_offset_tuning(dongle.dev);
- }
- // set up lrmix
- if (output.lrmix) {
- optimal_lrmix();
- }
- // Set the frequency
- verbose_set_frequency(dongle.dev, dongle.freq);
- fprintf(stderr, "Oversampling input by: %ix.\n", demod.downsample);
- fprintf(stderr, "Oversampling output by: %ix.\n", demod.post_downsample);
- fprintf(stderr, "Buffer size: %0.2fms\n", 1000 * 0.5 * (float) ACTUAL_BUF_LENGTH / (float) dongle.rate);
- // Set the sample rate
- verbose_set_sample_rate(dongle.dev, dongle.rate);
- fprintf(stderr, "Output at %u Hz.\n", demod.rate_in / demod.post_downsample);
- while (!do_exit) {
- safe_cond_wait(&s->hop, &s->hop_m);
- if (s->freq_len <= 1) {
- continue;
- }
- if (output.lrmix) {
- continue;
- }
- // hacky hopping
- s->freq_now = (s->freq_now + 1) % s->freq_len;
- optimal_settings(s->freqs[s->freq_now], demod.rate_in);
- rtlsdr_set_center_freq(dongle.dev, dongle.freq);
- dongle.mute = BUFFER_DUMP;
- }
- return 0;
- }
-
- int main(int argc, char **argv) {
-
- }*/

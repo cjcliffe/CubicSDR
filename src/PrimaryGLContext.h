@@ -12,12 +12,14 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 
+#define AL_NUM_BUFFERS 3
+#define AL_BUFFER_SIZE 4096
 
 class PrimaryGLContext: public wxGLContext {
 public:
     PrimaryGLContext(wxGLCanvas *canvas);
 
-    void Plot(std::vector<float> &points,std::vector<float> &points2);
+    void Plot(std::vector<float> &points, std::vector<float> &points2);
 
 private:
     // textures for the cube faces
@@ -54,6 +56,11 @@ private:
 
     ALCdevice *dev;
     ALCcontext *ctx;
+
+    ALuint source, buffers[AL_NUM_BUFFERS];
+    ALuint frequency;
+    ALenum format;
+    unsigned char *buf;
 
 wxDECLARE_EVENT_TABLE();
 };

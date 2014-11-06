@@ -16,9 +16,6 @@
 #include <algorithm>
 #include "Demodulate.h"
 
-#define AL_NUM_BUFFERS 3
-#define AL_BUFFER_SIZE 4096
-
 wxString glGetwxString(GLenum name) {
     const GLubyte *v = glGetString(name);
     if (v == 0) {
@@ -130,6 +127,31 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
     if (!ctx) {
         fprintf(stderr, "Oops2\n");
     }
+
+    alGenBuffers(AL_NUM_BUFFERS, buffers);
+    alGenSources(1, &source);
+
+    // prime the buffers
+    ALuint buffer_init[AL_BUFFER_SIZE];
+
+    for (int i = 0; i < AL_BUFFER_SIZE; i++) {
+        buffer_init[i] = 32767;
+    }
+
+    format = AL_FORMAT_MONO16;
+    alBufferData(buffers[0], format, buffer_init, AL_BUFFER_SIZE, 32000);
+    alBufferData(buffers[1], format, buffer_init, AL_BUFFER_SIZE, 32000);
+    alBufferData(buffers[2], format, buffer_init, AL_BUFFER_SIZE, 32000);
+    if (alGetError() != AL_NO_ERROR) {
+        std::cout << "Error priming :(\n";
+    }
+
+    alSourceQueueBuffers(source, AL_NUM_BUFFERS, buffers);
+    alSourcePlay(source);
+    if (alGetError() != AL_NO_ERROR) {
+        std::cout << "Error starting :(\n";
+    }
+
 }
 
 TestGLCanvas::~TestGLCanvas() {
@@ -185,8 +207,6 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
         std::vector<int16_t> tmp(data->begin(), data->end());
         demod.demod(tmp);
 
-//        std::cout << demod.lp_len << std::endl;
-
         if (waveform_points.size() < demod.lp_len * 2) {
             waveform_points.resize(demod.lp_len * 2);
         }
@@ -203,6 +223,35 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
         for (int i = 0, iMax = demod.lp_len; i < iMax; i++) {
             waveform_points[i * 2 + 1] = (float) demod.lowpassed[i] / waveform_ceil;
             waveform_points[i * 2] = ((double) i / (double) iMax);
+        }
+
+        ALint val;
+        ALuint buffer;
+
+        frequency = demod.output.rate;
+
+        alGetSourcei(source, AL_BUFFERS_PROCESSED, &val);
+        if (val > 0) {
+            std::cout << "buffer: " << demod.output_target->len << "@" << frequency << std::endl;
+//            std::vector<ALuint> al_buffer;
+//            al_buffer.resize(demod.lp_len);
+
+//            for (int i = 0, iMax = demod.lp_len; i < iMax; i++) {
+//                al_buffer[i] = demod.lowpassed[i] + 32767.0;
+//            }
+
+            alSourceUnqueueBuffers(source, 1, &buffer);
+            alBufferData(buffer, format, demod.output_target->buf, demod.output_target->len*2, frequency);
+            alSourceQueueBuffers(source, 1, &buffer);
+
+            if (alGetError() != AL_NO_ERROR) {
+                std::cout << "Error buffering :(\n";
+            }
+
+        }
+        alGetSourcei(source, AL_SOURCE_STATE, &val);
+        if (val != AL_PLAYING) {
+            alSourcePlay(source);
         }
 
         if (spectrum_points.size() < FFT_SIZE * 2) {
