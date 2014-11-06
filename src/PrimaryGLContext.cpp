@@ -132,16 +132,16 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
     alGenSources(1, &source);
 
     // prime the buffers
-    ALuint buffer_init[AL_BUFFER_SIZE];
+    int16_t buffer_init[AL_BUFFER_SIZE];
 
     for (int i = 0; i < AL_BUFFER_SIZE; i++) {
-        buffer_init[i] = 32767;
+        buffer_init[i] = 0;
     }
 
     format = AL_FORMAT_MONO16;
-    alBufferData(buffers[0], format, buffer_init, AL_BUFFER_SIZE, 32000);
-    alBufferData(buffers[1], format, buffer_init, AL_BUFFER_SIZE, 32000);
-    alBufferData(buffers[2], format, buffer_init, AL_BUFFER_SIZE, 32000);
+    for (int i = 0; i < AL_NUM_BUFFERS; i++) {
+      alBufferData(buffers[i], format, buffer_init, AL_BUFFER_SIZE, demod.output.rate);
+    }
     if (alGetError() != AL_NO_ERROR) {
         std::cout << "Error priming :(\n";
     }
@@ -228,30 +228,39 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
         ALint val;
         ALuint buffer;
 
+        alGetSourcei(source, AL_SOURCE_STATE, &val);
+        if (val != AL_PLAYING) {
+            alSourcePlay(source);
+        }
+
+        // std::cout << "buffer: " << demod.output_target->len << "@" << frequency << std::endl;
+        std::vector<ALuint> *newBuffer = new std::vector<ALuint>;
+        newBuffer->resize(demod.output_target->len);
+        memcpy(&(*newBuffer)[0],demod.output_target->buf,demod.output_target->len*2);
+        audio_queue.push(newBuffer);
+
+
         frequency = demod.output.rate;
 
-        alGetSourcei(source, AL_BUFFERS_PROCESSED, &val);
-        if (val > 0) {
-            std::cout << "buffer: " << demod.output_target->len << "@" << frequency << std::endl;
-//            std::vector<ALuint> al_buffer;
-//            al_buffer.resize(demod.lp_len);
-
-//            for (int i = 0, iMax = demod.lp_len; i < iMax; i++) {
-//                al_buffer[i] = demod.lowpassed[i] + 32767.0;
-//            }
-
+        while (audio_queue.size()>8) {
+            alGetSourcei(source, AL_BUFFERS_PROCESSED, &val);
+            if (val <= 0) {
+              break;
+            }
+          
+            std::vector<ALuint> *nextBuffer = audio_queue.front();
+            
             alSourceUnqueueBuffers(source, 1, &buffer);
-            alBufferData(buffer, format, demod.output_target->buf, demod.output_target->len*2, frequency);
+            alBufferData(buffer, format, &(*nextBuffer)[0], nextBuffer->size()*2, frequency);
             alSourceQueueBuffers(source, 1, &buffer);
+
+            audio_queue.pop();
+            
+            delete nextBuffer;
 
             if (alGetError() != AL_NO_ERROR) {
                 std::cout << "Error buffering :(\n";
             }
-
-        }
-        alGetSourcei(source, AL_SOURCE_STATE, &val);
-        if (val != AL_PLAYING) {
-            alSourcePlay(source);
         }
 
         if (spectrum_points.size() < FFT_SIZE * 2) {

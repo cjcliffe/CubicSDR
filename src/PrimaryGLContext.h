@@ -4,15 +4,22 @@
 #include "wx/timer.h"
 
 #include <vector>
+#include <queue>
+
 #include "CubicSDRDefs.h"
 #include "fftw3.h"
 
 #include "Demodulate.h"
 
+#ifdef WIN32
 #include <AL/al.h>
 #include <AL/alc.h>
+#else
+#include <OpenAL/al.h>
+#include <OpenAL/alc.h>
+#endif
 
-#define AL_NUM_BUFFERS 3
+#define AL_NUM_BUFFERS 16
 #define AL_BUFFER_SIZE 4096
 
 class PrimaryGLContext: public wxGLContext {
@@ -52,6 +59,8 @@ private:
     std::vector<float> fft_result_ma;
     std::vector<float> fft_result_maa;
 
+    std::queue< std::vector <ALuint> * > audio_queue;
+
     Demodulate demod;
 
     ALCdevice *dev;
@@ -60,7 +69,6 @@ private:
     ALuint source, buffers[AL_NUM_BUFFERS];
     ALuint frequency;
     ALenum format;
-    unsigned char *buf;
 
 wxDECLARE_EVENT_TABLE();
 };

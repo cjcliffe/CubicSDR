@@ -538,8 +538,8 @@ Demodulate::Demodulate() {
     mode_demod = &fm_demod;
     rate_in = 170000;
     rate_out = 170000;
-    rate_out2 = 32000;
-    output.rate = 32000;
+    rate_out2 = 44000;
+    output.rate = 44000;
     custom_atan = 1;
 //    post_downsample = 4;
     deemph = 1;
@@ -547,6 +547,7 @@ Demodulate::Demodulate() {
 
     int capture_freq;
 
+    // downsample = (SRATE / rate_in) + 1;
     downsample = (SRATE / rate_in) + 1;
     if (downsample_passes) {
         downsample_passes = (int) log2(downsample) + 1;
@@ -589,6 +590,7 @@ Demodulate::Demodulate() {
     output.results[1].trycond = 1;
     output.results[1].buf = NULL;
 
+
 //    controller.freqs[0] = 100000000;
 //    controller.freq_len = 0;
 //    controller.edge = 0;
@@ -615,7 +617,7 @@ Demodulate::Demodulate() {
 //                }
 //                break;
 
-    rate_in *= post_downsample;
+    // rate_in *= post_downsample;
     if (!output.rate) {
         output.rate = rate_out;
     }
