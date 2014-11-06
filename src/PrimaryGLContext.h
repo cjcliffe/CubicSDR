@@ -9,6 +9,10 @@
 
 #include "Demodulate.h"
 
+#include <AL/al.h>
+#include <AL/alc.h>
+
+
 class PrimaryGLContext: public wxGLContext {
 public:
     PrimaryGLContext(wxGLCanvas *canvas);
@@ -23,6 +27,7 @@ private:
 class TestGLCanvas: public wxGLCanvas {
 public:
     TestGLCanvas(wxWindow *parent, int *attribList = NULL);
+    ~TestGLCanvas();
 
     void setData(std::vector<signed char> *data);
 
@@ -46,6 +51,9 @@ private:
     std::vector<float> fft_result_maa;
 
     Demodulate demod;
+
+    ALCdevice *dev;
+    ALCcontext *ctx;
 
 wxDECLARE_EVENT_TABLE();
 };

@@ -16,6 +16,9 @@
 #include <algorithm>
 #include "Demodulate.h"
 
+#define AL_NUM_BUFFERS 3
+#define AL_BUFFER_SIZE 4096
+
 wxString glGetwxString(GLenum name) {
     const GLubyte *v = glGetString(name);
     if (v == 0) {
@@ -63,7 +66,7 @@ PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas) :
     CheckGLError();
 }
 
-void PrimaryGLContext::Plot(std::vector<float> &points,std::vector<float> &points2) {
+void PrimaryGLContext::Plot(std::vector<float> &points, std::vector<float> &points2) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glMatrixMode(GL_MODELVIEW);
@@ -117,6 +120,23 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
     plan[1] = fftw_plan_dft_1d(out_block_size, in, out[1], FFTW_FORWARD, FFTW_MEASURE);
 
     fft_ceil_ma = fft_ceil_maa = 1.0;
+
+    dev = alcOpenDevice(NULL);
+    if (!dev) {
+        fprintf(stderr, "Oops\n");
+    }
+    ctx = alcCreateContext(dev, NULL);
+    alcMakeContextCurrent(ctx);
+    if (!ctx) {
+        fprintf(stderr, "Oops2\n");
+    }
+}
+
+TestGLCanvas::~TestGLCanvas() {
+    alcMakeContextCurrent(NULL);
+    alcDestroyContext(ctx);
+    alcCloseDevice(dev);
+
 }
 
 void TestGLCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
@@ -126,7 +146,7 @@ void TestGLCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     PrimaryGLContext& canvas = wxGetApp().GetContext(this);
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
-    canvas.Plot(spectrum_points,waveform_points);
+    canvas.Plot(spectrum_points, waveform_points);
 
     SwapBuffers();
 }
@@ -175,7 +195,7 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
 
         for (int i = 0, iMax = demod.lp_len; i < iMax; i++) {
             float v = fabs(demod.lowpassed[i]);
-            if (v>waveform_ceil) {
+            if (v > waveform_ceil) {
                 waveform_ceil = v;
             }
         }

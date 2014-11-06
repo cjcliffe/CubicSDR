@@ -62,12 +62,16 @@ if (DEFINED WIN32)
   include_directories ( ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll32  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
   link_directories (  ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll32  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/x32 )
   set(FFTW_LIB fftw3-3)
+  include_directories ( ${PROJECT_SOURCE_DIR}/external/openal-soft-1.16.0-bin/include )
+  link_directories ( ${PROJECT_SOURCE_DIR}/external/openal-soft-1.16.0-bin/libs/Win32 )
+  SET (OPENAL_LIBRARY libOpenAL32.dll winmm)
 else (DEFINED WIN32)
   set(RTLSDR_INCLUDE "/opt/local/include" CACHE FILEPATH "RTL-SDR Include Path")
   set(RTLSDR_LIB "/opt/local/lib" CACHE FILEPATH "RTL-SDR Lib Path")
   include_directories(${RTLSDR_INCLUDE})
   link_directories(${RTLSDR_LIB})
   set(FFTW_LIB fftw3)
+  find_package (OpenAL)
 endif (DEFINED WIN32)
 
 
@@ -99,8 +103,8 @@ SET (cubicsdr_headers
 
 add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers})
 
-target_link_libraries(CubicSDR rtlsdr ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES})
-# cubicvr2 glfw ${GLFW_LIBRARIES} ${OPENAL_LIBRARY}
+target_link_libraries(CubicSDR rtlsdr ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY})
+# cubicvr2 glfw ${GLFW_LIBRARIES} 
 
 
 
