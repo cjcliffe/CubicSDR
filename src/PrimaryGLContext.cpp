@@ -86,7 +86,7 @@ void PrimaryGLContext::Plot(std::vector<float> &points, std::vector<float> &poin
     if (points2.size()) {
         glPushMatrix();
         glTranslatef(-1.0f, 0.5f, 0.0f);
-        glScalef(20.0f, 0.5f, 1.0f);
+        glScalef(2.0f, 0.5f, 1.0f);
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(2, GL_FLOAT, 0, &points2[0]);
         glDrawArrays(GL_LINE_STRIP, 0, points2.size() / 2);
@@ -152,34 +152,45 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
     if (alGetError() != AL_NO_ERROR) {
         std::cout << "Error starting :(\n";
     }
+    /*
+     // define filter length, type, number of bands
+     unsigned int n = 55;
+     liquid_firdespm_btype btype = LIQUID_FIRDESPM_BANDPASS;
+     unsigned int num_bands = 3;
 
-    // define filter length, type, number of bands
-    unsigned int n = 55;
-    liquid_firdespm_btype btype = LIQUID_FIRDESPM_BANDPASS;
-    unsigned int num_bands = 3;
+     // band edge description [size: num_bands x 2]
+     float bands[6] = { 0.0f, 0.14f, 0.15f, 0.35f, 0.36f, 0.5f };
 
-    // band edge description [size: num_bands x 2]
-    float bands[6] = { 0.0f, 0.14f, 0.15f, 0.35f, 0.36f, 0.5f };
+     // desired response [size: num_bands x 1]
+     float des[3] = { 1.0f, 0.0f, 1.0f };
 
-    // desired response [size: num_bands x 1]
-    float des[3] = { 1.0f, 0.0f, 1.0f };
+     // relative weights [size: num_bands x 1]
+     float weights[3] = { 1.0f, 1.0f, 1.0f };
 
-    // relative weights [size: num_bands x 1]
-    float weights[3] = { 1.0f, 1.0f, 1.0f };
+     // in-band weighting functions [size: num_bands x 1]
+     liquid_firdespm_wtype wtype[3] = { LIQUID_FIRDESPM_FLATWEIGHT, LIQUID_FIRDESPM_EXPWEIGHT, LIQUID_FIRDESPM_FLATWEIGHT };
 
-    // in-band weighting functions [size: num_bands x 1]
-    liquid_firdespm_wtype wtype[3] = { LIQUID_FIRDESPM_FLATWEIGHT, LIQUID_FIRDESPM_EXPWEIGHT, LIQUID_FIRDESPM_FLATWEIGHT };
+     // allocate memory for array and design filter
+     float h[n];
+     firdespm_run(n, num_bands, bands, des, weights, wtype, btype, h);
+     */
 
-    // allocate memory for array and design filter
-    float h[n];
-    firdespm_run(n, num_bands, bands, des, weights, wtype, btype, h);
+    float fc = 0.5f * (170000 / SRATE);         // filter cutoff frequency
+    float ft = 0.05f;         // filter transition
+    float As = 60.0f;         // stop-band attenuation [dB]
+    float mu = 0.0f;          // fractional timing offset
 
-    fir_filter = firfilt_crcf_create(h, n);
-    
-    unsigned int m=5;           // filter semi-length
-    float slsl=60.0f;           // filter sidelobe suppression level
-    
-    fir_hil = firhilbf_create(m,slsl);
+    // estimate required filter length and generate filter
+    unsigned int h_len = estimate_req_filter_len(ft, As);
+    float h[h_len];
+    liquid_firdes_kaiser(h_len, fc, As, mu, h);
+
+    fir_filter = firfilt_crcf_create(h, h_len);
+
+    unsigned int m = 5;           // filter semi-length
+    float slsl = 60.0f;           // filter sidelobe suppression level
+
+    fir_hil = firhilbf_create(m, slsl);
 }
 
 TestGLCanvas::~TestGLCanvas() {
@@ -323,11 +334,11 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
         }
 
         // for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
- //            if (i>FFT_SIZE/4 && i < FFT_SIZE-FFT_SIZE/4) {
- //                out[0][i][0] = 0;
- //                out[0][i][1] = 0;
- //            }
- //        }
+        //            if (i>FFT_SIZE/4 && i < FFT_SIZE-FFT_SIZE/4) {
+        //                out[0][i][0] = 0;
+        //                out[0][i][1] = 0;
+        //            }
+        //        }
 
         for (int j = 0; j < 2; j++) {
             for (int i = 0, iMax = FFT_SIZE / 2; i < iMax; i++) {
@@ -339,8 +350,8 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
                 double y = out[0][FFT_SIZE / 2 + i][1];
                 double z = sqrt(x * x + y * y);
 
-                fft_result[i] = z;
-                fft_result[FFT_SIZE/2 + i] = c;
+                fft_result[i] = log10(z);
+                fft_result[FFT_SIZE / 2 + i] = log10(c);
             }
         }
 
@@ -358,45 +369,68 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
         fft_ceil_ma = fft_ceil_ma + (fft_ceil - fft_ceil_ma) * 0.05;
         fft_ceil_maa = fft_ceil_maa + (fft_ceil - fft_ceil_maa) * 0.05;
 
-
         fftw_execute(plan[1]);
 
         for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
             spectrum_points[i * 2 + 1] = fft_result_maa[i] / fft_ceil_maa;
             spectrum_points[i * 2] = ((double) i / (double) iMax);
         }
-        
-        
-        if (waveform_points.size() < BUF_SIZE * 2) {
-          waveform_points.resize(BUF_SIZE * 2);
-        }
 
         float waveform_ceil = 0;
 
-        for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
-          float a = out[1][i][0];
-          float b = out[1][i][1];
-          float c = sqrt(a*a+b*b);
-          float v = fabs(c);
-          if (v > waveform_ceil) {
-            waveform_ceil = v;
-          }
+        std::vector<float> output_buffer;
+        output_buffer.resize(BUF_SIZE / 2);
+
+//        for (int i = 0, iMax = BUF_SIZE / 2; i < iMax; i++) {
+//            liquid_float_complex x;
+//            x.real = in[i][0];
+//            x.imag = in[i][1];
+//            float y[2];
+//
+//            firhilbf_interp_execute(fir_hil, x, y);
+//            output_buffer[i] = y[1];
+//
+//            if (waveform_ceil < y[1]) {
+//                waveform_ceil = y[1];
+//            }
+//        }
+
+        if (waveform_points.size() < BUF_SIZE) {
+            waveform_points.resize(BUF_SIZE);
         }
 
-        for (int i = 0, iMax = BUF_SIZE/2; i < iMax; i++) {
-          liquid_float_complex x;
-          x.real = in[i][0];
-          x.imag = in[i][1];
-          float y[2];
-          
-          firhilbf_interp_execute(fir_hil, x, y);
-          
-          waveform_points[i * 4 + 1] = y[0];
-          waveform_points[i * 4] = ((double) i / (double) iMax);
-          waveform_points[i * 4 + 3] = y[1];
-          waveform_points[i * 4 + 2] = ((double) i / (double) iMax);
+        int i, pcm = 0;
+        int16_t pr = pre_r;
+        int16_t pj = pre_j;
+        for (i = 0; i < BUF_SIZE / 2; i++) {
+//            liquid_float_complex x;
+//            x.real = in[i][0];
+//            x.imag = in[i][1];
+//            float y[2];
+//
+//            firhilbf_interp_execute(fir_hil, x, y);
+
+//            y[0] *= 10000.0;
+//            y[1] *= 1000.0;
+            pcm = polar_disc_fast((int)(in[i][0]*60.0), (int)(in[i][1]*60.0), pr, pj);
+
+            pr = (int)(in[i][0]*10.0);
+            pj = (int)(in[i][1]*10.0);
+
+            output_buffer[i] =  (float)pcm/60.0;
+
+            if (waveform_ceil < output_buffer[i]) {
+                waveform_ceil = output_buffer[i];
+            }
         }
-        
+        pre_r = pr;
+        pre_j = pj;
+
+        for (int i = 0, iMax = BUF_SIZE / 2; i < iMax; i++) {
+            waveform_points[i * 2 + 1] = output_buffer[i] / waveform_ceil;
+            waveform_points[i * 2] = ((double) i / (double) iMax);
+        }
+
     }
 }
 

@@ -59,6 +59,9 @@ private:
 
     firhilbf fir_hil;
 
+    int16_t pre_r;
+    int16_t pre_j;
+
     float fft_ceil_ma, fft_ceil_maa;
 
     std::vector<float> fft_result;
