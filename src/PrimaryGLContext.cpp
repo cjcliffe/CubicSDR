@@ -86,7 +86,7 @@ void PrimaryGLContext::Plot(std::vector<float> &points, std::vector<float> &poin
     if (points2.size()) {
         glPushMatrix();
         glTranslatef(-1.0f, 0.5f, 0.0f);
-        glScalef(2.0f, 0.5f, 1.0f);
+        glScalef(2.0f, 1.0f, 1.0f);
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(2, GL_FLOAT, 0, &points2[0]);
         glDrawArrays(GL_LINE_STRIP, 0, points2.size() / 2);
@@ -239,6 +239,20 @@ void TestGLCanvas::OnKeyDown(wxKeyEvent& event) {
     }
 }
 
+
+
+void multiply2(float ar, float aj, float br, float bj, float *cr, float *cj) {
+    *cr = ar * br - aj * bj;
+    *cj = aj * br + ar * bj;
+}
+float polar_discriminant2(float ar, float aj, float br, float bj) {
+    float cr, cj;
+    double angle;
+    multiply2(ar, aj, br, -bj, &cr, &cj);
+    angle = atan2(cj, cr);
+    return (angle / M_PI);
+}
+
 void TestGLCanvas::setData(std::vector<signed char> *data) {
 
     if (data && data->size()) {
@@ -312,8 +326,8 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
             liquid_float_complex x;
             liquid_float_complex y;
 
-            x.real = (float) (*data)[i * 2] / 127.0f;
-            x.imag = (float) (*data)[i * 2 + 1] / 127.0f;
+            x.real = (1 << 8) * (float) (*data)[i * 2] / 127.0f;
+            x.imag = (1 << 8) * (float) (*data)[i * 2 + 1] / 127.0f;
 
             firfilt_crcf_push(fir_filter, x);      // push input sample
             firfilt_crcf_execute(fir_filter, &y);   // compute output
@@ -369,14 +383,14 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
         fft_ceil_ma = fft_ceil_ma + (fft_ceil - fft_ceil_ma) * 0.05;
         fft_ceil_maa = fft_ceil_maa + (fft_ceil - fft_ceil_maa) * 0.05;
 
-        fftw_execute(plan[1]);
+        // fftw_execute(plan[1]);
 
         for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
             spectrum_points[i * 2 + 1] = fft_result_maa[i] / fft_ceil_maa;
             spectrum_points[i * 2] = ((double) i / (double) iMax);
         }
 
-        float waveform_ceil = 0;
+        float waveform_ceil = 0, waveform_floor = 0;
 
         std::vector<float> output_buffer;
         output_buffer.resize(BUF_SIZE / 2);
@@ -399,9 +413,13 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
             waveform_points.resize(BUF_SIZE);
         }
 
-        int i, pcm = 0;
-        int16_t pr = pre_r;
-        int16_t pj = pre_j;
+        int i; 
+        float pcm = 0;
+        float pr = pre_r;
+        float pj = pre_j;
+        
+        // std::cout << (in[i][0]) << std::endl;
+        
         for (i = 0; i < BUF_SIZE / 2; i++) {
 //            liquid_float_complex x;
 //            x.real = in[i][0];
@@ -412,22 +430,37 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
 
 //            y[0] *= 10000.0;
 //            y[1] *= 1000.0;
-            pcm = polar_disc_fast((int)(in[i][0]*60.0), (int)(in[i][1]*60.0), pr, pj);
+            // pcm = polar_disc_fast((int)(in[i][0]*32000.0), (int)(in[i][1]*32000.0), pr, pj);
+            pcm = polar_discriminant2(in[i][0],in[i][1], pr, pj);
 
-            pr = (int)(in[i][0]*10.0);
-            pj = (int)(in[i][1]*10.0);
+            pr = in[i][0];
+            pj = in[i][1];
 
-            output_buffer[i] =  (float)pcm/60.0;
+            output_buffer[i] =  (float)pcm + droop_ofs_maa;
 
             if (waveform_ceil < output_buffer[i]) {
                 waveform_ceil = output_buffer[i];
             }
+            
+            if (waveform_floor > output_buffer[i]) {
+                waveform_floor = output_buffer[i];
+            }
         }
+        
+        droop_ofs = -(waveform_ceil+waveform_floor)/2.0;
+        droop_ofs_ma = droop_ofs_ma + (droop_ofs-droop_ofs_ma)*0.01;
+        droop_ofs_maa = droop_ofs_maa + (droop_ofs_ma-droop_ofs_maa)*0.01;
+        
+        // std::cout << "pr: " << pre_r << std::endl;
+        // std::cout << "pj: " << pre_j << std::endl;
+        
+        // std::cout << "do:" << droop_ofs_maa << std::endl;
+            
         pre_r = pr;
         pre_j = pj;
 
         for (int i = 0, iMax = BUF_SIZE / 2; i < iMax; i++) {
-            waveform_points[i * 2 + 1] = output_buffer[i] / waveform_ceil;
+            waveform_points[i * 2 + 1] = output_buffer[i]*2.0;
             waveform_points[i * 2] = ((double) i / (double) iMax);
         }
 

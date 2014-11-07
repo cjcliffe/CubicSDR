@@ -59,8 +59,9 @@ private:
 
     firhilbf fir_hil;
 
-    int16_t pre_r;
-    int16_t pre_j;
+    float pre_r;
+    float pre_j;
+    float droop_ofs, droop_ofs_ma, droop_ofs_maa;
 
     float fft_ceil_ma, fft_ceil_maa;
 
