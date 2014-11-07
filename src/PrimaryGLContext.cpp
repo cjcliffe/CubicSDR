@@ -15,7 +15,6 @@
 #include "AppFrame.h"
 #include <algorithm>
 #include "Demodulate.h"
-#include "liquid.h"
 #include "complex.h"
 
 wxString glGetwxString(GLenum name) {
@@ -87,7 +86,7 @@ void PrimaryGLContext::Plot(std::vector<float> &points, std::vector<float> &poin
     if (points2.size()) {
         glPushMatrix();
         glTranslatef(-1.0f, 0.5f, 0.0f);
-        glScalef(2.0f, 0.5f, 1.0f);
+        glScalef(20.0f, 0.5f, 1.0f);
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(2, GL_FLOAT, 0, &points2[0]);
         glDrawArrays(GL_LINE_STRIP, 0, points2.size() / 2);
@@ -176,7 +175,11 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
     firdespm_run(n, num_bands, bands, des, weights, wtype, btype, h);
 
     fir_filter = firfilt_crcf_create(h, n);
-
+    
+    unsigned int m=5;           // filter semi-length
+    float slsl=60.0f;           // filter sidelobe suppression level
+    
+    fir_hil = firhilbf_create(m,slsl);
 }
 
 TestGLCanvas::~TestGLCanvas() {
@@ -319,12 +322,12 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
             fft_result_maa.resize(FFT_SIZE);
         }
 
-        for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
-            if (i>FFT_SIZE/4 && i < FFT_SIZE-FFT_SIZE/4) {
-                out[0][i][0] = 0;
-                out[0][i][1] = 0;
-            }
-        }
+        // for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
+ //            if (i>FFT_SIZE/4 && i < FFT_SIZE-FFT_SIZE/4) {
+ //                out[0][i][0] = 0;
+ //                out[0][i][1] = 0;
+ //            }
+ //        }
 
         for (int j = 0; j < 2; j++) {
             for (int i = 0, iMax = FFT_SIZE / 2; i < iMax; i++) {
@@ -362,6 +365,38 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
             spectrum_points[i * 2 + 1] = fft_result_maa[i] / fft_ceil_maa;
             spectrum_points[i * 2] = ((double) i / (double) iMax);
         }
+        
+        
+        if (waveform_points.size() < BUF_SIZE * 2) {
+          waveform_points.resize(BUF_SIZE * 2);
+        }
+
+        float waveform_ceil = 0;
+
+        for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
+          float a = out[1][i][0];
+          float b = out[1][i][1];
+          float c = sqrt(a*a+b*b);
+          float v = fabs(c);
+          if (v > waveform_ceil) {
+            waveform_ceil = v;
+          }
+        }
+
+        for (int i = 0, iMax = BUF_SIZE/2; i < iMax; i++) {
+          liquid_float_complex x;
+          x.real = in[i][0];
+          x.imag = in[i][1];
+          float y[2];
+          
+          firhilbf_interp_execute(fir_hil, x, y);
+          
+          waveform_points[i * 4 + 1] = y[0];
+          waveform_points[i * 4] = ((double) i / (double) iMax);
+          waveform_points[i * 4 + 3] = y[1];
+          waveform_points[i * 4 + 2] = ((double) i / (double) iMax);
+        }
+        
     }
 }
 

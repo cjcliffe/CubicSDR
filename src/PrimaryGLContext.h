@@ -9,7 +9,7 @@
 #include "CubicSDRDefs.h"
 #include "fftw3.h"
 
-#include "liquid.h"
+#include "liquid/liquid.h"
 
 #include "Demodulate.h"
 
@@ -56,6 +56,8 @@ private:
     fftw_plan plan[2];
 
     firfilt_crcf fir_filter;
+
+    firhilbf fir_hil;
 
     float fft_ceil_ma, fft_ceil_maa;
 
