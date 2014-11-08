@@ -84,7 +84,7 @@ private:
     ALCcontext *ctx;
 
     ALuint source, buffers[AL_NUM_BUFFERS];
-    ALuint frequency;
+    ALuint bandwidth;
     ALuint audio_frequency;
     float audio_resample_ratio;
     ALenum format;

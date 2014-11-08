@@ -109,10 +109,10 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
         wxFULL_REPAINT_ON_RESIZE), parent(parent) {
 
 
-    frequency = 170000;
-    resample_ratio = (float) frequency / (float) SRATE;
+    bandwidth = 800000;
+    resample_ratio = (float) (bandwidth)  / (float) SRATE;
     audio_frequency = 44000;
-    audio_resample_ratio = (float) audio_frequency / (float) frequency;
+    audio_resample_ratio = (float) (audio_frequency) / (float) bandwidth;
 
 
     int in_block_size = BUF_SIZE / 2;
@@ -182,7 +182,7 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
      firdespm_run(n, num_bands, bands, des, weights, wtype, btype, h);
      */
 
-    float fc = 0.5f * (frequency / SRATE);         // filter cutoff frequency
+    float fc = 0.5f * (bandwidth / SRATE);         // filter cutoff frequency
     float ft = 0.05f;         // filter transition
     float As = 60.0f;         // stop-band attenuation [dB]
     float mu = 0.0f;          // fractional timing offset
@@ -211,7 +211,7 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
     msresamp_crcf_print(audio_resampler);
 
 
-    float kf = 0.2f;        // modulation factor
+    float kf = 0.1f;        // modulation factor
 
     fdem = freqdem_create(kf);
     freqdem_print(fdem);
@@ -443,7 +443,7 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
         for (i = 0; i < num_written; i++) {
             freqdem_demodulate(fdem, resampled_output[i], &pcm);
 
-            resampled_output[i].real = (float) pcm/2.0;
+            resampled_output[i].real = (float) pcm;
             resampled_output[i].imag = 0;
 
             if (waveform_ceil < resampled_output[i].real) {
