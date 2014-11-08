@@ -22,7 +22,7 @@
 #endif
 
 #define AL_NUM_BUFFERS 16
-#define AL_BUFFER_SIZE 4096
+#define AL_BUFFER_SIZE 2048
 
 class PrimaryGLContext: public wxGLContext {
 public:
@@ -63,13 +63,20 @@ private:
     float pre_j;
     float droop_ofs, droop_ofs_ma, droop_ofs_maa;
 
+    msresamp_crcf resampler;
+    msresamp_crcf audio_resampler;
+    float resample_ratio;
+
+
+    freqdem fdem;
+
     float fft_ceil_ma, fft_ceil_maa;
 
     std::vector<float> fft_result;
     std::vector<float> fft_result_ma;
     std::vector<float> fft_result_maa;
 
-    std::queue< std::vector <ALuint> * > audio_queue;
+    std::queue< std::vector <ALint> * > audio_queue;
 
     Demodulate demod;
 
@@ -78,6 +85,8 @@ private:
 
     ALuint source, buffers[AL_NUM_BUFFERS];
     ALuint frequency;
+    ALuint audio_frequency;
+    float audio_resample_ratio;
     ALenum format;
 
 wxDECLARE_EVENT_TABLE();

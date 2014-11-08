@@ -48,6 +48,7 @@ void multiply(int ar, int aj, int br, int bj, int *cr, int *cj);
 int polar_discriminant(int ar, int aj, int br, int bj);
 int fast_atan2(int y, int x);
 int polar_disc_fast(int ar, int aj, int br, int bj);
+int polar_disc_lut(int ar, int aj, int br, int bj);
 
 class Demodulate {
 

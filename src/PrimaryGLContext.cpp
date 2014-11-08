@@ -108,6 +108,13 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
         wxFULL_REPAINT_ON_RESIZE), parent(parent) {
 
+
+    frequency = 170000;
+    resample_ratio = (float) frequency / (float) SRATE;
+    audio_frequency = 44000;
+    audio_resample_ratio = (float) audio_frequency / (float) frequency;
+
+
     int in_block_size = BUF_SIZE / 2;
     int out_block_size = FFT_SIZE;
 
@@ -141,7 +148,7 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
 
     format = AL_FORMAT_MONO16;
     for (int i = 0; i < AL_NUM_BUFFERS; i++) {
-        alBufferData(buffers[i], format, buffer_init, AL_BUFFER_SIZE, demod.output.rate);
+        alBufferData(buffers[i], format, buffer_init, AL_BUFFER_SIZE, audio_frequency);
     }
     if (alGetError() != AL_NO_ERROR) {
         std::cout << "Error priming :(\n";
@@ -175,7 +182,7 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
      firdespm_run(n, num_bands, bands, des, weights, wtype, btype, h);
      */
 
-    float fc = 0.5f * (170000 / SRATE);         // filter cutoff frequency
+    float fc = 0.5f * (frequency / SRATE);         // filter cutoff frequency
     float ft = 0.05f;         // filter transition
     float As = 60.0f;         // stop-band attenuation [dB]
     float mu = 0.0f;          // fractional timing offset
@@ -191,6 +198,23 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
     float slsl = 60.0f;           // filter sidelobe suppression level
 
     fir_hil = firhilbf_create(m, slsl);
+
+
+    // create multi-stage arbitrary resampler object
+    resampler = msresamp_crcf_create(resample_ratio, As);
+    msresamp_crcf_print(resampler);
+
+
+
+
+    audio_resampler = msresamp_crcf_create(audio_resample_ratio, As);
+    msresamp_crcf_print(audio_resampler);
+
+
+    float kf = 0.2f;        // modulation factor
+
+    fdem = freqdem_create(kf);
+    freqdem_print(fdem);
 }
 
 TestGLCanvas::~TestGLCanvas() {
@@ -219,12 +243,12 @@ void TestGLCanvas::OnKeyDown(wxKeyEvent& event) {
     switch (event.GetKeyCode()) {
     case WXK_RIGHT:
         freq = ((AppFrame*) parent)->getFrequency();
-        freq += 100000;
+        freq += 10000;
         ((AppFrame*) parent)->setFrequency(freq);
         break;
     case WXK_LEFT:
         freq = ((AppFrame*) parent)->getFrequency();
-        freq -= 100000;
+        freq -= 10000;
         ((AppFrame*) parent)->setFrequency(freq);
         break;
     case WXK_DOWN:
@@ -238,8 +262,6 @@ void TestGLCanvas::OnKeyDown(wxKeyEvent& event) {
         return;
     }
 }
-
-
 
 void multiply2(float ar, float aj, float br, float bj, float *cr, float *cj) {
     *cr = ar * br - aj * bj;
@@ -321,22 +343,33 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
             spectrum_points.resize(FFT_SIZE * 2);
         }
 
+        fftw_execute(plan[0]);
+
+
+        liquid_float_complex filtered_input[BUF_SIZE / 2];
+
         for (int i = 0; i < BUF_SIZE / 2; i++) {
 
             liquid_float_complex x;
             liquid_float_complex y;
 
-            x.real = (1 << 8) * (float) (*data)[i * 2] / 127.0f;
-            x.imag = (1 << 8) * (float) (*data)[i * 2 + 1] / 127.0f;
+            x.real = (float) (*data)[i * 2] / 127.0f;
+            x.imag = (float) (*data)[i * 2 + 1] / 127.0f;
 
             firfilt_crcf_push(fir_filter, x);      // push input sample
             firfilt_crcf_execute(fir_filter, &y);   // compute output
 
-            in[i][0] = y.real;
-            in[i][1] = y.imag;
+            filtered_input[i] = y;
+            in[i][0] = x.real;
+            in[i][1] = x.imag;
         }
 
-        fftw_execute(plan[0]);
+        int out_size = ceil((float) (BUF_SIZE / 2) * resample_ratio);
+
+        liquid_float_complex resampled_output[out_size];
+
+        unsigned int num_written;       // number of values written to buffer
+        msresamp_crcf_execute(resampler, filtered_input, (BUF_SIZE / 2), resampled_output, &num_written);
 
         double fft_ceil = 0;
         // fft_floor, 
@@ -346,13 +379,6 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
             fft_result_ma.resize(FFT_SIZE);
             fft_result_maa.resize(FFT_SIZE);
         }
-
-        // for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
-        //            if (i>FFT_SIZE/4 && i < FFT_SIZE-FFT_SIZE/4) {
-        //                out[0][i][0] = 0;
-        //                out[0][i][1] = 0;
-        //            }
-        //        }
 
         for (int j = 0; j < 2; j++) {
             for (int i = 0, iMax = FFT_SIZE / 2; i < iMax; i++) {
@@ -364,8 +390,8 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
                 double y = out[0][FFT_SIZE / 2 + i][1];
                 double z = sqrt(x * x + y * y);
 
-                fft_result[i] = log10(z);
-                fft_result[FFT_SIZE / 2 + i] = log10(c);
+                fft_result[i] = (z);
+                fft_result[FFT_SIZE / 2 + i] = (c);
             }
         }
 
@@ -392,8 +418,8 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
 
         float waveform_ceil = 0, waveform_floor = 0;
 
-        std::vector<float> output_buffer;
-        output_buffer.resize(BUF_SIZE / 2);
+//        std::vector<float> output_buffer;
+//        output_buffer.resize(num_written);
 
 //        for (int i = 0, iMax = BUF_SIZE / 2; i < iMax; i++) {
 //            liquid_float_complex x;
@@ -409,61 +435,94 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
 //            }
 //        }
 
-        if (waveform_points.size() < BUF_SIZE) {
-            waveform_points.resize(BUF_SIZE);
-        }
-
-        int i; 
+        int i;
         float pcm = 0;
         float pr = pre_r;
         float pj = pre_j;
-        
-        // std::cout << (in[i][0]) << std::endl;
-        
-        for (i = 0; i < BUF_SIZE / 2; i++) {
-//            liquid_float_complex x;
-//            x.real = in[i][0];
-//            x.imag = in[i][1];
-//            float y[2];
-//
-//            firhilbf_interp_execute(fir_hil, x, y);
 
-//            y[0] *= 10000.0;
-//            y[1] *= 1000.0;
-            // pcm = polar_disc_fast((int)(in[i][0]*32000.0), (int)(in[i][1]*32000.0), pr, pj);
-            pcm = polar_discriminant2(in[i][0],in[i][1], pr, pj);
+        for (i = 0; i < num_written; i++) {
+            freqdem_demodulate(fdem, resampled_output[i], &pcm);
 
-            pr = in[i][0];
-            pj = in[i][1];
+            resampled_output[i].real = (float) pcm/2.0;
+            resampled_output[i].imag = 0;
 
-            output_buffer[i] =  (float)pcm + droop_ofs_maa;
-
-            if (waveform_ceil < output_buffer[i]) {
-                waveform_ceil = output_buffer[i];
+            if (waveform_ceil < resampled_output[i].real) {
+                waveform_ceil = resampled_output[i].real;
             }
-            
-            if (waveform_floor > output_buffer[i]) {
-                waveform_floor = output_buffer[i];
+
+            if (waveform_floor > resampled_output[i].real) {
+                waveform_floor = resampled_output[i].real;
             }
         }
-        
-        droop_ofs = -(waveform_ceil+waveform_floor)/2.0;
-        droop_ofs_ma = droop_ofs_ma + (droop_ofs-droop_ofs_ma)*0.01;
-        droop_ofs_maa = droop_ofs_maa + (droop_ofs_ma-droop_ofs_maa)*0.01;
-        
-        // std::cout << "pr: " << pre_r << std::endl;
-        // std::cout << "pj: " << pre_j << std::endl;
-        
-        // std::cout << "do:" << droop_ofs_maa << std::endl;
-            
+
+        droop_ofs = -(waveform_ceil + waveform_floor) / 2.0;
+        droop_ofs_ma = droop_ofs_ma + (droop_ofs - droop_ofs_ma) * 0.01;
+        droop_ofs_maa = droop_ofs_maa + (droop_ofs_ma - droop_ofs_maa) * 0.01;
+
         pre_r = pr;
         pre_j = pj;
 
-        for (int i = 0, iMax = BUF_SIZE / 2; i < iMax; i++) {
-            waveform_points[i * 2 + 1] = output_buffer[i]*2.0;
+
+        int audio_out_size = ceil((float) (num_written) * audio_resample_ratio);
+        liquid_float_complex resampled_audio_output[audio_out_size];
+
+
+
+        unsigned int num_audio_written;       // number of values written to buffer
+        msresamp_crcf_execute(audio_resampler, resampled_output, num_written, resampled_audio_output, &num_audio_written);
+
+
+        if (waveform_points.size() != num_audio_written * 2) {
+            waveform_points.resize(num_audio_written * 2);
+        }
+
+        for (int i = 0, iMax = waveform_points.size() / 2; i < iMax; i++) {
+            waveform_points[i * 2 + 1] = resampled_audio_output[i].real * 0.5f;
             waveform_points[i * 2] = ((double) i / (double) iMax);
         }
 
+//        std::cout << num_audio_written << std::endl;
+
+
+
+
+        ALint val;
+        ALuint buffer;
+
+        alGetSourcei(source, AL_SOURCE_STATE, &val);
+        if (val != AL_PLAYING) {
+            alSourcePlay(source);
+        }
+
+        // std::cout << "buffer: " << demod.output_target->len << "@" << frequency << std::endl;
+        std::vector<ALint> *newBuffer = new std::vector<ALint>;
+        newBuffer->resize(num_audio_written);
+        for (int i = 0; i < num_audio_written; i++) {
+            (*newBuffer)[i] = resampled_audio_output[i].real*32767.0;
+        }
+
+        audio_queue.push(newBuffer);
+
+        while (audio_queue.size() > 8) {
+            alGetSourcei(source, AL_BUFFERS_PROCESSED, &val);
+            if (val <= 0) {
+                break;
+            }
+
+            std::vector<ALint> *nextBuffer = audio_queue.front();
+
+            alSourceUnqueueBuffers(source, 1, &buffer);
+            alBufferData(buffer, format, &(*nextBuffer)[0], nextBuffer->size() * 2, audio_frequency);
+            alSourceQueueBuffers(source, 1, &buffer);
+
+            audio_queue.pop();
+
+            delete nextBuffer;
+
+            if (alGetError() != AL_NO_ERROR) {
+                std::cout << "Error buffering :(\n";
+            }
+        }
     }
 }
 
