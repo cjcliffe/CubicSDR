@@ -10,10 +10,10 @@ public:
     };
 
     SDRThreadTask() :
-            m_cmd(SDR_THREAD_NULL) {
+            m_cmd(SDR_THREAD_NULL), arg_int(0) {
     }
     SDRThreadTask(SDR_COMMAND cmd) :
-            m_cmd(cmd) {
+            arg_int(0), m_cmd(cmd) {
     }
 
     void setUInt(unsigned int i);

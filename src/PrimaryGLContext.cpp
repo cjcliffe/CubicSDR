@@ -62,7 +62,7 @@ PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas) :
     CheckGLError();
 }
 
-void PrimaryGLContext::Plot(std::vector<float> &points) {
+void PrimaryGLContext::Plot(std::vector<float> &points, std::vector<float> &points2) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glMatrixMode(GL_MODELVIEW);
@@ -70,22 +70,27 @@ void PrimaryGLContext::Plot(std::vector<float> &points) {
 
 //    glEnable(GL_LINE_SMOOTH);
 
-    glPushMatrix();
-    glTranslatef(-1.0f, -0.9f, 0.0f);
-    glScalef(2.0f, 1.8f, 1.0f);
     if (points.size()) {
+        glPushMatrix();
+        glTranslatef(-1.0f, -0.9f, 0.0f);
+        glScalef(2.0f, 1.0f, 1.0f);
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(2, GL_FLOAT, 0, &points[0]);
         glDrawArrays(GL_LINE_STRIP, 0, points.size() / 2);
         glDisableClientState(GL_VERTEX_ARRAY);
-    } else {
-        glBegin(GL_LINE_STRIP);
-        glColor3f(1.0f, 1.0f, 1.0f);
-        glVertex3f(-1.0f, 0.0f, 0.0f);
-        glVertex3f(1.0f, 0.0f, 0.0f);
-        glEnd();
+        glPopMatrix();
     }
-    glPopMatrix();
+
+    if (points2.size()) {
+        glPushMatrix();
+        glTranslatef(-1.0f, 0.5f, 0.0f);
+        glScalef(2.0f, 1.0f, 1.0f);
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glVertexPointer(2, GL_FLOAT, 0, &points2[0]);
+        glDrawArrays(GL_LINE_STRIP, 0, points2.size() / 2);
+        glDisableClientState(GL_VERTEX_ARRAY);
+        glPopMatrix();
+    }
 
     glFlush();
 
@@ -97,9 +102,12 @@ EVT_KEY_DOWN(TestGLCanvas::OnKeyDown)
 EVT_IDLE(TestGLCanvas::OnIdle)
 wxEND_EVENT_TABLE()
 
+
+
 TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
         wxFULL_REPAINT_ON_RESIZE), parent(parent) {
+
 
     int in_block_size = BUF_SIZE / 2;
     int out_block_size = FFT_SIZE;
@@ -107,10 +115,16 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
     in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * in_block_size);
     out[0] = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * out_block_size);
     out[1] = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * out_block_size);
-    plan[0] = fftw_plan_dft_1d(out_block_size, in, out[0], FFTW_BACKWARD, FFTW_MEASURE);
-    plan[1] = fftw_plan_dft_1d(out_block_size, in, out[1], FFTW_FORWARD, FFTW_MEASURE);
+    plan[0] = fftw_plan_dft_1d(out_block_size, in, out[0], FFTW_FORWARD, FFTW_MEASURE);
+    plan[1] = fftw_plan_dft_1d(out_block_size, out[0], out[1], FFTW_BACKWARD, FFTW_MEASURE);
 
     fft_ceil_ma = fft_ceil_maa = 1.0;
+
+
+}
+
+TestGLCanvas::~TestGLCanvas() {
+
 }
 
 void TestGLCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
@@ -120,7 +134,9 @@ void TestGLCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     PrimaryGLContext& canvas = wxGetApp().GetContext(this);
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
-    canvas.Plot(points);
+    std::vector<float> null_pts;
+
+    canvas.Plot(spectrum_points, test_demod.waveform_points);
 
     SwapBuffers();
 }
@@ -152,24 +168,33 @@ void TestGLCanvas::OnKeyDown(wxKeyEvent& event) {
     }
 }
 
+void multiply2(float ar, float aj, float br, float bj, float *cr, float *cj) {
+    *cr = ar * br - aj * bj;
+    *cj = aj * br + ar * bj;
+}
+float polar_discriminant2(float ar, float aj, float br, float bj) {
+    float cr, cj;
+    double angle;
+    multiply2(ar, aj, br, -bj, &cr, &cj);
+    angle = atan2(cj, cr);
+    return (angle / M_PI);
+}
+
 void TestGLCanvas::setData(std::vector<signed char> *data) {
 
     if (data && data->size()) {
-
-        if (points.size() < FFT_SIZE * 2) {
-            points.resize(FFT_SIZE * 2);
+        if (spectrum_points.size() < FFT_SIZE * 2) {
+            spectrum_points.resize(FFT_SIZE * 2);
         }
 
         for (int i = 0; i < BUF_SIZE / 2; i++) {
-            in[i][0] = (double) (*data)[i * 2] / 127.0f;
-            in[i][1] = (double) (*data)[i * 2 + 1] / 127.0f;
+            in[i][0] = (float) (*data)[i * 2] / 127.0f;
+            in[i][1] = (float) (*data)[i * 2 + 1] / 127.0f;
         }
 
         fftw_execute(plan[0]);
-        fftw_execute(plan[1]);
 
         double fft_ceil = 0;
-        // fft_floor, 
 
         if (fft_result.size() < FFT_SIZE) {
             fft_result.resize(FFT_SIZE);
@@ -179,21 +204,16 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
 
         for (int j = 0; j < 2; j++) {
             for (int i = 0, iMax = FFT_SIZE / 2; i < iMax; i++) {
-                double a = out[j][j ? i : ((iMax - 1) - i)][0];
-                double b = out[j][j ? i : ((iMax - 1) - i)][1];
+                double a = out[0][i][0];
+                double b = out[0][i][1];
                 double c = sqrt(a * a + b * b);
 
-                double x = out[j ? 0 : 1][j ? ((FFT_SIZE - 1) - i) : ((FFT_SIZE / 2) + i)][0];
-                double y = out[j ? 0 : 1][j ? ((FFT_SIZE - 1) - i) : ((FFT_SIZE / 2) + i)][1];
+                double x = out[0][FFT_SIZE / 2 + i][0];
+                double y = out[0][FFT_SIZE / 2 + i][1];
                 double z = sqrt(x * x + y * y);
 
-                double r = (c < z) ? c : z;
-
-                if (!j) {
-                    fft_result[i] = r;
-                } else {
-                    fft_result[(FFT_SIZE / 2) + i] = r;
-                }
+                fft_result[i] = (z);
+                fft_result[FFT_SIZE / 2 + i] = (c);
             }
         }
 
@@ -211,10 +231,15 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
         fft_ceil_ma = fft_ceil_ma + (fft_ceil - fft_ceil_ma) * 0.05;
         fft_ceil_maa = fft_ceil_maa + (fft_ceil - fft_ceil_maa) * 0.05;
 
+        // fftw_execute(plan[1]);
+
         for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
-            points[i * 2 + 1] = fft_result_maa[i] / fft_ceil_maa;
-            points[i * 2] = ((double) i / (double) iMax);
+            spectrum_points[i * 2 + 1] = log10(fft_result_maa[i]) / log10(fft_ceil_maa);
+//            spectrum_points[i * 2 + 1] = (fft_result_maa[i]) / (fft_ceil_maa);
+            spectrum_points[i * 2] = ((double) i / (double) iMax);
         }
+
+        test_demod.writeBuffer(data);
     }
 }
 

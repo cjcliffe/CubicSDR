@@ -62,12 +62,22 @@ if (DEFINED WIN32)
   include_directories ( ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll32  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
   link_directories (  ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll32  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/x32 )
   set(FFTW_LIB fftw3-3)
+  
+  include_directories ( ${PROJECT_SOURCE_DIR}/external/portaudio/include )
+  link_directories ( ${PROJECT_SOURCE_DIR}/external/portaudio/libs )
+  SET (PORTAUDIO_LIBRARY portaudio.dll winmm)
+    
+  link_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/lib )
+  include_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/include )
 else (DEFINED WIN32)
   set(RTLSDR_INCLUDE "/opt/local/include" CACHE FILEPATH "RTL-SDR Include Path")
   set(RTLSDR_LIB "/opt/local/lib" CACHE FILEPATH "RTL-SDR Lib Path")
   include_directories(${RTLSDR_INCLUDE})
   link_directories(${RTLSDR_LIB})
+  
   set(FFTW_LIB fftw3)
+
+  SET (PORTAUDIO_LIBRARY portaudio)  
 endif (DEFINED WIN32)
 
 
@@ -80,6 +90,7 @@ SET (cubicsdr_sources
 	src/AppFrame.cpp
 	src/SDRThreadQueue.cpp
 	src/SDRThreadTask.cpp
+	src/Demodulator.cpp
 )
 
 SET (cubicsdr_headers
@@ -91,14 +102,15 @@ SET (cubicsdr_headers
 	src/CubicSDRDefs.h
 	src/SDRThreadQueue.h
 	src/SDRThreadTask.h
+	src/Demodulator.h
 )
 #configure_files(${PROJECT_SOURCE_DIR}/shaders ${PROJECT_BINARY_DIR}/shaders COPYONLY)
 #configure_files(${PROJECT_SOURCE_DIR}/png ${PROJECT_BINARY_DIR}/png COPYONLY)
 
 add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers})
 
-target_link_libraries(CubicSDR rtlsdr ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES})
-# cubicvr2 glfw ${GLFW_LIBRARIES} ${OPENAL_LIBRARY}
+target_link_libraries(CubicSDR rtlsdr liquid ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${PORTAUDIO_LIBRARY})
+# cubicvr2 glfw ${GLFW_LIBRARIES} 
 
 
 
