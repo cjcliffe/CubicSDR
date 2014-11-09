@@ -76,9 +76,8 @@ else (DEFINED WIN32)
   link_directories(${RTLSDR_LIB})
   
   set(FFTW_LIB fftw3)
-  
-  find_package (OpenAL)
-  include_directories ( ${OPENAL_INCLUDE_DIR} )
+
+  SET (PORTAUDIO_LIBRARY portaudio)  
 endif (DEFINED WIN32)
 
 

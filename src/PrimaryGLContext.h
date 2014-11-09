@@ -12,7 +12,9 @@
 #include "liquid/liquid.h"
 
 #include "portaudio.h"
+#ifdef WIN32
 #include "pa_stream.h"
+#endif
 
 class PrimaryGLContext: public wxGLContext {
 public:

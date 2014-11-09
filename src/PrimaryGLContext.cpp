@@ -15,7 +15,9 @@
 #include "AppFrame.h"
 #include <algorithm>
 
+#ifdef WIN32
 #include "pa_debugprint.h"
+#endif
 
 wxString glGetwxString(GLenum name) {
     const GLubyte *v = glGetString(name);
@@ -109,10 +111,14 @@ static int patestCallback(const void *inputBuffer, void *outputBuffer, unsigned 
 
     TestGLCanvas *src = (TestGLCanvas *) userData;
 
+    float *out = (float*) outputBuffer;
+
     if (!src->audio_queue.size()) {
+        for (int i = 0; i < framesPerBuffer * 2; i++) {
+            out[i] = 0;
+        }
         return paContinue;
     }
-    float *out = (float*) outputBuffer;
 
     std::vector<float> *nextBuffer = src->audio_queue.front();
 
@@ -161,7 +167,7 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
         std::cout << "Error starting :(\n";
     }
 
-    outputParameters.device = 5; /* default output device */
+    outputParameters.device = Pa_GetDefaultOutputDevice(); /* default output device */
     if (outputParameters.device == paNoDevice) {
         std::cout << "Error: No default output device.\n";
     }
