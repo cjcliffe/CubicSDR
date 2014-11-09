@@ -8,13 +8,7 @@
 
 #include "CubicSDRDefs.h"
 #include "fftw3.h"
-
-#include "liquid/liquid.h"
-
-#include "portaudio.h"
-#ifdef WIN32
-#include "pa_stream.h"
-#endif
+#include "Demodulator.h"
 
 class PrimaryGLContext: public wxGLContext {
 public:
@@ -32,9 +26,6 @@ public:
 
     void setData(std::vector<signed char> *data);
 
-    std::queue< std::vector <float> * > audio_queue;
-    unsigned int audio_queue_ptr;
-
 private:
     void OnPaint(wxPaintEvent& event);
     void OnKeyDown(wxKeyEvent& event);
@@ -43,22 +34,9 @@ private:
 
     wxWindow *parent;
     std::vector<float> spectrum_points;
-    std::vector<float> waveform_points;
 
     fftw_complex *in, *out[2];
     fftw_plan plan[2];
-
-    firfilt_crcf fir_filter;
-
-    float pre_r;
-    float pre_j;
-    float droop_ofs, droop_ofs_ma, droop_ofs_maa;
-
-    msresamp_crcf resampler;
-    msresamp_crcf audio_resampler;
-    float resample_ratio;
-
-    freqdem fdem;
 
     float fft_ceil_ma, fft_ceil_maa;
 
@@ -66,13 +44,6 @@ private:
     std::vector<float> fft_result_ma;
     std::vector<float> fft_result_maa;
 
-    unsigned int bandwidth;
-    unsigned int audio_frequency;
-    float audio_resample_ratio;
-
-    PaStreamParameters outputParameters;
-    PaStream *stream;
-
-
+    Demodulator test_demod;
 wxDECLARE_EVENT_TABLE();
 };
