@@ -22,7 +22,7 @@
 #endif
 
 #define AL_NUM_BUFFERS 16
-#define AL_BUFFER_SIZE 2048
+#define AL_BUFFER_SIZE 8192
 
 class PrimaryGLContext: public wxGLContext {
 public:
@@ -87,7 +87,6 @@ private:
     ALuint bandwidth;
     ALuint audio_frequency;
     float audio_resample_ratio;
-    ALenum format;
 
 wxDECLARE_EVENT_TABLE();
 };

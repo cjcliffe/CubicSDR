@@ -108,12 +108,10 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
         wxFULL_REPAINT_ON_RESIZE), parent(parent) {
 
-
     bandwidth = 800000;
-    resample_ratio = (float) (bandwidth)  / (float) SRATE;
-    audio_frequency = 44000;
+    resample_ratio = (float) (bandwidth) / (float) SRATE;
+    audio_frequency = 44100;
     audio_resample_ratio = (float) (audio_frequency) / (float) bandwidth;
-
 
     int in_block_size = BUF_SIZE / 2;
     int out_block_size = FFT_SIZE;
@@ -130,7 +128,9 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
     if (!dev) {
         fprintf(stderr, "Oops\n");
     }
-    ctx = alcCreateContext(dev, NULL);
+
+    ALCint contextAttr[] = {ALC_FREQUENCY,44100,0};
+    ctx = alcCreateContext(dev, contextAttr);
     alcMakeContextCurrent(ctx);
     if (!ctx) {
         fprintf(stderr, "Oops2\n");
@@ -138,6 +138,9 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
 
     alGenBuffers(AL_NUM_BUFFERS, buffers);
     alGenSources(1, &source);
+    alSourcef(source, AL_PITCH, 1.0f);
+    alSourcef(source, AL_GAIN, 1.0f);
+    alSourcei(source, AL_LOOPING, AL_FALSE);
 
     // prime the buffers
     int16_t buffer_init[AL_BUFFER_SIZE];
@@ -146,9 +149,8 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
         buffer_init[i] = 0;
     }
 
-    format = AL_FORMAT_MONO16;
     for (int i = 0; i < AL_NUM_BUFFERS; i++) {
-        alBufferData(buffers[i], format, buffer_init, AL_BUFFER_SIZE, audio_frequency);
+        alBufferData(buffers[i], AL_FORMAT_STEREO16, buffer_init, AL_BUFFER_SIZE*2, audio_frequency);
     }
     if (alGetError() != AL_NO_ERROR) {
         std::cout << "Error priming :(\n";
@@ -199,17 +201,12 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
 
     fir_hil = firhilbf_create(m, slsl);
 
-
     // create multi-stage arbitrary resampler object
     resampler = msresamp_crcf_create(resample_ratio, As);
     msresamp_crcf_print(resampler);
 
-
-
-
     audio_resampler = msresamp_crcf_create(audio_resample_ratio, As);
     msresamp_crcf_print(audio_resampler);
-
 
     float kf = 0.1f;        // modulation factor
 
@@ -345,7 +342,6 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
 
         fftw_execute(plan[0]);
 
-
         liquid_float_complex filtered_input[BUF_SIZE / 2];
 
         for (int i = 0; i < BUF_SIZE / 2; i++) {
@@ -462,15 +458,11 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
         pre_r = pr;
         pre_j = pj;
 
-
         int audio_out_size = ceil((float) (num_written) * audio_resample_ratio);
         liquid_float_complex resampled_audio_output[audio_out_size];
 
-
-
         unsigned int num_audio_written;       // number of values written to buffer
         msresamp_crcf_execute(audio_resampler, resampled_output, num_written, resampled_audio_output, &num_audio_written);
-
 
         if (waveform_points.size() != num_audio_written * 2) {
             waveform_points.resize(num_audio_written * 2);
@@ -483,27 +475,20 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
 
 //        std::cout << num_audio_written << std::endl;
 
-
-
-
         ALint val;
         ALuint buffer;
 
-        alGetSourcei(source, AL_SOURCE_STATE, &val);
-        if (val != AL_PLAYING) {
-            alSourcePlay(source);
-        }
-
         // std::cout << "buffer: " << demod.output_target->len << "@" << frequency << std::endl;
         std::vector<ALint> *newBuffer = new std::vector<ALint>;
-        newBuffer->resize(num_audio_written);
+        newBuffer->resize(num_audio_written*2);
         for (int i = 0; i < num_audio_written; i++) {
-            (*newBuffer)[i] = resampled_audio_output[i].real*32767.0;
+            (*newBuffer)[i] = resampled_audio_output[i].real * 32767.0;
+            (*newBuffer)[i+num_audio_written] = resampled_audio_output[i].real * 32767.0;
         }
 
         audio_queue.push(newBuffer);
 
-        while (audio_queue.size() > 8) {
+        while (audio_queue.size() > 4) {
             alGetSourcei(source, AL_BUFFERS_PROCESSED, &val);
             if (val <= 0) {
                 break;
@@ -512,7 +497,7 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
             std::vector<ALint> *nextBuffer = audio_queue.front();
 
             alSourceUnqueueBuffers(source, 1, &buffer);
-            alBufferData(buffer, format, &(*nextBuffer)[0], nextBuffer->size() * 2, audio_frequency);
+            alBufferData(buffer, AL_FORMAT_STEREO16, &(*nextBuffer)[0], nextBuffer->size()*2, audio_frequency);
             alSourceQueueBuffers(source, 1, &buffer);
 
             audio_queue.pop();
@@ -521,6 +506,11 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
 
             if (alGetError() != AL_NO_ERROR) {
                 std::cout << "Error buffering :(\n";
+            }
+
+            alGetSourcei(source, AL_SOURCE_STATE, &val);
+            if (val != AL_PLAYING) {
+                alSourcePlay(source);
             }
         }
     }
