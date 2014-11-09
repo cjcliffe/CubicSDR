@@ -14,8 +14,8 @@
 #include "CubicSDRDefs.h"
 #include "AppFrame.h"
 #include <algorithm>
-#include "Demodulate.h"
-#include "complex.h"
+
+#include "pa_debugprint.h"
 
 wxString glGetwxString(GLenum name) {
     const GLubyte *v = glGetString(name);
@@ -104,6 +104,37 @@ EVT_KEY_DOWN(TestGLCanvas::OnKeyDown)
 EVT_IDLE(TestGLCanvas::OnIdle)
 wxEND_EVENT_TABLE()
 
+static int patestCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo* timeInfo,
+        PaStreamCallbackFlags statusFlags, void *userData) {
+
+    TestGLCanvas *src = (TestGLCanvas *) userData;
+
+    if (!src->audio_queue.size()) {
+        return paContinue;
+    }
+    float *out = (float*) outputBuffer;
+
+    std::vector<float> *nextBuffer = src->audio_queue.front();
+
+    for (int i = 0; i < framesPerBuffer * 2; i++) {
+        out[i] = (*nextBuffer)[src->audio_queue_ptr];
+
+        src->audio_queue_ptr++;
+
+        if (src->audio_queue_ptr == nextBuffer->size()) {
+            src->audio_queue.pop();
+            delete nextBuffer;
+            src->audio_queue_ptr = 0;
+            if (!src->audio_queue.size()) {
+                break;
+            }
+            nextBuffer = src->audio_queue.front();
+        }
+    }
+
+    return paContinue;
+}
+
 TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
         wxFULL_REPAINT_ON_RESIZE), parent(parent) {
@@ -124,65 +155,31 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
 
     fft_ceil_ma = fft_ceil_maa = 1.0;
 
-    dev = alcOpenDevice(NULL);
-    if (!dev) {
-        fprintf(stderr, "Oops\n");
-    }
-
-    ALCint contextAttr[] = {ALC_FREQUENCY,44100,0};
-    ctx = alcCreateContext(dev, contextAttr);
-    alcMakeContextCurrent(ctx);
-    if (!ctx) {
-        fprintf(stderr, "Oops2\n");
-    }
-
-    alGenBuffers(AL_NUM_BUFFERS, buffers);
-    alGenSources(1, &source);
-    alSourcef(source, AL_PITCH, 1.0f);
-    alSourcef(source, AL_GAIN, 1.0f);
-    alSourcei(source, AL_LOOPING, AL_FALSE);
-
-    // prime the buffers
-    int16_t buffer_init[AL_BUFFER_SIZE];
-
-    for (int i = 0; i < AL_BUFFER_SIZE; i++) {
-        buffer_init[i] = 0;
-    }
-
-    for (int i = 0; i < AL_NUM_BUFFERS; i++) {
-        alBufferData(buffers[i], AL_FORMAT_STEREO16, buffer_init, AL_BUFFER_SIZE*2, audio_frequency);
-    }
-    if (alGetError() != AL_NO_ERROR) {
-        std::cout << "Error priming :(\n";
-    }
-
-    alSourceQueueBuffers(source, AL_NUM_BUFFERS, buffers);
-    alSourcePlay(source);
-    if (alGetError() != AL_NO_ERROR) {
+    PaError err;
+    err = Pa_Initialize();
+    if (err != paNoError) {
         std::cout << "Error starting :(\n";
     }
-    /*
-     // define filter length, type, number of bands
-     unsigned int n = 55;
-     liquid_firdespm_btype btype = LIQUID_FIRDESPM_BANDPASS;
-     unsigned int num_bands = 3;
 
-     // band edge description [size: num_bands x 2]
-     float bands[6] = { 0.0f, 0.14f, 0.15f, 0.35f, 0.36f, 0.5f };
+    outputParameters.device = 5; /* default output device */
+    if (outputParameters.device == paNoDevice) {
+        std::cout << "Error: No default output device.\n";
+    }
 
-     // desired response [size: num_bands x 1]
-     float des[3] = { 1.0f, 0.0f, 1.0f };
+    outputParameters.channelCount = 2; /* Stereo output, most likely supported. */
+    outputParameters.sampleFormat = paFloat32; /* 32 bit floating point output. */
+    outputParameters.suggestedLatency = Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
+    outputParameters.hostApiSpecificStreamInfo = NULL;
 
-     // relative weights [size: num_bands x 1]
-     float weights[3] = { 1.0f, 1.0f, 1.0f };
+    stream = NULL;
 
-     // in-band weighting functions [size: num_bands x 1]
-     liquid_firdespm_wtype wtype[3] = { LIQUID_FIRDESPM_FLATWEIGHT, LIQUID_FIRDESPM_EXPWEIGHT, LIQUID_FIRDESPM_FLATWEIGHT };
+    err = Pa_OpenStream(&stream, NULL, &outputParameters, 44100, 256, paClipOff, &patestCallback, this);
 
-     // allocate memory for array and design filter
-     float h[n];
-     firdespm_run(n, num_bands, bands, des, weights, wtype, btype, h);
-     */
+    err = Pa_StartStream(stream);
+    if (err != paNoError) {
+        std::cout << "Error starting stream: " << Pa_GetErrorText(err) << std::endl;
+        std::cout << "\tPortAudio error: " << Pa_GetErrorText(err) << std::endl;
+    }
 
     float fc = 0.5f * (bandwidth / SRATE);         // filter cutoff frequency
     float ft = 0.05f;         // filter transition
@@ -195,11 +192,6 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
     liquid_firdes_kaiser(h_len, fc, As, mu, h);
 
     fir_filter = firfilt_crcf_create(h, h_len);
-
-    unsigned int m = 5;           // filter semi-length
-    float slsl = 60.0f;           // filter sidelobe suppression level
-
-    fir_hil = firhilbf_create(m, slsl);
 
     // create multi-stage arbitrary resampler object
     resampler = msresamp_crcf_create(resample_ratio, As);
@@ -215,10 +207,10 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
 }
 
 TestGLCanvas::~TestGLCanvas() {
-    alcMakeContextCurrent(NULL);
-    alcDestroyContext(ctx);
-    alcCloseDevice(dev);
-
+    PaError err;
+    err = Pa_StopStream(stream);
+    err = Pa_CloseStream(stream);
+    Pa_Terminate();
 }
 
 void TestGLCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
@@ -240,12 +232,12 @@ void TestGLCanvas::OnKeyDown(wxKeyEvent& event) {
     switch (event.GetKeyCode()) {
     case WXK_RIGHT:
         freq = ((AppFrame*) parent)->getFrequency();
-        freq += 10000;
+        freq += 100000;
         ((AppFrame*) parent)->setFrequency(freq);
         break;
     case WXK_LEFT:
         freq = ((AppFrame*) parent)->getFrequency();
-        freq -= 10000;
+        freq -= 100000;
         ((AppFrame*) parent)->setFrequency(freq);
         break;
     case WXK_DOWN:
@@ -275,67 +267,6 @@ float polar_discriminant2(float ar, float aj, float br, float bj) {
 void TestGLCanvas::setData(std::vector<signed char> *data) {
 
     if (data && data->size()) {
-        /*
-         std::vector<int16_t> tmp(data->begin(), data->end());
-         demod.demod(tmp);
-
-         if (waveform_points.size() < demod.lp_len * 2) {
-         waveform_points.resize(demod.lp_len * 2);
-         }
-
-         float waveform_ceil = 0;
-
-         for (int i = 0, iMax = demod.lp_len; i < iMax; i++) {
-         float v = fabs(demod.lowpassed[i]);
-         if (v > waveform_ceil) {
-         waveform_ceil = v;
-         }
-         }
-
-         for (int i = 0, iMax = demod.lp_len; i < iMax; i++) {
-         waveform_points[i * 2 + 1] = (float) demod.lowpassed[i] / waveform_ceil;
-         waveform_points[i * 2] = ((double) i / (double) iMax);
-         }
-
-         ALint val;
-         ALuint buffer;
-
-         alGetSourcei(source, AL_SOURCE_STATE, &val);
-         if (val != AL_PLAYING) {
-         alSourcePlay(source);
-         }
-
-         // std::cout << "buffer: " << demod.output_target->len << "@" << frequency << std::endl;
-         std::vector<ALuint> *newBuffer = new std::vector<ALuint>;
-         newBuffer->resize(demod.output_target->len);
-         memcpy(&(*newBuffer)[0],demod.output_target->buf,demod.output_target->len*2);
-         audio_queue.push(newBuffer);
-
-
-         frequency = demod.output.rate;
-
-         while (audio_queue.size()>8) {
-         alGetSourcei(source, AL_BUFFERS_PROCESSED, &val);
-         if (val <= 0) {
-         break;
-         }
-
-         std::vector<ALuint> *nextBuffer = audio_queue.front();
-
-         alSourceUnqueueBuffers(source, 1, &buffer);
-         alBufferData(buffer, format, &(*nextBuffer)[0], nextBuffer->size()*2, frequency);
-         alSourceQueueBuffers(source, 1, &buffer);
-
-         audio_queue.pop();
-
-         delete nextBuffer;
-
-         if (alGetError() != AL_NO_ERROR) {
-         std::cout << "Error buffering :(\n";
-         }
-         }
-         */
-
         if (spectrum_points.size() < FFT_SIZE * 2) {
             spectrum_points.resize(FFT_SIZE * 2);
         }
@@ -408,35 +339,16 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
         // fftw_execute(plan[1]);
 
         for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
-            spectrum_points[i * 2 + 1] = fft_result_maa[i] / fft_ceil_maa;
+            spectrum_points[i * 2 + 1] = log10(fft_result_maa[i]) / log10(fft_ceil_maa);
+//            spectrum_points[i * 2 + 1] = (fft_result_maa[i]) / (fft_ceil_maa);
             spectrum_points[i * 2] = ((double) i / (double) iMax);
         }
 
         float waveform_ceil = 0, waveform_floor = 0;
 
-//        std::vector<float> output_buffer;
-//        output_buffer.resize(num_written);
-
-//        for (int i = 0, iMax = BUF_SIZE / 2; i < iMax; i++) {
-//            liquid_float_complex x;
-//            x.real = in[i][0];
-//            x.imag = in[i][1];
-//            float y[2];
-//
-//            firhilbf_interp_execute(fir_hil, x, y);
-//            output_buffer[i] = y[1];
-//
-//            if (waveform_ceil < y[1]) {
-//                waveform_ceil = y[1];
-//            }
-//        }
-
-        int i;
         float pcm = 0;
-        float pr = pre_r;
-        float pj = pre_j;
 
-        for (i = 0; i < num_written; i++) {
+        for (int i = 0; i < num_written; i++) {
             freqdem_demodulate(fdem, resampled_output[i], &pcm);
 
             resampled_output[i].real = (float) pcm;
@@ -450,13 +362,6 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
                 waveform_floor = resampled_output[i].real;
             }
         }
-
-        droop_ofs = -(waveform_ceil + waveform_floor) / 2.0;
-        droop_ofs_ma = droop_ofs_ma + (droop_ofs - droop_ofs_ma) * 0.01;
-        droop_ofs_maa = droop_ofs_maa + (droop_ofs_ma - droop_ofs_maa) * 0.01;
-
-        pre_r = pr;
-        pre_j = pj;
 
         int audio_out_size = ceil((float) (num_written) * audio_resample_ratio);
         liquid_float_complex resampled_audio_output[audio_out_size];
@@ -473,46 +378,14 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
             waveform_points[i * 2] = ((double) i / (double) iMax);
         }
 
-//        std::cout << num_audio_written << std::endl;
-
-        ALint val;
-        ALuint buffer;
-
-        // std::cout << "buffer: " << demod.output_target->len << "@" << frequency << std::endl;
-        std::vector<ALint> *newBuffer = new std::vector<ALint>;
-        newBuffer->resize(num_audio_written*2);
+        std::vector<float> *newBuffer = new std::vector<float>;
+        newBuffer->resize(num_audio_written * 2);
         for (int i = 0; i < num_audio_written; i++) {
-            (*newBuffer)[i] = resampled_audio_output[i].real * 32767.0;
-            (*newBuffer)[i+num_audio_written] = resampled_audio_output[i].real * 32767.0;
+            (*newBuffer)[i * 2] = resampled_audio_output[i].real;
+            (*newBuffer)[i * 2 + 1] = resampled_audio_output[i].real;
         }
 
         audio_queue.push(newBuffer);
-
-        while (audio_queue.size() > 4) {
-            alGetSourcei(source, AL_BUFFERS_PROCESSED, &val);
-            if (val <= 0) {
-                break;
-            }
-
-            std::vector<ALint> *nextBuffer = audio_queue.front();
-
-            alSourceUnqueueBuffers(source, 1, &buffer);
-            alBufferData(buffer, AL_FORMAT_STEREO16, &(*nextBuffer)[0], nextBuffer->size()*2, audio_frequency);
-            alSourceQueueBuffers(source, 1, &buffer);
-
-            audio_queue.pop();
-
-            delete nextBuffer;
-
-            if (alGetError() != AL_NO_ERROR) {
-                std::cout << "Error buffering :(\n";
-            }
-
-            alGetSourcei(source, AL_SOURCE_STATE, &val);
-            if (val != AL_PLAYING) {
-                alSourcePlay(source);
-            }
-        }
     }
 }
 

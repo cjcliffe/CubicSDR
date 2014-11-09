@@ -11,18 +11,8 @@
 
 #include "liquid/liquid.h"
 
-#include "Demodulate.h"
-
-#ifdef WIN32
-#include <AL/al.h>
-#include <AL/alc.h>
-#else
-#include <OpenAL/al.h>
-#include <OpenAL/alc.h>
-#endif
-
-#define AL_NUM_BUFFERS 16
-#define AL_BUFFER_SIZE 8192
+#include "portaudio.h"
+#include "pa_stream.h"
 
 class PrimaryGLContext: public wxGLContext {
 public:
@@ -31,8 +21,6 @@ public:
     void Plot(std::vector<float> &points, std::vector<float> &points2);
 
 private:
-    // textures for the cube faces
-    GLuint m_textures[6];
 };
 
 class TestGLCanvas: public wxGLCanvas {
@@ -41,6 +29,9 @@ public:
     ~TestGLCanvas();
 
     void setData(std::vector<signed char> *data);
+
+    std::queue< std::vector <float> * > audio_queue;
+    unsigned int audio_queue_ptr;
 
 private:
     void OnPaint(wxPaintEvent& event);
@@ -57,8 +48,6 @@ private:
 
     firfilt_crcf fir_filter;
 
-    firhilbf fir_hil;
-
     float pre_r;
     float pre_j;
     float droop_ofs, droop_ofs_ma, droop_ofs_maa;
@@ -66,7 +55,6 @@ private:
     msresamp_crcf resampler;
     msresamp_crcf audio_resampler;
     float resample_ratio;
-
 
     freqdem fdem;
 
@@ -76,17 +64,13 @@ private:
     std::vector<float> fft_result_ma;
     std::vector<float> fft_result_maa;
 
-    std::queue< std::vector <ALint> * > audio_queue;
-
-    Demodulate demod;
-
-    ALCdevice *dev;
-    ALCcontext *ctx;
-
-    ALuint source, buffers[AL_NUM_BUFFERS];
-    ALuint bandwidth;
-    ALuint audio_frequency;
+    unsigned int bandwidth;
+    unsigned int audio_frequency;
     float audio_resample_ratio;
+
+    PaStreamParameters outputParameters;
+    PaStream *stream;
+
 
 wxDECLARE_EVENT_TABLE();
 };

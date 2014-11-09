@@ -63,9 +63,9 @@ if (DEFINED WIN32)
   link_directories (  ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll32  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/x32 )
   set(FFTW_LIB fftw3-3)
   
-  include_directories ( ${PROJECT_SOURCE_DIR}/external/openal-soft-1.16.0-bin/include )
-  link_directories ( ${PROJECT_SOURCE_DIR}/external/openal-soft-1.16.0-bin/libs/Win32 )
-  SET (OPENAL_LIBRARY libOpenAL32.dll winmm)
+  include_directories ( ${PROJECT_SOURCE_DIR}/external/portaudio/include )
+  link_directories ( ${PROJECT_SOURCE_DIR}/external/portaudio/libs )
+  SET (PORTAUDIO_LIBRARY portaudio.dll winmm)
     
   link_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/lib )
   include_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/include )
@@ -91,7 +91,6 @@ SET (cubicsdr_sources
 	src/AppFrame.cpp
 	src/SDRThreadQueue.cpp
 	src/SDRThreadTask.cpp
-	src/Demodulate.cpp
 )
 
 SET (cubicsdr_headers
@@ -103,14 +102,13 @@ SET (cubicsdr_headers
 	src/CubicSDRDefs.h
 	src/SDRThreadQueue.h
 	src/SDRThreadTask.h
-	src/Demodulate.h
 )
 #configure_files(${PROJECT_SOURCE_DIR}/shaders ${PROJECT_BINARY_DIR}/shaders COPYONLY)
 #configure_files(${PROJECT_SOURCE_DIR}/png ${PROJECT_BINARY_DIR}/png COPYONLY)
 
 add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers})
 
-target_link_libraries(CubicSDR rtlsdr liquid ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY})
+target_link_libraries(CubicSDR rtlsdr liquid ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${PORTAUDIO_LIBRARY})
 # cubicvr2 glfw ${GLFW_LIBRARIES} 
 
 
