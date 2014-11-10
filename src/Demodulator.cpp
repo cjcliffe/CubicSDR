@@ -1,5 +1,9 @@
 #include "Demodulator.h"
 
+#ifdef WIN32
+#include <windows.h>
+#endif
+
 static int patestCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo* timeInfo,
         PaStreamCallbackFlags statusFlags, void *userData) {
 
@@ -48,7 +52,26 @@ Demodulator::Demodulator() {
         std::cout << "Error starting :(\n";
     }
 
-    outputParameters.device = Pa_GetDefaultOutputDevice(); /* default output device */
+    int preferred_device = -1;
+
+#ifdef WIN32
+    wchar_t dev_str[255];
+    memset(dev_str, 0, sizeof(wchar_t) * 255);
+    std::wstring env_name(L"PA_RECOMMENDED_OUTPUT_DEVICE");
+    GetEnvironmentVariable(env_name.c_str(), dev_str, 255);
+    std::wstring env_result(dev_str);
+
+    int env_dev = _wtoi(env_result.c_str());
+
+    if (env_dev || env_result.length()) {
+        std::cout << "Using preferred PortAudio device PA_RECOMMENDED_OUTPUT_DEVICE=" << env_result.c_str() << std::endl;
+        preferred_device = env_dev;
+    } else {
+        std::cout << "Environment variable PA_RECOMMENDED_OUTPUT_DEVICE not set, using PortAudio defaults." << std::endl;
+    }
+#endif
+
+    outputParameters.device = (preferred_device != -1) ? preferred_device : Pa_GetDefaultOutputDevice();
     if (outputParameters.device == paNoDevice) {
         std::cout << "Error: No default output device.\n";
     }
@@ -69,9 +92,9 @@ Demodulator::Demodulator() {
     }
 
     float fc = 0.5f * (bandwidth / SRATE);         // filter cutoff frequency
-    float ft = 0.05f;// filter transition
-    float As = 60.0f;// stop-band attenuation [dB]
-    float mu = 0.0f;// fractional timing offset
+    float ft = 0.05f;         // filter transition
+    float As = 60.0f;         // stop-band attenuation [dB]
+    float mu = 0.0f;         // fractional timing offset
 
     // estimate required filter length and generate filter
     unsigned int h_len = estimate_req_filter_len(ft, As);
@@ -87,7 +110,7 @@ Demodulator::Demodulator() {
     audio_resampler = msresamp_crcf_create(audio_resample_ratio, As);
     msresamp_crcf_print(audio_resampler);
 
-    float kf = 0.1f;// modulation factor
+    float kf = 0.1f;         // modulation factor
 
     fdem = freqdem_create(kf);
     freqdem_print(fdem);

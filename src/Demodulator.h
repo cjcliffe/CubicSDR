@@ -6,7 +6,6 @@
 #include <iostream>
 #include <math.h>
 
-
 #include "CubicSDRDefs.h"
 #include "liquid/liquid.h"
 
