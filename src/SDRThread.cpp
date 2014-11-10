@@ -13,7 +13,9 @@ SDRThread::~SDRThread() {
 
 }
 
-void SDRThread::enumerate_rtl() {
+int SDRThread::enumerate_rtl() {
+
+    int first_available = -1;
 
     char manufact[256], product[256], serial[256];
 
@@ -72,6 +74,9 @@ void SDRThread::enumerate_rtl() {
              */
 
             rtlsdr_close(dev);
+            if (first_available == -1) {
+                first_available = i;
+            }
 
         } else {
             std::cout << "\tUnable to access device #" << i << " (in use?)" << std::endl;
@@ -79,21 +84,25 @@ void SDRThread::enumerate_rtl() {
 
     }
 
+    return first_available;
+
 }
 
 wxThread::ExitCode SDRThread::Entry() {
-    signed char *buf = (signed char *) malloc(BUF_SIZE);
 
-    int use_my_dev = 1;
     int dev_count = rtlsdr_get_device_count();
+    int first_available = enumerate_rtl();
 
-    if (use_my_dev > dev_count - 1) {
-        use_my_dev = 0;
+    if (first_available == -1) {
+        std::cout << "No devices found.. SDR Thread exiting.." << std::endl;
+        return (wxThread::ExitCode) 0;
+    } else {
+        std::cout << "Using first available RTL-SDR device #" << first_available << std::endl;
     }
 
-    enumerate_rtl();
+    signed char *buf = (signed char *) malloc(BUF_SIZE);
 
-    rtlsdr_open(&dev, use_my_dev);
+    rtlsdr_open(&dev, first_available);
     rtlsdr_set_sample_rate(dev, SRATE);
     rtlsdr_set_center_freq(dev, DEFAULT_FREQ);
     rtlsdr_set_agc_mode(dev, 1);

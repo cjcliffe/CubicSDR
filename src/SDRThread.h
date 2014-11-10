@@ -29,7 +29,7 @@ public:
     SDRThread(SDRThreadQueue* pQueue, int id = 0);
     ~SDRThread();
 
-    void enumerate_rtl();
+    int enumerate_rtl();
 
 protected:
     virtual ExitCode Entry();
