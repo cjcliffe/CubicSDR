@@ -83,7 +83,7 @@ endif (DEFINED WIN32)
 
 
 SET (cubicsdr_sources
-    src/CubicSDR.cpp
+  src/CubicSDR.cpp
 	src/SDRThread.cpp
 	src/IQBufferThread.cpp
 	src/PrimaryGLContext.cpp
@@ -91,10 +91,11 @@ SET (cubicsdr_sources
 	src/SDRThreadQueue.cpp
 	src/SDRThreadTask.cpp
 	src/Demodulator.cpp
+  src/Gradient.cpp
 )
 
 SET (cubicsdr_headers
-    src/CubicSDR.h
+  src/CubicSDR.h
 	src/SDRThread.h
 	src/IQBufferThread.h
 	src/PrimaryGLContext.h
@@ -103,6 +104,7 @@ SET (cubicsdr_headers
 	src/SDRThreadQueue.h
 	src/SDRThreadTask.h
 	src/Demodulator.h
+  src/Gradient.h
 )
 #configure_files(${PROJECT_SOURCE_DIR}/shaders ${PROJECT_BINARY_DIR}/shaders COPYONLY)
 #configure_files(${PROJECT_SOURCE_DIR}/png ${PROJECT_BINARY_DIR}/png COPYONLY)

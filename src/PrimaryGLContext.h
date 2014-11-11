@@ -10,11 +10,15 @@
 #include "fftw3.h"
 #include "Demodulator.h"
 
+#include "Gradient.h"
+
+#define NUM_WATERFALL_LINES 256
+
 class PrimaryGLContext: public wxGLContext {
 public:
     PrimaryGLContext(wxGLCanvas *canvas);
 
-    void Plot(std::vector<float> &points, std::vector<float> &points2);
+    void Plot(std::vector<float> &points, std::vector<float> &points2, GLuint tex);
 
 private:
 };
@@ -44,6 +48,14 @@ private:
     std::vector<float> fft_result_ma;
     std::vector<float> fft_result_maa;
 
+    Gradient grad;
+    
+    std::vector<unsigned char> color_map;
+
+    unsigned char waterfall_tex[FFT_SIZE * NUM_WATERFALL_LINES];
+  
+    GLuint waterfall;
+  
     Demodulator test_demod;
 wxDECLARE_EVENT_TABLE();
 };

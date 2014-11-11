@@ -62,7 +62,7 @@ PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas) :
     CheckGLError();
 }
 
-void PrimaryGLContext::Plot(std::vector<float> &points, std::vector<float> &points2) {
+void PrimaryGLContext::Plot(std::vector<float> &points, std::vector<float> &points2, GLuint tex) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glMatrixMode(GL_MODELVIEW);
@@ -91,7 +91,21 @@ void PrimaryGLContext::Plot(std::vector<float> &points, std::vector<float> &poin
         glDisableClientState(GL_VERTEX_ARRAY);
         glPopMatrix();
     }
-
+    
+    glEnable(GL_TEXTURE_2D);
+    // glEnable(GL_COLOR_TABLE);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0,0.0);
+    glVertex3f(-0.8,-1.0,0.0);
+    glTexCoord2f(1.0,0.0);
+    glVertex3f(1.0,-1.0,0.0);
+    glTexCoord2f(1.0,1.0);
+    glVertex3f(1.0,1.0,0.0);
+    glTexCoord2f(0.0,1.0);
+    glVertex3f(-1.0,1.0,0.0);
+    glEnd();
+ 
     glFlush();
 
     CheckGLError();
@@ -120,7 +134,40 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
 
     fft_ceil_ma = fft_ceil_maa = 1.0;
 
+    grad.addColor(GradientColor(0,0.5,1.0));
+    grad.addColor(GradientColor(1.0,0,0));
+    grad.addColor(GradientColor(0,1.0,1.0));
+    
+    grad.generate(&color_map,256);
 
+    glGenTextures(1,  &waterfall);
+    std::cout << waterfall << std::endl;
+    std::cout << waterfall << std::endl;
+    std::cout << waterfall << std::endl;
+    std::cout << waterfall << std::endl;
+    // for (int i = 0; i < c.size()/3; i++) {
+    //     std::cout << i << ": r[" << (int)c[i*3] << "] g[" << (int)c[i*3+1] << "] b[" << (int)c[i*3+2] << "] " << std::endl;
+    // }
+
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D,waterfall);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    // glTexImage2D(GL_TEXTURE_2D,0,GL_INTENSITY,FFT_SIZE,NUM_WATERFALL_LINES,0,GL_COLOR_INDEX,GL_UNSIGNED_BYTE,(GLvoid *)waterfall_tex);
+    float clr[16] = { 255, 0, 0, 0, 
+                      0, 255, 0, 0, 
+                      0, 0, 255, 0, 
+                      255, 255, 255, 0 };
+    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,2,2,0,GL_RGBA,GL_UNSIGNED_BYTE,clr);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+
+    // glColorTable(GL_TEXTURE_2D,GL_RGB8,256,GL_RGB,GL_UNSIGNED_BYTE,&color_map[0]);
+    
 }
 
 TestGLCanvas::~TestGLCanvas() {
@@ -134,9 +181,8 @@ void TestGLCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     PrimaryGLContext& canvas = wxGetApp().GetContext(this);
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
-    std::vector<float> null_pts;
 
-    canvas.Plot(spectrum_points, test_demod.waveform_points);
+    canvas.Plot(spectrum_points, test_demod.waveform_points, waterfall);
 
     SwapBuffers();
 }
@@ -233,11 +279,17 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
 
         // fftw_execute(plan[1]);
 
+        
+        memmove(waterfall_tex+NUM_WATERFALL_LINES,waterfall_tex,(NUM_WATERFALL_LINES-1)*FFT_SIZE);
+        
         for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
             spectrum_points[i * 2 + 1] = log10(fft_result_maa[i]) / log10(fft_ceil_maa);
 //            spectrum_points[i * 2 + 1] = (fft_result_maa[i]) / (fft_ceil_maa);
-            spectrum_points[i * 2] = ((double) i / (double) iMax);
+            float v = ((float) i / (float) iMax);
+            spectrum_points[i * 2] = v;
+            waterfall_tex[i] = (unsigned char)(v*255.0);
         }
+
 
         test_demod.writeBuffer(data);
     }
