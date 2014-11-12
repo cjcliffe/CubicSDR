@@ -12,15 +12,19 @@
 
 #include "Gradient.h"
 
-#define NUM_WATERFALL_LINES 256
+#define NUM_WATERFALL_LINES 512
 
 class PrimaryGLContext: public wxGLContext {
 public:
     PrimaryGLContext(wxGLCanvas *canvas);
 
-    void Plot(std::vector<float> &points, std::vector<float> &points2, GLuint tex);
+    void Plot(std::vector<float> &points, std::vector<float> &points2, unsigned char *waterfall_tex);
 
 private:
+
+    Gradient grad;
+
+    GLuint waterfall;
 };
 
 class TestGLCanvas: public wxGLCanvas {
@@ -48,14 +52,10 @@ private:
     std::vector<float> fft_result_ma;
     std::vector<float> fft_result_maa;
 
-    Gradient grad;
-    
-    std::vector<unsigned char> color_map;
 
     unsigned char waterfall_tex[FFT_SIZE * NUM_WATERFALL_LINES];
   
-    GLuint waterfall;
-  
+
     Demodulator test_demod;
 wxDECLARE_EVENT_TABLE();
 };

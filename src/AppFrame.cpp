@@ -66,13 +66,6 @@ AppFrame::AppFrame() :
 }
 
 AppFrame::~AppFrame() {
-    delete t_SDR;
-//    delete t_IQBuffer;
-    delete m_pQueue;
-}
-
-void AppFrame::OnClose(wxCommandEvent& WXUNUSED(event)) {
-
     {
         wxCriticalSectionLocker enter(m_pThreadCS);
         if (t_SDR) {
@@ -94,6 +87,15 @@ void AppFrame::OnClose(wxCommandEvent& WXUNUSED(event)) {
             }
         }
     }
+
+    delete t_SDR;
+//    delete t_IQBuffer;
+    delete m_pQueue;
+}
+
+void AppFrame::OnClose(wxCommandEvent& WXUNUSED(event)) {
+
+
     // true is to force the frame to close
     Close(true);
 }

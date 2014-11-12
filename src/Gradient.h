@@ -21,21 +21,34 @@ public:
   void addColor(GradientColor c) {
       colors.push_back(c);
   }
-  
-  void generate(std::vector<unsigned char> *out, unsigned int len) {
+
+  std::vector<float> &getRed() {
+      return r_val;
+  }
+
+  std::vector<float> &getGreen() {
+      return g_val;
+  }
+
+  std::vector<float> &getBlue() {
+      return b_val;
+  }
+
+  void generate(unsigned int len) {
       int chunk_size = len/(colors.size()-1);      
 
-      out->resize(len*3);
-
       int p = 0;
+      r_val.resize(len);
+      g_val.resize(len);
+      b_val.resize(len);
 
       for (unsigned int j = 0, jMax = colors.size()-1; j < jMax; j++) {
-          if (chunk_size*3 < len && j == jMax-1) {
-              chunk_size += len-chunk_size*3;
+          if (chunk_size*(jMax+1) < len && j == jMax-1) {
+              chunk_size += len-chunk_size*(jMax+1);
           }
 
           for (unsigned int i = 0; i < chunk_size; i++) {
-              float idx = (float)(i+1)/(float)chunk_size;
+              float idx = (float)(i)/(float)chunk_size;
       
               float r1 = colors[j].r;
               float g1 = colors[j].g;
@@ -49,9 +62,16 @@ public:
               float g = g1 + (g2-g1) * idx;
               float b = b1 + (b2-b1) * idx;
               
-              (*out)[p*3] = (unsigned char)(r*255.0);
-              (*out)[p*3+1] = (unsigned char)(g*255.0);
-              (*out)[p*3+2] = (unsigned char)(b*255.0);
+              if (r<0.0) r = 0.0;
+              if (r>1.0) r = 1.0;
+              if (g<0.0) g = 0.0;
+              if (g>1.0) g = 1.0;
+              if (b<0.0) b = 0.0;
+              if (b>1.0) b = 1.0;
+
+              r_val[p] = r;
+              g_val[p] = g;
+              b_val[p] = b;
               
               p++;
           }
@@ -63,4 +83,7 @@ public:
   }
 private:
     std::vector<GradientColor> colors;
+    std::vector<float> r_val;
+    std::vector<float> g_val;
+    std::vector<float> b_val;
 };
