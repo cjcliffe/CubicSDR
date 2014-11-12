@@ -85,7 +85,7 @@ Demodulator::Demodulator() {
 
     stream = NULL;
 
-    err = Pa_OpenStream(&stream, NULL, &outputParameters, audio_frequency, 256, paClipOff, &patestCallback, this);
+    err = Pa_OpenStream(&stream, NULL, &outputParameters, audio_frequency, 1024, paClipOff, &patestCallback, this);
 
     err = Pa_StartStream(stream);
     if (err != paNoError) {

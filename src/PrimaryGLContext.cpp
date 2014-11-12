@@ -64,15 +64,13 @@ PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas) :
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, waterfall);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    // glTexImage2D(GL_TEXTURE_2D,0,GL_INTENSITY,FFT_SIZE,NUM_WATERFALL_LINES,0,GL_COLOR_INDEX,GL_UNSIGNED_BYTE,(GLvoid *)waterfall_tex);
-    float clr[16] = { 255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 255 };
+    
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-
 
     grad.addColor(GradientColor(0, 0, 0));
     grad.addColor(GradientColor(0, 0, 1.0));
@@ -81,11 +79,6 @@ PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas) :
     grad.addColor(GradientColor(1.0, 0.2, 0.0));
 
     grad.generate(256);
-    // glTexImage2D(GL_TEXTURE_2D,0,GL_INTENSITY,FFT_SIZE,NUM_WATERFALL_LINES,0,GL_COLOR_INDEX,GL_UNSIGNED_BYTE,(GLvoid *)waterfall_tex);
-
-    unsigned char rmap[256];
-    unsigned char gmap[256];
-    unsigned char bmap[256];
 
     glPixelTransferi(GL_MAP_COLOR, GL_TRUE);
     glPixelMapfv(GL_PIXEL_MAP_I_TO_R, 256, &(grad.getRed())[0]);
@@ -115,9 +108,7 @@ void PrimaryGLContext::Plot(std::vector<float> &points, std::vector<float> &poin
     }
     
     glBindTexture(GL_TEXTURE_2D, waterfall);
-//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, FFT_SIZE, NUM_WATERFALL_LINES, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, waterfall_tex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, FFT_SIZE, NUM_WATERFALL_LINES, 0, GL_COLOR_INDEX, GL_UNSIGNED_BYTE, (GLvoid *) waterfall_tex);
-//    glEnable(GL_LINE_SMOOTH);
 
     glDisable(GL_TEXTURE_2D);
 
@@ -183,8 +174,8 @@ TestGLCanvas::TestGLCanvas(wxWindow *parent, int *attribList) :
     plan[0] = fftw_plan_dft_1d(out_block_size, in, out[0], FFTW_FORWARD, FFTW_MEASURE);
     plan[1] = fftw_plan_dft_1d(out_block_size, out[0], out[1], FFTW_BACKWARD, FFTW_MEASURE);
 
-    fft_ceil_ma = fft_ceil_maa = 1.0;
-
+    fft_ceil_ma = fft_ceil_maa = 100.0;
+    fft_floor_ma = fft_floor_maa = 0.0;
 }
 
 TestGLCanvas::~TestGLCanvas() {
@@ -256,7 +247,7 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
 
         fftw_execute(plan[0]);
 
-        double fft_ceil = 0;
+        double fft_ceil = 0, fft_floor=1;
 
         if (fft_result.size() < FFT_SIZE) {
             fft_result.resize(FFT_SIZE);
@@ -288,15 +279,24 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
             if (fft_result_maa[i] > fft_ceil) {
                 fft_ceil = fft_result_maa[i];
             }
+            if (fft_result_maa[i] < fft_floor) {
+                fft_floor = fft_result_maa[i];
+            }
         }
 
-        fft_ceil_ma = fft_ceil_ma + (fft_ceil - fft_ceil_ma) * 0.05;
-        fft_ceil_maa = fft_ceil_maa + (fft_ceil - fft_ceil_maa) * 0.05;
+        fft_ceil += 1;
+        fft_floor -= 1;
+        
+        fft_ceil_ma = fft_ceil_ma + (fft_ceil - fft_ceil_ma) * 0.01;
+        fft_ceil_maa = fft_ceil_maa + (fft_ceil_ma - fft_ceil_maa) * 0.01;
+        
+        fft_floor_ma = fft_floor_ma + (fft_floor - fft_floor_ma) * 0.01;
+        fft_floor_maa = fft_floor_maa + (fft_floor_ma - fft_floor_maa) * 0.01;
 
         // fftw_execute(plan[1]);
 
         for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
-            float v = log10(fft_result_maa[i]) / log10(fft_ceil_maa);
+            float v = (log10(fft_result_maa[i]-fft_floor_maa) / log10(fft_ceil_maa-fft_floor_maa));
             spectrum_points[i * 2] = ((float) i / (float) iMax);
             spectrum_points[i * 2 + 1] = v;
         }
