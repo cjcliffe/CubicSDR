@@ -41,10 +41,12 @@ static int patestCallback(const void *inputBuffer, void *outputBuffer, unsigned 
 
 Demodulator::Demodulator() {
 
-    bandwidth = 800000;
+    bandwidth = 300000;
     resample_ratio = (float) (bandwidth) / (float) SRATE;
-    audio_frequency = 44100;
-    audio_resample_ratio = (float) (audio_frequency) / (float) bandwidth;
+    wbfm_frequency = 32000;
+    wbfm_resample_ratio = (float) (wbfm_frequency) / (float) bandwidth;
+    audio_frequency = 48000;
+    audio_resample_ratio = (float) (audio_frequency) / (float) wbfm_frequency;
 
     PaError err;
     err = Pa_Initialize();
@@ -83,7 +85,7 @@ Demodulator::Demodulator() {
 
     stream = NULL;
 
-    err = Pa_OpenStream(&stream, NULL, &outputParameters, 44100, 256, paClipOff, &patestCallback, this);
+    err = Pa_OpenStream(&stream, NULL, &outputParameters, audio_frequency, 256, paClipOff, &patestCallback, this);
 
     err = Pa_StartStream(stream);
     if (err != paNoError) {
@@ -103,14 +105,22 @@ Demodulator::Demodulator() {
 
     fir_filter = firfilt_crcf_create(h, h_len);
 
+    h_len = estimate_req_filter_len(ft, As);
+    liquid_firdes_kaiser(h_len, 0.3f, As, mu, h);
+    
+    fir_audio_filter = firfilt_crcf_create(h, h_len);
+
     // create multi-stage arbitrary resampler object
     resampler = msresamp_crcf_create(resample_ratio, As);
     msresamp_crcf_print(resampler);
 
+    wbfm_resampler = msresamp_crcf_create(wbfm_resample_ratio, As);
+    msresamp_crcf_print(wbfm_resampler);
+
     audio_resampler = msresamp_crcf_create(audio_resample_ratio, As);
     msresamp_crcf_print(audio_resampler);
 
-    float kf = 0.1f;         // modulation factor
+    float kf = 0.5f;         // modulation factor
 
     fdem = freqdem_create(kf);
     freqdem_print(fdem);
@@ -166,17 +176,32 @@ void Demodulator::writeBuffer(std::vector<signed char> *data) {
         }
     }
 
-    int audio_out_size = ceil((float) (num_written) * audio_resample_ratio);
+
+    int wbfm_out_size = ceil((float) (num_written) * wbfm_resample_ratio);
+    liquid_float_complex resampled_wbfm_output[wbfm_out_size];
+
+    unsigned int num_wbfm_written;
+    msresamp_crcf_execute(wbfm_resampler, resampled_output, num_written, resampled_wbfm_output, &num_wbfm_written);
+
+
+    for (int i = 0; i < num_wbfm_written; i++) {
+        firfilt_crcf_push(fir_audio_filter, resampled_wbfm_output[i]);
+        firfilt_crcf_execute(fir_audio_filter, &resampled_wbfm_output[i]);
+    }
+
+    int audio_out_size = ceil((float) (num_wbfm_written) * audio_resample_ratio);
     liquid_float_complex resampled_audio_output[audio_out_size];
 
-    unsigned int num_audio_written;       // number of values written to buffer
-    msresamp_crcf_execute(audio_resampler, resampled_output, num_written, resampled_audio_output, &num_audio_written);
+    unsigned int num_audio_written;
+    msresamp_crcf_execute(audio_resampler, resampled_wbfm_output, num_wbfm_written, resampled_audio_output, &num_audio_written);
 
     std::vector<float> *newBuffer = new std::vector<float>;
     newBuffer->resize(num_audio_written * 2);
     for (int i = 0; i < num_audio_written; i++) {
-        (*newBuffer)[i * 2] = resampled_audio_output[i].real;
-        (*newBuffer)[i * 2 + 1] = resampled_audio_output[i].real;
+        liquid_float_complex y = resampled_audio_output[i];
+
+        (*newBuffer)[i * 2] = y.real;
+        (*newBuffer)[i * 2 + 1] = y.real;
     }
 
     audio_queue.push(newBuffer);

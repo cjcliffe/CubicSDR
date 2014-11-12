@@ -95,12 +95,25 @@ PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas) :
     CheckGLError();
 }
 
-void PrimaryGLContext::Plot(std::vector<float> &points, std::vector<float> &points2, unsigned char *waterfall_tex) {
+void PrimaryGLContext::Plot(std::vector<float> &points, std::vector<float> &points2) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
+    if (points.size()) {
+        memmove(waterfall_tex + FFT_SIZE, waterfall_tex, (NUM_WATERFALL_LINES - 1) * FFT_SIZE);
+
+        for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
+            float v = points[i*2+1];
+
+            float wv = v;
+            if (wv<0.0) wv = 0.0;
+            if (wv>1.0) wv = 1.0;
+            waterfall_tex[i] = (unsigned char) floor(wv * 255.0);
+        }
+    }
+    
     glBindTexture(GL_TEXTURE_2D, waterfall);
 //    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, FFT_SIZE, NUM_WATERFALL_LINES, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, waterfall_tex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, FFT_SIZE, NUM_WATERFALL_LINES, 0, GL_COLOR_INDEX, GL_UNSIGNED_BYTE, (GLvoid *) waterfall_tex);
@@ -131,6 +144,7 @@ void PrimaryGLContext::Plot(std::vector<float> &points, std::vector<float> &poin
         glDisableClientState(GL_VERTEX_ARRAY);
         glPopMatrix();
     }
+
 
     glEnable(GL_TEXTURE_2D);
     // glEnable(GL_COLOR_TABLE);
@@ -184,7 +198,7 @@ void TestGLCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     PrimaryGLContext& canvas = wxGetApp().GetContext(this);
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
-    canvas.Plot(spectrum_points, test_demod.waveform_points, waterfall_tex);
+    canvas.Plot(spectrum_points, test_demod.waveform_points);
 
     SwapBuffers();
 }
@@ -281,16 +295,8 @@ void TestGLCanvas::setData(std::vector<signed char> *data) {
 
         // fftw_execute(plan[1]);
 
-        memmove(waterfall_tex + FFT_SIZE, waterfall_tex, (NUM_WATERFALL_LINES - 1) * FFT_SIZE);
-
         for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
             float v = log10(fft_result_maa[i]) / log10(fft_ceil_maa);
-
-            float wv = v;
-            if (wv<0.0) wv = 0.0;
-            if (wv>1.0) wv = 1.0;
-            waterfall_tex[i] = (unsigned char) floor(wv * 255.0);
-
             spectrum_points[i * 2] = ((float) i / (float) iMax);
             spectrum_points[i * 2 + 1] = v;
         }
