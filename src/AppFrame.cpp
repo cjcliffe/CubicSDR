@@ -23,7 +23,7 @@ wxEND_EVENT_TABLE()
 AppFrame::AppFrame() :
         wxFrame(NULL, wxID_ANY, wxT("CubicSDR")), frequency(DEFAULT_FREQ) {
 
-    canvas = new TestGLCanvas(this, NULL);
+    canvas = new ScopeCanvas(this, NULL);
 
 //    SetIcon(wxICON(sample));
 
@@ -94,7 +94,6 @@ AppFrame::~AppFrame() {
 }
 
 void AppFrame::OnClose(wxCommandEvent& WXUNUSED(event)) {
-
 
     // true is to force the frame to close
     Close(true);

@@ -91,7 +91,9 @@ SET (cubicsdr_sources
 	src/SDRThreadQueue.cpp
 	src/SDRThreadTask.cpp
 	src/Demodulator.cpp
-  src/Gradient.cpp
+	src/Gradient.cpp
+	src/visual/ScopeCanvas.cpp
+	src/visual/ScopeContext.cpp
 )
 
 SET (cubicsdr_headers
@@ -104,8 +106,14 @@ SET (cubicsdr_headers
 	src/SDRThreadQueue.h
 	src/SDRThreadTask.h
 	src/Demodulator.h
-  src/Gradient.h
+	src/Gradient.h
+	src/visual/ScopeCanvas.h
+	src/visual/ScopeContext.h
 )
+
+include_directories ( ${PROJECT_SOURCE_DIR}/src/visual 
+					  ${PROJECT_SOURCE_DIR}/src )
+
 #configure_files(${PROJECT_SOURCE_DIR}/shaders ${PROJECT_BINARY_DIR}/shaders COPYONLY)
 #configure_files(${PROJECT_SOURCE_DIR}/png ${PROJECT_BINARY_DIR}/png COPYONLY)
 

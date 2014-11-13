@@ -1,0 +1,107 @@
+#include "ScopeContext.h"
+
+#include "ScopeCanvas.h"
+
+ScopeContext::ScopeContext(ScopeCanvas *canvas, wxGLContext *sharedContext) :
+        PrimaryGLContext(canvas, sharedContext) {
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    glGenTextures(1, &waterfall);
+
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, waterfall);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+
+    grad.addColor(GradientColor(0, 0, 0));
+    grad.addColor(GradientColor(0, 0, 1.0));
+    grad.addColor(GradientColor(0, 1.0, 0));
+    grad.addColor(GradientColor(1.0, 1.0, 0));
+    grad.addColor(GradientColor(1.0, 0.2, 0.0));
+
+    grad.generate(256);
+
+    glPixelTransferi(GL_MAP_COLOR, GL_TRUE);
+    glPixelMapfv(GL_PIXEL_MAP_I_TO_R, 256, &(grad.getRed())[0]);
+    glPixelMapfv(GL_PIXEL_MAP_I_TO_G, 256, &(grad.getGreen())[0]);
+    glPixelMapfv(GL_PIXEL_MAP_I_TO_B, 256, &(grad.getBlue())[0]);
+}
+
+void ScopeContext::Plot(std::vector<float> &points, std::vector<float> &points2) {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    if (points.size()) {
+        memmove(waterfall_tex + FFT_SIZE, waterfall_tex, (NUM_WATERFALL_LINES - 1) * FFT_SIZE);
+
+        for (int i = 0, iMax = FFT_SIZE; i < iMax; i++) {
+            float v = points[i * 2 + 1];
+
+            float wv = v;
+            if (wv < 0.0)
+                wv = 0.0;
+            if (wv > 1.0)
+                wv = 1.0;
+            waterfall_tex[i] = (unsigned char) floor(wv * 255.0);
+        }
+    }
+
+    glBindTexture(GL_TEXTURE_2D, waterfall);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, FFT_SIZE, NUM_WATERFALL_LINES, 0, GL_COLOR_INDEX, GL_UNSIGNED_BYTE, (GLvoid *) waterfall_tex);
+
+    glDisable(GL_TEXTURE_2D);
+
+    glColor3f(1.0, 1.0, 1.0);
+
+    if (points.size()) {
+        glPushMatrix();
+        glTranslatef(-1.0f, -0.9f, 0.0f);
+        glScalef(2.0f, 1.0f, 1.0f);
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glVertexPointer(2, GL_FLOAT, 0, &points[0]);
+        glDrawArrays(GL_LINE_STRIP, 0, points.size() / 2);
+        glDisableClientState(GL_VERTEX_ARRAY);
+        glPopMatrix();
+    }
+
+    if (points2.size()) {
+        glPushMatrix();
+        glTranslatef(-1.0f, 0.5f, 0.0f);
+        glScalef(2.0f, 1.0f, 1.0f);
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glVertexPointer(2, GL_FLOAT, 0, &points2[0]);
+        glDrawArrays(GL_LINE_STRIP, 0, points2.size() / 2);
+        glDisableClientState(GL_VERTEX_ARRAY);
+        glPopMatrix();
+    }
+
+    glEnable(GL_TEXTURE_2D);
+    // glEnable(GL_COLOR_TABLE);
+    glBindTexture(GL_TEXTURE_2D, waterfall);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0, 0.0);
+    glVertex3f(-1.0, -1.0, 0.0);
+    glTexCoord2f(1.0, 0.0);
+    glVertex3f(1.0, -1.0, 0.0);
+    glTexCoord2f(1.0, 1.0);
+    glVertex3f(1.0, 1.0, 0.0);
+    glTexCoord2f(0.0, 1.0);
+    glVertex3f(-1.0, 1.0, 0.0);
+    glEnd();
+
+    glFlush();
+
+    CheckGLError();
+}
