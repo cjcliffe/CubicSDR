@@ -41,9 +41,9 @@ static int patestCallback(const void *inputBuffer, void *outputBuffer, unsigned 
 
 Demodulator::Demodulator() {
 
-    bandwidth = 300000;
+    bandwidth = 200000;
     resample_ratio = (float) (bandwidth) / (float) SRATE;
-    wbfm_frequency = 32000;
+    wbfm_frequency = 100000;
     wbfm_resample_ratio = (float) (wbfm_frequency) / (float) bandwidth;
     audio_frequency = 48000;
     audio_resample_ratio = (float) (audio_frequency) / (float) wbfm_frequency;
@@ -93,7 +93,7 @@ Demodulator::Demodulator() {
         std::cout << "\tPortAudio error: " << Pa_GetErrorText(err) << std::endl;
     }
 
-    float fc = 0.5f * (bandwidth / SRATE);         // filter cutoff frequency
+    float fc = 0.5f * ((float)bandwidth / (float)SRATE) * 0.75;         // filter cutoff frequency
     float ft = 0.05f;         // filter transition
     float As = 60.0f;         // stop-band attenuation [dB]
     float mu = 0.0f;         // fractional timing offset
@@ -106,7 +106,7 @@ Demodulator::Demodulator() {
     fir_filter = firfilt_crcf_create(h, h_len);
 
     h_len = estimate_req_filter_len(ft, As);
-    liquid_firdes_kaiser(h_len, 0.3f, As, mu, h);
+    liquid_firdes_kaiser(h_len, 32000.0/(float)wbfm_frequency, As, mu, h);
     
     fir_audio_filter = firfilt_crcf_create(h, h_len);
 
@@ -120,7 +120,7 @@ Demodulator::Demodulator() {
     audio_resampler = msresamp_crcf_create(audio_resample_ratio, As);
     msresamp_crcf_print(audio_resampler);
 
-    float kf = 0.5f;         // modulation factor
+    float kf = 0.75;         // modulation factor
 
     fdem = freqdem_create(kf);
     freqdem_print(fdem);
