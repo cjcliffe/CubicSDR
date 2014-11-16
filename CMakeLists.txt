@@ -90,7 +90,6 @@ SET (cubicsdr_sources
 	src/AppFrame.cpp
 	src/SDRThreadQueue.cpp
 	src/SDRThreadTask.cpp
-	src/Demodulator.cpp
 	src/DemodulatorThread.cpp
 	src/DemodulatorThreadQueue.cpp
 	src/DemodulatorThreadTask.cpp
@@ -115,7 +114,6 @@ SET (cubicsdr_headers
 	src/CubicSDRDefs.h
 	src/SDRThreadQueue.h
 	src/SDRThreadTask.h
-	src/Demodulator.h
 	src/DemodulatorThread.h
 	src/DemodulatorThreadQueue.h
 	src/DemodulatorThreadTask.h

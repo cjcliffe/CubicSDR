@@ -5,7 +5,7 @@
 //wxDEFINE_EVENT(wxEVT_COMMAND_AudioThread_INPUT, wxThreadEvent);
 
 AudioThread::AudioThread(AudioThreadQueue* pQueue, int id) :
-        wxThread(wxTHREAD_DETACHED), m_pQueue(pQueue), m_ID(id) {
+        wxThread(wxTHREAD_DETACHED), m_pQueue(pQueue), m_ID(id), audio_queue_ptr(0) {
 
 }
 AudioThread::~AudioThread() {
@@ -30,16 +30,15 @@ static int patestCallback(const void *inputBuffer, void *outputBuffer, unsigned 
         return paContinue;
     }
 
-    std::vector<float> *nextBuffer = src->audio_queue.front();
+    std::vector<float> nextBuffer = src->audio_queue.front();
 
     for (int i = 0; i < framesPerBuffer * 2; i++) {
-        out[i] = (*nextBuffer)[src->audio_queue_ptr];
+        out[i] = nextBuffer[src->audio_queue_ptr];
 
         src->audio_queue_ptr++;
 
-        if (src->audio_queue_ptr == nextBuffer->size()) {
+        if (src->audio_queue_ptr == nextBuffer.size()) {
             src->audio_queue.pop();
-            delete nextBuffer;
             src->audio_queue_ptr = 0;
             if (!src->audio_queue.size()) {
                 break;
@@ -107,10 +106,9 @@ wxThread::ExitCode AudioThread::Entry() {
             while (m_pQueue->stackSize()) {
                 AudioThreadTask task = m_pQueue->pop(); // pop a task from the queue. this will block the worker thread if queue is empty
                 switch (task.m_cmd) {
-                // case AudioThreadTask::AUDIO_THREAD_TUNING:
-                //
-                // audio_queue.push(newBuffer);
-
+                 case AudioThreadTask::AUDIO_THREAD_DATA:
+                     audio_queue.push(task.getData());
+                 break;
                 }
             }
         }

@@ -20,7 +20,7 @@
 //wxDECLARE_EVENT(wxEVT_COMMAND_DemodulatorThread_INPUT, wxThreadEvent);
 
 enum {
-    EVENT_DEMOD_INPUT = wxID_HIGHEST + 1
+    EVENT_DEMOD_INPUT = wxID_HIGHEST + 2
 };
 
 class DemodulatorThread: public wxThread {

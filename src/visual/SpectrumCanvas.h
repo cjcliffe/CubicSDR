@@ -9,7 +9,6 @@
 #include "SpectrumContext.h"
 
 #include "fftw3.h"
-#include "Demodulator.h"
 
 class SpectrumCanvas: public wxGLCanvas {
 public:

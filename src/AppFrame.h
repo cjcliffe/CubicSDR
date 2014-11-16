@@ -9,7 +9,6 @@
 #include "ScopeCanvas.h"
 #include "SpectrumCanvas.h"
 #include "WaterfallCanvas.h"
-#include "Demodulator.h"
 
 // Define a new frame type
 class AppFrame: public wxFrame {
@@ -43,8 +42,6 @@ private:
     //    IQBufferThread *t_IQBuffer;
     wxCriticalSection m_pThreadCS;
     unsigned int frequency;
-
-    Demodulator test_demod;
 
 // event table
 wxDECLARE_EVENT_TABLE();

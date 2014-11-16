@@ -61,7 +61,7 @@ wxThread::ExitCode DemodulatorThread::Entry() {
                 DemodulatorThreadTask task = m_pQueue->pop(); // pop a task from the queue. this will block the worker thread if queue is empty
                 switch (task.m_cmd) {
                 case DemodulatorThreadTask::DEMOD_THREAD_DATA:
-                    std::vector<unsigned char> *data = &task.getData();
+                    std::vector<signed char> *data = &task.getData();
                     if (data->size()) {
                         liquid_float_complex filtered_input[BUF_SIZE / 2];
 

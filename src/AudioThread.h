@@ -26,12 +26,12 @@ static int patestCallback(const void *inputBuffer, void *outputBuffer, unsigned 
 //wxDECLARE_EVENT(wxEVT_COMMAND_AudioThread_INPUT, wxThreadEvent);
 
 enum {
-    EVENT_AUDIO_INPUT = wxID_HIGHEST + 1
+    EVENT_AUDIO_INPUT = wxID_HIGHEST + 3
 };
 
 class AudioThread: public wxThread {
 public:
-    std::queue<std::vector<float> *> audio_queue;
+    std::queue<std::vector<float> > audio_queue;
     unsigned int audio_queue_ptr;
 
     AudioThread(AudioThreadQueue* pQueue, int id = 0);

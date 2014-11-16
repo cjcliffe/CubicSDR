@@ -142,8 +142,12 @@ void AppFrame::OnEventInput(wxThreadEvent& event) {
     std::vector<signed char> *new_buffer = event.GetPayload<std::vector<signed char> *>();
 //    std::cout << new_buffer->size() << std::endl;
     if (new_buffer->size()) {
-        test_demod.writeBuffer(new_buffer);
-        scopeCanvas->setWaveformPoints(test_demod.waveform_points);
+        DemodulatorThreadTask task = DemodulatorThreadTask(DemodulatorThreadTask::DEMOD_THREAD_DATA);
+        task.setData(*new_buffer);
+        threadQueueDemod->addTask(task, DemodulatorThreadQueue::DEMOD_PRIORITY_HIGHEST);
+
+//        test_demod.writeBuffer(new_buffer);
+//        scopeCanvas->setWaveformPoints(test_demod.waveform_points);
         spectrumCanvas->setData(new_buffer);
         waterfallCanvas->setData(new_buffer);
     } else {
@@ -151,7 +155,6 @@ void AppFrame::OnEventInput(wxThreadEvent& event) {
     }
     delete new_buffer;
 }
-
 
 // Demodulator -> Audio
 void AppFrame::OnDemodInput(wxThreadEvent& event) {

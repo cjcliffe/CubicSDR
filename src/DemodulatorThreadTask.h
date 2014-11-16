@@ -17,10 +17,10 @@ public:
             m_cmd(cmd) {
     }
 
-    void setData(std::vector<unsigned char> &data_in);
-    std::vector<unsigned char> &getData();
+    void setData(std::vector<signed char> &data_in);
+    std::vector<signed char> &getData();
 
     DEMOD_THREAD_COMMAND m_cmd;
 
-    std::vector<unsigned char> data;
+    std::vector<signed char> data;
 };
