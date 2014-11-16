@@ -31,13 +31,21 @@ public:
 
 private:
     firfilt_crcf fir_filter;
+    firfilt_crcf fir_audio_filter;
+
+    unsigned int bandwidth;
 
     msresamp_crcf resampler;
-    msresamp_crcf audio_resampler;
     float resample_ratio;
-    unsigned int bandwidth;
-    unsigned int audio_frequency;
+
+    msresamp_crcf wbfm_resampler;
+    float wbfm_resample_ratio;
+    unsigned int wbfm_frequency;
+
+    msresamp_crcf audio_resampler;
     float audio_resample_ratio;
+
+    unsigned int audio_frequency;
 
     PaStreamParameters outputParameters;
     PaStream *stream;

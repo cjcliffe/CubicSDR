@@ -42,7 +42,7 @@ int CubicSDR::OnExit() {
 PrimaryGLContext& CubicSDR::GetContext(wxGLCanvas *canvas) {
     PrimaryGLContext *glContext;
     if (!m_glContext) {
-        m_glContext = new PrimaryGLContext(canvas);
+        m_glContext = new PrimaryGLContext(canvas, NULL);
     }
     glContext = m_glContext;
 

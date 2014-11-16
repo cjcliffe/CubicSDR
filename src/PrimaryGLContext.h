@@ -7,43 +7,13 @@
 #include <queue>
 
 #include "CubicSDRDefs.h"
-#include "fftw3.h"
-#include "Demodulator.h"
 
 class PrimaryGLContext: public wxGLContext {
 public:
-    PrimaryGLContext(wxGLCanvas *canvas);
+    PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContext);
 
-    void Plot(std::vector<float> &points, std::vector<float> &points2);
-
-private:
-};
-
-class TestGLCanvas: public wxGLCanvas {
-public:
-    TestGLCanvas(wxWindow *parent, int *attribList = NULL);
-    ~TestGLCanvas();
-
-    void setData(std::vector<signed char> *data);
+    static wxString glGetwxString(GLenum name);
+    static void CheckGLError();
 
 private:
-    void OnPaint(wxPaintEvent& event);
-    void OnKeyDown(wxKeyEvent& event);
-
-    void OnIdle(wxIdleEvent &event);
-
-    wxWindow *parent;
-    std::vector<float> spectrum_points;
-
-    fftw_complex *in, *out[2];
-    fftw_plan plan[2];
-
-    float fft_ceil_ma, fft_ceil_maa;
-
-    std::vector<float> fft_result;
-    std::vector<float> fft_result_ma;
-    std::vector<float> fft_result_maa;
-
-    Demodulator test_demod;
-wxDECLARE_EVENT_TABLE();
 };
