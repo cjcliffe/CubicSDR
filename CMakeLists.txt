@@ -91,6 +91,12 @@ SET (cubicsdr_sources
 	src/SDRThreadQueue.cpp
 	src/SDRThreadTask.cpp
 	src/Demodulator.cpp
+	src/DemodulatorThread.cpp
+	src/DemodulatorThreadQueue.cpp
+	src/DemodulatorThreadTask.cpp
+	src/AudioThread.cpp
+	src/AudioThreadQueue.cpp
+	src/AudioThreadTask.cpp
 	src/Gradient.cpp
 	src/visual/ScopeCanvas.cpp
 	src/visual/ScopeContext.cpp
@@ -110,6 +116,12 @@ SET (cubicsdr_headers
 	src/SDRThreadQueue.h
 	src/SDRThreadTask.h
 	src/Demodulator.h
+	src/DemodulatorThread.h
+	src/DemodulatorThreadQueue.h
+	src/DemodulatorThreadTask.h
+	src/AudioThread.h
+	src/AudioThreadQueue.h
+	src/AudioThreadTask.h
 	src/Gradient.h
 	src/visual/ScopeCanvas.h
 	src/visual/ScopeContext.h
