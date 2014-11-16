@@ -9,19 +9,10 @@
 #include "CubicSDRDefs.h"
 #include "liquid/liquid.h"
 
-#include "portaudio.h"
-#ifdef WIN32
-#include "pa_stream.h"
-#include "pa_debugprint.h"
-#endif
 
-static int patestCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo* timeInfo,
-        PaStreamCallbackFlags statusFlags, void *userData);
 
 class Demodulator {
 public:
-    std::queue<std::vector<float> *> audio_queue;
-    unsigned int audio_queue_ptr;
     std::vector<float> waveform_points;
 
     Demodulator();
@@ -47,7 +38,5 @@ private:
 
     unsigned int audio_frequency;
 
-    PaStreamParameters outputParameters;
-    PaStream *stream;
     freqdem fdem;
 };
