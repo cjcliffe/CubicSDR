@@ -83,7 +83,7 @@ endif (DEFINED WIN32)
 
 
 SET (cubicsdr_sources
-  src/CubicSDR.cpp
+    src/CubicSDR.cpp
 	src/SDRThread.cpp
 	src/IQBufferThread.cpp
 	src/PrimaryGLContext.cpp
@@ -94,10 +94,14 @@ SET (cubicsdr_sources
 	src/Gradient.cpp
 	src/visual/ScopeCanvas.cpp
 	src/visual/ScopeContext.cpp
+	src/visual/SpectrumCanvas.cpp
+	src/visual/SpectrumContext.cpp
+	src/visual/WaterfallCanvas.cpp
+	src/visual/WaterfallContext.cpp
 )
 
 SET (cubicsdr_headers
-  src/CubicSDR.h
+    src/CubicSDR.h
 	src/SDRThread.h
 	src/IQBufferThread.h
 	src/PrimaryGLContext.h
@@ -109,6 +113,10 @@ SET (cubicsdr_headers
 	src/Gradient.h
 	src/visual/ScopeCanvas.h
 	src/visual/ScopeContext.h
+	src/visual/SpectrumCanvas.h
+	src/visual/SpectrumContext.h
+	src/visual/WaterfallCanvas.h
+	src/visual/WaterfallContext.h
 )
 
 include_directories ( ${PROJECT_SOURCE_DIR}/src/visual 

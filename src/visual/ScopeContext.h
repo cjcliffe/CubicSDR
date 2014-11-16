@@ -11,10 +11,7 @@ class ScopeContext: public PrimaryGLContext {
 public:
     ScopeContext(ScopeCanvas *canvas, wxGLContext *sharedContext);
 
-    void Plot(std::vector<float> &points, std::vector<float> &points2);
+    void Plot(std::vector<float> &points);
 
 private:
-    Gradient grad;
-    GLuint waterfall;
-    unsigned char waterfall_tex[FFT_SIZE * NUM_WATERFALL_LINES];
 };

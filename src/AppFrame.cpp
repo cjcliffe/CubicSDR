@@ -23,7 +23,18 @@ wxEND_EVENT_TABLE()
 AppFrame::AppFrame() :
         wxFrame(NULL, wxID_ANY, wxT("CubicSDR")), frequency(DEFAULT_FREQ) {
 
-    canvas = new ScopeCanvas(this, NULL);
+    wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
+
+    scopeCanvas = new ScopeCanvas(this, NULL);
+    vbox->Add(scopeCanvas, 1, wxEXPAND | wxALL, 0);
+    vbox->AddSpacer(2);
+    spectrumCanvas = new SpectrumCanvas(this, NULL);
+    vbox->Add(spectrumCanvas, 1, wxEXPAND | wxALL, 0);
+    vbox->AddSpacer(2);
+    waterfallCanvas = new WaterfallCanvas(this, NULL);
+    vbox->Add(waterfallCanvas, 4, wxEXPAND | wxALL, 0);
+
+    this->SetSizer(vbox);
 
 //    SetIcon(wxICON(sample));
 
@@ -77,16 +88,16 @@ AppFrame::~AppFrame() {
         }
     }
 
-    {
-        wxCriticalSectionLocker enter(m_pThreadCS);
-        if (t_IQBuffer) {
-            wxMessageOutputDebug().Printf("CubicSDR: deleting thread");
-            if (t_IQBuffer->Delete() != wxTHREAD_NO_ERROR) {
-                wxLogError
-                ("Can't delete the thread!");
-            }
-        }
-    }
+//    {
+//        wxCriticalSectionLocker enter(m_pThreadCS);
+//        if (t_IQBuffer) {
+//            wxMessageOutputDebug().Printf("CubicSDR: deleting thread");
+//            if (t_IQBuffer->Delete() != wxTHREAD_NO_ERROR) {
+//                wxLogError
+//                ("Can't delete the thread!");
+//            }
+//        }
+//    }
 
     delete t_SDR;
 //    delete t_IQBuffer;
@@ -106,9 +117,10 @@ void AppFrame::OnNewWindow(wxCommandEvent& WXUNUSED(event)) {
 void AppFrame::OnEventInput(wxThreadEvent& event) {
     std::vector<signed char> *new_buffer = event.GetPayload<std::vector<signed char> *>();
 
-//    std::cout << "Got IQ buffer, length: " << new_buffer->size() << std::endl;
-
-    canvas->setData(new_buffer);
+    test_demod.writeBuffer(new_buffer);
+    scopeCanvas->setWaveformPoints(test_demod.waveform_points);
+    spectrumCanvas->setData(new_buffer);
+    waterfallCanvas->setData(new_buffer);
 
     delete new_buffer;
 }
