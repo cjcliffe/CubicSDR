@@ -165,6 +165,16 @@ void AppFrame::OnDemodInput(wxThreadEvent& event) {
         AudioThreadTask task = AudioThreadTask(AudioThreadTask::AUDIO_THREAD_DATA);
         task.setData(*new_buffer);
         threadQueueAudio->addTask(task, AudioThreadQueue::AUDIO_PRIORITY_HIGHEST);
+
+        if (scopeCanvas->waveform_points.size() != new_buffer->size() * 2) {
+            scopeCanvas->waveform_points.resize(new_buffer->size() * 2);
+        }
+
+        for (int i = 0, iMax = new_buffer->size(); i < iMax; i++) {
+            scopeCanvas->waveform_points[i * 2 + 1] = (*new_buffer)[i] * 0.5f;
+            scopeCanvas->waveform_points[i * 2] = ((double) i / (double) iMax);
+        }
+
     } else {
         std::cout << "Incoming Demod data empty?" << std::endl;
     }
