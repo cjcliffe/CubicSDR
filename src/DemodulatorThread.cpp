@@ -162,9 +162,10 @@ wxThread::ExitCode DemodulatorThread::Entry() {
                     break;
                 }
             }
+        } else {
+            this->Yield();
+            this->Sleep(1);
         }
-
-        Sleep(1000);
     }
     std::cout << std::endl << "Demodulator Thread Done." << std::endl << std::endl;
 

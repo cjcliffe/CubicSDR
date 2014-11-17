@@ -14,6 +14,7 @@
 #include "SDRThread.h"
 #include "DemodulatorThread.h"
 #include "AudioThread.h"
+#include "CubicSDR.h"
 
 wxBEGIN_EVENT_TABLE(AppFrame, wxFrame)
 //EVT_MENU(wxID_NEW, AppFrame::OnNewWindow)
@@ -53,7 +54,7 @@ AppFrame::AppFrame() :
     SetMenuBar(menuBar);
 
     CreateStatusBar();
-    SetClientSize(1280, 400);
+    SetClientSize(1280, 600);
     Centre();
     Show();
 
@@ -186,6 +187,7 @@ void AppFrame::OnAudioInput(wxThreadEvent& event) {
 
 void AppFrame::OnIdle(wxIdleEvent& event) {
 
+    wxGetApp().Yield();
     event.Skip();
 }
 
