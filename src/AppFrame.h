@@ -3,10 +3,12 @@
 #include "wx/frame.h"
 #include "PrimaryGLContext.h"
 #include "SDRThread.h"
+#include "AudioThread.h"
+#include "DemodulatorThread.h"
+
 #include "ScopeCanvas.h"
 #include "SpectrumCanvas.h"
 #include "WaterfallCanvas.h"
-#include "Demodulator.h"
 
 // Define a new frame type
 class AppFrame: public wxFrame {
@@ -14,6 +16,9 @@ public:
     AppFrame();
     ~AppFrame();
     void OnEventInput(wxThreadEvent& event);
+    void OnDemodInput(wxThreadEvent& event);
+    void OnAudioInput(wxThreadEvent& event);
+
 
     void setFrequency(unsigned int freq);
     int getFrequency();
@@ -26,13 +31,17 @@ private:
     ScopeCanvas *scopeCanvas;
     SpectrumCanvas *spectrumCanvas;
     WaterfallCanvas *waterfallCanvas;
-    SDRThread *t_SDR;
-    IQBufferThread *t_IQBuffer;
-    wxCriticalSection m_pThreadCS;
-    SDRThreadQueue* m_pQueue;
-    unsigned int frequency;
 
-    Demodulator test_demod;
+    SDRThread *t_SDR;
+    SDRThreadQueue* threadQueueSDR;
+    AudioThread *t_Audio;
+    AudioThreadQueue* threadQueueAudio;
+    DemodulatorThread *t_Demod;
+    DemodulatorThreadQueue* threadQueueDemod;
+
+    //    IQBufferThread *t_IQBuffer;
+    wxCriticalSection m_pThreadCS;
+    unsigned int frequency;
 
 // event table
 wxDECLARE_EVENT_TABLE();

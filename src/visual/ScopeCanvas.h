@@ -12,6 +12,8 @@
 
 class ScopeCanvas: public wxGLCanvas {
 public:
+    std::vector<float> waveform_points;
+
     ScopeCanvas(wxWindow *parent, int *attribList = NULL);
     ~ScopeCanvas();
 
@@ -23,7 +25,6 @@ private:
     void OnIdle(wxIdleEvent &event);
 
     wxWindow *parent;
-    std::vector<float> waveform_points;
 
     ScopeContext *glContext;
 // event table

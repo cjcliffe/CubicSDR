@@ -9,7 +9,6 @@
 
 #include "wx/thread.h"
 
-#include "SDRThread.h"
 #include "IQBufferThread.h"
 #include "SDRThreadQueue.h"
 

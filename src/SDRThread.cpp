@@ -1,6 +1,7 @@
 #include "SDRThread.h"
 #include "CubicSDRDefs.h"
 #include <vector>
+#include "CubicSDR.h"
 
 //wxDEFINE_EVENT(wxEVT_COMMAND_SDRThread_INPUT, wxThreadEvent);
 
@@ -159,6 +160,9 @@ wxThread::ExitCode SDRThread::Entry() {
             } else {
                 delete new_buffer;
             }
+        } else {
+            this->Yield();
+            this->Sleep(1);
         }
     }
     std::cout << std::endl << "Done." << std::endl << std::endl;
