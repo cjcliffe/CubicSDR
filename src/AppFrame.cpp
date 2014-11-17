@@ -19,9 +19,9 @@
 wxBEGIN_EVENT_TABLE(AppFrame, wxFrame)
 //EVT_MENU(wxID_NEW, AppFrame::OnNewWindow)
 EVT_MENU(wxID_CLOSE, AppFrame::OnClose)
-EVT_THREAD(EVENT_SDR_INPUT, AppFrame::OnEventInput)
 EVT_THREAD(EVENT_DEMOD_INPUT, AppFrame::OnDemodInput)
 EVT_THREAD(EVENT_AUDIO_INPUT, AppFrame::OnAudioInput)
+EVT_COMMAND(wxID_ANY, wxEVT_THREAD, AppFrame::OnThread)
 EVT_IDLE(AppFrame::OnIdle)
 wxEND_EVENT_TABLE()
 
@@ -138,24 +138,38 @@ void AppFrame::OnNewWindow(wxCommandEvent& WXUNUSED(event)) {
     new AppFrame();
 }
 
-// SDR IQ -> Demodulator
-void AppFrame::OnEventInput(wxThreadEvent& event) {
-    std::vector<signed char> *new_buffer = event.GetPayload<std::vector<signed char> *>();
-//    std::cout << new_buffer->size() << std::endl;
-    if (new_buffer->size()) {
-        DemodulatorThreadTask task = DemodulatorThreadTask(DemodulatorThreadTask::DEMOD_THREAD_DATA);
-        task.setData(*new_buffer);
-        threadQueueDemod->addTask(task, DemodulatorThreadQueue::DEMOD_PRIORITY_HIGHEST);
 
-//        test_demod.writeBuffer(new_buffer);
-//        scopeCanvas->setWaveformPoints(test_demod.waveform_points);
-        spectrumCanvas->setData(new_buffer);
-        waterfallCanvas->setData(new_buffer);
-    } else {
-        std::cout << "Incoming IQ data empty?" << std::endl;
+void AppFrame::OnThread(wxCommandEvent& event) {
+    SDRThreadIQData *iqData;
+    std::vector<signed char> *new_buffer;
+
+    switch (event.GetId()) {
+
+    // SDR IQ -> Demodulator
+    case SDRThreadTask::SDR_THREAD_DATA:
+        iqData = (SDRThreadIQData *) event.GetClientData();
+        new_buffer = &(iqData->data);
+        if (new_buffer->size()) {
+            DemodulatorThreadTask task = DemodulatorThreadTask(DemodulatorThreadTask::DEMOD_THREAD_DATA);
+            task.setData(*new_buffer);
+
+            threadQueueDemod->addTask(task, DemodulatorThreadQueue::DEMOD_PRIORITY_HIGHEST);
+
+            spectrumCanvas->setData(new_buffer);
+            waterfallCanvas->setData(new_buffer);
+        } else {
+            std::cout << "Incoming IQ data empty?" << std::endl;
+        }
+        delete iqData;
+
+        break; // thread wants to exit: disable controls and destroy main window
+    default:
+        event.Skip();
     }
-    delete new_buffer;
 }
+
+
+
 
 // Demodulator -> Audio
 void AppFrame::OnDemodInput(wxThreadEvent& event) {

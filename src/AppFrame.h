@@ -15,6 +15,7 @@ class AppFrame: public wxFrame {
 public:
     AppFrame();
     ~AppFrame();
+    void OnThread (wxCommandEvent& event);
     void OnEventInput(wxThreadEvent& event);
     void OnDemodInput(wxThreadEvent& event);
     void OnAudioInput(wxThreadEvent& event);
