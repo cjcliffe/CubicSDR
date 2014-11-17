@@ -22,9 +22,10 @@ wxEND_EVENT_TABLE()
 
 ScopeCanvas::ScopeCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE), parent(parent) {
+        wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0) {
 
     glContext = new ScopeContext(this, &wxGetApp().GetContext(this));
+    timer.start();
 }
 
 ScopeCanvas::~ScopeCanvas() {
@@ -75,5 +76,10 @@ void ScopeCanvas::OnKeyDown(wxKeyEvent& event) {
 }
 
 void ScopeCanvas::OnIdle(wxIdleEvent &event) {
-    Refresh(false);
+    timer.update();
+    frameTimer += timer.lastUpdateSeconds();
+    if (frameTimer > 1.0/30.0) {
+        Refresh(false);
+        frameTimer = 0;
+    }
 }

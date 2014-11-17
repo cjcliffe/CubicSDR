@@ -97,6 +97,7 @@ SET (cubicsdr_sources
 	src/AudioThreadQueue.cpp
 	src/AudioThreadTask.cpp
 	src/Gradient.cpp
+	src/Timer.cpp
 	src/visual/ScopeCanvas.cpp
 	src/visual/ScopeContext.cpp
 	src/visual/SpectrumCanvas.cpp
@@ -121,6 +122,7 @@ SET (cubicsdr_headers
 	src/AudioThreadQueue.h
 	src/AudioThreadTask.h
 	src/Gradient.h
+	src/Timer.h
 	src/visual/ScopeCanvas.h
 	src/visual/ScopeContext.h
 	src/visual/SpectrumCanvas.h

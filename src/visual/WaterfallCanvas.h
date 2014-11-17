@@ -9,6 +9,7 @@
 #include "WaterfallContext.h"
 
 #include "fftw3.h"
+#include "Timer.h"
 
 class WaterfallCanvas: public wxGLCanvas {
 public:
@@ -36,6 +37,8 @@ private:
     std::vector<float> fft_result_maa;
 
     WaterfallContext *glContext;
+    Timer timer;
+    float frameTimer;
 // event table
 wxDECLARE_EVENT_TABLE();
 };

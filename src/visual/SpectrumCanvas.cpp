@@ -22,7 +22,7 @@ wxEND_EVENT_TABLE()
 
 SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE), parent(parent) {
+        wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0) {
 
     int in_block_size = BUF_SIZE / 2;
     int out_block_size = FFT_SIZE;
@@ -35,6 +35,7 @@ SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *attribList) :
     fft_floor_ma = fft_floor_maa = 0.0;
 
     glContext = new SpectrumContext(this, &wxGetApp().GetContext(this));
+    timer.start();
 }
 
 SpectrumCanvas::~SpectrumCanvas() {
@@ -152,5 +153,10 @@ void SpectrumCanvas::setData(std::vector<signed char> *data) {
 }
 
 void SpectrumCanvas::OnIdle(wxIdleEvent &event) {
-    Refresh(false);
+    timer.update();
+    frameTimer += timer.lastUpdateSeconds();
+    if (frameTimer > 1.0/30.0) {
+        Refresh(false);
+        frameTimer = 0;
+    }
 }

@@ -9,6 +9,7 @@
 #include "ScopeContext.h"
 
 #include "fftw3.h"
+#include "Timer.h"
 
 class ScopeCanvas: public wxGLCanvas {
 public:
@@ -27,6 +28,8 @@ private:
     wxWindow *parent;
 
     ScopeContext *glContext;
+    Timer timer;
+    float frameTimer;    
 // event table
 wxDECLARE_EVENT_TABLE();
 };
