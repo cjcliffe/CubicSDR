@@ -17,7 +17,7 @@
 #include "pa_debugprint.h"
 #endif
 
-static int patestCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo* timeInfo,
+static int audioCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo* timeInfo,
         PaStreamCallbackFlags statusFlags, void *userData);
 
 class AudioThread: public wxThread {

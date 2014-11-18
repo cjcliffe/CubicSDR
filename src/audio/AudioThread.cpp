@@ -16,14 +16,22 @@ AudioThread::~AudioThread() {
 }
 
 
-static int patestCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo* timeInfo,
+static int audioCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo* timeInfo,
         PaStreamCallbackFlags statusFlags, void *userData) {
 
     AudioThread *src = (AudioThread *) userData;
 
     float *out = (float*) outputBuffer;
 
-    if (!src->audio_queue.size()) {
+    if (statusFlags & paOutputOverflow) {
+        std::cout << "Audio buffer overflow.." << std::endl;
+    }
+
+    if (statusFlags & paOutputUnderflow) {
+        std::cout << "Audio buffer underflow.." << std::endl;
+    }
+
+    if ((statusFlags & paPrimingOutput) || (statusFlags & paOutputOverflow) || !src->audio_queue.size()) {
         for (int i = 0; i < framesPerBuffer * 2; i++) {
             out[i] = 0;
         }
@@ -91,7 +99,7 @@ wxThread::ExitCode AudioThread::Entry() {
 
     stream = NULL;
 
-    err = Pa_OpenStream(&stream, NULL, &outputParameters, AUDIO_FREQUENCY, 1024, paClipOff, &patestCallback, this);
+    err = Pa_OpenStream(&stream, NULL, &outputParameters, AUDIO_FREQUENCY, paFramesPerBufferUnspecified, paPrimeOutputBuffersUsingStreamCallback|paClipOff, &audioCallback, this);
 
     err = Pa_StartStream(stream);
     if (err != paNoError) {
