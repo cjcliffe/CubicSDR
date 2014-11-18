@@ -37,7 +37,10 @@ public:
             delete threadQueueDemod;
             t_Demod = NULL;
             threadQueueDemod = NULL;
+            return false;
         }
+
+        return true;
     }
 };
 

@@ -66,7 +66,6 @@ AppFrame::AppFrame() :
     }
 
     demodulatorTest = demodMgr.newThread(this);
-    demodulatorTest->params.inputResampleRate=170000;
     demodulatorTest->run();
 
     threadQueueAudio = new AudioThreadQueue(this);
