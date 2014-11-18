@@ -84,19 +84,19 @@ endif (DEFINED WIN32)
 
 SET (cubicsdr_sources
     src/CubicSDR.cpp
-	src/SDRThread.cpp
-	src/PrimaryGLContext.cpp
 	src/AppFrame.cpp
-	src/SDRThreadQueue.cpp
-	src/SDRThreadTask.cpp
-	src/DemodulatorThread.cpp
-	src/DemodulatorThreadQueue.cpp
-	src/DemodulatorThreadTask.cpp
-	src/AudioThread.cpp
-	src/AudioThreadQueue.cpp
-	src/AudioThreadTask.cpp
-	src/Gradient.cpp
-	src/Timer.cpp
+	src/sdr/SDRThread.cpp
+	src/sdr/SDRThreadQueue.cpp
+	src/sdr/SDRThreadTask.cpp
+	src/demod/DemodulatorThread.cpp
+	src/demod/DemodulatorThreadQueue.cpp
+	src/demod/DemodulatorThreadTask.cpp
+	src/audio/AudioThread.cpp
+	src/audio/AudioThreadQueue.cpp
+	src/audio/AudioThreadTask.cpp
+	src/util/Gradient.cpp
+	src/util/Timer.cpp
+	src/visual/PrimaryGLContext.cpp
 	src/visual/ScopeCanvas.cpp
 	src/visual/ScopeContext.cpp
 	src/visual/SpectrumCanvas.cpp
@@ -106,21 +106,21 @@ SET (cubicsdr_sources
 )
 
 SET (cubicsdr_headers
-    src/CubicSDR.h
-	src/SDRThread.h
-	src/PrimaryGLContext.h
-	src/AppFrame.h
 	src/CubicSDRDefs.h
-	src/SDRThreadQueue.h
-	src/SDRThreadTask.h
-	src/DemodulatorThread.h
-	src/DemodulatorThreadQueue.h
-	src/DemodulatorThreadTask.h
-	src/AudioThread.h
-	src/AudioThreadQueue.h
-	src/AudioThreadTask.h
-	src/Gradient.h
-	src/Timer.h
+    src/CubicSDR.h
+	src/AppFrame.h
+	src/sdr/SDRThread.h
+	src/sdr/SDRThreadQueue.h
+	src/sdr/SDRThreadTask.h
+	src/demod/DemodulatorThread.h
+	src/demod/DemodulatorThreadQueue.h
+	src/demod/DemodulatorThreadTask.h
+	src/audio/AudioThread.h
+	src/audio/AudioThreadQueue.h
+	src/audio/AudioThreadTask.h
+	src/util/Gradient.h
+	src/util/Timer.h
+	src/visual/PrimaryGLContext.h
 	src/visual/ScopeCanvas.h
 	src/visual/ScopeContext.h
 	src/visual/SpectrumCanvas.h
@@ -129,7 +129,11 @@ SET (cubicsdr_headers
 	src/visual/WaterfallContext.h
 )
 
-include_directories ( ${PROJECT_SOURCE_DIR}/src/visual 
+include_directories ( ${PROJECT_SOURCE_DIR}/src/sdr 
+					  ${PROJECT_SOURCE_DIR}/src/demod
+					  ${PROJECT_SOURCE_DIR}/src/audio
+					  ${PROJECT_SOURCE_DIR}/src/util
+					  ${PROJECT_SOURCE_DIR}/src/visual 
 					  ${PROJECT_SOURCE_DIR}/src )
 
 #configure_files(${PROJECT_SOURCE_DIR}/shaders ${PROJECT_BINARY_DIR}/shaders COPYONLY)
