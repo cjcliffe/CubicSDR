@@ -103,9 +103,12 @@ wxThread::ExitCode SDRThread::Entry() {
 
     signed char *buf = (signed char *) malloc(BUF_SIZE);
 
+    unsigned int frequency = DEFAULT_FREQ;
+    unsigned int bandwidth = SRATE;
+
     rtlsdr_open(&dev, first_available);
-    rtlsdr_set_sample_rate(dev, SRATE);
-    rtlsdr_set_center_freq(dev, DEFAULT_FREQ);
+    rtlsdr_set_sample_rate(dev, bandwidth);
+    rtlsdr_set_center_freq(dev, frequency);
     rtlsdr_set_agc_mode(dev, 1);
     rtlsdr_set_offset_tuning(dev, 1);
     rtlsdr_reset_buffer(dev);
@@ -136,17 +139,18 @@ wxThread::ExitCode SDRThread::Entry() {
             }
 
             if (freq_changed) {
-                rtlsdr_set_center_freq(dev, new_freq);
+                frequency = new_freq;
+                rtlsdr_set_center_freq(dev, frequency);
             }
         }
 
         rtlsdr_read_sync(dev, buf, BUF_SIZE, &n_read);
 
         if (!TestDestroy()) {
-            std::vector<signed char> *new_buffer = new std::vector<signed char>();
+            std::vector<signed char> new_buffer;
 
             for (int i = 0; i < n_read; i++) {
-                new_buffer->push_back(buf[i] - 127);
+                new_buffer.push_back(buf[i] - 127);
             }
 
             double time_slice = (double) n_read / (double) sample_rate;
@@ -154,11 +158,8 @@ wxThread::ExitCode SDRThread::Entry() {
 
             // std::cout << "Time Slice: " << time_slice << std::endl;
             if (!TestDestroy()) {
-                wxThreadEvent event(wxEVT_THREAD, EVENT_SDR_INPUT);
-                event.SetPayload(new_buffer);
-                wxQueueEvent(m_pQueue->getHandler(), event.Clone());
-            } else {
-                delete new_buffer;
+                SDRThreadIQData *iqData = new SDRThreadIQData(bandwidth,frequency,new_buffer);
+                m_pQueue->sendIQData(SDRThreadTask::SDR_THREAD_DATA, iqData);
             }
         } else {
             this->Yield();

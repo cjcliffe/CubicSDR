@@ -2,7 +2,6 @@
 #include "CubicSDRDefs.h"
 #include <vector>
 
-//wxDEFINE_EVENT(wxEVT_COMMAND_DemodulatorThread_INPUT, wxThreadEvent);
 
 DemodulatorThread::DemodulatorThread(DemodulatorThreadQueue* pQueue, int id) :
         wxThread(wxTHREAD_DETACHED), m_pQueue(pQueue), m_ID(id) {
@@ -61,7 +60,7 @@ wxThread::ExitCode DemodulatorThread::Entry() {
                 DemodulatorThreadTask task = m_pQueue->pop(); // pop a task from the queue. this will block the worker thread if queue is empty
                 switch (task.m_cmd) {
                 case DemodulatorThreadTask::DEMOD_THREAD_DATA:
-                    std::vector<signed char> *data = &task.getData();
+                    std::vector<signed char> *data = &task.data->data;
                     if (data->size()) {
                         liquid_float_complex filtered_input[BUF_SIZE / 2];
 
@@ -122,43 +121,24 @@ wxThread::ExitCode DemodulatorThread::Entry() {
                         unsigned int num_audio_written;
                         msresamp_crcf_execute(audio_resampler, resampled_wbfm_output, num_wbfm_written, resampled_audio_output, &num_audio_written);
 
-                        std::vector<float> *newBuffer = new std::vector<float>;
-                         newBuffer->resize(num_audio_written * 2);
+                        std::vector<float> newBuffer;
+                         newBuffer.resize(num_audio_written * 2);
                          for (int i = 0; i < num_audio_written; i++) {
                              liquid_float_complex y = resampled_audio_output[i];
 
-                             (*newBuffer)[i * 2] = y.real;
-                             (*newBuffer)[i * 2 + 1] = y.real;
+                             newBuffer[i * 2] = y.real;
+                             newBuffer[i * 2 + 1] = y.real;
                          }
 
 
                         if (!TestDestroy()) {
-                            wxThreadEvent event(wxEVT_THREAD, EVENT_DEMOD_INPUT);
-                            event.SetPayload(newBuffer);
-                            wxQueueEvent(m_pQueue->getHandler(), event.Clone());
-                        } else {
-                            delete newBuffer;
+                            DemodulatorThreadAudioData *audioOut = new DemodulatorThreadAudioData(task.data->frequency,audio_frequency,newBuffer);
+
+                            m_pQueue->sendAudioData(DemodulatorThreadTask::DEMOD_THREAD_AUDIO_DATA,audioOut);
                         }
 
-                        //        std::vector<float> *newBuffer = new std::vector<float>;
-                        //        newBuffer->resize(num_audio_written * 2);
-                        //        for (int i = 0; i < num_audio_written; i++) {
-                        //            liquid_float_complex y = resampled_audio_output[i];
-                        //
-                        //            (*newBuffer)[i * 2] = y.real;
-                        //            (*newBuffer)[i * 2 + 1] = y.real;
-                        //        }
-
-//                        if (waveform_points.size() != num_audio_written * 2) {
-//                            waveform_points.resize(num_audio_written * 2);
-//                        }
-//
-//                        for (int i = 0, iMax = waveform_points.size() / 2; i < iMax; i++) {
-//                            waveform_points[i * 2 + 1] = resampled_audio_output[i].real * 0.5f;
-//                            waveform_points[i * 2] = ((double) i / (double) iMax);
-//                        }
+                        delete task.data;
                     }
-                    // audio_queue.push(newBuffer);
                     break;
                 }
             }

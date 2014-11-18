@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <vector>
 #include "SDRThreadTask.h"
 
 #include "wx/event.h"
@@ -13,7 +14,7 @@ public:
     SDRThreadQueue(wxEvtHandler* pParent);
 
     void addTask(const SDRThreadTask& task, const SDR_PRIORITY& priority = SDR_PRIORITY_NORMAL);
-    void report(const SDRThreadTask::SDR_COMMAND& cmd, const wxString& sArg = wxEmptyString, int iArg = 0);
+    void sendIQData(const SDRThreadTask::SDR_COMMAND& cmd, SDRThreadIQData *data);
 
     SDRThreadTask pop();
     size_t stackSize();

@@ -26,10 +26,11 @@ SDRThreadTask SDRThreadQueue::pop() {
     return element;
 }
 
-void SDRThreadQueue::report(const SDRThreadTask::SDR_COMMAND& cmd, const wxString& sArg, int iArg) {
+void SDRThreadQueue::sendIQData(const SDRThreadTask::SDR_COMMAND& cmd, SDRThreadIQData *data) {
     wxCommandEvent evt(wxEVT_THREAD, cmd);
-    evt.SetString(sArg);
-    evt.SetInt(iArg);
+
+    evt.SetClientData(data);
+
     m_pParent->AddPendingEvent(evt);
 }
 

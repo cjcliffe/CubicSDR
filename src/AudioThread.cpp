@@ -5,7 +5,7 @@
 //wxDEFINE_EVENT(wxEVT_COMMAND_AudioThread_INPUT, wxThreadEvent);
 
 AudioThread::AudioThread(AudioThreadQueue* pQueue, int id) :
-        wxThread(wxTHREAD_DETACHED), m_pQueue(pQueue), m_ID(id), audio_queue_ptr(0) {
+        wxThread(wxTHREAD_DETACHED), m_pQueue(pQueue), m_ID(id), audio_queue_ptr(0), stream(NULL) {
 
 }
 AudioThread::~AudioThread() {
@@ -107,7 +107,10 @@ wxThread::ExitCode AudioThread::Entry() {
                 AudioThreadTask task = m_pQueue->pop(); // pop a task from the queue. this will block the worker thread if queue is empty
                 switch (task.m_cmd) {
                  case AudioThreadTask::AUDIO_THREAD_DATA:
-                     audio_queue.push(task.getData());
+                     if (!TestDestroy()) {
+                         audio_queue.push(task.data->data);
+                     }
+                     delete task.data;
                  break;
                 }
             }

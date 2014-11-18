@@ -15,9 +15,8 @@ class AppFrame: public wxFrame {
 public:
     AppFrame();
     ~AppFrame();
+    void OnThread (wxCommandEvent& event);
     void OnEventInput(wxThreadEvent& event);
-    void OnDemodInput(wxThreadEvent& event);
-    void OnAudioInput(wxThreadEvent& event);
 
 
     void setFrequency(unsigned int freq);
@@ -39,7 +38,6 @@ private:
     DemodulatorThread *t_Demod;
     DemodulatorThreadQueue* threadQueueDemod;
 
-    //    IQBufferThread *t_IQBuffer;
     wxCriticalSection m_pThreadCS;
     unsigned int frequency;
 
