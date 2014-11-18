@@ -3,17 +3,21 @@
 #include <vector>
 
 
-DemodulatorThread::DemodulatorThread(DemodulatorThreadQueue* pQueue, int id) :
+DemodulatorThread::DemodulatorThread(DemodulatorThreadQueue* pQueue, DemodulatorThreadParameters *params_in, int id) :
         wxThread(wxTHREAD_DETACHED), m_pQueue(pQueue), m_ID(id) {
 
-    bandwidth = 200000;
-    resample_ratio = (float) (bandwidth) / (float) SRATE;
-    wbfm_frequency = 100000;
-    wbfm_resample_ratio = (float) (wbfm_frequency) / (float) bandwidth;
-    audio_frequency = AUDIO_FREQUENCY;
-    audio_resample_ratio = (float) (audio_frequency) / (float) wbfm_frequency;
+    DemodulatorThreadParameters defaultParams;
+    if (!params_in) {
+        params = defaultParams;
+    } else {
+        params = *params_in;
+    }
 
-    float fc = 0.5f * ((float) bandwidth / (float) SRATE) * 0.75;         // filter cutoff frequency
+    resample_ratio = (float) (params.inputResampleRate) / (float) params.inputRate;
+    second_resampler_ratio = (float) (params.demodResampleRate) / (float) params.inputResampleRate;
+    audio_resample_ratio = (float) (params.audioSampleRate) / (float) params.demodResampleRate;
+
+    float fc = 0.5f * ((float) params.inputResampleRate / (float) params.inputRate) * 0.75;         // filter cutoff frequency
     float ft = 0.05f;         // filter transition
     float As = 60.0f;         // stop-band attenuation [dB]
     float mu = 0.0f;         // fractional timing offset
@@ -26,7 +30,7 @@ DemodulatorThread::DemodulatorThread(DemodulatorThreadQueue* pQueue, int id) :
     fir_filter = firfilt_crcf_create(h, h_len);
 
     h_len = estimate_req_filter_len(ft, As);
-    liquid_firdes_kaiser(h_len, 32000.0 / (float) wbfm_frequency, As, mu, h);
+    liquid_firdes_kaiser(h_len, (float)params.filterFrequency / (float) params.demodResampleRate, As, mu, h);
 
     fir_audio_filter = firfilt_crcf_create(h, h_len);
 
@@ -34,8 +38,8 @@ DemodulatorThread::DemodulatorThread(DemodulatorThreadQueue* pQueue, int id) :
     resampler = msresamp_crcf_create(resample_ratio, As);
     msresamp_crcf_print(resampler);
 
-    wbfm_resampler = msresamp_crcf_create(wbfm_resample_ratio, As);
-    msresamp_crcf_print(wbfm_resampler);
+    second_resampler = msresamp_crcf_create(second_resampler_ratio, As);
+    msresamp_crcf_print(second_resampler);
 
     audio_resampler = msresamp_crcf_create(audio_resample_ratio, As);
     msresamp_crcf_print(audio_resampler);
@@ -104,11 +108,11 @@ wxThread::ExitCode DemodulatorThread::Entry() {
                             }
                         }
 
-                        int wbfm_out_size = ceil((float) (num_written) * wbfm_resample_ratio);
+                        int wbfm_out_size = ceil((float) (num_written) * second_resampler_ratio);
                         liquid_float_complex resampled_wbfm_output[wbfm_out_size];
 
                         unsigned int num_wbfm_written;
-                        msresamp_crcf_execute(wbfm_resampler, resampled_output, num_written, resampled_wbfm_output, &num_wbfm_written);
+                        msresamp_crcf_execute(second_resampler, resampled_output, num_written, resampled_wbfm_output, &num_wbfm_written);
 
                         for (int i = 0; i < num_wbfm_written; i++) {
                             firfilt_crcf_push(fir_audio_filter, resampled_wbfm_output[i]);
@@ -132,7 +136,7 @@ wxThread::ExitCode DemodulatorThread::Entry() {
 
 
                         if (!TestDestroy()) {
-                            DemodulatorThreadAudioData *audioOut = new DemodulatorThreadAudioData(task.data->frequency,audio_frequency,newBuffer);
+                            DemodulatorThreadAudioData *audioOut = new DemodulatorThreadAudioData(task.data->frequency,params.audioSampleRate,newBuffer);
 
                             m_pQueue->sendAudioData(DemodulatorThreadTask::DEMOD_THREAD_AUDIO_DATA,audioOut);
                         }

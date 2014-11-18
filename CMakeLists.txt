@@ -91,6 +91,7 @@ SET (cubicsdr_sources
 	src/demod/DemodulatorThread.cpp
 	src/demod/DemodulatorThreadQueue.cpp
 	src/demod/DemodulatorThreadTask.cpp
+	src/demod/DemodulatorMgr.cpp
 	src/audio/AudioThread.cpp
 	src/audio/AudioThreadQueue.cpp
 	src/audio/AudioThreadTask.cpp
@@ -115,6 +116,7 @@ SET (cubicsdr_headers
 	src/demod/DemodulatorThread.h
 	src/demod/DemodulatorThreadQueue.h
 	src/demod/DemodulatorThreadTask.h
+	src/demod/DemodulatorMgr.h
 	src/audio/AudioThread.h
 	src/audio/AudioThreadQueue.h
 	src/audio/AudioThreadTask.h

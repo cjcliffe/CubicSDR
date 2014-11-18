@@ -12,7 +12,7 @@
 
 #include <vector>
 #include "SDRThread.h"
-#include "DemodulatorThread.h"
+#include "DemodulatorMgr.h"
 #include "AudioThread.h"
 #include "CubicSDR.h"
 
@@ -65,14 +65,9 @@ AppFrame::AppFrame() :
         t_SDR = NULL;
     }
 
-    threadQueueDemod = new DemodulatorThreadQueue(this);
-    t_Demod = new DemodulatorThread(threadQueueDemod);
-    if (t_Demod->Run() != wxTHREAD_NO_ERROR) {
-        wxLogError
-        ("Can't create the Demodulator thread!");
-        delete t_Demod;
-        t_Demod = NULL;
-    }
+    demodulatorTest = demodMgr.newThread(this);
+    demodulatorTest->params.inputResampleRate=170000;
+    demodulatorTest->run();
 
     threadQueueAudio = new AudioThreadQueue(this);
     t_Audio = new AudioThread(threadQueueAudio);
@@ -102,7 +97,6 @@ AppFrame::~AppFrame() {
 
 //    delete t_SDR;
     delete threadQueueAudio;
-    delete threadQueueDemod;
     delete threadQueueSDR;
 }
 
@@ -132,7 +126,7 @@ void AppFrame::OnThread(wxCommandEvent& event) {
         if (new_uc_buffer->size()) {
             DemodulatorThreadTask task = DemodulatorThreadTask(DemodulatorThreadTask::DEMOD_THREAD_DATA);
             task.data = new DemodulatorThreadIQData(iqData->bandwidth, iqData->frequency, iqData->data);
-            threadQueueDemod->addTask(task, DemodulatorThreadQueue::DEMOD_PRIORITY_HIGHEST);
+            demodulatorTest->addTask(task, DemodulatorThreadQueue::DEMOD_PRIORITY_HIGHEST);
 
             spectrumCanvas->setData(new_uc_buffer);
             waterfallCanvas->setData(new_uc_buffer);

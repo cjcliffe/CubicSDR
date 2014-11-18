@@ -4,6 +4,11 @@
 #include "wx/defs.h"
 #include "wx/string.h"
 #include "wx/object.h"
+#include "CubicSDRDefs.h"
+
+enum DemodulatorType {
+    DEMOD_TYPE_NULL, DEMOD_TYPE_AM, DEMOD_TYPE_FM, DEMOD_TYPE_LSB, DEMOD_TYPE_USB, DEMOD_TYPE_WFM
+};
 
 class DemodulatorThreadIQData: public wxObject {
 public:
@@ -35,6 +40,25 @@ public:
     }
 
     ~DemodulatorThreadAudioData() {
+
+    }
+};
+
+class DemodulatorThreadParameters: public wxObject {
+public:
+    unsigned int inputRate;
+    unsigned int inputResampleRate; // set equal to disable second stage re-sampling?
+    unsigned int demodResampleRate;
+    unsigned int filterFrequency;
+    unsigned int audioSampleRate;
+    DemodulatorType demodType;
+
+    DemodulatorThreadParameters() :
+            inputRate(SRATE), inputResampleRate(200000), demodResampleRate(100000), audioSampleRate(48000), filterFrequency(32000), demodType(DEMOD_TYPE_WFM) {
+
+    }
+
+    ~DemodulatorThreadParameters() {
 
     }
 };

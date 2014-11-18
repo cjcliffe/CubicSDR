@@ -4,7 +4,7 @@
 #include "PrimaryGLContext.h"
 #include "SDRThread.h"
 #include "AudioThread.h"
-#include "DemodulatorThread.h"
+#include "DemodulatorMgr.h"
 
 #include "ScopeCanvas.h"
 #include "SpectrumCanvas.h"
@@ -35,11 +35,12 @@ private:
     SDRThreadQueue* threadQueueSDR;
     AudioThread *t_Audio;
     AudioThreadQueue* threadQueueAudio;
-    DemodulatorThread *t_Demod;
-    DemodulatorThreadQueue* threadQueueDemod;
+    DemodulatorMgr demodMgr;
 
     wxCriticalSection m_pThreadCS;
     unsigned int frequency;
+
+    DemodulatorInstance *demodulatorTest;
 
 // event table
 wxDECLARE_EVENT_TABLE();

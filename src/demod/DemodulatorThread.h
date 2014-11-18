@@ -16,7 +16,8 @@
 
 class DemodulatorThread: public wxThread {
 public:
-    DemodulatorThread(DemodulatorThreadQueue* pQueue, int id = 0);
+
+    DemodulatorThread(DemodulatorThreadQueue* pQueue, DemodulatorThreadParameters *params, int id = 0);
     ~DemodulatorThread();
 
 protected:
@@ -27,17 +28,15 @@ protected:
     firfilt_crcf fir_filter;
     firfilt_crcf fir_audio_filter;
 
-    unsigned int bandwidth;
     msresamp_crcf resampler;
     float resample_ratio;
 
-    unsigned int wbfm_frequency;
-    msresamp_crcf wbfm_resampler;
-    float wbfm_resample_ratio;
+    msresamp_crcf second_resampler;
+    float second_resampler_ratio;
 
-    unsigned int audio_frequency;
     msresamp_crcf audio_resampler;
     float audio_resample_ratio;
 
+    DemodulatorThreadParameters params;
     freqdem fdem;
 };
