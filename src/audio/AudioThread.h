@@ -20,15 +20,6 @@
 static int patestCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo* timeInfo,
         PaStreamCallbackFlags statusFlags, void *userData);
 
-// declare a new type of event, to be used by our AudioThread class:
-//wxDECLARE_EVENT(wxEVT_COMMAND_AudioThread_COMPLETED, wxThreadEvent);
-//wxDECLARE_EVENT(wxEVT_COMMAND_AudioThread_UPDATE, wxThreadEvent);
-//wxDECLARE_EVENT(wxEVT_COMMAND_AudioThread_INPUT, wxThreadEvent);
-
-enum {
-    EVENT_AUDIO_INPUT = wxID_HIGHEST + 3
-};
-
 class AudioThread: public wxThread {
 public:
     std::queue<std::vector<float> > audio_queue;

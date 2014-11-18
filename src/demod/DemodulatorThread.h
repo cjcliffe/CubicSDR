@@ -14,10 +14,6 @@
 #include "liquid/liquid.h"
 
 
-enum {
-    EVENT_DEMOD_INPUT = wxID_HIGHEST + 2
-};
-
 class DemodulatorThread: public wxThread {
 public:
     DemodulatorThread(DemodulatorThreadQueue* pQueue, int id = 0);
