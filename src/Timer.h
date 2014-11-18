@@ -2,10 +2,11 @@
 #ifndef TIMER_H
 #define TIMER_H
 
-#ifndef WIN32
+#ifdef WIN32
+#include <windows.h>
+#else
 #include <sys/time.h>
 #endif
-#include <windows.h>
 
 /// Timer Class, high resolution timer
 /**
