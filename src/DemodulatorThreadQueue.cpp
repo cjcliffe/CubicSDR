@@ -26,10 +26,11 @@ DemodulatorThreadTask DemodulatorThreadQueue::pop() {
     return element;
 }
 
-void DemodulatorThreadQueue::report(const DemodulatorThreadTask::DEMOD_THREAD_COMMAND& cmd, const wxString& sArg, int iArg) {
+void DemodulatorThreadQueue::sendAudioData(const DemodulatorThreadTask::DEMOD_THREAD_COMMAND& cmd, DemodulatorThreadAudioData *data) {
     wxCommandEvent evt(wxEVT_THREAD, cmd);
-    evt.SetString(sArg);
-    evt.SetInt(iArg);
+
+    evt.SetClientData(data);
+
     m_pParent->AddPendingEvent(evt);
 }
 

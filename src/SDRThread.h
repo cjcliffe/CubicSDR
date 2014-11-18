@@ -9,17 +9,7 @@
 
 #include "wx/thread.h"
 
-#include "IQBufferThread.h"
 #include "SDRThreadQueue.h"
-
-// declare a new type of event, to be used by our SDRThread class:
-//wxDECLARE_EVENT(wxEVT_COMMAND_SDRThread_COMPLETED, wxThreadEvent);
-//wxDECLARE_EVENT(wxEVT_COMMAND_SDRThread_UPDATE, wxThreadEvent);
-//wxDECLARE_EVENT(wxEVT_COMMAND_SDRThread_INPUT, wxThreadEvent);
-
-enum {
-    EVENT_SDR_INPUT = wxID_HIGHEST + 1
-};
 
 class SDRThread: public wxThread {
 public:

@@ -13,7 +13,7 @@ public:
     DemodulatorThreadQueue(wxEvtHandler* pParent);
 
     void addTask(const DemodulatorThreadTask& task, const DEMOD_PRIORITY& priority = DEMOD_PRIORITY_NORMAL);
-    void report(const DemodulatorThreadTask::DEMOD_THREAD_COMMAND& cmd, const wxString& sArg = wxEmptyString, int iArg = 0);
+    void sendAudioData(const DemodulatorThreadTask::DEMOD_THREAD_COMMAND& cmd, DemodulatorThreadAudioData *data);
 
     DemodulatorThreadTask pop();
     size_t stackSize();

@@ -85,7 +85,6 @@ endif (DEFINED WIN32)
 SET (cubicsdr_sources
     src/CubicSDR.cpp
 	src/SDRThread.cpp
-	src/IQBufferThread.cpp
 	src/PrimaryGLContext.cpp
 	src/AppFrame.cpp
 	src/SDRThreadQueue.cpp
@@ -109,7 +108,6 @@ SET (cubicsdr_sources
 SET (cubicsdr_headers
     src/CubicSDR.h
 	src/SDRThread.h
-	src/IQBufferThread.h
 	src/PrimaryGLContext.h
 	src/AppFrame.h
 	src/CubicSDRDefs.h

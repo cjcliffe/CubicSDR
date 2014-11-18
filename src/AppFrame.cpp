@@ -19,8 +19,6 @@
 wxBEGIN_EVENT_TABLE(AppFrame, wxFrame)
 //EVT_MENU(wxID_NEW, AppFrame::OnNewWindow)
 EVT_MENU(wxID_CLOSE, AppFrame::OnClose)
-EVT_THREAD(EVENT_DEMOD_INPUT, AppFrame::OnDemodInput)
-EVT_THREAD(EVENT_AUDIO_INPUT, AppFrame::OnAudioInput)
 EVT_COMMAND(wxID_ANY, wxEVT_THREAD, AppFrame::OnThread)
 EVT_IDLE(AppFrame::OnIdle)
 wxEND_EVENT_TABLE()
@@ -85,14 +83,6 @@ AppFrame::AppFrame() :
         t_Audio = NULL;
     }
 
-//    t_IQBuffer = new IQBufferThread(this);
-//    if (t_IQBuffer->Run() != wxTHREAD_NO_ERROR) {
-//        wxLogError
-//        ("Can't create the thread!");
-//        delete t_IQBuffer;
-//    t_IQBuffer = NULL;
-//    }
-
 //    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 //    wxLogStatus("Double-buffered display %s supported", wxGLCanvas::IsDisplaySupported(attribs) ? "is" : "not");
 //    ShowFullScreen(true);
@@ -110,19 +100,7 @@ AppFrame::~AppFrame() {
         }
     }
 
-//    {
-//        wxCriticalSectionLocker enter(m_pThreadCS);
-//        if (t_IQBuffer) {
-//            wxMessageOutputDebug().Printf("CubicSDR: deleting thread");
-//            if (t_IQBuffer->Delete() != wxTHREAD_NO_ERROR) {
-//                wxLogError
-//                ("Can't delete the thread!");
-//            }
-//        }
-//    }
-
 //    delete t_SDR;
-//    delete t_IQBuffer;
     delete threadQueueAudio;
     delete threadQueueDemod;
     delete threadQueueSDR;
@@ -138,80 +116,64 @@ void AppFrame::OnNewWindow(wxCommandEvent& WXUNUSED(event)) {
     new AppFrame();
 }
 
-
 void AppFrame::OnThread(wxCommandEvent& event) {
     SDRThreadIQData *iqData;
-    std::vector<signed char> *new_buffer;
+    DemodulatorThreadAudioData *demodAudioData;
+
+    std::vector<signed char> *new_uc_buffer;
+    std::vector<float> *new_float_buffer;
 
     switch (event.GetId()) {
 
     // SDR IQ -> Demodulator
     case SDRThreadTask::SDR_THREAD_DATA:
         iqData = (SDRThreadIQData *) event.GetClientData();
-        new_buffer = &(iqData->data);
-        if (new_buffer->size()) {
+        new_uc_buffer = &(iqData->data);
+        if (new_uc_buffer->size()) {
             DemodulatorThreadTask task = DemodulatorThreadTask(DemodulatorThreadTask::DEMOD_THREAD_DATA);
-            task.setData(*new_buffer);
-
+            task.data = new DemodulatorThreadIQData(iqData->bandwidth, iqData->frequency, iqData->data);
             threadQueueDemod->addTask(task, DemodulatorThreadQueue::DEMOD_PRIORITY_HIGHEST);
 
-            spectrumCanvas->setData(new_buffer);
-            waterfallCanvas->setData(new_buffer);
+            spectrumCanvas->setData(new_uc_buffer);
+            waterfallCanvas->setData(new_uc_buffer);
         } else {
             std::cout << "Incoming IQ data empty?" << std::endl;
         }
         delete iqData;
 
         break; // thread wants to exit: disable controls and destroy main window
+
+        // Demodulator -> Audio
+    case DemodulatorThreadTask::DEMOD_THREAD_AUDIO_DATA:
+        demodAudioData = (DemodulatorThreadAudioData *) event.GetClientData();
+        new_float_buffer = &(demodAudioData->data);
+        if (new_float_buffer->size()) {
+            AudioThreadTask task = AudioThreadTask(AudioThreadTask::AUDIO_THREAD_DATA);
+            task.data = new AudioThreadData(demodAudioData->frequency, demodAudioData->sampleRate, demodAudioData->data);
+            threadQueueAudio->addTask(task, AudioThreadQueue::AUDIO_PRIORITY_HIGHEST);
+
+            if (scopeCanvas->waveform_points.size() != new_float_buffer->size() * 2) {
+                scopeCanvas->waveform_points.resize(new_float_buffer->size() * 2);
+            }
+
+            for (int i = 0, iMax = new_float_buffer->size(); i < iMax; i++) {
+                scopeCanvas->waveform_points[i * 2 + 1] = (*new_float_buffer)[i] * 0.5f;
+                scopeCanvas->waveform_points[i * 2] = ((double) i / (double) iMax);
+            }
+
+        } else {
+            std::cout << "Incoming Demodulator data empty?" << std::endl;
+        }
+        delete demodAudioData;
+
+        break;
     default:
         event.Skip();
     }
 }
 
-
-
-
-// Demodulator -> Audio
-void AppFrame::OnDemodInput(wxThreadEvent& event) {
-    std::vector<float> *new_buffer = event.GetPayload<std::vector<float> *>();
-
-    if (new_buffer->size()) {
-        AudioThreadTask task = AudioThreadTask(AudioThreadTask::AUDIO_THREAD_DATA);
-        task.setData(*new_buffer);
-        threadQueueAudio->addTask(task, AudioThreadQueue::AUDIO_PRIORITY_HIGHEST);
-
-        if (scopeCanvas->waveform_points.size() != new_buffer->size() * 2) {
-            scopeCanvas->waveform_points.resize(new_buffer->size() * 2);
-        }
-
-        for (int i = 0, iMax = new_buffer->size(); i < iMax; i++) {
-            scopeCanvas->waveform_points[i * 2 + 1] = (*new_buffer)[i] * 0.5f;
-            scopeCanvas->waveform_points[i * 2] = ((double) i / (double) iMax);
-        }
-
-    } else {
-        std::cout << "Incoming Demod data empty?" << std::endl;
-    }
-    delete new_buffer;
-}
-
-// Audio -> Visual
-void AppFrame::OnAudioInput(wxThreadEvent& event) {
-//    std::vector<float> *new_buffer = event.GetPayload<std::vector<float> *>();
-//
-//    if (new_buffer->size()) {
-//        AudioThreadTask task = AudioThreadTask(AudioThreadTask::AUDIO_THREAD_DATA);
-//        task.setData(*new_buffer);
-//        threadQueueAudio->addTask(task, AudioThreadQueue::AUDIO_PRIORITY_HIGHEST);
-//    } else {
-//        std::cout << "Incoming Demod data empty?" << std::endl;
-//    }
-//    delete new_buffer;
-}
-
 void AppFrame::OnIdle(wxIdleEvent& event) {
 
-    wxGetApp().Yield();
     event.Skip();
 }
 
