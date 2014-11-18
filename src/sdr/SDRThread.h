@@ -10,6 +10,8 @@
 #include "wx/thread.h"
 
 #include "SDRThreadQueue.h"
+#include "DemodulatorThreadQueue.h"
+#include "DemodulatorMgr.h"
 
 class SDRThread: public wxThread {
 public:
@@ -20,9 +22,15 @@ public:
 
     int enumerate_rtl();
 
+    void bindDemodulator(DemodulatorInstance &demod) {
+        demodulators.push_back(demod.threadQueueDemod);
+    }
+
 protected:
     virtual ExitCode Entry();
     uint32_t sample_rate;
     SDRThreadQueue* m_pQueue;
     int m_ID;
+
+    std::vector<DemodulatorThreadQueue *> demodulators;
 };

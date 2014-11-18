@@ -12,7 +12,7 @@
 
 #include "DemodulatorThreadQueue.h"
 #include "liquid/liquid.h"
-
+#include "AudioThread.h"
 
 class DemodulatorThread: public wxThread {
 public:

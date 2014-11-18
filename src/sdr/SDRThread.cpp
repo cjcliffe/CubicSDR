@@ -160,6 +160,15 @@ wxThread::ExitCode SDRThread::Entry() {
             if (!TestDestroy()) {
                 SDRThreadIQData *iqData = new SDRThreadIQData(bandwidth,frequency,new_buffer);
                 m_pQueue->sendIQData(SDRThreadTask::SDR_THREAD_DATA, iqData);
+
+                if (demodulators.size()) {
+                    for (int i = 0, iMax = demodulators.size(); i<iMax; i++) {
+                        DemodulatorThreadQueue *demodQueue = demodulators[i];
+                        DemodulatorThreadTask demod_task = DemodulatorThreadTask(DemodulatorThreadTask::DEMOD_THREAD_DATA);
+                        demod_task.data = new DemodulatorThreadIQData(iqData->bandwidth, iqData->frequency, iqData->data);
+                        demodQueue->addTask(demod_task, DemodulatorThreadQueue::DEMOD_PRIORITY_HIGHEST);
+                    }
+                }
             }
         } else {
             this->Yield();

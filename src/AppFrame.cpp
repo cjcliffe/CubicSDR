@@ -65,9 +65,6 @@ AppFrame::AppFrame() :
         t_SDR = NULL;
     }
 
-    demodulatorTest = demodMgr.newThread(this);
-    demodulatorTest->run();
-
     threadQueueAudio = new AudioThreadQueue(this);
     t_Audio = new AudioThread(threadQueueAudio);
     if (t_Audio->Run() != wxTHREAD_NO_ERROR) {
@@ -77,6 +74,11 @@ AppFrame::AppFrame() :
         t_Audio = NULL;
     }
 
+    demodulatorTest = demodMgr.newThread(this);
+    demodulatorTest->params.audioQueue = threadQueueAudio;
+    demodulatorTest->run();
+
+    t_SDR->bindDemodulator(*demodulatorTest);
 //    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 //    wxLogStatus("Double-buffered display %s supported", wxGLCanvas::IsDisplaySupported(attribs) ? "is" : "not");
 //    ShowFullScreen(true);
@@ -123,10 +125,6 @@ void AppFrame::OnThread(wxCommandEvent& event) {
         iqData = (SDRThreadIQData *) event.GetClientData();
         new_uc_buffer = &(iqData->data);
         if (new_uc_buffer->size()) {
-            DemodulatorThreadTask task = DemodulatorThreadTask(DemodulatorThreadTask::DEMOD_THREAD_DATA);
-            task.data = new DemodulatorThreadIQData(iqData->bandwidth, iqData->frequency, iqData->data);
-            demodulatorTest->addTask(task, DemodulatorThreadQueue::DEMOD_PRIORITY_HIGHEST);
-
             spectrumCanvas->setData(new_uc_buffer);
             waterfallCanvas->setData(new_uc_buffer);
         } else {
@@ -140,10 +138,7 @@ void AppFrame::OnThread(wxCommandEvent& event) {
     case DemodulatorThreadTask::DEMOD_THREAD_AUDIO_DATA:
         demodAudioData = (DemodulatorThreadAudioData *) event.GetClientData();
         new_float_buffer = &(demodAudioData->data);
-        if (new_float_buffer->size()) {
-            AudioThreadTask task = AudioThreadTask(AudioThreadTask::AUDIO_THREAD_DATA);
-            task.data = new AudioThreadData(demodAudioData->frequency, demodAudioData->sampleRate, demodAudioData->data);
-            threadQueueAudio->addTask(task, AudioThreadQueue::AUDIO_PRIORITY_HIGHEST);
+        if (new_float_buffer != NULL && new_float_buffer->size()) {
 
             if (scopeCanvas->waveform_points.size() != new_float_buffer->size() * 2) {
                 scopeCanvas->waveform_points.resize(new_float_buffer->size() * 2);

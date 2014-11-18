@@ -139,6 +139,12 @@ wxThread::ExitCode DemodulatorThread::Entry() {
                             DemodulatorThreadAudioData *audioOut = new DemodulatorThreadAudioData(task.data->frequency,params.audioSampleRate,newBuffer);
 
                             m_pQueue->sendAudioData(DemodulatorThreadTask::DEMOD_THREAD_AUDIO_DATA,audioOut);
+
+                            if (params.audioQueue != NULL) {
+                                AudioThreadTask audio_task = AudioThreadTask(AudioThreadTask::AUDIO_THREAD_DATA);
+                                audio_task.data = new AudioThreadData(task.data->frequency, params.audioSampleRate, newBuffer);
+                                params.audioQueue->addTask(audio_task, AudioThreadQueue::AUDIO_PRIORITY_HIGHEST);
+                            }
                         }
 
                         delete task.data;
