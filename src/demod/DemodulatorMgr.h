@@ -29,7 +29,6 @@ public:
 
     bool run() {
         init();
-
         if (t_Demod->Run() != wxTHREAD_NO_ERROR) {
             wxLogError
             ("Can't create the Demodulator thread!");
@@ -39,6 +38,7 @@ public:
             threadQueueDemod = NULL;
             return false;
         }
+        t_Demod->SetPriority(80);
 
         return true;
     }

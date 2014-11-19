@@ -64,6 +64,7 @@ AppFrame::AppFrame() :
         delete t_SDR;
         t_SDR = NULL;
     }
+    t_SDR->SetPriority(80);
 
     threadQueueAudio = new AudioThreadQueue(this);
     t_Audio = new AudioThread(threadQueueAudio);
@@ -73,6 +74,7 @@ AppFrame::AppFrame() :
         delete t_Audio;
         t_Audio = NULL;
     }
+    t_Audio->SetPriority(80);
 
     demodulatorTest = demodMgr.newThread(this);
     demodulatorTest->params.audioQueue = threadQueueAudio;
@@ -161,6 +163,8 @@ void AppFrame::OnThread(wxCommandEvent& event) {
 }
 
 void AppFrame::OnIdle(wxIdleEvent& event) {
+
+    Sleep(10);
 
     event.Skip();
 }
