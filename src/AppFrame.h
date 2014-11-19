@@ -10,6 +10,7 @@
 #include "SpectrumCanvas.h"
 #include "WaterfallCanvas.h"
 
+
 // Define a new frame type
 class AppFrame: public wxFrame {
 public:

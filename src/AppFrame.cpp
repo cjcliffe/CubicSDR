@@ -164,8 +164,6 @@ void AppFrame::OnThread(wxCommandEvent& event) {
 
 void AppFrame::OnIdle(wxIdleEvent& event) {
 
-    Sleep(10);
-
     event.Skip();
 }
 

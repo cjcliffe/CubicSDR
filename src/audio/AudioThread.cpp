@@ -2,6 +2,31 @@
 #include "CubicSDRDefs.h"
 #include <vector>
 
+#ifdef WIN32
+    #include <algorithm>
+    #include <functional>
+    #include <cctype>
+    #include <locale>
+    #include <sstream>
+
+    // trim from start
+    static inline std::wstring &wltrim(std::wstring &s) {
+            s.erase(s.begin(), std::find_if(s.begin(), s.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
+            return s;
+    }
+
+    // trim from end
+    static inline std::wstring &wrtrim(std::wstring &s) {
+            s.erase(std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+            return s;
+    }
+
+    // trim from both ends
+    static inline std::wstring &wtrim(std::wstring &s) {
+            return wltrim(wrtrim(s));
+    }
+#endif
+
 //wxDEFINE_EVENT(wxEVT_COMMAND_AudioThread_INPUT, wxThreadEvent);
 
 AudioThread::AudioThread(AudioThreadQueue* pQueue, int id) :
@@ -74,16 +99,23 @@ wxThread::ExitCode AudioThread::Entry() {
     wchar_t dev_str[255];
     memset(dev_str, 0, sizeof(wchar_t) * 255);
     std::wstring env_name(L"PA_RECOMMENDED_OUTPUT_DEVICE");
-    GetEnvironmentVariable(env_name.c_str(), dev_str, 255);
-    std::wstring env_result(dev_str);
+    GetEnvironmentVariable(wtrim(env_name).c_str(), dev_str, 255);
+    std::wistringstream env_result(dev_str);
 
-    int env_dev = _wtoi(env_result.c_str());
+    if (!env_result.eof()) {
+        int env_dev = -1;
+        env_result >> env_dev;
 
-    if (env_dev || env_result.length()) {
-        std::cout << "Using preferred PortAudio device PA_RECOMMENDED_OUTPUT_DEVICE=" << env_result.c_str() << std::endl;
-        preferred_device = env_dev;
-    } else {
-        std::cout << "Environment variable PA_RECOMMENDED_OUTPUT_DEVICE not set, using PortAudio defaults." << std::endl;
+        if (env_result.eof()) { // read everything, was all a number
+            if (env_dev >= 0) {
+                std::cout << "Using preferred PortAudio device PA_RECOMMENDED_OUTPUT_DEVICE=" << env_dev << std::endl;
+                preferred_device = env_dev;
+            } else {
+                std::cout << "Environment variable PA_RECOMMENDED_OUTPUT_DEVICE not set, using PortAudio defaults." << std::endl;
+            }
+        } else {
+            std::cout << "Environment variable PA_RECOMMENDED_OUTPUT_DEVICE didn't evaluate to a number, using PortAudio defaults." << std::endl;
+        }
     }
 #endif
 
