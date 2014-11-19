@@ -138,6 +138,10 @@ include_directories ( ${PROJECT_SOURCE_DIR}/src/sdr
 					  ${PROJECT_SOURCE_DIR}/src/visual 
 					  ${PROJECT_SOURCE_DIR}/src )
 
+ADD_DEFINITIONS(
+  -std=c++11 # Or -std=c++0x
+)
+                      
 #configure_files(${PROJECT_SOURCE_DIR}/shaders ${PROJECT_BINARY_DIR}/shaders COPYONLY)
 #configure_files(${PROJECT_SOURCE_DIR}/png ${PROJECT_BINARY_DIR}/png COPYONLY)
 
