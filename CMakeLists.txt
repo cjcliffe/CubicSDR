@@ -62,10 +62,6 @@ if (DEFINED WIN32)
   include_directories ( ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll32  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
   link_directories (  ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll32  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/x32 )
   set(FFTW_LIB fftw3-3)
-  
-  include_directories ( ${PROJECT_SOURCE_DIR}/external/portaudio/include )
-  link_directories ( ${PROJECT_SOURCE_DIR}/external/portaudio/libs )
-  SET (PORTAUDIO_LIBRARY portaudio.dll winmm)
     
   link_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/lib )
   include_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/include )
@@ -77,7 +73,6 @@ else (DEFINED WIN32)
   
   set(FFTW_LIB fftw3)
 
-  SET (PORTAUDIO_LIBRARY portaudio)  
 endif (DEFINED WIN32)
 
 
@@ -147,7 +142,7 @@ ADD_DEFINITIONS(
 
 add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers})
 
-target_link_libraries(CubicSDR rtlsdr liquid ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${PORTAUDIO_LIBRARY})
+target_link_libraries(CubicSDR rtlsdr liquid ao ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES})
 # cubicvr2 glfw ${GLFW_LIBRARIES} 
 
 
