@@ -59,15 +59,15 @@ include(${wxWidgets_USE_FILE})
 
 
 if (DEFINED WIN32)
-  include_directories ( ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll32  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
-  link_directories (  ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll32  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/x32 )
+  include_directories ( ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll64  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
+  link_directories (  ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll64  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/x64 )
   set(FFTW_LIB fftw3-3)
   
   include_directories ( ${PROJECT_SOURCE_DIR}/external/portaudio/include )
   link_directories ( ${PROJECT_SOURCE_DIR}/external/portaudio/libs )
   SET (PORTAUDIO_LIBRARY portaudio.dll winmm)
     
-  link_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/lib )
+  link_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/lib/64 )
   include_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/include )
 else (DEFINED WIN32)
   set(RTLSDR_INCLUDE "/opt/local/include" CACHE FILEPATH "RTL-SDR Include Path")
@@ -122,6 +122,7 @@ SET (cubicsdr_headers
 	src/audio/AudioThreadTask.h
 	src/util/Gradient.h
 	src/util/Timer.h
+	src/util/ThreadQueue.h
 	src/visual/PrimaryGLContext.h
 	src/visual/ScopeCanvas.h
 	src/visual/ScopeContext.h
@@ -139,14 +140,14 @@ include_directories ( ${PROJECT_SOURCE_DIR}/src/sdr
 					  ${PROJECT_SOURCE_DIR}/src )
 
 ADD_DEFINITIONS(
-  -std=c++11 # Or -std=c++0x
+  -std=c++0x # or -std=c++11
 )
-                      
+                 
 #configure_files(${PROJECT_SOURCE_DIR}/shaders ${PROJECT_BINARY_DIR}/shaders COPYONLY)
 #configure_files(${PROJECT_SOURCE_DIR}/png ${PROJECT_BINARY_DIR}/png COPYONLY)
 
 add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers})
-
+     
 target_link_libraries(CubicSDR rtlsdr liquid ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${PORTAUDIO_LIBRARY})
 # cubicvr2 glfw ${GLFW_LIBRARIES} 
 
