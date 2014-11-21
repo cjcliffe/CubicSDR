@@ -1,5 +1,7 @@
 cmake_minimum_required (VERSION 2.8)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+
 macro(configure_files srcDir destDir)
     message(STATUS "Configuring directory ${destDir}")
     make_directory(${destDir})
@@ -50,8 +52,9 @@ SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_BINARY_DIR})
 
 find_package(OpenGL REQUIRED)
 
+
+find_package(wxWidgets REQUIRED gl core base)
 set(wxWidgets_CONFIGURATION mswu)
-find_package(wxWidgets COMPONENTS gl core base REQUIRED)
 include(${wxWidgets_USE_FILE})
  
 # include_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/include )
@@ -59,13 +62,14 @@ include(${wxWidgets_USE_FILE})
 
 
 if (DEFINED WIN32)
+  set(wxWidgets_USE_STATIC ON)
   include_directories ( ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll64  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
   link_directories (  ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll64  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/x64 )
   set(FFTW_LIB fftw3-3)
   
   include_directories ( ${PROJECT_SOURCE_DIR}/external/portaudio/include )
-  link_directories ( ${PROJECT_SOURCE_DIR}/external/portaudio/libs )
-  SET (PORTAUDIO_LIBRARY portaudio.dll winmm)
+  link_directories ( ${PROJECT_SOURCE_DIR}/external/portaudio/libs/64 )
+  SET (PORTAUDIO_LIBRARY libportaudio_x86.dll winmm)
     
   link_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/lib/64 )
   include_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/include )

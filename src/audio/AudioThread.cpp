@@ -94,7 +94,7 @@ wxThread::ExitCode AudioThread::Entry() {
     }
 
     int preferred_device = -1;
-
+/*
 #ifdef WIN32
     wchar_t dev_str[255];
     memset(dev_str, 0, sizeof(wchar_t) * 255);
@@ -118,7 +118,7 @@ wxThread::ExitCode AudioThread::Entry() {
         }
     }
 #endif
-
+*/
     outputParameters.device = (preferred_device != -1) ? preferred_device : Pa_GetDefaultOutputDevice();
     if (outputParameters.device == paNoDevice) {
         std::cout << "Error: No default output device.\n";

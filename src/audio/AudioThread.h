@@ -12,10 +12,7 @@
 
 #include "AudioThreadQueue.h"
 #include "portaudio.h"
-#ifdef WIN32
-#include "pa_stream.h"
-#include "pa_debugprint.h"
-#endif
+
 
 static int audioCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo* timeInfo,
         PaStreamCallbackFlags statusFlags, void *userData);
