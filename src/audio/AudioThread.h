@@ -2,6 +2,7 @@
 
 #include <queue>
 #include <vector>
+#include <string>
 #include "wx/wxprec.h"
 
 #ifndef WX_PRECOMP
@@ -11,8 +12,8 @@
 #include "wx/thread.h"
 
 #include "AudioThreadQueue.h"
+#include "ThreadQueue.h"
 #include "portaudio.h"
-
 
 static int audioCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo* timeInfo,
         PaStreamCallbackFlags statusFlags, void *userData);
@@ -32,4 +33,24 @@ protected:
 
     PaStreamParameters outputParameters;
     PaStream *stream;
+};
+
+class AudioThreadNew {
+private:
+    ThreadQueue<std::string> *threadQueue;
+public:
+    AudioThreadNew(ThreadQueue<std::string> *tq_in) {
+        threadQueue = tq_in;
+    }
+
+    void threadMain() {
+        while (1) {
+            while (!threadQueue->empty()) {
+                std::string str;
+                if (threadQueue->try_pop(str)) {
+                    std::cout << str << std::endl;
+                }
+            }
+        }
+    }
 };

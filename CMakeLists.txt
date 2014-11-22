@@ -145,6 +145,7 @@ include_directories ( ${PROJECT_SOURCE_DIR}/src/sdr
 
 ADD_DEFINITIONS(
   -std=c++0x # or -std=c++11
+  -pthread
 )
                  
 #configure_files(${PROJECT_SOURCE_DIR}/shaders ${PROJECT_BINARY_DIR}/shaders COPYONLY)

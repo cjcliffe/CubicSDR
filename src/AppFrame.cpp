@@ -16,6 +16,8 @@
 #include "AudioThread.h"
 #include "CubicSDR.h"
 
+#include <thread>
+
 wxBEGIN_EVENT_TABLE(AppFrame, wxFrame)
 //EVT_MENU(wxID_NEW, AppFrame::OnNewWindow)
 EVT_MENU(wxID_CLOSE, AppFrame::OnClose)
@@ -25,6 +27,11 @@ wxEND_EVENT_TABLE()
 
 AppFrame::AppFrame() :
         wxFrame(NULL, wxID_ANY, wxT("CubicSDR")), frequency(DEFAULT_FREQ) {
+
+    audioThreadQueue = new ThreadQueue<std::string>;
+    audioThread = new AudioThreadNew(audioThreadQueue);
+
+    t1 = new std::thread(&AudioThreadNew::threadMain, audioThread);
 
     wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
 
@@ -119,6 +126,7 @@ void AppFrame::OnThread(wxCommandEvent& event) {
 
     std::vector<signed char> *new_uc_buffer;
     std::vector<float> *new_float_buffer;
+    std::string asdf("beep");
 
     switch (event.GetId()) {
 
@@ -133,7 +141,7 @@ void AppFrame::OnThread(wxCommandEvent& event) {
             std::cout << "Incoming IQ data empty?" << std::endl;
         }
         delete iqData;
-
+    //    audioThreadQueue->push(asdf);
         break; // thread wants to exit: disable controls and destroy main window
 
         // Demodulator -> Audio

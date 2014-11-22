@@ -9,7 +9,7 @@
 #include "ScopeCanvas.h"
 #include "SpectrumCanvas.h"
 #include "WaterfallCanvas.h"
-
+#include "ThreadQueue.h"
 
 // Define a new frame type
 class AppFrame: public wxFrame {
@@ -43,6 +43,9 @@ private:
 
     DemodulatorInstance *demodulatorTest;
 
+    ThreadQueue<std::string> *audioThreadQueue;
+    AudioThreadNew *audioThread;
+    std::thread *t1;
 // event table
 wxDECLARE_EVENT_TABLE();
 };
