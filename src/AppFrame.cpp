@@ -103,14 +103,6 @@ void AppFrame::OnNewWindow(wxCommandEvent& WXUNUSED(event)) {
 }
 
 void AppFrame::OnThread(wxCommandEvent& event) {
-    SDRThreadIQData *iqData;
-
-    std::vector<signed char> *new_uc_buffer;
-    std::vector<float> *new_float_buffer;
-    std::string asdf("beep");
-
-    // SDR IQ -> Demodulator
-
     event.Skip();
 }
 

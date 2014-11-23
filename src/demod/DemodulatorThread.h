@@ -75,7 +75,7 @@ public:
     DemodulatorType demodType;
 
     DemodulatorThreadParameters() :
-            audioInputQueue(NULL), inputRate(SRATE), inputResampleRate(200000), demodResampleRate(100000), audioSampleRate(48000), filterFrequency(
+            audioInputQueue(NULL), inputRate(SRATE), inputResampleRate(200000), demodResampleRate(100000), audioSampleRate(AUDIO_FREQUENCY), filterFrequency(
                     32000), demodType(DEMOD_TYPE_WFM) {
 
     }
