@@ -3,15 +3,15 @@
 #include <vector>
 #include "CubicSDR.h"
 
-//wxDEFINE_EVENT(wxEVT_COMMAND_SDRThread_INPUT, wxThreadEvent);
-
-SDRThread::SDRThread(SDRThreadQueue* pQueue, int id) :
-        wxThread(wxTHREAD_DETACHED), m_pQueue(pQueue), m_ID(id) {
+SDRThread::SDRThread(SDRThreadCommandQueue* pQueue) :
+        m_pQueue(pQueue), iqDataOutQueue(NULL), iqVisualQueue(NULL) {
     dev = NULL;
     sample_rate = SRATE;
 }
-SDRThread::~SDRThread() {
 
+SDRThread::~SDRThread() {
+    std::cout << std::endl << "SDR Thread Done." << std::endl << std::endl;
+    rtlsdr_close(dev);
 }
 
 int SDRThread::enumerate_rtl() {
@@ -89,19 +89,19 @@ int SDRThread::enumerate_rtl() {
 
 }
 
-wxThread::ExitCode SDRThread::Entry() {
+void SDRThread::threadMain() {
 
     int dev_count = rtlsdr_get_device_count();
     int first_available = enumerate_rtl();
 
     if (first_available == -1) {
         std::cout << "No devices found.. SDR Thread exiting.." << std::endl;
-        return (wxThread::ExitCode) 0;
+        return;
     } else {
         std::cout << "Using first available RTL-SDR device #" << first_available << std::endl;
     }
 
-    signed char *buf = (signed char *) malloc(BUF_SIZE);
+    signed char buf[BUF_SIZE];
 
     unsigned int frequency = DEFAULT_FREQ;
     unsigned int bandwidth = SRATE;
@@ -121,19 +121,20 @@ wxThread::ExitCode SDRThread::Entry() {
     double seconds = 0.0;
 
     std::cout << "Sampling..";
-    while (!TestDestroy()) {
-
-        if (m_pQueue->stackSize()) {
+    while (1) {
+        if (!m_pQueue->empty()) {
             bool freq_changed = false;
             float new_freq;
 
-            while (m_pQueue->stackSize()) {
-                SDRThreadTask task = m_pQueue->pop(); // pop a task from the queue. this will block the worker thread if queue is empty
-                switch (task.m_cmd) {
-                case SDRThreadTask::SDR_THREAD_TUNING:
-                    std::cout << "Set frequency: " << task.getUInt() << std::endl;
+            while (!m_pQueue->empty()) {
+                SDRThreadCommand command;
+                m_pQueue->pop(command);
+
+                switch (command.cmd) {
+                case SDRThreadCommand::SDR_THREAD_CMD_TUNE:
+                    std::cout << "Set frequency: " << command.int_value << std::endl;
                     freq_changed = true;
-                    new_freq = task.getUInt();
+                    new_freq = command.int_value;
                     break;
                 }
             }
@@ -146,40 +147,38 @@ wxThread::ExitCode SDRThread::Entry() {
 
         rtlsdr_read_sync(dev, buf, BUF_SIZE, &n_read);
 
-        if (!TestDestroy()) {
-            std::vector<signed char> new_buffer;
+        std::vector<signed char> new_buffer;
 
-            for (int i = 0; i < n_read; i++) {
-                new_buffer.push_back(buf[i] - 127);
-            }
-
-            double time_slice = (double) n_read / (double) sample_rate;
-            seconds += time_slice;
-
-            // std::cout << "Time Slice: " << time_slice << std::endl;
-            if (!TestDestroy()) {
-                SDRThreadIQData *iqData = new SDRThreadIQData(bandwidth,frequency,new_buffer);
-                m_pQueue->sendIQData(SDRThreadTask::SDR_THREAD_DATA, iqData);
-
-                if (demodulators.size()) {
-                    for (int i = 0, iMax = demodulators.size(); i<iMax; i++) {
-                        DemodulatorThreadQueue *demodQueue = demodulators[i];
-                        DemodulatorThreadTask demod_task = DemodulatorThreadTask(DemodulatorThreadTask::DEMOD_THREAD_DATA);
-                        demod_task.data = new DemodulatorThreadIQData(iqData->bandwidth, iqData->frequency, iqData->data);
-                        demodQueue->addTask(demod_task, DemodulatorThreadQueue::DEMOD_PRIORITY_HIGHEST);
-                    }
-                }
-            }
-        } else {
-            this->Yield();
-            this->Sleep(1);
+        for (int i = 0; i < n_read; i++) {
+            new_buffer.push_back(buf[i] - 127);
         }
+
+        double time_slice = (double) n_read / (double) sample_rate;
+        seconds += time_slice;
+
+        SDRThreadIQData dataOut;
+        dataOut.frequency = frequency;
+        dataOut.bandwidth = bandwidth;
+        dataOut.data = new_buffer;
+
+        if (iqDataOutQueue != NULL) {
+            iqDataOutQueue->push(dataOut);
+        }
+
+        if (iqVisualQueue != NULL) {
+            iqVisualQueue->push(dataOut);
+        }
+
+        if (demodulators.size()) {
+            for (int i = 0, iMax = demodulators.size(); i < iMax; i++) {
+                DemodulatorThreadQueue *demodQueue = demodulators[i];
+                DemodulatorThreadTask demod_task = DemodulatorThreadTask(DemodulatorThreadTask::DEMOD_THREAD_DATA);
+                demod_task.data = new DemodulatorThreadIQData(bandwidth, frequency, new_buffer);
+                demodQueue->addTask(demod_task, DemodulatorThreadQueue::DEMOD_PRIORITY_HIGHEST);
+            }
+        }
+
     }
-    std::cout << std::endl << "Done." << std::endl << std::endl;
 
-    rtlsdr_close(dev);
-    free(buf);
-
-    return (wxThread::ExitCode) 0;
 }
 

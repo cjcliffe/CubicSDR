@@ -28,11 +28,6 @@ wxEND_EVENT_TABLE()
 AppFrame::AppFrame() :
         wxFrame(NULL, wxID_ANY, wxT("CubicSDR")), frequency(DEFAULT_FREQ) {
 
-    audioThreadQueue = new ThreadQueue<std::string>;
-    audioThread = new AudioThreadNew(audioThreadQueue);
-
-    t1 = new std::thread(&AudioThreadNew::threadMain, audioThread);
-
     wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
 
     scopeCanvas = new ScopeCanvas(this, NULL);
@@ -63,51 +58,35 @@ AppFrame::AppFrame() :
     Centre();
     Show();
 
-    threadQueueSDR = new SDRThreadQueue(this);
-    t_SDR = new SDRThread(threadQueueSDR);
-    if (t_SDR->Run() != wxTHREAD_NO_ERROR) {
-        wxLogError
-        ("Can't create the SDR thread!");
-        delete t_SDR;
-        t_SDR = NULL;
-    }
-    t_SDR->SetPriority(80);
+    audioInputQueue = new AudioThreadInputQueue;
+    audioThread = new AudioThread(audioInputQueue);
 
-    threadQueueAudio = new AudioThreadQueue(this);
-    t_Audio = new AudioThread(threadQueueAudio);
-    if (t_Audio->Run() != wxTHREAD_NO_ERROR) {
-        wxLogError
-        ("Can't create the Audio thread!");
-        delete t_Audio;
-        t_Audio = NULL;
-    }
-    t_Audio->SetPriority(80);
+    t1 = new std::thread(&AudioThread::threadMain, audioThread);
 
     demodulatorTest = demodMgr.newThread(this);
-    demodulatorTest->params.audioQueue = threadQueueAudio;
+    demodulatorTest->params.audioInputQueue = audioInputQueue;
     demodulatorTest->run();
 
-    t_SDR->bindDemodulator(*demodulatorTest);
+    threadCmdQueueSDR = new SDRThreadCommandQueue;
+    sdrThread = new SDRThread(threadCmdQueueSDR);
+    sdrThread->bindDemodulator(*demodulatorTest);
+
+    iqVisualQueue = new SDRThreadIQDataQueue;
+    sdrThread->setIQVisualQueue(iqVisualQueue);
+
+    t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
+
 //    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 //    wxLogStatus("Double-buffered display %s supported", wxGLCanvas::IsDisplaySupported(attribs) ? "is" : "not");
 //    ShowFullScreen(true);
 }
 
 AppFrame::~AppFrame() {
-    {
-        wxCriticalSectionLocker enter(m_pThreadCS);
-        if (t_SDR) {
-            wxMessageOutputDebug().Printf("CubicSDR: deleting thread");
-            if (t_SDR->Delete() != wxTHREAD_NO_ERROR) {
-                wxLogError
-                ("Can't delete the thread!");
-            }
-        }
-    }
 
 //    delete t_SDR;
-    delete threadQueueAudio;
-    delete threadQueueSDR;
+    delete audioInputQueue;
+    delete audioThread;
+    delete threadCmdQueueSDR;
 }
 
 void AppFrame::OnClose(wxCommandEvent& WXUNUSED(event)) {
@@ -131,20 +110,7 @@ void AppFrame::OnThread(wxCommandEvent& event) {
     switch (event.GetId()) {
 
     // SDR IQ -> Demodulator
-    case SDRThreadTask::SDR_THREAD_DATA:
-        iqData = (SDRThreadIQData *) event.GetClientData();
-        new_uc_buffer = &(iqData->data);
-        if (new_uc_buffer->size()) {
-            spectrumCanvas->setData(new_uc_buffer);
-            waterfallCanvas->setData(new_uc_buffer);
-        } else {
-            std::cout << "Incoming IQ data empty?" << std::endl;
-        }
-        delete iqData;
-    //    audioThreadQueue->push(asdf);
-        break; // thread wants to exit: disable controls and destroy main window
 
-        // Demodulator -> Audio
     case DemodulatorThreadTask::DEMOD_THREAD_AUDIO_DATA:
         demodAudioData = (DemodulatorThreadAudioData *) event.GetClientData();
         new_float_buffer = &(demodAudioData->data);
@@ -171,15 +137,31 @@ void AppFrame::OnThread(wxCommandEvent& event) {
 }
 
 void AppFrame::OnIdle(wxIdleEvent& event) {
+    bool work_done = false;
 
-    event.Skip();
+    if (!iqVisualQueue->empty()) {
+        SDRThreadIQData iqData;
+        iqVisualQueue->pop(iqData);
+
+        if (iqData.data.size()) {
+            spectrumCanvas->setData(&iqData.data);
+            waterfallCanvas->setData(&iqData.data);
+        } else {
+            std::cout << "Incoming IQ data empty?" << std::endl;
+        }
+        work_done = true;
+    }
+
+    if (!work_done) {
+        event.Skip();
+    }
 }
 
 void AppFrame::setFrequency(unsigned int freq) {
     frequency = freq;
-    SDRThreadTask task = SDRThreadTask(SDRThreadTask::SDR_THREAD_TUNING);
-    task.setUInt(freq);
-    threadQueueSDR->addTask(task, SDRThreadQueue::SDR_PRIORITY_HIGHEST);
+    SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_TUNE);
+    command.int_value = freq;
+    threadCmdQueueSDR->push(command);
 }
 
 int AppFrame::getFrequency() {

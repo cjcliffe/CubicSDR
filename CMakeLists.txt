@@ -90,15 +90,11 @@ SET (cubicsdr_sources
     src/CubicSDR.cpp
 	src/AppFrame.cpp
 	src/sdr/SDRThread.cpp
-	src/sdr/SDRThreadQueue.cpp
-	src/sdr/SDRThreadTask.cpp
 	src/demod/DemodulatorThread.cpp
 	src/demod/DemodulatorThreadQueue.cpp
 	src/demod/DemodulatorThreadTask.cpp
 	src/demod/DemodulatorMgr.cpp
 	src/audio/AudioThread.cpp
-	src/audio/AudioThreadQueue.cpp
-	src/audio/AudioThreadTask.cpp
 	src/util/Gradient.cpp
 	src/util/Timer.cpp
 	src/visual/PrimaryGLContext.cpp
@@ -115,15 +111,11 @@ SET (cubicsdr_headers
     src/CubicSDR.h
 	src/AppFrame.h
 	src/sdr/SDRThread.h
-	src/sdr/SDRThreadQueue.h
-	src/sdr/SDRThreadTask.h
 	src/demod/DemodulatorThread.h
 	src/demod/DemodulatorThreadQueue.h
 	src/demod/DemodulatorThreadTask.h
 	src/demod/DemodulatorMgr.h
 	src/audio/AudioThread.h
-	src/audio/AudioThreadQueue.h
-	src/audio/AudioThreadTask.h
 	src/util/Gradient.h
 	src/util/Timer.h
 	src/util/ThreadQueue.h

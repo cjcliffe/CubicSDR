@@ -32,10 +32,6 @@ private:
     SpectrumCanvas *spectrumCanvas;
     WaterfallCanvas *waterfallCanvas;
 
-    SDRThread *t_SDR;
-    SDRThreadQueue* threadQueueSDR;
-    AudioThread *t_Audio;
-    AudioThreadQueue* threadQueueAudio;
     DemodulatorMgr demodMgr;
 
     wxCriticalSection m_pThreadCS;
@@ -43,9 +39,16 @@ private:
 
     DemodulatorInstance *demodulatorTest;
 
-    ThreadQueue<std::string> *audioThreadQueue;
-    AudioThreadNew *audioThread;
+    AudioThreadInputQueue *audioInputQueue;
+    AudioThread *audioThread;
+
+    SDRThread *sdrThread;
+    SDRThreadCommandQueue* threadCmdQueueSDR;
+    SDRThreadIQDataQueue* iqVisualQueue;
+
     std::thread *t1;
+    std::thread *t_SDR;
+
 // event table
 wxDECLARE_EVENT_TABLE();
 };

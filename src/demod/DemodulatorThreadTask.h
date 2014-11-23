@@ -5,7 +5,7 @@
 #include "wx/string.h"
 #include "wx/object.h"
 #include "CubicSDRDefs.h"
-#include "AudioThreadQueue.h"
+#include "AudioThread.h"
 
 enum DemodulatorType {
     DEMOD_TYPE_NULL, DEMOD_TYPE_AM, DEMOD_TYPE_FM, DEMOD_TYPE_LSB, DEMOD_TYPE_USB, DEMOD_TYPE_WFM
@@ -52,12 +52,12 @@ public:
     unsigned int demodResampleRate;
     unsigned int filterFrequency;
     unsigned int audioSampleRate;
-    AudioThreadQueue *audioQueue;
+    AudioThreadInputQueue *audioInputQueue;
 
     DemodulatorType demodType;
 
     DemodulatorThreadParameters() :
-        audioQueue(NULL), inputRate(SRATE), inputResampleRate(200000), demodResampleRate(100000), audioSampleRate(48000), filterFrequency(32000), demodType(DEMOD_TYPE_WFM) {
+        audioInputQueue(NULL), inputRate(SRATE), inputResampleRate(200000), demodResampleRate(100000), audioSampleRate(48000), filterFrequency(32000), demodType(DEMOD_TYPE_WFM) {
 
     }
 
