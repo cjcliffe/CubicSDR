@@ -91,8 +91,6 @@ SET (cubicsdr_sources
 	src/AppFrame.cpp
 	src/sdr/SDRThread.cpp
 	src/demod/DemodulatorThread.cpp
-	src/demod/DemodulatorThreadQueue.cpp
-	src/demod/DemodulatorThreadTask.cpp
 	src/demod/DemodulatorMgr.cpp
 	src/audio/AudioThread.cpp
 	src/util/Gradient.cpp
@@ -112,8 +110,6 @@ SET (cubicsdr_headers
 	src/AppFrame.h
 	src/sdr/SDRThread.h
 	src/demod/DemodulatorThread.h
-	src/demod/DemodulatorThreadQueue.h
-	src/demod/DemodulatorThreadTask.h
 	src/demod/DemodulatorMgr.h
 	src/audio/AudioThread.h
 	src/util/Gradient.h

@@ -65,11 +65,14 @@ AppFrame::AppFrame() :
 
     demodulatorTest = demodMgr.newThread(this);
     demodulatorTest->params.audioInputQueue = audioInputQueue;
-    demodulatorTest->run();
+    demodulatorTest->init();
+
+    audioVisualQueue = new DemodulatorThreadOutputQueue();
+    demodulatorTest->setVisualOutputQueue(audioVisualQueue);
 
     threadCmdQueueSDR = new SDRThreadCommandQueue;
     sdrThread = new SDRThread(threadCmdQueueSDR);
-    sdrThread->bindDemodulator(*demodulatorTest);
+    sdrThread->bindDemodulator(demodulatorTest);
 
     iqVisualQueue = new SDRThreadIQDataQueue;
     sdrThread->setIQVisualQueue(iqVisualQueue);
@@ -101,39 +104,14 @@ void AppFrame::OnNewWindow(wxCommandEvent& WXUNUSED(event)) {
 
 void AppFrame::OnThread(wxCommandEvent& event) {
     SDRThreadIQData *iqData;
-    DemodulatorThreadAudioData *demodAudioData;
 
     std::vector<signed char> *new_uc_buffer;
     std::vector<float> *new_float_buffer;
     std::string asdf("beep");
 
-    switch (event.GetId()) {
-
     // SDR IQ -> Demodulator
 
-    case DemodulatorThreadTask::DEMOD_THREAD_AUDIO_DATA:
-        demodAudioData = (DemodulatorThreadAudioData *) event.GetClientData();
-        new_float_buffer = &(demodAudioData->data);
-        if (new_float_buffer != NULL && new_float_buffer->size()) {
-
-            if (scopeCanvas->waveform_points.size() != new_float_buffer->size() * 2) {
-                scopeCanvas->waveform_points.resize(new_float_buffer->size() * 2);
-            }
-
-            for (int i = 0, iMax = new_float_buffer->size(); i < iMax; i++) {
-                scopeCanvas->waveform_points[i * 2 + 1] = (*new_float_buffer)[i] * 0.5f;
-                scopeCanvas->waveform_points[i * 2] = ((double) i / (double) iMax);
-            }
-
-        } else {
-            std::cout << "Incoming Demodulator data empty?" << std::endl;
-        }
-        delete demodAudioData;
-
-        break;
-    default:
-        event.Skip();
-    }
+    event.Skip();
 }
 
 void AppFrame::OnIdle(wxIdleEvent& event) {
@@ -148,6 +126,26 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             waterfallCanvas->setData(&iqData.data);
         } else {
             std::cout << "Incoming IQ data empty?" << std::endl;
+        }
+        work_done = true;
+    }
+
+    if (!audioVisualQueue->empty()) {
+        AudioThreadInput demodAudioData;
+        audioVisualQueue->pop(demodAudioData);
+        if (demodAudioData.data.size()) {
+
+            if (scopeCanvas->waveform_points.size() != demodAudioData.data.size() * 2) {
+                scopeCanvas->waveform_points.resize(demodAudioData.data.size() * 2);
+            }
+
+            for (int i = 0, iMax = demodAudioData.data.size(); i < iMax; i++) {
+                scopeCanvas->waveform_points[i * 2 + 1] = demodAudioData.data[i] * 0.5f;
+                scopeCanvas->waveform_points[i * 2] = ((double) i / (double) iMax);
+            }
+
+        } else {
+            std::cout << "Incoming Demodulator data empty?" << std::endl;
         }
         work_done = true;
     }

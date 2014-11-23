@@ -9,9 +9,8 @@
 
 #include "wx/thread.h"
 
-#include "DemodulatorThreadQueue.h"
-#include "DemodulatorMgr.h"
 #include "ThreadQueue.h"
+#include "DemodulatorMgr.h"
 
 class SDRThreadCommand {
 public:
@@ -65,8 +64,8 @@ public:
 
     int enumerate_rtl();
 
-    void bindDemodulator(DemodulatorInstance &demod) {
-        demodulators.push_back(demod.threadQueueDemod);
+    void bindDemodulator(DemodulatorInstance *demod) {
+        demodulators.push_back(demod);
     }
 
     void threadMain();
@@ -85,5 +84,5 @@ protected:
     SDRThreadIQDataQueue* iqDataOutQueue;
     SDRThreadIQDataQueue* iqVisualQueue;
 
-    std::vector<DemodulatorThreadQueue *> demodulators;
+    std::vector<DemodulatorInstance *> demodulators;
 };

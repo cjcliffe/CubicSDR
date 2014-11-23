@@ -170,11 +170,15 @@ void SDRThread::threadMain() {
         }
 
         if (demodulators.size()) {
+            DemodulatorThreadIQData demodDataOut;
+            demodDataOut.frequency = frequency;
+            demodDataOut.bandwidth = bandwidth;
+            demodDataOut.data = new_buffer;
+
             for (int i = 0, iMax = demodulators.size(); i < iMax; i++) {
-                DemodulatorThreadQueue *demodQueue = demodulators[i];
-                DemodulatorThreadTask demod_task = DemodulatorThreadTask(DemodulatorThreadTask::DEMOD_THREAD_DATA);
-                demod_task.data = new DemodulatorThreadIQData(bandwidth, frequency, new_buffer);
-                demodQueue->addTask(demod_task, DemodulatorThreadQueue::DEMOD_PRIORITY_HIGHEST);
+                DemodulatorInstance *demod = demodulators[i];
+                DemodulatorThreadInputQueue *demodQueue = demod->threadQueueDemod;
+                demodQueue->push(demodDataOut);
             }
         }
 

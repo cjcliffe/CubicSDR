@@ -45,6 +45,7 @@ private:
     SDRThread *sdrThread;
     SDRThreadCommandQueue* threadCmdQueueSDR;
     SDRThreadIQDataQueue* iqVisualQueue;
+    DemodulatorThreadOutputQueue* audioVisualQueue;
 
     std::thread *t1;
     std::thread *t_SDR;

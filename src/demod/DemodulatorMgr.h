@@ -4,44 +4,36 @@
 #include <map>
 
 #include "DemodulatorThread.h"
-#include "DemodulatorThreadQueue.h"
-#include "DemodulatorThreadTask.h"
 
 class DemodulatorInstance {
 public:
-    DemodulatorThread *t_Demod;
-    DemodulatorThreadQueue* threadQueueDemod;
-    DemodulatorThreadParameters params;
-    wxEvtHandler* parent;
+    DemodulatorThread *demodulatorThread;
+    std::thread *t_Demod;
 
-    DemodulatorInstance(wxEvtHandler* pParent) :
-            t_Demod(NULL), threadQueueDemod(NULL), parent(pParent) {
+    DemodulatorThreadInputQueue* threadQueueDemod;
+    DemodulatorThreadParameters params;
+
+    DemodulatorInstance() :
+            t_Demod(NULL), threadQueueDemod(NULL), demodulatorThread(NULL) {
+    }
+    void setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {
+        demodulatorThread->setVisualOutputQueue(tQueue);
     }
 
     void init() {
-        threadQueueDemod = new DemodulatorThreadQueue(parent);
-        t_Demod = new DemodulatorThread(threadQueueDemod, &params);
-    }
-
-    void addTask(const DemodulatorThreadTask& task, const DemodulatorThreadQueue::DEMOD_PRIORITY& priority) {
-        threadQueueDemod->addTask(task, priority);
-    }
-
-    bool run() {
-        init();
-        if (t_Demod->Run() != wxTHREAD_NO_ERROR) {
-            wxLogError
-            ("Can't create the Demodulator thread!");
-            delete t_Demod;
+        if (threadQueueDemod) {
             delete threadQueueDemod;
-            t_Demod = NULL;
-            threadQueueDemod = NULL;
-            return false;
         }
-        t_Demod->SetPriority(80);
+        if (demodulatorThread) {
+            delete demodulatorThread;
+        }
 
-        return true;
+        threadQueueDemod = new DemodulatorThreadInputQueue;
+        demodulatorThread = new DemodulatorThread(threadQueueDemod, &params);
+
+        t_Demod = new std::thread(&DemodulatorThread::threadMain, demodulatorThread);
     }
+
 };
 
 class DemodulatorMgr {
@@ -59,7 +51,7 @@ public:
     }
 
     DemodulatorInstance *newThread(wxEvtHandler* pParent) {
-        DemodulatorInstance *newDemod = new DemodulatorInstance(pParent);
+        DemodulatorInstance *newDemod = new DemodulatorInstance;
         demods.push_back(newDemod);
         return newDemod;
     }
