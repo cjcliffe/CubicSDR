@@ -351,9 +351,10 @@ RTLSDR_API int rtlsdr_wait_async(rtlsdr_dev_t *dev, rtlsdr_read_async_cb_t cb, v
  * \param cb callback function to return received samples
  * \param ctx user specific context to pass via the callback function
  * \param buf_num optional buffer count, buf_num * buf_len = overall buffer size
- *		  set to 0 for default buffer count (32)
+ *		  set to 0 for default buffer count (15)
  * \param buf_len optional buffer length, must be multiple of 512,
- *		  set to 0 for default buffer length (16 * 32 * 512)
+ *		  should be a multiple of 16384 (URB size), set to 0
+ *		  for default buffer length (16 * 32 * 512)
  * \return 0 on success
  */
 RTLSDR_API int rtlsdr_read_async(rtlsdr_dev_t *dev,

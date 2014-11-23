@@ -1,5 +1,7 @@
 cmake_minimum_required (VERSION 2.8)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+
 macro(configure_files srcDir destDir)
     message(STATUS "Configuring directory ${destDir}")
     make_directory(${destDir})
@@ -50,8 +52,9 @@ SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_BINARY_DIR})
 
 find_package(OpenGL REQUIRED)
 
+
+find_package(wxWidgets REQUIRED gl core base)
 set(wxWidgets_CONFIGURATION mswu)
-find_package(wxWidgets COMPONENTS gl core base REQUIRED)
 include(${wxWidgets_USE_FILE})
  
 # include_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/include )
@@ -59,15 +62,16 @@ include(${wxWidgets_USE_FILE})
 
 
 if (DEFINED WIN32)
-  include_directories ( ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll32  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
-  link_directories (  ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll32  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/x32 )
+  set(wxWidgets_USE_STATIC ON)
+  include_directories ( ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll64  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
+  link_directories (  ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll64  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/x64 )
   set(FFTW_LIB fftw3-3)
   
   include_directories ( ${PROJECT_SOURCE_DIR}/external/portaudio/include )
-  link_directories ( ${PROJECT_SOURCE_DIR}/external/portaudio/libs )
-  SET (PORTAUDIO_LIBRARY portaudio.dll winmm)
+  link_directories ( ${PROJECT_SOURCE_DIR}/external/portaudio/libs/64 )
+  SET (PORTAUDIO_LIBRARY libportaudio_x86.dll winmm)
     
-  link_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/lib )
+  link_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/lib/64 )
   include_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/include )
 else (DEFINED WIN32)
   set(RTLSDR_INCLUDE "/opt/local/include" CACHE FILEPATH "RTL-SDR Include Path")
@@ -84,19 +88,14 @@ endif (DEFINED WIN32)
 
 SET (cubicsdr_sources
     src/CubicSDR.cpp
-	src/SDRThread.cpp
-	src/PrimaryGLContext.cpp
 	src/AppFrame.cpp
-	src/SDRThreadQueue.cpp
-	src/SDRThreadTask.cpp
-	src/DemodulatorThread.cpp
-	src/DemodulatorThreadQueue.cpp
-	src/DemodulatorThreadTask.cpp
-	src/AudioThread.cpp
-	src/AudioThreadQueue.cpp
-	src/AudioThreadTask.cpp
-	src/Gradient.cpp
-	src/Timer.cpp
+	src/sdr/SDRThread.cpp
+	src/demod/DemodulatorThread.cpp
+	src/demod/DemodulatorMgr.cpp
+	src/audio/AudioThread.cpp
+	src/util/Gradient.cpp
+	src/util/Timer.cpp
+	src/visual/PrimaryGLContext.cpp
 	src/visual/ScopeCanvas.cpp
 	src/visual/ScopeContext.cpp
 	src/visual/SpectrumCanvas.cpp
@@ -106,21 +105,17 @@ SET (cubicsdr_sources
 )
 
 SET (cubicsdr_headers
-    src/CubicSDR.h
-	src/SDRThread.h
-	src/PrimaryGLContext.h
-	src/AppFrame.h
 	src/CubicSDRDefs.h
-	src/SDRThreadQueue.h
-	src/SDRThreadTask.h
-	src/DemodulatorThread.h
-	src/DemodulatorThreadQueue.h
-	src/DemodulatorThreadTask.h
-	src/AudioThread.h
-	src/AudioThreadQueue.h
-	src/AudioThreadTask.h
-	src/Gradient.h
-	src/Timer.h
+    src/CubicSDR.h
+	src/AppFrame.h
+	src/sdr/SDRThread.h
+	src/demod/DemodulatorThread.h
+	src/demod/DemodulatorMgr.h
+	src/audio/AudioThread.h
+	src/util/Gradient.h
+	src/util/Timer.h
+	src/util/ThreadQueue.h
+	src/visual/PrimaryGLContext.h
 	src/visual/ScopeCanvas.h
 	src/visual/ScopeContext.h
 	src/visual/SpectrumCanvas.h
@@ -129,9 +124,18 @@ SET (cubicsdr_headers
 	src/visual/WaterfallContext.h
 )
 
-include_directories ( ${PROJECT_SOURCE_DIR}/src/visual 
+include_directories ( ${PROJECT_SOURCE_DIR}/src/sdr 
+					  ${PROJECT_SOURCE_DIR}/src/demod
+					  ${PROJECT_SOURCE_DIR}/src/audio
+					  ${PROJECT_SOURCE_DIR}/src/util
+					  ${PROJECT_SOURCE_DIR}/src/visual 
 					  ${PROJECT_SOURCE_DIR}/src )
 
+ADD_DEFINITIONS(
+  -std=c++0x # or -std=c++11
+  -pthread
+)
+                 
 #configure_files(${PROJECT_SOURCE_DIR}/shaders ${PROJECT_BINARY_DIR}/shaders COPYONLY)
 #configure_files(${PROJECT_SOURCE_DIR}/png ${PROJECT_BINARY_DIR}/png COPYONLY)
 

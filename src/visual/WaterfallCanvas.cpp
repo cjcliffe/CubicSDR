@@ -151,10 +151,10 @@ void WaterfallCanvas::setData(std::vector<signed char> *data) {
 }
 
 void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
-    timer.update();
-    frameTimer += timer.lastUpdateSeconds();
-    if (frameTimer > 1.0/30.0) {
+//    timer.update();
+//    frameTimer += timer.lastUpdateSeconds();
+//    if (frameTimer > 1.0/30.0) {
         Refresh(false);
-        frameTimer = 0;
-    }
+//        frameTimer = 0;
+//    }
 }

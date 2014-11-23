@@ -4,20 +4,20 @@
 #include "PrimaryGLContext.h"
 #include "SDRThread.h"
 #include "AudioThread.h"
-#include "DemodulatorThread.h"
+#include "DemodulatorMgr.h"
 
 #include "ScopeCanvas.h"
 #include "SpectrumCanvas.h"
 #include "WaterfallCanvas.h"
+#include "ThreadQueue.h"
 
 // Define a new frame type
 class AppFrame: public wxFrame {
 public:
     AppFrame();
     ~AppFrame();
-    void OnThread (wxCommandEvent& event);
+    void OnThread(wxCommandEvent& event);
     void OnEventInput(wxThreadEvent& event);
-
 
     void setFrequency(unsigned int freq);
     int getFrequency();
@@ -31,15 +31,23 @@ private:
     SpectrumCanvas *spectrumCanvas;
     WaterfallCanvas *waterfallCanvas;
 
-    SDRThread *t_SDR;
-    SDRThreadQueue* threadQueueSDR;
-    AudioThread *t_Audio;
-    AudioThreadQueue* threadQueueAudio;
-    DemodulatorThread *t_Demod;
-    DemodulatorThreadQueue* threadQueueDemod;
+    DemodulatorMgr demodMgr;
 
     wxCriticalSection m_pThreadCS;
     unsigned int frequency;
+
+    DemodulatorInstance *demodulatorTest;
+
+    AudioThreadInputQueue *audioInputQueue;
+    AudioThread *audioThread;
+
+    SDRThread *sdrThread;
+    SDRThreadCommandQueue* threadCmdQueueSDR;
+    SDRThreadIQDataQueue* iqVisualQueue;
+    DemodulatorThreadOutputQueue* audioVisualQueue;
+
+    std::thread *threadAudio;
+    std::thread *threadSDR;
 
 // event table
 wxDECLARE_EVENT_TABLE();
