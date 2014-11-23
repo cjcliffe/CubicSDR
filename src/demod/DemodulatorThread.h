@@ -102,7 +102,7 @@ public:
     }
 
 protected:
-    DemodulatorThreadInputQueue* m_pQueue;
+    DemodulatorThreadInputQueue* inputQueue;
     DemodulatorThreadOutputQueue* visOutQueue;
 
     firfilt_crcf fir_filter;

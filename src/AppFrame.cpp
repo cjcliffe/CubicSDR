@@ -61,9 +61,9 @@ AppFrame::AppFrame() :
     audioInputQueue = new AudioThreadInputQueue;
     audioThread = new AudioThread(audioInputQueue);
 
-    t1 = new std::thread(&AudioThread::threadMain, audioThread);
+    threadAudio = new std::thread(&AudioThread::threadMain, audioThread);
 
-    demodulatorTest = demodMgr.newThread(this);
+    demodulatorTest = demodMgr.newThread();
     demodulatorTest->params.audioInputQueue = audioInputQueue;
     demodulatorTest->init();
 
@@ -77,7 +77,7 @@ AppFrame::AppFrame() :
     iqVisualQueue = new SDRThreadIQDataQueue;
     sdrThread->setIQVisualQueue(iqVisualQueue);
 
-    t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
+    threadSDR = new std::thread(&SDRThread::threadMain, sdrThread);
 
 //    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 //    wxLogStatus("Double-buffered display %s supported", wxGLCanvas::IsDisplaySupported(attribs) ? "is" : "not");

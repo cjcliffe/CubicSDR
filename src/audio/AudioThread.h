@@ -33,19 +33,9 @@ public:
     std::queue<std::vector<float> > audio_queue;
     unsigned int audio_queue_ptr;
 
-    AudioThread(AudioThreadInputQueue *inputQueue) :
-            inputQueue(inputQueue), stream(NULL), audio_queue_ptr(0) {
+    AudioThread(AudioThreadInputQueue *inputQueue);
 
-    }
-
-    ~AudioThread() {
-        PaError err;
-        err = Pa_StopStream(stream);
-        err = Pa_CloseStream(stream);
-        Pa_Terminate();
-
-        std::cout << std::endl << "Audio Thread Done." << std::endl << std::endl;
-    }
+    ~AudioThread();
 
     void threadMain();
 

@@ -3,7 +3,7 @@
 #include <vector>
 
 DemodulatorThread::DemodulatorThread(DemodulatorThreadInputQueue* pQueue, DemodulatorThreadParameters *params_in) :
-        m_pQueue(pQueue), visOutQueue(NULL) {
+        inputQueue(pQueue), visOutQueue(NULL) {
 
     DemodulatorThreadParameters defaultParams;
     if (!params_in) {
@@ -57,7 +57,7 @@ void DemodulatorThread::threadMain() {
 
     while (1) {
         DemodulatorThreadIQData inp;
-        m_pQueue->pop(inp);
+        inputQueue->pop(inp);
 
         std::vector<signed char> *data = &inp.data;
         if (data->size()) {
@@ -139,22 +139,6 @@ void DemodulatorThread::threadMain() {
             if (visOutQueue != NULL) {
                 visOutQueue->push(ati);
             }
-
-            /*if (!TestDestroy()) {
-             DemodulatorThreadAudioData *audioOut = new DemodulatorThreadAudioData(task.data->frequency, params.audioSampleRate, newBuffer);
-
-             m_pQueue->sendAudioData(DemodulatorThreadTask::DEMOD_THREAD_AUDIO_DATA, audioOut);
-
-             if (params.audioInputQueue != NULL) {
-             AudioThreadInput ati;
-             ati.data = newBuffer;
-             params.audioInputQueue->push(ati);
-             //                                AudioThreadTask audio_task = AudioThreadTask(AudioThreadTask::AUDIO_THREAD_DATA);
-             //                                audio_task.data = new AudioThreadData(task.data->frequency, params.audioSampleRate, newBuffer);
-             //                                params.audioQueue->addTask(audio_task, AudioThreadQueue::AUDIO_PRIORITY_HIGHEST);
-             }
-             }*/
-
         }
     }
 }

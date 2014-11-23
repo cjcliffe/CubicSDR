@@ -44,6 +44,20 @@ static int audioCallback(const void *inputBuffer, void *outputBuffer, unsigned l
     return paContinue;
 }
 
+AudioThread::AudioThread(AudioThreadInputQueue *inputQueue) :
+        inputQueue(inputQueue), stream(NULL), audio_queue_ptr(0) {
+
+}
+
+AudioThread::~AudioThread() {
+    PaError err;
+    err = Pa_StopStream(stream);
+    err = Pa_CloseStream(stream);
+    Pa_Terminate();
+
+    std::cout << std::endl << "Audio Thread Done." << std::endl << std::endl;
+}
+
 void AudioThread::threadMain() {
     PaError err;
     err = Pa_Initialize();
@@ -67,7 +81,7 @@ void AudioThread::threadMain() {
     stream = NULL;
 
     err = Pa_OpenStream(&stream, NULL, &outputParameters, AUDIO_FREQUENCY, paFramesPerBufferUnspecified,
-            paPrimeOutputBuffersUsingStreamCallback | paClipOff, &audioCallback, this);
+    paPrimeOutputBuffersUsingStreamCallback | paClipOff, &audioCallback, this);
 
     err = Pa_StartStream(stream);
     if (err != paNoError) {

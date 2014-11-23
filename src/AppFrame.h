@@ -16,9 +16,8 @@ class AppFrame: public wxFrame {
 public:
     AppFrame();
     ~AppFrame();
-    void OnThread (wxCommandEvent& event);
+    void OnThread(wxCommandEvent& event);
     void OnEventInput(wxThreadEvent& event);
-
 
     void setFrequency(unsigned int freq);
     int getFrequency();
@@ -47,8 +46,8 @@ private:
     SDRThreadIQDataQueue* iqVisualQueue;
     DemodulatorThreadOutputQueue* audioVisualQueue;
 
-    std::thread *t1;
-    std::thread *t_SDR;
+    std::thread *threadAudio;
+    std::thread *threadSDR;
 
 // event table
 wxDECLARE_EVENT_TABLE();
