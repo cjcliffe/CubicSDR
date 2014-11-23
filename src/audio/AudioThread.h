@@ -15,9 +15,6 @@
 #include "ThreadQueue.h"
 #include "portaudio.h"
 
-static int audioCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo* timeInfo,
-        PaStreamCallbackFlags statusFlags, void *userData);
-
 class AudioThreadInput {
 public:
     int frequency;
@@ -30,10 +27,7 @@ typedef ThreadQueue<AudioThreadInput> AudioThreadInputQueue;
 
 class AudioThread {
 public:
-    std::queue<std::vector<float> > audio_queue;
-    unsigned int audio_queue_ptr;
-
-    AudioThread(AudioThreadInputQueue *inputQueue);
+     AudioThread(AudioThreadInputQueue *inputQueue);
 
     ~AudioThread();
 

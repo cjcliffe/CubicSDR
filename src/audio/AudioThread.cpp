@@ -2,98 +2,65 @@
 #include "CubicSDRDefs.h"
 #include <vector>
 
-static int audioCallback(const void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo* timeInfo,
-        PaStreamCallbackFlags statusFlags, void *userData) {
-
-    AudioThread *src = (AudioThread *) userData;
-
-    float *out = (float*) outputBuffer;
-
-    if (statusFlags & paOutputOverflow) {
-        std::cout << "Audio buffer overflow.." << std::endl;
-    }
-
-    if (statusFlags & paOutputUnderflow) {
-        std::cout << "Audio buffer underflow.." << std::endl;
-    }
-
-    if ((statusFlags & paPrimingOutput) || (statusFlags & paOutputOverflow) || !src->audio_queue.size()) {
-        for (int i = 0; i < framesPerBuffer * 2; i++) {
-            out[i] = 0;
-        }
-        return paContinue;
-    }
-
-    std::vector<float> nextBuffer = src->audio_queue.front();
-
-    for (int i = 0; i < framesPerBuffer * 2; i++) {
-        out[i] = nextBuffer[src->audio_queue_ptr];
-
-        src->audio_queue_ptr++;
-
-        if (src->audio_queue_ptr == nextBuffer.size()) {
-            src->audio_queue.pop();
-            src->audio_queue_ptr = 0;
-            if (!src->audio_queue.size()) {
-                break;
-            }
-            nextBuffer = src->audio_queue.front();
-        }
-    }
-
-    return paContinue;
-}
-
 AudioThread::AudioThread(AudioThreadInputQueue *inputQueue) :
-        inputQueue(inputQueue), stream(NULL), audio_queue_ptr(0) {
+		inputQueue(inputQueue), stream(NULL) {
 
 }
 
 AudioThread::~AudioThread() {
-    PaError err;
-    err = Pa_StopStream(stream);
-    err = Pa_CloseStream(stream);
-    Pa_Terminate();
+	PaError err;
+	err = Pa_StopStream(stream);
+	err = Pa_CloseStream(stream);
+	Pa_Terminate();
 
-    std::cout << std::endl << "Audio Thread Done." << std::endl << std::endl;
+	std::cout << std::endl << "Audio Thread Done." << std::endl << std::endl;
 }
 
 void AudioThread::threadMain() {
-    PaError err;
-    err = Pa_Initialize();
-    if (err != paNoError) {
-        std::cout << "Error starting portaudio :(\n";
-        return;
-    }
+	PaError err;
+	err = Pa_Initialize();
+	if (err != paNoError) {
+		std::cout << "Error starting portaudio :(\n";
+		return;
+	}
 
-    int preferred_device = -1;
+	int preferred_device = -1;
 
-    outputParameters.device = (preferred_device != -1) ? preferred_device : Pa_GetDefaultOutputDevice();
-    if (outputParameters.device == paNoDevice) {
-        std::cout << "Error: No default output device.\n";
-    }
+	outputParameters.device =
+			(preferred_device != -1) ?
+					preferred_device : Pa_GetDefaultOutputDevice();
+	if (outputParameters.device == paNoDevice) {
+		std::cout << "Error: No default output device.\n";
+	}
 
-    outputParameters.channelCount = 2;
-    outputParameters.sampleFormat = paFloat32;
-    outputParameters.suggestedLatency = Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
-    outputParameters.hostApiSpecificStreamInfo = NULL;
+	outputParameters.channelCount = 2;
+	outputParameters.sampleFormat = paFloat32;
+	outputParameters.suggestedLatency = Pa_GetDeviceInfo(
+			outputParameters.device)->defaultHighOutputLatency;
+	outputParameters.hostApiSpecificStreamInfo = NULL;
 
-    stream = NULL;
+	stream = NULL;
 
-    err = Pa_OpenStream(&stream, NULL, &outputParameters, AUDIO_FREQUENCY, paFramesPerBufferUnspecified,
-    paPrimeOutputBuffersUsingStreamCallback | paClipOff, &audioCallback, this);
+//	err = Pa_OpenStream(&stream, NULL, &outputParameters, AUDIO_FREQUENCY,
+//			paFramesPerBufferUnspecified,
+//			paPrimeOutputBuffersUsingStreamCallback | paClipOff, &audioCallback,
+//			this);
 
-    err = Pa_StartStream(stream);
-    if (err != paNoError) {
-        std::cout << "Error starting stream: " << Pa_GetErrorText(err) << std::endl;
-        std::cout << "\tPortAudio error: " << Pa_GetErrorText(err) << std::endl;
-    }
+	err = Pa_OpenStream(&stream, NULL, &outputParameters, AUDIO_FREQUENCY,
+			paFramesPerBufferUnspecified, paClipOff, NULL, NULL);
 
-    while (1) {
-        AudioThreadInput inp;
-        inputQueue->pop(inp);
-        audio_queue.push(inp.data);
-    }
+	err = Pa_StartStream(stream);
+	if (err != paNoError) {
+		std::cout << "Error starting stream: " << Pa_GetErrorText(err)
+				<< std::endl;
+		std::cout << "\tPortAudio error: " << Pa_GetErrorText(err) << std::endl;
+	}
+
+	while (1) {
+		AudioThreadInput inp;
+		inputQueue->pop(inp);
+		Pa_WriteStream(stream, &inp.data[0], inp.data.size()/2);
+	}
 }
 
 /*
