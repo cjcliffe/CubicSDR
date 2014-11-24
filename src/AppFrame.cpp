@@ -26,7 +26,7 @@ EVT_IDLE(AppFrame::OnIdle)
 wxEND_EVENT_TABLE()
 
 AppFrame::AppFrame() :
-        wxFrame(NULL, wxID_ANY, wxT("CubicSDR")), frequency(DEFAULT_FREQ) {
+        wxFrame(NULL, wxID_ANY, wxT("CubicSDR")) {
 
     wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
 
@@ -58,26 +58,6 @@ AppFrame::AppFrame() :
     Centre();
     Show();
 
-    audioInputQueue = new AudioThreadInputQueue;
-    audioThread = new AudioThread(audioInputQueue);
-
-    threadAudio = new std::thread(&AudioThread::threadMain, audioThread);
-
-    demodulatorTest = demodMgr.newThread();
-    demodulatorTest->params.audioInputQueue = audioInputQueue;
-    demodulatorTest->init();
-
-    audioVisualQueue = new DemodulatorThreadOutputQueue();
-    demodulatorTest->setVisualOutputQueue(audioVisualQueue);
-
-    threadCmdQueueSDR = new SDRThreadCommandQueue;
-    sdrThread = new SDRThread(threadCmdQueueSDR);
-    sdrThread->bindDemodulator(demodulatorTest);
-
-    iqVisualQueue = new SDRThreadIQDataQueue;
-    sdrThread->setIQVisualQueue(iqVisualQueue);
-
-    threadSDR = new std::thread(&SDRThread::threadMain, sdrThread);
 
 //    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 //    wxLogStatus("Double-buffered display %s supported", wxGLCanvas::IsDisplaySupported(attribs) ? "is" : "not");
@@ -87,9 +67,7 @@ AppFrame::AppFrame() :
 AppFrame::~AppFrame() {
 
 //    delete t_SDR;
-    delete audioInputQueue;
-    delete audioThread;
-    delete threadCmdQueueSDR;
+
 }
 
 void AppFrame::OnClose(wxCommandEvent& WXUNUSED(event)) {
@@ -109,9 +87,9 @@ void AppFrame::OnThread(wxCommandEvent& event) {
 void AppFrame::OnIdle(wxIdleEvent& event) {
     bool work_done = false;
 
-    if (!iqVisualQueue->empty()) {
+    if (!wxGetApp().getIQVisualQueue()->empty()) {
         SDRThreadIQData iqData;
-        iqVisualQueue->pop(iqData);
+        wxGetApp().getIQVisualQueue()->pop(iqData);
 
         if (iqData.data.size()) {
             spectrumCanvas->setData(&iqData.data);
@@ -122,9 +100,9 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         work_done = true;
     }
 
-    if (!audioVisualQueue->empty()) {
+    if (!wxGetApp().getAudioVisualQueue()->empty()) {
         AudioThreadInput demodAudioData;
-        audioVisualQueue->pop(demodAudioData);
+        wxGetApp().getAudioVisualQueue()->pop(demodAudioData);
         if (demodAudioData.data.size()) {
 
             if (scopeCanvas->waveform_points.size() != demodAudioData.data.size() * 2) {
@@ -145,15 +123,4 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     if (!work_done) {
         event.Skip();
     }
-}
-
-void AppFrame::setFrequency(unsigned int freq) {
-    frequency = freq;
-    SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_TUNE);
-    command.int_value = freq;
-    threadCmdQueueSDR->push(command);
-}
-
-int AppFrame::getFrequency() {
-    return frequency;
 }

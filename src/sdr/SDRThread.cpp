@@ -4,7 +4,7 @@
 #include "CubicSDR.h"
 
 SDRThread::SDRThread(SDRThreadCommandQueue* pQueue) :
-        m_pQueue(pQueue), iqDataOutQueue(NULL), iqVisualQueue(NULL) {
+        m_pQueue(pQueue), iqDataOutQueue(NULL), iqVisualQueue(NULL), terminated(false) {
     dev = NULL;
     sample_rate = SRATE;
 }
@@ -121,7 +121,7 @@ void SDRThread::threadMain() {
     double seconds = 0.0;
 
     std::cout << "Sampling..";
-    while (1) {
+    while (!terminated) {
         if (!m_pQueue->empty()) {
             bool freq_changed = false;
             float new_freq;
@@ -186,3 +186,6 @@ void SDRThread::threadMain() {
 
 }
 
+void SDRThread::terminate() {
+    terminated = true;
+}

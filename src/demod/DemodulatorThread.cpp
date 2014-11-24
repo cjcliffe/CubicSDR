@@ -3,7 +3,7 @@
 #include <vector>
 
 DemodulatorThread::DemodulatorThread(DemodulatorThreadInputQueue* pQueue, DemodulatorThreadParameters *params_in) :
-        inputQueue(pQueue), visOutQueue(NULL) {
+        inputQueue(pQueue), visOutQueue(NULL), terminated(false) {
 
     DemodulatorThreadParameters defaultParams;
     if (!params_in) {
@@ -55,7 +55,7 @@ DemodulatorThread::~DemodulatorThread() {
 
 void DemodulatorThread::threadMain() {
 
-    while (1) {
+    while (!terminated) {
         DemodulatorThreadIQData inp;
         inputQueue->pop(inp);
 
@@ -143,3 +143,9 @@ void DemodulatorThread::threadMain() {
     }
 }
 
+void DemodulatorThread::terminate() {
+    std::cout << "Terminating demodulator thread.." << std::endl;
+    terminated = true;
+    DemodulatorThreadIQData inp;    // push dummy to nudge queue
+    inputQueue->push(inp);
+}

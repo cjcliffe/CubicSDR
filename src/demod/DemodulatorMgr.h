@@ -14,8 +14,10 @@ public:
     DemodulatorThreadParameters params;
 
     DemodulatorInstance();
+    ~DemodulatorInstance();
     void setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue);
     void init();
+    void terminate();
 };
 
 class DemodulatorMgr {
@@ -25,6 +27,7 @@ public:
 
     DemodulatorInstance *newThread();
 
+    void terminateAll();
 private:
     std::vector<DemodulatorInstance *> demods;
 };

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+
 #include "wx/wxprec.h"
 #include "rtl-sdr.h"
 
@@ -19,7 +21,7 @@ public:
         SDR_THREAD_CMD_TUNE
     };
 
-    SDRThreadCommand() : cmd(cmd), int_value(SDR_THREAD_CMD_NULL){
+    SDRThreadCommand() : cmd(cmd), int_value(SDR_THREAD_CMD_NULL) {
 
     }
 
@@ -77,6 +79,8 @@ public:
         iqVisualQueue = iqVisQueue;
         iqVisualQueue->set_max_num_items(1);
     }
+
+    void terminate();
 protected:
 
     uint32_t sample_rate;
@@ -85,4 +89,5 @@ protected:
     SDRThreadIQDataQueue* iqVisualQueue;
 
     std::vector<DemodulatorInstance *> demodulators;
+    std::atomic<bool> terminated;
 };

@@ -60,14 +60,14 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     unsigned int freq;
     switch (event.GetKeyCode()) {
     case WXK_RIGHT:
-        freq = ((AppFrame*) parent)->getFrequency();
+        freq = wxGetApp().getFrequency();
         freq += 100000;
-        ((AppFrame*) parent)->setFrequency(freq);
+        wxGetApp().setFrequency(freq);
         break;
     case WXK_LEFT:
-        freq = ((AppFrame*) parent)->getFrequency();
+        wxGetApp().getFrequency();
         freq -= 100000;
-        ((AppFrame*) parent)->setFrequency(freq);
+        wxGetApp().setFrequency(freq);
         break;
     case WXK_DOWN:
         break;

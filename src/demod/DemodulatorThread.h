@@ -101,6 +101,8 @@ public:
         visOutQueue->set_max_num_items(1);
     }
 
+    void terminate();
+
 protected:
     DemodulatorThreadInputQueue* inputQueue;
     DemodulatorThreadOutputQueue* visOutQueue;
@@ -119,4 +121,6 @@ protected:
 
     DemodulatorThreadParameters params;
     freqdem fdem;
+
+    std::atomic<bool> terminated;
 };

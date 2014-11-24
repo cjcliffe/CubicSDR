@@ -3,6 +3,7 @@
 #include <queue>
 #include <vector>
 #include <string>
+#include <atomic>
 #include "wx/wxprec.h"
 
 #ifndef WX_PRECOMP
@@ -28,14 +29,15 @@ typedef ThreadQueue<AudioThreadInput> AudioThreadInputQueue;
 class AudioThread {
 public:
      AudioThread(AudioThreadInputQueue *inputQueue);
-
     ~AudioThread();
 
     void threadMain();
+    void terminate();
 
 private:
     AudioThreadInputQueue *inputQueue;
     PaStreamParameters outputParameters;
     PaStream *stream;
+    std::atomic<bool> terminated;
 };
 

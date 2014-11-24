@@ -19,22 +19,56 @@ bool CubicSDR::OnInit() {
     if (!wxApp::OnInit())
         return false;
 
+    frequency = DEFAULT_FREQ;
+
+    audioInputQueue = new AudioThreadInputQueue;
+    audioThread = new AudioThread(audioInputQueue);
+
+    threadAudio = new std::thread(&AudioThread::threadMain, audioThread);
+
+    demodulatorTest = demodMgr.newThread();
+    demodulatorTest->params.audioInputQueue = audioInputQueue;
+    demodulatorTest->init();
+
+    audioVisualQueue = new DemodulatorThreadOutputQueue();
+    demodulatorTest->setVisualOutputQueue(audioVisualQueue);
+
+    threadCmdQueueSDR = new SDRThreadCommandQueue;
+    sdrThread = new SDRThread(threadCmdQueueSDR);
+    sdrThread->bindDemodulator(demodulatorTest);
+
+    iqVisualQueue = new SDRThreadIQDataQueue;
+    sdrThread->setIQVisualQueue(iqVisualQueue);
+
+    threadSDR = new std::thread(&SDRThread::threadMain, sdrThread);
+
     AppFrame *appframe = new AppFrame();
 
     return true;
 }
 
 int CubicSDR::OnExit() {
-    delete m_glContext;
+    std::cout << "Terminating SDR thread.." << std::endl;
+    sdrThread->terminate();
+    threadSDR->join();
 
-//	while (1) {
-//		{ wxCriticalSectionLocker enter(m_pThreadCS);
-//			if (!m_pThread)
-//				break;
-//		}
-//		// wait for thread completion
-//		wxThread::This()->Sleep(1);
-//	}
+    delete sdrThread;
+    delete threadSDR;
+
+    demodMgr.terminateAll();
+
+    audioThread->terminate();
+    threadAudio->join();
+
+    delete audioThread;
+    delete threadAudio;
+
+    delete audioInputQueue;
+    delete threadCmdQueueSDR;
+
+    delete iqVisualQueue;
+    delete audioVisualQueue;
+    delete m_glContext;
 
     return wxApp::OnExit();
 }
@@ -51,3 +85,13 @@ PrimaryGLContext& CubicSDR::GetContext(wxGLCanvas *canvas) {
     return *glContext;
 }
 
+void CubicSDR::setFrequency(unsigned int freq) {
+    frequency = freq;
+    SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_TUNE);
+    command.int_value = freq;
+    threadCmdQueueSDR->push(command);
+}
+
+int CubicSDR::getFrequency() {
+    return frequency;
+}
