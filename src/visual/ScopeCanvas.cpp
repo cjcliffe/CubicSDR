@@ -59,7 +59,7 @@ void ScopeCanvas::OnKeyDown(wxKeyEvent& event) {
         wxGetApp().setFrequency(freq);
         break;
     case WXK_LEFT:
-        wxGetApp().getFrequency();
+        freq = wxGetApp().getFrequency();
         freq -= 100000;
         wxGetApp().setFrequency(freq);
         break;
