@@ -57,11 +57,13 @@ void ScopeCanvas::OnKeyDown(wxKeyEvent& event) {
         freq = wxGetApp().getFrequency();
         freq += 100000;
         wxGetApp().setFrequency(freq);
-        break;
+        ((wxFrame*)parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"),freq));
+       break;
     case WXK_LEFT:
         freq = wxGetApp().getFrequency();
         freq -= 100000;
         wxGetApp().setFrequency(freq);
+        ((wxFrame*)parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"),freq));
         break;
     case WXK_DOWN:
         break;

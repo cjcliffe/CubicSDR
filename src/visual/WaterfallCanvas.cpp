@@ -36,6 +36,8 @@ WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
 
     glContext = new WaterfallContext(this, &wxGetApp().GetContext(this));
     timer.start();
+
+    SetCursor(wxCURSOR_CROSS);
 }
 
 WaterfallCanvas::~WaterfallCanvas() {
@@ -63,11 +65,13 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         freq = wxGetApp().getFrequency();
         freq += 100000;
         wxGetApp().setFrequency(freq);
+        ((wxFrame*)parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"),freq));
         break;
     case WXK_LEFT:
         freq = wxGetApp().getFrequency();
         freq -= 100000;
         wxGetApp().setFrequency(freq);
+        ((wxFrame*)parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"),freq));
         break;
     case WXK_DOWN:
         break;

@@ -23,6 +23,14 @@ private:
 
     void OnIdle(wxIdleEvent &event);
 
+    void mouseMoved(wxMouseEvent& event);
+    void mouseDown(wxMouseEvent& event);
+    void mouseWheelMoved(wxMouseEvent& event);
+    void mouseReleased(wxMouseEvent& event);
+
+//    void rightClick(wxMouseEvent& event);
+    void mouseLeftWindow(wxMouseEvent& event);
+
     wxWindow *parent;
     std::vector<float> spectrum_points;
 
@@ -39,6 +47,10 @@ private:
     SpectrumContext *glContext;
     Timer timer;
     float frameTimer;
+
+    float lastMouseX, lastMouseY;
+    float deltaMouseX, deltaMouseY;
+    bool isMouseDown;
 // event table
 wxDECLARE_EVENT_TABLE();
 };

@@ -14,15 +14,22 @@
 #include "CubicSDRDefs.h"
 #include "AppFrame.h"
 #include <algorithm>
+#include <wx/numformatter.h>
 
 wxBEGIN_EVENT_TABLE(SpectrumCanvas, wxGLCanvas) EVT_PAINT(SpectrumCanvas::OnPaint)
 EVT_KEY_DOWN(SpectrumCanvas::OnKeyDown)
 EVT_IDLE(SpectrumCanvas::OnIdle)
+EVT_MOTION(SpectrumCanvas::mouseMoved)
+EVT_LEFT_DOWN(SpectrumCanvas::mouseDown)
+EVT_LEFT_UP(SpectrumCanvas::mouseReleased)
+//EVT_RIGHT_DOWN(SpectrumCanvas::rightClick)
+EVT_LEAVE_WINDOW(SpectrumCanvas::mouseLeftWindow)
+EVT_MOUSEWHEEL(SpectrumCanvas::mouseWheelMoved)
 wxEND_EVENT_TABLE()
 
 SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0) {
+        wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0), isMouseDown(false) {
 
     int in_block_size = BUF_SIZE / 2;
     int out_block_size = FFT_SIZE;
@@ -36,6 +43,8 @@ SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *attribList) :
 
     glContext = new SpectrumContext(this, &wxGetApp().GetContext(this));
     timer.start();
+
+    SetCursor(wxCURSOR_SIZEWE);
 }
 
 SpectrumCanvas::~SpectrumCanvas() {
@@ -63,11 +72,13 @@ void SpectrumCanvas::OnKeyDown(wxKeyEvent& event) {
         freq = wxGetApp().getFrequency();
         freq += 100000;
         wxGetApp().setFrequency(freq);
+        ((wxFrame*)parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"),freq));
         break;
     case WXK_LEFT:
         freq = wxGetApp().getFrequency();
         freq -= 100000;
         wxGetApp().setFrequency(freq);
+        ((wxFrame*)parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"),freq));
         break;
     case WXK_DOWN:
         break;
@@ -160,3 +171,62 @@ void SpectrumCanvas::OnIdle(wxIdleEvent &event) {
 //        frameTimer = 0;
 //    }
 }
+
+
+
+
+
+void SpectrumCanvas::mouseMoved(wxMouseEvent& event) {
+    if (isMouseDown) {
+        const wxSize ClientSize = GetClientSize();
+        float mouseX = (float)event.m_x/(float)ClientSize.x;
+        float mouseY = (float)event.m_y/(float)ClientSize.y;
+
+
+        deltaMouseX = mouseX-lastMouseX;
+        deltaMouseY = mouseY-lastMouseY;
+
+        lastMouseX = mouseX;
+//        lastMouseY = mouseY;
+
+        int freqChange = deltaMouseX*SRATE;
+
+        int freq = wxGetApp().getFrequency();
+        freq -= freqChange;
+        wxGetApp().setFrequency(freq);
+
+        ((wxFrame*)parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %s"),wxNumberFormatter::ToString((long)freq,wxNumberFormatter::Style_WithThousandsSep)));
+
+        if (mouseY != lastMouseY) {
+            WarpPointer(event.m_x,lastMouseY*ClientSize.y);
+        }
+    }
+}
+
+void SpectrumCanvas::mouseDown(wxMouseEvent& event) {
+    const wxSize ClientSize = GetClientSize();
+    lastMouseX = (float)event.m_x/(float)ClientSize.x;
+    lastMouseY = (float)event.m_y/(float)ClientSize.y;
+
+    isMouseDown = true;
+    SetCursor(wxCURSOR_CROSS);
+}
+
+void SpectrumCanvas::mouseWheelMoved(wxMouseEvent& event) {
+    std::cout << "wheel?" << std::endl;
+}
+
+void SpectrumCanvas::mouseReleased(wxMouseEvent& event) {
+    isMouseDown = false;
+    SetCursor(wxCURSOR_SIZEWE);
+}
+
+void SpectrumCanvas::mouseLeftWindow(wxMouseEvent& event) {
+    isMouseDown = false;
+    SetCursor(wxCURSOR_SIZEWE);
+}
+
+//void SpectrumCanvas::rightClick(wxMouseEvent& event) {}
+//void SpectrumCanvas::keyPressed(wxKeyEvent& event) {}
+//void SpectrumCanvas::keyReleased(wxKeyEvent& event) {}
+
