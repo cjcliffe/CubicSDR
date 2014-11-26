@@ -1,14 +1,20 @@
 #include "MouseTracker.h"
+#include <iostream>
 
 void MouseTracker::OnMouseMoved(wxMouseEvent& event) {
+    if (target == NULL) {
+        return;
+    }
+
+    const wxSize ClientSize = target->GetClientSize();
+
+    mouseX = (float) event.m_x / (float) ClientSize.x;
+    mouseY = (float) event.m_y / (float) ClientSize.y;
+
+    deltaMouseX = mouseX - lastMouseX;
+    deltaMouseY = mouseY - lastMouseY;
+
     if (isMouseDown) {
-        const wxSize ClientSize = target->GetClientSize();
-        float mouseX = (float) event.m_x / (float) ClientSize.x;
-        float mouseY = (float) event.m_y / (float) ClientSize.y;
-
-        deltaMouseX = mouseX - lastMouseX;
-        deltaMouseY = mouseY - lastMouseY;
-
         lastMouseX = mouseX;
 
         if (vertDragLock && mouseY != lastMouseY) {
@@ -16,14 +22,24 @@ void MouseTracker::OnMouseMoved(wxMouseEvent& event) {
         } else {
             lastMouseY = mouseY;
         }
+    } else {
+        lastMouseY = mouseY;
+        lastMouseX = mouseX;
     }
 }
 
 void MouseTracker::OnMouseDown(wxMouseEvent& event) {
+    if (target == NULL) {
+        return;
+    }
+
     const wxSize ClientSize = target->GetClientSize();
 
-    lastMouseX = (float) event.m_x / (float) ClientSize.x;
-    lastMouseY = (float) event.m_y / (float) ClientSize.y;
+    mouseX = lastMouseX = (float) event.m_x / (float) ClientSize.x;
+    mouseY = lastMouseY = (float) event.m_y / (float) ClientSize.y;
+
+    originMouseX = mouseX;
+    originMouseY = mouseY;
 
     isMouseDown = true;
 }
@@ -36,8 +52,29 @@ void MouseTracker::OnMouseReleased(wxMouseEvent& event) {
     isMouseDown = false;
 }
 
+void MouseTracker::OnMouseEnterWindow(wxMouseEvent& event) {
+    isMouseInView = true;
+}
+
 void MouseTracker::OnMouseLeftWindow(wxMouseEvent& event) {
     isMouseDown = false;
+    isMouseInView = false;
+}
+
+float MouseTracker::getOriginMouseX() {
+    return originMouseX;
+}
+
+float MouseTracker::getOriginMouseY() {
+    return originMouseY;
+}
+
+float MouseTracker::getOriginDeltaMouseX() {
+    return mouseX - originMouseX;
+}
+
+float MouseTracker::getOriginDeltaMouseY() {
+    return mouseY - originMouseY;
 }
 
 float MouseTracker::getDeltaMouseX() {
@@ -70,4 +107,12 @@ void MouseTracker::setVertDragLock(bool dragLock) {
 
 bool MouseTracker::mouseDown() {
     return isMouseDown;
+}
+
+bool MouseTracker::mouseInView() {
+    return isMouseInView;
+}
+
+void MouseTracker::setTarget(wxWindow *target_in) {
+    target = target_in;
 }

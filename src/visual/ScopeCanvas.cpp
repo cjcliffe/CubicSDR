@@ -57,13 +57,13 @@ void ScopeCanvas::OnKeyDown(wxKeyEvent& event) {
         freq = wxGetApp().getFrequency();
         freq += 100000;
         wxGetApp().setFrequency(freq);
-        ((wxFrame*)parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"),freq));
-       break;
+        ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), freq));
+        break;
     case WXK_LEFT:
         freq = wxGetApp().getFrequency();
         freq -= 100000;
         wxGetApp().setFrequency(freq);
-        ((wxFrame*)parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"),freq));
+        ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), freq));
         break;
     case WXK_DOWN:
         break;
@@ -81,7 +81,7 @@ void ScopeCanvas::OnIdle(wxIdleEvent &event) {
 //    timer.update();
 //    frameTimer += timer.lastUpdateSeconds();
 //    if (frameTimer > 1.0/30.0) {
-        Refresh(false);
+    Refresh(false);
 //        frameTimer = 0;
 //    }
 }

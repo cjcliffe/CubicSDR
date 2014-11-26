@@ -29,7 +29,7 @@ private:
 
     ScopeContext *glContext;
     Timer timer;
-    float frameTimer;    
+    float frameTimer;
 // event table
 wxDECLARE_EVENT_TABLE();
 };

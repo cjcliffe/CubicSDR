@@ -1,5 +1,6 @@
 #include "WaterfallContext.h"
 #include "WaterfallCanvas.h"
+#include "CubicSDR.h"
 
 WaterfallContext::WaterfallContext(WaterfallCanvas *canvas, wxGLContext *sharedContext) :
         PrimaryGLContext(canvas, sharedContext) {
@@ -36,11 +37,14 @@ WaterfallContext::WaterfallContext(WaterfallCanvas *canvas, wxGLContext *sharedC
     glPixelMapfv(GL_PIXEL_MAP_I_TO_B, 256, &(grad.getBlue())[0]);
 }
 
-void WaterfallContext::Draw(std::vector<float> &points) {
+void WaterfallContext::BeginDraw() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+}
+
+void WaterfallContext::Draw(std::vector<float> &points) {
 
     if (points.size()) {
         memmove(waterfall_tex + FFT_SIZE, waterfall_tex, (NUM_WATERFALL_LINES - 1) * FFT_SIZE);
@@ -57,15 +61,13 @@ void WaterfallContext::Draw(std::vector<float> &points) {
         }
     }
 
+    glEnable(GL_TEXTURE_2D);
+
     glBindTexture(GL_TEXTURE_2D, waterfall);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, FFT_SIZE, NUM_WATERFALL_LINES, 0, GL_COLOR_INDEX, GL_UNSIGNED_BYTE, (GLvoid *) waterfall_tex);
 
-    glDisable(GL_TEXTURE_2D);
-
     glColor3f(1.0, 1.0, 1.0);
 
-    glEnable(GL_TEXTURE_2D);
-    // glEnable(GL_COLOR_TABLE);
     glBindTexture(GL_TEXTURE_2D, waterfall);
     glBegin(GL_QUADS);
     glTexCoord2f(0.0, 1.0);
@@ -78,6 +80,37 @@ void WaterfallContext::Draw(std::vector<float> &points) {
     glVertex3f(-1.0, 1.0, 0.0);
     glEnd();
 
+}
+
+void WaterfallContext::DrawFreqSelector(float uxPos) {
+    DemodulatorInstance *demod = wxGetApp().getDemodTest();
+
+    if (!demod) {
+        return;
+    }
+
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glDisable(GL_TEXTURE_2D);
+
+    glColor3f(1.0, 1.0, 1.0);
+
+    glBegin(GL_LINES);
+    glVertex3f((uxPos - 0.5) * 2.0, 1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0, -1.0, 0.0);
+
+    float ofs = ((float) demod->params.inputResampleRate) / (float) SRATE;
+
+    glVertex3f((uxPos - 0.5) * 2.0 - ofs, 1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0 - ofs, -1.0, 0.0);
+
+    glVertex3f((uxPos - 0.5) * 2.0 + ofs, 1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0 + ofs, -1.0, 0.0);
+
+    glEnd();
+
+}
+
+void WaterfallContext::EndDraw() {
     glFlush();
 
     CheckGLError();
