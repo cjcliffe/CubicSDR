@@ -95,6 +95,7 @@ SET (cubicsdr_sources
 	src/audio/AudioThread.cpp
 	src/util/Gradient.cpp
 	src/util/Timer.cpp
+	src/util/MouseTracker.cpp
 	src/visual/PrimaryGLContext.cpp
 	src/visual/ScopeCanvas.cpp
 	src/visual/ScopeContext.cpp
@@ -115,6 +116,7 @@ SET (cubicsdr_headers
 	src/util/Gradient.h
 	src/util/Timer.h
 	src/util/ThreadQueue.h
+	src/util/MouseTracker.h
 	src/visual/PrimaryGLContext.h
 	src/visual/ScopeCanvas.h
 	src/visual/ScopeContext.h

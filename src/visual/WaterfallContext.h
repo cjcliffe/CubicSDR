@@ -11,7 +11,10 @@ class WaterfallContext: public PrimaryGLContext {
 public:
     WaterfallContext(WaterfallCanvas *canvas, wxGLContext *sharedContext);
 
+    void BeginDraw();
     void Draw(std::vector<float> &points);
+    void DrawFreqSelector(float uxPos);
+    void EndDraw();
 
 private:
     Gradient grad;

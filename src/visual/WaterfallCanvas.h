@@ -7,6 +7,7 @@
 #include <queue>
 
 #include "WaterfallContext.h"
+#include "MouseTracker.h"
 
 #include "fftw3.h"
 #include "Timer.h"
@@ -22,6 +23,13 @@ private:
     void OnKeyDown(wxKeyEvent& event);
 
     void OnIdle(wxIdleEvent &event);
+
+    void mouseMoved(wxMouseEvent& event);
+    void mouseDown(wxMouseEvent& event);
+    void mouseWheelMoved(wxMouseEvent& event);
+    void mouseReleased(wxMouseEvent& event);
+    void mouseEnterWindow(wxMouseEvent& event);
+    void mouseLeftWindow(wxMouseEvent& event);
 
     wxWindow *parent;
     std::vector<float> spectrum_points;
@@ -39,6 +47,8 @@ private:
     WaterfallContext *glContext;
     Timer timer;
     float frameTimer;
+    MouseTracker mTracker;
+
 // event table
 wxDECLARE_EVENT_TABLE();
 };

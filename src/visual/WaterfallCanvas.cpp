@@ -15,9 +15,16 @@
 #include "AppFrame.h"
 #include <algorithm>
 
+#include <wx/numformatter.h>
+
 wxBEGIN_EVENT_TABLE(WaterfallCanvas, wxGLCanvas) EVT_PAINT(WaterfallCanvas::OnPaint)
 EVT_KEY_DOWN(WaterfallCanvas::OnKeyDown)
 EVT_IDLE(WaterfallCanvas::OnIdle)
+EVT_MOTION(WaterfallCanvas::mouseMoved)
+EVT_LEFT_DOWN(WaterfallCanvas::mouseDown)
+EVT_LEFT_UP(WaterfallCanvas::mouseReleased)
+EVT_LEAVE_WINDOW(WaterfallCanvas::mouseLeftWindow)
+EVT_ENTER_WINDOW(WaterfallCanvas::mouseEnterWindow)
 wxEND_EVENT_TABLE()
 
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
@@ -37,6 +44,8 @@ WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
     glContext = new WaterfallContext(this, &wxGetApp().GetContext(this));
     timer.start();
 
+    mTracker.setTarget(this);
+
     SetCursor(wxCURSOR_CROSS);
 }
 
@@ -51,7 +60,13 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->SetCurrent(*this);
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
+    glContext->BeginDraw();
     glContext->Draw(spectrum_points);
+
+    if (mTracker.mouseInView()) {
+        glContext->DrawFreqSelector(mTracker.getMouseX());
+    }
+    glContext->EndDraw();
 
     SwapBuffers();
 }
@@ -65,13 +80,13 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         freq = wxGetApp().getFrequency();
         freq += 100000;
         wxGetApp().setFrequency(freq);
-        ((wxFrame*)parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"),freq));
+        ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), freq));
         break;
     case WXK_LEFT:
         freq = wxGetApp().getFrequency();
         freq -= 100000;
         wxGetApp().setFrequency(freq);
-        ((wxFrame*)parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"),freq));
+        ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), freq));
         break;
     case WXK_DOWN:
         break;
@@ -158,7 +173,64 @@ void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
 //    timer.update();
 //    frameTimer += timer.lastUpdateSeconds();
 //    if (frameTimer > 1.0/30.0) {
-        Refresh(false);
+    Refresh(false);
 //        frameTimer = 0;
 //    }
+}
+
+void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
+    mTracker.OnMouseMoved(event);
+    if (mTracker.mouseDown()) {
+        int freqChange = mTracker.getDeltaMouseX() * SRATE;
+
+        if (freqChange != 0) {
+            int freq = wxGetApp().getFrequency();
+            freq -= freqChange;
+            wxGetApp().setFrequency(freq);
+
+            ((wxFrame*) parent)->GetStatusBar()->SetStatusText(
+                    wxString::Format(wxT("Set center frequency: %s"),
+                            wxNumberFormatter::ToString((long) freq, wxNumberFormatter::Style_WithThousandsSep)));
+        }
+    }
+}
+
+void WaterfallCanvas::mouseDown(wxMouseEvent& event) {
+    mTracker.OnMouseDown(event);
+    SetCursor(wxCURSOR_CROSS);
+}
+
+void WaterfallCanvas::mouseWheelMoved(wxMouseEvent& event) {
+    mTracker.OnMouseWheelMoved(event);
+}
+
+void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
+    mTracker.OnMouseReleased(event);
+
+    if (mTracker.getOriginDeltaMouseX() == 0 && mTracker.getOriginDeltaMouseX() == 0) {
+
+        float pos = mTracker.getMouseX();
+
+        int freq = wxGetApp().getFrequency();
+
+        freq += (pos - 0.5) * SRATE;
+
+        wxGetApp().setFrequency(freq);
+
+        ((wxFrame*) parent)->GetStatusBar()->SetStatusText(
+                wxString::Format(wxT("Set center frequency: %s"),
+                        wxNumberFormatter::ToString((long) freq, wxNumberFormatter::Style_WithThousandsSep)));
+    }
+
+    SetCursor(wxCURSOR_SIZEWE);
+}
+
+void WaterfallCanvas::mouseLeftWindow(wxMouseEvent& event) {
+    mTracker.OnMouseLeftWindow(event);
+    SetCursor(wxCURSOR_SIZEWE);
+}
+
+void WaterfallCanvas::mouseEnterWindow(wxMouseEvent& event) {
+    mTracker.OnMouseEnterWindow(event);
+    SetCursor(wxCURSOR_SIZEWE);
 }

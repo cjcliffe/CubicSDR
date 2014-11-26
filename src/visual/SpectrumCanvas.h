@@ -10,6 +10,7 @@
 
 #include "fftw3.h"
 #include "Timer.h"
+#include "MouseTracker.h"
 
 class SpectrumCanvas: public wxGLCanvas {
 public:
@@ -48,9 +49,7 @@ private:
     Timer timer;
     float frameTimer;
 
-    float lastMouseX, lastMouseY;
-    float deltaMouseX, deltaMouseY;
-    bool isMouseDown;
+    MouseTracker mTracker;
 // event table
 wxDECLARE_EVENT_TABLE();
 };

@@ -36,6 +36,10 @@ public:
         return iqVisualQueue;
     }
 
+    DemodulatorInstance *getDemodTest() {
+        return demodulatorTest;
+    }
+
 private:
     PrimaryGLContext *m_glContext;
 
