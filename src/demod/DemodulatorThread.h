@@ -146,6 +146,8 @@ protected:
     float audio_resample_ratio;
 
     DemodulatorThreadParameters params;
+    DemodulatorThreadParameters last_params;
+
     freqdem fdem;
 
     std::atomic<bool> terminated;

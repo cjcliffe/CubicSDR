@@ -3,7 +3,11 @@
 #include <vector>
 
 DemodulatorThread::DemodulatorThread(DemodulatorThreadInputQueue* pQueue) :
-        inputQueue(pQueue), visOutQueue(NULL), terminated(false), initialized(false), audio_resampler(NULL), audio_resample_ratio(1) {
+        inputQueue(pQueue), visOutQueue(NULL), terminated(false), initialized(false), audio_resampler(NULL), resample_ratio(1), audio_resample_ratio(1), resampler(NULL), commandQueue(NULL), fir_filter(NULL) {
+
+    float kf = 0.75;         // modulation factor
+    fdem = freqdem_create(kf);
+//    freqdem_print(fdem);
 
 }
 
@@ -32,23 +36,30 @@ void DemodulatorThread::initialize() {
     float h[h_len];
     liquid_firdes_kaiser(h_len, fc, As, mu, h);
 
-    fir_filter = firfilt_crcf_create(h, h_len);
+    if (fir_filter) {
+        firfilt_crcf_recreate(fir_filter, h, h_len);
+    } else {
+        fir_filter = firfilt_crcf_create(h, h_len);
+    }
 
     // create multi-stage arbitrary resampler object
+    if (resampler) {
+        msresamp_crcf_destroy(resampler);
+    }
     resampler = msresamp_crcf_create(resample_ratio, As);
 //    msresamp_crcf_print(resampler);
 
+    if (audio_resampler) {
+        msresamp_crcf_destroy(audio_resampler);
+    }
     audio_resampler = msresamp_crcf_create(audio_resample_ratio, As);
 //    msresamp_crcf_print(audio_resampler);
 
-    float kf = 0.75;         // modulation factor
-
-    fdem = freqdem_create(kf);
-//    freqdem_print(fdem);
 
     initialized = true;
-    std::cout << "inputResampleRate " << params.bandwidth << std::endl;
+//    std::cout << "inputResampleRate " << params.bandwidth << std::endl;
 
+    last_params = params;
 }
 
 DemodulatorThread::~DemodulatorThread() {
