@@ -6,13 +6,13 @@ class MouseTracker {
 public:
     MouseTracker(wxWindow *target) :
             target(target), mouseX(0), mouseY(0), lastMouseX(0), lastMouseY(0), originMouseX(0), originMouseY(0), deltaMouseX(0), deltaMouseY(0), isMouseDown(
-                    false), vertDragLock(false), isMouseInView(false) {
+                    false), vertDragLock(false), horizDragLock(false), isMouseInView(false) {
 
     }
 
     MouseTracker() :
             target(NULL), mouseX(0), mouseY(0), lastMouseX(0), lastMouseY(0), originMouseX(0), originMouseY(0), deltaMouseX(0), deltaMouseY(0), isMouseDown(
-                    false), vertDragLock(false), isMouseInView(false) {
+                    false), vertDragLock(false), horizDragLock(false), isMouseInView(false) {
 
     }
 
@@ -35,6 +35,7 @@ public:
     float getMouseY();
 
     void setVertDragLock(bool dragLock);
+    void setHorizDragLock(bool dragLock);
     bool mouseDown();
     bool mouseInView();
     void setTarget(wxWindow *target_in);
@@ -46,6 +47,6 @@ private:
     float originMouseX, originMouseY;
 
     bool isMouseDown, isMouseInView;
-    bool vertDragLock;
+    bool vertDragLock, horizDragLock;
     wxWindow *target;
 };

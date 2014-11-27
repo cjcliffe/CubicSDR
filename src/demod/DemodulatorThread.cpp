@@ -2,21 +2,27 @@
 #include "CubicSDRDefs.h"
 #include <vector>
 
-DemodulatorThread::DemodulatorThread(DemodulatorThreadInputQueue* pQueue, DemodulatorThreadParameters *params_in) :
-        inputQueue(pQueue), visOutQueue(NULL), terminated(false) {
+DemodulatorThread::DemodulatorThread(DemodulatorThreadInputQueue* pQueue) :
+        inputQueue(pQueue), visOutQueue(NULL), terminated(false), initialized(false), audio_resampler(NULL), audio_resample_ratio(1) {
 
-    DemodulatorThreadParameters defaultParams;
-    if (!params_in) {
-        params = defaultParams;
-    } else {
-        params = *params_in;
+}
+
+void DemodulatorThread::initialize() {
+    initialized = false;
+
+    resample_ratio = (float) (params.bandwidth) / (float) params.inputRate;
+    audio_resample_ratio = (float) (params.audioSampleRate) / (float) params.bandwidth;
+
+    float fc = 0.5 * ((double) params.bandwidth / (double) params.inputRate);         // filter cutoff frequency
+
+    if (fc <= 0) {
+        fc = 0;
     }
 
-    resample_ratio = (float) (params.inputResampleRate) / (float) params.inputRate;
-    second_resampler_ratio = (float) (params.demodResampleRate) / (float) params.inputResampleRate;
-    audio_resample_ratio = (float) (params.audioSampleRate) / (float) params.demodResampleRate;
+    if (fc >= 0.5) {
+        fc = 0.5;
+    }
 
-    float fc = 0.5f * ((float) params.inputResampleRate / (float) params.inputRate) * 0.75;         // filter cutoff frequency
     float ft = 0.05f;         // filter transition
     float As = 60.0f;         // stop-band attenuation [dB]
     float mu = 0.0f;         // fractional timing offset
@@ -28,25 +34,21 @@ DemodulatorThread::DemodulatorThread(DemodulatorThreadInputQueue* pQueue, Demodu
 
     fir_filter = firfilt_crcf_create(h, h_len);
 
-    h_len = estimate_req_filter_len(ft, As);
-    liquid_firdes_kaiser(h_len, (float) params.filterFrequency / (float) params.demodResampleRate, As, mu, h);
-
-    fir_audio_filter = firfilt_crcf_create(h, h_len);
-
     // create multi-stage arbitrary resampler object
     resampler = msresamp_crcf_create(resample_ratio, As);
-    msresamp_crcf_print(resampler);
-
-    second_resampler = msresamp_crcf_create(second_resampler_ratio, As);
-    msresamp_crcf_print(second_resampler);
+//    msresamp_crcf_print(resampler);
 
     audio_resampler = msresamp_crcf_create(audio_resample_ratio, As);
-    msresamp_crcf_print(audio_resampler);
+//    msresamp_crcf_print(audio_resampler);
 
     float kf = 0.75;         // modulation factor
 
     fdem = freqdem_create(kf);
-    freqdem_print(fdem);
+//    freqdem_print(fdem);
+
+    initialized = true;
+    std::cout << "inputResampleRate " << params.bandwidth << std::endl;
+
 }
 
 DemodulatorThread::~DemodulatorThread() {
@@ -55,9 +57,44 @@ DemodulatorThread::~DemodulatorThread() {
 
 void DemodulatorThread::threadMain() {
 
+    if (!initialized) {
+        initialize();
+    }
+
     while (!terminated) {
         DemodulatorThreadIQData inp;
         inputQueue->pop(inp);
+
+        if (!commandQueue->empty()) {
+            bool paramsChanged = false;
+            while (!commandQueue->empty()) {
+                DemodulatorThreadCommand command;
+                commandQueue->pop(command);
+                switch (command.cmd) {
+                case DemodulatorThreadCommand::SDR_THREAD_CMD_SETBANDWIDTH:
+                    if (command.int_value < 3000) {
+                        command.int_value = 3000;
+                    }
+                    if (command.int_value > SRATE) {
+                        command.int_value = SRATE;
+                    }
+                    params.bandwidth = command.int_value;
+                    paramsChanged = true;
+                    break;
+                }
+            }
+
+            if (paramsChanged) {
+                initialize();
+                while (!inputQueue->empty()) { // catch up
+                    inputQueue->pop(inp);
+                }
+            }
+        }
+
+        if (!initialized) {
+            continue;
+        }
 
         std::vector<signed char> *data = &inp.data;
         if (data->size()) {
@@ -103,22 +140,11 @@ void DemodulatorThread::threadMain() {
                 }
             }
 
-            int wbfm_out_size = ceil((float) (num_written) * second_resampler_ratio);
-            liquid_float_complex resampled_wbfm_output[wbfm_out_size];
-
-            unsigned int num_wbfm_written;
-            msresamp_crcf_execute(second_resampler, resampled_output, num_written, resampled_wbfm_output, &num_wbfm_written);
-
-            for (int i = 0; i < num_wbfm_written; i++) {
-                firfilt_crcf_push(fir_audio_filter, resampled_wbfm_output[i]);
-                firfilt_crcf_execute(fir_audio_filter, &resampled_wbfm_output[i]);
-            }
-
-            int audio_out_size = ceil((float) (num_wbfm_written) * audio_resample_ratio);
+            int audio_out_size = ceil((float) (num_written) * audio_resample_ratio);
             liquid_float_complex resampled_audio_output[audio_out_size];
 
             unsigned int num_audio_written;
-            msresamp_crcf_execute(audio_resampler, resampled_wbfm_output, num_wbfm_written, resampled_audio_output, &num_audio_written);
+            msresamp_crcf_execute(audio_resampler, resampled_output, num_written, resampled_audio_output, &num_audio_written);
 
             std::vector<float> newBuffer;
             newBuffer.resize(num_audio_written * 2);

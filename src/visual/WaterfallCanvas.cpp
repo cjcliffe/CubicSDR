@@ -29,7 +29,7 @@ wxEND_EVENT_TABLE()
 
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0) {
+        wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0), bwChange(false), demodBW(0) {
 
     int in_block_size = BUF_SIZE / 2;
     int out_block_size = FFT_SIZE;
@@ -45,7 +45,8 @@ WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
     timer.start();
 
     mTracker.setTarget(this);
-
+    mTracker.setVertDragLock(true);
+    mTracker.setHorizDragLock(true);
     SetCursor(wxCURSOR_CROSS);
 }
 
@@ -62,6 +63,12 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
     glContext->BeginDraw();
     glContext->Draw(spectrum_points);
+
+    std::vector<DemodulatorInstance *> *demods = &wxGetApp().getDemodMgr().getDemodulators();
+
+    for (int i = 0, iMax = demods->size(); i < iMax; i++) {
+        glContext->DrawDemod((*demods)[i]);
+    }
 
     if (mTracker.mouseInView()) {
         glContext->DrawFreqSelector(mTracker.getMouseX());
@@ -180,34 +187,61 @@ void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
 
 void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
     mTracker.OnMouseMoved(event);
+
+    DemodulatorInstance *demod = wxGetApp().getDemodTest();
+
     if (mTracker.mouseDown()) {
-        int freqChange = mTracker.getDeltaMouseX() * SRATE;
+        if (demod && mTracker.getDeltaMouseY()) {
+            int bwDiff = (int)(mTracker.getDeltaMouseY() * 100000.0);
 
-        if (freqChange != 0) {
-            int freq = wxGetApp().getFrequency();
-            freq -= freqChange;
-            wxGetApp().setFrequency(freq);
+            if (!demodBW) {
+                demodBW = demod->getParams().bandwidth;
+            }
 
-            ((wxFrame*) parent)->GetStatusBar()->SetStatusText(
-                    wxString::Format(wxT("Set center frequency: %s"),
-                            wxNumberFormatter::ToString((long) freq, wxNumberFormatter::Style_WithThousandsSep)));
+            DemodulatorThreadCommand command;
+            command.cmd = DemodulatorThreadCommand::SDR_THREAD_CMD_SETBANDWIDTH;
+            demodBW = demodBW - bwDiff;
+            if (demodBW < 1000) {
+                demodBW = 1000;
+            }
+            if (demodBW > SRATE) {
+                demodBW = SRATE;
+            }
+
+            command.int_value = demodBW;
+            demod->getCommandQueue()->push(command);
+            bwChange = true;
         }
+
+//        int freqChange = mTracker.getDeltaMouseX() * SRATE;
+//
+//        if (freqChange != 0) {
+//            int freq = wxGetApp().getFrequency();
+//            freq -= freqChange;
+//            wxGetApp().setFrequency(freq);
+//
+//            ((wxFrame*) parent)->GetStatusBar()->SetStatusText(
+//                    wxString::Format(wxT("Set center frequency: %s"),
+//                            wxNumberFormatter::ToString((long) freq, wxNumberFormatter::Style_WithThousandsSep)));
+//        }
     }
 }
 
 void WaterfallCanvas::mouseDown(wxMouseEvent& event) {
     mTracker.OnMouseDown(event);
-    SetCursor(wxCURSOR_CROSS);
+    SetCursor(wxCURSOR_SIZENS);
+    bwChange = false;
 }
 
 void WaterfallCanvas::mouseWheelMoved(wxMouseEvent& event) {
+    DemodulatorInstance *demod = wxGetApp().getDemodTest();
     mTracker.OnMouseWheelMoved(event);
 }
 
 void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
     mTracker.OnMouseReleased(event);
 
-    if (mTracker.getOriginDeltaMouseX() == 0 && mTracker.getOriginDeltaMouseX() == 0) {
+    if (mTracker.getOriginDeltaMouseX() == 0 && mTracker.getOriginDeltaMouseY() == 0 && !bwChange) {
 
         float pos = mTracker.getMouseX();
 
@@ -222,15 +256,15 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
                         wxNumberFormatter::ToString((long) freq, wxNumberFormatter::Style_WithThousandsSep)));
     }
 
-    SetCursor(wxCURSOR_SIZEWE);
+    SetCursor(wxCURSOR_CROSS);
 }
 
 void WaterfallCanvas::mouseLeftWindow(wxMouseEvent& event) {
     mTracker.OnMouseLeftWindow(event);
-    SetCursor(wxCURSOR_SIZEWE);
+    SetCursor(wxCURSOR_CROSS);
 }
 
 void WaterfallCanvas::mouseEnterWindow(wxMouseEvent& event) {
     mTracker.OnMouseEnterWindow(event);
-    SetCursor(wxCURSOR_SIZEWE);
+    SetCursor(wxCURSOR_CROSS);
 }
