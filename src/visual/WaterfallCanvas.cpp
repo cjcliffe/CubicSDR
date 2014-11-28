@@ -199,7 +199,7 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
             }
 
             DemodulatorThreadCommand command;
-            command.cmd = DemodulatorThreadCommand::SDR_THREAD_CMD_SETBANDWIDTH;
+            command.cmd = DemodulatorThreadCommand::SDR_THREAD_CMD_SET_BANDWIDTH;
             demodBW = demodBW - bwDiff;
             if (demodBW < 1000) {
                 demodBW = 1000;
@@ -245,11 +245,17 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
 
         float pos = mTracker.getMouseX();
 
-        int freq = wxGetApp().getFrequency();
+        int center_freq = wxGetApp().getFrequency();
 
-        freq += (pos - 0.5) * SRATE;
+        DemodulatorInstance *demod = wxGetApp().getDemodTest();
 
-        wxGetApp().setFrequency(freq);
+        int freq = center_freq - (int)(0.5 * (float)SRATE) + (int)((float)pos * (float)SRATE);
+
+        DemodulatorThreadCommand command;
+        command.cmd = DemodulatorThreadCommand::SDR_THREAD_CMD_SET_FREQUENCY;
+        command.int_value = freq;
+
+        demod->getCommandQueue()->push(command);
 
         ((wxFrame*) parent)->GetStatusBar()->SetStatusText(
                 wxString::Format(wxT("Set center frequency: %s"),

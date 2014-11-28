@@ -3,11 +3,15 @@
 #include <vector>
 
 DemodulatorThread::DemodulatorThread(DemodulatorThreadInputQueue* pQueue) :
-        inputQueue(pQueue), visOutQueue(NULL), terminated(false), initialized(false), audio_resampler(NULL), resample_ratio(1), audio_resample_ratio(1), resampler(NULL), commandQueue(NULL), fir_filter(NULL) {
+        inputQueue(pQueue), visOutQueue(NULL), terminated(false), initialized(false), audio_resampler(NULL), resample_ratio(1), audio_resample_ratio(
+                1), resampler(NULL), commandQueue(NULL), fir_filter(NULL) {
 
     float kf = 0.75;         // modulation factor
     fdem = freqdem_create(kf);
 //    freqdem_print(fdem);
+
+    nco_shift = nco_crcf_create(LIQUID_VCO);
+    shift_freq = 0;
 
 }
 
@@ -55,7 +59,6 @@ void DemodulatorThread::initialize() {
     audio_resampler = msresamp_crcf_create(audio_resample_ratio, As);
 //    msresamp_crcf_print(audio_resampler);
 
-
     initialized = true;
 //    std::cout << "inputResampleRate " << params.bandwidth << std::endl;
 
@@ -82,7 +85,7 @@ void DemodulatorThread::threadMain() {
                 DemodulatorThreadCommand command;
                 commandQueue->pop(command);
                 switch (command.cmd) {
-                case DemodulatorThreadCommand::SDR_THREAD_CMD_SETBANDWIDTH:
+                case DemodulatorThreadCommand::SDR_THREAD_CMD_SET_BANDWIDTH:
                     if (command.int_value < 3000) {
                         command.int_value = 3000;
                     }
@@ -91,6 +94,9 @@ void DemodulatorThread::threadMain() {
                     }
                     params.bandwidth = command.int_value;
                     paramsChanged = true;
+                    break;
+                case DemodulatorThreadCommand::SDR_THREAD_CMD_SET_FREQUENCY:
+                    params.frequency = command.int_value;
                     break;
                 }
             }
@@ -107,17 +113,42 @@ void DemodulatorThread::threadMain() {
             continue;
         }
 
+        // Requested frequency is not center, shift it into the center!
+        if (inp.frequency != params.frequency) {
+            if ((params.frequency - inp.frequency) != shift_freq) {
+                shift_freq = params.frequency - inp.frequency;
+                if (abs(shift_freq) <= (int)((float)(SRATE/2) * 1.5)) {
+                    nco_crcf_set_frequency(nco_shift, (2.0 * M_PI) * (((float)abs(shift_freq)) / ((float) SRATE)));
+                }
+            }
+        }
+
+        if (abs(shift_freq) > (int)((float)(SRATE/2) * 1.5)) {
+            continue;
+        }
+
         std::vector<signed char> *data = &inp.data;
         if (data->size()) {
             liquid_float_complex filtered_input[BUF_SIZE / 2];
 
+            liquid_float_complex x, y, z;
+
             for (int i = 0; i < BUF_SIZE / 2; i++) {
+                if (shift_freq != 0) {
+                    nco_crcf_step(nco_shift);
 
-                liquid_float_complex x;
-                liquid_float_complex y;
+                    z.real = (float) (*data)[i * 2] / 127.0f;
+                    z.imag = (float) (*data)[i * 2 + 1] / 127.0f;
 
-                x.real = (float) (*data)[i * 2] / 127.0f;
-                x.imag = (float) (*data)[i * 2 + 1] / 127.0f;
+                    if (shift_freq < 0) {
+                        nco_crcf_mix_up(nco_shift, z, &x);
+                    } else {
+                        nco_crcf_mix_down(nco_shift, z, &x);
+                    }
+                } else {
+                    x.real = (float) (*data)[i * 2] / 127.0f;
+                    x.imag = (float) (*data)[i * 2 + 1] / 127.0f;
+                }
 
                 firfilt_crcf_push(fir_filter, x);      // push input sample
                 firfilt_crcf_execute(fir_filter, &y);   // compute output

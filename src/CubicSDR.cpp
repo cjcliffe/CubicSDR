@@ -88,7 +88,7 @@ PrimaryGLContext& CubicSDR::GetContext(wxGLCanvas *canvas) {
 
 void CubicSDR::setFrequency(unsigned int freq) {
     frequency = freq;
-    demodulatorTest->getParams().frequency = freq;
+//    demodulatorTest->getParams().frequency = freq;
     SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_TUNE);
     command.int_value = freq;
     threadCmdQueueSDR->push(command);

@@ -23,7 +23,8 @@ class  DemodulatorThreadCommand {
 public:
     enum  DemodulatorThreadCommandEnum {
         SDR_THREAD_CMD_NULL,
-        SDR_THREAD_CMD_SETBANDWIDTH
+        SDR_THREAD_CMD_SET_BANDWIDTH,
+        SDR_THREAD_CMD_SET_FREQUENCY
     };
 
     DemodulatorThreadCommand() : cmd(cmd), int_value(SDR_THREAD_CMD_NULL) {
@@ -149,6 +150,9 @@ protected:
     DemodulatorThreadParameters last_params;
 
     freqdem fdem;
+    nco_crcf nco_shift;
+    int shift_freq;
+
 
     std::atomic<bool> terminated;
     std::atomic<bool> initialized;
