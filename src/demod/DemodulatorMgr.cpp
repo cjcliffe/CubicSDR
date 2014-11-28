@@ -2,6 +2,12 @@
 
 DemodulatorInstance::DemodulatorInstance() :
         t_Demod(NULL), threadQueueDemod(NULL), demodulatorThread(NULL) {
+
+    threadQueueDemod = new DemodulatorThreadInputQueue;
+    threadQueueCommand = new DemodulatorThreadCommandQueue;
+    demodulatorThread = new DemodulatorThread(threadQueueDemod);
+    demodulatorThread->setCommandQueue(threadQueueCommand);
+
 }
 
 DemodulatorInstance::~DemodulatorInstance() {
@@ -14,18 +20,28 @@ void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQu
     demodulatorThread->setVisualOutputQueue(tQueue);
 }
 
-void DemodulatorInstance::init() {
-    if (demodulatorThread) {
+void DemodulatorInstance::run() {
+    if (t_Demod) {
         terminate();
         delete threadQueueDemod;
         delete demodulatorThread;
         delete t_Demod;
+
+        threadQueueDemod = new DemodulatorThreadInputQueue;
+        threadQueueCommand = new DemodulatorThreadCommandQueue;
+        demodulatorThread = new DemodulatorThread(threadQueueDemod);
+        demodulatorThread->setCommandQueue(threadQueueCommand);
     }
 
-    threadQueueDemod = new DemodulatorThreadInputQueue;
-    demodulatorThread = new DemodulatorThread(threadQueueDemod, &params);
-
     t_Demod = new std::thread(&DemodulatorThread::threadMain, demodulatorThread);
+}
+
+DemodulatorThreadCommandQueue *DemodulatorInstance::getCommandQueue() {
+    return threadQueueCommand;
+}
+
+DemodulatorThreadParameters &DemodulatorInstance::getParams() {
+    return demodulatorThread->getParams();
 }
 
 void DemodulatorInstance::terminate() {
@@ -54,4 +70,8 @@ void DemodulatorMgr::terminateAll() {
         d->terminate();
         delete d;
     }
+}
+
+std::vector<DemodulatorInstance *> &DemodulatorMgr::getDemodulators() {
+    return demods;
 }

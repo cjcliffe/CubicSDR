@@ -208,6 +208,15 @@ public:
     }
 
     /**
+     *  Remove any items in the queue.
+     */
+    void flush() const {
+        std::lock_guard < std::mutex > lock(m_mutex);
+        std::queue<T, Container> emptyQueue;
+        std::swap(m_queue, emptyQueue);
+    }
+
+    /**
      *  Swaps the contents.
      * \param[out] sq The ThreadQueue to swap with 'this'.
      */

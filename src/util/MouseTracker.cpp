@@ -15,17 +15,23 @@ void MouseTracker::OnMouseMoved(wxMouseEvent& event) {
     deltaMouseY = mouseY - lastMouseY;
 
     if (isMouseDown) {
-        lastMouseX = mouseX;
-
-        if (vertDragLock && mouseY != lastMouseY) {
-            target->WarpPointer(event.m_x, lastMouseY * ClientSize.y);
-        } else {
-            lastMouseY = mouseY;
+#ifndef __APPLE__
+        if (horizDragLock && vertDragLock) {
+            target->WarpPointer(originMouseX * ClientSize.x, originMouseY * ClientSize.y);
+            mouseX = originMouseX;
+            mouseY = originMouseY;
+        } else if (vertDragLock  && mouseY != lastMouseY) {
+            target->WarpPointer(event.m_x, originMouseY * ClientSize.y);
+            mouseY = originMouseY;
+        } else if (horizDragLock && mouseX != lastMouseX) {
+            target->WarpPointer(originMouseX * ClientSize.x, event.m_y);
+            mouseX = originMouseX;
         }
-    } else {
-        lastMouseY = mouseY;
-        lastMouseX = mouseX;
+#endif
     }
+
+    lastMouseX = mouseX;
+    lastMouseY = mouseY;
 }
 
 void MouseTracker::OnMouseDown(wxMouseEvent& event) {
@@ -103,6 +109,10 @@ float MouseTracker::getMouseY() {
 
 void MouseTracker::setVertDragLock(bool dragLock) {
     vertDragLock = dragLock;
+}
+
+void MouseTracker::setHorizDragLock(bool dragLock) {
+    horizDragLock = dragLock;
 }
 
 bool MouseTracker::mouseDown() {

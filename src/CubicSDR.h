@@ -40,6 +40,10 @@ public:
         return demodulatorTest;
     }
 
+    DemodulatorMgr &getDemodMgr() {
+        return demodMgr;
+    }
+
 private:
     PrimaryGLContext *m_glContext;
 

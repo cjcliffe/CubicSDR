@@ -11,12 +11,15 @@ public:
     std::thread *t_Demod;
 
     DemodulatorThreadInputQueue* threadQueueDemod;
-    DemodulatorThreadParameters params;
+    DemodulatorThreadCommandQueue* threadQueueCommand;
 
     DemodulatorInstance();
     ~DemodulatorInstance();
     void setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue);
-    void init();
+    DemodulatorThreadCommandQueue *getCommandQueue();
+    DemodulatorThreadParameters &getParams();
+
+    void run();
     void terminate();
 };
 
@@ -26,6 +29,7 @@ public:
     ~DemodulatorMgr();
 
     DemodulatorInstance *newThread();
+    std::vector<DemodulatorInstance *> &getDemodulators();
 
     void terminateAll();
 private:

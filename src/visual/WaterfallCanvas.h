@@ -48,6 +48,8 @@ private:
     Timer timer;
     float frameTimer;
     MouseTracker mTracker;
+    bool bwChange;
+    int demodBW;
 
 // event table
 wxDECLARE_EVENT_TABLE();

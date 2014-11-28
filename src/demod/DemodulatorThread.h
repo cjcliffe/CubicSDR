@@ -16,8 +16,29 @@
 #include "CubicSDRDefs.h"
 
 enum DemodulatorType {
-    DEMOD_TYPE_NULL, DEMOD_TYPE_AM, DEMOD_TYPE_FM, DEMOD_TYPE_LSB, DEMOD_TYPE_USB, DEMOD_TYPE_WFM
+    DEMOD_TYPE_NULL, DEMOD_TYPE_AM, DEMOD_TYPE_FM, DEMOD_TYPE_LSB, DEMOD_TYPE_USB
 };
+
+class  DemodulatorThreadCommand {
+public:
+    enum  DemodulatorThreadCommandEnum {
+        SDR_THREAD_CMD_NULL,
+        SDR_THREAD_CMD_SET_BANDWIDTH,
+        SDR_THREAD_CMD_SET_FREQUENCY
+    };
+
+    DemodulatorThreadCommand() : cmd(cmd), int_value(SDR_THREAD_CMD_NULL) {
+
+    }
+
+    DemodulatorThreadCommand(DemodulatorThreadCommandEnum cmd) : cmd(cmd), int_value(0) {
+
+    }
+
+    DemodulatorThreadCommandEnum cmd;
+    int int_value;
+};
+
 
 class DemodulatorThreadIQData {
 public:
@@ -65,18 +86,16 @@ public:
 
 class DemodulatorThreadParameters {
 public:
+    unsigned int frequency;
     unsigned int inputRate;
-    unsigned int inputResampleRate; // set equal to disable second stage re-sampling?
-    unsigned int demodResampleRate;
-    unsigned int filterFrequency;
+    unsigned int bandwidth; // set equal to disable second stage re-sampling?
     unsigned int audioSampleRate;
     AudioThreadInputQueue *audioInputQueue;
 
     DemodulatorType demodType;
 
     DemodulatorThreadParameters() :
-            audioInputQueue(NULL), inputRate(SRATE), inputResampleRate(200000), demodResampleRate(100000), audioSampleRate(AUDIO_FREQUENCY), filterFrequency(
-                    32000), demodType(DEMOD_TYPE_WFM) {
+        frequency(0), audioInputQueue(NULL), inputRate(SRATE), bandwidth(200000), audioSampleRate(AUDIO_FREQUENCY), demodType(DEMOD_TYPE_FM) {
 
     }
 
@@ -87,11 +106,12 @@ public:
 
 typedef ThreadQueue<DemodulatorThreadIQData> DemodulatorThreadInputQueue;
 typedef ThreadQueue<AudioThreadInput> DemodulatorThreadOutputQueue;
+typedef ThreadQueue<DemodulatorThreadCommand> DemodulatorThreadCommandQueue;
 
 class DemodulatorThread {
 public:
 
-    DemodulatorThread(DemodulatorThreadInputQueue* pQueue, DemodulatorThreadParameters *params);
+    DemodulatorThread(DemodulatorThreadInputQueue* pQueue);
     ~DemodulatorThread();
 
     void threadMain();
@@ -101,26 +121,39 @@ public:
         visOutQueue->set_max_num_items(1);
     }
 
+    void setCommandQueue(DemodulatorThreadCommandQueue *tQueue) {
+        commandQueue = tQueue;
+    }
+
+    DemodulatorThreadParameters &getParams() {
+        return params;
+    }
+
+    void initialize();
+
     void terminate();
 
 protected:
     DemodulatorThreadInputQueue* inputQueue;
     DemodulatorThreadOutputQueue* visOutQueue;
+    DemodulatorThreadCommandQueue* commandQueue;
 
     firfilt_crcf fir_filter;
-    firfilt_crcf fir_audio_filter;
 
     msresamp_crcf resampler;
     float resample_ratio;
-
-    msresamp_crcf second_resampler;
-    float second_resampler_ratio;
 
     msresamp_crcf audio_resampler;
     float audio_resample_ratio;
 
     DemodulatorThreadParameters params;
+    DemodulatorThreadParameters last_params;
+
     freqdem fdem;
+    nco_crcf nco_shift;
+    int shift_freq;
+
 
     std::atomic<bool> terminated;
+    std::atomic<bool> initialized;
 };
