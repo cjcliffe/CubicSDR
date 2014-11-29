@@ -36,11 +36,19 @@ bool CubicSDR::OnInit() {
 
     threadCmdQueueSDR = new SDRThreadCommandQueue;
     sdrThread = new SDRThread(threadCmdQueueSDR);
-    sdrThread->bindDemodulator(demodulatorTest);
 
+    sdrPostThread = new SDRPostThread();
+
+    iqPostDataQueue = new SDRThreadIQDataQueue;
     iqVisualQueue = new SDRThreadIQDataQueue;
-    sdrThread->setIQVisualQueue(iqVisualQueue);
 
+    sdrThread->setIQDataOutQueue(iqPostDataQueue);
+    sdrPostThread->setIQDataInQueue(iqPostDataQueue);
+    sdrPostThread->setIQVisualQueue(iqVisualQueue);
+
+    sdrPostThread->bindDemodulator(demodulatorTest);
+
+    threadPostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
     threadSDR = new std::thread(&SDRThread::threadMain, sdrThread);
 
     AppFrame *appframe = new AppFrame();
@@ -53,8 +61,14 @@ int CubicSDR::OnExit() {
     sdrThread->terminate();
     threadSDR->join();
 
+    sdrPostThread->terminate();
+    threadPostSDR->join();
+
     delete sdrThread;
     delete threadSDR;
+
+    delete sdrPostThread;
+    delete threadPostSDR;
 
     demodMgr.terminateAll();
 
@@ -69,6 +83,8 @@ int CubicSDR::OnExit() {
 
     delete iqVisualQueue;
     delete audioVisualQueue;
+    delete iqPostDataQueue;
+
     delete m_glContext;
 
     return wxApp::OnExit();

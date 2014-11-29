@@ -90,6 +90,7 @@ SET (cubicsdr_sources
     src/CubicSDR.cpp
 	src/AppFrame.cpp
 	src/sdr/SDRThread.cpp
+	src/sdr/SDRPostThread.cpp
 	src/demod/DemodulatorThread.cpp
 	src/demod/DemodulatorMgr.cpp
 	src/audio/AudioThread.cpp
@@ -110,6 +111,7 @@ SET (cubicsdr_headers
     src/CubicSDR.h
 	src/AppFrame.h
 	src/sdr/SDRThread.h
+	src/sdr/SDRPostThread.h
 	src/demod/DemodulatorThread.h
 	src/demod/DemodulatorMgr.h
 	src/audio/AudioThread.h

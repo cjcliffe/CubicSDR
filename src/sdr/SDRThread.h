@@ -66,28 +66,17 @@ public:
 
     int enumerate_rtl();
 
-    void bindDemodulator(DemodulatorInstance *demod) {
-        demodulators.push_back(demod);
-    }
-
     void threadMain();
 
     void setIQDataOutQueue(SDRThreadIQDataQueue* iqDataQueue) {
         iqDataOutQueue = iqDataQueue;
     }
-    void setIQVisualQueue(SDRThreadIQDataQueue *iqVisQueue) {
-        iqVisualQueue = iqVisQueue;
-        iqVisualQueue->set_max_num_items(1);
-    }
 
     void terminate();
 protected:
-
     uint32_t sample_rate;
-    SDRThreadCommandQueue* m_pQueue;
-    SDRThreadIQDataQueue* iqDataOutQueue;
-    SDRThreadIQDataQueue* iqVisualQueue;
+    std::atomic<SDRThreadCommandQueue*> m_pQueue;
+    std::atomic<SDRThreadIQDataQueue*> iqDataOutQueue;
 
-    std::vector<DemodulatorInstance *> demodulators;
     std::atomic<bool> terminated;
 };
