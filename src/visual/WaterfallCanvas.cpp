@@ -85,13 +85,13 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     switch (event.GetKeyCode()) {
     case WXK_RIGHT:
         freq = wxGetApp().getFrequency();
-        freq += SRATE/2;
+        freq += SRATE / 2;
         wxGetApp().setFrequency(freq);
         ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), freq));
         break;
     case WXK_LEFT:
         freq = wxGetApp().getFrequency();
-        freq -= SRATE/2;
+        freq -= SRATE / 2;
         wxGetApp().setFrequency(freq);
         ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), freq));
         break;
@@ -129,19 +129,20 @@ void WaterfallCanvas::setData(std::vector<signed char> *data) {
             fft_result_maa.resize(FFT_SIZE);
         }
 
-        for (int j = 0; j < 2; j++) {
-            for (int i = 0, iMax = FFT_SIZE / 2; i < iMax; i++) {
-                double a = out[i][0];
-                double b = out[i][1];
-                double c = sqrt(a * a + b * b);
+        int n;
+        for (int i = 0, iMax = FFT_SIZE / 2; i < iMax; i++) {
+            n = (i == 0) ? 1 : i;
+            double a = out[n][0];
+            double b = out[n][1];
+            double c = sqrt(a * a + b * b);
 
-                double x = out[FFT_SIZE / 2 + i][0];
-                double y = out[FFT_SIZE / 2 + i][1];
-                double z = sqrt(x * x + y * y);
+            n = (i == FFT_SIZE / 2) ? (FFT_SIZE / 2 + 1) : i;
+            double x = out[FFT_SIZE / 2 + n][0];
+            double y = out[FFT_SIZE / 2 + n][1];
+            double z = sqrt(x * x + y * y);
 
-                fft_result[i] = (z);
-                fft_result[FFT_SIZE / 2 + i] = (c);
-            }
+            fft_result[i] = (z);
+            fft_result[FFT_SIZE / 2 + i] = (c);
         }
 
         float time_slice = (float) SRATE / (float) (BUF_SIZE / 2);
@@ -192,7 +193,7 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
 
     if (mTracker.mouseDown()) {
         if (demod && mTracker.getDeltaMouseY()) {
-            int bwDiff = (int)(mTracker.getDeltaMouseY() * 100000.0);
+            int bwDiff = (int) (mTracker.getDeltaMouseY() * 100000.0);
 
             if (!demodBW) {
                 demodBW = demod->getParams().bandwidth;
@@ -249,7 +250,7 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
 
         DemodulatorInstance *demod = wxGetApp().getDemodTest();
 
-        int freq = center_freq - (int)(0.5 * (float)SRATE) + (int)((float)pos * (float)SRATE);
+        int freq = center_freq - (int) (0.5 * (float) SRATE) + (int) ((float) pos * (float) SRATE);
 
         DemodulatorThreadCommand command;
         command.cmd = DemodulatorThreadCommand::SDR_THREAD_CMD_SET_FREQUENCY;

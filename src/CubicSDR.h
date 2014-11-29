@@ -11,6 +11,7 @@
 
 #include "ThreadQueue.h"
 #include "SDRThread.h"
+#include "SDRPostThread.h"
 #include "AudioThread.h"
 #include "DemodulatorMgr.h"
 
@@ -57,12 +58,15 @@ private:
     AudioThread *audioThread;
 
     SDRThread *sdrThread;
+    SDRPostThread *sdrPostThread;
     SDRThreadCommandQueue* threadCmdQueueSDR;
     SDRThreadIQDataQueue* iqVisualQueue;
+    SDRThreadIQDataQueue* iqPostDataQueue;
     DemodulatorThreadOutputQueue* audioVisualQueue;
 
     std::thread *threadAudio;
     std::thread *threadSDR;
+    std::thread *threadPostSDR;
 };
 
 DECLARE_APP(CubicSDR)

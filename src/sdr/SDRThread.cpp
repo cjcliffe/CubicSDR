@@ -4,7 +4,7 @@
 #include "CubicSDR.h"
 
 SDRThread::SDRThread(SDRThreadCommandQueue* pQueue) :
-        m_pQueue(pQueue), iqDataOutQueue(NULL), iqVisualQueue(NULL), terminated(false) {
+        m_pQueue(pQueue), iqDataOutQueue(NULL), terminated(false) {
     dev = NULL;
     sample_rate = SRATE;
 }
@@ -110,7 +110,7 @@ void SDRThread::threadMain() {
     rtlsdr_set_sample_rate(dev, bandwidth);
     rtlsdr_set_center_freq(dev, frequency);
     rtlsdr_set_agc_mode(dev, 1);
-    rtlsdr_set_offset_tuning(dev, 1);
+    rtlsdr_set_offset_tuning(dev, 0);
     rtlsdr_reset_buffer(dev);
 
     sample_rate = rtlsdr_get_sample_rate(dev);
@@ -122,13 +122,15 @@ void SDRThread::threadMain() {
 
     std::cout << "Sampling..";
     while (!terminated) {
-        if (!m_pQueue->empty()) {
+        SDRThreadCommandQueue *cmdQueue = m_pQueue.load();
+
+        if (!cmdQueue->empty()) {
             bool freq_changed = false;
             float new_freq;
 
-            while (!m_pQueue->empty()) {
+            while (!cmdQueue->empty()) {
                 SDRThreadCommand command;
-                m_pQueue->pop(command);
+                cmdQueue->pop(command);
 
                 switch (command.cmd) {
                 case SDRThreadCommand::SDR_THREAD_CMD_TUNE:
@@ -162,26 +164,8 @@ void SDRThread::threadMain() {
         dataOut.data = new_buffer;
 
         if (iqDataOutQueue != NULL) {
-            iqDataOutQueue->push(dataOut);
+            iqDataOutQueue.load()->push(dataOut);
         }
-
-        if (iqVisualQueue != NULL) {
-            iqVisualQueue->push(dataOut);
-        }
-
-        if (demodulators.size()) {
-            DemodulatorThreadIQData demodDataOut;
-            demodDataOut.frequency = frequency;
-            demodDataOut.bandwidth = bandwidth;
-            demodDataOut.data = new_buffer;
-
-            for (int i = 0, iMax = demodulators.size(); i < iMax; i++) {
-                DemodulatorInstance *demod = demodulators[i];
-                DemodulatorThreadInputQueue *demodQueue = demod->threadQueueDemod;
-                demodQueue->push(demodDataOut);
-            }
-        }
-
     }
 
 }

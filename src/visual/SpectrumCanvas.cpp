@@ -117,19 +117,20 @@ void SpectrumCanvas::setData(std::vector<signed char> *data) {
             fft_result_maa.resize(FFT_SIZE);
         }
 
-        for (int j = 0; j < 2; j++) {
-            for (int i = 0, iMax = FFT_SIZE / 2; i < iMax; i++) {
-                double a = out[i][0];
-                double b = out[i][1];
-                double c = sqrt(a * a + b * b);
+        int n;
+        for (int i = 0, iMax = FFT_SIZE / 2; i < iMax; i++) {
+            n = (i == 0)?1:i;
+            double a = out[n][0];
+            double b = out[n][1];
+            double c = sqrt(a * a + b * b);
 
-                double x = out[FFT_SIZE / 2 + i][0];
-                double y = out[FFT_SIZE / 2 + i][1];
-                double z = sqrt(x * x + y * y);
+            n = (i == FFT_SIZE/2)?(FFT_SIZE/2+1):i;
+            double x = out[FFT_SIZE / 2 + n][0];
+            double y = out[FFT_SIZE / 2 + n][1];
+            double z = sqrt(x * x + y * y);
 
-                fft_result[i] = (z);
-                fft_result[FFT_SIZE / 2 + i] = (c);
-            }
+            fft_result[i] = (z);
+            fft_result[FFT_SIZE / 2 + i] = (c);
         }
 
         float time_slice = (float) SRATE / (float) (BUF_SIZE / 2);
