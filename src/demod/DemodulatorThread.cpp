@@ -117,13 +117,13 @@ void DemodulatorThread::threadMain() {
         if (inp.frequency != params.frequency) {
             if ((params.frequency - inp.frequency) != shift_freq) {
                 shift_freq = params.frequency - inp.frequency;
-                if (abs(shift_freq) <= (int)((float)(SRATE/2) * 1.5)) {
-                    nco_crcf_set_frequency(nco_shift, (2.0 * M_PI) * (((float)abs(shift_freq)) / ((float) SRATE)));
+                if (abs(shift_freq) <= (int) ((float) (SRATE / 2) * 1.5)) {
+                    nco_crcf_set_frequency(nco_shift, (2.0 * M_PI) * (((float) abs(shift_freq)) / ((float) SRATE)));
                 }
             }
         }
 
-        if (abs(shift_freq) > (int)((float)(SRATE/2) * 1.5)) {
+        if (abs(shift_freq) > (int) ((float) (SRATE / 2) * 1.5)) {
             continue;
         }
 
@@ -163,23 +163,11 @@ void DemodulatorThread::threadMain() {
             unsigned int num_written;       // number of values written to buffer
             msresamp_crcf_execute(resampler, filtered_input, (BUF_SIZE / 2), resampled_output, &num_written);
 
-            float waveform_ceil = 0, waveform_floor = 0;
-
             float pcm = 0;
 
             for (int i = 0; i < num_written; i++) {
                 freqdem_demodulate(fdem, resampled_output[i], &pcm);
-
                 resampled_output[i].real = (float) pcm;
-                resampled_output[i].imag = 0;
-
-                if (waveform_ceil < resampled_output[i].real) {
-                    waveform_ceil = resampled_output[i].real;
-                }
-
-                if (waveform_floor > resampled_output[i].real) {
-                    waveform_floor = resampled_output[i].real;
-                }
             }
 
             int audio_out_size = ceil((float) (num_written) * audio_resample_ratio);
