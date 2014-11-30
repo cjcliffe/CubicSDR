@@ -92,7 +92,9 @@ void WaterfallContext::DrawDemod(DemodulatorInstance *demod) {
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_TEXTURE_2D);
 
-    glColor3f(1.0, 1.0, 1.0);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
+    glColor4f(1.0, 1.0, 1.0, 0.6);
 
     glBegin(GL_LINES);
     glVertex3f((uxPos - 0.5) * 2.0, 1.0, 0.0);
@@ -107,11 +109,23 @@ void WaterfallContext::DrawDemod(DemodulatorInstance *demod) {
     glVertex3f((uxPos - 0.5) * 2.0 + ofs, -1.0, 0.0);
 
     glEnd();
+
+    glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
+    glColor4f(1.0, 1.0, 1.0, 0.2);
+    glBegin(GL_QUADS);
+    glVertex3f((uxPos - 0.5) * 2.0 - ofs, 1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0 - ofs, -1.0, 0.0);
+
+    glVertex3f((uxPos - 0.5) * 2.0 + ofs, -1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0 + ofs, 1.0, 0.0);
+    glEnd();
+
+    glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
 
 }
 
-void WaterfallContext::DrawFreqSelector(float uxPos) {
+void WaterfallContext::DrawFreqSelector(float uxPos, float r = 1, float g = 1, float b = 1) {
     DemodulatorInstance *demod = wxGetApp().getDemodTest();
 
     if (!demod) {
@@ -121,7 +135,9 @@ void WaterfallContext::DrawFreqSelector(float uxPos) {
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_TEXTURE_2D);
 
-    glColor3f(1.0, 1.0, 1.0);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
+    glColor4f(r, g, b, 0.6);
 
     glBegin(GL_LINES);
     glVertex3f((uxPos - 0.5) * 2.0, 1.0, 0.0);
@@ -136,6 +152,7 @@ void WaterfallContext::DrawFreqSelector(float uxPos) {
     glVertex3f((uxPos - 0.5) * 2.0 + ofs, -1.0, 0.0);
 
     glEnd();
+    glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
 
 }

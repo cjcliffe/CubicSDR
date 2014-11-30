@@ -6,7 +6,7 @@ DemodulatorThread::DemodulatorThread(DemodulatorThreadInputQueue* pQueue) :
         inputQueue(pQueue), visOutQueue(NULL), terminated(false), initialized(false), audio_resampler(NULL), resample_ratio(1), audio_resample_ratio(
                 1), resampler(NULL), commandQueue(NULL), fir_filter(NULL) {
 
-    float kf = 0.75;         // modulation factor
+    float kf = 0.5;         // modulation factor
     fdem = freqdem_create(kf);
 //    freqdem_print(fdem);
 

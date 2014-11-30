@@ -71,7 +71,7 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     }
 
     if (mTracker.mouseInView()) {
-        glContext->DrawFreqSelector(mTracker.getMouseX());
+        glContext->DrawFreqSelector(mTracker.getMouseX(),0,1,0);
     }
     glContext->EndDraw();
 
