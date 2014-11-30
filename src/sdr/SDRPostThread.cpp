@@ -10,14 +10,10 @@ SDRPostThread::SDRPostThread() :
 }
 
 SDRPostThread::~SDRPostThread() {
-    std::cout << std::endl << "SDR post-process thread done." << std::endl << std::endl;
     rtlsdr_close(dev);
 }
 
 void SDRPostThread::threadMain() {
-
-    std::cout << "SDR post-process thread starting.." << std::endl;
-
     int n_read;
     double seconds = 0.0;
 
@@ -25,7 +21,8 @@ void SDRPostThread::threadMain() {
 
     liquid_float_complex x, y;
 
-    std::cout << "Sampling..";
+    std::cout << "SDR post-processing thread started.." << std::endl;
+
     while (!terminated) {
         SDRThreadIQData data_in;
 
@@ -70,9 +67,11 @@ void SDRPostThread::threadMain() {
             }
         }
     }
-
+    std::cout << "SDR post-processing thread done." << std::endl;
 }
 
 void SDRPostThread::terminate() {
     terminated = true;
+    SDRThreadIQData dummy;
+    iqDataInQueue.load()->push(dummy);
 }

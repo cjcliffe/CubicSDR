@@ -10,7 +10,6 @@ SDRThread::SDRThread(SDRThreadCommandQueue* pQueue) :
 }
 
 SDRThread::~SDRThread() {
-    std::cout << std::endl << "SDR Thread Done." << std::endl << std::endl;
     rtlsdr_close(dev);
 }
 
@@ -91,6 +90,8 @@ int SDRThread::enumerate_rtl() {
 
 void SDRThread::threadMain() {
 
+    std::cout << "SDR thread initializing.." << std::endl;
+
     int dev_count = rtlsdr_get_device_count();
     int first_available = enumerate_rtl();
 
@@ -120,7 +121,7 @@ void SDRThread::threadMain() {
     int n_read;
     double seconds = 0.0;
 
-    std::cout << "Sampling..";
+    std::cout << "SDR thread started.." << std::endl;
     while (!terminated) {
         SDRThreadCommandQueue *cmdQueue = m_pQueue.load();
 
@@ -167,7 +168,7 @@ void SDRThread::threadMain() {
             iqDataOutQueue.load()->push(dataOut);
         }
     }
-
+    std::cout << "SDR thread done." << std::endl;
 }
 
 void SDRThread::terminate() {

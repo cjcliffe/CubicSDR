@@ -19,26 +19,25 @@ enum DemodulatorType {
     DEMOD_TYPE_NULL, DEMOD_TYPE_AM, DEMOD_TYPE_FM, DEMOD_TYPE_LSB, DEMOD_TYPE_USB
 };
 
-class  DemodulatorThreadCommand {
+class DemodulatorThreadCommand {
 public:
-    enum  DemodulatorThreadCommandEnum {
-        SDR_THREAD_CMD_NULL,
-        SDR_THREAD_CMD_SET_BANDWIDTH,
-        SDR_THREAD_CMD_SET_FREQUENCY
+    enum DemodulatorThreadCommandEnum {
+        SDR_THREAD_CMD_NULL, SDR_THREAD_CMD_SET_BANDWIDTH, SDR_THREAD_CMD_SET_FREQUENCY
     };
 
-    DemodulatorThreadCommand() : cmd(cmd), int_value(SDR_THREAD_CMD_NULL) {
+    DemodulatorThreadCommand() :
+            cmd(cmd), int_value(SDR_THREAD_CMD_NULL) {
 
     }
 
-    DemodulatorThreadCommand(DemodulatorThreadCommandEnum cmd) : cmd(cmd), int_value(0) {
+    DemodulatorThreadCommand(DemodulatorThreadCommandEnum cmd) :
+            cmd(cmd), int_value(0) {
 
     }
 
     DemodulatorThreadCommandEnum cmd;
     int int_value;
 };
-
 
 class DemodulatorThreadIQData {
 public:
@@ -90,12 +89,11 @@ public:
     unsigned int inputRate;
     unsigned int bandwidth; // set equal to disable second stage re-sampling?
     unsigned int audioSampleRate;
-    AudioThreadInputQueue *audioInputQueue;
 
     DemodulatorType demodType;
 
     DemodulatorThreadParameters() :
-        frequency(0), audioInputQueue(NULL), inputRate(SRATE), bandwidth(200000), audioSampleRate(AUDIO_FREQUENCY), demodType(DEMOD_TYPE_FM) {
+            frequency(0), inputRate(SRATE), bandwidth(200000), audioSampleRate(AUDIO_FREQUENCY), demodType(DEMOD_TYPE_FM) {
 
     }
 
@@ -125,6 +123,10 @@ public:
         commandQueue = tQueue;
     }
 
+    void setAudioInputQueue(AudioThreadInputQueue *tQueue) {
+        audioInputQueue = tQueue;
+    }
+
     DemodulatorThreadParameters &getParams() {
         return params;
     }
@@ -137,6 +139,7 @@ protected:
     DemodulatorThreadInputQueue* inputQueue;
     DemodulatorThreadOutputQueue* visOutQueue;
     DemodulatorThreadCommandQueue* commandQueue;
+    AudioThreadInputQueue *audioInputQueue;
 
     firfilt_crcf fir_filter;
 
@@ -152,7 +155,6 @@ protected:
     freqdem fdem;
     nco_crcf nco_shift;
     int shift_freq;
-
 
     std::atomic<bool> terminated;
     std::atomic<bool> initialized;

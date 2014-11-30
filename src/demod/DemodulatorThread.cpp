@@ -66,7 +66,6 @@ void DemodulatorThread::initialize() {
 }
 
 DemodulatorThread::~DemodulatorThread() {
-    std::cout << std::endl << "Demodulator Thread Done." << std::endl << std::endl;
 }
 
 void DemodulatorThread::threadMain() {
@@ -75,6 +74,7 @@ void DemodulatorThread::threadMain() {
         initialize();
     }
 
+    std::cout << "Demodulator thread started.." << std::endl;
     while (!terminated) {
         DemodulatorThreadIQData inp;
         inputQueue->pop(inp);
@@ -200,8 +200,8 @@ void DemodulatorThread::threadMain() {
             AudioThreadInput ati;
             ati.data = newBuffer;
 
-            if (params.audioInputQueue != NULL) {
-                params.audioInputQueue->push(ati);
+            if (audioInputQueue != NULL) {
+                audioInputQueue->push(ati);
             }
 
             if (visOutQueue != NULL) {
@@ -209,10 +209,11 @@ void DemodulatorThread::threadMain() {
             }
         }
     }
+
+    std::cout << "Demodulator thread done." << std::endl;
 }
 
 void DemodulatorThread::terminate() {
-    std::cout << "Terminating demodulator thread.." << std::endl;
     terminated = true;
     DemodulatorThreadIQData inp;    // push dummy to nudge queue
     inputQueue->push(inp);

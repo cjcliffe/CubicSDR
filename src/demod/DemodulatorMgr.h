@@ -2,20 +2,27 @@
 
 #include <vector>
 #include <map>
+#include <thread>
 
 #include "DemodulatorThread.h"
 
 class DemodulatorInstance {
 public:
-    DemodulatorThread *demodulatorThread;
-    std::thread *t_Demod;
 
     DemodulatorThreadInputQueue* threadQueueDemod;
     DemodulatorThreadCommandQueue* threadQueueCommand;
+    DemodulatorThread *demodulatorThread;
+    std::thread *t_Demod;
+
+    AudioThreadInputQueue *audioInputQueue;
+    AudioThread *audioThread;
+    std::thread *t_Audio;
 
     DemodulatorInstance();
     ~DemodulatorInstance();
+
     void setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue);
+
     DemodulatorThreadCommandQueue *getCommandQueue();
     DemodulatorThreadParameters &getParams();
 

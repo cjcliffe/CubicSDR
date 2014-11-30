@@ -21,13 +21,7 @@ bool CubicSDR::OnInit() {
 
     frequency = DEFAULT_FREQ;
 
-    audioInputQueue = new AudioThreadInputQueue;
-    audioThread = new AudioThread(audioInputQueue);
-
-    threadAudio = new std::thread(&AudioThread::threadMain, audioThread);
-
     demodulatorTest = demodMgr.newThread();
-    demodulatorTest->getParams().audioInputQueue = audioInputQueue;
     demodulatorTest->getParams().frequency = DEFAULT_FREQ;
     demodulatorTest->run();
 
@@ -48,8 +42,8 @@ bool CubicSDR::OnInit() {
 
     sdrPostThread->bindDemodulator(demodulatorTest);
 
-    threadPostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
-    threadSDR = new std::thread(&SDRThread::threadMain, sdrThread);
+    t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
+    t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
 
     AppFrame *appframe = new AppFrame();
 
@@ -59,26 +53,21 @@ bool CubicSDR::OnInit() {
 int CubicSDR::OnExit() {
     std::cout << "Terminating SDR thread.." << std::endl;
     sdrThread->terminate();
-    threadSDR->join();
+    t_SDR->join();
 
+    std::cout << "Terminating SDR post-processing thread.." << std::endl;
     sdrPostThread->terminate();
-    threadPostSDR->join();
+    t_PostSDR->join();
 
     delete sdrThread;
-    delete threadSDR;
+    delete t_SDR;
 
     delete sdrPostThread;
-    delete threadPostSDR;
+    delete t_PostSDR;
 
     demodMgr.terminateAll();
 
-    audioThread->terminate();
-    threadAudio->join();
 
-    delete audioThread;
-    delete threadAudio;
-
-    delete audioInputQueue;
     delete threadCmdQueueSDR;
 
     delete iqVisualQueue;

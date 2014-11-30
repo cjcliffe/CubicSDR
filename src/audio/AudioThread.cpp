@@ -8,19 +8,16 @@ AudioThread::AudioThread(AudioThreadInputQueue *inputQueue) :
 }
 
 AudioThread::~AudioThread() {
-	PaError err;
-	err = Pa_StopStream(stream);
-	err = Pa_CloseStream(stream);
-	Pa_Terminate();
 
-	std::cout << std::endl << "Audio Thread Done." << std::endl << std::endl;
 }
 
 void AudioThread::threadMain() {
+    std::cout << "Audio thread initializing.." << std::endl;
+
 	PaError err;
 	err = Pa_Initialize();
 	if (err != paNoError) {
-		std::cout << "Error starting portaudio :(\n";
+		std::cout << "Error starting portaudio :(" << std::endl;
 		return;
 	}
 
@@ -58,10 +55,15 @@ void AudioThread::threadMain() {
 		    Pa_WriteStream(stream, &inp.data[0], inp.data.size()/2);
 		}
 	}
+
+    err = Pa_StopStream(stream);
+    err = Pa_CloseStream(stream);
+    Pa_Terminate();
+
+    std::cout << "Audio thread done." << std::endl;
 }
 
 void AudioThread::terminate() {
-    std::cout << "Terminating audio thread.." << std::endl;
     terminated = true;
     AudioThreadInput endCond;   // push an empty input to bump the queue
     inputQueue->push(endCond);
