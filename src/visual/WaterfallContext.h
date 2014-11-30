@@ -14,8 +14,8 @@ public:
 
     void BeginDraw();
     void Draw(std::vector<float> &points);
-    void DrawFreqSelector(float uxPos, float r, float g, float b);
-    void DrawDemod(DemodulatorInstance *demod);
+    void DrawFreqSelector(float uxPos, float r = 1, float g = 1, float b = 1);
+    void DrawDemod(DemodulatorInstance *demod, float r = 1, float g = 1, float b = 1);
     void EndDraw();
 
 private:

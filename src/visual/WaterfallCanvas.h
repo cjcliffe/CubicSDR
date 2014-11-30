@@ -18,6 +18,8 @@ public:
     ~WaterfallCanvas();
 
     void setData(std::vector<signed char> *data);
+    int GetFrequencyAt(float x);
+
 private:
     void OnPaint(wxPaintEvent& event);
     void OnKeyDown(wxKeyEvent& event);
@@ -50,6 +52,7 @@ private:
     MouseTracker mTracker;
     bool bwChange;
     int demodBW;
+    int hoveredDemod;
 
 // event table
 wxDECLARE_EVENT_TABLE();

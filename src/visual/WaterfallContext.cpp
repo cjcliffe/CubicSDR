@@ -82,7 +82,7 @@ void WaterfallContext::Draw(std::vector<float> &points) {
 
 }
 
-void WaterfallContext::DrawDemod(DemodulatorInstance *demod) {
+void WaterfallContext::DrawDemod(DemodulatorInstance *demod, float r, float g, float b) {
     if (!demod) {
         return;
     }
@@ -94,7 +94,7 @@ void WaterfallContext::DrawDemod(DemodulatorInstance *demod) {
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
-    glColor4f(1.0, 1.0, 1.0, 0.6);
+    glColor4f(r, g, b, 0.6);
 
     glBegin(GL_LINES);
     glVertex3f((uxPos - 0.5) * 2.0, 1.0, 0.0);
@@ -111,7 +111,7 @@ void WaterfallContext::DrawDemod(DemodulatorInstance *demod) {
     glEnd();
 
     glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
-    glColor4f(1.0, 1.0, 1.0, 0.2);
+    glColor4f(r, g, b, 0.2);
     glBegin(GL_QUADS);
     glVertex3f((uxPos - 0.5) * 2.0 - ofs, 1.0, 0.0);
     glVertex3f((uxPos - 0.5) * 2.0 - ofs, -1.0, 0.0);
@@ -125,7 +125,7 @@ void WaterfallContext::DrawDemod(DemodulatorInstance *demod) {
 
 }
 
-void WaterfallContext::DrawFreqSelector(float uxPos, float r = 1, float g = 1, float b = 1) {
+void WaterfallContext::DrawFreqSelector(float uxPos, float r, float g, float b) {
     DemodulatorInstance *demod = wxGetApp().getDemodTest();
 
     if (!demod) {

@@ -37,6 +37,7 @@ public:
 
     DemodulatorInstance *newThread();
     std::vector<DemodulatorInstance *> &getDemodulators();
+    std::vector<DemodulatorInstance *> *getDemodulatorsAt(int freq, int bandwidth);
 
     void terminateAll();
 private:

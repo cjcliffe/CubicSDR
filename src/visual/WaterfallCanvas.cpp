@@ -29,7 +29,7 @@ wxEND_EVENT_TABLE()
 
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0), bwChange(false), demodBW(0) {
+        wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0), bwChange(false), demodBW(0), hoveredDemod(-1) {
 
     int in_block_size = BUF_SIZE / 2;
     int out_block_size = FFT_SIZE;
@@ -54,6 +54,14 @@ WaterfallCanvas::~WaterfallCanvas() {
 
 }
 
+int WaterfallCanvas::GetFrequencyAt(float x) {
+
+    int center_freq = wxGetApp().getFrequency();
+    int freq = center_freq - (int) (0.5 * (float) SRATE) + (int) ((float) x * (float) SRATE);
+
+    return freq;
+}
+
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
     const wxSize ClientSize = GetClientSize();
@@ -64,15 +72,25 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->BeginDraw();
     glContext->Draw(spectrum_points);
 
-    std::vector<DemodulatorInstance *> *demods = &wxGetApp().getDemodMgr().getDemodulators();
-
-    for (int i = 0, iMax = demods->size(); i < iMax; i++) {
-        glContext->DrawDemod((*demods)[i]);
-    }
+    std::vector<DemodulatorInstance *> &demods = wxGetApp().getDemodMgr().getDemodulators();
 
     if (mTracker.mouseInView()) {
-        glContext->DrawFreqSelector(mTracker.getMouseX(),0,1,0);
+
+        if (hoveredDemod == -1) {
+            glContext->DrawFreqSelector(mTracker.getMouseX(), 0, 1, 0);
+        } else {
+            glContext->DrawDemod(demods[hoveredDemod],1,1,0);
+        }
     }
+
+
+    for (int i = 0, iMax = demods.size(); i < iMax; i++) {
+        if (hoveredDemod == i) {
+            continue;
+        }
+        glContext->DrawDemod(demods[i]);
+    }
+
     glContext->EndDraw();
 
     SwapBuffers();
@@ -225,6 +243,33 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
 //                    wxString::Format(wxT("Set center frequency: %s"),
 //                            wxNumberFormatter::ToString((long) freq, wxNumberFormatter::Style_WithThousandsSep)));
 //        }
+    } else {
+
+        int hovered = -1;
+        int nearest = -1;
+        int near_dist = SRATE;
+
+        int freqPos = GetFrequencyAt(mTracker.getMouseX());
+
+        std::vector<DemodulatorInstance *> *demodsHover = wxGetApp().getDemodMgr().getDemodulatorsAt(freqPos, 15000);
+
+        if (demodsHover->size()) {
+            for (int i = 0, iMax = demodsHover->size(); i < iMax; i++) {
+                DemodulatorInstance *hoverDemod = (*demodsHover)[i];
+
+                int dist = abs(hoverDemod->getParams().frequency-freqPos);
+
+                if (dist < near_dist) {
+                    nearest = i;
+                }
+            }
+
+            hovered = nearest;
+        }
+
+        hoveredDemod = hovered;
+
+        delete demodsHover;
     }
 }
 
@@ -269,6 +314,7 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
 void WaterfallCanvas::mouseLeftWindow(wxMouseEvent& event) {
     mTracker.OnMouseLeftWindow(event);
     SetCursor(wxCURSOR_CROSS);
+    hoveredDemod = -1;
 }
 
 void WaterfallCanvas::mouseEnterWindow(wxMouseEvent& event) {

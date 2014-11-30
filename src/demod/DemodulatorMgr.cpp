@@ -97,3 +97,23 @@ void DemodulatorMgr::terminateAll() {
 std::vector<DemodulatorInstance *> &DemodulatorMgr::getDemodulators() {
     return demods;
 }
+
+std::vector<DemodulatorInstance *> *DemodulatorMgr::getDemodulatorsAt(int freq, int bandwidth) {
+    std::vector<DemodulatorInstance *> *foundDemods = new std::vector<DemodulatorInstance *>();
+
+    for (int i = 0, iMax = demods.size(); i < iMax; i++) {
+        DemodulatorInstance *testDemod = demods[i];
+
+        int freqTest = testDemod->getParams().frequency;
+        int bandwidthTest = testDemod->getParams().bandwidth;
+        int halfBandwidthTest = bandwidthTest / 2;
+
+        int halfBuffer = bandwidth / 2;
+
+        if ((freq <= (freqTest + halfBandwidthTest + halfBuffer)) && (freq >= (freqTest - halfBandwidthTest - halfBuffer))) {
+            foundDemods->push_back(testDemod);
+        }
+    }
+
+    return foundDemods;
+}
