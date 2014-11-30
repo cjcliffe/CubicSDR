@@ -168,6 +168,7 @@ void DemodulatorThread::threadMain() {
             for (int i = 0; i < num_written; i++) {
                 freqdem_demodulate(fdem, resampled_output[i], &pcm);
                 resampled_output[i].real = (float) pcm;
+                resampled_output[i].imag = 0;
             }
 
             int audio_out_size = ceil((float) (num_written) * audio_resample_ratio);
