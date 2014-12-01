@@ -221,7 +221,7 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
             }
 
             DemodulatorThreadCommand command;
-            command.cmd = DemodulatorThreadCommand::SDR_THREAD_CMD_SET_BANDWIDTH;
+            command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_BANDWIDTH;
             activeDemodulatorBandwidth = activeDemodulatorBandwidth + bwDiff;
             if (activeDemodulatorBandwidth < 1000) {
                 activeDemodulatorBandwidth = 1000;
@@ -242,7 +242,7 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
             }
 
             DemodulatorThreadCommand command;
-            command.cmd = DemodulatorThreadCommand::SDR_THREAD_CMD_SET_FREQUENCY;
+            command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_FREQUENCY;
             activeDemodulatorFrequency = activeDemodulatorFrequency + bwDiff;
 
             command.int_value = activeDemodulatorFrequency;
@@ -327,7 +327,7 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
         int freq = center_freq - (int) (0.5 * (float) SRATE) + (int) ((float) pos * (float) SRATE);
 
         DemodulatorThreadCommand command;
-        command.cmd = DemodulatorThreadCommand::SDR_THREAD_CMD_SET_FREQUENCY;
+        command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_FREQUENCY;
         command.int_value = freq;
 
         demod->getCommandQueue()->push(command);

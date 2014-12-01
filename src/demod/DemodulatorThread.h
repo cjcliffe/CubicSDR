@@ -14,6 +14,7 @@
 #include "AudioThread.h"
 #include "ThreadQueue.h"
 #include "CubicSDRDefs.h"
+#include "DemodulatorWorkerThread.h"
 
 enum DemodulatorType {
     DEMOD_TYPE_NULL, DEMOD_TYPE_AM, DEMOD_TYPE_FM, DEMOD_TYPE_LSB, DEMOD_TYPE_USB
@@ -22,11 +23,11 @@ enum DemodulatorType {
 class DemodulatorThreadCommand {
 public:
     enum DemodulatorThreadCommandEnum {
-        SDR_THREAD_CMD_NULL, SDR_THREAD_CMD_SET_BANDWIDTH, SDR_THREAD_CMD_SET_FREQUENCY
+        DEMOD_THREAD_CMD_NULL, DEMOD_THREAD_CMD_SET_BANDWIDTH, DEMOD_THREAD_CMD_SET_FREQUENCY
     };
 
     DemodulatorThreadCommand() :
-            cmd(cmd), int_value(SDR_THREAD_CMD_NULL) {
+            cmd(DEMOD_THREAD_CMD_NULL), int_value(0) {
 
     }
 
@@ -106,6 +107,7 @@ typedef ThreadQueue<DemodulatorThreadIQData> DemodulatorThreadInputQueue;
 typedef ThreadQueue<AudioThreadInput> DemodulatorThreadOutputQueue;
 typedef ThreadQueue<DemodulatorThreadCommand> DemodulatorThreadCommandQueue;
 
+
 class DemodulatorThread {
 public:
 
@@ -158,4 +160,10 @@ protected:
 
     std::atomic<bool> terminated;
     std::atomic<bool> initialized;
+
+    DemodulatorWorkerThread *workerThread;
+    std::thread *t_Worker;
+
+    DemodulatorThreadWorkerCommandQueue *workerQueue;
+    DemodulatorThreadWorkerResultQueue *workerResults;
 };
