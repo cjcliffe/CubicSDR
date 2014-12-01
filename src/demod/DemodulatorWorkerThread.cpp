@@ -18,7 +18,6 @@ void DemodulatorWorkerThread::threadMain() {
         bool filterChanged = false;
         DemodulatorWorkerThreadCommand filterCommand;
         DemodulatorWorkerThreadCommand command;
-        DemodulatorWorkerThreadResult result;
 
         bool done = false;
         while (!done) {
@@ -33,7 +32,7 @@ void DemodulatorWorkerThread::threadMain() {
         }
 
         if (filterChanged) {
-            result.cmd = DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS;
+            DemodulatorWorkerThreadResult result(DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS);
 
             result.resample_ratio = (float) (filterCommand.bandwidth) / (float) filterCommand.inputRate;
             result.audio_resample_ratio = (float) (filterCommand.audioSampleRate) / (float) filterCommand.bandwidth;
@@ -58,10 +57,12 @@ void DemodulatorWorkerThread::threadMain() {
             liquid_firdes_kaiser(h_len, fc, As, mu, h);
 
             result.fir_filter = firfilt_crcf_create(h, h_len);
-
             result.resampler = msresamp_crcf_create(result.resample_ratio, As);
             result.audio_resampler = msresamp_crcf_create(result.audio_resample_ratio, As);
-            //    msresamp_crcf_print(audio_resampler);
+
+            result.audioSampleRate = filterCommand.audioSampleRate;
+            result.bandwidth = filterCommand.bandwidth;
+            result.inputRate = filterCommand.inputRate;
 
             resultQueue->push(result);
         }
