@@ -113,19 +113,49 @@ void DemodulatorThread::threadMain() {
             }
 
             if (bandwidthChanged) {
-//                DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS);
-//                command.audioSampleRate = bandwidthParams.audioSampleRate;
-//                command.bandwidth = bandwidthParams.bandwidth;
-//                command.frequency = bandwidthParams.frequency;
-//                command.inputRate = bandwidthParams.inputRate;
+    			std::cout << "Requesting new filters from worker.." << std::endl;
+                DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS);
+                command.audioSampleRate = bandwidthParams.audioSampleRate;
+                command.bandwidth = bandwidthParams.bandwidth;
+                command.frequency = bandwidthParams.frequency;
+                command.inputRate = bandwidthParams.inputRate;
 //
-//                workerQueue->push(command);
+                workerQueue->push(command);
 
-                initialize();
-                while (!inputQueue->empty()) { // catch up
-                    inputQueue->pop(inp);
-                }
+//            	params = bandwidthParams;
+//                initialize();
+//                while (!inputQueue->empty()) { // catch up
+//                    inputQueue->pop(inp);
+//                }
             }
+        }
+
+        if (!workerResults->empty()) {
+        	while (!workerResults->empty()) {
+        		DemodulatorWorkerThreadResult result;
+        		workerResults->pop(result);
+
+        		switch (result.cmd) {
+        		case DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS:
+        			std::cout << "New filters arrived from worker.." << std::endl;
+        			firfilt_crcf_destroy(fir_filter);
+        			msresamp_crcf_destroy(resampler);
+        			msresamp_crcf_destroy(audio_resampler);
+
+        		    fir_filter = result.fir_filter;
+        		    resampler = result.resampler;
+        		    audio_resampler = result.audio_resampler;
+
+        		    resample_ratio = result.resample_ratio;
+        		    audio_resample_ratio = result.audio_resample_ratio;
+
+        		    params.audioSampleRate = result.audioSampleRate;
+        		    params.bandwidth = result.bandwidth;
+        		    params.inputRate = result.inputRate;
+
+        			break;
+        		}
+        	}
         }
 
         if (!initialized) {
