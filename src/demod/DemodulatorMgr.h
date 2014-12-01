@@ -12,7 +12,11 @@ public:
     DemodulatorThreadInputQueue* threadQueueDemod;
     DemodulatorThreadCommandQueue* threadQueueCommand;
     DemodulatorThread *demodulatorThread;
+#ifdef __APPLE__
+    pthread_t t_Demod;
+#else
     std::thread *t_Demod;
+#endif
 
     AudioThreadInputQueue *audioInputQueue;
     AudioThread *audioThread;

@@ -50,7 +50,22 @@ void DemodulatorInstance::run() {
     }
 
     t_Audio = new std::thread(&AudioThread::threadMain, audioThread);
+
+#ifdef __APPLE__	// Already using pthreads, might as well do some custom init..
+	pthread_attr_t attr;
+	size_t size;
+
+	pthread_attr_init(&attr);
+	pthread_attr_setstacksize(&attr, 2048000);
+	pthread_attr_getstacksize(&attr, &size);
+    pthread_create(&t_Demod, &attr, &DemodulatorThread::pthread_helper, demodulatorThread);
+	pthread_attr_destroy(&attr);
+
+	std::cout << "Initialized demodulator stack size of " << size << std::endl;
+
+#else
     t_Demod = new std::thread(&DemodulatorThread::threadMain, demodulatorThread);
+#endif
 }
 
 DemodulatorThreadCommandQueue *DemodulatorInstance::getCommandQueue() {
@@ -64,8 +79,11 @@ DemodulatorThreadParameters &DemodulatorInstance::getParams() {
 void DemodulatorInstance::terminate() {
     std::cout << "Terminating demodulator thread.." << std::endl;
     demodulatorThread->terminate();
+#ifdef __APPLE__
+    pthread_join(t_Demod,NULL);
+#else
     t_Demod->join();
-
+#endif
     std::cout << "Terminating demodulator audio thread.." << std::endl;
     audioThread->terminate();
     t_Audio->join();

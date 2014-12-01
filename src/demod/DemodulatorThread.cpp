@@ -2,6 +2,10 @@
 #include "CubicSDRDefs.h"
 #include <vector>
 
+#ifdef __APPLE__
+	#include <pthread.h>
+#endif
+
 DemodulatorThread::DemodulatorThread(DemodulatorThreadInputQueue* pQueue) :
         inputQueue(pQueue), visOutQueue(NULL), terminated(false), initialized(false), audio_resampler(NULL), resample_ratio(1), audio_resample_ratio(
                 1), resampler(NULL), commandQueue(NULL), fir_filter(NULL), audioInputQueue(NULL) {
@@ -76,7 +80,11 @@ DemodulatorThread::~DemodulatorThread() {
     delete workerResults;
 }
 
+#ifdef __APPLE__
+void *DemodulatorThread::threadMain() {
+#else
 void DemodulatorThread::threadMain() {
+#endif
 
     if (!initialized) {
         initialize();
