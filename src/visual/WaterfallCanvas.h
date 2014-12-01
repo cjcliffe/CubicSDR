@@ -14,6 +14,8 @@
 
 class WaterfallCanvas: public wxGLCanvas {
 public:
+    enum DragState { WF_DRAG_NONE, WF_DRAG_BANDWIDTH_LEFT, WF_DRAG_BANDWIDTH_RIGHT, WF_DRAG_FREQUENCY };
+
     WaterfallCanvas(wxWindow *parent, int *attribList = NULL);
     ~WaterfallCanvas();
 
@@ -50,9 +52,13 @@ private:
     Timer timer;
     float frameTimer;
     MouseTracker mTracker;
-    bool bwChange;
-    int demodBW;
-    int hoveredDemod;
+
+    int activeDemodulatorBandwidth;
+    int activeDemodulatorFrequency;
+    DemodulatorInstance *activeDemodulator;
+
+    DragState dragState;
+    DragState nextDragState;
 
 // event table
 wxDECLARE_EVENT_TABLE();

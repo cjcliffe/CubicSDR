@@ -29,7 +29,8 @@ wxEND_EVENT_TABLE()
 
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0), bwChange(false), demodBW(0), hoveredDemod(-1) {
+        wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0), activeDemodulatorBandwidth(0), activeDemodulator(NULL), dragState(
+                WF_DRAG_NONE), nextDragState(WF_DRAG_NONE) {
 
     int in_block_size = BUF_SIZE / 2;
     int out_block_size = FFT_SIZE;
@@ -45,8 +46,6 @@ WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
     timer.start();
 
     mTracker.setTarget(this);
-    mTracker.setVertDragLock(true);
-    mTracker.setHorizDragLock(true);
     SetCursor(wxCURSOR_CROSS);
 }
 
@@ -76,16 +75,15 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
     if (mTracker.mouseInView()) {
 
-        if (hoveredDemod == -1) {
+        if (activeDemodulator == NULL) {
             glContext->DrawFreqSelector(mTracker.getMouseX(), 0, 1, 0);
         } else {
-            glContext->DrawDemod(demods[hoveredDemod],1,1,0);
+            glContext->DrawDemod(activeDemodulator, 1, 1, 0);
         }
     }
 
-
     for (int i = 0, iMax = demods.size(); i < iMax; i++) {
-        if (hoveredDemod == i) {
+        if (activeDemodulator == demods[i]) {
             continue;
         }
         glContext->DrawDemod(demods[i]);
@@ -210,64 +208,93 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
     DemodulatorInstance *demod = wxGetApp().getDemodTest();
 
     if (mTracker.mouseDown()) {
-        if (demod && mTracker.getDeltaMouseY()) {
-            int bwDiff = (int) (mTracker.getDeltaMouseY() * 100000.0);
+        if (dragState == WF_DRAG_BANDWIDTH_LEFT || dragState == WF_DRAG_BANDWIDTH_RIGHT) {
 
-            if (!demodBW) {
-                demodBW = demod->getParams().bandwidth;
+            int bwDiff = (int) (mTracker.getDeltaMouseX() * (float)SRATE) * 2;
+
+            if (dragState == WF_DRAG_BANDWIDTH_LEFT) {
+                bwDiff = -bwDiff;
+            }
+
+            if (!activeDemodulatorBandwidth) {
+                activeDemodulatorBandwidth = demod->getParams().bandwidth;
             }
 
             DemodulatorThreadCommand command;
             command.cmd = DemodulatorThreadCommand::SDR_THREAD_CMD_SET_BANDWIDTH;
-            demodBW = demodBW - bwDiff;
-            if (demodBW < 1000) {
-                demodBW = 1000;
+            activeDemodulatorBandwidth = activeDemodulatorBandwidth + bwDiff;
+            if (activeDemodulatorBandwidth < 1000) {
+                activeDemodulatorBandwidth = 1000;
             }
-            if (demodBW > SRATE) {
-                demodBW = SRATE;
+            if (activeDemodulatorBandwidth > SRATE) {
+                activeDemodulatorBandwidth = SRATE;
             }
 
-            command.int_value = demodBW;
+            command.int_value = activeDemodulatorBandwidth;
             demod->getCommandQueue()->push(command);
-            bwChange = true;
         }
 
-//        int freqChange = mTracker.getDeltaMouseX() * SRATE;
-//
-//        if (freqChange != 0) {
-//            int freq = wxGetApp().getFrequency();
-//            freq -= freqChange;
-//            wxGetApp().setFrequency(freq);
-//
-//            ((wxFrame*) parent)->GetStatusBar()->SetStatusText(
-//                    wxString::Format(wxT("Set center frequency: %s"),
-//                            wxNumberFormatter::ToString((long) freq, wxNumberFormatter::Style_WithThousandsSep)));
-//        }
+        if (dragState == WF_DRAG_FREQUENCY) {
+            int bwDiff = (int) (mTracker.getDeltaMouseX() * (float)SRATE);
+
+            if (!activeDemodulatorFrequency) {
+                activeDemodulatorFrequency = demod->getParams().frequency;
+            }
+
+            DemodulatorThreadCommand command;
+            command.cmd = DemodulatorThreadCommand::SDR_THREAD_CMD_SET_FREQUENCY;
+            activeDemodulatorFrequency = activeDemodulatorFrequency + bwDiff;
+
+            command.int_value = activeDemodulatorFrequency;
+            demod->getCommandQueue()->push(command);
+        }
     } else {
-
-        int hovered = -1;
-        int nearest = -1;
-        int near_dist = SRATE;
-
         int freqPos = GetFrequencyAt(mTracker.getMouseX());
+
+        activeDemodulator = NULL;
 
         std::vector<DemodulatorInstance *> *demodsHover = wxGetApp().getDemodMgr().getDemodulatorsAt(freqPos, 15000);
 
         if (demodsHover->size()) {
-            for (int i = 0, iMax = demodsHover->size(); i < iMax; i++) {
-                DemodulatorInstance *hoverDemod = (*demodsHover)[i];
+            int hovered = -1;
+            int near_dist = SRATE;
 
-                int dist = abs(hoverDemod->getParams().frequency-freqPos);
+            for (int i = 0, iMax = demodsHover->size(); i < iMax; i++) {
+                DemodulatorInstance *demod = (*demodsHover)[i];
+
+                int dist = abs((int)demod->getParams().frequency - freqPos);
 
                 if (dist < near_dist) {
-                    nearest = i;
+                    activeDemodulator = demod;
+                    near_dist = dist;
                 }
             }
 
-            hovered = nearest;
-        }
+            int freqDiff = ((int)activeDemodulator->getParams().frequency - freqPos);
 
-        hoveredDemod = hovered;
+            if (near_dist > (activeDemodulator->getParams().bandwidth / 3)) {
+                SetCursor(wxCURSOR_SIZEWE);
+
+                if (freqDiff > 0) {
+                    nextDragState = WF_DRAG_BANDWIDTH_LEFT;
+                } else {
+                    nextDragState = WF_DRAG_BANDWIDTH_RIGHT;
+                }
+
+
+                mTracker.setVertDragLock(true);
+                mTracker.setHorizDragLock(false);
+            } else {
+                SetCursor(wxCURSOR_SIZING);
+                nextDragState = WF_DRAG_FREQUENCY;
+
+                mTracker.setVertDragLock(true);
+                mTracker.setHorizDragLock(false);
+            }
+        } else {
+            SetCursor(wxCURSOR_CROSS);
+            nextDragState = WF_DRAG_NONE;
+        }
 
         delete demodsHover;
     }
@@ -275,8 +302,10 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
 
 void WaterfallCanvas::mouseDown(wxMouseEvent& event) {
     mTracker.OnMouseDown(event);
-    SetCursor(wxCURSOR_SIZENS);
-    bwChange = false;
+
+    dragState = nextDragState;
+    activeDemodulatorBandwidth = 0;
+    activeDemodulatorFrequency = 0;
 }
 
 void WaterfallCanvas::mouseWheelMoved(wxMouseEvent& event) {
@@ -287,7 +316,7 @@ void WaterfallCanvas::mouseWheelMoved(wxMouseEvent& event) {
 void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
     mTracker.OnMouseReleased(event);
 
-    if (mTracker.getOriginDeltaMouseX() == 0 && mTracker.getOriginDeltaMouseY() == 0 && !bwChange) {
+    if (mTracker.getOriginDeltaMouseX() == 0 && mTracker.getOriginDeltaMouseY() == 0 && dragState == WF_DRAG_NONE) {
 
         float pos = mTracker.getMouseX();
 
@@ -308,13 +337,18 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
                         wxNumberFormatter::ToString((long) freq, wxNumberFormatter::Style_WithThousandsSep)));
     }
 
+    dragState = WF_DRAG_NONE;
+
+    mTracker.setVertDragLock(true);
+    mTracker.setHorizDragLock(true);
+
     SetCursor(wxCURSOR_CROSS);
 }
 
 void WaterfallCanvas::mouseLeftWindow(wxMouseEvent& event) {
     mTracker.OnMouseLeftWindow(event);
     SetCursor(wxCURSOR_CROSS);
-    hoveredDemod = -1;
+    activeDemodulator = NULL;
 }
 
 void WaterfallCanvas::mouseEnterWindow(wxMouseEvent& event) {
