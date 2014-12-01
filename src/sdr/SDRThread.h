@@ -21,7 +21,7 @@ public:
         SDR_THREAD_CMD_TUNE
     };
 
-    SDRThreadCommand() : cmd(cmd), int_value(SDR_THREAD_CMD_NULL) {
+    SDRThreadCommand() : cmd(SDR_THREAD_CMD_NULL), int_value(0) {
 
     }
 

@@ -4,7 +4,7 @@
 
 DemodulatorThread::DemodulatorThread(DemodulatorThreadInputQueue* pQueue) :
         inputQueue(pQueue), visOutQueue(NULL), terminated(false), initialized(false), audio_resampler(NULL), resample_ratio(1), audio_resample_ratio(
-                1), resampler(NULL), commandQueue(NULL), fir_filter(NULL) {
+                1), resampler(NULL), commandQueue(NULL), fir_filter(NULL), audioInputQueue(NULL) {
 
     float kf = 0.5;         // modulation factor
     fdem = freqdem_create(kf);
@@ -13,6 +13,11 @@ DemodulatorThread::DemodulatorThread(DemodulatorThreadInputQueue* pQueue) :
     nco_shift = nco_crcf_create(LIQUID_VCO);
     shift_freq = 0;
 
+    workerQueue = new DemodulatorThreadWorkerCommandQueue;
+    workerResults = new DemodulatorThreadWorkerResultQueue;
+    workerThread = new DemodulatorWorkerThread(workerQueue,workerResults);
+
+    t_Worker = new std::thread(&DemodulatorWorkerThread::threadMain,workerThread);
 }
 
 void DemodulatorThread::initialize() {
@@ -66,6 +71,9 @@ void DemodulatorThread::initialize() {
 }
 
 DemodulatorThread::~DemodulatorThread() {
+    delete workerThread;
+    delete workerQueue;
+    delete workerResults;
 }
 
 void DemodulatorThread::threadMain() {
@@ -79,29 +87,40 @@ void DemodulatorThread::threadMain() {
         DemodulatorThreadIQData inp;
         inputQueue->pop(inp);
 
+        bool bandwidthChanged = false;
+        DemodulatorThreadParameters bandwidthParams = params;
+
         if (!commandQueue->empty()) {
             bool paramsChanged = false;
             while (!commandQueue->empty()) {
                 DemodulatorThreadCommand command;
                 commandQueue->pop(command);
                 switch (command.cmd) {
-                case DemodulatorThreadCommand::SDR_THREAD_CMD_SET_BANDWIDTH:
+                case DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_BANDWIDTH:
                     if (command.int_value < 3000) {
                         command.int_value = 3000;
                     }
                     if (command.int_value > SRATE) {
                         command.int_value = SRATE;
                     }
-                    params.bandwidth = command.int_value;
-                    paramsChanged = true;
+                    bandwidthParams.bandwidth = command.int_value;
+                    bandwidthChanged = true;
                     break;
-                case DemodulatorThreadCommand::SDR_THREAD_CMD_SET_FREQUENCY:
+                case DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_FREQUENCY:
                     params.frequency = command.int_value;
                     break;
                 }
             }
 
-            if (paramsChanged) {
+            if (bandwidthChanged) {
+//                DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS);
+//                command.audioSampleRate = bandwidthParams.audioSampleRate;
+//                command.bandwidth = bandwidthParams.bandwidth;
+//                command.frequency = bandwidthParams.frequency;
+//                command.inputRate = bandwidthParams.inputRate;
+//
+//                workerQueue->push(command);
+
                 initialize();
                 while (!inputQueue->empty()) { // catch up
                     inputQueue->pop(inp);
@@ -206,4 +225,7 @@ void DemodulatorThread::terminate() {
     terminated = true;
     DemodulatorThreadIQData inp;    // push dummy to nudge queue
     inputQueue->push(inp);
+
+    workerThread->terminate();
+    t_Worker->join();
 }
