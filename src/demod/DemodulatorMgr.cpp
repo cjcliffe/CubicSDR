@@ -20,7 +20,9 @@ DemodulatorInstance::~DemodulatorInstance() {
     delete audioInputQueue;
     delete threadQueueDemod;
     delete demodulatorThread;
+#ifndef __APPLE__
     delete t_Demod;
+#endif
 }
 
 void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {
