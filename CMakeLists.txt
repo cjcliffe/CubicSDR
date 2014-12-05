@@ -48,10 +48,7 @@ SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_BINARY_DIR})
 #include_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/include )
 #link_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/lib )
 
-
-
 find_package(OpenGL REQUIRED)
-
 
 find_package(wxWidgets REQUIRED gl core base)
 set(wxWidgets_CONFIGURATION mswu)
@@ -60,8 +57,7 @@ include(${wxWidgets_USE_FILE})
 # include_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/include )
 # link_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/lib ${OPENGL_INCLUDE_DIR})
 
-
-if (DEFINED WIN32)
+IF (DEFINED WIN32)
   set(wxWidgets_USE_STATIC ON)
   include_directories ( ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll64  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
   link_directories (  ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll64  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/x64 )
@@ -71,22 +67,49 @@ if (DEFINED WIN32)
   include_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/include )
   
   ADD_DEFINITIONS(
+    # To use wasapi
     -D__WINDOWS_WASAPI__
-#	-D__WINDOWS_DS__
+    # To use directsound
+    #-D__WINDOWS_DS__
   )
  
-  SET(OTHER_LIBRARIES -luuid -lksuser )
-  #SET(OTHER_LIBRARIES -ldsound)
-  
-else (DEFINED WIN32)
-  set(RTLSDR_INCLUDE "/opt/local/include" CACHE FILEPATH "RTL-SDR Include Path")
-  set(RTLSDR_LIB "/opt/local/lib" CACHE FILEPATH "RTL-SDR Lib Path")
-  include_directories(${RTLSDR_INCLUDE})
-  link_directories(${RTLSDR_LIB})
-  
-  set(FFTW_LIB fftw3)
-endif (DEFINED WIN32)
+  # To use wasapi
+  SET(OTHER_LIBRARIES -luuid -lksuser )  
+  # To use DirectSound (which uses WASAPI anyways?)
+  # SET(OTHER_LIBRARIES -ldsound)
+ENDIF (DEFINED WIN32)
 
+IF (UNIX)
+    set(RTLSDR_INCLUDE "/opt/local/include" CACHE FILEPATH "RTL-SDR Include Path")
+    set(RTLSDR_LIB "/opt/local/lib" CACHE FILEPATH "RTL-SDR Lib Path")
+    include_directories(${RTLSDR_INCLUDE})
+    link_directories(${RTLSDR_LIB})
+  
+    set(FFTW_LIB fftw3)
+
+    ADD_DEFINITIONS(
+        # -D__UNIX_JACK__
+        # -D__LINUX_ALSA__
+        # -D__LINUX_PULSE__
+        # -D__LINUX_OSS__
+    )
+ENDIF(UNIX)
+
+IF (APPLE)
+    set(RTLSDR_INCLUDE "/opt/local/include" CACHE FILEPATH "RTL-SDR Include Path")
+    set(RTLSDR_LIB "/opt/local/lib" CACHE FILEPATH "RTL-SDR Lib Path")
+    include_directories(${RTLSDR_INCLUDE})
+    link_directories(${RTLSDR_LIB})
+  
+    set(FFTW_LIB fftw3)
+
+    ADD_DEFINITIONS(
+      -D__MACOSX_CORE__
+    )    
+
+   FIND_LIBRARY(COREAUDIO_LIBRARY CoreAudio)
+   SET (OTHER_LIBRARIES ${COREAUDIO_LIBRARY})
+ENDIF (APPLE)
 
 
 SET (cubicsdr_sources
@@ -155,8 +178,3 @@ add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers})
 
 target_link_libraries(CubicSDR rtlsdr liquid ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
 # cubicvr2 glfw ${GLFW_LIBRARIES} 
-
-
-
-
-
