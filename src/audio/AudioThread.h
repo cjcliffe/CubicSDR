@@ -14,7 +14,7 @@
 
 #include "AudioThread.h"
 #include "ThreadQueue.h"
-#include "portaudio.h"
+#include "RtAudio.h"
 
 class AudioThreadInput {
 public:
@@ -36,8 +36,8 @@ public:
 
 private:
     AudioThreadInputQueue *inputQueue;
-    PaStreamParameters outputParameters;
-    PaStream *stream;
+//    PaStreamParameters outputParameters;
+//    PaStream *stream;
     std::atomic<bool> terminated;
 };
 

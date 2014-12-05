@@ -66,13 +66,16 @@ if (DEFINED WIN32)
   include_directories ( ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll64  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
   link_directories (  ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll64  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/x64 )
   set(FFTW_LIB fftw3-3)
-  
-  include_directories ( ${PROJECT_SOURCE_DIR}/external/portaudio/include )
-  link_directories ( ${PROJECT_SOURCE_DIR}/external/portaudio/libs/64 )
-  SET (PORTAUDIO_LIBRARY libportaudio_x86.dll winmm)
     
   link_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/lib/64 )
   include_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/include )
+  
+  ADD_DEFINITIONS(
+    -D__WINDOWS_DS__
+  )
+  
+  SET(OTHER_LIBRARIES -ldsound)
+  
 else (DEFINED WIN32)
   set(RTLSDR_INCLUDE "/opt/local/include" CACHE FILEPATH "RTL-SDR Include Path")
   set(RTLSDR_LIB "/opt/local/lib" CACHE FILEPATH "RTL-SDR Lib Path")
@@ -80,8 +83,6 @@ else (DEFINED WIN32)
   link_directories(${RTLSDR_LIB})
   
   set(FFTW_LIB fftw3)
-
-  SET (PORTAUDIO_LIBRARY portaudio)  
 endif (DEFINED WIN32)
 
 
@@ -105,6 +106,7 @@ SET (cubicsdr_sources
 	src/visual/SpectrumContext.cpp
 	src/visual/WaterfallCanvas.cpp
 	src/visual/WaterfallContext.cpp
+	external/rtaudio/RtAudio.cpp
 )
 
 SET (cubicsdr_headers
@@ -128,6 +130,7 @@ SET (cubicsdr_headers
 	src/visual/SpectrumContext.h
 	src/visual/WaterfallCanvas.h
 	src/visual/WaterfallContext.h
+	external/rtaudio/RtAudio.h
 )
 
 include_directories ( ${PROJECT_SOURCE_DIR}/src/sdr 
@@ -135,7 +138,8 @@ include_directories ( ${PROJECT_SOURCE_DIR}/src/sdr
 					  ${PROJECT_SOURCE_DIR}/src/audio
 					  ${PROJECT_SOURCE_DIR}/src/util
 					  ${PROJECT_SOURCE_DIR}/src/visual 
-					  ${PROJECT_SOURCE_DIR}/src )
+					  ${PROJECT_SOURCE_DIR}/src
+					  ${PROJECT_SOURCE_DIR}/external/rtaudio )
 
 ADD_DEFINITIONS(
   -std=c++0x # or -std=c++11
@@ -147,7 +151,7 @@ ADD_DEFINITIONS(
 
 add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers})
 
-target_link_libraries(CubicSDR rtlsdr liquid ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${PORTAUDIO_LIBRARY})
+target_link_libraries(CubicSDR rtlsdr liquid ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
 # cubicvr2 glfw ${GLFW_LIBRARIES} 
 
 
