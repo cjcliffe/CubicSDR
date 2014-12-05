@@ -4,8 +4,8 @@
 
 ScopeContext::ScopeContext(ScopeCanvas *canvas, wxGLContext *sharedContext) :
         PrimaryGLContext(canvas, sharedContext) {
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();

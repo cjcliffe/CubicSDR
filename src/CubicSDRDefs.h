@@ -1,6 +1,6 @@
 #pragma once
 
-#define BUF_SIZE (16384*6)
+#define BUF_SIZE (16384*4)
 #define SRATE 2000000
 #define FFT_SIZE 2048
 

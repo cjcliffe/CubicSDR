@@ -5,9 +5,9 @@ Cross-Platform Software-Defined Radio Application
 
 Utilizes: 
 --------
-  - liquid-dsp (http://liquidsdr.org/)
+  - liquid-dsp (http://liquidsdr.org/ https://github.com/jgaeddert/liquid-dsp)
+  - RtAudio (http://www.music.mcgill.ca/~gary/rtaudio/ http://github.com/thestk/rtaudio/)
   - OpenGL (https://www.opengl.org/)
-  - portaudio (http://www.portaudio.com/)
   - wxWidgets (https://www.wxwidgets.org/)
   - CMake (http://www.cmake.org/)
 
