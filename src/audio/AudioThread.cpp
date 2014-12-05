@@ -3,7 +3,7 @@
 #include <vector>
 
 AudioThread::AudioThread(AudioThreadInputQueue *inputQueue) :
-		inputQueue(inputQueue), terminated(false) { // , stream(NULL)
+        inputQueue(inputQueue), terminated(false), audio_queue_ptr(0) {
 
 }
 
@@ -11,54 +11,80 @@ AudioThread::~AudioThread() {
 
 }
 
+static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames, double streamTime, RtAudioStreamStatus status,
+        void *userData) {
+    AudioThread *src = (AudioThread *) userData;
+    float *out = (float*) outputBuffer;
+    if (status) {
+        std::cout << "Audio buffer underflow.." << std::endl;
+    }
+    if (!src->audio_queue.size()) {
+        for (int i = 0; i < nBufferFrames * 2; i++) {
+            out[i] = 0;
+        }
+        return 0;
+    }
+    std::vector<float> nextBuffer = src->audio_queue.front();
+    for (int i = 0; i < nBufferFrames * 2; i++) {
+        out[i] = nextBuffer[src->audio_queue_ptr];
+        src->audio_queue_ptr++;
+        if (src->audio_queue_ptr == nextBuffer.size()) {
+            src->audio_queue.pop();
+            src->audio_queue_ptr = 0;
+            if (!src->audio_queue.size()) {
+                for (int j = i; j < nBufferFrames * 2; j++) {
+                    std::cout << "Audio buffer underflow.." << std::endl;
+                    out[i] = 0;
+                }
+                return 0;
+            }
+            nextBuffer = src->audio_queue.front();
+        }
+    }
+    return 0;
+}
+
 void AudioThread::threadMain() {
     std::cout << "Audio thread initializing.." << std::endl;
 
-//	PaError err;
-//	err = Pa_Initialize();
-//	if (err != paNoError) {
-//		std::cout << "Error starting portaudio :(" << std::endl;
-//		return;
-//	}
-//
-//	int preferred_device = -1;
-//
-//	outputParameters.device =
-//			(preferred_device != -1) ?
-//					preferred_device : Pa_GetDefaultOutputDevice();
-//	if (outputParameters.device == paNoDevice) {
-//		std::cout << "Error: No default output device.\n";
-//	}
-//
-//	outputParameters.channelCount = 2;
-//	outputParameters.sampleFormat = paFloat32;
-//	outputParameters.suggestedLatency = Pa_GetDeviceInfo(
-//			outputParameters.device)->defaultHighOutputLatency;
-//	outputParameters.hostApiSpecificStreamInfo = NULL;
-//
-//	stream = NULL;
-//
-//	err = Pa_OpenStream(&stream, NULL, &outputParameters, AUDIO_FREQUENCY,
-//			paFramesPerBufferUnspecified, paClipOff, NULL, NULL);
+    if (dac.getDeviceCount() < 1) {
+        std::cout << "No audio devices found!" << std::endl;
+        return;
+    }
 
-//	err = Pa_StartStream(stream);
-//	if (err != paNoError) {
-//		std::cout << "Error starting stream: " << Pa_GetErrorText(err)
-//				<< std::endl;
-//		std::cout << "\tPortAudio error: " << Pa_GetErrorText(err) << std::endl;
-//	}
+    RtAudio::StreamParameters parameters;
+    parameters.deviceId = dac.getDefaultOutputDevice();
+    parameters.nChannels = 2;
+    parameters.firstChannel = 0;
+    unsigned int sampleRate = AUDIO_FREQUENCY;
+    unsigned int bufferFrames = 256;
 
-	while (!terminated) {
-		AudioThreadInput inp;
-		inputQueue->pop(inp);
-		if (inp.data.size()) {
-//		    Pa_WriteStream(stream, &inp.data[0], inp.data.size()/2);
-		}
-	}
+    try {
+        dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &bufferFrames, &audioCallback, (void *) this);
+        dac.startStream();
+    } catch (RtAudioError& e) {
+        e.printMessage();
+        return;
+    }
 
-//    err = Pa_StopStream(stream);
-//    err = Pa_CloseStream(stream);
-//    Pa_Terminate();
+    while (!terminated) {
+        AudioThreadInput inp;
+        inputQueue->pop(inp);
+        if (inp.data.size()) {
+            audio_queue.push(inp.data);
+        }
+    }
+
+    try {
+        // Stop the stream
+        dac.stopStream();
+    } catch (RtAudioError& e) {
+        e.printMessage();
+    }
+
+    if (dac.isStreamOpen()) {
+        dac.closeStream();
+    }
 
     std::cout << "Audio thread done." << std::endl;
 }

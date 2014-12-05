@@ -71,10 +71,12 @@ if (DEFINED WIN32)
   include_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/include )
   
   ADD_DEFINITIONS(
-    -D__WINDOWS_DS__
+    -D__WINDOWS_WASAPI__
+#	-D__WINDOWS_DS__
   )
-  
-  SET(OTHER_LIBRARIES -ldsound)
+ 
+  SET(OTHER_LIBRARIES -luuid -lksuser )
+  #SET(OTHER_LIBRARIES -ldsound)
   
 else (DEFINED WIN32)
   set(RTLSDR_INCLUDE "/opt/local/include" CACHE FILEPATH "RTL-SDR Include Path")

@@ -28,7 +28,10 @@ typedef ThreadQueue<AudioThreadInput> AudioThreadInputQueue;
 
 class AudioThread {
 public:
-     AudioThread(AudioThreadInputQueue *inputQueue);
+    std::queue<std::vector<float> > audio_queue;
+    unsigned int audio_queue_ptr;
+
+    AudioThread(AudioThreadInputQueue *inputQueue);
     ~AudioThread();
 
     void threadMain();
@@ -36,8 +39,7 @@ public:
 
 private:
     AudioThreadInputQueue *inputQueue;
-//    PaStreamParameters outputParameters;
-//    PaStream *stream;
+    RtAudio dac;
     std::atomic<bool> terminated;
 };
 
