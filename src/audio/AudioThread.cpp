@@ -59,8 +59,13 @@ void AudioThread::threadMain() {
     unsigned int sampleRate = AUDIO_FREQUENCY;
     unsigned int bufferFrames = 256;
 
+    RtAudio::StreamOptions opts;
+    opts.flags = RTAUDIO_MINIMIZE_LATENCY | RTAUDIO_SCHEDULE_REALTIME;
+    opts.streamName = "CubicSDR Audio Output";
+    opts.priority = 0;
+
     try {
-        dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &bufferFrames, &audioCallback, (void *) this);
+        dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &bufferFrames, &audioCallback, (void *) this, &opts);
         dac.startStream();
     } catch (RtAudioError& e) {
         e.printMessage();

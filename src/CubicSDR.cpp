@@ -47,6 +47,7 @@ bool CubicSDR::OnInit() {
 
     AppFrame *appframe = new AppFrame();
 
+#ifdef __APPLE__
     int main_policy;
     struct sched_param main_param;
 
@@ -54,6 +55,7 @@ bool CubicSDR::OnInit() {
     main_param.sched_priority = sched_get_priority_min(SCHED_OTHER);
 
     pthread_setschedparam(pthread_self(), main_policy, &main_param);
+#endif
 
     return true;
 }
