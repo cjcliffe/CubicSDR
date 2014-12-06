@@ -51,8 +51,8 @@ bool CubicSDR::OnInit() {
     int main_policy;
     struct sched_param main_param;
 
-    main_policy = SCHED_OTHER;
-    main_param.sched_priority = sched_get_priority_min(SCHED_OTHER);
+    main_policy = SCHED_RR;
+    main_param.sched_priority = sched_get_priority_min(SCHED_RR)+2;
 
     pthread_setschedparam(pthread_self(), main_policy, &main_param);
 #endif

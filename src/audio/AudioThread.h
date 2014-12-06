@@ -28,8 +28,9 @@ typedef ThreadQueue<AudioThreadInput> AudioThreadInputQueue;
 
 class AudioThread {
 public:
-    std::queue<std::vector<float> > audio_queue;
-    unsigned int audio_queue_ptr;
+    std::atomic< std::queue<std::vector<float> > *> audio_queue;
+    std::atomic<unsigned int> audio_queue_ptr;
+    std::atomic<unsigned int> underflow_count;
 
     AudioThread(AudioThreadInputQueue *inputQueue);
     ~AudioThread();
