@@ -25,8 +25,8 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
     int wait_for_it = 0;
 
     if (audio_queue->empty()) {
-		while (wait_for_it++ < 50) {	// Can we wait it out?
-			std::this_thread::sleep_for(std::chrono::microseconds(10000));
+		while (wait_for_it++ < 5) {	// Can we wait it out?
+			std::this_thread::sleep_for(std::chrono::microseconds(100000));
 //    		std::this_thread::yield();
 			if (!audio_queue->empty()) {
 				std::cout << "Buffer recovery.." << std::endl;
@@ -56,8 +56,8 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
             if (audio_queue->empty()) {
 
 #ifdef __APPLE__
-            	while (wait_for_it++ < 50) {	// Can we wait it out?
-        			std::this_thread::sleep_for(std::chrono::microseconds(10000));
+            	while (wait_for_it++ < 5) {	// Can we wait it out?
+        			std::this_thread::sleep_for(std::chrono::microseconds(100000));
             		if (!audio_queue->empty()) {
         				std::cout << "Buffer recovery.." << std::endl;
             			break;
