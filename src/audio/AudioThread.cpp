@@ -43,7 +43,6 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
         return 0;
     }
 
-    wait_for_it = 0;
 
     std::vector<float> nextBuffer = audio_queue->front();
     int nextBufferSize = nextBuffer.size();
@@ -56,6 +55,8 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
             if (audio_queue->empty()) {
 
 #ifdef __APPLE__
+                wait_for_it = 0;
+
             	while (wait_for_it++ < 5) {	// Can we wait it out?
         			std::this_thread::sleep_for(std::chrono::microseconds(100000));
             		if (!audio_queue->empty()) {
@@ -65,8 +66,8 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
             	}
 #endif
             	if (audio_queue->empty()) {
+					std::cout << "Audio buffer underflow mid request.."	<< (src->underflow_count++) << std::endl;
 					for (int j = i; j < nBufferFrames * 2; j++) {
-						std::cout << "Audio buffer underflow mid request.."	<< (src->underflow_count++) << std::endl;
 						out[i] = 0;
 					}
 					return 0;
@@ -91,7 +92,11 @@ void AudioThread::threadMain() {
     parameters.nChannels = 2;
     parameters.firstChannel = 0;
     unsigned int sampleRate = AUDIO_FREQUENCY;
+#ifdef __APPLE__
     unsigned int bufferFrames = 0;
+#else
+    unsigned int bufferFrames = 256;
+#endif
 
     RtAudio::StreamOptions opts;
 //    opts.flags =  RTAUDIO_SCHEDULE_REALTIME | RTAUDIO_MINIMIZE_LATENCY;
