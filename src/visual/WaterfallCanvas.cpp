@@ -205,9 +205,12 @@ void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
 void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
     mTracker.OnMouseMoved(event);
 
-    DemodulatorInstance *demod = wxGetApp().getDemodTest();
+    DemodulatorInstance *demod = activeDemodulator;
 
     if (mTracker.mouseDown()) {
+        if (demod == NULL) {
+            return;
+        }
         if (dragState == WF_DRAG_BANDWIDTH_LEFT || dragState == WF_DRAG_BANDWIDTH_RIGHT) {
 
             int bwDiff = (int) (mTracker.getDeltaMouseX() * (float)SRATE) * 2;
@@ -318,11 +321,15 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
 
     if (mTracker.getOriginDeltaMouseX() == 0 && mTracker.getOriginDeltaMouseY() == 0 && dragState == WF_DRAG_NONE) {
 
+        if (activeDemodulator == NULL) {
+            return;
+        }
+
         float pos = mTracker.getMouseX();
 
         int center_freq = wxGetApp().getFrequency();
 
-        DemodulatorInstance *demod = wxGetApp().getDemodTest();
+        DemodulatorInstance *demod = activeDemodulator;
 
         int freq = center_freq - (int) (0.5 * (float) SRATE) + (int) ((float) pos * (float) SRATE);
 
