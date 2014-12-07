@@ -21,12 +21,14 @@ bool CubicSDR::OnInit() {
 
     frequency = DEFAULT_FREQ;
 
-    demodulatorTest = demodMgr.newThread();
-    demodulatorTest->getParams().frequency = DEFAULT_FREQ;
-    demodulatorTest->run();
+    for (int i = 0; i < NUM_DEMODULATORS; i++) {
+        demodulatorTest[i] = demodMgr.newThread();
+        demodulatorTest[i]->getParams().frequency = DEFAULT_FREQ;
+        demodulatorTest[i]->run();
+    }
 
     audioVisualQueue = new DemodulatorThreadOutputQueue();
-    demodulatorTest->setVisualOutputQueue(audioVisualQueue);
+    demodulatorTest[0]->setVisualOutputQueue(audioVisualQueue);
 
     threadCmdQueueSDR = new SDRThreadCommandQueue;
     sdrThread = new SDRThread(threadCmdQueueSDR);
@@ -40,7 +42,9 @@ bool CubicSDR::OnInit() {
     sdrPostThread->setIQDataInQueue(iqPostDataQueue);
     sdrPostThread->setIQVisualQueue(iqVisualQueue);
 
-    sdrPostThread->bindDemodulator(demodulatorTest);
+    for (int i = 0; i < NUM_DEMODULATORS; i++) {
+        sdrPostThread->bindDemodulator(demodulatorTest[i]);
+    }
 
     t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
     t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);

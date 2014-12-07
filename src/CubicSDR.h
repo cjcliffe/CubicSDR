@@ -15,11 +15,13 @@
 #include "AudioThread.h"
 #include "DemodulatorMgr.h"
 
+#define NUM_DEMODULATORS 3
+
 class CubicSDR: public wxApp {
 public:
     CubicSDR() :
             m_glContext(NULL), t_PostSDR(NULL), t_SDR(NULL), audioVisualQueue(NULL), threadCmdQueueSDR(NULL), iqVisualQueue(NULL), frequency(
-                    DEFAULT_FREQ), sdrPostThread(NULL), iqPostDataQueue(NULL), sdrThread(NULL), demodulatorTest(NULL) {
+                    DEFAULT_FREQ), sdrPostThread(NULL), iqPostDataQueue(NULL), sdrThread(NULL) {
 
     }
 
@@ -40,7 +42,7 @@ public:
     }
 
     DemodulatorInstance *getDemodTest() {
-        return demodulatorTest;
+        return demodulatorTest[0];
     }
 
     DemodulatorMgr &getDemodMgr() {
@@ -54,7 +56,7 @@ private:
 
     unsigned int frequency;
 
-    DemodulatorInstance *demodulatorTest;
+    DemodulatorInstance *demodulatorTest[NUM_DEMODULATORS];
 
     SDRThread *sdrThread;
     SDRPostThread *sdrPostThread;
