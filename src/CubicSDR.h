@@ -15,7 +15,7 @@
 #include "AudioThread.h"
 #include "DemodulatorMgr.h"
 
-#define NUM_DEMODULATORS 3
+#define NUM_DEMODULATORS 1
 
 class CubicSDR: public wxApp {
 public:

@@ -7,6 +7,7 @@
 #include <queue>
 
 #include "CubicSDRDefs.h"
+#include "GLFont.h"
 
 class PrimaryGLContext: public wxGLContext {
 public:
@@ -15,5 +16,8 @@ public:
     static wxString glGetwxString(GLenum name);
     static void CheckGLError();
 
+    static GLFont *getFont();
+
 private:
+    static GLFont *font;
 };

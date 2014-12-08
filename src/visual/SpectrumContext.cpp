@@ -32,5 +32,8 @@ void SpectrumContext::Draw(std::vector<float> &points) {
         glDisableClientState(GL_VERTEX_ARRAY);
         glPopMatrix();
     }
+
+    getFont()->drawString("Testing",0.0,0.0,0.7);
+
     CheckGLError();
 }

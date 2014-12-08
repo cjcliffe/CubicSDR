@@ -15,6 +15,8 @@
 #include "AppFrame.h"
 #include <algorithm>
 
+GLFont *PrimaryGLContext::font = NULL;
+
 wxString PrimaryGLContext::glGetwxString(GLenum name) {
     const GLubyte *v = glGetString(name);
     if (v == 0) {
@@ -56,3 +58,11 @@ PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContex
     CheckGLError();
 }
 
+GLFont *PrimaryGLContext::getFont() {
+    if (font == NULL) {
+        font = new GLFont();
+        font->loadFont("vera_sans_mono.fnt");
+    }
+
+    return font;
+}
