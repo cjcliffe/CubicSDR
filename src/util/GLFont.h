@@ -55,7 +55,9 @@ public:
     GLFont();
     ~GLFont();
     void loadFont(std::string fontFile);
-    void drawString(std::string str, float xpos, float ypos, float height);
+
+    float getStringWidth(std::string str, float size, float viewAspect);
+    void drawString(std::string str, float xpos, float ypos, float height, float viewAspect);
 
 private:
     std::string nextParam(std::istringstream &str);

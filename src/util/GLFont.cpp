@@ -277,7 +277,7 @@ void GLFont::loadFont(std::string fontFile) {
         glGenTextures(1, &texId);
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, texId);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexImage2D(GL_TEXTURE_2D, 0, 4, imageWidth, imageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image[0]);
         glDisable(GL_TEXTURE_2D);
@@ -292,7 +292,7 @@ void GLFont::loadFont(std::string fontFile) {
             int charId = (*char_i).first;
             GLFontChar *fchar = (*char_i).second;
 
-            float faspect = fchar->getAspect()/8.0;
+            float faspect = fchar->getAspect();
 
             float uv_xpos = (float) fchar->getX() / (float) imageWidth;
             float uv_ypos = ((float) fchar->getY() / (float) imageHeight);
@@ -340,15 +340,49 @@ void GLFont::loadFont(std::string fontFile) {
     input.close();
 }
 
-void GLFont::drawString(std::string str, float xpos, float ypos, float size) {
+float GLFont::getStringWidth(std::string str, float size, float viewAspect) {
+
+    float scalex = size/viewAspect;
+
+    float width = 0;
+
+    for (int i = 0, iMax = str.length(); i < iMax; i++) {
+        int charId = str.at(i);
+
+        if (characters.find(charId) == characters.end()) {
+            continue;
+        }
+
+        GLFontChar *fchar = characters[charId];
+
+        float ofsx = (float)fchar->getXOffset()/(float)imageWidth;
+        float advx = (float)fchar->getXAdvance()/(float)imageWidth;
+
+        if (charId == 32) {
+            advx = characters['_']->getAspect();
+         }
+
+        width += fchar->getAspect()+advx-ofsx;
+    }
+
+    width *= scalex;
+
+    return width;
+}
+
+
+void GLFont::drawString(std::string str, float xpos, float ypos, float size, float viewAspect) {
 
     glPushMatrix();
     glTranslatef(xpos, ypos, 0.0f);
-    glScalef(size, size, 1.0f);
     glPushMatrix();
+    glScalef(size/viewAspect, size, 1.0f);
 
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, texId);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -364,13 +398,25 @@ void GLFont::drawString(std::string str, float xpos, float ypos, float size) {
 
         GLFontChar *fchar = characters[charId];
 
+
+        float ofsx = (float)fchar->getXOffset()/(float)imageWidth;
+        float advx = (float)fchar->getXAdvance()/(float)imageWidth;
+
+
+        if (charId == 32) {
+            advx = characters['_']->getAspect();
+         }
+
+        glTranslatef(-ofsx,0.0,0.0);
         glDrawArrays(GL_QUADS, fchar->getIndex()/2, 4);
-        glTranslatef(fchar->getAspect()/8.0,0.0,0.0);
+        glTranslatef(fchar->getAspect()+advx,0.0,0.0);
     }
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glPopMatrix();
     glPopMatrix();
+
+    glDisable(GL_BLEND);
 }
 

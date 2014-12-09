@@ -33,7 +33,16 @@ void SpectrumContext::Draw(std::vector<float> &points) {
         glPopMatrix();
     }
 
-    getFont()->drawString("Testing",0.0,0.0,0.7);
+    GLint vp[4];
+
+    glGetIntegerv( GL_VIEWPORT, vp);
+
+    std::string msgStr("Welcome to CubicSDR -- This is a test string. 01234567890!@#$%^&*()_[]");
+    float charHeight = 62.0;
+    float viewAspect = (float)vp[2]/(float)vp[3];
+    float msgWidth = getFont()->getStringWidth(msgStr,charHeight/(float)vp[3],viewAspect);
+
+    getFont()->drawString(msgStr,0.0-(msgWidth/2.0),0.0,charHeight/(float)vp[3],viewAspect);
 
     CheckGLError();
 }
