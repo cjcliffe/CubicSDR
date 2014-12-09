@@ -13,13 +13,8 @@ SpectrumContext::SpectrumContext(SpectrumCanvas *canvas, wxGLContext *sharedCont
 }
 
 void SpectrumContext::Draw(std::vector<float> &points) {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
 
     glDisable(GL_TEXTURE_2D);
-
     glColor3f(1.0, 1.0, 1.0);
 
     if (points.size()) {

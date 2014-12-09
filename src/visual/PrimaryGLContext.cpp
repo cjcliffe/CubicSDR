@@ -66,3 +66,94 @@ GLFont *PrimaryGLContext::getFont() {
 
     return font;
 }
+
+
+void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, float b) {
+    if (!demod) {
+        return;
+    }
+
+    float uxPos = (float) (demod->getParams().frequency - (wxGetApp().getFrequency() - SRATE / 2)) / (float) SRATE;
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_TEXTURE_2D);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
+    glColor4f(r, g, b, 0.6);
+
+    glBegin(GL_LINES);
+    glVertex3f((uxPos - 0.5) * 2.0, 1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0, -1.0, 0.0);
+
+    float ofs = ((float) demod->getParams().bandwidth) / (float) SRATE;
+
+    glVertex3f((uxPos - 0.5) * 2.0 - ofs, 1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0 - ofs, -1.0, 0.0);
+
+    glVertex3f((uxPos - 0.5) * 2.0 + ofs, 1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0 + ofs, -1.0, 0.0);
+
+    glEnd();
+
+    glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
+    glColor4f(r, g, b, 0.2);
+    glBegin(GL_QUADS);
+    glVertex3f((uxPos - 0.5) * 2.0 - ofs, 1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0 - ofs, -1.0, 0.0);
+
+    glVertex3f((uxPos - 0.5) * 2.0 + ofs, -1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0 + ofs, 1.0, 0.0);
+    glEnd();
+
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+
+}
+
+void PrimaryGLContext::DrawFreqSelector(float uxPos, float r, float g, float b) {
+    DemodulatorInstance *demod = wxGetApp().getDemodTest();
+
+    if (!demod) {
+        return;
+    }
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_TEXTURE_2D);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
+    glColor4f(r, g, b, 0.6);
+
+    glBegin(GL_LINES);
+    glVertex3f((uxPos - 0.5) * 2.0, 1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0, -1.0, 0.0);
+
+    float ofs = ((float) demod->getParams().bandwidth) / (float) SRATE;
+
+    glVertex3f((uxPos - 0.5) * 2.0 - ofs, 1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0 - ofs, -1.0, 0.0);
+
+    glVertex3f((uxPos - 0.5) * 2.0 + ofs, 1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0 + ofs, -1.0, 0.0);
+
+    glEnd();
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+
+}
+
+void PrimaryGLContext::BeginDraw() {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+
+
+void PrimaryGLContext::EndDraw() {
+    glFlush();
+
+    CheckGLError();
+}
+

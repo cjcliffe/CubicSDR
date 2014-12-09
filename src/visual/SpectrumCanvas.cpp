@@ -61,7 +61,16 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->SetCurrent(*this);
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
+    glContext->BeginDraw();
     glContext->Draw(spectrum_points);
+
+    std::vector<DemodulatorInstance *> &demods = wxGetApp().getDemodMgr().getDemodulators();
+
+    for (int i = 0, iMax = demods.size(); i < iMax; i++) {
+        glContext->DrawDemod(demods[i]);
+    }
+
+    glContext->EndDraw();
 
     SwapBuffers();
 }
@@ -73,13 +82,13 @@ void SpectrumCanvas::OnKeyDown(wxKeyEvent& event) {
     switch (event.GetKeyCode()) {
     case WXK_RIGHT:
         freq = wxGetApp().getFrequency();
-        freq += SRATE/2;
+        freq += SRATE / 2;
         wxGetApp().setFrequency(freq);
         ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), freq));
         break;
     case WXK_LEFT:
         freq = wxGetApp().getFrequency();
-        freq -= SRATE/2;
+        freq -= SRATE / 2;
         wxGetApp().setFrequency(freq);
         ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), freq));
         break;
@@ -119,12 +128,12 @@ void SpectrumCanvas::setData(std::vector<signed char> *data) {
 
         int n;
         for (int i = 0, iMax = FFT_SIZE / 2; i < iMax; i++) {
-            n = (i == 0)?1:i;
+            n = (i == 0) ? 1 : i;
             double a = out[n][0];
             double b = out[n][1];
             double c = sqrt(a * a + b * b);
 
-            n = (i == FFT_SIZE/2)?(FFT_SIZE/2+1):i;
+            n = (i == FFT_SIZE / 2) ? (FFT_SIZE / 2 + 1) : i;
             double x = out[FFT_SIZE / 2 + n][0];
             double y = out[FFT_SIZE / 2 + n][1];
             double z = sqrt(x * x + y * y);
