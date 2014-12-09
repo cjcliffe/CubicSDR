@@ -52,12 +52,20 @@ private:
 
 class GLFont {
 public:
+    enum Align {
+        GLFONT_ALIGN_LEFT,
+        GLFONT_ALIGN_RIGHT,
+        GLFONT_ALIGN_CENTER,
+        GLFONT_ALIGN_TOP,
+        GLFONT_ALIGN_BOTTOM
+    };
+
     GLFont();
     ~GLFont();
     void loadFont(std::string fontFile);
 
     float getStringWidth(std::string str, float size, float viewAspect);
-    void drawString(std::string str, float xpos, float ypos, float height, float viewAspect);
+    void drawString(std::string str, float xpos, float ypos, int pxHeight, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP);
 
 private:
     std::string nextParam(std::istringstream &str);
