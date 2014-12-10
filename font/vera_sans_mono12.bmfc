@@ -5,10 +5,10 @@ fileVersion=1
 fontName=Bitstream Vera Sans Mono
 fontFile=
 charSet=0
-fontSize=62
+fontSize=12
 aa=1
 scaleH=100
-useSmoothing=1
+useSmoothing=0
 isBold=0
 isItalic=0
 useUnicode=1
@@ -17,7 +17,7 @@ outputInvalidCharGlyph=0
 dontIncludeKerningPairs=0
 useHinting=1
 renderFromOutline=0
-useClearType=1
+useClearType=0
 
 # character alignment
 paddingDown=0
@@ -30,8 +30,8 @@ useFixedHeight=1
 forceZero=0
 
 # output file
-outWidth=512
-outHeight=512
+outWidth=128
+outHeight=128
 outBitDepth=32
 fontDescFormat=0
 fourChnlPacked=0

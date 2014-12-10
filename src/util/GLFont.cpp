@@ -5,7 +5,7 @@
 #include <algorithm>
 
 GLFontChar::GLFontChar() :
-        id(0), x(0), y(0), width(0), height(0), xadvance(0), xoffset(0), yoffset(0), index(0) {
+        id(0), x(0), y(0), width(0), height(0), xadvance(0), xoffset(0), yoffset(0), index(0), aspect(1) {
 
 }
 
@@ -96,7 +96,7 @@ int GLFontChar::getIndex() {
 }
 
 GLFont::GLFont() :
-        numCharacters(0), imageHeight(0), imageWidth(0), base(0), lineHeight(0), texId(0) {
+        numCharacters(0), imageHeight(0), imageWidth(0), base(0), lineHeight(0), texId(0), loaded(false) {
 
 }
 
@@ -277,8 +277,8 @@ void GLFont::loadFont(std::string fontFile) {
         glGenTextures(1, &texId);
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, texId);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexImage2D(GL_TEXTURE_2D, 0, 4, imageWidth, imageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image[0]);
         glDisable(GL_TEXTURE_2D);
 
@@ -303,29 +303,21 @@ void GLFont::loadFont(std::string fontFile) {
             gl_vertices[ofs + 1] = 0;
             gl_uv[ofs] = uv_xpos;
             gl_uv[ofs + 1] = uv_ypos + uv_yofs;
-//            gl_uv[ofs] = 0;
-//            gl_uv[ofs + 1] = 1;
 
             gl_vertices[ofs + 2] = faspect;
             gl_vertices[ofs + 3] = 0;
             gl_uv[ofs + 2] = uv_xpos + uv_xofs;
             gl_uv[ofs + 3] = uv_ypos + uv_yofs;
-//            gl_uv[ofs + 2] = 1;
-//            gl_uv[ofs + 3] = 1;
 
             gl_vertices[ofs + 4] = faspect;
             gl_vertices[ofs + 5] = 1;
             gl_uv[ofs + 4] = uv_xpos + uv_xofs;
             gl_uv[ofs + 5] = uv_ypos;
-//            gl_uv[ofs + 4] = 1;
-//            gl_uv[ofs + 5] = 0;
 
             gl_vertices[ofs + 6] = 0;
             gl_vertices[ofs + 7] = 1;
             gl_uv[ofs + 6] = uv_xpos;
             gl_uv[ofs + 7] = uv_ypos;
-//            gl_uv[ofs + 6] = 0;
-//            gl_uv[ofs + 7] = 0;
 
             fchar->setIndex(ofs);
 
@@ -333,11 +325,16 @@ void GLFont::loadFont(std::string fontFile) {
         }
 
         std::cout << "Loaded font '" << fontName << "' from '" << fontFileSource << "', parsed " << characters.size() << " characters." << std::endl;
+        loaded = true;
     } else {
         std::cout << "Error loading font file " << fontFileSource << std::endl;
     }
 
     input.close();
+}
+
+bool GLFont::isLoaded() {
+    return loaded;
 }
 
 float GLFont::getStringWidth(std::string str, float size, float viewAspect) {
@@ -362,7 +359,7 @@ float GLFont::getStringWidth(std::string str, float size, float viewAspect) {
             advx = characters['_']->getAspect();
         }
 
-        width += fchar->getAspect() + advx - ofsx;
+        width += fchar->getAspect() + advx + ofsx;
     }
 
     width *= scalex;
@@ -437,7 +434,7 @@ void GLFont::drawString(std::string str, float xpos, float ypos, int pxHeight, A
             advx = characters['_']->getAspect();
         }
 
-        glTranslatef(-ofsx, 0.0, 0.0);
+        glTranslatef(ofsx, 0.0, 0.0);
         glDrawArrays(GL_QUADS, fchar->getIndex() / 2, 4);
         glTranslatef(fchar->getAspect() + advx, 0.0, 0.0);
     }

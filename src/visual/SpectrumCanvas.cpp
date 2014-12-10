@@ -67,7 +67,7 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     std::vector<DemodulatorInstance *> &demods = wxGetApp().getDemodMgr().getDemodulators();
 
     for (int i = 0, iMax = demods.size(); i < iMax; i++) {
-        glContext->DrawDemod(demods[i]);
+        glContext->DrawDemodInfo(demods[i]);
     }
 
     glContext->EndDraw();

@@ -63,6 +63,7 @@ public:
     GLFont();
     ~GLFont();
     void loadFont(std::string fontFile);
+    bool isLoaded();
 
     float getStringWidth(std::string str, float size, float viewAspect);
     void drawString(std::string str, float xpos, float ypos, int pxHeight, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP);
@@ -76,6 +77,7 @@ private:
     int lineHeight;
     int base;
     int imageWidth, imageHeight;
+    bool loaded;
 
     std::map<int, GLFontChar *> characters;
 

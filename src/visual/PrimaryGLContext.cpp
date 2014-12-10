@@ -15,7 +15,7 @@
 #include "AppFrame.h"
 #include <algorithm>
 
-GLFont *PrimaryGLContext::font = NULL;
+GLFont PrimaryGLContext::fonts[GLFONT_MAX];
 
 wxString PrimaryGLContext::glGetwxString(GLenum name) {
     const GLubyte *v = glGetString(name);
@@ -58,15 +58,60 @@ PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContex
     CheckGLError();
 }
 
-GLFont *PrimaryGLContext::getFont() {
-    if (font == NULL) {
-        font = new GLFont();
-        font->loadFont("vera_sans_mono.fnt");
+GLFont &PrimaryGLContext::getFont(GLFontSize esize) {
+    if (!fonts[esize].isLoaded()) {
+
+        std::string fontName;
+        switch (esize) {
+        case GLFONT_SIZE12: fontName = "vera_sans_mono12.fnt";
+        break;
+        case GLFONT_SIZE16: fontName = "vera_sans_mono16.fnt";
+        break;
+        case GLFONT_SIZE18: fontName = "vera_sans_mono18.fnt";
+        break;
+        case GLFONT_SIZE24: fontName = "vera_sans_mono24.fnt";
+        break;
+        case GLFONT_SIZE32: fontName = "vera_sans_mono32.fnt";
+        break;
+        case GLFONT_SIZE48: fontName = "vera_sans_mono48.fnt";
+        break;
+        }
+
+        fonts[esize].loadFont(fontName);
     }
 
-    return font;
+    return fonts[esize];
 }
 
+void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, float r, float g, float b) {
+    if (!demod) {
+        return;
+    }
+
+    float uxPos = (float) (demod->getParams().frequency - (wxGetApp().getFrequency() - SRATE / 2)) / (float) SRATE;
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_TEXTURE_2D);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
+    glColor4f(r, g, b, 0.6);
+
+    float ofs = ((float) demod->getParams().bandwidth) / (float) SRATE;
+
+    glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
+    glColor4f(r, g, b, 0.2);
+    glBegin(GL_QUADS);
+    glVertex3f((uxPos - 0.5) * 2.0 - ofs, 1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0 - ofs, -1.0, 0.0);
+
+    glVertex3f((uxPos - 0.5) * 2.0 + ofs, -1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0 + ofs, 1.0, 0.0);
+    glEnd();
+
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+}
 
 void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, float b) {
     if (!demod) {
@@ -108,7 +153,6 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, f
 
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
-
 }
 
 void PrimaryGLContext::DrawFreqSelector(float uxPos, float r, float g, float b) {
@@ -149,7 +193,6 @@ void PrimaryGLContext::BeginDraw() {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
-
 
 void PrimaryGLContext::EndDraw() {
     glFlush();
