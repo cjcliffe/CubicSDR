@@ -32,6 +32,11 @@ public:
 
     void run();
     void terminate();
+    std::string getLabel();
+    void setLabel(std::string labelStr);
+
+private:
+    std::string label;
 };
 
 class DemodulatorMgr {
@@ -44,6 +49,13 @@ public:
     std::vector<DemodulatorInstance *> *getDemodulatorsAt(int freq, int bandwidth);
 
     void terminateAll();
+
+    void setActiveDemodulator(DemodulatorInstance *demod, bool temporary = true);
+    DemodulatorInstance *getActiveDemodulator();
+    DemodulatorInstance *getLastActiveDemodulator();
+
 private:
     std::vector<DemodulatorInstance *> demods;
+    DemodulatorInstance *activeDemodulator;
+    DemodulatorInstance *lastActiveDemodulator;
 };

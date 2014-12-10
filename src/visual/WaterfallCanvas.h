@@ -25,6 +25,7 @@ public:
 private:
     void OnPaint(wxPaintEvent& event);
     void OnKeyDown(wxKeyEvent& event);
+    void OnKeyUp(wxKeyEvent& event);
 
     void OnIdle(wxIdleEvent &event);
 
@@ -55,10 +56,11 @@ private:
 
     int activeDemodulatorBandwidth;
     int activeDemodulatorFrequency;
-    DemodulatorInstance *activeDemodulator;
 
     DragState dragState;
     DragState nextDragState;
+
+    bool shiftDown;
 
 // event table
 wxDECLARE_EVENT_TABLE();

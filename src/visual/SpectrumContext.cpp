@@ -22,8 +22,8 @@ void SpectrumContext::Draw(std::vector<float> &points) {
 
     if (points.size()) {
         glPushMatrix();
-        glTranslatef(-1.0f, -0.9f, 0.0f);
-        glScalef(2.0f, 1.8f, 1.0f);
+        glTranslatef(-1.0f, -0.75f, 0.0f);
+        glScalef(2.0f, 1.5f, 1.0f);
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(2, GL_FLOAT, 0, &points[0]);
         glDrawArrays(GL_LINE_STRIP, 0, points.size() / 2);

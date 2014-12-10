@@ -63,18 +63,24 @@ GLFont &PrimaryGLContext::getFont(GLFontSize esize) {
 
         std::string fontName;
         switch (esize) {
-        case GLFONT_SIZE12: fontName = "vera_sans_mono12.fnt";
-        break;
-        case GLFONT_SIZE16: fontName = "vera_sans_mono16.fnt";
-        break;
-        case GLFONT_SIZE18: fontName = "vera_sans_mono18.fnt";
-        break;
-        case GLFONT_SIZE24: fontName = "vera_sans_mono24.fnt";
-        break;
-        case GLFONT_SIZE32: fontName = "vera_sans_mono32.fnt";
-        break;
-        case GLFONT_SIZE48: fontName = "vera_sans_mono48.fnt";
-        break;
+        case GLFONT_SIZE12:
+            fontName = "vera_sans_mono12.fnt";
+            break;
+        case GLFONT_SIZE16:
+            fontName = "vera_sans_mono16.fnt";
+            break;
+        case GLFONT_SIZE18:
+            fontName = "vera_sans_mono18.fnt";
+            break;
+        case GLFONT_SIZE24:
+            fontName = "vera_sans_mono24.fnt";
+            break;
+        case GLFONT_SIZE32:
+            fontName = "vera_sans_mono32.fnt";
+            break;
+        case GLFONT_SIZE48:
+            fontName = "vera_sans_mono48.fnt";
+            break;
         }
 
         fonts[esize].loadFont(fontName);
@@ -88,9 +94,15 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, float r, float 
         return;
     }
 
-    float uxPos = (float) (demod->getParams().frequency - (wxGetApp().getFrequency() - SRATE / 2)) / (float) SRATE;
+    GLint vp[4];
+    glGetIntegerv( GL_VIEWPORT, vp);
 
-    glDisable(GL_DEPTH_TEST);
+    float viewHeight = (float) vp[3];
+    float viewWidth = (float) vp[2];
+
+    float uxPos = (float) (demod->getParams().frequency - (wxGetApp().getFrequency() - SRATE / 2)) / (float) SRATE;
+    uxPos = (uxPos - 0.5) * 2.0;
+
     glDisable(GL_TEXTURE_2D);
 
     glEnable(GL_BLEND);
@@ -102,15 +114,36 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, float r, float 
     glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
     glColor4f(r, g, b, 0.2);
     glBegin(GL_QUADS);
-    glVertex3f((uxPos - 0.5) * 2.0 - ofs, 1.0, 0.0);
-    glVertex3f((uxPos - 0.5) * 2.0 - ofs, -1.0, 0.0);
+    glVertex3f(uxPos - ofs, 1.0, 0.0);
+    glVertex3f(uxPos - ofs, -1.0, 0.0);
 
-    glVertex3f((uxPos - 0.5) * 2.0 + ofs, -1.0, 0.0);
-    glVertex3f((uxPos - 0.5) * 2.0 + ofs, 1.0, 0.0);
+    glVertex3f(uxPos + ofs, -1.0, 0.0);
+    glVertex3f(uxPos + ofs, 1.0, 0.0);
     glEnd();
 
+    float labelHeight = 20.0 / viewHeight;
+
+    float hPos = -1.0 + labelHeight;
+
+    if (ofs * 2.0 < 16.0 / viewWidth) {
+        ofs = 16.0 / viewWidth;
+
+        glColor4f(r, g, b, 0.2);
+        glBegin(GL_QUADS);
+        glVertex3f(uxPos - ofs, hPos + labelHeight, 0.0);
+        glVertex3f(uxPos - ofs, -1.0, 0.0);
+
+        glVertex3f(uxPos + ofs, -1.0, 0.0);
+        glVertex3f(uxPos + ofs, hPos + labelHeight, 0.0);
+        glEnd();
+    }
+
+    glColor4f(1.0, 1.0, 1.0, 0.8);
+
+    getFont(PrimaryGLContext::GLFONT_SIZE16).drawString(demod->getLabel(), uxPos, hPos, 16, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+
     glDisable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
+
 }
 
 void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, float b) {

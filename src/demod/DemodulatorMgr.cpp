@@ -1,4 +1,6 @@
 #include <DemodulatorMgr.h>
+#include <sstream>
+#include <algorithm>
 
 DemodulatorInstance::DemodulatorInstance() :
         t_Demod(NULL), t_Audio(NULL), threadQueueDemod(NULL), demodulatorThread(NULL) {
@@ -54,16 +56,16 @@ void DemodulatorInstance::run() {
     t_Audio = new std::thread(&AudioThread::threadMain, audioThread);
 
 #ifdef __APPLE__	// Already using pthreads, might as well do some custom init..
-	pthread_attr_t attr;
-	size_t size;
+    pthread_attr_t attr;
+    size_t size;
 
-	pthread_attr_init(&attr);
-	pthread_attr_setstacksize(&attr, 2048000);
-	pthread_attr_getstacksize(&attr, &size);
+    pthread_attr_init(&attr);
+    pthread_attr_setstacksize(&attr, 2048000);
+    pthread_attr_getstacksize(&attr, &size);
     pthread_create(&t_Demod, &attr, &DemodulatorThread::pthread_helper, demodulatorThread);
-	pthread_attr_destroy(&attr);
+    pthread_attr_destroy(&attr);
 
-	std::cout << "Initialized demodulator stack size of " << size << std::endl;
+    std::cout << "Initialized demodulator stack size of " << size << std::endl;
 
 #else
     t_Demod = new std::thread(&DemodulatorThread::threadMain, demodulatorThread);
@@ -91,7 +93,16 @@ void DemodulatorInstance::terminate() {
     t_Audio->join();
 }
 
-DemodulatorMgr::DemodulatorMgr() {
+std::string DemodulatorInstance::getLabel() {
+    return label;
+}
+
+void DemodulatorInstance::setLabel(std::string labelStr) {
+    label = labelStr;
+}
+
+DemodulatorMgr::DemodulatorMgr() :
+        activeDemodulator(NULL), lastActiveDemodulator(NULL) {
 
 }
 
@@ -101,7 +112,13 @@ DemodulatorMgr::~DemodulatorMgr() {
 
 DemodulatorInstance *DemodulatorMgr::newThread() {
     DemodulatorInstance *newDemod = new DemodulatorInstance;
+
     demods.push_back(newDemod);
+
+    std::stringstream label;
+    label << demods.size();
+    newDemod->setLabel(label.str());
+
     return newDemod;
 }
 
@@ -136,4 +153,27 @@ std::vector<DemodulatorInstance *> *DemodulatorMgr::getDemodulatorsAt(int freq, 
     }
 
     return foundDemods;
+}
+
+void DemodulatorMgr::setActiveDemodulator(DemodulatorInstance *demod, bool temporary) {
+    if (!temporary) {
+        if (activeDemodulator != NULL) {
+            lastActiveDemodulator = activeDemodulator;
+        } else {
+            lastActiveDemodulator = demod;
+        }
+    }
+    activeDemodulator = demod;
+}
+
+DemodulatorInstance *DemodulatorMgr::getActiveDemodulator() {
+    return activeDemodulator;
+}
+
+DemodulatorInstance *DemodulatorMgr::getLastActiveDemodulator() {
+    if (std::find(demods.begin(), demods.end(), lastActiveDemodulator) == demods.end()) {
+        lastActiveDemodulator = activeDemodulator;
+    }
+
+    return lastActiveDemodulator;
 }
