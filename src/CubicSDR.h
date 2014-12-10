@@ -49,6 +49,10 @@ public:
         return demodMgr;
     }
 
+    void bindDemodulator(DemodulatorInstance *newDemod) {
+        sdrPostThread->bindDemodulator(newDemod);
+    }
+
 private:
     PrimaryGLContext *m_glContext;
 

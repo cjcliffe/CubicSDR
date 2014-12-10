@@ -189,11 +189,16 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, f
 }
 
 void PrimaryGLContext::DrawFreqSelector(float uxPos, float r, float g, float b) {
-    DemodulatorInstance *demod = wxGetApp().getDemodTest();
+    DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+
+    int bw = 0;
 
     if (!demod) {
-        return;
+        bw = 200000;
+    } else {
+        bw = demod->getParams().bandwidth;
     }
+
 
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_TEXTURE_2D);
