@@ -17,7 +17,6 @@
 #include <wx/numformatter.h>
 
 wxBEGIN_EVENT_TABLE(SpectrumCanvas, wxGLCanvas) EVT_PAINT(SpectrumCanvas::OnPaint)
-EVT_KEY_DOWN(SpectrumCanvas::OnKeyDown)
 EVT_IDLE(SpectrumCanvas::OnIdle)
 EVT_MOTION(SpectrumCanvas::mouseMoved)
 EVT_LEFT_DOWN(SpectrumCanvas::mouseDown)
@@ -73,35 +72,6 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->EndDraw();
 
     SwapBuffers();
-}
-
-void SpectrumCanvas::OnKeyDown(wxKeyEvent& event) {
-    float angle = 5.0;
-
-    unsigned int freq;
-    switch (event.GetKeyCode()) {
-    case WXK_RIGHT:
-        freq = wxGetApp().getFrequency();
-        freq += SRATE / 2;
-        wxGetApp().setFrequency(freq);
-        ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), freq));
-        break;
-    case WXK_LEFT:
-        freq = wxGetApp().getFrequency();
-        freq -= SRATE / 2;
-        wxGetApp().setFrequency(freq);
-        ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), freq));
-        break;
-    case WXK_DOWN:
-        break;
-    case WXK_UP:
-        break;
-    case WXK_SPACE:
-        break;
-    default:
-        event.Skip();
-        return;
-    }
 }
 
 void SpectrumCanvas::setData(std::vector<signed char> *data) {

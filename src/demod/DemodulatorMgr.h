@@ -47,6 +47,7 @@ public:
     DemodulatorInstance *newThread();
     std::vector<DemodulatorInstance *> &getDemodulators();
     std::vector<DemodulatorInstance *> *getDemodulatorsAt(int freq, int bandwidth);
+    void deleteThread(DemodulatorInstance *);
 
     void terminateAll();
 
@@ -58,4 +59,5 @@ private:
     std::vector<DemodulatorInstance *> demods;
     DemodulatorInstance *activeDemodulator;
     DemodulatorInstance *lastActiveDemodulator;
+    DemodulatorInstance *activeVisualDemodulator;
 };

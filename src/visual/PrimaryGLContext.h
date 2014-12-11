@@ -29,4 +29,5 @@ public:
 
 private:
     static GLFont fonts[GLFONT_MAX];
+    DemodulatorThreadParameters defaultDemodParams;
 };

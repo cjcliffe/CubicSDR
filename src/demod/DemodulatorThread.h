@@ -131,7 +131,6 @@ public:
 
 	void setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {
 		visOutQueue = tQueue;
-		visOutQueue->set_max_num_items(1);
 	}
 
 	void setCommandQueue(DemodulatorThreadCommandQueue *tQueue) {

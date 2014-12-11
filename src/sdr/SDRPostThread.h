@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SDRThread.h"
+#include <algorithm>
 
 class SDRPostThread {
 public:
@@ -15,6 +16,20 @@ public:
         demodulators.push_back(demod);
     }
 
+    void removeDemodulator(DemodulatorInstance *demod) {
+        if (!demod) {
+            return;
+        }
+
+        std::vector<DemodulatorInstance *>::iterator i;
+
+        i = std::find(demodulators.begin(), demodulators.end(), demod);
+
+        if (i != demodulators.end()) {
+            demodulators.erase(i);
+        }
+    }
+
     void threadMain();
 
     void setIQDataInQueue(SDRThreadIQDataQueue* iqDataQueue) {
@@ -25,7 +40,6 @@ public:
     }
     void setIQVisualQueue(SDRThreadIQDataQueue *iqVisQueue) {
         iqVisualQueue = iqVisQueue;
-        iqVisualQueue.load()->set_max_num_items(1);
     }
 
     void terminate();

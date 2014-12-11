@@ -194,7 +194,7 @@ void PrimaryGLContext::DrawFreqSelector(float uxPos, float r, float g, float b) 
     int bw = 0;
 
     if (!demod) {
-        bw = 200000;
+        bw = defaultDemodParams.bandwidth;
     } else {
         bw = demod->getParams().bandwidth;
     }
@@ -211,7 +211,7 @@ void PrimaryGLContext::DrawFreqSelector(float uxPos, float r, float g, float b) 
     glVertex3f((uxPos - 0.5) * 2.0, 1.0, 0.0);
     glVertex3f((uxPos - 0.5) * 2.0, -1.0, 0.0);
 
-    float ofs = ((float) demod->getParams().bandwidth) / (float) SRATE;
+    float ofs = ((float) bw) / (float) SRATE;
 
     glVertex3f((uxPos - 0.5) * 2.0 - ofs, 1.0, 0.0);
     glVertex3f((uxPos - 0.5) * 2.0 - ofs, -1.0, 0.0);

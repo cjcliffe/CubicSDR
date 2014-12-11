@@ -50,7 +50,9 @@ void SDRPostThread::threadMain() {
             }
 
             if (iqVisualQueue != NULL) {
-                iqVisualQueue.load()->push(dataOut);
+                if (iqVisualQueue.load()->empty()) {
+                    iqVisualQueue.load()->push(dataOut);
+                }
             }
 
             if (demodulators.size()) {

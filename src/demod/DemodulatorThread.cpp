@@ -255,7 +255,5 @@ void DemodulatorThread::terminate() {
     terminated = true;
     DemodulatorThreadIQData inp;    // push dummy to nudge queue
     inputQueue->push(inp);
-
     workerThread->terminate();
-    t_Worker->join();
 }

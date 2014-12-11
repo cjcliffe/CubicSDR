@@ -21,15 +21,11 @@ bool CubicSDR::OnInit() {
 
     frequency = DEFAULT_FREQ;
 
-    for (int i = 0; i < NUM_DEMODULATORS; i++) {
-        demodulatorTest[i] = demodMgr.newThread();
-        demodulatorTest[i]->getParams().frequency = DEFAULT_FREQ;
-        demodulatorTest[i]->run();
-    }
-
     audioVisualQueue = new DemodulatorThreadOutputQueue();
-    demodulatorTest[0]->setVisualOutputQueue(audioVisualQueue);
-    demodMgr.setActiveDemodulator(demodulatorTest[0]);
+    audioVisualQueue->set_max_num_items(1);
+
+//    demodulatorTest[0]->setVisualOutputQueue(audioVisualQueue);
+//    demodMgr.setActiveDemodulator(demodulatorTest[0]);
 
     threadCmdQueueSDR = new SDRThreadCommandQueue;
     sdrThread = new SDRThread(threadCmdQueueSDR);
@@ -38,14 +34,11 @@ bool CubicSDR::OnInit() {
 
     iqPostDataQueue = new SDRThreadIQDataQueue;
     iqVisualQueue = new SDRThreadIQDataQueue;
+    iqVisualQueue->set_max_num_items(1);
 
     sdrThread->setIQDataOutQueue(iqPostDataQueue);
     sdrPostThread->setIQDataInQueue(iqPostDataQueue);
     sdrPostThread->setIQVisualQueue(iqVisualQueue);
-
-    for (int i = 0; i < NUM_DEMODULATORS; i++) {
-        sdrPostThread->bindDemodulator(demodulatorTest[i]);
-    }
 
     t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
     t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
@@ -82,7 +75,6 @@ int CubicSDR::OnExit() {
 
     demodMgr.terminateAll();
 
-
     delete threadCmdQueueSDR;
 
     delete iqVisualQueue;
@@ -116,4 +108,30 @@ void CubicSDR::setFrequency(unsigned int freq) {
 
 int CubicSDR::getFrequency() {
     return frequency;
+}
+
+DemodulatorThreadOutputQueue* CubicSDR::getAudioVisualQueue() {
+    return audioVisualQueue;
+}
+
+SDRThreadIQDataQueue* CubicSDR::getIQVisualQueue() {
+    return iqVisualQueue;
+}
+
+DemodulatorMgr &CubicSDR::getDemodMgr() {
+    return demodMgr;
+}
+
+void CubicSDR::bindDemodulator(DemodulatorInstance *demod) {
+    if (!demod) {
+        return;
+    }
+    sdrPostThread->bindDemodulator(demod);
+}
+
+void CubicSDR::removeDemodulator(DemodulatorInstance *demod) {
+    if (!demod) {
+        return;
+    }
+    sdrPostThread->removeDemodulator(demod);
 }

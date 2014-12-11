@@ -1,6 +1,7 @@
 #include <DemodulatorMgr.h>
 #include <sstream>
 #include <algorithm>
+#include "CubicSDR.h"
 
 DemodulatorInstance::DemodulatorInstance() :
         t_Demod(NULL), t_Audio(NULL), threadQueueDemod(NULL), demodulatorThread(NULL) {
@@ -83,14 +84,12 @@ DemodulatorThreadParameters &DemodulatorInstance::getParams() {
 void DemodulatorInstance::terminate() {
     std::cout << "Terminating demodulator thread.." << std::endl;
     demodulatorThread->terminate();
-#ifdef __APPLE__
-    pthread_join(t_Demod,NULL);
-#else
-    t_Demod->join();
-#endif
+//#ifdef __APPLE__
+//    pthread_join(t_Demod,NULL);
+//#else
+//#endif
     std::cout << "Terminating demodulator audio thread.." << std::endl;
     audioThread->terminate();
-    t_Audio->join();
 }
 
 std::string DemodulatorInstance::getLabel() {
@@ -102,7 +101,7 @@ void DemodulatorInstance::setLabel(std::string labelStr) {
 }
 
 DemodulatorMgr::DemodulatorMgr() :
-        activeDemodulator(NULL), lastActiveDemodulator(NULL) {
+        activeDemodulator(NULL), lastActiveDemodulator(NULL), activeVisualDemodulator(NULL) {
 
 }
 
@@ -127,12 +126,32 @@ void DemodulatorMgr::terminateAll() {
         DemodulatorInstance *d = demods.back();
         demods.pop_back();
         d->terminate();
-        delete d;
     }
 }
 
 std::vector<DemodulatorInstance *> &DemodulatorMgr::getDemodulators() {
     return demods;
+}
+
+void DemodulatorMgr::deleteThread(DemodulatorInstance *demod) {
+    std::vector<DemodulatorInstance *>::iterator i;
+
+    i = std::find(demods.begin(),demods.end(),demod);
+
+    if (activeDemodulator == demod) {
+        activeDemodulator = NULL;
+    }
+    if (lastActiveDemodulator == demod) {
+        lastActiveDemodulator = NULL;
+    }
+    if (activeVisualDemodulator == demod) {
+        activeVisualDemodulator = NULL;
+    }
+
+    if (i != demods.end()) {
+        demods.erase(i);
+        demod->terminate();
+    }
 }
 
 std::vector<DemodulatorInstance *> *DemodulatorMgr::getDemodulatorsAt(int freq, int bandwidth) {
@@ -163,6 +182,22 @@ void DemodulatorMgr::setActiveDemodulator(DemodulatorInstance *demod, bool tempo
             lastActiveDemodulator = demod;
         }
     }
+
+    if (activeVisualDemodulator) {
+        activeVisualDemodulator->setVisualOutputQueue(NULL);
+    }
+    if (demod) {
+        demod->setVisualOutputQueue(wxGetApp().getAudioVisualQueue());
+        activeVisualDemodulator = demod;
+    } else {
+        DemodulatorInstance *last = getLastActiveDemodulator();
+        if (last) {
+            last->setVisualOutputQueue(wxGetApp().getAudioVisualQueue());
+        }
+        activeVisualDemodulator = last;
+    }
+
+
     activeDemodulator = demod;
 }
 

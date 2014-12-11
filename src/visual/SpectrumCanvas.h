@@ -20,7 +20,6 @@ public:
     void setData(std::vector<signed char> *data);
 private:
     void OnPaint(wxPaintEvent& event);
-    void OnKeyDown(wxKeyEvent& event);
 
     void OnIdle(wxIdleEvent &event);
 

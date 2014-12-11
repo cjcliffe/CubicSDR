@@ -30,8 +30,8 @@ wxEND_EVENT_TABLE()
 
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0), activeDemodulatorBandwidth(0), dragState(WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), shiftDown(
-        false) {
+        wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0), dragState(WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), shiftDown(
+        false), activeDemodulatorBandwidth(0), activeDemodulatorFrequency(0) {
 
     int in_block_size = BUF_SIZE / 2;
     int out_block_size = FFT_SIZE;
@@ -88,6 +88,8 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
                     glContext->DrawDemod(lastActiveDemodulator, 1, 0, 0);
                     glContext->DrawFreqSelector(mTracker.getMouseX(), 1, 1, 0);
                 }
+            } else {
+                glContext->DrawFreqSelector(mTracker.getMouseX(), 1, 1, 0);
             }
         } else {
             if (lastActiveDemodulator) {
@@ -117,6 +119,7 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 }
 
 void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
+    shiftDown = event.ShiftDown();
 
 //    switch (event.GetKeyCode()) {
 //    }
@@ -124,6 +127,10 @@ void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
 
 void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     float angle = 5.0;
+
+    shiftDown = event.ShiftDown();
+
+    DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
 
     unsigned int freq;
     switch (event.GetKeyCode()) {
@@ -139,12 +146,15 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         wxGetApp().setFrequency(freq);
         ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), freq));
         break;
-    case WXK_DOWN:
+    case 'D':
+    case WXK_DELETE:
+        if (!activeDemod) {
+            break;
+        }
+        wxGetApp().getDemodMgr().deleteThread(activeDemod);
+        wxGetApp().removeDemodulator(activeDemod);
         break;
-    case WXK_UP:
-        break;
-    case WXK_SPACE:
-        break;
+
     default:
         event.Skip();
         return;
@@ -354,6 +364,8 @@ void WaterfallCanvas::mouseDown(wxMouseEvent& event) {
     mTracker.OnMouseDown(event);
     dragState = nextDragState;
 
+    shiftDown = event.ShiftDown();
+
     if (dragState) {
         wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getActiveDemodulator(), false);
     }
@@ -363,12 +375,13 @@ void WaterfallCanvas::mouseDown(wxMouseEvent& event) {
 }
 
 void WaterfallCanvas::mouseWheelMoved(wxMouseEvent& event) {
-    DemodulatorInstance *demod = wxGetApp().getDemodTest();
     mTracker.OnMouseWheelMoved(event);
 }
 
 void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
     mTracker.OnMouseReleased(event);
+
+    shiftDown = event.ShiftDown();
 
     mTracker.setVertDragLock(true);
     mTracker.setHorizDragLock(true);
@@ -380,7 +393,7 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
         int center_freq = wxGetApp().getFrequency();
         int freq = center_freq - (int) (0.5 * (float) SRATE) + (int) ((float) pos * (float) SRATE);
 
-        if (!shiftDown) {
+        if (!shiftDown && wxGetApp().getDemodMgr().getDemodulators().size()) {
             demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
         } else {
             demod = wxGetApp().getDemodMgr().newThread();
@@ -393,6 +406,8 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
             demod->run();
 
             wxGetApp().bindDemodulator(demod);
+
+            wxGetApp().getDemodMgr().setActiveDemodulator(demod);
         }
 
         if (dragState == WF_DRAG_NONE) {
@@ -401,11 +416,12 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
                 return;
             }
 
-
             DemodulatorThreadCommand command;
             command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_FREQUENCY;
             command.int_value = freq;
+            demod->getCommandQueue()->push(command);    // doesn't always work on first push?
             demod->getCommandQueue()->push(command);
+
 
             ((wxFrame*) parent)->GetStatusBar()->SetStatusText(
                     wxString::Format(wxT("Set demodulator frequency: %s"),

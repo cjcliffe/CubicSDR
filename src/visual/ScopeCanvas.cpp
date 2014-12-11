@@ -16,7 +16,6 @@
 #include <algorithm>
 
 wxBEGIN_EVENT_TABLE(ScopeCanvas, wxGLCanvas) EVT_PAINT(ScopeCanvas::OnPaint)
-EVT_KEY_DOWN(ScopeCanvas::OnKeyDown)
 EVT_IDLE(ScopeCanvas::OnIdle)
 wxEND_EVENT_TABLE()
 
@@ -46,35 +45,6 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->Plot(waveform_points);
 
     SwapBuffers();
-}
-
-void ScopeCanvas::OnKeyDown(wxKeyEvent& event) {
-    float angle = 5.0;
-
-    unsigned int freq;
-    switch (event.GetKeyCode()) {
-    case WXK_RIGHT:
-        freq = wxGetApp().getFrequency();
-        freq += SRATE/2;
-        wxGetApp().setFrequency(freq);
-        ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), freq));
-        break;
-    case WXK_LEFT:
-        freq = wxGetApp().getFrequency();
-        freq -= SRATE/2;
-        wxGetApp().setFrequency(freq);
-        ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), freq));
-        break;
-    case WXK_DOWN:
-        break;
-    case WXK_UP:
-        break;
-    case WXK_SPACE:
-        break;
-    default:
-        event.Skip();
-        return;
-    }
 }
 
 void ScopeCanvas::OnIdle(wxIdleEvent &event) {

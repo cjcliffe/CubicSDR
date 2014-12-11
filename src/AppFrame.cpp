@@ -41,6 +41,9 @@ AppFrame::AppFrame() :
 
     this->SetSizer(vbox);
 
+    waterfallCanvas->SetFocusFromKbd();
+    waterfallCanvas->SetFocus();
+
 //    SetIcon(wxICON(sample));
 
 // Make a menubar
