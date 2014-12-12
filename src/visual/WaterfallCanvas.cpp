@@ -81,22 +81,22 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         if (nextDragState == WF_DRAG_RANGE) {
             if (mTracker.mouseDown()) {
                 float width = mTracker.getOriginDeltaMouseX();
-                float centerPos = mTracker.getOriginMouseX()+width/2.0;
+                float centerPos = mTracker.getOriginMouseX() + width / 2.0;
 
                 if (shiftDown) {
                     glContext->DrawDemod(lastActiveDemodulator);
-                    glContext->DrawFreqSelector(centerPos, 0, 1, 0, width?width:(1.0/(float)ClientSize.x));
+                    glContext->DrawFreqSelector(centerPos, 0, 1, 0, width ? width : (1.0 / (float) ClientSize.x));
                 } else {
                     glContext->DrawDemod(lastActiveDemodulator, 1, 0, 0);
-                    glContext->DrawFreqSelector(centerPos, 1, 1, 0, width?width:(1.0/(float)ClientSize.x));
+                    glContext->DrawFreqSelector(centerPos, 1, 1, 0, width ? width : (1.0 / (float) ClientSize.x));
                 }
             } else {
                 if (shiftDown) {
                     glContext->DrawDemod(lastActiveDemodulator);
-                    glContext->DrawFreqSelector(mTracker.getMouseX(), 0, 1, 0, 1.0/(float)ClientSize.x);
+                    glContext->DrawFreqSelector(mTracker.getMouseX(), 0, 1, 0, 1.0 / (float) ClientSize.x);
                 } else {
                     glContext->DrawDemod(lastActiveDemodulator, 1, 0, 0);
-                    glContext->DrawFreqSelector(mTracker.getMouseX(), 1, 1, 0, 1.0/(float)ClientSize.x);
+                    glContext->DrawFreqSelector(mTracker.getMouseX(), 1, 1, 0, 1.0 / (float) ClientSize.x);
                 }
             }
         } else {
@@ -423,9 +423,9 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
     mTracker.setVertDragLock(false);
     mTracker.setHorizDragLock(false);
 
-    if (mTracker.getOriginDeltaMouseX() == 0 && mTracker.getOriginDeltaMouseY() == 0) {
-        DemodulatorInstance *demod;
+    DemodulatorInstance *demod;
 
+    if (mTracker.getOriginDeltaMouseX() == 0 && mTracker.getOriginDeltaMouseY() == 0) {
         float pos = mTracker.getMouseX();
         int center_freq = wxGetApp().getFrequency();
         int freq = center_freq - (int) (0.5 * (float) SRATE) + (int) ((float) pos * (float) SRATE);
@@ -444,11 +444,11 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
                 demod->run();
 
                 wxGetApp().bindDemodulator(demod);
-
                 wxGetApp().getDemodMgr().setActiveDemodulator(demod);
             }
 
             if (demod == NULL) {
+                dragState = WF_DRAG_NONE;
                 return;
             }
 
@@ -457,9 +457,7 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
             DemodulatorThreadCommand command;
             command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_FREQUENCY;
             command.int_value = freq;
-            demod->getCommandQueue()->push(command);    // doesn't always work on first push?
             demod->getCommandQueue()->push(command);
-
 
             ((wxFrame*) parent)->GetStatusBar()->SetStatusText(
                     wxString::Format(wxT("Set demodulator frequency: %s"),
@@ -471,9 +469,62 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
             mTracker.setVertDragLock(true);
             mTracker.setHorizDragLock(false);
         } else {
+            float pos = mTracker.getMouseX();
+            int center_freq = wxGetApp().getFrequency();
+            int freq = center_freq - (int) (0.5 * (float) SRATE) + (int) ((float) pos * (float) SRATE);
+
             wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getActiveDemodulator(), false);
             nextDragState = WF_DRAG_NONE;
         }
+    } else if (dragState == WF_DRAG_RANGE) {
+        float width = mTracker.getOriginDeltaMouseX();
+        float pos = mTracker.getOriginMouseX() + width / 2.0;
+
+        int center_freq = wxGetApp().getFrequency();
+        int freq = center_freq - (int) (0.5 * (float) SRATE) + (int) ((float) pos * (float) SRATE);
+        int bandwidth = (int)(fabs(width) * (float)SRATE);
+
+        if (bandwidth < 1000) {
+            bandwidth = 1000;
+        }
+
+        if (!bandwidth) {
+            dragState = WF_DRAG_NONE;
+            return;
+        }
+
+        if (!shiftDown && wxGetApp().getDemodMgr().getDemodulators().size()) {
+            demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+        } else {
+            demod = wxGetApp().getDemodMgr().newThread();
+            demod->getParams().frequency = freq;
+            demod->getParams().bandwidth = bandwidth;
+
+            demod->run();
+
+            wxGetApp().bindDemodulator(demod);
+            wxGetApp().getDemodMgr().setActiveDemodulator(demod);
+        }
+
+        if (demod == NULL) {
+            dragState = WF_DRAG_NONE;
+            return;
+        }
+
+        ((wxFrame*) parent)->GetStatusBar()->SetStatusText(
+                wxString::Format(wxT("Set demodulator frequency: %s"),
+                        wxNumberFormatter::ToString((long) freq, wxNumberFormatter::Style_WithThousandsSep)));
+
+        wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getLastActiveDemodulator(), false);
+        demod->updateLabel(freq);
+
+        DemodulatorThreadCommand command;
+        command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_FREQUENCY;
+        command.int_value = freq;
+        demod->getCommandQueue()->push(command);
+        command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_BANDWIDTH;
+        command.int_value = bandwidth;
+        demod->getCommandQueue()->push(command);
     }
 
     dragState = WF_DRAG_NONE;
