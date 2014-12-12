@@ -4,13 +4,38 @@
 #include "CubicSDR.h"
 
 SDRPostThread::SDRPostThread() :
-        iqDataInQueue(NULL), iqDataOutQueue(NULL), iqVisualQueue(NULL), terminated(false) {
-    dev = NULL;
-    sample_rate = SRATE;
+        iqDataInQueue(NULL), iqDataOutQueue(NULL), iqVisualQueue(NULL), terminated(false), dcFilter(NULL), sample_rate(SRATE) {
 }
 
 SDRPostThread::~SDRPostThread() {
-    rtlsdr_close(dev);
+}
+
+void SDRPostThread::bindDemodulator(DemodulatorInstance *demod) {
+    demodulators.push_back(demod);
+}
+
+void SDRPostThread::removeDemodulator(DemodulatorInstance *demod) {
+    if (!demod) {
+        return;
+    }
+
+    std::vector<DemodulatorInstance *>::iterator i;
+
+    i = std::find(demodulators.begin(), demodulators.end(), demod);
+
+    if (i != demodulators.end()) {
+        demodulators.erase(i);
+    }
+}
+
+void SDRPostThread::setIQDataInQueue(SDRThreadIQDataQueue* iqDataQueue) {
+    iqDataInQueue = iqDataQueue;
+}
+void SDRPostThread::setIQDataOutQueue(SDRThreadIQDataQueue* iqDataQueue) {
+    iqDataOutQueue = iqDataQueue;
+}
+void SDRPostThread::setIQVisualQueue(SDRThreadIQDataQueue *iqVisQueue) {
+    iqVisualQueue = iqVisQueue;
 }
 
 void SDRPostThread::threadMain() {

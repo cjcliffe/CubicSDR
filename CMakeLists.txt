@@ -153,6 +153,7 @@ SET (cubicsdr_headers
 	src/demod/DemodulatorThread.h
 	src/demod/DemodulatorWorkerThread.h
 	src/demod/DemodulatorMgr.h
+	src/demod/DemodDefs.h
 	src/audio/AudioThread.h
 	src/util/Gradient.h
 	src/util/Timer.h

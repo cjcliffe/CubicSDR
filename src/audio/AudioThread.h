@@ -15,6 +15,7 @@
 #include "AudioThread.h"
 #include "ThreadQueue.h"
 #include "RtAudio.h"
+#include "DemodDefs.h"
 
 class AudioThreadInput {
 public:
@@ -32,7 +33,7 @@ public:
     std::atomic<unsigned int> audio_queue_ptr;
     std::atomic<unsigned int> underflow_count;
 
-    AudioThread(AudioThreadInputQueue *inputQueue);
+    AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify);
     ~AudioThread();
 
     void threadMain();
@@ -42,5 +43,6 @@ private:
     AudioThreadInputQueue *inputQueue;
     RtAudio dac;
     std::atomic<bool> terminated;
+    DemodulatorThreadCommandQueue* threadQueueNotify;
 };
 

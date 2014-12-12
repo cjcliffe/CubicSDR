@@ -4,28 +4,29 @@
 #include "CubicSDR.h"
 
 DemodulatorInstance::DemodulatorInstance() :
-        t_Demod(NULL), t_Audio(NULL), threadQueueDemod(NULL), demodulatorThread(NULL) {
+        t_Demod(NULL), t_Audio(NULL), threadQueueDemod(NULL), demodulatorThread(NULL), terminated(false), audioTerminated(false), demodTerminated(
+        false) {
 
     threadQueueDemod = new DemodulatorThreadInputQueue;
     threadQueueCommand = new DemodulatorThreadCommandQueue;
-    demodulatorThread = new DemodulatorThread(threadQueueDemod);
+    threadQueueNotify = new DemodulatorThreadCommandQueue;
+    demodulatorThread = new DemodulatorThread(threadQueueDemod, threadQueueNotify);
     demodulatorThread->setCommandQueue(threadQueueCommand);
     audioInputQueue = new AudioThreadInputQueue;
-    audioThread = new AudioThread(audioInputQueue);
+    audioThread = new AudioThread(audioInputQueue, threadQueueNotify);
     demodulatorThread->setAudioInputQueue(audioInputQueue);
 }
 
 DemodulatorInstance::~DemodulatorInstance() {
-
     delete audioThread;
-    delete t_Audio;
+    delete demodulatorThread;
 
     delete audioInputQueue;
     delete threadQueueDemod;
-    delete demodulatorThread;
 #ifndef __APPLE__
-    delete t_Demod;
+//    delete t_Demod;
 #endif
+//    delete t_Audio;
 }
 
 void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {
@@ -33,27 +34,6 @@ void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQu
 }
 
 void DemodulatorInstance::run() {
-    if (t_Demod) {
-        terminate();
-
-        delete threadQueueDemod;
-        delete demodulatorThread;
-        delete t_Demod;
-        delete audioThread;
-        delete audioInputQueue;
-        delete t_Audio;
-
-        threadQueueDemod = new DemodulatorThreadInputQueue;
-        threadQueueCommand = new DemodulatorThreadCommandQueue;
-        demodulatorThread = new DemodulatorThread(threadQueueDemod);
-        demodulatorThread->setCommandQueue(threadQueueCommand);
-
-        audioInputQueue = new AudioThreadInputQueue;
-        audioThread = new AudioThread(audioInputQueue);
-
-        demodulatorThread->setAudioInputQueue(audioInputQueue);
-    }
-
     t_Audio = new std::thread(&AudioThread::threadMain, audioThread);
 
 #ifdef __APPLE__	// Already using pthreads, might as well do some custom init..
@@ -124,8 +104,7 @@ DemodulatorInstance *DemodulatorMgr::newThread() {
 void DemodulatorMgr::terminateAll() {
     while (demods.size()) {
         DemodulatorInstance *d = demods.back();
-        demods.pop_back();
-        d->terminate();
+        deleteThread(d);
     }
 }
 
@@ -136,7 +115,7 @@ std::vector<DemodulatorInstance *> &DemodulatorMgr::getDemodulators() {
 void DemodulatorMgr::deleteThread(DemodulatorInstance *demod) {
     std::vector<DemodulatorInstance *>::iterator i;
 
-    i = std::find(demods.begin(),demods.end(),demod);
+    i = std::find(demods.begin(), demods.end(), demod);
 
     if (activeDemodulator == demod) {
         activeDemodulator = NULL;
@@ -152,6 +131,10 @@ void DemodulatorMgr::deleteThread(DemodulatorInstance *demod) {
         demods.erase(i);
         demod->terminate();
     }
+
+    demods_deleted.push_back(demod);
+
+    garbageCollect();
 }
 
 std::vector<DemodulatorInstance *> *DemodulatorMgr::getDemodulatorsAt(int freq, int bandwidth) {
@@ -197,8 +180,9 @@ void DemodulatorMgr::setActiveDemodulator(DemodulatorInstance *demod, bool tempo
         activeVisualDemodulator = last;
     }
 
-
     activeDemodulator = demod;
+
+    garbageCollect();
 }
 
 DemodulatorInstance *DemodulatorMgr::getActiveDemodulator() {
@@ -212,3 +196,48 @@ DemodulatorInstance *DemodulatorMgr::getLastActiveDemodulator() {
 
     return lastActiveDemodulator;
 }
+
+void DemodulatorMgr::garbageCollect() {
+    if (demods_deleted.size()) {
+        std::vector<DemodulatorInstance *>::iterator i;
+
+        for (i = demods_deleted.begin(); i != demods_deleted.end(); i++) {
+            if ((*i)->isTerminated()) {
+                DemodulatorInstance *deleted = (*i);
+                demods_deleted.erase(i);
+
+                std::cout << "Garbage collected demodulator instance " << deleted->getLabel() << std::endl;
+
+                delete deleted;
+                return;
+            }
+        }
+    }
+}
+
+bool DemodulatorInstance::isTerminated() {
+    while (!threadQueueNotify->empty()) {
+        DemodulatorThreadCommand cmd;
+        threadQueueNotify->pop(cmd);
+
+        switch (cmd.cmd) {
+        case DemodulatorThreadCommand::DEMOD_THREAD_CMD_AUDIO_TERMINATED:
+            audioThread = NULL;
+            t_Audio->join();
+            audioTerminated = true;
+            break;
+        case DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_TERMINATED:
+            demodulatorThread = NULL;
+            t_Demod->join();
+            demodTerminated = true;
+            break;
+        default:
+            break;
+        }
+    }
+
+    terminated = audioTerminated && demodTerminated;
+
+    return terminated;
+}
+
