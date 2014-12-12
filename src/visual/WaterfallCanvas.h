@@ -14,7 +14,7 @@
 
 class WaterfallCanvas: public wxGLCanvas {
 public:
-    enum DragState { WF_DRAG_NONE, WF_DRAG_BANDWIDTH_LEFT, WF_DRAG_BANDWIDTH_RIGHT, WF_DRAG_FREQUENCY };
+    enum DragState { WF_DRAG_NONE, WF_DRAG_BANDWIDTH_LEFT, WF_DRAG_BANDWIDTH_RIGHT, WF_DRAG_FREQUENCY, WF_DRAG_RANGE };
 
     WaterfallCanvas(wxWindow *parent, int *attribList = NULL);
     ~WaterfallCanvas();
@@ -25,6 +25,7 @@ public:
 private:
     void OnPaint(wxPaintEvent& event);
     void OnKeyDown(wxKeyEvent& event);
+    void OnKeyUp(wxKeyEvent& event);
 
     void OnIdle(wxIdleEvent &event);
 
@@ -55,12 +56,14 @@ private:
 
     int activeDemodulatorBandwidth;
     int activeDemodulatorFrequency;
-    DemodulatorInstance *activeDemodulator;
 
     DragState dragState;
     DragState nextDragState;
 
-// event table
+    bool shiftDown;
+    bool altDown;
+    bool ctrlDown;
+    // event table
 wxDECLARE_EVENT_TABLE();
 };
 

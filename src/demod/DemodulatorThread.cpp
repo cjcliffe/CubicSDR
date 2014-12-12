@@ -3,12 +3,12 @@
 #include <vector>
 
 #ifdef __APPLE__
-	#include <pthread.h>
+#include <pthread.h>
 #endif
 
-DemodulatorThread::DemodulatorThread(DemodulatorThreadInputQueue* pQueue) :
+DemodulatorThread::DemodulatorThread(DemodulatorThreadInputQueue* pQueue, DemodulatorThreadCommandQueue* threadQueueNotify) :
         inputQueue(pQueue), visOutQueue(NULL), terminated(false), initialized(false), audio_resampler(NULL), resample_ratio(1), audio_resample_ratio(
-                1), resampler(NULL), commandQueue(NULL), fir_filter(NULL), audioInputQueue(NULL) {
+                1), resampler(NULL), commandQueue(NULL), fir_filter(NULL), audioInputQueue(NULL), threadQueueNotify(threadQueueNotify) {
 
     float kf = 0.5;         // modulation factor
     fdem = freqdem_create(kf);
@@ -249,13 +249,14 @@ void DemodulatorThread::threadMain() {
     }
 
     std::cout << "Demodulator thread done." << std::endl;
+    DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_TERMINATED);
+    tCmd.context = this;
+    threadQueueNotify->push(tCmd);
 }
 
 void DemodulatorThread::terminate() {
     terminated = true;
     DemodulatorThreadIQData inp;    // push dummy to nudge queue
     inputQueue->push(inp);
-
     workerThread->terminate();
-    t_Worker->join();
 }

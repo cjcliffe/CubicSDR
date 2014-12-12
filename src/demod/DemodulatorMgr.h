@@ -11,6 +11,7 @@ public:
 
     DemodulatorThreadInputQueue* threadQueueDemod;
     DemodulatorThreadCommandQueue* threadQueueCommand;
+    DemodulatorThreadCommandQueue* threadQueueNotify;
     DemodulatorThread *demodulatorThread;
 #ifdef __APPLE__
     pthread_t t_Demod;
@@ -32,6 +33,17 @@ public:
 
     void run();
     void terminate();
+    std::string getLabel();
+    void setLabel(std::string labelStr);
+
+    bool isTerminated();
+    void updateLabel(int freq);
+
+private:
+    std::atomic<std::string *> label;
+    bool terminated;
+    bool demodTerminated;
+    bool audioTerminated;
 };
 
 class DemodulatorMgr {
@@ -42,8 +54,21 @@ public:
     DemodulatorInstance *newThread();
     std::vector<DemodulatorInstance *> &getDemodulators();
     std::vector<DemodulatorInstance *> *getDemodulatorsAt(int freq, int bandwidth);
+    void deleteThread(DemodulatorInstance *);
 
     void terminateAll();
+
+    void setActiveDemodulator(DemodulatorInstance *demod, bool temporary = true);
+    DemodulatorInstance *getActiveDemodulator();
+    DemodulatorInstance *getLastActiveDemodulator();
+
 private:
+    void garbageCollect();
+
     std::vector<DemodulatorInstance *> demods;
+    std::vector<DemodulatorInstance *> demods_deleted;
+    DemodulatorInstance *activeDemodulator;
+    DemodulatorInstance *lastActiveDemodulator;
+    DemodulatorInstance *activeVisualDemodulator;
+
 };

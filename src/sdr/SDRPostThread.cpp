@@ -4,13 +4,38 @@
 #include "CubicSDR.h"
 
 SDRPostThread::SDRPostThread() :
-        iqDataInQueue(NULL), iqDataOutQueue(NULL), iqVisualQueue(NULL), terminated(false) {
-    dev = NULL;
-    sample_rate = SRATE;
+        iqDataInQueue(NULL), iqDataOutQueue(NULL), iqVisualQueue(NULL), terminated(false), dcFilter(NULL), sample_rate(SRATE) {
 }
 
 SDRPostThread::~SDRPostThread() {
-    rtlsdr_close(dev);
+}
+
+void SDRPostThread::bindDemodulator(DemodulatorInstance *demod) {
+    demodulators.push_back(demod);
+}
+
+void SDRPostThread::removeDemodulator(DemodulatorInstance *demod) {
+    if (!demod) {
+        return;
+    }
+
+    std::vector<DemodulatorInstance *>::iterator i;
+
+    i = std::find(demodulators.begin(), demodulators.end(), demod);
+
+    if (i != demodulators.end()) {
+        demodulators.erase(i);
+    }
+}
+
+void SDRPostThread::setIQDataInQueue(SDRThreadIQDataQueue* iqDataQueue) {
+    iqDataInQueue = iqDataQueue;
+}
+void SDRPostThread::setIQDataOutQueue(SDRThreadIQDataQueue* iqDataQueue) {
+    iqDataOutQueue = iqDataQueue;
+}
+void SDRPostThread::setIQVisualQueue(SDRThreadIQDataQueue *iqVisQueue) {
+    iqVisualQueue = iqVisQueue;
 }
 
 void SDRPostThread::threadMain() {
@@ -50,10 +75,15 @@ void SDRPostThread::threadMain() {
             }
 
             if (iqVisualQueue != NULL) {
-                iqVisualQueue.load()->push(dataOut);
+                if (iqVisualQueue.load()->empty()) {
+                    iqVisualQueue.load()->push(dataOut);
+                }
             }
 
             if (demodulators.size()) {
+                DemodulatorThreadIQData dummyDataOut;
+                dummyDataOut.frequency = data_in.frequency;
+                dummyDataOut.bandwidth = data_in.bandwidth;
                 DemodulatorThreadIQData demodDataOut;
                 demodDataOut.frequency = data_in.frequency;
                 demodDataOut.bandwidth = data_in.bandwidth;
@@ -62,6 +92,14 @@ void SDRPostThread::threadMain() {
                 for (int i = 0, iMax = demodulators.size(); i < iMax; i++) {
                     DemodulatorInstance *demod = demodulators[i];
                     DemodulatorThreadInputQueue *demodQueue = demod->threadQueueDemod;
+
+                    if (demod->getParams().frequency != data_in.frequency) {
+                        if (abs(data_in.frequency - demod->getParams().frequency) > (int) ((float) ((float) SRATE / 2.0) * 1.15)) {
+                            demodQueue->push(dummyDataOut);
+                            continue;
+                        }
+                    }
+
                     demodQueue->push(demodDataOut);
                 }
             }

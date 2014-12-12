@@ -21,7 +21,6 @@ public:
     void setWaveformPoints(std::vector<float> &waveform_points_in);
 private:
     void OnPaint(wxPaintEvent& event);
-    void OnKeyDown(wxKeyEvent& event);
 
     void OnIdle(wxIdleEvent &event);
 

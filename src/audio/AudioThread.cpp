@@ -1,9 +1,10 @@
 #include "AudioThread.h"
 #include "CubicSDRDefs.h"
 #include <vector>
+#include "DemodulatorThread.h"
 
-AudioThread::AudioThread(AudioThreadInputQueue *inputQueue) :
-        inputQueue(inputQueue), terminated(false), audio_queue_ptr(0), underflow_count(0) {
+AudioThread::AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify) :
+        inputQueue(inputQueue), terminated(false), audio_queue_ptr(0), underflow_count(0), threadQueueNotify(threadQueueNotify) {
 
 }
 
@@ -135,6 +136,10 @@ void AudioThread::threadMain() {
     }
 
     std::cout << "Audio thread done." << std::endl;
+
+    DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_AUDIO_TERMINATED);
+    tCmd.context = this;
+    threadQueueNotify->push(tCmd);
 }
 
 void AudioThread::terminate() {

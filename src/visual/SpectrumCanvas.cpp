@@ -17,12 +17,10 @@
 #include <wx/numformatter.h>
 
 wxBEGIN_EVENT_TABLE(SpectrumCanvas, wxGLCanvas) EVT_PAINT(SpectrumCanvas::OnPaint)
-EVT_KEY_DOWN(SpectrumCanvas::OnKeyDown)
 EVT_IDLE(SpectrumCanvas::OnIdle)
 EVT_MOTION(SpectrumCanvas::mouseMoved)
 EVT_LEFT_DOWN(SpectrumCanvas::mouseDown)
 EVT_LEFT_UP(SpectrumCanvas::mouseReleased)
-//EVT_RIGHT_DOWN(SpectrumCanvas::rightClick)
 EVT_LEAVE_WINDOW(SpectrumCanvas::mouseLeftWindow)
 EVT_MOUSEWHEEL(SpectrumCanvas::mouseWheelMoved)
 wxEND_EVENT_TABLE()
@@ -61,38 +59,18 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->SetCurrent(*this);
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
+    glContext->BeginDraw();
     glContext->Draw(spectrum_points);
 
-    SwapBuffers();
-}
+    std::vector<DemodulatorInstance *> &demods = wxGetApp().getDemodMgr().getDemodulators();
 
-void SpectrumCanvas::OnKeyDown(wxKeyEvent& event) {
-    float angle = 5.0;
-
-    unsigned int freq;
-    switch (event.GetKeyCode()) {
-    case WXK_RIGHT:
-        freq = wxGetApp().getFrequency();
-        freq += SRATE/2;
-        wxGetApp().setFrequency(freq);
-        ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), freq));
-        break;
-    case WXK_LEFT:
-        freq = wxGetApp().getFrequency();
-        freq -= SRATE/2;
-        wxGetApp().setFrequency(freq);
-        ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), freq));
-        break;
-    case WXK_DOWN:
-        break;
-    case WXK_UP:
-        break;
-    case WXK_SPACE:
-        break;
-    default:
-        event.Skip();
-        return;
+    for (int i = 0, iMax = demods.size(); i < iMax; i++) {
+        glContext->DrawDemodInfo(demods[i]);
     }
+
+    glContext->EndDraw();
+
+    SwapBuffers();
 }
 
 void SpectrumCanvas::setData(std::vector<signed char> *data) {
@@ -119,12 +97,12 @@ void SpectrumCanvas::setData(std::vector<signed char> *data) {
 
         int n;
         for (int i = 0, iMax = FFT_SIZE / 2; i < iMax; i++) {
-            n = (i == 0)?1:i;
+            n = (i == 0) ? 1 : i;
             double a = out[n][0];
             double b = out[n][1];
             double c = sqrt(a * a + b * b);
 
-            n = (i == FFT_SIZE/2)?(FFT_SIZE/2+1):i;
+            n = (i == FFT_SIZE / 2) ? (FFT_SIZE / 2 + 1) : i;
             double x = out[FFT_SIZE / 2 + n][0];
             double y = out[FFT_SIZE / 2 + n][1];
             double z = sqrt(x * x + y * y);
