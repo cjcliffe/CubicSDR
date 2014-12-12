@@ -7,6 +7,7 @@ Utilizes:
 --------
   - liquid-dsp (http://liquidsdr.org/ https://github.com/jgaeddert/liquid-dsp)
   - RtAudio (http://www.music.mcgill.ca/~gary/rtaudio/ http://github.com/thestk/rtaudio/)
+  - Osmocom RTLSDR (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
   - OpenGL (https://www.opengl.org/)
   - wxWidgets (https://www.wxwidgets.org/)
   - BMFont (http://www.angelcode.com/ http://www.angelcode.com/products/bmfont/)
