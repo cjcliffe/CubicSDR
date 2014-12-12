@@ -37,9 +37,10 @@ public:
     void setLabel(std::string labelStr);
 
     bool isTerminated();
+    void updateLabel(int freq);
 
 private:
-    std::string label;
+    std::atomic<std::string *> label;
     bool terminated;
     bool demodTerminated;
     bool audioTerminated;

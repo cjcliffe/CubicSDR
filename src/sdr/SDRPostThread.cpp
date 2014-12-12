@@ -81,6 +81,9 @@ void SDRPostThread::threadMain() {
             }
 
             if (demodulators.size()) {
+                DemodulatorThreadIQData dummyDataOut;
+                dummyDataOut.frequency = data_in.frequency;
+                dummyDataOut.bandwidth = data_in.bandwidth;
                 DemodulatorThreadIQData demodDataOut;
                 demodDataOut.frequency = data_in.frequency;
                 demodDataOut.bandwidth = data_in.bandwidth;
@@ -89,6 +92,14 @@ void SDRPostThread::threadMain() {
                 for (int i = 0, iMax = demodulators.size(); i < iMax; i++) {
                     DemodulatorInstance *demod = demodulators[i];
                     DemodulatorThreadInputQueue *demodQueue = demod->threadQueueDemod;
+
+                    if (demod->getParams().frequency != data_in.frequency) {
+                        if (abs(data_in.frequency - demod->getParams().frequency) > (int) ((float) ((float) SRATE / 2.0) * 1.15)) {
+                            demodQueue->push(dummyDataOut);
+                            continue;
+                        }
+                    }
+
                     demodQueue->push(demodDataOut);
                 }
             }

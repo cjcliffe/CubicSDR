@@ -2,11 +2,14 @@
 #include <sstream>
 #include <algorithm>
 #include "CubicSDR.h"
+#include <string>
+#include <sstream>
 
 DemodulatorInstance::DemodulatorInstance() :
         t_Demod(NULL), t_Audio(NULL), threadQueueDemod(NULL), demodulatorThread(NULL), terminated(false), audioTerminated(false), demodTerminated(
         false) {
 
+    label = new std::string("Unnamed");
     threadQueueDemod = new DemodulatorThreadInputQueue;
     threadQueueCommand = new DemodulatorThreadCommandQueue;
     threadQueueNotify = new DemodulatorThreadCommandQueue;
@@ -23,10 +26,6 @@ DemodulatorInstance::~DemodulatorInstance() {
 
     delete audioInputQueue;
     delete threadQueueDemod;
-#ifndef __APPLE__
-//    delete t_Demod;
-#endif
-//    delete t_Audio;
 }
 
 void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {
@@ -53,6 +52,13 @@ void DemodulatorInstance::run() {
 #endif
 }
 
+void DemodulatorInstance::updateLabel(int freq) {
+    std::stringstream newLabel;
+    newLabel.precision(3);
+    newLabel << std::fixed << ((float) freq / 1000000.0);
+    setLabel(newLabel.str());
+}
+
 DemodulatorThreadCommandQueue *DemodulatorInstance::getCommandQueue() {
     return threadQueueCommand;
 }
@@ -73,11 +79,16 @@ void DemodulatorInstance::terminate() {
 }
 
 std::string DemodulatorInstance::getLabel() {
-    return label;
+    return *(label.load());
 }
 
 void DemodulatorInstance::setLabel(std::string labelStr) {
-    label = labelStr;
+    std::string *newLabel = new std::string;
+    newLabel->append(labelStr);
+    std::string *oldLabel;
+    oldLabel = label;
+    label = newLabel;
+    delete oldLabel;
 }
 
 DemodulatorMgr::DemodulatorMgr() :

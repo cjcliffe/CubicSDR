@@ -188,7 +188,7 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, f
     glEnable(GL_DEPTH_TEST);
 }
 
-void PrimaryGLContext::DrawFreqSelector(float uxPos, float r, float g, float b) {
+void PrimaryGLContext::DrawFreqSelector(float uxPos, float r, float g, float b, float w) {
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     int bw = 0;
@@ -211,7 +211,13 @@ void PrimaryGLContext::DrawFreqSelector(float uxPos, float r, float g, float b) 
     glVertex3f((uxPos - 0.5) * 2.0, 1.0, 0.0);
     glVertex3f((uxPos - 0.5) * 2.0, -1.0, 0.0);
 
-    float ofs = ((float) bw) / (float) SRATE;
+    float ofs;
+
+    if (w) {
+        ofs = w;
+    } else {
+        ofs = ((float) bw) / (float) SRATE;
+    }
 
     glVertex3f((uxPos - 0.5) * 2.0 - ofs, 1.0, 0.0);
     glVertex3f((uxPos - 0.5) * 2.0 - ofs, -1.0, 0.0);
