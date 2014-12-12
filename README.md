@@ -6,12 +6,14 @@ Cross-Platform Software-Defined Radio Application
 Utilizes: 
 --------
   - liquid-dsp (http://liquidsdr.org/ https://github.com/jgaeddert/liquid-dsp)
+  - FFTW (http://www.fftw.org/ https://github.com/FFTW/fftw3)
   - RtAudio (http://www.music.mcgill.ca/~gary/rtaudio/ http://github.com/thestk/rtaudio/)
   - Osmocom RTLSDR (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
-  - OpenGL (https://www.opengl.org/)
-  - wxWidgets (https://www.wxwidgets.org/)
+  - LodePNG (http://lodev.org/lodepng/)
   - BMFont (http://www.angelcode.com/ http://www.angelcode.com/products/bmfont/)
   - Bitstream Vera font (http://en.wikipedia.org/wiki/Bitstream_Vera)
+  - OpenGL (https://www.opengl.org/)
+  - wxWidgets (https://www.wxwidgets.org/)
   - CMake (http://www.cmake.org/)
 
 
