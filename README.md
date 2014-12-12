@@ -9,6 +9,8 @@ Utilizes:
   - RtAudio (http://www.music.mcgill.ca/~gary/rtaudio/ http://github.com/thestk/rtaudio/)
   - OpenGL (https://www.opengl.org/)
   - wxWidgets (https://www.wxwidgets.org/)
+  - BMFont (http://www.angelcode.com/ http://www.angelcode.com/products/bmfont/)
+  - Bitstream Vera font (http://en.wikipedia.org/wiki/Bitstream_Vera)
   - CMake (http://www.cmake.org/)
 
 
