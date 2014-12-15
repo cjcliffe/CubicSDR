@@ -90,6 +90,9 @@ void DemodulatorThread::threadMain() {
         initialize();
     }
 
+    liquid_float_complex *in_buf = new liquid_float_complex[BUF_SIZE / 2];
+    liquid_float_complex *out_buf = new liquid_float_complex[BUF_SIZE / 2];
+
     std::cout << "Demodulator thread started.." << std::endl;
     while (!terminated) {
         DemodulatorThreadIQData inp;
@@ -151,45 +154,38 @@ void DemodulatorThread::threadMain() {
 
         std::vector<signed char> *data = &inp.data;
         if (data->size()) {
-            liquid_float_complex filtered_input[BUF_SIZE / 2];
-
-            liquid_float_complex x, y, z;
+            liquid_float_complex *temp_buf;
 
             for (int i = 0; i < BUF_SIZE / 2; i++) {
-                if (shift_freq != 0) {
-                    nco_crcf_step(nco_shift);
-
-                    z.real = (float) (*data)[i * 2] / 127.0f;
-                    z.imag = (float) (*data)[i * 2 + 1] / 127.0f;
-
-                    if (shift_freq < 0) {
-                        nco_crcf_mix_up(nco_shift, z, &x);
-                    } else {
-                        nco_crcf_mix_down(nco_shift, z, &x);
-                    }
-                } else {
-                    x.real = (float) (*data)[i * 2] / 127.0f;
-                    x.imag = (float) (*data)[i * 2 + 1] / 127.0f;
-                }
-
-                firfilt_crcf_push(fir_filter, x);      // push input sample
-                firfilt_crcf_execute(fir_filter, &y);   // compute output
-
-                filtered_input[i] = y;
+                in_buf[i].real = (float) (*data)[i * 2] / 127.0f;
+                in_buf[i].imag = (float) (*data)[i * 2 + 1] / 127.0f;
             }
+
+            if (shift_freq != 0) {
+                if (shift_freq < 0) {
+                    nco_crcf_mix_block_up(nco_shift, in_buf, out_buf, BUF_SIZE / 2);
+                } else {
+                    nco_crcf_mix_block_down(nco_shift, in_buf, out_buf, BUF_SIZE / 2);
+                }
+                temp_buf = in_buf;
+                in_buf = out_buf;
+                out_buf = temp_buf;
+            }
+
+            firfilt_crcf_execute_block(fir_filter, in_buf, BUF_SIZE / 2, out_buf);
 
             int out_size = ceil((float) (BUF_SIZE / 2) * resample_ratio);
 
             liquid_float_complex resampled_output[out_size];
+            float demod_output[out_size];
 
             unsigned int num_written;       // number of values written to buffer
-            msresamp_crcf_execute(resampler, filtered_input, (BUF_SIZE / 2), resampled_output, &num_written);
+            msresamp_crcf_execute(resampler, out_buf, (BUF_SIZE / 2), resampled_output, &num_written);
 
-            float pcm = 0;
+            freqdem_demodulate_block(fdem, resampled_output, num_written, demod_output);
 
             for (int i = 0; i < num_written; i++) {
-                freqdem_demodulate(fdem, resampled_output[i], &pcm);
-                resampled_output[i].real = (float) pcm;
+                resampled_output[i].real = demod_output[i];
                 resampled_output[i].imag = 0;
             }
 
@@ -247,6 +243,9 @@ void DemodulatorThread::threadMain() {
             }
         }
     }
+
+    delete in_buf;
+    delete out_buf;
 
     std::cout << "Demodulator thread done." << std::endl;
     DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_TERMINATED);
