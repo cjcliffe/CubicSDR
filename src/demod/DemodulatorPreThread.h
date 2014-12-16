@@ -2,56 +2,22 @@
 
 #include <queue>
 #include <vector>
-#include "wx/wxprec.h"
 
-#ifndef WX_PRECOMP
-#include "wx/wx.h"
-#endif
-
-#include "wx/thread.h"
-
-#include "liquid/liquid.h"
 #include "CubicSDRDefs.h"
-#include "DemodulatorWorkerThread.h"
 #include "DemodDefs.h"
+#include "DemodulatorWorkerThread.h"
 
-class DemodulatorThreadParameters {
-public:
-    unsigned int frequency;
-    unsigned int inputRate;
-    unsigned int bandwidth; // set equal to disable second stage re-sampling?
-    unsigned int audioSampleRate;
-
-    DemodulatorType demodType;
-
-    DemodulatorThreadParameters() :
-            frequency(0), inputRate(SRATE), bandwidth(200000), audioSampleRate(
-                    AUDIO_FREQUENCY), demodType(DEMOD_TYPE_FM) {
-
-    }
-
-    ~DemodulatorThreadParameters() {
-
-    }
-};
-
-typedef ThreadQueue<AudioThreadInput> DemodulatorThreadOutputQueue;
-
-class DemodulatorThread {
+class DemodulatorPreThread {
 public:
 
-	DemodulatorThread(DemodulatorThreadInputQueue* pQueue, DemodulatorThreadCommandQueue* threadQueueNotify);
-	~DemodulatorThread();
+	DemodulatorPreThread(DemodulatorThreadInputQueue* pQueueIn, DemodulatorThreadPostInputQueue* pQueueOut, DemodulatorThreadCommandQueue* threadQueueNotify);
+	~DemodulatorPreThread();
 
 #ifdef __APPLE__
 	void *threadMain();
 #else
 	void threadMain();
 #endif
-
-	void setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {
-		visOutQueue = tQueue;
-	}
 
 	void setCommandQueue(DemodulatorThreadCommandQueue *tQueue) {
 		commandQueue = tQueue;
@@ -71,18 +37,17 @@ public:
 
 #ifdef __APPLE__
 	static void *pthread_helper(void *context) {
-		return ((DemodulatorThread *) context)->threadMain();
+		return ((DemodulatorPreThread *) context)->threadMain();
 	}
 #endif
 
 protected:
 	DemodulatorThreadInputQueue* inputQueue;
-	DemodulatorThreadOutputQueue* visOutQueue;
+	DemodulatorThreadPostInputQueue* postInputQueue;
 	DemodulatorThreadCommandQueue* commandQueue;
 	AudioThreadInputQueue *audioInputQueue;
 
 	firfilt_crcf fir_filter;
-
 	msresamp_crcf resampler;
 	float resample_ratio;
 
