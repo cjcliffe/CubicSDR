@@ -20,63 +20,26 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
         std::cout << "Audio buffer underflow.." << (src->underflow_count++) << std::endl;
     }
 
-    std::queue<std::vector<float> > *audio_queue = src->audio_queue.load();
-
-#ifdef __APPLE__	// Crude re-sync
-    int wait_for_it = 0;
-
-    if (audio_queue->empty()) {
-		while (wait_for_it++ < 5) {	// Can we wait it out?
-			std::this_thread::sleep_for(std::chrono::microseconds(100000));
-//    		std::this_thread::yield();
-			if (!audio_queue->empty()) {
-				std::cout << "Buffer recovery.." << std::endl;
-				break;
-			}
-		}
-    }
-#endif
-
-    if (audio_queue->empty()) {
-        for (int i = 0; i < nBufferFrames * 2; i++) {
-            out[i] = 0;
+    if (src->audio_queue_ptr == src->currentInput.data.size()) {
+        if (src->terminated) {
+            return 1;
         }
-        return 0;
+        src->inputQueue->pop(src->currentInput);
+        src->audio_queue_ptr = 0;
     }
 
-
-    std::vector<float> nextBuffer = audio_queue->front();
-    int nextBufferSize = nextBuffer.size();
     for (int i = 0; i < nBufferFrames * 2; i++) {
-        out[i] = nextBuffer[src->audio_queue_ptr];
+        out[i] = src->currentInput.data[src->audio_queue_ptr];
         src->audio_queue_ptr++;
-        if (src->audio_queue_ptr == nextBufferSize) {
-            audio_queue->pop();
-            src->audio_queue_ptr = 0;
-            if (audio_queue->empty()) {
-
-#ifdef __APPLE__
-                wait_for_it = 0;
-
-            	while (wait_for_it++ < 5) {	// Can we wait it out?
-        			std::this_thread::sleep_for(std::chrono::microseconds(100000));
-            		if (!audio_queue->empty()) {
-        				std::cout << "Buffer recovery.." << std::endl;
-            			break;
-            		}
-            	}
-#endif
-            	if (audio_queue->empty()) {
-					std::cout << "Audio buffer underflow mid request.."	<< (src->underflow_count++) << std::endl;
-					for (int j = i; j < nBufferFrames * 2; j++) {
-						out[i] = 0;
-					}
-					return 0;
-				}
+        if (src->audio_queue_ptr == src->currentInput.data.size()) {
+            if (src->terminated) {
+                return 1;
             }
-            nextBuffer = audio_queue->front();
+            src->inputQueue->pop(src->currentInput);
+            src->audio_queue_ptr = 0;
         }
     }
+
     return 0;
 }
 
@@ -105,8 +68,6 @@ void AudioThread::threadMain() {
     opts.streamName = "CubicSDR Audio Output";
     opts.priority = sched_get_priority_max(SCHED_FIFO);
 
-    audio_queue = new std::queue<std::vector<float> >;
-
     try {
         dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &bufferFrames, &audioCallback, (void *) this, &opts);
         dac.startStream();
@@ -116,12 +77,8 @@ void AudioThread::threadMain() {
     }
 
     while (!terminated) {
-        AudioThreadInput inp;
-		inputQueue->pop(inp);
-		if (inp.data.size()) {
-			audio_queue.load()->push(inp.data);
-		}
-//        std::this_thread::yield();
+        AudioThreadCommand command;
+        cmdQueue.pop(command);
     }
 
     try {
@@ -144,6 +101,6 @@ void AudioThread::threadMain() {
 
 void AudioThread::terminate() {
     terminated = true;
-    AudioThreadInput endCond;   // push an empty input to bump the queue
-    inputQueue->push(endCond);
+    AudioThreadCommand endCond;   // push an empty input to bump the queue
+    cmdQueue.push(endCond);
 }

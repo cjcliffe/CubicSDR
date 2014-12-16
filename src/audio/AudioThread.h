@@ -25,13 +25,32 @@ public:
     std::vector<float> data;
 };
 
+class AudioThreadCommand {
+public:
+    enum AudioThreadCommandEnum {
+        AUTIO_THREAD_CMD_NULL,
+        AUTIO_THREAD_CMD_SET_DEVICE,
+    };
+
+    AudioThreadCommand() :
+            cmd(AUTIO_THREAD_CMD_NULL), int_value(0) {
+    }
+
+    AudioThreadCommandEnum cmd;
+    int int_value;
+};
+
 typedef ThreadQueue<AudioThreadInput> AudioThreadInputQueue;
+typedef ThreadQueue<AudioThreadCommand> AudioThreadCommandQueue;
 
 class AudioThread {
 public:
-    std::atomic< std::queue<std::vector<float> > *> audio_queue;
+
+    AudioThreadInput currentInput;
+    AudioThreadInputQueue *inputQueue;
     std::atomic<unsigned int> audio_queue_ptr;
     std::atomic<unsigned int> underflow_count;
+    std::atomic<bool> terminated;
 
     AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify);
     ~AudioThread();
@@ -40,9 +59,8 @@ public:
     void terminate();
 
 private:
-    AudioThreadInputQueue *inputQueue;
     RtAudio dac;
-    std::atomic<bool> terminated;
+    AudioThreadCommandQueue cmdQueue;
     DemodulatorThreadCommandQueue* threadQueueNotify;
 };
 
