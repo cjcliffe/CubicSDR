@@ -56,17 +56,13 @@ void AudioThread::threadMain() {
     parameters.nChannels = 2;
     parameters.firstChannel = 0;
     unsigned int sampleRate = AUDIO_FREQUENCY;
-#ifdef __APPLE__
-    unsigned int bufferFrames = 0;
-#else
     unsigned int bufferFrames = 256;
-#endif
 
     RtAudio::StreamOptions opts;
 //    opts.flags =  RTAUDIO_SCHEDULE_REALTIME | RTAUDIO_MINIMIZE_LATENCY;
 //    opts.flags = RTAUDIO_MINIMIZE_LATENCY;
     opts.streamName = "CubicSDR Audio Output";
-    opts.priority = sched_get_priority_max(SCHED_FIFO);
+//    opts.priority = sched_get_priority_max(SCHED_FIFO);
 
     try {
         dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &bufferFrames, &audioCallback, (void *) this, &opts);

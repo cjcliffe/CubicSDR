@@ -154,7 +154,11 @@ bool DemodulatorInstance::isTerminated() {
             break;
         case DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_TERMINATED:
             demodulatorThread = NULL;
+#ifdef __APPLE__
+            pthread_join(t_Demod,NULL);
+#else
             t_Demod->join();
+#endif
             demodTerminated = true;
             break;
         default:
