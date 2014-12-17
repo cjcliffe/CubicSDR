@@ -54,7 +54,10 @@ void PrimaryGLContext::CheckGLError() {
 PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContext) :
         wxGLContext(canvas, sharedContext) {
     SetCurrent(*canvas);
-
+    // Pre-load fonts
+    for (int i = 0; i < GLFONT_MAX; i++) {
+        getFont((GLFontSize)i);
+    }
     CheckGLError();
 }
 
