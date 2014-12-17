@@ -87,6 +87,12 @@ void *DemodulatorPreThread::threadMain() {
 #else
 void DemodulatorPreThread::threadMain() {
 #endif
+#ifdef __APPLE__
+	    pthread_t tID = pthread_self();	 // ID of this thread
+	    int priority = sched_get_priority_min( SCHED_RR );
+	    sched_param prio = { priority }; // scheduling priority of thread
+	    pthread_setschedparam( tID, SCHED_RR, &prio );
+#endif
 
     if (!initialized) {
         initialize();
@@ -179,20 +185,15 @@ void DemodulatorPreThread::threadMain() {
                 out_buf = temp_buf;
             }
 
-            firfilt_crcf_execute_block(fir_filter, in_buf, bufSize, out_buf);
-
-            int out_size = ceil((float) (bufSize) * resample_ratio);
-
             DemodulatorThreadPostIQData resamp;
+            resamp.data.resize(bufSize);
+
+            firfilt_crcf_execute_block(fir_filter, in_buf, bufSize, &resamp.data[0]);
 
             resamp.audio_resample_ratio = audio_resample_ratio;
             resamp.audio_resampler = audio_resampler;
-            resamp.data.resize(out_size);
-
-            unsigned int num_written;       // number of values written to buffer
-            msresamp_crcf_execute(resampler, out_buf, (bufSize), &resamp.data[0], &num_written);
-
-            resamp.data.resize(num_written);
+            resamp.resample_ratio = resample_ratio;
+            resamp.resampler = resampler;
 
             postInputQueue->push(resamp);
         }
@@ -205,8 +206,8 @@ void DemodulatorPreThread::threadMain() {
                 switch (result.cmd) {
                 case DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS:
                     firfilt_crcf_destroy(fir_filter);
-                    msresamp_crcf_destroy(resampler);
-                    msresamp_crcf_destroy(audio_resampler);
+//                    msresamp_crcf_destroy(resampler);
+//                    msresamp_crcf_destroy(audio_resampler);
 
                     fir_filter = result.fir_filter;
                     resampler = result.resampler;

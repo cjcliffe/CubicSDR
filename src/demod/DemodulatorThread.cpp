@@ -21,37 +21,61 @@ void *DemodulatorThread::threadMain() {
 #else
 	void DemodulatorThread::threadMain() {
 #endif
+#ifdef __APPLE__
+	    pthread_t tID = pthread_self();	 // ID of this thread
+	    int priority = sched_get_priority_min( SCHED_RR );
+	    sched_param prio = { priority }; // scheduling priority of thread
+	    pthread_setschedparam( tID, SCHED_RR, &prio );
+#endif
+
+	msresamp_crcf audio_resampler = NULL;
+	msresamp_crcf resampler = NULL;
 
 	std::cout << "Demodulator thread started.." << std::endl;
 	while (!terminated) {
 		DemodulatorThreadPostIQData inp;
 		postInputQueue->pop(inp);
 
-		int out_size = inp.data.size();
+		int bufSize = inp.data.size();
 
-		if (!out_size) {
+		if (!bufSize) {
 			continue;
 		}
 
-		msresamp_crcf audio_resampler = inp.audio_resampler;
+		if (resampler == NULL) {
+			resampler = inp.resampler;
+			audio_resampler = inp.audio_resampler;
+		} else if (resampler != inp.resampler) {
+			msresamp_crcf_destroy(resampler);
+			msresamp_crcf_destroy(audio_resampler);
+			resampler = inp.resampler;
+			audio_resampler = inp.audio_resampler;
+		}
+
+        int out_size = ceil((float) (bufSize) * inp.resample_ratio);
+        liquid_float_complex resampled_data[out_size];
+        
+        unsigned int num_written;
+        msresamp_crcf_execute(resampler, &inp.data[0], bufSize, resampled_data, &num_written);
+        
 		float audio_resample_ratio = inp.audio_resample_ratio;
 
-		float demod_output[out_size];
+		float demod_output[num_written];
 
-		freqdem_demodulate_block(fdem, &inp.data[0], out_size, demod_output);
+		freqdem_demodulate_block(fdem, resampled_data, num_written, demod_output);
 
-		liquid_float_complex demod_audio_data[out_size];
+		liquid_float_complex demod_audio_data[num_written];
 
-		for (int i = 0; i < out_size; i++) {
+		for (int i = 0; i < num_written; i++) {
 			demod_audio_data[i].real = demod_output[i];
 			demod_audio_data[i].imag = 0;
 		}
 
-		int audio_out_size = ceil((float) (out_size) * audio_resample_ratio);
+		int audio_out_size = ceil((float) (num_written) * audio_resample_ratio);
 		liquid_float_complex resampled_audio_output[audio_out_size];
 
 		unsigned int num_audio_written;
-		msresamp_crcf_execute(audio_resampler, demod_audio_data, out_size, resampled_audio_output, &num_audio_written);
+		msresamp_crcf_execute(audio_resampler, demod_audio_data, num_written, resampled_audio_output, &num_audio_written);
 
 		std::vector<float> newBuffer;
 		newBuffer.resize(num_audio_written * 2);
@@ -72,6 +96,13 @@ void *DemodulatorThread::threadMain() {
 		if (visOutQueue != NULL) {
 			visOutQueue->push(ati);
 		}
+	}
+
+	if (resampler != NULL) {
+		msresamp_crcf_destroy(resampler);
+	}
+	if (audio_resampler != NULL) {
+		msresamp_crcf_destroy(audio_resampler);
 	}
 
 	std::cout << "Demodulator thread done." << std::endl;

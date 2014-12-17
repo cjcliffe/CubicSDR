@@ -42,12 +42,14 @@ void DemodulatorInstance::run() {
 	pthread_attr_init(&attr);
 	pthread_attr_setstacksize(&attr, 2048000);
 	pthread_attr_getstacksize(&attr, &size);
+    pthread_attr_setschedpolicy(&attr, SCHED_RR);
 	pthread_create(&t_PreDemod, &attr, &DemodulatorPreThread::pthread_helper, demodulatorPreThread);
 	pthread_attr_destroy(&attr);
 
 	pthread_attr_init(&attr);
 	pthread_attr_setstacksize(&attr, 2048000);
 	pthread_attr_getstacksize(&attr, &size);
+    pthread_attr_setschedpolicy(&attr, SCHED_RR);
 	pthread_create(&t_Demod, &attr, &DemodulatorThread::pthread_helper, demodulatorThread);
 	pthread_attr_destroy(&attr);
 

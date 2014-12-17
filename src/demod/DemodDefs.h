@@ -66,6 +66,8 @@ public:
 	std::vector<liquid_float_complex> data;
 	float audio_resample_ratio;
 	msresamp_crcf audio_resampler;
+    float resample_ratio;
+    msresamp_crcf resampler;
 
 	DemodulatorThreadPostIQData(): audio_resample_ratio(0), audio_resampler(NULL) {
 
