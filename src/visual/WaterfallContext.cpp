@@ -37,7 +37,6 @@ WaterfallContext::WaterfallContext(WaterfallCanvas *canvas, wxGLContext *sharedC
     glPixelMapfv(GL_PIXEL_MAP_I_TO_B, 256, &(grad.getBlue())[0]);
 }
 
-
 void WaterfallContext::Draw(std::vector<float> &points) {
 
     if (points.size()) {

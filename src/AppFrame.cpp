@@ -61,9 +61,7 @@ AppFrame::AppFrame() :
     Centre();
     Show();
 
-
-    GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"),DEFAULT_FREQ));
-
+    GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), DEFAULT_FREQ));
 
 //    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 //    wxLogStatus("Double-buffered display %s supported", wxGLCanvas::IsDisplaySupported(attribs) ? "is" : "not");
@@ -119,8 +117,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
                 scopeCanvas->waveform_points.resize(demodAudioData.data.size());
             }
 
-            for (int i = 0, iMax = demodAudioData.data.size()/2; i < iMax; i++) {
-                scopeCanvas->waveform_points[i * 2 + 1] = demodAudioData.data[i*2] * 0.5f;
+            for (int i = 0, iMax = demodAudioData.data.size() / 2; i < iMax; i++) {
+                scopeCanvas->waveform_points[i * 2 + 1] = demodAudioData.data[i * 2] * 0.5f;
                 scopeCanvas->waveform_points[i * 2] = ((double) i / (double) iMax);
             }
 
@@ -131,6 +129,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     }
 
     if (!work_done) {
-    	event.Skip();
+        event.Skip();
     }
 }

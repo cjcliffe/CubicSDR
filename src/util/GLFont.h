@@ -6,7 +6,6 @@
 #include "lodepng.h"
 #include "wx/glcanvas.h"
 
-
 class GLFontChar {
 public:
     GLFontChar();
@@ -53,11 +52,7 @@ private:
 class GLFont {
 public:
     enum Align {
-        GLFONT_ALIGN_LEFT,
-        GLFONT_ALIGN_RIGHT,
-        GLFONT_ALIGN_CENTER,
-        GLFONT_ALIGN_TOP,
-        GLFONT_ALIGN_BOTTOM
+        GLFONT_ALIGN_LEFT, GLFONT_ALIGN_RIGHT, GLFONT_ALIGN_CENTER, GLFONT_ALIGN_TOP, GLFONT_ALIGN_BOTTOM
     };
 
     GLFont();

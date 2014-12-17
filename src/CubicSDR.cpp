@@ -24,9 +24,6 @@ bool CubicSDR::OnInit() {
     audioVisualQueue = new DemodulatorThreadOutputQueue();
     audioVisualQueue->set_max_num_items(1);
 
-//    demodulatorTest[0]->setVisualOutputQueue(audioVisualQueue);
-//    demodMgr.setActiveDemodulator(demodulatorTest[0]);
-
     threadCmdQueueSDR = new SDRThreadCommandQueue;
     sdrThread = new SDRThread(threadCmdQueueSDR);
 

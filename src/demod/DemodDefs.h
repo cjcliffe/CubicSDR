@@ -8,29 +8,28 @@ enum DemodulatorType {
 	DEMOD_TYPE_NULL,
 	DEMOD_TYPE_AM,
 	DEMOD_TYPE_FM,
-	DEMOD_TYPE_LSB,
-	DEMOD_TYPE_USB
+	DEMOD_TYPE_LSB, DEMOD_TYPE_USB
 };
 
 class DemodulatorThread;
 class DemodulatorThreadCommand {
 public:
-	enum DemodulatorThreadCommandEnum {
-		DEMOD_THREAD_CMD_NULL,
-		DEMOD_THREAD_CMD_SET_BANDWIDTH,
-		DEMOD_THREAD_CMD_SET_FREQUENCY,
-		DEMOD_THREAD_CMD_DEMOD_PREPROCESS_TERMINATED,
-		DEMOD_THREAD_CMD_DEMOD_TERMINATED,
-		DEMOD_THREAD_CMD_AUDIO_TERMINATED
-	};
+    enum DemodulatorThreadCommandEnum {
+        DEMOD_THREAD_CMD_NULL,
+        DEMOD_THREAD_CMD_SET_BANDWIDTH,
+        DEMOD_THREAD_CMD_SET_FREQUENCY,
+        DEMOD_THREAD_CMD_DEMOD_PREPROCESS_TERMINATED,
+        DEMOD_THREAD_CMD_DEMOD_TERMINATED,
+        DEMOD_THREAD_CMD_AUDIO_TERMINATED
+    };
 
-	DemodulatorThreadCommand() :
-			cmd(DEMOD_THREAD_CMD_NULL), int_value(0), context(NULL) {
+    DemodulatorThreadCommand() :
+            cmd(DEMOD_THREAD_CMD_NULL), int_value(0), context(NULL) {
 
-	}
+    }
 
-	DemodulatorThreadCommand(DemodulatorThreadCommandEnum cmd) :
-			cmd(cmd), int_value(0), context(NULL) {
+    DemodulatorThreadCommand(DemodulatorThreadCommandEnum cmd) :
+            cmd(cmd), int_value(0), context(NULL) {
 
 	}
 
@@ -69,7 +68,7 @@ public:
     float resample_ratio;
     msresamp_crcf resampler;
 
-	DemodulatorThreadPostIQData(): audio_resample_ratio(0), audio_resampler(NULL) {
+	DemodulatorThreadPostIQData(): audio_resample_ratio(0), audio_resampler(NULL), resample_ratio(0), resampler(NULL) {
 
 	}
 

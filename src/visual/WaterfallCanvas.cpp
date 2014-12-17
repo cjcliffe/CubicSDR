@@ -444,7 +444,7 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
                 demod->run();
 
                 wxGetApp().bindDemodulator(demod);
-                wxGetApp().getDemodMgr().setActiveDemodulator(demod,false);
+                wxGetApp().getDemodMgr().setActiveDemodulator(demod, false);
             }
 
             if (demod == NULL) {
@@ -482,7 +482,7 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
 
         int center_freq = wxGetApp().getFrequency();
         int freq = center_freq - (int) (0.5 * (float) SRATE) + (int) ((float) pos * (float) SRATE);
-        int bandwidth = (int)(fabs(width) * (float)SRATE);
+        int bandwidth = (int) (fabs(width) * (float) SRATE);
 
         if (bandwidth < 1000) {
             bandwidth = 1000;
@@ -503,7 +503,7 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
             demod->run();
 
             wxGetApp().bindDemodulator(demod);
-            wxGetApp().getDemodMgr().setActiveDemodulator(demod,false);
+            wxGetApp().getDemodMgr().setActiveDemodulator(demod, false);
         }
 
         if (demod == NULL) {

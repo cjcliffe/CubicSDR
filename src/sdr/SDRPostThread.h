@@ -19,7 +19,7 @@ public:
     void terminate();
 
 protected:
-     uint32_t sample_rate;
+    uint32_t sample_rate;
 
     std::atomic<SDRThreadIQDataQueue*> iqDataOutQueue;
     std::atomic<SDRThreadIQDataQueue*> iqDataInQueue;

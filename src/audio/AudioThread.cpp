@@ -45,13 +45,13 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
 
 void AudioThread::threadMain() {
 #ifdef __APPLE__
-	    pthread_t tID = pthread_self();	 // ID of this thread
-	    int priority = sched_get_priority_min( SCHED_RR );
-	    sched_param prio = { priority }; // scheduling priority of thread
-	    pthread_setschedparam( tID, SCHED_RR, &prio );
+    pthread_t tID = pthread_self();	 // ID of this thread
+    int priority = sched_get_priority_min( SCHED_RR );
+    sched_param prio = {priority}; // scheduling priority of thread
+    pthread_setschedparam( tID, SCHED_RR, &prio );
 #endif
 
-	    std::cout << "Audio thread initializing.." << std::endl;
+    std::cout << "Audio thread initializing.." << std::endl;
 
     if (dac.getDeviceCount() < 1) {
         std::cout << "No audio devices found!" << std::endl;
@@ -66,7 +66,7 @@ void AudioThread::threadMain() {
     unsigned int bufferFrames = 256;
 
     RtAudio::StreamOptions opts;
-    opts.flags =  RTAUDIO_SCHEDULE_REALTIME;
+    opts.flags = RTAUDIO_SCHEDULE_REALTIME;
 //    | RTAUDIO_MINIMIZE_LATENCY;
 //    opts.flags = RTAUDIO_MINIMIZE_LATENCY;
     opts.streamName = "CubicSDR Audio Output";

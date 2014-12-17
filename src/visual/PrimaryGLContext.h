@@ -12,7 +12,9 @@
 
 class PrimaryGLContext: public wxGLContext {
 public:
-    enum GLFontSize { GLFONT_SIZE12, GLFONT_SIZE16, GLFONT_SIZE18, GLFONT_SIZE24, GLFONT_SIZE32, GLFONT_SIZE48, GLFONT_MAX };
+    enum GLFontSize {
+        GLFONT_SIZE12, GLFONT_SIZE16, GLFONT_SIZE18, GLFONT_SIZE24, GLFONT_SIZE32, GLFONT_SIZE48, GLFONT_MAX
+    };
     PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContext);
 
     static wxString glGetwxString(GLenum name);
@@ -21,7 +23,7 @@ public:
     void BeginDraw();
     void EndDraw();
 
-    void DrawFreqSelector(float uxPos, float r = 1, float g = 1, float b = 1, float w=0);
+    void DrawFreqSelector(float uxPos, float r = 1, float g = 1, float b = 1, float w = 0);
     void DrawDemod(DemodulatorInstance *demod, float r = 1, float g = 1, float b = 1);
     void DrawDemodInfo(DemodulatorInstance *demod, float r = 1, float g = 1, float b = 1);
 

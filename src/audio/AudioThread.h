@@ -28,8 +28,7 @@ public:
 class AudioThreadCommand {
 public:
     enum AudioThreadCommandEnum {
-        AUTIO_THREAD_CMD_NULL,
-        AUTIO_THREAD_CMD_SET_DEVICE,
+        AUTIO_THREAD_CMD_NULL, AUTIO_THREAD_CMD_SET_DEVICE,
     };
 
     AudioThreadCommand() :

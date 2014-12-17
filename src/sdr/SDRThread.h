@@ -17,15 +17,16 @@
 class SDRThreadCommand {
 public:
     enum SDRThreadCommandEnum {
-        SDR_THREAD_CMD_NULL,
-        SDR_THREAD_CMD_TUNE
+        SDR_THREAD_CMD_NULL, SDR_THREAD_CMD_TUNE
     };
 
-    SDRThreadCommand() : cmd(SDR_THREAD_CMD_NULL), int_value(0) {
+    SDRThreadCommand() :
+            cmd(SDR_THREAD_CMD_NULL), int_value(0) {
 
     }
 
-    SDRThreadCommand(SDRThreadCommandEnum cmd) : cmd(cmd), int_value(0) {
+    SDRThreadCommand(SDRThreadCommandEnum cmd) :
+            cmd(cmd), int_value(0) {
 
     }
 
@@ -39,7 +40,8 @@ public:
     unsigned int bandwidth;
     std::vector<signed char> data;
 
-    SDRThreadIQData(): frequency(0), bandwidth(0) {
+    SDRThreadIQData() :
+            frequency(0), bandwidth(0) {
 
     }
 
@@ -52,7 +54,6 @@ public:
 
     }
 };
-
 
 typedef ThreadQueue<SDRThreadCommand> SDRThreadCommandQueue;
 typedef ThreadQueue<SDRThreadIQData> SDRThreadIQDataQueue;

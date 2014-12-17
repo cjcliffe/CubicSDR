@@ -11,7 +11,6 @@ class WaterfallContext: public PrimaryGLContext {
 public:
     WaterfallContext(WaterfallCanvas *canvas, wxGLContext *sharedContext);
 
-
     void Draw(std::vector<float> &points);
 
 private:

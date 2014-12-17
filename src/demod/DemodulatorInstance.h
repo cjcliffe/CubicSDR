@@ -45,11 +45,6 @@ public:
     void updateLabel(int freq);
 
 private:
-    std::atomic<std::string *> label;
-    bool terminated;
-    bool demodTerminated;
-    bool audioTerminated;
-    bool preDemodTerminated;
+    std::atomic<std::string *> label;bool terminated;bool demodTerminated;bool audioTerminated;bool preDemodTerminated;
 };
-
 

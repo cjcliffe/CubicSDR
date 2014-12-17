@@ -56,7 +56,7 @@ PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContex
     SetCurrent(*canvas);
     // Pre-load fonts
     for (int i = 0; i < GLFONT_MAX; i++) {
-        getFont((GLFontSize)i);
+        getFont((GLFontSize) i);
     }
     CheckGLError();
 }
@@ -201,7 +201,6 @@ void PrimaryGLContext::DrawFreqSelector(float uxPos, float r, float g, float b, 
     } else {
         bw = demod->getParams().bandwidth;
     }
-
 
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_TEXTURE_2D);

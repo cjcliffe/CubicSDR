@@ -11,41 +11,41 @@ typedef ThreadQueue<AudioThreadInput> DemodulatorThreadOutputQueue;
 class DemodulatorThread {
 public:
 
-	DemodulatorThread(DemodulatorThreadPostInputQueue* pQueueIn, DemodulatorThreadCommandQueue* threadQueueNotify);
-	~DemodulatorThread();
+    DemodulatorThread(DemodulatorThreadPostInputQueue* pQueueIn, DemodulatorThreadCommandQueue* threadQueueNotify);
+    ~DemodulatorThread();
 
 #ifdef __APPLE__
-	void *threadMain();
+    void *threadMain();
 #else
-	void threadMain();
+    void threadMain();
 #endif
 
-	void setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {
-		visOutQueue = tQueue;
-	}
+    void setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {
+        visOutQueue = tQueue;
+    }
 
-	void setAudioInputQueue(AudioThreadInputQueue *tQueue) {
-		audioInputQueue = tQueue;
-	}
+    void setAudioInputQueue(AudioThreadInputQueue *tQueue) {
+        audioInputQueue = tQueue;
+    }
 
-	void initialize();
+    void initialize();
 
-	void terminate();
+    void terminate();
 
 #ifdef __APPLE__
-	static void *pthread_helper(void *context) {
-		return ((DemodulatorThread *) context)->threadMain();
-	}
+    static void *pthread_helper(void *context) {
+        return ((DemodulatorThread *) context)->threadMain();
+    }
 #endif
 
 protected:
-	DemodulatorThreadPostInputQueue* postInputQueue;
-	DemodulatorThreadOutputQueue* visOutQueue;
-	AudioThreadInputQueue *audioInputQueue;
+    DemodulatorThreadPostInputQueue* postInputQueue;
+    DemodulatorThreadOutputQueue* visOutQueue;
+    AudioThreadInputQueue *audioInputQueue;
 
-	freqdem fdem;
+    freqdem fdem;
 
-	std::atomic<bool> terminated;
+    std::atomic<bool> terminated;
 
-	DemodulatorThreadCommandQueue* threadQueueNotify;
+    DemodulatorThreadCommandQueue* threadQueueNotify;
 };

@@ -1,4 +1,3 @@
-
 #include "CubicSDRDefs.h"
 #include <vector>
 
@@ -8,7 +7,8 @@
 
 #include "DemodulatorPreThread.h"
 
-DemodulatorPreThread::DemodulatorPreThread(DemodulatorThreadInputQueue* pQueueIn, DemodulatorThreadPostInputQueue* pQueueOut, DemodulatorThreadCommandQueue* threadQueueNotify) :
+DemodulatorPreThread::DemodulatorPreThread(DemodulatorThreadInputQueue* pQueueIn, DemodulatorThreadPostInputQueue* pQueueOut,
+        DemodulatorThreadCommandQueue* threadQueueNotify) :
         inputQueue(pQueueIn), postInputQueue(pQueueOut), terminated(false), initialized(false), audio_resampler(NULL), resample_ratio(1), audio_resample_ratio(
                 1), resampler(NULL), commandQueue(NULL), fir_filter(NULL), audioInputQueue(NULL), threadQueueNotify(threadQueueNotify) {
 
@@ -88,16 +88,15 @@ void *DemodulatorPreThread::threadMain() {
 void DemodulatorPreThread::threadMain() {
 #endif
 #ifdef __APPLE__
-	    pthread_t tID = pthread_self();	 // ID of this thread
-	    int priority = sched_get_priority_min( SCHED_RR );
-	    sched_param prio = { priority }; // scheduling priority of thread
-	    pthread_setschedparam( tID, SCHED_RR, &prio );
+    pthread_t tID = pthread_self();	 // ID of this thread
+    int priority = sched_get_priority_min( SCHED_RR );
+    sched_param prio = {priority}; // scheduling priority of thread
+    pthread_setschedparam( tID, SCHED_RR, &prio );
 #endif
 
     if (!initialized) {
         initialize();
     }
-
 
     std::cout << "Demodulator preprocessor thread started.." << std::endl;
     while (!terminated) {
@@ -160,7 +159,7 @@ void DemodulatorPreThread::threadMain() {
 
         std::vector<signed char> *data = &inp.data;
         if (data->size()) {
-        	int bufSize = data->size() / 2;
+            int bufSize = data->size() / 2;
 
             liquid_float_complex in_buf_data[bufSize];
             liquid_float_complex out_buf_data[bufSize];

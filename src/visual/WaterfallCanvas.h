@@ -14,7 +14,9 @@
 
 class WaterfallCanvas: public wxGLCanvas {
 public:
-    enum DragState { WF_DRAG_NONE, WF_DRAG_BANDWIDTH_LEFT, WF_DRAG_BANDWIDTH_RIGHT, WF_DRAG_FREQUENCY, WF_DRAG_RANGE };
+    enum DragState {
+        WF_DRAG_NONE, WF_DRAG_BANDWIDTH_LEFT, WF_DRAG_BANDWIDTH_RIGHT, WF_DRAG_FREQUENCY, WF_DRAG_RANGE
+    };
 
     WaterfallCanvas(wxWindow *parent, int *attribList = NULL);
     ~WaterfallCanvas();
@@ -60,9 +62,7 @@ private:
     DragState dragState;
     DragState nextDragState;
 
-    bool shiftDown;
-    bool altDown;
-    bool ctrlDown;
+    bool shiftDown;bool altDown;bool ctrlDown;
     // event table
 wxDECLARE_EVENT_TABLE();
 };
