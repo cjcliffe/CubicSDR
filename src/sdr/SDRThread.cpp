@@ -89,6 +89,12 @@ int SDRThread::enumerate_rtl() {
 }
 
 void SDRThread::threadMain() {
+//#ifdef __APPLE__
+//	    pthread_t tID = pthread_self();	 // ID of this thread
+//	    int priority = sched_get_priority_min( SCHED_RR );
+//	    sched_param prio = { priority }; // scheduling priority of thread
+//	    pthread_setschedparam( tID, SCHED_RR, &prio );
+//#endif
 
     std::cout << "SDR thread initializing.." << std::endl;
 

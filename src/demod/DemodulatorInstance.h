@@ -5,17 +5,22 @@
 #include <thread>
 
 #include "DemodulatorThread.h"
+#include "DemodulatorPreThread.h"
 
 class DemodulatorInstance {
 public:
 
     DemodulatorThreadInputQueue* threadQueueDemod;
+    DemodulatorThreadPostInputQueue* threadQueuePostDemod;
     DemodulatorThreadCommandQueue* threadQueueCommand;
     DemodulatorThreadCommandQueue* threadQueueNotify;
+    DemodulatorPreThread *demodulatorPreThread;
     DemodulatorThread *demodulatorThread;
 #ifdef __APPLE__
+    pthread_t t_PreDemod;
     pthread_t t_Demod;
 #else
+    std::thread *t_PreDemod;
     std::thread *t_Demod;
 #endif
 
@@ -44,6 +49,7 @@ private:
     bool terminated;
     bool demodTerminated;
     bool audioTerminated;
+    bool preDemodTerminated;
 };
 
 

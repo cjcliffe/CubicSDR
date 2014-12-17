@@ -1,6 +1,8 @@
 #pragma once
 
 #include "ThreadQueue.h"
+#include "CubicSDRDefs.h"
+#include "liquid/liquid.h"
 
 enum DemodulatorType {
 	DEMOD_TYPE_NULL,
@@ -17,6 +19,7 @@ public:
 		DEMOD_THREAD_CMD_NULL,
 		DEMOD_THREAD_CMD_SET_BANDWIDTH,
 		DEMOD_THREAD_CMD_SET_FREQUENCY,
+		DEMOD_THREAD_CMD_DEMOD_PREPROCESS_TERMINATED,
 		DEMOD_THREAD_CMD_DEMOD_TERMINATED,
 		DEMOD_THREAD_CMD_AUDIO_TERMINATED
 	};
@@ -58,6 +61,24 @@ public:
 	}
 };
 
+class DemodulatorThreadPostIQData {
+public:
+	std::vector<liquid_float_complex> data;
+	float audio_resample_ratio;
+	msresamp_crcf audio_resampler;
+    float resample_ratio;
+    msresamp_crcf resampler;
+
+	DemodulatorThreadPostIQData(): audio_resample_ratio(0), audio_resampler(NULL) {
+
+	}
+
+	~DemodulatorThreadPostIQData() {
+
+	}
+};
+
+
 class DemodulatorThreadAudioData {
 public:
 	unsigned int frequency;
@@ -84,4 +105,26 @@ public:
 };
 
 typedef ThreadQueue<DemodulatorThreadIQData> DemodulatorThreadInputQueue;
+typedef ThreadQueue<DemodulatorThreadPostIQData> DemodulatorThreadPostInputQueue;
 typedef ThreadQueue<DemodulatorThreadCommand> DemodulatorThreadCommandQueue;
+
+
+class DemodulatorThreadParameters {
+public:
+    unsigned int frequency;
+    unsigned int inputRate;
+    unsigned int bandwidth; // set equal to disable second stage re-sampling?
+    unsigned int audioSampleRate;
+
+    DemodulatorType demodType;
+
+    DemodulatorThreadParameters() :
+            frequency(0), inputRate(SRATE), bandwidth(200000), audioSampleRate(
+                    AUDIO_FREQUENCY), demodType(DEMOD_TYPE_FM) {
+
+    }
+
+    ~DemodulatorThreadParameters() {
+
+    }
+};
