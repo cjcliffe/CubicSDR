@@ -44,7 +44,15 @@ public:
     bool isTerminated();
     void updateLabel(int freq);
 
+    bool isActive();
+    void setActive(bool state);
+
 private:
-    std::atomic<std::string *> label;bool terminated;bool demodTerminated;bool audioTerminated;bool preDemodTerminated;
+    std::atomic<std::string *> label;
+    bool terminated;
+    bool demodTerminated;
+    bool audioTerminated;
+    bool preDemodTerminated;
+    std::atomic<bool> active;
 };
 

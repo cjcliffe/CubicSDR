@@ -176,8 +176,8 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         if (!activeDemod) {
             break;
         }
-        wxGetApp().getDemodMgr().deleteThread(activeDemod);
         wxGetApp().removeDemodulator(activeDemod);
+        wxGetApp().getDemodMgr().deleteThread(activeDemod);
         break;
 
     default:

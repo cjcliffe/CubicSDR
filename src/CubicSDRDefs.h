@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef __APPLE__
-#define BUF_SIZE (16384*3)
+#define BUF_SIZE (16384*2)
 #define SRATE 2000000
 #else
 #define BUF_SIZE (16384*4)

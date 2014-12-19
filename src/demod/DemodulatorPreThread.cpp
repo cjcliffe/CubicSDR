@@ -88,10 +88,10 @@ void *DemodulatorPreThread::threadMain() {
 void DemodulatorPreThread::threadMain() {
 #endif
 #ifdef __APPLE__
-    pthread_t tID = pthread_self();	 // ID of this thread
-    int priority = sched_get_priority_min( SCHED_RR );
-    sched_param prio = {priority}; // scheduling priority of thread
-    pthread_setschedparam( tID, SCHED_RR, &prio );
+    pthread_t tID = pthread_self();  // ID of this thread
+    int priority = sched_get_priority_max( SCHED_FIFO )-1;
+    sched_param prio = { priority }; // scheduling priority of thread
+    pthread_setschedparam(tID, SCHED_FIFO, &prio);
 #endif
 
     if (!initialized) {
