@@ -77,13 +77,15 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     DemodulatorInstance *activeDemodulator = wxGetApp().getDemodMgr().getActiveDemodulator();
     DemodulatorInstance *lastActiveDemodulator = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
+    bool isNew = shiftDown || (wxGetApp().getDemodMgr().getLastActiveDemodulator() && !wxGetApp().getDemodMgr().getLastActiveDemodulator()->isActive());
+
     if (mTracker.mouseInView()) {
         if (nextDragState == WF_DRAG_RANGE) {
             if (mTracker.mouseDown()) {
                 float width = mTracker.getOriginDeltaMouseX();
                 float centerPos = mTracker.getOriginMouseX() + width / 2.0;
 
-                if (shiftDown) {
+                if (isNew) {
                     glContext->DrawDemod(lastActiveDemodulator);
                     glContext->DrawFreqSelector(centerPos, 0, 1, 0, width ? width : (1.0 / (float) ClientSize.x));
                 } else {
@@ -91,7 +93,7 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
                     glContext->DrawFreqSelector(centerPos, 1, 1, 0, width ? width : (1.0 / (float) ClientSize.x));
                 }
             } else {
-                if (shiftDown) {
+                if (isNew) {
                     glContext->DrawDemod(lastActiveDemodulator);
                     glContext->DrawFreqSelector(mTracker.getMouseX(), 0, 1, 0, 1.0 / (float) ClientSize.x);
                 } else {
@@ -102,7 +104,7 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         } else {
             if (activeDemodulator == NULL) {
                 if (lastActiveDemodulator) {
-                    if (shiftDown) {
+                    if (isNew) {
                         glContext->DrawDemod(lastActiveDemodulator);
                         glContext->DrawFreqSelector(mTracker.getMouseX(), 0, 1, 0);
                     } else {
@@ -420,6 +422,8 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
     altDown = event.AltDown();
     ctrlDown = event.ControlDown();
 
+    bool isNew = shiftDown || (wxGetApp().getDemodMgr().getLastActiveDemodulator() && !wxGetApp().getDemodMgr().getLastActiveDemodulator()->isActive());
+
     mTracker.setVertDragLock(false);
     mTracker.setHorizDragLock(false);
 
@@ -431,7 +435,7 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
         int freq = center_freq - (int) (0.5 * (float) SRATE) + (int) ((float) pos * (float) SRATE);
 
         if (dragState == WF_DRAG_NONE) {
-            if (!shiftDown && wxGetApp().getDemodMgr().getDemodulators().size()) {
+            if (!isNew && wxGetApp().getDemodMgr().getDemodulators().size()) {
                 demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
             } else {
                 demod = wxGetApp().getDemodMgr().newThread();
@@ -493,7 +497,7 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
             return;
         }
 
-        if (!shiftDown && wxGetApp().getDemodMgr().getDemodulators().size()) {
+        if (!isNew && wxGetApp().getDemodMgr().getDemodulators().size()) {
             demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
         } else {
             demod = wxGetApp().getDemodMgr().newThread();

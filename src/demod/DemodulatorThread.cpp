@@ -24,7 +24,7 @@ void DemodulatorThread::threadMain() {
 #ifdef __APPLE__
     pthread_t tID = pthread_self();  // ID of this thread
     int priority = sched_get_priority_max( SCHED_FIFO )-1;
-    sched_param prio = { priority }; // scheduling priority of thread
+    sched_param prio = {priority}; // scheduling priority of thread
     pthread_setschedparam(tID, SCHED_FIFO, &prio);
 #endif
 
@@ -94,10 +94,13 @@ void DemodulatorThread::threadMain() {
         }
 
         if (visOutQueue != NULL && visOutQueue->empty()) {
-            AudioThreadInput ati_vis;
-            ati_vis.data.assign(demod_output,demod_output+num_written);
-            visOutQueue->push(ati_vis);
-//            visOutQueue->push(ati);
+            if (num_audio_written > num_written) {
+                visOutQueue->push(ati);
+            } else {
+                AudioThreadInput ati_vis;
+                ati_vis.data.assign(demod_output, demod_output + num_written);
+                visOutQueue->push(ati_vis);
+            }
         }
     }
 
