@@ -176,15 +176,15 @@ void AudioThread::threadMain() {
     unsigned int bufferFrames = 256;
 
     RtAudio::StreamOptions opts;
-    opts.flags = RTAUDIO_SCHEDULE_REALTIME;
-//    | RTAUDIO_MINIMIZE_LATENCY;
-//    opts.flags = RTAUDIO_MINIMIZE_LATENCY;
     opts.streamName = "CubicSDR Audio Output";
-    opts.priority = sched_get_priority_max(SCHED_FIFO);
 
     try {
 
 #ifdef __APPLE__
+        opts.priority = sched_get_priority_max(SCHED_FIFO);
+        //    opts.flags = RTAUDIO_MINIMIZE_LATENCY;
+        opts.flags = RTAUDIO_SCHEDULE_REALTIME;
+
         if (deviceController.find(parameters.deviceId) == deviceController.end()) {
             deviceController[parameters.deviceId] = new AudioThread(NULL, NULL);
             deviceController[parameters.deviceId]->bindThread(this);
