@@ -51,6 +51,8 @@ public:
     std::atomic<unsigned int> audio_queue_ptr;
     std::atomic<unsigned int> underflow_count;
     std::atomic<bool> terminated;
+    std::atomic<bool> active;
+    float gain;
 
     AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify);
     ~AudioThread();
@@ -63,11 +65,6 @@ public:
     bool isActive();
     void setActive(bool state);
 
-#ifdef __APPLE__
-    void bindThread(AudioThread *other);
-    void removeThread(AudioThread *other);
-#endif
-
 private:
     RtAudio dac;
     RtAudio::StreamParameters parameters;
@@ -76,12 +73,13 @@ private:
 
 #ifdef __APPLE__
 public:
+    void bindThread(AudioThread *other);
+    void removeThread(AudioThread *other);
+
     static std::map<int,AudioThread *> deviceController;
     static std::map<int,std::thread *> deviceThread;
     static void deviceCleanup();
     std::atomic<std::vector<AudioThread *> *> boundThreads;
-    float gain;
-    std::atomic<bool> active;
 #endif
 };
 
