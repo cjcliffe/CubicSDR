@@ -72,6 +72,10 @@ int CubicSDR::OnExit() {
 
     demodMgr.terminateAll();
 
+#ifdef __APPLE__
+    AudioThread::deviceCleanup();
+#endif
+
     delete threadCmdQueueSDR;
 
     delete iqVisualQueue;

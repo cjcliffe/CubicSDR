@@ -42,12 +42,12 @@ void SDRPostThread::threadMain() {
     int n_read;
     double seconds = 0.0;
 
-//#ifdef __APPLE__
-//	    pthread_t tID = pthread_self();	 // ID of this thread
-//	    int priority = sched_get_priority_min( SCHED_RR );
-//	    sched_param prio = { priority }; // scheduling priority of thread
-//	    pthread_setschedparam( tID, SCHED_RR, &prio );
-//#endif
+#ifdef __APPLE__
+    pthread_t tID = pthread_self();  // ID of this thread
+    int priority = sched_get_priority_max( SCHED_FIFO) - 1;
+    sched_param prio = { priority }; // scheduling priority of thread
+    pthread_setschedparam(tID, SCHED_FIFO, &prio);
+#endif
 
     dcFilter = iirfilt_crcf_create_dc_blocker(0.0005);
 
@@ -96,15 +96,20 @@ void SDRPostThread::threadMain() {
                 demodDataOut.bandwidth = data_in.bandwidth;
                 demodDataOut.data = data_in.data;
 
-                for (int i = 0, iMax = demodulators.size(); i < iMax; i++) {
-                    DemodulatorInstance *demod = demodulators[i];
+                std::vector<DemodulatorInstance *>::iterator i;
+                for (i = demodulators.begin(); i != demodulators.end(); i++) {
+                    DemodulatorInstance *demod = *i;
                     DemodulatorThreadInputQueue *demodQueue = demod->threadQueueDemod;
 
-                    if (demod->getParams().frequency != data_in.frequency) {
-                        if (abs(data_in.frequency - demod->getParams().frequency) > (int) ((float) ((float) SRATE / 2.0) * 1.15)) {
+                    if (demod->getParams().frequency != data_in.frequency
+                            && abs(data_in.frequency - demod->getParams().frequency) > (int) ((float) ((float) SRATE / 2.0) * 1.15)) {
+                        if (demod->isActive()) {
+                            demod->setActive(false);
                             demodQueue->push(dummyDataOut);
                             continue;
                         }
+                    } else if (!demod->isActive()) {
+                        demod->setActive(true);
                     }
 
                     demodQueue->push(demodDataOut);

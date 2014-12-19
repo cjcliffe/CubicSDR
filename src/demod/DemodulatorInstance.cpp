@@ -2,7 +2,7 @@
 
 DemodulatorInstance::DemodulatorInstance() :
         t_Demod(NULL), t_PreDemod(NULL), t_Audio(NULL), threadQueueDemod(NULL), demodulatorThread(NULL), terminated(false), audioTerminated(false), demodTerminated(
-        false), preDemodTerminated(false) {
+        false), preDemodTerminated(false), active(false) {
 
     label = new std::string("Unnamed");
     threadQueueDemod = new DemodulatorThreadInputQueue;
@@ -42,14 +42,12 @@ void DemodulatorInstance::run() {
     pthread_attr_init(&attr);
     pthread_attr_setstacksize(&attr, 2048000);
     pthread_attr_getstacksize(&attr, &size);
-    pthread_attr_setschedpolicy(&attr, SCHED_RR);
     pthread_create(&t_PreDemod, &attr, &DemodulatorPreThread::pthread_helper, demodulatorPreThread);
     pthread_attr_destroy(&attr);
 
     pthread_attr_init(&attr);
     pthread_attr_setstacksize(&attr, 2048000);
     pthread_attr_getstacksize(&attr, &size);
-    pthread_attr_setschedpolicy(&attr, SCHED_RR);
     pthread_create(&t_Demod, &attr, &DemodulatorThread::pthread_helper, demodulatorThread);
     pthread_attr_destroy(&attr);
 
@@ -59,6 +57,7 @@ void DemodulatorInstance::run() {
     t_PreDemod = new std::thread(&DemodulatorPreThread::threadMain, demodulatorPreThread);
     t_Demod = new std::thread(&DemodulatorThread::threadMain, demodulatorThread);
 #endif
+    active = true;
 }
 
 void DemodulatorInstance::updateLabel(int freq) {
@@ -137,3 +136,11 @@ bool DemodulatorInstance::isTerminated() {
     return terminated;
 }
 
+bool DemodulatorInstance::isActive() {
+    return active;
+}
+
+void DemodulatorInstance::setActive(bool state) {
+    active = state;
+    audioThread->setActive(state);
+}
