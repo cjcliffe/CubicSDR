@@ -65,9 +65,9 @@ void DemodulatorPreThread::initialize() {
 //    msresamp_crcf_print(resampler);
 
     if (audio_resampler) {
-        msresamp_crcf_destroy(audio_resampler);
+        msresamp_rrrf_destroy(audio_resampler);
     }
-    audio_resampler = msresamp_crcf_create(audio_resample_ratio, As);
+    audio_resampler = msresamp_rrrf_create(audio_resample_ratio, As);
 //    msresamp_crcf_print(audio_resampler);
 
     initialized = true;

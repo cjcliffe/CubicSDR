@@ -57,7 +57,7 @@ protected:
     msresamp_crcf resampler;
     float resample_ratio;
 
-    msresamp_crcf audio_resampler;
+    msresamp_rrrf audio_resampler;
     float audio_resample_ratio;
 
     DemodulatorThreadParameters params;

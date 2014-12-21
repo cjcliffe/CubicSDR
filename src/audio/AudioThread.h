@@ -22,6 +22,15 @@ class AudioThreadInput {
 public:
     int frequency;
     int sampleRate;
+    int channels;
+
+    AudioThreadInput(): frequency(0), sampleRate(0), channels(0) {
+
+    }
+
+    ~AudioThreadInput() {
+
+    }
 
     std::vector<float> data;
 };

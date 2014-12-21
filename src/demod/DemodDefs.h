@@ -79,7 +79,7 @@ class DemodulatorThreadPostIQData {
 public:
 	std::vector<liquid_float_complex> data;
 	float audio_resample_ratio;
-	msresamp_crcf audio_resampler;
+	msresamp_rrrf audio_resampler;
     float resample_ratio;
     msresamp_crcf resampler;
 
