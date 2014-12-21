@@ -11,7 +11,7 @@ class DemodulatorPreThread {
 public:
 
     DemodulatorPreThread(DemodulatorThreadInputQueue* pQueueIn, DemodulatorThreadPostInputQueue* pQueueOut,
-            DemodulatorThreadCommandQueue* threadQueueNotify);
+            DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify);
     ~DemodulatorPreThread();
 
 #ifdef __APPLE__
@@ -27,6 +27,11 @@ public:
     void setAudioInputQueue(AudioThreadInputQueue *tQueue) {
         audioInputQueue = tQueue;
     }
+
+    void setDemodulatorControlQueue(DemodulatorThreadControlCommandQueue *tQueue) {
+        threadQueueControl = tQueue;
+    }
+
 
     DemodulatorThreadParameters &getParams() {
         return params;
@@ -71,4 +76,5 @@ protected:
     DemodulatorThreadWorkerCommandQueue *workerQueue;
     DemodulatorThreadWorkerResultQueue *workerResults;
     DemodulatorThreadCommandQueue* threadQueueNotify;
+    DemodulatorThreadControlCommandQueue *threadQueueControl;
 };

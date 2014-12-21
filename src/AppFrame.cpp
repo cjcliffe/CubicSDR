@@ -113,12 +113,12 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         wxGetApp().getAudioVisualQueue()->pop(demodAudioData);
         if (demodAudioData.data.size()) {
 
-            if (scopeCanvas->waveform_points.size() != demodAudioData.data.size()) {
-                scopeCanvas->waveform_points.resize(demodAudioData.data.size());
+            if (scopeCanvas->waveform_points.size() != demodAudioData.data.size()*2) {
+                scopeCanvas->waveform_points.resize(demodAudioData.data.size()*2);
             }
 
-            for (int i = 0, iMax = demodAudioData.data.size() / 2; i < iMax; i++) {
-                scopeCanvas->waveform_points[i * 2 + 1] = demodAudioData.data[i * 2] * 0.5f;
+            for (int i = 0, iMax = demodAudioData.data.size(); i < iMax; i++) {
+                scopeCanvas->waveform_points[i * 2 + 1] = demodAudioData.data[i] * 0.5f;
                 scopeCanvas->waveform_points[i * 2] = ((double) i / (double) iMax);
             }
 

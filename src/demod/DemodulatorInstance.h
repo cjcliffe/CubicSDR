@@ -16,6 +16,8 @@ public:
     DemodulatorThreadCommandQueue* threadQueueNotify;
     DemodulatorPreThread *demodulatorPreThread;
     DemodulatorThread *demodulatorThread;
+    DemodulatorThreadControlCommandQueue *threadQueueControl;
+
 #ifdef __APPLE__
     pthread_t t_PreDemod;
     pthread_t t_Demod;
@@ -47,6 +49,10 @@ public:
     bool isActive();
     void setActive(bool state);
 
+    void squelchAuto();
+    bool isSquelchEnabled();
+    void setSquelchEnabled(bool state);
+
 private:
     std::atomic<std::string *> label;
     bool terminated;
@@ -54,5 +60,6 @@ private:
     bool audioTerminated;
     bool preDemodTerminated;
     std::atomic<bool> active;
+    std::atomic<bool> squelch;
 };
 

@@ -8,9 +8,9 @@
 #include "DemodulatorPreThread.h"
 
 DemodulatorPreThread::DemodulatorPreThread(DemodulatorThreadInputQueue* pQueueIn, DemodulatorThreadPostInputQueue* pQueueOut,
-        DemodulatorThreadCommandQueue* threadQueueNotify) :
+        DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify) :
         inputQueue(pQueueIn), postInputQueue(pQueueOut), terminated(false), initialized(false), audio_resampler(NULL), resample_ratio(1), audio_resample_ratio(
-                1), resampler(NULL), commandQueue(NULL), fir_filter(NULL), audioInputQueue(NULL), threadQueueNotify(threadQueueNotify) {
+                1), resampler(NULL), commandQueue(NULL), fir_filter(NULL), audioInputQueue(NULL), threadQueueNotify(threadQueueNotify), threadQueueControl(threadQueueControl) {
 
     float kf = 0.5;         // modulation factor
     fdem = freqdem_create(kf);

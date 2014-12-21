@@ -181,7 +181,16 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         wxGetApp().removeDemodulator(activeDemod);
         wxGetApp().getDemodMgr().deleteThread(activeDemod);
         break;
-
+    case 'S':
+        if (!activeDemod) {
+            break;
+        }
+        if (activeDemod->isSquelchEnabled()) {
+            activeDemod->setSquelchEnabled(false);
+        } else {
+            activeDemod->squelchAuto();
+        }
+        break;
     default:
         event.Skip();
         return;
