@@ -163,13 +163,21 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     switch (event.GetKeyCode()) {
     case WXK_RIGHT:
         freq = wxGetApp().getFrequency();
-        freq += SRATE / 2;
+        if (shiftDown) {
+            freq += SRATE*10;
+        } else {
+            freq += SRATE / 2;
+        }
         wxGetApp().setFrequency(freq);
         ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), freq));
         break;
     case WXK_LEFT:
         freq = wxGetApp().getFrequency();
-        freq -= SRATE / 2;
+        if (shiftDown) {
+            freq -= SRATE*10;
+        } else {
+            freq -= SRATE / 2;
+        }
         wxGetApp().setFrequency(freq);
         ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), freq));
         break;
