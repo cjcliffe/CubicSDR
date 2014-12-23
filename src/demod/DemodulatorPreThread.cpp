@@ -186,9 +186,10 @@ void DemodulatorPreThread::threadMain() {
 
             DemodulatorThreadPostIQData resamp;
             resamp.data = new std::vector<liquid_float_complex>;
-            resamp.data->resize(bufSize);
+//            resamp.data->resize(bufSize);
+            resamp.data->assign(in_buf,in_buf+bufSize);
 
-            firfilt_crcf_execute_block(fir_filter, in_buf, bufSize, &((*resamp.data)[0]));
+//            firfilt_crcf_execute_block(fir_filter, in_buf, bufSize, &((*resamp.data)[0]));
 
             resamp.audio_resample_ratio = audio_resample_ratio;
             resamp.audio_resampler = audio_resampler;
