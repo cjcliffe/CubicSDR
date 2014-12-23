@@ -67,29 +67,43 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
 
         if (srcmix->currentInput.channels == 0 || !srcmix->currentInput.data) {
             if (!srcmix->inputQueue->empty()) {
+                if (srcmix->currentInput.data) {
+                    delete srcmix->currentInput.data;
+                }
                 srcmix->inputQueue->pop(srcmix->currentInput);
+                srcmix->audio_queue_ptr = 0;
             }
-            continue;
+            return 0;
         }
 
         if (srcmix->currentInput.channels == 1) {
             for (int i = 0; i < nBufferFrames; i++) {
-                if (srcmix->audio_queue_ptr >= srcmix->currentInput.data.size()) {
+                if (srcmix->audio_queue_ptr >= srcmix->currentInput.data->size()) {
+                    if (srcmix->currentInput.data) {
+                        delete srcmix->currentInput.data;
+                    }
                     srcmix->inputQueue->pop(srcmix->currentInput);
                     srcmix->audio_queue_ptr = 0;
                 }
-                float v = srcmix->currentInput.data[srcmix->audio_queue_ptr] * src->gain;
-                out[i * 2] += v;
-                out[i * 2 + 1] += v;
+                if (srcmix->currentInput.data && srcmix->currentInput.data->size()) {
+                    float v = (*srcmix->currentInput.data)[srcmix->audio_queue_ptr] * src->gain;
+                    out[i * 2] += v;
+                    out[i * 2 + 1] += v;
+                }
                 srcmix->audio_queue_ptr++;
             }
         } else {
             for (int i = 0, iMax = src->currentInput.channels * nBufferFrames; i < iMax; i++) {
                 if (srcmix->audio_queue_ptr >= srcmix->currentInput.data.size()) {
+                    if (srcmix->currentInput.data) {
+                        delete srcmix->currentInput.data;
+                    }
                     srcmix->inputQueue->pop(srcmix->currentInput);
                     srcmix->audio_queue_ptr = 0;
                 }
-                out[i] = out[i] + srcmix->currentInput.data[srcmix->audio_queue_ptr] * src->gain;
+                if (srcmix->currentInput.data && srcmix->currentInput.data->size()) {
+                    out[i] = out[i] + (*srcmix->currentInput.data)[srcmix->audio_queue_ptr] * src->gain;
+                }
                 srcmix->audio_queue_ptr++;
             }
         }
@@ -116,6 +130,7 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                 delete src->currentInput.data;
             }
             src->inputQueue->pop(src->currentInput);
+            src->audio_queue_ptr = 0;
         }
         return 0;
     }
@@ -132,7 +147,9 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                 src->inputQueue->pop(src->currentInput);
                 src->audio_queue_ptr = 0;
             }
-            out[i * 2] = out[i * 2 + 1] = (*src->currentInput.data)[src->audio_queue_ptr] * src->gain;
+            if (src->currentInput.data && src->currentInput.data->size()) {
+                out[i * 2] = out[i * 2 + 1] = (*src->currentInput.data)[src->audio_queue_ptr] * src->gain;
+            }
             src->audio_queue_ptr++;
         }
     } else {
@@ -144,7 +161,9 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                 src->inputQueue->pop(src->currentInput);
                 src->audio_queue_ptr = 0;
             }
-            out[i] = (*src->currentInput.data)[src->audio_queue_ptr] * src->gain;
+            if (src->currentInput.data && src->currentInput.data->size()) {
+                out[i] = (*src->currentInput.data)[src->audio_queue_ptr] * src->gain;
+            }
             src->audio_queue_ptr++;
         }
     }
@@ -305,13 +324,13 @@ void AudioThread::setActive(bool state) {
 #ifdef __APPLE__
     AudioThreadInput dummy;
     if (state && !active) {
-        deviceController[parameters.deviceId]->bindThread(this);
         while (!inputQueue->empty()) {  // flush queue
             inputQueue->pop(dummy);
             if (dummy.data) {
                 delete dummy.data;
             }
         }
+        deviceController[parameters.deviceId]->bindThread(this);
     } else if (!state && active) {
         deviceController[parameters.deviceId]->removeThread(this);
         while (!inputQueue->empty()) {  // flush queue

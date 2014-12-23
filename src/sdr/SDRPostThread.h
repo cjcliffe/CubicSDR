@@ -26,6 +26,8 @@ protected:
     std::atomic<SDRThreadIQDataQueue*> iqVisualQueue;
 
     std::vector<DemodulatorInstance *> demodulators;
+    std::vector<DemodulatorInstance *> demodulators_add;
+    std::vector<DemodulatorInstance *> demodulators_remove;
     std::atomic<bool> terminated;
     iirfilt_crcf dcFilter;
 };

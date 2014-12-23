@@ -63,7 +63,7 @@ public:
 	std::atomic<int> *refCount;
 
 	DemodulatorThreadIQData() :
-			frequency(0), bandwidth(0), data(NULL), refCount(0) {
+			frequency(0), bandwidth(0), data(NULL), refCount(NULL) {
 
 	}
 
@@ -80,8 +80,8 @@ public:
 
     void cleanup() {
         if (refCount) {
-            (*refCount)--;
-            if ((*refCount) <= 0) {
+            refCount->store(refCount->load()-1);
+            if (refCount->load() == 0) {
                 delete data;
                 data = NULL;
                 delete refCount;

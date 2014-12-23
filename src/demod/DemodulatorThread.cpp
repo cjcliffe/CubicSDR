@@ -67,8 +67,6 @@ void DemodulatorThread::threadMain() {
         unsigned int num_written;
         msresamp_crcf_execute(resampler, &((*inp.data)[0]), bufSize, resampled_data, &num_written);
 
-        delete inp.data;
-
         agc_crcf_execute_block(agc, resampled_data, num_written, agc_data);
 
         float audio_resample_ratio = inp.audio_resample_ratio;
@@ -138,6 +136,7 @@ void DemodulatorThread::threadMain() {
             }
         }
 
+        delete inp.data;
     }
 
     if (resampler != NULL) {

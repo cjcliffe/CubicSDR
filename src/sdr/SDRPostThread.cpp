@@ -11,7 +11,7 @@ SDRPostThread::~SDRPostThread() {
 }
 
 void SDRPostThread::bindDemodulator(DemodulatorInstance *demod) {
-    demodulators.push_back(demod);
+    demodulators_add.push_back(demod);
 }
 
 void SDRPostThread::removeDemodulator(DemodulatorInstance *demod) {
@@ -19,13 +19,7 @@ void SDRPostThread::removeDemodulator(DemodulatorInstance *demod) {
         return;
     }
 
-    std::vector<DemodulatorInstance *>::iterator i;
-
-    i = std::find(demodulators.begin(), demodulators.end(), demod);
-
-    if (i != demodulators.end()) {
-        demodulators.erase(i);
-    }
+    demodulators_remove.push_back(demod);
 }
 
 void SDRPostThread::setIQDataInQueue(SDRThreadIQDataQueue* iqDataQueue) {
@@ -88,48 +82,90 @@ void SDRPostThread::threadMain() {
                 iqVisualQueue.load()->push(visualDataOut);
             }
 
-            std::atomic<int> *c = new std::atomic<int>;
-            c->store(demodulators.size());
 
-            bool demodActive = false;
+            if (demodulators_add.size()) {
+                while (!demodulators_add.empty()) {
+                    demodulators.push_back(demodulators_add.back());
+                    demodulators_add.pop_back();
+                }
+            }
+            if (demodulators_remove.size()) {
+                while (!demodulators_remove.empty()) {
+                    DemodulatorInstance *demod = demodulators_remove.back();
+                    demodulators_remove.pop_back();
+
+                    std::vector<DemodulatorInstance *>::iterator i = std::find(demodulators.begin(), demodulators.end(), demod);
+
+                    if (i != demodulators.end()) {
+                        demodulators.erase(i);
+                    }
+                }
+            }
+
+            int activeDemods = 0;
+            bool pushedData = false;
+            std::atomic<int> *c = new std::atomic<int>;
 
             if (demodulators.size()) {
-                DemodulatorThreadIQData dummyDataOut;
-                dummyDataOut.frequency = data_in.frequency;
-                dummyDataOut.bandwidth = data_in.bandwidth;
-                DemodulatorThreadIQData demodDataOut;
-                demodDataOut.frequency = data_in.frequency;
-                demodDataOut.bandwidth = data_in.bandwidth;
-                demodDataOut.setRefCount(c);
-                demodDataOut.data = data_in.data;
 
                 std::vector<DemodulatorInstance *>::iterator i;
                 for (i = demodulators.begin(); i != demodulators.end(); i++) {
                     DemodulatorInstance *demod = *i;
-                    DemodulatorThreadInputQueue *demodQueue = demod->threadQueueDemod;
 
                     if (demod->getParams().frequency != data_in.frequency
-                            && abs(data_in.frequency - demod->getParams().frequency) > (int) ((float) ((float) SRATE / 2.0) * 1.15)) {
-                        if (demod->isActive()) {
-                            demod->setActive(false);
-                            demodQueue->push(dummyDataOut);
-                            c->store(c->load() - 1);
+                            && abs(data_in.frequency - demod->getParams().frequency) > (int) ((float) ((float) SRATE / 2.0))) {
+                        continue;
+                    }
+                    activeDemods++;
+                }
+
+                c->store(activeDemods);
+
+                bool demodActive = false;
+
+                if (demodulators.size()) {
+                    DemodulatorThreadIQData dummyDataOut;
+                    dummyDataOut.frequency = data_in.frequency;
+                    dummyDataOut.bandwidth = data_in.bandwidth;
+                    dummyDataOut.data = NULL;
+                    DemodulatorThreadIQData demodDataOut;
+                    demodDataOut.frequency = data_in.frequency;
+                    demodDataOut.bandwidth = data_in.bandwidth;
+                    demodDataOut.setRefCount(c);
+                    demodDataOut.data = data_in.data;
+
+                    std::vector<DemodulatorInstance *>::iterator i;
+                    for (i = demodulators.begin(); i != demodulators.end(); i++) {
+                        DemodulatorInstance *demod = *i;
+                        DemodulatorThreadInputQueue *demodQueue = demod->threadQueueDemod;
+
+                        if (demod->getParams().frequency != data_in.frequency
+                                && abs(data_in.frequency - demod->getParams().frequency) > (int) ((float) ((float) SRATE / 2.0))) {
+                            if (demod->isActive()) {
+                                demod->setActive(false);
+                                demodQueue->push(dummyDataOut);
+                            }
+                        } else if (!demod->isActive()) {
+                            demod->setActive(true);
+                        }
+
+                        if (!demod->isActive()) {
                             continue;
                         }
-                    } else if (!demod->isActive()) {
-                        demod->setActive(true);
-                    }
 
-                    demodQueue->push(demodDataOut);
-                    demodActive = true;
+                        demodQueue->push(demodDataOut);
+                        pushedData = true;
+                    }
                 }
             }
 
-            if (!demodActive) {
+            if (!pushedData) {
                 delete dataOut.data;
                 delete c;
             }
         }
+
+
     }
     std::cout << "SDR post-processing thread done." << std::endl;
 }
