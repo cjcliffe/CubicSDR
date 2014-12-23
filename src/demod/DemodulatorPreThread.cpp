@@ -157,8 +157,8 @@ void DemodulatorPreThread::threadMain() {
             continue;
         }
 
-        std::vector<signed char> *data = &inp.data;
-        if (data->size()) {
+        std::vector<signed char> *data = inp.data;
+        if (data && data->size()) {
             int bufSize = data->size() / 2;
 
             liquid_float_complex in_buf_data[bufSize];
@@ -185,9 +185,10 @@ void DemodulatorPreThread::threadMain() {
             }
 
             DemodulatorThreadPostIQData resamp;
-            resamp.data.resize(bufSize);
+            resamp.data = new std::vector<liquid_float_complex>;
+            resamp.data->resize(bufSize);
 
-            firfilt_crcf_execute_block(fir_filter, in_buf, bufSize, &resamp.data[0]);
+            firfilt_crcf_execute_block(fir_filter, in_buf, bufSize, &((*resamp.data)[0]));
 
             resamp.audio_resample_ratio = audio_resample_ratio;
             resamp.audio_resampler = audio_resampler;
@@ -195,6 +196,7 @@ void DemodulatorPreThread::threadMain() {
             resamp.resampler = resampler;
 
             postInputQueue->push(resamp);
+            inp.cleanup();
         }
 
         if (!workerResults->empty()) {

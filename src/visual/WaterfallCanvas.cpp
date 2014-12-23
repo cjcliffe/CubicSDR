@@ -33,7 +33,7 @@ WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0), dragState(WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), shiftDown(
         false), altDown(false), ctrlDown(false), activeDemodulatorBandwidth(0), activeDemodulatorFrequency(0) {
 
-    int in_block_size = BUF_SIZE / 2;
+    int in_block_size = FFT_SIZE;
     int out_block_size = FFT_SIZE;
 
     in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * in_block_size);
@@ -204,7 +204,7 @@ void WaterfallCanvas::setData(std::vector<signed char> *data) {
             spectrum_points.resize(FFT_SIZE * 2);
         }
 
-        for (int i = 0; i < BUF_SIZE / 2; i++) {
+        for (int i = 0; i < FFT_SIZE; i++) {
             in[i][0] = (float) (*data)[i * 2] / 127.0f;
             in[i][1] = (float) (*data)[i * 2 + 1] / 127.0f;
         }

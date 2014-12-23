@@ -39,9 +39,14 @@ void DemodulatorThread::threadMain() {
         DemodulatorThreadPostIQData inp;
         postInputQueue->pop(inp);
 
-        int bufSize = inp.data.size();
+        if (!inp.data) {
+            continue;
+        }
+
+        int bufSize = inp.data->size();
 
         if (!bufSize) {
+            delete inp.data;
             continue;
         }
 
@@ -60,7 +65,9 @@ void DemodulatorThread::threadMain() {
         liquid_float_complex agc_data[out_size];
 
         unsigned int num_written;
-        msresamp_crcf_execute(resampler, &inp.data[0], bufSize, resampled_data, &num_written);
+        msresamp_crcf_execute(resampler, &((*inp.data)[0]), bufSize, resampled_data, &num_written);
+
+        delete inp.data;
 
         agc_crcf_execute_block(agc, resampled_data, num_written, agc_data);
 
@@ -77,7 +84,8 @@ void DemodulatorThread::threadMain() {
 
         AudioThreadInput ati;
         ati.channels = 1;
-        ati.data.assign(resampled_audio_output,resampled_audio_output+num_audio_written);
+        ati.data = new std::vector<float>;
+        ati.data->assign(resampled_audio_output,resampled_audio_output+num_audio_written);
 
         if (audioInputQueue != NULL) {
             if (!squelch_enabled || ((agc_crcf_get_signal_level(agc)) >= 0.1)) {
@@ -94,12 +102,14 @@ void DemodulatorThread::threadMain() {
                 if (num_vis > num_audio_written) {
                     num_vis = num_audio_written;
                 }
-                ati_vis.data.assign(ati.data.begin(), ati.data.begin()+num_vis);
+                ati_vis.data = new std::vector<float>;
+                ati_vis.data->assign(ati.data->begin(), ati.data->begin()+num_vis);
             } else {
                 if (num_vis > num_written) {
                     num_vis = num_written;
                 }
-                ati_vis.data.assign(demod_output, demod_output + num_vis);
+                ati_vis.data = new std::vector<float>;
+                ati_vis.data->assign(demod_output, demod_output + num_vis);
             }
 
             visOutQueue->push(ati_vis);

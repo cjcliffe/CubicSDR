@@ -156,10 +156,10 @@ void SDRThread::threadMain() {
 
         rtlsdr_read_sync(dev, buf, BUF_SIZE, &n_read);
 
-        std::vector<signed char> new_buffer;
+        std::vector<signed char> *new_buffer = new std::vector<signed char>;
 
         for (int i = 0; i < n_read; i++) {
-            new_buffer.push_back(buf[i] - 127);
+            new_buffer->push_back(buf[i] - 127);
         }
 
         double time_slice = (double) n_read / (double) sample_rate;

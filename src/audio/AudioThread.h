@@ -24,7 +24,7 @@ public:
     int sampleRate;
     int channels;
 
-    AudioThreadInput(): frequency(0), sampleRate(0), channels(0) {
+    AudioThreadInput(): frequency(0), sampleRate(0), channels(0), data(NULL) {
 
     }
 
@@ -32,7 +32,7 @@ public:
 
     }
 
-    std::vector<float> data;
+    std::vector<float> *data;
 };
 
 class AudioThreadCommand {

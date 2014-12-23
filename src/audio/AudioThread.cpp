@@ -65,7 +65,7 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
             continue;
         }
 
-        if (srcmix->currentInput.channels == 0) {
+        if (srcmix->currentInput.channels == 0 || !srcmix->currentInput.data) {
             if (!srcmix->inputQueue->empty()) {
                 srcmix->inputQueue->pop(srcmix->currentInput);
             }
@@ -110,8 +110,11 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
         std::cout << "Audio buffer underflow.." << (src->underflow_count++) << std::endl;
     }
 
-    if (src->currentInput.channels == 0) {
+    if (src->currentInput.channels == 0 || !src->currentInput.data) {
         if (!src->inputQueue->empty()) {
+            if (src->currentInput.data) {
+                delete src->currentInput.data;
+            }
             src->inputQueue->pop(src->currentInput);
         }
         return 0;
@@ -119,26 +122,29 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
 
     if (src->currentInput.channels == 1) {
         for (int i = 0; i < nBufferFrames; i++) {
-            if (src->audio_queue_ptr >= src->currentInput.data.size()) {
+            if (src->audio_queue_ptr >= src->currentInput.data->size()) {
+                if (src->currentInput.data) {
+                    delete src->currentInput.data;
+                }
                 if (src->terminated) {
                     break;
                 }
                 src->inputQueue->pop(src->currentInput);
                 src->audio_queue_ptr = 0;
             }
-            out[i * 2] = out[i * 2 + 1] = src->currentInput.data[src->audio_queue_ptr] * src->gain;
+            out[i * 2] = out[i * 2 + 1] = (*src->currentInput.data)[src->audio_queue_ptr] * src->gain;
             src->audio_queue_ptr++;
         }
     } else {
         for (int i = 0, iMax = src->currentInput.channels * nBufferFrames; i < iMax; i++) {
-            if (src->audio_queue_ptr >= src->currentInput.data.size()) {
+            if (src->audio_queue_ptr >= src->currentInput.data->size()) {
                 if (src->terminated) {
                     break;
                 }
                 src->inputQueue->pop(src->currentInput);
                 src->audio_queue_ptr = 0;
             }
-            out[i] = src->currentInput.data[src->audio_queue_ptr] * src->gain;
+            out[i] = (*src->currentInput.data)[src->audio_queue_ptr] * src->gain;
             src->audio_queue_ptr++;
         }
     }
@@ -302,11 +308,17 @@ void AudioThread::setActive(bool state) {
         deviceController[parameters.deviceId]->bindThread(this);
         while (!inputQueue->empty()) {  // flush queue
             inputQueue->pop(dummy);
+            if (dummy.data) {
+                delete dummy.data;
+            }
         }
     } else if (!state && active) {
         deviceController[parameters.deviceId]->removeThread(this);
         while (!inputQueue->empty()) {  // flush queue
             inputQueue->pop(dummy);
+            if (dummy.data) {
+                delete dummy.data;
+            }
         }
     }
 #endif

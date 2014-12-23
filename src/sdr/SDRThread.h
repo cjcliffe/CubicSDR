@@ -38,14 +38,14 @@ class SDRThreadIQData {
 public:
     unsigned int frequency;
     unsigned int bandwidth;
-    std::vector<signed char> data;
+    std::vector<signed char> *data;
 
     SDRThreadIQData() :
-            frequency(0), bandwidth(0) {
+            frequency(0), bandwidth(0), data(NULL) {
 
     }
 
-    SDRThreadIQData(unsigned int bandwidth, unsigned int frequency, std::vector<signed char> data) :
+    SDRThreadIQData(unsigned int bandwidth, unsigned int frequency, std::vector<signed char> *data) :
             data(data), frequency(frequency), bandwidth(bandwidth) {
 
     }
