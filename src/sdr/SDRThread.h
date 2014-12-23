@@ -38,7 +38,7 @@ class SDRThreadIQData {
 public:
     unsigned int frequency;
     unsigned int bandwidth;
-    std::vector<signed char> *data;
+    std::vector<signed char> data;
 
     SDRThreadIQData() :
             frequency(0), bandwidth(0), data(NULL) {
@@ -46,7 +46,7 @@ public:
     }
 
     SDRThreadIQData(unsigned int bandwidth, unsigned int frequency, std::vector<signed char> *data) :
-            frequency(frequency), bandwidth(bandwidth), data(data) {
+            frequency(frequency), bandwidth(bandwidth) {
 
     }
 
@@ -56,7 +56,7 @@ public:
 };
 
 typedef ThreadQueue<SDRThreadCommand> SDRThreadCommandQueue;
-typedef ThreadQueue<SDRThreadIQData> SDRThreadIQDataQueue;
+typedef ThreadQueue<SDRThreadIQData *> SDRThreadIQDataQueue;
 
 class SDRThread {
 public:

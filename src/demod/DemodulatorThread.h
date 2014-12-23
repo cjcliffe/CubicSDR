@@ -6,7 +6,7 @@
 #include "DemodDefs.h"
 #include "AudioThread.h"
 
-typedef ThreadQueue<AudioThreadInput> DemodulatorThreadOutputQueue;
+typedef ThreadQueue<AudioThreadInput *> DemodulatorThreadOutputQueue;
 
 #define DEMOD_VIS_SIZE 2048
 

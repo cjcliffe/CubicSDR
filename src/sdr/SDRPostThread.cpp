@@ -50,25 +50,25 @@ void SDRPostThread::threadMain() {
     std::cout << "SDR post-processing thread started.." << std::endl;
 
     while (!terminated) {
-        SDRThreadIQData data_in;
+        SDRThreadIQData *data_in;
 
         iqDataInQueue.load()->pop(data_in);
 
-        if (data_in.data && data_in.data->size()) {
-            SDRThreadIQData dataOut;
+        if (data_in && data_in->data.size()) {
+            SDRThreadIQData *dataOut = new SDRThreadIQData;
 
-            dataOut.frequency = data_in.frequency;
-            dataOut.bandwidth = data_in.bandwidth;
-            dataOut.data = data_in.data;
+            dataOut->frequency = data_in->frequency;
+            dataOut->bandwidth = data_in->bandwidth;
+            dataOut->data.assign(data_in->data.begin(), data_in->data.end());
 
-            for (int i = 0, iMax = dataOut.data->size() / 2; i < iMax; i++) {
-                x.real = (float) (*dataOut.data)[i * 2] / 127.0;
-                x.imag = (float) (*dataOut.data)[i * 2 + 1] / 127.0;
+            for (int i = 0, iMax = dataOut->data.size() / 2; i < iMax; i++) {
+                x.real = (float) dataOut->data[i * 2] / 127.0;
+                x.imag = (float) dataOut->data[i * 2 + 1] / 127.0;
 
                 iirfilt_crcf_execute(dcFilter, x, &y);
 
-                (*dataOut.data)[i * 2] = (signed char) floor(y.real * 127.0);
-                (*dataOut.data)[i * 2 + 1] = (signed char) floor(y.imag * 127.0);
+                dataOut->data[i * 2] = (signed char) floor(y.real * 127.0);
+                dataOut->data[i * 2 + 1] = (signed char) floor(y.imag * 127.0);
             }
 
             if (iqDataOutQueue != NULL) {
@@ -76,9 +76,8 @@ void SDRPostThread::threadMain() {
             }
 
             if (iqVisualQueue != NULL && iqVisualQueue.load()->empty()) {
-                SDRThreadIQData visualDataOut;
-                visualDataOut.data = new std::vector<signed char>;
-                visualDataOut.data->assign(dataOut.data->begin(), dataOut.data->begin() + (FFT_SIZE * 2));
+                SDRThreadIQData *visualDataOut = new SDRThreadIQData;
+                visualDataOut->data.assign(dataOut->data.begin(), dataOut->data.begin() + (FFT_SIZE * 2));
                 iqVisualQueue.load()->push(visualDataOut);
             }
 
@@ -110,34 +109,32 @@ void SDRPostThread::threadMain() {
                 for (i = demodulators.begin(); i != demodulators.end(); i++) {
                     DemodulatorInstance *demod = *i;
 
-                    if (demod->getParams().frequency != data_in.frequency
-                            && abs(data_in.frequency - demod->getParams().frequency) > (int) ((float) ((float) SRATE / 2.0))) {
+                    if (demod->getParams().frequency != data_in->frequency
+                            && abs(data_in->frequency - demod->getParams().frequency) > (int) ((float) ((float) SRATE / 2.0))) {
                         continue;
                     }
                     activeDemods++;
                 }
 
-                bool demodActive = false;
-
                 if (demodulators.size()) {
                     DemodulatorThreadIQData *demodDataOut = new DemodulatorThreadIQData;
-                    demodDataOut->frequency = data_in.frequency;
-                    demodDataOut->bandwidth = data_in.bandwidth;
+                    demodDataOut->frequency = data_in->frequency;
+                    demodDataOut->bandwidth = data_in->bandwidth;
                     demodDataOut->setRefCount(activeDemods);
-                    demodDataOut->data.assign(dataOut.data->begin(), dataOut.data->begin() + dataOut.data->size());
+                    demodDataOut->data.assign(dataOut->data.begin(), dataOut->data.begin() + dataOut->data.size());
 
                     std::vector<DemodulatorInstance *>::iterator i;
                     for (i = demodulators.begin(); i != demodulators.end(); i++) {
                         DemodulatorInstance *demod = *i;
                         DemodulatorThreadInputQueue *demodQueue = demod->threadQueueDemod;
 
-                        if (demod->getParams().frequency != data_in.frequency
-                                && abs(data_in.frequency - demod->getParams().frequency) > (int) ((float) ((float) SRATE / 2.0))) {
+                        if (demod->getParams().frequency != data_in->frequency
+                                && abs(data_in->frequency - demod->getParams().frequency) > (int) ((float) ((float) SRATE / 2.0))) {
                             if (demod->isActive()) {
                                 demod->setActive(false);
                                 DemodulatorThreadIQData *dummyDataOut = new DemodulatorThreadIQData;
-                                dummyDataOut->frequency = data_in.frequency;
-                                dummyDataOut->bandwidth = data_in.bandwidth;
+                                dummyDataOut->frequency = data_in->frequency;
+                                dummyDataOut->bandwidth = data_in->bandwidth;
                                 demodQueue->push(dummyDataOut);
                             }
                         } else if (!demod->isActive()) {
@@ -157,7 +154,10 @@ void SDRPostThread::threadMain() {
                     }
                 }
             }
-            delete dataOut.data;
+            delete dataOut;
+        }
+        if (data_in) {
+            delete data_in;
         }
     }
     std::cout << "SDR post-processing thread done." << std::endl;
@@ -165,6 +165,6 @@ void SDRPostThread::threadMain() {
 
 void SDRPostThread::terminate() {
     terminated = true;
-    SDRThreadIQData dummy;
+    SDRThreadIQData *dummy = new SDRThreadIQData;
     iqDataInQueue.load()->push(dummy);
 }

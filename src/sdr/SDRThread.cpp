@@ -158,19 +158,16 @@ void SDRThread::threadMain() {
 
         rtlsdr_read_sync(dev, buf, BUF_SIZE, &n_read);
 
-        std::vector<signed char> *new_buffer = new std::vector<signed char>;
+        SDRThreadIQData *dataOut = new SDRThreadIQData;
+        dataOut->frequency = frequency;
+        dataOut->bandwidth = bandwidth;
 
         for (int i = 0; i < n_read; i++) {
-            new_buffer->push_back(buf[i] - 127);
+            dataOut->data.push_back(buf[i] - 127);
         }
 
         double time_slice = (double) n_read / (double) sample_rate;
         seconds += time_slice;
-
-        SDRThreadIQData dataOut;
-        dataOut.frequency = frequency;
-        dataOut.bandwidth = bandwidth;
-        dataOut.data = new_buffer;
 
         if (iqDataOutQueue != NULL) {
             iqDataOutQueue.load()->push(dataOut);

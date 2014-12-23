@@ -76,10 +76,9 @@ void DemodulatorThread::threadMain() {
         unsigned int num_audio_written;
         msresamp_rrrf_execute(audio_resampler, demod_output, num_written, resampled_audio_output, &num_audio_written);
 
-        AudioThreadInput ati;
-        ati.channels = 1;
-        ati.data = new std::vector<float>;
-        ati.data->assign(resampled_audio_output,resampled_audio_output+num_audio_written);
+        AudioThreadInput *ati = new AudioThreadInput;
+        ati->channels = 1;
+        ati->data.assign(resampled_audio_output,resampled_audio_output+num_audio_written);
 
         if (audioInputQueue != NULL) {
             if (!squelch_enabled || ((agc_crcf_get_signal_level(agc)) >= 0.1)) {
@@ -88,22 +87,20 @@ void DemodulatorThread::threadMain() {
         }
 
         if (visOutQueue != NULL && visOutQueue->empty()) {
-            AudioThreadInput ati_vis;
-            ati_vis.channels = ati.channels;
+            AudioThreadInput *ati_vis = new AudioThreadInput;
+            ati_vis->channels = ati->channels;
 
             int num_vis = DEMOD_VIS_SIZE;
             if (num_audio_written > num_written) {
                 if (num_vis > num_audio_written) {
                     num_vis = num_audio_written;
                 }
-                ati_vis.data = new std::vector<float>;
-                ati_vis.data->assign(ati.data->begin(), ati.data->begin()+num_vis);
+                ati_vis->data.assign(ati->data.begin(), ati->data.begin()+num_vis);
             } else {
                 if (num_vis > num_written) {
                     num_vis = num_written;
                 }
-                ati_vis.data = new std::vector<float>;
-                ati_vis.data->assign(demod_output, demod_output + num_vis);
+                ati_vis->data.assign(demod_output, demod_output + num_vis);
             }
 
             visOutQueue->push(ati_vis);
