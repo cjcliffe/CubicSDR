@@ -26,12 +26,12 @@ public:
     };
 
     DemodulatorThreadCommand() :
-            cmd(DEMOD_THREAD_CMD_NULL), int_value(0), context(NULL) {
+            cmd(DEMOD_THREAD_CMD_NULL), context(NULL), int_value(0) {
 
     }
 
     DemodulatorThreadCommand(DemodulatorThreadCommandEnum cmd) :
-            cmd(cmd), int_value(0), context(NULL) {
+            cmd(cmd), context(NULL), int_value(0) {
 
 	}
 
@@ -59,61 +59,44 @@ class DemodulatorThreadIQData {
 public:
 	unsigned int frequency;
 	unsigned int bandwidth;
-	std::vector<signed char> *data;
-	std::atomic<int> *refCount;
+	std::vector<signed char> data;
 
 	DemodulatorThreadIQData() :
-			frequency(0), bandwidth(0), data(NULL), refCount(NULL) {
+			frequency(0), bandwidth(0), refCount(0) {
 
 	}
 
-	DemodulatorThreadIQData(const DemodulatorThreadIQData& o) {
-	    frequency = o.frequency;
-	    bandwidth = o.bandwidth;
-	    data = o.data;
-	    refCount = o.refCount;
-	}
-
-    void setRefCount(std::atomic<int> *rc) {
-        refCount = rc;
+    void setRefCount(int rc) {
+        refCount.store(rc);
     }
 
-    void cleanup() {
-        if (refCount) {
-            refCount->store(refCount->load()-1);
-            if (refCount->load() == 0) {
-                delete data;
-                data = NULL;
-                delete refCount;
-                refCount = NULL;
-            }
-        }
+    void decRefCount() {
+        refCount.store(refCount.load()-1);
+    }
+
+    int getRefCount() {
+        return refCount.load();
     }
 
 	~DemodulatorThreadIQData() {
 
 	}
+private:
+    std::atomic<int> refCount;
+
 };
 
 class DemodulatorThreadPostIQData {
 public:
-	std::vector<liquid_float_complex> *data;
+	std::vector<liquid_float_complex> data;
 	float audio_resample_ratio;
 	msresamp_rrrf audio_resampler;
     float resample_ratio;
     msresamp_crcf resampler;
 
-	DemodulatorThreadPostIQData(): audio_resample_ratio(0), audio_resampler(NULL), resample_ratio(0), resampler(NULL), data(NULL) {
+	DemodulatorThreadPostIQData(): audio_resample_ratio(0), audio_resampler(NULL), resample_ratio(0), resampler(NULL) {
 
 	}
-
-    DemodulatorThreadPostIQData(const DemodulatorThreadPostIQData &o) {
-        audio_resample_ratio = o.audio_resample_ratio;
-        audio_resampler = o.audio_resampler;
-        resample_ratio = o.resample_ratio;
-        resampler = o.resampler;
-        data = o.data;
-    }
 
 	~DemodulatorThreadPostIQData() {
 
@@ -130,14 +113,13 @@ public:
 	std::vector<float> *data;
 
 	DemodulatorThreadAudioData() :
-			sampleRate(0), frequency(0), channels(0), data(NULL) {
+			frequency(0), sampleRate(0), channels(0), data(NULL) {
 
 	}
 
 	DemodulatorThreadAudioData(unsigned int frequency, unsigned int sampleRate,
 			std::vector<float> *data) :
-			data(data), sampleRate(sampleRate), frequency(frequency), channels(
-					1) {
+			frequency(frequency), sampleRate(sampleRate), channels(1), data(data) {
 
 	}
 
@@ -146,8 +128,8 @@ public:
 	}
 };
 
-typedef ThreadQueue<DemodulatorThreadIQData> DemodulatorThreadInputQueue;
-typedef ThreadQueue<DemodulatorThreadPostIQData> DemodulatorThreadPostInputQueue;
+typedef ThreadQueue<DemodulatorThreadIQData *> DemodulatorThreadInputQueue;
+typedef ThreadQueue<DemodulatorThreadPostIQData *> DemodulatorThreadPostInputQueue;
 typedef ThreadQueue<DemodulatorThreadCommand> DemodulatorThreadCommandQueue;
 typedef ThreadQueue<DemodulatorThreadControlCommand> DemodulatorThreadControlCommandQueue;
 

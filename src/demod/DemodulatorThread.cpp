@@ -7,7 +7,7 @@
 #endif
 
 DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* pQueue, DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify) :
-        postInputQueue(pQueue), visOutQueue(NULL), terminated(false), audioInputQueue(NULL), threadQueueNotify(threadQueueNotify), threadQueueControl(threadQueueControl), agc(NULL), squelch_enabled(false), squelch_level(0), squelch_tolerance(0) {
+        postInputQueue(pQueue), visOutQueue(NULL), audioInputQueue(NULL), agc(NULL), terminated(false), threadQueueNotify(threadQueueNotify), threadQueueControl(threadQueueControl), squelch_level(0), squelch_tolerance(0), squelch_enabled(false) {
 
     float kf = 0.5;         // modulation factor
     fdem = freqdem_create(kf);
@@ -36,40 +36,36 @@ void DemodulatorThread::threadMain() {
 
     std::cout << "Demodulator thread started.." << std::endl;
     while (!terminated) {
-        DemodulatorThreadPostIQData inp;
+        DemodulatorThreadPostIQData *inp;
         postInputQueue->pop(inp);
 
-        if (!inp.data) {
-            continue;
-        }
-
-        int bufSize = inp.data->size();
+        int bufSize = inp->data.size();
 
         if (!bufSize) {
-            delete inp.data;
+            delete inp;
             continue;
         }
 
         if (resampler == NULL) {
-            resampler = inp.resampler;
-            audio_resampler = inp.audio_resampler;
-        } else if (resampler != inp.resampler) {
+            resampler = inp->resampler;
+            audio_resampler = inp->audio_resampler;
+        } else if (resampler != inp->resampler) {
             msresamp_crcf_destroy(resampler);
             msresamp_rrrf_destroy(audio_resampler);
-            resampler = inp.resampler;
-            audio_resampler = inp.audio_resampler;
+            resampler = inp->resampler;
+            audio_resampler = inp->audio_resampler;
         }
 
-        int out_size = ceil((float) (bufSize) * inp.resample_ratio);
+        int out_size = ceil((float) (bufSize) * inp->resample_ratio);
         liquid_float_complex resampled_data[out_size];
         liquid_float_complex agc_data[out_size];
 
         unsigned int num_written;
-        msresamp_crcf_execute(resampler, &((*inp.data)[0]), bufSize, resampled_data, &num_written);
+        msresamp_crcf_execute(resampler, &(inp->data[0]), bufSize, resampled_data, &num_written);
 
         agc_crcf_execute_block(agc, resampled_data, num_written, agc_data);
 
-        float audio_resample_ratio = inp.audio_resample_ratio;
+        float audio_resample_ratio = inp->audio_resample_ratio;
         float demod_output[num_written];
 
         freqdem_demodulate_block(fdem, agc_data, num_written, demod_output);
@@ -80,10 +76,9 @@ void DemodulatorThread::threadMain() {
         unsigned int num_audio_written;
         msresamp_rrrf_execute(audio_resampler, demod_output, num_written, resampled_audio_output, &num_audio_written);
 
-        AudioThreadInput ati;
-        ati.channels = 1;
-        ati.data = new std::vector<float>;
-        ati.data->assign(resampled_audio_output,resampled_audio_output+num_audio_written);
+        AudioThreadInput *ati = new AudioThreadInput;
+        ati->channels = 1;
+        ati->data.assign(resampled_audio_output,resampled_audio_output+num_audio_written);
 
         if (audioInputQueue != NULL) {
             if (!squelch_enabled || ((agc_crcf_get_signal_level(agc)) >= 0.1)) {
@@ -92,22 +87,20 @@ void DemodulatorThread::threadMain() {
         }
 
         if (visOutQueue != NULL && visOutQueue->empty()) {
-            AudioThreadInput ati_vis;
-            ati_vis.channels = ati.channels;
+            AudioThreadInput *ati_vis = new AudioThreadInput;
+            ati_vis->channels = ati->channels;
 
             int num_vis = DEMOD_VIS_SIZE;
             if (num_audio_written > num_written) {
                 if (num_vis > num_audio_written) {
                     num_vis = num_audio_written;
                 }
-                ati_vis.data = new std::vector<float>;
-                ati_vis.data->assign(ati.data->begin(), ati.data->begin()+num_vis);
+                ati_vis->data.assign(ati->data.begin(), ati->data.begin()+num_vis);
             } else {
                 if (num_vis > num_written) {
                     num_vis = num_written;
                 }
-                ati_vis.data = new std::vector<float>;
-                ati_vis.data->assign(demod_output, demod_output + num_vis);
+                ati_vis->data.assign(demod_output, demod_output + num_vis);
             }
 
             visOutQueue->push(ati_vis);
@@ -136,7 +129,7 @@ void DemodulatorThread::threadMain() {
             }
         }
 
-        delete inp.data;
+        delete inp;
     }
 
     if (resampler != NULL) {
@@ -156,6 +149,6 @@ void DemodulatorThread::threadMain() {
 
 void DemodulatorThread::terminate() {
     terminated = true;
-    DemodulatorThreadPostIQData inp;    // push dummy to nudge queue
+    DemodulatorThreadPostIQData *inp = new DemodulatorThreadPostIQData;    // push dummy to nudge queue
     postInputQueue->push(inp);
 }

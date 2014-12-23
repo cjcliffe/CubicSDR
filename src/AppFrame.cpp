@@ -96,14 +96,14 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 //    std::this_thread::yield();
 //#endif
     if (!wxGetApp().getIQVisualQueue()->empty()) {
-        SDRThreadIQData iqData;
+        SDRThreadIQData *iqData;
         wxGetApp().getIQVisualQueue()->pop(iqData);
 
-        if (iqData.data && iqData.data->size()) {
-            spectrumCanvas->setData(iqData.data);
-            waterfallCanvas->setData(iqData.data);
+        if (iqData && iqData->data.size()) {
+            spectrumCanvas->setData(&iqData->data);
+            waterfallCanvas->setData(&iqData->data);
 
-            delete iqData.data;
+            delete iqData;
         } else {
             std::cout << "Incoming IQ data empty?" << std::endl;
         }
@@ -111,20 +111,19 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     }
 
     if (!wxGetApp().getAudioVisualQueue()->empty()) {
-        AudioThreadInput demodAudioData;
+        AudioThreadInput *demodAudioData;
         wxGetApp().getAudioVisualQueue()->pop(demodAudioData);
-        if (demodAudioData.data && demodAudioData.data->size()) {
-
-            if (scopeCanvas->waveform_points.size() != demodAudioData.data->size()*2) {
-                scopeCanvas->waveform_points.resize(demodAudioData.data->size()*2);
+        if (demodAudioData && demodAudioData->data.size()) {
+            if (scopeCanvas->waveform_points.size() != demodAudioData->data.size()*2) {
+                scopeCanvas->waveform_points.resize(demodAudioData->data.size()*2);
             }
 
-            for (int i = 0, iMax = demodAudioData.data->size(); i < iMax; i++) {
-                scopeCanvas->waveform_points[i * 2 + 1] = (*demodAudioData.data)[i] * 0.5f;
+            for (int i = 0, iMax = demodAudioData->data.size(); i < iMax; i++) {
+                scopeCanvas->waveform_points[i * 2 + 1] = demodAudioData->data[i] * 0.5f;
                 scopeCanvas->waveform_points[i * 2] = ((double) i / (double) iMax);
             }
 
-            delete demodAudioData.data;
+            delete demodAudioData;
         } else {
             std::cout << "Incoming Demodulator data empty?" << std::endl;
         }

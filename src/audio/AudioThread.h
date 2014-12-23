@@ -24,7 +24,7 @@ public:
     int sampleRate;
     int channels;
 
-    AudioThreadInput(): frequency(0), sampleRate(0), channels(0), data(NULL) {
+    AudioThreadInput(): frequency(0), sampleRate(0), channels(0) {
 
     }
 
@@ -32,7 +32,7 @@ public:
 
     }
 
-    std::vector<float> *data;
+    std::vector<float> data;
 };
 
 class AudioThreadCommand {
@@ -49,13 +49,13 @@ public:
     int int_value;
 };
 
-typedef ThreadQueue<AudioThreadInput> AudioThreadInputQueue;
+typedef ThreadQueue<AudioThreadInput *> AudioThreadInputQueue;
 typedef ThreadQueue<AudioThreadCommand> AudioThreadCommandQueue;
 
 class AudioThread {
 public:
 
-    AudioThreadInput currentInput;
+    AudioThreadInput *currentInput;
     AudioThreadInputQueue *inputQueue;
     std::atomic<unsigned int> audio_queue_ptr;
     std::atomic<unsigned int> underflow_count;

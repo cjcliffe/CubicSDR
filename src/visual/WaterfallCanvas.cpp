@@ -30,8 +30,7 @@ wxEND_EVENT_TABLE()
 
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0), dragState(WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), shiftDown(
-        false), altDown(false), ctrlDown(false), activeDemodulatorBandwidth(0), activeDemodulatorFrequency(0) {
+                   wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0), activeDemodulatorBandwidth(0), activeDemodulatorFrequency(0), dragState(WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), shiftDown(false), altDown(false), ctrlDown(false) {
 
     int in_block_size = FFT_SIZE;
     int out_block_size = FFT_SIZE;

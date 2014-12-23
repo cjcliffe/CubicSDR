@@ -13,7 +13,7 @@ public:
 
     void setIQDataInQueue(SDRThreadIQDataQueue* iqDataQueue);
     void setIQDataOutQueue(SDRThreadIQDataQueue* iqDataQueue);
-    void setIQVisualQueue(SDRThreadIQDataQueue *iqVisQueue);
+    void setIQVisualQueue(SDRThreadIQDataQueue* iqVisQueue);
 
     void threadMain();
     void terminate();
@@ -21,9 +21,9 @@ public:
 protected:
     uint32_t sample_rate;
 
-    std::atomic<SDRThreadIQDataQueue*> iqDataOutQueue;
-    std::atomic<SDRThreadIQDataQueue*> iqDataInQueue;
-    std::atomic<SDRThreadIQDataQueue*> iqVisualQueue;
+    std::atomic<SDRThreadIQDataQueue *> iqDataOutQueue;
+    std::atomic<SDRThreadIQDataQueue *> iqDataInQueue;
+    std::atomic<SDRThreadIQDataQueue *> iqVisualQueue;
 
     std::vector<DemodulatorInstance *> demodulators;
     std::vector<DemodulatorInstance *> demodulators_add;
