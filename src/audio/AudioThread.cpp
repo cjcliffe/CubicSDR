@@ -94,7 +94,7 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
             }
         } else {
             for (int i = 0, iMax = src->currentInput.channels * nBufferFrames; i < iMax; i++) {
-                if (srcmix->audio_queue_ptr >= srcmix->currentInput.data.size()) {
+                if (srcmix->audio_queue_ptr >= srcmix->currentInput.data->size()) {
                     if (srcmix->currentInput.data) {
                         delete srcmix->currentInput.data;
                     }

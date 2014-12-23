@@ -59,11 +59,10 @@ class DemodulatorThreadIQData {
 public:
 	unsigned int frequency;
 	unsigned int bandwidth;
-	std::vector<signed char> *data;
-	std::atomic<int> *refCount;
+	std::vector<signed char> data;
 
 	DemodulatorThreadIQData() :
-			frequency(0), bandwidth(0), data(NULL), refCount(NULL) {
+			frequency(0), bandwidth(0), refCount(0) {
 
 	}
 
@@ -71,28 +70,27 @@ public:
 	    frequency = o.frequency;
 	    bandwidth = o.bandwidth;
 	    data = o.data;
-	    refCount = o.refCount;
+	    refCount.store(o.refCount.load());
 	}
 
-    void setRefCount(std::atomic<int> *rc) {
-        refCount = rc;
+    void setRefCount(int rc) {
+        refCount.store(rc);
     }
 
-    void cleanup() {
-        if (refCount) {
-            refCount->store(refCount->load()-1);
-            if (refCount->load() == 0) {
-                delete data;
-                data = NULL;
-                delete refCount;
-                refCount = NULL;
-            }
-        }
+    void decRefCount() {
+        refCount.store(refCount.load()-1);
+    }
+
+    int getRefCount() {
+        return refCount.load();
     }
 
 	~DemodulatorThreadIQData() {
 
 	}
+private:
+    std::atomic<int> refCount;
+
 };
 
 class DemodulatorThreadPostIQData {
@@ -146,7 +144,7 @@ public:
 	}
 };
 
-typedef ThreadQueue<DemodulatorThreadIQData> DemodulatorThreadInputQueue;
+typedef ThreadQueue<DemodulatorThreadIQData *> DemodulatorThreadInputQueue;
 typedef ThreadQueue<DemodulatorThreadPostIQData> DemodulatorThreadPostInputQueue;
 typedef ThreadQueue<DemodulatorThreadCommand> DemodulatorThreadCommandQueue;
 typedef ThreadQueue<DemodulatorThreadControlCommand> DemodulatorThreadControlCommandQueue;

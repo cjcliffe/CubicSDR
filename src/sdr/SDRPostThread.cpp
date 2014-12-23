@@ -39,7 +39,7 @@ void SDRPostThread::threadMain() {
 #ifdef __APPLE__
     pthread_t tID = pthread_self();  // ID of this thread
     int priority = sched_get_priority_max( SCHED_FIFO) - 1;
-    sched_param prio = {priority}; // scheduling priority of thread
+    sched_param prio = { priority }; // scheduling priority of thread
     pthread_setschedparam(tID, SCHED_FIFO, &prio);
 #endif
 
@@ -82,7 +82,6 @@ void SDRPostThread::threadMain() {
                 iqVisualQueue.load()->push(visualDataOut);
             }
 
-
             if (demodulators_add.size()) {
                 while (!demodulators_add.empty()) {
                     demodulators.push_back(demodulators_add.back());
@@ -104,7 +103,6 @@ void SDRPostThread::threadMain() {
 
             int activeDemods = 0;
             bool pushedData = false;
-            std::atomic<int> *c = new std::atomic<int>;
 
             if (demodulators.size()) {
 
@@ -119,20 +117,14 @@ void SDRPostThread::threadMain() {
                     activeDemods++;
                 }
 
-                c->store(activeDemods);
-
                 bool demodActive = false;
 
                 if (demodulators.size()) {
-                    DemodulatorThreadIQData dummyDataOut;
-                    dummyDataOut.frequency = data_in.frequency;
-                    dummyDataOut.bandwidth = data_in.bandwidth;
-                    dummyDataOut.data = NULL;
-                    DemodulatorThreadIQData demodDataOut;
-                    demodDataOut.frequency = data_in.frequency;
-                    demodDataOut.bandwidth = data_in.bandwidth;
-                    demodDataOut.setRefCount(c);
-                    demodDataOut.data = data_in.data;
+                    DemodulatorThreadIQData *demodDataOut = new DemodulatorThreadIQData;
+                    demodDataOut->frequency = data_in.frequency;
+                    demodDataOut->bandwidth = data_in.bandwidth;
+                    demodDataOut->setRefCount(activeDemods);
+                    demodDataOut->data.assign(dataOut.data->begin(), dataOut.data->begin() + dataOut.data->size());
 
                     std::vector<DemodulatorInstance *>::iterator i;
                     for (i = demodulators.begin(); i != demodulators.end(); i++) {
@@ -143,6 +135,9 @@ void SDRPostThread::threadMain() {
                                 && abs(data_in.frequency - demod->getParams().frequency) > (int) ((float) ((float) SRATE / 2.0))) {
                             if (demod->isActive()) {
                                 demod->setActive(false);
+                                DemodulatorThreadIQData *dummyDataOut = new DemodulatorThreadIQData;
+                                dummyDataOut->frequency = data_in.frequency;
+                                dummyDataOut->bandwidth = data_in.bandwidth;
                                 demodQueue->push(dummyDataOut);
                             }
                         } else if (!demod->isActive()) {
@@ -156,16 +151,14 @@ void SDRPostThread::threadMain() {
                         demodQueue->push(demodDataOut);
                         pushedData = true;
                     }
+
+                    if (!pushedData) {
+                        delete demodDataOut;
+                    }
                 }
             }
-
-            if (!pushedData) {
-                delete dataOut.data;
-                delete c;
-            }
+            delete dataOut.data;
         }
-
-
     }
     std::cout << "SDR post-processing thread done." << std::endl;
 }
