@@ -41,7 +41,7 @@ public:
     std::vector<signed char> data;
 
     SDRThreadIQData() :
-            frequency(0), bandwidth(0), data(NULL) {
+            frequency(0), bandwidth(0) {
 
     }
 
