@@ -38,6 +38,21 @@ public:
 	int int_value;
 };
 
+class DemodulatorThreadControlCommand {
+public:
+    enum DemodulatorThreadControlCommandEnum {
+        DEMOD_THREAD_CMD_CTL_NULL,
+        DEMOD_THREAD_CMD_CTL_SQUELCH_AUTO,
+        DEMOD_THREAD_CMD_CTL_SQUELCH_OFF
+    };
+
+    DemodulatorThreadControlCommand() :
+            cmd(DEMOD_THREAD_CMD_CTL_NULL) {
+    }
+
+    DemodulatorThreadControlCommandEnum cmd;
+};
+
 class DemodulatorThreadIQData {
 public:
 	unsigned int frequency;
@@ -64,7 +79,7 @@ class DemodulatorThreadPostIQData {
 public:
 	std::vector<liquid_float_complex> data;
 	float audio_resample_ratio;
-	msresamp_crcf audio_resampler;
+	msresamp_rrrf audio_resampler;
     float resample_ratio;
     msresamp_crcf resampler;
 
@@ -106,6 +121,7 @@ public:
 typedef ThreadQueue<DemodulatorThreadIQData> DemodulatorThreadInputQueue;
 typedef ThreadQueue<DemodulatorThreadPostIQData> DemodulatorThreadPostInputQueue;
 typedef ThreadQueue<DemodulatorThreadCommand> DemodulatorThreadCommandQueue;
+typedef ThreadQueue<DemodulatorThreadControlCommand> DemodulatorThreadControlCommandQueue;
 
 
 class DemodulatorThreadParameters {

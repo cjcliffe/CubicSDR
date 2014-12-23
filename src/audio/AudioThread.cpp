@@ -11,7 +11,7 @@ std::map<int, std::thread *> AudioThread::deviceThread;
 
 AudioThread::AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify) :
         inputQueue(inputQueue), terminated(false), audio_queue_ptr(0), underflow_count(0), threadQueueNotify(threadQueueNotify), gain(1.0), active(
-                false) {
+        false) {
 #ifdef __APPLE__
     boundThreads = new std::vector<AudioThread *>;
 #endif
@@ -65,14 +65,35 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
             continue;
         }
 
-        for (int i = 0; i < nBufferFrames * 2; i++) {
-            if (srcmix->audio_queue_ptr >= srcmix->currentInput.data.size()) {
+        if (srcmix->currentInput.channels == 0) {
+            if (!srcmix->inputQueue->empty()) {
                 srcmix->inputQueue->pop(srcmix->currentInput);
-                srcmix->audio_queue_ptr = 0;
             }
-            out[i] = out[i] + srcmix->currentInput.data[srcmix->audio_queue_ptr] * src->gain;
-            srcmix->audio_queue_ptr++;
+            continue;
         }
+
+        if (srcmix->currentInput.channels == 1) {
+            for (int i = 0; i < nBufferFrames; i++) {
+                if (srcmix->audio_queue_ptr >= srcmix->currentInput.data.size()) {
+                    srcmix->inputQueue->pop(srcmix->currentInput);
+                    srcmix->audio_queue_ptr = 0;
+                }
+                float v = srcmix->currentInput.data[srcmix->audio_queue_ptr] * src->gain;
+                out[i * 2] += v;
+                out[i * 2 + 1] += v;
+                srcmix->audio_queue_ptr++;
+            }
+        } else {
+            for (int i = 0, iMax = src->currentInput.channels * nBufferFrames; i < iMax; i++) {
+                if (srcmix->audio_queue_ptr >= srcmix->currentInput.data.size()) {
+                    srcmix->inputQueue->pop(srcmix->currentInput);
+                    srcmix->audio_queue_ptr = 0;
+                }
+                out[i] = out[i] + srcmix->currentInput.data[srcmix->audio_queue_ptr] * src->gain;
+                srcmix->audio_queue_ptr++;
+            }
+        }
+
     }
 
     return 0;
@@ -89,22 +110,41 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
         std::cout << "Audio buffer underflow.." << (src->underflow_count++) << std::endl;
     }
 
-    for (int i = 0; i < nBufferFrames * 2; i++) {
-        if (src->audio_queue_ptr >= src->currentInput.data.size()) {
-            if (src->terminated) {
-                break;
-            }
+    if (src->currentInput.channels == 0) {
+        if (!src->inputQueue->empty()) {
             src->inputQueue->pop(src->currentInput);
-            src->audio_queue_ptr = 0;
         }
-        out[i] = src->currentInput.data[src->audio_queue_ptr] * src->gain;
-        src->audio_queue_ptr++;
+        return 0;
     }
 
+    if (src->currentInput.channels == 1) {
+        for (int i = 0; i < nBufferFrames; i++) {
+            if (src->audio_queue_ptr >= src->currentInput.data.size()) {
+                if (src->terminated) {
+                    break;
+                }
+                src->inputQueue->pop(src->currentInput);
+                src->audio_queue_ptr = 0;
+            }
+            out[i * 2] = out[i * 2 + 1] = src->currentInput.data[src->audio_queue_ptr] * src->gain;
+            src->audio_queue_ptr++;
+        }
+    } else {
+        for (int i = 0, iMax = src->currentInput.channels * nBufferFrames; i < iMax; i++) {
+            if (src->audio_queue_ptr >= src->currentInput.data.size()) {
+                if (src->terminated) {
+                    break;
+                }
+                src->inputQueue->pop(src->currentInput);
+                src->audio_queue_ptr = 0;
+            }
+            out[i] = src->currentInput.data[src->audio_queue_ptr] * src->gain;
+            src->audio_queue_ptr++;
+        }
+    }
     return 0;
 }
 #endif
-
 
 void AudioThread::enumerateDevices() {
     int numDevices = dac.getDeviceCount();
@@ -158,7 +198,7 @@ void AudioThread::threadMain() {
 #ifdef __APPLE__
     pthread_t tID = pthread_self();	 // ID of this thread
     int priority = sched_get_priority_max( SCHED_RR) - 1;
-    sched_param prio = { priority }; // scheduling priority of thread
+    sched_param prio = {priority}; // scheduling priority of thread
     pthread_setschedparam(tID, SCHED_RR, &prio);
 #endif
 

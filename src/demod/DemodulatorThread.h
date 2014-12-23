@@ -8,10 +8,12 @@
 
 typedef ThreadQueue<AudioThreadInput> DemodulatorThreadOutputQueue;
 
+#define DEMOD_VIS_SIZE 2048
+
 class DemodulatorThread {
 public:
 
-    DemodulatorThread(DemodulatorThreadPostInputQueue* pQueueIn, DemodulatorThreadCommandQueue* threadQueueNotify);
+    DemodulatorThread(DemodulatorThreadPostInputQueue* pQueueIn, DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify);
     ~DemodulatorThread();
 
 #ifdef __APPLE__
@@ -44,8 +46,13 @@ protected:
     AudioThreadInputQueue *audioInputQueue;
 
     freqdem fdem;
+    agc_crcf agc;
 
     std::atomic<bool> terminated;
 
     DemodulatorThreadCommandQueue* threadQueueNotify;
+    DemodulatorThreadControlCommandQueue *threadQueueControl;
+    float squelch_level;
+    float squelch_tolerance;
+    bool squelch_enabled;
 };

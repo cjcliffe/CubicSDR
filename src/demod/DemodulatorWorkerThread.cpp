@@ -58,7 +58,7 @@ void DemodulatorWorkerThread::threadMain() {
 
             result.fir_filter = firfilt_crcf_create(h, h_len);
             result.resampler = msresamp_crcf_create(result.resample_ratio, As);
-            result.audio_resampler = msresamp_crcf_create(result.audio_resample_ratio, As);
+            result.audio_resampler = msresamp_rrrf_create(result.audio_resample_ratio, As);
 
             result.audioSampleRate = filterCommand.audioSampleRate;
             result.bandwidth = filterCommand.bandwidth;

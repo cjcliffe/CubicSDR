@@ -2,17 +2,18 @@
 
 DemodulatorInstance::DemodulatorInstance() :
         t_Demod(NULL), t_PreDemod(NULL), t_Audio(NULL), threadQueueDemod(NULL), demodulatorThread(NULL), terminated(false), audioTerminated(false), demodTerminated(
-        false), preDemodTerminated(false), active(false) {
+        false), preDemodTerminated(false), active(false), squelch(false) {
 
     label = new std::string("Unnamed");
     threadQueueDemod = new DemodulatorThreadInputQueue;
     threadQueuePostDemod = new DemodulatorThreadPostInputQueue;
     threadQueueCommand = new DemodulatorThreadCommandQueue;
     threadQueueNotify = new DemodulatorThreadCommandQueue;
+    threadQueueControl = new DemodulatorThreadControlCommandQueue;
 
-    demodulatorPreThread = new DemodulatorPreThread(threadQueueDemod, threadQueuePostDemod, threadQueueNotify);
+    demodulatorPreThread = new DemodulatorPreThread(threadQueueDemod, threadQueuePostDemod, threadQueueControl, threadQueueNotify);
     demodulatorPreThread->setCommandQueue(threadQueueCommand);
-    demodulatorThread = new DemodulatorThread(threadQueuePostDemod, threadQueueNotify);
+    demodulatorThread = new DemodulatorThread(threadQueuePostDemod, threadQueueControl, threadQueueNotify);
 
     audioInputQueue = new AudioThreadInputQueue;
     audioThread = new AudioThread(audioInputQueue, threadQueueNotify);
@@ -144,3 +145,30 @@ void DemodulatorInstance::setActive(bool state) {
     active = state;
     audioThread->setActive(state);
 }
+
+
+void DemodulatorInstance::squelchAuto() {
+    DemodulatorThreadControlCommand command;
+    command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_AUTO;
+    threadQueueControl->push(command);
+    squelch = true;
+}
+
+bool DemodulatorInstance::isSquelchEnabled() {
+    return squelch;
+}
+
+void DemodulatorInstance::setSquelchEnabled(bool state) {
+    if (!state && squelch) {
+        DemodulatorThreadControlCommand command;
+        command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_OFF;
+        threadQueueControl->push(command);
+    } else if (state && !squelch) {
+        DemodulatorThreadControlCommand command;
+        command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_AUTO;
+        threadQueueControl->push(command);
+    }
+
+    squelch = state;
+}
+
