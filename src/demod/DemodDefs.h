@@ -26,12 +26,12 @@ public:
     };
 
     DemodulatorThreadCommand() :
-            cmd(DEMOD_THREAD_CMD_NULL), int_value(0), context(NULL) {
+            cmd(DEMOD_THREAD_CMD_NULL), context(NULL), int_value(0) {
 
     }
 
     DemodulatorThreadCommand(DemodulatorThreadCommandEnum cmd) :
-            cmd(cmd), int_value(0), context(NULL) {
+            cmd(cmd), context(NULL), int_value(0) {
 
 	}
 
@@ -66,13 +66,6 @@ public:
 
 	}
 
-	DemodulatorThreadIQData(const DemodulatorThreadIQData& o) {
-	    frequency = o.frequency;
-	    bandwidth = o.bandwidth;
-	    data = o.data;
-	    refCount.store(o.refCount.load());
-	}
-
     void setRefCount(int rc) {
         refCount.store(rc);
     }
@@ -95,23 +88,15 @@ private:
 
 class DemodulatorThreadPostIQData {
 public:
-	std::vector<liquid_float_complex> *data;
+	std::vector<liquid_float_complex> data;
 	float audio_resample_ratio;
 	msresamp_rrrf audio_resampler;
     float resample_ratio;
     msresamp_crcf resampler;
 
-	DemodulatorThreadPostIQData(): audio_resample_ratio(0), audio_resampler(NULL), resample_ratio(0), resampler(NULL), data(NULL) {
+	DemodulatorThreadPostIQData(): audio_resample_ratio(0), audio_resampler(NULL), resample_ratio(0), resampler(NULL) {
 
 	}
-
-    DemodulatorThreadPostIQData(const DemodulatorThreadPostIQData &o) {
-        audio_resample_ratio = o.audio_resample_ratio;
-        audio_resampler = o.audio_resampler;
-        resample_ratio = o.resample_ratio;
-        resampler = o.resampler;
-        data = o.data;
-    }
 
 	~DemodulatorThreadPostIQData() {
 
@@ -128,14 +113,13 @@ public:
 	std::vector<float> *data;
 
 	DemodulatorThreadAudioData() :
-			sampleRate(0), frequency(0), channels(0), data(NULL) {
+			frequency(0), sampleRate(0), channels(0), data(NULL) {
 
 	}
 
 	DemodulatorThreadAudioData(unsigned int frequency, unsigned int sampleRate,
 			std::vector<float> *data) :
-			data(data), sampleRate(sampleRate), frequency(frequency), channels(
-					1) {
+			frequency(frequency), sampleRate(sampleRate), channels(1), data(data) {
 
 	}
 
@@ -145,7 +129,7 @@ public:
 };
 
 typedef ThreadQueue<DemodulatorThreadIQData *> DemodulatorThreadInputQueue;
-typedef ThreadQueue<DemodulatorThreadPostIQData> DemodulatorThreadPostInputQueue;
+typedef ThreadQueue<DemodulatorThreadPostIQData *> DemodulatorThreadPostInputQueue;
 typedef ThreadQueue<DemodulatorThreadCommand> DemodulatorThreadCommandQueue;
 typedef ThreadQueue<DemodulatorThreadControlCommand> DemodulatorThreadControlCommandQueue;
 

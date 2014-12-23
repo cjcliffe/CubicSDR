@@ -20,8 +20,7 @@
 class CubicSDR: public wxApp {
 public:
     CubicSDR() :
-            m_glContext(NULL), t_PostSDR(NULL), t_SDR(NULL), audioVisualQueue(NULL), threadCmdQueueSDR(NULL), iqVisualQueue(NULL), frequency(
-            DEFAULT_FREQ), sdrPostThread(NULL), iqPostDataQueue(NULL), sdrThread(NULL) {
+    m_glContext(NULL), frequency(DEFAULT_FREQ), sdrThread(NULL), sdrPostThread(NULL), threadCmdQueueSDR(NULL), iqVisualQueue(NULL), iqPostDataQueue(NULL), audioVisualQueue(NULL), t_SDR(NULL),  t_PostSDR(NULL) {
 
     }
 

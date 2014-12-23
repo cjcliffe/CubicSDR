@@ -145,6 +145,8 @@ void SDRThread::threadMain() {
                     freq_changed = true;
                     new_freq = command.int_value;
                     break;
+                    default:
+                    break;
                 }
             }
 

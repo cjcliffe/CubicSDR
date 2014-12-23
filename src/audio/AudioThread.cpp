@@ -10,8 +10,7 @@ std::map<int, std::thread *> AudioThread::deviceThread;
 #endif
 
 AudioThread::AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify) :
-        inputQueue(inputQueue), terminated(false), audio_queue_ptr(0), underflow_count(0), threadQueueNotify(threadQueueNotify), gain(1.0), active(
-        false) {
+inputQueue(inputQueue), audio_queue_ptr(0), underflow_count(0), terminated(false), active(false), gain(1.0), threadQueueNotify(threadQueueNotify) {
 #ifdef __APPLE__
     boundThreads = new std::vector<AudioThread *>;
 #endif

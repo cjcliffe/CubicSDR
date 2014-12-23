@@ -4,7 +4,7 @@
 #include "CubicSDR.h"
 
 SDRPostThread::SDRPostThread() :
-        iqDataInQueue(NULL), iqDataOutQueue(NULL), iqVisualQueue(NULL), terminated(false), dcFilter(NULL), sample_rate(SRATE) {
+        sample_rate(SRATE), iqDataOutQueue(NULL), iqDataInQueue(NULL), iqVisualQueue(NULL), terminated(false), dcFilter(NULL) {
 }
 
 SDRPostThread::~SDRPostThread() {

@@ -46,7 +46,7 @@ public:
     }
 
     SDRThreadIQData(unsigned int bandwidth, unsigned int frequency, std::vector<signed char> *data) :
-            data(data), frequency(frequency), bandwidth(bandwidth) {
+            frequency(frequency), bandwidth(bandwidth), data(data) {
 
     }
 
