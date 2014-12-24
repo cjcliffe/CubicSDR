@@ -41,6 +41,11 @@ void DemodulatorThread::threadMain() {
     std::deque<AudioThreadInput *> buffers;
     std::deque<AudioThreadInput *>::iterator buffers_i;
 
+    std::vector<liquid_float_complex> resampled_data;
+    std::vector<liquid_float_complex> agc_data;
+    std::vector<float> demod_output;
+    std::vector<float> resampled_audio_output;
+
     while (!terminated) {
         DemodulatorThreadPostIQData *inp;
         postInputQueue->pop(inp);
@@ -64,24 +69,43 @@ void DemodulatorThread::threadMain() {
         }
 
         int out_size = ceil((float) (bufSize) * inp->resample_ratio);
-        liquid_float_complex resampled_data[out_size];
-        liquid_float_complex agc_data[out_size];
+
+        if (agc_data.size() != out_size) {
+            if (agc_data.capacity() < out_size) {
+                agc_data.reserve(out_size);
+                resampled_data.reserve(out_size);
+            }
+            agc_data.resize(out_size);
+            resampled_data.resize(out_size);
+        }
 
         unsigned int num_written;
-        msresamp_crcf_execute(resampler, &(inp->data[0]), bufSize, resampled_data, &num_written);
+        msresamp_crcf_execute(resampler, &(inp->data[0]), bufSize, &resampled_data[0], &num_written);
 
-        agc_crcf_execute_block(agc, resampled_data, num_written, agc_data);
+        agc_crcf_execute_block(agc, &resampled_data[0], num_written, &agc_data[0]);
 
         float audio_resample_ratio = inp->audio_resample_ratio;
-        float demod_output[num_written];
 
-        freqdem_demodulate_block(fdem, agc_data, num_written, demod_output);
+        if (demod_output.size() != num_written) {
+            if (demod_output.capacity() < num_written) {
+                demod_output.reserve(num_written);
+            }
+            demod_output.resize(num_written);
+        }
+
+        freqdem_demodulate_block(fdem, &agc_data[0], num_written, &demod_output[0]);
 
         int audio_out_size = ceil((float) (num_written) * audio_resample_ratio);
-        float resampled_audio_output[audio_out_size];
+
+        if (audio_out_size != resampled_audio_output.size()) {
+            if (resampled_audio_output.capacity() < audio_out_size) {
+                resampled_audio_output.reserve(audio_out_size);
+            }
+            resampled_audio_output.resize(audio_out_size);
+        }
 
         unsigned int num_audio_written;
-        msresamp_rrrf_execute(audio_resampler, demod_output, num_written, resampled_audio_output, &num_audio_written);
+        msresamp_rrrf_execute(audio_resampler, &demod_output[0], num_written, &resampled_audio_output[0], &num_audio_written);
 
         if (audioInputQueue != NULL) {
             if (!squelch_enabled || ((agc_crcf_get_signal_level(agc)) >= 0.1)) {
@@ -101,7 +125,7 @@ void DemodulatorThread::threadMain() {
 
                 ati->setRefCount(1);
                 ati->channels = 1;
-                ati->data.assign(resampled_audio_output, resampled_audio_output + num_audio_written);
+                ati->data.assign(resampled_audio_output.begin(), resampled_audio_output.begin() + num_audio_written);
 
                 audioInputQueue->push(ati);
             }
@@ -116,12 +140,12 @@ void DemodulatorThread::threadMain() {
                 if (num_vis > num_audio_written) {
                     num_vis = num_audio_written;
                 }
-                ati_vis->data.assign(resampled_audio_output, resampled_audio_output + num_vis);
+                ati_vis->data.assign(resampled_audio_output.begin(), resampled_audio_output.begin() + num_vis);
             } else {
                 if (num_vis > num_written) {
                     num_vis = num_written;
                 }
-                ati_vis->data.assign(demod_output, demod_output + num_vis);
+                ati_vis->data.assign(demod_output.begin(), demod_output.begin() + num_vis);
             }
 
             visOutQueue->push(ati_vis);

@@ -181,6 +181,10 @@ void SDRThread::threadMain() {
         dataOut->frequency = frequency;
         dataOut->bandwidth = bandwidth;
 
+        if (dataOut->data.capacity() < n_read) {
+            dataOut->data.reserve(n_read);
+        }
+
         if (dataOut->data.size() != n_read) {
             dataOut->data.resize(n_read);
         }

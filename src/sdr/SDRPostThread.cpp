@@ -53,6 +53,7 @@ void SDRPostThread::threadMain() {
 
     std::deque<DemodulatorThreadIQData *> buffers;
     std::deque<DemodulatorThreadIQData *>::iterator buffers_i;
+    std::vector<signed char> dataOut;
 
     while (!terminated) {
         SDRThreadIQData *data_in;
@@ -61,29 +62,34 @@ void SDRPostThread::threadMain() {
 //        std::lock_guard < std::mutex > lock(data_in->m_mutex);
 
         if (data_in && data_in->data.size()) {
-            SDRThreadIQData *dataOut = new SDRThreadIQData;
+            if (data_in->data.size() > dataOut.capacity()) {
+                dataOut.reserve(data_in->data.size());
+            }
 
-            dataOut->frequency = data_in->frequency;
-            dataOut->bandwidth = data_in->bandwidth;
-            dataOut->data.assign(data_in->data.begin(), data_in->data.end());
+            dataOut.assign(data_in->data.begin(), data_in->data.end());
 
-            for (int i = 0, iMax = dataOut->data.size() / 2; i < iMax; i++) {
-                x.real = (float) dataOut->data[i * 2] / 127.0;
-                x.imag = (float) dataOut->data[i * 2 + 1] / 127.0;
+            for (int i = 0, iMax = dataOut.size() / 2; i < iMax; i++) {
+                x.real = (float) dataOut[i * 2] / 127.0;
+                x.imag = (float) dataOut[i * 2 + 1] / 127.0;
 
                 iirfilt_crcf_execute(dcFilter, x, &y);
 
-                dataOut->data[i * 2] = (signed char) floor(y.real * 127.0);
-                dataOut->data[i * 2 + 1] = (signed char) floor(y.imag * 127.0);
+                dataOut[i * 2] = (signed char) floor(y.real * 127.0);
+                dataOut[i * 2 + 1] = (signed char) floor(y.imag * 127.0);
             }
 
             if (iqDataOutQueue != NULL) {
-                iqDataOutQueue.load()->push(dataOut);
+                SDRThreadIQData *visDataOut = new SDRThreadIQData;
+
+                visDataOut->frequency = data_in->frequency;
+                visDataOut->bandwidth = data_in->bandwidth;
+                visDataOut->data.assign(dataOut.begin(), dataOut.end());
+                iqDataOutQueue.load()->push(visDataOut);
             }
 
             if (iqVisualQueue != NULL && iqVisualQueue.load()->empty()) {
                 SDRThreadIQData *visualDataOut = new SDRThreadIQData;
-                visualDataOut->data.assign(dataOut->data.begin(), dataOut->data.begin() + (FFT_SIZE * 2));
+                visualDataOut->data.assign(dataOut.begin(), dataOut.begin() + (FFT_SIZE * 2));
                 iqVisualQueue.load()->push(visualDataOut);
             }
 
@@ -142,7 +148,7 @@ void SDRPostThread::threadMain() {
                     demodDataOut->frequency = data_in->frequency;
                     demodDataOut->bandwidth = data_in->bandwidth;
                     demodDataOut->setRefCount(activeDemods);
-                    demodDataOut->data.assign(dataOut->data.begin(), dataOut->data.begin() + dataOut->data.size());
+                    demodDataOut->data.assign(dataOut.begin(), dataOut.begin() + dataOut.size());
 
                     std::vector<DemodulatorInstance *>::iterator i;
                     for (i = demodulators.begin(); i != demodulators.end(); i++) {
@@ -175,7 +181,6 @@ void SDRPostThread::threadMain() {
                     }
                 }
             }
-            delete dataOut;
         }
         data_in->decRefCount();
     }

@@ -104,6 +104,9 @@ void DemodulatorPreThread::threadMain() {
     std::deque<DemodulatorThreadPostIQData *> buffers;
     std::deque<DemodulatorThreadPostIQData *>::iterator buffers_i;
 
+    std::vector<liquid_float_complex> in_buf_data;
+    std::vector<liquid_float_complex> out_buf_data;
+
     while (!terminated) {
         DemodulatorThreadIQData *inp;
         inputQueue->pop(inp);
@@ -167,11 +170,17 @@ void DemodulatorPreThread::threadMain() {
         if (data->size()) {
             int bufSize = data->size() / 2;
 
-            liquid_float_complex in_buf_data[bufSize];
-            liquid_float_complex out_buf_data[bufSize];
+            if (in_buf_data.size() != bufSize) {
+                if (in_buf_data.capacity() < bufSize) {
+                    in_buf_data.reserve(bufSize);
+                    out_buf_data.reserve(bufSize);
+                }
+                in_buf_data.resize(bufSize);
+                out_buf_data.resize(bufSize);
+            }
 
-            liquid_float_complex *in_buf = in_buf_data;
-            liquid_float_complex *out_buf = out_buf_data;
+            liquid_float_complex *in_buf = &in_buf_data[0];
+            liquid_float_complex *out_buf = &out_buf_data[0];
             liquid_float_complex *temp_buf = NULL;
 
             for (int i = 0; i < bufSize; i++) {
@@ -215,11 +224,9 @@ void DemodulatorPreThread::threadMain() {
             resamp->resampler = resampler;
 
             postInputQueue->push(resamp);
-
-            inp->decRefCount();
-        } else {
-            inp->decRefCount();
         }
+
+        inp->decRefCount();
 
         if (!workerResults->empty()) {
             while (!workerResults->empty()) {
