@@ -157,6 +157,7 @@ void DemodulatorPreThread::threadMain() {
             continue;
         }
 
+        std::lock_guard < std::mutex > lock(inp->m_mutex);
         std::vector<signed char> *data = &inp->data;
         if (data->size()) {
             int bufSize = data->size() / 2;
@@ -172,6 +173,8 @@ void DemodulatorPreThread::threadMain() {
                 in_buf[i].real = (float) (*data)[i * 2] / 127.0f;
                 in_buf[i].imag = (float) (*data)[i * 2 + 1] / 127.0f;
             }
+
+            inp->decRefCount();
 
             if (shift_freq != 0) {
                 if (shift_freq < 0) {
@@ -195,10 +198,8 @@ void DemodulatorPreThread::threadMain() {
             resamp->resampler = resampler;
 
             postInputQueue->push(resamp);
+        } else {
             inp->decRefCount();
-            if (inp->getRefCount()<=0) {
-                delete inp;
-            }
         }
 
         if (!workerResults->empty()) {

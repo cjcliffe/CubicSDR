@@ -5,6 +5,7 @@
 #include "liquid/liquid.h"
 
 #include <atomic>
+#include <mutex>
 
 enum DemodulatorType {
 	DEMOD_TYPE_NULL,
@@ -60,6 +61,7 @@ public:
 	unsigned int frequency;
 	unsigned int bandwidth;
 	std::vector<signed char> data;
+    mutable std::mutex m_mutex;
 
 	DemodulatorThreadIQData() :
 			frequency(0), bandwidth(0), refCount(0) {

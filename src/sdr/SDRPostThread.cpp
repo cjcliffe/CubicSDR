@@ -1,7 +1,9 @@
 #include "SDRPostThread.h"
 #include "CubicSDRDefs.h"
-#include <vector>
 #include "CubicSDR.h"
+
+#include <vector>
+#include <deque>
 
 SDRPostThread::SDRPostThread() :
         sample_rate(SRATE), iqDataOutQueue(NULL), iqDataInQueue(NULL), iqVisualQueue(NULL), terminated(false), dcFilter(NULL) {
@@ -48,6 +50,9 @@ void SDRPostThread::threadMain() {
     liquid_float_complex x, y;
 
     std::cout << "SDR post-processing thread started.." << std::endl;
+
+    std::deque<DemodulatorThreadIQData *> buffers;
+    std::deque<DemodulatorThreadIQData *>::iterator buffers_i;
 
     while (!terminated) {
         SDRThreadIQData *data_in;
@@ -117,7 +122,22 @@ void SDRPostThread::threadMain() {
                 }
 
                 if (demodulators.size()) {
-                    DemodulatorThreadIQData *demodDataOut = new DemodulatorThreadIQData;
+                    
+                    DemodulatorThreadIQData *demodDataOut = NULL;
+                    
+                    for (buffers_i = buffers.begin(); buffers_i != buffers.end(); buffers_i++) {
+                        if ((*buffers_i)->getRefCount() <= 0) {
+                            demodDataOut = (*buffers_i);
+                            break;
+                        }
+                    }
+                    
+                    if (demodDataOut == NULL) {
+                        demodDataOut = new DemodulatorThreadIQData;
+                        buffers.push_back(demodDataOut);
+                    }
+                    
+                    std::lock_guard < std::mutex > lock(demodDataOut->m_mutex);
                     demodDataOut->frequency = data_in->frequency;
                     demodDataOut->bandwidth = data_in->bandwidth;
                     demodDataOut->setRefCount(activeDemods);
@@ -150,7 +170,7 @@ void SDRPostThread::threadMain() {
                     }
 
                     if (!pushedData) {
-                        delete demodDataOut;
+                        demodDataOut->setRefCount(0);
                     }
                 }
             }
@@ -160,6 +180,14 @@ void SDRPostThread::threadMain() {
             delete data_in;
         }
     }
+
+    while (!buffers.empty()) {
+        DemodulatorThreadIQData *demodDataDel = buffers.front();
+        buffers.pop_front();
+        std::lock_guard < std::mutex > lock(demodDataDel->m_mutex);
+        delete demodDataDel;
+    }
+
     std::cout << "SDR post-processing thread done." << std::endl;
 }
 
