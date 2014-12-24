@@ -34,7 +34,7 @@ public:
     int int_value;
 };
 
-class SDRThreadIQData {
+class SDRThreadIQData : public ReferenceCounter  {
 public:
     unsigned int frequency;
     unsigned int bandwidth;

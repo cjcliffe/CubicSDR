@@ -91,7 +91,7 @@ int SDRThread::enumerate_rtl() {
 void SDRThread::threadMain() {
 #ifdef __APPLE__
     pthread_t tID = pthread_self();  // ID of this thread
-    int priority = sched_get_priority_max( SCHED_FIFO )-1;
+    int priority = sched_get_priority_max( SCHED_FIFO) - 1;
     sched_param prio = { priority }; // scheduling priority of thread
     pthread_setschedparam(tID, SCHED_FIFO, &prio);
 #endif
@@ -128,6 +128,10 @@ void SDRThread::threadMain() {
     double seconds = 0.0;
 
     std::cout << "SDR thread started.." << std::endl;
+
+    std::deque<SDRThreadIQData *> buffers;
+    std::deque<SDRThreadIQData *>::iterator buffers_i;
+
     while (!terminated) {
         SDRThreadCommandQueue *cmdQueue = m_pQueue.load();
 
@@ -145,7 +149,7 @@ void SDRThread::threadMain() {
                     freq_changed = true;
                     new_freq = command.int_value;
                     break;
-                    default:
+                default:
                     break;
                 }
             }
@@ -158,12 +162,31 @@ void SDRThread::threadMain() {
 
         rtlsdr_read_sync(dev, buf, BUF_SIZE, &n_read);
 
-        SDRThreadIQData *dataOut = new SDRThreadIQData;
+        SDRThreadIQData *dataOut = NULL;
+
+        for (buffers_i = buffers.begin(); buffers_i != buffers.end(); buffers_i++) {
+            if ((*buffers_i)->getRefCount() <= 0) {
+                dataOut = (*buffers_i);
+                break;
+            }
+        }
+
+        if (dataOut == NULL) {
+            dataOut = new SDRThreadIQData;
+            buffers.push_back(dataOut);
+        }
+
+        std::lock_guard < std::mutex > lock(dataOut->m_mutex);
+        dataOut->setRefCount(1);
         dataOut->frequency = frequency;
         dataOut->bandwidth = bandwidth;
 
+        if (dataOut->data.size() != n_read) {
+            dataOut->data.resize(n_read);
+        }
+
         for (int i = 0; i < n_read; i++) {
-            dataOut->data.push_back(buf[i] - 127);
+            dataOut->data[i] = buf[i] - 127;
         }
 
         double time_slice = (double) n_read / (double) sample_rate;
@@ -173,6 +196,14 @@ void SDRThread::threadMain() {
             iqDataOutQueue.load()->push(dataOut);
         }
     }
+
+    while (!buffers.empty()) {
+        SDRThreadIQData *iqDataDel = buffers.front();
+        buffers.pop_front();
+        std::lock_guard < std::mutex > lock(iqDataDel->m_mutex);
+        delete iqDataDel;
+    }
+
     std::cout << "SDR thread done." << std::endl;
 }
 

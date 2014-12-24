@@ -56,39 +56,23 @@ public:
     DemodulatorThreadControlCommandEnum cmd;
 };
 
-class DemodulatorThreadIQData {
+class DemodulatorThreadIQData : public ReferenceCounter {
 public:
 	unsigned int frequency;
 	unsigned int bandwidth;
 	std::vector<signed char> data;
-    mutable std::mutex m_mutex;
 
 	DemodulatorThreadIQData() :
-			frequency(0), bandwidth(0), refCount(0) {
+			frequency(0), bandwidth(0) {
 
 	}
-
-    void setRefCount(int rc) {
-        refCount.store(rc);
-    }
-
-    void decRefCount() {
-        refCount.store(refCount.load()-1);
-    }
-
-    int getRefCount() {
-        return refCount.load();
-    }
 
 	~DemodulatorThreadIQData() {
 
 	}
-private:
-    std::atomic<int> refCount;
-
 };
 
-class DemodulatorThreadPostIQData {
+class DemodulatorThreadPostIQData : public ReferenceCounter {
 public:
 	std::vector<liquid_float_complex> data;
 	float audio_resample_ratio;
@@ -106,7 +90,7 @@ public:
 };
 
 
-class DemodulatorThreadAudioData {
+class DemodulatorThreadAudioData : public ReferenceCounter {
 public:
 	unsigned int frequency;
 	unsigned int sampleRate;

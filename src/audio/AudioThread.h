@@ -18,11 +18,12 @@
 #include "RtAudio.h"
 #include "DemodDefs.h"
 
-class AudioThreadInput {
+class AudioThreadInput: public ReferenceCounter  {
 public:
     int frequency;
     int sampleRate;
     int channels;
+    std::vector<float> data;
 
     AudioThreadInput(): frequency(0), sampleRate(0), channels(0) {
 
@@ -31,8 +32,6 @@ public:
     ~AudioThreadInput() {
 
     }
-
-    std::vector<float> data;
 };
 
 class AudioThreadCommand {

@@ -58,6 +58,7 @@ void SDRPostThread::threadMain() {
         SDRThreadIQData *data_in;
 
         iqDataInQueue.load()->pop(data_in);
+//        std::lock_guard < std::mutex > lock(data_in->m_mutex);
 
         if (data_in && data_in->data.size()) {
             SDRThreadIQData *dataOut = new SDRThreadIQData;
@@ -176,9 +177,7 @@ void SDRPostThread::threadMain() {
             }
             delete dataOut;
         }
-        if (data_in) {
-            delete data_in;
-        }
+        data_in->decRefCount();
     }
 
     while (!buffers.empty()) {
