@@ -10,7 +10,8 @@
 DemodulatorPreThread::DemodulatorPreThread(DemodulatorThreadInputQueue* pQueueIn, DemodulatorThreadPostInputQueue* pQueueOut,
         DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify) :
         inputQueue(pQueueIn), postInputQueue(pQueueOut), terminated(false), initialized(false), audio_resampler(NULL), resample_ratio(1), audio_resample_ratio(
-                1), resampler(NULL), commandQueue(NULL), fir_filter(NULL), audioInputQueue(NULL), threadQueueNotify(threadQueueNotify), threadQueueControl(threadQueueControl) {
+                1), resampler(NULL), commandQueue(NULL), fir_filter(NULL), audioInputQueue(NULL), threadQueueNotify(threadQueueNotify), threadQueueControl(
+                threadQueueControl) {
 
     float kf = 0.5;         // modulation factor
     fdem = freqdem_create(kf);
@@ -90,7 +91,7 @@ void DemodulatorPreThread::threadMain() {
 #ifdef __APPLE__
     pthread_t tID = pthread_self();  // ID of this thread
     int priority = sched_get_priority_max( SCHED_FIFO )-1;
-    sched_param prio = { priority }; // scheduling priority of thread
+    sched_param prio = {priority}; // scheduling priority of thread
     pthread_setschedparam(tID, SCHED_FIFO, &prio);
 #endif
 
@@ -99,6 +100,10 @@ void DemodulatorPreThread::threadMain() {
     }
 
     std::cout << "Demodulator preprocessor thread started.." << std::endl;
+
+    std::deque<DemodulatorThreadPostIQData *> buffers;
+    std::deque<DemodulatorThreadPostIQData *>::iterator buffers_i;
+
     while (!terminated) {
         DemodulatorThreadIQData *inp;
         inputQueue->pop(inp);
@@ -157,7 +162,7 @@ void DemodulatorPreThread::threadMain() {
             continue;
         }
 
-        std::lock_guard < std::mutex > lock(inp->m_mutex);
+//        std::lock_guard < std::mutex > lock(inp->m_mutex);
         std::vector<signed char> *data = &inp->data;
         if (data->size()) {
             int bufSize = data->size() / 2;
@@ -174,8 +179,6 @@ void DemodulatorPreThread::threadMain() {
                 in_buf[i].imag = (float) (*data)[i * 2 + 1] / 127.0f;
             }
 
-            inp->decRefCount();
-
             if (shift_freq != 0) {
                 if (shift_freq < 0) {
                     nco_crcf_mix_block_up(nco_shift, in_buf, out_buf, bufSize);
@@ -187,8 +190,22 @@ void DemodulatorPreThread::threadMain() {
                 out_buf = temp_buf;
             }
 
-            DemodulatorThreadPostIQData *resamp = new DemodulatorThreadPostIQData;
-            resamp->data.assign(in_buf,in_buf+bufSize);
+            DemodulatorThreadPostIQData *resamp = NULL;
+
+            for (buffers_i = buffers.begin(); buffers_i != buffers.end(); buffers_i++) {
+                if ((*buffers_i)->getRefCount() <= 0) {
+                    resamp = (*buffers_i);
+                    break;
+                }
+            }
+
+            if (resamp == NULL) {
+                resamp = new DemodulatorThreadPostIQData;
+                buffers.push_back(resamp);
+            }
+
+            resamp->setRefCount(1);
+            resamp->data.assign(in_buf, in_buf + bufSize);
 
 //            firfilt_crcf_execute_block(fir_filter, in_buf, bufSize, &((*resamp.data)[0]));
 
@@ -198,6 +215,8 @@ void DemodulatorPreThread::threadMain() {
             resamp->resampler = resampler;
 
             postInputQueue->push(resamp);
+
+            inp->decRefCount();
         } else {
             inp->decRefCount();
         }
@@ -228,6 +247,13 @@ void DemodulatorPreThread::threadMain() {
                 }
             }
         }
+    }
+
+    while (!buffers.empty()) {
+        DemodulatorThreadPostIQData *iqDataDel = buffers.front();
+        buffers.pop_front();
+        std::lock_guard < std::mutex > lock(iqDataDel->m_mutex);
+        delete iqDataDel;
     }
 
     std::cout << "Demodulator preprocessor thread done." << std::endl;

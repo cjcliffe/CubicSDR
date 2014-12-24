@@ -10,7 +10,8 @@ std::map<int, std::thread *> AudioThread::deviceThread;
 #endif
 
 AudioThread::AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify) :
-currentInput(NULL), inputQueue(inputQueue), audio_queue_ptr(0), underflow_count(0), terminated(false), active(false), gain(1.0), threadQueueNotify(threadQueueNotify) {
+        currentInput(NULL), inputQueue(inputQueue), audio_queue_ptr(0), underflow_count(0), terminated(false), active(false), gain(1.0), threadQueueNotify(
+                threadQueueNotify) {
 #ifdef __APPLE__
     boundThreads = new std::vector<AudioThread *>;
 #endif
@@ -72,11 +73,13 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
             srcmix->audio_queue_ptr = 0;
             continue;
         }
-        
+
+        std::lock_guard < std::mutex > lock(srcmix->currentInput->m_mutex);
+
         if (srcmix->currentInput->channels == 0 || !srcmix->currentInput->data.size()) {
             if (!srcmix->inputQueue->empty()) {
                 if (srcmix->currentInput) {
-                    delete srcmix->currentInput;
+                    srcmix->currentInput->decRefCount();
                     srcmix->currentInput = NULL;
                 }
                 if (srcmix->terminated) {
@@ -92,7 +95,7 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
             for (int i = 0; i < nBufferFrames; i++) {
                 if (srcmix->audio_queue_ptr >= srcmix->currentInput->data.size()) {
                     if (srcmix->currentInput) {
-                        delete srcmix->currentInput;
+                        srcmix->currentInput->decRefCount();
                         srcmix->currentInput = NULL;
                     }
                     if (srcmix->terminated) {
@@ -112,7 +115,7 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
             for (int i = 0, iMax = src->currentInput->channels * nBufferFrames; i < iMax; i++) {
                 if (srcmix->audio_queue_ptr >= srcmix->currentInput->data.size()) {
                     if (srcmix->currentInput) {
-                        delete srcmix->currentInput;
+                        srcmix->currentInput->decRefCount();
                         srcmix->currentInput = NULL;
                     }
                     if (srcmix->terminated) {
@@ -143,17 +146,19 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
     if (status) {
         std::cout << "Audio buffer underflow.." << (src->underflow_count++) << std::endl;
     }
-    
+
     if (!src->currentInput) {
         src->inputQueue->pop(src->currentInput);
         src->audio_queue_ptr = 0;
         return 0;
     }
 
+    std::lock_guard < std::mutex > lock(src->currentInput->m_mutex);
+
     if (src->currentInput->channels == 0 || !src->currentInput->data.size()) {
         if (!src->inputQueue->empty()) {
             if (src->currentInput) {
-                delete src->currentInput;
+                src->currentInput->decRefCount();
                 src->currentInput = NULL;
             }
             if (src->terminated) {
@@ -169,7 +174,7 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
         for (int i = 0; i < nBufferFrames; i++) {
             if (src->audio_queue_ptr >= src->currentInput->data.size()) {
                 if (src->currentInput) {
-                    delete src->currentInput;
+                    src->currentInput->decRefCount();
                     src->currentInput = NULL;
                 }
                 if (src->terminated) {

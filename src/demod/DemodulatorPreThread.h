@@ -32,7 +32,6 @@ public:
         threadQueueControl = tQueue;
     }
 
-
     DemodulatorThreadParameters &getParams() {
         return params;
     }

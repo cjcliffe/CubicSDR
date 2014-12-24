@@ -8,10 +8,7 @@
 #include <mutex>
 
 enum DemodulatorType {
-	DEMOD_TYPE_NULL,
-	DEMOD_TYPE_AM,
-	DEMOD_TYPE_FM,
-	DEMOD_TYPE_LSB, DEMOD_TYPE_USB
+    DEMOD_TYPE_NULL, DEMOD_TYPE_AM, DEMOD_TYPE_FM, DEMOD_TYPE_LSB, DEMOD_TYPE_USB
 };
 
 class DemodulatorThread;
@@ -34,19 +31,17 @@ public:
     DemodulatorThreadCommand(DemodulatorThreadCommandEnum cmd) :
             cmd(cmd), context(NULL), int_value(0) {
 
-	}
+    }
 
-	DemodulatorThreadCommandEnum cmd;
-	void *context;
-	int int_value;
+    DemodulatorThreadCommandEnum cmd;
+    void *context;
+    int int_value;
 };
 
 class DemodulatorThreadControlCommand {
 public:
     enum DemodulatorThreadControlCommandEnum {
-        DEMOD_THREAD_CMD_CTL_NULL,
-        DEMOD_THREAD_CMD_CTL_SQUELCH_AUTO,
-        DEMOD_THREAD_CMD_CTL_SQUELCH_OFF
+        DEMOD_THREAD_CMD_CTL_NULL, DEMOD_THREAD_CMD_CTL_SQUELCH_AUTO, DEMOD_THREAD_CMD_CTL_SQUELCH_OFF
     };
 
     DemodulatorThreadControlCommand() :
@@ -56,69 +51,67 @@ public:
     DemodulatorThreadControlCommandEnum cmd;
 };
 
-class DemodulatorThreadIQData : public ReferenceCounter {
+class DemodulatorThreadIQData: public ReferenceCounter {
 public:
-	unsigned int frequency;
-	unsigned int bandwidth;
-	std::vector<signed char> data;
+    unsigned int frequency;
+    unsigned int bandwidth;
+    std::vector<signed char> data;
 
-	DemodulatorThreadIQData() :
-			frequency(0), bandwidth(0) {
+    DemodulatorThreadIQData() :
+            frequency(0), bandwidth(0) {
 
-	}
+    }
 
-	~DemodulatorThreadIQData() {
+    ~DemodulatorThreadIQData() {
 
-	}
+    }
 };
 
-class DemodulatorThreadPostIQData : public ReferenceCounter {
+class DemodulatorThreadPostIQData: public ReferenceCounter {
 public:
-	std::vector<liquid_float_complex> data;
-	float audio_resample_ratio;
-	msresamp_rrrf audio_resampler;
+    std::vector<liquid_float_complex> data;
+    float audio_resample_ratio;
+    msresamp_rrrf audio_resampler;
     float resample_ratio;
     msresamp_crcf resampler;
 
-	DemodulatorThreadPostIQData(): audio_resample_ratio(0), audio_resampler(NULL), resample_ratio(0), resampler(NULL) {
+    DemodulatorThreadPostIQData() :
+            audio_resample_ratio(0), audio_resampler(NULL), resample_ratio(0), resampler(NULL) {
 
-	}
+    }
 
-	~DemodulatorThreadPostIQData() {
+    ~DemodulatorThreadPostIQData() {
 
-	}
+    }
 };
 
-
-class DemodulatorThreadAudioData : public ReferenceCounter {
+class DemodulatorThreadAudioData: public ReferenceCounter {
 public:
-	unsigned int frequency;
-	unsigned int sampleRate;
-	unsigned char channels;
+    unsigned int frequency;
+    unsigned int sampleRate;
+    unsigned char channels;
 
-	std::vector<float> *data;
+    std::vector<float> *data;
 
-	DemodulatorThreadAudioData() :
-			frequency(0), sampleRate(0), channels(0), data(NULL) {
+    DemodulatorThreadAudioData() :
+            frequency(0), sampleRate(0), channels(0), data(NULL) {
 
-	}
+    }
 
-	DemodulatorThreadAudioData(unsigned int frequency, unsigned int sampleRate,
-			std::vector<float> *data) :
-			frequency(frequency), sampleRate(sampleRate), channels(1), data(data) {
+    DemodulatorThreadAudioData(unsigned int frequency, unsigned int sampleRate, std::vector<float> *data) :
+            frequency(frequency), sampleRate(sampleRate), channels(1), data(data) {
 
-	}
+    }
 
-	~DemodulatorThreadAudioData() {
+    ~DemodulatorThreadAudioData() {
 
-	}
+    }
 };
 
 typedef ThreadQueue<DemodulatorThreadIQData *> DemodulatorThreadInputQueue;
 typedef ThreadQueue<DemodulatorThreadPostIQData *> DemodulatorThreadPostInputQueue;
 typedef ThreadQueue<DemodulatorThreadCommand> DemodulatorThreadCommandQueue;
 typedef ThreadQueue<DemodulatorThreadControlCommand> DemodulatorThreadControlCommandQueue;
-
 
 class DemodulatorThreadParameters {
 public:
@@ -131,7 +124,7 @@ public:
 
     DemodulatorThreadParameters() :
             frequency(0), inputRate(SRATE), bandwidth(200000), audioSampleRate(
-                    AUDIO_FREQUENCY), demodType(DEMOD_TYPE_FM) {
+            AUDIO_FREQUENCY), demodType(DEMOD_TYPE_FM) {
 
     }
 

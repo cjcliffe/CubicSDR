@@ -41,7 +41,7 @@ void SDRPostThread::threadMain() {
 #ifdef __APPLE__
     pthread_t tID = pthread_self();  // ID of this thread
     int priority = sched_get_priority_max( SCHED_FIFO) - 1;
-    sched_param prio = { priority }; // scheduling priority of thread
+    sched_param prio = {priority}; // scheduling priority of thread
     pthread_setschedparam(tID, SCHED_FIFO, &prio);
 #endif
 
@@ -123,22 +123,22 @@ void SDRPostThread::threadMain() {
                 }
 
                 if (demodulators.size()) {
-                    
+
                     DemodulatorThreadIQData *demodDataOut = NULL;
-                    
+
                     for (buffers_i = buffers.begin(); buffers_i != buffers.end(); buffers_i++) {
                         if ((*buffers_i)->getRefCount() <= 0) {
                             demodDataOut = (*buffers_i);
                             break;
                         }
                     }
-                    
+
                     if (demodDataOut == NULL) {
                         demodDataOut = new DemodulatorThreadIQData;
                         buffers.push_back(demodDataOut);
                     }
-                    
-                    std::lock_guard < std::mutex > lock(demodDataOut->m_mutex);
+
+//                    std::lock_guard < std::mutex > lock(demodDataOut->m_mutex);
                     demodDataOut->frequency = data_in->frequency;
                     demodDataOut->bandwidth = data_in->bandwidth;
                     demodDataOut->setRefCount(activeDemods);
@@ -183,8 +183,8 @@ void SDRPostThread::threadMain() {
     while (!buffers.empty()) {
         DemodulatorThreadIQData *demodDataDel = buffers.front();
         buffers.pop_front();
-        std::lock_guard < std::mutex > lock(demodDataDel->m_mutex);
-        delete demodDataDel;
+//        std::lock_guard < std::mutex > lock(demodDataDel->m_mutex);
+//        delete demodDataDel;
     }
 
     std::cout << "SDR post-processing thread done." << std::endl;

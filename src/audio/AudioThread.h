@@ -18,14 +18,15 @@
 #include "RtAudio.h"
 #include "DemodDefs.h"
 
-class AudioThreadInput: public ReferenceCounter  {
+class AudioThreadInput: public ReferenceCounter {
 public:
     int frequency;
     int sampleRate;
     int channels;
     std::vector<float> data;
 
-    AudioThreadInput(): frequency(0), sampleRate(0), channels(0) {
+    AudioThreadInput() :
+            frequency(0), sampleRate(0), channels(0) {
 
     }
 

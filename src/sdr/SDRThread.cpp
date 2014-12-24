@@ -92,7 +92,7 @@ void SDRThread::threadMain() {
 #ifdef __APPLE__
     pthread_t tID = pthread_self();  // ID of this thread
     int priority = sched_get_priority_max( SCHED_FIFO) - 1;
-    sched_param prio = { priority }; // scheduling priority of thread
+    sched_param prio = {priority}; // scheduling priority of thread
     pthread_setschedparam(tID, SCHED_FIFO, &prio);
 #endif
 
@@ -176,7 +176,7 @@ void SDRThread::threadMain() {
             buffers.push_back(dataOut);
         }
 
-        std::lock_guard < std::mutex > lock(dataOut->m_mutex);
+//        std::lock_guard < std::mutex > lock(dataOut->m_mutex);
         dataOut->setRefCount(1);
         dataOut->frequency = frequency;
         dataOut->bandwidth = bandwidth;
@@ -200,8 +200,8 @@ void SDRThread::threadMain() {
     while (!buffers.empty()) {
         SDRThreadIQData *iqDataDel = buffers.front();
         buffers.pop_front();
-        std::lock_guard < std::mutex > lock(iqDataDel->m_mutex);
-        delete iqDataDel;
+//        std::lock_guard < std::mutex > lock(iqDataDel->m_mutex);
+//        delete iqDataDel;
     }
 
     std::cout << "SDR thread done." << std::endl;

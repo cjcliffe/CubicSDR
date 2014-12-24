@@ -30,7 +30,8 @@ wxEND_EVENT_TABLE()
 
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-                   wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0), activeDemodulatorBandwidth(0), activeDemodulatorFrequency(0), dragState(WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), shiftDown(false), altDown(false), ctrlDown(false) {
+        wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0), activeDemodulatorBandwidth(0), activeDemodulatorFrequency(0), dragState(
+                WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), shiftDown(false), altDown(false), ctrlDown(false) {
 
     int in_block_size = FFT_SIZE;
     int out_block_size = FFT_SIZE;
@@ -76,7 +77,8 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     DemodulatorInstance *activeDemodulator = wxGetApp().getDemodMgr().getActiveDemodulator();
     DemodulatorInstance *lastActiveDemodulator = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
-    bool isNew = shiftDown || (wxGetApp().getDemodMgr().getLastActiveDemodulator() && !wxGetApp().getDemodMgr().getLastActiveDemodulator()->isActive());
+    bool isNew = shiftDown
+            || (wxGetApp().getDemodMgr().getLastActiveDemodulator() && !wxGetApp().getDemodMgr().getLastActiveDemodulator()->isActive());
 
     if (mTracker.mouseInView()) {
         if (nextDragState == WF_DRAG_RANGE) {
@@ -163,7 +165,7 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     case WXK_RIGHT:
         freq = wxGetApp().getFrequency();
         if (shiftDown) {
-            freq += SRATE*10;
+            freq += SRATE * 10;
         } else {
             freq += SRATE / 2;
         }
@@ -173,7 +175,7 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     case WXK_LEFT:
         freq = wxGetApp().getFrequency();
         if (shiftDown) {
-            freq -= SRATE*10;
+            freq -= SRATE * 10;
         } else {
             freq -= SRATE / 2;
         }
@@ -438,7 +440,8 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
     altDown = event.AltDown();
     ctrlDown = event.ControlDown();
 
-    bool isNew = shiftDown || (wxGetApp().getDemodMgr().getLastActiveDemodulator() && !wxGetApp().getDemodMgr().getLastActiveDemodulator()->isActive());
+    bool isNew = shiftDown
+            || (wxGetApp().getDemodMgr().getLastActiveDemodulator() && !wxGetApp().getDemodMgr().getLastActiveDemodulator()->isActive());
 
     mTracker.setVertDragLock(false);
     mTracker.setHorizDragLock(false);

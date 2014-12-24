@@ -6,8 +6,10 @@
 #include <pthread.h>
 #endif
 
-DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* pQueue, DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify) :
-        postInputQueue(pQueue), visOutQueue(NULL), audioInputQueue(NULL), agc(NULL), terminated(false), threadQueueNotify(threadQueueNotify), threadQueueControl(threadQueueControl), squelch_level(0), squelch_tolerance(0), squelch_enabled(false) {
+DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* pQueue, DemodulatorThreadControlCommandQueue *threadQueueControl,
+        DemodulatorThreadCommandQueue* threadQueueNotify) :
+        postInputQueue(pQueue), visOutQueue(NULL), audioInputQueue(NULL), agc(NULL), terminated(false), threadQueueNotify(threadQueueNotify), threadQueueControl(
+                threadQueueControl), squelch_level(0), squelch_tolerance(0), squelch_enabled(false) {
 
     float kf = 0.5;         // modulation factor
     fdem = freqdem_create(kf);
@@ -35,14 +37,19 @@ void DemodulatorThread::threadMain() {
     agc_crcf_set_bandwidth(agc, 1e-3f);
 
     std::cout << "Demodulator thread started.." << std::endl;
+
+    std::deque<AudioThreadInput *> buffers;
+    std::deque<AudioThreadInput *>::iterator buffers_i;
+
     while (!terminated) {
         DemodulatorThreadPostIQData *inp;
         postInputQueue->pop(inp);
+        std::lock_guard < std::mutex > lock(inp->m_mutex);
 
         int bufSize = inp->data.size();
 
         if (!bufSize) {
-            delete inp;
+            inp->decRefCount();
             continue;
         }
 
@@ -76,26 +83,40 @@ void DemodulatorThread::threadMain() {
         unsigned int num_audio_written;
         msresamp_rrrf_execute(audio_resampler, demod_output, num_written, resampled_audio_output, &num_audio_written);
 
-        AudioThreadInput *ati = new AudioThreadInput;
-        ati->channels = 1;
-        ati->data.assign(resampled_audio_output,resampled_audio_output+num_audio_written);
-
         if (audioInputQueue != NULL) {
             if (!squelch_enabled || ((agc_crcf_get_signal_level(agc)) >= 0.1)) {
+                AudioThreadInput *ati = NULL;
+
+                for (buffers_i = buffers.begin(); buffers_i != buffers.end(); buffers_i++) {
+                    if ((*buffers_i)->getRefCount() <= 0) {
+                        ati = (*buffers_i);
+                        break;
+                    }
+                }
+
+                if (ati == NULL) {
+                    ati = new AudioThreadInput;
+                    buffers.push_back(ati);
+                }
+
+                ati->setRefCount(1);
+                ati->channels = 1;
+                ati->data.assign(resampled_audio_output, resampled_audio_output + num_audio_written);
+
                 audioInputQueue->push(ati);
             }
         }
 
         if (visOutQueue != NULL && visOutQueue->empty()) {
             AudioThreadInput *ati_vis = new AudioThreadInput;
-            ati_vis->channels = ati->channels;
+            ati_vis->channels = 1;
 
             int num_vis = DEMOD_VIS_SIZE;
             if (num_audio_written > num_written) {
                 if (num_vis > num_audio_written) {
                     num_vis = num_audio_written;
                 }
-                ati_vis->data.assign(ati->data.begin(), ati->data.begin()+num_vis);
+                ati_vis->data.assign(resampled_audio_output, resampled_audio_output + num_vis);
             } else {
                 if (num_vis > num_written) {
                     num_vis = num_written;
@@ -115,7 +136,7 @@ void DemodulatorThread::threadMain() {
                 switch (command.cmd) {
                 case DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_AUTO:
                     squelch_level = agc_crcf_get_signal_level(agc);
-                    squelch_tolerance = agc_crcf_get_signal_level(agc)/2.0;
+                    squelch_tolerance = agc_crcf_get_signal_level(agc) / 2.0;
                     squelch_enabled = true;
                     break;
                 case DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_OFF:
@@ -129,7 +150,7 @@ void DemodulatorThread::threadMain() {
             }
         }
 
-        delete inp;
+        inp->decRefCount();
     }
 
     if (resampler != NULL) {
@@ -140,6 +161,13 @@ void DemodulatorThread::threadMain() {
     }
 
     agc_crcf_destroy(agc);
+
+    while (!buffers.empty()) {
+        AudioThreadInput *audioDataDel = buffers.front();
+        buffers.pop_front();
+        std::lock_guard < std::mutex > lock(audioDataDel->m_mutex);
+        delete audioDataDel;
+    }
 
     std::cout << "Demodulator thread done." << std::endl;
     DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_TERMINATED);

@@ -13,7 +13,8 @@ typedef ThreadQueue<AudioThreadInput *> DemodulatorThreadOutputQueue;
 class DemodulatorThread {
 public:
 
-    DemodulatorThread(DemodulatorThreadPostInputQueue* pQueueIn, DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify);
+    DemodulatorThread(DemodulatorThreadPostInputQueue* pQueueIn, DemodulatorThreadControlCommandQueue *threadQueueControl,
+            DemodulatorThreadCommandQueue* threadQueueNotify);
     ~DemodulatorThread();
 
 #ifdef __APPLE__
@@ -53,6 +54,5 @@ protected:
     DemodulatorThreadCommandQueue* threadQueueNotify;
     DemodulatorThreadControlCommandQueue *threadQueueControl;
     float squelch_level;
-    float squelch_tolerance;
-    bool squelch_enabled;
+    float squelch_tolerance;bool squelch_enabled;
 };
