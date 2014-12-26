@@ -166,9 +166,9 @@ void DemodulatorPreThread::threadMain() {
         }
 
 //        std::lock_guard < std::mutex > lock(inp->m_mutex);
-        std::vector<signed char> *data = &inp->data;
+        std::vector<liquid_float_complex> *data = &inp->data;
         if (data->size()) {
-            int bufSize = data->size() / 2;
+            int bufSize = data->size();
 
             if (in_buf_data.size() != bufSize) {
                 if (in_buf_data.capacity() < bufSize) {
@@ -179,14 +179,11 @@ void DemodulatorPreThread::threadMain() {
                 out_buf_data.resize(bufSize);
             }
 
+            in_buf_data.assign(inp->data.begin(),inp->data.end());
+
             liquid_float_complex *in_buf = &in_buf_data[0];
             liquid_float_complex *out_buf = &out_buf_data[0];
             liquid_float_complex *temp_buf = NULL;
-
-            for (int i = 0; i < bufSize; i++) {
-                in_buf[i].real = (float) (*data)[i * 2] / 127.0f;
-                in_buf[i].imag = (float) (*data)[i * 2 + 1] / 127.0f;
-            }
 
             if (shift_freq != 0) {
                 if (shift_freq < 0) {

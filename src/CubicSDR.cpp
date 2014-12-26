@@ -30,7 +30,7 @@ bool CubicSDR::OnInit() {
     sdrPostThread = new SDRPostThread();
 
     iqPostDataQueue = new SDRThreadIQDataQueue;
-    iqVisualQueue = new SDRThreadIQDataQueue;
+    iqVisualQueue = new DemodulatorThreadInputQueue;
     iqVisualQueue->set_max_num_items(1);
 
     sdrThread->setIQDataOutQueue(iqPostDataQueue);
@@ -115,7 +115,7 @@ DemodulatorThreadOutputQueue* CubicSDR::getAudioVisualQueue() {
     return audioVisualQueue;
 }
 
-SDRThreadIQDataQueue* CubicSDR::getIQVisualQueue() {
+DemodulatorThreadInputQueue* CubicSDR::getIQVisualQueue() {
     return iqVisualQueue;
 }
 

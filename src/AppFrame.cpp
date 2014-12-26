@@ -96,7 +96,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 //    std::this_thread::yield();
 //#endif
     if (!wxGetApp().getIQVisualQueue()->empty()) {
-        SDRThreadIQData *iqData;
+        DemodulatorThreadIQData *iqData;
         wxGetApp().getIQVisualQueue()->pop(iqData);
 
         if (iqData && iqData->data.size()) {

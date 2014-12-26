@@ -55,7 +55,7 @@ class DemodulatorThreadIQData: public ReferenceCounter {
 public:
     unsigned int frequency;
     unsigned int bandwidth;
-    std::vector<signed char> data;
+    std::vector<liquid_float_complex> data;
 
     DemodulatorThreadIQData() :
             frequency(0), bandwidth(0) {

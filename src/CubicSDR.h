@@ -33,7 +33,7 @@ public:
     int getFrequency();
 
     DemodulatorThreadOutputQueue* getAudioVisualQueue();
-    SDRThreadIQDataQueue* getIQVisualQueue();
+    DemodulatorThreadInputQueue* getIQVisualQueue();
     DemodulatorMgr &getDemodMgr();
 
     void bindDemodulator(DemodulatorInstance *demod);
@@ -50,8 +50,8 @@ private:
     SDRPostThread *sdrPostThread;
 
     SDRThreadCommandQueue* threadCmdQueueSDR;
-    SDRThreadIQDataQueue* iqVisualQueue;
     SDRThreadIQDataQueue* iqPostDataQueue;
+    DemodulatorThreadInputQueue* iqVisualQueue;
     DemodulatorThreadOutputQueue* audioVisualQueue;
 
     std::thread *t_SDR;

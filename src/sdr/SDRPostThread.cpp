@@ -27,10 +27,10 @@ void SDRPostThread::removeDemodulator(DemodulatorInstance *demod) {
 void SDRPostThread::setIQDataInQueue(SDRThreadIQDataQueue* iqDataQueue) {
     iqDataInQueue = iqDataQueue;
 }
-void SDRPostThread::setIQDataOutQueue(SDRThreadIQDataQueue* iqDataQueue) {
+void SDRPostThread::setIQDataOutQueue(DemodulatorThreadInputQueue* iqDataQueue) {
     iqDataOutQueue = iqDataQueue;
 }
-void SDRPostThread::setIQVisualQueue(SDRThreadIQDataQueue *iqVisQueue) {
+void SDRPostThread::setIQVisualQueue(DemodulatorThreadInputQueue *iqVisQueue) {
     iqVisualQueue = iqVisQueue;
 }
 
@@ -47,13 +47,12 @@ void SDRPostThread::threadMain() {
 
     dcFilter = iirfilt_crcf_create_dc_blocker(0.0005);
 
-    liquid_float_complex x, y;
-
     std::cout << "SDR post-processing thread started.." << std::endl;
 
     std::deque<DemodulatorThreadIQData *> buffers;
     std::deque<DemodulatorThreadIQData *>::iterator buffers_i;
-    std::vector<signed char> dataOut;
+    std::vector<liquid_float_complex> fpData;
+    std::vector<liquid_float_complex> dataOut;
 
     while (!terminated) {
         SDRThreadIQData *data_in;
@@ -62,34 +61,35 @@ void SDRPostThread::threadMain() {
 //        std::lock_guard < std::mutex > lock(data_in->m_mutex);
 
         if (data_in && data_in->data.size()) {
-            if (data_in->data.size() > dataOut.capacity()) {
-                dataOut.reserve(data_in->data.size());
+            int dataSize = data_in->data.size()/2;
+            if (dataSize > fpData.capacity()) {
+                fpData.reserve(dataSize);
+                dataOut.reserve(dataSize);
+            }
+            if (dataSize != fpData.size()) {
+                fpData.resize(dataSize);
+                dataOut.resize(dataSize);
             }
 
-            dataOut.assign(data_in->data.begin(), data_in->data.end());
-
-            for (int i = 0, iMax = dataOut.size() / 2; i < iMax; i++) {
-                x.real = (float) dataOut[i * 2] / 127.0;
-                x.imag = (float) dataOut[i * 2 + 1] / 127.0;
-
-                iirfilt_crcf_execute(dcFilter, x, &y);
-
-                dataOut[i * 2] = (signed char) floor(y.real * 127.0);
-                dataOut[i * 2 + 1] = (signed char) floor(y.imag * 127.0);
+            for (int i = 0, iMax = dataSize; i < iMax; i++) {
+                fpData[i].real = (float) data_in->data[i * 2] / 127.0;
+                fpData[i].imag = (float) data_in->data[i * 2 + 1] / 127.0;
             }
+
+            iirfilt_crcf_execute_block(dcFilter, &fpData[0], dataSize, &dataOut[0]);
 
             if (iqDataOutQueue != NULL) {
-                SDRThreadIQData *visDataOut = new SDRThreadIQData;
+                DemodulatorThreadIQData *pipeDataOut = new DemodulatorThreadIQData;
 
-                visDataOut->frequency = data_in->frequency;
-                visDataOut->bandwidth = data_in->bandwidth;
-                visDataOut->data.assign(dataOut.begin(), dataOut.end());
-                iqDataOutQueue.load()->push(visDataOut);
+                pipeDataOut->frequency = data_in->frequency;
+                pipeDataOut->bandwidth = data_in->bandwidth;
+                pipeDataOut->data.assign(dataOut.begin(), dataOut.end());
+                iqDataOutQueue.load()->push(pipeDataOut);
             }
 
             if (iqVisualQueue != NULL && iqVisualQueue.load()->empty()) {
-                SDRThreadIQData *visualDataOut = new SDRThreadIQData;
-                visualDataOut->data.assign(dataOut.begin(), dataOut.begin() + (FFT_SIZE * 2));
+                DemodulatorThreadIQData *visualDataOut = new DemodulatorThreadIQData;
+                visualDataOut->data.assign(dataOut.begin(), dataOut.begin() + FFT_SIZE);
                 iqVisualQueue.load()->push(visualDataOut);
             }
 
@@ -148,7 +148,7 @@ void SDRPostThread::threadMain() {
                     demodDataOut->frequency = data_in->frequency;
                     demodDataOut->bandwidth = data_in->bandwidth;
                     demodDataOut->setRefCount(activeDemods);
-                    demodDataOut->data.assign(dataOut.begin(), dataOut.begin() + dataOut.size());
+                    demodDataOut->data.assign(dataOut.begin(), dataOut.end());
 
                     std::vector<DemodulatorInstance *>::iterator i;
                     for (i = demodulators.begin(); i != demodulators.end(); i++) {

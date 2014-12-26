@@ -17,7 +17,7 @@ public:
     SpectrumCanvas(wxWindow *parent, int *attribList = NULL);
     ~SpectrumCanvas();
 
-    void setData(std::vector<signed char> *data);
+    void setData(std::vector<liquid_float_complex> *data);
 private:
     void OnPaint(wxPaintEvent& event);
 

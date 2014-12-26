@@ -206,7 +206,7 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     }
 }
 
-void WaterfallCanvas::setData(std::vector<signed char> *data) {
+void WaterfallCanvas::setData(std::vector<liquid_float_complex> *data) {
 
     if (data && data->size()) {
         if (spectrum_points.size() < FFT_SIZE * 2) {
@@ -214,8 +214,8 @@ void WaterfallCanvas::setData(std::vector<signed char> *data) {
         }
 
         for (int i = 0; i < FFT_SIZE; i++) {
-            in[i][0] = (float) (*data)[i * 2] / 127.0f;
-            in[i][1] = (float) (*data)[i * 2 + 1] / 127.0f;
+            in[i][0] = (*data)[i].real;
+            in[i][1] = (*data)[i].imag;
         }
 
         fftw_execute(plan);
