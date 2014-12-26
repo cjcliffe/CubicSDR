@@ -10,7 +10,8 @@
 DemodulatorPreThread::DemodulatorPreThread(DemodulatorThreadInputQueue* pQueueIn, DemodulatorThreadPostInputQueue* pQueueOut,
         DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify) :
         inputQueue(pQueueIn), postInputQueue(pQueueOut), terminated(false), initialized(false), audio_resampler(NULL), resample_ratio(1), audio_resample_ratio(
-                1), resampler(NULL), commandQueue(NULL), fir_filter(NULL), audioInputQueue(NULL), threadQueueNotify(threadQueueNotify), threadQueueControl(threadQueueControl) {
+                1), resampler(NULL), commandQueue(NULL), fir_filter(NULL), audioInputQueue(NULL), threadQueueNotify(threadQueueNotify), threadQueueControl(
+                threadQueueControl) {
 
     float kf = 0.5;         // modulation factor
     fdem = freqdem_create(kf);
@@ -90,7 +91,7 @@ void DemodulatorPreThread::threadMain() {
 #ifdef __APPLE__
     pthread_t tID = pthread_self();  // ID of this thread
     int priority = sched_get_priority_max( SCHED_FIFO )-1;
-    sched_param prio = { priority }; // scheduling priority of thread
+    sched_param prio = {priority}; // scheduling priority of thread
     pthread_setschedparam(tID, SCHED_FIFO, &prio);
 #endif
 
@@ -99,8 +100,15 @@ void DemodulatorPreThread::threadMain() {
     }
 
     std::cout << "Demodulator preprocessor thread started.." << std::endl;
+
+    std::deque<DemodulatorThreadPostIQData *> buffers;
+    std::deque<DemodulatorThreadPostIQData *>::iterator buffers_i;
+
+    std::vector<liquid_float_complex> in_buf_data;
+    std::vector<liquid_float_complex> out_buf_data;
+
     while (!terminated) {
-        DemodulatorThreadIQData inp;
+        DemodulatorThreadIQData *inp;
         inputQueue->pop(inp);
 
         bool bandwidthChanged = false;
@@ -144,9 +152,9 @@ void DemodulatorPreThread::threadMain() {
         }
 
         // Requested frequency is not center, shift it into the center!
-        if (inp.frequency != params.frequency) {
-            if ((params.frequency - inp.frequency) != shift_freq) {
-                shift_freq = params.frequency - inp.frequency;
+        if (inp->frequency != params.frequency) {
+            if ((params.frequency - inp->frequency) != shift_freq) {
+                shift_freq = params.frequency - inp->frequency;
                 if (abs(shift_freq) <= (int) ((float) (SRATE / 2) * 1.5)) {
                     nco_crcf_set_frequency(nco_shift, (2.0 * M_PI) * (((float) abs(shift_freq)) / ((float) SRATE)));
                 }
@@ -157,21 +165,25 @@ void DemodulatorPreThread::threadMain() {
             continue;
         }
 
-        std::vector<signed char> *data = &inp.data;
+//        std::lock_guard < std::mutex > lock(inp->m_mutex);
+        std::vector<liquid_float_complex> *data = &inp->data;
         if (data->size()) {
-            int bufSize = data->size() / 2;
+            int bufSize = data->size();
 
-            liquid_float_complex in_buf_data[bufSize];
-            liquid_float_complex out_buf_data[bufSize];
-
-            liquid_float_complex *in_buf = in_buf_data;
-            liquid_float_complex *out_buf = out_buf_data;
-            liquid_float_complex *temp_buf = NULL;
-
-            for (int i = 0; i < bufSize; i++) {
-                in_buf[i].real = (float) (*data)[i * 2] / 127.0f;
-                in_buf[i].imag = (float) (*data)[i * 2 + 1] / 127.0f;
+            if (in_buf_data.size() != bufSize) {
+                if (in_buf_data.capacity() < bufSize) {
+                    in_buf_data.reserve(bufSize);
+                    out_buf_data.reserve(bufSize);
+                }
+                in_buf_data.resize(bufSize);
+                out_buf_data.resize(bufSize);
             }
+
+            in_buf_data.assign(inp->data.begin(),inp->data.end());
+
+            liquid_float_complex *in_buf = &in_buf_data[0];
+            liquid_float_complex *out_buf = &out_buf_data[0];
+            liquid_float_complex *temp_buf = NULL;
 
             if (shift_freq != 0) {
                 if (shift_freq < 0) {
@@ -184,18 +196,34 @@ void DemodulatorPreThread::threadMain() {
                 out_buf = temp_buf;
             }
 
-            DemodulatorThreadPostIQData resamp;
-            resamp.data.resize(bufSize);
+            DemodulatorThreadPostIQData *resamp = NULL;
 
-            firfilt_crcf_execute_block(fir_filter, in_buf, bufSize, &resamp.data[0]);
+            for (buffers_i = buffers.begin(); buffers_i != buffers.end(); buffers_i++) {
+                if ((*buffers_i)->getRefCount() <= 0) {
+                    resamp = (*buffers_i);
+                    break;
+                }
+            }
 
-            resamp.audio_resample_ratio = audio_resample_ratio;
-            resamp.audio_resampler = audio_resampler;
-            resamp.resample_ratio = resample_ratio;
-            resamp.resampler = resampler;
+            if (resamp == NULL) {
+                resamp = new DemodulatorThreadPostIQData;
+                buffers.push_back(resamp);
+            }
+
+            resamp->setRefCount(1);
+            resamp->data.assign(in_buf, in_buf + bufSize);
+
+//            firfilt_crcf_execute_block(fir_filter, in_buf, bufSize, &((*resamp.data)[0]));
+
+            resamp->audio_resample_ratio = audio_resample_ratio;
+            resamp->audio_resampler = audio_resampler;
+            resamp->resample_ratio = resample_ratio;
+            resamp->resampler = resampler;
 
             postInputQueue->push(resamp);
         }
+
+        inp->decRefCount();
 
         if (!workerResults->empty()) {
             while (!workerResults->empty()) {
@@ -225,6 +253,13 @@ void DemodulatorPreThread::threadMain() {
         }
     }
 
+    while (!buffers.empty()) {
+        DemodulatorThreadPostIQData *iqDataDel = buffers.front();
+        buffers.pop_front();
+        std::lock_guard < std::mutex > lock(iqDataDel->m_mutex);
+        delete iqDataDel;
+    }
+
     std::cout << "Demodulator preprocessor thread done." << std::endl;
     DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_PREPROCESS_TERMINATED);
     tCmd.context = this;
@@ -233,7 +268,7 @@ void DemodulatorPreThread::threadMain() {
 
 void DemodulatorPreThread::terminate() {
     terminated = true;
-    DemodulatorThreadIQData inp;    // push dummy to nudge queue
+    DemodulatorThreadIQData *inp = new DemodulatorThreadIQData;    // push dummy to nudge queue
     inputQueue->push(inp);
     workerThread->terminate();
 }

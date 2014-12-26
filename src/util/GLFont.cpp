@@ -5,7 +5,7 @@
 #include <algorithm>
 
 GLFontChar::GLFontChar() :
-        id(0), x(0), y(0), width(0), height(0), xadvance(0), xoffset(0), yoffset(0), index(0), aspect(1) {
+        id(0), x(0), y(0), width(0), height(0), xoffset(0), yoffset(0), xadvance(0), aspect(1), index(0) {
 
 }
 
@@ -96,7 +96,7 @@ int GLFontChar::getIndex() {
 }
 
 GLFont::GLFont() :
-        numCharacters(0), imageHeight(0), imageWidth(0), base(0), lineHeight(0), texId(0), loaded(false) {
+        numCharacters(0), lineHeight(0), base(0), imageWidth(0), imageHeight(0), loaded(false), texId(0) {
 
 }
 
@@ -289,7 +289,7 @@ void GLFont::loadFont(std::string fontFile) {
 
         unsigned int ofs = 0;
         for (char_i = characters.begin(); char_i != characters.end(); char_i++) {
-            int charId = (*char_i).first;
+//            int charId = (*char_i).first;
             GLFontChar *fchar = (*char_i).second;
 
             float faspect = fchar->getAspect();

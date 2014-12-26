@@ -22,16 +22,18 @@ public:
     };
 
     DemodulatorWorkerThreadResult() :
-            cmd(DEMOD_WORKER_THREAD_RESULT_NULL), audioSampleRate(0), bandwidth(0), inputRate(0), fir_filter(NULL), resampler(NULL), resample_ratio(
-                    0), audio_resampler(NULL), audio_resample_ratio(0) {
+            cmd(DEMOD_WORKER_THREAD_RESULT_NULL), fir_filter(NULL), resampler(NULL), resample_ratio(0), audio_resampler(NULL), audio_resample_ratio(
+                    0), inputRate(0), bandwidth(0), audioSampleRate(0) {
 
     }
 
     DemodulatorWorkerThreadResult(DemodulatorThreadResultEnum cmd) :
-            cmd(cmd), audioSampleRate(0), bandwidth(0), inputRate(0), fir_filter(NULL), resampler(NULL), resample_ratio(0), audio_resampler(NULL), audio_resample_ratio(
-                    0) {
+            cmd(cmd), fir_filter(NULL), resampler(NULL), resample_ratio(0), audio_resampler(NULL), audio_resample_ratio(0), inputRate(0), bandwidth(
+                    0), audioSampleRate(0) {
 
     }
+
+    DemodulatorThreadResultEnum cmd;
 
     firfilt_crcf fir_filter;
     msresamp_crcf resampler;
@@ -43,7 +45,6 @@ public:
     unsigned int bandwidth;
     unsigned int audioSampleRate;
 
-    DemodulatorThreadResultEnum cmd;
 };
 
 class DemodulatorWorkerThreadCommand {
@@ -62,12 +63,12 @@ public:
 
     }
 
+    DemodulatorThreadCommandEnum cmd;
+
     unsigned int frequency;
     unsigned int inputRate;
     unsigned int bandwidth;
     unsigned int audioSampleRate;
-
-    DemodulatorThreadCommandEnum cmd;
 };
 
 typedef ThreadQueue<DemodulatorWorkerThreadCommand> DemodulatorThreadWorkerCommandQueue;

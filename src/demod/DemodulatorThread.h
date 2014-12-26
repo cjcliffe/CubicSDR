@@ -6,14 +6,15 @@
 #include "DemodDefs.h"
 #include "AudioThread.h"
 
-typedef ThreadQueue<AudioThreadInput> DemodulatorThreadOutputQueue;
+typedef ThreadQueue<AudioThreadInput *> DemodulatorThreadOutputQueue;
 
 #define DEMOD_VIS_SIZE 2048
 
 class DemodulatorThread {
 public:
 
-    DemodulatorThread(DemodulatorThreadPostInputQueue* pQueueIn, DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify);
+    DemodulatorThread(DemodulatorThreadPostInputQueue* pQueueIn, DemodulatorThreadControlCommandQueue *threadQueueControl,
+            DemodulatorThreadCommandQueue* threadQueueNotify);
     ~DemodulatorThread();
 
 #ifdef __APPLE__
@@ -53,6 +54,5 @@ protected:
     DemodulatorThreadCommandQueue* threadQueueNotify;
     DemodulatorThreadControlCommandQueue *threadQueueControl;
     float squelch_level;
-    float squelch_tolerance;
-    bool squelch_enabled;
+    float squelch_tolerance;bool squelch_enabled;
 };

@@ -77,12 +77,12 @@ DemodulatorThreadParameters &DemodulatorInstance::getParams() {
 }
 
 void DemodulatorInstance::terminate() {
-    std::cout << "Terminating demodulator preprocessor thread.." << std::endl;
-    demodulatorPreThread->terminate();
-    std::cout << "Terminating demodulator thread.." << std::endl;
-    demodulatorThread->terminate();
     std::cout << "Terminating demodulator audio thread.." << std::endl;
     audioThread->terminate();
+    std::cout << "Terminating demodulator thread.." << std::endl;
+    demodulatorThread->terminate();
+    std::cout << "Terminating demodulator preprocessor thread.." << std::endl;
+    demodulatorPreThread->terminate();
 }
 
 std::string DemodulatorInstance::getLabel() {
@@ -145,7 +145,6 @@ void DemodulatorInstance::setActive(bool state) {
     active = state;
     audioThread->setActive(state);
 }
-
 
 void DemodulatorInstance::squelchAuto() {
     DemodulatorThreadControlCommand command;

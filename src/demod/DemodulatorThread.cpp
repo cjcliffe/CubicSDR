@@ -6,8 +6,10 @@
 #include <pthread.h>
 #endif
 
-DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* pQueue, DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify) :
-        postInputQueue(pQueue), visOutQueue(NULL), terminated(false), audioInputQueue(NULL), threadQueueNotify(threadQueueNotify), threadQueueControl(threadQueueControl), agc(NULL), squelch_enabled(false), squelch_level(0), squelch_tolerance(0) {
+DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* pQueue, DemodulatorThreadControlCommandQueue *threadQueueControl,
+        DemodulatorThreadCommandQueue* threadQueueNotify) :
+        postInputQueue(pQueue), visOutQueue(NULL), audioInputQueue(NULL), agc(NULL), terminated(false), threadQueueNotify(threadQueueNotify), threadQueueControl(
+                threadQueueControl), squelch_level(0), squelch_tolerance(0), squelch_enabled(false) {
 
     float kf = 0.5;         // modulation factor
     fdem = freqdem_create(kf);
@@ -35,71 +37,115 @@ void DemodulatorThread::threadMain() {
     agc_crcf_set_bandwidth(agc, 1e-3f);
 
     std::cout << "Demodulator thread started.." << std::endl;
-    while (!terminated) {
-        DemodulatorThreadPostIQData inp;
-        postInputQueue->pop(inp);
 
-        int bufSize = inp.data.size();
+    std::deque<AudioThreadInput *> buffers;
+    std::deque<AudioThreadInput *>::iterator buffers_i;
+
+    std::vector<liquid_float_complex> resampled_data;
+    std::vector<liquid_float_complex> agc_data;
+    std::vector<float> demod_output;
+    std::vector<float> resampled_audio_output;
+
+    while (!terminated) {
+        DemodulatorThreadPostIQData *inp;
+        postInputQueue->pop(inp);
+        std::lock_guard < std::mutex > lock(inp->m_mutex);
+
+        int bufSize = inp->data.size();
 
         if (!bufSize) {
+            inp->decRefCount();
             continue;
         }
 
         if (resampler == NULL) {
-            resampler = inp.resampler;
-            audio_resampler = inp.audio_resampler;
-        } else if (resampler != inp.resampler) {
+            resampler = inp->resampler;
+            audio_resampler = inp->audio_resampler;
+        } else if (resampler != inp->resampler) {
             msresamp_crcf_destroy(resampler);
             msresamp_rrrf_destroy(audio_resampler);
-            resampler = inp.resampler;
-            audio_resampler = inp.audio_resampler;
+            resampler = inp->resampler;
+            audio_resampler = inp->audio_resampler;
         }
 
-        int out_size = ceil((float) (bufSize) * inp.resample_ratio);
-        liquid_float_complex resampled_data[out_size];
-        liquid_float_complex agc_data[out_size];
+        int out_size = ceil((float) (bufSize) * inp->resample_ratio);
+
+        if (agc_data.size() != out_size) {
+            if (agc_data.capacity() < out_size) {
+                agc_data.reserve(out_size);
+                resampled_data.reserve(out_size);
+            }
+            agc_data.resize(out_size);
+            resampled_data.resize(out_size);
+        }
 
         unsigned int num_written;
-        msresamp_crcf_execute(resampler, &inp.data[0], bufSize, resampled_data, &num_written);
+        msresamp_crcf_execute(resampler, &(inp->data[0]), bufSize, &resampled_data[0], &num_written);
 
-        agc_crcf_execute_block(agc, resampled_data, num_written, agc_data);
+        agc_crcf_execute_block(agc, &resampled_data[0], num_written, &agc_data[0]);
 
-        float audio_resample_ratio = inp.audio_resample_ratio;
-        float demod_output[num_written];
+        float audio_resample_ratio = inp->audio_resample_ratio;
 
-        freqdem_demodulate_block(fdem, agc_data, num_written, demod_output);
+        if (demod_output.size() != num_written) {
+            if (demod_output.capacity() < num_written) {
+                demod_output.reserve(num_written);
+            }
+            demod_output.resize(num_written);
+        }
+
+        freqdem_demodulate_block(fdem, &agc_data[0], num_written, &demod_output[0]);
 
         int audio_out_size = ceil((float) (num_written) * audio_resample_ratio);
-        float resampled_audio_output[audio_out_size];
+
+        if (audio_out_size != resampled_audio_output.size()) {
+            if (resampled_audio_output.capacity() < audio_out_size) {
+                resampled_audio_output.reserve(audio_out_size);
+            }
+            resampled_audio_output.resize(audio_out_size);
+        }
 
         unsigned int num_audio_written;
-        msresamp_rrrf_execute(audio_resampler, demod_output, num_written, resampled_audio_output, &num_audio_written);
-
-        AudioThreadInput ati;
-        ati.channels = 1;
-        ati.data.assign(resampled_audio_output,resampled_audio_output+num_audio_written);
+        msresamp_rrrf_execute(audio_resampler, &demod_output[0], num_written, &resampled_audio_output[0], &num_audio_written);
 
         if (audioInputQueue != NULL) {
             if (!squelch_enabled || ((agc_crcf_get_signal_level(agc)) >= 0.1)) {
+                AudioThreadInput *ati = NULL;
+
+                for (buffers_i = buffers.begin(); buffers_i != buffers.end(); buffers_i++) {
+                    if ((*buffers_i)->getRefCount() <= 0) {
+                        ati = (*buffers_i);
+                        break;
+                    }
+                }
+
+                if (ati == NULL) {
+                    ati = new AudioThreadInput;
+                    buffers.push_back(ati);
+                }
+
+                ati->setRefCount(1);
+                ati->channels = 1;
+                ati->data.assign(resampled_audio_output.begin(), resampled_audio_output.begin() + num_audio_written);
+
                 audioInputQueue->push(ati);
             }
         }
 
         if (visOutQueue != NULL && visOutQueue->empty()) {
-            AudioThreadInput ati_vis;
-            ati_vis.channels = ati.channels;
+            AudioThreadInput *ati_vis = new AudioThreadInput;
+            ati_vis->channels = 1;
 
             int num_vis = DEMOD_VIS_SIZE;
             if (num_audio_written > num_written) {
                 if (num_vis > num_audio_written) {
                     num_vis = num_audio_written;
                 }
-                ati_vis.data.assign(ati.data.begin(), ati.data.begin()+num_vis);
+                ati_vis->data.assign(resampled_audio_output.begin(), resampled_audio_output.begin() + num_vis);
             } else {
                 if (num_vis > num_written) {
                     num_vis = num_written;
                 }
-                ati_vis.data.assign(demod_output, demod_output + num_vis);
+                ati_vis->data.assign(demod_output.begin(), demod_output.begin() + num_vis);
             }
 
             visOutQueue->push(ati_vis);
@@ -114,7 +160,7 @@ void DemodulatorThread::threadMain() {
                 switch (command.cmd) {
                 case DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_AUTO:
                     squelch_level = agc_crcf_get_signal_level(agc);
-                    squelch_tolerance = agc_crcf_get_signal_level(agc)/2.0;
+                    squelch_tolerance = agc_crcf_get_signal_level(agc) / 2.0;
                     squelch_enabled = true;
                     break;
                 case DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_OFF:
@@ -128,6 +174,7 @@ void DemodulatorThread::threadMain() {
             }
         }
 
+        inp->decRefCount();
     }
 
     if (resampler != NULL) {
@@ -139,6 +186,13 @@ void DemodulatorThread::threadMain() {
 
     agc_crcf_destroy(agc);
 
+    while (!buffers.empty()) {
+        AudioThreadInput *audioDataDel = buffers.front();
+        buffers.pop_front();
+        std::lock_guard < std::mutex > lock(audioDataDel->m_mutex);
+        delete audioDataDel;
+    }
+
     std::cout << "Demodulator thread done." << std::endl;
     DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_TERMINATED);
     tCmd.context = this;
@@ -147,6 +201,6 @@ void DemodulatorThread::threadMain() {
 
 void DemodulatorThread::terminate() {
     terminated = true;
-    DemodulatorThreadPostIQData inp;    // push dummy to nudge queue
+    DemodulatorThreadPostIQData *inp = new DemodulatorThreadPostIQData;    // push dummy to nudge queue
     postInputQueue->push(inp);
 }

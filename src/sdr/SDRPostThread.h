@@ -12,8 +12,8 @@ public:
     void removeDemodulator(DemodulatorInstance *demod);
 
     void setIQDataInQueue(SDRThreadIQDataQueue* iqDataQueue);
-    void setIQDataOutQueue(SDRThreadIQDataQueue* iqDataQueue);
-    void setIQVisualQueue(SDRThreadIQDataQueue *iqVisQueue);
+    void setIQDataOutQueue(DemodulatorThreadInputQueue* iqDataQueue);
+    void setIQVisualQueue(DemodulatorThreadInputQueue* iqVisQueue);
 
     void threadMain();
     void terminate();
@@ -21,11 +21,13 @@ public:
 protected:
     uint32_t sample_rate;
 
-    std::atomic<SDRThreadIQDataQueue*> iqDataOutQueue;
-    std::atomic<SDRThreadIQDataQueue*> iqDataInQueue;
-    std::atomic<SDRThreadIQDataQueue*> iqVisualQueue;
+    std::atomic<SDRThreadIQDataQueue *> iqDataInQueue;
+    std::atomic<DemodulatorThreadInputQueue *> iqDataOutQueue;
+    std::atomic<DemodulatorThreadInputQueue *> iqVisualQueue;
 
     std::vector<DemodulatorInstance *> demodulators;
+    std::vector<DemodulatorInstance *> demodulators_add;
+    std::vector<DemodulatorInstance *> demodulators_remove;
     std::atomic<bool> terminated;
     iirfilt_crcf dcFilter;
 };

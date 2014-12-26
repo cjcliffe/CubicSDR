@@ -21,7 +21,7 @@ public:
     WaterfallCanvas(wxWindow *parent, int *attribList = NULL);
     ~WaterfallCanvas();
 
-    void setData(std::vector<signed char> *data);
+    void setData(std::vector<liquid_float_complex> *data);
     int GetFrequencyAt(float x);
 
 private:

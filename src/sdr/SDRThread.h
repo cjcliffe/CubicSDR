@@ -34,7 +34,7 @@ public:
     int int_value;
 };
 
-class SDRThreadIQData {
+class SDRThreadIQData : public ReferenceCounter  {
 public:
     unsigned int frequency;
     unsigned int bandwidth;
@@ -45,8 +45,8 @@ public:
 
     }
 
-    SDRThreadIQData(unsigned int bandwidth, unsigned int frequency, std::vector<signed char> data) :
-            data(data), frequency(frequency), bandwidth(bandwidth) {
+    SDRThreadIQData(unsigned int bandwidth, unsigned int frequency, std::vector<signed char> *data) :
+            frequency(frequency), bandwidth(bandwidth) {
 
     }
 
@@ -56,7 +56,7 @@ public:
 };
 
 typedef ThreadQueue<SDRThreadCommand> SDRThreadCommandQueue;
-typedef ThreadQueue<SDRThreadIQData> SDRThreadIQDataQueue;
+typedef ThreadQueue<SDRThreadIQData *> SDRThreadIQDataQueue;
 
 class SDRThread {
 public:

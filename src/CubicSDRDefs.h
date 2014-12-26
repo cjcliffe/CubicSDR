@@ -11,3 +11,25 @@
 
 #define DEFAULT_FREQ 98900000
 #define AUDIO_FREQUENCY 44100
+
+#include <mutex>
+#include <atomic>
+
+class ReferenceCounter {
+public:
+    mutable std::mutex m_mutex;
+
+    void setRefCount(int rc) {
+        refCount.store(rc);
+    }
+
+    void decRefCount() {
+        refCount.store(refCount.load()-1);
+    }
+
+    int getRefCount() {
+        return refCount.load();
+    }
+protected:
+    std::atomic<int> refCount;
+};

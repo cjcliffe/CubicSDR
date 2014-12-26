@@ -29,7 +29,7 @@ SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
         wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0) {
 
-    int in_block_size = BUF_SIZE / 2;
+    int in_block_size = FFT_SIZE;
     int out_block_size = FFT_SIZE;
 
     in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * in_block_size);
@@ -73,16 +73,16 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     SwapBuffers();
 }
 
-void SpectrumCanvas::setData(std::vector<signed char> *data) {
+void SpectrumCanvas::setData(std::vector<liquid_float_complex> *data) {
 
     if (data && data->size()) {
         if (spectrum_points.size() < FFT_SIZE * 2) {
             spectrum_points.resize(FFT_SIZE * 2);
         }
 
-        for (int i = 0; i < BUF_SIZE / 2; i++) {
-            in[i][0] = (float) (*data)[i * 2] / 127.0f;
-            in[i][1] = (float) (*data)[i * 2 + 1] / 127.0f;
+        for (int i = 0; i < FFT_SIZE; i++) {
+            in[i][0] = (*data)[i].real;
+            in[i][1] = (*data)[i].imag;
         }
 
         fftw_execute(plan);
