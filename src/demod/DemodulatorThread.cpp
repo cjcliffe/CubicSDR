@@ -8,8 +8,8 @@
 
 DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* pQueue, DemodulatorThreadControlCommandQueue *threadQueueControl,
         DemodulatorThreadCommandQueue* threadQueueNotify) :
-        postInputQueue(pQueue), visOutQueue(NULL), audioInputQueue(NULL), agc(NULL), stereo(false), terminated(false), threadQueueNotify(threadQueueNotify), threadQueueControl(
-                threadQueueControl), squelch_level(0), squelch_tolerance(0), squelch_enabled(false) {
+        postInputQueue(pQueue), visOutQueue(NULL), audioInputQueue(NULL), agc(NULL), stereo(false), terminated(false), threadQueueNotify(
+                threadQueueNotify), threadQueueControl(threadQueueControl), squelch_level(0), squelch_tolerance(0), squelch_enabled(false) {
 
     float kf = 0.5;         // modulation factor
     fdem = freqdem_create(kf);
@@ -106,18 +106,18 @@ void DemodulatorThread::threadMain() {
         freqdem_demodulate_block(fdem, &agc_data[0], num_written, &demod_output[0]);
 
         if (stereo) {
-            int shift_freq = 38000-inp->bandwidth;
-            double freq =  (2.0 * M_PI) * (((double) abs(shift_freq)) / ((double) inp->bandwidth));
+            int shift_freq = 38000 - inp->bandwidth;
+            double freq = (2.0 * M_PI) * (((double) abs(shift_freq)) / ((double) inp->bandwidth));
 
             for (int i = 0; i < num_written; i++) {
-                freq_index+=freq;
+                freq_index += freq;
 
-                demod_output_stereo[i] = demod_output[i] * sin(freq_index);// + demod_output[i] * cos(freq_index);
-                while (freq_index > (M_PI*2.0)) {
-                    freq_index -= (M_PI*2.0);
+                demod_output_stereo[i] = demod_output[i] * sin(freq_index); // + demod_output[i] * cos(freq_index);
+                while (freq_index > (M_PI * 2.0)) {
+                    freq_index -= (M_PI * 2.0);
                 }
-                while (freq_index < (M_PI*2.0)) {
-                    freq_index += (M_PI*2.0);
+                while (freq_index < (M_PI * 2.0)) {
+                    freq_index += (M_PI * 2.0);
                 }
             }
         }
@@ -160,10 +160,10 @@ void DemodulatorThread::threadMain() {
 
                 if (stereo) {
                     ati->channels = 2;
-                    ati->data.resize(num_audio_written*2);
+                    ati->data.resize(num_audio_written * 2);
                     for (int i = 0; i < num_audio_written; i++) {
-                        ati->data[i*2] = (resampled_audio_output[i]-(resampled_audio_output_stereo[i]));
-                        ati->data[i*2+1] = (resampled_audio_output[i]+(resampled_audio_output_stereo[i]));
+                        ati->data[i * 2] = (resampled_audio_output[i] - (resampled_audio_output_stereo[i]));
+                        ati->data[i * 2 + 1] = (resampled_audio_output[i] + (resampled_audio_output_stereo[i]));
                     }
                 } else {
                     ati->channels = 1;
@@ -179,22 +179,37 @@ void DemodulatorThread::threadMain() {
             ati_vis->channels = 1;
 
             int num_vis = DEMOD_VIS_SIZE;
-            if (num_audio_written > num_written) {
-                if (num_vis > num_audio_written) {
-                    num_vis = num_audio_written;
+            if (stereo) {
+
+                int stereoSize = resampled_audio_output.size();
+                if (stereoSize > DEMOD_VIS_SIZE) {
+                    stereoSize = DEMOD_VIS_SIZE;
                 }
-                ati_vis->data.assign(resampled_audio_output.begin(), resampled_audio_output.begin() + num_vis);
+                ati_vis->data.resize(stereoSize);
+
+                for (int i = 0; i < stereoSize / 2; i++) {
+                    ati_vis->data[i] = (resampled_audio_output[i] - (resampled_audio_output_stereo[i]));
+                    ati_vis->data[i + stereoSize / 2] = (resampled_audio_output[i] + (resampled_audio_output_stereo[i]));
+                }
             } else {
-                if (num_vis > num_written) {
-                    num_vis = num_written;
+                if (num_audio_written > num_written) {
+
+                    if (num_vis > num_audio_written) {
+                        num_vis = num_audio_written;
+                    }
+                    ati_vis->data.assign(resampled_audio_output.begin(), resampled_audio_output.begin() + num_vis);
+                } else {
+                    if (num_vis > num_written) {
+                        num_vis = num_written;
+                    }
+                    ati_vis->data.assign(demod_output.begin(), demod_output.begin() + num_vis);
                 }
-                ati_vis->data.assign(demod_output.begin(), demod_output.begin() + num_vis);
+
+//            std::cout << "Signal: " << agc_crcf_get_signal_level(agc) << " -- " << agc_crcf_get_rssi(agc) << "dB " << std::endl;
             }
 
             visOutQueue->push(ati_vis);
-//            std::cout << "Signal: " << agc_crcf_get_signal_level(agc) << " -- " << agc_crcf_get_rssi(agc) << "dB " << std::endl;
         }
-
         if (!threadQueueControl->empty()) {
             while (!threadQueueControl->empty()) {
                 DemodulatorThreadControlCommand command;
@@ -251,10 +266,9 @@ void DemodulatorThread::terminate() {
     postInputQueue->push(inp);
 }
 
-
 void DemodulatorThread::setStereo(bool state) {
     stereo = state;
-    std::cout << "Stereo " << (state?"Enabled":"Disabled") << std::endl;
+    std::cout << "Stereo " << (state ? "Enabled" : "Disabled") << std::endl;
 }
 
 bool DemodulatorThread::isStereo() {
