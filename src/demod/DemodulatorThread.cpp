@@ -34,6 +34,16 @@ void DemodulatorThread::threadMain() {
     msresamp_rrrf stereo_resampler = NULL;
     msresamp_crcf resampler = NULL;
 
+    unsigned int m=5;           // filter semi-length
+    float slsl=60.0f;           // filter sidelobe suppression level
+    liquid_float_complex x, y;
+
+    firhilbf firR2C = firhilbf_create(m,slsl);
+    firhilbf firC2R = firhilbf_create(m,slsl);
+
+    nco_crcf nco_shift = nco_crcf_create(LIQUID_NCO);
+    float shift_freq = 0;
+
     agc = agc_crcf_create();
     agc_crcf_set_bandwidth(agc, 1e-3f);
 
@@ -106,19 +116,20 @@ void DemodulatorThread::threadMain() {
         freqdem_demodulate_block(fdem, &agc_data[0], num_written, &demod_output[0]);
 
         if (stereo) {
-            int shift_freq = 38000 - inp->bandwidth;
-            double freq = (2.0 * M_PI) * (((double) abs(shift_freq)) / ((double) inp->bandwidth));
+
+            double freq = (2.0 * M_PI) * (((float) abs(38000)) / ((float) inp->bandwidth));
+
+            if (shift_freq != freq) {
+                nco_crcf_set_frequency(nco_shift, freq);
+                shift_freq = freq;
+            }
+
 
             for (int i = 0; i < num_written; i++) {
-                freq_index += freq;
-
-                demod_output_stereo[i] = demod_output[i] * sin(freq_index); // + demod_output[i] * cos(freq_index);
-                while (freq_index > (M_PI * 2.0)) {
-                    freq_index -= (M_PI * 2.0);
-                }
-                while (freq_index < (M_PI * 2.0)) {
-                    freq_index += (M_PI * 2.0);
-                }
+                firhilbf_r2c_execute(firR2C,demod_output[i],&x);
+                nco_crcf_mix_down(nco_shift, x, &y);
+                nco_crcf_step(nco_shift);
+                firhilbf_c2r_execute(firR2C,y,&demod_output_stereo[i]);
             }
         }
 
@@ -247,6 +258,9 @@ void DemodulatorThread::threadMain() {
     }
 
     agc_crcf_destroy(agc);
+    firhilbf_destroy(firR2C);
+    firhilbf_destroy(firC2R);
+    nco_crcf_destroy(nco_shift);
 
     while (!buffers.empty()) {
         AudioThreadInput *audioDataDel = buffers.front();
