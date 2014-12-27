@@ -162,8 +162,8 @@ void DemodulatorThread::threadMain() {
                     ati->channels = 2;
                     ati->data.resize(num_audio_written*2);
                     for (int i = 0; i < num_audio_written; i++) {
-                        ati->data[i*2] = (resampled_audio_output[i]-(resampled_audio_output_stereo[i]*2.0))/2.0;
-                        ati->data[i*2+1] = (resampled_audio_output[i]+(resampled_audio_output_stereo[i]*2.0))/2.0;
+                        ati->data[i*2] = (resampled_audio_output[i]-(resampled_audio_output_stereo[i]));
+                        ati->data[i*2+1] = (resampled_audio_output[i]+(resampled_audio_output_stereo[i]));
                     }
                 } else {
                     ati->channels = 1;
@@ -254,6 +254,7 @@ void DemodulatorThread::terminate() {
 
 void DemodulatorThread::setStereo(bool state) {
     stereo = state;
+    std::cout << "Stereo " << (state?"Enabled":"Disabled") << std::endl;
 }
 
 bool DemodulatorThread::isStereo() {
