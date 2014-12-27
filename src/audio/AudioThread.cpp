@@ -191,6 +191,10 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
     } else {
         for (int i = 0, iMax = src->currentInput->channels * nBufferFrames; i < iMax; i++) {
             if (src->audio_queue_ptr >= src->currentInput->data.size()) {
+                if (src->currentInput) {
+                    src->currentInput->decRefCount();
+                    src->currentInput = NULL;
+                }
                 if (src->terminated) {
                     return 1;
                 }

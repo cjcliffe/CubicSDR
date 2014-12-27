@@ -245,7 +245,7 @@ void WaterfallCanvas::setData(std::vector<liquid_float_complex> *data) {
             double b = out[n][1];
             double c = sqrt(a * a + b * b);
 
-            n = (i == FFT_SIZE / 2) ? (FFT_SIZE / 2 + 1) : i;
+//            n = (i == FFT_SIZE / 2) ? (FFT_SIZE / 2 + 1) : i;
             double x = out[FFT_SIZE / 2 + n][0];
             double y = out[FFT_SIZE / 2 + n][1];
             double z = sqrt(x * x + y * y);

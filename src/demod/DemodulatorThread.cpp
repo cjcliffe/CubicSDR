@@ -34,12 +34,12 @@ void DemodulatorThread::threadMain() {
     msresamp_rrrf stereo_resampler = NULL;
     msresamp_crcf resampler = NULL;
 
-    unsigned int m=5;           // filter semi-length
-    float slsl=60.0f;           // filter sidelobe suppression level
+    unsigned int m = 5;           // filter semi-length
+    float slsl = 60.0f;           // filter sidelobe suppression level
     liquid_float_complex x, y;
 
-    firhilbf firR2C = firhilbf_create(m,slsl);
-    firhilbf firC2R = firhilbf_create(m,slsl);
+    firhilbf firR2C = firhilbf_create(m, slsl);
+    firhilbf firC2R = firhilbf_create(m, slsl);
 
     nco_crcf nco_shift = nco_crcf_create(LIQUID_NCO);
     float shift_freq = 0;
@@ -107,15 +107,31 @@ void DemodulatorThread::threadMain() {
         if (demod_output.size() != num_written) {
             if (demod_output.capacity() < num_written) {
                 demod_output.reserve(num_written);
-                demod_output_stereo.reserve(num_written);
             }
             demod_output.resize(num_written);
-            demod_output_stereo.resize(num_written);
         }
+
+        int audio_out_size = ceil((float) (num_written) * audio_resample_ratio);
 
         freqdem_demodulate_block(fdem, &agc_data[0], num_written, &demod_output[0]);
 
+        if (audio_out_size != resampled_audio_output.size()) {
+            if (resampled_audio_output.capacity() < audio_out_size) {
+                resampled_audio_output.reserve(audio_out_size);
+            }
+            resampled_audio_output.resize(audio_out_size);
+        }
+
+        unsigned int num_audio_written;
+        msresamp_rrrf_execute(audio_resampler, &demod_output[0], num_written, &resampled_audio_output[0], &num_audio_written);
+
         if (stereo) {
+            if (demod_output_stereo.size() != num_written) {
+                if (demod_output_stereo.capacity() < num_written) {
+                    demod_output_stereo.reserve(num_written);
+                }
+                demod_output_stereo.resize(num_written);
+            }
 
             double freq = (2.0 * M_PI) * (((float) abs(38000)) / ((float) inp->bandwidth));
 
@@ -124,30 +140,20 @@ void DemodulatorThread::threadMain() {
                 shift_freq = freq;
             }
 
-
             for (int i = 0; i < num_written; i++) {
-                firhilbf_r2c_execute(firR2C,demod_output[i],&x);
+                firhilbf_r2c_execute(firR2C, demod_output[i], &x);
                 nco_crcf_mix_down(nco_shift, x, &y);
                 nco_crcf_step(nco_shift);
-                firhilbf_c2r_execute(firR2C,y,&demod_output_stereo[i]);
+                firhilbf_c2r_execute(firR2C, y, &demod_output_stereo[i]);
             }
-        }
 
-        int audio_out_size = ceil((float) (num_written) * audio_resample_ratio);
-
-        if (audio_out_size != resampled_audio_output.size()) {
-            if (resampled_audio_output.capacity() < audio_out_size) {
-                resampled_audio_output.reserve(audio_out_size);
-                resampled_audio_output_stereo.reserve(audio_out_size);
+            if (audio_out_size != resampled_audio_output_stereo.size()) {
+                if (resampled_audio_output_stereo.capacity() < audio_out_size) {
+                    resampled_audio_output_stereo.reserve(audio_out_size);
+                }
+                resampled_audio_output_stereo.resize(audio_out_size);
             }
-            resampled_audio_output.resize(audio_out_size);
-            resampled_audio_output_stereo.resize(audio_out_size);
-        }
 
-        unsigned int num_audio_written;
-        msresamp_rrrf_execute(audio_resampler, &demod_output[0], num_written, &resampled_audio_output[0], &num_audio_written);
-
-        if (stereo) {
             msresamp_rrrf_execute(stereo_resampler, &demod_output_stereo[0], num_written, &resampled_audio_output_stereo[0], &num_audio_written);
         }
 
@@ -171,6 +177,9 @@ void DemodulatorThread::threadMain() {
 
                 if (stereo) {
                     ati->channels = 2;
+                    if (ati->data.capacity() < (num_audio_written * 2)) {
+                        ati->data.reserve(num_audio_written * 2);
+                    }
                     ati->data.resize(num_audio_written * 2);
                     for (int i = 0; i < num_audio_written; i++) {
                         ati->data[i * 2] = (resampled_audio_output[i] - (resampled_audio_output_stereo[i]));
@@ -197,7 +206,7 @@ void DemodulatorThread::threadMain() {
                     stereoSize = DEMOD_VIS_SIZE;
                 }
                 ati_vis->data.resize(stereoSize);
-                ati_vis->channels = stereo?2:1;
+                ati_vis->channels = stereo ? 2 : 1;
 
                 for (int i = 0; i < stereoSize / 2; i++) {
                     ati_vis->data[i] = (resampled_audio_output[i] - (resampled_audio_output_stereo[i]));
