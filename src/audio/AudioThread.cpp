@@ -112,7 +112,7 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                 srcmix->audio_queue_ptr++;
             }
         } else {
-            for (int i = 0, iMax = src->currentInput->channels * nBufferFrames; i < iMax; i++) {
+            for (int i = 0, iMax = srcmix->currentInput->channels * nBufferFrames; i < iMax; i++) {
                 if (srcmix->audio_queue_ptr >= srcmix->currentInput->data.size()) {
                     if (srcmix->currentInput) {
                         srcmix->currentInput->decRefCount();

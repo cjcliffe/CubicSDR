@@ -22,13 +22,13 @@ public:
     };
 
     DemodulatorWorkerThreadResult() :
-            cmd(DEMOD_WORKER_THREAD_RESULT_NULL), fir_filter(NULL), resampler(NULL), resample_ratio(0), audio_resampler(NULL), audio_resample_ratio(
+            cmd(DEMOD_WORKER_THREAD_RESULT_NULL), fir_filter(NULL), resampler(NULL), resample_ratio(0), audio_resampler(NULL), stereo_resampler(NULL), audio_resample_ratio(
                     0), inputRate(0), bandwidth(0), audioSampleRate(0) {
 
     }
 
     DemodulatorWorkerThreadResult(DemodulatorThreadResultEnum cmd) :
-            cmd(cmd), fir_filter(NULL), resampler(NULL), resample_ratio(0), audio_resampler(NULL), audio_resample_ratio(0), inputRate(0), bandwidth(
+            cmd(cmd), fir_filter(NULL), resampler(NULL), resample_ratio(0), audio_resampler(NULL), stereo_resampler(NULL), audio_resample_ratio(0), inputRate(0), bandwidth(
                     0), audioSampleRate(0) {
 
     }
@@ -39,6 +39,7 @@ public:
     msresamp_crcf resampler;
     float resample_ratio;
     msresamp_rrrf audio_resampler;
+    msresamp_rrrf stereo_resampler;
     float audio_resample_ratio;
 
     unsigned int inputRate;

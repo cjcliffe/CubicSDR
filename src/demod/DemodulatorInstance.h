@@ -49,6 +49,9 @@ public:
     bool isActive();
     void setActive(bool state);
 
+    bool isStereo();
+    void setStereo(bool state);
+
     void squelchAuto();bool isSquelchEnabled();
     void setSquelchEnabled(bool state);
 
@@ -56,5 +59,6 @@ private:
     std::atomic<std::string *> label;bool terminated;bool demodTerminated;bool audioTerminated;bool preDemodTerminated;
     std::atomic<bool> active;
     std::atomic<bool> squelch;
+    std::atomic<bool> stereo;
 };
 

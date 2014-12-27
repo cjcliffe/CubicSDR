@@ -8,8 +8,8 @@
 
 DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* pQueue, DemodulatorThreadControlCommandQueue *threadQueueControl,
         DemodulatorThreadCommandQueue* threadQueueNotify) :
-        postInputQueue(pQueue), visOutQueue(NULL), audioInputQueue(NULL), agc(NULL), terminated(false), threadQueueNotify(threadQueueNotify), threadQueueControl(
-                threadQueueControl), squelch_level(0), squelch_tolerance(0), squelch_enabled(false) {
+        postInputQueue(pQueue), visOutQueue(NULL), audioInputQueue(NULL), agc(NULL), stereo(false), terminated(false), threadQueueNotify(
+                threadQueueNotify), threadQueueControl(threadQueueControl), squelch_level(0), squelch_tolerance(0), squelch_enabled(false) {
 
     float kf = 0.5;         // modulation factor
     fdem = freqdem_create(kf);
@@ -31,6 +31,7 @@ void DemodulatorThread::threadMain() {
 #endif
 
     msresamp_rrrf audio_resampler = NULL;
+    msresamp_rrrf stereo_resampler = NULL;
     msresamp_crcf resampler = NULL;
 
     agc = agc_crcf_create();
@@ -44,7 +45,11 @@ void DemodulatorThread::threadMain() {
     std::vector<liquid_float_complex> resampled_data;
     std::vector<liquid_float_complex> agc_data;
     std::vector<float> demod_output;
+    std::vector<float> demod_output_stereo;
     std::vector<float> resampled_audio_output;
+    std::vector<float> resampled_audio_output_stereo;
+
+    double freq_index = 0;
 
     while (!terminated) {
         DemodulatorThreadPostIQData *inp;
@@ -61,11 +66,14 @@ void DemodulatorThread::threadMain() {
         if (resampler == NULL) {
             resampler = inp->resampler;
             audio_resampler = inp->audio_resampler;
+            stereo_resampler = inp->stereo_resampler;
         } else if (resampler != inp->resampler) {
             msresamp_crcf_destroy(resampler);
             msresamp_rrrf_destroy(audio_resampler);
+            msresamp_rrrf_destroy(stereo_resampler);
             resampler = inp->resampler;
             audio_resampler = inp->audio_resampler;
+            stereo_resampler = inp->stereo_resampler;
         }
 
         int out_size = ceil((float) (bufSize) * inp->resample_ratio);
@@ -89,23 +97,48 @@ void DemodulatorThread::threadMain() {
         if (demod_output.size() != num_written) {
             if (demod_output.capacity() < num_written) {
                 demod_output.reserve(num_written);
+                demod_output_stereo.reserve(num_written);
             }
             demod_output.resize(num_written);
+            demod_output_stereo.resize(num_written);
         }
 
         freqdem_demodulate_block(fdem, &agc_data[0], num_written, &demod_output[0]);
+
+        if (stereo) {
+            int shift_freq = 38000 - inp->bandwidth;
+            double freq = (2.0 * M_PI) * (((double) abs(shift_freq)) / ((double) inp->bandwidth));
+
+            for (int i = 0; i < num_written; i++) {
+                freq_index += freq;
+
+                demod_output_stereo[i] = demod_output[i] * sin(freq_index); // + demod_output[i] * cos(freq_index);
+                while (freq_index > (M_PI * 2.0)) {
+                    freq_index -= (M_PI * 2.0);
+                }
+                while (freq_index < (M_PI * 2.0)) {
+                    freq_index += (M_PI * 2.0);
+                }
+            }
+        }
 
         int audio_out_size = ceil((float) (num_written) * audio_resample_ratio);
 
         if (audio_out_size != resampled_audio_output.size()) {
             if (resampled_audio_output.capacity() < audio_out_size) {
                 resampled_audio_output.reserve(audio_out_size);
+                resampled_audio_output_stereo.reserve(audio_out_size);
             }
             resampled_audio_output.resize(audio_out_size);
+            resampled_audio_output_stereo.resize(audio_out_size);
         }
 
         unsigned int num_audio_written;
         msresamp_rrrf_execute(audio_resampler, &demod_output[0], num_written, &resampled_audio_output[0], &num_audio_written);
+
+        if (stereo) {
+            msresamp_rrrf_execute(stereo_resampler, &demod_output_stereo[0], num_written, &resampled_audio_output_stereo[0], &num_audio_written);
+        }
 
         if (audioInputQueue != NULL) {
             if (!squelch_enabled || ((agc_crcf_get_signal_level(agc)) >= 0.1)) {
@@ -124,8 +157,18 @@ void DemodulatorThread::threadMain() {
                 }
 
                 ati->setRefCount(1);
-                ati->channels = 1;
-                ati->data.assign(resampled_audio_output.begin(), resampled_audio_output.begin() + num_audio_written);
+
+                if (stereo) {
+                    ati->channels = 2;
+                    ati->data.resize(num_audio_written * 2);
+                    for (int i = 0; i < num_audio_written; i++) {
+                        ati->data[i * 2] = (resampled_audio_output[i] - (resampled_audio_output_stereo[i]));
+                        ati->data[i * 2 + 1] = (resampled_audio_output[i] + (resampled_audio_output_stereo[i]));
+                    }
+                } else {
+                    ati->channels = 1;
+                    ati->data.assign(resampled_audio_output.begin(), resampled_audio_output.begin() + num_audio_written);
+                }
 
                 audioInputQueue->push(ati);
             }
@@ -136,22 +179,37 @@ void DemodulatorThread::threadMain() {
             ati_vis->channels = 1;
 
             int num_vis = DEMOD_VIS_SIZE;
-            if (num_audio_written > num_written) {
-                if (num_vis > num_audio_written) {
-                    num_vis = num_audio_written;
+            if (stereo) {
+
+                int stereoSize = resampled_audio_output.size();
+                if (stereoSize > DEMOD_VIS_SIZE) {
+                    stereoSize = DEMOD_VIS_SIZE;
                 }
-                ati_vis->data.assign(resampled_audio_output.begin(), resampled_audio_output.begin() + num_vis);
+                ati_vis->data.resize(stereoSize);
+
+                for (int i = 0; i < stereoSize / 2; i++) {
+                    ati_vis->data[i] = (resampled_audio_output[i] - (resampled_audio_output_stereo[i]));
+                    ati_vis->data[i + stereoSize / 2] = (resampled_audio_output[i] + (resampled_audio_output_stereo[i]));
+                }
             } else {
-                if (num_vis > num_written) {
-                    num_vis = num_written;
+                if (num_audio_written > num_written) {
+
+                    if (num_vis > num_audio_written) {
+                        num_vis = num_audio_written;
+                    }
+                    ati_vis->data.assign(resampled_audio_output.begin(), resampled_audio_output.begin() + num_vis);
+                } else {
+                    if (num_vis > num_written) {
+                        num_vis = num_written;
+                    }
+                    ati_vis->data.assign(demod_output.begin(), demod_output.begin() + num_vis);
                 }
-                ati_vis->data.assign(demod_output.begin(), demod_output.begin() + num_vis);
+
+//            std::cout << "Signal: " << agc_crcf_get_signal_level(agc) << " -- " << agc_crcf_get_rssi(agc) << "dB " << std::endl;
             }
 
             visOutQueue->push(ati_vis);
-//            std::cout << "Signal: " << agc_crcf_get_signal_level(agc) << " -- " << agc_crcf_get_rssi(agc) << "dB " << std::endl;
         }
-
         if (!threadQueueControl->empty()) {
             while (!threadQueueControl->empty()) {
                 DemodulatorThreadControlCommand command;
@@ -183,6 +241,9 @@ void DemodulatorThread::threadMain() {
     if (audio_resampler != NULL) {
         msresamp_rrrf_destroy(audio_resampler);
     }
+    if (stereo_resampler != NULL) {
+        msresamp_rrrf_destroy(stereo_resampler);
+    }
 
     agc_crcf_destroy(agc);
 
@@ -203,4 +264,13 @@ void DemodulatorThread::terminate() {
     terminated = true;
     DemodulatorThreadPostIQData *inp = new DemodulatorThreadPostIQData;    // push dummy to nudge queue
     postInputQueue->push(inp);
+}
+
+void DemodulatorThread::setStereo(bool state) {
+    stereo = state;
+    std::cout << "Stereo " << (state ? "Enabled" : "Disabled") << std::endl;
+}
+
+bool DemodulatorThread::isStereo() {
+    return stereo;
 }

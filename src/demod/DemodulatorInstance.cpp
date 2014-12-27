@@ -146,6 +146,16 @@ void DemodulatorInstance::setActive(bool state) {
     audioThread->setActive(state);
 }
 
+bool DemodulatorInstance::isStereo() {
+    return stereo;
+}
+
+void DemodulatorInstance::setStereo(bool state) {
+    stereo = state;
+    demodulatorThread->setStereo(state);
+}
+
+
 void DemodulatorInstance::squelchAuto() {
     DemodulatorThreadControlCommand command;
     command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_AUTO;
