@@ -31,6 +31,7 @@ void DemodulatorThread::threadMain() {
 #endif
 
     msresamp_rrrf audio_resampler = NULL;
+    msresamp_rrrf stereo_resampler = NULL;
     msresamp_crcf resampler = NULL;
 
     agc = agc_crcf_create();
@@ -65,11 +66,14 @@ void DemodulatorThread::threadMain() {
         if (resampler == NULL) {
             resampler = inp->resampler;
             audio_resampler = inp->audio_resampler;
+            stereo_resampler = inp->stereo_resampler;
         } else if (resampler != inp->resampler) {
             msresamp_crcf_destroy(resampler);
             msresamp_rrrf_destroy(audio_resampler);
+            msresamp_rrrf_destroy(stereo_resampler);
             resampler = inp->resampler;
             audio_resampler = inp->audio_resampler;
+            stereo_resampler = inp->stereo_resampler;
         }
 
         int out_size = ceil((float) (bufSize) * inp->resample_ratio);
@@ -108,7 +112,7 @@ void DemodulatorThread::threadMain() {
             for (int i = 0; i < num_written; i++) {
                 freq_index+=freq;
 
-                demod_output_stereo[i] = demod_output[i] * sin(freq_index) + demod_output[i] * cos(freq_index);
+                demod_output_stereo[i] = demod_output[i] * sin(freq_index);// + demod_output[i] * cos(freq_index);
                 while (freq_index > (M_PI*2.0)) {
                     freq_index -= (M_PI*2.0);
                 }
@@ -133,7 +137,7 @@ void DemodulatorThread::threadMain() {
         msresamp_rrrf_execute(audio_resampler, &demod_output[0], num_written, &resampled_audio_output[0], &num_audio_written);
 
         if (stereo) {
-            msresamp_rrrf_execute(audio_resampler, &demod_output_stereo[0], num_written, &resampled_audio_output_stereo[0], &num_audio_written);
+            msresamp_rrrf_execute(stereo_resampler, &demod_output_stereo[0], num_written, &resampled_audio_output_stereo[0], &num_audio_written);
         }
 
         if (audioInputQueue != NULL) {
@@ -221,6 +225,9 @@ void DemodulatorThread::threadMain() {
     }
     if (audio_resampler != NULL) {
         msresamp_rrrf_destroy(audio_resampler);
+    }
+    if (stereo_resampler != NULL) {
+        msresamp_rrrf_destroy(stereo_resampler);
     }
 
     agc_crcf_destroy(agc);

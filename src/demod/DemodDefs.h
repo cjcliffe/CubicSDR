@@ -73,11 +73,12 @@ public:
     int bandwidth;
     float audio_resample_ratio;
     msresamp_rrrf audio_resampler;
+    msresamp_rrrf stereo_resampler;
     float resample_ratio;
     msresamp_crcf resampler;
 
     DemodulatorThreadPostIQData() :
-            bandwidth(0), audio_resample_ratio(0), audio_resampler(NULL), resample_ratio(0), resampler(NULL) {
+            bandwidth(0), audio_resample_ratio(0), audio_resampler(NULL), stereo_resampler(NULL), resample_ratio(0), resampler(NULL) {
 
     }
 

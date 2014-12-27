@@ -9,7 +9,7 @@
 
 DemodulatorPreThread::DemodulatorPreThread(DemodulatorThreadInputQueue* pQueueIn, DemodulatorThreadPostInputQueue* pQueueOut,
         DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify) :
-        inputQueue(pQueueIn), postInputQueue(pQueueOut), terminated(false), initialized(false), audio_resampler(NULL), resample_ratio(1), audio_resample_ratio(
+        inputQueue(pQueueIn), postInputQueue(pQueueOut), terminated(false), initialized(false), audio_resampler(NULL), stereo_resampler(NULL), resample_ratio(1), audio_resample_ratio(
                 1), resampler(NULL), commandQueue(NULL), fir_filter(NULL), audioInputQueue(NULL), threadQueueNotify(threadQueueNotify), threadQueueControl(
                 threadQueueControl) {
 
@@ -70,6 +70,12 @@ void DemodulatorPreThread::initialize() {
     }
     audio_resampler = msresamp_rrrf_create(audio_resample_ratio, As);
 //    msresamp_crcf_print(audio_resampler);
+
+    if (stereo_resampler) {
+        msresamp_rrrf_destroy(stereo_resampler);
+    }
+    stereo_resampler = msresamp_rrrf_create(audio_resample_ratio, As);
+
 
     initialized = true;
 //    std::cout << "inputResampleRate " << params.bandwidth << std::endl;
@@ -217,6 +223,7 @@ void DemodulatorPreThread::threadMain() {
 
             resamp->audio_resample_ratio = audio_resample_ratio;
             resamp->audio_resampler = audio_resampler;
+            resamp->stereo_resampler = stereo_resampler;
             resamp->resample_ratio = resample_ratio;
             resamp->resampler = resampler;
             resamp->bandwidth = params.bandwidth;
@@ -240,6 +247,7 @@ void DemodulatorPreThread::threadMain() {
                     fir_filter = result.fir_filter;
                     resampler = result.resampler;
                     audio_resampler = result.audio_resampler;
+                    stereo_resampler = result.stereo_resampler;
 
                     resample_ratio = result.resample_ratio;
                     audio_resample_ratio = result.audio_resample_ratio;
