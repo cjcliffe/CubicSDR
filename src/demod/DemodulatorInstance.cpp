@@ -2,7 +2,7 @@
 
 DemodulatorInstance::DemodulatorInstance() :
         t_Demod(NULL), t_PreDemod(NULL), t_Audio(NULL), threadQueueDemod(NULL), demodulatorThread(NULL), terminated(false), audioTerminated(false), demodTerminated(
-        false), preDemodTerminated(false), active(false), squelch(false) {
+        false), preDemodTerminated(false), active(false), squelch(false), stereo(false) {
 
     label = new std::string("Unnamed");
     threadQueueDemod = new DemodulatorThreadInputQueue;

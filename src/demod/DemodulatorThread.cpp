@@ -186,6 +186,7 @@ void DemodulatorThread::threadMain() {
                     stereoSize = DEMOD_VIS_SIZE;
                 }
                 ati_vis->data.resize(stereoSize);
+                ati_vis->channels = stereo?2:1;
 
                 for (int i = 0; i < stereoSize / 2; i++) {
                     ati_vis->data[i] = (resampled_audio_output[i] - (resampled_audio_output_stereo[i]));

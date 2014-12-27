@@ -11,7 +11,10 @@ class ScopeContext: public PrimaryGLContext {
 public:
     ScopeContext(ScopeCanvas *canvas, wxGLContext *sharedContext);
 
+    void DrawBegin();
     void Plot(std::vector<float> &points);
+    void DrawDivider();
+    void DrawEnd();
 
 private:
 };

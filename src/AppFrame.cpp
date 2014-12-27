@@ -123,6 +123,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
                 scopeCanvas->waveform_points[i * 2] = ((double) i / (double) iMax);
             }
 
+            scopeCanvas->setDivider(demodAudioData->channels == 2);
+
             delete demodAudioData;
         } else {
             std::cout << "Incoming Demodulator data empty?" << std::endl;

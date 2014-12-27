@@ -21,7 +21,7 @@ wxEND_EVENT_TABLE()
 
 ScopeCanvas::ScopeCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0) {
+        wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0), divider(false) {
 
     glContext = new ScopeContext(this, &wxGetApp().GetContext(this));
     timer.start();
@@ -35,6 +35,10 @@ void ScopeCanvas::setWaveformPoints(std::vector<float> &waveform_points_in) {
     waveform_points = waveform_points_in;
 }
 
+void ScopeCanvas::setDivider(bool state) {
+    divider = state;
+}
+
 void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
     const wxSize ClientSize = GetClientSize();
@@ -42,7 +46,12 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->SetCurrent(*this);
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
+    glContext->DrawBegin();
     glContext->Plot(waveform_points);
+    if (divider) {
+        glContext->DrawDivider();
+    }
+    glContext->DrawEnd();
 
     SwapBuffers();
 }

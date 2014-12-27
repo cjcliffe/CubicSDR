@@ -19,6 +19,7 @@ public:
     ~ScopeCanvas();
 
     void setWaveformPoints(std::vector<float> &waveform_points_in);
+    void setDivider(bool state);
 private:
     void OnPaint(wxPaintEvent& event);
 
@@ -29,6 +30,7 @@ private:
     ScopeContext *glContext;
     Timer timer;
     float frameTimer;
+    bool divider;
 // event table
 wxDECLARE_EVENT_TABLE();
 };
