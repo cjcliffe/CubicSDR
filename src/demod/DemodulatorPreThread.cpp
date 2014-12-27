@@ -10,7 +10,7 @@
 DemodulatorPreThread::DemodulatorPreThread(DemodulatorThreadInputQueue* pQueueIn, DemodulatorThreadPostInputQueue* pQueueOut,
         DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify) :
         inputQueue(pQueueIn), postInputQueue(pQueueOut), terminated(false), initialized(false), audio_resampler(NULL), stereo_resampler(NULL), resample_ratio(1), audio_resample_ratio(
-                1), resampler(NULL), commandQueue(NULL), fir_filter(NULL), audioInputQueue(NULL), threadQueueNotify(threadQueueNotify), threadQueueControl(
+                1), resampler(NULL), commandQueue(NULL), audioInputQueue(NULL), threadQueueNotify(threadQueueNotify), threadQueueControl(
                 threadQueueControl) {
 
     float kf = 0.5;         // modulation factor
@@ -33,30 +33,7 @@ void DemodulatorPreThread::initialize() {
     resample_ratio = (float) (params.bandwidth) / (float) params.inputRate;
     audio_resample_ratio = (float) (params.audioSampleRate) / (float) params.bandwidth;
 
-    float fc = 0.5 * ((double) params.bandwidth / (double) params.inputRate);         // filter cutoff frequency
-
-    if (fc <= 0) {
-        fc = 0;
-    }
-
-    if (fc >= 0.5) {
-        fc = 0.5;
-    }
-
-    float ft = 0.05f;         // filter transition
     float As = 60.0f;         // stop-band attenuation [dB]
-    float mu = 0.0f;         // fractional timing offset
-
-    // estimate required filter length and generate filter
-    unsigned int h_len = estimate_req_filter_len(ft, As);
-    float h[h_len];
-    liquid_firdes_kaiser(h_len, fc, As, mu, h);
-
-    if (fir_filter) {
-        firfilt_crcf_recreate(fir_filter, h, h_len);
-    } else {
-        fir_filter = firfilt_crcf_create(h, h_len);
-    }
 
     // create multi-stage arbitrary resampler object
     if (resampler) {
@@ -240,11 +217,6 @@ void DemodulatorPreThread::threadMain() {
 
                 switch (result.cmd) {
                 case DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS:
-                    firfilt_crcf_destroy(fir_filter);
-//                    msresamp_crcf_destroy(resampler);
-//                    msresamp_crcf_destroy(audio_resampler);
-
-                    fir_filter = result.fir_filter;
                     resampler = result.resampler;
                     audio_resampler = result.audio_resampler;
                     stereo_resampler = result.stereo_resampler;
@@ -265,7 +237,6 @@ void DemodulatorPreThread::threadMain() {
     while (!buffers.empty()) {
         DemodulatorThreadPostIQData *iqDataDel = buffers.front();
         buffers.pop_front();
-        std::lock_guard < std::mutex > lock(iqDataDel->m_mutex);
         delete iqDataDel;
     }
 

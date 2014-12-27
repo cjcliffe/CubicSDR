@@ -52,7 +52,6 @@ protected:
     DemodulatorThreadCommandQueue* commandQueue;
     AudioThreadInputQueue *audioInputQueue;
 
-    firfilt_crcf fir_filter;
     msresamp_crcf resampler;
     float resample_ratio;
 

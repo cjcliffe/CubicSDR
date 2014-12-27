@@ -83,7 +83,7 @@ public:
     }
 
     ~DemodulatorThreadPostIQData() {
-
+        std::lock_guard < std::mutex > lock(m_mutex);
     }
 };
 

@@ -323,8 +323,8 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
             DemodulatorThreadCommand command;
             command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_BANDWIDTH;
             activeDemodulatorBandwidth = activeDemodulatorBandwidth + bwDiff;
-            if (activeDemodulatorBandwidth < 1000) {
-                activeDemodulatorBandwidth = 1000;
+            if (activeDemodulatorBandwidth < 2000) {
+                activeDemodulatorBandwidth = 2000;
             }
             if (activeDemodulatorBandwidth > SRATE) {
                 activeDemodulatorBandwidth = SRATE;
@@ -517,8 +517,8 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
         int freq = center_freq - (int) (0.5 * (float) SRATE) + (int) ((float) pos * (float) SRATE);
         int bandwidth = (int) (fabs(width) * (float) SRATE);
 
-        if (bandwidth < 1000) {
-            bandwidth = 1000;
+        if (bandwidth < 2000) {
+            bandwidth = 2000;
         }
 
         if (!bandwidth) {

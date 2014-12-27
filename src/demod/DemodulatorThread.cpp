@@ -32,7 +32,26 @@ void DemodulatorThread::threadMain() {
 
     msresamp_rrrf audio_resampler = NULL;
     msresamp_rrrf stereo_resampler = NULL;
+    firfilt_rrrf fir_filter = NULL;
+    firfilt_rrrf fir_filter2 = NULL;
     msresamp_crcf resampler = NULL;
+
+    float fc = 0.5 * ((double) 36000 / (double) AUDIO_FREQUENCY);         // filter cutoff frequency
+    if (fc <= 0) {
+        fc = 0;
+    }
+    if (fc >= 0.5) {
+        fc = 0.5;
+    }
+    float ft = 0.05f;         // filter transition
+    float As = 60.0f;         // stop-band attenuation [dB]
+    float mu = 0.0f;         // fractional timing offset
+    // estimate required filter length and generate filter
+    unsigned int h_len = estimate_req_filter_len(ft, As);
+    float h[h_len];
+    liquid_firdes_kaiser(h_len, fc, As, mu, h);
+    fir_filter = firfilt_rrrf_create(h, h_len);
+    fir_filter2 = firfilt_rrrf_create(h, h_len);
 
     unsigned int m = 5;           // filter semi-length
     float slsl = 60.0f;           // filter sidelobe suppression level
@@ -144,7 +163,7 @@ void DemodulatorThread::threadMain() {
                 firhilbf_r2c_execute(firR2C, demod_output[i], &x);
                 nco_crcf_mix_down(nco_shift, x, &y);
                 nco_crcf_step(nco_shift);
-                firhilbf_c2r_execute(firR2C, y, &demod_output_stereo[i]);
+                firhilbf_c2r_execute(firC2R, y, &demod_output_stereo[i]);
             }
 
             if (audio_out_size != resampled_audio_output_stereo.size()) {
@@ -157,9 +176,10 @@ void DemodulatorThread::threadMain() {
             msresamp_rrrf_execute(stereo_resampler, &demod_output_stereo[0], num_written, &resampled_audio_output_stereo[0], &num_audio_written);
         }
 
+        AudioThreadInput *ati = NULL;
+
         if (audioInputQueue != NULL) {
             if (!squelch_enabled || ((agc_crcf_get_signal_level(agc)) >= 0.1)) {
-                AudioThreadInput *ati = NULL;
 
                 for (buffers_i = buffers.begin(); buffers_i != buffers.end(); buffers_i++) {
                     if ((*buffers_i)->getRefCount() <= 0) {
@@ -182,8 +202,16 @@ void DemodulatorThread::threadMain() {
                     }
                     ati->data.resize(num_audio_written * 2);
                     for (int i = 0; i < num_audio_written; i++) {
-                        ati->data[i * 2] = (resampled_audio_output[i] - (resampled_audio_output_stereo[i]));
-                        ati->data[i * 2 + 1] = (resampled_audio_output[i] + (resampled_audio_output_stereo[i]));
+                        float l, r;
+
+                        firfilt_rrrf_push(fir_filter, (resampled_audio_output[i] - (resampled_audio_output_stereo[i])));
+                        firfilt_rrrf_execute(fir_filter, &l);
+
+                        firfilt_rrrf_push(fir_filter2, (resampled_audio_output[i] + (resampled_audio_output_stereo[i])));
+                        firfilt_rrrf_execute(fir_filter2, &r);
+
+                        ati->data[i * 2] = l;
+                        ati->data[i * 2 + 1] = r;
                     }
                 } else {
                     ati->channels = 1;
@@ -194,25 +222,24 @@ void DemodulatorThread::threadMain() {
             }
         }
 
-        if (visOutQueue != NULL && visOutQueue->empty()) {
+        if (ati && visOutQueue != NULL && visOutQueue->empty()) {
             AudioThreadInput *ati_vis = new AudioThreadInput;
-            ati_vis->channels = 1;
 
             int num_vis = DEMOD_VIS_SIZE;
             if (stereo) {
-
-                int stereoSize = resampled_audio_output.size();
+                ati_vis->channels = 2;
+                int stereoSize = ati->data.size();
                 if (stereoSize > DEMOD_VIS_SIZE) {
                     stereoSize = DEMOD_VIS_SIZE;
                 }
                 ati_vis->data.resize(stereoSize);
-                ati_vis->channels = stereo ? 2 : 1;
 
                 for (int i = 0; i < stereoSize / 2; i++) {
-                    ati_vis->data[i] = (resampled_audio_output[i] - (resampled_audio_output_stereo[i]));
-                    ati_vis->data[i + stereoSize / 2] = (resampled_audio_output[i] + (resampled_audio_output_stereo[i]));
+                    ati_vis->data[i] = ati->data[i*2];
+                    ati_vis->data[i + stereoSize / 2] = ati->data[i*2+1];
                 }
             } else {
+                ati_vis->channels = 1;
                 if (num_audio_written > num_written) {
 
                     if (num_vis > num_audio_written) {
@@ -265,6 +292,12 @@ void DemodulatorThread::threadMain() {
     if (stereo_resampler != NULL) {
         msresamp_rrrf_destroy(stereo_resampler);
     }
+    if (fir_filter != NULL) {
+        firfilt_rrrf_destroy(fir_filter);
+    }
+    if (fir_filter2 != NULL) {
+        firfilt_rrrf_destroy(fir_filter2);
+    }
 
     agc_crcf_destroy(agc);
     firhilbf_destroy(firR2C);
@@ -274,7 +307,6 @@ void DemodulatorThread::threadMain() {
     while (!buffers.empty()) {
         AudioThreadInput *audioDataDel = buffers.front();
         buffers.pop_front();
-        std::lock_guard < std::mutex > lock(audioDataDel->m_mutex);
         delete audioDataDel;
     }
 
