@@ -35,6 +35,9 @@ public:
 
     void terminate();
 
+    void setStereo(bool state);
+    bool isStereo();
+
 #ifdef __APPLE__
     static void *pthread_helper(void *context) {
         return ((DemodulatorThread *) context)->threadMain();
@@ -49,6 +52,7 @@ protected:
     freqdem fdem;
     agc_crcf agc;
 
+    std::atomic<bool> stereo;
     std::atomic<bool> terminated;
 
     DemodulatorThreadCommandQueue* threadQueueNotify;

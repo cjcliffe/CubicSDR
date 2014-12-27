@@ -219,6 +219,7 @@ void DemodulatorPreThread::threadMain() {
             resamp->audio_resampler = audio_resampler;
             resamp->resample_ratio = resample_ratio;
             resamp->resampler = resampler;
+            resamp->bandwidth = params.bandwidth;
 
             postInputQueue->push(resamp);
         }

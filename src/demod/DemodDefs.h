@@ -70,13 +70,14 @@ public:
 class DemodulatorThreadPostIQData: public ReferenceCounter {
 public:
     std::vector<liquid_float_complex> data;
+    int bandwidth;
     float audio_resample_ratio;
     msresamp_rrrf audio_resampler;
     float resample_ratio;
     msresamp_crcf resampler;
 
     DemodulatorThreadPostIQData() :
-            audio_resample_ratio(0), audio_resampler(NULL), resample_ratio(0), resampler(NULL) {
+            bandwidth(0), audio_resample_ratio(0), audio_resampler(NULL), resample_ratio(0), resampler(NULL) {
 
     }
 

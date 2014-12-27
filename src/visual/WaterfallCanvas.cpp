@@ -200,6 +200,16 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
             activeDemod->squelchAuto();
         }
         break;
+    case WXK_SPACE:
+          if (!activeDemod) {
+              break;
+          }
+          if (activeDemod->isStereo()) {
+              activeDemod->setStereo(false);
+          } else {
+              activeDemod->setStereo(true);
+          }
+          break;
     default:
         event.Skip();
         return;
