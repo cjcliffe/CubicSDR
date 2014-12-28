@@ -9,8 +9,8 @@
 
 DemodulatorPreThread::DemodulatorPreThread(DemodulatorThreadInputQueue* pQueueIn, DemodulatorThreadPostInputQueue* pQueueOut,
         DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify) :
-        inputQueue(pQueueIn), postInputQueue(pQueueOut), terminated(false), initialized(false), audio_resampler(NULL), stereo_resampler(NULL), resample_ratio(1), audio_resample_ratio(
-                1), resampler(NULL), commandQueue(NULL), audioInputQueue(NULL), threadQueueNotify(threadQueueNotify), threadQueueControl(
+        inputQueue(pQueueIn), postInputQueue(pQueueOut), terminated(false), initialized(false), audio_resampler(NULL), stereo_resampler(NULL), resample_ratio(
+                1), audio_resample_ratio(1), resampler(NULL), commandQueue(NULL), audioInputQueue(NULL), threadQueueNotify(threadQueueNotify), threadQueueControl(
                 threadQueueControl) {
 
     float kf = 0.5;         // modulation factor
@@ -53,7 +53,6 @@ void DemodulatorPreThread::initialize() {
     }
     stereo_resampler = msresamp_rrrf_create(audio_resample_ratio, As);
 
-
     initialized = true;
 //    std::cout << "inputResampleRate " << params.bandwidth << std::endl;
 
@@ -69,12 +68,12 @@ DemodulatorPreThread::~DemodulatorPreThread() {
 #ifdef __APPLE__
 void *DemodulatorPreThread::threadMain() {
 #else
-void DemodulatorPreThread::threadMain() {
+    void DemodulatorPreThread::threadMain() {
 #endif
 #ifdef __APPLE__
     pthread_t tID = pthread_self();  // ID of this thread
-    int priority = sched_get_priority_max( SCHED_FIFO )-1;
-    sched_param prio = {priority}; // scheduling priority of thread
+    int priority = sched_get_priority_max( SCHED_FIFO) - 1;
+    sched_param prio = { priority }; // scheduling priority of thread
     pthread_setschedparam(tID, SCHED_FIFO, &prio);
 #endif
 
@@ -162,7 +161,7 @@ void DemodulatorPreThread::threadMain() {
                 out_buf_data.resize(bufSize);
             }
 
-            in_buf_data.assign(inp->data.begin(),inp->data.end());
+            in_buf_data.assign(inp->data.begin(), inp->data.end());
 
             liquid_float_complex *in_buf = &in_buf_data[0];
             liquid_float_complex *out_buf = &out_buf_data[0];

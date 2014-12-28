@@ -15,9 +15,10 @@
 class SpectrumCanvas: public wxGLCanvas {
 public:
     SpectrumCanvas(wxWindow *parent, int *attribList = NULL);
+    void Setup(int fft_size_in);
     ~SpectrumCanvas();
 
-    void setData(std::vector<liquid_float_complex> *data);
+    void setData(DemodulatorThreadIQData *input);
 private:
     void OnPaint(wxPaintEvent& event);
 
@@ -47,6 +48,7 @@ private:
     SpectrumContext *glContext;
     Timer timer;
     float frameTimer;
+    int fft_size;
 
     MouseTracker mTracker;
 // event table

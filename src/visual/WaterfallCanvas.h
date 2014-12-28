@@ -19,10 +19,20 @@ public:
     };
 
     WaterfallCanvas(wxWindow *parent, int *attribList = NULL);
+    void Setup(int fft_size_in, int waterfall_lines_in);
     ~WaterfallCanvas();
 
-    void setData(std::vector<liquid_float_complex> *data);
+    void setData(DemodulatorThreadIQData *input);
     int GetFrequencyAt(float x);
+
+    void SetView(int center_freq_in, int bandwidth_in);
+    void DisableView();
+
+    void SetCenterFrequency(unsigned int center_freq_in);
+    unsigned int GetCenterFrequency();
+
+    void SetBandwidth(unsigned int bandwidth_in);
+    unsigned int GetBandwidth();
 
 private:
     void OnPaint(wxPaintEvent& event);
@@ -62,7 +72,28 @@ private:
     DragState dragState;
     DragState nextDragState;
 
-    bool shiftDown;bool altDown;bool ctrlDown;
+    bool shiftDown;
+    bool altDown;
+    bool ctrlDown;
+
+    int fft_size;
+    int waterfall_lines;
+
+    unsigned int center_freq;
+    unsigned int bandwidth;
+
+    bool isView;
+    msresamp_crcf resampler;
+    float resample_ratio;
+    nco_crcf nco_shift;
+    int shift_freq;
+
+    int last_input_bandwidth;
+    int last_bandwidth;
+
+    std::vector<liquid_float_complex> shift_buffer;
+    std::vector<liquid_float_complex> resampler_buffer;
+
     // event table
 wxDECLARE_EVENT_TABLE();
 };

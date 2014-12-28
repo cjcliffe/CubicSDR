@@ -6,7 +6,7 @@
 #include <deque>
 
 SDRPostThread::SDRPostThread() :
-        sample_rate(SRATE), iqDataOutQueue(NULL), iqDataInQueue(NULL), iqVisualQueue(NULL), terminated(false), dcFilter(NULL) {
+        sample_rate(SRATE), iqDataOutQueue(NULL), iqDataInQueue(NULL), iqVisualQueue(NULL), terminated(false), dcFilter(NULL), num_vis_samples(2048) {
 }
 
 SDRPostThread::~SDRPostThread() {
@@ -32,6 +32,14 @@ void SDRPostThread::setIQDataOutQueue(DemodulatorThreadInputQueue* iqDataQueue) 
 }
 void SDRPostThread::setIQVisualQueue(DemodulatorThreadInputQueue *iqVisQueue) {
     iqVisualQueue = iqVisQueue;
+}
+
+void SDRPostThread::setNumVisSamples(int num_vis_samples_in) {
+    num_vis_samples = num_vis_samples_in;
+}
+
+int SDRPostThread::getNumVisSamples() {
+    return num_vis_samples;
 }
 
 void SDRPostThread::threadMain() {
@@ -89,7 +97,9 @@ void SDRPostThread::threadMain() {
 
             if (iqVisualQueue != NULL && iqVisualQueue.load()->empty()) {
                 DemodulatorThreadIQData *visualDataOut = new DemodulatorThreadIQData;
-                visualDataOut->data.assign(dataOut.begin(), dataOut.begin() + FFT_SIZE);
+                visualDataOut->frequency = data_in->frequency;
+                visualDataOut->bandwidth = data_in->bandwidth;
+                visualDataOut->data.assign(dataOut.begin(), dataOut.begin() + num_vis_samples);
                 iqVisualQueue.load()->push(visualDataOut);
             }
 

@@ -14,4 +14,5 @@ public:
     void Draw(std::vector<float> &points);
 
 private:
+    int fft_size;
 };

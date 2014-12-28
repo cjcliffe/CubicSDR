@@ -23,7 +23,8 @@ private:
     ScopeCanvas *scopeCanvas;
     SpectrumCanvas *spectrumCanvas;
     WaterfallCanvas *waterfallCanvas;
+    WaterfallCanvas *demodWaterfallCanvas;
 
 // event table
-wxDECLARE_EVENT_TABLE();
+    wxDECLARE_EVENT_TABLE();
 };

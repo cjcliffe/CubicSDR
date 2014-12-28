@@ -28,7 +28,7 @@ EVT_IDLE(AppFrame::OnIdle)
 wxEND_EVENT_TABLE()
 
 AppFrame::AppFrame() :
-        wxFrame(NULL, wxID_ANY, wxT("CubicSDR")) {
+wxFrame(NULL, wxID_ANY, wxT("CubicSDR")) {
 
     wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodTray = new wxBoxSizer(wxHORIZONTAL);
@@ -64,15 +64,22 @@ AppFrame::AppFrame() :
 
     demodTray->Add(demodOpts, 1, wxEXPAND | wxALL, 0);
 
+    demodWaterfallCanvas = new WaterfallCanvas(this, NULL);
+    demodWaterfallCanvas->Setup(1024,128);
+    demodWaterfallCanvas->SetView(DEFAULT_FREQ,300000);
+    demodTray->Add(demodWaterfallCanvas, 7, wxEXPAND | wxALL, 0);
+
     scopeCanvas = new ScopeCanvas(this, NULL);
     demodTray->Add(scopeCanvas, 7, wxEXPAND | wxALL, 0);
 
     vbox->Add(demodTray, 1, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(2);
     spectrumCanvas = new SpectrumCanvas(this, NULL);
+    spectrumCanvas->Setup(2048);
     vbox->Add(spectrumCanvas, 1, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(2);
     waterfallCanvas = new WaterfallCanvas(this, NULL);
+    waterfallCanvas->Setup(2048,512);
     vbox->Add(waterfallCanvas, 4, wxEXPAND | wxALL, 0);
 
     this->SetSizer(vbox);
@@ -129,14 +136,27 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 //    std::this_thread::sleep_for(std::chrono::milliseconds(4));
 //    std::this_thread::yield();
 //#endif
+
+    DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+
+    if (demod) {
+        if (demod->getParams().frequency != demodWaterfallCanvas->GetCenterFrequency()) {
+            demodWaterfallCanvas->SetCenterFrequency(demod->getParams().frequency);
+        }
+        unsigned int demodBw = (unsigned int) ceil((float) demod->getParams().bandwidth * 1.5);
+        if (demodBw != demodWaterfallCanvas->GetBandwidth()) {
+            demodWaterfallCanvas->SetBandwidth(demodBw);
+        }
+    }
+
     if (!wxGetApp().getIQVisualQueue()->empty()) {
         DemodulatorThreadIQData *iqData;
         wxGetApp().getIQVisualQueue()->pop(iqData);
 
         if (iqData && iqData->data.size()) {
-            spectrumCanvas->setData(&iqData->data);
-            waterfallCanvas->setData(&iqData->data);
-
+            spectrumCanvas->setData(iqData);
+            waterfallCanvas->setData(iqData);
+            demodWaterfallCanvas->setData(iqData);
             delete iqData;
         } else {
             std::cout << "Incoming IQ data empty?" << std::endl;
@@ -148,8 +168,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         AudioThreadInput *demodAudioData;
         wxGetApp().getAudioVisualQueue()->pop(demodAudioData);
         if (demodAudioData && demodAudioData->data.size()) {
-            if (scopeCanvas->waveform_points.size() != demodAudioData->data.size()*2) {
-                scopeCanvas->waveform_points.resize(demodAudioData->data.size()*2);
+            if (scopeCanvas->waveform_points.size() != demodAudioData->data.size() * 2) {
+                scopeCanvas->waveform_points.resize(demodAudioData->data.size() * 2);
             }
 
             for (int i = 0, iMax = demodAudioData->data.size(); i < iMax; i++) {

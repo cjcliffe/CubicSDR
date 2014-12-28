@@ -367,7 +367,7 @@ void AudioThread::setActive(bool state) {
         while (!inputQueue->empty()) {  // flush queue
             inputQueue->pop(dummy);
             if (dummy) {
-                delete dummy;
+                dummy->decRefCount();
             }
         }
         deviceController[parameters.deviceId]->bindThread(this);
@@ -376,7 +376,7 @@ void AudioThread::setActive(bool state) {
         while (!inputQueue->empty()) {  // flush queue
             inputQueue->pop(dummy);
             if (dummy) {
-                delete dummy;
+                dummy->decRefCount();
             }
         }
     }
