@@ -46,7 +46,7 @@ Basic Goals and Status:
       - [ ] AM
       - [ ] LSB
       - [ ] USB
-    - Controls
+    - [ ] Controls
       - [ ] Display Frequency and allow manual adjustments
       - [ ] Allow selection of demodulation type
       - [ ] Display separate zoomed-in view of current waterfall and spectrum, allow adjustments
@@ -56,16 +56,18 @@ Basic Goals and Status:
       - [ ] Basic noise reduction / filter controls?
   - Basic Input Controls
     - [x] Drag spectrum to change center frequency
-    - [x] Clicking waterfall adds demodulator when none visible
+    - [x] Hold shift and click on waterfall to create a new demodulator
+    - [x] Clicking waterfall adds new demodulator when none visible
+    - [x] Drag center of demodulator on waterfall to change frequency
+    - [x] Drag edge of demodulator on waterfall to change bandwidth
+    - [x] Double-Click to move demodulator to frequency within it's current range
+    - [x] Hold alt and drag range on waterfall to set demodulator frequency + bandwidth
+    - [x] Hold alt+shift and drag range on waterfall for a new demodulator
+    - [x] Hover demodulator on waterfall and press 's' to toggle squelch
+    - [x] Hover demodulator on waterfall and press 'space' to toggle stereo
+    - [x] Hover demodulator on waterfall and press 'd' or 'delete' to delete it
     - [x] Keyboard arrows adjust frequency, shift for faster change
-    - [x] Drag center of demod on waterfall to change frequency
-    - [x] Drag edge of demod on waterfall to change bandwidth
-    - [x] Hover demod on waterfall and press 's' to toggle squelch
-    - [x] Hover demod on waterfall and press 'space' to toggle stereo
-    - [x] Hover demod on waterfall and press 'd' or 'delete' to delete it
-    - [x] Hold shift on waterfall to create a new demodulator
-    - [x] Hold alt on waterfall to drag a range for the demodulator
-    - [x] Hold alt+shift on waterfall to drag a range for a new demodulator
+    - [ ] Undo / Redo action
   - IQ Recording and playback
     - [ ] Recording
     - [ ] Playback
@@ -95,9 +97,9 @@ Advanced Goals:
 
 Target Platforms:
 ----------------
-  - OSX
-  - Windows
-  - Linux
+  - [x] OSX
+  - [x] Windows
+  - [ ] Linux
 
 
 License:
