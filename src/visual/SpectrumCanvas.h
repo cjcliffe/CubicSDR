@@ -46,8 +46,6 @@ private:
     std::vector<float> fft_result_maa;
 
     SpectrumContext *glContext;
-    Timer timer;
-    float frameTimer;
     int fft_size;
 
     MouseTracker mTracker;

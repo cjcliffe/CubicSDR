@@ -27,7 +27,7 @@ wxEND_EVENT_TABLE()
 
 SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0), fft_size(0), in(NULL), out(NULL), plan(NULL) {
+        wxFULL_REPAINT_ON_RESIZE), parent(parent), fft_size(0), in(NULL), out(NULL), plan(NULL) {
 
     glContext = new SpectrumContext(this, &wxGetApp().GetContext(this));
 
@@ -60,8 +60,6 @@ void SpectrumCanvas::Setup(int fft_size_in) {
 
     fft_ceil_ma = fft_ceil_maa = 100.0;
     fft_floor_ma = fft_floor_maa = 0.0;
-
-    timer.start();
 }
 
 SpectrumCanvas::~SpectrumCanvas() {
