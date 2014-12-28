@@ -18,6 +18,8 @@
 
 #include <thread>
 
+#include <wx/panel.h>
+
 wxBEGIN_EVENT_TABLE(AppFrame, wxFrame)
 //EVT_MENU(wxID_NEW, AppFrame::OnNewWindow)
 EVT_MENU(wxID_CLOSE, AppFrame::OnClose)
@@ -29,9 +31,43 @@ AppFrame::AppFrame() :
         wxFrame(NULL, wxID_ANY, wxT("CubicSDR")) {
 
     wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *demodTray = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer *demodOpts = new wxBoxSizer(wxVERTICAL);
+
+    demodTray->AddSpacer(5);
+    demodOpts->AddSpacer(5);
+
+    wxStaticText *audioDeviceLabel = new wxStaticText(this, wxID_ANY, wxString("Audio Device:"));
+    demodOpts->Add(audioDeviceLabel, 1, wxFIXED_MINSIZE | wxALL, 0);
+
+    wxArrayString str;
+    str.Add("Primary Device");
+    wxChoice *wxCh = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, str);
+    demodOpts->Add(wxCh, 1, wxFIXED_MINSIZE | wxALL, 0);
+
+    demodOpts->AddSpacer(2);
+
+    wxStaticText *demodTypeLabel = new wxStaticText(this, wxID_ANY, wxString("Demodulation:"));
+    demodOpts->Add(demodTypeLabel, 1, wxFIXED_MINSIZE | wxALL, 0);
+
+    str.Clear();
+    str.Add("FM");
+    str.Add("FM Stereo");
+    str.Add("AM");
+    str.Add("LSB");
+    str.Add("USB");
+    wxChoice *wxDemodChoice = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, str);
+    demodOpts->Add(wxDemodChoice, 1, wxFIXED_MINSIZE | wxALL, 0);
+
+    demodOpts->AddSpacer(5);
+    demodTray->AddSpacer(5);
+
+    demodTray->Add(demodOpts, 1, wxEXPAND | wxALL, 0);
 
     scopeCanvas = new ScopeCanvas(this, NULL);
-    vbox->Add(scopeCanvas, 1, wxEXPAND | wxALL, 0);
+    demodTray->Add(scopeCanvas, 7, wxEXPAND | wxALL, 0);
+
+    vbox->Add(demodTray, 1, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(2);
     spectrumCanvas = new SpectrumCanvas(this, NULL);
     vbox->Add(spectrumCanvas, 1, wxEXPAND | wxALL, 0);
@@ -69,8 +105,6 @@ AppFrame::AppFrame() :
 }
 
 AppFrame::~AppFrame() {
-
-//    delete t_SDR;
 
 }
 
