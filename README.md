@@ -17,17 +17,60 @@ Utilizes:
   - CMake (http://www.cmake.org/)
 
 
-Basic Goals:
------------
+Basic Goals and Status:
+----------------------
   - Simple UI
+  - Devices
+    - [x] RTL-SDR (RTL2832U)
+    - [ ] HackRF
+    - [ ] Whatever else I can get my hands on
   - Minimal configuration
+    - [ ] Device
+    - [ ] Bandwidth
+    - [ ] Default audio device and settings
+    - [ ] Color scheme
+    - [ ] Load/Save session
   - Neat Visuals
-  - LSB / USB / AM / FM / WFM / WBFM stereo demodulation
-  - Multiple demodulators per IQ stream
-  - Separate visualizations per demodulator
-  - Frequency locked/floating demodulators
+    - [x] Scope
+    - [x] Spectrum
+    - [x] Waterfall
+    - [ ] More 2D visuals
+    - [ ] 3D visuals
+  - Demodulation:
+    - [x] Multiple demodulators per IQ stream
+    - [ ] Audio device selection
+    - [ ] Modes
+      - [x] FM
+      - [x] WFM
+      - [x] WBFM stereo
+      - [ ] AM
+      - [ ] LSB
+      - [ ] USB
+    - Controls
+      - [ ] Display Frequency and allow manual adjustments
+      - [ ] Allow selection of demodulation type
+      - [ ] Display separate zoomed-in view of current waterfall and spectrum, allow adjustments
+      - [ ] Display signal level and allow squelch control
+      - [ ] Display audio output selection
+      - [ ] Volume control
+      - [ ] Basic noise reduction / filter controls?
+  - Basic Input Controls
+    - [x] Drag spectrum to change center frequency
+    - [x] Clicking waterfall adds demodulator when none visible
+    - [x] Keyboard arrows adjust frequency, shift for faster change
+    - [x] Drag center of demod on waterfall to change frequency
+    - [x] Drag edge of demod on waterfall to change bandwidth
+    - [x] Hover demod on waterfall and press 's' to toggle squelch
+    - [x] Hover demod on waterfall and press 'space' to toggle stereo
+    - [x] Hover demod on waterfall and press 'd' or 'delete' to delete it
+    - [x] Hold shift on waterfall to create a new demodulator
+    - [x] Hold alt on waterfall to drag a range for the demodulator
+    - [x] Hold alt+shift on waterfall to drag a range for a new demodulator
   - IQ Recording and playback
-  - Audio Recording
+    - [ ] Recording
+    - [ ] Playback
+  - Audio
+    - [ ] Recording
 
 
 Advanced Goals:
