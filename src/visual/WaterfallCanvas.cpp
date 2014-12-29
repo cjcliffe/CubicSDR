@@ -29,9 +29,11 @@ EVT_ENTER_WINDOW(WaterfallCanvas::mouseEnterWindow)
 wxEND_EVENT_TABLE()
 
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
-wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
+        wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
         wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0), activeDemodulatorBandwidth(0), activeDemodulatorFrequency(0), dragState(
-        WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), shiftDown(false), altDown(false), ctrlDown(false), fft_size(0), waterfall_lines(0), plan(NULL), in(NULL), out(NULL), center_freq(0), bandwidth(0), isView(false), resampler(NULL), resample_ratio(0), last_bandwidth(0), last_input_bandwidth(0) {
+                WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), shiftDown(false), altDown(false), ctrlDown(false), fft_size(0), waterfall_lines(0), plan(
+                NULL), in(NULL), out(NULL), center_freq(0), bandwidth(0), isView(false), resampler(NULL), resample_ratio(0), last_bandwidth(0), last_input_bandwidth(
+                0) {
 
     glContext = new WaterfallContext(this, &wxGetApp().GetContext(this));
 
@@ -100,7 +102,7 @@ unsigned int WaterfallCanvas::GetCenterFrequency() {
     if (isView) {
         return center_freq;
     } else {
-        return (unsigned int)wxGetApp().getFrequency();
+        return (unsigned int) wxGetApp().getFrequency();
     }
 }
 
@@ -114,6 +116,14 @@ unsigned int WaterfallCanvas::GetBandwidth() {
     } else {
         return SRATE;
     }
+}
+
+WaterfallCanvas::DragState WaterfallCanvas::getDragState() {
+    return dragState;
+}
+
+WaterfallCanvas::DragState WaterfallCanvas::getNextDragState() {
+    return nextDragState;
 }
 
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
@@ -303,9 +313,9 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
             }
 
             if (center_freq != input->frequency) {
-                if (((int)center_freq - (int)input->frequency) != shift_freq || last_input_bandwidth != input->bandwidth) {
-                    if ((int)input->frequency - abs((int)center_freq) < (int) ((float) ((float) SRATE / 2.0))) {
-                        shift_freq = (int)center_freq - (int)input->frequency;
+                if (((int) center_freq - (int) input->frequency) != shift_freq || last_input_bandwidth != input->bandwidth) {
+                    if ((int) input->frequency - abs((int) center_freq) < (int) ((float) ((float) SRATE / 2.0))) {
+                        shift_freq = (int) center_freq - (int) input->frequency;
                         nco_crcf_reset(nco_shift);
                         nco_crcf_set_frequency(nco_shift, (2.0 * M_PI) * (((float) abs(shift_freq)) / ((float) input->bandwidth)));
                     }
@@ -531,7 +541,7 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
             int freqDiff = ((int) activeDemodulator->getParams().frequency - freqPos);
 
             if (abs(freqDiff) > (activeDemodulator->getParams().bandwidth / 3)) {
-                SetCursor (wxCURSOR_SIZEWE);
+                SetCursor(wxCURSOR_SIZEWE);
 
                 if (freqDiff > 0) {
                     nextDragState = WF_DRAG_BANDWIDTH_LEFT;
@@ -542,14 +552,14 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
                 mTracker.setVertDragLock(true);
                 mTracker.setHorizDragLock(false);
             } else {
-                SetCursor (wxCURSOR_SIZING);
+                SetCursor(wxCURSOR_SIZING);
                 nextDragState = WF_DRAG_FREQUENCY;
 
                 mTracker.setVertDragLock(true);
                 mTracker.setHorizDragLock(false);
             }
         } else {
-            SetCursor (wxCURSOR_CROSS);
+            SetCursor(wxCURSOR_CROSS);
             nextDragState = WF_DRAG_NONE;
         }
 
@@ -631,7 +641,7 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
                             wxNumberFormatter::ToString((long) freq, wxNumberFormatter::Style_WithThousandsSep)));
 
             wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getLastActiveDemodulator(), false);
-            SetCursor (wxCURSOR_SIZING);
+            SetCursor(wxCURSOR_SIZING);
             nextDragState = WF_DRAG_FREQUENCY;
             mTracker.setVertDragLock(true);
             mTracker.setHorizDragLock(false);
@@ -699,12 +709,12 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
 
 void WaterfallCanvas::mouseLeftWindow(wxMouseEvent& event) {
     mTracker.OnMouseLeftWindow(event);
-    SetCursor (wxCURSOR_CROSS);
+    SetCursor(wxCURSOR_CROSS);
     wxGetApp().getDemodMgr().setActiveDemodulator(NULL);
 }
 
 void WaterfallCanvas::mouseEnterWindow(wxMouseEvent& event) {
     mTracker.OnMouseEnterWindow(event);
-    SetCursor (wxCURSOR_CROSS);
+    SetCursor(wxCURSOR_CROSS);
 }
 

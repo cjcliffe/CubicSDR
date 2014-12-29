@@ -31,8 +31,9 @@ AppFrame::AppFrame() :
 wxFrame(NULL, wxID_ANY, wxT("CubicSDR")) {
 
     wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
-    wxBoxSizer *demodTray = new wxBoxSizer(wxHORIZONTAL);
     wxBoxSizer *demodOpts = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *demodVisuals = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *demodTray = new wxBoxSizer(wxHORIZONTAL);
 
     demodTray->AddSpacer(5);
     demodOpts->AddSpacer(5);
@@ -64,15 +65,20 @@ wxFrame(NULL, wxID_ANY, wxT("CubicSDR")) {
 
     demodTray->Add(demodOpts, 1, wxEXPAND | wxALL, 0);
 
+
     demodWaterfallCanvas = new WaterfallCanvas(this, NULL);
     demodWaterfallCanvas->Setup(1024,128);
     demodWaterfallCanvas->SetView(DEFAULT_FREQ,300000);
-    demodTray->Add(demodWaterfallCanvas, 7, wxEXPAND | wxALL, 0);
+    demodVisuals->Add(demodWaterfallCanvas, 3, wxEXPAND | wxALL, 0);
+
+    demodTray->Add(demodVisuals, 7, wxEXPAND | wxALL, 0);
+
+    demodTray->AddSpacer(2);
 
     scopeCanvas = new ScopeCanvas(this, NULL);
     demodTray->Add(scopeCanvas, 7, wxEXPAND | wxALL, 0);
 
-    vbox->Add(demodTray, 1, wxEXPAND | wxALL, 0);
+    vbox->Add(demodTray, 2, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(2);
     spectrumCanvas = new SpectrumCanvas(this, NULL);
     spectrumCanvas->Setup(2048);
@@ -140,12 +146,17 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     if (demod) {
-        if (demod->getParams().frequency != demodWaterfallCanvas->GetCenterFrequency()) {
-            demodWaterfallCanvas->SetCenterFrequency(demod->getParams().frequency);
-        }
-        unsigned int demodBw = (unsigned int) ceil((float) demod->getParams().bandwidth * 1.5);
-        if (demodBw != demodWaterfallCanvas->GetBandwidth()) {
-            demodWaterfallCanvas->SetBandwidth(demodBw);
+        if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
+            if (demod->getParams().frequency != demodWaterfallCanvas->GetCenterFrequency()) {
+                demodWaterfallCanvas->SetCenterFrequency(demod->getParams().frequency);
+            }
+            unsigned int demodBw = (unsigned int) ceil((float) demod->getParams().bandwidth * 2.5);
+            if (demodBw > SRATE/2) {
+                demodBw = SRATE/2;
+            }
+            if (demodBw != demodWaterfallCanvas->GetBandwidth()) {
+                demodWaterfallCanvas->SetBandwidth(demodBw);
+            }
         }
     }
 

@@ -34,6 +34,9 @@ public:
     void SetBandwidth(unsigned int bandwidth_in);
     unsigned int GetBandwidth();
 
+    DragState getDragState();
+    DragState getNextDragState();
+
 private:
     void OnPaint(wxPaintEvent& event);
     void OnKeyDown(wxKeyEvent& event);
