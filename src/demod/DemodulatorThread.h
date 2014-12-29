@@ -8,7 +8,7 @@
 
 typedef ThreadQueue<AudioThreadInput *> DemodulatorThreadOutputQueue;
 
-#define DEMOD_VIS_SIZE 2048
+#define DEMOD_VIS_SIZE 1024
 
 class DemodulatorThread {
 public:
