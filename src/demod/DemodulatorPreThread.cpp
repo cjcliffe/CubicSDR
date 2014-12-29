@@ -30,32 +30,17 @@ DemodulatorPreThread::DemodulatorPreThread(DemodulatorThreadInputQueue* pQueueIn
 void DemodulatorPreThread::initialize() {
     initialized = false;
 
-    resample_ratio = (float) (params.bandwidth) / (float) params.inputRate;
-    audio_resample_ratio = (float) (params.audioSampleRate) / (float) params.bandwidth;
+    resample_ratio = (double) (params.bandwidth) / (double) params.inputRate;
+    audio_resample_ratio = (double) (params.audioSampleRate) / (double) params.bandwidth;
 
     float As = 60.0f;         // stop-band attenuation [dB]
 
-    // create multi-stage arbitrary resampler object
-    if (resampler) {
-        msresamp_crcf_destroy(resampler);
-    }
     resampler = msresamp_crcf_create(resample_ratio, As);
-//    msresamp_crcf_print(resampler);
-
-    if (audio_resampler) {
-        msresamp_rrrf_destroy(audio_resampler);
-    }
     audio_resampler = msresamp_rrrf_create(audio_resample_ratio, As);
-//    msresamp_crcf_print(audio_resampler);
-
-    if (stereo_resampler) {
-        msresamp_rrrf_destroy(stereo_resampler);
-    }
     stereo_resampler = msresamp_rrrf_create(audio_resample_ratio, As);
 
     initialized = true;
 //    std::cout << "inputResampleRate " << params.bandwidth << std::endl;
-
     last_params = params;
 }
 
@@ -68,12 +53,12 @@ DemodulatorPreThread::~DemodulatorPreThread() {
 #ifdef __APPLE__
 void *DemodulatorPreThread::threadMain() {
 #else
-    void DemodulatorPreThread::threadMain() {
+void DemodulatorPreThread::threadMain() {
 #endif
 #ifdef __APPLE__
     pthread_t tID = pthread_self();  // ID of this thread
     int priority = sched_get_priority_max( SCHED_FIFO) - 1;
-    sched_param prio = { priority }; // scheduling priority of thread
+    sched_param prio = {priority}; // scheduling priority of thread
     pthread_setschedparam(tID, SCHED_FIFO, &prio);
 #endif
 
@@ -137,13 +122,13 @@ void *DemodulatorPreThread::threadMain() {
         if (inp->frequency != params.frequency) {
             if ((params.frequency - inp->frequency) != shift_freq) {
                 shift_freq = params.frequency - inp->frequency;
-                if (abs(shift_freq) <= (int) ((float) (SRATE / 2) * 1.5)) {
-                    nco_crcf_set_frequency(nco_shift, (2.0 * M_PI) * (((float) abs(shift_freq)) / ((float) SRATE)));
+                if (abs(shift_freq) <= (int) ((double) (SRATE / 2) * 1.5)) {
+                    nco_crcf_set_frequency(nco_shift, (2.0 * M_PI) * (((double) abs(shift_freq)) / ((double) SRATE)));
                 }
             }
         }
 
-        if (abs(shift_freq) > (int) ((float) (SRATE / 2) * 1.5)) {
+        if (abs(shift_freq) > (int) ((double) (SRATE / 2) * 1.5)) {
             continue;
         }
 

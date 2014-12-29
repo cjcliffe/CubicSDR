@@ -20,18 +20,57 @@ void ScopeContext::DrawBegin() {
     glDisable (GL_TEXTURE_2D);
 }
 
-void ScopeContext::Plot(std::vector<float> &points) {
+void ScopeContext::Plot(std::vector<float> &points, bool stereo) {
     glColor3f(1.0, 1.0, 1.0);
 
+    if (stereo) {
+        glColor3f(0.7, 0.7, 0.7);
+        glBegin(GL_LINES);
+        glVertex2f(-1.0,0.0);
+        glVertex2f(1.0,0.0);
+        glEnd();
+        glColor3f(0.3, 0.3, 0.3);
+        glBegin(GL_LINES);
+        glVertex2f(-1.0,0.5);
+        glVertex2f(1.0,0.5);
+        glVertex2f(-1.0,-0.5);
+        glVertex2f(1.0,-0.5);
+        glEnd();
+    } else {
+        glColor3f(0.3, 0.3, 0.3);
+        glBegin(GL_LINES);
+        glVertex2f(-1.0,0.0);
+        glVertex2f(1.0,0.0);
+        glEnd();
+    }
+
+    glColor3f(0.9, 0.9, 0.9);
     if (points.size()) {
-        glPushMatrix();
-        glTranslatef(-1.0f, 0.0f, 0.0f);
-        glScalef(2.0f, 2.0f, 1.0f);
         glEnableClientState (GL_VERTEX_ARRAY);
         glVertexPointer(2, GL_FLOAT, 0, &points[0]);
-        glDrawArrays(GL_LINE_STRIP, 0, points.size() / 2);
+        if (stereo) {
+            glPushMatrix();
+            glTranslatef(-1.0f, 0.5f, 0.0f);
+            glScalef(4.0f, 0.92f, 1.0f);
+            glDrawArrays(GL_LINE_STRIP, 0, points.size() / 4);
+            glPopMatrix();
+
+            glPushMatrix();
+            glTranslatef(-3.0f, -0.5f, 0.0f);
+            glPushMatrix();
+            glScalef(4.0f, 0.92f, 1.0f);
+            glDrawArrays(GL_LINE_STRIP, points.size() / 4, points.size() / 4);
+            glPopMatrix();
+            glPopMatrix();
+        } else {
+            glPushMatrix();
+            glTranslatef(-1.0f, 0.0f, 0.0f);
+            glScalef(2.0f, 2.0f, 1.0f);
+            glDrawArrays(GL_LINE_STRIP, 0, points.size() / 2);
+            glPopMatrix();
+        }
         glDisableClientState(GL_VERTEX_ARRAY);
-        glPopMatrix();
+
     }
 }
 

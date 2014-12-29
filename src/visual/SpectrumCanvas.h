@@ -14,11 +14,23 @@
 
 class SpectrumCanvas: public wxGLCanvas {
 public:
+    std::vector<float> spectrum_points;
+
     SpectrumCanvas(wxWindow *parent, int *attribList = NULL);
     void Setup(int fft_size_in);
     ~SpectrumCanvas();
 
     void setData(DemodulatorThreadIQData *input);
+
+    void SetView(int center_freq_in, int bandwidth_in);
+    void DisableView();
+
+    void SetCenterFrequency(unsigned int center_freq_in);
+    unsigned int GetCenterFrequency();
+
+    void SetBandwidth(unsigned int bandwidth_in);
+    unsigned int GetBandwidth();
+
 private:
     void OnPaint(wxPaintEvent& event);
 
@@ -33,7 +45,6 @@ private:
     void mouseLeftWindow(wxMouseEvent& event);
 
     wxWindow *parent;
-    std::vector<float> spectrum_points;
 
     fftw_complex *in, *out;
     fftw_plan plan;
@@ -47,6 +58,11 @@ private:
 
     SpectrumContext *glContext;
     int fft_size;
+
+    unsigned int center_freq;
+    unsigned int bandwidth;
+
+    bool isView;
 
     MouseTracker mTracker;
 // event table

@@ -8,6 +8,7 @@
 
 #include "WaterfallContext.h"
 #include "MouseTracker.h"
+#include "SpectrumCanvas.h"
 
 #include "fftw3.h"
 #include "Timer.h"
@@ -37,6 +38,8 @@ public:
     DragState getDragState();
     DragState getNextDragState();
 
+    void attachSpectrumCanvas(SpectrumCanvas *canvas_in);
+
 private:
     void OnPaint(wxPaintEvent& event);
     void OnKeyDown(wxKeyEvent& event);
@@ -52,6 +55,7 @@ private:
     void mouseLeftWindow(wxMouseEvent& event);
 
     wxWindow *parent;
+    SpectrumCanvas *spectrumCanvas;
     std::vector<float> spectrum_points;
 
     fftw_complex *in, *out;

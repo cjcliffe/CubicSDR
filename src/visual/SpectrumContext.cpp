@@ -6,7 +6,7 @@
 #include <iostream>
 
 SpectrumContext::SpectrumContext(SpectrumCanvas *canvas, wxGLContext *sharedContext) :
-        PrimaryGLContext(canvas, sharedContext) {
+        PrimaryGLContext(canvas, sharedContext), fft_size(0) {
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
 
@@ -15,7 +15,7 @@ SpectrumContext::SpectrumContext(SpectrumCanvas *canvas, wxGLContext *sharedCont
 
 }
 
-void SpectrumContext::Draw(std::vector<float> &points) {
+void SpectrumContext::Draw(std::vector<float> &points, int freq, int bandwidth) {
 
     glDisable(GL_TEXTURE_2D);
     glColor3f(1.0, 1.0, 1.0);
@@ -35,9 +35,10 @@ void SpectrumContext::Draw(std::vector<float> &points) {
     glGetIntegerv( GL_VIEWPORT, vp);
 
     float viewHeight = (float) vp[3];
+    float viewWidth = (float) vp[2];
 
-    float leftFreq = (float) wxGetApp().getFrequency() - ((float) SRATE / 2.0);
-    float rightFreq = leftFreq + (float) SRATE;
+    float leftFreq = (float) freq - ((float) bandwidth / 2.0);
+    float rightFreq = leftFreq + (float) bandwidth;
 
     float firstMhz = floor(leftFreq / 1000000.0) * 1000000.0;
     float mhzStart = ((firstMhz - leftFreq) / (rightFreq - leftFreq)) * 2.0;

@@ -17,6 +17,8 @@
 
 #include <wx/numformatter.h>
 
+#define MIN_FM_BANDWIDTH 10000
+
 wxBEGIN_EVENT_TABLE(WaterfallCanvas, wxGLCanvas) EVT_PAINT(WaterfallCanvas::OnPaint)
 EVT_KEY_DOWN(WaterfallCanvas::OnKeyDown)
 EVT_KEY_UP(WaterfallCanvas::OnKeyUp)
@@ -30,7 +32,7 @@ wxEND_EVENT_TABLE()
 
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0), activeDemodulatorBandwidth(0), activeDemodulatorFrequency(0), dragState(
+        wxFULL_REPAINT_ON_RESIZE), parent(parent), spectrumCanvas(NULL), frameTimer(0), activeDemodulatorBandwidth(0), activeDemodulatorFrequency(0), dragState(
                 WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), shiftDown(false), altDown(false), ctrlDown(false), fft_size(0), waterfall_lines(0), plan(
                 NULL), in(NULL), out(NULL), center_freq(0), bandwidth(0), isView(false), resampler(NULL), resample_ratio(0), last_bandwidth(0), last_input_bandwidth(
                 0) {
@@ -125,6 +127,11 @@ WaterfallCanvas::DragState WaterfallCanvas::getDragState() {
 WaterfallCanvas::DragState WaterfallCanvas::getNextDragState() {
     return nextDragState;
 }
+
+void WaterfallCanvas::attachSpectrumCanvas(SpectrumCanvas *canvas_in) {
+    spectrumCanvas = canvas_in;
+}
+
 
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
@@ -427,6 +434,10 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
             spectrum_points[i * 2] = ((float) i / (float) iMax);
             spectrum_points[i * 2 + 1] = v;
         }
+
+        if (spectrumCanvas) {
+            spectrumCanvas->spectrum_points.assign(spectrum_points.begin(),spectrum_points.end());
+        }
     }
 }
 
@@ -467,11 +478,11 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
             DemodulatorThreadCommand command;
             command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_BANDWIDTH;
             activeDemodulatorBandwidth = activeDemodulatorBandwidth + bwDiff;
-            if (activeDemodulatorBandwidth < 2000) {
-                activeDemodulatorBandwidth = 2000;
+            if (activeDemodulatorBandwidth > SRATE) {
+                activeDemodulatorBandwidth = SRATE;
             }
-            if (activeDemodulatorBandwidth > GetBandwidth()) {
-                activeDemodulatorBandwidth = GetBandwidth();
+            if (activeDemodulatorBandwidth < MIN_FM_BANDWIDTH) {
+                activeDemodulatorBandwidth = MIN_FM_BANDWIDTH;
             }
 
             command.int_value = activeDemodulatorBandwidth;
@@ -661,8 +672,8 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
         unsigned int freq = input_center_freq - (int) (0.5 * (float) GetBandwidth()) + (int) ((float) pos * (float) GetBandwidth());
         unsigned int bw = (unsigned int) (fabs(width) * (float) GetBandwidth());
 
-        if (bw < 2000) {
-            bw = 2000;
+        if (bw < MIN_FM_BANDWIDTH) {
+            bw = MIN_FM_BANDWIDTH;
         }
 
         if (!bw) {

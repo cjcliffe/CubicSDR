@@ -58,5 +58,6 @@ protected:
     DemodulatorThreadCommandQueue* threadQueueNotify;
     DemodulatorThreadControlCommandQueue *threadQueueControl;
     float squelch_level;
-    float squelch_tolerance;bool squelch_enabled;
+    float squelch_tolerance;
+    bool squelch_enabled;
 };

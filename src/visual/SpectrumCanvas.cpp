@@ -27,7 +27,7 @@ wxEND_EVENT_TABLE()
 
 SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE), parent(parent), fft_size(0), in(NULL), out(NULL), plan(NULL) {
+        wxFULL_REPAINT_ON_RESIZE), parent(parent), fft_size(0), in(NULL), out(NULL), plan(NULL), center_freq(0), bandwidth(0), isView(0) {
 
     glContext = new SpectrumContext(this, &wxGetApp().GetContext(this));
 
@@ -74,12 +74,12 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
     glContext->BeginDraw();
-    glContext->Draw(spectrum_points);
+    glContext->Draw(spectrum_points, GetCenterFrequency(), GetBandwidth());
 
     std::vector<DemodulatorInstance *> &demods = wxGetApp().getDemodMgr().getDemodulators();
 
     for (int i = 0, iMax = demods.size(); i < iMax; i++) {
-        glContext->DrawDemodInfo(demods[i]);
+        glContext->DrawDemodInfo(demods[i], 1, 1, 1, GetCenterFrequency(), GetBandwidth());
     }
 
     glContext->EndDraw();
@@ -171,6 +171,41 @@ void SpectrumCanvas::setData(DemodulatorThreadIQData *input) {
     }
 }
 
+
+
+void SpectrumCanvas::SetView(int center_freq_in, int bandwidth_in) {
+    isView = true;
+    center_freq = center_freq_in;
+    bandwidth = bandwidth_in;
+}
+
+void SpectrumCanvas::DisableView() {
+    isView = false;
+}
+void SpectrumCanvas::SetCenterFrequency(unsigned int center_freq_in) {
+    center_freq = center_freq_in;
+}
+
+unsigned int SpectrumCanvas::GetCenterFrequency() {
+    if (isView) {
+        return center_freq;
+    } else {
+        return (unsigned int) wxGetApp().getFrequency();
+    }
+}
+
+void SpectrumCanvas::SetBandwidth(unsigned int bandwidth_in) {
+    bandwidth = bandwidth_in;
+}
+
+unsigned int SpectrumCanvas::GetBandwidth() {
+    if (isView) {
+        return bandwidth;
+    } else {
+        return SRATE;
+    }
+}
+
 void SpectrumCanvas::OnIdle(wxIdleEvent &event) {
 //    timer.update();
 //    frameTimer += timer.lastUpdateSeconds();
@@ -183,7 +218,7 @@ void SpectrumCanvas::OnIdle(wxIdleEvent &event) {
 void SpectrumCanvas::mouseMoved(wxMouseEvent& event) {
     mTracker.OnMouseMoved(event);
     if (mTracker.mouseDown()) {
-        int freqChange = mTracker.getDeltaMouseX() * SRATE;
+        int freqChange = mTracker.getDeltaMouseX() * GetBandwidth();
 
         if (freqChange != 0) {
             int freq = wxGetApp().getFrequency();

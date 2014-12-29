@@ -36,10 +36,10 @@ public:
     DemodulatorThreadResultEnum cmd;
 
     msresamp_crcf resampler;
-    float resample_ratio;
+    double resample_ratio;
     msresamp_rrrf audio_resampler;
     msresamp_rrrf stereo_resampler;
-    float audio_resample_ratio;
+    double audio_resample_ratio;
 
     unsigned int inputRate;
     unsigned int bandwidth;

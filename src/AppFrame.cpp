@@ -28,13 +28,14 @@ EVT_IDLE(AppFrame::OnIdle)
 wxEND_EVENT_TABLE()
 
 AppFrame::AppFrame() :
-wxFrame(NULL, wxID_ANY, wxT("CubicSDR")) {
+        wxFrame(NULL, wxID_ANY, wxT("CubicSDR")) {
 
     wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodOpts = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodVisuals = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodTray = new wxBoxSizer(wxHORIZONTAL);
 
+    /*
     demodTray->AddSpacer(5);
     demodOpts->AddSpacer(5);
 
@@ -63,12 +64,19 @@ wxFrame(NULL, wxID_ANY, wxT("CubicSDR")) {
     demodOpts->AddSpacer(5);
     demodTray->AddSpacer(5);
 
-    demodTray->Add(demodOpts, 1, wxEXPAND | wxALL, 0);
+    demodTray->Add(demodOpts, 1, wxEXPAND | wxALL, 0); */
 
+    demodSpectrumCanvas = new SpectrumCanvas(this, NULL);
+    demodSpectrumCanvas->Setup(1024);
+    demodSpectrumCanvas->SetView(DEFAULT_FREQ, 300000);
+    demodVisuals->Add(demodSpectrumCanvas, 1, wxEXPAND | wxALL, 0);
+
+    demodVisuals->AddSpacer(1);
 
     demodWaterfallCanvas = new WaterfallCanvas(this, NULL);
-    demodWaterfallCanvas->Setup(1024,128);
-    demodWaterfallCanvas->SetView(DEFAULT_FREQ,300000);
+    demodWaterfallCanvas->Setup(1024, 256);
+    demodWaterfallCanvas->SetView(DEFAULT_FREQ, 300000);
+    demodWaterfallCanvas->attachSpectrumCanvas(demodSpectrumCanvas);
     demodVisuals->Add(demodWaterfallCanvas, 3, wxEXPAND | wxALL, 0);
 
     demodTray->Add(demodVisuals, 7, wxEXPAND | wxALL, 0);
@@ -85,7 +93,8 @@ wxFrame(NULL, wxID_ANY, wxT("CubicSDR")) {
     vbox->Add(spectrumCanvas, 1, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(2);
     waterfallCanvas = new WaterfallCanvas(this, NULL);
-    waterfallCanvas->Setup(2048,512);
+    waterfallCanvas->Setup(2048, 512);
+    waterfallCanvas->attachSpectrumCanvas(spectrumCanvas);
     vbox->Add(waterfallCanvas, 4, wxEXPAND | wxALL, 0);
 
     this->SetSizer(vbox);
@@ -149,13 +158,15 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
             if (demod->getParams().frequency != demodWaterfallCanvas->GetCenterFrequency()) {
                 demodWaterfallCanvas->SetCenterFrequency(demod->getParams().frequency);
+                demodSpectrumCanvas->SetCenterFrequency(demod->getParams().frequency);
             }
             unsigned int demodBw = (unsigned int) ceil((float) demod->getParams().bandwidth * 2.5);
-            if (demodBw > SRATE/2) {
-                demodBw = SRATE/2;
+            if (demodBw > SRATE / 2) {
+                demodBw = SRATE / 2;
             }
             if (demodBw != demodWaterfallCanvas->GetBandwidth()) {
                 demodWaterfallCanvas->SetBandwidth(demodBw);
+                demodSpectrumCanvas->SetBandwidth(demodBw);
             }
         }
     }
@@ -165,7 +176,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         wxGetApp().getIQVisualQueue()->pop(iqData);
 
         if (iqData && iqData->data.size()) {
-            spectrumCanvas->setData(iqData);
+//            spectrumCanvas->setData(iqData);
             waterfallCanvas->setData(iqData);
             demodWaterfallCanvas->setData(iqData);
             delete iqData;
@@ -188,7 +199,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
                 scopeCanvas->waveform_points[i * 2] = ((double) i / (double) iMax);
             }
 
-            scopeCanvas->setDivider(demodAudioData->channels == 2);
+            scopeCanvas->setStereo(demodAudioData->channels == 2);
 
             delete demodAudioData;
         } else {

@@ -36,7 +36,7 @@ void DemodulatorThread::threadMain() {
     firfilt_rrrf fir_filter2 = NULL;
     msresamp_crcf resampler = NULL;
 
-    float fc = 0.5 * ((double) 36000 / (double) AUDIO_FREQUENCY);         // filter cutoff frequency
+    double fc = 0.5 * ((double) 36000 / (double) AUDIO_FREQUENCY);         // filter cutoff frequency
     if (fc <= 0) {
         fc = 0;
     }
@@ -61,7 +61,7 @@ void DemodulatorThread::threadMain() {
     firhilbf firC2R = firhilbf_create(m, slsl);
 
     nco_crcf nco_shift = nco_crcf_create(LIQUID_NCO);
-    float shift_freq = 0;
+    double shift_freq = 0;
 
     agc = agc_crcf_create();
     agc_crcf_set_bandwidth(agc, 1e-3f);
@@ -105,7 +105,7 @@ void DemodulatorThread::threadMain() {
             stereo_resampler = inp->stereo_resampler;
         }
 
-        int out_size = ceil((float) (bufSize) * inp->resample_ratio);
+        int out_size = ceil((double) (bufSize) * inp->resample_ratio);
 
         if (agc_data.size() != out_size) {
             if (agc_data.capacity() < out_size) {
@@ -121,7 +121,7 @@ void DemodulatorThread::threadMain() {
 
         agc_crcf_execute_block(agc, &resampled_data[0], num_written, &agc_data[0]);
 
-        float audio_resample_ratio = inp->audio_resample_ratio;
+        double audio_resample_ratio = inp->audio_resample_ratio;
 
         if (demod_output.size() != num_written) {
             if (demod_output.capacity() < num_written) {
@@ -130,7 +130,7 @@ void DemodulatorThread::threadMain() {
             demod_output.resize(num_written);
         }
 
-        int audio_out_size = ceil((float) (num_written) * audio_resample_ratio);
+        int audio_out_size = ceil((double) (num_written) * audio_resample_ratio);
 
         freqdem_demodulate_block(fdem, &agc_data[0], num_written, &demod_output[0]);
 
@@ -152,7 +152,7 @@ void DemodulatorThread::threadMain() {
                 demod_output_stereo.resize(num_written);
             }
 
-            double freq = (2.0 * M_PI) * (((float) abs(38000)) / ((float) inp->bandwidth));
+            double freq = (2.0 * M_PI) * (((double) abs(38000)) / ((double) inp->bandwidth));
 
             if (shift_freq != freq) {
                 nco_crcf_set_frequency(nco_shift, freq);
