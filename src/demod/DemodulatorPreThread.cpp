@@ -88,8 +88,8 @@ void DemodulatorPreThread::threadMain() {
                 commandQueue->pop(command);
                 switch (command.cmd) {
                 case DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_BANDWIDTH:
-                    if (command.int_value < 3000) {
-                        command.int_value = 3000;
+                    if (command.int_value < 1500) {
+                        command.int_value = 1500;
                     }
                     if (command.int_value > SRATE) {
                         command.int_value = SRATE;

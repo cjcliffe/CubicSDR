@@ -48,12 +48,12 @@ private:
     fftw_complex *in, *out;
     fftw_plan plan;
 
-    float fft_ceil_ma, fft_ceil_maa;
-    float fft_floor_ma, fft_floor_maa;
+    double fft_ceil_ma, fft_ceil_maa;
+    double fft_floor_ma, fft_floor_maa;
 
-    std::vector<float> fft_result;
-    std::vector<float> fft_result_ma;
-    std::vector<float> fft_result_maa;
+    std::vector<double> fft_result;
+    std::vector<double> fft_result_ma;
+    std::vector<double> fft_result_maa;
 
     SpectrumContext *glContext;
     int fft_size;

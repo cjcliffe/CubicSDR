@@ -34,14 +34,15 @@ public:
     void initialize();
     void terminate();
 
-    void setStereo(bool state);bool isStereo();
+    void setStereo(bool state);
+    bool isStereo();
 
     float getSignalLevel();
     void setSquelchLevel(float signal_level_in);
     float getSquelchLevel();
 
-    void setDemodulatorType(DemodulatorType demod_type_in);
-    DemodulatorType getDemodulatorType();
+    void setDemodulatorType(int demod_type_in);
+    int getDemodulatorType();
 
 #ifdef __APPLE__
     static void *pthread_helper(void *context) {
@@ -66,6 +67,7 @@ protected:
     AudioThreadInputQueue *audioInputQueue;
 
     freqdem fdem;
+    ampmodem ampdem_active;
     ampmodem ampdem;
     ampmodem ampdem_usb;
     ampmodem ampdem_lsb;
@@ -78,11 +80,12 @@ protected:
 
     std::atomic<bool> stereo;
     std::atomic<bool> terminated;
-    std::atomic<DemodulatorType> demodulatorType;
+    std::atomic<int> demodulatorType;
 
     DemodulatorThreadCommandQueue* threadQueueNotify;
     DemodulatorThreadControlCommandQueue *threadQueueControl;
     std::atomic<float> squelch_level;
     float squelch_tolerance;
-    std::atomic<float> signal_level;bool squelch_enabled;
+    std::atomic<float> signal_level;
+    bool squelch_enabled;
 };

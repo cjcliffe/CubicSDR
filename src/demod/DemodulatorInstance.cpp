@@ -19,6 +19,8 @@ DemodulatorInstance::DemodulatorInstance() :
     audioThread = new AudioThread(audioInputQueue, threadQueueNotify);
 
     demodulatorThread->setAudioInputQueue(audioInputQueue);
+
+    currentDemodType = demodulatorThread->getDemodulatorType();
 }
 
 DemodulatorInstance::~DemodulatorInstance() {
@@ -208,11 +210,17 @@ int DemodulatorInstance::getOutputDevice() {
     return audioThread->getOutputDevice();
 }
 
-void DemodulatorInstance::setDemodulatorType(DemodulatorType demod_type_in) {
-    demodulatorThread->setDemodulatorType(demod_type_in);
+void DemodulatorInstance::setDemodulatorType(int demod_type_in) {
+    if (demodulatorThread && threadQueueControl) {
+        DemodulatorThreadControlCommand command;
+         command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_TYPE;
+         currentDemodType = demod_type_in;
+         command.demodType = demod_type_in;
+         threadQueueControl->push(command);
+     }
 }
 
-DemodulatorType DemodulatorInstance::getDemodulatorType() {
-    return demodulatorThread->getDemodulatorType();
+int DemodulatorInstance::getDemodulatorType() {
+    return currentDemodType;
 }
 

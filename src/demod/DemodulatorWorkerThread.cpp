@@ -47,7 +47,6 @@ void DemodulatorWorkerThread::threadMain() {
             result.bandwidth = filterCommand.bandwidth;
             result.inputRate = filterCommand.inputRate;
             resultQueue->push(result);
-            std::this_thread::sleep_for(std::chrono::milliseconds(30));
         }
 
     }

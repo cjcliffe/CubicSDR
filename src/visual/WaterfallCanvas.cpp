@@ -17,9 +17,7 @@
 
 #include <wx/numformatter.h>
 
-#define MIN_FM_BANDWIDTH 2000
-#define MIN_AM_BANDWIDTH 2000
-
+#define MIN_BANDWIDTH 1500
 
 wxBEGIN_EVENT_TABLE(WaterfallCanvas, wxGLCanvas) EVT_PAINT(WaterfallCanvas::OnPaint)
 EVT_KEY_DOWN(WaterfallCanvas::OnKeyDown)
@@ -36,7 +34,7 @@ WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
         wxFULL_REPAINT_ON_RESIZE), parent(parent), spectrumCanvas(NULL), activeDemodulatorBandwidth(0), activeDemodulatorFrequency(0), dragState(
                 WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), shiftDown(false), altDown(false), ctrlDown(false), fft_size(0), waterfall_lines(0), plan(
-                NULL), in(NULL), out(NULL), center_freq(0), bandwidth(0), isView(false), resampler(NULL), resample_ratio(0), last_bandwidth(0), last_input_bandwidth(
+        NULL), in(NULL), out(NULL), center_freq(0), bandwidth(0), isView(false), resampler(NULL), resample_ratio(0), last_bandwidth(0), last_input_bandwidth(
                 0) {
 
     glContext = new WaterfallContext(this, &wxGetApp().GetContext(this));
@@ -84,7 +82,7 @@ void WaterfallCanvas::Setup(int fft_size_in, int waterfall_lines_in) {
     if (plan) {
         fftw_destroy_plan(plan);
     }
-    plan = fftw_plan_dft_1d(fft_size, in, out, FFTW_FORWARD, FFTW_MEASURE);
+    plan = fftw_plan_dft_1d(fft_size, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
 
     glContext->Setup(fft_size, waterfall_lines);
 }
@@ -132,7 +130,6 @@ WaterfallCanvas::DragState WaterfallCanvas::getNextDragState() {
 void WaterfallCanvas::attachSpectrumCanvas(SpectrumCanvas *canvas_in) {
     spectrumCanvas = canvas_in;
 }
-
 
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
@@ -346,7 +343,7 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
             }
 
             if (!resampler || bandwidth != last_bandwidth || last_input_bandwidth != input->bandwidth) {
-                resample_ratio = (float) (bandwidth) / (float) input->bandwidth;
+                resample_ratio = (double) (bandwidth) / (double) input->bandwidth;
 
                 float As = 60.0f;
 
@@ -359,7 +356,7 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
                 last_input_bandwidth = input->bandwidth;
             }
 
-            int out_size = ceil((float) (input->data.size()) * resample_ratio);
+            int out_size = ceil((double) (input->data.size()) * resample_ratio) + 32;
 
             if (resampler_buffer.size() != out_size) {
                 if (resampler_buffer.capacity() < out_size) {
@@ -373,14 +370,37 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
 
             resampler_buffer.resize(fft_size);
 
-            for (int i = 0; i < fft_size; i++) {
-                in[i][0] = resampler_buffer[i].real;
-                in[i][1] = resampler_buffer[i].imag;
+            if (num_written < fft_size) {
+                for (int i = 0; i < num_written; i++) {
+                    in[i][0] = resampler_buffer[i].real;
+                    in[i][1] = resampler_buffer[i].imag;
+                }
+                for (int i = num_written; i < fft_size; i++) {
+                    in[i][0] = 0;
+                    in[i][1] = 0;
+                }
+            } else {
+                for (int i = 0; i < fft_size; i++) {
+                    in[i][0] = resampler_buffer[i].real;
+                    in[i][1] = resampler_buffer[i].imag;
+                }
             }
         } else {
-            for (int i = 0; i < fft_size; i++) {
-                in[i][0] = (*data)[i].real;
-                in[i][1] = (*data)[i].imag;
+
+            if (data->size() < fft_size) {
+                for (int i = 0, iMax = data->size(); i < iMax; i++) {
+                    in[i][0] = (*data)[i].real;
+                    in[i][1] = (*data)[i].imag;
+                }
+                for (int i = data->size(); i < fft_size; i++) {
+                    in[i][0] = 0;
+                    in[i][1] = 0;
+                }
+            } else {
+                for (int i = 0; i < fft_size; i++) {
+                    in[i][0] = (*data)[i].real;
+                    in[i][1] = (*data)[i].imag;
+                }
             }
         }
 
@@ -430,19 +450,19 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
         fft_floor -= 1;
 
         fft_ceil_ma = fft_ceil_ma + (fft_ceil - fft_ceil_ma) * 0.05;
-        fft_ceil_maa = fft_ceil_maa + (fft_ceil_ma - fft_ceil_maa) * 0.01;
+        fft_ceil_maa = fft_ceil_maa + (fft_ceil_ma - fft_ceil_maa) * 0.05;
 
-        fft_floor_ma = fft_floor_ma + (fft_floor - fft_floor_ma) * 0.01;
-        fft_floor_maa = fft_floor_maa + (fft_floor_ma - fft_floor_maa) * 0.01;
+        fft_floor_ma = fft_floor_ma + (fft_floor - fft_floor_ma) * 0.05;
+        fft_floor_maa = fft_floor_maa + (fft_floor_ma - fft_floor_maa) * 0.05;
 
         for (int i = 0, iMax = fft_size; i < iMax; i++) {
-            float v = (log10(fft_result_maa[i] - fft_floor_maa) / log10(fft_ceil_maa - fft_floor_maa));
+            double v = (log10(fft_result_maa[i] - fft_floor_maa) / log10(fft_ceil_maa - fft_floor_maa));
             spectrum_points[i * 2] = ((float) i / (float) iMax);
             spectrum_points[i * 2 + 1] = v;
         }
 
         if (spectrumCanvas) {
-            spectrumCanvas->spectrum_points.assign(spectrum_points.begin(),spectrum_points.end());
+            spectrumCanvas->spectrum_points.assign(spectrum_points.begin(), spectrum_points.end());
         }
     }
 }
@@ -482,8 +502,8 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
             if (activeDemodulatorBandwidth > SRATE) {
                 activeDemodulatorBandwidth = SRATE;
             }
-            if (activeDemodulatorBandwidth < MIN_FM_BANDWIDTH) {
-                activeDemodulatorBandwidth = MIN_FM_BANDWIDTH;
+            if (activeDemodulatorBandwidth < MIN_BANDWIDTH) {
+                activeDemodulatorBandwidth = MIN_BANDWIDTH;
             }
 
             command.int_value = activeDemodulatorBandwidth;
@@ -673,8 +693,8 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
         unsigned int freq = input_center_freq - (int) (0.5 * (float) GetBandwidth()) + (int) ((float) pos * (float) GetBandwidth());
         unsigned int bw = (unsigned int) (fabs(width) * (float) GetBandwidth());
 
-        if (bw < MIN_FM_BANDWIDTH) {
-            bw = MIN_FM_BANDWIDTH;
+        if (bw < MIN_BANDWIDTH) {
+            bw = MIN_BANDWIDTH;
         }
 
         if (!bw) {

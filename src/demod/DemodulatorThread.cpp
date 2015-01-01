@@ -9,16 +9,14 @@
 DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* pQueue, DemodulatorThreadControlCommandQueue *threadQueueControl,
         DemodulatorThreadCommandQueue* threadQueueNotify) :
         postInputQueue(pQueue), visOutQueue(NULL), audioInputQueue(NULL), agc(NULL), am_max(1), am_max_ma(1), am_max_maa(1), stereo(false), terminated(
-                false), demodulatorType(DemodulatorType::DEMOD_TYPE_FM), threadQueueNotify(threadQueueNotify), threadQueueControl(threadQueueControl), squelch_level(
-                0), squelch_tolerance(0), signal_level(0), squelch_enabled(false) {
+        false), demodulatorType(DEMOD_TYPE_FM), threadQueueNotify(threadQueueNotify), threadQueueControl(threadQueueControl), squelch_level(0), squelch_tolerance(
+                0), signal_level(0), squelch_enabled(false) {
 
     fdem = freqdem_create(0.5);
-    liquid_ampmodem_type type_lsb = LIQUID_AMPMODEM_LSB;
-    ampdem_lsb = ampmodem_create(1.0, 0.5, type_lsb, 1);
-    liquid_ampmodem_type type_usb = LIQUID_AMPMODEM_USB;
-    ampdem_usb = ampmodem_create(1.0, -0.5, type_usb, 1);
-    liquid_ampmodem_type type_dsb = LIQUID_AMPMODEM_DSB;
-    ampdem = ampmodem_create(0.5, 0.0, type_dsb, 0);
+    ampdem_lsb = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_LSB, 1);
+    ampdem_usb = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_USB, 1);
+    ampdem = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_DSB, 0);
+    ampdem_active = ampdem;
 
 }
 DemodulatorThread::~DemodulatorThread() {
@@ -66,8 +64,23 @@ void DemodulatorThread::threadMain() {
     firhilbf firR2C = firhilbf_create(m, slsl);
     firhilbf firC2R = firhilbf_create(m, slsl);
 
-    nco_crcf nco_shift = nco_crcf_create(LIQUID_NCO);
-    double shift_freq = 0;
+    nco_crcf nco_stereo_shift = nco_crcf_create(LIQUID_NCO);
+    double nco_stereo_shift_freq = 0;
+
+    nco_crcf nco_ssb_shift_up = nco_crcf_create(LIQUID_NCO);
+    nco_crcf_set_frequency(nco_ssb_shift_up, (2.0 * M_PI) * 0.25);
+
+
+    nco_crcf nco_ssb_shift_down = nco_crcf_create(LIQUID_NCO);
+    nco_crcf_set_frequency(nco_ssb_shift_down, (2.0 * M_PI) * 0.25);
+
+    // estimate required filter length and generate filter
+    h_len = estimate_req_filter_len(ft,100.0);
+    float h2[h_len];
+    liquid_firdes_kaiser(h_len,0.25,As,0.0,h2);
+
+    firfilt_crcf ssb_fir_filter = firfilt_crcf_create(h2, h_len);
+
 
     agc = agc_crcf_create();
     agc_crcf_set_bandwidth(agc, 0.9);
@@ -106,7 +119,7 @@ void DemodulatorThread::threadMain() {
             freqdem_reset(fdem);
         }
 
-        int out_size = ceil((double) (bufSize) * inp->resample_ratio);
+        int out_size = ceil((double) (bufSize) * inp->resample_ratio) + 32;
 
         if (agc_data.size() != out_size) {
             if (agc_data.capacity() < out_size) {
@@ -131,7 +144,7 @@ void DemodulatorThread::threadMain() {
             demod_output.resize(num_written);
         }
 
-        int audio_out_size = ceil((double) (num_written) * audio_resample_ratio);
+        int audio_out_size = ceil((double) (num_written) * audio_resample_ratio) + 32;
 
         agc_crcf_execute_block(agc, &resampled_data[0], num_written, &agc_data[0]);
 
@@ -143,40 +156,51 @@ void DemodulatorThread::threadMain() {
             current_level = agc_crcf_get_signal_level(agc);
         }
 
-        switch (demodulatorType) {
-        case DemodulatorType::DEMOD_TYPE_FM:
+        if (demodulatorType == DEMOD_TYPE_FM) {
             freqdem_demodulate_block(fdem, &agc_data[0], num_written, &demod_output[0]);
-            break;
-        case DemodulatorType::DEMOD_TYPE_LSB:
-            for (int i = 0; i < num_written; i++) {
-                ampmodem_demodulate(ampdem_lsb, resampled_data[i], &demod_output[i]);
+        } else {
+            float p;
+            switch (demodulatorType) {
+            case DEMOD_TYPE_LSB:
+                for (int i = 0; i < num_written; i++) { // Reject upper band
+                    nco_crcf_mix_up(nco_ssb_shift_up, resampled_data[i], &x);
+                    nco_crcf_step(nco_ssb_shift_up);
+                    firfilt_crcf_push(ssb_fir_filter, x);
+                    firfilt_crcf_execute(ssb_fir_filter, &x);
+                    nco_crcf_mix_down(nco_ssb_shift_down, x, &resampled_data[i]);
+                    nco_crcf_step(nco_ssb_shift_down);
+                }
+                break;
+            case DEMOD_TYPE_USB:
+                for (int i = 0; i < num_written; i++) { // Reject lower band
+                    nco_crcf_mix_down(nco_ssb_shift_down, resampled_data[i], &x);
+                    nco_crcf_step(nco_ssb_shift_down);
+                    firfilt_crcf_push(ssb_fir_filter, x);
+                    firfilt_crcf_execute(ssb_fir_filter, &x);
+                    nco_crcf_mix_up(nco_ssb_shift_up, x, &resampled_data[i]);
+                    nco_crcf_step(nco_ssb_shift_up);
+                }
+                break;
+            case DEMOD_TYPE_AM:
+                break;
             }
 
-            break;
-        case DemodulatorType::DEMOD_TYPE_USB:
-            for (int i = 0; i < num_written; i++) {
-                ampmodem_demodulate(ampdem_usb, resampled_data[i], &demod_output[i]);
-            }
-
-            break;
-        case DemodulatorType::DEMOD_TYPE_AM:
             am_max = 0;
+
             for (int i = 0; i < num_written; i++) {
-                ampmodem_demodulate(ampdem, resampled_data[i], &demod_output[i]);
+                ampmodem_demodulate(ampdem_active, resampled_data[i], &demod_output[i]);
                 if (demod_output[i] > am_max) {
                     am_max = demod_output[i];
                 }
             }
-            am_max_ma = am_max_ma + (am_max - am_max_ma) * 0.03;
-            am_max_maa = am_max_maa + (am_max_ma - am_max_maa) * 0.03;
+            am_max_ma = am_max_ma + (am_max - am_max_ma) * 0.05;
+            am_max_maa = am_max_maa + (am_max_ma - am_max_maa) * 0.05;
 
-            float gain = 0.95/am_max_maa;
+            float gain = 0.95 / am_max_maa;
 
             for (int i = 0; i < num_written; i++) {
                 demod_output[i] *= gain;
             }
-
-            break;
         }
 
         if (audio_out_size != resampled_audio_output.size()) {
@@ -199,15 +223,15 @@ void DemodulatorThread::threadMain() {
 
             double freq = (2.0 * M_PI) * (((double) abs(38000)) / ((double) inp->bandwidth));
 
-            if (shift_freq != freq) {
-                nco_crcf_set_frequency(nco_shift, freq);
-                shift_freq = freq;
+            if (nco_stereo_shift_freq != freq) {
+                nco_crcf_set_frequency(nco_stereo_shift, freq);
+                nco_stereo_shift_freq = freq;
             }
 
             for (int i = 0; i < num_written; i++) {
                 firhilbf_r2c_execute(firR2C, demod_output[i], &x);
-                nco_crcf_mix_down(nco_shift, x, &y);
-                nco_crcf_step(nco_shift);
+                nco_crcf_mix_down(nco_stereo_shift, x, &y);
+                nco_crcf_step(nco_stereo_shift);
                 firhilbf_c2r_execute(firC2R, y, &demod_output_stereo[i]);
             }
 
@@ -310,6 +334,8 @@ void DemodulatorThread::threadMain() {
             visOutQueue->push(ati_vis);
         }
         if (!threadQueueControl->empty()) {
+            int newDemodType = DEMOD_TYPE_NULL;
+
             while (!threadQueueControl->empty()) {
                 DemodulatorThreadControlCommand command;
                 threadQueueControl->pop(command);
@@ -325,9 +351,29 @@ void DemodulatorThread::threadMain() {
                     squelch_tolerance = 1;
                     squelch_enabled = false;
                     break;
+                case DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_TYPE:
+                    newDemodType = command.demodType;
+                    break;
                 default:
                     break;
                 }
+            }
+
+            if (newDemodType != DEMOD_TYPE_NULL) {
+                switch (newDemodType) {
+                case DEMOD_TYPE_FM:
+                    break;
+                case DEMOD_TYPE_LSB:
+                    ampdem_active = ampdem_lsb;
+                    break;
+                case DEMOD_TYPE_USB:
+                    ampdem_active = ampdem_usb;
+                    break;
+                case DEMOD_TYPE_AM:
+                    ampdem_active = ampdem;
+                    break;
+                }
+                demodulatorType = newDemodType;
             }
         }
 
@@ -353,7 +399,11 @@ void DemodulatorThread::threadMain() {
     agc_crcf_destroy(agc);
     firhilbf_destroy(firR2C);
     firhilbf_destroy(firC2R);
-    nco_crcf_destroy(nco_shift);
+//    firhilbf_destroy(firR2Cssb);
+//    firhilbf_destroy(firC2Rssb);
+    nco_crcf_destroy(nco_stereo_shift);
+    nco_crcf_destroy(nco_ssb_shift_up);
+    nco_crcf_destroy(nco_ssb_shift_down);
 
     while (!buffers.empty()) {
         AudioThreadInput *audioDataDel = buffers.front();
@@ -397,10 +447,11 @@ float DemodulatorThread::getSquelchLevel() {
     return squelch_level;
 }
 
-void DemodulatorThread::setDemodulatorType(DemodulatorType demod_type_in) {
+void DemodulatorThread::setDemodulatorType(int demod_type_in) {
     demodulatorType = demod_type_in;
 }
 
-DemodulatorType DemodulatorThread::getDemodulatorType() {
+int DemodulatorThread::getDemodulatorType() {
     return demodulatorType;
 }
+

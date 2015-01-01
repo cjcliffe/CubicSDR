@@ -63,8 +63,8 @@ public:
     void setOutputDevice(int device_id);
     int getOutputDevice();
 
-    void setDemodulatorType(DemodulatorType demod_type_in);
-    DemodulatorType getDemodulatorType();
+    void setDemodulatorType(int demod_type_in);
+    int getDemodulatorType();
 
 private:
     std::atomic<std::string *> label; //
@@ -75,5 +75,7 @@ private:
     std::atomic<bool> active;
     std::atomic<bool> squelch;
     std::atomic<bool> stereo;
+
+    int currentDemodType;
 };
 
