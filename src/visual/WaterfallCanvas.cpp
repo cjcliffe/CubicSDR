@@ -32,7 +32,7 @@ wxEND_EVENT_TABLE()
 
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE), parent(parent), spectrumCanvas(NULL), frameTimer(0), activeDemodulatorBandwidth(0), activeDemodulatorFrequency(0), dragState(
+        wxFULL_REPAINT_ON_RESIZE), parent(parent), spectrumCanvas(NULL), activeDemodulatorBandwidth(0), activeDemodulatorFrequency(0), dragState(
                 WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), shiftDown(false), altDown(false), ctrlDown(false), fft_size(0), waterfall_lines(0), plan(
                 NULL), in(NULL), out(NULL), center_freq(0), bandwidth(0), isView(false), resampler(NULL), resample_ratio(0), last_bandwidth(0), last_input_bandwidth(
                 0) {
@@ -85,7 +85,6 @@ void WaterfallCanvas::Setup(int fft_size_in, int waterfall_lines_in) {
     plan = fftw_plan_dft_1d(fft_size, in, out, FFTW_FORWARD, FFTW_MEASURE);
 
     glContext->Setup(fft_size, waterfall_lines);
-    timer.start();
 }
 
 int WaterfallCanvas::GetFrequencyAt(float x) {
@@ -447,12 +446,7 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
 }
 
 void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
-//    timer.update();
-//    frameTimer += timer.lastUpdateSeconds();
-//    if (frameTimer > 1.0/30.0) {
     Refresh(false);
-//        frameTimer = 0;
-//    }
 }
 
 void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {

@@ -207,12 +207,7 @@ unsigned int SpectrumCanvas::GetBandwidth() {
 }
 
 void SpectrumCanvas::OnIdle(wxIdleEvent &event) {
-//    timer.update();
-//    frameTimer += timer.lastUpdateSeconds();
-//    if (frameTimer > 1.0/30.0) {
     Refresh(false);
-//        frameTimer = 0;
-//    }
 }
 
 void SpectrumCanvas::mouseMoved(wxMouseEvent& event) {

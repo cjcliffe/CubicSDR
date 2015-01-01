@@ -60,6 +60,9 @@ public:
     void setSquelchLevel(float signal_level_in);
     float getSquelchLevel();
 
+    void setOutputDevice(int device_id);
+    int getOutputDevice();
+
 private:
     std::atomic<std::string *> label; //
     bool terminated; //

@@ -11,7 +11,6 @@
 #include "SpectrumCanvas.h"
 
 #include "fftw3.h"
-#include "Timer.h"
 
 class WaterfallCanvas: public wxGLCanvas {
 public:
@@ -69,8 +68,6 @@ private:
     std::vector<float> fft_result_maa;
 
     WaterfallContext *glContext;
-    Timer timer;
-    float frameTimer;
     MouseTracker mTracker;
 
     int activeDemodulatorBandwidth;

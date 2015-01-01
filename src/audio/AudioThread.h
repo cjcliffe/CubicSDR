@@ -61,6 +61,7 @@ public:
     std::atomic<unsigned int> underflow_count;
     std::atomic<bool> terminated;
     std::atomic<bool> active;
+    std::atomic<int> output_device;
     float gain;
 
     AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify);
@@ -68,11 +69,15 @@ public:
 
     static void enumerateDevices(std::vector<RtAudio::DeviceInfo> &devs);
 
+    void setupDevice(int deviceId);
+    int getOutputDevice();
     void threadMain();
     void terminate();
 
     bool isActive();
     void setActive(bool state);
+
+    AudioThreadCommandQueue *getCommandQueue();
 
 private:
     RtAudio dac;

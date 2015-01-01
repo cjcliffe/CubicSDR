@@ -10,7 +10,7 @@ std::map<int, std::thread *> AudioThread::deviceThread;
 #endif
 
 AudioThread::AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify) :
-        currentInput(NULL), inputQueue(inputQueue), audio_queue_ptr(0), underflow_count(0), terminated(false), active(false), gain(1.0), threadQueueNotify(
+        currentInput(NULL), inputQueue(inputQueue), audio_queue_ptr(0), underflow_count(0), terminated(false), active(false), output_device(-1), gain(1.0), threadQueueNotify(
                 threadQueueNotify) {
 #ifdef __APPLE__
     boundThreads = new std::vector<AudioThread *>;
@@ -25,7 +25,9 @@ AudioThread::~AudioThread() {
 
 #ifdef __APPLE__
 void AudioThread::bindThread(AudioThread *other) {
-    boundThreads.load()->push_back(other);
+    if (boundThreads.find(other) == boundThreads.end()) {
+        boundThreads.load()->push_back(other);
+    }
 }
 
 void AudioThread::removeThread(AudioThread *other) {
@@ -263,22 +265,8 @@ void AudioThread::enumerateDevices(std::vector<RtAudio::DeviceInfo> &devs) {
     }
 }
 
-void AudioThread::threadMain() {
-#ifdef __APPLE__
-    pthread_t tID = pthread_self();	 // ID of this thread
-    int priority = sched_get_priority_max( SCHED_RR) - 1;
-    sched_param prio = {priority}; // scheduling priority of thread
-    pthread_setschedparam(tID, SCHED_RR, &prio);
-#endif
-
-    std::cout << "Audio thread initializing.." << std::endl;
-
-    if (dac.getDeviceCount() < 1) {
-        std::cout << "No audio devices found!" << std::endl;
-        return;
-    }
-
-    parameters.deviceId = dac.getDefaultOutputDevice();
+void AudioThread::setupDevice(int deviceId) {
+    parameters.deviceId = deviceId;
     parameters.nChannels = 2;
     parameters.firstChannel = 0;
     unsigned int sampleRate = AUDIO_FREQUENCY;
@@ -287,9 +275,15 @@ void AudioThread::threadMain() {
     RtAudio::StreamOptions opts;
     opts.streamName = "CubicSDR Audio Output";
 
+    output_device = deviceId;
+
     try {
 
 #ifdef __APPLE__
+        if (active && deviceController.find(parameters.deviceId) != deviceController.end()) {
+            deviceController[parameters.deviceId]->removeThread(this);
+        }
+
         opts.priority = sched_get_priority_max(SCHED_FIFO);
         //    opts.flags = RTAUDIO_MINIMIZE_LATENCY;
         opts.flags = RTAUDIO_SCHEDULE_REALTIME;
@@ -306,6 +300,13 @@ void AudioThread::threadMain() {
         }
         active = true;
 #else
+        if (dac.isStreamOpen()) {
+            if (dac.isStreamRunning()) {
+                dac.stopStream();
+            }
+            dac.closeStream();
+        }
+
         dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &bufferFrames, &audioCallback, (void *) this, &opts);
         dac.startStream();
 
@@ -314,10 +315,39 @@ void AudioThread::threadMain() {
         e.printMessage();
         return;
     }
+}
+
+int AudioThread::getOutputDevice() {
+    if (output_device == -1) {
+        return dac.getDefaultOutputDevice();
+    }
+    return output_device;
+}
+
+void AudioThread::threadMain() {
+#ifdef __APPLE__
+    pthread_t tID = pthread_self();	 // ID of this thread
+    int priority = sched_get_priority_max( SCHED_RR) - 1;
+    sched_param prio = {priority}; // scheduling priority of thread
+    pthread_setschedparam(tID, SCHED_RR, &prio);
+#endif
+
+    std::cout << "Audio thread initializing.." << std::endl;
+
+    if (dac.getDeviceCount() < 1) {
+        std::cout << "No audio devices found!" << std::endl;
+        return;
+    }
+
+    setupDevice(dac.getDefaultOutputDevice());
 
     while (!terminated) {
         AudioThreadCommand command;
         cmdQueue.pop(command);
+
+        if (command.cmd == AudioThreadCommand::AUDIO_THREAD_CMD_SET_DEVICE) {
+            setupDevice(command.int_value);
+        }
     }
 
 #ifdef __APPLE__
@@ -386,4 +416,9 @@ void AudioThread::setActive(bool state) {
     }
 #endif
     active = state;
+}
+
+
+AudioThreadCommandQueue *AudioThread::getCommandQueue() {
+    return &cmdQueue;
 }

@@ -9,7 +9,6 @@
 #include "SpectrumContext.h"
 
 #include "fftw3.h"
-#include "Timer.h"
 #include "MouseTracker.h"
 
 class SpectrumCanvas: public wxGLCanvas {

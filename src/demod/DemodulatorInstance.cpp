@@ -194,3 +194,16 @@ float DemodulatorInstance::getSquelchLevel() {
     return demodulatorThread->getSquelchLevel();
 }
 
+
+void DemodulatorInstance::setOutputDevice(int device_id) {
+    if (audioThread) {
+        AudioThreadCommand command;
+        command.cmd = AudioThreadCommand::AUDIO_THREAD_CMD_SET_DEVICE;
+        command.int_value = device_id;
+        audioThread->getCommandQueue()->push(command);
+    }
+}
+
+int DemodulatorInstance::getOutputDevice() {
+    return audioThread->getOutputDevice();
+}

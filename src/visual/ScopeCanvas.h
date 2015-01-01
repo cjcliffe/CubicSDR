@@ -7,9 +7,7 @@
 #include <queue>
 
 #include "ScopeContext.h"
-
 #include "fftw3.h"
-#include "Timer.h"
 
 class ScopeCanvas: public wxGLCanvas {
 public:
@@ -20,6 +18,7 @@ public:
 
     void setWaveformPoints(std::vector<float> &waveform_points_in);
     void setStereo(bool state);
+    void setDeviceName(std::string device_name);
 private:
     void OnPaint(wxPaintEvent& event);
 
@@ -28,8 +27,7 @@ private:
     wxWindow *parent;
 
     ScopeContext *glContext;
-    Timer timer;
-    float frameTimer;
+    std::string deviceName;
     bool stereo;
 // event table
 wxDECLARE_EVENT_TABLE();

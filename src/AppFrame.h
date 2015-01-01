@@ -21,7 +21,7 @@ public:
     void OnEventInput(wxThreadEvent& event);
 
 private:
-    void OnClose(wxCommandEvent& event);
+    void OnMenu(wxCommandEvent& event);
     void OnNewWindow(wxCommandEvent& event);
     void OnIdle(wxIdleEvent& event);
 
@@ -37,6 +37,7 @@ private:
 
     std::map<int,RtAudio::DeviceInfo> input_devices;
     std::map<int,RtAudio::DeviceInfo> output_devices;
+    std::map<int,wxMenuItem *> output_device_menuitems;
 
     wxDECLARE_EVENT_TABLE();
 };

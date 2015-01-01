@@ -22,13 +22,15 @@
 
 wxBEGIN_EVENT_TABLE(AppFrame, wxFrame)
 //EVT_MENU(wxID_NEW, AppFrame::OnNewWindow)
-EVT_MENU(wxID_CLOSE, AppFrame::OnClose)
+//EVT_MENU(wxID_CLOSE, AppFrame::OnClose)
+EVT_MENU(wxID_ANY, AppFrame::OnMenu)
+
 EVT_COMMAND(wxID_ANY, wxEVT_THREAD, AppFrame::OnThread)
 EVT_IDLE(AppFrame::OnIdle)
 wxEND_EVENT_TABLE()
 
 AppFrame::AppFrame() :
-        wxFrame(NULL, wxID_ANY, wxT("CubicSDR")) {
+        wxFrame(NULL, wxID_ANY, wxT("CubicSDR")), activeDemodulator(NULL) {
 
     wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodOpts = new wxBoxSizer(wxVERTICAL);
@@ -137,12 +139,14 @@ AppFrame::AppFrame() :
         i++;
     }
 
+    i = 0;
 
     for (mdevices_i = output_devices.begin(); mdevices_i != output_devices.end(); mdevices_i++) {
-        wxMenuItem *itm = menu->AppendRadioItem(wxID_RT_AUDIO_DEVICE+i,mdevices_i->second.name,wxT("Description?"));
+        wxMenuItem *itm = menu->AppendRadioItem(wxID_RT_AUDIO_DEVICE+mdevices_i->first,mdevices_i->second.name,wxT("Description?"));
         if (mdevices_i->second.isDefaultOutput) {
             itm->Check(true);
         }
+        output_device_menuitems[mdevices_i->first] = itm;
     }
 
     wxMenuBar *menuBar = new wxMenuBar;
@@ -166,10 +170,13 @@ AppFrame::~AppFrame() {
 
 }
 
-void AppFrame::OnClose(wxCommandEvent& WXUNUSED(event)) {
-
-    // true is to force the frame to close
-    Close(true);
+void AppFrame::OnMenu(wxCommandEvent& event) {
+    if (event.GetId() >= wxID_RT_AUDIO_DEVICE && event.GetId() < wxID_RT_AUDIO_DEVICE+output_devices.size()) {
+        if (activeDemodulator) {
+            activeDemodulator->setOutputDevice(event.GetId()-wxID_RT_AUDIO_DEVICE);
+            activeDemodulator = NULL;
+        }
+    }
 }
 
 void AppFrame::OnNewWindow(wxCommandEvent& WXUNUSED(event)) {
@@ -193,6 +200,9 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     if (demod) {
         if (demod != activeDemodulator) {
             demodSignalMeter->setInputValue(demod->getSquelchLevel());
+            int outputDevice = demod->getOutputDevice();
+            scopeCanvas->setDeviceName(output_devices[outputDevice].name);
+            output_device_menuitems[outputDevice]->Check(true);
         }
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
             if (demod->getParams().frequency != demodWaterfallCanvas->GetCenterFrequency()) {
