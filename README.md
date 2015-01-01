@@ -38,7 +38,7 @@ Basic Goals and Status:
     - [ ] 3D visuals
   - Demodulation:
     - [x] Multiple demodulators per IQ stream
-    - [ ] Audio device selection
+    - [x] Audio device selection
     - [ ] Modes
       - [x] FM
       - [x] WFM
@@ -49,9 +49,9 @@ Basic Goals and Status:
     - [ ] Controls
       - [ ] Display Frequency and allow manual adjustments
       - [ ] Allow selection of demodulation type
-      - [ ] Display separate zoomed-in view of current waterfall and spectrum, allow adjustments
-      - [ ] Display signal level and allow squelch control
-      - [ ] Display audio output selection
+      - [x] Display separate zoomed-in view of current waterfall and spectrum, allow adjustments
+      - [x] Display signal level and allow squelch control
+      - [x] Display audio output selection
       - [ ] Volume control
       - [ ] Basic noise reduction / filter controls?
   - Basic Input Controls
