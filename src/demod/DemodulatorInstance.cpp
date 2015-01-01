@@ -207,3 +207,12 @@ void DemodulatorInstance::setOutputDevice(int device_id) {
 int DemodulatorInstance::getOutputDevice() {
     return audioThread->getOutputDevice();
 }
+
+void DemodulatorInstance::setDemodulatorType(DemodulatorType demod_type_in) {
+    demodulatorThread->setDemodulatorType(demod_type_in);
+}
+
+DemodulatorType DemodulatorInstance::getDemodulatorType() {
+    return demodulatorThread->getDemodulatorType();
+}
+

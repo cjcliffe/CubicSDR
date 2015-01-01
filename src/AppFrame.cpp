@@ -150,7 +150,16 @@ AppFrame::AppFrame() :
     }
 
     wxMenuBar *menuBar = new wxMenuBar;
-    menuBar->Append(menu, wxT("&Device"));
+    menuBar->Append(menu, wxT("Output &Device"));
+
+    wxMenu *demodMenu = new wxMenu;
+    demod_menuitems[DemodulatorType::DEMOD_TYPE_FM] = demodMenu->AppendRadioItem(wxID_DEMOD_TYPE+DemodulatorType::DEMOD_TYPE_FM,wxT("FM"),wxT("Description?"));
+    demod_menuitems[DemodulatorType::DEMOD_TYPE_AM] = demodMenu->AppendRadioItem(wxID_DEMOD_TYPE+DemodulatorType::DEMOD_TYPE_AM,wxT("AM"),wxT("Description?"));
+    demod_menuitems[DemodulatorType::DEMOD_TYPE_LSB] = demodMenu->AppendRadioItem(wxID_DEMOD_TYPE+DemodulatorType::DEMOD_TYPE_LSB,wxT("LSB"),wxT("Description?"));
+    demod_menuitems[DemodulatorType::DEMOD_TYPE_USB] = demodMenu->AppendRadioItem(wxID_DEMOD_TYPE+DemodulatorType::DEMOD_TYPE_USB,wxT("USB"),wxT("Description?"));
+
+    menuBar->Append(demodMenu, wxT("Demodulaton &Type"));
+
 
     SetMenuBar(menuBar);
 
@@ -174,6 +183,22 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
     if (event.GetId() >= wxID_RT_AUDIO_DEVICE && event.GetId() < wxID_RT_AUDIO_DEVICE+devices.size()) {
         if (activeDemodulator) {
             activeDemodulator->setOutputDevice(event.GetId()-wxID_RT_AUDIO_DEVICE);
+            activeDemodulator = NULL;
+        }
+    }
+
+    if (activeDemodulator) {
+        if (event.GetId() == wxID_DEMOD_TYPE+DemodulatorType::DEMOD_TYPE_FM) {
+            activeDemodulator->setDemodulatorType(DemodulatorType::DEMOD_TYPE_FM);
+            activeDemodulator = NULL;
+        } else if (event.GetId() == wxID_DEMOD_TYPE+DemodulatorType::DEMOD_TYPE_AM) {
+            activeDemodulator->setDemodulatorType(DemodulatorType::DEMOD_TYPE_AM);
+            activeDemodulator = NULL;
+        } else if (event.GetId() == wxID_DEMOD_TYPE+DemodulatorType::DEMOD_TYPE_LSB) {
+            activeDemodulator->setDemodulatorType(DemodulatorType::DEMOD_TYPE_LSB);
+            activeDemodulator = NULL;
+        } else if (event.GetId() == wxID_DEMOD_TYPE+DemodulatorType::DEMOD_TYPE_USB) {
+            activeDemodulator->setDemodulatorType(DemodulatorType::DEMOD_TYPE_USB);
             activeDemodulator = NULL;
         }
     }
@@ -207,6 +232,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             int outputDevice = demod->getOutputDevice();
             scopeCanvas->setDeviceName(output_devices[outputDevice].name);
             output_device_menuitems[outputDevice]->Check(true);
+            DemodulatorType dType = demod->getDemodulatorType();
+            demod_menuitems[dType]->Check(true);
         }
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
             if (demod->getParams().frequency != demodWaterfallCanvas->GetCenterFrequency()) {

@@ -8,10 +8,18 @@
 
 DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* pQueue, DemodulatorThreadControlCommandQueue *threadQueueControl,
         DemodulatorThreadCommandQueue* threadQueueNotify) :
-        postInputQueue(pQueue), visOutQueue(NULL), audioInputQueue(NULL), agc(NULL), stereo(false), terminated(false), threadQueueNotify(
-                threadQueueNotify), threadQueueControl(threadQueueControl), squelch_level(0), squelch_tolerance(0), signal_level(0), squelch_enabled(false) {
+        postInputQueue(pQueue), visOutQueue(NULL), audioInputQueue(NULL), agc(NULL), am_max(1), am_max_ma(1), am_max_maa(1), stereo(false), terminated(
+                false), demodulatorType(DemodulatorType::DEMOD_TYPE_FM), threadQueueNotify(threadQueueNotify), threadQueueControl(threadQueueControl), squelch_level(
+                0), squelch_tolerance(0), signal_level(0), squelch_enabled(false) {
 
     fdem = freqdem_create(0.5);
+    liquid_ampmodem_type type_lsb = LIQUID_AMPMODEM_LSB;
+    ampdem_lsb = ampmodem_create(1.0, 0.5, type_lsb, 1);
+    liquid_ampmodem_type type_usb = LIQUID_AMPMODEM_USB;
+    ampdem_usb = ampmodem_create(1.0, -0.5, type_usb, 1);
+    liquid_ampmodem_type type_dsb = LIQUID_AMPMODEM_DSB;
+    ampdem = ampmodem_create(0.5, 0.0, type_dsb, 0);
+
 }
 DemodulatorThread::~DemodulatorThread() {
 }
@@ -66,16 +74,6 @@ void DemodulatorThread::threadMain() {
 
     std::cout << "Demodulator thread started.." << std::endl;
 
-    std::deque<AudioThreadInput *> buffers;
-    std::deque<AudioThreadInput *>::iterator buffers_i;
-
-    std::vector<liquid_float_complex> resampled_data;
-    std::vector<liquid_float_complex> agc_data;
-    std::vector<float> demod_output;
-    std::vector<float> demod_output_stereo;
-    std::vector<float> resampled_audio_output;
-    std::vector<float> resampled_audio_output_stereo;
-
     double freq_index = 0;
 
     while (!terminated) {
@@ -101,6 +99,11 @@ void DemodulatorThread::threadMain() {
             resampler = inp->resampler;
             audio_resampler = inp->audio_resampler;
             stereo_resampler = inp->stereo_resampler;
+
+            ampmodem_reset(ampdem_lsb);
+            ampmodem_reset(ampdem_usb);
+            ampmodem_reset(ampdem);
+            freqdem_reset(fdem);
         }
 
         int out_size = ceil((double) (bufSize) * inp->resample_ratio);
@@ -108,16 +111,16 @@ void DemodulatorThread::threadMain() {
         if (agc_data.size() != out_size) {
             if (agc_data.capacity() < out_size) {
                 agc_data.reserve(out_size);
+                agc_am_data.reserve(out_size);
                 resampled_data.reserve(out_size);
             }
             agc_data.resize(out_size);
             resampled_data.resize(out_size);
+            agc_am_data.resize(out_size);
         }
 
         unsigned int num_written;
         msresamp_crcf_execute(resampler, &(inp->data[0]), bufSize, &resampled_data[0], &num_written);
-
-        agc_crcf_execute_block(agc, &resampled_data[0], num_written, &agc_data[0]);
 
         double audio_resample_ratio = inp->audio_resample_ratio;
 
@@ -130,7 +133,51 @@ void DemodulatorThread::threadMain() {
 
         int audio_out_size = ceil((double) (num_written) * audio_resample_ratio);
 
-        freqdem_demodulate_block(fdem, &agc_data[0], num_written, &demod_output[0]);
+        agc_crcf_execute_block(agc, &resampled_data[0], num_written, &agc_data[0]);
+
+        float current_level = 0;
+
+        current_level = ((60.0 / fabs(agc_crcf_get_rssi(agc))) / 15.0 - signal_level);
+
+        if (agc_crcf_get_signal_level(agc) > current_level) {
+            current_level = agc_crcf_get_signal_level(agc);
+        }
+
+        switch (demodulatorType) {
+        case DemodulatorType::DEMOD_TYPE_FM:
+            freqdem_demodulate_block(fdem, &agc_data[0], num_written, &demod_output[0]);
+            break;
+        case DemodulatorType::DEMOD_TYPE_LSB:
+            for (int i = 0; i < num_written; i++) {
+                ampmodem_demodulate(ampdem_lsb, resampled_data[i], &demod_output[i]);
+            }
+
+            break;
+        case DemodulatorType::DEMOD_TYPE_USB:
+            for (int i = 0; i < num_written; i++) {
+                ampmodem_demodulate(ampdem_usb, resampled_data[i], &demod_output[i]);
+            }
+
+            break;
+        case DemodulatorType::DEMOD_TYPE_AM:
+            am_max = 0;
+            for (int i = 0; i < num_written; i++) {
+                ampmodem_demodulate(ampdem, resampled_data[i], &demod_output[i]);
+                if (demod_output[i] > am_max) {
+                    am_max = demod_output[i];
+                }
+            }
+            am_max_ma = am_max_ma + (am_max - am_max_ma) * 0.03;
+            am_max_maa = am_max_maa + (am_max_ma - am_max_maa) * 0.03;
+
+            float gain = 0.95/am_max_maa;
+
+            for (int i = 0; i < num_written; i++) {
+                demod_output[i] *= gain;
+            }
+
+            break;
+        }
 
         if (audio_out_size != resampled_audio_output.size()) {
             if (resampled_audio_output.capacity() < audio_out_size) {
@@ -174,14 +221,11 @@ void DemodulatorThread::threadMain() {
             msresamp_rrrf_execute(stereo_resampler, &demod_output_stereo[0], num_written, &resampled_audio_output_stereo[0], &num_audio_written);
         }
 
-        float current_level = ((60.0/fabs(agc_crcf_get_rssi(agc)))/15.0 - signal_level); //agc_crcf_get_signal_level(agc);
-
         if (current_level > signal_level) {
-            signal_level = signal_level + (current_level-signal_level) * 0.5;
+            signal_level = signal_level + (current_level - signal_level) * 0.5;
         } else {
-            signal_level = signal_level + (current_level-signal_level) * 0.05;
+            signal_level = signal_level + (current_level - signal_level) * 0.05;
         }
-
 
         AudioThreadInput *ati = NULL;
 
@@ -242,8 +286,8 @@ void DemodulatorThread::threadMain() {
                 ati_vis->data.resize(stereoSize);
 
                 for (int i = 0; i < stereoSize / 2; i++) {
-                    ati_vis->data[i] = ati->data[i*2];
-                    ati_vis->data[i + stereoSize / 2] = ati->data[i*2+1];
+                    ati_vis->data[i] = ati->data[i * 2];
+                    ati_vis->data[i + stereoSize / 2] = ati->data[i * 2 + 1];
                 }
             } else {
                 ati_vis->channels = 1;
@@ -351,4 +395,12 @@ void DemodulatorThread::setSquelchLevel(float signal_level_in) {
 
 float DemodulatorThread::getSquelchLevel() {
     return squelch_level;
+}
+
+void DemodulatorThread::setDemodulatorType(DemodulatorType demod_type_in) {
+    demodulatorType = demod_type_in;
+}
+
+DemodulatorType DemodulatorThread::getDemodulatorType() {
+    return demodulatorType;
 }

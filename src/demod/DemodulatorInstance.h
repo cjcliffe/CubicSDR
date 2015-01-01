@@ -63,6 +63,9 @@ public:
     void setOutputDevice(int device_id);
     int getOutputDevice();
 
+    void setDemodulatorType(DemodulatorType demod_type_in);
+    DemodulatorType getDemodulatorType();
+
 private:
     std::atomic<std::string *> label; //
     bool terminated; //

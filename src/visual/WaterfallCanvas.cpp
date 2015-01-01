@@ -17,7 +17,9 @@
 
 #include <wx/numformatter.h>
 
-#define MIN_FM_BANDWIDTH 10000
+#define MIN_FM_BANDWIDTH 2000
+#define MIN_AM_BANDWIDTH 2000
+
 
 wxBEGIN_EVENT_TABLE(WaterfallCanvas, wxGLCanvas) EVT_PAINT(WaterfallCanvas::OnPaint)
 EVT_KEY_DOWN(WaterfallCanvas::OnKeyDown)

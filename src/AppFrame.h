@@ -11,6 +11,7 @@
 #include <map>
 
 #define wxID_RT_AUDIO_DEVICE 1000
+#define wxID_DEMOD_TYPE 1500
 
 // Define a new frame type
 class AppFrame: public wxFrame {
@@ -40,6 +41,8 @@ private:
     std::map<int,RtAudio::DeviceInfo> input_devices;
     std::map<int,RtAudio::DeviceInfo> output_devices;
     std::map<int,wxMenuItem *> output_device_menuitems;
+
+    std::map<DemodulatorType,wxMenuItem *> demod_menuitems;
 
     wxDECLARE_EVENT_TABLE();
 };
