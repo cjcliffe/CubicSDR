@@ -25,7 +25,7 @@ AudioThread::~AudioThread() {
 
 #ifdef __APPLE__
 void AudioThread::bindThread(AudioThread *other) {
-    if (boundThreads.find(other) == boundThreads.end()) {
+    if (std::find(boundThreads.load()->begin(), boundThreads.load()->end(), other) == boundThreads.load()->end()) {
         boundThreads.load()->push_back(other);
     }
 }
@@ -275,13 +275,11 @@ void AudioThread::setupDevice(int deviceId) {
     RtAudio::StreamOptions opts;
     opts.streamName = "CubicSDR Audio Output";
 
-    output_device = deviceId;
-
     try {
 
 #ifdef __APPLE__
-        if (active && deviceController.find(parameters.deviceId) != deviceController.end()) {
-            deviceController[parameters.deviceId]->removeThread(this);
+        if (deviceController.find(output_device.load()) != deviceController.end()) {
+            deviceController[output_device.load()]->removeThread(this);
         }
 
         opts.priority = sched_get_priority_max(SCHED_FIFO);
@@ -290,6 +288,7 @@ void AudioThread::setupDevice(int deviceId) {
 
         if (deviceController.find(parameters.deviceId) == deviceController.end()) {
             deviceController[parameters.deviceId] = new AudioThread(NULL, NULL);
+            deviceController[parameters.deviceId]->setInitOutputDevice(parameters.deviceId);
             deviceController[parameters.deviceId]->bindThread(this);
             deviceThread[parameters.deviceId] = new std::thread(&AudioThread::threadMain, deviceController[parameters.deviceId]);
         } else if (deviceController[parameters.deviceId] == this) {
@@ -315,6 +314,8 @@ void AudioThread::setupDevice(int deviceId) {
         e.printMessage();
         return;
     }
+
+    output_device = deviceId;
 }
 
 int AudioThread::getOutputDevice() {
@@ -322,6 +323,10 @@ int AudioThread::getOutputDevice() {
         return dac.getDefaultOutputDevice();
     }
     return output_device;
+}
+
+void AudioThread::setInitOutputDevice(int deviceId) {
+    output_device = deviceId;
 }
 
 void AudioThread::threadMain() {
@@ -339,7 +344,9 @@ void AudioThread::threadMain() {
         return;
     }
 
-    setupDevice(dac.getDefaultOutputDevice());
+    setupDevice((output_device.load() == -1)?(dac.getDefaultOutputDevice()):output_device.load());
+
+    std::cout << "Audio thread started." << std::endl;
 
     while (!terminated) {
         AudioThreadCommand command;

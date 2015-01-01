@@ -10,7 +10,7 @@
 
 #include <map>
 
-#define wxID_RT_AUDIO_DEVICE 10000
+#define wxID_RT_AUDIO_DEVICE 1000
 
 // Define a new frame type
 class AppFrame: public wxFrame {
@@ -22,6 +22,7 @@ public:
 
 private:
     void OnMenu(wxCommandEvent& event);
+    void OnClose(wxCommandEvent& event);
     void OnNewWindow(wxCommandEvent& event);
     void OnIdle(wxIdleEvent& event);
 
@@ -35,6 +36,7 @@ private:
 
     DemodulatorInstance *activeDemodulator;
 
+    std::vector<RtAudio::DeviceInfo> devices;
     std::map<int,RtAudio::DeviceInfo> input_devices;
     std::map<int,RtAudio::DeviceInfo> output_devices;
     std::map<int,wxMenuItem *> output_device_menuitems;

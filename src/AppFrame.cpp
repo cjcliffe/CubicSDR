@@ -22,7 +22,7 @@
 
 wxBEGIN_EVENT_TABLE(AppFrame, wxFrame)
 //EVT_MENU(wxID_NEW, AppFrame::OnNewWindow)
-//EVT_MENU(wxID_CLOSE, AppFrame::OnClose)
+EVT_MENU(wxID_CLOSE, AppFrame::OnClose)
 EVT_MENU(wxID_ANY, AppFrame::OnMenu)
 
 EVT_COMMAND(wxID_ANY, wxEVT_THREAD, AppFrame::OnThread)
@@ -122,7 +122,6 @@ AppFrame::AppFrame() :
 
     wxMenu *menu = new wxMenu;
 
-    std::vector<RtAudio::DeviceInfo> devices;
     std::vector<RtAudio::DeviceInfo>::iterator devices_i;
     std::map<int,RtAudio::DeviceInfo>::iterator mdevices_i;
     AudioThread::enumerateDevices(devices);
@@ -143,6 +142,7 @@ AppFrame::AppFrame() :
 
     for (mdevices_i = output_devices.begin(); mdevices_i != output_devices.end(); mdevices_i++) {
         wxMenuItem *itm = menu->AppendRadioItem(wxID_RT_AUDIO_DEVICE+mdevices_i->first,mdevices_i->second.name,wxT("Description?"));
+        itm->SetId(wxID_RT_AUDIO_DEVICE+mdevices_i->first);
         if (mdevices_i->second.isDefaultOutput) {
             itm->Check(true);
         }
@@ -171,12 +171,16 @@ AppFrame::~AppFrame() {
 }
 
 void AppFrame::OnMenu(wxCommandEvent& event) {
-    if (event.GetId() >= wxID_RT_AUDIO_DEVICE && event.GetId() < wxID_RT_AUDIO_DEVICE+output_devices.size()) {
+    if (event.GetId() >= wxID_RT_AUDIO_DEVICE && event.GetId() < wxID_RT_AUDIO_DEVICE+devices.size()) {
         if (activeDemodulator) {
             activeDemodulator->setOutputDevice(event.GetId()-wxID_RT_AUDIO_DEVICE);
             activeDemodulator = NULL;
         }
     }
+}
+
+void AppFrame::OnClose(wxCommandEvent& WXUNUSED(event)) {
+    Close(true);
 }
 
 void AppFrame::OnNewWindow(wxCommandEvent& WXUNUSED(event)) {

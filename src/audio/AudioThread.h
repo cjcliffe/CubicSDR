@@ -70,6 +70,7 @@ public:
     static void enumerateDevices(std::vector<RtAudio::DeviceInfo> &devs);
 
     void setupDevice(int deviceId);
+    void setInitOutputDevice(int deviceId);
     int getOutputDevice();
     void threadMain();
     void terminate();
