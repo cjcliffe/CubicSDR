@@ -181,3 +181,16 @@ void DemodulatorInstance::setSquelchEnabled(bool state) {
     squelch = state;
 }
 
+float DemodulatorInstance::getSignalLevel() {
+    return demodulatorThread->getSignalLevel();
+}
+
+void DemodulatorInstance::setSquelchLevel(float signal_level_in) {
+    demodulatorThread->setSquelchLevel(signal_level_in);
+}
+
+
+float DemodulatorInstance::getSquelchLevel() {
+    return demodulatorThread->getSquelchLevel();
+}
+

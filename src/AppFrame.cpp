@@ -79,12 +79,18 @@ AppFrame::AppFrame() :
     demodWaterfallCanvas->attachSpectrumCanvas(demodSpectrumCanvas);
     demodVisuals->Add(demodWaterfallCanvas, 3, wxEXPAND | wxALL, 0);
 
-    demodTray->Add(demodVisuals, 7, wxEXPAND | wxALL, 0);
+    demodTray->Add(demodVisuals, 30, wxEXPAND | wxALL, 0);
+
+    demodTray->AddSpacer(2);
+
+    demodSignalMeter = new MeterCanvas(this, NULL);
+    demodSignalMeter->setMax(0.5);
+    demodTray->Add(demodSignalMeter, 1, wxEXPAND | wxALL, 0);
 
     demodTray->AddSpacer(2);
 
     scopeCanvas = new ScopeCanvas(this, NULL);
-    demodTray->Add(scopeCanvas, 7, wxEXPAND | wxALL, 0);
+    demodTray->Add(scopeCanvas, 30, wxEXPAND | wxALL, 0);
 
     vbox->Add(demodTray, 2, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(2);
@@ -105,12 +111,42 @@ AppFrame::AppFrame() :
 //    SetIcon(wxICON(sample));
 
 // Make a menubar
-    wxMenu *menu = new wxMenu;
+//    wxMenu *menu = new wxMenu;
 //    menu->Append(wxID_NEW);
 //    menu->AppendSeparator();
-    menu->Append(wxID_CLOSE);
+//    menu->Append(wxID_CLOSE);
+//    wxMenuBar *menuBar = new wxMenuBar;
+//    menuBar->Append(menu, wxT("&File"));
+
+    wxMenu *menu = new wxMenu;
+
+    std::vector<RtAudio::DeviceInfo> devices;
+    std::vector<RtAudio::DeviceInfo>::iterator devices_i;
+    std::map<int,RtAudio::DeviceInfo>::iterator mdevices_i;
+    AudioThread::enumerateDevices(devices);
+
+    int i = 0;
+
+    for (devices_i = devices.begin(); devices_i != devices.end(); devices_i++) {
+        if (devices_i->inputChannels) {
+            input_devices[i] = *devices_i;
+        }
+        if (devices_i->outputChannels) {
+            output_devices[i] = *devices_i;
+        }
+        i++;
+    }
+
+
+    for (mdevices_i = output_devices.begin(); mdevices_i != output_devices.end(); mdevices_i++) {
+        wxMenuItem *itm = menu->AppendRadioItem(wxID_RT_AUDIO_DEVICE+i,mdevices_i->second.name,wxT("Description?"));
+        if (mdevices_i->second.isDefaultOutput) {
+            itm->Check(true);
+        }
+    }
+
     wxMenuBar *menuBar = new wxMenuBar;
-    menuBar->Append(menu, wxT("&File"));
+    menuBar->Append(menu, wxT("&Device"));
 
     SetMenuBar(menuBar);
 
@@ -155,6 +191,9 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     if (demod) {
+        if (demod != activeDemodulator) {
+            demodSignalMeter->setInputValue(demod->getSquelchLevel());
+        }
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
             if (demod->getParams().frequency != demodWaterfallCanvas->GetCenterFrequency()) {
                 demodWaterfallCanvas->SetCenterFrequency(demod->getParams().frequency);
@@ -169,6 +208,11 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
                 demodSpectrumCanvas->SetBandwidth(demodBw);
             }
         }
+        demodSignalMeter->setLevel(demod->getSignalLevel());
+        if (demodSignalMeter->inputChanged()) {
+            demod->setSquelchLevel(demodSignalMeter->getInputValue());
+        }
+        activeDemodulator = demod;
     }
 
     if (!wxGetApp().getIQVisualQueue()->empty()) {

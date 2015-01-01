@@ -211,11 +211,15 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
 }
 #endif
 
-void AudioThread::enumerateDevices() {
-    int numDevices = dac.getDeviceCount();
+void AudioThread::enumerateDevices(std::vector<RtAudio::DeviceInfo> &devs) {
+    RtAudio endac;
+
+    int numDevices = endac.getDeviceCount();
 
     for (int i = 0; i < numDevices; i++) {
-        RtAudio::DeviceInfo info = dac.getDeviceInfo(i);
+        RtAudio::DeviceInfo info = endac.getDeviceInfo(i);
+
+        devs.push_back(info);
 
         std::cout << std::endl;
 

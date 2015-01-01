@@ -9,7 +9,7 @@ void MouseTracker::OnMouseMoved(wxMouseEvent& event) {
     const wxSize ClientSize = target->GetClientSize();
 
     mouseX = (float) event.m_x / (float) ClientSize.x;
-    mouseY = (float) event.m_y / (float) ClientSize.y;
+    mouseY = 1.0 - (float) event.m_y / (float) ClientSize.y;
 
     deltaMouseX = mouseX - lastMouseX;
     deltaMouseY = mouseY - lastMouseY;
@@ -17,11 +17,11 @@ void MouseTracker::OnMouseMoved(wxMouseEvent& event) {
     if (isMouseDown) {
 #ifndef __APPLE__
         if (horizDragLock && vertDragLock) {
-            target->WarpPointer(originMouseX * ClientSize.x, originMouseY * ClientSize.y);
+            target->WarpPointer(originMouseX * ClientSize.x, (1.0-originMouseY) * ClientSize.y);
             mouseX = originMouseX;
             mouseY = originMouseY;
         } else if (vertDragLock  && mouseY != lastMouseY) {
-            target->WarpPointer(event.m_x, originMouseY * ClientSize.y);
+            target->WarpPointer(event.m_x, (1.0-originMouseY) * ClientSize.y);
             mouseY = originMouseY;
         } else if (horizDragLock && mouseX != lastMouseX) {
             target->WarpPointer(originMouseX * ClientSize.x, event.m_y);
@@ -42,7 +42,7 @@ void MouseTracker::OnMouseDown(wxMouseEvent& event) {
     const wxSize ClientSize = target->GetClientSize();
 
     mouseX = lastMouseX = (float) event.m_x / (float) ClientSize.x;
-    mouseY = lastMouseY = (float) event.m_y / (float) ClientSize.y;
+    mouseY = lastMouseY = 1.0 - (float) event.m_y / (float) ClientSize.y;
 
     originMouseX = mouseX;
     originMouseY = mouseY;

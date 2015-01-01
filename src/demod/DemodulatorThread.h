@@ -32,11 +32,15 @@ public:
     }
 
     void initialize();
-
     void terminate();
 
     void setStereo(bool state);
     bool isStereo();
+
+    float getSignalLevel();
+    void setSquelchLevel(float signal_level_in);
+    float getSquelchLevel();
+
 
 #ifdef __APPLE__
     static void *pthread_helper(void *context) {
@@ -57,7 +61,8 @@ protected:
 
     DemodulatorThreadCommandQueue* threadQueueNotify;
     DemodulatorThreadControlCommandQueue *threadQueueControl;
-    float squelch_level;
+    std::atomic<float> squelch_level;
     float squelch_tolerance;
+    std::atomic<float> signal_level;
     bool squelch_enabled;
 };

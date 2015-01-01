@@ -42,6 +42,9 @@ WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
     nco_shift = nco_crcf_create(LIQUID_NCO);
     shift_freq = 0;
 
+    fft_ceil_ma = fft_ceil_maa = 100.0;
+    fft_floor_ma = fft_floor_maa = 0.0;
+
     mTracker.setTarget(this);
     SetCursor(wxCURSOR_CROSS);
 }
@@ -80,9 +83,6 @@ void WaterfallCanvas::Setup(int fft_size_in, int waterfall_lines_in) {
         fftw_destroy_plan(plan);
     }
     plan = fftw_plan_dft_1d(fft_size, in, out, FFTW_FORWARD, FFTW_MEASURE);
-
-    fft_ceil_ma = fft_ceil_maa = 100.0;
-    fft_floor_ma = fft_floor_maa = 0.0;
 
     glContext->Setup(fft_size, waterfall_lines);
     timer.start();
@@ -409,8 +409,13 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
         }
 
         for (int i = 0, iMax = fft_size; i < iMax; i++) {
-            fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * 0.65;
-            fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * 0.65;
+            if (isView) {
+                fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * 0.85;
+                fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * 0.55;
+            } else {
+                fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * 0.65;
+                fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * 0.65;
+            }
 
             if (fft_result_maa[i] > fft_ceil) {
                 fft_ceil = fft_result_maa[i];
@@ -423,7 +428,7 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
         fft_ceil += 1;
         fft_floor -= 1;
 
-        fft_ceil_ma = fft_ceil_ma + (fft_ceil - fft_ceil_ma) * 0.01;
+        fft_ceil_ma = fft_ceil_ma + (fft_ceil - fft_ceil_ma) * 0.05;
         fft_ceil_maa = fft_ceil_maa + (fft_ceil_ma - fft_ceil_maa) * 0.01;
 
         fft_floor_ma = fft_floor_ma + (fft_floor - fft_floor_ma) * 0.01;

@@ -9,11 +9,9 @@
 DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* pQueue, DemodulatorThreadControlCommandQueue *threadQueueControl,
         DemodulatorThreadCommandQueue* threadQueueNotify) :
         postInputQueue(pQueue), visOutQueue(NULL), audioInputQueue(NULL), agc(NULL), stereo(false), terminated(false), threadQueueNotify(
-                threadQueueNotify), threadQueueControl(threadQueueControl), squelch_level(0), squelch_tolerance(0), squelch_enabled(false) {
+                threadQueueNotify), threadQueueControl(threadQueueControl), squelch_level(0), squelch_tolerance(0), signal_level(0), squelch_enabled(false) {
 
-    float kf = 0.5;         // modulation factor
-    fdem = freqdem_create(kf);
-//    freqdem_print(fdem);
+    fdem = freqdem_create(0.5);
 }
 DemodulatorThread::~DemodulatorThread() {
 }
@@ -64,7 +62,7 @@ void DemodulatorThread::threadMain() {
     double shift_freq = 0;
 
     agc = agc_crcf_create();
-    agc_crcf_set_bandwidth(agc, 1e-3f);
+    agc_crcf_set_bandwidth(agc, 0.9);
 
     std::cout << "Demodulator thread started.." << std::endl;
 
@@ -176,10 +174,19 @@ void DemodulatorThread::threadMain() {
             msresamp_rrrf_execute(stereo_resampler, &demod_output_stereo[0], num_written, &resampled_audio_output_stereo[0], &num_audio_written);
         }
 
+        float current_level = ((60.0/fabs(agc_crcf_get_rssi(agc)))/15.0 - signal_level); //agc_crcf_get_signal_level(agc);
+
+        if (current_level > signal_level) {
+            signal_level = signal_level + (current_level-signal_level) * 0.5;
+        } else {
+            signal_level = signal_level + (current_level-signal_level) * 0.05;
+        }
+
+
         AudioThreadInput *ati = NULL;
 
         if (audioInputQueue != NULL) {
-            if (!squelch_enabled || ((agc_crcf_get_signal_level(agc)) >= 0.1)) {
+            if (!squelch_enabled || (signal_level >= squelch_level)) {
 
                 for (buffers_i = buffers.begin(); buffers_i != buffers.end(); buffers_i++) {
                     if ((*buffers_i)->getRefCount() <= 0) {
@@ -329,4 +336,19 @@ void DemodulatorThread::setStereo(bool state) {
 
 bool DemodulatorThread::isStereo() {
     return stereo;
+}
+
+float DemodulatorThread::getSignalLevel() {
+    return signal_level;
+}
+
+void DemodulatorThread::setSquelchLevel(float signal_level_in) {
+    if (!squelch_enabled) {
+        squelch_enabled = true;
+    }
+    squelch_level = signal_level_in;
+}
+
+float DemodulatorThread::getSquelchLevel() {
+    return squelch_level;
 }

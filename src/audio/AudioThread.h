@@ -66,7 +66,7 @@ public:
     AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify);
     ~AudioThread();
 
-    void enumerateDevices();
+    static void enumerateDevices(std::vector<RtAudio::DeviceInfo> &devs);
 
     void threadMain();
     void terminate();

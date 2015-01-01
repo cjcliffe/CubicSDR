@@ -4,7 +4,7 @@
 #define BUF_SIZE (16384*2)
 #define SRATE 2000000
 #else
-#define BUF_SIZE (16384*4)
+#define BUF_SIZE (16384*5)
 #define SRATE 2500000
 #endif
 #define DEFAULT_FFT_SIZE 2048
