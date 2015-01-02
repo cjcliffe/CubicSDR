@@ -221,17 +221,18 @@ void SpectrumCanvas::mouseMoved(wxMouseEvent& event) {
             int freq = wxGetApp().getFrequency();
 
             if (isView) {
-                center_freq -= freqChange;
+                center_freq = center_freq - freqChange;
                 if (waterfallCanvas) {
                     waterfallCanvas->SetCenterFrequency(center_freq);
                 }
 
-                if (SRATE/2 < (abs(freq-center_freq)+bandwidth/2)) {
-//                    if (center_freq < freq) {
-//                        freqChange = -((center_freq - (freq - bandwidth / 2)) - (SRATE/2));
-//                    } else {
-//                        freqChange = ((freq + bandwidth / 2) - center_freq - (SRATE/2));
-//                    }
+                int bw = (int)bandwidth;
+                int bwOfs = ((int)center_freq>freq)?((int)bandwidth/2):(-(int)bandwidth/2);
+                int freqEdge = ((int)center_freq+bwOfs);
+
+                if (abs(freq-freqEdge) > (SRATE/2)) {
+                    freqChange = -(((int)center_freq>freq)?(freqEdge-freq-(SRATE/2)):(freqEdge-freq+(SRATE/2)));
+                    std::cout << "change: " << freqChange;
                 } else {
                     freqChange = 0;
                 }
