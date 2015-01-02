@@ -95,6 +95,8 @@ private:
     int last_input_bandwidth;
     int last_bandwidth;
 
+    int zoom;
+
     std::vector<liquid_float_complex> shift_buffer;
     std::vector<liquid_float_complex> resampler_buffer;
 
