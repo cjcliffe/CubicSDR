@@ -19,11 +19,11 @@
 
 wxBEGIN_EVENT_TABLE(SpectrumCanvas, wxGLCanvas) EVT_PAINT(SpectrumCanvas::OnPaint)
 EVT_IDLE(SpectrumCanvas::OnIdle)
-EVT_MOTION(SpectrumCanvas::mouseMoved)
-EVT_LEFT_DOWN(SpectrumCanvas::mouseDown)
-EVT_LEFT_UP(SpectrumCanvas::mouseReleased)
-EVT_LEAVE_WINDOW(SpectrumCanvas::mouseLeftWindow)
-EVT_MOUSEWHEEL(SpectrumCanvas::mouseWheelMoved)
+EVT_MOTION(SpectrumCanvas::OnMouseMoved)
+EVT_LEFT_DOWN(SpectrumCanvas::OnMouseDown)
+EVT_LEFT_UP(SpectrumCanvas::OnMouseReleased)
+EVT_LEAVE_WINDOW(SpectrumCanvas::OnMouseLeftWindow)
+EVT_MOUSEWHEEL(SpectrumCanvas::OnMouseWheelMoved)
 wxEND_EVENT_TABLE()
 
 SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *attribList) :
@@ -32,12 +32,12 @@ SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *attribList) :
 
     glContext = new SpectrumContext(this, &wxGetApp().GetContext(this));
 
-    mTracker.setVertDragLock(true);
+    mouseTracker.setVertDragLock(true);
 
     SetCursor(wxCURSOR_SIZEWE);
 }
 
-void SpectrumCanvas::Setup(int fft_size_in) {
+void SpectrumCanvas::setup(int fft_size_in) {
     if (fft_size == fft_size_in) {
         return;
     }
@@ -73,12 +73,12 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
     glContext->BeginDraw();
-    glContext->Draw(spectrum_points, GetCenterFrequency(), GetBandwidth());
+    glContext->Draw(spectrum_points, getCenterFrequency(), getBandwidth());
 
     std::vector<DemodulatorInstance *> &demods = wxGetApp().getDemodMgr().getDemodulators();
 
     for (int i = 0, iMax = demods.size(); i < iMax; i++) {
-        glContext->DrawDemodInfo(demods[i], 1, 1, 1, GetCenterFrequency(), GetBandwidth());
+        glContext->DrawDemodInfo(demods[i], 1, 1, 1, getCenterFrequency(), getBandwidth());
     }
 
     glContext->EndDraw();
@@ -93,7 +93,7 @@ void SpectrumCanvas::setData(DemodulatorThreadIQData *input) {
     std::vector<liquid_float_complex> *data = &input->data;
     if (data && data->size()) {
         if (fft_size != data->size()) {
-            Setup(data->size());
+            setup(data->size());
         }
         if (spectrum_points.size() < fft_size * 2) {
             if (spectrum_points.capacity() < fft_size * 2) {
@@ -173,26 +173,26 @@ void SpectrumCanvas::OnIdle(wxIdleEvent &event) {
     Refresh(false);
 }
 
-void SpectrumCanvas::mouseMoved(wxMouseEvent& event) {
-    InteractiveCanvas::mouseMoved(event);
-    if (mTracker.mouseDown()) {
-        int freqChange = mTracker.getDeltaMouseX() * GetBandwidth();
+void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
+    InteractiveCanvas::OnMouseMoved(event);
+    if (mouseTracker.mouseDown()) {
+        int freqChange = mouseTracker.getDeltaMouseX() * getBandwidth();
 
         if (freqChange != 0) {
             int freq = wxGetApp().getFrequency();
 
             if (isView) {
-                center_freq = center_freq - freqChange;
+                centerFreq = centerFreq - freqChange;
                 if (waterfallCanvas) {
-                    waterfallCanvas->SetCenterFrequency(center_freq);
+                    waterfallCanvas->setCenterFrequency(centerFreq);
                 }
 
                 int bw = (int) bandwidth;
-                int bwOfs = ((int) center_freq > freq) ? ((int) bandwidth / 2) : (-(int) bandwidth / 2);
-                int freqEdge = ((int) center_freq + bwOfs);
+                int bwOfs = ((int) centerFreq > freq) ? ((int) bandwidth / 2) : (-(int) bandwidth / 2);
+                int freqEdge = ((int) centerFreq + bwOfs);
 
                 if (abs(freq - freqEdge) > (SRATE / 2)) {
-                    freqChange = -(((int) center_freq > freq) ? (freqEdge - freq - (SRATE / 2)) : (freqEdge - freq + (SRATE / 2)));
+                    freqChange = -(((int) centerFreq > freq) ? (freqEdge - freq - (SRATE / 2)) : (freqEdge - freq + (SRATE / 2)));
                 } else {
                     freqChange = 0;
                 }
@@ -210,22 +210,22 @@ void SpectrumCanvas::mouseMoved(wxMouseEvent& event) {
     }
 }
 
-void SpectrumCanvas::mouseDown(wxMouseEvent& event) {
-    InteractiveCanvas::mouseDown(event);
+void SpectrumCanvas::OnMouseDown(wxMouseEvent& event) {
+    InteractiveCanvas::OnMouseDown(event);
     SetCursor(wxCURSOR_CROSS);
 }
 
-void SpectrumCanvas::mouseWheelMoved(wxMouseEvent& event) {
-    InteractiveCanvas::mouseWheelMoved(event);
+void SpectrumCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
+    InteractiveCanvas::OnMouseWheelMoved(event);
 }
 
-void SpectrumCanvas::mouseReleased(wxMouseEvent& event) {
-    InteractiveCanvas::mouseReleased(event);
+void SpectrumCanvas::OnMouseReleased(wxMouseEvent& event) {
+    InteractiveCanvas::OnMouseReleased(event);
     SetCursor(wxCURSOR_SIZEWE);
 }
 
-void SpectrumCanvas::mouseLeftWindow(wxMouseEvent& event) {
-    InteractiveCanvas::mouseLeftWindow(event);
+void SpectrumCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
+    InteractiveCanvas::OnMouseLeftWindow(event);
     SetCursor(wxCURSOR_SIZEWE);
 }
 

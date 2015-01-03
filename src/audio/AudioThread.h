@@ -57,11 +57,11 @@ public:
 
     AudioThreadInput *currentInput;
     AudioThreadInputQueue *inputQueue;
-    std::atomic<unsigned int> audio_queue_ptr;
-    std::atomic<unsigned int> underflow_count;
+    std::atomic<unsigned int> audioQueuePtr;
+    std::atomic<unsigned int> underflowCount;
     std::atomic<bool> terminated;
     std::atomic<bool> active;
-    std::atomic<int> output_device;
+    std::atomic<int> outputDevice;
     float gain;
 
     AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify);

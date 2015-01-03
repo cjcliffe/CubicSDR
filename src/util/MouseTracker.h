@@ -4,20 +4,15 @@
 
 class MouseTracker {
 public:
-    MouseTracker(wxWindow *target) :
-            mouseX(0), mouseY(0), lastMouseX(0), lastMouseY(0), originMouseX(0), originMouseY(0), deltaMouseX(0), deltaMouseY(0), vertDragLock(false), horizDragLock(false), isMouseDown(false), isMouseInView(false), target(target) {
-
-    }
-
-    MouseTracker() :
-            mouseX(0), mouseY(0), lastMouseX(0), lastMouseY(0), originMouseX(0), originMouseY(0), deltaMouseX(0), deltaMouseY(0), vertDragLock(false), horizDragLock(false), isMouseDown(false), isMouseInView(false), target(NULL) {
-
-    }
+    MouseTracker(wxWindow *target);
+    MouseTracker();
 
     void OnMouseMoved(wxMouseEvent& event);
-    void OnMouseDown(wxMouseEvent& event);
     void OnMouseWheelMoved(wxMouseEvent& event);
+    void OnMouseDown(wxMouseEvent& event);
     void OnMouseReleased(wxMouseEvent& event);
+    void OnMouseRightDown(wxMouseEvent& event);
+    void OnMouseRightReleased(wxMouseEvent& event);
     void OnMouseEnterWindow(wxMouseEvent& event);
     void OnMouseLeftWindow(wxMouseEvent& event);
 
@@ -35,6 +30,7 @@ public:
     void setVertDragLock(bool dragLock);
     void setHorizDragLock(bool dragLock);
     bool mouseDown();
+    bool mouseRightDown();
     bool mouseInView();
     void setTarget(wxWindow *target_in);
 
@@ -45,6 +41,6 @@ private:
     float deltaMouseX, deltaMouseY;
 
     bool vertDragLock, horizDragLock;
-    bool isMouseDown, isMouseInView;
+    bool isMouseDown, isMouseRightDown, isMouseInView;
     wxWindow *target;
 };

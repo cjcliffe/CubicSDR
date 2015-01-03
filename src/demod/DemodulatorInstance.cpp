@@ -18,7 +18,7 @@ DemodulatorInstance::DemodulatorInstance() :
     audioInputQueue = new AudioThreadInputQueue;
     audioThread = new AudioThread(audioInputQueue, threadQueueNotify);
 
-    demodulatorThread->setAudioInputQueue(audioInputQueue);
+    demodulatorThread->setAudioOutputQueue(audioInputQueue);
 
     currentDemodType = demodulatorThread->getDemodulatorType();
 }
@@ -160,7 +160,7 @@ void DemodulatorInstance::setStereo(bool state) {
 
 void DemodulatorInstance::squelchAuto() {
     DemodulatorThreadControlCommand command;
-    command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_AUTO;
+    command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_ON;
     threadQueueControl->push(command);
     squelch = true;
 }
@@ -176,7 +176,7 @@ void DemodulatorInstance::setSquelchEnabled(bool state) {
         threadQueueControl->push(command);
     } else if (state && !squelch) {
         DemodulatorThreadControlCommand command;
-        command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_AUTO;
+        command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_ON;
         threadQueueControl->push(command);
     }
 

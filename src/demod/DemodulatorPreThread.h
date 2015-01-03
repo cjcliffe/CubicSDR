@@ -10,7 +10,7 @@
 class DemodulatorPreThread {
 public:
 
-    DemodulatorPreThread(DemodulatorThreadInputQueue* pQueueIn, DemodulatorThreadPostInputQueue* pQueueOut,
+    DemodulatorPreThread(DemodulatorThreadInputQueue* iqInputQueue, DemodulatorThreadPostInputQueue* iqOutputQueue,
             DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify);
     ~DemodulatorPreThread();
 
@@ -24,10 +24,6 @@ public:
         commandQueue = tQueue;
     }
 
-    void setAudioInputQueue(AudioThreadInputQueue *tQueue) {
-        audioInputQueue = tQueue;
-    }
-
     void setDemodulatorControlQueue(DemodulatorThreadControlCommandQueue *tQueue) {
         threadQueueControl = tQueue;
     }
@@ -37,7 +33,6 @@ public:
     }
 
     void initialize();
-
     void terminate();
 
 #ifdef __APPLE__
@@ -47,24 +42,22 @@ public:
 #endif
 
 protected:
-    DemodulatorThreadInputQueue* inputQueue;
-    DemodulatorThreadPostInputQueue* postInputQueue;
+    DemodulatorThreadInputQueue* iqInputQueue;
+    DemodulatorThreadPostInputQueue* iqOutputQueue;
     DemodulatorThreadCommandQueue* commandQueue;
-    AudioThreadInputQueue *audioInputQueue;
 
-    msresamp_crcf resampler;
-    double resample_ratio;
+    msresamp_crcf iqResampler;
+    double iqResampleRatio;
 
-    msresamp_rrrf audio_resampler;
-    msresamp_rrrf stereo_resampler;
-    double audio_resample_ratio;
+    msresamp_rrrf audioResampler;
+    msresamp_rrrf stereoResampler;
+    double audioResampleRatio;
 
     DemodulatorThreadParameters params;
-    DemodulatorThreadParameters last_params;
+    DemodulatorThreadParameters lastParams;
 
-    freqdem fdem;
-    nco_crcf nco_shift;
-    int shift_freq;
+    nco_crcf freqShifter;
+    int shiftFrequency;
 
     std::atomic<bool> terminated;
     std::atomic<bool> initialized;

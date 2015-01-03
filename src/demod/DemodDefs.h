@@ -44,7 +44,7 @@ public:
 class DemodulatorThreadControlCommand {
 public:
     enum DemodulatorThreadControlCommandEnum {
-        DEMOD_THREAD_CMD_CTL_NULL, DEMOD_THREAD_CMD_CTL_SQUELCH_AUTO, DEMOD_THREAD_CMD_CTL_SQUELCH_OFF, DEMOD_THREAD_CMD_CTL_TYPE
+        DEMOD_THREAD_CMD_CTL_NULL, DEMOD_THREAD_CMD_CTL_SQUELCH_ON, DEMOD_THREAD_CMD_CTL_SQUELCH_OFF, DEMOD_THREAD_CMD_CTL_TYPE
     };
 
     DemodulatorThreadControlCommand() :
@@ -75,14 +75,14 @@ class DemodulatorThreadPostIQData: public ReferenceCounter {
 public:
     std::vector<liquid_float_complex> data;
     int bandwidth;
-    double audio_resample_ratio;
-    msresamp_rrrf audio_resampler;
-    msresamp_rrrf stereo_resampler;
-    double resample_ratio;
     msresamp_crcf resampler;
+    double resamplerRatio;
+    msresamp_rrrf audioResampler;
+    msresamp_rrrf stereoResampler;
+    double audioResampleRatio;
 
     DemodulatorThreadPostIQData() :
-            bandwidth(0), audio_resample_ratio(0), audio_resampler(NULL), stereo_resampler(NULL), resample_ratio(0), resampler(NULL) {
+            bandwidth(0), resampler(NULL), resamplerRatio(0), audioResampler(NULL), stereoResampler(NULL), audioResampleRatio(0) {
 
     }
 

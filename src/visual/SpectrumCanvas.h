@@ -19,7 +19,7 @@ public:
     std::vector<float> spectrum_points;
 
     SpectrumCanvas(wxWindow *parent, int *attribList = NULL);
-    void Setup(int fft_size_in);
+    void setup(int fft_size_in);
     ~SpectrumCanvas();
 
     void setData(DemodulatorThreadIQData *input);
@@ -30,13 +30,11 @@ private:
 
     void OnIdle(wxIdleEvent &event);
 
-    void mouseMoved(wxMouseEvent& event);
-    void mouseDown(wxMouseEvent& event);
-    void mouseWheelMoved(wxMouseEvent& event);
-    void mouseReleased(wxMouseEvent& event);
-
-//    void rightClick(wxMouseEvent& event);
-    void mouseLeftWindow(wxMouseEvent& event);
+    void OnMouseMoved(wxMouseEvent& event);
+    void OnMouseDown(wxMouseEvent& event);
+    void OnMouseWheelMoved(wxMouseEvent& event);
+    void OnMouseReleased(wxMouseEvent& event);
+    void OnMouseLeftWindow(wxMouseEvent& event);
 
     fftw_complex *in, *out;
     fftw_plan plan;

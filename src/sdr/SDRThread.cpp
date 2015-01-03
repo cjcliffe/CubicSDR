@@ -4,9 +4,9 @@
 #include "CubicSDR.h"
 
 SDRThread::SDRThread(SDRThreadCommandQueue* pQueue) :
-        m_pQueue(pQueue), iqDataOutQueue(NULL), terminated(false) {
+        commandQueue(pQueue), iqDataOutQueue(NULL), terminated(false) {
     dev = NULL;
-    sample_rate = SRATE;
+    sampleRate = SRATE;
 }
 
 SDRThread::~SDRThread() {
@@ -98,14 +98,14 @@ void SDRThread::threadMain() {
 
     std::cout << "SDR thread initializing.." << std::endl;
 
-    int dev_count = rtlsdr_get_device_count();
-    int first_available = enumerate_rtl();
+    int devCount = rtlsdr_get_device_count();
+    int firstDevAvailable = enumerate_rtl();
 
-    if (first_available == -1) {
+    if (firstDevAvailable == -1) {
         std::cout << "No devices found.. SDR Thread exiting.." << std::endl;
         return;
     } else {
-        std::cout << "Using first available RTL-SDR device #" << first_available << std::endl;
+        std::cout << "Using first available RTL-SDR device #" << firstDevAvailable << std::endl;
     }
 
     signed char buf[BUF_SIZE];
@@ -113,16 +113,16 @@ void SDRThread::threadMain() {
     unsigned int frequency = DEFAULT_FREQ;
     unsigned int bandwidth = SRATE;
 
-    rtlsdr_open(&dev, first_available);
+    rtlsdr_open(&dev, firstDevAvailable);
     rtlsdr_set_sample_rate(dev, bandwidth);
     rtlsdr_set_center_freq(dev, frequency);
     rtlsdr_set_agc_mode(dev, 1);
     rtlsdr_set_offset_tuning(dev, 0);
     rtlsdr_reset_buffer(dev);
 
-    sample_rate = rtlsdr_get_sample_rate(dev);
+    sampleRate = rtlsdr_get_sample_rate(dev);
 
-    std::cout << "Sample Rate is: " << sample_rate << std::endl;
+    std::cout << "Sample Rate is: " << sampleRate << std::endl;
 
     int n_read;
     double seconds = 0.0;
@@ -133,7 +133,7 @@ void SDRThread::threadMain() {
     std::deque<SDRThreadIQData *>::iterator buffers_i;
 
     while (!terminated) {
-        SDRThreadCommandQueue *cmdQueue = m_pQueue.load();
+        SDRThreadCommandQueue *cmdQueue = commandQueue.load();
 
         if (!cmdQueue->empty()) {
             bool freq_changed = false;
@@ -193,7 +193,7 @@ void SDRThread::threadMain() {
             dataOut->data[i] = buf[i] - 127;
         }
 
-        double time_slice = (double) n_read / (double) sample_rate;
+        double time_slice = (double) n_read / (double) sampleRate;
         seconds += time_slice;
 
         if (iqDataOutQueue != NULL) {

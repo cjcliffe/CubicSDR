@@ -20,7 +20,7 @@ public:
     };
 
     WaterfallCanvas(wxWindow *parent, int *attribList = NULL);
-    void Setup(int fft_size_in, int waterfall_lines_in);
+    void setup(int fft_size_in, int waterfall_lines_in);
     ~WaterfallCanvas();
 
     void setData(DemodulatorThreadIQData *input);
@@ -37,12 +37,14 @@ private:
 
     void OnIdle(wxIdleEvent &event);
 
-    void mouseMoved(wxMouseEvent& event);
-    void mouseDown(wxMouseEvent& event);
-    void mouseWheelMoved(wxMouseEvent& event);
-    void mouseReleased(wxMouseEvent& event);
-    void mouseEnterWindow(wxMouseEvent& event);
-    void mouseLeftWindow(wxMouseEvent& event);
+    void OnMouseMoved(wxMouseEvent& event);
+    void OnMouseWheelMoved(wxMouseEvent& event);
+    void OnMouseDown(wxMouseEvent& event);
+    void OnMouseReleased(wxMouseEvent& event);
+    void OnMouseRightDown(wxMouseEvent& event);
+    void OnMouseRightReleased(wxMouseEvent& event);
+    void OnMouseEnterWindow(wxMouseEvent& event);
+    void OnMouseLeftWindow(wxMouseEvent& event);
 
     SpectrumCanvas *spectrumCanvas;
     std::vector<float> spectrum_points;
@@ -69,16 +71,15 @@ private:
     int waterfall_lines;
 
     msresamp_crcf resampler;
-    double resample_ratio;
-    nco_crcf nco_shift;
-    int shift_freq;
+    double resamplerRatio;
+    nco_crcf freqShifter;
+    int shiftFrequency;
 
-    int last_input_bandwidth;
-    int zoom;
+    int lastInputBandwidth;
+    float mouseZoom, zoom;
 
-    std::vector<liquid_float_complex> shift_buffer;
-    std::vector<liquid_float_complex> resampler_buffer;
-
+    std::vector<liquid_float_complex> shiftBuffer;
+    std::vector<liquid_float_complex> resampleBuffer;
     // event table
 wxDECLARE_EVENT_TABLE();
 };

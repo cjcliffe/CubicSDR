@@ -10,7 +10,7 @@ std::map<int, std::thread *> AudioThread::deviceThread;
 #endif
 
 AudioThread::AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify) :
-        currentInput(NULL), inputQueue(inputQueue), audio_queue_ptr(0), underflow_count(0), terminated(false), active(false), output_device(-1), gain(1.0), threadQueueNotify(
+        currentInput(NULL), inputQueue(inputQueue), audioQueuePtr(0), underflowCount(0), terminated(false), active(false), outputDevice(-1), gain(1.0), threadQueueNotify(
                 threadQueueNotify) {
 #ifdef __APPLE__
     boundThreads = new std::vector<AudioThread *>;
@@ -52,7 +52,7 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
     float *out = (float*) outputBuffer;
     memset(out, 0, nBufferFrames * 2 * sizeof(float));
     if (status) {
-        std::cout << "Audio buffer underflow.." << (src->underflow_count++) << std::endl;
+        std::cout << "Audio buffer underflow.." << (src->underflowCount++) << std::endl;
     }
 
     if (!src->boundThreads.load()->empty()) {
@@ -72,7 +72,7 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                 continue;
             }
             srcmix->inputQueue->pop(srcmix->currentInput);
-            srcmix->audio_queue_ptr = 0;
+            srcmix->audioQueuePtr = 0;
             continue;
         }
 
@@ -88,14 +88,14 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                     continue;
                 }
                 srcmix->inputQueue->pop(srcmix->currentInput);
-                srcmix->audio_queue_ptr = 0;
+                srcmix->audioQueuePtr = 0;
             }
             continue;
         }
 
         if (srcmix->currentInput->channels == 1) {
             for (int i = 0; i < nBufferFrames; i++) {
-                if (srcmix->audio_queue_ptr >= srcmix->currentInput->data.size()) {
+                if (srcmix->audioQueuePtr >= srcmix->currentInput->data.size()) {
                     if (srcmix->currentInput) {
                         srcmix->currentInput->decRefCount();
                         srcmix->currentInput = NULL;
@@ -104,18 +104,18 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                         continue;
                     }
                     srcmix->inputQueue->pop(srcmix->currentInput);
-                    srcmix->audio_queue_ptr = 0;
+                    srcmix->audioQueuePtr = 0;
                 }
                 if (srcmix->currentInput && srcmix->currentInput->data.size()) {
-                    float v = srcmix->currentInput->data[srcmix->audio_queue_ptr] * src->gain;
+                    float v = srcmix->currentInput->data[srcmix->audioQueuePtr] * src->gain;
                     out[i * 2] += v;
                     out[i * 2 + 1] += v;
                 }
-                srcmix->audio_queue_ptr++;
+                srcmix->audioQueuePtr++;
             }
         } else {
             for (int i = 0, iMax = srcmix->currentInput->channels * nBufferFrames; i < iMax; i++) {
-                if (srcmix->audio_queue_ptr >= srcmix->currentInput->data.size()) {
+                if (srcmix->audioQueuePtr >= srcmix->currentInput->data.size()) {
                     if (srcmix->currentInput) {
                         srcmix->currentInput->decRefCount();
                         srcmix->currentInput = NULL;
@@ -124,12 +124,12 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                         continue;
                     }
                     srcmix->inputQueue->pop(srcmix->currentInput);
-                    srcmix->audio_queue_ptr = 0;
+                    srcmix->audioQueuePtr = 0;
                 }
                 if (srcmix->currentInput && srcmix->currentInput->data.size()) {
-                    out[i] = out[i] + srcmix->currentInput->data[srcmix->audio_queue_ptr] * src->gain;
+                    out[i] = out[i] + srcmix->currentInput->data[srcmix->audioQueuePtr] * src->gain;
                 }
-                srcmix->audio_queue_ptr++;
+                srcmix->audioQueuePtr++;
             }
         }
 
@@ -146,12 +146,12 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
     float *out = (float*) outputBuffer;
     memset(out, 0, nBufferFrames * 2 * sizeof(float));
     if (status) {
-        std::cout << "Audio buffer underflow.." << (src->underflow_count++) << std::endl;
+        std::cout << "Audio buffer underflow.." << (src->underflowCount++) << std::endl;
     }
 
     if (!src->currentInput) {
         src->inputQueue->pop(src->currentInput);
-        src->audio_queue_ptr = 0;
+        src->audioQueuePtr = 0;
         return 0;
     }
 
@@ -167,14 +167,14 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                 return 1;
             }
             src->inputQueue->pop(src->currentInput);
-            src->audio_queue_ptr = 0;
+            src->audioQueuePtr = 0;
         }
         return 0;
     }
 
     if (src->currentInput->channels == 1) {
         for (int i = 0; i < nBufferFrames; i++) {
-            if (src->audio_queue_ptr >= src->currentInput->data.size()) {
+            if (src->audioQueuePtr >= src->currentInput->data.size()) {
                 if (src->currentInput) {
                     src->currentInput->decRefCount();
                     src->currentInput = NULL;
@@ -183,16 +183,16 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                     return 1;
                 }
                 src->inputQueue->pop(src->currentInput);
-                src->audio_queue_ptr = 0;
+                src->audioQueuePtr = 0;
             }
             if (src->currentInput && src->currentInput->data.size()) {
-                out[i * 2] = out[i * 2 + 1] = src->currentInput->data[src->audio_queue_ptr] * src->gain;
+                out[i * 2] = out[i * 2 + 1] = src->currentInput->data[src->audioQueuePtr] * src->gain;
             }
-            src->audio_queue_ptr++;
+            src->audioQueuePtr++;
         }
     } else {
         for (int i = 0, iMax = src->currentInput->channels * nBufferFrames; i < iMax; i++) {
-            if (src->audio_queue_ptr >= src->currentInput->data.size()) {
+            if (src->audioQueuePtr >= src->currentInput->data.size()) {
                 if (src->currentInput) {
                     src->currentInput->decRefCount();
                     src->currentInput = NULL;
@@ -201,12 +201,12 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                     return 1;
                 }
                 src->inputQueue->pop(src->currentInput);
-                src->audio_queue_ptr = 0;
+                src->audioQueuePtr = 0;
             }
             if (src->currentInput && src->currentInput->data.size()) {
-                out[i] = src->currentInput->data[src->audio_queue_ptr] * src->gain;
+                out[i] = src->currentInput->data[src->audioQueuePtr] * src->gain;
             }
-            src->audio_queue_ptr++;
+            src->audioQueuePtr++;
         }
     }
     return 0;
@@ -278,8 +278,8 @@ void AudioThread::setupDevice(int deviceId) {
     try {
 
 #ifdef __APPLE__
-        if (deviceController.find(output_device.load()) != deviceController.end()) {
-            deviceController[output_device.load()]->removeThread(this);
+        if (deviceController.find(outputDevice.load()) != deviceController.end()) {
+            deviceController[outputDevice.load()]->removeThread(this);
         }
 
         opts.priority = sched_get_priority_max(SCHED_FIFO);
@@ -315,18 +315,18 @@ void AudioThread::setupDevice(int deviceId) {
         return;
     }
 
-    output_device = deviceId;
+    outputDevice = deviceId;
 }
 
 int AudioThread::getOutputDevice() {
-    if (output_device == -1) {
+    if (outputDevice == -1) {
         return dac.getDefaultOutputDevice();
     }
-    return output_device;
+    return outputDevice;
 }
 
 void AudioThread::setInitOutputDevice(int deviceId) {
-    output_device = deviceId;
+    outputDevice = deviceId;
 }
 
 void AudioThread::threadMain() {
@@ -344,7 +344,7 @@ void AudioThread::threadMain() {
         return;
     }
 
-    setupDevice((output_device.load() == -1)?(dac.getDefaultOutputDevice()):output_device.load());
+    setupDevice((outputDevice.load() == -1)?(dac.getDefaultOutputDevice()):outputDevice.load());
 
     std::cout << "Audio thread started." << std::endl;
 

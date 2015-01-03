@@ -22,13 +22,13 @@ public:
     };
 
     DemodulatorWorkerThreadResult() :
-            cmd(DEMOD_WORKER_THREAD_RESULT_NULL), resampler(NULL), resample_ratio(0), audio_resampler(NULL), stereo_resampler(NULL), audio_resample_ratio(
+            cmd(DEMOD_WORKER_THREAD_RESULT_NULL), resampler(NULL), resamplerRatio(0), audioResampler(NULL), stereoResampler(NULL), audioResamplerRatio(
                     0), inputRate(0), bandwidth(0), audioSampleRate(0) {
 
     }
 
     DemodulatorWorkerThreadResult(DemodulatorThreadResultEnum cmd) :
-            cmd(cmd), resampler(NULL), resample_ratio(0), audio_resampler(NULL), stereo_resampler(NULL), audio_resample_ratio(0), inputRate(0), bandwidth(
+            cmd(cmd), resampler(NULL), resamplerRatio(0), audioResampler(NULL), stereoResampler(NULL), audioResamplerRatio(0), inputRate(0), bandwidth(
                     0), audioSampleRate(0) {
 
     }
@@ -36,10 +36,10 @@ public:
     DemodulatorThreadResultEnum cmd;
 
     msresamp_crcf resampler;
-    double resample_ratio;
-    msresamp_rrrf audio_resampler;
-    msresamp_rrrf stereo_resampler;
-    double audio_resample_ratio;
+    double resamplerRatio;
+    msresamp_rrrf audioResampler;
+    msresamp_rrrf stereoResampler;
+    double audioResamplerRatio;
 
     unsigned int inputRate;
     unsigned int bandwidth;

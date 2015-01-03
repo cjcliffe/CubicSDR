@@ -34,7 +34,7 @@ public:
     int int_value;
 };
 
-class SDRThreadIQData : public ReferenceCounter  {
+class SDRThreadIQData: public ReferenceCounter {
 public:
     unsigned int frequency;
     unsigned int bandwidth;
@@ -75,8 +75,8 @@ public:
 
     void terminate();
 protected:
-    uint32_t sample_rate;
-    std::atomic<SDRThreadCommandQueue*> m_pQueue;
+    uint32_t sampleRate;
+    std::atomic<SDRThreadCommandQueue*> commandQueue;
     std::atomic<SDRThreadIQDataQueue*> iqDataOutQueue;
 
     std::atomic<bool> terminated;

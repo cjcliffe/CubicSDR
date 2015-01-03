@@ -41,11 +41,11 @@ private:
     DemodulatorInstance *activeDemodulator;
 
     std::vector<RtAudio::DeviceInfo> devices;
-    std::map<int,RtAudio::DeviceInfo> input_devices;
-    std::map<int,RtAudio::DeviceInfo> output_devices;
-    std::map<int,wxMenuItem *> output_device_menuitems;
+    std::map<int,RtAudio::DeviceInfo> inputDevices;
+    std::map<int,RtAudio::DeviceInfo> outputDevices;
+    std::map<int,wxMenuItem *> outputDeviceMenuItems;
 
-    std::map<int,wxMenuItem *> demod_menuitems;
+    std::map<int,wxMenuItem *> demodMenuItems;
 
     wxDECLARE_EVENT_TABLE();
 };
