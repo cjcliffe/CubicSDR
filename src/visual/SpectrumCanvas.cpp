@@ -15,6 +15,7 @@
 #include "AppFrame.h"
 #include <algorithm>
 #include <wx/numformatter.h>
+#include "WaterfallCanvas.h"
 
 wxBEGIN_EVENT_TABLE(SpectrumCanvas, wxGLCanvas) EVT_PAINT(SpectrumCanvas::OnPaint)
 EVT_IDLE(SpectrumCanvas::OnIdle)
@@ -27,7 +28,8 @@ wxEND_EVENT_TABLE()
 
 SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE), parent(parent), fft_size(0), in(NULL), out(NULL), plan(NULL), center_freq(0), bandwidth(0), isView(0) {
+        wxFULL_REPAINT_ON_RESIZE), parent(parent), fft_size(0), in(NULL), out(NULL), plan(NULL), waterfallCanvas(NULL), center_freq(0), bandwidth(0), isView(
+                0) {
 
     glContext = new SpectrumContext(this, &wxGetApp().GetContext(this));
 
@@ -56,7 +58,6 @@ void SpectrumCanvas::Setup(int fft_size_in) {
         fftw_destroy_plan(plan);
     }
     plan = fftw_plan_dft_1d(fft_size, in, out, FFTW_FORWARD, FFTW_MEASURE);
-
 
     fft_ceil_ma = fft_ceil_maa = 100.0;
     fft_floor_ma = fft_floor_maa = 0.0;
@@ -171,8 +172,6 @@ void SpectrumCanvas::setData(DemodulatorThreadIQData *input) {
     }
 }
 
-
-
 void SpectrumCanvas::SetView(int center_freq_in, int bandwidth_in) {
     isView = true;
     center_freq = center_freq_in;
@@ -181,7 +180,10 @@ void SpectrumCanvas::SetView(int center_freq_in, int bandwidth_in) {
 
 void SpectrumCanvas::DisableView() {
     isView = false;
+    center_freq = wxGetApp().getFrequency();
+    bandwidth = SRATE;
 }
+
 void SpectrumCanvas::SetCenterFrequency(unsigned int center_freq_in) {
     center_freq = center_freq_in;
 }
@@ -217,12 +219,32 @@ void SpectrumCanvas::mouseMoved(wxMouseEvent& event) {
 
         if (freqChange != 0) {
             int freq = wxGetApp().getFrequency();
-            freq -= freqChange;
-            wxGetApp().setFrequency(freq);
 
-            ((wxFrame*) parent)->GetStatusBar()->SetStatusText(
-                    wxString::Format(wxT("Set center frequency: %s"),
-                            wxNumberFormatter::ToString((long) freq, wxNumberFormatter::Style_WithThousandsSep)));
+            if (isView) {
+                center_freq = center_freq - freqChange;
+                if (waterfallCanvas) {
+                    waterfallCanvas->SetCenterFrequency(center_freq);
+                }
+
+                int bw = (int)bandwidth;
+                int bwOfs = ((int)center_freq>freq)?((int)bandwidth/2):(-(int)bandwidth/2);
+                int freqEdge = ((int)center_freq+bwOfs);
+
+                if (abs(freq-freqEdge) > (SRATE/2)) {
+                    freqChange = -(((int)center_freq>freq)?(freqEdge-freq-(SRATE/2)):(freqEdge-freq+(SRATE/2)));
+                } else {
+                    freqChange = 0;
+                }
+            }
+
+            if (freqChange) {
+                freq -= freqChange;
+                wxGetApp().setFrequency(freq);
+                ((wxFrame*) parent)->GetStatusBar()->SetStatusText(
+                        wxString::Format(wxT("Set center frequency: %s"),
+                                wxNumberFormatter::ToString((long) freq, wxNumberFormatter::Style_WithThousandsSep)));
+            }
+
         }
     }
 }
@@ -246,6 +268,9 @@ void SpectrumCanvas::mouseLeftWindow(wxMouseEvent& event) {
     SetCursor(wxCURSOR_SIZEWE);
 }
 
+void SpectrumCanvas::attachWaterfallCanvas(WaterfallCanvas* canvas_in) {
+    waterfallCanvas = canvas_in;
+}
 //void SpectrumCanvas::rightClick(wxMouseEvent& event) {}
 //void SpectrumCanvas::keyPressed(wxKeyEvent& event) {}
 //void SpectrumCanvas::keyReleased(wxKeyEvent& event) {}

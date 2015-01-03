@@ -11,6 +11,8 @@
 #include "fftw3.h"
 #include "MouseTracker.h"
 
+class WaterfallCanvas;
+
 class SpectrumCanvas: public wxGLCanvas {
 public:
     std::vector<float> spectrum_points;
@@ -29,6 +31,8 @@ public:
 
     void SetBandwidth(unsigned int bandwidth_in);
     unsigned int GetBandwidth();
+
+    void attachWaterfallCanvas(WaterfallCanvas *canvas_in);
 
 private:
     void OnPaint(wxPaintEvent& event);
@@ -56,6 +60,7 @@ private:
     std::vector<double> fft_result_maa;
 
     SpectrumContext *glContext;
+    WaterfallCanvas *waterfallCanvas;
     int fft_size;
 
     unsigned int center_freq;

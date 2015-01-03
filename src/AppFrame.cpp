@@ -79,6 +79,7 @@ AppFrame::AppFrame() :
     demodWaterfallCanvas->Setup(1024, 256);
     demodWaterfallCanvas->SetView(DEFAULT_FREQ, 300000);
     demodWaterfallCanvas->attachSpectrumCanvas(demodSpectrumCanvas);
+    demodSpectrumCanvas->attachWaterfallCanvas(demodWaterfallCanvas);
     demodVisuals->Add(demodWaterfallCanvas, 3, wxEXPAND | wxALL, 0);
 
     demodTray->Add(demodVisuals, 30, wxEXPAND | wxALL, 0);
@@ -103,6 +104,7 @@ AppFrame::AppFrame() :
     waterfallCanvas = new WaterfallCanvas(this, NULL);
     waterfallCanvas->Setup(2048, 512);
     waterfallCanvas->attachSpectrumCanvas(spectrumCanvas);
+    spectrumCanvas->attachWaterfallCanvas(waterfallCanvas);
     vbox->Add(waterfallCanvas, 4, wxEXPAND | wxALL, 0);
 
     this->SetSizer(vbox);
