@@ -13,7 +13,7 @@ typedef ThreadQueue<AudioThreadInput *> DemodulatorThreadOutputQueue;
 class DemodulatorThread {
 public:
 
-    DemodulatorThread(DemodulatorThreadPostInputQueue* pQueueIn, DemodulatorThreadControlCommandQueue *threadQueueControl,
+    DemodulatorThread(DemodulatorThreadPostInputQueue* iqInputQueue, DemodulatorThreadControlCommandQueue *threadQueueControl,
             DemodulatorThreadCommandQueue* threadQueueNotify);
     ~DemodulatorThread();
 
@@ -23,15 +23,9 @@ public:
     void threadMain();
 #endif
 
-    void setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {
-        visOutQueue = tQueue;
-    }
+    void setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue);
+    void setAudioOutputQueue(AudioThreadInputQueue *tQueue);
 
-    void setAudioInputQueue(AudioThreadInputQueue *tQueue) {
-        audioInputQueue = tQueue;
-    }
-
-    void initialize();
     void terminate();
 
     void setStereo(bool state);
@@ -51,32 +45,32 @@ public:
 #endif
 
 protected:
-    std::deque<AudioThreadInput *> buffers;
-    std::deque<AudioThreadInput *>::iterator buffers_i;
+    std::deque<AudioThreadInput *> outputBuffers;
+    std::deque<AudioThreadInput *>::iterator outputBuffersI;
 
-    std::vector<liquid_float_complex> resampled_data;
-    std::vector<liquid_float_complex> agc_data;
-    std::vector<float> agc_am_data;
-    std::vector<float> demod_output;
-    std::vector<float> demod_output_stereo;
-    std::vector<float> resampled_audio_output;
-    std::vector<float> resampled_audio_output_stereo;
+    std::vector<liquid_float_complex> resampledData;
+    std::vector<liquid_float_complex> agcData;
+    std::vector<float> agcAMData;
+    std::vector<float> demodOutputData;
+    std::vector<float> demodStereoData;
+    std::vector<float> resampledOutputData;
+    std::vector<float> resampledStereoData;
 
-    DemodulatorThreadPostInputQueue* postInputQueue;
-    DemodulatorThreadOutputQueue* visOutQueue;
-    AudioThreadInputQueue *audioInputQueue;
+    DemodulatorThreadPostInputQueue* iqInputQueue;
+    DemodulatorThreadOutputQueue* audioVisOutputQueue;
+    AudioThreadInputQueue *audioOutputQueue;
 
-    freqdem fdem;
-    ampmodem ampdem_active;
-    ampmodem ampdem;
-    ampmodem ampdem_usb;
-    ampmodem ampdem_lsb;
+    freqdem demodFM;
+    ampmodem demodAM;
+    ampmodem demodAM_DSB_CSP;
+    ampmodem demodAM_LSB;
+    ampmodem demodAM_USB;
 
-    agc_crcf agc;
+    agc_crcf iqAutoGain;
 
-    float am_max;
-    float am_max_ma;
-    float am_max_maa;
+    float amOutputCeil;
+    float amOutputCeilMA;
+    float amOutputCeilMAA;
 
     std::atomic<bool> stereo;
     std::atomic<bool> terminated;
@@ -84,8 +78,7 @@ protected:
 
     DemodulatorThreadCommandQueue* threadQueueNotify;
     DemodulatorThreadControlCommandQueue *threadQueueControl;
-    std::atomic<float> squelch_level;
-    float squelch_tolerance;
-    std::atomic<float> signal_level;
-    bool squelch_enabled;
+    std::atomic<float> squelchLevel;
+    std::atomic<float> signalLevel;
+    bool squelchEnabled;
 };

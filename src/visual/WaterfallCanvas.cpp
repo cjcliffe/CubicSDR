@@ -23,22 +23,24 @@ wxBEGIN_EVENT_TABLE(WaterfallCanvas, wxGLCanvas) EVT_PAINT(WaterfallCanvas::OnPa
 EVT_KEY_DOWN(WaterfallCanvas::OnKeyDown)
 EVT_KEY_UP(WaterfallCanvas::OnKeyUp)
 EVT_IDLE(WaterfallCanvas::OnIdle)
-EVT_MOTION(WaterfallCanvas::mouseMoved)
-EVT_LEFT_DOWN(WaterfallCanvas::mouseDown)
-EVT_LEFT_UP(WaterfallCanvas::mouseReleased)
-EVT_LEAVE_WINDOW(WaterfallCanvas::mouseLeftWindow)
-EVT_ENTER_WINDOW(WaterfallCanvas::mouseEnterWindow)
+EVT_MOTION(WaterfallCanvas::OnMouseMoved)
+EVT_LEFT_DOWN(WaterfallCanvas::OnMouseDown)
+EVT_LEFT_UP(WaterfallCanvas::OnMouseReleased)
+EVT_RIGHT_DOWN(WaterfallCanvas::OnMouseRightDown)
+EVT_RIGHT_UP(WaterfallCanvas::OnMouseRightReleased)
+EVT_LEAVE_WINDOW(WaterfallCanvas::OnMouseLeftWindow)
+EVT_ENTER_WINDOW(WaterfallCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         InteractiveCanvas(parent, attribList), spectrumCanvas(NULL), activeDemodulatorBandwidth(0), activeDemodulatorFrequency(0), dragState(
                 WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), fft_size(0), waterfall_lines(0), plan(
-        NULL), in(NULL), out(NULL), resampler(NULL), resample_ratio(0), last_input_bandwidth(0), zoom(0) {
+        NULL), in(NULL), out(NULL), resampler(NULL), resamplerRatio(0), lastInputBandwidth(0), zoom(1), mouseZoom(1) {
 
     glContext = new WaterfallContext(this, &wxGetApp().GetContext(this));
 
-    nco_shift = nco_crcf_create(LIQUID_NCO);
-    shift_freq = 0;
+    freqShifter = nco_crcf_create(LIQUID_NCO);
+    shiftFrequency = 0;
 
     fft_ceil_ma = fft_ceil_maa = 100.0;
     fft_floor_ma = fft_floor_maa = 0.0;
@@ -47,10 +49,10 @@ WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
 }
 
 WaterfallCanvas::~WaterfallCanvas() {
-    nco_crcf_destroy(nco_shift);
+    nco_crcf_destroy(freqShifter);
 }
 
-void WaterfallCanvas::Setup(int fft_size_in, int waterfall_lines_in) {
+void WaterfallCanvas::setup(int fft_size_in, int waterfall_lines_in) {
     if (fft_size == fft_size_in && waterfall_lines_in == waterfall_lines) {
         return;
     }
@@ -103,14 +105,14 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     bool isNew = shiftDown
             || (wxGetApp().getDemodMgr().getLastActiveDemodulator() && !wxGetApp().getDemodMgr().getLastActiveDemodulator()->isActive());
 
-    int currentBandwidth = GetBandwidth();
-    int currentCenterFreq = GetCenterFrequency();
+    int currentBandwidth = getBandwidth();
+    int currentCenterFreq = getCenterFrequency();
 
-    if (mTracker.mouseInView()) {
+    if (mouseTracker.mouseInView()) {
         if (nextDragState == WF_DRAG_RANGE) {
-            if (mTracker.mouseDown()) {
-                float width = mTracker.getOriginDeltaMouseX();
-                float centerPos = mTracker.getOriginMouseX() + width / 2.0;
+            if (mouseTracker.mouseDown()) {
+                float width = mouseTracker.getOriginDeltaMouseX();
+                float centerPos = mouseTracker.getOriginMouseX() + width / 2.0;
 
                 if (isNew) {
                     glContext->DrawDemod(lastActiveDemodulator, 1, 1, 1, currentCenterFreq, currentBandwidth);
@@ -124,10 +126,10 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
             } else {
                 if (isNew) {
                     glContext->DrawDemod(lastActiveDemodulator, 1, 1, 1, currentCenterFreq, currentBandwidth);
-                    glContext->DrawFreqSelector(mTracker.getMouseX(), 0, 1, 0, 1.0 / (float) ClientSize.x, currentCenterFreq, currentBandwidth);
+                    glContext->DrawFreqSelector(mouseTracker.getMouseX(), 0, 1, 0, 1.0 / (float) ClientSize.x, currentCenterFreq, currentBandwidth);
                 } else {
                     glContext->DrawDemod(lastActiveDemodulator, 1, 0, 0, currentCenterFreq, currentBandwidth);
-                    glContext->DrawFreqSelector(mTracker.getMouseX(), 1, 1, 0, 1.0 / (float) ClientSize.x, currentCenterFreq, currentBandwidth);
+                    glContext->DrawFreqSelector(mouseTracker.getMouseX(), 1, 1, 0, 1.0 / (float) ClientSize.x, currentCenterFreq, currentBandwidth);
                 }
             }
         } else {
@@ -135,13 +137,13 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
                 if (lastActiveDemodulator) {
                     if (isNew) {
                         glContext->DrawDemod(lastActiveDemodulator, 1, 1, 1, currentCenterFreq, currentBandwidth);
-                        glContext->DrawFreqSelector(mTracker.getMouseX(), 0, 1, 0, 0, currentCenterFreq, currentBandwidth);
+                        glContext->DrawFreqSelector(mouseTracker.getMouseX(), 0, 1, 0, 0, currentCenterFreq, currentBandwidth);
                     } else {
                         glContext->DrawDemod(lastActiveDemodulator, 1, 0, 0, currentCenterFreq, currentBandwidth);
-                        glContext->DrawFreqSelector(mTracker.getMouseX(), 1, 1, 0, 0, currentCenterFreq, currentBandwidth);
+                        glContext->DrawFreqSelector(mouseTracker.getMouseX(), 1, 1, 0, 0, currentCenterFreq, currentBandwidth);
                     }
                 } else {
-                    glContext->DrawFreqSelector(mTracker.getMouseX(), 1, 1, 0, 0, currentCenterFreq, currentBandwidth);
+                    glContext->DrawFreqSelector(mouseTracker.getMouseX(), 1, 1, 0, 0, currentCenterFreq, currentBandwidth);
                 }
             } else {
                 if (lastActiveDemodulator) {
@@ -178,10 +180,10 @@ void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
     ctrlDown = event.ControlDown();
     switch (event.GetKeyCode()) {
     case 'A':
-        zoom = 0;
+        zoom = 1.0;
         break;
     case 'Z':
-        zoom = 0;
+        zoom = 1.0;
         break;
     }
 }
@@ -196,27 +198,27 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     unsigned int bw;
     switch (event.GetKeyCode()) {
     case 'A':
-        zoom = 1;
+        zoom = 0.95;
         break;
     case 'Z':
-        zoom = -1;
+        zoom = 1.05;
         break;
     case WXK_RIGHT:
         freq = wxGetApp().getFrequency();
         if (shiftDown) {
             freq += SRATE * 10;
             if (isView) {
-                SetView(center_freq + SRATE * 10, GetBandwidth());
+                setView(centerFreq + SRATE * 10, getBandwidth());
                 if (spectrumCanvas) {
-                    spectrumCanvas->SetView(GetCenterFrequency(), GetBandwidth());
+                    spectrumCanvas->setView(getCenterFrequency(), getBandwidth());
                 }
             }
         } else {
             freq += SRATE / 2;
             if (isView) {
-                SetView(center_freq + SRATE / 2, GetBandwidth());
+                setView(centerFreq + SRATE / 2, getBandwidth());
                 if (spectrumCanvas) {
-                    spectrumCanvas->SetView(GetCenterFrequency(), GetBandwidth());
+                    spectrumCanvas->setView(getCenterFrequency(), getBandwidth());
                 }
             }
         }
@@ -228,17 +230,17 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         if (shiftDown) {
             freq -= SRATE * 10;
             if (isView) {
-                SetView(center_freq - SRATE * 10, GetBandwidth());
+                setView(centerFreq - SRATE * 10, getBandwidth());
                 if (spectrumCanvas) {
-                    spectrumCanvas->SetView(GetCenterFrequency(), GetBandwidth());
+                    spectrumCanvas->setView(getCenterFrequency(), getBandwidth());
                 }
             }
         } else {
             freq -= SRATE / 2;
             if (isView) {
-                SetView(center_freq - SRATE / 2, GetBandwidth());
+                setView(centerFreq - SRATE / 2, getBandwidth());
                 if (spectrumCanvas) {
-                    spectrumCanvas->SetView(GetCenterFrequency(), GetBandwidth());
+                    spectrumCanvas->setView(getCenterFrequency(), getBandwidth());
                 }
             }
         }
@@ -284,59 +286,66 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
         return;
     }
 
+    float currentZoom = zoom;
+
+    if (mouseZoom != 1) {
+        currentZoom = mouseZoom;
+        mouseZoom = mouseZoom + (1.0 - mouseZoom)*0.2;
+    }
+
     unsigned int bw;
-    if (zoom) {
+    if (currentZoom != 1) {
         int freq = wxGetApp().getFrequency();
 
-        if (zoom > 0) {
-            center_freq = GetCenterFrequency();
-            bw = GetBandwidth();
-            bw = (unsigned int) ceil((float) bw * 0.95);
+        if (currentZoom < 1) {
+            centerFreq = getCenterFrequency();
+            bw = getBandwidth();
+            bw = (unsigned int) ceil((float) bw * currentZoom);
             if (bw < 80000) {
                 bw = 80000;
             }
-            if (mTracker.mouseInView()) {
-                int mfreqA = GetFrequencyAt(mTracker.getMouseX());
-                SetBandwidth(bw);
-                int mfreqB = GetFrequencyAt(mTracker.getMouseX());
-                center_freq += mfreqA - mfreqB;
+            if (mouseTracker.mouseInView()) {
+                int mfreqA = getFrequencyAt(mouseTracker.getMouseX());
+                setBandwidth(bw);
+                int mfreqB = getFrequencyAt(mouseTracker.getMouseX());
+                centerFreq += mfreqA - mfreqB;
             }
 
-            SetView(center_freq, bw);
+            setView(centerFreq, bw);
             if (spectrumCanvas) {
-                spectrumCanvas->SetView(center_freq, bw);
+                spectrumCanvas->setView(centerFreq, bw);
             }
         } else {
             if (isView) {
-                bw = GetBandwidth();
-                bw = (unsigned int) ceil((float) bw * 1.05);
+                bw = getBandwidth();
+                bw = (unsigned int) ceil((float) bw * currentZoom);
                 if ((int) bw >= SRATE) {
                     bw = (unsigned int) SRATE;
-                    DisableView();
+                    disableView();
                     if (spectrumCanvas) {
-                        spectrumCanvas->DisableView();
+                        spectrumCanvas->disableView();
                     }
                 } else {
-                    if (mTracker.mouseInView()) {
+                    if (mouseTracker.mouseInView()) {
                         int freq = wxGetApp().getFrequency();
-                        int mfreqA = GetFrequencyAt(mTracker.getMouseX());
-                        SetBandwidth(bw);
-                        int mfreqB = GetFrequencyAt(mTracker.getMouseX());
-                        center_freq += mfreqA - mfreqB;
+                        int mfreqA = getFrequencyAt(mouseTracker.getMouseX());
+                        setBandwidth(bw);
+                        int mfreqB = getFrequencyAt(mouseTracker.getMouseX());
+                        centerFreq += mfreqA - mfreqB;
                     }
 
-                    SetView(GetCenterFrequency(), bw);
+                    setView(getCenterFrequency(), bw);
                     if (spectrumCanvas) {
-                        spectrumCanvas->SetView(center_freq, bw);
+                        spectrumCanvas->setView(centerFreq, bw);
                     }
                 }
             }
         }
-        if (center_freq < freq && (center_freq - bandwidth / 2) < (freq - SRATE / 2)) {
-            center_freq = (freq - SRATE / 2) + bandwidth / 2;
+        if (centerFreq < freq && (centerFreq - bandwidth / 2) < (freq - SRATE / 2)) {
+            centerFreq = (freq - SRATE / 2) + bandwidth / 2;
         }
-        if (center_freq > freq && (center_freq + bandwidth / 2) > (freq + SRATE / 2)) {
-            center_freq = (freq + SRATE / 2) - bandwidth / 2;
+        if (centerFreq > freq && (centerFreq + bandwidth / 2) > (freq + SRATE / 2)) {
+            centerFreq = (freq + SRATE / 2) - bandwidth / 2;
         }
     }
 
@@ -360,63 +369,63 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
                 return;
             }
 
-            if (center_freq != input->frequency) {
-                if (((int) center_freq - (int) input->frequency) != shift_freq || last_input_bandwidth != input->bandwidth) {
-                    if ((int) input->frequency - abs((int) center_freq) < (int) ((float) ((float) SRATE / 2.0))) {
-                        shift_freq = (int) center_freq - (int) input->frequency;
-                        nco_crcf_reset(nco_shift);
-                        nco_crcf_set_frequency(nco_shift, (2.0 * M_PI) * (((float) abs(shift_freq)) / ((float) input->bandwidth)));
+            if (centerFreq != input->frequency) {
+                if (((int) centerFreq - (int) input->frequency) != shiftFrequency || lastInputBandwidth != input->bandwidth) {
+                    if ((int) input->frequency - abs((int) centerFreq) < (int) ((float) ((float) SRATE / 2.0))) {
+                        shiftFrequency = (int) centerFreq - (int) input->frequency;
+                        nco_crcf_reset(freqShifter);
+                        nco_crcf_set_frequency(freqShifter, (2.0 * M_PI) * (((float) abs(shiftFrequency)) / ((float) input->bandwidth)));
                     }
                 }
 
-                if (shift_buffer.size() != input->data.size()) {
-                    if (shift_buffer.capacity() < input->data.size()) {
-                        shift_buffer.reserve(input->data.size());
+                if (shiftBuffer.size() != input->data.size()) {
+                    if (shiftBuffer.capacity() < input->data.size()) {
+                        shiftBuffer.reserve(input->data.size());
                     }
-                    shift_buffer.resize(input->data.size());
+                    shiftBuffer.resize(input->data.size());
                 }
 
-                if (shift_freq < 0) {
-                    nco_crcf_mix_block_up(nco_shift, &input->data[0], &shift_buffer[0], input->data.size());
+                if (shiftFrequency < 0) {
+                    nco_crcf_mix_block_up(freqShifter, &input->data[0], &shiftBuffer[0], input->data.size());
                 } else {
-                    nco_crcf_mix_block_down(nco_shift, &input->data[0], &shift_buffer[0], input->data.size());
+                    nco_crcf_mix_block_down(freqShifter, &input->data[0], &shiftBuffer[0], input->data.size());
                 }
             } else {
-                shift_buffer.assign(input->data.begin(), input->data.end());
+                shiftBuffer.assign(input->data.begin(), input->data.end());
             }
 
-            if (!resampler || bandwidth != last_bandwidth || last_input_bandwidth != input->bandwidth) {
-                resample_ratio = (double) (bandwidth) / (double) input->bandwidth;
+            if (!resampler || bandwidth != lastBandwidth || lastInputBandwidth != input->bandwidth) {
+                resamplerRatio = (double) (bandwidth) / (double) input->bandwidth;
 
-                float As = 60.0f;
+                float As = 120.0f;
 
                 if (resampler) {
                     msresamp_crcf_destroy(resampler);
                 }
-                resampler = msresamp_crcf_create(resample_ratio, As);
+                resampler = msresamp_crcf_create(resamplerRatio, As);
 
-                last_bandwidth = bandwidth;
-                last_input_bandwidth = input->bandwidth;
+                lastBandwidth = bandwidth;
+                lastInputBandwidth = input->bandwidth;
             }
 
-            int out_size = ceil((double) (input->data.size()) * resample_ratio) + 512;
+            int out_size = ceil((double) (input->data.size()) * resamplerRatio) + 512;
 
-            if (resampler_buffer.size() != out_size) {
-                if (resampler_buffer.capacity() < out_size) {
-                    resampler_buffer.reserve(out_size);
+            if (resampleBuffer.size() != out_size) {
+                if (resampleBuffer.capacity() < out_size) {
+                    resampleBuffer.reserve(out_size);
                 }
-                resampler_buffer.resize(out_size);
+                resampleBuffer.resize(out_size);
             }
 
             unsigned int num_written;
-            msresamp_crcf_execute(resampler, &shift_buffer[0], input->data.size(), &resampler_buffer[0], &num_written);
+            msresamp_crcf_execute(resampler, &shiftBuffer[0], input->data.size(), &resampleBuffer[0], &num_written);
 
-            resampler_buffer.resize(fft_size);
+            resampleBuffer.resize(fft_size);
 
             if (num_written < fft_size) {
                 for (int i = 0; i < num_written; i++) {
-                    in[i][0] = resampler_buffer[i].real;
-                    in[i][1] = resampler_buffer[i].imag;
+                    in[i][0] = resampleBuffer[i].real;
+                    in[i][1] = resampleBuffer[i].imag;
                 }
                 for (int i = num_written; i < fft_size; i++) {
                     in[i][0] = 0;
@@ -424,8 +433,8 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
                 }
             } else {
                 for (int i = 0; i < fft_size; i++) {
-                    in[i][0] = resampler_buffer[i].real;
-                    in[i][1] = resampler_buffer[i].imag;
+                    in[i][0] = resampleBuffer[i].real;
+                    in[i][1] = resampleBuffer[i].imag;
                 }
             }
         } else {
@@ -514,17 +523,17 @@ void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
     Refresh(false);
 }
 
-void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
-    InteractiveCanvas::mouseMoved(event);
+void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
+    InteractiveCanvas::OnMouseMoved(event);
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getActiveDemodulator();
 
-    if (mTracker.mouseDown()) {
+    if (mouseTracker.mouseDown()) {
         if (demod == NULL) {
             return;
         }
         if (dragState == WF_DRAG_BANDWIDTH_LEFT || dragState == WF_DRAG_BANDWIDTH_RIGHT) {
 
-            int bwDiff = (int) (mTracker.getDeltaMouseX() * (float) GetBandwidth()) * 2;
+            int bwDiff = (int) (mouseTracker.getDeltaMouseX() * (float) getBandwidth()) * 2;
 
             if (dragState == WF_DRAG_BANDWIDTH_LEFT) {
                 bwDiff = -bwDiff;
@@ -550,7 +559,7 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
         }
 
         if (dragState == WF_DRAG_FREQUENCY) {
-            int bwDiff = (int) (mTracker.getDeltaMouseX() * (float) GetBandwidth());
+            int bwDiff = (int) (mouseTracker.getDeltaMouseX() * (float) getBandwidth());
 
             if (!activeDemodulatorFrequency) {
                 activeDemodulatorFrequency = demod->getParams().frequency;
@@ -567,8 +576,10 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
 
             setStatusText("Set demodulator frequency: %s", activeDemodulatorFrequency);
         }
+    } else if (mouseTracker.mouseRightDown()) {
+        mouseZoom = mouseZoom + ((1.0 - (mouseTracker.getDeltaMouseY()*4.0))-mouseZoom) * 0.1;
     } else {
-        int freqPos = GetFrequencyAt(mTracker.getMouseX());
+        int freqPos = getFrequencyAt(mouseTracker.getMouseX());
 
         std::vector<DemodulatorInstance *> *demodsHover = wxGetApp().getDemodMgr().getDemodulatorsAt(freqPos, 15000);
 
@@ -576,8 +587,8 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
 
         if (altDown) {
             nextDragState = WF_DRAG_RANGE;
-            mTracker.setVertDragLock(true);
-            mTracker.setHorizDragLock(false);
+            mouseTracker.setVertDragLock(true);
+            mouseTracker.setHorizDragLock(false);
             if (shiftDown) {
                 setStatusText("Click and drag to create a new demodulator by range.");
             } else {
@@ -585,7 +596,7 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
             }
         } else if (demodsHover->size()) {
             int hovered = -1;
-            int near_dist = GetBandwidth();
+            int near_dist = getBandwidth();
 
             DemodulatorInstance *activeDemodulator = NULL;
 
@@ -627,15 +638,15 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
                     nextDragState = WF_DRAG_BANDWIDTH_RIGHT;
                 }
 
-                mTracker.setVertDragLock(true);
-                mTracker.setHorizDragLock(false);
+                mouseTracker.setVertDragLock(true);
+                mouseTracker.setHorizDragLock(false);
                 setStatusText("Click and drag to change demodulator bandwidth. D to delete, SPACE for stereo.");
             } else {
                 SetCursor(wxCURSOR_SIZING);
                 nextDragState = WF_DRAG_FREQUENCY;
 
-                mTracker.setVertDragLock(true);
-                mTracker.setHorizDragLock(false);
+                mouseTracker.setVertDragLock(true);
+                mouseTracker.setHorizDragLock(false);
                 setStatusText("Click and drag to change demodulator frequency. D to delete, SPACE for stereo.");
             }
         } else {
@@ -652,8 +663,8 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
     }
 }
 
-void WaterfallCanvas::mouseDown(wxMouseEvent& event) {
-    InteractiveCanvas::mouseDown(event);
+void WaterfallCanvas::OnMouseDown(wxMouseEvent& event) {
+    InteractiveCanvas::OnMouseDown(event);
 
     dragState = nextDragState;
 
@@ -665,25 +676,25 @@ void WaterfallCanvas::mouseDown(wxMouseEvent& event) {
     activeDemodulatorFrequency = 0;
 }
 
-void WaterfallCanvas::mouseWheelMoved(wxMouseEvent& event) {
-    InteractiveCanvas::mouseWheelMoved(event);
+void WaterfallCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
+    InteractiveCanvas::OnMouseWheelMoved(event);
 }
 
-void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
-    InteractiveCanvas::mouseReleased(event);
+void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
+    InteractiveCanvas::OnMouseReleased(event);
 
     bool isNew = shiftDown
             || (wxGetApp().getDemodMgr().getLastActiveDemodulator() && !wxGetApp().getDemodMgr().getLastActiveDemodulator()->isActive());
 
-    mTracker.setVertDragLock(false);
-    mTracker.setHorizDragLock(false);
+    mouseTracker.setVertDragLock(false);
+    mouseTracker.setHorizDragLock(false);
 
     DemodulatorInstance *demod;
 
-    if (mTracker.getOriginDeltaMouseX() == 0 && mTracker.getOriginDeltaMouseY() == 0) {
-        float pos = mTracker.getMouseX();
-        int input_center_freq = GetCenterFrequency();
-        int freq = input_center_freq - (int) (0.5 * (float) GetBandwidth()) + (int) ((float) pos * (float) GetBandwidth());
+    if (mouseTracker.getOriginDeltaMouseX() == 0 && mouseTracker.getOriginDeltaMouseY() == 0) {
+        float pos = mouseTracker.getMouseX();
+        int input_center_freq = getCenterFrequency();
+        int freq = input_center_freq - (int) (0.5 * (float) getBandwidth()) + (int) ((float) pos * (float) getBandwidth());
 
         if (dragState == WF_DRAG_NONE) {
             if (!isNew && wxGetApp().getDemodMgr().getDemodulators().size()) {
@@ -723,19 +734,19 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
             wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getLastActiveDemodulator(), false);
             SetCursor(wxCURSOR_SIZING);
             nextDragState = WF_DRAG_FREQUENCY;
-            mTracker.setVertDragLock(true);
-            mTracker.setHorizDragLock(false);
+            mouseTracker.setVertDragLock(true);
+            mouseTracker.setHorizDragLock(false);
         } else {
             wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getActiveDemodulator(), false);
             nextDragState = WF_DRAG_FREQUENCY;
         }
     } else if (dragState == WF_DRAG_RANGE) {
-        float width = mTracker.getOriginDeltaMouseX();
-        float pos = mTracker.getOriginMouseX() + width / 2.0;
+        float width = mouseTracker.getOriginDeltaMouseX();
+        float pos = mouseTracker.getOriginMouseX() + width / 2.0;
 
-        int input_center_freq = GetCenterFrequency();
-        unsigned int freq = input_center_freq - (int) (0.5 * (float) GetBandwidth()) + (int) ((float) pos * (float) GetBandwidth());
-        unsigned int bw = (unsigned int) (fabs(width) * (float) GetBandwidth());
+        int input_center_freq = getCenterFrequency();
+        unsigned int freq = input_center_freq - (int) (0.5 * (float) getBandwidth()) + (int) ((float) pos * (float) getBandwidth());
+        unsigned int bw = (unsigned int) (fabs(width) * (float) getBandwidth());
 
         if (bw < MIN_BANDWIDTH) {
             bw = MIN_BANDWIDTH;
@@ -786,14 +797,30 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
     dragState = WF_DRAG_NONE;
 }
 
-void WaterfallCanvas::mouseLeftWindow(wxMouseEvent& event) {
-    InteractiveCanvas::mouseLeftWindow(event);
+void WaterfallCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
+    InteractiveCanvas::OnMouseLeftWindow(event);
     SetCursor(wxCURSOR_CROSS);
     wxGetApp().getDemodMgr().setActiveDemodulator(NULL);
+    mouseZoom = 1.0;
 }
 
-void WaterfallCanvas::mouseEnterWindow(wxMouseEvent& event) {
-    InteractiveCanvas::mouseEnterWindow(event);
+void WaterfallCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
+    InteractiveCanvas::OnMouseEnterWindow(event);
     SetCursor(wxCURSOR_CROSS);
 }
 
+void WaterfallCanvas::OnMouseRightDown(wxMouseEvent& event) {
+    InteractiveCanvas::OnMouseRightDown(event);
+
+    SetCursor(wxCURSOR_SIZENS);
+    mouseTracker.setVertDragLock(true);
+    mouseTracker.setHorizDragLock(true);
+}
+
+void WaterfallCanvas::OnMouseRightReleased(wxMouseEvent& event) {
+    InteractiveCanvas::OnMouseRightReleased(event);
+    SetCursor(wxCURSOR_CROSS);
+    mouseTracker.setVertDragLock(false);
+    mouseTracker.setHorizDragLock(false);
+    mouseZoom = 1.0;
+}

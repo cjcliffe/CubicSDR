@@ -38,15 +38,15 @@ AppFrame::AppFrame() :
     wxBoxSizer *demodTray = new wxBoxSizer(wxHORIZONTAL);
 
     demodSpectrumCanvas = new SpectrumCanvas(this, NULL);
-    demodSpectrumCanvas->Setup(1024);
-    demodSpectrumCanvas->SetView(DEFAULT_FREQ, 300000);
+    demodSpectrumCanvas->setup(1024);
+    demodSpectrumCanvas->setView(DEFAULT_FREQ, 300000);
     demodVisuals->Add(demodSpectrumCanvas, 1, wxEXPAND | wxALL, 0);
 
     demodVisuals->AddSpacer(1);
 
     demodWaterfallCanvas = new WaterfallCanvas(this, NULL);
-    demodWaterfallCanvas->Setup(1024, 256);
-    demodWaterfallCanvas->SetView(DEFAULT_FREQ, 300000);
+    demodWaterfallCanvas->setup(1024, 256);
+    demodWaterfallCanvas->setView(DEFAULT_FREQ, 300000);
     demodWaterfallCanvas->attachSpectrumCanvas(demodSpectrumCanvas);
     demodSpectrumCanvas->attachWaterfallCanvas(demodWaterfallCanvas);
     demodVisuals->Add(demodWaterfallCanvas, 3, wxEXPAND | wxALL, 0);
@@ -67,11 +67,11 @@ AppFrame::AppFrame() :
     vbox->Add(demodTray, 2, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(2);
     spectrumCanvas = new SpectrumCanvas(this, NULL);
-    spectrumCanvas->Setup(2048);
+    spectrumCanvas->setup(2048);
     vbox->Add(spectrumCanvas, 1, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(2);
     waterfallCanvas = new WaterfallCanvas(this, NULL);
-    waterfallCanvas->Setup(2048, 512);
+    waterfallCanvas->setup(2048, 512);
     waterfallCanvas->attachSpectrumCanvas(spectrumCanvas);
     spectrumCanvas->attachWaterfallCanvas(waterfallCanvas);
     vbox->Add(waterfallCanvas, 4, wxEXPAND | wxALL, 0);
@@ -101,33 +101,33 @@ AppFrame::AppFrame() :
 
     for (devices_i = devices.begin(); devices_i != devices.end(); devices_i++) {
         if (devices_i->inputChannels) {
-            input_devices[i] = *devices_i;
+            inputDevices[i] = *devices_i;
         }
         if (devices_i->outputChannels) {
-            output_devices[i] = *devices_i;
+            outputDevices[i] = *devices_i;
         }
         i++;
     }
 
     i = 0;
 
-    for (mdevices_i = output_devices.begin(); mdevices_i != output_devices.end(); mdevices_i++) {
+    for (mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
         wxMenuItem *itm = menu->AppendRadioItem(wxID_RT_AUDIO_DEVICE + mdevices_i->first, mdevices_i->second.name, wxT("Description?"));
         itm->SetId(wxID_RT_AUDIO_DEVICE + mdevices_i->first);
         if (mdevices_i->second.isDefaultOutput) {
             itm->Check(true);
         }
-        output_device_menuitems[mdevices_i->first] = itm;
+        outputDeviceMenuItems[mdevices_i->first] = itm;
     }
 
     wxMenuBar *menuBar = new wxMenuBar;
     menuBar->Append(menu, wxT("Active Demodulator &Output"));
 
     wxMenu *demodMenu = new wxMenu;
-    demod_menuitems[DEMOD_TYPE_FM] = demodMenu->AppendRadioItem(wxID_DEMOD_TYPE_FM, wxT("FM"), wxT("Description?"));
-    demod_menuitems[DEMOD_TYPE_AM] = demodMenu->AppendRadioItem(wxID_DEMOD_TYPE_AM, wxT("AM"), wxT("Description?"));
-    demod_menuitems[DEMOD_TYPE_LSB] = demodMenu->AppendRadioItem(wxID_DEMOD_TYPE_LSB, wxT("LSB"), wxT("Description?"));
-    demod_menuitems[DEMOD_TYPE_USB] = demodMenu->AppendRadioItem(wxID_DEMOD_TYPE_USB, wxT("USB"), wxT("Description?"));
+    demodMenuItems[DEMOD_TYPE_FM] = demodMenu->AppendRadioItem(wxID_DEMOD_TYPE_FM, wxT("FM"), wxT("Description?"));
+    demodMenuItems[DEMOD_TYPE_AM] = demodMenu->AppendRadioItem(wxID_DEMOD_TYPE_AM, wxT("AM"), wxT("Description?"));
+    demodMenuItems[DEMOD_TYPE_LSB] = demodMenu->AppendRadioItem(wxID_DEMOD_TYPE_LSB, wxT("LSB"), wxT("Description?"));
+    demodMenuItems[DEMOD_TYPE_USB] = demodMenu->AppendRadioItem(wxID_DEMOD_TYPE_USB, wxT("USB"), wxT("Description?"));
 
     menuBar->Append(demodMenu, wxT("Active Demodulator &Type"));
 
@@ -200,15 +200,15 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         if (demod != activeDemodulator) {
             demodSignalMeter->setInputValue(demod->getSquelchLevel());
             int outputDevice = demod->getOutputDevice();
-            scopeCanvas->setDeviceName(output_devices[outputDevice].name);
-            output_device_menuitems[outputDevice]->Check(true);
+            scopeCanvas->setDeviceName(outputDevices[outputDevice].name);
+            outputDeviceMenuItems[outputDevice]->Check(true);
             int dType = demod->getDemodulatorType();
-            demod_menuitems[dType]->Check(true);
+            demodMenuItems[dType]->Check(true);
         }
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
-            if (demod->getParams().frequency != demodWaterfallCanvas->GetCenterFrequency()) {
-                demodWaterfallCanvas->SetCenterFrequency(demod->getParams().frequency);
-                demodSpectrumCanvas->SetCenterFrequency(demod->getParams().frequency);
+            if (demod->getParams().frequency != demodWaterfallCanvas->getCenterFrequency()) {
+                demodWaterfallCanvas->setCenterFrequency(demod->getParams().frequency);
+                demodSpectrumCanvas->setCenterFrequency(demod->getParams().frequency);
             }
             unsigned int demodBw = (unsigned int) ceil((float) demod->getParams().bandwidth * 2.5);
             if (demodBw > SRATE / 2) {
@@ -217,8 +217,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             if (demodBw < 80000) {
                 demodBw = 80000;
             }
-            demodWaterfallCanvas->SetBandwidth(demodBw);
-            demodSpectrumCanvas->SetBandwidth(demodBw);
+            demodWaterfallCanvas->setBandwidth(demodBw);
+            demodSpectrumCanvas->setBandwidth(demodBw);
         }
         demodSignalMeter->setLevel(demod->getSignalLevel());
         if (demodSignalMeter->inputChanged()) {

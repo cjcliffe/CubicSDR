@@ -1,6 +1,17 @@
 #include "MouseTracker.h"
 #include <iostream>
 
+MouseTracker::MouseTracker(wxWindow *target) :
+        mouseX(0), mouseY(0), lastMouseX(0), lastMouseY(0), originMouseX(0), originMouseY(0), deltaMouseX(0), deltaMouseY(0), vertDragLock(false), horizDragLock(
+                false), isMouseDown(false), isMouseRightDown(false), isMouseInView(false), target(target) {
+
+}
+
+MouseTracker::MouseTracker() :
+        MouseTracker(NULL) {
+
+}
+
 void MouseTracker::OnMouseMoved(wxMouseEvent& event) {
     if (target == NULL) {
         return;
@@ -14,14 +25,14 @@ void MouseTracker::OnMouseMoved(wxMouseEvent& event) {
     deltaMouseX = mouseX - lastMouseX;
     deltaMouseY = mouseY - lastMouseY;
 
-    if (isMouseDown) {
+    if (isMouseDown || isMouseRightDown) {
 #ifndef __APPLE__
         if (horizDragLock && vertDragLock) {
-            target->WarpPointer(originMouseX * ClientSize.x, (1.0-originMouseY) * ClientSize.y);
+            target->WarpPointer(originMouseX * ClientSize.x, (1.0 - originMouseY) * ClientSize.y);
             mouseX = originMouseX;
             mouseY = originMouseY;
-        } else if (vertDragLock  && mouseY != lastMouseY) {
-            target->WarpPointer(event.m_x, (1.0-originMouseY) * ClientSize.y);
+        } else if (vertDragLock && mouseY != lastMouseY) {
+            target->WarpPointer(event.m_x, (1.0 - originMouseY) * ClientSize.y);
             mouseY = originMouseY;
         } else if (horizDragLock && mouseX != lastMouseX) {
             target->WarpPointer(originMouseX * ClientSize.x, event.m_y);
@@ -34,8 +45,12 @@ void MouseTracker::OnMouseMoved(wxMouseEvent& event) {
     lastMouseY = mouseY;
 }
 
+void MouseTracker::OnMouseWheelMoved(wxMouseEvent& event) {
+//    std::cout << "wheel?" << std::endl;
+}
+
 void MouseTracker::OnMouseDown(wxMouseEvent& event) {
-    if (target == NULL) {
+    if (isMouseRightDown || target == NULL) {
         return;
     }
 
@@ -50,20 +65,39 @@ void MouseTracker::OnMouseDown(wxMouseEvent& event) {
     isMouseDown = true;
 }
 
-void MouseTracker::OnMouseWheelMoved(wxMouseEvent& event) {
-//    std::cout << "wheel?" << std::endl;
-}
-
 void MouseTracker::OnMouseReleased(wxMouseEvent& event) {
     isMouseDown = false;
 }
 
+void MouseTracker::OnMouseRightDown(wxMouseEvent& event) {
+    if (isMouseDown || target == NULL) {
+        return;
+    }
+
+    const wxSize ClientSize = target->GetClientSize();
+
+    mouseX = lastMouseX = (float) event.m_x / (float) ClientSize.x;
+    mouseY = lastMouseY = 1.0 - (float) event.m_y / (float) ClientSize.y;
+
+    originMouseX = mouseX;
+    originMouseY = mouseY;
+
+    isMouseRightDown = true;
+}
+
+void MouseTracker::OnMouseRightReleased(wxMouseEvent& event) {
+    isMouseRightDown = false;
+}
+
 void MouseTracker::OnMouseEnterWindow(wxMouseEvent& event) {
     isMouseInView = true;
+    isMouseDown = false;
+    isMouseRightDown = false;
 }
 
 void MouseTracker::OnMouseLeftWindow(wxMouseEvent& event) {
     isMouseDown = false;
+    isMouseRightDown = false;
     isMouseInView = false;
 }
 
@@ -125,4 +159,9 @@ bool MouseTracker::mouseInView() {
 
 void MouseTracker::setTarget(wxWindow *target_in) {
     target = target_in;
+}
+
+
+bool MouseTracker::mouseRightDown() {
+    return isMouseRightDown;
 }

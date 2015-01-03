@@ -17,11 +17,11 @@
 
 wxBEGIN_EVENT_TABLE(MeterCanvas, wxGLCanvas) EVT_PAINT(MeterCanvas::OnPaint)
 EVT_IDLE(MeterCanvas::OnIdle)
-EVT_MOTION(MeterCanvas::mouseMoved)
-EVT_LEFT_DOWN(MeterCanvas::mouseDown)
-EVT_LEFT_UP(MeterCanvas::mouseReleased)
-EVT_LEAVE_WINDOW(MeterCanvas::mouseLeftWindow)
-EVT_ENTER_WINDOW(MeterCanvas::mouseEnterWindow)
+EVT_MOTION(MeterCanvas::OnMouseMoved)
+EVT_LEFT_DOWN(MeterCanvas::OnMouseDown)
+EVT_LEFT_UP(MeterCanvas::OnMouseReleased)
+EVT_LEAVE_WINDOW(MeterCanvas::OnMouseLeftWindow)
+EVT_ENTER_WINDOW(MeterCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
 MeterCanvas::MeterCanvas(wxWindow *parent, int *attribList) :
@@ -83,7 +83,7 @@ void MeterCanvas::OnIdle(wxIdleEvent &event) {
     Refresh(false);
 }
 
-void MeterCanvas::mouseMoved(wxMouseEvent& event) {
+void MeterCanvas::OnMouseMoved(wxMouseEvent& event) {
     mTracker.OnMouseMoved(event);
 
     shiftDown = event.ShiftDown();
@@ -95,7 +95,7 @@ void MeterCanvas::mouseMoved(wxMouseEvent& event) {
     }
 }
 
-void MeterCanvas::mouseDown(wxMouseEvent& event) {
+void MeterCanvas::OnMouseDown(wxMouseEvent& event) {
     mTracker.OnMouseDown(event);
 
     shiftDown = event.ShiftDown();
@@ -106,11 +106,11 @@ void MeterCanvas::mouseDown(wxMouseEvent& event) {
     mTracker.setHorizDragLock(true);
 }
 
-void MeterCanvas::mouseWheelMoved(wxMouseEvent& event) {
+void MeterCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
     mTracker.OnMouseWheelMoved(event);
 }
 
-void MeterCanvas::mouseReleased(wxMouseEvent& event) {
+void MeterCanvas::OnMouseReleased(wxMouseEvent& event) {
     mTracker.OnMouseReleased(event);
 
     shiftDown = event.ShiftDown();
@@ -120,12 +120,12 @@ void MeterCanvas::mouseReleased(wxMouseEvent& event) {
     userInputValue = mTracker.getMouseY()*level_max;
 }
 
-void MeterCanvas::mouseLeftWindow(wxMouseEvent& event) {
+void MeterCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
     mTracker.OnMouseLeftWindow(event);
     SetCursor(wxCURSOR_CROSS);
 }
 
-void MeterCanvas::mouseEnterWindow(wxMouseEvent& event) {
+void MeterCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
     mTracker.OnMouseEnterWindow(event);
     SetCursor(wxCURSOR_CROSS);
 }

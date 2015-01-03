@@ -7,18 +7,14 @@
 
 #include "DemodulatorPreThread.h"
 
-DemodulatorPreThread::DemodulatorPreThread(DemodulatorThreadInputQueue* pQueueIn, DemodulatorThreadPostInputQueue* pQueueOut,
+DemodulatorPreThread::DemodulatorPreThread(DemodulatorThreadInputQueue* iqInputQueue, DemodulatorThreadPostInputQueue* iqOutputQueue,
         DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify) :
-        inputQueue(pQueueIn), postInputQueue(pQueueOut), terminated(false), initialized(false), audio_resampler(NULL), stereo_resampler(NULL), resample_ratio(
-                1), audio_resample_ratio(1), resampler(NULL), commandQueue(NULL), audioInputQueue(NULL), threadQueueNotify(threadQueueNotify), threadQueueControl(
+        iqInputQueue(iqInputQueue), iqOutputQueue(iqOutputQueue), terminated(false), initialized(false), audioResampler(NULL), stereoResampler(NULL), iqResampleRatio(
+                1), audioResampleRatio(1), iqResampler(NULL), commandQueue(NULL), threadQueueNotify(threadQueueNotify), threadQueueControl(
                 threadQueueControl) {
 
-    float kf = 0.5;         // modulation factor
-    fdem = freqdem_create(kf);
-//    freqdem_print(fdem);
-
-    nco_shift = nco_crcf_create(LIQUID_VCO);
-    shift_freq = 0;
+    freqShifter = nco_crcf_create(LIQUID_VCO);
+    shiftFrequency = 0;
 
     workerQueue = new DemodulatorThreadWorkerCommandQueue;
     workerResults = new DemodulatorThreadWorkerResultQueue;
@@ -30,18 +26,18 @@ DemodulatorPreThread::DemodulatorPreThread(DemodulatorThreadInputQueue* pQueueIn
 void DemodulatorPreThread::initialize() {
     initialized = false;
 
-    resample_ratio = (double) (params.bandwidth) / (double) params.inputRate;
-    audio_resample_ratio = (double) (params.audioSampleRate) / (double) params.bandwidth;
+    iqResampleRatio = (double) (params.bandwidth) / (double) params.inputRate;
+    audioResampleRatio = (double) (params.audioSampleRate) / (double) params.bandwidth;
 
-    float As = 60.0f;         // stop-band attenuation [dB]
+    float As = 120.0f;         // stop-band attenuation [dB]
 
-    resampler = msresamp_crcf_create(resample_ratio, As);
-    audio_resampler = msresamp_rrrf_create(audio_resample_ratio, As);
-    stereo_resampler = msresamp_rrrf_create(audio_resample_ratio, As);
+    iqResampler = msresamp_crcf_create(iqResampleRatio, As);
+    audioResampler = msresamp_rrrf_create(audioResampleRatio, As);
+    stereoResampler = msresamp_rrrf_create(audioResampleRatio, As);
 
     initialized = true;
 //    std::cout << "inputResampleRate " << params.bandwidth << std::endl;
-    last_params = params;
+    lastParams = params;
 }
 
 DemodulatorPreThread::~DemodulatorPreThread() {
@@ -76,7 +72,7 @@ void DemodulatorPreThread::threadMain() {
 
     while (!terminated) {
         DemodulatorThreadIQData *inp;
-        inputQueue->pop(inp);
+        iqInputQueue->pop(inp);
 
         bool bandwidthChanged = false;
         DemodulatorThreadParameters bandwidthParams = params;
@@ -120,15 +116,15 @@ void DemodulatorPreThread::threadMain() {
 
         // Requested frequency is not center, shift it into the center!
         if (inp->frequency != params.frequency) {
-            if ((params.frequency - inp->frequency) != shift_freq) {
-                shift_freq = params.frequency - inp->frequency;
-                if (abs(shift_freq) <= (int) ((double) (SRATE / 2) * 1.5)) {
-                    nco_crcf_set_frequency(nco_shift, (2.0 * M_PI) * (((double) abs(shift_freq)) / ((double) SRATE)));
+            if ((params.frequency - inp->frequency) != shiftFrequency) {
+                shiftFrequency = params.frequency - inp->frequency;
+                if (abs(shiftFrequency) <= (int) ((double) (SRATE / 2) * 1.5)) {
+                    nco_crcf_set_frequency(freqShifter, (2.0 * M_PI) * (((double) abs(shiftFrequency)) / ((double) SRATE)));
                 }
             }
         }
 
-        if (abs(shift_freq) > (int) ((double) (SRATE / 2) * 1.5)) {
+        if (abs(shiftFrequency) > (int) ((double) (SRATE / 2) * 1.5)) {
             continue;
         }
 
@@ -152,11 +148,11 @@ void DemodulatorPreThread::threadMain() {
             liquid_float_complex *out_buf = &out_buf_data[0];
             liquid_float_complex *temp_buf = NULL;
 
-            if (shift_freq != 0) {
-                if (shift_freq < 0) {
-                    nco_crcf_mix_block_up(nco_shift, in_buf, out_buf, bufSize);
+            if (shiftFrequency != 0) {
+                if (shiftFrequency < 0) {
+                    nco_crcf_mix_block_up(freqShifter, in_buf, out_buf, bufSize);
                 } else {
-                    nco_crcf_mix_block_down(nco_shift, in_buf, out_buf, bufSize);
+                    nco_crcf_mix_block_down(freqShifter, in_buf, out_buf, bufSize);
                 }
                 temp_buf = in_buf;
                 in_buf = out_buf;
@@ -182,14 +178,14 @@ void DemodulatorPreThread::threadMain() {
 
 //            firfilt_crcf_execute_block(fir_filter, in_buf, bufSize, &((*resamp.data)[0]));
 
-            resamp->audio_resample_ratio = audio_resample_ratio;
-            resamp->audio_resampler = audio_resampler;
-            resamp->stereo_resampler = stereo_resampler;
-            resamp->resample_ratio = resample_ratio;
-            resamp->resampler = resampler;
+            resamp->audioResampleRatio = audioResampleRatio;
+            resamp->audioResampler = audioResampler;
+            resamp->stereoResampler = stereoResampler;
+            resamp->resamplerRatio = iqResampleRatio;
+            resamp->resampler = iqResampler;
             resamp->bandwidth = params.bandwidth;
 
-            postInputQueue->push(resamp);
+            iqOutputQueue->push(resamp);
         }
 
         inp->decRefCount();
@@ -201,12 +197,12 @@ void DemodulatorPreThread::threadMain() {
 
                 switch (result.cmd) {
                 case DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS:
-                    resampler = result.resampler;
-                    audio_resampler = result.audio_resampler;
-                    stereo_resampler = result.stereo_resampler;
+                    iqResampler = result.resampler;
+                    audioResampler = result.audioResampler;
+                    stereoResampler = result.stereoResampler;
 
-                    resample_ratio = result.resample_ratio;
-                    audio_resample_ratio = result.audio_resample_ratio;
+                    iqResampleRatio = result.resamplerRatio;
+                    audioResampleRatio = result.audioResamplerRatio;
 
                     params.audioSampleRate = result.audioSampleRate;
                     params.bandwidth = result.bandwidth;
@@ -233,6 +229,6 @@ void DemodulatorPreThread::threadMain() {
 void DemodulatorPreThread::terminate() {
     terminated = true;
     DemodulatorThreadIQData *inp = new DemodulatorThreadIQData;    // push dummy to nudge queue
-    inputQueue->push(inp);
+    iqInputQueue->push(inp);
     workerThread->terminate();
 }
