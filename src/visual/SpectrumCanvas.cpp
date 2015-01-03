@@ -201,12 +201,12 @@ void SpectrumCanvas::mouseMoved(wxMouseEvent& event) {
             if (freqChange) {
                 freq -= freqChange;
                 wxGetApp().setFrequency(freq);
-                ((wxFrame*) parent)->GetStatusBar()->SetStatusText(
-                        wxString::Format(wxT("Set center frequency: %s"),
-                                wxNumberFormatter::ToString((long) freq, wxNumberFormatter::Style_WithThousandsSep)));
+                setStatusText("Set center frequency: %s", freq);
             }
 
         }
+    } else {
+        setStatusText("Click and drag to adjust center frequency.");
     }
 }
 

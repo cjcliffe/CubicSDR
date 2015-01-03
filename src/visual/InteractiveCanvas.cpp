@@ -20,7 +20,7 @@
 InteractiveCanvas::InteractiveCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
         wxFULL_REPAINT_ON_RESIZE), parent(parent), shiftDown(false), altDown(false), ctrlDown(false), center_freq(0), bandwidth(0), last_bandwidth(0), isView(
-                false) {
+        false) {
     mTracker.setTarget(this);
 }
 
@@ -123,3 +123,11 @@ void InteractiveCanvas::mouseEnterWindow(wxMouseEvent& event) {
     mTracker.OnMouseEnterWindow(event);
 }
 
+void InteractiveCanvas::setStatusText(std::string statusText) {
+    ((wxFrame*) parent)->GetStatusBar()->SetStatusText(statusText);
+}
+
+void InteractiveCanvas::setStatusText(std::string statusText, int value) {
+    ((wxFrame*) parent)->GetStatusBar()->SetStatusText(
+            wxString::Format(statusText.c_str(), wxNumberFormatter::ToString((long) value, wxNumberFormatter::Style_WithThousandsSep)));
+}

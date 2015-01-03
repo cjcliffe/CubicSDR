@@ -221,7 +221,7 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
             }
         }
         wxGetApp().setFrequency(freq);
-        ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), freq));
+        setStatusText("Set center frequency: %s", freq);
         break;
     case WXK_LEFT:
         freq = wxGetApp().getFrequency();
@@ -243,7 +243,7 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
             }
         }
         wxGetApp().setFrequency(freq);
-        ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequenfcy: %i"), freq));
+        setStatusText("Set center frequency: %s", freq);
         break;
     case 'D':
     case WXK_DELETE:
@@ -546,6 +546,7 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
 
             command.int_value = activeDemodulatorBandwidth;
             demod->getCommandQueue()->push(command);
+            setStatusText("Set demodulator bandwidth: %s", activeDemodulatorBandwidth);
         }
 
         if (dragState == WF_DRAG_FREQUENCY) {
@@ -563,6 +564,8 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
             demod->getCommandQueue()->push(command);
 
             demod->updateLabel(activeDemodulatorFrequency);
+
+            setStatusText("Set demodulator frequency: %s", activeDemodulatorFrequency);
         }
     } else {
         int freqPos = GetFrequencyAt(mTracker.getMouseX());
@@ -575,6 +578,11 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
             nextDragState = WF_DRAG_RANGE;
             mTracker.setVertDragLock(true);
             mTracker.setHorizDragLock(false);
+            if (shiftDown) {
+                setStatusText("Click and drag to create a new demodulator by range.");
+            } else {
+                setStatusText("Click and drag to set the current demodulator range.");
+            }
         } else if (demodsHover->size()) {
             int hovered = -1;
             int near_dist = GetBandwidth();
@@ -621,16 +629,23 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
 
                 mTracker.setVertDragLock(true);
                 mTracker.setHorizDragLock(false);
+                setStatusText("Click and drag to change demodulator bandwidth. D to delete, SPACE for stereo.");
             } else {
                 SetCursor(wxCURSOR_SIZING);
                 nextDragState = WF_DRAG_FREQUENCY;
 
                 mTracker.setVertDragLock(true);
                 mTracker.setHorizDragLock(false);
+                setStatusText("Click and drag to change demodulator frequency. D to delete, SPACE for stereo.");
             }
         } else {
             SetCursor(wxCURSOR_CROSS);
             nextDragState = WF_DRAG_NONE;
+            if (shiftDown) {
+                setStatusText("Click to create a new demodulator or hold ALT to drag range.");
+            } else {
+                setStatusText("Click to move active demodulator frequency or hold ALT to drag range; hold SHIFT to create new.  A / Z to Zoom.  Arrow keys (+SHIFT) to move center frequency.");
+            }
         }
 
         delete demodsHover;
@@ -703,9 +718,7 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
             command.int_value = freq;
             demod->getCommandQueue()->push(command);
 
-            ((wxFrame*) parent)->GetStatusBar()->SetStatusText(
-                    wxString::Format(wxT("Set demodulator frequency: %s"),
-                            wxNumberFormatter::ToString((long) freq, wxNumberFormatter::Style_WithThousandsSep)));
+            setStatusText("New demodulator at frequency: %s", freq);
 
             wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getLastActiveDemodulator(), false);
             SetCursor(wxCURSOR_SIZING);
@@ -713,10 +726,6 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
             mTracker.setVertDragLock(true);
             mTracker.setHorizDragLock(false);
         } else {
-            float pos = mTracker.getMouseX();
-            int input_center_freq = GetCenterFrequency();
-            int freq = input_center_freq - (int) (0.5 * (float) GetBandwidth()) + (int) ((float) pos * (float) GetBandwidth());
-
             wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getActiveDemodulator(), false);
             nextDragState = WF_DRAG_FREQUENCY;
         }
@@ -760,9 +769,7 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
             return;
         }
 
-        ((wxFrame*) parent)->GetStatusBar()->SetStatusText(
-                wxString::Format(wxT("Set demodulator frequency: %s"),
-                        wxNumberFormatter::ToString((long) freq, wxNumberFormatter::Style_WithThousandsSep)));
+        setStatusText("New demodulator at frequency: %s", freq);
 
         wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getLastActiveDemodulator(), false);
         demod->updateLabel(freq);

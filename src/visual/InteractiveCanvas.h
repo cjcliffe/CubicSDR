@@ -4,6 +4,7 @@
 #include "wx/timer.h"
 
 #include "MouseTracker.h"
+#include <string>
 
 class InteractiveCanvas: public wxGLCanvas {
 public:
@@ -31,6 +32,9 @@ protected:
     void mouseReleased(wxMouseEvent& event);
     void mouseEnterWindow(wxMouseEvent& event);
     void mouseLeftWindow(wxMouseEvent& event);
+
+    void setStatusText(std::string statusText);
+    void setStatusText(std::string statusText, int value);
 
     wxWindow *parent;
     MouseTracker mTracker;

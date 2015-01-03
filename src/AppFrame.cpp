@@ -37,37 +37,6 @@ AppFrame::AppFrame() :
     wxBoxSizer *demodVisuals = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodTray = new wxBoxSizer(wxHORIZONTAL);
 
-    /*
-     demodTray->AddSpacer(5);
-     demodOpts->AddSpacer(5);
-
-     wxStaticText *audioDeviceLabel = new wxStaticText(this, wxID_ANY, wxString("Audio Device:"));
-     demodOpts->Add(audioDeviceLabel, 1, wxFIXED_MINSIZE | wxALL, 0);
-
-     wxArrayString str;
-     str.Add("Primary Device");
-     wxChoice *wxCh = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, str);
-     demodOpts->Add(wxCh, 1, wxFIXED_MINSIZE | wxALL, 0);
-
-     demodOpts->AddSpacer(2);
-
-     wxStaticText *demodTypeLabel = new wxStaticText(this, wxID_ANY, wxString("Demodulation:"));
-     demodOpts->Add(demodTypeLabel, 1, wxFIXED_MINSIZE | wxALL, 0);
-
-     str.Clear();
-     str.Add("FM");
-     str.Add("FM Stereo");
-     str.Add("AM");
-     str.Add("LSB");
-     str.Add("USB");
-     wxChoice *wxDemodChoice = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, str);
-     demodOpts->Add(wxDemodChoice, 1, wxFIXED_MINSIZE | wxALL, 0);
-
-     demodOpts->AddSpacer(5);
-     demodTray->AddSpacer(5);
-
-     demodTray->Add(demodOpts, 1, wxEXPAND | wxALL, 0); */
-
     demodSpectrumCanvas = new SpectrumCanvas(this, NULL);
     demodSpectrumCanvas->Setup(1024);
     demodSpectrumCanvas->SetView(DEFAULT_FREQ, 300000);
@@ -152,7 +121,7 @@ AppFrame::AppFrame() :
     }
 
     wxMenuBar *menuBar = new wxMenuBar;
-    menuBar->Append(menu, wxT("Output &Device"));
+    menuBar->Append(menu, wxT("Active Demodulator &Output"));
 
     wxMenu *demodMenu = new wxMenu;
     demod_menuitems[DEMOD_TYPE_FM] = demodMenu->AppendRadioItem(wxID_DEMOD_TYPE_FM, wxT("FM"), wxT("Description?"));
@@ -160,7 +129,7 @@ AppFrame::AppFrame() :
     demod_menuitems[DEMOD_TYPE_LSB] = demodMenu->AppendRadioItem(wxID_DEMOD_TYPE_LSB, wxT("LSB"), wxT("Description?"));
     demod_menuitems[DEMOD_TYPE_USB] = demodMenu->AppendRadioItem(wxID_DEMOD_TYPE_USB, wxT("USB"), wxT("Description?"));
 
-    menuBar->Append(demodMenu, wxT("Demodulaton &Type"));
+    menuBar->Append(demodMenu, wxT("Active Demodulator &Type"));
 
     SetMenuBar(menuBar);
 
