@@ -195,8 +195,55 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, f
     glVertex3f((uxPos - 0.5) * 2.0 + ofs, 1.0, 0.0);
     glEnd();
 
+    GLint vp[4];
+    glGetIntegerv( GL_VIEWPORT, vp);
+
+    float viewHeight = (float) vp[3];
+    float viewWidth = (float) vp[2];
+
+    float labelHeight = 20.0 / viewHeight;
+    float xOfs = (2.0 / viewWidth);
+    float yOfs = (2.0 / viewHeight);
+    float hPos = labelHeight;
+
+    glDisable(GL_BLEND);
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_COLOR_MATERIAL);
+
+    glEnable(GL_BLEND);
+
+    std::string demodStr;
+    GLFont::Align demodAlign;
+
+    switch (demod->getDemodulatorType()) {
+    case DEMOD_TYPE_FM:
+        demodStr = "FM";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
+    case DEMOD_TYPE_AM:
+        demodStr = "AM";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
+    case DEMOD_TYPE_LSB:
+        demodStr = "LSB";
+        demodAlign = GLFont::GLFONT_ALIGN_RIGHT;
+        break;
+    case DEMOD_TYPE_USB:
+        demodStr = "USB";
+        demodAlign = GLFont::GLFONT_ALIGN_LEFT;
+        break;
+    }
+
+    glColor3f(0, 0, 0);
+    getFont(PrimaryGLContext::GLFONT_SIZE16).drawString(demodStr, 2.0 * (uxPos - 0.5) + xOfs, -1.0 + hPos - yOfs, 16, demodAlign,
+            GLFont::GLFONT_ALIGN_CENTER);
+    glColor3f(0.8, 0.8, 0.8);
+    getFont(PrimaryGLContext::GLFONT_SIZE16).drawString(demodStr, 2.0 * (uxPos - 0.5), -1.0 + hPos, 16, demodAlign, GLFont::GLFONT_ALIGN_CENTER);
+
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
+
 }
 
 void PrimaryGLContext::DrawFreqSelector(float uxPos, float r, float g, float b, float w, int center_freq, int srate) {

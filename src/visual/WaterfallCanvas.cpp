@@ -655,7 +655,7 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
             if (shiftDown) {
                 setStatusText("Click to create a new demodulator or hold ALT to drag range.");
             } else {
-                setStatusText("Click to move active demodulator frequency or hold ALT to drag range; hold SHIFT to create new.  A / Z to Zoom.  Arrow keys (+SHIFT) to move center frequency.");
+                setStatusText("Click to move active demodulator frequency or hold ALT to drag range; hold SHIFT to create new.  Right drag or A / Z to Zoom.  Arrow keys (+SHIFT) to move center frequency.");
             }
         }
 

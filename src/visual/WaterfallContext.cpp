@@ -45,8 +45,6 @@ void WaterfallContext::Setup(int fft_size_in, int num_waterfall_lines_in) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-
     glPixelTransferi(GL_MAP_COLOR, GL_TRUE);
     glPixelMapfv(GL_PIXEL_MAP_I_TO_R, 256, &(grad.getRed())[0]);
     glPixelMapfv(GL_PIXEL_MAP_I_TO_G, 256, &(grad.getGreen())[0]);
@@ -55,6 +53,8 @@ void WaterfallContext::Setup(int fft_size_in, int num_waterfall_lines_in) {
 }
 
 void WaterfallContext::Draw(std::vector<float> &points) {
+
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 
     if (points.size()) {
         memmove(waterfall_tex + fft_size, waterfall_tex, (waterfall_lines - 1) * fft_size);
@@ -89,6 +89,8 @@ void WaterfallContext::Draw(std::vector<float> &points) {
     glTexCoord2f(0.0, 0.0);
     glVertex3f(-1.0, 1.0, 0.0);
     glEnd();
+
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 }
 
