@@ -232,7 +232,6 @@ void SpectrumCanvas::mouseMoved(wxMouseEvent& event) {
 
                 if (abs(freq-freqEdge) > (SRATE/2)) {
                     freqChange = -(((int)center_freq>freq)?(freqEdge-freq-(SRATE/2)):(freqEdge-freq+(SRATE/2)));
-                    std::cout << "change: " << freqChange;
                 } else {
                     freqChange = 0;
                 }

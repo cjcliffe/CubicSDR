@@ -119,7 +119,7 @@ void DemodulatorThread::threadMain() {
             freqdem_reset(fdem);
         }
 
-        int out_size = ceil((double) (bufSize) * inp->resample_ratio) + 32;
+        int out_size = ceil((double) (bufSize) * inp->resample_ratio) + 512;
 
         if (agc_data.size() != out_size) {
             if (agc_data.capacity() < out_size) {
@@ -144,7 +144,7 @@ void DemodulatorThread::threadMain() {
             demod_output.resize(num_written);
         }
 
-        int audio_out_size = ceil((double) (num_written) * audio_resample_ratio) + 32;
+        int audio_out_size = ceil((double) (num_written) * audio_resample_ratio) + 512;
 
         agc_crcf_execute_block(agc, &resampled_data[0], num_written, &agc_data[0]);
 

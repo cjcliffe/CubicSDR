@@ -313,6 +313,8 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
 
     unsigned int bw;
     if (zoom) {
+        int freq = wxGetApp().getFrequency();
+
         if (zoom > 0) {
             center_freq = GetCenterFrequency();
             bw = GetBandwidth();
@@ -320,6 +322,13 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
             if (bw < 80000) {
                 bw = 80000;
             }
+            if (mTracker.mouseInView()) {
+                int mfreqA = GetFrequencyAt(mTracker.getMouseX());
+                SetBandwidth(bw);
+                int mfreqB = GetFrequencyAt(mTracker.getMouseX());
+                center_freq += mfreqA - mfreqB;
+            }
+
             SetView(center_freq, bw);
             if (spectrumCanvas) {
                 spectrumCanvas->SetView(center_freq, bw);
@@ -335,12 +344,26 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
                         spectrumCanvas->DisableView();
                     }
                 } else {
+                    if (mTracker.mouseInView()) {
+                        int freq = wxGetApp().getFrequency();
+                        int mfreqA = GetFrequencyAt(mTracker.getMouseX());
+                        SetBandwidth(bw);
+                        int mfreqB = GetFrequencyAt(mTracker.getMouseX());
+                        center_freq += mfreqA - mfreqB;
+                    }
+
                     SetView(GetCenterFrequency(), bw);
                     if (spectrumCanvas) {
                         spectrumCanvas->SetView(center_freq, bw);
                     }
                 }
             }
+        }
+        if (center_freq < freq && (center_freq - bandwidth / 2) < (freq - SRATE / 2)) {
+            center_freq = (freq - SRATE / 2) + bandwidth / 2;
+        }
+        if (center_freq > freq && (center_freq + bandwidth / 2) > (freq + SRATE / 2)) {
+            center_freq = (freq + SRATE / 2) - bandwidth / 2;
         }
     }
 
@@ -695,6 +718,10 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
 
                 if (DemodulatorInstance *last = wxGetApp().getDemodMgr().getLastActiveDemodulator()) {
                     demod->getParams().bandwidth = last->getParams().bandwidth;
+                    demod->setDemodulatorType(last->getDemodulatorType());
+                    demod->setSquelchLevel(last->getSquelchLevel());
+                    demod->setSquelchEnabled(last->isSquelchEnabled());
+                    demod->setStereo(last->isStereo());
                 }
 
                 demod->run();
@@ -755,7 +782,12 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
             demod = wxGetApp().getDemodMgr().newThread();
             demod->getParams().frequency = freq;
             demod->getParams().bandwidth = bw;
-
+            if (DemodulatorInstance *last = wxGetApp().getDemodMgr().getLastActiveDemodulator()) {
+                demod->setDemodulatorType(last->getDemodulatorType());
+                demod->setSquelchLevel(last->getSquelchLevel());
+                demod->setSquelchEnabled(last->isSquelchEnabled());
+                demod->setStereo(last->isStereo());
+            }
             demod->run();
 
             wxGetApp().bindDemodulator(demod);
