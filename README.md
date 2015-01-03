@@ -41,14 +41,13 @@ Basic Goals and Status:
     - [x] Audio device selection
     - [ ] Modes
       - [x] FM
-      - [x] WFM
-      - [x] WBFM stereo
-      - [ ] AM
-      - [ ] LSB
-      - [ ] USB
+      - [x] FM stereo
+      - [x] AM
+      - [x] LSB
+      - [x] USB
     - [ ] Controls
       - [ ] Display Frequency and allow manual adjustments
-      - [ ] Allow selection of demodulation type
+      - [x] Allow selection of demodulation type
       - [x] Display separate zoomed-in view of current waterfall and spectrum, allow adjustments
       - [x] Display signal level and allow squelch control
       - [x] Display audio output selection
