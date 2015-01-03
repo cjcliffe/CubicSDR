@@ -39,7 +39,7 @@ Basic Goals and Status:
   - Demodulation:
     - [x] Multiple demodulators per IQ stream
     - [x] Audio device selection
-    - [ ] Modes
+    - [x] Modes
       - [x] FM
       - [x] FM stereo
       - [x] AM
