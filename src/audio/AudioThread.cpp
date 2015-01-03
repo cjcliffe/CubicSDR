@@ -10,7 +10,7 @@ std::map<int, std::thread *> AudioThread::deviceThread;
 #endif
 
 AudioThread::AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify) :
-        currentInput(NULL), inputQueue(inputQueue), audio_queue_ptr(0), underflow_count(0), terminated(false), active(false), gain(1.0), threadQueueNotify(
+        currentInput(NULL), inputQueue(inputQueue), audio_queue_ptr(0), underflow_count(0), terminated(false), active(false), output_device(-1), gain(1.0), threadQueueNotify(
                 threadQueueNotify) {
 #ifdef __APPLE__
     boundThreads = new std::vector<AudioThread *>;
@@ -25,7 +25,9 @@ AudioThread::~AudioThread() {
 
 #ifdef __APPLE__
 void AudioThread::bindThread(AudioThread *other) {
-    boundThreads.load()->push_back(other);
+    if (std::find(boundThreads.load()->begin(), boundThreads.load()->end(), other) == boundThreads.load()->end()) {
+        boundThreads.load()->push_back(other);
+    }
 }
 
 void AudioThread::removeThread(AudioThread *other) {
@@ -211,11 +213,15 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
 }
 #endif
 
-void AudioThread::enumerateDevices() {
-    int numDevices = dac.getDeviceCount();
+void AudioThread::enumerateDevices(std::vector<RtAudio::DeviceInfo> &devs) {
+    RtAudio endac;
+
+    int numDevices = endac.getDeviceCount();
 
     for (int i = 0; i < numDevices; i++) {
-        RtAudio::DeviceInfo info = dac.getDeviceInfo(i);
+        RtAudio::DeviceInfo info = endac.getDeviceInfo(i);
+
+        devs.push_back(info);
 
         std::cout << std::endl;
 
@@ -259,6 +265,70 @@ void AudioThread::enumerateDevices() {
     }
 }
 
+void AudioThread::setupDevice(int deviceId) {
+    parameters.deviceId = deviceId;
+    parameters.nChannels = 2;
+    parameters.firstChannel = 0;
+    unsigned int sampleRate = AUDIO_FREQUENCY;
+    unsigned int bufferFrames = 256;
+
+    RtAudio::StreamOptions opts;
+    opts.streamName = "CubicSDR Audio Output";
+
+    try {
+
+#ifdef __APPLE__
+        if (deviceController.find(output_device.load()) != deviceController.end()) {
+            deviceController[output_device.load()]->removeThread(this);
+        }
+
+        opts.priority = sched_get_priority_max(SCHED_FIFO);
+        //    opts.flags = RTAUDIO_MINIMIZE_LATENCY;
+        opts.flags = RTAUDIO_SCHEDULE_REALTIME;
+
+        if (deviceController.find(parameters.deviceId) == deviceController.end()) {
+            deviceController[parameters.deviceId] = new AudioThread(NULL, NULL);
+            deviceController[parameters.deviceId]->setInitOutputDevice(parameters.deviceId);
+            deviceController[parameters.deviceId]->bindThread(this);
+            deviceThread[parameters.deviceId] = new std::thread(&AudioThread::threadMain, deviceController[parameters.deviceId]);
+        } else if (deviceController[parameters.deviceId] == this) {
+            dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &bufferFrames, &audioCallback, (void *) this, &opts);
+            dac.startStream();
+        } else {
+            deviceController[parameters.deviceId]->bindThread(this);
+        }
+        active = true;
+#else
+        if (dac.isStreamOpen()) {
+            if (dac.isStreamRunning()) {
+                dac.stopStream();
+            }
+            dac.closeStream();
+        }
+
+        dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &bufferFrames, &audioCallback, (void *) this, &opts);
+        dac.startStream();
+
+#endif
+    } catch (RtAudioError& e) {
+        e.printMessage();
+        return;
+    }
+
+    output_device = deviceId;
+}
+
+int AudioThread::getOutputDevice() {
+    if (output_device == -1) {
+        return dac.getDefaultOutputDevice();
+    }
+    return output_device;
+}
+
+void AudioThread::setInitOutputDevice(int deviceId) {
+    output_device = deviceId;
+}
+
 void AudioThread::threadMain() {
 #ifdef __APPLE__
     pthread_t tID = pthread_self();	 // ID of this thread
@@ -274,46 +344,17 @@ void AudioThread::threadMain() {
         return;
     }
 
-    parameters.deviceId = dac.getDefaultOutputDevice();
-    parameters.nChannels = 2;
-    parameters.firstChannel = 0;
-    unsigned int sampleRate = AUDIO_FREQUENCY;
-    unsigned int bufferFrames = 256;
+    setupDevice((output_device.load() == -1)?(dac.getDefaultOutputDevice()):output_device.load());
 
-    RtAudio::StreamOptions opts;
-    opts.streamName = "CubicSDR Audio Output";
-
-    try {
-
-#ifdef __APPLE__
-        opts.priority = sched_get_priority_max(SCHED_FIFO);
-        //    opts.flags = RTAUDIO_MINIMIZE_LATENCY;
-        opts.flags = RTAUDIO_SCHEDULE_REALTIME;
-
-        if (deviceController.find(parameters.deviceId) == deviceController.end()) {
-            deviceController[parameters.deviceId] = new AudioThread(NULL, NULL);
-            deviceController[parameters.deviceId]->bindThread(this);
-            deviceThread[parameters.deviceId] = new std::thread(&AudioThread::threadMain, deviceController[parameters.deviceId]);
-        } else if (deviceController[parameters.deviceId] == this) {
-            dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &bufferFrames, &audioCallback, (void *) this, &opts);
-            dac.startStream();
-        } else {
-            deviceController[parameters.deviceId]->bindThread(this);
-        }
-        active = true;
-#else
-        dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &bufferFrames, &audioCallback, (void *) this, &opts);
-        dac.startStream();
-
-#endif
-    } catch (RtAudioError& e) {
-        e.printMessage();
-        return;
-    }
+    std::cout << "Audio thread started." << std::endl;
 
     while (!terminated) {
         AudioThreadCommand command;
         cmdQueue.pop(command);
+
+        if (command.cmd == AudioThreadCommand::AUDIO_THREAD_CMD_SET_DEVICE) {
+            setupDevice(command.int_value);
+        }
     }
 
 #ifdef __APPLE__
@@ -367,7 +408,7 @@ void AudioThread::setActive(bool state) {
         while (!inputQueue->empty()) {  // flush queue
             inputQueue->pop(dummy);
             if (dummy) {
-                delete dummy;
+                dummy->decRefCount();
             }
         }
         deviceController[parameters.deviceId]->bindThread(this);
@@ -376,10 +417,15 @@ void AudioThread::setActive(bool state) {
         while (!inputQueue->empty()) {  // flush queue
             inputQueue->pop(dummy);
             if (dummy) {
-                delete dummy;
+                dummy->decRefCount();
             }
         }
     }
 #endif
     active = state;
+}
+
+
+AudioThreadCommandQueue *AudioThread::getCommandQueue() {
+    return &cmdQueue;
 }

@@ -23,9 +23,9 @@ public:
     void BeginDraw();
     void EndDraw();
 
-    void DrawFreqSelector(float uxPos, float r = 1, float g = 1, float b = 1, float w = 0);
-    void DrawDemod(DemodulatorInstance *demod, float r = 1, float g = 1, float b = 1);
-    void DrawDemodInfo(DemodulatorInstance *demod, float r = 1, float g = 1, float b = 1);
+    void DrawFreqSelector(float uxPos, float r = 1, float g = 1, float b = 1, float w = 0, int center_freq = -1, int srate = SRATE);
+    void DrawDemod(DemodulatorInstance *demod, float r = 1, float g = 1, float b = 1, int center_freq = -1, int srate = SRATE);
+    void DrawDemodInfo(DemodulatorInstance *demod, float r = 1, float g = 1, float b = 1, int center_freq = -1, int srate = SRATE);
 
     static GLFont &getFont(GLFontSize esize);
 

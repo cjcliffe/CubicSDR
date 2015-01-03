@@ -28,6 +28,7 @@ bool CubicSDR::OnInit() {
     sdrThread = new SDRThread(threadCmdQueueSDR);
 
     sdrPostThread = new SDRPostThread();
+    sdrPostThread->setNumVisSamples(2048);
 
     iqPostDataQueue = new SDRThreadIQDataQueue;
     iqVisualQueue = new DemodulatorThreadInputQueue;

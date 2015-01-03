@@ -34,8 +34,8 @@ void DemodulatorWorkerThread::threadMain() {
         if (filterChanged) {
             DemodulatorWorkerThreadResult result(DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS);
 
-            result.resample_ratio = (float) (filterCommand.bandwidth) / (float) filterCommand.inputRate;
-            result.audio_resample_ratio = (float) (filterCommand.audioSampleRate) / (float) filterCommand.bandwidth;
+            result.resample_ratio = (double) (filterCommand.bandwidth) / (double) filterCommand.inputRate;
+            result.audio_resample_ratio = (double) (filterCommand.audioSampleRate) / (double) filterCommand.bandwidth;
 
             float As = 60.0f;         // stop-band attenuation [dB]
 
@@ -46,7 +46,6 @@ void DemodulatorWorkerThread::threadMain() {
             result.audioSampleRate = filterCommand.audioSampleRate;
             result.bandwidth = filterCommand.bandwidth;
             result.inputRate = filterCommand.inputRate;
-
             resultQueue->push(result);
         }
 

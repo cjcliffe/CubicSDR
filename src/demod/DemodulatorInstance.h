@@ -52,13 +52,30 @@ public:
     bool isStereo();
     void setStereo(bool state);
 
-    void squelchAuto();bool isSquelchEnabled();
+    void squelchAuto();
+    bool isSquelchEnabled();
     void setSquelchEnabled(bool state);
 
+    float getSignalLevel();
+    void setSquelchLevel(float signal_level_in);
+    float getSquelchLevel();
+
+    void setOutputDevice(int device_id);
+    int getOutputDevice();
+
+    void setDemodulatorType(int demod_type_in);
+    int getDemodulatorType();
+
 private:
-    std::atomic<std::string *> label;bool terminated;bool demodTerminated;bool audioTerminated;bool preDemodTerminated;
+    std::atomic<std::string *> label; //
+    bool terminated; //
+    bool demodTerminated; //
+    bool audioTerminated; //
+    bool preDemodTerminated;
     std::atomic<bool> active;
     std::atomic<bool> squelch;
     std::atomic<bool> stereo;
+
+    int currentDemodType;
 };
 

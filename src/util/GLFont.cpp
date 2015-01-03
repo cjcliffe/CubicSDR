@@ -382,7 +382,7 @@ void GLFont::drawString(std::string str, float xpos, float ypos, int pxHeight, A
     glPushMatrix();
     glTranslatef(xpos, ypos, 0.0f);
 
-    switch (hAlign) {
+    switch (vAlign) {
     case GLFONT_ALIGN_TOP:
         glTranslatef(0.0, -size, 0.0);
         break;
@@ -393,7 +393,7 @@ void GLFont::drawString(std::string str, float xpos, float ypos, int pxHeight, A
         break;
     }
 
-    switch (vAlign) {
+    switch (hAlign) {
     case GLFONT_ALIGN_RIGHT:
         glTranslatef(-msgWidth, 0.0, 0.0);
         break;
@@ -445,5 +445,6 @@ void GLFont::drawString(std::string str, float xpos, float ypos, int pxHeight, A
     glPopMatrix();
 
     glDisable(GL_BLEND);
+    glDisable(GL_TEXTURE_2D);
 }
 

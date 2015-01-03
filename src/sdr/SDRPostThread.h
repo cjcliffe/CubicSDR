@@ -15,6 +15,9 @@ public:
     void setIQDataOutQueue(DemodulatorThreadInputQueue* iqDataQueue);
     void setIQVisualQueue(DemodulatorThreadInputQueue* iqVisQueue);
 
+    void setNumVisSamples(int num_vis_samples_in);
+    int getNumVisSamples();
+
     void threadMain();
     void terminate();
 
@@ -30,4 +33,5 @@ protected:
     std::vector<DemodulatorInstance *> demodulators_remove;
     std::atomic<bool> terminated;
     iirfilt_crcf dcFilter;
+    int num_vis_samples;
 };

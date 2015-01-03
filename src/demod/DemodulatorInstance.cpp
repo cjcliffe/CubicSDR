@@ -19,6 +19,8 @@ DemodulatorInstance::DemodulatorInstance() :
     audioThread = new AudioThread(audioInputQueue, threadQueueNotify);
 
     demodulatorThread->setAudioInputQueue(audioInputQueue);
+
+    currentDemodType = demodulatorThread->getDemodulatorType();
 }
 
 DemodulatorInstance::~DemodulatorInstance() {
@@ -179,5 +181,46 @@ void DemodulatorInstance::setSquelchEnabled(bool state) {
     }
 
     squelch = state;
+}
+
+float DemodulatorInstance::getSignalLevel() {
+    return demodulatorThread->getSignalLevel();
+}
+
+void DemodulatorInstance::setSquelchLevel(float signal_level_in) {
+    demodulatorThread->setSquelchLevel(signal_level_in);
+}
+
+
+float DemodulatorInstance::getSquelchLevel() {
+    return demodulatorThread->getSquelchLevel();
+}
+
+
+void DemodulatorInstance::setOutputDevice(int device_id) {
+    if (audioThread) {
+        AudioThreadCommand command;
+        command.cmd = AudioThreadCommand::AUDIO_THREAD_CMD_SET_DEVICE;
+        command.int_value = device_id;
+        audioThread->getCommandQueue()->push(command);
+    }
+}
+
+int DemodulatorInstance::getOutputDevice() {
+    return audioThread->getOutputDevice();
+}
+
+void DemodulatorInstance::setDemodulatorType(int demod_type_in) {
+    if (demodulatorThread && threadQueueControl) {
+        DemodulatorThreadControlCommand command;
+         command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_TYPE;
+         currentDemodType = demod_type_in;
+         command.demodType = demod_type_in;
+         threadQueueControl->push(command);
+     }
+}
+
+int DemodulatorInstance::getDemodulatorType() {
+    return currentDemodType;
 }
 

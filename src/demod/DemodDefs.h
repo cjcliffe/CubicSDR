@@ -7,9 +7,12 @@
 #include <atomic>
 #include <mutex>
 
-enum DemodulatorType {
-    DEMOD_TYPE_NULL, DEMOD_TYPE_AM, DEMOD_TYPE_FM, DEMOD_TYPE_LSB, DEMOD_TYPE_USB
-};
+#define DEMOD_TYPE_NULL 0
+#define DEMOD_TYPE_FM 1
+#define DEMOD_TYPE_AM 2
+#define DEMOD_TYPE_LSB 3
+#define DEMOD_TYPE_USB 4
+
 
 class DemodulatorThread;
 class DemodulatorThreadCommand {
@@ -41,14 +44,15 @@ public:
 class DemodulatorThreadControlCommand {
 public:
     enum DemodulatorThreadControlCommandEnum {
-        DEMOD_THREAD_CMD_CTL_NULL, DEMOD_THREAD_CMD_CTL_SQUELCH_AUTO, DEMOD_THREAD_CMD_CTL_SQUELCH_OFF
+        DEMOD_THREAD_CMD_CTL_NULL, DEMOD_THREAD_CMD_CTL_SQUELCH_AUTO, DEMOD_THREAD_CMD_CTL_SQUELCH_OFF, DEMOD_THREAD_CMD_CTL_TYPE
     };
 
     DemodulatorThreadControlCommand() :
-            cmd(DEMOD_THREAD_CMD_CTL_NULL) {
+            cmd(DEMOD_THREAD_CMD_CTL_NULL), demodType(DEMOD_TYPE_NULL) {
     }
 
     DemodulatorThreadControlCommandEnum cmd;
+    int demodType;
 };
 
 class DemodulatorThreadIQData: public ReferenceCounter {
@@ -71,10 +75,10 @@ class DemodulatorThreadPostIQData: public ReferenceCounter {
 public:
     std::vector<liquid_float_complex> data;
     int bandwidth;
-    float audio_resample_ratio;
+    double audio_resample_ratio;
     msresamp_rrrf audio_resampler;
     msresamp_rrrf stereo_resampler;
-    float resample_ratio;
+    double resample_ratio;
     msresamp_crcf resampler;
 
     DemodulatorThreadPostIQData() :
@@ -122,7 +126,7 @@ public:
     unsigned int bandwidth; // set equal to disable second stage re-sampling?
     unsigned int audioSampleRate;
 
-    DemodulatorType demodType;
+    int demodType;
 
     DemodulatorThreadParameters() :
             frequency(0), inputRate(SRATE), bandwidth(200000), audioSampleRate(

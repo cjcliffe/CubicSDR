@@ -3,8 +3,6 @@
 #include "PrimaryGLContext.h"
 #include "Gradient.h"
 
-#define NUM_WATERFALL_LINES 512
-
 class WaterfallCanvas;
 
 class WaterfallContext: public PrimaryGLContext {
@@ -12,9 +10,12 @@ public:
     WaterfallContext(WaterfallCanvas *canvas, wxGLContext *sharedContext);
 
     void Draw(std::vector<float> &points);
+    void Setup(int fft_size_in, int num_waterfall_lines_in);
 
 private:
     Gradient grad;
     GLuint waterfall;
-    unsigned char waterfall_tex[FFT_SIZE * NUM_WATERFALL_LINES];
+    unsigned char *waterfall_tex;
+    int fft_size;
+    int waterfall_lines;
 };

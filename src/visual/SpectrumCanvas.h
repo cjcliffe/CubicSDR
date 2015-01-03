@@ -6,18 +6,25 @@
 #include <vector>
 #include <queue>
 
+#include "InteractiveCanvas.h"
 #include "SpectrumContext.h"
 
 #include "fftw3.h"
-#include "Timer.h"
 #include "MouseTracker.h"
 
-class SpectrumCanvas: public wxGLCanvas {
+class WaterfallCanvas;
+
+class SpectrumCanvas: public InteractiveCanvas {
 public:
+    std::vector<float> spectrum_points;
+
     SpectrumCanvas(wxWindow *parent, int *attribList = NULL);
+    void Setup(int fft_size_in);
     ~SpectrumCanvas();
 
-    void setData(std::vector<liquid_float_complex> *data);
+    void setData(DemodulatorThreadIQData *input);
+    void attachWaterfallCanvas(WaterfallCanvas *canvas_in);
+
 private:
     void OnPaint(wxPaintEvent& event);
 
@@ -31,24 +38,19 @@ private:
 //    void rightClick(wxMouseEvent& event);
     void mouseLeftWindow(wxMouseEvent& event);
 
-    wxWindow *parent;
-    std::vector<float> spectrum_points;
-
     fftw_complex *in, *out;
     fftw_plan plan;
 
-    float fft_ceil_ma, fft_ceil_maa;
-    float fft_floor_ma, fft_floor_maa;
+    double fft_ceil_ma, fft_ceil_maa;
+    double fft_floor_ma, fft_floor_maa;
 
-    std::vector<float> fft_result;
-    std::vector<float> fft_result_ma;
-    std::vector<float> fft_result_maa;
+    std::vector<double> fft_result;
+    std::vector<double> fft_result_ma;
+    std::vector<double> fft_result_maa;
 
     SpectrumContext *glContext;
-    Timer timer;
-    float frameTimer;
-
-    MouseTracker mTracker;
+    WaterfallCanvas *waterfallCanvas;
+    int fft_size;
 // event table
 wxDECLARE_EVENT_TABLE();
 };

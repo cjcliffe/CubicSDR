@@ -136,6 +136,9 @@ SET (cubicsdr_sources
 	src/util/MouseTracker.cpp
 	src/util/GLFont.cpp
 	src/visual/PrimaryGLContext.cpp
+	src/visual/InteractiveCanvas.cpp
+	src/visual/MeterCanvas.cpp
+	src/visual/MeterContext.cpp
 	src/visual/ScopeCanvas.cpp
 	src/visual/ScopeContext.cpp
 	src/visual/SpectrumCanvas.cpp
@@ -165,6 +168,9 @@ SET (cubicsdr_headers
 	src/util/MouseTracker.h
 	src/util/GLFont.h
 	src/visual/PrimaryGLContext.h
+	src/visual/InteractiveCanvas.h
+	src/visual/MeterCanvas.h
+	src/visual/MeterContext.h
 	src/visual/ScopeCanvas.h
 	src/visual/ScopeContext.h
 	src/visual/SpectrumCanvas.h

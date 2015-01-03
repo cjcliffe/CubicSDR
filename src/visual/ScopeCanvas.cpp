@@ -21,10 +21,9 @@ wxEND_EVENT_TABLE()
 
 ScopeCanvas::ScopeCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE), parent(parent), frameTimer(0), divider(false) {
+        wxFULL_REPAINT_ON_RESIZE), parent(parent), stereo(false) {
 
     glContext = new ScopeContext(this, &wxGetApp().GetContext(this));
-    timer.start();
 }
 
 ScopeCanvas::~ScopeCanvas() {
@@ -35,8 +34,13 @@ void ScopeCanvas::setWaveformPoints(std::vector<float> &waveform_points_in) {
     waveform_points = waveform_points_in;
 }
 
-void ScopeCanvas::setDivider(bool state) {
-    divider = state;
+void ScopeCanvas::setStereo(bool state) {
+    stereo = state;
+}
+
+void ScopeCanvas::setDeviceName(std::string device_name) {
+    deviceName = device_name;
+    deviceName.append(" ");
 }
 
 void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
@@ -47,20 +51,16 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
     glContext->DrawBegin();
-    glContext->Plot(waveform_points);
-    if (divider) {
-        glContext->DrawDivider();
+    if (!deviceName.empty()) {
+        glContext->DrawDeviceName(deviceName);
     }
+    glContext->Plot(waveform_points, stereo);
     glContext->DrawEnd();
+
 
     SwapBuffers();
 }
 
 void ScopeCanvas::OnIdle(wxIdleEvent &event) {
-//    timer.update();
-//    frameTimer += timer.lastUpdateSeconds();
-//    if (frameTimer > 1.0/30.0) {
     Refresh(false);
-//        frameTimer = 0;
-//    }
 }
