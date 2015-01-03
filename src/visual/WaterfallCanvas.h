@@ -6,13 +6,14 @@
 #include <vector>
 #include <queue>
 
+#include "InteractiveCanvas.h"
 #include "WaterfallContext.h"
 #include "MouseTracker.h"
 #include "SpectrumCanvas.h"
 
 #include "fftw3.h"
 
-class WaterfallCanvas: public wxGLCanvas {
+class WaterfallCanvas: public InteractiveCanvas {
 public:
     enum DragState {
         WF_DRAG_NONE, WF_DRAG_BANDWIDTH_LEFT, WF_DRAG_BANDWIDTH_RIGHT, WF_DRAG_FREQUENCY, WF_DRAG_RANGE
@@ -23,16 +24,6 @@ public:
     ~WaterfallCanvas();
 
     void setData(DemodulatorThreadIQData *input);
-    int GetFrequencyAt(float x);
-
-    void SetView(int center_freq_in, int bandwidth_in);
-    void DisableView();
-
-    void SetCenterFrequency(unsigned int center_freq_in);
-    unsigned int GetCenterFrequency();
-
-    void SetBandwidth(unsigned int bandwidth_in);
-    unsigned int GetBandwidth();
 
     DragState getDragState();
     DragState getNextDragState();
@@ -53,7 +44,6 @@ private:
     void mouseEnterWindow(wxMouseEvent& event);
     void mouseLeftWindow(wxMouseEvent& event);
 
-    wxWindow *parent;
     SpectrumCanvas *spectrumCanvas;
     std::vector<float> spectrum_points;
 
@@ -68,7 +58,6 @@ private:
     std::vector<double> fft_result_maa;
 
     WaterfallContext *glContext;
-    MouseTracker mTracker;
 
     int activeDemodulatorBandwidth;
     int activeDemodulatorFrequency;
@@ -76,25 +65,15 @@ private:
     DragState dragState;
     DragState nextDragState;
 
-    bool shiftDown;
-    bool altDown;
-    bool ctrlDown;
-
     int fft_size;
     int waterfall_lines;
 
-    unsigned int center_freq;
-    unsigned int bandwidth;
-
-    bool isView;
     msresamp_crcf resampler;
     double resample_ratio;
     nco_crcf nco_shift;
     int shift_freq;
 
     int last_input_bandwidth;
-    int last_bandwidth;
-
     int zoom;
 
     std::vector<liquid_float_complex> shift_buffer;

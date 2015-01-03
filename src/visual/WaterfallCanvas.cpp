@@ -31,11 +31,9 @@ EVT_ENTER_WINDOW(WaterfallCanvas::mouseEnterWindow)
 wxEND_EVENT_TABLE()
 
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
-        wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE), parent(parent), spectrumCanvas(NULL), activeDemodulatorBandwidth(0), activeDemodulatorFrequency(0), dragState(
-                WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), shiftDown(false), altDown(false), ctrlDown(false), fft_size(0), waterfall_lines(0), plan(
-        NULL), in(NULL), out(NULL), center_freq(0), bandwidth(0), isView(false), resampler(NULL), resample_ratio(0), last_bandwidth(0), last_input_bandwidth(
-                0), zoom(0) {
+        InteractiveCanvas(parent, attribList), spectrumCanvas(NULL), activeDemodulatorBandwidth(0), activeDemodulatorFrequency(0), dragState(
+                WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), fft_size(0), waterfall_lines(0), plan(
+        NULL), in(NULL), out(NULL), resampler(NULL), resample_ratio(0), last_input_bandwidth(0), zoom(0) {
 
     glContext = new WaterfallContext(this, &wxGetApp().GetContext(this));
 
@@ -45,26 +43,11 @@ WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
     fft_ceil_ma = fft_ceil_maa = 100.0;
     fft_floor_ma = fft_floor_maa = 0.0;
 
-    mTracker.setTarget(this);
     SetCursor(wxCURSOR_CROSS);
 }
 
 WaterfallCanvas::~WaterfallCanvas() {
     nco_crcf_destroy(nco_shift);
-}
-
-void WaterfallCanvas::SetView(int center_freq_in, int bandwidth_in) {
-    isView = true;
-    center_freq = center_freq_in;
-    bandwidth = bandwidth_in;
-    last_bandwidth = 0;
-}
-
-void WaterfallCanvas::DisableView() {
-    isView = false;
-    center_freq = wxGetApp().getFrequency();
-    bandwidth = SRATE;
-    last_bandwidth = 0;
 }
 
 void WaterfallCanvas::Setup(int fft_size_in, int waterfall_lines_in) {
@@ -88,38 +71,6 @@ void WaterfallCanvas::Setup(int fft_size_in, int waterfall_lines_in) {
     plan = fftw_plan_dft_1d(fft_size, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
 
     glContext->Setup(fft_size, waterfall_lines);
-}
-
-int WaterfallCanvas::GetFrequencyAt(float x) {
-    int iqCenterFreq = GetCenterFrequency();
-    int iqBandwidth = GetBandwidth();
-    int freq = iqCenterFreq - (int) (0.5 * (float) iqBandwidth) + (int) ((float) x * (float) iqBandwidth);
-
-    return freq;
-}
-
-void WaterfallCanvas::SetCenterFrequency(unsigned int center_freq_in) {
-    center_freq = center_freq_in;
-}
-
-unsigned int WaterfallCanvas::GetCenterFrequency() {
-    if (isView) {
-        return center_freq;
-    } else {
-        return (unsigned int) wxGetApp().getFrequency();
-    }
-}
-
-void WaterfallCanvas::SetBandwidth(unsigned int bandwidth_in) {
-    bandwidth = bandwidth_in;
-}
-
-unsigned int WaterfallCanvas::GetBandwidth() {
-    if (isView) {
-        return bandwidth;
-    } else {
-        return SRATE;
-    }
 }
 
 WaterfallCanvas::DragState WaterfallCanvas::getDragState() {
@@ -221,6 +172,7 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 }
 
 void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
+    InteractiveCanvas::OnKeyUp(event);
     shiftDown = event.ShiftDown();
     altDown = event.AltDown();
     ctrlDown = event.ControlDown();
@@ -235,11 +187,8 @@ void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
 }
 
 void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
+    InteractiveCanvas::OnKeyDown(event);
     float angle = 5.0;
-
-    shiftDown = event.ShiftDown();
-    altDown = event.AltDown();
-    ctrlDown = event.ControlDown();
 
     DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
 
@@ -256,8 +205,20 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         freq = wxGetApp().getFrequency();
         if (shiftDown) {
             freq += SRATE * 10;
+            if (isView) {
+                SetView(center_freq + SRATE * 10, GetBandwidth());
+                if (spectrumCanvas) {
+                    spectrumCanvas->SetView(GetCenterFrequency(), GetBandwidth());
+                }
+            }
         } else {
             freq += SRATE / 2;
+            if (isView) {
+                SetView(center_freq + SRATE / 2, GetBandwidth());
+                if (spectrumCanvas) {
+                    spectrumCanvas->SetView(GetCenterFrequency(), GetBandwidth());
+                }
+            }
         }
         wxGetApp().setFrequency(freq);
         ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), freq));
@@ -266,11 +227,23 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         freq = wxGetApp().getFrequency();
         if (shiftDown) {
             freq -= SRATE * 10;
+            if (isView) {
+                SetView(center_freq - SRATE * 10, GetBandwidth());
+                if (spectrumCanvas) {
+                    spectrumCanvas->SetView(GetCenterFrequency(), GetBandwidth());
+                }
+            }
         } else {
             freq -= SRATE / 2;
+            if (isView) {
+                SetView(center_freq - SRATE / 2, GetBandwidth());
+                if (spectrumCanvas) {
+                    spectrumCanvas->SetView(GetCenterFrequency(), GetBandwidth());
+                }
+            }
         }
         wxGetApp().setFrequency(freq);
-        ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), freq));
+        ((wxFrame*) parent)->GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequenfcy: %i"), freq));
         break;
     case 'D':
     case WXK_DELETE:
@@ -542,12 +515,7 @@ void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
 }
 
 void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
-    mTracker.OnMouseMoved(event);
-
-    shiftDown = event.ShiftDown();
-    altDown = event.AltDown();
-    ctrlDown = event.ControlDown();
-
+    InteractiveCanvas::mouseMoved(event);
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getActiveDemodulator();
 
     if (mTracker.mouseDown()) {
@@ -670,12 +638,9 @@ void WaterfallCanvas::mouseMoved(wxMouseEvent& event) {
 }
 
 void WaterfallCanvas::mouseDown(wxMouseEvent& event) {
-    mTracker.OnMouseDown(event);
-    dragState = nextDragState;
+    InteractiveCanvas::mouseDown(event);
 
-    shiftDown = event.ShiftDown();
-    altDown = event.AltDown();
-    ctrlDown = event.ControlDown();
+    dragState = nextDragState;
 
     if (dragState && dragState != WF_DRAG_RANGE) {
         wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getActiveDemodulator(), false);
@@ -686,15 +651,11 @@ void WaterfallCanvas::mouseDown(wxMouseEvent& event) {
 }
 
 void WaterfallCanvas::mouseWheelMoved(wxMouseEvent& event) {
-    mTracker.OnMouseWheelMoved(event);
+    InteractiveCanvas::mouseWheelMoved(event);
 }
 
 void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
-    mTracker.OnMouseReleased(event);
-
-    shiftDown = event.ShiftDown();
-    altDown = event.AltDown();
-    ctrlDown = event.ControlDown();
+    InteractiveCanvas::mouseReleased(event);
 
     bool isNew = shiftDown
             || (wxGetApp().getDemodMgr().getLastActiveDemodulator() && !wxGetApp().getDemodMgr().getLastActiveDemodulator()->isActive());
@@ -819,13 +780,13 @@ void WaterfallCanvas::mouseReleased(wxMouseEvent& event) {
 }
 
 void WaterfallCanvas::mouseLeftWindow(wxMouseEvent& event) {
-    mTracker.OnMouseLeftWindow(event);
+    InteractiveCanvas::mouseLeftWindow(event);
     SetCursor(wxCURSOR_CROSS);
     wxGetApp().getDemodMgr().setActiveDemodulator(NULL);
 }
 
 void WaterfallCanvas::mouseEnterWindow(wxMouseEvent& event) {
-    mTracker.OnMouseEnterWindow(event);
+    InteractiveCanvas::mouseEnterWindow(event);
     SetCursor(wxCURSOR_CROSS);
 }
 

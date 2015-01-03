@@ -6,6 +6,7 @@
 #include <vector>
 #include <queue>
 
+#include "InteractiveCanvas.h"
 #include "SpectrumContext.h"
 
 #include "fftw3.h"
@@ -13,7 +14,7 @@
 
 class WaterfallCanvas;
 
-class SpectrumCanvas: public wxGLCanvas {
+class SpectrumCanvas: public InteractiveCanvas {
 public:
     std::vector<float> spectrum_points;
 
@@ -22,16 +23,6 @@ public:
     ~SpectrumCanvas();
 
     void setData(DemodulatorThreadIQData *input);
-
-    void SetView(int center_freq_in, int bandwidth_in);
-    void DisableView();
-
-    void SetCenterFrequency(unsigned int center_freq_in);
-    unsigned int GetCenterFrequency();
-
-    void SetBandwidth(unsigned int bandwidth_in);
-    unsigned int GetBandwidth();
-
     void attachWaterfallCanvas(WaterfallCanvas *canvas_in);
 
 private:
@@ -47,8 +38,6 @@ private:
 //    void rightClick(wxMouseEvent& event);
     void mouseLeftWindow(wxMouseEvent& event);
 
-    wxWindow *parent;
-
     fftw_complex *in, *out;
     fftw_plan plan;
 
@@ -62,13 +51,6 @@ private:
     SpectrumContext *glContext;
     WaterfallCanvas *waterfallCanvas;
     int fft_size;
-
-    unsigned int center_freq;
-    unsigned int bandwidth;
-
-    bool isView;
-
-    MouseTracker mTracker;
 // event table
 wxDECLARE_EVENT_TABLE();
 };

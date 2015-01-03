@@ -27,13 +27,11 @@ EVT_MOUSEWHEEL(SpectrumCanvas::mouseWheelMoved)
 wxEND_EVENT_TABLE()
 
 SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *attribList) :
-        wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE), parent(parent), fft_size(0), in(NULL), out(NULL), plan(NULL), waterfallCanvas(NULL), center_freq(0), bandwidth(0), isView(
-                0) {
+        InteractiveCanvas(parent, attribList), fft_size(0), in(NULL), out(NULL), plan(NULL), fft_ceil_ma(1), fft_ceil_maa(1), fft_floor_ma(0), fft_floor_maa(
+                0), waterfallCanvas(NULL) {
 
     glContext = new SpectrumContext(this, &wxGetApp().GetContext(this));
 
-    mTracker.setTarget(this);
     mTracker.setVertDragLock(true);
 
     SetCursor(wxCURSOR_SIZEWE);
@@ -131,7 +129,6 @@ void SpectrumCanvas::setData(DemodulatorThreadIQData *input) {
             double b = out[n][1];
             double c = sqrt(a * a + b * b);
 
-//            n = (i == FFT_SIZE / 2) ? (FFT_SIZE / 2 + 1) : i;
             double x = out[fft_size / 2 + n][0];
             double y = out[fft_size / 2 + n][1];
             double z = sqrt(x * x + y * y);
@@ -172,48 +169,12 @@ void SpectrumCanvas::setData(DemodulatorThreadIQData *input) {
     }
 }
 
-void SpectrumCanvas::SetView(int center_freq_in, int bandwidth_in) {
-    isView = true;
-    center_freq = center_freq_in;
-    bandwidth = bandwidth_in;
-}
-
-void SpectrumCanvas::DisableView() {
-    isView = false;
-    center_freq = wxGetApp().getFrequency();
-    bandwidth = SRATE;
-}
-
-void SpectrumCanvas::SetCenterFrequency(unsigned int center_freq_in) {
-    center_freq = center_freq_in;
-}
-
-unsigned int SpectrumCanvas::GetCenterFrequency() {
-    if (isView) {
-        return center_freq;
-    } else {
-        return (unsigned int) wxGetApp().getFrequency();
-    }
-}
-
-void SpectrumCanvas::SetBandwidth(unsigned int bandwidth_in) {
-    bandwidth = bandwidth_in;
-}
-
-unsigned int SpectrumCanvas::GetBandwidth() {
-    if (isView) {
-        return bandwidth;
-    } else {
-        return SRATE;
-    }
-}
-
 void SpectrumCanvas::OnIdle(wxIdleEvent &event) {
     Refresh(false);
 }
 
 void SpectrumCanvas::mouseMoved(wxMouseEvent& event) {
-    mTracker.OnMouseMoved(event);
+    InteractiveCanvas::mouseMoved(event);
     if (mTracker.mouseDown()) {
         int freqChange = mTracker.getDeltaMouseX() * GetBandwidth();
 
@@ -226,12 +187,12 @@ void SpectrumCanvas::mouseMoved(wxMouseEvent& event) {
                     waterfallCanvas->SetCenterFrequency(center_freq);
                 }
 
-                int bw = (int)bandwidth;
-                int bwOfs = ((int)center_freq>freq)?((int)bandwidth/2):(-(int)bandwidth/2);
-                int freqEdge = ((int)center_freq+bwOfs);
+                int bw = (int) bandwidth;
+                int bwOfs = ((int) center_freq > freq) ? ((int) bandwidth / 2) : (-(int) bandwidth / 2);
+                int freqEdge = ((int) center_freq + bwOfs);
 
-                if (abs(freq-freqEdge) > (SRATE/2)) {
-                    freqChange = -(((int)center_freq>freq)?(freqEdge-freq-(SRATE/2)):(freqEdge-freq+(SRATE/2)));
+                if (abs(freq - freqEdge) > (SRATE / 2)) {
+                    freqChange = -(((int) center_freq > freq) ? (freqEdge - freq - (SRATE / 2)) : (freqEdge - freq + (SRATE / 2)));
                 } else {
                     freqChange = 0;
                 }
@@ -250,28 +211,25 @@ void SpectrumCanvas::mouseMoved(wxMouseEvent& event) {
 }
 
 void SpectrumCanvas::mouseDown(wxMouseEvent& event) {
-    mTracker.OnMouseDown(event);
+    InteractiveCanvas::mouseDown(event);
     SetCursor(wxCURSOR_CROSS);
 }
 
 void SpectrumCanvas::mouseWheelMoved(wxMouseEvent& event) {
-    mTracker.OnMouseWheelMoved(event);
+    InteractiveCanvas::mouseWheelMoved(event);
 }
 
 void SpectrumCanvas::mouseReleased(wxMouseEvent& event) {
-    mTracker.OnMouseReleased(event);
+    InteractiveCanvas::mouseReleased(event);
     SetCursor(wxCURSOR_SIZEWE);
 }
 
 void SpectrumCanvas::mouseLeftWindow(wxMouseEvent& event) {
-    mTracker.OnMouseLeftWindow(event);
+    InteractiveCanvas::mouseLeftWindow(event);
     SetCursor(wxCURSOR_SIZEWE);
 }
 
 void SpectrumCanvas::attachWaterfallCanvas(WaterfallCanvas* canvas_in) {
     waterfallCanvas = canvas_in;
 }
-//void SpectrumCanvas::rightClick(wxMouseEvent& event) {}
-//void SpectrumCanvas::keyPressed(wxKeyEvent& event) {}
-//void SpectrumCanvas::keyReleased(wxKeyEvent& event) {}
 
