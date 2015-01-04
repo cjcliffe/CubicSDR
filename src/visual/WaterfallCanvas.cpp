@@ -33,7 +33,7 @@ EVT_ENTER_WINDOW(WaterfallCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
-        InteractiveCanvas(parent, attribList), spectrumCanvas(NULL), activeDemodulatorBandwidth(0), activeDemodulatorFrequency(0), dragState(
+        InteractiveCanvas(parent, attribList), spectrumCanvas(NULL), dragState(
                 WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), fft_size(0), waterfall_lines(0), plan(
         NULL), in(NULL), out(NULL), resampler(NULL), resamplerRatio(0), lastInputBandwidth(0), zoom(1), mouseZoom(1) {
 
@@ -228,7 +228,11 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     case WXK_LEFT:
         freq = wxGetApp().getFrequency();
         if (shiftDown) {
-            freq -= SRATE * 10;
+            if (((long) freq - SRATE * 10) < SRATE / 2) {
+                freq = SRATE / 2;
+            } else {
+                freq -= SRATE * 10;
+            }
             if (isView) {
                 setView(centerFreq - SRATE * 10, getBandwidth());
                 if (spectrumCanvas) {
@@ -236,7 +240,11 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
                 }
             }
         } else {
-            freq -= SRATE / 2;
+            if (((long) freq - SRATE / 2) < SRATE / 2) {
+                freq = SRATE / 2;
+            } else {
+                freq -= SRATE / 2;
+            }
             if (isView) {
                 setView(centerFreq - SRATE / 2, getBandwidth());
                 if (spectrumCanvas) {
@@ -290,7 +298,7 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
 
     if (mouseZoom != 1) {
         currentZoom = mouseZoom;
-        mouseZoom = mouseZoom + (1.0 - mouseZoom)*0.2;
+        mouseZoom = mouseZoom + (1.0 - mouseZoom) * 0.2;
     }
 
     unsigned int bw;
@@ -539,45 +547,34 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
                 bwDiff = -bwDiff;
             }
 
-            if (!activeDemodulatorBandwidth) {
-                activeDemodulatorBandwidth = demod->getParams().bandwidth;
+            int currentBW = demod->getBandwidth();
+
+            currentBW = currentBW + bwDiff;
+            if (currentBW > SRATE) {
+                currentBW = SRATE;
+            }
+            if (currentBW < MIN_BANDWIDTH) {
+                currentBW = MIN_BANDWIDTH;
             }
 
-            DemodulatorThreadCommand command;
-            command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_BANDWIDTH;
-            activeDemodulatorBandwidth = activeDemodulatorBandwidth + bwDiff;
-            if (activeDemodulatorBandwidth > SRATE) {
-                activeDemodulatorBandwidth = SRATE;
-            }
-            if (activeDemodulatorBandwidth < MIN_BANDWIDTH) {
-                activeDemodulatorBandwidth = MIN_BANDWIDTH;
-            }
-
-            command.int_value = activeDemodulatorBandwidth;
-            demod->getCommandQueue()->push(command);
-            setStatusText("Set demodulator bandwidth: %s", activeDemodulatorBandwidth);
+            demod->setBandwidth(currentBW);
+            setStatusText("Set demodulator bandwidth: %s", demod->getBandwidth());
         }
 
         if (dragState == WF_DRAG_FREQUENCY) {
             int bwDiff = (int) (mouseTracker.getDeltaMouseX() * (float) getBandwidth());
 
-            if (!activeDemodulatorFrequency) {
-                activeDemodulatorFrequency = demod->getParams().frequency;
-            }
+            unsigned int currentFreq = demod->getFrequency();
 
-            DemodulatorThreadCommand command;
-            command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_FREQUENCY;
-            activeDemodulatorFrequency = activeDemodulatorFrequency + bwDiff;
+            currentFreq = (unsigned int)((int)currentFreq + bwDiff);
 
-            command.int_value = activeDemodulatorFrequency;
-            demod->getCommandQueue()->push(command);
+            demod->setFrequency(currentFreq);
+            demod->updateLabel(currentFreq);
 
-            demod->updateLabel(activeDemodulatorFrequency);
-
-            setStatusText("Set demodulator frequency: %s", activeDemodulatorFrequency);
+            setStatusText("Set demodulator frequency: %s", demod->getFrequency());
         }
     } else if (mouseTracker.mouseRightDown()) {
-        mouseZoom = mouseZoom + ((1.0 - (mouseTracker.getDeltaMouseY()*4.0))-mouseZoom) * 0.1;
+        mouseZoom = mouseZoom + ((1.0 - (mouseTracker.getDeltaMouseY() * 4.0)) - mouseZoom) * 0.1;
     } else {
         int freqPos = getFrequencyAt(mouseTracker.getMouseX());
 
@@ -655,7 +652,8 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
             if (shiftDown) {
                 setStatusText("Click to create a new demodulator or hold ALT to drag range.");
             } else {
-                setStatusText("Click to move active demodulator frequency or hold ALT to drag range; hold SHIFT to create new.  Right drag or A / Z to Zoom.  Arrow keys (+SHIFT) to move center frequency.");
+                setStatusText(
+                        "Click to move active demodulator frequency or hold ALT to drag range; hold SHIFT to create new.  Right drag or A / Z to Zoom.  Arrow keys (+SHIFT) to move center frequency.");
             }
         }
 
@@ -671,9 +669,6 @@ void WaterfallCanvas::OnMouseDown(wxMouseEvent& event) {
     if (dragState && dragState != WF_DRAG_RANGE) {
         wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getActiveDemodulator(), false);
     }
-
-    activeDemodulatorBandwidth = 0;
-    activeDemodulatorFrequency = 0;
 }
 
 void WaterfallCanvas::OnMouseWheelMoved(wxMouseEvent& event) {

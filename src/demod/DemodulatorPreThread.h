@@ -48,6 +48,7 @@ protected:
 
     msresamp_crcf iqResampler;
     double iqResampleRatio;
+    std::vector<liquid_float_complex> resampledData;
 
     msresamp_rrrf audioResampler;
     msresamp_rrrf stereoResampler;

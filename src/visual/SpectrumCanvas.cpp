@@ -179,7 +179,7 @@ void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
         int freqChange = mouseTracker.getDeltaMouseX() * getBandwidth();
 
         if (freqChange != 0) {
-            int freq = wxGetApp().getFrequency();
+            unsigned int freq = wxGetApp().getFrequency();
 
             if (isView) {
                 centerFreq = centerFreq - freqChange;
@@ -187,19 +187,23 @@ void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
                     waterfallCanvas->setCenterFrequency(centerFreq);
                 }
 
-                int bw = (int) bandwidth;
-                int bwOfs = ((int) centerFreq > freq) ? ((int) bandwidth / 2) : (-(int) bandwidth / 2);
-                int freqEdge = ((int) centerFreq + bwOfs);
+                long bw = (long) bandwidth;
+                long bwOfs = (centerFreq > freq) ? ((long) bandwidth / 2) : (-(long) bandwidth / 2);
+                long freqEdge = ((long) centerFreq + bwOfs);
 
-                if (abs(freq - freqEdge) > (SRATE / 2)) {
-                    freqChange = -(((int) centerFreq > freq) ? (freqEdge - freq - (SRATE / 2)) : (freqEdge - freq + (SRATE / 2)));
+                if (abs((long) freq - freqEdge) > (SRATE / 2)) {
+                    freqChange = -((centerFreq > freq) ? (freqEdge - (long)freq - (SRATE / 2)) : (freqEdge - (long)freq + (SRATE / 2)));
                 } else {
                     freqChange = 0;
                 }
             }
 
             if (freqChange) {
-                freq -= freqChange;
+                if ((long)freq - freqChange < SRATE/2) {
+                    freq = SRATE/2;
+                } else {
+                    freq -= freqChange;
+                }
                 wxGetApp().setFrequency(freq);
                 setStatusText("Set center frequency: %s", freq);
             }

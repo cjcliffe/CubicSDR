@@ -6,16 +6,15 @@
 #include <vector>
 #include <queue>
 
+#include "InteractiveCanvas.h"
 #include "MeterContext.h"
 #include "MouseTracker.h"
 
 #include "fftw3.h"
 #include "Timer.h"
 
-class MeterCanvas: public wxGLCanvas {
+class MeterCanvas: public InteractiveCanvas {
 public:
-    std::vector<float> waveform_points;
-
     MeterCanvas(wxWindow *parent, int *attribList = NULL);
     ~MeterCanvas();
 
@@ -28,6 +27,8 @@ public:
     bool inputChanged();
     float getInputValue();
 
+    void setHelpTip(std::string tip);
+
 private:
     void OnPaint(wxPaintEvent& event);
     void OnIdle(wxIdleEvent &event);
@@ -39,8 +40,6 @@ private:
     void OnMouseEnterWindow(wxMouseEvent& event);
     void OnMouseLeftWindow(wxMouseEvent& event);
 
-    MouseTracker mTracker;
-    wxWindow *parent;
     MeterContext *glContext;
 
     float level;
@@ -49,9 +48,8 @@ private:
     float inputValue;
     float userInputValue;
 
-    bool shiftDown;
-    bool altDown;
-    bool ctrlDown;
+    std::string helpTip;
+    //
 wxDECLARE_EVENT_TABLE();
 };
 

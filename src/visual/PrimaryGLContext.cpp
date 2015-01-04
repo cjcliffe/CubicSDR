@@ -107,7 +107,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, float r, float 
         center_freq = wxGetApp().getFrequency();
     }
 
-    float uxPos = (float) (demod->getParams().frequency - (center_freq - srate / 2)) / (float) srate;
+    float uxPos = (float) (demod->getFrequency() - (center_freq - srate / 2)) / (float) srate;
     uxPos = (uxPos - 0.5) * 2.0;
 
     glDisable(GL_TEXTURE_2D);
@@ -116,7 +116,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, float r, float 
     glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
     glColor4f(r, g, b, 0.6);
 
-    float ofs = ((float) demod->getParams().bandwidth) / (float) srate;
+    float ofs = ((float) demod->getBandwidth()) / (float) srate;
 
     glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
     glColor4f(r, g, b, 0.2);
@@ -162,7 +162,7 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, f
         center_freq = wxGetApp().getFrequency();
     }
 
-    float uxPos = (float) (demod->getParams().frequency - (center_freq - srate / 2)) / (float) srate;
+    float uxPos = (float) (demod->getFrequency() - (center_freq - srate / 2)) / (float) srate;
 
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_TEXTURE_2D);
@@ -175,7 +175,7 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, f
     glVertex3f((uxPos - 0.5) * 2.0, 1.0, 0.0);
     glVertex3f((uxPos - 0.5) * 2.0, -1.0, 0.0);
 
-    float ofs = ((float) demod->getParams().bandwidth) / (float) srate;
+    float ofs = ((float) demod->getBandwidth()) / (float) srate;
 
     glVertex3f((uxPos - 0.5) * 2.0 - ofs, 1.0, 0.0);
     glVertex3f((uxPos - 0.5) * 2.0 - ofs, -1.0, 0.0);
@@ -254,7 +254,7 @@ void PrimaryGLContext::DrawFreqSelector(float uxPos, float r, float g, float b, 
     if (!demod) {
         bw = defaultDemodParams.bandwidth;
     } else {
-        bw = demod->getParams().bandwidth;
+        bw = demod->getBandwidth();
     }
 
     glDisable(GL_DEPTH_TEST);

@@ -173,16 +173,24 @@ void DemodulatorPreThread::threadMain() {
                 buffers.push_back(resamp);
             }
 
-            resamp->setRefCount(1);
-            resamp->data.assign(in_buf, in_buf + bufSize);
+            int out_size = ceil((double) (bufSize) * iqResampleRatio) + 512;
 
-//            firfilt_crcf_execute_block(fir_filter, in_buf, bufSize, &((*resamp.data)[0]));
+            if (resampledData.size() != out_size) {
+                if (resampledData.capacity() < out_size) {
+                    resampledData.reserve(out_size);
+                }
+                resampledData.resize(out_size);
+            }
+
+            unsigned int numWritten;
+            msresamp_crcf_execute(iqResampler, in_buf, bufSize, &resampledData[0], &numWritten);
+
+            resamp->setRefCount(1);
+            resamp->data.assign(resampledData.begin(), resampledData.begin() + numWritten);
 
             resamp->audioResampleRatio = audioResampleRatio;
             resamp->audioResampler = audioResampler;
             resamp->stereoResampler = stereoResampler;
-            resamp->resamplerRatio = iqResampleRatio;
-            resamp->resampler = iqResampler;
             resamp->bandwidth = params.bandwidth;
 
             iqOutputQueue->push(resamp);
@@ -197,6 +205,8 @@ void DemodulatorPreThread::threadMain() {
 
                 switch (result.cmd) {
                 case DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS:
+                    msresamp_crcf_destroy(iqResampler);
+
                     iqResampler = result.resampler;
                     audioResampler = result.audioResampler;
                     stereoResampler = result.stereoResampler;

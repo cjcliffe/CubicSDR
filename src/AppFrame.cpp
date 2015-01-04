@@ -57,6 +57,7 @@ AppFrame::AppFrame() :
 
     demodSignalMeter = new MeterCanvas(this, NULL);
     demodSignalMeter->setMax(0.5);
+    demodSignalMeter->setHelpTip("Current Signal Level.  Click / Drag to set Squelch level.");
     demodTray->Add(demodSignalMeter, 1, wxEXPAND | wxALL, 0);
 
     demodTray->AddSpacer(2);

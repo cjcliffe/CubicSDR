@@ -48,7 +48,6 @@ protected:
     std::deque<AudioThreadInput *> outputBuffers;
     std::deque<AudioThreadInput *>::iterator outputBuffersI;
 
-    std::vector<liquid_float_complex> resampledData;
     std::vector<liquid_float_complex> agcData;
     std::vector<float> agcAMData;
     std::vector<float> demodOutputData;

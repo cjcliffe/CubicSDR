@@ -35,7 +35,6 @@ void DemodulatorThread::threadMain() {
     pthread_setschedparam(tID, SCHED_FIFO, &prio);
 #endif
 
-    msresamp_crcf resampler = NULL;
     msresamp_rrrf audioResampler = NULL;
     msresamp_rrrf stereoResampler = NULL;
     firfilt_rrrf firStereoLeft = NULL;
@@ -104,15 +103,12 @@ void DemodulatorThread::threadMain() {
             continue;
         }
 
-        if (resampler == NULL) {
-            resampler = inp->resampler;
+        if (audioResampler == NULL) {
             audioResampler = inp->audioResampler;
             stereoResampler = inp->stereoResampler;
-        } else if (resampler != inp->resampler) {
-            msresamp_crcf_destroy(resampler);
+        } else if (audioResampler != inp->audioResampler) {
             msresamp_rrrf_destroy(audioResampler);
             msresamp_rrrf_destroy(stereoResampler);
-            resampler = inp->resampler;
             audioResampler = inp->audioResampler;
             stereoResampler = inp->stereoResampler;
 
@@ -122,34 +118,27 @@ void DemodulatorThread::threadMain() {
             freqdem_reset(demodFM);
         }
 
-        int out_size = ceil((double) (bufSize) * inp->resamplerRatio) + 512;
-
-        if (agcData.size() != out_size) {
-            if (agcData.capacity() < out_size) {
-                agcData.reserve(out_size);
-                agcAMData.reserve(out_size);
-                resampledData.reserve(out_size);
+        if (agcData.size() != bufSize) {
+            if (agcData.capacity() < bufSize) {
+                agcData.reserve(bufSize);
+                agcAMData.reserve(bufSize);
             }
-            agcData.resize(out_size);
-            resampledData.resize(out_size);
-            agcAMData.resize(out_size);
+            agcData.resize(bufSize);
+            agcAMData.resize(bufSize);
         }
-
-        unsigned int numWritten;
-        msresamp_crcf_execute(resampler, &(inp->data[0]), bufSize, &resampledData[0], &numWritten);
 
         double audio_resample_ratio = inp->audioResampleRatio;
 
-        if (demodOutputData.size() != numWritten) {
-            if (demodOutputData.capacity() < numWritten) {
-                demodOutputData.reserve(numWritten);
+        if (demodOutputData.size() != bufSize) {
+            if (demodOutputData.capacity() < bufSize) {
+                demodOutputData.reserve(bufSize);
             }
-            demodOutputData.resize(numWritten);
+            demodOutputData.resize(bufSize);
         }
 
-        int audio_out_size = ceil((double) (numWritten) * audio_resample_ratio) + 512;
+        int audio_out_size = ceil((double) (bufSize) * audio_resample_ratio) + 512;
 
-        agc_crcf_execute_block(iqAutoGain, &resampledData[0], numWritten, &agcData[0]);
+        agc_crcf_execute_block(iqAutoGain, &(inp->data[0]), bufSize, &agcData[0]);
 
         float currentSignalLevel = 0;
 
@@ -160,27 +149,27 @@ void DemodulatorThread::threadMain() {
         }
 
         if (demodulatorType == DEMOD_TYPE_FM) {
-            freqdem_demodulate_block(demodFM, &agcData[0], numWritten, &demodOutputData[0]);
+            freqdem_demodulate_block(demodFM, &agcData[0], bufSize, &demodOutputData[0]);
         } else {
             float p;
             switch (demodulatorType.load()) {
             case DEMOD_TYPE_LSB:
-                for (int i = 0; i < numWritten; i++) { // Reject upper band
-                    nco_crcf_mix_up(ssbShifterUp, resampledData[i], &x);
+                for (int i = 0; i < bufSize; i++) { // Reject upper band
+                    nco_crcf_mix_up(ssbShifterUp, inp->data[i], &x);
                     nco_crcf_step(ssbShifterUp);
                     firfilt_crcf_push(firSSB, x);
                     firfilt_crcf_execute(firSSB, &x);
-                    nco_crcf_mix_down(ssbShifterDown, x, &resampledData[i]);
+                    nco_crcf_mix_down(ssbShifterDown, x, &(inp->data[i]));
                     nco_crcf_step(ssbShifterDown);
                 }
                 break;
             case DEMOD_TYPE_USB:
-                for (int i = 0; i < numWritten; i++) { // Reject lower band
-                    nco_crcf_mix_down(ssbShifterDown, resampledData[i], &x);
+                for (int i = 0; i < bufSize; i++) { // Reject lower band
+                    nco_crcf_mix_down(ssbShifterDown, inp->data[i], &x);
                     nco_crcf_step(ssbShifterDown);
                     firfilt_crcf_push(firSSB, x);
                     firfilt_crcf_execute(firSSB, &x);
-                    nco_crcf_mix_up(ssbShifterUp, x, &resampledData[i]);
+                    nco_crcf_mix_up(ssbShifterUp, x, &(inp->data[i]));
                     nco_crcf_step(ssbShifterUp);
                 }
                 break;
@@ -190,8 +179,8 @@ void DemodulatorThread::threadMain() {
 
             amOutputCeil = 0;
 
-            for (int i = 0; i < numWritten; i++) {
-                ampmodem_demodulate(demodAM, resampledData[i], &demodOutputData[i]);
+            for (int i = 0; i < bufSize; i++) {
+                ampmodem_demodulate(demodAM, inp->data[i], &demodOutputData[i]);
                 if (demodOutputData[i] > amOutputCeil) {
                     amOutputCeil = demodOutputData[i];
                 }
@@ -201,7 +190,7 @@ void DemodulatorThread::threadMain() {
 
             float gain = 0.95 / amOutputCeilMAA;
 
-            for (int i = 0; i < numWritten; i++) {
+            for (int i = 0; i < bufSize; i++) {
                 demodOutputData[i] *= gain;
             }
         }
@@ -214,14 +203,14 @@ void DemodulatorThread::threadMain() {
         }
 
         unsigned int numAudioWritten;
-        msresamp_rrrf_execute(audioResampler, &demodOutputData[0], numWritten, &resampledOutputData[0], &numAudioWritten);
+        msresamp_rrrf_execute(audioResampler, &demodOutputData[0], bufSize, &resampledOutputData[0], &numAudioWritten);
 
         if (stereo) {
-            if (demodStereoData.size() != numWritten) {
-                if (demodStereoData.capacity() < numWritten) {
-                    demodStereoData.reserve(numWritten);
+            if (demodStereoData.size() != bufSize) {
+                if (demodStereoData.capacity() < bufSize) {
+                    demodStereoData.reserve(bufSize);
                 }
-                demodStereoData.resize(numWritten);
+                demodStereoData.resize(bufSize);
             }
 
             double freq = (2.0 * M_PI) * (((double) abs(38000)) / ((double) inp->bandwidth));
@@ -231,7 +220,7 @@ void DemodulatorThread::threadMain() {
                 stereoShiftFrequency = freq;
             }
 
-            for (int i = 0; i < numWritten; i++) {
+            for (int i = 0; i < bufSize; i++) {
                 firhilbf_r2c_execute(firStereoR2C, demodOutputData[i], &x);
                 nco_crcf_mix_down(stereoShifter, x, &y);
                 nco_crcf_step(stereoShifter);
@@ -245,7 +234,7 @@ void DemodulatorThread::threadMain() {
                 resampledStereoData.resize(audio_out_size);
             }
 
-            msresamp_rrrf_execute(stereoResampler, &demodStereoData[0], numWritten, &resampledStereoData[0], &numAudioWritten);
+            msresamp_rrrf_execute(stereoResampler, &demodStereoData[0], bufSize, &resampledStereoData[0], &numAudioWritten);
         }
 
         if (currentSignalLevel > signalLevel) {
@@ -318,15 +307,15 @@ void DemodulatorThread::threadMain() {
                 }
             } else {
                 ati_vis->channels = 1;
-                if (numAudioWritten > numWritten) {
+                if (numAudioWritten > bufSize) {
 
                     if (num_vis > numAudioWritten) {
                         num_vis = numAudioWritten;
                     }
                     ati_vis->data.assign(resampledOutputData.begin(), resampledOutputData.begin() + num_vis);
                 } else {
-                    if (num_vis > numWritten) {
-                        num_vis = numWritten;
+                    if (num_vis > bufSize) {
+                        num_vis = bufSize;
                     }
                     ati_vis->data.assign(demodOutputData.begin(), demodOutputData.begin() + num_vis);
                 }
@@ -379,9 +368,6 @@ void DemodulatorThread::threadMain() {
         inp->decRefCount();
     }
 
-    if (resampler != NULL) {
-        msresamp_crcf_destroy(resampler);
-    }
     if (audioResampler != NULL) {
         msresamp_rrrf_destroy(audioResampler);
     }

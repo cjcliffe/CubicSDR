@@ -61,9 +61,6 @@ private:
 
     WaterfallContext *glContext;
 
-    int activeDemodulatorBandwidth;
-    int activeDemodulatorFrequency;
-
     DragState dragState;
     DragState nextDragState;
 

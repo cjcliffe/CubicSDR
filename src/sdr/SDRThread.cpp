@@ -145,9 +145,12 @@ void SDRThread::threadMain() {
 
                 switch (command.cmd) {
                 case SDRThreadCommand::SDR_THREAD_CMD_TUNE:
-                    std::cout << "Set frequency: " << command.int_value << std::endl;
                     freq_changed = true;
                     new_freq = command.int_value;
+                    if (new_freq < SRATE / 2) {
+                        new_freq = SRATE / 2;
+                    }
+                    std::cout << "Set frequency: " << new_freq << std::endl;
                     break;
                 default:
                     break;

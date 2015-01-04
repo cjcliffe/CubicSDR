@@ -66,7 +66,15 @@ public:
     void setDemodulatorType(int demod_type_in);
     int getDemodulatorType();
 
+    void setBandwidth(int bw);
+    int getBandwidth();
+
+    void setFrequency(unsigned int freq);
+    int getFrequency();
 private:
+
+    void checkBandwidth();
+
     std::atomic<std::string *> label; //
     bool terminated; //
     bool demodTerminated; //
@@ -77,5 +85,6 @@ private:
     std::atomic<bool> stereo;
 
     int currentDemodType;
-};
-
+    int currentBandwidth;
+    int currentFrequency;
+  };
