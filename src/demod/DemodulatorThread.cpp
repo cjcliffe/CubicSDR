@@ -163,7 +163,7 @@ void DemodulatorThread::threadMain() {
             freqdem_demodulate_block(demodFM, &agcData[0], numWritten, &demodOutputData[0]);
         } else {
             float p;
-            switch (demodulatorType) {
+            switch (demodulatorType.load()) {
             case DEMOD_TYPE_LSB:
                 for (int i = 0; i < numWritten; i++) { // Reject upper band
                     nco_crcf_mix_up(ssbShifterUp, resampledData[i], &x);
