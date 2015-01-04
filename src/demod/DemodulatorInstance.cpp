@@ -2,7 +2,7 @@
 
 DemodulatorInstance::DemodulatorInstance() :
         t_Demod(NULL), t_PreDemod(NULL), t_Audio(NULL), threadQueueDemod(NULL), demodulatorThread(NULL), terminated(false), audioTerminated(false), demodTerminated(
-        false), preDemodTerminated(false), active(false), squelch(false), stereo(false), currentBandwidth(0), currentFrequency(0) {
+        false), preDemodTerminated(false), active(false), squelch(false), stereo(false), currentFrequency(0), currentBandwidth(0) {
 
     label = new std::string("Unnamed");
     threadQueueDemod = new DemodulatorThreadInputQueue;
@@ -36,6 +36,8 @@ void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQu
 }
 
 void DemodulatorInstance::run() {
+    currentFrequency = demodulatorPreThread->getParams().frequency;
+
     t_Audio = new std::thread(&AudioThread::threadMain, audioThread);
 
 #ifdef __APPLE__    // Already using pthreads, might as well do some custom init..
@@ -63,10 +65,10 @@ void DemodulatorInstance::run() {
     active = true;
 }
 
-void DemodulatorInstance::updateLabel(int freq) {
+void DemodulatorInstance::updateLabel(long long freq) {
     std::stringstream newLabel;
     newLabel.precision(3);
-    newLabel << std::fixed << ((float) freq / 1000000.0);
+    newLabel << std::fixed << ((long double) freq / 1000000.0);
     setLabel(newLabel.str());
 }
 
@@ -234,7 +236,7 @@ void DemodulatorInstance::setBandwidth(int bw) {
         command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_BANDWIDTH;
         currentBandwidth = bw;
         checkBandwidth();
-        command.int_value = currentBandwidth;
+        command.llong_value = currentBandwidth;
         threadQueueCommand->push(command);
     }
     demodulatorPreThread->getParams().bandwidth;
@@ -247,21 +249,21 @@ int DemodulatorInstance::getBandwidth() {
     return currentBandwidth;
 }
 
-void DemodulatorInstance::setFrequency(unsigned int freq) {
-    if (((long)freq - getBandwidth()/2) < SRATE/2) {
+void DemodulatorInstance::setFrequency(long long freq) {
+    if ((freq - getBandwidth()/2) < SRATE/2) {
         freq = SRATE/2 - getBandwidth()/2;
     }
     if (demodulatorPreThread && threadQueueCommand) {
          DemodulatorThreadCommand command;
          command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_FREQUENCY;
          currentFrequency = freq;
-         command.int_value = freq;
+         command.llong_value = freq;
          threadQueueCommand->push(command);
      }
      demodulatorPreThread->getParams().bandwidth;
 }
 
-int DemodulatorInstance::getFrequency() {
+long long DemodulatorInstance::getFrequency() {
     if (!currentFrequency) {
         currentFrequency = demodulatorPreThread->getParams().frequency;
     }

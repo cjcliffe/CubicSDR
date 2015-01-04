@@ -44,7 +44,7 @@ public:
     void setLabel(std::string labelStr);
 
     bool isTerminated();
-    void updateLabel(int freq);
+    void updateLabel(long long freq);
 
     bool isActive();
     void setActive(bool state);
@@ -69,8 +69,8 @@ public:
     void setBandwidth(int bw);
     int getBandwidth();
 
-    void setFrequency(unsigned int freq);
-    int getFrequency();
+    void setFrequency(long long freq);
+    long long getFrequency();
 private:
 
     void checkBandwidth();
@@ -84,7 +84,7 @@ private:
     std::atomic<bool> squelch;
     std::atomic<bool> stereo;
 
-    int currentDemodType;
+    long long currentFrequency;
     int currentBandwidth;
-    int currentFrequency;
+    int currentDemodType;
   };

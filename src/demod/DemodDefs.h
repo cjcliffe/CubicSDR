@@ -27,18 +27,18 @@ public:
     };
 
     DemodulatorThreadCommand() :
-            cmd(DEMOD_THREAD_CMD_NULL), context(NULL), int_value(0) {
+            cmd(DEMOD_THREAD_CMD_NULL), context(NULL), llong_value(0) {
 
     }
 
     DemodulatorThreadCommand(DemodulatorThreadCommandEnum cmd) :
-            cmd(cmd), context(NULL), int_value(0) {
+            cmd(cmd), context(NULL), llong_value(0) {
 
     }
 
     DemodulatorThreadCommandEnum cmd;
     void *context;
-    int int_value;
+    long long llong_value;
 };
 
 class DemodulatorThreadControlCommand {
@@ -57,7 +57,7 @@ public:
 
 class DemodulatorThreadIQData: public ReferenceCounter {
 public:
-    unsigned int frequency;
+    long long frequency;
     unsigned int bandwidth;
     std::vector<liquid_float_complex> data;
 
@@ -91,7 +91,7 @@ public:
 
 class DemodulatorThreadAudioData: public ReferenceCounter {
 public:
-    unsigned int frequency;
+    long long frequency;
     unsigned int sampleRate;
     unsigned char channels;
 
@@ -102,7 +102,7 @@ public:
 
     }
 
-    DemodulatorThreadAudioData(unsigned int frequency, unsigned int sampleRate, std::vector<float> *data) :
+    DemodulatorThreadAudioData(long long frequency, unsigned int sampleRate, std::vector<float> *data) :
             frequency(frequency), sampleRate(sampleRate), channels(1), data(data) {
 
     }
@@ -119,7 +119,7 @@ typedef ThreadQueue<DemodulatorThreadControlCommand> DemodulatorThreadControlCom
 
 class DemodulatorThreadParameters {
 public:
-    unsigned int frequency;
+    long long frequency;
     unsigned int inputRate;
     unsigned int bandwidth; // set equal to disable second stage re-sampling?
     unsigned int audioSampleRate;

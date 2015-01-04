@@ -7,6 +7,7 @@
 #include "SpectrumCanvas.h"
 #include "WaterfallCanvas.h"
 #include "MeterCanvas.h"
+#include "TuningCanvas.h"
 
 #include <map>
 
@@ -36,6 +37,7 @@ private:
     SpectrumCanvas *demodSpectrumCanvas;
     WaterfallCanvas *demodWaterfallCanvas;
     MeterCanvas *demodSignalMeter;
+    TuningCanvas *demodTuner;
 // event table
 
     DemodulatorInstance *activeDemodulator;

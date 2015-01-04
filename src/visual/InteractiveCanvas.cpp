@@ -27,7 +27,7 @@ InteractiveCanvas::InteractiveCanvas(wxWindow *parent, int *attribList) :
 InteractiveCanvas::~InteractiveCanvas() {
 }
 
-void InteractiveCanvas::setView(int center_freq_in, int bandwidth_in) {
+void InteractiveCanvas::setView(long long center_freq_in, int bandwidth_in) {
     isView = true;
     centerFreq = center_freq_in;
     bandwidth = bandwidth_in;
@@ -41,23 +41,23 @@ void InteractiveCanvas::disableView() {
     lastBandwidth = 0;
 }
 
-int InteractiveCanvas::getFrequencyAt(float x) {
-    int iqCenterFreq = getCenterFrequency();
-    int iqBandwidth = getBandwidth();
-    int freq = iqCenterFreq - (int) (0.5 * (float) iqBandwidth) + (int) ((float) x * (float) iqBandwidth);
+long long InteractiveCanvas::getFrequencyAt(float x) {
+    long long iqCenterFreq = getCenterFrequency();
+    long long iqBandwidth = getBandwidth();
+    long long freq = iqCenterFreq - (long long)(0.5 * (long double) iqBandwidth) + ((long double) x * (long double) iqBandwidth);
 
     return freq;
 }
 
-void InteractiveCanvas::setCenterFrequency(unsigned int center_freq_in) {
+void InteractiveCanvas::setCenterFrequency(long long center_freq_in) {
     centerFreq = center_freq_in;
 }
 
-unsigned int InteractiveCanvas::getCenterFrequency() {
+long long InteractiveCanvas::getCenterFrequency() {
     if (isView) {
         return centerFreq;
     } else {
-        return (unsigned int) wxGetApp().getFrequency();
+        return wxGetApp().getFrequency();
     }
 }
 

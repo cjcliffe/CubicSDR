@@ -21,22 +21,22 @@ public:
     };
 
     SDRThreadCommand() :
-            cmd(SDR_THREAD_CMD_NULL), int_value(0) {
+            cmd(SDR_THREAD_CMD_NULL), llong_value(0) {
 
     }
 
     SDRThreadCommand(SDRThreadCommandEnum cmd) :
-            cmd(cmd), int_value(0) {
+            cmd(cmd), llong_value(0) {
 
     }
 
     SDRThreadCommandEnum cmd;
-    int int_value;
+    long long llong_value;
 };
 
 class SDRThreadIQData: public ReferenceCounter {
 public:
-    unsigned int frequency;
+    long long frequency;
     unsigned int bandwidth;
     std::vector<signed char> data;
 
@@ -45,7 +45,7 @@ public:
 
     }
 
-    SDRThreadIQData(unsigned int bandwidth, unsigned int frequency, std::vector<signed char> *data) :
+    SDRThreadIQData(unsigned int bandwidth, long long frequency, std::vector<signed char> *data) :
             frequency(frequency), bandwidth(bandwidth) {
 
     }

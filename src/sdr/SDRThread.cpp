@@ -110,7 +110,7 @@ void SDRThread::threadMain() {
 
     signed char buf[BUF_SIZE];
 
-    unsigned int frequency = DEFAULT_FREQ;
+    long long frequency = DEFAULT_FREQ;
     unsigned int bandwidth = SRATE;
 
     rtlsdr_open(&dev, firstDevAvailable);
@@ -137,7 +137,7 @@ void SDRThread::threadMain() {
 
         if (!cmdQueue->empty()) {
             bool freq_changed = false;
-            float new_freq;
+            long long new_freq;
 
             while (!cmdQueue->empty()) {
                 SDRThreadCommand command;
@@ -146,7 +146,7 @@ void SDRThread::threadMain() {
                 switch (command.cmd) {
                 case SDRThreadCommand::SDR_THREAD_CMD_TUNE:
                     freq_changed = true;
-                    new_freq = command.int_value;
+                    new_freq = command.llong_value;
                     if (new_freq < SRATE / 2) {
                         new_freq = SRATE / 2;
                     }

@@ -11,7 +11,7 @@ class SpectrumContext: public PrimaryGLContext {
 public:
     SpectrumContext(SpectrumCanvas *canvas, wxGLContext *sharedContext);
 
-    void Draw(std::vector<float> &points, int freq, int bandwidth);
+    void Draw(std::vector<float> &points, long long freq, int bandwidth);
 
 private:
     int fft_size;

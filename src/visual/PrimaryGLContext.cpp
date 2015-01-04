@@ -92,7 +92,7 @@ GLFont &PrimaryGLContext::getFont(GLFontSize esize) {
     return fonts[esize];
 }
 
-void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, float r, float g, float b, int center_freq, int srate) {
+void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, float r, float g, float b, long long center_freq, long long srate) {
     if (!demod) {
         return;
     }
@@ -153,7 +153,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, float r, float 
 
 }
 
-void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, float b, int center_freq, int srate) {
+void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, float b, long long center_freq, long long srate) {
     if (!demod) {
         return;
     }
@@ -246,10 +246,10 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, f
 
 }
 
-void PrimaryGLContext::DrawFreqSelector(float uxPos, float r, float g, float b, float w, int center_freq, int srate) {
+void PrimaryGLContext::DrawFreqSelector(float uxPos, float r, float g, float b, float w, long long center_freq, long long srate) {
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
-    int bw = 0;
+    long long bw = 0;
 
     if (!demod) {
         bw = defaultDemodParams.bandwidth;

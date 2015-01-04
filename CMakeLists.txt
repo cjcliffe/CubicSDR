@@ -139,6 +139,8 @@ SET (cubicsdr_sources
 	src/visual/InteractiveCanvas.cpp
 	src/visual/MeterCanvas.cpp
 	src/visual/MeterContext.cpp
+	src/visual/TuningCanvas.cpp
+	src/visual/TuningContext.cpp
 	src/visual/ScopeCanvas.cpp
 	src/visual/ScopeContext.cpp
 	src/visual/SpectrumCanvas.cpp
@@ -171,6 +173,8 @@ SET (cubicsdr_headers
 	src/visual/InteractiveCanvas.h
 	src/visual/MeterCanvas.h
 	src/visual/MeterContext.h
+	src/visual/TuningCanvas.h
+	src/visual/TuningContext.h
 	src/visual/ScopeCanvas.h
 	src/visual/ScopeContext.h
 	src/visual/SpectrumCanvas.h

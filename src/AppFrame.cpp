@@ -36,6 +36,7 @@ AppFrame::AppFrame() :
     wxBoxSizer *demodOpts = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodVisuals = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodTray = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer *demodScopeTray = new wxBoxSizer(wxVERTICAL);
 
     demodSpectrumCanvas = new SpectrumCanvas(this, NULL);
     demodSpectrumCanvas->setup(1024);
@@ -63,7 +64,15 @@ AppFrame::AppFrame() :
     demodTray->AddSpacer(2);
 
     scopeCanvas = new ScopeCanvas(this, NULL);
-    demodTray->Add(scopeCanvas, 30, wxEXPAND | wxALL, 0);
+    demodScopeTray->Add(scopeCanvas, 8, wxEXPAND | wxALL, 0);
+
+    demodScopeTray->AddSpacer(2);
+
+    demodTuner = new TuningCanvas(this, NULL);
+    demodTuner->setHelpTip("Testing tuner");
+    demodScopeTray->Add(demodTuner, 1, wxEXPAND | wxALL, 0);
+
+    demodTray->Add(demodScopeTray, 30, wxEXPAND | wxALL, 0);
 
     vbox->Add(demodTray, 2, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(2);
@@ -208,8 +217,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         }
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
             if (demod->getParams().frequency != demodWaterfallCanvas->getCenterFrequency()) {
-                demodWaterfallCanvas->setCenterFrequency(demod->getParams().frequency);
-                demodSpectrumCanvas->setCenterFrequency(demod->getParams().frequency);
+                demodWaterfallCanvas->setCenterFrequency(demod->getFrequency());
+                demodSpectrumCanvas->setCenterFrequency(demod->getFrequency());
             }
             unsigned int demodBw = (unsigned int) ceil((float) demod->getParams().bandwidth * 2.5);
             if (demodBw > SRATE / 2) {

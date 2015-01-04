@@ -11,13 +11,13 @@ public:
     InteractiveCanvas(wxWindow *parent, int *attribList = NULL);
     ~InteractiveCanvas();
 
-    int getFrequencyAt(float x);
+    long long getFrequencyAt(float x);
 
-    void setView(int center_freq_in, int bandwidth_in);
+    void setView(long long center_freq_in, int bandwidth_in);
     void disableView();
 
-    void setCenterFrequency(unsigned int center_freq_in);
-    unsigned int getCenterFrequency();
+    void setCenterFrequency(long long center_freq_in);
+    long long getCenterFrequency();
 
     void setBandwidth(unsigned int bandwidth_in);
     unsigned int getBandwidth();
@@ -45,7 +45,7 @@ protected:
     bool altDown;
     bool ctrlDown;
 
-    unsigned int centerFreq;
+    long long centerFreq;
     unsigned int bandwidth;
     unsigned int lastBandwidth;
 

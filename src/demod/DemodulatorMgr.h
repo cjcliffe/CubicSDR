@@ -13,7 +13,7 @@ public:
 
     DemodulatorInstance *newThread();
     std::vector<DemodulatorInstance *> &getDemodulators();
-    std::vector<DemodulatorInstance *> *getDemodulatorsAt(int freq, int bandwidth);
+    std::vector<DemodulatorInstance *> *getDemodulatorsAt(long long freq, int bandwidth);
     void deleteThread(DemodulatorInstance *);
 
     void terminateAll();

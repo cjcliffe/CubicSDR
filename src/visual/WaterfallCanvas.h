@@ -70,7 +70,7 @@ private:
     msresamp_crcf resampler;
     double resamplerRatio;
     nco_crcf freqShifter;
-    int shiftFrequency;
+    long shiftFrequency;
 
     int lastInputBandwidth;
     float mouseZoom, zoom;

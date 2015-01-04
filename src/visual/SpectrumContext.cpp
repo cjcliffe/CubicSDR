@@ -15,7 +15,7 @@ SpectrumContext::SpectrumContext(SpectrumCanvas *canvas, wxGLContext *sharedCont
 
 }
 
-void SpectrumContext::Draw(std::vector<float> &points, int freq, int bandwidth) {
+void SpectrumContext::Draw(std::vector<float> &points, long long freq, int bandwidth) {
 
     glDisable(GL_TEXTURE_2D);
     glColor3f(1.0, 1.0, 1.0);
@@ -37,14 +37,14 @@ void SpectrumContext::Draw(std::vector<float> &points, int freq, int bandwidth) 
     float viewHeight = (float) vp[3];
     float viewWidth = (float) vp[2];
 
-    float leftFreq = (float) freq - ((float) bandwidth / 2.0);
-    float rightFreq = leftFreq + (float) bandwidth;
+    long long leftFreq = (float) freq - ((float) bandwidth / 2.0);
+    long long rightFreq = leftFreq + (float) bandwidth;
 
-    float firstMhz = floor(leftFreq / 1000000.0) * 1000000.0;
-    float mhzStart = ((firstMhz - leftFreq) / (rightFreq - leftFreq)) * 2.0;
-    float mhzStep = (100000.0 / (rightFreq - leftFreq)) * 2.0;
+    long long firstMhz = (leftFreq / 1000000) * 1000000;
+    long double mhzStart = ((long double)(firstMhz - leftFreq) / (long double)(rightFreq - leftFreq)) * 2.0;
+    long double mhzStep = (100000.0 / (long double)(rightFreq - leftFreq)) * 2.0;
 
-    double currentMhz = trunc(floor(firstMhz / 1000000.0));
+    long double currentMhz = trunc(floor(firstMhz / 1000000.0));
 
     std::stringstream label;
     label.precision(2);

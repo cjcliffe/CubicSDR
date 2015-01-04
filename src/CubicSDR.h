@@ -29,8 +29,8 @@ public:
     virtual bool OnInit();
     virtual int OnExit();
 
-    void setFrequency(unsigned int freq);
-    int getFrequency();
+    void setFrequency(long long freq);
+    long long getFrequency();
 
     DemodulatorThreadOutputQueue* getAudioVisualQueue();
     DemodulatorThreadInputQueue* getIQVisualQueue();
@@ -44,7 +44,7 @@ private:
 
     DemodulatorMgr demodMgr;
 
-    unsigned int frequency;
+    long long frequency;
 
     SDRThread *sdrThread;
     SDRPostThread *sdrPostThread;

@@ -100,17 +100,17 @@ PrimaryGLContext& CubicSDR::GetContext(wxGLCanvas *canvas) {
     return *glContext;
 }
 
-void CubicSDR::setFrequency(unsigned int freq) {
+void CubicSDR::setFrequency(long long freq) {
     if (freq < SRATE/2) {
         freq = SRATE/2;
     }
     frequency = freq;
     SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_TUNE);
-    command.int_value = freq;
+    command.llong_value = freq;
     threadCmdQueueSDR->push(command);
 }
 
-int CubicSDR::getFrequency() {
+long long CubicSDR::getFrequency() {
     return frequency;
 }
 

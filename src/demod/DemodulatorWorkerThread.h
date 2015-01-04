@@ -65,7 +65,7 @@ public:
 
     DemodulatorThreadCommandEnum cmd;
 
-    unsigned int frequency;
+    long long frequency;
     unsigned int inputRate;
     unsigned int bandwidth;
     unsigned int audioSampleRate;

@@ -20,7 +20,7 @@
 
 class AudioThreadInput: public ReferenceCounter {
 public:
-    int frequency;
+    long long frequency;
     int sampleRate;
     int channels;
     std::vector<float> data;

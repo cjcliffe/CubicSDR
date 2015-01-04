@@ -84,17 +84,17 @@ void DemodulatorPreThread::threadMain() {
                 commandQueue->pop(command);
                 switch (command.cmd) {
                 case DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_BANDWIDTH:
-                    if (command.int_value < 1500) {
-                        command.int_value = 1500;
+                    if (command.llong_value < 1500) {
+                        command.llong_value = 1500;
                     }
-                    if (command.int_value > SRATE) {
-                        command.int_value = SRATE;
+                    if (command.llong_value > SRATE) {
+                        command.llong_value = SRATE;
                     }
-                    bandwidthParams.bandwidth = command.int_value;
+                    bandwidthParams.bandwidth = command.llong_value;
                     bandwidthChanged = true;
                     break;
                 case DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_FREQUENCY:
-                    params.frequency = command.int_value;
+                    params.frequency = command.llong_value;
                     break;
                 }
             }
