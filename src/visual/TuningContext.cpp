@@ -70,18 +70,42 @@ void TuningContext::DrawDemodFreqBw(long long freq, unsigned int bw, long long c
     }
 
     getFont(fontSize).drawString("Freq: ", -0.75, 0, fontHeight, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
-    freqStr.str("");
-    freqStr << std::fixed << freq << "Hz";
+    if (bw) {
+        freqStr.str("");
+        freqStr << std::fixed << freq << "Hz";
+    } else {
+        freqStr.str("---");
+    }
     getFont(fontSize).drawString(freqStr.str(), -0.75, 0, fontHeight, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
 
+    glColor3f(0.65, 0.65, 0.65);
+    glBegin(GL_LINES);
+    glVertex2f(-0.275, -1.0);
+    glVertex2f(-0.275, 1.0);
+    glEnd();
+
     getFont(fontSize).drawString("BW: ", -0.10, 0, fontHeight, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
-    freqStr.str("");
-    freqStr << std::fixed << bw << "Hz";
+    if (bw) {
+        freqStr.str("");
+        freqStr << std::fixed << bw << "Hz";
+    } else {
+        freqStr.str("---");
+    }
     getFont(fontSize).drawString(freqStr.str(), -0.10, 0, fontHeight, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
 
+    glColor3f(0.65, 0.65, 0.65);
+    glBegin(GL_LINES);
+    glVertex2f(0.275, -1.0);
+    glVertex2f(0.275, 1.0);
+    glEnd();
+
     getFont(fontSize).drawString("CTR: ", 0.50, 0, fontHeight, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
-    freqStr.str("");
-    freqStr << std::fixed << center << "Hz";
+    if (center) {
+        freqStr.str("");
+        freqStr << std::fixed << center << "Hz";
+    } else {
+        freqStr.str("---");
+    }
     getFont(fontSize).drawString(freqStr.str(), 0.50, 0, fontHeight, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
 }
 

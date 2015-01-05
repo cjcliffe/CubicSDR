@@ -25,7 +25,7 @@ EVT_ENTER_WINDOW(TuningCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
 TuningCanvas::TuningCanvas(wxWindow *parent, int *attribList) :
-        InteractiveCanvas(parent, attribList) {
+        InteractiveCanvas(parent, attribList), dragAccum(0) {
 
     glContext = new TuningContext(this, &wxGetApp().GetContext(this));
 }
@@ -46,7 +46,9 @@ void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     if (activeDemod != NULL) {
-        glContext->DrawDemodFreqBw(activeDemod->getFrequency(),activeDemod->getBandwidth(),wxGetApp().getFrequency());
+        glContext->DrawDemodFreqBw(activeDemod->getFrequency(), activeDemod->getBandwidth(), wxGetApp().getFrequency());
+    } else {
+        glContext->DrawDemodFreqBw(0, 0, wxGetApp().getFrequency());
     }
 
     glContext->DrawEnd();
@@ -61,11 +63,37 @@ void TuningCanvas::OnIdle(wxIdleEvent &event) {
 void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseMoved(event);
 
+    if (mouseTracker.mouseDown()) {
+        DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+
+        float uxPos = 2.0 * (mouseTracker.getMouseX() - 0.5);
+
+        dragAccum += mouseTracker.getDeltaMouseX();
+
+        if (uxPos < -0.275 && activeDemod != NULL) {
+            if (abs(dragAccum * 100.0) >= 1) {
+                activeDemod->setFrequency(activeDemod->getFrequency() + (int) (dragAccum * 100.0));
+                dragAccum = 0;
+            }
+        } else if (uxPos > 0.275) {
+            wxGetApp().setFrequency(wxGetApp().getFrequency() + (int) (mouseTracker.getDeltaMouseX() * SRATE * 100.0));
+            dragAccum = 0;
+        } else if (activeDemod != NULL) {
+            if (abs(dragAccum * 100.0) >= 1) {
+                activeDemod->setBandwidth(activeDemod->getBandwidth() + (int) (dragAccum * 100.0));
+                dragAccum = 0;
+            }
+        }
+    }
 }
 
 void TuningCanvas::OnMouseDown(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseDown(event);
     mouseTracker.setHorizDragLock(true);
+    mouseTracker.setVertDragLock(true);
+
+    dragAccum = 0;
+    SetCursor(wxCURSOR_IBEAM);
 }
 
 void TuningCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
@@ -74,6 +102,9 @@ void TuningCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
 
 void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseReleased(event);
+    mouseTracker.setHorizDragLock(false);
+    mouseTracker.setVertDragLock(false);
+    SetCursor(wxCURSOR_SIZEWE);
 }
 
 void TuningCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
@@ -83,7 +114,7 @@ void TuningCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
 
 void TuningCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
     InteractiveCanvas::mouseTracker.OnMouseEnterWindow(event);
-    SetCursor(wxCURSOR_CROSS);
+    SetCursor(wxCURSOR_SIZEWE);
 }
 
 void TuningCanvas::setHelpTip(std::string tip) {

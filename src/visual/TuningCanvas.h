@@ -34,6 +34,7 @@ private:
     TuningContext *glContext;
 
     std::string helpTip;
+    float dragAccum;
     //
 wxDECLARE_EVENT_TABLE();
 };
