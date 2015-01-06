@@ -25,7 +25,7 @@ EVT_ENTER_WINDOW(ModeSelectorCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
 ModeSelectorCanvas::ModeSelectorCanvas(wxWindow *parent, int *attribList) :
-        InteractiveCanvas(parent, attribList), dragAccum(0) {
+        InteractiveCanvas(parent, attribList) {
 
     glContext = new ModeSelectorContext(this, &wxGetApp().GetContext(this));
 }
@@ -43,6 +43,10 @@ void ModeSelectorCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
     glContext->DrawBegin();
 
+    glContext->DrawSelector("FM", 1, 4, true, 0.75, 0.75, 0.75, 1.0);
+    glContext->DrawSelector("AM", 2, 4, true, 0.75, 0.75, 0.75, 1.0);
+    glContext->DrawSelector("LSB", 3, 4, true, 0.75, 0.75, 0.75, 1.0);
+    glContext->DrawSelector("USB", 4, 4, true, 0.75, 0.75, 0.75, 1.0);
 
     glContext->DrawEnd();
 

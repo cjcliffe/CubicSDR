@@ -38,6 +38,12 @@ AppFrame::AppFrame() :
     wxBoxSizer *demodTray = new wxBoxSizer(wxHORIZONTAL);
     wxBoxSizer *demodScopeTray = new wxBoxSizer(wxVERTICAL);
 
+
+    demodModeSelector = new ModeSelectorCanvas(this, NULL);
+    demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
+
+//    demodTray->AddSpacer(2);
+
     demodSpectrumCanvas = new SpectrumCanvas(this, NULL);
     demodSpectrumCanvas->setup(1024);
     demodSpectrumCanvas->setView(DEFAULT_FREQ, 300000);

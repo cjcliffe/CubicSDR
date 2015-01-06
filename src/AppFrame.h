@@ -8,6 +8,7 @@
 #include "WaterfallCanvas.h"
 #include "MeterCanvas.h"
 #include "TuningCanvas.h"
+#include "ModeSelectorCanvas.h"
 
 #include <map>
 
@@ -34,6 +35,7 @@ private:
     ScopeCanvas *scopeCanvas;
     SpectrumCanvas *spectrumCanvas;
     WaterfallCanvas *waterfallCanvas;
+    ModeSelectorCanvas *demodModeSelector;
     SpectrumCanvas *demodSpectrumCanvas;
     WaterfallCanvas *demodWaterfallCanvas;
     MeterCanvas *demodSignalMeter;
