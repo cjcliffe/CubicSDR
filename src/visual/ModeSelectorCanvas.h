@@ -13,14 +13,31 @@
 #include "fftw3.h"
 #include "Timer.h"
 
+class ModeSelectorMode {
+public:
+    int value;
+    std::string label;
+
+    ModeSelectorMode(int value, std::string label) : value(value), label(label) {
+
+    }
+};
+
 class ModeSelectorCanvas: public InteractiveCanvas {
 public:
     ModeSelectorCanvas(wxWindow *parent, int *attribList = NULL);
     ~ModeSelectorCanvas();
 
+    int getHoveredSelection();
     void setHelpTip(std::string tip);
 
+    void addChoice(int value, std::string label);
+    void setSelection(int value);
+    int getSelection();
+
 private:
+    void setNumChoices(int numChoices_in);
+
     void OnPaint(wxPaintEvent& event);
     void OnIdle(wxIdleEvent &event);
 
@@ -34,6 +51,9 @@ private:
     ModeSelectorContext *glContext;
 
     std::string helpTip;
+    int numChoices;
+    int currentSelection;
+    std::vector<ModeSelectorMode> selections;
     //
 wxDECLARE_EVENT_TABLE();
 };

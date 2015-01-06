@@ -37,23 +37,23 @@ void ModeSelectorContext::DrawSelector(std::string label, int c, int cMax, bool 
 
     glColor4f(r, g, b, a);
 
-    float y = 1.0 - ((float) c / (float) cMax * 2.0);
+    float y = 1.0 - ((float) (c+1) / (float) cMax * 2.0);
     float height = (2.0 / (float) cMax);
     float padX = (4.0 / viewWidth);
     float padY = (4.0 / viewHeight);
-    glBegin(GL_LINE_LOOP);
+
+    glBegin(on?GL_QUADS:GL_LINE_LOOP);
     glVertex2f(-1.0 + padX, y + padY);
     glVertex2f(1.0 - padX, y + padY);
     glVertex2f(1.0 - padX, y + height - padY);
     glVertex2f(-1.0 + padX, y + height - padY);
     glEnd();
 
+    if (on) {
+        glColor4f(1.0-r, 1.0-g, 1.0-b, a);
+    }
+
     getFont(fontSize).drawString(label, 0.0, y + height / 2.0, fontHeight, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
-
-//    glEnable(GL_BLEND);
-//    glBlendFunc(GL_ONE, GL_ONE);
-//    glColor4f(r, g, b, a);
-
 }
 
 void ModeSelectorContext::DrawEnd() {

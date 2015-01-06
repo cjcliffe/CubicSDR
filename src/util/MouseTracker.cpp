@@ -149,6 +149,14 @@ void MouseTracker::setHorizDragLock(bool dragLock) {
     horizDragLock = dragLock;
 }
 
+bool MouseTracker::getVertDragLock() {
+    return vertDragLock;
+}
+
+bool MouseTracker::getHorizDragLock() {
+    return horizDragLock;
+}
+
 bool MouseTracker::mouseDown() {
     return isMouseDown;
 }
