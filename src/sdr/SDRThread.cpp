@@ -171,7 +171,7 @@ void SDRThread::threadMain() {
             }
             if (freq_changed) {
                 frequency = new_freq;
-                rtlsdr_set_center_freq(dev, frequency+offset);
+                rtlsdr_set_center_freq(dev, frequency-offset);
             }
         }
 
