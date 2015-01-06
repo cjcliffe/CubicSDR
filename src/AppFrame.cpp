@@ -6,6 +6,8 @@
 #include "wx/wx.h"
 #endif
 
+#include "wx/numdlg.h"
+
 #if !wxUSE_GLCANVAS
 #error "OpenGL required: set wxUSE_GLCANVAS to 1 and rebuild the library"
 #endif
@@ -37,6 +39,16 @@ AppFrame::AppFrame() :
     wxBoxSizer *demodVisuals = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodTray = new wxBoxSizer(wxHORIZONTAL);
     wxBoxSizer *demodScopeTray = new wxBoxSizer(wxVERTICAL);
+
+
+    demodModeSelector = new ModeSelectorCanvas(this, NULL);
+    demodModeSelector->addChoice(DEMOD_TYPE_FM,"FM");
+    demodModeSelector->addChoice(DEMOD_TYPE_AM,"AM");
+    demodModeSelector->addChoice(DEMOD_TYPE_LSB,"LSB");
+    demodModeSelector->addChoice(DEMOD_TYPE_USB,"USB");
+    demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
+
+//    demodTray->AddSpacer(2);
 
     demodSpectrumCanvas = new SpectrumCanvas(this, NULL);
     demodSpectrumCanvas->setup(1024);
@@ -88,20 +100,22 @@ AppFrame::AppFrame() :
 
     this->SetSizer(vbox);
 
-    waterfallCanvas->SetFocusFromKbd();
+//    waterfallCanvas->SetFocusFromKbd();
     waterfallCanvas->SetFocus();
 
 //    SetIcon(wxICON(sample));
 
 // Make a menubar
-//    wxMenu *menu = new wxMenu;
-//    menu->Append(wxID_NEW);
-//    menu->AppendSeparator();
-//    menu->Append(wxID_CLOSE);
-//    wxMenuBar *menuBar = new wxMenuBar;
-//    menuBar->Append(menu, wxT("&File"));
-
+    wxMenuBar *menuBar = new wxMenuBar;
     wxMenu *menu = new wxMenu;
+//    menu->Append(wxID_NEW);
+    menu->Append(wxID_SET_FREQ_OFFSET, "Set Frequency Offset");
+    menu->AppendSeparator();
+    menu->Append(wxID_CLOSE);
+
+    menuBar->Append(menu, wxT("&File"));
+
+    menu = new wxMenu;
 
     std::vector<RtAudio::DeviceInfo>::iterator devices_i;
     std::map<int, RtAudio::DeviceInfo>::iterator mdevices_i;
@@ -130,16 +144,7 @@ AppFrame::AppFrame() :
         outputDeviceMenuItems[mdevices_i->first] = itm;
     }
 
-    wxMenuBar *menuBar = new wxMenuBar;
     menuBar->Append(menu, wxT("Active Demodulator &Output"));
-
-    wxMenu *demodMenu = new wxMenu;
-    demodMenuItems[DEMOD_TYPE_FM] = demodMenu->AppendRadioItem(wxID_DEMOD_TYPE_FM, wxT("FM"), wxT("Description?"));
-    demodMenuItems[DEMOD_TYPE_AM] = demodMenu->AppendRadioItem(wxID_DEMOD_TYPE_AM, wxT("AM"), wxT("Description?"));
-    demodMenuItems[DEMOD_TYPE_LSB] = demodMenu->AppendRadioItem(wxID_DEMOD_TYPE_LSB, wxT("LSB"), wxT("Description?"));
-    demodMenuItems[DEMOD_TYPE_USB] = demodMenu->AppendRadioItem(wxID_DEMOD_TYPE_USB, wxT("USB"), wxT("Description?"));
-
-    menuBar->Append(demodMenu, wxT("Active Demodulator &Type"));
 
     SetMenuBar(menuBar);
 
@@ -165,22 +170,9 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             activeDemodulator->setOutputDevice(event.GetId() - wxID_RT_AUDIO_DEVICE);
             activeDemodulator = NULL;
         }
-    }
-
-    if (activeDemodulator) {
-        if (event.GetId() == wxID_DEMOD_TYPE_FM) {
-            activeDemodulator->setDemodulatorType(DEMOD_TYPE_FM);
-            activeDemodulator = NULL;
-        } else if (event.GetId() == wxID_DEMOD_TYPE_AM) {
-            activeDemodulator->setDemodulatorType(DEMOD_TYPE_AM);
-            activeDemodulator = NULL;
-        } else if (event.GetId() == wxID_DEMOD_TYPE_LSB) {
-            activeDemodulator->setDemodulatorType(DEMOD_TYPE_LSB);
-            activeDemodulator = NULL;
-        } else if (event.GetId() == wxID_DEMOD_TYPE_USB) {
-            activeDemodulator->setDemodulatorType(DEMOD_TYPE_USB);
-            activeDemodulator = NULL;
-        }
+    } else if (event.GetId() == wxID_SET_FREQ_OFFSET) {
+        long ofs = wxGetNumberFromUser ("Shift the displayed frequency by this amount.\ni.e. -125000000 for -125 MHz", "Frequency (Hz)", "Frequency Offset", 0, -2000000000, 2000000000, this);
+        wxGetApp().setOffset(ofs);
     }
 }
 
@@ -213,13 +205,18 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             scopeCanvas->setDeviceName(outputDevices[outputDevice].name);
             outputDeviceMenuItems[outputDevice]->Check(true);
             int dType = demod->getDemodulatorType();
-            demodMenuItems[dType]->Check(true);
+            demodModeSelector->setSelection(dType);
         }
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
             if (demod->getParams().frequency != demodWaterfallCanvas->getCenterFrequency()) {
                 demodWaterfallCanvas->setCenterFrequency(demod->getFrequency());
                 demodSpectrumCanvas->setCenterFrequency(demod->getFrequency());
             }
+            int dSelection = demodModeSelector->getSelection();
+            if (dSelection != -1 && dSelection != demod->getDemodulatorType()) {
+                demod->setDemodulatorType(dSelection);
+            }
+
             unsigned int demodBw = (unsigned int) ceil((float) demod->getParams().bandwidth * 2.5);
             if (demodBw > SRATE / 2) {
                 demodBw = SRATE / 2;
@@ -272,6 +269,10 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             std::cout << "Incoming Demodulator data empty?" << std::endl;
         }
         work_done = true;
+    }
+
+    if (!waterfallCanvas->HasFocus()) {
+        waterfallCanvas->SetFocus();
     }
 
     if (!work_done) {

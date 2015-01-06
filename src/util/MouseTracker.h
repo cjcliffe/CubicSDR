@@ -29,6 +29,8 @@ public:
 
     void setVertDragLock(bool dragLock);
     void setHorizDragLock(bool dragLock);
+    bool getVertDragLock();
+    bool getHorizDragLock();
     bool mouseDown();
     bool mouseRightDown();
     bool mouseInView();

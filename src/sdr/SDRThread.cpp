@@ -4,7 +4,7 @@
 #include "CubicSDR.h"
 
 SDRThread::SDRThread(SDRThreadCommandQueue* pQueue) :
-        commandQueue(pQueue), iqDataOutQueue(NULL), terminated(false) {
+        commandQueue(pQueue), iqDataOutQueue(NULL), terminated(false), offset(0) {
     dev = NULL;
     sampleRate = SRATE;
 }
@@ -137,7 +137,9 @@ void SDRThread::threadMain() {
 
         if (!cmdQueue->empty()) {
             bool freq_changed = false;
+            bool offset_changed = false;
             long long new_freq;
+            long long new_offset;
 
             while (!cmdQueue->empty()) {
                 SDRThreadCommand command;
@@ -152,14 +154,24 @@ void SDRThread::threadMain() {
                     }
                     std::cout << "Set frequency: " << new_freq << std::endl;
                     break;
+                case SDRThreadCommand::SDR_THREAD_CMD_SET_OFFSET:
+                    offset_changed = true;
+                    new_offset = command.llong_value;
+                    std::cout << "Set offset: " << new_offset << std::endl;
+                    break;
                 default:
                     break;
                 }
             }
 
+            if (offset_changed && !freq_changed) {
+                new_freq = frequency;
+                freq_changed = true;
+                offset = new_offset;
+            }
             if (freq_changed) {
                 frequency = new_freq;
-                rtlsdr_set_center_freq(dev, frequency);
+                rtlsdr_set_center_freq(dev, frequency-offset);
             }
         }
 

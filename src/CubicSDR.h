@@ -32,6 +32,9 @@ public:
     void setFrequency(long long freq);
     long long getFrequency();
 
+    void setOffset(long long ofs);
+    long long getOffset();
+
     DemodulatorThreadOutputQueue* getAudioVisualQueue();
     DemodulatorThreadInputQueue* getIQVisualQueue();
     DemodulatorMgr &getDemodMgr();
@@ -45,6 +48,7 @@ private:
     DemodulatorMgr demodMgr;
 
     long long frequency;
+    long long offset;
 
     SDRThread *sdrThread;
     SDRPostThread *sdrPostThread;

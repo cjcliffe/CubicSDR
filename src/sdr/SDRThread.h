@@ -17,7 +17,7 @@
 class SDRThreadCommand {
 public:
     enum SDRThreadCommandEnum {
-        SDR_THREAD_CMD_NULL, SDR_THREAD_CMD_TUNE
+        SDR_THREAD_CMD_NULL, SDR_THREAD_CMD_TUNE, SDR_THREAD_CMD_SET_OFFSET
     };
 
     SDRThreadCommand() :
@@ -76,6 +76,7 @@ public:
     void terminate();
 protected:
     uint32_t sampleRate;
+    long long offset;
     std::atomic<SDRThreadCommandQueue*> commandQueue;
     std::atomic<SDRThreadIQDataQueue*> iqDataOutQueue;
 
