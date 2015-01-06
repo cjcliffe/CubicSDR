@@ -6,6 +6,8 @@
 #include "wx/wx.h"
 #endif
 
+#include "wx/numdlg.h"
+
 #if !wxUSE_GLCANVAS
 #error "OpenGL required: set wxUSE_GLCANVAS to 1 and rebuild the library"
 #endif
@@ -107,7 +109,8 @@ AppFrame::AppFrame() :
     wxMenuBar *menuBar = new wxMenuBar;
     wxMenu *menu = new wxMenu;
 //    menu->Append(wxID_NEW);
-//    menu->AppendSeparator();
+    menu->Append(wxID_SET_FREQ_OFFSET, "Set Frequency Offset");
+    menu->AppendSeparator();
     menu->Append(wxID_CLOSE);
 
     menuBar->Append(menu, wxT("&File"));
@@ -167,6 +170,9 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             activeDemodulator->setOutputDevice(event.GetId() - wxID_RT_AUDIO_DEVICE);
             activeDemodulator = NULL;
         }
+    } else if (event.GetId() == wxID_SET_FREQ_OFFSET) {
+        long ofs = wxGetNumberFromUser ("Shift the displayed frequency by this amount.\ni.e. -125000000 for -125 MHz", "Frequency (Hz)", "Frequency Offset", 0, -2000000000, 2000000000, this);
+        wxGetApp().setOffset(ofs);
     }
 }
 

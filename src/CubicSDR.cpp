@@ -20,6 +20,7 @@ bool CubicSDR::OnInit() {
         return false;
 
     frequency = DEFAULT_FREQ;
+    offset = 0;
 
     audioVisualQueue = new DemodulatorThreadOutputQueue();
     audioVisualQueue->set_max_num_items(1);
@@ -107,6 +108,17 @@ void CubicSDR::setFrequency(long long freq) {
     frequency = freq;
     SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_TUNE);
     command.llong_value = freq;
+    threadCmdQueueSDR->push(command);
+}
+
+long long CubicSDR::getOffset() {
+    return offset;
+}
+
+void CubicSDR::setOffset(long long ofs) {
+    offset = ofs;
+    SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_SET_OFFSET);
+    command.llong_value = ofs;
     threadCmdQueueSDR->push(command);
 }
 

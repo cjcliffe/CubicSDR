@@ -13,6 +13,7 @@
 #include <map>
 
 #define wxID_RT_AUDIO_DEVICE 1000
+#define wxID_SET_FREQ_OFFSET 2001
 
 // Define a new frame type
 class AppFrame: public wxFrame {
