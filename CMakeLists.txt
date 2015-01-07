@@ -61,7 +61,7 @@ IF (WIN32)
   set(wxWidgets_USE_STATIC ON)
   include_directories ( ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll64  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
   link_directories (  ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll64  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/x64 )
-  set(FFTW_LIB fftw3-3)
+  set(FFTW_LIB fftw3f-3)
     
   link_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/lib/64 )
   include_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/include )
@@ -93,7 +93,7 @@ IF (UNIX)
     include_directories(${RTLSDR_INCLUDE})
     link_directories(${RTLSDR_LIB})
   
-    set(FFTW_LIB fftw3)
+    set(FFTW_LIB fftw3f)
 
     ADD_DEFINITIONS(
         # -D__UNIX_JACK__
@@ -109,7 +109,7 @@ IF (APPLE)
     include_directories(${RTLSDR_INCLUDE})
     link_directories(${RTLSDR_LIB})
   
-    set(FFTW_LIB fftw3)
+    set(FFTW_LIB fftw3f)
 
     ADD_DEFINITIONS(
       -D__MACOSX_CORE__

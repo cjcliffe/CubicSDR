@@ -47,15 +47,15 @@ void SpectrumCanvas::setup(int fft_size_in) {
     if (in) {
         free(in);
     }
-    in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * fft_size);
+    in = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex) * fft_size);
     if (out) {
         free(out);
     }
-    out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * fft_size);
+    out = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex) * fft_size);
     if (plan) {
-        fftw_destroy_plan(plan);
+        fftwf_destroy_plan(plan);
     }
-    plan = fftw_plan_dft_1d(fft_size, in, out, FFTW_FORWARD, FFTW_MEASURE);
+    plan = fftwf_plan_dft_1d(fft_size, in, out, FFTW_FORWARD, FFTW_MEASURE);
 
     fft_ceil_ma = fft_ceil_maa = 100.0;
     fft_floor_ma = fft_floor_maa = 0.0;
@@ -107,9 +107,9 @@ void SpectrumCanvas::setData(DemodulatorThreadIQData *input) {
             in[i][1] = (*data)[i].imag;
         }
 
-        fftw_execute(plan);
+        fftwf_execute(plan);
 
-        double fft_ceil = 0, fft_floor = 1;
+        float fft_ceil = 0, fft_floor = 1;
 
         if (fft_result.size() != fft_size) {
             if (fft_result.capacity() < fft_size) {
@@ -125,13 +125,13 @@ void SpectrumCanvas::setData(DemodulatorThreadIQData *input) {
         int n;
         for (int i = 0, iMax = fft_size / 2; i < iMax; i++) {
             n = (i == 0) ? 1 : i;
-            double a = out[n][0];
-            double b = out[n][1];
-            double c = sqrt(a * a + b * b);
+            float a = out[n][0];
+            float b = out[n][1];
+            float c = sqrt(a * a + b * b);
 
-            double x = out[fft_size / 2 + n][0];
-            double y = out[fft_size / 2 + n][1];
-            double z = sqrt(x * x + y * y);
+            float x = out[fft_size / 2 + n][0];
+            float y = out[fft_size / 2 + n][1];
+            float z = sqrt(x * x + y * y);
 
             fft_result[i] = (z);
             fft_result[fft_size / 2 + i] = (c);
@@ -158,7 +158,7 @@ void SpectrumCanvas::setData(DemodulatorThreadIQData *input) {
         fft_floor_ma = fft_floor_ma + (fft_floor - fft_floor_ma) * 0.01;
         fft_floor_maa = fft_floor_maa + (fft_floor_ma - fft_floor_maa) * 0.01;
 
-        // fftw_execute(plan[1]);
+        // fftwf_execute(plan[1]);
 
         for (int i = 0, iMax = fft_size; i < iMax; i++) {
             float v = (log10(fft_result_maa[i] - fft_floor_maa) / log10(fft_ceil_maa - fft_floor_maa));
@@ -182,7 +182,13 @@ void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
             long long freq = wxGetApp().getFrequency();
 
             if (isView) {
-                centerFreq = centerFreq - freqChange;
+                if (isView) {
+                    if (centerFreq - freqChange < bandwidth/2) {
+                        centerFreq = bandwidth/2;
+                    } else {
+                        centerFreq -= freqChange;
+                    }
+                }
                 if (waterfallCanvas) {
                     waterfallCanvas->setCenterFrequency(centerFreq);
                 }
