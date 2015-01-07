@@ -62,15 +62,15 @@ void WaterfallCanvas::setup(int fft_size_in, int waterfall_lines_in) {
     if (in) {
         free(in);
     }
-    in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * fft_size);
+    in = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex) * fft_size);
     if (out) {
         free(out);
     }
-    out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * fft_size);
+    out = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex) * fft_size);
     if (plan) {
-        fftw_destroy_plan(plan);
+        fftwf_destroy_plan(plan);
     }
-    plan = fftw_plan_dft_1d(fft_size, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+    plan = fftwf_plan_dft_1d(fft_size, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
 
     glContext->Setup(fft_size, waterfall_lines);
 }
@@ -195,6 +195,7 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
 
     long long freq;
+    long long originalFreq;
     unsigned int bw;
     switch (event.GetKeyCode()) {
     case 'A':
@@ -205,10 +206,11 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         break;
     case WXK_RIGHT:
         freq = wxGetApp().getFrequency();
+        originalFreq = freq;
         if (shiftDown) {
             freq += SRATE * 10;
             if (isView) {
-                setView(centerFreq + SRATE * 10, getBandwidth());
+                setView(centerFreq + (freq - originalFreq), getBandwidth());
                 if (spectrumCanvas) {
                     spectrumCanvas->setView(getCenterFrequency(), getBandwidth());
                 }
@@ -216,7 +218,7 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         } else {
             freq += SRATE / 2;
             if (isView) {
-                setView(centerFreq + SRATE / 2, getBandwidth());
+                setView(centerFreq + (freq - originalFreq), getBandwidth());
                 if (spectrumCanvas) {
                     spectrumCanvas->setView(getCenterFrequency(), getBandwidth());
                 }
@@ -227,6 +229,7 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         break;
     case WXK_LEFT:
         freq = wxGetApp().getFrequency();
+        originalFreq = freq;
         if (shiftDown) {
             if ((freq - SRATE * 10) < SRATE / 2) {
                 freq = SRATE / 2;
@@ -234,7 +237,7 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
                 freq -= SRATE * 10;
             }
             if (isView) {
-                setView(centerFreq - SRATE * 10, getBandwidth());
+                setView(centerFreq + (freq - originalFreq), getBandwidth());
                 if (spectrumCanvas) {
                     spectrumCanvas->setView(getCenterFrequency(), getBandwidth());
                 }
@@ -246,7 +249,7 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
                 freq -= SRATE / 2;
             }
             if (isView) {
-                setView(centerFreq - SRATE / 2, getBandwidth());
+                setView(centerFreq + (freq - originalFreq), getBandwidth());
                 if (spectrumCanvas) {
                     spectrumCanvas->setView(getCenterFrequency(), getBandwidth());
                 }
@@ -309,8 +312,8 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
             centerFreq = getCenterFrequency();
             bw = getBandwidth();
             bw = (long long) ceil((long double) bw * currentZoom);
-            if (bw < 80000) {
-                bw = 80000;
+            if (bw < 100000) {
+                bw = 100000;
             }
             if (mouseTracker.mouseInView()) {
                 long long mfreqA = getFrequencyAt(mouseTracker.getMouseX());
@@ -464,9 +467,9 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
             }
         }
 
-        fftw_execute(plan);
+        fftwf_execute(plan);
 
-        double fft_ceil = 0, fft_floor = 1;
+        float fft_ceil = 0, fft_floor = 1;
 
         if (fft_result.size() < fft_size) {
             fft_result.resize(fft_size);
@@ -477,13 +480,13 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
         int n;
         for (int i = 0, iMax = fft_size / 2; i < iMax; i++) {
             n = (i == 0) ? 1 : i;
-            double a = out[n][0];
-            double b = out[n][1];
-            double c = sqrt(a * a + b * b);
+            float a = out[n][0];
+            float b = out[n][1];
+            float c = sqrt(a * a + b * b);
 
-            double x = out[fft_size / 2 + n][0];
-            double y = out[fft_size / 2 + n][1];
-            double z = sqrt(x * x + y * y);
+            float x = out[fft_size / 2 + n][0];
+            float y = out[fft_size / 2 + n][1];
+            float z = sqrt(x * x + y * y);
 
             fft_result[i] = (z);
             fft_result[fft_size / 2 + i] = (c);
@@ -491,8 +494,8 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
 
         for (int i = 0, iMax = fft_size; i < iMax; i++) {
             if (isView) {
-                fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * 0.85;
-                fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * 0.55;
+                fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * 0.65;
+                fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * 0.65;
             } else {
                 fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * 0.65;
                 fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * 0.65;
@@ -506,7 +509,7 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
             }
         }
 
-        fft_ceil += 1;
+        fft_ceil += 0.25;
         fft_floor -= 1;
 
         fft_ceil_ma = fft_ceil_ma + (fft_ceil - fft_ceil_ma) * 0.05;
@@ -516,7 +519,7 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
         fft_floor_maa = fft_floor_maa + (fft_floor_ma - fft_floor_maa) * 0.05;
 
         for (int i = 0, iMax = fft_size; i < iMax; i++) {
-            double v = (log10(fft_result_maa[i] - fft_floor_maa) / log10(fft_ceil_maa - fft_floor_maa));
+            float v = (log10(fft_result_maa[i] - fft_floor_maa) / log10(fft_ceil_maa - fft_floor_maa));
             spectrum_points[i * 2] = ((float) i / (float) iMax);
             spectrum_points[i * 2 + 1] = v;
         }

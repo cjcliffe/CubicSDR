@@ -118,7 +118,23 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, float r, float 
 
     float ofs = ((float) demod->getBandwidth()) / (float) srate;
 
+
+    float labelHeight = 20.0 / viewHeight;
+    float hPos = -1.0 + labelHeight;
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glColor4f(0, 0, 0, 0.35);
+    glBegin(GL_QUADS);
+    glVertex3f(uxPos - ofs, hPos + labelHeight, 0.0);
+    glVertex3f(uxPos - ofs, -1.0, 0.0);
+
+    glVertex3f(uxPos + ofs, -1.0, 0.0);
+    glVertex3f(uxPos + ofs, hPos + labelHeight, 0.0);
+    glEnd();
+
     glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
+
     glColor4f(r, g, b, 0.2);
     glBegin(GL_QUADS);
     glVertex3f(uxPos - ofs, 1.0, 0.0);
@@ -128,9 +144,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, float r, float 
     glVertex3f(uxPos + ofs, 1.0, 0.0);
     glEnd();
 
-    float labelHeight = 20.0 / viewHeight;
 
-    float hPos = -1.0 + labelHeight;
 
     if (ofs * 2.0 < 16.0 / viewWidth) {
         ofs = 16.0 / viewWidth;

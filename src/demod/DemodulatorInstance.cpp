@@ -250,8 +250,8 @@ int DemodulatorInstance::getBandwidth() {
 }
 
 void DemodulatorInstance::setFrequency(long long freq) {
-    if ((freq - getBandwidth()/2) < SRATE/2) {
-        freq = SRATE/2 - getBandwidth()/2;
+    if ((freq - getBandwidth()/2) <= 0) {
+        freq = getBandwidth()/2;
     }
     if (demodulatorPreThread && threadQueueCommand) {
          DemodulatorThreadCommand command;

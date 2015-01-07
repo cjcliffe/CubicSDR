@@ -53,16 +53,16 @@ AppFrame::AppFrame() :
     demodSpectrumCanvas = new SpectrumCanvas(this, NULL);
     demodSpectrumCanvas->setup(1024);
     demodSpectrumCanvas->setView(DEFAULT_FREQ, 300000);
-    demodVisuals->Add(demodSpectrumCanvas, 1, wxEXPAND | wxALL, 0);
+    demodVisuals->Add(demodSpectrumCanvas, 3, wxEXPAND | wxALL, 0);
 
     demodVisuals->AddSpacer(1);
 
     demodWaterfallCanvas = new WaterfallCanvas(this, NULL);
-    demodWaterfallCanvas->setup(1024, 256);
+    demodWaterfallCanvas->setup(1024, 128);
     demodWaterfallCanvas->setView(DEFAULT_FREQ, 300000);
     demodWaterfallCanvas->attachSpectrumCanvas(demodSpectrumCanvas);
     demodSpectrumCanvas->attachWaterfallCanvas(demodWaterfallCanvas);
-    demodVisuals->Add(demodWaterfallCanvas, 3, wxEXPAND | wxALL, 0);
+    demodVisuals->Add(demodWaterfallCanvas, 6, wxEXPAND | wxALL, 0);
 
     demodTray->Add(demodVisuals, 30, wxEXPAND | wxALL, 0);
 
@@ -86,17 +86,17 @@ AppFrame::AppFrame() :
 
     demodTray->Add(demodScopeTray, 30, wxEXPAND | wxALL, 0);
 
-    vbox->Add(demodTray, 2, wxEXPAND | wxALL, 0);
+    vbox->Add(demodTray, 12, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(2);
     spectrumCanvas = new SpectrumCanvas(this, NULL);
     spectrumCanvas->setup(2048);
-    vbox->Add(spectrumCanvas, 1, wxEXPAND | wxALL, 0);
+    vbox->Add(spectrumCanvas, 5, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(2);
     waterfallCanvas = new WaterfallCanvas(this, NULL);
     waterfallCanvas->setup(2048, 512);
     waterfallCanvas->attachSpectrumCanvas(spectrumCanvas);
     spectrumCanvas->attachWaterfallCanvas(waterfallCanvas);
-    vbox->Add(waterfallCanvas, 4, wxEXPAND | wxALL, 0);
+    vbox->Add(waterfallCanvas, 20, wxEXPAND | wxALL, 0);
 
     this->SetSizer(vbox);
 
@@ -171,8 +171,10 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             activeDemodulator = NULL;
         }
     } else if (event.GetId() == wxID_SET_FREQ_OFFSET) {
-        long ofs = wxGetNumberFromUser ("Shift the displayed frequency by this amount.\ni.e. -125000000 for -125 MHz", "Frequency (Hz)", "Frequency Offset", 0, -2000000000, 2000000000, this);
-        wxGetApp().setOffset(ofs);
+        long ofs = wxGetNumberFromUser ("Shift the displayed frequency by this amount.\ni.e. -125000000 for -125 MHz", "Frequency (Hz)", "Frequency Offset", wxGetApp().getOffset(), -2000000000, 2000000000, this);
+        if (ofs != -1) {
+            wxGetApp().setOffset(ofs);
+        }
     }
 }
 
