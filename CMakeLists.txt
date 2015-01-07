@@ -93,7 +93,7 @@ IF (UNIX)
     include_directories(${RTLSDR_INCLUDE})
     link_directories(${RTLSDR_LIB})
   
-    set(FFTW_LIB fftw3)
+    set(FFTW_LIB fftw3f)
 
     ADD_DEFINITIONS(
         # -D__UNIX_JACK__
@@ -109,7 +109,7 @@ IF (APPLE)
     include_directories(${RTLSDR_INCLUDE})
     link_directories(${RTLSDR_LIB})
   
-    set(FFTW_LIB fftw3)
+    set(FFTW_LIB fftw3f)
 
     ADD_DEFINITIONS(
       -D__MACOSX_CORE__
