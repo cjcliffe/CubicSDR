@@ -32,7 +32,7 @@ EVT_IDLE(AppFrame::OnIdle)
 wxEND_EVENT_TABLE()
 
 AppFrame::AppFrame() :
-        wxFrame(NULL, wxID_ANY, wxT("CubicSDR")), activeDemodulator(NULL) {
+        wxFrame(NULL, wxID_ANY, wxT("CubicSDR v0.1a by Charles J. Cliffe (@ccliffe)")), activeDemodulator(NULL) {
 
     wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodOpts = new wxBoxSizer(wxVERTICAL);
