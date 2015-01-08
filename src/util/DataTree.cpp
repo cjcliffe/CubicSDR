@@ -31,6 +31,8 @@
 
 using namespace std;
 
+#define STRINGIFY(A)  #A
+
 DataElement::DataElement() {
     data_type = DATA_NULL;
     data_val = NULL;
@@ -180,6 +182,120 @@ void DataElement::set(std::set<string> &strset_in) {
     set(tmp_vect);
 }
 
+void DataElement::set(vector<char>& charvect_in) {
+    long ptr;
+    char temp_char;
+
+    data_type = DATA_CHAR_VECTOR;
+
+    data_init(sizeof(char) * charvect_in.size());
+
+    vector<char>::iterator i;
+
+    ptr = 0;
+
+    for (i = charvect_in.begin(); i != charvect_in.end(); i++) {
+        temp_char = *i;
+        memcpy(data_val + ptr, &temp_char, sizeof(char));
+        ptr += sizeof(char);
+    }
+}
+
+void DataElement::set(vector<unsigned char>& ucharvect_in) {
+    long ptr;
+    unsigned char temp_uchar;
+
+    data_type = DATA_UCHAR_VECTOR;
+
+    data_init(sizeof(unsigned char) * ucharvect_in.size());
+
+    vector<unsigned char>::iterator i;
+
+    ptr = 0;
+
+    for (i = ucharvect_in.begin(); i != ucharvect_in.end(); i++) {
+        temp_uchar = *i;
+        memcpy(data_val + ptr, &temp_uchar, sizeof(unsigned char));
+        ptr += sizeof(unsigned char);
+    }
+}
+
+void DataElement::set(vector<unsigned int>& uintvect_in) {
+    long ptr;
+    unsigned int temp_uint;
+
+    data_type = DATA_UCHAR_VECTOR;
+
+    data_init(sizeof(unsigned int) * uintvect_in.size());
+
+    vector<unsigned int>::iterator i;
+
+    ptr = 0;
+
+    for (i = uintvect_in.begin(); i != uintvect_in.end(); i++) {
+        temp_uint = *i;
+        memcpy(data_val + ptr, &temp_uint, sizeof(unsigned int));
+        ptr += sizeof(unsigned int);
+    }
+}
+
+void DataElement::set(vector<unsigned long>& ulongvect_in) {
+    long ptr;
+    unsigned long temp_ulong;
+
+    data_type = DATA_ULONG_VECTOR;
+
+    data_init(sizeof(unsigned long) * ulongvect_in.size());
+
+    vector<unsigned long>::iterator i;
+
+    ptr = 0;
+
+    for (i = ulongvect_in.begin(); i != ulongvect_in.end(); i++) {
+        temp_ulong = *i;
+        memcpy(data_val + ptr, &temp_ulong, sizeof(unsigned long));
+        ptr += sizeof(unsigned long);
+    }
+}
+
+void DataElement::set(vector<long long>& llongvect_in) {
+    long ptr;
+    long long temp_llong;
+
+    data_type = DATA_CHAR_VECTOR;
+
+    data_init(sizeof(long long) * llongvect_in.size());
+
+    vector<long long>::iterator i;
+
+    ptr = 0;
+
+    for (i = llongvect_in.begin(); i != llongvect_in.end(); i++) {
+        temp_llong = *i;
+        memcpy(data_val + ptr, &temp_llong, sizeof(long long));
+        ptr += sizeof(long long);
+    }
+}
+
+void DataElement::set(vector<long double>& ldoublevect_in) {
+    long ptr;
+    long double temp_ldouble;
+
+    data_type = DATA_CHAR_VECTOR;
+
+    data_init(sizeof(long double) * ldoublevect_in.size());
+
+    vector<long double>::iterator i;
+
+    ptr = 0;
+
+    for (i = ldoublevect_in.begin(); i != ldoublevect_in.end(); i++) {
+        temp_ldouble = *i;
+        memcpy(data_val + ptr, &temp_ldouble, sizeof(long double));
+        ptr += sizeof(long double);
+    }
+}
+
 void DataElement::set(vector<int> &intvect_in) {
     long ptr;
     int temp_int;
@@ -259,384 +375,502 @@ void DataElement::set(vector<double> &doublevect_in) {
     }
 }
 
-//void DataElement::get(bool &bool_in) throw (DataTypeMismatchException)
-//{
-//	if (!data_type) return;
-//	if (data_type != DATA_BOOL) throw(new DataTypeMismatchException("Type mismatch, not a BOOL"));
+#define DataElementGetNumericDef(enumtype, datatype) void DataElement::get(datatype& val_out) throw (DataTypeMismatchException) { \
+if (!data_type) \
+return; \
+    if (data_type != enumtype) { \
+        if (sizeof(datatype) < data_size) { \
+            std::cout << "Warning, data type mismatch requested size for '" << #datatype << "(" << sizeof(datatype) << ")' < data size '" << data_size << "'; possible loss of data."; \
+        } \
+        memset(&val_out, 0, sizeof(datatype)); \
+        memcpy(&val_out, data_val, (sizeof(datatype) < data_size) ? sizeof(datatype) : data_size); \
+    } \
+    memcpy(&val_out, data_val, data_size); \
+}
+
+DataElementGetNumericDef(DATA_CHAR, char)
+DataElementGetNumericDef(DATA_UCHAR, unsigned char)
+DataElementGetNumericDef(DATA_UINT, unsigned int)
+DataElementGetNumericDef(DATA_ULONG, unsigned long)
+DataElementGetNumericDef(DATA_LONGLONG, long long)
+DataElementGetNumericDef(DATA_LONGDOUBLE, long double)
+DataElementGetNumericDef(DATA_INT, int)
+DataElementGetNumericDef(DATA_LONG, long)
+DataElementGetNumericDef(DATA_FLOAT, float)
+DataElementGetNumericDef(DATA_DOUBLE, double)
+
+////void DataElement::get(char& char_in) throw (DataTypeMismatchException) {
+////if (!data_type)
+////    return;
+////if (data_type != DATA_CHAR)
+////    throw(new DataTypeMismatchException("Type mismatch, not a INT"));
+////
+////memcpy(&char_in, data_val, data_size);
+////}
 //
-//	memcpy(&bool_in, data_val, data_size);
+////void DataElement::get(unsigned char& uchar_in) throw (DataTypeMismatchException) {
+////if (!data_type)
+////    return;
+////if (data_type != DATA_UCHAR)
+////    throw(new DataTypeMismatchException("Type mismatch, not a INT"));
+////
+////memcpy(&uchar_in, data_val, data_size);
+////}
+//
+////void DataElement::get(unsigned int& uint_in) throw (DataTypeMismatchException) {
+////if (!data_type)
+////    return;
+////if (data_type != DATA_UINT)
+////    throw(new DataTypeMismatchException("Type mismatch, not a INT"));
+////
+////memcpy(&uint_in, data_val, data_size);
+////}
+//
+////void DataElement::get(unsigned long & ulong_in) throw (DataTypeMismatchException) {
+////if (!data_type)
+////    return;
+////if (data_type != DATA_ULONG)
+////    throw(new DataTypeMismatchException("Type mismatch, not a INT"));
+////
+////memcpy(&ulong_in, data_val, data_size);
+////}
+//
+////void DataElement::get(long long & long_in) throw (DataTypeMismatchException) {
+////if (!data_type)
+////    return;
+////if (data_type != DATA_LONG)
+////    throw(new DataTypeMismatchException("Type mismatch, not a INT"));
+////
+////memcpy(&long_in, data_val, data_size);
+////}
+//
+////void DataElement::get(long double& ldouble_in) throw (DataTypeMismatchException) {
+////if (!data_type)
+////    return;
+////if (data_type != DATA_LONGDOUBLE)
+////    throw(new DataTypeMismatchException("Type mismatch, not a INT"));
+////
+////memcpy(&ldouble_in, data_val, data_size);
+////}
+//
+//void DataElement::get(int &int_in) throw (DataTypeMismatchException) {
+//if (!data_type)
+//    return;
+//if (data_type != DATA_INT)
+//    throw(new DataTypeMismatchException("Type mismatch, not a INT"));
+//
+//memcpy(&int_in, data_val, data_size);
+//}
+//
+//void DataElement::get(long &long_in) throw (DataTypeMismatchException) {
+//if (!data_type)
+//    return;
+//if (data_type != DATA_LONG)
+//    throw(new DataTypeMismatchException("Type mismatch, not a LONG"));
+//
+//memcpy(&long_in, data_val, data_size);
+//}
+//
+//void DataElement::get(float &float_in) throw (DataTypeMismatchException) {
+//if (!data_type)
+//    return;
+//if (data_type != DATA_FLOAT)
+//    throw(new DataTypeMismatchException("Type mismatch, not a FLOAT"));
+//
+//memcpy(&float_in, data_val, data_size);
+//}
+//
+//void DataElement::get(double &double_in) throw (DataTypeMismatchException) {
+//if (!data_type)
+//    return;
+//if (data_type != DATA_DOUBLE)
+//    throw(new DataTypeMismatchException("Type mismatch, not a DOUBLE"));
+//
+//memcpy(&double_in, data_val, data_size);
 //}
 
-void DataElement::get(char& char_in) throw (DataTypeMismatchException) {
-    if (!data_type)
-        return;
-}
-
-void DataElement::get(unsigned char& uchar_in) throw (DataTypeMismatchException) {
-    if (!data_type)
-        return;
-}
-
-void DataElement::get(unsigned int& uint_in) throw (DataTypeMismatchException) {
-    if (!data_type)
-        return;
-}
-
-void DataElement::get(unsigned long & ulong_in) throw (DataTypeMismatchException) {
-    if (!data_type)
-        return;
-}
-
-void DataElement::get(long long & long_in) throw (DataTypeMismatchException) {
-    if (!data_type)
-        return;
-}
-
-void DataElement::get(long double& ldouble_in) throw (DataTypeMismatchException) {
-    if (!data_type)
-        return;
-}
-
-void DataElement::get(int &int_in) throw (DataTypeMismatchException) {
-    if (!data_type)
-        return;
-    if (data_type != DATA_INT)
-        throw(new DataTypeMismatchException("Type mismatch, not a INT"));
-
-    memcpy(&int_in, data_val, data_size);
-}
-
-void DataElement::get(long &long_in) throw (DataTypeMismatchException) {
-    if (!data_type)
-        return;
-    if (data_type != DATA_LONG)
-        throw(new DataTypeMismatchException("Type mismatch, not a LONG"));
-
-    memcpy(&long_in, data_val, data_size);
-}
-
-void DataElement::get(float &float_in) throw (DataTypeMismatchException) {
-    if (!data_type)
-        return;
-    if (data_type != DATA_FLOAT)
-        throw(new DataTypeMismatchException("Type mismatch, not a FLOAT"));
-
-    memcpy(&float_in, data_val, data_size);
-}
-
-void DataElement::get(double &double_in) throw (DataTypeMismatchException) {
-    if (!data_type)
-        return;
-    if (data_type != DATA_DOUBLE)
-        throw(new DataTypeMismatchException("Type mismatch, not a DOUBLE"));
-
-    memcpy(&double_in, data_val, data_size);
-}
-
 void DataElement::get(char **data_in) throw (DataTypeMismatchException) {
-    if (data_type != DATA_VOID)
-        throw(new DataTypeMismatchException("Type mismatch, not a CHAR*"));
-    *data_in = new char[data_size];
-    memcpy(*data_in, data_val, data_size);
+if (data_type != DATA_VOID)
+    throw(new DataTypeMismatchException("Type mismatch, not a CHAR*"));
+*data_in = new char[data_size];
+memcpy(*data_in, data_val, data_size);
 }
 
 void DataElement::get(string &str_in) throw (DataTypeMismatchException) {
-    if (!data_type)
-        return;
+if (!data_type)
+    return;
 
-    if (data_type != DATA_STRING)
-        throw(new DataTypeMismatchException("Type mismatch, not a STRING"));
+if (data_type != DATA_STRING)
+    throw(new DataTypeMismatchException("Type mismatch, not a STRING"));
 
-    if (!str_in.empty())	// flush the string
-    {
-        str_in.erase(str_in.begin(), str_in.end());
-    }
+if (!str_in.empty())	// flush the string
+{
+    str_in.erase(str_in.begin(), str_in.end());
+}
 
-    str_in.append(data_val);
+str_in.append(data_val);
 }
 
 void DataElement::get(vector<string> &strvect_in) throw (DataTypeMismatchException) {
-    long ptr;
-    if (!data_type)
-        return;
+long ptr;
+if (!data_type)
+    return;
 
-    if (data_type != DATA_STR_VECTOR)
-        throw(new DataTypeMismatchException("Type mismatch, not a STRING VECTOR"));
+if (data_type != DATA_STR_VECTOR)
+    throw(new DataTypeMismatchException("Type mismatch, not a STRING VECTOR"));
 
-    ptr = 0;
+ptr = 0;
 
-    while (ptr != data_size) {
-        strvect_in.push_back(string(data_val + ptr));
-        ptr += strlen(data_val + ptr) + 1;
-    }
+while (ptr != data_size) {
+    strvect_in.push_back(string(data_val + ptr));
+    ptr += strlen(data_val + ptr) + 1;
+}
 
 }
 
 void DataElement::get(std::set<string> &strset_in) throw (DataTypeMismatchException) {
-    if (!data_type)
-        return;
+if (!data_type)
+    return;
 
-    if (data_type != DATA_STR_VECTOR)
-        throw(new DataTypeMismatchException("Type mismatch, not a STRING VECTOR/SET"));
+if (data_type != DATA_STR_VECTOR)
+    throw(new DataTypeMismatchException("Type mismatch, not a STRING VECTOR/SET"));
 
-    std::vector<string> tmp_vect;
-    std::vector<string>::iterator i;
+std::vector<string> tmp_vect;
+std::vector<string>::iterator i;
 
-    get(tmp_vect);
+get(tmp_vect);
 
-    for (i = tmp_vect.begin(); i != tmp_vect.end(); i++) {
-        strset_in.insert(*i);
-    }
+for (i = tmp_vect.begin(); i != tmp_vect.end(); i++) {
+    strset_in.insert(*i);
 }
-
-void DataElement::get(vector<int> &intvect_in) throw (DataTypeMismatchException) {
-    long ptr;
-    if (!data_type)
-        return;
-
-    if (data_type != DATA_INT_VECTOR)
-        throw(new DataTypeMismatchException("Type mismatch, not a INT VECTOR"));
-
-    ptr = 0;
-
-    int temp_int;
-    while (ptr < data_size) {
-        temp_int = 0;
-        memcpy(&temp_int, data_val + ptr, sizeof(int));
-        intvect_in.push_back(temp_int);
-        ptr += sizeof(int);
-    }
-}
-
-void DataElement::get(vector<long> &longvect_in) throw (DataTypeMismatchException) {
-    long ptr;
-    if (!data_type)
-        return;
-
-    if (data_type != DATA_LONG_VECTOR)
-        throw(new DataTypeMismatchException("Type mismatch, not a LONG VECTOR"));
-
-    ptr = 0;
-
-    long temp_long;
-    while (ptr < data_size) {
-        temp_long = 0;
-        memcpy(&temp_long, data_val + ptr, sizeof(long));
-        longvect_in.push_back(temp_long);
-        ptr += sizeof(long);
-    }
-}
-
-void DataElement::get(vector<float> &floatvect_in) throw (DataTypeMismatchException) {
-    long ptr;
-    if (!data_type)
-        return;
-
-    if (data_type != DATA_FLOAT_VECTOR)
-        throw(new DataTypeMismatchException("Type mismatch, not a FLOAT VECTOR"));
-
-    ptr = 0;
-
-    float temp_float;
-    while (ptr < data_size) {
-        temp_float = 0;
-        memcpy(&temp_float, data_val + ptr, sizeof(float));
-        floatvect_in.push_back(temp_float);
-        ptr += sizeof(float);
-    }
-}
-
-void DataElement::get(vector<double> &doublevect_in) throw (DataTypeMismatchException) {
-    long ptr;
-    if (!data_type)
-        return;
-
-    if (data_type != DATA_DOUBLE_VECTOR)
-        throw(new DataTypeMismatchException("Type mismatch, not a DOUBLE VECTOR"));
-
-    ptr = 0;
-
-    double temp_double;
-
-    while (ptr < data_size) {
-        temp_double = 0;
-        memcpy(&temp_double, data_val + ptr, sizeof(double));
-        doublevect_in.push_back(temp_double);
-        ptr += sizeof(double);
-    }
-}
-
-long DataElement::getSerializedSize() {
-    return sizeof(unsigned char) + sizeof(unsigned int) + data_size;
-}
-
-long DataElement::getSerialized(char **ser_str) {
-    long ser_size = getSerializedSize();
-
-    *ser_str = new char[ser_size];
-
-    char *ser_pointer;
-
-    ser_pointer = *ser_str;
-
-    memcpy(ser_pointer, &data_type, sizeof(unsigned char));
-    ser_pointer += sizeof(unsigned char);
-    memcpy(ser_pointer, &data_size, sizeof(unsigned int));
-    ser_pointer += sizeof(unsigned int);
-    memcpy(ser_pointer, data_val, data_size);
-
-    return ser_size;
-}
-
-void DataElement::set(vector<char>& charvect_in) {
-}
-
-void DataElement::set(vector<unsigned char>& ucharvect_in) {
-}
-
-void DataElement::set(vector<unsigned int>& uintvect_in) {
-}
-
-void DataElement::set(vector<unsigned long>& ulongvect_in) {
-}
-
-void DataElement::set(vector<long long>& llongvect_in) {
-}
-
-void DataElement::set(vector<long double>& ldoublevect_in) {
 }
 
 void DataElement::get(vector<char>& charvect_in) throw (DataTypeMismatchException) {
+long ptr;
+if (!data_type)
+    return;
+
+if (data_type != DATA_CHAR_VECTOR)
+    throw(new DataTypeMismatchException("Type mismatch, not a INT VECTOR"));
+
+ptr = 0;
+
+char temp_char;
+while (ptr < data_size) {
+    temp_char = 0;
+    memcpy(&temp_char, data_val + ptr, sizeof(char));
+    charvect_in.push_back(temp_char);
+    ptr += sizeof(char);
+}
 }
 
 void DataElement::get(vector<unsigned char>& ucharvect_in) throw (DataTypeMismatchException) {
+long ptr;
+if (!data_type)
+    return;
+
+if (data_type != DATA_UCHAR_VECTOR)
+    throw(new DataTypeMismatchException("Type mismatch, not a INT VECTOR"));
+
+ptr = 0;
+
+unsigned char temp_char;
+while (ptr < data_size) {
+    temp_char = 0;
+    memcpy(&temp_char, data_val + ptr, sizeof(unsigned char));
+    ucharvect_in.push_back(temp_char);
+    ptr += sizeof(unsigned char);
+}
 }
 
 void DataElement::get(vector<unsigned int>& uintvect_in) throw (DataTypeMismatchException) {
+long ptr;
+if (!data_type)
+    return;
+
+if (data_type != DATA_UINT_VECTOR)
+    throw(new DataTypeMismatchException("Type mismatch, not a INT VECTOR"));
+
+ptr = 0;
+
+unsigned int temp_char;
+while (ptr < data_size) {
+    temp_char = 0;
+    memcpy(&temp_char, data_val + ptr, sizeof(unsigned int));
+    uintvect_in.push_back(temp_char);
+    ptr += sizeof(unsigned int);
+}
 }
 
 void DataElement::get(vector<unsigned long>& ulongvect_in) throw (DataTypeMismatchException) {
+long ptr;
+if (!data_type)
+    return;
+
+if (data_type != DATA_ULONG_VECTOR)
+    throw(new DataTypeMismatchException("Type mismatch, not a INT VECTOR"));
+
+ptr = 0;
+
+unsigned long temp_char;
+while (ptr < data_size) {
+    temp_char = 0;
+    memcpy(&temp_char, data_val + ptr, sizeof(unsigned long));
+    ulongvect_in.push_back(temp_char);
+    ptr += sizeof(unsigned long);
+}
 }
 
 void DataElement::get(vector<long long>& llongvect_in) throw (DataTypeMismatchException) {
+long ptr;
+if (!data_type)
+    return;
+
+if (data_type != DATA_LONGLONG_VECTOR)
+    throw(new DataTypeMismatchException("Type mismatch, not a INT VECTOR"));
+
+ptr = 0;
+
+long long temp_char;
+while (ptr < data_size) {
+    temp_char = 0;
+    memcpy(&temp_char, data_val + ptr, sizeof(long long));
+    llongvect_in.push_back(temp_char);
+    ptr += sizeof(long long);
+}
 }
 
 void DataElement::get(vector<long double>& ldoublevect_in) throw (DataTypeMismatchException) {
+long ptr;
+if (!data_type)
+    return;
+
+if (data_type != DATA_LONGDOUBLE_VECTOR)
+    throw(new DataTypeMismatchException("Type mismatch, not a INT VECTOR"));
+
+ptr = 0;
+
+long double temp_char;
+while (ptr < data_size) {
+    temp_char = 0;
+    memcpy(&temp_char, data_val + ptr, sizeof(long double));
+    ldoublevect_in.push_back(temp_char);
+    ptr += sizeof(long double);
+}
+}
+
+void DataElement::get(vector<int> &intvect_in) throw (DataTypeMismatchException) {
+long ptr;
+if (!data_type)
+    return;
+
+if (data_type != DATA_INT_VECTOR)
+    throw(new DataTypeMismatchException("Type mismatch, not a INT VECTOR"));
+
+ptr = 0;
+
+int temp_int;
+while (ptr < data_size) {
+    temp_int = 0;
+    memcpy(&temp_int, data_val + ptr, sizeof(int));
+    intvect_in.push_back(temp_int);
+    ptr += sizeof(int);
+}
+}
+
+void DataElement::get(vector<long> &longvect_in) throw (DataTypeMismatchException) {
+long ptr;
+if (!data_type)
+    return;
+
+if (data_type != DATA_LONG_VECTOR)
+    throw(new DataTypeMismatchException("Type mismatch, not a LONG VECTOR"));
+
+ptr = 0;
+
+long temp_long;
+while (ptr < data_size) {
+    temp_long = 0;
+    memcpy(&temp_long, data_val + ptr, sizeof(long));
+    longvect_in.push_back(temp_long);
+    ptr += sizeof(long);
+}
+}
+
+void DataElement::get(vector<float> &floatvect_in) throw (DataTypeMismatchException) {
+long ptr;
+if (!data_type)
+    return;
+
+if (data_type != DATA_FLOAT_VECTOR)
+    throw(new DataTypeMismatchException("Type mismatch, not a FLOAT VECTOR"));
+
+ptr = 0;
+
+float temp_float;
+while (ptr < data_size) {
+    temp_float = 0;
+    memcpy(&temp_float, data_val + ptr, sizeof(float));
+    floatvect_in.push_back(temp_float);
+    ptr += sizeof(float);
+}
+}
+
+void DataElement::get(vector<double> &doublevect_in) throw (DataTypeMismatchException) {
+long ptr;
+if (!data_type)
+    return;
+
+if (data_type != DATA_DOUBLE_VECTOR)
+    throw(new DataTypeMismatchException("Type mismatch, not a DOUBLE VECTOR"));
+
+ptr = 0;
+
+double temp_double;
+
+while (ptr < data_size) {
+    temp_double = 0;
+    memcpy(&temp_double, data_val + ptr, sizeof(double));
+    doublevect_in.push_back(temp_double);
+    ptr += sizeof(double);
+}
+}
+
+long DataElement::getSerializedSize() {
+return sizeof(unsigned char) + sizeof(unsigned int) + data_size;
+}
+
+long DataElement::getSerialized(char **ser_str) {
+long ser_size = getSerializedSize();
+
+*ser_str = new char[ser_size];
+
+char *ser_pointer;
+
+ser_pointer = *ser_str;
+
+memcpy(ser_pointer, &data_type, sizeof(unsigned char));
+ser_pointer += sizeof(unsigned char);
+memcpy(ser_pointer, &data_size, sizeof(unsigned int));
+ser_pointer += sizeof(unsigned int);
+memcpy(ser_pointer, data_val, data_size);
+
+return ser_size;
 }
 
 void DataElement::setSerialized(char *ser_str) {
-    char *ser_pointer = ser_str;
+char *ser_pointer = ser_str;
 
-    memcpy(&data_type, ser_pointer, sizeof(unsigned char));
-    ser_pointer += sizeof(unsigned char);
-    memcpy(&data_size, ser_pointer, sizeof(unsigned int));
-    ser_pointer += sizeof(unsigned int);
+memcpy(&data_type, ser_pointer, sizeof(unsigned char));
+ser_pointer += sizeof(unsigned char);
+memcpy(&data_size, ser_pointer, sizeof(unsigned int));
+ser_pointer += sizeof(unsigned int);
 
-    data_init(data_size);
-    memcpy(data_val, ser_pointer, data_size);
+data_init(data_size);
+memcpy(data_val, ser_pointer, data_size);
 }
 
 /* DataNode class */
 
 DataNode::DataNode() {
-    ptr = 0;
-    parentNode = NULL;
+ptr = 0;
+parentNode = NULL;
 }
 
 DataNode::DataNode(const char *name_in) {
-    ptr = 0;
-    node_name = name_in;
-    parentNode = NULL;
+ptr = 0;
+node_name = name_in;
+parentNode = NULL;
 }
 
 DataNode::~DataNode() {
-    for (vector<DataNode *>::iterator i = children.begin(); i != children.end(); i++) {
-        delete *i;
-    }
+for (vector<DataNode *>::iterator i = children.begin(); i != children.end(); i++) {
+    delete *i;
+}
 }
 
 void DataNode::setName(const char *name_in) {
-    node_name = name_in;
+node_name = name_in;
 }
 
 DataElement & DataNode::element() {
-    return data_elem;
+return data_elem;
 }
 
 DataNode &DataNode::newChild(const char *name_in) {
-    children.push_back(new DataNode(name_in));
-    childmap[name_in].push_back(children.back());
+children.push_back(new DataNode(name_in));
+childmap[name_in].push_back(children.back());
 
-    children.back()->setParentNode(*this);
+children.back()->setParentNode(*this);
 
-    return *children.back();
+return *children.back();
 }
 
 DataNode &DataNode::child(const char *name_in, int index) throw (DataInvalidChildException) {
-    DataNode *child_ret;
+DataNode *child_ret;
 
-    child_ret = childmap[name_in][index];
+child_ret = childmap[name_in][index];
 
-    if (!child_ret) {
-        stringstream error_str;
-        error_str << "no child '" << index << "' in DataNode '" << node_name << "'";
-        throw(DataInvalidChildException(error_str.str().c_str()));
-    }
+if (!child_ret) {
+    stringstream error_str;
+    error_str << "no child '" << index << "' in DataNode '" << node_name << "'";
+    throw(DataInvalidChildException(error_str.str().c_str()));
+}
 
-    return *child_ret;
+return *child_ret;
 }
 
 DataNode &DataNode::child(int index) throw (DataInvalidChildException) {
 
-    DataNode *child_ret;
+DataNode *child_ret;
 
-    child_ret = children[index];
+child_ret = children[index];
 
-    if (!child_ret) {
-        stringstream error_str;
-        error_str << "no child '" << index << "' in DataNode '" << node_name << "'";
-        throw(DataInvalidChildException(error_str.str().c_str()));
-    }
+if (!child_ret) {
+    stringstream error_str;
+    error_str << "no child '" << index << "' in DataNode '" << node_name << "'";
+    throw(DataInvalidChildException(error_str.str().c_str()));
+}
 
-    return *child_ret;
+return *child_ret;
 }
 
 int DataNode::numChildren() {
-    return children.size();
+return children.size();
 }
 
 int DataNode::numChildren(const char *name_in) {
-    return childmap[name_in].size();
+return childmap[name_in].size();
 }
 
 bool DataNode::hasAnother() {
-    return children.size() != ptr;
+return children.size() != ptr;
 }
 
 bool DataNode::hasAnother(const char *name_in) {
-    return childmap[name_in].size() != childmap_ptr[name_in];
+return childmap[name_in].size() != childmap_ptr[name_in];
 }
 
 DataNode & DataNode::getNext() throw (DataInvalidChildException) {
-    return child(ptr++);
+return child(ptr++);
 }
 
 DataNode &DataNode::getNext(const char *name_in) throw (DataInvalidChildException) {
-    return child(name_in, childmap_ptr[name_in]++);
+return child(name_in, childmap_ptr[name_in]++);
 }
 
 void DataNode::rewind() {
-    ptr = 0;
+ptr = 0;
 }
 
 void DataNode::rewind(const char *name_in) {
-    childmap_ptr[name_in] = 0;
+childmap_ptr[name_in] = 0;
 }
 
 /* DataTree class */
 
 DataTree::DataTree(const char *name_in) {
-    dn_root.setName(name_in);
+dn_root.setName(name_in);
 }
 
 DataTree::DataTree() {
@@ -648,940 +882,940 @@ DataTree::~DataTree() {
 ;
 
 DataNode & DataTree::rootNode() {
-    return dn_root;
+return dn_root;
 }
 
 std::string trim(std::string& s, const std::string& drop = " ") {
-    std::string r = s.erase(s.find_last_not_of(drop) + 1);
-    return r.erase(0, r.find_first_not_of(drop));
+std::string r = s.erase(s.find_last_not_of(drop) + 1);
+return r.erase(0, r.find_first_not_of(drop));
 }
 
 void DataTree::decodeXMLText(DataNode *elem, const char *src_text, DT_FloatingPointPolicy fpp) {
 
-    int tmp_char;
-    int tmp_int;
-    long tmp_long;
-    long long tmp_llong;
-    double tmp_double;
-    float tmp_float;
-    string tmp_str;
-    string tmp_str2;
-    std::stringstream tmp_stream;
-    std::stringstream tmp_stream2;
+int tmp_char;
+int tmp_int;
+long tmp_long;
+long long tmp_llong;
+double tmp_double;
+float tmp_float;
+string tmp_str;
+string tmp_str2;
+std::stringstream tmp_stream;
+std::stringstream tmp_stream2;
 
-    vector<char> tmp_charvect;
-    vector<int> tmp_intvect;
-    vector<long> tmp_longvect;
-    vector<long> tmp_llongvect;
-    vector<long>::iterator tmp_llongvect_i;
-    vector<double> tmp_doublevect;
-    vector<double>::iterator tmp_doublevect_i;
-    vector<float> tmp_floatvect;
+vector<char> tmp_charvect;
+vector<int> tmp_intvect;
+vector<long> tmp_longvect;
+vector<long> tmp_llongvect;
+vector<long>::iterator tmp_llongvect_i;
+vector<double> tmp_doublevect;
+vector<double>::iterator tmp_doublevect_i;
+vector<float> tmp_floatvect;
 
-    bool vChars = false;
-    bool vInts = false;
-    bool vLongs = false;
+bool vChars = false;
+bool vInts = false;
+bool vLongs = false;
 
-    string in_text = src_text;
+string in_text = src_text;
 
-    trim(in_text);
-    trim(in_text, "\r\n");
-    tmp_stream.str("");
-    tmp_stream2.str("");
+trim(in_text);
+trim(in_text, "\r\n");
+tmp_stream.str("");
+tmp_stream2.str("");
 
-    if (in_text.find_first_not_of("0123456789-") == string::npos) {
-        tmp_stream << in_text;
+if (in_text.find_first_not_of("0123456789-") == string::npos) {
+    tmp_stream << in_text;
+    tmp_stream >> tmp_llong;
+
+    tmp_int = tmp_llong;
+    tmp_long = tmp_llong;
+
+    if (tmp_int == tmp_llong) {
+        elem->element().set((int) tmp_int);
+    } else if (tmp_long == tmp_llong) {
+        elem->element().set((long) tmp_int);
+    } else {
+        elem->element().set((long long) tmp_long);
+    }
+} else if (in_text.find_first_not_of("0123456789.e+-") == string::npos) {
+    tmp_stream << in_text;
+
+    if (fpp == USE_FLOAT) {
+        tmp_stream >> tmp_float;
+
+        elem->element().set((float) tmp_float);
+    } else {
+        tmp_stream >> tmp_double;
+
+        elem->element().set((double) tmp_double);
+    }
+} else if (in_text.find_first_not_of("0123456789- ") == string::npos) {
+    tmp_stream << in_text;
+
+    vChars = true;
+    vInts = true;
+    vLongs = true;
+
+    while (!tmp_stream.eof()) {
         tmp_stream >> tmp_llong;
-
+        tmp_char = tmp_llong;
         tmp_int = tmp_llong;
         tmp_long = tmp_llong;
-
-        if (tmp_int == tmp_llong) {
-            elem->element().set((int) tmp_int);
-        } else if (tmp_long == tmp_llong) {
-            elem->element().set((long) tmp_int);
-        } else {
-            elem->element().set((long long) tmp_long);
+        if (tmp_char != tmp_llong) {
+            vChars = false;
         }
-    } else if (in_text.find_first_not_of("0123456789.e+-") == string::npos) {
-        tmp_stream << in_text;
+        if (tmp_int != tmp_llong) {
+            vInts = false;
+        }
+        if (tmp_long != tmp_llong) {
+            vLongs = false;
+        }
+        tmp_llongvect.push_back((long) tmp_long);
+    }
+
+    if (vChars) {
+        for (tmp_llongvect_i = tmp_llongvect.begin(); tmp_llongvect_i != tmp_llongvect.end(); tmp_llongvect_i++) {
+            tmp_charvect.push_back(*tmp_llongvect_i);
+        }
+        tmp_llongvect.clear();
+        elem->element().set(tmp_charvect);
+        tmp_charvect.clear();
+
+    } else if (vInts) {
+        for (tmp_llongvect_i = tmp_llongvect.begin(); tmp_llongvect_i != tmp_llongvect.end(); tmp_llongvect_i++) {
+            tmp_intvect.push_back(*tmp_llongvect_i);
+        }
+        tmp_llongvect.clear();
+        elem->element().set(tmp_intvect);
+        tmp_intvect.clear();
+    } else if (vLongs) {
+        for (tmp_llongvect_i = tmp_llongvect.begin(); tmp_llongvect_i != tmp_llongvect.end(); tmp_llongvect_i++) {
+            tmp_longvect.push_back(*tmp_llongvect_i);
+        }
+        tmp_llongvect.clear();
+        elem->element().set(tmp_longvect);
+        tmp_longvect.clear();
+    } else {
+        elem->element().set(tmp_llongvect);
+    }
+} else if (in_text.find_first_not_of("0123456789.e-+ ") == string::npos) {
+    tmp_stream << in_text;
+
+    if (fpp == USE_FLOAT) {
+        tmp_floatvect.clear();
+    } else {
+        tmp_doublevect.clear();
+    }
+
+    while (!tmp_stream.eof()) {
 
         if (fpp == USE_FLOAT) {
             tmp_stream >> tmp_float;
-
-            elem->element().set((float) tmp_float);
+            tmp_floatvect.push_back(tmp_float);
         } else {
             tmp_stream >> tmp_double;
-
-            elem->element().set((double) tmp_double);
+            tmp_doublevect.push_back(tmp_double);
         }
-    } else if (in_text.find_first_not_of("0123456789- ") == string::npos) {
-        tmp_stream << in_text;
-
-        vChars = true;
-        vInts = true;
-        vLongs = true;
-
-        while (!tmp_stream.eof()) {
-            tmp_stream >> tmp_llong;
-            tmp_char = tmp_llong;
-            tmp_int = tmp_llong;
-            tmp_long = tmp_llong;
-            if (tmp_char != tmp_llong) {
-                vChars = false;
-            }
-            if (tmp_int != tmp_llong) {
-                vInts = false;
-            }
-            if (tmp_long != tmp_llong) {
-                vLongs = false;
-            }
-            tmp_llongvect.push_back((long) tmp_long);
-        }
-
-        if (vChars) {
-            for (tmp_llongvect_i = tmp_llongvect.begin(); tmp_llongvect_i != tmp_llongvect.end(); tmp_llongvect_i++) {
-                tmp_charvect.push_back(*tmp_llongvect_i);
-            }
-            tmp_llongvect.clear();
-            elem->element().set(tmp_charvect);
-            tmp_charvect.clear();
-
-        } else if (vInts) {
-            for (tmp_llongvect_i = tmp_llongvect.begin(); tmp_llongvect_i != tmp_llongvect.end(); tmp_llongvect_i++) {
-                tmp_intvect.push_back(*tmp_llongvect_i);
-            }
-            tmp_llongvect.clear();
-            elem->element().set(tmp_intvect);
-            tmp_intvect.clear();
-        } else if (vLongs) {
-            for (tmp_llongvect_i = tmp_llongvect.begin(); tmp_llongvect_i != tmp_llongvect.end(); tmp_llongvect_i++) {
-                tmp_longvect.push_back(*tmp_llongvect_i);
-            }
-            tmp_llongvect.clear();
-            elem->element().set(tmp_longvect);
-            tmp_longvect.clear();
-        } else {
-            elem->element().set(tmp_llongvect);
-        }
-    } else if (in_text.find_first_not_of("0123456789.e-+ ") == string::npos) {
-        tmp_stream << in_text;
-
-        if (fpp == USE_FLOAT) {
-            tmp_floatvect.clear();
-        } else {
-            tmp_doublevect.clear();
-        }
-
-        while (!tmp_stream.eof()) {
-
-            if (fpp == USE_FLOAT) {
-                tmp_stream >> tmp_float;
-                tmp_floatvect.push_back(tmp_float);
-            } else {
-                tmp_stream >> tmp_double;
-                tmp_doublevect.push_back(tmp_double);
-            }
-        }
-
-        if (fpp == USE_FLOAT) {
-            elem->element().set(tmp_floatvect);
-        } else {
-            elem->element().set(tmp_doublevect);
-        }
-    } else {
-        elem->element().set(src_text);
-        //					printf( "Unhandled DataTree XML Field: [%s]", tmp_str.c_str() );	
     }
+
+    if (fpp == USE_FLOAT) {
+        elem->element().set(tmp_floatvect);
+    } else {
+        elem->element().set(tmp_doublevect);
+    }
+} else {
+    elem->element().set(src_text);
+    //					printf( "Unhandled DataTree XML Field: [%s]", tmp_str.c_str() );
+}
 
 }
 
 void DataTree::setFromXML(DataNode *elem, TiXmlNode *elxml, bool root_node, DT_FloatingPointPolicy fpp) {
-    TiXmlText *pText;
-    int t = elxml->Type();
-    string tmp_str;
+TiXmlText *pText;
+int t = elxml->Type();
+string tmp_str;
 
-    switch (t) {
-    case TiXmlNode::DOCUMENT:
-        //				printf( "Document" );
-        break;
+switch (t) {
+case TiXmlNode::DOCUMENT:
+    //				printf( "Document" );
+    break;
 
-    case TiXmlNode::ELEMENT:
-        if (!root_node)
-            elem = &elem->newChild(elxml->Value());
+case TiXmlNode::ELEMENT:
+    if (!root_node)
+        elem = &elem->newChild(elxml->Value());
 
-        const TiXmlAttribute *attribs;
-        attribs = elxml->ToElement()->FirstAttribute();
+    const TiXmlAttribute *attribs;
+    attribs = elxml->ToElement()->FirstAttribute();
 
-        while (attribs) {
+    while (attribs) {
 
-            // following badgerfish xml->json and xml->ruby convention for attributes..
-            string attrName("@");
-            attrName.append(attribs->Name());
+        // following badgerfish xml->json and xml->ruby convention for attributes..
+        string attrName("@");
+        attrName.append(attribs->Name());
 
-            decodeXMLText(&elem->newChild(attrName.c_str()), attribs->Value(), fpp);
+        decodeXMLText(&elem->newChild(attrName.c_str()), attribs->Value(), fpp);
 
-            attribs = attribs->Next();
-        }
-
-        //				printf( "Element \"%s\"", elxml->Value());
-        break;
-
-    case TiXmlNode::COMMENT:
-        //				printf( "Comment: \"%s\"", elxml->Value());
-        break;
-
-    case TiXmlNode::UNKNOWN:
-        //				printf( "Unknown" );
-        break;
-
-    case TiXmlNode::TEXT:
-        pText = elxml->ToText();
-
-        decodeXMLText(elem, pText->Value(), fpp);
-
-        //				pText = elxml->ToText();
-        //				printf( "Text: [%s]", pText->Value() );
-        break;
-
-    case TiXmlNode::DECLARATION:
-        //				printf( "Declaration" );
-        break;
-    default:
-        break;
+        attribs = attribs->Next();
     }
 
-    //	printf( "\n" );
+    //				printf( "Element \"%s\"", elxml->Value());
+    break;
 
-    TiXmlNode * pChild;
+case TiXmlNode::COMMENT:
+    //				printf( "Comment: \"%s\"", elxml->Value());
+    break;
 
-    if (!elxml->NoChildren()) {
-        if (elxml->FirstChild()->Type() == TiXmlNode::ELEMENT) {
-            if (elxml->FirstChild()->Value() == TIXML_STRING("str")) {
-                std::vector<std::string> tmp_strvect;
+case TiXmlNode::UNKNOWN:
+    //				printf( "Unknown" );
+    break;
 
-                for (pChild = elxml->FirstChild(); pChild != 0; pChild = pChild->NextSibling()) {
-                    if (pChild->Value() == TIXML_STRING("str")) {
-                        if (!pChild->FirstChild()) {
-                            tmp_strvect.push_back("");
-                            continue;
-                        }
+case TiXmlNode::TEXT:
+    pText = elxml->ToText();
 
-                        pText = pChild->FirstChild()->ToText();
+    decodeXMLText(elem, pText->Value(), fpp);
 
-                        if (pText) {
-                            tmp_str = pText->Value();
-                            tmp_strvect.push_back(tmp_str);
-                        }
+    //				pText = elxml->ToText();
+    //				printf( "Text: [%s]", pText->Value() );
+    break;
+
+case TiXmlNode::DECLARATION:
+    //				printf( "Declaration" );
+    break;
+default:
+    break;
+}
+
+//	printf( "\n" );
+
+TiXmlNode * pChild;
+
+if (!elxml->NoChildren()) {
+    if (elxml->FirstChild()->Type() == TiXmlNode::ELEMENT) {
+        if (elxml->FirstChild()->Value() == TIXML_STRING("str")) {
+            std::vector<std::string> tmp_strvect;
+
+            for (pChild = elxml->FirstChild(); pChild != 0; pChild = pChild->NextSibling()) {
+                if (pChild->Value() == TIXML_STRING("str")) {
+                    if (!pChild->FirstChild()) {
+                        tmp_strvect.push_back("");
+                        continue;
+                    }
+
+                    pText = pChild->FirstChild()->ToText();
+
+                    if (pText) {
+                        tmp_str = pText->Value();
+                        tmp_strvect.push_back(tmp_str);
                     }
                 }
-
-                elem->element().set(tmp_strvect);
-
-                return;
             }
+
+            elem->element().set(tmp_strvect);
+
+            return;
         }
     }
+}
 
-    for (pChild = elxml->FirstChild(); pChild != 0; pChild = pChild->NextSibling()) {
-        setFromXML(elem, pChild, false, fpp);
-    }
+for (pChild = elxml->FirstChild(); pChild != 0; pChild = pChild->NextSibling()) {
+    setFromXML(elem, pChild, false, fpp);
+}
 
 }
 
 void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
-    DataNode *child;
+DataNode *child;
 
-    elem->rewind();
+elem->rewind();
 
-    while (elem->hasAnother()) {
-        child = &elem->getNext();
+while (elem->hasAnother()) {
+    child = &elem->getNext();
 
-        std::string nodeName = child->getName();
+    std::string nodeName = child->getName();
 
-        TiXmlElement *element;
+    TiXmlElement *element;
 
-        element = new TiXmlElement(nodeName.length() ? nodeName.c_str() : "node");
-        std::string tmp;
-        std::stringstream tmp_stream;
-        TiXmlText *text;
-        std::vector<float> tmp_floatvect;
-        std::vector<float>::iterator tmp_floatvect_i;
-        std::vector<double> tmp_doublevect;
-        std::vector<double>::iterator tmp_doublevect_i;
-        std::vector<int> tmp_intvect;
-        std::vector<int>::iterator tmp_intvect_i;
-        std::vector<char> tmp_charvect;
-        std::vector<char>::iterator tmp_charvect_i;
-        std::vector<unsigned char> tmp_ucharvect;
-        std::vector<unsigned char>::iterator tmp_ucharvect_i;
-        std::vector<unsigned int> tmp_uintvect;
-        std::vector<unsigned int>::iterator tmp_uintvect_i;
-        std::vector<long> tmp_longvect;
-        std::vector<long>::iterator tmp_longvect_i;
-        std::vector<unsigned long> tmp_ulongvect;
-        std::vector<unsigned long>::iterator tmp_ulongvect_i;
-        std::vector<long long> tmp_llongvect;
-        std::vector<long long>::iterator tmp_llongvect_i;
-        std::vector<unsigned long long> tmp_ullongvect;
-        std::vector<unsigned long long>::iterator tmp_ullongvect_i;
-        std::vector<string> tmp_stringvect;
-        std::vector<string>::iterator tmp_stringvect_i;
-        TiXmlElement *tmp_node;
-        char *tmp_pstr;
-        double tmp_double;
-        long double tmp_ldouble;
-        float tmp_float;
-        char tmp_char;
-        unsigned char tmp_uchar;
-        int tmp_int;
-        unsigned int tmp_uint;
-        long tmp_long;
-        unsigned long tmp_ulong;
-        long long tmp_llong;
+    element = new TiXmlElement(nodeName.length() ? nodeName.c_str() : "node");
+    std::string tmp;
+    std::stringstream tmp_stream;
+    TiXmlText *text;
+    std::vector<float> tmp_floatvect;
+    std::vector<float>::iterator tmp_floatvect_i;
+    std::vector<double> tmp_doublevect;
+    std::vector<double>::iterator tmp_doublevect_i;
+    std::vector<int> tmp_intvect;
+    std::vector<int>::iterator tmp_intvect_i;
+    std::vector<char> tmp_charvect;
+    std::vector<char>::iterator tmp_charvect_i;
+    std::vector<unsigned char> tmp_ucharvect;
+    std::vector<unsigned char>::iterator tmp_ucharvect_i;
+    std::vector<unsigned int> tmp_uintvect;
+    std::vector<unsigned int>::iterator tmp_uintvect_i;
+    std::vector<long> tmp_longvect;
+    std::vector<long>::iterator tmp_longvect_i;
+    std::vector<unsigned long> tmp_ulongvect;
+    std::vector<unsigned long>::iterator tmp_ulongvect_i;
+    std::vector<long long> tmp_llongvect;
+    std::vector<long long>::iterator tmp_llongvect_i;
+    std::vector<unsigned long long> tmp_ullongvect;
+    std::vector<unsigned long long>::iterator tmp_ullongvect_i;
+    std::vector<string> tmp_stringvect;
+    std::vector<string>::iterator tmp_stringvect_i;
+    TiXmlElement *tmp_node;
+    char *tmp_pstr;
+    double tmp_double;
+    long double tmp_ldouble;
+    float tmp_float;
+    char tmp_char;
+    unsigned char tmp_uchar;
+    int tmp_int;
+    unsigned int tmp_uint;
+    long tmp_long;
+    unsigned long tmp_ulong;
+    long long tmp_llong;
 
-        switch (child->element().getDataType()) {
-        case DATA_NULL:
-            break;
-        case DATA_VOID:
-            child->element().get(&tmp_pstr);
-            // following badgerfish xml->json and xml->ruby convention for attributes..
-            if (nodeName.substr(0, 1) == string("@")) {
-                elxml->SetAttribute(nodeName.substr(1).c_str(), tmp_pstr);
-                delete element;
-                element = NULL;
-            } else {
-                text = new TiXmlText(tmp_pstr);
-                element->LinkEndChild(text);
-            }
-            delete tmp_pstr;
-            break;
-        case DATA_CHAR:
-            child->element().get(tmp_char);
-
-            tmp_stream.str("");
-
-            tmp_stream << tmp_char;
-
-            text = new TiXmlText(tmp_stream.str().c_str());
+    switch (child->element().getDataType()) {
+    case DATA_NULL:
+        break;
+    case DATA_VOID:
+        child->element().get(&tmp_pstr);
+        // following badgerfish xml->json and xml->ruby convention for attributes..
+        if (nodeName.substr(0, 1) == string("@")) {
+            elxml->SetAttribute(nodeName.substr(1).c_str(), tmp_pstr);
+            delete element;
+            element = NULL;
+        } else {
+            text = new TiXmlText(tmp_pstr);
             element->LinkEndChild(text);
-            break;
-        case DATA_UCHAR:
-            child->element().get(tmp_uchar);
+        }
+        delete tmp_pstr;
+        break;
+    case DATA_CHAR:
+        child->element().get(tmp_char);
 
-            tmp_stream.str("");
+        tmp_stream.str("");
 
-            tmp_stream << tmp_uchar;
+        tmp_stream << tmp_char;
 
-            text = new TiXmlText(tmp_stream.str().c_str());
+        text = new TiXmlText(tmp_stream.str().c_str());
+        element->LinkEndChild(text);
+        break;
+    case DATA_UCHAR:
+        child->element().get(tmp_uchar);
+
+        tmp_stream.str("");
+
+        tmp_stream << tmp_uchar;
+
+        text = new TiXmlText(tmp_stream.str().c_str());
+        element->LinkEndChild(text);
+        break;
+    case DATA_INT:
+        child->element().get(tmp_int);
+
+        tmp_stream.str("");
+
+        tmp_stream << tmp_int;
+
+        text = new TiXmlText(tmp_stream.str().c_str());
+        element->LinkEndChild(text);
+        break;
+    case DATA_UINT:
+        child->element().get(tmp_uint);
+
+        tmp_stream.str("");
+
+        tmp_stream << tmp_uint;
+
+        text = new TiXmlText(tmp_stream.str().c_str());
+        element->LinkEndChild(text);
+        break;
+    case DATA_LONG:
+        child->element().get(tmp_long);
+
+        tmp_stream.str("");
+
+        tmp_stream << tmp_long;
+
+        text = new TiXmlText(tmp_stream.str().c_str());
+        element->LinkEndChild(text);
+        break;
+    case DATA_ULONG:
+        child->element().get(tmp_ulong);
+
+        tmp_stream.str("");
+
+        tmp_stream << tmp_ulong;
+
+        text = new TiXmlText(tmp_stream.str().c_str());
+        element->LinkEndChild(text);
+        break;
+    case DATA_LONGLONG:
+        child->element().get(tmp_llong);
+
+        tmp_stream.str("");
+
+        tmp_stream << tmp_llong;
+
+        text = new TiXmlText(tmp_stream.str().c_str());
+        element->LinkEndChild(text);
+        break;
+    case DATA_FLOAT:
+        child->element().get(tmp_float);
+
+        tmp_stream.str("");
+
+        tmp_stream << tmp_float;
+
+        text = new TiXmlText(tmp_stream.str().c_str());
+        element->LinkEndChild(text);
+        break;
+    case DATA_DOUBLE:
+        child->element().get(tmp_double);
+
+        tmp_stream.str("");
+
+        tmp_stream << tmp_double;
+
+        text = new TiXmlText(tmp_stream.str().c_str());
+        element->LinkEndChild(text);
+        break;
+    case DATA_LONGDOUBLE:
+        child->element().get(tmp_ldouble);
+
+        tmp_stream.str("");
+
+        tmp_stream << tmp_ldouble;
+
+        text = new TiXmlText(tmp_stream.str().c_str());
+        element->LinkEndChild(text);
+        break;
+    case DATA_STRING:
+        child->element().get(tmp);
+        if (nodeName.substr(0, 1) == string("@")) {
+            elxml->SetAttribute(nodeName.substr(1).c_str(), tmp.c_str());
+            delete element;
+            element = NULL;
+        } else {
+            text = new TiXmlText(tmp.c_str());
             element->LinkEndChild(text);
-            break;
-        case DATA_INT:
-            child->element().get(tmp_int);
+        }
+        break;
 
-            tmp_stream.str("");
+    case DATA_STR_VECTOR:
+        child->element().get(tmp_stringvect);
 
-            tmp_stream << tmp_int;
+        tmp_stream.str("");
 
-            text = new TiXmlText(tmp_stream.str().c_str());
-            element->LinkEndChild(text);
-            break;
-        case DATA_UINT:
-            child->element().get(tmp_uint);
-
-            tmp_stream.str("");
-
-            tmp_stream << tmp_uint;
-
-            text = new TiXmlText(tmp_stream.str().c_str());
-            element->LinkEndChild(text);
-            break;
-        case DATA_LONG:
-            child->element().get(tmp_long);
-
-            tmp_stream.str("");
-
-            tmp_stream << tmp_long;
-
-            text = new TiXmlText(tmp_stream.str().c_str());
-            element->LinkEndChild(text);
-            break;
-        case DATA_ULONG:
-            child->element().get(tmp_ulong);
-
-            tmp_stream.str("");
-
-            tmp_stream << tmp_ulong;
-
-            text = new TiXmlText(tmp_stream.str().c_str());
-            element->LinkEndChild(text);
-            break;
-        case DATA_LONGLONG:
-            child->element().get(tmp_llong);
-
-            tmp_stream.str("");
-
-            tmp_stream << tmp_llong;
-
-            text = new TiXmlText(tmp_stream.str().c_str());
-            element->LinkEndChild(text);
-            break;
-        case DATA_FLOAT:
-            child->element().get(tmp_float);
-
-            tmp_stream.str("");
-
-            tmp_stream << tmp_float;
-
-            text = new TiXmlText(tmp_stream.str().c_str());
-            element->LinkEndChild(text);
-            break;
-        case DATA_DOUBLE:
-            child->element().get(tmp_double);
-
-            tmp_stream.str("");
-
-            tmp_stream << tmp_double;
-
-            text = new TiXmlText(tmp_stream.str().c_str());
-            element->LinkEndChild(text);
-            break;
-        case DATA_LONGDOUBLE:
-            child->element().get(tmp_ldouble);
-
-            tmp_stream.str("");
-
-            tmp_stream << tmp_ldouble;
-
-            text = new TiXmlText(tmp_stream.str().c_str());
-            element->LinkEndChild(text);
-            break;
-        case DATA_STRING:
-            child->element().get(tmp);
-            if (nodeName.substr(0, 1) == string("@")) {
-                elxml->SetAttribute(nodeName.substr(1).c_str(), tmp.c_str());
-                delete element;
-                element = NULL;
-            } else {
-                text = new TiXmlText(tmp.c_str());
-                element->LinkEndChild(text);
-            }
-            break;
-
-        case DATA_STR_VECTOR:
-            child->element().get(tmp_stringvect);
-
-            tmp_stream.str("");
-
-            for (tmp_stringvect_i = tmp_stringvect.begin(); tmp_stringvect_i != tmp_stringvect.end(); tmp_stringvect_i++) {
-                tmp_node = new TiXmlElement("str");
-                text = new TiXmlText((*tmp_stringvect_i).c_str());
-                tmp_node->LinkEndChild(text);
-                element->LinkEndChild(tmp_node);
-            }
-
-            tmp_stringvect.clear();
-            break;
-        case DATA_CHAR_VECTOR:
-            child->element().get(tmp_charvect);
-
-            tmp_stream.str("");
-
-            for (tmp_charvect_i = tmp_charvect.begin(); tmp_charvect_i != tmp_charvect.end(); tmp_charvect_i++) {
-                tmp_stream << (*tmp_charvect_i);
-                if (tmp_charvect_i != tmp_charvect.end() - 1)
-                    tmp_stream << " ";
-            }
-
-            text = new TiXmlText(tmp_stream.str().c_str());
-            element->LinkEndChild(text);
-            tmp_charvect.clear();
-            break;
-        case DATA_UCHAR_VECTOR:
-            child->element().get(tmp_ucharvect);
-
-            tmp_stream.str("");
-
-            for (tmp_ucharvect_i = tmp_ucharvect.begin(); tmp_ucharvect_i != tmp_ucharvect.end(); tmp_ucharvect_i++) {
-                tmp_stream << (*tmp_ucharvect_i);
-                if (tmp_ucharvect_i != tmp_ucharvect.end() - 1)
-                    tmp_stream << " ";
-            }
-
-            text = new TiXmlText(tmp_stream.str().c_str());
-            element->LinkEndChild(text);
-            tmp_ucharvect.clear();
-            break;
-        case DATA_INT_VECTOR:
-            child->element().get(tmp_intvect);
-
-            tmp_stream.str("");
-
-            for (tmp_intvect_i = tmp_intvect.begin(); tmp_intvect_i != tmp_intvect.end(); tmp_intvect_i++) {
-                tmp_stream << (*tmp_intvect_i);
-                if (tmp_intvect_i != tmp_intvect.end() - 1)
-                    tmp_stream << " ";
-            }
-
-            text = new TiXmlText(tmp_stream.str().c_str());
-            element->LinkEndChild(text);
-            tmp_intvect.clear();
-            break;
-        case DATA_UINT_VECTOR:
-            child->element().get(tmp_uintvect);
-
-            tmp_stream.str("");
-
-            for (tmp_uintvect_i = tmp_uintvect.begin(); tmp_uintvect_i != tmp_uintvect.end(); tmp_uintvect_i++) {
-                tmp_stream << (*tmp_intvect_i);
-                if (tmp_uintvect_i != tmp_uintvect.end() - 1)
-                    tmp_stream << " ";
-            }
-
-            text = new TiXmlText(tmp_stream.str().c_str());
-            element->LinkEndChild(text);
-            tmp_uintvect.clear();
-            break;
-        case DATA_LONG_VECTOR:
-            child->element().get(tmp_longvect);
-
-            tmp_stream.str("");
-
-            for (tmp_longvect_i = tmp_longvect.begin(); tmp_longvect_i != tmp_longvect.end(); tmp_longvect_i++) {
-                tmp_stream << (*tmp_longvect_i);
-                if (tmp_longvect_i != tmp_longvect.end() - 1)
-                    tmp_stream << " ";
-            }
-
-            text = new TiXmlText(tmp_stream.str().c_str());
-            element->LinkEndChild(text);
-            tmp_longvect.clear();
-            break;
-        case DATA_ULONG_VECTOR:
-            child->element().get(tmp_ulongvect);
-
-            tmp_stream.str("");
-
-            for (tmp_ulongvect_i = tmp_ulongvect.begin(); tmp_ulongvect_i != tmp_ulongvect.end(); tmp_ulongvect_i++) {
-                tmp_stream << (*tmp_ulongvect_i);
-                if (tmp_ulongvect_i != tmp_ulongvect.end() - 1)
-                    tmp_stream << " ";
-            }
-
-            text = new TiXmlText(tmp_stream.str().c_str());
-            element->LinkEndChild(text);
-            tmp_ulongvect.clear();
-            break;
-        case DATA_LONGLONG_VECTOR:
-            child->element().get(tmp_llongvect);
-
-            tmp_stream.str("");
-
-            for (tmp_llongvect_i = tmp_llongvect.begin(); tmp_llongvect_i != tmp_llongvect.end(); tmp_llongvect_i++) {
-                tmp_stream << (*tmp_llongvect_i);
-                if (tmp_llongvect_i != tmp_llongvect.end() - 1)
-                    tmp_stream << " ";
-            }
-
-            text = new TiXmlText(tmp_stream.str().c_str());
-            element->LinkEndChild(text);
-            tmp_llongvect.clear();
-            break;
-        case DATA_FLOAT_VECTOR:
-            child->element().get(tmp_floatvect);
-
-            tmp_stream.str("");
-
-            for (tmp_floatvect_i = tmp_floatvect.begin(); tmp_floatvect_i != tmp_floatvect.end(); tmp_floatvect_i++) {
-                tmp_stream << (*tmp_floatvect_i);
-                if (tmp_floatvect_i != tmp_floatvect.end() - 1)
-                    tmp_stream << " ";
-            }
-
-            text = new TiXmlText(tmp_stream.str().c_str());
-            element->LinkEndChild(text);
-            tmp_floatvect.clear();
-            break;
-        case DATA_DOUBLE_VECTOR:
-            child->element().get(tmp_doublevect);
-
-            tmp_stream.str("");
-
-            for (tmp_doublevect_i = tmp_doublevect.begin(); tmp_doublevect_i != tmp_doublevect.end(); tmp_doublevect_i++) {
-                tmp_stream << (*tmp_doublevect_i);
-                if (tmp_doublevect_i != tmp_doublevect.end() - 1)
-                    tmp_stream << " ";
-            }
-
-            text = new TiXmlText(tmp_stream.str().c_str());
-            element->LinkEndChild(text);
-            tmp_doublevect.clear();
-            break;
+        for (tmp_stringvect_i = tmp_stringvect.begin(); tmp_stringvect_i != tmp_stringvect.end(); tmp_stringvect_i++) {
+            tmp_node = new TiXmlElement("str");
+            text = new TiXmlText((*tmp_stringvect_i).c_str());
+            tmp_node->LinkEndChild(text);
+            element->LinkEndChild(tmp_node);
         }
 
-        if (element) {
-            elxml->LinkEndChild(element);
+        tmp_stringvect.clear();
+        break;
+    case DATA_CHAR_VECTOR:
+        child->element().get(tmp_charvect);
 
-            if (child->numChildren()) {
-                nodeToXML(child, element);
-            }
+        tmp_stream.str("");
+
+        for (tmp_charvect_i = tmp_charvect.begin(); tmp_charvect_i != tmp_charvect.end(); tmp_charvect_i++) {
+            tmp_stream << (*tmp_charvect_i);
+            if (tmp_charvect_i != tmp_charvect.end() - 1)
+                tmp_stream << " ";
         }
+
+        text = new TiXmlText(tmp_stream.str().c_str());
+        element->LinkEndChild(text);
+        tmp_charvect.clear();
+        break;
+    case DATA_UCHAR_VECTOR:
+        child->element().get(tmp_ucharvect);
+
+        tmp_stream.str("");
+
+        for (tmp_ucharvect_i = tmp_ucharvect.begin(); tmp_ucharvect_i != tmp_ucharvect.end(); tmp_ucharvect_i++) {
+            tmp_stream << (*tmp_ucharvect_i);
+            if (tmp_ucharvect_i != tmp_ucharvect.end() - 1)
+                tmp_stream << " ";
+        }
+
+        text = new TiXmlText(tmp_stream.str().c_str());
+        element->LinkEndChild(text);
+        tmp_ucharvect.clear();
+        break;
+    case DATA_INT_VECTOR:
+        child->element().get(tmp_intvect);
+
+        tmp_stream.str("");
+
+        for (tmp_intvect_i = tmp_intvect.begin(); tmp_intvect_i != tmp_intvect.end(); tmp_intvect_i++) {
+            tmp_stream << (*tmp_intvect_i);
+            if (tmp_intvect_i != tmp_intvect.end() - 1)
+                tmp_stream << " ";
+        }
+
+        text = new TiXmlText(tmp_stream.str().c_str());
+        element->LinkEndChild(text);
+        tmp_intvect.clear();
+        break;
+    case DATA_UINT_VECTOR:
+        child->element().get(tmp_uintvect);
+
+        tmp_stream.str("");
+
+        for (tmp_uintvect_i = tmp_uintvect.begin(); tmp_uintvect_i != tmp_uintvect.end(); tmp_uintvect_i++) {
+            tmp_stream << (*tmp_intvect_i);
+            if (tmp_uintvect_i != tmp_uintvect.end() - 1)
+                tmp_stream << " ";
+        }
+
+        text = new TiXmlText(tmp_stream.str().c_str());
+        element->LinkEndChild(text);
+        tmp_uintvect.clear();
+        break;
+    case DATA_LONG_VECTOR:
+        child->element().get(tmp_longvect);
+
+        tmp_stream.str("");
+
+        for (tmp_longvect_i = tmp_longvect.begin(); tmp_longvect_i != tmp_longvect.end(); tmp_longvect_i++) {
+            tmp_stream << (*tmp_longvect_i);
+            if (tmp_longvect_i != tmp_longvect.end() - 1)
+                tmp_stream << " ";
+        }
+
+        text = new TiXmlText(tmp_stream.str().c_str());
+        element->LinkEndChild(text);
+        tmp_longvect.clear();
+        break;
+    case DATA_ULONG_VECTOR:
+        child->element().get(tmp_ulongvect);
+
+        tmp_stream.str("");
+
+        for (tmp_ulongvect_i = tmp_ulongvect.begin(); tmp_ulongvect_i != tmp_ulongvect.end(); tmp_ulongvect_i++) {
+            tmp_stream << (*tmp_ulongvect_i);
+            if (tmp_ulongvect_i != tmp_ulongvect.end() - 1)
+                tmp_stream << " ";
+        }
+
+        text = new TiXmlText(tmp_stream.str().c_str());
+        element->LinkEndChild(text);
+        tmp_ulongvect.clear();
+        break;
+    case DATA_LONGLONG_VECTOR:
+        child->element().get(tmp_llongvect);
+
+        tmp_stream.str("");
+
+        for (tmp_llongvect_i = tmp_llongvect.begin(); tmp_llongvect_i != tmp_llongvect.end(); tmp_llongvect_i++) {
+            tmp_stream << (*tmp_llongvect_i);
+            if (tmp_llongvect_i != tmp_llongvect.end() - 1)
+                tmp_stream << " ";
+        }
+
+        text = new TiXmlText(tmp_stream.str().c_str());
+        element->LinkEndChild(text);
+        tmp_llongvect.clear();
+        break;
+    case DATA_FLOAT_VECTOR:
+        child->element().get(tmp_floatvect);
+
+        tmp_stream.str("");
+
+        for (tmp_floatvect_i = tmp_floatvect.begin(); tmp_floatvect_i != tmp_floatvect.end(); tmp_floatvect_i++) {
+            tmp_stream << (*tmp_floatvect_i);
+            if (tmp_floatvect_i != tmp_floatvect.end() - 1)
+                tmp_stream << " ";
+        }
+
+        text = new TiXmlText(tmp_stream.str().c_str());
+        element->LinkEndChild(text);
+        tmp_floatvect.clear();
+        break;
+    case DATA_DOUBLE_VECTOR:
+        child->element().get(tmp_doublevect);
+
+        tmp_stream.str("");
+
+        for (tmp_doublevect_i = tmp_doublevect.begin(); tmp_doublevect_i != tmp_doublevect.end(); tmp_doublevect_i++) {
+            tmp_stream << (*tmp_doublevect_i);
+            if (tmp_doublevect_i != tmp_doublevect.end() - 1)
+                tmp_stream << " ";
+        }
+
+        text = new TiXmlText(tmp_stream.str().c_str());
+        element->LinkEndChild(text);
+        tmp_doublevect.clear();
+        break;
     }
 
-    elem->rewind();
+    if (element) {
+        elxml->LinkEndChild(element);
+
+        if (child->numChildren()) {
+            nodeToXML(child, element);
+        }
+    }
+}
+
+elem->rewind();
 }
 
 void DataTree::printXML() /* get serialized size + return node names header */
 {
-    TiXmlDocument doc;
-    TiXmlDeclaration * decl = new TiXmlDeclaration("1.0", "", "");
-    doc.LinkEndChild(decl);
+TiXmlDocument doc;
+TiXmlDeclaration * decl = new TiXmlDeclaration("1.0", "", "");
+doc.LinkEndChild(decl);
 
-    DataNode *root = &rootNode();
+DataNode *root = &rootNode();
 
-    string rootName = root->getName();
+string rootName = root->getName();
 
-    TiXmlElement *element = new TiXmlElement(rootName.empty() ? "root" : rootName.c_str());
-    doc.LinkEndChild(element);
+TiXmlElement *element = new TiXmlElement(rootName.empty() ? "root" : rootName.c_str());
+doc.LinkEndChild(element);
 
-    if (!root->numChildren())
-        doc.Print();
-
-    nodeToXML(root, element);
-
-    root->rewind();
-
+if (!root->numChildren())
     doc.Print();
+
+nodeToXML(root, element);
+
+root->rewind();
+
+doc.Print();
 }
 
 long DataTree::getSerializedSize(DataElement &de_node_names, bool debug) /* get serialized size + return node names header */
 {
-    long total_size = 0;
+long total_size = 0;
 
-    stack<DataNode *> dn_stack;
-    vector<string> node_names;
-    map<string, int, string_less> node_name_index_map;
+stack<DataNode *> dn_stack;
+vector<string> node_names;
+map<string, int, string_less> node_name_index_map;
 
-    DataElement de_name_index;	// just used for sizing purposes
-    DataElement de_num_children;
+DataElement de_name_index;	// just used for sizing purposes
+DataElement de_num_children;
 
-    de_name_index.set((int) 0);
-    de_num_children.set((int) 0);
+de_name_index.set((int) 0);
+de_num_children.set((int) 0);
 
-    int de_name_index_size = de_name_index.getSerializedSize();
-    int de_num_children_size = de_num_children.getSerializedSize();
+int de_name_index_size = de_name_index.getSerializedSize();
+int de_num_children_size = de_num_children.getSerializedSize();
 
-    dn_stack.push(&dn_root);
+dn_stack.push(&dn_root);
 
-    while (!dn_stack.empty()) {
-        int name_index;
-        //					int num_children;
+while (!dn_stack.empty()) {
+    int name_index;
+    //					int num_children;
 
-        /* build the name list */
-        if (dn_stack.top()->getName().empty()) {
-            name_index = 0; /* empty string */
-        } else if (node_name_index_map[dn_stack.top()->getName().c_str()] == 0) {
-            node_names.push_back(string(dn_stack.top()->getName()));
-            name_index = node_names.size();
-            node_name_index_map[dn_stack.top()->getName().c_str()] = name_index;
-        } else {
-            name_index = node_name_index_map[dn_stack.top()->getName().c_str()];
-        }
-
-        /* add on the size of the name index and number of children */
-        total_size += de_name_index_size;
-        total_size += de_num_children_size;
-        total_size += dn_stack.top()->element().getSerializedSize();
-
-        /* debug output */
-        if (debug) {
-            for (unsigned int i = 0; i < dn_stack.size() - 1; i++)
-                cout << "--";
-            cout << (dn_stack.top()->getName().empty() ? "NULL" : dn_stack.top()->getName()) << "(" << dn_stack.top()->element().getSerializedSize()
-                    << ")";
-            cout << " type: " << dn_stack.top()->element().getDataType() << endl;
-            //cout << " index: " << name_index << endl;
-        }
-        /* end debug output */
-
-        /* if it has children, traverse into them */
-        if (dn_stack.top()->hasAnother()) {
-            dn_stack.push(&dn_stack.top()->getNext());
-            dn_stack.top()->rewind();
-        } else {
-            /* no more children, back out until we have children, then add next child to the top */
-            while (!dn_stack.empty()) {
-                if (!dn_stack.top()->hasAnother()) {
-                    dn_stack.top()->rewind();
-                    dn_stack.pop();
-                } else
-                    break;
-            }
-
-            if (!dn_stack.empty()) {
-                dn_stack.push(&dn_stack.top()->getNext());
-                dn_stack.top()->rewind();
-            }
-        }
+    /* build the name list */
+    if (dn_stack.top()->getName().empty()) {
+        name_index = 0; /* empty string */
+    } else if (node_name_index_map[dn_stack.top()->getName().c_str()] == 0) {
+        node_names.push_back(string(dn_stack.top()->getName()));
+        name_index = node_names.size();
+        node_name_index_map[dn_stack.top()->getName().c_str()] = name_index;
+    } else {
+        name_index = node_name_index_map[dn_stack.top()->getName().c_str()];
     }
 
-    /* set the header for use in serialization */
-    de_node_names.set(node_names);
+    /* add on the size of the name index and number of children */
+    total_size += de_name_index_size;
+    total_size += de_num_children_size;
+    total_size += dn_stack.top()->element().getSerializedSize();
 
-    total_size += de_node_names.getSerializedSize();
+    /* debug output */
+    if (debug) {
+        for (unsigned int i = 0; i < dn_stack.size() - 1; i++)
+            cout << "--";
+        cout << (dn_stack.top()->getName().empty() ? "NULL" : dn_stack.top()->getName()) << "(" << dn_stack.top()->element().getSerializedSize()
+                << ")";
+        cout << " type: " << dn_stack.top()->element().getDataType() << endl;
+        //cout << " index: " << name_index << endl;
+    }
+    /* end debug output */
 
-    return total_size;
+    /* if it has children, traverse into them */
+    if (dn_stack.top()->hasAnother()) {
+        dn_stack.push(&dn_stack.top()->getNext());
+        dn_stack.top()->rewind();
+    } else {
+        /* no more children, back out until we have children, then add next child to the top */
+        while (!dn_stack.empty()) {
+            if (!dn_stack.top()->hasAnother()) {
+                dn_stack.top()->rewind();
+                dn_stack.pop();
+            } else
+                break;
+        }
+
+        if (!dn_stack.empty()) {
+            dn_stack.push(&dn_stack.top()->getNext());
+            dn_stack.top()->rewind();
+        }
+    }
+}
+
+/* set the header for use in serialization */
+de_node_names.set(node_names);
+
+total_size += de_node_names.getSerializedSize();
+
+return total_size;
 }
 
 void DataNode::findAll(const char *name_in, vector<DataNode *> &node_list_out) {
-    stack<DataNode *> dn_stack;
+stack<DataNode *> dn_stack;
 
-    /* start at the root */
-    dn_stack.push(this);
+/* start at the root */
+dn_stack.push(this);
 
-    if (string(getName()) == string(name_in))
-        node_list_out.push_back(this);
+if (string(getName()) == string(name_in))
+    node_list_out.push_back(this);
 
-    while (!dn_stack.empty()) {
-        while (dn_stack.top()->hasAnother(name_in)) {
-            node_list_out.push_back(&dn_stack.top()->getNext(name_in));
+while (!dn_stack.empty()) {
+    while (dn_stack.top()->hasAnother(name_in)) {
+        node_list_out.push_back(&dn_stack.top()->getNext(name_in));
+    }
+
+    /* if it has children, traverse into them */
+    if (dn_stack.top()->hasAnother()) {
+        dn_stack.push(&dn_stack.top()->getNext());
+        dn_stack.top()->rewind();
+    } else {
+        /* no more children, back out until we have children, then add next child to the top */
+        while (!dn_stack.empty()) {
+            if (!dn_stack.top()->hasAnother()) {
+                dn_stack.top()->rewind();
+                dn_stack.pop();
+            } else
+                break;
         }
 
-        /* if it has children, traverse into them */
-        if (dn_stack.top()->hasAnother()) {
+        if (!dn_stack.empty()) {
             dn_stack.push(&dn_stack.top()->getNext());
             dn_stack.top()->rewind();
-        } else {
-            /* no more children, back out until we have children, then add next child to the top */
-            while (!dn_stack.empty()) {
-                if (!dn_stack.top()->hasAnother()) {
-                    dn_stack.top()->rewind();
-                    dn_stack.pop();
-                } else
-                    break;
-            }
-
-            if (!dn_stack.empty()) {
-                dn_stack.push(&dn_stack.top()->getNext());
-                dn_stack.top()->rewind();
-            }
         }
     }
+}
 
 }
 
 long DataTree::getSerialized(char **ser_str, bool debug) {
-    long data_ptr = 0;
-    long data_size = 0;
+long data_ptr = 0;
+long data_size = 0;
 
-    stack<DataNode *> dn_stack;
-    vector<string> node_names;
-    map<string, int, string_less> node_name_index_map;
+stack<DataNode *> dn_stack;
+vector<string> node_names;
+map<string, int, string_less> node_name_index_map;
 
-    /* header of node names, grabbed from getserializedsize to avoid having to memmove() or realloc() */
-    DataElement de_node_names;
+/* header of node names, grabbed from getserializedsize to avoid having to memmove() or realloc() */
+DataElement de_node_names;
 
-    data_size = getSerializedSize(de_node_names, debug);
+data_size = getSerializedSize(de_node_names, debug);
 
-    *ser_str = (char *) malloc(data_size);
+*ser_str = (char *) malloc(data_size);
 
-    char *data_out = *ser_str;
+char *data_out = *ser_str;
 
-    /* name list header */
-    char *de_node_names_serialized;
-    long de_node_names_serialized_size;
+/* name list header */
+char *de_node_names_serialized;
+long de_node_names_serialized_size;
 
-    de_node_names.getSerialized(&de_node_names_serialized);
-    de_node_names_serialized_size = de_node_names.getSerializedSize();
+de_node_names.getSerialized(&de_node_names_serialized);
+de_node_names_serialized_size = de_node_names.getSerializedSize();
 
-    /* copy the header and increase the pointer */
-    memcpy(data_out, de_node_names_serialized, de_node_names_serialized_size);
-    data_ptr += de_node_names_serialized_size;
+/* copy the header and increase the pointer */
+memcpy(data_out, de_node_names_serialized, de_node_names_serialized_size);
+data_ptr += de_node_names_serialized_size;
 
-    /* start at the root */
-    dn_stack.push(&dn_root);
+/* start at the root */
+dn_stack.push(&dn_root);
 
-    while (!dn_stack.empty()) {
-        int name_index;
-        int num_children;
-
-        DataElement de_name_index;
-        DataElement de_num_children;
-
-        char *de_name_index_serialized;
-        char *de_num_children_serialized;
-        char *element_serialized;
-
-        long de_name_index_serialized_size;
-        long de_num_children_serialized_size;
-        long element_serialized_size;
-
-        /* build the name list */
-        if (dn_stack.top()->getName().empty()) {
-            name_index = 0; /* empty string */
-        } else if (node_name_index_map[dn_stack.top()->getName().c_str()] == 0) {
-            node_names.push_back(string(dn_stack.top()->getName()));
-            name_index = node_names.size();
-            node_name_index_map[dn_stack.top()->getName().c_str()] = name_index;
-        } else {
-            name_index = node_name_index_map[dn_stack.top()->getName().c_str()];
-        }
-
-        num_children = dn_stack.top()->numChildren();
-
-        de_name_index.set(name_index);
-        de_num_children.set(num_children);
-
-        de_name_index_serialized_size = de_name_index.getSerializedSize();
-        de_num_children_serialized_size = de_num_children.getSerializedSize();
-        element_serialized_size = dn_stack.top()->element().getSerializedSize();
-
-        de_name_index.getSerialized(&de_name_index_serialized);
-        de_num_children.getSerialized(&de_num_children_serialized);
-        dn_stack.top()->element().getSerialized(&element_serialized);
-
-        /* add on the name index and number of children */
-        memcpy(data_out + data_ptr, de_name_index_serialized, de_name_index_serialized_size);
-        data_ptr += de_name_index_serialized_size;
-
-        memcpy(data_out + data_ptr, de_num_children_serialized, de_num_children_serialized_size);
-        data_ptr += de_num_children_serialized_size;
-
-        /* add on the data element */
-        memcpy(data_out + data_ptr, element_serialized, element_serialized_size);
-        data_ptr += element_serialized_size;
-
-        delete de_name_index_serialized;
-        delete de_num_children_serialized;
-        delete element_serialized;
-
-        /* if it has children, traverse into them */
-        if (dn_stack.top()->hasAnother()) {
-            dn_stack.push(&dn_stack.top()->getNext());
-            dn_stack.top()->rewind();
-        } else {
-            /* no more children, back out until we have children, then add next child to the top */
-            while (!dn_stack.empty()) {
-                if (!dn_stack.top()->hasAnother()) {
-                    dn_stack.top()->rewind();
-                    dn_stack.pop();
-                } else
-                    break;
-            }
-
-            if (!dn_stack.empty()) {
-                dn_stack.push(&dn_stack.top()->getNext());
-                dn_stack.top()->rewind();
-            }
-        }
-    }
-
-    return data_size;
-}
-
-void DataTree::setSerialized(char *ser_str, bool debug) {
-    long data_ptr = 0;
-    //	long data_size = 0;
-
-    stack<DataNode *> dn_stack;
-    stack<int> dn_childcount_stack;
-    vector<string> node_names;
-
-    DataElement de_node_names;
-
-    de_node_names.setSerialized(ser_str);
-    data_ptr += de_node_names.getSerializedSize();
-    de_node_names.get(node_names);
+while (!dn_stack.empty()) {
+    int name_index;
+    int num_children;
 
     DataElement de_name_index;
     DataElement de_num_children;
-    DataElement de_element;
 
-    dn_stack.push(&dn_root);
-    dn_childcount_stack.push(0); /* root (parent null) has no siblings */
+    char *de_name_index_serialized;
+    char *de_num_children_serialized;
+    char *element_serialized;
 
-    /* unserialization is a little less straightforward since we have to do a countdown of remaining children */
-    while (!dn_stack.empty()) {
-        int name_index;
-        int num_children;
+    long de_name_index_serialized_size;
+    long de_num_children_serialized_size;
+    long element_serialized_size;
 
-        /* pull the index of the name of this node */
-        de_name_index.setSerialized(ser_str + data_ptr);
-        data_ptr += de_name_index.getSerializedSize();
+    /* build the name list */
+    if (dn_stack.top()->getName().empty()) {
+        name_index = 0; /* empty string */
+    } else if (node_name_index_map[dn_stack.top()->getName().c_str()] == 0) {
+        node_names.push_back(string(dn_stack.top()->getName()));
+        name_index = node_names.size();
+        node_name_index_map[dn_stack.top()->getName().c_str()] = name_index;
+    } else {
+        name_index = node_name_index_map[dn_stack.top()->getName().c_str()];
+    }
 
-        /* pull the number of children this node has */
-        de_num_children.setSerialized(ser_str + data_ptr);
-        data_ptr += de_num_children.getSerializedSize();
+    num_children = dn_stack.top()->numChildren();
 
-        /* get values from the temp dataelements */
+    de_name_index.set(name_index);
+    de_num_children.set(num_children);
+
+    de_name_index_serialized_size = de_name_index.getSerializedSize();
+    de_num_children_serialized_size = de_num_children.getSerializedSize();
+    element_serialized_size = dn_stack.top()->element().getSerializedSize();
+
+    de_name_index.getSerialized(&de_name_index_serialized);
+    de_num_children.getSerialized(&de_num_children_serialized);
+    dn_stack.top()->element().getSerialized(&element_serialized);
+
+    /* add on the name index and number of children */
+    memcpy(data_out + data_ptr, de_name_index_serialized, de_name_index_serialized_size);
+    data_ptr += de_name_index_serialized_size;
+
+    memcpy(data_out + data_ptr, de_num_children_serialized, de_num_children_serialized_size);
+    data_ptr += de_num_children_serialized_size;
+
+    /* add on the data element */
+    memcpy(data_out + data_ptr, element_serialized, element_serialized_size);
+    data_ptr += element_serialized_size;
+
+    delete de_name_index_serialized;
+    delete de_num_children_serialized;
+    delete element_serialized;
+
+    /* if it has children, traverse into them */
+    if (dn_stack.top()->hasAnother()) {
+        dn_stack.push(&dn_stack.top()->getNext());
+        dn_stack.top()->rewind();
+    } else {
+        /* no more children, back out until we have children, then add next child to the top */
+        while (!dn_stack.empty()) {
+            if (!dn_stack.top()->hasAnother()) {
+                dn_stack.top()->rewind();
+                dn_stack.pop();
+            } else
+                break;
+        }
+
+        if (!dn_stack.empty()) {
+            dn_stack.push(&dn_stack.top()->getNext());
+            dn_stack.top()->rewind();
+        }
+    }
+}
+
+return data_size;
+}
+
+void DataTree::setSerialized(char *ser_str, bool debug) {
+long data_ptr = 0;
+//	long data_size = 0;
+
+stack<DataNode *> dn_stack;
+stack<int> dn_childcount_stack;
+vector<string> node_names;
+
+DataElement de_node_names;
+
+de_node_names.setSerialized(ser_str);
+data_ptr += de_node_names.getSerializedSize();
+de_node_names.get(node_names);
+
+DataElement de_name_index;
+DataElement de_num_children;
+DataElement de_element;
+
+dn_stack.push(&dn_root);
+dn_childcount_stack.push(0); /* root (parent null) has no siblings */
+
+/* unserialization is a little less straightforward since we have to do a countdown of remaining children */
+while (!dn_stack.empty()) {
+    int name_index;
+    int num_children;
+
+    /* pull the index of the name of this node */
+    de_name_index.setSerialized(ser_str + data_ptr);
+    data_ptr += de_name_index.getSerializedSize();
+
+    /* pull the number of children this node has */
+    de_num_children.setSerialized(ser_str + data_ptr);
+    data_ptr += de_num_children.getSerializedSize();
+
+    /* get values from the temp dataelements */
+    de_name_index.get(name_index);
+    de_num_children.get(num_children);
+
+    /* pull the node's element */
+    dn_stack.top()->element().setSerialized(ser_str + data_ptr);
+    data_ptr += dn_stack.top()->element().getSerializedSize();
+
+    /* debug output */
+    if (debug) {
+        for (unsigned int i = 0; i < dn_stack.size() - 1; i++)
+            cout << "--";
+        cout << (name_index ? node_names[name_index - 1] : "NULL") << "(" << dn_stack.top()->element().getSerializedSize() << ")";
+        cout << " index: " << name_index << endl;
+    }
+    /* end debug output */
+
+    /* name index >= 1 means it has a name */
+    if (name_index) {
+        dn_stack.top()->setName(node_names[name_index - 1].c_str());
+
+    } else /* name is nil */
+    {
+        dn_stack.top()->setName("");
+    }
+
+    if (num_children) /* Has children, create first child and push it to the top */
+    {
+        dn_childcount_stack.push(num_children); /* push the child count onto the stack */
+
+        de_name_index.setSerialized(ser_str + data_ptr); /* peek at the new child name but don't increment pointer */
         de_name_index.get(name_index);
-        de_num_children.get(num_children);
-
-        /* pull the node's element */
-        dn_stack.top()->element().setSerialized(ser_str + data_ptr);
-        data_ptr += dn_stack.top()->element().getSerializedSize();
-
-        /* debug output */
-        if (debug) {
-            for (unsigned int i = 0; i < dn_stack.size() - 1; i++)
-                cout << "--";
-            cout << (name_index ? node_names[name_index - 1] : "NULL") << "(" << dn_stack.top()->element().getSerializedSize() << ")";
-            cout << " index: " << name_index << endl;
+        /* add this child onto the top of the stack */
+        dn_stack.push(&dn_stack.top()->newChild((name_index ? node_names[name_index - 1] : string("")).c_str()));
+        dn_childcount_stack.top()--; /* decrement to count the new child */
         }
-        /* end debug output */
-
-        /* name index >= 1 means it has a name */
-        if (name_index) {
-            dn_stack.top()->setName(node_names[name_index - 1].c_str());
-
-        } else /* name is nil */
+    else /* No children, move on to the next sibling */
+    {
+        if (dn_childcount_stack.top()) /* any siblings remaining? */
         {
-            dn_stack.top()->setName("");
-        }
-
-        if (num_children) /* Has children, create first child and push it to the top */
-        {
-            dn_childcount_stack.push(num_children); /* push the child count onto the stack */
-
             de_name_index.setSerialized(ser_str + data_ptr); /* peek at the new child name but don't increment pointer */
             de_name_index.get(name_index);
-            /* add this child onto the top of the stack */
-            dn_stack.push(&dn_stack.top()->newChild((name_index ? node_names[name_index - 1] : string("")).c_str()));
-            dn_childcount_stack.top()--; /* decrement to count the new child */
+
+            dn_stack.pop();
+            dn_stack.push(&dn_stack.top()->newChild((name_index ? node_names[name_index - 1] : string("")).c_str())); /* create the next sibling and throw it on the stack */
+            dn_childcount_stack.top()--; /* decrement to count the new sibling */
             }
-        else /* No children, move on to the next sibling */
+        else /* This is the last sibling, move up the stack and find the next */
         {
-            if (dn_childcount_stack.top()) /* any siblings remaining? */
+            while (!dn_stack.empty()) /* move up the stack until we find the next sibling */
             {
-                de_name_index.setSerialized(ser_str + data_ptr); /* peek at the new child name but don't increment pointer */
-                de_name_index.get(name_index);
+                if (dn_childcount_stack.top()) {
+                    de_name_index.setSerialized(ser_str + data_ptr); /* peek at the new child name but don't increment pointer */
+                    de_name_index.get(name_index);
 
-                dn_stack.pop();
-                dn_stack.push(&dn_stack.top()->newChild((name_index ? node_names[name_index - 1] : string("")).c_str())); /* create the next sibling and throw it on the stack */
-                dn_childcount_stack.top()--; /* decrement to count the new sibling */
-                }
-            else /* This is the last sibling, move up the stack and find the next */
-            {
-                while (!dn_stack.empty()) /* move up the stack until we find the next sibling */
+                    dn_stack.pop();
+                    dn_stack.push(&dn_stack.top()->newChild((name_index ? node_names[name_index - 1] : string("")).c_str())); /* throw it on the stack */
+                    dn_childcount_stack.top()--; /* count it */
+                    break
+;                }
+                else
                 {
-                    if (dn_childcount_stack.top()) {
-                        de_name_index.setSerialized(ser_str + data_ptr); /* peek at the new child name but don't increment pointer */
-                        de_name_index.get(name_index);
-
-                        dn_stack.pop();
-                        dn_stack.push(&dn_stack.top()->newChild((name_index ? node_names[name_index - 1] : string("")).c_str())); /* throw it on the stack */
-                        dn_childcount_stack.top()--; /* count it */
-                        break
-;                    }
-                    else
-                    {
-                        dn_childcount_stack.pop();
-                        dn_stack.pop(); /* if no more siblings found the stack will empty naturally */
-                    }
+                    dn_childcount_stack.pop();
+                    dn_stack.pop(); /* if no more siblings found the stack will empty naturally */
                 }
             }
         }
     }
+}
 }
 
 bool DataTree::LoadFromFileXML(const std::string& filename, DT_FloatingPointPolicy fpp) {
