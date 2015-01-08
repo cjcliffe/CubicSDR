@@ -12,7 +12,7 @@ public:
     TuningContext(TuningCanvas *canvas, wxGLContext *sharedContext);
 
     void DrawBegin();
-    void Draw(float r, float g, float b, float a, float level);
+    void Draw(float r, float g, float b, float a, float p1, float p2);
     void DrawDemodFreqBw(long long freq, unsigned int bw, long long center);
     void DrawEnd();
 

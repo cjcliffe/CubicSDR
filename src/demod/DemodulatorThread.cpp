@@ -16,6 +16,7 @@ DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* iqInputQue
     demodFM = freqdem_create(0.5);
     demodAM_USB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_LSB, 1);
     demodAM_LSB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_USB, 1);
+    demodAM_DSB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_DSB, 1);
     demodAM_DSB_CSP = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_DSB, 0);
     demodAM = demodAM_DSB_CSP;
 
@@ -174,6 +175,7 @@ void DemodulatorThread::threadMain() {
                 }
                 break;
             case DEMOD_TYPE_AM:
+            case DEMOD_TYPE_DSB:
                 break;
             }
 
@@ -356,6 +358,9 @@ void DemodulatorThread::threadMain() {
                     break;
                 case DEMOD_TYPE_USB:
                     demodAM = demodAM_LSB;
+                    break;
+                case DEMOD_TYPE_DSB:
+                    demodAM = demodAM_DSB;
                     break;
                 case DEMOD_TYPE_AM:
                     demodAM = demodAM_DSB_CSP;

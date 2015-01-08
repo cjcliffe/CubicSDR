@@ -46,6 +46,7 @@ AppFrame::AppFrame() :
     demodModeSelector->addChoice(DEMOD_TYPE_AM,"AM");
     demodModeSelector->addChoice(DEMOD_TYPE_LSB,"LSB");
     demodModeSelector->addChoice(DEMOD_TYPE_USB,"USB");
+    demodModeSelector->addChoice(DEMOD_TYPE_DSB,"DSB");
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
 
 //    demodTray->AddSpacer(2);

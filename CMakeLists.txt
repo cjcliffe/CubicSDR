@@ -135,6 +135,7 @@ SET (cubicsdr_sources
 	src/util/Timer.cpp
 	src/util/MouseTracker.cpp
 	src/util/GLFont.cpp
+    src/util/DataTree.cpp
 	src/visual/PrimaryGLContext.cpp
 	src/visual/InteractiveCanvas.cpp
 	src/visual/MeterCanvas.cpp
@@ -151,6 +152,10 @@ SET (cubicsdr_sources
 	src/visual/WaterfallContext.cpp
 	external/rtaudio/RtAudio.cpp
 	external/lodepng/lodepng.cpp
+    external/tinyxml/tinyxml.cpp
+    external/tinyxml/tinystr.cpp
+    external/tinyxml/tinyxmlparser.cpp
+    external/tinyxml/tinyxmlerror.cpp
 )
 
 SET (cubicsdr_headers
@@ -171,6 +176,7 @@ SET (cubicsdr_headers
 	src/util/ThreadQueue.h
 	src/util/MouseTracker.h
 	src/util/GLFont.h
+    src/util/DataTree.h
 	src/visual/PrimaryGLContext.h
 	src/visual/InteractiveCanvas.h
 	src/visual/MeterCanvas.h
@@ -187,6 +193,8 @@ SET (cubicsdr_headers
 	src/visual/WaterfallContext.h
 	external/rtaudio/RtAudio.h
 	external/lodepng/lodepng.h
+    external/tinyxml/tinyxml.h
+    external/tinyxml/tinystr.h
 )
 
 include_directories ( 
@@ -198,6 +206,8 @@ include_directories (
 	${PROJECT_SOURCE_DIR}/src
 	${PROJECT_SOURCE_DIR}/external/rtaudio
 	${PROJECT_SOURCE_DIR}/external/lodepng 
+	${PROJECT_SOURCE_DIR}/external/fastlz 
+	${PROJECT_SOURCE_DIR}/external/tinyxml
 )
 
 ADD_DEFINITIONS(

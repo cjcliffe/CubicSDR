@@ -62,6 +62,7 @@ protected:
     freqdem demodFM;
     ampmodem demodAM;
     ampmodem demodAM_DSB_CSP;
+    ampmodem demodAM_DSB;
     ampmodem demodAM_LSB;
     ampmodem demodAM_USB;
 
