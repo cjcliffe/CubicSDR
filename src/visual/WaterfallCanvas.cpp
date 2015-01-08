@@ -680,7 +680,11 @@ void WaterfallCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseWheelMoved(event);
     float movement = (float)event.GetWheelRotation() / (float)event.GetLinesPerAction();
 
+#ifdef __APPLE__
     mouseZoom = 1.0f - movement/100.0f;
+#else
+    mouseZoom = 1.0f - movement/1000.0f;
+#endif
 }
 
 void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {

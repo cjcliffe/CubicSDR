@@ -113,9 +113,9 @@ void DemodulatorThread::threadMain() {
             audioResampler = inp->audioResampler;
             stereoResampler = inp->stereoResampler;
 
-            ampmodem_reset(demodAM_USB);
-            ampmodem_reset(demodAM_LSB);
-            ampmodem_reset(demodAM_DSB_CSP);
+            if (demodAM) {
+                ampmodem_reset(demodAM);
+            }
             freqdem_reset(demodFM);
         }
 
@@ -352,18 +352,23 @@ void DemodulatorThread::threadMain() {
             if (newDemodType != DEMOD_TYPE_NULL) {
                 switch (newDemodType) {
                 case DEMOD_TYPE_FM:
+                    freqdem_reset(demodFM);
                     break;
                 case DEMOD_TYPE_LSB:
                     demodAM = demodAM_USB;
+                    ampmodem_reset(demodAM);
                     break;
                 case DEMOD_TYPE_USB:
                     demodAM = demodAM_LSB;
+                    ampmodem_reset(demodAM);
                     break;
                 case DEMOD_TYPE_DSB:
                     demodAM = demodAM_DSB;
+                    ampmodem_reset(demodAM);
                     break;
                 case DEMOD_TYPE_AM:
                     demodAM = demodAM_DSB_CSP;
+                    ampmodem_reset(demodAM);
                     break;
                 }
                 demodulatorType = newDemodType;

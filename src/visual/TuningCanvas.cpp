@@ -95,7 +95,6 @@ void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
 
 void TuningCanvas::OnMouseDown(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseDown(event);
-    mouseTracker.setHorizDragLock(true);
     mouseTracker.setVertDragLock(true);
 
     uxDown = 2.0 * (mouseTracker.getMouseX() - 0.5);
@@ -110,7 +109,6 @@ void TuningCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
 
 void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseReleased(event);
-    mouseTracker.setHorizDragLock(false);
     mouseTracker.setVertDragLock(false);
     SetCursor (wxCURSOR_SIZEWE);
 }
