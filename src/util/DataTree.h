@@ -261,28 +261,49 @@ public:
     void findAll(const char *name_in, vector<DataNode *> &node_list_out);
     
     operator string () { string s; element().get(s); return s; }
+    operator char () { char v; element().get(v); return v; }
+    operator unsigned char () { unsigned char v; element().get(v); return v; }
     operator int () { int v; element().get(v); return v; }
+    operator unsigned int () { unsigned int v; element().get(v); return v; }
     operator long () { long v; element().get(v); return v; }
+    operator unsigned long () { unsigned long v; element().get(v); return v; }
+    operator long long () { long long v; element().get(v); return v; }
     operator float () { float v; element().get(v); return v; }
     operator double () { double v; element().get(v); return v; }
+    operator long double () { long double v; element().get(v); return v; }
 
+    operator vector<char> () { vector<char> v; element().get(v);  return v; }
+    operator vector<unsigned char> () { vector<unsigned char> v; element().get(v);  return v; }
     operator vector<int> () { vector<int> v; element().get(v);  return v; }
+    operator vector<unsigned int> () { vector<unsigned int> v; element().get(v);  return v; }
     operator vector<long> () { vector<long> v; element().get(v);  return v; }
+    operator vector<unsigned long> () { vector<unsigned long> v; element().get(v);  return v; }
     operator vector<float> () { vector<float> v; element().get(v);  return v; }
     operator vector<double> () { vector<double> v; element().get(v);  return v; }
+    operator vector<long double> () { vector<long double> v; element().get(v);  return v; }
     
     const string &operator= (const string &s) { element().set(s); return s; }
 
+    char operator= (char i) { element().set(i); return i; }
+    unsigned char operator= (unsigned char i) { element().set(i); return i; }
     int operator= (int i) { element().set(i); return i; }
+    unsigned int operator= (unsigned int i) { element().set(i); return i; }
     long operator= (long i) { element().set(i); return i; }
+    unsigned long operator= (unsigned long i) { element().set(i); return i; }
+    long long operator= (long long i) { element().set(i); return i; }
     float operator= (float i) { element().set(i); return i; }
     double operator= (double i) { element().set(i); return i; }
-
+    long double operator= (long double i) { element().set(i); return i; }
     
+    vector<char> &operator= (vector<char> &v) { element().set(v); return v; }
+    vector<unsigned char> &operator= (vector<unsigned char> &v) { element().set(v); return v; }
     vector<int> &operator= (vector<int> &v) { element().set(v); return v; }
+    vector<unsigned int> &operator= (vector<unsigned int> &v) { element().set(v); return v; }
     vector<long> &operator= (vector<long> &v) { element().set(v); return v; }
+    vector<unsigned long> &operator= (vector<unsigned long> &v) { element().set(v); return v; }
     vector<float> &operator= (vector<float> &v) { element().set(v); return v; }
     vector<double> &operator= (vector<double> &v) { element().set(v); return v; }
+    vector<long double> &operator= (vector<long double> &v) { element().set(v); return v; }
 
     DataNode &operator[] (const char *name_in) { return getNext(name_in); }
     DataNode &operator[] (int idx) { return child(idx); }
