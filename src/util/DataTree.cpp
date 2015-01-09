@@ -66,7 +66,7 @@ int DataElement::getUnitSize() {
 
 #define DataElementSetNumericDef(enumtype, datatype) void DataElement::set(const datatype& val_in) { \
         data_type = enumtype; \
-        unit_size = sizeof(char); \
+        unit_size = sizeof(datatype); \
         data_init(unit_size); \
         memcpy(data_val, &val_in, data_size); \
 }
@@ -140,7 +140,7 @@ void DataElement::set(std::set<string> &strset_in) {
 
 #define DataElementSetNumericVectorDef(enumtype, datatype) void DataElement::set(vector<datatype>& val_in) { \
         data_type = enumtype; \
-        unit_size = sizeof(char); \
+        unit_size = sizeof(datatype); \
         data_init(unit_size * val_in.size()); \
         memcpy(data_val, &val_in[0], data_size); \
 }
