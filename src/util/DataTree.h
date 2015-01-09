@@ -64,11 +64,10 @@ using namespace std;
 #define DATA_LONG_VECTOR		18
 #define DATA_ULONG_VECTOR       19
 #define DATA_LONGLONG_VECTOR    20
-#define DATA_ULONGLONG_VECTOR   21
-#define DATA_FLOAT_VECTOR		22
-#define DATA_DOUBLE_VECTOR		23
-#define DATA_LONGDOUBLE_VECTOR  24
-#define DATA_VOID               25
+#define DATA_FLOAT_VECTOR		21
+#define DATA_DOUBLE_VECTOR		22
+#define DATA_LONGDOUBLE_VECTOR  23
+#define DATA_VOID               24
 
 
 /* map comparison function */
@@ -122,7 +121,8 @@ class DataElement
 private:
     unsigned char data_type;
     unsigned int data_size;
-    
+    unsigned int unit_size;
+
     char *data_val;
     
     void data_init(long data_size_in);
@@ -133,9 +133,9 @@ public:
     
     int getDataType();
     long getDataSize();
+    int getUnitSize();
     
     /* set overloads */		
-    //		void set(const bool &bool_in);
     void set(const char &char_in);
     void set(const unsigned char &uchar_in);
     void set(const int &int_in);
