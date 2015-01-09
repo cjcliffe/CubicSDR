@@ -92,6 +92,8 @@ void DemodulatorThread::threadMain() {
 
     std::cout << "Demodulator thread started.." << std::endl;
 
+    terminated = false;
+
     while (!terminated) {
         DemodulatorThreadPostIQData *inp;
         iqInputQueue->pop(inp);

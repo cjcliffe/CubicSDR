@@ -60,6 +60,7 @@ public:
     std::atomic<unsigned int> audioQueuePtr;
     std::atomic<unsigned int> underflowCount;
     std::atomic<bool> terminated;
+    std::atomic<bool> initialized;
     std::atomic<bool> active;
     std::atomic<int> outputDevice;
     float gain;

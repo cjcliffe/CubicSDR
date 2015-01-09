@@ -72,6 +72,9 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                 continue;
             }
             srcmix->inputQueue->pop(srcmix->currentInput);
+            if (srcmix->terminated) {
+                continue;
+            }
             srcmix->audioQueuePtr = 0;
             continue;
         }
@@ -88,6 +91,9 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                     continue;
                 }
                 srcmix->inputQueue->pop(srcmix->currentInput);
+                if (srcmix->terminated) {
+                    continue;
+                }
                 srcmix->audioQueuePtr = 0;
             }
             continue;
@@ -104,6 +110,9 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                         continue;
                     }
                     srcmix->inputQueue->pop(srcmix->currentInput);
+                    if (srcmix->terminated) {
+                        continue;
+                    }
                     srcmix->audioQueuePtr = 0;
                 }
                 if (srcmix->currentInput && srcmix->currentInput->data.size()) {
@@ -124,6 +133,9 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                         continue;
                     }
                     srcmix->inputQueue->pop(srcmix->currentInput);
+                    if (srcmix->terminated) {
+                        continue;
+                    }
                     srcmix->audioQueuePtr = 0;
                 }
                 if (srcmix->currentInput && srcmix->currentInput->data.size()) {
@@ -151,6 +163,9 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
 
     if (!src->currentInput) {
         src->inputQueue->pop(src->currentInput);
+        if (src->terminated) {
+            return 1;
+        }
         src->audioQueuePtr = 0;
         return 0;
     }
@@ -167,6 +182,9 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                 return 1;
             }
             src->inputQueue->pop(src->currentInput);
+            if (src->terminated) {
+                return 1;
+            }
             src->audioQueuePtr = 0;
         }
         return 0;
@@ -183,6 +201,9 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                     return 1;
                 }
                 src->inputQueue->pop(src->currentInput);
+                if (src->terminated) {
+                    return 1;
+                }
                 src->audioQueuePtr = 0;
             }
             if (src->currentInput && src->currentInput->data.size()) {
@@ -201,6 +222,9 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                     return 1;
                 }
                 src->inputQueue->pop(src->currentInput);
+                if (src->terminated) {
+                    return 1;
+                }
                 src->audioQueuePtr = 0;
             }
             if (src->currentInput && src->currentInput->data.size()) {
@@ -348,6 +372,8 @@ void AudioThread::threadMain() {
 
     std::cout << "Audio thread started." << std::endl;
 
+    terminated = false;
+
     while (!terminated) {
         AudioThreadCommand command;
         cmdQueue.pop(command);
@@ -356,6 +382,9 @@ void AudioThread::threadMain() {
             setupDevice(command.int_value);
         }
     }
+
+    AudioThreadInput dummy;
+    inputQueue->push(&dummy);
 
 #ifdef __APPLE__
     if (deviceController[parameters.deviceId] != this) {

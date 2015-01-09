@@ -32,6 +32,10 @@ public:
         return params;
     }
 
+    void setParams(DemodulatorThreadParameters &params_in) {
+        params = params_in;
+    }
+
     void initialize();
     void terminate();
 

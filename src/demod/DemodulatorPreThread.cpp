@@ -70,6 +70,8 @@ void DemodulatorPreThread::threadMain() {
     std::vector<liquid_float_complex> in_buf_data;
     std::vector<liquid_float_complex> out_buf_data;
 
+    terminated = false;
+
     while (!terminated) {
         DemodulatorThreadIQData *inp;
         iqInputQueue->pop(inp);

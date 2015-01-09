@@ -1,8 +1,8 @@
 #include "DemodulatorInstance.h"
 
 DemodulatorInstance::DemodulatorInstance() :
-        t_Demod(NULL), t_PreDemod(NULL), t_Audio(NULL), threadQueueDemod(NULL), demodulatorThread(NULL), terminated(false), audioTerminated(false), demodTerminated(
-        false), preDemodTerminated(false), active(false), squelch(false), stereo(false), currentFrequency(0), currentBandwidth(0) {
+        t_Demod(NULL), t_PreDemod(NULL), t_Audio(NULL), threadQueueDemod(NULL), demodulatorThread(NULL), terminated(true), audioTerminated(true), demodTerminated(
+        true), preDemodTerminated(true), active(false), squelch(false), stereo(false), currentFrequency(0), currentBandwidth(0) {
 
     label = new std::string("Unnamed");
     threadQueueDemod = new DemodulatorThreadInputQueue;
@@ -26,9 +26,13 @@ DemodulatorInstance::DemodulatorInstance() :
 DemodulatorInstance::~DemodulatorInstance() {
     delete audioThread;
     delete demodulatorThread;
-
-    delete audioInputQueue;
+    delete demodulatorPreThread;
     delete threadQueueDemod;
+    delete threadQueuePostDemod;
+    delete threadQueueCommand;
+    delete threadQueueNotify;
+    delete threadQueueControl;
+    delete audioInputQueue;
 }
 
 void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {
@@ -36,7 +40,16 @@ void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQu
 }
 
 void DemodulatorInstance::run() {
+    if (active) {
+        return;
+    }
+
+//    while (!isTerminated()) {
+//        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+//    }
+
     currentFrequency = demodulatorPreThread->getParams().frequency;
+    currentDemodType = demodulatorThread->getDemodulatorType();
 
     t_Audio = new std::thread(&AudioThread::threadMain, audioThread);
 
@@ -63,6 +76,8 @@ void DemodulatorInstance::run() {
     t_Demod = new std::thread(&DemodulatorThread::threadMain, demodulatorThread);
 #endif
     active = true;
+    audioTerminated = demodTerminated = preDemodTerminated = terminated = false;
+
 }
 
 void DemodulatorInstance::updateLabel(long long freq) {
@@ -109,12 +124,10 @@ bool DemodulatorInstance::isTerminated() {
 
         switch (cmd.cmd) {
         case DemodulatorThreadCommand::DEMOD_THREAD_CMD_AUDIO_TERMINATED:
-            audioThread = NULL;
             t_Audio->join();
             audioTerminated = true;
             break;
         case DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_TERMINATED:
-            demodulatorThread = NULL;
 #ifdef __APPLE__
             pthread_join(t_Demod, NULL);
 #else
@@ -123,7 +136,6 @@ bool DemodulatorInstance::isTerminated() {
             demodTerminated = true;
             break;
         case DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_PREPROCESS_TERMINATED:
-            demodulatorPreThread = NULL;
 #ifdef __APPLE__
             pthread_join(t_PreDemod, NULL);
 #else
@@ -146,8 +158,12 @@ bool DemodulatorInstance::isActive() {
 }
 
 void DemodulatorInstance::setActive(bool state) {
+    if (active && !state) {
+        audioThread->setActive(state);
+    } else if (!active && state) {
+        audioThread->setActive(state);
+    }
     active = state;
-    audioThread->setActive(state);
 }
 
 bool DemodulatorInstance::isStereo() {
