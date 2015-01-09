@@ -17,6 +17,7 @@
 #include "DemodulatorMgr.h"
 #include "AudioThread.h"
 #include "CubicSDR.h"
+#include "DataTree.h"
 
 #include <thread>
 
@@ -32,7 +33,7 @@ EVT_IDLE(AppFrame::OnIdle)
 wxEND_EVENT_TABLE()
 
 AppFrame::AppFrame() :
-        wxFrame(NULL, wxID_ANY, wxT("CubicSDR v0.1a by Charles J. Cliffe (@ccliffe)")), activeDemodulator(NULL) {
+        wxFrame(NULL, wxID_ANY, wxT("CubicSDR " CUBICSDR_VERSION " by Charles J. Cliffe (@ccliffe)")), activeDemodulator(NULL) {
 
     wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodOpts = new wxBoxSizer(wxVERTICAL);
@@ -281,4 +282,34 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     if (!work_done) {
         event.Skip();
     }
+}
+
+void AppFrame::saveSession(std::string fileName) {
+    DataTree s("cubicsdr_session");
+    DataNode &header = s.rootNode().newChild("header");
+    header.newChild("version") = std::string(CUBICSDR_VERSION);
+    header.newChild("center_freq") = wxGetApp().getFrequency();
+    header.newChild("offset") = wxGetApp().getOffset();
+
+    DataNode &demods = s.rootNode().newChild("demodulators");
+
+    std::vector<DemodulatorInstance *> &instances = wxGetApp().getDemodMgr().getDemodulators();
+    std::vector<DemodulatorInstance *>::iterator instance_i;
+    for (instance_i = instances.begin(); instance_i != instances.end(); instance_i++) {
+        DataNode &demod = demods.newChild("demodulator");
+        demod.newChild("bandwidth") = (long)(*instance_i)->getBandwidth();
+        demod.newChild("frequency") = (long long)(*instance_i)->getFrequency();
+        demod.newChild("type") = (int)(*instance_i)->getDemodulatorType();
+        if ((*instance_i)->isSquelchEnabled()) {
+            demod.newChild("squelch") = (*instance_i)->getSquelchLevel();
+            demod.newChild("squelch_enabled") = (char)1;
+        }
+        demod.newChild("stereo") = (char)(*instance_i)->isStereo();
+        demod.newChild("output_device") = outputDevices[(*instance_i)->getOutputDevice()].name;
+    }
+
+    s.SaveToFileXML(fileName);
+}
+
+bool AppFrame::loadSession(std::string fileName) {
 }

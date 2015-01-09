@@ -1,5 +1,7 @@
 #pragma once
 
+#define CUBICSDR_VERSION "v0.01a"
+
 #ifdef __APPLE__
 #define BUF_SIZE (16384*2)
 #define SRATE 2000000

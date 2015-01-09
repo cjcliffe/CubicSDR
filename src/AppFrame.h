@@ -23,6 +23,9 @@ public:
     void OnThread(wxCommandEvent& event);
     void OnEventInput(wxThreadEvent& event);
 
+    void saveSession(std::string fileName);
+    bool loadSession(std::string fileName);
+
 private:
     void OnMenu(wxCommandEvent& event);
     void OnClose(wxCommandEvent& event);
@@ -45,6 +48,8 @@ private:
     std::map<int,RtAudio::DeviceInfo> inputDevices;
     std::map<int,RtAudio::DeviceInfo> outputDevices;
     std::map<int,wxMenuItem *> outputDeviceMenuItems;
+
+    std::string currentSessionFile;
 
     wxDECLARE_EVENT_TABLE();
 };
