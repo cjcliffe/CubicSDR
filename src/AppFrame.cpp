@@ -7,6 +7,7 @@
 #endif
 
 #include "wx/numdlg.h"
+#include "wx/filedlg.h"
 
 #if !wxUSE_GLCANVAS
 #error "OpenGL required: set wxUSE_GLCANVAS to 1 and rebuild the library"
@@ -26,20 +27,18 @@ wxBEGIN_EVENT_TABLE(AppFrame, wxFrame)
 //EVT_MENU(wxID_NEW, AppFrame::OnNewWindow)
 EVT_MENU(wxID_CLOSE, AppFrame::OnClose)
 EVT_MENU(wxID_ANY, AppFrame::OnMenu)
-
 EVT_COMMAND(wxID_ANY, wxEVT_THREAD, AppFrame::OnThread)
 EVT_IDLE(AppFrame::OnIdle)
 wxEND_EVENT_TABLE()
 
 AppFrame::AppFrame() :
-        wxFrame(NULL, wxID_ANY, wxT("CubicSDR v0.1a by Charles J. Cliffe (@ccliffe)")), activeDemodulator(NULL) {
+wxFrame(NULL, wxID_ANY, wxT("CubicSDR v0.1a by Charles J. Cliffe (@ccliffe)")), activeDemodulator(NULL) {
 
     wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodOpts = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodVisuals = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodTray = new wxBoxSizer(wxHORIZONTAL);
     wxBoxSizer *demodScopeTray = new wxBoxSizer(wxVERTICAL);
-
 
     demodModeSelector = new ModeSelectorCanvas(this, NULL);
     demodModeSelector->addChoice(DEMOD_TYPE_FM,"FM");
@@ -111,6 +110,9 @@ AppFrame::AppFrame() :
     wxMenu *menu = new wxMenu;
 //    menu->Append(wxID_NEW);
     menu->Append(wxID_SET_FREQ_OFFSET, "Set Frequency Offset");
+    menu->Append(wxID_OPEN, "&Open Session");
+    menu->Append(wxID_SAVE, "&Save Session");
+    menu->Append(wxID_SAVEAS, "Save Session &As..");
     menu->AppendSeparator();
     menu->Append(wxID_CLOSE);
 
@@ -172,15 +174,31 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             activeDemodulator = NULL;
         }
     } else if (event.GetId() == wxID_SET_FREQ_OFFSET) {
-        long ofs = wxGetNumberFromUser ("Shift the displayed frequency by this amount.\ni.e. -125000000 for -125 MHz", "Frequency (Hz)", "Frequency Offset", wxGetApp().getOffset(), -2000000000, 2000000000, this);
+        long ofs = wxGetNumberFromUser("Shift the displayed frequency by this amount.\ni.e. -125000000 for -125 MHz", "Frequency (Hz)",
+                "Frequency Offset", wxGetApp().getOffset(), -2000000000, 2000000000, this);
         if (ofs != -1) {
             wxGetApp().setOffset(ofs);
         }
+    } else if (event.GetId() == wxID_SAVE) {
+        wxFileDialog saveFileDialog(this, _("Save XML Session file"), "", "", "XML files (*.xml)|*.xml", wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
+       if (saveFileDialog.ShowModal() == wxID_CANCEL) {
+           return;
+       }
+       // saveFileDialog.GetPath();
+    } else if (event.GetId() == wxID_OPEN) {
+        wxFileDialog openFileDialog(this, _("Open XML Session file"), "", "","XML files (*.xml)|*.xml", wxFD_OPEN|wxFD_FILE_MUST_EXIST);
+       if (openFileDialog.ShowModal() == wxID_CANCEL) {
+           return;
+       }
+       // openFileDialog.GetPath();
+    } else if (event.GetId() == wxID_SAVEAS) {
+    } else if (event.GetId() == wxID_EXIT) {
+        Close(false);
     }
 }
 
 void AppFrame::OnClose(wxCommandEvent& WXUNUSED(event)) {
-    Close(true);
+    Close(false);
 }
 
 void AppFrame::OnNewWindow(wxCommandEvent& WXUNUSED(event)) {
