@@ -51,23 +51,22 @@ using namespace std;
 #define DATA_LONG				5
 #define DATA_ULONG              6
 #define DATA_LONGLONG           7
-#define DATA_ULONGLONG          8
-#define DATA_FLOAT				9
-#define DATA_DOUBLE				10
-#define DATA_LONGDOUBLE         11
-#define DATA_STRING				12
-#define DATA_STR_VECTOR		    13
-#define DATA_CHAR_VECTOR        14
-#define DATA_UCHAR_VECTOR       15
-#define DATA_INT_VECTOR		    16
-#define DATA_UINT_VECTOR        17
-#define DATA_LONG_VECTOR		18
-#define DATA_ULONG_VECTOR       19
-#define DATA_LONGLONG_VECTOR    20
-#define DATA_FLOAT_VECTOR		21
-#define DATA_DOUBLE_VECTOR		22
-#define DATA_LONGDOUBLE_VECTOR  23
-#define DATA_VOID               24
+#define DATA_FLOAT				8
+#define DATA_DOUBLE				9
+#define DATA_LONGDOUBLE         10
+#define DATA_STRING				11
+#define DATA_STR_VECTOR		    12
+#define DATA_CHAR_VECTOR        13
+#define DATA_UCHAR_VECTOR       14
+#define DATA_INT_VECTOR		    15
+#define DATA_UINT_VECTOR        16
+#define DATA_LONG_VECTOR		17
+#define DATA_ULONG_VECTOR       18
+#define DATA_LONGLONG_VECTOR    19
+#define DATA_FLOAT_VECTOR		20
+#define DATA_DOUBLE_VECTOR		21
+#define DATA_LONGDOUBLE_VECTOR  22
+#define DATA_VOID               23
 
 
 /* map comparison function */
@@ -119,9 +118,9 @@ public:
 class DataElement
 {
 private:
-    unsigned char data_type;
-    unsigned int data_size;
-    unsigned int unit_size;
+    int data_type;
+    long data_size;
+    int unit_size;
 
     char *data_val;
     
@@ -244,74 +243,74 @@ public:
     int numChildren();	/* Number of children */
     int numChildren(const char *name_in); /* Number of children named 'name_in' */
     
-    DataElement &element(); /* DataElement at this node */
+    DataElement *element(); /* DataElement at this node */
     
-    DataNode &newChild(const char *name_in);
-    DataNode &child(const char *name_in, int index = 0) throw (DataInvalidChildException);
-    DataNode &child(int index) throw (DataInvalidChildException);
+    DataNode *newChild(const char *name_in);
+    DataNode *child(const char *name_in, int index = 0) throw (DataInvalidChildException);
+    DataNode *child(int index) throw (DataInvalidChildException);
     
     
     bool hasAnother(const char *name_in);	/* useful for while() loops in conjunction with getNext() */
     bool hasAnother();
-    DataNode &getNext(const char *name_in) throw (DataInvalidChildException); /* get next of specified name */
-    DataNode &getNext() throw (DataInvalidChildException);	/* get next child */
+    DataNode *getNext(const char *name_in) throw (DataInvalidChildException); /* get next of specified name */
+    DataNode *getNext() throw (DataInvalidChildException);	/* get next child */
     void rewind(const char *name_in);	/* rewind specific */
     void rewind();	/* rewind generic */
         
     void findAll(const char *name_in, vector<DataNode *> &node_list_out);
     
-    operator string () { string s; element().get(s); return s; }
-    operator char () { char v; element().get(v); return v; }
-    operator unsigned char () { unsigned char v; element().get(v); return v; }
-    operator int () { int v; element().get(v); return v; }
-    operator unsigned int () { unsigned int v; element().get(v); return v; }
-    operator long () { long v; element().get(v); return v; }
-    operator unsigned long () { unsigned long v; element().get(v); return v; }
-    operator long long () { long long v; element().get(v); return v; }
-    operator float () { float v; element().get(v); return v; }
-    operator double () { double v; element().get(v); return v; }
-    operator long double () { long double v; element().get(v); return v; }
+    operator string () { string s; element()->get(s); return s; }
+    operator char () { char v; element()->get(v); return v; }
+    operator unsigned char () { unsigned char v; element()->get(v); return v; }
+    operator int () { int v; element()->get(v); return v; }
+    operator unsigned int () { unsigned int v; element()->get(v); return v; }
+    operator long () { long v; element()->get(v); return v; }
+    operator unsigned long () { unsigned long v; element()->get(v); return v; }
+    operator long long () { long long v; element()->get(v); return v; }
+    operator float () { float v; element()->get(v); return v; }
+    operator double () { double v; element()->get(v); return v; }
+    operator long double () { long double v; element()->get(v); return v; }
 
-    operator vector<char> () { vector<char> v; element().get(v);  return v; }
-    operator vector<unsigned char> () { vector<unsigned char> v; element().get(v);  return v; }
-    operator vector<int> () { vector<int> v; element().get(v);  return v; }
-    operator vector<unsigned int> () { vector<unsigned int> v; element().get(v);  return v; }
-    operator vector<long> () { vector<long> v; element().get(v);  return v; }
-    operator vector<unsigned long> () { vector<unsigned long> v; element().get(v);  return v; }
-    operator vector<float> () { vector<float> v; element().get(v);  return v; }
-    operator vector<double> () { vector<double> v; element().get(v);  return v; }
-    operator vector<long double> () { vector<long double> v; element().get(v);  return v; }
+    operator vector<char> () { vector<char> v; element()->get(v);  return v; }
+    operator vector<unsigned char> () { vector<unsigned char> v; element()->get(v);  return v; }
+    operator vector<int> () { vector<int> v; element()->get(v);  return v; }
+    operator vector<unsigned int> () { vector<unsigned int> v; element()->get(v);  return v; }
+    operator vector<long> () { vector<long> v; element()->get(v);  return v; }
+    operator vector<unsigned long> () { vector<unsigned long> v; element()->get(v);  return v; }
+    operator vector<float> () { vector<float> v; element()->get(v);  return v; }
+    operator vector<double> () { vector<double> v; element()->get(v);  return v; }
+    operator vector<long double> () { vector<long double> v; element()->get(v);  return v; }
     
-    const string &operator= (const string &s) { element().set(s); return s; }
+    const string &operator= (const string &s) { element()->set(s); return s; }
 
-    char operator= (char i) { element().set(i); return i; }
-    unsigned char operator= (unsigned char i) { element().set(i); return i; }
-    int operator= (int i) { element().set(i); return i; }
-    unsigned int operator= (unsigned int i) { element().set(i); return i; }
-    long operator= (long i) { element().set(i); return i; }
-    unsigned long operator= (unsigned long i) { element().set(i); return i; }
-    long long operator= (long long i) { element().set(i); return i; }
-    float operator= (float i) { element().set(i); return i; }
-    double operator= (double i) { element().set(i); return i; }
-    long double operator= (long double i) { element().set(i); return i; }
+    char operator= (char i) { element()->set(i); return i; }
+    unsigned char operator= (unsigned char i) { element()->set(i); return i; }
+    int operator= (int i) { element()->set(i); return i; }
+    unsigned int operator= (unsigned int i) { element()->set(i); return i; }
+    long operator= (long i) { element()->set(i); return i; }
+    unsigned long operator= (unsigned long i) { element()->set(i); return i; }
+    long long operator= (long long i) { element()->set(i); return i; }
+    float operator= (float i) { element()->set(i); return i; }
+    double operator= (double i) { element()->set(i); return i; }
+    long double operator= (long double i) { element()->set(i); return i; }
     
-    vector<char> &operator= (vector<char> &v) { element().set(v); return v; }
-    vector<unsigned char> &operator= (vector<unsigned char> &v) { element().set(v); return v; }
-    vector<int> &operator= (vector<int> &v) { element().set(v); return v; }
-    vector<unsigned int> &operator= (vector<unsigned int> &v) { element().set(v); return v; }
-    vector<long> &operator= (vector<long> &v) { element().set(v); return v; }
-    vector<unsigned long> &operator= (vector<unsigned long> &v) { element().set(v); return v; }
-    vector<float> &operator= (vector<float> &v) { element().set(v); return v; }
-    vector<double> &operator= (vector<double> &v) { element().set(v); return v; }
-    vector<long double> &operator= (vector<long double> &v) { element().set(v); return v; }
+    vector<char> &operator= (vector<char> &v) { element()->set(v); return v; }
+    vector<unsigned char> &operator= (vector<unsigned char> &v) { element()->set(v); return v; }
+    vector<int> &operator= (vector<int> &v) { element()->set(v); return v; }
+    vector<unsigned int> &operator= (vector<unsigned int> &v) { element()->set(v); return v; }
+    vector<long> &operator= (vector<long> &v) { element()->set(v); return v; }
+    vector<unsigned long> &operator= (vector<unsigned long> &v) { element()->set(v); return v; }
+    vector<float> &operator= (vector<float> &v) { element()->set(v); return v; }
+    vector<double> &operator= (vector<double> &v) { element()->set(v); return v; }
+    vector<long double> &operator= (vector<long double> &v) { element()->set(v); return v; }
 
-    DataNode &operator[] (const char *name_in) { return getNext(name_in); }
-    DataNode &operator[] (int idx) { return child(idx); }
+    DataNode *operator[] (const char *name_in) { return getNext(name_in); }
+    DataNode *operator[] (int idx) { return child(idx); }
 
     bool operator() (const char *name_in) { return hasAnother(name_in); }
     bool operator() () { return hasAnother(); }
 
-    DataNode &operator ^(const char *name_in) { return newChild(name_in); }
+    DataNode *operator ^(const char *name_in) { return newChild(name_in); }
 
 };
 
@@ -333,7 +332,7 @@ public:
     DataTree();
     ~DataTree();
     
-    DataNode &rootNode();
+    DataNode *rootNode();
     
     void nodeToXML(DataNode *elem, TiXmlElement *elxml);
     void setFromXML(DataNode *elem, TiXmlNode *elxml, bool root_node=true, DT_FloatingPointPolicy fpp=USE_FLOAT);

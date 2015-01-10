@@ -89,7 +89,7 @@ void DataElement::set(const char *data_in, long size_in) {
 }
 
 void DataElement::set(const char *data_in) {
-    data_type = DATA_VOID;
+    data_type = DATA_STRING;
     data_init(strlen(data_in) + 1);
     memcpy(data_val, data_in, data_size);
 }
@@ -176,7 +176,13 @@ return; \
             std::cout << "Warning, data type mismatch requested size for '" << #datatype << "(" << sizeof(datatype) << ")' < data size '" << data_size << "'; possible loss of data."; \
         } \
         memset(&val_out, 0, sizeof(datatype)); \
-        memcpy(&val_out, data_val, (sizeof(datatype) < data_size) ? sizeof(datatype) : data_size); \
+        if (sizeof(datatype) > 4 && data_size <= 4) { \
+            int v = 0; memcpy(&v,data_val,data_size); \
+            val_out = (datatype)v; \
+            return; \
+        } else { \
+            memcpy(&val_out, data_val, (sizeof(datatype) < data_size) ? sizeof(datatype) : data_size); \
+        } \
         return; \
     } \
     memcpy(&val_out, data_val, data_size); \
@@ -301,7 +307,7 @@ DataElementGetNumericVectorDef(DATA_LONGDOUBLE_VECTOR, long double, DATA_DOUBLE_
 
 
 long DataElement::getSerializedSize() {
-    return sizeof(unsigned char) + sizeof(unsigned int) + data_size;
+    return sizeof(int) + sizeof(long) + data_size;
 }
 
 long DataElement::getSerialized(char **ser_str) {
@@ -313,10 +319,10 @@ long DataElement::getSerialized(char **ser_str) {
 
     ser_pointer = *ser_str;
 
-    memcpy(ser_pointer, &data_type, sizeof(unsigned char));
-    ser_pointer += sizeof(unsigned char);
-    memcpy(ser_pointer, &data_size, sizeof(unsigned int));
-    ser_pointer += sizeof(unsigned int);
+    memcpy(ser_pointer, &data_type, sizeof(int));
+    ser_pointer += sizeof(int);
+    memcpy(ser_pointer, &data_size, sizeof(long));
+    ser_pointer += sizeof(long);
     memcpy(ser_pointer, data_val, data_size);
 
     return ser_size;
@@ -357,20 +363,20 @@ void DataNode::setName(const char *name_in) {
     node_name = name_in;
 }
 
-DataElement & DataNode::element() {
-    return data_elem;
+DataElement *DataNode::element() {
+    return &data_elem;
 }
 
-DataNode &DataNode::newChild(const char *name_in) {
+DataNode *DataNode::newChild(const char *name_in) {
     children.push_back(new DataNode(name_in));
     childmap[name_in].push_back(children.back());
 
     children.back()->setParentNode(*this);
 
-    return *children.back();
+    return children.back();
 }
 
-DataNode &DataNode::child(const char *name_in, int index) throw (DataInvalidChildException) {
+DataNode *DataNode::child(const char *name_in, int index) throw (DataInvalidChildException) {
     DataNode *child_ret;
 
     child_ret = childmap[name_in][index];
@@ -381,10 +387,10 @@ DataNode &DataNode::child(const char *name_in, int index) throw (DataInvalidChil
         throw(DataInvalidChildException(error_str.str().c_str()));
     }
 
-    return *child_ret;
+    return child_ret;
 }
 
-DataNode &DataNode::child(int index) throw (DataInvalidChildException) {
+DataNode *DataNode::child(int index) throw (DataInvalidChildException) {
 
     DataNode *child_ret;
 
@@ -396,7 +402,7 @@ DataNode &DataNode::child(int index) throw (DataInvalidChildException) {
         throw(DataInvalidChildException(error_str.str().c_str()));
     }
 
-    return *child_ret;
+    return child_ret;
 }
 
 int DataNode::numChildren() {
@@ -415,11 +421,11 @@ bool DataNode::hasAnother(const char *name_in) {
     return childmap[name_in].size() != childmap_ptr[name_in];
 }
 
-DataNode & DataNode::getNext() throw (DataInvalidChildException) {
+DataNode *DataNode::getNext() throw (DataInvalidChildException) {
     return child(ptr++);
 }
 
-DataNode &DataNode::getNext(const char *name_in) throw (DataInvalidChildException) {
+DataNode *DataNode::getNext(const char *name_in) throw (DataInvalidChildException) {
     return child(name_in, childmap_ptr[name_in]++);
 }
 
@@ -445,8 +451,8 @@ DataTree::~DataTree() {
 }
 ;
 
-DataNode & DataTree::rootNode() {
-    return dn_root;
+DataNode *DataTree::rootNode() {
+    return &dn_root;
 }
 
 std::string trim(std::string& s, const std::string& drop = " ") {
@@ -491,15 +497,15 @@ void DataTree::decodeXMLText(DataNode *elem, const char *src_text, DT_FloatingPo
         tmp_stream << in_text;
         tmp_stream >> tmp_llong;
 
-        tmp_int = tmp_llong;
-        tmp_long = tmp_llong;
+        tmp_int = (int)tmp_llong;
+        tmp_long = (long)tmp_llong;
 
         if (tmp_int == tmp_llong) {
-            elem->element().set((int) tmp_int);
+            elem->element()->set(tmp_int);
         } else if (tmp_long == tmp_llong) {
-            elem->element().set((long) tmp_int);
+            elem->element()->set(tmp_long);
         } else {
-            elem->element().set((long long) tmp_long);
+            elem->element()->set(tmp_llong);
         }
     } else if (in_text.find_first_not_of("0123456789.e+-") == string::npos) {
         tmp_stream << in_text;
@@ -507,11 +513,11 @@ void DataTree::decodeXMLText(DataNode *elem, const char *src_text, DT_FloatingPo
         if (fpp == USE_FLOAT) {
             tmp_stream >> tmp_float;
 
-            elem->element().set((float) tmp_float);
+            elem->element()->set((float) tmp_float);
         } else {
             tmp_stream >> tmp_double;
 
-            elem->element().set((double) tmp_double);
+            elem->element()->set((double) tmp_double);
         }
     } else if (in_text.find_first_not_of("0123456789- ") == string::npos) {
         tmp_stream << in_text;
@@ -542,7 +548,7 @@ void DataTree::decodeXMLText(DataNode *elem, const char *src_text, DT_FloatingPo
                 tmp_charvect.push_back(*tmp_llongvect_i);
             }
             tmp_llongvect.clear();
-            elem->element().set(tmp_charvect);
+            elem->element()->set(tmp_charvect);
             tmp_charvect.clear();
 
         } else if (vInts) {
@@ -550,17 +556,17 @@ void DataTree::decodeXMLText(DataNode *elem, const char *src_text, DT_FloatingPo
                 tmp_intvect.push_back(*tmp_llongvect_i);
             }
             tmp_llongvect.clear();
-            elem->element().set(tmp_intvect);
+            elem->element()->set(tmp_intvect);
             tmp_intvect.clear();
         } else if (vLongs) {
             for (tmp_llongvect_i = tmp_llongvect.begin(); tmp_llongvect_i != tmp_llongvect.end(); tmp_llongvect_i++) {
                 tmp_longvect.push_back(*tmp_llongvect_i);
             }
             tmp_llongvect.clear();
-            elem->element().set(tmp_longvect);
+            elem->element()->set(tmp_longvect);
             tmp_longvect.clear();
         } else {
-            elem->element().set(tmp_llongvect);
+            elem->element()->set(tmp_llongvect);
         }
     } else if (in_text.find_first_not_of("0123456789.e-+ ") == string::npos) {
         tmp_stream << in_text;
@@ -583,12 +589,12 @@ void DataTree::decodeXMLText(DataNode *elem, const char *src_text, DT_FloatingPo
         }
 
         if (fpp == USE_FLOAT) {
-            elem->element().set(tmp_floatvect);
+            elem->element()->set(tmp_floatvect);
         } else {
-            elem->element().set(tmp_doublevect);
+            elem->element()->set(tmp_doublevect);
         }
     } else {
-        elem->element().set(src_text);
+        elem->element()->set(src_text);
         //					printf( "Unhandled DataTree XML Field: [%s]", tmp_str.c_str() );
     }
 
@@ -606,7 +612,7 @@ void DataTree::setFromXML(DataNode *elem, TiXmlNode *elxml, bool root_node, DT_F
 
     case TiXmlNode::ELEMENT:
         if (!root_node)
-            elem = &elem->newChild(elxml->Value());
+            elem = elem->newChild(elxml->Value());
 
         const TiXmlAttribute *attribs;
         attribs = elxml->ToElement()->FirstAttribute();
@@ -617,7 +623,7 @@ void DataTree::setFromXML(DataNode *elem, TiXmlNode *elxml, bool root_node, DT_F
             string attrName("@");
             attrName.append(attribs->Name());
 
-            decodeXMLText(&elem->newChild(attrName.c_str()), attribs->Value(), fpp);
+            decodeXMLText(elem->newChild(attrName.c_str()), attribs->Value(), fpp);
 
             attribs = attribs->Next();
         }
@@ -674,7 +680,7 @@ void DataTree::setFromXML(DataNode *elem, TiXmlNode *elxml, bool root_node, DT_F
                     }
                 }
 
-                elem->element().set(tmp_strvect);
+                elem->element()->set(tmp_strvect);
 
                 return;
             }
@@ -693,7 +699,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
     elem->rewind();
 
     while (elem->hasAnother()) {
-        child = &elem->getNext();
+        child = elem->getNext();
 
         std::string nodeName = child->getName();
 
@@ -738,11 +744,11 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
         unsigned long tmp_ulong;
         long long tmp_llong;
 
-        switch (child->element().getDataType()) {
+        switch (child->element()->getDataType()) {
         case DATA_NULL:
             break;
         case DATA_VOID:
-            child->element().get(&tmp_pstr);
+            child->element()->get(&tmp_pstr);
 // following badgerfish xml->json and xml->ruby convention for attributes..
             if (nodeName.substr(0, 1) == string("@")) {
                 elxml->SetAttribute(nodeName.substr(1).c_str(), tmp_pstr);
@@ -755,7 +761,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             delete tmp_pstr;
             break;
         case DATA_CHAR:
-            child->element().get(tmp_char);
+            child->element()->get(tmp_char);
 
             tmp_stream.str("");
 
@@ -765,7 +771,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             element->LinkEndChild(text);
             break;
         case DATA_UCHAR:
-            child->element().get(tmp_uchar);
+            child->element()->get(tmp_uchar);
 
             tmp_stream.str("");
 
@@ -775,7 +781,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             element->LinkEndChild(text);
             break;
         case DATA_INT:
-            child->element().get(tmp_int);
+            child->element()->get(tmp_int);
 
             tmp_stream.str("");
 
@@ -785,7 +791,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             element->LinkEndChild(text);
             break;
         case DATA_UINT:
-            child->element().get(tmp_uint);
+            child->element()->get(tmp_uint);
 
             tmp_stream.str("");
 
@@ -795,7 +801,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             element->LinkEndChild(text);
             break;
         case DATA_LONG:
-            child->element().get(tmp_long);
+            child->element()->get(tmp_long);
 
             tmp_stream.str("");
 
@@ -805,7 +811,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             element->LinkEndChild(text);
             break;
         case DATA_ULONG:
-            child->element().get(tmp_ulong);
+            child->element()->get(tmp_ulong);
 
             tmp_stream.str("");
 
@@ -815,7 +821,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             element->LinkEndChild(text);
             break;
         case DATA_LONGLONG:
-            child->element().get(tmp_llong);
+            child->element()->get(tmp_llong);
 
             tmp_stream.str("");
 
@@ -825,7 +831,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             element->LinkEndChild(text);
             break;
         case DATA_FLOAT:
-            child->element().get(tmp_float);
+            child->element()->get(tmp_float);
 
             tmp_stream.str("");
 
@@ -835,7 +841,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             element->LinkEndChild(text);
             break;
         case DATA_DOUBLE:
-            child->element().get(tmp_double);
+            child->element()->get(tmp_double);
 
             tmp_stream.str("");
 
@@ -845,7 +851,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             element->LinkEndChild(text);
             break;
         case DATA_LONGDOUBLE:
-            child->element().get(tmp_ldouble);
+            child->element()->get(tmp_ldouble);
 
             tmp_stream.str("");
 
@@ -855,7 +861,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             element->LinkEndChild(text);
             break;
         case DATA_STRING:
-            child->element().get(tmp);
+            child->element()->get(tmp);
             if (nodeName.substr(0, 1) == string("@")) {
                 elxml->SetAttribute(nodeName.substr(1).c_str(), tmp.c_str());
                 delete element;
@@ -867,7 +873,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             break;
 
         case DATA_STR_VECTOR:
-            child->element().get(tmp_stringvect);
+            child->element()->get(tmp_stringvect);
 
             tmp_stream.str("");
 
@@ -881,7 +887,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             tmp_stringvect.clear();
             break;
         case DATA_CHAR_VECTOR:
-            child->element().get(tmp_charvect);
+            child->element()->get(tmp_charvect);
 
             tmp_stream.str("");
 
@@ -896,7 +902,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             tmp_charvect.clear();
             break;
         case DATA_UCHAR_VECTOR:
-            child->element().get(tmp_ucharvect);
+            child->element()->get(tmp_ucharvect);
 
             tmp_stream.str("");
 
@@ -911,7 +917,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             tmp_ucharvect.clear();
             break;
         case DATA_INT_VECTOR:
-            child->element().get(tmp_intvect);
+            child->element()->get(tmp_intvect);
 
             tmp_stream.str("");
 
@@ -926,7 +932,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             tmp_intvect.clear();
             break;
         case DATA_UINT_VECTOR:
-            child->element().get(tmp_uintvect);
+            child->element()->get(tmp_uintvect);
 
             tmp_stream.str("");
 
@@ -941,7 +947,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             tmp_uintvect.clear();
             break;
         case DATA_LONG_VECTOR:
-            child->element().get(tmp_longvect);
+            child->element()->get(tmp_longvect);
 
             tmp_stream.str("");
 
@@ -956,7 +962,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             tmp_longvect.clear();
             break;
         case DATA_ULONG_VECTOR:
-            child->element().get(tmp_ulongvect);
+            child->element()->get(tmp_ulongvect);
 
             tmp_stream.str("");
 
@@ -971,7 +977,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             tmp_ulongvect.clear();
             break;
         case DATA_LONGLONG_VECTOR:
-            child->element().get(tmp_llongvect);
+            child->element()->get(tmp_llongvect);
 
             tmp_stream.str("");
 
@@ -986,7 +992,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             tmp_llongvect.clear();
             break;
         case DATA_FLOAT_VECTOR:
-            child->element().get(tmp_floatvect);
+            child->element()->get(tmp_floatvect);
 
             tmp_stream.str("");
 
@@ -1001,7 +1007,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             tmp_floatvect.clear();
             break;
         case DATA_DOUBLE_VECTOR:
-            child->element().get(tmp_doublevect);
+            child->element()->get(tmp_doublevect);
 
             tmp_stream.str("");
 
@@ -1035,7 +1041,7 @@ void DataTree::printXML() /* get serialized size + return node names header */
     TiXmlDeclaration * decl = new TiXmlDeclaration("1.0", "", "");
     doc.LinkEndChild(decl);
 
-    DataNode *root = &rootNode();
+    DataNode *root = rootNode();
 
     string rootName = root->getName();
 
@@ -1089,22 +1095,22 @@ long DataTree::getSerializedSize(DataElement &de_node_names, bool debug) /* get 
         /* add on the size of the name index and number of children */
         total_size += de_name_index_size;
         total_size += de_num_children_size;
-        total_size += dn_stack.top()->element().getSerializedSize();
+        total_size += dn_stack.top()->element()->getSerializedSize();
 
         /* debug output */
         if (debug) {
             for (unsigned int i = 0; i < dn_stack.size() - 1; i++)
                 cout << "--";
-            cout << (dn_stack.top()->getName().empty() ? "NULL" : dn_stack.top()->getName()) << "(" << dn_stack.top()->element().getSerializedSize()
+            cout << (dn_stack.top()->getName().empty() ? "NULL" : dn_stack.top()->getName()) << "(" << dn_stack.top()->element()->getSerializedSize()
                     << ")";
-            cout << " type: " << dn_stack.top()->element().getDataType() << endl;
+            cout << " type: " << dn_stack.top()->element()->getDataType() << endl;
 //cout << " index: " << name_index << endl;
         }
         /* end debug output */
 
         /* if it has children, traverse into them */
         if (dn_stack.top()->hasAnother()) {
-            dn_stack.push(&dn_stack.top()->getNext());
+            dn_stack.push(dn_stack.top()->getNext());
             dn_stack.top()->rewind();
         } else {
             /* no more children, back out until we have children, then add next child to the top */
@@ -1117,7 +1123,7 @@ long DataTree::getSerializedSize(DataElement &de_node_names, bool debug) /* get 
             }
 
             if (!dn_stack.empty()) {
-                dn_stack.push(&dn_stack.top()->getNext());
+                dn_stack.push(dn_stack.top()->getNext());
                 dn_stack.top()->rewind();
             }
         }
@@ -1142,12 +1148,12 @@ void DataNode::findAll(const char *name_in, vector<DataNode *> &node_list_out) {
 
     while (!dn_stack.empty()) {
         while (dn_stack.top()->hasAnother(name_in)) {
-            node_list_out.push_back(&dn_stack.top()->getNext(name_in));
+            node_list_out.push_back(dn_stack.top()->getNext(name_in));
         }
 
         /* if it has children, traverse into them */
         if (dn_stack.top()->hasAnother()) {
-            dn_stack.push(&dn_stack.top()->getNext());
+            dn_stack.push(dn_stack.top()->getNext());
             dn_stack.top()->rewind();
         } else {
             /* no more children, back out until we have children, then add next child to the top */
@@ -1160,7 +1166,7 @@ void DataNode::findAll(const char *name_in, vector<DataNode *> &node_list_out) {
             }
 
             if (!dn_stack.empty()) {
-                dn_stack.push(&dn_stack.top()->getNext());
+                dn_stack.push(dn_stack.top()->getNext());
                 dn_stack.top()->rewind();
             }
         }
@@ -1232,11 +1238,11 @@ long DataTree::getSerialized(char **ser_str, bool debug) {
 
         de_name_index_serialized_size = de_name_index.getSerializedSize();
         de_num_children_serialized_size = de_num_children.getSerializedSize();
-        element_serialized_size = dn_stack.top()->element().getSerializedSize();
+        element_serialized_size = dn_stack.top()->element()->getSerializedSize();
 
         de_name_index.getSerialized(&de_name_index_serialized);
         de_num_children.getSerialized(&de_num_children_serialized);
-        dn_stack.top()->element().getSerialized(&element_serialized);
+        dn_stack.top()->element()->getSerialized(&element_serialized);
 
         /* add on the name index and number of children */
         memcpy(data_out + data_ptr, de_name_index_serialized, de_name_index_serialized_size);
@@ -1255,7 +1261,7 @@ long DataTree::getSerialized(char **ser_str, bool debug) {
 
         /* if it has children, traverse into them */
         if (dn_stack.top()->hasAnother()) {
-            dn_stack.push(&dn_stack.top()->getNext());
+            dn_stack.push(dn_stack.top()->getNext());
             dn_stack.top()->rewind();
         } else {
             /* no more children, back out until we have children, then add next child to the top */
@@ -1268,7 +1274,7 @@ long DataTree::getSerialized(char **ser_str, bool debug) {
             }
 
             if (!dn_stack.empty()) {
-                dn_stack.push(&dn_stack.top()->getNext());
+                dn_stack.push(dn_stack.top()->getNext());
                 dn_stack.top()->rewind();
             }
         }
@@ -1316,14 +1322,14 @@ void DataTree::setSerialized(char *ser_str, bool debug) {
         de_num_children.get(num_children);
 
         /* pull the node's element */
-        dn_stack.top()->element().setSerialized(ser_str + data_ptr);
-        data_ptr += dn_stack.top()->element().getSerializedSize();
+        dn_stack.top()->element()->setSerialized(ser_str + data_ptr);
+        data_ptr += dn_stack.top()->element()->getSerializedSize();
 
         /* debug output */
         if (debug) {
             for (unsigned int i = 0; i < dn_stack.size() - 1; i++)
                 cout << "--";
-            cout << (name_index ? node_names[name_index - 1] : "NULL") << "(" << dn_stack.top()->element().getSerializedSize() << ")";
+            cout << (name_index ? node_names[name_index - 1] : "NULL") << "(" << dn_stack.top()->element()->getSerializedSize() << ")";
             cout << " index: " << name_index << endl;
         }
         /* end debug output */
@@ -1344,7 +1350,7 @@ void DataTree::setSerialized(char *ser_str, bool debug) {
             de_name_index.setSerialized(ser_str + data_ptr); /* peek at the new child name but don't increment pointer */
             de_name_index.get(name_index);
             /* add this child onto the top of the stack */
-            dn_stack.push(&dn_stack.top()->newChild((name_index ? node_names[name_index - 1] : string("")).c_str()));
+            dn_stack.push(dn_stack.top()->newChild((name_index ? node_names[name_index - 1] : string("")).c_str()));
             dn_childcount_stack.top()--; /* decrement to count the new child */
             }
         else /* No children, move on to the next sibling */
@@ -1355,7 +1361,7 @@ void DataTree::setSerialized(char *ser_str, bool debug) {
                 de_name_index.get(name_index);
 
                 dn_stack.pop();
-                dn_stack.push(&dn_stack.top()->newChild((name_index ? node_names[name_index - 1] : string("")).c_str())); /* create the next sibling and throw it on the stack */
+                dn_stack.push(dn_stack.top()->newChild((name_index ? node_names[name_index - 1] : string("")).c_str())); /* create the next sibling and throw it on the stack */
                 dn_childcount_stack.top()--; /* decrement to count the new sibling */
                 }
             else /* This is the last sibling, move up the stack and find the next */
@@ -1367,7 +1373,7 @@ void DataTree::setSerialized(char *ser_str, bool debug) {
                         de_name_index.get(name_index);
 
                         dn_stack.pop();
-                        dn_stack.push(&dn_stack.top()->newChild((name_index ? node_names[name_index - 1] : string("")).c_str())); /* throw it on the stack */
+                        dn_stack.push(dn_stack.top()->newChild((name_index ? node_names[name_index - 1] : string("")).c_str())); /* throw it on the stack */
                         dn_childcount_stack.top()--; /* count it */
                         break
 ;                    }
@@ -1398,9 +1404,9 @@ bool DataTree::LoadFromFileXML(const std::string& filename, DT_FloatingPointPoli
         return false;
     }
 
-    rootNode().setName(xml_root_node->ToElement()->Value());
+    rootNode()->setName(xml_root_node->ToElement()->Value());
 
-    setFromXML(&rootNode(), xml_root_node, true, fpp);
+    setFromXML(rootNode(), xml_root_node, true, fpp);
 
     return true;
 }
@@ -1410,13 +1416,13 @@ bool DataTree::SaveToFileXML(const std::string& filename) {
     TiXmlDeclaration * decl = new TiXmlDeclaration("1.0", "", "");
     doc.LinkEndChild(decl);
 
-    string rootName = rootNode().getName();
+    string rootName = rootNode()->getName();
 
     TiXmlElement *element = new TiXmlElement(rootName.empty() ? "root" : rootName.c_str());
 
     doc.LinkEndChild(element);
 
-    nodeToXML(&rootNode(), element);
+    nodeToXML(rootNode(), element);
 
     doc.SaveFile(filename.c_str());
 
@@ -1489,11 +1495,11 @@ bool DataTree::SaveToFile(const std::string& filename, bool compress, int compre
         compress = false;
     }
 #endif
-    DataNode &header = dtHeader.rootNode();
+    DataNode *header = dtHeader.rootNode();
 
-    header ^ "version" = 1.0f;
-    header ^ "compression" = string(compress ? "FastLZ" : "none");
-    header ^ "uncompressed_size" = dataSize;
+    *header->newChild("version") = 1.0f;
+    *header->newChild("compression") = string(compress ? "FastLZ" : "none");
+    *header->newChild("uncompressed_size") = dataSize;
 
     headerSize = dtHeader.getSerialized(&hdr_serialized);
 
@@ -1533,10 +1539,10 @@ bool DataTree::LoadFromFile(const std::string& filename) {
 
     DataTree dtHeader;
     dtHeader.setSerialized(hdr_serialized);
-    DataNode &header = dtHeader.rootNode();
+    DataNode *header = dtHeader.rootNode();
 
-    string compressionType = header["compression"];
-    dataSize = header["uncompressed_size"];
+    string compressionType = *header->getNext("compression");
+    dataSize = *header->getNext("uncompressed_size");
 
     bool uncompress = false;
 #if USE_FASTLZ

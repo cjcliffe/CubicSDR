@@ -185,13 +185,13 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
        if (saveFileDialog.ShowModal() == wxID_CANCEL) {
            return;
        }
-       // saveFileDialog.GetPath();
+       saveSession(saveFileDialog.GetPath().ToStdString());
     } else if (event.GetId() == wxID_OPEN) {
         wxFileDialog openFileDialog(this, _("Open XML Session file"), "", "","XML files (*.xml)|*.xml", wxFD_OPEN|wxFD_FILE_MUST_EXIST);
        if (openFileDialog.ShowModal() == wxID_CANCEL) {
            return;
        }
-       // openFileDialog.GetPath();
+       loadSession(openFileDialog.GetPath().ToStdString());
     } else if (event.GetId() == wxID_SAVEAS) {
     } else if (event.GetId() == wxID_EXIT) {
         Close(false);
@@ -304,30 +304,81 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 
 void AppFrame::saveSession(std::string fileName) {
     DataTree s("cubicsdr_session");
-    DataNode &header = s.rootNode().newChild("header");
-    header.newChild("version") = std::string(CUBICSDR_VERSION);
-    header.newChild("center_freq") = wxGetApp().getFrequency();
-    header.newChild("offset") = wxGetApp().getOffset();
+    DataNode *header = s.rootNode()->newChild("header");
+    *header->newChild("version") = std::string(CUBICSDR_VERSION);
+    *header->newChild("center_freq") = wxGetApp().getFrequency();
+    *header->newChild("offset") = wxGetApp().getOffset();
 
-    DataNode &demods = s.rootNode().newChild("demodulators");
+    DataNode *demods = s.rootNode()->newChild("demodulators");
 
     std::vector<DemodulatorInstance *> &instances = wxGetApp().getDemodMgr().getDemodulators();
     std::vector<DemodulatorInstance *>::iterator instance_i;
     for (instance_i = instances.begin(); instance_i != instances.end(); instance_i++) {
-        DataNode &demod = demods.newChild("demodulator");
-        demod.newChild("bandwidth") = (long)(*instance_i)->getBandwidth();
-        demod.newChild("frequency") = (long long)(*instance_i)->getFrequency();
-        demod.newChild("type") = (int)(*instance_i)->getDemodulatorType();
-        if ((*instance_i)->isSquelchEnabled()) {
-            demod.newChild("squelch") = (*instance_i)->getSquelchLevel();
-            demod.newChild("squelch_enabled") = (char)1;
-        }
-        demod.newChild("stereo") = (char)(*instance_i)->isStereo();
-        demod.newChild("output_device") = outputDevices[(*instance_i)->getOutputDevice()].name;
+        DataNode *demod = demods->newChild("demodulator");
+        *demod->newChild("bandwidth") = (*instance_i)->getBandwidth();
+        *demod->newChild("frequency") = (*instance_i)->getFrequency();
+        *demod->newChild("type") = (*instance_i)->getDemodulatorType();
+        *demod->newChild("squelch_level") = (*instance_i)->getSquelchLevel();
+        *demod->newChild("squelch_enabled") = (*instance_i)->isSquelchEnabled()?1:0;
+        *demod->newChild("stereo") = (*instance_i)->isStereo()?1:0;
+        *demod->newChild("output_device") = outputDevices[(*instance_i)->getOutputDevice()].name;
     }
 
     s.SaveToFileXML(fileName);
 }
 
 bool AppFrame::loadSession(std::string fileName) {
+    DataTree l;
+    if (!l.LoadFromFileXML(fileName)) {
+        return false;
+    }
+
+//    wxGetApp().getDemodMgr().terminateAll();
+
+    try {
+        DataNode *header = l.rootNode()->getNext("header");
+
+        std::string version = *header->getNext("version");
+        long long center_freq = *header->getNext("center_freq");
+        long long offset = *header->getNext("offset");
+
+        std::cout << "Loading " << version << " session file" << std::endl;
+        std::cout << "\tCenter Frequency: " << center_freq << std::endl;
+        std::cout << "\tOffset: " << offset << std::endl;
+
+
+        DataNode *demodulators = l.rootNode()->getNext("demodulators");
+
+        while (demodulators->hasAnother("demodulator")) {
+            DataNode *demod = demodulators->getNext("demodulator");
+
+            if (!demod->hasAnother("bandwidth") || !demod->hasAnother("frequency")) {
+                continue;
+            }
+
+            long bandwidth = *demod->getNext("bandwidth");
+            long long freq = *demod->getNext("frequency");
+            int type = demod->hasAnother("type")?*demod->getNext("type"):DEMOD_TYPE_FM;
+            float squelch_level = demod->hasAnother("squelch_level")?(float)*demod->getNext("squelch_level"):0;
+            int squelch_enabled = demod->hasAnother("squelch_enabled")?(int)*demod->getNext("squelch_enabled"):0;
+            int stereo = demod->hasAnother("stereo")?(int)*demod->getNext("stereo"):0;
+            std::string output_device = demod->hasAnother("output_device")?*demod->getNext("output_device"):"";
+
+            std::cout << "\tFound demodulator at frequency " << freq << " type " << type << std::endl;
+            std::cout << "\t\tBandwidth: " << bandwidth << std::endl;
+            std::cout << "\t\tSquelch Level: " << squelch_level << std::endl;
+            std::cout << "\t\tSquelch Enabled: " << (squelch_enabled?"true":"false") << std::endl;
+            std::cout << "\t\tStereo: " << (stereo?"true":"false") << std::endl;
+            std::cout << "\t\tOutput Device: " << output_device << std::endl;
+
+        }
+
+    } catch (DataInvalidChildException &e) {
+        std::cout << e.what() << std::endl;
+        return false;
+    } catch (DataTypeMismatchException &e) {
+        std::cout << e.what() << std::endl;
+        return false;
+    }
+
 }
