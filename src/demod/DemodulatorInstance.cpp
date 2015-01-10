@@ -213,7 +213,9 @@ float DemodulatorInstance::getSquelchLevel() {
 }
 
 void DemodulatorInstance::setOutputDevice(int device_id) {
-    if (audioThread) {
+    if (!active) {
+        audioThread->setInitOutputDevice(device_id);
+    } else if (audioThread) {
         AudioThreadCommand command;
         command.cmd = AudioThreadCommand::AUDIO_THREAD_CMD_SET_DEVICE;
         command.int_value = device_id;
@@ -232,7 +234,12 @@ void DemodulatorInstance::checkBandwidth() {
 }
 
 void DemodulatorInstance::setDemodulatorType(int demod_type_in) {
-    if (demodulatorThread && threadQueueControl) {
+    if (!active) {
+        currentDemodType = demod_type_in;
+        checkBandwidth();
+        demodulatorPreThread->getParams().demodType = currentDemodType;
+        demodulatorThread->setDemodulatorType(currentDemodType);
+    } else if (demodulatorThread && threadQueueControl) {
         DemodulatorThreadControlCommand command;
         command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_TYPE;
         currentDemodType = demod_type_in;
@@ -247,7 +254,11 @@ int DemodulatorInstance::getDemodulatorType() {
 }
 
 void DemodulatorInstance::setBandwidth(int bw) {
-    if (demodulatorPreThread && threadQueueCommand) {
+    if (!active) {
+        currentBandwidth = bw;
+        checkBandwidth();
+        demodulatorPreThread->getParams().bandwidth = currentBandwidth;
+    } else if (demodulatorPreThread && threadQueueCommand) {
         DemodulatorThreadCommand command;
         command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_BANDWIDTH;
         currentBandwidth = bw;
@@ -255,7 +266,6 @@ void DemodulatorInstance::setBandwidth(int bw) {
         command.llong_value = currentBandwidth;
         threadQueueCommand->push(command);
     }
-    demodulatorPreThread->getParams().bandwidth;
 }
 
 int DemodulatorInstance::getBandwidth() {
@@ -266,17 +276,20 @@ int DemodulatorInstance::getBandwidth() {
 }
 
 void DemodulatorInstance::setFrequency(long long freq) {
-    if ((freq - getBandwidth()/2) <= 0) {
-        freq = getBandwidth()/2;
+    if ((freq - getBandwidth() / 2) <= 0) {
+        freq = getBandwidth() / 2;
     }
-    if (demodulatorPreThread && threadQueueCommand) {
-         DemodulatorThreadCommand command;
-         command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_FREQUENCY;
-         currentFrequency = freq;
-         command.llong_value = freq;
-         threadQueueCommand->push(command);
-     }
-     demodulatorPreThread->getParams().bandwidth;
+    if (!active) {
+        currentFrequency = freq;
+        demodulatorPreThread->getParams().frequency = currentFrequency;
+    } else if (demodulatorPreThread && threadQueueCommand) {
+        DemodulatorThreadCommand command;
+        command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_FREQUENCY;
+        currentFrequency = freq;
+        command.llong_value = freq;
+        threadQueueCommand->push(command);
+    }
+    demodulatorPreThread->getParams().bandwidth;
 }
 
 long long DemodulatorInstance::getFrequency() {

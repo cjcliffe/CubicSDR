@@ -33,7 +33,7 @@ EVT_IDLE(AppFrame::OnIdle)
 wxEND_EVENT_TABLE()
 
 AppFrame::AppFrame() :
-       wxFrame(NULL, wxID_ANY, wxT("CubicSDR " CUBICSDR_VERSION " by Charles J. Cliffe (@ccliffe)")), activeDemodulator(NULL) {
+        wxFrame(NULL, wxID_ANY, wxT("CubicSDR " CUBICSDR_VERSION " by Charles J. Cliffe (@ccliffe)")), activeDemodulator(NULL) {
 
     wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodOpts = new wxBoxSizer(wxVERTICAL);
@@ -42,11 +42,11 @@ AppFrame::AppFrame() :
     wxBoxSizer *demodScopeTray = new wxBoxSizer(wxVERTICAL);
 
     demodModeSelector = new ModeSelectorCanvas(this, NULL);
-    demodModeSelector->addChoice(DEMOD_TYPE_FM,"FM");
-    demodModeSelector->addChoice(DEMOD_TYPE_AM,"AM");
-    demodModeSelector->addChoice(DEMOD_TYPE_LSB,"LSB");
-    demodModeSelector->addChoice(DEMOD_TYPE_USB,"USB");
-    demodModeSelector->addChoice(DEMOD_TYPE_DSB,"DSB");
+    demodModeSelector->addChoice(DEMOD_TYPE_FM, "FM");
+    demodModeSelector->addChoice(DEMOD_TYPE_AM, "AM");
+    demodModeSelector->addChoice(DEMOD_TYPE_LSB, "LSB");
+    demodModeSelector->addChoice(DEMOD_TYPE_USB, "USB");
+    demodModeSelector->addChoice(DEMOD_TYPE_DSB, "DSB");
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
 
 //    demodTray->AddSpacer(2);
@@ -115,6 +115,7 @@ AppFrame::AppFrame() :
     menu->Append(wxID_SAVE, "&Save Session");
     menu->Append(wxID_SAVEAS, "Save Session &As..");
     menu->AppendSeparator();
+    menu->Append(wxID_RESET, "&Reset Session");
     menu->Append(wxID_CLOSE);
 
     menuBar->Append(menu, wxT("&File"));
@@ -159,6 +160,14 @@ AppFrame::AppFrame() :
 
     GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), DEFAULT_FREQ));
 
+    wxAcceleratorEntry entries[3];
+    entries[0].Set(wxACCEL_CTRL, (int) 'O', wxID_OPEN);
+    entries[1].Set(wxACCEL_CTRL, (int) 'S', wxID_SAVE);
+    entries[2].Set(wxACCEL_CTRL, (int) 'A', wxID_SAVEAS);
+
+    wxAcceleratorTable accel(3, entries);
+    SetAcceleratorTable(accel);
+
 //    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 //    wxLogStatus("Double-buffered display %s supported", wxGLCanvas::IsDisplaySupported(attribs) ? "is" : "not");
 //    ShowFullScreen(true);
@@ -181,18 +190,31 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             wxGetApp().setOffset(ofs);
         }
     } else if (event.GetId() == wxID_SAVE) {
-        wxFileDialog saveFileDialog(this, _("Save XML Session file"), "", "", "XML files (*.xml)|*.xml", wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
-       if (saveFileDialog.ShowModal() == wxID_CANCEL) {
-           return;
-       }
-       saveSession(saveFileDialog.GetPath().ToStdString());
+        if (!currentSessionFile.empty()) {
+            saveSession(currentSessionFile);
+        } else {
+            wxFileDialog saveFileDialog(this, _("Save XML Session file"), "", "", "XML files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+            if (saveFileDialog.ShowModal() == wxID_CANCEL) {
+                return;
+            }
+            saveSession(saveFileDialog.GetPath().ToStdString());
+        }
     } else if (event.GetId() == wxID_OPEN) {
-        wxFileDialog openFileDialog(this, _("Open XML Session file"), "", "","XML files (*.xml)|*.xml", wxFD_OPEN|wxFD_FILE_MUST_EXIST);
-       if (openFileDialog.ShowModal() == wxID_CANCEL) {
-           return;
-       }
-       loadSession(openFileDialog.GetPath().ToStdString());
+        wxFileDialog openFileDialog(this, _("Open XML Session file"), "", "", "XML files (*.xml)|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+        if (openFileDialog.ShowModal() == wxID_CANCEL) {
+            return;
+        }
+        loadSession(openFileDialog.GetPath().ToStdString());
     } else if (event.GetId() == wxID_SAVEAS) {
+        wxFileDialog saveFileDialog(this, _("Save XML Session file"), "", "", "XML files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+        if (saveFileDialog.ShowModal() == wxID_CANCEL) {
+            return;
+        }
+        saveSession(saveFileDialog.GetPath().ToStdString());
+    } else if (event.GetId() == wxID_RESET) {
+        wxGetApp().getDemodMgr().terminateAll();
+        wxGetApp().setFrequency(DEFAULT_FREQ);
+        wxGetApp().setOffset(0);
     } else if (event.GetId() == wxID_EXIT) {
         Close(false);
     }
@@ -319,8 +341,8 @@ void AppFrame::saveSession(std::string fileName) {
         *demod->newChild("frequency") = (*instance_i)->getFrequency();
         *demod->newChild("type") = (*instance_i)->getDemodulatorType();
         *demod->newChild("squelch_level") = (*instance_i)->getSquelchLevel();
-        *demod->newChild("squelch_enabled") = (*instance_i)->isSquelchEnabled()?1:0;
-        *demod->newChild("stereo") = (*instance_i)->isStereo()?1:0;
+        *demod->newChild("squelch_enabled") = (*instance_i)->isSquelchEnabled() ? 1 : 0;
+        *demod->newChild("stereo") = (*instance_i)->isStereo() ? 1 : 0;
         *demod->newChild("output_device") = outputDevices[(*instance_i)->getOutputDevice()].name;
     }
 
@@ -333,7 +355,7 @@ bool AppFrame::loadSession(std::string fileName) {
         return false;
     }
 
-//    wxGetApp().getDemodMgr().terminateAll();
+    wxGetApp().getDemodMgr().terminateAll();
 
     try {
         DataNode *header = l.rootNode()->getNext("header");
@@ -346,6 +368,8 @@ bool AppFrame::loadSession(std::string fileName) {
         std::cout << "\tCenter Frequency: " << center_freq << std::endl;
         std::cout << "\tOffset: " << offset << std::endl;
 
+        wxGetApp().setOffset(offset);
+        wxGetApp().setFrequency(center_freq);
 
         DataNode *demodulators = l.rootNode()->getNext("demodulators");
 
@@ -358,17 +382,47 @@ bool AppFrame::loadSession(std::string fileName) {
 
             long bandwidth = *demod->getNext("bandwidth");
             long long freq = *demod->getNext("frequency");
-            int type = demod->hasAnother("type")?*demod->getNext("type"):DEMOD_TYPE_FM;
-            float squelch_level = demod->hasAnother("squelch_level")?(float)*demod->getNext("squelch_level"):0;
-            int squelch_enabled = demod->hasAnother("squelch_enabled")?(int)*demod->getNext("squelch_enabled"):0;
-            int stereo = demod->hasAnother("stereo")?(int)*demod->getNext("stereo"):0;
-            std::string output_device = demod->hasAnother("output_device")?string(*(demod->getNext("output_device"))):"";
+            int type = demod->hasAnother("type") ? *demod->getNext("type") : DEMOD_TYPE_FM;
+            float squelch_level = demod->hasAnother("squelch_level") ? (float) *demod->getNext("squelch_level") : 0;
+            int squelch_enabled = demod->hasAnother("squelch_enabled") ? (int) *demod->getNext("squelch_enabled") : 0;
+            int stereo = demod->hasAnother("stereo") ? (int) *demod->getNext("stereo") : 0;
+            std::string output_device = demod->hasAnother("output_device") ? string(*(demod->getNext("output_device"))) : "";
 
-            std::cout << "\tFound demodulator at frequency " << freq << " type " << type << std::endl;
+            DemodulatorInstance *newDemod = wxGetApp().getDemodMgr().newThread();
+            newDemod->setDemodulatorType(type);
+            newDemod->setBandwidth(bandwidth);
+            newDemod->setFrequency(freq);
+            newDemod->updateLabel(freq);
+            if (squelch_enabled) {
+                newDemod->setSquelchEnabled(true);
+                newDemod->setSquelchLevel(squelch_level);
+            }
+            if (stereo) {
+                newDemod->setStereo(true);
+            }
+
+            bool found_device = false;
+            std::map<int, RtAudio::DeviceInfo>::iterator i;
+            for (i = outputDevices.begin(); i != outputDevices.end(); i++) {
+                if (i->second.name == output_device) {
+                    newDemod->setOutputDevice(i->first);
+                    found_device = true;
+                }
+            }
+
+            if (!found_device) {
+                std::cout << "\tWarning: named output device '" << output_device << "' was not found. Using default output.";
+            }
+
+            newDemod->run();
+
+            wxGetApp().bindDemodulator(newDemod);
+
+            std::cout << "\tAdded demodulator at frequency " << freq << " type " << type << std::endl;
             std::cout << "\t\tBandwidth: " << bandwidth << std::endl;
             std::cout << "\t\tSquelch Level: " << squelch_level << std::endl;
-            std::cout << "\t\tSquelch Enabled: " << (squelch_enabled?"true":"false") << std::endl;
-            std::cout << "\t\tStereo: " << (stereo?"true":"false") << std::endl;
+            std::cout << "\t\tSquelch Enabled: " << (squelch_enabled ? "true" : "false") << std::endl;
+            std::cout << "\t\tStereo: " << (stereo ? "true" : "false") << std::endl;
             std::cout << "\t\tOutput Device: " << output_device << std::endl;
 
         }
@@ -381,4 +435,5 @@ bool AppFrame::loadSession(std::string fileName) {
         return false;
     }
 
+    currentSessionFile = fileName;
 }

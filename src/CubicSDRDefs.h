@@ -11,8 +11,7 @@
 #endif
 #define DEFAULT_FFT_SIZE 2048
 
-//#define DEFAULT_FREQ 98900000
-#define DEFAULT_FREQ 132000000
+#define DEFAULT_FREQ 100000000
 #define AUDIO_FREQUENCY 44100
 
 #include <mutex>

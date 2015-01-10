@@ -130,9 +130,8 @@ void SDRPostThread::threadMain() {
                 std::vector<DemodulatorInstance *>::iterator i;
                 for (i = demodulators.begin(); i != demodulators.end(); i++) {
                     DemodulatorInstance *demod = *i;
-
-                    if (demod->getParams().frequency != data_in->frequency
-                            && abs(data_in->frequency - demod->getParams().frequency) > (SRATE / 2)) {
+                    if (demod->getFrequency() != data_in->frequency
+                            && abs(data_in->frequency - demod->getFrequency()) > (SRATE / 2)) {
                         continue;
                     }
                     activeDemods++;
@@ -165,8 +164,8 @@ void SDRPostThread::threadMain() {
                         DemodulatorInstance *demod = *i;
                         DemodulatorThreadInputQueue *demodQueue = demod->threadQueueDemod;
 
-                        if (demod->getParams().frequency != data_in->frequency
-                                && abs(data_in->frequency - demod->getParams().frequency) > (SRATE / 2)) {
+                        if (demod->getFrequency() != data_in->frequency
+                                && abs(data_in->frequency - demod->getFrequency()) > (SRATE / 2)) {
                             if (demod->isActive()) {
                                 demod->setActive(false);
                                 DemodulatorThreadIQData *dummyDataOut = new DemodulatorThreadIQData;
