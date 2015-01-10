@@ -34,15 +34,15 @@ void TuningContext::DrawBegin() {
     glDisable(GL_TEXTURE_2D);
 }
 
-void TuningContext::Draw(float r, float g, float b, float a, float level) {
+void TuningContext::Draw(float r, float g, float b, float a, float p1, float p2) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
     glColor4f(r, g, b, a);
     glBegin(GL_QUADS);
-    glVertex2f(1.0, -1.0 + 2.0 * level);
-    glVertex2f(-1.0, -1.0 + 2.0 * level);
-    glVertex2f(-1.0, -1.0);
-    glVertex2f(1.0, -1.0);
+    glVertex2f(-1.0+p2*2.0, 1.0);
+    glVertex2f(-1.0+p1*2.0, 1.0);
+    glVertex2f(-1.0+p1*2.0, -1.0);
+    glVertex2f(-1.0+p2*2.0, -1.0);
     glEnd();
     glDisable(GL_BLEND);
 }
@@ -69,6 +69,8 @@ void TuningContext::DrawDemodFreqBw(long long freq, unsigned int bw, long long c
         fontHeight = 12;
     }
 
+    glColor3f(0.85, 0.85, 0.85);
+
     getFont(fontSize).drawString("Freq: ", -0.75, 0, fontHeight, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
     if (bw) {
         freqStr.str("");
@@ -78,11 +80,6 @@ void TuningContext::DrawDemodFreqBw(long long freq, unsigned int bw, long long c
     }
     getFont(fontSize).drawString(freqStr.str(), -0.75, 0, fontHeight, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
 
-    glColor3f(0.65, 0.65, 0.65);
-    glBegin(GL_LINES);
-    glVertex2f(-0.275, -1.0);
-    glVertex2f(-0.275, 1.0);
-    glEnd();
 
     getFont(fontSize).drawString("BW: ", -0.10, 0, fontHeight, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
     if (bw) {
@@ -93,11 +90,6 @@ void TuningContext::DrawDemodFreqBw(long long freq, unsigned int bw, long long c
     }
     getFont(fontSize).drawString(freqStr.str(), -0.10, 0, fontHeight, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
 
-    glColor3f(0.65, 0.65, 0.65);
-    glBegin(GL_LINES);
-    glVertex2f(0.275, -1.0);
-    glVertex2f(0.275, 1.0);
-    glEnd();
 
     getFont(fontSize).drawString("CTR: ", 0.50, 0, fontHeight, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
     if (center) {
@@ -107,5 +99,15 @@ void TuningContext::DrawDemodFreqBw(long long freq, unsigned int bw, long long c
         freqStr.str("---");
     }
     getFont(fontSize).drawString(freqStr.str(), 0.50, 0, fontHeight, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
+
+
+    glColor3f(0.65, 0.65, 0.65);
+    glBegin(GL_LINES);
+    glVertex2f(-0.275, -1.0);
+    glVertex2f(-0.275, 1.0);
+    glVertex2f(0.275, -1.0);
+    glVertex2f(0.275, 1.0);
+    glEnd();
+
 }
 

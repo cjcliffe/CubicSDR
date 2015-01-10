@@ -14,6 +14,7 @@
 
 #define wxID_RT_AUDIO_DEVICE 1000
 #define wxID_SET_FREQ_OFFSET 2001
+#define wxID_RESET 2002
 
 // Define a new frame type
 class AppFrame: public wxFrame {
@@ -22,6 +23,9 @@ public:
     ~AppFrame();
     void OnThread(wxCommandEvent& event);
     void OnEventInput(wxThreadEvent& event);
+
+    void saveSession(std::string fileName);
+    bool loadSession(std::string fileName);
 
 private:
     void OnMenu(wxCommandEvent& event);
@@ -45,6 +49,8 @@ private:
     std::map<int,RtAudio::DeviceInfo> inputDevices;
     std::map<int,RtAudio::DeviceInfo> outputDevices;
     std::map<int,wxMenuItem *> outputDeviceMenuItems;
+
+    std::string currentSessionFile;
 
     wxDECLARE_EVENT_TABLE();
 };

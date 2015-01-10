@@ -1,8 +1,8 @@
 #include "DemodulatorInstance.h"
 
 DemodulatorInstance::DemodulatorInstance() :
-        t_Demod(NULL), t_PreDemod(NULL), t_Audio(NULL), threadQueueDemod(NULL), demodulatorThread(NULL), terminated(false), audioTerminated(false), demodTerminated(
-        false), preDemodTerminated(false), active(false), squelch(false), stereo(false), currentFrequency(0), currentBandwidth(0) {
+        t_Demod(NULL), t_PreDemod(NULL), t_Audio(NULL), threadQueueDemod(NULL), demodulatorThread(NULL), terminated(true), audioTerminated(true), demodTerminated(
+        true), preDemodTerminated(true), active(false), squelch(false), stereo(false), currentFrequency(0), currentBandwidth(0) {
 
     label = new std::string("Unnamed");
     threadQueueDemod = new DemodulatorThreadInputQueue;
@@ -26,9 +26,13 @@ DemodulatorInstance::DemodulatorInstance() :
 DemodulatorInstance::~DemodulatorInstance() {
     delete audioThread;
     delete demodulatorThread;
-
-    delete audioInputQueue;
+    delete demodulatorPreThread;
     delete threadQueueDemod;
+    delete threadQueuePostDemod;
+    delete threadQueueCommand;
+    delete threadQueueNotify;
+    delete threadQueueControl;
+    delete audioInputQueue;
 }
 
 void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {
@@ -36,7 +40,16 @@ void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQu
 }
 
 void DemodulatorInstance::run() {
+    if (active) {
+        return;
+    }
+
+//    while (!isTerminated()) {
+//        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+//    }
+
     currentFrequency = demodulatorPreThread->getParams().frequency;
+    currentDemodType = demodulatorThread->getDemodulatorType();
 
     t_Audio = new std::thread(&AudioThread::threadMain, audioThread);
 
@@ -63,6 +76,8 @@ void DemodulatorInstance::run() {
     t_Demod = new std::thread(&DemodulatorThread::threadMain, demodulatorThread);
 #endif
     active = true;
+    audioTerminated = demodTerminated = preDemodTerminated = terminated = false;
+
 }
 
 void DemodulatorInstance::updateLabel(long long freq) {
@@ -109,12 +124,10 @@ bool DemodulatorInstance::isTerminated() {
 
         switch (cmd.cmd) {
         case DemodulatorThreadCommand::DEMOD_THREAD_CMD_AUDIO_TERMINATED:
-            audioThread = NULL;
             t_Audio->join();
             audioTerminated = true;
             break;
         case DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_TERMINATED:
-            demodulatorThread = NULL;
 #ifdef __APPLE__
             pthread_join(t_Demod, NULL);
 #else
@@ -123,7 +136,6 @@ bool DemodulatorInstance::isTerminated() {
             demodTerminated = true;
             break;
         case DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_PREPROCESS_TERMINATED:
-            demodulatorPreThread = NULL;
 #ifdef __APPLE__
             pthread_join(t_PreDemod, NULL);
 #else
@@ -146,8 +158,12 @@ bool DemodulatorInstance::isActive() {
 }
 
 void DemodulatorInstance::setActive(bool state) {
+    if (active && !state) {
+        audioThread->setActive(state);
+    } else if (!active && state) {
+        audioThread->setActive(state);
+    }
     active = state;
-    audioThread->setActive(state);
 }
 
 bool DemodulatorInstance::isStereo() {
@@ -197,7 +213,9 @@ float DemodulatorInstance::getSquelchLevel() {
 }
 
 void DemodulatorInstance::setOutputDevice(int device_id) {
-    if (audioThread) {
+    if (!active) {
+        audioThread->setInitOutputDevice(device_id);
+    } else if (audioThread) {
         AudioThreadCommand command;
         command.cmd = AudioThreadCommand::AUDIO_THREAD_CMD_SET_DEVICE;
         command.int_value = device_id;
@@ -216,7 +234,12 @@ void DemodulatorInstance::checkBandwidth() {
 }
 
 void DemodulatorInstance::setDemodulatorType(int demod_type_in) {
-    if (demodulatorThread && threadQueueControl) {
+    if (!active) {
+        currentDemodType = demod_type_in;
+        checkBandwidth();
+        demodulatorPreThread->getParams().demodType = currentDemodType;
+        demodulatorThread->setDemodulatorType(currentDemodType);
+    } else if (demodulatorThread && threadQueueControl) {
         DemodulatorThreadControlCommand command;
         command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_TYPE;
         currentDemodType = demod_type_in;
@@ -231,7 +254,11 @@ int DemodulatorInstance::getDemodulatorType() {
 }
 
 void DemodulatorInstance::setBandwidth(int bw) {
-    if (demodulatorPreThread && threadQueueCommand) {
+    if (!active) {
+        currentBandwidth = bw;
+        checkBandwidth();
+        demodulatorPreThread->getParams().bandwidth = currentBandwidth;
+    } else if (demodulatorPreThread && threadQueueCommand) {
         DemodulatorThreadCommand command;
         command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_BANDWIDTH;
         currentBandwidth = bw;
@@ -239,7 +266,6 @@ void DemodulatorInstance::setBandwidth(int bw) {
         command.llong_value = currentBandwidth;
         threadQueueCommand->push(command);
     }
-    demodulatorPreThread->getParams().bandwidth;
 }
 
 int DemodulatorInstance::getBandwidth() {
@@ -250,17 +276,20 @@ int DemodulatorInstance::getBandwidth() {
 }
 
 void DemodulatorInstance::setFrequency(long long freq) {
-    if ((freq - getBandwidth()/2) <= 0) {
-        freq = getBandwidth()/2;
+    if ((freq - getBandwidth() / 2) <= 0) {
+        freq = getBandwidth() / 2;
     }
-    if (demodulatorPreThread && threadQueueCommand) {
-         DemodulatorThreadCommand command;
-         command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_FREQUENCY;
-         currentFrequency = freq;
-         command.llong_value = freq;
-         threadQueueCommand->push(command);
-     }
-     demodulatorPreThread->getParams().bandwidth;
+    if (!active) {
+        currentFrequency = freq;
+        demodulatorPreThread->getParams().frequency = currentFrequency;
+    } else if (demodulatorPreThread && threadQueueCommand) {
+        DemodulatorThreadCommand command;
+        command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_FREQUENCY;
+        currentFrequency = freq;
+        command.llong_value = freq;
+        threadQueueCommand->push(command);
+    }
+    demodulatorPreThread->getParams().bandwidth;
 }
 
 long long DemodulatorInstance::getFrequency() {

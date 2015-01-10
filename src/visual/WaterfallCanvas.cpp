@@ -30,6 +30,7 @@ EVT_RIGHT_DOWN(WaterfallCanvas::OnMouseRightDown)
 EVT_RIGHT_UP(WaterfallCanvas::OnMouseRightReleased)
 EVT_LEAVE_WINDOW(WaterfallCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(WaterfallCanvas::OnMouseEnterWindow)
+EVT_MOUSEWHEEL(WaterfallCanvas::OnMouseWheelMoved)
 wxEND_EVENT_TABLE()
 
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
@@ -302,6 +303,9 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
     if (mouseZoom != 1) {
         currentZoom = mouseZoom;
         mouseZoom = mouseZoom + (1.0 - mouseZoom) * 0.2;
+        if (fabs(mouseZoom-1.0)<0.01) {
+            mouseZoom = 1;
+        }
     }
 
     long long bw;
@@ -674,6 +678,13 @@ void WaterfallCanvas::OnMouseDown(wxMouseEvent& event) {
 
 void WaterfallCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseWheelMoved(event);
+    float movement = (float)event.GetWheelRotation() / (float)event.GetLinesPerAction();
+
+#ifdef __APPLE__
+    mouseZoom = 1.0f - movement/100.0f;
+#else
+    mouseZoom = 1.0f - movement/1000.0f;
+#endif
 }
 
 void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {

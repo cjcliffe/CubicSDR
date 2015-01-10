@@ -35,6 +35,7 @@ private:
 
     std::string helpTip;
     float dragAccum;
+    float uxDown;
     //
 wxDECLARE_EVENT_TABLE();
 };

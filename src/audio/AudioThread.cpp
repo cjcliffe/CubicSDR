@@ -10,8 +10,8 @@ std::map<int, std::thread *> AudioThread::deviceThread;
 #endif
 
 AudioThread::AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify) :
-        currentInput(NULL), inputQueue(inputQueue), audioQueuePtr(0), underflowCount(0), terminated(false), active(false), outputDevice(-1), gain(1.0), threadQueueNotify(
-                threadQueueNotify) {
+        currentInput(NULL), inputQueue(inputQueue), audioQueuePtr(0), underflowCount(0), terminated(false), active(false), outputDevice(-1), gain(
+                1.0), threadQueueNotify(threadQueueNotify) {
 #ifdef __APPLE__
     boundThreads = new std::vector<AudioThread *>;
 #endif
@@ -72,6 +72,9 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                 continue;
             }
             srcmix->inputQueue->pop(srcmix->currentInput);
+            if (srcmix->terminated) {
+                continue;
+            }
             srcmix->audioQueuePtr = 0;
             continue;
         }
@@ -88,6 +91,9 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                     continue;
                 }
                 srcmix->inputQueue->pop(srcmix->currentInput);
+                if (srcmix->terminated) {
+                    continue;
+                }
                 srcmix->audioQueuePtr = 0;
             }
             continue;
@@ -104,6 +110,9 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                         continue;
                     }
                     srcmix->inputQueue->pop(srcmix->currentInput);
+                    if (srcmix->terminated) {
+                        continue;
+                    }
                     srcmix->audioQueuePtr = 0;
                 }
                 if (srcmix->currentInput && srcmix->currentInput->data.size()) {
@@ -124,6 +133,9 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                         continue;
                     }
                     srcmix->inputQueue->pop(srcmix->currentInput);
+                    if (srcmix->terminated) {
+                        continue;
+                    }
                     srcmix->audioQueuePtr = 0;
                 }
                 if (srcmix->currentInput && srcmix->currentInput->data.size()) {
@@ -151,6 +163,9 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
 
     if (!src->currentInput) {
         src->inputQueue->pop(src->currentInput);
+        if (src->terminated) {
+            return 1;
+        }
         src->audioQueuePtr = 0;
         return 0;
     }
@@ -167,6 +182,9 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                 return 1;
             }
             src->inputQueue->pop(src->currentInput);
+            if (src->terminated) {
+                return 1;
+            }
             src->audioQueuePtr = 0;
         }
         return 0;
@@ -183,6 +201,9 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                     return 1;
                 }
                 src->inputQueue->pop(src->currentInput);
+                if (src->terminated) {
+                    return 1;
+                }
                 src->audioQueuePtr = 0;
             }
             if (src->currentInput && src->currentInput->data.size()) {
@@ -201,6 +222,9 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                     return 1;
                 }
                 src->inputQueue->pop(src->currentInput);
+                if (src->terminated) {
+                    return 1;
+                }
                 src->audioQueuePtr = 0;
             }
             if (src->currentInput && src->currentInput->data.size()) {
@@ -344,9 +368,11 @@ void AudioThread::threadMain() {
         return;
     }
 
-    setupDevice((outputDevice.load() == -1)?(dac.getDefaultOutputDevice()):outputDevice.load());
+    setupDevice((outputDevice.load() == -1) ? (dac.getDefaultOutputDevice()) : outputDevice.load());
 
     std::cout << "Audio thread started." << std::endl;
+
+    terminated = false;
 
     while (!terminated) {
         AudioThreadCommand command;
@@ -357,28 +383,34 @@ void AudioThread::threadMain() {
         }
     }
 
+    AudioThreadInput dummy;
+    inputQueue->push(&dummy);
+
 #ifdef __APPLE__
     if (deviceController[parameters.deviceId] != this) {
         deviceController[parameters.deviceId]->removeThread(this);
     } else {
         try {
-            dac.stopStream();
-            dac.closeStream();
+            if (dac.isStreamOpen()) {
+                if (dac.isStreamRunning()) {
+                    dac.stopStream();
+                }
+                dac.closeStream();
+            }
         } catch (RtAudioError& e) {
             e.printMessage();
         }
     }
 #else
     try {
-        // Stop the stream
-        dac.stopStream();
-        dac.closeStream();
+        if (dac.isStreamOpen()) {
+            if (dac.isStreamRunning()) {
+                dac.stopStream();
+            }
+            dac.closeStream();
+        }
     } catch (RtAudioError& e) {
         e.printMessage();
-    }
-
-    if (dac.isStreamOpen()) {
-        dac.closeStream();
     }
 #endif
 
@@ -424,7 +456,6 @@ void AudioThread::setActive(bool state) {
 #endif
     active = state;
 }
-
 
 AudioThreadCommandQueue *AudioThread::getCommandQueue() {
     return &cmdQueue;

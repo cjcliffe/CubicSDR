@@ -16,6 +16,7 @@ DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* iqInputQue
     demodFM = freqdem_create(0.5);
     demodAM_USB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_LSB, 1);
     demodAM_LSB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_USB, 1);
+    demodAM_DSB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_DSB, 1);
     demodAM_DSB_CSP = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_DSB, 0);
     demodAM = demodAM_DSB_CSP;
 
@@ -91,6 +92,8 @@ void DemodulatorThread::threadMain() {
 
     std::cout << "Demodulator thread started.." << std::endl;
 
+    terminated = false;
+
     while (!terminated) {
         DemodulatorThreadPostIQData *inp;
         iqInputQueue->pop(inp);
@@ -112,9 +115,9 @@ void DemodulatorThread::threadMain() {
             audioResampler = inp->audioResampler;
             stereoResampler = inp->stereoResampler;
 
-            ampmodem_reset(demodAM_USB);
-            ampmodem_reset(demodAM_LSB);
-            ampmodem_reset(demodAM_DSB_CSP);
+            if (demodAM) {
+                ampmodem_reset(demodAM);
+            }
             freqdem_reset(demodFM);
         }
 
@@ -174,6 +177,7 @@ void DemodulatorThread::threadMain() {
                 }
                 break;
             case DEMOD_TYPE_AM:
+            case DEMOD_TYPE_DSB:
                 break;
             }
 
@@ -350,15 +354,23 @@ void DemodulatorThread::threadMain() {
             if (newDemodType != DEMOD_TYPE_NULL) {
                 switch (newDemodType) {
                 case DEMOD_TYPE_FM:
+                    freqdem_reset(demodFM);
                     break;
                 case DEMOD_TYPE_LSB:
                     demodAM = demodAM_USB;
+                    ampmodem_reset(demodAM);
                     break;
                 case DEMOD_TYPE_USB:
                     demodAM = demodAM_LSB;
+                    ampmodem_reset(demodAM);
+                    break;
+                case DEMOD_TYPE_DSB:
+                    demodAM = demodAM_DSB;
+                    ampmodem_reset(demodAM);
                     break;
                 case DEMOD_TYPE_AM:
                     demodAM = demodAM_DSB_CSP;
+                    ampmodem_reset(demodAM);
                     break;
                 }
                 demodulatorType = newDemodType;

@@ -1,5 +1,7 @@
 #pragma once
 
+#define CUBICSDR_VERSION "v0.01a"
+
 #ifdef __APPLE__
 #define BUF_SIZE (16384*2)
 #define SRATE 2000000
@@ -9,8 +11,7 @@
 #endif
 #define DEFAULT_FFT_SIZE 2048
 
-//#define DEFAULT_FREQ 98900000
-#define DEFAULT_FREQ 132000000
+#define DEFAULT_FREQ 100000000
 #define AUDIO_FREQUENCY 44100
 
 #include <mutex>

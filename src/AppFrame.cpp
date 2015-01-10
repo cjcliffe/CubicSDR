@@ -7,6 +7,7 @@
 #endif
 
 #include "wx/numdlg.h"
+#include "wx/filedlg.h"
 
 #if !wxUSE_GLCANVAS
 #error "OpenGL required: set wxUSE_GLCANVAS to 1 and rebuild the library"
@@ -17,6 +18,7 @@
 #include "DemodulatorMgr.h"
 #include "AudioThread.h"
 #include "CubicSDR.h"
+#include "DataTree.h"
 
 #include <thread>
 
@@ -26,13 +28,12 @@ wxBEGIN_EVENT_TABLE(AppFrame, wxFrame)
 //EVT_MENU(wxID_NEW, AppFrame::OnNewWindow)
 EVT_MENU(wxID_CLOSE, AppFrame::OnClose)
 EVT_MENU(wxID_ANY, AppFrame::OnMenu)
-
 EVT_COMMAND(wxID_ANY, wxEVT_THREAD, AppFrame::OnThread)
 EVT_IDLE(AppFrame::OnIdle)
 wxEND_EVENT_TABLE()
 
 AppFrame::AppFrame() :
-        wxFrame(NULL, wxID_ANY, wxT("CubicSDR v0.1a by Charles J. Cliffe (@ccliffe)")), activeDemodulator(NULL) {
+        wxFrame(NULL, wxID_ANY, wxT("CubicSDR " CUBICSDR_VERSION " by Charles J. Cliffe (@ccliffe)")), activeDemodulator(NULL) {
 
     wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodOpts = new wxBoxSizer(wxVERTICAL);
@@ -40,12 +41,12 @@ AppFrame::AppFrame() :
     wxBoxSizer *demodTray = new wxBoxSizer(wxHORIZONTAL);
     wxBoxSizer *demodScopeTray = new wxBoxSizer(wxVERTICAL);
 
-
     demodModeSelector = new ModeSelectorCanvas(this, NULL);
-    demodModeSelector->addChoice(DEMOD_TYPE_FM,"FM");
-    demodModeSelector->addChoice(DEMOD_TYPE_AM,"AM");
-    demodModeSelector->addChoice(DEMOD_TYPE_LSB,"LSB");
-    demodModeSelector->addChoice(DEMOD_TYPE_USB,"USB");
+    demodModeSelector->addChoice(DEMOD_TYPE_FM, "FM");
+    demodModeSelector->addChoice(DEMOD_TYPE_AM, "AM");
+    demodModeSelector->addChoice(DEMOD_TYPE_LSB, "LSB");
+    demodModeSelector->addChoice(DEMOD_TYPE_USB, "USB");
+    demodModeSelector->addChoice(DEMOD_TYPE_DSB, "DSB");
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
 
 //    demodTray->AddSpacer(2);
@@ -110,7 +111,11 @@ AppFrame::AppFrame() :
     wxMenu *menu = new wxMenu;
 //    menu->Append(wxID_NEW);
     menu->Append(wxID_SET_FREQ_OFFSET, "Set Frequency Offset");
+    menu->Append(wxID_OPEN, "&Open Session");
+    menu->Append(wxID_SAVE, "&Save Session");
+    menu->Append(wxID_SAVEAS, "Save Session &As..");
     menu->AppendSeparator();
+    menu->Append(wxID_RESET, "&Reset Session");
     menu->Append(wxID_CLOSE);
 
     menuBar->Append(menu, wxT("&File"));
@@ -155,6 +160,14 @@ AppFrame::AppFrame() :
 
     GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), DEFAULT_FREQ));
 
+    wxAcceleratorEntry entries[3];
+    entries[0].Set(wxACCEL_CTRL, (int) 'O', wxID_OPEN);
+    entries[1].Set(wxACCEL_CTRL, (int) 'S', wxID_SAVE);
+    entries[2].Set(wxACCEL_CTRL, (int) 'A', wxID_SAVEAS);
+
+    wxAcceleratorTable accel(3, entries);
+    SetAcceleratorTable(accel);
+
 //    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 //    wxLogStatus("Double-buffered display %s supported", wxGLCanvas::IsDisplaySupported(attribs) ? "is" : "not");
 //    ShowFullScreen(true);
@@ -171,15 +184,44 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             activeDemodulator = NULL;
         }
     } else if (event.GetId() == wxID_SET_FREQ_OFFSET) {
-        long ofs = wxGetNumberFromUser ("Shift the displayed frequency by this amount.\ni.e. -125000000 for -125 MHz", "Frequency (Hz)", "Frequency Offset", wxGetApp().getOffset(), -2000000000, 2000000000, this);
+        long ofs = wxGetNumberFromUser("Shift the displayed frequency by this amount.\ni.e. -125000000 for -125 MHz", "Frequency (Hz)",
+                "Frequency Offset", wxGetApp().getOffset(), -2000000000, 2000000000, this);
         if (ofs != -1) {
             wxGetApp().setOffset(ofs);
         }
+    } else if (event.GetId() == wxID_SAVE) {
+        if (!currentSessionFile.empty()) {
+            saveSession(currentSessionFile);
+        } else {
+            wxFileDialog saveFileDialog(this, _("Save XML Session file"), "", "", "XML files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+            if (saveFileDialog.ShowModal() == wxID_CANCEL) {
+                return;
+            }
+            saveSession(saveFileDialog.GetPath().ToStdString());
+        }
+    } else if (event.GetId() == wxID_OPEN) {
+        wxFileDialog openFileDialog(this, _("Open XML Session file"), "", "", "XML files (*.xml)|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+        if (openFileDialog.ShowModal() == wxID_CANCEL) {
+            return;
+        }
+        loadSession(openFileDialog.GetPath().ToStdString());
+    } else if (event.GetId() == wxID_SAVEAS) {
+        wxFileDialog saveFileDialog(this, _("Save XML Session file"), "", "", "XML files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+        if (saveFileDialog.ShowModal() == wxID_CANCEL) {
+            return;
+        }
+        saveSession(saveFileDialog.GetPath().ToStdString());
+    } else if (event.GetId() == wxID_RESET) {
+        wxGetApp().getDemodMgr().terminateAll();
+        wxGetApp().setFrequency(DEFAULT_FREQ);
+        wxGetApp().setOffset(0);
+    } else if (event.GetId() == wxID_EXIT) {
+        Close(false);
     }
 }
 
 void AppFrame::OnClose(wxCommandEvent& WXUNUSED(event)) {
-    Close(true);
+    Close(false);
 }
 
 void AppFrame::OnNewWindow(wxCommandEvent& WXUNUSED(event)) {
@@ -280,4 +322,118 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     if (!work_done) {
         event.Skip();
     }
+}
+
+void AppFrame::saveSession(std::string fileName) {
+    DataTree s("cubicsdr_session");
+    DataNode *header = s.rootNode()->newChild("header");
+    *header->newChild("version") = std::string(CUBICSDR_VERSION);
+    *header->newChild("center_freq") = wxGetApp().getFrequency();
+    *header->newChild("offset") = wxGetApp().getOffset();
+
+    DataNode *demods = s.rootNode()->newChild("demodulators");
+
+    std::vector<DemodulatorInstance *> &instances = wxGetApp().getDemodMgr().getDemodulators();
+    std::vector<DemodulatorInstance *>::iterator instance_i;
+    for (instance_i = instances.begin(); instance_i != instances.end(); instance_i++) {
+        DataNode *demod = demods->newChild("demodulator");
+        *demod->newChild("bandwidth") = (*instance_i)->getBandwidth();
+        *demod->newChild("frequency") = (*instance_i)->getFrequency();
+        *demod->newChild("type") = (*instance_i)->getDemodulatorType();
+        *demod->newChild("squelch_level") = (*instance_i)->getSquelchLevel();
+        *demod->newChild("squelch_enabled") = (*instance_i)->isSquelchEnabled() ? 1 : 0;
+        *demod->newChild("stereo") = (*instance_i)->isStereo() ? 1 : 0;
+        *demod->newChild("output_device") = outputDevices[(*instance_i)->getOutputDevice()].name;
+    }
+
+    s.SaveToFileXML(fileName);
+}
+
+bool AppFrame::loadSession(std::string fileName) {
+    DataTree l;
+    if (!l.LoadFromFileXML(fileName)) {
+        return false;
+    }
+
+    wxGetApp().getDemodMgr().terminateAll();
+
+    try {
+        DataNode *header = l.rootNode()->getNext("header");
+
+        std::string version(*header->getNext("version"));
+        long long center_freq = *header->getNext("center_freq");
+        long long offset = *header->getNext("offset");
+
+        std::cout << "Loading " << version << " session file" << std::endl;
+        std::cout << "\tCenter Frequency: " << center_freq << std::endl;
+        std::cout << "\tOffset: " << offset << std::endl;
+
+        wxGetApp().setOffset(offset);
+        wxGetApp().setFrequency(center_freq);
+
+        DataNode *demodulators = l.rootNode()->getNext("demodulators");
+
+        while (demodulators->hasAnother("demodulator")) {
+            DataNode *demod = demodulators->getNext("demodulator");
+
+            if (!demod->hasAnother("bandwidth") || !demod->hasAnother("frequency")) {
+                continue;
+            }
+
+            long bandwidth = *demod->getNext("bandwidth");
+            long long freq = *demod->getNext("frequency");
+            int type = demod->hasAnother("type") ? *demod->getNext("type") : DEMOD_TYPE_FM;
+            float squelch_level = demod->hasAnother("squelch_level") ? (float) *demod->getNext("squelch_level") : 0;
+            int squelch_enabled = demod->hasAnother("squelch_enabled") ? (int) *demod->getNext("squelch_enabled") : 0;
+            int stereo = demod->hasAnother("stereo") ? (int) *demod->getNext("stereo") : 0;
+            std::string output_device = demod->hasAnother("output_device") ? string(*(demod->getNext("output_device"))) : "";
+
+            DemodulatorInstance *newDemod = wxGetApp().getDemodMgr().newThread();
+            newDemod->setDemodulatorType(type);
+            newDemod->setBandwidth(bandwidth);
+            newDemod->setFrequency(freq);
+            newDemod->updateLabel(freq);
+            if (squelch_enabled) {
+                newDemod->setSquelchEnabled(true);
+                newDemod->setSquelchLevel(squelch_level);
+            }
+            if (stereo) {
+                newDemod->setStereo(true);
+            }
+
+            bool found_device = false;
+            std::map<int, RtAudio::DeviceInfo>::iterator i;
+            for (i = outputDevices.begin(); i != outputDevices.end(); i++) {
+                if (i->second.name == output_device) {
+                    newDemod->setOutputDevice(i->first);
+                    found_device = true;
+                }
+            }
+
+            if (!found_device) {
+                std::cout << "\tWarning: named output device '" << output_device << "' was not found. Using default output.";
+            }
+
+            newDemod->run();
+
+            wxGetApp().bindDemodulator(newDemod);
+
+            std::cout << "\tAdded demodulator at frequency " << freq << " type " << type << std::endl;
+            std::cout << "\t\tBandwidth: " << bandwidth << std::endl;
+            std::cout << "\t\tSquelch Level: " << squelch_level << std::endl;
+            std::cout << "\t\tSquelch Enabled: " << (squelch_enabled ? "true" : "false") << std::endl;
+            std::cout << "\t\tStereo: " << (stereo ? "true" : "false") << std::endl;
+            std::cout << "\t\tOutput Device: " << output_device << std::endl;
+
+        }
+
+    } catch (DataInvalidChildException &e) {
+        std::cout << e.what() << std::endl;
+        return false;
+    } catch (DataTypeMismatchException &e) {
+        std::cout << e.what() << std::endl;
+        return false;
+    }
+
+    currentSessionFile = fileName;
 }

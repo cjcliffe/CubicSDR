@@ -12,6 +12,7 @@
 #define DEMOD_TYPE_AM 2
 #define DEMOD_TYPE_LSB 3
 #define DEMOD_TYPE_USB 4
+#define DEMOD_TYPE_DSB 5
 
 
 class DemodulatorThread;

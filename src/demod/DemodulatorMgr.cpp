@@ -29,6 +29,7 @@ DemodulatorInstance *DemodulatorMgr::newThread() {
 void DemodulatorMgr::terminateAll() {
     while (demods.size()) {
         DemodulatorInstance *d = demods.back();
+        wxGetApp().removeDemodulator(d);
         deleteThread(d);
     }
 }
@@ -54,8 +55,8 @@ void DemodulatorMgr::deleteThread(DemodulatorInstance *demod) {
 
     if (i != demods.end()) {
         demods.erase(i);
-        demod->terminate();
     }
+    demod->terminate();
 
     demods_deleted.push_back(demod);
 
