@@ -33,23 +33,29 @@ using namespace std;
 
 #define STRINGIFY(A)  #A
 
-DataElement::DataElement() {
-    data_type = DATA_NULL;
-    data_val = NULL;
-    data_size = 0;
-    unit_size = 0;
+DataElement::DataElement() : data_type(DATA_NULL), data_val(NULL), data_size(0), unit_size(0) {
 }
 
 DataElement::~DataElement() {
-    if (data_val)
+    if (data_val) {
         delete data_val;
+        data_val = NULL;
+    }
 }
 
 void DataElement::data_init(long data_size_in) {
-    if (data_val)
+    if (data_val) {
         delete data_val;
+        data_val = NULL;
+    }
     data_size = data_size_in;
-    data_val = new char[data_size];
+    if (data_size) {
+        data_val = new char[data_size];
+    }
+}
+
+char * DataElement::getDataPointer() {
+    return data_val;
 }
 
 int DataElement::getDataType() {
@@ -84,6 +90,7 @@ DataElementSetNumericDef(DATA_LONGDOUBLE, long double)
 
 void DataElement::set(const char *data_in, long size_in) {
     data_type = DATA_VOID;
+    if (!data_size) { return; }
     data_init(size_in);
     memcpy(data_val, data_in, data_size);
 }
@@ -220,7 +227,9 @@ void DataElement::get(string &str_in) throw (DataTypeMismatchException) {
         str_in.erase(str_in.begin(), str_in.end());
     }
 
-    str_in.append(data_val);
+    if (data_val) {
+        str_in.append(data_val);
+    }
 }
 
 void DataElement::get(vector<string> &strvect_in) throw (DataTypeMismatchException) {
@@ -342,20 +351,23 @@ void DataElement::setSerialized(char *ser_str) {
 
 /* DataNode class */
 
-DataNode::DataNode() {
-    ptr = 0;
-    parentNode = NULL;
+DataNode::DataNode(): ptr(0), parentNode(NULL) {
+    data_elem = new DataElement();
 }
 
-DataNode::DataNode(const char *name_in) {
-    ptr = 0;
+DataNode::DataNode(const char *name_in): ptr(0), parentNode(NULL) {
     node_name = name_in;
-    parentNode = NULL;
+    data_elem = new DataElement();
 }
 
 DataNode::~DataNode() {
-    for (vector<DataNode *>::iterator i = children.begin(); i != children.end(); i++) {
-        delete *i;
+    while (children.size()) {
+        DataNode *del = children.back();
+        children.pop_back();
+        delete del;
+    }
+    if (data_elem) {
+        delete data_elem;
     }
 }
 
@@ -364,7 +376,7 @@ void DataNode::setName(const char *name_in) {
 }
 
 DataElement *DataNode::element() {
-    return &data_elem;
+    return data_elem;
 }
 
 DataNode *DataNode::newChild(const char *name_in) {
@@ -1541,7 +1553,7 @@ bool DataTree::LoadFromFile(const std::string& filename) {
     dtHeader.setSerialized(hdr_serialized);
     DataNode *header = dtHeader.rootNode();
 
-    string compressionType = *header->getNext("compression");
+    string compressionType(*header->getNext("compression"));
     dataSize = *header->getNext("uncompressed_size");
 
     bool uncompress = false;

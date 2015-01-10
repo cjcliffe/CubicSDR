@@ -338,7 +338,7 @@ bool AppFrame::loadSession(std::string fileName) {
     try {
         DataNode *header = l.rootNode()->getNext("header");
 
-        std::string version = *header->getNext("version");
+        std::string version(*header->getNext("version"));
         long long center_freq = *header->getNext("center_freq");
         long long offset = *header->getNext("offset");
 
@@ -362,7 +362,7 @@ bool AppFrame::loadSession(std::string fileName) {
             float squelch_level = demod->hasAnother("squelch_level")?(float)*demod->getNext("squelch_level"):0;
             int squelch_enabled = demod->hasAnother("squelch_enabled")?(int)*demod->getNext("squelch_enabled"):0;
             int stereo = demod->hasAnother("stereo")?(int)*demod->getNext("stereo"):0;
-            std::string output_device = demod->hasAnother("output_device")?*demod->getNext("output_device"):"";
+            std::string output_device = demod->hasAnother("output_device")?string(*(demod->getNext("output_device"))):"";
 
             std::cout << "\tFound demodulator at frequency " << freq << " type " << type << std::endl;
             std::cout << "\t\tBandwidth: " << bandwidth << std::endl;

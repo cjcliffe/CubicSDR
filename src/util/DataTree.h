@@ -131,6 +131,7 @@ public:
     ~DataElement();
     
     int getDataType();
+    char *getDataPointer();
     long getDataSize();
     int getUnitSize();
     
@@ -224,7 +225,7 @@ private:
     map<string, unsigned int, string_less> childmap_ptr;
     
     string node_name;
-    DataElement data_elem;
+    DataElement *data_elem;
     unsigned int ptr;
     
     
@@ -259,7 +260,8 @@ public:
         
     void findAll(const char *name_in, vector<DataNode *> &node_list_out);
     
-    operator string () { string s; element()->get(s); return s; }
+//    operator string () { string s; element()->get(s); return s; }
+    operator const char * () { if (element()->getDataType() == DATA_STRING) return element()->getDataPointer(); else return NULL; }
     operator char () { char v; element()->get(v); return v; }
     operator unsigned char () { unsigned char v; element()->get(v); return v; }
     operator int () { int v; element()->get(v); return v; }
