@@ -25,11 +25,11 @@ Basic Goals and Status:
     - [ ] HackRF
     - [ ] Whatever else I can get my hands on
   - Minimal configuration
-    - [ ] Device
+    - [ ] Device Selection
     - [ ] Bandwidth
     - [ ] Default audio device and settings
     - [ ] Color scheme
-    - [ ] Load/Save session
+    - [x] Load/Save session
   - Neat Visuals
     - [x] Scope
     - [x] Spectrum
@@ -45,8 +45,9 @@ Basic Goals and Status:
       - [x] AM
       - [x] LSB
       - [x] USB
+      - [x] DSB
     - [ ] Controls
-      - [ ] Display Frequency and allow manual adjustments
+      - [x] Display Frequency and allow manual adjustments
       - [x] Allow selection of demodulation type
       - [x] Display separate zoomed-in view of current waterfall and spectrum, allow adjustments
       - [x] Display signal level and allow squelch control
