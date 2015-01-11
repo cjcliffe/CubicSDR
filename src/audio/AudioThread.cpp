@@ -51,6 +51,11 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
     AudioThread *src = (AudioThread *) userData;
     float *out = (float*) outputBuffer;
     memset(out, 0, nBufferFrames * 2 * sizeof(float));
+
+    if (src->terminated) {
+        return 1;
+    }
+
     if (status) {
         std::cout << "Audio buffer underflow.." << (src->underflowCount++) << std::endl;
     }
@@ -383,8 +388,10 @@ void AudioThread::threadMain() {
         }
     }
 
+#if !__APPLE__
     AudioThreadInput dummy;
     inputQueue->push(&dummy);
+#endif
 
 #ifdef __APPLE__
     if (deviceController[parameters.deviceId] != this) {

@@ -74,10 +74,6 @@ int CubicSDR::OnExit() {
 
     demodMgr.terminateAll();
 
-#ifdef __APPLE__
-    AudioThread::deviceCleanup();
-#endif
-
     delete threadCmdQueueSDR;
 
     delete iqVisualQueue;
@@ -85,6 +81,11 @@ int CubicSDR::OnExit() {
     delete iqPostDataQueue;
 
     delete m_glContext;
+
+
+#ifdef __APPLE__
+    AudioThread::deviceCleanup();
+#endif
 
     return wxApp::OnExit();
 }
