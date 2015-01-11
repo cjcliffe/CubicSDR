@@ -33,7 +33,7 @@ EVT_IDLE(AppFrame::OnIdle)
 wxEND_EVENT_TABLE()
 
 AppFrame::AppFrame() :
-        wxFrame(NULL, wxID_ANY, wxT("CubicSDR " CUBICSDR_VERSION " by Charles J. Cliffe (@ccliffe)")), activeDemodulator(NULL) {
+        wxFrame(NULL, wxID_ANY, wxT(CUBICSDR_TITLE)), activeDemodulator(NULL) {
 
     wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodOpts = new wxBoxSizer(wxVERTICAL);
@@ -86,6 +86,13 @@ AppFrame::AppFrame() :
     demodScopeTray->Add(demodTuner, 1, wxEXPAND | wxALL, 0);
 
     demodTray->Add(demodScopeTray, 30, wxEXPAND | wxALL, 0);
+
+    demodTray->AddSpacer(2);
+
+    demodGainMeter = new MeterCanvas(this, NULL);
+    demodGainMeter->setMax(2.0);
+    demodGainMeter->setHelpTip("Current Demodulator Gain Level.  Click / Drag to set Gain level.");
+    demodTray->Add(demodGainMeter, 1, wxEXPAND | wxALL, 0);
 
     vbox->Add(demodTray, 12, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(2);
@@ -215,6 +222,8 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         wxGetApp().getDemodMgr().terminateAll();
         wxGetApp().setFrequency(DEFAULT_FREQ);
         wxGetApp().setOffset(0);
+        SetTitle(wxT(CUBICSDR_TITLE));
+        currentSessionFile = "";
     } else if (event.GetId() == wxID_EXIT) {
         Close(false);
     }
@@ -245,6 +254,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     if (demod) {
         if (demod != activeDemodulator) {
             demodSignalMeter->setInputValue(demod->getSquelchLevel());
+            demodGainMeter->setInputValue(demod->getGain());
             int outputDevice = demod->getOutputDevice();
             scopeCanvas->setDeviceName(outputDevices[outputDevice].name);
             outputDeviceMenuItems[outputDevice]->Check(true);
@@ -272,8 +282,13 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             demodSpectrumCanvas->setBandwidth(demodBw);
         }
         demodSignalMeter->setLevel(demod->getSignalLevel());
+        demodGainMeter->setLevel(demod->getGain());
         if (demodSignalMeter->inputChanged()) {
             demod->setSquelchLevel(demodSignalMeter->getInputValue());
+        }
+        if (demodGainMeter->inputChanged()) {
+            demod->setGain(demodGainMeter->getInputValue());
+            demodGainMeter->setLevel(demodGainMeter->getInputValue());
         }
         activeDemodulator = demod;
     }
@@ -344,9 +359,16 @@ void AppFrame::saveSession(std::string fileName) {
         *demod->newChild("squelch_enabled") = (*instance_i)->isSquelchEnabled() ? 1 : 0;
         *demod->newChild("stereo") = (*instance_i)->isStereo() ? 1 : 0;
         *demod->newChild("output_device") = outputDevices[(*instance_i)->getOutputDevice()].name;
+        *demod->newChild("gain") = (*instance_i)->getGain();
     }
 
     s.SaveToFileXML(fileName);
+
+
+    currentSessionFile = fileName;
+    std::string filePart = fileName.substr(fileName.find_last_of(filePathSeparator)+1);
+    GetStatusBar()->SetStatusText(wxString::Format(wxT("Saved session: %s"), currentSessionFile.c_str()));
+    SetTitle(wxString::Format(wxT("%s: %s"), CUBICSDR_TITLE, filePart.c_str()));
 }
 
 bool AppFrame::loadSession(std::string fileName) {
@@ -387,11 +409,13 @@ bool AppFrame::loadSession(std::string fileName) {
             int squelch_enabled = demod->hasAnother("squelch_enabled") ? (int) *demod->getNext("squelch_enabled") : 0;
             int stereo = demod->hasAnother("stereo") ? (int) *demod->getNext("stereo") : 0;
             std::string output_device = demod->hasAnother("output_device") ? string(*(demod->getNext("output_device"))) : "";
+            float gain = demod->hasAnother("gain") ? (float) *demod->getNext("gain") : 1.0;
 
             DemodulatorInstance *newDemod = wxGetApp().getDemodMgr().newThread();
             newDemod->setDemodulatorType(type);
             newDemod->setBandwidth(bandwidth);
             newDemod->setFrequency(freq);
+            newDemod->setGain(gain);
             newDemod->updateLabel(freq);
             if (squelch_enabled) {
                 newDemod->setSquelchEnabled(true);
@@ -424,9 +448,7 @@ bool AppFrame::loadSession(std::string fileName) {
             std::cout << "\t\tSquelch Enabled: " << (squelch_enabled ? "true" : "false") << std::endl;
             std::cout << "\t\tStereo: " << (stereo ? "true" : "false") << std::endl;
             std::cout << "\t\tOutput Device: " << output_device << std::endl;
-
         }
-
     } catch (DataInvalidChildException &e) {
         std::cout << e.what() << std::endl;
         return false;
@@ -436,4 +458,9 @@ bool AppFrame::loadSession(std::string fileName) {
     }
 
     currentSessionFile = fileName;
+
+    std::string filePart = fileName.substr(fileName.find_last_of(filePathSeparator)+1);
+
+    GetStatusBar()->SetStatusText(wxString::Format(wxT("Loaded session file: %s"), currentSessionFile.c_str()));
+    SetTitle(wxString::Format(wxT("%s: %s"), CUBICSDR_TITLE, filePart.c_str()));
 }

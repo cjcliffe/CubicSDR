@@ -1,6 +1,14 @@
 #pragma once
 
 #define CUBICSDR_VERSION "v0.01a"
+#define CUBICSDR_TITLE "CubicSDR " CUBICSDR_VERSION " by Charles J. Cliffe (@ccliffe)"
+
+const char filePathSeparator =
+#ifdef _WIN32
+                            '\\';
+#else
+                            '/';
+#endif
 
 #ifdef __APPLE__
 #define BUF_SIZE (16384*2)

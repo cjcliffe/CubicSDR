@@ -298,3 +298,11 @@ long long DemodulatorInstance::getFrequency() {
     }
     return currentFrequency;
 }
+
+void DemodulatorInstance::setGain(float gain_in) {
+    audioThread->setGain(gain_in);
+}
+
+float DemodulatorInstance::getGain() {
+   return audioThread->getGain();
+}

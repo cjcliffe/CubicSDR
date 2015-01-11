@@ -63,7 +63,7 @@ public:
     std::atomic<bool> initialized;
     std::atomic<bool> active;
     std::atomic<int> outputDevice;
-    float gain;
+    std::atomic<float> gain;
 
     AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify);
     ~AudioThread();
@@ -78,6 +78,9 @@ public:
 
     bool isActive();
     void setActive(bool state);
+
+    void setGain(float gain_in);
+    float getGain();
 
     AudioThreadCommandQueue *getCommandQueue();
 

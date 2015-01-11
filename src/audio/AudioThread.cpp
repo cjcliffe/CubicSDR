@@ -460,3 +460,17 @@ void AudioThread::setActive(bool state) {
 AudioThreadCommandQueue *AudioThread::getCommandQueue() {
     return &cmdQueue;
 }
+
+void AudioThread::setGain(float gain_in) {
+    if (gain < 0.0) {
+        gain = 0.0;
+    }
+    if (gain > 2.0) {
+        gain = 2.0;
+    }
+    gain = gain_in;
+}
+
+float AudioThread::getGain() {
+    return gain;
+}

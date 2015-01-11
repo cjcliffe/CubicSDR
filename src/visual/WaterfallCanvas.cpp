@@ -717,6 +717,7 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
                     demod->setSquelchLevel(last->getSquelchLevel());
                     demod->setSquelchEnabled(last->isSquelchEnabled());
                     demod->setStereo(last->isStereo());
+                    demod->setGain(last->getGain());
                 }
 
                 demod->run();
@@ -776,6 +777,7 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
                 demod->setSquelchLevel(last->getSquelchLevel());
                 demod->setSquelchEnabled(last->isSquelchEnabled());
                 demod->setStereo(last->isStereo());
+                demod->setGain(last->getGain());
             }
             demod->run();
 
