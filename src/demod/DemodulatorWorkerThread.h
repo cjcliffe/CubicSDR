@@ -22,26 +22,26 @@ public:
     };
 
     DemodulatorWorkerThreadResult() :
-            cmd(DEMOD_WORKER_THREAD_RESULT_NULL), resampler(NULL), resamplerRatio(0), audioResampler(NULL), stereoResampler(NULL), audioResamplerRatio(
-                    0), inputRate(0), bandwidth(0), audioSampleRate(0) {
+            cmd(DEMOD_WORKER_THREAD_RESULT_NULL), iqResampler(NULL), iqResampleRatio(0), audioResampler(NULL), stereoResampler(NULL), audioResamplerRatio(
+                    0), sampleRate(0), bandwidth(0), audioSampleRate(0) {
 
     }
 
     DemodulatorWorkerThreadResult(DemodulatorThreadResultEnum cmd) :
-            cmd(cmd), resampler(NULL), resamplerRatio(0), audioResampler(NULL), stereoResampler(NULL), audioResamplerRatio(0), inputRate(0), bandwidth(
+            cmd(cmd), iqResampler(NULL), iqResampleRatio(0), audioResampler(NULL), stereoResampler(NULL), audioResamplerRatio(0), sampleRate(0), bandwidth(
                     0), audioSampleRate(0) {
 
     }
 
     DemodulatorThreadResultEnum cmd;
 
-    msresamp_crcf resampler;
-    double resamplerRatio;
+    msresamp_crcf iqResampler;
+    double iqResampleRatio;
     msresamp_rrrf audioResampler;
     msresamp_rrrf stereoResampler;
     double audioResamplerRatio;
 
-    unsigned int inputRate;
+    long long sampleRate;
     unsigned int bandwidth;
     unsigned int audioSampleRate;
 
@@ -54,19 +54,19 @@ public:
     };
 
     DemodulatorWorkerThreadCommand() :
-            cmd(DEMOD_WORKER_THREAD_CMD_NULL), frequency(0), inputRate(0), bandwidth(0), audioSampleRate(0) {
+            cmd(DEMOD_WORKER_THREAD_CMD_NULL), frequency(0), sampleRate(0), bandwidth(0), audioSampleRate(0) {
 
     }
 
     DemodulatorWorkerThreadCommand(DemodulatorThreadCommandEnum cmd) :
-            cmd(cmd), frequency(0), inputRate(0), bandwidth(0), audioSampleRate(0) {
+            cmd(cmd), frequency(0), sampleRate(0), bandwidth(0), audioSampleRate(0) {
 
     }
 
     DemodulatorThreadCommandEnum cmd;
 
     long long frequency;
-    unsigned int inputRate;
+    long long sampleRate;
     unsigned int bandwidth;
     unsigned int audioSampleRate;
 };

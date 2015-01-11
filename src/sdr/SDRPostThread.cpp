@@ -6,7 +6,7 @@
 #include <deque>
 
 SDRPostThread::SDRPostThread() :
-        sample_rate(SRATE), iqDataOutQueue(NULL), iqDataInQueue(NULL), iqVisualQueue(NULL), terminated(false), dcFilter(NULL), num_vis_samples(2048) {
+        iqDataOutQueue(NULL), iqDataInQueue(NULL), iqVisualQueue(NULL), terminated(false), dcFilter(NULL), num_vis_samples(2048) {
 }
 
 SDRPostThread::~SDRPostThread() {
@@ -90,7 +90,7 @@ void SDRPostThread::threadMain() {
                 DemodulatorThreadIQData *pipeDataOut = new DemodulatorThreadIQData;
 
                 pipeDataOut->frequency = data_in->frequency;
-                pipeDataOut->bandwidth = data_in->bandwidth;
+                pipeDataOut->sampleRate = data_in->sampleRate;
                 pipeDataOut->data.assign(dataOut.begin(), dataOut.end());
                 iqDataOutQueue.load()->push(pipeDataOut);
             }
@@ -98,7 +98,7 @@ void SDRPostThread::threadMain() {
             if (iqVisualQueue != NULL && iqVisualQueue.load()->empty()) {
                 DemodulatorThreadIQData *visualDataOut = new DemodulatorThreadIQData;
                 visualDataOut->frequency = data_in->frequency;
-                visualDataOut->bandwidth = data_in->bandwidth;
+                visualDataOut->sampleRate = data_in->sampleRate;
                 visualDataOut->data.assign(dataOut.begin(), dataOut.begin() + num_vis_samples);
                 iqVisualQueue.load()->push(visualDataOut);
             }
@@ -131,7 +131,7 @@ void SDRPostThread::threadMain() {
                 for (i = demodulators.begin(); i != demodulators.end(); i++) {
                     DemodulatorInstance *demod = *i;
                     if (demod->getFrequency() != data_in->frequency
-                            && abs(data_in->frequency - demod->getFrequency()) > (SRATE / 2)) {
+                            && abs(data_in->frequency - demod->getFrequency()) > (wxGetApp().getSampleRate() / 2)) {
                         continue;
                     }
                     activeDemods++;
@@ -155,7 +155,7 @@ void SDRPostThread::threadMain() {
 
 //                    std::lock_guard < std::mutex > lock(demodDataOut->m_mutex);
                     demodDataOut->frequency = data_in->frequency;
-                    demodDataOut->bandwidth = data_in->bandwidth;
+                    demodDataOut->sampleRate = data_in->sampleRate;
                     demodDataOut->setRefCount(activeDemods);
                     demodDataOut->data.assign(dataOut.begin(), dataOut.end());
 
@@ -165,12 +165,12 @@ void SDRPostThread::threadMain() {
                         DemodulatorThreadInputQueue *demodQueue = demod->threadQueueDemod;
 
                         if (demod->getFrequency() != data_in->frequency
-                                && abs(data_in->frequency - demod->getFrequency()) > (SRATE / 2)) {
+                                && abs(data_in->frequency - demod->getFrequency()) > (wxGetApp().getSampleRate() / 2)) {
                             if (demod->isActive()) {
                                 demod->setActive(false);
                                 DemodulatorThreadIQData *dummyDataOut = new DemodulatorThreadIQData;
                                 dummyDataOut->frequency = data_in->frequency;
-                                dummyDataOut->bandwidth = data_in->bandwidth;
+                                dummyDataOut->sampleRate = data_in->sampleRate;
                                 demodQueue->push(dummyDataOut);
                             }
                         } else if (!demod->isActive()) {

@@ -82,7 +82,6 @@ int CubicSDR::OnExit() {
 
     delete m_glContext;
 
-
 #ifdef __APPLE__
     AudioThread::deviceCleanup();
 #endif
@@ -103,8 +102,8 @@ PrimaryGLContext& CubicSDR::GetContext(wxGLCanvas *canvas) {
 }
 
 void CubicSDR::setFrequency(long long freq) {
-    if (freq < SRATE/2) {
-        freq = SRATE/2;
+    if (freq < sampleRate / 2) {
+        freq = sampleRate / 2;
     }
     frequency = freq;
     SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_TUNE);
@@ -144,6 +143,18 @@ void CubicSDR::bindDemodulator(DemodulatorInstance *demod) {
         return;
     }
     sdrPostThread->bindDemodulator(demod);
+}
+
+void CubicSDR::setSampleRate(long long rate_in) {
+    sampleRate = rate_in;
+    SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_SET_SAMPLERATE);
+    command.llong_value = rate_in;
+    threadCmdQueueSDR->push(command);
+    setFrequency(frequency);
+}
+
+long long CubicSDR::getSampleRate() {
+    return sampleRate;
 }
 
 void CubicSDR::removeDemodulator(DemodulatorInstance *demod) {

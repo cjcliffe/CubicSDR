@@ -6,7 +6,7 @@
 SDRThread::SDRThread(SDRThreadCommandQueue* pQueue) :
         commandQueue(pQueue), iqDataOutQueue(NULL), terminated(false), offset(0) {
     dev = NULL;
-    sampleRate = SRATE;
+    sampleRate = DEFAULT_SAMPLE_RATE;
 }
 
 SDRThread::~SDRThread() {
@@ -111,16 +111,15 @@ void SDRThread::threadMain() {
     signed char buf[BUF_SIZE];
 
     long long frequency = DEFAULT_FREQ;
-    unsigned int bandwidth = SRATE;
 
     rtlsdr_open(&dev, firstDevAvailable);
-    rtlsdr_set_sample_rate(dev, bandwidth);
-    rtlsdr_set_center_freq(dev, frequency);
+    rtlsdr_set_sample_rate(dev, sampleRate);
+    rtlsdr_set_center_freq(dev, frequency - offset);
     rtlsdr_set_agc_mode(dev, 1);
     rtlsdr_set_offset_tuning(dev, 0);
     rtlsdr_reset_buffer(dev);
 
-    sampleRate = rtlsdr_get_sample_rate(dev);
+//    sampleRate = rtlsdr_get_sample_rate(dev);
 
     std::cout << "Sample Rate is: " << sampleRate << std::endl;
 
@@ -138,8 +137,10 @@ void SDRThread::threadMain() {
         if (!cmdQueue->empty()) {
             bool freq_changed = false;
             bool offset_changed = false;
+            bool rate_changed = false;
             long long new_freq;
             long long new_offset;
+            long long new_rate;
 
             while (!cmdQueue->empty()) {
                 SDRThreadCommand command;
@@ -149,8 +150,8 @@ void SDRThread::threadMain() {
                 case SDRThreadCommand::SDR_THREAD_CMD_TUNE:
                     freq_changed = true;
                     new_freq = command.llong_value;
-                    if (new_freq < SRATE / 2) {
-                        new_freq = SRATE / 2;
+                    if (new_freq < sampleRate / 2) {
+                        new_freq = sampleRate / 2;
                     }
                     std::cout << "Set frequency: " << new_freq << std::endl;
                     break;
@@ -158,6 +159,11 @@ void SDRThread::threadMain() {
                     offset_changed = true;
                     new_offset = command.llong_value;
                     std::cout << "Set offset: " << new_offset << std::endl;
+                    break;
+                case SDRThreadCommand::SDR_THREAD_CMD_SET_SAMPLERATE:
+                    rate_changed = true;
+                    new_rate = command.llong_value;
+                    std::cout << "Set sample rate: " << new_rate << std::endl;
                     break;
                 default:
                     break;
@@ -169,9 +175,12 @@ void SDRThread::threadMain() {
                 freq_changed = true;
                 offset = new_offset;
             }
-            if (freq_changed) {
+            if (rate_changed) {
+                sampleRate = new_rate;
+                rtlsdr_set_sample_rate(dev, new_rate);
+            } else if (freq_changed) {
                 frequency = new_freq;
-                rtlsdr_set_center_freq(dev, frequency-offset);
+                rtlsdr_set_center_freq(dev, frequency - offset);
             }
         }
 
@@ -194,7 +203,7 @@ void SDRThread::threadMain() {
 //        std::lock_guard < std::mutex > lock(dataOut->m_mutex);
         dataOut->setRefCount(1);
         dataOut->frequency = frequency;
-        dataOut->bandwidth = bandwidth;
+        dataOut->sampleRate = sampleRate;
 
         if (dataOut->data.capacity() < n_read) {
             dataOut->data.reserve(n_read);

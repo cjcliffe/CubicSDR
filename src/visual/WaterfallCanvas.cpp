@@ -214,7 +214,7 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         freq = wxGetApp().getFrequency();
         originalFreq = freq;
         if (shiftDown) {
-            freq += SRATE * 10;
+            freq += wxGetApp().getSampleRate() * 10;
             if (isView) {
                 setView(centerFreq + (freq - originalFreq), getBandwidth());
                 if (spectrumCanvas) {
@@ -222,7 +222,7 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
                 }
             }
         } else {
-            freq += SRATE / 2;
+            freq += wxGetApp().getSampleRate() / 2;
             if (isView) {
                 setView(centerFreq + (freq - originalFreq), getBandwidth());
                 if (spectrumCanvas) {
@@ -237,10 +237,10 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         freq = wxGetApp().getFrequency();
         originalFreq = freq;
         if (shiftDown) {
-            if ((freq - SRATE * 10) < SRATE / 2) {
-                freq = SRATE / 2;
+            if ((freq - wxGetApp().getSampleRate() * 10) < wxGetApp().getSampleRate() / 2) {
+                freq = wxGetApp().getSampleRate() / 2;
             } else {
-                freq -= SRATE * 10;
+                freq -= wxGetApp().getSampleRate() * 10;
             }
             if (isView) {
                 setView(centerFreq + (freq - originalFreq), getBandwidth());
@@ -249,10 +249,10 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
                 }
             }
         } else {
-            if ((freq - SRATE / 2) < SRATE / 2) {
-                freq = SRATE / 2;
+            if ((freq - wxGetApp().getSampleRate() / 2) < wxGetApp().getSampleRate() / 2) {
+                freq = wxGetApp().getSampleRate() / 2;
             } else {
-                freq -= SRATE / 2;
+                freq -= wxGetApp().getSampleRate() / 2;
             }
             if (isView) {
                 setView(centerFreq + (freq - originalFreq), getBandwidth());
@@ -339,8 +339,8 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
             if (isView) {
                 bw = getBandwidth();
                 bw = (long long) ceil((long double) bw * currentZoom);
-                if (bw >= SRATE) {
-                    bw = SRATE;
+                if (bw >= wxGetApp().getSampleRate()) {
+                    bw = wxGetApp().getSampleRate();
                     disableView();
                     if (spectrumCanvas) {
                         spectrumCanvas->disableView();
@@ -361,11 +361,11 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
                 }
             }
         }
-        if (centerFreq < freq && (centerFreq - bandwidth / 2) < (freq - SRATE / 2)) {
-            centerFreq = (freq - SRATE / 2) + bandwidth / 2;
+        if (centerFreq < freq && (centerFreq - bandwidth / 2) < (freq - wxGetApp().getSampleRate() / 2)) {
+            centerFreq = (freq - wxGetApp().getSampleRate() / 2) + bandwidth / 2;
         }
-        if (centerFreq > freq && (centerFreq + bandwidth / 2) > (freq + SRATE / 2)) {
-            centerFreq = (freq + SRATE / 2) - bandwidth / 2;
+        if (centerFreq > freq && (centerFreq + bandwidth / 2) > (freq + wxGetApp().getSampleRate() / 2)) {
+            centerFreq = (freq + wxGetApp().getSampleRate() / 2) - bandwidth / 2;
         }
     }
 
@@ -385,16 +385,16 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
         }
 
         if (isView) {
-            if (!input->frequency || !input->bandwidth) {
+            if (!input->frequency || !input->sampleRate) {
                 return;
             }
 
             if (centerFreq != input->frequency) {
-                if ((centerFreq - input->frequency) != shiftFrequency || lastInputBandwidth != input->bandwidth) {
-                    if (abs(input->frequency - centerFreq) < (SRATE / 2)) {
+                if ((centerFreq - input->frequency) != shiftFrequency || lastInputBandwidth != input->sampleRate) {
+                    if (abs(input->frequency - centerFreq) < (wxGetApp().getSampleRate() / 2)) {
                         shiftFrequency = centerFreq - input->frequency;
                         nco_crcf_reset(freqShifter);
-                        nco_crcf_set_frequency(freqShifter, (2.0 * M_PI) * (((double) abs(shiftFrequency)) / ((double) input->bandwidth)));
+                        nco_crcf_set_frequency(freqShifter, (2.0 * M_PI) * (((double) abs(shiftFrequency)) / ((double) input->sampleRate)));
                     }
                 }
 
@@ -414,8 +414,8 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
                 shiftBuffer.assign(input->data.begin(), input->data.end());
             }
 
-            if (!resampler || bandwidth != lastBandwidth || lastInputBandwidth != input->bandwidth) {
-                resamplerRatio = (double) (bandwidth) / (double) input->bandwidth;
+            if (!resampler || bandwidth != lastBandwidth || lastInputBandwidth != input->sampleRate) {
+                resamplerRatio = (double) (bandwidth) / (double) input->sampleRate;
 
                 float As = 120.0f;
 
@@ -425,7 +425,7 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
                 resampler = msresamp_crcf_create(resamplerRatio, As);
 
                 lastBandwidth = bandwidth;
-                lastInputBandwidth = input->bandwidth;
+                lastInputBandwidth = input->sampleRate;
             }
 
             int out_size = ceil((double) (input->data.size()) * resamplerRatio) + 512;
@@ -562,8 +562,8 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
             int currentBW = demod->getBandwidth();
 
             currentBW = currentBW + bwDiff;
-            if (currentBW > SRATE) {
-                currentBW = SRATE;
+            if (currentBW > wxGetApp().getSampleRate()) {
+                currentBW = wxGetApp().getSampleRate();
             }
             if (currentBW < MIN_BANDWIDTH) {
                 currentBW = MIN_BANDWIDTH;

@@ -158,7 +158,6 @@ AppFrame::AppFrame() :
 
     menuBar->Append(menu, wxT("Active Demodulator &Output"));
 
-
     menu = new wxMenu;
 
     menu->Append(wxID_THEME_DEFAULT, "Default");
@@ -171,6 +170,16 @@ AppFrame::AppFrame() :
 
     menuBar->Append(menu, wxT("&Color Scheme"));
 
+    menu = new wxMenu;
+
+    menu->Append(wxID_BANDWIDTH_1000M, "1.0M");
+    menu->Append(wxID_BANDWIDTH_1500M, "1.5M");
+    menu->Append(wxID_BANDWIDTH_2000M, "2.0M");
+    menu->Append(wxID_BANDWIDTH_2500M, "2.5M");
+    menu->Append(wxID_BANDWIDTH_2880M, "2.88M");
+    menu->Append(wxID_BANDWIDTH_3200M, "3.2M");
+
+    menuBar->Append(menu, wxT("&Input Bandwidth"));
 
     SetMenuBar(menuBar);
 
@@ -262,6 +271,27 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         waterfallCanvas->setTheme(COLOR_THEME_RADAR);
         demodWaterfallCanvas->setTheme(COLOR_THEME_RADAR);
     }
+
+    switch (event.GetId()) {
+    case wxID_BANDWIDTH_1000M:
+        wxGetApp().setSampleRate(1000000);
+        break;
+    case wxID_BANDWIDTH_1500M:
+        wxGetApp().setSampleRate(1500000);
+        break;
+    case wxID_BANDWIDTH_2000M:
+        wxGetApp().setSampleRate(2000000);
+        break;
+    case wxID_BANDWIDTH_2500M:
+        wxGetApp().setSampleRate(2500000);
+        break;
+    case wxID_BANDWIDTH_2880M:
+        wxGetApp().setSampleRate(2880000);
+        break;
+    case wxID_BANDWIDTH_3200M:
+        wxGetApp().setSampleRate(3200000);
+        break;
+    }
 }
 
 void AppFrame::OnClose(wxCommandEvent& WXUNUSED(event)) {
@@ -307,8 +337,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             }
 
             unsigned int demodBw = (unsigned int) ceil((float) demod->getParams().bandwidth * 2.5);
-            if (demodBw > SRATE / 2) {
-                demodBw = SRATE / 2;
+            if (demodBw > wxGetApp().getSampleRate() / 2) {
+                demodBw = wxGetApp().getSampleRate() / 2;
             }
             if (demodBw < 80000) {
                 demodBw = 80000;
@@ -399,9 +429,8 @@ void AppFrame::saveSession(std::string fileName) {
 
     s.SaveToFileXML(fileName);
 
-
     currentSessionFile = fileName;
-    std::string filePart = fileName.substr(fileName.find_last_of(filePathSeparator)+1);
+    std::string filePart = fileName.substr(fileName.find_last_of(filePathSeparator) + 1);
     GetStatusBar()->SetStatusText(wxString::Format(wxT("Saved session: %s"), currentSessionFile.c_str()));
     SetTitle(wxString::Format(wxT("%s: %s"), CUBICSDR_TITLE, filePart.c_str()));
 }
@@ -494,7 +523,7 @@ bool AppFrame::loadSession(std::string fileName) {
 
     currentSessionFile = fileName;
 
-    std::string filePart = fileName.substr(fileName.find_last_of(filePathSeparator)+1);
+    std::string filePart = fileName.substr(fileName.find_last_of(filePathSeparator) + 1);
 
     GetStatusBar()->SetStatusText(wxString::Format(wxT("Loaded session file: %s"), currentSessionFile.c_str()));
     SetTitle(wxString::Format(wxT("%s: %s"), CUBICSDR_TITLE, filePart.c_str()));

@@ -6,6 +6,7 @@
 #endif
 
 #include "DemodulatorPreThread.h"
+#include "CubicSDR.h"
 
 DemodulatorPreThread::DemodulatorPreThread(DemodulatorThreadInputQueue* iqInputQueue, DemodulatorThreadPostInputQueue* iqOutputQueue,
         DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify) :
@@ -26,7 +27,7 @@ DemodulatorPreThread::DemodulatorPreThread(DemodulatorThreadInputQueue* iqInputQ
 void DemodulatorPreThread::initialize() {
     initialized = false;
 
-    iqResampleRatio = (double) (params.bandwidth) / (double) params.inputRate;
+    iqResampleRatio = (double) (params.bandwidth) / (double) params.sampleRate;
     audioResampleRatio = (double) (params.audioSampleRate) / (double) params.bandwidth;
 
     float As = 120.0f;         // stop-band attenuation [dB]
@@ -77,10 +78,10 @@ void DemodulatorPreThread::threadMain() {
         iqInputQueue->pop(inp);
 
         bool bandwidthChanged = false;
-        DemodulatorThreadParameters bandwidthParams = params;
+        bool rateChanged = false;
+        DemodulatorThreadParameters tempParams = params;
 
         if (!commandQueue->empty()) {
-            bool paramsChanged = false;
             while (!commandQueue->empty()) {
                 DemodulatorThreadCommand command;
                 commandQueue->pop(command);
@@ -89,10 +90,11 @@ void DemodulatorPreThread::threadMain() {
                     if (command.llong_value < 1500) {
                         command.llong_value = 1500;
                     }
-                    if (command.llong_value > SRATE) {
-                        command.llong_value = SRATE;
+                    if (command.llong_value > params.sampleRate) {
+                        tempParams.bandwidth = params.sampleRate;
+                    } else {
+                        tempParams.bandwidth = command.llong_value;
                     }
-                    bandwidthParams.bandwidth = command.llong_value;
                     bandwidthChanged = true;
                     break;
                 case DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_FREQUENCY:
@@ -100,16 +102,21 @@ void DemodulatorPreThread::threadMain() {
                     break;
                 }
             }
+        }
 
-            if (bandwidthChanged) {
-                DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS);
-                command.audioSampleRate = bandwidthParams.audioSampleRate;
-                command.bandwidth = bandwidthParams.bandwidth;
-                command.frequency = bandwidthParams.frequency;
-                command.inputRate = bandwidthParams.inputRate;
+        if (inp->sampleRate != tempParams.sampleRate) {
+            tempParams.sampleRate = inp->sampleRate;
+            rateChanged = true;
+        }
 
-                workerQueue->push(command);
-            }
+        if (bandwidthChanged || rateChanged) {
+            DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS);
+            command.sampleRate = tempParams.sampleRate;
+            command.audioSampleRate = tempParams.audioSampleRate;
+            command.bandwidth = tempParams.bandwidth;
+            command.frequency = tempParams.frequency;
+
+            workerQueue->push(command);
         }
 
         if (!initialized) {
@@ -118,21 +125,21 @@ void DemodulatorPreThread::threadMain() {
 
         // Requested frequency is not center, shift it into the center!
         if (inp->frequency != params.frequency) {
-            if ((params.frequency - inp->frequency) != shiftFrequency) {
+            if ((params.frequency - inp->frequency) != shiftFrequency || rateChanged) {
                 shiftFrequency = params.frequency - inp->frequency;
-                if (abs(shiftFrequency) <= (int) ((double) (SRATE / 2) * 1.5)) {
-                    nco_crcf_set_frequency(freqShifter, (2.0 * M_PI) * (((double) abs(shiftFrequency)) / ((double) SRATE)));
+                if (abs(shiftFrequency) <= (int) ((double) (wxGetApp().getSampleRate() / 2) * 1.5)) {
+                    nco_crcf_set_frequency(freqShifter, (2.0 * M_PI) * (((double) abs(shiftFrequency)) / ((double) wxGetApp().getSampleRate())));
                 }
             }
         }
 
-        if (abs(shiftFrequency) > (int) ((double) (SRATE / 2) * 1.5)) {
+        if (abs(shiftFrequency) > (int) ((double) (wxGetApp().getSampleRate() / 2) * 1.5)) {
             continue;
         }
 
 //        std::lock_guard < std::mutex > lock(inp->m_mutex);
         std::vector<liquid_float_complex> *data = &inp->data;
-        if (data->size()) {
+        if (data->size() && (inp->sampleRate == params.sampleRate)) {
             int bufSize = data->size();
 
             if (in_buf_data.size() != bufSize) {
@@ -193,7 +200,7 @@ void DemodulatorPreThread::threadMain() {
             resamp->audioResampleRatio = audioResampleRatio;
             resamp->audioResampler = audioResampler;
             resamp->stereoResampler = stereoResampler;
-            resamp->bandwidth = params.bandwidth;
+            resamp->sampleRate = params.bandwidth;
 
             iqOutputQueue->push(resamp);
         }
@@ -209,16 +216,16 @@ void DemodulatorPreThread::threadMain() {
                 case DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS:
                     msresamp_crcf_destroy(iqResampler);
 
-                    iqResampler = result.resampler;
+                    iqResampler = result.iqResampler;
                     audioResampler = result.audioResampler;
                     stereoResampler = result.stereoResampler;
 
-                    iqResampleRatio = result.resamplerRatio;
+                    iqResampleRatio = result.iqResampleRatio;
                     audioResampleRatio = result.audioResamplerRatio;
 
                     params.audioSampleRate = result.audioSampleRate;
                     params.bandwidth = result.bandwidth;
-                    params.inputRate = result.inputRate;
+                    params.sampleRate = result.sampleRate;
 
                     break;
                 }

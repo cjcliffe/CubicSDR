@@ -17,7 +17,7 @@
 class SDRThreadCommand {
 public:
     enum SDRThreadCommandEnum {
-        SDR_THREAD_CMD_NULL, SDR_THREAD_CMD_TUNE, SDR_THREAD_CMD_SET_OFFSET
+        SDR_THREAD_CMD_NULL, SDR_THREAD_CMD_TUNE, SDR_THREAD_CMD_SET_OFFSET, SDR_THREAD_CMD_SET_SAMPLERATE
     };
 
     SDRThreadCommand() :
@@ -37,16 +37,16 @@ public:
 class SDRThreadIQData: public ReferenceCounter {
 public:
     long long frequency;
-    unsigned int bandwidth;
+    long long sampleRate;
     std::vector<signed char> data;
 
     SDRThreadIQData() :
-            frequency(0), bandwidth(0) {
+            frequency(0), sampleRate(DEFAULT_SAMPLE_RATE) {
 
     }
 
-    SDRThreadIQData(unsigned int bandwidth, long long frequency, std::vector<signed char> *data) :
-            frequency(frequency), bandwidth(bandwidth) {
+    SDRThreadIQData(long long bandwidth, long long frequency, std::vector<signed char> *data) :
+            frequency(frequency), sampleRate(bandwidth) {
 
     }
 
