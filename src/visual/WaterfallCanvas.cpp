@@ -36,7 +36,7 @@ wxEND_EVENT_TABLE()
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         InteractiveCanvas(parent, attribList), spectrumCanvas(NULL), dragState(WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), fft_size(0), waterfall_lines(
                 0), plan(
-        NULL), in(NULL), out(NULL), resampler(NULL), resamplerRatio(0), lastInputBandwidth(0), zoom(1), mouseZoom(1) {
+        NULL), in(NULL), out(NULL), resampler(NULL), resamplerRatio(0), lastInputBandwidth(0), zoom(1), mouseZoom(1), theme(0) {
 
     glContext = new WaterfallContext(this, &wxGetApp().GetContext(this));
 
@@ -94,6 +94,11 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
     glContext->SetCurrent(*this);
     glViewport(0, 0, ClientSize.x, ClientSize.y);
+
+    if (theme != glContext->getTheme()) {
+        glContext->setTheme(theme);
+        theme = glContext->getTheme();
+    }
 
     glContext->BeginDraw();
     glContext->Draw(spectrum_points);
@@ -823,4 +828,12 @@ void WaterfallCanvas::OnMouseRightReleased(wxMouseEvent& event) {
     mouseTracker.setVertDragLock(false);
     mouseTracker.setHorizDragLock(false);
     mouseZoom = 1.0;
+}
+
+void WaterfallCanvas::setTheme(int theme_id) {
+    theme = theme_id;
+}
+
+int WaterfallCanvas::getTheme() {
+    return glContext->getTheme();
 }

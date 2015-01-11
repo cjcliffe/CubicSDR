@@ -29,8 +29,8 @@ void Gradient::generate(unsigned int len) {
     b_val.resize(len);
 
     for (unsigned int j = 0, jMax = colors.size() - 1; j < jMax; j++) {
-        if (chunk_size * (jMax + 1) < len && j == jMax - 1) {
-            chunk_size += len - chunk_size * (jMax + 1);
+        if ((chunk_size * (jMax)) < len && (j == jMax - 1)) {
+            chunk_size += len - chunk_size * (jMax);
         }
 
         for (unsigned int i = 0; i < chunk_size; i++) {

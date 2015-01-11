@@ -16,6 +16,14 @@
 #define wxID_SET_FREQ_OFFSET 2001
 #define wxID_RESET 2002
 
+#define wxID_THEME_DEFAULT 2100
+#define wxID_THEME_SHARP 2101
+#define wxID_THEME_BW 2102
+#define wxID_THEME_RAD 2103
+#define wxID_THEME_TOUCH 2104
+#define wxID_THEME_HD 2105
+#define wxID_THEME_RADAR 2106
+
 // Define a new frame type
 class AppFrame: public wxFrame {
 public:
