@@ -116,7 +116,7 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                     srcmix->audioQueuePtr = 0;
                 }
                 if (srcmix->currentInput && srcmix->currentInput->data.size()) {
-                    float v = srcmix->currentInput->data[srcmix->audioQueuePtr] * src->gain;
+                    float v = srcmix->currentInput->data[srcmix->audioQueuePtr] * src->gain * srcmix->gain;
                     out[i * 2] += v;
                     out[i * 2 + 1] += v;
                 }
@@ -139,7 +139,7 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                     srcmix->audioQueuePtr = 0;
                 }
                 if (srcmix->currentInput && srcmix->currentInput->data.size()) {
-                    out[i] = out[i] + srcmix->currentInput->data[srcmix->audioQueuePtr] * src->gain;
+                    out[i] = out[i] + srcmix->currentInput->data[srcmix->audioQueuePtr] * src->gain * srcmix->gain;
                 }
                 srcmix->audioQueuePtr++;
             }
