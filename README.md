@@ -28,7 +28,7 @@ Basic Goals and Status:
     - [ ] Device Selection
     - [ ] Bandwidth
     - [ ] Default audio device and settings
-    - [ ] Color scheme
+    - [x] Color scheme
     - [x] Load/Save session
   - Neat Visuals
     - [x] Scope
