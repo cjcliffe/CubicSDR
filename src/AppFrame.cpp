@@ -158,6 +158,20 @@ AppFrame::AppFrame() :
 
     menuBar->Append(menu, wxT("Active Demodulator &Output"));
 
+
+    menu = new wxMenu;
+
+    menu->Append(wxID_THEME_DEFAULT, "Default");
+    menu->Append(wxID_THEME_RADAR, "RADAR");
+    menu->Append(wxID_THEME_BW, "Black & White");
+    menu->Append(wxID_THEME_SHARP, "Sharp");
+    menu->Append(wxID_THEME_RAD, "Rad");
+    menu->Append(wxID_THEME_TOUCH, "Touch");
+    menu->Append(wxID_THEME_HD, "HD");
+
+    menuBar->Append(menu, wxT("&Color Scheme"));
+
+
     SetMenuBar(menuBar);
 
     CreateStatusBar();
@@ -226,6 +240,27 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         currentSessionFile = "";
     } else if (event.GetId() == wxID_EXIT) {
         Close(false);
+    } else if (event.GetId() == wxID_THEME_DEFAULT) {
+        waterfallCanvas->setTheme(COLOR_THEME_DEFAULT);
+        demodWaterfallCanvas->setTheme(COLOR_THEME_DEFAULT);
+    } else if (event.GetId() == wxID_THEME_SHARP) {
+        waterfallCanvas->setTheme(COLOR_THEME_SHARP);
+        demodWaterfallCanvas->setTheme(COLOR_THEME_SHARP);
+    } else if (event.GetId() == wxID_THEME_BW) {
+        waterfallCanvas->setTheme(COLOR_THEME_BW);
+        demodWaterfallCanvas->setTheme(COLOR_THEME_BW);
+    } else if (event.GetId() == wxID_THEME_RAD) {
+        waterfallCanvas->setTheme(COLOR_THEME_RAD);
+        demodWaterfallCanvas->setTheme(COLOR_THEME_RAD);
+    } else if (event.GetId() == wxID_THEME_TOUCH) {
+        waterfallCanvas->setTheme(COLOR_THEME_TOUCH);
+        demodWaterfallCanvas->setTheme(COLOR_THEME_TOUCH);
+    } else if (event.GetId() == wxID_THEME_HD) {
+        waterfallCanvas->setTheme(COLOR_THEME_HD);
+        demodWaterfallCanvas->setTheme(COLOR_THEME_HD);
+    } else if (event.GetId() == wxID_THEME_RADAR) {
+        waterfallCanvas->setTheme(COLOR_THEME_RADAR);
+        demodWaterfallCanvas->setTheme(COLOR_THEME_RADAR);
     }
 }
 

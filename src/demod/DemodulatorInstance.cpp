@@ -183,7 +183,7 @@ void DemodulatorInstance::squelchAuto() {
 }
 
 bool DemodulatorInstance::isSquelchEnabled() {
-    return squelch;
+    return (demodulatorThread->getSquelchLevel() != 0.0);
 }
 
 void DemodulatorInstance::setSquelchEnabled(bool state) {
