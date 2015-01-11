@@ -40,6 +40,7 @@ private:
     SpectrumCanvas *demodSpectrumCanvas;
     WaterfallCanvas *demodWaterfallCanvas;
     MeterCanvas *demodSignalMeter;
+    MeterCanvas *demodGainMeter;
     TuningCanvas *demodTuner;
 // event table
 

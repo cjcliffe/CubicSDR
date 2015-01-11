@@ -69,6 +69,9 @@ public:
     void setBandwidth(int bw);
     int getBandwidth();
 
+    void setGain(float gain_in);
+    float getGain();
+
     void setFrequency(long long freq);
     long long getFrequency();
 private:
