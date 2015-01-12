@@ -40,6 +40,7 @@ public:
 
     std::vector<SDRDeviceInfo *> *getDevices();
     void setDevice(int deviceId);
+    int getDevice();
 
     DemodulatorThreadOutputQueue* getAudioVisualQueue();
     DemodulatorThreadInputQueue* getIQVisualQueue();

@@ -200,3 +200,7 @@ void CubicSDR::setDevice(int deviceId) {
     command.llong_value = deviceId;
     threadCmdQueueSDR->push(command);
 }
+
+int CubicSDR::getDevice() {
+    return sdrThread->getDeviceId();
+}

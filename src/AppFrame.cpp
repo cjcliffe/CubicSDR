@@ -207,7 +207,7 @@ AppFrame::AppFrame() :
                 devName.append(" (In Use?)");
             }
 
-            menu->Append(wxID_DEVICE_ID+p, devName);
+            menu->AppendRadioItem(wxID_DEVICE_ID+p, devName)->Check(wxGetApp().getDevice() == p);
             p++;
         }
 
