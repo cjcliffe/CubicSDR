@@ -20,7 +20,7 @@
 class CubicSDR: public wxApp {
 public:
     CubicSDR() :
-    m_glContext(NULL), frequency(DEFAULT_FREQ), sdrThread(NULL), sdrPostThread(NULL), threadCmdQueueSDR(NULL), iqVisualQueue(NULL), iqPostDataQueue(NULL), audioVisualQueue(NULL), t_SDR(NULL),  t_PostSDR(NULL) {
+    m_glContext(NULL), frequency(DEFAULT_FREQ), sdrThread(NULL), sdrPostThread(NULL), threadCmdQueueSDR(NULL), iqVisualQueue(NULL), iqPostDataQueue(NULL), audioVisualQueue(NULL), t_SDR(NULL),  t_PostSDR(NULL), sampleRate(DEFAULT_SAMPLE_RATE) {
 
     }
 
@@ -35,6 +35,13 @@ public:
     void setOffset(long long ofs);
     long long getOffset();
 
+    void setSampleRate(long long rate_in);
+    long long getSampleRate();
+
+    std::vector<SDRDeviceInfo *> *getDevices();
+    void setDevice(int deviceId);
+    int getDevice();
+
     DemodulatorThreadOutputQueue* getAudioVisualQueue();
     DemodulatorThreadInputQueue* getIQVisualQueue();
     DemodulatorMgr &getDemodMgr();
@@ -44,11 +51,13 @@ public:
 
 private:
     PrimaryGLContext *m_glContext;
+    std::vector<SDRDeviceInfo *> devs;
 
     DemodulatorMgr demodMgr;
 
     long long frequency;
     long long offset;
+    long long sampleRate;
 
     SDRThread *sdrThread;
     SDRPostThread *sdrPostThread;

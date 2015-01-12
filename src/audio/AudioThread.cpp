@@ -421,13 +421,12 @@ void AudioThread::threadMain() {
     }
 #endif
 
-    std::cout << "Audio thread done." << std::endl;
-
     if (threadQueueNotify != NULL) {
         DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_AUDIO_TERMINATED);
         tCmd.context = this;
         threadQueueNotify->push(tCmd);
     }
+    std::cout << "Audio thread done." << std::endl;
 }
 
 void AudioThread::terminate() {

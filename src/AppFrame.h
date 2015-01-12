@@ -24,6 +24,16 @@
 #define wxID_THEME_HD 2105
 #define wxID_THEME_RADAR 2106
 
+#define wxID_BANDWIDTH_1000M 2152
+#define wxID_BANDWIDTH_1500M 2153
+#define wxID_BANDWIDTH_2000M 2154
+#define wxID_BANDWIDTH_2500M 2155
+#define wxID_BANDWIDTH_2880M 2156
+#define wxID_BANDWIDTH_3200M 2158
+
+#define wxID_DEVICE_ID 3500
+
+
 // Define a new frame type
 class AppFrame: public wxFrame {
 public:
@@ -58,6 +68,9 @@ private:
     std::map<int,RtAudio::DeviceInfo> inputDevices;
     std::map<int,RtAudio::DeviceInfo> outputDevices;
     std::map<int,wxMenuItem *> outputDeviceMenuItems;
+
+    std::map<int,wxMenuItem *> sampleRateMenuItems;
+
 
     std::string currentSessionFile;
 

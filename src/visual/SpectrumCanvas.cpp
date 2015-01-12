@@ -196,16 +196,16 @@ void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
                 long long bwOfs = (centerFreq > freq) ? ((long long) bandwidth / 2) : (-(long long) bandwidth / 2);
                 long long freqEdge = centerFreq + bwOfs;
 
-                if (abs(freq - freqEdge) > (SRATE / 2)) {
-                    freqChange = -((centerFreq > freq) ? (freqEdge - freq - (SRATE / 2)) : (freqEdge - freq + (SRATE / 2)));
+                if (abs(freq - freqEdge) > (wxGetApp().getSampleRate() / 2)) {
+                    freqChange = -((centerFreq > freq) ? (freqEdge - freq - (wxGetApp().getSampleRate() / 2)) : (freqEdge - freq + (wxGetApp().getSampleRate() / 2)));
                 } else {
                     freqChange = 0;
                 }
             }
 
             if (freqChange) {
-                if (freq - freqChange < SRATE/2) {
-                    freq = SRATE/2;
+                if (freq - freqChange < wxGetApp().getSampleRate()/2) {
+                    freq = wxGetApp().getSampleRate()/2;
                 } else {
                     freq -= freqChange;
                 }

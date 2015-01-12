@@ -37,7 +37,7 @@ void InteractiveCanvas::setView(long long center_freq_in, int bandwidth_in) {
 void InteractiveCanvas::disableView() {
     isView = false;
     centerFreq = wxGetApp().getFrequency();
-    bandwidth = SRATE;
+    bandwidth = wxGetApp().getSampleRate();
     lastBandwidth = 0;
 }
 
@@ -69,7 +69,7 @@ unsigned int InteractiveCanvas::getBandwidth() {
     if (isView) {
         return bandwidth;
     } else {
-        return SRATE;
+        return wxGetApp().getSampleRate();
     }
 }
 

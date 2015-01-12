@@ -67,7 +67,7 @@ void TuningCanvas::OnIdle(wxIdleEvent &event) {
         dragAccum += mouseTracker.getMouseX() - mouseTracker.getOriginMouseX();
 
         if (uxDown > 0.275) {
-            wxGetApp().setFrequency(wxGetApp().getFrequency() + (int) (mouseTracker.getOriginDeltaMouseX() * SRATE * 15.0));
+            wxGetApp().setFrequency(wxGetApp().getFrequency() + (int) (mouseTracker.getOriginDeltaMouseX() * (float)wxGetApp().getSampleRate() * 15.0));
         }
 
         if (abs(dragAccum * 10.0) >= 1) {

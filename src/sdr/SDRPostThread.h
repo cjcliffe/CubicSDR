@@ -22,8 +22,6 @@ public:
     void terminate();
 
 protected:
-    uint32_t sample_rate;
-
     std::atomic<SDRThreadIQDataQueue *> iqDataInQueue;
     std::atomic<DemodulatorThreadInputQueue *> iqDataOutQueue;
     std::atomic<DemodulatorThreadInputQueue *> iqVisualQueue;

@@ -14,7 +14,6 @@
 #define DEMOD_TYPE_USB 4
 #define DEMOD_TYPE_DSB 5
 
-
 class DemodulatorThread;
 class DemodulatorThreadCommand {
 public:
@@ -59,11 +58,11 @@ public:
 class DemodulatorThreadIQData: public ReferenceCounter {
 public:
     long long frequency;
-    unsigned int bandwidth;
+    long long sampleRate;
     std::vector<liquid_float_complex> data;
 
     DemodulatorThreadIQData() :
-            frequency(0), bandwidth(0) {
+            frequency(0), sampleRate(0) {
 
     }
 
@@ -75,13 +74,13 @@ public:
 class DemodulatorThreadPostIQData: public ReferenceCounter {
 public:
     std::vector<liquid_float_complex> data;
-    int bandwidth;
+    long long sampleRate;
     msresamp_rrrf audioResampler;
     msresamp_rrrf stereoResampler;
     double audioResampleRatio;
 
     DemodulatorThreadPostIQData() :
-            bandwidth(0), audioResampler(NULL), stereoResampler(NULL), audioResampleRatio(0) {
+            sampleRate(0), audioResampler(NULL), stereoResampler(NULL), audioResampleRatio(0) {
 
     }
 
@@ -121,14 +120,14 @@ typedef ThreadQueue<DemodulatorThreadControlCommand> DemodulatorThreadControlCom
 class DemodulatorThreadParameters {
 public:
     long long frequency;
-    unsigned int inputRate;
+    long long sampleRate;
     unsigned int bandwidth; // set equal to disable second stage re-sampling?
     unsigned int audioSampleRate;
 
     int demodType;
 
     DemodulatorThreadParameters() :
-            frequency(0), inputRate(SRATE), bandwidth(200000), audioSampleRate(
+            frequency(0), sampleRate(DEFAULT_SAMPLE_RATE), bandwidth(200000), audioSampleRate(
             AUDIO_FREQUENCY), demodType(DEMOD_TYPE_FM) {
 
     }

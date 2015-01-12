@@ -96,6 +96,9 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, float r, float 
     if (!demod) {
         return;
     }
+    if (!srate) {
+        srate = wxGetApp().getSampleRate();
+    }
 
     GLint vp[4];
     glGetIntegerv( GL_VIEWPORT, vp);
@@ -170,6 +173,9 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, float r, float 
 void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, float b, long long center_freq, long long srate) {
     if (!demod) {
         return;
+    }
+    if (!srate) {
+        srate = wxGetApp().getSampleRate();
     }
 
     if (center_freq == -1) {
@@ -269,6 +275,10 @@ void PrimaryGLContext::DrawFreqSelector(float uxPos, float r, float g, float b, 
         bw = defaultDemodParams.bandwidth;
     } else {
         bw = demod->getBandwidth();
+    }
+
+    if (!srate) {
+        srate = wxGetApp().getSampleRate();
     }
 
     glDisable(GL_DEPTH_TEST);

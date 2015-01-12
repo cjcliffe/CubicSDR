@@ -158,19 +158,61 @@ AppFrame::AppFrame() :
 
     menuBar->Append(menu, wxT("Active Demodulator &Output"));
 
-
     menu = new wxMenu;
 
-    menu->Append(wxID_THEME_DEFAULT, "Default");
-    menu->Append(wxID_THEME_RADAR, "RADAR");
-    menu->Append(wxID_THEME_BW, "Black & White");
-    menu->Append(wxID_THEME_SHARP, "Sharp");
-    menu->Append(wxID_THEME_RAD, "Rad");
-    menu->Append(wxID_THEME_TOUCH, "Touch");
-    menu->Append(wxID_THEME_HD, "HD");
+    menu->AppendRadioItem(wxID_THEME_DEFAULT, "Default")->Check(true);
+    menu->AppendRadioItem(wxID_THEME_RADAR, "RADAR");
+    menu->AppendRadioItem(wxID_THEME_BW, "Black & White");
+    menu->AppendRadioItem(wxID_THEME_SHARP, "Sharp");
+    menu->AppendRadioItem(wxID_THEME_RAD, "Rad");
+    menu->AppendRadioItem(wxID_THEME_TOUCH, "Touch");
+    menu->AppendRadioItem(wxID_THEME_HD, "HD");
 
     menuBar->Append(menu, wxT("&Color Scheme"));
 
+    menu = new wxMenu;
+
+    sampleRateMenuItems[wxID_BANDWIDTH_1000M] = menu->AppendRadioItem(wxID_BANDWIDTH_1000M, "1.0M");
+    sampleRateMenuItems[wxID_BANDWIDTH_1500M] = menu->AppendRadioItem(wxID_BANDWIDTH_1500M, "1.5M");
+    sampleRateMenuItems[wxID_BANDWIDTH_2000M] = menu->AppendRadioItem(wxID_BANDWIDTH_2000M, "2.0M");
+    sampleRateMenuItems[wxID_BANDWIDTH_2500M] = menu->AppendRadioItem(wxID_BANDWIDTH_2500M, "2.5M");
+    sampleRateMenuItems[wxID_BANDWIDTH_2880M] = menu->AppendRadioItem(wxID_BANDWIDTH_2880M, "2.88M");
+    sampleRateMenuItems[wxID_BANDWIDTH_3200M] = menu->AppendRadioItem(wxID_BANDWIDTH_3200M, "3.2M");
+
+#ifdef __APPLE
+    sampleRateMenuItems[wxID_BANDWIDTH_2000M]->Check(true);
+#else
+    sampleRateMenuItems[wxID_BANDWIDTH_2500M]->Check(true);
+#endif
+
+    menuBar->Append(menu, wxT("&Input Bandwidth"));
+
+    std::vector<SDRDeviceInfo *> *devs = wxGetApp().getDevices();
+    std::vector<SDRDeviceInfo *>::iterator devs_i;
+
+    if (devs->size() > 1) {
+
+        menu = new wxMenu;
+
+        int p = 0;
+        for (devs_i = devs->begin(); devs_i != devs->end(); devs_i++) {
+            std::string devName = (*devs_i)->getName();
+            if ((*devs_i)->isAvailable()) {
+                devName.append(": ");
+                devName.append((*devs_i)->getProduct());
+                devName.append(" [");
+                devName.append((*devs_i)->getSerial());
+                devName.append("]");
+            } else {
+                devName.append(" (In Use?)");
+            }
+
+            menu->AppendRadioItem(wxID_DEVICE_ID+p, devName)->Check(wxGetApp().getDevice() == p);
+            p++;
+        }
+
+        menuBar->Append(menu,wxT("&Device"));
+    }
 
     SetMenuBar(menuBar);
 
@@ -262,6 +304,32 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         waterfallCanvas->setTheme(COLOR_THEME_RADAR);
         demodWaterfallCanvas->setTheme(COLOR_THEME_RADAR);
     }
+
+    switch (event.GetId()) {
+    case wxID_BANDWIDTH_1000M:
+        wxGetApp().setSampleRate(1000000);
+        break;
+    case wxID_BANDWIDTH_1500M:
+        wxGetApp().setSampleRate(1500000);
+        break;
+    case wxID_BANDWIDTH_2000M:
+        wxGetApp().setSampleRate(2000000);
+        break;
+    case wxID_BANDWIDTH_2500M:
+        wxGetApp().setSampleRate(2500000);
+        break;
+    case wxID_BANDWIDTH_2880M:
+        wxGetApp().setSampleRate(2880000);
+        break;
+    case wxID_BANDWIDTH_3200M:
+        wxGetApp().setSampleRate(3200000);
+        break;
+    }
+
+    std::vector<SDRDeviceInfo *> *devs = wxGetApp().getDevices();
+    if (event.GetId() >= wxID_DEVICE_ID && event.GetId() <= wxID_DEVICE_ID+devs->size()) {
+        wxGetApp().setDevice(event.GetId()-wxID_DEVICE_ID);
+    }
 }
 
 void AppFrame::OnClose(wxCommandEvent& WXUNUSED(event)) {
@@ -307,8 +375,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             }
 
             unsigned int demodBw = (unsigned int) ceil((float) demod->getParams().bandwidth * 2.5);
-            if (demodBw > SRATE / 2) {
-                demodBw = SRATE / 2;
+            if (demodBw > wxGetApp().getSampleRate() / 2) {
+                demodBw = wxGetApp().getSampleRate() / 2;
             }
             if (demodBw < 80000) {
                 demodBw = 80000;
@@ -399,9 +467,8 @@ void AppFrame::saveSession(std::string fileName) {
 
     s.SaveToFileXML(fileName);
 
-
     currentSessionFile = fileName;
-    std::string filePart = fileName.substr(fileName.find_last_of(filePathSeparator)+1);
+    std::string filePart = fileName.substr(fileName.find_last_of(filePathSeparator) + 1);
     GetStatusBar()->SetStatusText(wxString::Format(wxT("Saved session: %s"), currentSessionFile.c_str()));
     SetTitle(wxString::Format(wxT("%s: %s"), CUBICSDR_TITLE, filePart.c_str()));
 }
@@ -425,8 +492,8 @@ bool AppFrame::loadSession(std::string fileName) {
         std::cout << "\tCenter Frequency: " << center_freq << std::endl;
         std::cout << "\tOffset: " << offset << std::endl;
 
-        wxGetApp().setOffset(offset);
         wxGetApp().setFrequency(center_freq);
+        wxGetApp().setOffset(offset);
 
         DataNode *demodulators = l.rootNode()->getNext("demodulators");
 
@@ -494,7 +561,7 @@ bool AppFrame::loadSession(std::string fileName) {
 
     currentSessionFile = fileName;
 
-    std::string filePart = fileName.substr(fileName.find_last_of(filePathSeparator)+1);
+    std::string filePart = fileName.substr(fileName.find_last_of(filePathSeparator) + 1);
 
     GetStatusBar()->SetStatusText(wxString::Format(wxT("Loaded session file: %s"), currentSessionFile.c_str()));
     SetTitle(wxString::Format(wxT("%s: %s"), CUBICSDR_TITLE, filePart.c_str()));

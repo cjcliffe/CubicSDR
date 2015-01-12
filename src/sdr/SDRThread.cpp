@@ -4,16 +4,16 @@
 #include "CubicSDR.h"
 
 SDRThread::SDRThread(SDRThreadCommandQueue* pQueue) :
-        commandQueue(pQueue), iqDataOutQueue(NULL), terminated(false), offset(0) {
+        commandQueue(pQueue), iqDataOutQueue(NULL), terminated(false), offset(0), deviceId(-1) {
     dev = NULL;
-    sampleRate = SRATE;
+    sampleRate = DEFAULT_SAMPLE_RATE;
 }
 
 SDRThread::~SDRThread() {
     rtlsdr_close(dev);
 }
 
-int SDRThread::enumerate_rtl() {
+int SDRThread::enumerate_rtl(std::vector<SDRDeviceInfo *> *devs) {
 
     int first_available = -1;
 
@@ -24,37 +24,51 @@ int SDRThread::enumerate_rtl() {
     std::cout << "RTL Devices: " << rtl_count << std::endl;
 
     for (int i = 0; i < rtl_count; i++) {
-        std::cout << "Device #" << i << ": " << rtlsdr_get_device_name(i) << std::endl;
+        std::string deviceName(rtlsdr_get_device_name(i));
+        std::string deviceManufacturer;
+        std::string deviceProduct;
+        std::string deviceTuner;
+        std::string deviceSerial;
+
+        bool deviceAvailable = false;
+        std::cout << "Device #" << i << ": " << deviceName << std::endl;
         if (rtlsdr_get_device_usb_strings(i, manufact, product, serial) == 0) {
             std::cout << "\tManufacturer: " << manufact << ", Product Name: " << product << ", Serial: " << serial << std::endl;
 
-            rtlsdr_open(&dev, i);
+            deviceSerial = serial;
+            deviceAvailable = true;
+            deviceProduct = product;
+            deviceManufacturer = manufact;
+
+            rtlsdr_dev_t *devTest;
+            rtlsdr_open(&devTest, i);
 
             std::cout << "\t Tuner type: ";
-            switch (rtlsdr_get_tuner_type(dev)) {
+            switch (rtlsdr_get_tuner_type(devTest)) {
             case RTLSDR_TUNER_UNKNOWN:
-                std::cout << "Unknown";
+                deviceTuner = "Unknown";
                 break;
             case RTLSDR_TUNER_E4000:
-                std::cout << "Elonics E4000";
+                deviceTuner = "Elonics E4000";
                 break;
             case RTLSDR_TUNER_FC0012:
-                std::cout << "Fitipower FC0012";
+                deviceTuner = "Fitipower FC0012";
                 break;
             case RTLSDR_TUNER_FC0013:
-                std::cout << "Fitipower FC0013";
+                deviceTuner = "Fitipower FC0013";
                 break;
             case RTLSDR_TUNER_FC2580:
-                std::cout << "Fitipower FC2580";
+                deviceTuner = "Fitipower FC2580";
                 break;
             case RTLSDR_TUNER_R820T:
-                std::cout << "Rafael Micro R820T";
+                deviceTuner = "Rafael Micro R820T";
                 break;
             case RTLSDR_TUNER_R828D:
+                deviceTuner = "Rafael Micro R828D";
                 break;
             }
 
-            std::cout << std::endl;
+            std::cout << deviceTuner << std::endl;
             /*
              int num_gains = rtlsdr_get_tuner_gains(dev, NULL);
 
@@ -73,7 +87,7 @@ int SDRThread::enumerate_rtl() {
              free(gains);
              */
 
-            rtlsdr_close(dev);
+            rtlsdr_close(devTest);
             if (first_available == -1) {
                 first_available = i;
             }
@@ -82,6 +96,15 @@ int SDRThread::enumerate_rtl() {
             std::cout << "\tUnable to access device #" << i << " (in use?)" << std::endl;
         }
 
+        if (devs != NULL) {
+            SDRDeviceInfo *devInfo = new SDRDeviceInfo();
+            devInfo->setName(deviceName);
+            devInfo->setAvailable(deviceAvailable);
+            devInfo->setProduct(deviceProduct);
+            devInfo->setSerial(deviceSerial);
+            devInfo->setManufacturer(deviceManufacturer);
+            devs->push_back(devInfo);
+        }
     }
 
     return first_available;
@@ -92,35 +115,36 @@ void SDRThread::threadMain() {
 #ifdef __APPLE__
     pthread_t tID = pthread_self();  // ID of this thread
     int priority = sched_get_priority_max( SCHED_FIFO) - 1;
-    sched_param prio = {priority}; // scheduling priority of thread
+    sched_param prio = { priority }; // scheduling priority of thread
     pthread_setschedparam(tID, SCHED_FIFO, &prio);
 #endif
 
     std::cout << "SDR thread initializing.." << std::endl;
 
     int devCount = rtlsdr_get_device_count();
-    int firstDevAvailable = enumerate_rtl();
+    if (deviceId == -1) {
+        deviceId = enumerate_rtl(NULL);
+    }
 
-    if (firstDevAvailable == -1) {
+    if (deviceId == -1) {
         std::cout << "No devices found.. SDR Thread exiting.." << std::endl;
         return;
     } else {
-        std::cout << "Using first available RTL-SDR device #" << firstDevAvailable << std::endl;
+        std::cout << "Using device #" << deviceId << std::endl;
     }
 
     signed char buf[BUF_SIZE];
 
     long long frequency = DEFAULT_FREQ;
-    unsigned int bandwidth = SRATE;
 
-    rtlsdr_open(&dev, firstDevAvailable);
-    rtlsdr_set_sample_rate(dev, bandwidth);
-    rtlsdr_set_center_freq(dev, frequency);
+    rtlsdr_open(&dev, deviceId);
+    rtlsdr_set_sample_rate(dev, sampleRate);
+    rtlsdr_set_center_freq(dev, frequency - offset);
     rtlsdr_set_agc_mode(dev, 1);
     rtlsdr_set_offset_tuning(dev, 0);
     rtlsdr_reset_buffer(dev);
 
-    sampleRate = rtlsdr_get_sample_rate(dev);
+//    sampleRate = rtlsdr_get_sample_rate(dev);
 
     std::cout << "Sample Rate is: " << sampleRate << std::endl;
 
@@ -138,8 +162,12 @@ void SDRThread::threadMain() {
         if (!cmdQueue->empty()) {
             bool freq_changed = false;
             bool offset_changed = false;
+            bool rate_changed = false;
+            bool device_changed = false;
             long long new_freq;
             long long new_offset;
+            long long new_rate;
+            int new_device;
 
             while (!cmdQueue->empty()) {
                 SDRThreadCommand command;
@@ -149,8 +177,8 @@ void SDRThread::threadMain() {
                 case SDRThreadCommand::SDR_THREAD_CMD_TUNE:
                     freq_changed = true;
                     new_freq = command.llong_value;
-                    if (new_freq < SRATE / 2) {
-                        new_freq = SRATE / 2;
+                    if (new_freq < sampleRate / 2) {
+                        new_freq = sampleRate / 2;
                     }
                     std::cout << "Set frequency: " << new_freq << std::endl;
                     break;
@@ -159,19 +187,41 @@ void SDRThread::threadMain() {
                     new_offset = command.llong_value;
                     std::cout << "Set offset: " << new_offset << std::endl;
                     break;
+                case SDRThreadCommand::SDR_THREAD_CMD_SET_SAMPLERATE:
+                    rate_changed = true;
+                    new_rate = command.llong_value;
+                    std::cout << "Set sample rate: " << new_rate << std::endl;
+                    break;
+                case SDRThreadCommand::SDR_THREAD_CMD_SET_DEVICE:
+                    device_changed = true;
+                    new_device = (int) command.llong_value;
+                    std::cout << "Set device: " << new_device << std::endl;
+                    break;
                 default:
                     break;
                 }
             }
 
+            if (device_changed) {
+                rtlsdr_close(dev);
+                rtlsdr_open(&dev, new_device);
+                rtlsdr_set_sample_rate(dev, sampleRate);
+                rtlsdr_set_center_freq(dev, frequency - offset);
+                rtlsdr_set_agc_mode(dev, 1);
+                rtlsdr_set_offset_tuning(dev, 0);
+                rtlsdr_reset_buffer(dev);
+            }
             if (offset_changed && !freq_changed) {
                 new_freq = frequency;
                 freq_changed = true;
                 offset = new_offset;
             }
-            if (freq_changed) {
+            if (rate_changed) {
+                sampleRate = new_rate;
+                rtlsdr_set_sample_rate(dev, new_rate);
+            } else if (freq_changed) {
                 frequency = new_freq;
-                rtlsdr_set_center_freq(dev, frequency-offset);
+                rtlsdr_set_center_freq(dev, frequency - offset);
             }
         }
 
@@ -194,7 +244,7 @@ void SDRThread::threadMain() {
 //        std::lock_guard < std::mutex > lock(dataOut->m_mutex);
         dataOut->setRefCount(1);
         dataOut->frequency = frequency;
-        dataOut->bandwidth = bandwidth;
+        dataOut->sampleRate = sampleRate;
 
         if (dataOut->data.capacity() < n_read) {
             dataOut->data.reserve(n_read);

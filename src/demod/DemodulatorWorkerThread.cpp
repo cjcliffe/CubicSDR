@@ -31,21 +31,21 @@ void DemodulatorWorkerThread::threadMain() {
             done = commandQueue->empty();
         }
 
-        if (filterChanged) {
+        if (filterChanged && !terminated) {
             DemodulatorWorkerThreadResult result(DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS);
 
-            result.resamplerRatio = (double) (filterCommand.bandwidth) / (double) filterCommand.inputRate;
+            result.iqResampleRatio = (double) (filterCommand.bandwidth) / (double) filterCommand.sampleRate;
             result.audioResamplerRatio = (double) (filterCommand.audioSampleRate) / (double) filterCommand.bandwidth;
 
             float As = 60.0f;         // stop-band attenuation [dB]
 
-            result.resampler = msresamp_crcf_create(result.resamplerRatio, As);
+            result.iqResampler = msresamp_crcf_create(result.iqResampleRatio, As);
             result.audioResampler = msresamp_rrrf_create(result.audioResamplerRatio, As);
             result.stereoResampler = msresamp_rrrf_create(result.audioResamplerRatio, As);
 
             result.audioSampleRate = filterCommand.audioSampleRate;
             result.bandwidth = filterCommand.bandwidth;
-            result.inputRate = filterCommand.inputRate;
+            result.sampleRate = filterCommand.sampleRate;
             resultQueue->push(result);
         }
 
