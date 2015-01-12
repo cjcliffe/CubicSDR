@@ -31,7 +31,7 @@ void DemodulatorWorkerThread::threadMain() {
             done = commandQueue->empty();
         }
 
-        if (filterChanged) {
+        if (filterChanged && !terminated) {
             DemodulatorWorkerThreadResult result(DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS);
 
             result.iqResampleRatio = (double) (filterCommand.bandwidth) / (double) filterCommand.sampleRate;

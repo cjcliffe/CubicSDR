@@ -239,10 +239,10 @@ void DemodulatorPreThread::threadMain() {
         delete iqDataDel;
     }
 
-    std::cout << "Demodulator preprocessor thread done." << std::endl;
     DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_PREPROCESS_TERMINATED);
     tCmd.context = this;
     threadQueueNotify->push(tCmd);
+    std::cout << "Demodulator preprocessor thread done." << std::endl;
 }
 
 void DemodulatorPreThread::terminate() {
@@ -250,4 +250,6 @@ void DemodulatorPreThread::terminate() {
     DemodulatorThreadIQData *inp = new DemodulatorThreadIQData;    // push dummy to nudge queue
     iqInputQueue->push(inp);
     workerThread->terminate();
+    t_Worker->detach();
+    delete t_Worker;
 }

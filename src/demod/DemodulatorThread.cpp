@@ -406,10 +406,10 @@ void DemodulatorThread::threadMain() {
         delete audioDataDel;
     }
 
-    std::cout << "Demodulator thread done." << std::endl;
     DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_TERMINATED);
     tCmd.context = this;
     threadQueueNotify->push(tCmd);
+    std::cout << "Demodulator thread done." << std::endl;
 }
 
 void DemodulatorThread::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {
