@@ -21,15 +21,15 @@ Basic Goals and Status:
 ----------------------
   - Simple UI
   - Devices
-    - [x] RTL-SDR (RTL2832U)
+    - [x] RTL-SDR
     - [ ] HackRF
     - [ ] Whatever else I can get my hands on
   - Minimal configuration
-    - [ ] Device Selection
-    - [ ] Bandwidth
-    - [ ] Default audio device and settings
+    - [x] Device Selection
+    - [x] Bandwidth
     - [x] Color scheme
     - [x] Load/Save session
+    - [ ] Default audio device and settings
   - Neat Visuals
     - [x] Scope
     - [x] Spectrum
@@ -52,7 +52,7 @@ Basic Goals and Status:
       - [x] Display separate zoomed-in view of current waterfall and spectrum, allow adjustments
       - [x] Display signal level and allow squelch control
       - [x] Display audio output selection
-      - [ ] Volume control
+      - [x] Volume control
       - [ ] Basic noise reduction / filter controls?
   - Basic Input Controls
     - [x] Drag spectrum to change center frequency
