@@ -31,6 +31,9 @@
 #define wxID_BANDWIDTH_2880M 2156
 #define wxID_BANDWIDTH_3200M 2158
 
+#define wxID_DEVICE_ID 3500
+
+
 // Define a new frame type
 class AppFrame: public wxFrame {
 public:

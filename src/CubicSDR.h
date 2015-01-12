@@ -38,6 +38,9 @@ public:
     void setSampleRate(long long rate_in);
     long long getSampleRate();
 
+    std::vector<SDRDeviceInfo *> *getDevices();
+    void setDevice(int deviceId);
+
     DemodulatorThreadOutputQueue* getAudioVisualQueue();
     DemodulatorThreadInputQueue* getIQVisualQueue();
     DemodulatorMgr &getDemodMgr();
@@ -47,6 +50,7 @@ public:
 
 private:
     PrimaryGLContext *m_glContext;
+    std::vector<SDRDeviceInfo *> devs;
 
     DemodulatorMgr demodMgr;
 

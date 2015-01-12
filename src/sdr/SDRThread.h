@@ -14,10 +14,71 @@
 #include "ThreadQueue.h"
 #include "DemodulatorMgr.h"
 
+class SDRDeviceInfo {
+public:
+    SDRDeviceInfo() : name(""), serial(""), available(false) { }
+
+    bool isAvailable() const {
+        return available;
+    }
+
+    void setAvailable(bool available) {
+        this->available = available;
+    }
+
+    const std::string& getName() const {
+        return name;
+    }
+
+    void setName(const std::string& name) {
+        this->name = name;
+    }
+
+    const std::string& getSerial() const {
+        return serial;
+    }
+
+    void setSerial(const std::string& serial) {
+        this->serial = serial;
+    }
+
+    const std::string& getTuner() const {
+        return tuner;
+    }
+
+    void setTuner(const std::string& tuner) {
+        this->tuner = tuner;
+    }
+
+    const std::string& getManufacturer() const {
+        return manufacturer;
+    }
+
+    void setManufacturer(const std::string& manufacturer) {
+        this->manufacturer = manufacturer;
+    }
+
+    const std::string& getProduct() const {
+        return product;
+    }
+
+    void setProduct(const std::string& product) {
+        this->product = product;
+    }
+
+private:
+    std::string name;
+    std::string serial;
+    std::string product;
+    std::string manufacturer;
+    std::string tuner;
+    bool available;
+};
+
 class SDRThreadCommand {
 public:
     enum SDRThreadCommandEnum {
-        SDR_THREAD_CMD_NULL, SDR_THREAD_CMD_TUNE, SDR_THREAD_CMD_SET_OFFSET, SDR_THREAD_CMD_SET_SAMPLERATE
+        SDR_THREAD_CMD_NULL, SDR_THREAD_CMD_TUNE, SDR_THREAD_CMD_SET_OFFSET, SDR_THREAD_CMD_SET_SAMPLERATE, SDR_THREAD_CMD_SET_DEVICE
     };
 
     SDRThreadCommand() :
@@ -65,7 +126,7 @@ public:
     SDRThread(SDRThreadCommandQueue* pQueue);
     ~SDRThread();
 
-    int enumerate_rtl();
+    static int enumerate_rtl(std::vector<SDRDeviceInfo *> *devs);
 
     void threadMain();
 
@@ -74,6 +135,15 @@ public:
     }
 
     void terminate();
+
+    int getDeviceId() const {
+        return deviceId;
+    }
+
+    void setDeviceId(int deviceId) {
+        this->deviceId = deviceId;
+    }
+
 protected:
     uint32_t sampleRate;
     long long offset;
@@ -81,4 +151,5 @@ protected:
     std::atomic<SDRThreadIQDataQueue*> iqDataOutQueue;
 
     std::atomic<bool> terminated;
+    int deviceId;
 };

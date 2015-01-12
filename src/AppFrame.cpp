@@ -187,6 +187,33 @@ AppFrame::AppFrame() :
 
     menuBar->Append(menu, wxT("&Input Bandwidth"));
 
+    std::vector<SDRDeviceInfo *> *devs = wxGetApp().getDevices();
+    std::vector<SDRDeviceInfo *>::iterator devs_i;
+
+    if (devs->size() > 1) {
+
+        menu = new wxMenu;
+
+        int p = 0;
+        for (devs_i = devs->begin(); devs_i != devs->end(); devs_i++) {
+            std::string devName = (*devs_i)->getName();
+            if ((*devs_i)->isAvailable()) {
+                devName.append(": ");
+                devName.append((*devs_i)->getProduct());
+                devName.append(" [");
+                devName.append((*devs_i)->getSerial());
+                devName.append("]");
+            } else {
+                devName.append(" (In Use?)");
+            }
+
+            menu->Append(wxID_DEVICE_ID+p, devName);
+            p++;
+        }
+
+        menuBar->Append(menu,wxT("&Device"));
+    }
+
     SetMenuBar(menuBar);
 
     CreateStatusBar();
@@ -297,6 +324,11 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
     case wxID_BANDWIDTH_3200M:
         wxGetApp().setSampleRate(3200000);
         break;
+    }
+
+    std::vector<SDRDeviceInfo *> *devs = wxGetApp().getDevices();
+    if (event.GetId() >= wxID_DEVICE_ID && event.GetId() <= wxID_DEVICE_ID+devs->size()) {
+        wxGetApp().setDevice(event.GetId()-wxID_DEVICE_ID);
     }
 }
 

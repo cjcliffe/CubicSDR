@@ -39,6 +39,32 @@ bool CubicSDR::OnInit() {
     sdrPostThread->setIQDataInQueue(iqPostDataQueue);
     sdrPostThread->setIQVisualQueue(iqVisualQueue);
 
+    std::vector<SDRDeviceInfo *>::iterator devs_i;
+
+    SDRThread::enumerate_rtl(&devs);
+
+    if (devs.size() > 1) {
+        wxArrayString choices;
+        for (devs_i = devs.begin(); devs_i != devs.end(); devs_i++) {
+            std::string devName = (*devs_i)->getName();
+            if ((*devs_i)->isAvailable()) {
+                devName.append(": ");
+                devName.append((*devs_i)->getProduct());
+                devName.append(" [");
+                devName.append((*devs_i)->getSerial());
+                devName.append("]");
+            } else {
+                devName.append(" (In Use?)");
+            }
+            choices.Add(devName);
+        }
+
+        int devId = wxGetSingleChoiceIndex(wxT("Devices"),wxT("Choose Input Device"),choices);
+
+        std::cout << "Chosen: " << devId << std::endl;
+        sdrThread->setDeviceId(devId);
+    }
+
     t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
     t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
 
@@ -162,4 +188,15 @@ void CubicSDR::removeDemodulator(DemodulatorInstance *demod) {
         return;
     }
     sdrPostThread->removeDemodulator(demod);
+}
+
+std::vector<SDRDeviceInfo*>* CubicSDR::getDevices() {
+    return &devs;
+}
+
+void CubicSDR::setDevice(int deviceId) {
+    sdrThread->setDeviceId(deviceId);
+    SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_SET_DEVICE);
+    command.llong_value = deviceId;
+    threadCmdQueueSDR->push(command);
 }
