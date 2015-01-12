@@ -160,24 +160,30 @@ AppFrame::AppFrame() :
 
     menu = new wxMenu;
 
-    menu->Append(wxID_THEME_DEFAULT, "Default");
-    menu->Append(wxID_THEME_RADAR, "RADAR");
-    menu->Append(wxID_THEME_BW, "Black & White");
-    menu->Append(wxID_THEME_SHARP, "Sharp");
-    menu->Append(wxID_THEME_RAD, "Rad");
-    menu->Append(wxID_THEME_TOUCH, "Touch");
-    menu->Append(wxID_THEME_HD, "HD");
+    menu->AppendRadioItem(wxID_THEME_DEFAULT, "Default")->Check(true);
+    menu->AppendRadioItem(wxID_THEME_RADAR, "RADAR");
+    menu->AppendRadioItem(wxID_THEME_BW, "Black & White");
+    menu->AppendRadioItem(wxID_THEME_SHARP, "Sharp");
+    menu->AppendRadioItem(wxID_THEME_RAD, "Rad");
+    menu->AppendRadioItem(wxID_THEME_TOUCH, "Touch");
+    menu->AppendRadioItem(wxID_THEME_HD, "HD");
 
     menuBar->Append(menu, wxT("&Color Scheme"));
 
     menu = new wxMenu;
 
-    menu->Append(wxID_BANDWIDTH_1000M, "1.0M");
-    menu->Append(wxID_BANDWIDTH_1500M, "1.5M");
-    menu->Append(wxID_BANDWIDTH_2000M, "2.0M");
-    menu->Append(wxID_BANDWIDTH_2500M, "2.5M");
-    menu->Append(wxID_BANDWIDTH_2880M, "2.88M");
-    menu->Append(wxID_BANDWIDTH_3200M, "3.2M");
+    sampleRateMenuItems[wxID_BANDWIDTH_1000M] = menu->AppendRadioItem(wxID_BANDWIDTH_1000M, "1.0M");
+    sampleRateMenuItems[wxID_BANDWIDTH_1500M] = menu->AppendRadioItem(wxID_BANDWIDTH_1500M, "1.5M");
+    sampleRateMenuItems[wxID_BANDWIDTH_2000M] = menu->AppendRadioItem(wxID_BANDWIDTH_2000M, "2.0M");
+    sampleRateMenuItems[wxID_BANDWIDTH_2500M] = menu->AppendRadioItem(wxID_BANDWIDTH_2500M, "2.5M");
+    sampleRateMenuItems[wxID_BANDWIDTH_2880M] = menu->AppendRadioItem(wxID_BANDWIDTH_2880M, "2.88M");
+    sampleRateMenuItems[wxID_BANDWIDTH_3200M] = menu->AppendRadioItem(wxID_BANDWIDTH_3200M, "3.2M");
+
+#ifdef __APPLE
+    sampleRateMenuItems[wxID_BANDWIDTH_2000M]->Check(true);
+#else
+    sampleRateMenuItems[wxID_BANDWIDTH_2500M]->Check(true);
+#endif
 
     menuBar->Append(menu, wxT("&Input Bandwidth"));
 
@@ -454,8 +460,8 @@ bool AppFrame::loadSession(std::string fileName) {
         std::cout << "\tCenter Frequency: " << center_freq << std::endl;
         std::cout << "\tOffset: " << offset << std::endl;
 
-        wxGetApp().setOffset(offset);
         wxGetApp().setFrequency(center_freq);
+        wxGetApp().setOffset(offset);
 
         DataNode *demodulators = l.rootNode()->getNext("demodulators");
 
