@@ -55,6 +55,10 @@ public:
     RGBColor button;
     RGBColor buttonHighlight;
 
+    RGBColor scopeBackground;
+    RGBColor fftBackground;
+    RGBColor generalBackground;
+
     Gradient waterfallGradient;
 
     std::string name;

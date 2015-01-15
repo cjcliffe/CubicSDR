@@ -13,6 +13,7 @@ ScopeContext::ScopeContext(ScopeCanvas *canvas, wxGLContext *sharedContext) :
 }
 
 void ScopeContext::DrawBegin() {
+    glClearColor(ThemeMgr::mgr.currentTheme->scopeBackground.r, ThemeMgr::mgr.currentTheme->scopeBackground.g, ThemeMgr::mgr.currentTheme->scopeBackground.b, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glMatrixMode(GL_MODELVIEW);
@@ -22,6 +23,21 @@ void ScopeContext::DrawBegin() {
 }
 
 void ScopeContext::Plot(std::vector<float> &points, bool stereo) {
+    glBegin(GL_QUADS);
+    glColor3f(ThemeMgr::mgr.currentTheme->scopeBackground.r*2.0, ThemeMgr::mgr.currentTheme->scopeBackground.g*2.0, ThemeMgr::mgr.currentTheme->scopeBackground.b*2.0);
+    glVertex2f(1, 1);
+    glVertex2f(-1, 1);
+    glColor3f(ThemeMgr::mgr.currentTheme->scopeBackground.r, ThemeMgr::mgr.currentTheme->scopeBackground.g, ThemeMgr::mgr.currentTheme->scopeBackground.b);
+    glVertex2f(-1, 0);
+    glVertex2f(1, 0);
+
+    glVertex2f(-1, 0);
+    glVertex2f(1, 0);
+    glColor3f(ThemeMgr::mgr.currentTheme->scopeBackground.r*2.0, ThemeMgr::mgr.currentTheme->scopeBackground.g*2.0, ThemeMgr::mgr.currentTheme->scopeBackground.b*2.0);
+    glVertex2f(1, -1);
+    glVertex2f(-1, -1);
+    glEnd();
+
     glColor3f(1.0, 1.0, 1.0);
 
     if (stereo) {
@@ -30,7 +46,7 @@ void ScopeContext::Plot(std::vector<float> &points, bool stereo) {
         glVertex2f(-1.0, 0.0);
         glVertex2f(1.0, 0.0);
         glEnd();
-        glColor3f(0.3, 0.3, 0.3);
+        glColor3f(ThemeMgr::mgr.currentTheme->scopeLine.r*0.35, ThemeMgr::mgr.currentTheme->scopeLine.g*0.35, ThemeMgr::mgr.currentTheme->scopeLine.b*0.35);
         glBegin(GL_LINES);
         glVertex2f(-1.0, 0.5);
         glVertex2f(1.0, 0.5);
@@ -38,7 +54,7 @@ void ScopeContext::Plot(std::vector<float> &points, bool stereo) {
         glVertex2f(1.0, -0.5);
         glEnd();
     } else {
-        glColor3f(0.3, 0.3, 0.3);
+        glColor3f(ThemeMgr::mgr.currentTheme->scopeLine.r*0.35, ThemeMgr::mgr.currentTheme->scopeLine.g*0.35, ThemeMgr::mgr.currentTheme->scopeLine.b*0.35);
         glBegin(GL_LINES);
         glVertex2f(-1.0, 0.0);
         glVertex2f(1.0, 0.0);

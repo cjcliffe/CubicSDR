@@ -312,7 +312,8 @@ void PrimaryGLContext::DrawFreqSelector(float uxPos, float r, float g, float b, 
 
 }
 
-void PrimaryGLContext::BeginDraw() {
+void PrimaryGLContext::BeginDraw(float r, float g, float b) {
+    glClearColor(r,g,b, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glMatrixMode(GL_MODELVIEW);

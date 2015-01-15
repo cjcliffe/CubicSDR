@@ -18,6 +18,16 @@ SpectrumContext::SpectrumContext(SpectrumCanvas *canvas, wxGLContext *sharedCont
 
 void SpectrumContext::Draw(std::vector<float> &points, long long freq, int bandwidth) {
 
+    glBegin(GL_QUADS);
+    glColor3f(ThemeMgr::mgr.currentTheme->fftBackground.r*2.0, ThemeMgr::mgr.currentTheme->fftBackground.g*2.0, ThemeMgr::mgr.currentTheme->fftBackground.b*2.0);
+    glVertex2f(1, 1);
+    glVertex2f(-1, 1);
+    glColor3f(ThemeMgr::mgr.currentTheme->fftBackground.r, ThemeMgr::mgr.currentTheme->fftBackground.g, ThemeMgr::mgr.currentTheme->fftBackground.b);
+    glVertex2f(-1, -0.5);
+    glVertex2f(1, -0.5);
+    glEnd();
+
+
     glDisable(GL_TEXTURE_2D);
     glColor3f(ThemeMgr::mgr.currentTheme->fftLine.r, ThemeMgr::mgr.currentTheme->fftLine.g, ThemeMgr::mgr.currentTheme->fftLine.b);
 
@@ -75,6 +85,7 @@ void SpectrumContext::Draw(std::vector<float> &points, long long freq, int bandw
         glVertex2f(m, 1);
         glEnd();
 
+        glColor4f(ThemeMgr::mgr.currentTheme->text.r, ThemeMgr::mgr.currentTheme->text.g, ThemeMgr::mgr.currentTheme->text.b,1.0);
         getFont(PrimaryGLContext::GLFONT_SIZE12).drawString(label.str(), m, hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
 
         label.str(std::string());

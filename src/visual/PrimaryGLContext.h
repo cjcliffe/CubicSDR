@@ -20,7 +20,7 @@ public:
     static wxString glGetwxString(GLenum name);
     static void CheckGLError();
 
-    void BeginDraw();
+    void BeginDraw(float r, float g, float b);
     void EndDraw();
 
     void DrawFreqSelector(float uxPos, float r = 1, float g = 1, float b = 1, float w = 0, long long center_freq = -1, long long srate = 0);

@@ -55,6 +55,10 @@ DefaultColorTheme::DefaultColorTheme() {
     freqLine = RGBColor(1, 1, 1);
     button = RGBColor(0.65, 0.65, 0.65);
     buttonHighlight = RGBColor(1, 1, 0);
+
+    scopeBackground = RGBColor(0.1, 0.1, 0.1);
+    fftBackground = RGBColor(0.1, 0.1, 0.1);
+    generalBackground = RGBColor(0.1, 0.1, 0.1);
 }
 
 BlackAndWhiteColorTheme::BlackAndWhiteColorTheme() {
@@ -63,20 +67,25 @@ BlackAndWhiteColorTheme::BlackAndWhiteColorTheme() {
     waterfallGradient.addColor(GradientColor(0.75, 0.75, 0.75));
     waterfallGradient.addColor(GradientColor(1.0, 1.0, 1.0));
     waterfallGradient.generate(256);
-    waterfallHighlight = RGBColor(1, 1, 1);
+    waterfallHighlight = RGBColor(1, 1, 0.9);
     waterfallNew = RGBColor(0, 1, 0);
     waterfallHover = RGBColor(1, 1, 0);
     waterfallDestroy = RGBColor(1, 0, 0);
     fftLine = RGBColor(0.9, 0.9, 0.9);
-    fftHighlight = RGBColor(1, 1, 1);
+    fftHighlight = RGBColor(1, 1, 0.9);
     scopeLine = RGBColor(0.9, 0.9, 0.9);
-    tuningBar = RGBColor(0.2, 0.2, 0.9);
-    meterLevel = RGBColor(0, 1, 0);
-    meterValue = RGBColor(1, 0, 0);
+    tuningBar = RGBColor(0.4, 0.4, 0.4);
+    meterLevel = RGBColor(0.5, 0.5, 0.5);
+    meterValue = RGBColor(0.5, 0.5, 0.5);
     text = RGBColor(1, 1, 1);
     freqLine = RGBColor(1, 1, 1);
     button = RGBColor(0.65, 0.65, 0.65);
-    buttonHighlight = RGBColor(1, 1, 0);
+    buttonHighlight = RGBColor(1, 1, 1);
+
+    scopeBackground = RGBColor(0.1, 0.1, 0.1);
+    fftBackground = RGBColor(0.1, 0.1, 0.1);
+    generalBackground = RGBColor(0.1, 0.1, 0.1);
+
 }
 
 SharpColorTheme::SharpColorTheme() {
@@ -107,6 +116,10 @@ SharpColorTheme::SharpColorTheme() {
     freqLine = RGBColor(0.9, 0.9, 1);
     button  = RGBColor(217.0/255.0,218.0/255.0,228.0/255.0);
     buttonHighlight= RGBColor(208.0/255.0,249.0/255.0,255.0/255.0);
+
+    scopeBackground = RGBColor(0.05, 0.05, 0.15);
+    fftBackground = RGBColor(0.05, 0.05, 0.15);
+    generalBackground = RGBColor(0.05, 0.05, 0.15);
 }
 
 RadColorTheme::RadColorTheme() {
@@ -198,15 +211,19 @@ RadarColorTheme::RadarColorTheme() {
     waterfallNew = RGBColor(0, 1, 0);
     waterfallHover = RGBColor(1, 1, 0);
     waterfallDestroy = RGBColor(1, 0, 0);
-    fftLine = RGBColor(0.9, 0.9, 0.9);
+    fftLine = RGBColor(0.8, 1.0, 0.8);
     fftHighlight = RGBColor(1, 1, 1);
-    scopeLine = RGBColor(0.9, 0.9, 0.9);
-    tuningBar = RGBColor(0.2, 0.2, 0.9);
-    meterLevel = RGBColor(0, 1, 0);
-    meterValue = RGBColor(1, 0, 0);
-    text = RGBColor(1, 1, 1);
+    scopeLine = RGBColor(0.8, 1.0, 0.8);
+    tuningBar = RGBColor(0.2, 0.9, 0.2);
+    meterLevel = RGBColor(0, 0.5, 0);
+    meterValue = RGBColor(0, 0.5, 0);
+    text = RGBColor(0.8, 1.0, 0.8);
     freqLine = RGBColor(1, 1, 1);
-    button = RGBColor(0.65, 0.65, 0.65);
-    buttonHighlight = RGBColor(1, 1, 0);
+    button = RGBColor(0.65, 0.75, 0.65);
+    buttonHighlight = RGBColor(0.65, 1.0, 0.65);
+
+    scopeBackground = RGBColor(0.05, 0.1, 0.05);
+    fftBackground = RGBColor(0.05, 0.1, 0.05);
+    generalBackground = RGBColor(0.05, 0.1, 0.05);
 }
 
