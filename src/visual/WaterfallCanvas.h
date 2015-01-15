@@ -29,8 +29,6 @@ public:
     DragState getNextDragState();
 
     void attachSpectrumCanvas(SpectrumCanvas *canvas_in);
-    void setTheme(int theme_id);
-    int getTheme();
 
 private:
     void OnPaint(wxPaintEvent& event);
@@ -76,8 +74,6 @@ private:
 
     int lastInputBandwidth;
     float mouseZoom, zoom;
-
-    int theme;
 
     std::vector<liquid_float_complex> shiftBuffer;
     std::vector<liquid_float_complex> resampleBuffer;

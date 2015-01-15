@@ -25,7 +25,7 @@ EVT_ENTER_WINDOW(TuningCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
 TuningCanvas::TuningCanvas(wxWindow *parent, int *attribList) :
-InteractiveCanvas(parent, attribList), dragAccum(0) {
+        InteractiveCanvas(parent, attribList), dragAccum(0) {
 
     glContext = new TuningContext(this, &wxGetApp().GetContext(this));
 }
@@ -52,7 +52,8 @@ void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     }
 
     if (mouseTracker.mouseDown()) {
-        glContext->Draw(0.2, 0.2, 0.9, 0.6, mouseTracker.getOriginMouseX(), mouseTracker.getMouseX());
+        glContext->Draw(ThemeMgr::mgr.currentTheme->tuningBar.r, ThemeMgr::mgr.currentTheme->tuningBar.g, ThemeMgr::mgr.currentTheme->tuningBar.b,
+                0.6, mouseTracker.getOriginMouseX(), mouseTracker.getMouseX());
     }
 
     glContext->DrawEnd();
@@ -64,23 +65,28 @@ void TuningCanvas::OnIdle(wxIdleEvent &event) {
     if (mouseTracker.mouseDown()) {
         DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
-        dragAccum += mouseTracker.getMouseX() - mouseTracker.getOriginMouseX();
+        float dragDelta = mouseTracker.getMouseX() - mouseTracker.getOriginMouseX();
+
+        dragAccum += dragDelta;
+
+        float moveVal = dragAccum * 10.0;
 
         if (uxDown > 0.275) {
-            wxGetApp().setFrequency(wxGetApp().getFrequency() + (int) (mouseTracker.getOriginDeltaMouseX() * (float)wxGetApp().getSampleRate() * 15.0));
+            wxGetApp().setFrequency(
+                    wxGetApp().getFrequency()
+                            + (int) (dragAccum * fabs(dragAccum * 10.0) * fabs(dragAccum * 10.0) * (float) wxGetApp().getSampleRate()));
+        } else if (fabs(moveVal) >= 1.0) {
+            if (uxDown < -0.275 && activeDemod != NULL) {
+                activeDemod->setFrequency(activeDemod->getFrequency() + (int) (moveVal * fabs(moveVal) * fabs(moveVal) * fabs(moveVal)));
+            } else if (activeDemod != NULL) {
+                activeDemod->setBandwidth(activeDemod->getBandwidth() + (int) (moveVal * fabs(moveVal) * fabs(moveVal) * fabs(moveVal)));
+            }
         }
 
-        if (abs(dragAccum * 10.0) >= 1) {
-            if (uxDown < -0.275 && activeDemod != NULL) {
-                activeDemod->setFrequency(activeDemod->getFrequency() + (int) (dragAccum * 10.0));
-            } else if (activeDemod != NULL) {
-                activeDemod->setBandwidth(activeDemod->getBandwidth() + (int) (dragAccum * 10.0));
-            }
-
-            while (dragAccum * 10.0 >= 1.0) {
+        while (fabs(dragAccum * 10.0) >= 1.0) {
+            if (dragAccum > 0) {
                 dragAccum -= 1.0 / 10.0;
-            }
-            while (dragAccum * -10.0 <= -1.0) {
+            } else {
                 dragAccum += 1.0 / 10.0;
             }
         }
@@ -100,7 +106,7 @@ void TuningCanvas::OnMouseDown(wxMouseEvent& event) {
     uxDown = 2.0 * (mouseTracker.getMouseX() - 0.5);
 
     dragAccum = 0;
-    SetCursor (wxCURSOR_IBEAM);
+    SetCursor(wxCURSOR_IBEAM);
 }
 
 void TuningCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
@@ -110,17 +116,17 @@ void TuningCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
 void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseReleased(event);
     mouseTracker.setVertDragLock(false);
-    SetCursor (wxCURSOR_SIZEWE);
+    SetCursor(wxCURSOR_SIZEWE);
 }
 
 void TuningCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseLeftWindow(event);
-    SetCursor (wxCURSOR_CROSS);
+    SetCursor(wxCURSOR_CROSS);
 }
 
 void TuningCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
     InteractiveCanvas::mouseTracker.OnMouseEnterWindow(event);
-    SetCursor (wxCURSOR_SIZEWE);
+    SetCursor(wxCURSOR_SIZEWE);
 }
 
 void TuningCanvas::setHelpTip(std::string tip) {

@@ -69,11 +69,8 @@ void MeterCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     if (mouseTracker.mouseInView()) {
         glContext->Draw(0.4, 0.4, 0.4, 0.5, mouseTracker.getMouseY());
     }
-
-    glContext->Draw(0.1, 0.75, 0.1, 0.5, level / level_max);
-
-    glContext->Draw(0.75, 0.1, 0.1, 0.5, userInputValue / level_max);
-
+    glContext->Draw(ThemeMgr::mgr.currentTheme->meterLevel.r, ThemeMgr::mgr.currentTheme->meterLevel.g, ThemeMgr::mgr.currentTheme->meterLevel.b, 0.5, level / level_max);
+    glContext->Draw(ThemeMgr::mgr.currentTheme->meterValue.r, ThemeMgr::mgr.currentTheme->meterValue.g, ThemeMgr::mgr.currentTheme->meterValue.b, 0.5, userInputValue / level_max);
     glContext->DrawEnd();
 
     SwapBuffers();

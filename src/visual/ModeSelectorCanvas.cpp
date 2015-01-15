@@ -64,7 +64,11 @@ void ModeSelectorCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     int yval = getHoveredSelection();
 
     for (int i = 0; i < numChoices; i++) {
-        glContext->DrawSelector(selections[i].label, i, numChoices, i == currentSelection || yval == i, (yval == i)?0.9:0.75, (yval == i)?0.9:0.75, (yval == i)?0.2:0.75, 1.0);
+        if (yval == i) {
+            glContext->DrawSelector(selections[i].label, i, numChoices, true, ThemeMgr::mgr.currentTheme->buttonHighlight.r, ThemeMgr::mgr.currentTheme->buttonHighlight.g, ThemeMgr::mgr.currentTheme->buttonHighlight.b, 1.0);
+        } else {
+            glContext->DrawSelector(selections[i].label, i, numChoices, i == currentSelection, ThemeMgr::mgr.currentTheme->button.r, ThemeMgr::mgr.currentTheme->button.g, ThemeMgr::mgr.currentTheme->button.b, 1.0);
+        }
     }
 
     glContext->DrawEnd();

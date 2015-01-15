@@ -36,7 +36,7 @@ wxEND_EVENT_TABLE()
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         InteractiveCanvas(parent, attribList), spectrumCanvas(NULL), dragState(WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), fft_size(0), waterfall_lines(
                 0), plan(
-        NULL), in(NULL), out(NULL), resampler(NULL), resamplerRatio(0), lastInputBandwidth(0), zoom(1), mouseZoom(1), theme(0) {
+        NULL), in(NULL), out(NULL), resampler(NULL), resamplerRatio(0), lastInputBandwidth(0), zoom(1), mouseZoom(1) {
 
     glContext = new WaterfallContext(this, &wxGetApp().GetContext(this));
 
@@ -95,11 +95,6 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->SetCurrent(*this);
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
-    if (theme != glContext->getTheme()) {
-        glContext->setTheme(theme);
-        theme = glContext->getTheme();
-    }
-
     glContext->BeginDraw();
     glContext->Draw(spectrum_points);
 
@@ -121,49 +116,49 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
                 float centerPos = mouseTracker.getOriginMouseX() + width / 2.0;
 
                 if (isNew) {
-                    glContext->DrawDemod(lastActiveDemodulator, 1, 1, 1, currentCenterFreq, currentBandwidth);
-                    glContext->DrawFreqSelector(centerPos, 0, 1, 0, width ? width : (1.0 / (float) ClientSize.x), currentCenterFreq,
+                    glContext->DrawDemod(lastActiveDemodulator, ThemeMgr::mgr.currentTheme->waterfallHighlight.r, ThemeMgr::mgr.currentTheme->waterfallHighlight.g, ThemeMgr::mgr.currentTheme->waterfallHighlight.b, currentCenterFreq, currentBandwidth);
+                    glContext->DrawFreqSelector(centerPos, ThemeMgr::mgr.currentTheme->waterfallNew.r, ThemeMgr::mgr.currentTheme->waterfallNew.g, ThemeMgr::mgr.currentTheme->waterfallNew.b, width ? width : (1.0 / (float) ClientSize.x), currentCenterFreq,
                             currentBandwidth);
                 } else {
-                    glContext->DrawDemod(lastActiveDemodulator, 1, 0, 0, currentCenterFreq, currentBandwidth);
-                    glContext->DrawFreqSelector(centerPos, 1, 1, 0, width ? width : (1.0 / (float) ClientSize.x), currentCenterFreq,
+                    glContext->DrawDemod(lastActiveDemodulator, ThemeMgr::mgr.currentTheme->waterfallDestroy.r, ThemeMgr::mgr.currentTheme->waterfallDestroy.g, ThemeMgr::mgr.currentTheme->waterfallDestroy.b, currentCenterFreq, currentBandwidth);
+                    glContext->DrawFreqSelector(centerPos, ThemeMgr::mgr.currentTheme->waterfallHover.r, ThemeMgr::mgr.currentTheme->waterfallHover.g, ThemeMgr::mgr.currentTheme->waterfallHover.b, width ? width : (1.0 / (float) ClientSize.x), currentCenterFreq,
                             currentBandwidth);
                 }
             } else {
                 if (isNew) {
-                    glContext->DrawDemod(lastActiveDemodulator, 1, 1, 1, currentCenterFreq, currentBandwidth);
-                    glContext->DrawFreqSelector(mouseTracker.getMouseX(), 0, 1, 0, 1.0 / (float) ClientSize.x, currentCenterFreq, currentBandwidth);
+                    glContext->DrawDemod(lastActiveDemodulator, ThemeMgr::mgr.currentTheme->waterfallHighlight.r, ThemeMgr::mgr.currentTheme->waterfallHighlight.g, ThemeMgr::mgr.currentTheme->waterfallHighlight.b, currentCenterFreq, currentBandwidth);
+                    glContext->DrawFreqSelector(mouseTracker.getMouseX(), ThemeMgr::mgr.currentTheme->waterfallNew.r, ThemeMgr::mgr.currentTheme->waterfallNew.g, ThemeMgr::mgr.currentTheme->waterfallNew.b, 1.0 / (float) ClientSize.x, currentCenterFreq, currentBandwidth);
                 } else {
-                    glContext->DrawDemod(lastActiveDemodulator, 1, 0, 0, currentCenterFreq, currentBandwidth);
-                    glContext->DrawFreqSelector(mouseTracker.getMouseX(), 1, 1, 0, 1.0 / (float) ClientSize.x, currentCenterFreq, currentBandwidth);
+                    glContext->DrawDemod(lastActiveDemodulator,ThemeMgr::mgr.currentTheme->waterfallDestroy.r, ThemeMgr::mgr.currentTheme->waterfallDestroy.g, ThemeMgr::mgr.currentTheme->waterfallDestroy.b, currentCenterFreq, currentBandwidth);
+                    glContext->DrawFreqSelector(mouseTracker.getMouseX(), ThemeMgr::mgr.currentTheme->waterfallHover.r, ThemeMgr::mgr.currentTheme->waterfallHover.g, ThemeMgr::mgr.currentTheme->waterfallHover.b, 1.0 / (float) ClientSize.x, currentCenterFreq, currentBandwidth);
                 }
             }
         } else {
             if (activeDemodulator == NULL) {
                 if (lastActiveDemodulator) {
                     if (isNew) {
-                        glContext->DrawDemod(lastActiveDemodulator, 1, 1, 1, currentCenterFreq, currentBandwidth);
-                        glContext->DrawFreqSelector(mouseTracker.getMouseX(), 0, 1, 0, 0, currentCenterFreq, currentBandwidth);
+                        glContext->DrawDemod(lastActiveDemodulator, ThemeMgr::mgr.currentTheme->waterfallHighlight.r, ThemeMgr::mgr.currentTheme->waterfallHighlight.g, ThemeMgr::mgr.currentTheme->waterfallHighlight.b, currentCenterFreq, currentBandwidth);
+                        glContext->DrawFreqSelector(mouseTracker.getMouseX(), ThemeMgr::mgr.currentTheme->waterfallNew.r, ThemeMgr::mgr.currentTheme->waterfallNew.g, ThemeMgr::mgr.currentTheme->waterfallNew.b, 0, currentCenterFreq, currentBandwidth);
                     } else {
-                        glContext->DrawDemod(lastActiveDemodulator, 1, 0, 0, currentCenterFreq, currentBandwidth);
-                        glContext->DrawFreqSelector(mouseTracker.getMouseX(), 1, 1, 0, 0, currentCenterFreq, currentBandwidth);
+                        glContext->DrawDemod(lastActiveDemodulator, ThemeMgr::mgr.currentTheme->waterfallDestroy.r, ThemeMgr::mgr.currentTheme->waterfallDestroy.g, ThemeMgr::mgr.currentTheme->waterfallDestroy.b, currentCenterFreq, currentBandwidth);
+                        glContext->DrawFreqSelector(mouseTracker.getMouseX(), ThemeMgr::mgr.currentTheme->waterfallHover.r, ThemeMgr::mgr.currentTheme->waterfallHover.g, ThemeMgr::mgr.currentTheme->waterfallHover.b, 0, currentCenterFreq, currentBandwidth);
                     }
                 } else {
-                    glContext->DrawFreqSelector(mouseTracker.getMouseX(), 1, 1, 0, 0, currentCenterFreq, currentBandwidth);
+                    glContext->DrawFreqSelector(mouseTracker.getMouseX(), ThemeMgr::mgr.currentTheme->waterfallNew.r, ThemeMgr::mgr.currentTheme->waterfallNew.g, ThemeMgr::mgr.currentTheme->waterfallNew.b, 0, currentCenterFreq, currentBandwidth);
                 }
             } else {
                 if (lastActiveDemodulator) {
-                    glContext->DrawDemod(lastActiveDemodulator, 1, 1, 1, currentCenterFreq, currentBandwidth);
+                    glContext->DrawDemod(lastActiveDemodulator, ThemeMgr::mgr.currentTheme->waterfallHighlight.r, ThemeMgr::mgr.currentTheme->waterfallHighlight.g, ThemeMgr::mgr.currentTheme->waterfallHighlight.b, currentCenterFreq, currentBandwidth);
                 }
-                glContext->DrawDemod(activeDemodulator, 1, 1, 0, currentCenterFreq, currentBandwidth);
+                glContext->DrawDemod(activeDemodulator, ThemeMgr::mgr.currentTheme->waterfallHover.r, ThemeMgr::mgr.currentTheme->waterfallHover.g, ThemeMgr::mgr.currentTheme->waterfallHover.b, currentCenterFreq, currentBandwidth);
             }
         }
     } else {
         if (activeDemodulator) {
-            glContext->DrawDemod(activeDemodulator, 1, 1, 1, currentCenterFreq, currentBandwidth);
+            glContext->DrawDemod(activeDemodulator, ThemeMgr::mgr.currentTheme->waterfallHighlight.r, ThemeMgr::mgr.currentTheme->waterfallHighlight.g, ThemeMgr::mgr.currentTheme->waterfallHighlight.b, currentCenterFreq, currentBandwidth);
         }
         if (lastActiveDemodulator) {
-            glContext->DrawDemod(lastActiveDemodulator, 1, 1, 1, currentCenterFreq, currentBandwidth);
+            glContext->DrawDemod(lastActiveDemodulator, ThemeMgr::mgr.currentTheme->waterfallHighlight.r, ThemeMgr::mgr.currentTheme->waterfallHighlight.g, ThemeMgr::mgr.currentTheme->waterfallHighlight.b, currentCenterFreq, currentBandwidth);
         }
     }
 
@@ -171,7 +166,7 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         if (activeDemodulator == demods[i] || lastActiveDemodulator == demods[i]) {
             continue;
         }
-        glContext->DrawDemod(demods[i], 1, 1, 1, currentCenterFreq, currentBandwidth);
+        glContext->DrawDemod(demods[i], ThemeMgr::mgr.currentTheme->waterfallHighlight.r, ThemeMgr::mgr.currentTheme->waterfallHighlight.g, ThemeMgr::mgr.currentTheme->waterfallHighlight.b, currentCenterFreq, currentBandwidth);
     }
 
     glContext->EndDraw();
@@ -828,12 +823,4 @@ void WaterfallCanvas::OnMouseRightReleased(wxMouseEvent& event) {
     mouseTracker.setVertDragLock(false);
     mouseTracker.setHorizDragLock(false);
     mouseZoom = 1.0;
-}
-
-void WaterfallCanvas::setTheme(int theme_id) {
-    theme = theme_id;
-}
-
-int WaterfallCanvas::getTheme() {
-    return glContext->getTheme();
 }

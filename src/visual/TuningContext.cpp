@@ -1,6 +1,8 @@
 #include "TuningContext.h"
 #include "TuningCanvas.h"
 
+#include "ColorTheme.h"
+
 // http://stackoverflow.com/questions/7276826/c-format-number-with-commas
 class comma_numpunct: public std::numpunct<char> {
 protected:
@@ -69,7 +71,7 @@ void TuningContext::DrawDemodFreqBw(long long freq, unsigned int bw, long long c
         fontHeight = 12;
     }
 
-    glColor3f(0.85, 0.85, 0.85);
+    glColor3f(ThemeMgr::mgr.currentTheme->text.r, ThemeMgr::mgr.currentTheme->text.g, ThemeMgr::mgr.currentTheme->text.b);
 
     getFont(fontSize).drawString("Freq: ", -0.75, 0, fontHeight, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
     if (bw) {

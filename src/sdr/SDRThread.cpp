@@ -212,14 +212,15 @@ void SDRThread::threadMain() {
                 rtlsdr_reset_buffer(dev);
             }
             if (offset_changed && !freq_changed) {
-                new_freq = frequency;
                 freq_changed = true;
+                new_freq = frequency;
                 offset = new_offset;
             }
             if (rate_changed) {
                 sampleRate = new_rate;
                 rtlsdr_set_sample_rate(dev, new_rate);
-            } else if (freq_changed) {
+            }
+            if (freq_changed) {
                 frequency = new_freq;
                 rtlsdr_set_center_freq(dev, frequency - offset);
             }

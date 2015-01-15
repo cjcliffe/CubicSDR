@@ -1,6 +1,7 @@
 #include "ScopeContext.h"
 
 #include "ScopeCanvas.h"
+#include "ColorTheme.h"
 
 ScopeContext::ScopeContext(ScopeCanvas *canvas, wxGLContext *sharedContext) :
         PrimaryGLContext(canvas, sharedContext) {
@@ -24,7 +25,7 @@ void ScopeContext::Plot(std::vector<float> &points, bool stereo) {
     glColor3f(1.0, 1.0, 1.0);
 
     if (stereo) {
-        glColor3f(0.7, 0.7, 0.7);
+        glColor3f(ThemeMgr::mgr.currentTheme->scopeLine.r, ThemeMgr::mgr.currentTheme->scopeLine.g, ThemeMgr::mgr.currentTheme->scopeLine.b);
         glBegin(GL_LINES);
         glVertex2f(-1.0, 0.0);
         glVertex2f(1.0, 0.0);
@@ -44,7 +45,7 @@ void ScopeContext::Plot(std::vector<float> &points, bool stereo) {
         glEnd();
     }
 
-    glColor3f(0.9, 0.9, 0.9);
+    glColor3f(ThemeMgr::mgr.currentTheme->scopeLine.r, ThemeMgr::mgr.currentTheme->scopeLine.g, ThemeMgr::mgr.currentTheme->scopeLine.b);
     if (points.size()) {
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(2, GL_FLOAT, 0, &points[0]);

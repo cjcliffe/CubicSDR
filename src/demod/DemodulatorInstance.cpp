@@ -126,14 +126,14 @@ bool DemodulatorInstance::isTerminated() {
         case DemodulatorThreadCommand::DEMOD_THREAD_CMD_AUDIO_TERMINATED:
             t_Audio->join();
             audioTerminated = true;
-            delete t_Audio;
+//            delete t_Audio;
             break;
         case DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_TERMINATED:
 #ifdef __APPLE__
             pthread_join(t_Demod, NULL);
 #else
             t_Demod->join();
-            delete t_Demod;
+//            delete t_Demod;
 #endif
             demodTerminated = true;
             break;
@@ -142,7 +142,7 @@ bool DemodulatorInstance::isTerminated() {
             pthread_join(t_PreDemod, NULL);
 #else
             t_PreDemod->join();
-            delete t_PreDemod;
+//            delete t_PreDemod;
 #endif
             preDemodTerminated = true;
             break;

@@ -19,6 +19,7 @@
 #include "AudioThread.h"
 #include "CubicSDR.h"
 #include "DataTree.h"
+#include "ColorTheme.h"
 
 #include <thread>
 
@@ -67,19 +68,19 @@ AppFrame::AppFrame() :
 
     demodTray->Add(demodVisuals, 30, wxEXPAND | wxALL, 0);
 
-    demodTray->AddSpacer(2);
+    demodTray->AddSpacer(1);
 
     demodSignalMeter = new MeterCanvas(this, NULL);
     demodSignalMeter->setMax(0.5);
     demodSignalMeter->setHelpTip("Current Signal Level.  Click / Drag to set Squelch level.");
     demodTray->Add(demodSignalMeter, 1, wxEXPAND | wxALL, 0);
 
-    demodTray->AddSpacer(2);
+    demodTray->AddSpacer(1);
 
     scopeCanvas = new ScopeCanvas(this, NULL);
     demodScopeTray->Add(scopeCanvas, 8, wxEXPAND | wxALL, 0);
 
-    demodScopeTray->AddSpacer(2);
+    demodScopeTray->AddSpacer(1);
 
     demodTuner = new TuningCanvas(this, NULL);
     demodTuner->setHelpTip("Testing tuner");
@@ -87,7 +88,7 @@ AppFrame::AppFrame() :
 
     demodTray->Add(demodScopeTray, 30, wxEXPAND | wxALL, 0);
 
-    demodTray->AddSpacer(2);
+    demodTray->AddSpacer(1);
 
     demodGainMeter = new MeterCanvas(this, NULL);
     demodGainMeter->setMax(2.0);
@@ -95,11 +96,11 @@ AppFrame::AppFrame() :
     demodTray->Add(demodGainMeter, 1, wxEXPAND | wxALL, 0);
 
     vbox->Add(demodTray, 12, wxEXPAND | wxALL, 0);
-    vbox->AddSpacer(2);
+    vbox->AddSpacer(1);
     spectrumCanvas = new SpectrumCanvas(this, NULL);
     spectrumCanvas->setup(2048);
     vbox->Add(spectrumCanvas, 5, wxEXPAND | wxALL, 0);
-    vbox->AddSpacer(2);
+    vbox->AddSpacer(1);
     waterfallCanvas = new WaterfallCanvas(this, NULL);
     waterfallCanvas->setup(2048, 512);
     waterfallCanvas->attachSpectrumCanvas(spectrumCanvas);
@@ -283,26 +284,19 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
     } else if (event.GetId() == wxID_EXIT) {
         Close(false);
     } else if (event.GetId() == wxID_THEME_DEFAULT) {
-        waterfallCanvas->setTheme(COLOR_THEME_DEFAULT);
-        demodWaterfallCanvas->setTheme(COLOR_THEME_DEFAULT);
+        ThemeMgr::mgr.setTheme(COLOR_THEME_DEFAULT);
     } else if (event.GetId() == wxID_THEME_SHARP) {
-        waterfallCanvas->setTheme(COLOR_THEME_SHARP);
-        demodWaterfallCanvas->setTheme(COLOR_THEME_SHARP);
+        ThemeMgr::mgr.setTheme(COLOR_THEME_SHARP);
     } else if (event.GetId() == wxID_THEME_BW) {
-        waterfallCanvas->setTheme(COLOR_THEME_BW);
-        demodWaterfallCanvas->setTheme(COLOR_THEME_BW);
+        ThemeMgr::mgr.setTheme(COLOR_THEME_BW);
     } else if (event.GetId() == wxID_THEME_RAD) {
-        waterfallCanvas->setTheme(COLOR_THEME_RAD);
-        demodWaterfallCanvas->setTheme(COLOR_THEME_RAD);
+        ThemeMgr::mgr.setTheme(COLOR_THEME_RAD);
     } else if (event.GetId() == wxID_THEME_TOUCH) {
-        waterfallCanvas->setTheme(COLOR_THEME_TOUCH);
-        demodWaterfallCanvas->setTheme(COLOR_THEME_TOUCH);
+        ThemeMgr::mgr.setTheme(COLOR_THEME_TOUCH);
     } else if (event.GetId() == wxID_THEME_HD) {
-        waterfallCanvas->setTheme(COLOR_THEME_HD);
-        demodWaterfallCanvas->setTheme(COLOR_THEME_HD);
+        ThemeMgr::mgr.setTheme(COLOR_THEME_HD);
     } else if (event.GetId() == wxID_THEME_RADAR) {
-        waterfallCanvas->setTheme(COLOR_THEME_RADAR);
-        demodWaterfallCanvas->setTheme(COLOR_THEME_RADAR);
+        ThemeMgr::mgr.setTheme(COLOR_THEME_RADAR);
     }
 
     switch (event.GetId()) {

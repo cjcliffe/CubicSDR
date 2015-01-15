@@ -4,6 +4,7 @@
 #include "CubicSDR.h"
 #include <sstream>
 #include <iostream>
+#include "ColorTheme.h"
 
 SpectrumContext::SpectrumContext(SpectrumCanvas *canvas, wxGLContext *sharedContext) :
         PrimaryGLContext(canvas, sharedContext), fft_size(0) {
@@ -18,7 +19,7 @@ SpectrumContext::SpectrumContext(SpectrumCanvas *canvas, wxGLContext *sharedCont
 void SpectrumContext::Draw(std::vector<float> &points, long long freq, int bandwidth) {
 
     glDisable(GL_TEXTURE_2D);
-    glColor3f(1.0, 1.0, 1.0);
+    glColor3f(ThemeMgr::mgr.currentTheme->fftLine.r, ThemeMgr::mgr.currentTheme->fftLine.g, ThemeMgr::mgr.currentTheme->fftLine.b);
 
     if (points.size()) {
         glPushMatrix();
@@ -41,8 +42,8 @@ void SpectrumContext::Draw(std::vector<float> &points, long long freq, int bandw
     long long rightFreq = leftFreq + (float) bandwidth;
 
     long long firstMhz = (leftFreq / 1000000) * 1000000;
-    long double mhzStart = ((long double)(firstMhz - leftFreq) / (long double)(rightFreq - leftFreq)) * 2.0;
-    long double mhzStep = (100000.0 / (long double)(rightFreq - leftFreq)) * 2.0;
+    long double mhzStart = ((long double) (firstMhz - leftFreq) / (long double) (rightFreq - leftFreq)) * 2.0;
+    long double mhzStep = (100000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
 
     long double currentMhz = trunc(floor(firstMhz / 1000000.0));
 
@@ -61,10 +62,11 @@ void SpectrumContext::Draw(std::vector<float> &points, long long freq, int bandw
 
         if (fractpart < 0.001) {
             glLineWidth(4.0);
-            glColor3f(1.0, 1.0, 1.0);
+            glColor3f(ThemeMgr::mgr.currentTheme->freqLine.r, ThemeMgr::mgr.currentTheme->freqLine.g, ThemeMgr::mgr.currentTheme->freqLine.b);
         } else {
             glLineWidth(1.0);
-            glColor3f(0.55, 0.55, 0.55);
+            glColor3f(ThemeMgr::mgr.currentTheme->freqLine.r * 0.65, ThemeMgr::mgr.currentTheme->freqLine.g * 0.65,
+                    ThemeMgr::mgr.currentTheme->freqLine.b * 0.65);
         }
 
         glDisable(GL_TEXTURE_2D);
