@@ -93,20 +93,20 @@ SharpColorTheme::SharpColorTheme() {
     waterfallGradient.addColor(GradientColor(1.0, 0.25, 0.0));
     waterfallGradient.addColor(GradientColor(0.5, 0.1, 0.0));
     waterfallGradient.generate(256);
-    waterfallHighlight = RGBColor(1, 1, 1);
+    waterfallHighlight = RGBColor(0.9, 0.9, 1.0);
     waterfallNew = RGBColor(0, 1, 0);
     waterfallHover = RGBColor(1, 1, 0);
     waterfallDestroy = RGBColor(1, 0, 0);
-    fftLine = RGBColor(0.9, 0.9, 0.9);
-    fftHighlight = RGBColor(1, 1, 1);
-    scopeLine = RGBColor(0.9, 0.9, 0.9);
+    fftLine = RGBColor(0.9, 0.9, 1.0);
+    fftHighlight = RGBColor(0.9, 0.9, 1.0);
+    scopeLine = RGBColor(0.9, 0.9, 1.0);
     tuningBar = RGBColor(0.2, 0.2, 0.9);
-    meterLevel = RGBColor(0, 1, 0);
-    meterValue = RGBColor(1, 0, 0);
-    text = RGBColor(1, 1, 1);
-    freqLine = RGBColor(1, 1, 1);
-    button = RGBColor(0.65, 0.65, 0.65);
-    buttonHighlight = RGBColor(1, 1, 0);
+    meterLevel = RGBColor(28.0/255.0,106.0/255.0,179.0/255.0);
+    meterValue = RGBColor(190.0/255.0,190.0/255.0,60.0/255.0);
+    text = RGBColor(0.9, 0.9, 1);
+    freqLine = RGBColor(0.9, 0.9, 1);
+    button  = RGBColor(217.0/255.0,218.0/255.0,228.0/255.0);
+    buttonHighlight= RGBColor(208.0/255.0,249.0/255.0,255.0/255.0);
 }
 
 RadColorTheme::RadColorTheme() {
