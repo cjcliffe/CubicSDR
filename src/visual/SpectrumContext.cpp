@@ -19,18 +19,22 @@ SpectrumContext::SpectrumContext(SpectrumCanvas *canvas, wxGLContext *sharedCont
 void SpectrumContext::Draw(std::vector<float> &points, long long freq, int bandwidth) {
 
     glBegin(GL_QUADS);
-    glColor3f(ThemeMgr::mgr.currentTheme->fftBackground.r*2.0, ThemeMgr::mgr.currentTheme->fftBackground.g*2.0, ThemeMgr::mgr.currentTheme->fftBackground.b*2.0);
-    glVertex2f(1, 1);
-    glVertex2f(-1, 1);
     glColor3f(ThemeMgr::mgr.currentTheme->fftBackground.r, ThemeMgr::mgr.currentTheme->fftBackground.g, ThemeMgr::mgr.currentTheme->fftBackground.b);
-    glVertex2f(-1, -0.5);
-    glVertex2f(1, -0.5);
+    glVertex2f(1, 0.5);
+    glVertex2f(-1, 0.5);
+    glColor3f(ThemeMgr::mgr.currentTheme->fftBackground.r*2.0, ThemeMgr::mgr.currentTheme->fftBackground.g*2.0, ThemeMgr::mgr.currentTheme->fftBackground.b*2.0);
+    glVertex2f(-1, -1);
+    glVertex2f(1, -1);
     glEnd();
 
 
     glDisable(GL_TEXTURE_2D);
     glColor3f(ThemeMgr::mgr.currentTheme->fftLine.r, ThemeMgr::mgr.currentTheme->fftLine.g, ThemeMgr::mgr.currentTheme->fftLine.b);
 
+    glEnable(GL_BLEND);
+    glEnable(GL_LINE_SMOOTH);
+    glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     if (points.size()) {
         glPushMatrix();
         glTranslatef(-1.0f, -0.75f, 0.0f);

@@ -53,7 +53,7 @@ void ModeSelectorContext::DrawSelector(std::string label, int c, int cMax, bool 
     glEnd();
 
     if (on) {
-        glColor4f(1.0-r, 1.0-g, 1.0-b, a);
+        glColor4f(0, 0, 0, a);
     }
 
     getFont(fontSize).drawString(label, 0.0, y + height / 2.0, fontHeight, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
