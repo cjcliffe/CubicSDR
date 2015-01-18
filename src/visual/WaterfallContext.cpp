@@ -20,23 +20,6 @@ void WaterfallContext::Setup(int fft_size_in, int num_waterfall_lines_in) {
 
     waterfall_tex = new unsigned char[fft_size * waterfall_lines];
     memset(waterfall_tex, 0, fft_size * waterfall_lines);
-
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-
-    glGenTextures(1, &waterfall);
-
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, waterfall);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
 
 void WaterfallContext::refreshTheme() {
@@ -50,6 +33,19 @@ void WaterfallContext::refreshTheme() {
 }
 
 void WaterfallContext::Draw(std::vector<float> &points) {
+
+	if (!waterfall) {
+	    glGenTextures(1, &waterfall);
+
+	    glEnable(GL_TEXTURE_2D);
+	    glBindTexture(GL_TEXTURE_2D, waterfall);
+	    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	}
 
     if (activeTheme != ThemeMgr::mgr.currentTheme) {
         refreshTheme();

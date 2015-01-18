@@ -4,7 +4,7 @@
 #include <algorithm>
 #include "DemodulatorThread.h"
 
-#ifdef __APPLE__
+#ifdef USE_MIXER
 std::map<int, AudioThread *> AudioThread::deviceController;
 std::map<int, std::thread *> AudioThread::deviceThread;
 #endif
@@ -12,18 +12,18 @@ std::map<int, std::thread *> AudioThread::deviceThread;
 AudioThread::AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify) :
         currentInput(NULL), inputQueue(inputQueue), audioQueuePtr(0), underflowCount(0), terminated(false), active(false), outputDevice(-1), gain(
                 1.0), threadQueueNotify(threadQueueNotify) {
-#ifdef __APPLE__
+#ifdef USE_MIXER
     boundThreads = new std::vector<AudioThread *>;
 #endif
 }
 
 AudioThread::~AudioThread() {
-#ifdef __APPLE__
+#ifdef USE_MIXER
     delete boundThreads.load();
 #endif
 }
 
-#ifdef __APPLE__
+#ifdef USE_MIXER
 void AudioThread::bindThread(AudioThread *other) {
     if (std::find(boundThreads.load()->begin(), boundThreads.load()->end(), other) == boundThreads.load()->end()) {
         boundThreads.load()->push_back(other);
@@ -306,7 +306,7 @@ void AudioThread::setupDevice(int deviceId) {
 
     try {
 
-#ifdef __APPLE__
+#ifdef USE_MIXER
         if (deviceController.find(outputDevice.load()) != deviceController.end()) {
             deviceController[outputDevice.load()]->removeThread(this);
         }
@@ -388,12 +388,12 @@ void AudioThread::threadMain() {
         }
     }
 
-#if !__APPLE__
+#if !USE_MIXER
     AudioThreadInput dummy;
     inputQueue->push(&dummy);
 #endif
 
-#ifdef __APPLE__
+#ifdef USE_MIXER
     if (deviceController[parameters.deviceId] != this) {
         deviceController[parameters.deviceId]->removeThread(this);
     } else {
@@ -440,7 +440,7 @@ bool AudioThread::isActive() {
 }
 
 void AudioThread::setActive(bool state) {
-#ifdef __APPLE__
+#ifdef USE_MIXER
     AudioThreadInput *dummy;
     if (state && !active) {
         while (!inputQueue->empty()) {  // flush queue
