@@ -27,6 +27,7 @@ void MouseTracker::OnMouseMoved(wxMouseEvent& event) {
 
     if (isMouseDown || isMouseRightDown) {
 #ifndef __APPLE__
+#ifndef __linux__
         if (horizDragLock && vertDragLock) {
             target->WarpPointer(originMouseX * ClientSize.x, (1.0 - originMouseY) * ClientSize.y);
             mouseX = originMouseX;
@@ -38,6 +39,7 @@ void MouseTracker::OnMouseMoved(wxMouseEvent& event) {
             target->WarpPointer(originMouseX * ClientSize.x, event.m_y);
             mouseX = originMouseX;
         }
+#endif
 #endif
     }
 
