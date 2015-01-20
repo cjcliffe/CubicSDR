@@ -16,12 +16,12 @@ Utilizes:
   - wxWidgets (https://www.wxwidgets.org/)
   - CMake (http://www.cmake.org/)
 
-
 Basic Goals and Status:
 ----------------------
   - Simple UI
   - Devices
     - [x] RTL-SDR
+    - [ ] rtl_tcp
     - [ ] HackRF
     - [ ] Whatever else I can get my hands on
   - Minimal configuration
@@ -29,7 +29,7 @@ Basic Goals and Status:
     - [x] Bandwidth
     - [x] Color scheme
     - [x] Load/Save session
-    - [ ] Default audio device and settings
+    - [ ] Default audio device and settings / preferences
   - Neat Visuals
     - [x] Scope
     - [x] Spectrum
@@ -37,6 +37,7 @@ Basic Goals and Status:
     - [ ] More 2D visuals
     - [ ] 3D visuals
   - Demodulation:
+    - [ ] Design a proper architecture for modular expansion :)
     - [x] Multiple demodulators per IQ stream
     - [x] Audio device selection
     - [x] Modes
@@ -73,10 +74,15 @@ Basic Goals and Status:
     - [ ] Playback
   - Audio
     - [ ] Recording
-
+  - Optimization
+    - [ ] Update visuals to OpenGL 3.x
+    - [ ] Resolve constant refresh on visuals that don't change often
+    - [ ] Resolve driver/platform vertical sync issues
+    - [ ] Group and divide IQ data distribution workload instead of 100% distribution per instance
 
 Advanced Goals:
 --------------
+  - Update visuals to support OpenGL ES
   - Basic demodulator filter(s) that can be enabled and tweaked visually
   - Support multiple simultaneous device usage
     * Categorize devices by antenna connections
