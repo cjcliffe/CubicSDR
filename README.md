@@ -99,7 +99,7 @@ Target Platforms:
 ----------------
   - [x] OSX
   - [x] Windows
-  - [ ] Linux
+  - [x] Linux
 
 
 License:
