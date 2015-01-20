@@ -87,7 +87,7 @@ IF (WIN32)
   
 ENDIF (WIN32)
 
-IF (UNIX)
+IF (UNIX AND NOT APPLE)
     set(RTLSDR_INCLUDE "/usr/local/include" CACHE FILEPATH "RTL-SDR Include Path")
     set(RTLSDR_LIB "/usr/local/lib" CACHE FILEPATH "RTL-SDR Lib Path")
     set(USE_AUDIO_PULSE ON CACHE BOOL "Use Pulse Audio")
@@ -130,8 +130,7 @@ IF(USE_AUDIO_OSS)
         -D__LINUX_OSS__
    )
 ENDIF(USE_AUDIO_OSS)
-
-ENDIF(UNIX)
+ENDIF(UNIX AND NOT APPLE)
 
 IF (APPLE)
     set(RTLSDR_INCLUDE "/opt/local/include" CACHE FILEPATH "RTL-SDR Include Path")
