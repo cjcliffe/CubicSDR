@@ -18,6 +18,14 @@
 #include "RtAudio.h"
 #include "DemodDefs.h"
 
+#ifdef __APPLE__
+#define USE_MIXER 1
+#endif
+
+#ifdef __linux__
+#define USE_MIXER 1
+#endif
+
 class AudioThreadInput: public ReferenceCounter {
 public:
     long long frequency;
@@ -90,7 +98,7 @@ private:
     AudioThreadCommandQueue cmdQueue;
     DemodulatorThreadCommandQueue* threadQueueNotify;
 
-#ifdef __APPLE__
+#ifdef USE_MIXER
 public:
     void bindThread(AudioThread *other);
     void removeThread(AudioThread *other);

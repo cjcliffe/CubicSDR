@@ -87,21 +87,50 @@ IF (WIN32)
   
 ENDIF (WIN32)
 
-IF (UNIX)
-    set(RTLSDR_INCLUDE "/opt/local/include" CACHE FILEPATH "RTL-SDR Include Path")
-    set(RTLSDR_LIB "/opt/local/lib" CACHE FILEPATH "RTL-SDR Lib Path")
+IF (UNIX AND NOT APPLE)
+    set(RTLSDR_INCLUDE "/usr/local/include" CACHE FILEPATH "RTL-SDR Include Path")
+    set(RTLSDR_LIB "/usr/local/lib" CACHE FILEPATH "RTL-SDR Lib Path")
+    set(USE_AUDIO_PULSE ON CACHE BOOL "Use Pulse Audio")
+    set(USE_AUDIO_JACK OFF CACHE BOOL "Use Jack Audio")
+    set(USE_AUDIO_ALSA OFF CACHE BOOL "Use ALSA Audio")
+    set(USE_AUDIO_OSS OFF CACHE BOOL "Use OSS Audio")
     include_directories(${RTLSDR_INCLUDE})
     link_directories(${RTLSDR_LIB})
   
     set(FFTW_LIB fftw3f)
 
-    ADD_DEFINITIONS(
-        # -D__UNIX_JACK__
-        # -D__LINUX_ALSA__
-        # -D__LINUX_PULSE__
-        # -D__LINUX_OSS__
-    )
-ENDIF(UNIX)
+IF(USE_AUDIO_PULSE)
+   SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} pulse-simple pulse)
+   ADD_DEFINITIONS(
+        -D__LINUX_PULSE__
+   )
+ENDIF(USE_AUDIO_PULSE)
+
+IF(USE_AUDIO_JACK)
+   SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} jack)
+   ADD_DEFINITIONS(
+        -D__UNIX_JACK__
+   )
+ENDIF(USE_AUDIO_JACK)
+
+IF(USE_AUDIO_ALSA)
+   SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} asound)
+   set(ALSA_INCLUDE_DIR "/usr/include" CACHE FILEPATH "ALSA include path")
+   include_directories(${ALSA_INCLUDE_DIR})
+   set(ALSA_LIB_DIR "/usr/lib" CACHE FILEPATH "ALSA lib path")
+   link_directories(${ALSA_LIB_DIR})
+   ADD_DEFINITIONS(
+       -D__LINUX_ALSA__
+   )
+ENDIF(USE_AUDIO_ALSA)
+
+IF(USE_AUDIO_OSS)
+   SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} oss)
+   ADD_DEFINITIONS(
+        -D__LINUX_OSS__
+   )
+ENDIF(USE_AUDIO_OSS)
+ENDIF(UNIX AND NOT APPLE)
 
 IF (APPLE)
     set(RTLSDR_INCLUDE "/opt/local/include" CACHE FILEPATH "RTL-SDR Include Path")
