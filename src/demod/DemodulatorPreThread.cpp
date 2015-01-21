@@ -100,6 +100,8 @@ void DemodulatorPreThread::threadMain() {
                 case DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_FREQUENCY:
                     params.frequency = command.llong_value;
                     break;
+                default:
+                    break;
                 }
             }
         }
@@ -228,6 +230,8 @@ void DemodulatorPreThread::threadMain() {
                     params.sampleRate = result.sampleRate;
 
                     break;
+                default:
+                    break;
                 }
             }
         }
@@ -243,6 +247,10 @@ void DemodulatorPreThread::threadMain() {
     tCmd.context = this;
     threadQueueNotify->push(tCmd);
     std::cout << "Demodulator preprocessor thread done." << std::endl;
+
+#ifdef __APPLE__
+    return this;
+#endif
 }
 
 void DemodulatorPreThread::terminate() {

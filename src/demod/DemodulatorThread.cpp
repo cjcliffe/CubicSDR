@@ -410,6 +410,10 @@ void DemodulatorThread::threadMain() {
     tCmd.context = this;
     threadQueueNotify->push(tCmd);
     std::cout << "Demodulator thread done." << std::endl;
+
+#ifdef __APPLE__
+    return this;
+#endif
 }
 
 void DemodulatorThread::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {

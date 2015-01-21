@@ -45,7 +45,7 @@ void MeterCanvas::setMax(float max_in) {
     level_max = max_in;
 }
 
-bool MeterCanvas::setInputValue(float slider_in) {
+void MeterCanvas::setInputValue(float slider_in) {
     userInputValue = inputValue = slider_in;
 }
 

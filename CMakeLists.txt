@@ -237,7 +237,6 @@ include_directories (
 	${PROJECT_SOURCE_DIR}/src
 	${PROJECT_SOURCE_DIR}/external/rtaudio
 	${PROJECT_SOURCE_DIR}/external/lodepng 
-	${PROJECT_SOURCE_DIR}/external/fastlz 
 	${PROJECT_SOURCE_DIR}/external/tinyxml
 )
 

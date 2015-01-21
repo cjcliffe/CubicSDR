@@ -27,6 +27,8 @@ void DemodulatorWorkerThread::threadMain() {
                 filterChanged = true;
                 filterCommand = command;
                 break;
+            default:
+                break;
             }
             done = commandQueue->empty();
         }

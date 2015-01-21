@@ -53,14 +53,14 @@ void PrimaryGLContext::CheckGLError() {
 
 PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContext) :
         wxGLContext(canvas, sharedContext) {
-    SetCurrent(*canvas);
-#ifndef __linux__
-    // Pre-load fonts
-    for (int i = 0; i < GLFONT_MAX; i++) {
-        getFont((GLFontSize) i);
-    }
-    CheckGLError();
-#endif
+//#ifndef __linux__
+//    SetCurrent(*canvas);
+//    // Pre-load fonts
+//    for (int i = 0; i < GLFONT_MAX; i++) {
+//        getFont((GLFontSize) i);
+//    }
+//    CheckGLError();
+//#endif
 }
 
 GLFont &PrimaryGLContext::getFont(GLFontSize esize) {
@@ -85,6 +85,9 @@ GLFont &PrimaryGLContext::getFont(GLFontSize esize) {
             break;
         case GLFONT_SIZE48:
             fontName = "vera_sans_mono48.fnt";
+            break;
+        default:
+            fontName = "vera_sans_mono12.fnt";
             break;
         }
 

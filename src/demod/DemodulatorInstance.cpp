@@ -292,7 +292,6 @@ void DemodulatorInstance::setFrequency(long long freq) {
         command.llong_value = freq;
         threadQueueCommand->push(command);
     }
-    demodulatorPreThread->getParams().bandwidth;
 }
 
 long long DemodulatorInstance::getFrequency() {
