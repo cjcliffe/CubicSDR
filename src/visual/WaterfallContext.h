@@ -15,8 +15,8 @@ public:
     void refreshTheme();
 
 private:
-    GLuint waterfall;
-    unsigned char *waterfall_tex;
+    GLuint waterfall[2];
+    unsigned char *waterfall_tex[2];
     int fft_size;
     int waterfall_lines;
 

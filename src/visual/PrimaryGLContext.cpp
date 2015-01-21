@@ -141,7 +141,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, float r, float 
     glVertex3f(uxPos + ofs, hPos + labelHeight, 0.0);
     glEnd();
 
-    glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
     glColor4f(r, g, b, 0.2);
     glBegin(GL_QUADS);
@@ -189,11 +189,10 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, f
 
     float uxPos = (float) (demod->getFrequency() - (center_freq - srate / 2)) / (float) srate;
 
-    glDisable(GL_DEPTH_TEST);
     glDisable(GL_TEXTURE_2D);
 
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     glColor4f(r, g, b, 0.6);
 
     glBegin(GL_LINES);
@@ -210,7 +209,7 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, f
 
     glEnd();
 
-    glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     glColor4f(r, g, b, 0.2);
     glBegin(GL_QUADS);
     glVertex3f((uxPos - 0.5) * 2.0 - ofs, 1.0, 0.0);
@@ -267,7 +266,6 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, f
     getFont(PrimaryGLContext::GLFONT_SIZE16).drawString(demodStr, 2.0 * (uxPos - 0.5), -1.0 + hPos, 16, demodAlign, GLFont::GLFONT_ALIGN_CENTER);
 
     glDisable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
 
 }
 
@@ -286,11 +284,10 @@ void PrimaryGLContext::DrawFreqSelector(float uxPos, float r, float g, float b, 
         srate = wxGetApp().getSampleRate();
     }
 
-    glDisable(GL_DEPTH_TEST);
     glDisable(GL_TEXTURE_2D);
 
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_DST_COLOR);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     glColor4f(r, g, b, 0.6);
 
     glBegin(GL_LINES);
@@ -313,7 +310,6 @@ void PrimaryGLContext::DrawFreqSelector(float uxPos, float r, float g, float b, 
 
     glEnd();
     glDisable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
 
 }
 
