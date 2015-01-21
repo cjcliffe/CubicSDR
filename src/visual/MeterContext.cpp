@@ -4,14 +4,12 @@
 
 MeterContext::MeterContext(MeterCanvas *canvas, wxGLContext *sharedContext) :
         PrimaryGLContext(canvas, sharedContext) {
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
 }
 
 void MeterContext::DrawBegin() {
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+
     glClearColor(ThemeMgr::mgr.currentTheme->generalBackground.r, ThemeMgr::mgr.currentTheme->generalBackground.g, ThemeMgr::mgr.currentTheme->generalBackground.b, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

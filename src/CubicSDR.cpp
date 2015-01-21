@@ -122,8 +122,6 @@ PrimaryGLContext& CubicSDR::GetContext(wxGLCanvas *canvas) {
     }
     glContext = m_glContext;
 
-    glContext->SetCurrent(*canvas);
-
     return *glContext;
 }
 
