@@ -409,6 +409,10 @@ void DemodulatorThread::threadMain() {
         delete audioDataDel;
     }
 
+    if (audioVisOutputQueue && !audioVisOutputQueue->empty()) {
+        AudioThreadInput *dummy_vis;
+        audioVisOutputQueue->pop(dummy_vis);
+    }
     delete ati_vis;
 
     DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_TERMINATED);

@@ -208,6 +208,10 @@ void SDRPostThread::threadMain() {
 //        std::lock_guard < std::mutex > lock(demodDataDel->m_mutex);
 //        delete demodDataDel;
     }
+    if (iqVisualQueue.load() && !iqVisualQueue.load()->empty()) {
+        DemodulatorThreadIQData *visualDataDummy;
+        iqVisualQueue.load()->pop(visualDataDummy);
+    }
 
     delete visualDataOut;
 

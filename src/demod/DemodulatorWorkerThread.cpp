@@ -24,6 +24,9 @@ void DemodulatorWorkerThread::threadMain() {
             commandQueue->pop(command);
             switch (command.cmd) {
             case DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS:
+                if (!filterCommand.bandwidth || !filterCommand.audioSampleRate) {
+                    break;
+                }
                 filterChanged = true;
                 filterCommand = command;
                 break;
@@ -32,13 +35,14 @@ void DemodulatorWorkerThread::threadMain() {
             }
             done = commandQueue->empty();
         }
+        
 
         if (filterChanged && !terminated) {
             DemodulatorWorkerThreadResult result(DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS);
 
             result.iqResampleRatio = (double) (filterCommand.bandwidth) / (double) filterCommand.sampleRate;
             result.audioResamplerRatio = (double) (filterCommand.audioSampleRate) / (double) filterCommand.bandwidth;
-
+            
             float As = 60.0f;         // stop-band attenuation [dB]
 
             result.iqResampler = msresamp_crcf_create(result.iqResampleRatio, As);
