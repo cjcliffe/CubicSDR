@@ -36,7 +36,7 @@ wxEND_EVENT_TABLE()
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         InteractiveCanvas(parent, attribList), spectrumCanvas(NULL), dragState(WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), fft_size(0), waterfall_lines(
                 0), plan(
-        NULL), in(NULL), out(NULL), resampler(NULL), resamplerRatio(0), lastInputBandwidth(0), zoom(1), mouseZoom(1) {
+        NULL), in(NULL), out(NULL), resampler(NULL), resamplerRatio(0), lastInputBandwidth(0), zoom(1), mouseZoom(1), otherWaterfallCanvas(NULL), polling(true) {
 
     glContext = new WaterfallContext(this, &wxGetApp().GetContext(this));
 
@@ -91,6 +91,21 @@ void WaterfallCanvas::attachSpectrumCanvas(SpectrumCanvas *canvas_in) {
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
     const wxSize ClientSize = GetClientSize();
+
+
+    if (polling && !wxGetApp().getIQVisualQueue()->empty()) {
+        DemodulatorThreadIQData *iqData;
+        wxGetApp().getIQVisualQueue()->pop(iqData);
+
+        if (iqData && iqData->data.size()) {
+            setData(iqData);
+            if (otherWaterfallCanvas) {
+                otherWaterfallCanvas->setData(iqData);
+            }
+        } else {
+            std::cout << "Incoming IQ data empty?" << std::endl;
+        }
+    }
 
     glContext->SetCurrent(*this);
     glViewport(0, 0, ClientSize.x, ClientSize.y);
@@ -823,4 +838,18 @@ void WaterfallCanvas::OnMouseRightReleased(wxMouseEvent& event) {
     mouseTracker.setVertDragLock(false);
     mouseTracker.setHorizDragLock(false);
     mouseZoom = 1.0;
+}
+
+void WaterfallCanvas::attachWaterfallCanvas(WaterfallCanvas* canvas_in) {
+    otherWaterfallCanvas = canvas_in;
+    otherWaterfallCanvas->setPolling(false);
+}
+
+
+bool WaterfallCanvas::isPolling() {
+    return polling;
+}
+
+void WaterfallCanvas::setPolling(bool polling) {
+    this->polling = polling;
 }
