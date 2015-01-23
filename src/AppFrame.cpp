@@ -369,12 +369,12 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
                 demod->setDemodulatorType(dSelection);
             }
 
-            unsigned int demodBw = (unsigned int) ceil((float) demod->getParams().bandwidth * 2.5);
+            unsigned int demodBw = (unsigned int) ceil((float) demod->getBandwidth() * 2.5);
             if (demodBw > wxGetApp().getSampleRate() / 2) {
                 demodBw = wxGetApp().getSampleRate() / 2;
             }
-            if (demodBw < 80000) {
-                demodBw = 80000;
+            if (demodBw < 50000) {
+                demodBw = 50000;
             }
             demodWaterfallCanvas->setBandwidth(demodBw);
             demodSpectrumCanvas->setBandwidth(demodBw);
