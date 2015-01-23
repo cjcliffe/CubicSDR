@@ -25,9 +25,12 @@ void WaterfallContext::Setup(int fft_size_in, int num_waterfall_lines_in) {
             delete waterfall_tex[i];
         }
 
-        waterfall_tex[i] = new unsigned char[half_fft_size * waterfall_lines];
-        memset(waterfall_tex[i], 0, half_fft_size * waterfall_lines);
+        waterfall_tex[i] = new unsigned char[half_fft_size * waterfall_lines * 2];
+        memset(waterfall_tex[i], 0, half_fft_size * waterfall_lines * 2);
     }
+    // Stagger memory updates at half intervals for tiles
+    waterfall_ofs[0] = waterfall_lines;
+    waterfall_ofs[1] = waterfall_lines - waterfall_lines / 8;
 }
 
 void WaterfallContext::refreshTheme() {
@@ -71,51 +74,70 @@ void WaterfallContext::Draw(std::vector<float> &points) {
 
     if (points.size()) {
         for (int j = 0; j < 2; j++) {
-            memmove(waterfall_tex[j] + half_fft_size, waterfall_tex[j], (waterfall_lines - 1) * half_fft_size);
 
+            int ofs = waterfall_ofs[j];
             for (int i = 0, iMax = half_fft_size; i < iMax; i++) {
                 float v = points[(j * half_fft_size + i) * 2 + 1];
 
-                float wv = v;
-                if (wv < 0.0)
-                    wv = 0.0;
-                if (wv > 0.99)
-                    wv = 0.99;
-                waterfall_tex[j][i] = (unsigned char) floor(wv * 255.0);
+                float wv = v < 0 ? 0 : (v > 0.99 ? 0.99 : v);
+
+                waterfall_tex[j][i + ofs * half_fft_size] = (unsigned char) floor(wv * 255.0);
             }
+
+            int quarter_lines = (waterfall_lines / 4);
+            int k = 4;
+            while (k--) {
+                if (waterfall_ofs[j] == quarter_lines * k) {
+                    memcpy(waterfall_tex[j] + (waterfall_lines * half_fft_size) + (quarter_lines * k * half_fft_size),
+                            waterfall_tex[j] + (quarter_lines * k * half_fft_size), quarter_lines * half_fft_size);
+                }
+            }
+
+            if (waterfall_ofs[j] == 0) {
+                waterfall_ofs[j] = waterfall_lines;
+            }
+
+            glBindTexture(GL_TEXTURE_2D, waterfall[j]);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, half_fft_size, waterfall_lines, 0, GL_COLOR_INDEX, GL_UNSIGNED_BYTE,
+                    (GLvoid *) (waterfall_tex[j] + (half_fft_size * (waterfall_ofs[j]))));
+
+            waterfall_ofs[j]--;
         }
-
-    }
-
-    for (int i = 0; i < 2; i++) {
-        glBindTexture(GL_TEXTURE_2D, waterfall[i]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, half_fft_size, waterfall_lines, 0, GL_COLOR_INDEX, GL_UNSIGNED_BYTE, (GLvoid *) waterfall_tex[i]);
     }
 
     glColor3f(1.0, 1.0, 1.0);
 
+    GLint vp[4];
+    glGetIntegerv( GL_VIEWPORT, vp);
+
+    float viewWidth = (float) vp[2];
+
+    // some bias to prevent seams at odd scales
+    float half_pixel = 1.0 / (float) viewWidth;
+    float half_texel = 1.0 / (float) half_fft_size;
+
     glBindTexture(GL_TEXTURE_2D, waterfall[0]);
     glBegin(GL_QUADS);
-    glTexCoord2f(0.0, 1.0);
+    glTexCoord2f(0.0 + half_texel, 1.0 - half_texel);
     glVertex3f(-1.0, -1.0, 0.0);
-    glTexCoord2f(1.0, 1.0);
-    glVertex3f(0.0, -1.0, 0.0);
-    glTexCoord2f(1.0, 0.0);
-    glVertex3f(0.0, 1.0, 0.0);
-    glTexCoord2f(0.0, 0.0);
+    glTexCoord2f(1.0 - half_texel, 1.0 - half_texel);
+    glVertex3f(0.0 + half_pixel, -1.0, 0.0);
+    glTexCoord2f(1.0 - half_texel, 0.0 + half_texel);
+    glVertex3f(0.0 + half_pixel, 1.0, 0.0);
+    glTexCoord2f(0.0 + half_texel, 0.0 + half_texel);
     glVertex3f(-1.0, 1.0, 0.0);
     glEnd();
 
     glBindTexture(GL_TEXTURE_2D, waterfall[1]);
     glBegin(GL_QUADS);
-    glTexCoord2f(0.0, 1.0);
-    glVertex3f(0.0, -1.0, 0.0);
-    glTexCoord2f(1.0, 1.0);
+    glTexCoord2f(0.0 + half_texel, 1.0 - half_texel);
+    glVertex3f(0.0 - half_pixel, -1.0, 0.0);
+    glTexCoord2f(1.0 - half_texel, 1.0 - half_texel);
     glVertex3f(1.0, -1.0, 0.0);
-    glTexCoord2f(1.0, 0.0);
+    glTexCoord2f(1.0 - half_texel, 0.0 + half_texel);
     glVertex3f(1.0, 1.0, 0.0);
-    glTexCoord2f(0.0, 0.0);
-    glVertex3f(0.0, 1.0, 0.0);
+    glTexCoord2f(0.0 + half_texel, 0.0 + half_texel);
+    glVertex3f(0.0 - half_pixel, 1.0, 0.0);
     glEnd();
 
     glBindTexture(GL_TEXTURE_2D, 0);

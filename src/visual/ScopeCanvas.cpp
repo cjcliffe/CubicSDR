@@ -47,6 +47,25 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
     const wxSize ClientSize = GetClientSize();
 
+    if (!wxGetApp().getAudioVisualQueue()->empty()) {
+        AudioThreadInput *demodAudioData;
+        wxGetApp().getAudioVisualQueue()->pop(demodAudioData);
+        if (demodAudioData && demodAudioData->data.size()) {
+            if (waveform_points.size() != demodAudioData->data.size() * 2) {
+                waveform_points.resize(demodAudioData->data.size() * 2);
+            }
+
+            for (int i = 0, iMax = demodAudioData->data.size(); i < iMax; i++) {
+                waveform_points[i * 2 + 1] = demodAudioData->data[i] * 0.5f;
+                waveform_points[i * 2] = ((double) i / (double) iMax);
+            }
+
+            setStereo(demodAudioData->channels == 2);
+        } else {
+            std::cout << "Incoming Demodulator data empty?" << std::endl;
+        }
+    }
+
     glContext->SetCurrent(*this);
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 

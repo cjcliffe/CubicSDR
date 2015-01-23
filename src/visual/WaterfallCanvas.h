@@ -29,6 +29,10 @@ public:
     DragState getNextDragState();
 
     void attachSpectrumCanvas(SpectrumCanvas *canvas_in);
+    void attachWaterfallCanvas(WaterfallCanvas *canvas_in);
+
+    bool isPolling();
+    void setPolling(bool polling);
 
 private:
     void OnPaint(wxPaintEvent& event);
@@ -46,8 +50,11 @@ private:
     void OnMouseEnterWindow(wxMouseEvent& event);
     void OnMouseLeftWindow(wxMouseEvent& event);
 
-    SpectrumCanvas *spectrumCanvas;
     std::vector<float> spectrum_points;
+
+    SpectrumCanvas *spectrumCanvas;
+    WaterfallCanvas *otherWaterfallCanvas;
+    bool polling;
 
     fftwf_complex *in, *out;
     fftwf_plan plan;

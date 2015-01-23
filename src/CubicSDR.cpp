@@ -185,6 +185,7 @@ void CubicSDR::removeDemodulator(DemodulatorInstance *demod) {
     if (!demod) {
         return;
     }
+    demod->setActive(false);
     sdrPostThread->removeDemodulator(demod);
 }
 

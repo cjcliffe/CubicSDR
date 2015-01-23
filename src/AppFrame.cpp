@@ -104,6 +104,7 @@ AppFrame::AppFrame() :
     waterfallCanvas = new WaterfallCanvas(this, NULL);
     waterfallCanvas->setup(2048, 512);
     waterfallCanvas->attachSpectrumCanvas(spectrumCanvas);
+    waterfallCanvas->attachWaterfallCanvas(demodWaterfallCanvas);
     spectrumCanvas->attachWaterfallCanvas(waterfallCanvas);
     vbox->Add(waterfallCanvas, 20, wxEXPAND | wxALL, 0);
 
@@ -390,50 +391,11 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         activeDemodulator = demod;
     }
 
-    if (!wxGetApp().getIQVisualQueue()->empty()) {
-        DemodulatorThreadIQData *iqData;
-        wxGetApp().getIQVisualQueue()->pop(iqData);
-
-        if (iqData && iqData->data.size()) {
-//            spectrumCanvas->setData(iqData);
-            waterfallCanvas->setData(iqData);
-            demodWaterfallCanvas->setData(iqData);
-            delete iqData;
-        } else {
-            std::cout << "Incoming IQ data empty?" << std::endl;
-        }
-        work_done = true;
-    }
-
-    if (!wxGetApp().getAudioVisualQueue()->empty()) {
-        AudioThreadInput *demodAudioData;
-        wxGetApp().getAudioVisualQueue()->pop(demodAudioData);
-        if (demodAudioData && demodAudioData->data.size()) {
-            if (scopeCanvas->waveform_points.size() != demodAudioData->data.size() * 2) {
-                scopeCanvas->waveform_points.resize(demodAudioData->data.size() * 2);
-            }
-
-            for (int i = 0, iMax = demodAudioData->data.size(); i < iMax; i++) {
-                scopeCanvas->waveform_points[i * 2 + 1] = demodAudioData->data[i] * 0.5f;
-                scopeCanvas->waveform_points[i * 2] = ((double) i / (double) iMax);
-            }
-
-            scopeCanvas->setStereo(demodAudioData->channels == 2);
-
-            delete demodAudioData;
-        } else {
-            std::cout << "Incoming Demodulator data empty?" << std::endl;
-        }
-        work_done = true;
-    }
-
     if (!waterfallCanvas->HasFocus()) {
         waterfallCanvas->SetFocus();
     }
 
-    if (!work_done) {
-        event.Skip();
-    }
+    event.Skip();
 }
 
 void AppFrame::saveSession(std::string fileName) {
