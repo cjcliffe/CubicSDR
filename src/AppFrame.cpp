@@ -398,7 +398,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 //            spectrumCanvas->setData(iqData);
             waterfallCanvas->setData(iqData);
             demodWaterfallCanvas->setData(iqData);
-            delete iqData;
         } else {
             std::cout << "Incoming IQ data empty?" << std::endl;
         }
@@ -419,8 +418,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             }
 
             scopeCanvas->setStereo(demodAudioData->channels == 2);
-
-            delete demodAudioData;
         } else {
             std::cout << "Incoming Demodulator data empty?" << std::endl;
         }

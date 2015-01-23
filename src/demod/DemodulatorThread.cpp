@@ -90,6 +90,9 @@ void DemodulatorThread::threadMain() {
     iqAutoGain = agc_crcf_create();
     agc_crcf_set_bandwidth(iqAutoGain, 0.9);
 
+    AudioThreadInput *ati_vis = new AudioThreadInput;
+    ati_vis->data.reserve(DEMOD_VIS_SIZE);
+
     std::cout << "Demodulator thread started.." << std::endl;
 
     terminated = false;
@@ -294,7 +297,6 @@ void DemodulatorThread::threadMain() {
         }
 
         if (ati && audioVisOutputQueue != NULL && audioVisOutputQueue->empty()) {
-            AudioThreadInput *ati_vis = new AudioThreadInput;
 
             int num_vis = DEMOD_VIS_SIZE;
             if (stereo) {
@@ -303,6 +305,7 @@ void DemodulatorThread::threadMain() {
                 if (stereoSize > DEMOD_VIS_SIZE) {
                     stereoSize = DEMOD_VIS_SIZE;
                 }
+
                 ati_vis->data.resize(stereoSize);
 
                 for (int i = 0; i < stereoSize / 2; i++) {
@@ -405,6 +408,8 @@ void DemodulatorThread::threadMain() {
         outputBuffers.pop_front();
         delete audioDataDel;
     }
+
+    delete ati_vis;
 
     DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_TERMINATED);
     tCmd.context = this;

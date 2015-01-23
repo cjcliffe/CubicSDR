@@ -17,6 +17,7 @@ public:
 private:
     GLuint waterfall[2];
     unsigned char *waterfall_tex[2];
+    int waterfall_ofs[2];
     int fft_size;
     int waterfall_lines;
 
