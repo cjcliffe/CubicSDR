@@ -24,9 +24,6 @@ void DemodulatorWorkerThread::threadMain() {
             commandQueue->pop(command);
             switch (command.cmd) {
             case DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS:
-                if (!filterCommand.bandwidth || !filterCommand.audioSampleRate) {
-                    break;
-                }
                 filterChanged = true;
                 filterCommand = command;
                 break;
@@ -40,18 +37,28 @@ void DemodulatorWorkerThread::threadMain() {
         if (filterChanged && !terminated) {
             DemodulatorWorkerThreadResult result(DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS);
 
-            result.iqResampleRatio = (double) (filterCommand.bandwidth) / (double) filterCommand.sampleRate;
-            result.audioResamplerRatio = (double) (filterCommand.audioSampleRate) / (double) filterCommand.bandwidth;
-            
             float As = 60.0f;         // stop-band attenuation [dB]
 
-            result.iqResampler = msresamp_crcf_create(result.iqResampleRatio, As);
-            result.audioResampler = msresamp_rrrf_create(result.audioResamplerRatio, As);
-            result.stereoResampler = msresamp_rrrf_create(result.audioResamplerRatio, As);
+            if (filterCommand.sampleRate && filterCommand.bandwidth) {
+                result.iqResampleRatio = (double) (filterCommand.bandwidth) / (double) filterCommand.sampleRate;
+                result.iqResampler = msresamp_crcf_create(result.iqResampleRatio, As);
+            }
 
-            result.audioSampleRate = filterCommand.audioSampleRate;
-            result.bandwidth = filterCommand.bandwidth;
-            result.sampleRate = filterCommand.sampleRate;
+            if (filterCommand.bandwidth && filterCommand.audioSampleRate) {
+                result.audioResamplerRatio = (double) (filterCommand.audioSampleRate) / (double) filterCommand.bandwidth;
+                result.audioResampler = msresamp_rrrf_create(result.audioResamplerRatio, As);
+                result.stereoResampler = msresamp_rrrf_create(result.audioResamplerRatio, As);
+                result.audioSampleRate = filterCommand.audioSampleRate;
+            }
+
+            if (filterCommand.bandwidth) {
+                result.bandwidth = filterCommand.bandwidth;
+            }
+
+            if (filterCommand.sampleRate) {
+                result.sampleRate = filterCommand.sampleRate;
+            }
+
             resultQueue->push(result);
         }
 

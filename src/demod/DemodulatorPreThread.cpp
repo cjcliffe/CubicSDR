@@ -106,7 +106,7 @@ void DemodulatorPreThread::threadMain() {
             }
         }
 
-        if (inp->sampleRate != tempParams.sampleRate) {
+        if (inp->sampleRate != tempParams.sampleRate && inp->sampleRate) {
             tempParams.sampleRate = inp->sampleRate;
             rateChanged = true;
         }
@@ -218,17 +218,25 @@ void DemodulatorPreThread::threadMain() {
                 case DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS:
                     msresamp_crcf_destroy(iqResampler);
 
-                    iqResampler = result.iqResampler;
-                    audioResampler = result.audioResampler;
-                    stereoResampler = result.stereoResampler;
 
-                    iqResampleRatio = result.iqResampleRatio;
-                    audioResampleRatio = result.audioResamplerRatio;
+                    if (result.iqResampler) {
+                        iqResampler = result.iqResampler;
+                        iqResampleRatio = result.iqResampleRatio;
+                    }
 
-                    params.audioSampleRate = result.audioSampleRate;
-                    params.bandwidth = result.bandwidth;
-                    params.sampleRate = result.sampleRate;
+                    if (result.audioResampler) {
+                        audioResampler = result.audioResampler;
+                        audioResampleRatio = result.audioResamplerRatio;
+                        stereoResampler = result.stereoResampler;
+                        params.audioSampleRate = result.audioSampleRate;
+                    }
 
+                    if (params.bandwidth) {
+                        params.bandwidth = result.bandwidth;
+                    }
+                    if (params.sampleRate) {
+                        params.sampleRate = result.sampleRate;
+                    }
                     break;
                 default:
                     break;
