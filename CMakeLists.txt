@@ -39,9 +39,19 @@ endmacro(configure_files_recurse)
 
 project (CubicSDR)
 
-SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
-SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_BINARY_DIR})
-SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_BINARY_DIR})
+if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+    MESSAGE( "64 bit compiler detected" )
+    SET( EX_PLATFORM 64 )
+    SET( EX_PLATFORM_NAME "x64" )
+else( CMAKE_SIZEOF_VOID_P EQUAL 8 ) 
+    MESSAGE( "32 bit compiler detected" )
+    SET( EX_PLATFORM 32 )
+    SET( EX_PLATFORM_NAME "x86" )
+endif( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+
+SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/${EX_PLATFORM_NAME})
+SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_BINARY_DIR}/${EX_PLATFORM_NAME})
+SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_BINARY_DIR}/${EX_PLATFORM_NAME})
 
 #add_subdirectory(${PROJECT_SOURCE_DIR}/glfw-3.0.3 ${PROJECT_BINARY_DIR}/glfw/)
 #include_directories(${PROJECT_SOURCE_DIR}/glfw-3.0.3/include)
@@ -57,33 +67,36 @@ include(${wxWidgets_USE_FILE})
 # include_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/include )
 # link_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/lib ${OPENGL_INCLUDE_DIR})
 
+
 IF (WIN32)
   set(wxWidgets_USE_STATIC ON)
-  include_directories ( ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll64  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
-  link_directories (  ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll64  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/x64 )
-  set(FFTW_LIB fftw3f-3)
+  include_directories ( ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
+  link_directories (  ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM_NAME}  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/${EX_PLATFORM_NAME} )
+  set(FFTW_LIB libfftw3f-3)
     
-  link_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/lib/64 )
+  link_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/lib/${EX_PLATFORM} )
   include_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/include )
-  
-  ADD_DEFINITIONS(
-    # To use wasapi
-    -D__WINDOWS_WASAPI__
-	
-    # To use directsound
-    #-D__WINDOWS_DS__
-  )
- 
-  # To use wasapi
-  SET(OTHER_LIBRARIES -luuid -lksuser )  
-  
-  # To use DirectSound (which uses WASAPI anyways?)
-  # SET(OTHER_LIBRARIES -ldsound)
+  set(LIQUID_LIB libliquid)
+
+  set(win_SOUND_LIB "DirectSound" CACHE STRING "Windows Sound Library (WASAPI, DirectSound")  
+  IF(${win_SOUND_LIB} STREQUAL "WASAPI")
+	ADD_DEFINITIONS(-D__WINDOWS_WASAPI__)	
+	IF (NOT MSVC)	
+		SET(OTHER_LIBRARIES -luuid -lksuser )
+	ENDIF(NOT MSVC)
+  ELSE()	
+	ADD_DEFINITIONS(-D__WINDOWS_DS__)	
+	IF (MSVC)	
+		SET(OTHER_LIBRARIES dsound.lib)
+	ELSE (MSVC)
+		SET(OTHER_LIBRARIES -ldsound)
+	ENDIF (MSVC)
+  ENDIF()    
   
   # Copy DLL files to build dir
-  configure_files(${PROJECT_SOURCE_DIR}/external/liquid-dsp-lib/64 ${CMAKE_BINARY_DIR} "*.dll")
-  configure_files(${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/x64 ${CMAKE_BINARY_DIR} "*.dll")
-  configure_files(${PROJECT_SOURCE_DIR}/external/fftw-3.3.4-dll64 ${CMAKE_BINARY_DIR} "*.dll")
+  configure_files(${PROJECT_SOURCE_DIR}/external/liquid-dsp/lib/${EX_PLATFORM} ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
+  configure_files(${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/${EX_PLATFORM_NAME} ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
+  configure_files(${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM_NAME} ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")  
   
 ENDIF (WIN32)
 
@@ -239,17 +252,26 @@ include_directories (
 	${PROJECT_SOURCE_DIR}/external/lodepng 
 	${PROJECT_SOURCE_DIR}/external/tinyxml
 )
+IF (NOT MSVC) 
+	ADD_DEFINITIONS(
+		-std=c++0x # or -std=c++11
+		-pthread
+	)
+ENDIF(NOT MSVC)
 
-ADD_DEFINITIONS(
-  -std=c++0x # or -std=c++11
-  -pthread
-)
- 
-configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR} "*.fnt")
-configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR} "*.png")
+configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.fnt")
+configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.png")
 
 add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers})
 
-target_link_libraries(CubicSDR rtlsdr liquid ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
+target_link_libraries(CubicSDR rtlsdr ${LIQUID_LIB} ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
 
+IF (WIN32)
+  set_target_properties(CubicSDR PROPERTIES LINK_FLAGS_DEBUG "/SUBSYSTEM:CONSOLE")
+  set_target_properties(CubicSDR PROPERTIES COMPILE_DEFINITIONS_DEBUG "_CONSOLE")
+  set_target_properties(CubicSDR PROPERTIES LINK_FLAGS_RELWITHDEBINFO "/SUBSYSTEM:CONSOLE")
+  set_target_properties(CubicSDR PROPERTIES COMPILE_DEFINITIONS_RELWITHDEBINFO "_CONSOLE")
+  set_target_properties(CubicSDR PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS")
+  set_target_properties(CubicSDR PROPERTIES LINK_FLAGS_MINSIZEREL "/SUBSYSTEM:WINDOWS")
+ ENDIF(WIN32)
 
