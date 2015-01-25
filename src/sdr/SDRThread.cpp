@@ -262,7 +262,7 @@ void SDRThread::threadMain() {
         double time_slice = (double) n_read / (double) sampleRate;
         seconds += time_slice;
 
-        if (iqDataOutQueue != NULL) {
+        if (iqDataOutQueue.load() != NULL) {
             iqDataOutQueue.load()->push(dataOut);
         }
     }

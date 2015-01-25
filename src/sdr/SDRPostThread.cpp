@@ -88,7 +88,7 @@ void SDRPostThread::threadMain() {
 
             iirfilt_crcf_execute_block(dcFilter, &fpData[0], dataSize, &dataOut[0]);
 
-            if (iqDataOutQueue != NULL) {
+            if (iqDataOutQueue.load() != NULL) {
                 DemodulatorThreadIQData *pipeDataOut = new DemodulatorThreadIQData;
 
                 pipeDataOut->frequency = data_in->frequency;
@@ -97,7 +97,7 @@ void SDRPostThread::threadMain() {
                 iqDataOutQueue.load()->push(pipeDataOut);
             }
 
-            if (iqVisualQueue != NULL && iqVisualQueue.load()->empty()) {
+            if (iqVisualQueue.load() != NULL && iqVisualQueue.load()->empty()) {
                 if (visualDataOut->data.size() < num_vis_samples) {
                     if (visualDataOut->data.capacity() < num_vis_samples) {
                         visualDataOut->data.reserve(num_vis_samples);

@@ -45,6 +45,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <climits>
+#include <algorithm>
 
 // Static variable definitions.
 const unsigned int RtApi::MAX_SAMPLE_RATES = 14;
