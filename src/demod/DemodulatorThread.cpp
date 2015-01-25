@@ -62,6 +62,8 @@ void DemodulatorThread::threadMain() {
     firStereoLeft = firfilt_rrrf_create(h, h_len);
     firStereoRight = firfilt_rrrf_create(h, h_len);
 
+    delete h;
+
     liquid_float_complex x, y;
 
     firhilbf firStereoR2C = firhilbf_create(5, 60.0f);
@@ -85,6 +87,8 @@ void DemodulatorThread::threadMain() {
     liquid_firdes_kaiser(h_len, 0.25, ssbAs, 0.0, ssb_h);
 
     firfilt_crcf firSSB = firfilt_crcf_create(ssb_h, h_len);
+
+    delete ssb_h;
 
     // Automatic IQ gain
     iqAutoGain = agc_crcf_create();
