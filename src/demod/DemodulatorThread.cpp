@@ -56,11 +56,13 @@ void DemodulatorThread::threadMain() {
     }
 
     unsigned int h_len = estimate_req_filter_len(ft, As);
-    float h[h_len];
+	float *h = new float[h_len];
     liquid_firdes_kaiser(h_len, firStereoCutoff, As, mu, h);
 
     firStereoLeft = firfilt_rrrf_create(h, h_len);
     firStereoRight = firfilt_rrrf_create(h, h_len);
+
+    delete h;
 
     liquid_float_complex x, y;
 
@@ -81,10 +83,12 @@ void DemodulatorThread::threadMain() {
     float ssbAs = 120.0f;         // stop-band attenuation [dB]
 
     h_len = estimate_req_filter_len(ssbFt, ssbAs);
-    float ssb_h[h_len];
+    float *ssb_h=new float[h_len];
     liquid_firdes_kaiser(h_len, 0.25, ssbAs, 0.0, ssb_h);
 
     firfilt_crcf firSSB = firfilt_crcf_create(ssb_h, h_len);
+
+    delete ssb_h;
 
     // Automatic IQ gain
     iqAutoGain = agc_crcf_create();

@@ -34,7 +34,7 @@ EVT_IDLE(AppFrame::OnIdle)
 wxEND_EVENT_TABLE()
 
 AppFrame::AppFrame() :
-        wxFrame(NULL, wxID_ANY, wxT(CUBICSDR_TITLE)), activeDemodulator(NULL) {
+        wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
 
     wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodOpts = new wxBoxSizer(wxVERTICAL);
@@ -280,7 +280,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         wxGetApp().getDemodMgr().terminateAll();
         wxGetApp().setFrequency(DEFAULT_FREQ);
         wxGetApp().setOffset(0);
-        SetTitle(wxT(CUBICSDR_TITLE));
+        SetTitle(CUBICSDR_TITLE);
         currentSessionFile = "";
     } else if (event.GetId() == wxID_EXIT) {
         Close(false);
