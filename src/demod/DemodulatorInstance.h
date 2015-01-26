@@ -90,4 +90,5 @@ private:
     long long currentFrequency;
     int currentBandwidth;
     int currentDemodType;
+    int currentOutputDevice;
   };

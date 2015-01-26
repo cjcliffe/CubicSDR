@@ -70,10 +70,10 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
     glContext->DrawBegin();
+    glContext->Plot(waveform_points, stereo);
     if (!deviceName.empty()) {
         glContext->DrawDeviceName(deviceName);
     }
-    glContext->Plot(waveform_points, stereo);
     glContext->DrawEnd();
 
 
