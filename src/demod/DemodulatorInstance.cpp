@@ -2,7 +2,7 @@
 
 DemodulatorInstance::DemodulatorInstance() :
         t_Demod(NULL), t_PreDemod(NULL), t_Audio(NULL), threadQueueDemod(NULL), demodulatorThread(NULL), terminated(true), audioTerminated(true), demodTerminated(
-        true), preDemodTerminated(true), active(false), squelch(false), stereo(false), currentFrequency(0), currentBandwidth(0) {
+        true), preDemodTerminated(true), active(false), squelch(false), stereo(false), currentFrequency(0), currentBandwidth(0), currentOutputDevice(-1) {
 
     label = new std::string("Unnamed");
     threadQueueDemod = new DemodulatorThreadInputQueue;
@@ -224,10 +224,15 @@ void DemodulatorInstance::setOutputDevice(int device_id) {
         command.int_value = device_id;
         audioThread->getCommandQueue()->push(command);
     }
+    currentOutputDevice = device_id;
 }
 
 int DemodulatorInstance::getOutputDevice() {
-    return audioThread->getOutputDevice();
+    if (currentOutputDevice == -1) {
+        return audioThread->getOutputDevice();
+    } else {
+        return currentOutputDevice;
+    }
 }
 
 void DemodulatorInstance::checkBandwidth() {
