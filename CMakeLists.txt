@@ -53,49 +53,72 @@ SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/${EX_PLATFORM_NAME})
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_BINARY_DIR}/${EX_PLATFORM_NAME})
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_BINARY_DIR}/${EX_PLATFORM_NAME})
 
-#add_subdirectory(${PROJECT_SOURCE_DIR}/glfw-3.0.3 ${PROJECT_BINARY_DIR}/glfw/)
-#include_directories(${PROJECT_SOURCE_DIR}/glfw-3.0.3/include)
-#include_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/include )
-#link_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/lib )
-
 find_package(OpenGL REQUIRED)
 
 find_package(wxWidgets REQUIRED gl core base)
 set(wxWidgets_CONFIGURATION mswu)
 include(${wxWidgets_USE_FILE})
- 
-# include_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/include )
-# link_directories ( ${PROJECT_SOURCE_DIR}/../CubicVR-2/build/lib ${OPENGL_INCLUDE_DIR})
 
 
 IF (WIN32)
-  set(wxWidgets_USE_STATIC ON)
-  include_directories ( ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
-  link_directories (  ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM_NAME}  ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/${EX_PLATFORM_NAME} )
-  set(FFTW_LIB libfftw3f-3)
-    
-  link_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/lib/${EX_PLATFORM} )
-  include_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/include )
-  set(LIQUID_LIB libliquid)
+	set(wxWidgets_USE_STATIC ON)
+	
+	# Audio device selection is not mandatory, dummy audio device is used if none are compiled in.
+	# Can also compile support for more than one simultaneously.
+	set(USE_AUDIO_DS ON CACHE BOOL "Include support for DirectSound")
+	set(USE_AUDIO_WASAPI OFF CACHE BOOL "Include support for WASAPI Audio")
+	# TODO:
+	# set(USE_AUDIO_ASIO OFF CACHE BOOL "Include support for ASIO Audio")
 
-  set(win_SOUND_LIB "DirectSound" CACHE STRING "Windows Sound Library (WASAPI, DirectSound")  
-  IF(${win_SOUND_LIB} STREQUAL "WASAPI")
-	ADD_DEFINITIONS(-D__WINDOWS_WASAPI__)	
-	IF (NOT MSVC)	
-		SET(OTHER_LIBRARIES -luuid -lksuser )
-	ENDIF(NOT MSVC)
-  ELSE()	
-	ADD_DEFINITIONS(-D__WINDOWS_DS__)	
-	IF (MSVC)	
-		SET(OTHER_LIBRARIES dsound.lib)
-	ELSE (MSVC)
-		SET(OTHER_LIBRARIES -ldsound)
-	ENDIF (MSVC)
-  ENDIF()    
+	# WASAPI
+	IF(USE_AUDIO_WASAPI)
+		ADD_DEFINITIONS(-D__WINDOWS_WASAPI__)	
+		IF (NOT MSVC)	
+			SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} -luuid -lksuser)
+		ENDIF(NOT MSVC)
+	ENDIF(USE_AUDIO_WASAPI)
+
+	# DirectSound
+	IF (USE_AUDIO_DS)	
+		ADD_DEFINITIONS(-D__WINDOWS_DS__)	
+		IF (MSVC)	
+			SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} dsound.lib)
+		ELSE (MSVC)
+			SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} -ldsound)
+		ENDIF (MSVC)
+	ENDIF(USE_AUDIO_DS)    
+  
+  # ASIO?
+  #IF(USE_AUDIO_ASIO)
+  #ENDIF(USE_AUDIO_ASIO)
+  
+	# FFTW
+	include_directories ( ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4 ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
+	set(FFTW_LIB libfftw3f-3)
+	link_directories ( ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM} )
+	configure_files(${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM} ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
+
+    include_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/include )
+	set(LIQUID_LIB libliquid)
+	
+	# Haven't looked into why these are different, just explicitly including everything for now until it can be sorted neatly.
+	IF (MSVC)
+	  # LIQUID
+	  link_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM} )
+	  configure_files(${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM} ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME}/ "*.dll")
+	  # RTL-SDR
+	  link_directories ( ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/msvc/${EX_PLATFORM} )
+	  configure_files(${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/msvc/${EX_PLATFORM} ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
+	ELSE (MSVC) # GCC
+	  # LIQUID
+	  link_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/gcc/${EX_PLATFORM} )
+	  configure_files(${PROJECT_SOURCE_DIR}/external/liquid-dsp/gcc/${EX_PLATFORM} ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
+	  # RTL-SDR
+	  link_directories ( ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/gcc/${EX_PLATFORM} )
+	  configure_files(${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/gcc/${EX_PLATFORM} ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
+	ENDIF(MSVC)  
   
   # Copy DLL files to build dir
-  configure_files(${PROJECT_SOURCE_DIR}/external/liquid-dsp/lib/${EX_PLATFORM} ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
-  configure_files(${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/${EX_PLATFORM_NAME} ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
   configure_files(${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM_NAME} ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")  
   
 ENDIF (WIN32)
@@ -267,12 +290,15 @@ add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers})
 
 target_link_libraries(CubicSDR rtlsdr ${LIQUID_LIB} ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
 
-IF (WIN32)
-  set_target_properties(CubicSDR PROPERTIES LINK_FLAGS_DEBUG "/SUBSYSTEM:CONSOLE")
-  set_target_properties(CubicSDR PROPERTIES COMPILE_DEFINITIONS_DEBUG "_CONSOLE")
-  set_target_properties(CubicSDR PROPERTIES LINK_FLAGS_RELWITHDEBINFO "/SUBSYSTEM:CONSOLE")
-  set_target_properties(CubicSDR PROPERTIES COMPILE_DEFINITIONS_RELWITHDEBINFO "_CONSOLE")
+IF (MSVC)
+  set_target_properties(CubicSDR PROPERTIES LINK_FLAGS_DEBUG "/SUBSYSTEM:WINDOWS")
+  set_target_properties(CubicSDR PROPERTIES COMPILE_DEFINITIONS_DEBUG "_WINDOWS")
+  set_target_properties(CubicSDR PROPERTIES LINK_FLAGS_RELWITHDEBINFO "/SUBSYSTEM:WINDOWS")
+  set_target_properties(CubicSDR PROPERTIES COMPILE_DEFINITIONS_RELWITHDEBINFO "_WINDOWS")
   set_target_properties(CubicSDR PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS")
+  set_target_properties(CubicSDR PROPERTIES COMPILE_DEFINITIONS_RELEASE "_WINDOWS")
   set_target_properties(CubicSDR PROPERTIES LINK_FLAGS_MINSIZEREL "/SUBSYSTEM:WINDOWS")
- ENDIF(WIN32)
+  set_target_properties(CubicSDR PROPERTIES COMPILE_DEFINITIONS_MINSIZEREL "_WINDOWS")
+  set(CMAKE_CREATE_WIN32_EXE "/SUBSYSTEM:WINDOWS /ENTRY:\"mainCRTStartup\"")
+ENDIF(MSVC)
 
