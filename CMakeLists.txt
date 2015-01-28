@@ -65,8 +65,8 @@ IF (WIN32)
 	
 	# Audio device selection is not mandatory, dummy audio device is used if none are compiled in.
 	# Can also compile support for more than one simultaneously.
-	set(USE_AUDIO_DS ON CACHE BOOL "Include support for DirectSound")
-	set(USE_AUDIO_WASAPI OFF CACHE BOOL "Include support for WASAPI Audio")
+	set(USE_AUDIO_DS OFF CACHE BOOL "Include support for DirectSound")
+	set(USE_AUDIO_WASAPI ON CACHE BOOL "Include support for WASAPI Audio")
 	# TODO:
 	# set(USE_AUDIO_ASIO OFF CACHE BOOL "Include support for ASIO Audio")
 
