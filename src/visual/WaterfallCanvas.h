@@ -56,7 +56,8 @@ private:
     WaterfallCanvas *otherWaterfallCanvas;
     bool polling;
 
-    fftwf_complex *in, *out;
+    fftwf_complex *in, *out, *fft_in_data, *fft_last_data;
+    unsigned int last_data_size;
     fftwf_plan plan;
 
     float fft_ceil_ma, fft_ceil_maa;
@@ -84,6 +85,8 @@ private:
 
     std::vector<liquid_float_complex> shiftBuffer;
     std::vector<liquid_float_complex> resampleBuffer;
+
+
     // event table
 wxDECLARE_EVENT_TABLE();
 };
