@@ -499,7 +499,7 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
 
         if (num_written >= fft_size) {
             execute = true;
-            memcpy(in, fft_in_data, sizeof(fftwf_complex) * fft_size * sizeof(fftwf_complex));
+            memcpy(in, fft_in_data, fft_size * sizeof(fftwf_complex));
             memcpy(fft_last_data, in, fft_size * sizeof(fftwf_complex));
 
         } else {
@@ -516,6 +516,7 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
                 memcpy(in, fft_last_data + (last_data_size - num_last), num_last * sizeof(fftwf_complex));
                 memcpy(in + num_last, fft_in_data, num_written * sizeof(fftwf_complex));
                 memcpy(fft_last_data, in, fft_size * sizeof(fftwf_complex));
+                execute = true;
             }
         }
 
