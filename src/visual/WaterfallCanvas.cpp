@@ -414,7 +414,7 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
             int desired_input_size = fft_size / resamplerRatio;
 
             if (input->data.size() < desired_input_size) {
-                std::cout << "fft underflow, desired: " << desired_input_size << " actual:" << input->data.size() << std::endl;
+//                std::cout << "fft underflow, desired: " << desired_input_size << " actual:" << input->data.size() << std::endl;
                 desired_input_size = input->data.size();
             }
 
