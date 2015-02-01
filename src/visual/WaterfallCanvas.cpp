@@ -444,7 +444,7 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
             }
 
             if (!resampler || bandwidth != lastBandwidth || lastInputBandwidth != input->sampleRate) {
-                float As = 120.0f;
+                float As = 60.0f;
 
                 if (resampler) {
                     msresamp_crcf_destroy(resampler);

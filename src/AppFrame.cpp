@@ -373,8 +373,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             if (demodBw > wxGetApp().getSampleRate() / 2) {
                 demodBw = wxGetApp().getSampleRate() / 2;
             }
-            if (demodBw < 50000) {
-                demodBw = 50000;
+            if (demodBw < 30000) {
+                demodBw = 30000;
             }
             demodWaterfallCanvas->setBandwidth(demodBw);
             demodSpectrumCanvas->setBandwidth(demodBw);
