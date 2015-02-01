@@ -6,7 +6,7 @@
 #include <deque>
 
 SDRPostThread::SDRPostThread() :
-        iqDataOutQueue(NULL), iqDataInQueue(NULL), iqVisualQueue(NULL), terminated(false), dcFilter(NULL), num_vis_samples(2048) {
+        iqDataOutQueue(NULL), iqDataInQueue(NULL), iqVisualQueue(NULL), terminated(false), dcFilter(NULL), num_vis_samples(16384) {
 }
 
 SDRPostThread::~SDRPostThread() {

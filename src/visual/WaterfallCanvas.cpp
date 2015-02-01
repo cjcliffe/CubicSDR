@@ -409,6 +409,15 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
                 return;
             }
 
+            resamplerRatio = (double) (bandwidth) / (double) input->sampleRate;
+
+            int desired_input_size = fft_size / resamplerRatio;
+
+            if (input->data.size() < desired_input_size) {
+                std::cout << "fft underflow, desired: " << desired_input_size << " actual:" << input->data.size() << std::endl;
+                desired_input_size = input->data.size();
+            }
+
             if (centerFreq != input->frequency) {
                 if ((centerFreq - input->frequency) != shiftFrequency || lastInputBandwidth != input->sampleRate) {
                     if (abs(input->frequency - centerFreq) < (wxGetApp().getSampleRate() / 2)) {
@@ -418,25 +427,23 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
                     }
                 }
 
-                if (shiftBuffer.size() != input->data.size()) {
-                    if (shiftBuffer.capacity() < input->data.size()) {
-                        shiftBuffer.reserve(input->data.size());
+                if (shiftBuffer.size() != desired_input_size) {
+                    if (shiftBuffer.capacity() < desired_input_size) {
+                        shiftBuffer.reserve(desired_input_size);
                     }
-                    shiftBuffer.resize(input->data.size());
+                    shiftBuffer.resize(desired_input_size);
                 }
 
                 if (shiftFrequency < 0) {
-                    nco_crcf_mix_block_up(freqShifter, &input->data[0], &shiftBuffer[0], input->data.size());
+                    nco_crcf_mix_block_up(freqShifter, &input->data[0], &shiftBuffer[0], desired_input_size);
                 } else {
-                    nco_crcf_mix_block_down(freqShifter, &input->data[0], &shiftBuffer[0], input->data.size());
+                    nco_crcf_mix_block_down(freqShifter, &input->data[0], &shiftBuffer[0], desired_input_size);
                 }
             } else {
                 shiftBuffer.assign(input->data.begin(), input->data.end());
             }
 
             if (!resampler || bandwidth != lastBandwidth || lastInputBandwidth != input->sampleRate) {
-                resamplerRatio = (double) (bandwidth) / (double) input->sampleRate;
-
                 float As = 120.0f;
 
                 if (resampler) {
@@ -448,7 +455,8 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
                 lastInputBandwidth = input->sampleRate;
             }
 
-            int out_size = ceil((double) (input->data.size()) * resamplerRatio) + 512;
+
+            int out_size = ceil((double) (desired_input_size) * resamplerRatio) + 512;
 
             if (resampleBuffer.size() != out_size) {
                 if (resampleBuffer.capacity() < out_size) {
@@ -457,7 +465,8 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
                 resampleBuffer.resize(out_size);
             }
 
-            msresamp_crcf_execute(resampler, &shiftBuffer[0], input->data.size(), &resampleBuffer[0], &num_written);
+
+            msresamp_crcf_execute(resampler, &shiftBuffer[0], desired_input_size, &resampleBuffer[0], &num_written);
 
             resampleBuffer.resize(fft_size);
 
