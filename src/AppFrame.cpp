@@ -360,7 +360,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             demodModeSelector->setSelection(dType);
         }
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
-            if (demod->getParams().frequency != demodWaterfallCanvas->getCenterFrequency()) {
+            if (demod->getFrequency() != demodWaterfallCanvas->getCenterFrequency()) {
                 demodWaterfallCanvas->setCenterFrequency(demod->getFrequency());
                 demodSpectrumCanvas->setCenterFrequency(demod->getFrequency());
             }

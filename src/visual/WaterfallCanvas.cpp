@@ -765,10 +765,10 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
             } else {
                 isNew = true;
                 demod = wxGetApp().getDemodMgr().newThread();
-                demod->getParams().frequency = freq;
+                demod->setFrequency(freq);
 
                 if (DemodulatorInstance *last = wxGetApp().getDemodMgr().getLastActiveDemodulator()) {
-                    demod->getParams().bandwidth = last->getBandwidth();
+                    demod->setBandwidth(last->getBandwidth());
                     demod->setDemodulatorType(last->getDemodulatorType());
                     demod->setSquelchLevel(last->getSquelchLevel());
                     demod->setSquelchEnabled(last->isSquelchEnabled());
@@ -826,8 +826,8 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
             demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
         } else {
             demod = wxGetApp().getDemodMgr().newThread();
-            demod->getParams().frequency = freq;
-            demod->getParams().bandwidth = bw;
+            demod->setFrequency(freq);
+            demod->setBandwidth(bw);
             if (DemodulatorInstance *last = wxGetApp().getDemodMgr().getLastActiveDemodulator()) {
                 demod->setDemodulatorType(last->getDemodulatorType());
                 demod->setSquelchLevel(last->getSquelchLevel());

@@ -91,10 +91,6 @@ DemodulatorThreadCommandQueue *DemodulatorInstance::getCommandQueue() {
     return threadQueueCommand;
 }
 
-DemodulatorThreadParameters &DemodulatorInstance::getParams() {
-    return demodulatorPreThread->getParams();
-}
-
 void DemodulatorInstance::terminate() {
     std::cout << "Terminating demodulator audio thread.." << std::endl;
     audioThread->terminate();

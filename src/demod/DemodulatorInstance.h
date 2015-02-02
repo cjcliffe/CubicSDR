@@ -36,7 +36,6 @@ public:
     void setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue);
 
     DemodulatorThreadCommandQueue *getCommandQueue();
-    DemodulatorThreadParameters &getParams();
 
     void run();
     void terminate();

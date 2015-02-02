@@ -70,8 +70,8 @@ std::vector<DemodulatorInstance *> *DemodulatorMgr::getDemodulatorsAt(long long 
     for (int i = 0, iMax = demods.size(); i < iMax; i++) {
         DemodulatorInstance *testDemod = demods[i];
 
-        long long freqTest = testDemod->getParams().frequency;
-        long long bandwidthTest = testDemod->getParams().bandwidth;
+        long long freqTest = testDemod->getFrequency();
+        long long bandwidthTest = testDemod->getBandwidth();
         long long halfBandwidthTest = bandwidthTest / 2;
 
         long long halfBuffer = bandwidth / 2;
