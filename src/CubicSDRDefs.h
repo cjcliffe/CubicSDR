@@ -11,7 +11,7 @@ const char filePathSeparator =
 #endif
 
 #ifdef __APPLE__
-#define BUF_SIZE (16384*2)
+#define BUF_SIZE (16384*6)
 #define DEFAULT_SAMPLE_RATE 2000000
 #endif
 #ifdef __linux__
