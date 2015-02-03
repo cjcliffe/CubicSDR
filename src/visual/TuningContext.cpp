@@ -82,7 +82,7 @@ void TuningContext::DrawDemodFreqBw(long long freq, unsigned int bw, long long c
     glColor3f(ThemeMgr::mgr.currentTheme->text.r, ThemeMgr::mgr.currentTheme->text.g, ThemeMgr::mgr.currentTheme->text.b);
 
     getFont(fontSize).drawString("Freq: ", -0.75, 0, fontHeight, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
-    if (bw) {
+    if (freq) {
         freqStr.str("");
         freqStr << std::fixed << freq << " Hz";
     } else {

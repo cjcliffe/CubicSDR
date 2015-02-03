@@ -275,7 +275,7 @@ void PrimaryGLContext::DrawFreqSelector(float uxPos, float r, float g, float b, 
     long long bw = 0;
 
     if (!demod) {
-        bw = defaultDemodParams.bandwidth;
+        bw = wxGetApp().getDemodMgr().getLastBandwidth();
     } else {
         bw = demod->getBandwidth();
     }

@@ -22,8 +22,27 @@ public:
     DemodulatorInstance *getActiveDemodulator();
     DemodulatorInstance *getLastActiveDemodulator();
 
+    int getLastBandwidth() const;
+    void setLastBandwidth(int lastBandwidth);
+
+    int getLastDemodulatorType() const;
+    void setLastDemodulatorType(int lastDemodType);
+
+    float getLastGain() const;
+    void setLastGain(float lastGain);
+
+    float getLastSquelchLevel() const;
+    void setLastSquelchLevel(float lastSquelch);
+
+    bool isLastSquelchEnabled() const;
+    void setLastSquelchEnabled(bool lastSquelchEnabled);
+
+    bool isLastStereo() const;
+    void setLastStereo(bool lastStereo);
+
 private:
     void garbageCollect();
+    void updateLastState();
 
     std::vector<DemodulatorInstance *> demods;
     std::vector<DemodulatorInstance *> demods_deleted;
@@ -31,4 +50,10 @@ private:
     DemodulatorInstance *lastActiveDemodulator;
     DemodulatorInstance *activeVisualDemodulator;
 
+    int lastBandwidth;
+    int lastDemodType;
+    bool lastSquelchEnabled;
+    float lastSquelch;
+    float lastGain;
+    bool lastStereo;
 };
