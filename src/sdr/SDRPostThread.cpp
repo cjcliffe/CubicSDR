@@ -2,11 +2,27 @@
 #include "CubicSDRDefs.h"
 #include "CubicSDR.h"
 
+#include <complex.h>
+#include <endian.h>
 #include <vector>
 #include <deque>
 
 SDRPostThread::SDRPostThread() :
         iqDataOutQueue(NULL), iqDataInQueue(NULL), iqVisualQueue(NULL), terminated(false), dcFilter(NULL), num_vis_samples(16384) {
+
+    // create a lookup table
+    for (unsigned int i = 0; i <= 0xffff; i++) {
+        liquid_float_complex tmp;
+# if (__BYTE_ORDER == __LITTLE_ENDIAN)
+        tmp.real = (float(i & 0xff) - 127.4f) * (1.0f/128.0f);
+        tmp.imag = (float(i >> 8) - 127.4f) * (1.0f/128.0f);
+        _lut.push_back(tmp);
+#else // BIG_ENDIAN
+        tmp.real = (float(i >> 8) - 127.4f) * (1.0f/128.0f);
+        tmp.imag = (float(i & 0xff) - 127.4f) * (1.0f/128.0f);
+        _lut.push_back(tmp);
+#endif
+    }
 }
 
 SDRPostThread::~SDRPostThread() {
@@ -82,8 +98,7 @@ void SDRPostThread::threadMain() {
             }
 
             for (int i = 0, iMax = dataSize; i < iMax; i++) {
-                fpData[i].real = (float) data_in->data[i * 2] / 127.0;
-                fpData[i].imag = (float) data_in->data[i * 2 + 1] / 127.0;
+                fpData[i] = _lut[*((uint16_t*)&data_in->data[2*i])];
             }
 
             iirfilt_crcf_execute_block(dcFilter, &fpData[0], dataSize, &dataOut[0]);

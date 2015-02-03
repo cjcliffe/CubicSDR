@@ -256,7 +256,7 @@ void SDRThread::threadMain() {
         }
 
         for (int i = 0; i < n_read; i++) {
-            dataOut->data[i] = buf[i] - 127;
+            dataOut->data[i] = buf[i];
         }
 
         double time_slice = (double) n_read / (double) sampleRate;
