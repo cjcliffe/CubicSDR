@@ -99,7 +99,7 @@ void DemodulatorThread::threadMain() {
 
     std::cout << "Demodulator thread started.." << std::endl;
 
-    switch (demodulatorType) {
+    switch (demodulatorType.load()) {
     case DEMOD_TYPE_FM:
         break;
     case DEMOD_TYPE_LSB:
