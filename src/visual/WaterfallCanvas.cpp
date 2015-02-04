@@ -656,7 +656,7 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
             } else {
                 setStatusText("Click and drag to set the current demodulator range.");
             }
-        } else if (demodsHover->size()) {
+        } else if (demodsHover->size() && !shiftDown) {
             int hovered = -1;
             long near_dist = getBandwidth();
 
@@ -674,7 +674,7 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
                     near_dist = dist;
                 }
 
-                if (dist <= halfBw && dist >= (int) ((float) halfBw / (float) 1.5)) {
+                if (dist <= halfBw && dist >= (int) ((float) halfBw / (1.5 - (0.65 * (1.0-(float)(wxGetApp().getSampleRate() - getBandwidth())/(float)wxGetApp().getSampleRate()))))) {
                     long edge_dist = abs(halfBw - dist);
                     if (edge_dist < near_dist) {
                         activeDemodulator = demod;
