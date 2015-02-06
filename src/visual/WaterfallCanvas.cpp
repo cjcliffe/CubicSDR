@@ -746,7 +746,7 @@ void WaterfallCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
 void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseReleased(event);
 
-    bool isNew = shiftDown
+    bool isNew = shiftDown || (wxGetApp().getDemodMgr().getLastActiveDemodulator() == NULL)
             || (wxGetApp().getDemodMgr().getLastActiveDemodulator() && !wxGetApp().getDemodMgr().getLastActiveDemodulator()->isActive());
 
     mouseTracker.setVertDragLock(false);
