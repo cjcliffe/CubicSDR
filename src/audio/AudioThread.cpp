@@ -326,6 +326,7 @@ void AudioThread::setupDevice(int deviceId) {
         } else {
             deviceController[parameters.deviceId]->bindThread(this);
         }
+        active = true;
 
 #else
         if (dac.isStreamOpen()) {
@@ -473,6 +474,7 @@ void AudioThread::setActive(bool state) {
             }
         }
     }
+    active = state;
 #else
     if (state && !active && outputDevice != -1) {
         active = state;
