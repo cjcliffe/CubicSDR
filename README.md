@@ -101,7 +101,7 @@ Advanced Goals:
     * Take control of additional devices and spawning new demodulators (i.e. trunkers)
     * Script manager / live editor
     * Provide scriptable liquid-dsp modulation for trancievers?
-
+  - "PVR" like mode with waterfall time shifting
 
 Target Platforms:
 ----------------
