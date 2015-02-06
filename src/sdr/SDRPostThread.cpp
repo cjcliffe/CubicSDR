@@ -2,8 +2,6 @@
 #include "CubicSDRDefs.h"
 #include "CubicSDR.h"
 
-#include <complex.h>
-#include <endian.h>
 #include <vector>
 #include <deque>
 
