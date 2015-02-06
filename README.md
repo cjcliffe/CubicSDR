@@ -75,6 +75,7 @@ Basic Goals and Status:
   - Audio
     - [ ] Recording
   - Optimization
+    - [ ] Eliminate large waterfall texture uploads
     - [ ] Update visuals to OpenGL 3.x
     - [ ] Resolve constant refresh on visuals that don't change often
     - [ ] Resolve driver/platform vertical sync issues
@@ -82,6 +83,7 @@ Basic Goals and Status:
 
 Advanced Goals:
 --------------
+  - Support shell-based stdin/stdout tools for direct output/playback to/from CLI audio processing apps (i.e. DSD on OSX)
   - Update visuals to support OpenGL ES
   - Basic demodulator filter(s) that can be enabled and tweaked visually
   - Support multiple simultaneous device usage
