@@ -56,7 +56,7 @@ void DemodulatorThread::threadMain() {
     }
 
     unsigned int h_len = estimate_req_filter_len(ft, As);
-	float *h = new float[h_len];
+    float *h = new float[h_len];
     liquid_firdes_kaiser(h_len, firStereoCutoff, As, mu, h);
 
     firStereoLeft = firfilt_rrrf_create(h, h_len);
@@ -83,7 +83,7 @@ void DemodulatorThread::threadMain() {
     float ssbAs = 120.0f;         // stop-band attenuation [dB]
 
     h_len = estimate_req_filter_len(ssbFt, ssbAs);
-    float *ssb_h=new float[h_len];
+    float *ssb_h = new float[h_len];
     liquid_firdes_kaiser(h_len, 0.25, ssbAs, 0.0, ssb_h);
 
     firfilt_crcf firSSB = firfilt_crcf_create(ssb_h, h_len);
@@ -98,6 +98,23 @@ void DemodulatorThread::threadMain() {
     ati_vis->data.reserve(DEMOD_VIS_SIZE);
 
     std::cout << "Demodulator thread started.." << std::endl;
+
+    switch (demodulatorType.load()) {
+    case DEMOD_TYPE_FM:
+        break;
+    case DEMOD_TYPE_LSB:
+        demodAM = demodAM_USB;
+        break;
+    case DEMOD_TYPE_USB:
+        demodAM = demodAM_LSB;
+        break;
+    case DEMOD_TYPE_DSB:
+        demodAM = demodAM_DSB;
+        break;
+    case DEMOD_TYPE_AM:
+        demodAM = demodAM_DSB_CSP;
+        break;
+    }
 
     terminated = false;
 

@@ -168,7 +168,7 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
 
     if (!src->currentInput) {
         src->inputQueue->pop(src->currentInput);
-        if (src->terminated) {
+        if (src->terminated || !src->active) {
             return 1;
         }
         src->audioQueuePtr = 0;
@@ -183,11 +183,11 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                 src->currentInput->decRefCount();
                 src->currentInput = NULL;
             }
-            if (src->terminated) {
+            if (src->terminated || !src->active) {
                 return 1;
             }
             src->inputQueue->pop(src->currentInput);
-            if (src->terminated) {
+            if (src->terminated || !src->active) {
                 return 1;
             }
             src->audioQueuePtr = 0;
@@ -202,11 +202,11 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                     src->currentInput->decRefCount();
                     src->currentInput = NULL;
                 }
-                if (src->terminated) {
+                if (src->terminated || !src->active) {
                     return 1;
                 }
                 src->inputQueue->pop(src->currentInput);
-                if (src->terminated) {
+                if (src->terminated || !src->active) {
                     return 1;
                 }
                 src->audioQueuePtr = 0;
@@ -223,11 +223,11 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                     src->currentInput->decRefCount();
                     src->currentInput = NULL;
                 }
-                if (src->terminated) {
+                if (src->terminated || !src->active) {
                     return 1;
                 }
                 src->inputQueue->pop(src->currentInput);
-                if (src->terminated) {
+                if (src->terminated || !src->active) {
                     return 1;
                 }
                 src->audioQueuePtr = 0;
@@ -327,6 +327,7 @@ void AudioThread::setupDevice(int deviceId) {
             deviceController[parameters.deviceId]->bindThread(this);
         }
         active = true;
+
 #else
         if (dac.isStreamOpen()) {
             if (dac.isStreamRunning()) {
@@ -335,16 +336,29 @@ void AudioThread::setupDevice(int deviceId) {
             dac.closeStream();
         }
 
-        dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &bufferFrames, &audioCallback, (void *) this, &opts);
-        dac.startStream();
+        active = true;
+
+        if (deviceId != -1) {
+            dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &bufferFrames, &audioCallback, (void *) this, &opts);
+            dac.startStream();
+        } else {
+            AudioThreadInput *dummy;
+            while (!inputQueue->empty()) {  // flush queue
+                inputQueue->pop(dummy);
+                if (dummy) {
+                    dummy->decRefCount();
+                }
+            }
+        }
 
 #endif
     } catch (RtAudioError& e) {
         e.printMessage();
         return;
     }
-
-    outputDevice = deviceId;
+    if (deviceId != -1) {
+        outputDevice = deviceId;
+    }
 }
 
 int AudioThread::getOutputDevice() {
@@ -440,6 +454,7 @@ bool AudioThread::isActive() {
 }
 
 void AudioThread::setActive(bool state) {
+
 #ifdef USE_MIXER
     AudioThreadInput *dummy;
     if (state && !active) {
@@ -459,8 +474,22 @@ void AudioThread::setActive(bool state) {
             }
         }
     }
-#endif
     active = state;
+#else
+    if (state && !active && outputDevice != -1) {
+        active = state;
+        AudioThreadCommand command;
+        command.cmd = AudioThreadCommand::AUDIO_THREAD_CMD_SET_DEVICE;
+        command.int_value = outputDevice;
+        cmdQueue.push(command);
+    } else if (active && !state) {
+        active = state;
+        AudioThreadCommand command;
+        command.cmd = AudioThreadCommand::AUDIO_THREAD_CMD_SET_DEVICE;
+        command.int_value = -1;
+    }
+
+#endif
 }
 
 AudioThreadCommandQueue *AudioThread::getCommandQueue() {

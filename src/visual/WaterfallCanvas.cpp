@@ -656,7 +656,7 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
             } else {
                 setStatusText("Click and drag to set the current demodulator range.");
             }
-        } else if (demodsHover->size()) {
+        } else if (demodsHover->size() && !shiftDown) {
             int hovered = -1;
             long near_dist = getBandwidth();
 
@@ -674,7 +674,7 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
                     near_dist = dist;
                 }
 
-                if (dist <= halfBw && dist >= (int) ((float) halfBw / (float) 1.5)) {
+                if (dist <= halfBw && dist >= (int) ((float) halfBw / (1.5 - (0.65 * (1.0-(float)(wxGetApp().getSampleRate() - getBandwidth())/(float)wxGetApp().getSampleRate()))))) {
                     long edge_dist = abs(halfBw - dist);
                     if (edge_dist < near_dist) {
                         activeDemodulator = demod;
@@ -753,6 +753,7 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
     mouseTracker.setHorizDragLock(false);
 
     DemodulatorInstance *demod;
+    DemodulatorMgr *mgr = &wxGetApp().getDemodMgr();
 
     if (mouseTracker.getOriginDeltaMouseX() == 0 && mouseTracker.getOriginDeltaMouseY() == 0) {
         float pos = mouseTracker.getMouseX();
@@ -767,14 +768,12 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
                 demod = wxGetApp().getDemodMgr().newThread();
                 demod->setFrequency(freq);
 
-                if (DemodulatorInstance *last = wxGetApp().getDemodMgr().getLastActiveDemodulator()) {
-                    demod->setBandwidth(last->getBandwidth());
-                    demod->setDemodulatorType(last->getDemodulatorType());
-                    demod->setSquelchLevel(last->getSquelchLevel());
-                    demod->setSquelchEnabled(last->isSquelchEnabled());
-                    demod->setStereo(last->isStereo());
-                    demod->setGain(last->getGain());
-                }
+                demod->setBandwidth(mgr->getLastBandwidth());
+                demod->setDemodulatorType(mgr->getLastDemodulatorType());
+                demod->setSquelchLevel(mgr->getLastSquelchLevel());
+                demod->setSquelchEnabled(mgr->isLastSquelchEnabled());
+                demod->setStereo(mgr->isLastStereo());
+                demod->setGain(mgr->getLastGain());
 
                 demod->run();
 
@@ -828,13 +827,13 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
             demod = wxGetApp().getDemodMgr().newThread();
             demod->setFrequency(freq);
             demod->setBandwidth(bw);
-            if (DemodulatorInstance *last = wxGetApp().getDemodMgr().getLastActiveDemodulator()) {
-                demod->setDemodulatorType(last->getDemodulatorType());
-                demod->setSquelchLevel(last->getSquelchLevel());
-                demod->setSquelchEnabled(last->isSquelchEnabled());
-                demod->setStereo(last->isStereo());
-                demod->setGain(last->getGain());
-            }
+
+            demod->setDemodulatorType(mgr->getLastDemodulatorType());
+            demod->setSquelchLevel(mgr->getLastSquelchLevel());
+            demod->setSquelchEnabled(mgr->isLastSquelchEnabled());
+            demod->setStereo(mgr->isLastStereo());
+            demod->setGain(mgr->getLastGain());
+
             demod->run();
 
             wxGetApp().bindDemodulator(demod);

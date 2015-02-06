@@ -48,7 +48,7 @@ void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     if (activeDemod != NULL) {
         glContext->DrawDemodFreqBw(activeDemod->getFrequency(), activeDemod->getBandwidth(), wxGetApp().getFrequency());
     } else {
-        glContext->DrawDemodFreqBw(0, 0, wxGetApp().getFrequency());
+        glContext->DrawDemodFreqBw(0, wxGetApp().getDemodMgr().getLastBandwidth(), wxGetApp().getFrequency());
     }
 
     if (mouseTracker.mouseDown()) {
@@ -76,10 +76,17 @@ void TuningCanvas::OnIdle(wxIdleEvent &event) {
                     wxGetApp().getFrequency()
                             + (int) (dragAccum * fabs(dragAccum * 10.0) * fabs(dragAccum * 10.0) * (float) wxGetApp().getSampleRate()));
         } else if (fabs(moveVal) >= 1.0) {
-            if (uxDown < -0.275 && activeDemod != NULL) {
-                activeDemod->setFrequency(activeDemod->getFrequency() + (int) (moveVal * fabs(moveVal) * fabs(moveVal) * fabs(moveVal)));
-            } else if (activeDemod != NULL) {
-                activeDemod->setBandwidth(activeDemod->getBandwidth() + (int) (moveVal * fabs(moveVal) * fabs(moveVal) * fabs(moveVal)));
+            if (uxDown < -0.275) {
+                if (activeDemod != NULL) {
+                    activeDemod->setFrequency(activeDemod->getFrequency() + (int) (moveVal * fabs(moveVal) * fabs(moveVal) * fabs(moveVal)));
+                }
+            } else {
+                int amt = (int) (moveVal * fabs(moveVal) * fabs(moveVal) * fabs(moveVal));
+                if (activeDemod != NULL) {
+                    activeDemod->setBandwidth(activeDemod->getBandwidth() + amt);
+                } else {
+                    wxGetApp().getDemodMgr().setLastBandwidth(wxGetApp().getDemodMgr().getLastBandwidth() + amt);
+                }
             }
         }
 

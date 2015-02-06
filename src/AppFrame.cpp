@@ -34,7 +34,7 @@ EVT_IDLE(AppFrame::OnIdle)
 wxEND_EVENT_TABLE()
 
 AppFrame::AppFrame() :
-        wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
+wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
 
     wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodOpts = new wxBoxSizer(wxVERTICAL);
@@ -48,6 +48,7 @@ AppFrame::AppFrame() :
     demodModeSelector->addChoice(DEMOD_TYPE_LSB, "LSB");
     demodModeSelector->addChoice(DEMOD_TYPE_USB, "USB");
     demodModeSelector->addChoice(DEMOD_TYPE_DSB, "DSB");
+    demodModeSelector->setSelection(DEMOD_TYPE_FM);
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
 
 //    demodTray->AddSpacer(2);
@@ -209,11 +210,11 @@ AppFrame::AppFrame() :
                 devName.append(" (In Use?)");
             }
 
-            menu->AppendRadioItem(wxID_DEVICE_ID+p, devName)->Check(wxGetApp().getDevice() == p);
+            menu->AppendRadioItem(wxID_DEVICE_ID + p, devName)->Check(wxGetApp().getDevice() == p);
             p++;
         }
 
-        menuBar->Append(menu,wxT("&Device"));
+        menuBar->Append(menu, wxT("&Device"));
     }
 
     SetMenuBar(menuBar);
@@ -322,8 +323,8 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
     }
 
     std::vector<SDRDeviceInfo *> *devs = wxGetApp().getDevices();
-    if (event.GetId() >= wxID_DEVICE_ID && event.GetId() <= wxID_DEVICE_ID+devs->size()) {
-        wxGetApp().setDevice(event.GetId()-wxID_DEVICE_ID);
+    if (event.GetId() >= wxID_DEVICE_ID && event.GetId() <= wxID_DEVICE_ID + devs->size()) {
+        wxGetApp().setDevice(event.GetId() - wxID_DEVICE_ID);
     }
 }
 
@@ -389,6 +390,26 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             demodGainMeter->setLevel(demodGainMeter->getInputValue());
         }
         activeDemodulator = demod;
+    } else {
+        DemodulatorMgr *mgr = &wxGetApp().getDemodMgr();
+
+        int dSelection = demodModeSelector->getSelection();
+        if (dSelection != -1 && dSelection != mgr->getLastDemodulatorType()) {
+            mgr->setLastDemodulatorType(dSelection);
+        }
+        demodGainMeter->setLevel(mgr->getLastGain());
+        if (demodSignalMeter->inputChanged()) {
+            mgr->setLastSquelchLevel(demodSignalMeter->getInputValue());
+        }
+        if (demodGainMeter->inputChanged()) {
+            mgr->setLastGain(demodGainMeter->getInputValue());
+            demodGainMeter->setLevel(demodGainMeter->getInputValue());
+        }
+
+        if (wxGetApp().getFrequency() != demodWaterfallCanvas->getCenterFrequency()) {
+            demodWaterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
+            demodSpectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
+        }
     }
 
     if (!waterfallCanvas->HasFocus()) {

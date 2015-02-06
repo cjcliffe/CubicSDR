@@ -6,7 +6,8 @@
 #include <sstream>
 
 DemodulatorMgr::DemodulatorMgr() :
-        activeDemodulator(NULL), lastActiveDemodulator(NULL), activeVisualDemodulator(NULL) {
+        activeDemodulator(NULL), lastActiveDemodulator(NULL), activeVisualDemodulator(NULL), lastBandwidth(DEFAULT_DEMOD_BW), lastDemodType(
+                DEFAULT_DEMOD_TYPE), lastGain(1.0), lastSquelch(0), lastSquelchEnabled(false), lastStereo(false) {
 
 }
 
@@ -91,6 +92,7 @@ void DemodulatorMgr::setActiveDemodulator(DemodulatorInstance *demod, bool tempo
         } else {
             lastActiveDemodulator = demod;
         }
+        updateLastState();
     }
 
     if (activeVisualDemodulator) {
@@ -113,13 +115,14 @@ void DemodulatorMgr::setActiveDemodulator(DemodulatorInstance *demod, bool tempo
 }
 
 DemodulatorInstance *DemodulatorMgr::getActiveDemodulator() {
+    if (activeDemodulator && !activeDemodulator->isActive()) {
+        activeDemodulator = getLastActiveDemodulator();
+    }
     return activeDemodulator;
 }
 
 DemodulatorInstance *DemodulatorMgr::getLastActiveDemodulator() {
-    if (std::find(demods.begin(), demods.end(), lastActiveDemodulator) == demods.end()) {
-        lastActiveDemodulator = activeDemodulator;
-    }
+    updateLastState();
 
     return lastActiveDemodulator;
 }
@@ -140,5 +143,83 @@ void DemodulatorMgr::garbageCollect() {
             }
         }
     }
+}
+
+void DemodulatorMgr::updateLastState() {
+    if (std::find(demods.begin(), demods.end(), lastActiveDemodulator) == demods.end()) {
+        if (activeDemodulator && activeDemodulator->isActive()) {
+            lastActiveDemodulator = activeDemodulator;
+        } else if (activeDemodulator && !activeDemodulator->isActive()){
+            activeDemodulator = NULL;
+            lastActiveDemodulator = NULL;
+        }
+    }
+
+    if (lastActiveDemodulator && !lastActiveDemodulator->isActive()) {
+        lastActiveDemodulator = NULL;
+    }
+
+    if (lastActiveDemodulator) {
+        lastBandwidth = lastActiveDemodulator->getBandwidth();
+        lastDemodType = lastActiveDemodulator->getDemodulatorType();
+        lastSquelchEnabled = lastActiveDemodulator->isSquelchEnabled();
+        lastSquelch = lastActiveDemodulator->getSquelchLevel();
+        lastGain = lastActiveDemodulator->getGain();
+        lastStereo = lastActiveDemodulator->isStereo();
+    }
+
+}
+
+int DemodulatorMgr::getLastBandwidth() const {
+    return lastBandwidth;
+}
+
+void DemodulatorMgr::setLastBandwidth(int lastBandwidth) {
+    if (lastBandwidth < 1500) {
+        lastBandwidth = 1500;
+    } else  if (lastBandwidth > wxGetApp().getSampleRate()) {
+        lastBandwidth = wxGetApp().getSampleRate();
+    }
+    this->lastBandwidth = lastBandwidth;
+}
+
+int DemodulatorMgr::getLastDemodulatorType() const {
+    return lastDemodType;
+}
+
+void DemodulatorMgr::setLastDemodulatorType(int lastDemodType) {
+    this->lastDemodType = lastDemodType;
+}
+
+float DemodulatorMgr::getLastGain() const {
+    return lastGain;
+}
+
+void DemodulatorMgr::setLastGain(float lastGain) {
+    this->lastGain = lastGain;
+}
+
+float DemodulatorMgr::getLastSquelchLevel() const {
+    return lastSquelch;
+}
+
+void DemodulatorMgr::setLastSquelchLevel(float lastSquelch) {
+    this->lastSquelch = lastSquelch;
+}
+
+bool DemodulatorMgr::isLastSquelchEnabled() const {
+    return lastSquelchEnabled;
+}
+
+void DemodulatorMgr::setLastSquelchEnabled(bool lastSquelchEnabled) {
+    this->lastSquelchEnabled = lastSquelchEnabled;
+}
+
+bool DemodulatorMgr::isLastStereo() const {
+    return lastStereo;
+}
+
+void DemodulatorMgr::setLastStereo(bool lastStereo) {
+    this->lastStereo = lastStereo;
 }
 

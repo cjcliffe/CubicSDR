@@ -196,6 +196,9 @@ void SDRPostThread::threadMain() {
                             }
                         } else if (!demod->isActive()) {
                             demod->setActive(true);
+                            if (wxGetApp().getDemodMgr().getLastActiveDemodulator() == NULL) {
+                                wxGetApp().getDemodMgr().setActiveDemodulator(demod);
+                            }
                         }
 
                         if (!demod->isActive()) {
