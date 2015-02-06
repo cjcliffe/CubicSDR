@@ -255,9 +255,7 @@ void SDRThread::threadMain() {
             dataOut->data.resize(n_read);
         }
 
-        for (int i = 0; i < n_read; i++) {
-            dataOut->data[i] = buf[i];
-        }
+        memcpy(&dataOut->data[0], buf, n_read);
 
         double time_slice = (double) n_read / (double) sampleRate;
         seconds += time_slice;
