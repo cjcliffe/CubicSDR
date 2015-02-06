@@ -34,7 +34,7 @@ EVT_IDLE(AppFrame::OnIdle)
 wxEND_EVENT_TABLE()
 
 AppFrame::AppFrame() :
-        wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
+wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
 
     wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodOpts = new wxBoxSizer(wxVERTICAL);
@@ -404,6 +404,11 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         if (demodGainMeter->inputChanged()) {
             mgr->setLastGain(demodGainMeter->getInputValue());
             demodGainMeter->setLevel(demodGainMeter->getInputValue());
+        }
+
+        if (wxGetApp().getFrequency() != demodWaterfallCanvas->getCenterFrequency()) {
+            demodWaterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
+            demodSpectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
         }
     }
 

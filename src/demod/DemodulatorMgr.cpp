@@ -115,6 +115,9 @@ void DemodulatorMgr::setActiveDemodulator(DemodulatorInstance *demod, bool tempo
 }
 
 DemodulatorInstance *DemodulatorMgr::getActiveDemodulator() {
+    if (activeDemodulator && !activeDemodulator->isActive()) {
+        activeDemodulator = getLastActiveDemodulator();
+    }
     return activeDemodulator;
 }
 
@@ -144,7 +147,16 @@ void DemodulatorMgr::garbageCollect() {
 
 void DemodulatorMgr::updateLastState() {
     if (std::find(demods.begin(), demods.end(), lastActiveDemodulator) == demods.end()) {
-        lastActiveDemodulator = activeDemodulator;
+        if (activeDemodulator && activeDemodulator->isActive()) {
+            lastActiveDemodulator = activeDemodulator;
+        } else if (activeDemodulator && !activeDemodulator->isActive()){
+            activeDemodulator = NULL;
+            lastActiveDemodulator = NULL;
+        }
+    }
+
+    if (lastActiveDemodulator && !lastActiveDemodulator->isActive()) {
+        lastActiveDemodulator = NULL;
     }
 
     if (lastActiveDemodulator) {
