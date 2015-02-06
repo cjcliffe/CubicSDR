@@ -32,4 +32,7 @@ protected:
     std::atomic<bool> terminated;
     iirfilt_crcf dcFilter;
     int num_vis_samples;
+
+private:
+    std::vector<liquid_float_complex> _lut;
 };

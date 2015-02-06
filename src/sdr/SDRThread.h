@@ -99,7 +99,7 @@ class SDRThreadIQData: public ReferenceCounter {
 public:
     long long frequency;
     long long sampleRate;
-    std::vector<signed char> data;
+    std::vector<unsigned char> data;
 
     SDRThreadIQData() :
             frequency(0), sampleRate(DEFAULT_SAMPLE_RATE) {
