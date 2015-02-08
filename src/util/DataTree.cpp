@@ -203,9 +203,51 @@ DataElementGetNumericDef(DATA_LONGLONG, long long, DATA_CHAR, DATA_UCHAR, DATA_U
 DataElementGetNumericDef(DATA_LONGDOUBLE, long double, DATA_CHAR, DATA_UCHAR, DATA_UINT, DATA_ULONG, DATA_LONGLONG, DATA_INT, DATA_LONG)
 DataElementGetNumericDef(DATA_INT, int, DATA_CHAR, DATA_UCHAR, DATA_UINT, DATA_ULONG, DATA_LONGLONG, DATA_LONGDOUBLE, DATA_LONG)
 DataElementGetNumericDef(DATA_LONG, long, DATA_CHAR, DATA_UCHAR, DATA_UINT, DATA_ULONG, DATA_LONGLONG, DATA_LONGDOUBLE, DATA_INT)
-DataElementGetNumericDef(DATA_FLOAT, float, DATA_DOUBLE, DATA_CHAR, DATA_UCHAR, DATA_UINT, DATA_ULONG, DATA_LONGLONG, DATA_LONGDOUBLE, DATA_INT,
+
+
+
+
+#define DataElementGetFloatingPointDef(enumtype, datatype, ...) void DataElement::get(datatype& val_out) throw (DataTypeMismatchException) { \
+if (!data_type) \
+return; \
+    int _compat[] = {__VA_ARGS__}; \
+    if (data_type != enumtype) { \
+        bool compat = false; \
+        for (int i = 0; i < sizeof(_compat)/sizeof(int); i++) { \
+              if (_compat[i] == data_type) { \
+                  compat = true; \
+                  break; \
+              } \
+        } \
+        if (!compat) { \
+            throw(new DataTypeMismatchException("Type mismatch, element type " #enumtype " is not compatible with a " #datatype)); \
+        } \
+        if (data_type == DATA_FLOAT || data_type == DATA_DOUBLE) { \
+            if (sizeof(datatype) < data_size) { \
+                std::cout << "Warning, data type mismatch requested size for '" << #datatype << "(" << sizeof(datatype) << ")' < data size '" << data_size << "'; possible loss of data."; \
+            } \
+            memset(&val_out, 0, sizeof(datatype)); \
+            if (sizeof(datatype) > 4 && data_size <= 4) { \
+                int v = 0; memcpy(&v,data_val,data_size); \
+                val_out = (datatype)v; \
+                return; \
+            } else { \
+                memcpy(&val_out, data_val, (sizeof(datatype) < data_size) ? sizeof(datatype) : data_size); \
+            } \
+        } else { \
+            long long tmp_int; \
+            get(tmp_int); \
+            datatype tmp_float = (float)tmp_int; \
+            memcpy(&val_out, &tmp_float, sizeof(datatype)); \
+        } \
+        return; \
+    } \
+    memcpy(&val_out, data_val, data_size); \
+}
+
+DataElementGetFloatingPointDef(DATA_FLOAT, float, DATA_DOUBLE, DATA_CHAR, DATA_UCHAR, DATA_UINT, DATA_ULONG, DATA_LONGLONG, DATA_LONGDOUBLE, DATA_INT,
         DATA_LONG)
-DataElementGetNumericDef(DATA_DOUBLE, double, DATA_FLOAT, DATA_CHAR, DATA_UCHAR, DATA_UINT, DATA_ULONG, DATA_LONGLONG, DATA_LONGDOUBLE, DATA_INT,
+DataElementGetFloatingPointDef(DATA_DOUBLE, double, DATA_FLOAT, DATA_CHAR, DATA_UCHAR, DATA_UINT, DATA_ULONG, DATA_LONGLONG, DATA_LONGDOUBLE, DATA_INT,
         DATA_LONG)
 
 void DataElement::get(char **data_in) throw (DataTypeMismatchException) {
