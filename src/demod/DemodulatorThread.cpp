@@ -313,6 +313,14 @@ void DemodulatorThread::threadMain() {
                     ati->data.assign(resampledOutputData.begin(), resampledOutputData.begin() + numAudioWritten);
                 }
 
+                std::vector<float>::iterator data_i;
+                ati->peak = 0;
+                for (data_i = ati->data.begin(); data_i != ati->data.end(); data_i++) {
+                    if (float p = fabs(*data_i) > ati->peak) {
+                        ati->peak = p;
+                    }
+                }
+
                 audioOutputQueue->push(ati);
             }
         }
