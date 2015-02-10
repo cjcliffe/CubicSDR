@@ -2,6 +2,10 @@
 #include <cstring>
 #include <iostream>
 
+#ifdef __APPLE__
+#include <OpenGL/OpenGL.h>
+#endif
+
 #ifdef _WIN32
 
 PFNWGLGETEXTENSIONSSTRINGEXTPROC wglGetExtensionsStringEXT = NULL;
@@ -41,22 +45,23 @@ void initGLExtensions() {
 #endif
 
 #ifdef __APPLE__
-    long l_interval= interval;
-    CGLSetParameter (CGLGetCurrentContext(), kCGLCPSwapInterval, &l_interval);
+    // OSX is just ON / OFF
+    const GLint gl_interval = 1;
+    CGLSetParameter (CGLGetCurrentContext(), kCGLCPSwapInterval, &gl_interval);
 #endif
 
 /*
 #ifdef LINUX
-    char* pcDummy = NULL;
+    char* glext_str = NULL;
 
     glXSwapIntervalSGIFunc glXSwapIntervalSGI = 0;
     glXSwapIntervalMESAFunc glXSwapIntervalMESA = 0;
 
-    pcDummy = (char*)glXQueryExtensionsString (glXGetCurrentDisplay(), 0);
-    if (strstr (pcDummy, "GLX_SGI_swap_control") != NULL) {
+    glext_str = (char*)glXQueryExtensionsString (glXGetCurrentDisplay(), 0);
+    if (strstr (glext_str, "GLX_SGI_swap_control") != NULL) {
         glXSwapIntervalSGI = (glXSwapIntervalSGIFunc) dlsym(RTLD_DEFAULT,"glXSwapIntervalSGI") && glXSwapIntervalSGI (interval);
 
-    } else if (strstr(pcDummy, "GLX_MESA_swap_control") != NULL) {
+    } else if (strstr(glext_str, "GLX_MESA_swap_control") != NULL) {
         glXSwapIntervalMESA = (glXSwapIntervalMESAFunc) dlsym(RTLD_DEFAULT,"glXSwapIntervalMESA") && glXSwapIntervalMESA (interval);
     }
 #endif
