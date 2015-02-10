@@ -6,6 +6,10 @@
 #include <OpenGL/OpenGL.h>
 #endif
 
+#ifdef __linux__
+#include <dlfcn.h>
+#endif
+
 #ifdef _WIN32
 
 PFNWGLGETEXTENSIONSSTRINGEXTPROC wglGetExtensionsStringEXT = NULL;
@@ -50,22 +54,27 @@ void initGLExtensions() {
     CGLSetParameter (CGLGetCurrentContext(), kCGLCPSwapInterval, &gl_interval);
 #endif
 
-/*
-#ifdef LINUX
-    char* glext_str = NULL;
+#ifdef __linux__
+    dlopen("libglx.so",RTLD_LAZY);
 
-    glXSwapIntervalSGIFunc glXSwapIntervalSGI = 0;
-    glXSwapIntervalMESAFunc glXSwapIntervalMESA = 0;
+    void (*glxSwapIntervalEXTFunc) (Display *dpy, GLXDrawable drawable, int interval);
+    int (*glxSwapIntervalMESAFunc)(unsigned int interval);
+    int (*glxSwapIntervalSGIFunc) (int interval);
 
-    glext_str = (char*)glXQueryExtensionsString (glXGetCurrentDisplay(), 0);
-    if (strstr (glext_str, "GLX_SGI_swap_control") != NULL) {
-        glXSwapIntervalSGI = (glXSwapIntervalSGIFunc) dlsym(RTLD_DEFAULT,"glXSwapIntervalSGI") && glXSwapIntervalSGI (interval);
+    glxSwapIntervalEXTFunc = (void (*) (Display *dpy, GLXDrawable drawable, int interval)) dlsym(RTLD_DEFAULT,"glXSwapIntervalEXT");
+    glxSwapIntervalMESAFunc = (int (*)(unsigned int interval)) dlsym(RTLD_DEFAULT,"glXSwapIntervalMESA");
+    glxSwapIntervalSGIFunc = (int (*) (int interval)) dlsym(RTLD_DEFAULT,"glXSwapIntervalSGI");
 
-    } else if (strstr(glext_str, "GLX_MESA_swap_control") != NULL) {
-        glXSwapIntervalMESA = (glXSwapIntervalMESAFunc) dlsym(RTLD_DEFAULT,"glXSwapIntervalMESA") && glXSwapIntervalMESA (interval);
+    if (glxSwapIntervalEXTFunc) {
+        Display *dpy = glXGetCurrentDisplay();
+        GLXDrawable drawable = glXGetCurrentDrawable();
+        glxSwapIntervalEXTFunc(dpy, drawable, interval);
+    } else if (glxSwapIntervalMESAFunc) {
+    	glxSwapIntervalMESAFunc(interval);
+    } else if (glxSwapIntervalSGIFunc) {
+    	glxSwapIntervalSGIFunc(interval);
     }
 #endif
-*/
 
     GLExt_initialized = true;
 }
