@@ -180,7 +180,7 @@ void SDRThread::threadMain() {
                     if (new_freq < sampleRate / 2) {
                         new_freq = sampleRate / 2;
                     }
-                    std::cout << "Set frequency: " << new_freq << std::endl;
+//                    std::cout << "Set frequency: " << new_freq << std::endl;
                     break;
                 case SDRThreadCommand::SDR_THREAD_CMD_SET_OFFSET:
                     offset_changed = true;
