@@ -67,6 +67,8 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     }
 
     glContext->SetCurrent(*this);
+    initGLExtensions();
+
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
     glContext->DrawBegin();

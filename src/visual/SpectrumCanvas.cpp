@@ -70,6 +70,8 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     const wxSize ClientSize = GetClientSize();
 
     glContext->SetCurrent(*this);
+    initGLExtensions();
+
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
     glContext->BeginDraw(ThemeMgr::mgr.currentTheme->fftBackground.r, ThemeMgr::mgr.currentTheme->fftBackground.g, ThemeMgr::mgr.currentTheme->fftBackground.b);

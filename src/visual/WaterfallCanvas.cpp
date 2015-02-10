@@ -116,7 +116,8 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     }
 
     glContext->SetCurrent(*this);
-    glViewport(0, 0, ClientSize.x, ClientSize.y);
+    initGLExtensions();
+   glViewport(0, 0, ClientSize.x, ClientSize.y);
 
     glContext->BeginDraw(0,0,0);
     glContext->Draw(spectrum_points);

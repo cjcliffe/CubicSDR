@@ -200,6 +200,7 @@ SET (cubicsdr_sources
 	src/util/Gradient.cpp
 	src/util/Timer.cpp
 	src/util/MouseTracker.cpp
+	src/util/GLExt.cpp
 	src/util/GLFont.cpp
     src/util/DataTree.cpp
 	src/visual/ColorTheme.cpp
@@ -242,6 +243,7 @@ SET (cubicsdr_headers
 	src/util/Timer.h
 	src/util/ThreadQueue.h
 	src/util/MouseTracker.h
+	src/util/GLExt.h
 	src/util/GLFont.h
     src/util/DataTree.h
 	src/visual/ColorTheme.h
