@@ -60,15 +60,21 @@ void initGLExtensions() {
     void (*glxSwapIntervalEXTFunc) (Display *dpy, GLXDrawable drawable, int interval);
     int (*glxSwapIntervalMESAFunc)(unsigned int interval);
     int (*glxSwapIntervalSGIFunc) (int interval);
+    void (*DRI2SwapIntervalFunc) (Display *dpy, XID drawable, int interval);
 
     glxSwapIntervalEXTFunc = (void (*) (Display *dpy, GLXDrawable drawable, int interval)) dlsym(RTLD_DEFAULT,"glXSwapIntervalEXT");
     glxSwapIntervalMESAFunc = (int (*)(unsigned int interval)) dlsym(RTLD_DEFAULT,"glXSwapIntervalMESA");
     glxSwapIntervalSGIFunc = (int (*) (int interval)) dlsym(RTLD_DEFAULT,"glXSwapIntervalSGI");
+    DRI2SwapIntervalFunc = (void (*) (Display *dpy, XID drawable, int interval)) dlsym(RTLD_DEFAULT,"DRI2SwapInterval");
 
     if (glxSwapIntervalEXTFunc) {
         Display *dpy = glXGetCurrentDisplay();
         GLXDrawable drawable = glXGetCurrentDrawable();
         glxSwapIntervalEXTFunc(dpy, drawable, interval);
+    } else if (DRI2SwapInterval) {
+        Display *dpy = glXGetCurrentDisplay();
+        GLXDrawable drawable = glXGetCurrentDrawable();
+        DRI2SwapInterval(dpy, drawable, interval);
     } else if (glxSwapIntervalMESAFunc) {
     	glxSwapIntervalMESAFunc(interval);
     } else if (glxSwapIntervalSGIFunc) {
