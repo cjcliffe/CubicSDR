@@ -278,12 +278,18 @@ include_directories (
 	${PROJECT_SOURCE_DIR}/external/lodepng 
 	${PROJECT_SOURCE_DIR}/external/tinyxml
 )
-IF (NOT MSVC) 
+
+IF (MSVC) 
+include_directories (
+	${PROJECT_SOURCE_DIR}/external/wglext
+)
+
+ELSE (MSVC)
 	ADD_DEFINITIONS(
 		-std=c++0x # or -std=c++11
 		-pthread
 	)
-ENDIF(NOT MSVC)
+ENDIF(MSVC)
 
 configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.fnt")
 configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.png")

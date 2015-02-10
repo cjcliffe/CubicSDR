@@ -3,7 +3,7 @@
 #include "CubicSDR.h"
 
 WaterfallContext::WaterfallContext(WaterfallCanvas *canvas, wxGLContext *sharedContext) :
-        PrimaryGLContext(canvas, sharedContext), waterfall_lines(0), fft_size(0), activeTheme(NULL) {
+        PrimaryGLContext(canvas, sharedContext), waterfall_lines(0), waterfall_slice(NULL), fft_size(0), activeTheme(NULL) {
     for (int i = 0; i < 2; i++) {
         waterfall[i] = 0;
     }
@@ -67,6 +67,11 @@ void WaterfallContext::Draw(std::vector<float> &points) {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, half_fft_size, waterfall_lines, 0, GL_COLOR_INDEX, GL_UNSIGNED_BYTE, (GLvoid *) waterfall_tex);
         }
 
+		if (waterfall_slice != NULL) {
+			delete waterfall_slice;
+		}
+		waterfall_slice = new unsigned char[half_fft_size];
+
         delete waterfall_tex;
     }
 
@@ -76,18 +81,17 @@ void WaterfallContext::Draw(std::vector<float> &points) {
     }
 
     if (points.size()) {
-        unsigned char waterfall_slice[2][half_fft_size];
         for (int j = 0; j < 2; j++) {
             for (int i = 0, iMax = half_fft_size; i < iMax; i++) {
                 float v = points[(j * half_fft_size + i) * 2 + 1];
 
                 float wv = v < 0 ? 0 : (v > 0.99 ? 0.99 : v);
 
-                waterfall_slice[j][i] = (unsigned char) floor(wv * 255.0);
+                waterfall_slice[i] = (unsigned char) floor(wv * 255.0);
             }
 
             glBindTexture(GL_TEXTURE_2D, waterfall[j]);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, waterfall_ofs[j], half_fft_size, 1, GL_COLOR_INDEX, GL_UNSIGNED_BYTE, (GLvoid *) waterfall_slice[j]);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, waterfall_ofs[j], half_fft_size, 1, GL_COLOR_INDEX, GL_UNSIGNED_BYTE, (GLvoid *) waterfall_slice);
 
             if (waterfall_ofs[j] == 0) {
                 waterfall_ofs[j] = waterfall_lines;

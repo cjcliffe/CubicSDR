@@ -19,6 +19,7 @@ private:
     int waterfall_ofs[2];
     int fft_size;
     int waterfall_lines;
+	unsigned char *waterfall_slice;
 
     ColorTheme *activeTheme;
 };
