@@ -75,7 +75,7 @@ Basic Goals and Status:
   - Audio
     - [ ] Recording
   - Optimization
-    - [ ] Eliminate large waterfall texture uploads
+    - [x] Eliminate large waterfall texture uploads
     - [ ] Update visuals to OpenGL 3.x
     - [ ] Resolve constant refresh on visuals that don't change often
     - [ ] Resolve driver/platform vertical sync issues
