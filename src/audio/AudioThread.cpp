@@ -166,9 +166,22 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
         std::cout << "Audio buffer underflow.." << (src->underflowCount++) << std::endl;
     }
 
+    if (src->terminated || !src->active) {
+        if (src->currentInput) {
+            src->currentInput->decRefCount();
+            src->currentInput = NULL;
+        }
+        return 1;
+    }
+
     if (!src->currentInput) {
+        if (src->inputQueue->empty()) {
+            return 0;
+        }
         src->inputQueue->pop(src->currentInput);
         if (src->terminated || !src->active) {
+            src->currentInput->decRefCount();
+            src->currentInput = NULL;
             return 1;
         }
         src->audioQueuePtr = 0;
@@ -188,6 +201,8 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
             }
             src->inputQueue->pop(src->currentInput);
             if (src->terminated || !src->active) {
+                src->currentInput->decRefCount();
+                src->currentInput = NULL;
                 return 1;
             }
             src->audioQueuePtr = 0;
@@ -207,6 +222,8 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                 }
                 src->inputQueue->pop(src->currentInput);
                 if (src->terminated || !src->active) {
+                    src->currentInput->decRefCount();
+                    src->currentInput = NULL;
                     return 1;
                 }
                 src->audioQueuePtr = 0;
@@ -228,6 +245,8 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                 }
                 src->inputQueue->pop(src->currentInput);
                 if (src->terminated || !src->active) {
+                    src->currentInput->decRefCount();
+                    src->currentInput = NULL;
                     return 1;
                 }
                 src->audioQueuePtr = 0;
@@ -336,12 +355,12 @@ void AudioThread::setupDevice(int deviceId) {
             dac.closeStream();
         }
 
-        active = true;
-
         if (deviceId != -1) {
+            active = true;
             dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &bufferFrames, &audioCallback, (void *) this, &opts);
             dac.startStream();
         } else {
+            active = false;
             AudioThreadInput *dummy;
             while (!inputQueue->empty()) {  // flush queue
                 inputQueue->pop(dummy);
@@ -487,6 +506,7 @@ void AudioThread::setActive(bool state) {
         AudioThreadCommand command;
         command.cmd = AudioThreadCommand::AUDIO_THREAD_CMD_SET_DEVICE;
         command.int_value = -1;
+        cmdQueue.push(command);
     }
 
 #endif
