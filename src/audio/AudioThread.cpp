@@ -60,11 +60,11 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
         std::cout << "Audio buffer underflow.." << (src->underflowCount++) << std::endl;
     }
 
-    if (!src->boundThreads.load()->empty()) {
-        src->gain = 1.0 / src->boundThreads.load()->size();
-    } else {
+    if (src->boundThreads.load()->empty()) {
         return 0;
     }
+
+    float peak = 0.0;
 
     for (int j = 0; j < src->boundThreads.load()->size(); j++) {
         AudioThread *srcmix = (*(src->boundThreads.load()))[j];
@@ -104,6 +104,8 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
             continue;
         }
 
+        peak += srcmix->currentInput->peak;
+
         if (srcmix->currentInput->channels == 1) {
             for (int i = 0; i < nBufferFrames; i++) {
                 if (srcmix->audioQueuePtr >= srcmix->currentInput->data.size()) {
@@ -121,7 +123,7 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                     srcmix->audioQueuePtr = 0;
                 }
                 if (srcmix->currentInput && srcmix->currentInput->data.size()) {
-                    float v = srcmix->currentInput->data[srcmix->audioQueuePtr] * src->gain * srcmix->gain;
+                    float v = srcmix->currentInput->data[srcmix->audioQueuePtr] * srcmix->gain;
                     out[i * 2] += v;
                     out[i * 2 + 1] += v;
                 }
@@ -144,12 +146,17 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                     srcmix->audioQueuePtr = 0;
                 }
                 if (srcmix->currentInput && srcmix->currentInput->data.size()) {
-                    out[i] = out[i] + srcmix->currentInput->data[srcmix->audioQueuePtr] * src->gain * srcmix->gain;
+                    out[i] = out[i] + srcmix->currentInput->data[srcmix->audioQueuePtr] * srcmix->gain;
                 }
                 srcmix->audioQueuePtr++;
             }
         }
 
+        if (peak > 1.0) {
+            for (int i = 0 ; i < nBufferFrames * 2; i ++) {
+                out[i] /= peak;
+            }
+        }
     }
 
     return 0;
