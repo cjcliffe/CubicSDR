@@ -180,8 +180,6 @@ void DemodulatorThread::threadMain() {
             currentSignalLevel = agc_crcf_get_signal_level(iqAutoGain);
         }
 
-        amOutputCeil = 0;
-
         if (demodulatorType == DEMOD_TYPE_FM) {
             freqdem_demodulate_block(demodFM, &agcData[0], bufSize, &demodOutputData[0]);
         } else {
@@ -197,10 +195,6 @@ void DemodulatorThread::threadMain() {
                     nco_crcf_step(ssbShifterDown);
                     ampmodem_demodulate(demodAM, y, &rz[1]);
                     resamp2_rrrf_decim_execute(ssbDecim, rz, &demodOutputData[i]);
-
-                    if (demodOutputData[i] > amOutputCeil) {
-                        amOutputCeil = demodOutputData[i];
-                    }
                 }
                 break;
             case DEMOD_TYPE_USB:
@@ -213,14 +207,13 @@ void DemodulatorThread::threadMain() {
                     nco_crcf_step(ssbShifterUp);
                     ampmodem_demodulate(demodAM, y, &rz[1]);
                     resamp2_rrrf_decim_execute(ssbDecim, rz, &demodOutputData[i]);
-
-                    if (demodOutputData[i] > amOutputCeil) {
-                        amOutputCeil = demodOutputData[i];
-                    }
                 }
                 break;
             case DEMOD_TYPE_AM:
             case DEMOD_TYPE_DSB:
+                for (int i = 0; i < bufSize; i++) {
+                    ampmodem_demodulate(demodAM, inp->data[i], &demodOutputData[i]);
+                }
                 break;
             }
 
@@ -228,7 +221,15 @@ void DemodulatorThread::threadMain() {
             amOutputCeilMA = amOutputCeilMA + (amOutputCeil - amOutputCeilMA) * 0.05;
             amOutputCeilMAA = amOutputCeilMAA + (amOutputCeilMA - amOutputCeilMAA) * 0.05;
 
-            float gain = 0.95 / amOutputCeilMAA;
+            amOutputCeil = 0;
+
+            for (int i = 0; i < bufSize; i++) {
+                if (demodOutputData[i] > amOutputCeil) {
+                    amOutputCeil = demodOutputData[i];
+                }
+            }
+
+            float gain = 0.5 / amOutputCeilMAA;
 
             for (int i = 0; i < bufSize; i++) {
                 demodOutputData[i] *= gain;
@@ -328,7 +329,8 @@ void DemodulatorThread::threadMain() {
                 std::vector<float>::iterator data_i;
                 ati->peak = 0;
                 for (data_i = ati->data.begin(); data_i != ati->data.end(); data_i++) {
-                    if (float p = fabs(*data_i) > ati->peak) {
+                    float p = fabs(*data_i);
+                    if (p > ati->peak) {
                         ati->peak = p;
                     }
                 }
