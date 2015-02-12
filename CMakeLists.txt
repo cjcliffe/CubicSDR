@@ -134,7 +134,8 @@ IF (UNIX AND NOT APPLE)
     link_directories(${RTLSDR_LIB})
   
     set(FFTW_LIB fftw3f)
-    set(OTHER_LIBRARIES liquid)
+    set(LIQUID_LIB liquid)
+    set(OTHER_LIBRARIES dl)
 
 IF(USE_AUDIO_PULSE)
    SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} pulse-simple pulse)
@@ -176,13 +177,14 @@ IF (APPLE)
     link_directories(${RTLSDR_LIB})
   
     set(FFTW_LIB fftw3f)
+    set(LIQUID_LIB liquid)
 
     ADD_DEFINITIONS(
       -D__MACOSX_CORE__
     )    
 
    FIND_LIBRARY(COREAUDIO_LIBRARY CoreAudio)
-   SET (OTHER_LIBRARIES ${COREAUDIO_LIBRARY} liquid)
+   SET (OTHER_LIBRARIES ${COREAUDIO_LIBRARY})
 ENDIF (APPLE)
 
 
