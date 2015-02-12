@@ -67,9 +67,14 @@ SpectrumCanvas::~SpectrumCanvas() {
 
 void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
+#ifdef __APPLE__    // force half-rate?
+    glFinish();
+#endif
     const wxSize ClientSize = GetClientSize();
 
     glContext->SetCurrent(*this);
+    initGLExtensions();
+
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
     glContext->BeginDraw(ThemeMgr::mgr.currentTheme->fftBackground.r, ThemeMgr::mgr.currentTheme->fftBackground.g, ThemeMgr::mgr.currentTheme->fftBackground.b);

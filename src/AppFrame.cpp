@@ -42,7 +42,15 @@ wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
     wxBoxSizer *demodTray = new wxBoxSizer(wxHORIZONTAL);
     wxBoxSizer *demodScopeTray = new wxBoxSizer(wxVERTICAL);
 
-    demodModeSelector = new ModeSelectorCanvas(this, NULL);
+    int attribList[] = {
+            WX_GL_RGBA,
+            WX_GL_STENCIL_SIZE, 8,
+            WX_GL_BUFFER_SIZE, 24,
+            WX_GL_DOUBLEBUFFER,
+            0
+    };
+
+    demodModeSelector = new ModeSelectorCanvas(this, attribList);
     demodModeSelector->addChoice(DEMOD_TYPE_FM, "FM");
     demodModeSelector->addChoice(DEMOD_TYPE_AM, "AM");
     demodModeSelector->addChoice(DEMOD_TYPE_LSB, "LSB");
@@ -53,14 +61,14 @@ wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
 
 //    demodTray->AddSpacer(2);
 
-    demodSpectrumCanvas = new SpectrumCanvas(this, NULL);
+    demodSpectrumCanvas = new SpectrumCanvas(this, attribList);
     demodSpectrumCanvas->setup(1024);
     demodSpectrumCanvas->setView(DEFAULT_FREQ, 300000);
     demodVisuals->Add(demodSpectrumCanvas, 3, wxEXPAND | wxALL, 0);
 
     demodVisuals->AddSpacer(1);
 
-    demodWaterfallCanvas = new WaterfallCanvas(this, NULL);
+    demodWaterfallCanvas = new WaterfallCanvas(this, attribList);
     demodWaterfallCanvas->setup(1024, 128);
     demodWaterfallCanvas->setView(DEFAULT_FREQ, 300000);
     demodWaterfallCanvas->attachSpectrumCanvas(demodSpectrumCanvas);
@@ -71,19 +79,19 @@ wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
 
     demodTray->AddSpacer(1);
 
-    demodSignalMeter = new MeterCanvas(this, NULL);
+    demodSignalMeter = new MeterCanvas(this, attribList);
     demodSignalMeter->setMax(0.5);
     demodSignalMeter->setHelpTip("Current Signal Level.  Click / Drag to set Squelch level.");
     demodTray->Add(demodSignalMeter, 1, wxEXPAND | wxALL, 0);
 
     demodTray->AddSpacer(1);
 
-    scopeCanvas = new ScopeCanvas(this, NULL);
+    scopeCanvas = new ScopeCanvas(this, attribList);
     demodScopeTray->Add(scopeCanvas, 8, wxEXPAND | wxALL, 0);
 
     demodScopeTray->AddSpacer(1);
 
-    demodTuner = new TuningCanvas(this, NULL);
+    demodTuner = new TuningCanvas(this, attribList);
     demodTuner->setHelpTip("Testing tuner");
     demodScopeTray->Add(demodTuner, 1, wxEXPAND | wxALL, 0);
 
@@ -91,18 +99,18 @@ wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
 
     demodTray->AddSpacer(1);
 
-    demodGainMeter = new MeterCanvas(this, NULL);
+    demodGainMeter = new MeterCanvas(this, attribList);
     demodGainMeter->setMax(2.0);
     demodGainMeter->setHelpTip("Current Demodulator Gain Level.  Click / Drag to set Gain level.");
     demodTray->Add(demodGainMeter, 1, wxEXPAND | wxALL, 0);
 
     vbox->Add(demodTray, 12, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(1);
-    spectrumCanvas = new SpectrumCanvas(this, NULL);
+    spectrumCanvas = new SpectrumCanvas(this, attribList);
     spectrumCanvas->setup(2048);
     vbox->Add(spectrumCanvas, 5, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(1);
-    waterfallCanvas = new WaterfallCanvas(this, NULL);
+    waterfallCanvas = new WaterfallCanvas(this, attribList);
     waterfallCanvas->setup(2048, 512);
     waterfallCanvas->attachSpectrumCanvas(spectrumCanvas);
     waterfallCanvas->attachWaterfallCanvas(demodWaterfallCanvas);

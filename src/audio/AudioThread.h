@@ -26,15 +26,20 @@
 #define USE_MIXER 1
 #endif
 
+#ifdef __WINDOWS_DS__
+#define USE_MIXER 1
+#endif
+
 class AudioThreadInput: public ReferenceCounter {
 public:
     long long frequency;
     int sampleRate;
     int channels;
+    float peak;
     std::vector<float> data;
 
     AudioThreadInput() :
-            frequency(0), sampleRate(0), channels(0) {
+            frequency(0), sampleRate(0), channels(0), peak(0) {
 
     }
 

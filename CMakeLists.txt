@@ -134,7 +134,8 @@ IF (UNIX AND NOT APPLE)
     link_directories(${RTLSDR_LIB})
   
     set(FFTW_LIB fftw3f)
-    set(OTHER_LIBRARIES liquid)
+    set(LIQUID_LIB liquid)
+    set(OTHER_LIBRARIES dl)
 
 IF(USE_AUDIO_PULSE)
    SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} pulse-simple pulse)
@@ -176,13 +177,14 @@ IF (APPLE)
     link_directories(${RTLSDR_LIB})
   
     set(FFTW_LIB fftw3f)
+    set(LIQUID_LIB liquid)
 
     ADD_DEFINITIONS(
       -D__MACOSX_CORE__
     )    
 
    FIND_LIBRARY(COREAUDIO_LIBRARY CoreAudio)
-   SET (OTHER_LIBRARIES ${COREAUDIO_LIBRARY} liquid)
+   SET (OTHER_LIBRARIES ${COREAUDIO_LIBRARY})
 ENDIF (APPLE)
 
 
@@ -200,6 +202,7 @@ SET (cubicsdr_sources
 	src/util/Gradient.cpp
 	src/util/Timer.cpp
 	src/util/MouseTracker.cpp
+	src/util/GLExt.cpp
 	src/util/GLFont.cpp
     src/util/DataTree.cpp
 	src/visual/ColorTheme.cpp
@@ -242,6 +245,7 @@ SET (cubicsdr_headers
 	src/util/Timer.h
 	src/util/ThreadQueue.h
 	src/util/MouseTracker.h
+	src/util/GLExt.h
 	src/util/GLFont.h
     src/util/DataTree.h
 	src/visual/ColorTheme.h
@@ -276,12 +280,18 @@ include_directories (
 	${PROJECT_SOURCE_DIR}/external/lodepng 
 	${PROJECT_SOURCE_DIR}/external/tinyxml
 )
-IF (NOT MSVC) 
+
+IF (MSVC) 
+include_directories (
+	${PROJECT_SOURCE_DIR}/external/wglext
+)
+
+ELSE (MSVC)
 	ADD_DEFINITIONS(
 		-std=c++0x # or -std=c++11
 		-pthread
 	)
-ENDIF(NOT MSVC)
+ENDIF(MSVC)
 
 configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.fnt")
 configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.png")

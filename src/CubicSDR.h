@@ -6,7 +6,7 @@
 
 #include <thread>
 
-#include "wx/glcanvas.h"
+#include "GLExt.h"
 #include "PrimaryGLContext.h"
 
 #include "ThreadQueue.h"

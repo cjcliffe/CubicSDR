@@ -60,11 +60,11 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
         std::cout << "Audio buffer underflow.." << (src->underflowCount++) << std::endl;
     }
 
-    if (!src->boundThreads.load()->empty()) {
-        src->gain = 1.0 / src->boundThreads.load()->size();
-    } else {
+    if (src->boundThreads.load()->empty()) {
         return 0;
     }
+
+    float peak = 0.0;
 
     for (int j = 0; j < src->boundThreads.load()->size(); j++) {
         AudioThread *srcmix = (*(src->boundThreads.load()))[j];
@@ -104,6 +104,8 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
             continue;
         }
 
+        peak += srcmix->currentInput->peak * srcmix->gain;
+
         if (srcmix->currentInput->channels == 1) {
             for (int i = 0; i < nBufferFrames; i++) {
                 if (srcmix->audioQueuePtr >= srcmix->currentInput->data.size()) {
@@ -121,7 +123,7 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                     srcmix->audioQueuePtr = 0;
                 }
                 if (srcmix->currentInput && srcmix->currentInput->data.size()) {
-                    float v = srcmix->currentInput->data[srcmix->audioQueuePtr] * src->gain * srcmix->gain;
+                    float v = srcmix->currentInput->data[srcmix->audioQueuePtr] * srcmix->gain;
                     out[i * 2] += v;
                     out[i * 2 + 1] += v;
                 }
@@ -144,12 +146,17 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                     srcmix->audioQueuePtr = 0;
                 }
                 if (srcmix->currentInput && srcmix->currentInput->data.size()) {
-                    out[i] = out[i] + srcmix->currentInput->data[srcmix->audioQueuePtr] * src->gain * srcmix->gain;
+                    out[i] = out[i] + srcmix->currentInput->data[srcmix->audioQueuePtr] * srcmix->gain;
                 }
                 srcmix->audioQueuePtr++;
             }
         }
 
+        if (peak > 1.0) {
+            for (int i = 0 ; i < nBufferFrames * 2; i ++) {
+                out[i] /= peak;
+            }
+        }
     }
 
     return 0;
@@ -166,9 +173,22 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
         std::cout << "Audio buffer underflow.." << (src->underflowCount++) << std::endl;
     }
 
+    if (src->terminated || !src->active) {
+        if (src->currentInput) {
+            src->currentInput->decRefCount();
+            src->currentInput = NULL;
+        }
+        return 1;
+    }
+
     if (!src->currentInput) {
+        if (src->inputQueue->empty()) {
+            return 0;
+        }
         src->inputQueue->pop(src->currentInput);
         if (src->terminated || !src->active) {
+            src->currentInput->decRefCount();
+            src->currentInput = NULL;
             return 1;
         }
         src->audioQueuePtr = 0;
@@ -188,6 +208,8 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
             }
             src->inputQueue->pop(src->currentInput);
             if (src->terminated || !src->active) {
+                src->currentInput->decRefCount();
+                src->currentInput = NULL;
                 return 1;
             }
             src->audioQueuePtr = 0;
@@ -207,6 +229,8 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                 }
                 src->inputQueue->pop(src->currentInput);
                 if (src->terminated || !src->active) {
+                    src->currentInput->decRefCount();
+                    src->currentInput = NULL;
                     return 1;
                 }
                 src->audioQueuePtr = 0;
@@ -228,6 +252,8 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                 }
                 src->inputQueue->pop(src->currentInput);
                 if (src->terminated || !src->active) {
+                    src->currentInput->decRefCount();
+                    src->currentInput = NULL;
                     return 1;
                 }
                 src->audioQueuePtr = 0;
@@ -336,12 +362,12 @@ void AudioThread::setupDevice(int deviceId) {
             dac.closeStream();
         }
 
-        active = true;
-
         if (deviceId != -1) {
+            active = true;
             dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &bufferFrames, &audioCallback, (void *) this, &opts);
             dac.startStream();
         } else {
+            active = false;
             AudioThreadInput *dummy;
             while (!inputQueue->empty()) {  // flush queue
                 inputQueue->pop(dummy);
@@ -487,6 +513,7 @@ void AudioThread::setActive(bool state) {
         AudioThreadCommand command;
         command.cmd = AudioThreadCommand::AUDIO_THREAD_CMD_SET_DEVICE;
         command.int_value = -1;
+        cmdQueue.push(command);
     }
 
 #endif

@@ -45,6 +45,9 @@ void ScopeCanvas::setDeviceName(std::string device_name) {
 
 void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
+#ifdef __APPLE__    // force half-rate?
+    glFinish();
+#endif
     const wxSize ClientSize = GetClientSize();
 
     if (!wxGetApp().getAudioVisualQueue()->empty()) {
@@ -67,6 +70,8 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     }
 
     glContext->SetCurrent(*this);
+    initGLExtensions();
+
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
     glContext->DrawBegin();
