@@ -104,7 +104,7 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
             continue;
         }
 
-        peak += srcmix->currentInput->peak;
+        peak += srcmix->currentInput->peak * srcmix->gain;
 
         if (srcmix->currentInput->channels == 1) {
             for (int i = 0; i < nBufferFrames; i++) {
