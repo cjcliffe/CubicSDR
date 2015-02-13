@@ -80,20 +80,9 @@ void DemodulatorThread::threadMain() {
     nco_crcf ssbShifterDown = nco_crcf_create(LIQUID_NCO);
     nco_crcf_set_frequency(ssbShifterDown, (2.0 * M_PI) * 0.25);
 
-//    float ssbFt = 0.001f;         // filter transition
-//    float ssbAs = 120.0f;         // stop-band attenuation [dB]
-
-//    h_len = estimate_req_filter_len(ssbFt, ssbAs);
-//    float *ssb_h = new float[h_len];
-//    liquid_firdes_kaiser(h_len, 0.25, ssbAs, 0.0, ssb_h);
-
-//    firfilt_crcf firSSB = firfilt_crcf_create(ssb_h, h_len);
-
-    //    delete ssb_h;
-
-    // create half-band resampler
-    resamp2_crcf ssbInterp = resamp2_crcf_create(7,0.0f,-120.0f);
-    resamp2_rrrf ssbDecim = resamp2_rrrf_create(7,0.0f,-120.0f);
+    // half band interp / decimate used for side-band elimination
+    resamp2_crcf ssbInterp = resamp2_crcf_create(7, 0.0f, -120.0f);
+    resamp2_crcf ssbDecim = resamp2_crcf_create(7, 0.0f, -120.0f);
 
     // Automatic IQ gain
     iqAutoGain = agc_crcf_create();
@@ -108,10 +97,10 @@ void DemodulatorThread::threadMain() {
     case DEMOD_TYPE_FM:
         break;
     case DEMOD_TYPE_LSB:
-        demodAM = demodAM_USB;
+        demodAM = demodAM_LSB;
         break;
     case DEMOD_TYPE_USB:
-        demodAM = demodAM_LSB;
+        demodAM = demodAM_USB;
         break;
     case DEMOD_TYPE_DSB:
         demodAM = demodAM_DSB;
@@ -186,27 +175,43 @@ void DemodulatorThread::threadMain() {
             float p;
             switch (demodulatorType.load()) {
             case DEMOD_TYPE_LSB:
-                for (int i = 0; i < bufSize; i++) { // Reject upper band
-                    resamp2_crcf_interp_execute(ssbInterp, inp->data[i], z);
-                    nco_crcf_mix_down(ssbShifterDown, z[0], &y);
+                for (int i = 0; i < bufSize / 2; i++) { // Reject upper band
+                    nco_crcf_mix_up(ssbShifterUp, inp->data[i * 2], &z[0]);
+                    nco_crcf_step(ssbShifterUp);
+                    nco_crcf_mix_up(ssbShifterUp, inp->data[i * 2 + 1], &z[1]);
+                    nco_crcf_step(ssbShifterUp);
+                    resamp2_crcf_decim_execute(ssbDecim, z, &x);
+                    resamp2_crcf_interp_execute(ssbInterp, x, z);
+
+                    nco_crcf_mix_down(ssbShifterDown, z[0], &x);
                     nco_crcf_step(ssbShifterDown);
-                    ampmodem_demodulate(demodAM, y, &rz[0]);
                     nco_crcf_mix_down(ssbShifterDown, z[1], &y);
                     nco_crcf_step(ssbShifterDown);
-                    ampmodem_demodulate(demodAM, y, &rz[1]);
-                    resamp2_rrrf_decim_execute(ssbDecim, rz, &demodOutputData[i]);
+                    ampmodem_demodulate(demodAM, x, &demodOutputData[i * 2]);
+                    ampmodem_demodulate(demodAM, y, &demodOutputData[i * 2 + 1]);
+                }
+                if (bufSize % 2) {  // yep, this is ugly for the moment until I buffer the overflow byte
+                    ampmodem_demodulate(demodAM, y, &demodOutputData[bufSize - 1]);
                 }
                 break;
             case DEMOD_TYPE_USB:
-                for (int i = 0; i < bufSize; i++) { // Reject lower band
-                    resamp2_crcf_interp_execute(ssbInterp, inp->data[i], z);
-                    nco_crcf_mix_up(ssbShifterUp, z[0], &y);
+                for (int i = 0; i < bufSize / 2; i++) { // Reject lower band
+                    nco_crcf_mix_down(ssbShifterDown, inp->data[i * 2], &z[0]);
+                    nco_crcf_step(ssbShifterDown);
+                    nco_crcf_mix_down(ssbShifterDown, inp->data[i * 2 + 1], &z[1]);
+                    nco_crcf_step(ssbShifterDown);
+                    resamp2_crcf_decim_execute(ssbDecim, z, &x);
+                    resamp2_crcf_interp_execute(ssbInterp, x, z);
+
+                    nco_crcf_mix_up(ssbShifterUp, z[0], &x);
                     nco_crcf_step(ssbShifterUp);
-                    ampmodem_demodulate(demodAM, y, &rz[0]);
                     nco_crcf_mix_up(ssbShifterUp, z[1], &y);
                     nco_crcf_step(ssbShifterUp);
-                    ampmodem_demodulate(demodAM, y, &rz[1]);
-                    resamp2_rrrf_decim_execute(ssbDecim, rz, &demodOutputData[i]);
+                    ampmodem_demodulate(demodAM, x, &demodOutputData[i * 2]);
+                    ampmodem_demodulate(demodAM, y, &demodOutputData[i * 2 + 1]);
+                }
+                if (bufSize % 2) {
+                    ampmodem_demodulate(demodAM, y, &demodOutputData[bufSize - 1]);
                 }
                 break;
             case DEMOD_TYPE_AM:
@@ -216,7 +221,6 @@ void DemodulatorThread::threadMain() {
                 }
                 break;
             }
-
 
             amOutputCeilMA = amOutputCeilMA + (amOutputCeil - amOutputCeilMA) * 0.05;
             amOutputCeilMAA = amOutputCeilMAA + (amOutputCeilMA - amOutputCeilMAA) * 0.05;
@@ -403,11 +407,11 @@ void DemodulatorThread::threadMain() {
                     freqdem_reset(demodFM);
                     break;
                 case DEMOD_TYPE_LSB:
-                    demodAM = demodAM_USB;
+                    demodAM = demodAM_LSB;
                     ampmodem_reset(demodAM);
                     break;
                 case DEMOD_TYPE_USB:
-                    demodAM = demodAM_LSB;
+                    demodAM = demodAM_USB;
                     ampmodem_reset(demodAM);
                     break;
                 case DEMOD_TYPE_DSB:
