@@ -34,7 +34,10 @@ Basic Goals and Status:
     - [x] Scope
     - [x] Spectrum
     - [x] Waterfall
+    - [ ] Audio Spectrum
     - [ ] More 2D visuals
+      - [ ] Add faint grid for sense of scale
+      - [ ] Indicate outer spectrum edges when zoomed
     - [ ] 3D visuals
   - Demodulation:
     - [ ] Design a proper architecture for modular expansion :)
@@ -47,6 +50,7 @@ Basic Goals and Status:
       - [x] LSB
       - [x] USB
       - [x] DSB
+      - [ ] RAW
     - [ ] Controls
       - [x] Display Frequency and allow manual adjustments
       - [x] Allow selection of demodulation type
@@ -54,7 +58,8 @@ Basic Goals and Status:
       - [x] Display signal level and allow squelch control
       - [x] Display audio output selection
       - [x] Volume control
-      - [ ] Basic noise reduction / filter controls?
+      - [ ] Demodulator input filtering
+      - [ ] Audio filtering
   - Basic Input Controls
     - [x] Drag spectrum to change center frequency
     - [x] Hold shift and click on waterfall to create a new demodulator
@@ -102,6 +107,8 @@ Advanced Goals:
     * Script manager / live editor
     * Provide scriptable liquid-dsp modulation for trancievers?
   - "PVR" like mode with waterfall time shifting
+  - L/R and surround-sound balance settings for separating and listening to mono streams
+
 
 Target Platforms:
 ----------------
