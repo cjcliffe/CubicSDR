@@ -125,7 +125,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, float r, float 
     glColor4f(r, g, b, 0.6);
 
     float ofs = ((float) demod->getBandwidth()) / (float) srate;
-
+    float ofsLeft = (demod->getDemodulatorType()!=DEMOD_TYPE_USB)?ofs:0, ofsRight = (demod->getDemodulatorType()!=DEMOD_TYPE_LSB)?ofs:0;
 
     float labelHeight = 20.0 / viewHeight;
     float hPos = -1.0 + labelHeight;
@@ -134,42 +134,47 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, float r, float 
 
     glColor4f(0, 0, 0, 0.35);
     glBegin(GL_QUADS);
-    glVertex3f(uxPos - ofs, hPos + labelHeight, 0.0);
-    glVertex3f(uxPos - ofs, -1.0, 0.0);
+    glVertex3f(uxPos - ofsLeft, hPos + labelHeight, 0.0);
+    glVertex3f(uxPos - ofsLeft, -1.0, 0.0);
 
-    glVertex3f(uxPos + ofs, -1.0, 0.0);
-    glVertex3f(uxPos + ofs, hPos + labelHeight, 0.0);
+    glVertex3f(uxPos + ofsRight, -1.0, 0.0);
+    glVertex3f(uxPos + ofsRight, hPos + labelHeight, 0.0);
     glEnd();
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
     glColor4f(r, g, b, 0.2);
     glBegin(GL_QUADS);
-    glVertex3f(uxPos - ofs, 1.0, 0.0);
-    glVertex3f(uxPos - ofs, -1.0, 0.0);
+    glVertex3f(uxPos - ofsLeft, 1.0, 0.0);
+    glVertex3f(uxPos - ofsLeft, -1.0, 0.0);
 
-    glVertex3f(uxPos + ofs, -1.0, 0.0);
-    glVertex3f(uxPos + ofs, 1.0, 0.0);
+    glVertex3f(uxPos + ofsRight, -1.0, 0.0);
+    glVertex3f(uxPos + ofsRight, 1.0, 0.0);
     glEnd();
-
-
 
     if (ofs * 2.0 < 16.0 / viewWidth) {
         ofs = 16.0 / viewWidth;
 
         glColor4f(r, g, b, 0.2);
         glBegin(GL_QUADS);
-        glVertex3f(uxPos - ofs, hPos + labelHeight, 0.0);
-        glVertex3f(uxPos - ofs, -1.0, 0.0);
+        glVertex3f(uxPos - ofsLeft, hPos + labelHeight, 0.0);
+        glVertex3f(uxPos - ofsLeft, -1.0, 0.0);
 
-        glVertex3f(uxPos + ofs, -1.0, 0.0);
-        glVertex3f(uxPos + ofs, hPos + labelHeight, 0.0);
+        glVertex3f(uxPos + ofsRight, -1.0, 0.0);
+        glVertex3f(uxPos + ofsRight, hPos + labelHeight, 0.0);
         glEnd();
     }
 
+
     glColor4f(1.0, 1.0, 1.0, 0.8);
 
-    getFont(PrimaryGLContext::GLFONT_SIZE16).drawString(demod->getLabel(), uxPos, hPos, 16, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+    if (demod->getDemodulatorType() == DEMOD_TYPE_USB) {
+        getFont(PrimaryGLContext::GLFONT_SIZE16).drawString(demod->getLabel(), uxPos, hPos, 16, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
+    } else if (demod->getDemodulatorType() == DEMOD_TYPE_LSB) {
+        getFont(PrimaryGLContext::GLFONT_SIZE16).drawString(demod->getLabel(), uxPos, hPos, 16, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
+    } else {
+        getFont(PrimaryGLContext::GLFONT_SIZE16).drawString(demod->getLabel(), uxPos, hPos, 16, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+    }
 
     glDisable(GL_BLEND);
 
@@ -195,28 +200,29 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, f
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     glColor4f(r, g, b, 0.6);
 
+    float ofs = ((float) demod->getBandwidth()) / (float) srate;
+    float ofsLeft = (demod->getDemodulatorType()!=DEMOD_TYPE_USB)?ofs:0, ofsRight = (demod->getDemodulatorType()!=DEMOD_TYPE_LSB)?ofs:0;
+
     glBegin(GL_LINES);
     glVertex3f((uxPos - 0.5) * 2.0, 1.0, 0.0);
     glVertex3f((uxPos - 0.5) * 2.0, -1.0, 0.0);
 
-    float ofs = ((float) demod->getBandwidth()) / (float) srate;
+    glVertex3f((uxPos - 0.5) * 2.0 - ofsLeft, 1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0 - ofsLeft, -1.0, 0.0);
 
-    glVertex3f((uxPos - 0.5) * 2.0 - ofs, 1.0, 0.0);
-    glVertex3f((uxPos - 0.5) * 2.0 - ofs, -1.0, 0.0);
-
-    glVertex3f((uxPos - 0.5) * 2.0 + ofs, 1.0, 0.0);
-    glVertex3f((uxPos - 0.5) * 2.0 + ofs, -1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0 + ofsRight, 1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0 + ofsRight, -1.0, 0.0);
 
     glEnd();
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     glColor4f(r, g, b, 0.2);
     glBegin(GL_QUADS);
-    glVertex3f((uxPos - 0.5) * 2.0 - ofs, 1.0, 0.0);
-    glVertex3f((uxPos - 0.5) * 2.0 - ofs, -1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0 - ofsLeft, 1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0 - ofsLeft, -1.0, 0.0);
 
-    glVertex3f((uxPos - 0.5) * 2.0 + ofs, -1.0, 0.0);
-    glVertex3f((uxPos - 0.5) * 2.0 + ofs, 1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0 + ofsRight, -1.0, 0.0);
+    glVertex3f((uxPos - 0.5) * 2.0 + ofsRight, 1.0, 0.0);
     glEnd();
 
     GLint vp[4];
@@ -252,10 +258,12 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, f
     case DEMOD_TYPE_LSB:
         demodStr = "LSB";
         demodAlign = GLFont::GLFONT_ALIGN_RIGHT;
+        uxPos -= xOfs;
         break;
     case DEMOD_TYPE_USB:
         demodStr = "USB";
         demodAlign = GLFont::GLFONT_ALIGN_LEFT;
+        uxPos += xOfs;
         break;
     }
 

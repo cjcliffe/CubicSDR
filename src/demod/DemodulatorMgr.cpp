@@ -77,7 +77,7 @@ std::vector<DemodulatorInstance *> *DemodulatorMgr::getDemodulatorsAt(long long 
 
         long long halfBuffer = bandwidth / 2;
 
-        if ((freq <= (freqTest + halfBandwidthTest + halfBuffer)) && (freq >= (freqTest - halfBandwidthTest - halfBuffer))) {
+        if ((freq <= (freqTest + ((testDemod->getDemodulatorType() != DEMOD_TYPE_LSB)?halfBandwidthTest:0) + halfBuffer)) && (freq >= (freqTest - ((testDemod->getDemodulatorType() != DEMOD_TYPE_USB)?halfBandwidthTest:0) - halfBuffer))) {
             foundDemods->push_back(testDemod);
         }
     }
