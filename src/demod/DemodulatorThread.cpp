@@ -190,9 +190,6 @@ void DemodulatorThread::threadMain() {
                     ampmodem_demodulate(demodAM, x, &demodOutputData[i * 2]);
                     ampmodem_demodulate(demodAM, y, &demodOutputData[i * 2 + 1]);
                 }
-                if (bufSize % 2) {  // yep, this is ugly for the moment until I buffer the overflow byte
-                    ampmodem_demodulate(demodAM, y, &demodOutputData[bufSize - 1]);
-                }
                 break;
             case DEMOD_TYPE_USB:
                 for (int i = 0; i < bufSize / 2; i++) { // Reject lower band
@@ -209,9 +206,6 @@ void DemodulatorThread::threadMain() {
                     nco_crcf_step(ssbShifterUp);
                     ampmodem_demodulate(demodAM, x, &demodOutputData[i * 2]);
                     ampmodem_demodulate(demodAM, y, &demodOutputData[i * 2 + 1]);
-                }
-                if (bufSize % 2) {
-                    ampmodem_demodulate(demodAM, y, &demodOutputData[bufSize - 1]);
                 }
                 break;
             case DEMOD_TYPE_AM:
