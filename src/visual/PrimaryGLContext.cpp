@@ -97,7 +97,7 @@ GLFont &PrimaryGLContext::getFont(GLFontSize esize) {
     return fonts[esize];
 }
 
-void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, float r, float g, float b, long long center_freq, long long srate) {
+void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBColor color, long long center_freq, long long srate) {
     if (!demod) {
         return;
     }
@@ -122,7 +122,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, float r, float 
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glColor4f(r, g, b, 0.6);
+    glColor4f(color.r, color.g, color.b, 0.6);
 
     float ofs = ((float) demod->getBandwidth()) / (float) srate;
     float ofsLeft = (demod->getDemodulatorType()!=DEMOD_TYPE_USB)?ofs:0, ofsRight = (demod->getDemodulatorType()!=DEMOD_TYPE_LSB)?ofs:0;
@@ -143,7 +143,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, float r, float 
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
-    glColor4f(r, g, b, 0.2);
+    glColor4f(color.r, color.g, color.b, 0.2);
     glBegin(GL_QUADS);
     glVertex3f(uxPos - ofsLeft, 1.0, 0.0);
     glVertex3f(uxPos - ofsLeft, -1.0, 0.0);
@@ -155,7 +155,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, float r, float 
     if (ofs * 2.0 < 16.0 / viewWidth) {
         ofs = 16.0 / viewWidth;
 
-        glColor4f(r, g, b, 0.2);
+        glColor4f(color.r, color.g, color.b, 0.2);
         glBegin(GL_QUADS);
         glVertex3f(uxPos - ofsLeft, hPos + labelHeight, 0.0);
         glVertex3f(uxPos - ofsLeft, -1.0, 0.0);
@@ -180,7 +180,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, float r, float 
 
 }
 
-void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, float b, long long center_freq, long long srate) {
+void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBColor color, long long center_freq, long long srate) {
     if (!demod) {
         return;
     }
@@ -198,7 +198,7 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, f
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-    glColor4f(r, g, b, 0.6);
+    glColor4f(color.r, color.g, color.b, 0.6);
 
     float ofs = ((float) demod->getBandwidth()) / (float) srate;
     float ofsLeft = (demod->getDemodulatorType()!=DEMOD_TYPE_USB)?ofs:0, ofsRight = (demod->getDemodulatorType()!=DEMOD_TYPE_LSB)?ofs:0;
@@ -216,7 +216,7 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, f
     glEnd();
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-    glColor4f(r, g, b, 0.2);
+    glColor4f(color.r, color.g, color.b, 0.2);
     glBegin(GL_QUADS);
     glVertex3f((uxPos - 0.5) * 2.0 - ofsLeft, 1.0, 0.0);
     glVertex3f((uxPos - 0.5) * 2.0 - ofsLeft, -1.0, 0.0);
@@ -277,10 +277,12 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, float r, float g, f
 
 }
 
-void PrimaryGLContext::DrawFreqSelector(float uxPos, float r, float g, float b, float w, long long center_freq, long long srate) {
+void PrimaryGLContext::DrawFreqSelector(float uxPos, RGBColor color, float w, long long center_freq, long long srate) {
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     long long bw = 0;
+
+    int last_type = wxGetApp().getDemodMgr().getLastDemodulatorType();
 
     if (!demod) {
         bw = wxGetApp().getDemodMgr().getLastBandwidth();
@@ -296,9 +298,10 @@ void PrimaryGLContext::DrawFreqSelector(float uxPos, float r, float g, float b, 
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-    glColor4f(r, g, b, 0.6);
+    glColor4f(color.r, color.g, color.b, 0.6);
 
     glBegin(GL_LINES);
+
     glVertex3f((uxPos - 0.5) * 2.0, 1.0, 0.0);
     glVertex3f((uxPos - 0.5) * 2.0, -1.0, 0.0);
 
@@ -310,15 +313,53 @@ void PrimaryGLContext::DrawFreqSelector(float uxPos, float r, float g, float b, 
         ofs = ((float) bw) / (float) srate;
     }
 
-    glVertex3f((uxPos - 0.5) * 2.0 - ofs, 1.0, 0.0);
-    glVertex3f((uxPos - 0.5) * 2.0 - ofs, -1.0, 0.0);
+    if (last_type != DEMOD_TYPE_USB) {
+        glVertex3f((uxPos - 0.5) * 2.0 - ofs, 1.0, 0.0);
+        glVertex3f((uxPos - 0.5) * 2.0 - ofs, -1.0, 0.0);
+    }
 
-    glVertex3f((uxPos - 0.5) * 2.0 + ofs, 1.0, 0.0);
-    glVertex3f((uxPos - 0.5) * 2.0 + ofs, -1.0, 0.0);
+    if (last_type != DEMOD_TYPE_LSB) {
+        glVertex3f((uxPos - 0.5) * 2.0 + ofs, 1.0, 0.0);
+        glVertex3f((uxPos - 0.5) * 2.0 + ofs, -1.0, 0.0);
+    }
 
     glEnd();
     glDisable(GL_BLEND);
 
+}
+
+void PrimaryGLContext::DrawRangeSelector(float uxPos1, float uxPos2, RGBColor color) {
+    if (uxPos2 < uxPos1) {
+        float temp = uxPos2;
+        uxPos2=uxPos1;
+        uxPos1=temp;
+    }
+
+    int last_type = wxGetApp().getDemodMgr().getLastDemodulatorType();
+
+    glDisable(GL_TEXTURE_2D);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    glColor4f(color.r, color.g, color.b, 0.6);
+
+    glLineWidth((last_type == DEMOD_TYPE_USB)?2.0:1.0);
+
+    glBegin(GL_LINES);
+    glVertex3f((uxPos1 - 0.5) * 2.0, 1.0, 0.0);
+    glVertex3f((uxPos1 - 0.5) * 2.0, -1.0, 0.0);
+    glEnd();
+
+    glLineWidth((last_type == DEMOD_TYPE_LSB)?2.0:1.0);
+
+    glBegin(GL_LINES);
+    glVertex3f((uxPos2 - 0.5) * 2.0, 1.0, 0.0);
+    glVertex3f((uxPos2 - 0.5) * 2.0, -1.0, 0.0);
+    glEnd();
+
+    glLineWidth(1.0);
+
+    glDisable(GL_BLEND);
 }
 
 void PrimaryGLContext::BeginDraw(float r, float g, float b) {
