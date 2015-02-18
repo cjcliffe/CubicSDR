@@ -83,7 +83,7 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     std::vector<DemodulatorInstance *> &demods = wxGetApp().getDemodMgr().getDemodulators();
 
     for (int i = 0, iMax = demods.size(); i < iMax; i++) {
-        glContext->DrawDemodInfo(demods[i], ThemeMgr::mgr.currentTheme->fftHighlight.r, ThemeMgr::mgr.currentTheme->fftHighlight.g, ThemeMgr::mgr.currentTheme->fftHighlight.b, getCenterFrequency(), getBandwidth());
+        glContext->DrawDemodInfo(demods[i], ThemeMgr::mgr.currentTheme->fftHighlight, getCenterFrequency(), getBandwidth());
     }
 
     glContext->EndDraw();

@@ -369,22 +369,35 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             demodModeSelector->setSelection(dType);
         }
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
-            if (demod->getFrequency() != demodWaterfallCanvas->getCenterFrequency()) {
-                demodWaterfallCanvas->setCenterFrequency(demod->getFrequency());
-                demodSpectrumCanvas->setCenterFrequency(demod->getFrequency());
-            }
-            int dSelection = demodModeSelector->getSelection();
-            if (dSelection != -1 && dSelection != demod->getDemodulatorType()) {
-                demod->setDemodulatorType(dSelection);
+            long long centerFreq = demod->getFrequency();
+            unsigned int demodBw = (unsigned int) ceil((float) demod->getBandwidth() * 2.5);
+
+            if (demod->getDemodulatorType() == DEMOD_TYPE_USB) {
+                demodBw /= 2;
+                centerFreq += demod->getBandwidth()/4;
             }
 
-            unsigned int demodBw = (unsigned int) ceil((float) demod->getBandwidth() * 2.5);
+            if (demod->getDemodulatorType() == DEMOD_TYPE_LSB) {
+                demodBw /= 2;
+                centerFreq -= demod->getBandwidth()/4;
+            }
+
             if (demodBw > wxGetApp().getSampleRate() / 2) {
                 demodBw = wxGetApp().getSampleRate() / 2;
             }
             if (demodBw < 30000) {
                 demodBw = 30000;
             }
+
+            if (centerFreq != demodWaterfallCanvas->getCenterFrequency()) {
+                demodWaterfallCanvas->setCenterFrequency(centerFreq);
+                demodSpectrumCanvas->setCenterFrequency(centerFreq);
+            }
+            int dSelection = demodModeSelector->getSelection();
+            if (dSelection != -1 && dSelection != demod->getDemodulatorType()) {
+                demod->setDemodulatorType(dSelection);
+            }
+
             demodWaterfallCanvas->setBandwidth(demodBw);
             demodSpectrumCanvas->setBandwidth(demodBw);
         }

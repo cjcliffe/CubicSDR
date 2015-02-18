@@ -9,6 +9,7 @@
 #include "CubicSDRDefs.h"
 #include "GLFont.h"
 #include "DemodulatorMgr.h"
+#include "ColorTheme.h"
 
 class PrimaryGLContext: public wxGLContext {
 public:
@@ -23,9 +24,10 @@ public:
     void BeginDraw(float r, float g, float b);
     void EndDraw();
 
-    void DrawFreqSelector(float uxPos, float r = 1, float g = 1, float b = 1, float w = 0, long long center_freq = -1, long long srate = 0);
-    void DrawDemod(DemodulatorInstance *demod, float r = 1, float g = 1, float b = 1, long long center_freq = -1, long long srate = 0);
-    void DrawDemodInfo(DemodulatorInstance *demod, float r = 1, float g = 1, float b = 1, long long center_freq = -1, long long srate = 0);
+    void DrawFreqSelector(float uxPos, RGBColor color, float w = 0, long long center_freq = -1, long long srate = 0);
+    void DrawRangeSelector(float uxPos1, float uxPos2, RGBColor color);
+    void DrawDemod(DemodulatorInstance *demod, RGBColor color, long long center_freq = -1, long long srate = 0);
+    void DrawDemodInfo(DemodulatorInstance *demod, RGBColor color, long long center_freq = -1, long long srate = 0);
 
     static GLFont &getFont(GLFontSize esize);
 
