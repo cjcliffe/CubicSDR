@@ -2,13 +2,6 @@
 
 #include <queue>
 #include <vector>
-#include "wx/wxprec.h"
-
-#ifndef WX_PRECOMP
-#include "wx/wx.h"
-#endif
-
-#include "wx/thread.h"
 
 #include "liquid/liquid.h"
 #include "AudioThread.h"

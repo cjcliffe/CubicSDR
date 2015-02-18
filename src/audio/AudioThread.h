@@ -5,13 +5,6 @@
 #include <map>
 #include <string>
 #include <atomic>
-#include "wx/wxprec.h"
-
-#ifndef WX_PRECOMP
-#include "wx/wx.h"
-#endif
-
-#include "wx/thread.h"
 
 #include "AudioThread.h"
 #include "ThreadQueue.h"

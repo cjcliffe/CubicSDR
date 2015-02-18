@@ -2,14 +2,7 @@
 
 #include <atomic>
 
-#include "wx/wxprec.h"
 #include "rtl-sdr.h"
-
-#ifndef WX_PRECOMP
-#include "wx/wx.h"
-#endif
-
-#include "wx/thread.h"
 
 #include "ThreadQueue.h"
 #include "DemodulatorMgr.h"

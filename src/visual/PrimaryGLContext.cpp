@@ -39,15 +39,13 @@ void PrimaryGLContext::CheckGLError() {
             return;
 
         if (err == errLast) {
-            wxLogError
-            (wxT("OpenGL error state couldn't be reset."));
+            std::cout << "OpenGL error state couldn't be reset." << std::endl;
             return;
         }
 
         errLast = err;
 
-        wxLogError
-        (wxT("OpenGL error %d"), err);
+        std::cout << "OpenGL Error " << err << std::endl;
     }
 }
 

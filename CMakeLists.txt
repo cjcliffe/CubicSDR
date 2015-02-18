@@ -1,6 +1,9 @@
 cmake_minimum_required (VERSION 2.8)
 
+IF (NOT APPLE)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+ENDIF(NOT APPLE)
+
 
 macro(configure_files srcDir destDir globStr)
     message(STATUS "Copying ${srcDir}/${globStr} to directory ${destDir}")
@@ -55,7 +58,7 @@ SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_BINARY_DIR}/${EX_PLATFORM_
 
 find_package(OpenGL REQUIRED)
 
-find_package(wxWidgets REQUIRED gl core base)
+find_package(wxWidgets COMPONENTS gl core base REQUIRED)
 set(wxWidgets_CONFIGURATION mswu)
 include(${wxWidgets_USE_FILE})
 
@@ -175,6 +178,7 @@ IF (APPLE)
     set(RTLSDR_LIB "/opt/local/lib" CACHE FILEPATH "RTL-SDR Lib Path")
     include_directories(${RTLSDR_INCLUDE})
     link_directories(${RTLSDR_LIB})
+    set(LIB_DIRS "${LIB_DIRS} ${RTLSDR_LIB}")
   
     set(FFTW_LIB fftw3f)
     set(LIQUID_LIB liquid)
@@ -185,6 +189,8 @@ IF (APPLE)
 
    FIND_LIBRARY(COREAUDIO_LIBRARY CoreAudio)
    SET (OTHER_LIBRARIES ${COREAUDIO_LIBRARY})
+   set(BUNDLE_APP OFF CACHE BOOL "Bundle Application")
+
 ENDIF (APPLE)
 
 
@@ -288,17 +294,18 @@ include_directories (
 
 ELSE (MSVC)
 	ADD_DEFINITIONS(
-		-std=c++0x # or -std=c++11
+		-std=c++0x 
 		-pthread
 	)
 ENDIF(MSVC)
 
-configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.fnt")
-configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.png")
 
-add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers})
-
-target_link_libraries(CubicSDR rtlsdr ${LIQUID_LIB} ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
+IF (NOT BUNDLE_APP)
+    configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.fnt")
+    configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.png")
+    add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers})
+    target_link_libraries(CubicSDR rtlsdr ${LIQUID_LIB} ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
+ENDIF (NOT BUNDLE_APP)
 
 IF (MSVC)
   set_target_properties(CubicSDR PROPERTIES LINK_FLAGS_DEBUG "/SUBSYSTEM:WINDOWS")
@@ -312,3 +319,83 @@ IF (MSVC)
   set(CMAKE_CREATE_WIN32_EXE "/SUBSYSTEM:WINDOWS /ENTRY:\"mainCRTStartup\"")
 ENDIF(MSVC)
 
+IF (APPLE AND BUNDLE_APP)
+    PROJECT(CubicSDR)
+    SET(MACOSX_BUNDLE_BUNDLE_NAME CubicSDR)
+    
+    ADD_DEFINITIONS(
+		-std=c++0x 
+		-pthread
+        -D_OSX_APP_
+        -DHAVE_TYPE_TRAITS=1
+        -mmacosx-version-min=10.9
+    )   
+      
+    ADD_EXECUTABLE(CubicSDR 
+        MACOSX_BUNDLE 
+        ${cubicsdr_sources}
+        ${cubicsdr_headers} 
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12.fnt
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16.fnt
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18.fnt
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24.fnt
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32.fnt
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48.fnt
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12_0.png
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16_0.png
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18_0.png
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24_0.png
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32_0.png
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48_0.png
+    ) 
+    
+    SET_SOURCE_FILES_PROPERTIES(
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12.fnt
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16.fnt
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18.fnt
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24.fnt
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32.fnt
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48.fnt
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12_0.png
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16_0.png
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18_0.png
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24_0.png
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32_0.png
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48_0.png
+        PROPERTIES
+        MACOSX_PACKAGE_LOCATION Resources
+      )
+      
+    # SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -L/opt/local/Library" )
+    
+    target_link_libraries(CubicSDR rtlsdr ${LIQUID_LIB} ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
+    SET_TARGET_PROPERTIES(CubicSDR PROPERTIES MACOSX_BUNDLE TRUE)
+    
+    # SET_TARGET_PROPERTIES(wxTest PROPERTIES
+    #      MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
+    #      MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
+    #      MACOSX_BUNDLE_LONG_VERSION_STRING "${PROJECT_VERSION}"
+    #      MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+    #      MACOSX_BUNDLE_GUI_IDENTIFIER "com.example.${PROJECT_NAME}"
+    #      MACOSX_BUNDLE_ICON_FILE icon.icns
+    #   )
+    
+    # SET(LIB_DIRS "${LIB_DIRS} ${wxWidgets_LIBRARY_DIRS} /usr/lib /usr/local/lib /opt/local/lib")
+    SET(APPS "${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME}/CubicSDR.app")
+    # SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
+    # SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+ 
+    # file(GLOB_RECURSE WXLIBS
+   #    \"\${wxWidgets_LIBRARY_DIRS}/*${CMAKE_SHARED_LIBRARY_SUFFIX}\")
+ 
+
+    INSTALL(CODE "
+           SET(BU_COPY_FULL_FRAMEWORK_CONTENTS ON)
+       include(BundleUtilities)
+       fixup_bundle(\"${APPS}\"   \"\"   \"${RTLSDR_LIB}\")
+       VERIFY_APP(\"${APPS}\")
+       " COMPONENT Runtime)
+       
+   set(CPACK_BINARY_DRAGNDROP ON)
+   include(CPack)
+ENDIF (APPLE AND BUNDLE_APP)
