@@ -336,8 +336,9 @@ void AudioThread::setupDevice(int deviceId) {
         if (deviceController.find(outputDevice.load()) != deviceController.end()) {
             deviceController[outputDevice.load()]->removeThread(this);
         }
-
+#ifndef _MSC_VER
         opts.priority = sched_get_priority_max(SCHED_FIFO);
+#endif
         //    opts.flags = RTAUDIO_MINIMIZE_LATENCY;
         opts.flags = RTAUDIO_SCHEDULE_REALTIME;
 
