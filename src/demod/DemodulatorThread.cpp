@@ -73,16 +73,8 @@ void DemodulatorThread::threadMain() {
     nco_crcf stereoShifter = nco_crcf_create(LIQUID_NCO);
     double stereoShiftFrequency = 0;
 
-    // SSB Half-band filter
-    nco_crcf ssbShifterUp = nco_crcf_create(LIQUID_NCO);
-    nco_crcf_set_frequency(ssbShifterUp, (2.0 * M_PI) * 0.25);
-
-    nco_crcf ssbShifterDown = nco_crcf_create(LIQUID_NCO);
-    nco_crcf_set_frequency(ssbShifterDown, (2.0 * M_PI) * 0.25);
-
-    // half band interp / decimate used for side-band elimination
-    resamp2_crcf ssbInterp = resamp2_crcf_create(7, 0.0f, -120.0f);
-    resamp2_crcf ssbDecim = resamp2_crcf_create(7, 0.0f, -120.0f);
+     // half band filter used for side-band elimination
+    resamp2_cccf ssbFilt = resamp2_cccf_create(12,-0.25f,60.0f);
 
     // Automatic IQ gain
     iqAutoGain = agc_crcf_create();
@@ -175,37 +167,15 @@ void DemodulatorThread::threadMain() {
             float p;
             switch (demodulatorType.load()) {
             case DEMOD_TYPE_LSB:
-                for (int i = 0; i < bufSize / 2; i++) { // Reject upper band
-                    nco_crcf_mix_up(ssbShifterUp, inp->data[i * 2], &z[0]);
-                    nco_crcf_step(ssbShifterUp);
-                    nco_crcf_mix_up(ssbShifterUp, inp->data[i * 2 + 1], &z[1]);
-                    nco_crcf_step(ssbShifterUp);
-                    resamp2_crcf_decim_execute(ssbDecim, z, &x);
-                    resamp2_crcf_interp_execute(ssbInterp, x, z);
-
-                    nco_crcf_mix_down(ssbShifterDown, z[0], &x);
-                    nco_crcf_step(ssbShifterDown);
-                    nco_crcf_mix_down(ssbShifterDown, z[1], &y);
-                    nco_crcf_step(ssbShifterDown);
-                    ampmodem_demodulate(demodAM, x, &demodOutputData[i * 2]);
-                    ampmodem_demodulate(demodAM, y, &demodOutputData[i * 2 + 1]);
+                for (int i = 0; i < bufSize; i++) { // Reject upper band
+                     resamp2_cccf_filter_execute(ssbFilt,inp->data[i],&x,&y);
+                     ampmodem_demodulate(demodAM, x, &demodOutputData[i]);
                 }
                 break;
             case DEMOD_TYPE_USB:
-                for (int i = 0; i < bufSize / 2; i++) { // Reject lower band
-                    nco_crcf_mix_down(ssbShifterDown, inp->data[i * 2], &z[0]);
-                    nco_crcf_step(ssbShifterDown);
-                    nco_crcf_mix_down(ssbShifterDown, inp->data[i * 2 + 1], &z[1]);
-                    nco_crcf_step(ssbShifterDown);
-                    resamp2_crcf_decim_execute(ssbDecim, z, &x);
-                    resamp2_crcf_interp_execute(ssbInterp, x, z);
-
-                    nco_crcf_mix_up(ssbShifterUp, z[0], &x);
-                    nco_crcf_step(ssbShifterUp);
-                    nco_crcf_mix_up(ssbShifterUp, z[1], &y);
-                    nco_crcf_step(ssbShifterUp);
-                    ampmodem_demodulate(demodAM, x, &demodOutputData[i * 2]);
-                    ampmodem_demodulate(demodAM, y, &demodOutputData[i * 2 + 1]);
+                for (int i = 0; i < bufSize; i++) { // Reject lower band
+                    resamp2_cccf_filter_execute(ssbFilt,inp->data[i],&x,&y);
+                    ampmodem_demodulate(demodAM, y, &demodOutputData[i]);
                 }
                 break;
             case DEMOD_TYPE_AM:
@@ -441,8 +411,7 @@ void DemodulatorThread::threadMain() {
     firhilbf_destroy(firStereoR2C);
     firhilbf_destroy(firStereoC2R);
     nco_crcf_destroy(stereoShifter);
-    nco_crcf_destroy(ssbShifterUp);
-    nco_crcf_destroy(ssbShifterDown);
+    resamp2_cccf_destroy(ssbFilt);
 
     while (!outputBuffers.empty()) {
         AudioThreadInput *audioDataDel = outputBuffers.front();

@@ -370,7 +370,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         }
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
             long long centerFreq = demod->getFrequency();
-            unsigned int demodBw = (unsigned int) ceil((float) demod->getBandwidth() * 2.5);
+            unsigned int demodBw = (unsigned int) ceil((float) demod->getBandwidth() * 2.25);
 
             if (demod->getDemodulatorType() == DEMOD_TYPE_USB) {
                 demodBw /= 2;
@@ -385,8 +385,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             if (demodBw > wxGetApp().getSampleRate() / 2) {
                 demodBw = wxGetApp().getSampleRate() / 2;
             }
-            if (demodBw < 30000) {
-                demodBw = 30000;
+            if (demodBw < 20000) {
+                demodBw = 20000;
             }
 
             if (centerFreq != demodWaterfallCanvas->getCenterFrequency()) {
