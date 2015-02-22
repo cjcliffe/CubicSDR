@@ -14,8 +14,8 @@ DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* iqInputQue
                 0), squelchEnabled(false) {
 
     demodFM = freqdem_create(0.5);
-    demodAM_USB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_LSB, 1);
-    demodAM_LSB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_USB, 1);
+    demodAM_USB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_USB, 1);
+    demodAM_LSB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_LSB, 1);
     demodAM_DSB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_DSB, 1);
     demodAM_DSB_CSP = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_DSB, 0);
     demodAM = demodAM_DSB_CSP;
@@ -64,7 +64,8 @@ void DemodulatorThread::threadMain() {
 
     delete h;
 
-    liquid_float_complex x, y;
+    liquid_float_complex x, y, z[2];
+    float rz[2];
 
     firhilbf firStereoR2C = firhilbf_create(5, 60.0f);
     firhilbf firStereoC2R = firhilbf_create(5, 60.0f);
@@ -72,23 +73,8 @@ void DemodulatorThread::threadMain() {
     nco_crcf stereoShifter = nco_crcf_create(LIQUID_NCO);
     double stereoShiftFrequency = 0;
 
-    // SSB Half-band filter
-    nco_crcf ssbShifterUp = nco_crcf_create(LIQUID_NCO);
-    nco_crcf_set_frequency(ssbShifterUp, (2.0 * M_PI) * 0.25);
-
-    nco_crcf ssbShifterDown = nco_crcf_create(LIQUID_NCO);
-    nco_crcf_set_frequency(ssbShifterDown, (2.0 * M_PI) * 0.25);
-
-    float ssbFt = 0.001f;         // filter transition
-    float ssbAs = 120.0f;         // stop-band attenuation [dB]
-
-    h_len = estimate_req_filter_len(ssbFt, ssbAs);
-    float *ssb_h = new float[h_len];
-    liquid_firdes_kaiser(h_len, 0.25, ssbAs, 0.0, ssb_h);
-
-    firfilt_crcf firSSB = firfilt_crcf_create(ssb_h, h_len);
-
-    delete ssb_h;
+     // half band filter used for side-band elimination
+    resamp2_cccf ssbFilt = resamp2_cccf_create(12,-0.25f,60.0f);
 
     // Automatic IQ gain
     iqAutoGain = agc_crcf_create();
@@ -103,10 +89,10 @@ void DemodulatorThread::threadMain() {
     case DEMOD_TYPE_FM:
         break;
     case DEMOD_TYPE_LSB:
-        demodAM = demodAM_USB;
+        demodAM = demodAM_LSB;
         break;
     case DEMOD_TYPE_USB:
-        demodAM = demodAM_LSB;
+        demodAM = demodAM_USB;
         break;
     case DEMOD_TYPE_DSB:
         demodAM = demodAM_DSB;
@@ -182,41 +168,36 @@ void DemodulatorThread::threadMain() {
             switch (demodulatorType.load()) {
             case DEMOD_TYPE_LSB:
                 for (int i = 0; i < bufSize; i++) { // Reject upper band
-                    nco_crcf_mix_up(ssbShifterUp, inp->data[i], &x);
-                    nco_crcf_step(ssbShifterUp);
-                    firfilt_crcf_push(firSSB, x);
-                    firfilt_crcf_execute(firSSB, &x);
-                    nco_crcf_mix_down(ssbShifterDown, x, &(inp->data[i]));
-                    nco_crcf_step(ssbShifterDown);
+                     resamp2_cccf_filter_execute(ssbFilt,inp->data[i],&x,&y);
+                     ampmodem_demodulate(demodAM, x, &demodOutputData[i]);
                 }
                 break;
             case DEMOD_TYPE_USB:
                 for (int i = 0; i < bufSize; i++) { // Reject lower band
-                    nco_crcf_mix_down(ssbShifterDown, inp->data[i], &x);
-                    nco_crcf_step(ssbShifterDown);
-                    firfilt_crcf_push(firSSB, x);
-                    firfilt_crcf_execute(firSSB, &x);
-                    nco_crcf_mix_up(ssbShifterUp, x, &(inp->data[i]));
-                    nco_crcf_step(ssbShifterUp);
+                    resamp2_cccf_filter_execute(ssbFilt,inp->data[i],&x,&y);
+                    ampmodem_demodulate(demodAM, y, &demodOutputData[i]);
                 }
                 break;
             case DEMOD_TYPE_AM:
             case DEMOD_TYPE_DSB:
+                for (int i = 0; i < bufSize; i++) {
+                    ampmodem_demodulate(demodAM, inp->data[i], &demodOutputData[i]);
+                }
                 break;
             }
+
+            amOutputCeilMA = amOutputCeilMA + (amOutputCeil - amOutputCeilMA) * 0.05;
+            amOutputCeilMAA = amOutputCeilMAA + (amOutputCeilMA - amOutputCeilMAA) * 0.05;
 
             amOutputCeil = 0;
 
             for (int i = 0; i < bufSize; i++) {
-                ampmodem_demodulate(demodAM, inp->data[i], &demodOutputData[i]);
                 if (demodOutputData[i] > amOutputCeil) {
                     amOutputCeil = demodOutputData[i];
                 }
             }
-            amOutputCeilMA = amOutputCeilMA + (amOutputCeil - amOutputCeilMA) * 0.05;
-            amOutputCeilMAA = amOutputCeilMAA + (amOutputCeilMA - amOutputCeilMAA) * 0.05;
 
-            float gain = 0.95 / amOutputCeilMAA;
+            float gain = 0.5 / amOutputCeilMAA;
 
             for (int i = 0; i < bufSize; i++) {
                 demodOutputData[i] *= gain;
@@ -316,7 +297,8 @@ void DemodulatorThread::threadMain() {
                 std::vector<float>::iterator data_i;
                 ati->peak = 0;
                 for (data_i = ati->data.begin(); data_i != ati->data.end(); data_i++) {
-                    if (float p = fabs(*data_i) > ati->peak) {
+                    float p = fabs(*data_i);
+                    if (p > ati->peak) {
                         ati->peak = p;
                     }
                 }
@@ -389,11 +371,11 @@ void DemodulatorThread::threadMain() {
                     freqdem_reset(demodFM);
                     break;
                 case DEMOD_TYPE_LSB:
-                    demodAM = demodAM_USB;
+                    demodAM = demodAM_LSB;
                     ampmodem_reset(demodAM);
                     break;
                 case DEMOD_TYPE_USB:
-                    demodAM = demodAM_LSB;
+                    demodAM = demodAM_USB;
                     ampmodem_reset(demodAM);
                     break;
                 case DEMOD_TYPE_DSB:
@@ -429,8 +411,7 @@ void DemodulatorThread::threadMain() {
     firhilbf_destroy(firStereoR2C);
     firhilbf_destroy(firStereoC2R);
     nco_crcf_destroy(stereoShifter);
-    nco_crcf_destroy(ssbShifterUp);
-    nco_crcf_destroy(ssbShifterDown);
+    resamp2_cccf_destroy(ssbFilt);
 
     while (!outputBuffers.empty()) {
         AudioThreadInput *audioDataDel = outputBuffers.front();

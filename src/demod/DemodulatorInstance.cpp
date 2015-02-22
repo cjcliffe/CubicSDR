@@ -232,8 +232,8 @@ int DemodulatorInstance::getOutputDevice() {
 }
 
 void DemodulatorInstance::checkBandwidth() {
-    if ((currentDemodType == DEMOD_TYPE_USB || currentDemodType == DEMOD_TYPE_LSB) && (getBandwidth() > 60000)) {
-        setBandwidth(60000);
+    if ((currentDemodType == DEMOD_TYPE_USB || currentDemodType == DEMOD_TYPE_LSB) && (getBandwidth() % 2)) {
+        setBandwidth(getBandwidth()+1);
     }
 }
 
