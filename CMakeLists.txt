@@ -347,6 +347,7 @@ IF (APPLE AND BUNDLE_APP)
         ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24_0.png
         ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32_0.png
         ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48_0.png
+        ${PROJECT_SOURCE_DIR}/icon/CubicSDR.icns
     ) 
     
     SET_SOURCE_FILES_PROPERTIES(
@@ -362,32 +363,26 @@ IF (APPLE AND BUNDLE_APP)
         ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24_0.png
         ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32_0.png
         ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48_0.png
+        ${PROJECT_SOURCE_DIR}/icon/CubicSDR.icns
         PROPERTIES
         MACOSX_PACKAGE_LOCATION Resources
       )
       
-    # SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -L/opt/local/Library" )
-    
     target_link_libraries(CubicSDR rtlsdr ${LIQUID_LIB} ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
     SET_TARGET_PROPERTIES(CubicSDR PROPERTIES MACOSX_BUNDLE TRUE)
+
+    SET_TARGET_PROPERTIES(CubicSDR PROPERTIES
+         MACOSX_BUNDLE_BUNDLE_NAME "CubicSDR"
+         # MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
+         # MACOSX_BUNDLE_LONG_VERSION_STRING "${PROJECT_VERSION}"
+         # MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+         MACOSX_BUNDLE_GUI_IDENTIFIER "com.cubicproductions.cubicsdr"
+         MACOSX_BUNDLE_ICON_FILE CubicSDR.icns
+      )
     
-    # SET_TARGET_PROPERTIES(wxTest PROPERTIES
-    #      MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
-    #      MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
-    #      MACOSX_BUNDLE_LONG_VERSION_STRING "${PROJECT_VERSION}"
-    #      MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
-    #      MACOSX_BUNDLE_GUI_IDENTIFIER "com.example.${PROJECT_NAME}"
-    #      MACOSX_BUNDLE_ICON_FILE icon.icns
-    #   )
-    
-    # SET(LIB_DIRS "${LIB_DIRS} ${wxWidgets_LIBRARY_DIRS} /usr/lib /usr/local/lib /opt/local/lib")
     SET(APPS "${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME}/CubicSDR.app")
     # SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
     # SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
- 
-    # file(GLOB_RECURSE WXLIBS
-   #    \"\${wxWidgets_LIBRARY_DIRS}/*${CMAKE_SHARED_LIBRARY_SUFFIX}\")
- 
 
     INSTALL(CODE "
            SET(BU_COPY_FULL_FRAMEWORK_CONTENTS ON)
@@ -395,7 +390,11 @@ IF (APPLE AND BUNDLE_APP)
        fixup_bundle(\"${APPS}\"   \"\"   \"${RTLSDR_LIB}\")
        VERIFY_APP(\"${APPS}\")
        " COMPONENT Runtime)
-       
+
+   INSTALL(TARGETS CubicSDR
+       BUNDLE DESTINATION . COMPONENT Runtime
+   )       
+
    set(CPACK_BINARY_DRAGNDROP ON)
    include(CPack)
 ENDIF (APPLE AND BUNDLE_APP)
