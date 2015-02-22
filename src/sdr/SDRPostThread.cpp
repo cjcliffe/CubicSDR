@@ -6,7 +6,7 @@
 #include <deque>
 
 SDRPostThread::SDRPostThread() :
-        iqDataOutQueue(NULL), iqDataInQueue(NULL), iqVisualQueue(NULL), terminated(false), dcFilter(NULL), num_vis_samples(16384) {
+        iqDataOutQueue(NULL), iqDataInQueue(NULL), iqVisualQueue(NULL), terminated(false), dcFilter(NULL), num_vis_samples(16384*2) {
 
     // create a lookup table
     for (unsigned int i = 0; i <= 0xffff; i++) {
