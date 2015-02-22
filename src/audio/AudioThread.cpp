@@ -3,6 +3,7 @@
 #include <vector>
 #include <algorithm>
 #include "DemodulatorThread.h"
+#include <memory.h>
 
 #ifdef USE_MIXER
 std::map<int, AudioThread *> AudioThread::deviceController;
