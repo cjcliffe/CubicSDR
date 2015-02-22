@@ -1,5 +1,7 @@
 #define OPENGL
 
+#include "CubicSDRDefs.h"
+
 #include "wx/wxprec.h"
 
 #ifndef WX_PRECOMP
@@ -13,9 +15,25 @@
 #include "CubicSDR.h"
 #include "AppFrame.h"
 
+#ifdef _OSX_APP_
+#include "CoreFoundation/CoreFoundation.h"
+#endif
+
 IMPLEMENT_APP(CubicSDR)
 
 bool CubicSDR::OnInit() {
+#ifdef _OSX_APP_
+    CFBundleRef mainBundle = CFBundleGetMainBundle();
+    CFURLRef resourcesURL = CFBundleCopyResourcesDirectoryURL(mainBundle);
+    char path[PATH_MAX];
+    if (!CFURLGetFileSystemRepresentation(resourcesURL, TRUE, (UInt8 *)path, PATH_MAX))
+    {
+        // error!
+    }
+    CFRelease(resourcesURL);
+    chdir(path);
+#endif
+    
     if (!wxApp::OnInit())
         return false;
 
