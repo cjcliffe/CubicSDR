@@ -82,7 +82,9 @@ void TuningCanvas::OnIdle(wxIdleEvent &event) {
         } else if (fabs(moveVal) >= 1.0) {
             if (uxDown < -0.275) {
                 if (activeDemod != NULL) {
-                    activeDemod->setFrequency(activeDemod->getFrequency() + (int) (moveVal * fabs(moveVal) * fabs(moveVal) * fabs(moveVal)));
+                    long long freq = activeDemod->getFrequency() + (int) (moveVal * fabs(moveVal) * fabs(moveVal) * fabs(moveVal));
+                    activeDemod->setFrequency(freq);
+                    activeDemod->updateLabel(freq);
                 }
             } else {
                 int amt = (int) (moveVal * fabs(moveVal) * fabs(moveVal) * fabs(moveVal));

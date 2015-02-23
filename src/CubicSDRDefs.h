@@ -1,6 +1,5 @@
 #pragma once
 
-#define CUBICSDR_VERSION "v0.01a"
 #define CUBICSDR_TITLE "CubicSDR " CUBICSDR_VERSION " by Charles J. Cliffe (@ccliffe)"
 
 #ifndef __BYTE_ORDER
