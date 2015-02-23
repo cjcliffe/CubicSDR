@@ -70,8 +70,8 @@ void DemodulatorPreThread::threadMain() {
 
     std::vector<liquid_float_complex> in_buf_data;
     std::vector<liquid_float_complex> out_buf_data;
-    liquid_float_complex carrySample;   // Keep the stream count even to simplify some demod operations
-    bool carrySampleFlag = false;
+//    liquid_float_complex carrySample;   // Keep the stream count even to simplify some demod operations
+//    bool carrySampleFlag = false;
 
     terminated = false;
 
@@ -200,27 +200,29 @@ void DemodulatorPreThread::threadMain() {
 
             resamp->setRefCount(1);
 
-            bool uneven = (numWritten % 2 != 0);
+            resamp->data.assign(resampledData.begin(), resampledData.begin() + numWritten);
 
-            if (!carrySampleFlag && !uneven) {
-                resamp->data.assign(resampledData.begin(), resampledData.begin() + numWritten);
-                carrySampleFlag = false;
-            } else if (!carrySampleFlag && uneven) {
-                resamp->data.assign(resampledData.begin(), resampledData.begin() + (numWritten-1));
-                carrySample = resampledData.back();
-                carrySampleFlag = true;
-            } else if (carrySampleFlag && uneven) {
-                resamp->data.resize(numWritten+1);
-                resamp->data[0] = carrySample;
-                memcpy(&resamp->data[1],&resampledData[0],sizeof(liquid_float_complex)*numWritten);
-                carrySampleFlag = false;
-            } else if (carrySampleFlag && !uneven) {
-                resamp->data.resize(numWritten);
-                resamp->data[0] = carrySample;
-                memcpy(&resamp->data[1],&resampledData[0],sizeof(liquid_float_complex)*(numWritten-1));
-                carrySample = resampledData.back();
-                carrySampleFlag = true;
-            }
+//            bool uneven = (numWritten % 2 != 0);
+
+//            if (!carrySampleFlag && !uneven) {
+//                resamp->data.assign(resampledData.begin(), resampledData.begin() + numWritten);
+//                carrySampleFlag = false;
+//            } else if (!carrySampleFlag && uneven) {
+//                resamp->data.assign(resampledData.begin(), resampledData.begin() + (numWritten-1));
+//                carrySample = resampledData.back();
+//                carrySampleFlag = true;
+//            } else if (carrySampleFlag && uneven) {
+//                resamp->data.resize(numWritten+1);
+//                resamp->data[0] = carrySample;
+//                memcpy(&resamp->data[1],&resampledData[0],sizeof(liquid_float_complex)*numWritten);
+//                carrySampleFlag = false;
+//            } else if (carrySampleFlag && !uneven) {
+//                resamp->data.resize(numWritten);
+//                resamp->data[0] = carrySample;
+//                memcpy(&resamp->data[1],&resampledData[0],sizeof(liquid_float_complex)*(numWritten-1));
+//                carrySample = resampledData.back();
+//                carrySampleFlag = true;
+//            }
 
 
 
