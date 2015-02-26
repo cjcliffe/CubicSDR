@@ -29,7 +29,11 @@ Basic Goals and Status:
     - [x] Bandwidth
     - [x] Color scheme
     - [x] Load/Save session
-    - [ ] Default audio device and settings / preferences
+    - [ ] Audio sample rate
+    - [ ] Device PPM
+    - [ ] Default preferences
+      - [ ] Audio defaults
+      - [ ] Device defaults
     - [ ] Bookmarks
   - Neat Visuals
     - [x] Scope
