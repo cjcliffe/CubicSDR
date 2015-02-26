@@ -24,12 +24,13 @@ Basic Goals and Status:
     - [ ] rtl_tcp
     - [ ] HackRF
     - [ ] Whatever else I can get my hands on
-  - Minimal configuration
+  - Basic Features
     - [x] Device Selection
     - [x] Bandwidth
     - [x] Color scheme
     - [x] Load/Save session
     - [ ] Default audio device and settings / preferences
+    - [ ] Bookmarks
   - Neat Visuals
     - [x] Scope
     - [x] Spectrum
