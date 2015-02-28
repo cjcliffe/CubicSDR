@@ -118,6 +118,11 @@ Advanced Goals:
   - Add tool for converting decimated I/Q recording to video
     - Select video features such as title/demodulation/scope/waterfall/etc
     - Render to video from GL frames->ffmpeg/mencoder /w demodulated audio
+  - Accessability / Control
+    - USB/MIDI control surfaces
+    - Joystick / gamepad input
+    - Vibration / force-feeback
+
 
 Target Platforms:
 ----------------
