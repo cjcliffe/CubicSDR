@@ -16,8 +16,8 @@ Utilizes:
   - wxWidgets (https://www.wxwidgets.org/)
   - CMake (http://www.cmake.org/)
 
-Basic Goals and Status:
-----------------------
+Features and Status:
+--------------------
   - Simple UI
   - Devices
     - [x] RTL-SDR
@@ -94,7 +94,7 @@ Basic Goals and Status:
     - [ ] Group and divide IQ data distribution workload instead of 100% distribution per instance
 
 Advanced Goals:
---------------
+---------------
   - Support shell-based stdin/stdout tools for direct output/playback to/from CLI audio processing apps (i.e. DSD on OSX)
   - Update visuals to support OpenGL ES
   - Basic demodulator filter(s) that can be enabled and tweaked visually
