@@ -75,13 +75,14 @@ Basic Goals and Status:
     - [x] Double-Click to move demodulator to frequency within it's current range
     - [x] Hold alt and drag range on waterfall to set demodulator frequency + bandwidth
     - [x] Hold alt+shift and drag range on waterfall for a new demodulator
-    - [x] Hover demodulator on waterfall and press 's' to toggle squelch
     - [x] Hover demodulator on waterfall and press 'space' to toggle stereo
     - [x] Hover demodulator on waterfall and press 'd' or 'delete' to delete it
     - [x] Keyboard arrows adjust frequency, shift for faster change
     - [ ] Undo / Redo action
-  - IQ Recording and playback
+  - I/Q Recording and playback
     - [ ] Recording
+      - [ ] Record I/Q input data
+      - [ ] Simultaneously record demod decimated I/Q and audio
     - [ ] Playback
   - Audio
     - [ ] Recording
@@ -114,7 +115,9 @@ Advanced Goals:
     * Provide scriptable liquid-dsp modulation for trancievers?
   - "PVR" like mode with waterfall time shifting
   - L/R and surround-sound balance settings for separating and listening to mono streams
-
+  - Add tool for converting decimated I/Q recording to video
+    - Select video features such as title/demodulation/scope/waterfall/etc
+    - Render to video from GL frames->ffmpeg/mencoder /w demodulated audio
 
 Target Platforms:
 ----------------
