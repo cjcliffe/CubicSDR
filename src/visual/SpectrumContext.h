@@ -13,6 +13,12 @@ public:
 
     void Draw(std::vector<float> &points, long long freq, int bandwidth);
 
+    float getFloorValue() const;
+    void setFloorValue(float floorValue);
+    float getCeilValue() const;
+    void setCeilValue(float ceilValue);
+
 private:
     int fft_size;
+    float floorValue, ceilValue;
 };

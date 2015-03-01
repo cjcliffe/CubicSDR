@@ -7,13 +7,30 @@
 #include "ColorTheme.h"
 
 SpectrumContext::SpectrumContext(SpectrumCanvas *canvas, wxGLContext *sharedContext) :
-        PrimaryGLContext(canvas, sharedContext), fft_size(0) {
+        PrimaryGLContext(canvas, sharedContext), fft_size(0), floorValue(0), ceilValue(1) {
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
 
+}
+
+
+float SpectrumContext::getFloorValue() const {
+    return floorValue;
+}
+
+void SpectrumContext::setFloorValue(float floorValue) {
+    this->floorValue = floorValue;
+}
+
+float SpectrumContext::getCeilValue() const {
+    return ceilValue;
+}
+
+void SpectrumContext::setCeilValue(float ceilValue) {
+    this->ceilValue = ceilValue;
 }
 
 void SpectrumContext::Draw(std::vector<float> &points, long long freq, int bandwidth) {
@@ -29,16 +46,76 @@ void SpectrumContext::Draw(std::vector<float> &points, long long freq, int bandw
 
 
     glDisable(GL_TEXTURE_2D);
-    glColor3f(ThemeMgr::mgr.currentTheme->fftLine.r, ThemeMgr::mgr.currentTheme->fftLine.g, ThemeMgr::mgr.currentTheme->fftLine.b);
 
     glEnable(GL_BLEND);
     glEnable(GL_LINE_SMOOTH);
     glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     if (points.size()) {
         glPushMatrix();
         glTranslatef(-1.0f, -0.75f, 0.0f);
         glScalef(2.0f, 1.5f, 1.0f);
+
+
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+        float p = 0;
+        float range = ceilValue-floorValue;
+
+        if (range > 80.0) {
+            float a = 0.5;
+
+            if (range < 100.0) {
+                a *= (20.0-(100.0-range))/20.0;
+            }
+
+            glColor4f(0.2, 0.2, 0.2, a);
+            glBegin(GL_LINES);
+            for (float l = floorValue; l<=ceilValue+100.0; l+=100.0) {
+                p += 100.0/range;
+                glVertex2f(0,p);  glVertex2f(1,p);
+            }
+            glEnd();
+        }
+
+        p = 0;
+        if (range > 20.0 && range < 100.0) {
+            float a = 0.5;
+
+            if (range <= 40.0) {
+                a *= ((range-20.0)/20.0);
+            }
+            if (range >= 80.0) {
+                a *= ((20.0-(range-80.0))/20.0);
+            }
+
+            glColor4f(0.2, 0.2, 0.2, a);
+            glBegin(GL_LINES);
+            for (float l = floorValue; l<=ceilValue+10.0; l+=10.0) {
+                p += 10.0/range;
+                glVertex2f(0,p);  glVertex2f(1,p);
+            }
+            glEnd();
+        }
+
+        p = 0;
+        if (range <= 40.0) {
+            float a = 0.5;
+
+            if (range >= 20.0) {
+                a *= ((20.0-(range-20.0))/20.0);
+            }
+
+            glColor4f(0.2, 0.2, 0.2, a);
+            glBegin(GL_LINES);
+            for (float l = floorValue; l<=ceilValue+1.0; l+=1.0) {
+                p += 1.0/(ceilValue-floorValue);
+                glVertex2f(0,p);  glVertex2f(1,p);
+            }
+            glEnd();
+        }
+
+
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glColor3f(ThemeMgr::mgr.currentTheme->fftLine.r, ThemeMgr::mgr.currentTheme->fftLine.g, ThemeMgr::mgr.currentTheme->fftLine.b);
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(2, GL_FLOAT, 0, &points[0]);
         glDrawArrays(GL_LINE_STRIP, 0, points.size() / 2);

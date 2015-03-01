@@ -586,6 +586,8 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
 
             if (spectrumCanvas) {
                 spectrumCanvas->spectrum_points.assign(spectrum_points.begin(), spectrum_points.end());
+                spectrumCanvas->getSpectrumContext()->setCeilValue(fft_ceil_maa);
+                spectrumCanvas->getSpectrumContext()->setFloorValue(fft_floor_maa);
             }
         }
     }

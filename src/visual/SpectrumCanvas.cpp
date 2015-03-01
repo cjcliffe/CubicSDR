@@ -244,3 +244,6 @@ void SpectrumCanvas::attachWaterfallCanvas(WaterfallCanvas* canvas_in) {
     waterfallCanvas = canvas_in;
 }
 
+SpectrumContext* SpectrumCanvas::getSpectrumContext() {
+    return glContext;
+}

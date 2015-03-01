@@ -25,6 +25,8 @@ public:
     void setData(DemodulatorThreadIQData *input);
     void attachWaterfallCanvas(WaterfallCanvas *canvas_in);
 
+    SpectrumContext* getSpectrumContext();
+
 private:
     void OnPaint(wxPaintEvent& event);
 
