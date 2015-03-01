@@ -129,13 +129,12 @@ void SpectrumCanvas::setData(DemodulatorThreadIQData *input) {
 
         int n;
         for (int i = 0, iMax = fft_size / 2; i < iMax; i++) {
-            n = (i == 0) ? 1 : i;
-            float a = out[n][0];
-            float b = out[n][1];
+            float a = out[i][0];
+            float b = out[i][1];
             float c = sqrt(a * a + b * b);
 
-            float x = out[fft_size / 2 + n][0];
-            float y = out[fft_size / 2 + n][1];
+            float x = out[fft_size / 2 + i][0];
+            float y = out[fft_size / 2 + i][1];
             float z = sqrt(x * x + y * y);
 
             fft_result[i] = (z);
@@ -162,8 +161,6 @@ void SpectrumCanvas::setData(DemodulatorThreadIQData *input) {
 
         fft_floor_ma = fft_floor_ma + (fft_floor - fft_floor_ma) * 0.01;
         fft_floor_maa = fft_floor_maa + (fft_floor_ma - fft_floor_maa) * 0.01;
-
-        // fftwf_execute(plan[1]);
 
         for (int i = 0, iMax = fft_size; i < iMax; i++) {
             float v = (log10(fft_result_maa[i] - fft_floor_maa) / log10(fft_ceil_maa - fft_floor_maa));

@@ -540,13 +540,12 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
 
             int n;
             for (int i = 0, iMax = fft_size / 2; i < iMax; i++) {
-                n = (i == 0) ? 1 : i;
-                float a = out[n][0];
-                float b = out[n][1];
+                float a = out[i][0];
+                float b = out[i][1];
                 float c = sqrt(a * a + b * b);
 
-                float x = out[fft_size / 2 + n][0];
-                float y = out[fft_size / 2 + n][1];
+                float x = out[fft_size / 2 + i][0];
+                float y = out[fft_size / 2 + i][1];
                 float z = sqrt(x * x + y * y);
 
                 fft_result[i] = (z);
