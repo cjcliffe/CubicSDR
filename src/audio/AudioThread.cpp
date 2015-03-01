@@ -40,7 +40,7 @@ void AudioThread::removeThread(AudioThread *other) {
 }
 
 void AudioThread::deviceCleanup() {
-    std::map<int,AudioThread *>::iterator i;
+    std::map<int, AudioThread *>::iterator i;
 
     for (i = deviceController.begin(); i != deviceController.end(); i++) {
         i->second->terminate();
@@ -105,7 +105,7 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
             continue;
         }
 
-        peak += srcmix->currentInput->peak * srcmix->gain;
+        float mixPeak = srcmix->currentInput->peak * srcmix->gain;
 
         if (srcmix->currentInput->channels == 1) {
             for (int i = 0; i < nBufferFrames; i++) {
@@ -122,6 +122,10 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                         continue;
                     }
                     srcmix->audioQueuePtr = 0;
+                    float srcPeak = srcmix->currentInput->peak * srcmix->gain;
+                    if (mixPeak < srcPeak) {
+                        mixPeak = srcPeak;
+                    }
                 }
                 if (srcmix->currentInput && srcmix->currentInput->data.size()) {
                     float v = srcmix->currentInput->data[srcmix->audioQueuePtr] * srcmix->gain;
@@ -145,6 +149,10 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                         continue;
                     }
                     srcmix->audioQueuePtr = 0;
+                    float srcPeak = srcmix->currentInput->peak * srcmix->gain;
+                    if (mixPeak < srcPeak) {
+                        mixPeak = srcPeak;
+                    }
                 }
                 if (srcmix->currentInput && srcmix->currentInput->data.size()) {
                     out[i] = out[i] + srcmix->currentInput->data[srcmix->audioQueuePtr] * srcmix->gain;
@@ -153,13 +161,14 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
             }
         }
 
-        if (peak > 1.0) {
-            for (int i = 0 ; i < nBufferFrames * 2; i ++) {
-                out[i] /= peak;
-            }
-        }
+        peak += mixPeak;
     }
 
+    if (peak > 1.0) {
+        for (int i = 0; i < nBufferFrames * 2; i++) {
+            out[i] /= peak;
+        }
+    }
     return 0;
 }
 

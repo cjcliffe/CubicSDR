@@ -191,8 +191,8 @@ void DemodulatorThread::threadMain() {
                 break;
             }
 
-            amOutputCeilMA = amOutputCeilMA + (amOutputCeil - amOutputCeilMA) * 0.05;
-            amOutputCeilMAA = amOutputCeilMAA + (amOutputCeilMA - amOutputCeilMAA) * 0.05;
+            amOutputCeilMA = amOutputCeilMA + (amOutputCeil - amOutputCeilMA) * 0.025;
+            amOutputCeilMAA = amOutputCeilMAA + (amOutputCeilMA - amOutputCeilMAA) * 0.025;
 
             amOutputCeil = 0;
 
