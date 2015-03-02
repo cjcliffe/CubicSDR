@@ -57,62 +57,35 @@ void SpectrumContext::Draw(std::vector<float> &points, long long freq, int bandw
 
 
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-        float p = 0;
         float range = ceilValue-floorValue;
+        float ranges[3][4] = { { 90.0, 5000.0, 10.0, 100.0 }, { 20.0, 150.0, 10.0, 10.0 }, { -20.0, 30.0, 10.0, 1.0 } };
 
-        if (range > 80.0) {
-            float a = 0.5;
+        for (int i = 0; i < 3; i++) {
+            float p = 0;
+            float rangeMin = ranges[i][0];
+            float rangeMax = ranges[i][1];
+            float rangeTrans = ranges[i][2];
+            float rangeStep = ranges[i][3];
 
-            if (range < 100.0) {
-                a *= (20.0-(100.0-range))/20.0;
+            if (range >= rangeMin && range <= rangeMax) {
+                float a = 1.0;
+
+                if (range <= rangeMin+rangeTrans) {
+                    a *= (range-rangeMin)/rangeTrans;
+                }
+                if (range >= rangeMax-rangeTrans) {
+                    a *= (rangeTrans-(range-(rangeMax-rangeTrans)))/rangeTrans;
+                }
+
+                glColor4f(0.12, 0.12, 0.12, a);
+                glBegin(GL_LINES);
+                for (float l = floorValue; l<=ceilValue+rangeStep; l+=rangeStep) {
+                    p += rangeStep/range;
+                    glVertex2f(0,p);  glVertex2f(1,p);
+                }
+                glEnd();
             }
-
-            glColor4f(0.2, 0.2, 0.2, a);
-            glBegin(GL_LINES);
-            for (float l = floorValue; l<=ceilValue+100.0; l+=100.0) {
-                p += 100.0/range;
-                glVertex2f(0,p);  glVertex2f(1,p);
-            }
-            glEnd();
         }
-
-        p = 0;
-        if (range > 20.0 && range < 100.0) {
-            float a = 0.5;
-
-            if (range <= 40.0) {
-                a *= ((range-20.0)/20.0);
-            }
-            if (range >= 80.0) {
-                a *= ((20.0-(range-80.0))/20.0);
-            }
-
-            glColor4f(0.2, 0.2, 0.2, a);
-            glBegin(GL_LINES);
-            for (float l = floorValue; l<=ceilValue+10.0; l+=10.0) {
-                p += 10.0/range;
-                glVertex2f(0,p);  glVertex2f(1,p);
-            }
-            glEnd();
-        }
-
-        p = 0;
-        if (range <= 40.0) {
-            float a = 0.5;
-
-            if (range >= 20.0) {
-                a *= ((20.0-(range-20.0))/20.0);
-            }
-
-            glColor4f(0.2, 0.2, 0.2, a);
-            glBegin(GL_LINES);
-            for (float l = floorValue; l<=ceilValue+1.0; l+=1.0) {
-                p += 1.0/(ceilValue-floorValue);
-                glVertex2f(0,p);  glVertex2f(1,p);
-            }
-            glEnd();
-        }
-
 
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glColor3f(ThemeMgr::mgr.currentTheme->fftLine.r, ThemeMgr::mgr.currentTheme->fftLine.g, ThemeMgr::mgr.currentTheme->fftLine.b);
