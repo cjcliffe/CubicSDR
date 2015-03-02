@@ -107,7 +107,14 @@ void SpectrumContext::Draw(std::vector<float> &points, long long freq, int bandw
 
     long long firstMhz = (leftFreq / 1000000) * 1000000;
     long double mhzStart = ((long double) (firstMhz - leftFreq) / (long double) (rightFreq - leftFreq)) * 2.0;
+
     long double mhzStep = (100000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
+    float mhzVisualStep = 0.1f;
+
+    if (mhzStep * 0.5 * viewWidth > 400) {
+        mhzStep = (10000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
+        mhzVisualStep = 0.01f;
+    }
 
     long double currentMhz = trunc(floor(firstMhz / 1000000.0));
 
@@ -144,7 +151,7 @@ void SpectrumContext::Draw(std::vector<float> &points, long long freq, int bandw
 
         label.str(std::string());
 
-        currentMhz += 0.1f;
+        currentMhz += mhzVisualStep;
     }
 
     glLineWidth(1.0);
