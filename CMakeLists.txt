@@ -88,6 +88,8 @@ include(${wxWidgets_USE_FILE})
 
 IF (WIN32)
 	set(wxWidgets_USE_STATIC ON)
+
+	set(BUILD_INSTALLER OFF CACHE BOOL "Build Installer")
 	
 	# Audio device selection is not mandatory, dummy audio device is used if none are compiled in.
 	# Can also compile support for more than one simultaneously.
@@ -421,3 +423,19 @@ IF (APPLE AND BUNDLE_APP)
    set(CPACK_BINARY_DRAGNDROP ON)
    include(CPack)
 ENDIF (APPLE AND BUNDLE_APP)
+
+IF (WIN32 AND BUILD_INSTALLER)
+	SET(CPACK_GENERATOR WIX)
+	set(CPACK_PACKAGE_NAME "CubicSDR")
+	set(CPACK_PACKAGE_VENDOR "cubicsdr.com")
+	set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "CubicSDR ${CUBICSDR_VERSION} Installer")
+	set(CPACK_PACKAGE_INSTALL_DIRECTORY "CubicSDR")
+	SET(CPACK_WIX_UPGRADE_GUID "5e6920fb-b7e6-4782-8351-3a3fbb04b52d")
+	SET(CPACK_WIX_PRODUCT_GUID "45c38bb0-cd32-49cf-9d04-2a192abfbda5")
+	SET(CPACK_WIX_PRODUCT_ICON "${PROJECT_SOURCE_DIR}/icon/CubicSDR.ico")
+	SET(CPACK_WIX_UI_BANNER "${CUBICSDR_VERSION} Installer")
+	SET(CPACK_WIX_PROGRAM_MENU_FOLDER "CubicSDR")
+	SET(CPACK_WIX_CMAKE_PACKAGE_REGISTRY "CubicSDR")	
+	
+	INCLUDE(CPack)
+ENDIF (WIN32 AND BUNDLE_INSTALLER)
