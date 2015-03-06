@@ -132,6 +132,7 @@ Target Platforms:
   - [x] OSX
   - [x] Windows
   - [x] Linux
+  - [ ] HTML5
 
 
 License:
