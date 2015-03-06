@@ -41,11 +41,11 @@ Features and Status:
     - [x] Waterfall
     - [ ] Audio Spectrum
     - [ ] More 2D visuals
-      - [ ] Add faint grid for sense of scale
+      - [x] Add faint grid for sense of scale
       - [ ] Indicate outer spectrum edges when zoomed
     - [ ] 3D visuals
   - Demodulation:
-    - [ ] Design a proper architecture for modular expansion :)
+    - [ ] Basic modular expansion
     - [x] Multiple demodulators per IQ stream
     - [x] Audio device selection
     - [x] Modes
@@ -95,6 +95,7 @@ Features and Status:
 
 Advanced Goals:
 ---------------
+  - Design a plan for expansion via modules (dylib/dll/lua)
   - Support shell-based stdin/stdout tools for direct output/playback to/from CLI audio processing apps (i.e. DSD on OSX)
   - Update visuals to support OpenGL ES
   - Basic demodulator filter(s) that can be enabled and tweaked visually
@@ -122,7 +123,9 @@ Advanced Goals:
     - USB/MIDI control surfaces
     - Joystick / gamepad input
     - Vibration / force-feeback
-
+  - Investigate compilation via emscripten using rtl_tcp for input
+    - Create self-contained web server+rtl_tcp bundle for embedded devices
+    - Use emscripten compiled CubicSDR via embedded web browser 
 
 Target Platforms:
 ----------------
