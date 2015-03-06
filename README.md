@@ -125,7 +125,7 @@ Advanced Goals:
     - Vibration / force-feeback
   - Investigate compilation via emscripten using rtl_tcp for input
     - Create self-contained web server+rtl_tcp bundle for embedded devices
-    - Use emscripten compiled CubicSDR via embedded web browser 
+    - Use emscripten compiled CubicSDR via embedded web server 
 
 Target Platforms:
 ----------------
