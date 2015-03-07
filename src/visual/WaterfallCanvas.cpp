@@ -192,7 +192,6 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
             glContext->DrawDemod(lastActiveDemodulator, currentTheme->waterfallHighlight, currentCenterFreq, currentBandwidth);
         }
     }
-    std::cout<<hoverAlpha<<std::endl;
 
     for (int i = 0, iMax = demods.size(); i < iMax; i++) {
         if (activeDemodulator == demods[i] || lastActiveDemodulator == demods[i]) {
