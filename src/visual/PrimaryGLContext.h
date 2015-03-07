@@ -31,7 +31,10 @@ public:
 
     static GLFont &getFont(GLFontSize esize);
 
+    void setHoverAlpha(float hoverAlpha);
+
 private:
     static GLFont fonts[GLFONT_MAX];
     DemodulatorThreadParameters defaultDemodParams;
+    float hoverAlpha;
 };

@@ -50,7 +50,7 @@ void PrimaryGLContext::CheckGLError() {
 }
 
 PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContext) :
-        wxGLContext(canvas, sharedContext) {
+        wxGLContext(canvas, sharedContext), hoverAlpha(1.0) {
 //#ifndef __linux__
 //    SetCurrent(*canvas);
 //    // Pre-load fonts
@@ -214,7 +214,7 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBColor color, lon
     glEnd();
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-    glColor4f(color.r, color.g, color.b, 0.2);
+    glColor4f(color.r, color.g, color.b, 0.2*hoverAlpha);
     glBegin(GL_QUADS);
     glVertex3f((uxPos - 0.5) * 2.0 - ofsLeft, 1.0, 0.0);
     glVertex3f((uxPos - 0.5) * 2.0 - ofsLeft, -1.0, 0.0);
@@ -374,3 +374,6 @@ void PrimaryGLContext::EndDraw() {
     CheckGLError();
 }
 
+void PrimaryGLContext::setHoverAlpha(float hoverAlpha) {
+    this->hoverAlpha = hoverAlpha;
+}
