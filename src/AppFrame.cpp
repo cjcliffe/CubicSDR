@@ -25,6 +25,10 @@
 
 #include <wx/panel.h>
 
+#ifdef __linux__
+#include "CubicSDR.xpm"
+#endif
+
 wxBEGIN_EVENT_TABLE(AppFrame, wxFrame)
 //EVT_MENU(wxID_NEW, AppFrame::OnNewWindow)
 EVT_MENU(wxID_CLOSE, AppFrame::OnClose)
@@ -232,8 +236,12 @@ wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
     Centre();
     Show();
 
+#ifdef __linux__
+    SetIcon(wxICON(cubicsdr));
+#endif
+#ifdef _WIN32
     SetIcon(wxICON(frame_icon));
-
+#endif
     GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), DEFAULT_FREQ));
 
     wxAcceleratorEntry entries[3];
