@@ -232,6 +232,8 @@ wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
     Centre();
     Show();
 
+    SetIcon(wxICON(frame_icon));
+
     GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), DEFAULT_FREQ));
 
     wxAcceleratorEntry entries[3];
