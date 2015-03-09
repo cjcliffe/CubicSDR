@@ -36,7 +36,7 @@ wxEND_EVENT_TABLE()
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         InteractiveCanvas(parent, attribList), spectrumCanvas(NULL), dragState(WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), fft_size(0), waterfall_lines(
                 0), plan(
-        NULL), in(NULL), out(NULL), resampler(NULL), resamplerRatio(0), lastInputBandwidth(0), zoom(1), mouseZoom(1), otherWaterfallCanvas(NULL), polling(true), last_data_size(0), fft_in_data(NULL), fft_last_data(NULL) {
+        NULL), in(NULL), out(NULL), resampler(NULL), resamplerRatio(0), lastInputBandwidth(0), zoom(1), mouseZoom(1), otherWaterfallCanvas(NULL), polling(true), last_data_size(0), fft_in_data(NULL), fft_last_data(NULL), hoverAlpha(1.0) {
 
     glContext = new WaterfallContext(this, &wxGetApp().GetContext(this));
 
@@ -142,6 +142,11 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     int last_type = wxGetApp().getDemodMgr().getLastDemodulatorType();
 
     if (mouseTracker.mouseInView()) {
+        hoverAlpha += (1.0f-hoverAlpha)*0.1f;
+        if (hoverAlpha > 1.5f) {
+            hoverAlpha = 1.5f;
+        }
+        glContext->setHoverAlpha(hoverAlpha);
         if (nextDragState == WF_DRAG_RANGE) {
             float width = (1.0 / (float) ClientSize.x);
             float rangeWidth = mouseTracker.getOriginDeltaMouseX();
@@ -175,6 +180,11 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
             }
         }
     } else {
+        hoverAlpha += (0.0f-hoverAlpha)*0.05f;
+        if (hoverAlpha < 1.0e-5f) {
+            hoverAlpha = 0;
+        }
+        glContext->setHoverAlpha(hoverAlpha);
         if (activeDemodulator) {
             glContext->DrawDemod(activeDemodulator, currentTheme->waterfallHighlight, currentCenterFreq, currentBandwidth);
         }

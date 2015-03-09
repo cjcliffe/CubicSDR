@@ -82,6 +82,7 @@ private:
 
     int lastInputBandwidth;
     float mouseZoom, zoom;
+    float hoverAlpha;
 
     std::vector<liquid_float_complex> shiftBuffer;
     std::vector<liquid_float_complex> resampleBuffer;

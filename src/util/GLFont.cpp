@@ -4,6 +4,10 @@
 #include <fstream>
 #include <algorithm>
 
+#ifndef RES_FOLDER
+#define RES_FOLDER ""
+#endif
+
 GLFontChar::GLFontChar() :
         id(0), x(0), y(0), width(0), height(0), xoffset(0), yoffset(0), xadvance(0), aspect(1), index(0) {
 
@@ -149,7 +153,8 @@ std::string GLFont::getParamValue(std::string param_str) {
 }
 
 void GLFont::loadFont(std::string fontFile) {
-    fontFileSource = fontFile;
+    fontFileSource = RES_FOLDER;
+    fontFileSource.append(fontFile);
 
     std::ifstream input;
     input.open(fontFileSource.c_str(), std::ios::in);
@@ -210,7 +215,8 @@ void GLFont::loadFont(std::string fontFile) {
                 std::string paramValue = getParamValue(param);
 
                 if (paramKey == "file") {
-                    imageFile = paramValue;
+                    imageFile = RES_FOLDER;
+                    imageFile.append(paramValue);
                 }
 //                std::cout << "[" << paramKey << "] = '" << paramValue << "'" << std::endl;
             }

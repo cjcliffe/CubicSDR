@@ -2,11 +2,11 @@ cmake_minimum_required (VERSION 2.8)
 
 SET(CUBICSDR_VERSION_MAJOR "0")
 SET(CUBICSDR_VERSION_MINOR "1")
-SET(CUBICSDR_VERSION_PATCH "0")
+SET(CUBICSDR_VERSION_PATCH "1")
 SET(CUBICSDR_VERSION_REL "beta")
 SET(CUBICSDR_VERSION "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}-${CUBICSDR_VERSION_REL}")
 
-SET(CPACK_PACKAGE_VERSION ${CUBICSDR_VERSION})
+SET(CPACK_PACKAGE_VERSION "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}")
 SET(CPACK_PACKAGE_VERSION_MAJOR ${CUBICSDR_VERSION_MAJOR})
 SET(CPACK_PACKAGE_VERSION_MINOR ${CUBICSDR_VERSION_MINOR})
 SET(CPACK_PACKAGE_VERSION_PATCH ${CUBICSDR_VERSION_PATCH})
@@ -88,6 +88,8 @@ include(${wxWidgets_USE_FILE})
 
 IF (WIN32)
 	set(wxWidgets_USE_STATIC ON)
+
+	set(BUILD_INSTALLER OFF CACHE BOOL "Build Installer")
 	
 	# Audio device selection is not mandatory, dummy audio device is used if none are compiled in.
 	# Can also compile support for more than one simultaneously.
@@ -150,6 +152,8 @@ IF (WIN32)
 ENDIF (WIN32)
 
 IF (UNIX AND NOT APPLE)
+    set(BUILD_DEB OFF CACHE BOOL "Build DEB")
+
     set(RTLSDR_INCLUDE "/usr/local/include" CACHE FILEPATH "RTL-SDR Include Path")
     set(RTLSDR_LIB "/usr/local/lib" CACHE FILEPATH "RTL-SDR Lib Path")
     set(USE_AUDIO_PULSE ON CACHE BOOL "Use Pulse Audio")
@@ -322,11 +326,25 @@ ELSE (MSVC)
 	)
 ENDIF(MSVC)
 
+set(RES_FILES "")
+if(MINGW)
+ set(RES_FILES ${PROJECT_SOURCE_DIR}/cubicsdr.rc)
+ set(CMAKE_RC_COMPILER_INIT windres)
+ ENABLE_LANGUAGE(RC)
+ IF(EX_PLATFORM EQUAL 64)
+	SET(RC_TARGET "pe-x86-64")
+ ELSE(EX_PLATFORM EQUAL 64)
+	SET(RC_TARGET "pe-i386")
+ ENDIF(EX_PLATFORM EQUAL 64)
+	
+ SET(CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> -O coff <DEFINES> -i <SOURCE> -o <OBJECT>")
+endif(MINGW)
 
 IF (NOT BUNDLE_APP)
     configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.fnt")
     configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.png")
-    add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers})
+    configure_files(${PROJECT_SOURCE_DIR}/icon ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} CubicSDR.ico)
+    add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers} ${RES_FILES})
     target_link_libraries(CubicSDR rtlsdr ${LIQUID_LIB} ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
 ENDIF (NOT BUNDLE_APP)
 
@@ -421,3 +439,108 @@ IF (APPLE AND BUNDLE_APP)
    set(CPACK_BINARY_DRAGNDROP ON)
    include(CPack)
 ENDIF (APPLE AND BUNDLE_APP)
+
+IF (WIN32 AND BUILD_INSTALLER)
+	set(CPACK_GENERATOR NSIS)
+	set(CPACK_PACKAGE_NAME "CubicSDR")
+	set(CPACK_PACKAGE_VENDOR "cubicsdr.com")
+	set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "CubicSDR ${CUBICSDR_VERSION} Installer")
+	set(CPACK_PACKAGE_INSTALL_DIRECTORY "CubicSDR")
+	SET(CPACK_NSIS_INSTALLED_ICON_NAME "CubicSDR.ico")
+	SET(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE") 
+	set(CPACK_PACKAGE_ICON "${PROJECT_SOURCE_DIR}/icon\\\\NSIS_Header.bmp")
+	IF(EX_PLATFORM EQUAL 64)
+		SET(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES64")
+		SET(CPACK_NSIS_PACKAGE_NAME "${CPACK_PACKAGE_INSTALL_DIRECTORY}")
+		SET(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "${CPACK_PACKAGE_NAME} ${CPACK_PACKAGE_VERSION}")
+		set(CMAKE_CL_64 TRUE)	# This gets around a bug in the CPack installer name generation for MinGW 64-bit since 2.8
+	ELSE(EX_PLATFORM EQUAL 64)
+		SET(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES")
+		SET(CPACK_NSIS_PACKAGE_NAME "${CPACK_PACKAGE_INSTALL_DIRECTORY} (x86)")
+		SET(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "${CPACK_PACKAGE_NAME} ${CPACK_PACKAGE_VERSION} (x86)")
+		set(CMAKE_CL_64 FALSE)
+	ENDIF(EX_PLATFORM EQUAL 64)
+	
+	set(CPACK_NSIS_EXECUTABLES_DIRECTORY ".") 
+	install(TARGETS CubicSDR RUNTIME DESTINATION .)
+	install(FILES 
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12.fnt
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16.fnt
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18.fnt
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24.fnt
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32.fnt
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48.fnt
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12_0.png
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16_0.png
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18_0.png
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24_0.png
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32_0.png
+        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48_0.png
+        ${PROJECT_SOURCE_DIR}/icon/CubicSDR.ico
+		${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM}/libfftw3f-3.dll
+		DESTINATION .)
+	IF (MSVC)
+	install(FILES 
+		${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/libliquid.dll
+		${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/msvc/${EX_PLATFORM}/rtlsdr.dll
+		${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/msvc/${EX_PLATFORM}/libusb-1.0.dll
+		DESTINATION .)
+	ELSE (MSVC)
+	install(FILES 
+		${PROJECT_SOURCE_DIR}/external/liquid-dsp/gcc/${EX_PLATFORM}/libliquid.dll
+		${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/gcc/${EX_PLATFORM}/librtlsdr.dll
+		${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/gcc/${EX_PLATFORM}/libusb-1.0.dll
+		DESTINATION .)
+	ENDIF(MSVC)
+
+		set(CPACK_PACKAGE_EXECUTABLES CubicSDR "CubicSDR")
+
+	IF (MSVC)
+		install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/external/msvc/${EX_PLATFORM_NAME}/vcredist_${EX_PLATFORM_NAME}.exe DESTINATION vc_redist)
+		set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "ExecWait '\\\"$INSTDIR\\\\vc_redist\\\\vcredist_${EX_PLATFORM_NAME}.exe\\\" /q:a'")
+	ENDIF (MSVC)
+		  
+		  
+	INCLUDE(CPack)	
+ENDIF (WIN32 AND BUILD_INSTALLER)
+
+
+IF (UNIX AND BUILD_DEB) 
+
+        set(CPACK_GENERATOR DEB)
+	set(CPACK_PACKAGE_NAME "CubicSDR")
+	SET(CPACK_DEBIAN_PACKAGE_DEPENDS " librtlsdr0, libfftw3-single3, libwxgtk3.0-0, libpulse0")
+	SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "Charles J. Cliffe <cj@cubicproductions.com>")
+	SET(CPACK_DEBIAN_PACKAGE_DESCRIPTION "CubicSDR Software Defined Radio application v${CUBICSDR_VERSION}")
+	SET(CPACK_DEBIAN_PACKAGE_SECTION "comm")
+        SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
+	SET(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${EX_PLATFORM_NAME}")
+    	
+	ADD_DEFINITIONS(
+	    -DRES_FOLDER="/usr/share/cubicsdr/"
+	    -D_FORTIFY_SOURCE=2
+	)	
+
+        set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,-z,relro")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,relro")
+
+	CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/external/deb/deb_post.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/deb_post.sh" @ONLY IMMEDIATE)
+
+	INSTALL(TARGETS CubicSDR DESTINATION bin)
+        install(FILES 
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12.fnt
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16.fnt
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18.fnt
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24.fnt
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32.fnt
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48.fnt
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12_0.png
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16_0.png
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18_0.png
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24_0.png
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32_0.png
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48_0.png
+	    DESTINATION share/cubicsdr)
+
+	INCLUDE(CPack)
+ENDIF (UNIX AND BUILD_DEB)
