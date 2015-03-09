@@ -152,6 +152,8 @@ IF (WIN32)
 ENDIF (WIN32)
 
 IF (UNIX AND NOT APPLE)
+    set(BUILD_DEB OFF CACHE BOOL "Build DEB")
+
     set(RTLSDR_INCLUDE "/usr/local/include" CACHE FILEPATH "RTL-SDR Include Path")
     set(RTLSDR_LIB "/usr/local/lib" CACHE FILEPATH "RTL-SDR Lib Path")
     set(USE_AUDIO_PULSE ON CACHE BOOL "Use Pulse Audio")
@@ -501,3 +503,44 @@ IF (WIN32 AND BUILD_INSTALLER)
 		  
 	INCLUDE(CPack)	
 ENDIF (WIN32 AND BUILD_INSTALLER)
+
+
+IF (UNIX AND BUILD_DEB) 
+
+        set(CPACK_GENERATOR DEB)
+	set(CPACK_PACKAGE_NAME "CubicSDR")
+	SET(CPACK_DEBIAN_PACKAGE_DEPENDS " librtlsdr0, libfftw3-single3, libwxgtk3.0-0, libpulse0")
+	SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "Charles J. Cliffe <cj@cubicproductions.com>")
+	SET(CPACK_DEBIAN_PACKAGE_DESCRIPTION "CubicSDR Software Defined Radio application v${CUBICSDR_VERSION}")
+	SET(CPACK_DEBIAN_PACKAGE_SECTION "comm")
+        SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
+	SET(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${EX_PLATFORM_NAME}")
+    	
+	ADD_DEFINITIONS(
+	    -DRES_FOLDER="/usr/share/cubicsdr/"
+	    -D_FORTIFY_SOURCE=2
+	)	
+
+        set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,-z,relro")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,relro")
+
+	CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/external/deb/deb_post.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/deb_post.sh" @ONLY IMMEDIATE)
+
+	INSTALL(TARGETS CubicSDR DESTINATION bin)
+        install(FILES 
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12.fnt
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16.fnt
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18.fnt
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24.fnt
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32.fnt
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48.fnt
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12_0.png
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16_0.png
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18_0.png
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24_0.png
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32_0.png
+            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48_0.png
+	    DESTINATION share/cubicsdr)
+
+	INCLUDE(CPack)
+ENDIF (UNIX AND BUILD_DEB)

@@ -40,6 +40,10 @@ wxEND_EVENT_TABLE()
 AppFrame::AppFrame() :
 wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
 
+#ifdef __linux__
+    SetIcon(wxICON(cubicsdr));
+#endif
+
     wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodOpts = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodVisuals = new wxBoxSizer(wxVERTICAL);
@@ -236,9 +240,7 @@ wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
     Centre();
     Show();
 
-#ifdef __linux__
-    SetIcon(wxICON(cubicsdr));
-#endif
+
 #ifdef _WIN32
     SetIcon(wxICON(frame_icon));
 #endif
