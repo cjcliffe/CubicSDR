@@ -47,7 +47,7 @@ void DemodulatorThread::threadMain() {
     firfilt_rrrf firStereoRight = NULL;
 
     // Stereo filters / shifters
-    double firStereoCutoff = 0.5 * ((double) 36000 / (double) AUDIO_FREQUENCY);         // filter cutoff frequency
+    double firStereoCutoff = 0.5 * ((double) 36000 / (double) DEFAULT_AUDIO_SAMPLE_RATE);         // filter cutoff frequency
     float ft = 0.05f;         // filter transition
     float As = 120.0f;         // stop-band attenuation [dB]
     float mu = 0.0f;         // fractional timing offset

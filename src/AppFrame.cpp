@@ -230,8 +230,38 @@ wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
             p++;
         }
 
-        menuBar->Append(menu, wxT("&Device"));
+        menuBar->Append(menu, wxT("Input &Device"));
     }
+
+
+    menu = new wxMenu;
+
+    i = 0;
+
+    for (mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
+        new wxMenu;
+        int menu_id = wxID_AUDIO_BANDWIDTH_BASE + wxID_AUDIO_DEVICE_MULTIPLIER * mdevices_i->first;
+        wxMenu *subMenu = new wxMenu;
+        menu->AppendSubMenu(subMenu,mdevices_i->second.name, wxT("Description?"));
+
+        int j = 0;
+        for (std::vector<unsigned int>::iterator srate = mdevices_i->second.sampleRates.begin(); srate != mdevices_i->second.sampleRates.end(); srate++) {
+            std::stringstream srateName;
+            srateName << ((float)(*srate)/1000.0f) << "kHz";
+            wxMenuItem *itm = subMenu->AppendRadioItem(menu_id+j, srateName.str(), wxT("Description?"));
+
+            if ((*srate) == DEFAULT_AUDIO_SAMPLE_RATE) {
+                itm->Check(true);
+            }
+
+            audioSampleRateMenuItems[menu_id+j] = itm;
+
+            j++;
+        }
+    }
+
+    menuBar->Append(menu, wxT("Audio &Bandwidth"));
+
 
     SetMenuBar(menuBar);
 
@@ -346,6 +376,31 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
     if (event.GetId() >= wxID_DEVICE_ID && event.GetId() <= wxID_DEVICE_ID + devs->size()) {
         wxGetApp().setDevice(event.GetId() - wxID_DEVICE_ID);
     }
+
+
+    if (event.GetId() >= wxID_AUDIO_BANDWIDTH_BASE) {
+        int evId = event.GetId();
+        std::vector<RtAudio::DeviceInfo>::iterator devices_i;
+        std::map<int, RtAudio::DeviceInfo>::iterator mdevices_i;
+
+        int i = 0;
+        for (mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
+               int menu_id = wxID_AUDIO_BANDWIDTH_BASE + wxID_AUDIO_DEVICE_MULTIPLIER * mdevices_i->first;
+
+               int j = 0;
+               for (std::vector<unsigned int>::iterator srate = mdevices_i->second.sampleRates.begin(); srate != mdevices_i->second.sampleRates.end(); srate++) {
+
+                   if (evId == menu_id + j) {
+                       //audioSampleRateMenuItems[menu_id+j];
+                       std::cout << "Would set audio sample rate on device " << mdevices_i->second.name << " (" << mdevices_i->first << ") to " << (*srate) << "Hz" << std::endl;
+                   }
+
+                   j++;
+               }
+               i++;
+           }
+    }
+
 }
 
 void AppFrame::OnClose(wxCommandEvent& WXUNUSED(event)) {

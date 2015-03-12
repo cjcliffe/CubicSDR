@@ -33,6 +33,10 @@
 
 #define wxID_DEVICE_ID 3500
 
+#define wxID_AUDIO_BANDWIDTH_BASE 9000
+#define wxID_AUDIO_DEVICE_MULTIPLIER 50
+
+
 
 // Define a new frame type
 class AppFrame: public wxFrame {
@@ -60,17 +64,15 @@ private:
     MeterCanvas *demodSignalMeter;
     MeterCanvas *demodGainMeter;
     TuningCanvas *demodTuner;
-// event table
 
     DemodulatorInstance *activeDemodulator;
 
     std::vector<RtAudio::DeviceInfo> devices;
     std::map<int,RtAudio::DeviceInfo> inputDevices;
     std::map<int,RtAudio::DeviceInfo> outputDevices;
-    std::map<int,wxMenuItem *> outputDeviceMenuItems;
-
-    std::map<int,wxMenuItem *> sampleRateMenuItems;
-
+    std::map<int, wxMenuItem *> outputDeviceMenuItems;
+    std::map<int, wxMenuItem *> sampleRateMenuItems;
+    std::map<int, wxMenuItem *> audioSampleRateMenuItems;
 
     std::string currentSessionFile;
 
