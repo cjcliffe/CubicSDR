@@ -11,18 +11,6 @@
 #include "RtAudio.h"
 #include "DemodDefs.h"
 
-#ifdef __APPLE__
-#define USE_MIXER 1
-#endif
-
-#ifdef __linux__
-#define USE_MIXER 1
-#endif
-
-#ifdef __WINDOWS_DS__
-#define USE_MIXER 1
-#endif
-
 class AudioThreadInput: public ReferenceCounter {
 public:
     long long frequency;
@@ -96,7 +84,6 @@ private:
     AudioThreadCommandQueue cmdQueue;
     DemodulatorThreadCommandQueue* threadQueueNotify;
 
-#ifdef USE_MIXER
 public:
     void bindThread(AudioThread *other);
     void removeThread(AudioThread *other);
@@ -105,6 +92,5 @@ public:
     static std::map<int,std::thread *> deviceThread;
     static void deviceCleanup();
     std::atomic<std::vector<AudioThread *> *> boundThreads;
-#endif
 };
 

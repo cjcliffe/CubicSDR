@@ -5,26 +5,19 @@
 #include "DemodulatorThread.h"
 #include <memory.h>
 
-#ifdef USE_MIXER
 std::map<int, AudioThread *> AudioThread::deviceController;
 std::map<int, std::thread *> AudioThread::deviceThread;
-#endif
 
 AudioThread::AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify) :
         currentInput(NULL), inputQueue(inputQueue), audioQueuePtr(0), underflowCount(0), terminated(false), active(false), outputDevice(-1), gain(
                 1.0), threadQueueNotify(threadQueueNotify) {
-#ifdef USE_MIXER
     boundThreads = new std::vector<AudioThread *>;
-#endif
 }
 
 AudioThread::~AudioThread() {
-#ifdef USE_MIXER
     delete boundThreads.load();
-#endif
 }
 
-#ifdef USE_MIXER
 void AudioThread::bindThread(AudioThread *other) {
     if (std::find(boundThreads.load()->begin(), boundThreads.load()->end(), other) == boundThreads.load()->end()) {
         boundThreads.load()->push_back(other);
@@ -172,112 +165,6 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
     return 0;
 }
 
-#else
-
-static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames, double streamTime, RtAudioStreamStatus status,
-        void *userData) {
-    AudioThread *src = (AudioThread *) userData;
-    float *out = (float*) outputBuffer;
-    memset(out, 0, nBufferFrames * 2 * sizeof(float));
-    if (status) {
-        std::cout << "Audio buffer underflow.." << (src->underflowCount++) << std::endl;
-    }
-
-    if (src->terminated || !src->active) {
-        if (src->currentInput) {
-            src->currentInput->decRefCount();
-            src->currentInput = NULL;
-        }
-        return 1;
-    }
-
-    if (!src->currentInput) {
-        if (src->inputQueue->empty()) {
-            return 0;
-        }
-        src->inputQueue->pop(src->currentInput);
-        if (src->terminated || !src->active) {
-            src->currentInput->decRefCount();
-            src->currentInput = NULL;
-            return 1;
-        }
-        src->audioQueuePtr = 0;
-        return 0;
-    }
-
-    std::lock_guard < std::mutex > lock(src->currentInput->m_mutex);
-
-    if (src->currentInput->channels == 0 || !src->currentInput->data.size()) {
-        if (!src->inputQueue->empty()) {
-            if (src->currentInput) {
-                src->currentInput->decRefCount();
-                src->currentInput = NULL;
-            }
-            if (src->terminated || !src->active) {
-                return 1;
-            }
-            src->inputQueue->pop(src->currentInput);
-            if (src->terminated || !src->active) {
-                src->currentInput->decRefCount();
-                src->currentInput = NULL;
-                return 1;
-            }
-            src->audioQueuePtr = 0;
-        }
-        return 0;
-    }
-
-    if (src->currentInput->channels == 1) {
-        for (int i = 0; i < nBufferFrames; i++) {
-            if (src->audioQueuePtr >= src->currentInput->data.size()) {
-                if (src->currentInput) {
-                    src->currentInput->decRefCount();
-                    src->currentInput = NULL;
-                }
-                if (src->terminated || !src->active) {
-                    return 1;
-                }
-                src->inputQueue->pop(src->currentInput);
-                if (src->terminated || !src->active) {
-                    src->currentInput->decRefCount();
-                    src->currentInput = NULL;
-                    return 1;
-                }
-                src->audioQueuePtr = 0;
-            }
-            if (src->currentInput && src->currentInput->data.size()) {
-                out[i * 2] = out[i * 2 + 1] = src->currentInput->data[src->audioQueuePtr] * src->gain;
-            }
-            src->audioQueuePtr++;
-        }
-    } else {
-        for (int i = 0, iMax = src->currentInput->channels * nBufferFrames; i < iMax; i++) {
-            if (src->audioQueuePtr >= src->currentInput->data.size()) {
-                if (src->currentInput) {
-                    src->currentInput->decRefCount();
-                    src->currentInput = NULL;
-                }
-                if (src->terminated || !src->active) {
-                    return 1;
-                }
-                src->inputQueue->pop(src->currentInput);
-                if (src->terminated || !src->active) {
-                    src->currentInput->decRefCount();
-                    src->currentInput = NULL;
-                    return 1;
-                }
-                src->audioQueuePtr = 0;
-            }
-            if (src->currentInput && src->currentInput->data.size()) {
-                out[i] = src->currentInput->data[src->audioQueuePtr] * src->gain;
-            }
-            src->audioQueuePtr++;
-        }
-    }
-    return 0;
-}
-#endif
-
 void AudioThread::enumerateDevices(std::vector<RtAudio::DeviceInfo> &devs) {
     RtAudio endac;
 
@@ -334,7 +221,7 @@ void AudioThread::setupDevice(int deviceId) {
     parameters.deviceId = deviceId;
     parameters.nChannels = 2;
     parameters.firstChannel = 0;
-    unsigned int sampleRate = AUDIO_FREQUENCY;
+    unsigned int sampleRate = DEFAULT_AUDIO_SAMPLE_RATE;
     unsigned int bufferFrames = 256;
 
     RtAudio::StreamOptions opts;
@@ -342,7 +229,6 @@ void AudioThread::setupDevice(int deviceId) {
 
     try {
 
-#ifdef USE_MIXER
         if (deviceController.find(outputDevice.load()) != deviceController.end()) {
             deviceController[outputDevice.load()]->removeThread(this);
         }
@@ -365,30 +251,6 @@ void AudioThread::setupDevice(int deviceId) {
         }
         active = true;
 
-#else
-        if (dac.isStreamOpen()) {
-            if (dac.isStreamRunning()) {
-                dac.stopStream();
-            }
-            dac.closeStream();
-        }
-
-        if (deviceId != -1) {
-            active = true;
-            dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &bufferFrames, &audioCallback, (void *) this, &opts);
-            dac.startStream();
-        } else {
-            active = false;
-            AudioThreadInput *dummy;
-            while (!inputQueue->empty()) {  // flush queue
-                inputQueue->pop(dummy);
-                if (dummy) {
-                    dummy->decRefCount();
-                }
-            }
-        }
-
-#endif
     } catch (RtAudioError& e) {
         e.printMessage();
         return;
@@ -439,12 +301,6 @@ void AudioThread::threadMain() {
         }
     }
 
-#if !USE_MIXER
-    AudioThreadInput dummy;
-    inputQueue->push(&dummy);
-#endif
-
-#ifdef USE_MIXER
     if (deviceController[parameters.deviceId] != this) {
         deviceController[parameters.deviceId]->removeThread(this);
     } else {
@@ -459,18 +315,6 @@ void AudioThread::threadMain() {
             e.printMessage();
         }
     }
-#else
-    try {
-        if (dac.isStreamOpen()) {
-            if (dac.isStreamRunning()) {
-                dac.stopStream();
-            }
-            dac.closeStream();
-        }
-    } catch (RtAudioError& e) {
-        e.printMessage();
-    }
-#endif
 
     if (threadQueueNotify != NULL) {
         DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_AUDIO_TERMINATED);
@@ -492,7 +336,6 @@ bool AudioThread::isActive() {
 
 void AudioThread::setActive(bool state) {
 
-#ifdef USE_MIXER
     AudioThreadInput *dummy;
     if (state && !active) {
         while (!inputQueue->empty()) {  // flush queue
@@ -512,22 +355,6 @@ void AudioThread::setActive(bool state) {
         }
     }
     active = state;
-#else
-    if (state && !active && outputDevice != -1) {
-        active = state;
-        AudioThreadCommand command;
-        command.cmd = AudioThreadCommand::AUDIO_THREAD_CMD_SET_DEVICE;
-        command.int_value = outputDevice;
-        cmdQueue.push(command);
-    } else if (active && !state) {
-        active = state;
-        AudioThreadCommand command;
-        command.cmd = AudioThreadCommand::AUDIO_THREAD_CMD_SET_DEVICE;
-        command.int_value = -1;
-        cmdQueue.push(command);
-    }
-
-#endif
 }
 
 AudioThreadCommandQueue *AudioThread::getCommandQueue() {
