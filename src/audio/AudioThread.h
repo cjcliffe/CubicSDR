@@ -32,7 +32,7 @@ public:
 class AudioThreadCommand {
 public:
     enum AudioThreadCommandEnum {
-        AUDIO_THREAD_CMD_NULL, AUDIO_THREAD_CMD_SET_DEVICE
+        AUDIO_THREAD_CMD_NULL, AUDIO_THREAD_CMD_SET_DEVICE, AUDIO_THREAD_CMD_SET_SAMPLE_RATE
     };
 
     AudioThreadCommand() :
@@ -65,8 +65,9 @@ public:
     static void enumerateDevices(std::vector<RtAudio::DeviceInfo> &devs);
 
     void setupDevice(int deviceId);
-    void setInitOutputDevice(int deviceId);
+    void setInitOutputDevice(int deviceId, int sampleRate=-1);
     int getOutputDevice();
+    void setSampleRate(int sampleRate);
     void threadMain();
     void terminate();
 
@@ -80,17 +81,22 @@ public:
 
 private:
     RtAudio dac;
+    unsigned int nBufferFrames;
+    RtAudio::StreamOptions opts;
     RtAudio::StreamParameters parameters;
     AudioThreadCommandQueue cmdQueue;
     DemodulatorThreadCommandQueue* threadQueueNotify;
+    int sampleRate;
 
 public:
     void bindThread(AudioThread *other);
     void removeThread(AudioThread *other);
 
     static std::map<int,AudioThread *> deviceController;
+    static std::map<int,int> deviceSampleRate;
     static std::map<int,std::thread *> deviceThread;
     static void deviceCleanup();
+    static void setDeviceSampleRate(int deviceId, int sampleRate);
     std::atomic<std::vector<AudioThread *> *> boundThreads;
 };
 

@@ -6,11 +6,12 @@
 #include <memory.h>
 
 std::map<int, AudioThread *> AudioThread::deviceController;
+std::map<int, int> AudioThread::deviceSampleRate;
 std::map<int, std::thread *> AudioThread::deviceThread;
 
 AudioThread::AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify) :
         currentInput(NULL), inputQueue(inputQueue), audioQueuePtr(0), underflowCount(0), terminated(false), active(false), outputDevice(-1), gain(
-                1.0), threadQueueNotify(threadQueueNotify) {
+                1.0), threadQueueNotify(threadQueueNotify), sampleRate(DEFAULT_AUDIO_SAMPLE_RATE), nBufferFrames(256) {
     boundThreads = new std::vector<AudioThread *>;
 }
 
@@ -217,18 +218,32 @@ void AudioThread::enumerateDevices(std::vector<RtAudio::DeviceInfo> &devs) {
     }
 }
 
+void AudioThread::setDeviceSampleRate(int deviceId, int sampleRate) {
+    if (deviceController.find(deviceId) != deviceController.end()) {
+        AudioThreadCommand refreshDevice;
+        refreshDevice.cmd = AudioThreadCommand::AUDIO_THREAD_CMD_SET_SAMPLE_RATE;
+        refreshDevice.int_value = sampleRate;
+        deviceController[deviceId]->getCommandQueue()->push(refreshDevice);
+    }
+}
+
+void AudioThread::setSampleRate(int sampleRate) {
+    deviceSampleRate[outputDevice] = sampleRate;
+    this->sampleRate = sampleRate;
+    dac.stopStream();
+    dac.closeStream();
+    dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &nBufferFrames, &audioCallback, (void *) this, &opts);
+    dac.startStream();
+}
+
 void AudioThread::setupDevice(int deviceId) {
     parameters.deviceId = deviceId;
     parameters.nChannels = 2;
     parameters.firstChannel = 0;
-    unsigned int sampleRate = DEFAULT_AUDIO_SAMPLE_RATE;
-    unsigned int bufferFrames = 256;
 
-    RtAudio::StreamOptions opts;
     opts.streamName = "CubicSDR Audio Output";
 
     try {
-
         if (deviceController.find(outputDevice.load()) != deviceController.end()) {
             deviceController[outputDevice.load()]->removeThread(this);
         }
@@ -240,11 +255,18 @@ void AudioThread::setupDevice(int deviceId) {
 
         if (deviceController.find(parameters.deviceId) == deviceController.end()) {
             deviceController[parameters.deviceId] = new AudioThread(NULL, NULL);
-            deviceController[parameters.deviceId]->setInitOutputDevice(parameters.deviceId);
+            int srate = DEFAULT_AUDIO_SAMPLE_RATE;
+            if (deviceSampleRate.find(parameters.deviceId) != deviceSampleRate.end()) {
+                srate = deviceSampleRate[parameters.deviceId];
+            } else {
+                deviceSampleRate[parameters.deviceId] = srate;
+            }
+            deviceController[parameters.deviceId]->setInitOutputDevice(parameters.deviceId, srate);
             deviceController[parameters.deviceId]->bindThread(this);
+
             deviceThread[parameters.deviceId] = new std::thread(&AudioThread::threadMain, deviceController[parameters.deviceId]);
         } else if (deviceController[parameters.deviceId] == this) {
-            dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &bufferFrames, &audioCallback, (void *) this, &opts);
+            dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &nBufferFrames, &audioCallback, (void *) this, &opts);
             dac.startStream();
         } else {
             deviceController[parameters.deviceId]->bindThread(this);
@@ -267,8 +289,16 @@ int AudioThread::getOutputDevice() {
     return outputDevice;
 }
 
-void AudioThread::setInitOutputDevice(int deviceId) {
+void AudioThread::setInitOutputDevice(int deviceId, int sampleRate) {
     outputDevice = deviceId;
+    if (sampleRate == -1) {
+        if (deviceSampleRate.find(parameters.deviceId) != deviceSampleRate.end()) {
+           sampleRate = deviceSampleRate[deviceId];
+        }
+    } else {
+        deviceSampleRate[deviceId] = sampleRate;
+    }
+    this->sampleRate = sampleRate;
 }
 
 void AudioThread::threadMain() {
@@ -298,6 +328,9 @@ void AudioThread::threadMain() {
 
         if (command.cmd == AudioThreadCommand::AUDIO_THREAD_CMD_SET_DEVICE) {
             setupDevice(command.int_value);
+        }
+        if (command.cmd == AudioThreadCommand::AUDIO_THREAD_CMD_SET_SAMPLE_RATE) {
+            setSampleRate(command.int_value);
         }
     }
 

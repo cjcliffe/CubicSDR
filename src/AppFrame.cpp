@@ -392,7 +392,8 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
 
                    if (evId == menu_id + j) {
                        //audioSampleRateMenuItems[menu_id+j];
-                       std::cout << "Would set audio sample rate on device " << mdevices_i->second.name << " (" << mdevices_i->first << ") to " << (*srate) << "Hz" << std::endl;
+                       //std::cout << "Would set audio sample rate on device " << mdevices_i->second.name << " (" << mdevices_i->first << ") to " << (*srate) << "Hz" << std::endl;
+                       AudioThread::setDeviceSampleRate(mdevices_i->first, *srate);
                    }
 
                    j++;
