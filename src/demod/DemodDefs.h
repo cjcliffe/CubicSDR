@@ -21,6 +21,7 @@ public:
         DEMOD_THREAD_CMD_NULL,
         DEMOD_THREAD_CMD_SET_BANDWIDTH,
         DEMOD_THREAD_CMD_SET_FREQUENCY,
+        DEMOD_THREAD_CMD_SET_AUDIO_RATE,
         DEMOD_THREAD_CMD_DEMOD_PREPROCESS_TERMINATED,
         DEMOD_THREAD_CMD_DEMOD_TERMINATED,
         DEMOD_THREAD_CMD_AUDIO_TERMINATED
@@ -78,9 +79,13 @@ public:
     msresamp_rrrf audioResampler;
     msresamp_rrrf stereoResampler;
     double audioResampleRatio;
+    int audioSampleRate;
+
+    firfilt_rrrf firStereoLeft;
+    firfilt_rrrf firStereoRight;
 
     DemodulatorThreadPostIQData() :
-            sampleRate(0), audioResampler(NULL), stereoResampler(NULL), audioResampleRatio(0) {
+            sampleRate(0), audioResampler(NULL), stereoResampler(NULL), audioResampleRatio(0), audioSampleRate(0), firStereoLeft(NULL), firStereoRight(NULL) {
 
     }
 

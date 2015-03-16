@@ -50,6 +50,8 @@ void DemodulatorInstance::run() {
 
     currentFrequency = demodulatorPreThread->getParams().frequency;
     currentDemodType = demodulatorThread->getDemodulatorType();
+    currentAudioSampleRate = AudioThread::deviceSampleRate[getOutputDevice()];
+    demodulatorPreThread->getParams().audioSampleRate = currentAudioSampleRate;
 
     t_Audio = new std::thread(&AudioThread::threadMain, audioThread);
 
@@ -215,6 +217,8 @@ void DemodulatorInstance::setOutputDevice(int device_id) {
     if (!active) {
         audioThread->setInitOutputDevice(device_id);
     } else if (audioThread) {
+        setAudioSampleRate(AudioThread::deviceSampleRate[device_id]);
+
         AudioThreadCommand command;
         command.cmd = AudioThreadCommand::AUDIO_THREAD_CMD_SET_DEVICE;
         command.int_value = device_id;
@@ -225,10 +229,10 @@ void DemodulatorInstance::setOutputDevice(int device_id) {
 
 int DemodulatorInstance::getOutputDevice() {
     if (currentOutputDevice == -1) {
-        return audioThread->getOutputDevice();
-    } else {
-        return currentOutputDevice;
+        currentOutputDevice = audioThread->getOutputDevice();
     }
+
+    return currentOutputDevice;
 }
 
 void DemodulatorInstance::checkBandwidth() {
@@ -301,6 +305,28 @@ long long DemodulatorInstance::getFrequency() {
     }
     return currentFrequency;
 }
+
+
+void DemodulatorInstance::setAudioSampleRate(int sampleRate) {
+    if (terminated) {
+        currentAudioSampleRate = sampleRate;
+        demodulatorPreThread->getParams().audioSampleRate = sampleRate;
+    } else if (demodulatorPreThread && threadQueueCommand) {
+        DemodulatorThreadCommand command;
+        command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_AUDIO_RATE;
+        currentAudioSampleRate = sampleRate;
+        command.llong_value = sampleRate;
+        threadQueueCommand->push(command);
+    }
+}
+
+int DemodulatorInstance::getAudioSampleRate() {
+    if (!currentAudioSampleRate) {
+        currentAudioSampleRate = audioThread->getSampleRate();
+    }
+    return currentAudioSampleRate;
+}
+
 
 void DemodulatorInstance::setGain(float gain_in) {
     audioThread->setGain(gain_in);

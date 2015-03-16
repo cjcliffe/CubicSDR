@@ -11,7 +11,7 @@
 DemodulatorPreThread::DemodulatorPreThread(DemodulatorThreadInputQueue* iqInputQueue, DemodulatorThreadPostInputQueue* iqOutputQueue,
         DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify) :
         iqInputQueue(iqInputQueue), iqOutputQueue(iqOutputQueue), terminated(false), initialized(false), audioResampler(NULL), stereoResampler(NULL), iqResampleRatio(
-                1), audioResampleRatio(1), iqResampler(NULL), commandQueue(NULL), threadQueueNotify(threadQueueNotify), threadQueueControl(
+                1), audioResampleRatio(1), firStereoRight(NULL), firStereoLeft(NULL), iqResampler(NULL), commandQueue(NULL), threadQueueNotify(threadQueueNotify), threadQueueControl(
                 threadQueueControl) {
 
     freqShifter = nco_crcf_create(LIQUID_VCO);
@@ -36,8 +36,27 @@ void DemodulatorPreThread::initialize() {
     audioResampler = msresamp_rrrf_create(audioResampleRatio, As);
     stereoResampler = msresamp_rrrf_create(audioResampleRatio, As);
 
+    // Stereo filters / shifters
+    double firStereoCutoff = 0.5 * ((double) 36000 / (double) params.audioSampleRate);         // filter cutoff frequency
+    float ft = 0.05f;         // filter transition
+    float mu = 0.0f;         // fractional timing offset
+
+    if (firStereoCutoff < 0) {
+        firStereoCutoff = 0;
+    }
+
+    if (firStereoCutoff > 0.5) {
+        firStereoCutoff = 0.5;
+    }
+
+    unsigned int h_len = estimate_req_filter_len(ft, As);
+    float *h = new float[h_len];
+    liquid_firdes_kaiser(h_len, firStereoCutoff, As, mu, h);
+
+    firStereoLeft = firfilt_rrrf_create(h, h_len);
+    firStereoRight = firfilt_rrrf_create(h, h_len);
+
     initialized = true;
-//    std::cout << "inputResampleRate " << params.bandwidth << std::endl;
     lastParams = params;
 }
 
@@ -100,7 +119,11 @@ void DemodulatorPreThread::threadMain() {
                     bandwidthChanged = true;
                     break;
                 case DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_FREQUENCY:
-                    params.frequency = command.llong_value;
+                    params.frequency = tempParams.frequency = command.llong_value;
+                    break;
+                case DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_AUDIO_RATE:
+                    tempParams.audioSampleRate = (int)command.llong_value;
+                    rateChanged = true;
                     break;
                 default:
                     break;
@@ -228,7 +251,10 @@ void DemodulatorPreThread::threadMain() {
 
             resamp->audioResampleRatio = audioResampleRatio;
             resamp->audioResampler = audioResampler;
+            resamp->audioSampleRate = params.audioSampleRate;
             resamp->stereoResampler = stereoResampler;
+            resamp->firStereoLeft = firStereoLeft;
+            resamp->firStereoRight = firStereoRight;
             resamp->sampleRate = params.bandwidth;
 
             iqOutputQueue->push(resamp);
@@ -245,23 +271,34 @@ void DemodulatorPreThread::threadMain() {
                 case DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS:
                     msresamp_crcf_destroy(iqResampler);
 
-
                     if (result.iqResampler) {
                         iqResampler = result.iqResampler;
                         iqResampleRatio = result.iqResampleRatio;
+                    }
+
+                    if (result.firStereoLeft) {
+                        firStereoLeft = result.firStereoLeft;
+                    }
+
+                    if (result.firStereoRight) {
+                        firStereoRight = result.firStereoRight;
                     }
 
                     if (result.audioResampler) {
                         audioResampler = result.audioResampler;
                         audioResampleRatio = result.audioResamplerRatio;
                         stereoResampler = result.stereoResampler;
+                    }
+
+                    if (result.audioSampleRate) {
                         params.audioSampleRate = result.audioSampleRate;
                     }
 
-                    if (params.bandwidth) {
+                    if (result.bandwidth) {
                         params.bandwidth = result.bandwidth;
                     }
-                    if (params.sampleRate) {
+
+                    if (result.sampleRate) {
                         params.sampleRate = result.sampleRate;
                     }
                     break;

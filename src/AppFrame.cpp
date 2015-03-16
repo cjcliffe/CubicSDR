@@ -251,9 +251,9 @@ wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
             wxMenuItem *itm = subMenu->AppendRadioItem(menu_id+j, srateName.str(), wxT("Description?"));
 
             if ((*srate) == DEFAULT_AUDIO_SAMPLE_RATE) {
+                AudioThread::deviceSampleRate[mdevices_i->first] = DEFAULT_AUDIO_SAMPLE_RATE;
                 itm->Check(true);
             }
-
             audioSampleRateMenuItems[menu_id+j] = itm;
 
             j++;

@@ -68,6 +68,7 @@ public:
     void setInitOutputDevice(int deviceId, int sampleRate=-1);
     int getOutputDevice();
     void setSampleRate(int sampleRate);
+    int getSampleRate();
     void threadMain();
     void terminate();
 

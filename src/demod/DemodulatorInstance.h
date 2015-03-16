@@ -73,6 +73,11 @@ public:
 
     void setFrequency(long long freq);
     long long getFrequency();
+
+    void setAudioSampleRate(int sampleRate);
+    int getAudioSampleRate();
+
+
 private:
 
     void checkBandwidth();
@@ -90,4 +95,5 @@ private:
     int currentBandwidth;
     int currentDemodType;
     int currentOutputDevice;
+    int currentAudioSampleRate;
   };

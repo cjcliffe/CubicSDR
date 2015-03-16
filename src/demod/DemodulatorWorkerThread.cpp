@@ -49,6 +49,26 @@ void DemodulatorWorkerThread::threadMain() {
                 result.audioResampler = msresamp_rrrf_create(result.audioResamplerRatio, As);
                 result.stereoResampler = msresamp_rrrf_create(result.audioResamplerRatio, As);
                 result.audioSampleRate = filterCommand.audioSampleRate;
+
+                // Stereo filters / shifters
+                double firStereoCutoff = 0.5 * ((double) 36000 / (double) filterCommand.audioSampleRate);         // filter cutoff frequency
+                float ft = 0.05f;         // filter transition
+                float mu = 0.0f;         // fractional timing offset
+
+                if (firStereoCutoff < 0) {
+                    firStereoCutoff = 0;
+                }
+
+                if (firStereoCutoff > 0.5) {
+                    firStereoCutoff = 0.5;
+                }
+
+                unsigned int h_len = estimate_req_filter_len(ft, As);
+                float *h = new float[h_len];
+                liquid_firdes_kaiser(h_len, firStereoCutoff, As, mu, h);
+
+                result.firStereoLeft = firfilt_rrrf_create(h, h_len);
+                result.firStereoRight = firfilt_rrrf_create(h, h_len);
             }
 
             if (filterCommand.bandwidth) {

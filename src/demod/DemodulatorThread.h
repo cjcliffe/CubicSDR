@@ -75,6 +75,7 @@ protected:
     std::atomic<bool> stereo;
     std::atomic<bool> terminated;
     std::atomic<int> demodulatorType;
+    int audioSampleRate;
 
     DemodulatorThreadCommandQueue* threadQueueNotify;
     DemodulatorThreadControlCommandQueue *threadQueueControl;
