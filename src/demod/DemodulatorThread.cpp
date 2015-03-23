@@ -222,7 +222,7 @@ void DemodulatorThread::threadMain() {
                 demodStereoData.resize(bufSize);
             }
 
-            double freq = (2.0 * M_PI) * (((double) abs(38000)) / ((double) inp->sampleRate));
+            double freq = (2.0 * M_PI) * ((double) 38000) / ((double) inp->sampleRate);
 
             if (stereoShiftFrequency != freq) {
                 nco_crcf_set_frequency(stereoShifter, freq);

@@ -303,8 +303,10 @@ void AudioThread::setupDevice(int deviceId) {
         if (deviceSampleRate.find(parameters.deviceId) != deviceSampleRate.end()) {
             sampleRate = deviceSampleRate[parameters.deviceId];
         } else {
-            sampleRate = DEFAULT_AUDIO_SAMPLE_RATE;
-            deviceSampleRate[parameters.deviceId] = sampleRate;
+        	std::cout << "Error, device sample rate wasn't initialized?" << std::endl;
+        	return;
+//            sampleRate = AudioThread::getDefaultAudioSampleRate();
+//            deviceSampleRate[parameters.deviceId] = sampleRate;
         }
 
         if (deviceController.find(parameters.deviceId) == deviceController.end()) {

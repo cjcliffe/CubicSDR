@@ -1,5 +1,5 @@
 /* XPM */
-static char *cubicsdr_xpm[] = {
+static char const *cubicsdr_xpm[] = {
 /* columns rows colors chars-per-pixel */
 "256 256 256 2 ",
 "   c #010101",

@@ -164,7 +164,6 @@ wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
         i++;
     }
 
-    i = 0;
 
     for (mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
         wxMenuItem *itm = menu->AppendRadioItem(wxID_RT_AUDIO_DEVICE + mdevices_i->first, mdevices_i->second.name, wxT("Description?"));
@@ -236,7 +235,30 @@ wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
 
     menu = new wxMenu;
 
-    i = 0;
+
+	#define NUM_RATES_DEFAULT 4
+    int desired_rates[NUM_RATES_DEFAULT] = { 48000, 44100, 96000, 192000 };
+
+    for (mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
+    	int desired_rate = 0;
+    	int desired_rank = NUM_RATES_DEFAULT+1;
+
+        for (std::vector<unsigned int>::iterator srate = mdevices_i->second.sampleRates.begin(); srate != mdevices_i->second.sampleRates.end(); srate++) {
+        	for (i = 0; i < NUM_RATES_DEFAULT; i++) {
+        		if (desired_rates[i] == (*srate)) {
+        			if (desired_rank > i) {
+        				desired_rank = i;
+        				desired_rate = (*srate);
+        			}
+        		}
+        	}
+        }
+
+		if (desired_rank > NUM_RATES_DEFAULT) {
+			desired_rate = mdevices_i->second.sampleRates.back();
+		}
+        AudioThread::deviceSampleRate[mdevices_i->first] = desired_rate;
+    }
 
     for (mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
         new wxMenu;
@@ -250,8 +272,7 @@ wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
             srateName << ((float)(*srate)/1000.0f) << "kHz";
             wxMenuItem *itm = subMenu->AppendRadioItem(menu_id+j, srateName.str(), wxT("Description?"));
 
-            if ((*srate) == DEFAULT_AUDIO_SAMPLE_RATE) {
-                AudioThread::deviceSampleRate[mdevices_i->first] = DEFAULT_AUDIO_SAMPLE_RATE;
+            if ((*srate) == AudioThread::deviceSampleRate[mdevices_i->first]) {
                 itm->Check(true);
             }
             audioSampleRateMenuItems[menu_id+j] = itm;
