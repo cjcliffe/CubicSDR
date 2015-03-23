@@ -683,7 +683,12 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
                     near_dist = dist;
                 }
 
-                if (dist <= halfBw && dist >= (int) ((float) halfBw / (1.5 - (0.65 * (1.0-(float)(wxGetApp().getSampleRate() - getBandwidth())/(float)wxGetApp().getSampleRate()))))) {
+
+                if (dist <= halfBw  && dist >= (int)((float) halfBw / 1.5)) {
+                    if ((freqDiff > 0 && activeDemodulator->getDemodulatorType() == DEMOD_TYPE_USB) ||
+                            (freqDiff < 0 && activeDemodulator->getDemodulatorType() == DEMOD_TYPE_LSB)) {
+                        continue;
+                    }
                     long edge_dist = abs(halfBw - dist);
                     if (edge_dist < near_dist) {
                         activeDemodulator = demod;
@@ -704,9 +709,13 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
                 SetCursor(wxCURSOR_SIZEWE);
 
                 if (freqDiff > 0) {
-                    nextDragState = WF_DRAG_BANDWIDTH_LEFT;
+                    if (activeDemodulator->getDemodulatorType() != DEMOD_TYPE_USB) {
+                        nextDragState = WF_DRAG_BANDWIDTH_LEFT;
+                    }
                 } else {
-                    nextDragState = WF_DRAG_BANDWIDTH_RIGHT;
+                    if (activeDemodulator->getDemodulatorType() != DEMOD_TYPE_LSB) {
+                        nextDragState = WF_DRAG_BANDWIDTH_RIGHT;
+                    }
                 }
 
                 mouseTracker.setVertDragLock(true);

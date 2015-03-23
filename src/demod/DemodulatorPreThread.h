@@ -58,6 +58,9 @@ protected:
     msresamp_rrrf stereoResampler;
     double audioResampleRatio;
 
+    firfilt_rrrf firStereoLeft;
+    firfilt_rrrf firStereoRight;
+
     DemodulatorThreadParameters params;
     DemodulatorThreadParameters lastParams;
 

@@ -16,14 +16,13 @@ public:
 
     DemodulatorWorkerThreadResult() :
             cmd(DEMOD_WORKER_THREAD_RESULT_NULL), iqResampler(NULL), iqResampleRatio(0), audioResampler(NULL), stereoResampler(NULL), audioResamplerRatio(
-                    0), sampleRate(0), bandwidth(0), audioSampleRate(0) {
+                    0), firStereoLeft(NULL), firStereoRight(NULL), sampleRate(0), bandwidth(0), audioSampleRate(0) {
 
     }
 
     DemodulatorWorkerThreadResult(DemodulatorThreadResultEnum cmd) :
-            cmd(cmd), iqResampler(NULL), iqResampleRatio(0), audioResampler(NULL), stereoResampler(NULL), audioResamplerRatio(0), sampleRate(0), bandwidth(
-                    0), audioSampleRate(0) {
-
+            DemodulatorWorkerThreadResult() {
+        this->cmd = cmd;
     }
 
     DemodulatorThreadResultEnum cmd;
@@ -33,6 +32,9 @@ public:
     msresamp_rrrf audioResampler;
     msresamp_rrrf stereoResampler;
     double audioResamplerRatio;
+
+    firfilt_rrrf firStereoLeft;
+    firfilt_rrrf firStereoRight;
 
     long long sampleRate;
     unsigned int bandwidth;

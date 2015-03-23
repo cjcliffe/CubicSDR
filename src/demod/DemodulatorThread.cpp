@@ -16,7 +16,7 @@ DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* iqInputQue
         iqInputQueue(iqInputQueue), audioVisOutputQueue(NULL), audioOutputQueue(NULL), iqAutoGain(NULL), amOutputCeil(1), amOutputCeilMA(1), amOutputCeilMAA(
                 1), stereo(false), terminated(
         false), demodulatorType(DEMOD_TYPE_FM), threadQueueNotify(threadQueueNotify), threadQueueControl(threadQueueControl), squelchLevel(0), signalLevel(
-                0), squelchEnabled(false) {
+                0), squelchEnabled(false), audioSampleRate(0) {
 
     demodFM = freqdem_create(0.5);
     demodAM_USB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_USB, 1);
@@ -45,29 +45,6 @@ void DemodulatorThread::threadMain() {
     msresamp_rrrf stereoResampler = NULL;
     firfilt_rrrf firStereoLeft = NULL;
     firfilt_rrrf firStereoRight = NULL;
-
-    // Stereo filters / shifters
-    double firStereoCutoff = 0.5 * ((double) 36000 / (double) AUDIO_FREQUENCY);         // filter cutoff frequency
-    float ft = 0.05f;         // filter transition
-    float As = 120.0f;         // stop-band attenuation [dB]
-    float mu = 0.0f;         // fractional timing offset
-
-    if (firStereoCutoff < 0) {
-        firStereoCutoff = 0;
-    }
-
-    if (firStereoCutoff > 0.5) {
-        firStereoCutoff = 0.5;
-    }
-
-    unsigned int h_len = estimate_req_filter_len(ft, As);
-    float *h = new float[h_len];
-    liquid_firdes_kaiser(h_len, firStereoCutoff, As, mu, h);
-
-    firStereoLeft = firfilt_rrrf_create(h, h_len);
-    firStereoRight = firfilt_rrrf_create(h, h_len);
-
-    delete h;
 
     liquid_float_complex x, y, z[2];
     float rz[2];
@@ -124,16 +101,34 @@ void DemodulatorThread::threadMain() {
         if (audioResampler == NULL) {
             audioResampler = inp->audioResampler;
             stereoResampler = inp->stereoResampler;
+            firStereoLeft = inp->firStereoLeft;
+            firStereoRight = inp->firStereoRight;
+            audioSampleRate = inp->audioSampleRate;
         } else if (audioResampler != inp->audioResampler) {
             msresamp_rrrf_destroy(audioResampler);
             msresamp_rrrf_destroy(stereoResampler);
             audioResampler = inp->audioResampler;
             stereoResampler = inp->stereoResampler;
+            audioSampleRate = inp->audioSampleRate;
 
             if (demodAM) {
                 ampmodem_reset(demodAM);
             }
             freqdem_reset(demodFM);
+        }
+
+        if (firStereoLeft != inp->firStereoLeft) {
+            if (firStereoLeft != NULL) {
+                firfilt_rrrf_destroy(firStereoLeft);
+            }
+            firStereoLeft = inp->firStereoLeft;
+        }
+
+        if (firStereoRight != inp->firStereoRight) {
+            if (firStereoRight != NULL) {
+                firfilt_rrrf_destroy(firStereoRight);
+            }
+            firStereoRight = inp->firStereoRight;
         }
 
         if (agcData.size() != bufSize) {
@@ -227,7 +222,7 @@ void DemodulatorThread::threadMain() {
                 demodStereoData.resize(bufSize);
             }
 
-            double freq = (2.0 * M_PI) * (((double) abs(38000)) / ((double) inp->sampleRate));
+            double freq = (2.0 * M_PI) * ((double) 38000) / ((double) inp->sampleRate);
 
             if (stereoShiftFrequency != freq) {
                 nco_crcf_set_frequency(stereoShifter, freq);
@@ -274,6 +269,7 @@ void DemodulatorThread::threadMain() {
                     outputBuffers.push_back(ati);
                 }
 
+                ati->sampleRate = audioSampleRate;
                 ati->setRefCount(1);
 
                 if (stereo) {

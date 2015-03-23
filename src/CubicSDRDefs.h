@@ -42,7 +42,6 @@ const char filePathSeparator =
 #define DEFAULT_FFT_SIZE 2048
 
 #define DEFAULT_FREQ 100000000
-#define AUDIO_FREQUENCY 44100
 #define DEFAULT_DEMOD_TYPE 1
 #define DEFAULT_DEMOD_BW 200000
 
