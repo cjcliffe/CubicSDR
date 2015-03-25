@@ -24,7 +24,7 @@ TuningContext::TuningContext(TuningCanvas *canvas, wxGLContext *sharedContext) :
     glLoadIdentity();
 
     comma_locale = std::locale(std::locale(), new comma_numpunct());
-    freqStr.imbue(comma_locale);
+    freqStrFormatted.imbue(comma_locale);
 }
 
 void TuningContext::DrawBegin() {
@@ -63,6 +63,51 @@ void TuningContext::DrawEnd() {
     CheckGLError();
 }
 
+void TuningContext::DrawTuner(long long freq, int count, float displayPos, float displayWidth) {
+    GLint vp[4];
+    glGetIntegerv( GL_VIEWPORT, vp);
+
+    float viewHeight = (float) vp[3];
+    float viewWidth = (float) vp[2];
+
+    freqStr.str("");
+    freqStr << freq;
+    std::string freqChars = freqStr.str();
+
+    PrimaryGLContext::GLFontSize fontSize = GLFONT_SIZE24;
+    int fontHeight = 24;
+
+    if (viewHeight < 28) {
+        fontSize = GLFONT_SIZE18;
+        fontHeight = 18;
+    }
+    if (viewHeight < 24) {
+        fontSize = GLFONT_SIZE16;
+        fontHeight = 16;
+    }
+    if (viewHeight < 18) {
+        fontSize = GLFONT_SIZE12;
+        fontHeight = 12;
+    }
+
+    glColor3f(ThemeMgr::mgr.currentTheme->text.r, ThemeMgr::mgr.currentTheme->text.g, ThemeMgr::mgr.currentTheme->text.b);
+    int numChars = freqChars.length();
+    int ofs = count-numChars;
+    for (int i = ofs; i < count; i++) {
+        float xpos = displayPos + (displayWidth/(float)count)*(float)i+((displayWidth/2.0)/(float)count);
+        getFont(fontSize).drawString(freqStr.str().substr(i-ofs,1), xpos, 0, fontHeight, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+    }
+
+    glColor3f(0.65, 0.65, 0.65);
+    glBegin(GL_LINES);
+    for (int i = count; i >= 0; i--) {
+        float xpos = displayPos + (displayWidth/(float)count)*(float)i;
+        glVertex2f(xpos, -1.0);
+        glVertex2f(xpos, 1.0);
+    }
+    glEnd();
+}
+
 void TuningContext::DrawDemodFreqBw(long long freq, unsigned int bw, long long center) {
     GLint vp[4];
     glGetIntegerv( GL_VIEWPORT, vp);
@@ -70,6 +115,14 @@ void TuningContext::DrawDemodFreqBw(long long freq, unsigned int bw, long long c
     float viewHeight = (float) vp[3];
     float viewWidth = (float) vp[2];
 
+    #define NUM_BINS 11
+    short num_bin[NUM_BINS] = { 0, 0, 1, 0, 5, 7, 0, 0, 0, 0, 0 };
+
+    DrawTuner(freq,11,-1.0,(1.0/3.0)*2.0);
+    DrawTuner(bw,7,-1.0+(2.25/3.0),(1.0/4.0)*2.0);
+    DrawTuner(center,11,-1.0+(2.0/3.0)*2.0,(1.0/3.0)*2.0);
+
+    /*
     PrimaryGLContext::GLFontSize fontSize = GLFONT_SIZE16;
 
     int fontHeight = 16;
@@ -118,6 +171,6 @@ void TuningContext::DrawDemodFreqBw(long long freq, unsigned int bw, long long c
     glVertex2f(0.275, -1.0);
     glVertex2f(0.275, 1.0);
     glEnd();
-
+     */
 }
 
