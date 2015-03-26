@@ -108,15 +108,27 @@ void TuningContext::DrawTuner(long long freq, int count, float displayPos, float
     glEnd();
 }
 
+int TuningContext::GetTunerDigitIndex(float mPos, int count, float displayPos, float displayWidth) {
+    mPos -= 0.5;
+    mPos *= 2.0;
+
+    float delta = mPos-displayPos;
+
+    if (delta < 0 || delta > displayWidth) {
+        return 0;
+    }
+
+    int index = floor((delta/displayWidth)*(count));
+
+    return count-index;
+}
+
 void TuningContext::DrawDemodFreqBw(long long freq, unsigned int bw, long long center) {
     GLint vp[4];
     glGetIntegerv( GL_VIEWPORT, vp);
 
     float viewHeight = (float) vp[3];
     float viewWidth = (float) vp[2];
-
-    #define NUM_BINS 11
-    short num_bin[NUM_BINS] = { 0, 0, 1, 0, 5, 7, 0, 0, 0, 0, 0 };
 
     DrawTuner(freq,11,-1.0,(1.0/3.0)*2.0);
     DrawTuner(bw,7,-1.0+(2.25/3.0),(1.0/4.0)*2.0);

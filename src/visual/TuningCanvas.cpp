@@ -110,6 +110,23 @@ void TuningCanvas::OnIdle(wxIdleEvent &event) {
 
 void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseMoved(event);
+    int index;
+
+    index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(),11,-1.0,(1.0/3.0)*2.0); // freq
+    if (index > 0) {
+        std::cout << "freq " << index << std::endl;
+    }
+
+    index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(),7,-1.0+(2.25/3.0),(1.0/4.0)*2.0); // bw
+    if (index > 0) {
+        std::cout << "bw " << index << std::endl;
+    }
+
+    index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(),11,-1.0+(2.0/3.0)*2.0,(1.0/3.0)*2.0); // center
+    if (index > 0) {
+        std::cout << "ctr " << index << std::endl;
+    }
+
 }
 
 void TuningCanvas::OnMouseDown(wxMouseEvent& event) {
