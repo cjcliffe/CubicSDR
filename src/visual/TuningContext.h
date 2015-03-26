@@ -15,6 +15,7 @@ public:
     void Draw(float r, float g, float b, float a, float p1, float p2);
     void DrawTuner(long long freq, int count, float displayPos, float displayWidth);
     int GetTunerDigitIndex(float mPos, int count, float displayPos, float displayWidth);
+    void DrawTunerBarIndexed(int start, int end, int count, float displayPos, float displayWidth, RGBColor color, float alpha, bool top, bool bottom);
 
     void DrawDemodFreqBw(long long freq, unsigned int bw, long long center);
     void DrawEnd();

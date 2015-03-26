@@ -49,15 +49,47 @@ void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
     DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
+    long long freq = 0;
     if (activeDemod != NULL) {
-        glContext->DrawDemodFreqBw(activeDemod->getFrequency(), activeDemod->getBandwidth(), wxGetApp().getFrequency());
-    } else {
-        glContext->DrawDemodFreqBw(0, wxGetApp().getDemodMgr().getLastBandwidth(), wxGetApp().getFrequency());
+        freq = activeDemod->getFrequency();
     }
+    long long bw = wxGetApp().getDemodMgr().getLastBandwidth();
+    long long center = wxGetApp().getFrequency();
+
+    float freqDP = -1.0;
+    float freqW = (1.0 / 3.0) * 2.0;
+
+    float bwDP = -1.0 + (2.25 / 3.0);
+    float bwW = (1.0 / 4.0) * 2.0;
+
+    float centerDP = -1.0 + (2.0 / 3.0) * 2.0;
+    float centerW = (1.0 / 3.0) * 2.0;
+
+    glContext->DrawTuner(freq, 11, freqDP, freqW);
+    glContext->DrawTuner(bw, 7, bwDP, bwW);
+    glContext->DrawTuner(center, 11, centerDP, centerW);
 
     if (mouseTracker.mouseDown()) {
         glContext->Draw(ThemeMgr::mgr.currentTheme->tuningBar.r, ThemeMgr::mgr.currentTheme->tuningBar.g, ThemeMgr::mgr.currentTheme->tuningBar.b,
                 0.6, mouseTracker.getOriginMouseX(), mouseTracker.getMouseX());
+    }
+
+    int index;
+    bool top = mouseTracker.getMouseY()>=0.5;
+    bool bottom = mouseTracker.getMouseY()<=0.5;
+    index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(), 11, freqDP, freqW); // freq
+    if (index > 0) {
+        glContext->DrawTunerBarIndexed(1, index, 11, freqDP, freqW, ThemeMgr::mgr.currentTheme->tuningBar, 0.6, top, bottom); // freq
+    }
+
+    index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(), 7, bwDP, bwW); // bw
+    if (index > 0) {
+        glContext->DrawTunerBarIndexed(1, index, 7, bwDP, bwW, ThemeMgr::mgr.currentTheme->tuningBar, 0.6, top, bottom); // bw
+    }
+
+    index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(), 11, centerDP, centerW); // center
+    if (index > 0) {
+        glContext->DrawTunerBarIndexed(1, index, 11, centerDP, centerW, ThemeMgr::mgr.currentTheme->tuningBar, 0.6, top, bottom); // center
     }
 
     glContext->DrawEnd();
@@ -110,23 +142,6 @@ void TuningCanvas::OnIdle(wxIdleEvent &event) {
 
 void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseMoved(event);
-    int index;
-
-    index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(),11,-1.0,(1.0/3.0)*2.0); // freq
-    if (index > 0) {
-        std::cout << "freq " << index << std::endl;
-    }
-
-    index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(),7,-1.0+(2.25/3.0),(1.0/4.0)*2.0); // bw
-    if (index > 0) {
-        std::cout << "bw " << index << std::endl;
-    }
-
-    index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(),11,-1.0+(2.0/3.0)*2.0,(1.0/3.0)*2.0); // center
-    if (index > 0) {
-        std::cout << "ctr " << index << std::endl;
-    }
-
 }
 
 void TuningCanvas::OnMouseDown(wxMouseEvent& event) {
