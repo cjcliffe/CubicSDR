@@ -28,6 +28,18 @@ TuningCanvas::TuningCanvas(wxWindow *parent, int *attribList) :
         InteractiveCanvas(parent, attribList), dragAccum(0) {
 
     glContext = new TuningContext(this, &wxGetApp().GetContext(this));
+
+    hoverIndex = 0;
+    hoverState = TUNING_HOVER_NONE;
+
+    freqDP = -1.0;
+    freqW = (1.0 / 3.0) * 2.0;
+
+    bwDP = -1.0 + (2.25 / 3.0);
+    bwW = (1.0 / 4.0) * 2.0;
+
+    centerDP = -1.0 + (2.0 / 3.0) * 2.0;
+    centerW = (1.0 / 3.0) * 2.0;
 }
 
 TuningCanvas::~TuningCanvas() {
@@ -56,41 +68,57 @@ void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     long long bw = wxGetApp().getDemodMgr().getLastBandwidth();
     long long center = wxGetApp().getFrequency();
 
-    float freqDP = -1.0;
-    float freqW = (1.0 / 3.0) * 2.0;
-
-    float bwDP = -1.0 + (2.25 / 3.0);
-    float bwW = (1.0 / 4.0) * 2.0;
-
-    float centerDP = -1.0 + (2.0 / 3.0) * 2.0;
-    float centerW = (1.0 / 3.0) * 2.0;
-
-    glContext->DrawTuner(freq, 11, freqDP, freqW);
-    glContext->DrawTuner(bw, 7, bwDP, bwW);
-    glContext->DrawTuner(center, 11, centerDP, centerW);
-
     if (mouseTracker.mouseDown()) {
         glContext->Draw(ThemeMgr::mgr.currentTheme->tuningBar.r, ThemeMgr::mgr.currentTheme->tuningBar.g, ThemeMgr::mgr.currentTheme->tuningBar.b,
                 0.6, mouseTracker.getOriginMouseX(), mouseTracker.getMouseX());
     }
 
-    int index;
-    bool top = mouseTracker.getMouseY()>=0.5;
-    bool bottom = mouseTracker.getMouseY()<=0.5;
-    index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(), 11, freqDP, freqW); // freq
-    if (index > 0) {
-        glContext->DrawTunerBarIndexed(1, index, 11, freqDP, freqW, ThemeMgr::mgr.currentTheme->tuningBar, 0.6, top, bottom); // freq
+    bool top = mouseTracker.getMouseY() >= 0.5;
+    bool bottom = mouseTracker.getMouseY() <= 0.5;
+
+    RGBColor clr = top ? ThemeMgr::mgr.currentTheme->tuningBarUp : ThemeMgr::mgr.currentTheme->tuningBarDown;
+
+    RGBColor clrDark = ThemeMgr::mgr.currentTheme->tuningBar;
+    RGBColor clrMid = ThemeMgr::mgr.currentTheme->tuningBar;
+    RGBColor clrLight = ThemeMgr::mgr.currentTheme->tuningBar;
+
+    clrDark.r*=0.5;clrDark.g*=0.5;clrDark.b*=0.5;
+    clrLight.r*=2.0;clrLight.g*=2.0;clrLight.b*=2.0;
+
+    glContext->DrawTunerBarIndexed(1, 3, 11, freqDP, freqW, clrDark, 0.25, true, true); // freq
+    glContext->DrawTunerBarIndexed(4, 6, 11, freqDP, freqW, clrMid, 0.25, true, true);
+    glContext->DrawTunerBarIndexed(7, 9, 11, freqDP, freqW, clrDark, 0.25, true, true);
+    glContext->DrawTunerBarIndexed(10, 11, 11, freqDP, freqW, clrMid, 0.25, true, true);
+
+    glContext->DrawTunerBarIndexed(1, 3, 7, bwDP, bwW, clrDark, 0.25, true, true); // bw
+    glContext->DrawTunerBarIndexed(4, 6, 7, bwDP, bwW, clrMid, 0.25, true, true);
+    glContext->DrawTunerBarIndexed(7, 7, 7, bwDP, bwW, clrDark, 0.25, true, true);
+
+    glContext->DrawTunerBarIndexed(1, 3, 11, centerDP, centerW, clrDark, 0.25, true, true); // freq
+      glContext->DrawTunerBarIndexed(4, 6, 11, centerDP, centerW, clrMid, 0.25, true, true);
+      glContext->DrawTunerBarIndexed(7, 9, 11, centerDP, centerW, clrDark, 0.25, true, true);
+      glContext->DrawTunerBarIndexed(10, 11, 11, centerDP, centerW, clrMid, 0.25, true, true);
+
+    if (hoverIndex > 0) {
+        switch (hoverState) {
+
+        case TUNING_HOVER_FREQ:
+            glContext->DrawTunerBarIndexed(hoverIndex, hoverIndex, 11, freqDP, freqW, clr, 0.25, top, bottom); // freq
+            break;
+        case TUNING_HOVER_BW:
+            glContext->DrawTunerBarIndexed(hoverIndex, hoverIndex, 7, bwDP, bwW, clr, 0.25, top, bottom); // bw
+            break;
+        case TUNING_HOVER_CENTER:
+            glContext->DrawTunerBarIndexed(hoverIndex, hoverIndex, 11, centerDP, centerW, clr, 0.25, top, bottom); // center
+            break;
+        case TUNING_HOVER_NONE:
+            break;
+        }
     }
 
-    index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(), 7, bwDP, bwW); // bw
-    if (index > 0) {
-        glContext->DrawTunerBarIndexed(1, index, 7, bwDP, bwW, ThemeMgr::mgr.currentTheme->tuningBar, 0.6, top, bottom); // bw
-    }
-
-    index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(), 11, centerDP, centerW); // center
-    if (index > 0) {
-        glContext->DrawTunerBarIndexed(1, index, 11, centerDP, centerW, ThemeMgr::mgr.currentTheme->tuningBar, 0.6, top, bottom); // center
-    }
+    glContext->DrawTuner(freq, 11, freqDP, freqW);
+    glContext->DrawTuner(bw, 7, bwDP, bwW);
+    glContext->DrawTuner(center, 11, centerDP, centerW);
 
     glContext->DrawEnd();
 
@@ -142,6 +170,32 @@ void TuningCanvas::OnIdle(wxIdleEvent &event) {
 
 void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseMoved(event);
+
+    int index = 0;
+
+    index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(), 11, freqDP, freqW); // freq
+    if (index > 0) {
+        hoverIndex = index;
+        hoverState = TUNING_HOVER_FREQ;
+        return;
+    }
+
+    index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(), 7, bwDP, bwW); // bw
+    if (index > 0) {
+        hoverIndex = index;
+        hoverState = TUNING_HOVER_BW;
+        return;
+    }
+
+    index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(), 11, centerDP, centerW); // center
+    if (index > 0) {
+        hoverIndex = index;
+        hoverState = TUNING_HOVER_CENTER;
+        return;
+    }
+
+    hoverIndex = 0;
+    hoverState = TUNING_HOVER_NONE;
 }
 
 void TuningCanvas::OnMouseDown(wxMouseEvent& event) {
@@ -161,17 +215,21 @@ void TuningCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
 void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseReleased(event);
     mouseTracker.setVertDragLock(false);
-    SetCursor(wxCURSOR_SIZEWE);
+    SetCursor(wxCURSOR_ARROW);
 }
 
 void TuningCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseLeftWindow(event);
     SetCursor(wxCURSOR_CROSS);
+    hoverIndex = 0;
+    hoverState = TUNING_HOVER_NONE;
 }
 
 void TuningCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
     InteractiveCanvas::mouseTracker.OnMouseEnterWindow(event);
-    SetCursor(wxCURSOR_SIZEWE);
+    SetCursor(wxCURSOR_ARROW);
+    hoverIndex = 0;
+    hoverState = TUNING_HOVER_NONE;
 }
 
 void TuningCanvas::setHelpTip(std::string tip) {

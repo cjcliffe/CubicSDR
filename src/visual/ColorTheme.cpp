@@ -49,6 +49,8 @@ DefaultColorTheme::DefaultColorTheme() {
     fftHighlight = RGBColor(1, 1, 1);
     scopeLine = RGBColor(0.9, 0.9, 0.9);
     tuningBar = RGBColor(0.2, 0.2, 0.9);
+    tuningBarUp = RGBColor(1.0, 139.0/255.0, 96.0/255.0);
+    tuningBarDown = RGBColor(148.0/255.0, 148.0/255.0, 1.0);
     meterLevel = RGBColor(0.1, 0.75, 0.1);
     meterValue = RGBColor(0.75, 0.1, 0.1);
     text = RGBColor(1, 1, 1);

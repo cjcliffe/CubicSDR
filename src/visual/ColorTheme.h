@@ -48,6 +48,8 @@ public:
     RGBColor fftHighlight;
     RGBColor scopeLine;
     RGBColor tuningBar;
+    RGBColor tuningBarUp;
+    RGBColor tuningBarDown;
     RGBColor meterLevel;
     RGBColor meterValue;
     RGBColor text;

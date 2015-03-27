@@ -15,6 +15,9 @@
 
 class TuningCanvas: public InteractiveCanvas {
 public:
+    enum HoverState {
+        TUNING_HOVER_NONE, TUNING_HOVER_FREQ, TUNING_HOVER_BW, TUNING_HOVER_CENTER
+    };
     TuningCanvas(wxWindow *parent, int *attribList = NULL);
     ~TuningCanvas();
 
@@ -36,6 +39,17 @@ private:
     std::string helpTip;
     float dragAccum;
     float uxDown;
+    HoverState hoverState;
+    int hoverIndex;
+
+    float freqDP;
+    float freqW;
+
+    float bwDP;
+    float bwW;
+
+    float centerDP;
+    float centerW;
     //
 wxDECLARE_EVENT_TABLE();
 };
