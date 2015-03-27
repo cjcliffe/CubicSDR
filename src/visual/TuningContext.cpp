@@ -99,7 +99,9 @@ void TuningContext::DrawTuner(long long freq, int count, float displayPos, float
         getFont(fontSize).drawString(freqStr.str().substr(i - ofs, 1), xpos, 0, fontHeight, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
     }
 
-    glColor3f(0.65, 0.65, 0.65);
+    glColor4f(0.65, 0.65, 0.65, 0.25);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBegin(GL_LINES);
     for (int i = count; i >= 0; i--) {
         float xpos = displayPos + (displayWidth / (float) count) * (float) i;
@@ -107,6 +109,7 @@ void TuningContext::DrawTuner(long long freq, int count, float displayPos, float
         glVertex2f(xpos, 1.0);
     }
     glEnd();
+    glDisable(GL_BLEND);
 }
 
 int TuningContext::GetTunerDigitIndex(float mPos, int count, float displayPos, float displayWidth) {

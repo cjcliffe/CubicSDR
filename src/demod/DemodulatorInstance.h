@@ -77,6 +77,8 @@ public:
     void setAudioSampleRate(int sampleRate);
     int getAudioSampleRate();
 
+    bool isFollow();
+    void setFollow(bool follow);
 
 private:
 
@@ -96,4 +98,5 @@ private:
     int currentDemodType;
     int currentOutputDevice;
     int currentAudioSampleRate;
+    bool follow;
   };

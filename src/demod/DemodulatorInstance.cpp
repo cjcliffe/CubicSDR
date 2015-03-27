@@ -335,3 +335,11 @@ void DemodulatorInstance::setGain(float gain_in) {
 float DemodulatorInstance::getGain() {
    return audioThread->getGain();
 }
+
+bool DemodulatorInstance::isFollow()  {
+    return follow;
+}
+
+void DemodulatorInstance::setFollow(bool follow) {
+    this->follow = follow;
+}

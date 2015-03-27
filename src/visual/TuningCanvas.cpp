@@ -25,7 +25,7 @@ EVT_ENTER_WINDOW(TuningCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
 TuningCanvas::TuningCanvas(wxWindow *parent, int *attribList) :
-        InteractiveCanvas(parent, attribList), dragAccum(0) {
+        InteractiveCanvas(parent, attribList), dragAccum(0), top(false), bottom(false), uxDown(0) {
 
     glContext = new TuningContext(this, &wxGetApp().GetContext(this));
 
@@ -73,31 +73,32 @@ void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
                 0.6, mouseTracker.getOriginMouseX(), mouseTracker.getMouseX());
     }
 
-    bool top = mouseTracker.getMouseY() >= 0.5;
-    bool bottom = mouseTracker.getMouseY() <= 0.5;
-
     RGBColor clr = top ? ThemeMgr::mgr.currentTheme->tuningBarUp : ThemeMgr::mgr.currentTheme->tuningBarDown;
 
     RGBColor clrDark = ThemeMgr::mgr.currentTheme->tuningBar;
     RGBColor clrMid = ThemeMgr::mgr.currentTheme->tuningBar;
     RGBColor clrLight = ThemeMgr::mgr.currentTheme->tuningBar;
 
-    clrDark.r*=0.5;clrDark.g*=0.5;clrDark.b*=0.5;
-    clrLight.r*=2.0;clrLight.g*=2.0;clrLight.b*=2.0;
+    clrDark.r *= 0.5;
+    clrDark.g *= 0.5;
+    clrDark.b *= 0.5;
+    clrLight.r *= 2.0;
+    clrLight.g *= 2.0;
+    clrLight.b *= 2.0;
 
-    glContext->DrawTunerBarIndexed(1, 3, 11, freqDP, freqW, clrDark, 0.25, true, true); // freq
-    glContext->DrawTunerBarIndexed(4, 6, 11, freqDP, freqW, clrMid, 0.25, true, true);
-    glContext->DrawTunerBarIndexed(7, 9, 11, freqDP, freqW, clrDark, 0.25, true, true);
-    glContext->DrawTunerBarIndexed(10, 11, 11, freqDP, freqW, clrMid, 0.25, true, true);
+    glContext->DrawTunerBarIndexed(1, 3, 11, freqDP, freqW, clrMid, 0.25, true, true); // freq
+    glContext->DrawTunerBarIndexed(4, 6, 11, freqDP, freqW, clrDark, 0.25, true, true);
+    glContext->DrawTunerBarIndexed(7, 9, 11, freqDP, freqW, clrMid, 0.25, true, true);
+    glContext->DrawTunerBarIndexed(10, 11, 11, freqDP, freqW, clrDark, 0.25, true, true);
 
-    glContext->DrawTunerBarIndexed(1, 3, 7, bwDP, bwW, clrDark, 0.25, true, true); // bw
-    glContext->DrawTunerBarIndexed(4, 6, 7, bwDP, bwW, clrMid, 0.25, true, true);
-    glContext->DrawTunerBarIndexed(7, 7, 7, bwDP, bwW, clrDark, 0.25, true, true);
+    glContext->DrawTunerBarIndexed(1, 3, 7, bwDP, bwW, clrMid, 0.25, true, true); // bw
+    glContext->DrawTunerBarIndexed(4, 6, 7, bwDP, bwW, clrDark, 0.25, true, true);
+    glContext->DrawTunerBarIndexed(7, 7, 7, bwDP, bwW, clrMid, 0.25, true, true);
 
-    glContext->DrawTunerBarIndexed(1, 3, 11, centerDP, centerW, clrDark, 0.25, true, true); // freq
-      glContext->DrawTunerBarIndexed(4, 6, 11, centerDP, centerW, clrMid, 0.25, true, true);
-      glContext->DrawTunerBarIndexed(7, 9, 11, centerDP, centerW, clrDark, 0.25, true, true);
-      glContext->DrawTunerBarIndexed(10, 11, 11, centerDP, centerW, clrMid, 0.25, true, true);
+    glContext->DrawTunerBarIndexed(1, 3, 11, centerDP, centerW, clrMid, 0.25, true, true); // freq
+    glContext->DrawTunerBarIndexed(4, 6, 11, centerDP, centerW, clrDark, 0.25, true, true);
+    glContext->DrawTunerBarIndexed(7, 9, 11, centerDP, centerW, clrMid, 0.25, true, true);
+    glContext->DrawTunerBarIndexed(10, 11, 11, centerDP, centerW, clrDark, 0.25, true, true);
 
     if (hoverIndex > 0) {
         switch (hoverState) {
@@ -126,44 +127,44 @@ void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 }
 
 void TuningCanvas::OnIdle(wxIdleEvent &event) {
-    if (mouseTracker.mouseDown()) {
-        DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
-
-        float dragDelta = mouseTracker.getMouseX() - mouseTracker.getOriginMouseX();
-
-        dragAccum += dragDelta;
-
-        float moveVal = dragAccum * 10.0;
-
-        if (uxDown > 0.275) {
-            wxGetApp().setFrequency(
-                    wxGetApp().getFrequency()
-                            + (int) (dragAccum * fabs(dragAccum * 10.0) * fabs(dragAccum * 10.0) * (float) wxGetApp().getSampleRate()));
-        } else if (fabs(moveVal) >= 1.0) {
-            if (uxDown < -0.275) {
-                if (activeDemod != NULL) {
-                    long long freq = activeDemod->getFrequency() + (int) (moveVal * fabs(moveVal) * fabs(moveVal) * fabs(moveVal));
-                    activeDemod->setFrequency(freq);
-                    activeDemod->updateLabel(freq);
-                }
-            } else {
-                int amt = (int) (moveVal * fabs(moveVal) * fabs(moveVal) * fabs(moveVal));
-                if (activeDemod != NULL) {
-                    activeDemod->setBandwidth(activeDemod->getBandwidth() + amt);
-                } else {
-                    wxGetApp().getDemodMgr().setLastBandwidth(wxGetApp().getDemodMgr().getLastBandwidth() + amt);
-                }
-            }
-        }
-
-        while (fabs(dragAccum * 10.0) >= 1.0) {
-            if (dragAccum > 0) {
-                dragAccum -= 1.0 / 10.0;
-            } else {
-                dragAccum += 1.0 / 10.0;
-            }
-        }
-    }
+//    if (mouseTracker.mouseDown()) {
+//        DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+//
+//        float dragDelta = mouseTracker.getMouseX() - mouseTracker.getOriginMouseX();
+//
+//        dragAccum += dragDelta;
+//
+//        float moveVal = dragAccum * 10.0;
+//
+//        if (uxDown > 0.275) {
+//            wxGetApp().setFrequency(
+//                    wxGetApp().getFrequency()
+//                            + (int) (dragAccum * fabs(dragAccum * 10.0) * fabs(dragAccum * 10.0) * (float) wxGetApp().getSampleRate()));
+//        } else if (fabs(moveVal) >= 1.0) {
+//            if (uxDown < -0.275) {
+//                if (activeDemod != NULL) {
+//                    long long freq = activeDemod->getFrequency() + (int) (moveVal * fabs(moveVal) * fabs(moveVal) * fabs(moveVal));
+//                    activeDemod->setFrequency(freq);
+//                    activeDemod->updateLabel(freq);
+//                }
+//            } else {
+//                int amt = (int) (moveVal * fabs(moveVal) * fabs(moveVal) * fabs(moveVal));
+//                if (activeDemod != NULL) {
+//                    activeDemod->setBandwidth(activeDemod->getBandwidth() + amt);
+//                } else {
+//                    wxGetApp().getDemodMgr().setLastBandwidth(wxGetApp().getDemodMgr().getLastBandwidth() + amt);
+//                }
+//            }
+//        }
+//
+//        while (fabs(dragAccum * 10.0) >= 1.0) {
+//            if (dragAccum > 0) {
+//                dragAccum -= 1.0 / 10.0;
+//            } else {
+//                dragAccum += 1.0 / 10.0;
+//            }
+//        }
+//    }
 
     Refresh(false);
 }
@@ -172,6 +173,9 @@ void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseMoved(event);
 
     int index = 0;
+
+    top = mouseTracker.getMouseY() >= 0.5;
+    bottom = mouseTracker.getMouseY() <= 0.5;
 
     index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(), 11, freqDP, freqW); // freq
     if (index > 0) {
@@ -200,12 +204,9 @@ void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
 
 void TuningCanvas::OnMouseDown(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseDown(event);
-    mouseTracker.setVertDragLock(true);
 
     uxDown = 2.0 * (mouseTracker.getMouseX() - 0.5);
-
     dragAccum = 0;
-    SetCursor(wxCURSOR_IBEAM);
 }
 
 void TuningCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
@@ -213,8 +214,62 @@ void TuningCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
 }
 
 void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
+    GLint vp[4];
+    glGetIntegerv( GL_VIEWPORT, vp);
+
+    float viewHeight = (float) vp[3];
+    float viewWidth = (float) vp[2];
+
     InteractiveCanvas::OnMouseReleased(event);
-    mouseTracker.setVertDragLock(false);
+
+    DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+
+    int hExponent = hoverIndex - 1;
+
+    if (hoverState == TUNING_HOVER_FREQ && activeDemod) {
+        long long freq = activeDemod->getFrequency();
+        if (top) {
+            freq += pow(10, hExponent);
+        } else {
+            freq -= pow(10, hExponent);
+        }
+
+        long long diff = abs(wxGetApp().getFrequency() - freq);
+
+        if (wxGetApp().getSampleRate() / 2 < diff) {
+            wxGetApp().setFrequency(freq);
+        }
+
+        activeDemod->setFrequency(freq);
+        activeDemod->updateLabel(freq);
+    }
+
+    if (hoverState == TUNING_HOVER_BW) {
+        long bw = wxGetApp().getDemodMgr().getLastBandwidth();
+        if (bw > wxGetApp().getSampleRate()) {
+            bw = wxGetApp().getSampleRate();
+        }
+        if (top) {
+            bw += pow(10, hExponent);
+        } else {
+            bw -= pow(10, hExponent);
+        }
+
+        wxGetApp().getDemodMgr().setLastBandwidth(bw);
+
+        if (activeDemod) {
+            activeDemod->setBandwidth(wxGetApp().getDemodMgr().getLastBandwidth());
+        }
+    }
+
+    if (hoverState == TUNING_HOVER_CENTER) {
+        if (top) {
+            wxGetApp().setFrequency(wxGetApp().getFrequency() + pow(10, hExponent));
+        } else {
+            wxGetApp().setFrequency(wxGetApp().getFrequency() - pow(10, hExponent));
+        }
+    }
+
     SetCursor(wxCURSOR_ARROW);
 }
 

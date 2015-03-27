@@ -50,6 +50,10 @@ private:
 
     float centerDP;
     float centerW;
+
+    bool top;
+    bool bottom;
+
     //
 wxDECLARE_EVENT_TABLE();
 };

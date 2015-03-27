@@ -79,6 +79,8 @@ RadarColorTheme::RadarColorTheme() {
     fftHighlight = RGBColor(1, 1, 1);
     scopeLine = RGBColor(0.8, 1.0, 0.8);
     tuningBar = RGBColor(0.2, 0.9, 0.2);
+    tuningBarUp = RGBColor(1.0, 139.0/255.0, 96.0/255.0);
+    tuningBarDown = RGBColor(148.0/255.0, 148.0/255.0, 1.0);
     meterLevel = RGBColor(0, 0.5, 0);
     meterValue = RGBColor(0, 0.5, 0);
     text = RGBColor(0.8, 1.0, 0.8);
@@ -105,6 +107,8 @@ BlackAndWhiteColorTheme::BlackAndWhiteColorTheme() {
     fftHighlight = RGBColor(1, 1, 0.9);
     scopeLine = RGBColor(0.9, 0.9, 0.9);
     tuningBar = RGBColor(0.4, 0.4, 0.4);
+    tuningBarUp = RGBColor(1.0, 139.0/255.0, 96.0/255.0);
+    tuningBarDown = RGBColor(148.0/255.0, 148.0/255.0, 1.0);
     meterLevel = RGBColor(0.5, 0.5, 0.5);
     meterValue = RGBColor(0.5, 0.5, 0.5);
     text = RGBColor(1, 1, 1);
@@ -140,6 +144,8 @@ SharpColorTheme::SharpColorTheme() {
     fftHighlight = RGBColor(0.9, 0.9, 1.0);
     scopeLine = RGBColor(0.85, 0.85, 1.0);
     tuningBar = RGBColor(0.2, 0.2, 0.9);
+    tuningBarUp = RGBColor(1.0, 139.0/255.0, 96.0/255.0);
+    tuningBarDown = RGBColor(148.0/255.0, 148.0/255.0, 1.0);
     meterLevel = RGBColor(28.0 / 255.0, 106.0 / 255.0, 179.0 / 255.0);
     meterValue = RGBColor(190.0 / 255.0, 190.0 / 255.0, 60.0 / 255.0);
     text = RGBColor(0.9, 0.9, 1);
@@ -168,6 +174,8 @@ RadColorTheme::RadColorTheme() {
     fftHighlight = RGBColor(1, 1, 1);
     scopeLine = RGBColor(1.0, 0.9, 0.9);
     tuningBar = RGBColor(0.2, 0.2, 0.9);
+    tuningBarUp = RGBColor(1.0, 139.0/255.0, 96.0/255.0);
+    tuningBarDown = RGBColor(148.0/255.0, 148.0/255.0, 1.0);
     meterLevel = RGBColor(0, 0.5, 0);
     meterValue = RGBColor(0.5, 0, 0);
     text = RGBColor(1, 1, 1);
@@ -199,6 +207,8 @@ TouchColorTheme::TouchColorTheme() {
     fftHighlight = RGBColor(1.0, 1.0, 1.0);
     scopeLine = RGBColor(234.0 / 255.0, 232.0 / 255.0, 247.0 / 255.0);
     tuningBar = RGBColor(61.0 / 255.0, 57.0 / 255.0, 88.0 / 255.0);
+    tuningBarUp = RGBColor(1.0, 139.0/255.0, 96.0/255.0);
+    tuningBarDown = RGBColor(148.0/255.0, 148.0/255.0, 1.0);
     meterLevel = RGBColor(61.0 / 255.0, 57.0 / 255.0, 88.0 / 255.0);
     meterValue = RGBColor(61.0 / 255.0, 57.0 / 255.0, 88.0 / 255.0);
     text = RGBColor(1, 1, 1);
@@ -231,6 +241,8 @@ HDColorTheme::HDColorTheme() {
     fftHighlight = RGBColor(1, 1, 1);
     scopeLine = RGBColor(0.9, 0.9, 0.9);
     tuningBar = RGBColor(0, 0.7, 0.7);
+    tuningBarUp = RGBColor(1.0, 139.0/255.0, 96.0/255.0);
+    tuningBarDown = RGBColor(148.0/255.0, 148.0/255.0, 1.0);
     meterLevel = RGBColor(0, 0.5, 0);
     meterValue = RGBColor(0.0, 0.0, 1.0);
     text = RGBColor(1, 1, 1);
