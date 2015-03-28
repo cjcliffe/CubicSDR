@@ -516,7 +516,9 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             demodGainMeter->setLevel(demodGainMeter->getInputValue());
         }
 
-        if (wxGetApp().getFrequency() != demodWaterfallCanvas->getCenterFrequency()) {
+        if (wxGetApp().getFrequency() != waterfallCanvas->getCenterFrequency()) {
+            spectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
+            waterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
             demodWaterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
             demodSpectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
         }
