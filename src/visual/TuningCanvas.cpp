@@ -225,16 +225,19 @@ void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
     DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     int hExponent = hoverIndex - 1;
+    double exp = pow(10, hExponent);
+    long long amount = top?exp:-exp;
 
     if (hoverState == TUNING_HOVER_FREQ && activeDemod) {
         long long freq = activeDemod->getFrequency();
-        if (top) {
-            freq += pow(10, hExponent);
-        } else {
-            freq -= pow(10, hExponent);
-        }
-
         long long diff = abs(wxGetApp().getFrequency() - freq);
+
+        if (shiftDown) {
+            bool carried = (long long)((freq) / (exp * 10)) != (long long)((freq + amount) / (exp * 10));
+            freq += carried?(9*-amount):amount;
+        } else {
+            freq += amount;
+        }
 
         if (wxGetApp().getSampleRate() / 2 < diff) {
             wxGetApp().setFrequency(freq);
@@ -245,14 +248,9 @@ void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
     }
 
     if (hoverState == TUNING_HOVER_BW) {
-        long bw = wxGetApp().getDemodMgr().getLastBandwidth();
+        long bw = wxGetApp().getDemodMgr().getLastBandwidth()+amount;
         if (bw > wxGetApp().getSampleRate()) {
             bw = wxGetApp().getSampleRate();
-        }
-        if (top) {
-            bw += pow(10, hExponent);
-        } else {
-            bw -= pow(10, hExponent);
         }
 
         wxGetApp().getDemodMgr().setLastBandwidth(bw);
@@ -263,11 +261,7 @@ void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
     }
 
     if (hoverState == TUNING_HOVER_CENTER) {
-        if (top) {
-            wxGetApp().setFrequency(wxGetApp().getFrequency() + pow(10, hExponent));
-        } else {
-            wxGetApp().setFrequency(wxGetApp().getFrequency() - pow(10, hExponent));
-        }
+        wxGetApp().setFrequency(wxGetApp().getFrequency() + amount);
     }
 
     SetCursor(wxCURSOR_ARROW);
