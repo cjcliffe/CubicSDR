@@ -100,7 +100,7 @@ void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->DrawTunerBarIndexed(7, 9, 11, centerDP, centerW, clrMid, 0.25, true, true);
     glContext->DrawTunerBarIndexed(10, 11, 11, centerDP, centerW, clrDark, 0.25, true, true);
 
-    if (hoverIndex > 0) {
+    if (hoverIndex > 0 && !mouseTracker.mouseDown()) {
         switch (hoverState) {
 
         case TUNING_HOVER_FREQ:
@@ -126,45 +126,82 @@ void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     SwapBuffers();
 }
 
+void TuningCanvas::StepTuner(ActiveState state, int exponent, bool up) {
+    double exp = pow(10, exponent);
+    long long amount = up?exp:-exp;
+
+    DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    if (state == TUNING_HOVER_FREQ && activeDemod) {
+        long long freq = activeDemod->getFrequency();
+        long long diff = abs(wxGetApp().getFrequency() - freq);
+
+        if (shiftDown) {
+            bool carried = (long long)((freq) / (exp * 10)) != (long long)((freq + amount) / (exp * 10)) || (bottom && freq < exp);
+            freq += carried?(9*-amount):amount;
+        } else {
+            freq += amount;
+        }
+
+        if (wxGetApp().getSampleRate() / 2 < diff) {
+            wxGetApp().setFrequency(freq);
+        }
+
+        activeDemod->setFrequency(freq);
+        activeDemod->updateLabel(freq);
+        activeDemod->setFollow(true);
+    }
+
+    if (state == TUNING_HOVER_BW) {
+        long bw = wxGetApp().getDemodMgr().getLastBandwidth();
+
+        if (shiftDown) {
+            bool carried = (long)((bw) / (exp * 10)) != (long)((bw + amount) / (exp * 10)) || (bottom && bw < exp);
+            bw += carried?(9*-amount):amount;
+        } else {
+            bw += amount;
+        }
+
+        if (bw > wxGetApp().getSampleRate()) {
+            bw = wxGetApp().getSampleRate();
+        }
+
+        wxGetApp().getDemodMgr().setLastBandwidth(bw);
+
+        if (activeDemod) {
+            activeDemod->setBandwidth(wxGetApp().getDemodMgr().getLastBandwidth());
+        }
+    }
+
+    if (state == TUNING_HOVER_CENTER) {
+        long long ctr = wxGetApp().getFrequency();
+        if (shiftDown) {
+            bool carried = (long long)((ctr) / (exp * 10)) != (long long)((ctr + amount) / (exp * 10)) || (bottom && ctr < exp);
+            ctr += carried?(9*-amount):amount;
+        } else {
+            ctr += amount;
+        }
+
+        wxGetApp().setFrequency(ctr);
+    }
+}
+
 void TuningCanvas::OnIdle(wxIdleEvent &event) {
-//    if (mouseTracker.mouseDown()) {
-//        DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
-//
-//        float dragDelta = mouseTracker.getMouseX() - mouseTracker.getOriginMouseX();
-//
-//        dragAccum += dragDelta;
-//
-//        float moveVal = dragAccum * 10.0;
-//
-//        if (uxDown > 0.275) {
-//            wxGetApp().setFrequency(
-//                    wxGetApp().getFrequency()
-//                            + (int) (dragAccum * fabs(dragAccum * 10.0) * fabs(dragAccum * 10.0) * (float) wxGetApp().getSampleRate()));
-//        } else if (fabs(moveVal) >= 1.0) {
-//            if (uxDown < -0.275) {
-//                if (activeDemod != NULL) {
-//                    long long freq = activeDemod->getFrequency() + (int) (moveVal * fabs(moveVal) * fabs(moveVal) * fabs(moveVal));
-//                    activeDemod->setFrequency(freq);
-//                    activeDemod->updateLabel(freq);
-//                }
-//            } else {
-//                int amt = (int) (moveVal * fabs(moveVal) * fabs(moveVal) * fabs(moveVal));
-//                if (activeDemod != NULL) {
-//                    activeDemod->setBandwidth(activeDemod->getBandwidth() + amt);
-//                } else {
-//                    wxGetApp().getDemodMgr().setLastBandwidth(wxGetApp().getDemodMgr().getLastBandwidth() + amt);
-//                }
-//            }
-//        }
-//
-//        while (fabs(dragAccum * 10.0) >= 1.0) {
-//            if (dragAccum > 0) {
-//                dragAccum -= 1.0 / 10.0;
-//            } else {
-//                dragAccum += 1.0 / 10.0;
-//            }
-//        }
-//    }
+    if (mouseTracker.mouseDown()) {
+        if (downState != TUNING_HOVER_NONE) {
+            dragAccum += 5.0*mouseTracker.getOriginDeltaMouseX();
+            while (dragAccum > 1.0) {
+                StepTuner(downState, downIndex-1, true);
+                dragAccum -= 1.0;
+            }
+            while (dragAccum < -1.0) {
+                StepTuner(downState, downIndex-1, false);
+                dragAccum += 1.0;
+            }
+        } else {
+            dragAccum = 0;
+        }
+std::cout << dragAccum << std::endl;
+    }
 
     Refresh(false);
 }
@@ -207,6 +244,10 @@ void TuningCanvas::OnMouseDown(wxMouseEvent& event) {
 
     uxDown = 2.0 * (mouseTracker.getMouseX() - 0.5);
     dragAccum = 0;
+
+    mouseTracker.setVertDragLock(true);
+    downIndex = hoverIndex;
+    downState = hoverState;
 }
 
 void TuningCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
@@ -222,64 +263,13 @@ void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
 
     InteractiveCanvas::OnMouseReleased(event);
 
-    DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
-
     int hExponent = hoverIndex - 1;
-    double exp = pow(10, hExponent);
-    long long amount = top?exp:-exp;
 
-    if (hoverState == TUNING_HOVER_FREQ && activeDemod) {
-        long long freq = activeDemod->getFrequency();
-        long long diff = abs(wxGetApp().getFrequency() - freq);
-
-        if (shiftDown) {
-            bool carried = (long long)((freq) / (exp * 10)) != (long long)((freq + amount) / (exp * 10)) || (bottom && freq < exp);
-            freq += carried?(9*-amount):amount;
-        } else {
-            freq += amount;
-        }
-
-        if (wxGetApp().getSampleRate() / 2 < diff) {
-            wxGetApp().setFrequency(freq);
-        }
-
-        activeDemod->setFrequency(freq);
-        activeDemod->updateLabel(freq);
-        activeDemod->setFollow(true);
+    if (hoverState != TUNING_HOVER_NONE) {
+        StepTuner(hoverState, hExponent, top);
     }
 
-    if (hoverState == TUNING_HOVER_BW) {
-        long bw = wxGetApp().getDemodMgr().getLastBandwidth();
-
-        if (shiftDown) {
-            bool carried = (long)((bw) / (exp * 10)) != (long)((bw + amount) / (exp * 10)) || (bottom && bw < exp);
-            bw += carried?(9*-amount):amount;
-        } else {
-            bw += amount;
-        }
-
-        if (bw > wxGetApp().getSampleRate()) {
-            bw = wxGetApp().getSampleRate();
-        }
-
-        wxGetApp().getDemodMgr().setLastBandwidth(bw);
-
-        if (activeDemod) {
-            activeDemod->setBandwidth(wxGetApp().getDemodMgr().getLastBandwidth());
-        }
-    }
-
-    if (hoverState == TUNING_HOVER_CENTER) {
-        long long ctr = wxGetApp().getFrequency();
-        if (shiftDown) {
-            bool carried = (long long)((ctr) / (exp * 10)) != (long long)((ctr + amount) / (exp * 10)) || (bottom && ctr < exp);
-            ctr += carried?(9*-amount):amount;
-        } else {
-            ctr += amount;
-        }
-
-        wxGetApp().setFrequency(ctr);
-    }
+    mouseTracker.setVertDragLock(false);
 
     SetCursor(wxCURSOR_ARROW);
 }
