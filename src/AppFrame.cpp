@@ -517,7 +517,9 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         }
 
         if (wxGetApp().getFrequency() != waterfallCanvas->getCenterFrequency()) {
-            spectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
+            if (!spectrumCanvas->getMouseTracker()->mouseDown()) {
+                spectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
+            }
             waterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
             demodWaterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
             demodSpectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());

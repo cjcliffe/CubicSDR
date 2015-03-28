@@ -73,6 +73,10 @@ unsigned int InteractiveCanvas::getBandwidth() {
     }
 }
 
+MouseTracker *InteractiveCanvas::getMouseTracker() {
+    return &mouseTracker;
+}
+
 void InteractiveCanvas::OnKeyUp(wxKeyEvent& event) {
     shiftDown = event.ShiftDown();
     altDown = event.AltDown();

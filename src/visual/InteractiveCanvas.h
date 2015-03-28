@@ -22,6 +22,8 @@ public:
     void setBandwidth(unsigned int bandwidth_in);
     unsigned int getBandwidth();
 
+    MouseTracker *getMouseTracker();
+
 protected:
     void OnKeyDown(wxKeyEvent& event);
     void OnKeyUp(wxKeyEvent& event);
