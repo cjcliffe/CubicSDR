@@ -44,6 +44,7 @@ private:
     ActiveState downState;
     int hoverIndex;
     int downIndex;
+    bool dragging;
 
     float freqDP;
     float freqW;

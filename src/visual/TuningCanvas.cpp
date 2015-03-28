@@ -30,7 +30,10 @@ TuningCanvas::TuningCanvas(wxWindow *parent, int *attribList) :
     glContext = new TuningContext(this, &wxGetApp().GetContext(this));
 
     hoverIndex = 0;
+    downIndex = 0;
     hoverState = TUNING_HOVER_NONE;
+    downState = TUNING_HOVER_NONE;
+    dragging = false;
 
     freqDP = -1.0;
     freqW = (1.0 / 3.0) * 2.0;
@@ -192,13 +195,16 @@ void TuningCanvas::OnIdle(wxIdleEvent &event) {
             while (dragAccum > 1.0) {
                 StepTuner(downState, downIndex-1, true);
                 dragAccum -= 1.0;
+                dragging = true;
             }
             while (dragAccum < -1.0) {
                 StepTuner(downState, downIndex-1, false);
                 dragAccum += 1.0;
+                dragging = true;
             }
         } else {
             dragAccum = 0;
+            dragging = false;
         }
     }
 
@@ -264,12 +270,13 @@ void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
 
     int hExponent = hoverIndex - 1;
 
-    if (hoverState != TUNING_HOVER_NONE) {
+    if (hoverState != TUNING_HOVER_NONE && !dragging) {
         StepTuner(hoverState, hExponent, top);
     }
 
     mouseTracker.setVertDragLock(false);
 
+    dragging = false;
     SetCursor(wxCURSOR_ARROW);
 }
 
