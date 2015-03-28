@@ -245,10 +245,19 @@ void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
 
         activeDemod->setFrequency(freq);
         activeDemod->updateLabel(freq);
+        activeDemod->setFollow(true);
     }
 
     if (hoverState == TUNING_HOVER_BW) {
-        long bw = wxGetApp().getDemodMgr().getLastBandwidth()+amount;
+        long bw = wxGetApp().getDemodMgr().getLastBandwidth();
+
+        if (shiftDown) {
+            bool carried = (long)((bw) / (exp * 10)) != (long)((bw + amount) / (exp * 10));
+            bw += carried?(9*-amount):amount;
+        } else {
+            bw += amount;
+        }
+
         if (bw > wxGetApp().getSampleRate()) {
             bw = wxGetApp().getSampleRate();
         }
@@ -261,7 +270,15 @@ void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
     }
 
     if (hoverState == TUNING_HOVER_CENTER) {
-        wxGetApp().setFrequency(wxGetApp().getFrequency() + amount);
+        long long ctr = wxGetApp().getFrequency();
+        if (shiftDown) {
+            bool carried = (long long)((ctr) / (exp * 10)) != (long long)((ctr + amount) / (exp * 10));
+            ctr += carried?(9*-amount):amount;
+        } else {
+            ctr += amount;
+        }
+
+        wxGetApp().setFrequency(ctr);
     }
 
     SetCursor(wxCURSOR_ARROW);
