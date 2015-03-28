@@ -200,7 +200,6 @@ void TuningCanvas::OnIdle(wxIdleEvent &event) {
         } else {
             dragAccum = 0;
         }
-std::cout << dragAccum << std::endl;
     }
 
     Refresh(false);
