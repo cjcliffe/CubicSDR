@@ -233,7 +233,7 @@ void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
         long long diff = abs(wxGetApp().getFrequency() - freq);
 
         if (shiftDown) {
-            bool carried = (long long)((freq) / (exp * 10)) != (long long)((freq + amount) / (exp * 10));
+            bool carried = (long long)((freq) / (exp * 10)) != (long long)((freq + amount) / (exp * 10)) || (bottom && freq < exp);
             freq += carried?(9*-amount):amount;
         } else {
             freq += amount;
@@ -252,7 +252,7 @@ void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
         long bw = wxGetApp().getDemodMgr().getLastBandwidth();
 
         if (shiftDown) {
-            bool carried = (long)((bw) / (exp * 10)) != (long)((bw + amount) / (exp * 10));
+            bool carried = (long)((bw) / (exp * 10)) != (long)((bw + amount) / (exp * 10)) || (bottom && bw < exp);
             bw += carried?(9*-amount):amount;
         } else {
             bw += amount;
@@ -272,7 +272,7 @@ void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
     if (hoverState == TUNING_HOVER_CENTER) {
         long long ctr = wxGetApp().getFrequency();
         if (shiftDown) {
-            bool carried = (long long)((ctr) / (exp * 10)) != (long long)((ctr + amount) / (exp * 10));
+            bool carried = (long long)((ctr) / (exp * 10)) != (long long)((ctr + amount) / (exp * 10)) || (bottom && ctr < exp);
             ctr += carried?(9*-amount):amount;
         } else {
             ctr += amount;
