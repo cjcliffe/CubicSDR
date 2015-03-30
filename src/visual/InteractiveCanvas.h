@@ -15,6 +15,7 @@ public:
 
     void setView(long long center_freq_in, int bandwidth_in);
     void disableView();
+    bool getViewState();
 
     void setCenterFrequency(long long center_freq_in);
     long long getCenterFrequency();

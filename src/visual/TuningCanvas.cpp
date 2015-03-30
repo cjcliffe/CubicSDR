@@ -223,25 +223,42 @@ void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
     if (index > 0) {
         hoverIndex = index;
         hoverState = TUNING_HOVER_FREQ;
-        return;
     }
 
-    index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(), 7, bwDP, bwW); // bw
-    if (index > 0) {
-        hoverIndex = index;
-        hoverState = TUNING_HOVER_BW;
-        return;
+    if (!index) {
+        index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(), 7, bwDP, bwW); // bw
+        if (index > 0) {
+            hoverIndex = index;
+            hoverState = TUNING_HOVER_BW;
+        }
     }
 
-    index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(), 11, centerDP, centerW); // center
-    if (index > 0) {
-        hoverIndex = index;
-        hoverState = TUNING_HOVER_CENTER;
-        return;
+    if (!index) {
+        index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(), 11, centerDP, centerW); // center
+        if (index > 0) {
+            hoverIndex = index;
+            hoverState = TUNING_HOVER_CENTER;
+        }
     }
 
-    hoverIndex = 0;
-    hoverState = TUNING_HOVER_NONE;
+    if (!index) {
+        hoverIndex = 0;
+        hoverState = TUNING_HOVER_NONE;
+    } else {
+        switch (hoverState) {
+        case TUNING_HOVER_FREQ:
+                setStatusText("Click or drag a digit to change frequency.  Hold shift to disable carry.");
+            break;
+        case TUNING_HOVER_BW:
+                setStatusText("Click or drag a digit to change bandwidth.  Hold shift to disable carry.");
+            break;
+        case TUNING_HOVER_CENTER:
+                setStatusText("Click or drag a digit to change center frequency.  Hold shift to disable carry.");
+            break;
+        }
+    }
+
+
 }
 
 void TuningCanvas::OnMouseDown(wxMouseEvent& event) {
@@ -270,7 +287,7 @@ void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
 
     int hExponent = hoverIndex - 1;
 
-    if (hoverState != TUNING_HOVER_NONE && !dragging) {
+    if (hoverState != TUNING_HOVER_NONE && !dragging && (downState == hoverState) && (downIndex == hoverIndex)) {
         StepTuner(hoverState, hExponent, top);
     }
 

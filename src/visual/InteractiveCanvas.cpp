@@ -41,6 +41,10 @@ void InteractiveCanvas::disableView() {
     lastBandwidth = 0;
 }
 
+bool InteractiveCanvas::getViewState() {
+    return isView;
+}
+
 long long InteractiveCanvas::getFrequencyAt(float x) {
     long long iqCenterFreq = getCenterFrequency();
     long long iqBandwidth = getBandwidth();
