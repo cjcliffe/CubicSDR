@@ -508,12 +508,12 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         }
 
         if (wxGetApp().getFrequency() != demodWaterfallCanvas->getCenterFrequency()) {
-            if (spectrumCanvas->getViewState() && abs(wxGetApp().getFrequency()-spectrumCanvas->getCenterFrequency()) > (wxGetApp().getSampleRate()/2)) {
-                spectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
-                waterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
-            }
             demodWaterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
             demodSpectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
+        }
+        if (spectrumCanvas->getViewState() && abs(wxGetApp().getFrequency()-spectrumCanvas->getCenterFrequency()) > (wxGetApp().getSampleRate()/2)) {
+            spectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
+            waterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
         }
     }
 
