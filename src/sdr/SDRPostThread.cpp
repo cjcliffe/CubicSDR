@@ -185,14 +185,17 @@ void SDRPostThread::threadMain() {
                         DemodulatorInstance *demod = *i;
                         DemodulatorThreadInputQueue *demodQueue = demod->threadQueueDemod;
 
-                        if (demod->getFrequency() != data_in->frequency
-                                && abs(data_in->frequency - demod->getFrequency()) > (wxGetApp().getSampleRate() / 2)) {
-                            if (demod->isActive()) {
+                        if (abs(data_in->frequency - demod->getFrequency()) > (wxGetApp().getSampleRate() / 2)) {
+                            if (demod->isActive() && !demod->isFollow()) {
                                 demod->setActive(false);
                                 DemodulatorThreadIQData *dummyDataOut = new DemodulatorThreadIQData;
                                 dummyDataOut->frequency = data_in->frequency;
                                 dummyDataOut->sampleRate = data_in->sampleRate;
                                 demodQueue->push(dummyDataOut);
+                            }
+
+                            if (demod->isFollow() && wxGetApp().getFrequency() != demod->getFrequency()) {
+                                wxGetApp().setFrequency(demod->getFrequency());
                             }
                         } else if (!demod->isActive()) {
                             demod->setActive(true);
@@ -203,6 +206,9 @@ void SDRPostThread::threadMain() {
 
                         if (!demod->isActive()) {
                             continue;
+                        }
+                        if (demod->isFollow()) {
+                            demod->setFollow(false);
                         }
 
                         demodQueue->push(demodDataOut);

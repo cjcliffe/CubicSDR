@@ -15,12 +15,15 @@ public:
 
     void setView(long long center_freq_in, int bandwidth_in);
     void disableView();
+    bool getViewState();
 
     void setCenterFrequency(long long center_freq_in);
     long long getCenterFrequency();
 
     void setBandwidth(unsigned int bandwidth_in);
     unsigned int getBandwidth();
+
+    MouseTracker *getMouseTracker();
 
 protected:
     void OnKeyDown(wxKeyEvent& event);

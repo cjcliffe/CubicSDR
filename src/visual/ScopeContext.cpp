@@ -73,6 +73,19 @@ void ScopeContext::Plot(std::vector<float> &points, bool stereo) {
     }
     glLineWidth(1.0);
 
+
+    GLint vp[4];
+    glGetIntegerv(GL_VIEWPORT, vp);
+    float viewHeight = (float) vp[3];
+    float hPos = (float) (13) / viewHeight;
+
+    glColor3f(0.65, 0.65, 0.65);
+
+    getFont(PrimaryGLContext::GLFONT_SIZE12).drawString("Frequency", -0.66, -1.0+hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+    getFont(PrimaryGLContext::GLFONT_SIZE12).drawString("Bandwidth", 0.0, -1.0+hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+    getFont(PrimaryGLContext::GLFONT_SIZE12).drawString("Center Frequency", 0.66, -1.0+hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+
+
     if (stereo) {
         glColor3f(ThemeMgr::mgr.currentTheme->scopeLine.r, ThemeMgr::mgr.currentTheme->scopeLine.g, ThemeMgr::mgr.currentTheme->scopeLine.b);
         glBegin (GL_LINES);

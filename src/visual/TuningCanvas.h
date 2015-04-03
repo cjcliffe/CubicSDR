@@ -15,6 +15,9 @@
 
 class TuningCanvas: public InteractiveCanvas {
 public:
+    enum ActiveState {
+        TUNING_HOVER_NONE, TUNING_HOVER_FREQ, TUNING_HOVER_BW, TUNING_HOVER_CENTER
+    };
     TuningCanvas(wxWindow *parent, int *attribList = NULL);
     ~TuningCanvas();
 
@@ -30,12 +33,31 @@ private:
     void OnMouseReleased(wxMouseEvent& event);
     void OnMouseEnterWindow(wxMouseEvent& event);
     void OnMouseLeftWindow(wxMouseEvent& event);
+    void StepTuner(ActiveState state, int factor, bool up = true);
 
     TuningContext *glContext;
 
     std::string helpTip;
     float dragAccum;
     float uxDown;
+    ActiveState hoverState;
+    ActiveState downState;
+    int hoverIndex;
+    int downIndex;
+    bool dragging;
+
+    float freqDP;
+    float freqW;
+
+    float bwDP;
+    float bwW;
+
+    float centerDP;
+    float centerW;
+
+    bool top;
+    bool bottom;
+
     //
 wxDECLARE_EVENT_TABLE();
 };

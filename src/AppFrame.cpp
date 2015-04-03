@@ -38,7 +38,7 @@ EVT_IDLE(AppFrame::OnIdle)
 wxEND_EVENT_TABLE()
 
 AppFrame::AppFrame() :
-wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
+        wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
 
 #ifdef __linux__
     SetIcon(wxICON(cubicsdr));
@@ -50,13 +50,7 @@ wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
     wxBoxSizer *demodTray = new wxBoxSizer(wxHORIZONTAL);
     wxBoxSizer *demodScopeTray = new wxBoxSizer(wxVERTICAL);
 
-    int attribList[] = {
-            WX_GL_RGBA,
-            WX_GL_STENCIL_SIZE, 8,
-            WX_GL_BUFFER_SIZE, 24,
-            WX_GL_DOUBLEBUFFER,
-            0
-    };
+    int attribList[] = { WX_GL_RGBA, WX_GL_STENCIL_SIZE, 8, WX_GL_BUFFER_SIZE, 24, WX_GL_DOUBLEBUFFER, 0 };
 
     demodModeSelector = new ModeSelectorCanvas(this, attribList);
     demodModeSelector->addChoice(DEMOD_TYPE_FM, "FM");
@@ -164,7 +158,6 @@ wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
         i++;
     }
 
-
     for (mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
         wxMenuItem *itm = menu->AppendRadioItem(wxID_RT_AUDIO_DEVICE + mdevices_i->first, mdevices_i->second.name, wxT("Description?"));
         itm->SetId(wxID_RT_AUDIO_DEVICE + mdevices_i->first);
@@ -232,31 +225,30 @@ wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
         menuBar->Append(menu, wxT("Input &Device"));
     }
 
-
     menu = new wxMenu;
 
-
-	#define NUM_RATES_DEFAULT 4
+#define NUM_RATES_DEFAULT 4
     int desired_rates[NUM_RATES_DEFAULT] = { 48000, 44100, 96000, 192000 };
 
     for (mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
-    	int desired_rate = 0;
-    	int desired_rank = NUM_RATES_DEFAULT+1;
+        int desired_rate = 0;
+        int desired_rank = NUM_RATES_DEFAULT + 1;
 
-        for (std::vector<unsigned int>::iterator srate = mdevices_i->second.sampleRates.begin(); srate != mdevices_i->second.sampleRates.end(); srate++) {
-        	for (i = 0; i < NUM_RATES_DEFAULT; i++) {
-        		if (desired_rates[i] == (*srate)) {
-        			if (desired_rank > i) {
-        				desired_rank = i;
-        				desired_rate = (*srate);
-        			}
-        		}
-        	}
+        for (std::vector<unsigned int>::iterator srate = mdevices_i->second.sampleRates.begin(); srate != mdevices_i->second.sampleRates.end();
+                srate++) {
+            for (i = 0; i < NUM_RATES_DEFAULT; i++) {
+                if (desired_rates[i] == (*srate)) {
+                    if (desired_rank > i) {
+                        desired_rank = i;
+                        desired_rate = (*srate);
+                    }
+                }
+            }
         }
 
-		if (desired_rank > NUM_RATES_DEFAULT) {
-			desired_rate = mdevices_i->second.sampleRates.back();
-		}
+        if (desired_rank > NUM_RATES_DEFAULT) {
+            desired_rate = mdevices_i->second.sampleRates.back();
+        }
         AudioThread::deviceSampleRate[mdevices_i->first] = desired_rate;
     }
 
@@ -264,18 +256,19 @@ wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
         new wxMenu;
         int menu_id = wxID_AUDIO_BANDWIDTH_BASE + wxID_AUDIO_DEVICE_MULTIPLIER * mdevices_i->first;
         wxMenu *subMenu = new wxMenu;
-        menu->AppendSubMenu(subMenu,mdevices_i->second.name, wxT("Description?"));
+        menu->AppendSubMenu(subMenu, mdevices_i->second.name, wxT("Description?"));
 
         int j = 0;
-        for (std::vector<unsigned int>::iterator srate = mdevices_i->second.sampleRates.begin(); srate != mdevices_i->second.sampleRates.end(); srate++) {
+        for (std::vector<unsigned int>::iterator srate = mdevices_i->second.sampleRates.begin(); srate != mdevices_i->second.sampleRates.end();
+                srate++) {
             std::stringstream srateName;
-            srateName << ((float)(*srate)/1000.0f) << "kHz";
-            wxMenuItem *itm = subMenu->AppendRadioItem(menu_id+j, srateName.str(), wxT("Description?"));
+            srateName << ((float) (*srate) / 1000.0f) << "kHz";
+            wxMenuItem *itm = subMenu->AppendRadioItem(menu_id + j, srateName.str(), wxT("Description?"));
 
             if ((*srate) == AudioThread::deviceSampleRate[mdevices_i->first]) {
                 itm->Check(true);
             }
-            audioSampleRateMenuItems[menu_id+j] = itm;
+            audioSampleRateMenuItems[menu_id + j] = itm;
 
             j++;
         }
@@ -283,14 +276,12 @@ wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
 
     menuBar->Append(menu, wxT("Audio &Bandwidth"));
 
-
     SetMenuBar(menuBar);
 
     CreateStatusBar();
     SetClientSize(1280, 600);
     Centre();
     Show();
-
 
 #ifdef _WIN32
     SetIcon(wxICON(frame_icon));
@@ -398,7 +389,6 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         wxGetApp().setDevice(event.GetId() - wxID_DEVICE_ID);
     }
 
-
     if (event.GetId() >= wxID_AUDIO_BANDWIDTH_BASE) {
         int evId = event.GetId();
         std::vector<RtAudio::DeviceInfo>::iterator devices_i;
@@ -406,21 +396,22 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
 
         int i = 0;
         for (mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
-               int menu_id = wxID_AUDIO_BANDWIDTH_BASE + wxID_AUDIO_DEVICE_MULTIPLIER * mdevices_i->first;
+            int menu_id = wxID_AUDIO_BANDWIDTH_BASE + wxID_AUDIO_DEVICE_MULTIPLIER * mdevices_i->first;
 
-               int j = 0;
-               for (std::vector<unsigned int>::iterator srate = mdevices_i->second.sampleRates.begin(); srate != mdevices_i->second.sampleRates.end(); srate++) {
+            int j = 0;
+            for (std::vector<unsigned int>::iterator srate = mdevices_i->second.sampleRates.begin(); srate != mdevices_i->second.sampleRates.end();
+                    srate++) {
 
-                   if (evId == menu_id + j) {
-                       //audioSampleRateMenuItems[menu_id+j];
-                       //std::cout << "Would set audio sample rate on device " << mdevices_i->second.name << " (" << mdevices_i->first << ") to " << (*srate) << "Hz" << std::endl;
-                       AudioThread::setDeviceSampleRate(mdevices_i->first, *srate);
-                   }
+                if (evId == menu_id + j) {
+                    //audioSampleRateMenuItems[menu_id+j];
+                    //std::cout << "Would set audio sample rate on device " << mdevices_i->second.name << " (" << mdevices_i->first << ") to " << (*srate) << "Hz" << std::endl;
+                    AudioThread::setDeviceSampleRate(mdevices_i->first, *srate);
+                }
 
-                   j++;
-               }
-               i++;
-           }
+                j++;
+            }
+            i++;
+        }
     }
 
 }
@@ -463,12 +454,12 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 
             if (demod->getDemodulatorType() == DEMOD_TYPE_USB) {
                 demodBw /= 2;
-                centerFreq += demod->getBandwidth()/4;
+                centerFreq += demod->getBandwidth() / 4;
             }
 
             if (demod->getDemodulatorType() == DEMOD_TYPE_LSB) {
                 demodBw /= 2;
-                centerFreq -= demod->getBandwidth()/4;
+                centerFreq -= demod->getBandwidth() / 4;
             }
 
             if (demodBw > wxGetApp().getSampleRate() / 2) {
@@ -519,6 +510,10 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         if (wxGetApp().getFrequency() != demodWaterfallCanvas->getCenterFrequency()) {
             demodWaterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
             demodSpectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
+        }
+        if (spectrumCanvas->getViewState() && abs(wxGetApp().getFrequency()-spectrumCanvas->getCenterFrequency()) > (wxGetApp().getSampleRate()/2)) {
+            spectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
+            waterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
         }
     }
 
