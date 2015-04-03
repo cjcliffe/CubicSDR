@@ -72,22 +72,14 @@ void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     long long center = wxGetApp().getFrequency();
 
     if (mouseTracker.mouseDown()) {
-        glContext->Draw(ThemeMgr::mgr.currentTheme->tuningBar.r, ThemeMgr::mgr.currentTheme->tuningBar.g, ThemeMgr::mgr.currentTheme->tuningBar.b,
-                0.6, mouseTracker.getOriginMouseX(), mouseTracker.getMouseX());
+        glContext->Draw(ThemeMgr::mgr.currentTheme->tuningBarDark.r, ThemeMgr::mgr.currentTheme->tuningBarDark.g, ThemeMgr::mgr.currentTheme->tuningBarDark.b,
+                0.75, mouseTracker.getOriginMouseX(), mouseTracker.getMouseX());
     }
 
     RGBColor clr = top ? ThemeMgr::mgr.currentTheme->tuningBarUp : ThemeMgr::mgr.currentTheme->tuningBarDown;
 
-    RGBColor clrDark = ThemeMgr::mgr.currentTheme->tuningBar;
-    RGBColor clrMid = ThemeMgr::mgr.currentTheme->tuningBar;
-    RGBColor clrLight = ThemeMgr::mgr.currentTheme->tuningBar;
-
-    clrDark.r *= 0.5;
-    clrDark.g *= 0.5;
-    clrDark.b *= 0.5;
-    clrLight.r *= 2.0;
-    clrLight.g *= 2.0;
-    clrLight.b *= 2.0;
+    RGBColor clrDark = ThemeMgr::mgr.currentTheme->tuningBarDark;
+    RGBColor clrMid = ThemeMgr::mgr.currentTheme->tuningBarLight;
 
     glContext->DrawTunerBarIndexed(1, 3, 11, freqDP, freqW, clrMid, 0.25, true, true); // freq
     glContext->DrawTunerBarIndexed(4, 6, 11, freqDP, freqW, clrDark, 0.25, true, true);

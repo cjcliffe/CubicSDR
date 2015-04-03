@@ -47,7 +47,8 @@ public:
     RGBColor fftLine;
     RGBColor fftHighlight;
     RGBColor scopeLine;
-    RGBColor tuningBar;
+    RGBColor tuningBarLight;
+    RGBColor tuningBarDark;
     RGBColor tuningBarUp;
     RGBColor tuningBarDown;
     RGBColor meterLevel;
