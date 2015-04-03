@@ -121,6 +121,9 @@ void ModeSelectorCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
 void ModeSelectorCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
     InteractiveCanvas::mouseTracker.OnMouseEnterWindow(event);
     SetCursor (wxCURSOR_ARROW);
+    if (!helpTip.empty()) {
+        setStatusText(helpTip);
+    }
 }
 
 void ModeSelectorCanvas::setHelpTip(std::string tip) {
