@@ -518,7 +518,11 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         }
     }
 
-    if (!waterfallCanvas->HasFocus()) {
+    if (demodTuner->getMouseTracker()->mouseInView()) {
+        if (!demodTuner->HasFocus()) {
+            demodTuner->SetFocus();
+        }
+    } else if (!waterfallCanvas->HasFocus()) {
         waterfallCanvas->SetFocus();
     }
 

@@ -22,6 +22,7 @@ EVT_LEFT_DOWN(TuningCanvas::OnMouseDown)
 EVT_LEFT_UP(TuningCanvas::OnMouseReleased)
 EVT_LEAVE_WINDOW(TuningCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(TuningCanvas::OnMouseEnterWindow)
+EVT_MOUSEWHEEL(TuningCanvas::OnMouseWheelMoved)
 wxEND_EVENT_TABLE()
 
 TuningCanvas::TuningCanvas(wxWindow *parent, int *attribList) :
@@ -266,6 +267,16 @@ void TuningCanvas::OnMouseDown(wxMouseEvent& event) {
 
 void TuningCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseWheelMoved(event);
+
+    int hExponent = hoverIndex - 1;
+
+    if (hoverState != TUNING_HOVER_NONE && !mouseTracker.mouseDown() && hoverIndex) {
+        if (event.m_wheelAxis == wxMOUSE_WHEEL_VERTICAL) {
+            StepTuner(hoverState, hExponent, (event.m_wheelRotation > 0)?true:false);
+        } else {
+            StepTuner(hoverState, hExponent, (event.m_wheelRotation < 0)?true:false);
+        }
+    }
 }
 
 void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
