@@ -226,6 +226,7 @@ ENDIF (APPLE)
 SET (cubicsdr_sources
     src/CubicSDR.cpp
 	src/AppFrame.cpp
+	src/AppConfig.cpp
 	src/sdr/SDRThread.cpp
 	src/sdr/SDRPostThread.cpp
 	src/demod/DemodulatorPreThread.cpp
@@ -267,6 +268,7 @@ SET (cubicsdr_headers
 	src/CubicSDRDefs.h
     src/CubicSDR.h
 	src/AppFrame.h
+	src/AppConfig.h
 	src/sdr/SDRThread.h
 	src/sdr/SDRPostThread.h
 	src/demod/DemodulatorPreThread.h

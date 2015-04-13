@@ -34,8 +34,20 @@ bool CubicSDR::OnInit() {
     chdir(path);
 #endif
     
-    if (!wxApp::OnInit())
+    if (!wxApp::OnInit()) {
         return false;
+    }
+
+    wxApp:SetAppName("cubicsdr");
+
+    config.setPPM("RTLBlah :: 00000001",11);
+    config.setPPM("RTLBlah :: 00000002",12);
+    config.save();
+    config.load();
+
+    std::cout << "test1: " << config.getPPM("RTLBlah :: 00000001") << std::endl;
+    std::cout << "test2: " << config.getPPM("RTLBlah :: 00000002") << std::endl;
+    std::cout << "test3: " << config.getPPM("foo") << std::endl;
 
     frequency = DEFAULT_FREQ;
     offset = 0;
@@ -220,4 +232,9 @@ void CubicSDR::setDevice(int deviceId) {
 
 int CubicSDR::getDevice() {
     return sdrThread->getDeviceId();
+}
+
+
+AppConfig *CubicSDR::getConfig() {
+    return &config;
 }
