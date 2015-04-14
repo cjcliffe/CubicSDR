@@ -38,7 +38,7 @@ bool CubicSDR::OnInit() {
         return false;
     }
 
-    wxApp: SetAppName("cubicsdr");
+    wxApp::SetAppName("cubicsdr");
 
     config.load();
 
