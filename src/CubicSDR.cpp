@@ -33,24 +33,18 @@ bool CubicSDR::OnInit() {
     CFRelease(resourcesURL);
     chdir(path);
 #endif
-    
+
     if (!wxApp::OnInit()) {
         return false;
     }
 
-    wxApp:SetAppName("cubicsdr");
+    wxApp: SetAppName("cubicsdr");
 
-    config.setPPM("RTLBlah :: 00000001",11);
-    config.setPPM("RTLBlah :: 00000002",12);
-    config.save();
     config.load();
-
-    std::cout << "test1: " << config.getPPM("RTLBlah :: 00000001") << std::endl;
-    std::cout << "test2: " << config.getPPM("RTLBlah :: 00000002") << std::endl;
-    std::cout << "test3: " << config.getPPM("foo") << std::endl;
 
     frequency = DEFAULT_FREQ;
     offset = 0;
+    ppm = 0;
 
     audioVisualQueue = new DemodulatorThreadOutputQueue();
     audioVisualQueue->set_max_num_items(1);
@@ -59,7 +53,7 @@ bool CubicSDR::OnInit() {
     sdrThread = new SDRThread(threadCmdQueueSDR);
 
     sdrPostThread = new SDRPostThread();
-    sdrPostThread->setNumVisSamples(16384*2);
+    sdrPostThread->setNumVisSamples(16384 * 2);
 
     iqPostDataQueue = new SDRThreadIQDataQueue;
     iqVisualQueue = new DemodulatorThreadInputQueue;
@@ -89,7 +83,7 @@ bool CubicSDR::OnInit() {
             choices.Add(devName);
         }
 
-        int devId = wxGetSingleChoiceIndex(wxT("Devices"),wxT("Choose Input Device"),choices);
+        int devId = wxGetSingleChoiceIndex(wxT("Devices"), wxT("Choose Input Device"), choices);
 
         std::cout << "Chosen: " << devId << std::endl;
         sdrThread->setDeviceId(devId);
@@ -228,13 +222,48 @@ void CubicSDR::setDevice(int deviceId) {
     SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_SET_DEVICE);
     command.llong_value = deviceId;
     threadCmdQueueSDR->push(command);
+
+    SDRDeviceInfo *dev = (*getDevices())[deviceId];
+
+    SDRThreadCommand command_ppm(SDRThreadCommand::SDR_THREAD_CMD_SET_PPM);
+    ppm = config.getPPM(dev->getDeviceId());
+    command_ppm.llong_value = ppm;
+    threadCmdQueueSDR->push(command_ppm);
 }
 
 int CubicSDR::getDevice() {
     return sdrThread->getDeviceId();
 }
 
-
 AppConfig *CubicSDR::getConfig() {
     return &config;
 }
+
+void CubicSDR::setPPM(int ppm_in) {
+    if (sdrThread->getDeviceId() < 0) {
+        return;
+    }
+    ppm = ppm_in;
+
+    SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_SET_PPM);
+    command.llong_value = ppm;
+    threadCmdQueueSDR->push(command);
+
+    SDRDeviceInfo *dev = (*getDevices())[getDevice()];
+
+    config.setPPM(dev->getDeviceId(), ppm_in);
+    config.save();
+}
+
+int CubicSDR::getPPM() {
+    if (sdrThread->getDeviceId() < 0) {
+        return 0;
+    }
+    SDRDeviceInfo *dev = (*getDevices())[getDevice()];
+
+    SDRThreadCommand command_ppm(SDRThreadCommand::SDR_THREAD_CMD_SET_PPM);
+    ppm = config.getPPM(dev->getDeviceId());
+
+    return ppm;
+}
+

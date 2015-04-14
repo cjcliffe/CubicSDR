@@ -19,15 +19,15 @@ std::string AppConfig::getConfigDir() {
     return dataDir;
 }
 
-void AppConfig::setPPM(std::string device_serial, int ppm) {
-    device_ppm[device_serial] = ppm;
+void AppConfig::setPPM(std::string deviceId, int ppm) {
+    device_ppm[deviceId] = ppm;
 }
 
-int AppConfig::getPPM(std::string device_serial) {
-    if (device_ppm.find(device_serial) == device_ppm.end()) {
+int AppConfig::getPPM(std::string deviceId) {
+    if (device_ppm.find(deviceId) == device_ppm.end()) {
         return 0;
     }
-    return device_ppm[device_serial];
+    return device_ppm[deviceId];
 }
 
 bool AppConfig::save() {

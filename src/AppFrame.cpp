@@ -132,6 +132,7 @@ AppFrame::AppFrame() :
     wxMenu *menu = new wxMenu;
 //    menu->Append(wxID_NEW);
     menu->Append(wxID_SET_FREQ_OFFSET, "Set Frequency Offset");
+    menu->Append(wxID_SET_PPM, "Set Device PPM");
     menu->Append(wxID_OPEN, "&Open Session");
     menu->Append(wxID_SAVE, "&Save Session");
     menu->Append(wxID_SAVEAS, "Save Session &As..");
@@ -318,6 +319,10 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         if (ofs != -1) {
             wxGetApp().setOffset(ofs);
         }
+    } else if (event.GetId() == wxID_SET_PPM) {
+        long ofs = wxGetNumberFromUser("Frequency correction for device in PPM.\ni.e. -51 for -51 PPM", "Parts per million (PPM)",
+                "Frequency Correction", wxGetApp().getPPM(), -1000, 1000, this);
+            wxGetApp().setPPM(ofs);
     } else if (event.GetId() == wxID_SAVE) {
         if (!currentSessionFile.empty()) {
             saveSession(currentSessionFile);

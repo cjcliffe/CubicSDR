@@ -15,6 +15,7 @@
 #define wxID_RT_AUDIO_DEVICE 1000
 #define wxID_SET_FREQ_OFFSET 2001
 #define wxID_RESET 2002
+#define wxID_SET_PPM 2003
 
 #define wxID_THEME_DEFAULT 2100
 #define wxID_THEME_SHARP 2101

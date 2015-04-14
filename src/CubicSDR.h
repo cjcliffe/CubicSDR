@@ -52,6 +52,9 @@ public:
 
     AppConfig *getConfig();
 
+    void setPPM(int ppm_in);
+    int getPPM();
+
 private:
     AppConfig config;
     PrimaryGLContext *m_glContext;
@@ -61,6 +64,7 @@ private:
 
     long long frequency;
     long long offset;
+    int ppm;
     long long sampleRate;
 
     SDRThread *sdrThread;

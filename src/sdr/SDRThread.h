@@ -11,6 +11,16 @@ class SDRDeviceInfo {
 public:
     SDRDeviceInfo() : name(""), serial(""), available(false) { }
 
+    std::string getDeviceId() {
+        std::string deviceId;
+
+        deviceId.append(getName());
+        deviceId.append(" :: ");
+        deviceId.append(getSerial());
+
+        return deviceId;
+    }
+
     bool isAvailable() const {
         return available;
     }
@@ -71,7 +81,7 @@ private:
 class SDRThreadCommand {
 public:
     enum SDRThreadCommandEnum {
-        SDR_THREAD_CMD_NULL, SDR_THREAD_CMD_TUNE, SDR_THREAD_CMD_SET_OFFSET, SDR_THREAD_CMD_SET_SAMPLERATE, SDR_THREAD_CMD_SET_DEVICE
+        SDR_THREAD_CMD_NULL, SDR_THREAD_CMD_TUNE, SDR_THREAD_CMD_SET_OFFSET, SDR_THREAD_CMD_SET_SAMPLERATE, SDR_THREAD_CMD_SET_PPM, SDR_THREAD_CMD_SET_DEVICE
     };
 
     SDRThreadCommand() :

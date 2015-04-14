@@ -11,8 +11,8 @@ public:
 
     std::string getConfigDir();
 
-    void setPPM(std::string device_serial, int ppm);
-    int getPPM(std::string device_serial);
+    void setPPM(std::string deviceId, int ppm);
+    int getPPM(std::string deviceId);
     bool save();
     bool load();
     bool reset();
