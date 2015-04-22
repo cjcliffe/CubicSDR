@@ -137,7 +137,7 @@ void SDRThread::threadMain() {
     signed char buf[BUF_SIZE];
 
     long long frequency = DEFAULT_FREQ;
-    int ppm = wxGetApp().getConfig()->getPPM(devs[deviceId]->getDeviceId());
+    int ppm = wxGetApp().getConfig()->getDevice(devs[deviceId]->getDeviceId())->getPPM();
 
     rtlsdr_open(&dev, deviceId);
     rtlsdr_set_sample_rate(dev, sampleRate);

@@ -38,7 +38,7 @@ bool CubicSDR::OnInit() {
         return false;
     }
 
-    wxApp::SetAppName("cubicsdr");
+    wxApp::SetAppName("CubicSDR");
 
     config.load();
 
@@ -226,7 +226,7 @@ void CubicSDR::setDevice(int deviceId) {
     SDRDeviceInfo *dev = (*getDevices())[deviceId];
 
     SDRThreadCommand command_ppm(SDRThreadCommand::SDR_THREAD_CMD_SET_PPM);
-    ppm = config.getPPM(dev->getDeviceId());
+    ppm = config.getDevice(dev->getDeviceId())->getPPM();
     command_ppm.llong_value = ppm;
     threadCmdQueueSDR->push(command_ppm);
 }
@@ -251,7 +251,7 @@ void CubicSDR::setPPM(int ppm_in) {
 
     SDRDeviceInfo *dev = (*getDevices())[getDevice()];
 
-    config.setPPM(dev->getDeviceId(), ppm_in);
+    config.getDevice(dev->getDeviceId())->setPPM(ppm_in);
     config.save();
 }
 
@@ -262,7 +262,7 @@ int CubicSDR::getPPM() {
     SDRDeviceInfo *dev = (*getDevices())[getDevice()];
 
     SDRThreadCommand command_ppm(SDRThreadCommand::SDR_THREAD_CMD_SET_PPM);
-    ppm = config.getPPM(dev->getDeviceId());
+    ppm = config.getDevice(dev->getDeviceId())->getPPM();
 
     return ppm;
 }

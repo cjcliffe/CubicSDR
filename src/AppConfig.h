@@ -6,16 +6,35 @@
 
 #include "DataTree.h"
 
+
+class DeviceConfig {
+public:
+    DeviceConfig();
+    DeviceConfig(std::string deviceId);
+
+    void setPPM(int ppm);
+    int getPPM();
+
+    void setDeviceId(std::string deviceId);
+    std::string getDeviceId();
+
+    void save(DataNode *node);
+    void load(DataNode *node);
+
+private:
+    std::string deviceId;
+    int ppm;
+};
+
 class AppConfig {
 public:
-
     std::string getConfigDir();
+    DeviceConfig *getDevice(std::string deviceId);
 
-    void setPPM(std::string deviceId, int ppm);
-    int getPPM(std::string deviceId);
     bool save();
     bool load();
     bool reset();
+
 private:
-    std::map<std::string, int> device_ppm;
+    std::map<std::string, DeviceConfig> deviceConfig;
 };

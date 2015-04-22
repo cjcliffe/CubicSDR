@@ -1,7 +1,53 @@
 #include "AppConfig.h"
 
-std::string AppConfig::getConfigDir() {
+DeviceConfig::DeviceConfig() : ppm(0), deviceId("") {
 
+}
+
+DeviceConfig::DeviceConfig(std::string deviceId) : ppm(0) {
+    this->deviceId = deviceId;
+}
+
+void DeviceConfig::setPPM(int ppm) {
+    this->ppm = ppm;
+}
+
+int DeviceConfig::getPPM() {
+    return ppm;
+}
+
+void DeviceConfig::setDeviceId(std::string deviceId) {
+    this->deviceId = deviceId;
+}
+
+std::string DeviceConfig::getDeviceId() {
+    return deviceId;
+}
+
+void DeviceConfig::save(DataNode *node) {
+    node->newChild("id")->element()->set(deviceId);
+    DataNode *ppm_node = node->newChild("ppm");
+    ppm_node->element()->set((int)ppm);
+}
+
+void DeviceConfig::load(DataNode *node) {
+    if (node->hasAnother("ppm")) {
+        DataNode *ppm_node = node->getNext("ppm");
+        int ppmValue = 0;
+        ppm_node->element()->get(ppmValue);
+        setPPM(ppmValue);
+        std::cout << "Loaded PPM for device '" << deviceId << "' at " << ppmValue << "ppm" << std::endl;
+    }
+}
+
+
+DeviceConfig *AppConfig::getDevice(std::string deviceId) {
+    DeviceConfig *conf = &deviceConfig[deviceId];
+    conf->setDeviceId(deviceId);
+    return conf;
+}
+
+std::string AppConfig::getConfigDir() {
     std::string dataDir = wxStandardPaths::Get().GetUserDataDir().ToStdString();
 
     bool mkStatus = false;
@@ -19,33 +65,21 @@ std::string AppConfig::getConfigDir() {
     return dataDir;
 }
 
-void AppConfig::setPPM(std::string deviceId, int ppm) {
-    device_ppm[deviceId] = ppm;
-}
-
-int AppConfig::getPPM(std::string deviceId) {
-    if (device_ppm.find(deviceId) == device_ppm.end()) {
-        return 0;
-    }
-    return device_ppm[deviceId];
-}
-
 bool AppConfig::save() {
     DataTree cfg;
 
     cfg.rootNode()->setName("cubicsdr_config");
-    DataNode *ppm_data = cfg.rootNode()->newChild("ppm");
+    DataNode *devices_node = cfg.rootNode()->newChild("devices");
 
-    std::map<std::string, int>::iterator device_ppm_i;
-    for (device_ppm_i = device_ppm.begin(); device_ppm_i != device_ppm.end(); device_ppm_i++) {
-        DataNode *ppm_ent = ppm_data->newChild("device");
-        ppm_ent->newChild("id")->element()->set(device_ppm_i->first);
-        ppm_ent->newChild("value")->element()->set((int)device_ppm_i->second);
+    std::map<std::string, DeviceConfig>::iterator device_config_i;
+    for (device_config_i = deviceConfig.begin(); device_config_i != deviceConfig.end(); device_config_i++) {
+        DataNode *device_node = devices_node->newChild("device");
+        device_config_i->second.save(device_node);
     }
 
     std::string cfgFileDir = getConfigDir();
 
-    wxFileName cfgFile = wxFileName(cfgFileDir, "cubicsdr.xml");
+    wxFileName cfgFile = wxFileName(cfgFileDir, "config.xml");
     std::string cfgFileName = cfgFile.GetFullPath(wxPATH_NATIVE).ToStdString();
 
     if (!cfg.SaveToFileXML(cfgFileName)) {
@@ -60,7 +94,7 @@ bool AppConfig::load() {
     DataTree cfg;
     std::string cfgFileDir = getConfigDir();
 
-    wxFileName cfgFile = wxFileName(cfgFileDir, "cubicsdr.xml");
+    wxFileName cfgFile = wxFileName(cfgFileDir, "config.xml");
     std::string cfgFileName = cfgFile.GetFullPath(wxPATH_NATIVE).ToStdString();
 
     if (!cfgFile.Exists()) {
@@ -68,25 +102,24 @@ bool AppConfig::load() {
     }
 
     if (cfgFile.IsFileReadable()) {
+        std::cout << "Loading:: configuration file '" << cfgFileName << "'" << std::endl;
+
         cfg.LoadFromFileXML(cfgFileName);
     } else {
         std::cout << "Error loading:: configuration file '" << cfgFileName << "' is not readable!" << std::endl;
         return false;
     }
 
-    if (cfg.rootNode()->hasAnother("ppm")) {
-        device_ppm.clear();
+    if (cfg.rootNode()->hasAnother("devices")) {
+        DataNode *devices_node = cfg.rootNode()->getNext("devices");
 
-        DataNode *ppm_data = cfg.rootNode()->getNext("ppm");
+        while (devices_node->hasAnother("device")) {
+            DataNode *device_node = devices_node->getNext("device");
+            if (device_node->hasAnother("id")) {
+                std::string deviceId;
+                device_node->getNext("id")->element()->get(deviceId);
 
-        while (ppm_data->hasAnother("device")) {
-            DataNode *ppm_ent = ppm_data->getNext("device");
-
-            if (ppm_ent->hasAnother("id") && ppm_ent->hasAnother("value")) {
-                std::string deviceId(*ppm_ent->getNext("id"));
-                int ppmValue = *ppm_ent->getNext("value");
-                setPPM(deviceId, ppmValue);
-                std::cout << "Loaded PPM for device '" << deviceId << "' at " << ppmValue << "ppm" << std::endl;
+                getDevice(deviceId)->load(device_node);
             }
         }
     }
