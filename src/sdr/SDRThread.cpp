@@ -125,6 +125,8 @@ void SDRThread::threadMain() {
     std::vector<SDRDeviceInfo *> devs;
     if (deviceId == -1) {
         deviceId = enumerate_rtl(&devs);
+    } else {
+        enumerate_rtl(&devs);
     }
 
     if (deviceId == -1) {
