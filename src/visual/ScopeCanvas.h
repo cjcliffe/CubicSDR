@@ -19,6 +19,9 @@ public:
     void setWaveformPoints(std::vector<float> &waveform_points_in);
     void setStereo(bool state);
     void setDeviceName(std::string device_name);
+    void setPPMMode(bool ppmMode);
+    bool getPPMMode();
+
 private:
     void OnPaint(wxPaintEvent& event);
 
@@ -29,6 +32,7 @@ private:
     ScopeContext *glContext;
     std::string deviceName;
     bool stereo;
+    bool ppmMode;
 // event table
 wxDECLARE_EVENT_TABLE();
 };

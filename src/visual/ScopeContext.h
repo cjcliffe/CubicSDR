@@ -12,7 +12,7 @@ public:
     ScopeContext(ScopeCanvas *canvas, wxGLContext *sharedContext);
 
     void DrawBegin();
-    void Plot(std::vector<float> &points, bool stereo=false);
+    void Plot(std::vector<float> &points, bool stereo=false, bool ppmMode=false);
     void DrawDeviceName(std::string deviceName);
     void DrawDivider();
     void DrawEnd();

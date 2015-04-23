@@ -51,6 +51,7 @@ public:
     void removeDemodulator(DemodulatorInstance *demod);
 
     AppConfig *getConfig();
+    void saveConfig();
 
     void setPPM(int ppm_in);
     int getPPM();

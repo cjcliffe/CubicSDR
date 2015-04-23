@@ -21,7 +21,7 @@ wxEND_EVENT_TABLE()
 
 ScopeCanvas::ScopeCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE), parent(parent), stereo(false) {
+        wxFULL_REPAINT_ON_RESIZE), parent(parent), stereo(false), ppmMode(false) {
 
     glContext = new ScopeContext(this, &wxGetApp().GetContext(this));
 }
@@ -41,6 +41,14 @@ void ScopeCanvas::setStereo(bool state) {
 void ScopeCanvas::setDeviceName(std::string device_name) {
     deviceName = device_name;
     deviceName.append(" ");
+}
+
+void ScopeCanvas::setPPMMode(bool ppmMode) {
+    this->ppmMode = ppmMode;
+}
+
+bool ScopeCanvas::getPPMMode() {
+    return ppmMode;
 }
 
 void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
@@ -75,7 +83,7 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
     glContext->DrawBegin();
-    glContext->Plot(waveform_points, stereo);
+    glContext->Plot(waveform_points, stereo, ppmMode);
     if (!deviceName.empty()) {
         glContext->DrawDeviceName(deviceName);
     }

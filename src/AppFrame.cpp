@@ -323,6 +323,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         long ofs = wxGetNumberFromUser("Frequency correction for device in PPM.\ni.e. -51 for -51 PPM", "Parts per million (PPM)",
                 "Frequency Correction", wxGetApp().getPPM(), -1000, 1000, this);
             wxGetApp().setPPM(ofs);
+            wxGetApp().saveConfig();
     } else if (event.GetId() == wxID_SAVE) {
         if (!currentSessionFile.empty()) {
             saveSession(currentSessionFile);
@@ -530,6 +531,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     } else if (!waterfallCanvas->HasFocus()) {
         waterfallCanvas->SetFocus();
     }
+
+    scopeCanvas->setPPMMode(demodTuner->isAltDown());
 
     event.Skip();
 }

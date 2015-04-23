@@ -16,7 +16,7 @@
 class TuningCanvas: public InteractiveCanvas {
 public:
     enum ActiveState {
-        TUNING_HOVER_NONE, TUNING_HOVER_FREQ, TUNING_HOVER_BW, TUNING_HOVER_CENTER
+        TUNING_HOVER_NONE, TUNING_HOVER_FREQ, TUNING_HOVER_BW, TUNING_HOVER_PPM, TUNING_HOVER_CENTER
     };
     TuningCanvas(wxWindow *parent, int *attribList = NULL);
     ~TuningCanvas();
@@ -33,6 +33,9 @@ private:
     void OnMouseReleased(wxMouseEvent& event);
     void OnMouseEnterWindow(wxMouseEvent& event);
     void OnMouseLeftWindow(wxMouseEvent& event);
+    void OnKeyDown(wxKeyEvent& event);
+    void OnKeyUp(wxKeyEvent& event);
+
     void StepTuner(ActiveState state, int factor, bool up = true);
 
     TuningContext *glContext;
@@ -57,6 +60,9 @@ private:
 
     bool top;
     bool bottom;
+
+    int currentPPM;
+    int lastPPM;
 
     //
 wxDECLARE_EVENT_TABLE();

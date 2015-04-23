@@ -239,6 +239,10 @@ AppConfig *CubicSDR::getConfig() {
     return &config;
 }
 
+void CubicSDR::saveConfig() {
+    config.save();
+}
+
 void CubicSDR::setPPM(int ppm_in) {
     if (sdrThread->getDeviceId() < 0) {
         return;
