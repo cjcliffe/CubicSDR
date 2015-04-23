@@ -164,6 +164,9 @@ void DemodulatorInstance::setActive(bool state) {
     } else if (!active && state) {
         audioThread->setActive(state);
     }
+    if (!state) {
+        tracking = false;
+    }
     active = state;
 }
 
@@ -342,4 +345,12 @@ bool DemodulatorInstance::isFollow()  {
 
 void DemodulatorInstance::setFollow(bool follow) {
     this->follow = follow;
+}
+
+bool DemodulatorInstance::isTracking()  {
+    return tracking;
+}
+
+void DemodulatorInstance::setTracking(bool tracking) {
+    this->tracking = tracking;
 }

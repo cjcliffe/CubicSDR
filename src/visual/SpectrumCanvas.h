@@ -24,6 +24,7 @@ public:
 
     void setData(DemodulatorThreadIQData *input);
     void attachWaterfallCanvas(WaterfallCanvas *canvas_in);
+    void moveCenterFrequency(long long freqChange);
 
     SpectrumContext* getSpectrumContext();
 
@@ -51,6 +52,7 @@ private:
     SpectrumContext *glContext;
     WaterfallCanvas *waterfallCanvas;
     int fft_size;
+    int trackingRate;
 // event table
 wxDECLARE_EVENT_TABLE();
 };

@@ -28,7 +28,7 @@ wxEND_EVENT_TABLE()
 
 SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *attribList) :
         InteractiveCanvas(parent, attribList), fft_size(0), in(NULL), out(NULL), plan(NULL), fft_ceil_ma(1), fft_ceil_maa(1), fft_floor_ma(0), fft_floor_maa(
-                0), waterfallCanvas(NULL) {
+                0), waterfallCanvas(NULL), trackingRate(0) {
 
     glContext = new SpectrumContext(this, &wxGetApp().GetContext(this));
 
@@ -175,46 +175,49 @@ void SpectrumCanvas::OnIdle(wxIdleEvent &event) {
     Refresh(false);
 }
 
+
+void SpectrumCanvas::moveCenterFrequency(long long freqChange) {
+    long long freq = wxGetApp().getFrequency();
+
+    if (isView) {
+        if (centerFreq - freqChange < bandwidth/2) {
+            centerFreq = bandwidth/2;
+        } else {
+            centerFreq -= freqChange;
+        }
+
+        if (waterfallCanvas) {
+            waterfallCanvas->setCenterFrequency(centerFreq);
+        }
+
+        long long bwOfs = (centerFreq > freq) ? ((long long) bandwidth / 2) : (-(long long) bandwidth / 2);
+        long long freqEdge = centerFreq + bwOfs;
+
+        if (abs(freq - freqEdge) > (wxGetApp().getSampleRate() / 2)) {
+            freqChange = -((centerFreq > freq) ? (freqEdge - freq - (wxGetApp().getSampleRate() / 2)) : (freqEdge - freq + (wxGetApp().getSampleRate() / 2)));
+        } else {
+            freqChange = 0;
+        }
+    }
+
+    if (freqChange) {
+        if (freq - freqChange < wxGetApp().getSampleRate()/2) {
+            freq = wxGetApp().getSampleRate()/2;
+        } else {
+            freq -= freqChange;
+        }
+        wxGetApp().setFrequency(freq);
+        setStatusText("Set center frequency: %s", freq);
+    }
+}
+
 void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseMoved(event);
     if (mouseTracker.mouseDown()) {
         int freqChange = mouseTracker.getDeltaMouseX() * getBandwidth();
 
         if (freqChange != 0) {
-            long long freq = wxGetApp().getFrequency();
-
-            if (isView) {
-                if (isView) {
-                    if (centerFreq - freqChange < bandwidth/2) {
-                        centerFreq = bandwidth/2;
-                    } else {
-                        centerFreq -= freqChange;
-                    }
-                }
-                if (waterfallCanvas) {
-                    waterfallCanvas->setCenterFrequency(centerFreq);
-                }
-
-                long long bwOfs = (centerFreq > freq) ? ((long long) bandwidth / 2) : (-(long long) bandwidth / 2);
-                long long freqEdge = centerFreq + bwOfs;
-
-                if (abs(freq - freqEdge) > (wxGetApp().getSampleRate() / 2)) {
-                    freqChange = -((centerFreq > freq) ? (freqEdge - freq - (wxGetApp().getSampleRate() / 2)) : (freqEdge - freq + (wxGetApp().getSampleRate() / 2)));
-                } else {
-                    freqChange = 0;
-                }
-            }
-
-            if (freqChange) {
-                if (freq - freqChange < wxGetApp().getSampleRate()/2) {
-                    freq = wxGetApp().getSampleRate()/2;
-                } else {
-                    freq -= freqChange;
-                }
-                wxGetApp().setFrequency(freq);
-                setStatusText("Set center frequency: %s", freq);
-            }
-
+            moveCenterFrequency(freqChange);
         }
     } else {
         setStatusText("Click and drag to adjust center frequency.");

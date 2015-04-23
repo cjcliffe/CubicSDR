@@ -446,6 +446,26 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     if (demod) {
+        DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+
+        if (demod->isTracking()) {
+            if (spectrumCanvas->getViewState()) {
+                long long diff = abs(demod->getFrequency() - spectrumCanvas->getCenterFrequency()) + (demod->getBandwidth()/2) + (demod->getBandwidth()/4);
+
+                if (diff > spectrumCanvas->getBandwidth()/2) {
+                    if (demod->getBandwidth() > spectrumCanvas->getBandwidth()) {
+                        diff = abs(demod->getFrequency() - spectrumCanvas->getCenterFrequency());
+                    } else {
+                        diff = diff - spectrumCanvas->getBandwidth()/2;
+                    }
+                    spectrumCanvas->moveCenterFrequency((demod->getFrequency() < spectrumCanvas->getCenterFrequency())?diff:-diff);
+                    demod->setTracking(false);
+                }
+            } else {
+                demod->setTracking(false);
+            }
+        }
+
         if (demod != activeDemodulator) {
             demodSignalMeter->setInputValue(demod->getSquelchLevel());
             demodGainMeter->setInputValue(demod->getGain());

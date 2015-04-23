@@ -153,9 +153,10 @@ void TuningCanvas::StepTuner(ActiveState state, int exponent, bool up) {
             wxGetApp().setFrequency(freq);
         }
 
+        activeDemod->setTracking(true);
+        activeDemod->setFollow(true);
         activeDemod->setFrequency(freq);
         activeDemod->updateLabel(freq);
-        activeDemod->setFollow(true);
     }
 
     if (state == TUNING_HOVER_BW) {
@@ -270,16 +271,16 @@ void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
     } else {
         switch (hoverState) {
         case TUNING_HOVER_FREQ:
-                setStatusText("Click or drag a digit to change frequency. Hold ALT to change PPM. Hold SHIFT to disable carry.");
+                setStatusText("Click, wheel or drag a digit to change frequency. Hold ALT to change PPM. Hold SHIFT to disable carry.");
             break;
         case TUNING_HOVER_BW:
-                setStatusText("Click or drag a digit to change bandwidth.  Hold SHIFT to disable carry.");
+                setStatusText("Click, wheel or drag a digit to change bandwidth.  Hold SHIFT to disable carry.");
             break;
         case TUNING_HOVER_CENTER:
-                setStatusText("Click or drag a digit to change center frequency.  Hold SHIFT to disable carry.");
+                setStatusText("Click, wheel or drag a digit to change center frequency.  Hold SHIFT to disable carry.");
             break;
         case TUNING_HOVER_PPM:
-                 setStatusText("Click or drag a digit to change device PPM offset.  Hold SHIFT to disable carry.");
+                 setStatusText("Click, wheel or drag a digit to change device PPM offset.  Hold SHIFT to disable carry.");
              break;
       }
     }
