@@ -320,7 +320,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             wxGetApp().setOffset(ofs);
         }
     } else if (event.GetId() == wxID_SET_PPM) {
-        long ofs = wxGetNumberFromUser("Frequency correction for device in PPM.\ni.e. -51 for -51 PPM", "Parts per million (PPM)",
+        long ofs = wxGetNumberFromUser("Frequency correction for device in PPM.\ni.e. -51 for -51 PPM\n\nNote: you can adjust PPM interactively\nby holding ALT over the frequency tuning bar.\n", "Parts per million (PPM)",
                 "Frequency Correction", wxGetApp().getPPM(), -1000, 1000, this);
             wxGetApp().setPPM(ofs);
             wxGetApp().saveConfig();
