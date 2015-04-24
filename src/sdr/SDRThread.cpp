@@ -207,7 +207,7 @@ void SDRThread::threadMain() {
                 case SDRThreadCommand::SDR_THREAD_CMD_SET_PPM:
                     ppm_changed = true;
                     new_ppm = (int) command.llong_value;
-                    std::cout << "Set PPM: " << new_ppm << std::endl;
+                    //std::cout << "Set PPM: " << new_ppm << std::endl;
                     break;
                 default:
                     break;
