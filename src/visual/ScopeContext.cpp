@@ -23,7 +23,7 @@ void ScopeContext::DrawBegin() {
     glDisable (GL_TEXTURE_2D);
 }
 
-void ScopeContext::Plot(std::vector<float> &points, bool stereo) {
+void ScopeContext::Plot(std::vector<float> &points, bool stereo, bool ppmMode) {
     if (stereo) {
         glBegin(GL_QUADS);
         glColor3f(ThemeMgr::mgr.currentTheme->scopeBackground.r, ThemeMgr::mgr.currentTheme->scopeBackground.g, ThemeMgr::mgr.currentTheme->scopeBackground.b);
@@ -81,7 +81,7 @@ void ScopeContext::Plot(std::vector<float> &points, bool stereo) {
 
     glColor3f(0.65, 0.65, 0.65);
 
-    getFont(PrimaryGLContext::GLFONT_SIZE12).drawString("Frequency", -0.66, -1.0+hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+    getFont(PrimaryGLContext::GLFONT_SIZE12).drawString(ppmMode?"Device PPM":"Frequency", -0.66, -1.0+hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
     getFont(PrimaryGLContext::GLFONT_SIZE12).drawString("Bandwidth", 0.0, -1.0+hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
     getFont(PrimaryGLContext::GLFONT_SIZE12).drawString("Center Frequency", 0.66, -1.0+hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
 

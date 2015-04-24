@@ -122,8 +122,11 @@ void SDRThread::threadMain() {
     std::cout << "SDR thread initializing.." << std::endl;
 
     int devCount = rtlsdr_get_device_count();
+    std::vector<SDRDeviceInfo *> devs;
     if (deviceId == -1) {
-        deviceId = enumerate_rtl(NULL);
+        deviceId = enumerate_rtl(&devs);
+    } else {
+        enumerate_rtl(&devs);
     }
 
     if (deviceId == -1) {
@@ -136,10 +139,12 @@ void SDRThread::threadMain() {
     signed char buf[BUF_SIZE];
 
     long long frequency = DEFAULT_FREQ;
+    int ppm = wxGetApp().getConfig()->getDevice(devs[deviceId]->getDeviceId())->getPPM();
 
     rtlsdr_open(&dev, deviceId);
     rtlsdr_set_sample_rate(dev, sampleRate);
     rtlsdr_set_center_freq(dev, frequency - offset);
+    rtlsdr_set_freq_correction(dev, ppm);
     rtlsdr_set_agc_mode(dev, 1);
     rtlsdr_set_offset_tuning(dev, 0);
     rtlsdr_reset_buffer(dev);
@@ -164,10 +169,12 @@ void SDRThread::threadMain() {
             bool offset_changed = false;
             bool rate_changed = false;
             bool device_changed = false;
-            long long new_freq;
-            long long new_offset;
-            long long new_rate;
-            int new_device;
+            bool ppm_changed = false;
+            long long new_freq = frequency;
+            long long new_offset = offset;
+            long long new_rate = sampleRate;
+            int new_device = deviceId;
+            int new_ppm = ppm;
 
             while (!cmdQueue->empty()) {
                 SDRThreadCommand command;
@@ -197,6 +204,11 @@ void SDRThread::threadMain() {
                     new_device = (int) command.llong_value;
                     std::cout << "Set device: " << new_device << std::endl;
                     break;
+                case SDRThreadCommand::SDR_THREAD_CMD_SET_PPM:
+                    ppm_changed = true;
+                    new_ppm = (int) command.llong_value;
+                    std::cout << "Set PPM: " << new_ppm << std::endl;
+                    break;
                 default:
                     break;
                 }
@@ -207,6 +219,7 @@ void SDRThread::threadMain() {
                 rtlsdr_open(&dev, new_device);
                 rtlsdr_set_sample_rate(dev, sampleRate);
                 rtlsdr_set_center_freq(dev, frequency - offset);
+                rtlsdr_set_freq_correction(dev, ppm);
                 rtlsdr_set_agc_mode(dev, 1);
                 rtlsdr_set_offset_tuning(dev, 0);
                 rtlsdr_reset_buffer(dev);
@@ -223,6 +236,10 @@ void SDRThread::threadMain() {
             if (freq_changed) {
                 frequency = new_freq;
                 rtlsdr_set_center_freq(dev, frequency - offset);
+            }
+            if (ppm_changed) {
+                ppm = new_ppm;
+                rtlsdr_set_freq_correction(dev, ppm);
             }
         }
 

@@ -80,6 +80,8 @@ public:
     bool isFollow();
     void setFollow(bool follow);
 
+    bool isTracking();
+    void setTracking(bool tracking);
 private:
 
     void checkBandwidth();
@@ -98,5 +100,5 @@ private:
     int currentDemodType;
     int currentOutputDevice;
     int currentAudioSampleRate;
-    bool follow;
+    bool follow, tracking;
   };

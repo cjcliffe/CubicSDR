@@ -14,6 +14,7 @@
 #include "SDRPostThread.h"
 #include "AudioThread.h"
 #include "DemodulatorMgr.h"
+#include "AppConfig.h"
 
 #define NUM_DEMODULATORS 1
 
@@ -49,7 +50,14 @@ public:
     void bindDemodulator(DemodulatorInstance *demod);
     void removeDemodulator(DemodulatorInstance *demod);
 
+    AppConfig *getConfig();
+    void saveConfig();
+
+    void setPPM(int ppm_in);
+    int getPPM();
+
 private:
+    AppConfig config;
     PrimaryGLContext *m_glContext;
     std::vector<SDRDeviceInfo *> devs;
 
@@ -57,6 +65,7 @@ private:
 
     long long frequency;
     long long offset;
+    int ppm;
     long long sampleRate;
 
     SDRThread *sdrThread;

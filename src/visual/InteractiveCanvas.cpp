@@ -81,6 +81,18 @@ MouseTracker *InteractiveCanvas::getMouseTracker() {
     return &mouseTracker;
 }
 
+bool InteractiveCanvas::isAltDown() {
+    return altDown;
+}
+
+bool InteractiveCanvas::isCtrlDown() {
+    return ctrlDown;
+}
+
+bool InteractiveCanvas::isShiftDown() {
+    return shiftDown;
+}
+
 void InteractiveCanvas::OnKeyUp(wxKeyEvent& event) {
     shiftDown = event.ShiftDown();
     altDown = event.AltDown();
@@ -88,8 +100,6 @@ void InteractiveCanvas::OnKeyUp(wxKeyEvent& event) {
 }
 
 void InteractiveCanvas::OnKeyDown(wxKeyEvent& event) {
-    float angle = 5.0;
-
     shiftDown = event.ShiftDown();
     altDown = event.AltDown();
     ctrlDown = event.ControlDown();
@@ -125,10 +135,18 @@ void InteractiveCanvas::OnMouseReleased(wxMouseEvent& event) {
 
 void InteractiveCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
     mouseTracker.OnMouseLeftWindow(event);
+
+    shiftDown = false;
+    altDown = false;
+    ctrlDown = false;
 }
 
 void InteractiveCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
     mouseTracker.OnMouseEnterWindow(event);
+
+    shiftDown = event.ShiftDown();
+    altDown = event.AltDown();
+    ctrlDown = event.ControlDown();
 }
 
 void InteractiveCanvas::setStatusText(std::string statusText) {

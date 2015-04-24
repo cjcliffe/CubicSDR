@@ -132,6 +132,7 @@ AppFrame::AppFrame() :
     wxMenu *menu = new wxMenu;
 //    menu->Append(wxID_NEW);
     menu->Append(wxID_SET_FREQ_OFFSET, "Set Frequency Offset");
+    menu->Append(wxID_SET_PPM, "Set Device PPM");
     menu->Append(wxID_OPEN, "&Open Session");
     menu->Append(wxID_SAVE, "&Save Session");
     menu->Append(wxID_SAVEAS, "Save Session &As..");
@@ -318,6 +319,11 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         if (ofs != -1) {
             wxGetApp().setOffset(ofs);
         }
+    } else if (event.GetId() == wxID_SET_PPM) {
+        long ofs = wxGetNumberFromUser("Frequency correction for device in PPM.\ni.e. -51 for -51 PPM\n\nNote: you can adjust PPM interactively\nby holding ALT over the frequency tuning bar.\n", "Parts per million (PPM)",
+                "Frequency Correction", wxGetApp().getPPM(), -1000, 1000, this);
+            wxGetApp().setPPM(ofs);
+            wxGetApp().saveConfig();
     } else if (event.GetId() == wxID_SAVE) {
         if (!currentSessionFile.empty()) {
             saveSession(currentSessionFile);
@@ -440,6 +446,26 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     if (demod) {
+        DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+
+        if (demod->isTracking()) {
+            if (spectrumCanvas->getViewState()) {
+                long long diff = abs(demod->getFrequency() - spectrumCanvas->getCenterFrequency()) + (demod->getBandwidth()/2) + (demod->getBandwidth()/4);
+
+                if (diff > spectrumCanvas->getBandwidth()/2) {
+                    if (demod->getBandwidth() > spectrumCanvas->getBandwidth()) {
+                        diff = abs(demod->getFrequency() - spectrumCanvas->getCenterFrequency());
+                    } else {
+                        diff = diff - spectrumCanvas->getBandwidth()/2;
+                    }
+                    spectrumCanvas->moveCenterFrequency((demod->getFrequency() < spectrumCanvas->getCenterFrequency())?diff:-diff);
+                    demod->setTracking(false);
+                }
+            } else {
+                demod->setTracking(false);
+            }
+        }
+
         if (demod != activeDemodulator) {
             demodSignalMeter->setInputValue(demod->getSquelchLevel());
             demodGainMeter->setInputValue(demod->getGain());
@@ -525,6 +551,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     } else if (!waterfallCanvas->HasFocus()) {
         waterfallCanvas->SetFocus();
     }
+
+    scopeCanvas->setPPMMode(demodTuner->isAltDown());
 
     event.Skip();
 }

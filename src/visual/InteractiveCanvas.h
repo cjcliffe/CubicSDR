@@ -25,6 +25,10 @@ public:
 
     MouseTracker *getMouseTracker();
 
+    bool isAltDown();
+    bool isCtrlDown();
+    bool isShiftDown();
+
 protected:
     void OnKeyDown(wxKeyEvent& event);
     void OnKeyUp(wxKeyEvent& event);

@@ -23,6 +23,8 @@ EVT_LEFT_UP(TuningCanvas::OnMouseReleased)
 EVT_LEAVE_WINDOW(TuningCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(TuningCanvas::OnMouseEnterWindow)
 EVT_MOUSEWHEEL(TuningCanvas::OnMouseWheelMoved)
+EVT_KEY_DOWN(TuningCanvas::OnKeyDown)
+EVT_KEY_UP(TuningCanvas::OnKeyUp)
 wxEND_EVENT_TABLE()
 
 TuningCanvas::TuningCanvas(wxWindow *parent, int *attribList) :
@@ -44,6 +46,8 @@ TuningCanvas::TuningCanvas(wxWindow *parent, int *attribList) :
 
     centerDP = -1.0 + (2.0 / 3.0) * 2.0;
     centerW = (1.0 / 3.0) * 2.0;
+
+    currentPPM = lastPPM = 0;
 }
 
 TuningCanvas::~TuningCanvas() {
@@ -110,10 +114,17 @@ void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
             break;
         case TUNING_HOVER_NONE:
             break;
-        }
+        case TUNING_HOVER_PPM:
+            glContext->DrawTunerBarIndexed(hoverIndex, hoverIndex, 11, freqDP, freqW, clr, 0.25, top, bottom); // freq
+            break;
+         }
     }
 
-    glContext->DrawTuner(freq, 11, freqDP, freqW);
+    if (altDown) {
+        glContext->DrawTuner(currentPPM, 11, freqDP, freqW);
+    } else {
+        glContext->DrawTuner(freq, 11, freqDP, freqW);
+    }
     glContext->DrawTuner(bw, 7, bwDP, bwW);
     glContext->DrawTuner(center, 11, centerDP, centerW);
 
@@ -142,9 +153,10 @@ void TuningCanvas::StepTuner(ActiveState state, int exponent, bool up) {
             wxGetApp().setFrequency(freq);
         }
 
+        activeDemod->setTracking(true);
+        activeDemod->setFollow(true);
         activeDemod->setFrequency(freq);
         activeDemod->updateLabel(freq);
-        activeDemod->setFollow(true);
     }
 
     if (state == TUNING_HOVER_BW) {
@@ -178,6 +190,25 @@ void TuningCanvas::StepTuner(ActiveState state, int exponent, bool up) {
         }
 
         wxGetApp().setFrequency(ctr);
+    }
+
+    if (state == TUNING_HOVER_PPM) {
+        if (shiftDown) {
+            bool carried = (long long)((currentPPM) / (exp * 10)) != (long long)((currentPPM + amount) / (exp * 10)) || (bottom && currentPPM < exp);
+            currentPPM += carried?(9*-amount):amount;
+        } else {
+            currentPPM += amount;
+        }
+
+        if (currentPPM > 2000) {
+            currentPPM = 2000;
+        }
+
+        if (currentPPM < -2000) {
+            currentPPM = -2000;
+        }
+
+        wxGetApp().setPPM(currentPPM);
     }
 }
 
@@ -215,7 +246,7 @@ void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
     index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(), 11, freqDP, freqW); // freq
     if (index > 0) {
         hoverIndex = index;
-        hoverState = TUNING_HOVER_FREQ;
+        hoverState = altDown?TUNING_HOVER_PPM:TUNING_HOVER_FREQ;
     }
 
     if (!index) {
@@ -240,15 +271,18 @@ void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
     } else {
         switch (hoverState) {
         case TUNING_HOVER_FREQ:
-                setStatusText("Click or drag a digit to change frequency.  Hold shift to disable carry.");
+                setStatusText("Click, wheel or drag a digit to change frequency. Hold ALT to change PPM. Hold SHIFT to disable carry.");
             break;
         case TUNING_HOVER_BW:
-                setStatusText("Click or drag a digit to change bandwidth.  Hold shift to disable carry.");
+                setStatusText("Click, wheel or drag a digit to change bandwidth.  Hold SHIFT to disable carry.");
             break;
         case TUNING_HOVER_CENTER:
-                setStatusText("Click or drag a digit to change center frequency.  Hold shift to disable carry.");
+                setStatusText("Click, wheel or drag a digit to change center frequency.  Hold SHIFT to disable carry.");
             break;
-        }
+        case TUNING_HOVER_PPM:
+                 setStatusText("Click, wheel or drag a digit to change device PPM offset.  Hold SHIFT to disable carry.");
+             break;
+      }
     }
 
 
@@ -305,6 +339,10 @@ void TuningCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
     SetCursor(wxCURSOR_CROSS);
     hoverIndex = 0;
     hoverState = TUNING_HOVER_NONE;
+
+    if (currentPPM != lastPPM) {
+        wxGetApp().saveConfig();
+    }
 }
 
 void TuningCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
@@ -312,8 +350,17 @@ void TuningCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
     SetCursor(wxCURSOR_ARROW);
     hoverIndex = 0;
     hoverState = TUNING_HOVER_NONE;
+    lastPPM = currentPPM = wxGetApp().getPPM();
 }
 
 void TuningCanvas::setHelpTip(std::string tip) {
     helpTip = tip;
+}
+
+void TuningCanvas::OnKeyDown(wxKeyEvent& event) {
+    InteractiveCanvas::OnKeyDown(event);
+}
+
+void TuningCanvas::OnKeyUp(wxKeyEvent& event) {
+    InteractiveCanvas::OnKeyUp(event);
 }

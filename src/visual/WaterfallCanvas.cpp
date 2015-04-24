@@ -820,6 +820,7 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
             mouseTracker.setHorizDragLock(false);
         } else {
             wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getActiveDemodulator(), false);
+            wxGetApp().getDemodMgr().getActiveDemodulator()->setTracking(true);
             nextDragState = WF_DRAG_FREQUENCY;
         }
     } else if (dragState == WF_DRAG_RANGE) {

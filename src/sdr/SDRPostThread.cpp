@@ -186,7 +186,7 @@ void SDRPostThread::threadMain() {
                         DemodulatorThreadInputQueue *demodQueue = demod->threadQueueDemod;
 
                         if (abs(data_in->frequency - demod->getFrequency()) > (wxGetApp().getSampleRate() / 2)) {
-                            if (demod->isActive() && !demod->isFollow()) {
+                            if (demod->isActive() && !demod->isFollow() && !demod->isTracking()) {
                                 demod->setActive(false);
                                 DemodulatorThreadIQData *dummyDataOut = new DemodulatorThreadIQData;
                                 dummyDataOut->frequency = data_in->frequency;
