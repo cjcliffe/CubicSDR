@@ -29,8 +29,8 @@ Features and Status:
     - [x] Bandwidth
     - [x] Color scheme
     - [x] Load/Save session
-    - [ ] Audio sample rate
-    - [ ] Device PPM
+    - [x] Audio sample rate
+    - [x] Device PPM
     - [ ] Default preferences
       - [ ] Audio defaults
       - [ ] Device defaults
