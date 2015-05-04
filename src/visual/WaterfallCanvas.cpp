@@ -302,21 +302,14 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         if (!activeDemod) {
             break;
         }
-        if (activeDemod->isSquelchEnabled()) {
-            activeDemod->setSquelchEnabled(false);
-        } else {
-            activeDemod->squelchAuto();
-        }
-        break;
-    case WXK_SPACE:
-        if (!activeDemod) {
-            break;
-        }
         if (activeDemod->isStereo()) {
             activeDemod->setStereo(false);
         } else {
             activeDemod->setStereo(true);
         }
+        break;
+    case WXK_SPACE:
+        wxGetApp().showFrequencyInput();
         break;
     default:
         event.Skip();
@@ -720,14 +713,14 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
 
                 mouseTracker.setVertDragLock(true);
                 mouseTracker.setHorizDragLock(false);
-                setStatusText("Click and drag to change demodulator bandwidth. D to delete, SPACE for stereo.");
+                setStatusText("Click and drag to change demodulator bandwidth. D to delete, S for stereo.");
             } else {
                 SetCursor(wxCURSOR_SIZING);
                 nextDragState = WF_DRAG_FREQUENCY;
 
                 mouseTracker.setVertDragLock(true);
                 mouseTracker.setHorizDragLock(false);
-                setStatusText("Click and drag to change demodulator frequency. D to delete, SPACE for stereo.");
+                setStatusText("Click and drag to change demodulator frequency. D to delete, S for stereo.");
             }
         } else {
             SetCursor(wxCURSOR_CROSS);
