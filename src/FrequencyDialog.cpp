@@ -13,6 +13,8 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
     SetEscapeId(wxID_CANCEL);
 
     Centre();
+
+    dialogText->SetSelection(-1, -1);
 }
 
 void FrequencyDialog::OnEnter(wxCommandEvent &event) {
