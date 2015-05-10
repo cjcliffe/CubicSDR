@@ -141,7 +141,7 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     ColorTheme *currentTheme = ThemeMgr::mgr.currentTheme;
     int last_type = wxGetApp().getDemodMgr().getLastDemodulatorType();
 
-    if (mouseTracker.mouseInView()) {
+    if (mouseTracker.mouseInView() || wxGetApp().getDemodMgr().getActiveDemodulator()) {
         hoverAlpha += (1.0f-hoverAlpha)*0.1f;
         if (hoverAlpha > 1.5f) {
             hoverAlpha = 1.5f;
@@ -713,23 +713,23 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
 
                 mouseTracker.setVertDragLock(true);
                 mouseTracker.setHorizDragLock(false);
-                setStatusText("Click and drag to change demodulator bandwidth. D to delete, S for stereo.");
+                setStatusText("Click and drag to change demodulator bandwidth. SPACE for direct frequency input. D to delete, S for stereo.");
             } else {
                 SetCursor(wxCURSOR_SIZING);
                 nextDragState = WF_DRAG_FREQUENCY;
 
                 mouseTracker.setVertDragLock(true);
                 mouseTracker.setHorizDragLock(false);
-                setStatusText("Click and drag to change demodulator frequency. D to delete, S for stereo.");
+                setStatusText("Click and drag to change demodulator frequency; SPACE for direct input. D to delete, S for stereo.");
             }
         } else {
             SetCursor(wxCURSOR_CROSS);
             nextDragState = WF_DRAG_NONE;
             if (shiftDown) {
-                setStatusText("Click to create a new demodulator or hold ALT to drag range.");
+                setStatusText("Click to create a new demodulator or hold ALT to drag range, SPACE for direct center frequency input.");
             } else {
                 setStatusText(
-                        "Click to move active demodulator frequency or hold ALT to drag range; hold SHIFT to create new.  Right drag or A / Z to Zoom.  Arrow keys (+SHIFT) to move center frequency.");
+                        "Click to move active demodulator frequency or hold ALT to drag range; hold SHIFT to create new.  Right drag or A / Z to Zoom.  Arrow keys (+SHIFT) to move center frequency; SPACE for direct input.");
             }
         }
 
