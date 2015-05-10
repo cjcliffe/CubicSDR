@@ -5,6 +5,7 @@
 #include "wx/string.h"
 #include "wx/button.h"
 
+#define wxID_FREQ_INPUT 3001
 
 class FrequencyDialog: public wxDialog
 {
@@ -20,6 +21,8 @@ public:
 private:
 
     void OnEnter ( wxCommandEvent &event );
+    void OnChar ( wxKeyEvent &event );
+    std::string& filterChars(std::string& s, const std::string& allowed);
 
     DECLARE_EVENT_TABLE()
 };
