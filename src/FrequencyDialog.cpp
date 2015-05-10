@@ -9,9 +9,16 @@ wxBEGIN_EVENT_TABLE(FrequencyDialog, wxDialog)
 EVT_CHAR_HOOK(FrequencyDialog::OnChar)
 wxEND_EVENT_TABLE()
 
-FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxString & title, const wxPoint & position, const wxSize & size, long style) :
+FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxString & title, DemodulatorInstance *demod, const wxPoint & position, const wxSize & size, long style) :
 wxDialog(parent, id, title, position, size, style) {
-    wxString freqStr = frequencyToStr(wxGetApp().getFrequency());
+    wxString freqStr;
+    activeDemod = demod;
+
+    if (activeDemod) {
+        freqStr = frequencyToStr(activeDemod->getFrequency());
+    } else {
+        freqStr = frequencyToStr(wxGetApp().getFrequency());
+    }
 
     dialogText = new wxTextCtrl(this, wxID_FREQ_INPUT, freqStr, wxPoint(6, 1), wxSize(size.GetWidth() - 20, size.GetHeight() - 70), wxTE_PROCESS_ENTER);
     dialogText->SetFont(wxFont(20, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
@@ -56,7 +63,7 @@ std::string FrequencyDialog::frequencyToStr(long long freq) {
 }
 
 long long FrequencyDialog::strToFrequency(std::string freqStr) {
-    std::string filterStr = filterChars(freqStr,std::string("0123456789.MKGmkg"));
+    std::string filterStr = filterChars(freqStr, std::string("0123456789.MKGmkg"));
 
     int numLen = filterStr.find_first_not_of("0123456789.");
 
@@ -64,7 +71,7 @@ long long FrequencyDialog::strToFrequency(std::string freqStr) {
         numLen = freqStr.length();
     }
 
-    std::string numPartStr = freqStr.substr(0,numLen);
+    std::string numPartStr = freqStr.substr(0, numLen);
     std::string suffixStr = freqStr.substr(numLen);
 
     std::stringstream numPartStream;
@@ -86,7 +93,7 @@ long long FrequencyDialog::strToFrequency(std::string freqStr) {
         freqTemp *= 1.0e6;
     }
 
-    return (long long)freqTemp;
+    return (long long) freqTemp;
 }
 
 void FrequencyDialog::OnChar(wxKeyEvent& event) {
@@ -98,8 +105,14 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
     case WXK_NUMPAD_ENTER:
         // Do Stuff
         freq = strToFrequency(dialogText->GetValue().ToStdString());
-        wxGetApp().setFrequency(freq);
-        std::cout << freq << std::endl;
+        if (activeDemod) {
+            activeDemod->setTracking(true);
+            activeDemod->setFollow(true);
+            activeDemod->setFrequency(freq);
+            activeDemod->updateLabel(freq);
+        } else {
+            wxGetApp().setFrequency(freq);
+        }
         Close();
         break;
     case WXK_ESCAPE:
@@ -123,7 +136,5 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
         event.Skip();
     } else if (c == WXK_RIGHT || c == WXK_LEFT || event.ControlDown()) {
         event.Skip();
-    } else {
-        std::cout << (int) c << std::endl;
     }
 }

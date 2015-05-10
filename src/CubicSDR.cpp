@@ -273,9 +273,7 @@ int CubicSDR::getPPM() {
 
 
 void CubicSDR::showFrequencyInput() {
-    FrequencyDialog fdialog(appframe, -1, _("Set Frequency"), wxPoint(-100,-100), wxSize(320, 75 ));
-
-    if ( fdialog.ShowModal() != wxID_OK ) {
-    } else {
-    }
+    FrequencyDialog fdialog(appframe, -1, demodMgr.getActiveDemodulator()?_("Set Demodulator Frequency"):_("Set Frequency"), demodMgr.getActiveDemodulator(), wxPoint(-100,-100), wxSize(320, 75 ));
+    fdialog.ShowModal();
 }
+
