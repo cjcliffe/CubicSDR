@@ -18,11 +18,13 @@ public:
 
     wxTextCtrl * dialogText;
 
+    long long strToFrequency(std::string freqStr);
+    std::string frequencyToStr(long long freq);
+
 private:
 
     void OnEnter ( wxCommandEvent &event );
     void OnChar ( wxKeyEvent &event );
     std::string& filterChars(std::string& s, const std::string& allowed);
-
     DECLARE_EVENT_TABLE()
 };
