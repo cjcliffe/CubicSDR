@@ -278,7 +278,7 @@ void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
     } else {
         switch (hoverState) {
         case TUNING_HOVER_FREQ:
-                setStatusText("Click, wheel or drag a digit to change frequency; SPACE for direct input. Hold ALT to change PPM. Hold SHIFT to disable carry.");
+                setStatusText("Click, wheel or drag a digit to change frequency; SPACE for direct input. Right click to set/clear snap. Hold ALT to change PPM. Hold SHIFT to disable carry.");
             break;
         case TUNING_HOVER_BW:
                 setStatusText("Click, wheel or drag a digit to change bandwidth.  Hold SHIFT to disable carry.");
