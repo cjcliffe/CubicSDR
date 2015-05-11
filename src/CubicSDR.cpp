@@ -13,7 +13,7 @@
 #endif
 
 #include "CubicSDR.h"
-#include "AppFrame.h"
+#include "FrequencyDialog.h"
 
 #ifdef _OSX_APP_
 #include "CoreFoundation/CoreFoundation.h"
@@ -92,7 +92,7 @@ bool CubicSDR::OnInit() {
     t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
     t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
 
-    AppFrame *appframe = new AppFrame();
+    appframe = new AppFrame();
 
 #ifdef __APPLE__
     int main_policy;
@@ -269,5 +269,11 @@ int CubicSDR::getPPM() {
     ppm = config.getDevice(dev->getDeviceId())->getPPM();
 
     return ppm;
+}
+
+
+void CubicSDR::showFrequencyInput() {
+    FrequencyDialog fdialog(appframe, -1, demodMgr.getActiveDemodulator()?_("Set Demodulator Frequency"):_("Set Center Frequency"), demodMgr.getActiveDemodulator(), wxPoint(-100,-100), wxSize(320, 75 ));
+    fdialog.ShowModal();
 }
 

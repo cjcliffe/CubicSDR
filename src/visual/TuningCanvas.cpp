@@ -271,21 +271,28 @@ void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
     } else {
         switch (hoverState) {
         case TUNING_HOVER_FREQ:
-                setStatusText("Click, wheel or drag a digit to change frequency. Hold ALT to change PPM. Hold SHIFT to disable carry.");
+                setStatusText("Click, wheel or drag a digit to change frequency; SPACE for direct input. Hold ALT to change PPM. Hold SHIFT to disable carry.");
             break;
         case TUNING_HOVER_BW:
                 setStatusText("Click, wheel or drag a digit to change bandwidth.  Hold SHIFT to disable carry.");
             break;
         case TUNING_HOVER_CENTER:
-                setStatusText("Click, wheel or drag a digit to change center frequency.  Hold SHIFT to disable carry.");
+                setStatusText("Click, wheel or drag a digit to change center frequency; SPACE for direct input.  Hold SHIFT to disable carry.");
             break;
         case TUNING_HOVER_PPM:
                  setStatusText("Click, wheel or drag a digit to change device PPM offset.  Hold SHIFT to disable carry.");
              break;
+        case TUNING_HOVER_NONE:
+            setStatusText("");
+            break;
       }
     }
 
-
+    if (hoverState == TUNING_HOVER_BW || hoverState == TUNING_HOVER_FREQ) {
+         wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getLastActiveDemodulator());
+     } else {
+         wxGetApp().getDemodMgr().setActiveDemodulator(NULL);
+     }
 }
 
 void TuningCanvas::OnMouseDown(wxMouseEvent& event) {
@@ -339,6 +346,7 @@ void TuningCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
     SetCursor(wxCURSOR_CROSS);
     hoverIndex = 0;
     hoverState = TUNING_HOVER_NONE;
+    wxGetApp().getDemodMgr().setActiveDemodulator(NULL);
 
     if (currentPPM != lastPPM) {
         wxGetApp().saveConfig();
@@ -359,6 +367,10 @@ void TuningCanvas::setHelpTip(std::string tip) {
 
 void TuningCanvas::OnKeyDown(wxKeyEvent& event) {
     InteractiveCanvas::OnKeyDown(event);
+
+    if (event.GetKeyCode() == WXK_SPACE && (hoverState == TUNING_HOVER_CENTER || hoverState == TUNING_HOVER_FREQ)) {
+        wxGetApp().showFrequencyInput();
+    }
 }
 
 void TuningCanvas::OnKeyUp(wxKeyEvent& event) {

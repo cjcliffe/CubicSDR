@@ -15,6 +15,7 @@
 #include "AudioThread.h"
 #include "DemodulatorMgr.h"
 #include "AppConfig.h"
+#include "AppFrame.h"
 
 #define NUM_DEMODULATORS 1
 
@@ -56,7 +57,10 @@ public:
     void setPPM(int ppm_in);
     int getPPM();
 
+    void showFrequencyInput();
+
 private:
+    AppFrame *appframe;
     AppConfig config;
     PrimaryGLContext *m_glContext;
     std::vector<SDRDeviceInfo *> devs;
