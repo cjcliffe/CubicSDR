@@ -35,6 +35,7 @@ Features and Status:
       - [ ] Audio defaults
       - [ ] Device defaults
     - [ ] Bookmarks
+    - [ ] History
   - Neat Visuals
     - [x] Scope
     - [x] Spectrum
