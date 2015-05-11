@@ -277,3 +277,13 @@ void CubicSDR::showFrequencyInput() {
     fdialog.ShowModal();
 }
 
+void CubicSDR::setFrequencySnap(int snap) {
+    if (snap > 1000000) {
+        snap = 1000000;
+    }
+    this->snap = snap;
+}
+
+int CubicSDR::getFrequencySnap() {
+    return snap;
+}

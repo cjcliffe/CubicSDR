@@ -633,12 +633,20 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
         }
 
         if (dragState == WF_DRAG_FREQUENCY) {
-            long long bwDiff = (long long) (mouseTracker.getDeltaMouseX() * (float) getBandwidth());
+            long long bwTarget = (long long) (mouseTracker.getMouseX() * (float) getBandwidth()) + getCenterFrequency() - (getBandwidth() / 2);
             long long currentFreq = demod->getFrequency();
+            long long bwDiff = bwTarget - currentFreq;
+            int snap = wxGetApp().getFrequencySnap();
 
-            demod->setFrequency(currentFreq + bwDiff);
-            currentFreq = demod->getFrequency();
-            demod->updateLabel(currentFreq);
+            if (snap > 1) {
+                bwDiff = roundf((float)bwDiff/(float)snap)*snap;
+            }
+
+            if (bwDiff) {
+                demod->setFrequency(currentFreq + bwDiff);
+                currentFreq = demod->getFrequency();
+                demod->updateLabel(currentFreq);
+            }
 
             setStatusText("Set demodulator frequency: %s", demod->getFrequency());
         }
@@ -765,13 +773,30 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
     mouseTracker.setVertDragLock(false);
     mouseTracker.setHorizDragLock(false);
 
-    DemodulatorInstance *demod;
+    DemodulatorInstance *demod = isNew?NULL:wxGetApp().getDemodMgr().getLastActiveDemodulator();
     DemodulatorMgr *mgr = &wxGetApp().getDemodMgr();
 
     if (mouseTracker.getOriginDeltaMouseX() == 0 && mouseTracker.getOriginDeltaMouseY() == 0) {
         float pos = mouseTracker.getMouseX();
         long long input_center_freq = getCenterFrequency();
-        long long freq = input_center_freq - (long long) (0.5 * (float) getBandwidth()) + (long long) ((float) pos * (float) getBandwidth());
+        long long freqTarget = input_center_freq - (long long) (0.5 * (float) getBandwidth()) + (long long) ((float) pos * (float) getBandwidth());
+        long long demodFreq = demod?demod->getFrequency():freqTarget;
+        long long bwDiff = freqTarget - demodFreq;
+        long long freq = demodFreq;
+
+         int snap = wxGetApp().getFrequencySnap();
+
+         if (snap > 1) {
+             if (demod) {
+                 bwDiff = roundf((double)bwDiff/(double)snap)*snap;
+                 freq += bwDiff;
+             } else {
+                 freq = roundl((long double)freq/(double)snap)*snap;
+             }
+         } else {
+             freq += bwDiff;
+         }
+
 
         if (dragState == WF_DRAG_NONE) {
             if (!isNew && wxGetApp().getDemodMgr().getDemodulators().size()) {

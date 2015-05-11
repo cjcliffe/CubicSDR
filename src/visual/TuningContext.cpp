@@ -112,6 +112,34 @@ void TuningContext::DrawTuner(long long freq, int count, float displayPos, float
     glDisable(GL_BLEND);
 }
 
+
+void TuningContext::DrawTunerDigitBox(int index, int count, float displayPos, float displayWidth, RGBColor c) {
+    GLint vp[4];
+    glGetIntegerv( GL_VIEWPORT, vp);
+
+    float viewHeight = (float) vp[3];
+    float viewWidth = (float) vp[2];
+
+    float pixelHeight = 2.0/viewHeight;
+
+    glColor4f(1.0, 0,0,1);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    float xpos = displayPos + (displayWidth / (float) count) * (float) (count-index);
+    float xpos2 = displayPos + (displayWidth / (float) count) * (float) ((count-1)-index);
+    glBegin(GL_LINE_STRIP);
+    glVertex2f(xpos, 1.0-pixelHeight);
+    glVertex2f(xpos, -1.0+pixelHeight);
+    glVertex2f(xpos2, -1.0+pixelHeight);
+    glVertex2f(xpos2, 1.0-pixelHeight);
+    glVertex2f(xpos, 1.0-pixelHeight);
+    glEnd();
+    glDisable(GL_BLEND);
+}
+
+
+
+
 int TuningContext::GetTunerDigitIndex(float mPos, int count, float displayPos, float displayWidth) {
     mPos -= 0.5;
     mPos *= 2.0;

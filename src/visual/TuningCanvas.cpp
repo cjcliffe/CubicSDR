@@ -20,6 +20,9 @@ EVT_IDLE(TuningCanvas::OnIdle)
 EVT_MOTION(TuningCanvas::OnMouseMoved)
 EVT_LEFT_DOWN(TuningCanvas::OnMouseDown)
 EVT_LEFT_UP(TuningCanvas::OnMouseReleased)
+EVT_RIGHT_DOWN(TuningCanvas::OnMouseRightDown)
+EVT_RIGHT_UP(TuningCanvas::OnMouseRightReleased)
+
 EVT_LEAVE_WINDOW(TuningCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(TuningCanvas::OnMouseEnterWindow)
 EVT_MOUSEWHEEL(TuningCanvas::OnMouseWheelMoved)
@@ -124,6 +127,10 @@ void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         glContext->DrawTuner(currentPPM, 11, freqDP, freqW);
     } else {
         glContext->DrawTuner(freq, 11, freqDP, freqW);
+        int snap = wxGetApp().getFrequencySnap();
+        if (snap != 1) {
+            glContext->DrawTunerDigitBox((int)log10(snap), 11, freqDP, freqW, RGBColor(1.0,0.0,0.0));
+        }
     }
     glContext->DrawTuner(bw, 7, bwDP, bwW);
     glContext->DrawTuner(center, 11, centerDP, centerW);
@@ -339,6 +346,27 @@ void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
 
     dragging = false;
     SetCursor(wxCURSOR_ARROW);
+}
+
+void TuningCanvas::OnMouseRightDown(wxMouseEvent& event) {
+    InteractiveCanvas::OnMouseRightDown(event);
+}
+
+void TuningCanvas::OnMouseRightReleased(wxMouseEvent& event) {
+    InteractiveCanvas::OnMouseRightReleased(event);
+
+    if (hoverState == TUNING_HOVER_FREQ) {
+        if (hoverIndex == 1) {
+            wxGetApp().setFrequencySnap(1);
+        } else if (hoverIndex > 1 && hoverIndex < 8) {
+            int exp = pow(10, hoverIndex-1);
+            if (wxGetApp().getFrequencySnap() == exp) {
+                wxGetApp().setFrequencySnap(1);
+            } else {
+                wxGetApp().setFrequencySnap(exp);
+            }
+        }
+    }
 }
 
 void TuningCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
