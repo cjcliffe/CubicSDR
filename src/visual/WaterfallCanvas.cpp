@@ -36,7 +36,7 @@ wxEND_EVENT_TABLE()
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         InteractiveCanvas(parent, attribList), spectrumCanvas(NULL), dragState(WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), fft_size(0), waterfall_lines(
                 0), plan(
-        NULL), in(NULL), out(NULL), resampler(NULL), resamplerRatio(0), lastInputBandwidth(0), zoom(1), mouseZoom(1), otherWaterfallCanvas(NULL), polling(true), last_data_size(0), fft_in_data(NULL), fft_last_data(NULL), hoverAlpha(1.0) {
+        NULL), in(NULL), out(NULL), resampler(NULL), resamplerRatio(0), lastInputBandwidth(0), zoom(1), mouseZoom(1), otherWaterfallCanvas(NULL), polling(true), last_data_size(0), fft_in_data(NULL), fft_last_data(NULL), hoverAlpha(1.0), dragOfs(0) {
 
     glContext = new WaterfallContext(this, &wxGetApp().GetContext(this));
 
@@ -633,7 +633,7 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
         }
 
         if (dragState == WF_DRAG_FREQUENCY) {
-            long long bwTarget = (long long) (mouseTracker.getMouseX() * (float) getBandwidth()) + getCenterFrequency() - (getBandwidth() / 2);
+            long long bwTarget = (long long) (mouseTracker.getMouseX() * (float) getBandwidth()) + getCenterFrequency() - (getBandwidth() / 2) - dragOfs;
             long long currentFreq = demod->getFrequency();
             long long bwDiff = bwTarget - currentFreq;
             int snap = wxGetApp().getFrequencySnap();
@@ -753,6 +753,10 @@ void WaterfallCanvas::OnMouseDown(wxMouseEvent& event) {
     dragState = nextDragState;
 
     if (dragState && dragState != WF_DRAG_RANGE) {
+        DemodulatorInstance *demod = wxGetApp().getDemodMgr().getActiveDemodulator();
+        if (demod) {
+            dragOfs = (long long) (mouseTracker.getMouseX() * (float) getBandwidth()) + getCenterFrequency() - (getBandwidth() / 2) - demod->getFrequency();
+        }
         wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getActiveDemodulator(), false);
     }
 }
