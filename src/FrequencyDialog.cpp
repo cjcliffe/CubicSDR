@@ -5,12 +5,12 @@
 #include <iomanip>
 #include "CubicSDR.h"
 
-wxBEGIN_EVENT_TABLE(FrequencyDialog, wxDialog)
-EVT_CHAR_HOOK(FrequencyDialog::OnChar)
+wxBEGIN_EVENT_TABLE(FrequencyDialog, wxDialog) EVT_CHAR_HOOK(FrequencyDialog::OnChar)
 wxEND_EVENT_TABLE()
 
-FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxString & title, DemodulatorInstance *demod, const wxPoint & position, const wxSize & size, long style) :
-wxDialog(parent, id, title, position, size, style) {
+FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxString & title, DemodulatorInstance *demod, const wxPoint & position,
+        const wxSize & size, long style) :
+        wxDialog(parent, id, title, position, size, style) {
     wxString freqStr;
     activeDemod = demod;
 
@@ -20,7 +20,8 @@ wxDialog(parent, id, title, position, size, style) {
         freqStr = frequencyToStr(wxGetApp().getFrequency());
     }
 
-    dialogText = new wxTextCtrl(this, wxID_FREQ_INPUT, freqStr, wxPoint(6, 1), wxSize(size.GetWidth() - 20, size.GetHeight() - 70), wxTE_PROCESS_ENTER);
+    dialogText = new wxTextCtrl(this, wxID_FREQ_INPUT, freqStr, wxPoint(6, 1), wxSize(size.GetWidth() - 20, size.GetHeight() - 70),
+    wxTE_PROCESS_ENTER);
     dialogText->SetFont(wxFont(20, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
 
     Centre();
@@ -122,7 +123,8 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
 
     std::string allowed("0123456789.MKGHZmkghz");
 
-    if (allowed.find_first_of(c) != std::string::npos || c == WXK_BACK) {
+    if (allowed.find_first_of(c) != std::string::npos || c == WXK_DELETE || c == WXK_BACK || c == WXK_NUMPAD_DECIMAL
+            || (c >= WXK_NUMPAD0 && c <= WXK_NUMPAD9)) {
         event.DoAllowNextEvent();
     } else if (event.ControlDown() && c == 'V') {
         // Alter clipboard contents to remove unwanted chars

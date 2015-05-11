@@ -346,7 +346,7 @@ void TuningCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
     SetCursor(wxCURSOR_CROSS);
     hoverIndex = 0;
     hoverState = TUNING_HOVER_NONE;
-    wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getLastActiveDemodulator());
+    wxGetApp().getDemodMgr().setActiveDemodulator(NULL);
 
     if (currentPPM != lastPPM) {
         wxGetApp().saveConfig();
@@ -368,7 +368,7 @@ void TuningCanvas::setHelpTip(std::string tip) {
 void TuningCanvas::OnKeyDown(wxKeyEvent& event) {
     InteractiveCanvas::OnKeyDown(event);
 
-    if (event.GetKeyCode() == WXK_SPACE && hoverState == TUNING_HOVER_CENTER || hoverState == TUNING_HOVER_FREQ) {
+    if (event.GetKeyCode() == WXK_SPACE && (hoverState == TUNING_HOVER_CENTER || hoverState == TUNING_HOVER_FREQ)) {
         wxGetApp().showFrequencyInput();
     }
 }
