@@ -133,6 +133,7 @@ AppFrame::AppFrame() :
 //    menu->Append(wxID_NEW);
     menu->Append(wxID_SET_FREQ_OFFSET, "Set Frequency Offset");
     menu->Append(wxID_SET_PPM, "Set Device PPM");
+    menu->AppendSeparator();
     menu->Append(wxID_OPEN, "&Open Session");
     menu->Append(wxID_SAVE, "&Save Session");
     menu->Append(wxID_SAVEAS, "Save Session &As..");
@@ -188,6 +189,7 @@ AppFrame::AppFrame() :
     sampleRateMenuItems[wxID_BANDWIDTH_1000M] = menu->AppendRadioItem(wxID_BANDWIDTH_1000M, "1.0M");
     sampleRateMenuItems[wxID_BANDWIDTH_1500M] = menu->AppendRadioItem(wxID_BANDWIDTH_1500M, "1.5M");
     sampleRateMenuItems[wxID_BANDWIDTH_2000M] = menu->AppendRadioItem(wxID_BANDWIDTH_2000M, "2.0M");
+    sampleRateMenuItems[wxID_BANDWIDTH_2160M] = menu->AppendRadioItem(wxID_BANDWIDTH_2160M, "2.16M");
     sampleRateMenuItems[wxID_BANDWIDTH_2500M] = menu->AppendRadioItem(wxID_BANDWIDTH_2500M, "2.5M");
     sampleRateMenuItems[wxID_BANDWIDTH_2880M] = menu->AppendRadioItem(wxID_BANDWIDTH_2880M, "2.88M");
     sampleRateMenuItems[wxID_BANDWIDTH_3200M] = menu->AppendRadioItem(wxID_BANDWIDTH_3200M, "3.2M");
@@ -379,6 +381,9 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         break;
     case wxID_BANDWIDTH_2000M:
         wxGetApp().setSampleRate(2000000);
+        break;
+    case wxID_BANDWIDTH_2160M:
+        wxGetApp().setSampleRate(2160000);
         break;
     case wxID_BANDWIDTH_2500M:
         wxGetApp().setSampleRate(2500000);

@@ -74,6 +74,7 @@ private:
 
     int fft_size;
     int waterfall_lines;
+    int dragOfs;
 
     msresamp_crcf resampler;
     double resamplerRatio;

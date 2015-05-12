@@ -19,7 +19,8 @@
 
 #define MIN_BANDWIDTH 1500
 
-wxBEGIN_EVENT_TABLE(WaterfallCanvas, wxGLCanvas) EVT_PAINT(WaterfallCanvas::OnPaint)
+wxBEGIN_EVENT_TABLE(WaterfallCanvas, wxGLCanvas)
+EVT_PAINT(WaterfallCanvas::OnPaint)
 EVT_KEY_DOWN(WaterfallCanvas::OnKeyDown)
 EVT_KEY_UP(WaterfallCanvas::OnKeyUp)
 EVT_IDLE(WaterfallCanvas::OnIdle)
@@ -36,7 +37,7 @@ wxEND_EVENT_TABLE()
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         InteractiveCanvas(parent, attribList), spectrumCanvas(NULL), dragState(WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), fft_size(0), waterfall_lines(
                 0), plan(
-        NULL), in(NULL), out(NULL), resampler(NULL), resamplerRatio(0), lastInputBandwidth(0), zoom(1), mouseZoom(1), otherWaterfallCanvas(NULL), polling(true), last_data_size(0), fft_in_data(NULL), fft_last_data(NULL), hoverAlpha(1.0) {
+        NULL), in(NULL), out(NULL), resampler(NULL), resamplerRatio(0), lastInputBandwidth(0), zoom(1), mouseZoom(1), otherWaterfallCanvas(NULL), polling(true), last_data_size(0), fft_in_data(NULL), fft_last_data(NULL), hoverAlpha(1.0), dragOfs(0) {
 
     glContext = new WaterfallContext(this, &wxGetApp().GetContext(this));
 
@@ -633,12 +634,20 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
         }
 
         if (dragState == WF_DRAG_FREQUENCY) {
-            long long bwDiff = (long long) (mouseTracker.getDeltaMouseX() * (float) getBandwidth());
+            long long bwTarget = getFrequencyAt(mouseTracker.getMouseX()) - dragOfs;
             long long currentFreq = demod->getFrequency();
+            long long bwDiff = bwTarget - currentFreq;
+            int snap = wxGetApp().getFrequencySnap();
 
-            demod->setFrequency(currentFreq + bwDiff);
-            currentFreq = demod->getFrequency();
-            demod->updateLabel(currentFreq);
+            if (snap > 1) {
+                bwDiff = roundf((float)bwDiff/(float)snap)*snap;
+            }
+
+            if (bwDiff) {
+                demod->setFrequency(currentFreq + bwDiff);
+                currentFreq = demod->getFrequency();
+                demod->updateLabel(currentFreq);
+            }
 
             setStatusText("Set demodulator frequency: %s", demod->getFrequency());
         }
@@ -670,20 +679,23 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
                 DemodulatorInstance *demod = (*demodsHover)[i];
                 long long freqDiff = demod->getFrequency() - freqPos;
                 long halfBw = (demod->getBandwidth() / 2);
-
+                long long currentBw = getBandwidth();
+                long long globalBw = wxGetApp().getSampleRate();
                 long dist = abs(freqDiff);
+                double bufferBw = 10000.0 * ((double)currentBw / (double)globalBw);
+                double maxDist = ((double)halfBw + bufferBw);
 
-                if (dist < near_dist) {
-                    activeDemodulator = demod;
-                    near_dist = dist;
-                }
-
-
-                if (dist <= halfBw  && dist >= (int)((float) halfBw / 1.5)) {
-                    if ((freqDiff > 0 && activeDemodulator->getDemodulatorType() == DEMOD_TYPE_USB) ||
-                            (freqDiff < 0 && activeDemodulator->getDemodulatorType() == DEMOD_TYPE_LSB)) {
+                if ((double)dist <= maxDist) {
+                    if ((freqDiff > 0 && demod->getDemodulatorType() == DEMOD_TYPE_USB) ||
+                            (freqDiff < 0 && demod->getDemodulatorType() == DEMOD_TYPE_LSB)) {
                         continue;
                     }
+
+                    if (dist < near_dist) {
+                        activeDemodulator = demod;
+                        near_dist = dist;
+                    }
+
                     long edge_dist = abs(halfBw - dist);
                     if (edge_dist < near_dist) {
                         activeDemodulator = demod;
@@ -693,6 +705,8 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
             }
 
             if (activeDemodulator == NULL) {
+                nextDragState = WF_DRAG_NONE;
+                SetCursor(wxCURSOR_CROSS);
                 return;
             }
 
@@ -701,15 +715,16 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
             long long freqDiff = activeDemodulator->getFrequency() - freqPos;
 
             if (abs(freqDiff) > (activeDemodulator->getBandwidth() / 3)) {
-                SetCursor(wxCURSOR_SIZEWE);
 
                 if (freqDiff > 0) {
                     if (activeDemodulator->getDemodulatorType() != DEMOD_TYPE_USB) {
                         nextDragState = WF_DRAG_BANDWIDTH_LEFT;
+                        SetCursor(wxCURSOR_SIZEWE);
                     }
                 } else {
                     if (activeDemodulator->getDemodulatorType() != DEMOD_TYPE_LSB) {
                         nextDragState = WF_DRAG_BANDWIDTH_RIGHT;
+                        SetCursor(wxCURSOR_SIZEWE);
                     }
                 }
 
@@ -745,6 +760,10 @@ void WaterfallCanvas::OnMouseDown(wxMouseEvent& event) {
     dragState = nextDragState;
 
     if (dragState && dragState != WF_DRAG_RANGE) {
+        DemodulatorInstance *demod = wxGetApp().getDemodMgr().getActiveDemodulator();
+        if (demod) {
+            dragOfs = (long long) (mouseTracker.getMouseX() * (float) getBandwidth()) + getCenterFrequency() - (getBandwidth() / 2) - demod->getFrequency();
+        }
         wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getActiveDemodulator(), false);
     }
 }
@@ -765,13 +784,32 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
     mouseTracker.setVertDragLock(false);
     mouseTracker.setHorizDragLock(false);
 
-    DemodulatorInstance *demod;
+    DemodulatorInstance *demod = isNew?NULL:wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    DemodulatorInstance *activeDemod = isNew?NULL:wxGetApp().getDemodMgr().getActiveDemodulator();
+
     DemodulatorMgr *mgr = &wxGetApp().getDemodMgr();
 
     if (mouseTracker.getOriginDeltaMouseX() == 0 && mouseTracker.getOriginDeltaMouseY() == 0) {
         float pos = mouseTracker.getMouseX();
         long long input_center_freq = getCenterFrequency();
-        long long freq = input_center_freq - (long long) (0.5 * (float) getBandwidth()) + (long long) ((float) pos * (float) getBandwidth());
+        long long freqTarget = input_center_freq - (long long) (0.5 * (float) getBandwidth()) + (long long) ((float) pos * (float) getBandwidth());
+        long long demodFreq = demod?demod->getFrequency():freqTarget;
+        long long bwDiff = freqTarget - demodFreq;
+        long long freq = demodFreq;
+
+         int snap = wxGetApp().getFrequencySnap();
+
+         if (snap > 1) {
+             if (demod) {
+                 bwDiff = roundf((double)bwDiff/(double)snap)*snap;
+                 freq += bwDiff;
+             } else {
+                 freq = roundl((long double)freq/(double)snap)*snap;
+             }
+         } else {
+             freq += bwDiff;
+         }
+
 
         if (dragState == WF_DRAG_NONE) {
             if (!isNew && wxGetApp().getDemodMgr().getDemodulators().size()) {
@@ -791,10 +829,9 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
                 demod->run();
 
                 wxGetApp().bindDemodulator(demod);
-                wxGetApp().getDemodMgr().setActiveDemodulator(demod, false);
             }
 
-            if (demod == NULL) {
+            if (!demod) {
                 dragState = WF_DRAG_NONE;
                 return;
             }
@@ -808,15 +845,19 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
                 setStatusText("Moved demodulator to frequency: %s", freq);
             }
 
-            wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getLastActiveDemodulator(), false);
+            wxGetApp().getDemodMgr().setActiveDemodulator(demod, false);
             SetCursor(wxCURSOR_SIZING);
             nextDragState = WF_DRAG_FREQUENCY;
             mouseTracker.setVertDragLock(true);
             mouseTracker.setHorizDragLock(false);
         } else {
-            wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getActiveDemodulator(), false);
-            wxGetApp().getDemodMgr().getActiveDemodulator()->setTracking(true);
-            nextDragState = WF_DRAG_FREQUENCY;
+            if (activeDemod) {
+                wxGetApp().getDemodMgr().setActiveDemodulator(activeDemod, false);
+                activeDemod->setTracking(true);
+                nextDragState = WF_DRAG_FREQUENCY;
+            } else {
+                nextDragState = WF_DRAG_NONE;
+            }
         }
     } else if (dragState == WF_DRAG_RANGE) {
         float width = mouseTracker.getOriginDeltaMouseX();
@@ -853,6 +894,13 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
             return;
         }
 
+        int snap = wxGetApp().getFrequencySnap();
+
+        if (snap > 1) {
+            freq = roundl((long double)freq/(double)snap)*snap;
+        }
+
+
         if (!isNew && wxGetApp().getDemodMgr().getDemodulators().size()) {
             demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
         } else {
@@ -869,7 +917,6 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
             demod->run();
 
             wxGetApp().bindDemodulator(demod);
-            wxGetApp().getDemodMgr().setActiveDemodulator(demod, false);
         }
 
         if (demod == NULL) {
@@ -879,10 +926,10 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
 
         setStatusText("New demodulator at frequency: %s", freq);
 
-        wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getLastActiveDemodulator(), false);
         demod->updateLabel(freq);
         demod->setFrequency(freq);
         demod->setBandwidth(bw);
+        wxGetApp().getDemodMgr().setActiveDemodulator(demod, false);
     }
 
     dragState = WF_DRAG_NONE;
