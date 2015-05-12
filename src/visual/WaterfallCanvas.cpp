@@ -682,19 +682,20 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
                 long long currentBw = getBandwidth();
                 long long globalBw = wxGetApp().getSampleRate();
                 long dist = abs(freqDiff);
-
-                double maxDist = ((double)halfBw + (double)halfBw * 0.05 * ((double)currentBw / (double)globalBw));
+                double bufferBw = 10000.0 * ((double)currentBw / (double)globalBw);
+                double maxDist = ((double)halfBw + bufferBw);
 
                 if ((double)dist <= maxDist) {
+                    if ((freqDiff > 0 && demod->getDemodulatorType() == DEMOD_TYPE_USB) ||
+                            (freqDiff < 0 && demod->getDemodulatorType() == DEMOD_TYPE_LSB)) {
+                        continue;
+                    }
+
                     if (dist < near_dist) {
                         activeDemodulator = demod;
                         near_dist = dist;
                     }
 
-                    if ((freqDiff > 0 && demod->getDemodulatorType() == DEMOD_TYPE_USB) ||
-                            (freqDiff < 0 && demod->getDemodulatorType() == DEMOD_TYPE_LSB)) {
-                        continue;
-                    }
                     long edge_dist = abs(halfBw - dist);
                     if (edge_dist < near_dist) {
                         activeDemodulator = demod;
@@ -705,6 +706,7 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
 
             if (activeDemodulator == NULL) {
                 nextDragState = WF_DRAG_NONE;
+                SetCursor(wxCURSOR_CROSS);
                 return;
             }
 
@@ -713,15 +715,16 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
             long long freqDiff = activeDemodulator->getFrequency() - freqPos;
 
             if (abs(freqDiff) > (activeDemodulator->getBandwidth() / 3)) {
-                SetCursor(wxCURSOR_SIZEWE);
 
                 if (freqDiff > 0) {
                     if (activeDemodulator->getDemodulatorType() != DEMOD_TYPE_USB) {
                         nextDragState = WF_DRAG_BANDWIDTH_LEFT;
+                        SetCursor(wxCURSOR_SIZEWE);
                     }
                 } else {
                     if (activeDemodulator->getDemodulatorType() != DEMOD_TYPE_LSB) {
                         nextDragState = WF_DRAG_BANDWIDTH_RIGHT;
+                        SetCursor(wxCURSOR_SIZEWE);
                     }
                 }
 
