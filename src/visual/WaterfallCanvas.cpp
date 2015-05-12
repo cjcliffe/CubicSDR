@@ -894,6 +894,13 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
             return;
         }
 
+        int snap = wxGetApp().getFrequencySnap();
+
+        if (snap > 1) {
+            freq = roundl((long double)freq/(double)snap)*snap;
+        }
+
+
         if (!isNew && wxGetApp().getDemodMgr().getDemodulators().size()) {
             demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
         } else {
