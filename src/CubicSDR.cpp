@@ -81,24 +81,19 @@ bool CubicSDR::OnInit() {
                 devName.append(" (In Use?)");
             }
             choices.Add(devName);
-        }
-
+        } 
         int devId = wxGetSingleChoiceIndex(wxT("Devices"), wxT("Choose Input Device"), choices);
 
         std::cout << "Chosen: " << devId << std::endl;
         sdrThread->setDeviceId(devId);
-    } 
+    } else {
+        OnMessage("no devices found!", "warning");
+    }
 
     t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
     t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
 
     appframe = new AppFrame();
-
-    if(devs.size() == 0) {
-        // appframe->OnMessage("no devices found!", "warning");
-        wxMessageDialog *message = new wxMessageDialog(NULL, wxT("no devices found"), wxT("warning"), wxOK | wxICON_ERROR );
-        message->ShowModal();
-    }
 
 #ifdef __APPLE__
     int main_policy;
@@ -292,4 +287,9 @@ void CubicSDR::setFrequencySnap(int snap) {
 
 int CubicSDR::getFrequencySnap() {
     return snap;
+}
+
+void CubicSDR::OnMessage(std::string text, std::string title) {
+    wxMessageDialog *message = new wxMessageDialog(NULL, wxString::Format(text.c_str()), wxString::Format(title.c_str()), wxOK | wxICON_ERROR );
+    message->ShowModal();
 }
