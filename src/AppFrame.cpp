@@ -306,7 +306,6 @@ AppFrame::AppFrame() :
 }
 
 AppFrame::~AppFrame() {
-
 }
 
 void AppFrame::OnMenu(wxCommandEvent& event) {
@@ -687,4 +686,9 @@ bool AppFrame::loadSession(std::string fileName) {
     SetTitle(wxString::Format(wxT("%s: %s"), CUBICSDR_TITLE, filePart.c_str()));
 
     return true;
+}
+
+void AppFrame::OnMessage(std::string text, std::string title) {
+    wxMessageDialog *message = new wxMessageDialog(NULL, wxString::Format(text.c_str()), wxString::Format(title.c_str()), wxOK | wxICON_ERROR );
+    message->ShowModal();
 }

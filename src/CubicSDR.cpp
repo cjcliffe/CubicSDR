@@ -87,12 +87,18 @@ bool CubicSDR::OnInit() {
 
         std::cout << "Chosen: " << devId << std::endl;
         sdrThread->setDeviceId(devId);
-    }
+    } 
 
     t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
     t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
 
     appframe = new AppFrame();
+
+    if(devs.size() == 0) {
+        // appframe->OnMessage("no devices found!", "warning");
+        wxMessageDialog *message = new wxMessageDialog(NULL, wxT("no devices found"), wxT("warning"), wxOK | wxICON_ERROR );
+        message->ShowModal();
+    }
 
 #ifdef __APPLE__
     int main_policy;
