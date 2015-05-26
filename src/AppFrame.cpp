@@ -687,8 +687,3 @@ bool AppFrame::loadSession(std::string fileName) {
 
     return true;
 }
-
-void AppFrame::OnMessage(std::string text, std::string title) {
-    wxMessageDialog *message = new wxMessageDialog(NULL, wxString::Format(text.c_str()), wxString::Format(title.c_str()), wxOK | wxICON_ERROR );
-    message->ShowModal();
-}

@@ -51,8 +51,6 @@ public:
     void saveSession(std::string fileName);
     bool loadSession(std::string fileName);
 
-    void OnMessage(std::string message, std::string title);
-
 private:
     void OnMenu(wxCommandEvent& event);
     void OnClose(wxCommandEvent& event);
