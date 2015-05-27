@@ -86,10 +86,11 @@ bool CubicSDR::OnInit() {
 
         std::cout << "Chosen: " << devId << std::endl;
         sdrThread->setDeviceId(devId);
-    } else {
-        OnMessage("no devices found!", "warning");
     }
-
+    else if(devs.size() == 0) {
+        wxGetApp().OnMessage("No devices found!", "warning");
+    }
+    
     t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
     t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
 
