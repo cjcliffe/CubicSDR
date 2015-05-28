@@ -61,7 +61,9 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     if (!wxGetApp().getAudioVisualQueue()->empty()) {
         AudioThreadInput *demodAudioData;
         wxGetApp().getAudioVisualQueue()->pop(demodAudioData);
-        int iMax = demodAudioData->data.size();
+
+        int iMax = demodAudioData?demodAudioData->data.size():0;
+
         if (demodAudioData && iMax) {
             if (waveform_points.size() != iMax * 2) {
                 waveform_points.resize(iMax * 2);
