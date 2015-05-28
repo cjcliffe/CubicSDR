@@ -110,6 +110,8 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         DemodulatorThreadIQData *iqData;
         wxGetApp().getIQVisualQueue()->pop(iqData);
 
+        iqData->busy_rw.lock();
+
         if (iqData && iqData->data.size()) {
             setData(iqData);
             if (otherWaterfallCanvas) {
@@ -118,6 +120,8 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         } else {
             std::cout << "Incoming IQ data empty?" << std::endl;
         }
+
+        iqData->busy_rw.unlock();
     }
 
     glContext->SetCurrent(*this);

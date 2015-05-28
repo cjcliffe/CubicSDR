@@ -61,15 +61,20 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     if (!wxGetApp().getAudioVisualQueue()->empty()) {
         AudioThreadInput *demodAudioData;
         wxGetApp().getAudioVisualQueue()->pop(demodAudioData);
-        if (demodAudioData && demodAudioData->data.size()) {
-            if (waveform_points.size() != demodAudioData->data.size() * 2) {
-                waveform_points.resize(demodAudioData->data.size() * 2);
+        int iMax = demodAudioData->data.size();
+        if (demodAudioData && iMax) {
+            if (waveform_points.size() != iMax * 2) {
+                waveform_points.resize(iMax * 2);
             }
 
-            for (int i = 0, iMax = demodAudioData->data.size(); i < iMax; i++) {
+            demodAudioData->busy_update.lock();
+
+            for (int i = 0; i < iMax; i++) {
                 waveform_points[i * 2 + 1] = demodAudioData->data[i] * 0.5f;
                 waveform_points[i * 2] = ((double) i / (double) iMax);
             }
+
+            demodAudioData->busy_update.unlock();
 
             setStereo(demodAudioData->channels == 2);
         } else {

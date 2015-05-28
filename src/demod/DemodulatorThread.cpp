@@ -310,6 +310,8 @@ void DemodulatorThread::threadMain() {
 
         if (ati && audioVisOutputQueue != NULL && audioVisOutputQueue->empty()) {
 
+            ati_vis->busy_update.lock();
+
             int num_vis = DEMOD_VIS_SIZE;
             if (stereo) {
                 ati_vis->channels = 2;
@@ -341,6 +343,8 @@ void DemodulatorThread::threadMain() {
 
 //            std::cout << "Signal: " << agc_crcf_get_signal_level(agc) << " -- " << agc_crcf_get_rssi(agc) << "dB " << std::endl;
             }
+
+            ati_vis->busy_update.unlock();
 
             audioVisOutputQueue->push(ati_vis);
         }

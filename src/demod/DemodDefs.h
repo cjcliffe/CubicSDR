@@ -61,6 +61,7 @@ public:
     long long frequency;
     long long sampleRate;
     std::vector<liquid_float_complex> data;
+    std::mutex busy_rw;
 
     DemodulatorThreadIQData() :
             frequency(0), sampleRate(0) {
