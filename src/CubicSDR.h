@@ -62,7 +62,7 @@ public:
 
     void showFrequencyInput();
 
-    void OnMessage(std::string message, std::string title);
+    void showMessage(std::string message, std::string title);
 
 private:
     AppFrame *appframe;

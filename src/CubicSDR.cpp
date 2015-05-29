@@ -88,7 +88,7 @@ bool CubicSDR::OnInit() {
         sdrThread->setDeviceId(devId);
     }
     else if(devs.size() == 0) {
-        wxGetApp().OnMessage("No devices found!", "warning");
+        wxGetApp().showMessage("No devices found!", "warning");
     }
     
     t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
@@ -290,7 +290,7 @@ int CubicSDR::getFrequencySnap() {
     return snap;
 }
 
-void CubicSDR::OnMessage(std::string text, std::string title) {
+void CubicSDR::showMessage(std::string text, std::string title) {
     wxMessageDialog *message = new wxMessageDialog(NULL, wxString::Format(text.c_str()), wxString::Format(title.c_str()), wxOK | wxICON_ERROR );
     message->ShowModal();
 }

@@ -58,9 +58,22 @@ AppFrame::AppFrame() :
     demodModeSelector->addChoice(DEMOD_TYPE_LSB, "LSB");
     demodModeSelector->addChoice(DEMOD_TYPE_USB, "USB");
     demodModeSelector->addChoice(DEMOD_TYPE_DSB, "DSB");
-    demodModeSelector->setSelection(DEMOD_TYPE_FM);
     demodModeSelector->setHelpTip("Choose modulation type: Frequency Modulation, Amplitude Modulation and Lower, Upper or Double Side-Band.");
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
+    
+    demodModeSelectoradv = new ModeSelectorCanvas(this, attribList);
+    demodModeSelectoradv->addChoice(DEMOD_TYPE_ASK, "ASK");
+    demodModeSelectoradv->addChoice(DEMOD_TYPE_APSK, "APSK");
+    demodModeSelectoradv->addChoice(DEMOD_TYPE_BPSK, "BPSK");
+    demodModeSelectoradv->addChoice(DEMOD_TYPE_DPSK, "DPSK");
+    demodModeSelectoradv->addChoice(DEMOD_TYPE_PSK, "PSK");
+    demodModeSelectoradv->addChoice(DEMOD_TYPE_OOK, "OOK");
+    demodModeSelectoradv->addChoice(DEMOD_TYPE_ST, "ST");
+    demodModeSelectoradv->addChoice(DEMOD_TYPE_SQAM, "SQAM");
+    demodModeSelectoradv->addChoice(DEMOD_TYPE_QAM, "QAM");
+    demodModeSelectoradv->addChoice(DEMOD_TYPE_QPSK, "QPSK");
+    demodModeSelectoradv->setHelpTip("Choose advanced modulation types.");
+    demodTray->Add(demodModeSelectoradv, 3, wxEXPAND | wxALL, 0);
 
 //    demodTray->AddSpacer(2);
 
