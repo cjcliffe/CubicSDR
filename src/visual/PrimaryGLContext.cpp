@@ -151,8 +151,6 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBColor color,
     glEnd();
 
     if (ofs * 2.0 < 16.0 / viewWidth) {
-        ofs = 16.0 / viewWidth;
-
         glColor4f(color.r, color.g, color.b, 0.2);
         glBegin(GL_QUADS);
         glVertex3f(uxPos - ofsLeft, hPos + labelHeight, 0.0);
@@ -241,8 +239,8 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBColor color, lon
 
     glEnable(GL_BLEND);
 
-    std::string demodStr;
-    GLFont::Align demodAlign;
+    std::string demodStr = "";
+    GLFont::Align demodAlign = GLFont::GLFONT_ALIGN_CENTER;
 
     switch (demod->getDemodulatorType()) {
     case DEMOD_TYPE_FM:

@@ -366,14 +366,12 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
                 bw = getBandwidth();
                 bw = (long long) ceil((long double) bw * currentZoom);
                 if (bw >= wxGetApp().getSampleRate()) {
-                    bw = wxGetApp().getSampleRate();
                     disableView();
                     if (spectrumCanvas) {
                         spectrumCanvas->disableView();
                     }
                 } else {
                     if (mouseTracker.mouseInView()) {
-                        long long freq = wxGetApp().getFrequency();
                         long long mfreqA = getFrequencyAt(mouseTracker.getMouseX());
                         setBandwidth(bw);
                         long long mfreqB = getFrequencyAt(mouseTracker.getMouseX());
@@ -521,8 +519,7 @@ void WaterfallCanvas::setData(DemodulatorThreadIQData *input) {
 
         } else {
             if (last_data_size + num_written < fft_size) { // priming
-                unsigned int num_copy = fft_size;
-                num_copy = fft_size - last_data_size;
+                unsigned int num_copy = fft_size - last_data_size;
                 if (num_written > num_copy) {
                     num_copy = num_written;
                 }

@@ -69,7 +69,6 @@ void TuningContext::DrawTuner(long long freq, int count, float displayPos, float
     glGetIntegerv( GL_VIEWPORT, vp);
 
     float viewHeight = (float) vp[3];
-    float viewWidth = (float) vp[2];
 
     freqStr.str("");
     freqStr << freq;
@@ -118,8 +117,6 @@ void TuningContext::DrawTunerDigitBox(int index, int count, float displayPos, fl
     glGetIntegerv( GL_VIEWPORT, vp);
 
     float viewHeight = (float) vp[3];
-    float viewWidth = (float) vp[2];
-
     float pixelHeight = 2.0/viewHeight;
 
     glColor4f(1.0, 0,0,1);
@@ -187,12 +184,6 @@ bool bottom) {
 }
 
 void TuningContext::DrawDemodFreqBw(long long freq, unsigned int bw, long long center) {
-    GLint vp[4];
-    glGetIntegerv( GL_VIEWPORT, vp);
-
-    float viewHeight = (float) vp[3];
-    float viewWidth = (float) vp[2];
-
     DrawTuner(freq, 11, -1.0, (1.0 / 3.0) * 2.0);
     DrawTuner(bw, 7, -1.0 + (2.25 / 3.0), (1.0 / 4.0) * 2.0);
     DrawTuner(center, 11, -1.0 + (2.0 / 3.0) * 2.0, (1.0 / 3.0) * 2.0);
