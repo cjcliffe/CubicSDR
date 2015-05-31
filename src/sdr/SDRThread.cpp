@@ -140,6 +140,7 @@ void SDRThread::threadMain() {
 
     long long frequency = DEFAULT_FREQ;
     int ppm = wxGetApp().getConfig()->getDevice(devs[deviceId]->getDeviceId())->getPPM();
+    int direct_sampling_mode = 0;
 
     rtlsdr_open(&dev, deviceId);
     rtlsdr_set_sample_rate(dev, sampleRate);
@@ -170,6 +171,7 @@ void SDRThread::threadMain() {
             bool rate_changed = false;
             bool device_changed = false;
             bool ppm_changed = false;
+            bool direct_sampling_changed = false;
             long long new_freq = frequency;
             long long new_offset = offset;
             long long new_rate = sampleRate;
@@ -209,6 +211,10 @@ void SDRThread::threadMain() {
                     new_ppm = (int) command.llong_value;
                     //std::cout << "Set PPM: " << new_ppm << std::endl;
                     break;
+                case SDRThreadCommand::SDR_THREAD_CMD_SET_DIRECT_SAMPLING:
+                    direct_sampling_mode = (int)command.llong_value;
+                    direct_sampling_changed = true;
+                    break;
                 default:
                     break;
                 }
@@ -222,6 +228,7 @@ void SDRThread::threadMain() {
                 rtlsdr_set_freq_correction(dev, ppm);
                 rtlsdr_set_agc_mode(dev, 1);
                 rtlsdr_set_offset_tuning(dev, 0);
+                rtlsdr_set_direct_sampling(dev, direct_sampling_mode);
                 rtlsdr_reset_buffer(dev);
             }
             if (offset_changed && !freq_changed) {
@@ -240,6 +247,9 @@ void SDRThread::threadMain() {
             if (ppm_changed) {
                 ppm = new_ppm;
                 rtlsdr_set_freq_correction(dev, ppm);
+            }
+            if (direct_sampling_changed) {
+                rtlsdr_set_direct_sampling(dev, direct_sampling_mode);
             }
         }
 
