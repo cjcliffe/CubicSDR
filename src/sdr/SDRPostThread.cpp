@@ -111,6 +111,9 @@ void SDRPostThread::threadMain() {
             }
 
             if (iqVisualQueue.load() != NULL && iqVisualQueue.load()->empty()) {
+
+                visualDataOut->busy_rw.lock();
+
                 if (visualDataOut->data.size() < num_vis_samples) {
                     if (visualDataOut->data.capacity() < num_vis_samples) {
                         visualDataOut->data.reserve(num_vis_samples);
@@ -121,6 +124,9 @@ void SDRPostThread::threadMain() {
                 visualDataOut->frequency = data_in->frequency;
                 visualDataOut->sampleRate = data_in->sampleRate;
                 visualDataOut->data.assign(dataOut.begin(), dataOut.begin() + num_vis_samples);
+
+                visualDataOut->busy_rw.unlock();
+
                 iqVisualQueue.load()->push(visualDataOut);
             }
 

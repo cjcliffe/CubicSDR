@@ -328,12 +328,6 @@ void TuningCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
 }
 
 void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
-    GLint vp[4];
-    glGetIntegerv( GL_VIEWPORT, vp);
-
-    float viewHeight = (float) vp[3];
-    float viewWidth = (float) vp[2];
-
     InteractiveCanvas::OnMouseReleased(event);
 
     int hExponent = hoverIndex - 1;

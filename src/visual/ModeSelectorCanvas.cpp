@@ -59,13 +59,6 @@ void ModeSelectorCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
     glContext->DrawBegin();
 
-    DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
-
-    int demodType = 0;
-    if (demod) {
-        demodType = demod->getDemodulatorType();
-    }
-
     int yval = getHoveredSelection();
 
     for (int i = 0; i < numChoices; i++) {

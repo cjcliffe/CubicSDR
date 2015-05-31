@@ -38,7 +38,7 @@ DataElement::DataElement() : data_type(DATA_NULL), data_val(NULL), data_size(0),
 
 DataElement::~DataElement() {
     if (data_val) {
-        delete data_val;
+        delete[] data_val;
         data_val = NULL;
     }
 }
@@ -1309,9 +1309,9 @@ long DataTree::getSerialized(char **ser_str, bool debug) {
         memcpy(data_out + data_ptr, element_serialized, element_serialized_size);
         data_ptr += element_serialized_size;
 
-        delete de_name_index_serialized;
-        delete de_num_children_serialized;
-        delete element_serialized;
+        delete[] de_name_index_serialized;
+        delete[] de_num_children_serialized;
+        delete[] element_serialized;
 
         /* if it has children, traverse into them */
         if (dn_stack.top()->hasAnother()) {
@@ -1360,8 +1360,8 @@ void DataTree::setSerialized(char *ser_str, bool debug) {
 
     /* unserialization is a little less straightforward since we have to do a countdown of remaining children */
     while (!dn_stack.empty()) {
-        int name_index;
-        int num_children;
+        int name_index = 0;
+        int num_children = 0;
 
         /* pull the index of the name of this node */
         de_name_index.setSerialized(ser_str + data_ptr);
@@ -1389,7 +1389,7 @@ void DataTree::setSerialized(char *ser_str, bool debug) {
         /* end debug output */
 
         /* name index >= 1 means it has a name */
-        if (name_index) {
+        if (name_index >= 1) {
             dn_stack.top()->setName(node_names[name_index - 1].c_str());
 
         } else /* name is nil */
@@ -1568,10 +1568,10 @@ bool DataTree::SaveToFile(const std::string& filename, bool compress, int compre
     fout << flush;
     fout.close();
 
-    delete hdr_serialized;
+    free(hdr_serialized);
 
     if (!compress) {
-        delete serialized;
+        free(serialized);
     } else {
         delete compressed;
     }
@@ -1630,8 +1630,8 @@ bool DataTree::LoadFromFile(const std::string& filename) {
 
     setSerialized(serialized);
 
-    delete serialized;
-    delete hdr_serialized;
+    delete[] serialized;
+    delete[] hdr_serialized;
 
     return true;
 }

@@ -13,8 +13,6 @@ void WaterfallContext::Setup(int fft_size_in, int num_waterfall_lines_in) {
     waterfall_lines = num_waterfall_lines_in;
     fft_size = fft_size_in;
 
-    int half_fft_size = fft_size / 2;
-
     for (int i = 0; i < 2; i++) {
         if (waterfall[i]) {
             glDeleteTextures(1, &waterfall[i]);
@@ -23,7 +21,6 @@ void WaterfallContext::Setup(int fft_size_in, int num_waterfall_lines_in) {
 
         waterfall_ofs[i] = waterfall_lines - 1;
     }
-    // Stagger memory updates at half intervals for tiles
 }
 
 void WaterfallContext::refreshTheme() {
@@ -72,7 +69,7 @@ void WaterfallContext::Draw(std::vector<float> &points) {
 		}
 		waterfall_slice = new unsigned char[half_fft_size];
 
-        delete waterfall_tex;
+        delete[] waterfall_tex;
     }
 
     if (activeTheme != ThemeMgr::mgr.currentTheme) {
@@ -107,7 +104,6 @@ void WaterfallContext::Draw(std::vector<float> &points) {
     glGetIntegerv(GL_VIEWPORT, vp);
 
     float viewWidth = (float) vp[2];
-    float viewHeight = (float) vp[3];
 
     // some bias to prevent seams at odd scales
     float half_pixel = 1.0 / viewWidth;
