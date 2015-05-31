@@ -25,10 +25,9 @@ protected:
     std::atomic<SDRThreadIQDataQueue *> iqDataInQueue;
     std::atomic<DemodulatorThreadInputQueue *> iqDataOutQueue;
     std::atomic<DemodulatorThreadInputQueue *> iqVisualQueue;
-
+	
+    std::mutex busy_demod;
     std::vector<DemodulatorInstance *> demodulators;
-    std::vector<DemodulatorInstance *> demodulators_add;
-    std::vector<DemodulatorInstance *> demodulators_remove;
     std::atomic<bool> terminated;
     iirfilt_crcf dcFilter;
     int num_vis_samples;

@@ -109,6 +109,8 @@ bool CubicSDR::OnInit() {
 }
 
 int CubicSDR::OnExit() {
+    demodMgr.terminateAll();
+    
     std::cout << "Terminating SDR thread.." << std::endl;
     sdrThread->terminate();
     t_SDR->join();
@@ -122,8 +124,6 @@ int CubicSDR::OnExit() {
 
     delete sdrPostThread;
     delete t_PostSDR;
-
-    demodMgr.terminateAll();
 
     delete threadCmdQueueSDR;
 

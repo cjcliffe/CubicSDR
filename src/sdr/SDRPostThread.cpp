@@ -27,7 +27,9 @@ SDRPostThread::~SDRPostThread() {
 }
 
 void SDRPostThread::bindDemodulator(DemodulatorInstance *demod) {
-    demodulators_add.push_back(demod);
+    busy_demod.lock();
+    demodulators.push_back(demod);
+    busy_demod.unlock();
 }
 
 void SDRPostThread::removeDemodulator(DemodulatorInstance *demod) {
@@ -35,7 +37,13 @@ void SDRPostThread::removeDemodulator(DemodulatorInstance *demod) {
         return;
     }
 
-    demodulators_remove.push_back(demod);
+    busy_demod.lock();
+    std::vector<DemodulatorInstance *>::iterator i = std::find(demodulators.begin(), demodulators.end(), demod);
+    
+    if (i != demodulators.end()) {
+        demodulators.erase(i);
+    }
+    busy_demod.unlock();
 }
 
 void SDRPostThread::setIQDataInQueue(SDRThreadIQDataQueue* iqDataQueue) {
@@ -129,25 +137,8 @@ void SDRPostThread::threadMain() {
 
                 iqVisualQueue.load()->push(visualDataOut);
             }
-
-            if (demodulators_add.size()) {
-                while (!demodulators_add.empty()) {
-                    demodulators.push_back(demodulators_add.back());
-                    demodulators_add.pop_back();
-                }
-            }
-            if (demodulators_remove.size()) {
-                while (!demodulators_remove.empty()) {
-                    DemodulatorInstance *demod = demodulators_remove.back();
-                    demodulators_remove.pop_back();
-
-                    std::vector<DemodulatorInstance *>::iterator i = std::find(demodulators.begin(), demodulators.end(), demod);
-
-                    if (i != demodulators.end()) {
-                        demodulators.erase(i);
-                    }
-                }
-            }
+            
+            busy_demod.lock();
 
             int activeDemods = 0;
             bool pushedData = false;
@@ -226,6 +217,8 @@ void SDRPostThread::threadMain() {
                     }
                 }
             }
+
+            busy_demod.unlock();
         }
         data_in->decRefCount();
     }
