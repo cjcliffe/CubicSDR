@@ -45,6 +45,7 @@ bool CubicSDR::OnInit() {
     frequency = DEFAULT_FREQ;
     offset = 0;
     ppm = 0;
+    directSamplingMode = 0;
 
     audioVisualQueue = new DemodulatorThreadOutputQueue();
     audioVisualQueue->set_max_num_items(1);
@@ -168,6 +169,17 @@ void CubicSDR::setOffset(long long ofs) {
     SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_SET_OFFSET);
     command.llong_value = ofs;
     threadCmdQueueSDR->push(command);
+}
+
+void CubicSDR::setDirectSampling(int mode) {
+    directSamplingMode = mode;
+    SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_SET_DIRECT_SAMPLING);
+    command.llong_value = mode;
+    threadCmdQueueSDR->push(command);
+}
+
+int CubicSDR::getDirectSampling() {
+    return directSamplingMode;
 }
 
 long long CubicSDR::getFrequency() {

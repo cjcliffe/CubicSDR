@@ -121,23 +121,37 @@ AppFrame::AppFrame() :
 
     this->SetSizer(vbox);
 
-//    waterfallCanvas->SetFocusFromKbd();
+    //    waterfallCanvas->SetFocusFromKbd();
     waterfallCanvas->SetFocus();
 
-//    SetIcon(wxICON(sample));
+    //    SetIcon(wxICON(sample));
 
-// Make a menubar
+    // Make a menubar
     wxMenuBar *menuBar = new wxMenuBar;
     wxMenu *menu = new wxMenu;
-//    menu->Append(wxID_NEW);
+
     menu->Append(wxID_SET_FREQ_OFFSET, "Set Frequency Offset");
     menu->Append(wxID_SET_PPM, "Set Device PPM");
+    
+    wxMenu *dsMenu = new wxMenu;
+            
+    dsMenu->AppendRadioItem(wxID_SET_DS_OFF, "Off");
+    dsMenu->AppendRadioItem(wxID_SET_DS_I, "I-ADC");
+    dsMenu->AppendRadioItem(wxID_SET_DS_Q, "Q-ADC");
+
+    menu->AppendSubMenu(dsMenu, "Direct Sampling");
+    
+    wxMenu *sessionMenu = new wxMenu;
+    sessionMenu->Append(wxID_OPEN, "&Open Session");
+    sessionMenu->Append(wxID_SAVE, "&Save Session");
+    sessionMenu->Append(wxID_SAVEAS, "Save Session &As..");
+    sessionMenu->AppendSeparator();
+    sessionMenu->Append(wxID_RESET, "&Reset Session");
+
+    menu->AppendSubMenu(sessionMenu, "Session");
+            
     menu->AppendSeparator();
-    menu->Append(wxID_OPEN, "&Open Session");
-    menu->Append(wxID_SAVE, "&Save Session");
-    menu->Append(wxID_SAVEAS, "Save Session &As..");
-    menu->AppendSeparator();
-    menu->Append(wxID_RESET, "&Reset Session");
+            
     menu->Append(wxID_CLOSE);
 
     menuBar->Append(menu, wxT("&File"));
@@ -320,6 +334,12 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         if (ofs != -1) {
             wxGetApp().setOffset(ofs);
         }
+    } else if (event.GetId() == wxID_SET_DS_OFF) {
+        wxGetApp().setDirectSampling(0);
+    } else if (event.GetId() == wxID_SET_DS_I) {
+        wxGetApp().setDirectSampling(1);
+    } else if (event.GetId() == wxID_SET_DS_Q) {
+        wxGetApp().setDirectSampling(2);
     } else if (event.GetId() == wxID_SET_PPM) {
         long ofs = wxGetNumberFromUser("Frequency correction for device in PPM.\ni.e. -51 for -51 PPM\n\nNote: you can adjust PPM interactively\nby holding ALT over the frequency tuning bar.\n", "Parts per million (PPM)",
                 "Frequency Correction", wxGetApp().getPPM(), -1000, 1000, this);

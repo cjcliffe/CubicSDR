@@ -37,6 +37,9 @@ public:
     void setOffset(long long ofs);
     long long getOffset();
 
+    void setDirectSampling(int mode);
+    int getDirectSampling();
+
     void setSampleRate(long long rate_in);
     long long getSampleRate();
 
@@ -74,6 +77,7 @@ private:
     long long offset;
     int ppm, snap;
     long long sampleRate;
+    int directSamplingMode;
 
     SDRThread *sdrThread;
     SDRPostThread *sdrPostThread;
