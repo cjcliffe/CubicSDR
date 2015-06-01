@@ -40,6 +40,9 @@ public:
     void setDirectSampling(int mode);
     int getDirectSampling();
 
+    void setSwapIQ(bool swapIQ);
+    bool getSwapIQ();
+
     void setSampleRate(long long rate_in);
     long long getSampleRate();
 

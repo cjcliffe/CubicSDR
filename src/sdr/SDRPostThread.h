@@ -17,7 +17,10 @@ public:
 
     void setNumVisSamples(int num_vis_samples_in);
     int getNumVisSamples();
-
+    
+    void setSwapIQ(bool swapIQ);
+    bool getSwapIQ();
+    
     void threadMain();
     void terminate();
 
@@ -31,7 +34,9 @@ protected:
     std::atomic<bool> terminated;
     iirfilt_crcf dcFilter;
     int num_vis_samples;
-
+    std::atomic<bool> swapIQ;
+    
 private:
     std::vector<liquid_float_complex> _lut;
+    std::vector<liquid_float_complex> _lut_swap;
 };
