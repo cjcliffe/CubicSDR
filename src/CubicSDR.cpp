@@ -182,6 +182,14 @@ int CubicSDR::getDirectSampling() {
     return directSamplingMode;
 }
 
+void CubicSDR::setSwapIQ(bool swapIQ) {
+    sdrPostThread->setSwapIQ(swapIQ);
+}
+
+bool CubicSDR::getSwapIQ() {
+    return sdrPostThread->getSwapIQ();
+}
+
 long long CubicSDR::getFrequency() {
     return frequency;
 }

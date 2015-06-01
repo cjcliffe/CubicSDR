@@ -6,19 +6,21 @@
 #include <deque>
 
 SDRPostThread::SDRPostThread() :
-        iqDataOutQueue(NULL), iqDataInQueue(NULL), iqVisualQueue(NULL), terminated(false), dcFilter(NULL), num_vis_samples(16384*2) {
+        iqDataInQueue(NULL), iqDataOutQueue(NULL), iqVisualQueue(NULL), terminated(false), dcFilter(NULL), num_vis_samples(16384*2), swapIQ(false) {
 
     // create a lookup table
     for (unsigned int i = 0; i <= 0xffff; i++) {
-        liquid_float_complex tmp;
+        liquid_float_complex tmp,tmp_swap;
 # if (__BYTE_ORDER == __LITTLE_ENDIAN)
-        tmp.real = (float(i & 0xff) - 127.4f) * (1.0f/128.0f);
-        tmp.imag = (float(i >> 8) - 127.4f) * (1.0f/128.0f);
+        tmp_swap.imag = tmp.real = (float(i & 0xff) - 127.4f) * (1.0f/128.0f);
+        tmp_swap.real = tmp.imag = (float(i >> 8) - 127.4f) * (1.0f/128.0f);
         _lut.push_back(tmp);
+        _lut_swap.push_back(tmp_swap);
 #else // BIG_ENDIAN
-        tmp.real = (float(i >> 8) - 127.4f) * (1.0f/128.0f);
-        tmp.imag = (float(i & 0xff) - 127.4f) * (1.0f/128.0f);
+        tmp_swap.imag = tmp.real = (float(i >> 8) - 127.4f) * (1.0f/128.0f);
+        tmp_swap.real = tmp.imag = (float(i & 0xff) - 127.4f) * (1.0f/128.0f);
         _lut.push_back(tmp);
+        _lut_swap.push_back(tmp_swap);
 #endif
     }
 }
@@ -64,6 +66,14 @@ int SDRPostThread::getNumVisSamples() {
     return num_vis_samples;
 }
 
+void SDRPostThread::setSwapIQ(bool swapIQ) {
+    this->swapIQ.store(swapIQ);
+}
+
+bool SDRPostThread::getSwapIQ() {
+    return this->swapIQ.load();
+}
+
 void SDRPostThread::threadMain() {
     int n_read;
     double seconds = 0.0;
@@ -103,8 +113,14 @@ void SDRPostThread::threadMain() {
                 dataOut.resize(dataSize);
             }
 
-            for (int i = 0, iMax = dataSize; i < iMax; i++) {
-                fpData[i] = _lut[*((uint16_t*)&data_in->data[2*i])];
+            if (swapIQ) {
+                for (int i = 0; i < dataSize; i++) {
+                    fpData[i] = _lut_swap[*((uint16_t*)&data_in->data[2*i])];
+                }
+            } else {
+                for (int i = 0; i < dataSize; i++) {
+                    fpData[i] = _lut[*((uint16_t*)&data_in->data[2*i])];
+                }
             }
 
             iirfilt_crcf_execute_block(dcFilter, &fpData[0], dataSize, &dataOut[0]);
