@@ -166,7 +166,7 @@ void GLFont::loadFont(std::string fontFile) {
 
     fontFileSource = fontFileName.GetFullPath(wxPATH_NATIVE).ToStdString();
     
-    if (!fontFileName.IsFileReadable()) {
+    if (!fontFileName.FileExists()) {
         std::cout << "Font file " << fontFileSource << " does not exist?" << std::endl;
         return;
     }
