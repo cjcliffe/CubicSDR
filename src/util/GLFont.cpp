@@ -153,9 +153,30 @@ std::string GLFont::getParamValue(std::string param_str) {
 }
 
 void GLFont::loadFont(std::string fontFile) {
-    fontFileSource = RES_FOLDER;
-    fontFileSource.append(fontFile);
+    
+    std::string resourceFolder = RES_FOLDER;
 
+    wxFileName fontFileName = wxFileName(resourceFolder, fontFile);
+    
+    if (!fontFileName.Exists()) {
+        wxFileName exePath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
+        fontFileName = wxFileName(exePath.GetPath(), fontFile);
+        resourceFolder = exePath.GetPath();
+    }
+
+    fontFileSource = fontFileName.GetFullPath(wxPATH_NATIVE).ToStdString();
+    
+    if (!fontFileName.IsFileReadable()) {
+        std::cout << "Font file " << fontFileSource << " does not exist?" << std::endl;
+        return;
+    }
+    
+    if (!fontFileName.IsFileReadable()) {
+        std::cout << "Font file " << fontFileSource << " is not readable?" << std::endl;
+        return;
+    }
+
+    
     std::ifstream input;
     input.open(fontFileSource.c_str(), std::ios::in);
 
@@ -215,8 +236,8 @@ void GLFont::loadFont(std::string fontFile) {
                 std::string paramValue = getParamValue(param);
 
                 if (paramKey == "file") {
-                    imageFile = RES_FOLDER;
-                    imageFile.append(paramValue);
+                    wxFileName imgFileName = wxFileName(resourceFolder, paramValue);
+                    imageFile = imgFileName.GetFullPath(wxPATH_NATIVE).ToStdString();
                 }
 //                std::cout << "[" << paramKey << "] = '" << paramValue << "'" << std::endl;
             }

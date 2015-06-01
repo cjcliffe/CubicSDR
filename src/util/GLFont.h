@@ -5,6 +5,8 @@
 #include <sstream>
 #include "lodepng.h"
 #include "wx/glcanvas.h"
+#include "wx/filename.h"
+#include "wx/stdpaths.h"
 
 class GLFontChar {
 public:
