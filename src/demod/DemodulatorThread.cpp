@@ -24,6 +24,18 @@ DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* iqInputQue
     demodAM_DSB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_DSB, 1);
     demodAM_DSB_CSP = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_DSB, 0);
     demodAM = demodAM_DSB_CSP;
+    
+    // advanced demodulators
+    demodASK = modem_create(LIQUID_MODEM_ASK2);
+    demodAPSK = modem_create(LIQUID_MODEM_APSK4);
+    demodBPSK = modem_create(LIQUID_MODEM_BPSK);
+    demodDPSK = modem_create(LIQUID_MODEM_DPSK4);
+    demodPSK = modem_create(LIQUID_MODEM_PSK2);
+    demodOOK = modem_create(LIQUID_MODEM_OOK);
+    demodSQAM = modem_create(LIQUID_MODEM_SQAM32);
+    demodST = modem_create(LIQUID_MODEM_V29);
+    demodQAM = modem_create(LIQUID_MODEM_QAM4);
+    demodQPSK = modem_create(LIQUID_MODEM_QPSK);
 
 }
 DemodulatorThread::~DemodulatorThread() {

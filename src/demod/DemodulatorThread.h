@@ -65,6 +65,16 @@ protected:
     ampmodem demodAM_DSB;
     ampmodem demodAM_LSB;
     ampmodem demodAM_USB;
+    modem demodASK;
+    modem demodAPSK;
+    modem demodBPSK;
+    modem demodDPSK;
+    modem demodPSK;
+    modem demodOOK;
+    modem demodSQAM;
+    modem demodST;
+    modem demodQAM;
+    modem demodQPSK;
 
     agc_crcf iqAutoGain;
 

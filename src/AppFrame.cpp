@@ -72,6 +72,7 @@ AppFrame::AppFrame() :
     demodModeSelectoradv->addChoice(DEMOD_TYPE_SQAM, "SQAM");
     demodModeSelectoradv->addChoice(DEMOD_TYPE_QAM, "QAM");
     demodModeSelectoradv->addChoice(DEMOD_TYPE_QPSK, "QPSK");
+    demodModeSelectoradv->setSelection(DEMOD_TYPE_ASK);
     demodModeSelectoradv->setHelpTip("Choose advanced modulation types.");
     demodTray->Add(demodModeSelectoradv, 3, wxEXPAND | wxALL, 0);
 
@@ -491,6 +492,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             outputDeviceMenuItems[outputDevice]->Check(true);
             int dType = demod->getDemodulatorType();
             demodModeSelector->setSelection(dType);
+            demodModeSelectoradv->setSelection(dType);
         }
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
             long long centerFreq = demod->getFrequency();
@@ -518,8 +520,14 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
                 demodSpectrumCanvas->setCenterFrequency(centerFreq);
             }
             int dSelection = demodModeSelector->getSelection();
+            int dSelectionadv = demodModeSelectoradv->getSelection();
             if (dSelection != -1 && dSelection != demod->getDemodulatorType()) {
                 demod->setDemodulatorType(dSelection);
+                demodModeSelectoradv->setSelection(-1);
+            } 
+            else if(dSelectionadv != -1 && dSelectionadv != demod->getDemodulatorType()) {
+                demod->setDemodulatorType(dSelectionadv);
+                demodModeSelector->setSelection(-1);
             }
 
             demodWaterfallCanvas->setBandwidth(demodBw);
@@ -538,7 +546,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     } else {
         DemodulatorMgr *mgr = &wxGetApp().getDemodMgr();
 
-        int dSelection = demodModeSelector->getSelection();
+        int dSelection = demodModeSelectoradv->getSelection();
         if (dSelection != -1 && dSelection != mgr->getLastDemodulatorType()) {
             mgr->setLastDemodulatorType(dSelection);
         }

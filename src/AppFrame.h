@@ -63,7 +63,6 @@ private:
     WaterfallCanvas *waterfallCanvas;
     ModeSelectorCanvas *demodModeSelector;
     ModeSelectorCanvas *demodModeSelectoradv;
-    ModeSelectorCanvas *demodModeSelectoradv2;
     SpectrumCanvas *demodSpectrumCanvas;
     WaterfallCanvas *demodWaterfallCanvas;
     MeterCanvas *demodSignalMeter;

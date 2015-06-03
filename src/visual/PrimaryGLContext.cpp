@@ -263,6 +263,47 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBColor color, lon
         demodAlign = GLFont::GLFONT_ALIGN_LEFT;
         uxPos += xOfs;
         break;
+    // advanced demodulators start here
+    case DEMOD_TYPE_ASK:
+        demodStr = "ASK";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
+    case DEMOD_TYPE_APSK:
+        demodStr = "APSK";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
+    case DEMOD_TYPE_BPSK:
+        demodStr = "BPSK";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
+    case DEMOD_TYPE_DPSK:
+        demodStr = "DPSK";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
+    case DEMOD_TYPE_PSK:
+        demodStr = "PSK";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
+    case DEMOD_TYPE_OOK:
+        demodStr = "OOK";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
+    case DEMOD_TYPE_SQAM:
+        demodStr = "SQAM";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
+    case DEMOD_TYPE_ST:
+        demodStr = "ST";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
+    case DEMOD_TYPE_QAM:
+        demodStr = "QAM";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
+    case DEMOD_TYPE_QPSK:
+        demodStr = "QPSK";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
     }
 
     glColor3f(0, 0, 0);
