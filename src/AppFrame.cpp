@@ -546,10 +546,17 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     } else {
         DemodulatorMgr *mgr = &wxGetApp().getDemodMgr();
 
-        int dSelection = demodModeSelectoradv->getSelection();
+        int dSelection = demodModeSelector->getSelection();
+        int dSelectionadv = demodModeSelectoradv->getSelection();
         if (dSelection != -1 && dSelection != mgr->getLastDemodulatorType()) {
             mgr->setLastDemodulatorType(dSelection);
+            demodModeSelectoradv->setSelection(-1);
         }
+        else if(dSelectionadv != -1 && dSelectionadv != mgr->getLastDemodulatorType()) {
+            mgr->setLastDemodulatorType(dSelectionadv);
+            demodModeSelector->setSelection(-1);
+        }
+        
         demodGainMeter->setLevel(mgr->getLastGain());
         if (demodSignalMeter->inputChanged()) {
             mgr->setLastSquelchLevel(demodSignalMeter->getInputValue());

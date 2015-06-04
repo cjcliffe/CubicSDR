@@ -177,6 +177,8 @@ void DemodulatorThread::threadMain() {
             freqdem_demodulate_block(demodFM, &agcData[0], bufSize, &demodOutputData[0]);
         } else {
             float p;
+            unsigned int bitstream;
+            int temp;
             switch (demodulatorType.load()) {
             case DEMOD_TYPE_LSB:
                 for (int i = 0; i < bufSize; i++) { // Reject upper band
@@ -194,6 +196,63 @@ void DemodulatorThread::threadMain() {
             case DEMOD_TYPE_DSB:
                 for (int i = 0; i < bufSize; i++) {
                     ampmodem_demodulate(demodAM, inp->data[i], &demodOutputData[i]);
+                }
+                break;
+            case DEMOD_TYPE_ASK:
+                for (int i = 0; i < bufSize; i++) {
+                    modem_demodulate(demodASK, inp->data[i], &bitstream);
+                    std::cout << bitstream << std::endl;
+                } 
+                break;
+            case DEMOD_TYPE_BPSK:
+                for (int i = 0; i < bufSize; i++) {
+                    modem_demodulate(demodBPSK, inp->data[i], &bitstream);
+                    std::cout << bitstream << std::endl;
+                } 
+                break;
+            case DEMOD_TYPE_DPSK:
+                for (int i = 0; i < bufSize; i++) {
+                    modem_demodulate(demodDPSK, inp->data[i], &bitstream);
+                    std::cout << bitstream << std::endl;
+                } 
+                break;
+            case DEMOD_TYPE_PSK:
+                for (int i = 0; i < bufSize; i++) {
+                    modem_demodulate(demodPSK, inp->data[i], &bitstream);
+                    std::cout << bitstream << std::endl;
+                } 
+                break;
+            case DEMOD_TYPE_OOK:
+                for (int i = 0; i < bufSize; i++) {
+                    modem_demodulate(demodOOK, inp->data[i], &bitstream);
+                    std::cout << bitstream << std::endl;
+                } 
+                break;
+            case DEMOD_TYPE_SQAM:
+                for (int i = 0; i < bufSize; i++) {
+                    modem_demodulate(demodSQAM, inp->data[i], &bitstream);
+                    std::cout << bitstream << std::endl;
+                } 
+                break;
+            case DEMOD_TYPE_ST:
+                for (int i = 0; i < bufSize; i++) {
+                    modem_demodulate(demodST, inp->data[i], &bitstream);
+                    std::cout << bitstream << std::endl;
+                } 
+                break;
+            case DEMOD_TYPE_QAM:
+                for (int i = 0; i < bufSize; i++) {
+                    modem_demodulate(demodQAM, inp->data[i], &bitstream);
+                    std::cout << bitstream << std::endl;
+                } 
+                break;
+            case DEMOD_TYPE_QPSK:
+                for (int i = 0; i < bufSize; i++) {
+                    modem_demodulate(demodQPSK, inp->data[i], &bitstream);
+                    // std::cout << bitstream << std::endl;
+                } 
+                if(modem_get_demodulator_evm(demodQPSK) <= 0.8f) {
+                    std::cout << "Lock!" << std::endl;
                 }
                 break;
             }
