@@ -60,6 +60,7 @@ protected:
 
     firfilt_rrrf firStereoLeft;
     firfilt_rrrf firStereoRight;
+    iirfilt_crcf iirStereoPilot;
 
     DemodulatorThreadParameters params;
     DemodulatorThreadParameters lastParams;

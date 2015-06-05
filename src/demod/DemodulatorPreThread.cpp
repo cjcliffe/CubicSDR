@@ -11,7 +11,7 @@
 DemodulatorPreThread::DemodulatorPreThread(DemodulatorThreadInputQueue* iqInputQueue, DemodulatorThreadPostInputQueue* iqOutputQueue,
         DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify) :
         iqInputQueue(iqInputQueue), iqOutputQueue(iqOutputQueue), terminated(false), initialized(false), audioResampler(NULL), stereoResampler(NULL), iqResampleRatio(
-                1), audioResampleRatio(1), firStereoRight(NULL), firStereoLeft(NULL), iqResampler(NULL), commandQueue(NULL), threadQueueNotify(threadQueueNotify), threadQueueControl(
+                1), audioResampleRatio(1), firStereoRight(NULL), firStereoLeft(NULL), iirStereoPilot(NULL), iqResampler(NULL), commandQueue(NULL), threadQueueNotify(threadQueueNotify), threadQueueControl(
                 threadQueueControl) {
 
     freqShifter = nco_crcf_create(LIQUID_VCO);
@@ -55,6 +55,14 @@ void DemodulatorPreThread::initialize() {
 
     firStereoLeft = firfilt_rrrf_create(h, h_len);
     firStereoRight = firfilt_rrrf_create(h, h_len);
+
+    // stereo pilot filter
+    unsigned int order =   5;       // filter order
+    float        f0    =   ((double) 19000 / (double) params.bandwidth);
+    float        fc    =   f0 + ((double) 3000 / (double) params.bandwidth);
+    float        Ap    =   1.0f;
+    As    =  60.0f;
+    iirStereoPilot = iirfilt_crcf_create_prototype(LIQUID_IIRDES_CHEBY2, LIQUID_IIRDES_BANDPASS, LIQUID_IIRDES_SOS, order, fc, f0, Ap, As);
 
     initialized = true;
     lastParams = params;
@@ -253,6 +261,7 @@ void DemodulatorPreThread::threadMain() {
             resamp->stereoResampler = stereoResampler;
             resamp->firStereoLeft = firStereoLeft;
             resamp->firStereoRight = firStereoRight;
+            resamp->iirStereoPilot = iirStereoPilot;
             resamp->sampleRate = params.bandwidth;
 
             iqOutputQueue->push(resamp);
@@ -282,6 +291,10 @@ void DemodulatorPreThread::threadMain() {
                         firStereoRight = result.firStereoRight;
                     }
 
+                    if (result.iirStereoPilot) {
+                        iirStereoPilot = result.iirStereoPilot;
+                    }
+                    
                     if (result.audioResampler) {
                         audioResampler = result.audioResampler;
                         audioResampleRatio = result.audioResamplerRatio;

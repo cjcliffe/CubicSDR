@@ -84,9 +84,10 @@ public:
 
     firfilt_rrrf firStereoLeft;
     firfilt_rrrf firStereoRight;
+    iirfilt_crcf iirStereoPilot;
 
     DemodulatorThreadPostIQData() :
-            sampleRate(0), audioResampler(NULL), stereoResampler(NULL), audioResampleRatio(0), audioSampleRate(0), firStereoLeft(NULL), firStereoRight(NULL) {
+            sampleRate(0), audioResampler(NULL), stereoResampler(NULL), audioResampleRatio(0), audioSampleRate(0), firStereoLeft(NULL), firStereoRight(NULL), iirStereoPilot(NULL) {
 
     }
 
