@@ -178,7 +178,6 @@ void DemodulatorThread::threadMain() {
         } else {
             float p;
             unsigned int bitstream;
-            int temp;
             switch (demodulatorType.load()) {
             case DEMOD_TYPE_LSB:
                 for (int i = 0; i < bufSize; i++) { // Reject upper band
@@ -203,57 +202,62 @@ void DemodulatorThread::threadMain() {
                     modem_demodulate(demodASK, inp->data[i], &bitstream);
                     std::cout << bitstream << std::endl;
                 } 
+                updateDemodulatorLock(demodASK);
                 break;
             case DEMOD_TYPE_BPSK:
                 for (int i = 0; i < bufSize; i++) {
                     modem_demodulate(demodBPSK, inp->data[i], &bitstream);
                     std::cout << bitstream << std::endl;
                 } 
+                updateDemodulatorLock(demodBPSK);
                 break;
             case DEMOD_TYPE_DPSK:
                 for (int i = 0; i < bufSize; i++) {
                     modem_demodulate(demodDPSK, inp->data[i], &bitstream);
                     std::cout << bitstream << std::endl;
                 } 
+                updateDemodulatorLock(demodDPSK);
                 break;
             case DEMOD_TYPE_PSK:
                 for (int i = 0; i < bufSize; i++) {
                     modem_demodulate(demodPSK, inp->data[i], &bitstream);
                     std::cout << bitstream << std::endl;
                 } 
+                updateDemodulatorLock(demodPSK);
                 break;
             case DEMOD_TYPE_OOK:
                 for (int i = 0; i < bufSize; i++) {
                     modem_demodulate(demodOOK, inp->data[i], &bitstream);
                     std::cout << bitstream << std::endl;
                 } 
+                updateDemodulatorLock(demodOOK);
                 break;
             case DEMOD_TYPE_SQAM:
                 for (int i = 0; i < bufSize; i++) {
                     modem_demodulate(demodSQAM, inp->data[i], &bitstream);
                     std::cout << bitstream << std::endl;
                 } 
+                updateDemodulatorLock(demodSQAM);
                 break;
             case DEMOD_TYPE_ST:
                 for (int i = 0; i < bufSize; i++) {
                     modem_demodulate(demodST, inp->data[i], &bitstream);
                     std::cout << bitstream << std::endl;
                 } 
+                updateDemodulatorLock(demodST);
                 break;
             case DEMOD_TYPE_QAM:
                 for (int i = 0; i < bufSize; i++) {
                     modem_demodulate(demodQAM, inp->data[i], &bitstream);
                     std::cout << bitstream << std::endl;
                 } 
+                updateDemodulatorLock(demodQAM);
                 break;
             case DEMOD_TYPE_QPSK:
                 for (int i = 0; i < bufSize; i++) {
                     modem_demodulate(demodQPSK, inp->data[i], &bitstream);
-                    // std::cout << bitstream << std::endl;
                 } 
-                if(modem_get_demodulator_evm(demodQPSK) <= 0.8f) {
-                    std::cout << "Lock!" << std::endl;
-                }
+                updateDemodulatorLock(demodQPSK);
                 break;
             }
 
@@ -458,6 +462,10 @@ void DemodulatorThread::threadMain() {
                     demodAM = demodAM_DSB_CSP;
                     ampmodem_reset(demodAM);
                     break;
+                case DEMOD_TYPE_QPSK:
+                    std::cout << "reset modem qpsk" << std::endl;
+                    modem_reset(demodQPSK);
+                    break;
                 }
                 demodulatorType = newDemodType;
             }
@@ -551,5 +559,22 @@ void DemodulatorThread::setDemodulatorType(int demod_type_in) {
 
 int DemodulatorThread::getDemodulatorType() {
     return demodulatorType;
+}
+
+void DemodulatorThread::setDemodulatorLock(bool demod_lock_in) {
+    if(demod_lock_in) {
+        currentDemodLock = true;
+    }
+    else {
+        currentDemodLock = false;
+    }
+}
+
+int DemodulatorThread::getDemodulatorLock() {
+    return currentDemodLock;
+}
+
+void DemodulatorThread::updateDemodulatorLock(modem demod) {
+    modem_get_demodulator_evm(demod) <= 0.8f ? setDemodulatorLock(true) : setDemodulatorLock(false); 
 }
 

@@ -37,6 +37,9 @@ public:
 
     void setDemodulatorType(int demod_type_in);
     int getDemodulatorType();
+    
+    void setDemodulatorLock(bool demod_lock_in);
+    int getDemodulatorLock();
 
 #ifdef __APPLE__
     static void *pthread_helper(void *context) {
@@ -92,4 +95,7 @@ protected:
     std::atomic<float> squelchLevel;
     std::atomic<float> signalLevel;
     bool squelchEnabled;
+    
+    bool currentDemodLock = false;
+    void updateDemodulatorLock(modem demod);
 };

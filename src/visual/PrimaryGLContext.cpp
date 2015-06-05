@@ -305,6 +305,12 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBColor color, lon
         demodAlign = GLFont::GLFONT_ALIGN_CENTER;
         break;
     }
+    
+    
+    // add lock to string if we have an lock
+    if(demod->getDemodulatorLock()) {
+        demodStr = demodStr + " Lock";
+    }
 
     glColor3f(0, 0, 0);
     getFont(PrimaryGLContext::GLFONT_SIZE16).drawString(demodStr, 2.0 * (uxPos - 0.5) + xOfs, -1.0 + hPos - yOfs, 16, demodAlign,

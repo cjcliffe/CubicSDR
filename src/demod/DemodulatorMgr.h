@@ -27,6 +27,9 @@ public:
 
     int getLastDemodulatorType() const;
     void setLastDemodulatorType(int lastDemodType);
+    
+    bool getLastDemodulatorLock() const;
+    void setLastDemodulatorLock(bool lastDemodLock);
 
     float getLastGain() const;
     void setLastGain(float lastGain);
@@ -52,6 +55,7 @@ private:
 
     int lastBandwidth;
     int lastDemodType;
+    bool lastDemodLock;
     bool lastSquelchEnabled;
     float lastSquelch;
     float lastGain;

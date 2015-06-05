@@ -162,6 +162,7 @@ void DemodulatorMgr::updateLastState() {
     if (lastActiveDemodulator) {
         lastBandwidth = lastActiveDemodulator->getBandwidth();
         lastDemodType = lastActiveDemodulator->getDemodulatorType();
+        lastDemodLock = lastActiveDemodulator->getDemodulatorLock();
         lastSquelchEnabled = lastActiveDemodulator->isSquelchEnabled();
         lastSquelch = lastActiveDemodulator->getSquelchLevel();
         lastGain = lastActiveDemodulator->getGain();
@@ -189,6 +190,14 @@ int DemodulatorMgr::getLastDemodulatorType() const {
 
 void DemodulatorMgr::setLastDemodulatorType(int lastDemodType) {
     this->lastDemodType = lastDemodType;
+}
+
+bool DemodulatorMgr::getLastDemodulatorLock() const {
+    return lastDemodLock;
+}
+
+void DemodulatorMgr::setLastDemodulatorLock(bool lastDemodLock) {
+    this->lastDemodLock = lastDemodLock;
 }
 
 float DemodulatorMgr::getLastGain() const {
