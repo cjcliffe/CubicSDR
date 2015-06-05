@@ -268,8 +268,8 @@ void DemodulatorThread::threadMain() {
 //            
             nco_crcf_set_frequency(stereoShifter, nco_crcf_get_frequency(stereoPilot)*2);
             nco_crcf_set_phase(stereoShifter, nco_crcf_get_phase(stereoPilot));
-            std::cout << "[PLL] phase error: " << phase_error;
-            std::cout << " freq:" << (((nco_crcf_get_frequency(stereoPilot) / (2.0 * M_PI)) * inp->sampleRate)) << std::endl;
+//            std::cout << "[PLL] phase error: " << phase_error;
+//            std::cout << " freq:" << (((nco_crcf_get_frequency(stereoPilot) / (2.0 * M_PI)) * inp->sampleRate)) << std::endl;
             
             if (audio_out_size != resampledStereoData.size()) {
                 if (resampledStereoData.capacity() < audio_out_size) {
