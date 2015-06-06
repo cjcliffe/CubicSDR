@@ -51,8 +51,8 @@ void DemodulatorWorkerThread::threadMain() {
                 result.audioSampleRate = filterCommand.audioSampleRate;
 
                 // Stereo filters / shifters
-                double firStereoCutoff = 0.5 * ((double) 36000 / (double) filterCommand.audioSampleRate);         // filter cutoff frequency
-                float ft = 0.05f;         // filter transition
+                double firStereoCutoff = ((double) 16000 / (double) filterCommand.audioSampleRate);
+                float ft = ((double) 1000 / (double) filterCommand.audioSampleRate);        // filter transition
                 float mu = 0.0f;         // fractional timing offset
 
                 if (firStereoCutoff < 0) {
@@ -70,10 +70,10 @@ void DemodulatorWorkerThread::threadMain() {
                 result.firStereoLeft = firfilt_rrrf_create(h, h_len);
                 result.firStereoRight = firfilt_rrrf_create(h, h_len);
 
-                
-                unsigned int order =   5;
+                // stereo pilot filter
+                unsigned int order =   5;       // filter order
                 float        f0    =   ((double) 19000 / (double) filterCommand.bandwidth);
-                float        fc    =   f0 + ((double) 3000 / (double) filterCommand.bandwidth);
+                float        fc    =   ((double) 19500 / (double) filterCommand.bandwidth);
                 float        Ap    =   1.0f;
                 As    =  60.0f;
                 

@@ -37,8 +37,8 @@ void DemodulatorPreThread::initialize() {
     stereoResampler = msresamp_rrrf_create(audioResampleRatio, As);
 
     // Stereo filters / shifters
-    double firStereoCutoff = 0.5 * ((double) 36000 / (double) params.audioSampleRate);         // filter cutoff frequency
-    float ft = 0.05f;         // filter transition
+    double firStereoCutoff = ((double) 16000 / (double) params.audioSampleRate);
+    float ft = ((double) 1000 / (double) params.audioSampleRate);         // filter transition
     float mu = 0.0f;         // fractional timing offset
 
     if (firStereoCutoff < 0) {
@@ -59,7 +59,7 @@ void DemodulatorPreThread::initialize() {
     // stereo pilot filter
     unsigned int order =   5;       // filter order
     float        f0    =   ((double) 19000 / (double) params.bandwidth);
-    float        fc    =   f0 + ((double) 3000 / (double) params.bandwidth);
+    float        fc    =   ((double) 19500 / (double) params.bandwidth);
     float        Ap    =   1.0f;
     As    =  60.0f;
     iirStereoPilot = iirfilt_crcf_create_prototype(LIQUID_IIRDES_CHEBY2, LIQUID_IIRDES_BANDPASS, LIQUID_IIRDES_SOS, order, fc, f0, Ap, As);
