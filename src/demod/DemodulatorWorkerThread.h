@@ -16,7 +16,7 @@ public:
 
     DemodulatorWorkerThreadResult() :
             cmd(DEMOD_WORKER_THREAD_RESULT_NULL), iqResampler(NULL), iqResampleRatio(0), audioResampler(NULL), stereoResampler(NULL), audioResamplerRatio(
-                    0), firStereoLeft(NULL), firStereoRight(NULL), sampleRate(0), bandwidth(0), audioSampleRate(0) {
+                    0), firStereoLeft(NULL), firStereoRight(NULL), iirStereoPilot(NULL), sampleRate(0), bandwidth(0), audioSampleRate(0) {
 
     }
 
@@ -35,6 +35,7 @@ public:
 
     firfilt_rrrf firStereoLeft;
     firfilt_rrrf firStereoRight;
+    iirfilt_crcf iirStereoPilot;
 
     long long sampleRate;
     unsigned int bandwidth;

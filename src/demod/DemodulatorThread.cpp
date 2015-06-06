@@ -45,15 +45,16 @@ void DemodulatorThread::threadMain() {
     msresamp_rrrf stereoResampler = NULL;
     firfilt_rrrf firStereoLeft = NULL;
     firfilt_rrrf firStereoRight = NULL;
+    iirfilt_crcf iirStereoPilot = NULL;
 
-    liquid_float_complex x, y, z[2];
-    float rz[2];
+    liquid_float_complex u, v, w, x, y;
 
     firhilbf firStereoR2C = firhilbf_create(5, 60.0f);
     firhilbf firStereoC2R = firhilbf_create(5, 60.0f);
 
-    nco_crcf stereoShifter = nco_crcf_create(LIQUID_NCO);
-    double stereoShiftFrequency = 0;
+    nco_crcf stereoPilot = nco_crcf_create(LIQUID_VCO);
+    nco_crcf_reset(stereoPilot);
+    nco_crcf_pll_set_bandwidth(stereoPilot, 0.25f);
 
      // half band filter used for side-band elimination
     resamp2_cccf ssbFilt = resamp2_cccf_create(12,-0.25f,60.0f);
@@ -103,6 +104,7 @@ void DemodulatorThread::threadMain() {
             stereoResampler = inp->stereoResampler;
             firStereoLeft = inp->firStereoLeft;
             firStereoRight = inp->firStereoRight;
+            iirStereoPilot = inp->iirStereoPilot;
             audioSampleRate = inp->audioSampleRate;
         } else if (audioResampler != inp->audioResampler) {
             msresamp_rrrf_destroy(audioResampler);
@@ -129,6 +131,13 @@ void DemodulatorThread::threadMain() {
                 firfilt_rrrf_destroy(firStereoRight);
             }
             firStereoRight = inp->firStereoRight;
+        }
+
+        if (iirStereoPilot != inp->iirStereoPilot) {
+            if (iirStereoPilot != NULL) {
+                iirfilt_crcf_destroy(iirStereoPilot);
+            }
+            iirStereoPilot = inp->iirStereoPilot;
         }
 
         if (agcData.size() != bufSize) {
@@ -222,20 +231,41 @@ void DemodulatorThread::threadMain() {
                 demodStereoData.resize(bufSize);
             }
 
-            double freq = (2.0 * M_PI) * ((double) 38000) / ((double) inp->sampleRate);
-
-            if (stereoShiftFrequency != freq) {
-                nco_crcf_set_frequency(stereoShifter, freq);
-                stereoShiftFrequency = freq;
-            }
+            
+            float phase_error = 0;
 
             for (int i = 0; i < bufSize; i++) {
+                // real -> complex
                 firhilbf_r2c_execute(firStereoR2C, demodOutputData[i], &x);
-                nco_crcf_mix_down(stereoShifter, x, &y);
-                nco_crcf_step(stereoShifter);
-                firhilbf_c2r_execute(firStereoC2R, y, &demodStereoData[i]);
+
+                // 19khz pilot band-pass
+                iirfilt_crcf_execute(iirStereoPilot, x, &v);
+                nco_crcf_cexpf(stereoPilot, &w);
+                                
+                w.imag = -w.imag; // conjf(w)
+                
+                // multiply u = v * conjf(w)
+                u.real = v.real * w.real - v.imag * w.imag;
+                u.imag = v.real * w.imag + v.imag * w.real;
+                
+                // cargf(u)
+                phase_error = atan2f(u.imag,u.real);
+                
+                // step pll
+                nco_crcf_pll_step(stereoPilot, phase_error);
+                nco_crcf_step(stereoPilot);
+                
+                // 38khz down-mix
+                nco_crcf_mix_down(stereoPilot, x, &y);
+                nco_crcf_mix_down(stereoPilot, y, &x);
+
+                // complex -> real
+                firhilbf_c2r_execute(firStereoC2R, x, &demodStereoData[i]);
             }
 
+//            std::cout << "[PLL] phase error: " << phase_error;
+//            std::cout << " freq:" << (((nco_crcf_get_frequency(stereoPilot) / (2.0 * M_PI)) * inp->sampleRate)) << std::endl;
+            
             if (audio_out_size != resampledStereoData.size()) {
                 if (resampledStereoData.capacity() < audio_out_size) {
                     resampledStereoData.reserve(audio_out_size);
@@ -281,10 +311,10 @@ void DemodulatorThread::threadMain() {
                     for (int i = 0; i < numAudioWritten; i++) {
                         float l, r;
 
-                        firfilt_rrrf_push(firStereoLeft, (resampledOutputData[i] - (resampledStereoData[i])));
+                        firfilt_rrrf_push(firStereoLeft, 0.568 * (resampledOutputData[i] - (resampledStereoData[i])));
                         firfilt_rrrf_execute(firStereoLeft, &l);
 
-                        firfilt_rrrf_push(firStereoRight, (resampledOutputData[i] + (resampledStereoData[i])));
+                        firfilt_rrrf_push(firStereoRight, 0.568 * (resampledOutputData[i] + (resampledStereoData[i])));
                         firfilt_rrrf_execute(firStereoRight, &r);
 
                         ati->data[i * 2] = l;
@@ -411,11 +441,14 @@ void DemodulatorThread::threadMain() {
     if (firStereoRight != NULL) {
         firfilt_rrrf_destroy(firStereoRight);
     }
+    if (iirStereoPilot != NULL) {
+      iirfilt_crcf_destroy(iirStereoPilot);
+    }
 
     agc_crcf_destroy(iqAutoGain);
     firhilbf_destroy(firStereoR2C);
     firhilbf_destroy(firStereoC2R);
-    nco_crcf_destroy(stereoShifter);
+    nco_crcf_destroy(stereoPilot);
     resamp2_cccf_destroy(ssbFilt);
 
     while (!outputBuffers.empty()) {
