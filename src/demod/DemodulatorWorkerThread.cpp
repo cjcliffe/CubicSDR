@@ -70,10 +70,14 @@ void DemodulatorWorkerThread::threadMain() {
                 result.firStereoLeft = firfilt_rrrf_create(h, h_len);
                 result.firStereoRight = firfilt_rrrf_create(h, h_len);
 
+                float bw = filterCommand.bandwidth;
+                if (bw < 100000.0) {
+                    bw = 100000.0;
+                }
                 // stereo pilot filter
                 unsigned int order =   5;       // filter order
-                float        f0    =   ((double) 19000 / (double) filterCommand.bandwidth);
-                float        fc    =   ((double) 19500 / (double) filterCommand.bandwidth);
+                float        f0    =   ((double) 19000 / bw);
+                float        fc    =   ((double) 19500 / bw);
                 float        Ap    =   1.0f;
                 As    =  60.0f;
                 

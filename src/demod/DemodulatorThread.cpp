@@ -117,6 +117,7 @@ void DemodulatorThread::threadMain() {
                 ampmodem_reset(demodAM);
             }
             freqdem_reset(demodFM);
+            nco_crcf_reset(stereoPilot);
         }
 
         if (firStereoLeft != inp->firStereoLeft) {
@@ -223,7 +224,7 @@ void DemodulatorThread::threadMain() {
         unsigned int numAudioWritten;
         msresamp_rrrf_execute(audioResampler, &demodOutputData[0], bufSize, &resampledOutputData[0], &numAudioWritten);
 
-        if (stereo) {
+        if (stereo && inp->sampleRate >= 100000) {
             if (demodStereoData.size() != bufSize) {
                 if (demodStereoData.capacity() < bufSize) {
                     demodStereoData.reserve(bufSize);
@@ -302,7 +303,7 @@ void DemodulatorThread::threadMain() {
                 ati->sampleRate = audioSampleRate;
                 ati->setRefCount(1);
 
-                if (stereo) {
+                if (stereo && inp->sampleRate >= 100000) {
                     ati->channels = 2;
                     if (ati->data.capacity() < (numAudioWritten * 2)) {
                         ati->data.reserve(numAudioWritten * 2);
@@ -343,7 +344,7 @@ void DemodulatorThread::threadMain() {
             ati_vis->busy_update.lock();
 
             int num_vis = DEMOD_VIS_SIZE;
-            if (stereo) {
+            if (stereo && inp->sampleRate >= 100000) {
                 ati_vis->channels = 2;
                 int stereoSize = ati->data.size();
                 if (stereoSize > DEMOD_VIS_SIZE) {

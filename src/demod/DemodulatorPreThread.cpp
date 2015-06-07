@@ -57,9 +57,13 @@ void DemodulatorPreThread::initialize() {
     firStereoRight = firfilt_rrrf_create(h, h_len);
 
     // stereo pilot filter
+    float bw = params.bandwidth;
+    if (bw < 100000.0) {
+        bw = 100000.0;
+    }
     unsigned int order =   5;       // filter order
-    float        f0    =   ((double) 19000 / (double) params.bandwidth);
-    float        fc    =   ((double) 19500 / (double) params.bandwidth);
+    float        f0    =   ((double) 19000 / bw);
+    float        fc    =   ((double) 19500 / bw);
     float        Ap    =   1.0f;
     As    =  60.0f;
     iirStereoPilot = iirfilt_crcf_create_prototype(LIQUID_IIRDES_CHEBY2, LIQUID_IIRDES_BANDPASS, LIQUID_IIRDES_SOS, order, fc, f0, Ap, As);
