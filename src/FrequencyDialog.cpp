@@ -5,7 +5,8 @@
 #include <iomanip>
 #include "CubicSDR.h"
 
-wxBEGIN_EVENT_TABLE(FrequencyDialog, wxDialog) EVT_CHAR_HOOK(FrequencyDialog::OnChar)
+wxBEGIN_EVENT_TABLE(FrequencyDialog, wxDialog)
+EVT_CHAR_HOOK(FrequencyDialog::OnChar)
 wxEND_EVENT_TABLE()
 
 FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxString & title, DemodulatorInstance *demod, const wxPoint & position,
@@ -98,7 +99,7 @@ long long FrequencyDialog::strToFrequency(std::string freqStr) {
 }
 
 void FrequencyDialog::OnChar(wxKeyEvent& event) {
-    wxChar c = event.GetKeyCode();
+    int c = event.GetKeyCode();
     long long freq;
 
     switch (c) {
@@ -125,7 +126,12 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
 
     if (allowed.find_first_of(c) != std::string::npos || c == WXK_DELETE || c == WXK_BACK || c == WXK_NUMPAD_DECIMAL
             || (c >= WXK_NUMPAD0 && c <= WXK_NUMPAD9)) {
+#ifdef __linux__
+        dialogText->OnChar(event);
+        event.Skip();
+#else
         event.DoAllowNextEvent();
+#endif
     } else if (event.ControlDown() && c == 'V') {
         // Alter clipboard contents to remove unwanted chars
         wxTheClipboard->Open();
