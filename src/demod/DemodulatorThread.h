@@ -96,6 +96,6 @@ protected:
     std::atomic<float> signalLevel;
     bool squelchEnabled;
     
-    bool currentDemodLock = false;
-    void updateDemodulatorLock(modem demod);
+    bool currentDemodLock;
+    void updateDemodulatorLock(modem demod, float sensitivity);
 };

@@ -101,7 +101,6 @@ private:
     long long currentFrequency;
     int currentBandwidth;
     int currentDemodType;
-    bool currentDemodLock = false;
     int currentOutputDevice;
     int currentAudioSampleRate;
     bool follow, tracking;

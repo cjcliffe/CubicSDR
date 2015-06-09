@@ -61,20 +61,33 @@ AppFrame::AppFrame() :
     demodModeSelector->setHelpTip("Choose modulation type: Frequency Modulation, Amplitude Modulation and Lower, Upper or Double Side-Band.");
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
     
-    demodModeSelectoradv = new ModeSelectorCanvas(this, attribList);
-    demodModeSelectoradv->addChoice(DEMOD_TYPE_ASK, "ASK");
-    demodModeSelectoradv->addChoice(DEMOD_TYPE_APSK, "APSK");
-    demodModeSelectoradv->addChoice(DEMOD_TYPE_BPSK, "BPSK");
-    demodModeSelectoradv->addChoice(DEMOD_TYPE_DPSK, "DPSK");
-    demodModeSelectoradv->addChoice(DEMOD_TYPE_PSK, "PSK");
-    demodModeSelectoradv->addChoice(DEMOD_TYPE_OOK, "OOK");
-    demodModeSelectoradv->addChoice(DEMOD_TYPE_ST, "ST");
-    demodModeSelectoradv->addChoice(DEMOD_TYPE_SQAM, "SQAM");
-    demodModeSelectoradv->addChoice(DEMOD_TYPE_QAM, "QAM");
-    demodModeSelectoradv->addChoice(DEMOD_TYPE_QPSK, "QPSK");
-    demodModeSelectoradv->setSelection(DEMOD_TYPE_ASK);
-    demodModeSelectoradv->setHelpTip("Choose advanced modulation types.");
-    demodTray->Add(demodModeSelectoradv, 3, wxEXPAND | wxALL, 0);
+    demodModeSelectorAdv = new ModeSelectorCanvas(this, attribList);
+    demodModeSelectorAdv->addChoice(DEMOD_TYPE_ASK, "ASK");
+    demodModeSelectorAdv->addChoice(DEMOD_TYPE_APSK, "APSK");
+    demodModeSelectorAdv->addChoice(DEMOD_TYPE_BPSK, "BPSK");
+    demodModeSelectorAdv->addChoice(DEMOD_TYPE_DPSK, "DPSK");
+    demodModeSelectorAdv->addChoice(DEMOD_TYPE_PSK, "PSK");
+    demodModeSelectorAdv->addChoice(DEMOD_TYPE_OOK, "OOK");
+    demodModeSelectorAdv->addChoice(DEMOD_TYPE_ST, "ST");
+    demodModeSelectorAdv->addChoice(DEMOD_TYPE_SQAM, "SQAM");
+    demodModeSelectorAdv->addChoice(DEMOD_TYPE_QAM, "QAM");
+    demodModeSelectorAdv->addChoice(DEMOD_TYPE_QPSK, "QPSK");
+    demodModeSelectorAdv->setSelection(DEMOD_TYPE_ASK);
+    demodModeSelectorAdv->setHelpTip("Choose advanced modulation types.");
+    demodTray->Add(demodModeSelectorAdv, 3, wxEXPAND | wxALL, 0);
+    
+    demodModeSelectorCons = new ModeSelectorCanvas(this, attribList);
+    demodModeSelectorCons->addChoice(1, "auto");
+    demodModeSelectorCons->addChoice(2, "2");
+    demodModeSelectorCons->addChoice(4, "4");
+    demodModeSelectorCons->addChoice(8, "8");
+    demodModeSelectorCons->addChoice(16, "16");
+    demodModeSelectorCons->addChoice(32, "32");
+    demodModeSelectorCons->addChoice(64, "64");
+    demodModeSelectorCons->addChoice(128, "128");
+    demodModeSelectorCons->addChoice(256, "256");
+    demodModeSelectorCons->setHelpTip("Choose number of constallations types.");
+    demodTray->Add(demodModeSelectorCons, 2, wxEXPAND | wxALL, 0);
 
 //    demodTray->AddSpacer(2);
 
@@ -492,7 +505,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             outputDeviceMenuItems[outputDevice]->Check(true);
             int dType = demod->getDemodulatorType();
             demodModeSelector->setSelection(dType);
-            demodModeSelectoradv->setSelection(dType);
+            demodModeSelectorAdv->setSelection(dType);
         }
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
             long long centerFreq = demod->getFrequency();
@@ -520,10 +533,10 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
                 demodSpectrumCanvas->setCenterFrequency(centerFreq);
             }
             int dSelection = demodModeSelector->getSelection();
-            int dSelectionadv = demodModeSelectoradv->getSelection();
+            int dSelectionadv = demodModeSelectorAdv->getSelection();
             if (dSelection != -1 && dSelection != demod->getDemodulatorType()) {
                 demod->setDemodulatorType(dSelection);
-                demodModeSelectoradv->setSelection(-1);
+                demodModeSelectorAdv->setSelection(-1);
             } 
             else if(dSelectionadv != -1 && dSelectionadv != demod->getDemodulatorType()) {
                 demod->setDemodulatorType(dSelectionadv);
@@ -547,10 +560,10 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         DemodulatorMgr *mgr = &wxGetApp().getDemodMgr();
 
         int dSelection = demodModeSelector->getSelection();
-        int dSelectionadv = demodModeSelectoradv->getSelection();
+        int dSelectionadv = demodModeSelectorAdv->getSelection();
         if (dSelection != -1 && dSelection != mgr->getLastDemodulatorType()) {
             mgr->setLastDemodulatorType(dSelection);
-            demodModeSelectoradv->setSelection(-1);
+            demodModeSelectorAdv->setSelection(-1);
         }
         else if(dSelectionadv != -1 && dSelectionadv != mgr->getLastDemodulatorType()) {
             mgr->setLastDemodulatorType(dSelectionadv);

@@ -306,7 +306,6 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBColor color, lon
         break;
     }
     
-    
     // add lock to string if we have an lock
     if(demod->getDemodulatorLock()) {
         demodStr = demodStr + " Lock";
