@@ -17,7 +17,6 @@ DemodulatorMgr::~DemodulatorMgr() {
 
 DemodulatorInstance *DemodulatorMgr::newThread() {
     DemodulatorInstance *newDemod = new DemodulatorInstance;
-
     demods.push_back(newDemod);
 
     std::stringstream label;

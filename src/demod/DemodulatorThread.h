@@ -83,13 +83,53 @@ protected:
     modem demodASK256;
                 
     modem demodAPSK;
+	modem demodAPSK4;
+	modem demodAPSK8;
+	modem demodAPSK16;
+	modem demodAPSK32;
+	modem demodAPSK64;
+	modem demodAPSK128;
+	modem demodAPSK256;
+
     modem demodBPSK;
+
     modem demodDPSK;
+	modem demodDPSK2;
+	modem demodDPSK4;
+	modem demodDPSK8;
+	modem demodDPSK16;
+	modem demodDPSK32;
+	modem demodDPSK64;
+	modem demodDPSK128;
+	modem demodDPSK256;
+
     modem demodPSK;
+	modem demodPSK2;
+	modem demodPSK4;
+	modem demodPSK8;
+	modem demodPSK16;
+	modem demodPSK32;
+	modem demodPSK64;
+	modem demodPSK128;
+	modem demodPSK256;
+
     modem demodOOK;
+
     modem demodSQAM;
+	modem demodSQAM32;
+	modem demodSQAM128;
+
     modem demodST;
+
     modem demodQAM;
+	modem demodQAM4;
+	modem demodQAM8;
+	modem demodQAM16;
+	modem demodQAM32;
+	modem demodQAM64;
+	modem demodQAM128;
+	modem demodQAM256;
+
     modem demodQPSK;
 
     agc_crcf iqAutoGain;
@@ -111,5 +151,8 @@ protected:
     bool squelchEnabled;
     
     bool currentDemodLock;
+	int currentDemodCons;
+
+	void updateDemodulatorCons(int Cons);
     void updateDemodulatorLock(modem demod, float sensitivity);
 };

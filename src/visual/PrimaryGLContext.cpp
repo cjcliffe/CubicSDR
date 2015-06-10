@@ -305,6 +305,10 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBColor color, lon
         demodAlign = GLFont::GLFONT_ALIGN_CENTER;
         break;
     }
+
+	if (demod->getDemodulatorCons() != NULL && demod->getDemodulatorCons() > 0) {
+		demodStr = demodStr + std::to_string(demod->getDemodulatorCons());
+	}
     
     // add lock to string if we have an lock
     if(demod->getDemodulatorLock()) {

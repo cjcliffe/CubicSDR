@@ -536,18 +536,23 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             }
             int dSelection = demodModeSelector->getSelection();
             int dSelectionadv = demodModeSelectorAdv->getSelection();
+			int dSelectionCons = demodModeSelectorCons->getSelection();
+
             // basic demodulators
             if (dSelection != -1 && dSelection != demod->getDemodulatorType()) {
                 demod->setDemodulatorType(dSelection);
                 demodModeSelectorAdv->setSelection(-1);
             } 
             // advanced demodulators
-            else if(dSelectionadv != -1 && dSelectionadv != demod->getDemodulatorType()) {
-                demod->setDemodulatorType(dSelectionadv);
-                demod->setDemodulatorCons(demodModeSelectorCons->getSelection());
-                // std::cout << "updating demodulator" << std::endl;
-                demodModeSelector->setSelection(-1);
+			else if (dSelectionadv != -1 && dSelectionadv != demod->getDemodulatorType()) {
+				demod->setDemodulatorType(dSelectionadv);
+				demodModeSelector->setSelection(-1);
             }
+
+			// set constellations
+			if (dSelectionCons != demod->getDemodulatorCons()) {
+				demod->setDemodulatorCons(dSelectionCons);
+			}
 
             demodWaterfallCanvas->setBandwidth(demodBw);
             demodSpectrumCanvas->setBandwidth(demodBw);
@@ -567,6 +572,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 
         int dSelection = demodModeSelector->getSelection();
         int dSelectionadv = demodModeSelectorAdv->getSelection();
+		int dSelectionCons = demodModeSelectorCons->getSelection();
+
         // basic demodulators
         if (dSelection != -1 && dSelection != mgr->getLastDemodulatorType()) {
             mgr->setLastDemodulatorType(dSelection);
@@ -575,9 +582,13 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         // advanced demodulators
         else if(dSelectionadv != -1 && dSelectionadv != mgr->getLastDemodulatorType()) {
             mgr->setLastDemodulatorType(dSelectionadv);
-            mgr->setLastDemodulatorCons(demodModeSelectorCons->getSelection());
             demodModeSelector->setSelection(-1);
         }
+
+		// set constellations
+		if (dSelectionCons != mgr->getLastDemodulatorCons()) {
+			mgr->setLastDemodulatorCons(dSelectionCons);
+		}
         
         demodGainMeter->setLevel(mgr->getLastGain());
         if (demodSignalMeter->inputChanged()) {
