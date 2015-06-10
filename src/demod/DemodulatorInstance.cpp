@@ -21,6 +21,7 @@ DemodulatorInstance::DemodulatorInstance() :
     demodulatorThread->setAudioOutputQueue(audioInputQueue);
 
     currentDemodType = demodulatorThread->getDemodulatorType();
+    currentDemodCons = demodulatorThread->getDemodulatorCons();
 }
 
 DemodulatorInstance::~DemodulatorInstance() {
@@ -50,6 +51,7 @@ void DemodulatorInstance::run() {
 
     currentFrequency = demodulatorPreThread->getParams().frequency;
     currentDemodType = demodulatorThread->getDemodulatorType();
+    currentDemodCons = demodulatorThread->getDemodulatorCons();
     currentAudioSampleRate = AudioThread::deviceSampleRate[getOutputDevice()];
     demodulatorPreThread->getParams().audioSampleRate = currentAudioSampleRate;
 
@@ -270,6 +272,14 @@ void DemodulatorInstance::setDemodulatorLock(bool demod_lock_in) {
 
 int DemodulatorInstance::getDemodulatorLock() {
     return demodulatorThread->getDemodulatorLock();
+}
+
+void DemodulatorInstance::setDemodulatorCons(int demod_cons_in) {
+    demodulatorThread->setDemodulatorCons(demod_cons_in);
+}
+
+int DemodulatorInstance::getDemodulatorCons() {
+    return demodulatorThread->getDemodulatorCons();
 }
 
 void DemodulatorInstance::setBandwidth(int bw) {

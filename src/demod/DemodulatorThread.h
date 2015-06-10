@@ -40,6 +40,9 @@ public:
     
     void setDemodulatorLock(bool demod_lock_in);
     int getDemodulatorLock();
+    
+    void setDemodulatorCons(int demod_cons_in);
+    int getDemodulatorCons();
 
 #ifdef __APPLE__
     static void *pthread_helper(void *context) {
@@ -68,7 +71,17 @@ protected:
     ampmodem demodAM_DSB;
     ampmodem demodAM_LSB;
     ampmodem demodAM_USB;
-    modem demodASK;
+
+    modem demodASK;    
+    modem demodASK2;
+    modem demodASK4;
+    modem demodASK8;
+    modem demodASK16;
+    modem demodASK32;
+    modem demodASK64;
+    modem demodASK128;
+    modem demodASK256;
+                
     modem demodAPSK;
     modem demodBPSK;
     modem demodDPSK;
@@ -88,6 +101,7 @@ protected:
     std::atomic<bool> stereo;
     std::atomic<bool> terminated;
     std::atomic<int> demodulatorType;
+    std::atomic<int> demodulatorCons;
     int audioSampleRate;
 
     DemodulatorThreadCommandQueue* threadQueueNotify;

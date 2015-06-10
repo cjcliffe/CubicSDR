@@ -26,7 +26,20 @@ DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* iqInputQue
     demodAM = demodAM_DSB_CSP;
     
     // advanced demodulators
-    demodASK = modem_create(LIQUID_MODEM_ASK256);
+    // This could properly be done easier.
+    
+    demodulatorCons = 2;
+    
+    demodASK = modem_create(LIQUID_MODEM_ASK2);
+    demodASK2 = modem_create(LIQUID_MODEM_ASK2);
+    demodASK4 = modem_create(LIQUID_MODEM_ASK4);
+    demodASK8 = modem_create(LIQUID_MODEM_ASK8);
+    demodASK16 = modem_create(LIQUID_MODEM_ASK16);
+    demodASK32 = modem_create(LIQUID_MODEM_ASK32);
+    demodASK64 = modem_create(LIQUID_MODEM_ASK64);
+    demodASK128 = modem_create(LIQUID_MODEM_ASK128);
+    demodASK256 = modem_create(LIQUID_MODEM_ASK256);
+    
     demodAPSK = modem_create(LIQUID_MODEM_APSK256);
     demodBPSK = modem_create(LIQUID_MODEM_BPSK);
     demodDPSK = modem_create(LIQUID_MODEM_DPSK256);
@@ -200,11 +213,14 @@ void DemodulatorThread::threadMain() {
                 }
                 break;
             case DEMOD_TYPE_ASK:
+                if(demodulatorCons == 2) {
+                    demodASK = demodASK2;
+                }
                 for (int i = 0; i < bufSize; i++) {
                     modem_demodulate(demodASK, inp->data[i], &bitstream);
                     // std::cout << bitstream << std::endl;
                 } 
-                updateDemodulatorLock(demodASK, 0.8f);
+                updateDemodulatorLock(demodASK, 0.5f);
                 break;
             case DEMOD_TYPE_BPSK:
                 for (int i = 0; i < bufSize; i++) {
@@ -570,6 +586,15 @@ void DemodulatorThread::setDemodulatorLock(bool demod_lock_in) {
 
 int DemodulatorThread::getDemodulatorLock() {
     return currentDemodLock;
+}
+
+void DemodulatorThread::setDemodulatorCons(int demod_cons_in) {
+    std::cout << "Updating constellations" << std::endl;
+    demodulatorCons = demod_cons_in;
+}
+
+int DemodulatorThread::getDemodulatorCons() {
+    return demodulatorCons;
 }
 
 void DemodulatorThread::updateDemodulatorLock(modem demod, float sensitivity) {

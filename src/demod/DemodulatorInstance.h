@@ -67,6 +67,9 @@ public:
     
     void setDemodulatorLock(bool demod_lock_in);
     int getDemodulatorLock();
+    
+    void setDemodulatorCons(int demod_cons_in);
+    int getDemodulatorCons();
 
     void setBandwidth(int bw);
     int getBandwidth();
@@ -101,6 +104,7 @@ private:
     long long currentFrequency;
     int currentBandwidth;
     int currentDemodType;
+    int currentDemodCons;
     int currentOutputDevice;
     int currentAudioSampleRate;
     bool follow, tracking;

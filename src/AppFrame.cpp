@@ -504,8 +504,10 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             scopeCanvas->setDeviceName(outputDevices[outputDevice].name);
             outputDeviceMenuItems[outputDevice]->Check(true);
             int dType = demod->getDemodulatorType();
+            int dCons = demod->getDemodulatorCons();
             demodModeSelector->setSelection(dType);
             demodModeSelectorAdv->setSelection(dType);
+            demodModeSelectorCons->setSelection(dCons);
         }
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
             long long centerFreq = demod->getFrequency();
@@ -534,12 +536,16 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             }
             int dSelection = demodModeSelector->getSelection();
             int dSelectionadv = demodModeSelectorAdv->getSelection();
+            // basic demodulators
             if (dSelection != -1 && dSelection != demod->getDemodulatorType()) {
                 demod->setDemodulatorType(dSelection);
                 demodModeSelectorAdv->setSelection(-1);
             } 
+            // advanced demodulators
             else if(dSelectionadv != -1 && dSelectionadv != demod->getDemodulatorType()) {
                 demod->setDemodulatorType(dSelectionadv);
+                demod->setDemodulatorCons(demodModeSelectorCons->getSelection());
+                // std::cout << "updating demodulator" << std::endl;
                 demodModeSelector->setSelection(-1);
             }
 
@@ -561,12 +567,15 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 
         int dSelection = demodModeSelector->getSelection();
         int dSelectionadv = demodModeSelectorAdv->getSelection();
+        // basic demodulators
         if (dSelection != -1 && dSelection != mgr->getLastDemodulatorType()) {
             mgr->setLastDemodulatorType(dSelection);
             demodModeSelectorAdv->setSelection(-1);
         }
+        // advanced demodulators
         else if(dSelectionadv != -1 && dSelectionadv != mgr->getLastDemodulatorType()) {
             mgr->setLastDemodulatorType(dSelectionadv);
+            mgr->setLastDemodulatorCons(demodModeSelectorCons->getSelection());
             demodModeSelector->setSelection(-1);
         }
         
