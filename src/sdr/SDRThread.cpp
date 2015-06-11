@@ -239,15 +239,17 @@ void SDRThread::threadMain() {
                 rtlsdr_set_direct_sampling(dev, direct_sampling_mode);
                 rtlsdr_reset_buffer(dev);
             }
-            if (offset_changed && !freq_changed) {
-                freq_changed = true;
-                new_freq = frequency;
+            if (offset_changed) {
+                if (!freq_changed) {
+                    new_freq = frequency;
+                    freq_changed = true;
+                }
                 offset = new_offset;
             }
             if (rate_changed) {
                 rtlsdr_set_sample_rate(dev, new_rate);
-                sampleRate = rtlsdr_get_sample_rate(dev);
                 rtlsdr_reset_buffer(dev);
+                sampleRate = rtlsdr_get_sample_rate(dev);
             }
             if (freq_changed) {
                 frequency = new_freq;
