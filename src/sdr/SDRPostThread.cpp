@@ -149,9 +149,9 @@ void SDRPostThread::threadMain() {
                 visualDataOut->sampleRate = data_in->sampleRate;
                 visualDataOut->data.assign(dataOut.begin(), dataOut.begin() + num_vis_samples);
 
-                visualDataOut->busy_rw.unlock();
-
                 iqVisualQueue.load()->push(visualDataOut);
+
+                visualDataOut->busy_rw.unlock();
             }
             
             busy_demod.lock();

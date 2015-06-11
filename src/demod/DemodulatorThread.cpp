@@ -375,9 +375,9 @@ void DemodulatorThread::threadMain() {
 //            std::cout << "Signal: " << agc_crcf_get_signal_level(agc) << " -- " << agc_crcf_get_rssi(agc) << "dB " << std::endl;
             }
 
-            ati_vis->busy_update.unlock();
-
             audioVisOutputQueue->push(ati_vis);
+
+            ati_vis->busy_update.unlock();
         }
         if (!threadQueueControl->empty()) {
             int newDemodType = DEMOD_TYPE_NULL;

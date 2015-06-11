@@ -141,6 +141,7 @@ void SDRThread::threadMain() {
     long long frequency = DEFAULT_FREQ;
     int ppm = wxGetApp().getConfig()->getDevice(devs[deviceId]->getDeviceId())->getPPM();
     int direct_sampling_mode = 0;
+    int buf_size = BUF_SIZE;
 
     rtlsdr_open(&dev, deviceId);
     rtlsdr_set_sample_rate(dev, sampleRate);
@@ -199,6 +200,13 @@ void SDRThread::threadMain() {
                 case SDRThreadCommand::SDR_THREAD_CMD_SET_SAMPLERATE:
                     rate_changed = true;
                     new_rate = command.llong_value;
+                    if (new_rate <= 250000) {
+                        buf_size = BUF_SIZE/4;
+                    } else if (new_rate < 1500000) {
+                        buf_size = BUF_SIZE/2;
+                    } else {
+                        buf_size = BUF_SIZE;
+                    }
                     std::cout << "Set sample rate: " << new_rate << std::endl;
                     break;
                 case SDRThreadCommand::SDR_THREAD_CMD_SET_DEVICE:
@@ -237,8 +245,9 @@ void SDRThread::threadMain() {
                 offset = new_offset;
             }
             if (rate_changed) {
-                sampleRate = new_rate;
                 rtlsdr_set_sample_rate(dev, new_rate);
+                sampleRate = rtlsdr_get_sample_rate(dev);
+                rtlsdr_reset_buffer(dev);
             }
             if (freq_changed) {
                 frequency = new_freq;
@@ -253,7 +262,7 @@ void SDRThread::threadMain() {
             }
         }
 
-        rtlsdr_read_sync(dev, buf, BUF_SIZE, &n_read);
+        rtlsdr_read_sync(dev, buf, buf_size, &n_read);
 
         SDRThreadIQData *dataOut = NULL;
 
