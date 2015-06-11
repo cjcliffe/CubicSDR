@@ -52,7 +52,6 @@ Features and Status:
     - [x] Modes
       - [x] FM
       - [x] FM stereo
-        - [ ] Experimental, needs improvement
       - [x] AM
       - [x] LSB
       - [x] USB
