@@ -201,20 +201,23 @@ AppFrame::AppFrame() :
     menuBar->Append(menu, wxT("&Color Scheme"));
 
     menu = new wxMenu;
-
+            
+    sampleRateMenuItems[wxID_BANDWIDTH_250K] = menu->AppendRadioItem(wxID_BANDWIDTH_250K, "250k");
     sampleRateMenuItems[wxID_BANDWIDTH_1000M] = menu->AppendRadioItem(wxID_BANDWIDTH_1000M, "1.0M");
-    sampleRateMenuItems[wxID_BANDWIDTH_1500M] = menu->AppendRadioItem(wxID_BANDWIDTH_1500M, "1.5M");
+    sampleRateMenuItems[wxID_BANDWIDTH_1500M] = menu->AppendRadioItem(wxID_BANDWIDTH_1024M, "1.024M");
+    sampleRateMenuItems[wxID_BANDWIDTH_1024M] = menu->AppendRadioItem(wxID_BANDWIDTH_1500M, "1.5M");
+    sampleRateMenuItems[wxID_BANDWIDTH_1800M] = menu->AppendRadioItem(wxID_BANDWIDTH_1800M, "1.8M");
+    sampleRateMenuItems[wxID_BANDWIDTH_1920M] = menu->AppendRadioItem(wxID_BANDWIDTH_1920M, "1.92M");
     sampleRateMenuItems[wxID_BANDWIDTH_2000M] = menu->AppendRadioItem(wxID_BANDWIDTH_2000M, "2.0M");
+    sampleRateMenuItems[wxID_BANDWIDTH_2048M] = menu->AppendRadioItem(wxID_BANDWIDTH_2048M, "2.048M");
     sampleRateMenuItems[wxID_BANDWIDTH_2160M] = menu->AppendRadioItem(wxID_BANDWIDTH_2160M, "2.16M");
-    sampleRateMenuItems[wxID_BANDWIDTH_2500M] = menu->AppendRadioItem(wxID_BANDWIDTH_2500M, "2.5M");
+    sampleRateMenuItems[wxID_BANDWIDTH_2400M] = menu->AppendRadioItem(wxID_BANDWIDTH_2400M, "2.4M");
+    sampleRateMenuItems[wxID_BANDWIDTH_2560M] = menu->AppendRadioItem(wxID_BANDWIDTH_2560M, "2.56M");
     sampleRateMenuItems[wxID_BANDWIDTH_2880M] = menu->AppendRadioItem(wxID_BANDWIDTH_2880M, "2.88M");
+//    sampleRateMenuItems[wxID_BANDWIDTH_3000M] = menu->AppendRadioItem(wxID_BANDWIDTH_3000M, "3.0M");
     sampleRateMenuItems[wxID_BANDWIDTH_3200M] = menu->AppendRadioItem(wxID_BANDWIDTH_3200M, "3.2M");
 
-#ifdef __APPLE
-    sampleRateMenuItems[wxID_BANDWIDTH_2000M]->Check(true);
-#else
-    sampleRateMenuItems[wxID_BANDWIDTH_2500M]->Check(true);
-#endif
+    sampleRateMenuItems[wxID_BANDWIDTH_2400M]->Check(true);
 
     menuBar->Append(menu, wxT("&Input Bandwidth"));
 
@@ -399,27 +402,48 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
     }
 
     switch (event.GetId()) {
-    case wxID_BANDWIDTH_1000M:
-        wxGetApp().setSampleRate(1000000);
-        break;
-    case wxID_BANDWIDTH_1500M:
-        wxGetApp().setSampleRate(1500000);
-        break;
-    case wxID_BANDWIDTH_2000M:
-        wxGetApp().setSampleRate(2000000);
-        break;
-    case wxID_BANDWIDTH_2160M:
-        wxGetApp().setSampleRate(2160000);
-        break;
-    case wxID_BANDWIDTH_2500M:
-        wxGetApp().setSampleRate(2500000);
-        break;
-    case wxID_BANDWIDTH_2880M:
-        wxGetApp().setSampleRate(2880000);
-        break;
-    case wxID_BANDWIDTH_3200M:
-        wxGetApp().setSampleRate(3200000);
-        break;
+        case wxID_BANDWIDTH_250K:
+            wxGetApp().setSampleRate(250000);
+            break;
+        case wxID_BANDWIDTH_1000M:
+            wxGetApp().setSampleRate(1000000);
+            break;
+        case wxID_BANDWIDTH_1024M:
+            wxGetApp().setSampleRate(1024000);
+            break;
+        case wxID_BANDWIDTH_1500M:
+            wxGetApp().setSampleRate(1500000);
+            break;
+        case wxID_BANDWIDTH_1800M:
+            wxGetApp().setSampleRate(1800000);
+            break;
+        case wxID_BANDWIDTH_1920M:
+            wxGetApp().setSampleRate(1920000);
+            break;
+        case wxID_BANDWIDTH_2000M:
+            wxGetApp().setSampleRate(2000000);
+            break;
+        case wxID_BANDWIDTH_2048M:
+            wxGetApp().setSampleRate(2048000);
+            break;
+        case wxID_BANDWIDTH_2160M:
+            wxGetApp().setSampleRate(2160000);
+            break;
+        case wxID_BANDWIDTH_2400M:
+            wxGetApp().setSampleRate(2400000);
+            break;
+        case wxID_BANDWIDTH_2560M:
+            wxGetApp().setSampleRate(2560000);
+            break;
+        case wxID_BANDWIDTH_2880M:
+            wxGetApp().setSampleRate(2880000);
+            break;
+//        case wxID_BANDWIDTH_3000M:
+//            wxGetApp().setSampleRate(3000000);
+//            break;
+        case wxID_BANDWIDTH_3200M:
+            wxGetApp().setSampleRate(3200000);
+            break;
     }
 
     std::vector<SDRDeviceInfo *> *devs = wxGetApp().getDevices();
