@@ -233,12 +233,14 @@ void DemodulatorThread::threadMain() {
 		// Reset demodulator Constellations & Lock
 		updateDemodulatorCons(0);
 
+		// create digital output buffer
+		demodOutputDataDigital = new unsigned int[bufSize];
+
         if (demodulatorType == DEMOD_TYPE_FM) {
 			currentDemodLock = false;
             freqdem_demodulate_block(demodFM, &agcData[0], bufSize, &demodOutputData[0]);
         } else {
             float p;
-            unsigned int bitstream;
             switch (demodulatorType.load()) {
             case DEMOD_TYPE_LSB:
 				currentDemodLock = false;
@@ -262,7 +264,7 @@ void DemodulatorThread::threadMain() {
                 }
                 break;
 			// advanced demodulators
-			// tneeds refactoring
+			// needs refactoring
             case DEMOD_TYPE_ASK:
 
 				switch (demodulatorCons) {
@@ -304,10 +306,12 @@ void DemodulatorThread::threadMain() {
                 }
 
                 for (int i = 0; i < bufSize; i++) {
-                    modem_demodulate(demodASK, inp->data[i], &bitstream);
+
+					
+                    modem_demodulate(demodASK, inp->data[i], &demodOutputDataDigital[i]);
                     // std::cout << bitstream << std::endl;
                 } 
-                updateDemodulatorLock(demodASK, 0.5f);
+                updateDemodulatorLock(demodASK, 0.005f);
                 break;
 			case DEMOD_TYPE_APSK:
 
@@ -350,17 +354,21 @@ void DemodulatorThread::threadMain() {
 				}
 
 				for (int i = 0; i < bufSize; i++) {
-					modem_demodulate(demodAPSK, inp->data[i], &bitstream);
+					
+					
+					modem_demodulate(demodAPSK, inp->data[i], &demodOutputDataDigital[i]);
 					// std::cout << bitstream << std::endl;
 				}
-				updateDemodulatorLock(demodAPSK, 0.5f);
+				updateDemodulatorLock(demodAPSK, 0.005f);
 				break;
             case DEMOD_TYPE_BPSK:
                 for (int i = 0; i < bufSize; i++) {
-                    modem_demodulate(demodBPSK, inp->data[i], &bitstream);
+
+					
+                    modem_demodulate(demodBPSK, inp->data[i], &demodOutputDataDigital[i]);
                     // std::cout << bitstream << std::endl;
                 } 
-                updateDemodulatorLock(demodBPSK, 0.8f);
+                updateDemodulatorLock(demodBPSK, 0.005f);
                 break;
             case DEMOD_TYPE_DPSK:
 
@@ -403,10 +411,12 @@ void DemodulatorThread::threadMain() {
 				}
 
                 for (int i = 0; i < bufSize; i++) {
-                    modem_demodulate(demodDPSK, inp->data[i], &bitstream);
+
+					
+                    modem_demodulate(demodDPSK, inp->data[i], &demodOutputDataDigital[i]);
                     // std::cout << bitstream << std::endl;
                 } 
-                updateDemodulatorLock(demodDPSK, 0.8f);
+                updateDemodulatorLock(demodDPSK, 0.005f);
                 break;
             case DEMOD_TYPE_PSK:
 
@@ -449,17 +459,21 @@ void DemodulatorThread::threadMain() {
 				}
 
                 for (int i = 0; i < bufSize; i++) {
-                    modem_demodulate(demodPSK, inp->data[i], &bitstream);
+
+					
+                    modem_demodulate(demodPSK, inp->data[i], &demodOutputDataDigital[i]);
                     // std::cout << bitstream << std::endl;
                 } 
-                updateDemodulatorLock(demodPSK, 0.8f);
+                updateDemodulatorLock(demodPSK, 0.005f);
                 break;
             case DEMOD_TYPE_OOK:
                 for (int i = 0; i < bufSize; i++) {
-                    modem_demodulate(demodOOK, inp->data[i], &bitstream);
+
+					
+                    modem_demodulate(demodOOK, inp->data[i], &demodOutputDataDigital[i]);
                     // std::cout << bitstream << std::endl;
                 } 
-                updateDemodulatorLock(demodOOK, 0.8f);
+                updateDemodulatorLock(demodOOK, 0.005f);
                 break;
             case DEMOD_TYPE_SQAM:
 
@@ -502,17 +516,21 @@ void DemodulatorThread::threadMain() {
 				}
 
                 for (int i = 0; i < bufSize; i++) {
-                    modem_demodulate(demodSQAM, inp->data[i], &bitstream);
+
+					
+                    modem_demodulate(demodSQAM, inp->data[i], &demodOutputDataDigital[i]);
                     // std::cout << bitstream << std::endl;
                 } 
-                updateDemodulatorLock(demodSQAM, 0.8f);
+                updateDemodulatorLock(demodSQAM, 0.005f);
                 break;
             case DEMOD_TYPE_ST:
                 for (int i = 0; i < bufSize; i++) {
-                    modem_demodulate(demodST, inp->data[i], &bitstream);
+
+					
+                    modem_demodulate(demodST, inp->data[i], &demodOutputDataDigital[i]);
                     // std::cout << bitstream << std::endl;
                 } 
-                updateDemodulatorLock(demodST, 0.8f);
+                updateDemodulatorLock(demodST, 0.005f);
                 break;
             case DEMOD_TYPE_QAM:
 
@@ -555,17 +573,21 @@ void DemodulatorThread::threadMain() {
 				}
 
                 for (int i = 0; i < bufSize; i++) {
-                    modem_demodulate(demodQAM, inp->data[i], &bitstream);
+
+					
+                    modem_demodulate(demodQAM, inp->data[i], &demodOutputDataDigital[i]);
                     // std::cout << bitstream << std::endl;
                 } 
-                updateDemodulatorLock(demodQAM, 0.5f);
+				updateDemodulatorLock(demodQAM, 0.5f);
                 break;
             case DEMOD_TYPE_QPSK:
                 for (int i = 0; i < bufSize; i++) {
-                    modem_demodulate(demodQPSK, inp->data[i], &bitstream);
+
+					
+					modem_demodulate(demodQPSK, inp->data[i], &demodOutputDataDigital[i]);
                     // std::cout << bitstream << std::endl;
-                } 
-                updateDemodulatorLock(demodQPSK, 0.8f);
+				} 
+				updateDemodulatorLock(demodQPSK, 0.8f);
                 break;
             }
 
@@ -578,7 +600,7 @@ void DemodulatorThread::threadMain() {
                 if (demodOutputData[i] > amOutputCeil) {
                     amOutputCeil = demodOutputData[i];
                 }
-            }
+			}
 
             float gain = 0.5 / amOutputCeilMAA;
 
@@ -596,6 +618,9 @@ void DemodulatorThread::threadMain() {
 
         unsigned int numAudioWritten;
         msresamp_rrrf_execute(audioResampler, &demodOutputData[0], bufSize, &resampledOutputData[0], &numAudioWritten);
+
+		// destroy the digital buffer
+		delete[] demodOutputDataDigital;
 
         if (stereo) {
             if (demodStereoData.size() != bufSize) {
@@ -770,10 +795,36 @@ void DemodulatorThread::threadMain() {
                     demodAM = demodAM_DSB_CSP;
                     ampmodem_reset(demodAM);
                     break;
-//                case DEMOD_TYPE_QPSK:
-//                    std::cout << "reset modem qpsk" << std::endl;
-//                    modem_reset(demodQPSK);
-//                    break;
+				case DEMOD_TYPE_ASK:
+					modem_reset(demodASK);
+					break;
+				case DEMOD_TYPE_APSK:
+					modem_reset(demodAPSK);
+					break;
+				case DEMOD_TYPE_BPSK:
+					modem_reset(demodBPSK);
+					break;
+				case DEMOD_TYPE_DPSK:
+					modem_reset(demodDPSK);
+					break;
+				case DEMOD_TYPE_PSK:
+					modem_reset(demodPSK);
+					break;
+				case DEMOD_TYPE_OOK:
+					modem_reset(demodOOK);
+					break;
+				case DEMOD_TYPE_SQAM:
+					modem_reset(demodSQAM);
+					break;
+				case DEMOD_TYPE_ST:
+					modem_reset(demodST);
+					break;
+				case DEMOD_TYPE_QAM:
+					modem_reset(demodQAM);
+					break;
+                case DEMOD_TYPE_QPSK:
+                    modem_reset(demodQPSK);
+                    break;
                 }
                 demodulatorType = newDemodType;
             }
@@ -886,7 +937,7 @@ int DemodulatorThread::getDemodulatorCons() {
 }
 
 void DemodulatorThread::updateDemodulatorLock(modem demod, float sensitivity) {
-    modem_get_demodulator_evm(demod) <= sensitivity ? setDemodulatorLock(true) : setDemodulatorLock(false);
+	modem_get_demodulator_evm(demod) <= sensitivity ? setDemodulatorLock(true) : setDemodulatorLock(false);
 }
 
 void DemodulatorThread::updateDemodulatorCons(int Cons) {

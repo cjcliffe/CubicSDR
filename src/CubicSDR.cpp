@@ -21,7 +21,7 @@
 IMPLEMENT_APP(CubicSDR)
 
 // console output buffer for windows
-#ifdef _WIN64_
+#ifdef _WINDOWS
 class outbuf : public std::streambuf {
 	public:
 	outbuf() {
@@ -51,7 +51,7 @@ bool CubicSDR::OnInit() {
     }
 
 	// console output for windows
-	#ifdef _WIN64_
+	#ifdef _WINDOWS
 	if (AllocConsole()) {
 		freopen("CONOUT$", "w", stdout);
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
