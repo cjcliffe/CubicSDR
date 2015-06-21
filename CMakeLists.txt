@@ -257,6 +257,7 @@ SET (cubicsdr_sources
 	src/visual/SpectrumContext.cpp
 	src/visual/WaterfallCanvas.cpp
 	src/visual/WaterfallContext.cpp
+    src/ui/GLPanel.cpp
 	external/rtaudio/RtAudio.cpp
 	external/lodepng/lodepng.cpp
     external/tinyxml/tinyxml.cpp
@@ -302,6 +303,11 @@ SET (cubicsdr_headers
 	src/visual/SpectrumContext.h
 	src/visual/WaterfallCanvas.h
 	src/visual/WaterfallContext.h
+    src/ui/GLPanel.h
+    src/ui/UITestCanvas.cpp
+    src/ui/UITestCanvas.h
+    src/ui/UITestContext.cpp
+    src/ui/UITestContext.h    
 	external/rtaudio/RtAudio.h
 	external/lodepng/lodepng.h
     external/tinyxml/tinyxml.h
@@ -314,6 +320,7 @@ include_directories (
 	${PROJECT_SOURCE_DIR}/src/audio
 	${PROJECT_SOURCE_DIR}/src/util
 	${PROJECT_SOURCE_DIR}/src/visual 
+	${PROJECT_SOURCE_DIR}/src/ui
 	${PROJECT_SOURCE_DIR}/src
 	${PROJECT_SOURCE_DIR}/external/rtaudio
 	${PROJECT_SOURCE_DIR}/external/lodepng 
