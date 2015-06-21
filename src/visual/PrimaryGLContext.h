@@ -24,10 +24,10 @@ public:
     void BeginDraw(float r, float g, float b);
     void EndDraw();
 
-    void DrawFreqSelector(float uxPos, RGBColor color, float w = 0, long long center_freq = -1, long long srate = 0);
-    void DrawRangeSelector(float uxPos1, float uxPos2, RGBColor color);
-    void DrawDemod(DemodulatorInstance *demod, RGBColor color, long long center_freq = -1, long long srate = 0);
-    void DrawDemodInfo(DemodulatorInstance *demod, RGBColor color, long long center_freq = -1, long long srate = 0);
+    void DrawFreqSelector(float uxPos, RGB color, float w = 0, long long center_freq = -1, long long srate = 0);
+    void DrawRangeSelector(float uxPos1, float uxPos2, RGB color);
+    void DrawDemod(DemodulatorInstance *demod, RGB color, long long center_freq = -1, long long srate = 0);
+    void DrawDemodInfo(DemodulatorInstance *demod, RGB color, long long center_freq = -1, long long srate = 0);
 
     static GLFont &getFont(GLFontSize esize);
 

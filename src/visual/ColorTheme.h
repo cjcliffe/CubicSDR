@@ -15,21 +15,21 @@
 #define COLOR_THEME_RADAR 6
 #define COLOR_THEME_MAX 7
 
-class RGBColor {
+class RGB {
 public:
     float r, g, b;
-    RGBColor(float r, float g, float b) :
+    RGB(float r, float g, float b) :
             r(r), g(g), b(b) {
     }
 
-    RGBColor() :
-            RGBColor(0, 0, 0) {
+    RGB() :
+            RGB(0, 0, 0) {
     }
 
-    ~RGBColor() {
+    ~RGB() {
     }
 
-    RGBColor & operator=(const RGBColor &other) {
+    RGB & operator=(const RGB &other) {
         r = other.r;
         g = other.g;
         b = other.b;
@@ -39,28 +39,28 @@ public:
 
 class ColorTheme {
 public:
-    RGBColor waterfallHighlight;
-    RGBColor waterfallNew;
-    RGBColor wfHighlight;
-    RGBColor waterfallHover;
-    RGBColor waterfallDestroy;
-    RGBColor fftLine;
-    RGBColor fftHighlight;
-    RGBColor scopeLine;
-    RGBColor tuningBarLight;
-    RGBColor tuningBarDark;
-    RGBColor tuningBarUp;
-    RGBColor tuningBarDown;
-    RGBColor meterLevel;
-    RGBColor meterValue;
-    RGBColor text;
-    RGBColor freqLine;
-    RGBColor button;
-    RGBColor buttonHighlight;
+    RGB waterfallHighlight;
+    RGB waterfallNew;
+    RGB wfHighlight;
+    RGB waterfallHover;
+    RGB waterfallDestroy;
+    RGB fftLine;
+    RGB fftHighlight;
+    RGB scopeLine;
+    RGB tuningBarLight;
+    RGB tuningBarDark;
+    RGB tuningBarUp;
+    RGB tuningBarDown;
+    RGB meterLevel;
+    RGB meterValue;
+    RGB text;
+    RGB freqLine;
+    RGB button;
+    RGB buttonHighlight;
 
-    RGBColor scopeBackground;
-    RGBColor fftBackground;
-    RGBColor generalBackground;
+    RGB scopeBackground;
+    RGB fftBackground;
+    RGB generalBackground;
 
     Gradient waterfallGradient;
 

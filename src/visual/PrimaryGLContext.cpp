@@ -95,7 +95,7 @@ GLFont &PrimaryGLContext::getFont(GLFontSize esize) {
     return fonts[esize];
 }
 
-void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBColor color, long long center_freq, long long srate) {
+void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGB color, long long center_freq, long long srate) {
     if (!demod) {
         return;
     }
@@ -176,7 +176,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBColor color,
 
 }
 
-void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBColor color, long long center_freq, long long srate) {
+void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGB color, long long center_freq, long long srate) {
     if (!demod) {
         return;
     }
@@ -273,7 +273,7 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBColor color, lon
 
 }
 
-void PrimaryGLContext::DrawFreqSelector(float uxPos, RGBColor color, float w, long long center_freq, long long srate) {
+void PrimaryGLContext::DrawFreqSelector(float uxPos, RGB color, float w, long long center_freq, long long srate) {
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     long long bw = 0;
@@ -324,7 +324,7 @@ void PrimaryGLContext::DrawFreqSelector(float uxPos, RGBColor color, float w, lo
 
 }
 
-void PrimaryGLContext::DrawRangeSelector(float uxPos1, float uxPos2, RGBColor color) {
+void PrimaryGLContext::DrawRangeSelector(float uxPos1, float uxPos2, RGB color) {
     if (uxPos2 < uxPos1) {
         float temp = uxPos2;
         uxPos2=uxPos1;
