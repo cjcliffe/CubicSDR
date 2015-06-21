@@ -2,6 +2,7 @@
 
 #include <vector>
 #include "GLExt.h"
+#include "ColorTheme.h"
 
 class GLPanelEdges {
 public:
@@ -26,31 +27,7 @@ private:
     std::vector<float> glPoints;
     std::vector<float> glColors;
 
-    void genArrays() {
-        if (!glPoints.size()) {
-            glPoints.resize(2 * 4);
-            glColors.resize(3 * 4);
-        }
-        
-        float pts[2 * 4] = {
-            0.0f, 0.0f,
-            0.0f, 1.0f,
-            1.0f, 1.0f,
-            1.0f, 0.0f
-        };
-        
-        float clr[3 * 4] = {
-            1.0, 0.0, 0.0,
-            0.0, 1.0, 0.0,
-            0.0, 0.0, 1.0,
-            1.0, 1.0, 1.0
-        };
-        
-        glPoints.reserve(2 * 4);
-        glColors.reserve(3 * 4);
-        glPoints.assign(pts, pts + (2 * 4));
-        glColors.assign(clr, clr + (3 * 4));
-    }
+    void genArrays();
     
 public:
     typedef enum GLPanelFillType { GLPANEL_FILL_NONE, GLPANEL_FILL_SOLID, GLPANEL_FILL_GRAD_X, GLPANEL_FILL_GRAD_Y, GLPANEL_FILL_GRAD_BAR_X, GLPANEL_FILL_GRAD_BAR_Y } GLPanelFillType;
@@ -58,10 +35,11 @@ public:
     float pos[2];
     float size[2];
     float view[2];
-    GLPanelFillType fill;
+    GLPanelFillType fillType;
     GLPanelCoordinateSystem coord;
     GLPanelEdges margin;
     GLPanelEdges border;
+    RGB fill[2];
     bool contentsVisible;
     
     std::vector<GLPanel *> children;
@@ -75,6 +53,8 @@ public:
     float getHeightPx();
     
     void setFill(GLPanelFillType fill_mode);
+    void setFillColor(RGB color1);
+    void setFillColor(RGB color1, RGB color2);
     void setMargin(float marg);
     void setMargin(float margl, float margr, float margt, float margb);
         
@@ -92,18 +72,5 @@ public:
         
     }
     
-    void drawPanelContents() {
-        glColor3f(1.0,1.0,1.0);
-        glBegin(GL_LINES);
-        glVertex2f(0, 0.5);
-        glVertex2f(1, 0.5);
-        glVertex2f(0.5, 0);
-        glVertex2f(0.5, 1);
-        
-        glVertex2f(0.5, 1);
-        glVertex2f(0.48, 0.80);
-        glVertex2f(0.5, 1);
-        glVertex2f(0.52, 0.80);
-        glEnd();
-    }
+    void drawPanelContents();
 };

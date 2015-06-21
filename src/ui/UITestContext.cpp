@@ -4,15 +4,25 @@
 
 UITestContext::UITestContext(UITestCanvas *canvas, wxGLContext *sharedContext) :
 PrimaryGLContext(canvas, sharedContext) {
+    
     testPanel.setPosition(0.0, 0.0);
     testPanel.setSize(1.0, 1.0);
     testPanel.setMargin(0.02, 0.02, 0.1, 0.1);
+    testPanel.setFill(GLPanel::GLPANEL_FILL_GRAD_BAR_Y);
+    testPanel.setFillColor(RGB(0.0,0.0,1.0), RGB(0.0,1.0,0.0));
+    
     testChildPanel.setPosition(0.0, 0.0);
     testChildPanel.setMargin(0.05);
     testChildPanel.setSize(1.0, 0.3);
+    testChildPanel.setFill(GLPanel::GLPANEL_FILL_GRAD_BAR_X);
+    testChildPanel.setFillColor(RGB(0.0,0.0,1.0), RGB(0.0,1.0,0.0));
+
     testChildPanel2.setPosition(0.0, 0.3);
     testChildPanel2.setSize(1.0, 0.3);
     testChildPanel2.setMargin(0.05);
+    testChildPanel2.setFill(GLPanel::GLPANEL_FILL_GRAD_X);
+    testChildPanel2.setFillColor(RGB(0.0,0.0,1.0), RGB(0.0,1.0,0.0));
+    
     testPanel.addChild(&testChildPanel);
     testPanel.addChild(&testChildPanel2);
 }
