@@ -40,6 +40,7 @@ public:
     GLPanelEdges margin;
     GLPanelEdges border;
     RGB fill[2];
+    RGB borderColor;
     bool contentsVisible;
     
     std::vector<GLPanel *> children;
@@ -57,7 +58,11 @@ public:
     void setFillColor(RGB color1, RGB color2);
     void setMargin(float marg);
     void setMargin(float margl, float margr, float margt, float margb);
-        
+
+    void setBorderColor(RGB clr);
+    void setBorder(float bord);
+    void setBorder(float bordl, float bordr, float bordt, float bordb);
+    
     void addChild(GLPanel *childPanel);
     
     void drawChildren();

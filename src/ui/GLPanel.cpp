@@ -9,10 +9,24 @@ GLPanel::GLPanel() : fillType(GLPANEL_FILL_SOLID), coord(GLPANEL_Y_DOWN_ZERO_ONE
     size[1] = 1.0f;
     fill[0] = RGB(0.5,0.5,0.5);
     fill[1] = RGB(0.1,0.1,0.1);
+    borderColor = RGB(0.8, 0.8, 0.8);
     genArrays();
 }
 
 void GLPanel::genArrays() {
+    
+    float min, mid, max;
+    
+    if (coord == GLPANEL_Y_DOWN || coord == GLPANEL_Y_UP) {
+        min = -1;
+        mid = 0;
+        max = 1;
+    } else {
+        min = 0;
+        mid = 0.5;
+        max = 1;
+    }
+    
     if (fillType == GLPANEL_FILL_SOLID || fillType == GLPANEL_FILL_GRAD_X || fillType == GLPANEL_FILL_GRAD_Y) {
         glPoints.reserve(2 * 4);
         glPoints.resize(2 * 4);
@@ -20,10 +34,10 @@ void GLPanel::genArrays() {
         glColors.resize(3 * 4);
         
         float pts[2 * 4] = {
-            0.0f, 0.0f,
-            0.0f, 1.0f,
-            1.0f, 1.0f,
-            1.0f, 0.0f
+            min, min,
+            min, max,
+            max, max,
+            max, min
         };
         
         RGB c[4];
@@ -57,15 +71,15 @@ void GLPanel::genArrays() {
         
         if (fillType == GLPANEL_FILL_GRAD_BAR_X) {
             float pts[2 * 8] = {
-                0.0f, 0.0f,
-                0.0f, 1.0f,
-                0.5f, 1.0f,
-                0.5f, 0.0f,
+                min, min,
+                min, max,
+                mid, max,
+                mid, min,
                 
-                0.5f, 0.0f,
-                0.5f, 1.0f,
-                1.0f, 1.0f,
-                1.0f, 0.0f
+                mid, min,
+                mid, max,
+                max, max,
+                max, min
             };
             glPoints.assign(pts, pts + (2 * 8));
 
@@ -77,15 +91,15 @@ void GLPanel::genArrays() {
 
         } else if (fillType == GLPANEL_FILL_GRAD_BAR_Y) {
             float pts[2 * 8] = {
-                0.0f, 0.0f,
-                0.0f, 0.5f,
-                1.0f, 0.5f,
-                1.0f, 0.0f,
+                min, min,
+                min, mid,
+                max, mid,
+                max, min,
                 
-                0.0f, 0.5f,
-                0.0f, 1.0f,
-                1.0f, 1.0f,
-                1.0f, 0.5f
+                min, mid,
+                min, max,
+                max, max,
+                max, mid
             };
             glPoints.assign(pts, pts + (2 * 8));
 
@@ -153,7 +167,6 @@ void GLPanel::setFillColor(RGB color1, RGB color2) {
     genArrays();
 }
 
-
 void GLPanel::setMargin(float marg) {
     margin.left = margin.right = margin.top = margin.bottom = marg;
 }
@@ -165,6 +178,20 @@ void GLPanel::setMargin(float margl, float margr, float margt, float margb) {
     margin.bottom = margb;
 }
 
+void GLPanel::setBorderColor(RGB clr) {
+    borderColor = clr;
+}
+
+void GLPanel::setBorder(float bord) {
+    border.left = border.right = border.top = border.bottom = bord;
+}
+
+void GLPanel::setBorder(float bordl, float bordr, float bordt, float bordb) {
+    border.left = bordl;
+    border.right = bordr;
+    border.top = bordt;
+    border.bottom = bordb;
+}
 
 void GLPanel::addChild(GLPanel *childPanel) {
     children.push_back(childPanel);
@@ -185,6 +212,18 @@ void GLPanel::drawPanelContents() {
 }
 
 void GLPanel::draw(GLPanel *parent) {
+    float min, mid, max;
+    
+    if (coord == GLPANEL_Y_DOWN || coord == GLPANEL_Y_UP) {
+        min = -1;
+        mid = 0;
+        max = 1;
+    } else {
+        min = 0;
+        mid = 0.5;
+        max = 1;
+    }
+
     if (!parent) {
         if (coord == GLPANEL_Y_DOWN_ZERO_ONE) {
             glPushMatrix();
@@ -218,6 +257,45 @@ void GLPanel::draw(GLPanel *parent) {
         
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_COLOR_ARRAY);
+        
+        if (border.left || border.right || border.top || border.bottom) {
+            glEnable(GL_LINE_SMOOTH);
+            glColor3f(borderColor.r, borderColor.g, borderColor.b);
+            
+            if (border.left) {
+                glLineWidth(border.left);
+                glBegin(GL_LINES);
+                glVertex2f(min, min);
+                glVertex2f(min, max);
+                glEnd();
+            }
+        
+            if (border.right) {
+                glLineWidth(border.right);
+                glBegin(GL_LINES);
+                glVertex2f(max, min);
+                glVertex2f(max, max);
+                glEnd();
+            }
+
+            if (border.top) {
+                glLineWidth(border.top);
+                glBegin(GL_LINES);
+                glVertex2f(min, min);
+                glVertex2f(max, min);
+                glEnd();
+            }
+
+            if (border.bottom) {
+                glLineWidth(border.bottom);
+                glBegin(GL_LINES);
+                glVertex2f(min, max);
+                glVertex2f(max, max);
+                glEnd();
+            }
+
+            glDisable(GL_LINE_SMOOTH);
+        }
     }
     
     if (contentsVisible) {
@@ -231,8 +309,6 @@ void GLPanel::draw(GLPanel *parent) {
         glPopMatrix();
     }
 }
-
-
 
 
 
