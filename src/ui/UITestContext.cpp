@@ -44,7 +44,7 @@ void UITestContext::DrawBegin() {
 }
 
 void UITestContext::Draw() {
-    testPanel.draw();
+    testPanel.draw(CubicVR::mat4::identity());
 }
 
 void UITestContext::DrawEnd() {

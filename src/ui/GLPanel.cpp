@@ -1,8 +1,8 @@
 
 #include "GLPanel.h"
+#include "cubic_math.h"
 
-
-GLPanel::GLPanel() : fillType(GLPANEL_FILL_SOLID), coord(GLPANEL_Y_DOWN_ZERO_ONE), contentsVisible(true) {
+GLPanel::GLPanel() : fillType(GLPANEL_FILL_SOLID), contentsVisible(true), transform(CubicVR::mat4::identity()) {
     pos[0] = 0.0f;
     pos[1] = 0.0f;
     size[0] = 1.0f;
@@ -10,7 +10,7 @@ GLPanel::GLPanel() : fillType(GLPANEL_FILL_SOLID), coord(GLPANEL_Y_DOWN_ZERO_ONE
     fill[0] = RGB(0.5,0.5,0.5);
     fill[1] = RGB(0.1,0.1,0.1);
     borderColor = RGB(0.8, 0.8, 0.8);
-    genArrays();
+    setCoordinateSystem(GLPANEL_Y_DOWN_ZERO_ONE);
 }
 
 void GLPanel::genArrays() {
@@ -125,6 +125,7 @@ void GLPanel::genArrays() {
     }
 }
 
+
 void GLPanel::setViewport() {
     GLint vp[4];
     glGetIntegerv(GL_VIEWPORT, vp);
@@ -149,6 +150,23 @@ float GLPanel::getWidthPx() {
 
 float GLPanel::getHeightPx() {
     return size[1]*view[0];
+}
+
+
+void GLPanel::setCoordinateSystem(GLPanelCoordinateSystem coord_in) {
+    coord = coord_in;
+    
+    if (coord == GLPANEL_Y_DOWN || coord == GLPANEL_Y_UP) {
+        min = -1;
+        mid = 0;
+        max = 1;
+    } else {
+        min = 0;
+        mid = 0.5;
+        max = 1;
+    }
+    
+    genArrays();
 }
 
 void GLPanel::setFill(GLPanelFillType fill_mode) {
@@ -202,7 +220,7 @@ void GLPanel::drawChildren() {
         std::vector<GLPanel *>::iterator panel_i;
         
         for (panel_i = children.begin(); panel_i != children.end(); panel_i++) {
-            (*panel_i)->draw(this);
+            (*panel_i)->draw(transform, this);
         }
     }
 }
@@ -211,41 +229,53 @@ void GLPanel::drawPanelContents() {
     drawChildren();
 }
 
-void GLPanel::draw(GLPanel *parent) {
-    float min, mid, max;
+void GLPanel::draw(CubicVR::mat4 transform_in, GLPanel *parent) {
+    using namespace CubicVR;
     
-    if (coord == GLPANEL_Y_DOWN || coord == GLPANEL_Y_UP) {
-        min = -1;
-        mid = 0;
-        max = 1;
-    } else {
-        min = 0;
-        mid = 0.5;
-        max = 1;
-    }
+    mat4 mCoord = mat4::identity();
 
     if (!parent) {
         if (coord == GLPANEL_Y_DOWN_ZERO_ONE) {
-            glPushMatrix();
-            glTranslatef(-1.0f, 1.0f, 0.0f);
-            glScalef(2.0f, -2.0f, 2.0f);
+            mCoord *= mat4::translate(-1.0f, 1.0f, 0.0f) * mat4::scale(2.0f, -2.0f, 2.0f);
         }
         if (coord == GLPANEL_Y_UP_ZERO_ONE) {
-            glPushMatrix();
-            glTranslatef(-1.0f, -1.0f, 0.0f);
-            glScalef(2.0f, 2.0f, 2.0f);
+            mCoord = mat4::translate(-1.0f, -1.0f, 0.0f) * mat4::scale(2.0f, 2.0f, 2.0f);
         }
         if (coord == GLPANEL_Y_DOWN) {
-            glPushMatrix();
-            glScalef(1.0f, -1.0f, 1.0f);
+            mCoord = mat4::scale(2.0f, 2.0f, 2.0f);
         }
-        if (coord == GLPANEL_Y_UP) {
-            glPushMatrix();
-        }
+//        if (coord == GLPANEL_Y_UP) {
+//        }
     }
-    glPushMatrix();
-    glTranslatef(pos[0]+margin.left, pos[1]+margin.top, 0);
-    glScalef(size[0]-(margin.left+margin.right), size[1]-(margin.top+margin.bottom), 0);
+    
+    // compute local transform
+    localTransform = mCoord *  mat4::translate(pos[0]+margin.left, pos[1]+margin.top, 0) *
+        mat4::scale(size[0]-(margin.left+margin.right), size[1]-(margin.top+margin.bottom), 0);
+
+    // compute global transform
+    transform = transform_in * localTransform;
+    
+    glLoadMatrixf(transform);
+
+    // init view[]
+    setViewport();
+    
+    // get min/max transform
+    vec4 vmin_t = mat4::vec4_multiply(vec4(min, min, 0, 1), transform);
+    vec4 vmax_t = mat4::vec4_multiply(vec4(max, max, 0, 1), transform);
+    
+    // screen dimensions
+    vec2 vmin((vmin_t.x>vmax_t.x)?vmax_t.x:vmin_t.x, vmin.y = (vmin_t.y>vmax_t.y)?vmax_t.y:vmin_t.y);
+    vec2 vmax((vmin_t.y>vmax_t.y)?vmin_t.y:vmax_t.y, vmax.y = (vmin_t.y>vmax_t.y)?vmin_t.y:vmax_t.y);
+
+    // unit dimensions
+    vec2 umin = (vmin * 0.5) + vec2(1,1);
+    vec2 umax = (vmax * 0.5) + vec2(1,1);
+    
+    // pixel dimensions
+    vec2 pdim((umax.x - umin.x) * view[0], (umax.y  - umin.y) * view[1]);
+    
+    std::cout << umin << " :: " << umax << " :: " << pdim << std::endl;
     
     if (fillType != GLPANEL_FILL_NONE) {
         glEnableClientState(GL_VERTEX_ARRAY);
@@ -301,11 +331,6 @@ void GLPanel::draw(GLPanel *parent) {
     if (contentsVisible) {
         glPushMatrix();
         drawPanelContents();
-        glPopMatrix();
-    }
-    
-    glPopMatrix();
-    if (!parent) {
         glPopMatrix();
     }
 }

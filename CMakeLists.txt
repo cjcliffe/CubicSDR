@@ -264,6 +264,7 @@ SET (cubicsdr_sources
     external/tinyxml/tinystr.cpp
     external/tinyxml/tinyxmlparser.cpp
     external/tinyxml/tinyxmlerror.cpp
+    external/cubicvr2/math/cubic_math.cpp
 )
 
 SET (cubicsdr_headers
@@ -312,6 +313,20 @@ SET (cubicsdr_headers
 	external/lodepng/lodepng.h
     external/tinyxml/tinyxml.h
     external/tinyxml/tinystr.h
+    external/cubicvr2/math/aabb.h
+    external/cubicvr2/math/cubic_math.h
+    external/cubicvr2/math/cubic_types.h
+    external/cubicvr2/math/frustum.h
+    external/cubicvr2/math/mat3.h
+    external/cubicvr2/math/mat4.h
+    external/cubicvr2/math/plane.h
+    external/cubicvr2/math/quaternion.h
+    external/cubicvr2/math/sphere.h
+    external/cubicvr2/math/transform.h
+    external/cubicvr2/math/triangle.h
+    external/cubicvr2/math/vec2.h
+    external/cubicvr2/math/vec3.h
+    external/cubicvr2/math/vec4.h
 )
 
 include_directories ( 
@@ -325,6 +340,7 @@ include_directories (
 	${PROJECT_SOURCE_DIR}/external/rtaudio
 	${PROJECT_SOURCE_DIR}/external/lodepng 
 	${PROJECT_SOURCE_DIR}/external/tinyxml
+	${PROJECT_SOURCE_DIR}/external/cubicvr2/math
 )
 
 IF (MSVC) 

@@ -3,6 +3,7 @@
 #include <vector>
 #include "GLExt.h"
 #include "ColorTheme.h"
+#include "cubic_math.h"
 
 class GLPanelEdges {
 public:
@@ -26,8 +27,9 @@ class GLPanel {
 private:
     std::vector<float> glPoints;
     std::vector<float> glColors;
-
+    
     void genArrays();
+    void setViewport();
     
 public:
     typedef enum GLPanelFillType { GLPANEL_FILL_NONE, GLPANEL_FILL_SOLID, GLPANEL_FILL_GRAD_X, GLPANEL_FILL_GRAD_Y, GLPANEL_FILL_GRAD_BAR_X, GLPANEL_FILL_GRAD_BAR_Y } GLPanelFillType;
@@ -42,16 +44,19 @@ public:
     RGB fill[2];
     RGB borderColor;
     bool contentsVisible;
-    
+    CubicVR::mat4 transform;
+    CubicVR::mat4 localTransform;
+    float min, mid, max;
+
     std::vector<GLPanel *> children;
     
     GLPanel();
     
-    void setViewport();
     void setPosition(float x, float y);
     void setSize(float w, float h);
     float getWidthPx();
     float getHeightPx();
+    void setCoordinateSystem(GLPanelCoordinateSystem coord);
     
     void setFill(GLPanelFillType fill_mode);
     void setFillColor(RGB color1);
@@ -67,7 +72,7 @@ public:
     
     void drawChildren();
     virtual void drawPanelContents();
-    void draw(GLPanel *parent=NULL);
+    void draw(CubicVR::mat4 transform, GLPanel *parent=NULL);
 };
 
 
