@@ -14,19 +14,6 @@ GLPanel::GLPanel() : fillType(GLPANEL_FILL_SOLID), contentsVisible(true), transf
 }
 
 void GLPanel::genArrays() {
-    
-    float min, mid, max;
-    
-    if (coord == GLPANEL_Y_DOWN || coord == GLPANEL_Y_UP) {
-        min = -1;
-        mid = 0;
-        max = 1;
-    } else {
-        min = 0;
-        mid = 0.5;
-        max = 1;
-    }
-    
     if (fillType == GLPANEL_FILL_SOLID || fillType == GLPANEL_FILL_GRAD_X || fillType == GLPANEL_FILL_GRAD_Y) {
         glPoints.reserve(2 * 4);
         glPoints.resize(2 * 4);
@@ -265,8 +252,8 @@ void GLPanel::draw(CubicVR::mat4 transform_in, GLPanel *parent) {
     vec4 vmax_t = mat4::vec4_multiply(vec4(max, max, 0, 1), transform);
     
     // screen dimensions
-    vec2 vmin((vmin_t.x>vmax_t.x)?vmax_t.x:vmin_t.x, vmin.y = (vmin_t.y>vmax_t.y)?vmax_t.y:vmin_t.y);
-    vec2 vmax((vmin_t.y>vmax_t.y)?vmin_t.y:vmax_t.y, vmax.y = (vmin_t.y>vmax_t.y)?vmin_t.y:vmax_t.y);
+    vec2 vmin((vmin_t.x>vmax_t.x)?vmax_t.x:vmin_t.x, (vmin_t.y>vmax_t.y)?vmax_t.y:vmin_t.y);
+    vec2 vmax((vmin_t.x>vmax_t.x)?vmin_t.x:vmax_t.x, (vmin_t.y>vmax_t.y)?vmin_t.y:vmax_t.y);
 
     // unit dimensions
     vec2 umin = (vmin * 0.5) + vec2(1,1);
@@ -276,7 +263,7 @@ void GLPanel::draw(CubicVR::mat4 transform_in, GLPanel *parent) {
     vec2 pdim((umax.x - umin.x) * view[0], (umax.y  - umin.y) * view[1]);
     
     std::cout << umin << " :: " << umax << " :: " << pdim << std::endl;
-    
+
     if (fillType != GLPANEL_FILL_NONE) {
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
@@ -289,42 +276,45 @@ void GLPanel::draw(CubicVR::mat4 transform_in, GLPanel *parent) {
         glDisableClientState(GL_COLOR_ARRAY);
         
         if (border.left || border.right || border.top || border.bottom) {
+            glLoadMatrixf(mat4::identity());
+
             glEnable(GL_LINE_SMOOTH);
             glColor3f(borderColor.r, borderColor.g, borderColor.b);
             
             if (border.left) {
                 glLineWidth(border.left);
                 glBegin(GL_LINES);
-                glVertex2f(min, min);
-                glVertex2f(min, max);
+                glVertex2f(vmin.x, vmin.y);
+                glVertex2f(vmin.x, vmax.y);
                 glEnd();
             }
         
             if (border.right) {
                 glLineWidth(border.right);
                 glBegin(GL_LINES);
-                glVertex2f(max, min);
-                glVertex2f(max, max);
+                glVertex2f(vmax.x, vmin.y);
+                glVertex2f(vmax.x, vmax.y);
                 glEnd();
             }
 
             if (border.top) {
                 glLineWidth(border.top);
                 glBegin(GL_LINES);
-                glVertex2f(min, min);
-                glVertex2f(max, min);
+                glVertex2f(vmin.x, vmin.y);
+                glVertex2f(vmax.x, vmin.y);
                 glEnd();
             }
 
             if (border.bottom) {
                 glLineWidth(border.bottom);
                 glBegin(GL_LINES);
-                glVertex2f(min, max);
-                glVertex2f(max, max);
+                glVertex2f(vmin.x, vmax.y);
+                glVertex2f(vmax.x, vmax.y);
                 glEnd();
             }
 
             glDisable(GL_LINE_SMOOTH);
+            glLoadMatrixf(transform);
         }
     }
     
