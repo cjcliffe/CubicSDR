@@ -264,8 +264,8 @@ void GLPanel::draw(CubicVR::mat4 transform_in, GLPanel *parent) {
     std::cout << umin << " :: " << ucenter << " :: " << pdim << " :: " << pvec << std::endl;
     
     if (marginPx.left || marginPx.right || marginPx.top || marginPx.bottom) {
-        localTransform *= mat4::translate(marginPx.left*pvec.x, marginPx.top*pvec.y, 0) *
-            mat4::scale(1.0-(marginPx.left+marginPx.right)*pvec.x, 1.0-(marginPx.top+marginPx.bottom)*pvec.y, 0);
+        localTransform *= mat4::translate(marginPx.left*pvec.x/size[0], marginPx.top*pvec.y/size[1], 0) *
+            mat4::scale(1.0-(marginPx.left+marginPx.right)*pvec.x/size[0], 1.0-(marginPx.top+marginPx.bottom)*pvec.y/size[1], 0);
         transform = transform_in * localTransform;
     }
     
