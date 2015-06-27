@@ -172,30 +172,30 @@ void GLPanel::setFillColor(RGB color1, RGB color2) {
     genArrays();
 }
 
-void GLPanel::setMargin(float marg) {
-    margin.left = margin.right = margin.top = margin.bottom = marg;
+void GLPanel::setMarginPx(float marg) {
+    marginPx.left = marginPx.right = marginPx.top = marginPx.bottom = marg;
 }
 
-void GLPanel::setMargin(float margl, float margr, float margt, float margb) {
-    margin.left = margl;
-    margin.right = margr;
-    margin.top = margt;
-    margin.bottom = margb;
+void GLPanel::setMarginPx(float margl, float margr, float margt, float margb) {
+    marginPx.left = margl;
+    marginPx.right = margr;
+    marginPx.top = margt;
+    marginPx.bottom = margb;
 }
 
 void GLPanel::setBorderColor(RGB clr) {
     borderColor = clr;
 }
 
-void GLPanel::setBorder(float bord) {
-    border.left = border.right = border.top = border.bottom = bord;
+void GLPanel::setBorderPx(float bord) {
+    borderPx.left = borderPx.right = borderPx.top = borderPx.bottom = bord;
 }
 
-void GLPanel::setBorder(float bordl, float bordr, float bordt, float bordb) {
-    border.left = bordl;
-    border.right = bordr;
-    border.top = bordt;
-    border.bottom = bordb;
+void GLPanel::setBorderPx(float bordl, float bordr, float bordt, float bordb) {
+    borderPx.left = bordl;
+    borderPx.right = bordr;
+    borderPx.top = bordt;
+    borderPx.bottom = bordb;
 }
 
 void GLPanel::addChild(GLPanel *childPanel) {
@@ -236,14 +236,10 @@ void GLPanel::draw(CubicVR::mat4 transform_in, GLPanel *parent) {
     }
     
     // compute local transform
-    localTransform = mCoord *  mat4::translate(pos[0]+margin.left, pos[1]+margin.top, 0) *
-        mat4::scale(size[0]-(margin.left+margin.right), size[1]-(margin.top+margin.bottom), 0);
-
+    localTransform = mCoord * (mat4::translate(pos[0], pos[1], 0) * mat4::scale(size[0], size[1], 0));
     // compute global transform
     transform = transform_in * localTransform;
     
-    glLoadMatrixf(transform);
-
     // init view[]
     setViewport();
     
@@ -254,16 +250,27 @@ void GLPanel::draw(CubicVR::mat4 transform_in, GLPanel *parent) {
     // screen dimensions
     vec2 vmin((vmin_t.x>vmax_t.x)?vmax_t.x:vmin_t.x, (vmin_t.y>vmax_t.y)?vmax_t.y:vmin_t.y);
     vec2 vmax((vmin_t.x>vmax_t.x)?vmin_t.x:vmax_t.x, (vmin_t.y>vmax_t.y)?vmin_t.y:vmax_t.y);
-
+    
     // unit dimensions
     vec2 umin = (vmin * 0.5) + vec2(1,1);
     vec2 umax = (vmax * 0.5) + vec2(1,1);
     
+    vec2 ucenter = (umin + umax) * 0.5;
+    
     // pixel dimensions
     vec2 pdim((umax.x - umin.x) * view[0], (umax.y  - umin.y) * view[1]);
+    vec2 pvec((vmax.x-vmin.x) / pdim.x, (vmax.y-vmin.y) / pdim.y);
     
-    std::cout << umin << " :: " << umax << " :: " << pdim << std::endl;
-
+    std::cout << umin << " :: " << ucenter << " :: " << pdim << " :: " << pvec << std::endl;
+    
+    if (marginPx.left || marginPx.right || marginPx.top || marginPx.bottom) {
+        localTransform *= mat4::translate(marginPx.left*pvec.x, marginPx.top*pvec.y, 0) *
+            mat4::scale(1.0-(marginPx.left+marginPx.right)*pvec.x, 1.0-(marginPx.top+marginPx.bottom)*pvec.y, 0);
+        transform = transform_in * localTransform;
+    }
+    
+    glLoadMatrixf(transform);
+    
     if (fillType != GLPANEL_FILL_NONE) {
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
@@ -275,46 +282,43 @@ void GLPanel::draw(CubicVR::mat4 transform_in, GLPanel *parent) {
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_COLOR_ARRAY);
         
-        if (border.left || border.right || border.top || border.bottom) {
-            glLoadMatrixf(mat4::identity());
-
+        if (borderPx.left || borderPx.right || borderPx.top || borderPx.bottom) {
             glEnable(GL_LINE_SMOOTH);
             glColor3f(borderColor.r, borderColor.g, borderColor.b);
             
-            if (border.left) {
-                glLineWidth(border.left);
+            if (borderPx.left) {
+                glLineWidth(borderPx.left);
                 glBegin(GL_LINES);
-                glVertex2f(vmin.x, vmin.y);
-                glVertex2f(vmin.x, vmax.y);
+                glVertex2f(min, min);
+                glVertex2f(min, max);
                 glEnd();
             }
         
-            if (border.right) {
-                glLineWidth(border.right);
+            if (borderPx.right) {
+                glLineWidth(borderPx.right);
                 glBegin(GL_LINES);
-                glVertex2f(vmax.x, vmin.y);
-                glVertex2f(vmax.x, vmax.y);
+                glVertex2f(max, min);
+                glVertex2f(max, max);
                 glEnd();
             }
 
-            if (border.top) {
-                glLineWidth(border.top);
+            if (borderPx.top) {
+                glLineWidth(borderPx.top);
                 glBegin(GL_LINES);
-                glVertex2f(vmin.x, vmin.y);
-                glVertex2f(vmax.x, vmin.y);
+                glVertex2f(min, min);
+                glVertex2f(max, min);
                 glEnd();
             }
 
-            if (border.bottom) {
-                glLineWidth(border.bottom);
+            if (borderPx.bottom) {
+                glLineWidth(borderPx.bottom);
                 glBegin(GL_LINES);
-                glVertex2f(vmin.x, vmax.y);
-                glVertex2f(vmax.x, vmax.y);
+                glVertex2f(min, max);
+                glVertex2f(max, max);
                 glEnd();
             }
 
             glDisable(GL_LINE_SMOOTH);
-            glLoadMatrixf(transform);
         }
     }
     
