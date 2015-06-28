@@ -57,6 +57,7 @@ AppFrame::AppFrame() :
     demodModeSelector->addChoice(DEMOD_TYPE_LSB, "LSB");
     demodModeSelector->addChoice(DEMOD_TYPE_USB, "USB");
     demodModeSelector->addChoice(DEMOD_TYPE_DSB, "DSB");
+    demodModeSelector->addChoice(DEMOD_TYPE_RAW, "I/Q");
     demodModeSelector->setSelection(DEMOD_TYPE_FM);
     demodModeSelector->setHelpTip("Choose modulation type: Frequency Modulation, Amplitude Modulation and Lower, Upper or Double Side-Band.");
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);

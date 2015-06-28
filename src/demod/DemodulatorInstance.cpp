@@ -220,13 +220,12 @@ void DemodulatorInstance::setOutputDevice(int device_id) {
     if (!active) {
         audioThread->setInitOutputDevice(device_id);
     } else if (audioThread) {
-        setAudioSampleRate(AudioThread::deviceSampleRate[device_id]);
-
         AudioThreadCommand command;
         command.cmd = AudioThreadCommand::AUDIO_THREAD_CMD_SET_DEVICE;
         command.int_value = device_id;
         audioThread->getCommandQueue()->push(command);
     }
+    setAudioSampleRate(AudioThread::deviceSampleRate[device_id]);
     currentOutputDevice = device_id;
 }
 
@@ -258,6 +257,13 @@ void DemodulatorInstance::setDemodulatorType(int demod_type_in) {
         checkBandwidth();
         threadQueueControl->push(command);
     }
+    if (currentDemodType == DEMOD_TYPE_RAW) {
+        if (currentAudioSampleRate) {
+            setBandwidth(currentAudioSampleRate);
+        } else {
+            setBandwidth(AudioThread::deviceSampleRate[getOutputDevice()]);
+        }
+    }
 }
 
 int DemodulatorInstance::getDemodulatorType() {
@@ -265,6 +271,13 @@ int DemodulatorInstance::getDemodulatorType() {
 }
 
 void DemodulatorInstance::setBandwidth(int bw) {
+    if (currentDemodType == DEMOD_TYPE_RAW) {
+        if (currentAudioSampleRate) {
+            bw = currentAudioSampleRate;
+        } else {
+            bw = AudioThread::deviceSampleRate[getOutputDevice()];
+        }
+    }
     if (!active) {
         currentBandwidth = bw;
         checkBandwidth();
@@ -320,6 +333,9 @@ void DemodulatorInstance::setAudioSampleRate(int sampleRate) {
         currentAudioSampleRate = sampleRate;
         command.llong_value = sampleRate;
         threadQueueCommand->push(command);
+    }
+    if (currentDemodType == DEMOD_TYPE_RAW) {
+        setBandwidth(currentAudioSampleRate);
     }
 }
 

@@ -13,6 +13,8 @@
 #define DEMOD_TYPE_LSB 3
 #define DEMOD_TYPE_USB 4
 #define DEMOD_TYPE_DSB 5
+#define DEMOD_TYPE_RAW 6
+
 
 class DemodulatorThread;
 class DemodulatorThreadCommand {

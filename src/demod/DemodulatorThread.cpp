@@ -173,6 +173,8 @@ void DemodulatorThread::threadMain() {
 
         if (demodulatorType == DEMOD_TYPE_FM) {
             freqdem_demodulate_block(demodFM, &agcData[0], bufSize, &demodOutputData[0]);
+        } else if (demodulatorType == DEMOD_TYPE_RAW) {
+            // do nothing here..
         } else {
             float p;
             switch (demodulatorType.load()) {
@@ -222,6 +224,10 @@ void DemodulatorThread::threadMain() {
         }
 
         unsigned int numAudioWritten;
+
+        if (demodulatorType == DEMOD_TYPE_RAW) {
+            numAudioWritten = bufSize;
+        } else {
         msresamp_rrrf_execute(audioResampler, &demodOutputData[0], bufSize, &resampledOutputData[0], &numAudioWritten);
 
         if (stereo && inp->sampleRate >= 100000) {
@@ -276,6 +282,7 @@ void DemodulatorThread::threadMain() {
 
             msresamp_rrrf_execute(stereoResampler, &demodStereoData[0], bufSize, &resampledStereoData[0], &numAudioWritten);
         }
+        }
 
         if (currentSignalLevel > signalLevel) {
             signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.5;
@@ -303,7 +310,17 @@ void DemodulatorThread::threadMain() {
                 ati->sampleRate = audioSampleRate;
                 ati->setRefCount(1);
 
-                if (stereo && inp->sampleRate >= 100000) {
+                if (demodulatorType == DEMOD_TYPE_RAW) {
+                    ati->channels = 2;
+                    if (ati->data.capacity() < (numAudioWritten * 2)) {
+                        ati->data.reserve(numAudioWritten * 2);
+                    }
+                    ati->data.resize(numAudioWritten * 2);
+                    for (int i = 0; i < numAudioWritten; i++) {
+                        ati->data[i * 2] = agcData[i].real;
+                        ati->data[i * 2 + 1] = agcData[i].imag;
+                    }
+                } else if (stereo && inp->sampleRate >= 100000) {
                     ati->channels = 2;
                     if (ati->data.capacity() < (numAudioWritten * 2)) {
                         ati->data.reserve(numAudioWritten * 2);
@@ -344,18 +361,25 @@ void DemodulatorThread::threadMain() {
             ati_vis->busy_update.lock();
 
             int num_vis = DEMOD_VIS_SIZE;
-            if (stereo && inp->sampleRate >= 100000) {
+            if (demodulatorType == DEMOD_TYPE_RAW || (stereo && inp->sampleRate >= 100000)) {
                 ati_vis->channels = 2;
                 int stereoSize = ati->data.size();
-                if (stereoSize > DEMOD_VIS_SIZE) {
-                    stereoSize = DEMOD_VIS_SIZE;
+                if (stereoSize > DEMOD_VIS_SIZE * 2) {
+                    stereoSize = DEMOD_VIS_SIZE * 2;
                 }
 
                 ati_vis->data.resize(stereoSize);
 
-                for (int i = 0; i < stereoSize / 2; i++) {
-                    ati_vis->data[i] = ati->data[i * 2];
-                    ati_vis->data[i + stereoSize / 2] = ati->data[i * 2 + 1];
+                if (demodulatorType == DEMOD_TYPE_RAW) {
+                    for (int i = 0; i < stereoSize / 2; i++) {
+                        ati_vis->data[i] = ati->data[i * 2] * 0.5;
+                        ati_vis->data[i + stereoSize / 2] = ati->data[i * 2 + 1] * 0.5;
+                    }
+                } else {
+                    for (int i = 0; i < stereoSize / 2; i++) {
+                        ati_vis->data[i] = ati->data[i * 2];
+                        ati_vis->data[i + stereoSize / 2] = ati->data[i * 2 + 1];
+                    }
                 }
             } else {
                 ati_vis->channels = 1;
