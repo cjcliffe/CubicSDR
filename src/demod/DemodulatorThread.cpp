@@ -218,6 +218,22 @@ void DemodulatorThread::threadMain() {
             demodOutputData.resize(bufSize);
         }
 
+		if (demodOutputDataDigital.size() != bufSize) {
+			if (demodOutputDataDigital.capacity() < bufSize) {
+				demodOutputDataDigital.reserve(bufSize);
+			}
+			demodOutputDataDigital.resize(bufSize);
+		}
+
+		/*
+		if (demodOutputDataDigitalTest.size() != bufSize) {
+			if (demodOutputDataDigitalTest.capacity() < bufSize) {
+				demodOutputDataDigitalTest.reserve(bufSize);
+			}
+			demodOutputDataDigitalTest.resize(bufSize);
+		}
+		*/
+
         int audio_out_size = ceil((double) (bufSize) * audio_resample_ratio) + 512;
 
         agc_crcf_execute_block(iqAutoGain, &(inp->data[0]), bufSize, &agcData[0]);
@@ -234,7 +250,10 @@ void DemodulatorThread::threadMain() {
 		updateDemodulatorCons(0);
 
 		// create digital output buffer
-		demodOutputDataDigital = new unsigned int[bufSize];
+		//demodOutputDataDigital = new unsigned int[bufSize];
+		//demodOutputDataDigitalTest = new unsigned int[bufSize];
+		//demodOutputSoftbits = new unsigned char[bufSize];
+		//demodOutputSoftbitsTest = new unsigned char[bufSize];
 
         if (demodulatorType == DEMOD_TYPE_FM) {
 			currentDemodLock = false;
@@ -581,12 +600,14 @@ void DemodulatorThread::threadMain() {
 				updateDemodulatorLock(demodQAM, 0.5f);
                 break;
             case DEMOD_TYPE_QPSK:
-                for (int i = 0; i < bufSize; i++) {
+				freqdem_demodulate_block(demodFM, &agcData[0], bufSize, &demodOutputData[0]);
 
-					
+				for (int i = 0; i < bufSize; i++) {
+					//modem_demodulate(demodQPSK, inp->data[i], &demodOutputDataDigitalTest[i]);
 					modem_demodulate(demodQPSK, inp->data[i], &demodOutputDataDigital[i]);
-                    // std::cout << bitstream << std::endl;
-				} 
+				}
+
+                // std::cout << bitstream << std::endl;
 				updateDemodulatorLock(demodQPSK, 0.8f);
                 break;
             }
@@ -618,9 +639,27 @@ void DemodulatorThread::threadMain() {
 
         unsigned int numAudioWritten;
         msresamp_rrrf_execute(audioResampler, &demodOutputData[0], bufSize, &resampledOutputData[0], &numAudioWritten);
+		
+		/*
+		if (demodulatorType.load() == DEMOD_TYPE_QPSK) {
+			if (!std::equal(demodOutputDataDigitalTest, demodOutputDataDigitalTest + sizeof demodOutputDataDigitalTest / sizeof *demodOutputDataDigitalTest, demodOutputDataDigital)) {
+				if (!std::equal(demodOutputSoftbitsTest, demodOutputSoftbitsTest + sizeof demodOutputSoftbitsTest / sizeof *demodOutputSoftbitsTest, demodOutputSoftbits)) {
+					std::cout << "Data not equal?!" << std::endl;
+					for (int i = 0; i < bufSize; i++) {
+						std::cout << std::to_string(demodOutputDataDigitalTest[i]) + std::to_string(demodOutputDataDigital[i]) << std::endl;
+						std::cout << std::to_string(demodOutputSoftbitsTest[i]) + std::to_string(demodOutputSoftbits[i]) << std::endl;
+					}
+					terminated = true;
+				}
+			}
 
-		// destroy the digital buffer
-		delete[] demodOutputDataDigital;
+			// destroy the digital buffer
+			delete[] demodOutputDataDigital;
+			delete[] demodOutputDataDigitalTest;
+			delete[] demodOutputSoftbits;
+			delete[] demodOutputSoftbitsTest;
+		}
+		*/
 
         if (stereo) {
             if (demodStereoData.size() != bufSize) {

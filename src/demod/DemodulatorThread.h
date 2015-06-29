@@ -61,7 +61,11 @@ protected:
     std::vector<float> resampledOutputData;
     std::vector<float> resampledStereoData;
 
-	unsigned int *demodOutputDataDigital;
+	std::vector<unsigned int> demodOutputDataDigital;
+	//std::vector<unsigned int> demodOutputDataDigitalTest;
+
+	//std::vector<unsigned char> demodOutputSoftbits;
+	//std::vector<unsigned char> demodOutputSoftbitsTest;
 
     DemodulatorThreadPostInputQueue* iqInputQueue;
     DemodulatorThreadOutputQueue* audioVisOutputQueue;
