@@ -233,6 +233,21 @@ void GLPanel::draw(CubicVR::mat4 transform_in, GLPanel *parent) {
         }
 //        if (coord == GLPANEL_Y_UP) {
 //        }
+    } else if (parent->coord != coord) {
+        if (parent->coord == GLPANEL_Y_DOWN_ZERO_ONE && coord == GLPANEL_Y_UP_ZERO_ONE) {
+            mCoord *= mat4::translate(0.0f, 1.0f, 0.0f) * mat4::scale(1.0f, -1.0f, 1.0f);
+        }
+        if (parent->coord == GLPANEL_Y_UP_ZERO_ONE && coord == GLPANEL_Y_DOWN_ZERO_ONE) {
+            mCoord *= mat4::translate(0.0f, -1.0f, 0.0f) * mat4::scale(1.0f, -1.0f, 1.0f);
+        }
+//        if (coord == GLPANEL_Y_UP_ZERO_ONE) {
+//            mCoord = mat4::translate(-1.0f, -1.0f, 0.0f) * mat4::scale(2.0f, 2.0f, 2.0f);
+//        }
+//        if (coord == GLPANEL_Y_DOWN) {
+//            mCoord = mat4::scale(2.0f, 2.0f, 2.0f);
+//        }
+        //        if (coord == GLPANEL_Y_UP) {
+        //        }
     }
     
     // compute local transform
@@ -248,24 +263,24 @@ void GLPanel::draw(CubicVR::mat4 transform_in, GLPanel *parent) {
     vec4 vmax_t = mat4::vec4_multiply(vec4(max, max, 0, 1), transform);
     
     // screen dimensions
-    vec2 vmin((vmin_t.x>vmax_t.x)?vmax_t.x:vmin_t.x, (vmin_t.y>vmax_t.y)?vmax_t.y:vmin_t.y);
-    vec2 vmax((vmin_t.x>vmax_t.x)?vmin_t.x:vmax_t.x, (vmin_t.y>vmax_t.y)?vmin_t.y:vmax_t.y);
+    vmin = vec2((vmin_t.x > vmax_t.x)?vmax_t.x:vmin_t.x, (vmin_t.y > vmax_t.y)?vmax_t.y:vmin_t.y);
+    vmax = vec2((vmin_t.x > vmax_t.x)?vmin_t.x:vmax_t.x, (vmin_t.y > vmax_t.y)?vmin_t.y:vmax_t.y);
     
     // unit dimensions
-    vec2 umin = (vmin * 0.5) + vec2(1,1);
-    vec2 umax = (vmax * 0.5) + vec2(1,1);
+    umin = (vmin * 0.5) + vec2(1,1);
+    umax = (vmax * 0.5) + vec2(1,1);
     
-    vec2 ucenter = (umin + umax) * 0.5;
+    ucenter = vec2((umin + umax) * 0.5);
     
     // pixel dimensions
-    vec2 pdim((umax.x - umin.x) * view[0], (umax.y  - umin.y) * view[1]);
-    vec2 pvec((vmax.x-vmin.x) / pdim.x, (vmax.y-vmin.y) / pdim.y);
+    pdim = vec2((umax.x - umin.x) * view[0], (umax.y  - umin.y) * view[1]);
+    pvec = vec2((vmax.x - vmin.x) / pdim.x, (vmax.y - vmin.y) / pdim.y);
     
     std::cout << umin << " :: " << ucenter << " :: " << pdim << " :: " << pvec << std::endl;
     
     if (marginPx.left || marginPx.right || marginPx.top || marginPx.bottom) {
-        localTransform *= mat4::translate(marginPx.left*pvec.x/size[0], marginPx.top*pvec.y/size[1], 0) *
-            mat4::scale(1.0-(marginPx.left+marginPx.right)*pvec.x/size[0], 1.0-(marginPx.top+marginPx.bottom)*pvec.y/size[1], 0);
+        localTransform *= mat4::translate(marginPx.left * pvec.x / size[0], marginPx.top * pvec.y / size[1], 0) *
+            mat4::scale(1.0 - (marginPx.left + marginPx.right) * pvec.x / size[0], 1.0 - (marginPx.top + marginPx.bottom) * pvec.y / size[1], 0);
         transform = transform_in * localTransform;
     }
     
@@ -329,6 +344,23 @@ void GLPanel::draw(CubicVR::mat4 transform_in, GLPanel *parent) {
     }
 }
 
+
+GLTextPanel::GLTextPanel() : GLPanel() {
+    coord = GLPANEL_Y_UP_ZERO_ONE;
+}
+
+void GLTextPanel::drawPanelContents() {
+    glColor4f(1, 1, 1, 1.0);
+    GLFont::getFont(GLFont::GLFONT_SIZE48).drawString(textVal, mid,  mid,  48, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, (int)pdim.x*2, (int)pdim.y*2);
+}
+
+void GLTextPanel::setText(std::string text) {
+    textVal = text;
+}
+
+std::string GLTextPanel::getText() {
+    return textVal;
+}
 
 
 

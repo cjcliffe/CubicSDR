@@ -2,6 +2,7 @@
 
 #include <vector>
 #include "GLExt.h"
+#include "GLFont.h"
 #include "ColorTheme.h"
 #include "cubic_math.h"
 
@@ -47,6 +48,12 @@ public:
     CubicVR::mat4 transform;
     CubicVR::mat4 localTransform;
     float min, mid, max;
+    // screen dimensions
+    CubicVR::vec2 vmin, vmax;
+    // unit dimensions
+    CubicVR::vec2 umin, umax, ucenter;
+    // pixel dimensions
+    CubicVR::vec2 pdim, pvec;
 
     std::vector<GLPanel *> children;
     
@@ -75,6 +82,17 @@ public:
     void draw(CubicVR::mat4 transform, GLPanel *parent=NULL);
 };
 
+
+class GLTextPanel : public GLPanel {
+private:
+    std::string textVal;
+public:
+    GLTextPanel();
+    
+    void drawPanelContents();
+    void setText(std::string text);
+    std::string getText();
+};
 
 class GLTestPanel : public GLPanel {
 public:

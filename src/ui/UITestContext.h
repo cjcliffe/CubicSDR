@@ -17,4 +17,5 @@ private:
     GLPanel testPanel;
     GLTestPanel testChildPanel;
     GLPanel testChildPanel2;
+    GLTextPanel testText1;
 };

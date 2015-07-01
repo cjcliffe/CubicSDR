@@ -397,16 +397,20 @@ float GLFont::getStringWidth(std::string str, float size, float viewAspect) {
     return width;
 }
 
-void GLFont::drawString(std::string str, float xpos, float ypos, int pxHeight, Align hAlign, Align vAlign) {
+void GLFont::drawString(std::string str, float xpos, float ypos, int pxHeight, Align hAlign, Align vAlign, int vpx, int vpy) {
 
-    GLint vp[4];
 
     pxHeight *= 2;
 
-    glGetIntegerv( GL_VIEWPORT, vp);
-
-    float size = (float) pxHeight / (float) vp[3];
-    float viewAspect = (float) vp[2] / (float) vp[3];
+    if (!vpx || !vpy) {
+        GLint vp[4];
+        glGetIntegerv( GL_VIEWPORT, vp);
+        vpx = vp[2];
+        vpy = vp[3];
+    }
+    
+    float size = (float) pxHeight / (float) vpy;
+    float viewAspect = (float) vpx / (float) vpy;
     float msgWidth = getStringWidth(str, size, viewAspect);
 
     glPushMatrix();

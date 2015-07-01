@@ -26,6 +26,10 @@ PrimaryGLContext(canvas, sharedContext) {
     testChildPanel2.setBorderColor(RGB(1.0,0.0,0.0));
     testChildPanel2.setBorderPx(1);
     
+    testText1.setText("Testing 123..");
+    testText1.setFill(GLPanel::GLPANEL_FILL_NONE);
+    testChildPanel2.addChild(&testText1);
+    
     testPanel.addChild(&testChildPanel);
     testPanel.addChild(&testChildPanel2);
 }
