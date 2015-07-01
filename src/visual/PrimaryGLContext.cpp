@@ -15,8 +15,6 @@
 #include "AppFrame.h"
 #include <algorithm>
 
-GLFont PrimaryGLContext::fonts[GLFONT_MAX];
-
 wxString PrimaryGLContext::glGetwxString(GLenum name) {
     const GLubyte *v = glGetString(name);
     if (v == 0) {
@@ -59,40 +57,6 @@ PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContex
 //    }
 //    CheckGLError();
 //#endif
-}
-
-GLFont &PrimaryGLContext::getFont(GLFontSize esize) {
-    if (!fonts[esize].isLoaded()) {
-
-        std::string fontName;
-        switch (esize) {
-        case GLFONT_SIZE12:
-            fontName = "vera_sans_mono12.fnt";
-            break;
-        case GLFONT_SIZE16:
-            fontName = "vera_sans_mono16.fnt";
-            break;
-        case GLFONT_SIZE18:
-            fontName = "vera_sans_mono18.fnt";
-            break;
-        case GLFONT_SIZE24:
-            fontName = "vera_sans_mono24.fnt";
-            break;
-        case GLFONT_SIZE32:
-            fontName = "vera_sans_mono32.fnt";
-            break;
-        case GLFONT_SIZE48:
-            fontName = "vera_sans_mono48.fnt";
-            break;
-        default:
-            fontName = "vera_sans_mono12.fnt";
-            break;
-        }
-
-        fonts[esize].loadFont(fontName);
-    }
-
-    return fonts[esize];
 }
 
 void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGB color, long long center_freq, long long srate) {
@@ -165,11 +129,11 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGB color, long
     glColor4f(1.0, 1.0, 1.0, 0.8);
 
     if (demod->getDemodulatorType() == DEMOD_TYPE_USB) {
-        getFont(PrimaryGLContext::GLFONT_SIZE16).drawString(demod->getLabel(), uxPos, hPos, 16, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
+        GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demod->getLabel(), uxPos, hPos, 16, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
     } else if (demod->getDemodulatorType() == DEMOD_TYPE_LSB) {
-        getFont(PrimaryGLContext::GLFONT_SIZE16).drawString(demod->getLabel(), uxPos, hPos, 16, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
+        GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demod->getLabel(), uxPos, hPos, 16, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
     } else {
-        getFont(PrimaryGLContext::GLFONT_SIZE16).drawString(demod->getLabel(), uxPos, hPos, 16, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+        GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demod->getLabel(), uxPos, hPos, 16, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
     }
 
     glDisable(GL_BLEND);
@@ -264,10 +228,10 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGB color, long lon
     }
 
     glColor3f(0, 0, 0);
-    getFont(PrimaryGLContext::GLFONT_SIZE16).drawString(demodStr, 2.0 * (uxPos - 0.5) + xOfs, -1.0 + hPos - yOfs, 16, demodAlign,
+    GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodStr, 2.0 * (uxPos - 0.5) + xOfs, -1.0 + hPos - yOfs, 16, demodAlign,
             GLFont::GLFONT_ALIGN_CENTER);
     glColor3f(0.8, 0.8, 0.8);
-    getFont(PrimaryGLContext::GLFONT_SIZE16).drawString(demodStr, 2.0 * (uxPos - 0.5), -1.0 + hPos, 16, demodAlign, GLFont::GLFONT_ALIGN_CENTER);
+    GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodStr, 2.0 * (uxPos - 0.5), -1.0 + hPos, 16, demodAlign, GLFont::GLFONT_ALIGN_CENTER);
 
     glDisable(GL_BLEND);
 

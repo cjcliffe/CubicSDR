@@ -8,6 +8,9 @@
 #define RES_FOLDER ""
 #endif
 
+
+GLFont GLFont::fonts[GLFONT_MAX];
+
 GLFontChar::GLFontChar() :
         id(0), x(0), y(0), width(0), height(0), xoffset(0), yoffset(0), xadvance(0), aspect(1), index(0) {
 
@@ -475,3 +478,38 @@ void GLFont::drawString(std::string str, float xpos, float ypos, int pxHeight, A
     glDisable(GL_TEXTURE_2D);
 }
 
+
+
+GLFont &GLFont::getFont(GLFontSize esize) {
+    if (!fonts[esize].isLoaded()) {
+        
+        std::string fontName;
+        switch (esize) {
+            case GLFONT_SIZE12:
+                fontName = "vera_sans_mono12.fnt";
+                break;
+            case GLFONT_SIZE16:
+                fontName = "vera_sans_mono16.fnt";
+                break;
+            case GLFONT_SIZE18:
+                fontName = "vera_sans_mono18.fnt";
+                break;
+            case GLFONT_SIZE24:
+                fontName = "vera_sans_mono24.fnt";
+                break;
+            case GLFONT_SIZE32:
+                fontName = "vera_sans_mono32.fnt";
+                break;
+            case GLFONT_SIZE48:
+                fontName = "vera_sans_mono48.fnt";
+                break;
+            default:
+                fontName = "vera_sans_mono12.fnt";
+                break;
+        }
+        
+        fonts[esize].loadFont(fontName);
+    }
+    
+    return fonts[esize];
+}

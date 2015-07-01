@@ -13,9 +13,6 @@
 
 class PrimaryGLContext: public wxGLContext {
 public:
-    enum GLFontSize {
-        GLFONT_SIZE12, GLFONT_SIZE16, GLFONT_SIZE18, GLFONT_SIZE24, GLFONT_SIZE32, GLFONT_SIZE48, GLFONT_MAX
-    };
     PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContext);
 
     static wxString glGetwxString(GLenum name);
@@ -29,12 +26,9 @@ public:
     void DrawDemod(DemodulatorInstance *demod, RGB color, long long center_freq = -1, long long srate = 0);
     void DrawDemodInfo(DemodulatorInstance *demod, RGB color, long long center_freq = -1, long long srate = 0);
 
-    static GLFont &getFont(GLFontSize esize);
-
     void setHoverAlpha(float hoverAlpha);
 
 private:
-    static GLFont fonts[GLFONT_MAX];
     DemodulatorThreadParameters defaultDemodParams;
     float hoverAlpha;
 };
