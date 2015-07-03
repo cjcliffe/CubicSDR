@@ -26,8 +26,6 @@ DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* iqInputQue
     demodAM = demodAM_DSB_CSP;
     
     // advanced demodulators
-	// needs refactoring
-	// should look into dynamicly creating modems, so only the required type exists.
     
     demodulatorCons = 2;
 	currentDemodCons = 0;
@@ -211,12 +209,12 @@ void DemodulatorThread::threadMain() {
 
         double audio_resample_ratio = inp->audioResampleRatio;
 
-        if (demodOutputData.size() != bufSize) {
-            if (demodOutputData.capacity() < bufSize) {
-                demodOutputData.reserve(bufSize);
-            }
-            demodOutputData.resize(bufSize);
-        }
+		if (demodOutputData.size() != bufSize) {
+			if (demodOutputData.capacity() < bufSize) {
+				demodOutputData.reserve(bufSize);
+			}
+			demodOutputData.resize(bufSize);
+		}
 
 		if (demodOutputDataDigital.size() != bufSize) {
 			if (demodOutputDataDigital.capacity() < bufSize) {
@@ -224,15 +222,6 @@ void DemodulatorThread::threadMain() {
 			}
 			demodOutputDataDigital.resize(bufSize);
 		}
-
-		/*
-		if (demodOutputDataDigitalTest.size() != bufSize) {
-			if (demodOutputDataDigitalTest.capacity() < bufSize) {
-				demodOutputDataDigitalTest.reserve(bufSize);
-			}
-			demodOutputDataDigitalTest.resize(bufSize);
-		}
-		*/
 
         int audio_out_size = ceil((double) (bufSize) * audio_resample_ratio) + 512;
 
@@ -248,12 +237,6 @@ void DemodulatorThread::threadMain() {
 
 		// Reset demodulator Constellations & Lock
 		updateDemodulatorCons(0);
-
-		// create digital output buffer
-		//demodOutputDataDigital = new unsigned int[bufSize];
-		//demodOutputDataDigitalTest = new unsigned int[bufSize];
-		//demodOutputSoftbits = new unsigned char[bufSize];
-		//demodOutputSoftbitsTest = new unsigned char[bufSize];
 
         if (demodulatorType == DEMOD_TYPE_FM) {
 			currentDemodLock = false;
@@ -283,7 +266,6 @@ void DemodulatorThread::threadMain() {
                 }
                 break;
 			// advanced demodulators
-			// needs refactoring
             case DEMOD_TYPE_ASK:
 
 				switch (demodulatorCons) {
@@ -325,10 +307,7 @@ void DemodulatorThread::threadMain() {
                 }
 
                 for (int i = 0; i < bufSize; i++) {
-
-					
                     modem_demodulate(demodASK, inp->data[i], &demodOutputDataDigital[i]);
-                    // std::cout << bitstream << std::endl;
                 } 
                 updateDemodulatorLock(demodASK, 0.005f);
                 break;
@@ -373,19 +352,13 @@ void DemodulatorThread::threadMain() {
 				}
 
 				for (int i = 0; i < bufSize; i++) {
-					
-					
-					modem_demodulate(demodAPSK, inp->data[i], &demodOutputDataDigital[i]);
-					// std::cout << bitstream << std::endl;
+					modem_demodulate(demodAPSK, inp->data[i], &demodOutputDataDigital[i]);					
 				}
 				updateDemodulatorLock(demodAPSK, 0.005f);
 				break;
             case DEMOD_TYPE_BPSK:
                 for (int i = 0; i < bufSize; i++) {
-
-					
-                    modem_demodulate(demodBPSK, inp->data[i], &demodOutputDataDigital[i]);
-                    // std::cout << bitstream << std::endl;
+                    modem_demodulate(demodBPSK, inp->data[i], &demodOutputDataDigital[i]);                 
                 } 
                 updateDemodulatorLock(demodBPSK, 0.005f);
                 break;
@@ -430,10 +403,7 @@ void DemodulatorThread::threadMain() {
 				}
 
                 for (int i = 0; i < bufSize; i++) {
-
-					
-                    modem_demodulate(demodDPSK, inp->data[i], &demodOutputDataDigital[i]);
-                    // std::cout << bitstream << std::endl;
+                    modem_demodulate(demodDPSK, inp->data[i], &demodOutputDataDigital[i]);                 
                 } 
                 updateDemodulatorLock(demodDPSK, 0.005f);
                 break;
@@ -478,19 +448,13 @@ void DemodulatorThread::threadMain() {
 				}
 
                 for (int i = 0; i < bufSize; i++) {
-
-					
-                    modem_demodulate(demodPSK, inp->data[i], &demodOutputDataDigital[i]);
-                    // std::cout << bitstream << std::endl;
+                    modem_demodulate(demodPSK, inp->data[i], &demodOutputDataDigital[i]);                
                 } 
                 updateDemodulatorLock(demodPSK, 0.005f);
                 break;
             case DEMOD_TYPE_OOK:
                 for (int i = 0; i < bufSize; i++) {
-
-					
-                    modem_demodulate(demodOOK, inp->data[i], &demodOutputDataDigital[i]);
-                    // std::cout << bitstream << std::endl;
+                    modem_demodulate(demodOOK, inp->data[i], &demodOutputDataDigital[i]); 
                 } 
                 updateDemodulatorLock(demodOOK, 0.005f);
                 break;
@@ -535,19 +499,13 @@ void DemodulatorThread::threadMain() {
 				}
 
                 for (int i = 0; i < bufSize; i++) {
-
-					
-                    modem_demodulate(demodSQAM, inp->data[i], &demodOutputDataDigital[i]);
-                    // std::cout << bitstream << std::endl;
+                    modem_demodulate(demodSQAM, inp->data[i], &demodOutputDataDigital[i]);                
                 } 
                 updateDemodulatorLock(demodSQAM, 0.005f);
                 break;
             case DEMOD_TYPE_ST:
                 for (int i = 0; i < bufSize; i++) {
-
-					
-                    modem_demodulate(demodST, inp->data[i], &demodOutputDataDigital[i]);
-                    // std::cout << bitstream << std::endl;
+					modem_demodulate(demodST, inp->data[i], &demodOutputDataDigital[i]);
                 } 
                 updateDemodulatorLock(demodST, 0.005f);
                 break;
@@ -592,22 +550,14 @@ void DemodulatorThread::threadMain() {
 				}
 
                 for (int i = 0; i < bufSize; i++) {
-
-					
-                    modem_demodulate(demodQAM, inp->data[i], &demodOutputDataDigital[i]);
-                    // std::cout << bitstream << std::endl;
+                    modem_demodulate(demodQAM, inp->data[i], &demodOutputDataDigital[i]);        
                 } 
 				updateDemodulatorLock(demodQAM, 0.5f);
                 break;
             case DEMOD_TYPE_QPSK:
-				freqdem_demodulate_block(demodFM, &agcData[0], bufSize, &demodOutputData[0]);
-
 				for (int i = 0; i < bufSize; i++) {
-					//modem_demodulate(demodQPSK, inp->data[i], &demodOutputDataDigitalTest[i]);
 					modem_demodulate(demodQPSK, inp->data[i], &demodOutputDataDigital[i]);
-				}
-
-                // std::cout << bitstream << std::endl;
+				}            
 				updateDemodulatorLock(demodQPSK, 0.8f);
                 break;
             }
@@ -639,27 +589,6 @@ void DemodulatorThread::threadMain() {
 
         unsigned int numAudioWritten;
         msresamp_rrrf_execute(audioResampler, &demodOutputData[0], bufSize, &resampledOutputData[0], &numAudioWritten);
-		
-		/*
-		if (demodulatorType.load() == DEMOD_TYPE_QPSK) {
-			if (!std::equal(demodOutputDataDigitalTest, demodOutputDataDigitalTest + sizeof demodOutputDataDigitalTest / sizeof *demodOutputDataDigitalTest, demodOutputDataDigital)) {
-				if (!std::equal(demodOutputSoftbitsTest, demodOutputSoftbitsTest + sizeof demodOutputSoftbitsTest / sizeof *demodOutputSoftbitsTest, demodOutputSoftbits)) {
-					std::cout << "Data not equal?!" << std::endl;
-					for (int i = 0; i < bufSize; i++) {
-						std::cout << std::to_string(demodOutputDataDigitalTest[i]) + std::to_string(demodOutputDataDigital[i]) << std::endl;
-						std::cout << std::to_string(demodOutputSoftbitsTest[i]) + std::to_string(demodOutputSoftbits[i]) << std::endl;
-					}
-					terminated = true;
-				}
-			}
-
-			// destroy the digital buffer
-			delete[] demodOutputDataDigital;
-			delete[] demodOutputDataDigitalTest;
-			delete[] demodOutputSoftbits;
-			delete[] demodOutputSoftbitsTest;
-		}
-		*/
 
         if (stereo) {
             if (demodStereoData.size() != bufSize) {
@@ -835,42 +764,48 @@ void DemodulatorThread::threadMain() {
                     ampmodem_reset(demodAM);
                     break;
 				case DEMOD_TYPE_ASK:
-					modem_reset(demodASK);
+					//modem_reset(demodASK);
 					break;
 				case DEMOD_TYPE_APSK:
-					modem_reset(demodAPSK);
+					//modem_reset(demodAPSK);
 					break;
 				case DEMOD_TYPE_BPSK:
-					modem_reset(demodBPSK);
+					//modem_reset(demodBPSK);
 					break;
 				case DEMOD_TYPE_DPSK:
-					modem_reset(demodDPSK);
+					//modem_reset(demodDPSK);
 					break;
 				case DEMOD_TYPE_PSK:
-					modem_reset(demodPSK);
+					//modem_reset(demodPSK);
 					break;
 				case DEMOD_TYPE_OOK:
-					modem_reset(demodOOK);
+					//modem_reset(demodOOK);
 					break;
 				case DEMOD_TYPE_SQAM:
-					modem_reset(demodSQAM);
+					//modem_reset(demodSQAM);
 					break;
 				case DEMOD_TYPE_ST:
-					modem_reset(demodST);
+					//modem_reset(demodST);
 					break;
 				case DEMOD_TYPE_QAM:
-					modem_reset(demodQAM);
+					//modem_reset(demodQAM);
 					break;
                 case DEMOD_TYPE_QPSK:
-                    modem_reset(demodQPSK);
+                    //modem_reset(demodQPSK);
                     break;
+				default:
+					// empty default to prevent exceptions
+					break;
                 }
                 demodulatorType = newDemodType;
             }
         }
 
+		demodOutputDataDigital.empty();
+
         inp->decRefCount();
     }
+	// end while !terminated
 
     if (audioResampler != NULL) {
         msresamp_rrrf_destroy(audioResampler);
