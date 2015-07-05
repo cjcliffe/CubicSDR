@@ -2,7 +2,9 @@
 #include "GLPanel.h"
 #include "cubic_math.h"
 
-GLPanel::GLPanel() : fillType(GLPANEL_FILL_SOLID), contentsVisible(true), transform(CubicVR::mat4::identity()) {
+using namespace CubicVR;
+
+GLPanel::GLPanel() : fillType(GLPANEL_FILL_SOLID), contentsVisible(true), transform(mat4::identity()) {
     pos[0] = 0.0f;
     pos[1] = 0.0f;
     size[0] = 1.0f;
@@ -203,7 +205,8 @@ void GLPanel::drawChildren() {
         std::vector<GLPanel *>::iterator panel_i;
         
         for (panel_i = children.begin(); panel_i != children.end(); panel_i++) {
-            (*panel_i)->draw(transform, this);
+            (*panel_i)->calcTransform(transform);
+            (*panel_i)->draw();
         }
     }
 }
@@ -212,10 +215,7 @@ void GLPanel::drawPanelContents() {
     drawChildren();
 }
 
-void GLPanel::draw(CubicVR::mat4 transform_in, GLPanel *parent) {
-    using namespace CubicVR;
-    
-    
+void GLPanel::calcTransform(mat4 transform_in) {
     // compute local transform
     localTransform = mat4::translate(pos[0], pos[1], 0) * mat4::scale(size[0], size[1], 0);
     // compute global transform
@@ -247,7 +247,9 @@ void GLPanel::draw(CubicVR::mat4 transform_in, GLPanel *parent) {
     if (marginPx) {
         transform *= mat4::scale(1.0 - marginPx * 2.0 * pvec.x / size[0], 1.0 - marginPx * 2.0 * pvec.y / size[1], 0);
     }
-    
+}
+
+void GLPanel::draw() {
     glLoadMatrixf(transform);
     
     if (fillType != GLPANEL_FILL_NONE) {

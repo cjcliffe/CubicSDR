@@ -78,7 +78,8 @@ public:
     
     void drawChildren();
     virtual void drawPanelContents();
-    void draw(CubicVR::mat4 transform, GLPanel *parent=NULL);
+    void calcTransform(CubicVR::mat4 transform);
+    void draw();
 };
 
 
