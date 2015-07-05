@@ -40,7 +40,7 @@ public:
     float view[2];
     GLPanelFillType fillType;
     GLPanelCoordinateSystem coord;
-    GLPanelEdges marginPx;
+    float marginPx;
     GLPanelEdges borderPx;
     RGB fill[2];
     RGB borderColor;
@@ -69,7 +69,6 @@ public:
     void setFillColor(RGB color1);
     void setFillColor(RGB color1, RGB color2);
     void setMarginPx(float marg);
-    void setMarginPx(float margl, float margr, float margt, float margb);
 
     void setBorderColor(RGB clr);
     void setBorderPx(float bord);

@@ -10,10 +10,12 @@ GLPanel::GLPanel() : fillType(GLPANEL_FILL_SOLID), contentsVisible(true), transf
     fill[0] = RGB(0.5,0.5,0.5);
     fill[1] = RGB(0.1,0.1,0.1);
     borderColor = RGB(0.8, 0.8, 0.8);
-    setCoordinateSystem(GLPANEL_Y_DOWN_ZERO_ONE);
+    setCoordinateSystem(GLPANEL_Y_UP);
 }
 
 void GLPanel::genArrays() {
+    float min = -1.0, mid = 0, max = 1.0;
+    
     if (fillType == GLPANEL_FILL_SOLID || fillType == GLPANEL_FILL_GRAD_X || fillType == GLPANEL_FILL_GRAD_Y) {
         glPoints.reserve(2 * 4);
         glPoints.resize(2 * 4);
@@ -173,15 +175,9 @@ void GLPanel::setFillColor(RGB color1, RGB color2) {
 }
 
 void GLPanel::setMarginPx(float marg) {
-    marginPx.left = marginPx.right = marginPx.top = marginPx.bottom = marg;
+    marginPx = marg;
 }
 
-void GLPanel::setMarginPx(float margl, float margr, float margt, float margb) {
-    marginPx.left = margl;
-    marginPx.right = margr;
-    marginPx.top = margt;
-    marginPx.bottom = margb;
-}
 
 void GLPanel::setBorderColor(RGB clr) {
     borderColor = clr;
@@ -219,39 +215,9 @@ void GLPanel::drawPanelContents() {
 void GLPanel::draw(CubicVR::mat4 transform_in, GLPanel *parent) {
     using namespace CubicVR;
     
-    mat4 mCoord = mat4::identity();
-
-    if (!parent) {
-        if (coord == GLPANEL_Y_DOWN_ZERO_ONE) {
-            mCoord *= mat4::translate(-1.0f, 1.0f, 0.0f) * mat4::scale(2.0f, -2.0f, 2.0f);
-        }
-        if (coord == GLPANEL_Y_UP_ZERO_ONE) {
-            mCoord = mat4::translate(-1.0f, -1.0f, 0.0f) * mat4::scale(2.0f, 2.0f, 2.0f);
-        }
-        if (coord == GLPANEL_Y_DOWN) {
-            mCoord = mat4::scale(2.0f, 2.0f, 2.0f);
-        }
-//        if (coord == GLPANEL_Y_UP) {
-//        }
-    } else if (parent->coord != coord) {
-        if (parent->coord == GLPANEL_Y_DOWN_ZERO_ONE && coord == GLPANEL_Y_UP_ZERO_ONE) {
-            mCoord *= mat4::translate(0.0f, 1.0f, 0.0f) * mat4::scale(1.0f, -1.0f, 1.0f);
-        }
-        if (parent->coord == GLPANEL_Y_UP_ZERO_ONE && coord == GLPANEL_Y_DOWN_ZERO_ONE) {
-            mCoord *= mat4::translate(0.0f, -1.0f, 0.0f) * mat4::scale(1.0f, -1.0f, 1.0f);
-        }
-//        if (coord == GLPANEL_Y_UP_ZERO_ONE) {
-//            mCoord = mat4::translate(-1.0f, -1.0f, 0.0f) * mat4::scale(2.0f, 2.0f, 2.0f);
-//        }
-//        if (coord == GLPANEL_Y_DOWN) {
-//            mCoord = mat4::scale(2.0f, 2.0f, 2.0f);
-//        }
-        //        if (coord == GLPANEL_Y_UP) {
-        //        }
-    }
     
     // compute local transform
-    localTransform = mCoord * (mat4::translate(pos[0], pos[1], 0) * mat4::scale(size[0], size[1], 0));
+    localTransform = mat4::translate(pos[0], pos[1], 0) * mat4::scale(size[0], size[1], 0);
     // compute global transform
     transform = transform_in * localTransform;
     
@@ -273,15 +239,13 @@ void GLPanel::draw(CubicVR::mat4 transform_in, GLPanel *parent) {
     ucenter = vec2((umin + umax) * 0.5);
     
     // pixel dimensions
-    pdim = vec2((umax.x - umin.x) * view[0], (umax.y  - umin.y) * view[1]);
-    pvec = vec2((vmax.x - vmin.x) / pdim.x, (vmax.y - vmin.y) / pdim.y);
+    pdim = vec2((vmax.x - vmin.x) / 2.0 * view[0], (vmax.y  - vmin.y) / 2.0 * view[1]);
+    pvec = vec2(((vmax.x - vmin.x) / 2.0) / pdim.x, ((vmax.y - vmin.y) / 2.0) / pdim.y);
     
     std::cout << umin << " :: " << ucenter << " :: " << pdim << " :: " << pvec << std::endl;
     
-    if (marginPx.left || marginPx.right || marginPx.top || marginPx.bottom) {
-        localTransform *= mat4::translate(marginPx.left * pvec.x / size[0], marginPx.top * pvec.y / size[1], 0) *
-            mat4::scale(1.0 - (marginPx.left + marginPx.right) * pvec.x / size[0], 1.0 - (marginPx.top + marginPx.bottom) * pvec.y / size[1], 0);
-        transform = transform_in * localTransform;
+    if (marginPx) {
+        transform *= mat4::scale(1.0 - marginPx * 2.0 * pvec.x / size[0], 1.0 - marginPx * 2.0 * pvec.y / size[1], 0);
     }
     
     glLoadMatrixf(transform);
@@ -338,20 +302,32 @@ void GLPanel::draw(CubicVR::mat4 transform_in, GLPanel *parent) {
     }
     
     if (contentsVisible) {
-        glPushMatrix();
+        mat4 mCoord = mat4::identity();
+
+        if (coord == GLPANEL_Y_DOWN_ZERO_ONE) {
+            mCoord *= mat4::translate(-1.0f, 1.0f, 0.0f) * mat4::scale(2.0f, -2.0f, 2.0f);
+        }
+        if (coord == GLPANEL_Y_UP_ZERO_ONE) {
+            mCoord = mat4::translate(-1.0f, -1.0f, 0.0f) * mat4::scale(2.0f, 2.0f, 2.0f);
+        }
+        if (coord == GLPANEL_Y_DOWN) {
+            mCoord = mat4::scale(1.0f, -1.0f, 1.0f);
+        }
+        //        if (coord == GLPANEL_Y_UP) {
+        //        }
+        glLoadMatrixf(transform * mCoord);
         drawPanelContents();
-        glPopMatrix();
     }
 }
 
 
 GLTextPanel::GLTextPanel() : GLPanel() {
-    coord = GLPANEL_Y_UP_ZERO_ONE;
+    coord = GLPANEL_Y_UP;
 }
 
 void GLTextPanel::drawPanelContents() {
     glColor4f(1, 1, 1, 1.0);
-    GLFont::getFont(GLFont::GLFONT_SIZE48).drawString(textVal, mid,  mid,  48, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, (int)pdim.x*2, (int)pdim.y*2);
+    GLFont::getFont(GLFont::GLFONT_SIZE48).drawString(textVal, mid,  mid,  48, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, (int)pdim.x, (int)pdim.y);
 }
 
 void GLTextPanel::setText(std::string text) {
@@ -367,20 +343,20 @@ std::string GLTextPanel::getText() {
 void GLTestPanel::drawPanelContents() {
     glColor3f(1.0,1.0,1.0);
     glBegin(GL_LINES);
-    glVertex2f(0, 0.5);
-    glVertex2f(1, 0.5);
-    glVertex2f(0.5, 0);
-    glVertex2f(0.5, 1);
+    glVertex2f(min, mid);
+    glVertex2f(max, mid);
+    glVertex2f(mid, min);
+    glVertex2f(mid, max);
     
-    glVertex2f(0.5, 1);
-    glVertex2f(0.48, 0.80);
-    glVertex2f(0.5, 1);
-    glVertex2f(0.52, 0.80);
+    glVertex2f(mid, max);
+    glVertex2f(mid - 0.02, max - 0.2);
+    glVertex2f(mid, 1);
+    glVertex2f(mid + 0.02, max - 0.2);
     
-    glVertex2f(1, 0.5);
-    glVertex2f(0.90, 0.25);
-    glVertex2f(1, 0.5);
-    glVertex2f(0.90, 0.75);
+    glVertex2f(max, mid);
+    glVertex2f(max - 0.1, mid + max * 0.25);
+    glVertex2f(max, mid);
+    glVertex2f(max - 0.1, mid - max * 0.25);
     
     glEnd();
 }
