@@ -135,12 +135,20 @@ void GLPanel::setSize(float w, float h) {
     size[1] = h;
 }
 
+float GLPanel::getWidth() {
+    return size[0];
+}
+
+float GLPanel::getHeight() {
+    return size[1];
+}
+
 float GLPanel::getWidthPx() {
-    return size[0]*view[0];
+    return pdim.x;
 }
 
 float GLPanel::getHeightPx() {
-    return size[1]*view[0];
+    return pdim.y;
 }
 
 
@@ -329,7 +337,33 @@ GLTextPanel::GLTextPanel() : GLPanel() {
 
 void GLTextPanel::drawPanelContents() {
     glColor4f(1, 1, 1, 1.0);
-    GLFont::getFont(GLFont::GLFONT_SIZE48).drawString(textVal, mid,  mid,  48, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, (int)pdim.x, (int)pdim.y);
+    
+    GLFont::GLFontSize sz;
+    float size;
+
+    
+    if (pdim.y < 16) {
+        sz = GLFont::GLFONT_SIZE12;
+        size = 12;
+    } else if (pdim.y < 18) {
+        sz = GLFont::GLFONT_SIZE16;
+        size = 16;
+    } else if(pdim.y < 24) {
+        sz = GLFont::GLFONT_SIZE18;
+        size = 18;
+    } else if(pdim.y < 32) {
+        sz = GLFont::GLFONT_SIZE24;
+        size = 24;
+    } else if(pdim.y < 48) {
+        sz = GLFont::GLFONT_SIZE32;
+        size = 32;
+    } else {
+        sz = GLFont::GLFONT_SIZE48;
+        size = 48;
+    }
+    
+
+    GLFont::getFont(sz).drawString(textVal, mid,  mid,  size, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, (int)pdim.x, (int)pdim.y);
 }
 
 void GLTextPanel::setText(std::string text) {

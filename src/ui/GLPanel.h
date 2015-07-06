@@ -61,6 +61,8 @@ public:
     
     void setPosition(float x, float y);
     void setSize(float w, float h);
+    float getWidth();
+    float getHeight();
     float getWidthPx();
     float getHeightPx();
     void setCoordinateSystem(GLPanelCoordinateSystem coord);
