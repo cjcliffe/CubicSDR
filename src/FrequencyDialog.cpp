@@ -65,7 +65,7 @@ std::string FrequencyDialog::frequencyToStr(long long freq) {
 }
 
 long long FrequencyDialog::strToFrequency(std::string freqStr) {
-    std::string filterStr = filterChars(freqStr, std::string("0123456789.MKGmkg"));
+    std::string filterStr = filterChars(freqStr, std::string("0123456789.MKGHmkgh"));
 
     int numLen = filterStr.find_first_not_of("0123456789.");
 
@@ -90,8 +90,10 @@ long long FrequencyDialog::strToFrequency(std::string freqStr) {
             freqTemp *= 1.0e6;
         } else if (suffixStr.find_first_of("Kk") != std::string::npos) {
             freqTemp *= 1.0e3;
+        } else if (suffixStr.find_first_of("Hh") != std::string::npos) {
+            // ...
         }
-    } else if (numPartStr.find_first_of(".") != std::string::npos) {
+    } else if (numPartStr.find_first_of(".") != std::string::npos || freqTemp <= 3000) {
         freqTemp *= 1.0e6;
     }
 
