@@ -258,6 +258,8 @@ void GLPanel::calcTransform(mat4 transform_in) {
 }
 
 void GLPanel::draw() {
+    float min = -1.0, max = 1.0;
+
     glLoadMatrixf(transform);
     
     if (fillType != GLPANEL_FILL_NONE) {
