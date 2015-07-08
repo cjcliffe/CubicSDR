@@ -6,7 +6,7 @@
 SDRThread::SDRThread(SDRThreadCommandQueue* pQueue) :
         commandQueue(pQueue), iqDataOutQueue(NULL), terminated(false), offset(0), deviceId(-1) {
     dev = NULL;
-    sampleRate = DEFAULT_SAMPLE_RATE;
+    sampleRate.store(DEFAULT_SAMPLE_RATE);
 }
 
 SDRThread::~SDRThread() {
@@ -122,6 +122,7 @@ void SDRThread::threadMain() {
     std::cout << "SDR thread initializing.." << std::endl;
 
     int devCount = rtlsdr_get_device_count();
+    
     std::vector<SDRDeviceInfo *> devs;
     if (deviceId == -1) {
         deviceId = enumerate_rtl(&devs);
@@ -136,16 +137,20 @@ void SDRThread::threadMain() {
         std::cout << "Using device #" << deviceId << std::endl;
     }
 
+    DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(devs[deviceId]->getDeviceId());
+    
     signed char buf[BUF_SIZE];
 
     long long frequency = DEFAULT_FREQ;
-    int ppm = wxGetApp().getConfig()->getDevice(devs[deviceId]->getDeviceId())->getPPM();
-    int direct_sampling_mode = 0;
+    int ppm = devConfig->getPPM();
+    int direct_sampling_mode = devConfig->getDirectSampling();;
     int buf_size = BUF_SIZE;
-
+    offset.store(devConfig->getOffset());
+    wxGetApp().setSwapIQ(devConfig->getIQSwap());
+    
     rtlsdr_open(&dev, deviceId);
-    rtlsdr_set_sample_rate(dev, sampleRate);
-    rtlsdr_set_center_freq(dev, frequency - offset);
+    rtlsdr_set_sample_rate(dev, sampleRate.load());
+    rtlsdr_set_center_freq(dev, frequency - offset.load());
     rtlsdr_set_freq_correction(dev, ppm);
     rtlsdr_set_agc_mode(dev, 1);
     rtlsdr_set_offset_tuning(dev, 0);
@@ -153,7 +158,7 @@ void SDRThread::threadMain() {
 
 //    sampleRate = rtlsdr_get_sample_rate(dev);
 
-    std::cout << "Sample Rate is: " << sampleRate << std::endl;
+    std::cout << "Sample Rate is: " << sampleRate.load() << std::endl;
 
     int n_read;
     double seconds = 0.0;
@@ -174,8 +179,8 @@ void SDRThread::threadMain() {
             bool ppm_changed = false;
             bool direct_sampling_changed = false;
             long long new_freq = frequency;
-            long long new_offset = offset;
-            long long new_rate = sampleRate;
+            long long new_offset = offset.load();
+            long long new_rate = sampleRate.load();
             int new_device = deviceId;
             int new_ppm = ppm;
 
@@ -187,8 +192,8 @@ void SDRThread::threadMain() {
                 case SDRThreadCommand::SDR_THREAD_CMD_TUNE:
                     freq_changed = true;
                     new_freq = command.llong_value;
-                    if (new_freq < sampleRate / 2) {
-                        new_freq = sampleRate / 2;
+                    if (new_freq < sampleRate.load() / 2) {
+                        new_freq = sampleRate.load() / 2;
                     }
 //                    std::cout << "Set frequency: " << new_freq << std::endl;
                     break;
@@ -231,8 +236,8 @@ void SDRThread::threadMain() {
             if (device_changed) {
                 rtlsdr_close(dev);
                 rtlsdr_open(&dev, new_device);
-                rtlsdr_set_sample_rate(dev, sampleRate);
-                rtlsdr_set_center_freq(dev, frequency - offset);
+                rtlsdr_set_sample_rate(dev, sampleRate.load());
+                rtlsdr_set_center_freq(dev, frequency - offset.load());
                 rtlsdr_set_freq_correction(dev, ppm);
                 rtlsdr_set_agc_mode(dev, 1);
                 rtlsdr_set_offset_tuning(dev, 0);
@@ -244,16 +249,16 @@ void SDRThread::threadMain() {
                     new_freq = frequency;
                     freq_changed = true;
                 }
-                offset = new_offset;
+                offset.store(new_offset);
             }
             if (rate_changed) {
                 rtlsdr_set_sample_rate(dev, new_rate);
                 rtlsdr_reset_buffer(dev);
-                sampleRate = rtlsdr_get_sample_rate(dev);
+                sampleRate.store(rtlsdr_get_sample_rate(dev));
             }
             if (freq_changed) {
                 frequency = new_freq;
-                rtlsdr_set_center_freq(dev, frequency - offset);
+                rtlsdr_set_center_freq(dev, frequency - offset.load());
             }
             if (ppm_changed) {
                 ppm = new_ppm;
@@ -283,7 +288,7 @@ void SDRThread::threadMain() {
 //        std::lock_guard < std::mutex > lock(dataOut->m_mutex);
         dataOut->setRefCount(1);
         dataOut->frequency = frequency;
-        dataOut->sampleRate = sampleRate;
+        dataOut->sampleRate = sampleRate.load();
 
         if (dataOut->data.capacity() < n_read) {
             dataOut->data.reserve(n_read);
@@ -295,7 +300,7 @@ void SDRThread::threadMain() {
 
         memcpy(&dataOut->data[0], buf, n_read);
 
-        double time_slice = (double) n_read / (double) sampleRate;
+        double time_slice = (double) n_read / (double) sampleRate.load();
         seconds += time_slice;
 
         if (iqDataOutQueue.load() != NULL) {

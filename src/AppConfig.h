@@ -14,7 +14,16 @@ public:
 
     void setPPM(int ppm);
     int getPPM();
+    
+    void setDirectSampling(int mode);
+    int getDirectSampling();
+    
+    void setOffset(long long offset);
+    long long getOffset();
 
+    void setIQSwap(bool iqSwap);
+    bool getIQSwap();
+    
     void setDeviceId(std::string deviceId);
     std::string getDeviceId();
 
@@ -23,7 +32,9 @@ public:
 
 private:
     std::string deviceId;
-    int ppm;
+    int ppm, directSampling;
+    bool iqSwap;
+    long long offset;
 };
 
 class AppConfig {

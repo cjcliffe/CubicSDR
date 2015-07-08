@@ -86,6 +86,7 @@ private:
     std::map<int, wxMenuItem *> outputDeviceMenuItems;
     std::map<int, wxMenuItem *> sampleRateMenuItems;
     std::map<int, wxMenuItem *> audioSampleRateMenuItems;
+    std::map<int, wxMenuItem *> directSamplingMenuItems;
     wxMenuItem *iqSwapMenuItem;
     
     std::string currentSessionFile;

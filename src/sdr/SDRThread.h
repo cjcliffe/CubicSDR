@@ -140,19 +140,19 @@ public:
     void terminate();
 
     int getDeviceId() const {
-        return deviceId;
+        return deviceId.load();
     }
 
     void setDeviceId(int deviceId) {
-        this->deviceId = deviceId;
+        this->deviceId.store(deviceId);
     }
 
 protected:
-    uint32_t sampleRate;
-    long long offset;
+    std::atomic<uint32_t> sampleRate;
+    std::atomic<long long> offset;
     std::atomic<SDRThreadCommandQueue*> commandQueue;
     std::atomic<SDRThreadIQDataQueue*> iqDataOutQueue;
 
     std::atomic<bool> terminated;
-    int deviceId;
+    std::atomic<int> deviceId;
 };

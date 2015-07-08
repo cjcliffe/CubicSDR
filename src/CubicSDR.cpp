@@ -169,6 +169,10 @@ void CubicSDR::setOffset(long long ofs) {
     SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_SET_OFFSET);
     command.llong_value = ofs;
     threadCmdQueueSDR->push(command);
+    
+    SDRDeviceInfo *dev = (*getDevices())[getDevice()];
+    config.getDevice(dev->getDeviceId())->setOffset(ofs);
+    config.save();
 }
 
 void CubicSDR::setDirectSampling(int mode) {
@@ -176,6 +180,10 @@ void CubicSDR::setDirectSampling(int mode) {
     SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_SET_DIRECT_SAMPLING);
     command.llong_value = mode;
     threadCmdQueueSDR->push(command);
+
+    SDRDeviceInfo *dev = (*getDevices())[getDevice()];
+    config.getDevice(dev->getDeviceId())->setDirectSampling(mode);
+    config.save();
 }
 
 int CubicSDR::getDirectSampling() {
@@ -184,6 +192,9 @@ int CubicSDR::getDirectSampling() {
 
 void CubicSDR::setSwapIQ(bool swapIQ) {
     sdrPostThread->setSwapIQ(swapIQ);
+    SDRDeviceInfo *dev = (*getDevices())[getDevice()];
+    config.getDevice(dev->getDeviceId())->setIQSwap(swapIQ);
+    config.save();
 }
 
 bool CubicSDR::getSwapIQ() {
@@ -244,11 +255,12 @@ void CubicSDR::setDevice(int deviceId) {
     threadCmdQueueSDR->push(command);
 
     SDRDeviceInfo *dev = (*getDevices())[deviceId];
+    DeviceConfig *devConfig = config.getDevice(dev->getDeviceId());
 
-    SDRThreadCommand command_ppm(SDRThreadCommand::SDR_THREAD_CMD_SET_PPM);
-    ppm = config.getDevice(dev->getDeviceId())->getPPM();
-    command_ppm.llong_value = ppm;
-    threadCmdQueueSDR->push(command_ppm);
+    setPPM(devConfig->getPPM());
+    setDirectSampling(devConfig->getDirectSampling());
+    setSwapIQ(devConfig->getIQSwap());
+    setOffset(devConfig->getOffset());
 }
 
 int CubicSDR::getDevice() {
