@@ -10,54 +10,65 @@ DeviceConfig::DeviceConfig(std::string deviceId) : ppm(0) {
 }
 
 void DeviceConfig::setPPM(int ppm) {
-    this->ppm = ppm;
+    this->ppm.store(ppm);
 }
 
 int DeviceConfig::getPPM() {
-    return ppm;
+    return ppm.load();
 }
 
 void DeviceConfig::setDirectSampling(int mode) {
-    directSampling = mode;
+    directSampling.store(mode);
 }
 
 int DeviceConfig::getDirectSampling() {
-    return directSampling;
+    return directSampling.load();
 }
 
 void DeviceConfig::setOffset(long long offset) {
-    this->offset = offset;
+    this->offset.store(offset);
 }
 
 long long DeviceConfig::getOffset() {
-    return offset;
+    return offset.load();
 }
 
 void DeviceConfig::setIQSwap(bool iqSwap) {
-    this->iqSwap = iqSwap;
+    this->iqSwap.store(iqSwap);
 }
 
 bool DeviceConfig::getIQSwap() {
-    return iqSwap;
+    return iqSwap.load();
 }
 
 void DeviceConfig::setDeviceId(std::string deviceId) {
+    busy_lock.lock();
     this->deviceId = deviceId;
+    busy_lock.unlock();
 }
 
 std::string DeviceConfig::getDeviceId() {
-    return deviceId;
+    std::string tmp;
+
+    busy_lock.lock();
+    tmp = deviceId;
+    busy_lock.unlock();
+
+    return tmp;
 }
 
 void DeviceConfig::save(DataNode *node) {
+    busy_lock.lock();
     *node->newChild("id") = deviceId;
     *node->newChild("ppm") = (int)ppm;
     *node->newChild("iq_swap") = iqSwap;
     *node->newChild("direct_sampling") = directSampling;
     *node->newChild("offset") = offset;
+    busy_lock.unlock();
 }
 
 void DeviceConfig::load(DataNode *node) {
+    busy_lock.lock();
     if (node->hasAnother("ppm")) {
         DataNode *ppm_node = node->getNext("ppm");
         int ppmValue = 0;
@@ -96,8 +107,9 @@ void DeviceConfig::load(DataNode *node) {
         long long offsetValue = 0;
         offset_node->element()->get(offsetValue);
         setOffset(offsetValue);
-        std::cout << "Loaded offset for device '" << deviceId << "' at " << offsetValue << "ppm" << std::endl;
+        std::cout << "Loaded offset for device '" << deviceId << "' at " << offsetValue << "Hz" << std::endl;
     }
+    busy_lock.unlock();
 }
 
 

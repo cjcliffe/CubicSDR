@@ -319,8 +319,18 @@ AppFrame::AppFrame() :
     wxAcceleratorTable accel(3, entries);
     SetAcceleratorTable(accel);
 
-    SDRDeviceInfo *dev = (*wxGetApp().getDevices())[wxGetApp().getDevice()];
-    DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
+//    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
+//    wxLogStatus("Double-buffered display %s supported", wxGLCanvas::IsDisplaySupported(attribs) ? "is" : "not");
+//    ShowFullScreen(true);
+}
+
+AppFrame::~AppFrame() {
+
+}
+
+
+void AppFrame::initDeviceParams(std::string deviceId) {
+    DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
     
     int dsMode = devConfig->getDirectSampling();
     
@@ -331,16 +341,8 @@ AppFrame::AppFrame() :
     if (devConfig->getIQSwap()) {
         iqSwapMenuItem->Check();
     }
-    
-
-//    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
-//    wxLogStatus("Double-buffered display %s supported", wxGLCanvas::IsDisplaySupported(attribs) ? "is" : "not");
-//    ShowFullScreen(true);
 }
 
-AppFrame::~AppFrame() {
-
-}
 
 void AppFrame::OnMenu(wxCommandEvent& event) {
     if (event.GetId() >= wxID_RT_AUDIO_DEVICE && event.GetId() < wxID_RT_AUDIO_DEVICE + devices.size()) {

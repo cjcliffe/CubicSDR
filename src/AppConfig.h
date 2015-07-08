@@ -3,9 +3,10 @@
 #include <wx/stdpaths.h>
 #include <wx/dir.h>
 #include <wx/filename.h>
+#include <atomic>
+#include <mutex>
 
 #include "DataTree.h"
-
 
 class DeviceConfig {
 public:
@@ -32,9 +33,11 @@ public:
 
 private:
     std::string deviceId;
-    int ppm, directSampling;
-    bool iqSwap;
-    long long offset;
+    std::mutex busy_lock;
+
+    std::atomic<int> ppm, directSampling;
+    std::atomic<bool> iqSwap;
+    std::atomic<long long> offset;
 };
 
 class AppConfig {

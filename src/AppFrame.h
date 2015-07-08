@@ -58,6 +58,7 @@ public:
     ~AppFrame();
     void OnThread(wxCommandEvent& event);
     void OnEventInput(wxThreadEvent& event);
+    void initDeviceParams(std::string deviceId);
 
     void saveSession(std::string fileName);
     bool loadSession(std::string fileName);

@@ -67,6 +67,7 @@ bool CubicSDR::OnInit() {
     std::vector<SDRDeviceInfo *>::iterator devs_i;
 
     SDRThread::enumerate_rtl(&devs);
+    SDRDeviceInfo *dev = NULL;
 
     if (devs.size() > 1) {
         wxArrayString choices;
@@ -78,6 +79,9 @@ bool CubicSDR::OnInit() {
                 devName.append(" [");
                 devName.append((*devs_i)->getSerial());
                 devName.append("]");
+                if (!dev) {
+                    dev = (*devs_i);
+                }
             } else {
                 devName.append(" (In Use?)");
             }
@@ -85,15 +89,24 @@ bool CubicSDR::OnInit() {
         }
 
         int devId = wxGetSingleChoiceIndex(wxT("Devices"), wxT("Choose Input Device"), choices);
+        dev = devs[devId];
 
-        std::cout << "Chosen: " << devId << std::endl;
         sdrThread->setDeviceId(devId);
+    } else if (devs.size() == 1) {
+        dev = devs[0];
     }
 
     t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
     t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
 
     appframe = new AppFrame();
+    if (dev != NULL) {
+        appframe->initDeviceParams(dev->getDeviceId());
+        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
+        ppm = devConfig->getPPM();
+        offset = devConfig->getOffset();
+        directSamplingMode = devConfig->getDirectSampling();
+    }
 
 #ifdef __APPLE__
     int main_policy;
