@@ -79,9 +79,6 @@ bool CubicSDR::OnInit() {
                 devName.append(" [");
                 devName.append((*devs_i)->getSerial());
                 devName.append("]");
-                if (!dev) {
-                    dev = (*devs_i);
-                }
             } else {
                 devName.append(" (In Use?)");
             }

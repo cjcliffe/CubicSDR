@@ -645,7 +645,6 @@ void AppFrame::saveSession(std::string fileName) {
     DataNode *header = s.rootNode()->newChild("header");
     *header->newChild("version") = std::string(CUBICSDR_VERSION);
     *header->newChild("center_freq") = wxGetApp().getFrequency();
-    *header->newChild("offset") = wxGetApp().getOffset();
 
     DataNode *demods = s.rootNode()->newChild("demodulators");
 
@@ -684,14 +683,11 @@ bool AppFrame::loadSession(std::string fileName) {
 
         std::string version(*header->getNext("version"));
         long long center_freq = *header->getNext("center_freq");
-        long long offset = *header->getNext("offset");
 
         std::cout << "Loading " << version << " session file" << std::endl;
         std::cout << "\tCenter Frequency: " << center_freq << std::endl;
-        std::cout << "\tOffset: " << offset << std::endl;
 
         wxGetApp().setFrequency(center_freq);
-        wxGetApp().setOffset(offset);
 
         DataNode *demodulators = l.rootNode()->getNext("demodulators");
 
@@ -739,7 +735,7 @@ bool AppFrame::loadSession(std::string fileName) {
             }
 
             newDemod->run();
-
+            newDemod->setActive(false);
             wxGetApp().bindDemodulator(newDemod);
 
             std::cout << "\tAdded demodulator at frequency " << freq << " type " << type << std::endl;
