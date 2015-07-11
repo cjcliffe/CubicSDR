@@ -68,6 +68,8 @@ public:
 
     void showFrequencyInput();
 
+    void showMessage(std::string message, std::string title);
+
 private:
     AppFrame *appframe;
     AppConfig config;

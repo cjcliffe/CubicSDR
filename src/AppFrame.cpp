@@ -57,9 +57,36 @@ AppFrame::AppFrame() :
     demodModeSelector->addChoice(DEMOD_TYPE_LSB, "LSB");
     demodModeSelector->addChoice(DEMOD_TYPE_USB, "USB");
     demodModeSelector->addChoice(DEMOD_TYPE_DSB, "DSB");
-    demodModeSelector->setSelection(DEMOD_TYPE_FM);
     demodModeSelector->setHelpTip("Choose modulation type: Frequency Modulation, Amplitude Modulation and Lower, Upper or Double Side-Band.");
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
+    
+    demodModeSelectorAdv = new ModeSelectorCanvas(this, attribList);
+    demodModeSelectorAdv->addChoice(DEMOD_TYPE_ASK, "ASK");
+    demodModeSelectorAdv->addChoice(DEMOD_TYPE_APSK, "APSK");
+    demodModeSelectorAdv->addChoice(DEMOD_TYPE_BPSK, "BPSK");
+    demodModeSelectorAdv->addChoice(DEMOD_TYPE_DPSK, "DPSK");
+    demodModeSelectorAdv->addChoice(DEMOD_TYPE_PSK, "PSK");
+    demodModeSelectorAdv->addChoice(DEMOD_TYPE_OOK, "OOK");
+    demodModeSelectorAdv->addChoice(DEMOD_TYPE_ST, "ST");
+    demodModeSelectorAdv->addChoice(DEMOD_TYPE_SQAM, "SQAM");
+    demodModeSelectorAdv->addChoice(DEMOD_TYPE_QAM, "QAM");
+    demodModeSelectorAdv->addChoice(DEMOD_TYPE_QPSK, "QPSK");
+    demodModeSelectorAdv->setSelection(DEMOD_TYPE_ASK);
+    demodModeSelectorAdv->setHelpTip("Choose advanced modulation types.");
+    demodTray->Add(demodModeSelectorAdv, 3, wxEXPAND | wxALL, 0);
+    
+    demodModeSelectorCons = new ModeSelectorCanvas(this, attribList);
+    demodModeSelectorCons->addChoice(1, "auto");
+    demodModeSelectorCons->addChoice(2, "2");
+    demodModeSelectorCons->addChoice(4, "4");
+    demodModeSelectorCons->addChoice(8, "8");
+    demodModeSelectorCons->addChoice(16, "16");
+    demodModeSelectorCons->addChoice(32, "32");
+    demodModeSelectorCons->addChoice(64, "64");
+    demodModeSelectorCons->addChoice(128, "128");
+    demodModeSelectorCons->addChoice(256, "256");
+    demodModeSelectorCons->setHelpTip("Choose number of constallations types.");
+    demodTray->Add(demodModeSelectorCons, 2, wxEXPAND | wxALL, 0);
 
 //    demodTray->AddSpacer(2);
 
@@ -325,7 +352,6 @@ AppFrame::AppFrame() :
 }
 
 AppFrame::~AppFrame() {
-
 }
 
 void AppFrame::OnMenu(wxCommandEvent& event) {
@@ -528,7 +554,10 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             scopeCanvas->setDeviceName(outputDevices[outputDevice].name);
             outputDeviceMenuItems[outputDevice]->Check(true);
             int dType = demod->getDemodulatorType();
+            int dCons = demod->getDemodulatorCons();
             demodModeSelector->setSelection(dType);
+            demodModeSelectorAdv->setSelection(dType);
+            demodModeSelectorCons->setSelection(dCons);
         }
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
             long long centerFreq = demod->getFrequency();
@@ -556,9 +585,24 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
                 demodSpectrumCanvas->setCenterFrequency(centerFreq);
             }
             int dSelection = demodModeSelector->getSelection();
+            int dSelectionadv = demodModeSelectorAdv->getSelection();
+			int dSelectionCons = demodModeSelectorCons->getSelection();
+
+            // basic demodulators
             if (dSelection != -1 && dSelection != demod->getDemodulatorType()) {
                 demod->setDemodulatorType(dSelection);
+                demodModeSelectorAdv->setSelection(-1);
+            } 
+            // advanced demodulators
+			else if (dSelectionadv != -1 && dSelectionadv != demod->getDemodulatorType()) {
+				demod->setDemodulatorType(dSelectionadv);
+				demodModeSelector->setSelection(-1);
             }
+
+			// set constellations
+			if (dSelectionCons != demod->getDemodulatorCons()) {
+				demod->setDemodulatorCons(dSelectionCons);
+			}
 
             demodWaterfallCanvas->setBandwidth(demodBw);
             demodSpectrumCanvas->setBandwidth(demodBw);
@@ -577,9 +621,25 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         DemodulatorMgr *mgr = &wxGetApp().getDemodMgr();
 
         int dSelection = demodModeSelector->getSelection();
+        int dSelectionadv = demodModeSelectorAdv->getSelection();
+		int dSelectionCons = demodModeSelectorCons->getSelection();
+
+        // basic demodulators
         if (dSelection != -1 && dSelection != mgr->getLastDemodulatorType()) {
             mgr->setLastDemodulatorType(dSelection);
+            demodModeSelectorAdv->setSelection(-1);
         }
+        // advanced demodulators
+        else if(dSelectionadv != -1 && dSelectionadv != mgr->getLastDemodulatorType()) {
+            mgr->setLastDemodulatorType(dSelectionadv);
+            demodModeSelector->setSelection(-1);
+        }
+
+		// set constellations
+		if (dSelectionCons != mgr->getLastDemodulatorCons()) {
+			mgr->setLastDemodulatorCons(dSelectionCons);
+		}
+        
         demodGainMeter->setLevel(mgr->getLastGain());
         if (demodSignalMeter->inputChanged()) {
             mgr->setLastSquelchLevel(demodSignalMeter->getInputValue());

@@ -68,10 +68,13 @@ private:
     void OnNewWindow(wxCommandEvent& event);
     void OnIdle(wxIdleEvent& event);
 
+
     ScopeCanvas *scopeCanvas;
     SpectrumCanvas *spectrumCanvas;
     WaterfallCanvas *waterfallCanvas;
     ModeSelectorCanvas *demodModeSelector;
+    ModeSelectorCanvas *demodModeSelectorAdv;
+    ModeSelectorCanvas *demodModeSelectorCons;
     SpectrumCanvas *demodSpectrumCanvas;
     WaterfallCanvas *demodWaterfallCanvas;
     MeterCanvas *demodSignalMeter;
