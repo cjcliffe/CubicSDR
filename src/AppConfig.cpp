@@ -114,7 +114,10 @@ void DeviceConfig::load(DataNode *node) {
 
 
 DeviceConfig *AppConfig::getDevice(std::string deviceId) {
-    DeviceConfig *conf = &deviceConfig[deviceId];
+	if (deviceConfig.find(deviceId) == deviceConfig.end()) {
+		deviceConfig[deviceId] = new DeviceConfig();
+	}
+    DeviceConfig *conf = deviceConfig[deviceId];
     conf->setDeviceId(deviceId);
     return conf;
 }
@@ -143,10 +146,10 @@ bool AppConfig::save() {
     cfg.rootNode()->setName("cubicsdr_config");
     DataNode *devices_node = cfg.rootNode()->newChild("devices");
 
-    std::map<std::string, DeviceConfig>::iterator device_config_i;
+    std::map<std::string, DeviceConfig *>::iterator device_config_i;
     for (device_config_i = deviceConfig.begin(); device_config_i != deviceConfig.end(); device_config_i++) {
         DataNode *device_node = devices_node->newChild("device");
-        device_config_i->second.save(device_node);
+        device_config_i->second->save(device_node);
     }
 
     std::string cfgFileDir = getConfigDir();

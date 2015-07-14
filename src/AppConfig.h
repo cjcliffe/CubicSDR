@@ -35,9 +35,9 @@ private:
     std::string deviceId;
     std::mutex busy_lock;
 
-    std::atomic<int> ppm, directSampling;
-    std::atomic<bool> iqSwap;
-    std::atomic<long long> offset;
+    std::atomic_int ppm, directSampling;
+    std::atomic_bool iqSwap;
+    std::atomic_llong offset;
 };
 
 class AppConfig {
@@ -50,5 +50,5 @@ public:
     bool reset();
 
 private:
-    std::map<std::string, DeviceConfig> deviceConfig;
+    std::map<std::string, DeviceConfig *> deviceConfig;
 };
