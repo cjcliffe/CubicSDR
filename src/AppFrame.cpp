@@ -151,9 +151,9 @@ AppFrame::AppFrame() :
             
     wxMenu *dsMenu = new wxMenu;
     
-    dsMenu->AppendRadioItem(wxID_SET_DS_OFF, "Off");
-    dsMenu->AppendRadioItem(wxID_SET_DS_I, "I-ADC");
-    dsMenu->AppendRadioItem(wxID_SET_DS_Q, "Q-ADC");
+    directSamplingMenuItems[0] = dsMenu->AppendRadioItem(wxID_SET_DS_OFF, "Off");
+    directSamplingMenuItems[1] = dsMenu->AppendRadioItem(wxID_SET_DS_I, "I-ADC");
+    directSamplingMenuItems[2] = dsMenu->AppendRadioItem(wxID_SET_DS_Q, "Q-ADC");
     
     menu->AppendSubMenu(dsMenu, "Direct Sampling");
 
@@ -328,6 +328,22 @@ AppFrame::~AppFrame() {
 
 }
 
+
+void AppFrame::initDeviceParams(std::string deviceId) {
+    DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
+    
+    int dsMode = devConfig->getDirectSampling();
+    
+    if (dsMode > 0 && dsMode <= 2) {
+        directSamplingMenuItems[devConfig->getDirectSampling()]->Check();
+    }
+    
+    if (devConfig->getIQSwap()) {
+        iqSwapMenuItem->Check();
+    }
+}
+
+
 void AppFrame::OnMenu(wxCommandEvent& event) {
     if (event.GetId() >= wxID_RT_AUDIO_DEVICE && event.GetId() < wxID_RT_AUDIO_DEVICE + devices.size()) {
         if (activeDemodulator) {
@@ -448,7 +464,19 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
 
     std::vector<SDRDeviceInfo *> *devs = wxGetApp().getDevices();
     if (event.GetId() >= wxID_DEVICE_ID && event.GetId() <= wxID_DEVICE_ID + devs->size()) {
-        wxGetApp().setDevice(event.GetId() - wxID_DEVICE_ID);
+        int devId = event.GetId() - wxID_DEVICE_ID;
+        wxGetApp().setDevice(devId);
+
+        SDRDeviceInfo *dev = (*wxGetApp().getDevices())[devId];
+        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
+        
+        int dsMode = devConfig->getDirectSampling();
+        
+        if (dsMode >= 0 && dsMode <= 2) {
+            directSamplingMenuItems[devConfig->getDirectSampling()]->Check();
+        }
+        
+        iqSwapMenuItem->Check(devConfig->getIQSwap());
     }
 
     if (event.GetId() >= wxID_AUDIO_BANDWIDTH_BASE) {
@@ -617,7 +645,6 @@ void AppFrame::saveSession(std::string fileName) {
     DataNode *header = s.rootNode()->newChild("header");
     *header->newChild("version") = std::string(CUBICSDR_VERSION);
     *header->newChild("center_freq") = wxGetApp().getFrequency();
-    *header->newChild("offset") = wxGetApp().getOffset();
 
     DataNode *demods = s.rootNode()->newChild("demodulators");
 
@@ -656,14 +683,11 @@ bool AppFrame::loadSession(std::string fileName) {
 
         std::string version(*header->getNext("version"));
         long long center_freq = *header->getNext("center_freq");
-        long long offset = *header->getNext("offset");
 
         std::cout << "Loading " << version << " session file" << std::endl;
         std::cout << "\tCenter Frequency: " << center_freq << std::endl;
-        std::cout << "\tOffset: " << offset << std::endl;
 
         wxGetApp().setFrequency(center_freq);
-        wxGetApp().setOffset(offset);
 
         DataNode *demodulators = l.rootNode()->getNext("demodulators");
 
@@ -711,7 +735,7 @@ bool AppFrame::loadSession(std::string fileName) {
             }
 
             newDemod->run();
-
+            newDemod->setActive(false);
             wxGetApp().bindDemodulator(newDemod);
 
             std::cout << "\tAdded demodulator at frequency " << freq << " type " << type << std::endl;
