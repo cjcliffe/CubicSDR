@@ -1,11 +1,13 @@
 #include "AppConfig.h"
 #include "CubicSDR.h"
 
-DeviceConfig::DeviceConfig() : deviceId(""), ppm(0), directSampling(false), offset(0) {
-
+DeviceConfig::DeviceConfig() : deviceId("") {
+	ppm.store(0);
+	directSampling.store(false);
+	offset.store(0);
 }
 
-DeviceConfig::DeviceConfig(std::string deviceId) : ppm(0) {
+DeviceConfig::DeviceConfig(std::string deviceId) : DeviceConfig() {
     this->deviceId = deviceId;
 }
 
