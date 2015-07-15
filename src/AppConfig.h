@@ -3,6 +3,7 @@
 #include <wx/stdpaths.h>
 #include <wx/dir.h>
 #include <wx/filename.h>
+#include <wx/panel.h>
 #include <atomic>
 #include <mutex>
 
@@ -45,10 +46,18 @@ public:
     std::string getConfigDir();
     DeviceConfig *getDevice(std::string deviceId);
 
+    void setWindow(wxPoint winXY, wxSize winWH);
+    wxRect *getWindow();
+    
+    void setTheme(int themeId);
+    int getTheme();
+    
     bool save();
     bool load();
     bool reset();
 
 private:
     std::map<std::string, DeviceConfig *> deviceConfig;
+    std::atomic_int winX,winY,winW,winH;
+    std::atomic_int themeId;
 };
