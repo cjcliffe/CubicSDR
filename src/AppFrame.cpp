@@ -313,6 +313,11 @@ AppFrame::AppFrame() :
         SetClientSize(1280, 600);
         Centre();
     }
+    bool max = wxGetApp().getConfig()->getWindowMaximized();
+
+    if (max) {
+        this->Maximize();
+    }
             
     ThemeMgr::mgr.setTheme(wxGetApp().getConfig()->getTheme());
 
@@ -520,6 +525,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
 
 void AppFrame::OnClose(wxCloseEvent& event) {
     wxGetApp().getConfig()->setWindow(this->GetPosition(), this->GetClientSize());
+    wxGetApp().getConfig()->setWindowMaximized(this->IsMaximized());
     wxGetApp().getConfig()->setTheme(ThemeMgr::mgr.getTheme());
     wxGetApp().getConfig()->save();
     event.Skip();

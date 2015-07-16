@@ -114,6 +114,16 @@ void DeviceConfig::load(DataNode *node) {
     busy_lock.unlock();
 }
 
+AppConfig::AppConfig() {
+    winX.store(0);
+    winY.store(0);
+    winW.store(0);
+    winH.store(0);
+    winMax.store(false);
+    themeId.store(0);
+}
+
+
 
 DeviceConfig *AppConfig::getDevice(std::string deviceId) {
 	if (deviceConfig.find(deviceId) == deviceConfig.end()) {
@@ -150,6 +160,14 @@ void AppConfig::setWindow(wxPoint winXY, wxSize winWH) {
     winH.store(winWH.y);
 }
 
+void AppConfig::setWindowMaximized(bool max) {
+    winMax.store(max);
+}
+
+bool AppConfig::getWindowMaximized() {
+    return winMax.load();
+}
+
 wxRect *AppConfig::getWindow() {
     wxRect *r = NULL;
     if (winH.load() && winW.load()) {
@@ -180,6 +198,8 @@ bool AppConfig::save() {
         *window_node->newChild("y") = winY.load();
         *window_node->newChild("w") = winW.load();
         *window_node->newChild("h") = winH.load();
+
+        *window_node->newChild("max") = winMax.load();
 
         *window_node->newChild("theme") = themeId.load();
     }
@@ -228,6 +248,7 @@ bool AppConfig::load() {
 
     if (cfg.rootNode()->hasAnother("window")) {
         int x,y,w,h;
+        int max;
         
         DataNode *win_node = cfg.rootNode()->getNext("window");
         
@@ -243,6 +264,11 @@ bool AppConfig::load() {
             winH.store(h);
         }
         
+        if (win_node->hasAnother("max")) {
+            win_node->getNext("max")->element()->get(max);
+            winMax.store(max?true:false);
+        }
+
         if (win_node->hasAnother("theme")) {
             int theme;
             win_node->getNext("theme")->element()->get(theme);
