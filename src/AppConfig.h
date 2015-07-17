@@ -3,9 +3,11 @@
 #include <wx/stdpaths.h>
 #include <wx/dir.h>
 #include <wx/filename.h>
+#include <wx/panel.h>
+#include <atomic>
+#include <mutex>
 
 #include "DataTree.h"
-
 
 class DeviceConfig {
 public:
@@ -14,7 +16,16 @@ public:
 
     void setPPM(int ppm);
     int getPPM();
+    
+    void setDirectSampling(int mode);
+    int getDirectSampling();
+    
+    void setOffset(long long offset);
+    long long getOffset();
 
+    void setIQSwap(bool iqSwap);
+    bool getIQSwap();
+    
     void setDeviceId(std::string deviceId);
     std::string getDeviceId();
 
@@ -23,18 +34,35 @@ public:
 
 private:
     std::string deviceId;
-    int ppm;
+    std::mutex busy_lock;
+
+    std::atomic_int ppm, directSampling;
+    std::atomic_bool iqSwap;
+    std::atomic_llong offset;
 };
 
 class AppConfig {
 public:
+    AppConfig();
     std::string getConfigDir();
     DeviceConfig *getDevice(std::string deviceId);
 
+    void setWindow(wxPoint winXY, wxSize winWH);
+    wxRect *getWindow();
+    
+    void setWindowMaximized(bool max);
+    bool getWindowMaximized();
+
+    void setTheme(int themeId);
+    int getTheme();
+    
     bool save();
     bool load();
     bool reset();
 
 private:
-    std::map<std::string, DeviceConfig> deviceConfig;
+    std::map<std::string, DeviceConfig *> deviceConfig;
+    std::atomic_int winX,winY,winW,winH;
+    std::atomic_bool winMax;
+    std::atomic_int themeId;
 };
