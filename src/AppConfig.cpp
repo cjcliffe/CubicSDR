@@ -114,6 +114,16 @@ void DeviceConfig::load(DataNode *node) {
     busy_lock.unlock();
 }
 
+AppConfig::AppConfig() {
+    winX.store(0);
+    winY.store(0);
+    winW.store(0);
+    winH.store(0);
+    winMax.store(false);
+    themeId.store(0);
+}
+
+
 
 DeviceConfig *AppConfig::getDevice(std::string deviceId) {
 	if (deviceConfig.find(deviceId) == deviceConfig.end()) {
@@ -142,10 +152,58 @@ std::string AppConfig::getConfigDir() {
     return dataDir;
 }
 
+
+void AppConfig::setWindow(wxPoint winXY, wxSize winWH) {
+    winX.store(winXY.x);
+    winY.store(winXY.y);
+    winW.store(winWH.x);
+    winH.store(winWH.y);
+}
+
+void AppConfig::setWindowMaximized(bool max) {
+    winMax.store(max);
+}
+
+bool AppConfig::getWindowMaximized() {
+    return winMax.load();
+}
+
+wxRect *AppConfig::getWindow() {
+    wxRect *r = NULL;
+    if (winH.load() && winW.load()) {
+        r = new wxRect(winX.load(),winY.load(),winW.load(),winH.load());
+    }
+    return r;
+}
+
+
+void AppConfig::setTheme(int themeId) {
+    this->themeId.store(themeId);
+}
+
+int AppConfig::getTheme() {
+    return themeId.load();
+}
+
+
 bool AppConfig::save() {
     DataTree cfg;
 
     cfg.rootNode()->setName("cubicsdr_config");
+    
+    if (winW.load() && winH.load()) {
+        DataNode *window_node = cfg.rootNode()->newChild("window");
+        
+        *window_node->newChild("x") = winX.load();
+        *window_node->newChild("y") = winY.load();
+        *window_node->newChild("w") = winW.load();
+        *window_node->newChild("h") = winH.load();
+
+        *window_node->newChild("max") = winMax.load();
+
+        *window_node->newChild("theme") = themeId.load();
+    }
+    
     DataNode *devices_node = cfg.rootNode()->newChild("devices");
 
     std::map<std::string, DeviceConfig *>::iterator device_config_i;
@@ -154,6 +212,7 @@ bool AppConfig::save() {
         device_config_i->second->save(device_node);
     }
 
+    
     std::string cfgFileDir = getConfigDir();
 
     wxFileName cfgFile = wxFileName(cfgFileDir, "config.xml");
@@ -187,6 +246,37 @@ bool AppConfig::load() {
         return false;
     }
 
+    if (cfg.rootNode()->hasAnother("window")) {
+        int x,y,w,h;
+        int max;
+        
+        DataNode *win_node = cfg.rootNode()->getNext("window");
+        
+        if (win_node->hasAnother("w") && win_node->hasAnother("h") && win_node->hasAnother("x") && win_node->hasAnother("y")) {
+            win_node->getNext("x")->element()->get(x);
+            win_node->getNext("y")->element()->get(y);
+            win_node->getNext("w")->element()->get(w);
+            win_node->getNext("h")->element()->get(h);
+            
+            winX.store(x);
+            winY.store(y);
+            winW.store(w);
+            winH.store(h);
+        }
+        
+        if (win_node->hasAnother("max")) {
+            win_node->getNext("max")->element()->get(max);
+            winMax.store(max?true:false);
+        }
+
+        if (win_node->hasAnother("theme")) {
+            int theme;
+            win_node->getNext("theme")->element()->get(theme);
+            themeId.store(theme);
+        }
+
+    }
+    
     if (cfg.rootNode()->hasAnother("devices")) {
         DataNode *devices_node = cfg.rootNode()->getNext("devices");
 

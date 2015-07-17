@@ -65,7 +65,7 @@ public:
 
 private:
     void OnMenu(wxCommandEvent& event);
-    void OnClose(wxCommandEvent& event);
+    void OnClose(wxCloseEvent& event);
     void OnNewWindow(wxCommandEvent& event);
     void OnIdle(wxIdleEvent& event);
 

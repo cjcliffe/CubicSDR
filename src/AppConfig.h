@@ -3,6 +3,7 @@
 #include <wx/stdpaths.h>
 #include <wx/dir.h>
 #include <wx/filename.h>
+#include <wx/panel.h>
 #include <atomic>
 #include <mutex>
 
@@ -42,13 +43,26 @@ private:
 
 class AppConfig {
 public:
+    AppConfig();
     std::string getConfigDir();
     DeviceConfig *getDevice(std::string deviceId);
 
+    void setWindow(wxPoint winXY, wxSize winWH);
+    wxRect *getWindow();
+    
+    void setWindowMaximized(bool max);
+    bool getWindowMaximized();
+
+    void setTheme(int themeId);
+    int getTheme();
+    
     bool save();
     bool load();
     bool reset();
 
 private:
     std::map<std::string, DeviceConfig *> deviceConfig;
+    std::atomic_int winX,winY,winW,winH;
+    std::atomic_bool winMax;
+    std::atomic_int themeId;
 };

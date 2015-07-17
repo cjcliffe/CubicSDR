@@ -31,7 +31,7 @@
 
 wxBEGIN_EVENT_TABLE(AppFrame, wxFrame)
 //EVT_MENU(wxID_NEW, AppFrame::OnNewWindow)
-EVT_MENU(wxID_CLOSE, AppFrame::OnClose)
+EVT_CLOSE(AppFrame::OnClose)
 EVT_MENU(wxID_ANY, AppFrame::OnMenu)
 EVT_COMMAND(wxID_ANY, wxEVT_THREAD, AppFrame::OnThread)
 EVT_IDLE(AppFrame::OnIdle)
@@ -190,13 +190,15 @@ AppFrame::AppFrame() :
 
     menu = new wxMenu;
 
-    menu->AppendRadioItem(wxID_THEME_DEFAULT, "Default")->Check(true);
-    menu->AppendRadioItem(wxID_THEME_RADAR, "RADAR");
-    menu->AppendRadioItem(wxID_THEME_BW, "Black & White");
-    menu->AppendRadioItem(wxID_THEME_SHARP, "Sharp");
-    menu->AppendRadioItem(wxID_THEME_RAD, "Rad");
-    menu->AppendRadioItem(wxID_THEME_TOUCH, "Touch");
-    menu->AppendRadioItem(wxID_THEME_HD, "HD");
+    int themeId = wxGetApp().getConfig()->getTheme();
+            
+    menu->AppendRadioItem(wxID_THEME_DEFAULT, "Default")->Check(themeId==COLOR_THEME_DEFAULT);
+    menu->AppendRadioItem(wxID_THEME_RADAR, "RADAR")->Check(themeId==COLOR_THEME_RADAR);
+    menu->AppendRadioItem(wxID_THEME_BW, "Black & White")->Check(themeId==COLOR_THEME_BW);
+    menu->AppendRadioItem(wxID_THEME_SHARP, "Sharp")->Check(themeId==COLOR_THEME_SHARP);
+    menu->AppendRadioItem(wxID_THEME_RAD, "Rad")->Check(themeId==COLOR_THEME_RAD);
+    menu->AppendRadioItem(wxID_THEME_TOUCH, "Touch")->Check(themeId==COLOR_THEME_TOUCH);
+    menu->AppendRadioItem(wxID_THEME_HD, "HD")->Check(themeId==COLOR_THEME_HD);
 
     menuBar->Append(menu, wxT("&Color Scheme"));
 
@@ -302,8 +304,23 @@ AppFrame::AppFrame() :
     SetMenuBar(menuBar);
 
     CreateStatusBar();
-    SetClientSize(1280, 600);
-    Centre();
+
+    wxRect *win = wxGetApp().getConfig()->getWindow();
+    if (win) {
+        this->SetPosition(win->GetPosition());
+        this->SetClientSize(win->GetSize());
+    } else {
+        SetClientSize(1280, 600);
+        Centre();
+    }
+    bool max = wxGetApp().getConfig()->getWindowMaximized();
+
+    if (max) {
+        this->Maximize();
+    }
+            
+    ThemeMgr::mgr.setTheme(wxGetApp().getConfig()->getTheme());
+
     Show();
 
 #ifdef _WIN32
@@ -506,8 +523,12 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
 
 }
 
-void AppFrame::OnClose(wxCommandEvent& WXUNUSED(event)) {
-    Close(false);
+void AppFrame::OnClose(wxCloseEvent& event) {
+    wxGetApp().getConfig()->setWindow(this->GetPosition(), this->GetClientSize());
+    wxGetApp().getConfig()->setWindowMaximized(this->IsMaximized());
+    wxGetApp().getConfig()->setTheme(ThemeMgr::mgr.getTheme());
+    wxGetApp().getConfig()->save();
+    event.Skip();
 }
 
 void AppFrame::OnNewWindow(wxCommandEvent& WXUNUSED(event)) {
