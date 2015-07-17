@@ -61,7 +61,7 @@ void DemodulatorThread::threadMain() {
 
     // Automatic IQ gain
     iqAutoGain = agc_crcf_create();
-    agc_crcf_set_bandwidth(iqAutoGain, 0.9);
+    agc_crcf_set_bandwidth(iqAutoGain, 0.1);
 
     AudioThreadInput *ati_vis = new AudioThreadInput;
     ati_vis->data.reserve(DEMOD_VIS_SIZE);
@@ -372,8 +372,8 @@ void DemodulatorThread::threadMain() {
 
                 if (demodulatorType == DEMOD_TYPE_RAW) {
                     for (int i = 0; i < stereoSize / 2; i++) {
-                        ati_vis->data[i] = ati->data[i * 2] * 0.5;
-                        ati_vis->data[i + stereoSize / 2] = ati->data[i * 2 + 1] * 0.5;
+                        ati_vis->data[i] = ati->data[i * 2] * 0.75;
+                        ati_vis->data[i + stereoSize / 2] = ati->data[i * 2 + 1] * 0.75;
                     }
                 } else {
                     for (int i = 0; i < stereoSize / 2; i++) {
