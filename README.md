@@ -86,6 +86,33 @@ Features and Status:
     - [ ] Playback
   - Audio
     - [ ] Recording
+  - Implement digital demodulation supported by liquid-dsp: (http://liquidsdr.org/doc/modem.html)
+    - [ ] Demodulator Lab
+      - [ ] Toggle current demodulator exclusively into "Lab" mode
+        - [ ] Additional visualizations for audio and I/Q stream
+          - [ ] Audio Spectrum
+          - [ ] Constellation / X-Y Scope
+        - [ ] Digital demodulation status and controls
+        - [ ] Demodulator AGC, Equalization controls
+          - [ ] Lock AGC and Equalization when digital lock obtained
+        - [ ] Digital output
+          - [ ] Output console
+          - [ ] Capture file (auto?)
+          - [ ] Network output
+          - [ ] Block device output
+    - [ ] Digital modes available to implement
+      - [ ] PSK
+      - [ ] DPSK
+      - [ ] ASK
+      - [ ] QAM 
+      - [ ] APSK
+      - [ ] BPSK 
+      - [ ] QPSK
+      - [ ] OOK 
+      - [ ] SQAM 
+      - [ ] Star Modem 
+      - [ ] MFSK
+      - [ ] CPFSK
   - Optimization
     - [x] Eliminate large waterfall texture uploads
     - [ ] Update visuals to OpenGL 3.x
@@ -93,8 +120,9 @@ Features and Status:
     - [ ] Resolve driver/platform vertical sync issues
     - [ ] Group and divide IQ data distribution workload instead of 100% distribution per instance
 
-Advanced Goals:
----------------
+
+Advanced Goals and ideas:
+------------------------
   - Design a plan for expansion via modules (dylib/dll/lua)
   - Support shell-based stdin/stdout tools for direct output/playback to/from CLI audio processing apps (i.e. DSD on OSX)
   - Update visuals to support OpenGL ES
@@ -102,8 +130,6 @@ Advanced Goals:
   - Support multiple simultaneous device usage
     * Categorize devices by antenna connections
     * Allow locked frequencies to activate unused devices to continue demodulation on same antenna
-  - Implement digital demodulation supported by liquid-dsp: (http://liquidsdr.org/doc/modem.html)
-    * PSK, DPSK, ASK, QAM, APSK, BPSK, QPSK, OOK, SQAM, Star Modem(?)
   - Integrate LUA
     * Expose liquid-dsp functionality
     * Scriptable liquid-dsp demodulation
