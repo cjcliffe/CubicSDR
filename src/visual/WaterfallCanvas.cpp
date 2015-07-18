@@ -907,9 +907,8 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
         } else {
             demod = wxGetApp().getDemodMgr().newThread();
             demod->setFrequency(freq);
-            demod->setBandwidth(bw);
-
             demod->setDemodulatorType(mgr->getLastDemodulatorType());
+            demod->setBandwidth(bw);
             demod->setSquelchLevel(mgr->getLastSquelchLevel());
             demod->setSquelchEnabled(mgr->isLastSquelchEnabled());
             demod->setStereo(mgr->isLastStereo());
