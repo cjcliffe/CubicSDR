@@ -87,18 +87,19 @@ private:
     void checkBandwidth();
 
     std::atomic<std::string *> label; //
-    bool terminated; //
-    bool demodTerminated; //
-    bool audioTerminated; //
-    bool preDemodTerminated;
-    std::atomic<bool> active;
-    std::atomic<bool> squelch;
-    std::atomic<bool> stereo;
+    std::atomic_bool terminated; //
+    std::atomic_bool demodTerminated; //
+    std::atomic_bool audioTerminated; //
+    std::atomic_bool preDemodTerminated;
+    std::atomic_bool active;
+    std::atomic_bool squelch;
+    std::atomic_bool stereo;
 
-    long long currentFrequency;
-    int currentBandwidth;
-    int currentDemodType;
-    int currentOutputDevice;
-    int currentAudioSampleRate;
-    bool follow, tracking;
+    std::atomic_llong currentFrequency;
+    std::atomic_int currentBandwidth;
+    std::atomic_int currentDemodType;
+    std::atomic_int currentOutputDevice;
+    std::atomic_int currentAudioSampleRate;
+    std::atomic<float> currentAudioGain;
+    std::atomic_bool follow, tracking;
   };

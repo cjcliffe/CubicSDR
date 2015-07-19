@@ -2,7 +2,7 @@
 
 DemodulatorInstance::DemodulatorInstance() :
         t_Demod(NULL), t_PreDemod(NULL), t_Audio(NULL), threadQueueDemod(NULL), demodulatorThread(NULL), terminated(true), audioTerminated(true), demodTerminated(
-        true), preDemodTerminated(true), active(false), squelch(false), stereo(false), tracking(false), follow(false), currentAudioSampleRate(0), currentFrequency(0), currentBandwidth(0), currentOutputDevice(-1) {
+        true), preDemodTerminated(true), active(false), squelch(false), stereo(false), tracking(false), follow(false), currentAudioSampleRate(0), currentFrequency(0), currentBandwidth(0), currentOutputDevice(-1), currentAudioGain(1.0) {
 
     label = new std::string("Unnamed");
     threadQueueDemod = new DemodulatorThreadInputQueue;
@@ -244,25 +244,31 @@ void DemodulatorInstance::checkBandwidth() {
 }
 
 void DemodulatorInstance::setDemodulatorType(int demod_type_in) {
-    if (!active) {
-        currentDemodType = demod_type_in;
-        checkBandwidth();
-        demodulatorPreThread->getParams().demodType = currentDemodType;
-        demodulatorThread->setDemodulatorType(currentDemodType);
-    } else if (demodulatorThread && threadQueueControl) {
-        DemodulatorThreadControlCommand command;
-        command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_TYPE;
-        currentDemodType = demod_type_in;
-        command.demodType = demod_type_in;
-        checkBandwidth();
-        threadQueueControl->push(command);
-    }
+    currentDemodType = demod_type_in;
+
     if (currentDemodType == DEMOD_TYPE_RAW) {
         if (currentAudioSampleRate) {
             setBandwidth(currentAudioSampleRate);
         } else {
             setBandwidth(AudioThread::deviceSampleRate[getOutputDevice()]);
         }
+    } else if (currentDemodType == DEMOD_TYPE_USB || currentDemodType == DEMOD_TYPE_LSB || currentDemodType == DEMOD_TYPE_DSB || currentDemodType == DEMOD_TYPE_AM) {
+    	demodulatorThread->setAGC(false);
+    } else {
+    	demodulatorThread->setAGC(true);
+    }
+    setGain(getGain());
+
+    if (!active) {
+        checkBandwidth();
+        demodulatorPreThread->getParams().demodType = currentDemodType;
+        demodulatorThread->setDemodulatorType(currentDemodType);
+    } else if (demodulatorThread && threadQueueControl) {
+        DemodulatorThreadControlCommand command;
+        command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_TYPE;
+        command.demodType = demod_type_in;
+        checkBandwidth();
+        threadQueueControl->push(command);
     }
 }
 
@@ -348,11 +354,23 @@ int DemodulatorInstance::getAudioSampleRate() {
 
 
 void DemodulatorInstance::setGain(float gain_in) {
-    audioThread->setGain(gain_in);
+	currentAudioGain = gain_in;
+
+    if (currentDemodType == DEMOD_TYPE_RAW) {
+		if (gain_in < 0.25) {
+		    audioThread->setGain(1.0);
+			demodulatorThread->setAGC(false);
+		} else {
+		    audioThread->setGain(gain_in);
+			demodulatorThread->setAGC(true);
+		}
+    } else {
+        audioThread->setGain(gain_in);
+    }
 }
 
 float DemodulatorInstance::getGain() {
-   return audioThread->getGain();
+   return currentAudioGain;
 }
 
 bool DemodulatorInstance::isFollow()  {
