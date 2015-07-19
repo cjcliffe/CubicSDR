@@ -193,7 +193,6 @@ void CubicSDR::setOffset(long long ofs) {
     
     SDRDeviceInfo *dev = (*getDevices())[getDevice()];
     config.getDevice(dev->getDeviceId())->setOffset(ofs);
-    config.save();
 }
 
 void CubicSDR::setDirectSampling(int mode) {
@@ -204,7 +203,6 @@ void CubicSDR::setDirectSampling(int mode) {
 
     SDRDeviceInfo *dev = (*getDevices())[getDevice()];
     config.getDevice(dev->getDeviceId())->setDirectSampling(mode);
-    config.save();
 }
 
 int CubicSDR::getDirectSampling() {
@@ -215,7 +213,6 @@ void CubicSDR::setSwapIQ(bool swapIQ) {
     sdrPostThread->setSwapIQ(swapIQ);
     SDRDeviceInfo *dev = (*getDevices())[getDevice()];
     config.getDevice(dev->getDeviceId())->setIQSwap(swapIQ);
-    config.save();
 }
 
 bool CubicSDR::getSwapIQ() {
@@ -309,7 +306,6 @@ void CubicSDR::setPPM(int ppm_in) {
     SDRDeviceInfo *dev = (*getDevices())[getDevice()];
 
     config.getDevice(dev->getDeviceId())->setPPM(ppm_in);
-    config.save();
 }
 
 int CubicSDR::getPPM() {

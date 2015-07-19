@@ -376,16 +376,21 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
                 "Frequency Offset", wxGetApp().getOffset(), -2000000000, 2000000000, this);
         if (ofs != -1) {
             wxGetApp().setOffset(ofs);
+            wxGetApp().saveConfig();
         }
     } else if (event.GetId() == wxID_SET_DS_OFF) {
         wxGetApp().setDirectSampling(0);
+        wxGetApp().saveConfig();
     } else if (event.GetId() == wxID_SET_DS_I) {
         wxGetApp().setDirectSampling(1);
+        wxGetApp().saveConfig();
     } else if (event.GetId() == wxID_SET_DS_Q) {
         wxGetApp().setDirectSampling(2);
+        wxGetApp().saveConfig();
     } else if (event.GetId() == wxID_SET_SWAP_IQ) {
         bool swap_state = !wxGetApp().getSwapIQ();
         wxGetApp().setSwapIQ(swap_state);
+        wxGetApp().saveConfig();
         iqSwapMenuItem->Check(swap_state);
     } else if (event.GetId() == wxID_SET_PPM) {
         long ofs = wxGetNumberFromUser("Frequency correction for device in PPM.\ni.e. -51 for -51 PPM\n\nNote: you can adjust PPM interactively\nby holding ALT over the frequency tuning bar.\n", "Parts per million (PPM)",
