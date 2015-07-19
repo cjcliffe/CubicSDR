@@ -121,6 +121,7 @@ AppConfig::AppConfig() {
     winH.store(0);
     winMax.store(false);
     themeId.store(0);
+    snap.store(1);
 }
 
 
@@ -186,6 +187,15 @@ int AppConfig::getTheme() {
 }
 
 
+void AppConfig::setSnap(long long snapVal) {
+    this->snap.store(snapVal);
+}
+
+long long AppConfig::getSnap() {
+    return snap.load();
+}
+
+
 bool AppConfig::save() {
     DataTree cfg;
 
@@ -200,8 +210,8 @@ bool AppConfig::save() {
         *window_node->newChild("h") = winH.load();
 
         *window_node->newChild("max") = winMax.load();
-
         *window_node->newChild("theme") = themeId.load();
+        *window_node->newChild("snap") = snap.load();
     }
     
     DataNode *devices_node = cfg.rootNode()->newChild("devices");
@@ -275,6 +285,11 @@ bool AppConfig::load() {
             themeId.store(theme);
         }
 
+        if (win_node->hasAnother("snap")) {
+			long long snapVal;
+			win_node->getNext("snap")->element()->get(snapVal);
+			snap.store(snapVal);
+		}
     }
     
     if (cfg.rootNode()->hasAnother("devices")) {

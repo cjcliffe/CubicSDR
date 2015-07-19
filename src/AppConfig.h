@@ -55,7 +55,10 @@ public:
 
     void setTheme(int themeId);
     int getTheme();
-    
+
+    void setSnap(long long snapVal);
+    long long getSnap();
+
     bool save();
     bool load();
     bool reset();
@@ -65,4 +68,5 @@ private:
     std::atomic_int winX,winY,winW,winH;
     std::atomic_bool winMax;
     std::atomic_int themeId;
+    std::atomic_llong snap;
 };

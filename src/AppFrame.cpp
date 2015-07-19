@@ -319,6 +319,9 @@ AppFrame::AppFrame() :
     if (max) {
         this->Maximize();
     }
+
+    long long freqSnap = wxGetApp().getConfig()->getSnap();
+    wxGetApp().setFrequencySnap(freqSnap);
             
     ThemeMgr::mgr.setTheme(wxGetApp().getConfig()->getTheme());
 
@@ -528,6 +531,7 @@ void AppFrame::OnClose(wxCloseEvent& event) {
     wxGetApp().getConfig()->setWindow(this->GetPosition(), this->GetClientSize());
     wxGetApp().getConfig()->setWindowMaximized(this->IsMaximized());
     wxGetApp().getConfig()->setTheme(ThemeMgr::mgr.getTheme());
+    wxGetApp().getConfig()->setSnap(wxGetApp().getFrequencySnap());
     wxGetApp().getConfig()->save();
     event.Skip();
 }
