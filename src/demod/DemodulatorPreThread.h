@@ -68,8 +68,8 @@ protected:
     nco_crcf freqShifter;
     int shiftFrequency;
 
-    std::atomic<bool> terminated;
-    std::atomic<bool> initialized;
+    std::atomic_bool terminated;
+    std::atomic_bool initialized;
 
     DemodulatorWorkerThread *workerThread;
     std::thread *t_Worker;

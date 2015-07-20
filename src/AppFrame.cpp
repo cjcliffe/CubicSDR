@@ -57,6 +57,7 @@ AppFrame::AppFrame() :
     demodModeSelector->addChoice(DEMOD_TYPE_LSB, "LSB");
     demodModeSelector->addChoice(DEMOD_TYPE_USB, "USB");
     demodModeSelector->addChoice(DEMOD_TYPE_DSB, "DSB");
+    demodModeSelector->addChoice(DEMOD_TYPE_RAW, "I/Q");
     demodModeSelector->setSelection(DEMOD_TYPE_FM);
     demodModeSelector->setHelpTip("Choose modulation type: Frequency Modulation, Amplitude Modulation and Lower, Upper or Double Side-Band.");
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
@@ -318,6 +319,9 @@ AppFrame::AppFrame() :
     if (max) {
         this->Maximize();
     }
+
+    long long freqSnap = wxGetApp().getConfig()->getSnap();
+    wxGetApp().setFrequencySnap(freqSnap);
             
     ThemeMgr::mgr.setTheme(wxGetApp().getConfig()->getTheme());
 
@@ -372,16 +376,21 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
                 "Frequency Offset", wxGetApp().getOffset(), -2000000000, 2000000000, this);
         if (ofs != -1) {
             wxGetApp().setOffset(ofs);
+            wxGetApp().saveConfig();
         }
     } else if (event.GetId() == wxID_SET_DS_OFF) {
         wxGetApp().setDirectSampling(0);
+        wxGetApp().saveConfig();
     } else if (event.GetId() == wxID_SET_DS_I) {
         wxGetApp().setDirectSampling(1);
+        wxGetApp().saveConfig();
     } else if (event.GetId() == wxID_SET_DS_Q) {
         wxGetApp().setDirectSampling(2);
+        wxGetApp().saveConfig();
     } else if (event.GetId() == wxID_SET_SWAP_IQ) {
         bool swap_state = !wxGetApp().getSwapIQ();
         wxGetApp().setSwapIQ(swap_state);
+        wxGetApp().saveConfig();
         iqSwapMenuItem->Check(swap_state);
     } else if (event.GetId() == wxID_SET_PPM) {
         long ofs = wxGetNumberFromUser("Frequency correction for device in PPM.\ni.e. -51 for -51 PPM\n\nNote: you can adjust PPM interactively\nby holding ALT over the frequency tuning bar.\n", "Parts per million (PPM)",
@@ -527,6 +536,7 @@ void AppFrame::OnClose(wxCloseEvent& event) {
     wxGetApp().getConfig()->setWindow(this->GetPosition(), this->GetClientSize());
     wxGetApp().getConfig()->setWindowMaximized(this->IsMaximized());
     wxGetApp().getConfig()->setTheme(ThemeMgr::mgr.getTheme());
+    wxGetApp().getConfig()->setSnap(wxGetApp().getFrequencySnap());
     wxGetApp().getConfig()->save();
     event.Skip();
 }

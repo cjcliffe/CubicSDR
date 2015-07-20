@@ -31,6 +31,9 @@ public:
     void setStereo(bool state);
     bool isStereo();
 
+    void setAGC(bool state);
+    bool getAGC();
+
     float getSignalLevel();
     void setSquelchLevel(float signal_level_in);
     float getSquelchLevel();
@@ -72,9 +75,10 @@ protected:
     float amOutputCeilMA;
     float amOutputCeilMAA;
 
-    std::atomic<bool> stereo;
-    std::atomic<bool> terminated;
-    std::atomic<int> demodulatorType;
+    std::atomic_bool stereo;
+    std::atomic_bool agcEnabled;
+    std::atomic_bool terminated;
+    std::atomic_int demodulatorType;
     int audioSampleRate;
 
     DemodulatorThreadCommandQueue* threadQueueNotify;

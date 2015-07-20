@@ -53,5 +53,5 @@ public:
         return refCount.load();
     }
 protected:
-    std::atomic<int> refCount;
+    std::atomic_int refCount;
 };
