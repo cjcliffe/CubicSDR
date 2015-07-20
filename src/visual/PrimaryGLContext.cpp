@@ -261,7 +261,60 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBColor color, lon
         demodAlign = GLFont::GLFONT_ALIGN_LEFT;
         uxPos += xOfs;
         break;
+    // advanced demodulators start here
+    case DEMOD_TYPE_ASK:
+        demodStr = "ASK";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
+    case DEMOD_TYPE_APSK:
+        demodStr = "APSK";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
+    case DEMOD_TYPE_BPSK:
+        demodStr = "BPSK";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
+    case DEMOD_TYPE_DPSK:
+        demodStr = "DPSK";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
+    case DEMOD_TYPE_PSK:
+        demodStr = "PSK";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
+    case DEMOD_TYPE_OOK:
+        demodStr = "OOK";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
+    case DEMOD_TYPE_SQAM:
+        demodStr = "SQAM";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
+    case DEMOD_TYPE_ST:
+        demodStr = "ST";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
+    case DEMOD_TYPE_QAM:
+        demodStr = "QAM";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
+    case DEMOD_TYPE_QPSK:
+        demodStr = "QPSK";
+        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+        break;
     }
+
+	if (demod->getDemodulatorCons() != NULL && demod->getDemodulatorCons() > 0) {
+		demodStr = demodStr + std::to_string(demod->getDemodulatorCons());
+	}
+    
+    // add lock to string if we have an lock
+    if(demod->getDemodulatorLock()) {
+        demodStr = demodStr + " Lock";
+    } 
+    // else {
+    //     demodStr = demodStr + " UnLock";
+    // }
 
     glColor3f(0, 0, 0);
     getFont(PrimaryGLContext::GLFONT_SIZE16).drawString(demodStr, 2.0 * (uxPos - 0.5) + xOfs, -1.0 + hPos - yOfs, 16, demodAlign,

@@ -64,6 +64,12 @@ public:
 
     void setDemodulatorType(int demod_type_in);
     int getDemodulatorType();
+    
+    void setDemodulatorLock(bool demod_lock_in);
+    int getDemodulatorLock();
+    
+    void setDemodulatorCons(int demod_cons_in);
+    int getDemodulatorCons();
 
     void setBandwidth(int bw);
     int getBandwidth();
@@ -98,6 +104,7 @@ private:
     std::atomic_llong currentFrequency;
     std::atomic_int currentBandwidth;
     std::atomic_int currentDemodType;
+    std::atomic_int currentDemodCons;
     std::atomic_int currentOutputDevice;
     std::atomic_int currentAudioSampleRate;
     std::atomic<float> currentAudioGain;

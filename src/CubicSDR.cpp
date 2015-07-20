@@ -1,7 +1,6 @@
 #define OPENGL
 
 #include "CubicSDRDefs.h"
-
 #include "wx/wxprec.h"
 
 #ifndef WX_PRECOMP
@@ -21,6 +20,19 @@
 
 IMPLEMENT_APP(CubicSDR)
 
+// console output buffer for windows
+#ifdef _WINDOWS
+class outbuf : public std::streambuf {
+	public:
+	outbuf() {
+		setp(0, 0);
+	}
+	virtual int_type overflow(int_type c = traits_type::eof()) {
+		return fputc(c, stdout) == EOF ? traits_type::eof() : c;
+	}
+};
+#endif
+
 bool CubicSDR::OnInit() {
 #ifdef _OSX_APP_
     CFBundleRef mainBundle = CFBundleGetMainBundle();
@@ -37,6 +49,17 @@ bool CubicSDR::OnInit() {
     if (!wxApp::OnInit()) {
         return false;
     }
+
+	// console output for windows
+	#ifdef _WINDOWS
+	if (AllocConsole()) {
+		freopen("CONOUT$", "w", stdout);
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
+	}
+	outbuf ob;
+	std::streambuf *sb = std::cout.rdbuf(&ob);
+	std::cout.rdbuf(sb);
+	#endif
 
     wxApp::SetAppName("CubicSDR");
 
@@ -103,7 +126,7 @@ bool CubicSDR::OnInit() {
         info->ShowModal();
         return false;
     }
-
+    
     t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
     t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
 
