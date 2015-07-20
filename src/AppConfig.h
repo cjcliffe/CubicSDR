@@ -59,11 +59,14 @@ public:
     void setSnap(long long snapVal);
     long long getSnap();
 
+    void setConfigName(std::string configName);
+    std::string getConfigFileName();
     bool save();
     bool load();
     bool reset();
 
 private:
+    std::string configName;
     std::map<std::string, DeviceConfig *> deviceConfig;
     std::atomic_int winX,winY,winW,winH;
     std::atomic_bool winMax;

@@ -17,6 +17,8 @@
 #include "AppConfig.h"
 #include "AppFrame.h"
 
+#include <wx/cmdline.h>
+
 #define NUM_DEMODULATORS 1
 
 class CubicSDR: public wxApp {
@@ -30,6 +32,9 @@ public:
 
     virtual bool OnInit();
     virtual int OnExit();
+
+    virtual void OnInitCmdLine(wxCmdLineParser& parser);
+    virtual bool OnCmdLineParsed(wxCmdLineParser& parser);
 
     void setFrequency(long long freq);
     long long getFrequency();
@@ -92,6 +97,13 @@ private:
 
     std::thread *t_SDR;
     std::thread *t_PostSDR;
+};
+
+static const wxCmdLineEntryDesc commandLineInfo [] =
+{
+    { wxCMD_LINE_SWITCH, "h", "help", "Command line parameter help", wxCMD_LINE_VAL_NONE, wxCMD_LINE_OPTION_HELP },
+    { wxCMD_LINE_OPTION, "c", "config", "Specify a named configuration to use, i.e. '-c ham'" },
+    { wxCMD_LINE_NONE }
 };
 
 DECLARE_APP(CubicSDR)

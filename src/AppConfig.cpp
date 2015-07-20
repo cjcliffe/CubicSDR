@@ -114,7 +114,7 @@ void DeviceConfig::load(DataNode *node) {
     busy_lock.unlock();
 }
 
-AppConfig::AppConfig() {
+AppConfig::AppConfig() : configName("") {
     winX.store(0);
     winY.store(0);
     winW.store(0);
@@ -195,6 +195,27 @@ long long AppConfig::getSnap() {
     return snap.load();
 }
 
+void AppConfig::setConfigName(std::string configName) {
+    this->configName = configName;
+}
+
+std::string AppConfig::getConfigFileName() {
+    std::string cfgFileDir = getConfigDir();
+    
+    wxFileName cfgFile;
+    if (configName.length()) {
+        std::string tempFn("config-");
+        tempFn.append(configName);
+        tempFn.append(".xml");
+        cfgFile = wxFileName(cfgFileDir, tempFn);
+    } else {
+        cfgFile = wxFileName(cfgFileDir, "config.xml");
+    }
+    
+    std::string cfgFileName = cfgFile.GetFullPath(wxPATH_NATIVE).ToStdString();
+    
+    return cfgFileName;
+}
 
 bool AppConfig::save() {
     DataTree cfg;
@@ -221,13 +242,9 @@ bool AppConfig::save() {
         DataNode *device_node = devices_node->newChild("device");
         device_config_i->second->save(device_node);
     }
-
     
-    std::string cfgFileDir = getConfigDir();
-
-    wxFileName cfgFile = wxFileName(cfgFileDir, "config.xml");
-    std::string cfgFileName = cfgFile.GetFullPath(wxPATH_NATIVE).ToStdString();
-
+    std::string cfgFileName = getConfigFileName();
+    
     if (!cfg.SaveToFileXML(cfgFileName)) {
         std::cout << "Error saving :: configuration file '" << cfgFileName << "' is not writable!" << std::endl;
         return false;
@@ -240,8 +257,8 @@ bool AppConfig::load() {
     DataTree cfg;
     std::string cfgFileDir = getConfigDir();
 
-    wxFileName cfgFile = wxFileName(cfgFileDir, "config.xml");
-    std::string cfgFileName = cfgFile.GetFullPath(wxPATH_NATIVE).ToStdString();
+    std::string cfgFileName = getConfigFileName();
+    wxFileName cfgFile = wxFileName(cfgFileName);
 
     if (!cfgFile.Exists()) {
         return true;
