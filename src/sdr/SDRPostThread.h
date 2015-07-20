@@ -31,10 +31,10 @@ protected:
 	
     std::mutex busy_demod;
     std::vector<DemodulatorInstance *> demodulators;
-    std::atomic<bool> terminated;
+    std::atomic_bool terminated;
     iirfilt_crcf dcFilter;
     int num_vis_samples;
-    std::atomic<bool> swapIQ;
+    std::atomic_bool swapIQ;
     
 private:
     std::vector<liquid_float_complex> _lut;

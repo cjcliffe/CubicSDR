@@ -149,10 +149,10 @@ public:
 
 protected:
     std::atomic<uint32_t> sampleRate;
-    std::atomic<long long> offset;
+    std::atomic_llong offset;
     std::atomic<SDRThreadCommandQueue*> commandQueue;
     std::atomic<SDRThreadIQDataQueue*> iqDataOutQueue;
 
-    std::atomic<bool> terminated;
-    std::atomic<int> deviceId;
+    std::atomic_bool terminated;
+    std::atomic_int deviceId;
 };
