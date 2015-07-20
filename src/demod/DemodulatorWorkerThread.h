@@ -93,5 +93,5 @@ protected:
     DemodulatorThreadWorkerCommandQueue *commandQueue;
     DemodulatorThreadWorkerResultQueue *resultQueue;
 
-    std::atomic<bool> terminated;
+    std::atomic_bool terminated;
 };

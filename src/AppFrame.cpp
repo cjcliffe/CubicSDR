@@ -31,7 +31,7 @@
 
 wxBEGIN_EVENT_TABLE(AppFrame, wxFrame)
 //EVT_MENU(wxID_NEW, AppFrame::OnNewWindow)
-EVT_MENU(wxID_CLOSE, AppFrame::OnClose)
+EVT_CLOSE(AppFrame::OnClose)
 EVT_MENU(wxID_ANY, AppFrame::OnMenu)
 EVT_COMMAND(wxID_ANY, wxEVT_THREAD, AppFrame::OnThread)
 EVT_IDLE(AppFrame::OnIdle)
@@ -57,6 +57,7 @@ AppFrame::AppFrame() :
     demodModeSelector->addChoice(DEMOD_TYPE_LSB, "LSB");
     demodModeSelector->addChoice(DEMOD_TYPE_USB, "USB");
     demodModeSelector->addChoice(DEMOD_TYPE_DSB, "DSB");
+    demodModeSelector->addChoice(DEMOD_TYPE_RAW, "I/Q");
     demodModeSelector->setSelection(DEMOD_TYPE_FM);
     demodModeSelector->setHelpTip("Choose modulation type: Frequency Modulation, Amplitude Modulation and Lower, Upper or Double Side-Band.");
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
@@ -156,9 +157,9 @@ AppFrame::AppFrame() :
             
     wxMenu *dsMenu = new wxMenu;
     
-    dsMenu->AppendRadioItem(wxID_SET_DS_OFF, "Off");
-    dsMenu->AppendRadioItem(wxID_SET_DS_I, "I-ADC");
-    dsMenu->AppendRadioItem(wxID_SET_DS_Q, "Q-ADC");
+    directSamplingMenuItems[0] = dsMenu->AppendRadioItem(wxID_SET_DS_OFF, "Off");
+    directSamplingMenuItems[1] = dsMenu->AppendRadioItem(wxID_SET_DS_I, "I-ADC");
+    directSamplingMenuItems[2] = dsMenu->AppendRadioItem(wxID_SET_DS_Q, "Q-ADC");
     
     menu->AppendSubMenu(dsMenu, "Direct Sampling");
 
@@ -195,13 +196,15 @@ AppFrame::AppFrame() :
 
     menu = new wxMenu;
 
-    menu->AppendRadioItem(wxID_THEME_DEFAULT, "Default")->Check(true);
-    menu->AppendRadioItem(wxID_THEME_RADAR, "RADAR");
-    menu->AppendRadioItem(wxID_THEME_BW, "Black & White");
-    menu->AppendRadioItem(wxID_THEME_SHARP, "Sharp");
-    menu->AppendRadioItem(wxID_THEME_RAD, "Rad");
-    menu->AppendRadioItem(wxID_THEME_TOUCH, "Touch");
-    menu->AppendRadioItem(wxID_THEME_HD, "HD");
+    int themeId = wxGetApp().getConfig()->getTheme();
+            
+    menu->AppendRadioItem(wxID_THEME_DEFAULT, "Default")->Check(themeId==COLOR_THEME_DEFAULT);
+    menu->AppendRadioItem(wxID_THEME_RADAR, "RADAR")->Check(themeId==COLOR_THEME_RADAR);
+    menu->AppendRadioItem(wxID_THEME_BW, "Black & White")->Check(themeId==COLOR_THEME_BW);
+    menu->AppendRadioItem(wxID_THEME_SHARP, "Sharp")->Check(themeId==COLOR_THEME_SHARP);
+    menu->AppendRadioItem(wxID_THEME_RAD, "Rad")->Check(themeId==COLOR_THEME_RAD);
+    menu->AppendRadioItem(wxID_THEME_TOUCH, "Touch")->Check(themeId==COLOR_THEME_TOUCH);
+    menu->AppendRadioItem(wxID_THEME_HD, "HD")->Check(themeId==COLOR_THEME_HD);
 
     menuBar->Append(menu, wxT("&Color Scheme"));
 
@@ -307,8 +310,26 @@ AppFrame::AppFrame() :
     SetMenuBar(menuBar);
 
     CreateStatusBar();
-    SetClientSize(1280, 600);
-    Centre();
+
+    wxRect *win = wxGetApp().getConfig()->getWindow();
+    if (win) {
+        this->SetPosition(win->GetPosition());
+        this->SetClientSize(win->GetSize());
+    } else {
+        SetClientSize(1280, 600);
+        Centre();
+    }
+    bool max = wxGetApp().getConfig()->getWindowMaximized();
+
+    if (max) {
+        this->Maximize();
+    }
+
+    long long freqSnap = wxGetApp().getConfig()->getSnap();
+    wxGetApp().setFrequencySnap(freqSnap);
+            
+    ThemeMgr::mgr.setTheme(wxGetApp().getConfig()->getTheme());
+
     Show();
 
 #ifdef _WIN32
@@ -333,6 +354,22 @@ AppFrame::~AppFrame() {
 
 }
 
+
+void AppFrame::initDeviceParams(std::string deviceId) {
+    DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
+    
+    int dsMode = devConfig->getDirectSampling();
+    
+    if (dsMode > 0 && dsMode <= 2) {
+        directSamplingMenuItems[devConfig->getDirectSampling()]->Check();
+    }
+    
+    if (devConfig->getIQSwap()) {
+        iqSwapMenuItem->Check();
+    }
+}
+
+
 void AppFrame::OnMenu(wxCommandEvent& event) {
     if (event.GetId() >= wxID_RT_AUDIO_DEVICE && event.GetId() < wxID_RT_AUDIO_DEVICE + devices.size()) {
         if (activeDemodulator) {
@@ -344,16 +381,21 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
                 "Frequency Offset", wxGetApp().getOffset(), -2000000000, 2000000000, this);
         if (ofs != -1) {
             wxGetApp().setOffset(ofs);
+            wxGetApp().saveConfig();
         }
     } else if (event.GetId() == wxID_SET_DS_OFF) {
         wxGetApp().setDirectSampling(0);
+        wxGetApp().saveConfig();
     } else if (event.GetId() == wxID_SET_DS_I) {
         wxGetApp().setDirectSampling(1);
+        wxGetApp().saveConfig();
     } else if (event.GetId() == wxID_SET_DS_Q) {
         wxGetApp().setDirectSampling(2);
+        wxGetApp().saveConfig();
     } else if (event.GetId() == wxID_SET_SWAP_IQ) {
         bool swap_state = !wxGetApp().getSwapIQ();
         wxGetApp().setSwapIQ(swap_state);
+        wxGetApp().saveConfig();
         iqSwapMenuItem->Check(swap_state);
     } else if (event.GetId() == wxID_SET_PPM) {
         long ofs = wxGetNumberFromUser("Frequency correction for device in PPM.\ni.e. -51 for -51 PPM\n\nNote: you can adjust PPM interactively\nby holding ALT over the frequency tuning bar.\n", "Parts per million (PPM)",
@@ -453,7 +495,19 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
 
     std::vector<SDRDeviceInfo *> *devs = wxGetApp().getDevices();
     if (event.GetId() >= wxID_DEVICE_ID && event.GetId() <= wxID_DEVICE_ID + devs->size()) {
-        wxGetApp().setDevice(event.GetId() - wxID_DEVICE_ID);
+        int devId = event.GetId() - wxID_DEVICE_ID;
+        wxGetApp().setDevice(devId);
+
+        SDRDeviceInfo *dev = (*wxGetApp().getDevices())[devId];
+        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
+        
+        int dsMode = devConfig->getDirectSampling();
+        
+        if (dsMode >= 0 && dsMode <= 2) {
+            directSamplingMenuItems[devConfig->getDirectSampling()]->Check();
+        }
+        
+        iqSwapMenuItem->Check(devConfig->getIQSwap());
     }
 
     if (event.GetId() >= wxID_AUDIO_BANDWIDTH_BASE) {
@@ -483,8 +537,13 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
 
 }
 
-void AppFrame::OnClose(wxCommandEvent& WXUNUSED(event)) {
-    Close(false);
+void AppFrame::OnClose(wxCloseEvent& event) {
+    wxGetApp().getConfig()->setWindow(this->GetPosition(), this->GetClientSize());
+    wxGetApp().getConfig()->setWindowMaximized(this->IsMaximized());
+    wxGetApp().getConfig()->setTheme(ThemeMgr::mgr.getTheme());
+    wxGetApp().getConfig()->setSnap(wxGetApp().getFrequencySnap());
+    wxGetApp().getConfig()->save();
+    event.Skip();
 }
 
 void AppFrame::OnNewWindow(wxCommandEvent& WXUNUSED(event)) {
@@ -622,7 +681,6 @@ void AppFrame::saveSession(std::string fileName) {
     DataNode *header = s.rootNode()->newChild("header");
     *header->newChild("version") = std::string(CUBICSDR_VERSION);
     *header->newChild("center_freq") = wxGetApp().getFrequency();
-    *header->newChild("offset") = wxGetApp().getOffset();
 
     DataNode *demods = s.rootNode()->newChild("demodulators");
 
@@ -661,14 +719,11 @@ bool AppFrame::loadSession(std::string fileName) {
 
         std::string version(*header->getNext("version"));
         long long center_freq = *header->getNext("center_freq");
-        long long offset = *header->getNext("offset");
 
         std::cout << "Loading " << version << " session file" << std::endl;
         std::cout << "\tCenter Frequency: " << center_freq << std::endl;
-        std::cout << "\tOffset: " << offset << std::endl;
 
         wxGetApp().setFrequency(center_freq);
-        wxGetApp().setOffset(offset);
 
         DataNode *demodulators = l.rootNode()->getNext("demodulators");
 
@@ -716,7 +771,7 @@ bool AppFrame::loadSession(std::string fileName) {
             }
 
             newDemod->run();
-
+            newDemod->setActive(false);
             wxGetApp().bindDemodulator(newDemod);
 
             std::cout << "\tAdded demodulator at frequency " << freq << " type " << type << std::endl;

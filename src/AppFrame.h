@@ -59,13 +59,14 @@ public:
     ~AppFrame();
     void OnThread(wxCommandEvent& event);
     void OnEventInput(wxThreadEvent& event);
+    void initDeviceParams(std::string deviceId);
 
     void saveSession(std::string fileName);
     bool loadSession(std::string fileName);
 
 private:
     void OnMenu(wxCommandEvent& event);
-    void OnClose(wxCommandEvent& event);
+    void OnClose(wxCloseEvent& event);
     void OnNewWindow(wxCommandEvent& event);
     void OnIdle(wxIdleEvent& event);
 
@@ -88,6 +89,7 @@ private:
     std::map<int, wxMenuItem *> outputDeviceMenuItems;
     std::map<int, wxMenuItem *> sampleRateMenuItems;
     std::map<int, wxMenuItem *> audioSampleRateMenuItems;
+    std::map<int, wxMenuItem *> directSamplingMenuItems;
     wxMenuItem *iqSwapMenuItem;
     
     std::string currentSessionFile;
