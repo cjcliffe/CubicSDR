@@ -58,15 +58,22 @@ public:
 
     void setSnap(long long snapVal);
     long long getSnap();
+    
+    void setCenterFreq(long long freqVal);
+    long long getCenterFreq();
 
+    void setConfigName(std::string configName);
+    std::string getConfigFileName(bool ignoreName=false);
     bool save();
     bool load();
     bool reset();
 
 private:
+    std::string configName;
     std::map<std::string, DeviceConfig *> deviceConfig;
     std::atomic_int winX,winY,winW,winH;
     std::atomic_bool winMax;
     std::atomic_int themeId;
     std::atomic_llong snap;
+    std::atomic_llong centerFreq;
 };

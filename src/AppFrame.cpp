@@ -66,14 +66,14 @@ AppFrame::AppFrame() :
 
     demodSpectrumCanvas = new SpectrumCanvas(this, attribList);
     demodSpectrumCanvas->setup(1024);
-    demodSpectrumCanvas->setView(DEFAULT_FREQ, 300000);
+    demodSpectrumCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
     demodVisuals->Add(demodSpectrumCanvas, 3, wxEXPAND | wxALL, 0);
 
     demodVisuals->AddSpacer(1);
 
     demodWaterfallCanvas = new WaterfallCanvas(this, attribList);
     demodWaterfallCanvas->setup(1024, 128);
-    demodWaterfallCanvas->setView(DEFAULT_FREQ, 300000);
+    demodWaterfallCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
     demodWaterfallCanvas->attachSpectrumCanvas(demodSpectrumCanvas);
     demodSpectrumCanvas->attachWaterfallCanvas(demodWaterfallCanvas);
     demodVisuals->Add(demodWaterfallCanvas, 6, wxEXPAND | wxALL, 0);
@@ -335,7 +335,6 @@ AppFrame::AppFrame() :
 #ifdef _WIN32
     SetIcon(wxICON(frame_icon));
 #endif
-    GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), DEFAULT_FREQ));
 
     wxAcceleratorEntry entries[3];
     entries[0].Set(wxACCEL_CTRL, (int) 'O', wxID_OPEN);
@@ -426,7 +425,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         saveSession(saveFileDialog.GetPath().ToStdString());
     } else if (event.GetId() == wxID_RESET) {
         wxGetApp().getDemodMgr().terminateAll();
-        wxGetApp().setFrequency(DEFAULT_FREQ);
+        wxGetApp().setFrequency(100000000);
         wxGetApp().setOffset(0);
         SetTitle(CUBICSDR_TITLE);
         currentSessionFile = "";
@@ -542,6 +541,7 @@ void AppFrame::OnClose(wxCloseEvent& event) {
     wxGetApp().getConfig()->setWindowMaximized(this->IsMaximized());
     wxGetApp().getConfig()->setTheme(ThemeMgr::mgr.getTheme());
     wxGetApp().getConfig()->setSnap(wxGetApp().getFrequencySnap());
+    wxGetApp().getConfig()->setCenterFreq(wxGetApp().getFrequency());
     wxGetApp().getConfig()->save();
     event.Skip();
 }
