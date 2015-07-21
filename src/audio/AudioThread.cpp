@@ -12,8 +12,15 @@ std::map<int, int> AudioThread::deviceSampleRate;
 std::map<int, std::thread *> AudioThread::deviceThread;
 
 AudioThread::AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify) :
-        currentInput(NULL), inputQueue(inputQueue), audioQueuePtr(0), underflowCount(0), terminated(false), active(false), outputDevice(-1), gain(
+        currentInput(NULL), inputQueue(inputQueue), gain(
                 1.0), threadQueueNotify(threadQueueNotify), sampleRate(0), nBufferFrames(1024) {
+
+	audioQueuePtr.store(0); 
+	underflowCount.store(0);
+	terminated.store(false);
+	active.store(false);
+	outputDevice.store(-1);
+
     boundThreads = new std::vector<AudioThread *>;
 }
 

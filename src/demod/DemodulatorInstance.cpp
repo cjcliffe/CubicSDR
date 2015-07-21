@@ -1,8 +1,22 @@
 #include "DemodulatorInstance.h"
 
 DemodulatorInstance::DemodulatorInstance() :
-        t_Demod(NULL), t_PreDemod(NULL), t_Audio(NULL), threadQueueDemod(NULL), demodulatorThread(NULL), terminated(true), audioTerminated(true), demodTerminated(
-        true), preDemodTerminated(true), active(false), squelch(false), stereo(false), tracking(false), follow(false), currentAudioSampleRate(0), currentFrequency(0), currentBandwidth(0), currentOutputDevice(-1), currentAudioGain(1.0) {
+        t_Demod(NULL), t_PreDemod(NULL), t_Audio(NULL), threadQueueDemod(NULL), demodulatorThread(NULL), currentAudioGain(1.0) {
+
+	terminated.store(true);
+	audioTerminated.store(true);
+	demodTerminated.store(true);
+	preDemodTerminated.store(true);
+	active.store(false);
+	squelch.store(false);
+	stereo.store(false);
+	tracking.store(false);
+	follow.store(false);
+	currentAudioSampleRate.store(0);
+	currentFrequency.store(0);
+	currentBandwidth.store(0);
+	currentOutputDevice.store(-1);
+
 
     label = new std::string("Unnamed");
     threadQueueDemod = new DemodulatorThreadInputQueue;
