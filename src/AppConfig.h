@@ -60,7 +60,7 @@ public:
     long long getSnap();
 
     void setConfigName(std::string configName);
-    std::string getConfigFileName();
+    std::string getConfigFileName(bool ignoreName=false);
     bool save();
     bool load();
     bool reset();

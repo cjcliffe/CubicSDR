@@ -199,11 +199,11 @@ void AppConfig::setConfigName(std::string configName) {
     this->configName = configName;
 }
 
-std::string AppConfig::getConfigFileName() {
+std::string AppConfig::getConfigFileName(bool ignoreName) {
     std::string cfgFileDir = getConfigDir();
     
     wxFileName cfgFile;
-    if (configName.length()) {
+    if (configName.length() && !ignoreName) {
         std::string tempFn("config-");
         tempFn.append(configName);
         tempFn.append(".xml");
@@ -261,7 +261,23 @@ bool AppConfig::load() {
     wxFileName cfgFile = wxFileName(cfgFileName);
 
     if (!cfgFile.Exists()) {
-        return true;
+        if (configName.length()) {
+            wxFileName baseConfig = wxFileName(getConfigFileName(true));
+            if (baseConfig.Exists()) {
+                std::string baseConfigFileName = baseConfig.GetFullPath(wxPATH_NATIVE).ToStdString();
+                std::cout << "Creating new configuration file '" << cfgFileName << "' by copying '" << baseConfigFileName << "'..";
+                wxCopyFile(baseConfigFileName, cfgFileName);
+                if (!cfgFile.Exists()) {
+                    std::cout << "failed." << std::endl;
+                    return true;
+                }
+                std::cout << "ok." << std::endl;
+            } else {
+                return true;
+            }
+        } else {
+            return true;
+        }
     }
 
     if (cfgFile.IsFileReadable()) {
