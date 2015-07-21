@@ -40,7 +40,7 @@ bool CubicSDR::OnInit() {
 
     wxApp::SetAppName("CubicSDR");
 
-    frequency = DEFAULT_FREQ;
+    frequency = wxGetApp().getConfig()->getCenterFreq();
     offset = 0;
     ppm = 0;
     directSamplingMode = 0;
