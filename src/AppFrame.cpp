@@ -324,6 +324,8 @@ AppFrame::AppFrame() :
     wxGetApp().setFrequencySnap(freqSnap);
             
     ThemeMgr::mgr.setTheme(wxGetApp().getConfig()->getTheme());
+            
+    wxGetApp().setFrequency(wxGetApp().getConfig()->getCenterFreq());
 
     Show();
 

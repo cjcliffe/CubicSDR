@@ -122,6 +122,7 @@ AppConfig::AppConfig() : configName("") {
     winMax.store(false);
     themeId.store(0);
     snap.store(1);
+    centerFreq.store(100000000);
 }
 
 
@@ -195,6 +196,14 @@ long long AppConfig::getSnap() {
     return snap.load();
 }
 
+void AppConfig::setCenterFreq(long long freqVal) {
+    centerFreq.store(freqVal);
+}
+
+long long AppConfig::getCenterFreq() {
+    return centerFreq.load();
+}
+
 void AppConfig::setConfigName(std::string configName) {
     this->configName = configName;
 }
@@ -233,6 +242,7 @@ bool AppConfig::save() {
         *window_node->newChild("max") = winMax.load();
         *window_node->newChild("theme") = themeId.load();
         *window_node->newChild("snap") = snap.load();
+        *window_node->newChild("center_freq") = centerFreq.load();
     }
     
     DataNode *devices_node = cfg.rootNode()->newChild("devices");
@@ -323,7 +333,13 @@ bool AppConfig::load() {
 			win_node->getNext("snap")->element()->get(snapVal);
 			snap.store(snapVal);
 		}
-    }
+
+        if (win_node->hasAnother("center_freq")) {
+            long long freqVal;
+            win_node->getNext("center_freq")->element()->get(freqVal);
+            centerFreq.store(freqVal);
+        }
+}
     
     if (cfg.rootNode()->hasAnother("devices")) {
         DataNode *devices_node = cfg.rootNode()->getNext("devices");

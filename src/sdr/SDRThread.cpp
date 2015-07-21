@@ -141,7 +141,7 @@ void SDRThread::threadMain() {
     
     signed char buf[BUF_SIZE];
 
-    long long frequency = DEFAULT_FREQ;
+    long long frequency = wxGetApp().getConfig()->getCenterFreq();
     int ppm = devConfig->getPPM();
     int direct_sampling_mode = devConfig->getDirectSampling();;
     int buf_size = BUF_SIZE;

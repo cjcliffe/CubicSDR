@@ -58,6 +58,9 @@ public:
 
     void setSnap(long long snapVal);
     long long getSnap();
+    
+    void setCenterFreq(long long freqVal);
+    long long getCenterFreq();
 
     void setConfigName(std::string configName);
     std::string getConfigFileName(bool ignoreName=false);
@@ -72,4 +75,5 @@ private:
     std::atomic_bool winMax;
     std::atomic_int themeId;
     std::atomic_llong snap;
+    std::atomic_llong centerFreq;
 };
