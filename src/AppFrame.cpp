@@ -330,7 +330,7 @@ AppFrame::AppFrame() :
 #ifdef _WIN32
     SetIcon(wxICON(frame_icon));
 #endif
-    GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %i"), wxGetApp().getConfig()->getCenterFreq()));
+    GetStatusBar()->SetStatusText(wxString::Format(wxT("Set center frequency: %ll"), wxGetApp().getConfig()->getCenterFreq()));
 
     wxAcceleratorEntry entries[3];
     entries[0].Set(wxACCEL_CTRL, (int) 'O', wxID_OPEN);
