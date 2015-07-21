@@ -40,9 +40,7 @@ bool CubicSDR::OnInit() {
 
     wxApp::SetAppName("CubicSDR");
 
-    config.load();
-
-    frequency = DEFAULT_FREQ;
+    frequency = wxGetApp().getConfig()->getCenterFreq();
     offset = 0;
     ppm = 0;
     directSamplingMode = 0;
@@ -169,6 +167,24 @@ PrimaryGLContext& CubicSDR::GetContext(wxGLCanvas *canvas) {
     glContext = m_glContext;
 
     return *glContext;
+}
+
+void CubicSDR::OnInitCmdLine(wxCmdLineParser& parser) {
+    parser.SetDesc (commandLineInfo);
+    parser.SetSwitchChars (wxT("-"));
+}
+
+bool CubicSDR::OnCmdLineParsed(wxCmdLineParser& parser) {
+    wxString *confName = new wxString;
+    if (parser.Found("c",confName)) {
+        if (confName) {
+            config.setConfigName(confName->ToStdString());
+        }
+    }
+    
+    config.load();
+
+    return true;
 }
 
 void CubicSDR::setFrequency(long long freq) {

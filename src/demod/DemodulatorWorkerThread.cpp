@@ -3,8 +3,8 @@
 #include <vector>
 
 DemodulatorWorkerThread::DemodulatorWorkerThread(DemodulatorThreadWorkerCommandQueue* in, DemodulatorThreadWorkerResultQueue* out) :
-        terminated(false), commandQueue(in), resultQueue(out) {
-
+        commandQueue(in), resultQueue(out) {
+	terminated.store(false);
 }
 
 DemodulatorWorkerThread::~DemodulatorWorkerThread() {

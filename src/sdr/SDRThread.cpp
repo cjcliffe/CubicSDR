@@ -4,7 +4,10 @@
 #include "CubicSDR.h"
 
 SDRThread::SDRThread(SDRThreadCommandQueue* pQueue) :
-        commandQueue(pQueue), iqDataOutQueue(NULL), terminated(false), offset(0), deviceId(-1) {
+        commandQueue(pQueue), iqDataOutQueue(NULL) {
+	terminated.store(false);
+	offset.store(0);
+	deviceId.store(-1);
     dev = NULL;
     sampleRate.store(DEFAULT_SAMPLE_RATE);
 }
@@ -141,7 +144,7 @@ void SDRThread::threadMain() {
     
     signed char buf[BUF_SIZE];
 
-    long long frequency = DEFAULT_FREQ;
+    long long frequency = wxGetApp().getConfig()->getCenterFreq();
     int ppm = devConfig->getPPM();
     int direct_sampling_mode = devConfig->getDirectSampling();;
     int buf_size = BUF_SIZE;

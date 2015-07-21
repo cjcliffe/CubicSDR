@@ -114,7 +114,7 @@ void DeviceConfig::load(DataNode *node) {
     busy_lock.unlock();
 }
 
-AppConfig::AppConfig() {
+AppConfig::AppConfig() : configName("") {
     winX.store(0);
     winY.store(0);
     winW.store(0);
@@ -122,6 +122,7 @@ AppConfig::AppConfig() {
     winMax.store(false);
     themeId.store(0);
     snap.store(1);
+    centerFreq.store(100000000);
 }
 
 
@@ -195,6 +196,35 @@ long long AppConfig::getSnap() {
     return snap.load();
 }
 
+void AppConfig::setCenterFreq(long long freqVal) {
+    centerFreq.store(freqVal);
+}
+
+long long AppConfig::getCenterFreq() {
+    return centerFreq.load();
+}
+
+void AppConfig::setConfigName(std::string configName) {
+    this->configName = configName;
+}
+
+std::string AppConfig::getConfigFileName(bool ignoreName) {
+    std::string cfgFileDir = getConfigDir();
+    
+    wxFileName cfgFile;
+    if (configName.length() && !ignoreName) {
+        std::string tempFn("config-");
+        tempFn.append(configName);
+        tempFn.append(".xml");
+        cfgFile = wxFileName(cfgFileDir, tempFn);
+    } else {
+        cfgFile = wxFileName(cfgFileDir, "config.xml");
+    }
+    
+    std::string cfgFileName = cfgFile.GetFullPath(wxPATH_NATIVE).ToStdString();
+    
+    return cfgFileName;
+}
 
 bool AppConfig::save() {
     DataTree cfg;
@@ -212,6 +242,7 @@ bool AppConfig::save() {
         *window_node->newChild("max") = winMax.load();
         *window_node->newChild("theme") = themeId.load();
         *window_node->newChild("snap") = snap.load();
+        *window_node->newChild("center_freq") = centerFreq.load();
     }
     
     DataNode *devices_node = cfg.rootNode()->newChild("devices");
@@ -221,13 +252,9 @@ bool AppConfig::save() {
         DataNode *device_node = devices_node->newChild("device");
         device_config_i->second->save(device_node);
     }
-
     
-    std::string cfgFileDir = getConfigDir();
-
-    wxFileName cfgFile = wxFileName(cfgFileDir, "config.xml");
-    std::string cfgFileName = cfgFile.GetFullPath(wxPATH_NATIVE).ToStdString();
-
+    std::string cfgFileName = getConfigFileName();
+    
     if (!cfg.SaveToFileXML(cfgFileName)) {
         std::cout << "Error saving :: configuration file '" << cfgFileName << "' is not writable!" << std::endl;
         return false;
@@ -240,11 +267,27 @@ bool AppConfig::load() {
     DataTree cfg;
     std::string cfgFileDir = getConfigDir();
 
-    wxFileName cfgFile = wxFileName(cfgFileDir, "config.xml");
-    std::string cfgFileName = cfgFile.GetFullPath(wxPATH_NATIVE).ToStdString();
+    std::string cfgFileName = getConfigFileName();
+    wxFileName cfgFile = wxFileName(cfgFileName);
 
     if (!cfgFile.Exists()) {
-        return true;
+        if (configName.length()) {
+            wxFileName baseConfig = wxFileName(getConfigFileName(true));
+            if (baseConfig.Exists()) {
+                std::string baseConfigFileName = baseConfig.GetFullPath(wxPATH_NATIVE).ToStdString();
+                std::cout << "Creating new configuration file '" << cfgFileName << "' by copying '" << baseConfigFileName << "'..";
+                wxCopyFile(baseConfigFileName, cfgFileName);
+                if (!cfgFile.Exists()) {
+                    std::cout << "failed." << std::endl;
+                    return true;
+                }
+                std::cout << "ok." << std::endl;
+            } else {
+                return true;
+            }
+        } else {
+            return true;
+        }
     }
 
     if (cfgFile.IsFileReadable()) {
@@ -290,7 +333,13 @@ bool AppConfig::load() {
 			win_node->getNext("snap")->element()->get(snapVal);
 			snap.store(snapVal);
 		}
-    }
+
+        if (win_node->hasAnother("center_freq")) {
+            long long freqVal;
+            win_node->getNext("center_freq")->element()->get(freqVal);
+            centerFreq.store(freqVal);
+        }
+}
     
     if (cfg.rootNode()->hasAnother("devices")) {
         DataNode *devices_node = cfg.rootNode()->getNext("devices");
