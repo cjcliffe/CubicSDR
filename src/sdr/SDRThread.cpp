@@ -4,7 +4,10 @@
 #include "CubicSDR.h"
 
 SDRThread::SDRThread(SDRThreadCommandQueue* pQueue) :
-        commandQueue(pQueue), iqDataOutQueue(NULL), terminated(false), offset(0), deviceId(-1) {
+        commandQueue(pQueue), iqDataOutQueue(NULL) {
+	terminated.store(false);
+	offset.store(0);
+	deviceId.store(-1);
     dev = NULL;
     sampleRate.store(DEFAULT_SAMPLE_RATE);
 }

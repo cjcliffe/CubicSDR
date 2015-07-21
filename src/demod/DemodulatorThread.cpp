@@ -14,9 +14,13 @@
 DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* iqInputQueue, DemodulatorThreadControlCommandQueue *threadQueueControl,
         DemodulatorThreadCommandQueue* threadQueueNotify) :
         iqInputQueue(iqInputQueue), audioVisOutputQueue(NULL), audioOutputQueue(NULL), iqAutoGain(NULL), amOutputCeil(1), amOutputCeilMA(1), amOutputCeilMAA(
-                1), stereo(false), agcEnabled(true), terminated(
-        false), demodulatorType(DEMOD_TYPE_FM), threadQueueNotify(threadQueueNotify), threadQueueControl(threadQueueControl), squelchLevel(0), signalLevel(
+                1), threadQueueNotify(threadQueueNotify), threadQueueControl(threadQueueControl), squelchLevel(0), signalLevel(
                 0), squelchEnabled(false), audioSampleRate(0) {
+
+	stereo.store(false);
+	agcEnabled.store(false);
+	terminated.store(false);
+	demodulatorType.store(DEMOD_TYPE_FM);
 
     demodFM = freqdem_create(0.5);
     demodAM_USB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_USB, 1);
