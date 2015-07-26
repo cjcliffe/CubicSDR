@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Exec=CubicSDR %u
+Icon=/usr/share/cubicsdr/CubicSDR.png
+Terminal=false
+Name=CubicSDR
+GenericName=CubicSDR
+Comment=Software-Defined Radio Application
+Categories=Science;HamRadio;DataVisualization;

@@ -552,7 +552,9 @@ IF (UNIX AND BUILD_DEB)
             ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24_0.png
             ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32_0.png
             ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48_0.png
+            ${PROJECT_SOURCE_DIR}/src/CubicSDR.png
 	    DESTINATION share/cubicsdr)
-
+            INSTALL(FILES CubicSDR.desktop 
+            DESTINATION share/applications)
 	INCLUDE(CPack)
 ENDIF (UNIX AND BUILD_DEB)
