@@ -257,6 +257,7 @@ SET (cubicsdr_sources
 	src/visual/SpectrumContext.cpp
 	src/visual/WaterfallCanvas.cpp
 	src/visual/WaterfallContext.cpp
+    src/process/VisualProcessor.cpp
     src/ui/GLPanel.cpp
 	external/rtaudio/RtAudio.cpp
 	external/lodepng/lodepng.cpp
@@ -304,6 +305,7 @@ SET (cubicsdr_headers
 	src/visual/SpectrumContext.h
 	src/visual/WaterfallCanvas.h
 	src/visual/WaterfallContext.h
+    src/process/VisualProcessor.h
     src/ui/GLPanel.h
     src/ui/UITestCanvas.cpp
     src/ui/UITestCanvas.h
