@@ -224,7 +224,7 @@ ENDIF (APPLE)
 
 
 SET (cubicsdr_sources
-    src/CubicSDR.cpp
+	src/CubicSDR.cpp
 	src/AppFrame.cpp
 	src/AppConfig.cpp
 	src/FrequencyDialog.cpp
@@ -241,7 +241,7 @@ SET (cubicsdr_sources
 	src/util/MouseTracker.cpp
 	src/util/GLExt.cpp
 	src/util/GLFont.cpp
-    src/util/DataTree.cpp
+	src/util/DataTree.cpp
 	src/visual/ColorTheme.cpp
 	src/visual/PrimaryGLContext.cpp
 	src/visual/InteractiveCanvas.cpp
@@ -257,20 +257,22 @@ SET (cubicsdr_sources
 	src/visual/SpectrumContext.cpp
 	src/visual/WaterfallCanvas.cpp
 	src/visual/WaterfallContext.cpp
-    src/process/VisualProcessor.cpp
-    src/ui/GLPanel.cpp
+	src/process/VisualProcessor.cpp
+	src/process/SpectrumVisualProcessor.cpp
+	src/process/WaterfallVisualProcessor.cpp
+	src/ui/GLPanel.cpp
 	external/rtaudio/RtAudio.cpp
 	external/lodepng/lodepng.cpp
-    external/tinyxml/tinyxml.cpp
-    external/tinyxml/tinystr.cpp
-    external/tinyxml/tinyxmlparser.cpp
-    external/tinyxml/tinyxmlerror.cpp
-    external/cubicvr2/math/cubic_math.cpp
+	external/tinyxml/tinyxml.cpp
+	external/tinyxml/tinystr.cpp
+	external/tinyxml/tinyxmlparser.cpp
+	external/tinyxml/tinyxmlerror.cpp
+	external/cubicvr2/math/cubic_math.cpp
 )
 
 SET (cubicsdr_headers
 	src/CubicSDRDefs.h
-    src/CubicSDR.h
+	src/CubicSDR.h
 	src/AppFrame.h
 	src/AppConfig.h
 	src/FrequencyDialog.h
@@ -289,7 +291,7 @@ SET (cubicsdr_headers
 	src/util/MouseTracker.h
 	src/util/GLExt.h
 	src/util/GLFont.h
-    src/util/DataTree.h
+	src/util/DataTree.h
 	src/visual/ColorTheme.h
 	src/visual/PrimaryGLContext.h
 	src/visual/InteractiveCanvas.h
@@ -305,30 +307,32 @@ SET (cubicsdr_headers
 	src/visual/SpectrumContext.h
 	src/visual/WaterfallCanvas.h
 	src/visual/WaterfallContext.h
-    src/process/VisualProcessor.h
-    src/ui/GLPanel.h
-    src/ui/UITestCanvas.cpp
-    src/ui/UITestCanvas.h
-    src/ui/UITestContext.cpp
-    src/ui/UITestContext.h    
+	src/process/VisualProcessor.h
+	src/process/SpectrumVisualProcessor.h
+	src/process/WaterfallVisualProcessor.h
+	src/ui/GLPanel.h
+	src/ui/UITestCanvas.cpp
+	src/ui/UITestCanvas.h
+	src/ui/UITestContext.cpp
+	src/ui/UITestContext.h    
 	external/rtaudio/RtAudio.h
 	external/lodepng/lodepng.h
-    external/tinyxml/tinyxml.h
-    external/tinyxml/tinystr.h
-    external/cubicvr2/math/aabb.h
-    external/cubicvr2/math/cubic_math.h
-    external/cubicvr2/math/cubic_types.h
-    external/cubicvr2/math/frustum.h
-    external/cubicvr2/math/mat3.h
-    external/cubicvr2/math/mat4.h
-    external/cubicvr2/math/plane.h
-    external/cubicvr2/math/quaternion.h
-    external/cubicvr2/math/sphere.h
-    external/cubicvr2/math/transform.h
-    external/cubicvr2/math/triangle.h
-    external/cubicvr2/math/vec2.h
-    external/cubicvr2/math/vec3.h
-    external/cubicvr2/math/vec4.h
+	external/tinyxml/tinyxml.h
+	external/tinyxml/tinystr.h
+	external/cubicvr2/math/aabb.h
+	external/cubicvr2/math/cubic_math.h
+	external/cubicvr2/math/cubic_types.h
+	external/cubicvr2/math/frustum.h
+	external/cubicvr2/math/mat3.h
+	external/cubicvr2/math/mat4.h
+	external/cubicvr2/math/plane.h
+	external/cubicvr2/math/quaternion.h
+	external/cubicvr2/math/sphere.h
+	external/cubicvr2/math/transform.h
+	external/cubicvr2/math/triangle.h
+	external/cubicvr2/math/vec2.h
+	external/cubicvr2/math/vec3.h
+	external/cubicvr2/math/vec4.h
 )
 
 include_directories ( 
@@ -336,7 +340,8 @@ include_directories (
 	${PROJECT_SOURCE_DIR}/src/demod
 	${PROJECT_SOURCE_DIR}/src/audio
 	${PROJECT_SOURCE_DIR}/src/util
-	${PROJECT_SOURCE_DIR}/src/visual 
+	${PROJECT_SOURCE_DIR}/src/visual
+	${PROJECT_SOURCE_DIR}/src/process
 	${PROJECT_SOURCE_DIR}/src/ui
 	${PROJECT_SOURCE_DIR}/src
 	${PROJECT_SOURCE_DIR}/external/rtaudio
