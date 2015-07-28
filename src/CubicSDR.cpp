@@ -21,6 +21,12 @@
 
 IMPLEMENT_APP(CubicSDR)
 
+CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE), directSamplingMode(0),
+    sdrThread(NULL), sdrPostThread(NULL), threadCmdQueueSDR(NULL), iqPostDataQueue(NULL), iqVisualQueue(NULL), audioVisualQueue(NULL), t_SDR(NULL), t_PostSDR(NULL) {
+    
+}
+
+
 bool CubicSDR::OnInit() {
 #ifdef _OSX_APP_
     CFBundleRef mainBundle = CFBundleGetMainBundle();
