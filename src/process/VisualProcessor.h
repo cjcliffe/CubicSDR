@@ -32,16 +32,18 @@ public:
     
     void run() {
         busy_update.lock();
-        process();
+        if (input && !input->empty()) {
+            process();
+        }
         busy_update.unlock();
     }
     
+protected:
     virtual void process() {
         // process inputs to output
         // distribute(output);
     }
-    
-protected:
+
     void distribute(ReferenceCounter *output) {
         // distribute outputs
         output->setRefCount(outputs.size());
@@ -54,5 +56,19 @@ protected:
     VisualDataQueue * input;
     std::vector<VisualDataQueue *> outputs;
     std::mutex busy_update;
+};
+
+
+class VisualDataDistributor : public VisualProcessor {
+protected:
+    virtual void process() {
+        while (!input->empty()) {
+            ReferenceCounter *inp;
+            input->pop(inp);
+            if (inp) {
+                distribute(inp);
+            }
+        }
+    }
 };
 
