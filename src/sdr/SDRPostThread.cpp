@@ -94,8 +94,7 @@ void SDRPostThread::threadMain() {
 
     std::cout << "SDR post-processing thread started.." << std::endl;
 
-    std::deque<DemodulatorThreadIQData *> buffers;
-    std::deque<DemodulatorThreadIQData *>::iterator buffers_i;
+    ReBuffer<DemodulatorThreadIQData> buffers;
     std::vector<liquid_float_complex> fpData;
     std::vector<liquid_float_complex> dataOut;
 
@@ -176,19 +175,7 @@ void SDRPostThread::threadMain() {
 
                 if (demodulators.size()) {
 
-                    DemodulatorThreadIQData *demodDataOut = NULL;
-
-                    for (buffers_i = buffers.begin(); buffers_i != buffers.end(); buffers_i++) {
-                        if ((*buffers_i)->getRefCount() <= 0) {
-                            demodDataOut = (*buffers_i);
-                            break;
-                        }
-                    }
-
-                    if (demodDataOut == NULL) {
-                        demodDataOut = new DemodulatorThreadIQData;
-                        buffers.push_back(demodDataOut);
-                    }
+                    DemodulatorThreadIQData *demodDataOut = buffers.getBuffer();
 
 //                    std::lock_guard < std::mutex > lock(demodDataOut->m_mutex);
                     demodDataOut->frequency = data_in->frequency;
@@ -242,12 +229,8 @@ void SDRPostThread::threadMain() {
         data_in->decRefCount();
     }
 
-    while (!buffers.empty()) {
-        DemodulatorThreadIQData *demodDataDel = buffers.front();
-        buffers.pop_front();
-//        std::lock_guard < std::mutex > lock(demodDataDel->m_mutex);
-//        delete demodDataDel;
-    }
+//    buffers.purge();
+    
     if (iqVisualQueue.load() && !iqVisualQueue.load()->empty()) {
         DemodulatorThreadIQData *visualDataDummy;
         iqVisualQueue.load()->pop(visualDataDummy);

@@ -258,6 +258,7 @@ SET (cubicsdr_sources
 	src/visual/WaterfallCanvas.cpp
 	src/visual/WaterfallContext.cpp
 	src/process/VisualProcessor.cpp
+	src/process/ScopeVisualProcessor.cpp
 	src/process/SpectrumVisualProcessor.cpp
 	src/process/WaterfallVisualProcessor.cpp
 	src/ui/GLPanel.cpp
@@ -308,6 +309,7 @@ SET (cubicsdr_headers
 	src/visual/WaterfallCanvas.h
 	src/visual/WaterfallContext.h
 	src/process/VisualProcessor.h
+	src/process/ScopeVisualProcessor.h
 	src/process/SpectrumVisualProcessor.h
 	src/process/WaterfallVisualProcessor.h
 	src/ui/GLPanel.h

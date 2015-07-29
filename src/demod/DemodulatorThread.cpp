@@ -307,17 +307,7 @@ void DemodulatorThread::threadMain() {
         if (audioOutputQueue != NULL) {
             if (!squelchEnabled || (signalLevel >= squelchLevel)) {
 
-                for (outputBuffersI = outputBuffers.begin(); outputBuffersI != outputBuffers.end(); outputBuffersI++) {
-                    if ((*outputBuffersI)->getRefCount() <= 0) {
-                        ati = (*outputBuffersI);
-                        break;
-                    }
-                }
-
-                if (ati == NULL) {
-                    ati = new AudioThreadInput;
-                    outputBuffers.push_back(ati);
-                }
+                ati = outputBuffers.getBuffer();
 
                 ati->sampleRate = audioSampleRate;
                 ati->setRefCount(1);
@@ -491,11 +481,7 @@ void DemodulatorThread::threadMain() {
     nco_crcf_destroy(stereoPilot);
     resamp2_cccf_destroy(ssbFilt);
 
-    while (!outputBuffers.empty()) {
-        AudioThreadInput *audioDataDel = outputBuffers.front();
-        outputBuffers.pop_front();
-        delete audioDataDel;
-    }
+    outputBuffers.purge();
 
     if (audioVisOutputQueue && !audioVisOutputQueue->empty()) {
         AudioThreadInput *dummy_vis;

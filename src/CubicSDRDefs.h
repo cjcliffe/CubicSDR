@@ -35,6 +35,7 @@ const char filePathSeparator =
 
 #include <mutex>
 #include <atomic>
+#include <deque>
 
 class ReferenceCounter {
 public:
@@ -53,4 +54,34 @@ public:
     }
 protected:
     std::atomic_int refCount;
+};
+
+template<class BufferType = ReferenceCounter>
+class ReBuffer {
+    
+public:
+    BufferType *getBuffer() {
+        BufferType* buf = NULL;
+        for (outputBuffersI = outputBuffers.begin(); outputBuffersI != outputBuffers.end(); outputBuffersI++) {
+            if ((*outputBuffersI)->getRefCount() <= 0) {
+                return (*outputBuffersI);
+            }
+        }
+        
+        buf = new BufferType();
+        outputBuffers.push_back(buf);
+        
+        return buf;
+    }
+    
+    void purge() {
+        while (!outputBuffers.empty()) {
+            BufferType *ref = outputBuffers.front();
+            outputBuffers.pop_front();
+            delete ref;
+        }
+    }
+private:
+    std::deque<BufferType*> outputBuffers;
+    typename std::deque<BufferType*>::iterator outputBuffersI;
 };

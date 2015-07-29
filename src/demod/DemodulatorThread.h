@@ -48,8 +48,7 @@ public:
 #endif
 
 protected:
-    std::deque<AudioThreadInput *> outputBuffers;
-    std::deque<AudioThreadInput *>::iterator outputBuffersI;
+    ReBuffer<AudioThreadInput> outputBuffers;
 
     std::vector<liquid_float_complex> agcData;
     std::vector<float> agcAMData;

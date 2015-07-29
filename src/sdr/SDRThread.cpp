@@ -168,8 +168,7 @@ void SDRThread::threadMain() {
 
     std::cout << "SDR thread started.." << std::endl;
 
-    std::deque<SDRThreadIQData *> buffers;
-    std::deque<SDRThreadIQData *>::iterator buffers_i;
+    ReBuffer<SDRThreadIQData> buffers;
 
     while (!terminated) {
         SDRThreadCommandQueue *cmdQueue = commandQueue.load();
@@ -274,19 +273,7 @@ void SDRThread::threadMain() {
 
         rtlsdr_read_sync(dev, buf, buf_size, &n_read);
 
-        SDRThreadIQData *dataOut = NULL;
-
-        for (buffers_i = buffers.begin(); buffers_i != buffers.end(); buffers_i++) {
-            if ((*buffers_i)->getRefCount() <= 0) {
-                dataOut = (*buffers_i);
-                break;
-            }
-        }
-
-        if (dataOut == NULL) {
-            dataOut = new SDRThreadIQData;
-            buffers.push_back(dataOut);
-        }
+        SDRThreadIQData *dataOut = buffers.getBuffer();
 
 //        std::lock_guard < std::mutex > lock(dataOut->m_mutex);
         dataOut->setRefCount(1);
@@ -311,13 +298,8 @@ void SDRThread::threadMain() {
         }
     }
 
-    while (!buffers.empty()) {
-        SDRThreadIQData *iqDataDel = buffers.front();
-        buffers.pop_front();
-//        std::lock_guard < std::mutex > lock(iqDataDel->m_mutex);
-//        delete iqDataDel;
-    }
-
+    // buffers.purge();
+    
     std::cout << "SDR thread done." << std::endl;
 }
 
