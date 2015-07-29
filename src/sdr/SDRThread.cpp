@@ -298,7 +298,7 @@ void SDRThread::threadMain() {
         }
     }
 
-    // buffers.purge();
+     buffers.purge();
     
     std::cout << "SDR thread done." << std::endl;
 }

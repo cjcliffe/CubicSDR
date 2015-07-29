@@ -229,7 +229,7 @@ void SDRPostThread::threadMain() {
         data_in->decRefCount();
     }
 
-//    buffers.purge();
+    buffers.purge();
     
     if (iqVisualQueue.load() && !iqVisualQueue.load()->empty()) {
         DemodulatorThreadIQData *visualDataDummy;

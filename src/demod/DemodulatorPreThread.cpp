@@ -98,8 +98,7 @@ void DemodulatorPreThread::threadMain() {
 
     std::cout << "Demodulator preprocessor thread started.." << std::endl;
 
-    std::deque<DemodulatorThreadPostIQData *> buffers;
-    std::deque<DemodulatorThreadPostIQData *>::iterator buffers_i;
+    ReBuffer<DemodulatorThreadPostIQData> buffers;
 
     std::vector<liquid_float_complex> in_buf_data;
     std::vector<liquid_float_complex> out_buf_data;
@@ -207,19 +206,7 @@ void DemodulatorPreThread::threadMain() {
                 out_buf = temp_buf;
             }
 
-            DemodulatorThreadPostIQData *resamp = NULL;
-
-            for (buffers_i = buffers.begin(); buffers_i != buffers.end(); buffers_i++) {
-                if ((*buffers_i)->getRefCount() <= 0) {
-                    resamp = (*buffers_i);
-                    break;
-                }
-            }
-
-            if (resamp == NULL) {
-                resamp = new DemodulatorThreadPostIQData;
-                buffers.push_back(resamp);
-            }
+            DemodulatorThreadPostIQData *resamp = buffers.getBuffer();
 
             int out_size = ceil((double) (bufSize) * iqResampleRatio) + 512;
 
@@ -326,12 +313,8 @@ void DemodulatorPreThread::threadMain() {
         }
     }
 
-    while (!buffers.empty()) {
-        DemodulatorThreadPostIQData *iqDataDel = buffers.front();
-        buffers.pop_front();
-        delete iqDataDel;
-    }
-
+    buffers.purge();
+    
     DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_PREPROCESS_TERMINATED);
     tCmd.context = this;
     threadQueueNotify->push(tCmd);
