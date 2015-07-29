@@ -15,6 +15,7 @@
 #define DEMOD_TYPE_DSB 5
 #define DEMOD_TYPE_RAW 6
 
+#include "IOThread.h"
 
 class DemodulatorThread;
 class DemodulatorThreadCommand {

@@ -2,6 +2,7 @@
 
 #include "CubicSDRDefs.h"
 #include "ThreadQueue.h"
+#include "IOThread.h"
 
 typedef ThreadQueue<ReferenceCounter *> VisualDataQueue;
 

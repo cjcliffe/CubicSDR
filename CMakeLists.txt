@@ -228,6 +228,7 @@ SET (cubicsdr_sources
 	src/AppFrame.cpp
 	src/AppConfig.cpp
 	src/FrequencyDialog.cpp
+    src/IOThread.cpp
 	src/sdr/SDRThread.cpp
 	src/sdr/SDRPostThread.cpp
 	src/demod/DemodulatorPreThread.cpp
@@ -277,6 +278,7 @@ SET (cubicsdr_headers
 	src/AppFrame.h
 	src/AppConfig.h
 	src/FrequencyDialog.h
+    src/IOThread.h
 	src/sdr/SDRThread.h
 	src/sdr/SDRPostThread.h
 	src/demod/DemodulatorPreThread.h
