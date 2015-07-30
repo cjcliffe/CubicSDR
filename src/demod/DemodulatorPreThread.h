@@ -7,18 +7,14 @@
 #include "DemodDefs.h"
 #include "DemodulatorWorkerThread.h"
 
-class DemodulatorPreThread {
+class DemodulatorPreThread : public IOThread {
 public:
 
     DemodulatorPreThread(DemodulatorThreadInputQueue* iqInputQueue, DemodulatorThreadPostInputQueue* iqOutputQueue,
             DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify);
     ~DemodulatorPreThread();
 
-#ifdef __APPLE__
-    void *threadMain();
-#else
-    void threadMain();
-#endif
+    void run();
 
     void setCommandQueue(DemodulatorThreadCommandQueue *tQueue) {
         commandQueue = tQueue;
@@ -68,7 +64,6 @@ protected:
     nco_crcf freqShifter;
     int shiftFrequency;
 
-    std::atomic_bool terminated;
     std::atomic_bool initialized;
 
     DemodulatorWorkerThread *workerThread;

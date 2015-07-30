@@ -3,9 +3,8 @@
 #include <vector>
 #include "CubicSDR.h"
 
-SDRThread::SDRThread(SDRThreadCommandQueue* pQueue) :
+SDRThread::SDRThread(SDRThreadCommandQueue* pQueue) : IOThread(),
         commandQueue(pQueue), iqDataOutQueue(NULL) {
-	terminated.store(false);
 	offset.store(0);
 	deviceId.store(-1);
     dev = NULL;
@@ -114,7 +113,7 @@ int SDRThread::enumerate_rtl(std::vector<SDRDeviceInfo *> *devs) {
 
 }
 
-void SDRThread::threadMain() {
+void SDRThread::run() {
 #ifdef __APPLE__
     pthread_t tID = pthread_self();  // ID of this thread
     int priority = sched_get_priority_max( SCHED_FIFO) - 1;
@@ -124,8 +123,6 @@ void SDRThread::threadMain() {
 
     std::cout << "SDR thread initializing.." << std::endl;
 
-    int devCount = rtlsdr_get_device_count();
-    
     std::vector<SDRDeviceInfo *> devs;
     if (deviceId == -1) {
         deviceId = enumerate_rtl(&devs);
@@ -303,6 +300,3 @@ void SDRThread::threadMain() {
     std::cout << "SDR thread done." << std::endl;
 }
 
-void SDRThread::terminate() {
-    terminated = true;
-}

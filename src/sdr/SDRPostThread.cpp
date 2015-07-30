@@ -5,10 +5,9 @@
 #include <vector>
 #include <deque>
 
-SDRPostThread::SDRPostThread() :
+SDRPostThread::SDRPostThread() : IOThread(),
         iqDataInQueue(NULL), iqDataOutQueue(NULL), iqVisualQueue(NULL), dcFilter(NULL), num_vis_samples(16384*2) {
 	
-	terminated.store(false);
 	swapIQ.store(false);
 
     // create a lookup table
@@ -77,10 +76,7 @@ bool SDRPostThread::getSwapIQ() {
     return this->swapIQ.load();
 }
 
-void SDRPostThread::threadMain() {
-    int n_read;
-    double seconds = 0.0;
-
+void SDRPostThread::run() {
 #ifdef __APPLE__
     pthread_t tID = pthread_self();  // ID of this thread
     int priority = sched_get_priority_max( SCHED_FIFO) - 1;

@@ -12,14 +12,13 @@
 #endif
 
 DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* iqInputQueue, DemodulatorThreadControlCommandQueue *threadQueueControl,
-        DemodulatorThreadCommandQueue* threadQueueNotify) :
+        DemodulatorThreadCommandQueue* threadQueueNotify) : IOThread(),
         iqInputQueue(iqInputQueue), audioVisOutputQueue(NULL), audioOutputQueue(NULL), iqAutoGain(NULL), amOutputCeil(1), amOutputCeilMA(1), amOutputCeilMAA(
                 1), threadQueueNotify(threadQueueNotify), threadQueueControl(threadQueueControl), squelchLevel(0), signalLevel(
                 0), squelchEnabled(false), audioSampleRate(0) {
 
 	stereo.store(false);
 	agcEnabled.store(false);
-	terminated.store(false);
 	demodulatorType.store(DEMOD_TYPE_FM);
 
     demodFM = freqdem_create(0.5);
@@ -33,11 +32,7 @@ DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* iqInputQue
 DemodulatorThread::~DemodulatorThread() {
 }
 
-#ifdef __APPLE__
-void *DemodulatorThread::threadMain() {
-#else
-void DemodulatorThread::threadMain() {
-#endif
+void DemodulatorThread::run() {
 #ifdef __APPLE__
     pthread_t tID = pthread_self();  // ID of this thread
     int priority = sched_get_priority_max( SCHED_FIFO )-1;
@@ -88,8 +83,6 @@ void DemodulatorThread::threadMain() {
         demodAM = demodAM_DSB_CSP;
         break;
     }
-
-    terminated = false;
 
     while (!terminated) {
         DemodulatorThreadPostIQData *inp;

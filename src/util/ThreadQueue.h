@@ -15,9 +15,13 @@
 #include <cstdint>
 #include <condition_variable>
 
+class ThreadQueueBase {
+    
+};
+
 /** A thread-safe asynchronous queue */
 template<class T, class Container = std::list<T>>
-class ThreadQueue {
+class ThreadQueue : public ThreadQueueBase {
 
     typedef typename Container::value_type value_type;
     typedef typename Container::size_type size_type;

@@ -122,7 +122,7 @@ public:
 typedef ThreadQueue<SDRThreadCommand> SDRThreadCommandQueue;
 typedef ThreadQueue<SDRThreadIQData *> SDRThreadIQDataQueue;
 
-class SDRThread {
+class SDRThread : public IOThread {
 public:
     rtlsdr_dev_t *dev;
 
@@ -131,13 +131,11 @@ public:
 
     static int enumerate_rtl(std::vector<SDRDeviceInfo *> *devs);
 
-    void threadMain();
+    void run();
 
     void setIQDataOutQueue(SDRThreadIQDataQueue* iqDataQueue) {
         iqDataOutQueue = iqDataQueue;
     }
-
-    void terminate();
 
     int getDeviceId() const {
         return deviceId.load();
@@ -153,6 +151,5 @@ protected:
     std::atomic<SDRThreadCommandQueue*> commandQueue;
     std::atomic<SDRThreadIQDataQueue*> iqDataOutQueue;
 
-    std::atomic_bool terminated;
     std::atomic_int deviceId;
 };

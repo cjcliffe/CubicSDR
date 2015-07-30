@@ -10,18 +10,14 @@ typedef ThreadQueue<AudioThreadInput *> DemodulatorThreadOutputQueue;
 
 #define DEMOD_VIS_SIZE 1024
 
-class DemodulatorThread {
+class DemodulatorThread : public IOThread {
 public:
 
     DemodulatorThread(DemodulatorThreadPostInputQueue* iqInputQueue, DemodulatorThreadControlCommandQueue *threadQueueControl,
             DemodulatorThreadCommandQueue* threadQueueNotify);
     ~DemodulatorThread();
 
-#ifdef __APPLE__
-    void *threadMain();
-#else
-    void threadMain();
-#endif
+    void run();
 
     void setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue);
     void setAudioOutputQueue(AudioThreadInputQueue *tQueue);
@@ -76,7 +72,6 @@ protected:
 
     std::atomic_bool stereo;
     std::atomic_bool agcEnabled;
-    std::atomic_bool terminated;
     std::atomic_int demodulatorType;
     int audioSampleRate;
 

@@ -9,11 +9,10 @@
 #include "CubicSDR.h"
 
 DemodulatorPreThread::DemodulatorPreThread(DemodulatorThreadInputQueue* iqInputQueue, DemodulatorThreadPostInputQueue* iqOutputQueue,
-        DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify) :
+        DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify) : IOThread(),
         iqInputQueue(iqInputQueue), iqOutputQueue(iqOutputQueue), audioResampler(NULL), stereoResampler(NULL), iqResampleRatio(
                 1), audioResampleRatio(1), firStereoRight(NULL), firStereoLeft(NULL), iirStereoPilot(NULL), iqResampler(NULL), commandQueue(NULL), threadQueueNotify(threadQueueNotify), threadQueueControl(
                 threadQueueControl) {
-	terminated.store(false);
 	initialized.store(false);
 
     freqShifter = nco_crcf_create(LIQUID_VCO);
@@ -80,11 +79,7 @@ DemodulatorPreThread::~DemodulatorPreThread() {
     delete workerResults;
 }
 
-#ifdef __APPLE__
-void *DemodulatorPreThread::threadMain() {
-#else
-void DemodulatorPreThread::threadMain() {
-#endif
+void DemodulatorPreThread::run() {
 #ifdef __APPLE__
     pthread_t tID = pthread_self();  // ID of this thread
     int priority = sched_get_priority_max( SCHED_FIFO) - 1;
@@ -104,8 +99,6 @@ void DemodulatorPreThread::threadMain() {
     std::vector<liquid_float_complex> out_buf_data;
 //    liquid_float_complex carrySample;   // Keep the stream count even to simplify some demod operations
 //    bool carrySampleFlag = false;
-
-    terminated = false;
 
     while (!terminated) {
         DemodulatorThreadIQData *inp;
@@ -319,10 +312,6 @@ void DemodulatorPreThread::threadMain() {
     tCmd.context = this;
     threadQueueNotify->push(tCmd);
     std::cout << "Demodulator preprocessor thread done." << std::endl;
-
-#ifdef __APPLE__
-    return this;
-#endif
 }
 
 void DemodulatorPreThread::terminate() {

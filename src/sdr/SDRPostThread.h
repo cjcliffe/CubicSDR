@@ -3,7 +3,7 @@
 #include "SDRThread.h"
 #include <algorithm>
 
-class SDRPostThread {
+class SDRPostThread : public IOThread {
 public:
     SDRPostThread();
     ~SDRPostThread();
@@ -21,7 +21,7 @@ public:
     void setSwapIQ(bool swapIQ);
     bool getSwapIQ();
     
-    void threadMain();
+    void run();
     void terminate();
 
 protected:
@@ -31,7 +31,6 @@ protected:
 	
     std::mutex busy_demod;
     std::vector<DemodulatorInstance *> demodulators;
-    std::atomic_bool terminated;
     iirfilt_crcf dcFilter;
     int num_vis_samples;
     std::atomic_bool swapIQ;

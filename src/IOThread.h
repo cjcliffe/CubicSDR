@@ -6,6 +6,7 @@
 #include <map>
 #include <string>
 
+#include "ThreadQueue.h"
 
 struct map_string_less : public std::binary_function<std::string,std::string,bool>
 {
@@ -69,61 +70,32 @@ private:
 
 class IOThread {
 public:
-    virtual void setup() {
-        
-    };
-    
-    virtual void init() {
-        
-    };
-    
-    virtual void onBindOutput(std::string name, void* threadQueue) {
-        
-    };
-    
-    virtual void onBindInput(std::string name, void* threadQueue) {
-        
-    };
-    
+    IOThread();
+    ~IOThread();
+
+    static void *pthread_helper(void *context);
+
 #ifdef __APPLE__
-    virtual void *threadMain() {
-        return 0;
-    };
-    
-    static void *pthread_helper(void *context) {
-        return ((IOThread *) context)->threadMain();
-    };
-    
+    virtual void *threadMain();
 #else
-    virtual void threadMain() {
-        
-    };
+    virtual void threadMain();
 #endif
-    
-    virtual void terminate() {
-        
-    };
-    
-    void setInputQueue(std::string qname, void *threadQueue) {
-        input_queues[qname] = threadQueue;
-        this->onBindInput(qname, threadQueue);
-    };
-    
-    void *getInputQueue(std::string qname) {
-        return input_queues[qname];
-    };
-    
-    void setOutputQueue(std::string qname, void *threadQueue) {
-        output_queues[qname] = threadQueue;
-        this->onBindOutput(qname, threadQueue);
-    };
-    
-    void *getOutputQueue(std::string qname) {
-        return output_queues[qname];
-    };
+
+    virtual void setup();
+    virtual void run();
+    virtual void terminate();
+    bool isTerminated();
+    virtual void onBindOutput(std::string name, ThreadQueueBase* threadQueue);
+    virtual void onBindInput(std::string name, ThreadQueueBase* threadQueue);
+
+    void setInputQueue(std::string qname, ThreadQueueBase *threadQueue);
+    void *getInputQueue(std::string qname);
+    void setOutputQueue(std::string qname, ThreadQueueBase *threadQueue);
+    void *getOutputQueue(std::string qname);
     
     
 protected:
-    std::map<std::string, void *, map_string_less> input_queues;
-    std::map<std::string, void *, map_string_less> output_queues;
+    std::map<std::string, ThreadQueueBase *, map_string_less> input_queues;
+    std::map<std::string, ThreadQueueBase *, map_string_less> output_queues;
+    std::atomic_bool terminated;
 };
