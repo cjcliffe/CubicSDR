@@ -50,16 +50,6 @@ void SDRPostThread::removeDemodulator(DemodulatorInstance *demod) {
     busy_demod.unlock();
 }
 
-void SDRPostThread::setIQDataInQueue(SDRThreadIQDataQueue* iqDataQueue) {
-    iqDataInQueue = iqDataQueue;
-}
-void SDRPostThread::setIQDataOutQueue(DemodulatorThreadInputQueue* iqDataQueue) {
-    iqDataOutQueue = iqDataQueue;
-}
-void SDRPostThread::setIQVisualQueue(DemodulatorThreadInputQueue *iqVisQueue) {
-    iqVisualQueue = iqVisQueue;
-}
-
 void SDRPostThread::setNumVisSamples(int num_vis_samples_in) {
     num_vis_samples = num_vis_samples_in;
 }
@@ -90,6 +80,10 @@ void SDRPostThread::run() {
 
     std::cout << "SDR post-processing thread started.." << std::endl;
 
+    iqDataInQueue = (SDRThreadIQDataQueue*)getInputQueue("IQDataInput");
+    iqDataOutQueue = (DemodulatorThreadInputQueue*)getOutputQueue("IQDataOutput");
+    iqVisualQueue = (DemodulatorThreadInputQueue*)getOutputQueue("IQVisualDataOut");
+    
     ReBuffer<DemodulatorThreadIQData> buffers;
     std::vector<liquid_float_complex> fpData;
     std::vector<liquid_float_complex> dataOut;
@@ -97,7 +91,7 @@ void SDRPostThread::run() {
     while (!terminated) {
         SDRThreadIQData *data_in;
 
-        iqDataInQueue.load()->pop(data_in);
+        iqDataInQueue->pop(data_in);
 //        std::lock_guard < std::mutex > lock(data_in->m_mutex);
 
         if (data_in && data_in->data.size()) {
@@ -123,16 +117,16 @@ void SDRPostThread::run() {
 
             iirfilt_crcf_execute_block(dcFilter, &fpData[0], dataSize, &dataOut[0]);
 
-            if (iqDataOutQueue.load() != NULL) {
+            if (iqDataOutQueue != NULL) {
                 DemodulatorThreadIQData *pipeDataOut = new DemodulatorThreadIQData;
 
                 pipeDataOut->frequency = data_in->frequency;
                 pipeDataOut->sampleRate = data_in->sampleRate;
                 pipeDataOut->data.assign(dataOut.begin(), dataOut.end());
-                iqDataOutQueue.load()->push(pipeDataOut);
+                iqDataOutQueue->push(pipeDataOut);
             }
 
-            if (iqVisualQueue.load() != NULL && iqVisualQueue.load()->empty()) {
+            if (iqVisualQueue != NULL && iqVisualQueue->empty()) {
 
                 visualDataOut->busy_rw.lock();
 
@@ -147,7 +141,7 @@ void SDRPostThread::run() {
                 visualDataOut->sampleRate = data_in->sampleRate;
                 visualDataOut->data.assign(dataOut.begin(), dataOut.begin() + num_vis_samples);
 
-                iqVisualQueue.load()->push(visualDataOut);
+                iqVisualQueue->push(visualDataOut);
 
                 visualDataOut->busy_rw.unlock();
             }
@@ -227,9 +221,9 @@ void SDRPostThread::run() {
 
     buffers.purge();
     
-    if (iqVisualQueue.load() && !iqVisualQueue.load()->empty()) {
+    if (iqVisualQueue && !iqVisualQueue->empty()) {
         DemodulatorThreadIQData *visualDataDummy;
-        iqVisualQueue.load()->pop(visualDataDummy);
+        iqVisualQueue->pop(visualDataDummy);
     }
 
     delete visualDataOut;
@@ -240,5 +234,5 @@ void SDRPostThread::run() {
 void SDRPostThread::terminate() {
     terminated = true;
     SDRThreadIQData *dummy = new SDRThreadIQData;
-    iqDataInQueue.load()->push(dummy);
+    iqDataInQueue->push(dummy);
 }

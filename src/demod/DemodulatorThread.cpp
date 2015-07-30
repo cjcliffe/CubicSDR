@@ -70,7 +70,7 @@ void DemodulatorThread::run() {
     std::cout << "Demodulator thread started.." << std::endl;
 
     iqInputQueue = (DemodulatorThreadPostInputQueue*)getInputQueue("IQDataInput");
-    audioOutputQueue = (AudioThreadInputQueue*)getOutputQueue("AudioDataOut");
+    audioOutputQueue = (AudioThreadInputQueue*)getOutputQueue("AudioDataOutput");
     threadQueueControl = (DemodulatorThreadControlCommandQueue *)getInputQueue("ControlQueue");
     threadQueueNotify = (DemodulatorThreadCommandQueue*)getOutputQueue("NotifyQueue");
     

@@ -49,7 +49,6 @@ typedef ThreadQueue<AudioThreadCommand> AudioThreadCommandQueue;
 
 class AudioThread : public IOThread {
 public:
-
     AudioThreadInput *currentInput;
     AudioThreadInputQueue *inputQueue;
     std::atomic_uint audioQueuePtr;
@@ -59,7 +58,7 @@ public:
     std::atomic_int outputDevice;
     std::atomic<float> gain;
 
-    AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify);
+    AudioThread();
     ~AudioThread();
 
     static void enumerateDevices(std::vector<RtAudio::DeviceInfo> &devs);

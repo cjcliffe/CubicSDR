@@ -17,7 +17,10 @@ DemodulatorPreThread::DemodulatorPreThread() : IOThread(), iqResampler(NULL), iq
 
     workerQueue = new DemodulatorThreadWorkerCommandQueue;
     workerResults = new DemodulatorThreadWorkerResultQueue;
-    workerThread = new DemodulatorWorkerThread(workerQueue, workerResults);
+     
+    workerThread = new DemodulatorWorkerThread();
+    workerThread->setInputQueue("WorkerCommandQueue",workerQueue);
+    workerThread->setOutputQueue("WorkerResultQueue",workerResults);
 }
 
 void DemodulatorPreThread::initialize() {
@@ -93,7 +96,7 @@ void DemodulatorPreThread::run() {
     ReBuffer<DemodulatorThreadPostIQData> buffers;
 
     iqInputQueue = (DemodulatorThreadInputQueue*)getInputQueue("IQDataInput");
-    iqOutputQueue = (DemodulatorThreadPostInputQueue*)getOutputQueue("IQDataOut");
+    iqOutputQueue = (DemodulatorThreadPostInputQueue*)getOutputQueue("IQDataOutput");
     threadQueueNotify = (DemodulatorThreadCommandQueue*)getOutputQueue("NotifyQueue");
     commandQueue = ( DemodulatorThreadCommandQueue*)getInputQueue("CommandQueue");
     

@@ -73,7 +73,7 @@ typedef ThreadQueue<DemodulatorWorkerThreadResult> DemodulatorThreadWorkerResult
 class DemodulatorWorkerThread : public IOThread {
 public:
 
-    DemodulatorWorkerThread(DemodulatorThreadWorkerCommandQueue* in, DemodulatorThreadWorkerResultQueue* out);
+    DemodulatorWorkerThread();
     ~DemodulatorWorkerThread();
 
     void run();

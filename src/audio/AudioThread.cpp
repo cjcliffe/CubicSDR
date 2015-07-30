@@ -11,9 +11,9 @@ std::map<int, AudioThread *> AudioThread::deviceController;
 std::map<int, int> AudioThread::deviceSampleRate;
 std::map<int, std::thread *> AudioThread::deviceThread;
 
-AudioThread::AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify) : IOThread(),
-        currentInput(NULL), inputQueue(inputQueue), gain(
-                1.0), threadQueueNotify(threadQueueNotify), sampleRate(0), nBufferFrames(1024) {
+AudioThread::AudioThread() : IOThread(),
+        currentInput(NULL), inputQueue(NULL), gain(
+                1.0), threadQueueNotify(NULL), sampleRate(0), nBufferFrames(1024) {
 
 	audioQueuePtr.store(0); 
 	underflowCount.store(0);
@@ -316,7 +316,7 @@ void AudioThread::setupDevice(int deviceId) {
         }
 
         if (deviceController.find(parameters.deviceId) == deviceController.end()) {
-            deviceController[parameters.deviceId] = new AudioThread(NULL, NULL);
+            deviceController[parameters.deviceId] = new AudioThread();
 
             deviceController[parameters.deviceId]->setInitOutputDevice(parameters.deviceId, sampleRate);
             deviceController[parameters.deviceId]->bindThread(this);
@@ -377,6 +377,9 @@ void AudioThread::run() {
 
     std::cout << "Audio thread started." << std::endl;
 
+    inputQueue = (AudioThreadInputQueue *)getInputQueue("AudioDataInput");
+    threadQueueNotify = (DemodulatorThreadCommandQueue*)getOutputQueue("NotifyQueue");
+    
     while (!terminated) {
         AudioThreadCommand command;
         cmdQueue.pop(command);
