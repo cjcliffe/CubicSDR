@@ -3,8 +3,7 @@
 #include <vector>
 #include "CubicSDR.h"
 
-SDRThread::SDRThread(SDRThreadCommandQueue* pQueue) : IOThread(),
-        commandQueue(pQueue), iqDataOutQueue(NULL) {
+SDRThread::SDRThread() : IOThread() {
 	offset.store(0);
 	deviceId.store(-1);
     dev = NULL;
@@ -167,9 +166,10 @@ void SDRThread::run() {
 
     ReBuffer<SDRThreadIQData> buffers;
 
-    while (!terminated) {
-        SDRThreadCommandQueue *cmdQueue = commandQueue.load();
+    SDRThreadIQDataQueue* iqDataOutQueue = (SDRThreadIQDataQueue*) getOutputQueue("IQDataOutput");
+    SDRThreadCommandQueue* cmdQueue = (SDRThreadCommandQueue*) getInputQueue("SDRCommandQueue");
 
+    while (!terminated) {
         if (!cmdQueue->empty()) {
             bool freq_changed = false;
             bool offset_changed = false;
@@ -290,8 +290,8 @@ void SDRThread::run() {
         double time_slice = (double) n_read / (double) sampleRate.load();
         seconds += time_slice;
 
-        if (iqDataOutQueue.load() != NULL) {
-            iqDataOutQueue.load()->push(dataOut);
+        if (iqDataOutQueue != NULL) {
+            iqDataOutQueue->push(dataOut);
         }
     }
 

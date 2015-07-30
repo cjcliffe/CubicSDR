@@ -126,17 +126,13 @@ class SDRThread : public IOThread {
 public:
     rtlsdr_dev_t *dev;
 
-    SDRThread(SDRThreadCommandQueue* pQueue);
+    SDRThread();
     ~SDRThread();
 
     static int enumerate_rtl(std::vector<SDRDeviceInfo *> *devs);
 
     void run();
-
-    void setIQDataOutQueue(SDRThreadIQDataQueue* iqDataQueue) {
-        iqDataOutQueue = iqDataQueue;
-    }
-
+    
     int getDeviceId() const {
         return deviceId.load();
     }
@@ -148,8 +144,5 @@ public:
 protected:
     std::atomic<uint32_t> sampleRate;
     std::atomic_llong offset;
-    std::atomic<SDRThreadCommandQueue*> commandQueue;
-    std::atomic<SDRThreadIQDataQueue*> iqDataOutQueue;
-
     std::atomic_int deviceId;
 };
