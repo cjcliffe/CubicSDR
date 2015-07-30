@@ -1,7 +1,7 @@
 #include "DemodulatorInstance.h"
 
 DemodulatorInstance::DemodulatorInstance() :
-        t_Demod(NULL), t_PreDemod(NULL), t_Audio(NULL), threadQueueDemod(NULL), demodulatorThread(NULL), currentAudioGain(1.0) {
+        threadQueueDemod(NULL), demodulatorThread(NULL), t_PreDemod(NULL), t_Demod(NULL), t_Audio(NULL), currentAudioGain(1.0) {
 
 	terminated.store(true);
 	audioTerminated.store(true);
@@ -24,7 +24,7 @@ DemodulatorInstance::DemodulatorInstance() :
     threadQueueCommand = new DemodulatorThreadCommandQueue;
     threadQueueNotify = new DemodulatorThreadCommandQueue;
     threadQueueControl = new DemodulatorThreadControlCommandQueue;
-
+    
     demodulatorPreThread = new DemodulatorPreThread();
     demodulatorPreThread->setInputQueue("IQDataInput",threadQueueDemod);
     demodulatorPreThread->setOutputQueue("IQDataOut",threadQueuePostDemod);
@@ -32,13 +32,15 @@ DemodulatorInstance::DemodulatorInstance() :
     demodulatorPreThread->setOutputQueue("NotifyQueue",threadQueueNotify);
     demodulatorPreThread->setInputQueue("CommandQueue",threadQueueCommand);
             
-    demodulatorThread = new DemodulatorThread(threadQueuePostDemod, threadQueueControl, threadQueueNotify);
-
     audioInputQueue = new AudioThreadInputQueue;
+
+    demodulatorThread = new DemodulatorThread();
+    demodulatorThread->setInputQueue("IQDataInput",threadQueuePostDemod);
+    demodulatorThread->setInputQueue("ControlQueue",threadQueueControl);
+    demodulatorThread->setOutputQueue("NotifyQueue",threadQueueNotify);
+    demodulatorThread->setOutputQueue("AudioDataOut", audioInputQueue);
+
     audioThread = new AudioThread(audioInputQueue, threadQueueNotify);
-
-    demodulatorThread->setAudioOutputQueue(audioInputQueue);
-
     currentDemodType = demodulatorThread->getDemodulatorType();
 }
 

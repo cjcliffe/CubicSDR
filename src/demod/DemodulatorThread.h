@@ -13,14 +13,12 @@ typedef ThreadQueue<AudioThreadInput *> DemodulatorThreadOutputQueue;
 class DemodulatorThread : public IOThread {
 public:
 
-    DemodulatorThread(DemodulatorThreadPostInputQueue* iqInputQueue, DemodulatorThreadControlCommandQueue *threadQueueControl,
-            DemodulatorThreadCommandQueue* threadQueueNotify);
+    DemodulatorThread();
     ~DemodulatorThread();
 
     void run();
 
     void setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue);
-    void setAudioOutputQueue(AudioThreadInputQueue *tQueue);
 
     void terminate();
 
@@ -53,10 +51,6 @@ protected:
     std::vector<float> resampledOutputData;
     std::vector<float> resampledStereoData;
 
-    DemodulatorThreadPostInputQueue* iqInputQueue;
-    DemodulatorThreadOutputQueue* audioVisOutputQueue;
-    AudioThreadInputQueue *audioOutputQueue;
-
     freqdem demodFM;
     ampmodem demodAM;
     ampmodem demodAM_DSB_CSP;
@@ -75,9 +69,13 @@ protected:
     std::atomic_int demodulatorType;
     int audioSampleRate;
 
-    DemodulatorThreadCommandQueue* threadQueueNotify;
-    DemodulatorThreadControlCommandQueue *threadQueueControl;
     std::atomic<float> squelchLevel;
     std::atomic<float> signalLevel;
     bool squelchEnabled;
+    
+    DemodulatorThreadPostInputQueue* iqInputQueue;
+    AudioThreadInputQueue *audioOutputQueue;
+    DemodulatorThreadOutputQueue* audioVisOutputQueue;
+    DemodulatorThreadControlCommandQueue *threadQueueControl;
+    DemodulatorThreadCommandQueue* threadQueueNotify;
 };

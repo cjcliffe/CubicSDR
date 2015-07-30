@@ -58,4 +58,9 @@ protected:
 
     DemodulatorThreadWorkerCommandQueue *workerQueue;
     DemodulatorThreadWorkerResultQueue *workerResults;
+
+    DemodulatorThreadInputQueue* iqInputQueue;
+    DemodulatorThreadPostInputQueue* iqOutputQueue;
+    DemodulatorThreadCommandQueue* threadQueueNotify;
+    DemodulatorThreadCommandQueue* commandQueue;
 };

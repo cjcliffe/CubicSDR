@@ -11,11 +11,7 @@
 #include <pthread.h>
 #endif
 
-DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* iqInputQueue, DemodulatorThreadControlCommandQueue *threadQueueControl,
-        DemodulatorThreadCommandQueue* threadQueueNotify) : IOThread(),
-        iqInputQueue(iqInputQueue), audioVisOutputQueue(NULL), audioOutputQueue(NULL), iqAutoGain(NULL), amOutputCeil(1), amOutputCeilMA(1), amOutputCeilMAA(
-                1), threadQueueNotify(threadQueueNotify), threadQueueControl(threadQueueControl), squelchLevel(0), signalLevel(
-                0), squelchEnabled(false), audioSampleRate(0) {
+DemodulatorThread::DemodulatorThread() : IOThread(), iqAutoGain(NULL), amOutputCeil(1), amOutputCeilMA(1), amOutputCeilMAA(1), audioSampleRate(0), squelchLevel(0), signalLevel(0), squelchEnabled(false), iqInputQueue(NULL), audioOutputQueue(NULL), audioVisOutputQueue(NULL), threadQueueControl(NULL), threadQueueNotify(NULL) {
 
 	stereo.store(false);
 	agcEnabled.store(false);
@@ -67,6 +63,11 @@ void DemodulatorThread::run() {
 
     std::cout << "Demodulator thread started.." << std::endl;
 
+    iqInputQueue = (DemodulatorThreadPostInputQueue*)getInputQueue("IQDataInput");
+    audioOutputQueue = (AudioThreadInputQueue*)getOutputQueue("AudioDataOut");
+    threadQueueControl = (DemodulatorThreadControlCommandQueue *)getInputQueue("ControlQueue");
+    threadQueueNotify = (DemodulatorThreadCommandQueue*)getOutputQueue("NotifyQueue");
+    
     switch (demodulatorType.load()) {
     case DEMOD_TYPE_FM:
         break;
@@ -485,19 +486,12 @@ void DemodulatorThread::run() {
     DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_TERMINATED);
     tCmd.context = this;
     threadQueueNotify->push(tCmd);
+    
     std::cout << "Demodulator thread done." << std::endl;
-
-#ifdef __APPLE__
-    return this;
-#endif
 }
 
 void DemodulatorThread::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {
     audioVisOutputQueue = tQueue;
-}
-
-void DemodulatorThread::setAudioOutputQueue(AudioThreadInputQueue *tQueue) {
-    audioOutputQueue = tQueue;
 }
 
 void DemodulatorThread::terminate() {

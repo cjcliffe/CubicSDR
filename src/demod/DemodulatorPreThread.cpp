@@ -8,7 +8,8 @@
 #include "DemodulatorPreThread.h"
 #include "CubicSDR.h"
 
-DemodulatorPreThread::DemodulatorPreThread() : IOThread(), iqResampler(NULL), iqResampleRatio(1), audioResampler(NULL), stereoResampler(NULL), audioResampleRatio(1), firStereoLeft(NULL), firStereoRight(NULL), iirStereoPilot(NULL) {
+DemodulatorPreThread::DemodulatorPreThread() : IOThread(), iqResampler(NULL), iqResampleRatio(1), audioResampler(NULL), stereoResampler(NULL), audioResampleRatio(1), firStereoLeft(NULL), firStereoRight(NULL), iirStereoPilot(NULL), iqInputQueue(NULL), iqOutputQueue(NULL), threadQueueNotify(NULL), commandQueue(NULL)
+ {
 	initialized.store(false);
 
     freqShifter = nco_crcf_create(LIQUID_VCO);
@@ -91,11 +92,10 @@ void DemodulatorPreThread::run() {
 
     ReBuffer<DemodulatorThreadPostIQData> buffers;
 
-    DemodulatorThreadInputQueue* iqInputQueue = (DemodulatorThreadInputQueue*)getInputQueue("IQDataInput");
-    DemodulatorThreadPostInputQueue* iqOutputQueue = (DemodulatorThreadPostInputQueue*)getOutputQueue("IQDataOut");
-    DemodulatorThreadControlCommandQueue *threadQueueControl = (DemodulatorThreadControlCommandQueue *)getInputQueue("ControlQueue");
-    DemodulatorThreadCommandQueue* threadQueueNotify = (DemodulatorThreadCommandQueue*)getOutputQueue("NotifyQueue");
-    DemodulatorThreadCommandQueue* commandQueue = ( DemodulatorThreadCommandQueue*)getInputQueue("CommandQueue");
+    iqInputQueue = (DemodulatorThreadInputQueue*)getInputQueue("IQDataInput");
+    iqOutputQueue = (DemodulatorThreadPostInputQueue*)getOutputQueue("IQDataOut");
+    threadQueueNotify = (DemodulatorThreadCommandQueue*)getOutputQueue("NotifyQueue");
+    commandQueue = ( DemodulatorThreadCommandQueue*)getInputQueue("CommandQueue");
     
     std::vector<liquid_float_complex> in_buf_data;
     std::vector<liquid_float_complex> out_buf_data;
@@ -310,12 +310,6 @@ void DemodulatorPreThread::run() {
 
     buffers.purge();
 
-    DemodulatorThreadIQData *inp = new DemodulatorThreadIQData;    // push dummy to nudge queue
-    iqInputQueue->push(inp);
-    workerThread->terminate();
-    t_Worker->detach();
-    delete t_Worker;
-
     DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_PREPROCESS_TERMINATED);
     tCmd.context = this;
     threadQueueNotify->push(tCmd);
@@ -324,4 +318,9 @@ void DemodulatorPreThread::run() {
 
 void DemodulatorPreThread::terminate() {
     terminated = true;
+    DemodulatorThreadIQData *inp = new DemodulatorThreadIQData;    // push dummy to nudge queue
+    iqInputQueue->push(inp);
+    workerThread->terminate();
+    t_Worker->detach();
+    delete t_Worker;
 }
