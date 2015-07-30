@@ -300,3 +300,11 @@ void SDRThread::run() {
     std::cout << "SDR thread done." << std::endl;
 }
 
+
+int SDRThread::getDeviceId() const {
+    return deviceId.load();
+}
+
+void SDRThread::setDeviceId(int deviceId) {
+    this->deviceId.store(deviceId);
+}
