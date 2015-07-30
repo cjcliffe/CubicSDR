@@ -16,10 +16,9 @@ public:
     DemodulatorThread();
     ~DemodulatorThread();
 
+    void onBindOutput(std::string name, ThreadQueueBase *threadQueue);
+    
     void run();
-
-    void setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue);
-
     void terminate();
 
     void setStereo(bool state);

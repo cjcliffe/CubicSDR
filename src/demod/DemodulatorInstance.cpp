@@ -23,16 +23,15 @@ DemodulatorInstance::DemodulatorInstance() :
     threadQueuePostDemod = new DemodulatorThreadPostInputQueue;
     threadQueueCommand = new DemodulatorThreadCommandQueue;
     threadQueueNotify = new DemodulatorThreadCommandQueue;
-    threadQueueControl = new DemodulatorThreadControlCommandQueue;
     
     demodulatorPreThread = new DemodulatorPreThread();
     demodulatorPreThread->setInputQueue("IQDataInput",threadQueueDemod);
     demodulatorPreThread->setOutputQueue("IQDataOut",threadQueuePostDemod);
-    demodulatorPreThread->setInputQueue("ControlQueue",threadQueueControl);
     demodulatorPreThread->setOutputQueue("NotifyQueue",threadQueueNotify);
     demodulatorPreThread->setInputQueue("CommandQueue",threadQueueCommand);
             
     audioInputQueue = new AudioThreadInputQueue;
+    threadQueueControl = new DemodulatorThreadControlCommandQueue;
 
     demodulatorThread = new DemodulatorThread();
     demodulatorThread->setInputQueue("IQDataInput",threadQueuePostDemod);
@@ -57,7 +56,7 @@ DemodulatorInstance::~DemodulatorInstance() {
 }
 
 void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {
-    demodulatorThread->setVisualOutputQueue(tQueue);
+    demodulatorThread->setOutputQueue("AudioVisualOutput", tQueue);
 }
 
 void DemodulatorInstance::run() {

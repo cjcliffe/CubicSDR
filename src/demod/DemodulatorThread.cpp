@@ -28,6 +28,12 @@ DemodulatorThread::DemodulatorThread() : IOThread(), iqAutoGain(NULL), amOutputC
 DemodulatorThread::~DemodulatorThread() {
 }
 
+void DemodulatorThread::onBindOutput(std::string name, ThreadQueueBase *threadQueue) {
+    if (name == "AudioVisualOutput") {
+        audioVisOutputQueue = (DemodulatorThreadOutputQueue *)threadQueue;
+    }
+}
+
 void DemodulatorThread::run() {
 #ifdef __APPLE__
     pthread_t tID = pthread_self();  // ID of this thread
@@ -488,10 +494,6 @@ void DemodulatorThread::run() {
     threadQueueNotify->push(tCmd);
     
     std::cout << "Demodulator thread done." << std::endl;
-}
-
-void DemodulatorThread::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {
-    audioVisOutputQueue = tQueue;
 }
 
 void DemodulatorThread::terminate() {
