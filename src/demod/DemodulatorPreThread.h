@@ -10,19 +10,10 @@
 class DemodulatorPreThread : public IOThread {
 public:
 
-    DemodulatorPreThread(DemodulatorThreadInputQueue* iqInputQueue, DemodulatorThreadPostInputQueue* iqOutputQueue,
-            DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify);
+    DemodulatorPreThread();
     ~DemodulatorPreThread();
 
     void run();
-
-    void setCommandQueue(DemodulatorThreadCommandQueue *tQueue) {
-        commandQueue = tQueue;
-    }
-
-    void setDemodulatorControlQueue(DemodulatorThreadControlCommandQueue *tQueue) {
-        threadQueueControl = tQueue;
-    }
 
     DemodulatorThreadParameters &getParams() {
         return params;
@@ -42,10 +33,6 @@ public:
 #endif
 
 protected:
-    DemodulatorThreadInputQueue* iqInputQueue;
-    DemodulatorThreadPostInputQueue* iqOutputQueue;
-    DemodulatorThreadCommandQueue* commandQueue;
-
     msresamp_crcf iqResampler;
     double iqResampleRatio;
     std::vector<liquid_float_complex> resampledData;
@@ -71,6 +58,4 @@ protected:
 
     DemodulatorThreadWorkerCommandQueue *workerQueue;
     DemodulatorThreadWorkerResultQueue *workerResults;
-    DemodulatorThreadCommandQueue* threadQueueNotify;
-    DemodulatorThreadControlCommandQueue *threadQueueControl;
 };

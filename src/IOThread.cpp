@@ -10,6 +10,7 @@ IOThread::~IOThread() {
 
 #ifdef __APPLE__
 void *IOThread::threadMain() {
+    terminated.store(false);
     run();
     return this;
 };
@@ -19,6 +20,7 @@ void *IOThread::pthread_helper(void *context) {
 };
 #else
 void IOThread::threadMain() {
+    terminated.store(false);
     run();
 };
 #endif

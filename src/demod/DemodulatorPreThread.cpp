@@ -8,11 +8,7 @@
 #include "DemodulatorPreThread.h"
 #include "CubicSDR.h"
 
-DemodulatorPreThread::DemodulatorPreThread(DemodulatorThreadInputQueue* iqInputQueue, DemodulatorThreadPostInputQueue* iqOutputQueue,
-        DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify) : IOThread(),
-        iqInputQueue(iqInputQueue), iqOutputQueue(iqOutputQueue), audioResampler(NULL), stereoResampler(NULL), iqResampleRatio(
-                1), audioResampleRatio(1), firStereoRight(NULL), firStereoLeft(NULL), iirStereoPilot(NULL), iqResampler(NULL), commandQueue(NULL), threadQueueNotify(threadQueueNotify), threadQueueControl(
-                threadQueueControl) {
+DemodulatorPreThread::DemodulatorPreThread() : IOThread(), iqResampler(NULL), iqResampleRatio(1), audioResampler(NULL), stereoResampler(NULL), audioResampleRatio(1), firStereoLeft(NULL), firStereoRight(NULL), iirStereoPilot(NULL) {
 	initialized.store(false);
 
     freqShifter = nco_crcf_create(LIQUID_VCO);
@@ -21,8 +17,6 @@ DemodulatorPreThread::DemodulatorPreThread(DemodulatorThreadInputQueue* iqInputQ
     workerQueue = new DemodulatorThreadWorkerCommandQueue;
     workerResults = new DemodulatorThreadWorkerResultQueue;
     workerThread = new DemodulatorWorkerThread(workerQueue, workerResults);
-
-    t_Worker = new std::thread(&DemodulatorWorkerThread::threadMain, workerThread);
 }
 
 void DemodulatorPreThread::initialize() {
@@ -93,8 +87,16 @@ void DemodulatorPreThread::run() {
 
     std::cout << "Demodulator preprocessor thread started.." << std::endl;
 
+    t_Worker = new std::thread(&DemodulatorWorkerThread::threadMain, workerThread);
+
     ReBuffer<DemodulatorThreadPostIQData> buffers;
 
+    DemodulatorThreadInputQueue* iqInputQueue = (DemodulatorThreadInputQueue*)getInputQueue("IQDataInput");
+    DemodulatorThreadPostInputQueue* iqOutputQueue = (DemodulatorThreadPostInputQueue*)getOutputQueue("IQDataOut");
+    DemodulatorThreadControlCommandQueue *threadQueueControl = (DemodulatorThreadControlCommandQueue *)getInputQueue("ControlQueue");
+    DemodulatorThreadCommandQueue* threadQueueNotify = (DemodulatorThreadCommandQueue*)getOutputQueue("NotifyQueue");
+    DemodulatorThreadCommandQueue* commandQueue = ( DemodulatorThreadCommandQueue*)getInputQueue("CommandQueue");
+    
     std::vector<liquid_float_complex> in_buf_data;
     std::vector<liquid_float_complex> out_buf_data;
 //    liquid_float_complex carrySample;   // Keep the stream count even to simplify some demod operations
@@ -307,7 +309,13 @@ void DemodulatorPreThread::run() {
     }
 
     buffers.purge();
-    
+
+    DemodulatorThreadIQData *inp = new DemodulatorThreadIQData;    // push dummy to nudge queue
+    iqInputQueue->push(inp);
+    workerThread->terminate();
+    t_Worker->detach();
+    delete t_Worker;
+
     DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_PREPROCESS_TERMINATED);
     tCmd.context = this;
     threadQueueNotify->push(tCmd);
@@ -316,9 +324,4 @@ void DemodulatorPreThread::run() {
 
 void DemodulatorPreThread::terminate() {
     terminated = true;
-    DemodulatorThreadIQData *inp = new DemodulatorThreadIQData;    // push dummy to nudge queue
-    iqInputQueue->push(inp);
-    workerThread->terminate();
-    t_Worker->detach();
-    delete t_Worker;
 }

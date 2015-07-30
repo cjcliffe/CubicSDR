@@ -71,7 +71,7 @@ private:
 class IOThread {
 public:
     IOThread();
-    ~IOThread();
+    virtual ~IOThread();
 
     static void *pthread_helper(void *context);
 
