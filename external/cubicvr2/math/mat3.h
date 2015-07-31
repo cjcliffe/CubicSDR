@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include "vec3.h"
+#include <cstring>
 
 namespace CubicVR {
 

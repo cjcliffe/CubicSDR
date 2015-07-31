@@ -59,7 +59,7 @@ PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContex
 //#endif
 }
 
-void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGB color, long long center_freq, long long srate) {
+void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGB3f color, long long center_freq, long long srate) {
     if (!demod) {
         return;
     }
@@ -140,7 +140,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGB color, long
 
 }
 
-void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGB color, long long center_freq, long long srate) {
+void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGB3f color, long long center_freq, long long srate) {
     if (!demod) {
         return;
     }
@@ -237,7 +237,7 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGB color, long lon
 
 }
 
-void PrimaryGLContext::DrawFreqSelector(float uxPos, RGB color, float w, long long center_freq, long long srate) {
+void PrimaryGLContext::DrawFreqSelector(float uxPos, RGB3f color, float w, long long center_freq, long long srate) {
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     long long bw = 0;
@@ -288,7 +288,7 @@ void PrimaryGLContext::DrawFreqSelector(float uxPos, RGB color, float w, long lo
 
 }
 
-void PrimaryGLContext::DrawRangeSelector(float uxPos1, float uxPos2, RGB color) {
+void PrimaryGLContext::DrawRangeSelector(float uxPos1, float uxPos2, RGB3f color) {
     if (uxPos2 < uxPos1) {
         float temp = uxPos2;
         uxPos2=uxPos1;

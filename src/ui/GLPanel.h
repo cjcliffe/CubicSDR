@@ -42,8 +42,8 @@ public:
     GLPanelCoordinateSystem coord;
     float marginPx;
     GLPanelEdges borderPx;
-    RGB fill[2];
-    RGB borderColor;
+    RGB3f fill[2];
+    RGB3f borderColor;
     bool contentsVisible;
     CubicVR::mat4 transform;
     CubicVR::mat4 localTransform;
@@ -68,11 +68,11 @@ public:
     void setCoordinateSystem(GLPanelCoordinateSystem coord);
     
     void setFill(GLPanelFillType fill_mode);
-    void setFillColor(RGB color1);
-    void setFillColor(RGB color1, RGB color2);
+    void setFillColor(RGB3f color1);
+    void setFillColor(RGB3f color1, RGB3f color2);
     void setMarginPx(float marg);
 
-    void setBorderColor(RGB clr);
+    void setBorderColor(RGB3f clr);
     void setBorderPx(float bord);
     void setBorderPx(float bordl, float bordr, float bordt, float bordb);
     

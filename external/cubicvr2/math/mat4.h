@@ -72,15 +72,15 @@ namespace CubicVR {
             return mOut;
         }
         
-        static mat4 perspective(__float fovy, __float aspect, __float near, __float far) {
+        static mat4 perspective(__float fovy, __float aspect, __float znear, __float zfar) {
             __float yFac = tan(fovy * (float)M_PI / 360.0f);
             __float xFac = yFac * aspect;
             
             return mat4(
-                1.0f / xFac, 0, 0, 0, 0, 1.0f / yFac, 0, 0, 0, 0, -(far + near) / (far - near), -1, 0, 0, -(2.0f * far * near) / (far - near), 0);
+                1.0f / xFac, 0, 0, 0, 0, 1.0f / yFac, 0, 0, 0, 0, -(zfar + znear) / (zfar - znear), -1, 0, 0, -(2.0f * zfar * znear) / (zfar - znear), 0);
         };
-        static mat4 ortho(__float left,__float right,__float bottom,__float top,__float near,__float far) {
-            return mat4(2.0f / (right - left), 0, 0, 0, 0, 2.0f / (top - bottom), 0, 0, 0, 0, -2.0f / (far - near), 0, -(left + right) / (right - left), -(top + bottom) / (top - bottom), -(far + near) / (far - near), 1);
+        static mat4 ortho(__float left,__float right,__float bottom,__float top,__float znear,__float zfar) {
+            return mat4(2.0f / (right - left), 0, 0, 0, 0, 2.0f / (top - bottom), 0, 0, 0, 0, -2.0f / (zfar - znear), 0, -(left + right) / (right - left), -(top + bottom) / (top - bottom), -(zfar + znear) / (zfar - znear), 1);
         };
         static __float determinant(mat4 m) {
             
