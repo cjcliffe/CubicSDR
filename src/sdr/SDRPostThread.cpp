@@ -176,7 +176,7 @@ void SDRPostThread::run() {
                     std::vector<DemodulatorInstance *>::iterator i;
                     for (i = demodulators.begin(); i != demodulators.end(); i++) {
                         DemodulatorInstance *demod = *i;
-                        DemodulatorThreadInputQueue *demodQueue = demod->threadQueueDemod;
+                        DemodulatorThreadInputQueue *demodQueue = demod->getIQInputDataPipe();
 
                         if (abs(data_in->frequency - demod->getFrequency()) > (wxGetApp().getSampleRate() / 2)) {
                             if (demod->isActive() && !demod->isFollow() && !demod->isTracking()) {

@@ -87,10 +87,10 @@ private:
     SDRThread *sdrThread;
     SDRPostThread *sdrPostThread;
 
-    SDRThreadCommandQueue* threadCmdQueueSDR;
-    SDRThreadIQDataQueue* iqPostDataQueue;
-    DemodulatorThreadInputQueue* iqVisualQueue;
-    DemodulatorThreadOutputQueue* audioVisualQueue;
+    SDRThreadCommandQueue* pipeSDRCommand;
+    SDRThreadIQDataQueue* pipeSDRIQData;
+    DemodulatorThreadInputQueue* pipeIQVisualData;
+    DemodulatorThreadOutputQueue* pipeAudioVisualData;
 
     std::thread *t_SDR;
     std::thread *t_PostSDR;
