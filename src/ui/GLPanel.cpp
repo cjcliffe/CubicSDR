@@ -9,9 +9,9 @@ GLPanel::GLPanel() : fillType(GLPANEL_FILL_SOLID), contentsVisible(true), transf
     pos[1] = 0.0f;
     size[0] = 1.0f;
     size[1] = 1.0f;
-    fill[0] = RGB(0.5,0.5,0.5);
-    fill[1] = RGB(0.1,0.1,0.1);
-    borderColor = RGB(0.8, 0.8, 0.8);
+    fill[0] = RGB3f(0.5,0.5,0.5);
+    fill[1] = RGB3f(0.1,0.1,0.1);
+    borderColor = RGB3f(0.8, 0.8, 0.8);
     setCoordinateSystem(GLPANEL_Y_UP);
 }
 
@@ -31,7 +31,7 @@ void GLPanel::genArrays() {
             max, min
         };
         
-        RGB c[4];
+        RGB3f c[4];
         
         if (fillType == GLPANEL_FILL_SOLID) {
             c[0] = c[1] = c[2] = c[3] = fill[0];
@@ -58,7 +58,7 @@ void GLPanel::genArrays() {
         glColors.reserve(3 * 8);
         glColors.resize(3 * 8);
         
-        RGB c[8];
+        RGB3f c[8];
         
         if (fillType == GLPANEL_FILL_GRAD_BAR_X) {
             float pts[2 * 8] = {
@@ -173,12 +173,12 @@ void GLPanel::setFill(GLPanelFillType fill_mode) {
     genArrays();
 }
 
-void GLPanel::setFillColor(RGB color1) {
+void GLPanel::setFillColor(RGB3f color1) {
     fill[0] = color1;
     genArrays();
 }
 
-void GLPanel::setFillColor(RGB color1, RGB color2) {
+void GLPanel::setFillColor(RGB3f color1, RGB3f color2) {
     fill[0] = color1;
     fill[1] = color2;
     genArrays();
@@ -189,7 +189,7 @@ void GLPanel::setMarginPx(float marg) {
 }
 
 
-void GLPanel::setBorderColor(RGB clr) {
+void GLPanel::setBorderColor(RGB3f clr) {
     borderColor = clr;
 }
 

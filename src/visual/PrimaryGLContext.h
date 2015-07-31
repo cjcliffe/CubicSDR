@@ -21,10 +21,10 @@ public:
     void BeginDraw(float r, float g, float b);
     void EndDraw();
 
-    void DrawFreqSelector(float uxPos, RGB color, float w = 0, long long center_freq = -1, long long srate = 0);
-    void DrawRangeSelector(float uxPos1, float uxPos2, RGB color);
-    void DrawDemod(DemodulatorInstance *demod, RGB color, long long center_freq = -1, long long srate = 0);
-    void DrawDemodInfo(DemodulatorInstance *demod, RGB color, long long center_freq = -1, long long srate = 0);
+    void DrawFreqSelector(float uxPos, RGB3f color, float w = 0, long long center_freq = -1, long long srate = 0);
+    void DrawRangeSelector(float uxPos1, float uxPos2, RGB3f color);
+    void DrawDemod(DemodulatorInstance *demod, RGB3f color, long long center_freq = -1, long long srate = 0);
+    void DrawDemodInfo(DemodulatorInstance *demod, RGB3f color, long long center_freq = -1, long long srate = 0);
 
     void setHoverAlpha(float hoverAlpha);
 

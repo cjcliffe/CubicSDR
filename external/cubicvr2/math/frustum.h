@@ -10,6 +10,7 @@
 #define CubicVR2_frustum_h
 
 #include <vector>
+#include "cubic_types.h"
 #include "mat4.h"
 #include "vec3.h"
 #include "vec4.h"
@@ -75,14 +76,14 @@ namespace CubicVR {
             
             //Sphere
             __float fov = 1 / pMatrix[5];
-            __float near = -planes[PLANE_NEAR][3];
-            __float far = planes[PLANE_FAR][3];
-            __float view_length = far - near;
+            __float znear = -planes[PLANE_NEAR][3];
+            __float zfar = planes[PLANE_FAR][3];
+            __float view_length = zfar - znear;
             __float height = view_length * fov;
             __float width = height;
             
-            vec3 P(0, 0, near + view_length * 0.5f);
-            vec3 Q(width, height, near + view_length);
+            vec3 P(0, 0, znear + view_length * 0.5f);
+            vec3 Q(width, height, znear + view_length);
             vec3 diff = vec3::subtract(P, Q);
             __float diff_mag = vec3::length(diff);
             
