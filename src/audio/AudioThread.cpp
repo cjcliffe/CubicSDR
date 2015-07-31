@@ -11,13 +11,12 @@ std::map<int, AudioThread *> AudioThread::deviceController;
 std::map<int, int> AudioThread::deviceSampleRate;
 std::map<int, std::thread *> AudioThread::deviceThread;
 
-AudioThread::AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify) :
-        currentInput(NULL), inputQueue(inputQueue), gain(
-                1.0), threadQueueNotify(threadQueueNotify), sampleRate(0), nBufferFrames(1024) {
+AudioThread::AudioThread() : IOThread(),
+        currentInput(NULL), inputQueue(NULL), gain(
+                1.0), threadQueueNotify(NULL), sampleRate(0), nBufferFrames(1024) {
 
 	audioQueuePtr.store(0); 
 	underflowCount.store(0);
-	terminated.store(false);
 	active.store(false);
 	outputDevice.store(-1);
 
@@ -56,7 +55,7 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
     float *out = (float*) outputBuffer;
     memset(out, 0, nBufferFrames * 2 * sizeof(float));
 
-    if (src->terminated) {
+    if (src->isTerminated()) {
         return 1;
     }
 
@@ -72,17 +71,17 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
 
     for (int j = 0; j < src->boundThreads.load()->size(); j++) {
         AudioThread *srcmix = (*(src->boundThreads.load()))[j];
-        if (srcmix->terminated || !srcmix->inputQueue || srcmix->inputQueue->empty() || !srcmix->isActive()) {
+        if (srcmix->isTerminated() || !srcmix->inputQueue || srcmix->inputQueue->empty() || !srcmix->isActive()) {
             continue;
         }
 
         if (!srcmix->currentInput) {
             srcmix->audioQueuePtr = 0;
-            if (srcmix->terminated || srcmix->inputQueue->empty()) {
+            if (srcmix->isTerminated() || srcmix->inputQueue->empty()) {
                 continue;
             }
             srcmix->inputQueue->pop(srcmix->currentInput);
-            if (srcmix->terminated) {
+            if (srcmix->isTerminated()) {
                 continue;
             }
             continue;
@@ -117,11 +116,11 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                     srcmix->currentInput->decRefCount();
                     srcmix->currentInput = NULL;
                 }
-                if (srcmix->terminated || srcmix->inputQueue->empty()) {
+                if (srcmix->isTerminated() || srcmix->inputQueue->empty()) {
                     continue;
                 }
                 srcmix->inputQueue->pop(srcmix->currentInput);
-                if (srcmix->terminated) {
+                if (srcmix->isTerminated()) {
                     continue;
                 }
             }
@@ -138,11 +137,11 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                         srcmix->currentInput->decRefCount();
                         srcmix->currentInput = NULL;
                     }
-                    if (srcmix->terminated || srcmix->inputQueue->empty()) {
+                    if (srcmix->isTerminated() || srcmix->inputQueue->empty()) {
                         break;
                     }
                     srcmix->inputQueue->pop(srcmix->currentInput);
-                    if (srcmix->terminated) {
+                    if (srcmix->isTerminated()) {
                         break;
                     }
                     float srcPeak = srcmix->currentInput->peak * srcmix->gain;
@@ -165,11 +164,11 @@ static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBu
                         srcmix->currentInput->decRefCount();
                         srcmix->currentInput = NULL;
                     }
-                    if (srcmix->terminated || srcmix->inputQueue->empty()) {
+                    if (srcmix->isTerminated() || srcmix->inputQueue->empty()) {
                         break;
                     }
                     srcmix->inputQueue->pop(srcmix->currentInput);
-                    if (srcmix->terminated) {
+                    if (srcmix->isTerminated()) {
                         break;
                     }
                     float srcPeak = srcmix->currentInput->peak * srcmix->gain;
@@ -317,7 +316,7 @@ void AudioThread::setupDevice(int deviceId) {
         }
 
         if (deviceController.find(parameters.deviceId) == deviceController.end()) {
-            deviceController[parameters.deviceId] = new AudioThread(NULL, NULL);
+            deviceController[parameters.deviceId] = new AudioThread();
 
             deviceController[parameters.deviceId]->setInitOutputDevice(parameters.deviceId, sampleRate);
             deviceController[parameters.deviceId]->bindThread(this);
@@ -359,7 +358,7 @@ void AudioThread::setInitOutputDevice(int deviceId, int sampleRate) {
     this->sampleRate = sampleRate;
 }
 
-void AudioThread::threadMain() {
+void AudioThread::run() {
 #ifdef __APPLE__
     pthread_t tID = pthread_self();	 // ID of this thread
     int priority = sched_get_priority_max( SCHED_RR) - 1;
@@ -378,8 +377,9 @@ void AudioThread::threadMain() {
 
     std::cout << "Audio thread started." << std::endl;
 
-    terminated = false;
-
+    inputQueue = (AudioThreadInputQueue *)getInputQueue("AudioDataInput");
+    threadQueueNotify = (DemodulatorThreadCommandQueue*)getOutputQueue("NotifyQueue");
+    
     while (!terminated) {
         AudioThreadCommand command;
         cmdQueue.pop(command);

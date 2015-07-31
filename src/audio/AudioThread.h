@@ -47,20 +47,18 @@ public:
 typedef ThreadQueue<AudioThreadInput *> AudioThreadInputQueue;
 typedef ThreadQueue<AudioThreadCommand> AudioThreadCommandQueue;
 
-class AudioThread {
+class AudioThread : public IOThread {
 public:
-
     AudioThreadInput *currentInput;
     AudioThreadInputQueue *inputQueue;
     std::atomic_uint audioQueuePtr;
     std::atomic_uint underflowCount;
-    std::atomic_bool terminated;
     std::atomic_bool initialized;
     std::atomic_bool active;
     std::atomic_int outputDevice;
     std::atomic<float> gain;
 
-    AudioThread(AudioThreadInputQueue *inputQueue, DemodulatorThreadCommandQueue* threadQueueNotify);
+    AudioThread();
     ~AudioThread();
 
     static void enumerateDevices(std::vector<RtAudio::DeviceInfo> &devs);
@@ -70,7 +68,7 @@ public:
     int getOutputDevice();
     void setSampleRate(int sampleRate);
     int getSampleRate();
-    void threadMain();
+    void run();
     void terminate();
 
     bool isActive();

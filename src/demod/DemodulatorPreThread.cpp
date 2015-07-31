@@ -8,12 +8,8 @@
 #include "DemodulatorPreThread.h"
 #include "CubicSDR.h"
 
-DemodulatorPreThread::DemodulatorPreThread(DemodulatorThreadInputQueue* iqInputQueue, DemodulatorThreadPostInputQueue* iqOutputQueue,
-        DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify) :
-        iqInputQueue(iqInputQueue), iqOutputQueue(iqOutputQueue), audioResampler(NULL), stereoResampler(NULL), iqResampleRatio(
-                1), audioResampleRatio(1), firStereoRight(NULL), firStereoLeft(NULL), iirStereoPilot(NULL), iqResampler(NULL), commandQueue(NULL), threadQueueNotify(threadQueueNotify), threadQueueControl(
-                threadQueueControl) {
-	terminated.store(false);
+DemodulatorPreThread::DemodulatorPreThread() : IOThread(), iqResampler(NULL), iqResampleRatio(1), audioResampler(NULL), stereoResampler(NULL), audioResampleRatio(1), firStereoLeft(NULL), firStereoRight(NULL), iirStereoPilot(NULL), iqInputQueue(NULL), iqOutputQueue(NULL), threadQueueNotify(NULL), commandQueue(NULL)
+ {
 	initialized.store(false);
 
     freqShifter = nco_crcf_create(LIQUID_VCO);
@@ -21,9 +17,10 @@ DemodulatorPreThread::DemodulatorPreThread(DemodulatorThreadInputQueue* iqInputQ
 
     workerQueue = new DemodulatorThreadWorkerCommandQueue;
     workerResults = new DemodulatorThreadWorkerResultQueue;
-    workerThread = new DemodulatorWorkerThread(workerQueue, workerResults);
-
-    t_Worker = new std::thread(&DemodulatorWorkerThread::threadMain, workerThread);
+     
+    workerThread = new DemodulatorWorkerThread();
+    workerThread->setInputQueue("WorkerCommandQueue",workerQueue);
+    workerThread->setOutputQueue("WorkerResultQueue",workerResults);
 }
 
 void DemodulatorPreThread::initialize() {
@@ -80,11 +77,7 @@ DemodulatorPreThread::~DemodulatorPreThread() {
     delete workerResults;
 }
 
-#ifdef __APPLE__
-void *DemodulatorPreThread::threadMain() {
-#else
-void DemodulatorPreThread::threadMain() {
-#endif
+void DemodulatorPreThread::run() {
 #ifdef __APPLE__
     pthread_t tID = pthread_self();  // ID of this thread
     int priority = sched_get_priority_max( SCHED_FIFO) - 1;
@@ -98,15 +91,19 @@ void DemodulatorPreThread::threadMain() {
 
     std::cout << "Demodulator preprocessor thread started.." << std::endl;
 
-    std::deque<DemodulatorThreadPostIQData *> buffers;
-    std::deque<DemodulatorThreadPostIQData *>::iterator buffers_i;
+    t_Worker = new std::thread(&DemodulatorWorkerThread::threadMain, workerThread);
 
+    ReBuffer<DemodulatorThreadPostIQData> buffers;
+
+    iqInputQueue = (DemodulatorThreadInputQueue*)getInputQueue("IQDataInput");
+    iqOutputQueue = (DemodulatorThreadPostInputQueue*)getOutputQueue("IQDataOutput");
+    threadQueueNotify = (DemodulatorThreadCommandQueue*)getOutputQueue("NotifyQueue");
+    commandQueue = ( DemodulatorThreadCommandQueue*)getInputQueue("CommandQueue");
+    
     std::vector<liquid_float_complex> in_buf_data;
     std::vector<liquid_float_complex> out_buf_data;
 //    liquid_float_complex carrySample;   // Keep the stream count even to simplify some demod operations
 //    bool carrySampleFlag = false;
-
-    terminated = false;
 
     while (!terminated) {
         DemodulatorThreadIQData *inp;
@@ -207,19 +204,7 @@ void DemodulatorPreThread::threadMain() {
                 out_buf = temp_buf;
             }
 
-            DemodulatorThreadPostIQData *resamp = NULL;
-
-            for (buffers_i = buffers.begin(); buffers_i != buffers.end(); buffers_i++) {
-                if ((*buffers_i)->getRefCount() <= 0) {
-                    resamp = (*buffers_i);
-                    break;
-                }
-            }
-
-            if (resamp == NULL) {
-                resamp = new DemodulatorThreadPostIQData;
-                buffers.push_back(resamp);
-            }
+            DemodulatorThreadPostIQData *resamp = buffers.getBuffer();
 
             int out_size = ceil((double) (bufSize) * iqResampleRatio) + 512;
 
@@ -326,20 +311,12 @@ void DemodulatorPreThread::threadMain() {
         }
     }
 
-    while (!buffers.empty()) {
-        DemodulatorThreadPostIQData *iqDataDel = buffers.front();
-        buffers.pop_front();
-        delete iqDataDel;
-    }
+    buffers.purge();
 
     DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_PREPROCESS_TERMINATED);
     tCmd.context = this;
     threadQueueNotify->push(tCmd);
     std::cout << "Demodulator preprocessor thread done." << std::endl;
-
-#ifdef __APPLE__
-    return this;
-#endif
 }
 
 void DemodulatorPreThread::terminate() {

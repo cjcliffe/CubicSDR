@@ -25,7 +25,7 @@ EVT_ENTER_WINDOW(ModeSelectorCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
 ModeSelectorCanvas::ModeSelectorCanvas(wxWindow *parent, int *attribList) :
-InteractiveCanvas(parent, attribList), currentSelection(-1), numChoices(0) {
+InteractiveCanvas(parent, attribList), numChoices(0), currentSelection(-1) {
 
     glContext = new ModeSelectorContext(this, &wxGetApp().GetContext(this));
 }

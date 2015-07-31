@@ -1,7 +1,7 @@
 #include "DemodulatorInstance.h"
 
 DemodulatorInstance::DemodulatorInstance() :
-        t_Demod(NULL), t_PreDemod(NULL), t_Audio(NULL), threadQueueDemod(NULL), demodulatorThread(NULL), currentAudioGain(1.0) {
+        pipeIQInputData(NULL), demodulatorThread(NULL), t_PreDemod(NULL), t_Demod(NULL), t_Audio(NULL), currentAudioGain(1.0) {
 
 	terminated.store(true);
 	audioTerminated.store(true);
@@ -19,20 +19,29 @@ DemodulatorInstance::DemodulatorInstance() :
 
 
     label = new std::string("Unnamed");
-    threadQueueDemod = new DemodulatorThreadInputQueue;
-    threadQueuePostDemod = new DemodulatorThreadPostInputQueue;
-    threadQueueCommand = new DemodulatorThreadCommandQueue;
-    threadQueueNotify = new DemodulatorThreadCommandQueue;
+    pipeIQInputData = new DemodulatorThreadInputQueue;
+    pipeIQDemodData = new DemodulatorThreadPostInputQueue;
+    pipeDemodCommand = new DemodulatorThreadCommandQueue;
+    pipeDemodNotify = new DemodulatorThreadCommandQueue;
+    
+    demodulatorPreThread = new DemodulatorPreThread();
+    demodulatorPreThread->setInputQueue("IQDataInput",pipeIQInputData);
+    demodulatorPreThread->setOutputQueue("IQDataOutput",pipeIQDemodData);
+    demodulatorPreThread->setOutputQueue("NotifyQueue",pipeDemodNotify);
+    demodulatorPreThread->setInputQueue("CommandQueue",pipeDemodCommand);
+            
+    audioInputQueue = new AudioThreadInputQueue;
     threadQueueControl = new DemodulatorThreadControlCommandQueue;
 
-    demodulatorPreThread = new DemodulatorPreThread(threadQueueDemod, threadQueuePostDemod, threadQueueControl, threadQueueNotify);
-    demodulatorPreThread->setCommandQueue(threadQueueCommand);
-    demodulatorThread = new DemodulatorThread(threadQueuePostDemod, threadQueueControl, threadQueueNotify);
+    demodulatorThread = new DemodulatorThread();
+    demodulatorThread->setInputQueue("IQDataInput",pipeIQDemodData);
+    demodulatorThread->setInputQueue("ControlQueue",threadQueueControl);
+    demodulatorThread->setOutputQueue("NotifyQueue",pipeDemodNotify);
+    demodulatorThread->setOutputQueue("AudioDataOutput", audioInputQueue);
 
-    audioInputQueue = new AudioThreadInputQueue;
-    audioThread = new AudioThread(audioInputQueue, threadQueueNotify);
-
-    demodulatorThread->setAudioOutputQueue(audioInputQueue);
+    audioThread = new AudioThread();
+    audioThread->setInputQueue("AudioDataInput", audioInputQueue);
+    audioThread->setOutputQueue("NotifyQueue", pipeDemodNotify);
 
     currentDemodType = demodulatorThread->getDemodulatorType();
     currentDemodCons = demodulatorThread->getDemodulatorCons();
@@ -42,16 +51,16 @@ DemodulatorInstance::~DemodulatorInstance() {
     delete audioThread;
     delete demodulatorThread;
     delete demodulatorPreThread;
-    delete threadQueueDemod;
-    delete threadQueuePostDemod;
-    delete threadQueueCommand;
-    delete threadQueueNotify;
+    delete pipeIQInputData;
+    delete pipeIQDemodData;
+    delete pipeDemodCommand;
+    delete pipeDemodNotify;
     delete threadQueueControl;
     delete audioInputQueue;
 }
 
 void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {
-    demodulatorThread->setVisualOutputQueue(tQueue);
+    demodulatorThread->setOutputQueue("AudioVisualOutput", tQueue);
 }
 
 void DemodulatorInstance::run() {
@@ -106,7 +115,7 @@ void DemodulatorInstance::updateLabel(long long freq) {
 }
 
 DemodulatorThreadCommandQueue *DemodulatorInstance::getCommandQueue() {
-    return threadQueueCommand;
+    return pipeDemodCommand;
 }
 
 void DemodulatorInstance::terminate() {
@@ -132,9 +141,9 @@ void DemodulatorInstance::setLabel(std::string labelStr) {
 }
 
 bool DemodulatorInstance::isTerminated() {
-    while (!threadQueueNotify->empty()) {
+    while (!pipeDemodNotify->empty()) {
         DemodulatorThreadCommand cmd;
-        threadQueueNotify->pop(cmd);
+        pipeDemodNotify->pop(cmd);
 
         switch (cmd.cmd) {
         case DemodulatorThreadCommand::DEMOD_THREAD_CMD_AUDIO_TERMINATED:
@@ -320,13 +329,13 @@ void DemodulatorInstance::setBandwidth(int bw) {
         currentBandwidth = bw;
         checkBandwidth();
         demodulatorPreThread->getParams().bandwidth = currentBandwidth;
-    } else if (demodulatorPreThread && threadQueueCommand) {
+    } else if (demodulatorPreThread && pipeDemodCommand) {
         DemodulatorThreadCommand command;
         command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_BANDWIDTH;
         currentBandwidth = bw;
         checkBandwidth();
         command.llong_value = currentBandwidth;
-        threadQueueCommand->push(command);
+        pipeDemodCommand->push(command);
     }
 }
 
@@ -344,12 +353,12 @@ void DemodulatorInstance::setFrequency(long long freq) {
     if (!active) {
         currentFrequency = freq;
         demodulatorPreThread->getParams().frequency = currentFrequency;
-    } else if (demodulatorPreThread && threadQueueCommand) {
+    } else if (demodulatorPreThread && pipeDemodCommand) {
         DemodulatorThreadCommand command;
         command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_FREQUENCY;
         currentFrequency = freq;
         command.llong_value = freq;
-        threadQueueCommand->push(command);
+        pipeDemodCommand->push(command);
     }
 }
 
@@ -365,12 +374,12 @@ void DemodulatorInstance::setAudioSampleRate(int sampleRate) {
     if (terminated) {
         currentAudioSampleRate = sampleRate;
         demodulatorPreThread->getParams().audioSampleRate = sampleRate;
-    } else if (demodulatorPreThread && threadQueueCommand) {
+    } else if (demodulatorPreThread && pipeDemodCommand) {
         DemodulatorThreadCommand command;
         command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_AUDIO_RATE;
         currentAudioSampleRate = sampleRate;
         command.llong_value = sampleRate;
-        threadQueueCommand->push(command);
+        pipeDemodCommand->push(command);
     }
     if (currentDemodType == DEMOD_TYPE_RAW) {
         setBandwidth(currentAudioSampleRate);
@@ -419,4 +428,8 @@ bool DemodulatorInstance::isTracking()  {
 
 void DemodulatorInstance::setTracking(bool tracking) {
     this->tracking = tracking;
+}
+
+DemodulatorThreadInputQueue *DemodulatorInstance::getIQInputDataPipe() {
+    return pipeIQInputData;
 }

@@ -23,10 +23,7 @@
 
 class CubicSDR: public wxApp {
 public:
-    CubicSDR() :
-    appframe(NULL), m_glContext(NULL), frequency(0), sdrThread(NULL), sdrPostThread(NULL), threadCmdQueueSDR(NULL), iqVisualQueue(NULL), iqPostDataQueue(NULL), audioVisualQueue(NULL), t_SDR(NULL),  t_PostSDR(NULL), sampleRate(DEFAULT_SAMPLE_RATE), offset(0), snap(1), directSamplingMode(0), ppm(0) {
-
-    }
+    CubicSDR();
 
     PrimaryGLContext &GetContext(wxGLCanvas *canvas);
 
@@ -90,10 +87,10 @@ private:
     SDRThread *sdrThread;
     SDRPostThread *sdrPostThread;
 
-    SDRThreadCommandQueue* threadCmdQueueSDR;
-    SDRThreadIQDataQueue* iqPostDataQueue;
-    DemodulatorThreadInputQueue* iqVisualQueue;
-    DemodulatorThreadOutputQueue* audioVisualQueue;
+    SDRThreadCommandQueue* pipeSDRCommand;
+    SDRThreadIQDataQueue* pipeSDRIQData;
+    DemodulatorThreadInputQueue* pipeIQVisualData;
+    DemodulatorThreadOutputQueue* pipeAudioVisualData;
 
     std::thread *t_SDR;
     std::thread *t_PostSDR;

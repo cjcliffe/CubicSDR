@@ -81,9 +81,9 @@ void ScopeContext::Plot(std::vector<float> &points, bool stereo, bool ppmMode) {
 
     glColor3f(0.65, 0.65, 0.65);
 
-    getFont(PrimaryGLContext::GLFONT_SIZE12).drawString(ppmMode?"Device PPM":"Frequency", -0.66, -1.0+hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
-    getFont(PrimaryGLContext::GLFONT_SIZE12).drawString("Bandwidth", 0.0, -1.0+hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
-    getFont(PrimaryGLContext::GLFONT_SIZE12).drawString("Center Frequency", 0.66, -1.0+hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+    GLFont::getFont(GLFont::GLFONT_SIZE12).drawString(ppmMode?"Device PPM":"Frequency", -0.66, -1.0+hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+    GLFont::getFont(GLFont::GLFONT_SIZE12).drawString("Bandwidth", 0.0, -1.0+hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+    GLFont::getFont(GLFont::GLFONT_SIZE12).drawString("Center Frequency", 0.66, -1.0+hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
 
 
     if (stereo) {
@@ -151,7 +151,7 @@ void ScopeContext::DrawDeviceName(std::string deviceName) {
     float hPos = (float) (viewHeight - 20) / viewHeight;
 
     glColor3f(0.65, 0.65, 0.65);
-    getFont(PrimaryGLContext::GLFONT_SIZE12).drawString(deviceName.c_str(), 1.0, hPos, 12, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
+    GLFont::getFont(GLFont::GLFONT_SIZE12).drawString(deviceName.c_str(), 1.0, hPos, 12, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
 }
 
 void ScopeContext::DrawEnd() {

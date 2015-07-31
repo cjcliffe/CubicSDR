@@ -3,7 +3,7 @@
 #include "SDRThread.h"
 #include <algorithm>
 
-class SDRPostThread {
+class SDRPostThread : public IOThread {
 public:
     SDRPostThread();
     ~SDRPostThread();
@@ -11,27 +11,22 @@ public:
     void bindDemodulator(DemodulatorInstance *demod);
     void removeDemodulator(DemodulatorInstance *demod);
 
-    void setIQDataInQueue(SDRThreadIQDataQueue* iqDataQueue);
-    void setIQDataOutQueue(DemodulatorThreadInputQueue* iqDataQueue);
-    void setIQVisualQueue(DemodulatorThreadInputQueue* iqVisQueue);
-
     void setNumVisSamples(int num_vis_samples_in);
     int getNumVisSamples();
     
     void setSwapIQ(bool swapIQ);
     bool getSwapIQ();
     
-    void threadMain();
+    void run();
     void terminate();
 
 protected:
-    std::atomic<SDRThreadIQDataQueue *> iqDataInQueue;
-    std::atomic<DemodulatorThreadInputQueue *> iqDataOutQueue;
-    std::atomic<DemodulatorThreadInputQueue *> iqVisualQueue;
+    SDRThreadIQDataQueue *iqDataInQueue;
+    DemodulatorThreadInputQueue *iqDataOutQueue;
+    DemodulatorThreadInputQueue *iqVisualQueue;
 	
     std::mutex busy_demod;
     std::vector<DemodulatorInstance *> demodulators;
-    std::atomic_bool terminated;
     iirfilt_crcf dcFilter;
     int num_vis_samples;
     std::atomic_bool swapIQ;

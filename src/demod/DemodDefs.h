@@ -25,6 +25,8 @@
 #define DEMOD_TYPE_QPSK 15
 #define DEMOD_TYPE_RAW 16
 
+#include "IOThread.h"
+
 class DemodulatorThread;
 class DemodulatorThreadCommand {
 public:

@@ -33,24 +33,3 @@ const char filePathSeparator =
 #define DEFAULT_DEMOD_TYPE 1
 #define DEFAULT_DEMOD_BW 200000
 
-#include <mutex>
-#include <atomic>
-
-class ReferenceCounter {
-public:
-    mutable std::mutex m_mutex;
-
-    void setRefCount(int rc) {
-        refCount.store(rc);
-    }
-
-    void decRefCount() {
-        refCount.store(refCount.load()-1);
-    }
-
-    int getRefCount() {
-        return refCount.load();
-    }
-protected:
-    std::atomic_int refCount;
-};

@@ -2,18 +2,20 @@
 #include "CubicSDRDefs.h"
 #include <vector>
 
-DemodulatorWorkerThread::DemodulatorWorkerThread(DemodulatorThreadWorkerCommandQueue* in, DemodulatorThreadWorkerResultQueue* out) :
-        commandQueue(in), resultQueue(out) {
-	terminated.store(false);
+DemodulatorWorkerThread::DemodulatorWorkerThread() : IOThread(),
+        commandQueue(NULL), resultQueue(NULL) {
 }
 
 DemodulatorWorkerThread::~DemodulatorWorkerThread() {
 }
 
-void DemodulatorWorkerThread::threadMain() {
+void DemodulatorWorkerThread::run() {
 
     std::cout << "Demodulator worker thread started.." << std::endl;
-
+    
+    commandQueue = (DemodulatorThreadWorkerCommandQueue *)getInputQueue("WorkerCommandQueue");
+    resultQueue = (DemodulatorThreadWorkerResultQueue *)getOutputQueue("WorkerResultQueue");
+    
     while (!terminated) {
         bool filterChanged = false;
         DemodulatorWorkerThreadCommand filterCommand;

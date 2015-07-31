@@ -9,6 +9,7 @@
 #include "MeterCanvas.h"
 #include "TuningCanvas.h"
 #include "ModeSelectorCanvas.h"
+#include "UITestCanvas.h"
 
 #include <map>
 
@@ -81,6 +82,7 @@ private:
     MeterCanvas *demodSignalMeter;
     MeterCanvas *demodGainMeter;
     TuningCanvas *demodTuner;
+    UITestCanvas *testCanvas;
 
     DemodulatorInstance *activeDemodulator;
 

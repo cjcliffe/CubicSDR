@@ -56,6 +56,9 @@ public:
     enum Align {
         GLFONT_ALIGN_LEFT, GLFONT_ALIGN_RIGHT, GLFONT_ALIGN_CENTER, GLFONT_ALIGN_TOP, GLFONT_ALIGN_BOTTOM
     };
+    enum GLFontSize {
+        GLFONT_SIZE12, GLFONT_SIZE16, GLFONT_SIZE18, GLFONT_SIZE24, GLFONT_SIZE32, GLFONT_SIZE48, GLFONT_MAX
+    };
 
     GLFont();
     ~GLFont();
@@ -63,7 +66,10 @@ public:
     bool isLoaded();
 
     float getStringWidth(std::string str, float size, float viewAspect);
-    void drawString(std::string str, float xpos, float ypos, int pxHeight, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP);
+    void drawString(std::string str, float xpos, float ypos, int pxHeight, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx=0, int vpy=0);
+
+    static GLFont fonts[GLFONT_MAX];
+    static GLFont &getFont(GLFontSize esize);
 
 private:
     std::string nextParam(std::istringstream &str);

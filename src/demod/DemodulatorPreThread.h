@@ -7,26 +7,13 @@
 #include "DemodDefs.h"
 #include "DemodulatorWorkerThread.h"
 
-class DemodulatorPreThread {
+class DemodulatorPreThread : public IOThread {
 public:
 
-    DemodulatorPreThread(DemodulatorThreadInputQueue* iqInputQueue, DemodulatorThreadPostInputQueue* iqOutputQueue,
-            DemodulatorThreadControlCommandQueue *threadQueueControl, DemodulatorThreadCommandQueue* threadQueueNotify);
+    DemodulatorPreThread();
     ~DemodulatorPreThread();
 
-#ifdef __APPLE__
-    void *threadMain();
-#else
-    void threadMain();
-#endif
-
-    void setCommandQueue(DemodulatorThreadCommandQueue *tQueue) {
-        commandQueue = tQueue;
-    }
-
-    void setDemodulatorControlQueue(DemodulatorThreadControlCommandQueue *tQueue) {
-        threadQueueControl = tQueue;
-    }
+    void run();
 
     DemodulatorThreadParameters &getParams() {
         return params;
@@ -46,10 +33,6 @@ public:
 #endif
 
 protected:
-    DemodulatorThreadInputQueue* iqInputQueue;
-    DemodulatorThreadPostInputQueue* iqOutputQueue;
-    DemodulatorThreadCommandQueue* commandQueue;
-
     msresamp_crcf iqResampler;
     double iqResampleRatio;
     std::vector<liquid_float_complex> resampledData;
@@ -68,7 +51,6 @@ protected:
     nco_crcf freqShifter;
     int shiftFrequency;
 
-    std::atomic_bool terminated;
     std::atomic_bool initialized;
 
     DemodulatorWorkerThread *workerThread;
@@ -76,6 +58,9 @@ protected:
 
     DemodulatorThreadWorkerCommandQueue *workerQueue;
     DemodulatorThreadWorkerResultQueue *workerResults;
+
+    DemodulatorThreadInputQueue* iqInputQueue;
+    DemodulatorThreadPostInputQueue* iqOutputQueue;
     DemodulatorThreadCommandQueue* threadQueueNotify;
-    DemodulatorThreadControlCommandQueue *threadQueueControl;
+    DemodulatorThreadCommandQueue* commandQueue;
 };

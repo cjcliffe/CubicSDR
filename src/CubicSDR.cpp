@@ -33,6 +33,12 @@ class outbuf : public std::streambuf {
 };
 #endif
 
+
+CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE), directSamplingMode(0),
+    sdrThread(NULL), sdrPostThread(NULL), pipeSDRCommand(NULL), pipeSDRIQData(NULL), pipeIQVisualData(NULL), pipeAudioVisualData(NULL), t_SDR(NULL), t_PostSDR(NULL) {
+    
+}
+
 bool CubicSDR::OnInit() {
 #ifdef _OSX_APP_
     CFBundleRef mainBundle = CFBundleGetMainBundle();
@@ -68,22 +74,25 @@ bool CubicSDR::OnInit() {
     ppm = 0;
     directSamplingMode = 0;
 
-    audioVisualQueue = new DemodulatorThreadOutputQueue();
-    audioVisualQueue->set_max_num_items(1);
+    // Visual Data
+    pipeIQVisualData = new DemodulatorThreadInputQueue();
+    pipeIQVisualData->set_max_num_items(1);
+    
+    pipeAudioVisualData = new DemodulatorThreadOutputQueue();
+    pipeAudioVisualData->set_max_num_items(1);
+    
+    // I/Q Data
+    pipeSDRIQData = new SDRThreadIQDataQueue;
+    pipeSDRCommand = new SDRThreadCommandQueue();
 
-    threadCmdQueueSDR = new SDRThreadCommandQueue;
-    sdrThread = new SDRThread(threadCmdQueueSDR);
+    sdrThread = new SDRThread();
+    sdrThread->setInputQueue("SDRCommandQueue",pipeSDRCommand);
+    sdrThread->setOutputQueue("IQDataOutput",pipeSDRIQData);
 
     sdrPostThread = new SDRPostThread();
     sdrPostThread->setNumVisSamples(16384 * 2);
-
-    iqPostDataQueue = new SDRThreadIQDataQueue;
-    iqVisualQueue = new DemodulatorThreadInputQueue;
-    iqVisualQueue->set_max_num_items(1);
-
-    sdrThread->setIQDataOutQueue(iqPostDataQueue);
-    sdrPostThread->setIQDataInQueue(iqPostDataQueue);
-    sdrPostThread->setIQVisualQueue(iqVisualQueue);
+    sdrPostThread->setInputQueue("IQDataInput", pipeSDRIQData);
+    sdrPostThread->setOutputQueue("IQVisualDataOut", pipeIQVisualData);
 
     std::vector<SDRDeviceInfo *>::iterator devs_i;
 
@@ -167,11 +176,11 @@ int CubicSDR::OnExit() {
     delete sdrPostThread;
     delete t_PostSDR;
 
-    delete threadCmdQueueSDR;
+    delete pipeSDRCommand;
 
-    delete iqVisualQueue;
-    delete audioVisualQueue;
-    delete iqPostDataQueue;
+    delete pipeIQVisualData;
+    delete pipeAudioVisualData;
+    delete pipeSDRIQData;
 
     delete m_glContext;
 
@@ -217,7 +226,7 @@ void CubicSDR::setFrequency(long long freq) {
     frequency = freq;
     SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_TUNE);
     command.llong_value = freq;
-    threadCmdQueueSDR->push(command);
+    pipeSDRCommand->push(command);
 }
 
 long long CubicSDR::getOffset() {
@@ -228,7 +237,7 @@ void CubicSDR::setOffset(long long ofs) {
     offset = ofs;
     SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_SET_OFFSET);
     command.llong_value = ofs;
-    threadCmdQueueSDR->push(command);
+    pipeSDRCommand->push(command);
     
     SDRDeviceInfo *dev = (*getDevices())[getDevice()];
     config.getDevice(dev->getDeviceId())->setOffset(ofs);
@@ -238,7 +247,7 @@ void CubicSDR::setDirectSampling(int mode) {
     directSamplingMode = mode;
     SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_SET_DIRECT_SAMPLING);
     command.llong_value = mode;
-    threadCmdQueueSDR->push(command);
+    pipeSDRCommand->push(command);
 
     SDRDeviceInfo *dev = (*getDevices())[getDevice()];
     config.getDevice(dev->getDeviceId())->setDirectSampling(mode);
@@ -263,11 +272,11 @@ long long CubicSDR::getFrequency() {
 }
 
 DemodulatorThreadOutputQueue* CubicSDR::getAudioVisualQueue() {
-    return audioVisualQueue;
+    return pipeAudioVisualData;
 }
 
 DemodulatorThreadInputQueue* CubicSDR::getIQVisualQueue() {
-    return iqVisualQueue;
+    return pipeIQVisualData;
 }
 
 DemodulatorMgr &CubicSDR::getDemodMgr() {
@@ -285,7 +294,7 @@ void CubicSDR::setSampleRate(long long rate_in) {
     sampleRate = rate_in;
     SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_SET_SAMPLERATE);
     command.llong_value = rate_in;
-    threadCmdQueueSDR->push(command);
+    pipeSDRCommand->push(command);
     setFrequency(frequency);
 }
 
@@ -309,7 +318,7 @@ void CubicSDR::setDevice(int deviceId) {
     sdrThread->setDeviceId(deviceId);
     SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_SET_DEVICE);
     command.llong_value = deviceId;
-    threadCmdQueueSDR->push(command);
+    pipeSDRCommand->push(command);
 
     SDRDeviceInfo *dev = (*getDevices())[deviceId];
     DeviceConfig *devConfig = config.getDevice(dev->getDeviceId());
@@ -340,7 +349,7 @@ void CubicSDR::setPPM(int ppm_in) {
 
     SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_SET_PPM);
     command.llong_value = ppm;
-    threadCmdQueueSDR->push(command);
+    pipeSDRCommand->push(command);
 
     SDRDeviceInfo *dev = (*getDevices())[getDevice()];
 

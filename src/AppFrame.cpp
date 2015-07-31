@@ -147,6 +147,12 @@ AppFrame::AppFrame() :
     spectrumCanvas->attachWaterfallCanvas(waterfallCanvas);
     vbox->Add(waterfallCanvas, 20, wxEXPAND | wxALL, 0);
 
+/*
+    vbox->AddSpacer(1);
+    testCanvas = new UITestCanvas(this, attribList);
+    vbox->Add(testCanvas, 20, wxEXPAND | wxALL, 0);
+// */
+            
     this->SetSizer(vbox);
 
     //    waterfallCanvas->SetFocusFromKbd();
