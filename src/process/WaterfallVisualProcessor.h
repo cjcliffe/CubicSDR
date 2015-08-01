@@ -9,7 +9,5 @@ class WaterfallVisualData : public ReferenceCounter {
 
 class WaterfallVisualProcessor : public VisualProcessor<DemodulatorThreadIQData, WaterfallVisualData> {
 protected:
-    void process() {
-        
-    }
+    void process();
 };
