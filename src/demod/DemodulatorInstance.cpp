@@ -1,7 +1,7 @@
 #include "DemodulatorInstance.h"
 
 DemodulatorInstance::DemodulatorInstance() :
-        pipeIQInputData(NULL), demodulatorThread(NULL), t_PreDemod(NULL), t_Demod(NULL), t_Audio(NULL), currentAudioGain(1.0) {
+        t_PreDemod(NULL), pipeIQInputData(NULL), demodulatorThread(NULL), t_Demod(NULL), t_Audio(NULL), currentAudioGain(1.0) {
 
 	terminated.store(true);
 	audioTerminated.store(true);
@@ -30,17 +30,17 @@ DemodulatorInstance::DemodulatorInstance() :
     demodulatorPreThread->setOutputQueue("NotifyQueue",pipeDemodNotify);
     demodulatorPreThread->setInputQueue("CommandQueue",pipeDemodCommand);
             
-    audioInputQueue = new AudioThreadInputQueue;
+    pipeAudioData = new AudioThreadInputQueue;
     threadQueueControl = new DemodulatorThreadControlCommandQueue;
 
     demodulatorThread = new DemodulatorThread();
     demodulatorThread->setInputQueue("IQDataInput",pipeIQDemodData);
     demodulatorThread->setInputQueue("ControlQueue",threadQueueControl);
     demodulatorThread->setOutputQueue("NotifyQueue",pipeDemodNotify);
-    demodulatorThread->setOutputQueue("AudioDataOutput", audioInputQueue);
+    demodulatorThread->setOutputQueue("AudioDataOutput", pipeAudioData);
 
     audioThread = new AudioThread();
-    audioThread->setInputQueue("AudioDataInput", audioInputQueue);
+    audioThread->setInputQueue("AudioDataInput", pipeAudioData);
     audioThread->setOutputQueue("NotifyQueue", pipeDemodNotify);
 
     currentDemodType = demodulatorThread->getDemodulatorType();
@@ -55,7 +55,7 @@ DemodulatorInstance::~DemodulatorInstance() {
     delete pipeDemodCommand;
     delete pipeDemodNotify;
     delete threadQueueControl;
-    delete audioInputQueue;
+    delete pipeAudioData;
 }
 
 void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {

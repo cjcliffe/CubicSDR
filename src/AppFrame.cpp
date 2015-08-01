@@ -91,6 +91,7 @@ AppFrame::AppFrame() :
 
     scopeCanvas = new ScopeCanvas(this, attribList);
     demodScopeTray->Add(scopeCanvas, 8, wxEXPAND | wxALL, 0);
+    wxGetApp().getScopeProcessor()->attachOutput(scopeCanvas->getInputQueue());
 
     demodScopeTray->AddSpacer(1);
 

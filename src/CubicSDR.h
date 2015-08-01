@@ -16,6 +16,7 @@
 #include "DemodulatorMgr.h"
 #include "AppConfig.h"
 #include "AppFrame.h"
+#include "ScopeVisualProcessor.h"
 
 #include <wx/cmdline.h>
 
@@ -52,6 +53,8 @@ public:
     void setDevice(int deviceId);
     int getDevice();
 
+    ScopeVisualProcessor *getScopeProcessor();
+    
     DemodulatorThreadOutputQueue* getAudioVisualQueue();
     DemodulatorThreadInputQueue* getIQVisualQueue();
     DemodulatorMgr &getDemodMgr();
@@ -92,6 +95,8 @@ private:
     DemodulatorThreadInputQueue* pipeIQVisualData;
     DemodulatorThreadOutputQueue* pipeAudioVisualData;
 
+    ScopeVisualProcessor scopeProcessor;
+    
     std::thread *t_SDR;
     std::thread *t_PostSDR;
 };

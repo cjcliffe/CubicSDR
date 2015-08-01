@@ -52,7 +52,7 @@ protected:
     void distribute(OutputDataType *output) {
         // distribute outputs
         output->setRefCount(outputs.size());
-        for (outputs_i = outputs.begin(); outputs_i != outputs.begin(); outputs_i++) {
+        for (outputs_i = outputs.begin(); outputs_i != outputs.end(); outputs_i++) {
         	if ((*outputs_i)->full()) {
         		output->decRefCount();
         	} else {
@@ -62,7 +62,7 @@ protected:
     }
     
     bool isOutputEmpty() {
-        for (outputs_i = outputs.begin(); outputs_i != outputs.begin(); outputs_i++) {
+        for (outputs_i = outputs.begin(); outputs_i != outputs.end(); outputs_i++) {
             if (!(*outputs_i)->empty()) {
             	return false;
             }
@@ -71,7 +71,7 @@ protected:
     }
 
     bool isAnyOutputEmpty() {
-        for (outputs_i = outputs.begin(); outputs_i != outputs.begin(); outputs_i++) {
+        for (outputs_i = outputs.begin(); outputs_i != outputs.end(); outputs_i++) {
             if ((*outputs_i)->empty()) {
             	return true;
             }

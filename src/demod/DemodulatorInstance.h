@@ -18,7 +18,6 @@ public:
     std::thread *t_Demod;
 #endif
 
-    AudioThreadInputQueue *audioInputQueue;
     AudioThread *audioThread;
     std::thread *t_Audio;
 
@@ -80,6 +79,7 @@ public:
 protected:
     DemodulatorThreadInputQueue* pipeIQInputData;
     DemodulatorThreadPostInputQueue* pipeIQDemodData;
+    AudioThreadInputQueue *pipeAudioData;
     DemodulatorThreadCommandQueue* pipeDemodCommand;
     DemodulatorThreadCommandQueue* pipeDemodNotify;
     DemodulatorPreThread *demodulatorPreThread;

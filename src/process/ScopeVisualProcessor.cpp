@@ -1,7 +1,7 @@
 #include "ScopeVisualProcessor.h"
 
 void ScopeVisualProcessor::process() {
-    if (isOutputEmpty()) {
+    if (!isOutputEmpty()) {
         return;
     }
     if (!input->empty()) {

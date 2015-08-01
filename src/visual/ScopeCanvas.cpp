@@ -21,17 +21,14 @@ wxEND_EVENT_TABLE()
 
 ScopeCanvas::ScopeCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE), parent(parent), stereo(false), ppmMode(false) {
+        wxFULL_REPAINT_ON_RESIZE), stereo(false), ppmMode(false) {
 
     glContext = new ScopeContext(this, &wxGetApp().GetContext(this));
+    inputData.set_max_num_items(1);
 }
 
 ScopeCanvas::~ScopeCanvas() {
 
-}
-
-void ScopeCanvas::setWaveformPoints(std::vector<float> &waveform_points_in) {
-    waveform_points = waveform_points_in;
 }
 
 void ScopeCanvas::setStereo(bool state) {
@@ -58,30 +55,26 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 #endif
     const wxSize ClientSize = GetClientSize();
 
-    if (!wxGetApp().getAudioVisualQueue()->empty()) {
-        AudioThreadInput *demodAudioData;
-        wxGetApp().getAudioVisualQueue()->pop(demodAudioData);
+    wxGetApp().getScopeProcessor()->run();
+    if (!inputData.empty()) {
+        ScopeRenderData *avData;
+        inputData.pop(avData);
 
-        int iMax = demodAudioData?demodAudioData->data.size():0;
-
-        if (demodAudioData && iMax) {
-            if (waveform_points.size() != iMax * 2) {
-                waveform_points.resize(iMax * 2);
-            }
-
-            demodAudioData->busy_update.lock();
-
-            for (int i = 0; i < iMax; i++) {
-                waveform_points[i * 2 + 1] = demodAudioData->data[i] * 0.5f;
-                waveform_points[i * 2] = ((double) i / (double) iMax);
-            }
-
-            demodAudioData->busy_update.unlock();
-
-            setStereo(demodAudioData->channels == 2);
-        } else {
-            std::cout << "Incoming Demodulator data empty?" << std::endl;
+        if (!avData) {
+            return;
         }
+        
+        int iMax = avData->waveform_points.size();
+        
+        if (!iMax) {
+            avData->decRefCount();
+            return;
+        }
+        
+        waveform_points.assign(avData->waveform_points.begin(),avData->waveform_points.end());
+        setStereo(avData->channels == 2);
+        
+        avData->decRefCount();
     }
 
     glContext->SetCurrent(*this);
@@ -102,4 +95,8 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
 void ScopeCanvas::OnIdle(wxIdleEvent &event) {
     Refresh(false);
+}
+
+ScopeRenderDataQueue *ScopeCanvas::getInputQueue() {
+    return &inputData;
 }

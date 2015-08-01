@@ -58,6 +58,8 @@ bool CubicSDR::OnInit() {
     pipeAudioVisualData = new DemodulatorThreadOutputQueue();
     pipeAudioVisualData->set_max_num_items(1);
     
+    scopeProcessor.setInput(pipeAudioVisualData);
+    
     // I/Q Data
     pipeSDRIQData = new SDRThreadIQDataQueue;
     pipeSDRCommand = new SDRThreadCommandQueue();
@@ -246,6 +248,10 @@ bool CubicSDR::getSwapIQ() {
 
 long long CubicSDR::getFrequency() {
     return frequency;
+}
+
+ScopeVisualProcessor *CubicSDR::getScopeProcessor() {
+    return &scopeProcessor;
 }
 
 DemodulatorThreadOutputQueue* CubicSDR::getAudioVisualQueue() {
