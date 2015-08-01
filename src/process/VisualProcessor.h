@@ -5,27 +5,30 @@
 #include "IOThread.h"
 #include <algorithm>
 
-typedef ThreadQueue<ReferenceCounter *> VisualDataQueue;
-
+template<class InputQueueType = ThreadQueueBase, class OutputQueueType = ThreadQueueBase, class OutputDataType = ReferenceCounter>
 class VisualProcessor {
 public:
-    void setInput(VisualDataQueue *vis_in) {
+	virtual ~VisualProcessor() {
+
+	}
+
+    void setInput(InputQueueType *vis_in) {
         busy_update.lock();
         input = vis_in;
         busy_update.unlock();
     }
     
-    void attachOutput(VisualDataQueue *vis_out) {
+    void attachOutput(OutputQueueType *vis_out) {
         // attach an output queue
         busy_update.lock();
         outputs.push_back(vis_out);
         busy_update.unlock();
     }
     
-    void removeOutput(VisualDataQueue *vis_out) {
+    void removeOutput(OutputQueueType *vis_out) {
         // remove an output queue
         busy_update.lock();
-        std::vector<VisualDataQueue *>::iterator i = std::find(outputs.begin(), outputs.end(), vis_out);
+        typename std::vector<OutputQueueType *>::iterator i = std::find(outputs.begin(), outputs.end(), vis_out);
         if (i != outputs.end()) {
             outputs.erase(i);
         }
@@ -46,29 +49,53 @@ protected:
         // distribute(output);
     }
 
-    void distribute(ReferenceCounter *output) {
+    void distribute(OutputDataType *output) {
         // distribute outputs
         output->setRefCount(outputs.size());
-        std::vector<VisualDataQueue *>::iterator outputs_i;
         for (outputs_i = outputs.begin(); outputs_i != outputs.begin(); outputs_i++) {
-            (*outputs_i)->push(output);
+        	if ((*outputs_i)->full()) {
+        		output->decRefCount();
+        	} else {
+        		(*outputs_i)->push(output);
+        	}
         }
     }
     
-    VisualDataQueue * input;
-    std::vector<VisualDataQueue *> outputs;
+    bool isOutputEmpty() {
+        for (outputs_i = outputs.begin(); outputs_i != outputs.begin(); outputs_i++) {
+            if (!(*outputs_i)->empty()) {
+            	return false;
+            }
+        }
+        return true;
+    }
+
+    bool isAnyOutputEmpty() {
+        for (outputs_i = outputs.begin(); outputs_i != outputs.begin(); outputs_i++) {
+            if ((*outputs_i)->empty()) {
+            	return true;
+            }
+        }
+        return false;
+    }
+
+    InputQueueType *input;
+    std::vector<OutputQueueType *> outputs;
+	typename std::vector<OutputQueueType *>::iterator outputs_i;
     std::mutex busy_update;
 };
 
 
-class VisualDataDistributor : public VisualProcessor {
+template<class QueueType = ThreadQueueBase, class OutputDataType = ReferenceCounter>
+class VisualDataDistributor : public VisualProcessor<QueueType, QueueType, OutputDataType> {
 protected:
-    virtual void process() {
-        while (!input->empty()) {
-            ReferenceCounter *inp;
-            input->pop(inp);
+    void process() {
+
+        while (!VisualProcessor<QueueType, QueueType, OutputDataType>::input->empty()) {
+        	ReferenceCounter *inp;
+        	VisualProcessor<QueueType, QueueType, OutputDataType>::input->pop(inp);
             if (inp) {
-                distribute(inp);
+            	VisualProcessor<QueueType, QueueType, OutputDataType>::distribute(inp);
             }
         }
     }

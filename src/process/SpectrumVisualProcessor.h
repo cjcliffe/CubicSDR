@@ -1,8 +1,13 @@
 #pragma once
 
 #include "VisualProcessor.h"
+#include "SpectrumCanvas.h"
 
-class SpectrumVisualProcessor : public VisualProcessor {
+class SpectrumVisualData : public ReferenceCounter {
+
+};
+
+class SpectrumVisualProcessor : public VisualProcessor<DemodulatorThreadIQData, SpectrumVisualData> {
 protected:
     virtual void process() {
         /*

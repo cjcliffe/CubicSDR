@@ -3,35 +3,54 @@
 #include "VisualProcessor.h"
 #include "AudioThread.h"
 
-class ScopeVisualProcessor : public VisualProcessor {
-protected:
-    std::vector<float> waveform_points;
+class ScopeRenderData: public ReferenceCounter {
+public:
+	std::vector<float> waveform_points;
+	int channels;
+};
 
+typedef ThreadQueue<ScopeRenderData *> ScopeRenderDataQueue;
+
+class ScopeVisualProcessor : public VisualProcessor<AudioThreadInputQueue, ScopeRenderDataQueue, ScopeRenderData> {
+protected:
     virtual void process() {
+    	if (isOutputEmpty()) {
+    		return;
+    	}
         if (!input->empty()) {
-            ReferenceCounter *ati_ref;
-            input->pop(ati_ref);
-            
-            AudioThreadInput *ati = (AudioThreadInput *)ati_ref;
-            if (!ati) {
+            AudioThreadInput *audioInputData;
+            input->pop(audioInputData);
+
+            if (!audioInputData) {
                 return;
             }
-            int iMax = ati->data.size();
+            int iMax = audioInputData->data.size();
             if (!iMax) {
-                ati->decRefCount();
+                audioInputData->decRefCount();
                 return;
             }
-            if (waveform_points.size() != iMax * 2) {
-                waveform_points.resize(iMax * 2);
+
+            ScopeRenderData *renderData = outputBuffers.getBuffer();
+            renderData->channels = audioInputData->channels;
+
+            if (renderData->waveform_points.size() != iMax * 2) {
+            	renderData->waveform_points.resize(iMax * 2);
             }
             
             for (int i = 0; i < iMax; i++) {
-                waveform_points[i * 2 + 1] = ati->data[i] * 0.5f;
-                waveform_points[i * 2] = ((double) i / (double) iMax);
+            	renderData->waveform_points[i * 2 + 1] = audioInputData->data[i] * 0.5f;
+            	renderData->waveform_points[i * 2] = ((double) i / (double) iMax);
             }
             
+            distribute(renderData);
             // ati->channels
         }
+    }
+
+    ReBuffer<ScopeRenderData> outputBuffers;
+};
+
+
 /*
  if (!wxGetApp().getAudioVisualQueue()->empty()) {
             AudioThreadInput *demodAudioData;
@@ -59,5 +78,3 @@ protected:
             }
         }
 */
-    }
-};
