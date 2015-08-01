@@ -11,7 +11,7 @@ public:
 
 typedef ThreadQueue<ScopeRenderData *> ScopeRenderDataQueue;
 
-class ScopeVisualProcessor : public VisualProcessor<AudioThreadInputQueue, ScopeRenderDataQueue, ScopeRenderData> {
+class ScopeVisualProcessor : public VisualProcessor<AudioThreadInput, ScopeRenderData> {
 protected:
     virtual void process() {
     	if (isOutputEmpty()) {

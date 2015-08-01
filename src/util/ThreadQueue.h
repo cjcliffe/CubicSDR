@@ -212,12 +212,12 @@ public:
     }
 
     /**
-     *  Check if the queue is empty.
-     * \return true if queue is empty.
+     *  Check if the queue is full.
+     * \return true if queue is full.
      */
     bool full() const {
         std::lock_guard < std::mutex > lock(m_mutex);
-        return m_queue.size() >= m_max_num_items;
+        return (m_max_num_items != 0) && (m_queue.size() >= m_max_num_items);
     }
 
     /**

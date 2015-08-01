@@ -5,30 +5,30 @@
 #include "IOThread.h"
 #include <algorithm>
 
-template<class InputQueueType = ThreadQueueBase, class OutputQueueType = ThreadQueueBase, class OutputDataType = ReferenceCounter>
+template<class InputDataType = ReferenceCounter, class OutputDataType = ReferenceCounter>
 class VisualProcessor {
 public:
 	virtual ~VisualProcessor() {
 
 	}
 
-    void setInput(InputQueueType *vis_in) {
+    void setInput(ThreadQueue<InputDataType *> *vis_in) {
         busy_update.lock();
         input = vis_in;
         busy_update.unlock();
     }
     
-    void attachOutput(OutputQueueType *vis_out) {
+    void attachOutput(ThreadQueue<OutputDataType *> *vis_out) {
         // attach an output queue
         busy_update.lock();
         outputs.push_back(vis_out);
         busy_update.unlock();
     }
     
-    void removeOutput(OutputQueueType *vis_out) {
+    void removeOutput(ThreadQueue<OutputDataType *> *vis_out) {
         // remove an output queue
         busy_update.lock();
-        typename std::vector<OutputQueueType *>::iterator i = std::find(outputs.begin(), outputs.end(), vis_out);
+        typename std::vector<ThreadQueue<OutputDataType *> *>::iterator i = std::find(outputs.begin(), outputs.end(), vis_out);
         if (i != outputs.end()) {
             outputs.erase(i);
         }
@@ -79,23 +79,23 @@ protected:
         return false;
     }
 
-    InputQueueType *input;
-    std::vector<OutputQueueType *> outputs;
-	typename std::vector<OutputQueueType *>::iterator outputs_i;
+    ThreadQueue<InputDataType *> *input;
+    std::vector<ThreadQueue<OutputDataType *> *> outputs;
+	typename std::vector<ThreadQueue<OutputDataType *> *>::iterator outputs_i;
     std::mutex busy_update;
 };
 
 
-template<class QueueType = ThreadQueueBase, class OutputDataType = ReferenceCounter>
-class VisualDataDistributor : public VisualProcessor<QueueType, QueueType, OutputDataType> {
+template<class InputDataType = ReferenceCounter, class OutputDataType = ReferenceCounter>
+class VisualDataDistributor : public VisualProcessor<InputDataType, OutputDataType> {
 protected:
     void process() {
 
-        while (!VisualProcessor<QueueType, QueueType, OutputDataType>::input->empty()) {
+        while (!VisualProcessor<InputDataType, OutputDataType>::input->empty()) {
         	ReferenceCounter *inp;
-        	VisualProcessor<QueueType, QueueType, OutputDataType>::input->pop(inp);
+        	VisualProcessor<InputDataType, OutputDataType>::input->pop(inp);
             if (inp) {
-            	VisualProcessor<QueueType, QueueType, OutputDataType>::distribute(inp);
+            	VisualProcessor<InputDataType, OutputDataType>::distribute(inp);
             }
         }
     }
