@@ -27,7 +27,7 @@ EVT_MOUSEWHEEL(SpectrumCanvas::OnMouseWheelMoved)
 wxEND_EVENT_TABLE()
 
 SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *attribList) :
-        InteractiveCanvas(parent, attribList), fft_size(0), waterfallCanvas(NULL), trackingRate(0) {
+        InteractiveCanvas(parent, attribList), waterfallCanvas(NULL) {
 
     glContext = new SpectrumContext(this, &wxGetApp().GetContext(this));
 

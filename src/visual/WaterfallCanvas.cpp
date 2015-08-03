@@ -717,16 +717,6 @@ void WaterfallCanvas::OnMouseRightReleased(wxMouseEvent& event) {
     mouseZoom = 1.0;
 }
 
-
-//
-//bool WaterfallCanvas::isPolling() {
-//    return polling;
-//}
-//
-//void WaterfallCanvas::setPolling(bool polling) {
-//    this->polling = polling;
-//}
-
 SpectrumVisualDataQueue *WaterfallCanvas::getVisualDataQueue() {
     return &visualDataQueue;
 }
