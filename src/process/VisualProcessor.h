@@ -86,16 +86,18 @@ protected:
 };
 
 
-template<class InputDataType = ReferenceCounter, class OutputDataType = ReferenceCounter>
-class VisualDataDistributor : public VisualProcessor<InputDataType, OutputDataType> {
+template<class OutputDataType = ReferenceCounter>
+class VisualDataDistributor : public VisualProcessor<OutputDataType, OutputDataType> {
 protected:
     void process() {
-
-        while (!VisualProcessor<InputDataType, OutputDataType>::input->empty()) {
-        	ReferenceCounter *inp;
-        	VisualProcessor<InputDataType, OutputDataType>::input->pop(inp);
+        if (!VisualProcessor<OutputDataType, OutputDataType>::isOutputEmpty()) {
+            return;
+        }
+        while (!VisualProcessor<OutputDataType, OutputDataType>::input->empty()) {
+        	OutputDataType *inp;
+        	VisualProcessor<OutputDataType, OutputDataType>::input->pop(inp);
             if (inp) {
-            	VisualProcessor<InputDataType, OutputDataType>::distribute(inp);
+            	VisualProcessor<OutputDataType, OutputDataType>::distribute(inp);
             }
         }
     }

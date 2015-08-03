@@ -1,7 +1,7 @@
 #include "DemodulatorInstance.h"
 
 DemodulatorInstance::DemodulatorInstance() :
-        t_PreDemod(NULL), pipeIQInputData(NULL), demodulatorThread(NULL), t_Demod(NULL), t_Audio(NULL), currentAudioGain(1.0) {
+        t_PreDemod(NULL), t_Demod(NULL), t_Audio(NULL) {
 
 	terminated.store(true);
 	audioTerminated.store(true);
@@ -16,7 +16,7 @@ DemodulatorInstance::DemodulatorInstance() :
 	currentFrequency.store(0);
 	currentBandwidth.store(0);
 	currentOutputDevice.store(-1);
-
+    currentAudioGain.store(1.0);
 
     label = new std::string("Unnamed");
     pipeIQInputData = new DemodulatorThreadInputQueue;

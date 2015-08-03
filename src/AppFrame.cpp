@@ -64,10 +64,11 @@ AppFrame::AppFrame() :
 
 //    demodTray->AddSpacer(2);
 
+    wxGetApp().getDemodSpectrumProcesor()->setup(1024);
     demodSpectrumCanvas = new SpectrumCanvas(this, attribList);
-    demodSpectrumCanvas->setup(1024);
     demodSpectrumCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
     demodVisuals->Add(demodSpectrumCanvas, 3, wxEXPAND | wxALL, 0);
+    wxGetApp().getDemodSpectrumProcesor()->attachOutput(demodSpectrumCanvas->getVisualDataQueue());
 
     demodVisuals->AddSpacer(1);
 
@@ -77,6 +78,7 @@ AppFrame::AppFrame() :
     demodWaterfallCanvas->attachSpectrumCanvas(demodSpectrumCanvas);
     demodSpectrumCanvas->attachWaterfallCanvas(demodWaterfallCanvas);
     demodVisuals->Add(demodWaterfallCanvas, 6, wxEXPAND | wxALL, 0);
+    wxGetApp().getDemodSpectrumProcesor()->attachOutput(demodWaterfallCanvas->getVisualDataQueue());
 
     demodTray->Add(demodVisuals, 30, wxEXPAND | wxALL, 0);
 
@@ -110,17 +112,19 @@ AppFrame::AppFrame() :
 
     vbox->Add(demodTray, 12, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(1);
+
+    wxGetApp().getSpectrumProcesor()->setup(2048);
     spectrumCanvas = new SpectrumCanvas(this, attribList);
-    spectrumCanvas->setup(2048);
     vbox->Add(spectrumCanvas, 5, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(1);
+    wxGetApp().getSpectrumProcesor()->attachOutput(spectrumCanvas->getVisualDataQueue());
+
     waterfallCanvas = new WaterfallCanvas(this, attribList);
     waterfallCanvas->setup(2048, 512);
     waterfallCanvas->attachSpectrumCanvas(spectrumCanvas);
-    waterfallCanvas->attachWaterfallCanvas(demodWaterfallCanvas);
     spectrumCanvas->attachWaterfallCanvas(waterfallCanvas);
     vbox->Add(waterfallCanvas, 20, wxEXPAND | wxALL, 0);
-
+    wxGetApp().getSpectrumProcesor()->attachOutput(waterfallCanvas->getVisualDataQueue());
 /*
     vbox->AddSpacer(1);
     testCanvas = new UITestCanvas(this, attribList);
@@ -674,7 +678,26 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     }
 
     scopeCanvas->setPPMMode(demodTuner->isAltDown());
-
+    
+    
+    wxGetApp().getSpectrumDistributor()->run();
+    
+    SpectrumVisualProcessor *proc = wxGetApp().getSpectrumProcesor();
+    
+    proc->setView(waterfallCanvas->getViewState());
+    proc->setBandwidth(waterfallCanvas->getBandwidth());
+    proc->setCenterFrequency(waterfallCanvas->getCenterFrequency());
+    
+    proc->run();
+    
+    SpectrumVisualProcessor *dproc = wxGetApp().getDemodSpectrumProcesor();
+    
+    dproc->setView(demodWaterfallCanvas->getViewState());
+    dproc->setBandwidth(demodWaterfallCanvas->getBandwidth());
+    dproc->setCenterFrequency(demodWaterfallCanvas->getCenterFrequency());
+    
+    dproc->run();
+    
     event.Skip();
 }
 

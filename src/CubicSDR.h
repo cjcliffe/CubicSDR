@@ -16,7 +16,9 @@
 #include "DemodulatorMgr.h"
 #include "AppConfig.h"
 #include "AppFrame.h"
+
 #include "ScopeVisualProcessor.h"
+#include "SpectrumVisualProcessor.h"
 
 #include <wx/cmdline.h>
 
@@ -54,6 +56,9 @@ public:
     int getDevice();
 
     ScopeVisualProcessor *getScopeProcessor();
+    SpectrumVisualProcessor *getSpectrumProcesor();
+    SpectrumVisualProcessor *getDemodSpectrumProcesor();
+    VisualDataDistributor<DemodulatorThreadIQData> *getSpectrumDistributor();
     
     DemodulatorThreadOutputQueue* getAudioVisualQueue();
     DemodulatorThreadInputQueue* getIQVisualQueue();
@@ -94,8 +99,14 @@ private:
     SDRThreadIQDataQueue* pipeSDRIQData;
     DemodulatorThreadInputQueue* pipeIQVisualData;
     DemodulatorThreadOutputQueue* pipeAudioVisualData;
+    DemodulatorThreadInputQueue* pipeDemodIQVisualData;
+    DemodulatorThreadInputQueue* pipeSpectrumIQVisualData;
 
     ScopeVisualProcessor scopeProcessor;
+    SpectrumVisualProcessor spectrumProcessor;
+    SpectrumVisualProcessor demodSpectrumProcessor;
+    
+    VisualDataDistributor<DemodulatorThreadIQData> spectrumDistributor;
     
     std::thread *t_SDR;
     std::thread *t_PostSDR;
