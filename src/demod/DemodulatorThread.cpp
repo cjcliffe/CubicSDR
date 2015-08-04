@@ -266,7 +266,6 @@ void DemodulatorThread::run() {
         } else if (demodulatorType == DEMOD_TYPE_RAW) {
             // do nothing here..
         } else {
-            float p;
             switch (demodulatorType.load()) {
             case DEMOD_TYPE_LSB:
 				currentDemodLock = false;

@@ -31,7 +31,7 @@ EVT_KEY_UP(TuningCanvas::OnKeyUp)
 wxEND_EVENT_TABLE()
 
 TuningCanvas::TuningCanvas(wxWindow *parent, int *attribList) :
-        InteractiveCanvas(parent, attribList), dragAccum(0), top(false), bottom(false), uxDown(0) {
+        InteractiveCanvas(parent, attribList), dragAccum(0), uxDown(0), top(false), bottom(false) {
 
     glContext = new TuningContext(this, &wxGetApp().GetContext(this));
 

@@ -77,9 +77,25 @@ bool CubicSDR::OnInit() {
     // Visual Data
     pipeIQVisualData = new DemodulatorThreadInputQueue();
     pipeIQVisualData->set_max_num_items(1);
+
+    spectrumDistributor.setInput(pipeIQVisualData);
+    
+    pipeDemodIQVisualData = new DemodulatorThreadInputQueue();
+    pipeIQVisualData->set_max_num_items(1);
+    
+    pipeSpectrumIQVisualData = new DemodulatorThreadInputQueue();
+    pipeIQVisualData->set_max_num_items(1);
+    
+    spectrumDistributor.attachOutput(pipeDemodIQVisualData);
+    spectrumDistributor.attachOutput(pipeSpectrumIQVisualData);
+    
+    demodSpectrumProcessor.setInput(pipeDemodIQVisualData);
+    spectrumProcessor.setInput(pipeSpectrumIQVisualData);
     
     pipeAudioVisualData = new DemodulatorThreadOutputQueue();
     pipeAudioVisualData->set_max_num_items(1);
+    
+    scopeProcessor.setInput(pipeAudioVisualData);
     
     // I/Q Data
     pipeSDRIQData = new SDRThreadIQDataQueue;
@@ -270,6 +286,23 @@ bool CubicSDR::getSwapIQ() {
 long long CubicSDR::getFrequency() {
     return frequency;
 }
+
+ScopeVisualProcessor *CubicSDR::getScopeProcessor() {
+    return &scopeProcessor;
+}
+
+SpectrumVisualProcessor *CubicSDR::getSpectrumProcesor() {
+    return &spectrumProcessor;
+}
+
+SpectrumVisualProcessor *CubicSDR::getDemodSpectrumProcesor() {
+    return &demodSpectrumProcessor;
+}
+
+VisualDataDistributor<DemodulatorThreadIQData> *CubicSDR::getSpectrumDistributor() {
+    return &spectrumDistributor;
+}
+
 
 DemodulatorThreadOutputQueue* CubicSDR::getAudioVisualQueue() {
     return pipeAudioVisualData;

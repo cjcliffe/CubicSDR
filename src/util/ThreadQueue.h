@@ -212,6 +212,15 @@ public:
     }
 
     /**
+     *  Check if the queue is full.
+     * \return true if queue is full.
+     */
+    bool full() const {
+        std::lock_guard < std::mutex > lock(m_mutex);
+        return (m_max_num_items != 0) && (m_queue.size() >= m_max_num_items);
+    }
+
+    /**
      *  Remove any items in the queue.
      */
     void flush() const {

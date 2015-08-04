@@ -17,6 +17,9 @@
 #include "AppConfig.h"
 #include "AppFrame.h"
 
+#include "ScopeVisualProcessor.h"
+#include "SpectrumVisualProcessor.h"
+
 #include <wx/cmdline.h>
 
 #define NUM_DEMODULATORS 1
@@ -52,6 +55,11 @@ public:
     void setDevice(int deviceId);
     int getDevice();
 
+    ScopeVisualProcessor *getScopeProcessor();
+    SpectrumVisualProcessor *getSpectrumProcesor();
+    SpectrumVisualProcessor *getDemodSpectrumProcesor();
+    VisualDataDistributor<DemodulatorThreadIQData> *getSpectrumDistributor();
+    
     DemodulatorThreadOutputQueue* getAudioVisualQueue();
     DemodulatorThreadInputQueue* getIQVisualQueue();
     DemodulatorMgr &getDemodMgr();
@@ -91,7 +99,15 @@ private:
     SDRThreadIQDataQueue* pipeSDRIQData;
     DemodulatorThreadInputQueue* pipeIQVisualData;
     DemodulatorThreadOutputQueue* pipeAudioVisualData;
+    DemodulatorThreadInputQueue* pipeDemodIQVisualData;
+    DemodulatorThreadInputQueue* pipeSpectrumIQVisualData;
 
+    ScopeVisualProcessor scopeProcessor;
+    SpectrumVisualProcessor spectrumProcessor;
+    SpectrumVisualProcessor demodSpectrumProcessor;
+    
+    VisualDataDistributor<DemodulatorThreadIQData> spectrumDistributor;
+    
     std::thread *t_SDR;
     std::thread *t_PostSDR;
 };

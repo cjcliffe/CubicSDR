@@ -12,13 +12,13 @@ std::map<int, int> AudioThread::deviceSampleRate;
 std::map<int, std::thread *> AudioThread::deviceThread;
 
 AudioThread::AudioThread() : IOThread(),
-        currentInput(NULL), inputQueue(NULL), gain(
-                1.0), threadQueueNotify(NULL), sampleRate(0), nBufferFrames(1024) {
+        currentInput(NULL), inputQueue(NULL), nBufferFrames(1024), threadQueueNotify(NULL), sampleRate(0) {
 
 	audioQueuePtr.store(0); 
 	underflowCount.store(0);
 	active.store(false);
 	outputDevice.store(-1);
+    gain.store(1.0);
 
     boundThreads = new std::vector<AudioThread *>;
 }

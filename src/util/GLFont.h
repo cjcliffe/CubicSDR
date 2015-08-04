@@ -76,7 +76,6 @@ private:
     std::string getParamKey(std::string param_str);
     std::string getParamValue(std::string param_str);
 
-    int numCharacters;
     int lineHeight;
     int base;
     int imageWidth, imageHeight;
