@@ -3,7 +3,7 @@
 #include "CubicSDR.h"
 
 WaterfallContext::WaterfallContext(WaterfallCanvas *canvas, wxGLContext *sharedContext) :
-        PrimaryGLContext(canvas, sharedContext), waterfall_lines(0), waterfall_slice(NULL), fft_size(0), activeTheme(NULL) {
+        PrimaryGLContext(canvas, sharedContext), fft_size(0), waterfall_lines(0), waterfall_slice(NULL), activeTheme(NULL) {
     for (int i = 0; i < 2; i++) {
         waterfall[i] = 0;
     }

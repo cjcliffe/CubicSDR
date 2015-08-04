@@ -1598,8 +1598,8 @@ bool DataTree::LoadFromFile(const std::string& filename) {
     string compressionType(*header->getNext("compression"));
     dataSize = *header->getNext("uncompressed_size");
 
-    bool uncompress = false;
 #if USE_FASTLZ
+    bool uncompress = false;
     if (compressionType == "FastLZ") {
         uncompress = true;
     }

@@ -57,7 +57,6 @@ private:
     int waterfall_lines;
     int dragOfs;
 
-    int lastInputBandwidth;
     float mouseZoom, zoom;
     float hoverAlpha;
 

@@ -561,12 +561,6 @@ void AppFrame::OnThread(wxCommandEvent& event) {
 }
 
 void AppFrame::OnIdle(wxIdleEvent& event) {
-    bool work_done = false;
-
-//#ifdef __APPLE__
-//    std::this_thread::sleep_for(std::chrono::milliseconds(4));
-//    std::this_thread::yield();
-//#endif
 
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 

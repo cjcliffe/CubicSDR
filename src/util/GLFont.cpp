@@ -103,7 +103,7 @@ int GLFontChar::getIndex() {
 }
 
 GLFont::GLFont() :
-        numCharacters(0), lineHeight(0), base(0), imageWidth(0), imageHeight(0), loaded(false), texId(0) {
+        lineHeight(0), base(0), imageWidth(0), imageHeight(0), loaded(false), texId(0) {
 
 }
 

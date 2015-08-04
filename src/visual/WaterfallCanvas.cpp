@@ -36,7 +36,7 @@ wxEND_EVENT_TABLE()
 
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         InteractiveCanvas(parent, attribList), dragState(WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), fft_size(0), waterfall_lines(
-                0), zoom(1), mouseZoom(1), hoverAlpha(1.0), dragOfs(0) {
+                0), mouseZoom(1), zoom(1), hoverAlpha(1.0), dragOfs(0) {
 
     glContext = new WaterfallContext(this, &wxGetApp().GetContext(this));
 
@@ -173,7 +173,6 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     int currentBandwidth = getBandwidth();
     long long currentCenterFreq = getCenterFrequency();
 
-    float demodColor, selectorColor;
     ColorTheme *currentTheme = ThemeMgr::mgr.currentTheme;
     int last_type = wxGetApp().getDemodMgr().getLastDemodulatorType();
 
@@ -260,13 +259,11 @@ void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
 
 void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     InteractiveCanvas::OnKeyDown(event);
-    float angle = 5.0;
 
     DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
 
     long long freq;
     long long originalFreq;
-    unsigned int bw;
     switch (event.GetKeyCode()) {
     case 'A':
         zoom = 0.95;
@@ -425,7 +422,6 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
                 setStatusText("Click and drag to set the current demodulator range.");
             }
         } else if (demodsHover->size() && !shiftDown) {
-            int hovered = -1;
             long near_dist = getBandwidth();
 
             DemodulatorInstance *activeDemodulator = NULL;

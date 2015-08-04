@@ -7,7 +7,7 @@
 #include "ColorTheme.h"
 
 SpectrumContext::SpectrumContext(SpectrumCanvas *canvas, wxGLContext *sharedContext) :
-        PrimaryGLContext(canvas, sharedContext), fft_size(0), floorValue(0), ceilValue(1) {
+        PrimaryGLContext(canvas, sharedContext), floorValue(0), ceilValue(1) {
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
 

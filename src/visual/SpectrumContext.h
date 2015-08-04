@@ -19,6 +19,5 @@ public:
     void setCeilValue(float ceilValue);
 
 private:
-    int fft_size;
     float floorValue, ceilValue;
 };
