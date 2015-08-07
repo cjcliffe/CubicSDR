@@ -21,7 +21,7 @@ Features and Status:
   - Simple UI
   - Devices
     - [x] RTL-SDR
-    - [ ] rtl_tcp
+    - [ ] rtl_tcp client
     - [ ] gr-osmosdr
   - Basic Features
     - [x] Device Selection
@@ -35,6 +35,7 @@ Features and Status:
       - [x] Device defaults
     - [ ] Bookmarks
     - [ ] History
+    - [ ] Run as rtl_tcp server and visualize control
   - Neat Visuals
     - [ ] 2D visuals
       - [x] Y Scope
