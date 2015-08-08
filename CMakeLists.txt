@@ -339,6 +339,21 @@ SET (cubicsdr_headers
 	external/cubicvr2/math/vec4.h
 )
 
+set(REG_EXT "[^/]*([.]cpp|[.]c|[.]h|[.]hpp)$")
+
+SOURCE_GROUP("Base" REGULAR_EXPRESSION src/${REG_EXT})
+SOURCE_GROUP("SDR" REGULAR_EXPRESSION src/sdr/${REG_EXT})
+SOURCE_GROUP("Demodulator" REGULAR_EXPRESSION src/demod/${REG_EXT})
+SOURCE_GROUP("Audio" REGULAR_EXPRESSION src/audio/${REG_EXT})
+SOURCE_GROUP("Utility" REGULAR_EXPRESSION src/util/${REG_EXT})
+SOURCE_GROUP("Visual" REGULAR_EXPRESSION src/visual/${REG_EXT})
+SOURCE_GROUP("Process" REGULAR_EXPRESSION src/process/${REG_EXT})
+SOURCE_GROUP("UI" REGULAR_EXPRESSION src/ui/${REG_EXT})
+SOURCE_GROUP("_ext-RTAudio" REGULAR_EXPRESSION external/rtaudio/.*${REG_EXT})
+SOURCE_GROUP("_ext-LodePNG" REGULAR_EXPRESSION external/lodepng/.*${REG_EXT})
+SOURCE_GROUP("_ext-TinyXML" REGULAR_EXPRESSION external/tinyxml/.*${REG_EXT})
+SOURCE_GROUP("_ext-CubicVR2" REGULAR_EXPRESSION external/cubicvr2/.*${REG_EXT})
+
 include_directories ( 
 	${PROJECT_SOURCE_DIR}/src/sdr 
 	${PROJECT_SOURCE_DIR}/src/demod
