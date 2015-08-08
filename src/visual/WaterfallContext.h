@@ -10,7 +10,7 @@ class WaterfallContext: public PrimaryGLContext {
 public:
     WaterfallContext(WaterfallCanvas *canvas, wxGLContext *sharedContext);
 
-    void Draw(std::vector<float> &points);
+    void Draw(std::vector<float> &points, bool step);
     void Setup(int fft_size_in, int num_waterfall_lines_in);
     void refreshTheme();
 

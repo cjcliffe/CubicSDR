@@ -70,9 +70,6 @@ void WaterfallCanvas::attachSpectrumCanvas(SpectrumCanvas *canvas_in) {
 
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
-#ifdef __APPLE__    // force half-rate?
-    glFinish();
-#endif
 
     const wxSize ClientSize = GetClientSize();
     long double currentZoom = zoom;
@@ -139,28 +136,29 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         }
     }
 
-    if (visualDataQueue.empty()) {
-        return;
+    bool step = false;
+    if (!visualDataQueue.empty()) {
+        SpectrumVisualData *vData;
+        
+        visualDataQueue.pop(vData);
+        
+        if (!vData) {
+            return;
+        }
+        
+        spectrum_points.assign(vData->spectrum_points.begin(),vData->spectrum_points.end());
+        
+        vData->decRefCount();
+        step = true;
     }
     
-    SpectrumVisualData *vData;
-    
-    visualDataQueue.pop(vData);
-    
-    if (!vData) {
-        return;
-    }
-    
-    spectrum_points.assign(vData->spectrum_points.begin(),vData->spectrum_points.end());
-    
-    vData->decRefCount();
     
     glContext->SetCurrent(*this);
     initGLExtensions();
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
     glContext->BeginDraw(0,0,0);
-    glContext->Draw(spectrum_points);
+    glContext->Draw(spectrum_points, step);
 
     std::vector<DemodulatorInstance *> &demods = wxGetApp().getDemodMgr().getDemodulators();
 
@@ -352,7 +350,7 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     }
 }
 void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
-    Refresh(false);
+    event.Skip();
 }
 
 void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {

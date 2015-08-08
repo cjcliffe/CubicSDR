@@ -36,7 +36,7 @@ void WaterfallContext::refreshTheme() {
     }
 }
 
-void WaterfallContext::Draw(std::vector<float> &points) {
+void WaterfallContext::Draw(std::vector<float> &points, bool step) {
 
     int half_fft_size = fft_size / 2;
 

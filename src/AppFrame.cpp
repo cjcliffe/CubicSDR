@@ -35,10 +35,11 @@ EVT_CLOSE(AppFrame::OnClose)
 EVT_MENU(wxID_ANY, AppFrame::OnMenu)
 EVT_COMMAND(wxID_ANY, wxEVT_THREAD, AppFrame::OnThread)
 EVT_IDLE(AppFrame::OnIdle)
+EVT_TIMER(FRAME_TIMER_ID, AppFrame::OnTimer)
 wxEND_EVENT_TABLE()
 
 AppFrame::AppFrame() :
-        wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
+        wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL), frame_timer(this, FRAME_TIMER_ID) {
 
 #ifdef __linux__
     SetIcon(wxICON(cubicsdr));
@@ -350,6 +351,7 @@ AppFrame::AppFrame() :
     wxAcceleratorTable accel(3, entries);
     SetAcceleratorTable(accel);
 
+    frame_timer.Start(30);
 //    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 //    wxLogStatus("Double-buffered display %s supported", wxGLCanvas::IsDisplaySupported(attribs) ? "is" : "not");
 //    ShowFullScreen(true);
@@ -561,6 +563,10 @@ void AppFrame::OnThread(wxCommandEvent& event) {
 }
 
 void AppFrame::OnIdle(wxIdleEvent& event) {
+    event.Skip();
+}
+
+void AppFrame::OnTimer(wxTimerEvent& event) {
 
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
@@ -691,6 +697,26 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     dproc->setCenterFrequency(demodWaterfallCanvas->getCenterFrequency());
     
     dproc->run();
+
+    scopeCanvas->Refresh();
+    
+    waterfallCanvas->Refresh();
+    spectrumCanvas->Refresh();
+    
+    demodWaterfallCanvas->Refresh();
+    demodSpectrumCanvas->Refresh();
+    
+    demodSignalMeter->Refresh();
+
+    if (demodTuner->getMouseTracker()->mouseInView() || demodTuner->changed()) {
+        demodTuner->Refresh();
+    }
+    if (demodModeSelector->getMouseTracker()->mouseInView()) {
+        demodModeSelector->Refresh();
+    }
+    if (demodGainMeter->getMouseTracker()->mouseInView()) {
+        demodGainMeter->Refresh();
+    }
     
     event.Skip();
 }

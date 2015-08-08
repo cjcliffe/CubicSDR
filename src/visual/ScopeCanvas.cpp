@@ -50,9 +50,6 @@ bool ScopeCanvas::getPPMMode() {
 
 void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
-#ifdef __APPLE__    // force half-rate?
-    glFinish();
-#endif
     const wxSize ClientSize = GetClientSize();
 
     wxGetApp().getScopeProcessor()->run();
@@ -94,7 +91,7 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 }
 
 void ScopeCanvas::OnIdle(wxIdleEvent &event) {
-    Refresh(false);
+    event.Skip();
 }
 
 ScopeRenderDataQueue *ScopeCanvas::getInputQueue() {

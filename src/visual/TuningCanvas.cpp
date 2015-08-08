@@ -31,7 +31,7 @@ EVT_KEY_UP(TuningCanvas::OnKeyUp)
 wxEND_EVENT_TABLE()
 
 TuningCanvas::TuningCanvas(wxWindow *parent, int *attribList) :
-        InteractiveCanvas(parent, attribList), dragAccum(0), uxDown(0), top(false), bottom(false) {
+        InteractiveCanvas(parent, attribList), dragAccum(0), uxDown(0), top(false), bottom(false), freq(-1), bw(-1), center(-1) {
 
     glContext = new TuningContext(this, &wxGetApp().GetContext(this));
 
@@ -57,13 +57,27 @@ TuningCanvas::~TuningCanvas() {
 
 }
 
+bool TuningCanvas::changed() {
+    DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    
+    long long current_freq = 0;
+    if (activeDemod != NULL) {
+        freq = activeDemod->getFrequency();
+    }
+    long long current_bw = wxGetApp().getDemodMgr().getLastBandwidth();
+    long long current_center = wxGetApp().getFrequency();
+    
+    if (current_freq != freq || current_bw != bw || current_center != center) {
+        return true;
+    }
+    
+    return false;
+}
+
 void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
-#ifdef __APPLE__    // force half-rate?
-    glFinish();
-#endif
     const wxSize ClientSize = GetClientSize();
-
+    
     glContext->SetCurrent(*this);
     initGLExtensions();
     glViewport(0, 0, ClientSize.x, ClientSize.y);
@@ -71,13 +85,13 @@ void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->DrawBegin();
 
     DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
-
-    long long freq = 0;
+    
+    freq = 0;
     if (activeDemod != NULL) {
         freq = activeDemod->getFrequency();
     }
-    long long bw = wxGetApp().getDemodMgr().getLastBandwidth();
-    long long center = wxGetApp().getFrequency();
+    bw = wxGetApp().getDemodMgr().getLastBandwidth();
+    center = wxGetApp().getFrequency();
 
     if (mouseTracker.mouseDown()) {
         glContext->Draw(ThemeMgr::mgr.currentTheme->tuningBarDark.r, ThemeMgr::mgr.currentTheme->tuningBarDark.g, ThemeMgr::mgr.currentTheme->tuningBarDark.b,
@@ -238,8 +252,6 @@ void TuningCanvas::OnIdle(wxIdleEvent &event) {
             dragging = false;
         }
     }
-
-    Refresh(false);
 }
 
 void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
@@ -373,6 +385,7 @@ void TuningCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
     if (currentPPM != lastPPM) {
         wxGetApp().saveConfig();
     }
+    Refresh();
 }
 
 void TuningCanvas::OnMouseEnterWindow(wxMouseEvent& event) {

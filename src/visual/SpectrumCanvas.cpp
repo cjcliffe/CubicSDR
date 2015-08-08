@@ -42,26 +42,22 @@ SpectrumCanvas::~SpectrumCanvas() {
 
 void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
-#ifdef __APPLE__    // force half-rate?
-    glFinish();
-#endif
     const wxSize ClientSize = GetClientSize();
     
-    if (visualDataQueue.empty()) {
-        return;
+    if (!visualDataQueue.empty()) {
+        SpectrumVisualData *vData;
+        
+        visualDataQueue.pop(vData);
+        
+        if (!vData) {
+            return;
+        }
+        
+        spectrum_points.assign(vData->spectrum_points.begin(),vData->spectrum_points.end());
+        
+        vData->decRefCount();
     }
     
-    SpectrumVisualData *vData;
-    
-    visualDataQueue.pop(vData);
-    
-    if (!vData) {
-        return;
-    }
-    
-    spectrum_points.assign(vData->spectrum_points.begin(),vData->spectrum_points.end());
-    
-    vData->decRefCount();
     
     glContext->SetCurrent(*this);
     initGLExtensions();
@@ -84,7 +80,7 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
 
 void SpectrumCanvas::OnIdle(wxIdleEvent &event) {
-    Refresh(false);
+    event.Skip();
 }
 
 
