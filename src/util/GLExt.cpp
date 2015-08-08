@@ -36,6 +36,8 @@ void initGLExtensions() {
 
     std::cout << std::endl << "Supported GL Extensions: " << std::endl << extensions << std::endl << std::endl;
 
+    const GLint interval = 1;
+
 #ifdef _WIN32
     if (GLExtSupported("WGL_EXT_swap_control")) {
         std::cout << "Initializing WGL swap control extensions.." << std::endl;
@@ -48,8 +50,7 @@ void initGLExtensions() {
 
 #ifdef __APPLE__
     // OSX is just ON / OFF
-    const GLint gl_interval = 1;
-    CGLSetParameter (CGLGetCurrentContext(), kCGLCPSwapInterval, &gl_interval);
+    CGLSetParameter (CGLGetCurrentContext(), kCGLCPSwapInterval, &interval);
 #endif
 
 #ifdef __linux__
