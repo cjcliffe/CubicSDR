@@ -679,7 +679,7 @@ void AppFrame::OnTimer(wxTimerEvent& event) {
 
     scopeCanvas->setPPMMode(demodTuner->isAltDown());
     
-    
+    wxGetApp().getScopeProcessor()->run();
     wxGetApp().getSpectrumDistributor()->run();
     
     SpectrumVisualProcessor *proc = wxGetApp().getSpectrumProcesor();

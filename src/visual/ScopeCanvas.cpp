@@ -52,7 +52,6 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
     const wxSize ClientSize = GetClientSize();
 
-    wxGetApp().getScopeProcessor()->run();
     if (!inputData.empty()) {
         ScopeRenderData *avData;
         inputData.pop(avData);
