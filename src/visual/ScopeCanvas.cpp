@@ -69,7 +69,6 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         }
   
         scopePanel.setPoints(avData->waveform_points);
-//        waveform_points.assign(avData->waveform_points.begin(),avData->waveform_points.end());
         setStereo(avData->channels == 2);
         
         avData->decRefCount();

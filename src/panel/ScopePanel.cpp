@@ -29,7 +29,7 @@ void ScopePanel::drawPanelContents() {
         bgPanel.calcTransform(transform);
         bgPanel.draw();
 
-        glLoadIdentity();
+        glLoadMatrixf(transform);
         glColor3f(ThemeMgr::mgr.currentTheme->scopeLine.r * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.g * 0.35,
                   ThemeMgr::mgr.currentTheme->scopeLine.b * 0.35);
         glBegin (GL_LINES);
@@ -45,7 +45,7 @@ void ScopePanel::drawPanelContents() {
         bgPanelStereo[1].calcTransform(transform);
         bgPanelStereo[1].draw();
 
-        glLoadIdentity();
+        glLoadMatrixf(transform);
         glColor3f(ThemeMgr::mgr.currentTheme->scopeLine.r, ThemeMgr::mgr.currentTheme->scopeLine.g, ThemeMgr::mgr.currentTheme->scopeLine.b);
         glBegin (GL_LINES);
         glVertex2f(-1.0, 0.0);
