@@ -244,6 +244,7 @@ SET (cubicsdr_sources
 	src/util/GLExt.cpp
 	src/util/GLFont.cpp
 	src/util/DataTree.cpp
+    src/panel/ScopePanel.cpp
 	src/visual/ColorTheme.cpp
 	src/visual/PrimaryGLContext.cpp
 	src/visual/InteractiveCanvas.cpp
@@ -296,6 +297,7 @@ SET (cubicsdr_headers
 	src/util/GLExt.h
 	src/util/GLFont.h
 	src/util/DataTree.h
+    src/panel/ScopePanel.h
 	src/visual/ColorTheme.h
 	src/visual/PrimaryGLContext.h
 	src/visual/InteractiveCanvas.h
@@ -346,6 +348,7 @@ SOURCE_GROUP("SDR" REGULAR_EXPRESSION src/sdr/${REG_EXT})
 SOURCE_GROUP("Demodulator" REGULAR_EXPRESSION src/demod/${REG_EXT})
 SOURCE_GROUP("Audio" REGULAR_EXPRESSION src/audio/${REG_EXT})
 SOURCE_GROUP("Utility" REGULAR_EXPRESSION src/util/${REG_EXT})
+SOURCE_GROUP("Panel" REGULAR_EXPRESSION src/panel/${REG_EXT})
 SOURCE_GROUP("Visual" REGULAR_EXPRESSION src/visual/${REG_EXT})
 SOURCE_GROUP("Process" REGULAR_EXPRESSION src/process/${REG_EXT})
 SOURCE_GROUP("UI" REGULAR_EXPRESSION src/ui/${REG_EXT})
@@ -359,6 +362,7 @@ include_directories (
 	${PROJECT_SOURCE_DIR}/src/demod
 	${PROJECT_SOURCE_DIR}/src/audio
 	${PROJECT_SOURCE_DIR}/src/util
+	${PROJECT_SOURCE_DIR}/src/panel
 	${PROJECT_SOURCE_DIR}/src/visual
 	${PROJECT_SOURCE_DIR}/src/process
 	${PROJECT_SOURCE_DIR}/src/ui

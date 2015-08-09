@@ -707,15 +707,13 @@ void AppFrame::OnTimer(wxTimerEvent& event) {
     demodSpectrumCanvas->Refresh();
     
     demodSignalMeter->Refresh();
+    demodGainMeter->Refresh();
 
     if (demodTuner->getMouseTracker()->mouseInView() || demodTuner->changed()) {
         demodTuner->Refresh();
     }
     if (demodModeSelector->getMouseTracker()->mouseInView()) {
         demodModeSelector->Refresh();
-    }
-    if (demodGainMeter->getMouseTracker()->mouseInView()) {
-        demodGainMeter->Refresh();
     }
     
     event.Skip();

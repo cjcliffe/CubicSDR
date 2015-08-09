@@ -225,7 +225,7 @@ void GLPanel::drawPanelContents() {
 
 void GLPanel::calcTransform(mat4 transform_in) {
     // compute local transform
-    localTransform = mat4::translate(pos[0], pos[1], 0) * mat4::scale(size[0], size[1], 0);
+    localTransform = mat4::translate(pos[0], pos[1], 0) * mat4::scale(size[0], size[1], 1);
     // compute global transform
     transform = transform_in * localTransform;
     
@@ -250,10 +250,10 @@ void GLPanel::calcTransform(mat4 transform_in) {
     pdim = vec2((vmax.x - vmin.x) / 2.0 * view[0], (vmax.y  - vmin.y) / 2.0 * view[1]);
     pvec = vec2(((vmax.x - vmin.x) / 2.0) / pdim.x, ((vmax.y - vmin.y) / 2.0) / pdim.y);
     
-    std::cout << umin << " :: " << ucenter << " :: " << pdim << " :: " << pvec << std::endl;
+//    std::cout << umin << " :: " << ucenter << " :: " << pdim << " :: " << pvec << std::endl;
     
     if (marginPx) {
-        transform *= mat4::scale(1.0 - marginPx * 2.0 * pvec.x / size[0], 1.0 - marginPx * 2.0 * pvec.y / size[1], 0);
+        transform *= mat4::scale(1.0 - marginPx * 2.0 * pvec.x / size[0], 1.0 - marginPx * 2.0 * pvec.y / size[1], 1);
     }
 }
 

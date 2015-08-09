@@ -35,6 +35,9 @@ public:
         b = other.b;
         return *this;
     }
+    
+    RGB3f operator*(float v) { return RGB3f(r*v, g*v, b*v); }
+
 };
 
 class ColorTheme {

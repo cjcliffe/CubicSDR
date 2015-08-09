@@ -15,6 +15,7 @@
 #include "AppFrame.h"
 #include <algorithm>
 
+
 wxBEGIN_EVENT_TABLE(ScopeCanvas, wxGLCanvas) EVT_PAINT(ScopeCanvas::OnPaint)
 EVT_IDLE(ScopeCanvas::OnIdle)
 wxEND_EVENT_TABLE()
@@ -66,8 +67,9 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
             avData->decRefCount();
             return;
         }
-        
-        waveform_points.assign(avData->waveform_points.begin(),avData->waveform_points.end());
+  
+        scopePanel.setPoints(avData->waveform_points);
+//        waveform_points.assign(avData->waveform_points.begin(),avData->waveform_points.end());
         setStereo(avData->channels == 2);
         
         avData->decRefCount();
@@ -79,7 +81,10 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
     glContext->DrawBegin();
-    glContext->Plot(waveform_points, stereo, ppmMode);
+    scopePanel.setMode(stereo?ScopePanel::SCOPE_MODE_2Y:ScopePanel::SCOPE_MODE_Y);
+    scopePanel.calcTransform(CubicVR::mat4::identity());
+    scopePanel.draw();
+    glContext->DrawTunerTitles(ppmMode);
     if (!deviceName.empty()) {
         glContext->DrawDeviceName(deviceName);
     }
