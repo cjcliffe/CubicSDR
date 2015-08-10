@@ -60,9 +60,6 @@ float MeterCanvas::getInputValue() {
 
 void MeterCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
-#ifdef __APPLE__    // force half-rate?
-    glFinish();
-#endif
     const wxSize ClientSize = GetClientSize();
 
     glContext->SetCurrent(*this);
@@ -82,7 +79,7 @@ void MeterCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 }
 
 void MeterCanvas::OnIdle(wxIdleEvent &event) {
-    Refresh(false);
+    event.Skip();
 }
 
 void MeterCanvas::OnMouseMoved(wxMouseEvent& event) {
@@ -115,6 +112,7 @@ void MeterCanvas::OnMouseReleased(wxMouseEvent& event) {
 void MeterCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseLeftWindow(event);
     SetCursor(wxCURSOR_CROSS);
+    Refresh();
 }
 
 void MeterCanvas::OnMouseEnterWindow(wxMouseEvent& event) {

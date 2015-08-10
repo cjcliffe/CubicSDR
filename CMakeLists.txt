@@ -244,6 +244,9 @@ SET (cubicsdr_sources
 	src/util/GLExt.cpp
 	src/util/GLFont.cpp
 	src/util/DataTree.cpp
+    src/panel/ScopePanel.cpp
+    src/panel/SpectrumPanel.cpp
+    src/panel/WaterfallPanel.cpp
 	src/visual/ColorTheme.cpp
 	src/visual/PrimaryGLContext.cpp
 	src/visual/InteractiveCanvas.cpp
@@ -256,9 +259,7 @@ SET (cubicsdr_sources
 	src/visual/ScopeCanvas.cpp
 	src/visual/ScopeContext.cpp
 	src/visual/SpectrumCanvas.cpp
-	src/visual/SpectrumContext.cpp
 	src/visual/WaterfallCanvas.cpp
-	src/visual/WaterfallContext.cpp
 	src/process/VisualProcessor.cpp
 	src/process/ScopeVisualProcessor.cpp
 	src/process/SpectrumVisualProcessor.cpp
@@ -296,6 +297,9 @@ SET (cubicsdr_headers
 	src/util/GLExt.h
 	src/util/GLFont.h
 	src/util/DataTree.h
+    src/panel/ScopePanel.h
+    src/panel/SpectrumPanel.h
+    src/panel/WaterfallPanel.h
 	src/visual/ColorTheme.h
 	src/visual/PrimaryGLContext.h
 	src/visual/InteractiveCanvas.h
@@ -308,9 +312,7 @@ SET (cubicsdr_headers
 	src/visual/ScopeCanvas.h
 	src/visual/ScopeContext.h
 	src/visual/SpectrumCanvas.h
-	src/visual/SpectrumContext.h
 	src/visual/WaterfallCanvas.h
-	src/visual/WaterfallContext.h
 	src/process/VisualProcessor.h
 	src/process/ScopeVisualProcessor.h
 	src/process/SpectrumVisualProcessor.h
@@ -339,11 +341,28 @@ SET (cubicsdr_headers
 	external/cubicvr2/math/vec4.h
 )
 
+set(REG_EXT "[^/]*([.]cpp|[.]c|[.]h|[.]hpp)$")
+
+SOURCE_GROUP("Base" REGULAR_EXPRESSION src/${REG_EXT})
+SOURCE_GROUP("SDR" REGULAR_EXPRESSION src/sdr/${REG_EXT})
+SOURCE_GROUP("Demodulator" REGULAR_EXPRESSION src/demod/${REG_EXT})
+SOURCE_GROUP("Audio" REGULAR_EXPRESSION src/audio/${REG_EXT})
+SOURCE_GROUP("Utility" REGULAR_EXPRESSION src/util/${REG_EXT})
+SOURCE_GROUP("Panel" REGULAR_EXPRESSION src/panel/${REG_EXT})
+SOURCE_GROUP("Visual" REGULAR_EXPRESSION src/visual/${REG_EXT})
+SOURCE_GROUP("Process" REGULAR_EXPRESSION src/process/${REG_EXT})
+SOURCE_GROUP("UI" REGULAR_EXPRESSION src/ui/${REG_EXT})
+SOURCE_GROUP("_ext-RTAudio" REGULAR_EXPRESSION external/rtaudio/.*${REG_EXT})
+SOURCE_GROUP("_ext-LodePNG" REGULAR_EXPRESSION external/lodepng/.*${REG_EXT})
+SOURCE_GROUP("_ext-TinyXML" REGULAR_EXPRESSION external/tinyxml/.*${REG_EXT})
+SOURCE_GROUP("_ext-CubicVR2" REGULAR_EXPRESSION external/cubicvr2/.*${REG_EXT})
+
 include_directories ( 
 	${PROJECT_SOURCE_DIR}/src/sdr 
 	${PROJECT_SOURCE_DIR}/src/demod
 	${PROJECT_SOURCE_DIR}/src/audio
 	${PROJECT_SOURCE_DIR}/src/util
+	${PROJECT_SOURCE_DIR}/src/panel
 	${PROJECT_SOURCE_DIR}/src/visual
 	${PROJECT_SOURCE_DIR}/src/process
 	${PROJECT_SOURCE_DIR}/src/ui
@@ -586,7 +605,9 @@ IF (UNIX AND BUILD_DEB)
             ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24_0.png
             ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32_0.png
             ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48_0.png
+            ${PROJECT_SOURCE_DIR}/src/CubicSDR.png
 	    DESTINATION share/cubicsdr)
-
+            INSTALL(FILES CubicSDR.desktop 
+            DESTINATION share/applications)
 	INCLUDE(CPack)
 ENDIF (UNIX AND BUILD_DEB)

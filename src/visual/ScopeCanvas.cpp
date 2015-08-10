@@ -15,6 +15,7 @@
 #include "AppFrame.h"
 #include <algorithm>
 
+
 wxBEGIN_EVENT_TABLE(ScopeCanvas, wxGLCanvas) EVT_PAINT(ScopeCanvas::OnPaint)
 EVT_IDLE(ScopeCanvas::OnIdle)
 wxEND_EVENT_TABLE()
@@ -50,31 +51,20 @@ bool ScopeCanvas::getPPMMode() {
 
 void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
-#ifdef __APPLE__    // force half-rate?
-    glFinish();
-#endif
     const wxSize ClientSize = GetClientSize();
 
-    wxGetApp().getScopeProcessor()->run();
     if (!inputData.empty()) {
         ScopeRenderData *avData;
         inputData.pop(avData);
 
-        if (!avData) {
-            return;
-        }
-        
-        int iMax = avData->waveform_points.size();
-        
-        if (!iMax) {
+        if (avData) {
+            if (avData->waveform_points.size()) {
+                scopePanel.setPoints(avData->waveform_points);
+                setStereo(avData->channels == 2);
+            }
+            
             avData->decRefCount();
-            return;
         }
-        
-        waveform_points.assign(avData->waveform_points.begin(),avData->waveform_points.end());
-        setStereo(avData->channels == 2);
-        
-        avData->decRefCount();
     }
 
     glContext->SetCurrent(*this);
@@ -83,7 +73,10 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
     glContext->DrawBegin();
-    glContext->Plot(waveform_points, stereo, ppmMode);
+    scopePanel.setMode(stereo?ScopePanel::SCOPE_MODE_2Y:ScopePanel::SCOPE_MODE_Y);
+    scopePanel.calcTransform(CubicVR::mat4::identity());
+    scopePanel.draw();
+    glContext->DrawTunerTitles(ppmMode);
     if (!deviceName.empty()) {
         glContext->DrawDeviceName(deviceName);
     }
@@ -94,7 +87,7 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 }
 
 void ScopeCanvas::OnIdle(wxIdleEvent &event) {
-    Refresh(false);
+    event.Skip();
 }
 
 ScopeRenderDataQueue *ScopeCanvas::getInputQueue() {

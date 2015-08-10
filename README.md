@@ -21,9 +21,8 @@ Features and Status:
   - Simple UI
   - Devices
     - [x] RTL-SDR
-    - [ ] rtl_tcp
-    - [ ] HackRF
-    - [ ] Whatever else I can get my hands on
+    - [ ] rtl_tcp client
+    - [ ] gr-osmosdr
   - Basic Features
     - [x] Device Selection
     - [x] Bandwidth
@@ -33,18 +32,21 @@ Features and Status:
     - [x] Device PPM
     - [ ] Default preferences
       - [ ] Audio defaults
-      - [ ] Device defaults
+      - [x] Device defaults
     - [ ] Bookmarks
     - [ ] History
+    - [ ] Run as rtl_tcp server and visualize control
   - Neat Visuals
-    - [x] Scope
-    - [x] Spectrum
-    - [x] Waterfall
-    - [ ] Audio Spectrum
-    - [ ] More 2D visuals
+    - [ ] 2D visuals
+      - [x] Y Scope
+      - [x] Spectrum
+      - [x] Waterfall
       - [x] Add faint grid for sense of scale
+      - [ ] Audio Spectrum
+      - [ ] X/Y Scope
       - [ ] Indicate outer spectrum edges when zoomed
     - [ ] 3D visuals
+      - [ ] I/Q helix
   - Demodulation:
     - [ ] Basic modular expansion
     - [x] Multiple demodulators per IQ stream
@@ -56,7 +58,7 @@ Features and Status:
       - [x] LSB
       - [x] USB
       - [x] DSB
-      - [ ] RAW
+      - [x] I/Q
     - [ ] Controls
       - [x] Display Frequency and allow manual adjustments
       - [x] Allow selection of demodulation type
@@ -64,8 +66,10 @@ Features and Status:
       - [x] Display signal level and allow squelch control
       - [x] Display audio output selection
       - [x] Volume control
-      - [ ] Demodulator input filtering
-      - [ ] Audio filtering
+      - [x] Direct frequency input
+      - [ ] Mute
+      - [ ] Waterfall speed
+      - [ ] RTL-SDR Gain
   - Basic Input Controls
     - [x] Drag spectrum to change center frequency
     - [x] Hold shift and click on waterfall to create a new demodulator
@@ -88,6 +92,8 @@ Features and Status:
     - [ ] Recording
   - Implement digital demodulation supported by liquid-dsp: (http://liquidsdr.org/doc/modem.html)
     - [ ] Demodulator Lab
+      - [ ] Demodulator I/Q input filtering
+      - [ ] Audio output filtering
       - [ ] Toggle current demodulator exclusively into "Lab" mode
         - [ ] Additional visualizations for audio and I/Q stream
           - [ ] Audio Spectrum
@@ -115,9 +121,9 @@ Features and Status:
       - [ ] CPFSK
   - Optimization
     - [x] Eliminate large waterfall texture uploads
-    - [ ] Update visuals to OpenGL 3.x
+    - [ ] Update visuals to OpenGL 3.x / OpenGL ES
     - [ ] Resolve constant refresh on visuals that don't change often
-    - [ ] Resolve driver/platform vertical sync issues
+    - [ ] Resolve all driver/platform vertical sync issues
     - [ ] Group and divide IQ data distribution workload instead of 100% distribution per instance
 
 
@@ -140,6 +146,7 @@ Advanced Goals and ideas:
     * Take control of additional devices and spawning new demodulators (i.e. trunkers)
     * Script manager / live editor
     * Provide scriptable liquid-dsp modulation for trancievers?
+    * Allow scripts to launch/run headless (no UI)
   - "PVR" like mode with waterfall time shifting
   - L/R and surround-sound balance settings for separating and listening to mono streams
   - Add tool for converting decimated I/Q recording to video

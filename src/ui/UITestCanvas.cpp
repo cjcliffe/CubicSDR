@@ -36,9 +36,6 @@ UITestCanvas::~UITestCanvas() {
 
 void UITestCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
-#ifdef __APPLE__    // force half-rate?
-    glFinish();
-#endif
     const wxSize ClientSize = GetClientSize();
     
     glContext->SetCurrent(*this);

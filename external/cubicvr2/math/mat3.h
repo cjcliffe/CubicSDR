@@ -23,7 +23,9 @@ namespace CubicVR {
         __float a,b,c,d,e,f,g,h,i;
 
         //        __float  operator [] (unsigned i) const { return ((__float *)this)[i]; }
+#ifndef _WIN32
         __float& operator [] (unsigned i)       { return ((__float *)this)[i]; }
+#endif
         operator __float*() const { return (__float *)this; }
         
         mat3(__float ai,__float bi,__float ci,__float di,__float ei,__float fi,__float gi,__float hi,__float ii) {

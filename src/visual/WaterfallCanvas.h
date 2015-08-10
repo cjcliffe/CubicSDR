@@ -7,9 +7,9 @@
 #include <queue>
 
 #include "InteractiveCanvas.h"
-#include "WaterfallContext.h"
 #include "MouseTracker.h"
 #include "SpectrumCanvas.h"
+#include "WaterfallPanel.h"
 
 
 class WaterfallCanvas: public InteractiveCanvas {
@@ -47,8 +47,8 @@ private:
     std::vector<float> spectrum_points;
 
     SpectrumCanvas *spectrumCanvas;
-
-    WaterfallContext *glContext;
+    PrimaryGLContext *glContext;
+    WaterfallPanel waterfallPanel;
 
     DragState dragState;
     DragState nextDragState;

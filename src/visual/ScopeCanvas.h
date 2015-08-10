@@ -8,12 +8,11 @@
 
 #include "ScopeContext.h"
 #include "ScopeVisualProcessor.h"
+#include "ScopePanel.h"
 #include "fftw3.h"
 
 class ScopeCanvas: public wxGLCanvas {
 public:
-    std::vector<float> waveform_points;
-
     ScopeCanvas(wxWindow *parent, int *attribList = NULL);
     ~ScopeCanvas();
 
@@ -29,6 +28,7 @@ private:
     void OnIdle(wxIdleEvent &event);
 
     ScopeRenderDataQueue inputData;
+    ScopePanel scopePanel;
     ScopeContext *glContext;
     std::string deviceName;
     bool stereo;

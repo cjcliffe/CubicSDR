@@ -1,31 +1,24 @@
 #pragma once
 
-#include "wx/glcanvas.h"
-#include "wx/timer.h"
-
 #include <vector>
 #include <queue>
 
 #include "InteractiveCanvas.h"
-#include "SpectrumContext.h"
-
-#include "fftw3.h"
+#include "PrimaryGLContext.h"
 #include "MouseTracker.h"
 #include "SpectrumVisualProcessor.h"
+#include "SpectrumPanel.h"
 
 class WaterfallCanvas;
 
 class SpectrumCanvas: public InteractiveCanvas {
 public:
-    std::vector<float> spectrum_points;
-
     SpectrumCanvas(wxWindow *parent, int *attribList = NULL);
     ~SpectrumCanvas();
 
     void attachWaterfallCanvas(WaterfallCanvas *canvas_in);
     void moveCenterFrequency(long long freqChange);
 
-    SpectrumContext* getSpectrumContext();
     SpectrumVisualDataQueue *getVisualDataQueue();
     
 private:
@@ -39,8 +32,9 @@ private:
     void OnMouseReleased(wxMouseEvent& event);
     void OnMouseLeftWindow(wxMouseEvent& event);
 
-    SpectrumContext *glContext;
+    PrimaryGLContext *glContext;
     WaterfallCanvas *waterfallCanvas;
+    SpectrumPanel spectrumPanel;
     
     SpectrumVisualDataQueue visualDataQueue;
 

@@ -22,7 +22,8 @@ public:
     ~TuningCanvas();
 
     void setHelpTip(std::string tip);
-
+    bool changed();
+    
 private:
     void OnPaint(wxPaintEvent& event);
     void OnIdle(wxIdleEvent &event);
@@ -66,6 +67,7 @@ private:
     int currentPPM;
     int lastPPM;
 
+    long long freq, bw, center;
     //
 wxDECLARE_EVENT_TABLE();
 };
