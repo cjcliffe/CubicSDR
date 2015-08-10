@@ -456,6 +456,11 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         ThemeMgr::mgr.setTheme(COLOR_THEME_RADAR);
     }
 
+    if (event.GetId() >= wxID_THEME_DEFAULT && event.GetId() <= wxID_THEME_RADAR) {
+    	demodTuner->Refresh();
+    	demodModeSelector->Refresh();
+    }
+
     switch (event.GetId()) {
         case wxID_BANDWIDTH_250K:
             wxGetApp().setSampleRate(250000);

@@ -1,6 +1,7 @@
 #include "WaterfallPanel.h"
 
 WaterfallPanel::WaterfallPanel() : GLPanel(), fft_size(0), waterfall_lines(0), waterfall_slice(NULL), activeTheme(NULL) {
+	setFillColor(RGB3f(0,0,0));
     for (int i = 0; i < 2; i++) {
         waterfall[i] = 0;
     }
@@ -106,7 +107,7 @@ void WaterfallPanel::drawPanelContents() {
     if (!waterfall[0]) {
         return;
     }
-        
+
     int half_fft_size = fft_size / 2;
     
     glLoadMatrixf(transform);
