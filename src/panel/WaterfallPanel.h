@@ -9,11 +9,13 @@ public:
     void refreshTheme();
     void setPoints(std::vector<float> &points);
     void step();
-    void drawPanelContents();
     
     std::vector<float> points;
     bool needsUpdate;
 
+protected:
+    void drawPanelContents();
+    
 private:
     GLuint waterfall[2];
     int waterfall_ofs[2];

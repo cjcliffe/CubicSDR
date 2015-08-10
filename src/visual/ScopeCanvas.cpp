@@ -57,21 +57,14 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         ScopeRenderData *avData;
         inputData.pop(avData);
 
-        if (!avData) {
-            return;
-        }
-        
-        int iMax = avData->waveform_points.size();
-        
-        if (!iMax) {
+        if (avData) {
+            if (avData->waveform_points.size()) {
+                scopePanel.setPoints(avData->waveform_points);
+                setStereo(avData->channels == 2);
+            }
+            
             avData->decRefCount();
-            return;
         }
-  
-        scopePanel.setPoints(avData->waveform_points);
-        setStereo(avData->channels == 2);
-        
-        avData->decRefCount();
     }
 
     glContext->SetCurrent(*this);

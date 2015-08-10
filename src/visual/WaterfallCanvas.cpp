@@ -139,7 +139,7 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->SetCurrent(*this);
     initGLExtensions();
     glViewport(0, 0, ClientSize.x, ClientSize.y);
-
+    
     if (!visualDataQueue.empty()) {
         SpectrumVisualData *vData;
         
@@ -148,9 +148,8 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         if (vData) {
             waterfallPanel.setPoints(vData->spectrum_points);
             waterfallPanel.step();
+            vData->decRefCount();
         }
-        
-        vData->decRefCount();
     }
 
     glContext->BeginDraw(0,0,0);

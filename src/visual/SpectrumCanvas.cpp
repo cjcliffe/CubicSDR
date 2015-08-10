@@ -29,7 +29,7 @@ wxEND_EVENT_TABLE()
 SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *attribList) :
         InteractiveCanvas(parent, attribList), waterfallCanvas(NULL) {
 
-    glContext = new SpectrumContext(this, &wxGetApp().GetContext(this));
+    glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this));
 
     mouseTracker.setVertDragLock(true);
 
@@ -49,13 +49,12 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         
         visualDataQueue.pop(vData);
         
-        if (!vData) {
-            return;
+        if (vData) {
+            spectrumPanel.setPoints(vData->spectrum_points);
+            spectrumPanel.setFloorValue(vData->fft_floor);
+            spectrumPanel.setCeilValue(vData->fft_ceiling);
+            vData->decRefCount();
         }
-        
-        spectrum_points.assign(vData->spectrum_points.begin(),vData->spectrum_points.end());
-        
-        vData->decRefCount();
     }
     
     
@@ -64,9 +63,14 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
-    glContext->BeginDraw(ThemeMgr::mgr.currentTheme->fftBackground.r, ThemeMgr::mgr.currentTheme->fftBackground.g, ThemeMgr::mgr.currentTheme->fftBackground.b);
-    glContext->Draw(spectrum_points, getCenterFrequency(), getBandwidth());
+    glContext->BeginDraw(0,0,0);
 
+    spectrumPanel.setFreq(getCenterFrequency());
+    spectrumPanel.setBandwidth(getBandwidth());
+    
+    spectrumPanel.calcTransform(CubicVR::mat4::identity());
+    spectrumPanel.draw();
+    
     std::vector<DemodulatorInstance *> &demods = wxGetApp().getDemodMgr().getDemodulators();
 
     for (int i = 0, iMax = demods.size(); i < iMax; i++) {
@@ -153,10 +157,6 @@ void SpectrumCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
 
 void SpectrumCanvas::attachWaterfallCanvas(WaterfallCanvas* canvas_in) {
     waterfallCanvas = canvas_in;
-}
-
-SpectrumContext* SpectrumCanvas::getSpectrumContext() {
-    return glContext;
 }
 
 SpectrumVisualDataQueue *SpectrumCanvas::getVisualDataQueue() {

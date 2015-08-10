@@ -11,8 +11,11 @@ public:
     
     void setMode(ScopeMode scopeMode);
     void setPoints(std::vector<float> &points);
-    void drawPanelContents();
     
+protected:
+    void drawPanelContents();
+
+private:
     std::vector<float> points;
     ScopeMode scopeMode;
     GLPanel bgPanel;
