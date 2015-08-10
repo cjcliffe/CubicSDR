@@ -13,6 +13,8 @@ GLPanel::GLPanel() : fillType(GLPANEL_FILL_SOLID), contentsVisible(true), transf
     fill[1] = RGB3f(0.1,0.1,0.1);
     borderColor = RGB3f(0.8, 0.8, 0.8);
     setCoordinateSystem(GLPANEL_Y_UP);
+    setMarginPx(0);
+    setBorderPx(0);
 }
 
 void GLPanel::genArrays() {

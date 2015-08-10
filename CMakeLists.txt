@@ -245,6 +245,8 @@ SET (cubicsdr_sources
 	src/util/GLFont.cpp
 	src/util/DataTree.cpp
     src/panel/ScopePanel.cpp
+    src/panel/SpectrumPanel.cpp
+    src/panel/WaterfallPanel.cpp
 	src/visual/ColorTheme.cpp
 	src/visual/PrimaryGLContext.cpp
 	src/visual/InteractiveCanvas.cpp
@@ -259,7 +261,6 @@ SET (cubicsdr_sources
 	src/visual/SpectrumCanvas.cpp
 	src/visual/SpectrumContext.cpp
 	src/visual/WaterfallCanvas.cpp
-	src/visual/WaterfallContext.cpp
 	src/process/VisualProcessor.cpp
 	src/process/ScopeVisualProcessor.cpp
 	src/process/SpectrumVisualProcessor.cpp
@@ -298,6 +299,8 @@ SET (cubicsdr_headers
 	src/util/GLFont.h
 	src/util/DataTree.h
     src/panel/ScopePanel.h
+    src/panel/SpectrumPanel.h
+    src/panel/WaterfallPanel.h
 	src/visual/ColorTheme.h
 	src/visual/PrimaryGLContext.h
 	src/visual/InteractiveCanvas.h
@@ -312,7 +315,6 @@ SET (cubicsdr_headers
 	src/visual/SpectrumCanvas.h
 	src/visual/SpectrumContext.h
 	src/visual/WaterfallCanvas.h
-	src/visual/WaterfallContext.h
 	src/process/VisualProcessor.h
 	src/process/ScopeVisualProcessor.h
 	src/process/SpectrumVisualProcessor.h
