@@ -25,7 +25,10 @@ namespace CubicVR {
         __float a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p;
 
         //        __float  operator [] (unsigned i) const { return ((__float *)this)[i]; }
+#ifndef _WIN32
         __float& operator [] (unsigned i)       { return ((__float *)this)[i]; }
+#endif
+
         operator __float*() const { return (__float *)this; }
         mat4(__float ai,__float bi,__float ci,__float di,__float ei,__float fi,__float gi,__float hi,__float ii,__float ji,__float ki,__float li,__float mi,__float ni,__float oi,__float pi) {
             a = ai; b = bi; c = ci; d = di; e = ei; f = fi; g = gi; h = hi; i = ii; j = ji; k = ki; l = li; m = mi; n = ni; o = oi; p = pi;
