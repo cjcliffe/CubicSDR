@@ -224,10 +224,12 @@ ENDIF (APPLE)
 
 
 SET (cubicsdr_sources
-    src/CubicSDR.cpp
+	src/CubicSDR.cpp
 	src/AppFrame.cpp
 	src/AppConfig.cpp
 	src/FrequencyDialog.cpp
+    src/IOThread.cpp
+	src/sdr/SDRDeviceInfo.cpp
 	src/sdr/SDRThread.cpp
 	src/sdr/SDRPostThread.cpp
 	src/demod/DemodulatorPreThread.cpp
@@ -241,7 +243,10 @@ SET (cubicsdr_sources
 	src/util/MouseTracker.cpp
 	src/util/GLExt.cpp
 	src/util/GLFont.cpp
-    src/util/DataTree.cpp
+	src/util/DataTree.cpp
+    src/panel/ScopePanel.cpp
+    src/panel/SpectrumPanel.cpp
+    src/panel/WaterfallPanel.cpp
 	src/visual/ColorTheme.cpp
 	src/visual/PrimaryGLContext.cpp
 	src/visual/InteractiveCanvas.cpp
@@ -254,23 +259,28 @@ SET (cubicsdr_sources
 	src/visual/ScopeCanvas.cpp
 	src/visual/ScopeContext.cpp
 	src/visual/SpectrumCanvas.cpp
-	src/visual/SpectrumContext.cpp
 	src/visual/WaterfallCanvas.cpp
-	src/visual/WaterfallContext.cpp
+	src/process/VisualProcessor.cpp
+	src/process/ScopeVisualProcessor.cpp
+	src/process/SpectrumVisualProcessor.cpp
+	src/ui/GLPanel.cpp
 	external/rtaudio/RtAudio.cpp
 	external/lodepng/lodepng.cpp
-    external/tinyxml/tinyxml.cpp
-    external/tinyxml/tinystr.cpp
-    external/tinyxml/tinyxmlparser.cpp
-    external/tinyxml/tinyxmlerror.cpp
+	external/tinyxml/tinyxml.cpp
+	external/tinyxml/tinystr.cpp
+	external/tinyxml/tinyxmlparser.cpp
+	external/tinyxml/tinyxmlerror.cpp
+	external/cubicvr2/math/cubic_math.cpp
 )
 
 SET (cubicsdr_headers
 	src/CubicSDRDefs.h
-    src/CubicSDR.h
+	src/CubicSDR.h
 	src/AppFrame.h
 	src/AppConfig.h
 	src/FrequencyDialog.h
+    src/IOThread.h
+	src/sdr/SDRDeviceInfo.h
 	src/sdr/SDRThread.h
 	src/sdr/SDRPostThread.h
 	src/demod/DemodulatorPreThread.h
@@ -286,7 +296,10 @@ SET (cubicsdr_headers
 	src/util/MouseTracker.h
 	src/util/GLExt.h
 	src/util/GLFont.h
-    src/util/DataTree.h
+	src/util/DataTree.h
+    src/panel/ScopePanel.h
+    src/panel/SpectrumPanel.h
+    src/panel/WaterfallPanel.h
 	src/visual/ColorTheme.h
 	src/visual/PrimaryGLContext.h
 	src/visual/InteractiveCanvas.h
@@ -299,25 +312,65 @@ SET (cubicsdr_headers
 	src/visual/ScopeCanvas.h
 	src/visual/ScopeContext.h
 	src/visual/SpectrumCanvas.h
-	src/visual/SpectrumContext.h
 	src/visual/WaterfallCanvas.h
-	src/visual/WaterfallContext.h
+	src/process/VisualProcessor.h
+	src/process/ScopeVisualProcessor.h
+	src/process/SpectrumVisualProcessor.h
+	src/ui/GLPanel.h
+	src/ui/UITestCanvas.cpp
+	src/ui/UITestCanvas.h
+	src/ui/UITestContext.cpp
+	src/ui/UITestContext.h    
 	external/rtaudio/RtAudio.h
 	external/lodepng/lodepng.h
-    external/tinyxml/tinyxml.h
-    external/tinyxml/tinystr.h
+	external/tinyxml/tinyxml.h
+	external/tinyxml/tinystr.h
+	external/cubicvr2/math/aabb.h
+	external/cubicvr2/math/cubic_math.h
+	external/cubicvr2/math/cubic_types.h
+	external/cubicvr2/math/frustum.h
+	external/cubicvr2/math/mat3.h
+	external/cubicvr2/math/mat4.h
+	external/cubicvr2/math/plane.h
+	external/cubicvr2/math/quaternion.h
+	external/cubicvr2/math/sphere.h
+	external/cubicvr2/math/transform.h
+	external/cubicvr2/math/triangle.h
+	external/cubicvr2/math/vec2.h
+	external/cubicvr2/math/vec3.h
+	external/cubicvr2/math/vec4.h
 )
+
+set(REG_EXT "[^/]*([.]cpp|[.]c|[.]h|[.]hpp)$")
+
+SOURCE_GROUP("Base" REGULAR_EXPRESSION src/${REG_EXT})
+SOURCE_GROUP("SDR" REGULAR_EXPRESSION src/sdr/${REG_EXT})
+SOURCE_GROUP("Demodulator" REGULAR_EXPRESSION src/demod/${REG_EXT})
+SOURCE_GROUP("Audio" REGULAR_EXPRESSION src/audio/${REG_EXT})
+SOURCE_GROUP("Utility" REGULAR_EXPRESSION src/util/${REG_EXT})
+SOURCE_GROUP("Panel" REGULAR_EXPRESSION src/panel/${REG_EXT})
+SOURCE_GROUP("Visual" REGULAR_EXPRESSION src/visual/${REG_EXT})
+SOURCE_GROUP("Process" REGULAR_EXPRESSION src/process/${REG_EXT})
+SOURCE_GROUP("UI" REGULAR_EXPRESSION src/ui/${REG_EXT})
+SOURCE_GROUP("_ext-RTAudio" REGULAR_EXPRESSION external/rtaudio/.*${REG_EXT})
+SOURCE_GROUP("_ext-LodePNG" REGULAR_EXPRESSION external/lodepng/.*${REG_EXT})
+SOURCE_GROUP("_ext-TinyXML" REGULAR_EXPRESSION external/tinyxml/.*${REG_EXT})
+SOURCE_GROUP("_ext-CubicVR2" REGULAR_EXPRESSION external/cubicvr2/.*${REG_EXT})
 
 include_directories ( 
 	${PROJECT_SOURCE_DIR}/src/sdr 
 	${PROJECT_SOURCE_DIR}/src/demod
 	${PROJECT_SOURCE_DIR}/src/audio
 	${PROJECT_SOURCE_DIR}/src/util
-	${PROJECT_SOURCE_DIR}/src/visual 
+	${PROJECT_SOURCE_DIR}/src/panel
+	${PROJECT_SOURCE_DIR}/src/visual
+	${PROJECT_SOURCE_DIR}/src/process
+	${PROJECT_SOURCE_DIR}/src/ui
 	${PROJECT_SOURCE_DIR}/src
 	${PROJECT_SOURCE_DIR}/external/rtaudio
 	${PROJECT_SOURCE_DIR}/external/lodepng 
 	${PROJECT_SOURCE_DIR}/external/tinyxml
+	${PROJECT_SOURCE_DIR}/external/cubicvr2/math
 )
 
 IF (MSVC) 

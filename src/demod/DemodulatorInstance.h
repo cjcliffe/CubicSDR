@@ -10,14 +10,6 @@
 class DemodulatorInstance {
 public:
 
-    DemodulatorThreadInputQueue* threadQueueDemod;
-    DemodulatorThreadPostInputQueue* threadQueuePostDemod;
-    DemodulatorThreadCommandQueue* threadQueueCommand;
-    DemodulatorThreadCommandQueue* threadQueueNotify;
-    DemodulatorPreThread *demodulatorPreThread;
-    DemodulatorThread *demodulatorThread;
-    DemodulatorThreadControlCommandQueue *threadQueueControl;
-
 #ifdef __APPLE__
     pthread_t t_PreDemod;
     pthread_t t_Demod;
@@ -26,7 +18,6 @@ public:
     std::thread *t_Demod;
 #endif
 
-    AudioThreadInputQueue *audioInputQueue;
     AudioThread *audioThread;
     std::thread *t_Audio;
 
@@ -82,6 +73,19 @@ public:
 
     bool isTracking();
     void setTracking(bool tracking);
+
+    DemodulatorThreadInputQueue *getIQInputDataPipe();
+
+protected:
+    DemodulatorThreadInputQueue* pipeIQInputData;
+    DemodulatorThreadPostInputQueue* pipeIQDemodData;
+    AudioThreadInputQueue *pipeAudioData;
+    DemodulatorThreadCommandQueue* pipeDemodCommand;
+    DemodulatorThreadCommandQueue* pipeDemodNotify;
+    DemodulatorPreThread *demodulatorPreThread;
+    DemodulatorThread *demodulatorThread;
+    DemodulatorThreadControlCommandQueue *threadQueueControl;
+
 private:
 
     void checkBandwidth();

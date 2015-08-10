@@ -25,7 +25,7 @@ EVT_ENTER_WINDOW(ModeSelectorCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
 ModeSelectorCanvas::ModeSelectorCanvas(wxWindow *parent, int *attribList) :
-InteractiveCanvas(parent, attribList), currentSelection(-1), numChoices(0) {
+InteractiveCanvas(parent, attribList), numChoices(0), currentSelection(-1) {
 
     glContext = new ModeSelectorContext(this, &wxGetApp().GetContext(this));
 }
@@ -47,10 +47,7 @@ int ModeSelectorCanvas::getHoveredSelection() {
 
 void ModeSelectorCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
-#ifdef __APPLE__    // force half-rate?
-    glFinish();
-#endif
-   const wxSize ClientSize = GetClientSize();
+    const wxSize ClientSize = GetClientSize();
 
     glContext->SetCurrent(*this);
     initGLExtensions();
@@ -75,7 +72,7 @@ void ModeSelectorCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 }
 
 void ModeSelectorCanvas::OnIdle(wxIdleEvent &event) {
-    Refresh(false);
+    event.Skip();
 }
 
 void ModeSelectorCanvas::OnMouseMoved(wxMouseEvent& event) {
@@ -109,6 +106,7 @@ void ModeSelectorCanvas::OnMouseReleased(wxMouseEvent& event) {
 void ModeSelectorCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseLeftWindow(event);
     SetCursor (wxCURSOR_CROSS);
+    Refresh();
 }
 
 void ModeSelectorCanvas::OnMouseEnterWindow(wxMouseEvent& event) {

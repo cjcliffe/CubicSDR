@@ -11,15 +11,10 @@
 #include <pthread.h>
 #endif
 
-DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* iqInputQueue, DemodulatorThreadControlCommandQueue *threadQueueControl,
-        DemodulatorThreadCommandQueue* threadQueueNotify) :
-        iqInputQueue(iqInputQueue), audioVisOutputQueue(NULL), audioOutputQueue(NULL), iqAutoGain(NULL), amOutputCeil(1), amOutputCeilMA(1), amOutputCeilMAA(
-                1), threadQueueNotify(threadQueueNotify), threadQueueControl(threadQueueControl), squelchLevel(0), signalLevel(
-                0), squelchEnabled(false), audioSampleRate(0) {
+DemodulatorThread::DemodulatorThread() : IOThread(), iqAutoGain(NULL), amOutputCeil(1), amOutputCeilMA(1), amOutputCeilMAA(1), audioSampleRate(0), squelchLevel(0), signalLevel(0), squelchEnabled(false), iqInputQueue(NULL), audioOutputQueue(NULL), audioVisOutputQueue(NULL), threadQueueControl(NULL), threadQueueNotify(NULL) {
 
 	stereo.store(false);
 	agcEnabled.store(false);
-	terminated.store(false);
 	demodulatorType.store(DEMOD_TYPE_FM);
 
     demodFM = freqdem_create(0.5);
@@ -33,11 +28,13 @@ DemodulatorThread::DemodulatorThread(DemodulatorThreadPostInputQueue* iqInputQue
 DemodulatorThread::~DemodulatorThread() {
 }
 
-#ifdef __APPLE__
-void *DemodulatorThread::threadMain() {
-#else
-void DemodulatorThread::threadMain() {
-#endif
+void DemodulatorThread::onBindOutput(std::string name, ThreadQueueBase *threadQueue) {
+    if (name == "AudioVisualOutput") {
+        audioVisOutputQueue = (DemodulatorThreadOutputQueue *)threadQueue;
+    }
+}
+
+void DemodulatorThread::run() {
 #ifdef __APPLE__
     pthread_t tID = pthread_self();  // ID of this thread
     int priority = sched_get_priority_max( SCHED_FIFO )-1;
@@ -72,6 +69,11 @@ void DemodulatorThread::threadMain() {
 
     std::cout << "Demodulator thread started.." << std::endl;
 
+    iqInputQueue = (DemodulatorThreadPostInputQueue*)getInputQueue("IQDataInput");
+    audioOutputQueue = (AudioThreadInputQueue*)getOutputQueue("AudioDataOutput");
+    threadQueueControl = (DemodulatorThreadControlCommandQueue *)getInputQueue("ControlQueue");
+    threadQueueNotify = (DemodulatorThreadCommandQueue*)getOutputQueue("NotifyQueue");
+    
     switch (demodulatorType.load()) {
     case DEMOD_TYPE_FM:
         break;
@@ -88,8 +90,6 @@ void DemodulatorThread::threadMain() {
         demodAM = demodAM_DSB_CSP;
         break;
     }
-
-    terminated = false;
 
     while (!terminated) {
         DemodulatorThreadPostIQData *inp;
@@ -188,7 +188,6 @@ void DemodulatorThread::threadMain() {
         } else if (demodulatorType == DEMOD_TYPE_RAW) {
             // do nothing here..
         } else {
-            float p;
             switch (demodulatorType.load()) {
             case DEMOD_TYPE_LSB:
                 for (int i = 0; i < bufSize; i++) { // Reject upper band
@@ -307,17 +306,7 @@ void DemodulatorThread::threadMain() {
         if (audioOutputQueue != NULL) {
             if (!squelchEnabled || (signalLevel >= squelchLevel)) {
 
-                for (outputBuffersI = outputBuffers.begin(); outputBuffersI != outputBuffers.end(); outputBuffersI++) {
-                    if ((*outputBuffersI)->getRefCount() <= 0) {
-                        ati = (*outputBuffersI);
-                        break;
-                    }
-                }
-
-                if (ati == NULL) {
-                    ati = new AudioThreadInput;
-                    outputBuffers.push_back(ati);
-                }
+                ati = outputBuffers.getBuffer();
 
                 ati->sampleRate = audioSampleRate;
                 ati->setRefCount(1);
@@ -491,11 +480,7 @@ void DemodulatorThread::threadMain() {
     nco_crcf_destroy(stereoPilot);
     resamp2_cccf_destroy(ssbFilt);
 
-    while (!outputBuffers.empty()) {
-        AudioThreadInput *audioDataDel = outputBuffers.front();
-        outputBuffers.pop_front();
-        delete audioDataDel;
-    }
+    outputBuffers.purge();
 
     if (audioVisOutputQueue && !audioVisOutputQueue->empty()) {
         AudioThreadInput *dummy_vis;
@@ -506,19 +491,8 @@ void DemodulatorThread::threadMain() {
     DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_TERMINATED);
     tCmd.context = this;
     threadQueueNotify->push(tCmd);
+    
     std::cout << "Demodulator thread done." << std::endl;
-
-#ifdef __APPLE__
-    return this;
-#endif
-}
-
-void DemodulatorThread::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {
-    audioVisOutputQueue = tQueue;
-}
-
-void DemodulatorThread::setAudioOutputQueue(AudioThreadInputQueue *tQueue) {
-    audioOutputQueue = tQueue;
 }
 
 void DemodulatorThread::terminate() {

@@ -3,9 +3,7 @@
 #include <vector>
 #include "CubicSDR.h"
 
-SDRThread::SDRThread(SDRThreadCommandQueue* pQueue) :
-        commandQueue(pQueue), iqDataOutQueue(NULL) {
-	terminated.store(false);
+SDRThread::SDRThread() : IOThread() {
 	offset.store(0);
 	deviceId.store(-1);
     dev = NULL;
@@ -114,7 +112,7 @@ int SDRThread::enumerate_rtl(std::vector<SDRDeviceInfo *> *devs) {
 
 }
 
-void SDRThread::threadMain() {
+void SDRThread::run() {
 #ifdef __APPLE__
     pthread_t tID = pthread_self();  // ID of this thread
     int priority = sched_get_priority_max( SCHED_FIFO) - 1;
@@ -124,8 +122,6 @@ void SDRThread::threadMain() {
 
     std::cout << "SDR thread initializing.." << std::endl;
 
-    int devCount = rtlsdr_get_device_count();
-    
     std::vector<SDRDeviceInfo *> devs;
     if (deviceId == -1) {
         deviceId = enumerate_rtl(&devs);
@@ -168,12 +164,12 @@ void SDRThread::threadMain() {
 
     std::cout << "SDR thread started.." << std::endl;
 
-    std::deque<SDRThreadIQData *> buffers;
-    std::deque<SDRThreadIQData *>::iterator buffers_i;
+    ReBuffer<SDRThreadIQData> buffers;
+
+    SDRThreadIQDataQueue* iqDataOutQueue = (SDRThreadIQDataQueue*) getOutputQueue("IQDataOutput");
+    SDRThreadCommandQueue* cmdQueue = (SDRThreadCommandQueue*) getInputQueue("SDRCommandQueue");
 
     while (!terminated) {
-        SDRThreadCommandQueue *cmdQueue = commandQueue.load();
-
         if (!cmdQueue->empty()) {
             bool freq_changed = false;
             bool offset_changed = false;
@@ -274,19 +270,7 @@ void SDRThread::threadMain() {
 
         rtlsdr_read_sync(dev, buf, buf_size, &n_read);
 
-        SDRThreadIQData *dataOut = NULL;
-
-        for (buffers_i = buffers.begin(); buffers_i != buffers.end(); buffers_i++) {
-            if ((*buffers_i)->getRefCount() <= 0) {
-                dataOut = (*buffers_i);
-                break;
-            }
-        }
-
-        if (dataOut == NULL) {
-            dataOut = new SDRThreadIQData;
-            buffers.push_back(dataOut);
-        }
+        SDRThreadIQData *dataOut = buffers.getBuffer();
 
 //        std::lock_guard < std::mutex > lock(dataOut->m_mutex);
         dataOut->setRefCount(1);
@@ -306,21 +290,21 @@ void SDRThread::threadMain() {
         double time_slice = (double) n_read / (double) sampleRate.load();
         seconds += time_slice;
 
-        if (iqDataOutQueue.load() != NULL) {
-            iqDataOutQueue.load()->push(dataOut);
+        if (iqDataOutQueue != NULL) {
+            iqDataOutQueue->push(dataOut);
         }
     }
 
-    while (!buffers.empty()) {
-        SDRThreadIQData *iqDataDel = buffers.front();
-        buffers.pop_front();
-//        std::lock_guard < std::mutex > lock(iqDataDel->m_mutex);
-//        delete iqDataDel;
-    }
-
+     buffers.purge();
+    
     std::cout << "SDR thread done." << std::endl;
 }
 
-void SDRThread::terminate() {
-    terminated = true;
+
+int SDRThread::getDeviceId() const {
+    return deviceId.load();
+}
+
+void SDRThread::setDeviceId(int deviceId) {
+    this->deviceId.store(deviceId);
 }

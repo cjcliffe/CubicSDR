@@ -8,6 +8,9 @@
 #define RES_FOLDER ""
 #endif
 
+
+GLFont GLFont::fonts[GLFONT_MAX];
+
 GLFontChar::GLFontChar() :
         id(0), x(0), y(0), width(0), height(0), xoffset(0), yoffset(0), xadvance(0), aspect(1), index(0) {
 
@@ -100,7 +103,7 @@ int GLFontChar::getIndex() {
 }
 
 GLFont::GLFont() :
-        numCharacters(0), lineHeight(0), base(0), imageWidth(0), imageHeight(0), loaded(false), texId(0) {
+        lineHeight(0), base(0), imageWidth(0), imageHeight(0), loaded(false), texId(0) {
 
 }
 
@@ -394,16 +397,20 @@ float GLFont::getStringWidth(std::string str, float size, float viewAspect) {
     return width;
 }
 
-void GLFont::drawString(std::string str, float xpos, float ypos, int pxHeight, Align hAlign, Align vAlign) {
+void GLFont::drawString(std::string str, float xpos, float ypos, int pxHeight, Align hAlign, Align vAlign, int vpx, int vpy) {
 
-    GLint vp[4];
 
     pxHeight *= 2;
 
-    glGetIntegerv( GL_VIEWPORT, vp);
-
-    float size = (float) pxHeight / (float) vp[3];
-    float viewAspect = (float) vp[2] / (float) vp[3];
+    if (!vpx || !vpy) {
+        GLint vp[4];
+        glGetIntegerv( GL_VIEWPORT, vp);
+        vpx = vp[2];
+        vpy = vp[3];
+    }
+    
+    float size = (float) pxHeight / (float) vpy;
+    float viewAspect = (float) vpx / (float) vpy;
     float msgWidth = getStringWidth(str, size, viewAspect);
 
     glPushMatrix();
@@ -475,3 +482,38 @@ void GLFont::drawString(std::string str, float xpos, float ypos, int pxHeight, A
     glDisable(GL_TEXTURE_2D);
 }
 
+
+
+GLFont &GLFont::getFont(GLFontSize esize) {
+    if (!fonts[esize].isLoaded()) {
+        
+        std::string fontName;
+        switch (esize) {
+            case GLFONT_SIZE12:
+                fontName = "vera_sans_mono12.fnt";
+                break;
+            case GLFONT_SIZE16:
+                fontName = "vera_sans_mono16.fnt";
+                break;
+            case GLFONT_SIZE18:
+                fontName = "vera_sans_mono18.fnt";
+                break;
+            case GLFONT_SIZE24:
+                fontName = "vera_sans_mono24.fnt";
+                break;
+            case GLFONT_SIZE32:
+                fontName = "vera_sans_mono32.fnt";
+                break;
+            case GLFONT_SIZE48:
+                fontName = "vera_sans_mono48.fnt";
+                break;
+            default:
+                fontName = "vera_sans_mono12.fnt";
+                break;
+        }
+        
+        fonts[esize].loadFont(fontName);
+    }
+    
+    return fonts[esize];
+}

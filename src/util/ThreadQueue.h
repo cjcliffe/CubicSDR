@@ -15,9 +15,13 @@
 #include <cstdint>
 #include <condition_variable>
 
+class ThreadQueueBase {
+    
+};
+
 /** A thread-safe asynchronous queue */
 template<class T, class Container = std::list<T>>
-class ThreadQueue {
+class ThreadQueue : public ThreadQueueBase {
 
     typedef typename Container::value_type value_type;
     typedef typename Container::size_type size_type;
@@ -205,6 +209,15 @@ public:
     bool empty() const {
         std::lock_guard < std::mutex > lock(m_mutex);
         return m_queue.empty();
+    }
+
+    /**
+     *  Check if the queue is full.
+     * \return true if queue is full.
+     */
+    bool full() const {
+        std::lock_guard < std::mutex > lock(m_mutex);
+        return (m_max_num_items != 0) && (m_queue.size() >= m_max_num_items);
     }
 
     /**

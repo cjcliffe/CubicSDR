@@ -74,19 +74,19 @@ void TuningContext::DrawTuner(long long freq, int count, float displayPos, float
     freqStr << freq;
     std::string freqChars = freqStr.str();
 
-    PrimaryGLContext::GLFontSize fontSize = GLFONT_SIZE24;
+    GLFont::GLFontSize fontSize = GLFont::GLFONT_SIZE24;
     int fontHeight = 24;
 
     if (viewHeight < 28) {
-        fontSize = GLFONT_SIZE18;
+        fontSize = GLFont::GLFONT_SIZE18;
         fontHeight = 18;
     }
     if (viewHeight < 24) {
-        fontSize = GLFONT_SIZE16;
+        fontSize = GLFont::GLFONT_SIZE16;
         fontHeight = 16;
     }
     if (viewHeight < 18) {
-        fontSize = GLFONT_SIZE12;
+        fontSize = GLFont::GLFONT_SIZE12;
         fontHeight = 12;
     }
 
@@ -95,7 +95,7 @@ void TuningContext::DrawTuner(long long freq, int count, float displayPos, float
     int ofs = count - numChars;
     for (int i = ofs; i < count; i++) {
         float xpos = displayPos + (displayWidth / (float) count) * (float) i + ((displayWidth / 2.0) / (float) count);
-        getFont(fontSize).drawString(freqStr.str().substr(i - ofs, 1), xpos, 0, fontHeight, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+        GLFont::getFont(fontSize).drawString(freqStr.str().substr(i - ofs, 1), xpos, 0, fontHeight, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
     }
 
     glColor4f(0.65, 0.65, 0.65, 0.25);
@@ -112,7 +112,7 @@ void TuningContext::DrawTuner(long long freq, int count, float displayPos, float
 }
 
 
-void TuningContext::DrawTunerDigitBox(int index, int count, float displayPos, float displayWidth, RGBColor c) {
+void TuningContext::DrawTunerDigitBox(int index, int count, float displayPos, float displayWidth, RGB3f c) {
     GLint vp[4];
     glGetIntegerv( GL_VIEWPORT, vp);
 
@@ -152,7 +152,7 @@ int TuningContext::GetTunerDigitIndex(float mPos, int count, float displayPos, f
     return count - index;
 }
 
-void TuningContext::DrawTunerBarIndexed(int start, int end, int count, float displayPos, float displayWidth, RGBColor color, float alpha, bool top,
+void TuningContext::DrawTunerBarIndexed(int start, int end, int count, float displayPos, float displayWidth, RGB3f color, float alpha, bool top,
 bool bottom) {
     float ofs = (displayWidth / (float) count);
     float p2 = displayPos + ofs * (float) (count - start + 1);

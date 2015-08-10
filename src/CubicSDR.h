@@ -17,16 +17,16 @@
 #include "AppConfig.h"
 #include "AppFrame.h"
 
+#include "ScopeVisualProcessor.h"
+#include "SpectrumVisualProcessor.h"
+
 #include <wx/cmdline.h>
 
 #define NUM_DEMODULATORS 1
 
 class CubicSDR: public wxApp {
 public:
-    CubicSDR() :
-    appframe(NULL), m_glContext(NULL), frequency(0), sdrThread(NULL), sdrPostThread(NULL), threadCmdQueueSDR(NULL), iqVisualQueue(NULL), iqPostDataQueue(NULL), audioVisualQueue(NULL), t_SDR(NULL),  t_PostSDR(NULL), sampleRate(DEFAULT_SAMPLE_RATE), offset(0), snap(1), directSamplingMode(0), ppm(0) {
-
-    }
+    CubicSDR();
 
     PrimaryGLContext &GetContext(wxGLCanvas *canvas);
 
@@ -55,6 +55,11 @@ public:
     void setDevice(int deviceId);
     int getDevice();
 
+    ScopeVisualProcessor *getScopeProcessor();
+    SpectrumVisualProcessor *getSpectrumProcesor();
+    SpectrumVisualProcessor *getDemodSpectrumProcesor();
+    VisualDataDistributor<DemodulatorThreadIQData> *getSpectrumDistributor();
+    
     DemodulatorThreadOutputQueue* getAudioVisualQueue();
     DemodulatorThreadInputQueue* getIQVisualQueue();
     DemodulatorMgr &getDemodMgr();
@@ -90,11 +95,19 @@ private:
     SDRThread *sdrThread;
     SDRPostThread *sdrPostThread;
 
-    SDRThreadCommandQueue* threadCmdQueueSDR;
-    SDRThreadIQDataQueue* iqPostDataQueue;
-    DemodulatorThreadInputQueue* iqVisualQueue;
-    DemodulatorThreadOutputQueue* audioVisualQueue;
+    SDRThreadCommandQueue* pipeSDRCommand;
+    SDRThreadIQDataQueue* pipeSDRIQData;
+    DemodulatorThreadInputQueue* pipeIQVisualData;
+    DemodulatorThreadOutputQueue* pipeAudioVisualData;
+    DemodulatorThreadInputQueue* pipeDemodIQVisualData;
+    DemodulatorThreadInputQueue* pipeSpectrumIQVisualData;
 
+    ScopeVisualProcessor scopeProcessor;
+    SpectrumVisualProcessor spectrumProcessor;
+    SpectrumVisualProcessor demodSpectrumProcessor;
+    
+    VisualDataDistributor<DemodulatorThreadIQData> spectrumDistributor;
+    
     std::thread *t_SDR;
     std::thread *t_PostSDR;
 };

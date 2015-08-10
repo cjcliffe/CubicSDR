@@ -70,13 +70,13 @@ public:
 typedef ThreadQueue<DemodulatorWorkerThreadCommand> DemodulatorThreadWorkerCommandQueue;
 typedef ThreadQueue<DemodulatorWorkerThreadResult> DemodulatorThreadWorkerResultQueue;
 
-class DemodulatorWorkerThread {
+class DemodulatorWorkerThread : public IOThread {
 public:
 
-    DemodulatorWorkerThread(DemodulatorThreadWorkerCommandQueue* in, DemodulatorThreadWorkerResultQueue* out);
+    DemodulatorWorkerThread();
     ~DemodulatorWorkerThread();
 
-    void threadMain();
+    void run();
 
     void setCommandQueue(DemodulatorThreadWorkerCommandQueue *tQueue) {
         commandQueue = tQueue;
@@ -92,6 +92,4 @@ protected:
 
     DemodulatorThreadWorkerCommandQueue *commandQueue;
     DemodulatorThreadWorkerResultQueue *resultQueue;
-
-    std::atomic_bool terminated;
 };

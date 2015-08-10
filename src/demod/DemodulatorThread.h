@@ -10,22 +10,15 @@ typedef ThreadQueue<AudioThreadInput *> DemodulatorThreadOutputQueue;
 
 #define DEMOD_VIS_SIZE 1024
 
-class DemodulatorThread {
+class DemodulatorThread : public IOThread {
 public:
 
-    DemodulatorThread(DemodulatorThreadPostInputQueue* iqInputQueue, DemodulatorThreadControlCommandQueue *threadQueueControl,
-            DemodulatorThreadCommandQueue* threadQueueNotify);
+    DemodulatorThread();
     ~DemodulatorThread();
 
-#ifdef __APPLE__
-    void *threadMain();
-#else
-    void threadMain();
-#endif
-
-    void setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue);
-    void setAudioOutputQueue(AudioThreadInputQueue *tQueue);
-
+    void onBindOutput(std::string name, ThreadQueueBase *threadQueue);
+    
+    void run();
     void terminate();
 
     void setStereo(bool state);
@@ -48,8 +41,7 @@ public:
 #endif
 
 protected:
-    std::deque<AudioThreadInput *> outputBuffers;
-    std::deque<AudioThreadInput *>::iterator outputBuffersI;
+    ReBuffer<AudioThreadInput> outputBuffers;
 
     std::vector<liquid_float_complex> agcData;
     std::vector<float> agcAMData;
@@ -57,10 +49,6 @@ protected:
     std::vector<float> demodStereoData;
     std::vector<float> resampledOutputData;
     std::vector<float> resampledStereoData;
-
-    DemodulatorThreadPostInputQueue* iqInputQueue;
-    DemodulatorThreadOutputQueue* audioVisOutputQueue;
-    AudioThreadInputQueue *audioOutputQueue;
 
     freqdem demodFM;
     ampmodem demodAM;
@@ -77,13 +65,16 @@ protected:
 
     std::atomic_bool stereo;
     std::atomic_bool agcEnabled;
-    std::atomic_bool terminated;
     std::atomic_int demodulatorType;
     int audioSampleRate;
 
-    DemodulatorThreadCommandQueue* threadQueueNotify;
-    DemodulatorThreadControlCommandQueue *threadQueueControl;
     std::atomic<float> squelchLevel;
     std::atomic<float> signalLevel;
     bool squelchEnabled;
+    
+    DemodulatorThreadPostInputQueue* iqInputQueue;
+    AudioThreadInputQueue *audioOutputQueue;
+    DemodulatorThreadOutputQueue* audioVisOutputQueue;
+    DemodulatorThreadControlCommandQueue *threadQueueControl;
+    DemodulatorThreadCommandQueue* threadQueueNotify;
 };

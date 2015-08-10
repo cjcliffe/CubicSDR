@@ -35,10 +35,11 @@ EVT_CLOSE(AppFrame::OnClose)
 EVT_MENU(wxID_ANY, AppFrame::OnMenu)
 EVT_COMMAND(wxID_ANY, wxEVT_THREAD, AppFrame::OnThread)
 EVT_IDLE(AppFrame::OnIdle)
+EVT_TIMER(FRAME_TIMER_ID, AppFrame::OnTimer)
 wxEND_EVENT_TABLE()
 
 AppFrame::AppFrame() :
-        wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
+        wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL), frame_timer(this, FRAME_TIMER_ID) {
 
 #ifdef __linux__
     SetIcon(wxICON(cubicsdr));
@@ -64,10 +65,11 @@ AppFrame::AppFrame() :
 
 //    demodTray->AddSpacer(2);
 
+    wxGetApp().getDemodSpectrumProcesor()->setup(1024);
     demodSpectrumCanvas = new SpectrumCanvas(this, attribList);
-    demodSpectrumCanvas->setup(1024);
     demodSpectrumCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
     demodVisuals->Add(demodSpectrumCanvas, 3, wxEXPAND | wxALL, 0);
+    wxGetApp().getDemodSpectrumProcesor()->attachOutput(demodSpectrumCanvas->getVisualDataQueue());
 
     demodVisuals->AddSpacer(1);
 
@@ -77,6 +79,7 @@ AppFrame::AppFrame() :
     demodWaterfallCanvas->attachSpectrumCanvas(demodSpectrumCanvas);
     demodSpectrumCanvas->attachWaterfallCanvas(demodWaterfallCanvas);
     demodVisuals->Add(demodWaterfallCanvas, 6, wxEXPAND | wxALL, 0);
+    wxGetApp().getDemodSpectrumProcesor()->attachOutput(demodWaterfallCanvas->getVisualDataQueue());
 
     demodTray->Add(demodVisuals, 30, wxEXPAND | wxALL, 0);
 
@@ -91,6 +94,7 @@ AppFrame::AppFrame() :
 
     scopeCanvas = new ScopeCanvas(this, attribList);
     demodScopeTray->Add(scopeCanvas, 8, wxEXPAND | wxALL, 0);
+    wxGetApp().getScopeProcessor()->attachOutput(scopeCanvas->getInputQueue());
 
     demodScopeTray->AddSpacer(1);
 
@@ -109,17 +113,25 @@ AppFrame::AppFrame() :
 
     vbox->Add(demodTray, 12, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(1);
+
+    wxGetApp().getSpectrumProcesor()->setup(2048);
     spectrumCanvas = new SpectrumCanvas(this, attribList);
-    spectrumCanvas->setup(2048);
     vbox->Add(spectrumCanvas, 5, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(1);
+    wxGetApp().getSpectrumProcesor()->attachOutput(spectrumCanvas->getVisualDataQueue());
+
     waterfallCanvas = new WaterfallCanvas(this, attribList);
     waterfallCanvas->setup(2048, 512);
     waterfallCanvas->attachSpectrumCanvas(spectrumCanvas);
-    waterfallCanvas->attachWaterfallCanvas(demodWaterfallCanvas);
     spectrumCanvas->attachWaterfallCanvas(waterfallCanvas);
     vbox->Add(waterfallCanvas, 20, wxEXPAND | wxALL, 0);
-
+    wxGetApp().getSpectrumProcesor()->attachOutput(waterfallCanvas->getVisualDataQueue());
+/*
+    vbox->AddSpacer(1);
+    testCanvas = new UITestCanvas(this, attribList);
+    vbox->Add(testCanvas, 20, wxEXPAND | wxALL, 0);
+// */
+            
     this->SetSizer(vbox);
 
     //    waterfallCanvas->SetFocusFromKbd();
@@ -339,6 +351,8 @@ AppFrame::AppFrame() :
     wxAcceleratorTable accel(3, entries);
     SetAcceleratorTable(accel);
 
+    // frame rate = 1000 / 30 = 33ms
+    frame_timer.Start(33);
 //    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 //    wxLogStatus("Double-buffered display %s supported", wxGLCanvas::IsDisplaySupported(attribs) ? "is" : "not");
 //    ShowFullScreen(true);
@@ -440,6 +454,11 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         ThemeMgr::mgr.setTheme(COLOR_THEME_HD);
     } else if (event.GetId() == wxID_THEME_RADAR) {
         ThemeMgr::mgr.setTheme(COLOR_THEME_RADAR);
+    }
+
+    if (event.GetId() >= wxID_THEME_DEFAULT && event.GetId() <= wxID_THEME_RADAR) {
+    	demodTuner->Refresh();
+    	demodModeSelector->Refresh();
     }
 
     switch (event.GetId()) {
@@ -550,12 +569,10 @@ void AppFrame::OnThread(wxCommandEvent& event) {
 }
 
 void AppFrame::OnIdle(wxIdleEvent& event) {
-    bool work_done = false;
+    event.Skip();
+}
 
-//#ifdef __APPLE__
-//    std::this_thread::sleep_for(std::chrono::milliseconds(4));
-//    std::this_thread::yield();
-//#endif
+void AppFrame::OnTimer(wxTimerEvent& event) {
 
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
@@ -667,7 +684,44 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     }
 
     scopeCanvas->setPPMMode(demodTuner->isAltDown());
+    
+    wxGetApp().getScopeProcessor()->run();
+    wxGetApp().getSpectrumDistributor()->run();
+    
+    SpectrumVisualProcessor *proc = wxGetApp().getSpectrumProcesor();
+    
+    proc->setView(waterfallCanvas->getViewState());
+    proc->setBandwidth(waterfallCanvas->getBandwidth());
+    proc->setCenterFrequency(waterfallCanvas->getCenterFrequency());
+    
+    proc->run();
+    
+    SpectrumVisualProcessor *dproc = wxGetApp().getDemodSpectrumProcesor();
+    
+    dproc->setView(demodWaterfallCanvas->getViewState());
+    dproc->setBandwidth(demodWaterfallCanvas->getBandwidth());
+    dproc->setCenterFrequency(demodWaterfallCanvas->getCenterFrequency());
+    
+    dproc->run();
 
+    scopeCanvas->Refresh();
+    
+    waterfallCanvas->Refresh();
+    spectrumCanvas->Refresh();
+    
+    demodWaterfallCanvas->Refresh();
+    demodSpectrumCanvas->Refresh();
+    
+    demodSignalMeter->Refresh();
+    demodGainMeter->Refresh();
+
+    if (demodTuner->getMouseTracker()->mouseInView() || demodTuner->changed()) {
+        demodTuner->Refresh();
+    }
+    if (demodModeSelector->getMouseTracker()->mouseInView()) {
+        demodModeSelector->Refresh();
+    }
+    
     event.Skip();
 }
 
