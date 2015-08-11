@@ -26,6 +26,8 @@ public:
     void setBandwidth(long bandwidth_in);
     long getBandwidth();
     
+    int getDesiredInputSize();
+    
     void setup(int fftSize);
     
 protected:
@@ -59,4 +61,39 @@ private:
     
     std::vector<liquid_float_complex> shiftBuffer;
     std::vector<liquid_float_complex> resampleBuffer;
+    int desiredInputSize;
+};
+
+
+class FFTDataDistributor : public VisualProcessor<DemodulatorThreadIQData, DemodulatorThreadIQData> {
+public:
+    void setFFTSize(int fftSize) {
+        this->fftSize = fftSize;
+    }
+    
+protected:
+    void process() {
+        while (!input->empty()) {
+            if (!isAnyOutputEmpty()) {
+                return;
+            }
+            DemodulatorThreadIQData *inp;
+            input->pop(inp);
+            if (inp) {
+                if (inp->data.size() >= fftSize) {
+                    for (int i = 0, iMax = inp->data.size()-fftSize; i < iMax; i += fftSize) {
+                        DemodulatorThreadIQData *outp = outputBuffers.getBuffer();
+                        outp->frequency = inp->frequency;
+                        outp->sampleRate = inp->sampleRate;
+                        outp->data.assign(inp->data.begin()+i,inp->data.begin()+i+fftSize);
+                        distribute(outp);
+                    }
+                }
+                inp->decRefCount();
+            }
+        }
+    }
+    
+    ReBuffer<DemodulatorThreadIQData> outputBuffers;
+    int fftSize;
 };

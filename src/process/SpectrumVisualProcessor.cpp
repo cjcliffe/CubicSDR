@@ -14,6 +14,7 @@ SpectrumVisualProcessor::SpectrumVisualProcessor() : lastInputBandwidth(0), last
     
     fft_ceil_ma = fft_ceil_maa = 100.0;
     fft_floor_ma = fft_floor_maa = 0.0;
+    desiredInputSize = 0;
 }
 
 SpectrumVisualProcessor::~SpectrumVisualProcessor() {
@@ -45,8 +46,13 @@ long SpectrumVisualProcessor::getBandwidth() {
     return bandwidth.load();
 }
 
+int SpectrumVisualProcessor::getDesiredInputSize() {
+    return desiredInputSize;
+}
+
 void SpectrumVisualProcessor::setup(int fftSize_in) {
     fftSize = fftSize_in;
+    desiredInputSize = fftSize;
     
     if (fftwInput) {
         free(fftwInput);
@@ -102,6 +108,8 @@ void SpectrumVisualProcessor::process() {
             resamplerRatio = (double) (bandwidth) / (double) iqData->sampleRate;
             
             int desired_input_size = fftSize / resamplerRatio;
+            
+            this->desiredInputSize = desired_input_size;
             
             if (iqData->data.size() < desired_input_size) {
                 //                std::cout << "fft underflow, desired: " << desired_input_size << " actual:" << input->data.size() << std::endl;
@@ -280,5 +288,7 @@ void SpectrumVisualProcessor::process() {
         
         distribute(output);
     }
-    
+ 
+    iqData->decRefCount();
 }
+

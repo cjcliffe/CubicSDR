@@ -96,5 +96,8 @@ private:
     std::string currentSessionFile;
     wxTimer frame_timer;
     
+    FFTDataDistributor fftDistrib;
+    DemodulatorThreadInputQueue fftQueue;
+    
     wxDECLARE_EVENT_TABLE();
 };

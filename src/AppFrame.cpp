@@ -120,12 +120,18 @@ AppFrame::AppFrame() :
     vbox->AddSpacer(1);
     wxGetApp().getSpectrumProcesor()->attachOutput(spectrumCanvas->getVisualDataQueue());
 
+    wxGetApp().getWaterfallProcesor()->setup(2048);
     waterfallCanvas = new WaterfallCanvas(this, attribList);
     waterfallCanvas->setup(2048, 512);
     waterfallCanvas->attachSpectrumCanvas(spectrumCanvas);
     spectrumCanvas->attachWaterfallCanvas(waterfallCanvas);
     vbox->Add(waterfallCanvas, 20, wxEXPAND | wxALL, 0);
-    wxGetApp().getSpectrumProcesor()->attachOutput(waterfallCanvas->getVisualDataQueue());
+//    wxGetApp().getSpectrumProcesor()->attachOutput(waterfallCanvas->getVisualDataQueue());
+    fftDistrib.setInput(wxGetApp().getWaterfallVisualQueue());
+    fftDistrib.attachOutput(&fftQueue);
+    wxGetApp().getWaterfallProcesor()->setInput(&fftQueue);
+    wxGetApp().getWaterfallProcesor()->attachOutput(waterfallCanvas->getVisualDataQueue());
+            
 /*
     vbox->AddSpacer(1);
     testCanvas = new UITestCanvas(this, attribList);
@@ -690,9 +696,9 @@ void AppFrame::OnTimer(wxTimerEvent& event) {
     
     SpectrumVisualProcessor *proc = wxGetApp().getSpectrumProcesor();
     
-    proc->setView(waterfallCanvas->getViewState());
-    proc->setBandwidth(waterfallCanvas->getBandwidth());
-    proc->setCenterFrequency(waterfallCanvas->getCenterFrequency());
+    proc->setView(spectrumCanvas->getViewState());
+    proc->setBandwidth(spectrumCanvas->getBandwidth());
+    proc->setCenterFrequency(spectrumCanvas->getCenterFrequency());
     
     proc->run();
     
@@ -704,6 +710,27 @@ void AppFrame::OnTimer(wxTimerEvent& event) {
     
     dproc->run();
 
+    SpectrumVisualProcessor *wproc = wxGetApp().getWaterfallProcesor();
+
+    int fftSize = wproc->getDesiredInputSize();
+    
+    if (fftSize) {
+        fftDistrib.setFFTSize(fftSize);
+    } else {
+        fftDistrib.setFFTSize(DEFAULT_FFT_SIZE);
+    }
+    
+    fftDistrib.run();
+
+    wproc->setView(waterfallCanvas->getViewState());
+    wproc->setBandwidth(waterfallCanvas->getBandwidth());
+    wproc->setCenterFrequency(waterfallCanvas->getCenterFrequency());
+    
+    while (!wproc->isInputEmpty()) {
+        wproc->run();
+    }
+
+    
     scopeCanvas->Refresh();
     
     waterfallCanvas->Refresh();

@@ -140,7 +140,7 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     initGLExtensions();
     glViewport(0, 0, ClientSize.x, ClientSize.y);
     
-    if (!visualDataQueue.empty()) {
+    while (!visualDataQueue.empty()) {
         SpectrumVisualData *vData;
         
         visualDataQueue.pop(vData);

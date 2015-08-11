@@ -82,18 +82,18 @@ void SDRPostThread::run() {
 
     iqDataInQueue = (SDRThreadIQDataQueue*)getInputQueue("IQDataInput");
     iqDataOutQueue = (DemodulatorThreadInputQueue*)getOutputQueue("IQDataOutput");
-    iqVisualQueue = (DemodulatorThreadInputQueue*)getOutputQueue("IQVisualDataOut");
+    iqVisualQueue = (DemodulatorThreadInputQueue*)getOutputQueue("IQVisualDataOutput");
     
     ReBuffer<DemodulatorThreadIQData> buffers;
     std::vector<liquid_float_complex> fpData;
     std::vector<liquid_float_complex> dataOut;
-
+    
     while (!terminated) {
         SDRThreadIQData *data_in;
-
+        
         iqDataInQueue->pop(data_in);
-//        std::lock_guard < std::mutex > lock(data_in->m_mutex);
-
+        //        std::lock_guard < std::mutex > lock(data_in->m_mutex);
+        
         if (data_in && data_in->data.size()) {
             int dataSize = data_in->data.size()/2;
             if (dataSize > fpData.capacity()) {
@@ -104,7 +104,7 @@ void SDRPostThread::run() {
                 fpData.resize(dataSize);
                 dataOut.resize(dataSize);
             }
-
+            
             if (swapIQ) {
                 for (int i = 0; i < dataSize; i++) {
                     fpData[i] = _lut_swap[*((uint16_t*)&data_in->data[2*i])];
@@ -114,106 +114,101 @@ void SDRPostThread::run() {
                     fpData[i] = _lut[*((uint16_t*)&data_in->data[2*i])];
                 }
             }
-
+            
             iirfilt_crcf_execute_block(dcFilter, &fpData[0], dataSize, &dataOut[0]);
-
-            if (iqDataOutQueue != NULL) {
-                DemodulatorThreadIQData *pipeDataOut = new DemodulatorThreadIQData;
-
-                pipeDataOut->frequency = data_in->frequency;
-                pipeDataOut->sampleRate = data_in->sampleRate;
-                pipeDataOut->data.assign(dataOut.begin(), dataOut.end());
-                iqDataOutQueue->push(pipeDataOut);
-            }
-
+            
             if (iqVisualQueue != NULL && iqVisualQueue->empty()) {
-
+                
                 visualDataOut->busy_rw.lock();
-
+                
                 if (visualDataOut->data.size() < num_vis_samples) {
                     if (visualDataOut->data.capacity() < num_vis_samples) {
                         visualDataOut->data.reserve(num_vis_samples);
                     }
                     visualDataOut->data.resize(num_vis_samples);
                 }
-
+                
                 visualDataOut->frequency = data_in->frequency;
                 visualDataOut->sampleRate = data_in->sampleRate;
                 visualDataOut->data.assign(dataOut.begin(), dataOut.begin() + num_vis_samples);
-
+                
                 iqVisualQueue->push(visualDataOut);
-
+                
                 visualDataOut->busy_rw.unlock();
             }
             
             busy_demod.lock();
-
+            
             int activeDemods = 0;
             bool pushedData = false;
-
-            if (demodulators.size()) {
-
-                std::vector<DemodulatorInstance *>::iterator i;
-                for (i = demodulators.begin(); i != demodulators.end(); i++) {
-                    DemodulatorInstance *demod = *i;
+            
+            if (demodulators.size() || iqDataOutQueue != NULL) {
+                std::vector<DemodulatorInstance *>::iterator demod_i;
+                for (demod_i = demodulators.begin(); demod_i != demodulators.end(); demod_i++) {
+                    DemodulatorInstance *demod = *demod_i;
                     if (demod->getFrequency() != data_in->frequency
-                            && abs(data_in->frequency - demod->getFrequency()) > (wxGetApp().getSampleRate() / 2)) {
+                        && abs(data_in->frequency - demod->getFrequency()) > (wxGetApp().getSampleRate() / 2)) {
                         continue;
                     }
                     activeDemods++;
                 }
-
-                if (demodulators.size()) {
-
-                    DemodulatorThreadIQData *demodDataOut = buffers.getBuffer();
-
-//                    std::lock_guard < std::mutex > lock(demodDataOut->m_mutex);
-                    demodDataOut->frequency = data_in->frequency;
-                    demodDataOut->sampleRate = data_in->sampleRate;
-                    demodDataOut->setRefCount(activeDemods);
-                    demodDataOut->data.assign(dataOut.begin(), dataOut.end());
-
-                    std::vector<DemodulatorInstance *>::iterator i;
-                    for (i = demodulators.begin(); i != demodulators.end(); i++) {
-                        DemodulatorInstance *demod = *i;
-                        DemodulatorThreadInputQueue *demodQueue = demod->getIQInputDataPipe();
-
-                        if (abs(data_in->frequency - demod->getFrequency()) > (wxGetApp().getSampleRate() / 2)) {
-                            if (demod->isActive() && !demod->isFollow() && !demod->isTracking()) {
-                                demod->setActive(false);
-                                DemodulatorThreadIQData *dummyDataOut = new DemodulatorThreadIQData;
-                                dummyDataOut->frequency = data_in->frequency;
-                                dummyDataOut->sampleRate = data_in->sampleRate;
-                                demodQueue->push(dummyDataOut);
-                            }
-
-                            if (demod->isFollow() && wxGetApp().getFrequency() != demod->getFrequency()) {
-                                wxGetApp().setFrequency(demod->getFrequency());
-                            }
-                        } else if (!demod->isActive()) {
-                            demod->setActive(true);
-                            if (wxGetApp().getDemodMgr().getLastActiveDemodulator() == NULL) {
-                                wxGetApp().getDemodMgr().setActiveDemodulator(demod);
-                            }
+                
+                if (iqDataOutQueue != NULL) {
+                    activeDemods++;
+                }
+                
+                DemodulatorThreadIQData *demodDataOut = buffers.getBuffer();
+                
+                //                    std::lock_guard < std::mutex > lock(demodDataOut->m_mutex);
+                demodDataOut->frequency = data_in->frequency;
+                demodDataOut->sampleRate = data_in->sampleRate;
+                demodDataOut->setRefCount(activeDemods);
+                demodDataOut->data.assign(dataOut.begin(), dataOut.end());
+                
+                for (demod_i = demodulators.begin(); demod_i != demodulators.end(); demod_i++) {
+                    DemodulatorInstance *demod = *demod_i;
+                    DemodulatorThreadInputQueue *demodQueue = demod->getIQInputDataPipe();
+                    
+                    if (abs(data_in->frequency - demod->getFrequency()) > (wxGetApp().getSampleRate() / 2)) {
+                        if (demod->isActive() && !demod->isFollow() && !demod->isTracking()) {
+                            demod->setActive(false);
+                            DemodulatorThreadIQData *dummyDataOut = new DemodulatorThreadIQData;
+                            dummyDataOut->frequency = data_in->frequency;
+                            dummyDataOut->sampleRate = data_in->sampleRate;
+                            demodQueue->push(dummyDataOut);
                         }
-
-                        if (!demod->isActive()) {
-                            continue;
+                        
+                        if (demod->isFollow() && wxGetApp().getFrequency() != demod->getFrequency()) {
+                            wxGetApp().setFrequency(demod->getFrequency());
                         }
-                        if (demod->isFollow()) {
-                            demod->setFollow(false);
+                    } else if (!demod->isActive()) {
+                        demod->setActive(true);
+                        if (wxGetApp().getDemodMgr().getLastActiveDemodulator() == NULL) {
+                            wxGetApp().getDemodMgr().setActiveDemodulator(demod);
                         }
-
-                        demodQueue->push(demodDataOut);
-                        pushedData = true;
                     }
-
-                    if (!pushedData) {
-                        demodDataOut->setRefCount(0);
+                    
+                    if (!demod->isActive()) {
+                        continue;
                     }
+                    if (demod->isFollow()) {
+                        demod->setFollow(false);
+                    }
+                    
+                    demodQueue->push(demodDataOut);
+                    pushedData = true;
+                }
+                
+                if (iqDataOutQueue != NULL) {
+                    iqDataOutQueue->push(demodDataOut);
+                    pushedData = true;
+                }
+                
+                if (!pushedData && iqDataOutQueue == NULL) {
+                    demodDataOut->setRefCount(0);
                 }
             }
-
+            
             busy_demod.unlock();
         }
         data_in->decRefCount();
