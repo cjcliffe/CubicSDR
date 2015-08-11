@@ -3,6 +3,7 @@
 #include "VisualProcessor.h"
 #include "DemodDefs.h"
 #include "fftw3.h"
+#include <cmath>
 
 class SpectrumVisualData : public ReferenceCounter {
 public:
@@ -67,8 +68,15 @@ private:
 
 class FFTDataDistributor : public VisualProcessor<DemodulatorThreadIQData, DemodulatorThreadIQData> {
 public:
+    FFTDataDistributor() : linesPerSecond(30) {
+    }
+    
     void setFFTSize(int fftSize) {
         this->fftSize = fftSize;
+    }
+    
+    void setLinesPerSecond(int lines) {
+        this->linesPerSecond = lines;
     }
     
 protected:
@@ -79,14 +87,31 @@ protected:
             }
             DemodulatorThreadIQData *inp;
             input->pop(inp);
+            
+            // number of milliseconds contained in input
+            double inputTime = (double)inp->data.size() / (double)inp->sampleRate;
+            // number of lines in input
+            int inputLines = floor((double)inp->data.size()/(double)fftSize);
+            
+            // ratio required to achieve the desired rate
+            double lineRateStep = ((double)linesPerSecond * inputTime)/(double)inputLines;
+            
             if (inp) {
                 if (inp->data.size() >= fftSize) {
                     for (int i = 0, iMax = inp->data.size()-fftSize; i < iMax; i += fftSize) {
-                        DemodulatorThreadIQData *outp = outputBuffers.getBuffer();
-                        outp->frequency = inp->frequency;
-                        outp->sampleRate = inp->sampleRate;
-                        outp->data.assign(inp->data.begin()+i,inp->data.begin()+i+fftSize);
-                        distribute(outp);
+                        lineRateAccum += lineRateStep;
+                        
+                        if (lineRateAccum >= 1.0) {
+                            DemodulatorThreadIQData *outp = outputBuffers.getBuffer();
+                            outp->frequency = inp->frequency;
+                            outp->sampleRate = inp->sampleRate;
+                            outp->data.assign(inp->data.begin()+i,inp->data.begin()+i+fftSize);
+                            distribute(outp);
+                            
+                            while (lineRateAccum > 1.0) {
+                                lineRateAccum -= 1.0;
+                            }
+                        }
                     }
                 }
                 inp->decRefCount();
@@ -96,4 +121,6 @@ protected:
     
     ReBuffer<DemodulatorThreadIQData> outputBuffers;
     int fftSize;
+    int linesPerSecond;
+    double lineRateAccum;
 };

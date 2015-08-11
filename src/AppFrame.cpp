@@ -719,7 +719,7 @@ void AppFrame::OnTimer(wxTimerEvent& event) {
     } else {
         fftDistrib.setFFTSize(DEFAULT_FFT_SIZE);
     }
-    
+    fftDistrib.setLinesPerSecond(15);
     fftDistrib.run();
 
     wproc->setView(waterfallCanvas->getViewState());
