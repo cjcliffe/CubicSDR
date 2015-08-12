@@ -405,7 +405,14 @@ void AppFrame::initDeviceParams(std::string deviceId) {
     
     if (!frame_timer.IsRunning()) {
         // frame rate = 1000 / 30 = 33ms
+
+// windows needs a bit more time or it lags?
+#ifdef _WIN32
         frame_timer.Start(25);
+#else
+	frame_timer.Start(33);
+#endif
+
     }
 }
 
