@@ -769,6 +769,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         wproc->run();
     }
     
+    usleep(5000);
    /* scopeCanvas->Refresh();
     
     waterfallCanvas->Refresh();
