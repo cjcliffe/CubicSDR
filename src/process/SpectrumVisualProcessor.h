@@ -68,7 +68,7 @@ private:
 
 class FFTDataDistributor : public VisualProcessor<DemodulatorThreadIQData, DemodulatorThreadIQData> {
 public:
-    FFTDataDistributor() : linesPerSecond(30), lineRateAccum(0.0) {
+    FFTDataDistributor() : linesPerSecond(DEFAULT_WATERFALL_LPS), lineRateAccum(0.0) {
     }
     
     void setFFTSize(int fftSize) {

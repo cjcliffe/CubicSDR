@@ -63,8 +63,6 @@ AppFrame::AppFrame() :
     demodModeSelector->setHelpTip("Choose modulation type: Frequency Modulation, Amplitude Modulation and Lower, Upper or Double Side-Band.");
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
 
-//    demodTray->AddSpacer(2);
-
     wxGetApp().getDemodSpectrumProcesor()->setup(1024);
     demodSpectrumCanvas = new SpectrumCanvas(this, attribList);
     demodSpectrumCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
@@ -114,24 +112,49 @@ AppFrame::AppFrame() :
     vbox->Add(demodTray, 12, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(1);
 
+    wxBoxSizer *spectrumSizer = new wxBoxSizer(wxHORIZONTAL);
     wxGetApp().getSpectrumProcesor()->setup(2048);
     spectrumCanvas = new SpectrumCanvas(this, attribList);
-    vbox->Add(spectrumCanvas, 5, wxEXPAND | wxALL, 0);
-    vbox->AddSpacer(1);
     wxGetApp().getSpectrumProcesor()->attachOutput(spectrumCanvas->getVisualDataQueue());
+            
+    spectrumAvgMeter = new MeterCanvas(this, attribList);
+    spectrumAvgMeter->setMax(3.0);
+    spectrumAvgMeter->setInputValue(1.0);
+    
+    spectrumSizer->Add(spectrumCanvas, 63, wxEXPAND | wxALL, 0);
+    spectrumSizer->AddSpacer(1);
+    spectrumSizer->Add(spectrumAvgMeter, 1, wxEXPAND | wxALL, 0);
+            
+    vbox->Add(spectrumSizer, 5, wxEXPAND | wxALL, 0);
+
+    vbox->AddSpacer(1);
+            
+    wxBoxSizer *wfSizer = new wxBoxSizer(wxHORIZONTAL);
 
     wxGetApp().getWaterfallProcesor()->setup(2048);
     waterfallCanvas = new WaterfallCanvas(this, attribList);
     waterfallCanvas->setup(2048, 512);
-    waterfallCanvas->attachSpectrumCanvas(spectrumCanvas);
-    spectrumCanvas->attachWaterfallCanvas(waterfallCanvas);
-    vbox->Add(waterfallCanvas, 20, wxEXPAND | wxALL, 0);
-//    wxGetApp().getSpectrumProcesor()->attachOutput(waterfallCanvas->getVisualDataQueue());
+    
     fftDistrib.setInput(wxGetApp().getWaterfallVisualQueue());
     fftDistrib.attachOutput(&fftQueue);
+    
     wxGetApp().getWaterfallProcesor()->setInput(&fftQueue);
     wxGetApp().getWaterfallProcesor()->attachOutput(waterfallCanvas->getVisualDataQueue());
             
+    waterfallSpeedMeter = new MeterCanvas(this, attribList);
+    waterfallSpeedMeter->setMax(sqrt(1024));
+    waterfallSpeedMeter->setInputValue(sqrt(DEFAULT_WATERFALL_LPS));
+
+    wfSizer->Add(waterfallCanvas, 63, wxEXPAND | wxALL, 0);
+    wfSizer->AddSpacer(1);
+    wfSizer->Add(waterfallSpeedMeter, 1, wxEXPAND | wxALL, 0);
+            
+    vbox->Add(wfSizer, 20, wxEXPAND | wxALL, 0);
+
+    // TODO: refactor these..
+    waterfallCanvas->attachSpectrumCanvas(spectrumCanvas);
+    spectrumCanvas->attachWaterfallCanvas(waterfallCanvas);
+
 /*
     vbox->AddSpacer(1);
     testCanvas = new UITestCanvas(this, attribList);
@@ -722,8 +745,13 @@ void AppFrame::OnTimer(wxTimerEvent& event) {
     } else {
         fftDistrib.setFFTSize(DEFAULT_FFT_SIZE);
     }
-    fftDistrib.setLinesPerSecond(24);
-    wxGetApp().getWaterfallVisualQueue()->set_max_num_items(24);
+    
+    if (waterfallSpeedMeter->inputChanged()) {
+        int val = (int)waterfallSpeedMeter->getInputValue();
+        fftDistrib.setLinesPerSecond((int)ceil(val*val));
+        wxGetApp().getWaterfallVisualQueue()->set_max_num_items((int)ceil(val*val));
+    }
+
     fftDistrib.run();
 
     wproc->setView(waterfallCanvas->getViewState());
@@ -751,6 +779,12 @@ void AppFrame::OnTimer(wxTimerEvent& event) {
     }
     if (demodModeSelector->getMouseTracker()->mouseInView()) {
         demodModeSelector->Refresh();
+    }
+    if (waterfallSpeedMeter->getMouseTracker()->mouseInView()) {
+        waterfallSpeedMeter->Refresh();
+    }
+    if (spectrumAvgMeter->getMouseTracker()->mouseInView()) {
+        spectrumAvgMeter->Refresh();
     }
     
     event.Skip();

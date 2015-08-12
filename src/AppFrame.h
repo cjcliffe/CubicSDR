@@ -80,7 +80,9 @@ private:
     MeterCanvas *demodSignalMeter;
     MeterCanvas *demodGainMeter;
     TuningCanvas *demodTuner;
-    UITestCanvas *testCanvas;
+//    UITestCanvas *testCanvas;
+    MeterCanvas *spectrumAvgMeter;
+    MeterCanvas *waterfallSpeedMeter;
 
     DemodulatorInstance *activeDemodulator;
 

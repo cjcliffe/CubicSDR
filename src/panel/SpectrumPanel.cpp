@@ -113,14 +113,14 @@ void SpectrumPanel::drawPanelContents() {
     long double mhzStep = (100000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
     double mhzVisualStep = 0.1f;
     
-    if (mhzStep * 0.5 * viewWidth > 400) {
-        mhzStep = (10000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
-        mhzVisualStep = 0.01f;
-    }
-
     if (mhzStep * 0.5 * viewWidth < 40) {
         mhzStep = (250000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
         mhzVisualStep = 0.25f;
+    }
+
+    if (mhzStep * 0.5 * viewWidth > 400) {
+        mhzStep = (10000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
+        mhzVisualStep = 0.01f;
     }
 
     long double currentMhz = trunc(floor(firstMhz / 1000000.0));
