@@ -37,6 +37,8 @@ protected:
 };
 
 
+#define REBUFFER_GC_LIMIT 100
+
 template<class BufferType = ReferenceCounter>
 class ReBuffer {
     
@@ -44,9 +46,21 @@ public:
     BufferType *getBuffer() {
         BufferType* buf = NULL;
         for (outputBuffersI = outputBuffers.begin(); outputBuffersI != outputBuffers.end(); outputBuffersI++) {
-            if ((*outputBuffersI)->getRefCount() <= 0) {
-                return (*outputBuffersI);
+            if (!buf && (*outputBuffersI)->getRefCount() <= 0) {
+                buf = (*outputBuffersI);
+                (*outputBuffersI)->setRefCount(0);
+            } else if ((*outputBuffersI)->getRefCount() <= 0) {
+                (*outputBuffersI)->decRefCount();
             }
+        }
+        
+        if (buf) {
+            if (outputBuffers.back()->getRefCount() < -REBUFFER_GC_LIMIT) {
+                BufferType *ref = outputBuffers.back();
+                outputBuffers.pop_back();
+                delete ref;
+            }
+            return buf;
         }
         
         buf = new BufferType();
