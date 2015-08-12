@@ -380,7 +380,6 @@ AppFrame::AppFrame() :
     wxAcceleratorTable accel(3, entries);
     SetAcceleratorTable(accel);
 
-    // frame rate = 1000 / 30 = 33ms
 //    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 //    wxLogStatus("Double-buffered display %s supported", wxGLCanvas::IsDisplaySupported(attribs) ? "is" : "not");
 //    ShowFullScreen(true);
@@ -405,7 +404,8 @@ void AppFrame::initDeviceParams(std::string deviceId) {
     }
     
     if (!frame_timer.IsRunning()) {
-        frame_timer.Start(33);
+        // frame rate = 1000 / 30 = 33ms
+        frame_timer.Start(25);
     }
 }
 
