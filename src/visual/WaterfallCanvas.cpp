@@ -68,6 +68,25 @@ void WaterfallCanvas::attachSpectrumCanvas(SpectrumCanvas *canvas_in) {
     spectrumCanvas = canvas_in;
 }
 
+void WaterfallCanvas::processInputQueue() {
+    if (!glContext) {
+        return;
+    }
+    glContext->SetCurrent(*this);
+    
+    while (!visualDataQueue.empty()) {
+        SpectrumVisualData *vData;
+        
+        visualDataQueue.pop(vData);
+        
+        if (vData) {
+            waterfallPanel.setPoints(vData->spectrum_points);
+            waterfallPanel.step();
+            vData->decRefCount();
+        }
+    }
+}
+
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
 
@@ -139,18 +158,6 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->SetCurrent(*this);
     initGLExtensions();
     glViewport(0, 0, ClientSize.x, ClientSize.y);
-    
-    while (!visualDataQueue.empty()) {
-        SpectrumVisualData *vData;
-        
-        visualDataQueue.pop(vData);
-        
-        if (vData) {
-            waterfallPanel.setPoints(vData->spectrum_points);
-            waterfallPanel.step();
-            vData->decRefCount();
-        }
-    }
 
     glContext->BeginDraw(0,0,0);
 

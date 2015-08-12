@@ -121,8 +121,8 @@ void SDRPostThread::run() {
                 visualDataOut->busy_rw.lock();
                 visualDataOut->setRefCount(1);
                 
-                if (num_vis_samples > data_in->data.size()) {
-                    num_vis_samples = data_in->data.size();
+                if (num_vis_samples > dataOut.size()) {
+                    num_vis_samples = dataOut.size();
                 }
 
                 if (visualDataOut->data.size() < num_vis_samples) {

@@ -35,11 +35,10 @@ EVT_CLOSE(AppFrame::OnClose)
 EVT_MENU(wxID_ANY, AppFrame::OnMenu)
 EVT_COMMAND(wxID_ANY, wxEVT_THREAD, AppFrame::OnThread)
 EVT_IDLE(AppFrame::OnIdle)
-//EVT_TIMER(FRAME_TIMER_ID, AppFrame::OnTimer)
 wxEND_EVENT_TABLE()
 
 AppFrame::AppFrame() :
-        wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL), frame_timer(this, FRAME_TIMER_ID) {
+        wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
 
 #ifdef __linux__
     SetIcon(wxICON(cubicsdr));
@@ -261,7 +260,7 @@ AppFrame::AppFrame() :
 //    sampleRateMenuItems[wxID_BANDWIDTH_3000M] = menu->AppendRadioItem(wxID_BANDWIDTH_3000M, "3.0M");
     sampleRateMenuItems[wxID_BANDWIDTH_3200M] = menu->AppendRadioItem(wxID_BANDWIDTH_3200M, "3.2M");
 
-    sampleRateMenuItems[wxID_BANDWIDTH_2400M]->Check(true);
+    sampleRateMenuItems[wxID_BANDWIDTH_2048M]->Check(true);
 
     menuBar->Append(menu, wxT("&Input Bandwidth"));
 
@@ -401,18 +400,6 @@ void AppFrame::initDeviceParams(std::string deviceId) {
     
     if (devConfig->getIQSwap()) {
         iqSwapMenuItem->Check();
-    }
-    
-    if (!frame_timer.IsRunning()) {
-        // frame rate = 1000 / 30 = 33ms
-
-// windows needs a bit more time or it lags?
-//#ifdef _WIN32
-//        frame_timer.Start(25);
-//#else
-//	frame_timer.Start(15);
-//#endif
-
     }
 }
 
@@ -608,10 +595,6 @@ void AppFrame::OnThread(wxCommandEvent& event) {
 }
 
 void AppFrame::OnIdle(wxIdleEvent& event) {
-//    event.Skip();
-//}
-//
-//void AppFrame::OnTimer(wxTimerEvent& event) {
 
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
@@ -768,6 +751,9 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     while (!wproc->isInputEmpty()) {
         wproc->run();
     }
+    
+    waterfallCanvas->processInputQueue();
+    demodWaterfallCanvas->processInputQueue();
     
     usleep(5000);
    /* scopeCanvas->Refresh();

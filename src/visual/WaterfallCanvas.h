@@ -26,6 +26,7 @@ public:
     DragState getNextDragState();
     
     void attachSpectrumCanvas(SpectrumCanvas *canvas_in);
+    void processInputQueue();
     SpectrumVisualDataQueue *getVisualDataQueue();
 
 private:
