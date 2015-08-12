@@ -30,6 +30,8 @@ protected:
     iirfilt_crcf dcFilter;
     int num_vis_samples;
     std::atomic_bool swapIQ;
+    ReBuffer<DemodulatorThreadIQData> visualDataBuffers;
+
     
 private:
     std::vector<liquid_float_complex> _lut;

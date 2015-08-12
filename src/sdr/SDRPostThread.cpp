@@ -76,8 +76,6 @@ void SDRPostThread::run() {
 
     dcFilter = iirfilt_crcf_create_dc_blocker(0.0005);
 
-    DemodulatorThreadIQData *visualDataOut = new DemodulatorThreadIQData;
-
     std::cout << "SDR post-processing thread started.." << std::endl;
 
     iqDataInQueue = (SDRThreadIQDataQueue*)getInputQueue("IQDataInput");
@@ -118,8 +116,8 @@ void SDRPostThread::run() {
             iirfilt_crcf_execute_block(dcFilter, &fpData[0], dataSize, &dataOut[0]);
             
             if (iqVisualQueue != NULL && iqVisualQueue->empty()) {
-                
-                visualDataOut->busy_rw.lock();
+                DemodulatorThreadIQData *visualDataOut = visualDataBuffers.getBuffer();
+                visualDataOut->setRefCount(1);
                 
                 if (visualDataOut->data.size() < num_vis_samples) {
                     if (visualDataOut->data.capacity() < num_vis_samples) {
@@ -133,8 +131,6 @@ void SDRPostThread::run() {
                 visualDataOut->data.assign(dataOut.begin(), dataOut.begin() + num_vis_samples);
                 
                 iqVisualQueue->push(visualDataOut);
-                
-                visualDataOut->busy_rw.unlock();
             }
             
             busy_demod.lock();
@@ -221,7 +217,7 @@ void SDRPostThread::run() {
         iqVisualQueue->pop(visualDataDummy);
     }
 
-    delete visualDataOut;
+    visualDataBuffers.purge();
 
     std::cout << "SDR post-processing thread done." << std::endl;
 }

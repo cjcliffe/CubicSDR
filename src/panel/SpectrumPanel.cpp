@@ -58,18 +58,18 @@ void SpectrumPanel::drawPanelContents() {
 
     if (points.size()) {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-        float range = ceilValue-floorValue;
-        float ranges[3][4] = { { 90.0, 5000.0, 10.0, 100.0 }, { 20.0, 150.0, 10.0, 10.0 }, { -20.0, 30.0, 10.0, 1.0 } };
+        double range = ceilValue-floorValue;
+        double ranges[3][4] = { { 90.0, 5000.0, 10.0, 100.0 }, { 20.0, 150.0, 10.0, 10.0 }, { -20.0, 30.0, 10.0, 1.0 } };
         
         for (int i = 0; i < 3; i++) {
-            float p = 0;
-            float rangeMin = ranges[i][0];
-            float rangeMax = ranges[i][1];
-            float rangeTrans = ranges[i][2];
-            float rangeStep = ranges[i][3];
+            double p = 0;
+            double rangeMin = ranges[i][0];
+            double rangeMax = ranges[i][1];
+            double rangeTrans = ranges[i][2];
+            double rangeStep = ranges[i][3];
             
             if (range >= rangeMin && range <= rangeMax) {
-                float a = 1.0;
+                double a = 1.0;
                 
                 if (range <= rangeMin+rangeTrans) {
                     a *= (range-rangeMin)/rangeTrans;
@@ -80,7 +80,7 @@ void SpectrumPanel::drawPanelContents() {
                 
                 glColor4f(0.12, 0.12, 0.12, a);
                 glBegin(GL_LINES);
-                for (float l = floorValue; l<=ceilValue+rangeStep; l+=rangeStep) {
+                for (double l = floorValue; l<=ceilValue+rangeStep; l+=rangeStep) {
                     p += rangeStep/range;
                     glVertex2f(0,p);  glVertex2f(1,p);
                 }
@@ -104,29 +104,34 @@ void SpectrumPanel::drawPanelContents() {
     float viewHeight = (float) vp[3];
     float viewWidth = (float) vp[2];
     
-    long long leftFreq = (float) freq - ((float) bandwidth / 2.0);
-    long long rightFreq = leftFreq + (float) bandwidth;
+    long long leftFreq = (double) freq - ((double) bandwidth / 2.0);
+    long long rightFreq = leftFreq + (double) bandwidth;
     
     long long firstMhz = (leftFreq / 1000000) * 1000000;
     long double mhzStart = ((long double) (firstMhz - leftFreq) / (long double) (rightFreq - leftFreq)) * 2.0;
     
     long double mhzStep = (100000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
-    float mhzVisualStep = 0.1f;
+    double mhzVisualStep = 0.1f;
     
     if (mhzStep * 0.5 * viewWidth > 400) {
         mhzStep = (10000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
         mhzVisualStep = 0.01f;
     }
-    
+
+    if (mhzStep * 0.5 * viewWidth < 40) {
+        mhzStep = (250000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
+        mhzVisualStep = 0.25f;
+    }
+
     long double currentMhz = trunc(floor(firstMhz / 1000000.0));
     
     std::stringstream label;
     label.precision(2);
     
-    float hPos = 1.0 - (16.0 / viewHeight);
-    float lMhzPos = 1.0 - (5.0 / viewHeight);
+    double hPos = 1.0 - (16.0 / viewHeight);
+    double lMhzPos = 1.0 - (5.0 / viewHeight);
     
-    for (float m = -1.0 + mhzStart, mMax = 1.0 + ((mhzStart>0)?mhzStart:-mhzStart); m <= mMax; m += mhzStep) {
+    for (double m = -1.0 + mhzStart, mMax = 1.0 + ((mhzStart>0)?mhzStart:-mhzStart); m <= mMax; m += mhzStep) {
         label << std::fixed << currentMhz;
         
         double fractpart, intpart;
