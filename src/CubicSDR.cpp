@@ -58,10 +58,10 @@ bool CubicSDR::OnInit() {
     spectrumDistributor.setInput(pipeIQVisualData);
     
     pipeDemodIQVisualData = new DemodulatorThreadInputQueue();
-    pipeIQVisualData->set_max_num_items(1);
+    pipeDemodIQVisualData->set_max_num_items(1);
     
     pipeSpectrumIQVisualData = new DemodulatorThreadInputQueue();
-    pipeIQVisualData->set_max_num_items(1);
+    pipeSpectrumIQVisualData->set_max_num_items(1);
     
     pipeWaterfallIQVisualData = new DemodulatorThreadInputQueue();
     pipeWaterfallIQVisualData->set_max_num_items(512);

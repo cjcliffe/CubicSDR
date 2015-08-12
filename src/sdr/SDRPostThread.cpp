@@ -117,6 +117,7 @@ void SDRPostThread::run() {
             
             if (iqVisualQueue != NULL && iqVisualQueue->empty()) {
                 DemodulatorThreadIQData *visualDataOut = visualDataBuffers.getBuffer();
+                visualDataOut->busy_rw.lock();
                 visualDataOut->setRefCount(1);
                 
                 if (visualDataOut->data.size() < num_vis_samples) {
@@ -130,6 +131,7 @@ void SDRPostThread::run() {
                 visualDataOut->sampleRate = data_in->sampleRate;
                 visualDataOut->data.assign(dataOut.begin(), dataOut.begin() + num_vis_samples);
                 
+                visualDataOut->busy_rw.unlock();
                 iqVisualQueue->push(visualDataOut);
             }
             
