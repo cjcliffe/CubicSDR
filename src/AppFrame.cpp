@@ -35,7 +35,7 @@ EVT_CLOSE(AppFrame::OnClose)
 EVT_MENU(wxID_ANY, AppFrame::OnMenu)
 EVT_COMMAND(wxID_ANY, wxEVT_THREAD, AppFrame::OnThread)
 EVT_IDLE(AppFrame::OnIdle)
-EVT_TIMER(FRAME_TIMER_ID, AppFrame::OnTimer)
+//EVT_TIMER(FRAME_TIMER_ID, AppFrame::OnTimer)
 wxEND_EVENT_TABLE()
 
 AppFrame::AppFrame() :
@@ -407,11 +407,11 @@ void AppFrame::initDeviceParams(std::string deviceId) {
         // frame rate = 1000 / 30 = 33ms
 
 // windows needs a bit more time or it lags?
-#ifdef _WIN32
-        frame_timer.Start(25);
-#else
-	frame_timer.Start(33);
-#endif
+//#ifdef _WIN32
+//        frame_timer.Start(25);
+//#else
+//	frame_timer.Start(15);
+//#endif
 
     }
 }
@@ -608,10 +608,10 @@ void AppFrame::OnThread(wxCommandEvent& event) {
 }
 
 void AppFrame::OnIdle(wxIdleEvent& event) {
-    event.Skip();
-}
-
-void AppFrame::OnTimer(wxTimerEvent& event) {
+//    event.Skip();
+//}
+//
+//void AppFrame::OnTimer(wxTimerEvent& event) {
 
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
@@ -768,9 +768,8 @@ void AppFrame::OnTimer(wxTimerEvent& event) {
     while (!wproc->isInputEmpty()) {
         wproc->run();
     }
-
     
-    scopeCanvas->Refresh();
+   /* scopeCanvas->Refresh();
     
     waterfallCanvas->Refresh();
     spectrumCanvas->Refresh();
@@ -792,9 +791,9 @@ void AppFrame::OnTimer(wxTimerEvent& event) {
     }
     if (spectrumAvgMeter->getMouseTracker()->mouseInView()) {
         spectrumAvgMeter->Refresh();
-    }
+    } */
     
-    event.Skip();
+    event.RequestMore();
 }
 
 void AppFrame::saveSession(std::string fileName) {

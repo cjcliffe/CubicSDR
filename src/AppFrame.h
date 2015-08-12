@@ -69,7 +69,7 @@ private:
     void OnClose(wxCloseEvent& event);
     void OnNewWindow(wxCommandEvent& event);
     void OnIdle(wxIdleEvent& event);
-    void OnTimer(wxTimerEvent& event);
+//    void OnTimer(wxTimerEvent& event);
 
     ScopeCanvas *scopeCanvas;
     SpectrumCanvas *spectrumCanvas;

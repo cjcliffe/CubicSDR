@@ -79,7 +79,8 @@ void MeterCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 }
 
 void MeterCanvas::OnIdle(wxIdleEvent &event) {
-    event.Skip();
+    Refresh();
+    event.RequestMore();
 }
 
 void MeterCanvas::OnMouseMoved(wxMouseEvent& event) {

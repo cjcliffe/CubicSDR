@@ -252,6 +252,8 @@ void TuningCanvas::OnIdle(wxIdleEvent &event) {
             dragging = false;
         }
     }
+    Refresh();
+    event.RequestMore();
 }
 
 void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {

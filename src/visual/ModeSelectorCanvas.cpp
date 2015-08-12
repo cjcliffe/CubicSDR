@@ -72,7 +72,8 @@ void ModeSelectorCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 }
 
 void ModeSelectorCanvas::OnIdle(wxIdleEvent &event) {
-    event.Skip();
+    Refresh();
+    event.RequestMore();
 }
 
 void ModeSelectorCanvas::OnMouseMoved(wxMouseEvent& event) {

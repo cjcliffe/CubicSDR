@@ -347,7 +347,8 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     }
 }
 void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
-    event.Skip();
+    Refresh();
+    event.RequestMore();
 }
 
 void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {

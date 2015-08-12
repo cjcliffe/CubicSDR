@@ -85,7 +85,8 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
 
 void SpectrumCanvas::OnIdle(wxIdleEvent &event) {
-    event.Skip();
+    Refresh();
+    event.RequestMore();
 }
 
 

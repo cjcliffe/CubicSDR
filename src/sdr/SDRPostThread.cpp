@@ -91,6 +91,7 @@ void SDRPostThread::run() {
         
         iqDataInQueue->pop(data_in);
         //        std::lock_guard < std::mutex > lock(data_in->m_mutex);
+        int num_vis_samples = this->num_vis_samples;
         
         if (data_in && data_in->data.size()) {
             int dataSize = data_in->data.size()/2;
@@ -120,6 +121,10 @@ void SDRPostThread::run() {
                 visualDataOut->busy_rw.lock();
                 visualDataOut->setRefCount(1);
                 
+                if (num_vis_samples > data_in->data.size()) {
+                    num_vis_samples = data_in->data.size();
+                }
+
                 if (visualDataOut->data.size() < num_vis_samples) {
                     if (visualDataOut->data.capacity() < num_vis_samples) {
                         visualDataOut->data.reserve(num_vis_samples);

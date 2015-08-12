@@ -33,4 +33,4 @@ const char filePathSeparator =
 #define DEFAULT_DEMOD_TYPE 1
 #define DEFAULT_DEMOD_BW 200000
 
-#define DEFAULT_WATERFALL_LPS 24
+#define DEFAULT_WATERFALL_LPS 30
