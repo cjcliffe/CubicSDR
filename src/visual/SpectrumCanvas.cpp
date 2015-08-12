@@ -32,7 +32,8 @@ SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *attribList) :
     glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this));
 
     mouseTracker.setVertDragLock(true);
-
+    visualDataQueue.set_max_num_items(1);
+            
     SetCursor(wxCURSOR_SIZEWE);
 }
 

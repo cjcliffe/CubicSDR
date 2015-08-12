@@ -90,8 +90,8 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
             centerFreq = getCenterFrequency();
             bw = getBandwidth();
             bw = (long long) ceil((long double) bw * currentZoom);
-            if (bw < 100000) {
-                bw = 100000;
+            if (bw < 30000) {
+                bw = 30000;
             }
             if (mouseTracker.mouseInView()) {
                 long long mfreqA = getFrequencyAt(mouseTracker.getMouseX());

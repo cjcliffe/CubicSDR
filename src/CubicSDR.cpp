@@ -64,6 +64,7 @@ bool CubicSDR::OnInit() {
     pipeIQVisualData->set_max_num_items(1);
     
     pipeWaterfallIQVisualData = new DemodulatorThreadInputQueue();
+    pipeWaterfallIQVisualData->set_max_num_items(512);
     
     spectrumDistributor.attachOutput(pipeDemodIQVisualData);
     spectrumDistributor.attachOutput(pipeSpectrumIQVisualData);
@@ -85,7 +86,7 @@ bool CubicSDR::OnInit() {
     sdrThread->setOutputQueue("IQDataOutput",pipeSDRIQData);
 
     sdrPostThread = new SDRPostThread();
-    sdrPostThread->setNumVisSamples(16384 * 2);
+    sdrPostThread->setNumVisSamples(BUF_SIZE);
     sdrPostThread->setInputQueue("IQDataInput", pipeSDRIQData);
     sdrPostThread->setOutputQueue("IQVisualDataOutput", pipeIQVisualData);
     sdrPostThread->setOutputQueue("IQDataOutput", pipeWaterfallIQVisualData);

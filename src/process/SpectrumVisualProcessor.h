@@ -68,7 +68,7 @@ private:
 
 class FFTDataDistributor : public VisualProcessor<DemodulatorThreadIQData, DemodulatorThreadIQData> {
 public:
-    FFTDataDistributor() : linesPerSecond(30) {
+    FFTDataDistributor() : linesPerSecond(30), lineRateAccum(0.0) {
     }
     
     void setFFTSize(int fftSize) {
@@ -87,7 +87,13 @@ protected:
             }
             DemodulatorThreadIQData *inp;
             input->pop(inp);
+
+            int fftSize = this->fftSize;
             
+            if (fftSize > inp->data.size()) {
+                fftSize = inp->data.size();
+            }
+
             // number of milliseconds contained in input
             double inputTime = (double)inp->data.size() / (double)inp->sampleRate;
             // number of lines in input
@@ -98,7 +104,7 @@ protected:
             
             if (inp) {
                 if (inp->data.size() >= fftSize) {
-                    for (int i = 0, iMax = inp->data.size()-fftSize; i < iMax; i += fftSize) {
+                    for (int i = 0, iMax = inp->data.size()-fftSize; i <= iMax; i += fftSize) {
                         lineRateAccum += lineRateStep;
                         
                         if (lineRateAccum >= 1.0) {
@@ -108,7 +114,7 @@ protected:
                             outp->data.assign(inp->data.begin()+i,inp->data.begin()+i+fftSize);
                             distribute(outp);
                             
-                            while (lineRateAccum > 1.0) {
+                            while (lineRateAccum >= 1.0) {
                                 lineRateAccum -= 1.0;
                             }
                         }
