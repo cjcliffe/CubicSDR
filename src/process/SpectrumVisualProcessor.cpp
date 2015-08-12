@@ -89,6 +89,12 @@ void SpectrumVisualProcessor::process() {
     
     input->pop(iqData);
     
+    if (!iqData) {
+        return;
+    }
+    
+    iqData->busy_rw.lock();
+    
     std::vector<liquid_float_complex> *data = &iqData->data;
     
     if (data && data->size()) {
@@ -102,6 +108,8 @@ void SpectrumVisualProcessor::process() {
         
         if (is_view.load()) {
             if (!iqData->frequency || !iqData->sampleRate) {
+                iqData->decRefCount();
+                iqData->busy_rw.unlock();
                 return;
             }
             
@@ -290,5 +298,6 @@ void SpectrumVisualProcessor::process() {
     }
  
     iqData->decRefCount();
+    iqData->busy_rw.unlock();
 }
 
