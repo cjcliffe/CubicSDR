@@ -5,6 +5,7 @@
 #include <deque>
 #include <map>
 #include <string>
+#include <iostream>
 
 #include "ThreadQueue.h"
 
@@ -62,6 +63,10 @@ public:
             }
             return buf;
         }
+        
+//        if (outputBuffers.size() > 100) {
+//            std::cout << "Buffer over 100.." << std::endl;
+//        }
         
         buf = new BufferType();
         outputBuffers.push_back(buf);

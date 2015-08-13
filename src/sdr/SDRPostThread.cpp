@@ -86,6 +86,8 @@ void SDRPostThread::run() {
     std::vector<liquid_float_complex> fpData;
     std::vector<liquid_float_complex> dataOut;
     
+    iqDataInQueue->set_max_num_items(30);
+    
     while (!terminated) {
         SDRThreadIQData *data_in;
         
@@ -203,8 +205,12 @@ void SDRPostThread::run() {
                 }
                 
                 if (iqDataOutQueue != NULL) {
-                    iqDataOutQueue->push(demodDataOut);
-                    pushedData = true;
+                    if (!iqDataOutQueue->full()) {
+                        iqDataOutQueue->push(demodDataOut);
+                        pushedData = true;
+                    } else {
+                        demodDataOut->decRefCount();
+                    }
                 }
                 
                 if (!pushedData && iqDataOutQueue == NULL) {
