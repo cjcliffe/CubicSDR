@@ -118,8 +118,8 @@ AppFrame::AppFrame() :
     wxGetApp().getSpectrumProcesor()->attachOutput(spectrumCanvas->getVisualDataQueue());
             
     spectrumAvgMeter = new MeterCanvas(this, attribList);
-    spectrumAvgMeter->setMax(3.0);
-    spectrumAvgMeter->setLevel(1.0);
+    spectrumAvgMeter->setMax(1.0);
+    spectrumAvgMeter->setLevel(0.65);
     spectrumAvgMeter->setShowUserInput(false);
 
     spectrumSizer->Add(spectrumCanvas, 63, wxEXPAND | wxALL, 0);
@@ -712,8 +712,14 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     
     wxGetApp().getScopeProcessor()->run();
     wxGetApp().getSpectrumDistributor()->run();
-    
+
     SpectrumVisualProcessor *proc = wxGetApp().getSpectrumProcesor();
+    
+    if (spectrumAvgMeter->inputChanged()) {
+        float val = spectrumAvgMeter->getInputValue();
+        spectrumAvgMeter->setLevel(val);
+        proc->setFFTAverageRate(val);
+    }
     
     proc->setView(spectrumCanvas->getViewState());
     proc->setBandwidth(spectrumCanvas->getBandwidth());

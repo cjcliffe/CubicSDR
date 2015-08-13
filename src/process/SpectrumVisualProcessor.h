@@ -21,6 +21,8 @@ public:
     bool isView();
     void setView(bool bView);
     
+    void setFFTAverageRate(float fftAverageRate);
+    
     void setCenterFrequency(long long centerFreq_in);
     long long getCenterFrequency();
     
@@ -50,6 +52,7 @@ private:
     
     float fft_ceil_ma, fft_ceil_maa;
     float fft_floor_ma, fft_floor_maa;
+    float fft_average_rate;
     
     std::vector<float> fft_result;
     std::vector<float> fft_result_ma;
