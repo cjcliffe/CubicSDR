@@ -106,6 +106,7 @@ AppFrame::AppFrame() :
     demodGainMeter = new MeterCanvas(this, attribList);
     demodGainMeter->setMax(2.0);
     demodGainMeter->setHelpTip("Current Demodulator Gain Level.  Click / Drag to set Gain level.");
+    demodGainMeter->setShowUserInput(false);
     demodTray->Add(demodGainMeter, 1, wxEXPAND | wxALL, 0);
 
     vbox->Add(demodTray, 12, wxEXPAND | wxALL, 0);
@@ -118,8 +119,9 @@ AppFrame::AppFrame() :
             
     spectrumAvgMeter = new MeterCanvas(this, attribList);
     spectrumAvgMeter->setMax(3.0);
-    spectrumAvgMeter->setInputValue(1.0);
-    
+    spectrumAvgMeter->setLevel(1.0);
+    spectrumAvgMeter->setShowUserInput(false);
+
     spectrumSizer->Add(spectrumCanvas, 63, wxEXPAND | wxALL, 0);
     spectrumSizer->AddSpacer(1);
     spectrumSizer->Add(spectrumAvgMeter, 1, wxEXPAND | wxALL, 0);
@@ -142,7 +144,8 @@ AppFrame::AppFrame() :
             
     waterfallSpeedMeter = new MeterCanvas(this, attribList);
     waterfallSpeedMeter->setMax(sqrt(1024));
-    waterfallSpeedMeter->setInputValue(sqrt(DEFAULT_WATERFALL_LPS));
+    waterfallSpeedMeter->setLevel(sqrt(DEFAULT_WATERFALL_LPS));
+    waterfallSpeedMeter->setShowUserInput(false);
 
     wfSizer->Add(waterfallCanvas, 63, wxEXPAND | wxALL, 0);
     wfSizer->AddSpacer(1);
@@ -737,7 +740,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     }
     
     if (waterfallSpeedMeter->inputChanged()) {
-        int val = (int)waterfallSpeedMeter->getInputValue();
+        float val = waterfallSpeedMeter->getInputValue();
+        waterfallSpeedMeter->setLevel(val);
         fftDistrib.setLinesPerSecond((int)ceil(val*val));
         wxGetApp().getWaterfallVisualQueue()->set_max_num_items((int)ceil(val*val));
     }
