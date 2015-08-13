@@ -768,7 +768,11 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 #ifndef _WIN32
     usleep(5000);
 #endif
-    
+  
+    if (this->IsVisible()) {
+        waterfallCanvas->DoPaint();
+        demodWaterfallCanvas->DoPaint();
+    }
     event.RequestMore();
 }
 
