@@ -26,6 +26,7 @@ public:
     void setInputValue(float slider_in);
     bool inputChanged();
     float getInputValue();
+    void setShowUserInput(bool showUserInput);
 
     void setHelpTip(std::string tip);
 
@@ -48,6 +49,8 @@ private:
     float inputValue;
     float userInputValue;
 
+    bool showUserInput;
+    
     std::string helpTip;
     //
 wxDECLARE_EVENT_TABLE();

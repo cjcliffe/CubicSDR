@@ -35,11 +35,10 @@ EVT_CLOSE(AppFrame::OnClose)
 EVT_MENU(wxID_ANY, AppFrame::OnMenu)
 EVT_COMMAND(wxID_ANY, wxEVT_THREAD, AppFrame::OnThread)
 EVT_IDLE(AppFrame::OnIdle)
-EVT_TIMER(FRAME_TIMER_ID, AppFrame::OnTimer)
 wxEND_EVENT_TABLE()
 
 AppFrame::AppFrame() :
-        wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL), frame_timer(this, FRAME_TIMER_ID) {
+        wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
 
 #ifdef __linux__
     SetIcon(wxICON(cubicsdr));
@@ -107,6 +106,7 @@ AppFrame::AppFrame() :
     demodGainMeter = new MeterCanvas(this, attribList);
     demodGainMeter->setMax(2.0);
     demodGainMeter->setHelpTip("Current Demodulator Gain Level.  Click / Drag to set Gain level.");
+    demodGainMeter->setShowUserInput(false);
     demodTray->Add(demodGainMeter, 1, wxEXPAND | wxALL, 0);
 
     vbox->Add(demodTray, 12, wxEXPAND | wxALL, 0);
@@ -118,9 +118,10 @@ AppFrame::AppFrame() :
     wxGetApp().getSpectrumProcesor()->attachOutput(spectrumCanvas->getVisualDataQueue());
             
     spectrumAvgMeter = new MeterCanvas(this, attribList);
-    spectrumAvgMeter->setMax(3.0);
-    spectrumAvgMeter->setInputValue(1.0);
-    
+    spectrumAvgMeter->setMax(1.0);
+    spectrumAvgMeter->setLevel(0.65);
+    spectrumAvgMeter->setShowUserInput(false);
+
     spectrumSizer->Add(spectrumCanvas, 63, wxEXPAND | wxALL, 0);
     spectrumSizer->AddSpacer(1);
     spectrumSizer->Add(spectrumAvgMeter, 1, wxEXPAND | wxALL, 0);
@@ -143,7 +144,8 @@ AppFrame::AppFrame() :
             
     waterfallSpeedMeter = new MeterCanvas(this, attribList);
     waterfallSpeedMeter->setMax(sqrt(1024));
-    waterfallSpeedMeter->setInputValue(sqrt(DEFAULT_WATERFALL_LPS));
+    waterfallSpeedMeter->setLevel(sqrt(DEFAULT_WATERFALL_LPS));
+    waterfallSpeedMeter->setShowUserInput(false);
 
     wfSizer->Add(waterfallCanvas, 63, wxEXPAND | wxALL, 0);
     wfSizer->AddSpacer(1);
@@ -261,7 +263,7 @@ AppFrame::AppFrame() :
 //    sampleRateMenuItems[wxID_BANDWIDTH_3000M] = menu->AppendRadioItem(wxID_BANDWIDTH_3000M, "3.0M");
     sampleRateMenuItems[wxID_BANDWIDTH_3200M] = menu->AppendRadioItem(wxID_BANDWIDTH_3200M, "3.2M");
 
-    sampleRateMenuItems[wxID_BANDWIDTH_2400M]->Check(true);
+    sampleRateMenuItems[wxID_BANDWIDTH_2048M]->Check(true);
 
     menuBar->Append(menu, wxT("&Input Bandwidth"));
 
@@ -401,11 +403,6 @@ void AppFrame::initDeviceParams(std::string deviceId) {
     
     if (devConfig->getIQSwap()) {
         iqSwapMenuItem->Check();
-    }
-    
-    if (!frame_timer.IsRunning()) {
-        // frame rate = 1000 / 30 = 33ms
-        frame_timer.Start(25);
     }
 }
 
@@ -601,10 +598,6 @@ void AppFrame::OnThread(wxCommandEvent& event) {
 }
 
 void AppFrame::OnIdle(wxIdleEvent& event) {
-    event.Skip();
-}
-
-void AppFrame::OnTimer(wxTimerEvent& event) {
 
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
@@ -719,8 +712,14 @@ void AppFrame::OnTimer(wxTimerEvent& event) {
     
     wxGetApp().getScopeProcessor()->run();
     wxGetApp().getSpectrumDistributor()->run();
-    
+
     SpectrumVisualProcessor *proc = wxGetApp().getSpectrumProcesor();
+    
+    if (spectrumAvgMeter->inputChanged()) {
+        float val = spectrumAvgMeter->getInputValue();
+        spectrumAvgMeter->setLevel(val);
+        proc->setFFTAverageRate(val);
+    }
     
     proc->setView(spectrumCanvas->getViewState());
     proc->setBandwidth(spectrumCanvas->getBandwidth());
@@ -747,7 +746,8 @@ void AppFrame::OnTimer(wxTimerEvent& event) {
     }
     
     if (waterfallSpeedMeter->inputChanged()) {
-        int val = (int)waterfallSpeedMeter->getInputValue();
+        float val = waterfallSpeedMeter->getInputValue();
+        waterfallSpeedMeter->setLevel(val);
         fftDistrib.setLinesPerSecond((int)ceil(val*val));
         wxGetApp().getWaterfallVisualQueue()->set_max_num_items((int)ceil(val*val));
     }
@@ -761,33 +761,15 @@ void AppFrame::OnTimer(wxTimerEvent& event) {
     while (!wproc->isInputEmpty()) {
         wproc->run();
     }
+    
+    waterfallCanvas->processInputQueue();
+    demodWaterfallCanvas->processInputQueue();
 
+#ifndef _WIN32
+    usleep(5000);
+#endif
     
-    scopeCanvas->Refresh();
-    
-    waterfallCanvas->Refresh();
-    spectrumCanvas->Refresh();
-    
-    demodWaterfallCanvas->Refresh();
-    demodSpectrumCanvas->Refresh();
-    
-    demodSignalMeter->Refresh();
-    demodGainMeter->Refresh();
-
-    if (demodTuner->getMouseTracker()->mouseInView() || demodTuner->changed()) {
-        demodTuner->Refresh();
-    }
-    if (demodModeSelector->getMouseTracker()->mouseInView()) {
-        demodModeSelector->Refresh();
-    }
-    if (waterfallSpeedMeter->getMouseTracker()->mouseInView()) {
-        waterfallSpeedMeter->Refresh();
-    }
-    if (spectrumAvgMeter->getMouseTracker()->mouseInView()) {
-        spectrumAvgMeter->Refresh();
-    }
-    
-    event.Skip();
+    event.RequestMore();
 }
 
 void AppFrame::saveSession(std::string fileName) {

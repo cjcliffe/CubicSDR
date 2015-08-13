@@ -87,7 +87,8 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 }
 
 void ScopeCanvas::OnIdle(wxIdleEvent &event) {
-    event.Skip();
+    Refresh();
+    event.RequestMore();
 }
 
 ScopeRenderDataQueue *ScopeCanvas::getInputQueue() {

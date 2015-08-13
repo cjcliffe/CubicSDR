@@ -78,9 +78,11 @@ bool CubicSDR::OnInit() {
     scopeProcessor.setInput(pipeAudioVisualData);
     
     // I/Q Data
-    pipeSDRIQData = new SDRThreadIQDataQueue;
+    pipeSDRIQData = new SDRThreadIQDataQueue();
     pipeSDRCommand = new SDRThreadCommandQueue();
 
+    pipeSDRIQData->set_max_num_items(1);
+    
     sdrThread = new SDRThread();
     sdrThread->setInputQueue("SDRCommandQueue",pipeSDRCommand);
     sdrThread->setOutputQueue("IQDataOutput",pipeSDRIQData);

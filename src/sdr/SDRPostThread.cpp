@@ -86,11 +86,14 @@ void SDRPostThread::run() {
     std::vector<liquid_float_complex> fpData;
     std::vector<liquid_float_complex> dataOut;
     
+    iqDataInQueue->set_max_num_items(0);
+    
     while (!terminated) {
         SDRThreadIQData *data_in;
         
         iqDataInQueue->pop(data_in);
         //        std::lock_guard < std::mutex > lock(data_in->m_mutex);
+        int num_vis_samples = this->num_vis_samples;
         
         if (data_in && data_in->data.size()) {
             int dataSize = data_in->data.size()/2;
@@ -120,6 +123,10 @@ void SDRPostThread::run() {
                 visualDataOut->busy_rw.lock();
                 visualDataOut->setRefCount(1);
                 
+                if (num_vis_samples > dataOut.size()) {
+                    num_vis_samples = dataOut.size();
+                }
+
                 if (visualDataOut->data.size() < num_vis_samples) {
                     if (visualDataOut->data.capacity() < num_vis_samples) {
                         visualDataOut->data.reserve(num_vis_samples);
@@ -198,8 +205,12 @@ void SDRPostThread::run() {
                 }
                 
                 if (iqDataOutQueue != NULL) {
-                    iqDataOutQueue->push(demodDataOut);
-                    pushedData = true;
+                    if (!iqDataOutQueue->full()) {
+                        iqDataOutQueue->push(demodDataOut);
+                        pushedData = true;
+                    } else {
+                        demodDataOut->decRefCount();
+                    }
                 }
                 
                 if (!pushedData && iqDataOutQueue == NULL) {

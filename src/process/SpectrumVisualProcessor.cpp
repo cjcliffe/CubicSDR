@@ -15,6 +15,7 @@ SpectrumVisualProcessor::SpectrumVisualProcessor() : lastInputBandwidth(0), last
     fft_ceil_ma = fft_ceil_maa = 100.0;
     fft_floor_ma = fft_floor_maa = 0.0;
     desiredInputSize = 0;
+    fft_average_rate = 0.65;
 }
 
 SpectrumVisualProcessor::~SpectrumVisualProcessor() {
@@ -29,6 +30,9 @@ void SpectrumVisualProcessor::setView(bool bView) {
     is_view.store(bView);
 }
 
+void SpectrumVisualProcessor::setFFTAverageRate(float fftAverageRate) {
+    this->fft_average_rate = fftAverageRate;
+}
 
 void SpectrumVisualProcessor::setCenterFrequency(long long centerFreq_in) {
     centerFreq.store(centerFreq_in);
@@ -260,11 +264,11 @@ void SpectrumVisualProcessor::process() {
             
             for (int i = 0, iMax = fftSize; i < iMax; i++) {
                 if (is_view.load()) {
-                    fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * 0.65;
-                    fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * 0.65;
+                    fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * fft_average_rate;
+                    fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * fft_average_rate;
                 } else {
-                    fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * 0.65;
-                    fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * 0.65;
+                    fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * fft_average_rate;
+                    fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * fft_average_rate;
                 }
                 
                 if (fft_result_maa[i] > fft_ceil) {
