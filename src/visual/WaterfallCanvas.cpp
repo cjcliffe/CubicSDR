@@ -88,12 +88,8 @@ void WaterfallCanvas::processInputQueue() {
 }
 
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
-//    event.Skip();
-}
-
-void WaterfallCanvas::DoPaint() {
-    wxClientDC dc(this);
-    //    wxPaintDC dc(this);
+//    wxClientDC dc(this);
+    wxPaintDC dc(this);
 
     const wxSize ClientSize = GetClientSize();
     long double currentZoom = zoom;
@@ -359,9 +355,9 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     }
 }
 void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
-//    Refresh();
-//    event.RequestMore();
-    event.Skip();
+    Refresh();
+    event.RequestMore();
+//    event.Skip();
 }
 
 void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {

@@ -282,10 +282,6 @@ SpectrumVisualProcessor *CubicSDR::getDemodSpectrumProcesor() {
     return &demodSpectrumProcessor;
 }
 
-SpectrumVisualProcessor *CubicSDR::getWaterfallProcesor() {
-    return &waterfallProcessor;
-}
-
 VisualDataDistributor<DemodulatorThreadIQData> *CubicSDR::getSpectrumDistributor() {
     return &spectrumDistributor;
 }

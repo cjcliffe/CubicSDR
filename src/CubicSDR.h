@@ -58,7 +58,6 @@ public:
     ScopeVisualProcessor *getScopeProcessor();
     SpectrumVisualProcessor *getSpectrumProcesor();
     SpectrumVisualProcessor *getDemodSpectrumProcesor();
-    SpectrumVisualProcessor *getWaterfallProcesor();
     VisualDataDistributor<DemodulatorThreadIQData> *getSpectrumDistributor();
     
     DemodulatorThreadOutputQueue* getAudioVisualQueue();
@@ -107,7 +106,6 @@ private:
 
     ScopeVisualProcessor scopeProcessor;
     SpectrumVisualProcessor spectrumProcessor;
-    SpectrumVisualProcessor waterfallProcessor;
     SpectrumVisualProcessor demodSpectrumProcessor;
     
     VisualDataDistributor<DemodulatorThreadIQData> spectrumDistributor;
