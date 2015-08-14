@@ -17,6 +17,7 @@ void ScopeVisualProcessor::process() {
             return;
         }
         
+        audioInputData->busy_update.lock();
         ScopeRenderData *renderData = outputBuffers.getBuffer();
         renderData->channels = audioInputData->channels;
         
@@ -44,6 +45,8 @@ void ScopeVisualProcessor::process() {
                 renderData->waveform_points[i * 2 + 1] = audioInputData->data[i] / peak;
             }
         }
+
         distribute(renderData);
+        audioInputData->busy_update.unlock();
     }
 }

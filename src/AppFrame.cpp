@@ -118,6 +118,7 @@ AppFrame::AppFrame() :
     wxGetApp().getSpectrumProcesor()->attachOutput(spectrumCanvas->getVisualDataQueue());
             
     spectrumAvgMeter = new MeterCanvas(this, attribList);
+    spectrumAvgMeter->setHelpTip("Spectrum averaging speed, click or drag to adjust.");
     spectrumAvgMeter->setMax(1.0);
     spectrumAvgMeter->setLevel(0.65);
     spectrumAvgMeter->setShowUserInput(false);
@@ -143,6 +144,7 @@ AppFrame::AppFrame() :
     wxGetApp().getWaterfallProcesor()->attachOutput(waterfallCanvas->getVisualDataQueue());
             
     waterfallSpeedMeter = new MeterCanvas(this, attribList);
+    waterfallSpeedMeter->setHelpTip("Waterfall speed, click or drag to adjust (max 1024 lines per second)");
     waterfallSpeedMeter->setMax(sqrt(1024));
     waterfallSpeedMeter->setLevel(sqrt(DEFAULT_WATERFALL_LPS));
     waterfallSpeedMeter->setShowUserInput(false);
@@ -263,7 +265,7 @@ AppFrame::AppFrame() :
 //    sampleRateMenuItems[wxID_BANDWIDTH_3000M] = menu->AppendRadioItem(wxID_BANDWIDTH_3000M, "3.0M");
     sampleRateMenuItems[wxID_BANDWIDTH_3200M] = menu->AppendRadioItem(wxID_BANDWIDTH_3200M, "3.2M");
 
-    sampleRateMenuItems[wxID_BANDWIDTH_2048M]->Check(true);
+    sampleRateMenuItems[wxID_BANDWIDTH_2400M]->Check(true);
 
     menuBar->Append(menu, wxT("&Input Bandwidth"));
 
@@ -719,6 +721,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         float val = spectrumAvgMeter->getInputValue();
         spectrumAvgMeter->setLevel(val);
         proc->setFFTAverageRate(val);
+
+        GetStatusBar()->SetStatusText(wxString::Format(wxT("Spectrum averaging speed changed to %0.2f%%."),val*100.0));
     }
     
     proc->setView(spectrumCanvas->getViewState());
@@ -750,6 +754,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         waterfallSpeedMeter->setLevel(val);
         fftDistrib.setLinesPerSecond((int)ceil(val*val));
         wxGetApp().getWaterfallVisualQueue()->set_max_num_items((int)ceil(val*val));
+
+        GetStatusBar()->SetStatusText(wxString::Format(wxT("Waterfall max speed changed to %d lines per second."),(int)ceil(val*val)));
     }
 
     fftDistrib.run();
@@ -769,12 +775,13 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     if (this->IsVisible()) {
         waterfallCanvas->DoPaint();
         demodWaterfallCanvas->DoPaint();
-    }
+    } else {
 #ifndef _WIN32
-    else {
         usleep(15000);
-    }
+#else
+        Sleep(15);
 #endif
+    }
 
     event.RequestMore();
 }
