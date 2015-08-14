@@ -58,10 +58,13 @@ bool CubicSDR::OnInit() {
     spectrumDistributor.setInput(pipeIQVisualData);
     
     pipeDemodIQVisualData = new DemodulatorThreadInputQueue();
-    pipeIQVisualData->set_max_num_items(1);
+    pipeDemodIQVisualData->set_max_num_items(1);
     
     pipeSpectrumIQVisualData = new DemodulatorThreadInputQueue();
-    pipeIQVisualData->set_max_num_items(1);
+    pipeSpectrumIQVisualData->set_max_num_items(1);
+    
+    pipeWaterfallIQVisualData = new DemodulatorThreadInputQueue();
+    pipeWaterfallIQVisualData->set_max_num_items(DEFAULT_WATERFALL_LPS);
     
     spectrumDistributor.attachOutput(pipeDemodIQVisualData);
     spectrumDistributor.attachOutput(pipeSpectrumIQVisualData);
@@ -75,18 +78,21 @@ bool CubicSDR::OnInit() {
     scopeProcessor.setInput(pipeAudioVisualData);
     
     // I/Q Data
-    pipeSDRIQData = new SDRThreadIQDataQueue;
+    pipeSDRIQData = new SDRThreadIQDataQueue();
     pipeSDRCommand = new SDRThreadCommandQueue();
 
+    pipeSDRIQData->set_max_num_items(1);
+    
     sdrThread = new SDRThread();
     sdrThread->setInputQueue("SDRCommandQueue",pipeSDRCommand);
     sdrThread->setOutputQueue("IQDataOutput",pipeSDRIQData);
 
     sdrPostThread = new SDRPostThread();
-    sdrPostThread->setNumVisSamples(16384 * 2);
+    sdrPostThread->setNumVisSamples(BUF_SIZE);
     sdrPostThread->setInputQueue("IQDataInput", pipeSDRIQData);
-    sdrPostThread->setOutputQueue("IQVisualDataOut", pipeIQVisualData);
-
+    sdrPostThread->setOutputQueue("IQVisualDataOutput", pipeIQVisualData);
+    sdrPostThread->setOutputQueue("IQDataOutput", pipeWaterfallIQVisualData);
+    
     std::vector<SDRDeviceInfo *>::iterator devs_i;
 
     SDRThread::enumerate_rtl(&devs);
@@ -276,6 +282,10 @@ SpectrumVisualProcessor *CubicSDR::getDemodSpectrumProcesor() {
     return &demodSpectrumProcessor;
 }
 
+SpectrumVisualProcessor *CubicSDR::getWaterfallProcesor() {
+    return &waterfallProcessor;
+}
+
 VisualDataDistributor<DemodulatorThreadIQData> *CubicSDR::getSpectrumDistributor() {
     return &spectrumDistributor;
 }
@@ -287,6 +297,10 @@ DemodulatorThreadOutputQueue* CubicSDR::getAudioVisualQueue() {
 
 DemodulatorThreadInputQueue* CubicSDR::getIQVisualQueue() {
     return pipeIQVisualData;
+}
+
+DemodulatorThreadInputQueue* CubicSDR::getWaterfallVisualQueue() {
+    return pipeWaterfallIQVisualData;
 }
 
 DemodulatorMgr &CubicSDR::getDemodMgr() {

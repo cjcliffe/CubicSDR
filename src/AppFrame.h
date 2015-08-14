@@ -50,8 +50,6 @@
 #define wxID_AUDIO_BANDWIDTH_BASE 9000
 #define wxID_AUDIO_DEVICE_MULTIPLIER 50
 
-#define FRAME_TIMER_ID 1000
-
 // Define a new frame type
 class AppFrame: public wxFrame {
 public:
@@ -69,7 +67,6 @@ private:
     void OnClose(wxCloseEvent& event);
     void OnNewWindow(wxCommandEvent& event);
     void OnIdle(wxIdleEvent& event);
-    void OnTimer(wxTimerEvent& event);
 
     ScopeCanvas *scopeCanvas;
     SpectrumCanvas *spectrumCanvas;
@@ -80,7 +77,9 @@ private:
     MeterCanvas *demodSignalMeter;
     MeterCanvas *demodGainMeter;
     TuningCanvas *demodTuner;
-    UITestCanvas *testCanvas;
+//    UITestCanvas *testCanvas;
+    MeterCanvas *spectrumAvgMeter;
+    MeterCanvas *waterfallSpeedMeter;
 
     DemodulatorInstance *activeDemodulator;
 
@@ -94,7 +93,9 @@ private:
     wxMenuItem *iqSwapMenuItem;
     
     std::string currentSessionFile;
-    wxTimer frame_timer;
+    
+    FFTDataDistributor fftDistrib;
+    DemodulatorThreadInputQueue fftQueue;
     
     wxDECLARE_EVENT_TABLE();
 };

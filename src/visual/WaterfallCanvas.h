@@ -26,7 +26,9 @@ public:
     DragState getNextDragState();
     
     void attachSpectrumCanvas(SpectrumCanvas *canvas_in);
+    void processInputQueue();
     SpectrumVisualDataQueue *getVisualDataQueue();
+    void DoPaint();
 
 private:
     void OnPaint(wxPaintEvent& event);

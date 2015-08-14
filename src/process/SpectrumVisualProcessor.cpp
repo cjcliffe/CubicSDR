@@ -14,6 +14,8 @@ SpectrumVisualProcessor::SpectrumVisualProcessor() : lastInputBandwidth(0), last
     
     fft_ceil_ma = fft_ceil_maa = 100.0;
     fft_floor_ma = fft_floor_maa = 0.0;
+    desiredInputSize = 0;
+    fft_average_rate = 0.65;
 }
 
 SpectrumVisualProcessor::~SpectrumVisualProcessor() {
@@ -28,6 +30,13 @@ void SpectrumVisualProcessor::setView(bool bView) {
     is_view.store(bView);
 }
 
+void SpectrumVisualProcessor::setFFTAverageRate(float fftAverageRate) {
+    this->fft_average_rate = fftAverageRate;
+}
+
+float SpectrumVisualProcessor::getFFTAverageRate() {
+    return this->fft_average_rate;
+}
 
 void SpectrumVisualProcessor::setCenterFrequency(long long centerFreq_in) {
     centerFreq.store(centerFreq_in);
@@ -45,8 +54,13 @@ long SpectrumVisualProcessor::getBandwidth() {
     return bandwidth.load();
 }
 
+int SpectrumVisualProcessor::getDesiredInputSize() {
+    return desiredInputSize;
+}
+
 void SpectrumVisualProcessor::setup(int fftSize_in) {
     fftSize = fftSize_in;
+    desiredInputSize = fftSize;
     
     if (fftwInput) {
         free(fftwInput);
@@ -83,6 +97,12 @@ void SpectrumVisualProcessor::process() {
     
     input->pop(iqData);
     
+    if (!iqData) {
+        return;
+    }
+    
+    iqData->busy_rw.lock();
+    
     std::vector<liquid_float_complex> *data = &iqData->data;
     
     if (data && data->size()) {
@@ -96,12 +116,16 @@ void SpectrumVisualProcessor::process() {
         
         if (is_view.load()) {
             if (!iqData->frequency || !iqData->sampleRate) {
+                iqData->decRefCount();
+                iqData->busy_rw.unlock();
                 return;
             }
             
             resamplerRatio = (double) (bandwidth) / (double) iqData->sampleRate;
             
             int desired_input_size = fftSize / resamplerRatio;
+            
+            this->desiredInputSize = desired_input_size;
             
             if (iqData->data.size() < desired_input_size) {
                 //                std::cout << "fft underflow, desired: " << desired_input_size << " actual:" << input->data.size() << std::endl;
@@ -244,11 +268,11 @@ void SpectrumVisualProcessor::process() {
             
             for (int i = 0, iMax = fftSize; i < iMax; i++) {
                 if (is_view.load()) {
-                    fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * 0.65;
-                    fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * 0.65;
+                    fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * fft_average_rate;
+                    fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * fft_average_rate;
                 } else {
-                    fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * 0.65;
-                    fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * 0.65;
+                    fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * fft_average_rate;
+                    fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * fft_average_rate;
                 }
                 
                 if (fft_result_maa[i] > fft_ceil) {
@@ -280,5 +304,8 @@ void SpectrumVisualProcessor::process() {
         
         distribute(output);
     }
-    
+ 
+    iqData->decRefCount();
+    iqData->busy_rw.unlock();
 }
+

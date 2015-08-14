@@ -11,6 +11,28 @@ public:
 	virtual ~VisualProcessor() {
 
 	}
+    
+    bool isInputEmpty() {
+        return input->empty();
+    }
+    
+    bool isOutputEmpty() {
+        for (outputs_i = outputs.begin(); outputs_i != outputs.end(); outputs_i++) {
+            if ((*outputs_i)->full()) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    bool isAnyOutputEmpty() {
+        for (outputs_i = outputs.begin(); outputs_i != outputs.end(); outputs_i++) {
+            if (!(*outputs_i)->full()) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     void setInput(ThreadQueue<InputDataType *> *vis_in) {
         busy_update.lock();
@@ -60,24 +82,6 @@ protected:
         	}
         }
     }
-    
-    bool isOutputEmpty() {
-        for (outputs_i = outputs.begin(); outputs_i != outputs.end(); outputs_i++) {
-            if (!(*outputs_i)->empty()) {
-            	return false;
-            }
-        }
-        return true;
-    }
-
-    bool isAnyOutputEmpty() {
-        for (outputs_i = outputs.begin(); outputs_i != outputs.end(); outputs_i++) {
-            if ((*outputs_i)->empty()) {
-            	return true;
-            }
-        }
-        return false;
-    }
 
     ThreadQueue<InputDataType *> *input;
     std::vector<ThreadQueue<OutputDataType *> *> outputs;
@@ -90,10 +94,10 @@ template<class OutputDataType = ReferenceCounter>
 class VisualDataDistributor : public VisualProcessor<OutputDataType, OutputDataType> {
 protected:
     void process() {
-        if (!VisualProcessor<OutputDataType, OutputDataType>::isOutputEmpty()) {
-            return;
-        }
         while (!VisualProcessor<OutputDataType, OutputDataType>::input->empty()) {
+            if (!VisualProcessor<OutputDataType, OutputDataType>::isAnyOutputEmpty()) {
+                return;
+            }
         	OutputDataType *inp;
         	VisualProcessor<OutputDataType, OutputDataType>::input->pop(inp);
             if (inp) {

@@ -61,7 +61,13 @@ public:
     
     void setCenterFreq(long long freqVal);
     long long getCenterFreq();
-
+    
+    void setWaterfallLinesPerSec(int lps);
+    int getWaterfallLinesPerSec();
+    
+    void setSpectrumAvgSpeed(float avgSpeed);
+    float getSpectrumAvgSpeed();
+    
     void setConfigName(std::string configName);
     std::string getConfigFileName(bool ignoreName=false);
     bool save();
@@ -76,4 +82,6 @@ private:
     std::atomic_int themeId;
     std::atomic_llong snap;
     std::atomic_llong centerFreq;
+    std::atomic_int waterfallLinesPerSec;
+    std::atomic<float> spectrumAvgSpeed;
 };

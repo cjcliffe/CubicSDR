@@ -36,7 +36,11 @@ void initGLExtensions() {
 
     std::cout << std::endl << "Supported GL Extensions: " << std::endl << extensions << std::endl << std::endl;
 
+#ifdef __linux__
+    const GLint interval = 2;
+#else
     const GLint interval = 1;
+#endif
 
 #ifdef _WIN32
     if (GLExtSupported("WGL_EXT_swap_control")) {
