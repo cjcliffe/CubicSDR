@@ -161,7 +161,7 @@ void DemodulatorThread::run() {
     while (!terminated) {
         DemodulatorThreadPostIQData *inp;
         iqInputQueue->pop(inp);
-        std::lock_guard < std::mutex > lock(inp->m_mutex);
+//        std::lock_guard < std::mutex > lock(inp->m_mutex);
 
         int bufSize = inp->data.size();
 

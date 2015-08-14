@@ -58,10 +58,12 @@ public:
     ScopeVisualProcessor *getScopeProcessor();
     SpectrumVisualProcessor *getSpectrumProcesor();
     SpectrumVisualProcessor *getDemodSpectrumProcesor();
+    SpectrumVisualProcessor *getWaterfallProcesor();
     VisualDataDistributor<DemodulatorThreadIQData> *getSpectrumDistributor();
     
     DemodulatorThreadOutputQueue* getAudioVisualQueue();
     DemodulatorThreadInputQueue* getIQVisualQueue();
+    DemodulatorThreadInputQueue* getWaterfallVisualQueue();
     DemodulatorMgr &getDemodMgr();
 
     void bindDemodulator(DemodulatorInstance *demod);
@@ -101,9 +103,11 @@ private:
     DemodulatorThreadOutputQueue* pipeAudioVisualData;
     DemodulatorThreadInputQueue* pipeDemodIQVisualData;
     DemodulatorThreadInputQueue* pipeSpectrumIQVisualData;
+    DemodulatorThreadInputQueue* pipeWaterfallIQVisualData;
 
     ScopeVisualProcessor scopeProcessor;
     SpectrumVisualProcessor spectrumProcessor;
+    SpectrumVisualProcessor waterfallProcessor;
     SpectrumVisualProcessor demodSpectrumProcessor;
     
     VisualDataDistributor<DemodulatorThreadIQData> spectrumDistributor;

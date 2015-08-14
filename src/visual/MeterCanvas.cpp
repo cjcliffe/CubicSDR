@@ -25,7 +25,7 @@ EVT_ENTER_WINDOW(MeterCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
 MeterCanvas::MeterCanvas(wxWindow *parent, int *attribList) :
-        InteractiveCanvas(parent, attribList), level(0), level_max(1), inputValue(0), userInputValue(0) {
+        InteractiveCanvas(parent, attribList), level(0), level_max(1), inputValue(0), userInputValue(0), showUserInput(true) {
 
     glContext = new MeterContext(this, &wxGetApp().GetContext(this));
 }
@@ -58,6 +58,10 @@ float MeterCanvas::getInputValue() {
     return userInputValue;
 }
 
+void MeterCanvas::setShowUserInput(bool showUserInput) {
+    this->showUserInput = showUserInput;
+}
+
 void MeterCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
     const wxSize ClientSize = GetClientSize();
@@ -68,18 +72,23 @@ void MeterCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
     glContext->DrawBegin();
+    glContext->Draw(ThemeMgr::mgr.currentTheme->generalBackground.r, ThemeMgr::mgr.currentTheme->generalBackground.g, ThemeMgr::mgr.currentTheme->generalBackground.b, 0.5, 1.0);
+    
     if (mouseTracker.mouseInView()) {
         glContext->Draw(0.4, 0.4, 0.4, 0.5, mouseTracker.getMouseY());
     }
     glContext->Draw(ThemeMgr::mgr.currentTheme->meterLevel.r, ThemeMgr::mgr.currentTheme->meterLevel.g, ThemeMgr::mgr.currentTheme->meterLevel.b, 0.5, level / level_max);
-    glContext->Draw(ThemeMgr::mgr.currentTheme->meterValue.r, ThemeMgr::mgr.currentTheme->meterValue.g, ThemeMgr::mgr.currentTheme->meterValue.b, 0.5, userInputValue / level_max);
+    if (showUserInput) {
+        glContext->Draw(ThemeMgr::mgr.currentTheme->meterValue.r, ThemeMgr::mgr.currentTheme->meterValue.g, ThemeMgr::mgr.currentTheme->meterValue.b, 0.5, userInputValue / level_max);
+    }
     glContext->DrawEnd();
 
     SwapBuffers();
 }
 
 void MeterCanvas::OnIdle(wxIdleEvent &event) {
-    event.Skip();
+    Refresh();
+    event.RequestMore();
 }
 
 void MeterCanvas::OnMouseMoved(wxMouseEvent& event) {

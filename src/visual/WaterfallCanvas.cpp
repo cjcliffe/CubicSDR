@@ -68,8 +68,32 @@ void WaterfallCanvas::attachSpectrumCanvas(SpectrumCanvas *canvas_in) {
     spectrumCanvas = canvas_in;
 }
 
+void WaterfallCanvas::processInputQueue() {
+    if (!glContext) {
+        return;
+    }
+    glContext->SetCurrent(*this);
+    
+    while (!visualDataQueue.empty()) {
+        SpectrumVisualData *vData;
+        
+        visualDataQueue.pop(vData);
+        
+        if (vData) {
+            waterfallPanel.setPoints(vData->spectrum_points);
+            waterfallPanel.step();
+            vData->decRefCount();
+        }
+    }
+}
+
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
-    wxPaintDC dc(this);
+//    event.Skip();
+}
+
+void WaterfallCanvas::DoPaint() {
+    wxClientDC dc(this);
+    //    wxPaintDC dc(this);
 
     const wxSize ClientSize = GetClientSize();
     long double currentZoom = zoom;
@@ -90,8 +114,8 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
             centerFreq = getCenterFrequency();
             bw = getBandwidth();
             bw = (long long) ceil((long double) bw * currentZoom);
-            if (bw < 100000) {
-                bw = 100000;
+            if (bw < 30000) {
+                bw = 30000;
             }
             if (mouseTracker.mouseInView()) {
                 long long mfreqA = getFrequencyAt(mouseTracker.getMouseX());
@@ -139,18 +163,6 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->SetCurrent(*this);
     initGLExtensions();
     glViewport(0, 0, ClientSize.x, ClientSize.y);
-    
-    if (!visualDataQueue.empty()) {
-        SpectrumVisualData *vData;
-        
-        visualDataQueue.pop(vData);
-        
-        if (vData) {
-            waterfallPanel.setPoints(vData->spectrum_points);
-            waterfallPanel.step();
-            vData->decRefCount();
-        }
-    }
 
     glContext->BeginDraw(0,0,0);
 
@@ -347,6 +359,8 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     }
 }
 void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
+//    Refresh();
+//    event.RequestMore();
     event.Skip();
 }
 
