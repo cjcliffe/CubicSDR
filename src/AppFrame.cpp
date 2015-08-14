@@ -775,6 +775,9 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     if (this->IsVisible()) {
         waterfallCanvas->DoPaint();
         demodWaterfallCanvas->DoPaint();
+#ifdef __APPLE__
+        usleep(5000);
+#endif
     } else {
 #ifndef _WIN32
         usleep(15000);
