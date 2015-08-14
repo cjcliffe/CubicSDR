@@ -367,6 +367,16 @@ AppFrame::AppFrame() :
 
     long long freqSnap = wxGetApp().getConfig()->getSnap();
     wxGetApp().setFrequencySnap(freqSnap);
+
+    float spectrumAvg = wxGetApp().getConfig()->getSpectrumAvgSpeed();
+            
+    spectrumAvgMeter->setLevel(spectrumAvg);
+    wxGetApp().getSpectrumProcesor()->setFFTAverageRate(spectrumAvg);
+            
+    int wflps =wxGetApp().getConfig()->getWaterfallLinesPerSec();
+            
+    waterfallSpeedMeter->setLevel(sqrt(wflps));
+    fftDistrib.setLinesPerSecond(wflps);
             
     ThemeMgr::mgr.setTheme(wxGetApp().getConfig()->getTheme());
 
@@ -466,7 +476,22 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
     } else if (event.GetId() == wxID_RESET) {
         wxGetApp().getDemodMgr().terminateAll();
         wxGetApp().setFrequency(100000000);
-        wxGetApp().setOffset(0);
+        wxGetApp().getDemodMgr().setLastDemodulatorType(DEMOD_TYPE_FM);
+        demodModeSelector->setSelection(1);
+        wxGetApp().getDemodMgr().setLastStereo(false);
+        wxGetApp().getDemodMgr().setLastBandwidth(DEFAULT_DEMOD_BW);
+        wxGetApp().getDemodMgr().setLastGain(1.0);
+        wxGetApp().getDemodMgr().setLastSquelchLevel(0);
+        waterfallCanvas->setBandwidth(wxGetApp().getSampleRate());
+        waterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
+        spectrumCanvas->setBandwidth(wxGetApp().getSampleRate());
+        spectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
+        fftDistrib.setLinesPerSecond(DEFAULT_WATERFALL_LPS);
+        waterfallSpeedMeter->setLevel(sqrt(DEFAULT_WATERFALL_LPS));
+        wxGetApp().getSpectrumProcesor()->setFFTAverageRate(0.65);
+        spectrumAvgMeter->setLevel(0.65);
+        demodModeSelector->Refresh();
+        demodTuner->Refresh();
         SetTitle(CUBICSDR_TITLE);
         currentSessionFile = "";
     } else if (event.GetId() == wxID_EXIT) {
@@ -587,6 +612,8 @@ void AppFrame::OnClose(wxCloseEvent& event) {
     wxGetApp().getConfig()->setTheme(ThemeMgr::mgr.getTheme());
     wxGetApp().getConfig()->setSnap(wxGetApp().getFrequencySnap());
     wxGetApp().getConfig()->setCenterFreq(wxGetApp().getFrequency());
+    wxGetApp().getConfig()->setSpectrumAvgSpeed(wxGetApp().getSpectrumProcesor()->getFFTAverageRate());
+    wxGetApp().getConfig()->setWaterfallLinesPerSec(fftDistrib.getLinesPerSecond());
     wxGetApp().getConfig()->save();
     event.Skip();
 }

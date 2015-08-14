@@ -34,6 +34,10 @@ void SpectrumVisualProcessor::setFFTAverageRate(float fftAverageRate) {
     this->fft_average_rate = fftAverageRate;
 }
 
+float SpectrumVisualProcessor::getFFTAverageRate() {
+    return this->fft_average_rate;
+}
+
 void SpectrumVisualProcessor::setCenterFrequency(long long centerFreq_in) {
     centerFreq.store(centerFreq_in);
 }

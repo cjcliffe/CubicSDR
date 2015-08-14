@@ -22,6 +22,7 @@ public:
     void setView(bool bView);
     
     void setFFTAverageRate(float fftAverageRate);
+    float getFFTAverageRate();
     
     void setCenterFrequency(long long centerFreq_in);
     long long getCenterFrequency();
@@ -82,6 +83,9 @@ public:
         this->linesPerSecond = lines;
     }
     
+    int getLinesPerSecond() {
+        return this->linesPerSecond;
+    }
 protected:
     void process() {
         while (!input->empty()) {

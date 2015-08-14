@@ -123,6 +123,8 @@ AppConfig::AppConfig() : configName("") {
     themeId.store(0);
     snap.store(1);
     centerFreq.store(100000000);
+    waterfallLinesPerSec.store(DEFAULT_WATERFALL_LPS);
+    spectrumAvgSpeed.store(0.65f);
 }
 
 
@@ -204,6 +206,23 @@ long long AppConfig::getCenterFreq() {
     return centerFreq.load();
 }
 
+
+void AppConfig::setWaterfallLinesPerSec(int lps) {
+    waterfallLinesPerSec.store(lps);
+}
+
+int AppConfig::getWaterfallLinesPerSec() {
+    return waterfallLinesPerSec.load();
+}
+
+void AppConfig::setSpectrumAvgSpeed(float avgSpeed) {
+    spectrumAvgSpeed.store(avgSpeed);
+}
+
+float AppConfig::getSpectrumAvgSpeed() {
+    return spectrumAvgSpeed.load();
+}
+
 void AppConfig::setConfigName(std::string configName) {
     this->configName = configName;
 }
@@ -243,6 +262,8 @@ bool AppConfig::save() {
         *window_node->newChild("theme") = themeId.load();
         *window_node->newChild("snap") = snap.load();
         *window_node->newChild("center_freq") = centerFreq.load();
+        *window_node->newChild("waterfall_lps") = waterfallLinesPerSec.load();
+        *window_node->newChild("spectrum_avg") = spectrumAvgSpeed.load();
     }
     
     DataNode *devices_node = cfg.rootNode()->newChild("devices");
@@ -339,7 +360,19 @@ bool AppConfig::load() {
             win_node->getNext("center_freq")->element()->get(freqVal);
             centerFreq.store(freqVal);
         }
-}
+
+        if (win_node->hasAnother("waterfall_lps")) {
+            int lpsVal;
+            win_node->getNext("waterfall_lps")->element()->get(lpsVal);
+            waterfallLinesPerSec.store(lpsVal);
+        }
+        
+        if (win_node->hasAnother("spectrum_avg")) {
+            float avgVal;
+            win_node->getNext("spectrum_avg")->element()->get(avgVal);
+            spectrumAvgSpeed.store(avgVal);
+        }
+    }
     
     if (cfg.rootNode()->hasAnother("devices")) {
         DataNode *devices_node = cfg.rootNode()->getNext("devices");
