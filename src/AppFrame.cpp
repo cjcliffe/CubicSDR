@@ -784,9 +784,9 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
   
     if (!this->IsActive()) {
 #ifndef _WIN32
-        usleep(50000);
+        usleep(25000);
 #else
-        Sleep(50);
+        Sleep(25);
 #endif
     }
 
