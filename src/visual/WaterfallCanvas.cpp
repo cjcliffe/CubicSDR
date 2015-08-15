@@ -252,10 +252,14 @@ void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
     ctrlDown = event.ControlDown();
     switch (event.GetKeyCode()) {
     case 'A':
-        zoom = 1.0;
+    case WXK_UP:
+    case WXK_NUMPAD_UP:
+            zoom = 1.0;
         break;
     case 'Z':
-        zoom = 1.0;
+    case WXK_DOWN:
+    case WXK_NUMPAD_DOWN:
+            zoom = 1.0;
         break;
     }
 }
@@ -269,16 +273,21 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     long long originalFreq;
     switch (event.GetKeyCode()) {
     case 'A':
-        zoom = 0.95;
+    case WXK_UP:
+    case WXK_NUMPAD_UP:
+            zoom = 0.95;
         break;
     case 'Z':
-        zoom = 1.05;
+    case WXK_DOWN:
+    case WXK_NUMPAD_DOWN:
+            zoom = 1.05;
         break;
     case WXK_RIGHT:
-        freq = wxGetApp().getFrequency();
+    case WXK_NUMPAD_RIGHT:
+        freq = getCenterFrequency();
         originalFreq = freq;
         if (shiftDown) {
-            freq += wxGetApp().getSampleRate() * 10;
+            freq += getBandwidth() * 10;
             if (isView) {
                 setView(centerFreq + (freq - originalFreq), getBandwidth());
                 if (spectrumCanvas) {
@@ -286,7 +295,7 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
                 }
             }
         } else {
-            freq += wxGetApp().getSampleRate() / 2;
+            freq += getBandwidth() / 2;
             if (isView) {
                 setView(centerFreq + (freq - originalFreq), getBandwidth());
                 if (spectrumCanvas) {
@@ -298,13 +307,14 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         setStatusText("Set center frequency: %s", freq);
         break;
     case WXK_LEFT:
-        freq = wxGetApp().getFrequency();
+    case WXK_NUMPAD_LEFT:
+        freq = getCenterFrequency();
         originalFreq = freq;
         if (shiftDown) {
-            if ((freq - wxGetApp().getSampleRate() * 10) < wxGetApp().getSampleRate() / 2) {
+            if ((freq - getBandwidth() * 10) < wxGetApp().getSampleRate() / 2) {
                 freq = wxGetApp().getSampleRate() / 2;
             } else {
-                freq -= wxGetApp().getSampleRate() * 10;
+                freq -= getBandwidth() * 10;
             }
             if (isView) {
                 setView(centerFreq + (freq - originalFreq), getBandwidth());
@@ -313,10 +323,10 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
                 }
             }
         } else {
-            if ((freq - wxGetApp().getSampleRate() / 2) < wxGetApp().getSampleRate() / 2) {
+            if ((freq - getBandwidth() / 2) < wxGetApp().getSampleRate() / 2) {
                 freq = wxGetApp().getSampleRate() / 2;
             } else {
-                freq -= wxGetApp().getSampleRate() / 2;
+                freq -= getBandwidth() / 2;
             }
             if (isView) {
                 setView(centerFreq + (freq - originalFreq), getBandwidth());
