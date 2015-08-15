@@ -782,15 +782,11 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     waterfallCanvas->processInputQueue();
     demodWaterfallCanvas->processInputQueue();
   
-    if (this->IsVisible()) {
-#ifdef __APPLE__
-        usleep(5000);
-#endif
-    } else {
+    if (!this->IsActive()) {
 #ifndef _WIN32
-        usleep(15000);
+        usleep(50000);
 #else
-        Sleep(15);
+        Sleep(50);
 #endif
     }
 
