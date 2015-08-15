@@ -13,7 +13,6 @@
 #endif
 
 #include "CubicSDR.h"
-#include "FrequencyDialog.h"
 
 #ifdef _OSX_APP_
 #include "CoreFoundation/CoreFoundation.h"
@@ -389,8 +388,25 @@ int CubicSDR::getPPM() {
 }
 
 
-void CubicSDR::showFrequencyInput() {
-    FrequencyDialog fdialog(appframe, -1, demodMgr.getActiveDemodulator()?_("Set Demodulator Frequency"):_("Set Center Frequency"), demodMgr.getActiveDemodulator(), wxPoint(-100,-100), wxSize(320, 75 ));
+void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode) {
+    const wxString demodTitle("Set Demodulator Frequency");
+    const wxString freqTitle("Set Center Frequency");
+    const wxString bwTitle("Set Demodulator Bandwidth");
+
+    wxString title;
+    
+    switch (targetMode) {
+        case FrequencyDialog::FDIALOG_TARGET_DEFAULT:
+            title = demodMgr.getActiveDemodulator()?demodTitle:freqTitle;
+            break;
+        case FrequencyDialog::FDIALOG_TARGET_BANDWIDTH:
+            title = bwTitle;
+            break;
+        default:
+            break;
+    }
+    
+    FrequencyDialog fdialog(appframe, -1, title, demodMgr.getActiveDemodulator(), wxPoint(-100,-100), wxSize(320, 75 ), wxDEFAULT_DIALOG_STYLE, targetMode);
     fdialog.ShowModal();
 }
 

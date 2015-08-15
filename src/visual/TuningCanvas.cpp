@@ -407,8 +407,12 @@ void TuningCanvas::setHelpTip(std::string tip) {
 void TuningCanvas::OnKeyDown(wxKeyEvent& event) {
     InteractiveCanvas::OnKeyDown(event);
 
-    if (event.GetKeyCode() == WXK_SPACE && (hoverState == TUNING_HOVER_CENTER || hoverState == TUNING_HOVER_FREQ)) {
-        wxGetApp().showFrequencyInput();
+    if (event.GetKeyCode() == WXK_SPACE) {
+        if (hoverState == TUNING_HOVER_CENTER || hoverState == TUNING_HOVER_FREQ) {
+            wxGetApp().showFrequencyInput(FrequencyDialog::FDIALOG_TARGET_DEFAULT);
+        } else if (hoverState == TUNING_HOVER_BW) {
+            wxGetApp().showFrequencyInput(FrequencyDialog::FDIALOG_TARGET_BANDWIDTH);
+        }
     }
 }
 
