@@ -9,7 +9,8 @@
 #include "MeterCanvas.h"
 #include "TuningCanvas.h"
 #include "ModeSelectorCanvas.h"
-#include "UITestCanvas.h"
+#include "FFTVisualDataThread.h"
+//#include "UITestCanvas.h"
 
 #include <map>
 
@@ -94,8 +95,9 @@ private:
     
     std::string currentSessionFile;
     
-    FFTDataDistributor fftDistrib;
-    DemodulatorThreadInputQueue fftQueue;
+    FFTVisualDataThread *waterfallDataThread;
     
+    std::thread *t_FFTData;
+
     wxDECLARE_EVENT_TABLE();
 };

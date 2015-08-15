@@ -32,9 +32,8 @@ void initGLExtensions() {
         return;
     }
 
-    const GLubyte *extensions = glGetString(GL_EXTENSIONS);
-
-    std::cout << std::endl << "Supported GL Extensions: " << std::endl << extensions << std::endl << std::endl;
+//    const GLubyte *extensions = glGetString(GL_EXTENSIONS);
+//    std::cout << std::endl << "Supported GL Extensions: " << std::endl << extensions << std::endl << std::endl;
 
 #ifdef __linux__
     const GLint interval = 2;

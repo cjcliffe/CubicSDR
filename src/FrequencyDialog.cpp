@@ -10,15 +10,22 @@ EVT_CHAR_HOOK(FrequencyDialog::OnChar)
 wxEND_EVENT_TABLE()
 
 FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxString & title, DemodulatorInstance *demod, const wxPoint & position,
-        const wxSize & size, long style) :
+        const wxSize & size, long style, FrequencyDialogTarget targetMode) :
         wxDialog(parent, id, title, position, size, style) {
     wxString freqStr;
     activeDemod = demod;
+    this->targetMode = targetMode;
 
-    if (activeDemod) {
-        freqStr = frequencyToStr(activeDemod->getFrequency());
-    } else {
-        freqStr = frequencyToStr(wxGetApp().getFrequency());
+    if (targetMode == FDIALOG_TARGET_DEFAULT) {
+        if (activeDemod) {
+            freqStr = frequencyToStr(activeDemod->getFrequency());
+        } else {
+            freqStr = frequencyToStr(wxGetApp().getFrequency());
+        }
+    }
+            
+    if (targetMode == FDIALOG_TARGET_BANDWIDTH) {
+        freqStr = frequencyToStr(wxGetApp().getDemodMgr().getLastBandwidth());
     }
 
     dialogText = new wxTextCtrl(this, wxID_FREQ_INPUT, freqStr, wxPoint(6, 1), wxSize(size.GetWidth() - 20, size.GetHeight() - 70),
@@ -109,14 +116,23 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
     case WXK_NUMPAD_ENTER:
         // Do Stuff
         freq = strToFrequency(dialogText->GetValue().ToStdString());
-        if (activeDemod) {
-            activeDemod->setTracking(true);
-            activeDemod->setFollow(true);
-            activeDemod->setFrequency(freq);
-            activeDemod->updateLabel(freq);
-        } else {
-            wxGetApp().setFrequency(freq);
-        }
+            if (targetMode == FDIALOG_TARGET_DEFAULT) {
+                if (activeDemod) {
+                    activeDemod->setTracking(true);
+                    activeDemod->setFollow(true);
+                    activeDemod->setFrequency(freq);
+                    activeDemod->updateLabel(freq);
+                } else {
+                    wxGetApp().setFrequency(freq);
+                }
+            }
+            if (targetMode == FDIALOG_TARGET_BANDWIDTH) {
+                if (activeDemod) {
+                    activeDemod->setBandwidth(freq);
+                } else {
+                    wxGetApp().getDemodMgr().setLastBandwidth(freq);
+                }
+            }
         Close();
         break;
     case WXK_ESCAPE:

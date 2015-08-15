@@ -111,7 +111,10 @@ protected:
             
             if (inp) {
                 if (inp->data.size() >= fftSize) {
-                    for (int i = 0, iMax = inp->data.size()-fftSize; i <= iMax; i += fftSize) {
+                    if (lineRateAccum + (lineRateStep * floor((double)inp->data.size()/(double)fftSize)) < 1.0) {
+                         // move along, nothing to see here..
+                        lineRateAccum += (lineRateStep * inp->data.size()/fftSize);
+                    } else for (int i = 0, iMax = inp->data.size()-fftSize; i <= iMax; i += fftSize) {
                         lineRateAccum += lineRateStep;
                         
                         if (lineRateAccum >= 1.0) {

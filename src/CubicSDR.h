@@ -16,6 +16,7 @@
 #include "DemodulatorMgr.h"
 #include "AppConfig.h"
 #include "AppFrame.h"
+#include "FrequencyDialog.h"
 
 #include "ScopeVisualProcessor.h"
 #include "SpectrumVisualProcessor.h"
@@ -58,7 +59,6 @@ public:
     ScopeVisualProcessor *getScopeProcessor();
     SpectrumVisualProcessor *getSpectrumProcesor();
     SpectrumVisualProcessor *getDemodSpectrumProcesor();
-    SpectrumVisualProcessor *getWaterfallProcesor();
     VisualDataDistributor<DemodulatorThreadIQData> *getSpectrumDistributor();
     
     DemodulatorThreadOutputQueue* getAudioVisualQueue();
@@ -78,7 +78,7 @@ public:
     void setPPM(int ppm_in);
     int getPPM();
 
-    void showFrequencyInput();
+    void showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode = FrequencyDialog::FDIALOG_TARGET_DEFAULT);
 
 private:
     AppFrame *appframe;
@@ -107,7 +107,6 @@ private:
 
     ScopeVisualProcessor scopeProcessor;
     SpectrumVisualProcessor spectrumProcessor;
-    SpectrumVisualProcessor waterfallProcessor;
     SpectrumVisualProcessor demodSpectrumProcessor;
     
     VisualDataDistributor<DemodulatorThreadIQData> spectrumDistributor;
