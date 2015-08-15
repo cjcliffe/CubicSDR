@@ -36,7 +36,7 @@ void FFTVisualDataThread::run() {
     
     while(!terminated) {
         
-        std::this_thread::sleep_for(std::chrono::milliseconds(15));
+        std::this_thread::sleep_for(std::chrono::milliseconds(12));
         
         int fftSize = wproc.getDesiredInputSize();
         
