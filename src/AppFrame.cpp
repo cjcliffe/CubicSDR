@@ -783,11 +783,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     demodWaterfallCanvas->processInputQueue();
   
     if (!this->IsActive()) {
-#ifndef _WIN32
-        usleep(25000);
-#else
-        Sleep(25);
-#endif
+        std::this_thread::sleep_for(std::chrono::milliseconds(25));
     }
 
     event.RequestMore();
