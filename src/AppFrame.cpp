@@ -746,6 +746,9 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     
     if (spectrumAvgMeter->inputChanged()) {
         float val = spectrumAvgMeter->getInputValue();
+        if (val < 0.01) {
+            val = 0.01;
+        }
         spectrumAvgMeter->setLevel(val);
         proc->setFFTAverageRate(val);
 
