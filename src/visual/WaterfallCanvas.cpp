@@ -269,8 +269,9 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
 
     DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
 
-    long long freq;
-    long long originalFreq;
+    long long originalFreq = getCenterFrequency();
+    long long freq = originalFreq;
+
     switch (event.GetKeyCode()) {
     case 'A':
     case WXK_UP:
@@ -284,59 +285,19 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         break;
     case WXK_RIGHT:
     case WXK_NUMPAD_RIGHT:
-        freq = getCenterFrequency();
-        originalFreq = freq;
         if (shiftDown) {
             freq += getBandwidth() * 10;
-            if (isView) {
-                setView(centerFreq + (freq - originalFreq), getBandwidth());
-                if (spectrumCanvas) {
-                    spectrumCanvas->setView(getCenterFrequency(), getBandwidth());
-                }
-            }
         } else {
             freq += getBandwidth() / 2;
-            if (isView) {
-                setView(centerFreq + (freq - originalFreq), getBandwidth());
-                if (spectrumCanvas) {
-                    spectrumCanvas->setView(getCenterFrequency(), getBandwidth());
-                }
-            }
         }
-        wxGetApp().setFrequency(freq);
-        setStatusText("Set center frequency: %s", freq);
         break;
     case WXK_LEFT:
     case WXK_NUMPAD_LEFT:
-        freq = getCenterFrequency();
-        originalFreq = freq;
         if (shiftDown) {
-            if ((freq - getBandwidth() * 10) < wxGetApp().getSampleRate() / 2) {
-                freq = wxGetApp().getSampleRate() / 2;
-            } else {
-                freq -= getBandwidth() * 10;
-            }
-            if (isView) {
-                setView(centerFreq + (freq - originalFreq), getBandwidth());
-                if (spectrumCanvas) {
-                    spectrumCanvas->setView(getCenterFrequency(), getBandwidth());
-                }
-            }
+            freq -= getBandwidth() * 10;
         } else {
-            if ((freq - getBandwidth() / 2) < wxGetApp().getSampleRate() / 2) {
-                freq = wxGetApp().getSampleRate() / 2;
-            } else {
-                freq -= getBandwidth() / 2;
-            }
-            if (isView) {
-                setView(centerFreq + (freq - originalFreq), getBandwidth());
-                if (spectrumCanvas) {
-                    spectrumCanvas->setView(getCenterFrequency(), getBandwidth());
-                }
-            }
+            freq -= getBandwidth() / 2;
         }
-        wxGetApp().setFrequency(freq);
-        setStatusText("Set center frequency: %s", freq);
         break;
     case 'D':
     case WXK_DELETE:
@@ -363,6 +324,36 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         event.Skip();
         return;
     }
+
+    long long minFreq = wxGetApp().getSampleRate()/2;
+    if (freq < minFreq) {
+        freq = minFreq;
+    }
+
+    if (freq != originalFreq) {
+        if (isView) {
+            setView(freq, getBandwidth());
+            if (spectrumCanvas) {
+                spectrumCanvas->setView(freq, getBandwidth());
+            }
+
+            long long minFreq = wxGetApp().getFrequency()-(wxGetApp().getSampleRate()/2);
+            long long maxFreq = wxGetApp().getFrequency()+(wxGetApp().getSampleRate()/2);
+
+            if (freq < minFreq) {
+                wxGetApp().setFrequency(freq+(wxGetApp().getSampleRate()/2));
+                setStatusText("Set center frequency: %s", freq);
+            }
+            if (freq > maxFreq) {
+                wxGetApp().setFrequency(freq-(wxGetApp().getSampleRate()/2));
+                setStatusText("Set center frequency: %s", freq);
+            }
+        } else {
+            wxGetApp().setFrequency(freq);
+            setStatusText("Set center frequency: %s", freq);
+        }
+    }
+
 }
 void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
     Refresh();
