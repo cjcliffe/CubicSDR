@@ -30,6 +30,7 @@ private:
     void OnMouseDown(wxMouseEvent& event);
     void OnMouseWheelMoved(wxMouseEvent& event);
     void OnMouseReleased(wxMouseEvent& event);
+    void OnMouseEnterWindow(wxMouseEvent& event);
     void OnMouseLeftWindow(wxMouseEvent& event);
 
     PrimaryGLContext *glContext;

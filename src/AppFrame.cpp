@@ -759,9 +759,9 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         GetStatusBar()->SetStatusText(wxString::Format(wxT("Spectrum averaging speed changed to %0.2f%%."),val*100.0));
     }
     
-    proc->setView(spectrumCanvas->getViewState());
-    proc->setBandwidth(spectrumCanvas->getBandwidth());
-    proc->setCenterFrequency(spectrumCanvas->getCenterFrequency());
+    proc->setView(waterfallCanvas->getViewState());
+    proc->setBandwidth(waterfallCanvas->getBandwidth());
+    proc->setCenterFrequency(waterfallCanvas->getCenterFrequency());
     
     SpectrumVisualProcessor *dproc = wxGetApp().getDemodSpectrumProcessor();
     
@@ -784,7 +784,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     
     waterfallCanvas->processInputQueue();
     demodWaterfallCanvas->processInputQueue();
-  
+
     if (!this->IsActive()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(25));
     }

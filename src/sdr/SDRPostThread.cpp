@@ -221,14 +221,14 @@ void SDRPostThread::run() {
         data_in->decRefCount();
     }
 
-    buffers.purge();
+//    buffers.purge();
     
     if (iqVisualQueue && !iqVisualQueue->empty()) {
         DemodulatorThreadIQData *visualDataDummy;
         iqVisualQueue->pop(visualDataDummy);
     }
 
-    visualDataBuffers.purge();
+//    visualDataBuffers.purge();
 
     std::cout << "SDR post-processing thread done." << std::endl;
 }
