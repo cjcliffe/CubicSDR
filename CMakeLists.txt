@@ -264,6 +264,7 @@ SET (cubicsdr_sources
 	src/process/ScopeVisualProcessor.cpp
 	src/process/SpectrumVisualProcessor.cpp
 	src/process/FFTVisualDataThread.cpp
+    src/process/SpectrumVisualDataThread.cpp
 	src/ui/GLPanel.cpp
 	external/rtaudio/RtAudio.cpp
 	external/lodepng/lodepng.cpp
@@ -318,6 +319,7 @@ SET (cubicsdr_headers
 	src/process/ScopeVisualProcessor.h
 	src/process/SpectrumVisualProcessor.h
 	src/process/FFTVisualDataThread.h
+    src/process/SpectrumVisualDataThread.h
 	src/ui/GLPanel.h
 	src/ui/UITestCanvas.cpp
 	src/ui/UITestCanvas.h
