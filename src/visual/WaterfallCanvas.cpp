@@ -322,6 +322,12 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         wxGetApp().removeDemodulator(activeDemod);
         wxGetApp().getDemodMgr().deleteThread(activeDemod);
         break;
+    case 'M':
+        if (!activeDemod) {
+            break;
+        }
+        activeDemod->setMuted(!activeDemod->isMuted());
+        break;
     case 'S':
         if (!activeDemod) {
             break;

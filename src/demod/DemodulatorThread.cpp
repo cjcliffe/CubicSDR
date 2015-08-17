@@ -14,6 +14,7 @@
 DemodulatorThread::DemodulatorThread() : IOThread(), iqAutoGain(NULL), amOutputCeil(1), amOutputCeilMA(1), amOutputCeilMAA(1), audioSampleRate(0), squelchLevel(0), signalLevel(0), squelchEnabled(false), iqInputQueue(NULL), audioOutputQueue(NULL), audioVisOutputQueue(NULL), threadQueueControl(NULL), threadQueueNotify(NULL) {
 
 	stereo.store(false);
+    muted.store(false);
 	agcEnabled.store(false);
 	demodulatorType.store(DEMOD_TYPE_FM);
 
@@ -404,7 +405,11 @@ void DemodulatorThread::run() {
         }
 
         if (ati != NULL) {
-            audioOutputQueue->push(ati);
+            if (!muted.load()) {
+                audioOutputQueue->push(ati);
+            } else {
+                ati->setRefCount(0);
+            }
         }
 
         if (!threadQueueControl->empty()) {
@@ -508,6 +513,14 @@ void DemodulatorThread::setStereo(bool state) {
 
 bool DemodulatorThread::isStereo() {
     return stereo.load();
+}
+
+bool DemodulatorThread::isMuted() {
+    return muted.load();
+}
+
+void DemodulatorThread::setMuted(bool muted) {
+    this->muted.store(muted);
 }
 
 void DemodulatorThread::setAGC(bool state) {

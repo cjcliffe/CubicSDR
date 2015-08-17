@@ -73,6 +73,9 @@ public:
 
     bool isTracking();
     void setTracking(bool tracking);
+    
+    bool isMuted();
+    void setMuted(bool muted);
 
     DemodulatorThreadInputQueue *getIQInputDataPipe();
 
@@ -98,6 +101,7 @@ private:
     std::atomic_bool active;
     std::atomic_bool squelch;
     std::atomic_bool stereo;
+    std::atomic_bool muted;
 
     std::atomic_llong currentFrequency;
     std::atomic_int currentBandwidth;
