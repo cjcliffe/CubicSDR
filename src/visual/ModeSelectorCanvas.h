@@ -35,6 +35,11 @@ public:
     void setSelection(int value);
     int getSelection();
 
+    void setToggleMode(bool toggleMode);
+
+    bool modeChanged();
+    void clearModeChanged();
+    
 private:
     void setNumChoices(int numChoices_in);
 
@@ -53,6 +58,8 @@ private:
     std::string helpTip;
     int numChoices;
     int currentSelection;
+    bool toggleMode;
+    bool inputChanged;
     std::vector<ModeSelectorMode> selections;
     //
 wxDECLARE_EVENT_TABLE();

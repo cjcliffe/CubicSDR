@@ -103,12 +103,25 @@ AppFrame::AppFrame() :
 
     demodTray->AddSpacer(1);
 
+    wxBoxSizer *demodGainTray = new wxBoxSizer(wxVERTICAL);
+            
     demodGainMeter = new MeterCanvas(this, attribList);
     demodGainMeter->setMax(2.0);
     demodGainMeter->setHelpTip("Current Demodulator Gain Level.  Click / Drag to set Gain level.");
     demodGainMeter->setShowUserInput(false);
-    demodTray->Add(demodGainMeter, 1, wxEXPAND | wxALL, 0);
+    demodGainTray->Add(demodGainMeter, 8, wxEXPAND | wxALL, 0);
 
+    demodGainTray->AddSpacer(1);
+
+    demodMuteButton = new ModeSelectorCanvas(this, attribList);
+    demodMuteButton->addChoice(1, "M");
+    demodMuteButton->setHelpTip("Demodulator Mute Toggle");
+    demodMuteButton->setToggleMode(true);
+          
+    demodGainTray->Add(demodMuteButton, 1, wxEXPAND | wxALL, 0);
+
+    demodTray->Add(demodGainTray, 1, wxEXPAND | wxALL, 0);
+            
     vbox->Add(demodTray, 12, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(1);
 
@@ -663,6 +676,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             outputDeviceMenuItems[outputDevice]->Check(true);
             int dType = demod->getDemodulatorType();
             demodModeSelector->setSelection(dType);
+            demodMuteButton->setSelection(demod->isMuted()?1:-1);
         }
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
             long long centerFreq = demod->getFrequency();
@@ -692,6 +706,22 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             int dSelection = demodModeSelector->getSelection();
             if (dSelection != -1 && dSelection != demod->getDemodulatorType()) {
                 demod->setDemodulatorType(dSelection);
+            }
+
+            int muteMode = demodMuteButton->getSelection();
+            if (demodMuteButton->modeChanged()) {
+                if (demod->isMuted() && muteMode == -1) {
+                    demod->setMuted(false);
+                } else if (!demod->isMuted() && muteMode == 1) {
+                    demod->setMuted(true);
+                }
+                demodMuteButton->clearModeChanged();
+            } else {
+                if (demod->isMuted() && muteMode == -1) {
+                    demodMuteButton->setSelection(1);
+                } else if (!demod->isMuted() && muteMode == 1) {
+                    demodMuteButton->setSelection(-1);
+                }
             }
 
             demodWaterfallCanvas->setBandwidth(demodBw);
@@ -812,6 +842,7 @@ void AppFrame::saveSession(std::string fileName) {
         *demod->newChild("stereo") = (*instance_i)->isStereo() ? 1 : 0;
         *demod->newChild("output_device") = outputDevices[(*instance_i)->getOutputDevice()].name;
         *demod->newChild("gain") = (*instance_i)->getGain();
+        *demod->newChild("muted") = (*instance_i)->isMuted() ? 1 : 0;
     }
 
     s.SaveToFileXML(fileName);
@@ -859,6 +890,7 @@ bool AppFrame::loadSession(std::string fileName) {
             float squelch_level = demod->hasAnother("squelch_level") ? (float) *demod->getNext("squelch_level") : 0;
             int squelch_enabled = demod->hasAnother("squelch_enabled") ? (int) *demod->getNext("squelch_enabled") : 0;
             int stereo = demod->hasAnother("stereo") ? (int) *demod->getNext("stereo") : 0;
+            int muted = demod->hasAnother("muted") ? (int) *demod->getNext("muted") : 0;
             std::string output_device = demod->hasAnother("output_device") ? string(*(demod->getNext("output_device"))) : "";
             float gain = demod->hasAnother("gain") ? (float) *demod->getNext("gain") : 1.0;
 
@@ -870,6 +902,7 @@ bool AppFrame::loadSession(std::string fileName) {
             newDemod->setFrequency(freq);
             newDemod->setGain(gain);
             newDemod->updateLabel(freq);
+            newDemod->setMuted(muted?true:false);
             if (squelch_enabled) {
                 newDemod->setSquelchEnabled(true);
                 newDemod->setSquelchLevel(squelch_level);

@@ -322,6 +322,12 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         wxGetApp().removeDemodulator(activeDemod);
         wxGetApp().getDemodMgr().deleteThread(activeDemod);
         break;
+    case 'M':
+        if (!activeDemod) {
+            break;
+        }
+        activeDemod->setMuted(!activeDemod->isMuted());
+        break;
     case 'S':
         if (!activeDemod) {
             break;
@@ -357,18 +363,15 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
 
             if (freq < minFreq) {
                 wxGetApp().setFrequency(freq+(wxGetApp().getSampleRate()/2));
-                setStatusText("Set center frequency: %s", freq);
             }
             if (freq > maxFreq) {
                 wxGetApp().setFrequency(freq-(wxGetApp().getSampleRate()/2));
-                setStatusText("Set center frequency: %s", freq);
             }
         } else {
             if (spectrumCanvas) {
                 spectrumCanvas->setCenterFrequency(freq);
             }
             wxGetApp().setFrequency(freq);
-            setStatusText("Set center frequency: %s", freq);
         }
     }
 
@@ -406,7 +409,6 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
             }
 
             demod->setBandwidth(currentBW);
-            setStatusText("Set demodulator bandwidth: %s", demod->getBandwidth());
         }
 
         if (dragState == WF_DRAG_FREQUENCY) {
@@ -424,8 +426,6 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
                 currentFreq = demod->getFrequency();
                 demod->updateLabel(currentFreq);
             }
-
-            setStatusText("Set demodulator frequency: %s", demod->getFrequency());
         }
     } else if (mouseTracker.mouseRightDown()) {
         mouseZoom = mouseZoom + ((1.0 - (mouseTracker.getDeltaMouseY() * 4.0)) - mouseZoom) * 0.1;
@@ -505,14 +505,14 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
 
                 mouseTracker.setVertDragLock(true);
                 mouseTracker.setHorizDragLock(false);
-                setStatusText("Click and drag to change demodulator bandwidth. SPACE for direct frequency input. D to delete, S for stereo.");
+                setStatusText("Click and drag to change demodulator bandwidth. SPACE for direct frequency input. M for mute, D to delete, S for stereo.");
             } else {
                 SetCursor(wxCURSOR_SIZING);
                 nextDragState = WF_DRAG_FREQUENCY;
 
                 mouseTracker.setVertDragLock(true);
                 mouseTracker.setHorizDragLock(false);
-                setStatusText("Click and drag to change demodulator frequency; SPACE for direct input. D to delete, S for stereo.");
+                setStatusText("Click and drag to change demodulator frequency; SPACE for direct input. M for mute, D to delete, S for stereo.");
             }
         } else {
             SetCursor(wxCURSOR_CROSS);

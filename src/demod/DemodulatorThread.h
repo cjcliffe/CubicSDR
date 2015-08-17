@@ -27,6 +27,9 @@ public:
     void setAGC(bool state);
     bool getAGC();
 
+    void setMuted(bool state);
+    bool isMuted();
+    
     float getSignalLevel();
     void setSquelchLevel(float signal_level_in);
     float getSquelchLevel();
@@ -64,6 +67,7 @@ protected:
     float amOutputCeilMAA;
 
     std::atomic_bool stereo;
+    std::atomic_bool muted;
     std::atomic_bool agcEnabled;
     std::atomic_int demodulatorType;
     int audioSampleRate;

@@ -25,7 +25,7 @@ EVT_ENTER_WINDOW(ModeSelectorCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
 ModeSelectorCanvas::ModeSelectorCanvas(wxWindow *parent, int *attribList) :
-InteractiveCanvas(parent, attribList), numChoices(0), currentSelection(-1) {
+InteractiveCanvas(parent, attribList), numChoices(0), currentSelection(-1), toggleMode(false), inputChanged(false) {
 
     glContext = new ModeSelectorContext(this, &wxGetApp().GetContext(this));
 }
@@ -97,10 +97,21 @@ void ModeSelectorCanvas::OnMouseReleased(wxMouseEvent& event) {
 
     const wxSize ClientSize = GetClientSize();
 
+    int selectedButton = currentSelection;
     if (mouseTracker.getOriginDeltaMouseX() < 2.0 / ClientSize.y) {
-        currentSelection = getHoveredSelection();
+        selectedButton = getHoveredSelection();
     }
 
+    if (toggleMode && (currentSelection == selectedButton)) {
+        selectedButton = -1;
+    }
+    
+    if (currentSelection != selectedButton) {
+        inputChanged = true;
+    }
+    
+    currentSelection = selectedButton;
+    
     SetCursor (wxCURSOR_ARROW);
 }
 
@@ -148,4 +159,15 @@ int ModeSelectorCanvas::getSelection() {
     return selections[currentSelection].value;
 }
 
+void ModeSelectorCanvas::setToggleMode(bool toggleMode) {
+    this->toggleMode = toggleMode;
+}
+
+bool ModeSelectorCanvas::modeChanged() {
+    return inputChanged;
+}
+
+void ModeSelectorCanvas::clearModeChanged() {
+    inputChanged = false;
+}
 
