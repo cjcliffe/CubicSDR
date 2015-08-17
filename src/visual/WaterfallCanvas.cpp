@@ -105,45 +105,49 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     long long bw;
     if (currentZoom != 1) {
         long long freq = wxGetApp().getFrequency();
-        
+        bw = getBandwidth();
+
+        double mpos = 0;
+        float mouseInView = false;
+
+        if (mouseTracker.mouseInView()) {
+            mpos = mouseTracker.getMouseX();
+            mouseInView = true;
+        } else if (spectrumCanvas && spectrumCanvas->getMouseTracker()->mouseInView()) {
+            mpos = spectrumCanvas->getMouseTracker()->getMouseX();
+            mouseInView = true;
+        }
+
         if (currentZoom < 1) {
-            centerFreq = getCenterFrequency();
-            bw = getBandwidth();
             bw = (long long) ceil((long double) bw * currentZoom);
             if (bw < 30000) {
                 bw = 30000;
             }
-            if (mouseTracker.mouseInView()) {
-                long long mfreqA = getFrequencyAt(mouseTracker.getMouseX());
+            if (mouseInView) {
+                long long mfreqA = getFrequencyAt(mpos);
                 setBandwidth(bw);
-                long long mfreqB = getFrequencyAt(mouseTracker.getMouseX());
+                long long mfreqB = getFrequencyAt(mpos);
                 centerFreq += mfreqA - mfreqB;
             }
             
             setView(centerFreq, bw);
-            if (spectrumCanvas) {
-                spectrumCanvas->setView(centerFreq, bw);
-            }
         } else {
             if (isView) {
-                bw = getBandwidth();
                 bw = (long long) ceil((long double) bw * currentZoom);
+
                 if (bw >= wxGetApp().getSampleRate()) {
                     disableView();
                     if (spectrumCanvas) {
                         spectrumCanvas->disableView();
                     }
                 } else {
-                    if (mouseTracker.mouseInView()) {
-                        long long mfreqA = getFrequencyAt(mouseTracker.getMouseX());
+                    if (mouseInView) {
+                        long long mfreqA = getFrequencyAt(mpos);
                         setBandwidth(bw);
-                        long long mfreqB = getFrequencyAt(mouseTracker.getMouseX());
+                        long long mfreqB = getFrequencyAt(mpos);
                         centerFreq += mfreqA - mfreqB;
-                    }
-                    
-                    setView(getCenterFrequency(), bw);
-                    if (spectrumCanvas) {
-                        spectrumCanvas->setView(centerFreq, bw);
+                    } else {
+                        setBandwidth(bw);
                     }
                 }
             }
@@ -154,8 +158,15 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         if (centerFreq > freq && (centerFreq + bandwidth / 2) > (freq + wxGetApp().getSampleRate() / 2)) {
             centerFreq = (freq + wxGetApp().getSampleRate() / 2) - bandwidth / 2;
         }
+
+        if (spectrumCanvas) {
+            if ((spectrumCanvas->getCenterFrequency() != centerFreq) || (spectrumCanvas->getBandwidth() != bw)) {
+                spectrumCanvas->setView(centerFreq,bw);
+            }
+        }
     }
     
+
     glContext->SetCurrent(*this);
     initGLExtensions();
     glViewport(0, 0, ClientSize.x, ClientSize.y);
@@ -255,11 +266,13 @@ void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
     case WXK_UP:
     case WXK_NUMPAD_UP:
             zoom = 1.0;
+            mouseZoom = 0.95;
         break;
     case 'Z':
     case WXK_DOWN:
     case WXK_NUMPAD_DOWN:
             zoom = 1.0;
+            mouseZoom = 1.05;
         break;
     }
 }
@@ -276,11 +289,13 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     case 'A':
     case WXK_UP:
     case WXK_NUMPAD_UP:
+            mouseZoom = 1.0;
             zoom = 0.95;
         break;
     case 'Z':
     case WXK_DOWN:
     case WXK_NUMPAD_DOWN:
+            mouseZoom = 1.0;
             zoom = 1.05;
         break;
     case WXK_RIGHT:
@@ -349,6 +364,9 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
                 setStatusText("Set center frequency: %s", freq);
             }
         } else {
+            if (spectrumCanvas) {
+                spectrumCanvas->setCenterFrequency(freq);
+            }
             wxGetApp().setFrequency(freq);
             setStatusText("Set center frequency: %s", freq);
         }

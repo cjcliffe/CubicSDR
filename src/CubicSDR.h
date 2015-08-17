@@ -20,6 +20,7 @@
 
 #include "ScopeVisualProcessor.h"
 #include "SpectrumVisualProcessor.h"
+#include "SpectrumVisualDataThread.h"
 
 #include <wx/cmdline.h>
 
@@ -57,8 +58,8 @@ public:
     int getDevice();
 
     ScopeVisualProcessor *getScopeProcessor();
-    SpectrumVisualProcessor *getSpectrumProcesor();
-    SpectrumVisualProcessor *getDemodSpectrumProcesor();
+    SpectrumVisualProcessor *getSpectrumProcessor();
+    SpectrumVisualProcessor *getDemodSpectrumProcessor();
     VisualDataDistributor<DemodulatorThreadIQData> *getSpectrumDistributor();
     
     DemodulatorThreadOutputQueue* getAudioVisualQueue();
@@ -96,6 +97,8 @@ private:
 
     SDRThread *sdrThread;
     SDRPostThread *sdrPostThread;
+    SpectrumVisualDataThread *spectrumVisualThread;
+    SpectrumVisualDataThread *demodVisualThread;
 
     SDRThreadCommandQueue* pipeSDRCommand;
     SDRThreadIQDataQueue* pipeSDRIQData;
@@ -106,13 +109,13 @@ private:
     DemodulatorThreadInputQueue* pipeWaterfallIQVisualData;
 
     ScopeVisualProcessor scopeProcessor;
-    SpectrumVisualProcessor spectrumProcessor;
-    SpectrumVisualProcessor demodSpectrumProcessor;
     
     VisualDataDistributor<DemodulatorThreadIQData> spectrumDistributor;
-    
+
     std::thread *t_SDR;
     std::thread *t_PostSDR;
+    std::thread *t_SpectrumVisual;
+    std::thread *t_DemodVisual;
 };
 
 static const wxCmdLineEntryDesc commandLineInfo [] =

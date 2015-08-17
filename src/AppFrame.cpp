@@ -62,11 +62,11 @@ AppFrame::AppFrame() :
     demodModeSelector->setHelpTip("Choose modulation type: Frequency Modulation, Amplitude Modulation and Lower, Upper or Double Side-Band.");
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
 
-    wxGetApp().getDemodSpectrumProcesor()->setup(1024);
+    wxGetApp().getDemodSpectrumProcessor()->setup(1024);
     demodSpectrumCanvas = new SpectrumCanvas(this, attribList);
     demodSpectrumCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
     demodVisuals->Add(demodSpectrumCanvas, 3, wxEXPAND | wxALL, 0);
-    wxGetApp().getDemodSpectrumProcesor()->attachOutput(demodSpectrumCanvas->getVisualDataQueue());
+    wxGetApp().getDemodSpectrumProcessor()->attachOutput(demodSpectrumCanvas->getVisualDataQueue());
 
     demodVisuals->AddSpacer(1);
 
@@ -76,7 +76,7 @@ AppFrame::AppFrame() :
     demodWaterfallCanvas->attachSpectrumCanvas(demodSpectrumCanvas);
     demodSpectrumCanvas->attachWaterfallCanvas(demodWaterfallCanvas);
     demodVisuals->Add(demodWaterfallCanvas, 6, wxEXPAND | wxALL, 0);
-    wxGetApp().getDemodSpectrumProcesor()->attachOutput(demodWaterfallCanvas->getVisualDataQueue());
+    wxGetApp().getDemodSpectrumProcessor()->attachOutput(demodWaterfallCanvas->getVisualDataQueue());
 
     demodTray->Add(demodVisuals, 30, wxEXPAND | wxALL, 0);
 
@@ -113,9 +113,9 @@ AppFrame::AppFrame() :
     vbox->AddSpacer(1);
 
     wxBoxSizer *spectrumSizer = new wxBoxSizer(wxHORIZONTAL);
-    wxGetApp().getSpectrumProcesor()->setup(2048);
+    wxGetApp().getSpectrumProcessor()->setup(2048);
     spectrumCanvas = new SpectrumCanvas(this, attribList);
-    wxGetApp().getSpectrumProcesor()->attachOutput(spectrumCanvas->getVisualDataQueue());
+    wxGetApp().getSpectrumProcessor()->attachOutput(spectrumCanvas->getVisualDataQueue());
             
     spectrumAvgMeter = new MeterCanvas(this, attribList);
     spectrumAvgMeter->setHelpTip("Spectrum averaging speed, click or drag to adjust.");
@@ -370,7 +370,7 @@ AppFrame::AppFrame() :
     float spectrumAvg = wxGetApp().getConfig()->getSpectrumAvgSpeed();
             
     spectrumAvgMeter->setLevel(spectrumAvg);
-    wxGetApp().getSpectrumProcesor()->setFFTAverageRate(spectrumAvg);
+    wxGetApp().getSpectrumProcessor()->setFFTAverageRate(spectrumAvg);
             
     int wflps =wxGetApp().getConfig()->getWaterfallLinesPerSec();
             
@@ -488,7 +488,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         spectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
         waterfallDataThread->setLinesPerSecond(DEFAULT_WATERFALL_LPS);
         waterfallSpeedMeter->setLevel(sqrt(DEFAULT_WATERFALL_LPS));
-        wxGetApp().getSpectrumProcesor()->setFFTAverageRate(0.65);
+        wxGetApp().getSpectrumProcessor()->setFFTAverageRate(0.65);
         spectrumAvgMeter->setLevel(0.65);
         demodModeSelector->Refresh();
         demodTuner->Refresh();
@@ -607,12 +607,16 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
 }
 
 void AppFrame::OnClose(wxCloseEvent& event) {
+    wxGetApp().getDemodSpectrumProcessor()->removeOutput(demodSpectrumCanvas->getVisualDataQueue());
+    wxGetApp().getDemodSpectrumProcessor()->removeOutput(demodWaterfallCanvas->getVisualDataQueue());
+    wxGetApp().getSpectrumProcessor()->removeOutput(spectrumCanvas->getVisualDataQueue());
+
     wxGetApp().getConfig()->setWindow(this->GetPosition(), this->GetClientSize());
     wxGetApp().getConfig()->setWindowMaximized(this->IsMaximized());
     wxGetApp().getConfig()->setTheme(ThemeMgr::mgr.getTheme());
     wxGetApp().getConfig()->setSnap(wxGetApp().getFrequencySnap());
     wxGetApp().getConfig()->setCenterFreq(wxGetApp().getFrequency());
-    wxGetApp().getConfig()->setSpectrumAvgSpeed(wxGetApp().getSpectrumProcesor()->getFFTAverageRate());
+    wxGetApp().getConfig()->setSpectrumAvgSpeed(wxGetApp().getSpectrumProcessor()->getFFTAverageRate());
     wxGetApp().getConfig()->setWaterfallLinesPerSec(waterfallDataThread->getLinesPerSecond());
     wxGetApp().getConfig()->save();
     event.Skip();
@@ -742,7 +746,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     wxGetApp().getScopeProcessor()->run();
     wxGetApp().getSpectrumDistributor()->run();
 
-    SpectrumVisualProcessor *proc = wxGetApp().getSpectrumProcesor();
+    SpectrumVisualProcessor *proc = wxGetApp().getSpectrumProcessor();
     
     if (spectrumAvgMeter->inputChanged()) {
         float val = spectrumAvgMeter->getInputValue();
@@ -755,19 +759,15 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         GetStatusBar()->SetStatusText(wxString::Format(wxT("Spectrum averaging speed changed to %0.2f%%."),val*100.0));
     }
     
-    proc->setView(spectrumCanvas->getViewState());
-    proc->setBandwidth(spectrumCanvas->getBandwidth());
-    proc->setCenterFrequency(spectrumCanvas->getCenterFrequency());
+    proc->setView(waterfallCanvas->getViewState());
+    proc->setBandwidth(waterfallCanvas->getBandwidth());
+    proc->setCenterFrequency(waterfallCanvas->getCenterFrequency());
     
-    proc->run();
-    
-    SpectrumVisualProcessor *dproc = wxGetApp().getDemodSpectrumProcesor();
+    SpectrumVisualProcessor *dproc = wxGetApp().getDemodSpectrumProcessor();
     
     dproc->setView(demodWaterfallCanvas->getViewState());
     dproc->setBandwidth(demodWaterfallCanvas->getBandwidth());
     dproc->setCenterFrequency(demodWaterfallCanvas->getCenterFrequency());
-    
-    dproc->run();
 
     SpectrumVisualProcessor *wproc = waterfallDataThread->getProcessor();
 
@@ -784,7 +784,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     
     waterfallCanvas->processInputQueue();
     demodWaterfallCanvas->processInputQueue();
-  
+
     if (!this->IsActive()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(25));
     }

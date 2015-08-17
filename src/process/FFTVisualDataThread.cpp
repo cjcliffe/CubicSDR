@@ -59,6 +59,6 @@ void FFTVisualDataThread::run() {
         }
     }
     
-    std::cout << "FFT visual data thread terminated." << std::endl;
+    std::cout << "FFT visual data thread done." << std::endl;
 }
 
