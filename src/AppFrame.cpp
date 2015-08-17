@@ -843,6 +843,9 @@ bool AppFrame::loadSession(std::string fileName) {
 
         DataNode *demodulators = l.rootNode()->getNext("demodulators");
 
+        int numDemodulators = 0;
+        DemodulatorInstance *loadedDemod = NULL;
+        
         while (demodulators->hasAnother("demodulator")) {
             DataNode *demod = demodulators->getNext("demodulator");
 
@@ -860,6 +863,8 @@ bool AppFrame::loadSession(std::string fileName) {
             float gain = demod->hasAnother("gain") ? (float) *demod->getNext("gain") : 1.0;
 
             DemodulatorInstance *newDemod = wxGetApp().getDemodMgr().newThread();
+            loadedDemod = newDemod;
+            numDemodulators++;
             newDemod->setDemodulatorType(type);
             newDemod->setBandwidth(bandwidth);
             newDemod->setFrequency(freq);
@@ -896,6 +901,13 @@ bool AppFrame::loadSession(std::string fileName) {
             std::cout << "\t\tSquelch Enabled: " << (squelch_enabled ? "true" : "false") << std::endl;
             std::cout << "\t\tStereo: " << (stereo ? "true" : "false") << std::endl;
             std::cout << "\t\tOutput Device: " << output_device << std::endl;
+        }
+        
+        if ((numDemodulators == 1) && loadedDemod) {
+            loadedDemod->setActive(true);
+            loadedDemod->setFollow(true);
+            loadedDemod->setTracking(true);
+            wxGetApp().getDemodMgr().setActiveDemodulator(loadedDemod);
         }
     } catch (DataInvalidChildException &e) {
         std::cout << e.what() << std::endl;
