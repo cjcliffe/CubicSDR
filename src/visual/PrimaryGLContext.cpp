@@ -136,7 +136,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGB3f color, lo
     std::string demodLabel = demod->getLabel();
     
     if (demod->isMuted()) {
-        demodLabel.append("[M]");
+        demodLabel = std::string("[M] ") + demodLabel;
     }
     
     if (demod->getDemodulatorType() == DEMOD_TYPE_USB) {
@@ -241,11 +241,7 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGB3f color, long l
     glColor3f(0, 0, 0);
     GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodStr, 2.0 * (uxPos - 0.5) + xOfs, -1.0 + hPos - yOfs, 16, demodAlign,
             GLFont::GLFONT_ALIGN_CENTER);
-    if (demod->isMuted()) {
-        glColor3f(0.8, 0.2, 0.2);
-    } else {
-        glColor3f(0.8, 0.2, 0.2);
-    }
+    glColor3f(1, 1, 1);
     GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodStr, 2.0 * (uxPos - 0.5), -1.0 + hPos, 16, demodAlign, GLFont::GLFONT_ALIGN_CENTER);
 
     glDisable(GL_BLEND);
