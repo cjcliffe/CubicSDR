@@ -22,6 +22,7 @@ EVT_IDLE(SpectrumCanvas::OnIdle)
 EVT_MOTION(SpectrumCanvas::OnMouseMoved)
 EVT_LEFT_DOWN(SpectrumCanvas::OnMouseDown)
 EVT_LEFT_UP(SpectrumCanvas::OnMouseReleased)
+EVT_ENTER_WINDOW(SpectrumCanvas::OnMouseEnterWindow)
 EVT_LEAVE_WINDOW(SpectrumCanvas::OnMouseLeftWindow)
 EVT_MOUSEWHEEL(SpectrumCanvas::OnMouseWheelMoved)
 wxEND_EVENT_TABLE()
@@ -149,6 +150,11 @@ void SpectrumCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
 
 void SpectrumCanvas::OnMouseReleased(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseReleased(event);
+    SetCursor(wxCURSOR_SIZEWE);
+}
+
+void SpectrumCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
+    InteractiveCanvas::OnMouseEnterWindow(event);
     SetCursor(wxCURSOR_SIZEWE);
 }
 

@@ -16,9 +16,11 @@
 #include "DemodulatorMgr.h"
 #include "AppConfig.h"
 #include "AppFrame.h"
+#include "FrequencyDialog.h"
 
 #include "ScopeVisualProcessor.h"
 #include "SpectrumVisualProcessor.h"
+#include "SpectrumVisualDataThread.h"
 
 #include <wx/cmdline.h>
 
@@ -56,9 +58,8 @@ public:
     int getDevice();
 
     ScopeVisualProcessor *getScopeProcessor();
-    SpectrumVisualProcessor *getSpectrumProcesor();
-    SpectrumVisualProcessor *getDemodSpectrumProcesor();
-    SpectrumVisualProcessor *getWaterfallProcesor();
+    SpectrumVisualProcessor *getSpectrumProcessor();
+    SpectrumVisualProcessor *getDemodSpectrumProcessor();
     VisualDataDistributor<DemodulatorThreadIQData> *getSpectrumDistributor();
     
     DemodulatorThreadOutputQueue* getAudioVisualQueue();
@@ -78,7 +79,7 @@ public:
     void setPPM(int ppm_in);
     int getPPM();
 
-    void showFrequencyInput();
+    void showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode = FrequencyDialog::FDIALOG_TARGET_DEFAULT);
 
 private:
     AppFrame *appframe;
@@ -96,6 +97,8 @@ private:
 
     SDRThread *sdrThread;
     SDRPostThread *sdrPostThread;
+    SpectrumVisualDataThread *spectrumVisualThread;
+    SpectrumVisualDataThread *demodVisualThread;
 
     SDRThreadCommandQueue* pipeSDRCommand;
     SDRThreadIQDataQueue* pipeSDRIQData;
@@ -106,14 +109,13 @@ private:
     DemodulatorThreadInputQueue* pipeWaterfallIQVisualData;
 
     ScopeVisualProcessor scopeProcessor;
-    SpectrumVisualProcessor spectrumProcessor;
-    SpectrumVisualProcessor waterfallProcessor;
-    SpectrumVisualProcessor demodSpectrumProcessor;
     
     VisualDataDistributor<DemodulatorThreadIQData> spectrumDistributor;
-    
+
     std::thread *t_SDR;
     std::thread *t_PostSDR;
+    std::thread *t_SpectrumVisual;
+    std::thread *t_DemodVisual;
 };
 
 static const wxCmdLineEntryDesc commandLineInfo [] =

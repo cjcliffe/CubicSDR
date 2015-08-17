@@ -12,7 +12,6 @@
 #endif
 
 #include "CubicSDR.h"
-#include "FrequencyDialog.h"
 
 #ifdef _OSX_APP_
 #include "CoreFoundation/CoreFoundation.h"
@@ -35,7 +34,7 @@ class outbuf : public std::streambuf {
 
 
 CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE), directSamplingMode(0),
-    sdrThread(NULL), sdrPostThread(NULL), pipeSDRCommand(NULL), pipeSDRIQData(NULL), pipeIQVisualData(NULL), pipeAudioVisualData(NULL), t_SDR(NULL), t_PostSDR(NULL) {
+    sdrThread(NULL), sdrPostThread(NULL), spectrumVisualThread(NULL), demodVisualThread(NULL), pipeSDRCommand(NULL), pipeSDRIQData(NULL), pipeIQVisualData(NULL), pipeAudioVisualData(NULL), t_SDR(NULL), t_PostSDR(NULL) {
     
 }
 
@@ -75,6 +74,9 @@ bool CubicSDR::OnInit() {
     directSamplingMode = 0;
 
     // Visual Data
+    spectrumVisualThread = new SpectrumVisualDataThread();
+    demodVisualThread = new SpectrumVisualDataThread();
+    
     pipeIQVisualData = new DemodulatorThreadInputQueue();
     pipeIQVisualData->set_max_num_items(1);
 
@@ -92,8 +94,8 @@ bool CubicSDR::OnInit() {
     spectrumDistributor.attachOutput(pipeDemodIQVisualData);
     spectrumDistributor.attachOutput(pipeSpectrumIQVisualData);
     
-    demodSpectrumProcessor.setInput(pipeDemodIQVisualData);
-    spectrumProcessor.setInput(pipeSpectrumIQVisualData);
+    getDemodSpectrumProcessor()->setInput(pipeDemodIQVisualData);
+    getSpectrumProcessor()->setInput(pipeSpectrumIQVisualData);
     
     pipeAudioVisualData = new DemodulatorThreadOutputQueue();
     pipeAudioVisualData->set_max_num_items(1);
@@ -104,7 +106,7 @@ bool CubicSDR::OnInit() {
     pipeSDRIQData = new SDRThreadIQDataQueue();
     pipeSDRCommand = new SDRThreadCommandQueue();
 
-    pipeSDRIQData->set_max_num_items(1);
+    pipeSDRIQData->set_max_num_items(100);
     
     sdrThread = new SDRThread();
     sdrThread->setInputQueue("SDRCommandQueue",pipeSDRCommand);
@@ -158,6 +160,8 @@ bool CubicSDR::OnInit() {
     
     t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
     t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
+    t_SpectrumVisual = new std::thread(&SpectrumVisualDataThread::threadMain, spectrumVisualThread);
+    t_DemodVisual = new std::thread(&SpectrumVisualDataThread::threadMain, demodVisualThread);
 
     appframe = new AppFrame();
     if (dev != NULL) {
@@ -191,6 +195,13 @@ int CubicSDR::OnExit() {
     std::cout << "Terminating SDR post-processing thread.." << std::endl;
     sdrPostThread->terminate();
     t_PostSDR->join();
+    
+    std::cout << "Terminating Visual Processor threads.." << std::endl;
+    spectrumVisualThread->terminate();
+    t_SpectrumVisual->join();
+
+    demodVisualThread->terminate();
+    t_DemodVisual->join();
 
     delete sdrThread;
     delete t_SDR;
@@ -198,6 +209,11 @@ int CubicSDR::OnExit() {
     delete sdrPostThread;
     delete t_PostSDR;
 
+    delete t_SpectrumVisual;
+    delete spectrumVisualThread;
+    delete t_DemodVisual;
+    delete demodVisualThread;
+    
     delete pipeSDRCommand;
 
     delete pipeIQVisualData;
@@ -297,16 +313,12 @@ ScopeVisualProcessor *CubicSDR::getScopeProcessor() {
     return &scopeProcessor;
 }
 
-SpectrumVisualProcessor *CubicSDR::getSpectrumProcesor() {
-    return &spectrumProcessor;
+SpectrumVisualProcessor *CubicSDR::getSpectrumProcessor() {
+    return spectrumVisualThread->getProcessor();
 }
 
-SpectrumVisualProcessor *CubicSDR::getDemodSpectrumProcesor() {
-    return &demodSpectrumProcessor;
-}
-
-SpectrumVisualProcessor *CubicSDR::getWaterfallProcesor() {
-    return &waterfallProcessor;
+SpectrumVisualProcessor *CubicSDR::getDemodSpectrumProcessor() {
+    return demodVisualThread->getProcessor();
 }
 
 VisualDataDistributor<DemodulatorThreadIQData> *CubicSDR::getSpectrumDistributor() {
@@ -416,8 +428,25 @@ int CubicSDR::getPPM() {
 }
 
 
-void CubicSDR::showFrequencyInput() {
-    FrequencyDialog fdialog(appframe, -1, demodMgr.getActiveDemodulator()?_("Set Demodulator Frequency"):_("Set Center Frequency"), demodMgr.getActiveDemodulator(), wxPoint(-100,-100), wxSize(320, 75 ));
+void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode) {
+    const wxString demodTitle("Set Demodulator Frequency");
+    const wxString freqTitle("Set Center Frequency");
+    const wxString bwTitle("Set Demodulator Bandwidth");
+
+    wxString title;
+    
+    switch (targetMode) {
+        case FrequencyDialog::FDIALOG_TARGET_DEFAULT:
+            title = demodMgr.getActiveDemodulator()?demodTitle:freqTitle;
+            break;
+        case FrequencyDialog::FDIALOG_TARGET_BANDWIDTH:
+            title = bwTitle;
+            break;
+        default:
+            break;
+    }
+    
+    FrequencyDialog fdialog(appframe, -1, title, demodMgr.getActiveDemodulator(), wxPoint(-100,-100), wxSize(320, 75 ), wxDEFAULT_DIALOG_STYLE, targetMode);
     fdialog.ShowModal();
 }
 

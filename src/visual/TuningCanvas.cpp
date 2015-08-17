@@ -297,7 +297,7 @@ void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
                 setStatusText("Click, wheel or drag a digit to change frequency; SPACE for direct input. Right click to set/clear snap. Hold ALT to change PPM. Hold SHIFT to disable carry.");
             break;
         case TUNING_HOVER_BW:
-                setStatusText("Click, wheel or drag a digit to change bandwidth.  Hold SHIFT to disable carry.");
+                setStatusText("Click, wheel or drag a digit to change bandwidth; SPACE for direct input.  Hold SHIFT to disable carry.");
             break;
         case TUNING_HOVER_CENTER:
                 setStatusText("Click, wheel or drag a digit to change center frequency; SPACE for direct input.  Hold SHIFT to disable carry.");
@@ -407,8 +407,12 @@ void TuningCanvas::setHelpTip(std::string tip) {
 void TuningCanvas::OnKeyDown(wxKeyEvent& event) {
     InteractiveCanvas::OnKeyDown(event);
 
-    if (event.GetKeyCode() == WXK_SPACE && (hoverState == TUNING_HOVER_CENTER || hoverState == TUNING_HOVER_FREQ)) {
-        wxGetApp().showFrequencyInput();
+    if (event.GetKeyCode() == WXK_SPACE) {
+        if (hoverState == TUNING_HOVER_CENTER || hoverState == TUNING_HOVER_FREQ) {
+            wxGetApp().showFrequencyInput(FrequencyDialog::FDIALOG_TARGET_DEFAULT);
+        } else if (hoverState == TUNING_HOVER_BW) {
+            wxGetApp().showFrequencyInput(FrequencyDialog::FDIALOG_TARGET_BANDWIDTH);
+        }
     }
 }
 

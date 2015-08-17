@@ -85,6 +85,7 @@ Features and Status:
     - [ ] Undo / Redo action
   - I/Q Recording and playback
     - [ ] Recording
+      - [ ] Record waterfall output to PNG file chunks of desired height 
       - [ ] Record I/Q input data
       - [ ] Simultaneously record demod decimated I/Q and audio
     - [ ] Playback
