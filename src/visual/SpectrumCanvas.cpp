@@ -126,12 +126,15 @@ void SpectrumCanvas::moveCenterFrequency(long long freqChange) {
             freq -= freqChange;
         }
         wxGetApp().setFrequency(freq);
-        setStatusText("Set center frequency: %s", freq);
     }
 }
 
 void SpectrumCanvas::setShowDb(bool showDb) {
     spectrumPanel.setShowDb(showDb);
+}
+
+bool SpectrumCanvas::getShowDb() {
+    return spectrumPanel.getShowDb();
 }
 
 
@@ -144,7 +147,7 @@ void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
             moveCenterFrequency(freqChange);
         }
     } else {
-        setStatusText("Click and drag to adjust center frequency.");
+        setStatusText("Click and drag to adjust center frequency. 'B' to toggle decibels display.");
     }
 }
 

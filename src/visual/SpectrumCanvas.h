@@ -20,6 +20,7 @@ public:
     void moveCenterFrequency(long long freqChange);
 
     void setShowDb(bool showDb);
+    bool getShowDb();
     
     SpectrumVisualDataQueue *getVisualDataQueue();
     
