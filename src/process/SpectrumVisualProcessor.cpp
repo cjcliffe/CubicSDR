@@ -290,7 +290,7 @@ void SpectrumVisualProcessor::process() {
             fft_floor_maa = fft_floor_maa + (fft_floor_ma - fft_floor_maa) * 0.05;
             
             for (int i = 0, iMax = fftSize; i < iMax; i++) {
-                float v = (log10(fft_result_maa[i]+0.25 - (fft_floor_maa-1.0)) / log10((fft_ceil_maa+0.25) - (fft_floor_maa-1.0)));
+                float v = (log10(fft_result_maa[i]+0.25 - (fft_floor_maa-0.75)) / log10((fft_ceil_maa+0.25) - (fft_floor_maa-0.75)));
                 output->spectrum_points[i * 2] = ((float) i / (float) iMax);
                 output->spectrum_points[i * 2 + 1] = v;
             }
