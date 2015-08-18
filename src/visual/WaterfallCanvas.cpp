@@ -161,7 +161,13 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
         if (spectrumCanvas) {
             if ((spectrumCanvas->getCenterFrequency() != centerFreq) || (spectrumCanvas->getBandwidth() != bw)) {
-                spectrumCanvas->setView(centerFreq,bw);
+                if (getViewState()) {
+                    spectrumCanvas->setView(centerFreq,bw);
+                } else {
+                    spectrumCanvas->disableView();
+                    spectrumCanvas->setCenterFrequency(centerFreq);
+                    spectrumCanvas->setBandwidth(bw);
+                }
             }
         }
     }
