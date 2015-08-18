@@ -98,10 +98,10 @@ void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
                 0.75, mouseTracker.getOriginMouseX(), mouseTracker.getMouseX());
     }
 
-    RGB3f clr = top ? ThemeMgr::mgr.currentTheme->tuningBarUp : ThemeMgr::mgr.currentTheme->tuningBarDown;
+    RGBA4f clr = top ? ThemeMgr::mgr.currentTheme->tuningBarUp : ThemeMgr::mgr.currentTheme->tuningBarDown;
 
-    RGB3f clrDark = ThemeMgr::mgr.currentTheme->tuningBarDark;
-    RGB3f clrMid = ThemeMgr::mgr.currentTheme->tuningBarLight;
+    RGBA4f clrDark = ThemeMgr::mgr.currentTheme->tuningBarDark;
+    RGBA4f clrMid = ThemeMgr::mgr.currentTheme->tuningBarLight;
 
     glContext->DrawTunerBarIndexed(1, 3, 11, freqDP, freqW, clrMid, 0.25, true, true); // freq
     glContext->DrawTunerBarIndexed(4, 6, 11, freqDP, freqW, clrDark, 0.25, true, true);
@@ -143,7 +143,7 @@ void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         glContext->DrawTuner(freq, 11, freqDP, freqW);
         int snap = wxGetApp().getFrequencySnap();
         if (snap != 1) {
-            glContext->DrawTunerDigitBox((int)log10(snap), 11, freqDP, freqW, RGB3f(1.0,0.0,0.0));
+            glContext->DrawTunerDigitBox((int)log10(snap), 11, freqDP, freqW, RGBA4f(1.0,0.0,0.0));
         }
     }
     glContext->DrawTuner(bw, 7, bwDP, bwW);

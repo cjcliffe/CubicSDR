@@ -128,6 +128,7 @@ AppFrame::AppFrame() :
     wxBoxSizer *spectrumSizer = new wxBoxSizer(wxHORIZONTAL);
     wxGetApp().getSpectrumProcessor()->setup(2048);
     spectrumCanvas = new SpectrumCanvas(this, attribList);
+    spectrumCanvas->setShowDb(true);
     wxGetApp().getSpectrumProcessor()->attachOutput(spectrumCanvas->getVisualDataQueue());
             
     spectrumAvgMeter = new MeterCanvas(this, attribList);

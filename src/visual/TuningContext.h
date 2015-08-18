@@ -14,9 +14,9 @@ public:
     void DrawBegin();
     void Draw(float r, float g, float b, float a, float p1, float p2);
     void DrawTuner(long long freq, int count, float displayPos, float displayWidth);
-    void DrawTunerDigitBox(int index, int count, float displayPos, float displayWidth, RGB3f c);
+    void DrawTunerDigitBox(int index, int count, float displayPos, float displayWidth, RGBA4f c);
     int GetTunerDigitIndex(float mPos, int count, float displayPos, float displayWidth);
-    void DrawTunerBarIndexed(int start, int end, int count, float displayPos, float displayWidth, RGB3f color, float alpha, bool top, bool bottom);
+    void DrawTunerBarIndexed(int start, int end, int count, float displayPos, float displayWidth, RGBA4f color, float alpha, bool top, bool bottom);
 
     void DrawDemodFreqBw(long long freq, unsigned int bw, long long center);
     void DrawEnd();

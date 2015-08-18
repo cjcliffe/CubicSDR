@@ -1,7 +1,7 @@
 #include "WaterfallPanel.h"
 
 WaterfallPanel::WaterfallPanel() : GLPanel(), fft_size(0), waterfall_lines(0), waterfall_slice(NULL), activeTheme(NULL) {
-	setFillColor(RGB3f(0,0,0));
+	setFillColor(RGBA4f(0,0,0));
     for (int i = 0; i < 2; i++) {
         waterfall[i] = 0;
     }

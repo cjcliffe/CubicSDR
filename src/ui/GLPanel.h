@@ -42,8 +42,8 @@ public:
     GLPanelCoordinateSystem coord;
     float marginPx;
     GLPanelEdges borderPx;
-    RGB3f fill[2];
-    RGB3f borderColor;
+    RGBA4f fill[2];
+    RGBA4f borderColor;
     bool contentsVisible;
     CubicVR::mat4 transform;
     CubicVR::mat4 localTransform;
@@ -68,15 +68,16 @@ public:
     void setCoordinateSystem(GLPanelCoordinateSystem coord);
     
     void setFill(GLPanelFillType fill_mode);
-    void setFillColor(RGB3f color1);
-    void setFillColor(RGB3f color1, RGB3f color2);
+    void setFillColor(RGBA4f color1);
+    void setFillColor(RGBA4f color1, RGBA4f color2);
     void setMarginPx(float marg);
 
-    void setBorderColor(RGB3f clr);
+    void setBorderColor(RGBA4f clr);
     void setBorderPx(float bord);
     void setBorderPx(float bordl, float bordr, float bordt, float bordb);
     
     void addChild(GLPanel *childPanel);
+    void removeChild(GLPanel *childPanel);
     
     void drawChildren();
     virtual void drawPanelContents();
@@ -88,11 +89,13 @@ public:
 class GLTextPanel : public GLPanel {
 private:
     std::string textVal;
+    GLFont::Align horizAlign;
+    GLFont::Align vertAlign;
 public:
     GLTextPanel();
     
     void drawPanelContents();
-    void setText(std::string text);
+    void setText(std::string text, GLFont::Align hAlign = GLFont::GLFONT_ALIGN_CENTER, GLFont::Align vAlign = GLFont::GLFONT_ALIGN_CENTER);
     std::string getText();
 };
 
