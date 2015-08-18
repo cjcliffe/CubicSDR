@@ -1,6 +1,7 @@
 
 #include "GLPanel.h"
 #include "cubic_math.h"
+#include <algorithm>
 
 using namespace CubicVR;
 
@@ -208,7 +209,7 @@ void GLPanel::setBorderPx(float bordl, float bordr, float bordt, float bordb) {
 
 void GLPanel::addChild(GLPanel *childPanel) {
     std::vector<GLPanel *>::iterator i = std::find(children.begin(), children.end(), childPanel);
-    
+
     if (i == children.end()) {
         children.push_back(childPanel);
     }
@@ -216,7 +217,7 @@ void GLPanel::addChild(GLPanel *childPanel) {
 
 void GLPanel::removeChild(GLPanel *childPanel) {
     std::vector<GLPanel *>::iterator i = std::find(children.begin(), children.end(), childPanel);
-    
+
     if (i != children.end()) {
         children.erase(i);
     }
