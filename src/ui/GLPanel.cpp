@@ -9,9 +9,9 @@ GLPanel::GLPanel() : fillType(GLPANEL_FILL_SOLID), contentsVisible(true), transf
     pos[1] = 0.0f;
     size[0] = 1.0f;
     size[1] = 1.0f;
-    fill[0] = RGB3f(0.5,0.5,0.5);
-    fill[1] = RGB3f(0.1,0.1,0.1);
-    borderColor = RGB3f(0.8, 0.8, 0.8);
+    fill[0] = RGBA4f(0.5,0.5,0.5);
+    fill[1] = RGBA4f(0.1,0.1,0.1);
+    borderColor = RGBA4f(0.8, 0.8, 0.8);
     setCoordinateSystem(GLPANEL_Y_UP);
     setMarginPx(0);
     setBorderPx(0);
@@ -23,8 +23,8 @@ void GLPanel::genArrays() {
     if (fillType == GLPANEL_FILL_SOLID || fillType == GLPANEL_FILL_GRAD_X || fillType == GLPANEL_FILL_GRAD_Y) {
         glPoints.reserve(2 * 4);
         glPoints.resize(2 * 4);
-        glColors.reserve(3 * 4);
-        glColors.resize(3 * 4);
+        glColors.reserve(4 * 4);
+        glColors.resize(4 * 4);
         
         float pts[2 * 4] = {
             min, min,
@@ -33,7 +33,7 @@ void GLPanel::genArrays() {
             max, min
         };
         
-        RGB3f c[4];
+        RGBA4f c[4];
         
         if (fillType == GLPANEL_FILL_SOLID) {
             c[0] = c[1] = c[2] = c[3] = fill[0];
@@ -45,22 +45,22 @@ void GLPanel::genArrays() {
             c[1] = c[2] = fill[1];
         }
         
-        float clr[3 * 4] = {
-            c[0].r, c[0].g, c[0].b,
-            c[1].r, c[1].g, c[1].b,
-            c[2].r, c[2].g, c[2].b,
-            c[3].r, c[3].g, c[3].b
-        };
+        float clr[4 * 4] = {
+             c[0].r, c[0].g, c[0].b, c[0].a,
+             c[1].r, c[1].g, c[1].b, c[1].a,
+             c[2].r, c[2].g, c[2].b, c[2].a,
+             c[3].r, c[3].g, c[3].b, c[3].a
+         };
         
         glPoints.assign(pts, pts + (2 * 4));
-        glColors.assign(clr, clr + (3 * 4));
+        glColors.assign(clr, clr + (4 * 4));
     } else {
         glPoints.reserve(2 * 8);
         glPoints.resize(2 * 8);
-        glColors.reserve(3 * 8);
-        glColors.resize(3 * 8);
+        glColors.reserve(4 * 8);
+        glColors.resize(4 * 8);
         
-        RGB3f c[8];
+        RGBA4f c[8];
         
         if (fillType == GLPANEL_FILL_GRAD_BAR_X) {
             float pts[2 * 8] = {
@@ -103,18 +103,18 @@ void GLPanel::genArrays() {
             c[5] = c[6] = fill[0];
         }
         
-        float clr[3 * 8] = {
-            c[0].r, c[0].g, c[0].b,
-            c[1].r, c[1].g, c[1].b,
-            c[2].r, c[2].g, c[2].b,
-            c[3].r, c[3].g, c[3].b,
-            c[4].r, c[4].g, c[4].b,
-            c[5].r, c[5].g, c[5].b,
-            c[6].r, c[6].g, c[6].b,
-            c[7].r, c[7].g, c[7].b
+        float clr[4 * 8] = {
+            c[0].r, c[0].g, c[0].b, c[0].a,
+            c[1].r, c[1].g, c[1].b, c[1].a,
+            c[2].r, c[2].g, c[2].b, c[2].a,
+            c[3].r, c[3].g, c[3].b, c[3].a,
+            c[4].r, c[4].g, c[4].b, c[4].a,
+            c[5].r, c[5].g, c[5].b, c[5].a,
+            c[6].r, c[6].g, c[6].b, c[6].a,
+            c[7].r, c[7].g, c[7].b, c[7].a
         };
         
-        glColors.assign(clr, clr + (3 * 8));
+        glColors.assign(clr, clr + (4 * 8));
     }
 }
 
@@ -175,12 +175,12 @@ void GLPanel::setFill(GLPanelFillType fill_mode) {
     genArrays();
 }
 
-void GLPanel::setFillColor(RGB3f color1) {
+void GLPanel::setFillColor(RGBA4f color1) {
     fill[0] = color1;
     genArrays();
 }
 
-void GLPanel::setFillColor(RGB3f color1, RGB3f color2) {
+void GLPanel::setFillColor(RGBA4f color1, RGBA4f color2) {
     fill[0] = color1;
     fill[1] = color2;
     genArrays();
@@ -191,7 +191,7 @@ void GLPanel::setMarginPx(float marg) {
 }
 
 
-void GLPanel::setBorderColor(RGB3f clr) {
+void GLPanel::setBorderColor(RGBA4f clr) {
     borderColor = clr;
 }
 
@@ -207,7 +207,19 @@ void GLPanel::setBorderPx(float bordl, float bordr, float bordt, float bordb) {
 }
 
 void GLPanel::addChild(GLPanel *childPanel) {
-    children.push_back(childPanel);
+    std::vector<GLPanel *>::iterator i = std::find(children.begin(), children.end(), childPanel);
+    
+    if (i == children.end()) {
+        children.push_back(childPanel);
+    }
+}
+
+void GLPanel::removeChild(GLPanel *childPanel) {
+    std::vector<GLPanel *>::iterator i = std::find(children.begin(), children.end(), childPanel);
+    
+    if (i != children.end()) {
+        children.erase(i);
+    }
 }
 
 void GLPanel::drawChildren() {
@@ -265,10 +277,12 @@ void GLPanel::draw() {
     glLoadMatrixf(transform);
     
     if (fillType != GLPANEL_FILL_NONE) {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
         glVertexPointer(2, GL_FLOAT, 0, &glPoints[0]);
-        glColorPointer(3, GL_FLOAT, 0, &glColors[0]);
+        glColorPointer(4, GL_FLOAT, 0, &glColors[0]);
         
         glDrawArrays(GL_QUADS, 0, glPoints.size() / 2);
         
@@ -277,7 +291,7 @@ void GLPanel::draw() {
         
         if (borderPx.left || borderPx.right || borderPx.top || borderPx.bottom) {
             glEnable(GL_LINE_SMOOTH);
-            glColor3f(borderColor.r, borderColor.g, borderColor.b);
+            glColor4f(borderColor.r, borderColor.g, borderColor.b, borderColor.a);
             
             if (borderPx.left) {
                 glLineWidth(borderPx.left);
@@ -313,6 +327,7 @@ void GLPanel::draw() {
 
             glDisable(GL_LINE_SMOOTH);
         }
+        glDisable(GL_BLEND);
     }
     
     if (contentsVisible) {
@@ -337,6 +352,8 @@ void GLPanel::draw() {
 
 GLTextPanel::GLTextPanel() : GLPanel() {
     coord = GLPANEL_Y_UP;
+    horizAlign = GLFont::GLFONT_ALIGN_CENTER;
+    vertAlign = GLFont::GLFONT_ALIGN_CENTER;
 }
 
 void GLTextPanel::drawPanelContents() {
@@ -346,19 +363,19 @@ void GLTextPanel::drawPanelContents() {
     float size;
 
     
-    if (pdim.y < 16) {
+    if (pdim.y <= 16) {
         sz = GLFont::GLFONT_SIZE12;
         size = 12;
-    } else if (pdim.y < 18) {
+    } else if (pdim.y <= 18) {
         sz = GLFont::GLFONT_SIZE16;
         size = 16;
-    } else if(pdim.y < 24) {
+    } else if(pdim.y <= 24) {
         sz = GLFont::GLFONT_SIZE18;
         size = 18;
-    } else if(pdim.y < 32) {
+    } else if(pdim.y <= 32) {
         sz = GLFont::GLFONT_SIZE24;
         size = 24;
-    } else if(pdim.y < 48) {
+    } else if(pdim.y <= 48) {
         sz = GLFont::GLFONT_SIZE32;
         size = 32;
     } else {
@@ -367,11 +384,13 @@ void GLTextPanel::drawPanelContents() {
     }
     
 
-    GLFont::getFont(sz).drawString(textVal, mid,  mid,  size, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, (int)pdim.x, (int)pdim.y);
+    GLFont::getFont(sz).drawString(textVal, mid,  mid,  size, horizAlign, vertAlign, (int)pdim.x, (int)pdim.y);
 }
 
-void GLTextPanel::setText(std::string text) {
+void GLTextPanel::setText(std::string text, GLFont::Align hAlign, GLFont::Align vAlign) {
     textVal = text;
+    horizAlign = hAlign;
+    vertAlign = vAlign;
 }
 
 std::string GLTextPanel::getText() {

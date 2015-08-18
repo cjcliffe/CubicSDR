@@ -338,6 +338,11 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
             activeDemod->setStereo(true);
         }
         break;
+    case 'B':
+        if (spectrumCanvas) {
+            spectrumCanvas->setShowDb(!spectrumCanvas->getShowDb());
+        }
+        break;
     case WXK_SPACE:
         wxGetApp().showFrequencyInput();
         break;

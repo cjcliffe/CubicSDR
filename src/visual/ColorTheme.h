@@ -15,55 +15,56 @@
 #define COLOR_THEME_RADAR 6
 #define COLOR_THEME_MAX 7
 
-class RGB3f {
+class RGBA4f {
 public:
-    float r, g, b;
-    RGB3f(float r, float g, float b) :
-            r(r), g(g), b(b) {
+    float r, g, b, a;
+    RGBA4f(float r, float g, float b, float a = 1.0) :
+            r(r), g(g), b(b), a(a) {
     }
 
-    RGB3f() :
-            RGB3f(0, 0, 0) {
+    RGBA4f() :
+            RGBA4f(0, 0, 0) {
     }
 
-    ~RGB3f() {
+    ~RGBA4f() {
     }
 
-    RGB3f & operator=(const RGB3f &other) {
+    RGBA4f & operator=(const RGBA4f &other) {
         r = other.r;
         g = other.g;
         b = other.b;
+        a = other.a;
         return *this;
     }
     
-    RGB3f operator*(float v) { return RGB3f(r*v, g*v, b*v); }
+    RGBA4f operator*(float v) { return RGBA4f(r*v, g*v, b*v); }
 
 };
 
 class ColorTheme {
 public:
-    RGB3f waterfallHighlight;
-    RGB3f waterfallNew;
-    RGB3f wfHighlight;
-    RGB3f waterfallHover;
-    RGB3f waterfallDestroy;
-    RGB3f fftLine;
-    RGB3f fftHighlight;
-    RGB3f scopeLine;
-    RGB3f tuningBarLight;
-    RGB3f tuningBarDark;
-    RGB3f tuningBarUp;
-    RGB3f tuningBarDown;
-    RGB3f meterLevel;
-    RGB3f meterValue;
-    RGB3f text;
-    RGB3f freqLine;
-    RGB3f button;
-    RGB3f buttonHighlight;
+    RGBA4f waterfallHighlight;
+    RGBA4f waterfallNew;
+    RGBA4f wfHighlight;
+    RGBA4f waterfallHover;
+    RGBA4f waterfallDestroy;
+    RGBA4f fftLine;
+    RGBA4f fftHighlight;
+    RGBA4f scopeLine;
+    RGBA4f tuningBarLight;
+    RGBA4f tuningBarDark;
+    RGBA4f tuningBarUp;
+    RGBA4f tuningBarDown;
+    RGBA4f meterLevel;
+    RGBA4f meterValue;
+    RGBA4f text;
+    RGBA4f freqLine;
+    RGBA4f button;
+    RGBA4f buttonHighlight;
 
-    RGB3f scopeBackground;
-    RGB3f fftBackground;
-    RGB3f generalBackground;
+    RGBA4f scopeBackground;
+    RGBA4f fftBackground;
+    RGBA4f generalBackground;
 
     Gradient waterfallGradient;
 

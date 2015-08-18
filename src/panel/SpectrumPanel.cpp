@@ -2,15 +2,24 @@
 
 #include <sstream>
 #include <iostream>
+#include <iomanip>
 #include "ColorTheme.h"
 
-SpectrumPanel::SpectrumPanel() : floorValue(0), ceilValue(1) {
+SpectrumPanel::SpectrumPanel() : floorValue(0), ceilValue(1), showDb(false) {
     setFill(GLPANEL_FILL_GRAD_Y);
     setFillColor(ThemeMgr::mgr.currentTheme->fftBackground * 2.0, ThemeMgr::mgr.currentTheme->fftBackground);
+    
+    dbPanelCeil.setMarginPx(0);
+    dbPanelCeil.setFill(GLPanel::GLPANEL_FILL_GRAD_X);
+    dbPanelCeil.setFillColor(RGBA4f(0.2,0.2,0.2,5.0), RGBA4f(0.2,0.2,0.2,0.0));
+    
+    dbPanelFloor.setMarginPx(0);
+    dbPanelFloor.setFill(GLPanel::GLPANEL_FILL_GRAD_X);
+    dbPanelFloor.setFillColor(RGBA4f(0.2,0.2,0.2,5.), RGBA4f(0.2,0.2,0.2,0.0));
 }
 
 
-float SpectrumPanel::getFloorValue() const {
+float SpectrumPanel::getFloorValue() {
     return floorValue;
 }
 
@@ -18,7 +27,7 @@ void SpectrumPanel::setFloorValue(float floorValue) {
     this->floorValue = floorValue;
 }
 
-float SpectrumPanel::getCeilValue() const {
+float SpectrumPanel::getCeilValue() {
     return ceilValue;
 }
 
@@ -41,6 +50,23 @@ void SpectrumPanel::setBandwidth(long long bandwidth) {
 long long SpectrumPanel::getBandwidth() {
     return bandwidth;
 }
+
+void SpectrumPanel::setShowDb(bool showDb) {
+    this->showDb = showDb;
+    if (showDb) {
+        addChild(&dbPanelCeil);
+        addChild(&dbPanelFloor);
+    } else {
+        removeChild(&dbPanelCeil);
+        removeChild(&dbPanelFloor);
+    }
+    
+}
+
+bool SpectrumPanel::getShowDb() {
+    return showDb;
+}
+
 
 void SpectrumPanel::setPoints(std::vector<float> &points) {
     this->points.assign(points.begin(), points.end());
@@ -95,14 +121,14 @@ void SpectrumPanel::drawPanelContents() {
         glDrawArrays(GL_LINE_STRIP, 0, points.size() / 2);
         glDisableClientState(GL_VERTEX_ARRAY);
     }
-    
-    glLoadMatrixf(transform);
-
+  
     GLint vp[4];
     glGetIntegerv( GL_VIEWPORT, vp);
     
     float viewHeight = (float) vp[3];
     float viewWidth = (float) vp[2];
+    glLoadMatrixf(transform);
+
     
     long long leftFreq = (double) freq - ((double) bandwidth / 2.0);
     long long rightFreq = leftFreq + (double) bandwidth;
@@ -162,4 +188,25 @@ void SpectrumPanel::drawPanelContents() {
     }
     
     glLineWidth(1.0);
+
+    
+    if (showDb) {
+        float dbPanelWidth = (1.0/viewWidth)*75.0;
+        float dbPanelHeight = (1.0/viewHeight)*14.0;
+        
+        
+        std::stringstream ssLabel;
+        ssLabel << std::fixed << std::setprecision(1) << (20.0 * log10(2.0*(getCeilValue())/2048.0)) << "dB";
+
+        dbPanelCeil.setText(ssLabel.str(), GLFont::GLFONT_ALIGN_RIGHT);
+        dbPanelCeil.setSize(dbPanelWidth, dbPanelHeight);
+        dbPanelCeil.setPosition(-1.0 + dbPanelWidth, 1.0 - dbPanelHeight);
+        
+        ssLabel.str("");
+        ssLabel << (20.0 * log10(2.0*(getFloorValue())/2048.0)) << "dB";
+
+        dbPanelFloor.setText(ssLabel.str(), GLFont::GLFONT_ALIGN_RIGHT);
+        dbPanelFloor.setSize(dbPanelWidth, dbPanelHeight);
+        dbPanelFloor.setPosition(-1.0 + dbPanelWidth, - 1.0 + dbPanelHeight);
+    }
 }
