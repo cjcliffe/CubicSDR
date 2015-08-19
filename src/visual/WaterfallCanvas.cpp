@@ -36,7 +36,7 @@ wxEND_EVENT_TABLE()
 
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         InteractiveCanvas(parent, attribList), dragState(WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), fft_size(0), waterfall_lines(0),
-        dragOfs(0), mouseZoom(1), zoom(1), hoverAlpha(1.0) {
+        dragOfs(0), mouseZoom(1), zoom(1), freqMove(0.0), freqMoving(false), hoverAlpha(1.0) {
 
     glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this));
 
@@ -99,6 +99,19 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         mouseZoom = mouseZoom + (1.0 - mouseZoom) * 0.2;
         if (fabs(mouseZoom-1.0)<0.01) {
             mouseZoom = 1;
+        }
+    }
+    
+    if (freqMove != 0.0) {
+        long long newFreq = getCenterFrequency() + (long long)((long double)getBandwidth()*freqMove) * 0.01;
+        
+        updateCenterFrequency(newFreq);
+        
+        if (!freqMoving) {
+            freqMove -= (freqMove * 0.2);
+            if (fabs(freqMove) < 0.01) {
+                freqMove = 0.0;
+            }
         }
     }
     
@@ -280,6 +293,12 @@ void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
             zoom = 1.0;
             mouseZoom = 1.05;
         break;
+    case WXK_LEFT:
+    case WXK_NUMPAD_LEFT:
+    case WXK_RIGHT:
+    case WXK_NUMPAD_RIGHT:
+            freqMoving = false;
+            break;
     }
 }
 
@@ -306,18 +325,20 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         break;
     case WXK_RIGHT:
     case WXK_NUMPAD_RIGHT:
-        if (shiftDown) {
-            freq += getBandwidth() * 10;
+        if (isView) {
+            freqMove = shiftDown?5.0:1.0;
+            freqMoving = true;
         } else {
-            freq += getBandwidth() / 2;
+            freq += shiftDown?(getBandwidth() * 10):(getBandwidth() / 2);
         }
         break;
     case WXK_LEFT:
     case WXK_NUMPAD_LEFT:
-        if (shiftDown) {
-            freq -= getBandwidth() * 10;
+        if (isView) {
+            freqMove = shiftDown?-5.0:-1.0;
+            freqMoving = true;
         } else {
-            freq -= getBandwidth() / 2;
+            freq -= shiftDown?(getBandwidth() * 10):(getBandwidth() / 2);
         }
         break;
     case 'D':
@@ -363,27 +384,7 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     }
 
     if (freq != originalFreq) {
-        if (isView) {
-            setView(freq, getBandwidth());
-            if (spectrumCanvas) {
-                spectrumCanvas->setView(freq, getBandwidth());
-            }
-
-            long long minFreq = wxGetApp().getFrequency()-(wxGetApp().getSampleRate()/2);
-            long long maxFreq = wxGetApp().getFrequency()+(wxGetApp().getSampleRate()/2);
-
-            if (freq < minFreq) {
-                wxGetApp().setFrequency(freq+(wxGetApp().getSampleRate()/2));
-            }
-            if (freq > maxFreq) {
-                wxGetApp().setFrequency(freq-(wxGetApp().getSampleRate()/2));
-            }
-        } else {
-            if (spectrumCanvas) {
-                spectrumCanvas->setCenterFrequency(freq);
-            }
-            wxGetApp().setFrequency(freq);
-        }
+        updateCenterFrequency(freq);
     }
 
 }
@@ -532,7 +533,7 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
                 setStatusText("Click to create a new demodulator or hold ALT to drag range, SPACE for direct center frequency input.");
             } else {
                 setStatusText(
-                        "Click to move active demodulator frequency or hold ALT to drag range; hold SHIFT to create new.  Right drag or A / Z to Zoom.  Arrow keys (+SHIFT) to move center frequency; SPACE for direct input.");
+                        "Click to move active demodulator frequency or hold ALT to drag range; hold SHIFT to create new.  Right drag or wheel to Zoom.  Arrow keys to navigate/zoom.");
             }
         }
 
@@ -751,3 +752,29 @@ void WaterfallCanvas::OnMouseRightReleased(wxMouseEvent& event) {
 SpectrumVisualDataQueue *WaterfallCanvas::getVisualDataQueue() {
     return &visualDataQueue;
 }
+
+void WaterfallCanvas::updateCenterFrequency(long long freq) {
+    if (isView) {
+        setView(freq, getBandwidth());
+        if (spectrumCanvas) {
+            spectrumCanvas->setView(freq, getBandwidth());
+        }
+        
+        long long minFreq = wxGetApp().getFrequency()-(wxGetApp().getSampleRate()/2);
+        long long maxFreq = wxGetApp().getFrequency()+(wxGetApp().getSampleRate()/2);
+        
+        if (freq < minFreq) {
+            wxGetApp().setFrequency(freq+(wxGetApp().getSampleRate()/2));
+        }
+        if (freq > maxFreq) {
+            wxGetApp().setFrequency(freq-(wxGetApp().getSampleRate()/2));
+        }
+    } else {
+        if (spectrumCanvas) {
+            spectrumCanvas->setCenterFrequency(freq);
+        }
+        wxGetApp().setFrequency(freq);
+    }
+
+}
+

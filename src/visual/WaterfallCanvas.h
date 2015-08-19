@@ -45,6 +45,8 @@ private:
     void OnMouseEnterWindow(wxMouseEvent& event);
     void OnMouseLeftWindow(wxMouseEvent& event);
 
+    void updateCenterFrequency(long long freq);
+    
     std::vector<float> spectrum_points;
 
     SpectrumCanvas *spectrumCanvas;
@@ -59,6 +61,8 @@ private:
     int dragOfs;
 
     float mouseZoom, zoom;
+    bool freqMoving;
+    long double freqMove;
     float hoverAlpha;
 
     SpectrumVisualDataQueue visualDataQueue;
