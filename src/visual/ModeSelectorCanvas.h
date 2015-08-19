@@ -40,6 +40,9 @@ public:
     bool modeChanged();
     void clearModeChanged();
     
+    void setPadding(float padX, float padY);
+    void setHighlightColor(RGBA4f hc);
+    
 private:
     void setNumChoices(int numChoices_in);
 
@@ -61,6 +64,9 @@ private:
     bool toggleMode;
     bool inputChanged;
     std::vector<ModeSelectorMode> selections;
+    float padX, padY;
+    RGBA4f highlightColor;
+    bool highlightOverride;
     //
 wxDECLARE_EVENT_TABLE();
 };

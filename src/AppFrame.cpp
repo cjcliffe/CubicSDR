@@ -115,6 +115,8 @@ AppFrame::AppFrame() :
 
     demodMuteButton = new ModeSelectorCanvas(this, attribList);
     demodMuteButton->addChoice(1, "M");
+    demodMuteButton->setPadding(-1,-1);
+    demodMuteButton->setHighlightColor(RGBA4f(0.8,0.2,0.2));
     demodMuteButton->setHelpTip("Demodulator Mute Toggle");
     demodMuteButton->setToggleMode(true);
           
@@ -492,6 +494,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         wxGetApp().setFrequency(100000000);
         wxGetApp().getDemodMgr().setLastDemodulatorType(DEMOD_TYPE_FM);
         demodModeSelector->setSelection(1);
+        wxGetApp().getDemodMgr().setLastMuted(false);
         wxGetApp().getDemodMgr().setLastStereo(false);
         wxGetApp().getDemodMgr().setLastBandwidth(DEFAULT_DEMOD_BW);
         wxGetApp().getDemodMgr().setLastGain(1.0);
@@ -716,12 +719,15 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
                 } else if (!demod->isMuted() && muteMode == 1) {
                     demod->setMuted(true);
                 }
+                wxGetApp().getDemodMgr().setLastMuted(demod->isMuted());
                 demodMuteButton->clearModeChanged();
             } else {
                 if (demod->isMuted() && muteMode == -1) {
                     demodMuteButton->setSelection(1);
+                    wxGetApp().getDemodMgr().setLastMuted(demod->isMuted());
                 } else if (!demod->isMuted() && muteMode == 1) {
                     demodMuteButton->setSelection(-1);
+                    wxGetApp().getDemodMgr().setLastMuted(demod->isMuted());
                 }
             }
 
@@ -761,6 +767,15 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         if (spectrumCanvas->getViewState() && abs(wxGetApp().getFrequency()-spectrumCanvas->getCenterFrequency()) > (wxGetApp().getSampleRate()/2)) {
             spectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
             waterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
+        }
+        if (demodMuteButton->modeChanged()) {
+            int muteMode = demodMuteButton->getSelection();
+            if (muteMode == -1) {
+                wxGetApp().getDemodMgr().setLastMuted(false);
+            } else if (muteMode == 1) {
+                wxGetApp().getDemodMgr().setLastMuted(true);
+            }
+            demodMuteButton->clearModeChanged();
         }
     }
 
