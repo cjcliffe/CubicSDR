@@ -74,13 +74,24 @@ namespace CubicVR {
             
             return mOut;
         }
-        
-        static mat4 perspective(__float fovy, __float aspect, __float znear, __float zfar) {
+        static mat4 frustum(__float left, __float right, __float bottom, __float top, __float zNear, __float zFar) {
+            __float A = (right + left) / (right - left);
+            __float B = (top + bottom) / (top - bottom);
+            __float C = - (zFar + zNear) / (zFar - zNear);
+            __float D = - (-2.0 * zFar * zNear) / (zFar - zNear);
+            
+            
+            return mat4((2.0 * zNear) / (right - left), 0, A, 0,
+                        0, (2.0 * zNear) / (top - bottom), B, 0,
+                        0, 0, C, D,
+                        0, 0, -1, 0);
+        };
+        static mat4 perspective(__float fovy, __float aspect, __float zNear, __float zFar) {
             __float yFac = tan(fovy * (float)M_PI / 360.0f);
             __float xFac = yFac * aspect;
             
-            return mat4(
-                1.0f / xFac, 0, 0, 0, 0, 1.0f / yFac, 0, 0, 0, 0, -(zfar + znear) / (zfar - znear), -1, 0, 0, -(2.0f * zfar * znear) / (zfar - znear), 0);
+            return mat4::frustum(-xFac, xFac, -yFac, yFac, zNear, zFar);
+
         };
         static mat4 ortho(__float left,__float right,__float bottom,__float top,__float znear,__float zfar) {
             return mat4(2.0f / (right - left), 0, 0, 0, 0, 2.0f / (top - bottom), 0, 0, 0, 0, -2.0f / (zfar - znear), 0, -(left + right) / (right - left), -(top + bottom) / (top - bottom), -(zfar + znear) / (zfar - znear), 1);
@@ -300,8 +311,18 @@ namespace CubicVR {
             
             return mat4::translate(-eyex,-eyey,-eyez) * mat4( side[0], up[0], -forward[0], 0, side[1], up[1], -forward[1], 0, side[2], up[2], -forward[2], 0, 0, 0, 0, 1);
         };
+        
+        static vec3 unProject(mat4 pMatrix, mat4 mvMatrix, float width, float height, float winx, float winy, float winz) {
+            vec4 p(((winx / width) * 2.0) - 1.0, -(((winy / height) * 2.0) - 1.0), 1.0, 1.0);
+            
+            vec4 invp = mat4::vec4_multiply(mat4::vec4_multiply(p, mat4::inverse(pMatrix)), mat4::inverse(mvMatrix));
+            
+            vec3 result(invp[0] / invp[3], invp[1] / invp[3], invp[2] / invp[3]);
+            
+            return result;
+        };
     };
-    
-}
+  }
+
 
 #endif /* defined(__CubicVR2__mat4__) */

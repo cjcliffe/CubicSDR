@@ -49,6 +49,8 @@ public:
      * \param[in] item An item.
      */
     void set_max_num_items(unsigned int max_num_items) {
+        std::lock_guard < std::mutex > lock(m_mutex);
+
         m_max_num_items = max_num_items;
     }
 

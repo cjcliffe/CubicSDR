@@ -8,6 +8,9 @@ using namespace CubicVR;
 GLPanel::GLPanel() : fillType(GLPANEL_FILL_SOLID), contentsVisible(true), transform(mat4::identity()) {
     pos[0] = 0.0f;
     pos[1] = 0.0f;
+    rot[0] = 0.0f;
+    rot[1] = 0.0f;
+    rot[2] = 0.0f;
     size[0] = 1.0f;
     size[1] = 1.0f;
     fill[0] = RGBA4f(0.5,0.5,0.5);
@@ -241,6 +244,11 @@ void GLPanel::drawPanelContents() {
 void GLPanel::calcTransform(mat4 transform_in) {
     // compute local transform
     localTransform = mat4::translate(pos[0], pos[1], 0) * mat4::scale(size[0], size[1], 1);
+    
+    if (rot[0] || rot[1] || rot[2]) {
+        localTransform *= mat4::rotate(rot[0], rot[1], rot[2]);
+    }
+    
     // compute global transform
     transform = transform_in * localTransform;
     

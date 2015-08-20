@@ -153,11 +153,12 @@ AppFrame::AppFrame() :
     waterfallCanvas->setup(2048, 512);
 
     waterfallDataThread = new FFTVisualDataThread();
-    t_FFTData = new std::thread(&FFTVisualDataThread::threadMain, waterfallDataThread);
 
     waterfallDataThread->setInputQueue("IQDataInput", wxGetApp().getWaterfallVisualQueue());
     waterfallDataThread->setOutputQueue("FFTDataOutput", waterfallCanvas->getVisualDataQueue());
-            
+
+    t_FFTData = new std::thread(&FFTVisualDataThread::threadMain, waterfallDataThread);
+
     waterfallSpeedMeter = new MeterCanvas(this, attribList);
     waterfallSpeedMeter->setHelpTip("Waterfall speed, click or drag to adjust (max 1024 lines per second)");
     waterfallSpeedMeter->setMax(sqrt(1024));

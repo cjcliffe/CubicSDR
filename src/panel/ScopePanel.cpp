@@ -2,6 +2,7 @@
 #include "ColorTheme.h"
 
 ScopePanel::ScopePanel() : GLPanel(), scopeMode(SCOPE_MODE_Y) {
+    setFill(GLPanelFillType::GLPANEL_FILL_NONE);
     bgPanel.setFill(GLPanelFillType::GLPANEL_FILL_GRAD_BAR_Y);
     bgPanelStereo[0].setFill(GLPanelFillType::GLPANEL_FILL_GRAD_BAR_Y);
     bgPanelStereo[0].setPosition(0, 0.5);
@@ -21,14 +22,13 @@ void ScopePanel::setPoints(std::vector<float> &points) {
 }
 
 void ScopePanel::drawPanelContents() {
-
-    glLineWidth(1.0);
     
     if (scopeMode == SCOPE_MODE_Y) {
         bgPanel.setFillColor(ThemeMgr::mgr.currentTheme->scopeBackground, ThemeMgr::mgr.currentTheme->scopeBackground * 2.0);
         bgPanel.calcTransform(transform);
         bgPanel.draw();
-
+        glLineWidth(1.0);
+        glEnable(GL_LINE_SMOOTH);
         glLoadMatrixf(transform);
         glColor3f(ThemeMgr::mgr.currentTheme->scopeLine.r * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.g * 0.35,
                   ThemeMgr::mgr.currentTheme->scopeLine.b * 0.35);
@@ -45,8 +45,10 @@ void ScopePanel::drawPanelContents() {
         bgPanelStereo[1].calcTransform(transform);
         bgPanelStereo[1].draw();
 
+        glLineWidth(1.0);
         glLoadMatrixf(transform);
         glColor3f(ThemeMgr::mgr.currentTheme->scopeLine.r, ThemeMgr::mgr.currentTheme->scopeLine.g, ThemeMgr::mgr.currentTheme->scopeLine.b);
+        glEnable(GL_LINE_SMOOTH);
         glBegin (GL_LINES);
         glVertex2f(-1.0, 0.0);
         glVertex2f(1.0, 0.0);
