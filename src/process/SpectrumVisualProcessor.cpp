@@ -14,7 +14,7 @@ SpectrumVisualProcessor::SpectrumVisualProcessor() : lastInputBandwidth(0), last
     
     fft_ceil_ma = fft_ceil_maa = 100.0;
     fft_floor_ma = fft_floor_maa = 0.0;
-    desiredInputSize = 0;
+    desiredInputSize.store(0);
     fft_average_rate = 0.65;
 }
 
@@ -27,19 +27,25 @@ bool SpectrumVisualProcessor::isView() {
 }
 
 void SpectrumVisualProcessor::setView(bool bView) {
+    busy_run.lock();
     is_view.store(bView);
+    busy_run.unlock();
 }
 
 void SpectrumVisualProcessor::setFFTAverageRate(float fftAverageRate) {
-    this->fft_average_rate = fftAverageRate;
+    busy_run.lock();
+    this->fft_average_rate.store(fftAverageRate);
+    busy_run.unlock();
 }
 
 float SpectrumVisualProcessor::getFFTAverageRate() {
-    return this->fft_average_rate;
+    return this->fft_average_rate.load();
 }
 
 void SpectrumVisualProcessor::setCenterFrequency(long long centerFreq_in) {
+    busy_run.lock();
     centerFreq.store(centerFreq_in);
+    busy_run.unlock();
 }
 
 long long SpectrumVisualProcessor::getCenterFrequency() {
@@ -47,7 +53,9 @@ long long SpectrumVisualProcessor::getCenterFrequency() {
 }
 
 void SpectrumVisualProcessor::setBandwidth(long bandwidth_in) {
+    busy_run.lock();
     bandwidth.store(bandwidth_in);
+    busy_run.unlock();
 }
 
 long SpectrumVisualProcessor::getBandwidth() {
@@ -55,12 +63,14 @@ long SpectrumVisualProcessor::getBandwidth() {
 }
 
 int SpectrumVisualProcessor::getDesiredInputSize() {
-    return desiredInputSize;
+    return desiredInputSize.load();
 }
 
 void SpectrumVisualProcessor::setup(int fftSize_in) {
+    busy_run.lock();
+
     fftSize = fftSize_in;
-    desiredInputSize = fftSize;
+    desiredInputSize.store(fftSize);
     
     if (fftwInput) {
         free(fftwInput);
@@ -82,7 +92,7 @@ void SpectrumVisualProcessor::setup(int fftSize_in) {
         fftwf_destroy_plan(fftw_plan);
     }
     fftw_plan = fftwf_plan_dft_1d(fftSize, fftwInput, fftwOutput, FFTW_FORWARD, FFTW_ESTIMATE);
-    
+    busy_run.unlock();
 }
 
 void SpectrumVisualProcessor::process() {
@@ -102,6 +112,7 @@ void SpectrumVisualProcessor::process() {
     }
     
     iqData->busy_rw.lock();
+    busy_run.lock();
     
     std::vector<liquid_float_complex> *data = &iqData->data;
     
@@ -118,6 +129,7 @@ void SpectrumVisualProcessor::process() {
             if (!iqData->frequency || !iqData->sampleRate) {
                 iqData->decRefCount();
                 iqData->busy_rw.unlock();
+                busy_run.unlock();
                 return;
             }
             
@@ -125,7 +137,7 @@ void SpectrumVisualProcessor::process() {
             
             int desired_input_size = fftSize / resamplerRatio;
             
-            this->desiredInputSize = desired_input_size;
+            this->desiredInputSize.store(desired_input_size);
             
             if (iqData->data.size() < desired_input_size) {
                 //                std::cout << "fft underflow, desired: " << desired_input_size << " actual:" << input->data.size() << std::endl;
@@ -304,5 +316,6 @@ void SpectrumVisualProcessor::process() {
  
     iqData->decRefCount();
     iqData->busy_rw.unlock();
+    busy_run.unlock();
 }
 

@@ -132,27 +132,31 @@ void SpectrumPanel::drawPanelContents() {
     
     long long leftFreq = (double) freq - ((double) bandwidth / 2.0);
     long long rightFreq = leftFreq + (double) bandwidth;
-    
-    long long firstMhz = (leftFreq / 1000000) * 1000000;
-    long double mhzStart = ((long double) (firstMhz - leftFreq) / (long double) (rightFreq - leftFreq)) * 2.0;
+
+    long long hzStep = 1000000;
     
     long double mhzStep = (100000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
-    double mhzVisualStep = 0.1f;
-    
+    double mhzVisualStep = 0.1;
+
+    std::stringstream label;
+    label.precision(1);
+
     if (mhzStep * 0.5 * viewWidth < 40) {
         mhzStep = (250000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
-        mhzVisualStep = 0.25f;
+        mhzVisualStep = 0.25;
+        label.precision(2);
     }
 
-    if (mhzStep * 0.5 * viewWidth > 400) {
+    if (mhzStep * 0.5 * viewWidth > 350) {
         mhzStep = (10000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
-        mhzVisualStep = 0.01f;
+        mhzVisualStep = 0.01;
+        label.precision(2);
     }
-
-    long double currentMhz = trunc(floor(firstMhz / 1000000.0));
     
-    std::stringstream label;
-    label.precision(2);
+    long long firstMhz = (leftFreq / hzStep) * hzStep;
+    long double mhzStart = ((long double) (firstMhz - leftFreq) / (long double) (rightFreq - leftFreq)) * 2.0;
+    long double currentMhz = trunc(floor(firstMhz / (long double)1000000.0));
+    
     
     double hPos = 1.0 - (16.0 / viewHeight);
     double lMhzPos = 1.0 - (5.0 / viewHeight);
