@@ -90,7 +90,9 @@ AppFrame::AppFrame() :
     demodTray->AddSpacer(1);
 
     scopeCanvas = new ScopeCanvas(this, attribList);
+    scopeCanvas->setHelpTip("Audio Visuals, drag left/right to toggle Scope or Spectrum.");
     demodScopeTray->Add(scopeCanvas, 8, wxEXPAND | wxALL, 0);
+    wxGetApp().getScopeProcessor()->setup(2048);
     wxGetApp().getScopeProcessor()->attachOutput(scopeCanvas->getInputQueue());
 
     demodScopeTray->AddSpacer(1);
@@ -789,6 +791,11 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     }
 
     scopeCanvas->setPPMMode(demodTuner->isAltDown());
+    
+    scopeCanvas->setShowDb(spectrumCanvas->getShowDb());
+    wxGetApp().getScopeProcessor()->setScopeEnabled(scopeCanvas->scopeVisible());
+    wxGetApp().getScopeProcessor()->setSpectrumEnabled(scopeCanvas->spectrumVisible());
+    wxGetApp().getAudioVisualQueue()->set_max_num_items((scopeCanvas->scopeVisible()?1:0) + (scopeCanvas->spectrumVisible()?1:0));
     
     wxGetApp().getScopeProcessor()->run();
     wxGetApp().getSpectrumDistributor()->run();

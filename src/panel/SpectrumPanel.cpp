@@ -5,7 +5,7 @@
 #include <iomanip>
 #include "ColorTheme.h"
 
-SpectrumPanel::SpectrumPanel() : floorValue(0), ceilValue(1), showDb(false) {
+SpectrumPanel::SpectrumPanel() : floorValue(0), ceilValue(1), showDb(false), fftSize(2048) {
     setFill(GLPANEL_FILL_GRAD_Y);
     setFillColor(ThemeMgr::mgr.currentTheme->fftBackground * 2.0, ThemeMgr::mgr.currentTheme->fftBackground);
     
@@ -49,6 +49,14 @@ void SpectrumPanel::setBandwidth(long long bandwidth) {
 
 long long SpectrumPanel::getBandwidth() {
     return bandwidth;
+}
+
+void SpectrumPanel::setFFTSize(int fftSize_in) {
+    this->fftSize = fftSize_in;
+}
+
+int SpectrumPanel::getFFTSize() {
+    return fftSize;
 }
 
 void SpectrumPanel::setShowDb(bool showDb) {
@@ -133,7 +141,7 @@ void SpectrumPanel::drawPanelContents() {
     long long leftFreq = (double) freq - ((double) bandwidth / 2.0);
     long long rightFreq = leftFreq + (double) bandwidth;
 
-    long long hzStep = 1000000;
+    long long hzStep = 100000;
     
     long double mhzStep = (100000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
     double mhzVisualStep = 0.1;
@@ -144,10 +152,37 @@ void SpectrumPanel::drawPanelContents() {
     if (mhzStep * 0.5 * viewWidth < 40) {
         mhzStep = (250000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
         mhzVisualStep = 0.25;
-        label.precision(2);
-    }
 
-    if (mhzStep * 0.5 * viewWidth > 350) {
+        if (mhzStep * 0.5 * viewWidth < 40) {
+            mhzStep = (500000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
+            mhzVisualStep = 0.5;
+        }
+
+        if (mhzStep * 0.5 * viewWidth < 40) {
+            mhzStep = (1000000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
+            mhzVisualStep = 1.0;
+        }
+        
+        if (mhzStep * 0.5 * viewWidth < 40) {
+            mhzStep = (2500000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
+            mhzVisualStep = 2.5;
+        }
+        
+        if (mhzStep * 0.5 * viewWidth < 40) {
+            mhzStep = (5000000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
+            mhzVisualStep = 5.0;
+        }
+
+        if (mhzStep * 0.5 * viewWidth < 40) {
+            mhzStep = (10000000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
+            mhzVisualStep = 10.0;
+        }
+
+        if (mhzStep * 0.5 * viewWidth < 40) {
+            mhzStep = (50000000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
+            mhzVisualStep = 50.0;
+        }
+    } else if (mhzStep * 0.5 * viewWidth > 350) {
         mhzStep = (10000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
         mhzVisualStep = 0.01;
         label.precision(2);
@@ -193,21 +228,20 @@ void SpectrumPanel::drawPanelContents() {
     
     glLineWidth(1.0);
 
-    
     if (showDb) {
         float dbPanelWidth = (1.0/viewWidth)*75.0;
         float dbPanelHeight = (1.0/viewHeight)*14.0;
         
         
         std::stringstream ssLabel;
-        ssLabel << std::fixed << std::setprecision(1) << (20.0 * log10(2.0*(getCeilValue())/2048.0)) << "dB";
+        ssLabel << std::fixed << std::setprecision(1) << (20.0 * log10(2.0*(getCeilValue())/(double)fftSize)) << "dB";
 
         dbPanelCeil.setText(ssLabel.str(), GLFont::GLFONT_ALIGN_RIGHT);
         dbPanelCeil.setSize(dbPanelWidth, dbPanelHeight);
         dbPanelCeil.setPosition(-1.0 + dbPanelWidth, 1.0 - dbPanelHeight);
         
         ssLabel.str("");
-        ssLabel << (20.0 * log10(2.0*(getFloorValue())/2048.0)) << "dB";
+        ssLabel << (20.0 * log10(2.0*(getFloorValue())/(double)fftSize)) << "dB";
 
         dbPanelFloor.setText(ssLabel.str(), GLFont::GLFONT_ALIGN_RIGHT);
         dbPanelFloor.setSize(dbPanelWidth, dbPanelHeight);

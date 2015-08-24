@@ -9,6 +9,7 @@
 #include "ScopeContext.h"
 #include "ScopeVisualProcessor.h"
 #include "ScopePanel.h"
+#include "SpectrumPanel.h"
 #include "fftw3.h"
 #include "InteractiveCanvas.h"
 
@@ -21,6 +22,14 @@ public:
     void setDeviceName(std::string device_name);
     void setPPMMode(bool ppmMode);
     bool getPPMMode();
+
+    void setShowDb(bool showDb);
+    bool getShowDb();
+
+    bool scopeVisible();
+    bool spectrumVisible();
+    
+    void setHelpTip(std::string tip);
 
     ScopeRenderDataQueue *getInputQueue();
     
@@ -36,15 +45,19 @@ private:
 
     ScopeRenderDataQueue inputData;
     ScopePanel scopePanel;
+    GLPanel parentPanel;
+    SpectrumPanel spectrumPanel;
     GLPanel bgPanel;
     ScopeContext *glContext;
     std::string deviceName;
     bool stereo;
     bool ppmMode;
+    bool showDb;
     float panelSpacing;
     float ctr;
     float ctrTarget;
     float dragAccel;
+    std::string helpTip;
 // event table
 wxDECLARE_EVENT_TABLE();
 };

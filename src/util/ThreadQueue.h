@@ -30,13 +30,17 @@ class ThreadQueue : public ThreadQueueBase {
 public:
 
     /*! Create safe queue. */
-    ThreadQueue() = default;
+    ThreadQueue() {
+        m_max_num_items.store(0);
+    };
     ThreadQueue(ThreadQueue&& sq) {
         m_queue = std::move(sq.m_queue);
+        m_max_num_items.store(0);
     }
     ThreadQueue(const ThreadQueue& sq) {
         std::lock_guard < std::mutex > lock(sq.m_mutex);
         m_queue = sq.m_queue;
+        m_max_num_items.store(0);
     }
 
     /*! Destroy safe queue. */
@@ -50,8 +54,9 @@ public:
      */
     void set_max_num_items(unsigned int max_num_items) {
         std::lock_guard < std::mutex > lock(m_mutex);
-
-        m_max_num_items = max_num_items;
+        if (m_max_num_items.load() != max_num_items) {
+            m_max_num_items.store(max_num_items);
+        }
     }
 
     /**
@@ -62,7 +67,7 @@ public:
     bool push(const value_type& item) {
         std::lock_guard < std::mutex > lock(m_mutex);
 
-        if (m_max_num_items > 0 && m_queue.size() > m_max_num_items)
+        if (m_max_num_items.load() > 0 && m_queue.size() > m_max_num_items.load())
             return false;
 
         m_queue.push(item);
@@ -78,7 +83,7 @@ public:
     bool push(const value_type&& item) {
         std::lock_guard < std::mutex > lock(m_mutex);
 
-        if (m_max_num_items > 0 && m_queue.size() > m_max_num_items)
+        if (m_max_num_items.load() > 0 && m_queue.size() > m_max_num_items.load())
             return false;
 
         m_queue.push(item);
@@ -219,7 +224,7 @@ public:
      */
     bool full() const {
         std::lock_guard < std::mutex > lock(m_mutex);
-        return (m_max_num_items != 0) && (m_queue.size() >= m_max_num_items);
+        return (m_max_num_items.load() != 0) && (m_queue.size() >= m_max_num_items.load());
     }
 
     /**
@@ -280,7 +285,7 @@ private:
     std::queue<T, Container> m_queue;
     mutable std::mutex m_mutex;
     std::condition_variable m_condition;
-    unsigned int m_max_num_items = 0;
+    std::atomic_uint m_max_num_items;
 };
 
 /*! Swaps the contents of two ThreadQueue objects. */
