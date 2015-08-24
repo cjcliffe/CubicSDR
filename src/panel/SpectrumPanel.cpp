@@ -141,7 +141,7 @@ void SpectrumPanel::drawPanelContents() {
     long long leftFreq = (double) freq - ((double) bandwidth / 2.0);
     long long rightFreq = leftFreq + (double) bandwidth;
 
-    long long hzStep = 100000;
+    long long hzStep = 1000000;
     
     long double mhzStep = (100000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
     double mhzVisualStep = 0.1;
