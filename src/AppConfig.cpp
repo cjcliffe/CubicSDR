@@ -2,6 +2,7 @@
 #include "CubicSDR.h"
 
 DeviceConfig::DeviceConfig() : deviceId("") {
+	iqSwap.store(0);
 	ppm.store(0);
 	directSampling.store(false);
 	offset.store(0);
