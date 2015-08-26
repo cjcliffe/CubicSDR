@@ -19,7 +19,10 @@ public:
     
     void setBandwidth(long long bandwidth);
     long long getBandwidth();
-    
+
+    void setFFTSize(int fftSize_in);
+    int getFFTSize();
+
     void setShowDb(bool showDb);
     bool getShowDb();
     
@@ -28,6 +31,7 @@ protected:
 
 private:
     float floorValue, ceilValue;
+    int fftSize;
     long long freq;
     long long bandwidth;
     std::vector<float> points;

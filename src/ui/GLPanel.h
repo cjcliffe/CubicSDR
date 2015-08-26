@@ -36,6 +36,7 @@ public:
     typedef enum GLPanelFillType { GLPANEL_FILL_NONE, GLPANEL_FILL_SOLID, GLPANEL_FILL_GRAD_X, GLPANEL_FILL_GRAD_Y, GLPANEL_FILL_GRAD_BAR_X, GLPANEL_FILL_GRAD_BAR_Y } GLPanelFillType;
     typedef enum GLPanelCoordinateSystem { GLPANEL_Y_DOWN_ZERO_ONE, GLPANEL_Y_UP_ZERO_ONE, GLPANEL_Y_UP, GLPANEL_Y_DOWN } GLPanelCoordinateSystem;
     float pos[2];
+    float rot[3];
     float size[2];
     float view[2];
     GLPanelFillType fillType;

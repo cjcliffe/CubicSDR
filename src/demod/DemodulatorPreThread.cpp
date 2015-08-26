@@ -72,9 +72,6 @@ void DemodulatorPreThread::initialize() {
 }
 
 DemodulatorPreThread::~DemodulatorPreThread() {
-    delete workerThread;
-    delete workerQueue;
-    delete workerResults;
 }
 
 void DemodulatorPreThread::run() {
@@ -260,7 +257,7 @@ void DemodulatorPreThread::run() {
 
         inp->decRefCount();
 
-        if (!workerResults->empty()) {
+        if (!terminated && !workerResults->empty()) {
             while (!workerResults->empty()) {
                 DemodulatorWorkerThreadResult result;
                 workerResults->pop(result);
@@ -323,7 +320,12 @@ void DemodulatorPreThread::terminate() {
     terminated = true;
     DemodulatorThreadIQData *inp = new DemodulatorThreadIQData;    // push dummy to nudge queue
     iqInputQueue->push(inp);
+    DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_NULL);
+    workerQueue->push(command);
     workerThread->terminate();
-    t_Worker->detach();
+    t_Worker->join();
     delete t_Worker;
+    delete workerThread;
+    delete workerResults;
+    delete workerQueue;
 }

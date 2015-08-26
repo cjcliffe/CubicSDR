@@ -90,7 +90,9 @@ AppFrame::AppFrame() :
     demodTray->AddSpacer(1);
 
     scopeCanvas = new ScopeCanvas(this, attribList);
+    scopeCanvas->setHelpTip("Audio Visuals, drag left/right to toggle Scope or Spectrum.");
     demodScopeTray->Add(scopeCanvas, 8, wxEXPAND | wxALL, 0);
+    wxGetApp().getScopeProcessor()->setup(2048);
     wxGetApp().getScopeProcessor()->attachOutput(scopeCanvas->getInputQueue());
 
     demodScopeTray->AddSpacer(1);
@@ -153,11 +155,12 @@ AppFrame::AppFrame() :
     waterfallCanvas->setup(2048, 512);
 
     waterfallDataThread = new FFTVisualDataThread();
-    t_FFTData = new std::thread(&FFTVisualDataThread::threadMain, waterfallDataThread);
 
     waterfallDataThread->setInputQueue("IQDataInput", wxGetApp().getWaterfallVisualQueue());
     waterfallDataThread->setOutputQueue("FFTDataOutput", waterfallCanvas->getVisualDataQueue());
-            
+
+    t_FFTData = new std::thread(&FFTVisualDataThread::threadMain, waterfallDataThread);
+
     waterfallSpeedMeter = new MeterCanvas(this, attribList);
     waterfallSpeedMeter->setHelpTip("Waterfall speed, click or drag to adjust (max 1024 lines per second)");
     waterfallSpeedMeter->setMax(sqrt(1024));
@@ -788,6 +791,11 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     }
 
     scopeCanvas->setPPMMode(demodTuner->isAltDown());
+    
+    scopeCanvas->setShowDb(spectrumCanvas->getShowDb());
+    wxGetApp().getScopeProcessor()->setScopeEnabled(scopeCanvas->scopeVisible());
+    wxGetApp().getScopeProcessor()->setSpectrumEnabled(scopeCanvas->spectrumVisible());
+    wxGetApp().getAudioVisualQueue()->set_max_num_items((scopeCanvas->scopeVisible()?1:0) + (scopeCanvas->spectrumVisible()?1:0));
     
     wxGetApp().getScopeProcessor()->run();
     wxGetApp().getSpectrumDistributor()->run();

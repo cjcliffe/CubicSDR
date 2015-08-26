@@ -310,6 +310,7 @@ void DemodulatorThread::run() {
                 ati = outputBuffers.getBuffer();
 
                 ati->sampleRate = audioSampleRate;
+                ati->inputRate = inp->sampleRate;
                 ati->setRefCount(1);
 
                 if (demodulatorType == DEMOD_TYPE_RAW) {
@@ -359,7 +360,9 @@ void DemodulatorThread::run() {
         if (ati && audioVisOutputQueue != NULL && audioVisOutputQueue->empty()) {
 
             ati_vis->busy_update.lock();
-
+            ati_vis->sampleRate = inp->sampleRate;
+            ati_vis->inputRate = inp->sampleRate;
+            
             int num_vis = DEMOD_VIS_SIZE;
             if (demodulatorType == DEMOD_TYPE_RAW || (stereo && inp->sampleRate >= 100000)) {
                 ati_vis->channels = 2;
@@ -377,6 +380,8 @@ void DemodulatorThread::run() {
                     }
                 } else {
                     for (int i = 0; i < stereoSize / 2; i++) {
+                        ati_vis->inputRate = audioSampleRate;
+                        ati_vis->sampleRate = 36000;
                         ati_vis->data[i] = ati->data[i * 2];
                         ati_vis->data[i + stereoSize / 2] = ati->data[i * 2 + 1];
                     }
@@ -384,7 +389,7 @@ void DemodulatorThread::run() {
             } else {
                 ati_vis->channels = 1;
                 if (numAudioWritten > bufSize) {
-
+                    ati_vis->inputRate = audioSampleRate;
                     if (num_vis > numAudioWritten) {
                         num_vis = numAudioWritten;
                     }
@@ -399,9 +404,8 @@ void DemodulatorThread::run() {
 //            std::cout << "Signal: " << agc_crcf_get_signal_level(agc) << " -- " << agc_crcf_get_rssi(agc) << "dB " << std::endl;
             }
 
-            audioVisOutputQueue->push(ati_vis);
-
             ati_vis->busy_update.unlock();
+            audioVisOutputQueue->push(ati_vis);
         }
 
         if (ati != NULL) {
