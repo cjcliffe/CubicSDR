@@ -14,6 +14,7 @@
 #include <thread>
 #include <cstdint>
 #include <condition_variable>
+#include <atomic>
 
 class ThreadQueueBase {
     
