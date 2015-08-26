@@ -9,12 +9,12 @@ ScopeVisualProcessor::ScopeVisualProcessor(): fftInData(NULL), fftwOutput(NULL),
 }
 
 ScopeVisualProcessor::~ScopeVisualProcessor() {
-    if (fftInData) {
+    /*if (fftInData) {
         free(fftInData);
     }
     if (fftwOutput) {
         free(fftwOutput);
-    }
+    }*/
     if (fftw_plan) {
         fftwf_destroy_plan(fftw_plan);
     }
