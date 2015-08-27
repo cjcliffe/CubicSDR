@@ -14,6 +14,7 @@
 class AudioThreadInput: public ReferenceCounter {
 public:
     long long frequency;
+    int inputRate;
     int sampleRate;
     int channels;
     float peak;

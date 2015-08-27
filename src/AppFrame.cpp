@@ -117,7 +117,9 @@ AppFrame::AppFrame() :
     demodTray->AddSpacer(1);
 
     scopeCanvas = new ScopeCanvas(this, attribList);
+    scopeCanvas->setHelpTip("Audio Visuals, drag left/right to toggle Scope or Spectrum.");
     demodScopeTray->Add(scopeCanvas, 8, wxEXPAND | wxALL, 0);
+    wxGetApp().getScopeProcessor()->setup(2048);
     wxGetApp().getScopeProcessor()->attachOutput(scopeCanvas->getInputQueue());
 
     demodScopeTray->AddSpacer(1);
@@ -130,18 +132,34 @@ AppFrame::AppFrame() :
 
     demodTray->AddSpacer(1);
 
+    wxBoxSizer *demodGainTray = new wxBoxSizer(wxVERTICAL);
+            
     demodGainMeter = new MeterCanvas(this, attribList);
     demodGainMeter->setMax(2.0);
     demodGainMeter->setHelpTip("Current Demodulator Gain Level.  Click / Drag to set Gain level.");
     demodGainMeter->setShowUserInput(false);
-    demodTray->Add(demodGainMeter, 1, wxEXPAND | wxALL, 0);
+    demodGainTray->Add(demodGainMeter, 8, wxEXPAND | wxALL, 0);
 
+    demodGainTray->AddSpacer(1);
+
+    demodMuteButton = new ModeSelectorCanvas(this, attribList);
+    demodMuteButton->addChoice(1, "M");
+    demodMuteButton->setPadding(-1,-1);
+    demodMuteButton->setHighlightColor(RGBA4f(0.8,0.2,0.2));
+    demodMuteButton->setHelpTip("Demodulator Mute Toggle");
+    demodMuteButton->setToggleMode(true);
+          
+    demodGainTray->Add(demodMuteButton, 1, wxEXPAND | wxALL, 0);
+
+    demodTray->Add(demodGainTray, 1, wxEXPAND | wxALL, 0);
+            
     vbox->Add(demodTray, 12, wxEXPAND | wxALL, 0);
     vbox->AddSpacer(1);
 
     wxBoxSizer *spectrumSizer = new wxBoxSizer(wxHORIZONTAL);
     wxGetApp().getSpectrumProcessor()->setup(2048);
     spectrumCanvas = new SpectrumCanvas(this, attribList);
+    spectrumCanvas->setShowDb(true);
     wxGetApp().getSpectrumProcessor()->attachOutput(spectrumCanvas->getVisualDataQueue());
             
     spectrumAvgMeter = new MeterCanvas(this, attribList);
@@ -164,11 +182,12 @@ AppFrame::AppFrame() :
     waterfallCanvas->setup(2048, 512);
 
     waterfallDataThread = new FFTVisualDataThread();
-    t_FFTData = new std::thread(&FFTVisualDataThread::threadMain, waterfallDataThread);
 
     waterfallDataThread->setInputQueue("IQDataInput", wxGetApp().getWaterfallVisualQueue());
     waterfallDataThread->setOutputQueue("FFTDataOutput", waterfallCanvas->getVisualDataQueue());
-            
+
+    t_FFTData = new std::thread(&FFTVisualDataThread::threadMain, waterfallDataThread);
+
     waterfallSpeedMeter = new MeterCanvas(this, attribList);
     waterfallSpeedMeter->setHelpTip("Waterfall speed, click or drag to adjust (max 1024 lines per second)");
     waterfallSpeedMeter->setMax(sqrt(1024));
@@ -505,6 +524,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         wxGetApp().setFrequency(100000000);
         wxGetApp().getDemodMgr().setLastDemodulatorType(DEMOD_TYPE_FM);
         demodModeSelector->setSelection(1);
+        wxGetApp().getDemodMgr().setLastMuted(false);
         wxGetApp().getDemodMgr().setLastStereo(false);
         wxGetApp().getDemodMgr().setLastBandwidth(DEFAULT_DEMOD_BW);
         wxGetApp().getDemodMgr().setLastGain(1.0);
@@ -693,6 +713,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             demodModeSelector->setSelection(dType);
             demodModeSelectorAdv->setSelection(dType);
             demodModeSelectorCons->setSelection(dCons);
+            demodMuteButton->setSelection(demod->isMuted()?1:-1);
         }
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
             long long centerFreq = demod->getFrequency();
@@ -738,6 +759,25 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 			if (dSelectionCons != demod->getDemodulatorCons()) {
 				demod->setDemodulatorCons(dSelectionCons);
 			}
+
+            int muteMode = demodMuteButton->getSelection();
+            if (demodMuteButton->modeChanged()) {
+                if (demod->isMuted() && muteMode == -1) {
+                    demod->setMuted(false);
+                } else if (!demod->isMuted() && muteMode == 1) {
+                    demod->setMuted(true);
+                }
+                wxGetApp().getDemodMgr().setLastMuted(demod->isMuted());
+                demodMuteButton->clearModeChanged();
+            } else {
+                if (demod->isMuted() && muteMode == -1) {
+                    demodMuteButton->setSelection(1);
+                    wxGetApp().getDemodMgr().setLastMuted(demod->isMuted());
+                } else if (!demod->isMuted() && muteMode == 1) {
+                    demodMuteButton->setSelection(-1);
+                    wxGetApp().getDemodMgr().setLastMuted(demod->isMuted());
+                }
+            }
 
             demodWaterfallCanvas->setBandwidth(demodBw);
             demodSpectrumCanvas->setBandwidth(demodBw);
@@ -792,6 +832,15 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             spectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
             waterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
         }
+        if (demodMuteButton->modeChanged()) {
+            int muteMode = demodMuteButton->getSelection();
+            if (muteMode == -1) {
+                wxGetApp().getDemodMgr().setLastMuted(false);
+            } else if (muteMode == 1) {
+                wxGetApp().getDemodMgr().setLastMuted(true);
+            }
+            demodMuteButton->clearModeChanged();
+        }
     }
 
     if (demodTuner->getMouseTracker()->mouseInView()) {
@@ -804,6 +853,11 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 
     scopeCanvas->setPPMMode(demodTuner->isAltDown());
     
+    scopeCanvas->setShowDb(spectrumCanvas->getShowDb());
+    wxGetApp().getScopeProcessor()->setScopeEnabled(scopeCanvas->scopeVisible());
+    wxGetApp().getScopeProcessor()->setSpectrumEnabled(scopeCanvas->spectrumVisible());
+    wxGetApp().getAudioVisualQueue()->set_max_num_items((scopeCanvas->scopeVisible()?1:0) + (scopeCanvas->spectrumVisible()?1:0));
+    
     wxGetApp().getScopeProcessor()->run();
     wxGetApp().getSpectrumDistributor()->run();
 
@@ -813,6 +867,9 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         float val = spectrumAvgMeter->getInputValue();
         if (val < 0.01) {
             val = 0.01;
+        }
+        if (val > 0.99) {
+            val = 0.99;
         }
         spectrumAvgMeter->setLevel(val);
         proc->setFFTAverageRate(val);
@@ -873,6 +930,7 @@ void AppFrame::saveSession(std::string fileName) {
         *demod->newChild("stereo") = (*instance_i)->isStereo() ? 1 : 0;
         *demod->newChild("output_device") = outputDevices[(*instance_i)->getOutputDevice()].name;
         *demod->newChild("gain") = (*instance_i)->getGain();
+        *demod->newChild("muted") = (*instance_i)->isMuted() ? 1 : 0;
     }
 
     s.SaveToFileXML(fileName);
@@ -904,6 +962,9 @@ bool AppFrame::loadSession(std::string fileName) {
 
         DataNode *demodulators = l.rootNode()->getNext("demodulators");
 
+        int numDemodulators = 0;
+        DemodulatorInstance *loadedDemod = NULL;
+        
         while (demodulators->hasAnother("demodulator")) {
             DataNode *demod = demodulators->getNext("demodulator");
 
@@ -917,15 +978,19 @@ bool AppFrame::loadSession(std::string fileName) {
             float squelch_level = demod->hasAnother("squelch_level") ? (float) *demod->getNext("squelch_level") : 0;
             int squelch_enabled = demod->hasAnother("squelch_enabled") ? (int) *demod->getNext("squelch_enabled") : 0;
             int stereo = demod->hasAnother("stereo") ? (int) *demod->getNext("stereo") : 0;
+            int muted = demod->hasAnother("muted") ? (int) *demod->getNext("muted") : 0;
             std::string output_device = demod->hasAnother("output_device") ? string(*(demod->getNext("output_device"))) : "";
             float gain = demod->hasAnother("gain") ? (float) *demod->getNext("gain") : 1.0;
 
             DemodulatorInstance *newDemod = wxGetApp().getDemodMgr().newThread();
+            loadedDemod = newDemod;
+            numDemodulators++;
             newDemod->setDemodulatorType(type);
             newDemod->setBandwidth(bandwidth);
             newDemod->setFrequency(freq);
             newDemod->setGain(gain);
             newDemod->updateLabel(freq);
+            newDemod->setMuted(muted?true:false);
             if (squelch_enabled) {
                 newDemod->setSquelchEnabled(true);
                 newDemod->setSquelchLevel(squelch_level);
@@ -957,6 +1022,13 @@ bool AppFrame::loadSession(std::string fileName) {
             std::cout << "\t\tSquelch Enabled: " << (squelch_enabled ? "true" : "false") << std::endl;
             std::cout << "\t\tStereo: " << (stereo ? "true" : "false") << std::endl;
             std::cout << "\t\tOutput Device: " << output_device << std::endl;
+        }
+        
+        if ((numDemodulators == 1) && loadedDemod) {
+            loadedDemod->setActive(true);
+            loadedDemod->setFollow(true);
+            loadedDemod->setTracking(true);
+            wxGetApp().getDemodMgr().setActiveDemodulator(loadedDemod);
         }
     } catch (DataInvalidChildException &e) {
         std::cout << e.what() << std::endl;

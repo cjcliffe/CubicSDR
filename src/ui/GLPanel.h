@@ -36,14 +36,15 @@ public:
     typedef enum GLPanelFillType { GLPANEL_FILL_NONE, GLPANEL_FILL_SOLID, GLPANEL_FILL_GRAD_X, GLPANEL_FILL_GRAD_Y, GLPANEL_FILL_GRAD_BAR_X, GLPANEL_FILL_GRAD_BAR_Y } GLPanelFillType;
     typedef enum GLPanelCoordinateSystem { GLPANEL_Y_DOWN_ZERO_ONE, GLPANEL_Y_UP_ZERO_ONE, GLPANEL_Y_UP, GLPANEL_Y_DOWN } GLPanelCoordinateSystem;
     float pos[2];
+    float rot[3];
     float size[2];
     float view[2];
     GLPanelFillType fillType;
     GLPanelCoordinateSystem coord;
     float marginPx;
     GLPanelEdges borderPx;
-    RGB3f fill[2];
-    RGB3f borderColor;
+    RGBA4f fill[2];
+    RGBA4f borderColor;
     bool contentsVisible;
     CubicVR::mat4 transform;
     CubicVR::mat4 localTransform;
@@ -68,15 +69,16 @@ public:
     void setCoordinateSystem(GLPanelCoordinateSystem coord);
     
     void setFill(GLPanelFillType fill_mode);
-    void setFillColor(RGB3f color1);
-    void setFillColor(RGB3f color1, RGB3f color2);
+    void setFillColor(RGBA4f color1);
+    void setFillColor(RGBA4f color1, RGBA4f color2);
     void setMarginPx(float marg);
 
-    void setBorderColor(RGB3f clr);
+    void setBorderColor(RGBA4f clr);
     void setBorderPx(float bord);
     void setBorderPx(float bordl, float bordr, float bordt, float bordb);
     
     void addChild(GLPanel *childPanel);
+    void removeChild(GLPanel *childPanel);
     
     void drawChildren();
     virtual void drawPanelContents();
@@ -88,11 +90,13 @@ public:
 class GLTextPanel : public GLPanel {
 private:
     std::string textVal;
+    GLFont::Align horizAlign;
+    GLFont::Align vertAlign;
 public:
     GLTextPanel();
     
     void drawPanelContents();
-    void setText(std::string text);
+    void setText(std::string text, GLFont::Align hAlign = GLFont::GLFONT_ALIGN_CENTER, GLFont::Align vAlign = GLFont::GLFONT_ALIGN_CENTER);
     std::string getText();
 };
 

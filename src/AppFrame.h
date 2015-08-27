@@ -84,6 +84,7 @@ private:
 //    UITestCanvas *testCanvas;
     MeterCanvas *spectrumAvgMeter;
     MeterCanvas *waterfallSpeedMeter;
+    ModeSelectorCanvas *demodMuteButton;
 
     DemodulatorInstance *activeDemodulator;
 

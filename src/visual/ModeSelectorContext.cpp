@@ -22,7 +22,7 @@ void ModeSelectorContext::DrawBegin() {
     glDisable(GL_TEXTURE_2D);
 }
 
-void ModeSelectorContext::DrawSelector(std::string label, int c, int cMax, bool on, float r, float g, float b, float a) {
+void ModeSelectorContext::DrawSelector(std::string label, int c, int cMax, bool on, float r, float g, float b, float a, float px, float py) {
     GLint vp[4];
     glGetIntegerv( GL_VIEWPORT, vp);
 
@@ -42,15 +42,21 @@ void ModeSelectorContext::DrawSelector(std::string label, int c, int cMax, bool 
 
     float y = 1.0 - ((float) (c+1) / (float) cMax * 2.0);
     float height = (2.0 / (float) cMax);
-    float padX = (4.0 / viewWidth);
-    float padY = (4.0 / viewHeight);
+    float padX = (px / viewWidth);
+    float padY = (py / viewHeight);
 
+    if (a < 1.0) {
+        glEnable(GL_BLEND);
+    }
     glBegin(on?GL_QUADS:GL_LINE_LOOP);
     glVertex2f(-1.0 + padX, y + padY);
     glVertex2f(1.0 - padX, y + padY);
     glVertex2f(1.0 - padX, y + height - padY);
     glVertex2f(-1.0 + padX, y + height - padY);
     glEnd();
+    if (a < 1.0) {
+        glDisable(GL_BLEND);
+    }
 
     if (on) {
         glColor4f(0, 0, 0, a);

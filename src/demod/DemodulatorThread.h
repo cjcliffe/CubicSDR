@@ -8,7 +8,7 @@
 
 typedef ThreadQueue<AudioThreadInput *> DemodulatorThreadOutputQueue;
 
-#define DEMOD_VIS_SIZE 1024
+#define DEMOD_VIS_SIZE 2048
 
 class DemodulatorThread : public IOThread {
 public:
@@ -27,6 +27,9 @@ public:
     void setAGC(bool state);
     bool getAGC();
 
+    void setMuted(bool state);
+    bool isMuted();
+    
     float getSignalLevel();
     void setSquelchLevel(float signal_level_in);
     float getSquelchLevel();
@@ -135,6 +138,7 @@ protected:
     float amOutputCeilMAA;
 
     std::atomic_bool stereo;
+    std::atomic_bool muted;
     std::atomic_bool agcEnabled;
     std::atomic_int demodulatorType;
     std::atomic_int demodulatorCons;

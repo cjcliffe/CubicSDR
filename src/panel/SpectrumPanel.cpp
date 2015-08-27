@@ -2,15 +2,24 @@
 
 #include <sstream>
 #include <iostream>
+#include <iomanip>
 #include "ColorTheme.h"
 
-SpectrumPanel::SpectrumPanel() : floorValue(0), ceilValue(1) {
+SpectrumPanel::SpectrumPanel() : floorValue(0), ceilValue(1), showDb(false), fftSize(2048) {
     setFill(GLPANEL_FILL_GRAD_Y);
     setFillColor(ThemeMgr::mgr.currentTheme->fftBackground * 2.0, ThemeMgr::mgr.currentTheme->fftBackground);
+    
+    dbPanelCeil.setMarginPx(0);
+    dbPanelCeil.setFill(GLPanel::GLPANEL_FILL_GRAD_X);
+    dbPanelCeil.setFillColor(RGBA4f(0.2,0.2,0.2,5.0), RGBA4f(0.2,0.2,0.2,0.0));
+    
+    dbPanelFloor.setMarginPx(0);
+    dbPanelFloor.setFill(GLPanel::GLPANEL_FILL_GRAD_X);
+    dbPanelFloor.setFillColor(RGBA4f(0.2,0.2,0.2,5.), RGBA4f(0.2,0.2,0.2,0.0));
 }
 
 
-float SpectrumPanel::getFloorValue() const {
+float SpectrumPanel::getFloorValue() {
     return floorValue;
 }
 
@@ -18,7 +27,7 @@ void SpectrumPanel::setFloorValue(float floorValue) {
     this->floorValue = floorValue;
 }
 
-float SpectrumPanel::getCeilValue() const {
+float SpectrumPanel::getCeilValue() {
     return ceilValue;
 }
 
@@ -41,6 +50,31 @@ void SpectrumPanel::setBandwidth(long long bandwidth) {
 long long SpectrumPanel::getBandwidth() {
     return bandwidth;
 }
+
+void SpectrumPanel::setFFTSize(int fftSize_in) {
+    this->fftSize = fftSize_in;
+}
+
+int SpectrumPanel::getFFTSize() {
+    return fftSize;
+}
+
+void SpectrumPanel::setShowDb(bool showDb) {
+    this->showDb = showDb;
+    if (showDb) {
+        addChild(&dbPanelCeil);
+        addChild(&dbPanelFloor);
+    } else {
+        removeChild(&dbPanelCeil);
+        removeChild(&dbPanelFloor);
+    }
+    
+}
+
+bool SpectrumPanel::getShowDb() {
+    return showDb;
+}
+
 
 void SpectrumPanel::setPoints(std::vector<float> &points) {
     this->points.assign(points.begin(), points.end());
@@ -95,38 +129,69 @@ void SpectrumPanel::drawPanelContents() {
         glDrawArrays(GL_LINE_STRIP, 0, points.size() / 2);
         glDisableClientState(GL_VERTEX_ARRAY);
     }
-    
-    glLoadMatrixf(transform);
-
+  
     GLint vp[4];
     glGetIntegerv( GL_VIEWPORT, vp);
     
     float viewHeight = (float) vp[3];
     float viewWidth = (float) vp[2];
+    glLoadMatrixf(transform);
+
     
     long long leftFreq = (double) freq - ((double) bandwidth / 2.0);
     long long rightFreq = leftFreq + (double) bandwidth;
-    
-    long long firstMhz = (leftFreq / 1000000) * 1000000;
-    long double mhzStart = ((long double) (firstMhz - leftFreq) / (long double) (rightFreq - leftFreq)) * 2.0;
+
+    long long hzStep = 1000000;
     
     long double mhzStep = (100000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
-    double mhzVisualStep = 0.1f;
-    
+    double mhzVisualStep = 0.1;
+
+    std::stringstream label;
+    label.precision(1);
+
     if (mhzStep * 0.5 * viewWidth < 40) {
         mhzStep = (250000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
-        mhzVisualStep = 0.25f;
-    }
+        mhzVisualStep = 0.25;
 
-    if (mhzStep * 0.5 * viewWidth > 400) {
+        if (mhzStep * 0.5 * viewWidth < 40) {
+            mhzStep = (500000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
+            mhzVisualStep = 0.5;
+        }
+
+        if (mhzStep * 0.5 * viewWidth < 40) {
+            mhzStep = (1000000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
+            mhzVisualStep = 1.0;
+        }
+        
+        if (mhzStep * 0.5 * viewWidth < 40) {
+            mhzStep = (2500000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
+            mhzVisualStep = 2.5;
+        }
+        
+        if (mhzStep * 0.5 * viewWidth < 40) {
+            mhzStep = (5000000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
+            mhzVisualStep = 5.0;
+        }
+
+        if (mhzStep * 0.5 * viewWidth < 40) {
+            mhzStep = (10000000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
+            mhzVisualStep = 10.0;
+        }
+
+        if (mhzStep * 0.5 * viewWidth < 40) {
+            mhzStep = (50000000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
+            mhzVisualStep = 50.0;
+        }
+    } else if (mhzStep * 0.5 * viewWidth > 350) {
         mhzStep = (10000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
-        mhzVisualStep = 0.01f;
+        mhzVisualStep = 0.01;
+        label.precision(2);
     }
-
-    long double currentMhz = trunc(floor(firstMhz / 1000000.0));
     
-    std::stringstream label;
-    label.precision(2);
+    long long firstMhz = (leftFreq / hzStep) * hzStep;
+    long double mhzStart = ((long double) (firstMhz - leftFreq) / (long double) (rightFreq - leftFreq)) * 2.0;
+    long double currentMhz = trunc(floor(firstMhz / (long double)1000000.0));
+    
     
     double hPos = 1.0 - (16.0 / viewHeight);
     double lMhzPos = 1.0 - (5.0 / viewHeight);
@@ -162,4 +227,24 @@ void SpectrumPanel::drawPanelContents() {
     }
     
     glLineWidth(1.0);
+
+    if (showDb) {
+        float dbPanelWidth = (1.0/viewWidth)*75.0;
+        float dbPanelHeight = (1.0/viewHeight)*14.0;
+        
+        
+        std::stringstream ssLabel;
+        ssLabel << std::fixed << std::setprecision(1) << (20.0 * log10(2.0*(getCeilValue())/(double)fftSize)) << "dB";
+
+        dbPanelCeil.setText(ssLabel.str(), GLFont::GLFONT_ALIGN_RIGHT);
+        dbPanelCeil.setSize(dbPanelWidth, dbPanelHeight);
+        dbPanelCeil.setPosition(-1.0 + dbPanelWidth, 1.0 - dbPanelHeight);
+        
+        ssLabel.str("");
+        ssLabel << (20.0 * log10(2.0*(getFloorValue())/(double)fftSize)) << "dB";
+
+        dbPanelFloor.setText(ssLabel.str(), GLFont::GLFONT_ALIGN_RIGHT);
+        dbPanelFloor.setSize(dbPanelWidth, dbPanelHeight);
+        dbPanelFloor.setPosition(-1.0 + dbPanelWidth, - 1.0 + dbPanelHeight);
+    }
 }

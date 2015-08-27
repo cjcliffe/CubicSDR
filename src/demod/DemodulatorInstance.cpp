@@ -10,6 +10,7 @@ DemodulatorInstance::DemodulatorInstance() :
 	active.store(false);
 	squelch.store(false);
 	stereo.store(false);
+    muted.store(false);
 	tracking.store(false);
 	follow.store(false);
 	currentAudioSampleRate.store(0);
@@ -428,6 +429,15 @@ bool DemodulatorInstance::isTracking()  {
 
 void DemodulatorInstance::setTracking(bool tracking) {
     this->tracking = tracking;
+}
+
+bool DemodulatorInstance::isMuted() {
+    return demodulatorThread->isMuted();
+}
+
+void DemodulatorInstance::setMuted(bool muted) {
+    this->muted = muted;
+    demodulatorThread->setMuted(muted);
 }
 
 DemodulatorThreadInputQueue *DemodulatorInstance::getIQInputDataPipe() {

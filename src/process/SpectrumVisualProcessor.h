@@ -53,7 +53,7 @@ private:
     
     double fft_ceil_ma, fft_ceil_maa;
     double fft_floor_ma, fft_floor_maa;
-    float fft_average_rate;
+    std::atomic<float> fft_average_rate;
     
     std::vector<double> fft_result;
     std::vector<double> fft_result_ma;
@@ -66,7 +66,8 @@ private:
     
     std::vector<liquid_float_complex> shiftBuffer;
     std::vector<liquid_float_complex> resampleBuffer;
-    int desiredInputSize;
+    std::atomic_int desiredInputSize;
+    std::mutex busy_run;
 };
 
 

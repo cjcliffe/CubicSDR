@@ -73,6 +73,8 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     spectrumPanel.calcTransform(CubicVR::mat4::identity());
     spectrumPanel.draw();
     
+    glLoadIdentity();
+    
     std::vector<DemodulatorInstance *> &demods = wxGetApp().getDemodMgr().getDemodulators();
 
     for (int i = 0, iMax = demods.size(); i < iMax; i++) {
@@ -80,6 +82,8 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     }
 
     glContext->EndDraw();
+
+    spectrumPanel.drawChildren();
 
     SwapBuffers();
 }
@@ -122,9 +126,17 @@ void SpectrumCanvas::moveCenterFrequency(long long freqChange) {
             freq -= freqChange;
         }
         wxGetApp().setFrequency(freq);
-        setStatusText("Set center frequency: %s", freq);
     }
 }
+
+void SpectrumCanvas::setShowDb(bool showDb) {
+    spectrumPanel.setShowDb(showDb);
+}
+
+bool SpectrumCanvas::getShowDb() {
+    return spectrumPanel.getShowDb();
+}
+
 
 void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseMoved(event);
@@ -135,7 +147,7 @@ void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
             moveCenterFrequency(freqChange);
         }
     } else {
-        setStatusText("Click and drag to adjust center frequency.");
+        setStatusText("Click and drag to adjust center frequency. 'B' to toggle decibels display.");
     }
 }
 

@@ -232,3 +232,12 @@ void DemodulatorMgr::setLastStereo(bool lastStereo) {
     this->lastStereo = lastStereo;
 }
 
+
+bool DemodulatorMgr::isLastMuted() const {
+    return lastMuted;
+}
+
+void DemodulatorMgr::setLastMuted(bool lastMuted) {
+    this->lastMuted = lastMuted;
+}
+

@@ -12,6 +12,6 @@ public:
     ModeSelectorContext(ModeSelectorCanvas *canvas, wxGLContext *sharedContext);
 
     void DrawBegin();
-    void DrawSelector(std::string label, int c, int cMax, bool on, float r, float g, float b, float a);
+    void DrawSelector(std::string label, int c, int cMax, bool on, float r, float g, float b, float a, float padx, float pady);
     void DrawEnd();
 };

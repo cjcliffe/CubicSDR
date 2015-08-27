@@ -25,9 +25,11 @@ EVT_ENTER_WINDOW(ModeSelectorCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
 ModeSelectorCanvas::ModeSelectorCanvas(wxWindow *parent, int *attribList) :
-InteractiveCanvas(parent, attribList), numChoices(0), currentSelection(-1) {
+InteractiveCanvas(parent, attribList), numChoices(0), currentSelection(-1), toggleMode(false), inputChanged(false), padX(4.0), padY(4.0), highlightOverride(false) {
 
     glContext = new ModeSelectorContext(this, &wxGetApp().GetContext(this));
+    
+    highlightColor = RGBA4f(1.0,1.0,1.0,1.0);
 }
 
 ModeSelectorCanvas::~ModeSelectorCanvas() {
@@ -59,10 +61,15 @@ void ModeSelectorCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     int yval = getHoveredSelection();
 
     for (int i = 0; i < numChoices; i++) {
-        if (yval == i) {
-            glContext->DrawSelector(selections[i].label, i, numChoices, true, ThemeMgr::mgr.currentTheme->buttonHighlight.r, ThemeMgr::mgr.currentTheme->buttonHighlight.g, ThemeMgr::mgr.currentTheme->buttonHighlight.b, 1.0);
+        if (yval == i && !highlightOverride) {
+            RGBA4f hc = ThemeMgr::mgr.currentTheme->buttonHighlight;
+            glContext->DrawSelector(selections[i].label, i, numChoices, true, hc.r, hc.g, hc.b, 1.0, padX, padY);
         } else {
-            glContext->DrawSelector(selections[i].label, i, numChoices, i == currentSelection, ThemeMgr::mgr.currentTheme->button.r, ThemeMgr::mgr.currentTheme->button.g, ThemeMgr::mgr.currentTheme->button.b, 1.0);
+            RGBA4f hc = ThemeMgr::mgr.currentTheme->button;
+            if (highlightOverride) {
+                hc = highlightColor;
+            }
+            glContext->DrawSelector(selections[i].label, i, numChoices, i == currentSelection, hc.r, hc.g, hc.b, 1.0, padX, padY);
         }
     }
 
@@ -97,11 +104,22 @@ void ModeSelectorCanvas::OnMouseReleased(wxMouseEvent& event) {
 
     const wxSize ClientSize = GetClientSize();
 
+    int selectedButton = currentSelection;
     if (mouseTracker.getOriginDeltaMouseX() < 2.0 / ClientSize.y) {
-        currentSelection = getHoveredSelection();
+        selectedButton = getHoveredSelection();
     }
 
-    SetCursor (wxCURSOR_ARROW);
+    if (toggleMode && (currentSelection == selectedButton)) {
+        selectedButton = -1;
+    }
+    
+    if (currentSelection != selectedButton) {
+        inputChanged = true;
+    }
+    
+    currentSelection = selectedButton;
+    
+    SetCursor (wxCURSOR_HAND);
 }
 
 void ModeSelectorCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
@@ -112,7 +130,7 @@ void ModeSelectorCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
 
 void ModeSelectorCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
     InteractiveCanvas::mouseTracker.OnMouseEnterWindow(event);
-    SetCursor (wxCURSOR_ARROW);
+    SetCursor (wxCURSOR_HAND);
     if (!helpTip.empty()) {
         setStatusText(helpTip);
     }
@@ -148,4 +166,24 @@ int ModeSelectorCanvas::getSelection() {
     return selections[currentSelection].value;
 }
 
+void ModeSelectorCanvas::setToggleMode(bool toggleMode) {
+    this->toggleMode = toggleMode;
+}
 
+bool ModeSelectorCanvas::modeChanged() {
+    return inputChanged;
+}
+
+void ModeSelectorCanvas::clearModeChanged() {
+    inputChanged = false;
+}
+
+void ModeSelectorCanvas::setPadding(float padX, float padY) {
+    this->padX = padX;
+    this->padY = padY;
+}
+
+void ModeSelectorCanvas::setHighlightColor(RGBA4f hc) {
+    this->highlightColor = hc;
+    this->highlightOverride = true;
+}
