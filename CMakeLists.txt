@@ -423,6 +423,12 @@ IF (MSVC)
   set(CMAKE_CREATE_WIN32_EXE "/SUBSYSTEM:WINDOWS /ENTRY:\"mainCRTStartup\"")
 ENDIF(MSVC)
 
+IF (APPLE)
+    ADD_DEFINITIONS(
+        -DHAVE_TYPE_TRAITS=1
+    )
+ENDIF(APPLE)
+
 IF (APPLE AND BUNDLE_APP)
     PROJECT(CubicSDR)
     SET(MACOSX_BUNDLE_BUNDLE_NAME CubicSDR)
@@ -431,7 +437,6 @@ IF (APPLE AND BUNDLE_APP)
 		-std=c++0x 
 		-pthread
         -D_OSX_APP_
-        -DHAVE_TYPE_TRAITS=1
         -mmacosx-version-min=10.9
     )   
       

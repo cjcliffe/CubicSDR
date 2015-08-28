@@ -320,8 +320,8 @@ void DemodulatorThread::run() {
                     }
                     ati->data.resize(numAudioWritten * 2);
                     for (int i = 0; i < numAudioWritten; i++) {
-                        ati->data[i * 2] = (*inputData)[i].real;
-                        ati->data[i * 2 + 1] = (*inputData)[i].imag;
+                        ati->data[i * 2] = (*inputData)[i].imag;
+                        ati->data[i * 2 + 1] = (*inputData)[i].real;
                     }
                 } else if (stereo && inp->sampleRate >= 100000) {
                     ati->channels = 2;
