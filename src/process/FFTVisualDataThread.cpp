@@ -1,7 +1,8 @@
 #include "FFTVisualDataThread.h"
 #include "CubicSDR.h"
 
-FFTVisualDataThread::FFTVisualDataThread() : linesPerSecond(DEFAULT_WATERFALL_LPS) {
+FFTVisualDataThread::FFTVisualDataThread() {
+	linesPerSecond.store(DEFAULT_WATERFALL_LPS);
     lpsChanged.store(true);
 }
 
