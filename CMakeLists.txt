@@ -426,6 +426,7 @@ ENDIF(MSVC)
 IF (APPLE)
     ADD_DEFINITIONS(
         -DHAVE_TYPE_TRAITS=1
+        -mmacosx-version-min=10.9
     )
 ENDIF(APPLE)
 
@@ -437,7 +438,6 @@ IF (APPLE AND BUNDLE_APP)
 		-std=c++0x 
 		-pthread
         -D_OSX_APP_
-        -mmacosx-version-min=10.9
     )   
       
     ADD_EXECUTABLE(CubicSDR 
