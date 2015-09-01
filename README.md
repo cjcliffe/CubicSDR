@@ -42,7 +42,7 @@ Features and Status:
       - [x] Spectrum
       - [x] Waterfall
       - [x] Add faint grid for sense of scale
-      - [ ] Audio Spectrum
+      - [x] Audio Spectrum
       - [ ] X/Y Scope
       - [ ] Indicate outer spectrum edges when zoomed
     - [ ] 3D visuals
@@ -67,8 +67,8 @@ Features and Status:
       - [x] Display audio output selection
       - [x] Volume control
       - [x] Direct frequency input
-      - [ ] Mute
-      - [ ] Waterfall speed
+      - [x] Mute
+      - [x] Waterfall speed
       - [ ] RTL-SDR Gain
   - Basic Input Controls
     - [x] Drag spectrum to change center frequency
