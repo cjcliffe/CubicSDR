@@ -121,6 +121,7 @@ AppFrame::AppFrame() :
     demodMuteButton->setHighlightColor(RGBA4f(0.8,0.2,0.2));
     demodMuteButton->setHelpTip("Demodulator Mute Toggle");
     demodMuteButton->setToggleMode(true);
+	demodMuteButton->setSelection(-1);
           
     demodGainTray->Add(demodMuteButton, 1, wxEXPAND | wxALL, 0);
 
