@@ -102,6 +102,10 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
     const wxSize ClientSize = GetClientSize();
 
+#ifdef __APPLE__
+    glFinish();
+#endif
+
     while (!inputData.empty()) {
         ScopeRenderData *avData;
         inputData.pop(avData);

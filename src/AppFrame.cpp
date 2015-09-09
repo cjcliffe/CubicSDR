@@ -49,7 +49,7 @@ AppFrame::AppFrame() :
     wxBoxSizer *demodTray = new wxBoxSizer(wxHORIZONTAL);
     wxBoxSizer *demodScopeTray = new wxBoxSizer(wxVERTICAL);
 
-    int attribList[] = { WX_GL_RGBA, WX_GL_STENCIL_SIZE, 8, WX_GL_BUFFER_SIZE, 24, WX_GL_DOUBLEBUFFER, 0 };
+    int attribList[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 
     demodModeSelector = new ModeSelectorCanvas(this, attribList);
     demodModeSelector->addChoice(DEMOD_TYPE_FM, "FM");
@@ -840,7 +840,9 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     wproc->setCenterFrequency(waterfallCanvas->getCenterFrequency());
     
     waterfallCanvas->processInputQueue();
+//    waterfallCanvas->Refresh();
     demodWaterfallCanvas->processInputQueue();
+//    demodWaterfallCanvas->Refresh();
 
     if (!this->IsActive()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(25));

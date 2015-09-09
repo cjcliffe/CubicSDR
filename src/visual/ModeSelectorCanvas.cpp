@@ -79,18 +79,19 @@ void ModeSelectorCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 }
 
 void ModeSelectorCanvas::OnIdle(wxIdleEvent &event) {
-    Refresh();
-    event.RequestMore();
+    event.Skip();
 }
 
 void ModeSelectorCanvas::OnMouseMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseMoved(event);
+    Refresh();
 }
 
 void ModeSelectorCanvas::OnMouseDown(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseDown(event);
     mouseTracker.setHorizDragLock(true);
     mouseTracker.setVertDragLock(true);
+    Refresh();
 }
 
 void ModeSelectorCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
@@ -120,6 +121,7 @@ void ModeSelectorCanvas::OnMouseReleased(wxMouseEvent& event) {
     currentSelection = selectedButton;
     
     SetCursor (wxCURSOR_HAND);
+    Refresh();
 }
 
 void ModeSelectorCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
@@ -134,6 +136,7 @@ void ModeSelectorCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
     if (!helpTip.empty()) {
         setStatusText(helpTip);
     }
+    Refresh();
 }
 
 void ModeSelectorCanvas::setHelpTip(std::string tip) {
@@ -142,6 +145,7 @@ void ModeSelectorCanvas::setHelpTip(std::string tip) {
 
 void ModeSelectorCanvas::setNumChoices(int numChoices_in) {
     numChoices = numChoices_in;
+    Refresh();
 }
 
 void ModeSelectorCanvas::addChoice(int value, std::string label) {
@@ -157,6 +161,7 @@ void ModeSelectorCanvas::setSelection(int value) {
         }
     }
     currentSelection = -1;
+    Refresh();
 }
 
 int ModeSelectorCanvas::getSelection() {

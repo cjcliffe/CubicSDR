@@ -90,7 +90,7 @@ bool CubicSDR::OnInit() {
     sdrThread->setOutputQueue("IQDataOutput",pipeSDRIQData);
 
     sdrPostThread = new SDRPostThread();
-    sdrPostThread->setNumVisSamples(BUF_SIZE);
+//    sdrPostThread->setNumVisSamples(BUF_SIZE);
     sdrPostThread->setInputQueue("IQDataInput", pipeSDRIQData);
     sdrPostThread->setOutputQueue("IQVisualDataOutput", pipeIQVisualData);
     sdrPostThread->setOutputQueue("IQDataOutput", pipeWaterfallIQVisualData);
@@ -425,6 +425,10 @@ void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetM
     
     FrequencyDialog fdialog(appframe, -1, title, demodMgr.getActiveDemodulator(), wxPoint(-100,-100), wxSize(320, 75 ), wxDEFAULT_DIALOG_STYLE, targetMode);
     fdialog.ShowModal();
+}
+
+AppFrame *CubicSDR::getAppFrame() {
+    return appframe;
 }
 
 void CubicSDR::setFrequencySnap(int snap) {

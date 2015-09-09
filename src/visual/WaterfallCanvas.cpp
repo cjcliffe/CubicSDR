@@ -74,6 +74,7 @@ void WaterfallCanvas::processInputQueue() {
     }
     glContext->SetCurrent(*this);
     
+    bool processed = false;
     while (!visualDataQueue.empty()) {
         SpectrumVisualData *vData;
         
@@ -83,7 +84,11 @@ void WaterfallCanvas::processInputQueue() {
             waterfallPanel.setPoints(vData->spectrum_points);
             waterfallPanel.step();
             vData->decRefCount();
+            processed = true;
         }
+    }
+    if (processed) {
+        Refresh();
     }
 }
 
@@ -91,6 +96,12 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 //    wxClientDC dc(this);
     wxPaintDC dc(this);
 
+//#ifdef __APPLE__
+//    glFinish();
+//#endif
+
+//    processInputQueue();
+    
     const wxSize ClientSize = GetClientSize();
     long double currentZoom = zoom;
     
@@ -272,6 +283,7 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
     glContext->EndDraw();
 
+    glFlush();
     SwapBuffers();
 }
 
@@ -389,9 +401,11 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
 
 }
 void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
-    Refresh();
-    event.RequestMore();
-//    event.Skip();
+//    Refresh();
+//    processInputQueue();
+//    Refresh();
+//    event.RequestMore();
+    event.Skip();
 }
 
 void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {

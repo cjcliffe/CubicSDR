@@ -80,7 +80,8 @@ public:
     int getPPM();
 
     void showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode = FrequencyDialog::FDIALOG_TARGET_DEFAULT);
-
+    AppFrame *getAppFrame();
+    
 private:
     AppFrame *appframe;
     AppConfig config;
