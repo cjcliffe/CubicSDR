@@ -75,9 +75,9 @@ void WaterfallCanvas::processInputQueue() {
     glContext->SetCurrent(*this);
     
     bool processed = false;
-    while (!visualDataQueue.empty()) {
+    int numVis = visualDataQueue.size();
+    for (int i = 0; i < numVis; i++) {
         SpectrumVisualData *vData;
-        
         visualDataQueue.pop(vData);
         
         if (vData) {

@@ -45,9 +45,9 @@ SpectrumCanvas::~SpectrumCanvas() {
 void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
     const wxSize ClientSize = GetClientSize();
-#ifdef __APPLE__
-    glFinish();
-#endif
+//#ifdef __APPLE__
+//    glFinish();
+//#endif
     
     
     if (!visualDataQueue.empty()) {

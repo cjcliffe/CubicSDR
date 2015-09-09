@@ -16,7 +16,7 @@ int FFTDataDistributor::getLinesPerSecond() {
 }
 
 void FFTDataDistributor::process() {
-	while (!input->empty()) {
+	if (!input->empty()) {
 		if (!isAnyOutputEmpty()) {
 			return;
 		}
@@ -33,7 +33,7 @@ void FFTDataDistributor::process() {
 			}
 			inp->decRefCount();
 		} else {
-			continue;
+			return;
 		}
 
 		// number of seconds contained in input

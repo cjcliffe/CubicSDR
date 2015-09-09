@@ -4,8 +4,16 @@
 #include <iostream>
 #include <iomanip>
 #include "ColorTheme.h"
+#include "CubicSDRDefs.h"
 
-SpectrumPanel::SpectrumPanel() : floorValue(0), ceilValue(1), showDb(false), fftSize(2048) {
+SpectrumPanel::SpectrumPanel() {
+    floorValue = 0;
+    ceilValue = 1;
+    showDb = false;
+    fftSize = DEFAULT_FFT_SIZE;
+    bandwidth = DEFAULT_DEMOD_BW;
+    freq = 0;
+    
     setFill(GLPANEL_FILL_GRAD_Y);
     setFillColor(ThemeMgr::mgr.currentTheme->fftBackground * 2.0, ThemeMgr::mgr.currentTheme->fftBackground);
     
@@ -233,15 +241,18 @@ void SpectrumPanel::drawPanelContents() {
         float dbPanelHeight = (1.0/viewHeight)*14.0;
         
         
-        std::stringstream ssLabel;
-        ssLabel << std::fixed << std::setprecision(1) << (20.0 * log10(2.0*(getCeilValue())/(double)fftSize)) << "dB";
-
+        std::stringstream ssLabel("");
+        if (getCeilValue() != getFloorValue() && fftSize) {
+            ssLabel << std::fixed << std::setprecision(1) << (20.0 * log10(2.0*(getCeilValue())/(double)fftSize)) << "dB";
+        }
         dbPanelCeil.setText(ssLabel.str(), GLFont::GLFONT_ALIGN_RIGHT);
         dbPanelCeil.setSize(dbPanelWidth, dbPanelHeight);
         dbPanelCeil.setPosition(-1.0 + dbPanelWidth, 1.0 - dbPanelHeight);
         
         ssLabel.str("");
-        ssLabel << (20.0 * log10(2.0*(getFloorValue())/(double)fftSize)) << "dB";
+        if (getCeilValue() != getFloorValue() && fftSize) {
+            ssLabel << (20.0 * log10(2.0*(getFloorValue())/(double)fftSize)) << "dB";
+        }
 
         dbPanelFloor.setText(ssLabel.str(), GLFont::GLFONT_ALIGN_RIGHT);
         dbPanelFloor.setSize(dbPanelWidth, dbPanelHeight);
