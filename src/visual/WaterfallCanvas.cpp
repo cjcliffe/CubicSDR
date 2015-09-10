@@ -82,15 +82,18 @@ void WaterfallCanvas::processInputQueue() {
 //    int numVis = visualDataQueue.size();
     
     gTimer.update();
-//    if (visualDataQueue.size() < 10 && !preBuf) {
-//        return;
-//    } else {
-//        preBuf = true;
-//        if (visualDataQueue.size() < 2) {
-//            preBuf = false;
+//    if (linesPerSecond >= 30) {
+//        if ((visualDataQueue.size() < (linesPerSecond/5)) && !preBuf) {
+//            return;
+//        } else {
+//            if (visualDataQueue.size() < (linesPerSecond/10)) {
+//                preBuf = false;
+//            } else {
+//                preBuf = true;
+//            }
 //        }
 //    }
-//    
+    
     double targetVis =  1.0 / (double)linesPerSecond;
     lpsIndex += gTimer.lastUpdateSeconds();
 
@@ -114,14 +117,14 @@ void WaterfallCanvas::processInputQueue() {
             }
         }
     }
-//    if (processed) {
+    if (processed) {
         Refresh();
-//    }
+    }
 }
 
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 //    wxClientDC dc(this);
-    testTimer.timerTestFunc();
+//    testTimer.timerTestFunc();
     wxPaintDC dc(this);
 
 //#ifdef __APPLE__
