@@ -1,13 +1,14 @@
 
 #include "Timer.h"
 
-#ifdef WIN32
+#ifdef _WIN32
+	#include <windows.h>
 	#include <mmsystem.h>
 #endif
 
 #include <iostream>
 
-Timer::Timer(void) : time_elapsed(0), system_milliseconds(0), start_time(0), end_time(0), last_update(0), num_updates(0), paused_time(0), offset(0), paused_state(false), lock_state(0), lock_rate(0)
+Timer::Timer(void) : time_elapsed(0), system_milliseconds(0), start_time(0), end_time(0), last_update(0), num_updates(0), paused_time(0), offset(0), paused_state(false), lock_state(false), lock_rate(0)
 {
 }
 
@@ -77,8 +78,10 @@ void Timer::update(void)
 	}
 	else
 	{
-#ifdef WIN32
+#ifdef _WIN32
+
 		system_milliseconds = timeGetTime ();
+
 #else
 		gettimeofday(&time_val,&time_zone);
 
