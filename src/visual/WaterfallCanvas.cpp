@@ -107,14 +107,16 @@ void WaterfallCanvas::processInputQueue() {
                         vData->decRefCount();
                         processed = true;
                     }
+                    lpsIndex-=targetVis;
+                } else {
+                	break;
                 }
-                lpsIndex-=targetVis;
             }
         }
     }
-    if (processed) {
+//    if (processed) {
         Refresh();
-    }
+//    }
 }
 
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
@@ -428,10 +430,10 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
 }
 void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
 //    Refresh();
-//    processInputQueue();
+    processInputQueue();
 //    Refresh();
-//    event.RequestMore();
-    event.Skip();
+    event.RequestMore();
+//    event.Skip();
 }
 
 void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {

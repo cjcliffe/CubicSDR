@@ -842,9 +842,9 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     wproc->setBandwidth(waterfallCanvas->getBandwidth());
     wproc->setCenterFrequency(waterfallCanvas->getCenterFrequency());
     
-    waterfallCanvas->processInputQueue();
+//    waterfallCanvas->processInputQueue();
 //    waterfallCanvas->Refresh();
-    demodWaterfallCanvas->processInputQueue();
+//    demodWaterfallCanvas->processInputQueue();
 //    demodWaterfallCanvas->Refresh();
 
     if (!this->IsActive()) {

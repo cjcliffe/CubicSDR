@@ -63,7 +63,6 @@ float MeterCanvas::getInputValue() {
 
 void MeterCanvas::setShowUserInput(bool showUserInput) {
     this->showUserInput = showUserInput;
-    Refresh();
 }
 
 void MeterCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
@@ -91,7 +90,11 @@ void MeterCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 }
 
 void MeterCanvas::OnIdle(wxIdleEvent &event) {
-    event.Skip();
+	if (mouseTracker.mouseInView()) {
+	    Refresh();
+	} else {
+		event.Skip();
+	}
 }
 
 void MeterCanvas::OnMouseMoved(wxMouseEvent& event) {
@@ -104,7 +107,6 @@ void MeterCanvas::OnMouseMoved(wxMouseEvent& event) {
             setStatusText(helpTip);
         }
     }
-    Refresh();
 }
 
 void MeterCanvas::OnMouseDown(wxMouseEvent& event) {

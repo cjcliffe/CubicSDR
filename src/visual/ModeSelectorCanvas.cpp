@@ -79,19 +79,21 @@ void ModeSelectorCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 }
 
 void ModeSelectorCanvas::OnIdle(wxIdleEvent &event) {
-    event.Skip();
+	if (mouseTracker.mouseInView()) {
+		Refresh();
+	} else {
+		event.Skip();
+	}
 }
 
 void ModeSelectorCanvas::OnMouseMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseMoved(event);
-    Refresh();
 }
 
 void ModeSelectorCanvas::OnMouseDown(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseDown(event);
     mouseTracker.setHorizDragLock(true);
     mouseTracker.setVertDragLock(true);
-    Refresh();
 }
 
 void ModeSelectorCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
