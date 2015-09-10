@@ -10,7 +10,7 @@
 #include "MouseTracker.h"
 #include "SpectrumCanvas.h"
 #include "WaterfallPanel.h"
-
+#include "Timer.h"
 
 class WaterfallCanvas: public InteractiveCanvas {
 public:
@@ -28,6 +28,8 @@ public:
     void attachSpectrumCanvas(SpectrumCanvas *canvas_in);
     void processInputQueue();
     SpectrumVisualDataQueue *getVisualDataQueue();
+
+    void setLinesPerSecond(int lps);
 
 private:
     void OnPaint(wxPaintEvent& event);
@@ -64,9 +66,12 @@ private:
     bool freqMoving;
     long double freqMove;
     float hoverAlpha;
-
+    int linesPerSecond;
+    
     SpectrumVisualDataQueue visualDataQueue;
-
+    Timer gTimer, testTimer;
+    double lpsIndex;
+    bool preBuf;
     // event table
 wxDECLARE_EVENT_TABLE();
 };

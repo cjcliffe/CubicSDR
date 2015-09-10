@@ -395,6 +395,7 @@ AppFrame::AppFrame() :
             
     waterfallSpeedMeter->setLevel(sqrt(wflps));
     waterfallDataThread->setLinesPerSecond(wflps);
+    waterfallCanvas->setLinesPerSecond(wflps);
             
     ThemeMgr::mgr.setTheme(wxGetApp().getConfig()->getTheme());
 
@@ -507,6 +508,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         spectrumCanvas->setBandwidth(wxGetApp().getSampleRate());
         spectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
         waterfallDataThread->setLinesPerSecond(DEFAULT_WATERFALL_LPS);
+        waterfallCanvas->setLinesPerSecond(DEFAULT_WATERFALL_LPS);
         waterfallSpeedMeter->setLevel(sqrt(DEFAULT_WATERFALL_LPS));
         wxGetApp().getSpectrumProcessor()->setFFTAverageRate(0.65);
         spectrumAvgMeter->setLevel(0.65);
@@ -832,6 +834,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         float val = waterfallSpeedMeter->getInputValue();
         waterfallSpeedMeter->setLevel(val);
         waterfallDataThread->setLinesPerSecond((int)ceil(val*val));
+        waterfallCanvas->setLinesPerSecond((int)ceil(val*val));
         GetStatusBar()->SetStatusText(wxString::Format(wxT("Waterfall max speed changed to %d lines per second."),(int)ceil(val*val)));
     }
 

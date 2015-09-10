@@ -39,7 +39,9 @@ WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         dragOfs(0), mouseZoom(1), zoom(1), freqMove(0.0), freqMoving(false), hoverAlpha(1.0) {
 
     glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this));
-
+    linesPerSecond = 30;
+    lpsIndex = 0;
+    preBuf = false;
     SetCursor(wxCURSOR_CROSS);
 }
 
@@ -54,6 +56,8 @@ void WaterfallCanvas::setup(int fft_size_in, int waterfall_lines_in) {
     waterfall_lines = waterfall_lines_in;
 
     waterfallPanel.setup(fft_size, waterfall_lines);
+    gTimer.start();
+    testTimer.start();
 }
 
 WaterfallCanvas::DragState WaterfallCanvas::getDragState() {
@@ -75,25 +79,47 @@ void WaterfallCanvas::processInputQueue() {
     glContext->SetCurrent(*this);
     
     bool processed = false;
-    int numVis = visualDataQueue.size();
-    for (int i = 0; i < numVis; i++) {
-        SpectrumVisualData *vData;
-        visualDataQueue.pop(vData);
-        
-        if (vData) {
-            waterfallPanel.setPoints(vData->spectrum_points);
-            waterfallPanel.step();
-            vData->decRefCount();
-            processed = true;
+//    int numVis = visualDataQueue.size();
+    
+    gTimer.update();
+//    if (visualDataQueue.size() < 10 && !preBuf) {
+//        return;
+//    } else {
+//        preBuf = true;
+//        if (visualDataQueue.size() < 2) {
+//            preBuf = false;
+//        }
+//    }
+//    
+    double targetVis =  1.0 / (double)linesPerSecond;
+    lpsIndex += gTimer.lastUpdateSeconds();
+
+    if (linesPerSecond) {
+        if (lpsIndex >= targetVis) {
+            while (lpsIndex >= targetVis) {
+                SpectrumVisualData *vData;
+                if (!visualDataQueue.empty()) {
+                    visualDataQueue.pop(vData);
+                    
+                    if (vData) {
+                        waterfallPanel.setPoints(vData->spectrum_points);
+                        waterfallPanel.step();
+                        vData->decRefCount();
+                        processed = true;
+                    }
+                }
+                lpsIndex-=targetVis;
+            }
         }
     }
     if (processed) {
-        Refresh();
+//        Refresh();
     }
 }
 
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 //    wxClientDC dc(this);
+    testTimer.timerTestFunc();
     wxPaintDC dc(this);
 
 //#ifdef __APPLE__
@@ -401,11 +427,11 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
 
 }
 void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
-//    Refresh();
+    Refresh();
 //    processInputQueue();
 //    Refresh();
-//    event.RequestMore();
-    event.Skip();
+    event.RequestMore();
+//    event.Skip();
 }
 
 void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
@@ -792,4 +818,9 @@ void WaterfallCanvas::updateCenterFrequency(long long freq) {
     }
 
 }
+
+void WaterfallCanvas::setLinesPerSecond(int lps) {
+    linesPerSecond = lps;
+}
+
 

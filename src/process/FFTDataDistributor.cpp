@@ -47,11 +47,11 @@ void FFTDataDistributor::process() {
 		if (inputBuffer.data.size() >= fftSize) {
 			int numProcessed = 0;
 
-//			if (lineRateAccum + (lineRateStep * floor((double)inputBuffer.data.size()/(double)fftSize)) < 1.0) {
-//				// move along, nothing to see here..
-//				lineRateAccum += (lineRateStep * inputBuffer.data.size()/fftSize);
-//				numProcessed = inputBuffer.data.size()/fftSize;
-//			} else {
+			if (lineRateAccum + (lineRateStep * ((double)inputBuffer.data.size()/(double)fftSize)) < 1.0) {
+				// move along, nothing to see here..
+				lineRateAccum += (lineRateStep * ((double)inputBuffer.data.size()/(double)fftSize));
+				numProcessed = inputBuffer.data.size();
+			} else {
 				for (int i = 0, iMax = inputBuffer.data.size(); i < iMax; i += fftSize) {
 					if ((i + fftSize) > iMax) {
 						break;
@@ -72,7 +72,7 @@ void FFTDataDistributor::process() {
 
 					numProcessed += fftSize;
 				}
-//			}
+			}
 			if (numProcessed) {
 				inputBuffer.data.erase(inputBuffer.data.begin(), inputBuffer.data.begin() + numProcessed);
 			}

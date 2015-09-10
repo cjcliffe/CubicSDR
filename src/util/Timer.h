@@ -155,6 +155,9 @@ public:
      *  \return Current pause state, true if paused, false otherwise
      */
     bool paused();
+    
+    
+    void timerTestFunc();
 };
 
 #endif
