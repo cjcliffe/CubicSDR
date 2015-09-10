@@ -113,7 +113,7 @@ void WaterfallCanvas::processInputQueue() {
         }
     }
     if (processed) {
-//        Refresh();
+        Refresh();
     }
 }
 
@@ -427,11 +427,11 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
 
 }
 void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
-    Refresh();
+//    Refresh();
 //    processInputQueue();
 //    Refresh();
-    event.RequestMore();
-//    event.Skip();
+//    event.RequestMore();
+    event.Skip();
 }
 
 void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
@@ -821,6 +821,15 @@ void WaterfallCanvas::updateCenterFrequency(long long freq) {
 
 void WaterfallCanvas::setLinesPerSecond(int lps) {
     linesPerSecond = lps;
+    while (!visualDataQueue.empty()) {
+        SpectrumVisualData *vData;
+        visualDataQueue.pop(vData);
+        
+        if (vData) {
+            vData->decRefCount();
+        }
+    }
+
 }
 
 
