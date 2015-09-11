@@ -107,3 +107,25 @@ protected:
     }
 };
 
+
+template<class OutputDataType = ReferenceCounter>
+class VisualDataReDistributor : public VisualProcessor<OutputDataType, OutputDataType> {
+protected:
+    void process() {
+        while (!VisualProcessor<OutputDataType, OutputDataType>::input->empty()) {
+            if (!VisualProcessor<OutputDataType, OutputDataType>::isAnyOutputEmpty()) {
+                return;
+            }
+            OutputDataType *inp;
+            VisualProcessor<OutputDataType, OutputDataType>::input->pop(inp);
+            
+            if (inp) {
+                OutputDataType *outp = buffers.getBuffer();
+                (*outp) = (*inp);
+                inp->decRefCount();
+                VisualProcessor<OutputDataType, OutputDataType>::distribute(outp);
+            }
+        }
+    }
+    ReBuffer<OutputDataType> buffers;
+};

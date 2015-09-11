@@ -99,6 +99,7 @@ void WaterfallCanvas::processInputQueue() {
 
     if (linesPerSecond) {
         if (lpsIndex >= targetVis) {
+            tex_update.lock();
             while (lpsIndex >= targetVis) {
                 SpectrumVisualData *vData;
                 if (!visualDataQueue.empty()) {
@@ -115,6 +116,7 @@ void WaterfallCanvas::processInputQueue() {
                 	break;
                 }
             }
+            tex_update.unlock();
         }
     }
     if (processed) {
@@ -235,7 +237,9 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->BeginDraw(0,0,0);
 
     waterfallPanel.calcTransform(CubicVR::mat4::identity());
+    tex_update.lock();
     waterfallPanel.draw();
+    tex_update.unlock();
 
     std::vector<DemodulatorInstance *> &demods = wxGetApp().getDemodMgr().getDemodulators();
 
@@ -314,7 +318,7 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
     glContext->EndDraw();
 
-    glFlush();
+//    glFlush();
     SwapBuffers();
 }
 

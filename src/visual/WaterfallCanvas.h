@@ -72,6 +72,7 @@ private:
     Timer gTimer, testTimer;
     double lpsIndex;
     bool preBuf;
+    std::mutex tex_update;
     // event table
 wxDECLARE_EVENT_TABLE();
 };

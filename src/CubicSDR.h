@@ -60,7 +60,7 @@ public:
     ScopeVisualProcessor *getScopeProcessor();
     SpectrumVisualProcessor *getSpectrumProcessor();
     SpectrumVisualProcessor *getDemodSpectrumProcessor();
-    VisualDataDistributor<DemodulatorThreadIQData> *getSpectrumDistributor();
+    VisualDataReDistributor<DemodulatorThreadIQData> *getSpectrumDistributor();
     
     DemodulatorThreadOutputQueue* getAudioVisualQueue();
     DemodulatorThreadInputQueue* getIQVisualQueue();
@@ -111,7 +111,7 @@ private:
 
     ScopeVisualProcessor scopeProcessor;
     
-    VisualDataDistributor<DemodulatorThreadIQData> spectrumDistributor;
+    VisualDataReDistributor<DemodulatorThreadIQData> spectrumDistributor;
 
     std::thread *t_SDR;
     std::thread *t_PostSDR;

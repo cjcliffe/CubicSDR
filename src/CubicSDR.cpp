@@ -298,7 +298,7 @@ SpectrumVisualProcessor *CubicSDR::getDemodSpectrumProcessor() {
     return demodVisualThread->getProcessor();
 }
 
-VisualDataDistributor<DemodulatorThreadIQData> *CubicSDR::getSpectrumDistributor() {
+VisualDataReDistributor<DemodulatorThreadIQData> *CubicSDR::getSpectrumDistributor() {
     return &spectrumDistributor;
 }
 
