@@ -69,7 +69,7 @@ private:
     int linesPerSecond;
     
     SpectrumVisualDataQueue visualDataQueue;
-    Timer gTimer, testTimer;
+    Timer gTimer;
     double lpsIndex;
     bool preBuf;
     std::mutex tex_update;
