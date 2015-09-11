@@ -2,6 +2,7 @@
 
 #include "IOThread.h"
 #include "SpectrumVisualProcessor.h"
+#include "FFTDataDistributor.h"
 
 class FFTVisualDataThread : public IOThread {
 public:

@@ -123,7 +123,7 @@ Features and Status:
   - Optimization
     - [x] Eliminate large waterfall texture uploads
     - [ ] Update visuals to OpenGL 3.x / OpenGL ES
-    - [ ] Resolve constant refresh on visuals that don't change often
+    - [x] Resolve constant refresh on visuals that don't change often
     - [ ] Resolve all driver/platform vertical sync issues
     - [ ] Group and divide IQ data distribution workload instead of 100% distribution per instance
 

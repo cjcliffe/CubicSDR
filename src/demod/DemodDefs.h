@@ -71,6 +71,13 @@ public:
 
     }
 
+    DemodulatorThreadIQData & operator=(const DemodulatorThreadIQData &other) {
+        frequency = other.frequency;
+        sampleRate = other.sampleRate;
+        data.assign(other.data.begin(), other.data.end());
+        return *this;
+    }
+
     ~DemodulatorThreadIQData() {
 
     }

@@ -6,7 +6,7 @@
 #include <deque>
 
 SDRPostThread::SDRPostThread() : IOThread(),
-        iqDataInQueue(NULL), iqDataOutQueue(NULL), iqVisualQueue(NULL), dcFilter(NULL), num_vis_samples(16384*2) {
+        iqDataInQueue(NULL), iqDataOutQueue(NULL), iqVisualQueue(NULL), dcFilter(NULL){
 	
 	swapIQ.store(false);
 
@@ -50,14 +50,6 @@ void SDRPostThread::removeDemodulator(DemodulatorInstance *demod) {
     busy_demod.unlock();
 }
 
-void SDRPostThread::setNumVisSamples(int num_vis_samples_in) {
-    num_vis_samples = num_vis_samples_in;
-}
-
-int SDRPostThread::getNumVisSamples() {
-    return num_vis_samples;
-}
-
 void SDRPostThread::setSwapIQ(bool swapIQ) {
     this->swapIQ.store(swapIQ);
 }
@@ -93,7 +85,6 @@ void SDRPostThread::run() {
         
         iqDataInQueue->pop(data_in);
         //        std::lock_guard < std::mutex > lock(data_in->m_mutex);
-        int num_vis_samples = this->num_vis_samples;
         
         if (data_in && data_in->data.size()) {
             int dataSize = data_in->data.size()/2;
@@ -118,21 +109,19 @@ void SDRPostThread::run() {
             
             iirfilt_crcf_execute_block(dcFilter, &fpData[0], dataSize, &dataOut[0]);
             
-            if (iqVisualQueue != NULL && iqVisualQueue->empty()) {
+            if (iqVisualQueue != NULL && !iqVisualQueue->full()) {
                 DemodulatorThreadIQData *visualDataOut = visualDataBuffers.getBuffer();
                 visualDataOut->setRefCount(1);
                 
-                if (num_vis_samples > dataOut.size()) {
-                    num_vis_samples = dataOut.size();
-                }
+                int num_vis_samples = dataOut.size();
 
-                if (visualDataOut->data.size() < num_vis_samples) {
-                    if (visualDataOut->data.capacity() < num_vis_samples) {
-                        visualDataOut->data.reserve(num_vis_samples);
-                    }
-                    visualDataOut->data.resize(num_vis_samples);
-                }
-                
+//                if (visualDataOut->data.size() < num_vis_samples) {
+//                    if (visualDataOut->data.capacity() < num_vis_samples) {
+//                        visualDataOut->data.reserve(num_vis_samples);
+//                    }
+//                    visualDataOut->data.resize(num_vis_samples);
+//                }
+//
                 visualDataOut->frequency = data_in->frequency;
                 visualDataOut->sampleRate = data_in->sampleRate;
                 visualDataOut->data.assign(dataOut.begin(), dataOut.begin() + num_vis_samples);

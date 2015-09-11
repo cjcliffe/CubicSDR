@@ -66,7 +66,7 @@ bool CubicSDR::OnInit() {
     pipeSpectrumIQVisualData->set_max_num_items(1);
     
     pipeWaterfallIQVisualData = new DemodulatorThreadInputQueue();
-    pipeWaterfallIQVisualData->set_max_num_items(DEFAULT_WATERFALL_LPS);
+    pipeWaterfallIQVisualData->set_max_num_items(128);
     
     spectrumDistributor.attachOutput(pipeDemodIQVisualData);
     spectrumDistributor.attachOutput(pipeSpectrumIQVisualData);
@@ -90,7 +90,7 @@ bool CubicSDR::OnInit() {
     sdrThread->setOutputQueue("IQDataOutput",pipeSDRIQData);
 
     sdrPostThread = new SDRPostThread();
-    sdrPostThread->setNumVisSamples(BUF_SIZE);
+//    sdrPostThread->setNumVisSamples(BUF_SIZE);
     sdrPostThread->setInputQueue("IQDataInput", pipeSDRIQData);
     sdrPostThread->setOutputQueue("IQVisualDataOutput", pipeIQVisualData);
     sdrPostThread->setOutputQueue("IQDataOutput", pipeWaterfallIQVisualData);
@@ -298,7 +298,7 @@ SpectrumVisualProcessor *CubicSDR::getDemodSpectrumProcessor() {
     return demodVisualThread->getProcessor();
 }
 
-VisualDataDistributor<DemodulatorThreadIQData> *CubicSDR::getSpectrumDistributor() {
+VisualDataReDistributor<DemodulatorThreadIQData> *CubicSDR::getSpectrumDistributor() {
     return &spectrumDistributor;
 }
 
@@ -425,6 +425,10 @@ void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetM
     
     FrequencyDialog fdialog(appframe, -1, title, demodMgr.getActiveDemodulator(), wxPoint(-100,-100), wxSize(320, 75 ), wxDEFAULT_DIALOG_STYLE, targetMode);
     fdialog.ShowModal();
+}
+
+AppFrame *CubicSDR::getAppFrame() {
+    return appframe;
 }
 
 void CubicSDR::setFrequencySnap(int snap) {

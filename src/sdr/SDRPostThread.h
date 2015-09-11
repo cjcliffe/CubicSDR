@@ -11,9 +11,6 @@ public:
     void bindDemodulator(DemodulatorInstance *demod);
     void removeDemodulator(DemodulatorInstance *demod);
 
-    void setNumVisSamples(int num_vis_samples_in);
-    int getNumVisSamples();
-    
     void setSwapIQ(bool swapIQ);
     bool getSwapIQ();
     
@@ -28,7 +25,6 @@ protected:
     std::mutex busy_demod;
     std::vector<DemodulatorInstance *> demodulators;
     iirfilt_crcf dcFilter;
-    int num_vis_samples;
     std::atomic_bool swapIQ;
     ReBuffer<DemodulatorThreadIQData> visualDataBuffers;
 

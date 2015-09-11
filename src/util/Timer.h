@@ -24,7 +24,7 @@ private:
     unsigned long paused_time;
     unsigned long offset;
 
-#ifndef WIN32
+#ifndef _WIN32
     struct timeval time_val;
     struct timezone time_zone;
 #endif
@@ -155,6 +155,9 @@ public:
      *  \return Current pause state, true if paused, false otherwise
      */
     bool paused();
+    
+    
+    void timerTestFunc();
 };
 
 #endif

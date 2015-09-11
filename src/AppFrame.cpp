@@ -49,7 +49,7 @@ AppFrame::AppFrame() :
     wxBoxSizer *demodTray = new wxBoxSizer(wxHORIZONTAL);
     wxBoxSizer *demodScopeTray = new wxBoxSizer(wxVERTICAL);
 
-    int attribList[] = { WX_GL_RGBA, WX_GL_STENCIL_SIZE, 8, WX_GL_BUFFER_SIZE, 24, WX_GL_DOUBLEBUFFER, 0 };
+    int attribList[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 
     demodModeSelector = new ModeSelectorCanvas(this, attribList);
     demodModeSelector->addChoice(DEMOD_TYPE_FM, "FM");
@@ -396,6 +396,7 @@ AppFrame::AppFrame() :
             
     waterfallSpeedMeter->setLevel(sqrt(wflps));
     waterfallDataThread->setLinesPerSecond(wflps);
+    waterfallCanvas->setLinesPerSecond(wflps);
             
     ThemeMgr::mgr.setTheme(wxGetApp().getConfig()->getTheme());
 
@@ -508,6 +509,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         spectrumCanvas->setBandwidth(wxGetApp().getSampleRate());
         spectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
         waterfallDataThread->setLinesPerSecond(DEFAULT_WATERFALL_LPS);
+        waterfallCanvas->setLinesPerSecond(DEFAULT_WATERFALL_LPS);
         waterfallSpeedMeter->setLevel(sqrt(DEFAULT_WATERFALL_LPS));
         wxGetApp().getSpectrumProcessor()->setFFTAverageRate(0.65);
         spectrumAvgMeter->setLevel(0.65);
@@ -833,6 +835,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         float val = waterfallSpeedMeter->getInputValue();
         waterfallSpeedMeter->setLevel(val);
         waterfallDataThread->setLinesPerSecond((int)ceil(val*val));
+        waterfallCanvas->setLinesPerSecond((int)ceil(val*val));
         GetStatusBar()->SetStatusText(wxString::Format(wxT("Waterfall max speed changed to %d lines per second."),(int)ceil(val*val)));
     }
 
@@ -840,8 +843,10 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     wproc->setBandwidth(waterfallCanvas->getBandwidth());
     wproc->setCenterFrequency(waterfallCanvas->getCenterFrequency());
     
-    waterfallCanvas->processInputQueue();
-    demodWaterfallCanvas->processInputQueue();
+//    waterfallCanvas->processInputQueue();
+//    waterfallCanvas->Refresh();
+//    demodWaterfallCanvas->processInputQueue();
+//    demodWaterfallCanvas->Refresh();
 
     if (!this->IsActive()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(25));
