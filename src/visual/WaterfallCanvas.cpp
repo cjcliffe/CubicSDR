@@ -57,7 +57,6 @@ void WaterfallCanvas::setup(int fft_size_in, int waterfall_lines_in) {
 
     waterfallPanel.setup(fft_size, waterfall_lines);
     gTimer.start();
-    testTimer.start();
 }
 
 WaterfallCanvas::DragState WaterfallCanvas::getDragState() {
