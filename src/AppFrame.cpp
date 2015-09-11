@@ -77,6 +77,7 @@ AppFrame::AppFrame() :
     demodSpectrumCanvas->attachWaterfallCanvas(demodWaterfallCanvas);
     demodVisuals->Add(demodWaterfallCanvas, 6, wxEXPAND | wxALL, 0);
     wxGetApp().getDemodSpectrumProcessor()->attachOutput(demodWaterfallCanvas->getVisualDataQueue());
+    demodWaterfallCanvas->getVisualDataQueue()->set_max_num_items(3);
 
     demodTray->Add(demodVisuals, 30, wxEXPAND | wxALL, 0);
 
