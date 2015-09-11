@@ -120,7 +120,7 @@ void WaterfallCanvas::processInputQueue() {
         }
     }
     if (processed) {
-        Refresh();
+//        Refresh();
     }
 }
 
@@ -133,7 +133,7 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 //    glFinish();
 //#endif
 
-//    processInputQueue();
+    processInputQueue();
     
     const wxSize ClientSize = GetClientSize();
     long double currentZoom = zoom;
@@ -437,8 +437,8 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
 }
 void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
 //    Refresh();
-    processInputQueue();
-//    Refresh();
+//    processInputQueue();
+    Refresh();
     event.RequestMore();
 //    event.Skip();
 }
