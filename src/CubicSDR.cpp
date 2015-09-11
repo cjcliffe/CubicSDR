@@ -66,7 +66,7 @@ bool CubicSDR::OnInit() {
     pipeSpectrumIQVisualData->set_max_num_items(1);
     
     pipeWaterfallIQVisualData = new DemodulatorThreadInputQueue();
-    pipeWaterfallIQVisualData->set_max_num_items(DEFAULT_WATERFALL_LPS);
+    pipeWaterfallIQVisualData->set_max_num_items(128);
     
     spectrumDistributor.attachOutput(pipeDemodIQVisualData);
     spectrumDistributor.attachOutput(pipeSpectrumIQVisualData);

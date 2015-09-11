@@ -78,21 +78,7 @@ void WaterfallCanvas::processInputQueue() {
     }
     glContext->SetCurrent(*this);
     
-    bool processed = false;
-//    int numVis = visualDataQueue.size();
-    
     gTimer.update();
-//    if (linesPerSecond >= 30) {
-//        if ((visualDataQueue.size() < (linesPerSecond/5)) && !preBuf) {
-//            return;
-//        } else {
-//            if (visualDataQueue.size() < (linesPerSecond/10)) {
-//                preBuf = false;
-//            } else {
-//                preBuf = true;
-//            }
-//        }
-//    }
     
     double targetVis =  1.0 / (double)linesPerSecond;
     lpsIndex += gTimer.lastUpdateSeconds();
@@ -109,7 +95,6 @@ void WaterfallCanvas::processInputQueue() {
                         waterfallPanel.setPoints(vData->spectrum_points);
                         waterfallPanel.step();
                         vData->decRefCount();
-                        processed = true;
                     }
                     lpsIndex-=targetVis;
                 } else {
@@ -118,20 +103,10 @@ void WaterfallCanvas::processInputQueue() {
             }
             tex_update.unlock();
         }
-    }
-    if (processed) {
-//        Refresh();
-    }
-}
+    }}
 
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
-//    wxClientDC dc(this);
-//    testTimer.timerTestFunc();
     wxPaintDC dc(this);
-
-//#ifdef __APPLE__
-//    glFinish();
-//#endif
 
     processInputQueue();
     
@@ -318,7 +293,6 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
     glContext->EndDraw();
 
-//    glFlush();
     SwapBuffers();
 }
 
@@ -436,11 +410,11 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
 
 }
 void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
-//    Refresh();
-//    processInputQueue();
     Refresh();
     event.RequestMore();
-//    event.Skip();
+    if (visualDataQueue.size() > linesPerSecond) {
+        processInputQueue();
+    }
 }
 
 void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
