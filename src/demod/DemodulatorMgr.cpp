@@ -7,7 +7,7 @@
 
 DemodulatorMgr::DemodulatorMgr() :
         activeDemodulator(NULL), lastActiveDemodulator(NULL), activeVisualDemodulator(NULL), lastBandwidth(DEFAULT_DEMOD_BW), lastDemodType(
-                DEFAULT_DEMOD_TYPE), lastSquelchEnabled(false), lastSquelch(0), lastGain(1.0), lastStereo(false) {
+                DEFAULT_DEMOD_TYPE), lastSquelchEnabled(false), lastSquelch(0), lastGain(1.0), lastStereo(false), lastMuted(false) {
 
 }
 

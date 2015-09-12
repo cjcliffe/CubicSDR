@@ -2,8 +2,8 @@ cmake_minimum_required (VERSION 2.8)
 
 SET(CUBICSDR_VERSION_MAJOR "0")
 SET(CUBICSDR_VERSION_MINOR "1")
-SET(CUBICSDR_VERSION_PATCH "3")
-SET(CUBICSDR_VERSION_REL "beta")
+SET(CUBICSDR_VERSION_PATCH "6")
+SET(CUBICSDR_VERSION_REL "beta-issue140")
 SET(CUBICSDR_VERSION "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}-${CUBICSDR_VERSION_REL}")
 
 SET(CPACK_PACKAGE_VERSION "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}")
@@ -264,6 +264,7 @@ SET (cubicsdr_sources
 	src/process/ScopeVisualProcessor.cpp
 	src/process/SpectrumVisualProcessor.cpp
 	src/process/FFTVisualDataThread.cpp
+	src/process/FFTDataDistributor.cpp
     src/process/SpectrumVisualDataThread.cpp
 	src/ui/GLPanel.cpp
 	external/rtaudio/RtAudio.cpp
@@ -319,6 +320,7 @@ SET (cubicsdr_headers
 	src/process/ScopeVisualProcessor.h
 	src/process/SpectrumVisualProcessor.h
 	src/process/FFTVisualDataThread.h
+	src/process/FFTDataDistributor.h
     src/process/SpectrumVisualDataThread.h
 	src/ui/GLPanel.h
 	src/ui/UITestCanvas.cpp
@@ -423,6 +425,13 @@ IF (MSVC)
   set(CMAKE_CREATE_WIN32_EXE "/SUBSYSTEM:WINDOWS /ENTRY:\"mainCRTStartup\"")
 ENDIF(MSVC)
 
+IF (APPLE)
+    ADD_DEFINITIONS(
+        -DHAVE_TYPE_TRAITS=1
+        -mmacosx-version-min=10.9
+    )
+ENDIF(APPLE)
+
 IF (APPLE AND BUNDLE_APP)
     PROJECT(CubicSDR)
     SET(MACOSX_BUNDLE_BUNDLE_NAME CubicSDR)
@@ -431,8 +440,6 @@ IF (APPLE AND BUNDLE_APP)
 		-std=c++0x 
 		-pthread
         -D_OSX_APP_
-        -DHAVE_TYPE_TRAITS=1
-        -mmacosx-version-min=10.9
     )   
       
     ADD_EXECUTABLE(CubicSDR 

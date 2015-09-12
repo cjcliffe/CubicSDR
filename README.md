@@ -42,7 +42,7 @@ Features and Status:
       - [x] Spectrum
       - [x] Waterfall
       - [x] Add faint grid for sense of scale
-      - [ ] Audio Spectrum
+      - [x] Audio Spectrum
       - [ ] X/Y Scope
       - [ ] Indicate outer spectrum edges when zoomed
     - [ ] 3D visuals
@@ -67,8 +67,8 @@ Features and Status:
       - [x] Display audio output selection
       - [x] Volume control
       - [x] Direct frequency input
-      - [ ] Mute
-      - [ ] Waterfall speed
+      - [x] Mute
+      - [x] Waterfall speed
       - [ ] RTL-SDR Gain
   - Basic Input Controls
     - [x] Drag spectrum to change center frequency
@@ -123,7 +123,7 @@ Features and Status:
   - Optimization
     - [x] Eliminate large waterfall texture uploads
     - [ ] Update visuals to OpenGL 3.x / OpenGL ES
-    - [ ] Resolve constant refresh on visuals that don't change often
+    - [x] Resolve constant refresh on visuals that don't change often
     - [ ] Resolve all driver/platform vertical sync issues
     - [ ] Group and divide IQ data distribution workload instead of 100% distribution per instance
 

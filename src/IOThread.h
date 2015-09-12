@@ -8,6 +8,7 @@
 #include <iostream>
 
 #include "ThreadQueue.h"
+#include "Timer.h"
 
 struct map_string_less : public std::binary_function<std::string,std::string,bool>
 {
@@ -112,9 +113,9 @@ public:
     void setOutputQueue(std::string qname, ThreadQueueBase *threadQueue);
     void *getOutputQueue(std::string qname);
     
-    
 protected:
     std::map<std::string, ThreadQueueBase *, map_string_less> input_queues;
     std::map<std::string, ThreadQueueBase *, map_string_less> output_queues;
     std::atomic_bool terminated;
+    Timer gTimer;
 };

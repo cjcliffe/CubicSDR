@@ -1,7 +1,8 @@
 #include "FFTVisualDataThread.h"
 #include "CubicSDR.h"
 
-FFTVisualDataThread::FFTVisualDataThread() : linesPerSecond(DEFAULT_WATERFALL_LPS) {
+FFTVisualDataThread::FFTVisualDataThread() {
+	linesPerSecond.store(DEFAULT_WATERFALL_LPS);
     lpsChanged.store(true);
 }
 
@@ -36,7 +37,8 @@ void FFTVisualDataThread::run() {
     
     while(!terminated) {
         
-        std::this_thread::sleep_for(std::chrono::milliseconds(12));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+//        std::this_thread::yield();
         
         int fftSize = wproc.getDesiredInputSize();
         
@@ -48,7 +50,7 @@ void FFTVisualDataThread::run() {
     
         if (lpsChanged.load()) {
             fftDistrib.setLinesPerSecond(linesPerSecond.load());
-            pipeIQDataIn->set_max_num_items(linesPerSecond.load());
+//            pipeIQDataIn->set_max_num_items(linesPerSecond.load());
             lpsChanged.store(false);
         }
         

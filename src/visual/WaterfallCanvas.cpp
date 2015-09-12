@@ -39,7 +39,9 @@ WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         dragOfs(0), mouseZoom(1), zoom(1), freqMove(0.0), freqMoving(false), hoverAlpha(1.0) {
 
     glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this));
-
+    linesPerSecond = 30;
+    lpsIndex = 0;
+    preBuf = false;
     SetCursor(wxCURSOR_CROSS);
 }
 
@@ -54,6 +56,7 @@ void WaterfallCanvas::setup(int fft_size_in, int waterfall_lines_in) {
     waterfall_lines = waterfall_lines_in;
 
     waterfallPanel.setup(fft_size, waterfall_lines);
+    gTimer.start();
 }
 
 WaterfallCanvas::DragState WaterfallCanvas::getDragState() {
@@ -74,23 +77,38 @@ void WaterfallCanvas::processInputQueue() {
     }
     glContext->SetCurrent(*this);
     
-    while (!visualDataQueue.empty()) {
-        SpectrumVisualData *vData;
-        
-        visualDataQueue.pop(vData);
-        
-        if (vData) {
-            waterfallPanel.setPoints(vData->spectrum_points);
-            waterfallPanel.step();
-            vData->decRefCount();
+    gTimer.update();
+    
+    double targetVis =  1.0 / (double)linesPerSecond;
+    lpsIndex += gTimer.lastUpdateSeconds();
+
+    if (linesPerSecond) {
+        if (lpsIndex >= targetVis) {
+            tex_update.lock();
+            while (lpsIndex >= targetVis) {
+                SpectrumVisualData *vData;
+                if (!visualDataQueue.empty()) {
+                    visualDataQueue.pop(vData);
+                    
+                    if (vData) {
+                        waterfallPanel.setPoints(vData->spectrum_points);
+                        waterfallPanel.step();
+                        vData->decRefCount();
+                    }
+                    lpsIndex-=targetVis;
+                } else {
+                	break;
+                }
+            }
+            tex_update.unlock();
         }
-    }
-}
+    }}
 
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
-//    wxClientDC dc(this);
     wxPaintDC dc(this);
 
+    processInputQueue();
+    
     const wxSize ClientSize = GetClientSize();
     long double currentZoom = zoom;
     
@@ -193,7 +211,9 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->BeginDraw(0,0,0);
 
     waterfallPanel.calcTransform(CubicVR::mat4::identity());
+    tex_update.lock();
     waterfallPanel.draw();
+    tex_update.unlock();
 
     std::vector<DemodulatorInstance *> &demods = wxGetApp().getDemodMgr().getDemodulators();
 
@@ -391,7 +411,9 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
 void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
     Refresh();
     event.RequestMore();
-//    event.Skip();
+    if (visualDataQueue.size() > linesPerSecond) {
+        processInputQueue();
+    }
 }
 
 void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
@@ -778,4 +800,18 @@ void WaterfallCanvas::updateCenterFrequency(long long freq) {
     }
 
 }
+
+void WaterfallCanvas::setLinesPerSecond(int lps) {
+    linesPerSecond = lps;
+    while (!visualDataQueue.empty()) {
+        SpectrumVisualData *vData;
+        visualDataQueue.pop(vData);
+        
+        if (vData) {
+            vData->decRefCount();
+        }
+    }
+
+}
+
 
