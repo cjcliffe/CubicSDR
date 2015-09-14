@@ -96,16 +96,22 @@ void SDRPostThread::run() {
                 fpData.resize(dataSize);
                 dataOut.resize(dataSize);
             }
-            
-            if (swapIQ) {
-                for (int i = 0; i < dataSize; i++) {
-                    fpData[i] = _lut_swap[*((uint16_t*)&data_in->data[2*i])];
-                }
-            } else {
-                for (int i = 0; i < dataSize; i++) {
-                    fpData[i] = _lut[*((uint16_t*)&data_in->data[2*i])];
-                }
+
+
+            for (int i = 0; i < dataSize; i++) {
+                fpData[i].real = data_in->data[i*2];
+                fpData[i].imag = data_in->data[i*2+1];
             }
+
+//            if (swapIQ) {
+//                for (int i = 0; i < dataSize; i++) {
+//                    fpData[i] = _lut_swap[*((uint16_t*)&data_in->data[2*i])];
+//                }
+//            } else {
+//                for (int i = 0; i < dataSize; i++) {
+//                    fpData[i] = _lut[*((uint16_t*)&data_in->data[2*i])];
+//                }
+//            }
             
             iirfilt_crcf_execute_block(dcFilter, &fpData[0], dataSize, &dataOut[0]);
             

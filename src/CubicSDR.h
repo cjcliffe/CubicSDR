@@ -10,7 +10,11 @@
 #include "PrimaryGLContext.h"
 
 #include "ThreadQueue.h"
-#include "SDRThread.h"
+#ifdef USE_RTL_SDR
+    #include "SDRThread.h"
+#else
+    #include "SoapySDRThread.h"
+#endif
 #include "SDRPostThread.h"
 #include "AudioThread.h"
 #include "DemodulatorMgr.h"
@@ -86,7 +90,7 @@ private:
     AppFrame *appframe;
     AppConfig config;
     PrimaryGLContext *m_glContext;
-    std::vector<SDRDeviceInfo *> devs;
+    std::vector<SDRDeviceInfo *> *devs;
 
     DemodulatorMgr demodMgr;
 

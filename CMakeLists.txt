@@ -2,8 +2,8 @@ cmake_minimum_required (VERSION 2.8)
 
 SET(CUBICSDR_VERSION_MAJOR "0")
 SET(CUBICSDR_VERSION_MINOR "1")
-SET(CUBICSDR_VERSION_PATCH "6")
-SET(CUBICSDR_VERSION_REL "beta-issue140")
+SET(CUBICSDR_VERSION_PATCH "7")
+SET(CUBICSDR_VERSION_REL "beta-issue64")
 SET(CUBICSDR_VERSION "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}-${CUBICSDR_VERSION_REL}")
 
 SET(CPACK_PACKAGE_VERSION "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}")
@@ -15,9 +15,9 @@ ADD_DEFINITIONS(
     -DCUBICSDR_VERSION="${CUBICSDR_VERSION}"
 )
 
-IF (NOT APPLE)
+# IF (NOT APPLE)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
-ENDIF(NOT APPLE)
+# ENDIF(NOT APPLE)
 
 
 macro(configure_files srcDir destDir globStr)
@@ -80,11 +80,31 @@ SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_BINARY_DIR}/${EX_PLATFORM_NA
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_BINARY_DIR}/${EX_PLATFORM_NAME})
 
 find_package(OpenGL REQUIRED)
+IF (NOT WIN32)
+find_package(FFTW REQUIRED)
+find_package(Liquid REQUIRED)
+include_directories(${LIQUID_INCLUDES} ${FFTW_INCLUDES})
+SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} ${LIQUID_LIBRARIES} ${FFTW_LIBRARIES})
+ENDIF()
 
 find_package(wxWidgets COMPONENTS gl core base REQUIRED)
 set(wxWidgets_CONFIGURATION mswu)
 include(${wxWidgets_USE_FILE})
 
+SET(USE_SOAPY_SDR ON CACHE BOOL "Build with SoapySDR support instead of RTL-SDR.")
+IF (USE_SOAPY_SDR) 
+    find_package(SoapySDR NO_MODULE REQUIRED)
+    include_directories(${SOAPY_SDR_INCLUDE_DIR})
+    SET(OTHER_LIBRARIES ${SOAPY_SDR_LIBRARY} ${OTHER_LIBRARIES})
+    ADD_DEFINITIONS(
+		-DUSE_SOAPY_SDR=1
+    )       
+ELSE()
+    SET(USE_RTL_SDR ON CACHE BOOL "Build with RTL-SDR support only.")
+    ADD_DEFINITIONS(
+		-DUSE_RTL_SDR=1
+    )       
+ENDIF()
 
 IF (WIN32)
 	set(wxWidgets_USE_STATIC ON)
@@ -121,10 +141,15 @@ IF (WIN32)
   #ENDIF(USE_AUDIO_ASIO)
   
 	# FFTW
-	include_directories ( ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4 ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
+	include_directories ( ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4 )
 	set(FFTW_LIB libfftw3f-3)
+
 	link_directories ( ${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM} )
 	configure_files(${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM} ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
+
+    IF(USE_RTL_SDR)
+        include_directories( ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release )
+    ENDIF()
 
     include_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/include )
 	set(LIQUID_LIB libliquid)
@@ -135,15 +160,19 @@ IF (WIN32)
 	  link_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM} )
 	  configure_files(${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM} ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME}/ "*.dll")
 	  # RTL-SDR
-	  link_directories ( ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/msvc/${EX_PLATFORM} )
-	  configure_files(${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/msvc/${EX_PLATFORM} ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
+      IF(USE_RTL_SDR)
+          link_directories ( ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/msvc/${EX_PLATFORM} )
+          configure_files(${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/msvc/${EX_PLATFORM} ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
+      ENDIF()
 	ELSE (MSVC) # GCC
 	  # LIQUID
 	  link_directories ( ${PROJECT_SOURCE_DIR}/external/liquid-dsp/gcc/${EX_PLATFORM} )
 	  configure_files(${PROJECT_SOURCE_DIR}/external/liquid-dsp/gcc/${EX_PLATFORM} ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
 	  # RTL-SDR
-	  link_directories ( ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/gcc/${EX_PLATFORM} )
-	  configure_files(${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/gcc/${EX_PLATFORM} ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
+      IF(USE_RTL_SDR)
+          link_directories ( ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/gcc/${EX_PLATFORM} )
+          configure_files(${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/gcc/${EX_PLATFORM} ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
+      ENDIF()
 	ENDIF(MSVC)  
   
   # Copy DLL files to build dir
@@ -154,18 +183,20 @@ ENDIF (WIN32)
 IF (UNIX AND NOT APPLE)
     set(BUILD_DEB OFF CACHE BOOL "Build DEB")
 
-    set(RTLSDR_INCLUDE "/usr/local/include" CACHE FILEPATH "RTL-SDR Include Path")
-    set(RTLSDR_LIB "/usr/local/lib" CACHE FILEPATH "RTL-SDR Lib Path")
-    set(USE_AUDIO_PULSE ON CACHE BOOL "Use Pulse Audio")
-    set(USE_AUDIO_JACK OFF CACHE BOOL "Use Jack Audio")
-    set(USE_AUDIO_ALSA OFF CACHE BOOL "Use ALSA Audio")
-    set(USE_AUDIO_OSS OFF CACHE BOOL "Use OSS Audio")
-    include_directories(${RTLSDR_INCLUDE})
-    link_directories(${RTLSDR_LIB})
+    IF(USE_RTL_SDR)
+        SET(RTLSDR_INCLUDE "/usr/local/include" CACHE FILEPATH "RTL-SDR Include Path")
+        SET(RTLSDR_LIB "/usr/local/lib" CACHE FILEPATH "RTL-SDR Lib Path")
+        include_directories(${RTLSDR_INCLUDE})
+        link_directories(${RTLSDR_LIB})
+    ENDIF()
+    SET(USE_AUDIO_PULSE ON CACHE BOOL "Use Pulse Audio")
+    SET(USE_AUDIO_JACK OFF CACHE BOOL "Use Jack Audio")
+    SET(USE_AUDIO_ALSA OFF CACHE BOOL "Use ALSA Audio")
+    SET(USE_AUDIO_OSS OFF CACHE BOOL "Use OSS Audio")
   
-    set(FFTW_LIB fftw3f)
-    set(LIQUID_LIB liquid)
-    set(OTHER_LIBRARIES dl)
+    SET(FFTW_LIB fftw3f)
+    SET(LIQUID_LIB liquid)
+    SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} dl)
 
 IF(USE_AUDIO_PULSE)
    SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} pulse-simple pulse)
@@ -203,21 +234,25 @@ ENDIF(USE_AUDIO_OSS)
 ENDIF(UNIX AND NOT APPLE)
 
 IF (APPLE)
-    set(RTLSDR_INCLUDE "/opt/local/include" CACHE FILEPATH "RTL-SDR Include Path")
-    set(RTLSDR_LIB "/opt/local/lib" CACHE FILEPATH "RTL-SDR Lib Path")
-    include_directories(${RTLSDR_INCLUDE})
-    link_directories(${RTLSDR_LIB})
-    set(LIB_DIRS "${LIB_DIRS} ${RTLSDR_LIB}")
+    IF (USE_RTL_SDR)
+        SET(RTLSDR_INCLUDE "/opt/local/include" CACHE FILEPATH "RTL-SDR Include Path")
+        SET(RTLSDR_LIB "/opt/local/lib" CACHE FILEPATH "RTL-SDR Lib Path")
+        include_directories(${RTLSDR_INCLUDE})
+        link_directories(${RTLSDR_LIB})
+        SET(LIB_DIRS ${LIB_DIRS} ${RTLSDR_LIB})
+    ENDIF()
   
-    set(FFTW_LIB fftw3f)
-    set(LIQUID_LIB liquid)
+    SET(FFTW_LIB fftw3f)
+    SET(LIQUID_LIB liquid)
+    link_directories(/usr/local/lib)
+    link_directories(/opt/local/lib)
 
     ADD_DEFINITIONS(
       -D__MACOSX_CORE__
     )    
 
    FIND_LIBRARY(COREAUDIO_LIBRARY CoreAudio)
-   SET (OTHER_LIBRARIES ${COREAUDIO_LIBRARY})
+   SET (OTHER_LIBRARIES ${COREAUDIO_LIBRARY} ${OTHER_LIBRARIES})
    set(BUNDLE_APP OFF CACHE BOOL "Bundle Application")
 
 ENDIF (APPLE)
@@ -230,7 +265,6 @@ SET (cubicsdr_sources
 	src/FrequencyDialog.cpp
     src/IOThread.cpp
 	src/sdr/SDRDeviceInfo.cpp
-	src/sdr/SDRThread.cpp
 	src/sdr/SDRPostThread.cpp
 	src/demod/DemodulatorPreThread.cpp
 	src/demod/DemodulatorThread.cpp
@@ -284,7 +318,6 @@ SET (cubicsdr_headers
 	src/FrequencyDialog.h
     src/IOThread.h
 	src/sdr/SDRDeviceInfo.h
-	src/sdr/SDRThread.h
 	src/sdr/SDRPostThread.h
 	src/demod/DemodulatorPreThread.h
 	src/demod/DemodulatorThread.h
@@ -346,6 +379,16 @@ SET (cubicsdr_headers
 	external/cubicvr2/math/vec3.h
 	external/cubicvr2/math/vec4.h
 )
+
+
+IF (USE_SOAPY_SDR) 
+    SET(cubicsdr_sources ${cubicsdr_sources} src/SDR/SoapySDRThread.cpp)
+    SET(cubicsdr_headers ${cubicsdr_headers} src/SDR/SoapySDRThread.h)
+ELSE()
+    SET(cubicsdr_sources ${cubicsdr_sources} src/SDR/SDRThread.cpp)
+    SET(cubicsdr_headers ${cubicsdr_headers} src/SDR/SDRThread.h)
+ENDIF()
+
 
 set(REG_EXT "[^/]*([.]cpp|[.]c|[.]h|[.]hpp)$")
 
@@ -410,7 +453,10 @@ IF (NOT BUNDLE_APP)
     configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.png")
     configure_files(${PROJECT_SOURCE_DIR}/icon ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} CubicSDR.ico)
     add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers} ${RES_FILES})
-    target_link_libraries(CubicSDR rtlsdr ${LIQUID_LIB} ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
+    IF (USE_RTL_SDR)
+        SET(OTHER_LIBRARIES rtlsdr ${OTHER_LIBRARIES})
+    ENDIF()
+    target_link_libraries(CubicSDR ${LIQUID_LIB} ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
 ENDIF (NOT BUNDLE_APP)
 
 IF (MSVC)
@@ -479,7 +525,11 @@ IF (APPLE AND BUNDLE_APP)
         MACOSX_PACKAGE_LOCATION Resources
       )
       
-    target_link_libraries(CubicSDR rtlsdr ${LIQUID_LIB} ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
+    IF (USE_RTL_SDR)
+      SET(OTHER_LIBRARIES rtlsdr ${OTHER_LIBRARIES})
+    ENDIF()
+
+    target_link_libraries(CubicSDR ${LIQUID_LIB} ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
     SET_TARGET_PROPERTIES(CubicSDR PROPERTIES MACOSX_BUNDLE TRUE)
 
     SET_TARGET_PROPERTIES(CubicSDR PROPERTIES
@@ -498,7 +548,7 @@ IF (APPLE AND BUNDLE_APP)
     INSTALL(CODE "
            SET(BU_COPY_FULL_FRAMEWORK_CONTENTS ON)
        include(BundleUtilities)
-       fixup_bundle(\"${APPS}\"   \"\"   \"${RTLSDR_LIB}\")
+       fixup_bundle(\"${APPS}\"   \"\"   \"/usr/local/lib\")
        VERIFY_APP(\"${APPS}\")
        " COMPONENT Runtime)
 
@@ -550,17 +600,23 @@ IF (WIN32 AND BUILD_INSTALLER)
 		${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM}/libfftw3f-3.dll
 		DESTINATION .)
 	IF (MSVC)
-	install(FILES 
-		${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/libliquid.dll
-		${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/msvc/${EX_PLATFORM}/rtlsdr.dll
-		${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/msvc/${EX_PLATFORM}/libusb-1.0.dll
-		DESTINATION .)
+        IF (USE_RTL_SDR)
+            SET (OTHER_INSTALL_FILES ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/msvc/${EX_PLATFORM}/rtlsdr.dll)
+        ENDIF()
+    	install(FILES 
+    		${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/libliquid.dll
+    		${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/msvc/${EX_PLATFORM}/libusb-1.0.dll
+            ${OTHER_INSTALL_FILES}
+    		DESTINATION .)
 	ELSE (MSVC)
-	install(FILES 
-		${PROJECT_SOURCE_DIR}/external/liquid-dsp/gcc/${EX_PLATFORM}/libliquid.dll
-		${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/gcc/${EX_PLATFORM}/librtlsdr.dll
-		${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/gcc/${EX_PLATFORM}/libusb-1.0.dll
-		DESTINATION .)
+        IF (USE_RTL_SDR)
+            SET (OTHER_INSTALL_FILES ${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/gcc/${EX_PLATFORM}/librtlsdr.dll)
+        ENDIF()
+    	install(FILES 
+    		${PROJECT_SOURCE_DIR}/external/liquid-dsp/gcc/${EX_PLATFORM}/libliquid.dll    		
+    		${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/gcc/${EX_PLATFORM}/libusb-1.0.dll
+            ${OTHER_INSTALL_FILES}
+    		DESTINATION .)
 	ENDIF(MSVC)
 	
 	IF(MSVC AND EX_PLATFORM EQUAL 32)
@@ -585,7 +641,10 @@ IF (UNIX AND BUILD_DEB)
 
         set(CPACK_GENERATOR DEB)
 	set(CPACK_PACKAGE_NAME "CubicSDR")
-	SET(CPACK_DEBIAN_PACKAGE_DEPENDS " librtlsdr0, libfftw3-single3, libwxgtk3.0-0, libpulse0")
+	SET(CPACK_DEBIAN_PACKAGE_DEPENDS " libfftw3-single3, libwxgtk3.0-0, libpulse0")
+    IF (USE_RTL_SDR)
+    	SET(CPACK_DEBIAN_PACKAGE_DEPENDS " librtlsdr0, ${CPACK_DEBIAN_PACKAGE_DEPENDS}")
+    ENDIF()
 	SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "Charles J. Cliffe <cj@cubicproductions.com>")
 	SET(CPACK_DEBIAN_PACKAGE_DESCRIPTION "CubicSDR Software Defined Radio application v${CUBICSDR_VERSION}")
 	SET(CPACK_DEBIAN_PACKAGE_SECTION "comm")

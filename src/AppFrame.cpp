@@ -14,7 +14,6 @@
 #endif
 
 #include <vector>
-#include "SDRThread.h"
 #include "DemodulatorMgr.h"
 #include "AudioThread.h"
 #include "CubicSDR.h"
@@ -284,6 +283,7 @@ AppFrame::AppFrame() :
     sampleRateMenuItems[wxID_BANDWIDTH_2880M] = menu->AppendRadioItem(wxID_BANDWIDTH_2880M, "2.88M");
 //    sampleRateMenuItems[wxID_BANDWIDTH_3000M] = menu->AppendRadioItem(wxID_BANDWIDTH_3000M, "3.0M");
     sampleRateMenuItems[wxID_BANDWIDTH_3200M] = menu->AppendRadioItem(wxID_BANDWIDTH_3200M, "3.2M");
+    sampleRateMenuItems[wxID_BANDWIDTH_MANUAL] = menu->AppendRadioItem(wxID_BANDWIDTH_MANUAL, "Manual Entry");
 
     sampleRateMenuItems[wxID_BANDWIDTH_2400M]->Check(true);
 
@@ -583,6 +583,12 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
 //            break;
         case wxID_BANDWIDTH_3200M:
             wxGetApp().setSampleRate(3200000);
+            break;
+        case wxID_BANDWIDTH_MANUAL:
+            long bw = wxGetNumberFromUser("Set the bandwidth manually", "Sample Rate (Hz), i.e. 2560000 for 2.56M",                                           "Manual Bandwidth Entry", wxGetApp().getSampleRate(), 250000, 16000000, this);
+            if (bw != -1) {
+                wxGetApp().setSampleRate(bw);
+            }
             break;
     }
 

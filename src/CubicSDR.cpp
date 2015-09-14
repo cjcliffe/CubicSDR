@@ -97,19 +97,20 @@ bool CubicSDR::OnInit() {
     
     std::vector<SDRDeviceInfo *>::iterator devs_i;
 
-    SDRThread::enumerate_rtl(&devs);
+//    SDRThread::enumerate_rtl(&devs);
+    devs = SDRThread::enumerate_devices();
     SDRDeviceInfo *dev = NULL;
 
-    if (devs.size() > 1) {
+    if (devs->size() > 1) {
         wxArrayString choices;
-        for (devs_i = devs.begin(); devs_i != devs.end(); devs_i++) {
+        for (devs_i = devs->begin(); devs_i != devs->end(); devs_i++) {
             std::string devName = (*devs_i)->getName();
             if ((*devs_i)->isAvailable()) {
-                devName.append(": ");
-                devName.append((*devs_i)->getProduct());
-                devName.append(" [");
-                devName.append((*devs_i)->getSerial());
-                devName.append("]");
+//                devName.append(": ");
+//                devName.append((*devs_i)->getProduct());
+//                devName.append(" [");
+//                devName.append((*devs_i)->getSerial());
+//                devName.append("]");
             } else {
                 devName.append(" (In Use?)");
             }
@@ -121,11 +122,11 @@ bool CubicSDR::OnInit() {
             return false;
         }
         
-        dev = devs[devId];
+        dev = (*devs)[devId];
 
         sdrThread->setDeviceId(devId);
-    } else if (devs.size() == 1) {
-        dev = devs[0];
+    } else if (devs->size() == 1) {
+        dev = (*devs)[0];
     }
     
     if (!dev) {
@@ -347,7 +348,7 @@ void CubicSDR::removeDemodulator(DemodulatorInstance *demod) {
 }
 
 std::vector<SDRDeviceInfo*>* CubicSDR::getDevices() {
-    return &devs;
+    return devs;
 }
 
 void CubicSDR::setDevice(int deviceId) {

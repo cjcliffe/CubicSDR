@@ -1,6 +1,64 @@
 #include "SDRDeviceInfo.h"
 
 
+int SDRDeviceChannel::getChannel() const {
+    return channel;
+}
+
+void SDRDeviceChannel::setChannel(const int channel) {
+    this->channel = channel;
+}
+
+bool SDRDeviceChannel::isFullDuplex() {
+    return fullDuplex;
+}
+
+void SDRDeviceChannel::setFullDuplex(bool fullDuplex) {
+    this->fullDuplex = fullDuplex;
+}
+
+bool SDRDeviceChannel::isTx() {
+    return tx;
+}
+
+void SDRDeviceChannel::setTx(bool tx) {
+    this->tx = tx;
+}
+
+bool SDRDeviceChannel::isRx() {
+    return rx;
+}
+
+void SDRDeviceChannel::setRx(bool rx) {
+    this->rx = rx;
+}
+
+const SDRDeviceRange &SDRDeviceChannel::getGain() const {
+    return rangeGain;
+}
+
+const SDRDeviceRange &SDRDeviceChannel::getLNAGain() const {
+    return rangeLNA;
+}
+
+const SDRDeviceRange &SDRDeviceChannel::getFreqRange() const {
+    return rangeFull;
+}
+
+const SDRDeviceRange &SDRDeviceChannel::getRFRange() const {
+    return rangeRF;
+}
+
+const std::vector<long long> &SDRDeviceChannel::getSampleRates() const {
+    return sampleRates;
+}
+
+const std::vector<long long> &SDRDeviceChannel::getFilterBandwidths() const {
+    return filterBandwidths;
+}
+
+
+
 SDRDeviceInfo::SDRDeviceInfo() : name(""), serial(""), available(false) {
 
 }
@@ -9,10 +67,18 @@ std::string SDRDeviceInfo::getDeviceId() {
     std::string deviceId;
     
     deviceId.append(getName());
-    deviceId.append(" :: ");
-    deviceId.append(getSerial());
+//    deviceId.append(" :: ");
+//    deviceId.append(getSerial());
     
     return deviceId;
+}
+
+const int SDRDeviceInfo::getIndex() const {
+    return index;
+}
+
+void SDRDeviceInfo::setIndex(const int index) {
+    this->index = index;
 }
 
 bool SDRDeviceInfo::isAvailable() const {
@@ -63,3 +129,31 @@ void SDRDeviceInfo::setProduct(const std::string& product) {
     this->product = product;
 }
 
+const std::string& SDRDeviceInfo::getDriver() const {
+    return driver;
+}
+
+void SDRDeviceInfo::setDriver(const std::string& driver) {
+    this->driver = driver;
+}
+
+const std::string& SDRDeviceInfo::getHardware() const {
+    return hardware;
+}
+
+void SDRDeviceInfo::setHardware(const std::string& hardware) {
+    this->hardware = hardware;
+}
+
+bool SDRDeviceInfo::hasTimestamps() const {
+    return timestamps;
+}
+
+void SDRDeviceInfo::setTimestamps(bool timestamps) {
+    this->timestamps = timestamps;
+}
+
+std::string SDRDeviceInfo::getDeviceArgs() {
+    return "driver=" + driver;
+    //+ "," + getDriver() + "=" + std::to_string(getIndex());
+}
