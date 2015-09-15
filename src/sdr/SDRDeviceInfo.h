@@ -111,6 +111,7 @@ public:
     
     const std::vector<SDRDeviceChannel>& getChannels() const;
     
+    void setDeviceArgs(std::string deviceArgs);
     std::string getDeviceArgs();
 private:
     int index;
@@ -118,5 +119,6 @@ private:
     std::string driver, hardware;
     bool timestamps, available;
     
+    std::string deviceArgs;
     std::vector<SDRDeviceChannel> channels;
 };

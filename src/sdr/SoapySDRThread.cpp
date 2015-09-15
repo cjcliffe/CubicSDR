@@ -74,6 +74,7 @@ std::vector<SDRDeviceInfo *> *SDRThread::enumerate_devices() {
     for (size_t i = 0; i < results.size(); i++) {
         std::cout << "Found device " << i << std::endl;
         SDRDeviceInfo *dev = new SDRDeviceInfo();
+        std::string devArgs("");
         for (SoapySDR::Kwargs::const_iterator it = results[i].begin(); it != results[i].end(); ++it) {
             std::cout << "  " << it->first << " = " << it->second << std::endl;
             if (it->first == "driver") {
@@ -81,11 +82,15 @@ std::vector<SDRDeviceInfo *> *SDRThread::enumerate_devices() {
             } else if (it->first == "label") {
                 dev->setName(it->second);
             }
-//            else if (it->first == dev->getDriver()) {
-//                dev->setIndex(std::stoi(it->second.c_str()));
-//            }
+            if (devArgs.size()) {
+                devArgs.append(",");
+            }
+            devArgs.append(it->first);
+            devArgs.append("=");
+            devArgs.append(it->second);
         }
         
+        dev->setDeviceArgs(devArgs);
         dev->setIndex(deviceIndexes[dev->getDriver()]);
         deviceIndexes[dev->getDriver()]++;
         
@@ -148,9 +153,9 @@ void SDRThread::run() {
 
     
     SDRDeviceInfo *dev = devs[deviceId];
-    std::vector<SoapySDR::Kwargs> dev_results = SoapySDR::Device::enumerate(dev->getDeviceArgs());
-    SoapySDR::Device *device = SoapySDR::Device::make(dev_results[dev->getIndex()]);
 
+    SoapySDR::Device *device = SoapySDR::Device::make(dev->getDeviceArgs()+",direct_samp="+std::to_string(devConfig->getDirectSampling())+",buffers=6,buflen=16384");
+    
     device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
     device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency - offset.load());
     device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm);
@@ -231,9 +236,7 @@ void SDRThread::run() {
                 device->closeStream(stream);
                 SoapySDR::Device::unmake(device);
                 
-                SDRDeviceInfo *dev = devs[new_device];
-                std::vector<SoapySDR::Kwargs> dev_results = SoapySDR::Device::enumerate(dev->getDeviceArgs());
-                device = SoapySDR::Device::make(dev_results[dev->getIndex()]);
+                device = SoapySDR::Device::make(dev->getDeviceArgs()+",direct_samp="+std::to_string(devConfig->getDirectSampling())+",buffers=6,buflen=16384");
                 
                 device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
                 device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency - offset.load());
@@ -269,7 +272,7 @@ void SDRThread::run() {
         }
 
         
-        int n_read = device->readStream(stream, buffs, BUF_SIZE/2, flags, timeNs, 99999999);
+        int n_read = device->readStream(stream, buffs, BUF_SIZE/2, flags, timeNs);
         
 //        std::cout << n_read << ", " << timeNs << std::endl;
 
@@ -293,159 +296,7 @@ void SDRThread::run() {
     device->closeStream(stream);
     SoapySDR::Device::unmake(device);
     
-/*
-
- 
-    rtlsdr_open(&dev, deviceId);
-    rtlsdr_set_sample_rate(dev, sampleRate.load());
-    rtlsdr_set_center_freq(dev, frequency - offset.load());
-    rtlsdr_set_freq_correction(dev, ppm);
-    rtlsdr_set_agc_mode(dev, 1);
-    rtlsdr_set_offset_tuning(dev, 0);
-    rtlsdr_reset_buffer(dev);
-
-//    sampleRate = rtlsdr_get_sample_rate(dev);
-
-    std::cout << "Sample Rate is: " << sampleRate.load() << std::endl;
-
-    int n_read;
-    double seconds = 0.0;
-
-    std::cout << "SDR thread started.." << std::endl;
-
-    ReBuffer<SDRThreadIQData> buffers;
-
-    SDRThreadIQDataQueue* iqDataOutQueue = (SDRThreadIQDataQueue*) getOutputQueue("IQDataOutput");
-    SDRThreadCommandQueue* cmdQueue = (SDRThreadCommandQueue*) getInputQueue("SDRCommandQueue");
-
-    while (!terminated) {
-        if (!cmdQueue->empty()) {
-            bool freq_changed = false;
-            bool offset_changed = false;
-            bool rate_changed = false;
-            bool device_changed = false;
-            bool ppm_changed = false;
-            bool direct_sampling_changed = false;
-            long long new_freq = frequency;
-            long long new_offset = offset.load();
-            long long new_rate = sampleRate.load();
-            int new_device = deviceId;
-            int new_ppm = ppm;
-
-            while (!cmdQueue->empty()) {
-                SDRThreadCommand command;
-                cmdQueue->pop(command);
-
-                switch (command.cmd) {
-                case SDRThreadCommand::SDR_THREAD_CMD_TUNE:
-                    freq_changed = true;
-                    new_freq = command.llong_value;
-                    if (new_freq < sampleRate.load() / 2) {
-                        new_freq = sampleRate.load() / 2;
-                    }
-//                    std::cout << "Set frequency: " << new_freq << std::endl;
-                    break;
-                case SDRThreadCommand::SDR_THREAD_CMD_SET_OFFSET:
-                    offset_changed = true;
-                    new_offset = command.llong_value;
-                    std::cout << "Set offset: " << new_offset << std::endl;
-                    break;
-                case SDRThreadCommand::SDR_THREAD_CMD_SET_SAMPLERATE:
-                    rate_changed = true;
-                    new_rate = command.llong_value;
-                    if (new_rate <= 250000) {
-                        buf_size = BUF_SIZE/4;
-                    } else if (new_rate < 1500000) {
-                        buf_size = BUF_SIZE/2;
-                    } else {
-                        buf_size = BUF_SIZE;
-                    }
-                    std::cout << "Set sample rate: " << new_rate << std::endl;
-                    break;
-                case SDRThreadCommand::SDR_THREAD_CMD_SET_DEVICE:
-                    device_changed = true;
-                    new_device = (int) command.llong_value;
-                    std::cout << "Set device: " << new_device << std::endl;
-                    break;
-                case SDRThreadCommand::SDR_THREAD_CMD_SET_PPM:
-                    ppm_changed = true;
-                    new_ppm = (int) command.llong_value;
-                    //std::cout << "Set PPM: " << new_ppm << std::endl;
-                    break;
-                case SDRThreadCommand::SDR_THREAD_CMD_SET_DIRECT_SAMPLING:
-                    direct_sampling_mode = (int)command.llong_value;
-                    direct_sampling_changed = true;
-                    break;
-                default:
-                    break;
-                }
-            }
-
-            if (device_changed) {
-                rtlsdr_close(dev);
-                rtlsdr_open(&dev, new_device);
-                rtlsdr_set_sample_rate(dev, sampleRate.load());
-                rtlsdr_set_center_freq(dev, frequency - offset.load());
-                rtlsdr_set_freq_correction(dev, ppm);
-                rtlsdr_set_agc_mode(dev, 1);
-                rtlsdr_set_offset_tuning(dev, 0);
-                rtlsdr_set_direct_sampling(dev, direct_sampling_mode);
-                rtlsdr_reset_buffer(dev);
-            }
-            if (offset_changed) {
-                if (!freq_changed) {
-                    new_freq = frequency;
-                    freq_changed = true;
-                }
-                offset.store(new_offset);
-            }
-            if (rate_changed) {
-                rtlsdr_set_sample_rate(dev, new_rate);
-                rtlsdr_reset_buffer(dev);
-                sampleRate.store(rtlsdr_get_sample_rate(dev));
-            }
-            if (freq_changed) {
-                frequency = new_freq;
-                rtlsdr_set_center_freq(dev, frequency - offset.load());
-            }
-            if (ppm_changed) {
-                ppm = new_ppm;
-                rtlsdr_set_freq_correction(dev, ppm);
-            }
-            if (direct_sampling_changed) {
-                rtlsdr_set_direct_sampling(dev, direct_sampling_mode);
-            }
-        }
-
-        rtlsdr_read_sync(dev, buf, buf_size, &n_read);
-
-        SDRThreadIQData *dataOut = buffers.getBuffer();
-
-//        std::lock_guard < std::mutex > lock(dataOut->m_mutex);
-        dataOut->setRefCount(1);
-        dataOut->frequency = frequency;
-        dataOut->sampleRate = sampleRate.load();
-
-        if (dataOut->data.capacity() < n_read) {
-            dataOut->data.reserve(n_read);
-        }
-
-        if (dataOut->data.size() != n_read) {
-            dataOut->data.resize(n_read);
-        }
-
-        memcpy(&dataOut->data[0], buf, n_read);
-
-        double time_slice = (double) n_read / (double) sampleRate.load();
-        seconds += time_slice;
-
-        if (iqDataOutQueue != NULL) {
-            iqDataOutQueue->push(dataOut);
-        }
-    }
-
-//     buffers.purge();
-    */
+    buffers.purge();
     std::cout << "SDR thread done." << std::endl;
 }
 
