@@ -276,21 +276,22 @@ void SDRThread::run() {
         
 //        std::cout << n_read << ", " << timeNs << std::endl;
 
-        SDRThreadIQData *dataOut = buffers.getBuffer();
-        
-        dataOut->setRefCount(1);
-        dataOut->frequency = frequency;
-        dataOut->sampleRate = sampleRate.load();
-        
-        dataOut->data.resize(n_read * 2);
-        memcpy(&dataOut->data[0],buffs[0],n_read * sizeof(float) * 2);
-        
-        if (iqDataOutQueue != NULL) {
-            iqDataOutQueue->push(dataOut);
-        } else {
-            dataOut->setRefCount(0);
+        if (n_read > 0) {
+            SDRThreadIQData *dataOut = buffers.getBuffer();
+            
+            dataOut->setRefCount(1);
+            dataOut->frequency = frequency;
+            dataOut->sampleRate = sampleRate.load();
+            
+            dataOut->data.resize(n_read * 2);
+            memcpy(&dataOut->data[0],buffs[0],n_read * sizeof(float) * 2);
+            
+            if (iqDataOutQueue != NULL) {
+                iqDataOutQueue->push(dataOut);
+            } else {
+                dataOut->setRefCount(0);
+            }
         }
-
     }
     device->deactivateStream(stream);
     device->closeStream(stream);
