@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.8)
 
 SET(CUBICSDR_VERSION_MAJOR "0")
 SET(CUBICSDR_VERSION_MINOR "1")
-SET(CUBICSDR_VERSION_PATCH "7")
+SET(CUBICSDR_VERSION_PATCH "8")
 SET(CUBICSDR_VERSION_REL "beta-issue64")
 SET(CUBICSDR_VERSION "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}-${CUBICSDR_VERSION_REL}")
 
@@ -382,11 +382,11 @@ SET (cubicsdr_headers
 
 
 IF (USE_SOAPY_SDR) 
-    SET(cubicsdr_sources ${cubicsdr_sources} src/SDR/SoapySDRThread.cpp)
-    SET(cubicsdr_headers ${cubicsdr_headers} src/SDR/SoapySDRThread.h)
+    SET(cubicsdr_sources ${cubicsdr_sources} src/sdr/SoapySDRThread.cpp)
+    SET(cubicsdr_headers ${cubicsdr_headers} src/sdr/SoapySDRThread.h)
 ELSE()
-    SET(cubicsdr_sources ${cubicsdr_sources} src/SDR/SDRThread.cpp)
-    SET(cubicsdr_headers ${cubicsdr_headers} src/SDR/SDRThread.h)
+    SET(cubicsdr_sources ${cubicsdr_sources} src/sdr/SDRThread.cpp)
+    SET(cubicsdr_headers ${cubicsdr_headers} src/sdr/SDRThread.h)
 ENDIF()
 
 
