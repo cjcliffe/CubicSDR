@@ -153,11 +153,11 @@ void SDRDeviceInfo::setTimestamps(bool timestamps) {
     this->timestamps = timestamps;
 }
 
-void SDRDeviceInfo::setDeviceArgs(std::string deviceArgs) {
+void SDRDeviceInfo::setDeviceArgs(SoapySDR::Kwargs deviceArgs) {
     this->deviceArgs = deviceArgs;
 }
 
-std::string SDRDeviceInfo::getDeviceArgs() {
+SoapySDR::Kwargs SDRDeviceInfo::getDeviceArgs() {
     return deviceArgs;
 //    return "driver=" + driver + "," + getDriver() + "=" + std::to_string(getIndex());
 }

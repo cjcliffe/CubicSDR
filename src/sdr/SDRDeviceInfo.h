@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include <SoapySDR/Types.hpp>
+
 /*
     ----------------------------------------------------
     -- Device identification
@@ -111,14 +113,14 @@ public:
     
     const std::vector<SDRDeviceChannel>& getChannels() const;
     
-    void setDeviceArgs(std::string deviceArgs);
-    std::string getDeviceArgs();
+    void setDeviceArgs(SoapySDR::Kwargs deviceArgs);
+    SoapySDR::Kwargs getDeviceArgs();
 private:
     int index;
     std::string name, serial, product, manufacturer, tuner;
     std::string driver, hardware;
     bool timestamps, available;
     
-    std::string deviceArgs;
+    SoapySDR::Kwargs deviceArgs;
     std::vector<SDRDeviceChannel> channels;
 };

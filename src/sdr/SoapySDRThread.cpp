@@ -74,7 +74,6 @@ std::vector<SDRDeviceInfo *> *SDRThread::enumerate_devices() {
     for (size_t i = 0; i < results.size(); i++) {
         std::cout << "Found device " << i << std::endl;
         SDRDeviceInfo *dev = new SDRDeviceInfo();
-        std::string devArgs("");
         for (SoapySDR::Kwargs::const_iterator it = results[i].begin(); it != results[i].end(); ++it) {
             std::cout << "  " << it->first << " = " << it->second << std::endl;
             if (it->first == "driver") {
@@ -82,19 +81,13 @@ std::vector<SDRDeviceInfo *> *SDRThread::enumerate_devices() {
             } else if (it->first == "label") {
                 dev->setName(it->second);
             }
-            if (devArgs.size()) {
-                devArgs.append(",");
-            }
-            devArgs.append(it->first);
-            devArgs.append("=");
-            devArgs.append(it->second);
         }
         
-        dev->setDeviceArgs(devArgs);
+        dev->setDeviceArgs(results[i]);
         dev->setIndex(deviceIndexes[dev->getDriver()]);
         deviceIndexes[dev->getDriver()]++;
         
-        std::cout << "Make device " << dev->getDeviceArgs() << std::endl;
+        std::cout << "Make device " << i << std::endl;
         try {
             SoapySDR::Device *device = SoapySDR::Device::make(dev->getDeviceArgs());
             SoapySDR::Kwargs info = device->getHardwareInfo();
@@ -123,12 +116,12 @@ std::vector<SDRDeviceInfo *> *SDRThread::enumerate_devices() {
 }
 
 void SDRThread::run() {
-//#ifdef __APPLE__
-//    pthread_t tID = pthread_self();  // ID of this thread
-//    int priority = sched_get_priority_max( SCHED_FIFO) - 1;
-//    sched_param prio = { priority }; // scheduling priority of thread
-//    pthread_setschedparam(tID, SCHED_FIFO, &prio);
-//#endif
+#ifdef __APPLE__
+    pthread_t tID = pthread_self();  // ID of this thread
+    int priority = sched_get_priority_max( SCHED_FIFO) - 1;
+    sched_param prio = { priority }; // scheduling priority of thread
+    pthread_setschedparam(tID, SCHED_FIFO, &prio);
+#endif
 
     std::cout << "SDR thread initializing.." << std::endl;
     
@@ -153,13 +146,16 @@ void SDRThread::run() {
 
     
     SDRDeviceInfo *dev = devs[deviceId];
-
-    SoapySDR::Device *device = SoapySDR::Device::make(dev->getDeviceArgs()+",direct_samp="+std::to_string(devConfig->getDirectSampling())+",buffers=6,buflen=16384");
+    SoapySDR::Kwargs args = dev->getDeviceArgs();
+    args["direct_samp"] = std::to_string(devConfig->getDirectSampling());
+    args["buffers"] = "8";
+    args["buflen"] = "16384";
+    SoapySDR::Device *device = SoapySDR::Device::make(args);
     
     device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
     device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency - offset.load());
     device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm);
-    device->setGainMode(SOAPY_SDR_RX,0, true);
+    device->setGainMode(SOAPY_SDR_RX,0,true);
     
     SoapySDR::Stream *stream = device->setupStream(SOAPY_SDR_RX,"CF32");
     device->activateStream(stream);
@@ -236,7 +232,16 @@ void SDRThread::run() {
                 device->closeStream(stream);
                 SoapySDR::Device::unmake(device);
                 
-                device = SoapySDR::Device::make(dev->getDeviceArgs()+",direct_samp="+std::to_string(devConfig->getDirectSampling())+",buffers=6,buflen=16384");
+                deviceId = new_device;
+                dev = devs[deviceId];
+                device_changed = false;
+                
+                SoapySDR::Kwargs args = dev->getDeviceArgs();
+                args["direct_samp"] = std::to_string(devConfig->getDirectSampling());
+                args["buffers"] = "8";
+                args["buflen"] = "16384";
+
+                device = SoapySDR::Device::make(args);
                 
                 device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
                 device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency - offset.load());
