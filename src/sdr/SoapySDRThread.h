@@ -62,6 +62,7 @@ public:
     
     int getDeviceId() const;
     void setDeviceId(int deviceId);
+    int getOptimalElementCount(long long sampleRate, int fps);
 
 protected:
     static std::vector<std::string> factories;

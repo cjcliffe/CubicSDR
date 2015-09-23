@@ -116,12 +116,12 @@ std::vector<SDRDeviceInfo *> *SDRThread::enumerate_devices() {
 }
 
 void SDRThread::run() {
-#ifdef __APPLE__
-    pthread_t tID = pthread_self();  // ID of this thread
-    int priority = sched_get_priority_max( SCHED_FIFO) - 1;
-    sched_param prio = { priority }; // scheduling priority of thread
-    pthread_setschedparam(tID, SCHED_FIFO, &prio);
-#endif
+//#ifdef __APPLE__
+//    pthread_t tID = pthread_self();  // ID of this thread
+//    int priority = sched_get_priority_max( SCHED_FIFO) - 1;
+//    sched_param prio = { priority }; // scheduling priority of thread
+//    pthread_setschedparam(tID, SCHED_FIFO, &prio);
+//#endif
 
     std::cout << "SDR thread initializing.." << std::endl;
     
@@ -140,7 +140,7 @@ void SDRThread::run() {
     long long frequency = wxGetApp().getConfig()->getCenterFreq();
     int ppm = devConfig->getPPM();
     int direct_sampling_mode = devConfig->getDirectSampling();;
-//    int buf_size = BUF_SIZE;
+    int numElems = 0;
     offset.store(devConfig->getOffset());
     wxGetApp().setSwapIQ(devConfig->getIQSwap());
 
@@ -148,7 +148,7 @@ void SDRThread::run() {
     SDRDeviceInfo *dev = devs[deviceId];
     SoapySDR::Kwargs args = dev->getDeviceArgs();
     args["direct_samp"] = std::to_string(devConfig->getDirectSampling());
-    args["buffers"] = "8";
+    args["buffers"] = "6";
     args["buflen"] = "16384";
     SoapySDR::Device *device = SoapySDR::Device::make(args);
     
@@ -160,9 +160,10 @@ void SDRThread::run() {
     SoapySDR::Stream *stream = device->setupStream(SOAPY_SDR_RX,"CF32");
     device->activateStream(stream);
     
+    numElems = getOptimalElementCount(sampleRate.load(), 60);
+    
     void *buffs[1];
-
-    buffs[0] = malloc(BUF_SIZE * sizeof(float));
+    buffs[0] = malloc(numElems * 2 * sizeof(float));
 
     int flags;
     long long timeNs;
@@ -238,7 +239,7 @@ void SDRThread::run() {
                 
                 SoapySDR::Kwargs args = dev->getDeviceArgs();
                 args["direct_samp"] = std::to_string(devConfig->getDirectSampling());
-                args["buffers"] = "8";
+                args["buffers"] = "6";
                 args["buflen"] = "16384";
 
                 device = SoapySDR::Device::make(args);
@@ -262,6 +263,10 @@ void SDRThread::run() {
             if (rate_changed) {
                 device->setSampleRate(SOAPY_SDR_RX,0,new_rate);
                 sampleRate.store(device->getSampleRate(SOAPY_SDR_RX,0));
+                
+                numElems = getOptimalElementCount(sampleRate.load(), 60);
+                free(buffs[0]);
+                buffs[0] = malloc(numElems * 2 * sizeof(float));
             }
             if (freq_changed) {
                 frequency = new_freq;
@@ -277,7 +282,7 @@ void SDRThread::run() {
         }
 
         
-        int n_read = device->readStream(stream, buffs, BUF_SIZE/2, flags, timeNs);
+        int n_read = device->readStream(stream, buffs, numElems, flags, timeNs);
         
 //        std::cout << n_read << ", " << timeNs << std::endl;
 
@@ -301,7 +306,8 @@ void SDRThread::run() {
     device->deactivateStream(stream);
     device->closeStream(stream);
     SoapySDR::Device::unmake(device);
-    
+    free(buffs[0]);
+
     buffers.purge();
     std::cout << "SDR thread done." << std::endl;
 }
@@ -313,4 +319,11 @@ int SDRThread::getDeviceId() const {
 
 void SDRThread::setDeviceId(int deviceId) {
     this->deviceId.store(deviceId);
+}
+
+int SDRThread::getOptimalElementCount(long long sampleRate, int fps) {
+    int elemCount = (int)floor((double)sampleRate/(double)fps);
+    elemCount = int(ceil((double)elemCount/512.0)*512.0);
+    std::cout << "calculated optimal element count of " << elemCount << std::endl;
+    return elemCount;
 }
