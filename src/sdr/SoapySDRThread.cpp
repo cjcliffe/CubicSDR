@@ -139,14 +139,23 @@ void SDRThread::run() {
 
     long long frequency = wxGetApp().getConfig()->getCenterFreq();
     int ppm = devConfig->getPPM();
-    int direct_sampling_mode = devConfig->getDirectSampling();;
+    int direct_sampling_mode = devConfig->getDirectSampling();
     int numElems = 0;
+    bool hasPPM = false;
+    
     offset.store(devConfig->getOffset());
     wxGetApp().setSwapIQ(devConfig->getIQSwap());
 
     
     SDRDeviceInfo *dev = devs[deviceId];
     SoapySDR::Kwargs args = dev->getDeviceArgs();
+    
+    std::string driverName = dev->getDriver();
+    
+    if (driverName == "rtl" || driverName == "rtlsdr") {
+        hasPPM = true;
+    }
+    
     args["direct_samp"] = std::to_string(devConfig->getDirectSampling());
     args["buffers"] = "6";
     args["buflen"] = "16384";
@@ -154,7 +163,9 @@ void SDRThread::run() {
     
     device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
     device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency - offset.load());
-    device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm);
+    if (hasPPM) {
+        device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm);
+    }
     device->setGainMode(SOAPY_SDR_RX,0,true);
     
     SoapySDR::Stream *stream = device->setupStream(SOAPY_SDR_RX,"CF32");
@@ -246,7 +257,9 @@ void SDRThread::run() {
                 
                 device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
                 device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency - offset.load());
-                device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm);
+                if (hasPPM) {
+                    device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm);
+                }
                 device->setGainMode(SOAPY_SDR_RX,0, true);
 
                 SoapySDR::Stream *stream = device->setupStream(SOAPY_SDR_RX,"CF32");
@@ -272,7 +285,7 @@ void SDRThread::run() {
                 frequency = new_freq;
                 device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency - offset.load());
             }
-            if (ppm_changed) {
+            if (ppm_changed && hasPPM) {
                 ppm = new_ppm;
                 device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm);
             }
