@@ -585,7 +585,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             wxGetApp().setSampleRate(3200000);
             break;
         case wxID_BANDWIDTH_MANUAL:
-            long bw = wxGetNumberFromUser("Set the bandwidth manually", "Sample Rate (Hz), i.e. 2560000 for 2.56M",                                           "Manual Bandwidth Entry", wxGetApp().getSampleRate(), 250000, 16000000, this);
+            long bw = wxGetNumberFromUser("Set the bandwidth manually", "Sample Rate (Hz), i.e. 2560000 for 2.56M",                                           "Manual Bandwidth Entry", wxGetApp().getSampleRate(), 250000, 25000000, this);
             if (bw != -1) {
                 wxGetApp().setSampleRate(bw);
             }
