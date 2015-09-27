@@ -67,9 +67,24 @@ std::vector<SDRDeviceInfo *> *SDRThread::enumerate_devices() {
     }
     std::cout << std::endl;
 
-    
     std::vector<SoapySDR::Kwargs> results = SoapySDR::Device::enumerate();
-    std::map<std::string, int> deviceIndexes;
+
+    // Remote driver test..
+/* * /
+    SDRDeviceInfo *remoteDev = new SDRDeviceInfo();
+    remoteDev->setDriver("remote");
+    remoteDev->setName("SoapySDR Remote Test");
+    SoapySDR::Kwargs remoteArgs;
+    remoteArgs["driver"] = "remote";
+    remoteArgs["remote"] = "127.0.0.1";
+//    remoteArgs["remote"] = "192.168.1.107";
+    remoteArgs["remote:driver"] = "rtlsdr";
+    remoteArgs["remote:format"] = "CS8";
+    remoteArgs["buffers"] = "6";
+    remoteArgs["buflen"] = "16384";
+    remoteDev->setDeviceArgs(remoteArgs);
+    SDRThread::devs.push_back(remoteDev);
+//  */
     
     for (size_t i = 0; i < results.size(); i++) {
         std::cout << "Found device " << i << std::endl;
@@ -84,8 +99,6 @@ std::vector<SDRDeviceInfo *> *SDRThread::enumerate_devices() {
         }
         
         dev->setDeviceArgs(results[i]);
-        dev->setIndex(deviceIndexes[dev->getDriver()]);
-        deviceIndexes[dev->getDriver()]++;
         
         std::cout << "Make device " << i << std::endl;
         try {
@@ -294,26 +307,38 @@ void SDRThread::run() {
             }
         }
 
+
+        SDRThreadIQData *dataOut = buffers.getBuffer();
+        if (dataOut->data.size() != numElems * 2) {
+            dataOut->data.resize(numElems * 2);
+        }
+
+        int n_read = 0;
+        while (n_read != numElems) {
+            int n_stream_read = device->readStream(stream, buffs, numElems-n_read, flags, timeNs);
+            if (n_stream_read > 0) {
+                memcpy(&dataOut->data[n_read * 2], buffs[0], n_stream_read * sizeof(float) * 2);
+                n_read += n_stream_read;
+            } else {
+                dataOut->data.resize(n_read);
+                break;
+            }
+        }
         
-        int n_read = device->readStream(stream, buffs, numElems, flags, timeNs);
-        
-//        std::cout << n_read << ", " << timeNs << std::endl;
+//        std::cout << n_read << std::endl;
 
         if (n_read > 0) {
-            SDRThreadIQData *dataOut = buffers.getBuffer();
-            
             dataOut->setRefCount(1);
             dataOut->frequency = frequency;
             dataOut->sampleRate = sampleRate.load();
-            
-            dataOut->data.resize(n_read * 2);
-            memcpy(&dataOut->data[0],buffs[0],n_read * sizeof(float) * 2);
-            
+        
             if (iqDataOutQueue != NULL) {
                 iqDataOutQueue->push(dataOut);
             } else {
                 dataOut->setRefCount(0);
             }
+        } else {
+            dataOut->setRefCount(0);
         }
     }
     device->deactivateStream(stream);
