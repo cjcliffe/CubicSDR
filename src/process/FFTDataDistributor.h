@@ -19,4 +19,5 @@ protected:
     int fftSize;
     int linesPerSecond;
     double lineRateAccum;
+    int bufferMax, bufferOffset, bufferedItems;
 };
