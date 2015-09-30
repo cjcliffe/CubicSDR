@@ -26,7 +26,7 @@ void FFTDataDistributor::process() {
 		if (inp) {
 			if (inputBuffer.sampleRate != inp->sampleRate || inputBuffer.frequency != inp->frequency) {
                 
-                bufferMax = inp->sampleRate / 4;
+                bufferMax = inp->sampleRate / 2;
 //                std::cout << "Buffer Max: " << bufferMax << std::endl;
                 bufferOffset = 0;
                 
@@ -37,6 +37,8 @@ void FFTDataDistributor::process() {
             if ((bufferOffset + bufferedItems + inp->data.size()) > bufferMax) {
                 std::cout << "Buffer max failed: " << bufferMax << ", ofs: " << bufferOffset
                     << ", input size: " << inp->data.size() << ", items: " << bufferedItems << std::endl;
+                memmove(&inputBuffer.data[0], &inputBuffer.data[bufferOffset], bufferedItems*sizeof(liquid_float_complex));
+                bufferOffset = 0;
             } else {
                 memcpy(&inputBuffer.data[bufferOffset+bufferedItems],&inp->data[0],inp->data.size()*sizeof(liquid_float_complex));
                 bufferedItems += inp->data.size();
