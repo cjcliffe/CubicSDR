@@ -30,11 +30,12 @@ class SDRThreadIQData: public ReferenceCounter {
 public:
     long long frequency;
     long long sampleRate;
+    bool dcCorrected;
 //    std::vector<unsigned char> data;
     std::vector<float> data;
 
     SDRThreadIQData() :
-            frequency(0), sampleRate(DEFAULT_SAMPLE_RATE) {
+            frequency(0), sampleRate(DEFAULT_SAMPLE_RATE), dcCorrected(true) {
 
     }
 

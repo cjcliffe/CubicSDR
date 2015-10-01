@@ -74,15 +74,22 @@ std::vector<SDRDeviceInfo *> *SDRThread::enumerate_devices() {
     SDRDeviceInfo *remoteDev = new SDRDeviceInfo();
     remoteDev->setDriver("remote");
     remoteDev->setName("SoapySDR Remote Test");
+    
     SoapySDR::Kwargs remoteArgs;
     remoteArgs["driver"] = "remote";
-    remoteArgs["remote"] = "127.0.0.1";
-//    remoteArgs["remote"] = "192.168.1.107";
+//    remoteArgs["remote"] = "127.0.0.1";
+    remoteArgs["remote"] = "192.168.1.103";
     remoteArgs["remote:driver"] = "rtlsdr";
-    remoteArgs["remote:format"] = "CS8";
     remoteArgs["buffers"] = "6";
     remoteArgs["buflen"] = "16384";
     remoteDev->setDeviceArgs(remoteArgs);
+
+    SoapySDR::Kwargs streamArgs;
+    streamArgs["remote:mtu"] = "8192";
+    streamArgs["remote:format"] = "CS8";
+    streamArgs["remote:window"] = "16384000";
+    remoteDev->setStreamArgs(streamArgs);
+    
     SDRThread::devs.push_back(remoteDev);
 //  */
     
@@ -110,7 +117,17 @@ std::vector<SDRDeviceInfo *> *SDRThread::enumerate_devices() {
                     dev->setHardware(it->second);
                 }
             }
+            
+            if (device->hasDCOffsetMode(SOAPY_SDR_RX, 0)) {
+                device->setDCOffsetMode(SOAPY_SDR_RX, 0, true);
+                std::cout << "Hardware DC offset support detected; internal DC offset correction will be disabled." << std::endl;
+                dev->setHardwareDC(true);
+            } else {
+                dev->setHardwareDC(false);
+            }
+
             SoapySDR::Device::unmake(device);
+            
             dev->setAvailable(true);
         } catch (const std::exception &ex) {
             std::cerr << "Error making device: " << ex.what() << std::endl;
@@ -155,6 +172,7 @@ void SDRThread::run() {
     int direct_sampling_mode = devConfig->getDirectSampling();
     int numElems = 0;
     bool hasPPM = false;
+    bool hasHardwareDC = false;
     
     offset.store(devConfig->getOffset());
     wxGetApp().setSwapIQ(devConfig->getIQSwap());
@@ -174,15 +192,17 @@ void SDRThread::run() {
     args["buflen"] = "16384";
     SoapySDR::Device *device = SoapySDR::Device::make(args);
     
+    SoapySDR::Stream *stream = device->setupStream(SOAPY_SDR_RX,"CF32", std::vector<size_t>(), dev->getStreamArgs());
+    
+    device->activateStream(stream);
     device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
     device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency - offset.load());
     if (hasPPM) {
         device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm);
     }
-    device->setGainMode(SOAPY_SDR_RX,0,true);
     
-    SoapySDR::Stream *stream = device->setupStream(SOAPY_SDR_RX,"CF32");
-    device->activateStream(stream);
+    device->setGainMode(SOAPY_SDR_RX,0,true);
+    hasHardwareDC = dev->hasHardwareDC();
     
     numElems = getOptimalElementCount(sampleRate.load(), 60);
     
@@ -274,9 +294,15 @@ void SDRThread::run() {
                     device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm);
                 }
                 device->setGainMode(SOAPY_SDR_RX,0, true);
+                hasHardwareDC = dev->hasHardwareDC();
+                if (hasHardwareDC) {
+                    device->setDCOffsetMode(SOAPY_SDR_RX, 0, true);
+                    std::cout << "Hardware DC offset support detected; internal DC offset compensation disabled." << std::endl;
+                }
 
-                SoapySDR::Stream *stream = device->setupStream(SOAPY_SDR_RX,"CF32");
+                SoapySDR::Stream *stream = device->setupStream(SOAPY_SDR_RX,"CF32", std::vector<size_t>(), dev->getStreamArgs());
                 device->activateStream(stream);
+                
             }
 
             if (offset_changed) {
@@ -331,6 +357,7 @@ void SDRThread::run() {
             dataOut->setRefCount(1);
             dataOut->frequency = frequency;
             dataOut->sampleRate = sampleRate.load();
+            dataOut->dcCorrected = hasHardwareDC;
         
             if (iqDataOutQueue != NULL) {
                 iqDataOutQueue->push(dataOut);

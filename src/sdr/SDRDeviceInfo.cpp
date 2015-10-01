@@ -59,7 +59,7 @@ const std::vector<long long> &SDRDeviceChannel::getFilterBandwidths() const {
 
 
 
-SDRDeviceInfo::SDRDeviceInfo() : name(""), serial(""), available(false) {
+SDRDeviceInfo::SDRDeviceInfo() : name(""), serial(""), available(false), hardwareDC(false) {
 
 }
 
@@ -145,6 +145,15 @@ void SDRDeviceInfo::setHardware(const std::string& hardware) {
     this->hardware = hardware;
 }
 
+const bool& SDRDeviceInfo::hasHardwareDC() const {
+    return hardwareDC;
+}
+
+void SDRDeviceInfo::setHardwareDC(const bool& hardware) {
+    hardwareDC = hardware;
+}
+
+
 bool SDRDeviceInfo::hasTimestamps() const {
     return timestamps;
 }
@@ -159,5 +168,12 @@ void SDRDeviceInfo::setDeviceArgs(SoapySDR::Kwargs deviceArgs) {
 
 SoapySDR::Kwargs SDRDeviceInfo::getDeviceArgs() {
     return deviceArgs;
-//    return "driver=" + driver + "," + getDriver() + "=" + std::to_string(getIndex());
+}
+
+void SDRDeviceInfo::setStreamArgs(SoapySDR::Kwargs streamArgs) {
+    this->streamArgs = streamArgs;
+}
+
+SoapySDR::Kwargs SDRDeviceInfo::getStreamArgs() {
+    return streamArgs;
 }

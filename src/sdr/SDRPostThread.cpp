@@ -88,32 +88,45 @@ void SDRPostThread::run() {
         
         if (data_in && data_in->data.size()) {
             int dataSize = data_in->data.size()/2;
-            if (dataSize > fpData.capacity()) {
-                fpData.reserve(dataSize);
+
+            if (dataSize > dataOut.capacity()) {
                 dataOut.reserve(dataSize);
             }
-            if (dataSize != fpData.size()) {
-                fpData.resize(dataSize);
+            if (dataSize != dataOut.size()) {
                 dataOut.resize(dataSize);
             }
 
-
-            for (int i = 0; i < dataSize; i++) {
-                fpData[i].real = data_in->data[i*2];
-                fpData[i].imag = data_in->data[i*2+1];
-            }
-
-//            if (swapIQ) {
-//                for (int i = 0; i < dataSize; i++) {
-//                    fpData[i] = _lut_swap[*((uint16_t*)&data_in->data[2*i])];
-//                }
-//            } else {
-//                for (int i = 0; i < dataSize; i++) {
-//                    fpData[i] = _lut[*((uint16_t*)&data_in->data[2*i])];
-//                }
-//            }
             
-            iirfilt_crcf_execute_block(dcFilter, &fpData[0], dataSize, &dataOut[0]);
+            //            if (swapIQ) {
+            //                for (int i = 0; i < dataSize; i++) {
+            //                    fpData[i] = _lut_swap[*((uint16_t*)&data_in->data[2*i])];
+            //                }
+            //            } else {
+            //                for (int i = 0; i < dataSize; i++) {
+            //                    fpData[i] = _lut[*((uint16_t*)&data_in->data[2*i])];
+            //                }
+            //            }
+
+            if (data_in->dcCorrected) {
+                for (int i = 0; i < dataSize; i++) {
+                    dataOut[i].real = data_in->data[i*2];
+                    dataOut[i].imag = data_in->data[i*2+1];
+                }
+            } else {
+                if (dataSize > fpData.capacity()) {
+                    fpData.reserve(dataSize);
+                }
+                if (dataSize != fpData.size()) {
+                    fpData.resize(dataSize);
+                }
+
+                for (int i = 0; i < dataSize; i++) {
+                    fpData[i].real = data_in->data[i*2];
+                    fpData[i].imag = data_in->data[i*2+1];
+                }
+            
+                iirfilt_crcf_execute_block(dcFilter, &fpData[0], dataSize, &dataOut[0]);
+            }
             
             if (iqVisualQueue != NULL && !iqVisualQueue->full()) {
                 DemodulatorThreadIQData *visualDataOut = visualDataBuffers.getBuffer();

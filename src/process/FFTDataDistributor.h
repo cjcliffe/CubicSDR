@@ -3,6 +3,7 @@
 #include "VisualProcessor.h"
 #include "DemodDefs.h"
 #include <cmath>
+#include <cstring>
 
 class FFTDataDistributor : public VisualProcessor<DemodulatorThreadIQData, DemodulatorThreadIQData> {
 public:

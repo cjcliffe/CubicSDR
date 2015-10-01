@@ -108,6 +108,9 @@ public:
     const std::string& getHardware() const;
     void setHardware(const std::string& hardware);
     
+    const bool& hasHardwareDC() const;
+    void setHardwareDC(const bool& hardware);
+    
     bool hasTimestamps() const;
     void setTimestamps(bool timestamps);
     
@@ -115,12 +118,16 @@ public:
     
     void setDeviceArgs(SoapySDR::Kwargs deviceArgs);
     SoapySDR::Kwargs getDeviceArgs();
+
+    void setStreamArgs(SoapySDR::Kwargs deviceArgs);
+    SoapySDR::Kwargs getStreamArgs();
+
 private:
     int index;
     std::string name, serial, product, manufacturer, tuner;
     std::string driver, hardware;
-    bool timestamps, available;
+    bool timestamps, available, hardwareDC;
     
-    SoapySDR::Kwargs deviceArgs;
+    SoapySDR::Kwargs deviceArgs, streamArgs;
     std::vector<SDRDeviceChannel> channels;
 };
