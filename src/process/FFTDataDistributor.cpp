@@ -26,7 +26,7 @@ void FFTDataDistributor::process() {
 		if (inp) {
 			if (inputBuffer.sampleRate != inp->sampleRate || inputBuffer.frequency != inp->frequency) {
                 
-                bufferMax = inp->sampleRate;
+                bufferMax = inp->sampleRate / 4;
 //                std::cout << "Buffer Max: " << bufferMax << std::endl;
                 bufferOffset = 0;
                 
