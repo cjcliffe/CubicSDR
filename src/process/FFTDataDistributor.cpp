@@ -26,7 +26,7 @@ void FFTDataDistributor::process() {
 		if (inp) {
 			if (inputBuffer.sampleRate != inp->sampleRate || inputBuffer.frequency != inp->frequency) {
                 
-                bufferMax = inp->sampleRate / 2;
+                bufferMax = inp->sampleRate;
 //                std::cout << "Buffer Max: " << bufferMax << std::endl;
                 bufferOffset = 0;
                 
@@ -35,8 +35,6 @@ void FFTDataDistributor::process() {
                 inputBuffer.data.resize(bufferMax);
 			}
             if ((bufferOffset + bufferedItems + inp->data.size()) > bufferMax) {
-                std::cout << "Buffer max failed: " << bufferMax << ", ofs: " << bufferOffset
-                    << ", input size: " << inp->data.size() << ", items: " << bufferedItems << std::endl;
                 memmove(&inputBuffer.data[0], &inputBuffer.data[bufferOffset], bufferedItems*sizeof(liquid_float_complex));
                 bufferOffset = 0;
             } else {
@@ -91,10 +89,6 @@ void FFTDataDistributor::process() {
             }
             if (bufferedItems <= 0) {
                 bufferedItems = 0;
-                bufferOffset = 0;
-            }
-            if ((bufferMax-(bufferOffset+bufferedItems)) < (fftSize * linesPerSecond / 8)) {
-                memmove(&inputBuffer.data[0], &inputBuffer.data[bufferOffset], bufferedItems*sizeof(liquid_float_complex));
                 bufferOffset = 0;
             }
 		}
