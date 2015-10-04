@@ -276,24 +276,56 @@ void CubicSDR::setSampleRate(long long rate_in) {
 }
 
 void CubicSDR::setDevice(SDRDeviceInfo *dev) {
-
     if (!sdrThread->isTerminated()) {
         sdrThread->terminate();
         if (t_SDR) {
             t_SDR->join();
+            delete t_SDR;
         }
     }
     
     sdrThread->setDevice(dev);
     
     DeviceConfig *devConfig = config.getDevice(dev->getDeviceId());
-
-    setPPM(devConfig->getPPM());
-    setDirectSampling(devConfig->getDirectSampling());
-    setSwapIQ(devConfig->getIQSwap());
-    setOffset(devConfig->getOffset());
     
-    t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
+    SDRDeviceChannel *chan = dev->getRxChannel();
+    
+    if (chan) {
+        long long freqHigh, freqLow;
+        
+        freqHigh = chan->getRFRange().getHigh();
+        freqLow = chan->getRFRange().getLow();
+        
+        if (frequency > freqHigh) {
+            frequency = freqHigh;
+        } else if (frequency < freqLow) {
+            frequency = freqLow;
+        }
+        
+        int rateHigh, rateLow;
+        rateLow = chan->getSampleRates()[0];
+        rateHigh = chan->getSampleRates()[chan->getSampleRates().size()-1];
+
+        if (sampleRate > rateHigh) {
+            sampleRate = rateHigh;
+        } else if (sampleRate < rateLow) {
+            sampleRate = rateLow;
+        }
+        
+        if (frequency < sampleRate/2) {
+            frequency = sampleRate/2;
+        }
+        
+        setFrequency(frequency);
+        setSampleRate(sampleRate);
+
+        setPPM(devConfig->getPPM());
+        setDirectSampling(devConfig->getDirectSampling());
+        setSwapIQ(devConfig->getIQSwap());
+        setOffset(devConfig->getOffset());
+        
+        t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
+    }
 }
 
 SDRDeviceInfo *CubicSDR::getDevice() {

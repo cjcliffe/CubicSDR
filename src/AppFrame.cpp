@@ -195,6 +195,8 @@ AppFrame::AppFrame() :
     wxMenuBar *menuBar = new wxMenuBar;
     wxMenu *menu = new wxMenu;
     
+    menu->Append(wxID_SDR_DEVICES, "SDR Devices");
+    menu->AppendSeparator();
     menu->Append(wxID_OPEN, "&Open Session");
     menu->Append(wxID_SAVE, "&Save Session");
     menu->Append(wxID_SAVEAS, "Save Session &As..");
@@ -210,7 +212,6 @@ AppFrame::AppFrame() :
             
     menu = new wxMenu;
     
-    menu->Append(wxID_SDR_DEVICES, "SDR Devices");
     menu->Append(wxID_SET_FREQ_OFFSET, "Frequency Offset");
     menu->Append(wxID_SET_PPM, "Device PPM");
     iqSwapMenuItem = menu->AppendCheckItem(wxID_SET_SWAP_IQ, "Swap I/Q");

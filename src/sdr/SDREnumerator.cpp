@@ -111,6 +111,25 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices() {
                 }
             }
             
+            int numChan = device->getNumChannels(SOAPY_SDR_RX);
+            for (int i = 0; i < numChan; i++) {
+                SDRDeviceChannel *chan = new SDRDeviceChannel();
+
+                SoapySDR::RangeList rfRange = device->getFrequencyRange(SOAPY_SDR_RX, i);
+                double rfMin = rfRange[0].minimum();
+                double rfMax = rfRange[rfRange.size()-1].maximum();
+                chan->setChannel(i);
+                chan->setFullDuplex(device->getFullDuplex(SOAPY_SDR_RX, i));
+                chan->setRx(true);
+                chan->setTx(false);
+                chan->getRFRange().setLow(rfMin);
+                chan->getRFRange().setHigh(rfMax);
+
+                std::vector<double> rates = device->listSampleRates(SOAPY_SDR_RX, i);
+                chan->getSampleRates().assign(rates.begin(), rates.end());
+                dev->addChannel(chan);
+            }
+            
             if (device->hasDCOffsetMode(SOAPY_SDR_RX, 0)) {
                 device->setDCOffsetMode(SOAPY_SDR_RX, 0, true);
                 std::cout << "Hardware DC offset support detected; internal DC offset correction will be disabled." << std::endl;

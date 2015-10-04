@@ -34,20 +34,25 @@
 
 class SDRDeviceRange {
 public:
-    SDRDeviceRange(float low, float high);
+    SDRDeviceRange();
+    SDRDeviceRange(double low, double high);
     
-    float getLow() const;
-    void setLow(const float low);
-    float getHigh() const;
-    void setHigh(const float high);
+    double getLow();
+    void setLow(double low);
+    double getHigh();
+    void setHigh(double high);
     
 private:
-    float low, high;
+    double low, high;
 };
 
 class SDRDeviceChannel {
-    int getChannel() const;
-    void setChannel(const int channel);
+public:
+    SDRDeviceChannel();
+    ~SDRDeviceChannel();
+    
+    int getChannel();
+    void setChannel(int channel);
     
     bool isFullDuplex();
     void setFullDuplex(bool fullDuplex);
@@ -58,13 +63,13 @@ class SDRDeviceChannel {
     bool isRx();
     void setRx(bool rx);
     
-    const SDRDeviceRange &getGain() const;
-    const SDRDeviceRange &getLNAGain() const;
-    const SDRDeviceRange &getFreqRange() const;
-    const SDRDeviceRange &getRFRange() const;
+    SDRDeviceRange &getGain();
+    SDRDeviceRange &getLNAGain();
+    SDRDeviceRange &getFreqRange();
+    SDRDeviceRange &getRFRange();
 
-    const std::vector<long long> &getSampleRates() const;
-    const std::vector<long long> &getFilterBandwidths() const;
+    std::vector<long long> &getSampleRates();
+    std::vector<long long> &getFilterBandwidths();
     
 private:
     int channel;
@@ -114,7 +119,10 @@ public:
     bool hasTimestamps() const;
     void setTimestamps(bool timestamps);
     
-    const std::vector<SDRDeviceChannel>& getChannels() const;
+    void addChannel(SDRDeviceChannel *chan);
+    std::vector<SDRDeviceChannel *> &getChannels();
+    SDRDeviceChannel * getRxChannel();
+    SDRDeviceChannel * getTxChannel();
     
     void setDeviceArgs(SoapySDR::Kwargs deviceArgs);
     SoapySDR::Kwargs getDeviceArgs();
@@ -129,5 +137,5 @@ private:
     bool timestamps, available, hardwareDC;
     
     SoapySDR::Kwargs deviceArgs, streamArgs;
-    std::vector<SDRDeviceChannel> channels;
+    std::vector<SDRDeviceChannel *> channels;
 };

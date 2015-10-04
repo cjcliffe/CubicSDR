@@ -1,11 +1,41 @@
 #include "SDRDeviceInfo.h"
 
+SDRDeviceRange::SDRDeviceRange() {
+    low = 0;
+    high = 0;
+}
 
-int SDRDeviceChannel::getChannel() const {
+SDRDeviceRange::SDRDeviceRange(double low, double high) {
+    this->low = low;
+    this->high = high;
+}
+
+double SDRDeviceRange::getLow() {
+    return low;
+}
+void SDRDeviceRange::setLow(double low) {
+    this->low = low;
+}
+double SDRDeviceRange::getHigh() {
+    return high;
+}
+void SDRDeviceRange::setHigh(double high) {
+    this->high = high;
+}
+
+SDRDeviceChannel::SDRDeviceChannel() {
+    
+}
+
+SDRDeviceChannel::~SDRDeviceChannel() {
+    
+}
+
+int SDRDeviceChannel::getChannel() {
     return channel;
 }
 
-void SDRDeviceChannel::setChannel(const int channel) {
+void SDRDeviceChannel::setChannel(int channel) {
     this->channel = channel;
 }
 
@@ -33,27 +63,27 @@ void SDRDeviceChannel::setRx(bool rx) {
     this->rx = rx;
 }
 
-const SDRDeviceRange &SDRDeviceChannel::getGain() const {
+SDRDeviceRange &SDRDeviceChannel::getGain() {
     return rangeGain;
 }
 
-const SDRDeviceRange &SDRDeviceChannel::getLNAGain() const {
+SDRDeviceRange &SDRDeviceChannel::getLNAGain() {
     return rangeLNA;
 }
 
-const SDRDeviceRange &SDRDeviceChannel::getFreqRange() const {
+SDRDeviceRange &SDRDeviceChannel::getFreqRange() {
     return rangeFull;
 }
 
-const SDRDeviceRange &SDRDeviceChannel::getRFRange() const {
+SDRDeviceRange &SDRDeviceChannel::getRFRange() {
     return rangeRF;
 }
 
-const std::vector<long long> &SDRDeviceChannel::getSampleRates() const {
+std::vector<long long> &SDRDeviceChannel::getSampleRates() {
     return sampleRates;
 }
 
-const std::vector<long long> &SDRDeviceChannel::getFilterBandwidths() const {
+std::vector<long long> &SDRDeviceChannel::getFilterBandwidths() {
     return filterBandwidths;
 }
 
@@ -177,3 +207,32 @@ void SDRDeviceInfo::setStreamArgs(SoapySDR::Kwargs streamArgs) {
 SoapySDR::Kwargs SDRDeviceInfo::getStreamArgs() {
     return streamArgs;
 }
+
+void SDRDeviceInfo::addChannel(SDRDeviceChannel *chan) {
+    channels.push_back(chan);
+}
+
+std::vector<SDRDeviceChannel *> &SDRDeviceInfo::getChannels() {
+    return channels;
+}
+
+SDRDeviceChannel * SDRDeviceInfo::getRxChannel() {
+    std::vector<SDRDeviceChannel *>::iterator channel_i;
+    for (channel_i = channels.begin(); channel_i != channels.end(); channel_i++) {
+        if ((*channel_i)->isRx()) {
+            return (*channel_i);
+        }
+    }
+    return NULL;
+}
+
+SDRDeviceChannel * SDRDeviceInfo::getTxChannel() {
+    std::vector<SDRDeviceChannel *>::iterator channel_i;
+    for (channel_i = channels.begin(); channel_i != channels.end(); channel_i++) {
+        if ((*channel_i)->isTx()) {
+            return (*channel_i);
+        }
+    }
+    return NULL;
+}
+
