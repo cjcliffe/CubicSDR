@@ -4,10 +4,6 @@
 #include "CubicSDR.h"
 #include <string>
 
-#include <SoapySDR/Version.hpp>
-#include <SoapySDR/Modules.hpp>
-#include <SoapySDR/Registry.hpp>
-#include <SoapySDR/Device.hpp>
 
 std::vector<std::string> SDRThread::factories;
 std::vector<std::string> SDRThread::modules;
@@ -15,14 +11,32 @@ std::vector<SDRDeviceInfo *> SDRThread::devs;
 
 
 SDRThread::SDRThread() : IOThread() {
-	offset.store(0);
-	deviceId.store(-1);
-//    dev = NULL;
+    device = NULL;
+
+    deviceConfig.store(NULL);
+    deviceInfo.store(NULL);
+
     sampleRate.store(DEFAULT_SAMPLE_RATE);
+    frequency.store(0);
+    offset.store(0);
+    ppm.store(0);
+    direct_sampling_mode.store(0);
+
+    numElems.store(0);
+    
+    rate_changed.store(false);
+    freq_changed.store(false);
+    offset_changed.store(false);
+    ppm_changed .store(false);
+    direct_sampling_changed.store(false);
+    device_changed.store(false);
+
+    hasPPM.store(false);
+    hasHardwareDC.store(false);
 }
 
 SDRThread::~SDRThread() {
-//    rtlsdr_close(dev);
+
 }
 
 
@@ -145,6 +159,130 @@ std::vector<SDRDeviceInfo *> *SDRThread::enumerate_devices() {
     return &SDRThread::devs;
 }
 
+void SDRThread::init() {
+    SDRDeviceInfo *devInfo = deviceInfo.load();
+    deviceConfig.store(wxGetApp().getConfig()->getDevice(devInfo->getDeviceId()));
+    DeviceConfig *devConfig = deviceConfig.load();
+    
+    frequency = wxGetApp().getConfig()->getCenterFreq();
+    ppm.store(devConfig->getPPM());
+    direct_sampling_mode.store(devConfig->getDirectSampling());
+
+    std::string driverName = devInfo->getDriver();
+
+    offset = devConfig->getOffset();
+    wxGetApp().setSwapIQ(devConfig->getIQSwap());
+    
+    SoapySDR::Kwargs args = devInfo->getDeviceArgs();
+    
+    args["direct_samp"] = std::to_string(devConfig->getDirectSampling());
+    
+    if (driverName == "rtl" || driverName == "rtlsdr") {
+        args["buffers"] = "6";
+        args["buflen"] = "16384";
+        hasPPM = true;
+    } else {
+        hasPPM = false;
+    }
+    
+    device = SoapySDR::Device::make(args);
+    stream = device->setupStream(SOAPY_SDR_RX,"CF32", std::vector<size_t>(), devInfo->getStreamArgs());
+    
+    device->activateStream(stream);
+    device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
+    device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency - offset.load());
+    if (hasPPM) {
+        device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm);
+    }
+    device->setGainMode(SOAPY_SDR_RX,0,true);
+    hasHardwareDC = devInfo->hasHardwareDC();
+    
+    numElems = getOptimalElementCount(sampleRate.load(), 60);
+    
+    buffs[0] = malloc(numElems * 2 * sizeof(float));
+}
+
+void SDRThread::deinit() {
+    device->deactivateStream(stream);
+    device->closeStream(stream);
+    SoapySDR::Device::unmake(device);
+    free(buffs[0]);
+}
+
+void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
+    int flags;
+    long long timeNs;
+
+    SDRThreadIQData *dataOut = buffers.getBuffer();
+    if (dataOut->data.size() != numElems * 2) {
+        dataOut->data.resize(numElems * 2);
+    }
+
+    int n_read = 0;
+    while (n_read != numElems) {
+        int n_stream_read = device->readStream(stream, buffs, numElems-n_read, flags, timeNs);
+        if (n_stream_read > 0) {
+            memcpy(&dataOut->data[n_read * 2], buffs[0], n_stream_read * sizeof(float) * 2);
+            n_read += n_stream_read;
+        } else {
+            dataOut->data.resize(n_read);
+            break;
+        }
+    }
+    
+    //        std::cout << n_read << std::endl;
+    
+    if (n_read > 0) {
+        dataOut->setRefCount(1);
+        dataOut->frequency = frequency;
+        dataOut->sampleRate = sampleRate.load();
+        dataOut->dcCorrected = hasHardwareDC;
+        
+        iqDataOutQueue->push(dataOut);
+    }
+}
+
+void SDRThread::readLoop() {
+    SDRThreadIQDataQueue* iqDataOutQueue = (SDRThreadIQDataQueue*) getOutputQueue("IQDataOutput");
+    
+    if (iqDataOutQueue == NULL) {
+        return;
+    }
+    
+    while (!terminated.load()) {
+        if (offset_changed.load()) {
+            if (!freq_changed.load()) {
+                frequency.store(frequency.load());
+                freq_changed.store(true);
+            }
+            offset_changed.store(false);
+        }
+        if (rate_changed.load()) {
+            device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
+            sampleRate.store(device->getSampleRate(SOAPY_SDR_RX,0));
+            numElems.store(getOptimalElementCount(sampleRate.load(), 60));
+            free(buffs[0]);
+            buffs[0] = malloc(numElems.load() * 2 * sizeof(float));
+            rate_changed.store(false);
+        }
+        if (ppm_changed.load() && hasPPM.load()) {
+            device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm.load());
+            direct_sampling_changed.store(false);
+        }
+        if (freq_changed.load()) {
+            device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency.load() - offset.load());
+            freq_changed.store(false);
+        }
+        if (direct_sampling_changed.load()) {
+            //                rtlsdr_set_direct_sampling(dev, direct_sampling_mode);
+        }
+        
+        readStream(iqDataOutQueue);
+    }
+    buffers.purge();
+}
+
+
 void SDRThread::run() {
 //#ifdef __APPLE__
 //    pthread_t tID = pthread_self();  // ID of this thread
@@ -153,242 +291,98 @@ void SDRThread::run() {
 //    pthread_setschedparam(tID, SCHED_FIFO, &prio);
 //#endif
 
-    std::cout << "SDR thread initializing.." << std::endl;
+    std::cout << "SDR thread starting." << std::endl;
+    terminated.store(false);
     
-    if (deviceId == -1 && devs.size() == 0) {
-        std::cout << "No devices found.. SDR Thread exiting.." << std::endl;
-        return;
+    if (deviceInfo.load() != NULL) {
+        std::cout << "device init()" << std::endl;
+        init();
+        std::cout << "starting readLoop()" << std::endl;
+        readLoop();
+        std::cout << "readLoop() ended." << std::endl;
+        deinit();
+        std::cout << "device deinit()" << std::endl;
     } else {
-        if (deviceId == -1) {
-            deviceId = 0;
-        }
-        std::cout << "Using device #" << deviceId << std::endl;
-    }
-
-    DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(devs[deviceId]->getDeviceId());
-
-    long long frequency = wxGetApp().getConfig()->getCenterFreq();
-    int ppm = devConfig->getPPM();
-    int direct_sampling_mode = devConfig->getDirectSampling();
-    int numElems = 0;
-    bool hasPPM = false;
-    bool hasHardwareDC = false;
-    
-    offset.store(devConfig->getOffset());
-    wxGetApp().setSwapIQ(devConfig->getIQSwap());
-
-    
-    SDRDeviceInfo *dev = devs[deviceId];
-    SoapySDR::Kwargs args = dev->getDeviceArgs();
-    
-    std::string driverName = dev->getDriver();
-    
-    if (driverName == "rtl" || driverName == "rtlsdr") {
-        hasPPM = true;
+        std::cout << "Device setting not found, enumerating." << std::endl;
+        SDRThread::enumerate_devices();
+        std::cout << "Reporting enumeration complete." << std::endl;
+        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_DEVICES_READY, "Devices Ready.");
+        terminated.store(true);
+        return;
     }
     
-    args["direct_samp"] = std::to_string(devConfig->getDirectSampling());
-    args["buffers"] = "6";
-    args["buflen"] = "16384";
-    SoapySDR::Device *device = SoapySDR::Device::make(args);
-    
-    SoapySDR::Stream *stream = device->setupStream(SOAPY_SDR_RX,"CF32", std::vector<size_t>(), dev->getStreamArgs());
-    
-    device->activateStream(stream);
-    device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
-    device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency - offset.load());
-    if (hasPPM) {
-        device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm);
-    }
-    
-    device->setGainMode(SOAPY_SDR_RX,0,true);
-    hasHardwareDC = dev->hasHardwareDC();
-    
-    numElems = getOptimalElementCount(sampleRate.load(), 60);
-    
-    void *buffs[1];
-    buffs[0] = malloc(numElems * 2 * sizeof(float));
-
-    int flags;
-    long long timeNs;
-
-    ReBuffer<SDRThreadIQData> buffers;
-
-    SDRThreadIQDataQueue* iqDataOutQueue = (SDRThreadIQDataQueue*) getOutputQueue("IQDataOutput");
-    SDRThreadCommandQueue* cmdQueue = (SDRThreadCommandQueue*) getInputQueue("SDRCommandQueue");
-
-    while (!terminated) {
-        if (!cmdQueue->empty()) {
-            bool freq_changed = false;
-            bool offset_changed = false;
-            bool rate_changed = false;
-            bool device_changed = false;
-            bool ppm_changed = false;
-            bool direct_sampling_changed = false;
-            long long new_freq = frequency;
-            long long new_offset = offset.load();
-            long long new_rate = sampleRate.load();
-            int new_device = deviceId;
-            int new_ppm = ppm;
-            
-            while (!cmdQueue->empty()) {
-                SDRThreadCommand command;
-                cmdQueue->pop(command);
-                
-                switch (command.cmd) {
-                    case SDRThreadCommand::SDR_THREAD_CMD_TUNE:
-                        freq_changed = true;
-                        new_freq = command.llong_value;
-                        if (new_freq < sampleRate.load() / 2) {
-                            new_freq = sampleRate.load() / 2;
-                        }
-                        break;
-                    case SDRThreadCommand::SDR_THREAD_CMD_SET_OFFSET:
-                        offset_changed = true;
-                        new_offset = command.llong_value;
-                        std::cout << "Set offset: " << new_offset << std::endl;
-                        break;
-                    case SDRThreadCommand::SDR_THREAD_CMD_SET_SAMPLERATE:
-                        rate_changed = true;
-                        new_rate = command.llong_value;
-                        std::cout << "Set sample rate: " << new_rate << std::endl;
-                        break;
-                    case SDRThreadCommand::SDR_THREAD_CMD_SET_DEVICE:
-                        device_changed = true;
-                        new_device = (int) command.llong_value;
-                        std::cout << "Set device: " << new_device << std::endl;
-                        break;
-                    case SDRThreadCommand::SDR_THREAD_CMD_SET_PPM:
-                        ppm_changed = true;
-                        new_ppm = (int) command.llong_value;
-                        //std::cout << "Set PPM: " << new_ppm << std::endl;
-                        break;
-                    case SDRThreadCommand::SDR_THREAD_CMD_SET_DIRECT_SAMPLING:
-                        direct_sampling_mode = (int)command.llong_value;
-                        direct_sampling_changed = true;
-                        break;
-                    default:
-                        break;
-                }
-            }
-            
-            if (device_changed) {
-                device->deactivateStream(stream);
-                device->closeStream(stream);
-                SoapySDR::Device::unmake(device);
-                
-                deviceId = new_device;
-                dev = devs[deviceId];
-                device_changed = false;
-                
-                SoapySDR::Kwargs args = dev->getDeviceArgs();
-                args["direct_samp"] = std::to_string(devConfig->getDirectSampling());
-                args["buffers"] = "6";
-                args["buflen"] = "16384";
-
-                device = SoapySDR::Device::make(args);
-                
-                device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
-                device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency - offset.load());
-                if (hasPPM) {
-                    device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm);
-                }
-                device->setGainMode(SOAPY_SDR_RX,0, true);
-                hasHardwareDC = dev->hasHardwareDC();
-                if (hasHardwareDC) {
-                    device->setDCOffsetMode(SOAPY_SDR_RX, 0, true);
-                    std::cout << "Hardware DC offset support detected; internal DC offset compensation disabled." << std::endl;
-                }
-
-                SoapySDR::Stream *stream = device->setupStream(SOAPY_SDR_RX,"CF32", std::vector<size_t>(), dev->getStreamArgs());
-                device->activateStream(stream);
-                
-            }
-
-            if (offset_changed) {
-                if (!freq_changed) {
-                    new_freq = frequency;
-                    freq_changed = true;
-                }
-                offset.store(new_offset);
-            }
-            if (rate_changed) {
-                device->setSampleRate(SOAPY_SDR_RX,0,new_rate);
-                sampleRate.store(device->getSampleRate(SOAPY_SDR_RX,0));
-                
-                numElems = getOptimalElementCount(sampleRate.load(), 60);
-                free(buffs[0]);
-                buffs[0] = malloc(numElems * 2 * sizeof(float));
-            }
-            if (freq_changed) {
-                frequency = new_freq;
-                device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency - offset.load());
-            }
-            if (ppm_changed && hasPPM) {
-                ppm = new_ppm;
-                device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm);
-            }
-            if (direct_sampling_changed) {
-//                rtlsdr_set_direct_sampling(dev, direct_sampling_mode);
-            }
-        }
-
-
-        SDRThreadIQData *dataOut = buffers.getBuffer();
-        if (dataOut->data.size() != numElems * 2) {
-            dataOut->data.resize(numElems * 2);
-        }
-
-        int n_read = 0;
-        while (n_read != numElems) {
-            int n_stream_read = device->readStream(stream, buffs, numElems-n_read, flags, timeNs);
-            if (n_stream_read > 0) {
-                memcpy(&dataOut->data[n_read * 2], buffs[0], n_stream_read * sizeof(float) * 2);
-                n_read += n_stream_read;
-            } else {
-                dataOut->data.resize(n_read);
-                break;
-            }
-        }
-        
-//        std::cout << n_read << std::endl;
-
-        if (n_read > 0) {
-            dataOut->setRefCount(1);
-            dataOut->frequency = frequency;
-            dataOut->sampleRate = sampleRate.load();
-            dataOut->dcCorrected = hasHardwareDC;
-        
-            if (iqDataOutQueue != NULL) {
-                iqDataOutQueue->push(dataOut);
-            } else {
-                dataOut->setRefCount(0);
-            }
-        } else {
-            dataOut->setRefCount(0);
-        }
-    }
-    device->deactivateStream(stream);
-    device->closeStream(stream);
-    SoapySDR::Device::unmake(device);
-    free(buffs[0]);
-
-    buffers.purge();
     std::cout << "SDR thread done." << std::endl;
+    
+    if (!terminated.load()) {
+        terminated.store(true);
+        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_TERMINATED, "Done.");
+    }
 }
 
 
-int SDRThread::getDeviceId() const {
-    return deviceId.load();
+SDRDeviceInfo *SDRThread::getDevice() {
+    return deviceInfo.load();
 }
 
-void SDRThread::setDeviceId(int deviceId) {
-    this->deviceId.store(deviceId);
+void SDRThread::setDevice(SDRDeviceInfo *dev) {
+    deviceInfo.store(dev);
+    deviceConfig.store(wxGetApp().getConfig()->getDevice(dev->getDeviceId()));
 }
 
 int SDRThread::getOptimalElementCount(long long sampleRate, int fps) {
     int elemCount = (int)floor((double)sampleRate/(double)fps);
     elemCount = int(ceil((double)elemCount/512.0)*512.0);
-    std::cout << "calculated optimal element count of " << elemCount << std::endl;
+    std::cout << "Calculated optimal element count of " << elemCount << std::endl;
     return elemCount;
+}
+
+void SDRThread::setFrequency(long long freq) {
+    if (freq < sampleRate.load() / 2) {
+        freq = sampleRate.load() / 2;
+    }
+    frequency.store(freq);
+    freq_changed.store(true);
+}
+
+long long SDRThread::getFrequency() {
+    return frequency.load();
+}
+
+void SDRThread::setOffset(long long ofs) {
+    offset.store(ofs);
+    offset_changed.store(true);
+    std::cout << "Set offset: " << offset.load() << std::endl;
+}
+
+long long SDRThread::getOffset() {
+    return offset.load();
+}
+
+void SDRThread::setSampleRate(int rate) {
+    sampleRate.store(rate);
+    rate_changed = true;
+    std::cout << "Set sample rate: " << sampleRate.load() << std::endl;
+}
+int SDRThread::getSampleRate() {
+    return sampleRate.load();
+}
+
+void SDRThread::setPPM(int ppm) {
+    this->ppm.store(ppm);
+    ppm_changed.store(true);
+    std::cout << "Set PPM: " << this->ppm.load() << std::endl;
+}
+
+int SDRThread::getPPM() {
+    return ppm.load();
+}
+
+void SDRThread::setDirectSampling(int dsMode) {
+    direct_sampling_mode.store(dsMode);
+    direct_sampling_changed.store(true);
+    std::cout << "Set direct sampling mode: " << this->direct_sampling_mode.load() << std::endl;
+}
+
+int SDRThread::getDirectSampling() {
+    return direct_sampling_mode.load();
 }

@@ -234,6 +234,7 @@ ENDIF(USE_AUDIO_OSS)
 ENDIF(UNIX AND NOT APPLE)
 
 IF (APPLE)
+    SET(CMAKE_OSX_DEPLOYMENT_TARGET, "10.9")
     IF (USE_RTL_SDR)
         SET(RTLSDR_INCLUDE "/opt/local/include" CACHE FILEPATH "RTL-SDR Include Path")
         SET(RTLSDR_LIB "/opt/local/lib" CACHE FILEPATH "RTL-SDR Lib Path")
@@ -301,6 +302,8 @@ SET (cubicsdr_sources
 	src/process/FFTDataDistributor.cpp
     src/process/SpectrumVisualDataThread.cpp
 	src/ui/GLPanel.cpp
+    src/forms/SDRDevices/SDRDevices.cpp
+    src/forms/SDRDevices/SDRDevicesForm.cpp
 	external/rtaudio/RtAudio.cpp
 	external/lodepng/lodepng.cpp
 	external/tinyxml/tinyxml.cpp
@@ -360,6 +363,8 @@ SET (cubicsdr_headers
 	src/ui/UITestCanvas.h
 	src/ui/UITestContext.cpp
 	src/ui/UITestContext.h    
+    src/forms/SDRDevices/SDRDevices.h
+    src/forms/SDRDevices/SDRDevicesForm.h
 	external/rtaudio/RtAudio.h
 	external/lodepng/lodepng.h
 	external/tinyxml/tinyxml.h
@@ -392,21 +397,23 @@ ENDIF()
 
 set(REG_EXT "[^/]*([.]cpp|[.]c|[.]h|[.]hpp)$")
 
-SOURCE_GROUP("Base" REGULAR_EXPRESSION src/${REG_EXT})
-SOURCE_GROUP("SDR" REGULAR_EXPRESSION src/sdr/${REG_EXT})
-SOURCE_GROUP("Demodulator" REGULAR_EXPRESSION src/demod/${REG_EXT})
-SOURCE_GROUP("Audio" REGULAR_EXPRESSION src/audio/${REG_EXT})
-SOURCE_GROUP("Utility" REGULAR_EXPRESSION src/util/${REG_EXT})
-SOURCE_GROUP("Panel" REGULAR_EXPRESSION src/panel/${REG_EXT})
-SOURCE_GROUP("Visual" REGULAR_EXPRESSION src/visual/${REG_EXT})
-SOURCE_GROUP("Process" REGULAR_EXPRESSION src/process/${REG_EXT})
-SOURCE_GROUP("UI" REGULAR_EXPRESSION src/ui/${REG_EXT})
-SOURCE_GROUP("_ext-RTAudio" REGULAR_EXPRESSION external/rtaudio/.*${REG_EXT})
-SOURCE_GROUP("_ext-LodePNG" REGULAR_EXPRESSION external/lodepng/.*${REG_EXT})
-SOURCE_GROUP("_ext-TinyXML" REGULAR_EXPRESSION external/tinyxml/.*${REG_EXT})
-SOURCE_GROUP("_ext-CubicVR2" REGULAR_EXPRESSION external/cubicvr2/.*${REG_EXT})
+SOURCE_GROUP("Base" REGULAR_EXPRESSION "src/${REG_EXT}")
+SOURCE_GROUP("Forms\\SDRDevices" REGULAR_EXPRESSION "src/forms/SDRDevices/${REG_EXT}")
+SOURCE_GROUP("SDR" REGULAR_EXPRESSION "src/sdr/${REG_EXT}")
+SOURCE_GROUP("Demodulator" REGULAR_EXPRESSION "src/demod/${REG_EXT}")
+SOURCE_GROUP("Audio" REGULAR_EXPRESSION "src/audio/${REG_EXT}")
+SOURCE_GROUP("Utility" REGULAR_EXPRESSION "src/util/${REG_EXT}")
+SOURCE_GROUP("Visual" REGULAR_EXPRESSION "src/visual/${REG_EXT}")
+SOURCE_GROUP("Panel" REGULAR_EXPRESSION "src/panel/${REG_EXT}")
+SOURCE_GROUP("Process" REGULAR_EXPRESSION "src/process/${REG_EXT}")
+SOURCE_GROUP("UI" REGULAR_EXPRESSION "src/ui/${REG_EXT}")
+SOURCE_GROUP("_ext-RTAudio" REGULAR_EXPRESSION "external/rtaudio/.*${REG_EXT}")
+SOURCE_GROUP("_ext-LodePNG" REGULAR_EXPRESSION "external/lodepng/.*${REG_EXT}")
+SOURCE_GROUP("_ext-TinyXML" REGULAR_EXPRESSION "external/tinyxml/.*${REG_EXT}")
+SOURCE_GROUP("_ext-CubicVR2" REGULAR_EXPRESSION "external/cubicvr2/.*${REG_EXT}")
 
 include_directories ( 
+	${PROJECT_SOURCE_DIR}/src/forms/SDRDevices
 	${PROJECT_SOURCE_DIR}/src/sdr 
 	${PROJECT_SOURCE_DIR}/src/demod
 	${PROJECT_SOURCE_DIR}/src/audio

@@ -42,6 +42,9 @@ public:
     virtual void OnInitCmdLine(wxCmdLineParser& parser);
     virtual bool OnCmdLineParsed(wxCmdLineParser& parser);
 
+    SDRDeviceInfo *deviceSelector();
+    void sdrThreadNotify(SDRThread::SDRThreadState state, std::string message);
+
     void setFrequency(long long freq);
     long long getFrequency();
 
@@ -59,7 +62,7 @@ public:
 
     std::vector<SDRDeviceInfo *> *getDevices();
     void setDevice(int deviceId);
-    int getDevice();
+    SDRDeviceInfo * getDevice();
 
     ScopeVisualProcessor *getScopeProcessor();
     SpectrumVisualProcessor *getSpectrumProcessor();
@@ -105,7 +108,7 @@ private:
     SpectrumVisualDataThread *spectrumVisualThread;
     SpectrumVisualDataThread *demodVisualThread;
 
-    SDRThreadCommandQueue* pipeSDRCommand;
+//    SDRThreadCommandQueue* pipeSDRCommand;
     SDRThreadIQDataQueue* pipeSDRIQData;
     DemodulatorThreadInputQueue* pipeIQVisualData;
     DemodulatorThreadOutputQueue* pipeAudioVisualData;

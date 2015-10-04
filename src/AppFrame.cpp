@@ -292,29 +292,29 @@ AppFrame::AppFrame() :
     std::vector<SDRDeviceInfo *> *devs = wxGetApp().getDevices();
     std::vector<SDRDeviceInfo *>::iterator devs_i;
 
-    if (devs->size() > 1) {
-
-        menu = new wxMenu;
-
-        int p = 0;
-        for (devs_i = devs->begin(); devs_i != devs->end(); devs_i++) {
-            std::string devName = (*devs_i)->getName();
-            if ((*devs_i)->isAvailable()) {
-                devName.append(": ");
-                devName.append((*devs_i)->getProduct());
-                devName.append(" [");
-                devName.append((*devs_i)->getSerial());
-                devName.append("]");
-            } else {
-                devName.append(" (In Use?)");
-            }
-
-            menu->AppendRadioItem(wxID_DEVICE_ID + p, devName)->Check(wxGetApp().getDevice() == p);
-            p++;
-        }
-
-        menuBar->Append(menu, wxT("Input &Device"));
-    }
+//    if (devs->size() > 1) {
+//
+//        menu = new wxMenu;
+//
+//        int p = 0;
+//        for (devs_i = devs->begin(); devs_i != devs->end(); devs_i++) {
+//            std::string devName = (*devs_i)->getName();
+//            if ((*devs_i)->isAvailable()) {
+//                devName.append(": ");
+//                devName.append((*devs_i)->getProduct());
+//                devName.append(" [");
+//                devName.append((*devs_i)->getSerial());
+//                devName.append("]");
+//            } else {
+//                devName.append(" (In Use?)");
+//            }
+//
+//            menu->AppendRadioItem(wxID_DEVICE_ID + p, devName); //->Check(wxGetApp().getDevice() == p);
+//            p++;
+//        }
+//
+//        menuBar->Append(menu, wxT("Input &Device"));
+//    }
 
     menu = new wxMenu;
 
