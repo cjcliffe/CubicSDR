@@ -210,6 +210,7 @@ AppFrame::AppFrame() :
             
     menu = new wxMenu;
     
+    menu->Append(wxID_SDR_DEVICES, "SDR Devices");
     menu->Append(wxID_SET_FREQ_OFFSET, "Frequency Offset");
     menu->Append(wxID_SET_PPM, "Device PPM");
     iqSwapMenuItem = menu->AppendCheckItem(wxID_SET_SWAP_IQ, "Swap I/Q");
@@ -468,6 +469,8 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         wxGetApp().setSwapIQ(swap_state);
         wxGetApp().saveConfig();
         iqSwapMenuItem->Check(swap_state);
+    } else if (event.GetId() == wxID_SDR_DEVICES) {
+        wxGetApp().deviceSelector();
     } else if (event.GetId() == wxID_SET_PPM) {
         long ofs = wxGetNumberFromUser("Frequency correction for device in PPM.\ni.e. -51 for -51 PPM\n\nNote: you can adjust PPM interactively\nby holding ALT over the frequency tuning bar.\n", "Parts per million (PPM)",
                 "Frequency Correction", wxGetApp().getPPM(), -1000, 1000, this);
@@ -585,29 +588,30 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             wxGetApp().setSampleRate(3200000);
             break;
         case wxID_BANDWIDTH_MANUAL:
-            long bw = wxGetNumberFromUser("Set the bandwidth manually", "Sample Rate (Hz), i.e. 2560000 for 2.56M",                                           "Manual Bandwidth Entry", wxGetApp().getSampleRate(), 250000, 25000000, this);
+            long bw = wxGetNumberFromUser("Set the bandwidth manually", "Sample Rate (Hz), i.e. 2560000 for 2.56M",
+                                          "Manual Bandwidth Entry", wxGetApp().getSampleRate(), 250000, 25000000, this);
             if (bw != -1) {
                 wxGetApp().setSampleRate(bw);
             }
             break;
     }
 
-    std::vector<SDRDeviceInfo *> *devs = wxGetApp().getDevices();
-    if (event.GetId() >= wxID_DEVICE_ID && event.GetId() <= wxID_DEVICE_ID + devs->size()) {
-        int devId = event.GetId() - wxID_DEVICE_ID;
-        wxGetApp().setDevice(devId);
-
-        SDRDeviceInfo *dev = (*wxGetApp().getDevices())[devId];
-        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
-        
-        int dsMode = devConfig->getDirectSampling();
-        
-        if (dsMode >= 0 && dsMode <= 2) {
-            directSamplingMenuItems[devConfig->getDirectSampling()]->Check();
-        }
-        
-        iqSwapMenuItem->Check(devConfig->getIQSwap());
-    }
+//    std::vector<SDRDeviceInfo *> *devs = wxGetApp().getDevices();
+//    if (event.GetId() >= wxID_DEVICE_ID && event.GetId() <= wxID_DEVICE_ID + devs->size()) {
+//        int devId = event.GetId() - wxID_DEVICE_ID;
+//        wxGetApp().setDevice(devId);
+//
+//        SDRDeviceInfo *dev = (*wxGetApp().getDevices())[devId];
+//        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
+//        
+//        int dsMode = devConfig->getDirectSampling();
+//        
+//        if (dsMode >= 0 && dsMode <= 2) {
+//            directSamplingMenuItems[devConfig->getDirectSampling()]->Check();
+//        }
+//        
+//        iqSwapMenuItem->Check(devConfig->getIQSwap());
+//    }
 
     if (event.GetId() >= wxID_AUDIO_BANDWIDTH_BASE) {
         int evId = event.GetId();

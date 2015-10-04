@@ -14,6 +14,7 @@
     #include "SDRThread.h"
 #else
     #include "SoapySDRThread.h"
+    #include "SDREnumerator.h"
 #endif
 #include "SDRPostThread.h"
 #include "AudioThread.h"
@@ -42,9 +43,10 @@ public:
     virtual void OnInitCmdLine(wxCmdLineParser& parser);
     virtual bool OnCmdLineParsed(wxCmdLineParser& parser);
 
-    SDRDeviceInfo *deviceSelector();
+    void deviceSelector();
     void sdrThreadNotify(SDRThread::SDRThreadState state, std::string message);
-
+    void sdrEnumThreadNotify(SDREnumerator::SDREnumState state, std::string message);
+    
     void setFrequency(long long freq);
     long long getFrequency();
 
@@ -61,7 +63,7 @@ public:
     long long getSampleRate();
 
     std::vector<SDRDeviceInfo *> *getDevices();
-    void setDevice(int deviceId);
+    void setDevice(SDRDeviceInfo *dev);
     SDRDeviceInfo * getDevice();
 
     ScopeVisualProcessor *getScopeProcessor();
@@ -104,6 +106,7 @@ private:
     int directSamplingMode;
 
     SDRThread *sdrThread;
+    SDREnumerator *sdrEnum;
     SDRPostThread *sdrPostThread;
     SpectrumVisualDataThread *spectrumVisualThread;
     SpectrumVisualDataThread *demodVisualThread;
@@ -120,10 +123,7 @@ private:
     
     VisualDataReDistributor<DemodulatorThreadIQData> spectrumDistributor;
 
-    std::thread *t_SDR;
-    std::thread *t_PostSDR;
-    std::thread *t_SpectrumVisual;
-    std::thread *t_DemodVisual;
+    std::thread *t_SDR, *t_SDREnum, *t_PostSDR, *t_SpectrumVisual, *t_DemodVisual;
 };
 
 static const wxCmdLineEntryDesc commandLineInfo [] =

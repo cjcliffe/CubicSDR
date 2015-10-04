@@ -267,6 +267,7 @@ SET (cubicsdr_sources
     src/IOThread.cpp
 	src/sdr/SDRDeviceInfo.cpp
 	src/sdr/SDRPostThread.cpp
+	src/sdr/SDREnumerator.cpp
 	src/demod/DemodulatorPreThread.cpp
 	src/demod/DemodulatorThread.cpp
 	src/demod/DemodulatorWorkerThread.cpp
@@ -322,6 +323,7 @@ SET (cubicsdr_headers
     src/IOThread.h
 	src/sdr/SDRDeviceInfo.h
 	src/sdr/SDRPostThread.h
+	src/sdr/SDREnumerator.h
 	src/demod/DemodulatorPreThread.h
 	src/demod/DemodulatorThread.h
 	src/demod/DemodulatorWorkerThread.h

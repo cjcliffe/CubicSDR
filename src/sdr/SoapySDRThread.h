@@ -47,10 +47,8 @@ private:
 public:
     SDRThread();
     ~SDRThread();
-    enum SDRThreadState { SDR_THREAD_DEVICES_READY, SDR_THREAD_NO_DEVICES, SDR_THREAD_TERMINATED, SDR_THREAD_FAILED };
+    enum SDRThreadState { SDR_THREAD_TERMINATED, SDR_THREAD_FAILED };
     
-    static std::vector<SDRDeviceInfo *> *enumerate_devices();
-
     void run();
 
     SDRDeviceInfo *getDevice();
@@ -73,9 +71,6 @@ public:
     int getDirectSampling();
  
 protected:
-    static std::vector<std::string> factories;
-    static std::vector<std::string> modules;
-    static std::vector<SDRDeviceInfo *> devs;
     SoapySDR::Stream *stream;
     SoapySDR::Device *device;
     void *buffs[1];

@@ -17,14 +17,14 @@
 #include <wx/settings.h>
 #include <wx/string.h>
 #include <wx/treectrl.h>
-#include <wx/listctrl.h>
+#include <wx/button.h>
 #include <wx/sizer.h>
 #include <wx/panel.h>
+#include <wx/listctrl.h>
 #include <wx/bitmap.h>
 #include <wx/image.h>
 #include <wx/icon.h>
 #include <wx/notebook.h>
-#include <wx/menu.h>
 #include <wx/frame.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -39,15 +39,24 @@ class devFrame : public wxFrame
 	
 	protected:
 		wxStatusBar* devStatusBar;
+		wxPanel* m_panel3;
+		wxPanel* m_panel6;
 		wxTreeCtrl* devTree;
+		wxPanel* m_panel4;
+		wxButton* m_addRemoteButton;
+		wxButton* m_useSelectedButton;
 		wxNotebook* devTabs;
 		wxPanel* devInfoPanel;
 		wxListCtrl* m_DevInfoList;
 		wxPanel* devParamsPanel;
 		wxListCtrl* m_ParamInfoList;
-		wxMenuBar* devMenuBar;
-		wxMenu* devFileMenu;
-		wxMenu* devEditMenu;
+		
+		// Virtual event handlers, overide them in your derived class
+		virtual void OnDeleteItem( wxTreeEvent& event ) { event.Skip(); }
+		virtual void OnSelectionChanged( wxTreeEvent& event ) { event.Skip(); }
+		virtual void OnAddRemote( wxMouseEvent& event ) { event.Skip(); }
+		virtual void OnUseSelected( wxMouseEvent& event ) { event.Skip(); }
+		
 	
 	public:
 		

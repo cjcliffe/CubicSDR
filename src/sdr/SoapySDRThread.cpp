@@ -5,11 +5,6 @@
 #include <string>
 
 
-std::vector<std::string> SDRThread::factories;
-std::vector<std::string> SDRThread::modules;
-std::vector<SDRDeviceInfo *> SDRThread::devs;
-
-
 SDRThread::SDRThread() : IOThread() {
     device = NULL;
 
@@ -37,126 +32,6 @@ SDRThread::SDRThread() : IOThread() {
 
 SDRThread::~SDRThread() {
 
-}
-
-
-std::vector<SDRDeviceInfo *> *SDRThread::enumerate_devices() {
-
-    if (SDRThread::devs.size()) {
-        return &SDRThread::devs;
-    }
-    
-    std::cout << "SoapySDR init.." << std::endl;
-    std::cout << "\tAPI Version: v" << SoapySDR::getAPIVersion() << std::endl;
-    std::cout << "\tABI Version: v" << SoapySDR::getABIVersion() << std::endl;
-    std::cout << "\tInstall root: " << SoapySDR::getRootPath() << std::endl;
-
-    modules = SoapySDR::listModules();
-    for (size_t i = 0; i < modules.size(); i++) {
-        std::cout << "\tModule found: " << modules[i] << std::endl;
-    }
-    if (modules.empty()) {
-        std::cout << "No modules found!" << std::endl;
-    }
-    
-    std::cout << "\tLoading modules... " << std::flush;
-    SoapySDR::loadModules();
-    std::cout << "done" << std::endl;
-    
-    if (SDRThread::factories.size()) {
-        SDRThread::factories.erase(SDRThread::factories.begin(), SDRThread::factories.end());
-    }
-    
-    std::cout << "\tAvailable factories...";
-    SoapySDR::FindFunctions factories = SoapySDR::Registry::listFindFunctions();
-    for (SoapySDR::FindFunctions::const_iterator it = factories.begin(); it != factories.end(); ++it) {
-        if (it != factories.begin()) {
-            std::cout << ", ";
-        }
-        std::cout << it->first;
-        SDRThread::factories.push_back(it->first);
-    }
-    if (factories.empty()) {
-        std::cout << "No factories found!" << std::endl;
-    }
-    std::cout << std::endl;
-
-    std::vector<SoapySDR::Kwargs> results = SoapySDR::Device::enumerate();
-
-    // Remote driver test..
-/* * /
-    SDRDeviceInfo *remoteDev = new SDRDeviceInfo();
-    remoteDev->setDriver("remote");
-    remoteDev->setName("SoapySDR Remote Test");
-    
-    SoapySDR::Kwargs remoteArgs;
-    remoteArgs["driver"] = "remote";
-//    remoteArgs["remote"] = "127.0.0.1";
-    remoteArgs["remote"] = "192.168.1.103";
-    remoteArgs["remote:driver"] = "rtlsdr";
-    remoteArgs["buffers"] = "6";
-    remoteArgs["buflen"] = "16384";
-    remoteDev->setDeviceArgs(remoteArgs);
-
-    SoapySDR::Kwargs streamArgs;
-    streamArgs["remote:mtu"] = "8192";
-    streamArgs["remote:format"] = "CS8";
-    streamArgs["remote:window"] = "16384000";
-    remoteDev->setStreamArgs(streamArgs);
-    
-    SDRThread::devs.push_back(remoteDev);
-//  */
-    
-    for (size_t i = 0; i < results.size(); i++) {
-        std::cout << "Found device " << i << std::endl;
-        SDRDeviceInfo *dev = new SDRDeviceInfo();
-        for (SoapySDR::Kwargs::const_iterator it = results[i].begin(); it != results[i].end(); ++it) {
-            std::cout << "  " << it->first << " = " << it->second << std::endl;
-            if (it->first == "driver") {
-                dev->setDriver(it->second);
-            } else if (it->first == "label") {
-                dev->setName(it->second);
-            }
-        }
-        
-        dev->setDeviceArgs(results[i]);
-        
-        std::cout << "Make device " << i << std::endl;
-        try {
-            SoapySDR::Device *device = SoapySDR::Device::make(dev->getDeviceArgs());
-            SoapySDR::Kwargs info = device->getHardwareInfo();
-            for (SoapySDR::Kwargs::const_iterator it = info.begin(); it != info.end(); ++it) {
-                std::cout << "  " << it->first << "=" << it->second << std::endl;
-                if (it->first == "hardware") {
-                    dev->setHardware(it->second);
-                }
-            }
-            
-            if (device->hasDCOffsetMode(SOAPY_SDR_RX, 0)) {
-                device->setDCOffsetMode(SOAPY_SDR_RX, 0, true);
-                std::cout << "Hardware DC offset support detected; internal DC offset correction will be disabled." << std::endl;
-                dev->setHardwareDC(true);
-            } else {
-                dev->setHardwareDC(false);
-            }
-
-            SoapySDR::Device::unmake(device);
-            
-            dev->setAvailable(true);
-        } catch (const std::exception &ex) {
-            std::cerr << "Error making device: " << ex.what() << std::endl;
-            dev->setAvailable(false);
-        }
-        std::cout << std::endl;
-
-        SDRThread::devs.push_back(dev);
-    }
-    if (results.empty()) {
-        std::cout << "No devices found!" << std::endl;
-    }
-    std::cout << std::endl;
-
-    return &SDRThread::devs;
 }
 
 void SDRThread::init() {
@@ -303,12 +178,7 @@ void SDRThread::run() {
         deinit();
         std::cout << "device deinit()" << std::endl;
     } else {
-        std::cout << "Device setting not found, enumerating." << std::endl;
-        SDRThread::enumerate_devices();
-        std::cout << "Reporting enumeration complete." << std::endl;
-        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_DEVICES_READY, "Devices Ready.");
-        terminated.store(true);
-        return;
+        std::cout << "SDR Thread started with null device?" << std::endl;
     }
     
     std::cout << "SDR thread done." << std::endl;

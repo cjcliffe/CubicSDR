@@ -18,6 +18,8 @@
 #include "CoreFoundation/CoreFoundation.h"
 #endif
 
+#include <SDRDevices.h>
+
 IMPLEMENT_APP(CubicSDR)
 
 CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE), directSamplingMode(0),
@@ -96,8 +98,11 @@ bool CubicSDR::OnInit() {
     t_SpectrumVisual = new std::thread(&SpectrumVisualDataThread::threadMain, spectrumVisualThread);
     t_DemodVisual = new std::thread(&SpectrumVisualDataThread::threadMain, demodVisualThread);
 
-    t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
+//    t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
 
+    sdrEnum = new SDREnumerator();
+    t_SDREnum = new std::thread(&SDREnumerator::threadMain, sdrEnum);
+    
     appframe = new AppFrame();
 
 #ifdef __APPLE__
@@ -119,7 +124,9 @@ int CubicSDR::OnExit() {
     std::cout << "Terminating SDR thread.." << std::endl;
     if (!sdrThread->isTerminated()) {
         sdrThread->terminate();
-        t_SDR->join();
+        if (t_SDR) {
+            t_SDR->join();
+        }
     }
     std::cout << "Terminating SDR post-processing thread.." << std::endl;
     sdrPostThread->terminate();
@@ -183,68 +190,15 @@ bool CubicSDR::OnCmdLineParsed(wxCmdLineParser& parser) {
     return true;
 }
 
-SDRDeviceInfo *CubicSDR::deviceSelector() {
-    std::vector<SDRDeviceInfo *>::iterator devs_i;
-    
-    SDRDeviceInfo *dev = NULL;
-
-    devs = SDRThread::enumerate_devices();
-    
-    if (devs->size() > 1) {
-        wxArrayString choices;
-        for (devs_i = devs->begin(); devs_i != devs->end(); devs_i++) {
-            std::string devName = (*devs_i)->getName();
-            if ((*devs_i)->isAvailable()) {
-//                devName.append(": ");
-//                devName.append((*devs_i)->getProduct());
-//                devName.append(" [");
-//                devName.append((*devs_i)->getSerial());
-//                devName.append("]");
-            } else {
-                devName.append(" (In Use?)");
-            }
-            choices.Add(devName);
-        }
-
-        int devId = wxGetSingleChoiceIndex(wxT("Devices"), wxT("Choose Input Device"), choices);
-        if (devId == -1) {  // User chose to cancel
-            return NULL;
-        }
-
-        dev = (*devs)[devId];
-    } else if (devs->size() == 1) {
-        dev = (*devs)[0];
+void CubicSDR::deviceSelector() {
+    if (sdrEnum->isTerminated()) {
+        devs = SDREnumerator::enumerate_devices();
+        SDRDevicesDialog *dlg = new SDRDevicesDialog(appframe);
+        dlg->Show();
     }
-
-    if (dev == NULL) {
-        wxMessageDialog *info;
-        info = new wxMessageDialog(NULL, wxT("\x28\u256F\xB0\u25A1\xB0\uFF09\u256F\uFE35\x20\u253B\u2501\u253B"), wxT("RTL-SDR device not found"), wxOK | wxICON_ERROR);
-        info->ShowModal();
-        return NULL;
-    }
-    
-    return dev;
 }
 
 void CubicSDR::sdrThreadNotify(SDRThread::SDRThreadState state, std::string message) {
-    if (state == SDRThread::SDR_THREAD_DEVICES_READY) {
-        SDRDeviceInfo *dev = deviceSelector();
-        if (dev) {
-            appframe->initDeviceParams(dev->getDeviceId());
-            DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
-            ppm = devConfig->getPPM();
-            offset = devConfig->getOffset();
-            directSamplingMode = devConfig->getDirectSampling();
-            sdrThread->setDevice(dev);
-            if (t_SDR) {
-                delete t_SDR;
-            }
-            t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
-        }
-    }
-    if (state == SDRThread::SDR_THREAD_NO_DEVICES) {
-        
-    }
     if (state == SDRThread::SDR_THREAD_TERMINATED) {
         t_SDR->join();
         delete t_SDR;
@@ -255,6 +209,20 @@ void CubicSDR::sdrThreadNotify(SDRThread::SDRThreadState state, std::string mess
         info->ShowModal();
     }
 }
+
+
+void CubicSDR::sdrEnumThreadNotify(SDREnumerator::SDREnumState state, std::string message) {
+    if (state == SDREnumerator::SDR_ENUM_DEVICES_READY) {
+        deviceSelector();
+    }
+    if (state == SDREnumerator::SDR_ENUM_FAILED) {
+        sdrEnum->terminate();
+        wxMessageDialog *info;
+        info = new wxMessageDialog(NULL, message, wxT("Error enumerating devices"), wxOK | wxICON_ERROR);
+        info->ShowModal();
+    }
+}
+
 
 void CubicSDR::setFrequency(long long freq) {
     if (freq < sampleRate / 2) {
@@ -307,17 +275,25 @@ void CubicSDR::setSampleRate(long long rate_in) {
     setFrequency(frequency);
 }
 
-void CubicSDR::setDevice(int deviceId) {
-    
-//    SDRDeviceInfo *dev = (*getDevices())[deviceId];
-//    DeviceConfig *devConfig = config.getDevice(dev->getDeviceId());
+void CubicSDR::setDevice(SDRDeviceInfo *dev) {
 
-//    sdrThread->setDevice(devConfig);
-//
-//    setPPM(devConfig->getPPM());
-//    setDirectSampling(devConfig->getDirectSampling());
-//    setSwapIQ(devConfig->getIQSwap());
-//    setOffset(devConfig->getOffset());
+    if (!sdrThread->isTerminated()) {
+        sdrThread->terminate();
+        if (t_SDR) {
+            t_SDR->join();
+        }
+    }
+    
+    sdrThread->setDevice(dev);
+    
+    DeviceConfig *devConfig = config.getDevice(dev->getDeviceId());
+
+    setPPM(devConfig->getPPM());
+    setDirectSampling(devConfig->getDirectSampling());
+    setSwapIQ(devConfig->getIQSwap());
+    setOffset(devConfig->getOffset());
+    
+    t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
 }
 
 SDRDeviceInfo *CubicSDR::getDevice() {
