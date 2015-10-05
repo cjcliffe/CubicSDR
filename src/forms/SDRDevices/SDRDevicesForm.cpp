@@ -26,7 +26,9 @@ devFrame::devFrame( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	bSizer6 = new wxBoxSizer( wxVERTICAL );
 	
 	devTree = new wxTreeCtrl( m_panel6, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_DEFAULT_STYLE );
-	bSizer6->Add( devTree, 1, wxEXPAND, 5 );
+	devTree->Enable( false );
+	
+	bSizer6->Add( devTree, 1, wxEXPAND|wxALIGN_RIGHT, 5 );
 	
 	m_panel4 = new wxPanel( m_panel6, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer5;
@@ -51,6 +53,8 @@ devFrame::devFrame( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	bSizer4->Add( m_panel6, 1, wxEXPAND | wxALL, 5 );
 	
 	devTabs = new wxNotebook( m_panel3, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
+	devTabs->Hide();
+	
 	devInfoPanel = new wxPanel( devTabs, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* devInfoSizer;
 	devInfoSizer = new wxBoxSizer( wxVERTICAL );
@@ -87,22 +91,29 @@ devFrame::devFrame( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	
 	this->SetSizer( devFrameSizer );
 	this->Layout();
+	m_deviceTimer.SetOwner( this, wxID_ANY );
 	
 	this->Centre( wxBOTH );
 	
 	// Connect Events
+	this->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( devFrame::OnClose ) );
+	devTree->Connect( wxEVT_LEFT_DCLICK, wxMouseEventHandler( devFrame::OnTreeDoubleClick ), NULL, this );
 	devTree->Connect( wxEVT_COMMAND_TREE_DELETE_ITEM, wxTreeEventHandler( devFrame::OnDeleteItem ), NULL, this );
 	devTree->Connect( wxEVT_COMMAND_TREE_SEL_CHANGED, wxTreeEventHandler( devFrame::OnSelectionChanged ), NULL, this );
 	m_addRemoteButton->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnAddRemote ), NULL, this );
 	m_useSelectedButton->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnUseSelected ), NULL, this );
+	this->Connect( wxID_ANY, wxEVT_TIMER, wxTimerEventHandler( devFrame::OnDeviceTimer ) );
 }
 
 devFrame::~devFrame()
 {
 	// Disconnect Events
+	this->Disconnect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( devFrame::OnClose ) );
+	devTree->Disconnect( wxEVT_LEFT_DCLICK, wxMouseEventHandler( devFrame::OnTreeDoubleClick ), NULL, this );
 	devTree->Disconnect( wxEVT_COMMAND_TREE_DELETE_ITEM, wxTreeEventHandler( devFrame::OnDeleteItem ), NULL, this );
 	devTree->Disconnect( wxEVT_COMMAND_TREE_SEL_CHANGED, wxTreeEventHandler( devFrame::OnSelectionChanged ), NULL, this );
 	m_addRemoteButton->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnAddRemote ), NULL, this );
 	m_useSelectedButton->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnUseSelected ), NULL, this );
+	this->Disconnect( wxID_ANY, wxEVT_TIMER, wxTimerEventHandler( devFrame::OnDeviceTimer ) );
 	
 }

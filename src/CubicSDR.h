@@ -26,6 +26,7 @@
 #include "ScopeVisualProcessor.h"
 #include "SpectrumVisualProcessor.h"
 #include "SpectrumVisualDataThread.h"
+#include "SDRDevices.h"
 
 #include <wx/cmdline.h>
 
@@ -69,7 +70,7 @@ public:
     ScopeVisualProcessor *getScopeProcessor();
     SpectrumVisualProcessor *getSpectrumProcessor();
     SpectrumVisualProcessor *getDemodSpectrumProcessor();
-    VisualDataReDistributor<DemodulatorThreadIQData> *getSpectrumDistributor();
+    VisualDataDistributor<DemodulatorThreadIQData> *getSpectrumDistributor();
     
     DemodulatorThreadOutputQueue* getAudioVisualQueue();
     DemodulatorThreadInputQueue* getIQVisualQueue();
@@ -90,6 +91,15 @@ public:
 
     void showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode = FrequencyDialog::FDIALOG_TARGET_DEFAULT);
     AppFrame *getAppFrame();
+    
+    bool areDevicesReady();
+    bool areDevicesEnumerating();
+    std::string getNotification();
+    
+    void addRemote(std::string remoteAddr);
+    void removeRemote(std::string remoteAddr);
+
+    void setDeviceSelectorClosed();
     
 private:
     AppFrame *appframe;
@@ -121,9 +131,15 @@ private:
 
     ScopeVisualProcessor scopeProcessor;
     
-    VisualDataReDistributor<DemodulatorThreadIQData> spectrumDistributor;
+    VisualDataDistributor<DemodulatorThreadIQData> spectrumDistributor;
+
+    SDRDevicesDialog *deviceSelectorDialog;
 
     std::thread *t_SDR, *t_SDREnum, *t_PostSDR, *t_SpectrumVisual, *t_DemodVisual;
+    std::atomic_bool devicesReady;
+    std::atomic_bool deviceSelectorOpen;
+    std::string notifyMessage;
+    std::mutex notify_busy;
 };
 
 static const wxCmdLineEntryDesc commandLineInfo [] =

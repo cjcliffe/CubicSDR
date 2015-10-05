@@ -24,7 +24,8 @@ void SDRDeviceRange::setHigh(double high) {
 }
 
 SDRDeviceChannel::SDRDeviceChannel() {
-    
+    hardwareDC = false;
+    hasCorr = false;
 }
 
 SDRDeviceChannel::~SDRDeviceChannel() {
@@ -87,9 +88,26 @@ std::vector<long long> &SDRDeviceChannel::getFilterBandwidths() {
     return filterBandwidths;
 }
 
+const bool& SDRDeviceChannel::hasHardwareDC() const {
+    return hardwareDC;
+}
+
+void SDRDeviceChannel::setHardwareDC(const bool& hardware) {
+    hardwareDC = hardware;
+}
 
 
-SDRDeviceInfo::SDRDeviceInfo() : name(""), serial(""), available(false), hardwareDC(false) {
+
+const bool& SDRDeviceChannel::hasCORR() const {
+    return hardwareDC;
+}
+
+void SDRDeviceChannel::setCORR(const bool& hardware) {
+    hardwareDC = hardware;
+}
+
+
+SDRDeviceInfo::SDRDeviceInfo() : name(""), serial(""), available(false) {
 
 }
 
@@ -174,15 +192,6 @@ const std::string& SDRDeviceInfo::getHardware() const {
 void SDRDeviceInfo::setHardware(const std::string& hardware) {
     this->hardware = hardware;
 }
-
-const bool& SDRDeviceInfo::hasHardwareDC() const {
-    return hardwareDC;
-}
-
-void SDRDeviceInfo::setHardwareDC(const bool& hardware) {
-    hardwareDC = hardware;
-}
-
 
 bool SDRDeviceInfo::hasTimestamps() const {
     return timestamps;

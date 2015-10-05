@@ -18,8 +18,6 @@
 #include "CoreFoundation/CoreFoundation.h"
 #endif
 
-#include <SDRDevices.h>
-
 IMPLEMENT_APP(CubicSDR)
 
 CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE), directSamplingMode(0),
@@ -51,6 +49,8 @@ bool CubicSDR::OnInit() {
     offset = 0;
     ppm = 0;
     directSamplingMode = 0;
+    devicesReady.store(false);
+    deviceSelectorOpen.store(false);
 
     // Visual Data
     spectrumVisualThread = new SpectrumVisualDataThread();
@@ -99,21 +99,24 @@ bool CubicSDR::OnInit() {
     t_DemodVisual = new std::thread(&SpectrumVisualDataThread::threadMain, demodVisualThread);
 
 //    t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
-
     sdrEnum = new SDREnumerator();
-    t_SDREnum = new std::thread(&SDREnumerator::threadMain, sdrEnum);
-    
+
     appframe = new AppFrame();
+    deviceSelectorOpen.store(true);
+    deviceSelectorDialog = new SDRDevicesDialog(appframe);
+    deviceSelectorDialog->Show();
 
-#ifdef __APPLE__
-    int main_policy;
-    struct sched_param main_param;
+    t_SDREnum = new std::thread(&SDREnumerator::threadMain, sdrEnum);
 
-    main_policy = SCHED_RR;
-    main_param.sched_priority = sched_get_priority_min(SCHED_RR)+2;
-
-    pthread_setschedparam(pthread_self(), main_policy, &main_param);
-#endif
+//#ifdef __APPLE__
+//    int main_policy;
+//    struct sched_param main_param;
+//
+//    main_policy = SCHED_RR;
+//    main_param.sched_priority = sched_get_priority_min(SCHED_RR)+2;
+//
+//    pthread_setschedparam(pthread_self(), main_policy, &main_param);
+//#endif
 
     return true;
 }
@@ -191,36 +194,61 @@ bool CubicSDR::OnCmdLineParsed(wxCmdLineParser& parser) {
 }
 
 void CubicSDR::deviceSelector() {
-    if (sdrEnum->isTerminated()) {
-        devs = SDREnumerator::enumerate_devices();
-        SDRDevicesDialog *dlg = new SDRDevicesDialog(appframe);
-        dlg->Show();
+    if (deviceSelectorOpen) {
+        deviceSelectorDialog->Raise();
+        deviceSelectorDialog->SetFocus();
+        return;
     }
+    deviceSelectorOpen = true;
+    deviceSelectorDialog = new SDRDevicesDialog(appframe);
+    deviceSelectorDialog->Show();
+}
+
+void CubicSDR::addRemote(std::string remoteAddr) {
+    SDREnumerator::addRemote(remoteAddr);
+    devicesReady.store(false);
+    t_SDREnum = new std::thread(&SDREnumerator::threadMain, sdrEnum);
+}
+
+void CubicSDR::removeRemote(std::string remoteAddr) {
+    SDREnumerator::removeRemote(remoteAddr);
 }
 
 void CubicSDR::sdrThreadNotify(SDRThread::SDRThreadState state, std::string message) {
+    notify_busy.lock();
+    if (state == SDRThread::SDR_THREAD_MESSAGE) {
+        notifyMessage = message;
+    }
     if (state == SDRThread::SDR_THREAD_TERMINATED) {
         t_SDR->join();
         delete t_SDR;
     }
     if (state == SDRThread::SDR_THREAD_FAILED) {
-        wxMessageDialog *info;
-        info = new wxMessageDialog(NULL, message, wxT("Error initializing device"), wxOK | wxICON_ERROR);
-        info->ShowModal();
+        notifyMessage = message;
+//        wxMessageDialog *info;
+//        info = new wxMessageDialog(NULL, message, wxT("Error initializing device"), wxOK | wxICON_ERROR);
+//        info->ShowModal();
     }
+    appframe->SetStatusText(message);
+    notify_busy.unlock();
 }
 
 
 void CubicSDR::sdrEnumThreadNotify(SDREnumerator::SDREnumState state, std::string message) {
+    notify_busy.lock();
+    if (state == SDREnumerator::SDR_ENUM_MESSAGE) {
+        notifyMessage = message;
+    }
     if (state == SDREnumerator::SDR_ENUM_DEVICES_READY) {
-        deviceSelector();
+        devs = SDREnumerator::enumerate_devices("", true);
+        devicesReady.store(true);
     }
     if (state == SDREnumerator::SDR_ENUM_FAILED) {
+        notifyMessage = message;
         sdrEnum->terminate();
-        wxMessageDialog *info;
-        info = new wxMessageDialog(NULL, message, wxT("Error enumerating devices"), wxOK | wxICON_ERROR);
-        info->ShowModal();
     }
+    appframe->SetStatusText(message);
+    notify_busy.unlock();
 }
 
 
@@ -296,11 +324,13 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev) {
         freqHigh = chan->getRFRange().getHigh();
         freqLow = chan->getRFRange().getLow();
         
-        if (frequency > freqHigh) {
-            frequency = freqHigh;
-        } else if (frequency < freqLow) {
-            frequency = freqLow;
-        }
+// upconverter settings don't like this, need to handle elsewhere..
+//        if (frequency > freqHigh) {
+//            frequency = freqHigh;
+//        }
+//        else if (frequency < freqLow) {
+//            frequency = freqLow;
+//        }
         
         int rateHigh, rateLow;
         rateLow = chan->getSampleRates()[0];
@@ -344,7 +374,7 @@ SpectrumVisualProcessor *CubicSDR::getDemodSpectrumProcessor() {
     return demodVisualThread->getProcessor();
 }
 
-VisualDataReDistributor<DemodulatorThreadIQData> *CubicSDR::getSpectrumDistributor() {
+VisualDataDistributor<DemodulatorThreadIQData> *CubicSDR::getSpectrumDistributor() {
     return &spectrumDistributor;
 }
 
@@ -394,8 +424,7 @@ AppConfig *CubicSDR::getConfig() {
 }
 
 void CubicSDR::saveConfig() {
-#warning Configuration Save Disabled
-//    config.save();
+    config.save();
 }
 
 void CubicSDR::setPPM(int ppm_in) {
@@ -452,4 +481,24 @@ void CubicSDR::setFrequencySnap(int snap) {
 
 int CubicSDR::getFrequencySnap() {
     return snap;
+}
+
+bool CubicSDR::areDevicesReady() {
+    return devicesReady.load();
+}
+
+bool CubicSDR::areDevicesEnumerating() {
+    return !sdrEnum->isTerminated();
+}
+
+std::string CubicSDR::getNotification() {
+    std::string msg;
+    notify_busy.lock();
+    msg = notifyMessage;
+    notify_busy.unlock();
+    return msg;
+}
+
+void CubicSDR::setDeviceSelectorClosed() {
+    deviceSelectorOpen.store(false);
 }

@@ -39,7 +39,6 @@ void SDRThread::init() {
     deviceConfig.store(wxGetApp().getConfig()->getDevice(devInfo->getDeviceId()));
     DeviceConfig *devConfig = deviceConfig.load();
     
-    frequency = wxGetApp().getConfig()->getCenterFreq();
     ppm.store(devConfig->getPPM());
     direct_sampling_mode.store(devConfig->getDirectSampling());
 
@@ -53,6 +52,7 @@ void SDRThread::init() {
     args["direct_samp"] = std::to_string(devConfig->getDirectSampling());
     
     if (driverName == "rtl" || driverName == "rtlsdr") {
+        args["iq_swap"] = std::to_string(devConfig->getIQSwap()?1:0);
         args["buffers"] = "6";
         args["buflen"] = "16384";
         hasPPM = true;
@@ -60,17 +60,30 @@ void SDRThread::init() {
         hasPPM = false;
     }
     
+    wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Initializing device."));
     device = SoapySDR::Device::make(args);
     stream = device->setupStream(SOAPY_SDR_RX,"CF32", std::vector<size_t>(), devInfo->getStreamArgs());
     
+    wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Activating stream."));
     device->activateStream(stream);
     device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
     device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency - offset.load());
-    if (hasPPM) {
-        device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm);
+    SDRDeviceChannel *chan = devInfo->getRxChannel();
+    if (chan->hasCORR()) {
+        hasPPM.store(true);
+        device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm.load());
+    } else {
+        hasPPM.store(false);
     }
+    if (chan->hasHardwareDC()) {
+        hasHardwareDC.store(true);
+        wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Found hardware DC offset correction support, internal disabled."));
+        device->setDCOffsetMode(SOAPY_SDR_RX, chan->getChannel(), true);
+    } else {
+        hasHardwareDC.store(false);
+    }
+
     device->setGainMode(SOAPY_SDR_RX,0,true);
-    hasHardwareDC = devInfo->hasHardwareDC();
     
     numElems = getOptimalElementCount(sampleRate.load(), 60);
     

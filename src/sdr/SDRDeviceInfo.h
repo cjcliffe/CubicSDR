@@ -71,9 +71,16 @@ public:
     std::vector<long long> &getSampleRates();
     std::vector<long long> &getFilterBandwidths();
     
+    const bool& hasHardwareDC() const;
+    void setHardwareDC(const bool& hardware);
+
+    const bool& hasCORR() const;
+    void setCORR(const bool& corr);
+    
+    
 private:
     int channel;
-    bool fullDuplex, tx, rx;
+    bool fullDuplex, tx, rx, hardwareDC, hasCorr;
     SDRDeviceRange rangeGain, rangeLNA, rangeFull, rangeRF;
     std::vector<long long> sampleRates;
     std::vector<long long> filterBandwidths;
@@ -113,9 +120,6 @@ public:
     const std::string& getHardware() const;
     void setHardware(const std::string& hardware);
     
-    const bool& hasHardwareDC() const;
-    void setHardwareDC(const bool& hardware);
-    
     bool hasTimestamps() const;
     void setTimestamps(bool timestamps);
     
@@ -134,7 +138,7 @@ private:
     int index;
     std::string name, serial, product, manufacturer, tuner;
     std::string driver, hardware;
-    bool timestamps, available, hardwareDC;
+    bool timestamps, available;
     
     SoapySDR::Kwargs deviceArgs, streamArgs;
     std::vector<SDRDeviceChannel *> channels;

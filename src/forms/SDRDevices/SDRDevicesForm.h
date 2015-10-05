@@ -25,6 +25,7 @@
 #include <wx/image.h>
 #include <wx/icon.h>
 #include <wx/notebook.h>
+#include <wx/timer.h>
 #include <wx/frame.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -50,17 +51,21 @@ class devFrame : public wxFrame
 		wxListCtrl* m_DevInfoList;
 		wxPanel* devParamsPanel;
 		wxListCtrl* m_ParamInfoList;
+		wxTimer m_deviceTimer;
 		
 		// Virtual event handlers, overide them in your derived class
+		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
+		virtual void OnTreeDoubleClick( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnDeleteItem( wxTreeEvent& event ) { event.Skip(); }
 		virtual void OnSelectionChanged( wxTreeEvent& event ) { event.Skip(); }
 		virtual void OnAddRemote( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnUseSelected( wxMouseEvent& event ) { event.Skip(); }
+		virtual void OnDeviceTimer( wxTimerEvent& event ) { event.Skip(); }
 		
 	
 	public:
 		
-		devFrame( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("CubicSDR :: SDR Devices"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 692,467 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
+		devFrame( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("CubicSDR :: SDR Devices"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 392,467 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
 		
 		~devFrame();
 	
