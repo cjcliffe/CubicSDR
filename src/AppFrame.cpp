@@ -291,8 +291,8 @@ AppFrame::AppFrame() :
 
     menuBar->Append(menu, wxT("&Input Bandwidth"));
 
-    std::vector<SDRDeviceInfo *> *devs = wxGetApp().getDevices();
-    std::vector<SDRDeviceInfo *>::iterator devs_i;
+//    std::vector<SDRDeviceInfo *> *devs = wxGetApp().getDevices();
+//    std::vector<SDRDeviceInfo *>::iterator devs_i;
 
 //    if (devs->size() > 1) {
 //
@@ -346,7 +346,6 @@ AppFrame::AppFrame() :
     }
 
     for (mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
-        new wxMenu;
         int menu_id = wxID_AUDIO_BANDWIDTH_BASE + wxID_AUDIO_DEVICE_MULTIPLIER * mdevices_i->first;
         wxMenu *subMenu = new wxMenu;
         menu->AppendSubMenu(subMenu, mdevices_i->second.name, wxT("Description?"));
@@ -417,6 +416,8 @@ AppFrame::AppFrame() :
     wxAcceleratorTable accel(3, entries);
     SetAcceleratorTable(accel);
 
+    wxGetApp().deviceSelector();
+            
 //    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 //    wxLogStatus("Double-buffered display %s supported", wxGLCanvas::IsDisplaySupported(attribs) ? "is" : "not");
 //    ShowFullScreen(true);

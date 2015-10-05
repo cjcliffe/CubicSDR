@@ -102,9 +102,6 @@ bool CubicSDR::OnInit() {
     sdrEnum = new SDREnumerator();
 
     appframe = new AppFrame();
-    deviceSelectorOpen.store(true);
-    deviceSelectorDialog = new SDRDevicesDialog(appframe);
-    deviceSelectorDialog->Show();
 
     t_SDREnum = new std::thread(&SDREnumerator::threadMain, sdrEnum);
 
@@ -199,7 +196,7 @@ void CubicSDR::deviceSelector() {
         deviceSelectorDialog->SetFocus();
         return;
     }
-    deviceSelectorOpen = true;
+    deviceSelectorOpen.store(true);
     deviceSelectorDialog = new SDRDevicesDialog(appframe);
     deviceSelectorDialog->Show();
 }

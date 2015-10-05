@@ -20,7 +20,7 @@ AudioThread::AudioThread() : IOThread(),
 	outputDevice.store(-1);
     gain.store(1.0);
 
-    boundThreads = new std::vector<AudioThread *>;
+    boundThreads.store(new std::vector<AudioThread *>);
 }
 
 AudioThread::~AudioThread() {
