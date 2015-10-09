@@ -101,9 +101,9 @@ bool CubicSDR::OnInit() {
 //    t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
     sdrEnum = new SDREnumerator();
 
-    appframe = new AppFrame();
-
     t_SDREnum = new std::thread(&SDREnumerator::threadMain, sdrEnum);
+
+    appframe = new AppFrame();
 
 //#ifdef __APPLE__
 //    int main_policy;
@@ -226,7 +226,7 @@ void CubicSDR::sdrThreadNotify(SDRThread::SDRThreadState state, std::string mess
 //        info = new wxMessageDialog(NULL, message, wxT("Error initializing device"), wxOK | wxICON_ERROR);
 //        info->ShowModal();
     }
-    appframe->SetStatusText(message);
+    //if (appframe) { appframe->SetStatusText(message); }
     notify_busy.unlock();
 }
 
@@ -244,7 +244,7 @@ void CubicSDR::sdrEnumThreadNotify(SDREnumerator::SDREnumState state, std::strin
         notifyMessage = message;
         sdrEnum->terminate();
     }
-    appframe->SetStatusText(message);
+    //if (appframe) { appframe->SetStatusText(message); }
     notify_busy.unlock();
 }
 
