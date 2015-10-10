@@ -101,9 +101,9 @@ bool CubicSDR::OnInit() {
 //    t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
     sdrEnum = new SDREnumerator();
 
-    t_SDREnum = new std::thread(&SDREnumerator::threadMain, sdrEnum);
 
     appframe = new AppFrame();
+	t_SDREnum = new std::thread(&SDREnumerator::threadMain, sdrEnum);
 
 //#ifdef __APPLE__
 //    int main_policy;
@@ -498,4 +498,8 @@ std::string CubicSDR::getNotification() {
 
 void CubicSDR::setDeviceSelectorClosed() {
     deviceSelectorOpen.store(false);
+}
+
+bool CubicSDR::isDeviceSelectorOpen() {
+	return deviceSelectorOpen.load();
 }

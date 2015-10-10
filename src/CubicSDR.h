@@ -100,6 +100,7 @@ public:
     void removeRemote(std::string remoteAddr);
 
     void setDeviceSelectorClosed();
+	bool isDeviceSelectorOpen();
     
 private:
     AppFrame *appframe;

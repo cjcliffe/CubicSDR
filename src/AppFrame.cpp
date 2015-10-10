@@ -802,8 +802,10 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         if (!demodTuner->HasFocus()) {
             demodTuner->SetFocus();
         }
-    } else if (!waterfallCanvas->HasFocus()) {
-        waterfallCanvas->SetFocus();
+    } else if (!wxGetApp().isDeviceSelectorOpen()) {
+		if (!waterfallCanvas->HasFocus()) {
+			waterfallCanvas->SetFocus();
+		}
     }
 
     scopeCanvas->setPPMMode(demodTuner->isAltDown());

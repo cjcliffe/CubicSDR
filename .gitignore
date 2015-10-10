@@ -1,3 +1,4 @@
+build/
 cmake_build/
 cmake_build_msvc/
 dist/
