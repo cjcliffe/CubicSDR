@@ -143,9 +143,9 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
             std::cout << "  " << it->first << " = " << it->second << std::endl;
             if (it->first == "driver") {
                 dev->setDriver(it->second);
-            } else if (it->first == "label") {
+            } else if (it->first == "label" || it->first == "device") {
                 dev->setName(it->second);
-            }
+			}
         }
 
         dev->setDeviceArgs(deviceArgs);
