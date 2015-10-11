@@ -99,11 +99,11 @@ void SDRDeviceChannel::setHardwareDC(const bool& hardware) {
 
 
 const bool& SDRDeviceChannel::hasCORR() const {
-    return hardwareDC;
+    return hasCorr;
 }
 
-void SDRDeviceChannel::setCORR(const bool& hardware) {
-    hardwareDC = hardware;
+void SDRDeviceChannel::setCORR(const bool& hasCorr) {
+	this->hasCorr = hasCorr;
 }
 
 
