@@ -435,8 +435,8 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
             int currentBW = demod->getBandwidth();
 
             currentBW = currentBW + bwDiff;
-            if (currentBW > wxGetApp().getSampleRate()) {
-                currentBW = wxGetApp().getSampleRate();
+            if (currentBW > CHANNELIZER_RATE_MAX) {
+                currentBW = CHANNELIZER_RATE_MAX;
             }
             if (currentBW < MIN_BANDWIDTH) {
                 currentBW = MIN_BANDWIDTH;

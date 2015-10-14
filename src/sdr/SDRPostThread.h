@@ -30,10 +30,8 @@ protected:
     std::vector<DemodulatorInstance *> demodulators;
     iirfilt_crcf dcFilter;
     std::atomic_bool swapIQ;
-    ReBuffer<DemodulatorThreadIQData> visualDataBuffers;
 
-    
-private:
-    std::vector<liquid_float_complex> _lut;
-    std::vector<liquid_float_complex> _lut_swap;
+    ReBuffer<DemodulatorThreadIQData> visualDataBuffers;
+    int numChannels, sampleRate;
+    firpfbch2_crcf channelizer;
 };

@@ -28,6 +28,7 @@ SDRThread::SDRThread() : IOThread() {
 
     hasPPM.store(false);
     hasHardwareDC.store(false);
+    numChannels.store(8);
 }
 
 SDRThread::~SDRThread() {
@@ -85,7 +86,9 @@ void SDRThread::init() {
 
     device->setGainMode(SOAPY_SDR_RX,0,true);
     
-    numElems = getOptimalElementCount(sampleRate.load(), 60);
+    numChannels.store(getOptimalChannelCount(sampleRate.load()));
+    numElems.store(getOptimalElementCount(sampleRate.load(), 30));
+    
     
     buffs[0] = malloc(numElems * 2 * sizeof(float));
 }
@@ -102,15 +105,15 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
     long long timeNs;
 
     SDRThreadIQData *dataOut = buffers.getBuffer();
-    if (dataOut->data.size() != numElems * 2) {
-        dataOut->data.resize(numElems * 2);
+    if (dataOut->data.size() != numElems) {
+        dataOut->data.resize(numElems);
     }
 
     int n_read = 0;
-    while (n_read != numElems) {
+    while (n_read != numElems && !terminated) {
         int n_stream_read = device->readStream(stream, buffs, numElems-n_read, flags, timeNs);
         if (n_stream_read > 0) {
-            memcpy(&dataOut->data[n_read * 2], buffs[0], n_stream_read * sizeof(float) * 2);
+            memcpy(&dataOut->data[n_read], buffs[0], n_stream_read * sizeof(float) * 2);
             n_read += n_stream_read;
         } else {
             dataOut->data.resize(n_read);
@@ -120,11 +123,12 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
     
     //        std::cout << n_read << std::endl;
     
-    if (n_read > 0) {
+    if (n_read > 0 && !terminated) {
         dataOut->setRefCount(1);
-        dataOut->frequency = frequency;
+        dataOut->frequency = frequency.load();
         dataOut->sampleRate = sampleRate.load();
-        dataOut->dcCorrected = hasHardwareDC;
+        dataOut->dcCorrected = hasHardwareDC.load();
+        dataOut->numChannels = numChannels.load();
         
         iqDataOutQueue->push(dataOut);
     }
@@ -148,6 +152,7 @@ void SDRThread::readLoop() {
         if (rate_changed.load()) {
             device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
             sampleRate.store(device->getSampleRate(SOAPY_SDR_RX,0));
+            numChannels.store(getOptimalChannelCount(sampleRate.load()));
             numElems.store(getOptimalElementCount(sampleRate.load(), 60));
             free(buffs[0]);
             buffs[0] = malloc(numElems.load() * 2 * sizeof(float));
@@ -174,7 +179,7 @@ void SDRThread::readLoop() {
 void SDRThread::run() {
 //#ifdef __APPLE__
 //    pthread_t tID = pthread_self();  // ID of this thread
-//    int priority = sched_get_priority_max( SCHED_FIFO) - 1;
+//    int priority = sched_get_priority_max( SCHED_FIFO);
 //    sched_param prio = { priority }; // scheduling priority of thread
 //    pthread_setschedparam(tID, SCHED_FIFO, &prio);
 //#endif
@@ -214,10 +219,30 @@ void SDRThread::setDevice(SDRDeviceInfo *dev) {
 
 int SDRThread::getOptimalElementCount(long long sampleRate, int fps) {
     int elemCount = (int)floor((double)sampleRate/(double)fps);
-    elemCount = int(ceil((double)elemCount/512.0)*512.0);
-    std::cout << "Calculated optimal element count of " << elemCount << std::endl;
+    int nch = numChannels.load();
+    elemCount = int(ceil((double)elemCount/(double)nch))*nch;
+    std::cout << "Calculated optimal " << numChannels.load() << " channel element count of " << elemCount << std::endl;
     return elemCount;
 }
+
+int SDRThread::getOptimalChannelCount(long long sampleRate) {
+    int optimal_rate = CHANNELIZER_RATE_MAX;
+    int optimal_count = int(ceil(double(sampleRate)/double(optimal_rate)));
+    
+    if (optimal_count % 2 == 1) {
+        optimal_count--;
+    }
+    
+    if (optimal_count < 4) {
+        optimal_count = 4;
+    }
+    
+    if (optimal_count > 16) {
+        optimal_count = 16;
+    }
+    return optimal_count;
+}
+
 
 void SDRThread::setFrequency(long long freq) {
     if (freq < sampleRate.load() / 2) {
