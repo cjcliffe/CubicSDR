@@ -31,7 +31,25 @@ protected:
     iirfilt_crcf dcFilter;
     std::atomic_bool swapIQ;
 
+private:
+    void initPFBChannelizer();
+    void updateActiveDemodulators();
+    void updateChannels();
+
+    ReBuffer<DemodulatorThreadIQData> buffers;
+    std::vector<liquid_float_complex> fpData;
+    std::vector<liquid_float_complex> dataOut;
+    std::vector<long long> chanCenters;
+    long long chanBw;
+    
+    int nRunDemods;
+    std::vector<DemodulatorInstance *> runDemods;
+    std::vector<int> demodChannel;
+    std::vector<int> demodChannelActive;
+
     ReBuffer<DemodulatorThreadIQData> visualDataBuffers;
+    atomic_bool doRefresh;
     int numChannels, sampleRate;
+    long long frequency;
     firpfbch2_crcf channelizer;
 };
