@@ -29,6 +29,8 @@ SDRThread::SDRThread() : IOThread() {
     hasPPM.store(false);
     hasHardwareDC.store(false);
     numChannels.store(8);
+
+    dcFilter = iirfilt_crcf_create_dc_blocker(0.0005);
 }
 
 SDRThread::~SDRThread() {
@@ -88,7 +90,7 @@ void SDRThread::init() {
     
     numChannels.store(getOptimalChannelCount(sampleRate.load()));
     numElems.store(getOptimalElementCount(sampleRate.load(), 30));
-    
+    inpBuffer.data.resize(numElems.load());
     
     buffs[0] = malloc(numElems * 2 * sizeof(float));
 }
@@ -104,26 +106,31 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
     int flags;
     long long timeNs;
 
-    SDRThreadIQData *dataOut = buffers.getBuffer();
-    if (dataOut->data.size() != numElems) {
-        dataOut->data.resize(numElems);
-    }
 
     int n_read = 0;
     while (n_read != numElems && !terminated) {
         int n_stream_read = device->readStream(stream, buffs, numElems-n_read, flags, timeNs);
         if (n_stream_read > 0) {
-            memcpy(&dataOut->data[n_read], buffs[0], n_stream_read * sizeof(float) * 2);
+            memcpy(&inpBuffer.data[n_read], buffs[0], n_stream_read * sizeof(float) * 2);
             n_read += n_stream_read;
         } else {
-            dataOut->data.resize(n_read);
             break;
         }
     }
     
-    //        std::cout << n_read << std::endl;
-    
     if (n_read > 0 && !terminated) {
+        SDRThreadIQData *dataOut = buffers.getBuffer();
+
+        if (hasHardwareDC) {
+            dataOut->data.assign(inpBuffer.data.begin(), inpBuffer.data.begin()+n_read);
+        } else {
+            if (dataOut->data.size() != n_read) {
+                dataOut->data.resize(n_read);
+            }
+            iirfilt_crcf_execute_block(dcFilter, &inpBuffer.data[0], n_read, &dataOut->data[0]);
+        }
+
+        
         dataOut->setRefCount(1);
         dataOut->frequency = frequency.load();
         dataOut->sampleRate = sampleRate.load();
@@ -154,6 +161,7 @@ void SDRThread::readLoop() {
             sampleRate.store(device->getSampleRate(SOAPY_SDR_RX,0));
             numChannels.store(getOptimalChannelCount(sampleRate.load()));
             numElems.store(getOptimalElementCount(sampleRate.load(), 60));
+            inpBuffer.data.resize(numElems.load());
             free(buffs[0]);
             buffs[0] = malloc(numElems.load() * 2 * sizeof(float));
             rate_changed.store(false);

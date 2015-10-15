@@ -77,7 +77,8 @@ protected:
     SoapySDR::Device *device;
     void *buffs[1];
     ReBuffer<SDRThreadIQData> buffers;
-
+    iirfilt_crcf dcFilter;
+    SDRThreadIQData inpBuffer;
     std::atomic<DeviceConfig *> deviceConfig;
     std::atomic<SDRDeviceInfo *> deviceInfo;
 

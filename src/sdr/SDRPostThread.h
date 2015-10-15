@@ -28,7 +28,6 @@ protected:
 	
     std::mutex busy_demod;
     std::vector<DemodulatorInstance *> demodulators;
-    iirfilt_crcf dcFilter;
     std::atomic_bool swapIQ;
 
 private:

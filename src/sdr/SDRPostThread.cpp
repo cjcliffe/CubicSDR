@@ -18,8 +18,6 @@ SDRPostThread::SDRPostThread() : IOThread() {
     nRunDemods = 0;
     
     doRefresh.store(false);
-
-    dcFilter = iirfilt_crcf_create_dc_blocker(0.0005);
 }
 
 SDRPostThread::~SDRPostThread() {
@@ -179,23 +177,8 @@ void SDRPostThread::run() {
             //                    fpData[i] = _lut[*((uint16_t*)&data_in->data[2*i])];
             //                }
             //            }
-
-            if (dataSize > fpData.capacity()) {
-                fpData.reserve(dataSize);
-            }
-            if (dataSize != fpData.size()) {
-                fpData.resize(dataSize);
-            }
-
-            if (data_in->dcCorrected) {
-                fpData.assign(data_in->data.begin(), data_in->data.end());
-            } else {
-                iirfilt_crcf_execute_block(dcFilter, &data_in->data[0], dataSize, &fpData[0]);
-            }
             
             if (iqVisualQueue != NULL || iqDataOutQueue != NULL) {
-                int num_vis_samples = fpData.size();
-
                 bool doIQVis = iqVisualQueue && !iqVisualQueue->full();
                 bool doIQOut = iqDataOutQueue != NULL;
                 
@@ -204,7 +187,7 @@ void SDRPostThread::run() {
                 
                 iqDataOut->frequency = data_in->frequency;
                 iqDataOut->sampleRate = data_in->sampleRate;
-                iqDataOut->data.assign(fpData.begin(), fpData.begin() + num_vis_samples);
+                iqDataOut->data.assign(data_in->data.begin(), data_in->data.begin() + dataSize);
 
                 if (doIQVis) {
                     iqVisualQueue->push(iqDataOut);
@@ -234,7 +217,7 @@ void SDRPostThread::run() {
                 // channelize data
                 // firpfbch2 output rate is 2 x ( input rate / channels )
                 for (int i = 0, iMax = dataSize; i < iMax; i+=numChannels/2) {
-                    firpfbch2_crcf_execute(channelizer, &fpData[i], &dataOut[i * 2]);
+                    firpfbch2_crcf_execute(channelizer, &data_in->data[i], &dataOut[i * 2]);
                 }
 
                 for (int i = 0, iMax = numChannels; i < iMax; i++) {
