@@ -245,9 +245,9 @@ int SDRThread::getOptimalChannelCount(long long sampleRate) {
         optimal_count = 4;
     }
     
-    if (optimal_count > 16) {
-        optimal_count = 16;
-    }
+//    if (optimal_count > 16) {
+//        optimal_count = 16;
+//    }
     return optimal_count;
 }
 

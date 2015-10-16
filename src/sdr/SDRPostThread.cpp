@@ -214,6 +214,11 @@ void SDRPostThread::run() {
             
             // Find active demodulators
             if (nRunDemods) {
+                
+                for (int i = 0; i < numChannels; i++) {
+                    firpfbch2_crcf_set_channel_state(channelizer, i, (demodChannelActive[i]>0)?1:0);
+                }
+                
                 // channelize data
                 // firpfbch2 output rate is 2 x ( input rate / channels )
                 for (int i = 0, iMax = dataSize; i < iMax; i+=numChannels/2) {
