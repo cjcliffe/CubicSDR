@@ -56,11 +56,11 @@ bool SDRPostThread::getSwapIQ() {
 void SDRPostThread::initPFBChannelizer() {
 //    std::cout << "Initializing post-process FIR polyphase filterbank channelizer with " << numChannels << " channels." << std::endl;
     if (channelizer) {
-        firpfbch2_crcf_destroy(channelizer);
+        firpfbch_crcf_destroy(channelizer);
     }
-    channelizer = firpfbch2_crcf_create_kaiser(LIQUID_ANALYZER, numChannels, 1, 60);
+    channelizer = firpfbch_crcf_create_kaiser(LIQUID_ANALYZER, numChannels, 4, 60);
     
-    chanBw = (sampleRate / numChannels) * 2;
+    chanBw = (sampleRate / numChannels);
     
     chanCenters.resize(numChannels);
     demodChannelActive.resize(numChannels);
@@ -122,7 +122,7 @@ void SDRPostThread::updateActiveDemodulators() {
 void SDRPostThread::updateChannels() {
     // calculate channel center frequencies, todo: cache
     for (int i = 0; i < numChannels/2; i++) {
-        int ofs = ((chanBw/2) * i);
+        int ofs = ((chanBw) * i);
         chanCenters[i] = frequency + ofs;
         chanCenters[i+(numChannels/2)] = frequency - (sampleRate/2) + ofs;
     }
@@ -159,7 +159,7 @@ void SDRPostThread::run() {
             }
             
             int dataSize = data_in->data.size();
-            int outSize = data_in->data.size()*2;
+            int outSize = data_in->data.size();
 
             if (outSize > dataOut.capacity()) {
                 dataOut.reserve(outSize);
@@ -215,14 +215,14 @@ void SDRPostThread::run() {
             // Find active demodulators
             if (nRunDemods) {
                 
-                for (int i = 0; i < numChannels; i++) {
-                    firpfbch2_crcf_set_channel_state(channelizer, i, (demodChannelActive[i]>0)?1:0);
-                }
+//                for (int i = 0; i < numChannels; i++) {
+//                    firpfbch_crcf_set_channel_state(channelizer, i, (demodChannelActive[i]>0)?1:0);
+//                }
                 
                 // channelize data
                 // firpfbch2 output rate is 2 x ( input rate / channels )
-                for (int i = 0, iMax = dataSize; i < iMax; i+=numChannels/2) {
-                    firpfbch2_crcf_execute(channelizer, &data_in->data[i], &dataOut[i * 2]);
+                for (int i = 0, iMax = dataSize; i < iMax; i+=numChannels) {
+                    firpfbch_crcf_analyzer_execute(channelizer, &data_in->data[i], &dataOut[i]);
                 }
 
                 for (int i = 0, iMax = numChannels; i < iMax; i++) {

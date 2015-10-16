@@ -50,5 +50,5 @@ private:
     atomic_bool doRefresh;
     int numChannels, sampleRate;
     long long frequency;
-    firpfbch2_crcf channelizer;
+    firpfbch_crcf channelizer;
 };
