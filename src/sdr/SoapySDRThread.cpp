@@ -30,7 +30,7 @@ SDRThread::SDRThread() : IOThread() {
     hasHardwareDC.store(false);
     numChannels.store(8);
 
-    dcFilter = iirfilt_crcf_create_dc_blocker(0.0005);
+//    dcFilter = iirfilt_crcf_create_dc_blocker(0.0005);
 }
 
 SDRThread::~SDRThread() {
@@ -80,7 +80,7 @@ void SDRThread::init() {
     }
     if (chan->hasHardwareDC()) {
         hasHardwareDC.store(true);
-        wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Found hardware DC offset correction support, internal disabled."));
+//        wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Found hardware DC offset correction support, internal disabled."));
         device->setDCOffsetMode(SOAPY_SDR_RX, chan->getChannel(), true);
     } else {
         hasHardwareDC.store(false);
@@ -121,14 +121,14 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
     if (n_read > 0 && !terminated) {
         SDRThreadIQData *dataOut = buffers.getBuffer();
 
-        if (hasHardwareDC) {
+//        if (hasHardwareDC) {
             dataOut->data.assign(inpBuffer.data.begin(), inpBuffer.data.begin()+n_read);
-        } else {
-            if (dataOut->data.size() != n_read) {
-                dataOut->data.resize(n_read);
-            }
-            iirfilt_crcf_execute_block(dcFilter, &inpBuffer.data[0], n_read, &dataOut->data[0]);
-        }
+//        } else {
+//            if (dataOut->data.size() != n_read) {
+//                dataOut->data.resize(n_read);
+//            }
+//            iirfilt_crcf_execute_block(dcFilter, &inpBuffer.data[0], n_read, &dataOut->data[0]);
+//        }
 
         
         dataOut->setRefCount(1);

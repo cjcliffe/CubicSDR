@@ -70,11 +70,11 @@ public:
     ScopeVisualProcessor *getScopeProcessor();
     SpectrumVisualProcessor *getSpectrumProcessor();
     SpectrumVisualProcessor *getDemodSpectrumProcessor();
-    VisualDataDistributor<DemodulatorThreadIQData> *getSpectrumDistributor();
     
     DemodulatorThreadOutputQueue* getAudioVisualQueue();
     DemodulatorThreadInputQueue* getIQVisualQueue();
     DemodulatorThreadInputQueue* getWaterfallVisualQueue();
+    DemodulatorThreadInputQueue* getActiveDemodVisualQueue();
     DemodulatorMgr &getDemodMgr();
 
     void bindDemodulator(DemodulatorInstance *demod);
@@ -122,18 +122,15 @@ private:
     SpectrumVisualDataThread *spectrumVisualThread;
     SpectrumVisualDataThread *demodVisualThread;
 
-//    SDRThreadCommandQueue* pipeSDRCommand;
     SDRThreadIQDataQueue* pipeSDRIQData;
     DemodulatorThreadInputQueue* pipeIQVisualData;
     DemodulatorThreadOutputQueue* pipeAudioVisualData;
     DemodulatorThreadInputQueue* pipeDemodIQVisualData;
-    DemodulatorThreadInputQueue* pipeSpectrumIQVisualData;
     DemodulatorThreadInputQueue* pipeWaterfallIQVisualData;
+    DemodulatorThreadInputQueue* pipeActiveDemodIQVisualData;
 
     ScopeVisualProcessor scopeProcessor;
     
-    VisualDataDistributor<DemodulatorThreadIQData> spectrumDistributor;
-
     SDRDevicesDialog *deviceSelectorDialog;
 
     std::thread *t_SDR, *t_SDREnum, *t_PostSDR, *t_SpectrumVisual, *t_DemodVisual;

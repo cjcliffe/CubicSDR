@@ -25,7 +25,8 @@ protected:
     SDRThreadIQDataQueue *iqDataInQueue;
     DemodulatorThreadInputQueue *iqDataOutQueue;
     DemodulatorThreadInputQueue *iqVisualQueue;
-	
+    DemodulatorThreadInputQueue *iqActiveDemodVisualQueue;
+    
     std::mutex busy_demod;
     std::vector<DemodulatorInstance *> demodulators;
     std::atomic_bool swapIQ;
@@ -51,4 +52,5 @@ private:
     int numChannels, sampleRate;
     long long frequency;
     firpfbch_crcf channelizer;
+    iirfilt_crcf dcFilter;
 };

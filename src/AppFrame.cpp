@@ -671,8 +671,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     if (demod) {
-        DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
-
         if (demod->isTracking()) {
             if (spectrumCanvas->getViewState()) {
                 long long diff = abs(demod->getFrequency() - spectrumCanvas->getCenterFrequency()) + (demod->getBandwidth()/2) + (demod->getBandwidth()/4);
@@ -816,7 +814,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     wxGetApp().getAudioVisualQueue()->set_max_num_items((scopeCanvas->scopeVisible()?1:0) + (scopeCanvas->spectrumVisible()?1:0));
     
     wxGetApp().getScopeProcessor()->run();
-    wxGetApp().getSpectrumDistributor()->run();
+//    wxGetApp().getSpectrumDistributor()->run();
 
     SpectrumVisualProcessor *proc = wxGetApp().getSpectrumProcessor();
     

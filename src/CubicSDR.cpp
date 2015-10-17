@@ -59,22 +59,14 @@ bool CubicSDR::OnInit() {
     pipeIQVisualData = new DemodulatorThreadInputQueue();
     pipeIQVisualData->set_max_num_items(1);
 
-    spectrumDistributor.setInput(pipeIQVisualData);
-    
     pipeDemodIQVisualData = new DemodulatorThreadInputQueue();
     pipeDemodIQVisualData->set_max_num_items(1);
-    
-    pipeSpectrumIQVisualData = new DemodulatorThreadInputQueue();
-    pipeSpectrumIQVisualData->set_max_num_items(1);
     
     pipeWaterfallIQVisualData = new DemodulatorThreadInputQueue();
     pipeWaterfallIQVisualData->set_max_num_items(128);
     
-    spectrumDistributor.attachOutput(pipeDemodIQVisualData);
-    spectrumDistributor.attachOutput(pipeSpectrumIQVisualData);
-    
     getDemodSpectrumProcessor()->setInput(pipeDemodIQVisualData);
-    getSpectrumProcessor()->setInput(pipeSpectrumIQVisualData);
+    getSpectrumProcessor()->setInput(pipeIQVisualData);
     
     pipeAudioVisualData = new DemodulatorThreadOutputQueue();
     pipeAudioVisualData->set_max_num_items(1);
@@ -89,18 +81,16 @@ bool CubicSDR::OnInit() {
     sdrThread->setOutputQueue("IQDataOutput",pipeSDRIQData);
 
     sdrPostThread = new SDRPostThread();
-//    sdrPostThread->setNumVisSamples(BUF_SIZE);
     sdrPostThread->setInputQueue("IQDataInput", pipeSDRIQData);
     sdrPostThread->setOutputQueue("IQVisualDataOutput", pipeIQVisualData);
     sdrPostThread->setOutputQueue("IQDataOutput", pipeWaterfallIQVisualData);
+    sdrPostThread->setOutputQueue("IQActiveDemodVisualDataOutput", pipeDemodIQVisualData);
     
     t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
     t_SpectrumVisual = new std::thread(&SpectrumVisualDataThread::threadMain, spectrumVisualThread);
     t_DemodVisual = new std::thread(&SpectrumVisualDataThread::threadMain, demodVisualThread);
 
-//    t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
     sdrEnum = new SDREnumerator();
-
 
     appframe = new AppFrame();
 	t_SDREnum = new std::thread(&SDREnumerator::threadMain, sdrEnum);
@@ -370,11 +360,6 @@ SpectrumVisualProcessor *CubicSDR::getSpectrumProcessor() {
 SpectrumVisualProcessor *CubicSDR::getDemodSpectrumProcessor() {
     return demodVisualThread->getProcessor();
 }
-
-VisualDataDistributor<DemodulatorThreadIQData> *CubicSDR::getSpectrumDistributor() {
-    return &spectrumDistributor;
-}
-
 
 DemodulatorThreadOutputQueue* CubicSDR::getAudioVisualQueue() {
     return pipeAudioVisualData;
