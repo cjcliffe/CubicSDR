@@ -63,8 +63,8 @@ void SDRPostThread::initPFBChannelizer() {
     
     chanBw = (sampleRate / numChannels);
     
-    chanCenters.resize(numChannels);
-    demodChannelActive.resize(numChannels);
+    chanCenters.resize(numChannels+1);
+    demodChannelActive.resize(numChannels+1);
     
 //    std::cout << "Channel bandwidth spacing: " << (chanBw) << std::endl;
 }
@@ -125,6 +125,7 @@ void SDRPostThread::updateChannels() {
         chanCenters[i] = frequency + ofs;
         chanCenters[i+(numChannels/2)] = frequency - (sampleRate/2) + ofs;
     }
+    chanCenters[numChannels] = frequency + (sampleRate/2);
 }
 
 void SDRPostThread::run() {
@@ -238,7 +239,7 @@ void SDRPostThread::run() {
                 for (int i = 0; i < nRunDemods; i++) {
                     DemodulatorInstance *demod = runDemods[i];
                     long long minDelta = data_in->sampleRate;
-                    for (int j = 0, jMax = numChannels; j < jMax; j++) {
+                    for (int j = 0, jMax = numChannels+1; j < jMax; j++) {
                         // Distance from channel center to demod center
                         long long fdelta = abs(demod->getFrequency() - chanCenters[j]);
                         if (fdelta < minDelta) {
@@ -259,7 +260,7 @@ void SDRPostThread::run() {
                 }
                 
                 // Run channels
-                for (int i = 0; i < numChannels; i++) {
+                for (int i = 0; i < numChannels+1; i++) {
                     bool doVis = (activeDemodChannel == i) && (iqActiveDemodVisualQueue != NULL) && !iqActiveDemodVisualQueue->full();
                     
                     DemodulatorThreadIQData *demodDataOut = buffers.getBuffer();
@@ -277,18 +278,26 @@ void SDRPostThread::run() {
                         demodDataOut->data.resize(chanDataSize);
                     }
 
+                    int idx = i;
+                    
+                    // Extra channel wraps lower side band of lowest channel
+                    // to fix frequency gap on upper side of spectrum
+                    if (i == numChannels) {
+                        idx = (numChannels/2);
+                    }
+                    
                     // prepare channel data buffer
                     if (i == 0) {   // Channel 0 requires DC correction
                         if (dcBuf.size() != chanDataSize) {
                             dcBuf.resize(chanDataSize);
                         }
-                        for (int j = 0, idx = i; j < chanDataSize; j++) {
+                        for (int j = 0; j < chanDataSize; j++) {
                             idx += numChannels;
                             dcBuf[j] = dataOut[idx];
                         }
                         iirfilt_crcf_execute_block(dcFilter, &dcBuf[0], chanDataSize, &demodDataOut->data[0]);
                     } else {
-                        for (int j = 0, idx = i; j < chanDataSize; j++) {
+                        for (int j = 0; j < chanDataSize; j++) {
                             idx += numChannels;
                             demodDataOut->data[j] = dataOut[idx];
                         }
