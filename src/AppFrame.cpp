@@ -855,6 +855,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     wproc->setView(waterfallCanvas->getViewState());
     wproc->setBandwidth(waterfallCanvas->getBandwidth());
     wproc->setCenterFrequency(waterfallCanvas->getCenterFrequency());
+    wxGetApp().getSDRPostThread()->setIQVisualRange(waterfallCanvas->getCenterFrequency(), waterfallCanvas->getBandwidth());
     
 //    waterfallCanvas->processInputQueue();
 //    waterfallCanvas->Refresh();

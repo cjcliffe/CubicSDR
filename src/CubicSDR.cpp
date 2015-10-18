@@ -377,6 +377,10 @@ DemodulatorMgr &CubicSDR::getDemodMgr() {
     return demodMgr;
 }
 
+SDRPostThread *CubicSDR::getSDRPostThread() {
+    return sdrPostThread;
+}
+
 void CubicSDR::bindDemodulator(DemodulatorInstance *demod) {
     if (!demod) {
         return;

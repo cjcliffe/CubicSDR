@@ -77,6 +77,8 @@ public:
     DemodulatorThreadInputQueue* getActiveDemodVisualQueue();
     DemodulatorMgr &getDemodMgr();
 
+    SDRPostThread *getSDRPostThread();
+    
     void bindDemodulator(DemodulatorInstance *demod);
     void removeDemodulator(DemodulatorInstance *demod);
 

@@ -21,6 +21,8 @@ public:
     void run();
     void terminate();
 
+    void setIQVisualRange(long long frequency, int bandwidth);
+        
 protected:
     SDRThreadIQDataQueue *iqDataInQueue;
     DemodulatorThreadInputQueue *iqDataOutQueue;
@@ -35,6 +37,7 @@ private:
     void initPFBChannelizer();
     void updateActiveDemodulators();
     void updateChannels();
+    int getChannelAt(long long frequency);
 
     ReBuffer<DemodulatorThreadIQData> buffers;
     std::vector<liquid_float_complex> fpData;
@@ -49,6 +52,8 @@ private:
 
     ReBuffer<DemodulatorThreadIQData> visualDataBuffers;
     atomic_bool doRefresh;
+    atomic_llong visFrequency;
+    atomic_int visBandwidth;
     int numChannels, sampleRate;
     long long frequency;
     firpfbch_crcf channelizer;
