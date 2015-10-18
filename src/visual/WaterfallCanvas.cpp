@@ -100,6 +100,7 @@ void WaterfallCanvas::processInputQueue() {
                 	break;
                 }
             }
+            waterfallPanel.update();
             tex_update.unlock();
         }
     }}

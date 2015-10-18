@@ -9,7 +9,8 @@ public:
     void refreshTheme();
     void setPoints(std::vector<float> &points);
     void step();
-
+    void update();
+    
 protected:
     void drawPanelContents();
     
@@ -21,6 +22,9 @@ private:
     int fft_size;
     int waterfall_lines;
     unsigned char *waterfall_slice;
+    std::vector<unsigned char> lineBuffer[2];
+    std::vector<unsigned char> rLineBuffer[2];
+    int lines_buffered;
     
     ColorTheme *activeTheme;
 };
