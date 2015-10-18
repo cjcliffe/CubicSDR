@@ -91,15 +91,46 @@ void WaterfallPanel::step() {
                 waterfall_slice[i] = (unsigned char) floor(wv * 255.0);
             }
             
+            int newBufSize = (half_fft_size*lines_buffered+half_fft_size);
+            if (lineBuffer[j].size() < newBufSize) {
+                lineBuffer[j].resize(newBufSize);
+                rLineBuffer[j].resize(newBufSize);
+            }
+            memcpy(&(lineBuffer[j][half_fft_size*lines_buffered]), waterfall_slice, sizeof(unsigned char) * half_fft_size);
+        }
+        lines_buffered++;
+    }
+}
+
+void WaterfallPanel::update() {
+    int half_fft_size = fft_size / 2;
+
+    for (int i = 0; i < lines_buffered; i++) {
+        for (int j = 0; j < 2; j++) {
+            memcpy(&(rLineBuffer[j][i*half_fft_size]),
+                   &(lineBuffer[j][((lines_buffered-1)*half_fft_size)-(i*half_fft_size)]), sizeof(unsigned char) * half_fft_size);
+        }
+    }
+    
+    int run_ofs = 0;
+    while (lines_buffered) {
+        int run_lines = lines_buffered;
+        if (run_lines > waterfall_ofs[0]) {
+            run_lines = waterfall_ofs[0];
+        }
+        for (int j = 0; j < 2; j++) {
             glBindTexture(GL_TEXTURE_2D, waterfall[j]);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, waterfall_ofs[j], half_fft_size, 1, GL_COLOR_INDEX, GL_UNSIGNED_BYTE, (GLvoid *) waterfall_slice);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, waterfall_ofs[j]-run_lines, half_fft_size, run_lines,
+                            GL_COLOR_INDEX, GL_UNSIGNED_BYTE, (GLvoid *) &(rLineBuffer[j][run_ofs]));
+            
+            waterfall_ofs[j]-=run_lines;
             
             if (waterfall_ofs[j] == 0) {
                 waterfall_ofs[j] = waterfall_lines;
             }
-            
-            waterfall_ofs[j]--;
         }
+        run_ofs += run_lines*half_fft_size;
+        lines_buffered-=run_lines;
     }
 }
 

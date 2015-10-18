@@ -5,12 +5,12 @@ Cross-Platform Software-Defined Radio Application
 
 Utilizes: 
 --------
-  - liquid-dsp (http://liquidsdr.org/ https://github.com/jgaeddert/liquid-dsp)
-  - FFTW (http://www.fftw.org/ https://github.com/FFTW/fftw3)
-  - RtAudio (http://www.music.mcgill.ca/~gary/rtaudio/ http://github.com/thestk/rtaudio/)
-  - Osmocom RTLSDR (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
+  - liquid-dsp (http://liquidsdr.org/ -- https://github.com/jgaeddert/liquid-dsp)
+  - SoapySDR (http://www.pothosware.com/ -- https://github.com/pothosware/SoapySDR)
+  - FFTW (http://www.fftw.org/ -- https://github.com/FFTW/fftw3)
+  - RtAudio (http://www.music.mcgill.ca/~gary/rtaudio/ -- http://github.com/thestk/rtaudio/)
   - LodePNG (http://lodev.org/lodepng/)
-  - BMFont (http://www.angelcode.com/ http://www.angelcode.com/products/bmfont/)
+  - BMFont (http://www.angelcode.com/ -- http://www.angelcode.com/products/bmfont/)
   - Bitstream Vera font (http://en.wikipedia.org/wiki/Bitstream_Vera)
   - OpenGL (https://www.opengl.org/)
   - wxWidgets (https://www.wxwidgets.org/)
@@ -20,9 +20,19 @@ Features and Status:
 --------------------
   - Simple UI
   - Devices
-    - [x] RTL-SDR
+    - [x] SoapySDR Device support (known working checked)
+      - [x] SoapySDRPlay for SDRPlay (Maintained by C.J.)
+      - [x] SoapyRTLSDR for RTL-SDR (Maintained by C.J.)
+      - [x] SoapyHackRF for HackRF
+      - [x] SoapyBladeRF for BladeRF
+      - [ ] SoapyUHD for Ettus USRP
+      - [x] SoapyRemote, use any SoapySDR Device via network (works on Pi)
+      - [x] SoapyOsmo for GrOsmoSDR devices
+        - [ ] OsmoSDR
+        - [ ] MiriSDR
+        - [ ] RFSpace
+        - [x] AirSpy
     - [ ] rtl_tcp client
-    - [ ] gr-osmosdr
   - Basic Features
     - [x] Device Selection
     - [x] Bandwidth
@@ -30,11 +40,14 @@ Features and Status:
     - [x] Load/Save session
     - [x] Audio sample rate
     - [x] Device PPM
+    - [x] Waterfall speed
+    - [x] Spectrum average speed
+    - [ ] Gain Controls
+    - [ ] Bookmarks
+    - [ ] History
     - [ ] Default preferences
       - [ ] Audio defaults
       - [x] Device defaults
-    - [ ] Bookmarks
-    - [ ] History
     - [ ] Run as rtl_tcp server and visualize control
   - Neat Visuals
     - [ ] 2D visuals
@@ -68,8 +81,6 @@ Features and Status:
       - [x] Volume control
       - [x] Direct frequency input
       - [x] Mute
-      - [x] Waterfall speed
-      - [ ] RTL-SDR Gain
   - Basic Input Controls
     - [x] Drag spectrum to change center frequency
     - [x] Hold shift and click on waterfall to create a new demodulator

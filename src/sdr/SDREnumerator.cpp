@@ -124,7 +124,7 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
         
         if (isRemote) {
             wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Querying remote " + remoteAddr + " device #" + std::to_string(i));
-            deviceArgs["remote"] = remoteAddr;
+//            deviceArgs["remote"] = remoteAddr;
             if (deviceArgs.count("rtl") != 0) {
                 streamArgs["remote:mtu"] = "8192";
                 streamArgs["remote:format"] = "CS8";

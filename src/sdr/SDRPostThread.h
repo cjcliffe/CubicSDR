@@ -21,19 +21,41 @@ public:
     void run();
     void terminate();
 
+    void setIQVisualRange(long long frequency, int bandwidth);
+        
 protected:
     SDRThreadIQDataQueue *iqDataInQueue;
     DemodulatorThreadInputQueue *iqDataOutQueue;
     DemodulatorThreadInputQueue *iqVisualQueue;
-	
+    DemodulatorThreadInputQueue *iqActiveDemodVisualQueue;
+    
     std::mutex busy_demod;
     std::vector<DemodulatorInstance *> demodulators;
-    iirfilt_crcf dcFilter;
     std::atomic_bool swapIQ;
-    ReBuffer<DemodulatorThreadIQData> visualDataBuffers;
 
-    
 private:
-    std::vector<liquid_float_complex> _lut;
-    std::vector<liquid_float_complex> _lut_swap;
+    void initPFBChannelizer();
+    void updateActiveDemodulators();
+    void updateChannels();
+    int getChannelAt(long long frequency);
+
+    ReBuffer<DemodulatorThreadIQData> buffers;
+    std::vector<liquid_float_complex> fpData;
+    std::vector<liquid_float_complex> dataOut;
+    std::vector<long long> chanCenters;
+    long long chanBw;
+    
+    int nRunDemods;
+    std::vector<DemodulatorInstance *> runDemods;
+    std::vector<int> demodChannel;
+    std::vector<int> demodChannelActive;
+
+    ReBuffer<DemodulatorThreadIQData> visualDataBuffers;
+    atomic_bool doRefresh;
+    atomic_llong visFrequency;
+    atomic_int visBandwidth;
+    int numChannels, sampleRate;
+    long long frequency;
+    firpfbch_crcf channelizer;
+    iirfilt_crcf dcFilter;
 };

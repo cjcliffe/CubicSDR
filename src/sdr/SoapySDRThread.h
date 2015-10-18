@@ -18,10 +18,11 @@ public:
     long long frequency;
     long long sampleRate;
     bool dcCorrected;
-    std::vector<float> data;
+    int numChannels;
+    std::vector<liquid_float_complex> data;
 
     SDRThreadIQData() :
-            frequency(0), sampleRate(DEFAULT_SAMPLE_RATE), dcCorrected(true) {
+            frequency(0), sampleRate(DEFAULT_SAMPLE_RATE), dcCorrected(true), numChannels(0) {
 
     }
 
@@ -54,6 +55,7 @@ public:
     SDRDeviceInfo *getDevice();
     void setDevice(SDRDeviceInfo *dev);
     int getOptimalElementCount(long long sampleRate, int fps);
+    int getOptimalChannelCount(long long sampleRate);
     
     void setFrequency(long long freq);
     long long getFrequency();
@@ -75,13 +77,13 @@ protected:
     SoapySDR::Device *device;
     void *buffs[1];
     ReBuffer<SDRThreadIQData> buffers;
-
+    SDRThreadIQData inpBuffer;
     std::atomic<DeviceConfig *> deviceConfig;
     std::atomic<SDRDeviceInfo *> deviceInfo;
 
     std::atomic<uint32_t> sampleRate;
     std::atomic_llong frequency, offset;
-    std::atomic_int ppm, direct_sampling_mode, numElems;
+    std::atomic_int ppm, direct_sampling_mode, numElems, numChannels;
     std::atomic_bool hasPPM, hasHardwareDC;
 
     std::atomic_bool rate_changed, freq_changed, offset_changed,

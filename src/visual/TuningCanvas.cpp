@@ -190,8 +190,8 @@ void TuningCanvas::StepTuner(ActiveState state, int exponent, bool up) {
             bw += amount;
         }
 
-        if (bw > wxGetApp().getSampleRate()) {
-            bw = wxGetApp().getSampleRate();
+        if (bw > CHANNELIZER_RATE_MAX) {
+            bw = CHANNELIZER_RATE_MAX;
         }
 
         wxGetApp().getDemodMgr().setLastBandwidth(bw);
