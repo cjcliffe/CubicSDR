@@ -27,7 +27,7 @@ const char filePathSeparator =
 
 #define BUF_SIZE (16384*6)
 
-#define DEFAULT_SAMPLE_RATE 2400000
+#define DEFAULT_SAMPLE_RATE 2500000
 #define DEFAULT_FFT_SIZE 2048
 
 #define DEFAULT_DEMOD_TYPE 1

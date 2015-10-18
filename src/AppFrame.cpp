@@ -280,14 +280,14 @@ AppFrame::AppFrame() :
     sampleRateMenuItems[wxID_BANDWIDTH_2000M] = menu->AppendRadioItem(wxID_BANDWIDTH_2000M, "2.0M");
     sampleRateMenuItems[wxID_BANDWIDTH_2048M] = menu->AppendRadioItem(wxID_BANDWIDTH_2048M, "2.048M");
     sampleRateMenuItems[wxID_BANDWIDTH_2160M] = menu->AppendRadioItem(wxID_BANDWIDTH_2160M, "2.16M");
-    sampleRateMenuItems[wxID_BANDWIDTH_2400M] = menu->AppendRadioItem(wxID_BANDWIDTH_2400M, "2.4M");
-    sampleRateMenuItems[wxID_BANDWIDTH_2560M] = menu->AppendRadioItem(wxID_BANDWIDTH_2560M, "2.56M");
+//    sampleRateMenuItems[wxID_BANDWIDTH_2400M] = menu->AppendRadioItem(wxID_BANDWIDTH_2400M, "2.4M");
+    sampleRateMenuItems[wxID_BANDWIDTH_2500M] = menu->AppendRadioItem(wxID_BANDWIDTH_2500M, "2.5M");
     sampleRateMenuItems[wxID_BANDWIDTH_2880M] = menu->AppendRadioItem(wxID_BANDWIDTH_2880M, "2.88M");
 //    sampleRateMenuItems[wxID_BANDWIDTH_3000M] = menu->AppendRadioItem(wxID_BANDWIDTH_3000M, "3.0M");
     sampleRateMenuItems[wxID_BANDWIDTH_3200M] = menu->AppendRadioItem(wxID_BANDWIDTH_3200M, "3.2M");
     sampleRateMenuItems[wxID_BANDWIDTH_MANUAL] = menu->AppendRadioItem(wxID_BANDWIDTH_MANUAL, "Manual Entry");
 
-    sampleRateMenuItems[wxID_BANDWIDTH_2400M]->Check(true);
+    sampleRateMenuItems[wxID_BANDWIDTH_2500M]->Check(true);
 
     menuBar->Append(menu, wxT("&Input Bandwidth"));
 
@@ -574,11 +574,8 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         case wxID_BANDWIDTH_2160M:
             wxGetApp().setSampleRate(2160000);
             break;
-        case wxID_BANDWIDTH_2400M:
-            wxGetApp().setSampleRate(2400000);
-            break;
-        case wxID_BANDWIDTH_2560M:
-            wxGetApp().setSampleRate(2560000);
+        case wxID_BANDWIDTH_2500M:
+            wxGetApp().setSampleRate(2500000);
             break;
         case wxID_BANDWIDTH_2880M:
             wxGetApp().setSampleRate(2880000);
