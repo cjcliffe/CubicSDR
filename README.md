@@ -3,6 +3,8 @@ CubicSDR
 
 Cross-Platform Software-Defined Radio Application
 
+Please see the [CubicSDR GitHub Wiki](https://github.com/cjcliffe/CubicSDR/wiki) for build instructions.
+
 Utilizes: 
 --------
   - liquid-dsp (http://liquidsdr.org/ https://github.com/jgaeddert/liquid-dsp)
