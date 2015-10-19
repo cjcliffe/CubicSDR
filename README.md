@@ -146,17 +146,17 @@ Advanced Goals and ideas:
       - Visual outputs?
     * Take control of additional devices and spawning new demodulators (i.e. trunkers)
     * Script manager / live editor
-    * Provide scriptable liquid-dsp modulation for trancievers?
+    * Provide scriptable liquid-dsp modulation for transceivers?
     * Allow scripts to launch/run headless (no UI)
   - "PVR" like mode with waterfall time shifting
   - L/R and surround-sound balance settings for separating and listening to mono streams
   - Add tool for converting decimated I/Q recording to video
-    - Select video features such as title/demodulation/scope/waterfall/etc
+    - Select video features such as title/demodulation/scope/waterfall/etc.
     - Render to video from GL frames->ffmpeg/mencoder /w demodulated audio
-  - Accessability / Control
+  - Accessibility / Control
     - USB/MIDI control surfaces
     - Joystick / gamepad input
-    - Vibration / force-feeback
+    - Vibration / force-feedback
   - Investigate compilation via emscripten using rtl_tcp for input
     - Create web server+rtl_tcp bundle for embedded devices
     - Use emscripten compiled CubicSDR via embedded web server 
