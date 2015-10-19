@@ -637,8 +637,8 @@ IF (WIN32 AND BUILD_INSTALLER)
 		set(CPACK_PACKAGE_EXECUTABLES CubicSDR "CubicSDR")
 
 	IF (MSVC)
-		install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/external/msvc/${EX_PLATFORM_NAME}/vcredist_${EX_PLATFORM_NAME}.exe DESTINATION vc_redist)
-		set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "ExecWait '\\\"$INSTDIR\\\\vc_redist\\\\vcredist_${EX_PLATFORM_NAME}.exe\\\" /q:a'")
+		install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/external/msvc/${EX_PLATFORM_NAME}/vc_redist.${EX_PLATFORM_NAME}.exe DESTINATION vc_redist)
+		set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "ExecWait '\\\"$INSTDIR\\\\vc_redist\\\\vc_redist.${EX_PLATFORM_NAME}.exe\\\" /q:a'")
 	ENDIF (MSVC)
 		  
 		  
