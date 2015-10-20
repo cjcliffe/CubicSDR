@@ -68,9 +68,9 @@ void SDRThread::init() {
     stream = device->setupStream(SOAPY_SDR_RX,"CF32", std::vector<size_t>(), devInfo->getStreamArgs());
     
     wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Activating stream."));
-    device->activateStream(stream);
     device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
     device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency - offset.load());
+    device->activateStream(stream);
     SDRDeviceChannel *chan = devInfo->getRxChannel();
     if (chan->hasCORR()) {
         hasPPM.store(true);
