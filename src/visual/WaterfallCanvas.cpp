@@ -75,6 +75,7 @@ void WaterfallCanvas::processInputQueue() {
     if (!glContext) {
         return;
     }
+    tex_update.lock();
     glContext->SetCurrent(*this);
     
     gTimer.update();
@@ -84,7 +85,6 @@ void WaterfallCanvas::processInputQueue() {
 
     if (linesPerSecond) {
         if (lpsIndex >= targetVis) {
-            tex_update.lock();
             while (lpsIndex >= targetVis) {
                 SpectrumVisualData *vData;
                 if (!visualDataQueue.empty()) {
@@ -101,9 +101,10 @@ void WaterfallCanvas::processInputQueue() {
                 }
             }
             waterfallPanel.update();
-            tex_update.unlock();
         }
-    }}
+    }
+    tex_update.unlock();
+}
 
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
@@ -205,6 +206,7 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     }
     
 
+    tex_update.lock();
     glContext->SetCurrent(*this);
     initGLExtensions();
     glViewport(0, 0, ClientSize.x, ClientSize.y);
@@ -212,9 +214,7 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->BeginDraw(0,0,0);
 
     waterfallPanel.calcTransform(CubicVR::mat4::identity());
-    tex_update.lock();
     waterfallPanel.draw();
-    tex_update.unlock();
 
     std::vector<DemodulatorInstance *> &demods = wxGetApp().getDemodMgr().getDemodulators();
 
@@ -294,6 +294,7 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->EndDraw();
 
     SwapBuffers();
+    tex_update.unlock();
 }
 
 void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
