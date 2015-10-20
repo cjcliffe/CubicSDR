@@ -20,6 +20,25 @@
 
 IMPLEMENT_APP(CubicSDR)
 
+#ifdef MINGW_PATCH
+	FILE _iob[] = { *stdin, *stdout, *stderr };
+
+	extern "C" FILE * __cdecl __iob_func(void)
+	{
+		return _iob;
+	}
+
+	extern "C" int __cdecl __isnan(double x)
+	{
+		return _finite(x)?0:1;
+	}
+
+	extern "C" int __cdecl __isnanf(float x)
+	{
+		return _finitef(x)?0:1;
+	}
+#endif
+
 CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE), directSamplingMode(0),
     sdrThread(NULL), sdrPostThread(NULL), spectrumVisualThread(NULL), demodVisualThread(NULL), pipeSDRIQData(NULL), pipeIQVisualData(NULL), pipeAudioVisualData(NULL), t_SDR(NULL), t_PostSDR(NULL) {
     
