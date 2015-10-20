@@ -109,7 +109,9 @@ void WaterfallCanvas::processInputQueue() {
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
 
-    processInputQueue();
+    if (visualDataQueue.size() > 0) {
+        processInputQueue();
+    }
     
     const wxSize ClientSize = GetClientSize();
     long double currentZoom = zoom;
