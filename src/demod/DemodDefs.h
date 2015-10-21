@@ -144,7 +144,7 @@ public:
     int demodType;
 
     DemodulatorThreadParameters() :
-            frequency(0), sampleRate(0), bandwidth(200000), audioSampleRate(0),
+            frequency(0), sampleRate(DEFAULT_SAMPLE_RATE), bandwidth(200000), audioSampleRate(0),
             demodType(DEMOD_TYPE_FM) {
 
     }
