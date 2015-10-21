@@ -531,8 +531,32 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
 
     switch (event.GetId()) {
         case wxID_BANDWIDTH_MANUAL:
-            long bw = wxGetNumberFromUser("Set the bandwidth manually", "Sample Rate (Hz), i.e. 2560000 for 2.56M",
-                                          "Manual Bandwidth Entry", wxGetApp().getSampleRate(), 250000, 25000000, this);
+            int rateHigh, rateLow;
+            
+            SDRDeviceInfo *dev = wxGetApp().getDevice();
+            if (dev == NULL) {
+                break;
+            }
+            
+            SDRDeviceChannel *chan = dev->getRxChannel();
+            
+            rateLow = 2000000;
+            rateHigh = 30000000;
+            
+            if (chan->getSampleRates().size()) {
+                rateLow = chan->getSampleRates()[0];
+                rateHigh = chan->getSampleRates()[chan->getSampleRates().size()-1];
+            }
+
+            long bw = wxGetNumberFromUser("\n" + dev->getName() + "\n\n  "
+                                          + "min: " + std::to_string(rateLow) + " Hz"
+                                          + ", max: " + std::to_string(rateHigh) + " Hz\n",
+                                          "Sample Rate in Hz",
+                                          "Manual Bandwidth Entry",
+                                          wxGetApp().getSampleRate(),
+                                          rateLow,
+                                          rateHigh,
+                                          this);
             if (bw != -1) {
                 wxGetApp().setSampleRate(bw);
             }
