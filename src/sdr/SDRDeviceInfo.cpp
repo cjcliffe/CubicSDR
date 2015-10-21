@@ -88,9 +88,9 @@ std::vector<long> &SDRDeviceChannel::getSampleRates() {
 long SDRDeviceChannel::getSampleRateNear(long sampleRate_in) {
     long returnRate = sampleRates[0];
     long sDelta = (long)sampleRate_in-sampleRates[0];
-    long minDelta = abs(sDelta);
+    long minDelta = std::abs(sDelta);
     for (std::vector<long>::iterator i = sampleRates.begin(); i != sampleRates.end(); i++) {
-        long thisDelta = abs(sampleRate_in - (*i));
+        long thisDelta = std::abs(sampleRate_in - (*i));
         if (thisDelta < minDelta) {
             minDelta = thisDelta;
             returnRate = (*i);

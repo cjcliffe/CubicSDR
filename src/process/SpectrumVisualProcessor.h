@@ -33,6 +33,7 @@ public:
     int getDesiredInputSize();
     
     void setup(int fftSize);
+    void setHideDC(bool hideDC);
     
 protected:
     void process();
@@ -68,4 +69,5 @@ private:
     std::vector<liquid_float_complex> resampleBuffer;
     std::atomic_int desiredInputSize;
     std::mutex busy_run;
+    std::atomic_bool hideDC;
 };

@@ -786,7 +786,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 //    wxGetApp().getSpectrumDistributor()->run();
 
     SpectrumVisualProcessor *proc = wxGetApp().getSpectrumProcessor();
-    
+    proc->setHideDC(true);
+
     if (spectrumAvgMeter->inputChanged()) {
         float val = spectrumAvgMeter->getInputValue();
         if (val < 0.01) {
@@ -812,7 +813,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     dproc->setCenterFrequency(demodWaterfallCanvas->getCenterFrequency());
 
     SpectrumVisualProcessor *wproc = waterfallDataThread->getProcessor();
-
+    wproc->setHideDC(true);
+    
     if (waterfallSpeedMeter->inputChanged()) {
         float val = waterfallSpeedMeter->getInputValue();
         waterfallSpeedMeter->setLevel(val);

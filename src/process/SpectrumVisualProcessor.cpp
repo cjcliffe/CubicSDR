@@ -8,6 +8,7 @@ SpectrumVisualProcessor::SpectrumVisualProcessor() : lastInputBandwidth(0), last
     fftSize.store(0);
     centerFreq.store(0);
     bandwidth.store(0);
+    hideDC.store(false);
     
     freqShifter = nco_crcf_create(LIQUID_NCO);
     shiftFrequency = 0;
@@ -94,6 +95,11 @@ void SpectrumVisualProcessor::setup(int fftSize_in) {
     fftw_plan = fftwf_plan_dft_1d(fftSize, fftwInput, fftwOutput, FFTW_FORWARD, FFTW_ESTIMATE);
     busy_run.unlock();
 }
+
+void SpectrumVisualProcessor::setHideDC(bool hideDC) {
+    this->hideDC.store(hideDC);
+}
+
 
 void SpectrumVisualProcessor::process() {
     if (!isOutputEmpty()) {
@@ -305,6 +311,42 @@ void SpectrumVisualProcessor::process() {
                 float v = (log10(fft_result_maa[i]+0.25 - (fft_floor_maa-0.75)) / log10((fft_ceil_maa+0.25) - (fft_floor_maa-0.75)));
                 output->spectrum_points[i * 2] = ((float) i / (float) iMax);
                 output->spectrum_points[i * 2 + 1] = v;
+            }
+                
+            if (hideDC.load()) { // DC-spike removal
+                long long freqMin = centerFreq-(bandwidth/2);
+                long long freqMax = centerFreq+(bandwidth/2);
+                long long zeroPt = (iqData->frequency-freqMin);
+                
+                if (freqMin < iqData->frequency && freqMax > iqData->frequency) {
+                    int freqRange = int(freqMax-freqMin);
+                    int freqStep = freqRange/fftSize;
+                    int fftStart = (zeroPt/freqStep)-(2000/freqStep);
+                    int fftEnd = (zeroPt/freqStep)+(2000/freqStep);
+                    
+//                    std::cout << "range:" << freqRange << ", step: " << freqStep << ", start: " << fftStart << ", end: " << fftEnd << std::endl;
+                    
+                    if (fftEnd-fftStart < 2) {
+                        fftEnd++;
+                        fftStart--;
+                    }
+                    
+                    int numSteps = (fftEnd-fftStart);
+                    int halfWay = fftStart+(numSteps/2);
+
+                    if ((fftEnd+numSteps/2+1 < fftSize) && (fftStart-numSteps/2-1 >= 0) && (fftEnd > fftStart)) {
+                        int n = 1;
+                        for (int i = fftStart; i < halfWay; i++) {
+                            output->spectrum_points[i * 2 + 1] = output->spectrum_points[(fftStart - n) * 2 + 1];
+                            n++;
+                        }
+                        n = 1;
+                        for (int i = halfWay; i < fftEnd; i++) {
+                            output->spectrum_points[i * 2 + 1] = output->spectrum_points[(fftEnd + n) * 2 + 1];
+                            n++;
+                        }
+                    }
+                }
             }
             
             output->fft_ceiling = fft_ceil_maa;
