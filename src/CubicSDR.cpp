@@ -112,7 +112,7 @@ long long strToFrequency(std::string freqStr) {
 }
 
 
-CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE), directSamplingMode(0),
+CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0), ppm(0), snap(1), sampleRate(0), directSamplingMode(0),
     sdrThread(NULL), sdrPostThread(NULL), spectrumVisualThread(NULL), demodVisualThread(NULL), pipeSDRIQData(NULL), pipeIQVisualData(NULL), pipeAudioVisualData(NULL), t_SDR(NULL), t_PostSDR(NULL) {
     
 }
@@ -411,10 +411,20 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev) {
 //            frequency = freqLow;
 //        }
         
-        int rateHigh, rateLow;
-        rateLow = chan->getSampleRates()[0];
-        rateHigh = chan->getSampleRates()[chan->getSampleRates().size()-1];
+        // Try for a reasonable default sample rate.
+        if (!sampleRate) {
+            sampleRate = chan->getSampleRateNear(DEFAULT_SAMPLE_RATE);
+        }
 
+        int rateHigh, rateLow;
+
+        rateHigh = rateLow = sampleRate;
+        
+        if (chan->getSampleRates().size()) {
+            rateLow = chan->getSampleRates()[0];
+            rateHigh = chan->getSampleRates()[chan->getSampleRates().size()-1];
+        }
+        
         if (sampleRate > rateHigh) {
             sampleRate = rateHigh;
         } else if (sampleRate < rateLow) {

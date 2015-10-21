@@ -1,4 +1,5 @@
 #include "SDRDeviceInfo.h"
+#include <cstdlib>
 
 SDRDeviceRange::SDRDeviceRange() {
     low = 0;
@@ -82,6 +83,20 @@ SDRDeviceRange &SDRDeviceChannel::getRFRange() {
 
 std::vector<long> &SDRDeviceChannel::getSampleRates() {
     return sampleRates;
+}
+
+long SDRDeviceChannel::getSampleRateNear(long sampleRate_in) {
+    long returnRate = sampleRates[0];
+    long sDelta = (long)sampleRate_in-sampleRates[0];
+    long minDelta = abs(sDelta);
+    for (std::vector<long>::iterator i = sampleRates.begin(); i != sampleRates.end(); i++) {
+        long thisDelta = abs(sampleRate_in - (*i));
+        if (thisDelta < minDelta) {
+            minDelta = thisDelta;
+            returnRate = (*i);
+        }
+    }
+    return returnRate;
 }
 
 std::vector<long long> &SDRDeviceChannel::getFilterBandwidths() {

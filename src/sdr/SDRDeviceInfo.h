@@ -69,6 +69,7 @@ public:
     SDRDeviceRange &getRFRange();
 
     std::vector<long> &getSampleRates();
+    long getSampleRateNear(long sampleRate_in);
     std::vector<long long> &getFilterBandwidths();
     
     const bool& hasHardwareDC() const;

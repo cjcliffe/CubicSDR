@@ -11,7 +11,7 @@ SDRThread::SDRThread() : IOThread() {
     deviceConfig.store(NULL);
     deviceInfo.store(NULL);
 
-    sampleRate.store(DEFAULT_SAMPLE_RATE);
+    sampleRate.store(0);
     frequency.store(0);
     offset.store(0);
     ppm.store(0);
