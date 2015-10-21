@@ -142,6 +142,7 @@ private:
     std::thread *t_SDR, *t_SDREnum, *t_PostSDR, *t_SpectrumVisual, *t_DemodVisual;
     std::atomic_bool devicesReady;
     std::atomic_bool deviceSelectorOpen;
+    std::atomic_bool sampleRateInitialized;
     std::string notifyMessage;
     std::mutex notify_busy;
 };

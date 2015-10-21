@@ -22,7 +22,7 @@ public:
     std::vector<liquid_float_complex> data;
 
     SDRThreadIQData() :
-            frequency(0), sampleRate(0), dcCorrected(true), numChannels(0) {
+            frequency(0), sampleRate(DEFAULT_SAMPLE_RATE), dcCorrected(true), numChannels(0) {
 
     }
 
