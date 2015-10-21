@@ -14,11 +14,11 @@
 #endif
 
 #include <vector>
-#include "DemodulatorMgr.h"
 #include "AudioThread.h"
 #include "CubicSDR.h"
 #include "DataTree.h"
 #include "ColorTheme.h"
+#include "DemodulatorMgr.h"
 
 #include <thread>
 
@@ -269,54 +269,8 @@ AppFrame::AppFrame() :
 
     menuBar->Append(menu, wxT("&Color Scheme"));
 
-    menu = new wxMenu;
-            
-    sampleRateMenuItems[wxID_BANDWIDTH_250K] = menu->AppendRadioItem(wxID_BANDWIDTH_250K, "250k");
-    sampleRateMenuItems[wxID_BANDWIDTH_1000M] = menu->AppendRadioItem(wxID_BANDWIDTH_1000M, "1.0M");
-    sampleRateMenuItems[wxID_BANDWIDTH_1500M] = menu->AppendRadioItem(wxID_BANDWIDTH_1024M, "1.024M");
-    sampleRateMenuItems[wxID_BANDWIDTH_1024M] = menu->AppendRadioItem(wxID_BANDWIDTH_1500M, "1.5M");
-    sampleRateMenuItems[wxID_BANDWIDTH_1800M] = menu->AppendRadioItem(wxID_BANDWIDTH_1800M, "1.8M");
-    sampleRateMenuItems[wxID_BANDWIDTH_1920M] = menu->AppendRadioItem(wxID_BANDWIDTH_1920M, "1.92M");
-    sampleRateMenuItems[wxID_BANDWIDTH_2000M] = menu->AppendRadioItem(wxID_BANDWIDTH_2000M, "2.0M");
-    sampleRateMenuItems[wxID_BANDWIDTH_2048M] = menu->AppendRadioItem(wxID_BANDWIDTH_2048M, "2.048M");
-    sampleRateMenuItems[wxID_BANDWIDTH_2160M] = menu->AppendRadioItem(wxID_BANDWIDTH_2160M, "2.16M");
-//    sampleRateMenuItems[wxID_BANDWIDTH_2400M] = menu->AppendRadioItem(wxID_BANDWIDTH_2400M, "2.4M");
-    sampleRateMenuItems[wxID_BANDWIDTH_2500M] = menu->AppendRadioItem(wxID_BANDWIDTH_2500M, "2.5M");
-    sampleRateMenuItems[wxID_BANDWIDTH_2880M] = menu->AppendRadioItem(wxID_BANDWIDTH_2880M, "2.88M");
-//    sampleRateMenuItems[wxID_BANDWIDTH_3000M] = menu->AppendRadioItem(wxID_BANDWIDTH_3000M, "3.0M");
-    sampleRateMenuItems[wxID_BANDWIDTH_3200M] = menu->AppendRadioItem(wxID_BANDWIDTH_3200M, "3.2M");
-    sampleRateMenuItems[wxID_BANDWIDTH_MANUAL] = menu->AppendRadioItem(wxID_BANDWIDTH_MANUAL, "Manual Entry");
-
-    sampleRateMenuItems[wxID_BANDWIDTH_2500M]->Check(true);
-
-    menuBar->Append(menu, wxT("&Input Bandwidth"));
-
-//    std::vector<SDRDeviceInfo *> *devs = wxGetApp().getDevices();
-//    std::vector<SDRDeviceInfo *>::iterator devs_i;
-
-//    if (devs->size() > 1) {
-//
-//        menu = new wxMenu;
-//
-//        int p = 0;
-//        for (devs_i = devs->begin(); devs_i != devs->end(); devs_i++) {
-//            std::string devName = (*devs_i)->getName();
-//            if ((*devs_i)->isAvailable()) {
-//                devName.append(": ");
-//                devName.append((*devs_i)->getProduct());
-//                devName.append(" [");
-//                devName.append((*devs_i)->getSerial());
-//                devName.append("]");
-//            } else {
-//                devName.append(" (In Use?)");
-//            }
-//
-//            menu->AppendRadioItem(wxID_DEVICE_ID + p, devName); //->Check(wxGetApp().getDevice() == p);
-//            p++;
-//        }
-//
-//        menuBar->Append(menu, wxT("Input &Device"));
-//    }
+    sampleRateMenu = new wxMenu;
+    menuBar->Append(sampleRateMenu, wxT("&Input Bandwidth"));
 
     menu = new wxMenu;
 
@@ -429,7 +383,9 @@ AppFrame::~AppFrame() {
 }
 
 
-void AppFrame::initDeviceParams(std::string deviceId) {
+void AppFrame::initDeviceParams(SDRDeviceInfo *devInfo) {
+    std::string deviceId = devInfo->getName();
+
     DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
     
     int dsMode = devConfig->getDirectSampling();
@@ -440,6 +396,33 @@ void AppFrame::initDeviceParams(std::string deviceId) {
     
     if (devConfig->getIQSwap()) {
         iqSwapMenuItem->Check();
+    }
+    
+    // Build sample rate menu from device info
+    sampleRates = devInfo->getRxChannel()->getSampleRates();
+    
+    for (std::map<int, wxMenuItem *>::iterator i = sampleRateMenuItems.begin(); i != sampleRateMenuItems.end(); i++) {
+        sampleRateMenu->Remove(i->first);
+    }
+
+    sampleRateMenuItems.erase(sampleRateMenuItems.begin(),sampleRateMenuItems.end());
+    
+    int ofs = 0;
+    long sampleRate = wxGetApp().getSampleRate();
+    bool checked = false;
+    for (vector<long>::iterator i = sampleRates.begin(); i != sampleRates.end(); i++) {
+        sampleRateMenuItems[wxID_BANDWIDTH_BASE+ofs] = sampleRateMenu->AppendRadioItem(wxID_BANDWIDTH_BASE+ofs, frequencyToStr(*i));
+        if (sampleRate == (*i)) {
+            sampleRateMenuItems[wxID_BANDWIDTH_BASE+ofs]->Check(true);
+            checked = true;
+        }
+        ofs++;
+    }
+    
+    sampleRateMenuItems[wxID_BANDWIDTH_MANUAL] = sampleRateMenu->AppendRadioItem(wxID_BANDWIDTH_MANUAL, "Manual Entry");
+    
+    if (!checked) {
+        sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Check(true);
     }
 }
 
@@ -547,45 +530,6 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
     }
 
     switch (event.GetId()) {
-        case wxID_BANDWIDTH_250K:
-            wxGetApp().setSampleRate(250000);
-            break;
-        case wxID_BANDWIDTH_1000M:
-            wxGetApp().setSampleRate(1000000);
-            break;
-        case wxID_BANDWIDTH_1024M:
-            wxGetApp().setSampleRate(1024000);
-            break;
-        case wxID_BANDWIDTH_1500M:
-            wxGetApp().setSampleRate(1500000);
-            break;
-        case wxID_BANDWIDTH_1800M:
-            wxGetApp().setSampleRate(1800000);
-            break;
-        case wxID_BANDWIDTH_1920M:
-            wxGetApp().setSampleRate(1920000);
-            break;
-        case wxID_BANDWIDTH_2000M:
-            wxGetApp().setSampleRate(2000000);
-            break;
-        case wxID_BANDWIDTH_2048M:
-            wxGetApp().setSampleRate(2048000);
-            break;
-        case wxID_BANDWIDTH_2160M:
-            wxGetApp().setSampleRate(2160000);
-            break;
-        case wxID_BANDWIDTH_2500M:
-            wxGetApp().setSampleRate(2500000);
-            break;
-        case wxID_BANDWIDTH_2880M:
-            wxGetApp().setSampleRate(2880000);
-            break;
-//        case wxID_BANDWIDTH_3000M:
-//            wxGetApp().setSampleRate(3000000);
-//            break;
-        case wxID_BANDWIDTH_3200M:
-            wxGetApp().setSampleRate(3200000);
-            break;
         case wxID_BANDWIDTH_MANUAL:
             long bw = wxGetNumberFromUser("Set the bandwidth manually", "Sample Rate (Hz), i.e. 2560000 for 2.56M",
                                           "Manual Bandwidth Entry", wxGetApp().getSampleRate(), 250000, 25000000, this);
@@ -612,6 +556,10 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
 //        iqSwapMenuItem->Check(devConfig->getIQSwap());
 //    }
 
+    if (event.GetId() >= wxID_BANDWIDTH_BASE && event.GetId() < wxID_BANDWIDTH_BASE+sampleRates.size()) {
+        wxGetApp().setSampleRate(sampleRates[event.GetId()-wxID_BANDWIDTH_BASE]);
+    }
+    
     if (event.GetId() >= wxID_AUDIO_BANDWIDTH_BASE) {
         int evId = event.GetId();
         std::vector<RtAudio::DeviceInfo>::iterator devices_i;

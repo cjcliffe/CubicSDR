@@ -190,7 +190,9 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
                 }
                 
                 std::vector<double> rates = device->listSampleRates(SOAPY_SDR_RX, i);
-                chan->getSampleRates().assign(rates.begin(), rates.end());
+                for (std::vector<double>::iterator i = rates.begin(); i != rates.end(); i++) {
+                    chan->getSampleRates().push_back((long)(*i));
+                }
                 dev->addChannel(chan);
             }
             

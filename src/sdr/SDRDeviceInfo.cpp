@@ -80,7 +80,7 @@ SDRDeviceRange &SDRDeviceChannel::getRFRange() {
     return rangeRF;
 }
 
-std::vector<long long> &SDRDeviceChannel::getSampleRates() {
+std::vector<long> &SDRDeviceChannel::getSampleRates() {
     return sampleRates;
 }
 

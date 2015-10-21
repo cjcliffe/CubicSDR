@@ -10,6 +10,7 @@
 #include "TuningCanvas.h"
 #include "ModeSelectorCanvas.h"
 #include "FFTVisualDataThread.h"
+#include "SDRDeviceInfo.h"
 //#include "UITestCanvas.h"
 
 #include <map>
@@ -32,26 +33,14 @@
 #define wxID_THEME_HD 2105
 #define wxID_THEME_RADAR 2106
 
-#define wxID_BANDWIDTH_250K 2150
-#define wxID_BANDWIDTH_1000M 2151
-#define wxID_BANDWIDTH_1024M 2152
-#define wxID_BANDWIDTH_1500M 2153
-#define wxID_BANDWIDTH_1800M 2154
-#define wxID_BANDWIDTH_1920M 2155
-#define wxID_BANDWIDTH_2000M 2156
-#define wxID_BANDWIDTH_2048M 2157
-#define wxID_BANDWIDTH_2160M 2158
-//#define wxID_BANDWIDTH_2400M 2159
-#define wxID_BANDWIDTH_2500M 2160
-#define wxID_BANDWIDTH_2880M 2161
-//#define wxID_BANDWIDTH_3000M 2162
-#define wxID_BANDWIDTH_3200M 2163
-#define wxID_BANDWIDTH_MANUAL 2164
+#define wxID_BANDWIDTH_BASE 2150
+#define wxID_BANDWIDTH_MANUAL 2200
 
 #define wxID_DEVICE_ID 3500
 
 #define wxID_AUDIO_BANDWIDTH_BASE 9000
 #define wxID_AUDIO_DEVICE_MULTIPLIER 50
+
 
 // Define a new frame type
 class AppFrame: public wxFrame {
@@ -60,7 +49,7 @@ public:
     ~AppFrame();
     void OnThread(wxCommandEvent& event);
     void OnEventInput(wxThreadEvent& event);
-    void initDeviceParams(std::string deviceId);
+    void initDeviceParams(SDRDeviceInfo *devInfo);
 
     void saveSession(std::string fileName);
     bool loadSession(std::string fileName);
@@ -95,6 +84,8 @@ private:
     std::map<int, wxMenuItem *> audioSampleRateMenuItems;
     std::map<int, wxMenuItem *> directSamplingMenuItems;
     wxMenuItem *iqSwapMenuItem;
+    wxMenu *sampleRateMenu;
+    std::vector<long> sampleRates;
     
     std::string currentSessionFile;
     

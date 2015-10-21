@@ -68,7 +68,7 @@ public:
     SDRDeviceRange &getFreqRange();
     SDRDeviceRange &getRFRange();
 
-    std::vector<long long> &getSampleRates();
+    std::vector<long> &getSampleRates();
     std::vector<long long> &getFilterBandwidths();
     
     const bool& hasHardwareDC() const;
@@ -82,7 +82,7 @@ private:
     int channel;
     bool fullDuplex, tx, rx, hardwareDC, hasCorr;
     SDRDeviceRange rangeGain, rangeLNA, rangeFull, rangeRF;
-    std::vector<long long> sampleRates;
+    std::vector<long> sampleRates;
     std::vector<long long> filterBandwidths;
 };
 
