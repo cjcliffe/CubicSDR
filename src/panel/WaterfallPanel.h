@@ -24,7 +24,8 @@ private:
     unsigned char *waterfall_slice;
     std::vector<unsigned char> lineBuffer[2];
     std::vector<unsigned char> rLineBuffer[2];
-    int lines_buffered;
+    std::atomic_int lines_buffered;
+    std::atomic_bool texInitialized, bufferInitialized;
     
     ColorTheme *activeTheme;
 };
