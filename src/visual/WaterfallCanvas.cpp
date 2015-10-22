@@ -72,11 +72,7 @@ void WaterfallCanvas::attachSpectrumCanvas(SpectrumCanvas *canvas_in) {
 }
 
 void WaterfallCanvas::processInputQueue() {
-    if (!glContext) {
-        return;
-    }
     tex_update.lock();
-    glContext->SetCurrent(*this);
     
     gTimer.update();
     
@@ -100,19 +96,19 @@ void WaterfallCanvas::processInputQueue() {
                 	break;
                 }
             }
-            waterfallPanel.update();
         }
     }
+    wxClientDC(this);
+    glContext->SetCurrent(*this);
+    waterfallPanel.update();
+    
     tex_update.unlock();
 }
 
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
+    tex_update.lock();
     wxPaintDC dc(this);
 
-    if (visualDataQueue.size() > 0) {
-        processInputQueue();
-    }
-    
     const wxSize ClientSize = GetClientSize();
     long double currentZoom = zoom;
     
@@ -208,7 +204,6 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     }
     
 
-    tex_update.lock();
     glContext->SetCurrent(*this);
     initGLExtensions();
     glViewport(0, 0, ClientSize.x, ClientSize.y);
@@ -413,11 +408,9 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
 
 }
 void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
+    processInputQueue();
     Refresh();
     event.RequestMore();
-    if (visualDataQueue.size() > linesPerSecond) {
-        processInputQueue();
-    }
 }
 
 void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
@@ -806,6 +799,7 @@ void WaterfallCanvas::updateCenterFrequency(long long freq) {
 }
 
 void WaterfallCanvas::setLinesPerSecond(int lps) {
+    tex_update.lock();
     linesPerSecond = lps;
     while (!visualDataQueue.empty()) {
         SpectrumVisualData *vData;
@@ -815,7 +809,7 @@ void WaterfallCanvas::setLinesPerSecond(int lps) {
             vData->decRefCount();
         }
     }
-
+    tex_update.unlock();
 }
 
 
