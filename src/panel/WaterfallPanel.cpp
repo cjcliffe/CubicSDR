@@ -151,7 +151,7 @@ void WaterfallPanel::update() {
 }
 
 void WaterfallPanel::drawPanelContents() {
-    if (!waterfall[0]) {
+    if (!texInitialized.load()) {
         return;
     }
 
