@@ -79,6 +79,7 @@ void WaterfallCanvas::processInputQueue() {
     double targetVis =  1.0 / (double)linesPerSecond;
     lpsIndex += gTimer.lastUpdateSeconds();
 
+    bool updated = false;
     if (linesPerSecond) {
         if (lpsIndex >= targetVis) {
             while (lpsIndex >= targetVis) {
@@ -90,6 +91,7 @@ void WaterfallCanvas::processInputQueue() {
                         waterfallPanel.setPoints(vData->spectrum_points);
                         waterfallPanel.step();
                         vData->decRefCount();
+                        updated = true;
                     }
                     lpsIndex-=targetVis;
                 } else {
@@ -98,10 +100,11 @@ void WaterfallCanvas::processInputQueue() {
             }
         }
     }
-    wxClientDC(this);
-    glContext->SetCurrent(*this);
-    waterfallPanel.update();
-    
+    if (updated) {
+        wxClientDC(this);
+        glContext->SetCurrent(*this);
+        waterfallPanel.update();
+    }
     tex_update.unlock();
 }
 
