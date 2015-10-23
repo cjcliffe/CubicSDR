@@ -82,7 +82,7 @@ find_package(wxWidgets COMPONENTS gl core base REQUIRED)
 set(wxWidgets_CONFIGURATION mswu)
 include(${wxWidgets_USE_FILE})
 
-find_package(SoapySDR NO_MODULE REQUIRED)
+find_package(SoapySDR "0.4.0" NO_MODULE REQUIRED)
 include_directories(${SOAPY_SDR_INCLUDE_DIR})
 SET(OTHER_LIBRARIES ${SOAPY_SDR_LIBRARY} ${OTHER_LIBRARIES})
 ADD_DEFINITIONS(
@@ -181,7 +181,7 @@ ENDIF(USE_AUDIO_OSS)
 ENDIF(UNIX AND NOT APPLE)
 
 IF (APPLE)
-    SET(CMAKE_OSX_DEPLOYMENT_TARGET, "10.9")
+    SET(CMAKE_OSX_DEPLOYMENT_TARGET, "10.10")
   
     SET(FFTW_LIB fftw3f)
     SET(LIQUID_LIB liquid)
@@ -415,7 +415,7 @@ ENDIF(MSVC)
 IF (APPLE)
     ADD_DEFINITIONS(
         -DHAVE_TYPE_TRAITS=1
-        -mmacosx-version-min=10.9
+        -mmacosx-version-min=10.10
     )
 ENDIF(APPLE)
 

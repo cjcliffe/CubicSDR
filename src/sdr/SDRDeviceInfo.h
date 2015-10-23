@@ -78,13 +78,17 @@ public:
     const bool& hasCORR() const;
     void setCORR(const bool& corr);
     
-    
+    void setStreamArgsInfo(SoapySDR::ArgInfoList streamArgs);
+    SoapySDR::ArgInfoList getStreamArgsInfo();
+    std::vector<std::string> getStreamArgNames();
+
 private:
     int channel;
     bool fullDuplex, tx, rx, hardwareDC, hasCorr;
     SDRDeviceRange rangeGain, rangeLNA, rangeFull, rangeRF;
     std::vector<long> sampleRates;
     std::vector<long long> filterBandwidths;
+    SoapySDR::ArgInfoList streamArgInfo;
 };
 
 
@@ -135,6 +139,11 @@ public:
     void setStreamArgs(SoapySDR::Kwargs deviceArgs);
     SoapySDR::Kwargs getStreamArgs();
 
+    void setSettingsInfo(SoapySDR::ArgInfoList settingsArgs);
+    SoapySDR::ArgInfoList getSettingsArgInfo();
+
+    std::vector<std::string> getSettingNames();
+    
 private:
     int index;
     std::string name, serial, product, manufacturer, tuner;
@@ -142,5 +151,6 @@ private:
     bool timestamps, available;
     
     SoapySDR::Kwargs deviceArgs, streamArgs;
+    SoapySDR::ArgInfoList settingInfo;
     std::vector<SDRDeviceChannel *> channels;
 };

@@ -25,12 +25,14 @@ SDRThread::SDRThread() : IOThread() {
     ppm_changed .store(false);
     direct_sampling_changed.store(false);
     device_changed.store(false);
+    iq_swap.store(false);
+    iq_swap_changed.store(false);
 
     hasPPM.store(false);
     hasHardwareDC.store(false);
     numChannels.store(8);
-
-//    dcFilter = iirfilt_crcf_create_dc_blocker(0.0005);
+    hasDirectSampling.store(false);
+    hasIQSwap.store(false);
 }
 
 SDRThread::~SDRThread() {
@@ -43,25 +45,19 @@ void SDRThread::init() {
     DeviceConfig *devConfig = deviceConfig.load();
     
     ppm.store(devConfig->getPPM());
+    ppm_changed.store(true);
+    
     direct_sampling_mode.store(devConfig->getDirectSampling());
-
+    direct_sampling_changed.store(true);
+    
+    iq_swap.store(devConfig->getIQSwap());
+    iq_swap_changed.store(true);
+    
     std::string driverName = devInfo->getDriver();
 
     offset = devConfig->getOffset();
-    wxGetApp().setSwapIQ(devConfig->getIQSwap());
     
     SoapySDR::Kwargs args = devInfo->getDeviceArgs();
-    
-    args["direct_samp"] = std::to_string(devConfig->getDirectSampling());
-    
-    if (driverName == "rtl" || driverName == "rtlsdr") {
-        args["iq_swap"] = std::to_string(devConfig->getIQSwap()?1:0);
-        args["buffers"] = "6";
-        args["buflen"] = "16384";
-        hasPPM = true;
-    } else {
-        hasPPM = false;
-    }
     
     wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Initializing device."));
     device = SoapySDR::Device::make(args);
@@ -86,6 +82,14 @@ void SDRThread::init() {
         hasHardwareDC.store(false);
     }
 
+    std::vector<std::string> settingNames = devInfo->getSettingNames();
+    if (std::find(settingNames.begin(), settingNames.end(), "direct_samp") != settingNames.end()) {
+        hasDirectSampling.store(true);
+    }
+    if (std::find(settingNames.begin(), settingNames.end(), "iq_swap") != settingNames.end()) {
+        hasIQSwap.store(true);
+    }
+    
     device->setGainMode(SOAPY_SDR_RX,0,true);
     
     numChannels.store(getOptimalChannelCount(sampleRate.load()));
@@ -168,14 +172,19 @@ void SDRThread::readLoop() {
         }
         if (ppm_changed.load() && hasPPM.load()) {
             device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm.load());
-            direct_sampling_changed.store(false);
+            ppm_changed.store(false);
         }
         if (freq_changed.load()) {
             device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency.load() - offset.load());
             freq_changed.store(false);
         }
-        if (direct_sampling_changed.load()) {
-            //                rtlsdr_set_direct_sampling(dev, direct_sampling_mode);
+        if (hasDirectSampling.load() && direct_sampling_changed.load()) {
+            device->writeSetting("direct_samp", std::to_string(direct_sampling_mode));
+            direct_sampling_changed.store(false);
+        }
+        if (hasIQSwap.load() && iq_swap_changed.load()) {
+            device->writeSetting("iq_swap", iq_swap.load()?"true":"false");
+            iq_swap_changed.store(false);
         }
         
         readStream(iqDataOutQueue);
@@ -301,4 +310,13 @@ void SDRThread::setDirectSampling(int dsMode) {
 
 int SDRThread::getDirectSampling() {
     return direct_sampling_mode.load();
+}
+
+void SDRThread::setIQSwap(bool iqSwap) {
+    iq_swap.store(iqSwap);
+    iq_swap_changed.store(true);
+}
+
+bool SDRThread::getIQSwap() {
+    return iq_swap.load();
 }

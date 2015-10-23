@@ -14,9 +14,6 @@ public:
 
     void bindDemodulator(DemodulatorInstance *demod);
     void removeDemodulator(DemodulatorInstance *demod);
-
-    void setSwapIQ(bool swapIQ);
-    bool getSwapIQ();
     
     void run();
     void terminate();
@@ -31,7 +28,6 @@ protected:
     
     std::mutex busy_demod;
     std::vector<DemodulatorInstance *> demodulators;
-    std::atomic_bool swapIQ;
 
 private:
     void initPFBChannelizer();

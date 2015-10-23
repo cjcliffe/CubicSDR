@@ -10,7 +10,6 @@ SDRPostThread::SDRPostThread() : IOThread() {
     iqDataOutQueue = NULL;
     iqVisualQueue = NULL;
 
-    swapIQ.store(false);
     numChannels = 0;
     channelizer = NULL;
     
@@ -47,14 +46,6 @@ void SDRPostThread::removeDemodulator(DemodulatorInstance *demod) {
         doRefresh.store(true);
     }
     busy_demod.unlock();
-}
-
-void SDRPostThread::setSwapIQ(bool swapIQ) {
-    this->swapIQ.store(swapIQ);
-}
-
-bool SDRPostThread::getSwapIQ() {
-    return this->swapIQ.load();
 }
 
 void SDRPostThread::initPFBChannelizer() {
@@ -191,17 +182,6 @@ void SDRPostThread::run() {
             if (outSize != dataOut.size()) {
                 dataOut.resize(outSize);
             }
-
-            //            if (swapIQ) {
-            //                for (int i = 0; i < dataSize; i++) {
-            //                    fpData[i] = _lut_swap[*((uint16_t*)&data_in->data[2*i])];
-            //                }
-            //            } else {
-            //                for (int i = 0; i < dataSize; i++) {
-            //                    fpData[i] = _lut[*((uint16_t*)&data_in->data[2*i])];
-            //                }
-            //            }
-            
             int activeVisChannel = -1;
             
 //            if (visBandwidth.load() && visBandwidth.load() < (chanBw/2)) {

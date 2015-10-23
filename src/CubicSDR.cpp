@@ -363,13 +363,13 @@ int CubicSDR::getDirectSampling() {
 }
 
 void CubicSDR::setSwapIQ(bool swapIQ) {
-    sdrPostThread->setSwapIQ(swapIQ);
+    sdrThread->setIQSwap(swapIQ);
     SDRDeviceInfo *dev = getDevice();
     config.getDevice(dev->getDeviceId())->setIQSwap(swapIQ);
 }
 
 bool CubicSDR::getSwapIQ() {
-    return sdrPostThread->getSwapIQ();
+    return sdrThread->getIQSwap();
 }
 
 long long CubicSDR::getFrequency() {

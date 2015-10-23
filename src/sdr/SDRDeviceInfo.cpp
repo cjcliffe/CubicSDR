@@ -111,14 +111,28 @@ void SDRDeviceChannel::setHardwareDC(const bool& hardware) {
     hardwareDC = hardware;
 }
 
-
-
 const bool& SDRDeviceChannel::hasCORR() const {
     return hasCorr;
 }
 
 void SDRDeviceChannel::setCORR(const bool& hasCorr) {
 	this->hasCorr = hasCorr;
+}
+
+void SDRDeviceChannel::setStreamArgsInfo(SoapySDR::ArgInfoList streamArgs) {
+    streamArgInfo = streamArgs;
+}
+
+SoapySDR::ArgInfoList SDRDeviceChannel::getStreamArgsInfo() {
+    return streamArgInfo;
+}
+
+std::vector<std::string> SDRDeviceChannel::getStreamArgNames() {
+    std::vector<std::string> names;
+    for (SoapySDR::ArgInfoList::const_iterator i = streamArgInfo.begin(); i != streamArgInfo.end(); i++) {
+        names.push_back((*i).key);
+    }
+    return names;
 }
 
 
@@ -231,6 +245,23 @@ void SDRDeviceInfo::setStreamArgs(SoapySDR::Kwargs streamArgs) {
 SoapySDR::Kwargs SDRDeviceInfo::getStreamArgs() {
     return streamArgs;
 }
+
+void SDRDeviceInfo::setSettingsInfo(SoapySDR::ArgInfoList settingsArgs) {
+    settingInfo = settingsArgs;
+}
+
+SoapySDR::ArgInfoList SDRDeviceInfo::getSettingsArgInfo() {
+    return settingInfo;
+}
+
+std::vector<std::string> SDRDeviceInfo::getSettingNames() {
+    std::vector<std::string> names;
+    for (SoapySDR::ArgInfoList::const_iterator i = settingInfo.begin(); i != settingInfo.end(); i++) {
+        names.push_back((*i).key);
+    }
+    return names;
+}
+
 
 void SDRDeviceInfo::addChannel(SDRDeviceChannel *chan) {
     channels.push_back(chan);

@@ -71,6 +71,9 @@ public:
     
     void setDirectSampling(int dsMode);
     int getDirectSampling();
+    
+    void setIQSwap(bool iqSwap);
+    bool getIQSwap();
  
 protected:
     SoapySDR::Stream *stream;
@@ -84,8 +87,7 @@ protected:
     std::atomic<uint32_t> sampleRate;
     std::atomic_llong frequency, offset;
     std::atomic_int ppm, direct_sampling_mode, numElems, numChannels;
-    std::atomic_bool hasPPM, hasHardwareDC;
-
-    std::atomic_bool rate_changed, freq_changed, offset_changed,
-        ppm_changed, direct_sampling_changed, device_changed;
+    std::atomic_bool hasPPM, hasHardwareDC, hasDirectSampling, hasIQSwap;
+    std::atomic_bool iq_swap, rate_changed, freq_changed, offset_changed,
+        ppm_changed, direct_sampling_changed, device_changed, iq_swap_changed;
 };

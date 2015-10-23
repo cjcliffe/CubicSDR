@@ -88,30 +88,6 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
         results = SoapySDR::Device::enumerate();
     }
     
-
-    // Remote driver test..
-/* * /
-    SDRDeviceInfo *remoteDev = new SDRDeviceInfo();
-    remoteDev->setDriver("remote");
-    remoteDev->setName("SoapySDR Remote Test");
-    
-    SoapySDR::Kwargs remoteArgs;
-    remoteArgs["driver"] = "remote";
-//    remoteArgs["remote"] = "127.0.0.1";
-    remoteArgs["remote"] = "192.168.1.103";
-    remoteArgs["remote:driver"] = "rtlsdr";
-    remoteArgs["buffers"] = "6";
-    remoteArgs["buflen"] = "16384";
-    remoteDev->setDeviceArgs(remoteArgs);
-
-    SoapySDR::Kwargs streamArgs;
-    streamArgs["remote:mtu"] = "8192";
-    streamArgs["remote:format"] = "CS8";
-    streamArgs["remote:window"] = "16384000";
-    remoteDev->setStreamArgs(streamArgs);
-    
-    SDRThread::devs.push_back(remoteDev);
-//  */
     if (isRemote) {
         wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Opening remote server ") + remoteAddr + "..");
     }
@@ -134,11 +110,6 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
             wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Found local device #") + std::to_string(i));
         }
 
-        if (deviceArgs.count("rtl") != 0 || (deviceArgs.count("driver") != 0 && (deviceArgs["driver"] == "rtl" || deviceArgs["driver"] == "rtlsdr"))) {
-            streamArgs["buffers"] = "6";
-            streamArgs["buflen"] = "16384";
-        }
-        
         for (SoapySDR::Kwargs::const_iterator it = deviceArgs.begin(); it != deviceArgs.end(); ++it) {
             std::cout << "  " << it->first << " = " << it->second << std::endl;
             if (it->first == "driver") {
@@ -149,7 +120,7 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
         }
 
         dev->setDeviceArgs(deviceArgs);
-        dev->setStreamArgs(deviceArgs);
+        dev->setStreamArgs(streamArgs);
         
         std::cout << "Make device " << i << std::endl;
         try {
@@ -193,10 +164,13 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
                 for (std::vector<double>::iterator i = rates.begin(); i != rates.end(); i++) {
                     chan->getSampleRates().push_back((long)(*i));
                 }
+                
+                chan->setStreamArgsInfo(device->getStreamArgsInfo(SOAPY_SDR_RX, i));
+                
                 dev->addChannel(chan);
             }
             
-
+            dev->setSettingsInfo(device->getSettingInfo());
             
             SoapySDR::Device::unmake(device);
             
