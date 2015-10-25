@@ -40,6 +40,7 @@ SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *attribList) :
     SetCursor(wxCURSOR_SIZEWE);
     scaleFactor = 1.0;
     resetScaleFactor = false;
+    scaleFactorEnabled = false;
     bwChange = 0.0;
 }
 
@@ -165,6 +166,11 @@ void SpectrumCanvas::disableView() {
     InteractiveCanvas::disableView();
 }
 
+void SpectrumCanvas::setScaleFactorEnabled(bool en) {
+    scaleFactorEnabled = en;
+}
+
+
 void SpectrumCanvas::updateScaleFactor(float factor) {
     SpectrumVisualProcessor *sp = wxGetApp().getSpectrumProcessor();
     FFTVisualDataThread *wdt = wxGetApp().getAppFrame()->getWaterfallDataThread();
@@ -184,7 +190,7 @@ void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
             moveCenterFrequency(freqChange);
         }
     }
-    else if (mouseTracker.mouseRightDown()) {
+    else if (scaleFactorEnabled && mouseTracker.mouseRightDown()) {
         
         float yDelta = mouseTracker.getDeltaMouseY();
 
@@ -199,7 +205,11 @@ void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
         resetScaleFactor = false;
         updateScaleFactor(scaleFactor);
     } else {
-        setStatusText("Drag horitontal to adjust center frequency. Right-drag to adjust vertical scale, click to reset. 'B' to toggle decibels display.");
+        if (scaleFactorEnabled) {
+            setStatusText("Drag horitontal to adjust center frequency. Right-drag to adjust vertical scale, click to reset. 'B' to toggle decibels display.");
+        } else {
+            setStatusText("Displaying spectrum of active demodulator.");
+        }
     }
 }
 

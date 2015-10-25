@@ -34,7 +34,10 @@ EVT_CLOSE(AppFrame::OnClose)
 EVT_MENU(wxID_ANY, AppFrame::OnMenu)
 EVT_COMMAND(wxID_ANY, wxEVT_THREAD, AppFrame::OnThread)
 EVT_IDLE(AppFrame::OnIdle)
+EVT_SPLITTER_DCLICK(wxID_ANY, AppFrame::OnDoubleClickSash)
+EVT_SPLITTER_UNSPLIT(wxID_ANY, AppFrame::OnUnSplit)
 wxEND_EVENT_TABLE()
+
 
 AppFrame::AppFrame() :
         wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
@@ -50,7 +53,13 @@ AppFrame::AppFrame() :
 
     int attribList[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 
-    demodModeSelector = new ModeSelectorCanvas(this, attribList);
+    mainSplitter = new wxSplitterWindow( this, wxID_MAIN_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
+    mainSplitter->SetSashGravity(12.0/37.0);
+    mainSplitter->SetMinimumPaneSize(1);
+
+    wxPanel *demodPanel = new wxPanel(mainSplitter, wxID_ANY);
+            
+    demodModeSelector = new ModeSelectorCanvas(demodPanel, attribList);
     demodModeSelector->addChoice(DEMOD_TYPE_FM, "FM");
     demodModeSelector->addChoice(DEMOD_TYPE_AM, "AM");
     demodModeSelector->addChoice(DEMOD_TYPE_LSB, "LSB");
@@ -62,14 +71,14 @@ AppFrame::AppFrame() :
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
 
     wxGetApp().getDemodSpectrumProcessor()->setup(1024);
-    demodSpectrumCanvas = new SpectrumCanvas(this, attribList);
+    demodSpectrumCanvas = new SpectrumCanvas(demodPanel, attribList);
     demodSpectrumCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
     demodVisuals->Add(demodSpectrumCanvas, 3, wxEXPAND | wxALL, 0);
     wxGetApp().getDemodSpectrumProcessor()->attachOutput(demodSpectrumCanvas->getVisualDataQueue());
 
     demodVisuals->AddSpacer(1);
 
-    demodWaterfallCanvas = new WaterfallCanvas(this, attribList);
+    demodWaterfallCanvas = new WaterfallCanvas(demodPanel, attribList);
     demodWaterfallCanvas->setup(1024, 128);
     demodWaterfallCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
     demodWaterfallCanvas->attachSpectrumCanvas(demodSpectrumCanvas);
@@ -82,14 +91,14 @@ AppFrame::AppFrame() :
 
     demodTray->AddSpacer(1);
 
-    demodSignalMeter = new MeterCanvas(this, attribList);
+    demodSignalMeter = new MeterCanvas(demodPanel, attribList);
     demodSignalMeter->setMax(0.5);
     demodSignalMeter->setHelpTip("Current Signal Level.  Click / Drag to set Squelch level.");
     demodTray->Add(demodSignalMeter, 1, wxEXPAND | wxALL, 0);
 
     demodTray->AddSpacer(1);
 
-    scopeCanvas = new ScopeCanvas(this, attribList);
+    scopeCanvas = new ScopeCanvas(demodPanel, attribList);
     scopeCanvas->setHelpTip("Audio Visuals, drag left/right to toggle Scope or Spectrum.");
     demodScopeTray->Add(scopeCanvas, 8, wxEXPAND | wxALL, 0);
     wxGetApp().getScopeProcessor()->setup(2048);
@@ -97,7 +106,7 @@ AppFrame::AppFrame() :
 
     demodScopeTray->AddSpacer(1);
 
-    demodTuner = new TuningCanvas(this, attribList);
+    demodTuner = new TuningCanvas(demodPanel, attribList);
     demodTuner->setHelpTip("Testing tuner");
     demodScopeTray->Add(demodTuner, 1, wxEXPAND | wxALL, 0);
 
@@ -107,7 +116,7 @@ AppFrame::AppFrame() :
 
     wxBoxSizer *demodGainTray = new wxBoxSizer(wxVERTICAL);
             
-    demodGainMeter = new MeterCanvas(this, attribList);
+    demodGainMeter = new MeterCanvas(demodPanel, attribList);
     demodGainMeter->setMax(2.0);
     demodGainMeter->setHelpTip("Current Demodulator Gain Level.  Click / Drag to set Gain level.");
     demodGainMeter->setShowUserInput(false);
@@ -115,7 +124,7 @@ AppFrame::AppFrame() :
 
     demodGainTray->AddSpacer(1);
 
-    demodMuteButton = new ModeSelectorCanvas(this, attribList);
+    demodMuteButton = new ModeSelectorCanvas(demodPanel, attribList);
     demodMuteButton->addChoice(1, "M");
     demodMuteButton->setPadding(-1,-1);
     demodMuteButton->setHighlightColor(RGBA4f(0.8,0.2,0.2));
@@ -126,17 +135,28 @@ AppFrame::AppFrame() :
     demodGainTray->Add(demodMuteButton, 1, wxEXPAND | wxALL, 0);
 
     demodTray->Add(demodGainTray, 1, wxEXPAND | wxALL, 0);
-            
-    vbox->Add(demodTray, 12, wxEXPAND | wxALL, 0);
-    vbox->AddSpacer(1);
+    
+    demodPanel->SetSizer(demodTray);
 
+//    vbox->Add(demodTray, 12, wxEXPAND | wxALL, 0);
+//    vbox->AddSpacer(1);
+            
+    mainVisSplitter = new wxSplitterWindow( mainSplitter, wxID_VIS_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
+    mainVisSplitter->SetSashGravity(5.0/25.0);
+    mainVisSplitter->SetMinimumPaneSize(1);
+        
+//    mainVisSplitter->Connect( wxEVT_IDLE, wxIdleEventHandler( AppFrame::mainVisSplitterIdle ), NULL, this );
+
+    wxPanel *spectrumPanel = new wxPanel(mainVisSplitter, wxID_ANY);
     wxBoxSizer *spectrumSizer = new wxBoxSizer(wxHORIZONTAL);
+
     wxGetApp().getSpectrumProcessor()->setup(2048);
-    spectrumCanvas = new SpectrumCanvas(this, attribList);
+    spectrumCanvas = new SpectrumCanvas(spectrumPanel, attribList);
     spectrumCanvas->setShowDb(true);
+    spectrumCanvas->setScaleFactorEnabled(true);
     wxGetApp().getSpectrumProcessor()->attachOutput(spectrumCanvas->getVisualDataQueue());
             
-    spectrumAvgMeter = new MeterCanvas(this, attribList);
+    spectrumAvgMeter = new MeterCanvas(spectrumPanel, attribList);
     spectrumAvgMeter->setHelpTip("Spectrum averaging speed, click or drag to adjust.");
     spectrumAvgMeter->setMax(1.0);
     spectrumAvgMeter->setLevel(0.65);
@@ -145,14 +165,16 @@ AppFrame::AppFrame() :
     spectrumSizer->Add(spectrumCanvas, 63, wxEXPAND | wxALL, 0);
     spectrumSizer->AddSpacer(1);
     spectrumSizer->Add(spectrumAvgMeter, 1, wxEXPAND | wxALL, 0);
+    spectrumPanel->SetSizer(spectrumSizer);
             
-    vbox->Add(spectrumSizer, 5, wxEXPAND | wxALL, 0);
+//    vbox->Add(spectrumSizer, 5, wxEXPAND | wxALL, 0);
 
-    vbox->AddSpacer(1);
+//    vbox->AddSpacer(1);
             
+    wxPanel *waterfallPanel = new wxPanel(mainVisSplitter, wxID_ANY);
     wxBoxSizer *wfSizer = new wxBoxSizer(wxHORIZONTAL);
-
-    waterfallCanvas = new WaterfallCanvas(this, attribList);
+           
+    waterfallCanvas = new WaterfallCanvas(waterfallPanel, attribList);
     waterfallCanvas->setup(2048, 512);
 
     waterfallDataThread = new FFTVisualDataThread();
@@ -162,7 +184,7 @@ AppFrame::AppFrame() :
 
     t_FFTData = new std::thread(&FFTVisualDataThread::threadMain, waterfallDataThread);
 
-    waterfallSpeedMeter = new MeterCanvas(this, attribList);
+    waterfallSpeedMeter = new MeterCanvas(waterfallPanel, attribList);
     waterfallSpeedMeter->setHelpTip("Waterfall speed, click or drag to adjust (max 1024 lines per second)");
     waterfallSpeedMeter->setMax(sqrt(1024));
     waterfallSpeedMeter->setLevel(sqrt(DEFAULT_WATERFALL_LPS));
@@ -171,9 +193,15 @@ AppFrame::AppFrame() :
     wfSizer->Add(waterfallCanvas, 63, wxEXPAND | wxALL, 0);
     wfSizer->AddSpacer(1);
     wfSizer->Add(waterfallSpeedMeter, 1, wxEXPAND | wxALL, 0);
+    waterfallPanel->SetSizer(wfSizer);
             
-    vbox->Add(wfSizer, 20, wxEXPAND | wxALL, 0);
+//    vbox->Add(wfSizer, 20, wxEXPAND | wxALL, 0);
 
+    mainVisSplitter->SplitHorizontally( spectrumPanel, waterfallPanel, 0 );
+    mainSplitter->SplitHorizontally( demodPanel, mainVisSplitter );
+            
+    vbox->Add(mainSplitter, 1, wxEXPAND | wxALL, 0);
+            
     // TODO: refactor these..
     waterfallCanvas->attachSpectrumCanvas(spectrumCanvas);
     spectrumCanvas->attachWaterfallCanvas(waterfallCanvas);
@@ -381,7 +409,6 @@ AppFrame::~AppFrame() {
     waterfallDataThread->terminate();
     t_FFTData->join();
 }
-
 
 void AppFrame::initDeviceParams(SDRDeviceInfo *devInfo) {
     std::string deviceId = devInfo->getName();
@@ -838,6 +865,39 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     }
 
     event.RequestMore();
+}
+
+
+void AppFrame::OnDoubleClickSash(wxSplitterEvent& event)
+{
+    wxWindow *a, *b;
+    wxSplitterWindow *w = NULL;
+    float g = 0.5;
+
+    if (event.GetId() == wxID_MAIN_SPLITTER) {
+        w = mainSplitter;
+        g = 12.0/37.0;
+    } else if (event.GetId() == wxID_VIS_SPLITTER) {
+        w = mainVisSplitter;
+        g = 7.4/37.0;
+    }
+
+    if (w != NULL) {
+        a = w->GetWindow1();
+        b = w->GetWindow2();
+        w->Unsplit();
+        w->SetSashGravity(g);
+        wxSize s = w->GetSize();
+        
+        w->SplitHorizontally(a, b, int(float(s.GetHeight()) * g));
+    }
+    
+    event.Veto();
+}
+
+void AppFrame::OnUnSplit(wxSplitterEvent& event)
+{
+    event.Veto();
 }
 
 void AppFrame::saveSession(std::string fileName) {

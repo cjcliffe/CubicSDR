@@ -25,6 +25,8 @@ public:
     void setView(long long center_freq_in, int bandwidth_in);
     void disableView();
 
+    void setScaleFactorEnabled(bool en);
+    
     SpectrumVisualDataQueue *getVisualDataQueue();
     
 private:
@@ -48,7 +50,7 @@ private:
     SpectrumPanel spectrumPanel;
     float scaleFactor;
     int bwChange;
-    bool resetScaleFactor;
+    bool resetScaleFactor, scaleFactorEnabled;
     
     SpectrumVisualDataQueue visualDataQueue;
 

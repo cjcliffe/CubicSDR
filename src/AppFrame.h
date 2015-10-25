@@ -1,6 +1,9 @@
 #pragma once
 
-#include "wx/frame.h"
+#include <wx/frame.h>
+#include <wx/panel.h>
+#include <wx/splitter.h>
+
 #include "PrimaryGLContext.h"
 
 #include "ScopeCanvas.h"
@@ -24,6 +27,9 @@
 #define wxID_SET_DS_Q 2006
 #define wxID_SET_SWAP_IQ 2007
 #define wxID_SDR_DEVICES 2008
+
+#define wxID_MAIN_SPLITTER 2050
+#define wxID_VIS_SPLITTER 2051
 
 #define wxID_THEME_DEFAULT 2100
 #define wxID_THEME_SHARP 2101
@@ -61,7 +67,9 @@ private:
     void OnClose(wxCloseEvent& event);
     void OnNewWindow(wxCommandEvent& event);
     void OnIdle(wxIdleEvent& event);
-    
+    void OnDoubleClickSash(wxSplitterEvent& event);
+    void OnUnSplit(wxSplitterEvent& event);
+  
     ScopeCanvas *scopeCanvas;
     SpectrumCanvas *spectrumCanvas;
     WaterfallCanvas *waterfallCanvas;
@@ -75,7 +83,8 @@ private:
     MeterCanvas *spectrumAvgMeter;
     MeterCanvas *waterfallSpeedMeter;
     ModeSelectorCanvas *demodMuteButton;
-
+    wxSplitterWindow *mainVisSplitter, *mainSplitter;
+    
     DemodulatorInstance *activeDemodulator;
 
     std::vector<RtAudio::DeviceInfo> devices;

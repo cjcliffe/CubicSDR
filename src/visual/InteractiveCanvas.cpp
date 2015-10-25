@@ -150,11 +150,11 @@ void InteractiveCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
 }
 
 void InteractiveCanvas::setStatusText(std::string statusText) {
-    ((wxFrame*) parent)->GetStatusBar()->SetStatusText(statusText);
+    wxGetApp().getAppFrame()->GetStatusBar()->SetStatusText(statusText);
 }
 
 void InteractiveCanvas::setStatusText(std::string statusText, int value) {
-    ((wxFrame*) parent)->GetStatusBar()->SetStatusText(
+    wxGetApp().getAppFrame()->GetStatusBar()->SetStatusText(
             wxString::Format(statusText.c_str(), wxNumberFormatter::ToString((long) value, wxNumberFormatter::Style_WithThousandsSep)));
 }
 
