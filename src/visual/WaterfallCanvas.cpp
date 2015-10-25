@@ -43,6 +43,7 @@ WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
     lpsIndex = 0;
     preBuf = false;
     SetCursor(wxCURSOR_CROSS);
+    scaleMove = 0;
 }
 
 WaterfallCanvas::~WaterfallCanvas() {
@@ -121,6 +122,25 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         if (fabs(mouseZoom-1.0)<0.01) {
             mouseZoom = 1;
         }
+    }
+    
+    if (scaleMove != 0) {
+        SpectrumVisualProcessor *sp = wxGetApp().getSpectrumProcessor();
+        FFTVisualDataThread *wdt = wxGetApp().getAppFrame()->getWaterfallDataThread();
+        SpectrumVisualProcessor *wp = wdt->getProcessor();
+        float factor = sp->getScaleFactor();
+
+        factor += scaleMove * 0.02;
+        
+        if (factor < 0.25) {
+            factor = 0.25;
+        }
+        if (factor > 10.0) {
+            factor = 10.0;
+        }
+        
+        sp->setScaleFactor(factor);
+        wp->setScaleFactor(factor);
     }
     
     if (freqMove != 0.0) {
@@ -306,14 +326,20 @@ void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
     case 'A':
     case WXK_UP:
     case WXK_NUMPAD_UP:
+            scaleMove = 0.0;
             zoom = 1.0;
-            mouseZoom = 0.95;
+            if (mouseZoom != 1.0) {
+                mouseZoom = 0.95;
+            }
         break;
     case 'Z':
     case WXK_DOWN:
     case WXK_NUMPAD_DOWN:
+            scaleMove = 0.0;
             zoom = 1.0;
-            mouseZoom = 1.05;
+            if (mouseZoom != 1.0) {
+                mouseZoom = 1.05;
+            }
         break;
     case WXK_LEFT:
     case WXK_NUMPAD_LEFT:
@@ -336,14 +362,22 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     case 'A':
     case WXK_UP:
     case WXK_NUMPAD_UP:
-            mouseZoom = 1.0;
-            zoom = 0.95;
+            if (!shiftDown) {
+                mouseZoom = 1.0;
+                zoom = 0.95;
+            } else {
+                scaleMove = 1.0;
+            }
         break;
     case 'Z':
     case WXK_DOWN:
     case WXK_NUMPAD_DOWN:
-            mouseZoom = 1.0;
-            zoom = 1.05;
+            if (!shiftDown) {
+                mouseZoom = 1.0;
+                zoom = 1.05;
+            } else {
+                scaleMove = -1.0;
+            }
         break;
     case WXK_RIGHT:
     case WXK_NUMPAD_RIGHT:

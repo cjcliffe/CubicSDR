@@ -206,7 +206,7 @@ void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
         updateScaleFactor(scaleFactor);
     } else {
         if (scaleFactorEnabled) {
-            setStatusText("Drag horitontal to adjust center frequency. Right-drag to adjust vertical scale, click to reset. 'B' to toggle decibels display.");
+            setStatusText("Drag horizontal to adjust center frequency. Right-drag or SHIFT+UP/DOWN to adjust vertical scale; right-click to reset. 'B' to toggle decibels display.");
         } else {
             setStatusText("Displaying spectrum of active demodulator.");
         }
@@ -247,6 +247,7 @@ SpectrumVisualDataQueue *SpectrumCanvas::getVisualDataQueue() {
 
 void SpectrumCanvas::OnMouseRightDown(wxMouseEvent& event) {
     mouseTracker.OnMouseRightDown(event);
+    scaleFactor = wxGetApp().getSpectrumProcessor()->getScaleFactor();
 }
 
 void SpectrumCanvas::OnMouseRightReleased(wxMouseEvent& event) {
