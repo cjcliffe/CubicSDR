@@ -17,6 +17,7 @@ SpectrumVisualProcessor::SpectrumVisualProcessor() : lastInputBandwidth(0), last
     fft_floor_ma = fft_floor_maa = 0.0;
     desiredInputSize.store(0);
     fft_average_rate = 0.65;
+    scaleFactor.store(1.0);
 }
 
 SpectrumVisualProcessor::~SpectrumVisualProcessor() {
@@ -307,10 +308,12 @@ void SpectrumVisualProcessor::process() {
             fft_floor_ma = fft_floor_ma + (fft_floor - fft_floor_ma) * 0.05;
             fft_floor_maa = fft_floor_maa + (fft_floor_ma - fft_floor_maa) * 0.05;
             
+            float sf = scaleFactor.load();
+            
             for (int i = 0, iMax = fftSize; i < iMax; i++) {
                 float v = (log10(fft_result_maa[i]+0.25 - (fft_floor_maa-0.75)) / log10((fft_ceil_maa+0.25) - (fft_floor_maa-0.75)));
                 output->spectrum_points[i * 2] = ((float) i / (float) iMax);
-                output->spectrum_points[i * 2 + 1] = v;
+                output->spectrum_points[i * 2 + 1] = v*sf;
             }
                 
             if (hideDC.load()) { // DC-spike removal
@@ -349,7 +352,7 @@ void SpectrumVisualProcessor::process() {
                 }
             }
             
-            output->fft_ceiling = fft_ceil_maa;
+            output->fft_ceiling = fft_ceil_maa/sf;
             output->fft_floor = fft_floor_maa;
         }
         
@@ -359,5 +362,15 @@ void SpectrumVisualProcessor::process() {
     iqData->decRefCount();
     iqData->busy_rw.unlock();
     busy_run.unlock();
+}
+
+
+void SpectrumVisualProcessor::setScaleFactor(float sf) {
+    scaleFactor.store(sf);
+}
+
+
+float SpectrumVisualProcessor::getScaleFactor() {
+    return scaleFactor.load();
 }
 

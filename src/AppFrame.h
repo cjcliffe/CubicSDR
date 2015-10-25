@@ -54,12 +54,14 @@ public:
     void saveSession(std::string fileName);
     bool loadSession(std::string fileName);
 
+    FFTVisualDataThread *getWaterfallDataThread();
+
 private:
     void OnMenu(wxCommandEvent& event);
     void OnClose(wxCloseEvent& event);
     void OnNewWindow(wxCommandEvent& event);
     void OnIdle(wxIdleEvent& event);
-
+    
     ScopeCanvas *scopeCanvas;
     SpectrumCanvas *spectrumCanvas;
     WaterfallCanvas *waterfallCanvas;

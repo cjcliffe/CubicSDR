@@ -977,3 +977,8 @@ bool AppFrame::loadSession(std::string fileName) {
 
     return true;
 }
+
+FFTVisualDataThread *AppFrame::getWaterfallDataThread() {
+    return waterfallDataThread;
+}
+

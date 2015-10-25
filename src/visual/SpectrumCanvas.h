@@ -22,6 +22,9 @@ public:
     void setShowDb(bool showDb);
     bool getShowDb();
     
+    void setView(long long center_freq_in, int bandwidth_in);
+    void disableView();
+
     SpectrumVisualDataQueue *getVisualDataQueue();
     
 private:
@@ -35,10 +38,17 @@ private:
     void OnMouseReleased(wxMouseEvent& event);
     void OnMouseEnterWindow(wxMouseEvent& event);
     void OnMouseLeftWindow(wxMouseEvent& event);
+    void OnMouseRightDown(wxMouseEvent& event);
+    void OnMouseRightReleased(wxMouseEvent& event);
 
+    void updateScaleFactor(float factor);
+    
     PrimaryGLContext *glContext;
     WaterfallCanvas *waterfallCanvas;
     SpectrumPanel spectrumPanel;
+    float scaleFactor;
+    int bwChange;
+    bool resetScaleFactor;
     
     SpectrumVisualDataQueue visualDataQueue;
 

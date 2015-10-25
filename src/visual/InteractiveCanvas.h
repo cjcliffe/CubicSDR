@@ -13,8 +13,8 @@ public:
 
     long long getFrequencyAt(float x);
 
-    void setView(long long center_freq_in, int bandwidth_in);
-    void disableView();
+    virtual void setView(long long center_freq_in, int bandwidth_in);
+    virtual void disableView();
     bool getViewState();
 
     void setCenterFrequency(long long center_freq_in);

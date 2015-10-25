@@ -25,6 +25,8 @@ EVT_LEFT_UP(SpectrumCanvas::OnMouseReleased)
 EVT_ENTER_WINDOW(SpectrumCanvas::OnMouseEnterWindow)
 EVT_LEAVE_WINDOW(SpectrumCanvas::OnMouseLeftWindow)
 EVT_MOUSEWHEEL(SpectrumCanvas::OnMouseWheelMoved)
+EVT_RIGHT_DOWN(SpectrumCanvas::OnMouseRightDown)
+EVT_RIGHT_UP(SpectrumCanvas::OnMouseRightReleased)
 wxEND_EVENT_TABLE()
 
 SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *attribList) :
@@ -36,6 +38,9 @@ SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *attribList) :
     visualDataQueue.set_max_num_items(1);
             
     SetCursor(wxCURSOR_SIZEWE);
+    scaleFactor = 1.0;
+    resetScaleFactor = false;
+    bwChange = 0.0;
 }
 
 SpectrumCanvas::~SpectrumCanvas() {
@@ -57,6 +62,15 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
             spectrumPanel.setCeilValue(vData->fft_ceiling);
             vData->decRefCount();
         }
+    }
+    
+    if (resetScaleFactor) {
+        scaleFactor += (1.0-scaleFactor)*0.05;
+        if (fabs(scaleFactor-1.0) < 0.01) {
+            scaleFactor = 1.0;
+            resetScaleFactor = false;
+        }
+        updateScaleFactor(scaleFactor);
     }
     
     
@@ -137,6 +151,29 @@ bool SpectrumCanvas::getShowDb() {
     return spectrumPanel.getShowDb();
 }
 
+void SpectrumCanvas::setView(long long center_freq_in, int bandwidth_in) {
+    bwChange += bandwidth_in-bandwidth;
+    #define BW_RESET_TH 400000
+    if (bwChange > BW_RESET_TH || bwChange < -BW_RESET_TH) {
+        resetScaleFactor = true;
+        bwChange = 0;
+    }
+    InteractiveCanvas::setView(center_freq_in, bandwidth_in);
+}
+
+void SpectrumCanvas::disableView() {
+    InteractiveCanvas::disableView();
+}
+
+void SpectrumCanvas::updateScaleFactor(float factor) {
+    SpectrumVisualProcessor *sp = wxGetApp().getSpectrumProcessor();
+    FFTVisualDataThread *wdt = wxGetApp().getAppFrame()->getWaterfallDataThread();
+    SpectrumVisualProcessor *wp = wdt->getProcessor();
+
+    scaleFactor = factor;
+    sp->setScaleFactor(factor);
+    wp->setScaleFactor(factor);
+}
 
 void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseMoved(event);
@@ -146,8 +183,23 @@ void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
         if (freqChange != 0) {
             moveCenterFrequency(freqChange);
         }
+    }
+    else if (mouseTracker.mouseRightDown()) {
+        
+        float yDelta = mouseTracker.getDeltaMouseY();
+
+        scaleFactor += yDelta*2.0;
+        if (scaleFactor < 0.25) {
+            scaleFactor = 0.25;
+        }
+        if (scaleFactor > 10.0) {
+            scaleFactor = 10.0;
+        }
+        
+        resetScaleFactor = false;
+        updateScaleFactor(scaleFactor);
     } else {
-        setStatusText("Click and drag to adjust center frequency. 'B' to toggle decibels display.");
+        setStatusText("Drag horitontal to adjust center frequency. Right-drag to adjust vertical scale, click to reset. 'B' to toggle decibels display.");
     }
 }
 
@@ -181,4 +233,15 @@ void SpectrumCanvas::attachWaterfallCanvas(WaterfallCanvas* canvas_in) {
 
 SpectrumVisualDataQueue *SpectrumCanvas::getVisualDataQueue() {
     return &visualDataQueue;
+}
+
+void SpectrumCanvas::OnMouseRightDown(wxMouseEvent& event) {
+    mouseTracker.OnMouseRightDown(event);
+}
+
+void SpectrumCanvas::OnMouseRightReleased(wxMouseEvent& event) {
+    if (!mouseTracker.getOriginDeltaMouseY()) {
+        resetScaleFactor = true;
+    }
+    mouseTracker.OnMouseRightReleased(event);
 }
