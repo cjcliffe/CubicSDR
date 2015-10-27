@@ -48,7 +48,7 @@ AppFrame::AppFrame() :
 
     wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodVisuals = new wxBoxSizer(wxVERTICAL);
-    wxBoxSizer *demodTray = new wxBoxSizer(wxHORIZONTAL);
+    demodTray = new wxBoxSizer(wxHORIZONTAL);
     wxBoxSizer *demodScopeTray = new wxBoxSizer(wxVERTICAL);
 
     int attribList[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
@@ -58,6 +58,13 @@ AppFrame::AppFrame() :
     mainSplitter->SetMinimumPaneSize(1);
 
     wxPanel *demodPanel = new wxPanel(mainSplitter, wxID_ANY);
+            
+    gainCanvas = new GainCanvas(demodPanel, attribList);
+    
+    gainSizerItem = demodTray->Add(gainCanvas, 0, wxEXPAND | wxALL, 0);
+    gainSizerItem->Show(false);
+    gainSpacerItem = demodTray->AddSpacer(1);
+    gainSpacerItem->Show(false);
             
     demodModeSelector = new ModeSelectorCanvas(demodPanel, attribList);
     demodModeSelector->addChoice(DEMOD_TYPE_FM, "FM");
@@ -252,6 +259,9 @@ AppFrame::AppFrame() :
     
     menu->AppendSubMenu(dsMenu, "Direct Sampling");
 
+    agcMenuItem = menu->AppendCheckItem(wxID_AGC_CONTROL, "Automatic Gain");
+    agcMenuItem->Check(wxGetApp().getAGCMode());
+            
     menuBar->Append(menu, wxT("&Settings"));
             
     menu = new wxMenu;
@@ -451,6 +461,22 @@ void AppFrame::initDeviceParams(SDRDeviceInfo *devInfo) {
     if (!checked) {
         sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Check(true);
     }
+
+    if (!wxGetApp().getAGCMode()) {
+        gainSpacerItem->Show(true);
+        gainSizerItem->Show(true);
+        gainSizerItem->SetMinSize(devInfo->getRxChannel()->getGains().size()*50,0);
+        demodTray->Layout();
+        gainCanvas->updateGainUI();
+        gainCanvas->Refresh();
+        gainCanvas->Refresh();
+    } else {
+        gainSpacerItem->Show(false);
+        gainSizerItem->Show(false);
+        demodTray->Layout();
+    }
+    
+    agcMenuItem->Check(wxGetApp().getAGCMode());
 }
 
 
@@ -481,6 +507,22 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         wxGetApp().setSwapIQ(swap_state);
         wxGetApp().saveConfig();
         iqSwapMenuItem->Check(swap_state);
+    } else if (event.GetId() == wxID_AGC_CONTROL) {
+        if (!wxGetApp().getAGCMode()) {
+            wxGetApp().setAGCMode(true);
+            gainSpacerItem->Show(false);
+            gainSizerItem->Show(false);
+            demodTray->Layout();
+        } else {
+            wxGetApp().setAGCMode(false);
+            gainSpacerItem->Show(true);
+            gainSizerItem->Show(true);
+            gainSizerItem->SetMinSize(wxGetApp().getDevice()->getRxChannel()->getGains().size()*40,0);
+            demodTray->Layout();
+            gainCanvas->updateGainUI();
+            gainCanvas->Refresh();
+            gainCanvas->Refresh();
+        }
     } else if (event.GetId() == wxID_SDR_DEVICES) {
         wxGetApp().deviceSelector();
     } else if (event.GetId() == wxID_SET_PPM) {
@@ -554,6 +596,9 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
     if (event.GetId() >= wxID_THEME_DEFAULT && event.GetId() <= wxID_THEME_RADAR) {
     	demodTuner->Refresh();
     	demodModeSelector->Refresh();
+        waterfallSpeedMeter->Refresh();
+        spectrumAvgMeter->Refresh();
+        gainCanvas->setThemeColors();
     }
 
     switch (event.GetId()) {

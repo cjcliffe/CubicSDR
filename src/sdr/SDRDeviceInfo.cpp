@@ -11,6 +11,10 @@ SDRDeviceRange::SDRDeviceRange(double low, double high) {
     this->high = high;
 }
 
+SDRDeviceRange::SDRDeviceRange(std::string name, double low, double high) : SDRDeviceRange(low, high) {
+    this->name = name;
+}
+
 double SDRDeviceRange::getLow() {
     return low;
 }
@@ -22,6 +26,14 @@ double SDRDeviceRange::getHigh() {
 }
 void SDRDeviceRange::setHigh(double high) {
     this->high = high;
+}
+
+std::string SDRDeviceRange::getName() {
+    return this->name;
+}
+
+void SDRDeviceRange::setName(std::string name) {
+    this->name = name;
 }
 
 SDRDeviceChannel::SDRDeviceChannel() {
@@ -79,6 +91,18 @@ SDRDeviceRange &SDRDeviceChannel::getFreqRange() {
 
 SDRDeviceRange &SDRDeviceChannel::getRFRange() {
     return rangeRF;
+}
+
+void SDRDeviceChannel::addGain(SDRDeviceRange range) {
+    gainInfo.push_back(range);
+}
+
+std::vector<SDRDeviceRange> &SDRDeviceChannel::getGains() {
+    return gainInfo;
+}
+
+void SDRDeviceChannel::addGain(std::string name, SoapySDR::Range range) {
+    gainInfo.push_back(SDRDeviceRange(name,range.minimum(),range.maximum()));
 }
 
 std::vector<long> &SDRDeviceChannel::getSampleRates() {

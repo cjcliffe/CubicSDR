@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.8)
 
 SET(CUBICSDR_VERSION_MAJOR "0")
 SET(CUBICSDR_VERSION_MINOR "1")
-SET(CUBICSDR_VERSION_PATCH "13")
+SET(CUBICSDR_VERSION_PATCH "14")
 SET(CUBICSDR_VERSION_REL "alpha")
 SET(CUBICSDR_VERSION "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}-${CUBICSDR_VERSION_REL}")
 
@@ -237,6 +237,7 @@ SET (cubicsdr_sources
 	src/visual/ScopeContext.cpp
 	src/visual/SpectrumCanvas.cpp
 	src/visual/WaterfallCanvas.cpp
+    src/visual/GainCanvas.cpp
 	src/process/VisualProcessor.cpp
 	src/process/ScopeVisualProcessor.cpp
 	src/process/SpectrumVisualProcessor.cpp
@@ -296,6 +297,7 @@ SET (cubicsdr_headers
 	src/visual/ScopeContext.h
 	src/visual/SpectrumCanvas.h
 	src/visual/WaterfallCanvas.h
+    src/visual/GainCanvas.h
 	src/process/VisualProcessor.h
 	src/process/ScopeVisualProcessor.h
 	src/process/SpectrumVisualProcessor.h

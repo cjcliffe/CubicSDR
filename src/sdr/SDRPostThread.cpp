@@ -332,6 +332,18 @@ void SDRPostThread::run() {
                 }
             }
             
+            bool doUpdate = false;
+            for (int j = 0; j < nRunDemods; j++) {
+                DemodulatorInstance *demod = runDemods[j];
+                if (abs(frequency - demod->getFrequency()) > (sampleRate / 2)) {
+                    doUpdate = true;
+                }
+            }
+            
+            if (doUpdate) {
+                updateActiveDemodulators();
+            }
+            
             busy_demod.unlock();
         }
         data_in->decRefCount();

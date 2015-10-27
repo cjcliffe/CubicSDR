@@ -108,6 +108,12 @@ public:
     void setDeviceSelectorClosed();
 	bool isDeviceSelectorOpen();
     
+    void setAGCMode(bool mode);
+    bool getAGCMode();
+
+    void setGain(std::string name, float gain_in);
+    float getGain(std::string name);
+
 private:
     AppFrame *appframe;
     AppConfig config;
@@ -121,6 +127,7 @@ private:
     int ppm, snap;
     long long sampleRate;
     int directSamplingMode;
+    std::atomic_bool agcMode;
 
     SDRThread *sdrThread;
     SDREnumerator *sdrEnum;

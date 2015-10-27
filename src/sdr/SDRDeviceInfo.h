@@ -36,13 +36,17 @@ class SDRDeviceRange {
 public:
     SDRDeviceRange();
     SDRDeviceRange(double low, double high);
+    SDRDeviceRange(std::string name, double low, double high);
     
     double getLow();
     void setLow(double low);
     double getHigh();
     void setHigh(double high);
+    std::string getName();
+    void setName(std::string name);
     
 private:
+    std::string name;
     double low, high;
 };
 
@@ -62,6 +66,10 @@ public:
     
     bool isRx();
     void setRx(bool rx);
+    
+    void addGain(SDRDeviceRange range);
+    void addGain(std::string name, SoapySDR::Range range);
+    std::vector<SDRDeviceRange> &getGains();
     
     SDRDeviceRange &getGain();
     SDRDeviceRange &getLNAGain();
@@ -89,6 +97,7 @@ private:
     std::vector<long> sampleRates;
     std::vector<long long> filterBandwidths;
     SoapySDR::ArgInfoList streamArgInfo;
+    std::vector<SDRDeviceRange> gainInfo;
 };
 
 

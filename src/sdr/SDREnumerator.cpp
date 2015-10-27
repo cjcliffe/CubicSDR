@@ -167,6 +167,12 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
                 
                 chan->setStreamArgsInfo(device->getStreamArgsInfo(SOAPY_SDR_RX, i));
                 
+                std::vector<std::string> gainNames = device->listGains(SOAPY_SDR_RX, i);
+                
+                for (std::vector<std::string>::iterator gname = gainNames.begin(); gname!= gainNames.end(); gname++) {
+                    chan->addGain((*gname),device->getGainRange(SOAPY_SDR_RX, i, (*gname)));
+                }
+                
                 dev->addChannel(chan);
             }
             

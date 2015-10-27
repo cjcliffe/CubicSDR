@@ -3,6 +3,7 @@
 #include <wx/frame.h>
 #include <wx/panel.h>
 #include <wx/splitter.h>
+#include <wx/sizer.h>
 
 #include "PrimaryGLContext.h"
 
@@ -12,6 +13,7 @@
 #include "MeterCanvas.h"
 #include "TuningCanvas.h"
 #include "ModeSelectorCanvas.h"
+#include "GainCanvas.h"
 #include "FFTVisualDataThread.h"
 #include "SDRDeviceInfo.h"
 //#include "UITestCanvas.h"
@@ -27,6 +29,7 @@
 #define wxID_SET_DS_Q 2006
 #define wxID_SET_SWAP_IQ 2007
 #define wxID_SDR_DEVICES 2008
+#define wxID_AGC_CONTROL 2009
 
 #define wxID_MAIN_SPLITTER 2050
 #define wxID_VIS_SPLITTER 2051
@@ -83,7 +86,10 @@ private:
     MeterCanvas *spectrumAvgMeter;
     MeterCanvas *waterfallSpeedMeter;
     ModeSelectorCanvas *demodMuteButton;
+    GainCanvas *gainCanvas;
+    wxSizerItem *gainSizerItem, *gainSpacerItem;
     wxSplitterWindow *mainVisSplitter, *mainSplitter;
+    wxBoxSizer *demodTray;
     
     DemodulatorInstance *activeDemodulator;
 
@@ -96,6 +102,7 @@ private:
     std::map<int, wxMenuItem *> directSamplingMenuItems;
     wxMenuItem *iqSwapMenuItem;
     wxMenu *sampleRateMenu;
+    wxMenuItem *agcMenuItem;
     std::vector<long> sampleRates;
     
     std::string currentSessionFile;

@@ -33,6 +33,10 @@ SDRThread::SDRThread() : IOThread() {
     numChannels.store(8);
     hasDirectSampling.store(false);
     hasIQSwap.store(false);
+    
+    agc_mode.store(true);
+    agc_mode_changed.store(false);
+    gain_value_changed.store(false);
 }
 
 SDRThread::~SDRThread() {
@@ -90,7 +94,7 @@ void SDRThread::init() {
         hasIQSwap.store(true);
     }
     
-    device->setGainMode(SOAPY_SDR_RX,0,true);
+    device->setGainMode(SOAPY_SDR_RX,0,agc_mode.load());
     
     numChannels.store(getOptimalChannelCount(sampleRate.load()));
     numElems.store(getOptimalElementCount(sampleRate.load(), 30));
@@ -152,6 +156,8 @@ void SDRThread::readLoop() {
         return;
     }
     
+    updateGains();
+
     while (!terminated.load()) {
         if (offset_changed.load()) {
             if (!freq_changed.load()) {
@@ -186,10 +192,46 @@ void SDRThread::readLoop() {
             device->writeSetting("iq_swap", iq_swap.load()?"true":"false");
             iq_swap_changed.store(false);
         }
+        if (agc_mode_changed.load()) {
+            SDRDeviceInfo *devInfo = deviceInfo.load();
+
+            device->setGainMode(SOAPY_SDR_RX,devInfo->getRxChannel()->getChannel(),agc_mode.load());
+            agc_mode_changed.store(false);
+            if (!agc_mode.load()) {
+                updateGains();
+            }
+        }
+        if (gain_value_changed.load() && !agc_mode.load()) {
+            SDRDeviceInfo *devInfo = deviceInfo.load();
+
+            for (std::map<std::string,std::atomic_bool>::iterator gci = gainChanged.begin(); gci != gainChanged.end(); gci++) {
+                if (gci->second.load()) {
+                    device->setGain(SOAPY_SDR_RX, devInfo->getRxChannel()->getChannel(), gci->first, gainValues[gci->first]);
+                    gainChanged[gci->first] = false;
+                }
+            }
+            
+            gain_value_changed.store(false);
+        }
         
         readStream(iqDataOutQueue);
     }
     buffers.purge();
+}
+
+void SDRThread::updateGains() {
+    SDRDeviceInfo *devInfo = deviceInfo.load();
+    
+    gainValues.erase(gainValues.begin(),gainValues.end());
+    gainChanged.erase(gainChanged.begin(),gainChanged.end());
+    
+    std::vector<SDRDeviceRange> gains = devInfo->getRxChannel()->getGains();
+    for (std::vector<SDRDeviceRange>::iterator gi = gains.begin(); gi != gains.end(); gi++) {
+        gainValues[(*gi).getName()] = device->getGain(SOAPY_SDR_RX, devInfo->getRxChannel()->getChannel(), (*gi).getName());
+        gainChanged[(*gi).getName()] = false;
+    }
+    
+    gain_value_changed.store(false);
 }
 
 
@@ -319,4 +361,23 @@ void SDRThread::setIQSwap(bool iqSwap) {
 
 bool SDRThread::getIQSwap() {
     return iq_swap.load();
+}
+
+void SDRThread::setAGCMode(bool mode) {
+    agc_mode.store(mode);
+    agc_mode_changed.store(true);
+}
+
+bool SDRThread::getAGCMode() {
+    return agc_mode.load();
+}
+
+void SDRThread::setGain(std::string name, float value) {
+    gainValues[name].store(value);
+    gainChanged[name].store(true);
+    gain_value_changed.store(true);
+}
+
+float SDRThread::getGain(std::string name) {
+    return gainValues[name].load();
 }

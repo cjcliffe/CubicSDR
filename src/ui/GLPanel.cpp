@@ -5,7 +5,7 @@
 
 using namespace CubicVR;
 
-GLPanel::GLPanel() : fillType(GLPANEL_FILL_SOLID), contentsVisible(true), transform(mat4::identity()) {
+GLPanel::GLPanel() : fillType(GLPANEL_FILL_SOLID), contentsVisible(true), visible(true), transform(mat4::identity()) {
     pos[0] = 0.0f;
     pos[1] = 0.0f;
     rot[0] = 0.0f;
@@ -19,6 +19,8 @@ GLPanel::GLPanel() : fillType(GLPANEL_FILL_SOLID), contentsVisible(true), transf
     setCoordinateSystem(GLPANEL_Y_UP);
     setMarginPx(0);
     setBorderPx(0);
+    srcBlend = GL_SRC_ALPHA;
+    dstBlend = GL_ONE_MINUS_SRC_ALPHA;
 }
 
 void GLPanel::genArrays() {
@@ -174,6 +176,19 @@ void GLPanel::setCoordinateSystem(GLPanelCoordinateSystem coord_in) {
     genArrays();
 }
 
+bool GLPanel::hitTest(CubicVR::vec2 pos, CubicVR::vec2 &result) {
+    CubicVR::vec4 hitPos = CubicVR::mat4::vec4_multiply(CubicVR::vec4(pos.x, pos.y, 0.0, 1.0), transformInverse);
+    
+    if (hitPos.x >= -1.0 && hitPos.x <= 1.0 && hitPos.y >= -1.0 && hitPos.y <= 1.0) {
+        result.x = hitPos.x;
+        result.y = hitPos.y;
+        return true;
+    }
+    
+    return false;
+}
+
+
 void GLPanel::setFill(GLPanelFillType fill_mode) {
     fillType = fill_mode;
     genArrays();
@@ -208,6 +223,11 @@ void GLPanel::setBorderPx(float bordl, float bordr, float bordt, float bordb) {
     borderPx.right = bordr;
     borderPx.top = bordt;
     borderPx.bottom = bordb;
+}
+
+void GLPanel::setBlend(GLuint src, GLuint dst) {
+    srcBlend = src;
+    dstBlend = dst;
 }
 
 void GLPanel::addChild(GLPanel *childPanel) {
@@ -278,6 +298,8 @@ void GLPanel::calcTransform(mat4 transform_in) {
     if (marginPx) {
         transform *= mat4::scale(1.0 - marginPx * 2.0 * pvec.x / size[0], 1.0 - marginPx * 2.0 * pvec.y / size[1], 1);
     }
+    
+    transformInverse = CubicVR::mat4::inverse(transform);
 }
 
 void GLPanel::draw() {
@@ -285,9 +307,9 @@ void GLPanel::draw() {
 
     glLoadMatrixf(transform);
     
-    if (fillType != GLPANEL_FILL_NONE) {
+    if (fillType != GLPANEL_FILL_NONE && visible) {
         glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glBlendFunc(srcBlend, dstBlend);
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
         glVertexPointer(2, GL_FLOAT, 0, &glPoints[0]);

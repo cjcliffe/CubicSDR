@@ -74,8 +74,16 @@ public:
     
     void setIQSwap(bool iqSwap);
     bool getIQSwap();
- 
+    
+    void setAGCMode(bool mode);
+    bool getAGCMode();
+
+    void setGain(std::string name, float value);
+    float getGain(std::string name);
+    
 protected:
+    void updateGains();
+    
     SoapySDR::Stream *stream;
     SoapySDR::Device *device;
     void *buffs[1];
@@ -88,6 +96,8 @@ protected:
     std::atomic_llong frequency, offset;
     std::atomic_int ppm, direct_sampling_mode, numElems, numChannels;
     std::atomic_bool hasPPM, hasHardwareDC, hasDirectSampling, hasIQSwap;
-    std::atomic_bool iq_swap, rate_changed, freq_changed, offset_changed,
-        ppm_changed, direct_sampling_changed, device_changed, iq_swap_changed;
+    std::atomic_bool iq_swap, agc_mode, rate_changed, freq_changed, offset_changed,
+        ppm_changed, direct_sampling_changed, device_changed, iq_swap_changed, agc_mode_changed, gain_value_changed;
+    std::map<std::string,std::atomic<float> > gainValues;
+    std::map<std::string,std::atomic_bool> gainChanged;
 };

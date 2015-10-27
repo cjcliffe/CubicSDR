@@ -115,6 +115,7 @@ long long strToFrequency(std::string freqStr) {
 CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE), directSamplingMode(0),
     sdrThread(NULL), sdrPostThread(NULL), spectrumVisualThread(NULL), demodVisualThread(NULL), pipeSDRIQData(NULL), pipeIQVisualData(NULL), pipeAudioVisualData(NULL), t_SDR(NULL), t_PostSDR(NULL) {
         sampleRateInitialized.store(false);
+        agcMode.store(true);
 }
 
 
@@ -597,3 +598,22 @@ void CubicSDR::setDeviceSelectorClosed() {
 bool CubicSDR::isDeviceSelectorOpen() {
 	return deviceSelectorOpen.load();
 }
+
+void CubicSDR::setAGCMode(bool mode) {
+    agcMode.store(mode);
+    sdrThread->setAGCMode(mode);
+}
+
+bool CubicSDR::getAGCMode() {
+    return agcMode.load();
+}
+
+
+void CubicSDR::setGain(std::string name, float gain_in) {
+    sdrThread->setGain(name,gain_in);
+}
+
+float CubicSDR::getGain(std::string name) {
+    return sdrThread->getGain(name);
+}
+
