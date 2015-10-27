@@ -300,9 +300,9 @@ void SDRPostThread::run() {
                             dcBuf.resize(chanDataSize);
                         }
                         for (int j = 0; j < chanDataSize; j++) {
-                            idx += numChannels;
                             dcBuf[j] = dataOut[idx];
-                        }
+							idx += numChannels;
+						}
                         iirfilt_crcf_execute_block(dcFilter, &dcBuf[0], chanDataSize, &demodDataOut->data[0]);
                     } else {
                         for (int j = 0; j < chanDataSize; j++) {

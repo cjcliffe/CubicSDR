@@ -166,11 +166,6 @@ void ScopeVisualProcessor::process() {
                     fft_floor = fft_result_maa[i];
                 }
             }
-            
-			if (fft_floor == fft_ceil) {
-				audioInputData->decRefCount();
-				return;
-			}
 
             fft_ceil_ma = fft_ceil_ma + (fft_ceil - fft_ceil_ma) * 0.05;
             fft_ceil_maa = fft_ceil_maa + (fft_ceil_ma - fft_ceil_maa) * 0.05;
