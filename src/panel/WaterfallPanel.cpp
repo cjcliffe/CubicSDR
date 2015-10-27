@@ -177,7 +177,7 @@ void WaterfallPanel::drawPanelContents() {
     float half_pixel = 1.0 / viewWidth;
     float half_texel = 1.0 / (float) half_fft_size;
     float vtexel = 1.0 / (float) waterfall_lines;
-    float vofs = (float) (waterfall_ofs[0] + 1) * vtexel;
+    float vofs = (float) (waterfall_ofs[0]) * vtexel;
     
     glBindTexture(GL_TEXTURE_2D, waterfall[0]);
     glBegin (GL_QUADS);
@@ -191,7 +191,7 @@ void WaterfallPanel::drawPanelContents() {
     glVertex3f(-1.0, 1.0, 0.0);
     glEnd();
     
-    vofs = (float) (waterfall_ofs[1] + 1) * vtexel;
+    vofs = (float) (waterfall_ofs[1]) * vtexel;
     glBindTexture(GL_TEXTURE_2D, waterfall[1]);
     glBegin(GL_QUADS);
     glTexCoord2f(0.0 + half_texel, 1.0 + vofs);
