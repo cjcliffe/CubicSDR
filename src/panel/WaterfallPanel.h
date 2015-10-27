@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GLPanel.h"
+#include <atomic>
 
 class WaterfallPanel : public GLPanel {
 public:
