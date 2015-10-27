@@ -65,8 +65,7 @@ void DemodulatorThread::run() {
     iqAutoGain = agc_crcf_create();
     agc_crcf_set_bandwidth(iqAutoGain, 0.1);
 
-    AudioThreadInput *ati_vis = new AudioThreadInput;
-    ati_vis->data.reserve(DEMOD_VIS_SIZE);
+    ReBuffer<AudioThreadInput> audioVisBuffers;
 
     std::cout << "Demodulator thread started.." << std::endl;
 
@@ -358,8 +357,8 @@ void DemodulatorThread::run() {
         }
 
         if (ati && audioVisOutputQueue != NULL && audioVisOutputQueue->empty()) {
-
-            ati_vis->busy_update.lock();
+			AudioThreadInput *ati_vis = audioVisBuffers.getBuffer();
+			ati_vis->setRefCount(1);
             ati_vis->sampleRate = inp->sampleRate;
             ati_vis->inputRate = inp->sampleRate;
             
@@ -404,7 +403,6 @@ void DemodulatorThread::run() {
 //            std::cout << "Signal: " << agc_crcf_get_signal_level(agc) << " -- " << agc_crcf_get_rssi(agc) << "dB " << std::endl;
             }
 
-            ati_vis->busy_update.unlock();
             audioVisOutputQueue->push(ati_vis);
         }
 
@@ -495,7 +493,7 @@ void DemodulatorThread::run() {
         AudioThreadInput *dummy_vis;
         audioVisOutputQueue->pop(dummy_vis);
     }
-    delete ati_vis;
+	audioVisBuffers.purge();
 
     DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_TERMINATED);
     tCmd.context = this;

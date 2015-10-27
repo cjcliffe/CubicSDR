@@ -6,6 +6,8 @@ ScopeVisualProcessor::ScopeVisualProcessor(): fftInData(NULL), fftwOutput(NULL),
     scopeEnabled.store(true);
     spectrumEnabled.store(true);
     fft_average_rate = 0.65;
+	fft_ceil_ma = fft_ceil_maa = 0;
+	fft_floor_ma = fft_floor_maa = 0;
 }
 
 ScopeVisualProcessor::~ScopeVisualProcessor() {
@@ -66,9 +68,7 @@ void ScopeVisualProcessor::process() {
             audioInputData->decRefCount();
             return;
         }
-        
-        audioInputData->busy_update.lock();
-        
+                
         ScopeRenderData *renderData = NULL;
         
         if (scopeEnabled) {
@@ -117,7 +117,6 @@ void ScopeVisualProcessor::process() {
         }
         
         if (spectrumEnabled) {
-            renderData = outputBuffers.getBuffer();
             iMax = audioInputData->data.size();
 
             if (audioInputData->channels==1) {
@@ -157,9 +156,9 @@ void ScopeVisualProcessor::process() {
             }
             
             for (i = 0; i < (fftSize/2); i++) {
-                fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * fft_average_rate;
                 fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * fft_average_rate;
-                
+				fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * fft_average_rate;
+
                 if (fft_result_maa[i] > fft_ceil) {
                     fft_ceil = fft_result_maa[i];
                 }
@@ -168,6 +167,11 @@ void ScopeVisualProcessor::process() {
                 }
             }
             
+			if (fft_floor == fft_ceil) {
+				audioInputData->decRefCount();
+				return;
+			}
+
             fft_ceil_ma = fft_ceil_ma + (fft_ceil - fft_ceil_ma) * 0.05;
             fft_ceil_maa = fft_ceil_maa + (fft_ceil_ma - fft_ceil_maa) * 0.05;
             
@@ -180,6 +184,8 @@ void ScopeVisualProcessor::process() {
                 outSize = (int)floor((float)outSize * ((float)audioInputData->sampleRate/(float)audioInputData->inputRate));
             }
             
+			renderData = outputBuffers.getBuffer();
+
             if (renderData->waveform_points.size() != outSize*2) {
                 renderData->waveform_points.resize(outSize*2);
             }
@@ -199,6 +205,6 @@ void ScopeVisualProcessor::process() {
             distribute(renderData);
         }
         
-        audioInputData->busy_update.unlock();
+        audioInputData->decRefCount();
     }
 }

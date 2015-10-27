@@ -306,9 +306,9 @@ void SDRPostThread::run() {
                         iirfilt_crcf_execute_block(dcFilter, &dcBuf[0], chanDataSize, &demodDataOut->data[0]);
                     } else {
                         for (int j = 0; j < chanDataSize; j++) {
-                            idx += numChannels;
                             demodDataOut->data[j] = dataOut[idx];
-                        }
+							idx += numChannels;
+						}
                     }
 
 //                    if (doVis) {
