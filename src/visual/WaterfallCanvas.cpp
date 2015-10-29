@@ -146,6 +146,11 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     if (freqMove != 0.0) {
         long long newFreq = getCenterFrequency() + (long long)((long double)getBandwidth()*freqMove) * 0.01;
         
+        long long minFreq = bandwidth/2;
+        if (newFreq < minFreq) {
+            newFreq = minFreq;
+        }
+
         updateCenterFrequency(newFreq);
         
         if (!freqMoving) {
@@ -434,7 +439,7 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         return;
     }
 
-    long long minFreq = wxGetApp().getSampleRate()/2;
+    long long minFreq = bandwidth/2;
     if (freq < minFreq) {
         freq = minFreq;
     }
