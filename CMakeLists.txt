@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.8)
 
 SET(CUBICSDR_VERSION_MAJOR "0")
 SET(CUBICSDR_VERSION_MINOR "1")
-SET(CUBICSDR_VERSION_PATCH "14")
+SET(CUBICSDR_VERSION_PATCH "15")
 SET(CUBICSDR_VERSION_REL "alpha")
 SET(CUBICSDR_VERSION "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}-${CUBICSDR_VERSION_REL}")
 
@@ -35,6 +35,22 @@ macro(configure_files srcDir destDir globStr)
     endforeach(templateFile)
 endmacro(configure_files)
 
+macro(configure_install_files srcDir destDir globStr)
+    message(STATUS "Copying ${srcDir}/${globStr} to directory ${destDir}")
+    make_directory(${destDir})
+
+    file(GLOB templateFiles RELATIVE ${srcDir} ${srcDir}/${globStr})
+    foreach(templateFile ${templateFiles})
+        set(srcTemplatePath ${srcDir}/${templateFile})
+        message(STATUS "Configuring file ${templateFile}")
+        if(NOT IS_DIRECTORY ${srcTemplatePath})
+            configure_file(
+                    ${srcTemplatePath}
+                    ${destDir}/${templateFile}
+                    COPYONLY)
+        endif(NOT IS_DIRECTORY ${srcTemplatePath})
+    endforeach(templateFile)
+endmacro(configure_files)
 
 macro(configure_files_recurse srcDir destDir)
     message(STATUS "Configuring directory ${destDir}")
@@ -396,7 +412,8 @@ IF (NOT BUNDLE_APP)
     configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.png")
     configure_files(${PROJECT_SOURCE_DIR}/icon ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} CubicSDR.ico)
 	IF(MSVC)
-    configure_files(${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM}/ ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} libfftw3f-3.dll)
+		configure_files(${SOAPY_SDR_ROOT}/bin/ ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
+		configure_files(${SOAPY_SDR_ROOT}/lib/SoapySDR/modules/ ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME}/modules/ "*.dll")
 	ENDIF()
     add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers} ${RES_FILES})
     target_link_libraries(CubicSDR ${LIQUID_LIB} ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
@@ -500,6 +517,8 @@ IF (APPLE AND BUNDLE_APP)
 ENDIF (APPLE AND BUNDLE_APP)
 
 IF (WIN32 AND BUILD_INSTALLER)
+    set(BUNDLE_SOAPY_MODS OFF CACHE BOOL "Bundle local SoapySDR modules")
+
 	set(CPACK_GENERATOR NSIS)
 	set(CPACK_PACKAGE_NAME "CubicSDR")
 	set(CPACK_PACKAGE_VENDOR "cubicsdr.com")
@@ -522,6 +541,7 @@ IF (WIN32 AND BUILD_INSTALLER)
 	
 	set(CPACK_NSIS_EXECUTABLES_DIRECTORY ".") 
 	install(TARGETS CubicSDR RUNTIME DESTINATION .)
+
 	install(FILES 
         ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12.fnt
         ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16.fnt
@@ -537,24 +557,24 @@ IF (WIN32 AND BUILD_INSTALLER)
         ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48_0.png
         ${PROJECT_SOURCE_DIR}/icon/CubicSDR.ico
 		${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM}/libfftw3f-3.dll
+		${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/libliquid.dll
 		DESTINATION .)
-	IF (MSVC)
-    	install(FILES 
- #   		${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/libliquid.dll
- #   		${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/msvc/${EX_PLATFORM}/libusb-1.0.dll
-            ${OTHER_INSTALL_FILES}
-    		DESTINATION .)
-	ELSE (MSVC)
-    	install(FILES 
- #   		${PROJECT_SOURCE_DIR}/external/liquid-dsp/gcc/${EX_PLATFORM}/libliquid.dll    		
- #   		${PROJECT_SOURCE_DIR}/external/rtl-sdr-release/gcc/${EX_PLATFORM}/libusb-1.0.dll
-            ${OTHER_INSTALL_FILES}
-    		DESTINATION .)
-	ENDIF(MSVC)
+
+	IF (BUNDLE_SOAPY_MODS)
+		ADD_DEFINITIONS(
+			-DBUNDLE_SOAPY_MODS=1
+		)
+		file(GLOB SOAPY_BINS ${SOAPY_SDR_ROOT}/bin/*.dll)
+		file(GLOB SOAPY_MODS ${SOAPY_SDR_ROOT}/lib/SoapySDR/modules/*.dll)
+		message(STATUS "SOAPY_BINS: ${SOAPY_BINS}")
+		message(STATUS "SOAPY_MODS: ${SOAPY_MODS}")
+		install(FILES ${SOAPY_BINS} DESTINATION .)
+		install(FILES ${SOAPY_MODS} DESTINATION modules)
+	ENDIF(BUNDLE_SOAPY_MODS)
 	
 	IF(MSVC AND EX_PLATFORM EQUAL 32)
 	install(FILES 
-#		${PROJECT_SOURCE_DIR}/external/msvc/${EX_PLATFORM_NAME}/libgcc_s_dw2-1.dll
+		${PROJECT_SOURCE_DIR}/external/msvc/${EX_PLATFORM_NAME}/libgcc_s_dw2-1.dll
 		DESTINATION .)
 	ENDIF(MSVC AND EX_PLATFORM EQUAL 32)
 
@@ -572,7 +592,7 @@ ENDIF (WIN32 AND BUILD_INSTALLER)
 
 IF (UNIX AND BUILD_DEB) 
 
-        set(CPACK_GENERATOR DEB)
+    set(CPACK_GENERATOR DEB)
 	set(CPACK_PACKAGE_NAME "CubicSDR")
 	SET(CPACK_DEBIAN_PACKAGE_DEPENDS " libfftw3-single3, libwxgtk3.0-0, libpulse0")
  	SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "Charles J. Cliffe <cj@cubicproductions.com>")
