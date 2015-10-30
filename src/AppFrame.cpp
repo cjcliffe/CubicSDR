@@ -508,6 +508,10 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         wxGetApp().saveConfig();
         iqSwapMenuItem->Check(swap_state);
     } else if (event.GetId() == wxID_AGC_CONTROL) {
+        if (wxGetApp().getDevice() == NULL) {
+            agcMenuItem->Check();
+            return;
+        }
         if (!wxGetApp().getAGCMode()) {
             wxGetApp().setAGCMode(true);
             gainSpacerItem->Show(false);
