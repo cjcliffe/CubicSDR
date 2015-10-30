@@ -101,7 +101,9 @@ AppFrame::AppFrame() :
     demodSignalMeter = new MeterCanvas(demodPanel, attribList);
     demodSignalMeter->setMax(0.5);
     demodSignalMeter->setHelpTip("Current Signal Level.  Click / Drag to set Squelch level.");
+    demodSignalMeter->SetMinSize(wxSize(12,24));
     demodTray->Add(demodSignalMeter, 1, wxEXPAND | wxALL, 0);
+
 
     demodTray->AddSpacer(1);
 
@@ -115,6 +117,7 @@ AppFrame::AppFrame() :
 
     demodTuner = new TuningCanvas(demodPanel, attribList);
     demodTuner->setHelpTip("Testing tuner");
+    demodTuner->SetMinClientSize(wxSize(200,24));
     demodScopeTray->Add(demodTuner, 1, wxEXPAND | wxALL, 0);
 
     demodTray->Add(demodScopeTray, 30, wxEXPAND | wxALL, 0);
@@ -127,7 +130,9 @@ AppFrame::AppFrame() :
     demodGainMeter->setMax(2.0);
     demodGainMeter->setHelpTip("Current Demodulator Gain Level.  Click / Drag to set Gain level.");
     demodGainMeter->setShowUserInput(false);
+    demodGainMeter->SetMinSize(wxSize(12,24));
     demodGainTray->Add(demodGainMeter, 8, wxEXPAND | wxALL, 0);
+
 
     demodGainTray->AddSpacer(1);
 
@@ -138,7 +143,8 @@ AppFrame::AppFrame() :
     demodMuteButton->setHelpTip("Demodulator Mute Toggle");
     demodMuteButton->setToggleMode(true);
 	demodMuteButton->setSelection(-1);
-          
+    demodMuteButton->SetMinSize(wxSize(12,24));
+            
     demodGainTray->Add(demodMuteButton, 1, wxEXPAND | wxALL, 0);
 
     demodTray->Add(demodGainTray, 1, wxEXPAND | wxALL, 0);
@@ -168,6 +174,8 @@ AppFrame::AppFrame() :
     spectrumAvgMeter->setMax(1.0);
     spectrumAvgMeter->setLevel(0.65);
     spectrumAvgMeter->setShowUserInput(false);
+    spectrumAvgMeter->SetMinSize(wxSize(12,24));
+
 
     spectrumSizer->Add(spectrumCanvas, 63, wxEXPAND | wxALL, 0);
     spectrumSizer->AddSpacer(1);
@@ -196,6 +204,7 @@ AppFrame::AppFrame() :
     waterfallSpeedMeter->setMax(sqrt(1024));
     waterfallSpeedMeter->setLevel(sqrt(DEFAULT_WATERFALL_LPS));
     waterfallSpeedMeter->setShowUserInput(false);
+    waterfallSpeedMeter->SetMinSize(wxSize(12,24));
 
     wfSizer->Add(waterfallCanvas, 63, wxEXPAND | wxALL, 0);
     wfSizer->AddSpacer(1);
