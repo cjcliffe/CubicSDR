@@ -35,23 +35,6 @@ macro(configure_files srcDir destDir globStr)
     endforeach(templateFile)
 endmacro(configure_files)
 
-macro(configure_install_files srcDir destDir globStr)
-    message(STATUS "Copying ${srcDir}/${globStr} to directory ${destDir}")
-    make_directory(${destDir})
-
-    file(GLOB templateFiles RELATIVE ${srcDir} ${srcDir}/${globStr})
-    foreach(templateFile ${templateFiles})
-        set(srcTemplatePath ${srcDir}/${templateFile})
-        message(STATUS "Configuring file ${templateFile}")
-        if(NOT IS_DIRECTORY ${srcTemplatePath})
-            configure_file(
-                    ${srcTemplatePath}
-                    ${destDir}/${templateFile}
-                    COPYONLY)
-        endif(NOT IS_DIRECTORY ${srcTemplatePath})
-    endforeach(templateFile)
-endmacro(configure_files)
-
 macro(configure_files_recurse srcDir destDir)
     message(STATUS "Configuring directory ${destDir}")
     make_directory(${destDir})
