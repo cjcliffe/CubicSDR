@@ -98,6 +98,8 @@ protected:
     std::atomic_bool hasPPM, hasHardwareDC, hasDirectSampling, hasIQSwap;
     std::atomic_bool iq_swap, agc_mode, rate_changed, freq_changed, offset_changed,
         ppm_changed, direct_sampling_changed, device_changed, iq_swap_changed, agc_mode_changed, gain_value_changed;
-    std::map<std::string,std::atomic<float> > gainValues;
-    std::map<std::string,std::atomic_bool> gainChanged;
+
+    std::mutex gain_busy;
+    std::map<std::string, float> gainValues;
+    std::map<std::string, bool> gainChanged;
 };

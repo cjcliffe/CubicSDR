@@ -204,12 +204,14 @@ void SDRThread::readLoop() {
         if (gain_value_changed.load() && !agc_mode.load()) {
             SDRDeviceInfo *devInfo = deviceInfo.load();
 
-            for (std::map<std::string,std::atomic_bool>::iterator gci = gainChanged.begin(); gci != gainChanged.end(); gci++) {
-                if (gci->second.load()) {
+            gain_busy.lock();
+            for (std::map<std::string,bool>::iterator gci = gainChanged.begin(); gci != gainChanged.end(); gci++) {
+                if (gci->second) {
                     device->setGain(SOAPY_SDR_RX, devInfo->getRxChannel()->getChannel(), gci->first, gainValues[gci->first]);
                     gainChanged[gci->first] = false;
                 }
             }
+            gain_busy.unlock();
             
             gain_value_changed.store(false);
         }
@@ -373,11 +375,16 @@ bool SDRThread::getAGCMode() {
 }
 
 void SDRThread::setGain(std::string name, float value) {
-    gainValues[name].store(value);
-    gainChanged[name].store(true);
+    gain_busy.lock();
+    gainValues[name] = value;
+    gainChanged[name] = true;
     gain_value_changed.store(true);
+    gain_busy.unlock();
 }
 
 float SDRThread::getGain(std::string name) {
-    return gainValues[name].load();
+	gain_busy.lock();
+	float val = gainValues[name];
+	gain_busy.unlock();
+	return val;
 }
