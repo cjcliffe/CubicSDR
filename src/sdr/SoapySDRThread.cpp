@@ -81,7 +81,7 @@ void SDRThread::init() {
     if (chan->hasHardwareDC()) {
         hasHardwareDC.store(true);
 //        wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Found hardware DC offset correction support, internal disabled."));
-        device->setDCOffsetMode(SOAPY_SDR_RX, chan->getChannel(), false);
+        device->setDCOffsetMode(SOAPY_SDR_RX, chan->getChannel(), true);
     } else {
         hasHardwareDC.store(false);
     }
