@@ -34,7 +34,6 @@ SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *attribList) :
 
     glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this));
 
-    mouseTracker.setVertDragLock(true);
     visualDataQueue.set_max_num_items(1);
             
     SetCursor(wxCURSOR_SIZEWE);
@@ -214,6 +213,7 @@ void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
 }
 
 void SpectrumCanvas::OnMouseDown(wxMouseEvent& event) {
+	mouseTracker.setVertDragLock(true);
     InteractiveCanvas::OnMouseDown(event);
     SetCursor(wxCURSOR_CROSS);
 }
@@ -223,7 +223,8 @@ void SpectrumCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
 }
 
 void SpectrumCanvas::OnMouseReleased(wxMouseEvent& event) {
-    InteractiveCanvas::OnMouseReleased(event);
+	mouseTracker.setVertDragLock(false);
+	InteractiveCanvas::OnMouseReleased(event);
     SetCursor(wxCURSOR_SIZEWE);
 }
 
@@ -246,11 +247,13 @@ SpectrumVisualDataQueue *SpectrumCanvas::getVisualDataQueue() {
 }
 
 void SpectrumCanvas::OnMouseRightDown(wxMouseEvent& event) {
+	mouseTracker.setHorizDragLock(true);
     mouseTracker.OnMouseRightDown(event);
     scaleFactor = wxGetApp().getSpectrumProcessor()->getScaleFactor();
 }
 
 void SpectrumCanvas::OnMouseRightReleased(wxMouseEvent& event) {
+	mouseTracker.setHorizDragLock(false);
     if (!mouseTracker.getOriginDeltaMouseY()) {
         resetScaleFactor = true;
     }
