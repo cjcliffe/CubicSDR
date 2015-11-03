@@ -59,6 +59,7 @@ public:
     void OnThread(wxCommandEvent& event);
     void OnEventInput(wxThreadEvent& event);
     void initDeviceParams(SDRDeviceInfo *devInfo);
+    void updateDeviceParams();
 
     void saveSession(std::string fileName);
     bool loadSession(std::string fileName);
@@ -110,6 +111,8 @@ private:
     FFTVisualDataThread *waterfallDataThread;
     
     std::thread *t_FFTData;
+    SDRDeviceInfo *devInfo;
+    std::atomic_bool deviceChanged;
 
     wxDECLARE_EVENT_TABLE();
 };

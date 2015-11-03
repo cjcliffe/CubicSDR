@@ -416,7 +416,8 @@ AppFrame::AppFrame() :
 
     wxAcceleratorTable accel(3, entries);
     SetAcceleratorTable(accel);
-
+    deviceChanged.store(false);
+    devInfo = NULL;
     wxGetApp().deviceSelector();
             
 //    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
@@ -430,10 +431,25 @@ AppFrame::~AppFrame() {
 }
 
 void AppFrame::initDeviceParams(SDRDeviceInfo *devInfo) {
-    std::string deviceId = devInfo->getName();
+    this->devInfo = devInfo;
+    deviceChanged.store(true);
+}
 
-    DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
+void AppFrame::updateDeviceParams() {
     
+    if (!deviceChanged.load()) {
+        return;
+    }
+    
+    if (!devInfo) {
+        deviceChanged.store(false);
+        return;
+    }
+
+    std::string deviceId = devInfo->getName();
+    
+    DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
+
     int dsMode = devConfig->getDirectSampling();
     
     if (dsMode > 0 && dsMode <= 2) {
@@ -450,7 +466,7 @@ void AppFrame::initDeviceParams(SDRDeviceInfo *devInfo) {
     for (std::map<int, wxMenuItem *>::iterator i = sampleRateMenuItems.begin(); i != sampleRateMenuItems.end(); i++) {
         sampleRateMenu->Remove(i->first);
     }
-
+    
     sampleRateMenuItems.erase(sampleRateMenuItems.begin(),sampleRateMenuItems.end());
     
     int ofs = 0;
@@ -470,7 +486,7 @@ void AppFrame::initDeviceParams(SDRDeviceInfo *devInfo) {
     if (!checked) {
         sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Check(true);
     }
-
+    
     if (!wxGetApp().getAGCMode()) {
         gainSpacerItem->Show(true);
         gainSizerItem->Show(true);
@@ -486,6 +502,8 @@ void AppFrame::initDeviceParams(SDRDeviceInfo *devInfo) {
     }
     
     agcMenuItem->Check(wxGetApp().getAGCMode());
+    
+    deviceChanged.store(false);
 }
 
 
@@ -722,6 +740,10 @@ void AppFrame::OnThread(wxCommandEvent& event) {
 
 void AppFrame::OnIdle(wxIdleEvent& event) {
 
+    if (deviceChanged.load()) {
+        updateDeviceParams();
+    }
+    
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     if (demod) {
