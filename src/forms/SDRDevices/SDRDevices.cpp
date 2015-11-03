@@ -11,30 +11,7 @@ SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent ): devFrame( parent ) {
     m_useSelectedButton->Disable();
     m_deviceTimer.Start(250);
     
-    
-    // Add int property
-    m_propertyGrid->Append( new wxIntProperty("IntProperty", wxPG_LABEL, 12345678) );
-    // Add float property (value type is actually double)
-    m_propertyGrid->Append( new wxFloatProperty("FloatProperty", wxPG_LABEL, 12345.678) );
-    // Add a bool property
-    m_propertyGrid->Append( new wxBoolProperty("BoolProperty", wxPG_LABEL, false) );
-    // A string property that can be edited in a separate editor dialog.
-    m_propertyGrid->Append( new wxLongStringProperty("LongStringProperty",
-                                         wxPG_LABEL,
-                                         "This is much longer string than the "
-                                         "first one. Edit it by clicking the button."));
-    // String editor with dir selector button.
-    m_propertyGrid->Append( new wxDirProperty("DirProperty", wxPG_LABEL, ::wxGetUserHome()) );
-    // wxArrayStringProperty embeds a wxArrayString.
-    m_propertyGrid->Append( new wxArrayStringProperty("Label of ArrayStringProperty",
-                                          "NameOfArrayStringProp"));
-    // A file selector property.
-    m_propertyGrid->Append( new wxFileProperty("FileProperty", wxPG_LABEL, wxEmptyString) );
-    // Extra: set wild card for file property (format same as in wxFileDialog).
-    m_propertyGrid->SetPropertyAttribute( "FileProperty",
-                             wxPG_FILE_WILDCARD,
-                             "All files (*.*)|*.*" );
-}
+   }
 
 void SDRDevicesDialog::OnClose( wxCloseEvent& event ) {
     wxGetApp().setDeviceSelectorClosed();
@@ -45,7 +22,98 @@ void SDRDevicesDialog::OnDeleteItem( wxTreeEvent& event ) {
     event.Skip();
 }
 
+wxPGProperty *SDRDevicesDialog::addArgInfoProperty(wxPropertyGrid *pg, SoapySDR::ArgInfo arg) {
+    
+    wxPGProperty *prop = NULL;
+    
+    int intVal;
+    double floatVal;
+    std::vector<std::string>::iterator stringIter;
+    
+    switch (arg.type) {
+        case SoapySDR::ArgInfo::INT:
+            try {
+                intVal = std::stoi(arg.value);
+            } catch (std::invalid_argument e) {
+                intVal = 0;
+            }
+            prop = pg->Append( new wxIntProperty(arg.name, wxPG_LABEL, intVal) );
+            if (arg.range.minimum() != arg.range.maximum()) {
+                pg->SetPropertyAttribute( prop, wxPG_ATTR_MIN, arg.range.minimum());
+                pg->SetPropertyAttribute( prop, wxPG_ATTR_MAX, arg.range.maximum());
+            }
+            break;
+        case SoapySDR::ArgInfo::FLOAT:
+            try {
+                floatVal = std::stod(arg.value);
+            } catch (std::invalid_argument e) {
+                floatVal = 0;
+            }
+            prop = pg->Append( new wxFloatProperty(arg.name, wxPG_LABEL, floatVal) );
+            if (arg.range.minimum() != arg.range.maximum()) {
+                pg->SetPropertyAttribute( prop, wxPG_ATTR_MIN, arg.range.minimum());
+                pg->SetPropertyAttribute( prop, wxPG_ATTR_MAX, arg.range.maximum());
+            }
+            break;
+        case SoapySDR::ArgInfo::BOOL:
+            prop = pg->Append( new wxBoolProperty(arg.name, wxPG_LABEL, (arg.value=="true")) );
+            break;
+        case SoapySDR::ArgInfo::STRING:
+            if (arg.options.size()) {
+                intVal = 0;
+                prop = pg->Append( new wxEnumProperty(arg.name, wxPG_LABEL) );
+                for (stringIter = arg.options.begin(); stringIter != arg.options.end(); stringIter++) {
+                    prop->AddChoice((*stringIter));
+                    if ((*stringIter)==arg.value) {
+                        prop->SetChoiceSelection(intVal);
+                    }
+                    intVal++;
+                }
+            } else {
+                prop = pg->Append( new wxStringProperty(arg.name, wxPG_LABEL, arg.value) );
+            }
+            break;
+    }
+    
+    if (prop != NULL) {
+        prop->SetHelpString(arg.key + ": " + arg.description);
+    }
+    
+    return prop;
+}
+
 void SDRDevicesDialog::OnSelectionChanged( wxTreeEvent& event ) {
+    wxTreeItemId selId = devTree->GetSelection();
+
+    dev = getSelectedDevice(selId);
+
+    if (dev) {
+        m_propertyGrid->Clear();
+        m_propertyGrid->Append(new wxPropertyCategory("Run-time Settings"));
+        
+        SoapySDR::ArgInfoList::const_iterator args_i;
+
+        SoapySDR::ArgInfoList args = dev->getSettingsArgInfo();
+        
+        for (args_i = args.begin(); args_i != args.end(); args_i++) {
+            SoapySDR::ArgInfo arg = (*args_i);
+            addArgInfoProperty(m_propertyGrid, arg);
+        }
+        
+        if (dev->getRxChannel()) {
+            args = dev->getRxChannel()->getStreamArgsInfo();
+
+            if (args.size()) {
+                m_propertyGrid->Append(new wxPropertyCategory("Stream Settings"));
+
+                for (args_i = args.begin(); args_i != args.end(); args_i++) {
+                    SoapySDR::ArgInfo arg = (*args_i);
+                    addArgInfoProperty(m_propertyGrid, arg);
+                }
+            }
+        }
+        
+    }
     event.Skip();
 }
 
@@ -70,12 +138,19 @@ void SDRDevicesDialog::OnAddRemote( wxMouseEvent& event ) {
 
 }
 
+SDRDeviceInfo *SDRDevicesDialog::getSelectedDevice(wxTreeItemId selId) {
+    devItems_i = devItems.find(selId);
+    if (devItems_i != devItems.end()) {
+        return devItems[selId];
+    }
+    return NULL;
+}
+
 void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event ) {
     wxTreeItemId selId = devTree->GetSelection();
     
-    devItems_i = devItems.find(selId);
-    if (devItems_i != devItems.end()) {
-        dev = devItems[selId];
+    dev = getSelectedDevice(selId);
+    if (dev != NULL) {
         wxGetApp().setDevice(dev);
         Close();
     }

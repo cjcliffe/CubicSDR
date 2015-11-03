@@ -159,6 +159,7 @@ bool CubicSDR::OnInit() {
     
     getDemodSpectrumProcessor()->setInput(pipeDemodIQVisualData);
     getSpectrumProcessor()->setInput(pipeIQVisualData);
+    getSpectrumProcessor()->setHideDC(true);
     
     pipeAudioVisualData = new DemodulatorThreadOutputQueue();
     pipeAudioVisualData->set_max_num_items(1);

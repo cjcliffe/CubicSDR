@@ -56,7 +56,7 @@ devFrame::devFrame( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	wxBoxSizer* bSizer7;
 	bSizer7 = new wxBoxSizer( wxVERTICAL );
 	
-	m_staticText1 = new wxStaticText( m_panel61, wxID_ANY, wxT("Stream Options"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText1 = new wxStaticText( m_panel61, wxID_ANY, wxT("SoapySDR Device Options"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText1->Wrap( -1 );
 	bSizer7->Add( m_staticText1, 0, wxALL, 5 );
 	

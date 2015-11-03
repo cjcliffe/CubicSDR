@@ -196,6 +196,7 @@ AppFrame::AppFrame() :
 
     waterfallDataThread->setInputQueue("IQDataInput", wxGetApp().getWaterfallVisualQueue());
     waterfallDataThread->setOutputQueue("FFTDataOutput", waterfallCanvas->getVisualDataQueue());
+    waterfallDataThread->getProcessor()->setHideDC(true);
 
     t_FFTData = new std::thread(&FFTVisualDataThread::threadMain, waterfallDataThread);
 
@@ -636,24 +637,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             }
             break;
     }
-
-//    std::vector<SDRDeviceInfo *> *devs = wxGetApp().getDevices();
-//    if (event.GetId() >= wxID_DEVICE_ID && event.GetId() <= wxID_DEVICE_ID + devs->size()) {
-//        int devId = event.GetId() - wxID_DEVICE_ID;
-//        wxGetApp().setDevice(devId);
-//
-//        SDRDeviceInfo *dev = (*wxGetApp().getDevices())[devId];
-//        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
-//        
-//        int dsMode = devConfig->getDirectSampling();
-//        
-//        if (dsMode >= 0 && dsMode <= 2) {
-//            directSamplingMenuItems[devConfig->getDirectSampling()]->Check();
-//        }
-//        
-//        iqSwapMenuItem->Check(devConfig->getIQSwap());
-//    }
-
+    
     if (event.GetId() >= wxID_BANDWIDTH_BASE && event.GetId() < wxID_BANDWIDTH_BASE+sampleRates.size()) {
         wxGetApp().setSampleRate(sampleRates[event.GetId()-wxID_BANDWIDTH_BASE]);
     }
@@ -864,7 +848,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 //    wxGetApp().getSpectrumDistributor()->run();
 
     SpectrumVisualProcessor *proc = wxGetApp().getSpectrumProcessor();
-    proc->setHideDC(true);
 
     if (spectrumAvgMeter->inputChanged()) {
         float val = spectrumAvgMeter->getInputValue();
@@ -891,7 +874,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     dproc->setCenterFrequency(demodWaterfallCanvas->getCenterFrequency());
 
     SpectrumVisualProcessor *wproc = waterfallDataThread->getProcessor();
-    wproc->setHideDC(true);
     
     if (waterfallSpeedMeter->inputChanged()) {
         float val = waterfallSpeedMeter->getInputValue();
