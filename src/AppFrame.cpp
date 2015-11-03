@@ -236,7 +236,7 @@ AppFrame::AppFrame() :
     //    SetIcon(wxICON(sample));
 
     // Make a menubar
-    wxMenuBar *menuBar = new wxMenuBar;
+    menuBar = new wxMenuBar;
     wxMenu *menu = new wxMenu;
     
     menu->Append(wxID_SDR_DEVICES, "SDR Devices");
@@ -307,9 +307,6 @@ AppFrame::AppFrame() :
 
     menuBar->Append(menu, wxT("&Color Scheme"));
 
-    sampleRateMenu = new wxMenu;
-    menuBar->Append(sampleRateMenu, wxT("&Input Bandwidth"));
-
     menu = new wxMenu;
 
 #define NUM_RATES_DEFAULT 4
@@ -357,6 +354,10 @@ AppFrame::AppFrame() :
             j++;
         }
     }
+
+    sampleRateMenu = new wxMenu;
+
+    menuBar->Append(sampleRateMenu, wxT("&Input Bandwidth"));
 
     menuBar->Append(menu, wxT("Audio &Bandwidth"));
 
@@ -407,7 +408,8 @@ AppFrame::AppFrame() :
 
     wxAcceleratorTable accel(3, entries);
     SetAcceleratorTable(accel);
-
+    deviceChanged.store(false);
+    devInfo = NULL;
     wxGetApp().deviceSelector();
             
 //    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
@@ -421,24 +423,26 @@ AppFrame::~AppFrame() {
 }
 
 void AppFrame::initDeviceParams(SDRDeviceInfo *devInfo) {
-    std::string deviceId = devInfo->getName();
+    this->devInfo = devInfo;
+    deviceChanged.store(true);
+}
 
-    DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
+void AppFrame::updateDeviceParams() {
+    
+    if (!deviceChanged.load()) {
+        return;
+    }
     
     // Build sample rate menu from device info
     sampleRates = devInfo->getRxChannel()->getSampleRates();
-    
-    for (std::map<int, wxMenuItem *>::iterator i = sampleRateMenuItems.begin(); i != sampleRateMenuItems.end(); i++) {
-        sampleRateMenu->Remove(i->first);
-    }
-
     sampleRateMenuItems.erase(sampleRateMenuItems.begin(),sampleRateMenuItems.end());
     
+    wxMenu *newSampleRateMenu = new wxMenu;
     int ofs = 0;
     long sampleRate = wxGetApp().getSampleRate();
     bool checked = false;
     for (vector<long>::iterator i = sampleRates.begin(); i != sampleRates.end(); i++) {
-        sampleRateMenuItems[wxID_BANDWIDTH_BASE+ofs] = sampleRateMenu->AppendRadioItem(wxID_BANDWIDTH_BASE+ofs, frequencyToStr(*i));
+        sampleRateMenuItems[wxID_BANDWIDTH_BASE+ofs] = newSampleRateMenu->AppendRadioItem(wxID_BANDWIDTH_BASE+ofs, frequencyToStr(*i));
         if (sampleRate == (*i)) {
             sampleRateMenuItems[wxID_BANDWIDTH_BASE+ofs]->Check(true);
             checked = true;
@@ -446,11 +450,13 @@ void AppFrame::initDeviceParams(SDRDeviceInfo *devInfo) {
         ofs++;
     }
     
-    sampleRateMenuItems[wxID_BANDWIDTH_MANUAL] = sampleRateMenu->AppendRadioItem(wxID_BANDWIDTH_MANUAL, "Manual Entry");
-    
+    sampleRateMenuItems[wxID_BANDWIDTH_MANUAL] = newSampleRateMenu->AppendRadioItem(wxID_BANDWIDTH_MANUAL, wxT("Manual Entry")); 
     if (!checked) {
         sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Check(true);
     }
+   
+    menuBar->Replace(4, newSampleRateMenu, wxT("&Input Bandwidth"));
+    sampleRateMenu = newSampleRateMenu;
 
     if (!wxGetApp().getAGCMode()) {
         gainSpacerItem->Show(true);
@@ -467,6 +473,8 @@ void AppFrame::initDeviceParams(SDRDeviceInfo *devInfo) {
     }
     
     agcMenuItem->Check(wxGetApp().getAGCMode());
+    
+    deviceChanged.store(false);
 }
 
 
@@ -703,6 +711,10 @@ void AppFrame::OnThread(wxCommandEvent& event) {
 
 void AppFrame::OnIdle(wxIdleEvent& event) {
 
+    if (deviceChanged.load()) {
+        updateDeviceParams();
+    }
+    
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     if (demod) {
