@@ -101,6 +101,7 @@ private:
     std::map<int, wxMenuItem *> sampleRateMenuItems;
     std::map<int, wxMenuItem *> audioSampleRateMenuItems;
     std::map<int, wxMenuItem *> directSamplingMenuItems;
+    wxMenuBar *menuBar;
     wxMenuItem *iqSwapMenuItem;
     wxMenu *sampleRateMenu;
     wxMenuItem *agcMenuItem;

@@ -236,7 +236,7 @@ AppFrame::AppFrame() :
     //    SetIcon(wxICON(sample));
 
     // Make a menubar
-    wxMenuBar *menuBar = new wxMenuBar;
+    menuBar = new wxMenuBar;
     wxMenu *menu = new wxMenu;
     
     menu->Append(wxID_SDR_DEVICES, "SDR Devices");
@@ -316,9 +316,6 @@ AppFrame::AppFrame() :
 
     menuBar->Append(menu, wxT("&Color Scheme"));
 
-    sampleRateMenu = new wxMenu;
-    menuBar->Append(sampleRateMenu, wxT("&Input Bandwidth"));
-
     menu = new wxMenu;
 
 #define NUM_RATES_DEFAULT 4
@@ -366,6 +363,10 @@ AppFrame::AppFrame() :
             j++;
         }
     }
+
+    sampleRateMenu = new wxMenu;
+
+    menuBar->Append(sampleRateMenu, wxT("&Input Bandwidth"));
 
     menuBar->Append(menu, wxT("Audio &Bandwidth"));
 
@@ -462,18 +463,14 @@ void AppFrame::updateDeviceParams() {
     
     // Build sample rate menu from device info
     sampleRates = devInfo->getRxChannel()->getSampleRates();
-    
-    for (std::map<int, wxMenuItem *>::iterator i = sampleRateMenuItems.begin(); i != sampleRateMenuItems.end(); i++) {
-        sampleRateMenu->Remove(i->first);
-    }
-    
     sampleRateMenuItems.erase(sampleRateMenuItems.begin(),sampleRateMenuItems.end());
     
+    wxMenu *newSampleRateMenu = new wxMenu;
     int ofs = 0;
     long sampleRate = wxGetApp().getSampleRate();
     bool checked = false;
     for (vector<long>::iterator i = sampleRates.begin(); i != sampleRates.end(); i++) {
-        sampleRateMenuItems[wxID_BANDWIDTH_BASE+ofs] = sampleRateMenu->AppendRadioItem(wxID_BANDWIDTH_BASE+ofs, frequencyToStr(*i));
+        sampleRateMenuItems[wxID_BANDWIDTH_BASE+ofs] = newSampleRateMenu->AppendRadioItem(wxID_BANDWIDTH_BASE+ofs, frequencyToStr(*i));
         if (sampleRate == (*i)) {
             sampleRateMenuItems[wxID_BANDWIDTH_BASE+ofs]->Check(true);
             checked = true;
@@ -481,12 +478,14 @@ void AppFrame::updateDeviceParams() {
         ofs++;
     }
     
-    sampleRateMenuItems[wxID_BANDWIDTH_MANUAL] = sampleRateMenu->AppendRadioItem(wxID_BANDWIDTH_MANUAL, "Manual Entry");
-    
+    sampleRateMenuItems[wxID_BANDWIDTH_MANUAL] = newSampleRateMenu->AppendRadioItem(wxID_BANDWIDTH_MANUAL, wxT("Manual Entry")); 
     if (!checked) {
         sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Check(true);
     }
-    
+   
+    menuBar->Replace(4, newSampleRateMenu, wxT("&Input Bandwidth"));
+    sampleRateMenu = newSampleRateMenu;
+
     if (!wxGetApp().getAGCMode()) {
         gainSpacerItem->Show(true);
         gainSizerItem->Show(true);
