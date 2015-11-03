@@ -258,16 +258,7 @@ AppFrame::AppFrame() :
     
     menu->Append(wxID_SET_FREQ_OFFSET, "Frequency Offset");
     menu->Append(wxID_SET_PPM, "Device PPM");
-    iqSwapMenuItem = menu->AppendCheckItem(wxID_SET_SWAP_IQ, "Swap I/Q");
             
-    wxMenu *dsMenu = new wxMenu;
-    
-    directSamplingMenuItems[0] = dsMenu->AppendRadioItem(wxID_SET_DS_OFF, "Off");
-    directSamplingMenuItems[1] = dsMenu->AppendRadioItem(wxID_SET_DS_I, "I-ADC");
-    directSamplingMenuItems[2] = dsMenu->AppendRadioItem(wxID_SET_DS_Q, "Q-ADC");
-    
-    menu->AppendSubMenu(dsMenu, "Direct Sampling");
-
     agcMenuItem = menu->AppendCheckItem(wxID_AGC_CONTROL, "Automatic Gain");
     agcMenuItem->Check(wxGetApp().getAGCMode());
             
@@ -434,16 +425,6 @@ void AppFrame::initDeviceParams(SDRDeviceInfo *devInfo) {
 
     DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
     
-    int dsMode = devConfig->getDirectSampling();
-    
-    if (dsMode > 0 && dsMode <= 2) {
-        directSamplingMenuItems[devConfig->getDirectSampling()]->Check();
-    }
-    
-    if (devConfig->getIQSwap()) {
-        iqSwapMenuItem->Check();
-    }
-    
     // Build sample rate menu from device info
     sampleRates = devInfo->getRxChannel()->getSampleRates();
     
@@ -503,19 +484,19 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             wxGetApp().saveConfig();
         }
     } else if (event.GetId() == wxID_SET_DS_OFF) {
-        wxGetApp().setDirectSampling(0);
-        wxGetApp().saveConfig();
+//        wxGetApp().setDirectSampling(0);
+//        wxGetApp().saveConfig();
     } else if (event.GetId() == wxID_SET_DS_I) {
-        wxGetApp().setDirectSampling(1);
-        wxGetApp().saveConfig();
+//        wxGetApp().setDirectSampling(1);
+//        wxGetApp().saveConfig();
     } else if (event.GetId() == wxID_SET_DS_Q) {
-        wxGetApp().setDirectSampling(2);
-        wxGetApp().saveConfig();
+//        wxGetApp().setDirectSampling(2);
+//        wxGetApp().saveConfig();
     } else if (event.GetId() == wxID_SET_SWAP_IQ) {
-        bool swap_state = !wxGetApp().getSwapIQ();
-        wxGetApp().setSwapIQ(swap_state);
-        wxGetApp().saveConfig();
-        iqSwapMenuItem->Check(swap_state);
+//        bool swap_state = !wxGetApp().getSwapIQ();
+//        wxGetApp().setSwapIQ(swap_state);
+//        wxGetApp().saveConfig();
+//        iqSwapMenuItem->Check(swap_state);
     } else if (event.GetId() == wxID_AGC_CONTROL) {
         if (wxGetApp().getDevice() == NULL) {
             agcMenuItem->Check();

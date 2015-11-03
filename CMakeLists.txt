@@ -425,6 +425,10 @@ IF (APPLE AND BUNDLE_APP)
     PROJECT(CubicSDR)
     SET(MACOSX_BUNDLE_BUNDLE_NAME CubicSDR)
     
+    set(BUNDLE_SOAPY_MODS OFF CACHE BOOL "Bundle local SoapySDR modules")
+    
+    
+    
     ADD_DEFINITIONS(
 		-std=c++0x 
 		-pthread
@@ -490,6 +494,18 @@ IF (APPLE AND BUNDLE_APP)
        fixup_bundle(\"${APPS}\"   \"\"   \"/usr/local/lib\")
        VERIFY_APP(\"${APPS}\")
        " COMPONENT Runtime)
+
+       # IF (BUNDLE_SOAPY_MODS)
+       #         install( DIRECTORY "${SOAPY_SDR_ROOT}/lib/modules"
+       #             DESTINATION ${APPS}/modules
+       #             COMPONENT Runtime
+       #             FILES_MATCHING
+       #             PATTERN "*.dylib"
+       #             PATTERN "*_debug.dylib" EXCLUDE
+       #         )
+       # ENDIF(BUNDLE_SOAPY_MODS)
+
+
 
    INSTALL(TARGETS CubicSDR
        BUNDLE DESTINATION . COMPONENT Runtime

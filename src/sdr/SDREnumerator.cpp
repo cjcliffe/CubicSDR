@@ -108,19 +108,6 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
         SDRDeviceInfo *dev = new SDRDeviceInfo();
         
         SoapySDR::Kwargs deviceArgs = results[i];
-        SoapySDR::Kwargs streamArgs;
-        
-        if (isRemote) {
-            wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Querying remote " + remoteAddr + " device #" + std::to_string(i));
-//            deviceArgs["remote"] = remoteAddr;
-            if (deviceArgs.count("rtl") != 0) {
-                streamArgs["remote:mtu"] = "8192";
-                streamArgs["remote:format"] = "CS8";
-                streamArgs["remote:window"] = "16384000";
-            }
-        } else {
-            wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Found local device #") + std::to_string(i));
-        }
 
         for (SoapySDR::Kwargs::const_iterator it = deviceArgs.begin(); it != deviceArgs.end(); ++it) {
             std::cout << "  " << it->first << " = " << it->second << std::endl;
@@ -132,7 +119,6 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
         }
 
         dev->setDeviceArgs(deviceArgs);
-        dev->setStreamArgs(streamArgs);
         
         std::cout << "Make device " << i << std::endl;
         try {
@@ -187,6 +173,29 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
                 
                 dev->addChannel(chan);
             }
+            
+            
+            SoapySDR::Kwargs streamArgs;
+            
+            if (isRemote) {
+                wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Querying remote " + remoteAddr + " device #" + std::to_string(i));
+                
+//                if (deviceArgs.count("rtl") != 0) {
+//                    streamArgs["remote:mtu"] = "8192";
+//                    streamArgs["remote:window"] = "16384000";
+//                }
+                double fullScale = 0;
+                std::string nativeFormat = device->getNativeStreamFormat(SOAPY_SDR_RX, dev->getRxChannel()->getChannel(), fullScale);
+                
+                if (nativeFormat.length()) {
+                    streamArgs["remote:format"] = nativeFormat;
+                }
+            } else {
+                wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Found local device #") + std::to_string(i));
+            }
+            
+            dev->setStreamArgs(streamArgs);
+
             
             dev->setSettingsInfo(device->getSettingInfo());
             

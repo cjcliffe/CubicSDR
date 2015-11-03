@@ -10,6 +10,30 @@ SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent ): devFrame( parent ) {
     m_addRemoteButton->Disable();
     m_useSelectedButton->Disable();
     m_deviceTimer.Start(250);
+    
+    
+    // Add int property
+    m_propertyGrid->Append( new wxIntProperty("IntProperty", wxPG_LABEL, 12345678) );
+    // Add float property (value type is actually double)
+    m_propertyGrid->Append( new wxFloatProperty("FloatProperty", wxPG_LABEL, 12345.678) );
+    // Add a bool property
+    m_propertyGrid->Append( new wxBoolProperty("BoolProperty", wxPG_LABEL, false) );
+    // A string property that can be edited in a separate editor dialog.
+    m_propertyGrid->Append( new wxLongStringProperty("LongStringProperty",
+                                         wxPG_LABEL,
+                                         "This is much longer string than the "
+                                         "first one. Edit it by clicking the button."));
+    // String editor with dir selector button.
+    m_propertyGrid->Append( new wxDirProperty("DirProperty", wxPG_LABEL, ::wxGetUserHome()) );
+    // wxArrayStringProperty embeds a wxArrayString.
+    m_propertyGrid->Append( new wxArrayStringProperty("Label of ArrayStringProperty",
+                                          "NameOfArrayStringProp"));
+    // A file selector property.
+    m_propertyGrid->Append( new wxFileProperty("FileProperty", wxPG_LABEL, wxEmptyString) );
+    // Extra: set wild card for file property (format same as in wxFileDialog).
+    m_propertyGrid->SetPropertyAttribute( "FileProperty",
+                             wxPG_FILE_WILDCARD,
+                             "All files (*.*)|*.*" );
 }
 
 void SDRDevicesDialog::OnClose( wxCloseEvent& event ) {

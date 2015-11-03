@@ -112,7 +112,7 @@ long long strToFrequency(std::string freqStr) {
 }
 
 
-CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE), directSamplingMode(0),
+CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE),
     sdrThread(NULL), sdrPostThread(NULL), spectrumVisualThread(NULL), demodVisualThread(NULL), pipeSDRIQData(NULL), pipeIQVisualData(NULL), pipeAudioVisualData(NULL), t_SDR(NULL), t_PostSDR(NULL) {
         sampleRateInitialized.store(false);
         agcMode.store(true);
@@ -141,7 +141,6 @@ bool CubicSDR::OnInit() {
     frequency = wxGetApp().getConfig()->getCenterFreq();
     offset = 0;
     ppm = 0;
-    directSamplingMode = 0;
     devicesReady.store(false);
     deviceSelectorOpen.store(false);
 
@@ -351,28 +350,6 @@ void CubicSDR::setOffset(long long ofs) {
     config.getDevice(dev->getDeviceId())->setOffset(ofs);
 }
 
-void CubicSDR::setDirectSampling(int mode) {
-    directSamplingMode = mode;
-    sdrThread->setDirectSampling(mode);
-
-    SDRDeviceInfo *dev = getDevice();
-    config.getDevice(dev->getDeviceId())->setDirectSampling(mode);
-}
-
-int CubicSDR::getDirectSampling() {
-    return directSamplingMode;
-}
-
-void CubicSDR::setSwapIQ(bool swapIQ) {
-    sdrThread->setIQSwap(swapIQ);
-    SDRDeviceInfo *dev = getDevice();
-    config.getDevice(dev->getDeviceId())->setIQSwap(swapIQ);
-}
-
-bool CubicSDR::getSwapIQ() {
-    return sdrThread->getIQSwap();
-}
-
 long long CubicSDR::getFrequency() {
     return frequency;
 }
@@ -441,8 +418,6 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev) {
         setSampleRate(sampleRate);
 
         setPPM(devConfig->getPPM());
-        setDirectSampling(devConfig->getDirectSampling());
-        setSwapIQ(devConfig->getIQSwap());
         setOffset(devConfig->getOffset());
         
         t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);

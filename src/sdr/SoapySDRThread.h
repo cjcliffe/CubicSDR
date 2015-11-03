@@ -69,12 +69,6 @@ public:
     void setPPM(int ppm);
     int getPPM();
     
-    void setDirectSampling(int dsMode);
-    int getDirectSampling();
-    
-    void setIQSwap(bool iqSwap);
-    bool getIQSwap();
-    
     void setAGCMode(bool mode);
     bool getAGCMode();
 
@@ -94,10 +88,10 @@ protected:
 
     std::atomic<uint32_t> sampleRate;
     std::atomic_llong frequency, offset;
-    std::atomic_int ppm, direct_sampling_mode, numElems, numChannels;
-    std::atomic_bool hasPPM, hasHardwareDC, hasDirectSampling, hasIQSwap;
-    std::atomic_bool iq_swap, agc_mode, rate_changed, freq_changed, offset_changed,
-        ppm_changed, direct_sampling_changed, device_changed, iq_swap_changed, agc_mode_changed, gain_value_changed;
+    std::atomic_int ppm, numElems, numChannels;
+    std::atomic_bool hasPPM, hasHardwareDC;
+    std::atomic_bool agc_mode, rate_changed, freq_changed, offset_changed,
+        ppm_changed, device_changed, agc_mode_changed, gain_value_changed;
 
     std::mutex gain_busy;
     std::map<std::string, float> gainValues;
