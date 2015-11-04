@@ -255,15 +255,9 @@ AppFrame::AppFrame() :
             
     menuBar->Append(menu, wxT("&File"));
             
-    menu = new wxMenu;
-    
-    menu->Append(wxID_SET_FREQ_OFFSET, "Frequency Offset");
-    menu->Append(wxID_SET_PPM, "Device PPM");
-            
-    agcMenuItem = menu->AppendCheckItem(wxID_AGC_CONTROL, "Automatic Gain");
-    agcMenuItem->Check(wxGetApp().getAGCMode());
-            
-    menuBar->Append(menu, wxT("&Settings"));
+    settingsMenu = new wxMenu;
+          
+    menuBar->Append(settingsMenu, wxT("&Settings"));
             
     menu = new wxMenu;
 
@@ -434,7 +428,62 @@ void AppFrame::updateDeviceParams() {
         return;
     }
     
-    // Build sample rate menu from device info
+    
+    // Build settings menu
+    wxMenu *newSettingsMenu = new wxMenu;
+    newSettingsMenu->Append(wxID_SET_FREQ_OFFSET, "Frequency Offset");
+    if (devInfo->getRxChannel()->hasCORR()) {
+        newSettingsMenu->Append(wxID_SET_PPM, "Device PPM");
+    }
+    
+    agcMenuItem = newSettingsMenu->AppendCheckItem(wxID_AGC_CONTROL, "Automatic Gain");
+    agcMenuItem->Check(wxGetApp().getAGCMode());
+    
+    SoapySDR::ArgInfoList args = devInfo->getSettingsArgInfo();
+    SoapySDR::ArgInfoList::const_iterator args_i;
+    
+    int i = 0;
+    for (args_i = args.begin(); args_i != args.end(); args_i++) {
+        SoapySDR::ArgInfo arg = (*args_i);
+        if (arg.type == SoapySDR::ArgInfo::BOOL) {
+            wxMenuItem *item = newSettingsMenu->AppendCheckItem(wxID_SETTINGS_BASE+i, arg.name, arg.description);
+            item->Check(arg.value=="true");
+            i++;
+        } else if (arg.type == SoapySDR::ArgInfo::INT) {
+            wxMenuItem *item = newSettingsMenu->Append(wxID_SETTINGS_BASE+i, arg.name, arg.description);
+            i++;
+        } else if (arg.type == SoapySDR::ArgInfo::FLOAT) {
+            wxMenuItem *item = newSettingsMenu->Append(wxID_SETTINGS_BASE+i, arg.name, arg.description);
+            i++;
+        } else if (arg.type == SoapySDR::ArgInfo::STRING) {
+            if (arg.options.size()) {
+                wxMenu *subMenu = new wxMenu;
+                int j = 0;
+                for (std::vector<std::string>::iterator str_i = arg.options.begin(); str_i != arg.options.end(); str_i++) {
+                    std::string optName = (*str_i);
+                    std::string displayName = optName;
+                    if (arg.optionNames.size()) {
+                        displayName = arg.optionNames[j];
+                    }
+                    wxMenuItem *item = subMenu->AppendRadioItem(wxID_SETTINGS_BASE+i, displayName);
+                    if (arg.value == (*str_i)) {
+                        item->Check();
+                    }
+                    i++;
+                    j++;
+                }
+                newSettingsMenu->AppendSubMenu(subMenu, arg.name, arg.description);
+            } else {
+                wxMenuItem *item = newSettingsMenu->Append(wxID_SETTINGS_BASE+i, arg.name, arg.description);
+                i++;
+            }
+        }
+    }
+    
+    menuBar->Replace(1, newSettingsMenu, wxT("&Settings"));
+    settingsMenu = newSettingsMenu;
+    
+    // Build sample rate menu
     sampleRates = devInfo->getRxChannel()->getSampleRates();
     sampleRateMenuItems.erase(sampleRateMenuItems.begin(),sampleRateMenuItems.end());
     

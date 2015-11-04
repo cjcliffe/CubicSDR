@@ -81,7 +81,7 @@ void ScopeVisualProcessor::process() {
             renderData->channels = audioInputData->channels;
             renderData->inputRate = audioInputData->inputRate;
             renderData->sampleRate = audioInputData->sampleRate;
-            
+
             if (renderData->waveform_points.size() != iMax * 2) {
                 renderData->waveform_points.resize(iMax * 2);
             }
@@ -112,7 +112,6 @@ void ScopeVisualProcessor::process() {
             }
 
             renderData->spectrum = false;
-            
             distribute(renderData);
         }
         
@@ -137,7 +136,14 @@ void ScopeVisualProcessor::process() {
                     }
                 }
             }
+            
+            renderData = outputBuffers.getBuffer();
 
+            renderData->channels = audioInputData->channels;
+            renderData->inputRate = audioInputData->inputRate;
+            renderData->sampleRate = audioInputData->sampleRate;
+            
+            audioInputData->decRefCount();
             
             fftwf_execute(fftw_plan);
             
@@ -175,12 +181,10 @@ void ScopeVisualProcessor::process() {
 
             int outSize = fftSize/2;
             
-            if (audioInputData->sampleRate != audioInputData->inputRate) {
-                outSize = (int)floor((float)outSize * ((float)audioInputData->sampleRate/(float)audioInputData->inputRate));
+            if (renderData->sampleRate != renderData->inputRate) {
+                outSize = (int)floor((float)outSize * ((float)renderData->sampleRate/(float)renderData->inputRate));
             }
             
-			renderData = outputBuffers.getBuffer();
-
             if (renderData->waveform_points.size() != outSize*2) {
                 renderData->waveform_points.resize(outSize*2);
             }
@@ -194,12 +198,10 @@ void ScopeVisualProcessor::process() {
             renderData->fft_floor = fft_floor_maa;
             renderData->fft_ceil = fft_ceil_maa;
             renderData->fft_size = fftSize/2;
-            renderData->inputRate = audioInputData->inputRate;
-            renderData->sampleRate = audioInputData->sampleRate;
             renderData->spectrum = true;
             distribute(renderData);
+        } else {
+            audioInputData->decRefCount();
         }
-        
-        audioInputData->decRefCount();
     }
 }

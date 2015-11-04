@@ -63,10 +63,17 @@ wxPGProperty *SDRDevicesDialog::addArgInfoProperty(wxPropertyGrid *pg, SoapySDR:
                 intVal = 0;
                 prop = pg->Append( new wxEnumProperty(arg.name, wxPG_LABEL) );
                 for (stringIter = arg.options.begin(); stringIter != arg.options.end(); stringIter++) {
-                    prop->AddChoice((*stringIter));
+                    std::string optName = (*stringIter);
+                    std::string displayName = optName;
+                    if (arg.optionNames.size()) {
+                        displayName = arg.optionNames[intVal];
+                    }
+
+                    prop->AddChoice(displayName);
                     if ((*stringIter)==arg.value) {
                         prop->SetChoiceSelection(intVal);
                     }
+                    
                     intVal++;
                 }
             } else {

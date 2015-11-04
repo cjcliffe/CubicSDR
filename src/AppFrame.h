@@ -45,6 +45,8 @@
 #define wxID_BANDWIDTH_BASE 2150
 #define wxID_BANDWIDTH_MANUAL 2200
 
+#define wxID_SETTINGS_BASE 2300
+
 #define wxID_DEVICE_ID 3500
 
 #define wxID_AUDIO_BANDWIDTH_BASE 9000
@@ -104,6 +106,7 @@ private:
     wxMenuBar *menuBar;
     wxMenu *sampleRateMenu;
     wxMenuItem *agcMenuItem;
+    wxMenu *settingsMenu;
     std::vector<long> sampleRates;
     
     std::string currentSessionFile;
