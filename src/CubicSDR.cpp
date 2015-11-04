@@ -373,6 +373,10 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev) {
         }
     }
     
+    for (SoapySDR::Kwargs::const_iterator i = settingArgs.begin(); i != settingArgs.end(); i++) {
+        sdrThread->writeSetting(i->first, i->second);
+    }
+    sdrThread->setStreamArgs(streamArgs);
     sdrThread->setDevice(dev);
     
     DeviceConfig *devConfig = config.getDevice(dev->getDeviceId());
@@ -597,5 +601,13 @@ void CubicSDR::setGain(std::string name, float gain_in) {
 
 float CubicSDR::getGain(std::string name) {
     return sdrThread->getGain(name);
+}
+
+void CubicSDR::setStreamArgs(SoapySDR::Kwargs streamArgs_in) {
+    streamArgs = streamArgs_in;
+}
+
+void CubicSDR::setDeviceArgs(SoapySDR::Kwargs settingArgs_in) {
+    settingArgs = settingArgs_in;
 }
 

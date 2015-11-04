@@ -93,7 +93,7 @@ void SDRDevicesDialog::OnSelectionChanged( wxTreeEvent& event ) {
     wxTreeItemId selId = devTree->GetSelection();
 
     dev = getSelectedDevice(selId);
-
+    props.erase(props.begin(), props.end());
     if (dev) {
         m_propertyGrid->Clear();
         m_propertyGrid->Append(new wxPropertyCategory("Run-time Settings"));
@@ -104,7 +104,7 @@ void SDRDevicesDialog::OnSelectionChanged( wxTreeEvent& event ) {
         
         for (args_i = args.begin(); args_i != args.end(); args_i++) {
             SoapySDR::ArgInfo arg = (*args_i);
-            addArgInfoProperty(m_propertyGrid, arg);
+            props.push_back(addArgInfoProperty(m_propertyGrid, arg));
         }
         
         if (dev->getRxChannel()) {
@@ -115,7 +115,7 @@ void SDRDevicesDialog::OnSelectionChanged( wxTreeEvent& event ) {
 
                 for (args_i = args.begin(); args_i != args.end(); args_i++) {
                     SoapySDR::ArgInfo arg = (*args_i);
-                    addArgInfoProperty(m_propertyGrid, arg);
+                    props.push_back(addArgInfoProperty(m_propertyGrid, arg));
                 }
             }
         }
@@ -158,6 +158,53 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event ) {
     
     dev = getSelectedDevice(selId);
     if (dev != NULL) {
+        
+        int i = 0;
+        SoapySDR::ArgInfoList::const_iterator args_i;
+        SoapySDR::ArgInfoList args = dev->getSettingsArgInfo();
+        
+        SoapySDR::Kwargs settingArgs;
+        SoapySDR::Kwargs streamArgs;
+        
+        for (args_i = args.begin(); args_i != args.end(); args_i++) {
+            SoapySDR::ArgInfo arg = (*args_i);
+            wxPGProperty *prop = props[i];
+            
+            if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size()) {
+                settingArgs[arg.key] = arg.options[prop->GetChoiceSelection()];
+            } else if (arg.type == SoapySDR::ArgInfo::BOOL) {
+                settingArgs[arg.key] = (prop->GetValueAsString()=="True")?"true":"false";
+            } else {
+                settingArgs[arg.key] = prop->GetValueAsString();
+            }
+            
+            i++;
+        }
+        
+        if (dev->getRxChannel()) {
+            args = dev->getRxChannel()->getStreamArgsInfo();
+            
+            if (args.size()) {
+                for (args_i = args.begin(); args_i != args.end(); args_i++) {
+                    SoapySDR::ArgInfo arg = (*args_i);
+                    wxPGProperty *prop = props[i];
+            
+                    if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size()) {
+                        streamArgs[arg.key] = arg.options[prop->GetChoiceSelection()];
+                    } else if (arg.type == SoapySDR::ArgInfo::BOOL) {
+                        streamArgs[arg.key] = (prop->GetValueAsString()=="True")?"true":"false";
+                    } else {
+                        streamArgs[arg.key] = prop->GetValueAsString();
+                    }
+                    
+                    i++;
+                }
+            }
+        }
+        
+
+        wxGetApp().setDeviceArgs(settingArgs);
+        wxGetApp().setStreamArgs(streamArgs);
         wxGetApp().setDevice(dev);
         Close();
     }

@@ -109,6 +109,9 @@ public:
     void setGain(std::string name, float gain_in);
     float getGain(std::string name);
 
+    void setStreamArgs(SoapySDR::Kwargs streamArgs_in);
+    void setDeviceArgs(SoapySDR::Kwargs settingArgs_in);
+    
 private:
     AppFrame *appframe;
     AppConfig config;
@@ -140,6 +143,9 @@ private:
     
     SDRDevicesDialog *deviceSelectorDialog;
 
+    SoapySDR::Kwargs streamArgs;
+    SoapySDR::Kwargs settingArgs;
+    
     std::thread *t_SDR, *t_SDREnum, *t_PostSDR, *t_SpectrumVisual, *t_DemodVisual;
     std::atomic_bool devicesReady;
     std::atomic_bool deviceSelectorOpen;

@@ -38,6 +38,18 @@ SDRThread::~SDRThread() {
 
 }
 
+SoapySDR::Kwargs SDRThread::combineArgs(SoapySDR::Kwargs a, SoapySDR::Kwargs b) {
+    SoapySDR::Kwargs c;
+    SoapySDR::Kwargs::iterator i;
+    for (i = a.begin(); i != a.end(); i++) {
+        c[i->first] = i->second;
+    }
+    for (i = b.begin(); i != b.end(); i++) {
+        c[i->first] = i->second;
+    }
+    return c;
+}
+
 void SDRThread::init() {
     SDRDeviceInfo *devInfo = deviceInfo.load();
     deviceConfig.store(wxGetApp().getConfig()->getDevice(devInfo->getDeviceId()));
@@ -54,7 +66,7 @@ void SDRThread::init() {
     
     wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Initializing device."));
     device = SoapySDR::Device::make(args);
-    stream = device->setupStream(SOAPY_SDR_RX,"CF32", std::vector<size_t>(), devInfo->getStreamArgs());
+    stream = device->setupStream(SOAPY_SDR_RX,"CF32", std::vector<size_t>(), combineArgs(devInfo->getStreamArgs(),streamArgs));
     
     wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Activating stream."));
     device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
@@ -406,3 +418,6 @@ std::string SDRThread::readSetting(std::string name) {
     return val;
 }
 
+void SDRThread::setStreamArgs(SoapySDR::Kwargs streamArgs_in) {
+    streamArgs = streamArgs_in;
+}

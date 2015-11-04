@@ -78,9 +78,12 @@ public:
     void writeSetting(std::string name, std::string value);
     std::string readSetting(std::string name);
     
+    void setStreamArgs(SoapySDR::Kwargs streamArgs);
+    
 protected:
     void updateGains();
     void updateSettings();
+    SoapySDR::Kwargs combineArgs(SoapySDR::Kwargs a, SoapySDR::Kwargs b);
 
     SoapySDR::Stream *stream;
     SoapySDR::Device *device;
@@ -104,4 +107,6 @@ protected:
     std::mutex gain_busy;
     std::map<std::string, float> gainValues;
     std::map<std::string, bool> gainChanged;
+    
+    SoapySDR::Kwargs streamArgs;
 };
