@@ -296,6 +296,9 @@ void CubicSDR::removeRemote(std::string remoteAddr) {
 
 void CubicSDR::sdrThreadNotify(SDRThread::SDRThreadState state, std::string message) {
     notify_busy.lock();
+    if (state == SDRThread::SDR_THREAD_INITIALIZED) {
+        appframe->initDeviceParams(getDevice());
+    }
     if (state == SDRThread::SDR_THREAD_MESSAGE) {
         notifyMessage = message;
     }
@@ -422,8 +425,6 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev) {
         setOffset(devConfig->getOffset());
         
         t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
-        
-        appframe->initDeviceParams(dev);
     }
 }
 
@@ -462,6 +463,11 @@ DemodulatorMgr &CubicSDR::getDemodMgr() {
 SDRPostThread *CubicSDR::getSDRPostThread() {
     return sdrPostThread;
 }
+
+SDRThread *CubicSDR::getSDRThread() {
+    return sdrThread;
+}
+
 
 void CubicSDR::bindDemodulator(DemodulatorInstance *demod) {
     if (!demod) {

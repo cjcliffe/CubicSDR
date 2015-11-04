@@ -48,7 +48,7 @@ private:
 public:
     SDRThread();
     ~SDRThread();
-    enum SDRThreadState { SDR_THREAD_MESSAGE, SDR_THREAD_TERMINATED, SDR_THREAD_FAILED };
+    enum SDRThreadState { SDR_THREAD_MESSAGE, SDR_THREAD_INITIALIZED, SDR_THREAD_TERMINATED, SDR_THREAD_FAILED };
     
     void run();
 
@@ -75,9 +75,13 @@ public:
     void setGain(std::string name, float value);
     float getGain(std::string name);
     
+    void writeSetting(std::string name, std::string value);
+    std::string readSetting(std::string name);
+    
 protected:
     void updateGains();
-    
+    void updateSettings();
+
     SoapySDR::Stream *stream;
     SoapySDR::Device *device;
     void *buffs[1];
@@ -85,13 +89,17 @@ protected:
     SDRThreadIQData inpBuffer;
     std::atomic<DeviceConfig *> deviceConfig;
     std::atomic<SDRDeviceInfo *> deviceInfo;
+    
+    std::mutex setting_busy;
+    std::map<std::string, std::string> settings;
+    std::map<std::string, bool> settingChanged;
 
     std::atomic<uint32_t> sampleRate;
     std::atomic_llong frequency, offset;
     std::atomic_int ppm, numElems, numChannels;
     std::atomic_bool hasPPM, hasHardwareDC;
     std::atomic_bool agc_mode, rate_changed, freq_changed, offset_changed,
-        ppm_changed, device_changed, agc_mode_changed, gain_value_changed;
+        ppm_changed, device_changed, agc_mode_changed, gain_value_changed, setting_value_changed;
 
     std::mutex gain_busy;
     std::map<std::string, float> gainValues;

@@ -76,7 +76,8 @@ public:
     DemodulatorMgr &getDemodMgr();
 
     SDRPostThread *getSDRPostThread();
-    
+    SDRThread *getSDRThread();
+
     void bindDemodulator(DemodulatorInstance *demod);
     void removeDemodulator(DemodulatorInstance *demod);
 
