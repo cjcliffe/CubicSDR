@@ -439,21 +439,22 @@ void AppFrame::updateDeviceParams() {
     agcMenuItem = newSettingsMenu->AppendCheckItem(wxID_AGC_CONTROL, "Automatic Gain");
     agcMenuItem->Check(wxGetApp().getAGCMode());
     
-    SoapySDR::ArgInfoList args = devInfo->getSettingsArgInfo();
     SoapySDR::ArgInfoList::const_iterator args_i;
     
     int i = 0;
-    for (args_i = args.begin(); args_i != args.end(); args_i++) {
+    settingArgs = devInfo->getSettingsArgInfo();
+    for (args_i = settingArgs.begin(); args_i != settingArgs.end(); args_i++) {
         SoapySDR::ArgInfo arg = (*args_i);
+        std::string currentVal = wxGetApp().getSDRThread()->readSetting(arg.key);
         if (arg.type == SoapySDR::ArgInfo::BOOL) {
             wxMenuItem *item = newSettingsMenu->AppendCheckItem(wxID_SETTINGS_BASE+i, arg.name, arg.description);
-            item->Check(arg.value=="true");
+            item->Check(currentVal=="true");
             i++;
         } else if (arg.type == SoapySDR::ArgInfo::INT) {
-            wxMenuItem *item = newSettingsMenu->Append(wxID_SETTINGS_BASE+i, arg.name, arg.description);
+            newSettingsMenu->Append(wxID_SETTINGS_BASE+i, arg.name, arg.description);
             i++;
         } else if (arg.type == SoapySDR::ArgInfo::FLOAT) {
-            wxMenuItem *item = newSettingsMenu->Append(wxID_SETTINGS_BASE+i, arg.name, arg.description);
+            newSettingsMenu->Append(wxID_SETTINGS_BASE+i, arg.name, arg.description);
             i++;
         } else if (arg.type == SoapySDR::ArgInfo::STRING) {
             if (arg.options.size()) {
@@ -466,19 +467,20 @@ void AppFrame::updateDeviceParams() {
                         displayName = arg.optionNames[j];
                     }
                     wxMenuItem *item = subMenu->AppendRadioItem(wxID_SETTINGS_BASE+i, displayName);
-                    if (arg.value == (*str_i)) {
+                    if (currentVal == (*str_i)) {
                         item->Check();
                     }
-                    i++;
                     j++;
+                    i++;
                 }
                 newSettingsMenu->AppendSubMenu(subMenu, arg.name, arg.description);
             } else {
-                wxMenuItem *item = newSettingsMenu->Append(wxID_SETTINGS_BASE+i, arg.name, arg.description);
+                newSettingsMenu->Append(wxID_SETTINGS_BASE+i, arg.name, arg.description);
                 i++;
             }
         }
     }
+    settingsIdMax = wxID_SETTINGS_BASE+i;
     
     menuBar->Replace(1, newSettingsMenu, wxT("&Settings"));
     settingsMenu = newSettingsMenu;
@@ -645,6 +647,53 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         ThemeMgr::mgr.setTheme(COLOR_THEME_RADAR);
     }
 
+    if (event.GetId() >= wxID_SETTINGS_BASE && event.GetId() < settingsIdMax) {
+        int setIdx = event.GetId()-wxID_SETTINGS_BASE;
+        int menuIdx = 0;
+        for (std::vector<SoapySDR::ArgInfo>::iterator arg_i = settingArgs.begin(); arg_i != settingArgs.end(); arg_i++) {
+            SoapySDR::ArgInfo &arg = (*arg_i);
+
+            if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size() && setIdx >= menuIdx && setIdx < menuIdx+arg.options.size()) {
+                int optIdx = setIdx-menuIdx;
+                wxGetApp().getSDRThread()->writeSetting(arg.key, arg.options[optIdx]);
+                break;
+            } else if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size()) {
+                menuIdx += arg.options.size();
+            } else if (menuIdx == setIdx) {
+                if (arg.type == SoapySDR::ArgInfo::BOOL) {
+                    wxGetApp().getSDRThread()->writeSetting(arg.key, (wxGetApp().getSDRThread()->readSetting(arg.key)=="true")?"false":"true");
+                    break;
+                } else if (arg.type == SoapySDR::ArgInfo::STRING) {
+                    menuIdx++;
+                } else if (arg.type == SoapySDR::ArgInfo::INT) {
+                    int currentVal;
+                    try {
+                        currentVal = std::stoi(wxGetApp().getSDRThread()->readSetting(arg.key));
+                    } catch (std::invalid_argument e) {
+                        currentVal = 0;
+                    }
+                    int intVal = wxGetNumberFromUser(arg.description, arg.units, arg.name, currentVal, arg.range.minimum(), arg.range.maximum(), this);
+                    if (intVal != -1) {
+                        wxGetApp().getSDRThread()->writeSetting(arg.key, std::to_string(intVal));
+                    }
+                    break;
+                } else if (arg.type == SoapySDR::ArgInfo::FLOAT) {
+                    wxString floatVal = wxGetTextFromUser(arg.description, arg.name, wxGetApp().getSDRThread()->readSetting(arg.key));
+                    try {
+                        wxGetApp().getSDRThread()->writeSetting(arg.key, floatVal.ToStdString());
+                    } catch (std::invalid_argument e) {
+                        // ...
+                    }
+                    break;
+                } else {
+                    menuIdx++;
+                }
+            } else {
+                menuIdx++;
+            }
+        }
+    }
+    
     if (event.GetId() >= wxID_THEME_DEFAULT && event.GetId() <= wxID_THEME_RADAR) {
     	demodTuner->Refresh();
     	demodModeSelector->Refresh();

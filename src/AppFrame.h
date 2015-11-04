@@ -52,7 +52,6 @@
 #define wxID_AUDIO_BANDWIDTH_BASE 9000
 #define wxID_AUDIO_DEVICE_MULTIPLIER 50
 
-
 // Define a new frame type
 class AppFrame: public wxFrame {
 public:
@@ -107,6 +106,8 @@ private:
     wxMenu *sampleRateMenu;
     wxMenuItem *agcMenuItem;
     wxMenu *settingsMenu;
+    SoapySDR::ArgInfoList settingArgs;
+    int settingsIdMax;
     std::vector<long> sampleRates;
     
     std::string currentSessionFile;
