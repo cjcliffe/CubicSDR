@@ -15,7 +15,6 @@ SDRThread::SDRThread() : IOThread() {
     frequency.store(0);
     offset.store(0);
     ppm.store(0);
-    direct_sampling_mode.store(0);
 
     numElems.store(0);
     
@@ -23,24 +22,32 @@ SDRThread::SDRThread() : IOThread() {
     freq_changed.store(false);
     offset_changed.store(false);
     ppm_changed .store(false);
-    direct_sampling_changed.store(false);
     device_changed.store(false);
-    iq_swap.store(false);
-    iq_swap_changed.store(false);
 
     hasPPM.store(false);
     hasHardwareDC.store(false);
     numChannels.store(8);
-    hasDirectSampling.store(false);
-    hasIQSwap.store(false);
     
     agc_mode.store(true);
     agc_mode_changed.store(false);
     gain_value_changed.store(false);
+    setting_value_changed.store(false);
 }
 
 SDRThread::~SDRThread() {
 
+}
+
+SoapySDR::Kwargs SDRThread::combineArgs(SoapySDR::Kwargs a, SoapySDR::Kwargs b) {
+    SoapySDR::Kwargs c;
+    SoapySDR::Kwargs::iterator i;
+    for (i = a.begin(); i != a.end(); i++) {
+        c[i->first] = i->second;
+    }
+    for (i = b.begin(); i != b.end(); i++) {
+        c[i->first] = i->second;
+    }
+    return c;
 }
 
 void SDRThread::init() {
@@ -51,12 +58,6 @@ void SDRThread::init() {
     ppm.store(devConfig->getPPM());
     ppm_changed.store(true);
     
-    direct_sampling_mode.store(devConfig->getDirectSampling());
-    direct_sampling_changed.store(true);
-    
-    iq_swap.store(devConfig->getIQSwap());
-    iq_swap_changed.store(true);
-    
     std::string driverName = devInfo->getDriver();
 
     offset = devConfig->getOffset();
@@ -65,7 +66,7 @@ void SDRThread::init() {
     
     wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Initializing device."));
     device = SoapySDR::Device::make(args);
-    stream = device->setupStream(SOAPY_SDR_RX,"CF32", std::vector<size_t>(), devInfo->getStreamArgs());
+    stream = device->setupStream(SOAPY_SDR_RX,"CF32", std::vector<size_t>(), combineArgs(devInfo->getStreamArgs(),streamArgs));
     
     wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Activating stream."));
     device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
@@ -85,14 +86,6 @@ void SDRThread::init() {
     } else {
         hasHardwareDC.store(false);
     }
-
-    std::vector<std::string> settingNames = devInfo->getSettingNames();
-    if (std::find(settingNames.begin(), settingNames.end(), "direct_samp") != settingNames.end()) {
-        hasDirectSampling.store(true);
-    }
-    if (std::find(settingNames.begin(), settingNames.end(), "iq_swap") != settingNames.end()) {
-        hasIQSwap.store(true);
-    }
     
     device->setGainMode(SOAPY_SDR_RX,0,agc_mode.load());
     
@@ -101,6 +94,30 @@ void SDRThread::init() {
     inpBuffer.data.resize(numElems.load());
     
     buffs[0] = malloc(numElems * 2 * sizeof(float));
+    
+    SoapySDR::ArgInfoList settingsInfo = device->getSettingInfo();
+    SoapySDR::ArgInfoList::const_iterator settings_i;
+    
+    if (!setting_value_changed.load()) {
+        settings.erase(settings.begin(), settings.end());
+        settingChanged.erase(settingChanged.begin(), settingChanged.end());
+    }
+    
+    setting_busy.lock();
+    for (settings_i = settingsInfo.begin(); settings_i != settingsInfo.end(); settings_i++) {
+        SoapySDR::ArgInfo setting = (*settings_i);
+        if ((settingChanged.find(setting.key) != settingChanged.end()) && (settings.find(setting.key) != settings.end())) {
+            device->writeSetting(setting.key, settings[setting.key]);
+            settingChanged[setting.key] = false;
+        } else {
+            settings[setting.key] = device->readSetting(setting.key);
+            settingChanged[setting.key] = false;
+        }
+    }
+    setting_value_changed.store(false);
+    setting_busy.unlock();
+    
+    wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_INITIALIZED, std::string("Device Initialized."));
 }
 
 void SDRThread::deinit() {
@@ -159,65 +176,10 @@ void SDRThread::readLoop() {
     updateGains();
 
     while (!terminated.load()) {
-        if (offset_changed.load()) {
-            if (!freq_changed.load()) {
-                frequency.store(frequency.load());
-                freq_changed.store(true);
-            }
-            offset_changed.store(false);
-        }
-        if (rate_changed.load()) {
-            device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
-            sampleRate.store(device->getSampleRate(SOAPY_SDR_RX,0));
-            numChannels.store(getOptimalChannelCount(sampleRate.load()));
-            numElems.store(getOptimalElementCount(sampleRate.load(), 60));
-            inpBuffer.data.resize(numElems.load());
-            free(buffs[0]);
-            buffs[0] = malloc(numElems.load() * 2 * sizeof(float));
-            rate_changed.store(false);
-        }
-        if (ppm_changed.load() && hasPPM.load()) {
-            device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm.load());
-            ppm_changed.store(false);
-        }
-        if (freq_changed.load()) {
-            device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency.load() - offset.load());
-            freq_changed.store(false);
-        }
-        if (hasDirectSampling.load() && direct_sampling_changed.load()) {
-            device->writeSetting("direct_samp", std::to_string(direct_sampling_mode));
-            direct_sampling_changed.store(false);
-        }
-        if (hasIQSwap.load() && iq_swap_changed.load()) {
-            device->writeSetting("iq_swap", iq_swap.load()?"true":"false");
-            iq_swap_changed.store(false);
-        }
-        if (agc_mode_changed.load()) {
-            SDRDeviceInfo *devInfo = deviceInfo.load();
-
-            device->setGainMode(SOAPY_SDR_RX,devInfo->getRxChannel()->getChannel(),agc_mode.load());
-            agc_mode_changed.store(false);
-            if (!agc_mode.load()) {
-                updateGains();
-            }
-        }
-        if (gain_value_changed.load() && !agc_mode.load()) {
-            SDRDeviceInfo *devInfo = deviceInfo.load();
-
-            gain_busy.lock();
-            for (std::map<std::string,bool>::iterator gci = gainChanged.begin(); gci != gainChanged.end(); gci++) {
-                if (gci->second) {
-                    device->setGain(SOAPY_SDR_RX, devInfo->getRxChannel()->getChannel(), gci->first, gainValues[gci->first]);
-                    gainChanged[gci->first] = false;
-                }
-            }
-            gain_busy.unlock();
-            
-            gain_value_changed.store(false);
-        }
-        
+        updateSettings();
         readStream(iqDataOutQueue);
     }
+
     buffers.purge();
 }
 
@@ -236,6 +198,76 @@ void SDRThread::updateGains() {
     gain_value_changed.store(false);
 }
 
+void SDRThread::updateSettings() {
+    if (offset_changed.load()) {
+        if (!freq_changed.load()) {
+            frequency.store(frequency.load());
+            freq_changed.store(true);
+        }
+        offset_changed.store(false);
+    }
+    
+    if (rate_changed.load()) {
+        device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
+        sampleRate.store(device->getSampleRate(SOAPY_SDR_RX,0));
+        numChannels.store(getOptimalChannelCount(sampleRate.load()));
+        numElems.store(getOptimalElementCount(sampleRate.load(), 60));
+        inpBuffer.data.resize(numElems.load());
+        free(buffs[0]);
+        buffs[0] = malloc(numElems.load() * 2 * sizeof(float));
+        rate_changed.store(false);
+    }
+    
+    if (ppm_changed.load() && hasPPM.load()) {
+        device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm.load());
+        ppm_changed.store(false);
+    }
+    
+    if (freq_changed.load()) {
+        device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency.load() - offset.load());
+        freq_changed.store(false);
+    }
+    
+    if (agc_mode_changed.load()) {
+        SDRDeviceInfo *devInfo = deviceInfo.load();
+        
+        device->setGainMode(SOAPY_SDR_RX,devInfo->getRxChannel()->getChannel(),agc_mode.load());
+        agc_mode_changed.store(false);
+        if (!agc_mode.load()) {
+            updateGains();
+        }
+    }
+    
+    if (gain_value_changed.load() && !agc_mode.load()) {
+        SDRDeviceInfo *devInfo = deviceInfo.load();
+        
+        gain_busy.lock();
+        for (std::map<std::string,bool>::iterator gci = gainChanged.begin(); gci != gainChanged.end(); gci++) {
+            if (gci->second) {
+                device->setGain(SOAPY_SDR_RX, devInfo->getRxChannel()->getChannel(), gci->first, gainValues[gci->first]);
+                gainChanged[gci->first] = false;
+            }
+        }
+        gain_busy.unlock();
+        
+        gain_value_changed.store(false);
+    }
+    
+    
+    if (setting_value_changed.load()) {
+        setting_busy.lock();
+        
+        for (std::map<std::string, bool>::iterator sci = settingChanged.begin(); sci != settingChanged.end(); sci++) {
+            if (sci->second) {
+                device->writeSetting(sci->first, settings[sci->first]);
+                settingChanged[sci->first] = false;
+            }
+        }
+        
+        setting_value_changed.store(false);
+        setting_busy.unlock();
+    }
+}
 
 void SDRThread::run() {
 //#ifdef __APPLE__
@@ -346,25 +378,6 @@ int SDRThread::getPPM() {
     return ppm.load();
 }
 
-void SDRThread::setDirectSampling(int dsMode) {
-    direct_sampling_mode.store(dsMode);
-    direct_sampling_changed.store(true);
-    std::cout << "Set direct sampling mode: " << this->direct_sampling_mode.load() << std::endl;
-}
-
-int SDRThread::getDirectSampling() {
-    return direct_sampling_mode.load();
-}
-
-void SDRThread::setIQSwap(bool iqSwap) {
-    iq_swap.store(iqSwap);
-    iq_swap_changed.store(true);
-}
-
-bool SDRThread::getIQSwap() {
-    return iq_swap.load();
-}
-
 void SDRThread::setAGCMode(bool mode) {
     agc_mode.store(mode);
     agc_mode_changed.store(true);
@@ -387,4 +400,24 @@ float SDRThread::getGain(std::string name) {
 	float val = gainValues[name];
 	gain_busy.unlock();
 	return val;
+}
+
+void SDRThread::writeSetting(std::string name, std::string value) {
+    setting_busy.lock();
+    settings[name] = value;
+    settingChanged[name] = true;
+    setting_value_changed.store(true);
+    setting_busy.unlock();
+}
+
+std::string SDRThread::readSetting(std::string name) {
+    std::string val;
+    setting_busy.lock();
+    val = device->readSetting(name);
+    setting_busy.unlock();
+    return val;
+}
+
+void SDRThread::setStreamArgs(SoapySDR::Kwargs streamArgs_in) {
+    streamArgs = streamArgs_in;
 }

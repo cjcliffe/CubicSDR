@@ -112,7 +112,7 @@ long long strToFrequency(std::string freqStr) {
 }
 
 
-CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE), directSamplingMode(0),
+CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE),
     sdrThread(NULL), sdrPostThread(NULL), spectrumVisualThread(NULL), demodVisualThread(NULL), pipeSDRIQData(NULL), pipeIQVisualData(NULL), pipeAudioVisualData(NULL), t_SDR(NULL), t_PostSDR(NULL) {
         sampleRateInitialized.store(false);
         agcMode.store(true);
@@ -141,7 +141,6 @@ bool CubicSDR::OnInit() {
     frequency = wxGetApp().getConfig()->getCenterFreq();
     offset = 0;
     ppm = 0;
-    directSamplingMode = 0;
     devicesReady.store(false);
     deviceSelectorOpen.store(false);
 
@@ -160,6 +159,7 @@ bool CubicSDR::OnInit() {
     
     getDemodSpectrumProcessor()->setInput(pipeDemodIQVisualData);
     getSpectrumProcessor()->setInput(pipeIQVisualData);
+    getSpectrumProcessor()->setHideDC(true);
     
     pipeAudioVisualData = new DemodulatorThreadOutputQueue();
     pipeAudioVisualData->set_max_num_items(1);
@@ -270,6 +270,16 @@ bool CubicSDR::OnCmdLineParsed(wxCmdLineParser& parser) {
     
     config.load();
 
+#ifdef BUNDLE_SOAPY_MODS
+    if (parser.Found("l")) {
+        useLocalMod.store(true);
+    } else {
+        useLocalMod.store(false);
+    }
+#else
+    useLocalMod.store(false);
+#endif
+    
     return true;
 }
 
@@ -296,6 +306,9 @@ void CubicSDR::removeRemote(std::string remoteAddr) {
 
 void CubicSDR::sdrThreadNotify(SDRThread::SDRThreadState state, std::string message) {
     notify_busy.lock();
+    if (state == SDRThread::SDR_THREAD_INITIALIZED) {
+        appframe->initDeviceParams(getDevice());
+    }
     if (state == SDRThread::SDR_THREAD_MESSAGE) {
         notifyMessage = message;
     }
@@ -351,28 +364,6 @@ void CubicSDR::setOffset(long long ofs) {
     config.getDevice(dev->getDeviceId())->setOffset(ofs);
 }
 
-void CubicSDR::setDirectSampling(int mode) {
-    directSamplingMode = mode;
-    sdrThread->setDirectSampling(mode);
-
-    SDRDeviceInfo *dev = getDevice();
-    config.getDevice(dev->getDeviceId())->setDirectSampling(mode);
-}
-
-int CubicSDR::getDirectSampling() {
-    return directSamplingMode;
-}
-
-void CubicSDR::setSwapIQ(bool swapIQ) {
-    sdrThread->setIQSwap(swapIQ);
-    SDRDeviceInfo *dev = getDevice();
-    config.getDevice(dev->getDeviceId())->setIQSwap(swapIQ);
-}
-
-bool CubicSDR::getSwapIQ() {
-    return sdrThread->getIQSwap();
-}
-
 long long CubicSDR::getFrequency() {
     return frequency;
 }
@@ -392,6 +383,10 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev) {
         }
     }
     
+    for (SoapySDR::Kwargs::const_iterator i = settingArgs.begin(); i != settingArgs.end(); i++) {
+        sdrThread->writeSetting(i->first, i->second);
+    }
+    sdrThread->setStreamArgs(streamArgs);
     sdrThread->setDevice(dev);
     
     DeviceConfig *devConfig = config.getDevice(dev->getDeviceId());
@@ -441,13 +436,9 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev) {
         setSampleRate(sampleRate);
 
         setPPM(devConfig->getPPM());
-        setDirectSampling(devConfig->getDirectSampling());
-        setSwapIQ(devConfig->getIQSwap());
         setOffset(devConfig->getOffset());
         
         t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
-        
-        appframe->initDeviceParams(dev);
     }
 }
 
@@ -486,6 +477,11 @@ DemodulatorMgr &CubicSDR::getDemodMgr() {
 SDRPostThread *CubicSDR::getSDRPostThread() {
     return sdrPostThread;
 }
+
+SDRThread *CubicSDR::getSDRThread() {
+    return sdrThread;
+}
+
 
 void CubicSDR::bindDemodulator(DemodulatorInstance *demod) {
     if (!demod) {
@@ -617,3 +613,14 @@ float CubicSDR::getGain(std::string name) {
     return sdrThread->getGain(name);
 }
 
+void CubicSDR::setStreamArgs(SoapySDR::Kwargs streamArgs_in) {
+    streamArgs = streamArgs_in;
+}
+
+void CubicSDR::setDeviceArgs(SoapySDR::Kwargs settingArgs_in) {
+    settingArgs = settingArgs_in;
+}
+
+bool CubicSDR::getUseLocalMod() {
+    return useLocalMod.load();
+}

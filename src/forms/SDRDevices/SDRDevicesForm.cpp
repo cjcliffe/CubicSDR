@@ -52,35 +52,22 @@ devFrame::devFrame( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	bSizer6->Fit( m_panel6 );
 	bSizer4->Add( m_panel6, 1, wxEXPAND | wxALL, 5 );
 	
-	devTabs = new wxNotebook( m_panel3, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
-	devTabs->Hide();
+	m_panel61 = new wxPanel( m_panel3, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer7;
+	bSizer7 = new wxBoxSizer( wxVERTICAL );
 	
-	devInfoPanel = new wxPanel( devTabs, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	wxBoxSizer* devInfoSizer;
-	devInfoSizer = new wxBoxSizer( wxVERTICAL );
+	m_staticText1 = new wxStaticText( m_panel61, wxID_ANY, wxT("SoapySDR Device Options"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText1->Wrap( -1 );
+	bSizer7->Add( m_staticText1, 0, wxALL, 5 );
 	
-	m_DevInfoList = new wxListCtrl( devInfoPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLC_ICON );
-	devInfoSizer->Add( m_DevInfoList, 1, wxEXPAND, 5 );
-	
-	
-	devInfoPanel->SetSizer( devInfoSizer );
-	devInfoPanel->Layout();
-	devInfoSizer->Fit( devInfoPanel );
-	devTabs->AddPage( devInfoPanel, wxT("Device"), false );
-	devParamsPanel = new wxPanel( devTabs, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	wxBoxSizer* devParamsSizer;
-	devParamsSizer = new wxBoxSizer( wxVERTICAL );
-	
-	m_ParamInfoList = new wxListCtrl( devParamsPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLC_ICON );
-	devParamsSizer->Add( m_ParamInfoList, 1, wxEXPAND, 5 );
+	m_propertyGrid = new wxPropertyGrid(m_panel61, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPG_DEFAULT_STYLE);
+	bSizer7->Add( m_propertyGrid, 1, wxALL|wxEXPAND, 5 );
 	
 	
-	devParamsPanel->SetSizer( devParamsSizer );
-	devParamsPanel->Layout();
-	devParamsSizer->Fit( devParamsPanel );
-	devTabs->AddPage( devParamsPanel, wxT("Parameters"), false );
-	
-	bSizer4->Add( devTabs, 1, wxEXPAND, 5 );
+	m_panel61->SetSizer( bSizer7 );
+	m_panel61->Layout();
+	bSizer7->Fit( m_panel61 );
+	bSizer4->Add( m_panel61, 1, wxEXPAND | wxALL, 5 );
 	
 	
 	m_panel3->SetSizer( bSizer4 );

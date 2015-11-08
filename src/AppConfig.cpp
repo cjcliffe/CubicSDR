@@ -2,9 +2,7 @@
 #include "CubicSDR.h"
 
 DeviceConfig::DeviceConfig() : deviceId("") {
-	iqSwap.store(0);
 	ppm.store(0);
-	directSampling.store(false);
 	offset.store(0);
 }
 
@@ -20,28 +18,12 @@ int DeviceConfig::getPPM() {
     return ppm.load();
 }
 
-void DeviceConfig::setDirectSampling(int mode) {
-    directSampling.store(mode);
-}
-
-int DeviceConfig::getDirectSampling() {
-    return directSampling.load();
-}
-
 void DeviceConfig::setOffset(long long offset) {
     this->offset.store(offset);
 }
 
 long long DeviceConfig::getOffset() {
     return offset.load();
-}
-
-void DeviceConfig::setIQSwap(bool iqSwap) {
-    this->iqSwap.store(iqSwap);
-}
-
-bool DeviceConfig::getIQSwap() {
-    return iqSwap.load();
 }
 
 void DeviceConfig::setDeviceId(std::string deviceId) {
@@ -64,8 +46,6 @@ void DeviceConfig::save(DataNode *node) {
     busy_lock.lock();
     *node->newChild("id") = deviceId;
     *node->newChild("ppm") = (int)ppm;
-    *node->newChild("iq_swap") = iqSwap;
-    *node->newChild("direct_sampling") = directSampling;
     *node->newChild("offset") = offset;
     busy_lock.unlock();
 }
@@ -78,32 +58,6 @@ void DeviceConfig::load(DataNode *node) {
         ppm_node->element()->get(ppmValue);
         setPPM(ppmValue);
         std::cout << "Loaded PPM for device '" << deviceId << "' at " << ppmValue << "ppm" << std::endl;
-    }
-    if (node->hasAnother("iq_swap")) {
-        DataNode *iq_swap_node = node->getNext("iq_swap");
-        int iqSwapValue = 0;
-        iq_swap_node->element()->get(iqSwapValue);
-        setIQSwap(iqSwapValue?true:false);
-        std::cout << "Loaded I/Q Swap for device '" << deviceId << "' as " << (iqSwapValue?"swapped":"not swapped") << std::endl;
-    }
-    if (node->hasAnother("direct_sampling")) {
-        DataNode *direct_sampling_node = node->getNext("direct_sampling");
-        int directSamplingValue = 0;
-        direct_sampling_node->element()->get(directSamplingValue);
-        setDirectSampling(directSamplingValue);
-        std::cout << "Loaded Direct Sampling Mode for device '" << deviceId << "':  ";
-        switch (directSamplingValue) {
-            case 0:
-                std::cout << "off" << std::endl;
-                break;
-            case 1:
-                std::cout << "I-ADC" << std::endl;
-                break;
-            case 2:
-                std::cout << "Q-ADC" << std::endl;
-                break;
-                
-        }
     }
     if (node->hasAnother("offset")) {
         DataNode *offset_node = node->getNext("offset");

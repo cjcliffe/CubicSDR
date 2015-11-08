@@ -45,11 +45,12 @@
 #define wxID_BANDWIDTH_BASE 2150
 #define wxID_BANDWIDTH_MANUAL 2200
 
+#define wxID_SETTINGS_BASE 2300
+
 #define wxID_DEVICE_ID 3500
 
 #define wxID_AUDIO_BANDWIDTH_BASE 9000
 #define wxID_AUDIO_DEVICE_MULTIPLIER 50
-
 
 // Define a new frame type
 class AppFrame: public wxFrame {
@@ -102,9 +103,11 @@ private:
     std::map<int, wxMenuItem *> audioSampleRateMenuItems;
     std::map<int, wxMenuItem *> directSamplingMenuItems;
     wxMenuBar *menuBar;
-    wxMenuItem *iqSwapMenuItem;
     wxMenu *sampleRateMenu;
     wxMenuItem *agcMenuItem;
+    wxMenu *settingsMenu;
+    SoapySDR::ArgInfoList settingArgs;
+    int settingsIdMax;
     std::vector<long> sampleRates;
     
     std::string currentSessionFile;

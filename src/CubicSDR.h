@@ -58,12 +58,6 @@ public:
     void setOffset(long long ofs);
     long long getOffset();
 
-    void setDirectSampling(int mode);
-    int getDirectSampling();
-
-    void setSwapIQ(bool swapIQ);
-    bool getSwapIQ();
-
     void setSampleRate(long long rate_in);
     long long getSampleRate();
 
@@ -82,7 +76,8 @@ public:
     DemodulatorMgr &getDemodMgr();
 
     SDRPostThread *getSDRPostThread();
-    
+    SDRThread *getSDRThread();
+
     void bindDemodulator(DemodulatorInstance *demod);
     void removeDemodulator(DemodulatorInstance *demod);
 
@@ -114,6 +109,10 @@ public:
     void setGain(std::string name, float gain_in);
     float getGain(std::string name);
 
+    void setStreamArgs(SoapySDR::Kwargs streamArgs_in);
+    void setDeviceArgs(SoapySDR::Kwargs settingArgs_in);
+
+    bool getUseLocalMod();
 private:
     AppFrame *appframe;
     AppConfig config;
@@ -126,7 +125,6 @@ private:
     long long offset;
     int ppm, snap;
     long long sampleRate;
-    int directSamplingMode;
     std::atomic_bool agcMode;
 
     SDRThread *sdrThread;
@@ -146,19 +144,33 @@ private:
     
     SDRDevicesDialog *deviceSelectorDialog;
 
+    SoapySDR::Kwargs streamArgs;
+    SoapySDR::Kwargs settingArgs;
+    
     std::thread *t_SDR, *t_SDREnum, *t_PostSDR, *t_SpectrumVisual, *t_DemodVisual;
     std::atomic_bool devicesReady;
     std::atomic_bool deviceSelectorOpen;
     std::atomic_bool sampleRateInitialized;
+    std::atomic_bool useLocalMod;
     std::string notifyMessage;
     std::mutex notify_busy;
 };
 
+#ifdef BUNDLE_SOAPY_MODS
+static const wxCmdLineEntryDesc commandLineInfo [] =
+{
+    { wxCMD_LINE_SWITCH, "h", "help", "Command line parameter help", wxCMD_LINE_VAL_NONE, wxCMD_LINE_OPTION_HELP },
+    { wxCMD_LINE_OPTION, "c", "config", "Specify a named configuration to use, i.e. '-c ham'" },
+    { wxCMD_LINE_SWITCH, "l", "localmod", "Check local SoapySDR modules instead of bundled first." },
+    { wxCMD_LINE_NONE }
+};
+#else
 static const wxCmdLineEntryDesc commandLineInfo [] =
 {
     { wxCMD_LINE_SWITCH, "h", "help", "Command line parameter help", wxCMD_LINE_VAL_NONE, wxCMD_LINE_OPTION_HELP },
     { wxCMD_LINE_OPTION, "c", "config", "Specify a named configuration to use, i.e. '-c ham'" },
     { wxCMD_LINE_NONE }
 };
+#endif
 
 DECLARE_APP(CubicSDR)

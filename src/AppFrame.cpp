@@ -196,6 +196,7 @@ AppFrame::AppFrame() :
 
     waterfallDataThread->setInputQueue("IQDataInput", wxGetApp().getWaterfallVisualQueue());
     waterfallDataThread->setOutputQueue("FFTDataOutput", waterfallCanvas->getVisualDataQueue());
+    waterfallDataThread->getProcessor()->setHideDC(true);
 
     t_FFTData = new std::thread(&FFTVisualDataThread::threadMain, waterfallDataThread);
 
@@ -254,24 +255,9 @@ AppFrame::AppFrame() :
             
     menuBar->Append(menu, wxT("&File"));
             
-    menu = new wxMenu;
-    
-    menu->Append(wxID_SET_FREQ_OFFSET, "Frequency Offset");
-    menu->Append(wxID_SET_PPM, "Device PPM");
-    iqSwapMenuItem = menu->AppendCheckItem(wxID_SET_SWAP_IQ, "Swap I/Q");
-            
-    wxMenu *dsMenu = new wxMenu;
-    
-    directSamplingMenuItems[0] = dsMenu->AppendRadioItem(wxID_SET_DS_OFF, "Off");
-    directSamplingMenuItems[1] = dsMenu->AppendRadioItem(wxID_SET_DS_I, "I-ADC");
-    directSamplingMenuItems[2] = dsMenu->AppendRadioItem(wxID_SET_DS_Q, "Q-ADC");
-    
-    menu->AppendSubMenu(dsMenu, "Direct Sampling");
-
-    agcMenuItem = menu->AppendCheckItem(wxID_AGC_CONTROL, "Automatic Gain");
-    agcMenuItem->Check(wxGetApp().getAGCMode());
-            
-    menuBar->Append(menu, wxT("&Settings"));
+    settingsMenu = new wxMenu;
+          
+    menuBar->Append(settingsMenu, wxT("&Settings"));
             
     menu = new wxMenu;
 
@@ -442,26 +428,64 @@ void AppFrame::updateDeviceParams() {
         return;
     }
     
-    if (!devInfo) {
-        deviceChanged.store(false);
-        return;
-    }
-
-    std::string deviceId = devInfo->getName();
     
-    DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
-
-    int dsMode = devConfig->getDirectSampling();
-    
-    if (dsMode > 0 && dsMode <= 2) {
-        directSamplingMenuItems[devConfig->getDirectSampling()]->Check();
+    // Build settings menu
+    wxMenu *newSettingsMenu = new wxMenu;
+    newSettingsMenu->Append(wxID_SET_FREQ_OFFSET, "Frequency Offset");
+    if (devInfo->getRxChannel()->hasCORR()) {
+        newSettingsMenu->Append(wxID_SET_PPM, "Device PPM");
     }
     
-    if (devConfig->getIQSwap()) {
-        iqSwapMenuItem->Check();
-    }
+    agcMenuItem = newSettingsMenu->AppendCheckItem(wxID_AGC_CONTROL, "Automatic Gain");
+    agcMenuItem->Check(wxGetApp().getAGCMode());
     
-    // Build sample rate menu from device info
+    SoapySDR::ArgInfoList::const_iterator args_i;
+    
+    int i = 0;
+    settingArgs = devInfo->getSettingsArgInfo();
+    for (args_i = settingArgs.begin(); args_i != settingArgs.end(); args_i++) {
+        SoapySDR::ArgInfo arg = (*args_i);
+        std::string currentVal = wxGetApp().getSDRThread()->readSetting(arg.key);
+        if (arg.type == SoapySDR::ArgInfo::BOOL) {
+            wxMenuItem *item = newSettingsMenu->AppendCheckItem(wxID_SETTINGS_BASE+i, arg.name, arg.description);
+            item->Check(currentVal=="true");
+            i++;
+        } else if (arg.type == SoapySDR::ArgInfo::INT) {
+            newSettingsMenu->Append(wxID_SETTINGS_BASE+i, arg.name, arg.description);
+            i++;
+        } else if (arg.type == SoapySDR::ArgInfo::FLOAT) {
+            newSettingsMenu->Append(wxID_SETTINGS_BASE+i, arg.name, arg.description);
+            i++;
+        } else if (arg.type == SoapySDR::ArgInfo::STRING) {
+            if (arg.options.size()) {
+                wxMenu *subMenu = new wxMenu;
+                int j = 0;
+                for (std::vector<std::string>::iterator str_i = arg.options.begin(); str_i != arg.options.end(); str_i++) {
+                    std::string optName = (*str_i);
+                    std::string displayName = optName;
+                    if (arg.optionNames.size()) {
+                        displayName = arg.optionNames[j];
+                    }
+                    wxMenuItem *item = subMenu->AppendRadioItem(wxID_SETTINGS_BASE+i, displayName);
+                    if (currentVal == (*str_i)) {
+                        item->Check();
+                    }
+                    j++;
+                    i++;
+                }
+                newSettingsMenu->AppendSubMenu(subMenu, arg.name, arg.description);
+            } else {
+                newSettingsMenu->Append(wxID_SETTINGS_BASE+i, arg.name, arg.description);
+                i++;
+            }
+        }
+    }
+    settingsIdMax = wxID_SETTINGS_BASE+i;
+    
+    menuBar->Replace(1, newSettingsMenu, wxT("&Settings"));
+    settingsMenu = newSettingsMenu;
+    
+    // Build sample rate menu
     sampleRates = devInfo->getRxChannel()->getSampleRates();
     sampleRateMenuItems.erase(sampleRateMenuItems.begin(),sampleRateMenuItems.end());
     
@@ -520,19 +544,19 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             wxGetApp().saveConfig();
         }
     } else if (event.GetId() == wxID_SET_DS_OFF) {
-        wxGetApp().setDirectSampling(0);
-        wxGetApp().saveConfig();
+//        wxGetApp().setDirectSampling(0);
+//        wxGetApp().saveConfig();
     } else if (event.GetId() == wxID_SET_DS_I) {
-        wxGetApp().setDirectSampling(1);
-        wxGetApp().saveConfig();
+//        wxGetApp().setDirectSampling(1);
+//        wxGetApp().saveConfig();
     } else if (event.GetId() == wxID_SET_DS_Q) {
-        wxGetApp().setDirectSampling(2);
-        wxGetApp().saveConfig();
+//        wxGetApp().setDirectSampling(2);
+//        wxGetApp().saveConfig();
     } else if (event.GetId() == wxID_SET_SWAP_IQ) {
-        bool swap_state = !wxGetApp().getSwapIQ();
-        wxGetApp().setSwapIQ(swap_state);
-        wxGetApp().saveConfig();
-        iqSwapMenuItem->Check(swap_state);
+//        bool swap_state = !wxGetApp().getSwapIQ();
+//        wxGetApp().setSwapIQ(swap_state);
+//        wxGetApp().saveConfig();
+//        iqSwapMenuItem->Check(swap_state);
     } else if (event.GetId() == wxID_AGC_CONTROL) {
         if (wxGetApp().getDevice() == NULL) {
             agcMenuItem->Check();
@@ -623,6 +647,53 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         ThemeMgr::mgr.setTheme(COLOR_THEME_RADAR);
     }
 
+    if (event.GetId() >= wxID_SETTINGS_BASE && event.GetId() < settingsIdMax) {
+        int setIdx = event.GetId()-wxID_SETTINGS_BASE;
+        int menuIdx = 0;
+        for (std::vector<SoapySDR::ArgInfo>::iterator arg_i = settingArgs.begin(); arg_i != settingArgs.end(); arg_i++) {
+            SoapySDR::ArgInfo &arg = (*arg_i);
+
+            if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size() && setIdx >= menuIdx && setIdx < menuIdx+arg.options.size()) {
+                int optIdx = setIdx-menuIdx;
+                wxGetApp().getSDRThread()->writeSetting(arg.key, arg.options[optIdx]);
+                break;
+            } else if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size()) {
+                menuIdx += arg.options.size();
+            } else if (menuIdx == setIdx) {
+                if (arg.type == SoapySDR::ArgInfo::BOOL) {
+                    wxGetApp().getSDRThread()->writeSetting(arg.key, (wxGetApp().getSDRThread()->readSetting(arg.key)=="true")?"false":"true");
+                    break;
+                } else if (arg.type == SoapySDR::ArgInfo::STRING) {
+                    menuIdx++;
+                } else if (arg.type == SoapySDR::ArgInfo::INT) {
+                    int currentVal;
+                    try {
+                        currentVal = std::stoi(wxGetApp().getSDRThread()->readSetting(arg.key));
+                    } catch (std::invalid_argument e) {
+                        currentVal = 0;
+                    }
+                    int intVal = wxGetNumberFromUser(arg.description, arg.units, arg.name, currentVal, arg.range.minimum(), arg.range.maximum(), this);
+                    if (intVal != -1) {
+                        wxGetApp().getSDRThread()->writeSetting(arg.key, std::to_string(intVal));
+                    }
+                    break;
+                } else if (arg.type == SoapySDR::ArgInfo::FLOAT) {
+                    wxString floatVal = wxGetTextFromUser(arg.description, arg.name, wxGetApp().getSDRThread()->readSetting(arg.key));
+                    try {
+                        wxGetApp().getSDRThread()->writeSetting(arg.key, floatVal.ToStdString());
+                    } catch (std::invalid_argument e) {
+                        // ...
+                    }
+                    break;
+                } else {
+                    menuIdx++;
+                }
+            } else {
+                menuIdx++;
+            }
+        }
+    }
+    
     if (event.GetId() >= wxID_THEME_DEFAULT && event.GetId() <= wxID_THEME_RADAR) {
     	demodTuner->Refresh();
     	demodModeSelector->Refresh();
@@ -664,24 +735,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             }
             break;
     }
-
-//    std::vector<SDRDeviceInfo *> *devs = wxGetApp().getDevices();
-//    if (event.GetId() >= wxID_DEVICE_ID && event.GetId() <= wxID_DEVICE_ID + devs->size()) {
-//        int devId = event.GetId() - wxID_DEVICE_ID;
-//        wxGetApp().setDevice(devId);
-//
-//        SDRDeviceInfo *dev = (*wxGetApp().getDevices())[devId];
-//        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
-//        
-//        int dsMode = devConfig->getDirectSampling();
-//        
-//        if (dsMode >= 0 && dsMode <= 2) {
-//            directSamplingMenuItems[devConfig->getDirectSampling()]->Check();
-//        }
-//        
-//        iqSwapMenuItem->Check(devConfig->getIQSwap());
-//    }
-
+    
     if (event.GetId() >= wxID_BANDWIDTH_BASE && event.GetId() < wxID_BANDWIDTH_BASE+sampleRates.size()) {
         wxGetApp().setSampleRate(sampleRates[event.GetId()-wxID_BANDWIDTH_BASE]);
     }
@@ -892,7 +946,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 //    wxGetApp().getSpectrumDistributor()->run();
 
     SpectrumVisualProcessor *proc = wxGetApp().getSpectrumProcessor();
-    proc->setHideDC(true);
 
     if (spectrumAvgMeter->inputChanged()) {
         float val = spectrumAvgMeter->getInputValue();
@@ -919,7 +972,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     dproc->setCenterFrequency(demodWaterfallCanvas->getCenterFrequency());
 
     SpectrumVisualProcessor *wproc = waterfallDataThread->getProcessor();
-    wproc->setHideDC(true);
     
     if (waterfallSpeedMeter->inputChanged()) {
         float val = waterfallSpeedMeter->getInputValue();

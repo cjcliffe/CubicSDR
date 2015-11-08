@@ -48,7 +48,7 @@ private:
 public:
     SDRThread();
     ~SDRThread();
-    enum SDRThreadState { SDR_THREAD_MESSAGE, SDR_THREAD_TERMINATED, SDR_THREAD_FAILED };
+    enum SDRThreadState { SDR_THREAD_MESSAGE, SDR_THREAD_INITIALIZED, SDR_THREAD_TERMINATED, SDR_THREAD_FAILED };
     
     void run();
 
@@ -69,21 +69,22 @@ public:
     void setPPM(int ppm);
     int getPPM();
     
-    void setDirectSampling(int dsMode);
-    int getDirectSampling();
-    
-    void setIQSwap(bool iqSwap);
-    bool getIQSwap();
-    
     void setAGCMode(bool mode);
     bool getAGCMode();
 
     void setGain(std::string name, float value);
     float getGain(std::string name);
     
+    void writeSetting(std::string name, std::string value);
+    std::string readSetting(std::string name);
+    
+    void setStreamArgs(SoapySDR::Kwargs streamArgs);
+    
 protected:
     void updateGains();
-    
+    void updateSettings();
+    SoapySDR::Kwargs combineArgs(SoapySDR::Kwargs a, SoapySDR::Kwargs b);
+
     SoapySDR::Stream *stream;
     SoapySDR::Device *device;
     void *buffs[1];
@@ -91,15 +92,21 @@ protected:
     SDRThreadIQData inpBuffer;
     std::atomic<DeviceConfig *> deviceConfig;
     std::atomic<SDRDeviceInfo *> deviceInfo;
+    
+    std::mutex setting_busy;
+    std::map<std::string, std::string> settings;
+    std::map<std::string, bool> settingChanged;
 
     std::atomic<uint32_t> sampleRate;
     std::atomic_llong frequency, offset;
-    std::atomic_int ppm, direct_sampling_mode, numElems, numChannels;
-    std::atomic_bool hasPPM, hasHardwareDC, hasDirectSampling, hasIQSwap;
-    std::atomic_bool iq_swap, agc_mode, rate_changed, freq_changed, offset_changed,
-        ppm_changed, direct_sampling_changed, device_changed, iq_swap_changed, agc_mode_changed, gain_value_changed;
+    std::atomic_int ppm, numElems, numChannels;
+    std::atomic_bool hasPPM, hasHardwareDC;
+    std::atomic_bool agc_mode, rate_changed, freq_changed, offset_changed,
+        ppm_changed, device_changed, agc_mode_changed, gain_value_changed, setting_value_changed;
 
     std::mutex gain_busy;
     std::map<std::string, float> gainValues;
     std::map<std::string, bool> gainChanged;
+    
+    SoapySDR::Kwargs streamArgs;
 };

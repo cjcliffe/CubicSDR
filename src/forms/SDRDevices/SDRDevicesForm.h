@@ -20,11 +20,12 @@
 #include <wx/button.h>
 #include <wx/sizer.h>
 #include <wx/panel.h>
-#include <wx/listctrl.h>
+#include <wx/stattext.h>
 #include <wx/bitmap.h>
 #include <wx/image.h>
 #include <wx/icon.h>
-#include <wx/notebook.h>
+#include <wx/propgrid/propgrid.h>
+#include <wx/propgrid/advprops.h>
 #include <wx/timer.h>
 #include <wx/frame.h>
 
@@ -46,11 +47,9 @@ class devFrame : public wxFrame
 		wxPanel* m_panel4;
 		wxButton* m_addRemoteButton;
 		wxButton* m_useSelectedButton;
-		wxNotebook* devTabs;
-		wxPanel* devInfoPanel;
-		wxListCtrl* m_DevInfoList;
-		wxPanel* devParamsPanel;
-		wxListCtrl* m_ParamInfoList;
+		wxPanel* m_panel61;
+		wxStaticText* m_staticText1;
+		wxPropertyGrid* m_propertyGrid;
 		wxTimer m_deviceTimer;
 		
 		// Virtual event handlers, overide them in your derived class
@@ -65,7 +64,7 @@ class devFrame : public wxFrame
 	
 	public:
 		
-		devFrame( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("CubicSDR :: SDR Devices"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 392,467 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
+		devFrame( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("CubicSDR :: SDR Devices"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 700,467 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
 		
 		~devFrame();
 	
