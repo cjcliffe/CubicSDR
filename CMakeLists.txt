@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.8)
 
 SET(CUBICSDR_VERSION_MAJOR "0")
 SET(CUBICSDR_VERSION_MINOR "1")
-SET(CUBICSDR_VERSION_PATCH "15")
+SET(CUBICSDR_VERSION_PATCH "16")
 SET(CUBICSDR_VERSION_REL "alpha")
 SET(CUBICSDR_VERSION "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}-${CUBICSDR_VERSION_REL}")
 
@@ -427,7 +427,11 @@ IF (APPLE AND BUNDLE_APP)
     
     set(BUNDLE_SOAPY_MODS OFF CACHE BOOL "Bundle local SoapySDR modules")
     
-    
+    IF (BUNDLE_SOAPY_MODS)
+    	ADD_DEFINITIONS(
+    		-DBUNDLE_SOAPY_MODS=1
+    	)
+    ENDIF()
     
     ADD_DEFINITIONS(
 		-std=c++0x 
@@ -470,7 +474,7 @@ IF (APPLE AND BUNDLE_APP)
         ${PROJECT_SOURCE_DIR}/icon/CubicSDR.icns
         PROPERTIES
         MACOSX_PACKAGE_LOCATION Resources
-      )
+    )
 
     target_link_libraries(CubicSDR ${LIQUID_LIB} ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
     SET_TARGET_PROPERTIES(CubicSDR PROPERTIES MACOSX_BUNDLE TRUE)
@@ -482,30 +486,51 @@ IF (APPLE AND BUNDLE_APP)
          # MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
          MACOSX_BUNDLE_GUI_IDENTIFIER "com.cubicproductions.cubicsdr"
          MACOSX_BUNDLE_ICON_FILE CubicSDR.icns
-      )
+    )
     
     SET(APPS "${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME}/CubicSDR.app")
     # SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
     # SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+    
+    IF (BUNDLE_SOAPY_MODS)
+
+    message(STATUS "SOAPY_ROOT: ${SOAPY_SDR_ROOT}")
+    file(GLOB SOAPY_MODS ${SOAPY_SDR_ROOT}/lib/SoapySDR/modules/*.so)
+    
+    FOREACH(SOAPY_MOD_FILE ${SOAPY_MODS})
+            INSTALL( FILES "${SOAPY_MOD_FILE}"
+                DESTINATION "${APPS}/Contents/MacOS/modules"
+                COMPONENT Runtime
+            )
+    ENDFOREACH()
+    
+    ENDIF(BUNDLE_SOAPY_MODS)
 
     INSTALL(CODE "
-           SET(BU_COPY_FULL_FRAMEWORK_CONTENTS ON)
+       SET(BU_COPY_FULL_FRAMEWORK_CONTENTS ON)
        include(BundleUtilities)
        fixup_bundle(\"${APPS}\"   \"\"   \"/usr/local/lib\")
-       VERIFY_APP(\"${APPS}\")
        " COMPONENT Runtime)
 
-       # IF (BUNDLE_SOAPY_MODS)
-       #         install( DIRECTORY "${SOAPY_SDR_ROOT}/lib/modules"
-       #             DESTINATION ${APPS}/modules
-       #             COMPONENT Runtime
-       #             FILES_MATCHING
-       #             PATTERN "*.dylib"
-       #             PATTERN "*_debug.dylib" EXCLUDE
-       #         )
-       # ENDIF(BUNDLE_SOAPY_MODS)
-
-
+    IF (BUNDLE_SOAPY_MODS)
+       FOREACH(SOAPY_MOD_FILE ${SOAPY_MODS})
+           GET_FILENAME_COMPONENT(SOAPY_MOD_NAME ${SOAPY_MOD_FILE} NAME)
+           
+           IF(${SOAPY_MOD_NAME} STREQUAL "libsdrPlaySupport.so") # prevent inclusion of libmirsdrapi-rsp.so
+               message(STATUS "Excluding libsdrPlaySupport.so")
+               CONTINUE()
+           ELSE()
+               message(STATUS "Bundling ${SOAPY_MOD_NAME} from ${SOAPY_MOD_FILE}")
+           ENDIF()
+           INSTALL(CODE "
+               fixup_bundle(\"${APPS}\"   \"${APPS}/Contents/MacOS/modules/${SOAPY_MOD_NAME}\"   \"/usr/local/lib\")
+              " COMPONENT Runtime)
+       ENDFOREACH()
+   ENDIF(BUNDLE_SOAPY_MODS)
+   
+   INSTALL(CODE "
+       VERIFY_APP(\"${APPS}\")
+       " COMPONENT Runtime)
 
    INSTALL(TARGETS CubicSDR
        BUNDLE DESTINATION . COMPONENT Runtime

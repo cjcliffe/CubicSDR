@@ -270,6 +270,16 @@ bool CubicSDR::OnCmdLineParsed(wxCmdLineParser& parser) {
     
     config.load();
 
+#ifdef BUNDLE_SOAPY_MODS
+    if (parser.Found("l")) {
+        useLocalMod.store(true);
+    } else {
+        useLocalMod.store(false);
+    }
+#else
+    useLocalMod.store(false);
+#endif
+    
     return true;
 }
 
@@ -611,3 +621,6 @@ void CubicSDR::setDeviceArgs(SoapySDR::Kwargs settingArgs_in) {
     settingArgs = settingArgs_in;
 }
 
+bool CubicSDR::getUseLocalMod() {
+    return useLocalMod.load();
+}
