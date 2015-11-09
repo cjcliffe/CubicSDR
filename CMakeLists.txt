@@ -77,7 +77,7 @@ include_directories(${LIQUID_INCLUDES} ${FFTW_INCLUDES})
 SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} ${LIQUID_LIBRARIES} ${FFTW_LIBRARIES})
 #ENDIF()
 
-find_package(wxWidgets COMPONENTS gl core base REQUIRED)
+find_package(wxWidgets COMPONENTS gl core propgrid base REQUIRED)
 set(wxWidgets_CONFIGURATION mswu)
 include(${wxWidgets_USE_FILE})
 
