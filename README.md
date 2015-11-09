@@ -25,14 +25,15 @@ Features and Status:
       - [x] SoapyRTLSDR for RTL-SDR (Maintained by C.J.)
       - [x] SoapyHackRF for HackRF
       - [x] SoapyBladeRF for BladeRF
-      - [ ] SoapyUHD for Ettus USRP
+      - [ ] SoapyUHD for Ettus USRP (untested)
       - [x] SoapyRemote, use any SoapySDR Device via network (works on Pi)
+      - [ ] SoapyAirSpy (WIP by C.J.)
+      - [ ] SoapyAudio (WIP by C.J.)
       - [x] SoapyOsmo for GrOsmoSDR devices
         - [ ] OsmoSDR
         - [ ] MiriSDR
         - [ ] RFSpace
         - [x] AirSpy
-    - [ ] rtl_tcp client
   - Basic Features
     - [x] Device Selection
     - [x] Bandwidth
@@ -42,13 +43,13 @@ Features and Status:
     - [x] Device PPM
     - [x] Waterfall speed
     - [x] Spectrum average speed
-    - [ ] Gain Controls
+    - [x] Gain Controls
     - [ ] Bookmarks
     - [ ] History
     - [ ] Default preferences
       - [ ] Audio defaults
       - [x] Device defaults
-    - [ ] Run as rtl_tcp server and visualize control
+    - [ ] Run any device as rtl_tcp server and visualize control
   - Neat Visuals
     - [ ] 2D visuals
       - [x] Y Scope
@@ -72,7 +73,7 @@ Features and Status:
       - [x] USB
       - [x] DSB
       - [x] I/Q
-    - [ ] Controls
+    - [x] Controls
       - [x] Display Frequency and allow manual adjustments
       - [x] Allow selection of demodulation type
       - [x] Display separate zoomed-in view of current waterfall and spectrum, allow adjustments
@@ -136,7 +137,7 @@ Features and Status:
     - [ ] Update visuals to OpenGL 3.x / OpenGL ES
     - [x] Resolve constant refresh on visuals that don't change often
     - [ ] Resolve all driver/platform vertical sync issues
-    - [ ] Group and divide IQ data distribution workload instead of 100% distribution per instance
+    - [x] Group and divide IQ data distribution workload instead of 100% distribution per instance
 
 
 Advanced Goals and ideas:
@@ -168,8 +169,8 @@ Advanced Goals and ideas:
     - USB/MIDI control surfaces
     - Joystick / gamepad input
     - Vibration / force-feeback
-  - Investigate compilation via emscripten using rtl_tcp for input
-    - Create web server+rtl_tcp bundle for embedded devices
+  - Investigate compilation via emscripten using SoapyRemote for input
+    - Create web server+SoapyRemote bundle for embedded devices
     - Use emscripten compiled CubicSDR via embedded web server 
 
 Target Platforms:
