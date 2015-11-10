@@ -1,7 +1,7 @@
 # - Find LIQUID
 # Find the native LIQUID includes and library
 #
-#  LIQUID_INCLUDES    - where to find LIQUID3.h
+#  LIQUID_INCLUDES    - where to find LIQUID.h
 #  LIQUID_LIBRARIES   - List of libraries when using LIQUID.
 #  LIQUID_FOUND       - True if LIQUID found.
 
@@ -19,4 +19,4 @@ find_library (LIQUID_LIBRARIES NAMES liquid)
 include (FindPackageHandleStandardArgs)
 find_package_handle_standard_args (LIQUID DEFAULT_MSG LIQUID_LIBRARIES LIQUID_INCLUDES)
 
-mark_as_advanced (LIQUID_LIBRARIES LIQUID_INCLUDES)
+#mark_as_advanced (LIQUID_LIBRARIES LIQUID_INCLUDES)

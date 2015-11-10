@@ -69,6 +69,19 @@ SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/${EX_PLATFORM_NAME})
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_BINARY_DIR}/${EX_PLATFORM_NAME})
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_BINARY_DIR}/${EX_PLATFORM_NAME})
 
+IF (MSVC) 
+	include_directories ("${PROJECT_SOURCE_DIR}/external/wglext")
+	SET(FFTW_INCLUDES "${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/")
+	SET(FFTW_LIBRARIES "${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM}/libfftw3f-3.lib")
+	SET(LIQUID_INCLUDES "${PROJECT_SOURCE_DIR}/external/liquid-dsp/include/")
+	SET(LIQUID_LIBRARIES "${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/libliquid.lib")
+ELSE (MSVC)
+	ADD_DEFINITIONS(
+		-std=c++0x 
+		-pthread
+	)
+ENDIF(MSVC)
+
 find_package(OpenGL REQUIRED)
 #IF (NOT WIN32)
 find_package(FFTW REQUIRED)
@@ -77,7 +90,7 @@ include_directories(${LIQUID_INCLUDES} ${FFTW_INCLUDES})
 SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} ${LIQUID_LIBRARIES} ${FFTW_LIBRARIES})
 #ENDIF()
 
-find_package(wxWidgets COMPONENTS gl core propgrid base REQUIRED)
+find_package(wxWidgets COMPONENTS gl core propgrid adv base REQUIRED)
 set(wxWidgets_CONFIGURATION mswu)
 include(${wxWidgets_USE_FILE})
 
@@ -363,18 +376,6 @@ include_directories (
 	${PROJECT_SOURCE_DIR}/external/tinyxml
 	${PROJECT_SOURCE_DIR}/external/cubicvr2/math
 )
-
-IF (MSVC) 
-include_directories (
-	${PROJECT_SOURCE_DIR}/external/wglext
-)
-
-ELSE (MSVC)
-	ADD_DEFINITIONS(
-		-std=c++0x 
-		-pthread
-	)
-ENDIF(MSVC)
 
 set(RES_FILES "")
 if(MINGW OR MSVC)
