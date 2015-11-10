@@ -629,7 +629,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         demodTuner->Refresh();
         SetTitle(CUBICSDR_TITLE);
         currentSessionFile = "";
-    } else if (event.GetId() == wxID_EXIT) {
+    } else if (event.GetId() == wxID_CLOSE) {
         Close(false);
     } else if (event.GetId() == wxID_THEME_DEFAULT) {
         ThemeMgr::mgr.setTheme(COLOR_THEME_DEFAULT);
