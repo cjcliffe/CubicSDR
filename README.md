@@ -3,6 +3,8 @@ CubicSDR
 
 Cross-Platform Software-Defined Radio Application
 
+Please see the [CubicSDR GitHub Wiki](https://github.com/cjcliffe/CubicSDR/wiki) for build instructions.
+
 Utilizes: 
 --------
   - liquid-dsp (http://liquidsdr.org/ -- https://github.com/jgaeddert/liquid-dsp)
@@ -158,14 +160,14 @@ Advanced Goals and ideas:
       - Visual outputs?
     * Take control of additional devices and spawning new demodulators (i.e. trunkers)
     * Script manager / live editor
-    * Provide scriptable liquid-dsp modulation for trancievers?
+    * Provide scriptable liquid-dsp modulation for transceivers?
     * Allow scripts to launch/run headless (no UI)
   - "PVR" like mode with waterfall time shifting
   - L/R and surround-sound balance settings for separating and listening to mono streams
   - Add tool for converting decimated I/Q recording to video
-    - Select video features such as title/demodulation/scope/waterfall/etc
+    - Select video features such as title/demodulation/scope/waterfall/etc.
     - Render to video from GL frames->ffmpeg/mencoder /w demodulated audio
-  - Accessability / Control
+  - Accessibility / Control
     - USB/MIDI control surfaces
     - Joystick / gamepad input
     - Vibration / force-feeback
