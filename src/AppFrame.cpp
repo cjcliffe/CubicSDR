@@ -14,12 +14,11 @@
 #endif
 
 #include <vector>
-#include "SDRThread.h"
-#include "DemodulatorMgr.h"
 #include "AudioThread.h"
 #include "CubicSDR.h"
 #include "DataTree.h"
 #include "ColorTheme.h"
+#include "DemodulatorMgr.h"
 
 #include <thread>
 
@@ -35,7 +34,10 @@ EVT_CLOSE(AppFrame::OnClose)
 EVT_MENU(wxID_ANY, AppFrame::OnMenu)
 EVT_COMMAND(wxID_ANY, wxEVT_THREAD, AppFrame::OnThread)
 EVT_IDLE(AppFrame::OnIdle)
+EVT_SPLITTER_DCLICK(wxID_ANY, AppFrame::OnDoubleClickSash)
+EVT_SPLITTER_UNSPLIT(wxID_ANY, AppFrame::OnUnSplit)
 wxEND_EVENT_TABLE()
+
 
 AppFrame::AppFrame() :
         wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
@@ -46,12 +48,25 @@ AppFrame::AppFrame() :
 
     wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodVisuals = new wxBoxSizer(wxVERTICAL);
-    wxBoxSizer *demodTray = new wxBoxSizer(wxHORIZONTAL);
+    demodTray = new wxBoxSizer(wxHORIZONTAL);
     wxBoxSizer *demodScopeTray = new wxBoxSizer(wxVERTICAL);
 
     int attribList[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 
-    demodModeSelector = new ModeSelectorCanvas(this, attribList);
+    mainSplitter = new wxSplitterWindow( this, wxID_MAIN_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
+    mainSplitter->SetSashGravity(12.0/37.0);
+    mainSplitter->SetMinimumPaneSize(1);
+
+    wxPanel *demodPanel = new wxPanel(mainSplitter, wxID_ANY);
+            
+    gainCanvas = new GainCanvas(demodPanel, attribList);
+    
+    gainSizerItem = demodTray->Add(gainCanvas, 0, wxEXPAND | wxALL, 0);
+    gainSizerItem->Show(false);
+    gainSpacerItem = demodTray->AddSpacer(1);
+    gainSpacerItem->Show(false);
+            
+    demodModeSelector = new ModeSelectorCanvas(demodPanel, attribList);
     demodModeSelector->addChoice(DEMOD_TYPE_FM, "FM");
     demodModeSelector->addChoice(DEMOD_TYPE_AM, "AM");
     demodModeSelector->addChoice(DEMOD_TYPE_LSB, "LSB");
@@ -63,14 +78,14 @@ AppFrame::AppFrame() :
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
 
     wxGetApp().getDemodSpectrumProcessor()->setup(1024);
-    demodSpectrumCanvas = new SpectrumCanvas(this, attribList);
+    demodSpectrumCanvas = new SpectrumCanvas(demodPanel, attribList);
     demodSpectrumCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
     demodVisuals->Add(demodSpectrumCanvas, 3, wxEXPAND | wxALL, 0);
     wxGetApp().getDemodSpectrumProcessor()->attachOutput(demodSpectrumCanvas->getVisualDataQueue());
 
     demodVisuals->AddSpacer(1);
 
-    demodWaterfallCanvas = new WaterfallCanvas(this, attribList);
+    demodWaterfallCanvas = new WaterfallCanvas(demodPanel, attribList);
     demodWaterfallCanvas->setup(1024, 128);
     demodWaterfallCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
     demodWaterfallCanvas->attachSpectrumCanvas(demodSpectrumCanvas);
@@ -83,14 +98,16 @@ AppFrame::AppFrame() :
 
     demodTray->AddSpacer(1);
 
-    demodSignalMeter = new MeterCanvas(this, attribList);
+    demodSignalMeter = new MeterCanvas(demodPanel, attribList);
     demodSignalMeter->setMax(0.5);
     demodSignalMeter->setHelpTip("Current Signal Level.  Click / Drag to set Squelch level.");
+    demodSignalMeter->SetMinSize(wxSize(12,24));
     demodTray->Add(demodSignalMeter, 1, wxEXPAND | wxALL, 0);
+
 
     demodTray->AddSpacer(1);
 
-    scopeCanvas = new ScopeCanvas(this, attribList);
+    scopeCanvas = new ScopeCanvas(demodPanel, attribList);
     scopeCanvas->setHelpTip("Audio Visuals, drag left/right to toggle Scope or Spectrum.");
     demodScopeTray->Add(scopeCanvas, 8, wxEXPAND | wxALL, 0);
     wxGetApp().getScopeProcessor()->setup(2048);
@@ -98,8 +115,9 @@ AppFrame::AppFrame() :
 
     demodScopeTray->AddSpacer(1);
 
-    demodTuner = new TuningCanvas(this, attribList);
+    demodTuner = new TuningCanvas(demodPanel, attribList);
     demodTuner->setHelpTip("Testing tuner");
+    demodTuner->SetMinClientSize(wxSize(200,24));
     demodScopeTray->Add(demodTuner, 1, wxEXPAND | wxALL, 0);
 
     demodTray->Add(demodScopeTray, 30, wxEXPAND | wxALL, 0);
@@ -108,73 +126,99 @@ AppFrame::AppFrame() :
 
     wxBoxSizer *demodGainTray = new wxBoxSizer(wxVERTICAL);
             
-    demodGainMeter = new MeterCanvas(this, attribList);
+    demodGainMeter = new MeterCanvas(demodPanel, attribList);
     demodGainMeter->setMax(2.0);
     demodGainMeter->setHelpTip("Current Demodulator Gain Level.  Click / Drag to set Gain level.");
     demodGainMeter->setShowUserInput(false);
+    demodGainMeter->SetMinSize(wxSize(12,24));
     demodGainTray->Add(demodGainMeter, 8, wxEXPAND | wxALL, 0);
+
 
     demodGainTray->AddSpacer(1);
 
-    demodMuteButton = new ModeSelectorCanvas(this, attribList);
+    demodMuteButton = new ModeSelectorCanvas(demodPanel, attribList);
     demodMuteButton->addChoice(1, "M");
     demodMuteButton->setPadding(-1,-1);
     demodMuteButton->setHighlightColor(RGBA4f(0.8,0.2,0.2));
     demodMuteButton->setHelpTip("Demodulator Mute Toggle");
     demodMuteButton->setToggleMode(true);
 	demodMuteButton->setSelection(-1);
-          
+    demodMuteButton->SetMinSize(wxSize(12,24));
+            
     demodGainTray->Add(demodMuteButton, 1, wxEXPAND | wxALL, 0);
 
     demodTray->Add(demodGainTray, 1, wxEXPAND | wxALL, 0);
-            
-    vbox->Add(demodTray, 12, wxEXPAND | wxALL, 0);
-    vbox->AddSpacer(1);
+    
+    demodPanel->SetSizer(demodTray);
 
+//    vbox->Add(demodTray, 12, wxEXPAND | wxALL, 0);
+//    vbox->AddSpacer(1);
+            
+    mainVisSplitter = new wxSplitterWindow( mainSplitter, wxID_VIS_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
+    mainVisSplitter->SetSashGravity(5.0/25.0);
+    mainVisSplitter->SetMinimumPaneSize(1);
+        
+//    mainVisSplitter->Connect( wxEVT_IDLE, wxIdleEventHandler( AppFrame::mainVisSplitterIdle ), NULL, this );
+
+    wxPanel *spectrumPanel = new wxPanel(mainVisSplitter, wxID_ANY);
     wxBoxSizer *spectrumSizer = new wxBoxSizer(wxHORIZONTAL);
+
     wxGetApp().getSpectrumProcessor()->setup(2048);
-    spectrumCanvas = new SpectrumCanvas(this, attribList);
+    spectrumCanvas = new SpectrumCanvas(spectrumPanel, attribList);
     spectrumCanvas->setShowDb(true);
+    spectrumCanvas->setScaleFactorEnabled(true);
     wxGetApp().getSpectrumProcessor()->attachOutput(spectrumCanvas->getVisualDataQueue());
             
-    spectrumAvgMeter = new MeterCanvas(this, attribList);
+    spectrumAvgMeter = new MeterCanvas(spectrumPanel, attribList);
     spectrumAvgMeter->setHelpTip("Spectrum averaging speed, click or drag to adjust.");
     spectrumAvgMeter->setMax(1.0);
     spectrumAvgMeter->setLevel(0.65);
     spectrumAvgMeter->setShowUserInput(false);
+    spectrumAvgMeter->SetMinSize(wxSize(12,24));
+
 
     spectrumSizer->Add(spectrumCanvas, 63, wxEXPAND | wxALL, 0);
     spectrumSizer->AddSpacer(1);
     spectrumSizer->Add(spectrumAvgMeter, 1, wxEXPAND | wxALL, 0);
+    spectrumPanel->SetSizer(spectrumSizer);
             
-    vbox->Add(spectrumSizer, 5, wxEXPAND | wxALL, 0);
+//    vbox->Add(spectrumSizer, 5, wxEXPAND | wxALL, 0);
 
-    vbox->AddSpacer(1);
+//    vbox->AddSpacer(1);
             
+    wxPanel *waterfallPanel = new wxPanel(mainVisSplitter, wxID_ANY);
     wxBoxSizer *wfSizer = new wxBoxSizer(wxHORIZONTAL);
-
-    waterfallCanvas = new WaterfallCanvas(this, attribList);
+           
+    waterfallCanvas = new WaterfallCanvas(waterfallPanel, attribList);
     waterfallCanvas->setup(2048, 512);
 
     waterfallDataThread = new FFTVisualDataThread();
 
     waterfallDataThread->setInputQueue("IQDataInput", wxGetApp().getWaterfallVisualQueue());
     waterfallDataThread->setOutputQueue("FFTDataOutput", waterfallCanvas->getVisualDataQueue());
+    waterfallDataThread->getProcessor()->setHideDC(true);
 
     t_FFTData = new std::thread(&FFTVisualDataThread::threadMain, waterfallDataThread);
 
-    waterfallSpeedMeter = new MeterCanvas(this, attribList);
+    waterfallSpeedMeter = new MeterCanvas(waterfallPanel, attribList);
     waterfallSpeedMeter->setHelpTip("Waterfall speed, click or drag to adjust (max 1024 lines per second)");
     waterfallSpeedMeter->setMax(sqrt(1024));
     waterfallSpeedMeter->setLevel(sqrt(DEFAULT_WATERFALL_LPS));
     waterfallSpeedMeter->setShowUserInput(false);
+    waterfallSpeedMeter->SetMinSize(wxSize(12,24));
 
     wfSizer->Add(waterfallCanvas, 63, wxEXPAND | wxALL, 0);
     wfSizer->AddSpacer(1);
     wfSizer->Add(waterfallSpeedMeter, 1, wxEXPAND | wxALL, 0);
+    waterfallPanel->SetSizer(wfSizer);
             
-    vbox->Add(wfSizer, 20, wxEXPAND | wxALL, 0);
+//    vbox->Add(wfSizer, 20, wxEXPAND | wxALL, 0);
 
+    mainVisSplitter->SplitHorizontally( spectrumPanel, waterfallPanel, 0 );
+    mainSplitter->SplitHorizontally( demodPanel, mainVisSplitter );
+            
+    vbox->Add(mainSplitter, 1, wxEXPAND | wxALL, 0);
+            
     // TODO: refactor these..
     waterfallCanvas->attachSpectrumCanvas(spectrumCanvas);
     spectrumCanvas->attachWaterfallCanvas(waterfallCanvas);
@@ -193,9 +237,11 @@ AppFrame::AppFrame() :
     //    SetIcon(wxICON(sample));
 
     // Make a menubar
-    wxMenuBar *menuBar = new wxMenuBar;
+    menuBar = new wxMenuBar;
     wxMenu *menu = new wxMenu;
     
+    menu->Append(wxID_SDR_DEVICES, "SDR Devices");
+    menu->AppendSeparator();
     menu->Append(wxID_OPEN, "&Open Session");
     menu->Append(wxID_SAVE, "&Save Session");
     menu->Append(wxID_SAVEAS, "Save Session &As..");
@@ -209,21 +255,9 @@ AppFrame::AppFrame() :
             
     menuBar->Append(menu, wxT("&File"));
             
-    menu = new wxMenu;
-    
-    menu->Append(wxID_SET_FREQ_OFFSET, "Frequency Offset");
-    menu->Append(wxID_SET_PPM, "Device PPM");
-    iqSwapMenuItem = menu->AppendCheckItem(wxID_SET_SWAP_IQ, "Swap I/Q");
-            
-    wxMenu *dsMenu = new wxMenu;
-    
-    directSamplingMenuItems[0] = dsMenu->AppendRadioItem(wxID_SET_DS_OFF, "Off");
-    directSamplingMenuItems[1] = dsMenu->AppendRadioItem(wxID_SET_DS_I, "I-ADC");
-    directSamplingMenuItems[2] = dsMenu->AppendRadioItem(wxID_SET_DS_Q, "Q-ADC");
-    
-    menu->AppendSubMenu(dsMenu, "Direct Sampling");
-
-    menuBar->Append(menu, wxT("&Settings"));
+    settingsMenu = new wxMenu;
+          
+    menuBar->Append(settingsMenu, wxT("&Settings"));
             
     menu = new wxMenu;
 
@@ -269,54 +303,6 @@ AppFrame::AppFrame() :
     menuBar->Append(menu, wxT("&Color Scheme"));
 
     menu = new wxMenu;
-            
-    sampleRateMenuItems[wxID_BANDWIDTH_250K] = menu->AppendRadioItem(wxID_BANDWIDTH_250K, "250k");
-    sampleRateMenuItems[wxID_BANDWIDTH_1000M] = menu->AppendRadioItem(wxID_BANDWIDTH_1000M, "1.0M");
-    sampleRateMenuItems[wxID_BANDWIDTH_1500M] = menu->AppendRadioItem(wxID_BANDWIDTH_1024M, "1.024M");
-    sampleRateMenuItems[wxID_BANDWIDTH_1024M] = menu->AppendRadioItem(wxID_BANDWIDTH_1500M, "1.5M");
-    sampleRateMenuItems[wxID_BANDWIDTH_1800M] = menu->AppendRadioItem(wxID_BANDWIDTH_1800M, "1.8M");
-    sampleRateMenuItems[wxID_BANDWIDTH_1920M] = menu->AppendRadioItem(wxID_BANDWIDTH_1920M, "1.92M");
-    sampleRateMenuItems[wxID_BANDWIDTH_2000M] = menu->AppendRadioItem(wxID_BANDWIDTH_2000M, "2.0M");
-    sampleRateMenuItems[wxID_BANDWIDTH_2048M] = menu->AppendRadioItem(wxID_BANDWIDTH_2048M, "2.048M");
-    sampleRateMenuItems[wxID_BANDWIDTH_2160M] = menu->AppendRadioItem(wxID_BANDWIDTH_2160M, "2.16M");
-    sampleRateMenuItems[wxID_BANDWIDTH_2400M] = menu->AppendRadioItem(wxID_BANDWIDTH_2400M, "2.4M");
-    sampleRateMenuItems[wxID_BANDWIDTH_2560M] = menu->AppendRadioItem(wxID_BANDWIDTH_2560M, "2.56M");
-    sampleRateMenuItems[wxID_BANDWIDTH_2880M] = menu->AppendRadioItem(wxID_BANDWIDTH_2880M, "2.88M");
-//    sampleRateMenuItems[wxID_BANDWIDTH_3000M] = menu->AppendRadioItem(wxID_BANDWIDTH_3000M, "3.0M");
-    sampleRateMenuItems[wxID_BANDWIDTH_3200M] = menu->AppendRadioItem(wxID_BANDWIDTH_3200M, "3.2M");
-
-    sampleRateMenuItems[wxID_BANDWIDTH_2400M]->Check(true);
-
-    menuBar->Append(menu, wxT("&Input Bandwidth"));
-
-    std::vector<SDRDeviceInfo *> *devs = wxGetApp().getDevices();
-    std::vector<SDRDeviceInfo *>::iterator devs_i;
-
-    if (devs->size() > 1) {
-
-        menu = new wxMenu;
-
-        int p = 0;
-        for (devs_i = devs->begin(); devs_i != devs->end(); devs_i++) {
-            std::string devName = (*devs_i)->getName();
-            if ((*devs_i)->isAvailable()) {
-                devName.append(": ");
-                devName.append((*devs_i)->getProduct());
-                devName.append(" [");
-                devName.append((*devs_i)->getSerial());
-                devName.append("]");
-            } else {
-                devName.append(" (In Use?)");
-            }
-
-            menu->AppendRadioItem(wxID_DEVICE_ID + p, devName)->Check(wxGetApp().getDevice() == p);
-            p++;
-        }
-
-        menuBar->Append(menu, wxT("Input &Device"));
-    }
-
-    menu = new wxMenu;
 
 #define NUM_RATES_DEFAULT 4
     int desired_rates[NUM_RATES_DEFAULT] = { 48000, 44100, 96000, 192000 };
@@ -344,7 +330,6 @@ AppFrame::AppFrame() :
     }
 
     for (mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
-        new wxMenu;
         int menu_id = wxID_AUDIO_BANDWIDTH_BASE + wxID_AUDIO_DEVICE_MULTIPLIER * mdevices_i->first;
         wxMenu *subMenu = new wxMenu;
         menu->AppendSubMenu(subMenu, mdevices_i->second.name, wxT("Description?"));
@@ -364,6 +349,10 @@ AppFrame::AppFrame() :
             j++;
         }
     }
+
+    sampleRateMenu = new wxMenu;
+
+    menuBar->Append(sampleRateMenu, wxT("&Input Bandwidth"));
 
     menuBar->Append(menu, wxT("Audio &Bandwidth"));
 
@@ -414,7 +403,10 @@ AppFrame::AppFrame() :
 
     wxAcceleratorTable accel(3, entries);
     SetAcceleratorTable(accel);
-
+    deviceChanged.store(false);
+    devInfo = NULL;
+    wxGetApp().deviceSelector();
+            
 //    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 //    wxLogStatus("Double-buffered display %s supported", wxGLCanvas::IsDisplaySupported(attribs) ? "is" : "not");
 //    ShowFullScreen(true);
@@ -425,19 +417,116 @@ AppFrame::~AppFrame() {
     t_FFTData->join();
 }
 
+void AppFrame::initDeviceParams(SDRDeviceInfo *devInfo) {
+    this->devInfo = devInfo;
+    deviceChanged.store(true);
+}
 
-void AppFrame::initDeviceParams(std::string deviceId) {
-    DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
+void AppFrame::updateDeviceParams() {
     
-    int dsMode = devConfig->getDirectSampling();
-    
-    if (dsMode > 0 && dsMode <= 2) {
-        directSamplingMenuItems[devConfig->getDirectSampling()]->Check();
+    if (!deviceChanged.load()) {
+        return;
     }
     
-    if (devConfig->getIQSwap()) {
-        iqSwapMenuItem->Check();
+    
+    // Build settings menu
+    wxMenu *newSettingsMenu = new wxMenu;
+    newSettingsMenu->Append(wxID_SET_FREQ_OFFSET, "Frequency Offset");
+    if (devInfo->getRxChannel()->hasCORR()) {
+        newSettingsMenu->Append(wxID_SET_PPM, "Device PPM");
     }
+    
+    agcMenuItem = newSettingsMenu->AppendCheckItem(wxID_AGC_CONTROL, "Automatic Gain");
+    agcMenuItem->Check(wxGetApp().getAGCMode());
+    
+    SoapySDR::ArgInfoList::const_iterator args_i;
+    
+    int i = 0;
+    settingArgs = devInfo->getSettingsArgInfo();
+    for (args_i = settingArgs.begin(); args_i != settingArgs.end(); args_i++) {
+        SoapySDR::ArgInfo arg = (*args_i);
+        std::string currentVal = wxGetApp().getSDRThread()->readSetting(arg.key);
+        if (arg.type == SoapySDR::ArgInfo::BOOL) {
+            wxMenuItem *item = newSettingsMenu->AppendCheckItem(wxID_SETTINGS_BASE+i, arg.name, arg.description);
+            item->Check(currentVal=="true");
+            i++;
+        } else if (arg.type == SoapySDR::ArgInfo::INT) {
+            newSettingsMenu->Append(wxID_SETTINGS_BASE+i, arg.name, arg.description);
+            i++;
+        } else if (arg.type == SoapySDR::ArgInfo::FLOAT) {
+            newSettingsMenu->Append(wxID_SETTINGS_BASE+i, arg.name, arg.description);
+            i++;
+        } else if (arg.type == SoapySDR::ArgInfo::STRING) {
+            if (arg.options.size()) {
+                wxMenu *subMenu = new wxMenu;
+                int j = 0;
+                for (std::vector<std::string>::iterator str_i = arg.options.begin(); str_i != arg.options.end(); str_i++) {
+                    std::string optName = (*str_i);
+                    std::string displayName = optName;
+                    if (arg.optionNames.size()) {
+                        displayName = arg.optionNames[j];
+                    }
+                    wxMenuItem *item = subMenu->AppendRadioItem(wxID_SETTINGS_BASE+i, displayName);
+                    if (currentVal == (*str_i)) {
+                        item->Check();
+                    }
+                    j++;
+                    i++;
+                }
+                newSettingsMenu->AppendSubMenu(subMenu, arg.name, arg.description);
+            } else {
+                newSettingsMenu->Append(wxID_SETTINGS_BASE+i, arg.name, arg.description);
+                i++;
+            }
+        }
+    }
+    settingsIdMax = wxID_SETTINGS_BASE+i;
+    
+    menuBar->Replace(1, newSettingsMenu, wxT("&Settings"));
+    settingsMenu = newSettingsMenu;
+    
+    // Build sample rate menu
+    sampleRates = devInfo->getRxChannel()->getSampleRates();
+    sampleRateMenuItems.erase(sampleRateMenuItems.begin(),sampleRateMenuItems.end());
+    
+    wxMenu *newSampleRateMenu = new wxMenu;
+    int ofs = 0;
+    long sampleRate = wxGetApp().getSampleRate();
+    bool checked = false;
+    for (vector<long>::iterator i = sampleRates.begin(); i != sampleRates.end(); i++) {
+        sampleRateMenuItems[wxID_BANDWIDTH_BASE+ofs] = newSampleRateMenu->AppendRadioItem(wxID_BANDWIDTH_BASE+ofs, frequencyToStr(*i));
+        if (sampleRate == (*i)) {
+            sampleRateMenuItems[wxID_BANDWIDTH_BASE+ofs]->Check(true);
+            checked = true;
+        }
+        ofs++;
+    }
+    
+    sampleRateMenuItems[wxID_BANDWIDTH_MANUAL] = newSampleRateMenu->AppendRadioItem(wxID_BANDWIDTH_MANUAL, wxT("Manual Entry")); 
+    if (!checked) {
+        sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Check(true);
+    }
+   
+    menuBar->Replace(4, newSampleRateMenu, wxT("&Input Bandwidth"));
+    sampleRateMenu = newSampleRateMenu;
+
+    if (!wxGetApp().getAGCMode()) {
+        gainSpacerItem->Show(true);
+        gainSizerItem->Show(true);
+        gainSizerItem->SetMinSize(devInfo->getRxChannel()->getGains().size()*50,0);
+        demodTray->Layout();
+        gainCanvas->updateGainUI();
+        gainCanvas->Refresh();
+        gainCanvas->Refresh();
+    } else {
+        gainSpacerItem->Show(false);
+        gainSizerItem->Show(false);
+        demodTray->Layout();
+    }
+    
+    agcMenuItem->Check(wxGetApp().getAGCMode());
+    
+    deviceChanged.store(false);
 }
 
 
@@ -455,19 +544,41 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             wxGetApp().saveConfig();
         }
     } else if (event.GetId() == wxID_SET_DS_OFF) {
-        wxGetApp().setDirectSampling(0);
-        wxGetApp().saveConfig();
+//        wxGetApp().setDirectSampling(0);
+//        wxGetApp().saveConfig();
     } else if (event.GetId() == wxID_SET_DS_I) {
-        wxGetApp().setDirectSampling(1);
-        wxGetApp().saveConfig();
+//        wxGetApp().setDirectSampling(1);
+//        wxGetApp().saveConfig();
     } else if (event.GetId() == wxID_SET_DS_Q) {
-        wxGetApp().setDirectSampling(2);
-        wxGetApp().saveConfig();
+//        wxGetApp().setDirectSampling(2);
+//        wxGetApp().saveConfig();
     } else if (event.GetId() == wxID_SET_SWAP_IQ) {
-        bool swap_state = !wxGetApp().getSwapIQ();
-        wxGetApp().setSwapIQ(swap_state);
-        wxGetApp().saveConfig();
-        iqSwapMenuItem->Check(swap_state);
+//        bool swap_state = !wxGetApp().getSwapIQ();
+//        wxGetApp().setSwapIQ(swap_state);
+//        wxGetApp().saveConfig();
+//        iqSwapMenuItem->Check(swap_state);
+    } else if (event.GetId() == wxID_AGC_CONTROL) {
+        if (wxGetApp().getDevice() == NULL) {
+            agcMenuItem->Check();
+            return;
+        }
+        if (!wxGetApp().getAGCMode()) {
+            wxGetApp().setAGCMode(true);
+            gainSpacerItem->Show(false);
+            gainSizerItem->Show(false);
+            demodTray->Layout();
+        } else {
+            wxGetApp().setAGCMode(false);
+            gainSpacerItem->Show(true);
+            gainSizerItem->Show(true);
+            gainSizerItem->SetMinSize(wxGetApp().getDevice()->getRxChannel()->getGains().size()*40,0);
+            demodTray->Layout();
+            gainCanvas->updateGainUI();
+            gainCanvas->Refresh();
+            gainCanvas->Refresh();
+        }
+    } else if (event.GetId() == wxID_SDR_DEVICES) {
+        wxGetApp().deviceSelector();
     } else if (event.GetId() == wxID_SET_PPM) {
         long ofs = wxGetNumberFromUser("Frequency correction for device in PPM.\ni.e. -51 for -51 PPM\n\nNote: you can adjust PPM interactively\nby holding ALT over the frequency tuning bar.\n", "Parts per million (PPM)",
                 "Frequency Correction", wxGetApp().getPPM(), -1000, 1000, this);
@@ -536,73 +647,99 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         ThemeMgr::mgr.setTheme(COLOR_THEME_RADAR);
     }
 
+    if (event.GetId() >= wxID_SETTINGS_BASE && event.GetId() < settingsIdMax) {
+        int setIdx = event.GetId()-wxID_SETTINGS_BASE;
+        int menuIdx = 0;
+        for (std::vector<SoapySDR::ArgInfo>::iterator arg_i = settingArgs.begin(); arg_i != settingArgs.end(); arg_i++) {
+            SoapySDR::ArgInfo &arg = (*arg_i);
+
+            if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size() && setIdx >= menuIdx && setIdx < menuIdx+arg.options.size()) {
+                int optIdx = setIdx-menuIdx;
+                wxGetApp().getSDRThread()->writeSetting(arg.key, arg.options[optIdx]);
+                break;
+            } else if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size()) {
+                menuIdx += arg.options.size();
+            } else if (menuIdx == setIdx) {
+                if (arg.type == SoapySDR::ArgInfo::BOOL) {
+                    wxGetApp().getSDRThread()->writeSetting(arg.key, (wxGetApp().getSDRThread()->readSetting(arg.key)=="true")?"false":"true");
+                    break;
+                } else if (arg.type == SoapySDR::ArgInfo::STRING) {
+                    menuIdx++;
+                } else if (arg.type == SoapySDR::ArgInfo::INT) {
+                    int currentVal;
+                    try {
+                        currentVal = std::stoi(wxGetApp().getSDRThread()->readSetting(arg.key));
+                    } catch (std::invalid_argument e) {
+                        currentVal = 0;
+                    }
+                    int intVal = wxGetNumberFromUser(arg.description, arg.units, arg.name, currentVal, arg.range.minimum(), arg.range.maximum(), this);
+                    if (intVal != -1) {
+                        wxGetApp().getSDRThread()->writeSetting(arg.key, std::to_string(intVal));
+                    }
+                    break;
+                } else if (arg.type == SoapySDR::ArgInfo::FLOAT) {
+                    wxString floatVal = wxGetTextFromUser(arg.description, arg.name, wxGetApp().getSDRThread()->readSetting(arg.key));
+                    try {
+                        wxGetApp().getSDRThread()->writeSetting(arg.key, floatVal.ToStdString());
+                    } catch (std::invalid_argument e) {
+                        // ...
+                    }
+                    break;
+                } else {
+                    menuIdx++;
+                }
+            } else {
+                menuIdx++;
+            }
+        }
+    }
+    
     if (event.GetId() >= wxID_THEME_DEFAULT && event.GetId() <= wxID_THEME_RADAR) {
     	demodTuner->Refresh();
     	demodModeSelector->Refresh();
+        waterfallSpeedMeter->Refresh();
+        spectrumAvgMeter->Refresh();
+        gainCanvas->setThemeColors();
     }
 
     switch (event.GetId()) {
-        case wxID_BANDWIDTH_250K:
-            wxGetApp().setSampleRate(250000);
-            break;
-        case wxID_BANDWIDTH_1000M:
-            wxGetApp().setSampleRate(1000000);
-            break;
-        case wxID_BANDWIDTH_1024M:
-            wxGetApp().setSampleRate(1024000);
-            break;
-        case wxID_BANDWIDTH_1500M:
-            wxGetApp().setSampleRate(1500000);
-            break;
-        case wxID_BANDWIDTH_1800M:
-            wxGetApp().setSampleRate(1800000);
-            break;
-        case wxID_BANDWIDTH_1920M:
-            wxGetApp().setSampleRate(1920000);
-            break;
-        case wxID_BANDWIDTH_2000M:
-            wxGetApp().setSampleRate(2000000);
-            break;
-        case wxID_BANDWIDTH_2048M:
-            wxGetApp().setSampleRate(2048000);
-            break;
-        case wxID_BANDWIDTH_2160M:
-            wxGetApp().setSampleRate(2160000);
-            break;
-        case wxID_BANDWIDTH_2400M:
-            wxGetApp().setSampleRate(2400000);
-            break;
-        case wxID_BANDWIDTH_2560M:
-            wxGetApp().setSampleRate(2560000);
-            break;
-        case wxID_BANDWIDTH_2880M:
-            wxGetApp().setSampleRate(2880000);
-            break;
-//        case wxID_BANDWIDTH_3000M:
-//            wxGetApp().setSampleRate(3000000);
-//            break;
-        case wxID_BANDWIDTH_3200M:
-            wxGetApp().setSampleRate(3200000);
+        case wxID_BANDWIDTH_MANUAL:
+            int rateHigh, rateLow;
+            
+            SDRDeviceInfo *dev = wxGetApp().getDevice();
+            if (dev == NULL) {
+                break;
+            }
+            
+            SDRDeviceChannel *chan = dev->getRxChannel();
+            
+            rateLow = 2000000;
+            rateHigh = 30000000;
+            
+            if (chan->getSampleRates().size()) {
+                rateLow = chan->getSampleRates()[0];
+                rateHigh = chan->getSampleRates()[chan->getSampleRates().size()-1];
+            }
+
+            long bw = wxGetNumberFromUser("\n" + dev->getName() + "\n\n  "
+                                          + "min: " + std::to_string(rateLow) + " Hz"
+                                          + ", max: " + std::to_string(rateHigh) + " Hz\n",
+                                          "Sample Rate in Hz",
+                                          "Manual Bandwidth Entry",
+                                          wxGetApp().getSampleRate(),
+                                          rateLow,
+                                          rateHigh,
+                                          this);
+            if (bw != -1) {
+                wxGetApp().setSampleRate(bw);
+            }
             break;
     }
-
-    std::vector<SDRDeviceInfo *> *devs = wxGetApp().getDevices();
-    if (event.GetId() >= wxID_DEVICE_ID && event.GetId() <= wxID_DEVICE_ID + devs->size()) {
-        int devId = event.GetId() - wxID_DEVICE_ID;
-        wxGetApp().setDevice(devId);
-
-        SDRDeviceInfo *dev = (*wxGetApp().getDevices())[devId];
-        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
-        
-        int dsMode = devConfig->getDirectSampling();
-        
-        if (dsMode >= 0 && dsMode <= 2) {
-            directSamplingMenuItems[devConfig->getDirectSampling()]->Check();
-        }
-        
-        iqSwapMenuItem->Check(devConfig->getIQSwap());
+    
+    if (event.GetId() >= wxID_BANDWIDTH_BASE && event.GetId() < wxID_BANDWIDTH_BASE+sampleRates.size()) {
+        wxGetApp().setSampleRate(sampleRates[event.GetId()-wxID_BANDWIDTH_BASE]);
     }
-
+    
     if (event.GetId() >= wxID_AUDIO_BANDWIDTH_BASE) {
         int evId = event.GetId();
         std::vector<RtAudio::DeviceInfo>::iterator devices_i;
@@ -656,11 +793,13 @@ void AppFrame::OnThread(wxCommandEvent& event) {
 
 void AppFrame::OnIdle(wxIdleEvent& event) {
 
+    if (deviceChanged.load()) {
+        updateDeviceParams();
+    }
+    
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     if (demod) {
-        DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
-
         if (demod->isTracking()) {
             if (spectrumCanvas->getViewState()) {
                 long long diff = abs(demod->getFrequency() - spectrumCanvas->getCenterFrequency()) + (demod->getBandwidth()/2) + (demod->getBandwidth()/4);
@@ -790,8 +929,10 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         if (!demodTuner->HasFocus()) {
             demodTuner->SetFocus();
         }
-    } else if (!waterfallCanvas->HasFocus()) {
-        waterfallCanvas->SetFocus();
+    } else if (!wxGetApp().isDeviceSelectorOpen()) {
+		if (!waterfallCanvas->HasFocus()) {
+			waterfallCanvas->SetFocus();
+		}
     }
 
     scopeCanvas->setPPMMode(demodTuner->isAltDown());
@@ -802,10 +943,10 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     wxGetApp().getAudioVisualQueue()->set_max_num_items((scopeCanvas->scopeVisible()?1:0) + (scopeCanvas->spectrumVisible()?1:0));
     
     wxGetApp().getScopeProcessor()->run();
-    wxGetApp().getSpectrumDistributor()->run();
+//    wxGetApp().getSpectrumDistributor()->run();
 
     SpectrumVisualProcessor *proc = wxGetApp().getSpectrumProcessor();
-    
+
     if (spectrumAvgMeter->inputChanged()) {
         float val = spectrumAvgMeter->getInputValue();
         if (val < 0.01) {
@@ -831,7 +972,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     dproc->setCenterFrequency(demodWaterfallCanvas->getCenterFrequency());
 
     SpectrumVisualProcessor *wproc = waterfallDataThread->getProcessor();
-
+    
     if (waterfallSpeedMeter->inputChanged()) {
         float val = waterfallSpeedMeter->getInputValue();
         waterfallSpeedMeter->setLevel(val);
@@ -843,6 +984,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     wproc->setView(waterfallCanvas->getViewState());
     wproc->setBandwidth(waterfallCanvas->getBandwidth());
     wproc->setCenterFrequency(waterfallCanvas->getCenterFrequency());
+    wxGetApp().getSDRPostThread()->setIQVisualRange(waterfallCanvas->getCenterFrequency(), waterfallCanvas->getBandwidth());
     
 //    waterfallCanvas->processInputQueue();
 //    waterfallCanvas->Refresh();
@@ -854,6 +996,39 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     }
 
     event.RequestMore();
+}
+
+
+void AppFrame::OnDoubleClickSash(wxSplitterEvent& event)
+{
+    wxWindow *a, *b;
+    wxSplitterWindow *w = NULL;
+    float g = 0.5;
+
+    if (event.GetId() == wxID_MAIN_SPLITTER) {
+        w = mainSplitter;
+        g = 12.0/37.0;
+    } else if (event.GetId() == wxID_VIS_SPLITTER) {
+        w = mainVisSplitter;
+        g = 7.4/37.0;
+    }
+
+    if (w != NULL) {
+        a = w->GetWindow1();
+        b = w->GetWindow2();
+        w->Unsplit();
+        w->SetSashGravity(g);
+        wxSize s = w->GetSize();
+        
+        w->SplitHorizontally(a, b, int(float(s.GetHeight()) * g));
+    }
+    
+    event.Veto();
+}
+
+void AppFrame::OnUnSplit(wxSplitterEvent& event)
+{
+    event.Veto();
 }
 
 void AppFrame::saveSession(std::string fileName) {
@@ -993,3 +1168,8 @@ bool AppFrame::loadSession(std::string fileName) {
 
     return true;
 }
+
+FFTVisualDataThread *AppFrame::getWaterfallDataThread() {
+    return waterfallDataThread;
+}
+

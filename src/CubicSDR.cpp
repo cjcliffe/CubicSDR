@@ -13,6 +13,7 @@
 #endif
 
 #include "CubicSDR.h"
+#include <iomanip>
 
 #ifdef _OSX_APP_
 #include "CoreFoundation/CoreFoundation.h"
@@ -20,9 +21,101 @@
 
 IMPLEMENT_APP(CubicSDR)
 
-CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE), directSamplingMode(0),
-    sdrThread(NULL), sdrPostThread(NULL), spectrumVisualThread(NULL), demodVisualThread(NULL), pipeSDRCommand(NULL), pipeSDRIQData(NULL), pipeIQVisualData(NULL), pipeAudioVisualData(NULL), t_SDR(NULL), t_PostSDR(NULL) {
+#ifdef MINGW_PATCH
+	FILE _iob[] = { *stdin, *stdout, *stderr };
+
+	extern "C" FILE * __cdecl __iob_func(void)
+	{
+		return _iob;
+	}
+
+	extern "C" int __cdecl __isnan(double x)
+	{
+		return _finite(x)?0:1;
+	}
+
+	extern "C" int __cdecl __isnanf(float x)
+	{
+		return _finitef(x)?0:1;
+	}
+#endif
+
+
+std::string& filterChars(std::string& s, const std::string& allowed) {
+    s.erase(remove_if(s.begin(), s.end(), [&allowed](const char& c) {
+        return allowed.find(c) == std::string::npos;
+    }), s.end());
+    return s;
+}
+
+std::string frequencyToStr(long long freq) {
+    long double freqTemp;
     
+    freqTemp = freq;
+    std::string suffix("");
+    std::stringstream freqStr;
+    
+    if (freqTemp >= 1.0e9) {
+        freqTemp /= 1.0e9;
+        freqStr << std::setprecision(10);
+        suffix = std::string("GHz");
+    } else if (freqTemp >= 1.0e6) {
+        freqTemp /= 1.0e6;
+        freqStr << std::setprecision(7);
+        suffix = std::string("MHz");
+    } else if (freqTemp >= 1.0e3) {
+        freqTemp /= 1.0e3;
+        freqStr << std::setprecision(4);
+        suffix = std::string("KHz");
+    }
+    
+    freqStr << freqTemp;
+    freqStr << suffix;
+    
+    return freqStr.str();
+}
+
+long long strToFrequency(std::string freqStr) {
+    std::string filterStr = filterChars(freqStr, std::string("0123456789.MKGHmkgh"));
+    
+    int numLen = filterStr.find_first_not_of("0123456789.");
+    
+    if (numLen == std::string::npos) {
+        numLen = freqStr.length();
+    }
+    
+    std::string numPartStr = freqStr.substr(0, numLen);
+    std::string suffixStr = freqStr.substr(numLen);
+    
+    std::stringstream numPartStream;
+    numPartStream.str(numPartStr);
+    
+    long double freqTemp = 0;
+    
+    numPartStream >> freqTemp;
+    
+    if (suffixStr.length()) {
+        if (suffixStr.find_first_of("Gg") != std::string::npos) {
+            freqTemp *= 1.0e9;
+        } else if (suffixStr.find_first_of("Mm") != std::string::npos) {
+            freqTemp *= 1.0e6;
+        } else if (suffixStr.find_first_of("Kk") != std::string::npos) {
+            freqTemp *= 1.0e3;
+        } else if (suffixStr.find_first_of("Hh") != std::string::npos) {
+            // ...
+        }
+    } else if (numPartStr.find_first_of(".") != std::string::npos || freqTemp <= 3000) {
+        freqTemp *= 1.0e6;
+    }
+    
+    return (long long) freqTemp;
+}
+
+
+CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE),
+    sdrThread(NULL), sdrPostThread(NULL), spectrumVisualThread(NULL), demodVisualThread(NULL), pipeSDRIQData(NULL), pipeIQVisualData(NULL), pipeAudioVisualData(NULL), t_SDR(NULL), t_PostSDR(NULL) {
+        sampleRateInitialized.store(false);
+        agcMode.store(true);
 }
 
 
@@ -48,7 +141,8 @@ bool CubicSDR::OnInit() {
     frequency = wxGetApp().getConfig()->getCenterFreq();
     offset = 0;
     ppm = 0;
-    directSamplingMode = 0;
+    devicesReady.store(false);
+    deviceSelectorOpen.store(false);
 
     // Visual Data
     spectrumVisualThread = new SpectrumVisualDataThread();
@@ -57,22 +151,15 @@ bool CubicSDR::OnInit() {
     pipeIQVisualData = new DemodulatorThreadInputQueue();
     pipeIQVisualData->set_max_num_items(1);
 
-    spectrumDistributor.setInput(pipeIQVisualData);
-    
     pipeDemodIQVisualData = new DemodulatorThreadInputQueue();
     pipeDemodIQVisualData->set_max_num_items(1);
-    
-    pipeSpectrumIQVisualData = new DemodulatorThreadInputQueue();
-    pipeSpectrumIQVisualData->set_max_num_items(1);
     
     pipeWaterfallIQVisualData = new DemodulatorThreadInputQueue();
     pipeWaterfallIQVisualData->set_max_num_items(128);
     
-    spectrumDistributor.attachOutput(pipeDemodIQVisualData);
-    spectrumDistributor.attachOutput(pipeSpectrumIQVisualData);
-    
     getDemodSpectrumProcessor()->setInput(pipeDemodIQVisualData);
-    getSpectrumProcessor()->setInput(pipeSpectrumIQVisualData);
+    getSpectrumProcessor()->setInput(pipeIQVisualData);
+    getSpectrumProcessor()->setHideDC(true);
     
     pipeAudioVisualData = new DemodulatorThreadOutputQueue();
     pipeAudioVisualData->set_max_num_items(1);
@@ -81,83 +168,35 @@ bool CubicSDR::OnInit() {
     
     // I/Q Data
     pipeSDRIQData = new SDRThreadIQDataQueue();
-    pipeSDRCommand = new SDRThreadCommandQueue();
-
     pipeSDRIQData->set_max_num_items(100);
     
     sdrThread = new SDRThread();
-    sdrThread->setInputQueue("SDRCommandQueue",pipeSDRCommand);
     sdrThread->setOutputQueue("IQDataOutput",pipeSDRIQData);
 
     sdrPostThread = new SDRPostThread();
-//    sdrPostThread->setNumVisSamples(BUF_SIZE);
     sdrPostThread->setInputQueue("IQDataInput", pipeSDRIQData);
     sdrPostThread->setOutputQueue("IQVisualDataOutput", pipeIQVisualData);
     sdrPostThread->setOutputQueue("IQDataOutput", pipeWaterfallIQVisualData);
+    sdrPostThread->setOutputQueue("IQActiveDemodVisualDataOutput", pipeDemodIQVisualData);
     
-    std::vector<SDRDeviceInfo *>::iterator devs_i;
-
-    SDRThread::enumerate_rtl(&devs);
-    SDRDeviceInfo *dev = NULL;
-
-    if (devs.size() > 1) {
-        wxArrayString choices;
-        for (devs_i = devs.begin(); devs_i != devs.end(); devs_i++) {
-            std::string devName = (*devs_i)->getName();
-            if ((*devs_i)->isAvailable()) {
-                devName.append(": ");
-                devName.append((*devs_i)->getProduct());
-                devName.append(" [");
-                devName.append((*devs_i)->getSerial());
-                devName.append("]");
-            } else {
-                devName.append(" (In Use?)");
-            }
-            choices.Add(devName);
-        }
-
-        int devId = wxGetSingleChoiceIndex(wxT("Devices"), wxT("Choose Input Device"), choices);        
-        if (devId == -1) {  // User chose to cancel
-            return false;
-        }
-        
-        dev = devs[devId];
-
-        sdrThread->setDeviceId(devId);
-    } else if (devs.size() == 1) {
-        dev = devs[0];
-    }
-    
-    if (!dev) {
-        wxMessageDialog *info;
-        info = new wxMessageDialog(NULL, wxT("\x28\u256F\xB0\u25A1\xB0\uFF09\u256F\uFE35\x20\u253B\u2501\u253B"), wxT("RTL-SDR device not found"), wxOK | wxICON_ERROR);
-        info->ShowModal();
-        return false;
-    }
-
     t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
-    t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
     t_SpectrumVisual = new std::thread(&SpectrumVisualDataThread::threadMain, spectrumVisualThread);
     t_DemodVisual = new std::thread(&SpectrumVisualDataThread::threadMain, demodVisualThread);
 
+    sdrEnum = new SDREnumerator();
+
     appframe = new AppFrame();
-    if (dev != NULL) {
-        appframe->initDeviceParams(dev->getDeviceId());
-        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
-        ppm = devConfig->getPPM();
-        offset = devConfig->getOffset();
-        directSamplingMode = devConfig->getDirectSampling();
-    }
+	t_SDREnum = new std::thread(&SDREnumerator::threadMain, sdrEnum);
 
-#ifdef __APPLE__
-    int main_policy;
-    struct sched_param main_param;
-
-    main_policy = SCHED_RR;
-    main_param.sched_priority = sched_get_priority_min(SCHED_RR)+2;
-
-    pthread_setschedparam(pthread_self(), main_policy, &main_param);
-#endif
+//#ifdef __APPLE__
+//    int main_policy;
+//    struct sched_param main_param;
+//
+//    main_policy = SCHED_RR;
+//    main_param.sched_priority = sched_get_priority_min(SCHED_RR)+2;
+//
+//    pthread_setschedparam(pthread_self(), main_policy, &main_param);
+//#endif
 
     return true;
 }
@@ -166,9 +205,12 @@ int CubicSDR::OnExit() {
     demodMgr.terminateAll();
     
     std::cout << "Terminating SDR thread.." << std::endl;
-    sdrThread->terminate();
-    t_SDR->join();
-
+    if (!sdrThread->isTerminated()) {
+        sdrThread->terminate();
+        if (t_SDR) {
+            t_SDR->join();
+        }
+    }
     std::cout << "Terminating SDR post-processing thread.." << std::endl;
     sdrPostThread->terminate();
     t_PostSDR->join();
@@ -181,7 +223,6 @@ int CubicSDR::OnExit() {
     t_DemodVisual->join();
 
     delete sdrThread;
-    delete t_SDR;
 
     delete sdrPostThread;
     delete t_PostSDR;
@@ -191,8 +232,6 @@ int CubicSDR::OnExit() {
     delete t_DemodVisual;
     delete demodVisualThread;
     
-    delete pipeSDRCommand;
-
     delete pipeIQVisualData;
     delete pipeAudioVisualData;
     delete pipeSDRIQData;
@@ -231,17 +270,87 @@ bool CubicSDR::OnCmdLineParsed(wxCmdLineParser& parser) {
     
     config.load();
 
+#ifdef BUNDLE_SOAPY_MODS
+    if (parser.Found("l")) {
+        useLocalMod.store(true);
+    } else {
+        useLocalMod.store(false);
+    }
+#else
+    useLocalMod.store(false);
+#endif
+    
     return true;
 }
+
+void CubicSDR::deviceSelector() {
+    if (deviceSelectorOpen) {
+        deviceSelectorDialog->Raise();
+        deviceSelectorDialog->SetFocus();
+        return;
+    }
+    deviceSelectorOpen.store(true);
+    deviceSelectorDialog = new SDRDevicesDialog(appframe);
+    deviceSelectorDialog->Show();
+}
+
+void CubicSDR::addRemote(std::string remoteAddr) {
+    SDREnumerator::addRemote(remoteAddr);
+    devicesReady.store(false);
+    t_SDREnum = new std::thread(&SDREnumerator::threadMain, sdrEnum);
+}
+
+void CubicSDR::removeRemote(std::string remoteAddr) {
+    SDREnumerator::removeRemote(remoteAddr);
+}
+
+void CubicSDR::sdrThreadNotify(SDRThread::SDRThreadState state, std::string message) {
+    notify_busy.lock();
+    if (state == SDRThread::SDR_THREAD_INITIALIZED) {
+        appframe->initDeviceParams(getDevice());
+    }
+    if (state == SDRThread::SDR_THREAD_MESSAGE) {
+        notifyMessage = message;
+    }
+    if (state == SDRThread::SDR_THREAD_TERMINATED) {
+        t_SDR->join();
+        delete t_SDR;
+    }
+    if (state == SDRThread::SDR_THREAD_FAILED) {
+        notifyMessage = message;
+//        wxMessageDialog *info;
+//        info = new wxMessageDialog(NULL, message, wxT("Error initializing device"), wxOK | wxICON_ERROR);
+//        info->ShowModal();
+    }
+    //if (appframe) { appframe->SetStatusText(message); }
+    notify_busy.unlock();
+}
+
+
+void CubicSDR::sdrEnumThreadNotify(SDREnumerator::SDREnumState state, std::string message) {
+    notify_busy.lock();
+    if (state == SDREnumerator::SDR_ENUM_MESSAGE) {
+        notifyMessage = message;
+    }
+    if (state == SDREnumerator::SDR_ENUM_DEVICES_READY) {
+        devs = SDREnumerator::enumerate_devices("", true);
+        devicesReady.store(true);
+    }
+    if (state == SDREnumerator::SDR_ENUM_FAILED) {
+        notifyMessage = message;
+        sdrEnum->terminate();
+    }
+    //if (appframe) { appframe->SetStatusText(message); }
+    notify_busy.unlock();
+}
+
 
 void CubicSDR::setFrequency(long long freq) {
     if (freq < sampleRate / 2) {
         freq = sampleRate / 2;
     }
     frequency = freq;
-    SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_TUNE);
-    command.llong_value = freq;
-    pipeSDRCommand->push(command);
+    sdrThread->setFrequency(freq);
 }
 
 long long CubicSDR::getOffset() {
@@ -250,40 +359,91 @@ long long CubicSDR::getOffset() {
 
 void CubicSDR::setOffset(long long ofs) {
     offset = ofs;
-    SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_SET_OFFSET);
-    command.llong_value = ofs;
-    pipeSDRCommand->push(command);
-    
-    SDRDeviceInfo *dev = (*getDevices())[getDevice()];
+    sdrThread->setOffset(offset);
+    SDRDeviceInfo *dev = getDevice();
     config.getDevice(dev->getDeviceId())->setOffset(ofs);
-}
-
-void CubicSDR::setDirectSampling(int mode) {
-    directSamplingMode = mode;
-    SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_SET_DIRECT_SAMPLING);
-    command.llong_value = mode;
-    pipeSDRCommand->push(command);
-
-    SDRDeviceInfo *dev = (*getDevices())[getDevice()];
-    config.getDevice(dev->getDeviceId())->setDirectSampling(mode);
-}
-
-int CubicSDR::getDirectSampling() {
-    return directSamplingMode;
-}
-
-void CubicSDR::setSwapIQ(bool swapIQ) {
-    sdrPostThread->setSwapIQ(swapIQ);
-    SDRDeviceInfo *dev = (*getDevices())[getDevice()];
-    config.getDevice(dev->getDeviceId())->setIQSwap(swapIQ);
-}
-
-bool CubicSDR::getSwapIQ() {
-    return sdrPostThread->getSwapIQ();
 }
 
 long long CubicSDR::getFrequency() {
     return frequency;
+}
+
+void CubicSDR::setSampleRate(long long rate_in) {
+    sampleRate = rate_in;
+    sdrThread->setSampleRate(sampleRate);
+    setFrequency(frequency);
+}
+
+void CubicSDR::setDevice(SDRDeviceInfo *dev) {
+    if (!sdrThread->isTerminated()) {
+        sdrThread->terminate();
+        if (t_SDR) {
+            t_SDR->join();
+            delete t_SDR;
+        }
+    }
+    
+    for (SoapySDR::Kwargs::const_iterator i = settingArgs.begin(); i != settingArgs.end(); i++) {
+        sdrThread->writeSetting(i->first, i->second);
+    }
+    sdrThread->setStreamArgs(streamArgs);
+    sdrThread->setDevice(dev);
+    
+    DeviceConfig *devConfig = config.getDevice(dev->getDeviceId());
+    
+    SDRDeviceChannel *chan = dev->getRxChannel();
+    
+    if (chan) {
+        long long freqHigh, freqLow;
+        
+        freqHigh = chan->getRFRange().getHigh();
+        freqLow = chan->getRFRange().getLow();
+        
+// upconverter settings don't like this, need to handle elsewhere..
+//        if (frequency > freqHigh) {
+//            frequency = freqHigh;
+//        }
+//        else if (frequency < freqLow) {
+//            frequency = freqLow;
+//        }
+        
+        // Try for a reasonable default sample rate.
+        if (!sampleRateInitialized.load()) {
+            sampleRate = chan->getSampleRateNear(DEFAULT_SAMPLE_RATE);
+            sampleRateInitialized.store(true);
+        }
+
+        int rateHigh, rateLow;
+
+        rateHigh = rateLow = sampleRate;
+        
+        if (chan->getSampleRates().size()) {
+            rateLow = chan->getSampleRates()[0];
+            rateHigh = chan->getSampleRates()[chan->getSampleRates().size()-1];
+        }
+        
+        if (sampleRate > rateHigh) {
+            sampleRate = rateHigh;
+        } else if (sampleRate < rateLow) {
+            sampleRate = rateLow;
+        }
+        
+        if (frequency < sampleRate/2) {
+            frequency = sampleRate/2;
+        }
+        
+        setFrequency(frequency);
+        setSampleRate(sampleRate);
+
+        setPPM(devConfig->getPPM());
+        setOffset(devConfig->getOffset());
+        
+        t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
+    }
+}
+
+SDRDeviceInfo *CubicSDR::getDevice() {
+    return sdrThread->getDevice();
 }
 
 ScopeVisualProcessor *CubicSDR::getScopeProcessor() {
@@ -297,11 +457,6 @@ SpectrumVisualProcessor *CubicSDR::getSpectrumProcessor() {
 SpectrumVisualProcessor *CubicSDR::getDemodSpectrumProcessor() {
     return demodVisualThread->getProcessor();
 }
-
-VisualDataReDistributor<DemodulatorThreadIQData> *CubicSDR::getSpectrumDistributor() {
-    return &spectrumDistributor;
-}
-
 
 DemodulatorThreadOutputQueue* CubicSDR::getAudioVisualQueue() {
     return pipeAudioVisualData;
@@ -319,19 +474,20 @@ DemodulatorMgr &CubicSDR::getDemodMgr() {
     return demodMgr;
 }
 
+SDRPostThread *CubicSDR::getSDRPostThread() {
+    return sdrPostThread;
+}
+
+SDRThread *CubicSDR::getSDRThread() {
+    return sdrThread;
+}
+
+
 void CubicSDR::bindDemodulator(DemodulatorInstance *demod) {
     if (!demod) {
         return;
     }
     sdrPostThread->bindDemodulator(demod);
-}
-
-void CubicSDR::setSampleRate(long long rate_in) {
-    sampleRate = rate_in;
-    SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_SET_SAMPLERATE);
-    command.llong_value = rate_in;
-    pipeSDRCommand->push(command);
-    setFrequency(frequency);
 }
 
 long long CubicSDR::getSampleRate() {
@@ -347,27 +503,9 @@ void CubicSDR::removeDemodulator(DemodulatorInstance *demod) {
 }
 
 std::vector<SDRDeviceInfo*>* CubicSDR::getDevices() {
-    return &devs;
+    return devs;
 }
 
-void CubicSDR::setDevice(int deviceId) {
-    sdrThread->setDeviceId(deviceId);
-    SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_SET_DEVICE);
-    command.llong_value = deviceId;
-    pipeSDRCommand->push(command);
-
-    SDRDeviceInfo *dev = (*getDevices())[deviceId];
-    DeviceConfig *devConfig = config.getDevice(dev->getDeviceId());
-
-    setPPM(devConfig->getPPM());
-    setDirectSampling(devConfig->getDirectSampling());
-    setSwapIQ(devConfig->getIQSwap());
-    setOffset(devConfig->getOffset());
-}
-
-int CubicSDR::getDevice() {
-    return sdrThread->getDeviceId();
-}
 
 AppConfig *CubicSDR::getConfig() {
     return &config;
@@ -378,29 +516,20 @@ void CubicSDR::saveConfig() {
 }
 
 void CubicSDR::setPPM(int ppm_in) {
-    if (sdrThread->getDeviceId() < 0) {
-        return;
-    }
     ppm = ppm_in;
+    sdrThread->setPPM(ppm);
 
-    SDRThreadCommand command(SDRThreadCommand::SDR_THREAD_CMD_SET_PPM);
-    command.llong_value = ppm;
-    pipeSDRCommand->push(command);
-
-    SDRDeviceInfo *dev = (*getDevices())[getDevice()];
-
-    config.getDevice(dev->getDeviceId())->setPPM(ppm_in);
+    SDRDeviceInfo *dev = getDevice();
+    if (dev) {
+        config.getDevice(dev->getDeviceId())->setPPM(ppm_in);
+    }
 }
 
 int CubicSDR::getPPM() {
-    if (sdrThread->getDeviceId() < 0) {
-        return 0;
+    SDRDeviceInfo *dev = sdrThread->getDevice();
+    if (dev) {
+        ppm = config.getDevice(dev->getDeviceId())->getPPM();
     }
-    SDRDeviceInfo *dev = (*getDevices())[getDevice()];
-
-    SDRThreadCommand command_ppm(SDRThreadCommand::SDR_THREAD_CMD_SET_PPM);
-    ppm = config.getDevice(dev->getDeviceId())->getPPM();
-
     return ppm;
 }
 
@@ -440,4 +569,58 @@ void CubicSDR::setFrequencySnap(int snap) {
 
 int CubicSDR::getFrequencySnap() {
     return snap;
+}
+
+bool CubicSDR::areDevicesReady() {
+    return devicesReady.load();
+}
+
+bool CubicSDR::areDevicesEnumerating() {
+    return !sdrEnum->isTerminated();
+}
+
+std::string CubicSDR::getNotification() {
+    std::string msg;
+    notify_busy.lock();
+    msg = notifyMessage;
+    notify_busy.unlock();
+    return msg;
+}
+
+void CubicSDR::setDeviceSelectorClosed() {
+    deviceSelectorOpen.store(false);
+}
+
+bool CubicSDR::isDeviceSelectorOpen() {
+	return deviceSelectorOpen.load();
+}
+
+void CubicSDR::setAGCMode(bool mode) {
+    agcMode.store(mode);
+    sdrThread->setAGCMode(mode);
+}
+
+bool CubicSDR::getAGCMode() {
+    return agcMode.load();
+}
+
+
+void CubicSDR::setGain(std::string name, float gain_in) {
+    sdrThread->setGain(name,gain_in);
+}
+
+float CubicSDR::getGain(std::string name) {
+    return sdrThread->getGain(name);
+}
+
+void CubicSDR::setStreamArgs(SoapySDR::Kwargs streamArgs_in) {
+    streamArgs = streamArgs_in;
+}
+
+void CubicSDR::setDeviceArgs(SoapySDR::Kwargs settingArgs_in) {
+    settingArgs = settingArgs_in;
+}
+
+bool CubicSDR::getUseLocalMod() {
+    return useLocalMod.load();
 }

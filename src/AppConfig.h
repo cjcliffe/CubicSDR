@@ -17,15 +17,9 @@ public:
     void setPPM(int ppm);
     int getPPM();
     
-    void setDirectSampling(int mode);
-    int getDirectSampling();
-    
     void setOffset(long long offset);
     long long getOffset();
 
-    void setIQSwap(bool iqSwap);
-    bool getIQSwap();
-    
     void setDeviceId(std::string deviceId);
     std::string getDeviceId();
 
@@ -36,8 +30,7 @@ private:
     std::string deviceId;
     std::mutex busy_lock;
 
-    std::atomic_int ppm, directSampling;
-    std::atomic_bool iqSwap;
+    std::atomic_int ppm;
     std::atomic_llong offset;
 };
 

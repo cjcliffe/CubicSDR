@@ -1,12 +1,114 @@
 #pragma once
 
 #include <string>
+#include <vector>
+
+#include <SoapySDR/Types.hpp>
+
+/*
+    ----------------------------------------------------
+    -- Device identification
+    ----------------------------------------------------
+    driver=rtl
+    hardware=rtl
+
+    ----------------------------------------------------
+    -- Peripheral summary
+    ----------------------------------------------------
+    Channels: 1 Rx, 0 Tx
+    Timestamps: NO
+
+    ----------------------------------------------------
+    -- RX Channel 0
+    ----------------------------------------------------
+    Full-duplex: YES
+    Antennas: RX
+    Full gain range: [0, 49.6] dB
+    LNA gain range: [0, 49.6] dB
+    Full freq range: [24, 1766] MHz
+    RF freq range: [24, 1766] MHz
+    CORR freq range:  MHz
+    Sample rates: [0.25, 2.56] MHz
+    Filter bandwidths: [] MHz
+*/
+
+class SDRDeviceRange {
+public:
+    SDRDeviceRange();
+    SDRDeviceRange(double low, double high);
+    SDRDeviceRange(std::string name, double low, double high);
+    
+    double getLow();
+    void setLow(double low);
+    double getHigh();
+    void setHigh(double high);
+    std::string getName();
+    void setName(std::string name);
+    
+private:
+    std::string name;
+    double low, high;
+};
+
+class SDRDeviceChannel {
+public:
+    SDRDeviceChannel();
+    ~SDRDeviceChannel();
+    
+    int getChannel();
+    void setChannel(int channel);
+    
+    bool isFullDuplex();
+    void setFullDuplex(bool fullDuplex);
+    
+    bool isTx();
+    void setTx(bool tx);
+    
+    bool isRx();
+    void setRx(bool rx);
+    
+    void addGain(SDRDeviceRange range);
+    void addGain(std::string name, SoapySDR::Range range);
+    std::vector<SDRDeviceRange> &getGains();
+    
+    SDRDeviceRange &getGain();
+    SDRDeviceRange &getLNAGain();
+    SDRDeviceRange &getFreqRange();
+    SDRDeviceRange &getRFRange();
+
+    std::vector<long> &getSampleRates();
+    long getSampleRateNear(long sampleRate_in);
+    std::vector<long long> &getFilterBandwidths();
+    
+    const bool& hasHardwareDC() const;
+    void setHardwareDC(const bool& hardware);
+
+    const bool& hasCORR() const;
+    void setCORR(const bool& corr);
+    
+    void setStreamArgsInfo(SoapySDR::ArgInfoList streamArgs);
+    SoapySDR::ArgInfoList getStreamArgsInfo();
+    std::vector<std::string> getStreamArgNames();
+
+private:
+    int channel;
+    bool fullDuplex, tx, rx, hardwareDC, hasCorr;
+    SDRDeviceRange rangeGain, rangeLNA, rangeFull, rangeRF;
+    std::vector<long> sampleRates;
+    std::vector<long long> filterBandwidths;
+    SoapySDR::ArgInfoList streamArgInfo;
+    std::vector<SDRDeviceRange> gainInfo;
+};
+
 
 class SDRDeviceInfo {
 public:
     SDRDeviceInfo();
     
     std::string getDeviceId();
+    
+    const int getIndex() const;
+    void setIndex(const int index);
     
     bool isAvailable() const;
     void setAvailable(bool available);
@@ -25,12 +127,39 @@ public:
     
     const std::string& getProduct() const;
     void setProduct(const std::string& product);
+
+    const std::string& getDriver() const;
+    void setDriver(const std::string& driver);
+    
+    const std::string& getHardware() const;
+    void setHardware(const std::string& hardware);
+    
+    bool hasTimestamps() const;
+    void setTimestamps(bool timestamps);
+    
+    void addChannel(SDRDeviceChannel *chan);
+    std::vector<SDRDeviceChannel *> &getChannels();
+    SDRDeviceChannel * getRxChannel();
+    SDRDeviceChannel * getTxChannel();
+    
+    void setDeviceArgs(SoapySDR::Kwargs deviceArgs);
+    SoapySDR::Kwargs getDeviceArgs();
+
+    void setStreamArgs(SoapySDR::Kwargs deviceArgs);
+    SoapySDR::Kwargs getStreamArgs();
+
+    void setSettingsInfo(SoapySDR::ArgInfoList settingsArgs);
+    SoapySDR::ArgInfoList getSettingsArgInfo();
+
+    std::vector<std::string> getSettingNames();
     
 private:
-    std::string name;
-    std::string serial;
-    std::string product;
-    std::string manufacturer;
-    std::string tuner;
-    bool available;
+    int index;
+    std::string name, serial, product, manufacturer, tuner;
+    std::string driver, hardware;
+    bool timestamps, available;
+    
+    SoapySDR::Kwargs deviceArgs, streamArgs;
+    SoapySDR::ArgInfoList settingInfo;
+    std::vector<SDRDeviceChannel *> channels;
 };

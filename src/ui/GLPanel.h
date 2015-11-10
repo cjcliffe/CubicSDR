@@ -45,8 +45,8 @@ public:
     GLPanelEdges borderPx;
     RGBA4f fill[2];
     RGBA4f borderColor;
-    bool contentsVisible;
-    CubicVR::mat4 transform;
+    bool contentsVisible, visible;
+    CubicVR::mat4 transform, transformInverse;
     CubicVR::mat4 localTransform;
     float min, mid, max;
     // screen dimensions
@@ -55,7 +55,8 @@ public:
     CubicVR::vec2 umin, umax, ucenter;
     // pixel dimensions
     CubicVR::vec2 pdim, pvec;
-
+    GLuint srcBlend, dstBlend;
+    
     std::vector<GLPanel *> children;
     
     GLPanel();
@@ -68,6 +69,8 @@ public:
     float getHeightPx();
     void setCoordinateSystem(GLPanelCoordinateSystem coord);
     
+    bool hitTest(CubicVR::vec2 pos, CubicVR::vec2 &result);
+    
     void setFill(GLPanelFillType fill_mode);
     void setFillColor(RGBA4f color1);
     void setFillColor(RGBA4f color1, RGBA4f color2);
@@ -76,6 +79,8 @@ public:
     void setBorderColor(RGBA4f clr);
     void setBorderPx(float bord);
     void setBorderPx(float bordl, float bordr, float bordt, float bordb);
+    
+    void setBlend(GLuint src, GLuint dst);
     
     void addChild(GLPanel *childPanel);
     void removeChild(GLPanel *childPanel);

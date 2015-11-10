@@ -155,18 +155,20 @@ void DemodulatorPreThread::run() {
         }
 
         if (!initialized) {
+            inp->decRefCount();
             continue;
         }
 
         // Requested frequency is not center, shift it into the center!
         if ((params.frequency - inp->frequency) != shiftFrequency || rateChanged) {
             shiftFrequency = params.frequency - inp->frequency;
-            if (abs(shiftFrequency) <= (int) ((double) (wxGetApp().getSampleRate() / 2) * 1.5)) {
-                nco_crcf_set_frequency(freqShifter, (2.0 * M_PI) * (((double) abs(shiftFrequency)) / ((double) wxGetApp().getSampleRate())));
+            if (abs(shiftFrequency) <= (int) ((double) (inp->sampleRate / 2) * 1.5)) {
+                nco_crcf_set_frequency(freqShifter, (2.0 * M_PI) * (((double) abs(shiftFrequency)) / ((double) inp->sampleRate)));
             }
         }
 
-        if (abs(shiftFrequency) > (int) ((double) (wxGetApp().getSampleRate() / 2) * 1.5)) {
+        if (abs(shiftFrequency) > (int) ((double) (inp->sampleRate / 2) * 1.5)) {
+            inp->decRefCount();
             continue;
         }
 

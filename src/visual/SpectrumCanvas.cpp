@@ -25,6 +25,8 @@ EVT_LEFT_UP(SpectrumCanvas::OnMouseReleased)
 EVT_ENTER_WINDOW(SpectrumCanvas::OnMouseEnterWindow)
 EVT_LEAVE_WINDOW(SpectrumCanvas::OnMouseLeftWindow)
 EVT_MOUSEWHEEL(SpectrumCanvas::OnMouseWheelMoved)
+EVT_RIGHT_DOWN(SpectrumCanvas::OnMouseRightDown)
+EVT_RIGHT_UP(SpectrumCanvas::OnMouseRightReleased)
 wxEND_EVENT_TABLE()
 
 SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *attribList) :
@@ -32,10 +34,13 @@ SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *attribList) :
 
     glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this));
 
-    mouseTracker.setVertDragLock(true);
     visualDataQueue.set_max_num_items(1);
             
     SetCursor(wxCURSOR_SIZEWE);
+    scaleFactor = 1.0;
+    resetScaleFactor = false;
+    scaleFactorEnabled = false;
+    bwChange = 0.0;
 }
 
 SpectrumCanvas::~SpectrumCanvas() {
@@ -57,6 +62,15 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
             spectrumPanel.setCeilValue(vData->fft_ceiling);
             vData->decRefCount();
         }
+    }
+    
+    if (resetScaleFactor) {
+        scaleFactor += (1.0-scaleFactor)*0.05;
+        if (fabs(scaleFactor-1.0) < 0.01) {
+            scaleFactor = 1.0;
+            resetScaleFactor = false;
+        }
+        updateScaleFactor(scaleFactor);
     }
     
     
@@ -137,6 +151,34 @@ bool SpectrumCanvas::getShowDb() {
     return spectrumPanel.getShowDb();
 }
 
+void SpectrumCanvas::setView(long long center_freq_in, int bandwidth_in) {
+    bwChange += bandwidth_in-bandwidth;
+    #define BW_RESET_TH 400000
+    if (bwChange > BW_RESET_TH || bwChange < -BW_RESET_TH) {
+        resetScaleFactor = true;
+        bwChange = 0;
+    }
+    InteractiveCanvas::setView(center_freq_in, bandwidth_in);
+}
+
+void SpectrumCanvas::disableView() {
+    InteractiveCanvas::disableView();
+}
+
+void SpectrumCanvas::setScaleFactorEnabled(bool en) {
+    scaleFactorEnabled = en;
+}
+
+
+void SpectrumCanvas::updateScaleFactor(float factor) {
+    SpectrumVisualProcessor *sp = wxGetApp().getSpectrumProcessor();
+    FFTVisualDataThread *wdt = wxGetApp().getAppFrame()->getWaterfallDataThread();
+    SpectrumVisualProcessor *wp = wdt->getProcessor();
+
+    scaleFactor = factor;
+    sp->setScaleFactor(factor);
+    wp->setScaleFactor(factor);
+}
 
 void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseMoved(event);
@@ -146,12 +188,32 @@ void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
         if (freqChange != 0) {
             moveCenterFrequency(freqChange);
         }
+    }
+    else if (scaleFactorEnabled && mouseTracker.mouseRightDown()) {
+        
+        float yDelta = mouseTracker.getDeltaMouseY();
+
+        scaleFactor += yDelta*2.0;
+        if (scaleFactor < 0.25) {
+            scaleFactor = 0.25;
+        }
+        if (scaleFactor > 10.0) {
+            scaleFactor = 10.0;
+        }
+        
+        resetScaleFactor = false;
+        updateScaleFactor(scaleFactor);
     } else {
-        setStatusText("Click and drag to adjust center frequency. 'B' to toggle decibels display.");
+        if (scaleFactorEnabled) {
+            setStatusText("Drag horizontal to adjust center frequency. Right-drag or SHIFT+UP/DOWN to adjust vertical scale; right-click to reset. 'B' to toggle decibels display.");
+        } else {
+            setStatusText("Displaying spectrum of active demodulator.");
+        }
     }
 }
 
 void SpectrumCanvas::OnMouseDown(wxMouseEvent& event) {
+	mouseTracker.setVertDragLock(true);
     InteractiveCanvas::OnMouseDown(event);
     SetCursor(wxCURSOR_CROSS);
 }
@@ -161,7 +223,8 @@ void SpectrumCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
 }
 
 void SpectrumCanvas::OnMouseReleased(wxMouseEvent& event) {
-    InteractiveCanvas::OnMouseReleased(event);
+	mouseTracker.setVertDragLock(false);
+	InteractiveCanvas::OnMouseReleased(event);
     SetCursor(wxCURSOR_SIZEWE);
 }
 
@@ -181,4 +244,18 @@ void SpectrumCanvas::attachWaterfallCanvas(WaterfallCanvas* canvas_in) {
 
 SpectrumVisualDataQueue *SpectrumCanvas::getVisualDataQueue() {
     return &visualDataQueue;
+}
+
+void SpectrumCanvas::OnMouseRightDown(wxMouseEvent& event) {
+	mouseTracker.setHorizDragLock(true);
+    mouseTracker.OnMouseRightDown(event);
+    scaleFactor = wxGetApp().getSpectrumProcessor()->getScaleFactor();
+}
+
+void SpectrumCanvas::OnMouseRightReleased(wxMouseEvent& event) {
+	mouseTracker.setHorizDragLock(false);
+    if (!mouseTracker.getOriginDeltaMouseY()) {
+        resetScaleFactor = true;
+    }
+    mouseTracker.OnMouseRightReleased(event);
 }

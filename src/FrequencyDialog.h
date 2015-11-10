@@ -21,14 +21,10 @@ public:
 
     wxTextCtrl * dialogText;
 
-    long long strToFrequency(std::string freqStr);
-    std::string frequencyToStr(long long freq);
-
 private:
     DemodulatorInstance *activeDemod;
     void OnEnter ( wxCommandEvent &event );
     void OnChar ( wxKeyEvent &event );
-    std::string& filterChars(std::string& s, const std::string& allowed);
     FrequencyDialogTarget targetMode;
     DECLARE_EVENT_TABLE()
 };

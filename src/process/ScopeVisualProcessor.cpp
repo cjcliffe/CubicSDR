@@ -6,6 +6,8 @@ ScopeVisualProcessor::ScopeVisualProcessor(): fftInData(NULL), fftwOutput(NULL),
     scopeEnabled.store(true);
     spectrumEnabled.store(true);
     fft_average_rate = 0.65;
+	fft_ceil_ma = fft_ceil_maa = 0;
+	fft_floor_ma = fft_floor_maa = 0;
 }
 
 ScopeVisualProcessor::~ScopeVisualProcessor() {
@@ -66,9 +68,7 @@ void ScopeVisualProcessor::process() {
             audioInputData->decRefCount();
             return;
         }
-        
-        audioInputData->busy_update.lock();
-        
+                
         ScopeRenderData *renderData = NULL;
         
         if (scopeEnabled) {
@@ -81,7 +81,7 @@ void ScopeVisualProcessor::process() {
             renderData->channels = audioInputData->channels;
             renderData->inputRate = audioInputData->inputRate;
             renderData->sampleRate = audioInputData->sampleRate;
-            
+
             if (renderData->waveform_points.size() != iMax * 2) {
                 renderData->waveform_points.resize(iMax * 2);
             }
@@ -112,12 +112,10 @@ void ScopeVisualProcessor::process() {
             }
 
             renderData->spectrum = false;
-            
             distribute(renderData);
         }
         
         if (spectrumEnabled) {
-            renderData = outputBuffers.getBuffer();
             iMax = audioInputData->data.size();
 
             if (audioInputData->channels==1) {
@@ -138,7 +136,14 @@ void ScopeVisualProcessor::process() {
                     }
                 }
             }
+            
+            renderData = outputBuffers.getBuffer();
 
+            renderData->channels = audioInputData->channels;
+            renderData->inputRate = audioInputData->inputRate;
+            renderData->sampleRate = audioInputData->sampleRate;
+            
+            audioInputData->decRefCount();
             
             fftwf_execute(fftw_plan);
             
@@ -157,9 +162,9 @@ void ScopeVisualProcessor::process() {
             }
             
             for (i = 0; i < (fftSize/2); i++) {
-                fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * fft_average_rate;
                 fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * fft_average_rate;
-                
+				fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * fft_average_rate;
+
                 if (fft_result_maa[i] > fft_ceil) {
                     fft_ceil = fft_result_maa[i];
                 }
@@ -167,7 +172,7 @@ void ScopeVisualProcessor::process() {
                     fft_floor = fft_result_maa[i];
                 }
             }
-            
+
             fft_ceil_ma = fft_ceil_ma + (fft_ceil - fft_ceil_ma) * 0.05;
             fft_ceil_maa = fft_ceil_maa + (fft_ceil_ma - fft_ceil_maa) * 0.05;
             
@@ -176,8 +181,8 @@ void ScopeVisualProcessor::process() {
 
             int outSize = fftSize/2;
             
-            if (audioInputData->sampleRate != audioInputData->inputRate) {
-                outSize = (int)floor((float)outSize * ((float)audioInputData->sampleRate/(float)audioInputData->inputRate));
+            if (renderData->sampleRate != renderData->inputRate) {
+                outSize = (int)floor((float)outSize * ((float)renderData->sampleRate/(float)renderData->inputRate));
             }
             
             if (renderData->waveform_points.size() != outSize*2) {
@@ -193,12 +198,10 @@ void ScopeVisualProcessor::process() {
             renderData->fft_floor = fft_floor_maa;
             renderData->fft_ceil = fft_ceil_maa;
             renderData->fft_size = fftSize/2;
-            renderData->inputRate = audioInputData->inputRate;
-            renderData->sampleRate = audioInputData->sampleRate;
             renderData->spectrum = true;
             distribute(renderData);
+        } else {
+            audioInputData->decRefCount();
         }
-        
-        audioInputData->busy_update.unlock();
     }
 }
