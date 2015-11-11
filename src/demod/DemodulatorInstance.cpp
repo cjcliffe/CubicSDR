@@ -257,7 +257,9 @@ void DemodulatorInstance::setOutputDevice(int device_id) {
 
 int DemodulatorInstance::getOutputDevice() {
     if (currentOutputDevice == -1) {
-        currentOutputDevice = audioThread->getOutputDevice();
+        if (audioThread) {
+            currentOutputDevice = audioThread->getOutputDevice();
+        }
     }
 
     return currentOutputDevice;
@@ -326,7 +328,7 @@ void DemodulatorInstance::setBandwidth(int bw) {
             bw = AudioThread::deviceSampleRate[getOutputDevice()];
         }
     }
-    if (!active) {
+    if (!active && demodulatorPreThread != NULL) {
         currentBandwidth = bw;
         checkBandwidth();
         demodulatorPreThread->getParams().bandwidth = currentBandwidth;

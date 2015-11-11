@@ -1,6 +1,10 @@
 #pragma once
 
-#include "wx/frame.h"
+#include <wx/frame.h>
+#include <wx/panel.h>
+#include <wx/splitter.h>
+#include <wx/sizer.h>
+
 #include "PrimaryGLContext.h"
 
 #include "ScopeCanvas.h"
@@ -9,7 +13,9 @@
 #include "MeterCanvas.h"
 #include "TuningCanvas.h"
 #include "ModeSelectorCanvas.h"
+#include "GainCanvas.h"
 #include "FFTVisualDataThread.h"
+#include "SDRDeviceInfo.h"
 //#include "UITestCanvas.h"
 
 #include <map>
@@ -22,6 +28,11 @@
 #define wxID_SET_DS_I 2005
 #define wxID_SET_DS_Q 2006
 #define wxID_SET_SWAP_IQ 2007
+#define wxID_SDR_DEVICES 2008
+#define wxID_AGC_CONTROL 2009
+
+#define wxID_MAIN_SPLITTER 2050
+#define wxID_VIS_SPLITTER 2051
 
 #define wxID_THEME_DEFAULT 2100
 #define wxID_THEME_SHARP 2101
@@ -31,20 +42,10 @@
 #define wxID_THEME_HD 2105
 #define wxID_THEME_RADAR 2106
 
-#define wxID_BANDWIDTH_250K 2150
-#define wxID_BANDWIDTH_1000M 2151
-#define wxID_BANDWIDTH_1024M 2152
-#define wxID_BANDWIDTH_1500M 2153
-#define wxID_BANDWIDTH_1800M 2154
-#define wxID_BANDWIDTH_1920M 2155
-#define wxID_BANDWIDTH_2000M 2156
-#define wxID_BANDWIDTH_2048M 2157
-#define wxID_BANDWIDTH_2160M 2158
-#define wxID_BANDWIDTH_2400M 2159
-#define wxID_BANDWIDTH_2560M 2160
-#define wxID_BANDWIDTH_2880M 2161
-//#define wxID_BANDWIDTH_3000M 2162
-#define wxID_BANDWIDTH_3200M 2163
+#define wxID_BANDWIDTH_BASE 2150
+#define wxID_BANDWIDTH_MANUAL 2200
+
+#define wxID_SETTINGS_BASE 2300
 
 #define wxID_DEVICE_ID 3500
 
@@ -58,18 +59,22 @@ public:
     ~AppFrame();
     void OnThread(wxCommandEvent& event);
     void OnEventInput(wxThreadEvent& event);
-    void initDeviceParams(std::string deviceId);
+    void initDeviceParams(SDRDeviceInfo *devInfo);
+    void updateDeviceParams();
 
     void saveSession(std::string fileName);
     bool loadSession(std::string fileName);
+
+    FFTVisualDataThread *getWaterfallDataThread();
 
 private:
     void OnMenu(wxCommandEvent& event);
     void OnClose(wxCloseEvent& event);
     void OnNewWindow(wxCommandEvent& event);
     void OnIdle(wxIdleEvent& event);
-
-
+    void OnDoubleClickSash(wxSplitterEvent& event);
+    void OnUnSplit(wxSplitterEvent& event);
+  
     ScopeCanvas *scopeCanvas;
     SpectrumCanvas *spectrumCanvas;
     WaterfallCanvas *waterfallCanvas;
@@ -85,7 +90,11 @@ private:
     MeterCanvas *spectrumAvgMeter;
     MeterCanvas *waterfallSpeedMeter;
     ModeSelectorCanvas *demodMuteButton;
-
+    GainCanvas *gainCanvas;
+    wxSizerItem *gainSizerItem, *gainSpacerItem;
+    wxSplitterWindow *mainVisSplitter, *mainSplitter;
+    wxBoxSizer *demodTray;
+    
     DemodulatorInstance *activeDemodulator;
 
     std::vector<RtAudio::DeviceInfo> devices;
@@ -95,13 +104,21 @@ private:
     std::map<int, wxMenuItem *> sampleRateMenuItems;
     std::map<int, wxMenuItem *> audioSampleRateMenuItems;
     std::map<int, wxMenuItem *> directSamplingMenuItems;
-    wxMenuItem *iqSwapMenuItem;
+    wxMenuBar *menuBar;
+    wxMenu *sampleRateMenu;
+    wxMenuItem *agcMenuItem;
+    wxMenu *settingsMenu;
+    SoapySDR::ArgInfoList settingArgs;
+    int settingsIdMax;
+    std::vector<long> sampleRates;
     
     std::string currentSessionFile;
     
     FFTVisualDataThread *waterfallDataThread;
     
     std::thread *t_FFTData;
+    SDRDeviceInfo *devInfo;
+    std::atomic_bool deviceChanged;
 
     wxDECLARE_EVENT_TABLE();
 };

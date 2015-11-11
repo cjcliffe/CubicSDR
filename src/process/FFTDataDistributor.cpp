@@ -1,6 +1,7 @@
 #include "FFTDataDistributor.h"
 
 FFTDataDistributor::FFTDataDistributor() : linesPerSecond(DEFAULT_WATERFALL_LPS), lineRateAccum(0.0), fftSize(DEFAULT_FFT_SIZE) {
+    bufferedItems = 0;
 }
 
 void FFTDataDistributor::setFFTSize(int fftSize) {
@@ -25,34 +26,44 @@ void FFTDataDistributor::process() {
 
 		if (inp) {
 			if (inputBuffer.sampleRate != inp->sampleRate || inputBuffer.frequency != inp->frequency) {
+                
+                bufferMax = inp->sampleRate / 4;
+//                std::cout << "Buffer Max: " << bufferMax << std::endl;
+                bufferOffset = 0;
+                
 				inputBuffer.sampleRate = inp->sampleRate;
 				inputBuffer.frequency = inp->frequency;
-				inputBuffer.data.assign(inp->data.begin(), inp->data.end());
-			} else {
-				inputBuffer.data.insert(inputBuffer.data.end(), inp->data.begin(), inp->data.end());
+                inputBuffer.data.resize(bufferMax);
 			}
+            if ((bufferOffset + bufferedItems + inp->data.size()) > bufferMax) {
+                memmove(&inputBuffer.data[0], &inputBuffer.data[bufferOffset], bufferedItems*sizeof(liquid_float_complex));
+                bufferOffset = 0;
+            } else {
+                memcpy(&inputBuffer.data[bufferOffset+bufferedItems],&inp->data[0],inp->data.size()*sizeof(liquid_float_complex));
+                bufferedItems += inp->data.size();
+            }
 			inp->decRefCount();
 		} else {
 			continue;
 		}
 
 		// number of seconds contained in input
-		double inputTime = (double)inputBuffer.data.size() / (double)inputBuffer.sampleRate;
+		double inputTime = (double)bufferedItems / (double)inputBuffer.sampleRate;
 		// number of lines in input
-		double inputLines = (double)inputBuffer.data.size()/(double)fftSize;
+		double inputLines = (double)bufferedItems / (double)fftSize;
 
 		// ratio required to achieve the desired rate
 		double lineRateStep = ((double)linesPerSecond * inputTime)/(double)inputLines;
 
-		if (inputBuffer.data.size() >= fftSize) {
+		if (bufferedItems >= fftSize) {
 			int numProcessed = 0;
 
-			if (lineRateAccum + (lineRateStep * ((double)inputBuffer.data.size()/(double)fftSize)) < 1.0) {
+			if (lineRateAccum + (lineRateStep * ((double)bufferedItems/(double)fftSize)) < 1.0) {
 				// move along, nothing to see here..
-				lineRateAccum += (lineRateStep * ((double)inputBuffer.data.size()/(double)fftSize));
-				numProcessed = inputBuffer.data.size();
+				lineRateAccum += (lineRateStep * ((double)bufferedItems/(double)fftSize));
+				numProcessed = bufferedItems;
 			} else {
-				for (int i = 0, iMax = inputBuffer.data.size(); i < iMax; i += fftSize) {
+				for (int i = 0, iMax = bufferedItems; i < iMax; i += fftSize) {
 					if ((i + fftSize) > iMax) {
 						break;
 					}
@@ -62,7 +73,7 @@ void FFTDataDistributor::process() {
 						DemodulatorThreadIQData *outp = outputBuffers.getBuffer();
 						outp->frequency = inputBuffer.frequency;
 						outp->sampleRate = inputBuffer.sampleRate;
-						outp->data.assign(inputBuffer.data.begin()+i,inputBuffer.data.begin()+i+fftSize);
+						outp->data.assign(inputBuffer.data.begin()+bufferOffset+i,inputBuffer.data.begin()+bufferOffset+i+fftSize);
 						distribute(outp);
 
 						while (lineRateAccum >= 1.0) {
@@ -74,8 +85,13 @@ void FFTDataDistributor::process() {
 				}
 			}
 			if (numProcessed) {
-				inputBuffer.data.erase(inputBuffer.data.begin(), inputBuffer.data.begin() + numProcessed);
-			}
+                bufferedItems -= numProcessed;
+                bufferOffset += numProcessed;
+            }
+            if (bufferedItems <= 0) {
+                bufferedItems = 0;
+                bufferOffset = 0;
+            }
 		}
 	}
 }

@@ -67,6 +67,7 @@ private:
     long double freqMove;
     float hoverAlpha;
     int linesPerSecond;
+    float scaleMove;
     
     SpectrumVisualDataQueue visualDataQueue;
     Timer gTimer;

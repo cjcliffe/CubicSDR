@@ -20,7 +20,7 @@ AudioThread::AudioThread() : IOThread(),
 	outputDevice.store(-1);
     gain.store(1.0);
 
-    boundThreads = new std::vector<AudioThread *>;
+    boundThreads.store(new std::vector<AudioThread *>);
 }
 
 AudioThread::~AudioThread() {
@@ -428,7 +428,7 @@ bool AudioThread::isActive() {
 void AudioThread::setActive(bool state) {
 
     AudioThreadInput *dummy;
-    if (state && !active) {
+    if (state && !active && inputQueue) {
         while (!inputQueue->empty()) {  // flush queue
             inputQueue->pop(dummy);
             if (dummy) {
@@ -438,10 +438,12 @@ void AudioThread::setActive(bool state) {
         deviceController[parameters.deviceId]->bindThread(this);
     } else if (!state && active) {
         deviceController[parameters.deviceId]->removeThread(this);
-        while (!inputQueue->empty()) {  // flush queue
-            inputQueue->pop(dummy);
-            if (dummy) {
-                dummy->decRefCount();
+        if(inputQueue) {
+            while (!inputQueue->empty()) {  // flush queue
+                inputQueue->pop(dummy);
+                if (dummy) {
+                    dummy->decRefCount();
+                }
             }
         }
     }

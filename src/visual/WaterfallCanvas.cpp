@@ -43,6 +43,7 @@ WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
     lpsIndex = 0;
     preBuf = false;
     SetCursor(wxCURSOR_CROSS);
+    scaleMove = 0;
 }
 
 WaterfallCanvas::~WaterfallCanvas() {
@@ -72,19 +73,16 @@ void WaterfallCanvas::attachSpectrumCanvas(SpectrumCanvas *canvas_in) {
 }
 
 void WaterfallCanvas::processInputQueue() {
-    if (!glContext) {
-        return;
-    }
-    glContext->SetCurrent(*this);
+    tex_update.lock();
     
     gTimer.update();
     
     double targetVis =  1.0 / (double)linesPerSecond;
     lpsIndex += gTimer.lastUpdateSeconds();
 
+    bool updated = false;
     if (linesPerSecond) {
         if (lpsIndex >= targetVis) {
-            tex_update.lock();
             while (lpsIndex >= targetVis) {
                 SpectrumVisualData *vData;
                 if (!visualDataQueue.empty()) {
@@ -94,21 +92,27 @@ void WaterfallCanvas::processInputQueue() {
                         waterfallPanel.setPoints(vData->spectrum_points);
                         waterfallPanel.step();
                         vData->decRefCount();
+                        updated = true;
                     }
                     lpsIndex-=targetVis;
                 } else {
                 	break;
                 }
             }
-            tex_update.unlock();
         }
-    }}
+    }
+    if (updated) {
+        wxClientDC(this);
+        glContext->SetCurrent(*this);
+        waterfallPanel.update();
+    }
+    tex_update.unlock();
+}
 
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
+    tex_update.lock();
     wxPaintDC dc(this);
 
-    processInputQueue();
-    
     const wxSize ClientSize = GetClientSize();
     long double currentZoom = zoom;
     
@@ -120,9 +124,33 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         }
     }
     
+    if (scaleMove != 0) {
+        SpectrumVisualProcessor *sp = wxGetApp().getSpectrumProcessor();
+        FFTVisualDataThread *wdt = wxGetApp().getAppFrame()->getWaterfallDataThread();
+        SpectrumVisualProcessor *wp = wdt->getProcessor();
+        float factor = sp->getScaleFactor();
+
+        factor += scaleMove * 0.02;
+        
+        if (factor < 0.25) {
+            factor = 0.25;
+        }
+        if (factor > 10.0) {
+            factor = 10.0;
+        }
+        
+        sp->setScaleFactor(factor);
+        wp->setScaleFactor(factor);
+    }
+    
     if (freqMove != 0.0) {
         long long newFreq = getCenterFrequency() + (long long)((long double)getBandwidth()*freqMove) * 0.01;
         
+        long long minFreq = bandwidth/2;
+        if (newFreq < minFreq) {
+            newFreq = minFreq;
+        }
+
         updateCenterFrequency(newFreq);
         
         if (!freqMoving) {
@@ -211,9 +239,7 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->BeginDraw(0,0,0);
 
     waterfallPanel.calcTransform(CubicVR::mat4::identity());
-    tex_update.lock();
     waterfallPanel.draw();
-    tex_update.unlock();
 
     std::vector<DemodulatorInstance *> &demods = wxGetApp().getDemodMgr().getDemodulators();
 
@@ -293,6 +319,7 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->EndDraw();
 
     SwapBuffers();
+    tex_update.unlock();
 }
 
 void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
@@ -304,14 +331,20 @@ void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
     case 'A':
     case WXK_UP:
     case WXK_NUMPAD_UP:
+            scaleMove = 0.0;
             zoom = 1.0;
-            mouseZoom = 0.95;
+            if (mouseZoom != 1.0) {
+                mouseZoom = 0.95;
+            }
         break;
     case 'Z':
     case WXK_DOWN:
     case WXK_NUMPAD_DOWN:
+            scaleMove = 0.0;
             zoom = 1.0;
-            mouseZoom = 1.05;
+            if (mouseZoom != 1.0) {
+                mouseZoom = 1.05;
+            }
         break;
     case WXK_LEFT:
     case WXK_NUMPAD_LEFT:
@@ -334,14 +367,22 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     case 'A':
     case WXK_UP:
     case WXK_NUMPAD_UP:
-            mouseZoom = 1.0;
-            zoom = 0.95;
+            if (!shiftDown) {
+                mouseZoom = 1.0;
+                zoom = 0.95;
+            } else {
+                scaleMove = 1.0;
+            }
         break;
     case 'Z':
     case WXK_DOWN:
     case WXK_NUMPAD_DOWN:
-            mouseZoom = 1.0;
-            zoom = 1.05;
+            if (!shiftDown) {
+                mouseZoom = 1.0;
+                zoom = 1.05;
+            } else {
+                scaleMove = -1.0;
+            }
         break;
     case WXK_RIGHT:
     case WXK_NUMPAD_RIGHT:
@@ -398,7 +439,7 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         return;
     }
 
-    long long minFreq = wxGetApp().getSampleRate()/2;
+    long long minFreq = bandwidth/2;
     if (freq < minFreq) {
         freq = minFreq;
     }
@@ -409,11 +450,9 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
 
 }
 void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
+    processInputQueue();
     Refresh();
     event.RequestMore();
-    if (visualDataQueue.size() > linesPerSecond) {
-        processInputQueue();
-    }
 }
 
 void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
@@ -435,8 +474,8 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
             int currentBW = demod->getBandwidth();
 
             currentBW = currentBW + bwDiff;
-            if (currentBW > wxGetApp().getSampleRate()) {
-                currentBW = wxGetApp().getSampleRate();
+            if (currentBW > CHANNELIZER_RATE_MAX) {
+                currentBW = CHANNELIZER_RATE_MAX;
             }
             if (currentBW < MIN_BANDWIDTH) {
                 currentBW = MIN_BANDWIDTH;
@@ -802,6 +841,7 @@ void WaterfallCanvas::updateCenterFrequency(long long freq) {
 }
 
 void WaterfallCanvas::setLinesPerSecond(int lps) {
+    tex_update.lock();
     linesPerSecond = lps;
     while (!visualDataQueue.empty()) {
         SpectrumVisualData *vData;
@@ -811,7 +851,7 @@ void WaterfallCanvas::setLinesPerSecond(int lps) {
             vData->decRefCount();
         }
     }
-
+    tex_update.unlock();
 }
 
 

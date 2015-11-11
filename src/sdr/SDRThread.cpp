@@ -41,8 +41,12 @@ int SDRThread::enumerate_rtl(std::vector<SDRDeviceInfo *> *devs) {
             deviceProduct = product;
             deviceManufacturer = manufact;
 
-            rtlsdr_dev_t *devTest;
-            rtlsdr_open(&devTest, i);
+            rtlsdr_dev_t *devTest = nullptr;
+            if(rtlsdr_open(&devTest, i) < 0)
+            {
+                std::cout << "\tFailed to open device " << i << std::endl;
+                continue;
+            }
 
             std::cout << "\t Tuner type: ";
             switch (rtlsdr_get_tuner_type(devTest)) {

@@ -3,14 +3,16 @@ CubicSDR
 
 Cross-Platform Software-Defined Radio Application
 
+Please see the [CubicSDR GitHub Wiki](https://github.com/cjcliffe/CubicSDR/wiki) for build instructions.
+
 Utilizes: 
 --------
-  - liquid-dsp (http://liquidsdr.org/ https://github.com/jgaeddert/liquid-dsp)
-  - FFTW (http://www.fftw.org/ https://github.com/FFTW/fftw3)
-  - RtAudio (http://www.music.mcgill.ca/~gary/rtaudio/ http://github.com/thestk/rtaudio/)
-  - Osmocom RTLSDR (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
+  - liquid-dsp (http://liquidsdr.org/ -- https://github.com/jgaeddert/liquid-dsp)
+  - SoapySDR (http://www.pothosware.com/ -- https://github.com/pothosware/SoapySDR)
+  - FFTW (http://www.fftw.org/ -- https://github.com/FFTW/fftw3)
+  - RtAudio (http://www.music.mcgill.ca/~gary/rtaudio/ -- http://github.com/thestk/rtaudio/)
   - LodePNG (http://lodev.org/lodepng/)
-  - BMFont (http://www.angelcode.com/ http://www.angelcode.com/products/bmfont/)
+  - BMFont (http://www.angelcode.com/ -- http://www.angelcode.com/products/bmfont/)
   - Bitstream Vera font (http://en.wikipedia.org/wiki/Bitstream_Vera)
   - OpenGL (https://www.opengl.org/)
   - wxWidgets (https://www.wxwidgets.org/)
@@ -20,9 +22,20 @@ Features and Status:
 --------------------
   - Simple UI
   - Devices
-    - [x] RTL-SDR
-    - [ ] rtl_tcp client
-    - [ ] gr-osmosdr
+    - [x] SoapySDR Device support (known working checked)
+      - [x] SoapySDRPlay for SDRPlay (Maintained by C.J.)
+      - [x] SoapyRTLSDR for RTL-SDR (Maintained by C.J.)
+      - [x] SoapyHackRF for HackRF
+      - [x] SoapyBladeRF for BladeRF
+      - [ ] SoapyUHD for Ettus USRP (untested)
+      - [x] SoapyRemote, use any SoapySDR Device via network (works on Pi)
+      - [ ] SoapyAirSpy (WIP by C.J.)
+      - [ ] SoapyAudio (WIP by C.J.)
+      - [x] SoapyOsmo for GrOsmoSDR devices
+        - [ ] OsmoSDR
+        - [ ] MiriSDR
+        - [ ] RFSpace
+        - [x] AirSpy
   - Basic Features
     - [x] Device Selection
     - [x] Bandwidth
@@ -30,12 +43,15 @@ Features and Status:
     - [x] Load/Save session
     - [x] Audio sample rate
     - [x] Device PPM
+    - [x] Waterfall speed
+    - [x] Spectrum average speed
+    - [x] Gain Controls
+    - [ ] Bookmarks
+    - [ ] History
     - [ ] Default preferences
       - [ ] Audio defaults
       - [x] Device defaults
-    - [ ] Bookmarks
-    - [ ] History
-    - [ ] Run as rtl_tcp server and visualize control
+    - [ ] Run any device as rtl_tcp server and visualize control
   - Neat Visuals
     - [ ] 2D visuals
       - [x] Y Scope
@@ -59,7 +75,7 @@ Features and Status:
       - [x] USB
       - [x] DSB
       - [x] I/Q
-    - [ ] Controls
+    - [x] Controls
       - [x] Display Frequency and allow manual adjustments
       - [x] Allow selection of demodulation type
       - [x] Display separate zoomed-in view of current waterfall and spectrum, allow adjustments
@@ -68,8 +84,6 @@ Features and Status:
       - [x] Volume control
       - [x] Direct frequency input
       - [x] Mute
-      - [x] Waterfall speed
-      - [ ] RTL-SDR Gain
   - Basic Input Controls
     - [x] Drag spectrum to change center frequency
     - [x] Hold shift and click on waterfall to create a new demodulator
@@ -125,7 +139,7 @@ Features and Status:
     - [ ] Update visuals to OpenGL 3.x / OpenGL ES
     - [x] Resolve constant refresh on visuals that don't change often
     - [ ] Resolve all driver/platform vertical sync issues
-    - [ ] Group and divide IQ data distribution workload instead of 100% distribution per instance
+    - [x] Group and divide IQ data distribution workload instead of 100% distribution per instance
 
 
 Advanced Goals and ideas:
@@ -146,19 +160,19 @@ Advanced Goals and ideas:
       - Visual outputs?
     * Take control of additional devices and spawning new demodulators (i.e. trunkers)
     * Script manager / live editor
-    * Provide scriptable liquid-dsp modulation for trancievers?
+    * Provide scriptable liquid-dsp modulation for transceivers?
     * Allow scripts to launch/run headless (no UI)
   - "PVR" like mode with waterfall time shifting
   - L/R and surround-sound balance settings for separating and listening to mono streams
   - Add tool for converting decimated I/Q recording to video
-    - Select video features such as title/demodulation/scope/waterfall/etc
+    - Select video features such as title/demodulation/scope/waterfall/etc.
     - Render to video from GL frames->ffmpeg/mencoder /w demodulated audio
-  - Accessability / Control
+  - Accessibility / Control
     - USB/MIDI control surfaces
     - Joystick / gamepad input
     - Vibration / force-feeback
-  - Investigate compilation via emscripten using rtl_tcp for input
-    - Create web server+rtl_tcp bundle for embedded devices
+  - Investigate compilation via emscripten using SoapyRemote for input
+    - Create web server+SoapyRemote bundle for embedded devices
     - Use emscripten compiled CubicSDR via embedded web server 
 
 Target Platforms:
