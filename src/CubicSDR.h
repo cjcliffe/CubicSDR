@@ -161,7 +161,7 @@ static const wxCmdLineEntryDesc commandLineInfo [] =
 {
     { wxCMD_LINE_SWITCH, "h", "help", "Command line parameter help", wxCMD_LINE_VAL_NONE, wxCMD_LINE_OPTION_HELP },
     { wxCMD_LINE_OPTION, "c", "config", "Specify a named configuration to use, i.e. '-c ham'" },
-    { wxCMD_LINE_SWITCH, "l", "localmod", "Check local SoapySDR modules instead of bundled first." },
+    { wxCMD_LINE_SWITCH, "b", "bundled", "Use bundled SoapySDR modules first instead of local." },
     { wxCMD_LINE_NONE }
 };
 #else

@@ -11,8 +11,10 @@ SET(CPACK_PACKAGE_VERSION_MAJOR ${CUBICSDR_VERSION_MAJOR})
 SET(CPACK_PACKAGE_VERSION_MINOR ${CUBICSDR_VERSION_MINOR})
 SET(CPACK_PACKAGE_VERSION_PATCH ${CUBICSDR_VERSION_PATCH})
 
+SET (VERSION_SUFFIX "" CACHE STRING "Add custom version suffix to CubicSDR application title.")
+
 ADD_DEFINITIONS(
-    -DCUBICSDR_VERSION="${CUBICSDR_VERSION}"
+    -DCUBICSDR_VERSION="${CUBICSDR_VERSION}-${VERSION_SUFFIX}"
 )
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
@@ -427,6 +429,7 @@ IF (APPLE AND BUNDLE_APP)
     SET(MACOSX_BUNDLE_BUNDLE_NAME CubicSDR)
     
     set(BUNDLE_SOAPY_MODS OFF CACHE BOOL "Bundle local SoapySDR modules")
+    set(BUNDLE_MIR_SDR OFF CACHE BOOL "Bundle mir_sdr for personal use only -- do not distribute.")
     
     IF (BUNDLE_SOAPY_MODS)
     	ADD_DEFINITIONS(
@@ -516,12 +519,13 @@ IF (APPLE AND BUNDLE_APP)
     IF (BUNDLE_SOAPY_MODS)
        FOREACH(SOAPY_MOD_FILE ${SOAPY_MODS})
            GET_FILENAME_COMPONENT(SOAPY_MOD_NAME ${SOAPY_MOD_FILE} NAME)
-           
-           IF(${SOAPY_MOD_NAME} STREQUAL "libsdrPlaySupport.so") # prevent inclusion of libmirsdrapi-rsp.so
+           IF(NOT BUNDLE_MIR_SDR) # prevent inclusion of libmirsdrapi-rsp.so
+           IF(${SOAPY_MOD_NAME} STREQUAL "libsdrPlaySupport.so")
                message(STATUS "Excluding libsdrPlaySupport.so")
                CONTINUE()
            ELSE()
                message(STATUS "Bundling ${SOAPY_MOD_NAME} from ${SOAPY_MOD_FILE}")
+           ENDIF()
            ENDIF()
            INSTALL(CODE "
                fixup_bundle(\"${APPS}\"   \"${APPS}/Contents/MacOS/modules/${SOAPY_MOD_NAME}\"   \"/usr/local/lib\")

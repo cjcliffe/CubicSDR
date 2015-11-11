@@ -271,13 +271,13 @@ bool CubicSDR::OnCmdLineParsed(wxCmdLineParser& parser) {
     config.load();
 
 #ifdef BUNDLE_SOAPY_MODS
-    if (parser.Found("l")) {
-        useLocalMod.store(true);
-    } else {
+    if (parser.Found("b")) {
         useLocalMod.store(false);
+    } else {
+        useLocalMod.store(true);
     }
 #else
-    useLocalMod.store(false);
+    useLocalMod.store(true);
 #endif
     
     return true;

@@ -63,8 +63,6 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
         wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Loading SoapySDR modules..");
 		SoapySDR::loadModules();
 		#endif
-        wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "done.");
-        std::cout << "done." << std::endl;
 
 //        modules = SoapySDR::listModules();
 //        for (size_t i = 0; i < modules.size(); i++) {
@@ -143,6 +141,12 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
                     dev->setHardware(it->second);
                 }
             }
+
+            if (isRemote) {
+                wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Querying remote " + remoteAddr + " device #" + std::to_string(i) + ": " + dev-> getName());
+            } else {
+                wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Querying device #") + std::to_string(i) + ": " + dev->getName());
+            }
             
             int numChan = device->getNumChannels(SOAPY_SDR_RX);
             for (int i = 0; i < numChan; i++) {
@@ -191,8 +195,6 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
             SoapySDR::Kwargs streamArgs;
             
             if (isRemote) {
-                wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Querying remote " + remoteAddr + " device #" + std::to_string(i));
-                
 //                if (deviceArgs.count("rtl") != 0) {
 //                    streamArgs["remote:mtu"] = "8192";
 //                    streamArgs["remote:window"] = "16384000";
@@ -203,8 +205,6 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
                 if (nativeFormat.length()) {
                     streamArgs["remote:format"] = nativeFormat;
                 }
-            } else {
-                wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Found local device #") + std::to_string(i));
             }
             
             dev->setStreamArgs(streamArgs);
@@ -217,7 +217,7 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
             dev->setAvailable(true);
         } catch (const std::exception &ex) {
             std::cerr << "Error making device: " << ex.what() << std::endl;
-            wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Error making device #") + std::to_string(i));
+            wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Error querying device #") + std::to_string(i));
             dev->setAvailable(false);
         }
         std::cout << std::endl;
