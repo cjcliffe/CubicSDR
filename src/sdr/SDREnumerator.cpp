@@ -115,7 +115,6 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
         wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Opening remote server ") + remoteAddr + "..");
     }
     for (size_t i = 0; i < results.size(); i++) {
-//        std::cout << "Found device " << i << std::endl;
         SDRDeviceInfo *dev = new SDRDeviceInfo();
         
         SoapySDR::Kwargs deviceArgs = results[i];
@@ -128,6 +127,14 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
                 dev->setName(it->second);
 			}
         }
+        
+        if (deviceArgs.count("remote")) {
+            isRemote = true;
+        } else {
+            isRemote = false;
+        }
+        
+        dev->setRemote(isRemote);
 
         dev->setDeviceArgs(deviceArgs);
         
@@ -141,7 +148,7 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
                     dev->setHardware(it->second);
                 }
             }
-
+            
             if (isRemote) {
                 wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Querying remote " + remoteAddr + " device #" + std::to_string(i) + ": " + dev-> getName());
             } else {
@@ -191,25 +198,6 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
                 dev->addChannel(chan);
             }
             
-            
-            SoapySDR::Kwargs streamArgs;
-            
-            if (isRemote) {
-//                if (deviceArgs.count("rtl") != 0) {
-//                    streamArgs["remote:mtu"] = "8192";
-//                    streamArgs["remote:window"] = "16384000";
-//                }
-                double fullScale = 0;
-                std::string nativeFormat = device->getNativeStreamFormat(SOAPY_SDR_RX, dev->getRxChannel()->getChannel(), fullScale);
-                
-                if (nativeFormat.length()) {
-                    streamArgs["remote:format"] = nativeFormat;
-                }
-            }
-            
-            dev->setStreamArgs(streamArgs);
-
-            
             dev->setSettingsInfo(device->getSettingInfo());
             
             SoapySDR::Device::unmake(device);
@@ -237,10 +225,6 @@ void SDREnumerator::run() {
 
     std::cout << "SDR enumerator starting." << std::endl;
     terminated.store(false);
-    
-//    if (!remotes.size()) {
-//        remotes.push_back("raspberrypi.local");
-//    }
 
     wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Scanning local devices, please wait..");
     SDREnumerator::enumerate_devices("");
