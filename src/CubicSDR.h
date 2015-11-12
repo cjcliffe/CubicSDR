@@ -102,6 +102,8 @@ public:
 
     void setDeviceSelectorClosed();
 	bool isDeviceSelectorOpen();
+    void closeDeviceSelector();
+
     
     void setAGCMode(bool mode);
     bool getAGCMode();
@@ -113,6 +115,8 @@ public:
     void setDeviceArgs(SoapySDR::Kwargs settingArgs_in);
 
     bool getUseLocalMod();
+    std::string getModulePath();
+    
 private:
     AppFrame *appframe;
     AppConfig config;
@@ -153,6 +157,7 @@ private:
     std::atomic_bool sampleRateInitialized;
     std::atomic_bool useLocalMod;
     std::string notifyMessage;
+    std::string modulePath;
     std::mutex notify_busy;
 };
 
@@ -161,6 +166,7 @@ static const wxCmdLineEntryDesc commandLineInfo [] =
 {
     { wxCMD_LINE_SWITCH, "h", "help", "Command line parameter help", wxCMD_LINE_VAL_NONE, wxCMD_LINE_OPTION_HELP },
     { wxCMD_LINE_OPTION, "c", "config", "Specify a named configuration to use, i.e. '-c ham'" },
+    { wxCMD_LINE_OPTION, "m", "modpath", "Load modules from suppplied path, i.e. '-m ~/SoapyMods/'" },
     { wxCMD_LINE_SWITCH, "b", "bundled", "Use bundled SoapySDR modules first instead of local." },
     { wxCMD_LINE_NONE }
 };
@@ -169,6 +175,7 @@ static const wxCmdLineEntryDesc commandLineInfo [] =
 {
     { wxCMD_LINE_SWITCH, "h", "help", "Command line parameter help", wxCMD_LINE_VAL_NONE, wxCMD_LINE_OPTION_HELP },
     { wxCMD_LINE_OPTION, "c", "config", "Specify a named configuration to use, i.e. '-c ham'" },
+    { wxCMD_LINE_OPTION, "m", "modpath", "Load modules from suppplied path, i.e. '-m ~/SoapyMods/'" },
     { wxCMD_LINE_NONE }
 };
 #endif

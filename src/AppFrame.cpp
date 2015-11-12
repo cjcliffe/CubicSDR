@@ -768,6 +768,8 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
 }
 
 void AppFrame::OnClose(wxCloseEvent& event) {
+    wxGetApp().closeDeviceSelector();
+
     wxGetApp().getDemodSpectrumProcessor()->removeOutput(demodSpectrumCanvas->getVisualDataQueue());
     wxGetApp().getDemodSpectrumProcessor()->removeOutput(demodWaterfallCanvas->getVisualDataQueue());
     wxGetApp().getSpectrumProcessor()->removeOutput(spectrumCanvas->getVisualDataQueue());
