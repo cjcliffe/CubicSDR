@@ -56,9 +56,7 @@ void WaterfallPanel::step() {
     int half_fft_size = fft_size / 2;
 
     if (!bufferInitialized.load()) {
-        if (waterfall_slice != NULL) {
-            delete waterfall_slice;
-        }
+        delete waterfall_slice;
         waterfall_slice = new unsigned char[half_fft_size];
         bufferInitialized.store(true);
     }
