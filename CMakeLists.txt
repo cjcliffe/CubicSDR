@@ -24,16 +24,16 @@ macro(configure_files srcDir destDir globStr)
     message(STATUS "Copying ${srcDir}/${globStr} to directory ${destDir}")
     make_directory(${destDir})
 
-    file(GLOB templateFiles RELATIVE "${srcDir}" "${srcDir}/${globStr}")
-    foreach(templateFile "${templateFiles}")
-        set(srcTemplatePath "${srcDir}/${templateFile}")
+    file(GLOB templateFiles RELATIVE ${srcDir} ${srcDir}/${globStr})
+    foreach(templateFile ${templateFiles})
+        set(srcTemplatePath ${srcDir}/${templateFile})
         message(STATUS "Configuring file ${templateFile}")
-        if(NOT IS_DIRECTORY "${srcTemplatePath}")
+        if(NOT IS_DIRECTORY ${srcTemplatePath})
             configure_file(
-                    "${srcTemplatePath}"
-                    "${destDir}/${templateFile}"
+                    ${srcTemplatePath}
+                    ${destDir}/${templateFile}
                     COPYONLY)
-        endif(NOT IS_DIRECTORY "${srcTemplatePath}")
+        endif(NOT IS_DIRECTORY ${srcTemplatePath})
     endforeach(templateFile)
 endmacro(configure_files)
 
@@ -41,16 +41,16 @@ macro(configure_files_recurse srcDir destDir)
     message(STATUS "Configuring directory ${destDir}")
     make_directory(${destDir})
 
-    file(GLOB_RECURSE templateFiles RELATIVE "${srcDir}" "${srcDir}/*")
-    foreach(templateFile "${templateFiles}")
-        set(srcTemplatePath "${srcDir}/${templateFile}")
+    file(GLOB_RECURSE templateFiles RELATIVE ${srcDir} ${srcDir}/*)
+    foreach(templateFile ${templateFiles})
+        set(srcTemplatePath ${srcDir}/${templateFile})
         message(STATUS "Configuring file ${templateFile}")
-        if(NOT IS_DIRECTORY "${srcTemplatePath}")
+        if(NOT IS_DIRECTORY ${srcTemplatePath})
             configure_file(
-                    "${srcTemplatePath}"
-                    "${destDir}/${templateFile}"
+                    ${srcTemplatePath}
+                    ${destDir}/${templateFile}
                     COPYONLY)
-        endif(NOT IS_DIRECTORY "${srcTemplatePath}")
+        endif(NOT IS_DIRECTORY ${srcTemplatePath})
     endforeach(templateFile)
 endmacro(configure_files_recurse)
 
@@ -67,9 +67,9 @@ else( CMAKE_SIZEOF_VOID_P EQUAL 8 )
 endif( CMAKE_SIZEOF_VOID_P EQUAL 8 )
 
 
-SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/${EX_PLATFORM_NAME}")
-SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${PROJECT_BINARY_DIR}/${EX_PLATFORM_NAME}")
-SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${PROJECT_BINARY_DIR}/${EX_PLATFORM_NAME}")
+SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/${EX_PLATFORM_NAME})
+SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_BINARY_DIR}/${EX_PLATFORM_NAME})
+SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_BINARY_DIR}/${EX_PLATFORM_NAME})
 
 IF (MSVC) 
 	include_directories ("${PROJECT_SOURCE_DIR}/external/wglext")
@@ -381,7 +381,7 @@ include_directories (
 
 set(RES_FILES "")
 if(MINGW OR MSVC)
- set(RES_FILES "${PROJECT_SOURCE_DIR}/cubicsdr.rc")
+ set(RES_FILES ${PROJECT_SOURCE_DIR}/cubicsdr.rc)
  set(CMAKE_RC_COMPILER_INIT windres)
  ENABLE_LANGUAGE(RC)
  IF(EX_PLATFORM EQUAL 64)
@@ -394,12 +394,12 @@ if(MINGW OR MSVC)
 endif(MINGW OR MSVC)
 
 IF (NOT BUNDLE_APP)
-    configure_files("${PROJECT_SOURCE_DIR}/font" "${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME}" "*.fnt")
-    configure_files("${PROJECT_SOURCE_DIR}/font" "${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME}" "*.png")
-    configure_files("${PROJECT_SOURCE_DIR}/icon" "${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME}" CubicSDR.ico)
+    configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.fnt")
+    configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.png")
+    configure_files(${PROJECT_SOURCE_DIR}/icon ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} CubicSDR.ico)
 	IF(MSVC)	
-		configure_files("${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM}/" "${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME}" "*.dll")
-		configure_files("${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/" "${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME}" "*.dll")
+		configure_files(${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM}/ ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
+		configure_files(${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/ ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
 	ENDIF()
     add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers} ${RES_FILES})
     target_link_libraries(CubicSDR ${LIQUID_LIB} ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
@@ -499,7 +499,7 @@ IF (APPLE AND BUNDLE_APP)
     IF (BUNDLE_SOAPY_MODS)
 
     message(STATUS "SOAPY_ROOT: ${SOAPY_SDR_ROOT}")
-    file(GLOB SOAPY_MODS "${SOAPY_SDR_ROOT}/lib/SoapySDR/modules/*.so")
+    file(GLOB SOAPY_MODS ${SOAPY_SDR_ROOT}/lib/SoapySDR/modules/*.so)
     
     FOREACH(SOAPY_MOD_FILE ${SOAPY_MODS})
             INSTALL( FILES "${SOAPY_MOD_FILE}"
@@ -593,8 +593,8 @@ IF (WIN32 AND BUILD_INSTALLER)
 		ADD_DEFINITIONS(
 			-DBUNDLE_SOAPY_MODS=1
 		)
-		file(GLOB SOAPY_BINS "${SOAPY_SDR_ROOT}/bin/*.dll")
-		file(GLOB SOAPY_MODS "${SOAPY_SDR_ROOT}/lib/SoapySDR/modules/*.dll")
+		file(GLOB SOAPY_BINS ${SOAPY_SDR_ROOT}/bin/*.dll)
+		file(GLOB SOAPY_MODS ${SOAPY_SDR_ROOT}/lib/SoapySDR/modules/*.dll)
 		message(STATUS "SOAPY_BINS: ${SOAPY_BINS}")
 		message(STATUS "SOAPY_MODS: ${SOAPY_MODS}")
 		install(FILES ${SOAPY_BINS} DESTINATION .)
@@ -607,10 +607,10 @@ IF (WIN32 AND BUILD_INSTALLER)
 		DESTINATION .)
 	ENDIF(MSVC AND EX_PLATFORM EQUAL 32)
 
-	set(CPACK_PACKAGE_EXECUTABLES CubicSDR "CubicSDR")
+		set(CPACK_PACKAGE_EXECUTABLES CubicSDR "CubicSDR")
 
 	IF (MSVC)
-		install(PROGRAMS "${CMAKE_CURRENT_SOURCE_DIR}/external/msvc/${EX_PLATFORM_NAME}/vc_redist.${EX_PLATFORM_NAME}.exe" DESTINATION vc_redist)
+		install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/external/msvc/${EX_PLATFORM_NAME}/vc_redist.${EX_PLATFORM_NAME}.exe DESTINATION vc_redist)
 		set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "ExecWait '\\\"$INSTDIR\\\\vc_redist\\\\vc_redist.${EX_PLATFORM_NAME}.exe\\\" /q:a'")
 	ENDIF (MSVC)
 		  
