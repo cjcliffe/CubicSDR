@@ -647,7 +647,11 @@ IF (UNIX AND NOT APPLE AND BUILD_DEB)
     set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,-z,relro")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,relro")
 
-	CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/external/deb/deb_post.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/deb_post.sh" @ONLY IMMEDIATE)
+	CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/external/deb/deb_post.sh.in" 
+			"${CMAKE_CURRENT_BINARY_DIR}/deb_post.sh" @ONLY IMMEDIATE)
+
+	CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CubicSDR.desktop.in"
+			"${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.desktop" @ONLY IMMEDIATE)
 
 	INSTALL(TARGETS CubicSDR DESTINATION bin)
         install(FILES 
@@ -655,7 +659,7 @@ IF (UNIX AND NOT APPLE AND BUILD_DEB)
             ${PROJECT_SOURCE_DIR}/src/CubicSDR.png
 	    DESTINATION share/cubicsdr)
         
-    INSTALL(FILES CubicSDR.desktop 
+    INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.desktop" 
         DESTINATION share/applications)
         
 	INCLUDE(CPack)
@@ -670,17 +674,20 @@ IF(UNIX AND NOT APPLE AND NOT BUILD_DEB)
 
     set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,-z,relro")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,relro")
+ 
+	CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CubicSDR.desktop.in"
+			"${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.desktop" @ONLY IMMEDIATE)
 
 	INSTALL(TARGETS CubicSDR DESTINATION bin)
         install(FILES 
             ${CUBICSDR_RESOURCES}
             ${PROJECT_SOURCE_DIR}/src/CubicSDR.png
     DESTINATION share/cubicsdr)
-        INSTALL(FILES CubicSDR.desktop 
+        INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.desktop"
         DESTINATION share/applications)
         
-    	CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/external/deb/deb_post.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/deb_post.sh" @ONLY IMMEDIATE)
-        
+    	CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/external/deb/deb_post.sh.in" 
+			"${CMAKE_CURRENT_BINARY_DIR}/deb_post.sh" @ONLY IMMEDIATE)
     CONFIGURE_FILE(
       "${PROJECT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
       "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
