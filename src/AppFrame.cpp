@@ -77,6 +77,7 @@ AppFrame::AppFrame() :
     demodModeSelector->setHelpTip("Choose modulation type: Frequency Modulation, Amplitude Modulation and Lower, Upper or Double Side-Band.");
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
     
+#ifdef ENABLE_DIGITAL_LAB
     demodModeSelectorAdv = new ModeSelectorCanvas(this, attribList);
     demodModeSelectorAdv->addChoice(DEMOD_TYPE_ASK, "ASK");
     demodModeSelectorAdv->addChoice(DEMOD_TYPE_APSK, "APSK");
@@ -103,7 +104,8 @@ AppFrame::AppFrame() :
     demodModeSelectorCons->addChoice(256, "256");
     demodModeSelectorCons->setHelpTip("Choose number of constallations types.");
     demodTray->Add(demodModeSelectorCons, 2, wxEXPAND | wxALL, 0);
-
+#endif
+            
     wxGetApp().getDemodSpectrumProcessor()->setup(1024);
     demodSpectrumCanvas = new SpectrumCanvas(demodPanel, attribList);
     demodSpectrumCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
@@ -854,10 +856,12 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             scopeCanvas->setDeviceName(outputDevices[outputDevice].name);
             outputDeviceMenuItems[outputDevice]->Check(true);
             int dType = demod->getDemodulatorType();
-            int dCons = demod->getDemodulatorCons();
             demodModeSelector->setSelection(dType);
+#ifdef ENABLE_DIGITAL_LAB
+            int dCons = demod->getDemodulatorCons();
             demodModeSelectorAdv->setSelection(dType);
             demodModeSelectorCons->setSelection(dCons);
+#endif
             demodMuteButton->setSelection(demod->isMuted()?1:-1);
         }
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
@@ -886,6 +890,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
                 demodSpectrumCanvas->setCenterFrequency(centerFreq);
             }
             int dSelection = demodModeSelector->getSelection();
+#ifdef ENABLE_DIGITAL_LAB
             int dSelectionadv = demodModeSelectorAdv->getSelection();
 			int dSelectionCons = demodModeSelectorCons->getSelection();
 
@@ -893,7 +898,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             if (dSelection != -1 && dSelection != demod->getDemodulatorType()) {
                 demod->setDemodulatorType(dSelection);
                 demodModeSelectorAdv->setSelection(-1);
-            } 
+            }
             // advanced demodulators
 			else if (dSelectionadv != -1 && dSelectionadv != demod->getDemodulatorType()) {
 				demod->setDemodulatorType(dSelectionadv);
@@ -904,6 +909,12 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 			if (dSelectionCons != demod->getDemodulatorCons()) {
 				demod->setDemodulatorCons(dSelectionCons);
 			}
+#else
+            // basic demodulators
+            if (dSelection != -1 && dSelection != demod->getDemodulatorType()) {
+                demod->setDemodulatorType(dSelection);
+            }
+#endif
 
             int muteMode = demodMuteButton->getSelection();
             if (demodMuteButton->modeChanged()) {
@@ -941,6 +952,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         DemodulatorMgr *mgr = &wxGetApp().getDemodMgr();
 
         int dSelection = demodModeSelector->getSelection();
+#ifdef ENABLE_DIGITAL_LAB
         int dSelectionadv = demodModeSelectorAdv->getSelection();
 		int dSelectionCons = demodModeSelectorCons->getSelection();
 
@@ -959,7 +971,12 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 		if (dSelectionCons != mgr->getLastDemodulatorCons()) {
 			mgr->setLastDemodulatorCons(dSelectionCons);
 		}
-        
+#else
+        // basic demodulators
+        if (dSelection != -1 && dSelection != mgr->getLastDemodulatorType()) {
+            mgr->setLastDemodulatorType(dSelection);
+        }
+#endif
         demodGainMeter->setLevel(mgr->getLastGain());
         if (demodSignalMeter->inputChanged()) {
             mgr->setLastSquelchLevel(demodSignalMeter->getInputValue());

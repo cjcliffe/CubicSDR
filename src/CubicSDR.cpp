@@ -20,6 +20,7 @@
 
 IMPLEMENT_APP(CubicSDR)
 
+#ifdef ENABLE_DIGITAL_LAB
 // console output buffer for windows
 #ifdef _WINDOWS
 class outbuf : public std::streambuf {
@@ -31,6 +32,7 @@ class outbuf : public std::streambuf {
 		return fputc(c, stdout) == EOF ? traits_type::eof() : c;
 	}
 };
+#endif
 #endif
 
 #ifdef MINGW_PATCH
@@ -147,6 +149,7 @@ bool CubicSDR::OnInit() {
         return false;
     }
 
+#ifdef ENABLE_DIGITAL_LAB
 	// console output for windows
 	#ifdef _WINDOWS
 	if (AllocConsole()) {
@@ -157,7 +160,8 @@ bool CubicSDR::OnInit() {
 	std::streambuf *sb = std::cout.rdbuf(&ob);
 	std::cout.rdbuf(sb);
 	#endif
-
+#endif
+    
     wxApp::SetAppName("CubicSDR");
 
     frequency = wxGetApp().getConfig()->getCenterFreq();
