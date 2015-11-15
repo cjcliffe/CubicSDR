@@ -1,7 +1,6 @@
 #define OPENGL
 
 #include "CubicSDRDefs.h"
-
 #include "wx/wxprec.h"
 
 #ifndef WX_PRECOMP
@@ -20,6 +19,21 @@
 #endif
 
 IMPLEMENT_APP(CubicSDR)
+
+#ifdef ENABLE_DIGITAL_LAB
+// console output buffer for windows
+#ifdef _WINDOWS
+class outbuf : public std::streambuf {
+	public:
+	outbuf() {
+		setp(0, 0);
+	}
+	virtual int_type overflow(int_type c = traits_type::eof()) {
+		return fputc(c, stdout) == EOF ? traits_type::eof() : c;
+	}
+};
+#endif
+#endif
 
 #ifdef MINGW_PATCH
 	FILE _iob[] = { *stdin, *stdout, *stderr };
@@ -118,7 +132,6 @@ CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0
         agcMode.store(true);
 }
 
-
 bool CubicSDR::OnInit() {
 #ifdef _OSX_APP_
     CFBundleRef mainBundle = CFBundleGetMainBundle();
@@ -136,6 +149,19 @@ bool CubicSDR::OnInit() {
         return false;
     }
 
+#ifdef ENABLE_DIGITAL_LAB
+	// console output for windows
+	#ifdef _WINDOWS
+	if (AllocConsole()) {
+		freopen("CONOUT$", "w", stdout);
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
+	}
+	outbuf ob;
+	std::streambuf *sb = std::cout.rdbuf(&ob);
+	std::cout.rdbuf(sb);
+	#endif
+#endif
+    
     wxApp::SetAppName("CubicSDR");
 
     frequency = wxGetApp().getConfig()->getCenterFreq();

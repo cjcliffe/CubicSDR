@@ -17,8 +17,14 @@ ADD_DEFINITIONS(
     -DCUBICSDR_VERSION="${CUBICSDR_VERSION}-${VERSION_SUFFIX}"
 )
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+SET (ENABLE_DIGITAL_LAB OFF CACHE BOOL "Enable 'Digital Lab' testing features.")
+IF(ENABLE_DIGITAL_LAB)
+ADD_DEFINITIONS(
+    -DENABLE_DIGITAL_LAB=1
+)
+ENDIF()
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 macro(configure_files srcDir destDir globStr)
     message(STATUS "Copying ${srcDir}/${globStr} to directory ${destDir}")

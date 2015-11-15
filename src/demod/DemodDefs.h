@@ -13,7 +13,17 @@
 #define DEMOD_TYPE_LSB 3
 #define DEMOD_TYPE_USB 4
 #define DEMOD_TYPE_DSB 5
-#define DEMOD_TYPE_RAW 6
+#define DEMOD_TYPE_ASK 6
+#define DEMOD_TYPE_APSK 7
+#define DEMOD_TYPE_BPSK 8
+#define DEMOD_TYPE_DPSK 9
+#define DEMOD_TYPE_PSK 10
+#define DEMOD_TYPE_OOK 11
+#define DEMOD_TYPE_ST 12
+#define DEMOD_TYPE_SQAM 13
+#define DEMOD_TYPE_QAM 14
+#define DEMOD_TYPE_QPSK 15
+#define DEMOD_TYPE_RAW 16
 
 #include "IOThread.h"
 
