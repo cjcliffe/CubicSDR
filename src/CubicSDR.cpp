@@ -301,8 +301,24 @@ bool CubicSDR::OnCmdLineParsed(wxCmdLineParser& parser) {
 #else
     useLocalMod.store(true);
 #endif
+
+    wxString *modPath = new wxString;
+
+    if (parser.Found("m",modPath)) {
+        if (modPath) {
+            modulePath = modPath->ToStdString();
+        } else {
+            modulePath = "";
+        }
+    }
     
     return true;
+}
+
+void CubicSDR::closeDeviceSelector() {
+    if (deviceSelectorOpen) {
+        deviceSelectorDialog->Close();
+    }
 }
 
 void CubicSDR::deviceSelector() {
@@ -645,4 +661,8 @@ void CubicSDR::setDeviceArgs(SoapySDR::Kwargs settingArgs_in) {
 
 bool CubicSDR::getUseLocalMod() {
     return useLocalMod.load();
+}
+
+std::string CubicSDR::getModulePath() {
+    return modulePath;
 }

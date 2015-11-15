@@ -136,6 +136,9 @@ public:
     
     bool hasTimestamps() const;
     void setTimestamps(bool timestamps);
+
+    bool isRemote() const;
+    void setRemote(bool remote);
     
     void addChannel(SDRDeviceChannel *chan);
     std::vector<SDRDeviceChannel *> &getChannels();
@@ -157,7 +160,7 @@ private:
     int index;
     std::string name, serial, product, manufacturer, tuner;
     std::string driver, hardware;
-    bool timestamps, available;
+    bool timestamps, available, remote;
     
     SoapySDR::Kwargs deviceArgs, streamArgs;
     SoapySDR::ArgInfoList settingInfo;

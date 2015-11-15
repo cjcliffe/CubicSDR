@@ -229,12 +229,17 @@ void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
         
         wxTreeItemId devRoot = devTree->AddRoot("Devices");
         wxTreeItemId localBranch = devTree->AppendItem(devRoot, "Local");
+        wxTreeItemId dsBranch = devTree->AppendItem(devRoot, "Local Net");
         wxTreeItemId remoteBranch = devTree->AppendItem(devRoot, "Remote");
         
         devs[""] = SDREnumerator::enumerate_devices("",true);
         if (devs[""] != NULL) {
             for (devs_i = devs[""]->begin(); devs_i != devs[""]->end(); devs_i++) {
-                devItems[devTree->AppendItem(localBranch, (*devs_i)->getName())] = (*devs_i);
+                if ((*devs_i)->isRemote()) {
+                    devItems[devTree->AppendItem(dsBranch, (*devs_i)->getName())] = (*devs_i);
+                } else {
+                    devItems[devTree->AppendItem(localBranch, (*devs_i)->getName())] = (*devs_i);
+                }
             }
         }
         

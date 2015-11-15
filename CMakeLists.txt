@@ -345,6 +345,21 @@ SET (cubicsdr_headers
 	external/cubicvr2/math/vec4.h
 )
 
+SET (CUBICSDR_RESOURCES 
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12.fnt
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16.fnt
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18.fnt
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24.fnt
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32.fnt
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48.fnt
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12_0.png
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16_0.png
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18_0.png
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24_0.png
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32_0.png
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48_0.png
+)
+
 set(REG_EXT "[^/]*([.]cpp|[.]c|[.]h|[.]hpp)$")
 
 SOURCE_GROUP("Base" REGULAR_EXPRESSION "src/${REG_EXT}")
@@ -447,34 +462,12 @@ IF (APPLE AND BUNDLE_APP)
         MACOSX_BUNDLE 
         ${cubicsdr_sources}
         ${cubicsdr_headers} 
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12.fnt
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16.fnt
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18.fnt
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24.fnt
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32.fnt
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48.fnt
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12_0.png
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16_0.png
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18_0.png
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24_0.png
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32_0.png
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48_0.png
+        ${CUBICSDR_RESOURCES}
         ${PROJECT_SOURCE_DIR}/icon/CubicSDR.icns
     ) 
     
     SET_SOURCE_FILES_PROPERTIES(
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12.fnt
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16.fnt
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18.fnt
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24.fnt
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32.fnt
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48.fnt
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12_0.png
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16_0.png
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18_0.png
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24_0.png
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32_0.png
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48_0.png
+        ${CUBICSDR_RESOURCES}
         ${PROJECT_SOURCE_DIR}/icon/CubicSDR.icns
         PROPERTIES
         MACOSX_PACKAGE_LOCATION Resources
@@ -543,7 +536,32 @@ IF (APPLE AND BUNDLE_APP)
 
    set(CPACK_BINARY_DRAGNDROP ON)
    include(CPack)
-ENDIF (APPLE AND BUNDLE_APP)
+ENDIF()
+IF(APPLE AND NOT BUNDLE_APP)
+    IF (NOT CMAKE_INSTALL_PREFIX)
+        SET(CMAKE_INSTALL_PREFIX "/usr/")
+    ENDIF()
+	ADD_DEFINITIONS(
+	    -DRES_FOLDER="${CMAKE_INSTALL_PREFIX}/share/cubicsdr/"
+	)	
+
+    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,-z,relro")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,relro")
+
+	INSTALL(TARGETS CubicSDR DESTINATION bin)
+        install(FILES 
+            ${CUBICSDR_RESOURCES}
+            ${PROJECT_SOURCE_DIR}/src/CubicSDR.png
+	    DESTINATION share/cubicsdr)
+
+    CONFIGURE_FILE(
+      "${PROJECT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
+      "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+       @ONLY IMMEDIATE)
+    ADD_CUSTOM_TARGET(uninstall
+      "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake") 
+          
+ENDIF ()
 
 IF (WIN32 AND BUILD_INSTALLER)
     set(BUNDLE_SOAPY_MODS OFF CACHE BOOL "Bundle local SoapySDR modules")
@@ -572,18 +590,7 @@ IF (WIN32 AND BUILD_INSTALLER)
 	install(TARGETS CubicSDR RUNTIME DESTINATION .)
 
 	install(FILES 
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12.fnt
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16.fnt
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18.fnt
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24.fnt
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32.fnt
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48.fnt
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12_0.png
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16_0.png
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18_0.png
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24_0.png
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32_0.png
-        ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48_0.png
+        ${CUBICSDR_RESOURCES}
         ${PROJECT_SOURCE_DIR}/icon/CubicSDR.ico
 		${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM}/libfftw3f-3.dll
 		${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/libliquid.dll
@@ -619,8 +626,7 @@ IF (WIN32 AND BUILD_INSTALLER)
 ENDIF (WIN32 AND BUILD_INSTALLER)
 
 
-IF (UNIX AND BUILD_DEB) 
-
+IF (UNIX AND NOT APPLE AND BUILD_DEB) 
     set(CPACK_GENERATOR DEB)
 	set(CPACK_PACKAGE_NAME "CubicSDR")
 	SET(CPACK_DEBIAN_PACKAGE_DEPENDS " libfftw3-single3, libwxgtk3.0-0, libpulse0")
@@ -629,34 +635,63 @@ IF (UNIX AND BUILD_DEB)
 	SET(CPACK_DEBIAN_PACKAGE_SECTION "comm")
         SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
 	SET(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${EX_PLATFORM_NAME}")
-    	
+
+    IF (NOT CMAKE_INSTALL_PREFIX)
+        SET(CMAKE_INSTALL_PREFIX "/usr/")
+    ENDIF()
 	ADD_DEFINITIONS(
-	    -DRES_FOLDER="/usr/share/cubicsdr/"
+	    -DRES_FOLDER="${CMAKE_INSTALL_PREFIX}/share/cubicsdr/"
 	    -D_FORTIFY_SOURCE=2
 	)	
+    	
+    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,-z,relro")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,relro")
 
-        set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,-z,relro")
-        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,relro")
+	CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/external/deb/deb_post.sh.in" 
+			"${CMAKE_CURRENT_BINARY_DIR}/deb_post.sh" @ONLY IMMEDIATE)
 
-	CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/external/deb/deb_post.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/deb_post.sh" @ONLY IMMEDIATE)
+	CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CubicSDR.desktop.in"
+			"${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.desktop" @ONLY IMMEDIATE)
 
 	INSTALL(TARGETS CubicSDR DESTINATION bin)
         install(FILES 
-            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12.fnt
-            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16.fnt
-            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18.fnt
-            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24.fnt
-            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32.fnt
-            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48.fnt
-            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12_0.png
-            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16_0.png
-            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18_0.png
-            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24_0.png
-            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32_0.png
-            ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48_0.png
+            ${CUBICSDR_RESOURCES}
             ${PROJECT_SOURCE_DIR}/src/CubicSDR.png
 	    DESTINATION share/cubicsdr)
-            INSTALL(FILES CubicSDR.desktop 
-            DESTINATION share/applications)
+        
+    INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.desktop" 
+        DESTINATION share/applications)
+        
 	INCLUDE(CPack)
-ENDIF (UNIX AND BUILD_DEB)
+ENDIF()
+IF(UNIX AND NOT APPLE AND NOT BUILD_DEB)
+    IF (NOT CMAKE_INSTALL_PREFIX)
+        SET(CMAKE_INSTALL_PREFIX "/usr/")
+    ENDIF()
+	ADD_DEFINITIONS(
+	    -DRES_FOLDER="${CMAKE_INSTALL_PREFIX}/share/cubicsdr/"
+	)	
+
+    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,-z,relro")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,relro")
+ 
+	CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CubicSDR.desktop.in"
+			"${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.desktop" @ONLY IMMEDIATE)
+
+	INSTALL(TARGETS CubicSDR DESTINATION bin)
+        install(FILES 
+            ${CUBICSDR_RESOURCES}
+            ${PROJECT_SOURCE_DIR}/src/CubicSDR.png
+    DESTINATION share/cubicsdr)
+        INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.desktop"
+        DESTINATION share/applications)
+        
+    	CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/external/deb/deb_post.sh.in" 
+			"${CMAKE_CURRENT_BINARY_DIR}/deb_post.sh" @ONLY IMMEDIATE)
+    CONFIGURE_FILE(
+      "${PROJECT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
+      "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+       @ONLY IMMEDIATE)
+    ADD_CUSTOM_TARGET(uninstall
+      "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake") 
+ENDIF()
