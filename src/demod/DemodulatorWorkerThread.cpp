@@ -47,12 +47,12 @@ void DemodulatorWorkerThread::run() {
             }
 
             if (filterCommand.bandwidth && filterCommand.audioSampleRate) {
-                result.audioResamplerRatio = (double) (filterCommand.audioSampleRate) / (double) filterCommand.bandwidth;
-                result.audioResampler = msresamp_rrrf_create(result.audioResamplerRatio, As);
-                result.stereoResampler = msresamp_rrrf_create(result.audioResamplerRatio, As);
-                result.audioSampleRate = filterCommand.audioSampleRate;
+//                result.audioResamplerRatio = (double) (filterCommand.audioSampleRate) / (double) filterCommand.bandwidth;
+//                result.audioResampler = msresamp_rrrf_create(result.audioResamplerRatio, As);
+//                result.stereoResampler = msresamp_rrrf_create(result.audioResamplerRatio, As);
+//                result.audioSampleRate = filterCommand.audioSampleRate;
 
-                // Stereo filters / shifters
+/*                // Stereo filters / shifters
                 double firStereoCutoff = ((double) 16000 / (double) filterCommand.audioSampleRate);
                 float ft = ((double) 1000 / (double) filterCommand.audioSampleRate);        // filter transition
                 float mu = 0.0f;         // fractional timing offset
@@ -83,7 +83,7 @@ void DemodulatorWorkerThread::run() {
                 float        Ap    =   1.0f;
                 As    =  60.0f;
                 
-                result.iirStereoPilot = iirfilt_crcf_create_prototype(LIQUID_IIRDES_CHEBY2, LIQUID_IIRDES_BANDPASS, LIQUID_IIRDES_SOS, order, fc, f0, Ap, As);
+                result.iirStereoPilot = iirfilt_crcf_create_prototype(LIQUID_IIRDES_CHEBY2, LIQUID_IIRDES_BANDPASS, LIQUID_IIRDES_SOS, order, fc, f0, Ap, As); */
             }
 
             if (filterCommand.bandwidth) {

@@ -202,7 +202,7 @@ bool DemodulatorInstance::isStereo() {
 
 void DemodulatorInstance::setStereo(bool state) {
     stereo = state;
-    demodulatorThread->setStereo(state);
+//    demodulatorThread->setStereo(state);
 }
 
 void DemodulatorInstance::squelchAuto() {

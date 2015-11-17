@@ -1,0 +1,38 @@
+#include "ModemIQ.h"
+
+ModemIQ::ModemIQ() {
+    
+}
+
+Modem *ModemIQ::factory() {
+    return new ModemIQ;
+}
+
+ModemKit *ModemIQ::buildKit(long long sampleRate, int audioSampleRate) {
+    ModemKit *kit = new ModemKit;
+    return kit;
+}
+
+void ModemIQ::disposeKit(ModemKit *kit) {
+    delete kit;
+}
+
+void ModemIQ::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
+    int bufSize = input->data.size();
+    
+    if (!bufSize) {
+        input->decRefCount();
+        return;
+    }
+    
+    audioOut->channels = 2;
+    if (audioOut->data.capacity() < (bufSize * 2)) {
+        audioOut->data.reserve(bufSize * 2);
+    }
+    
+    audioOut->data.resize(bufSize * 2);
+    for (int i = 0; i < bufSize; i++) {
+        audioOut->data[i * 2] = input->data[i].imag;
+        audioOut->data[i * 2 + 1] = input->data[i].real;
+    }
+}

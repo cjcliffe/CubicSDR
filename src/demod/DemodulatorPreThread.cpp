@@ -27,45 +27,45 @@ void DemodulatorPreThread::initialize() {
     initialized = false;
 
     iqResampleRatio = (double) (params.bandwidth) / (double) params.sampleRate;
-    audioResampleRatio = (double) (params.audioSampleRate) / (double) params.bandwidth;
+//    audioResampleRatio = (double) (params.audioSampleRate) / (double) params.bandwidth;
 
-    float As = 120.0f;         // stop-band attenuation [dB]
+    float As = 60.0f;         // stop-band attenuation [dB]
 
     iqResampler = msresamp_crcf_create(iqResampleRatio, As);
-    audioResampler = msresamp_rrrf_create(audioResampleRatio, As);
-    stereoResampler = msresamp_rrrf_create(audioResampleRatio, As);
+//    audioResampler = msresamp_rrrf_create(audioResampleRatio, As);
+//    stereoResampler = msresamp_rrrf_create(audioResampleRatio, As);
 
     // Stereo filters / shifters
-    double firStereoCutoff = ((double) 16000 / (double) params.audioSampleRate);
-    float ft = ((double) 1000 / (double) params.audioSampleRate);         // filter transition
-    float mu = 0.0f;         // fractional timing offset
+//    double firStereoCutoff = ((double) 16000 / (double) params.audioSampleRate);
+//    float ft = ((double) 1000 / (double) params.audioSampleRate);         // filter transition
+//    float mu = 0.0f;         // fractional timing offset
+//
+//    if (firStereoCutoff < 0) {
+//        firStereoCutoff = 0;
+//    }
+//
+//    if (firStereoCutoff > 0.5) {
+//        firStereoCutoff = 0.5;
+//    }
 
-    if (firStereoCutoff < 0) {
-        firStereoCutoff = 0;
-    }
-
-    if (firStereoCutoff > 0.5) {
-        firStereoCutoff = 0.5;
-    }
-
-    unsigned int h_len = estimate_req_filter_len(ft, As);
-    float *h = new float[h_len];
-    liquid_firdes_kaiser(h_len, firStereoCutoff, As, mu, h);
-
-    firStereoLeft = firfilt_rrrf_create(h, h_len);
-    firStereoRight = firfilt_rrrf_create(h, h_len);
+//    unsigned int h_len = estimate_req_filter_len(ft, As);
+//    float *h = new float[h_len];
+//    liquid_firdes_kaiser(h_len, firStereoCutoff, As, mu, h);
+//
+//    firStereoLeft = firfilt_rrrf_create(h, h_len);
+//    firStereoRight = firfilt_rrrf_create(h, h_len);
 
     // stereo pilot filter
-    float bw = params.bandwidth;
-    if (bw < 100000.0) {
-        bw = 100000.0;
-    }
-    unsigned int order =   5;       // filter order
-    float        f0    =   ((double) 19000 / bw);
-    float        fc    =   ((double) 19500 / bw);
-    float        Ap    =   1.0f;
-    As    =  60.0f;
-    iirStereoPilot = iirfilt_crcf_create_prototype(LIQUID_IIRDES_CHEBY2, LIQUID_IIRDES_BANDPASS, LIQUID_IIRDES_SOS, order, fc, f0, Ap, As);
+//    float bw = params.bandwidth;
+//    if (bw < 100000.0) {
+//        bw = 100000.0;
+//    }
+//    unsigned int order =   5;       // filter order
+//    float        f0    =   ((double) 19000 / bw);
+//    float        fc    =   ((double) 19500 / bw);
+//    float        Ap    =   1.0f;
+//    As    =  60.0f;
+//    iirStereoPilot = iirfilt_crcf_create_prototype(LIQUID_IIRDES_CHEBY2, LIQUID_IIRDES_BANDPASS, LIQUID_IIRDES_SOS, order, fc, f0, Ap, As);
 
     initialized = true;
     lastParams = params;
@@ -218,7 +218,6 @@ void DemodulatorPreThread::run() {
             msresamp_crcf_execute(iqResampler, in_buf, bufSize, &resampledData[0], &numWritten);
 
             resamp->setRefCount(1);
-
             resamp->data.assign(resampledData.begin(), resampledData.begin() + numWritten);
 
 //            bool uneven = (numWritten % 2 != 0);
@@ -245,13 +244,13 @@ void DemodulatorPreThread::run() {
 
 
 
-            resamp->audioResampleRatio = audioResampleRatio;
-            resamp->audioResampler = audioResampler;
-            resamp->audioSampleRate = params.audioSampleRate;
-            resamp->stereoResampler = stereoResampler;
-            resamp->firStereoLeft = firStereoLeft;
-            resamp->firStereoRight = firStereoRight;
-            resamp->iirStereoPilot = iirStereoPilot;
+//            resamp->audioResampleRatio = audioResampleRatio;
+//            resamp->audioResampler = audioResampler;
+//            resamp->audioSampleRate = params.audioSampleRate;
+//            resamp->stereoResampler = stereoResampler;
+//            resamp->firStereoLeft = firStereoLeft;
+//            resamp->firStereoRight = firStereoRight;
+//            resamp->iirStereoPilot = iirStereoPilot;
             resamp->sampleRate = params.bandwidth;
 
             iqOutputQueue->push(resamp);

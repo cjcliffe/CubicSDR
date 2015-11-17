@@ -36,6 +36,8 @@ public:
     firfilt_rrrf firStereoLeft;
     firfilt_rrrf firStereoRight;
     iirfilt_crcf iirStereoPilot;
+    
+    DemodulatorThread *demodThread;
 
     long long sampleRate;
     unsigned int bandwidth;

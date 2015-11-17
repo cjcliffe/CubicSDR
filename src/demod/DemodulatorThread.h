@@ -21,8 +21,8 @@ public:
     void run();
     void terminate();
 
-    void setStereo(bool state);
-    bool isStereo();
+//    void setStereo(bool state);
+//    bool isStereo();
 
     void setAGC(bool state);
     bool getAGC();
@@ -42,35 +42,35 @@ public:
     
     void setDemodulatorCons(int demod_cons_in);
     int getDemodulatorCons();
-
-#ifdef __APPLE__
-    static void *pthread_helper(void *context) {
-        return ((DemodulatorThread *) context)->threadMain();
-    }
-#endif
+//
+//#ifdef __APPLE__
+//    static void *pthread_helper(void *context) {
+//        return ((DemodulatorThread *) context)->threadMain();
+//    }
+//#endif
 
 protected:
     ReBuffer<AudioThreadInput> outputBuffers;
 
     std::vector<liquid_float_complex> agcData;
     std::vector<float> agcAMData;
-    std::vector<float> demodOutputData;
-    std::vector<float> demodStereoData;
-    std::vector<float> resampledOutputData;
-    std::vector<float> resampledStereoData;
+//    std::vector<float> demodOutputData;
+//    std::vector<float> demodStereoData;
+//    std::vector<float> resampledOutputData;
+//    std::vector<float> resampledStereoData;
 	std::vector<unsigned int> demodOutputDataDigital;
 	//std::vector<unsigned int> demodOutputDataDigitalTest;
 
 	//std::vector<unsigned char> demodOutputSoftbits;
 	//std::vector<unsigned char> demodOutputSoftbitsTest;
 
-    freqdem demodFM;
-    ampmodem demodAM;
-    ampmodem demodAM_DSB_CSP;
-    ampmodem demodAM_DSB;
-    ampmodem demodAM_LSB;
-    ampmodem demodAM_USB;
-
+//    freqdem demodFM;
+//    ampmodem demodAM;
+//    ampmodem demodAM_DSB_CSP;
+//    ampmodem demodAM_DSB;
+//    ampmodem demodAM_LSB;
+//    ampmodem demodAM_USB;
+/*
     modem demodASK;    
     modem demodASK2;
     modem demodASK4;
@@ -130,14 +130,14 @@ protected:
 	modem demodQAM256;
 
     modem demodQPSK;
-
+*/
     agc_crcf iqAutoGain;
 
     float amOutputCeil;
     float amOutputCeilMA;
     float amOutputCeilMAA;
 
-    std::atomic_bool stereo;
+//    std::atomic_bool stereo;
     std::atomic_bool muted;
     std::atomic_bool agcEnabled;
     std::atomic_int demodulatorType;

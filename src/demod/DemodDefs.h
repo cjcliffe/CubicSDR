@@ -93,21 +93,14 @@ public:
     }
 };
 
+
 class DemodulatorThreadPostIQData: public ReferenceCounter {
 public:
     std::vector<liquid_float_complex> data;
     long long sampleRate;
-    msresamp_rrrf audioResampler;
-    msresamp_rrrf stereoResampler;
-    double audioResampleRatio;
-    int audioSampleRate;
-
-    firfilt_rrrf firStereoLeft;
-    firfilt_rrrf firStereoRight;
-    iirfilt_crcf iirStereoPilot;
 
     DemodulatorThreadPostIQData() :
-            sampleRate(0), audioResampler(NULL), stereoResampler(NULL), audioResampleRatio(0), audioSampleRate(0), firStereoLeft(NULL), firStereoRight(NULL), iirStereoPilot(NULL) {
+            sampleRate(0) {
 
     }
 
@@ -115,6 +108,7 @@ public:
         std::lock_guard < std::mutex > lock(m_mutex);
     }
 };
+
 
 class DemodulatorThreadAudioData: public ReferenceCounter {
 public:
