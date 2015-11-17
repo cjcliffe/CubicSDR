@@ -32,6 +32,8 @@ public:
     void setHelpTip(std::string tip);
 
     void addChoice(int value, std::string label);
+    void setSelection(std::string label);
+    std::string getSelectionLabel();
     void setSelection(int value);
     int getSelection();
 

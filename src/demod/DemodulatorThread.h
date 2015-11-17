@@ -34,8 +34,8 @@ public:
     void setSquelchLevel(float signal_level_in);
     float getSquelchLevel();
 
-    void setDemodulatorType(int demod_type_in);
-    int getDemodulatorType();
+    void setDemodulatorType(std::string demod_type_in);
+    std::string getDemodulatorType();
     
     void setDemodulatorLock(bool demod_lock_in);
     int getDemodulatorLock();
@@ -140,7 +140,7 @@ protected:
 //    std::atomic_bool stereo;
     std::atomic_bool muted;
     std::atomic_bool agcEnabled;
-    std::atomic_int demodulatorType;
+    std::string demodulatorType;
     std::atomic_int demodulatorCons;
     int audioSampleRate;
 

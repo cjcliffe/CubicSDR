@@ -8,7 +8,7 @@
 #include "DemodulatorPreThread.h"
 #include "CubicSDR.h"
 
-DemodulatorPreThread::DemodulatorPreThread() : IOThread(), iqResampler(NULL), iqResampleRatio(1), audioResampler(NULL), stereoResampler(NULL), audioResampleRatio(1), firStereoLeft(NULL), firStereoRight(NULL), iirStereoPilot(NULL), iqInputQueue(NULL), iqOutputQueue(NULL), threadQueueNotify(NULL), commandQueue(NULL)
+DemodulatorPreThread::DemodulatorPreThread() : IOThread(), iqResampler(NULL), iqResampleRatio(1), iqInputQueue(NULL), iqOutputQueue(NULL), threadQueueNotify(NULL), commandQueue(NULL)
  {
 	initialized.store(false);
 
@@ -272,27 +272,27 @@ void DemodulatorPreThread::run() {
                         iqResampleRatio = result.iqResampleRatio;
                     }
 
-                    if (result.firStereoLeft) {
-                        firStereoLeft = result.firStereoLeft;
-                    }
-
-                    if (result.firStereoRight) {
-                        firStereoRight = result.firStereoRight;
-                    }
-
-                    if (result.iirStereoPilot) {
-                        iirStereoPilot = result.iirStereoPilot;
-                    }
-                    
-                    if (result.audioResampler) {
-                        audioResampler = result.audioResampler;
-                        audioResampleRatio = result.audioResamplerRatio;
-                        stereoResampler = result.stereoResampler;
-                    }
-
-                    if (result.audioSampleRate) {
-                        params.audioSampleRate = result.audioSampleRate;
-                    }
+//                    if (result.firStereoLeft) {
+//                        firStereoLeft = result.firStereoLeft;
+//                    }
+//
+//                    if (result.firStereoRight) {
+//                        firStereoRight = result.firStereoRight;
+//                    }
+//
+//                    if (result.iirStereoPilot) {
+//                        iirStereoPilot = result.iirStereoPilot;
+//                    }
+//                    
+//                    if (result.audioResampler) {
+//                        audioResampler = result.audioResampler;
+//                        audioResampleRatio = result.audioResamplerRatio;
+//                        stereoResampler = result.stereoResampler;
+//                    }
+//
+//                    if (result.audioSampleRate) {
+//                        params.audioSampleRate = result.audioSampleRate;
+//                    }
 
                     if (result.bandwidth) {
                         params.bandwidth = result.bandwidth;

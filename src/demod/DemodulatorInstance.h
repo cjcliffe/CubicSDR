@@ -53,8 +53,8 @@ public:
     void setOutputDevice(int device_id);
     int getOutputDevice();
 
-    void setDemodulatorType(int demod_type_in);
-    int getDemodulatorType();
+    void setDemodulatorType(std::string demod_type_in);
+    std::string getDemodulatorType();
     
     void setDemodulatorLock(bool demod_lock_in);
     int getDemodulatorLock();
@@ -99,6 +99,9 @@ private:
 
     void checkBandwidth();
 
+    Modem *currentModem;
+    ModemKit *currentModemKit;
+    
     std::atomic<std::string *> label; //
     std::atomic_bool terminated; //
     std::atomic_bool demodTerminated; //
@@ -111,7 +114,7 @@ private:
 
     std::atomic_llong currentFrequency;
     std::atomic_int currentBandwidth;
-    std::atomic_int currentDemodType;
+    std::string currentDemodType;
     std::atomic_int currentDemodCons;
     std::atomic_int currentOutputDevice;
     std::atomic_int currentAudioSampleRate;

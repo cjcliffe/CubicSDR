@@ -76,7 +76,7 @@ std::vector<DemodulatorInstance *> *DemodulatorMgr::getDemodulatorsAt(long long 
 
         long long halfBuffer = bandwidth / 2;
 
-        if ((freq <= (freqTest + ((testDemod->getDemodulatorType() != DEMOD_TYPE_LSB)?halfBandwidthTest:0) + halfBuffer)) && (freq >= (freqTest - ((testDemod->getDemodulatorType() != DEMOD_TYPE_USB)?halfBandwidthTest:0) - halfBuffer))) {
+        if ((freq <= (freqTest + ((testDemod->getDemodulatorType() != "LSB")?halfBandwidthTest:0) + halfBuffer)) && (freq >= (freqTest - ((testDemod->getDemodulatorType() != "USB")?halfBandwidthTest:0) - halfBuffer))) {
             foundDemods->push_back(testDemod);
         }
     }
@@ -184,11 +184,11 @@ void DemodulatorMgr::setLastBandwidth(int lastBandwidth) {
     this->lastBandwidth = lastBandwidth;
 }
 
-int DemodulatorMgr::getLastDemodulatorType() const {
+std::string DemodulatorMgr::getLastDemodulatorType() const {
     return lastDemodType;
 }
 
-void DemodulatorMgr::setLastDemodulatorType(int lastDemodType) {
+void DemodulatorMgr::setLastDemodulatorType(std::string lastDemodType) {
     this->lastDemodType = lastDemodType;
 }
 

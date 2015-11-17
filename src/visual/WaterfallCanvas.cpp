@@ -253,7 +253,7 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     long long currentCenterFreq = getCenterFrequency();
 
     ColorTheme *currentTheme = ThemeMgr::mgr.currentTheme;
-    int last_type = wxGetApp().getDemodMgr().getLastDemodulatorType();
+    std::string last_type = wxGetApp().getDemodMgr().getLastDemodulatorType();
 
     if (mouseTracker.mouseInView() || wxGetApp().getDemodMgr().getActiveDemodulator()) {
         hoverAlpha += (1.0f-hoverAlpha)*0.1f;
@@ -277,7 +277,7 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
             glContext->DrawDemod(lastActiveDemodulator, isNew?currentTheme->waterfallHighlight:currentTheme->waterfallDestroy, currentCenterFreq, currentBandwidth);
 
-            if ((last_type == DEMOD_TYPE_LSB || last_type == DEMOD_TYPE_USB) && mouseTracker.mouseDown()) {
+            if ((last_type == "LSB" || last_type == "USB") && mouseTracker.mouseDown()) {
                 centerPos = mouseTracker.getMouseX();
                 glContext->DrawRangeSelector(centerPos, centerPos-width, isNew?currentTheme->waterfallNew:currentTheme->waterfallHover);
             } else {
@@ -534,8 +534,8 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
                 double maxDist = ((double)halfBw + bufferBw);
 
                 if ((double)dist <= maxDist) {
-                    if ((freqDiff > 0 && demod->getDemodulatorType() == DEMOD_TYPE_USB) ||
-                            (freqDiff < 0 && demod->getDemodulatorType() == DEMOD_TYPE_LSB)) {
+                    if ((freqDiff > 0 && demod->getDemodulatorType() == "USB") ||
+                            (freqDiff < 0 && demod->getDemodulatorType() == "LSB")) {
                         continue;
                     }
 
@@ -565,12 +565,12 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
             if (abs(freqDiff) > (activeDemodulator->getBandwidth() / 3)) {
 
                 if (freqDiff > 0) {
-                    if (activeDemodulator->getDemodulatorType() != DEMOD_TYPE_USB) {
+                    if (activeDemodulator->getDemodulatorType() != "USB") {
                         nextDragState = WF_DRAG_BANDWIDTH_LEFT;
                         SetCursor(wxCURSOR_SIZEWE);
                     }
                 } else {
-                    if (activeDemodulator->getDemodulatorType() != DEMOD_TYPE_LSB) {
+                    if (activeDemodulator->getDemodulatorType() != "LSB") {
                         nextDragState = WF_DRAG_BANDWIDTH_RIGHT;
                         SetCursor(wxCURSOR_SIZEWE);
                     }
@@ -712,9 +712,9 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
         float width = mouseTracker.getOriginDeltaMouseX();
 
         float pos;
-        int last_type = mgr->getLastDemodulatorType();
+        std::string last_type = mgr->getLastDemodulatorType();
 
-        if (last_type == DEMOD_TYPE_LSB || last_type == DEMOD_TYPE_USB) {
+        if (last_type == "LSB" || last_type == "USB") {
             float pos1 = mouseTracker.getOriginMouseX();
             float pos2 = mouseTracker.getMouseX();
 
@@ -724,7 +724,7 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
                 pos2 = tmp;
             }
 
-            pos = (last_type == DEMOD_TYPE_LSB)?pos2:pos1;
+            pos = (last_type == "LSB")?pos2:pos1;
             width *= 2;
         } else {
             pos = mouseTracker.getOriginMouseX() + width / 2.0;

@@ -37,13 +37,13 @@ protected:
     double iqResampleRatio;
     std::vector<liquid_float_complex> resampledData;
 
-    msresamp_rrrf audioResampler;
-    msresamp_rrrf stereoResampler;
-    double audioResampleRatio;
+//    msresamp_rrrf audioResampler;
+//    msresamp_rrrf stereoResampler;
+//    double audioResampleRatio;
 
-    firfilt_rrrf firStereoLeft;
-    firfilt_rrrf firStereoRight;
-    iirfilt_crcf iirStereoPilot;
+//    firfilt_rrrf firStereoLeft;
+//    firfilt_rrrf firStereoRight;
+//    iirfilt_crcf iirStereoPilot;
 
     DemodulatorThreadParameters params;
     DemodulatorThreadParameters lastParams;

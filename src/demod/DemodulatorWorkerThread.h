@@ -7,6 +7,7 @@
 #include "AudioThread.h"
 #include "ThreadQueue.h"
 #include "CubicSDRDefs.h"
+#include "Modem.h"
 
 class DemodulatorWorkerThreadResult {
 public:
@@ -15,8 +16,7 @@ public:
     };
 
     DemodulatorWorkerThreadResult() :
-            cmd(DEMOD_WORKER_THREAD_RESULT_NULL), iqResampler(NULL), iqResampleRatio(0), audioResampler(NULL), stereoResampler(NULL), audioResamplerRatio(
-                    0), firStereoLeft(NULL), firStereoRight(NULL), iirStereoPilot(NULL), sampleRate(0), bandwidth(0), audioSampleRate(0) {
+            cmd(DEMOD_WORKER_THREAD_RESULT_NULL), iqResampler(nullptr), iqResampleRatio(0), sampleRate(0), bandwidth(0), modemKit(nullptr) {
 
     }
 
@@ -29,20 +29,12 @@ public:
 
     msresamp_crcf iqResampler;
     double iqResampleRatio;
-    msresamp_rrrf audioResampler;
-    msresamp_rrrf stereoResampler;
-    double audioResamplerRatio;
-
-    firfilt_rrrf firStereoLeft;
-    firfilt_rrrf firStereoRight;
-    iirfilt_crcf iirStereoPilot;
     
     DemodulatorThread *demodThread;
 
     long long sampleRate;
     unsigned int bandwidth;
-    unsigned int audioSampleRate;
-
+    ModemKit *modemKit;
 };
 
 class DemodulatorWorkerThreadCommand {

@@ -7,23 +7,23 @@
 #include <atomic>
 #include <mutex>
 
-#define DEMOD_TYPE_NULL 0
-#define DEMOD_TYPE_FM 1
-#define DEMOD_TYPE_AM 2
-#define DEMOD_TYPE_LSB 3
-#define DEMOD_TYPE_USB 4
-#define DEMOD_TYPE_DSB 5
-#define DEMOD_TYPE_ASK 6
-#define DEMOD_TYPE_APSK 7
-#define DEMOD_TYPE_BPSK 8
-#define DEMOD_TYPE_DPSK 9
-#define DEMOD_TYPE_PSK 10
-#define DEMOD_TYPE_OOK 11
-#define DEMOD_TYPE_ST 12
-#define DEMOD_TYPE_SQAM 13
-#define DEMOD_TYPE_QAM 14
-#define DEMOD_TYPE_QPSK 15
-#define DEMOD_TYPE_RAW 16
+//#define DEMOD_TYPE_NULL 0
+//#define DEMOD_TYPE_FM 1
+//#define DEMOD_TYPE_AM 2
+//#define DEMOD_TYPE_LSB 3
+//#define DEMOD_TYPE_USB 4
+//#define DEMOD_TYPE_DSB 5
+//#define DEMOD_TYPE_ASK 6
+//#define DEMOD_TYPE_APSK 7
+//#define DEMOD_TYPE_BPSK 8
+//#define DEMOD_TYPE_DPSK 9
+//#define DEMOD_TYPE_PSK 10
+//#define DEMOD_TYPE_OOK 11
+//#define DEMOD_TYPE_ST 12
+//#define DEMOD_TYPE_SQAM 13
+//#define DEMOD_TYPE_QAM 14
+//#define DEMOD_TYPE_QPSK 15
+//#define DEMOD_TYPE_RAW 16
 
 #include "IOThread.h"
 
@@ -62,11 +62,11 @@ public:
     };
 
     DemodulatorThreadControlCommand() :
-            cmd(DEMOD_THREAD_CMD_CTL_NULL), demodType(DEMOD_TYPE_NULL) {
+            cmd(DEMOD_THREAD_CMD_CTL_NULL), demodType("") {
     }
 
     DemodulatorThreadControlCommandEnum cmd;
-    int demodType;
+    std::string demodType;
 };
 
 class DemodulatorThreadIQData: public ReferenceCounter {
@@ -145,11 +145,11 @@ public:
     unsigned int bandwidth; // set equal to disable second stage re-sampling?
     unsigned int audioSampleRate;
 
-    int demodType;
+    std::string demodType;
 
     DemodulatorThreadParameters() :
             frequency(0), sampleRate(DEFAULT_SAMPLE_RATE), bandwidth(200000), audioSampleRate(0),
-            demodType(DEMOD_TYPE_FM) {
+            demodType("FM") {
 
     }
 

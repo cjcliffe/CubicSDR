@@ -16,7 +16,7 @@ DemodulatorThread::DemodulatorThread() : IOThread(), iqAutoGain(NULL), amOutputC
 //	stereo.store(false);
     muted.store(false);
 	agcEnabled.store(false);
-	demodulatorType.store(DEMOD_TYPE_FM);
+	demodulatorType = "FM";
 
 //    demodFM = freqdem_create(0.5);
 //    demodAM_USB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_USB, 1);
@@ -965,11 +965,11 @@ float DemodulatorThread::getSquelchLevel() {
     return squelchLevel;
 }
 
-void DemodulatorThread::setDemodulatorType(int demod_type_in) {
+void DemodulatorThread::setDemodulatorType(std::string demod_type_in) {
     demodulatorType = demod_type_in;
 }
 
-int DemodulatorThread::getDemodulatorType() {
+std::string DemodulatorThread::getDemodulatorType() {
     return demodulatorType;
 }
 
