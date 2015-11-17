@@ -2,8 +2,8 @@
 
 ModemFactoryList Modem::modemFactories;
 
-void Modem::addModemFactory(std::string modemName, ModemFactoryFunc *factoryFunc) {
-    modemFactories[modemName] = factoryFunc;
+void Modem::addModemFactory(std::string modemName, Modem *factorySingle) {
+    modemFactories[modemName] = factorySingle;
 }
 
 ModemFactoryList Modem::getFactories() {

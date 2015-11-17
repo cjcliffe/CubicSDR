@@ -27,6 +27,14 @@
 #include "SpectrumVisualProcessor.h"
 #include "SpectrumVisualDataThread.h"
 #include "SDRDevices.h"
+#include "Modem.h"
+#include "ModemFM.h"
+#include "ModemFMStereo.h"
+#include "ModemAM.h"
+#include "ModemUSB.h"
+#include "ModemLSB.h"
+#include "ModemDSB.h"
+#include "ModemIQ.h"
 
 #include <wx/cmdline.h>
 

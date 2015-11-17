@@ -30,12 +30,11 @@ public:
 };
 
 class Modem;
-typedef Modem *(Modem::*ModemFactoryFunc)();
-typedef std::map<std::string,ModemFactoryFunc *> ModemFactoryList;
+typedef std::map<std::string,Modem *> ModemFactoryList;
 
 class Modem  {
 public:
-    static void addModemFactory(std::string modemName, ModemFactoryFunc *factoryFunc);
+    static void addModemFactory(std::string modemName, Modem *factorySingle);
     static ModemFactoryList getFactories();
     
     virtual Modem *factory();
