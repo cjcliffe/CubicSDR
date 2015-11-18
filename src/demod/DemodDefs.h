@@ -82,6 +82,7 @@ class DemodulatorThreadPostIQData: public ReferenceCounter {
 public:
     std::vector<liquid_float_complex> data;
     long long sampleRate;
+    std::string modemType;
     Modem *modem;
     ModemKit *modemKit;
 

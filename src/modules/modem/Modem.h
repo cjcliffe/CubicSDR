@@ -36,12 +36,13 @@ class Modem  {
 public:
     static void addModemFactory(std::string modemName, Modem *factorySingle);
     static ModemFactoryList getFactories();
+    static Modem *makeModem(std::string modemType);
     
-    virtual Modem *factory();
+    virtual Modem *factory() = 0;
 
-    virtual ModemKit *buildKit(long long sampleRate, int audioSampleRate);
-    virtual void disposeKit(ModemKit *kit);
-    virtual void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
+    virtual ModemKit *buildKit(long long sampleRate, int audioSampleRate) = 0;
+    virtual void disposeKit(ModemKit *kit) = 0;
+    virtual void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) = 0;
 private:
     static ModemFactoryList modemFactories;
 };

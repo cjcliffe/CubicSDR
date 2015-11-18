@@ -10,18 +10,10 @@ ModemFactoryList Modem::getFactories() {
     return modemFactories;
 }
 
-Modem *Modem::factory() {
+Modem *Modem::makeModem(std::string modemType) {
+    if (modemFactories.find(modemType) != modemFactories.end()) {
+        return modemFactories[modemType]->factory();
+    }
+    
     return nullptr;
-}
-
-ModemKit *Modem::buildKit(long long sampleRate, int audioSampleRate) {
-    return nullptr;
-}
-
-void Modem::disposeKit(ModemKit *kit) {
-    return;
-}
-
-void Modem::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
-    return;
 }

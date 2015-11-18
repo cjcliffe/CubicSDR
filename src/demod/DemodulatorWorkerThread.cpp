@@ -18,6 +18,7 @@ void DemodulatorWorkerThread::run() {
     
     while (!terminated) {
         bool filterChanged = false;
+        bool makeDemod = false;
         DemodulatorWorkerThreadCommand filterCommand;
         DemodulatorWorkerThreadCommand command;
 
@@ -27,6 +28,10 @@ void DemodulatorWorkerThread::run() {
             switch (command.cmd) {
             case DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS:
                 filterChanged = true;
+                filterCommand = command;
+                break;
+            case DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_MAKE_DEMOD:
+                makeDemod = true;
                 filterCommand = command;
                 break;
             default:
@@ -46,44 +51,16 @@ void DemodulatorWorkerThread::run() {
                 result.iqResampler = msresamp_crcf_create(result.iqResampleRatio, As);
             }
 
+            if (makeDemod) {
+                cModem = Modem::makeModem(filterCommand.demodType);
+            }
+            
             if (filterCommand.bandwidth && filterCommand.audioSampleRate) {
-//                result.audioResamplerRatio = (double) (filterCommand.audioSampleRate) / (double) filterCommand.bandwidth;
-//                result.audioResampler = msresamp_rrrf_create(result.audioResamplerRatio, As);
-//                result.stereoResampler = msresamp_rrrf_create(result.audioResamplerRatio, As);
-//                result.audioSampleRate = filterCommand.audioSampleRate;
-
-/*                // Stereo filters / shifters
-                double firStereoCutoff = ((double) 16000 / (double) filterCommand.audioSampleRate);
-                float ft = ((double) 1000 / (double) filterCommand.audioSampleRate);        // filter transition
-                float mu = 0.0f;         // fractional timing offset
-
-                if (firStereoCutoff < 0) {
-                    firStereoCutoff = 0;
+                result.modem = cModem;
+                if (cModem != nullptr) {
+                    cModemKit = cModem->buildKit(filterCommand.bandwidth, filterCommand.audioSampleRate);
                 }
-
-                if (firStereoCutoff > 0.5) {
-                    firStereoCutoff = 0.5;
-                }
-
-                unsigned int h_len = estimate_req_filter_len(ft, As);
-                float *h = new float[h_len];
-                liquid_firdes_kaiser(h_len, firStereoCutoff, As, mu, h);
-
-                result.firStereoLeft = firfilt_rrrf_create(h, h_len);
-                result.firStereoRight = firfilt_rrrf_create(h, h_len);
-
-                float bw = filterCommand.bandwidth;
-                if (bw < 100000.0) {
-                    bw = 100000.0;
-                }
-                // stereo pilot filter
-                unsigned int order =   5;       // filter order
-                float        f0    =   ((double) 19000 / bw);
-                float        fc    =   ((double) 19500 / bw);
-                float        Ap    =   1.0f;
-                As    =  60.0f;
-                
-                result.iirStereoPilot = iirfilt_crcf_create_prototype(LIQUID_IIRDES_CHEBY2, LIQUID_IIRDES_BANDPASS, LIQUID_IIRDES_SOS, order, fc, f0, Ap, As); */
+                result.modemKit = cModemKit;
             }
 
             if (filterCommand.bandwidth) {

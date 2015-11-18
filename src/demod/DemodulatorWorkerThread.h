@@ -41,16 +41,16 @@ public:
 class DemodulatorWorkerThreadCommand {
 public:
     enum DemodulatorThreadCommandEnum {
-        DEMOD_WORKER_THREAD_CMD_NULL, DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS
+        DEMOD_WORKER_THREAD_CMD_NULL, DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS, DEMOD_WORKER_THREAD_CMD_MAKE_DEMOD
     };
 
     DemodulatorWorkerThreadCommand() :
-            cmd(DEMOD_WORKER_THREAD_CMD_NULL), frequency(0), sampleRate(0), bandwidth(0), audioSampleRate(0) {
+            cmd(DEMOD_WORKER_THREAD_CMD_NULL), frequency(0), sampleRate(0), bandwidth(0), audioSampleRate(0), demodType("") {
 
     }
 
     DemodulatorWorkerThreadCommand(DemodulatorThreadCommandEnum cmd) :
-            cmd(cmd), frequency(0), sampleRate(0), bandwidth(0), audioSampleRate(0) {
+            cmd(cmd), frequency(0), sampleRate(0), bandwidth(0), audioSampleRate(0), demodType("") {
 
     }
 
@@ -60,6 +60,7 @@ public:
     long long sampleRate;
     unsigned int bandwidth;
     unsigned int audioSampleRate;
+    std::string demodType;
 };
 
 typedef ThreadQueue<DemodulatorWorkerThreadCommand> DemodulatorThreadWorkerCommandQueue;
@@ -87,4 +88,6 @@ protected:
 
     DemodulatorThreadWorkerCommandQueue *commandQueue;
     DemodulatorThreadWorkerResultQueue *resultQueue;
+    Modem *cModem;
+    ModemKit *cModemKit;
 };
