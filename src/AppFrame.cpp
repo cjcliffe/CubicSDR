@@ -68,11 +68,12 @@ AppFrame::AppFrame() :
             
     demodModeSelector = new ModeSelectorCanvas(demodPanel, attribList);
     demodModeSelector->addChoice(0, "FM");
-    demodModeSelector->addChoice(1, "AM");
-    demodModeSelector->addChoice(2, "LSB");
-    demodModeSelector->addChoice(3, "USB");
-    demodModeSelector->addChoice(4, "DSB");
-    demodModeSelector->addChoice(5, "I/Q");
+    demodModeSelector->addChoice(1, "FMS");
+    demodModeSelector->addChoice(2, "AM");
+    demodModeSelector->addChoice(3, "LSB");
+    demodModeSelector->addChoice(4, "USB");
+    demodModeSelector->addChoice(5, "DSB");
+    demodModeSelector->addChoice(6, "I/Q");
     demodModeSelector->setSelection("FM");
     demodModeSelector->setHelpTip("Choose modulation type: Frequency Modulation, Amplitude Modulation and Lower, Upper or Double Side-Band.");
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);

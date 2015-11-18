@@ -1,6 +1,8 @@
 #include "ModemFMStereo.h"
 
 ModemFMStereo::ModemFMStereo() {
+    demodFM = freqdem_create(0.5);
+
     firStereoR2C = firhilbf_create(5, 60.0f);
     firStereoC2R = firhilbf_create(5, 60.0f);
     
