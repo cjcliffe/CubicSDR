@@ -15,13 +15,11 @@ public:
 
     void run();
 
-    DemodulatorThreadParameters &getParams() {
-        return params;
-    }
-
-    void setParams(DemodulatorThreadParameters &params_in) {
-        params = params_in;
-    }
+    DemodulatorThreadParameters &getParams();
+    void setParams(DemodulatorThreadParameters &params_in);
+    
+    void setDemodType(std::string demodType);
+    std::string getDemodType();
 
     void initialize();
     void terminate();
@@ -39,14 +37,6 @@ protected:
 
     Modem *cModem;
     ModemKit *cModemKit;
-    
-//    msresamp_rrrf audioResampler;
-//    msresamp_rrrf stereoResampler;
-//    double audioResampleRatio;
-
-//    firfilt_rrrf firStereoLeft;
-//    firfilt_rrrf firStereoRight;
-//    iirfilt_crcf iirStereoPilot;
 
     DemodulatorThreadParameters params;
     DemodulatorThreadParameters lastParams;
@@ -55,6 +45,8 @@ protected:
     int shiftFrequency;
 
     std::atomic_bool initialized;
+    std::atomic_bool demodTypeChanged;
+    std::string demodType;
 
     DemodulatorWorkerThread *workerThread;
     std::thread *t_Worker;

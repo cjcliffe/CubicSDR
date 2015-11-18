@@ -170,47 +170,7 @@ void DemodulatorThread::run() {
             continue;
         }
 
-//        if (audioResampler == NULL) {
-//            audioResampler = inp->audioResampler;
-//            stereoResampler = inp->stereoResampler;
-//            firStereoLeft = inp->firStereoLeft;
-//            firStereoRight = inp->firStereoRight;
-//            iirStereoPilot = inp->iirStereoPilot;
-//            audioSampleRate = inp->audioSampleRate;
-//        } else if (audioResampler != inp->audioResampler) {
-//            msresamp_rrrf_destroy(audioResampler);
-//            msresamp_rrrf_destroy(stereoResampler);
-//            audioResampler = inp->audioResampler;
-//            stereoResampler = inp->stereoResampler;
-//            audioSampleRate = inp->audioSampleRate;
-//
-//            if (demodAM) {
-//                ampmodem_reset(demodAM);
-//            }
-//            freqdem_reset(demodFM);
-//            nco_crcf_reset(stereoPilot);
-//        }
-//
-//        if (firStereoLeft != inp->firStereoLeft) {
-//            if (firStereoLeft != NULL) {
-//                firfilt_rrrf_destroy(firStereoLeft);
-//            }
-//            firStereoLeft = inp->firStereoLeft;
-//        }
-//
-//        if (firStereoRight != inp->firStereoRight) {
-//            if (firStereoRight != NULL) {
-//                firfilt_rrrf_destroy(firStereoRight);
-//            }
-//            firStereoRight = inp->firStereoRight;
-//        }
-//
-//        if (iirStereoPilot != inp->iirStereoPilot) {
-//            if (iirStereoPilot != NULL) {
-//                iirfilt_crcf_destroy(iirStereoPilot);
-//            }
-//            iirStereoPilot = inp->iirStereoPilot;
-//        }
+
 
         if (agcData.size() != bufSize) {
             if (agcData.capacity() < bufSize) {
@@ -618,59 +578,7 @@ void DemodulatorThread::run() {
         } else {
         msresamp_rrrf_execute(audioResampler, &demodOutputData[0], bufSize, &resampledOutputData[0], &numAudioWritten);
 
-        if (stereo && inp->sampleRate >= 100000) {
-            if (demodStereoData.size() != bufSize) {
-                if (demodStereoData.capacity() < bufSize) {
-                    demodStereoData.reserve(bufSize);
-                }
-                demodStereoData.resize(bufSize);
-            }
-
-            
-            float phase_error = 0;
-
-            for (int i = 0; i < bufSize; i++) {
-                // real -> complex
-                firhilbf_r2c_execute(firStereoR2C, demodOutputData[i], &x);
-
-                // 19khz pilot band-pass
-                iirfilt_crcf_execute(iirStereoPilot, x, &v);
-                nco_crcf_cexpf(stereoPilot, &w);
-                                
-                w.imag = -w.imag; // conjf(w)
-                
-                // multiply u = v * conjf(w)
-                u.real = v.real * w.real - v.imag * w.imag;
-                u.imag = v.real * w.imag + v.imag * w.real;
-                
-                // cargf(u)
-                phase_error = atan2f(u.imag,u.real);
-                
-                // step pll
-                nco_crcf_pll_step(stereoPilot, phase_error);
-                nco_crcf_step(stereoPilot);
-                
-                // 38khz down-mix
-                nco_crcf_mix_down(stereoPilot, x, &y);
-                nco_crcf_mix_down(stereoPilot, y, &x);
-
-                // complex -> real
-                firhilbf_c2r_execute(firStereoC2R, x, &demodStereoData[i]);
-            }
-
-//            std::cout << "[PLL] phase error: " << phase_error;
-//            std::cout << " freq:" << (((nco_crcf_get_frequency(stereoPilot) / (2.0 * M_PI)) * inp->sampleRate)) << std::endl;
-            
-            if (audio_out_size != resampledStereoData.size()) {
-                if (resampledStereoData.capacity() < audio_out_size) {
-                    resampledStereoData.reserve(audio_out_size);
-                }
-                resampledStereoData.resize(audio_out_size);
-            }
-
-            msresamp_rrrf_execute(stereoResampler, &demodStereoData[0], bufSize, &resampledStereoData[0], &numAudioWritten);
-        }
-        }*/
+    }*/
 
         if (currentSignalLevel > signalLevel) {
             signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.5;
