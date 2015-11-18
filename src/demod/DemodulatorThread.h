@@ -21,10 +21,7 @@ public:
     
     void run();
     void terminate();
-
-//    void setStereo(bool state);
-//    bool isStereo();
-
+    
     void setAGC(bool state);
     bool getAGC();
 
@@ -138,7 +135,6 @@ protected:
     float amOutputCeilMA;
     float amOutputCeilMAA;
 
-//    std::atomic_bool stereo;
     std::atomic_bool muted;
     std::atomic_bool agcEnabled;
     std::string demodulatorType;

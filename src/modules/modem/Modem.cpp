@@ -17,3 +17,11 @@ Modem *Modem::makeModem(std::string modemType) {
     
     return nullptr;
 }
+
+Modem::Modem() {
+    
+}
+
+Modem::~Modem() {
+    
+}

@@ -13,17 +13,10 @@
 
 DemodulatorThread::DemodulatorThread() : IOThread(), iqAutoGain(NULL), amOutputCeil(1), amOutputCeilMA(1), amOutputCeilMAA(1), audioSampleRate(0), squelchLevel(0), signalLevel(0), squelchEnabled(false), iqInputQueue(NULL), audioOutputQueue(NULL), audioVisOutputQueue(NULL), threadQueueControl(NULL), threadQueueNotify(NULL) {
 
-//	stereo.store(false);
     muted.store(false);
 	agcEnabled.store(false);
 	demodulatorType = "FM";
 
-//    demodFM = freqdem_create(0.5);
-//    demodAM_USB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_USB, 1);
-//    demodAM_LSB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_LSB, 1);
-//    demodAM_DSB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_DSB, 1);
-//    demodAM_DSB_CSP = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_DSB, 0);
-//    demodAM = demodAM_DSB_CSP;
     
     // advanced demodulators
     
@@ -110,24 +103,6 @@ void DemodulatorThread::run() {
     pthread_setschedparam(tID, SCHED_FIFO, &prio);
 #endif
 
-//    msresamp_rrrf audioResampler = NULL;
-//    msresamp_rrrf stereoResampler = NULL;
-//    firfilt_rrrf firStereoLeft = NULL;
-//    firfilt_rrrf firStereoRight = NULL;
-//    iirfilt_crcf iirStereoPilot = NULL;
-
-//    liquid_float_complex u, v, w, x, y;
-
-//    firhilbf firStereoR2C = firhilbf_create(5, 60.0f);
-//    firhilbf firStereoC2R = firhilbf_create(5, 60.0f);
-
-//    nco_crcf stereoPilot = nco_crcf_create(LIQUID_VCO);
-//    nco_crcf_reset(stereoPilot);
-//    nco_crcf_pll_set_bandwidth(stereoPilot, 0.25f);
-
-     // half band filter used for side-band elimination
-//    resamp2_crcf ssbFilt = resamp2_crcf_create(12,-0.25f,60.0f);
-
     // Automatic IQ gain
     iqAutoGain = agc_crcf_create();
     agc_crcf_set_bandwidth(iqAutoGain, 0.1);
@@ -140,24 +115,9 @@ void DemodulatorThread::run() {
     audioOutputQueue = (AudioThreadInputQueue*)getOutputQueue("AudioDataOutput");
     threadQueueControl = (DemodulatorThreadControlCommandQueue *)getInputQueue("ControlQueue");
     threadQueueNotify = (DemodulatorThreadCommandQueue*)getOutputQueue("NotifyQueue");
+   
+    ModemIQData modemData;
     
-//    switch (demodulatorType.load()) {
-//    case DEMOD_TYPE_FM:
-//        break;
-//    case DEMOD_TYPE_LSB:
-//        demodAM = demodAM_LSB;
-//        break;
-//    case DEMOD_TYPE_USB:
-//        demodAM = demodAM_USB;
-//        break;
-//    case DEMOD_TYPE_DSB:
-//        demodAM = demodAM_DSB;
-//        break;
-//    case DEMOD_TYPE_AM:
-//        demodAM = demodAM_DSB_CSP;
-//        break;
-//    }
-
     while (!terminated) {
         DemodulatorThreadPostIQData *inp;
         iqInputQueue->pop(inp);
@@ -171,7 +131,21 @@ void DemodulatorThread::run() {
         }
 
 
-
+        if (inp->modemKit && inp->modemKit != cModemKit) {
+            cModem->disposeKit(cModemKit);
+            cModemKit = inp->modemKit;
+        }
+        
+        if (inp->modem && inp->modem != cModem) {
+            delete cModem;
+            cModem = inp->modem;
+        }
+        
+        if (!cModem || !cModemKit) {
+            inp->decRefCount();
+            continue;
+        }
+        
         if (agcData.size() != bufSize) {
             if (agcData.capacity() < bufSize) {
                 agcData.reserve(bufSize);
@@ -180,25 +154,6 @@ void DemodulatorThread::run() {
             agcData.resize(bufSize);
             agcAMData.resize(bufSize);
         }
-
-//        double audio_resample_ratio = inp->audioResampleRatio;
-
-//		if (demodOutputData.size() != bufSize) {
-//			if (demodOutputData.capacity() < bufSize) {
-//				demodOutputData.reserve(bufSize);
-//			}
-//			demodOutputData.resize(bufSize);
-//		}
-
-/*
-		if (demodOutputDataDigital.size() != bufSize) {
-			if (demodOutputDataDigital.capacity() < bufSize) {
-				demodOutputDataDigital.reserve(bufSize);
-			}
-			demodOutputDataDigital.resize(bufSize);
-		}
-*/
-//        int audio_out_size = ceil((double) (bufSize) * audio_resample_ratio) + 512;
 
         agc_crcf_execute_block(iqAutoGain, &(inp->data[0]), bufSize, &agcData[0]);
 
@@ -217,38 +172,24 @@ void DemodulatorThread::run() {
         } else {
         	inputData = &inp->data;
         }
+        
+        modemData.sampleRate = inp->sampleRate;
+        modemData.data.assign(inputData->begin(), inputData->end());
+        
+        AudioThreadInput *ati = NULL;
+        ati = outputBuffers.getBuffer();
+        
+        ati->sampleRate = audioSampleRate;
+        ati->inputRate = inp->sampleRate;
+        ati->setRefCount(1);
 
+        cModem->demodulate(cModemKit, &modemData, ati);
+        
         // Reset demodulator Constellations & Lock
 //        updateDemodulatorCons(0);
 /*
-        if (demodulatorType == DEMOD_TYPE_FM) {
-            currentDemodLock = false;
-            freqdem_demodulate_block(demodFM, &(*inputData)[0], bufSize, &demodOutputData[0]);
-        } else if (demodulatorType == DEMOD_TYPE_RAW) {
-            // do nothing here..
-        } else {
+        {
             switch (demodulatorType.load()) {
-            case DEMOD_TYPE_LSB:
-				currentDemodLock = false;
-                for (int i = 0; i < bufSize; i++) { // Reject upper band
-                     resamp2_crcf_filter_execute(ssbFilt,(*inputData)[i],&x,&y);
-                     ampmodem_demodulate(demodAM, x, &demodOutputData[i]);
-                }
-                break;
-            case DEMOD_TYPE_USB:
-				currentDemodLock = false;
-                for (int i = 0; i < bufSize; i++) { // Reject lower band
-                    resamp2_crcf_filter_execute(ssbFilt,(*inputData)[i],&x,&y);
-                    ampmodem_demodulate(demodAM, y, &demodOutputData[i]);
-                }
-                break;
-            case DEMOD_TYPE_AM:
-            case DEMOD_TYPE_DSB:
-				currentDemodLock = false;
-                for (int i = 0; i < bufSize; i++) {
-                    ampmodem_demodulate(demodAM, (*inputData)[i], &demodOutputData[i]);
-                }
-                break;
 			// advanced demodulators
             case DEMOD_TYPE_ASK:
 
@@ -545,38 +486,7 @@ void DemodulatorThread::run() {
 				updateDemodulatorLock(demodQPSK, 0.8f);
                 break;
             }
-
-            amOutputCeilMA = amOutputCeilMA + (amOutputCeil - amOutputCeilMA) * 0.025;
-            amOutputCeilMAA = amOutputCeilMAA + (amOutputCeilMA - amOutputCeilMAA) * 0.025;
-
-            amOutputCeil = 0;
-
-            for (int i = 0; i < bufSize; i++) {
-                if (demodOutputData[i] > amOutputCeil) {
-                    amOutputCeil = demodOutputData[i];
-                }
-			}
-
-            float gain = 0.5 / amOutputCeilMAA;
-
-            for (int i = 0; i < bufSize; i++) {
-                demodOutputData[i] *= gain;
-            }
         }
-
-        if (audio_out_size != resampledOutputData.size()) {
-            if (resampledOutputData.capacity() < audio_out_size) {
-                resampledOutputData.reserve(audio_out_size);
-            }
-            resampledOutputData.resize(audio_out_size);
-        }
-
-        unsigned int numAudioWritten;
-
-        if (demodulatorType == DEMOD_TYPE_RAW) {
-            numAudioWritten = bufSize;
-        } else {
-        msresamp_rrrf_execute(audioResampler, &demodOutputData[0], bufSize, &resampledOutputData[0], &numAudioWritten);
 
     }*/
 
@@ -586,51 +496,9 @@ void DemodulatorThread::run() {
             signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.05;
         }
 
-        AudioThreadInput *ati = NULL;
 
         if (audioOutputQueue != NULL) {
-            if (!squelchEnabled || (signalLevel >= squelchLevel)) {
-                ati = outputBuffers.getBuffer();
-
-                ati->sampleRate = audioSampleRate;
-                ati->inputRate = inp->sampleRate;
-                ati->setRefCount(1);
-
-                /*
-
-                if (demodulatorType == DEMOD_TYPE_RAW) {
-                    ati->channels = 2;
-                    if (ati->data.capacity() < (numAudioWritten * 2)) {
-                        ati->data.reserve(numAudioWritten * 2);
-                    }
-                    ati->data.resize(numAudioWritten * 2);
-                    for (int i = 0; i < numAudioWritten; i++) {
-                        ati->data[i * 2] = (*inputData)[i].imag;
-                        ati->data[i * 2 + 1] = (*inputData)[i].real;
-                    }
-                } else if (stereo && inp->sampleRate >= 100000) {
-                    ati->channels = 2;
-                    if (ati->data.capacity() < (numAudioWritten * 2)) {
-                        ati->data.reserve(numAudioWritten * 2);
-                    }
-                    ati->data.resize(numAudioWritten * 2);
-                    for (int i = 0; i < numAudioWritten; i++) {
-                        float l, r;
-
-                        firfilt_rrrf_push(firStereoLeft, 0.568 * (resampledOutputData[i] - (resampledStereoData[i])));
-                        firfilt_rrrf_execute(firStereoLeft, &l);
-
-                        firfilt_rrrf_push(firStereoRight, 0.568 * (resampledOutputData[i] + (resampledStereoData[i])));
-                        firfilt_rrrf_execute(firStereoRight, &r);
-
-                        ati->data[i * 2] = l;
-                        ati->data[i * 2 + 1] = r;
-                    }
-                } else {
-                    ati->channels = 1;
-                    ati->data.assign(resampledOutputData.begin(), resampledOutputData.begin() + numAudioWritten);
-                }
-*/
+            if (ati && (!squelchEnabled || (signalLevel >= squelchLevel))) {
                 std::vector<float>::iterator data_i;
                 ati->peak = 0;
                 for (data_i = ati->data.begin(); data_i != ati->data.end(); data_i++) {
@@ -639,9 +507,13 @@ void DemodulatorThread::run() {
                         ati->peak = p;
                     }
                 }
+            } else if (ati) {
+                ati->decRefCount();
             }
+        } else if (ati) {
+            ati->decRefCount();
         }
-/*
+
         if (ati && audioVisOutputQueue != NULL && audioVisOutputQueue->empty()) {
 			AudioThreadInput *ati_vis = audioVisBuffers.getBuffer();
 			ati_vis->setRefCount(1);
@@ -649,7 +521,7 @@ void DemodulatorThread::run() {
             ati_vis->inputRate = inp->sampleRate;
             
             int num_vis = DEMOD_VIS_SIZE;
-            if (demodulatorType == DEMOD_TYPE_RAW || (stereo && inp->sampleRate >= 100000)) {
+            if (ati->channels==2) {
                 ati_vis->channels = 2;
                 int stereoSize = ati->data.size();
                 if (stereoSize > DEMOD_VIS_SIZE * 2) {
@@ -658,7 +530,7 @@ void DemodulatorThread::run() {
 
                 ati_vis->data.resize(stereoSize);
 
-                if (demodulatorType == DEMOD_TYPE_RAW) {
+                if (demodulatorType == "I/Q") {
                     for (int i = 0; i < stereoSize / 2; i++) {
                         ati_vis->data[i] = agcData[i].real * 0.75;
                         ati_vis->data[i + stereoSize / 2] = agcData[i].imag * 0.75;
@@ -679,12 +551,12 @@ void DemodulatorThread::run() {
                     if (num_vis > numAudioWritten) {
                         num_vis = numAudioWritten;
                     }
-                    ati_vis->data.assign(resampledOutputData.begin(), resampledOutputData.begin() + num_vis);
+                    ati_vis->data.assign(ati->data.begin(), ati->data.begin() + num_vis);
                 } else {
                     if (num_vis > bufSize) {
                         num_vis = bufSize;
                     }
-                    ati_vis->data.assign(demodOutputData.begin(), demodOutputData.begin() + num_vis);
+                    ati_vis->data.assign(ati->data.begin(), ati->data.begin() + num_vis);
                 }
 
 //            std::cout << "Signal: " << agc_crcf_get_signal_level(agc) << " -- " << agc_crcf_get_rssi(agc) << "dB " << std::endl;
@@ -692,7 +564,7 @@ void DemodulatorThread::run() {
 
             audioVisOutputQueue->push(ati_vis);
         }
-*/
+
         
         if (ati != NULL) {
             if (!muted.load()) {
@@ -723,64 +595,6 @@ void DemodulatorThread::run() {
                     break;
                 }
             }
-/*
-            if (newDemodType != DEMOD_TYPE_NULL) {
-                switch (newDemodType) {
-                case DEMOD_TYPE_FM:
-                    freqdem_reset(demodFM);
-                    break;
-                case DEMOD_TYPE_LSB:
-                    demodAM = demodAM_LSB;
-                    ampmodem_reset(demodAM);
-                    break;
-                case DEMOD_TYPE_USB:
-                    demodAM = demodAM_USB;
-                    ampmodem_reset(demodAM);
-                    break;
-                case DEMOD_TYPE_DSB:
-                    demodAM = demodAM_DSB;
-                    ampmodem_reset(demodAM);
-                    break;
-                case DEMOD_TYPE_AM:
-                    demodAM = demodAM_DSB_CSP;
-                    ampmodem_reset(demodAM);
-                    break;
-				case DEMOD_TYPE_ASK:
-					//modem_reset(demodASK);
-					break;
-				case DEMOD_TYPE_APSK:
-					//modem_reset(demodAPSK);
-					break;
-				case DEMOD_TYPE_BPSK:
-					//modem_reset(demodBPSK);
-					break;
-				case DEMOD_TYPE_DPSK:
-					//modem_reset(demodDPSK);
-					break;
-				case DEMOD_TYPE_PSK:
-					//modem_reset(demodPSK);
-					break;
-				case DEMOD_TYPE_OOK:
-					//modem_reset(demodOOK);
-					break;
-				case DEMOD_TYPE_SQAM:
-					//modem_reset(demodSQAM);
-					break;
-				case DEMOD_TYPE_ST:
-					//modem_reset(demodST);
-					break;
-				case DEMOD_TYPE_QAM:
-					//modem_reset(demodQAM);
-					break;
-                case DEMOD_TYPE_QPSK:
-                    //modem_reset(demodQPSK);
-                    break;
-				default:
-					// empty default to prevent exceptions
-					break;
-                }
-                demodulatorType = newDemodType;
-            }*/
         }
 
 //		demodOutputDataDigital.empty();
@@ -788,29 +602,7 @@ void DemodulatorThread::run() {
         inp->decRefCount();
     }
 	// end while !terminated
-/*
-    if (audioResampler != NULL) {
-        msresamp_rrrf_destroy(audioResampler);
-    }
-    if (stereoResampler != NULL) {
-        msresamp_rrrf_destroy(stereoResampler);
-    }
-    if (firStereoLeft != NULL) {
-        firfilt_rrrf_destroy(firStereoLeft);
-    }
-    if (firStereoRight != NULL) {
-        firfilt_rrrf_destroy(firStereoRight);
-    }
-    if (iirStereoPilot != NULL) {
-      iirfilt_crcf_destroy(iirStereoPilot);
-    }
-
-    agc_crcf_destroy(iqAutoGain);
-    firhilbf_destroy(firStereoR2C);
-    firhilbf_destroy(firStereoC2R);
-    nco_crcf_destroy(stereoPilot);
-    resamp2_crcf_destroy(ssbFilt);
-*/
+    
     outputBuffers.purge();
 
     if (audioVisOutputQueue && !audioVisOutputQueue->empty()) {
@@ -831,15 +623,6 @@ void DemodulatorThread::terminate() {
     DemodulatorThreadPostIQData *inp = new DemodulatorThreadPostIQData;    // push dummy to nudge queue
     iqInputQueue->push(inp);
 }
-
-//void DemodulatorThread::setStereo(bool state) {
-//    stereo.store(state);
-//    std::cout << "Stereo " << (state ? "Enabled" : "Disabled") << std::endl;
-//}
-
-//bool DemodulatorThread::isStereo() {
-//    return stereo.load();
-//}
 
 bool DemodulatorThread::isMuted() {
     return muted.load();
