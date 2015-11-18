@@ -64,6 +64,8 @@ void DemodulatorPreThread::run() {
     std::vector<liquid_float_complex> in_buf_data;
     std::vector<liquid_float_complex> out_buf_data;
 
+    setDemodType(params.demodType);
+    
     while (!terminated) {
         DemodulatorThreadIQData *inp;
         iqInputQueue->pop(inp);
@@ -199,9 +201,11 @@ void DemodulatorPreThread::run() {
 
                 switch (result.cmd) {
                 case DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS:
-                    msresamp_crcf_destroy(iqResampler);
 
                     if (result.iqResampler) {
+                        if (iqResampler) {
+                            msresamp_crcf_destroy(iqResampler);
+                        }
                         iqResampler = result.iqResampler;
                         iqResampleRatio = result.iqResampleRatio;
                     }
@@ -224,6 +228,7 @@ void DemodulatorPreThread::run() {
                         
                     if (result.modemType != "") {
                         demodType = result.modemType;
+                        params.demodType = result.modemType;
                         demodTypeChanged.store(false);
                     }
                     break;
@@ -254,6 +259,8 @@ void DemodulatorPreThread::setDemodType(std::string demodType) {
     this->newDemodType = demodType;
     DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_MAKE_DEMOD);
     command.demodType = demodType;
+    command.bandwidth = params.bandwidth;
+    command.audioSampleRate = params.audioSampleRate;
     workerQueue->push(command);
 }
 

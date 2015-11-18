@@ -10,11 +10,12 @@
 typedef ThreadQueue<AudioThreadInput *> DemodulatorThreadOutputQueue;
 
 #define DEMOD_VIS_SIZE 2048
+class DemodulatorInstance;
 
 class DemodulatorThread : public IOThread {
 public:
 
-    DemodulatorThread();
+    DemodulatorThread(DemodulatorInstance *parent);
     ~DemodulatorThread();
 
     void onBindOutput(std::string name, ThreadQueueBase *threadQueue);
@@ -45,6 +46,7 @@ public:
 //#endif
 
 protected:
+    DemodulatorInstance *demodInstance;
     ReBuffer<AudioThreadInput> outputBuffers;
 
     std::vector<liquid_float_complex> agcData;

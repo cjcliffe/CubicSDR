@@ -74,5 +74,6 @@ void ModemAnalog::buildAudioOutput(ModemKitAnalog *akit, AudioThreadInput *audio
     msresamp_rrrf_execute(akit->audioResampler, &demodOutputData[0], demodOutputData.size(), &resampledOutputData[0], &numAudioWritten);
     
     audioOut->channels = 1;
+    audioOut->sampleRate = akit->audioSampleRate;
     audioOut->data.assign(resampledOutputData.begin(), resampledOutputData.begin() + numAudioWritten);
 }

@@ -3,7 +3,7 @@
 #include <vector>
 
 DemodulatorWorkerThread::DemodulatorWorkerThread() : IOThread(),
-        commandQueue(NULL), resultQueue(NULL) {
+        commandQueue(NULL), resultQueue(NULL), cModem(nullptr), cModemKit(nullptr) {
 }
 
 DemodulatorWorkerThread::~DemodulatorWorkerThread() {
@@ -41,7 +41,7 @@ void DemodulatorWorkerThread::run() {
         }
         
 
-        if (filterChanged && !terminated) {
+        if ((makeDemod || filterChanged) && !terminated) {
             DemodulatorWorkerThreadResult result(DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS);
 
             float As = 60.0f;         // stop-band attenuation [dB]
@@ -55,14 +55,14 @@ void DemodulatorWorkerThread::run() {
                 cModem = Modem::makeModem(filterCommand.demodType);
                 cModemType = filterCommand.demodType;
             }
-            
+            result.modem = cModem;
+
             if (filterCommand.bandwidth && filterCommand.audioSampleRate) {
-                result.modem = cModem;
                 if (cModem != nullptr) {
                     cModemKit = cModem->buildKit(filterCommand.bandwidth, filterCommand.audioSampleRate);
                 }
-                result.modemKit = cModemKit;
             }
+            result.modemKit = cModemKit;
 
             if (filterCommand.bandwidth) {
                 result.bandwidth = filterCommand.bandwidth;

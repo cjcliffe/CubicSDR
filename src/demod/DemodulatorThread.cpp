@@ -1,5 +1,6 @@
 #include "CubicSDRDefs.h"
 #include "DemodulatorThread.h"
+#include "DemodulatorInstance.h"
 #include <vector>
 
 #include <cmath>
@@ -11,8 +12,9 @@
 #include <pthread.h>
 #endif
 
-DemodulatorThread::DemodulatorThread() : IOThread(), iqAutoGain(NULL), amOutputCeil(1), amOutputCeilMA(1), amOutputCeilMAA(1), audioSampleRate(0), squelchLevel(0), signalLevel(0), squelchEnabled(false), iqInputQueue(NULL), audioOutputQueue(NULL), audioVisOutputQueue(NULL), threadQueueControl(NULL), threadQueueNotify(NULL) {
+DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent) : IOThread(), iqAutoGain(NULL), amOutputCeil(1), amOutputCeilMA(1), amOutputCeilMAA(1), audioSampleRate(0), squelchLevel(0), signalLevel(0), squelchEnabled(false), iqInputQueue(NULL), audioOutputQueue(NULL), audioVisOutputQueue(NULL), threadQueueControl(NULL), threadQueueNotify(NULL), cModem(nullptr), cModemKit(nullptr) {
 
+    demodInstance = parent;
     muted.store(false);
 	agcEnabled.store(false);
 
@@ -122,6 +124,8 @@ void DemodulatorThread::run() {
         iqInputQueue->pop(inp);
 //        std::lock_guard < std::mutex > lock(inp->m_mutex);
 
+        audioSampleRate = demodInstance->getAudioSampleRate();
+        
         int bufSize = inp->data.size();
 
         if (!bufSize) {
@@ -131,7 +135,9 @@ void DemodulatorThread::run() {
 
 
         if (inp->modemKit && inp->modemKit != cModemKit) {
-            cModem->disposeKit(cModemKit);
+            if (cModemKit != nullptr) {
+                cModem->disposeKit(cModemKit);
+            }
             cModemKit = inp->modemKit;
         }
         
@@ -174,6 +180,9 @@ void DemodulatorThread::run() {
         
         modemData.sampleRate = inp->sampleRate;
         modemData.data.assign(inputData->begin(), inputData->end());
+        modemData.setRefCount(1);
+        
+        
         
         AudioThreadInput *ati = NULL;
         ati = outputBuffers.getBuffer();
@@ -506,11 +515,7 @@ void DemodulatorThread::run() {
                         ati->peak = p;
                     }
                 }
-            } else if (ati) {
-                ati->decRefCount();
             }
-        } else if (ati) {
-            ati->decRefCount();
         }
 
         if (ati && audioVisOutputQueue != NULL && audioVisOutputQueue->empty()) {
@@ -545,18 +550,18 @@ void DemodulatorThread::run() {
             } else {
                 int numAudioWritten = ati->data.size();
                 ati_vis->channels = 1;
-                if (numAudioWritten > bufSize) {
+//                if (numAudioWritten > bufSize) {
                     ati_vis->inputRate = audioSampleRate;
                     if (num_vis > numAudioWritten) {
                         num_vis = numAudioWritten;
                     }
                     ati_vis->data.assign(ati->data.begin(), ati->data.begin() + num_vis);
-                } else {
-                    if (num_vis > bufSize) {
-                        num_vis = bufSize;
-                    }
-                    ati_vis->data.assign(ati->data.begin(), ati->data.begin() + num_vis);
-                }
+//                } else {
+//                    if (num_vis > bufSize) {
+//                        num_vis = bufSize;
+//                    }
+//                    ati_vis->data.assign(ati->data.begin(), ati->data.begin() + num_vis);
+//                }
 
 //            std::cout << "Signal: " << agc_crcf_get_signal_level(agc) << " -- " << agc_crcf_get_rssi(agc) << "dB " << std::endl;
             }
@@ -574,8 +579,6 @@ void DemodulatorThread::run() {
         }
 
         if (!threadQueueControl->empty()) {
-//            int newDemodType = DEMOD_TYPE_NULL;
-
             while (!threadQueueControl->empty()) {
                 DemodulatorThreadControlCommand command;
                 threadQueueControl->pop(command);
@@ -587,9 +590,6 @@ void DemodulatorThread::run() {
                 case DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_OFF:
                     squelchEnabled = false;
                     break;
-//                case DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_TYPE:
-//                    newDemodType = command.demodType;
-//                    break;
                 default:
                     break;
                 }

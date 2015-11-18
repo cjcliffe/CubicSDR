@@ -34,7 +34,7 @@ DemodulatorInstance::DemodulatorInstance() :
     pipeAudioData = new AudioThreadInputQueue;
     threadQueueControl = new DemodulatorThreadControlCommandQueue;
 
-    demodulatorThread = new DemodulatorThread();
+    demodulatorThread = new DemodulatorThread(this);
     demodulatorThread->setInputQueue("IQDataInput",pipeIQDemodData);
     demodulatorThread->setInputQueue("ControlQueue",threadQueueControl);
     demodulatorThread->setOutputQueue("NotifyQueue",pipeDemodNotify);
@@ -291,11 +291,7 @@ void DemodulatorInstance::setDemodulatorType(std::string demod_type_in) {
         checkBandwidth();
         demodulatorPreThread->getParams().demodType = currentDemodType;
     } else if (demodulatorThread && threadQueueControl) {
-        DemodulatorThreadControlCommand command;
-        command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_TYPE;
-        command.demodType = demod_type_in;
-        checkBandwidth();
-        threadQueueControl->push(command);
+        demodulatorPreThread->setDemodType(currentDemodType);
     }
 }
 
