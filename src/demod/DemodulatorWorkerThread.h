@@ -16,7 +16,7 @@ public:
     };
 
     DemodulatorWorkerThreadResult() :
-            cmd(DEMOD_WORKER_THREAD_RESULT_NULL), iqResampler(nullptr), iqResampleRatio(0), sampleRate(0), bandwidth(0), modemKit(nullptr) {
+            cmd(DEMOD_WORKER_THREAD_RESULT_NULL), iqResampler(nullptr), iqResampleRatio(0), sampleRate(0), bandwidth(0), modemKit(nullptr), modemType("") {
 
     }
 
@@ -36,6 +36,7 @@ public:
     unsigned int bandwidth;
     Modem *modem;
     ModemKit *modemKit;
+    std::string modemType;
 };
 
 class DemodulatorWorkerThreadCommand {
@@ -90,4 +91,5 @@ protected:
     DemodulatorThreadWorkerResultQueue *resultQueue;
     Modem *cModem;
     ModemKit *cModemKit;
+    std::string cModemType;
 };

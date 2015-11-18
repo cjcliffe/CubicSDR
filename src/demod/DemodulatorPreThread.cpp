@@ -182,6 +182,7 @@ void DemodulatorPreThread::run() {
             resamp->setRefCount(1);
             resamp->data.assign(resampledData.begin(), resampledData.begin() + numWritten);
 
+            resamp->modemType = demodType;
             resamp->modem = cModem;
             resamp->modemKit = cModemKit;
             resamp->sampleRate = params.bandwidth;
@@ -220,6 +221,11 @@ void DemodulatorPreThread::run() {
                     if (result.sampleRate) {
                         params.sampleRate = result.sampleRate;
                     }
+                        
+                    if (result.modemType != "") {
+                        demodType = result.modemType;
+                        demodTypeChanged.store(false);
+                    }
                     break;
                 default:
                     break;
@@ -245,11 +251,16 @@ void DemodulatorPreThread::setParams(DemodulatorThreadParameters &params_in) {
 }
 
 void DemodulatorPreThread::setDemodType(std::string demodType) {
-    this->demodType = demodType;
-    demodTypeChanged.store(true);
+    this->newDemodType = demodType;
+    DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_MAKE_DEMOD);
+    command.demodType = demodType;
+    workerQueue->push(command);
 }
 
 std::string DemodulatorPreThread::getDemodType() {
+    if (newDemodType != demodType) {
+        return newDemodType;
+    }
     return demodType;
 }
 

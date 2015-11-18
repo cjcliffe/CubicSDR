@@ -15,7 +15,6 @@ DemodulatorThread::DemodulatorThread() : IOThread(), iqAutoGain(NULL), amOutputC
 
     muted.store(false);
 	agcEnabled.store(false);
-	demodulatorType = "FM";
 
     
     // advanced demodulators
@@ -530,7 +529,7 @@ void DemodulatorThread::run() {
 
                 ati_vis->data.resize(stereoSize);
 
-                if (demodulatorType == "I/Q") {
+                if (inp->modemType == "I/Q") {
                     for (int i = 0; i < stereoSize / 2; i++) {
                         ati_vis->data[i] = agcData[i].real * 0.75;
                         ati_vis->data[i + stereoSize / 2] = agcData[i].imag * 0.75;
@@ -654,14 +653,6 @@ void DemodulatorThread::setSquelchLevel(float signal_level_in) {
 
 float DemodulatorThread::getSquelchLevel() {
     return squelchLevel;
-}
-
-void DemodulatorThread::setDemodulatorType(std::string demod_type_in) {
-    demodulatorType = demod_type_in;
-}
-
-std::string DemodulatorThread::getDemodulatorType() {
-    return demodulatorType;
 }
 
 void DemodulatorThread::setDemodulatorLock(bool demod_lock_in) {

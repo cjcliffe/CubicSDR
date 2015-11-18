@@ -47,6 +47,7 @@ protected:
     std::atomic_bool initialized;
     std::atomic_bool demodTypeChanged;
     std::string demodType;
+    std::string newDemodType;
 
     DemodulatorWorkerThread *workerThread;
     std::thread *t_Worker;

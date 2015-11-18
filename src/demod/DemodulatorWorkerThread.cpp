@@ -53,6 +53,7 @@ void DemodulatorWorkerThread::run() {
 
             if (makeDemod) {
                 cModem = Modem::makeModem(filterCommand.demodType);
+                cModemType = filterCommand.demodType;
             }
             
             if (filterCommand.bandwidth && filterCommand.audioSampleRate) {
@@ -71,6 +72,8 @@ void DemodulatorWorkerThread::run() {
                 result.sampleRate = filterCommand.sampleRate;
             }
 
+            result.modemType = cModemType;
+            
             resultQueue->push(result);
         }
 

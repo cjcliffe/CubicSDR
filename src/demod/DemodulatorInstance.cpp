@@ -44,7 +44,7 @@ DemodulatorInstance::DemodulatorInstance() :
     audioThread->setInputQueue("AudioDataInput", pipeAudioData);
     audioThread->setOutputQueue("NotifyQueue", pipeDemodNotify);
 
-    currentDemodType = demodulatorThread->getDemodulatorType();
+    currentDemodType = demodulatorPreThread->getParams().demodType;
     currentDemodCons = demodulatorThread->getDemodulatorCons();
 }
 
@@ -74,7 +74,7 @@ void DemodulatorInstance::run() {
 //    }
 
     currentFrequency = demodulatorPreThread->getParams().frequency;
-    currentDemodType = demodulatorThread->getDemodulatorType();
+    currentDemodType = demodulatorPreThread->getParams().demodType;
     currentDemodCons = demodulatorThread->getDemodulatorCons();
     currentAudioSampleRate = AudioThread::deviceSampleRate[getOutputDevice()];
     demodulatorPreThread->getParams().audioSampleRate = currentAudioSampleRate;
@@ -290,7 +290,6 @@ void DemodulatorInstance::setDemodulatorType(std::string demod_type_in) {
     if (!active) {
         checkBandwidth();
         demodulatorPreThread->getParams().demodType = currentDemodType;
-        demodulatorThread->setDemodulatorType(currentDemodType);
     } else if (demodulatorThread && threadQueueControl) {
         DemodulatorThreadControlCommand command;
         command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_TYPE;
