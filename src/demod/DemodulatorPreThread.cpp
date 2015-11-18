@@ -8,7 +8,7 @@
 #include "DemodulatorPreThread.h"
 #include "CubicSDR.h"
 
-DemodulatorPreThread::DemodulatorPreThread() : IOThread(), iqResampler(NULL), iqResampleRatio(1), iqInputQueue(NULL), iqOutputQueue(NULL), threadQueueNotify(NULL), commandQueue(NULL)
+DemodulatorPreThread::DemodulatorPreThread() : IOThread(), iqResampler(NULL), iqResampleRatio(1), iqInputQueue(NULL), iqOutputQueue(NULL), threadQueueNotify(NULL), commandQueue(NULL), cModem(nullptr), cModemKit(nullptr)
  {
 	initialized.store(false);
 
@@ -251,6 +251,8 @@ void DemodulatorPreThread::run() {
 //            resamp->firStereoLeft = firStereoLeft;
 //            resamp->firStereoRight = firStereoRight;
 //            resamp->iirStereoPilot = iirStereoPilot;
+            resamp->modem = cModem;
+            resamp->modemKit = cModemKit;
             resamp->sampleRate = params.bandwidth;
 
             iqOutputQueue->push(resamp);
@@ -294,6 +296,14 @@ void DemodulatorPreThread::run() {
 //                        params.audioSampleRate = result.audioSampleRate;
 //                    }
 
+                        if (result.modem != nullptr) {
+                            cModem = result.modem;
+                        }
+                        
+                        if (result.modemKit != nullptr) {
+                            cModemKit = result.modemKit;
+                        }
+                        
                     if (result.bandwidth) {
                         params.bandwidth = result.bandwidth;
                     }

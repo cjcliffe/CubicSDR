@@ -34,6 +34,7 @@ public:
 
     long long sampleRate;
     unsigned int bandwidth;
+    Modem *modem;
     ModemKit *modemKit;
 };
 

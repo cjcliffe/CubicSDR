@@ -98,9 +98,6 @@ protected:
 private:
 
     void checkBandwidth();
-
-    Modem *currentModem;
-    ModemKit *currentModemKit;
     
     std::atomic<std::string *> label; //
     std::atomic_bool terminated; //

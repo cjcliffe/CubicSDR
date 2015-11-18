@@ -5,6 +5,7 @@
 
 #include "DemodDefs.h"
 #include "AudioThread.h"
+#include "Modem.h"
 
 typedef ThreadQueue<AudioThreadInput *> DemodulatorThreadOutputQueue;
 
@@ -154,6 +155,9 @@ protected:
 	void updateDemodulatorCons(int Cons);
     void updateDemodulatorLock(modem demod, float sensitivity);
 
+    Modem *cModem;
+    ModemKit *cModemKit;
+    
     DemodulatorThreadPostInputQueue* iqInputQueue;
     AudioThreadInputQueue *audioOutputQueue;
     DemodulatorThreadOutputQueue* audioVisOutputQueue;
