@@ -171,7 +171,18 @@ bool CubicSDR::OnInit() {
     Modem::addModemFactory("USB", new ModemUSB);
     Modem::addModemFactory("DSB", new ModemDSB);
     Modem::addModemFactory("I/Q", new ModemIQ);
-    
+
+    Modem::addModemFactory("APSK", new ModemAPSK);
+    Modem::addModemFactory("ASK", new ModemASK);
+    Modem::addModemFactory("BPSK", new ModemBPSK);
+    Modem::addModemFactory("DPSK", new ModemDPSK);
+    Modem::addModemFactory("OOK", new ModemOOK);
+    Modem::addModemFactory("PSK", new ModemPSK);
+    Modem::addModemFactory("QAM", new ModemQAM);
+    Modem::addModemFactory("QPSK", new ModemQPSK);
+    Modem::addModemFactory("SQAM", new ModemSQAM);
+    Modem::addModemFactory("ST", new ModemST);
+
     frequency = wxGetApp().getConfig()->getCenterFreq();
     offset = 0;
     ppm = 0;
