@@ -22,7 +22,7 @@ void ModemAnalog::disposeKit(ModemKit *kit) {
     ModemKitAnalog *akit = (ModemKitAnalog *)kit;
     
     msresamp_rrrf_destroy(akit->audioResampler);
-    delete kit;
+    delete akit;
 }
 
 void ModemAnalog::initOutputBuffers(ModemKitAnalog *akit, ModemIQData *input) {

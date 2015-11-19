@@ -12,80 +12,12 @@
 #include <pthread.h>
 #endif
 
-DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent) : IOThread(), iqAutoGain(NULL), amOutputCeil(1), amOutputCeilMA(1), amOutputCeilMAA(1), audioSampleRate(0), squelchLevel(0), signalLevel(0), squelchEnabled(false), iqInputQueue(NULL), audioOutputQueue(NULL), audioVisOutputQueue(NULL), threadQueueControl(NULL), threadQueueNotify(NULL), cModem(nullptr), cModemKit(nullptr) {
+DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent) : IOThread(), iqAutoGain(NULL), audioSampleRate(0), squelchLevel(0), signalLevel(0), squelchEnabled(false), iqInputQueue(NULL), audioOutputQueue(NULL), audioVisOutputQueue(NULL), threadQueueControl(NULL), threadQueueNotify(NULL), cModem(nullptr), cModemKit(nullptr) {
 
     demodInstance = parent;
     muted.store(false);
 	agcEnabled.store(false);
 
-    
-    // advanced demodulators
-    
-/*    demodulatorCons.store(2);
-	currentDemodCons = 0;
-	
-	demodASK = demodASK2;
-    demodASK2 = modem_create(LIQUID_MODEM_ASK2);
-    demodASK4 = modem_create(LIQUID_MODEM_ASK4);
-    demodASK8 = modem_create(LIQUID_MODEM_ASK8);
-    demodASK16 = modem_create(LIQUID_MODEM_ASK16);
-    demodASK32 = modem_create(LIQUID_MODEM_ASK32);
-    demodASK64 = modem_create(LIQUID_MODEM_ASK64);
-    demodASK128 = modem_create(LIQUID_MODEM_ASK128);
-    demodASK256 = modem_create(LIQUID_MODEM_ASK256);
-
-	demodAPSK = demodAPSK4;
-	demodAPSK4 = modem_create(LIQUID_MODEM_APSK4);
-	demodAPSK8 = modem_create(LIQUID_MODEM_APSK8);
-	demodAPSK16 = modem_create(LIQUID_MODEM_APSK16);
-	demodAPSK32 = modem_create(LIQUID_MODEM_APSK32);
-	demodAPSK64 = modem_create(LIQUID_MODEM_APSK64);
-	demodAPSK128 = modem_create(LIQUID_MODEM_APSK128);
-	demodAPSK256 = modem_create(LIQUID_MODEM_APSK256);
-    
-    demodBPSK = modem_create(LIQUID_MODEM_BPSK);
-
-	demodDPSK = demodDPSK2;
-    demodDPSK2 = modem_create(LIQUID_MODEM_DPSK2);
-	demodDPSK4 = modem_create(LIQUID_MODEM_DPSK4);
-	demodDPSK8 = modem_create(LIQUID_MODEM_DPSK8);
-	demodDPSK16 = modem_create(LIQUID_MODEM_DPSK16);
-	demodDPSK32 = modem_create(LIQUID_MODEM_DPSK32);
-	demodDPSK64 = modem_create(LIQUID_MODEM_DPSK64);
-	demodDPSK128 = modem_create(LIQUID_MODEM_DPSK128);
-	demodDPSK256 = modem_create(LIQUID_MODEM_DPSK256);
-
-	demodPSK = demodPSK2;
-	demodPSK2 = modem_create(LIQUID_MODEM_PSK2);
-	demodPSK4 = modem_create(LIQUID_MODEM_PSK4);
-	demodPSK8 = modem_create(LIQUID_MODEM_PSK8);
-	demodPSK16 = modem_create(LIQUID_MODEM_PSK16);
-	demodPSK32 = modem_create(LIQUID_MODEM_PSK32);
-	demodPSK64 = modem_create(LIQUID_MODEM_PSK64);
-	demodPSK128 = modem_create(LIQUID_MODEM_PSK128);
-	demodPSK256 = modem_create(LIQUID_MODEM_PSK256);
-
-    demodOOK = modem_create(LIQUID_MODEM_OOK);
-
-	demodSQAM = demodSQAM32;
-	demodSQAM32 = modem_create(LIQUID_MODEM_SQAM32);
-    demodSQAM128 = modem_create(LIQUID_MODEM_SQAM128);
-
-    demodST = modem_create(LIQUID_MODEM_V29);
-
-	demodQAM = demodQAM4;
-	demodQAM4 = modem_create(LIQUID_MODEM_QAM4);
-	demodQAM8 = modem_create(LIQUID_MODEM_QAM8);
-	demodQAM16 = modem_create(LIQUID_MODEM_QAM16);
-	demodQAM32 = modem_create(LIQUID_MODEM_QAM32);
-	demodQAM64 = modem_create(LIQUID_MODEM_QAM64);
-	demodQAM128 = modem_create(LIQUID_MODEM_QAM128);
-	demodQAM256 = modem_create(LIQUID_MODEM_QAM256);
-
-    demodQPSK = modem_create(LIQUID_MODEM_QPSK);
-    
-    currentDemodLock = false; */
-    
 }
 DemodulatorThread::~DemodulatorThread() {
 }
@@ -132,7 +64,6 @@ void DemodulatorThread::run() {
             inp->decRefCount();
             continue;
         }
-
 
         if (inp->modemKit && inp->modemKit != cModemKit) {
             if (cModemKit != nullptr) {
@@ -182,8 +113,6 @@ void DemodulatorThread::run() {
         modemData.data.assign(inputData->begin(), inputData->end());
         modemData.setRefCount(1);
         
-        
-        
         AudioThreadInput *ati = NULL;
         ati = outputBuffers.getBuffer();
         
@@ -192,318 +121,12 @@ void DemodulatorThread::run() {
         ati->setRefCount(1);
 
         cModem->demodulate(cModemKit, &modemData, ati);
-        
-        // Reset demodulator Constellations & Lock
-//        updateDemodulatorCons(0);
-/*
-        {
-            switch (demodulatorType.load()) {
-			// advanced demodulators
-            case DEMOD_TYPE_ASK:
-
-				switch (demodulatorCons.load()) {
-				case 2:
-                    demodASK = demodASK2;
-					updateDemodulatorCons(2);
-					break;
-				case 4:
-					demodASK = demodASK4;
-					updateDemodulatorCons(4);
-					break;
-				case 8:
-					demodASK = demodASK8;
-					updateDemodulatorCons(8);
-					break;
-				case 16:
-					demodASK = demodASK16;
-					updateDemodulatorCons(16);
-					break;
-				case 32:
-					demodASK = demodASK32;
-					updateDemodulatorCons(32);
-					break;
-				case 64:
-					demodASK = demodASK64;
-					updateDemodulatorCons(64);
-					break;
-				case 128:
-					demodASK = demodASK128;
-					updateDemodulatorCons(128);
-					break;
-				case 256:
-					demodASK = demodASK256;
-					updateDemodulatorCons(256);
-					break;
-				default:
-					demodASK = demodASK2;
-					break;
-                }
-
-                for (int i = 0; i < bufSize; i++) {
-                    modem_demodulate(demodASK, inp->data[i], &demodOutputDataDigital[i]);
-                } 
-                updateDemodulatorLock(demodASK, 0.005f);
-                break;
-			case DEMOD_TYPE_APSK:
-
-				switch (demodulatorCons.load()) {
-				case 2:
-					demodAPSK = demodAPSK4;
-					updateDemodulatorCons(4);
-					break;
-				case 4:
-					demodAPSK = demodAPSK4;
-					updateDemodulatorCons(4);
-					break;
-				case 8:
-					demodAPSK = demodAPSK8;
-					updateDemodulatorCons(8);
-					break;
-				case 16:
-					demodAPSK = demodAPSK16;
-					updateDemodulatorCons(16);
-					break;
-				case 32:
-					demodAPSK = demodAPSK32;
-					updateDemodulatorCons(32);
-					break;
-				case 64:
-					demodAPSK = demodAPSK64;
-					updateDemodulatorCons(64);
-					break;
-				case 128:
-					demodAPSK = demodAPSK128;
-					updateDemodulatorCons(128);
-					break;
-				case 256:
-					demodAPSK = demodAPSK256;
-					updateDemodulatorCons(256);
-					break;
-				default:
-					demodAPSK = demodAPSK4;
-					break;
-				}
-
-				for (int i = 0; i < bufSize; i++) {
-					modem_demodulate(demodAPSK, inp->data[i], &demodOutputDataDigital[i]);					
-				}
-				updateDemodulatorLock(demodAPSK, 0.005f);
-				break;
-            case DEMOD_TYPE_BPSK:
-                for (int i = 0; i < bufSize; i++) {
-                    modem_demodulate(demodBPSK, inp->data[i], &demodOutputDataDigital[i]);                 
-                } 
-                updateDemodulatorLock(demodBPSK, 0.005f);
-                break;
-            case DEMOD_TYPE_DPSK:
-
-				switch (demodulatorCons.load()) {
-				case 2:
-					demodDPSK = demodDPSK2;
-					updateDemodulatorCons(2);
-					break;
-				case 4:
-					demodDPSK = demodDPSK4;
-					updateDemodulatorCons(4);
-					break;
-				case 8:
-					demodDPSK = demodDPSK8;
-					updateDemodulatorCons(8);
-					break;
-				case 16:
-					demodDPSK = demodDPSK16;
-					updateDemodulatorCons(16);
-					break;
-				case 32:
-					demodDPSK = demodDPSK32;
-					updateDemodulatorCons(32);
-					break;
-				case 64:
-					demodDPSK = demodDPSK64;
-					updateDemodulatorCons(64);
-					break;
-				case 128:
-					demodDPSK = demodDPSK128;
-					updateDemodulatorCons(128);
-					break;
-				case 256:
-					demodDPSK = demodDPSK256;
-					updateDemodulatorCons(256);
-					break;
-				default:
-					demodDPSK = demodDPSK2;
-					break;
-				}
-
-                for (int i = 0; i < bufSize; i++) {
-                    modem_demodulate(demodDPSK, inp->data[i], &demodOutputDataDigital[i]);                 
-                } 
-                updateDemodulatorLock(demodDPSK, 0.005f);
-                break;
-            case DEMOD_TYPE_PSK:
-
-				switch (demodulatorCons.load()) {
-				case 2:
-					demodPSK = demodPSK2;
-					updateDemodulatorCons(2);
-					break;
-				case 4:
-					demodPSK = demodPSK4;
-					updateDemodulatorCons(4);
-					break;
-				case 8:
-					demodPSK = demodPSK8;
-					updateDemodulatorCons(8);
-					break;
-				case 16:
-					demodPSK = demodPSK16;
-					updateDemodulatorCons(16);
-					break;
-				case 32:
-					demodPSK = demodPSK32;
-					updateDemodulatorCons(32);
-					break;
-				case 64:
-					demodPSK = demodPSK64;
-					updateDemodulatorCons(64);
-					break;
-				case 128:
-					demodPSK = demodPSK128;
-					updateDemodulatorCons(128);
-					break;
-				case 256:
-					demodPSK = demodPSK256;
-					updateDemodulatorCons(256);
-					break;
-				default:
-					demodPSK = demodPSK2;
-					break;
-				}
-
-                for (int i = 0; i < bufSize; i++) {
-                    modem_demodulate(demodPSK, inp->data[i], &demodOutputDataDigital[i]);                
-                } 
-                updateDemodulatorLock(demodPSK, 0.005f);
-                break;
-            case DEMOD_TYPE_OOK:
-                for (int i = 0; i < bufSize; i++) {
-                    modem_demodulate(demodOOK, inp->data[i], &demodOutputDataDigital[i]); 
-                } 
-                updateDemodulatorLock(demodOOK, 0.005f);
-                break;
-            case DEMOD_TYPE_SQAM:
-
-				switch (demodulatorCons.load()) {
-				case 2:
-					demodSQAM = demodSQAM32;
-					updateDemodulatorCons(32);
-					break;
-				case 4:
-					demodSQAM = demodSQAM32;
-					updateDemodulatorCons(32);
-					break;
-				case 8:
-					demodSQAM = demodSQAM32;
-					updateDemodulatorCons(32);
-					break;
-				case 16:
-					demodSQAM = demodSQAM32;
-					updateDemodulatorCons(32);
-					break;
-				case 32:
-					demodSQAM = demodSQAM32;
-					updateDemodulatorCons(32);
-					break;
-				case 64:
-					demodSQAM = demodSQAM32;
-					updateDemodulatorCons(32);
-					break;
-				case 128:
-					demodSQAM = demodSQAM128;
-					updateDemodulatorCons(128);
-					break;
-				case 256:
-					demodSQAM = demodSQAM128;
-					updateDemodulatorCons(128);
-					break;
-				default:
-					demodSQAM = demodSQAM32;
-					break;
-				}
-
-                for (int i = 0; i < bufSize; i++) {
-                    modem_demodulate(demodSQAM, inp->data[i], &demodOutputDataDigital[i]);                
-                } 
-                updateDemodulatorLock(demodSQAM, 0.005f);
-                break;
-            case DEMOD_TYPE_ST:
-                for (int i = 0; i < bufSize; i++) {
-					modem_demodulate(demodST, inp->data[i], &demodOutputDataDigital[i]);
-                } 
-                updateDemodulatorLock(demodST, 0.005f);
-                break;
-            case DEMOD_TYPE_QAM:
-
-				switch (demodulatorCons.load()) {
-				case 2:
-					demodQAM = demodQAM4;
-					updateDemodulatorCons(4);
-					break;
-				case 4:
-					demodQAM = demodQAM4;
-					updateDemodulatorCons(4);
-					break;
-				case 8:
-					demodQAM = demodQAM8;
-					updateDemodulatorCons(8);
-					break;
-				case 16:
-					demodQAM = demodQAM16;
-					updateDemodulatorCons(16);
-					break;
-				case 32:
-					demodQAM = demodQAM32;
-					updateDemodulatorCons(32);
-					break;
-				case 64:
-					demodQAM = demodQAM64;
-					updateDemodulatorCons(64);
-					break;
-				case 128:
-					demodQAM = demodQAM128;
-					updateDemodulatorCons(128);
-					break;
-				case 256:
-					demodQAM = demodQAM256;
-					updateDemodulatorCons(256);
-					break;
-				default:
-					demodQAM = demodQAM4;
-					break;
-				}
-
-                for (int i = 0; i < bufSize; i++) {
-                    modem_demodulate(demodQAM, inp->data[i], &demodOutputDataDigital[i]);        
-                } 
-				updateDemodulatorLock(demodQAM, 0.5f);
-                break;
-            case DEMOD_TYPE_QPSK:
-				for (int i = 0; i < bufSize; i++) {
-					modem_demodulate(demodQPSK, inp->data[i], &demodOutputDataDigital[i]);
-				}            
-				updateDemodulatorLock(demodQPSK, 0.8f);
-                break;
-            }
-        }
-
-    }*/
 
         if (currentSignalLevel > signalLevel) {
             signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.5;
         } else {
             signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.05;
         }
-
 
         if (audioOutputQueue != NULL) {
             if (ati && (!squelchEnabled || (signalLevel >= squelchLevel))) {
@@ -596,7 +219,6 @@ void DemodulatorThread::run() {
             }
         }
 
-//		demodOutputDataDigital.empty();
 
         inp->decRefCount();
     }
@@ -653,30 +275,4 @@ void DemodulatorThread::setSquelchLevel(float signal_level_in) {
 
 float DemodulatorThread::getSquelchLevel() {
     return squelchLevel;
-}
-
-void DemodulatorThread::setDemodulatorLock(bool demod_lock_in) {
-    demod_lock_in ? currentDemodLock = true : currentDemodLock = false;
-}
-
-int DemodulatorThread::getDemodulatorLock() {
-    return currentDemodLock;
-}
-
-void DemodulatorThread::setDemodulatorCons(int demod_cons_in) {
-    demodulatorCons.store(demod_cons_in);
-}
-
-int DemodulatorThread::getDemodulatorCons() {
-	return currentDemodCons;
-}
-
-void DemodulatorThread::updateDemodulatorLock(modem demod, float sensitivity) {
-	modem_get_demodulator_evm(demod) <= sensitivity ? setDemodulatorLock(true) : setDemodulatorLock(false);
-}
-
-void DemodulatorThread::updateDemodulatorCons(int Cons) {
-	if (currentDemodCons != Cons) {
-		currentDemodCons = Cons;
-	}
 }

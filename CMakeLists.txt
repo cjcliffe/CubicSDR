@@ -236,6 +236,7 @@ SET (cubicsdr_sources
 	src/demod/DemodulatorMgr.cpp
     src/modules/modem/Modem.cpp
     src/modules/modem/ModemAnalog.cpp
+    src/modules/modem/ModemDigital.cpp
     src/modules/modem/digital/ModemASK.cpp
     src/modules/modem/digital/ModemAPSK.cpp
     src/modules/modem/digital/ModemBPSK.cpp
@@ -314,6 +315,7 @@ SET (cubicsdr_headers
 	src/demod/DemodDefs.h
     src/modules/modem/Modem.h
     src/modules/modem/ModemAnalog.h
+    src/modules/modem/ModemDigital.h
     src/modules/modem/digital/ModemASK.h
     src/modules/modem/digital/ModemAPSK.h
     src/modules/modem/digital/ModemBPSK.h

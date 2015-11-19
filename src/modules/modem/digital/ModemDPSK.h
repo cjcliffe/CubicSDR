@@ -1,3 +1,22 @@
 #pragma once
-#include "Modem.h"
+#include "ModemDigital.h"
+
+class ModemDPSK : public ModemDigital {
+public:
+    ModemDPSK();
+    ~ModemDPSK();
+    Modem *factory();
+    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
+    
+private:
+    modem demodDPSK;
+    modem demodDPSK2;
+    modem demodDPSK4;
+    modem demodDPSK8;
+    modem demodDPSK16;
+    modem demodDPSK32;
+    modem demodDPSK64;
+    modem demodDPSK128;
+    modem demodDPSK256;
+};
 
