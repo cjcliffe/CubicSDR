@@ -116,12 +116,14 @@ void DemodulatorThread::run() {
         modemData.setRefCount(1);
         
         AudioThreadInput *ati = NULL;
-        ati = outputBuffers.getBuffer();
         
-        ati->sampleRate = audioSampleRate;
-        ati->inputRate = inp->sampleRate;
-        ati->setRefCount(1);
-        
+        if (cModem->getType() != "digital") {
+            ati = outputBuffers.getBuffer();
+            
+            ati->sampleRate = audioSampleRate;
+            ati->inputRate = inp->sampleRate;
+            ati->setRefCount(1);
+        }
         cModem->demodulate(cModemKit, &modemData, ati);
         
         if (currentSignalLevel > signalLevel) {

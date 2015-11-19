@@ -73,7 +73,6 @@ void DemodulatorInstance::run() {
 //    }
 
     currentFrequency = demodulatorPreThread->getParams().frequency;
-    currentDemodType = demodulatorPreThread->getParams().demodType;
     currentAudioSampleRate = AudioThread::deviceSampleRate[getOutputDevice()];
     demodulatorPreThread->getParams().audioSampleRate = currentAudioSampleRate;
 
@@ -101,6 +100,8 @@ void DemodulatorInstance::run() {
     t_PreDemod = new std::thread(&DemodulatorPreThread::threadMain, demodulatorPreThread);
     t_Demod = new std::thread(&DemodulatorThread::threadMain, demodulatorThread);
 #endif
+
+    setDemodulatorType(demodulatorPreThread->getParams().demodType);
     active = true;
     audioTerminated = demodTerminated = preDemodTerminated = terminated = false;
 
@@ -285,9 +286,9 @@ void DemodulatorInstance::setDemodulatorType(std::string demod_type_in) {
     }
     setGain(getGain());
 
+    demodulatorPreThread->getParams().demodType = currentDemodType;
     if (!active) {
         checkBandwidth();
-        demodulatorPreThread->getParams().demodType = currentDemodType;
     } else if (demodulatorThread && threadQueueControl) {
         demodulatorPreThread->setDemodType(currentDemodType);
     }

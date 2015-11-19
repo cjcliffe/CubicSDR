@@ -52,8 +52,6 @@ void DemodulatorPreThread::run() {
 
     std::cout << "Demodulator preprocessor thread started.." << std::endl;
 
-    t_Worker = new std::thread(&DemodulatorWorkerThread::threadMain, workerThread);
-
     ReBuffer<DemodulatorThreadPostIQData> buffers;
 
     iqInputQueue = (DemodulatorThreadInputQueue*)getInputQueue("IQDataInput");
@@ -65,6 +63,7 @@ void DemodulatorPreThread::run() {
     std::vector<liquid_float_complex> out_buf_data;
 
     setDemodType(params.demodType);
+    t_Worker = new std::thread(&DemodulatorWorkerThread::threadMain, workerThread);
     
     while (!terminated) {
         DemodulatorThreadIQData *inp;
@@ -262,10 +261,11 @@ void DemodulatorPreThread::setDemodType(std::string demodType) {
     command.bandwidth = params.bandwidth;
     command.audioSampleRate = params.audioSampleRate;
     workerQueue->push(command);
+    demodTypeChanged.store(true);
 }
 
 std::string DemodulatorPreThread::getDemodType() {
-    if (newDemodType != demodType) {
+    if (demodTypeChanged.load()) {
         return newDemodType;
     }
     return demodType;
