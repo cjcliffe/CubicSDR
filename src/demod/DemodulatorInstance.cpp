@@ -45,7 +45,6 @@ DemodulatorInstance::DemodulatorInstance() :
     audioThread->setOutputQueue("NotifyQueue", pipeDemodNotify);
 
     currentDemodType = demodulatorPreThread->getParams().demodType;
-    currentDemodCons = demodulatorThread->getDemodulatorCons();
 }
 
 DemodulatorInstance::~DemodulatorInstance() {
@@ -75,7 +74,6 @@ void DemodulatorInstance::run() {
 
     currentFrequency = demodulatorPreThread->getParams().frequency;
     currentDemodType = demodulatorPreThread->getParams().demodType;
-    currentDemodCons = demodulatorThread->getDemodulatorCons();
     currentAudioSampleRate = AudioThread::deviceSampleRate[getOutputDevice()];
     demodulatorPreThread->getParams().audioSampleRate = currentAudioSampleRate;
 
@@ -300,19 +298,35 @@ std::string DemodulatorInstance::getDemodulatorType() {
 }
 
 void DemodulatorInstance::setDemodulatorLock(bool demod_lock_in) {
-    demodulatorThread->setDemodulatorLock(demod_lock_in);
+    Modem *cModem = demodulatorPreThread->getModem();
+    if (cModem && cModem->getType() == "digital") {
+        ((ModemDigital *)cModem)->setDemodulatorLock(demod_lock_in);
+    }
 }
 
 int DemodulatorInstance::getDemodulatorLock() {
-    return demodulatorThread->getDemodulatorLock();
+    Modem *cModem = demodulatorPreThread->getModem();
+
+    if (cModem && cModem->getType() == "digital") {
+        return ((ModemDigital *)cModem)->getDemodulatorLock();
+    }
+
+    return -1;
 }
 
 void DemodulatorInstance::setDemodulatorCons(int demod_cons_in) {
-    demodulatorThread->setDemodulatorCons(demod_cons_in);
+    Modem *cModem = demodulatorPreThread->getModem();
+    if (cModem && cModem->getType() == "digital") {
+        ((ModemDigital *)cModem)->setDemodulatorCons(demod_cons_in);
+    }
 }
 
 int DemodulatorInstance::getDemodulatorCons() {
-    return demodulatorThread->getDemodulatorCons();
+    Modem *cModem = demodulatorPreThread->getModem();
+    if (cModem && cModem->getType() == "digital") {
+        return ((ModemDigital *)cModem)->getDemodulatorCons();
+    }
+    return -1;
 }
 
 void DemodulatorInstance::setBandwidth(int bw) {

@@ -8,6 +8,10 @@ Modem *ModemAM::factory() {
     return new ModemAM;
 }
 
+std::string ModemAM::getName() {
+    return "AM";
+}
+
 void ModemAM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
     ModemKitAnalog *amkit = (ModemKitAnalog *)kit;
     

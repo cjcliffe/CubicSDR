@@ -29,10 +29,13 @@ ModemASK::~ModemASK() {
     modem_destroy(demodASK256);
 }
 
+std::string ModemASK::getName() {
+    return "ASK";
+}
+
 void ModemASK::updateDemodulatorCons(int cons) {
     if (currentDemodCons.load() != cons) {
         currentDemodCons = cons;
-
     }
 }
 

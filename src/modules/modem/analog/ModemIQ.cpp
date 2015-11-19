@@ -13,6 +13,14 @@ ModemKit *ModemIQ::buildKit(long long sampleRate, int audioSampleRate) {
     return kit;
 }
 
+std::string ModemIQ::getType() {
+    return "analog";
+}
+
+std::string ModemIQ::getName() {
+    return "I/Q";
+}
+
 void ModemIQ::disposeKit(ModemKit *kit) {
     delete kit;
 }

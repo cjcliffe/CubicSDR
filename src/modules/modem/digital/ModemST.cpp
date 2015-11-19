@@ -8,6 +8,10 @@ Modem *ModemST::factory() {
     return new ModemST;
 }
 
+std::string ModemST::getName() {
+    return "ST";
+}
+
 ModemST::~ModemST() {
     modem_destroy(demodST);
 }

@@ -12,6 +12,9 @@ ModemOOK::~ModemOOK() {
     modem_destroy(demodOOK);
 }
 
+std::string ModemOOK::getName() {
+    return "OOK";
+}
 
 void ModemOOK::updateDemodulatorCons(int cons) {
     if (currentDemodCons.load() != cons) {

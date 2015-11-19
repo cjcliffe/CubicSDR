@@ -10,6 +10,10 @@ Modem *ModemLSB::factory() {
     return new ModemLSB;
 }
 
+std::string ModemLSB::getName() {
+    return "LSB";
+}
+
 ModemLSB::~ModemLSB() {
     resamp2_crcf_destroy(ssbFilt);
     ampmodem_destroy(demodAM_LSB);

@@ -17,6 +17,10 @@ Modem *ModemQAM::factory() {
     return new ModemQAM;
 }
 
+std::string ModemQAM::getName() {
+    return "QAM";
+}
+
 ModemQAM::~ModemQAM() {
     modem_destroy(demodQAM4);
     modem_destroy(demodQAM8);

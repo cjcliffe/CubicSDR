@@ -24,12 +24,9 @@ public:
     void initialize();
     void terminate();
 
-#ifdef __APPLE__
-    static void *pthread_helper(void *context) {
-        return ((DemodulatorPreThread *) context)->threadMain();
-    }
-#endif
-
+    Modem *getModem();
+    ModemKit *getModemKit();
+    
 protected:
     msresamp_crcf iqResampler;
     double iqResampleRatio;

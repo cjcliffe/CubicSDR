@@ -5,6 +5,7 @@ class ModemQAM : public ModemDigital {
 public:
     ModemQAM();
     ~ModemQAM();
+    std::string getName();
     Modem *factory();
     void updateDemodulatorCons(int cons);
     void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);

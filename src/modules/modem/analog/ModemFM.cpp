@@ -8,6 +8,10 @@ Modem *ModemFM::factory() {
     return new ModemFM;
 }
 
+std::string ModemFM::getName() {
+    return "FM";
+}
+
 void ModemFM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
     ModemKitAnalog *fmkit = (ModemKitAnalog *)kit;
     

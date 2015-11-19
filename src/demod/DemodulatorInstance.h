@@ -7,6 +7,9 @@
 #include "DemodulatorThread.h"
 #include "DemodulatorPreThread.h"
 
+#include "ModemDigital.h"
+#include "ModemAnalog.h"
+
 class DemodulatorInstance {
 public:
 
@@ -112,7 +115,6 @@ private:
     std::atomic_llong currentFrequency;
     std::atomic_int currentBandwidth;
     std::string currentDemodType;
-    std::atomic_int currentDemodCons;
     std::atomic_int currentOutputDevice;
     std::atomic_int currentAudioSampleRate;
     std::atomic<float> currentAudioGain;

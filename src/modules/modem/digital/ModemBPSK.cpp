@@ -12,6 +12,10 @@ ModemBPSK::~ModemBPSK() {
     modem_destroy(demodBPSK);
 }
 
+std::string ModemBPSK::getName() {
+    return "BPSK";
+}
+
 void ModemBPSK::updateDemodulatorCons(int cons) {
     if (currentDemodCons.load() != cons) {
         currentDemodCons = cons;

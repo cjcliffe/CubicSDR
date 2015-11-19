@@ -8,6 +8,10 @@ Modem *ModemDSB::factory() {
     return new ModemDSB;
 }
 
+std::string ModemDSB::getName() {
+    return "DSB";
+}
+
 void ModemDSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
     ModemKitAnalog *amkit = (ModemKitAnalog *)kit;
 

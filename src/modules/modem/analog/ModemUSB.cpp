@@ -10,6 +10,10 @@ Modem *ModemUSB::factory() {
     return new ModemUSB;
 }
 
+std::string ModemUSB::getName() {
+    return "USB";
+}
+
 ModemUSB::~ModemUSB() {
     resamp2_crcf_destroy(ssbFilt);
     ampmodem_destroy(demodAM_USB);

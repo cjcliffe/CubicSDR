@@ -14,7 +14,6 @@ public:
     int audioSampleRate;
 };
 
-
 class ModemIQData: public ReferenceCounter {
 public:
     std::vector<liquid_float_complex> data;
@@ -34,10 +33,11 @@ typedef std::map<std::string,Modem *> ModemFactoryList;
 
 class Modem  {
 public:
-    static void addModemFactory(std::string modemName, Modem *factorySingle);
+    static void addModemFactory(Modem *factorySingle);
     static ModemFactoryList getFactories();
     static Modem *makeModem(std::string modemType);
-    
+    virtual std::string getType() = 0;
+    virtual std::string getName() = 0;
     virtual Modem *factory() = 0;
 
     Modem();

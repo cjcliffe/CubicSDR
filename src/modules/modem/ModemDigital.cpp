@@ -1,6 +1,11 @@
 #include "ModemDigital.h"
 
 ModemDigital::ModemDigital() {
+
+}
+
+std::string ModemDigital::getType() {
+    return "digital";
 }
 
 ModemKit *ModemDigital::buildKit(long long sampleRate, int audioSampleRate) {

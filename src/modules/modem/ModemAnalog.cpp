@@ -4,6 +4,10 @@ ModemAnalog::ModemAnalog() : aOutputCeil(1), aOutputCeilMA(1), aOutputCeilMAA(1)
     
 }
 
+std::string ModemAnalog::getType() {
+    return "analog";
+}
+
 ModemKit *ModemAnalog::buildKit(long long sampleRate, int audioSampleRate) {
     ModemKitAnalog *akit = new ModemKitAnalog;
     

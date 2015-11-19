@@ -164,24 +164,24 @@ bool CubicSDR::OnInit() {
     
     wxApp::SetAppName("CubicSDR");
 
-    Modem::addModemFactory("FM", new ModemFM);
-    Modem::addModemFactory("FMS", new ModemFMStereo);
-    Modem::addModemFactory("AM", new ModemAM);
-    Modem::addModemFactory("LSB", new ModemLSB);
-    Modem::addModemFactory("USB", new ModemUSB);
-    Modem::addModemFactory("DSB", new ModemDSB);
-    Modem::addModemFactory("I/Q", new ModemIQ);
+    Modem::addModemFactory(new ModemFM);
+    Modem::addModemFactory(new ModemFMStereo);
+    Modem::addModemFactory(new ModemAM);
+    Modem::addModemFactory(new ModemLSB);
+    Modem::addModemFactory(new ModemUSB);
+    Modem::addModemFactory(new ModemDSB);
+    Modem::addModemFactory(new ModemIQ);
 
-    Modem::addModemFactory("APSK", new ModemAPSK);
-    Modem::addModemFactory("ASK", new ModemASK);
-    Modem::addModemFactory("BPSK", new ModemBPSK);
-    Modem::addModemFactory("DPSK", new ModemDPSK);
-    Modem::addModemFactory("OOK", new ModemOOK);
-    Modem::addModemFactory("PSK", new ModemPSK);
-    Modem::addModemFactory("QAM", new ModemQAM);
-    Modem::addModemFactory("QPSK", new ModemQPSK);
-    Modem::addModemFactory("SQAM", new ModemSQAM);
-    Modem::addModemFactory("ST", new ModemST);
+    Modem::addModemFactory(new ModemAPSK);
+    Modem::addModemFactory(new ModemASK);
+    Modem::addModemFactory(new ModemBPSK);
+    Modem::addModemFactory(new ModemDPSK);
+    Modem::addModemFactory(new ModemOOK);
+    Modem::addModemFactory(new ModemPSK);
+    Modem::addModemFactory(new ModemQAM);
+    Modem::addModemFactory(new ModemQPSK);
+    Modem::addModemFactory(new ModemSQAM);
+    Modem::addModemFactory(new ModemST);
 
     frequency = wxGetApp().getConfig()->getCenterFreq();
     offset = 0;

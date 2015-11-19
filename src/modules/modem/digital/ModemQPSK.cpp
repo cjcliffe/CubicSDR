@@ -12,6 +12,10 @@ ModemQPSK::~ModemQPSK() {
     modem_destroy(demodQPSK);
 }
 
+std::string ModemQPSK::getName() {
+    return "QPSK";
+}
+
 void ModemQPSK::updateDemodulatorCons(int cons) {
     if (currentDemodCons.load() != cons) {
         currentDemodCons = cons;

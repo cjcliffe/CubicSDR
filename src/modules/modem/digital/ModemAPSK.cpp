@@ -27,6 +27,10 @@ ModemAPSK::~ModemAPSK() {
     modem_destroy(demodAPSK256);
 }
 
+std::string ModemAPSK::getName() {
+    return "APSK";
+}
+
 void ModemAPSK::updateDemodulatorCons(int cons) {
     if (currentDemodCons.load() != cons) {
         currentDemodCons = cons;

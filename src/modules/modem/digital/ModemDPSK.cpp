@@ -18,6 +18,10 @@ Modem *ModemDPSK::factory() {
     return new ModemDPSK;
 }
 
+std::string ModemDPSK::getName() {
+    return "DPSK";
+}
+
 ModemDPSK::~ModemDPSK() {
     modem_destroy(demodDPSK2);
     modem_destroy(demodDPSK4);

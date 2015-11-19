@@ -15,6 +15,7 @@ public:
 class ModemAnalog : public Modem {
 public:
     ModemAnalog();
+    std::string getType();
     ModemKit *buildKit(long long sampleRate, int audioSampleRate);
     void disposeKit(ModemKit *kit);
     void initOutputBuffers(ModemKitAnalog *akit, ModemIQData *input);

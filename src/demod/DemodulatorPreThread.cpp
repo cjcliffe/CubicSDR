@@ -284,3 +284,12 @@ void DemodulatorPreThread::terminate() {
     delete workerResults;
     delete workerQueue;
 }
+
+
+Modem *DemodulatorPreThread::getModem() {
+    return cModem;
+}
+
+ModemKit *DemodulatorPreThread::getModemKit() {
+    return cModemKit;
+}

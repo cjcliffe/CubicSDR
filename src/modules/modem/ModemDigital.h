@@ -12,6 +12,7 @@ public:
 class ModemDigital : public Modem {
 public:
     ModemDigital();
+    std::string getType();
     ModemKit *buildKit(long long sampleRate, int audioSampleRate);
     void disposeKit(ModemKit *kit);
     void digitalStart(ModemKitDigital *kit, modem mod, ModemIQData *input);

@@ -17,6 +17,10 @@ ModemSQAM::~ModemSQAM() {
     modem_destroy(demodSQAM128);
 }
 
+std::string ModemSQAM::getName() {
+    return "SQAM";
+}
+
 void ModemSQAM::updateDemodulatorCons(int cons) {
     if (currentDemodCons.load() != cons) {
         currentDemodCons = cons;

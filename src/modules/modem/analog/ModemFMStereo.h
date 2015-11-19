@@ -20,6 +20,8 @@ class ModemFMStereo : public Modem {
 public:
     ModemFMStereo();
     ~ModemFMStereo();
+    std::string getType();
+    std::string getName();
     Modem *factory();
     ModemKit *buildKit(long long sampleRate, int audioSampleRate);
     void disposeKit(ModemKit *kit);

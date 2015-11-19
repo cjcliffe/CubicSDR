@@ -5,6 +5,7 @@
 class ModemAM : public ModemAnalog {
 public:
     ModemAM();
+    std::string getName();
     Modem *factory();
     void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
     

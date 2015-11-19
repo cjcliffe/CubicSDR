@@ -18,6 +18,14 @@ ModemFMStereo::~ModemFMStereo() {
     nco_crcf_destroy(stereoPilot);
 }
 
+std::string ModemFMStereo::getType() {
+    return "analog";
+}
+
+std::string ModemFMStereo::getName() {
+    return "FMS";
+}
+
 Modem *ModemFMStereo::factory() {
     return new ModemFMStereo;
 }

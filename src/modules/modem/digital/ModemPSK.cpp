@@ -18,6 +18,10 @@ Modem *ModemPSK::factory() {
     return new ModemPSK;
 }
 
+std::string ModemPSK::getName() {
+    return "PSK";
+}
+
 ModemPSK::~ModemPSK() {
     modem_destroy(demodPSK2);
     modem_destroy(demodPSK4);
