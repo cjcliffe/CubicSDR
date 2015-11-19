@@ -1,8 +1,6 @@
 #include "ModemPSK.h"
 
 ModemPSK::ModemPSK() {
-    
-    demodPSK = demodPSK2;
     demodPSK2 = modem_create(LIQUID_MODEM_PSK2);
     demodPSK4 = modem_create(LIQUID_MODEM_PSK4);
     demodPSK8 = modem_create(LIQUID_MODEM_PSK8);
@@ -11,6 +9,7 @@ ModemPSK::ModemPSK() {
     demodPSK64 = modem_create(LIQUID_MODEM_PSK64);
     demodPSK128 = modem_create(LIQUID_MODEM_PSK128);
     demodPSK256 = modem_create(LIQUID_MODEM_PSK256);
+    demodPSK = demodPSK2;
 }
 
 Modem *ModemPSK::factory() {

@@ -8,7 +8,6 @@ Modem *ModemST::factory() {
     return new ModemST;
 }
 
-
 ModemST::~ModemST() {
     modem_destroy(demodST);
 }
