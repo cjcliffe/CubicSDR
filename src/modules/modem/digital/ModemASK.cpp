@@ -10,6 +10,9 @@ ModemASK::ModemASK() {
     demodASK128 = modem_create(LIQUID_MODEM_ASK128);
     demodASK256 = modem_create(LIQUID_MODEM_ASK256);
     demodASK = demodASK2;
+    demodulatorCons.store(2);
+    currentDemodCons.store(0);
+    updateDemodulatorCons(2);
 }
 
 Modem *ModemASK::factory() {
@@ -26,7 +29,15 @@ ModemASK::~ModemASK() {
     modem_destroy(demodASK256);
 }
 
+void ModemASK::updateDemodulatorCons(int cons) {
+    if (currentDemodCons.load() != cons) {
+        currentDemodCons = cons;
+
+    }
+}
+
 void ModemASK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
+    ModemKitDigital *dkit = (ModemKitDigital *)kit;
     
     switch (demodulatorCons.load()) {
         case 2:
@@ -66,8 +77,12 @@ void ModemASK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *a
             break;
     }
     
+    digitalStart(dkit, demodASK, input);
+
     for (int i = 0, bufSize = input->data.size(); i < bufSize; i++) {
         modem_demodulate(demodASK, input->data[i], &demodOutputDataDigital[i]);
     }
     updateDemodulatorLock(demodASK, 0.005f);
+    
+    digitalFinish(dkit, demodASK);
 }

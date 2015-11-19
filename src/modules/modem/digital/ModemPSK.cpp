@@ -9,7 +9,9 @@ ModemPSK::ModemPSK() {
     demodPSK64 = modem_create(LIQUID_MODEM_PSK64);
     demodPSK128 = modem_create(LIQUID_MODEM_PSK128);
     demodPSK256 = modem_create(LIQUID_MODEM_PSK256);
-    demodPSK = demodPSK2;
+    demodulatorCons.store(2);
+    currentDemodCons.store(0);
+    updateDemodulatorCons(2);
 }
 
 Modem *ModemPSK::factory() {
@@ -27,48 +29,59 @@ ModemPSK::~ModemPSK() {
     modem_destroy(demodPSK256);
 }
 
-void ModemPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
-    
-    switch (demodulatorCons.load()) {
-        case 2:
-            demodPSK = demodPSK2;
-            updateDemodulatorCons(2);
-            break;
-        case 4:
-            demodPSK = demodPSK4;
-            updateDemodulatorCons(4);
-            break;
-        case 8:
-            demodPSK = demodPSK8;
-            updateDemodulatorCons(8);
-            break;
-        case 16:
-            demodPSK = demodPSK16;
-            updateDemodulatorCons(16);
-            break;
-        case 32:
-            demodPSK = demodPSK32;
-            updateDemodulatorCons(32);
-            break;
-        case 64:
-            demodPSK = demodPSK64;
-            updateDemodulatorCons(64);
-            break;
-        case 128:
-            demodPSK = demodPSK128;
-            updateDemodulatorCons(128);
-            break;
-        case 256:
-            demodPSK = demodPSK256;
-            updateDemodulatorCons(256);
-            break;
-        default:
-            demodPSK = demodPSK2;
-            break;
+void ModemPSK::updateDemodulatorCons(int cons) {
+    if (currentDemodCons.load() != cons) {
+        currentDemodCons = cons;
+                
+        switch (demodulatorCons.load()) {
+            case 2:
+                demodPSK = demodPSK2;
+                updateDemodulatorCons(2);
+                break;
+            case 4:
+                demodPSK = demodPSK4;
+                updateDemodulatorCons(4);
+                break;
+            case 8:
+                demodPSK = demodPSK8;
+                updateDemodulatorCons(8);
+                break;
+            case 16:
+                demodPSK = demodPSK16;
+                updateDemodulatorCons(16);
+                break;
+            case 32:
+                demodPSK = demodPSK32;
+                updateDemodulatorCons(32);
+                break;
+            case 64:
+                demodPSK = demodPSK64;
+                updateDemodulatorCons(64);
+                break;
+            case 128:
+                demodPSK = demodPSK128;
+                updateDemodulatorCons(128);
+                break;
+            case 256:
+                demodPSK = demodPSK256;
+                updateDemodulatorCons(256);
+                break;
+            default:
+                demodPSK = demodPSK2;
+                break;
+        }
     }
+}
+
+void ModemPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
+    ModemKitDigital *dkit = (ModemKitDigital *)kit;
+
+    digitalStart(dkit, demodPSK, input);
     
     for (int i = 0, bufSize = input->data.size(); i < bufSize; i++) {
         modem_demodulate(demodPSK, input->data[i], &demodOutputDataDigital[i]);
     }
     updateDemodulatorLock(demodPSK, 0.005f);
+    
+    digitalFinish(dkit, demodPSK);
 }

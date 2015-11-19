@@ -14,21 +14,23 @@ public:
     ModemDigital();
     ModemKit *buildKit(long long sampleRate, int audioSampleRate);
     void disposeKit(ModemKit *kit);
+    void digitalStart(ModemKitDigital *kit, modem mod, ModemIQData *input);
+    void digitalFinish(ModemKitDigital *kit, modem mod);
 
-    void setDemodulatorLock(bool demod_lock_in);
-    int getDemodulatorLock();
+    virtual void setDemodulatorLock(bool demod_lock_in);
+    virtual int getDemodulatorLock();
     
-    void setDemodulatorCons(int demod_cons_in);
-    int getDemodulatorCons();
+    virtual void setDemodulatorCons(int demod_cons_in);
+    virtual int getDemodulatorCons();
 
-    void updateDemodulatorCons(int Cons);
-    void updateDemodulatorLock(modem demod, float sensitivity);
+    virtual void updateDemodulatorCons(int cons);
+    virtual void updateDemodulatorLock(modem mod, float sensitivity);
 
 protected:
     std::vector<unsigned int> demodOutputDataDigital;
     std::atomic_int demodulatorCons;
-    bool currentDemodLock;
-    int currentDemodCons;
+    std::atomic_bool currentDemodLock;
+    std::atomic_int currentDemodCons;
         
 //    std::vector<unsigned int> demodOutputDataDigitalTest;    
 //    std::vector<unsigned char> demodOutputSoftbits;
