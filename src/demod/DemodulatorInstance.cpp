@@ -312,7 +312,7 @@ int DemodulatorInstance::getDemodulatorLock() {
         return ((ModemDigital *)cModem)->getDemodulatorLock();
     }
 
-    return -1;
+    return 0;
 }
 
 void DemodulatorInstance::setDemodulatorCons(int demod_cons_in) {
@@ -327,7 +327,7 @@ int DemodulatorInstance::getDemodulatorCons() {
     if (cModem && cModem->getType() == "digital") {
         return ((ModemDigital *)cModem)->getDemodulatorCons();
     }
-    return -1;
+    return 0;
 }
 
 void DemodulatorInstance::setBandwidth(int bw) {

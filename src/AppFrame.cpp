@@ -912,7 +912,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 			}
 #else
             // basic demodulators
-            if (dSelection != -1 && dSelection != demod->getDemodulatorType()) {
+            if (dSelection != "" && dSelection != demod->getDemodulatorType()) {
                 demod->setDemodulatorType(dSelection);
             }
 #endif
@@ -974,7 +974,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 		}
 #else
         // basic demodulators
-        if (dSelection != -1 && dSelection != mgr->getLastDemodulatorType()) {
+        if (dSelection != "" && dSelection != mgr->getLastDemodulatorType()) {
             mgr->setLastDemodulatorType(dSelection);
         }
 #endif
