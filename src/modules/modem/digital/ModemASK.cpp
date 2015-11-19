@@ -36,49 +36,49 @@ std::string ModemASK::getName() {
 void ModemASK::updateDemodulatorCons(int cons) {
     if (currentDemodCons.load() != cons) {
         currentDemodCons = cons;
+        
+        switch (demodulatorCons.load()) {
+            case 2:
+                demodASK = demodASK2;
+                updateDemodulatorCons(2);
+                break;
+            case 4:
+                demodASK = demodASK4;
+                updateDemodulatorCons(4);
+                break;
+            case 8:
+                demodASK = demodASK8;
+                updateDemodulatorCons(8);
+                break;
+            case 16:
+                demodASK = demodASK16;
+                updateDemodulatorCons(16);
+                break;
+            case 32:
+                demodASK = demodASK32;
+                updateDemodulatorCons(32);
+                break;
+            case 64:
+                demodASK = demodASK64;
+                updateDemodulatorCons(64);
+                break;
+            case 128:
+                demodASK = demodASK128;
+                updateDemodulatorCons(128);
+                break;
+            case 256:
+                demodASK = demodASK256;
+                updateDemodulatorCons(256);
+                break;
+            default:
+                demodASK = demodASK2;
+                break;
+        }
     }
 }
 
 void ModemASK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
     ModemKitDigital *dkit = (ModemKitDigital *)kit;
-    
-    switch (demodulatorCons.load()) {
-        case 2:
-            demodASK = demodASK2;
-            updateDemodulatorCons(2);
-            break;
-        case 4:
-            demodASK = demodASK4;
-            updateDemodulatorCons(4);
-            break;
-        case 8:
-            demodASK = demodASK8;
-            updateDemodulatorCons(8);
-            break;
-        case 16:
-            demodASK = demodASK16;
-            updateDemodulatorCons(16);
-            break;
-        case 32:
-            demodASK = demodASK32;
-            updateDemodulatorCons(32);
-            break;
-        case 64:
-            demodASK = demodASK64;
-            updateDemodulatorCons(64);
-            break;
-        case 128:
-            demodASK = demodASK128;
-            updateDemodulatorCons(128);
-            break;
-        case 256:
-            demodASK = demodASK256;
-            updateDemodulatorCons(256);
-            break;
-        default:
-            demodASK = demodASK2;
-            break;
-    }
     
     digitalStart(dkit, demodASK, input);
 
