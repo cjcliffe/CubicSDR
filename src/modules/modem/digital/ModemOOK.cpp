@@ -13,13 +13,9 @@ ModemOOK::~ModemOOK() {
 }
 
 void ModemOOK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
-
-/*
-case DEMOD_TYPE_OOK:
-for (int i = 0; i < bufSize; i++) {
-    modem_demodulate(demodOOK, inp->data[i], &demodOutputDataDigital[i]);
-}
-updateDemodulatorLock(demodOOK, 0.005f);
-break;
-*/
+    
+    for (int i = 0, bufSize=input->data.size(); i < bufSize; i++) {
+        modem_demodulate(demodOOK, input->data[i], &demodOutputDataDigital[i]);
+    }
+    updateDemodulatorLock(demodOOK, 0.005f);
 }

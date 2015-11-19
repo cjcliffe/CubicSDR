@@ -29,9 +29,7 @@ protected:
     std::atomic_int demodulatorCons;
     bool currentDemodLock;
     int currentDemodCons;
-    
-    int bufSize;
-    
+        
 //    std::vector<unsigned int> demodOutputDataDigitalTest;    
 //    std::vector<unsigned char> demodOutputSoftbits;
 //    std::vector<unsigned char> demodOutputSoftbitsTest;

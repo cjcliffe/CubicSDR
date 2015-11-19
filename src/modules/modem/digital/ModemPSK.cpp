@@ -29,52 +29,47 @@ ModemPSK::~ModemPSK() {
 }
 
 void ModemPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
-
-/*
-case DEMOD_TYPE_PSK:
-
-switch (demodulatorCons.load()) {
-    case 2:
-        demodPSK = demodPSK2;
-        updateDemodulatorCons(2);
-        break;
-    case 4:
-        demodPSK = demodPSK4;
-        updateDemodulatorCons(4);
-        break;
-    case 8:
-        demodPSK = demodPSK8;
-        updateDemodulatorCons(8);
-        break;
-    case 16:
-        demodPSK = demodPSK16;
-        updateDemodulatorCons(16);
-        break;
-    case 32:
-        demodPSK = demodPSK32;
-        updateDemodulatorCons(32);
-        break;
-    case 64:
-        demodPSK = demodPSK64;
-        updateDemodulatorCons(64);
-        break;
-    case 128:
-        demodPSK = demodPSK128;
-        updateDemodulatorCons(128);
-        break;
-    case 256:
-        demodPSK = demodPSK256;
-        updateDemodulatorCons(256);
-        break;
-    default:
-        demodPSK = demodPSK2;
-        break;
-}
-
-for (int i = 0; i < bufSize; i++) {
-    modem_demodulate(demodPSK, inp->data[i], &demodOutputDataDigital[i]);
-}
-updateDemodulatorLock(demodPSK, 0.005f);
-break;
-*/
+    
+    switch (demodulatorCons.load()) {
+        case 2:
+            demodPSK = demodPSK2;
+            updateDemodulatorCons(2);
+            break;
+        case 4:
+            demodPSK = demodPSK4;
+            updateDemodulatorCons(4);
+            break;
+        case 8:
+            demodPSK = demodPSK8;
+            updateDemodulatorCons(8);
+            break;
+        case 16:
+            demodPSK = demodPSK16;
+            updateDemodulatorCons(16);
+            break;
+        case 32:
+            demodPSK = demodPSK32;
+            updateDemodulatorCons(32);
+            break;
+        case 64:
+            demodPSK = demodPSK64;
+            updateDemodulatorCons(64);
+            break;
+        case 128:
+            demodPSK = demodPSK128;
+            updateDemodulatorCons(128);
+            break;
+        case 256:
+            demodPSK = demodPSK256;
+            updateDemodulatorCons(256);
+            break;
+        default:
+            demodPSK = demodPSK2;
+            break;
+    }
+    
+    for (int i = 0, bufSize = input->data.size(); i < bufSize; i++) {
+        modem_demodulate(demodPSK, input->data[i], &demodOutputDataDigital[i]);
+    }
+    updateDemodulatorLock(demodPSK, 0.005f);
 }

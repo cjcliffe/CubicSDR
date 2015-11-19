@@ -13,13 +13,9 @@ ModemQPSK::~ModemQPSK() {
 }
 
 void ModemQPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
-
-/*
-case DEMOD_TYPE_QPSK:
-for (int i = 0; i < bufSize; i++) {
-    modem_demodulate(demodQPSK, inp->data[i], &demodOutputDataDigital[i]);
-}
-updateDemodulatorLock(demodQPSK, 0.8f);
-break;
-*/
+    
+    for (int i = 0, bufSize = input->data.size(); i < bufSize; i++) {
+        modem_demodulate(demodQPSK, input->data[i], &demodOutputDataDigital[i]);
+    }
+    updateDemodulatorLock(demodQPSK, 0.8f);
 }

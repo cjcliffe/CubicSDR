@@ -26,9 +26,6 @@ ModemAPSK::~ModemAPSK() {
 }
 
 void ModemAPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
-/*
- case DEMOD_TYPE_APSK:
-    
     switch (demodulatorCons.load()) {
         case 2:
             demodAPSK = demodAPSK4;
@@ -67,10 +64,8 @@ void ModemAPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *
             break;
     }
     
-    for (int i = 0; i < bufSize; i++) {
-        modem_demodulate(demodAPSK, inp->data[i], &demodOutputDataDigital[i]);
+    for (int i = 0, bufSize = input->data.size(); i < bufSize; i++) {
+        modem_demodulate(demodAPSK, input->data[i], &demodOutputDataDigital[i]);
     }
     updateDemodulatorLock(demodAPSK, 0.005f);
-    break;
-*/
 }

@@ -26,52 +26,48 @@ ModemQAM::~ModemQAM() {
 }
 
 void ModemQAM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
-
-/*
-case DEMOD_TYPE_QAM:
-
-switch (demodulatorCons.load()) {
-    case 2:
-        demodQAM = demodQAM4;
-        updateDemodulatorCons(4);
-        break;
-    case 4:
-        demodQAM = demodQAM4;
-        updateDemodulatorCons(4);
-        break;
-    case 8:
-        demodQAM = demodQAM8;
-        updateDemodulatorCons(8);
-        break;
-    case 16:
-        demodQAM = demodQAM16;
-        updateDemodulatorCons(16);
-        break;
-    case 32:
-        demodQAM = demodQAM32;
-        updateDemodulatorCons(32);
-        break;
-    case 64:
-        demodQAM = demodQAM64;
-        updateDemodulatorCons(64);
-        break;
-    case 128:
-        demodQAM = demodQAM128;
-        updateDemodulatorCons(128);
-        break;
-    case 256:
-        demodQAM = demodQAM256;
-        updateDemodulatorCons(256);
-        break;
-    default:
-        demodQAM = demodQAM4;
-        break;
-}
-
-for (int i = 0; i < bufSize; i++) {
-    modem_demodulate(demodQAM, inp->data[i], &demodOutputDataDigital[i]);
-}
-updateDemodulatorLock(demodQAM, 0.5f);
-break;
-*/
+    
+    
+    switch (demodulatorCons.load()) {
+        case 2:
+            demodQAM = demodQAM4;
+            updateDemodulatorCons(4);
+            break;
+        case 4:
+            demodQAM = demodQAM4;
+            updateDemodulatorCons(4);
+            break;
+        case 8:
+            demodQAM = demodQAM8;
+            updateDemodulatorCons(8);
+            break;
+        case 16:
+            demodQAM = demodQAM16;
+            updateDemodulatorCons(16);
+            break;
+        case 32:
+            demodQAM = demodQAM32;
+            updateDemodulatorCons(32);
+            break;
+        case 64:
+            demodQAM = demodQAM64;
+            updateDemodulatorCons(64);
+            break;
+        case 128:
+            demodQAM = demodQAM128;
+            updateDemodulatorCons(128);
+            break;
+        case 256:
+            demodQAM = demodQAM256;
+            updateDemodulatorCons(256);
+            break;
+        default:
+            demodQAM = demodQAM4;
+            break;
+    }
+    
+    for (int i = 0, bufSize = input->data.size(); i < bufSize; i++) {
+        modem_demodulate(demodQAM, input->data[i], &demodOutputDataDigital[i]);
+    }
+    updateDemodulatorLock(demodQAM, 0.5f);
 }

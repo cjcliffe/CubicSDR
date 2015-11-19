@@ -28,52 +28,47 @@ ModemDPSK::~ModemDPSK() {
 }
 
 void ModemDPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
-
-/*
-case DEMOD_TYPE_DPSK:
-
-switch (demodulatorCons.load()) {
-    case 2:
-        demodDPSK = demodDPSK2;
-        updateDemodulatorCons(2);
-        break;
-    case 4:
-        demodDPSK = demodDPSK4;
-        updateDemodulatorCons(4);
-        break;
-    case 8:
-        demodDPSK = demodDPSK8;
-        updateDemodulatorCons(8);
-        break;
-    case 16:
-        demodDPSK = demodDPSK16;
-        updateDemodulatorCons(16);
-        break;
-    case 32:
-        demodDPSK = demodDPSK32;
-        updateDemodulatorCons(32);
-        break;
-    case 64:
-        demodDPSK = demodDPSK64;
-        updateDemodulatorCons(64);
-        break;
-    case 128:
-        demodDPSK = demodDPSK128;
-        updateDemodulatorCons(128);
-        break;
-    case 256:
-        demodDPSK = demodDPSK256;
-        updateDemodulatorCons(256);
-        break;
-    default:
-        demodDPSK = demodDPSK2;
-        break;
-}
-
-for (int i = 0; i < bufSize; i++) {
-    modem_demodulate(demodDPSK, inp->data[i], &demodOutputDataDigital[i]);
-}
-updateDemodulatorLock(demodDPSK, 0.005f);
-break;
-*/
+    
+    switch (demodulatorCons.load()) {
+        case 2:
+            demodDPSK = demodDPSK2;
+            updateDemodulatorCons(2);
+            break;
+        case 4:
+            demodDPSK = demodDPSK4;
+            updateDemodulatorCons(4);
+            break;
+        case 8:
+            demodDPSK = demodDPSK8;
+            updateDemodulatorCons(8);
+            break;
+        case 16:
+            demodDPSK = demodDPSK16;
+            updateDemodulatorCons(16);
+            break;
+        case 32:
+            demodDPSK = demodDPSK32;
+            updateDemodulatorCons(32);
+            break;
+        case 64:
+            demodDPSK = demodDPSK64;
+            updateDemodulatorCons(64);
+            break;
+        case 128:
+            demodDPSK = demodDPSK128;
+            updateDemodulatorCons(128);
+            break;
+        case 256:
+            demodDPSK = demodDPSK256;
+            updateDemodulatorCons(256);
+            break;
+        default:
+            demodDPSK = demodDPSK2;
+            break;
+    }
+    
+    for (int i = 0, bufSize = input->data.size(); i < bufSize; i++) {
+        modem_demodulate(demodDPSK, input->data[i], &demodOutputDataDigital[i]);
+    }
+    updateDemodulatorLock(demodDPSK, 0.005f);
 }

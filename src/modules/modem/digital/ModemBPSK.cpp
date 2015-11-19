@@ -2,7 +2,7 @@
 
 ModemBPSK::ModemBPSK() {
     demodBPSK = modem_create(LIQUID_MODEM_BPSK);
-
+    
 }
 
 Modem *ModemBPSK::factory() {
@@ -14,12 +14,8 @@ ModemBPSK::~ModemBPSK() {
 }
 
 void ModemBPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
-/*
-case DEMOD_TYPE_BPSK:
-for (int i = 0; i < bufSize; i++) {
-    modem_demodulate(demodBPSK, inp->data[i], &demodOutputDataDigital[i]);
-}
-updateDemodulatorLock(demodBPSK, 0.005f);
-break;
-*/
+    for (int i = 0, bufSize=input->data.size(); i < bufSize; i++) {
+        modem_demodulate(demodBPSK, input->data[i], &demodOutputDataDigital[i]);
+    }
+    updateDemodulatorLock(demodBPSK, 0.005f);
 }

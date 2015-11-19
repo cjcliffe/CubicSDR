@@ -14,14 +14,9 @@ ModemST::~ModemST() {
 }
 
 void ModemST::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
-
-/*
-case DEMOD_TYPE_ST:
-for (int i = 0; i < bufSize; i++) {
-    modem_demodulate(demodST, inp->data[i], &demodOutputDataDigital[i]);
-}
-updateDemodulatorLock(demodST, 0.005f);
-break;
-
-*/
+    
+    for (int i = 0, bufSize = input->data.size(); i < bufSize; i++) {
+        modem_demodulate(demodST, input->data[i], &demodOutputDataDigital[i]);
+    }
+    updateDemodulatorLock(demodST, 0.005f);
 }
