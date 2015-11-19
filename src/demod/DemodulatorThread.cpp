@@ -13,13 +13,15 @@
 #endif
 
 DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent) : IOThread(), iqAutoGain(NULL), audioSampleRate(0), squelchLevel(0), signalLevel(0), squelchEnabled(false), iqInputQueue(NULL), audioOutputQueue(NULL), audioVisOutputQueue(NULL), threadQueueControl(NULL), threadQueueNotify(NULL), cModem(nullptr), cModemKit(nullptr) {
-
+    
     demodInstance = parent;
     muted.store(false);
-	agcEnabled.store(false);
-
+    agcEnabled.store(false);
+    
 }
+
 DemodulatorThread::~DemodulatorThread() {
+    
 }
 
 void DemodulatorThread::onBindOutput(std::string name, ThreadQueueBase *threadQueue) {
@@ -35,36 +37,36 @@ void DemodulatorThread::run() {
     sched_param prio = {priority}; // scheduling priority of thread
     pthread_setschedparam(tID, SCHED_FIFO, &prio);
 #endif
-
+    
     // Automatic IQ gain
     iqAutoGain = agc_crcf_create();
     agc_crcf_set_bandwidth(iqAutoGain, 0.1);
-
+    
     ReBuffer<AudioThreadInput> audioVisBuffers;
-
+    
     std::cout << "Demodulator thread started.." << std::endl;
-
+    
     iqInputQueue = (DemodulatorThreadPostInputQueue*)getInputQueue("IQDataInput");
     audioOutputQueue = (AudioThreadInputQueue*)getOutputQueue("AudioDataOutput");
     threadQueueControl = (DemodulatorThreadControlCommandQueue *)getInputQueue("ControlQueue");
     threadQueueNotify = (DemodulatorThreadCommandQueue*)getOutputQueue("NotifyQueue");
-   
+    
     ModemIQData modemData;
     
     while (!terminated) {
         DemodulatorThreadPostIQData *inp;
         iqInputQueue->pop(inp);
-//        std::lock_guard < std::mutex > lock(inp->m_mutex);
-
+        //        std::lock_guard < std::mutex > lock(inp->m_mutex);
+        
         audioSampleRate = demodInstance->getAudioSampleRate();
         
         int bufSize = inp->data.size();
-
+        
         if (!bufSize) {
             inp->decRefCount();
             continue;
         }
-
+        
         if (inp->modemKit && inp->modemKit != cModemKit) {
             if (cModemKit != nullptr) {
                 cModem->disposeKit(cModemKit);
@@ -90,23 +92,23 @@ void DemodulatorThread::run() {
             agcData.resize(bufSize);
             agcAMData.resize(bufSize);
         }
-
+        
         agc_crcf_execute_block(iqAutoGain, &(inp->data[0]), bufSize, &agcData[0]);
-
+        
         float currentSignalLevel = 0;
-
+        
         currentSignalLevel = ((60.0 / fabs(agc_crcf_get_rssi(iqAutoGain))) / 15.0 - signalLevel);
-
+        
         if (agc_crcf_get_signal_level(iqAutoGain) > currentSignalLevel) {
             currentSignalLevel = agc_crcf_get_signal_level(iqAutoGain);
         }
-
+        
         std::vector<liquid_float_complex> *inputData;
-
+        
         if (agcEnabled) {
-        	inputData = &agcData;
+            inputData = &agcData;
         } else {
-        	inputData = &inp->data;
+            inputData = &inp->data;
         }
         
         modemData.sampleRate = inp->sampleRate;
@@ -119,15 +121,15 @@ void DemodulatorThread::run() {
         ati->sampleRate = audioSampleRate;
         ati->inputRate = inp->sampleRate;
         ati->setRefCount(1);
-
+        
         cModem->demodulate(cModemKit, &modemData, ati);
-
+        
         if (currentSignalLevel > signalLevel) {
             signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.5;
         } else {
             signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.05;
         }
-
+        
         if (audioOutputQueue != NULL) {
             if (ati && (!squelchEnabled || (signalLevel >= squelchLevel))) {
                 std::vector<float>::iterator data_i;
@@ -140,10 +142,10 @@ void DemodulatorThread::run() {
                 }
             }
         }
-
+        
         if (ati && audioVisOutputQueue != NULL && audioVisOutputQueue->empty()) {
-			AudioThreadInput *ati_vis = audioVisBuffers.getBuffer();
-			ati_vis->setRefCount(1);
+            AudioThreadInput *ati_vis = audioVisBuffers.getBuffer();
+            ati_vis->setRefCount(1);
             ati_vis->sampleRate = inp->sampleRate;
             ati_vis->inputRate = inp->sampleRate;
             
@@ -154,9 +156,9 @@ void DemodulatorThread::run() {
                 if (stereoSize > DEMOD_VIS_SIZE * 2) {
                     stereoSize = DEMOD_VIS_SIZE * 2;
                 }
-
+                
                 ati_vis->data.resize(stereoSize);
-
+                
                 if (inp->modemType == "I/Q") {
                     for (int i = 0; i < stereoSize / 2; i++) {
                         ati_vis->data[i] = agcData[i].real * 0.75;
@@ -173,25 +175,25 @@ void DemodulatorThread::run() {
             } else {
                 int numAudioWritten = ati->data.size();
                 ati_vis->channels = 1;
-//                if (numAudioWritten > bufSize) {
-                    ati_vis->inputRate = audioSampleRate;
-                    if (num_vis > numAudioWritten) {
-                        num_vis = numAudioWritten;
-                    }
-                    ati_vis->data.assign(ati->data.begin(), ati->data.begin() + num_vis);
-//                } else {
-//                    if (num_vis > bufSize) {
-//                        num_vis = bufSize;
-//                    }
-//                    ati_vis->data.assign(ati->data.begin(), ati->data.begin() + num_vis);
-//                }
-
-//            std::cout << "Signal: " << agc_crcf_get_signal_level(agc) << " -- " << agc_crcf_get_rssi(agc) << "dB " << std::endl;
+                //                if (numAudioWritten > bufSize) {
+                ati_vis->inputRate = audioSampleRate;
+                if (num_vis > numAudioWritten) {
+                    num_vis = numAudioWritten;
+                }
+                ati_vis->data.assign(ati->data.begin(), ati->data.begin() + num_vis);
+                //                } else {
+                //                    if (num_vis > bufSize) {
+                //                        num_vis = bufSize;
+                //                    }
+                //                    ati_vis->data.assign(ati->data.begin(), ati->data.begin() + num_vis);
+                //                }
+                
+                //            std::cout << "Signal: " << agc_crcf_get_signal_level(agc) << " -- " << agc_crcf_get_rssi(agc) << "dB " << std::endl;
             }
-
+            
             audioVisOutputQueue->push(ati_vis);
         }
-
+        
         
         if (ati != NULL) {
             if (!muted.load()) {
@@ -200,38 +202,37 @@ void DemodulatorThread::run() {
                 ati->setRefCount(0);
             }
         }
-
+        
         if (!threadQueueControl->empty()) {
             while (!threadQueueControl->empty()) {
                 DemodulatorThreadControlCommand command;
                 threadQueueControl->pop(command);
-
+                
                 switch (command.cmd) {
-                case DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_ON:
-                    squelchEnabled = true;
-                    break;
-                case DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_OFF:
-                    squelchEnabled = false;
-                    break;
-                default:
-                    break;
+                    case DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_ON:
+                        squelchEnabled = true;
+                        break;
+                    case DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_OFF:
+                        squelchEnabled = false;
+                        break;
+                    default:
+                        break;
                 }
             }
         }
-
-
+        
         inp->decRefCount();
     }
-	// end while !terminated
+    // end while !terminated
     
     outputBuffers.purge();
-
+    
     if (audioVisOutputQueue && !audioVisOutputQueue->empty()) {
         AudioThreadInput *dummy_vis;
         audioVisOutputQueue->pop(dummy_vis);
     }
-	audioVisBuffers.purge();
-
+    audioVisBuffers.purge();
+    
     DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_TERMINATED);
     tCmd.context = this;
     threadQueueNotify->push(tCmd);
@@ -254,13 +255,12 @@ void DemodulatorThread::setMuted(bool muted) {
 }
 
 void DemodulatorThread::setAGC(bool state) {
-	agcEnabled.store(state);
+    agcEnabled.store(state);
 }
 
 bool DemodulatorThread::getAGC() {
-	return agcEnabled.load();
+    return agcEnabled.load();
 }
-
 
 float DemodulatorThread::getSignalLevel() {
     return signalLevel.load();

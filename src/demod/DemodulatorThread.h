@@ -33,13 +33,6 @@ public:
     void setSquelchLevel(float signal_level_in);
     float getSquelchLevel();
 
-//
-//#ifdef __APPLE__
-//    static void *pthread_helper(void *context) {
-//        return ((DemodulatorThread *) context)->threadMain();
-//    }
-//#endif
-
 protected:
     DemodulatorInstance *demodInstance;
     ReBuffer<AudioThreadInput> outputBuffers;
