@@ -1,10 +1,6 @@
 #include "ModemDigital.h"
 
 ModemDigital::ModemDigital() {
-    demodulatorCons.store(2);
-    // Reset demodulator Constellations & Lock
-    updateDemodulatorCons(0);
-    currentDemodLock.store(false);
 }
 
 ModemKit *ModemDigital::buildKit(long long sampleRate, int audioSampleRate) {
@@ -21,7 +17,6 @@ void ModemDigital::disposeKit(ModemKit *kit) {
     
     delete dkit;
 }
-
 
 void ModemDigital::setDemodulatorLock(bool demod_lock_in) {
     currentDemodLock.store(demod_lock_in);
@@ -40,7 +35,7 @@ int ModemDigital::getDemodulatorCons() {
 }
 
 void ModemDigital::updateDemodulatorLock(modem mod, float sensitivity) {
-    modem_get_demodulator_evm(mod) <= sensitivity ? setDemodulatorLock(true) : setDemodulatorLock(false);
+    setDemodulatorLock(modem_get_demodulator_evm(mod) <= sensitivity);
 }
 
 void ModemDigital::updateDemodulatorCons(int cons) {
