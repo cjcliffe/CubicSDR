@@ -7,7 +7,7 @@
 
 DemodulatorMgr::DemodulatorMgr() :
         activeDemodulator(NULL), lastActiveDemodulator(NULL), activeVisualDemodulator(NULL), lastBandwidth(DEFAULT_DEMOD_BW), lastDemodType(
-                DEFAULT_DEMOD_TYPE), lastSquelchEnabled(false), lastSquelch(0), lastGain(1.0), lastStereo(false), lastMuted(false) {
+                DEFAULT_DEMOD_TYPE), lastSquelchEnabled(false), lastSquelch(0), lastGain(1.0), lastMuted(false) {
 
 }
 
@@ -76,7 +76,7 @@ std::vector<DemodulatorInstance *> *DemodulatorMgr::getDemodulatorsAt(long long 
 
         long long halfBuffer = bandwidth / 2;
 
-        if ((freq <= (freqTest + ((testDemod->getDemodulatorType() != DEMOD_TYPE_LSB)?halfBandwidthTest:0) + halfBuffer)) && (freq >= (freqTest - ((testDemod->getDemodulatorType() != DEMOD_TYPE_USB)?halfBandwidthTest:0) - halfBuffer))) {
+        if ((freq <= (freqTest + ((testDemod->getDemodulatorType() != "LSB")?halfBandwidthTest:0) + halfBuffer)) && (freq >= (freqTest - ((testDemod->getDemodulatorType() != "USB")?halfBandwidthTest:0) - halfBuffer))) {
             foundDemods->push_back(testDemod);
         }
     }
@@ -166,7 +166,6 @@ void DemodulatorMgr::updateLastState() {
         lastSquelchEnabled = lastActiveDemodulator->isSquelchEnabled();
         lastSquelch = lastActiveDemodulator->getSquelchLevel();
         lastGain = lastActiveDemodulator->getGain();
-        lastStereo = lastActiveDemodulator->isStereo();
     }
 
 }
@@ -184,11 +183,11 @@ void DemodulatorMgr::setLastBandwidth(int lastBandwidth) {
     this->lastBandwidth = lastBandwidth;
 }
 
-int DemodulatorMgr::getLastDemodulatorType() const {
+std::string DemodulatorMgr::getLastDemodulatorType() const {
     return lastDemodType;
 }
 
-void DemodulatorMgr::setLastDemodulatorType(int lastDemodType) {
+void DemodulatorMgr::setLastDemodulatorType(std::string lastDemodType) {
     this->lastDemodType = lastDemodType;
 }
 
@@ -223,15 +222,6 @@ bool DemodulatorMgr::isLastSquelchEnabled() const {
 void DemodulatorMgr::setLastSquelchEnabled(bool lastSquelchEnabled) {
     this->lastSquelchEnabled = lastSquelchEnabled;
 }
-
-bool DemodulatorMgr::isLastStereo() const {
-    return lastStereo;
-}
-
-void DemodulatorMgr::setLastStereo(bool lastStereo) {
-    this->lastStereo = lastStereo;
-}
-
 
 bool DemodulatorMgr::isLastMuted() const {
     return lastMuted;

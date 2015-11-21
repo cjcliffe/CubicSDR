@@ -67,28 +67,29 @@ AppFrame::AppFrame() :
     gainSpacerItem->Show(false);
             
     demodModeSelector = new ModeSelectorCanvas(demodPanel, attribList);
-    demodModeSelector->addChoice(DEMOD_TYPE_FM, "FM");
-    demodModeSelector->addChoice(DEMOD_TYPE_AM, "AM");
-    demodModeSelector->addChoice(DEMOD_TYPE_LSB, "LSB");
-    demodModeSelector->addChoice(DEMOD_TYPE_USB, "USB");
-    demodModeSelector->addChoice(DEMOD_TYPE_DSB, "DSB");
-    demodModeSelector->addChoice(DEMOD_TYPE_RAW, "I/Q");
-    demodModeSelector->setSelection(DEMOD_TYPE_FM);
+    demodModeSelector->addChoice(0, "FM");
+    demodModeSelector->addChoice(1, "FMS");
+    demodModeSelector->addChoice(2, "AM");
+    demodModeSelector->addChoice(3, "LSB");
+    demodModeSelector->addChoice(4, "USB");
+    demodModeSelector->addChoice(5, "DSB");
+    demodModeSelector->addChoice(6, "I/Q");
+    demodModeSelector->setSelection("FM");
     demodModeSelector->setHelpTip("Choose modulation type: Frequency Modulation, Amplitude Modulation and Lower, Upper or Double Side-Band.");
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
     
 #ifdef ENABLE_DIGITAL_LAB
     demodModeSelectorAdv = new ModeSelectorCanvas(this, attribList);
-    demodModeSelectorAdv->addChoice(DEMOD_TYPE_ASK, "ASK");
-    demodModeSelectorAdv->addChoice(DEMOD_TYPE_APSK, "APSK");
-    demodModeSelectorAdv->addChoice(DEMOD_TYPE_BPSK, "BPSK");
-    demodModeSelectorAdv->addChoice(DEMOD_TYPE_DPSK, "DPSK");
-    demodModeSelectorAdv->addChoice(DEMOD_TYPE_PSK, "PSK");
-    demodModeSelectorAdv->addChoice(DEMOD_TYPE_OOK, "OOK");
-    demodModeSelectorAdv->addChoice(DEMOD_TYPE_ST, "ST");
-    demodModeSelectorAdv->addChoice(DEMOD_TYPE_SQAM, "SQAM");
-    demodModeSelectorAdv->addChoice(DEMOD_TYPE_QAM, "QAM");
-    demodModeSelectorAdv->addChoice(DEMOD_TYPE_QPSK, "QPSK");
+    demodModeSelectorAdv->addChoice(0, "ASK");
+    demodModeSelectorAdv->addChoice(1, "APSK");
+    demodModeSelectorAdv->addChoice(2, "BPSK");
+    demodModeSelectorAdv->addChoice(3, "DPSK");
+    demodModeSelectorAdv->addChoice(4, "PSK");
+    demodModeSelectorAdv->addChoice(5, "OOK");
+    demodModeSelectorAdv->addChoice(6, "ST");
+    demodModeSelectorAdv->addChoice(7, "SQAM");
+    demodModeSelectorAdv->addChoice(8, "QAM");
+    demodModeSelectorAdv->addChoice(9, "QPSK");
     demodModeSelectorAdv->setHelpTip("Choose advanced modulation types.");
     demodTray->Add(demodModeSelectorAdv, 3, wxEXPAND | wxALL, 0);
     
@@ -638,10 +639,9 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
     } else if (event.GetId() == wxID_RESET) {
         wxGetApp().getDemodMgr().terminateAll();
         wxGetApp().setFrequency(100000000);
-        wxGetApp().getDemodMgr().setLastDemodulatorType(DEMOD_TYPE_FM);
+        wxGetApp().getDemodMgr().setLastDemodulatorType("FM");
         demodModeSelector->setSelection(1);
         wxGetApp().getDemodMgr().setLastMuted(false);
-        wxGetApp().getDemodMgr().setLastStereo(false);
         wxGetApp().getDemodMgr().setLastBandwidth(DEFAULT_DEMOD_BW);
         wxGetApp().getDemodMgr().setLastGain(1.0);
         wxGetApp().getDemodMgr().setLastSquelchLevel(0);
@@ -855,7 +855,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             int outputDevice = demod->getOutputDevice();
             scopeCanvas->setDeviceName(outputDevices[outputDevice].name);
             outputDeviceMenuItems[outputDevice]->Check(true);
-            int dType = demod->getDemodulatorType();
+            std::string dType = demod->getDemodulatorType();
             demodModeSelector->setSelection(dType);
 #ifdef ENABLE_DIGITAL_LAB
             int dCons = demod->getDemodulatorCons();
@@ -868,12 +868,12 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             long long centerFreq = demod->getFrequency();
             unsigned int demodBw = (unsigned int) ceil((float) demod->getBandwidth() * 2.25);
 
-            if (demod->getDemodulatorType() == DEMOD_TYPE_USB) {
+            if (demod->getDemodulatorType() == "USB") {
                 demodBw /= 2;
                 centerFreq += demod->getBandwidth() / 4;
             }
 
-            if (demod->getDemodulatorType() == DEMOD_TYPE_LSB) {
+            if (demod->getDemodulatorType() == "LSB") {
                 demodBw /= 2;
                 centerFreq -= demod->getBandwidth() / 4;
             }
@@ -889,18 +889,18 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
                 demodWaterfallCanvas->setCenterFrequency(centerFreq);
                 demodSpectrumCanvas->setCenterFrequency(centerFreq);
             }
-            int dSelection = demodModeSelector->getSelection();
+            std::string dSelection = demodModeSelector->getSelectionLabel();
 #ifdef ENABLE_DIGITAL_LAB
-            int dSelectionadv = demodModeSelectorAdv->getSelection();
+            std::string dSelectionadv = demodModeSelectorAdv->getSelectionLabel();
 			int dSelectionCons = demodModeSelectorCons->getSelection();
 
             // basic demodulators
-            if (dSelection != -1 && dSelection != demod->getDemodulatorType()) {
+            if (dSelection != "" && dSelection != demod->getDemodulatorType()) {
                 demod->setDemodulatorType(dSelection);
                 demodModeSelectorAdv->setSelection(-1);
             }
             // advanced demodulators
-			else if (dSelectionadv != -1 && dSelectionadv != demod->getDemodulatorType()) {
+			else if (dSelectionadv != "" && dSelectionadv != demod->getDemodulatorType()) {
 				demod->setDemodulatorType(dSelectionadv);
 				demodModeSelector->setSelection(-1);
             }
@@ -911,7 +911,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 			}
 #else
             // basic demodulators
-            if (dSelection != -1 && dSelection != demod->getDemodulatorType()) {
+            if (dSelection != "" && dSelection != demod->getDemodulatorType()) {
                 demod->setDemodulatorType(dSelection);
             }
 #endif
@@ -951,18 +951,18 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     } else {
         DemodulatorMgr *mgr = &wxGetApp().getDemodMgr();
 
-        int dSelection = demodModeSelector->getSelection();
+        std::string dSelection = demodModeSelector->getSelectionLabel();
 #ifdef ENABLE_DIGITAL_LAB
-        int dSelectionadv = demodModeSelectorAdv->getSelection();
+        std::string dSelectionadv = demodModeSelectorAdv->getSelectionLabel();
 		int dSelectionCons = demodModeSelectorCons->getSelection();
 
         // basic demodulators
-        if (dSelection != -1 && dSelection != mgr->getLastDemodulatorType()) {
+        if (dSelection != "" && dSelection != mgr->getLastDemodulatorType()) {
             mgr->setLastDemodulatorType(dSelection);
             demodModeSelectorAdv->setSelection(-1);
         }
         // advanced demodulators
-        else if(dSelectionadv != -1 && dSelectionadv != mgr->getLastDemodulatorType()) {
+        else if(dSelectionadv != "" && dSelectionadv != mgr->getLastDemodulatorType()) {
             mgr->setLastDemodulatorType(dSelectionadv);
             demodModeSelector->setSelection(-1);
         }
@@ -973,7 +973,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 		}
 #else
         // basic demodulators
-        if (dSelection != -1 && dSelection != mgr->getLastDemodulatorType()) {
+        if (dSelection != "" && dSelection != mgr->getLastDemodulatorType()) {
             mgr->setLastDemodulatorType(dSelection);
         }
 #endif
@@ -1128,7 +1128,6 @@ void AppFrame::saveSession(std::string fileName) {
         *demod->newChild("type") = (*instance_i)->getDemodulatorType();
         *demod->newChild("squelch_level") = (*instance_i)->getSquelchLevel();
         *demod->newChild("squelch_enabled") = (*instance_i)->isSquelchEnabled() ? 1 : 0;
-        *demod->newChild("stereo") = (*instance_i)->isStereo() ? 1 : 0;
         *demod->newChild("output_device") = outputDevices[(*instance_i)->getOutputDevice()].name;
         *demod->newChild("gain") = (*instance_i)->getGain();
         *demod->newChild("muted") = (*instance_i)->isMuted() ? 1 : 0;
@@ -1175,13 +1174,31 @@ bool AppFrame::loadSession(std::string fileName) {
 
             long bandwidth = *demod->getNext("bandwidth");
             long long freq = *demod->getNext("frequency");
-            int type = demod->hasAnother("type") ? *demod->getNext("type") : DEMOD_TYPE_FM;
+            std::string type = demod->hasAnother("type") ? string(*demod->getNext("type")) : "FM";
             float squelch_level = demod->hasAnother("squelch_level") ? (float) *demod->getNext("squelch_level") : 0;
             int squelch_enabled = demod->hasAnother("squelch_enabled") ? (int) *demod->getNext("squelch_enabled") : 0;
-            int stereo = demod->hasAnother("stereo") ? (int) *demod->getNext("stereo") : 0;
             int muted = demod->hasAnother("muted") ? (int) *demod->getNext("muted") : 0;
             std::string output_device = demod->hasAnother("output_device") ? string(*(demod->getNext("output_device"))) : "";
             float gain = demod->hasAnother("gain") ? (float) *demod->getNext("gain") : 1.0;
+
+            // TODO: Check if "type" is numeric and perform update to new values
+            //#define DEMOD_TYPE_NULL 0
+            //#define DEMOD_TYPE_FM 1
+            //#define DEMOD_TYPE_AM 2
+            //#define DEMOD_TYPE_LSB 3
+            //#define DEMOD_TYPE_USB 4
+            //#define DEMOD_TYPE_DSB 5
+            //#define DEMOD_TYPE_ASK 6
+            //#define DEMOD_TYPE_APSK 7
+            //#define DEMOD_TYPE_BPSK 8
+            //#define DEMOD_TYPE_DPSK 9
+            //#define DEMOD_TYPE_PSK 10
+            //#define DEMOD_TYPE_OOK 11
+            //#define DEMOD_TYPE_ST 12
+            //#define DEMOD_TYPE_SQAM 13
+            //#define DEMOD_TYPE_QAM 14
+            //#define DEMOD_TYPE_QPSK 15
+            //#define DEMOD_TYPE_RAW 16
 
             DemodulatorInstance *newDemod = wxGetApp().getDemodMgr().newThread();
             loadedDemod = newDemod;
@@ -1196,10 +1213,7 @@ bool AppFrame::loadSession(std::string fileName) {
                 newDemod->setSquelchEnabled(true);
                 newDemod->setSquelchLevel(squelch_level);
             }
-            if (stereo) {
-                newDemod->setStereo(true);
-            }
-
+            
             bool found_device = false;
             std::map<int, RtAudio::DeviceInfo>::iterator i;
             for (i = outputDevices.begin(); i != outputDevices.end(); i++) {
@@ -1221,7 +1235,6 @@ bool AppFrame::loadSession(std::string fileName) {
             std::cout << "\t\tBandwidth: " << bandwidth << std::endl;
             std::cout << "\t\tSquelch Level: " << squelch_level << std::endl;
             std::cout << "\t\tSquelch Enabled: " << (squelch_enabled ? "true" : "false") << std::endl;
-            std::cout << "\t\tStereo: " << (stereo ? "true" : "false") << std::endl;
             std::cout << "\t\tOutput Device: " << output_device << std::endl;
         }
         

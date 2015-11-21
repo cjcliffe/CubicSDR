@@ -8,7 +8,7 @@
 #include "DemodulatorPreThread.h"
 #include "CubicSDR.h"
 
-DemodulatorPreThread::DemodulatorPreThread() : IOThread(), iqResampler(NULL), iqResampleRatio(1), audioResampler(NULL), stereoResampler(NULL), audioResampleRatio(1), firStereoLeft(NULL), firStereoRight(NULL), iirStereoPilot(NULL), iqInputQueue(NULL), iqOutputQueue(NULL), threadQueueNotify(NULL), commandQueue(NULL)
+DemodulatorPreThread::DemodulatorPreThread() : IOThread(), iqResampler(NULL), iqResampleRatio(1), cModem(nullptr), cModemKit(nullptr), iqInputQueue(NULL), iqOutputQueue(NULL), threadQueueNotify(NULL), commandQueue(NULL)
  {
 	initialized.store(false);
 
@@ -24,50 +24,14 @@ DemodulatorPreThread::DemodulatorPreThread() : IOThread(), iqResampler(NULL), iq
 }
 
 void DemodulatorPreThread::initialize() {
-    initialized = false;
-
     iqResampleRatio = (double) (params.bandwidth) / (double) params.sampleRate;
-    audioResampleRatio = (double) (params.audioSampleRate) / (double) params.bandwidth;
 
-    float As = 120.0f;         // stop-band attenuation [dB]
+    float As = 60.0f;         // stop-band attenuation [dB]
 
     iqResampler = msresamp_crcf_create(iqResampleRatio, As);
-    audioResampler = msresamp_rrrf_create(audioResampleRatio, As);
-    stereoResampler = msresamp_rrrf_create(audioResampleRatio, As);
 
-    // Stereo filters / shifters
-    double firStereoCutoff = ((double) 16000 / (double) params.audioSampleRate);
-    float ft = ((double) 1000 / (double) params.audioSampleRate);         // filter transition
-    float mu = 0.0f;         // fractional timing offset
-
-    if (firStereoCutoff < 0) {
-        firStereoCutoff = 0;
-    }
-
-    if (firStereoCutoff > 0.5) {
-        firStereoCutoff = 0.5;
-    }
-
-    unsigned int h_len = estimate_req_filter_len(ft, As);
-    float *h = new float[h_len];
-    liquid_firdes_kaiser(h_len, firStereoCutoff, As, mu, h);
-
-    firStereoLeft = firfilt_rrrf_create(h, h_len);
-    firStereoRight = firfilt_rrrf_create(h, h_len);
-
-    // stereo pilot filter
-    float bw = params.bandwidth;
-    if (bw < 100000.0) {
-        bw = 100000.0;
-    }
-    unsigned int order =   5;       // filter order
-    float        f0    =   ((double) 19000 / bw);
-    float        fc    =   ((double) 19500 / bw);
-    float        Ap    =   1.0f;
-    As    =  60.0f;
-    iirStereoPilot = iirfilt_crcf_create_prototype(LIQUID_IIRDES_CHEBY2, LIQUID_IIRDES_BANDPASS, LIQUID_IIRDES_SOS, order, fc, f0, Ap, As);
-
-    initialized = true;
+    initialized.store(true);
+    
     lastParams = params;
 }
 
@@ -88,8 +52,6 @@ void DemodulatorPreThread::run() {
 
     std::cout << "Demodulator preprocessor thread started.." << std::endl;
 
-    t_Worker = new std::thread(&DemodulatorWorkerThread::threadMain, workerThread);
-
     ReBuffer<DemodulatorThreadPostIQData> buffers;
 
     iqInputQueue = (DemodulatorThreadInputQueue*)getInputQueue("IQDataInput");
@@ -99,9 +61,10 @@ void DemodulatorPreThread::run() {
     
     std::vector<liquid_float_complex> in_buf_data;
     std::vector<liquid_float_complex> out_buf_data;
-//    liquid_float_complex carrySample;   // Keep the stream count even to simplify some demod operations
-//    bool carrySampleFlag = false;
 
+    setDemodType(params.demodType);
+    t_Worker = new std::thread(&DemodulatorWorkerThread::threadMain, workerThread);
+    
     while (!terminated) {
         DemodulatorThreadIQData *inp;
         iqInputQueue->pop(inp);
@@ -218,40 +181,11 @@ void DemodulatorPreThread::run() {
             msresamp_crcf_execute(iqResampler, in_buf, bufSize, &resampledData[0], &numWritten);
 
             resamp->setRefCount(1);
-
             resamp->data.assign(resampledData.begin(), resampledData.begin() + numWritten);
 
-//            bool uneven = (numWritten % 2 != 0);
-
-//            if (!carrySampleFlag && !uneven) {
-//                resamp->data.assign(resampledData.begin(), resampledData.begin() + numWritten);
-//                carrySampleFlag = false;
-//            } else if (!carrySampleFlag && uneven) {
-//                resamp->data.assign(resampledData.begin(), resampledData.begin() + (numWritten-1));
-//                carrySample = resampledData.back();
-//                carrySampleFlag = true;
-//            } else if (carrySampleFlag && uneven) {
-//                resamp->data.resize(numWritten+1);
-//                resamp->data[0] = carrySample;
-//                memcpy(&resamp->data[1],&resampledData[0],sizeof(liquid_float_complex)*numWritten);
-//                carrySampleFlag = false;
-//            } else if (carrySampleFlag && !uneven) {
-//                resamp->data.resize(numWritten);
-//                resamp->data[0] = carrySample;
-//                memcpy(&resamp->data[1],&resampledData[0],sizeof(liquid_float_complex)*(numWritten-1));
-//                carrySample = resampledData.back();
-//                carrySampleFlag = true;
-//            }
-
-
-
-            resamp->audioResampleRatio = audioResampleRatio;
-            resamp->audioResampler = audioResampler;
-            resamp->audioSampleRate = params.audioSampleRate;
-            resamp->stereoResampler = stereoResampler;
-            resamp->firStereoLeft = firStereoLeft;
-            resamp->firStereoRight = firStereoRight;
-            resamp->iirStereoPilot = iirStereoPilot;
+            resamp->modemType = demodType;
+            resamp->modem = cModem;
+            resamp->modemKit = cModemKit;
             resamp->sampleRate = params.bandwidth;
 
             iqOutputQueue->push(resamp);
@@ -266,41 +200,35 @@ void DemodulatorPreThread::run() {
 
                 switch (result.cmd) {
                 case DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS:
-                    msresamp_crcf_destroy(iqResampler);
 
                     if (result.iqResampler) {
+                        if (iqResampler) {
+                            msresamp_crcf_destroy(iqResampler);
+                        }
                         iqResampler = result.iqResampler;
                         iqResampleRatio = result.iqResampleRatio;
                     }
 
-                    if (result.firStereoLeft) {
-                        firStereoLeft = result.firStereoLeft;
-                    }
-
-                    if (result.firStereoRight) {
-                        firStereoRight = result.firStereoRight;
-                    }
-
-                    if (result.iirStereoPilot) {
-                        iirStereoPilot = result.iirStereoPilot;
+                    if (result.modem != nullptr) {
+                        cModem = result.modem;
                     }
                     
-                    if (result.audioResampler) {
-                        audioResampler = result.audioResampler;
-                        audioResampleRatio = result.audioResamplerRatio;
-                        stereoResampler = result.stereoResampler;
+                    if (result.modemKit != nullptr) {
+                        cModemKit = result.modemKit;
                     }
-
-                    if (result.audioSampleRate) {
-                        params.audioSampleRate = result.audioSampleRate;
-                    }
-
+                        
                     if (result.bandwidth) {
                         params.bandwidth = result.bandwidth;
                     }
 
                     if (result.sampleRate) {
                         params.sampleRate = result.sampleRate;
+                    }
+                        
+                    if (result.modemType != "") {
+                        demodType = result.modemType;
+                        params.demodType = result.modemType;
+                        demodTypeChanged.store(false);
                     }
                     break;
                 default:
@@ -318,6 +246,31 @@ void DemodulatorPreThread::run() {
     std::cout << "Demodulator preprocessor thread done." << std::endl;
 }
 
+DemodulatorThreadParameters &DemodulatorPreThread::getParams() {
+    return params;
+}
+
+void DemodulatorPreThread::setParams(DemodulatorThreadParameters &params_in) {
+    params = params_in;
+}
+
+void DemodulatorPreThread::setDemodType(std::string demodType) {
+    this->newDemodType = demodType;
+    DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_MAKE_DEMOD);
+    command.demodType = demodType;
+    command.bandwidth = params.bandwidth;
+    command.audioSampleRate = params.audioSampleRate;
+    workerQueue->push(command);
+    demodTypeChanged.store(true);
+}
+
+std::string DemodulatorPreThread::getDemodType() {
+    if (demodTypeChanged.load()) {
+        return newDemodType;
+    }
+    return demodType;
+}
+
 void DemodulatorPreThread::terminate() {
     terminated = true;
     DemodulatorThreadIQData *inp = new DemodulatorThreadIQData;    // push dummy to nudge queue
@@ -330,4 +283,13 @@ void DemodulatorPreThread::terminate() {
     delete workerThread;
     delete workerResults;
     delete workerQueue;
+}
+
+
+Modem *DemodulatorPreThread::getModem() {
+    return cModem;
+}
+
+ModemKit *DemodulatorPreThread::getModemKit() {
+    return cModemKit;
 }

@@ -15,35 +15,25 @@ public:
 
     void run();
 
-    DemodulatorThreadParameters &getParams() {
-        return params;
-    }
-
-    void setParams(DemodulatorThreadParameters &params_in) {
-        params = params_in;
-    }
+    DemodulatorThreadParameters &getParams();
+    void setParams(DemodulatorThreadParameters &params_in);
+    
+    void setDemodType(std::string demodType);
+    std::string getDemodType();
 
     void initialize();
     void terminate();
 
-#ifdef __APPLE__
-    static void *pthread_helper(void *context) {
-        return ((DemodulatorPreThread *) context)->threadMain();
-    }
-#endif
-
+    Modem *getModem();
+    ModemKit *getModemKit();
+    
 protected:
     msresamp_crcf iqResampler;
     double iqResampleRatio;
     std::vector<liquid_float_complex> resampledData;
 
-    msresamp_rrrf audioResampler;
-    msresamp_rrrf stereoResampler;
-    double audioResampleRatio;
-
-    firfilt_rrrf firStereoLeft;
-    firfilt_rrrf firStereoRight;
-    iirfilt_crcf iirStereoPilot;
+    Modem *cModem;
+    ModemKit *cModemKit;
 
     DemodulatorThreadParameters params;
     DemodulatorThreadParameters lastParams;
@@ -52,6 +42,9 @@ protected:
     int shiftFrequency;
 
     std::atomic_bool initialized;
+    std::atomic_bool demodTypeChanged;
+    std::string demodType;
+    std::string newDemodType;
 
     DemodulatorWorkerThread *workerThread;
     std::thread *t_Worker;

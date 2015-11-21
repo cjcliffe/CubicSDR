@@ -27,6 +27,26 @@
 #include "SpectrumVisualProcessor.h"
 #include "SpectrumVisualDataThread.h"
 #include "SDRDevices.h"
+#include "Modem.h"
+
+#include "ModemFM.h"
+#include "ModemFMStereo.h"
+#include "ModemAM.h"
+#include "ModemUSB.h"
+#include "ModemLSB.h"
+#include "ModemDSB.h"
+#include "ModemIQ.h"
+
+#include "ModemAPSK.h"
+#include "ModemASK.h"
+#include "ModemBPSK.h"
+#include "ModemDPSK.h"
+#include "ModemOOK.h"
+#include "ModemPSK.h"
+#include "ModemQAM.h"
+#include "ModemQPSK.h"
+#include "ModemSQAM.h"
+#include "ModemST.h"
 
 #include <wx/cmdline.h>
 

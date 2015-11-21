@@ -2,8 +2,8 @@ cmake_minimum_required (VERSION 2.8)
 
 SET(CUBICSDR_VERSION_MAJOR "0")
 SET(CUBICSDR_VERSION_MINOR "1")
-SET(CUBICSDR_VERSION_PATCH "16")
-SET(CUBICSDR_VERSION_REL "alpha")
+SET(CUBICSDR_VERSION_PATCH "17")
+SET(CUBICSDR_VERSION_REL "alpha-demod-refactor")
 SET(CUBICSDR_VERSION "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}-${CUBICSDR_VERSION_REL}")
 
 SET(CPACK_PACKAGE_VERSION "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}")
@@ -234,6 +234,26 @@ SET (cubicsdr_sources
 	src/demod/DemodulatorWorkerThread.cpp
 	src/demod/DemodulatorInstance.cpp
 	src/demod/DemodulatorMgr.cpp
+    src/modules/modem/Modem.cpp
+    src/modules/modem/ModemAnalog.cpp
+    src/modules/modem/ModemDigital.cpp
+    src/modules/modem/digital/ModemASK.cpp
+    src/modules/modem/digital/ModemAPSK.cpp
+    src/modules/modem/digital/ModemBPSK.cpp
+    src/modules/modem/digital/ModemDPSK.cpp
+    src/modules/modem/digital/ModemPSK.cpp
+    src/modules/modem/digital/ModemOOK.cpp
+    src/modules/modem/digital/ModemST.cpp
+    src/modules/modem/digital/ModemSQAM.cpp
+    src/modules/modem/digital/ModemQAM.cpp
+    src/modules/modem/digital/ModemQPSK.cpp
+    src/modules/modem/analog/ModemAM.cpp
+    src/modules/modem/analog/ModemDSB.cpp
+    src/modules/modem/analog/ModemFM.cpp
+    src/modules/modem/analog/ModemFMStereo.cpp
+    src/modules/modem/analog/ModemIQ.cpp
+    src/modules/modem/analog/ModemLSB.cpp
+    src/modules/modem/analog/ModemUSB.cpp
 	src/audio/AudioThread.cpp
 	src/util/Gradient.cpp
 	src/util/Timer.cpp
@@ -293,6 +313,26 @@ SET (cubicsdr_headers
 	src/demod/DemodulatorInstance.h
 	src/demod/DemodulatorMgr.h
 	src/demod/DemodDefs.h
+    src/modules/modem/Modem.h
+    src/modules/modem/ModemAnalog.h
+    src/modules/modem/ModemDigital.h
+    src/modules/modem/digital/ModemASK.h
+    src/modules/modem/digital/ModemAPSK.h
+    src/modules/modem/digital/ModemBPSK.h
+    src/modules/modem/digital/ModemDPSK.h
+    src/modules/modem/digital/ModemPSK.h
+    src/modules/modem/digital/ModemOOK.h
+    src/modules/modem/digital/ModemST.h
+    src/modules/modem/digital/ModemSQAM.h
+    src/modules/modem/digital/ModemQAM.h
+    src/modules/modem/digital/ModemQPSK.h
+    src/modules/modem/analog/ModemAM.h
+    src/modules/modem/analog/ModemDSB.h
+    src/modules/modem/analog/ModemFM.h
+    src/modules/modem/analog/ModemFMStereo.h
+    src/modules/modem/analog/ModemIQ.h
+    src/modules/modem/analog/ModemLSB.h
+    src/modules/modem/analog/ModemUSB.h
 	src/audio/AudioThread.h
 	src/util/Gradient.h
 	src/util/Timer.h
@@ -372,6 +412,9 @@ SOURCE_GROUP("Base" REGULAR_EXPRESSION "src/${REG_EXT}")
 SOURCE_GROUP("Forms\\SDRDevices" REGULAR_EXPRESSION "src/forms/SDRDevices/${REG_EXT}")
 SOURCE_GROUP("SDR" REGULAR_EXPRESSION "src/sdr/${REG_EXT}")
 SOURCE_GROUP("Demodulator" REGULAR_EXPRESSION "src/demod/${REG_EXT}")
+SOURCE_GROUP("Modem" REGULAR_EXPRESSION "src/modules/modem/${REG_EXT}")
+SOURCE_GROUP("Modem-Analog" REGULAR_EXPRESSION "src/modules/modem/analog/${REG_EXT}")
+SOURCE_GROUP("Modem-Digital" REGULAR_EXPRESSION "src/modules/modem/digital/${REG_EXT}")
 SOURCE_GROUP("Audio" REGULAR_EXPRESSION "src/audio/${REG_EXT}")
 SOURCE_GROUP("Utility" REGULAR_EXPRESSION "src/util/${REG_EXT}")
 SOURCE_GROUP("Visual" REGULAR_EXPRESSION "src/visual/${REG_EXT}")
@@ -387,6 +430,10 @@ include_directories (
 	${PROJECT_SOURCE_DIR}/src/forms/SDRDevices
 	${PROJECT_SOURCE_DIR}/src/sdr 
 	${PROJECT_SOURCE_DIR}/src/demod
+	${PROJECT_SOURCE_DIR}/src/modules
+	${PROJECT_SOURCE_DIR}/src/modules/modem
+	${PROJECT_SOURCE_DIR}/src/modules/modem/digital
+	${PROJECT_SOURCE_DIR}/src/modules/modem/analog
 	${PROJECT_SOURCE_DIR}/src/audio
 	${PROJECT_SOURCE_DIR}/src/util
 	${PROJECT_SOURCE_DIR}/src/panel

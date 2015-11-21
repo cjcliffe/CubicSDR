@@ -25,8 +25,8 @@ public:
     int getLastBandwidth() const;
     void setLastBandwidth(int lastBandwidth);
 
-    int getLastDemodulatorType() const;
-    void setLastDemodulatorType(int lastDemodType);
+    std::string getLastDemodulatorType() const;
+    void setLastDemodulatorType(std::string lastDemodType);
     
     int getLastDemodulatorCons() const;
     void setLastDemodulatorCons(int lastDemodCons);
@@ -39,10 +39,7 @@ public:
 
     bool isLastSquelchEnabled() const;
     void setLastSquelchEnabled(bool lastSquelchEnabled);
-
-    bool isLastStereo() const;
-    void setLastStereo(bool lastStereo);
-
+    
     bool isLastMuted() const;
     void setLastMuted(bool lastMuted);
 
@@ -57,11 +54,11 @@ private:
     DemodulatorInstance *activeVisualDemodulator;
 
     int lastBandwidth;
-    int lastDemodType;
+    std::string lastDemodType;
     bool lastDemodLock;
     int lastDemodCons;
     bool lastSquelchEnabled;
     float lastSquelch;
     float lastGain;
-    bool lastStereo, lastMuted;
+    bool lastMuted;
 };

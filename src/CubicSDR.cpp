@@ -164,6 +164,25 @@ bool CubicSDR::OnInit() {
     
     wxApp::SetAppName("CubicSDR");
 
+    Modem::addModemFactory(new ModemFM);
+    Modem::addModemFactory(new ModemFMStereo);
+    Modem::addModemFactory(new ModemAM);
+    Modem::addModemFactory(new ModemLSB);
+    Modem::addModemFactory(new ModemUSB);
+    Modem::addModemFactory(new ModemDSB);
+    Modem::addModemFactory(new ModemIQ);
+
+    Modem::addModemFactory(new ModemAPSK);
+    Modem::addModemFactory(new ModemASK);
+    Modem::addModemFactory(new ModemBPSK);
+    Modem::addModemFactory(new ModemDPSK);
+    Modem::addModemFactory(new ModemOOK);
+    Modem::addModemFactory(new ModemPSK);
+    Modem::addModemFactory(new ModemQAM);
+    Modem::addModemFactory(new ModemQPSK);
+    Modem::addModemFactory(new ModemSQAM);
+    Modem::addModemFactory(new ModemST);
+
     frequency = wxGetApp().getConfig()->getCenterFreq();
     offset = 0;
     ppm = 0;

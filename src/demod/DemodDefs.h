@@ -7,24 +7,6 @@
 #include <atomic>
 #include <mutex>
 
-#define DEMOD_TYPE_NULL 0
-#define DEMOD_TYPE_FM 1
-#define DEMOD_TYPE_AM 2
-#define DEMOD_TYPE_LSB 3
-#define DEMOD_TYPE_USB 4
-#define DEMOD_TYPE_DSB 5
-#define DEMOD_TYPE_ASK 6
-#define DEMOD_TYPE_APSK 7
-#define DEMOD_TYPE_BPSK 8
-#define DEMOD_TYPE_DPSK 9
-#define DEMOD_TYPE_PSK 10
-#define DEMOD_TYPE_OOK 11
-#define DEMOD_TYPE_ST 12
-#define DEMOD_TYPE_SQAM 13
-#define DEMOD_TYPE_QAM 14
-#define DEMOD_TYPE_QPSK 15
-#define DEMOD_TYPE_RAW 16
-
 #include "IOThread.h"
 
 class DemodulatorThread;
@@ -62,11 +44,11 @@ public:
     };
 
     DemodulatorThreadControlCommand() :
-            cmd(DEMOD_THREAD_CMD_CTL_NULL), demodType(DEMOD_TYPE_NULL) {
+            cmd(DEMOD_THREAD_CMD_CTL_NULL), demodType("") {
     }
 
     DemodulatorThreadControlCommandEnum cmd;
-    int demodType;
+    std::string demodType;
 };
 
 class DemodulatorThreadIQData: public ReferenceCounter {
@@ -93,21 +75,19 @@ public:
     }
 };
 
+class Modem;
+class ModemKit;
+
 class DemodulatorThreadPostIQData: public ReferenceCounter {
 public:
     std::vector<liquid_float_complex> data;
     long long sampleRate;
-    msresamp_rrrf audioResampler;
-    msresamp_rrrf stereoResampler;
-    double audioResampleRatio;
-    int audioSampleRate;
-
-    firfilt_rrrf firStereoLeft;
-    firfilt_rrrf firStereoRight;
-    iirfilt_crcf iirStereoPilot;
+    std::string modemType;
+    Modem *modem;
+    ModemKit *modemKit;
 
     DemodulatorThreadPostIQData() :
-            sampleRate(0), audioResampler(NULL), stereoResampler(NULL), audioResampleRatio(0), audioSampleRate(0), firStereoLeft(NULL), firStereoRight(NULL), iirStereoPilot(NULL) {
+            sampleRate(0), modem(nullptr), modemKit(nullptr) {
 
     }
 
@@ -115,6 +95,7 @@ public:
         std::lock_guard < std::mutex > lock(m_mutex);
     }
 };
+
 
 class DemodulatorThreadAudioData: public ReferenceCounter {
 public:
@@ -151,11 +132,11 @@ public:
     unsigned int bandwidth; // set equal to disable second stage re-sampling?
     unsigned int audioSampleRate;
 
-    int demodType;
+    std::string demodType;
 
     DemodulatorThreadParameters() :
             frequency(0), sampleRate(DEFAULT_SAMPLE_RATE), bandwidth(200000), audioSampleRate(0),
-            demodType(DEMOD_TYPE_FM) {
+            demodType("FM") {
 
     }
 

@@ -9,7 +9,6 @@ DemodulatorInstance::DemodulatorInstance() :
 	preDemodTerminated.store(true);
 	active.store(false);
 	squelch.store(false);
-	stereo.store(false);
     muted.store(false);
 	tracking.store(false);
 	follow.store(false);
@@ -34,7 +33,7 @@ DemodulatorInstance::DemodulatorInstance() :
     pipeAudioData = new AudioThreadInputQueue;
     threadQueueControl = new DemodulatorThreadControlCommandQueue;
 
-    demodulatorThread = new DemodulatorThread();
+    demodulatorThread = new DemodulatorThread(this);
     demodulatorThread->setInputQueue("IQDataInput",pipeIQDemodData);
     demodulatorThread->setInputQueue("ControlQueue",threadQueueControl);
     demodulatorThread->setOutputQueue("NotifyQueue",pipeDemodNotify);
@@ -44,8 +43,7 @@ DemodulatorInstance::DemodulatorInstance() :
     audioThread->setInputQueue("AudioDataInput", pipeAudioData);
     audioThread->setOutputQueue("NotifyQueue", pipeDemodNotify);
 
-    currentDemodType = demodulatorThread->getDemodulatorType();
-    currentDemodCons = demodulatorThread->getDemodulatorCons();
+    currentDemodType = demodulatorPreThread->getParams().demodType;
 }
 
 DemodulatorInstance::~DemodulatorInstance() {
@@ -74,10 +72,9 @@ void DemodulatorInstance::run() {
 //    }
 
     currentFrequency = demodulatorPreThread->getParams().frequency;
-    currentDemodType = demodulatorThread->getDemodulatorType();
-    currentDemodCons = demodulatorThread->getDemodulatorCons();
     currentAudioSampleRate = AudioThread::deviceSampleRate[getOutputDevice()];
     demodulatorPreThread->getParams().audioSampleRate = currentAudioSampleRate;
+    setDemodulatorType(demodulatorPreThread->getParams().demodType);
 
     t_Audio = new std::thread(&AudioThread::threadMain, audioThread);
 
@@ -103,6 +100,7 @@ void DemodulatorInstance::run() {
     t_PreDemod = new std::thread(&DemodulatorPreThread::threadMain, demodulatorPreThread);
     t_Demod = new std::thread(&DemodulatorThread::threadMain, demodulatorThread);
 #endif
+
     active = true;
     audioTerminated = demodTerminated = preDemodTerminated = terminated = false;
 
@@ -196,15 +194,6 @@ void DemodulatorInstance::setActive(bool state) {
     active = state;
 }
 
-bool DemodulatorInstance::isStereo() {
-    return stereo;
-}
-
-void DemodulatorInstance::setStereo(bool state) {
-    stereo = state;
-    demodulatorThread->setStereo(state);
-}
-
 void DemodulatorInstance::squelchAuto() {
     DemodulatorThreadControlCommand command;
     command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_ON;
@@ -271,57 +260,69 @@ void DemodulatorInstance::checkBandwidth() {
 //    }
 }
 
-void DemodulatorInstance::setDemodulatorType(int demod_type_in) {
+void DemodulatorInstance::setDemodulatorType(std::string demod_type_in) {
     currentDemodType = demod_type_in;
 
-    if (currentDemodType == DEMOD_TYPE_RAW) {
+    if (currentDemodType == "I/Q") {
         if (currentAudioSampleRate) {
             setBandwidth(currentAudioSampleRate);
         } else {
             setBandwidth(AudioThread::deviceSampleRate[getOutputDevice()]);
         }
-    } else if (currentDemodType == DEMOD_TYPE_USB || currentDemodType == DEMOD_TYPE_LSB || currentDemodType == DEMOD_TYPE_DSB || currentDemodType == DEMOD_TYPE_AM) {
+    } else if (currentDemodType == "USB" || currentDemodType == "LSB" || currentDemodType == "DSB" || currentDemodType == "AM") {
     	demodulatorThread->setAGC(false);
     } else {
     	demodulatorThread->setAGC(true);
     }
     setGain(getGain());
 
+    demodulatorPreThread->getParams().demodType = currentDemodType;
     if (!active) {
         checkBandwidth();
-        demodulatorPreThread->getParams().demodType = currentDemodType;
-        demodulatorThread->setDemodulatorType(currentDemodType);
+        demodulatorPreThread->setDemodType(currentDemodType);
     } else if (demodulatorThread && threadQueueControl) {
-        DemodulatorThreadControlCommand command;
-        command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_TYPE;
-        command.demodType = demod_type_in;
-        checkBandwidth();
-        threadQueueControl->push(command);
+        demodulatorPreThread->setDemodType(currentDemodType);
     }
 }
 
-int DemodulatorInstance::getDemodulatorType() {
+std::string DemodulatorInstance::getDemodulatorType() {
     return currentDemodType;
 }
 
 void DemodulatorInstance::setDemodulatorLock(bool demod_lock_in) {
-    demodulatorThread->setDemodulatorLock(demod_lock_in);
+    Modem *cModem = demodulatorPreThread->getModem();
+    if (cModem && cModem->getType() == "digital") {
+        ((ModemDigital *)cModem)->setDemodulatorLock(demod_lock_in);
+    }
 }
 
 int DemodulatorInstance::getDemodulatorLock() {
-    return demodulatorThread->getDemodulatorLock();
+    Modem *cModem = demodulatorPreThread->getModem();
+
+    if (cModem && cModem->getType() == "digital") {
+        return ((ModemDigital *)cModem)->getDemodulatorLock();
+    }
+
+    return 0;
 }
 
 void DemodulatorInstance::setDemodulatorCons(int demod_cons_in) {
-    demodulatorThread->setDemodulatorCons(demod_cons_in);
+    Modem *cModem = demodulatorPreThread->getModem();
+    if (cModem && cModem->getType() == "digital") {
+        ((ModemDigital *)cModem)->setDemodulatorCons(demod_cons_in);
+    }
 }
 
 int DemodulatorInstance::getDemodulatorCons() {
-    return demodulatorThread->getDemodulatorCons();
+    Modem *cModem = demodulatorPreThread->getModem();
+    if (cModem && cModem->getType() == "digital") {
+        return ((ModemDigital *)cModem)->getDemodulatorCons();
+    }
+    return 0;
 }
 
 void DemodulatorInstance::setBandwidth(int bw) {
-    if (currentDemodType == DEMOD_TYPE_RAW) {
+    if (currentDemodType == "I/Q") {
         if (currentAudioSampleRate) {
             bw = currentAudioSampleRate;
         } else {
@@ -384,7 +385,7 @@ void DemodulatorInstance::setAudioSampleRate(int sampleRate) {
         command.llong_value = sampleRate;
         pipeDemodCommand->push(command);
     }
-    if (currentDemodType == DEMOD_TYPE_RAW) {
+    if (currentDemodType == "I/Q") {
         setBandwidth(currentAudioSampleRate);
     }
 }
@@ -400,7 +401,7 @@ int DemodulatorInstance::getAudioSampleRate() {
 void DemodulatorInstance::setGain(float gain_in) {
 	currentAudioGain = gain_in;
 
-    if (currentDemodType == DEMOD_TYPE_RAW) {
+    if (currentDemodType == "I/Q") {
 		if (gain_in < 0.25) {
 		    audioThread->setGain(1.0);
 			demodulatorThread->setAGC(false);

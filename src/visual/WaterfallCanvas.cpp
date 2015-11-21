@@ -36,7 +36,7 @@ wxEND_EVENT_TABLE()
 
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
         InteractiveCanvas(parent, attribList), dragState(WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), fft_size(0), waterfall_lines(0),
-        dragOfs(0), mouseZoom(1), zoom(1), freqMove(0.0), freqMoving(false), hoverAlpha(1.0) {
+        dragOfs(0), mouseZoom(1), zoom(1), freqMoving(false), freqMove(0.0), hoverAlpha(1.0) {
 
     glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this));
     linesPerSecond = 30;
@@ -253,7 +253,7 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     long long currentCenterFreq = getCenterFrequency();
 
     ColorTheme *currentTheme = ThemeMgr::mgr.currentTheme;
-    int last_type = wxGetApp().getDemodMgr().getLastDemodulatorType();
+    std::string last_type = wxGetApp().getDemodMgr().getLastDemodulatorType();
 
     if (mouseTracker.mouseInView() || wxGetApp().getDemodMgr().getActiveDemodulator()) {
         hoverAlpha += (1.0f-hoverAlpha)*0.1f;
@@ -277,7 +277,7 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
             glContext->DrawDemod(lastActiveDemodulator, isNew?currentTheme->waterfallHighlight:currentTheme->waterfallDestroy, currentCenterFreq, currentBandwidth);
 
-            if ((last_type == DEMOD_TYPE_LSB || last_type == DEMOD_TYPE_USB) && mouseTracker.mouseDown()) {
+            if ((last_type == "LSB" || last_type == "USB") && mouseTracker.mouseDown()) {
                 centerPos = mouseTracker.getMouseX();
                 glContext->DrawRangeSelector(centerPos, centerPos-width, isNew?currentTheme->waterfallNew:currentTheme->waterfallHover);
             } else {
@@ -416,16 +416,6 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         }
         activeDemod->setMuted(!activeDemod->isMuted());
         break;
-    case 'S':
-        if (!activeDemod) {
-            break;
-        }
-        if (activeDemod->isStereo()) {
-            activeDemod->setStereo(false);
-        } else {
-            activeDemod->setStereo(true);
-        }
-        break;
     case 'B':
         if (spectrumCanvas) {
             spectrumCanvas->setShowDb(!spectrumCanvas->getShowDb());
@@ -534,8 +524,8 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
                 double maxDist = ((double)halfBw + bufferBw);
 
                 if ((double)dist <= maxDist) {
-                    if ((freqDiff > 0 && demod->getDemodulatorType() == DEMOD_TYPE_USB) ||
-                            (freqDiff < 0 && demod->getDemodulatorType() == DEMOD_TYPE_LSB)) {
+                    if ((freqDiff > 0 && demod->getDemodulatorType() == "USB") ||
+                            (freqDiff < 0 && demod->getDemodulatorType() == "LSB")) {
                         continue;
                     }
 
@@ -565,12 +555,12 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
             if (abs(freqDiff) > (activeDemodulator->getBandwidth() / 3)) {
 
                 if (freqDiff > 0) {
-                    if (activeDemodulator->getDemodulatorType() != DEMOD_TYPE_USB) {
+                    if (activeDemodulator->getDemodulatorType() != "USB") {
                         nextDragState = WF_DRAG_BANDWIDTH_LEFT;
                         SetCursor(wxCURSOR_SIZEWE);
                     }
                 } else {
-                    if (activeDemodulator->getDemodulatorType() != DEMOD_TYPE_LSB) {
+                    if (activeDemodulator->getDemodulatorType() != "LSB") {
                         nextDragState = WF_DRAG_BANDWIDTH_RIGHT;
                         SetCursor(wxCURSOR_SIZEWE);
                     }
@@ -578,14 +568,14 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
 
                 mouseTracker.setVertDragLock(true);
                 mouseTracker.setHorizDragLock(false);
-                setStatusText("Click and drag to change demodulator bandwidth. SPACE for direct frequency input. M for mute, D to delete, S for stereo.");
+                setStatusText("Click and drag to change demodulator bandwidth. SPACE for direct frequency input. M for mute, D to delete.");
             } else {
                 SetCursor(wxCURSOR_SIZING);
                 nextDragState = WF_DRAG_FREQUENCY;
 
                 mouseTracker.setVertDragLock(true);
                 mouseTracker.setHorizDragLock(false);
-                setStatusText("Click and drag to change demodulator frequency; SPACE for direct input. M for mute, D to delete, S for stereo.");
+                setStatusText("Click and drag to change demodulator frequency; SPACE for direct input. M for mute, D to delete.");
             }
         } else {
             SetCursor(wxCURSOR_CROSS);
@@ -671,7 +661,6 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
                 demod->setBandwidth(mgr->getLastBandwidth());
                 demod->setSquelchLevel(mgr->getLastSquelchLevel());
                 demod->setSquelchEnabled(mgr->isLastSquelchEnabled());
-                demod->setStereo(mgr->isLastStereo());
                 demod->setGain(mgr->getLastGain());
                 demod->setMuted(mgr->isLastMuted());
 
@@ -712,9 +701,9 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
         float width = mouseTracker.getOriginDeltaMouseX();
 
         float pos;
-        int last_type = mgr->getLastDemodulatorType();
+        std::string last_type = mgr->getLastDemodulatorType();
 
-        if (last_type == DEMOD_TYPE_LSB || last_type == DEMOD_TYPE_USB) {
+        if (last_type == "LSB" || last_type == "USB") {
             float pos1 = mouseTracker.getOriginMouseX();
             float pos2 = mouseTracker.getMouseX();
 
@@ -724,7 +713,7 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
                 pos2 = tmp;
             }
 
-            pos = (last_type == DEMOD_TYPE_LSB)?pos2:pos1;
+            pos = (last_type == "LSB")?pos2:pos1;
             width *= 2;
         } else {
             pos = mouseTracker.getOriginMouseX() + width / 2.0;
@@ -759,7 +748,6 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
             demod->setBandwidth(bw);
             demod->setSquelchLevel(mgr->getLastSquelchLevel());
             demod->setSquelchEnabled(mgr->isLastSquelchEnabled());
-            demod->setStereo(mgr->isLastStereo());
             demod->setGain(mgr->getLastGain());
 
             demod->run();

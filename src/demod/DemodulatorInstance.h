@@ -7,6 +7,9 @@
 #include "DemodulatorThread.h"
 #include "DemodulatorPreThread.h"
 
+#include "ModemDigital.h"
+#include "ModemAnalog.h"
+
 class DemodulatorInstance {
 public:
 
@@ -39,9 +42,6 @@ public:
     bool isActive();
     void setActive(bool state);
 
-    bool isStereo();
-    void setStereo(bool state);
-
     void squelchAuto();
     bool isSquelchEnabled();
     void setSquelchEnabled(bool state);
@@ -53,8 +53,8 @@ public:
     void setOutputDevice(int device_id);
     int getOutputDevice();
 
-    void setDemodulatorType(int demod_type_in);
-    int getDemodulatorType();
+    void setDemodulatorType(std::string demod_type_in);
+    std::string getDemodulatorType();
     
     void setDemodulatorLock(bool demod_lock_in);
     int getDemodulatorLock();
@@ -98,7 +98,7 @@ protected:
 private:
 
     void checkBandwidth();
-
+    
     std::atomic<std::string *> label; //
     std::atomic_bool terminated; //
     std::atomic_bool demodTerminated; //
@@ -106,13 +106,11 @@ private:
     std::atomic_bool preDemodTerminated;
     std::atomic_bool active;
     std::atomic_bool squelch;
-    std::atomic_bool stereo;
     std::atomic_bool muted;
 
     std::atomic_llong currentFrequency;
     std::atomic_int currentBandwidth;
-    std::atomic_int currentDemodType;
-    std::atomic_int currentDemodCons;
+    std::string currentDemodType;
     std::atomic_int currentOutputDevice;
     std::atomic_int currentAudioSampleRate;
     std::atomic<float> currentAudioGain;

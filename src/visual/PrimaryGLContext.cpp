@@ -87,7 +87,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, l
     glColor4f(color.r, color.g, color.b, 0.6);
 
     float ofs = ((float) demod->getBandwidth()) / (float) srate;
-    float ofsLeft = (demod->getDemodulatorType()!=DEMOD_TYPE_USB)?ofs:0, ofsRight = (demod->getDemodulatorType()!=DEMOD_TYPE_LSB)?ofs:0;
+    float ofsLeft = (demod->getDemodulatorType()!="USB")?ofs:0, ofsRight = (demod->getDemodulatorType()!="LSB")?ofs:0;
 
     float labelHeight = 20.0 / viewHeight;
     float hPos = -1.0 + labelHeight;
@@ -139,9 +139,9 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, l
         demodLabel = std::string("[M] ") + demodLabel;
     }
     
-    if (demod->getDemodulatorType() == DEMOD_TYPE_USB) {
+    if (demod->getDemodulatorType() == "USB") {
         GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos, hPos, 16, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
-    } else if (demod->getDemodulatorType() == DEMOD_TYPE_LSB) {
+    } else if (demod->getDemodulatorType() == "LSB") {
         GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos, hPos, 16, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
     } else {
         GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos, hPos, 16, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
@@ -172,7 +172,7 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
     glColor4f(color.r, color.g, color.b, 0.6);
 
     float ofs = ((float) demod->getBandwidth()) / (float) srate;
-    float ofsLeft = (demod->getDemodulatorType()!=DEMOD_TYPE_USB)?ofs:0, ofsRight = (demod->getDemodulatorType()!=DEMOD_TYPE_LSB)?ofs:0;
+    float ofsLeft = (demod->getDemodulatorType()!="USB")?ofs:0, ofsRight = (demod->getDemodulatorType()!="LSB")?ofs:0;
 
     glBegin(GL_LINES);
     glVertex3f((uxPos - 0.5) * 2.0, 1.0, 0.0);
@@ -217,69 +217,20 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
     std::string demodStr = "";
     GLFont::Align demodAlign = GLFont::GLFONT_ALIGN_CENTER;
 
-    switch (demod->getDemodulatorType()) {
-    case DEMOD_TYPE_FM:
-        demodStr = "FM";
-        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
-        break;
-    case DEMOD_TYPE_AM:
-        demodStr = "AM";
-        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
-        break;
-    case DEMOD_TYPE_LSB:
-        demodStr = "LSB";
+    demodStr = demod->getDemodulatorType();
+
+    demodAlign = GLFont::GLFONT_ALIGN_CENTER;
+
+    if (demodStr == "LSB") {
         demodAlign = GLFont::GLFONT_ALIGN_RIGHT;
         uxPos -= xOfs;
-        break;
-    case DEMOD_TYPE_USB:
-        demodStr = "USB";
+    } else if (demodStr == "USB") {
         demodAlign = GLFont::GLFONT_ALIGN_LEFT;
         uxPos += xOfs;
-        break;
-    // advanced demodulators start here
-    case DEMOD_TYPE_ASK:
-        demodStr = "ASK";
-        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
-        break;
-    case DEMOD_TYPE_APSK:
-        demodStr = "APSK";
-        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
-        break;
-    case DEMOD_TYPE_BPSK:
-        demodStr = "BPSK";
-        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
-        break;
-    case DEMOD_TYPE_DPSK:
-        demodStr = "DPSK";
-        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
-        break;
-    case DEMOD_TYPE_PSK:
-        demodStr = "PSK";
-        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
-        break;
-    case DEMOD_TYPE_OOK:
-        demodStr = "OOK";
-        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
-        break;
-    case DEMOD_TYPE_SQAM:
-        demodStr = "SQAM";
-        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
-        break;
-    case DEMOD_TYPE_ST:
-        demodStr = "ST";
-        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
-        break;
-    case DEMOD_TYPE_QAM:
-        demodStr = "QAM";
-        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
-        break;
-    case DEMOD_TYPE_QPSK:
-        demodStr = "QPSK";
-        demodAlign = GLFont::GLFONT_ALIGN_CENTER;
-        break;
     }
+    // advanced demodulators start here
 
-	if (demod->getDemodulatorCons() != NULL && demod->getDemodulatorCons() > 0) {
+	if (demod->getDemodulatorCons() > 0) {
 		demodStr = demodStr + std::to_string(demod->getDemodulatorCons());
 	}
     
@@ -306,7 +257,7 @@ void PrimaryGLContext::DrawFreqSelector(float uxPos, RGBA4f color, float w, long
 
     long long bw = 0;
 
-    int last_type = wxGetApp().getDemodMgr().getLastDemodulatorType();
+    std::string last_type = wxGetApp().getDemodMgr().getLastDemodulatorType();
 
     if (!demod) {
         bw = wxGetApp().getDemodMgr().getLastBandwidth();
@@ -337,12 +288,12 @@ void PrimaryGLContext::DrawFreqSelector(float uxPos, RGBA4f color, float w, long
         ofs = ((float) bw) / (float) srate;
     }
 
-    if (last_type != DEMOD_TYPE_USB) {
+    if (last_type != "USB") {
         glVertex3f((uxPos - 0.5) * 2.0 - ofs, 1.0, 0.0);
         glVertex3f((uxPos - 0.5) * 2.0 - ofs, -1.0, 0.0);
     }
 
-    if (last_type != DEMOD_TYPE_LSB) {
+    if (last_type != "LSB") {
         glVertex3f((uxPos - 0.5) * 2.0 + ofs, 1.0, 0.0);
         glVertex3f((uxPos - 0.5) * 2.0 + ofs, -1.0, 0.0);
     }
@@ -359,7 +310,7 @@ void PrimaryGLContext::DrawRangeSelector(float uxPos1, float uxPos2, RGBA4f colo
         uxPos1=temp;
     }
 
-    int last_type = wxGetApp().getDemodMgr().getLastDemodulatorType();
+    std::string last_type = wxGetApp().getDemodMgr().getLastDemodulatorType();
 
     glDisable(GL_TEXTURE_2D);
 
@@ -367,14 +318,14 @@ void PrimaryGLContext::DrawRangeSelector(float uxPos1, float uxPos2, RGBA4f colo
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     glColor4f(color.r, color.g, color.b, 0.6);
 
-    glLineWidth((last_type == DEMOD_TYPE_USB)?2.0:1.0);
+    glLineWidth((last_type == "USB")?2.0:1.0);
 
     glBegin(GL_LINES);
     glVertex3f((uxPos1 - 0.5) * 2.0, 1.0, 0.0);
     glVertex3f((uxPos1 - 0.5) * 2.0, -1.0, 0.0);
     glEnd();
 
-    glLineWidth((last_type == DEMOD_TYPE_LSB)?2.0:1.0);
+    glLineWidth((last_type == "LSB")?2.0:1.0);
 
     glBegin(GL_LINES);
     glVertex3f((uxPos2 - 0.5) * 2.0, 1.0, 0.0);

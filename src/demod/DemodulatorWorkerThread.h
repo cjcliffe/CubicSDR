@@ -7,6 +7,7 @@
 #include "AudioThread.h"
 #include "ThreadQueue.h"
 #include "CubicSDRDefs.h"
+#include "Modem.h"
 
 class DemodulatorWorkerThreadResult {
 public:
@@ -15,8 +16,7 @@ public:
     };
 
     DemodulatorWorkerThreadResult() :
-            cmd(DEMOD_WORKER_THREAD_RESULT_NULL), iqResampler(NULL), iqResampleRatio(0), audioResampler(NULL), stereoResampler(NULL), audioResamplerRatio(
-                    0), firStereoLeft(NULL), firStereoRight(NULL), iirStereoPilot(NULL), sampleRate(0), bandwidth(0), audioSampleRate(0) {
+            cmd(DEMOD_WORKER_THREAD_RESULT_NULL), iqResampler(nullptr), iqResampleRatio(0), sampleRate(0), bandwidth(0), modemKit(nullptr), modemType("") {
 
     }
 
@@ -29,33 +29,29 @@ public:
 
     msresamp_crcf iqResampler;
     double iqResampleRatio;
-    msresamp_rrrf audioResampler;
-    msresamp_rrrf stereoResampler;
-    double audioResamplerRatio;
-
-    firfilt_rrrf firStereoLeft;
-    firfilt_rrrf firStereoRight;
-    iirfilt_crcf iirStereoPilot;
+    
+    DemodulatorThread *demodThread;
 
     long long sampleRate;
     unsigned int bandwidth;
-    unsigned int audioSampleRate;
-
+    Modem *modem;
+    ModemKit *modemKit;
+    std::string modemType;
 };
 
 class DemodulatorWorkerThreadCommand {
 public:
     enum DemodulatorThreadCommandEnum {
-        DEMOD_WORKER_THREAD_CMD_NULL, DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS
+        DEMOD_WORKER_THREAD_CMD_NULL, DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS, DEMOD_WORKER_THREAD_CMD_MAKE_DEMOD
     };
 
     DemodulatorWorkerThreadCommand() :
-            cmd(DEMOD_WORKER_THREAD_CMD_NULL), frequency(0), sampleRate(0), bandwidth(0), audioSampleRate(0) {
+            cmd(DEMOD_WORKER_THREAD_CMD_NULL), frequency(0), sampleRate(0), bandwidth(0), audioSampleRate(0), demodType("") {
 
     }
 
     DemodulatorWorkerThreadCommand(DemodulatorThreadCommandEnum cmd) :
-            cmd(cmd), frequency(0), sampleRate(0), bandwidth(0), audioSampleRate(0) {
+            cmd(cmd), frequency(0), sampleRate(0), bandwidth(0), audioSampleRate(0), demodType("") {
 
     }
 
@@ -65,6 +61,7 @@ public:
     long long sampleRate;
     unsigned int bandwidth;
     unsigned int audioSampleRate;
+    std::string demodType;
 };
 
 typedef ThreadQueue<DemodulatorWorkerThreadCommand> DemodulatorThreadWorkerCommandQueue;
@@ -92,4 +89,7 @@ protected:
 
     DemodulatorThreadWorkerCommandQueue *commandQueue;
     DemodulatorThreadWorkerResultQueue *resultQueue;
+    Modem *cModem;
+    ModemKit *cModemKit;
+    std::string cModemType;
 };
