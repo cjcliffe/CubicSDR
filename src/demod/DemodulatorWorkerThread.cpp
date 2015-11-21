@@ -63,6 +63,12 @@ void DemodulatorWorkerThread::run() {
                 } else {
                     cModemKit = nullptr;
                 }
+            } else if (filterChanged && filterCommand.bandwidth && filterCommand.audioSampleRate) {
+                if (cModem != nullptr) {
+                    cModemKit = cModem->buildKit(filterCommand.bandwidth, filterCommand.audioSampleRate);
+                } else {
+                    cModemKit = nullptr;
+                }
             } else if (makeDemod) {
                 cModemKit = nullptr;
             }
