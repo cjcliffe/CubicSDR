@@ -19,7 +19,7 @@ void DemodulatorWorkerThread::run() {
     while (!terminated) {
         bool filterChanged = false;
         bool makeDemod = false;
-        DemodulatorWorkerThreadCommand filterCommand;
+        DemodulatorWorkerThreadCommand filterCommand, demodCommand;
         DemodulatorWorkerThreadCommand command;
 
         bool done = false;
@@ -32,7 +32,7 @@ void DemodulatorWorkerThread::run() {
                 break;
             case DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_MAKE_DEMOD:
                 makeDemod = true;
-                filterCommand = command;
+                demodCommand = command;
                 break;
             default:
                 break;
@@ -52,15 +52,19 @@ void DemodulatorWorkerThread::run() {
             }
 
             if (makeDemod) {
-                cModem = Modem::makeModem(filterCommand.demodType);
-                cModemType = filterCommand.demodType;
+                cModem = Modem::makeModem(demodCommand.demodType);
+                cModemType = demodCommand.demodType;
             }
             result.modem = cModem;
 
-            if (filterCommand.bandwidth && filterCommand.audioSampleRate) {
+            if (makeDemod && demodCommand.bandwidth && demodCommand.audioSampleRate) {
                 if (cModem != nullptr) {
-                    cModemKit = cModem->buildKit(filterCommand.bandwidth, filterCommand.audioSampleRate);
+                    cModemKit = cModem->buildKit(demodCommand.bandwidth, demodCommand.audioSampleRate);
+                } else {
+                    cModemKit = nullptr;
                 }
+            } else if (makeDemod) {
+                cModemKit = nullptr;
             }
             result.modemKit = cModemKit;
 
