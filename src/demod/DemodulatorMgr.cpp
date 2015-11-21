@@ -7,7 +7,7 @@
 
 DemodulatorMgr::DemodulatorMgr() :
         activeDemodulator(NULL), lastActiveDemodulator(NULL), activeVisualDemodulator(NULL), lastBandwidth(DEFAULT_DEMOD_BW), lastDemodType(
-                DEFAULT_DEMOD_TYPE), lastSquelchEnabled(false), lastSquelch(0), lastGain(1.0), lastStereo(false), lastMuted(false) {
+                DEFAULT_DEMOD_TYPE), lastSquelchEnabled(false), lastSquelch(0), lastGain(1.0), lastMuted(false) {
 
 }
 
@@ -166,7 +166,6 @@ void DemodulatorMgr::updateLastState() {
         lastSquelchEnabled = lastActiveDemodulator->isSquelchEnabled();
         lastSquelch = lastActiveDemodulator->getSquelchLevel();
         lastGain = lastActiveDemodulator->getGain();
-        lastStereo = lastActiveDemodulator->isStereo();
     }
 
 }
@@ -223,15 +222,6 @@ bool DemodulatorMgr::isLastSquelchEnabled() const {
 void DemodulatorMgr::setLastSquelchEnabled(bool lastSquelchEnabled) {
     this->lastSquelchEnabled = lastSquelchEnabled;
 }
-
-bool DemodulatorMgr::isLastStereo() const {
-    return lastStereo;
-}
-
-void DemodulatorMgr::setLastStereo(bool lastStereo) {
-    this->lastStereo = lastStereo;
-}
-
 
 bool DemodulatorMgr::isLastMuted() const {
     return lastMuted;

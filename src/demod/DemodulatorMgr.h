@@ -39,10 +39,7 @@ public:
 
     bool isLastSquelchEnabled() const;
     void setLastSquelchEnabled(bool lastSquelchEnabled);
-
-    bool isLastStereo() const;
-    void setLastStereo(bool lastStereo);
-
+    
     bool isLastMuted() const;
     void setLastMuted(bool lastMuted);
 
@@ -63,5 +60,5 @@ private:
     bool lastSquelchEnabled;
     float lastSquelch;
     float lastGain;
-    bool lastStereo, lastMuted;
+    bool lastMuted;
 };

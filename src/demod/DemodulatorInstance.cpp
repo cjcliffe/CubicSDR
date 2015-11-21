@@ -9,7 +9,6 @@ DemodulatorInstance::DemodulatorInstance() :
 	preDemodTerminated.store(true);
 	active.store(false);
 	squelch.store(false);
-	stereo.store(false);
     muted.store(false);
 	tracking.store(false);
 	follow.store(false);
@@ -193,15 +192,6 @@ void DemodulatorInstance::setActive(bool state) {
         tracking = false;
     }
     active = state;
-}
-
-bool DemodulatorInstance::isStereo() {
-    return stereo;
-}
-
-void DemodulatorInstance::setStereo(bool state) {
-    stereo = state;
-//    demodulatorThread->setStereo(state);
 }
 
 void DemodulatorInstance::squelchAuto() {

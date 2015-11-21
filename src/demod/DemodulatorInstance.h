@@ -42,9 +42,6 @@ public:
     bool isActive();
     void setActive(bool state);
 
-    bool isStereo();
-    void setStereo(bool state);
-
     void squelchAuto();
     bool isSquelchEnabled();
     void setSquelchEnabled(bool state);
@@ -109,7 +106,6 @@ private:
     std::atomic_bool preDemodTerminated;
     std::atomic_bool active;
     std::atomic_bool squelch;
-    std::atomic_bool stereo;
     std::atomic_bool muted;
 
     std::atomic_llong currentFrequency;

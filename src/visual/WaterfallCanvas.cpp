@@ -416,16 +416,6 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         }
         activeDemod->setMuted(!activeDemod->isMuted());
         break;
-    case 'S':
-        if (!activeDemod) {
-            break;
-        }
-        if (activeDemod->isStereo()) {
-            activeDemod->setStereo(false);
-        } else {
-            activeDemod->setStereo(true);
-        }
-        break;
     case 'B':
         if (spectrumCanvas) {
             spectrumCanvas->setShowDb(!spectrumCanvas->getShowDb());
@@ -578,14 +568,14 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
 
                 mouseTracker.setVertDragLock(true);
                 mouseTracker.setHorizDragLock(false);
-                setStatusText("Click and drag to change demodulator bandwidth. SPACE for direct frequency input. M for mute, D to delete, S for stereo.");
+                setStatusText("Click and drag to change demodulator bandwidth. SPACE for direct frequency input. M for mute, D to delete.");
             } else {
                 SetCursor(wxCURSOR_SIZING);
                 nextDragState = WF_DRAG_FREQUENCY;
 
                 mouseTracker.setVertDragLock(true);
                 mouseTracker.setHorizDragLock(false);
-                setStatusText("Click and drag to change demodulator frequency; SPACE for direct input. M for mute, D to delete, S for stereo.");
+                setStatusText("Click and drag to change demodulator frequency; SPACE for direct input. M for mute, D to delete.");
             }
         } else {
             SetCursor(wxCURSOR_CROSS);
@@ -671,7 +661,6 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
                 demod->setBandwidth(mgr->getLastBandwidth());
                 demod->setSquelchLevel(mgr->getLastSquelchLevel());
                 demod->setSquelchEnabled(mgr->isLastSquelchEnabled());
-                demod->setStereo(mgr->isLastStereo());
                 demod->setGain(mgr->getLastGain());
                 demod->setMuted(mgr->isLastMuted());
 
@@ -759,7 +748,6 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
             demod->setBandwidth(bw);
             demod->setSquelchLevel(mgr->getLastSquelchLevel());
             demod->setSquelchEnabled(mgr->isLastSquelchEnabled());
-            demod->setStereo(mgr->isLastStereo());
             demod->setGain(mgr->getLastGain());
 
             demod->run();

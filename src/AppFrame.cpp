@@ -642,7 +642,6 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         wxGetApp().getDemodMgr().setLastDemodulatorType("FM");
         demodModeSelector->setSelection(1);
         wxGetApp().getDemodMgr().setLastMuted(false);
-        wxGetApp().getDemodMgr().setLastStereo(false);
         wxGetApp().getDemodMgr().setLastBandwidth(DEFAULT_DEMOD_BW);
         wxGetApp().getDemodMgr().setLastGain(1.0);
         wxGetApp().getDemodMgr().setLastSquelchLevel(0);
@@ -1129,7 +1128,6 @@ void AppFrame::saveSession(std::string fileName) {
         *demod->newChild("type") = (*instance_i)->getDemodulatorType();
         *demod->newChild("squelch_level") = (*instance_i)->getSquelchLevel();
         *demod->newChild("squelch_enabled") = (*instance_i)->isSquelchEnabled() ? 1 : 0;
-        *demod->newChild("stereo") = (*instance_i)->isStereo() ? 1 : 0;
         *demod->newChild("output_device") = outputDevices[(*instance_i)->getOutputDevice()].name;
         *demod->newChild("gain") = (*instance_i)->getGain();
         *demod->newChild("muted") = (*instance_i)->isMuted() ? 1 : 0;
@@ -1179,7 +1177,6 @@ bool AppFrame::loadSession(std::string fileName) {
             std::string type = demod->hasAnother("type") ? string(*demod->getNext("type")) : "FM";
             float squelch_level = demod->hasAnother("squelch_level") ? (float) *demod->getNext("squelch_level") : 0;
             int squelch_enabled = demod->hasAnother("squelch_enabled") ? (int) *demod->getNext("squelch_enabled") : 0;
-            int stereo = demod->hasAnother("stereo") ? (int) *demod->getNext("stereo") : 0;
             int muted = demod->hasAnother("muted") ? (int) *demod->getNext("muted") : 0;
             std::string output_device = demod->hasAnother("output_device") ? string(*(demod->getNext("output_device"))) : "";
             float gain = demod->hasAnother("gain") ? (float) *demod->getNext("gain") : 1.0;
@@ -1216,10 +1213,7 @@ bool AppFrame::loadSession(std::string fileName) {
                 newDemod->setSquelchEnabled(true);
                 newDemod->setSquelchLevel(squelch_level);
             }
-            if (stereo) {
-                newDemod->setStereo(true);
-            }
-
+            
             bool found_device = false;
             std::map<int, RtAudio::DeviceInfo>::iterator i;
             for (i = outputDevices.begin(); i != outputDevices.end(); i++) {
@@ -1241,7 +1235,6 @@ bool AppFrame::loadSession(std::string fileName) {
             std::cout << "\t\tBandwidth: " << bandwidth << std::endl;
             std::cout << "\t\tSquelch Level: " << squelch_level << std::endl;
             std::cout << "\t\tSquelch Enabled: " << (squelch_enabled ? "true" : "false") << std::endl;
-            std::cout << "\t\tStereo: " << (stereo ? "true" : "false") << std::endl;
             std::cout << "\t\tOutput Device: " << output_device << std::endl;
         }
         
