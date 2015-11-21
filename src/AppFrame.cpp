@@ -129,7 +129,10 @@ AppFrame::AppFrame() :
     demodTray->AddSpacer(1);
 
     demodSignalMeter = new MeterCanvas(demodPanel, attribList);
-    demodSignalMeter->setMax(0.5);
+    demodSignalMeter->setMax(DEMOD_SIGNAL_MAX);
+    demodSignalMeter->setMin(DEMOD_SIGNAL_MIN);
+    demodSignalMeter->setLevel(DEMOD_SIGNAL_MIN);
+    demodSignalMeter->setInputValue(DEMOD_SIGNAL_MIN);
     demodSignalMeter->setHelpTip("Current Signal Level.  Click / Drag to set Squelch level.");
     demodSignalMeter->SetMinSize(wxSize(12,24));
     demodTray->Add(demodSignalMeter, 1, wxEXPAND | wxALL, 0);
@@ -644,7 +647,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         wxGetApp().getDemodMgr().setLastMuted(false);
         wxGetApp().getDemodMgr().setLastBandwidth(DEFAULT_DEMOD_BW);
         wxGetApp().getDemodMgr().setLastGain(1.0);
-        wxGetApp().getDemodMgr().setLastSquelchLevel(0);
+        wxGetApp().getDemodMgr().setLastSquelchLevel(-100);
         waterfallCanvas->setBandwidth(wxGetApp().getSampleRate());
         waterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
         spectrumCanvas->setBandwidth(wxGetApp().getSampleRate());

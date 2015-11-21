@@ -10,6 +10,9 @@
 typedef ThreadQueue<AudioThreadInput *> DemodulatorThreadOutputQueue;
 
 #define DEMOD_VIS_SIZE 2048
+#define DEMOD_SIGNAL_MIN -30
+#define DEMOD_SIGNAL_MAX 30
+
 class DemodulatorInstance;
 
 class DemodulatorThread : public IOThread {
@@ -23,9 +26,6 @@ public:
     void run();
     void terminate();
     
-    void setAGC(bool state);
-    bool getAGC();
-
     void setMuted(bool state);
     bool isMuted();
     
@@ -33,16 +33,16 @@ public:
     void setSquelchLevel(float signal_level_in);
     float getSquelchLevel();
 
+    
 protected:
+    
+    float abMagnitude(double alpha, double beta, float inphase, float quadrature);
+    float linearToDb(float linear);
+
     DemodulatorInstance *demodInstance;
     ReBuffer<AudioThreadInput> outputBuffers;
 
-    std::vector<liquid_float_complex> agcData;
-
-    agc_crcf iqAutoGain;
-
     std::atomic_bool muted;
-    std::atomic_bool agcEnabled;
     int audioSampleRate;
 
     std::atomic<float> squelchLevel;

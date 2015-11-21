@@ -269,10 +269,6 @@ void DemodulatorInstance::setDemodulatorType(std::string demod_type_in) {
         } else {
             setBandwidth(AudioThread::deviceSampleRate[getOutputDevice()]);
         }
-    } else if (currentDemodType == "USB" || currentDemodType == "LSB" || currentDemodType == "DSB" || currentDemodType == "AM") {
-    	demodulatorThread->setAGC(false);
-    } else {
-    	demodulatorThread->setAGC(true);
     }
     setGain(getGain());
 
@@ -400,18 +396,7 @@ int DemodulatorInstance::getAudioSampleRate() {
 
 void DemodulatorInstance::setGain(float gain_in) {
 	currentAudioGain = gain_in;
-
-    if (currentDemodType == "I/Q") {
-		if (gain_in < 0.25) {
-		    audioThread->setGain(1.0);
-			demodulatorThread->setAGC(false);
-		} else {
-		    audioThread->setGain(gain_in);
-			demodulatorThread->setAGC(true);
-		}
-    } else {
-        audioThread->setGain(gain_in);
-    }
+    audioThread->setGain(gain_in);
 }
 
 float DemodulatorInstance::getGain() {

@@ -22,6 +22,7 @@ public:
     float getLevel();
 
     void setMax(float max_in);
+    void setMin(float max_in);
 
     void setInputValue(float slider_in);
     bool inputChanged();
@@ -44,7 +45,7 @@ private:
     MeterContext *glContext;
 
     float level;
-    float level_max;
+    float level_min, level_max;
 
     float inputValue;
     float userInputValue;

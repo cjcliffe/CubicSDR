@@ -25,7 +25,7 @@ EVT_ENTER_WINDOW(MeterCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
 MeterCanvas::MeterCanvas(wxWindow *parent, int *attribList) :
-        InteractiveCanvas(parent, attribList), level(0), level_max(1), inputValue(0), userInputValue(0), showUserInput(true) {
+        InteractiveCanvas(parent, attribList), level(0), level_min(0), level_max(1), inputValue(0), userInputValue(0), showUserInput(true) {
 
     glContext = new MeterContext(this, &wxGetApp().GetContext(this));
 }
@@ -44,6 +44,11 @@ float MeterCanvas::getLevel() {
 
 void MeterCanvas::setMax(float max_in) {
     level_max = max_in;
+    Refresh();
+}
+
+void MeterCanvas::setMin(float min_in) {
+    level_min = min_in;
     Refresh();
 }
 
@@ -80,10 +85,10 @@ void MeterCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     if (mouseTracker.mouseInView()) {
         glContext->Draw(0.4, 0.4, 0.4, 0.5, mouseTracker.getMouseY());
     }
-    glContext->Draw(ThemeMgr::mgr.currentTheme->meterLevel.r, ThemeMgr::mgr.currentTheme->meterLevel.g, ThemeMgr::mgr.currentTheme->meterLevel.b, 0.5, level / level_max);
+    glContext->Draw(ThemeMgr::mgr.currentTheme->meterLevel.r, ThemeMgr::mgr.currentTheme->meterLevel.g, ThemeMgr::mgr.currentTheme->meterLevel.b, 0.5, (level-level_min) / (level_max-level_min));
     if (showUserInput) {
-        glContext->Draw(ThemeMgr::mgr.currentTheme->meterValue.r, ThemeMgr::mgr.currentTheme->meterValue.g, ThemeMgr::mgr.currentTheme->meterValue.b, 0.5, userInputValue / level_max);
-    }
+        glContext->Draw(ThemeMgr::mgr.currentTheme->meterValue.r, ThemeMgr::mgr.currentTheme->meterValue.g, ThemeMgr::mgr.currentTheme->meterValue.b, 0.5, (userInputValue-level_min) / (level_max-level_min));
+    } 
     glContext->DrawEnd();
 
     SwapBuffers();
@@ -101,7 +106,7 @@ void MeterCanvas::OnMouseMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseMoved(event);
 
     if (mouseTracker.mouseDown()) {
-        userInputValue = mouseTracker.getMouseY() * level_max;
+        userInputValue = mouseTracker.getMouseY() * (level_max-level_min) + level_min;
     } else {
         if (!helpTip.empty()) {
             setStatusText(helpTip);
@@ -111,7 +116,7 @@ void MeterCanvas::OnMouseMoved(wxMouseEvent& event) {
 
 void MeterCanvas::OnMouseDown(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseDown(event);
-    userInputValue = mouseTracker.getMouseY() * level_max;
+    userInputValue = mouseTracker.getMouseY() * (level_max-level_min) + level_min;
     mouseTracker.setHorizDragLock(true);
     Refresh();
 }
@@ -123,7 +128,7 @@ void MeterCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
 
 void MeterCanvas::OnMouseReleased(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseReleased(event);
-    userInputValue = mouseTracker.getMouseY() * level_max;
+    userInputValue = mouseTracker.getMouseY() * (level_max-level_min) + level_min;
     Refresh();
 }
 
