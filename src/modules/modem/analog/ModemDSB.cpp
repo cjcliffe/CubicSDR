@@ -22,7 +22,9 @@ void ModemDSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *a
         return;
     }
     
-    ampmodem_demodulate_block(demodAM_DSB, &input->data[0], bufSize, &demodOutputData[0]);
+	for (int i = 0; i < bufSize; i++) {
+		ampmodem_demodulate(demodAM_DSB, input->data[i], &demodOutputData[i]);
+	}
     
     buildAudioOutput(amkit, audioOut, true);
 }
