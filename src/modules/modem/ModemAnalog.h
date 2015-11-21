@@ -20,6 +20,8 @@ public:
     void disposeKit(ModemKit *kit);
     void initOutputBuffers(ModemKitAnalog *akit, ModemIQData *input);
     void buildAudioOutput(ModemKitAnalog *akit, AudioThreadInput *audioOut, bool autoGain);
+    std::vector<float> *getDemodOutputData();
+    std::vector<float> *getResampledOutputData();
 protected:
     int bufSize;
     std::vector<float> demodOutputData;

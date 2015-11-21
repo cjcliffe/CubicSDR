@@ -81,3 +81,11 @@ void ModemAnalog::buildAudioOutput(ModemKitAnalog *akit, AudioThreadInput *audio
     audioOut->sampleRate = akit->audioSampleRate;
     audioOut->data.assign(resampledOutputData.begin(), resampledOutputData.begin() + numAudioWritten);
 }
+
+std::vector<float> *ModemAnalog::getDemodOutputData() {
+    return &demodOutputData;
+}
+
+std::vector<float> *ModemAnalog::getResampledOutputData() {
+    return &resampledOutputData;
+}

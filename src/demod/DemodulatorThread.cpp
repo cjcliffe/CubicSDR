@@ -117,7 +117,10 @@ void DemodulatorThread::run() {
         
         AudioThreadInput *ati = NULL;
         
-        if (cModem->getType() != "digital") {
+        ModemAnalog *modemAnalog = (cModem->getType() == "analog")?((ModemAnalog *)cModem):nullptr;
+        ModemDigital *modemDigital = (cModem->getType() == "digital")?((ModemDigital *)cModem):nullptr;
+        
+        if (modemAnalog != nullptr) {
             ati = outputBuffers.getBuffer();
             
             ati->sampleRate = audioSampleRate;
@@ -177,18 +180,19 @@ void DemodulatorThread::run() {
             } else {
                 int numAudioWritten = ati->data.size();
                 ati_vis->channels = 1;
-                //                if (numAudioWritten > bufSize) {
-                ati_vis->inputRate = audioSampleRate;
-                if (num_vis > numAudioWritten) {
-                    num_vis = numAudioWritten;
+                std::vector<float> *demodOutData = (modemAnalog != nullptr)?modemAnalog->getDemodOutputData():nullptr;
+                if ((numAudioWritten > bufSize) || (demodOutData == nullptr)) {
+                    ati_vis->inputRate = audioSampleRate;
+                    if (num_vis > numAudioWritten) {
+                        num_vis = numAudioWritten;
+                    }
+                    ati_vis->data.assign(ati->data.begin(), ati->data.begin() + num_vis);
+                } else {
+                    if (num_vis > demodOutData->size()) {
+                        num_vis = demodOutData->size();
+                    }
+                    ati_vis->data.assign(demodOutData->begin(), demodOutData->begin() + num_vis);
                 }
-                ati_vis->data.assign(ati->data.begin(), ati->data.begin() + num_vis);
-                //                } else {
-                //                    if (num_vis > bufSize) {
-                //                        num_vis = bufSize;
-                //                    }
-                //                    ati_vis->data.assign(ati->data.begin(), ati->data.begin() + num_vis);
-                //                }
                 
                 //            std::cout << "Signal: " << agc_crcf_get_signal_level(agc) << " -- " << agc_crcf_get_rssi(agc) << "dB " << std::endl;
             }
