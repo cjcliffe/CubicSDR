@@ -3,6 +3,7 @@
 #include "liquid/liquid.h"
 #include "IOThread.h"
 #include "AudioThread.h"
+#include <cmath>
 
 class ModemKit {
 public:
