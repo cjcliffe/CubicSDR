@@ -38,7 +38,6 @@ protected:
     ReBuffer<AudioThreadInput> outputBuffers;
 
     std::vector<liquid_float_complex> agcData;
-    std::vector<float> agcAMData;
 
     agc_crcf iqAutoGain;
 

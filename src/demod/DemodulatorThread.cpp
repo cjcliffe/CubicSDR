@@ -87,10 +87,8 @@ void DemodulatorThread::run() {
         if (agcData.size() != bufSize) {
             if (agcData.capacity() < bufSize) {
                 agcData.reserve(bufSize);
-                agcAMData.reserve(bufSize);
             }
             agcData.resize(bufSize);
-            agcAMData.resize(bufSize);
         }
         
         agc_crcf_execute_block(iqAutoGain, &(inp->data[0]), bufSize, &agcData[0]);
@@ -118,7 +116,7 @@ void DemodulatorThread::run() {
         AudioThreadInput *ati = NULL;
         
         ModemAnalog *modemAnalog = (cModem->getType() == "analog")?((ModemAnalog *)cModem):nullptr;
-        ModemDigital *modemDigital = (cModem->getType() == "digital")?((ModemDigital *)cModem):nullptr;
+//        ModemDigital *modemDigital = (cModem->getType() == "digital")?((ModemDigital *)cModem):nullptr;
         
         if (modemAnalog != nullptr) {
             ati = outputBuffers.getBuffer();
