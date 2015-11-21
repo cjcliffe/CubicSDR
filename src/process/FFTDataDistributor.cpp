@@ -1,6 +1,6 @@
 #include "FFTDataDistributor.h"
 
-FFTDataDistributor::FFTDataDistributor() : linesPerSecond(DEFAULT_WATERFALL_LPS), lineRateAccum(0.0), fftSize(DEFAULT_FFT_SIZE) {
+FFTDataDistributor::FFTDataDistributor() : fftSize(DEFAULT_FFT_SIZE), linesPerSecond(DEFAULT_WATERFALL_LPS), lineRateAccum(0.0) {
     bufferedItems = 0;
 }
 

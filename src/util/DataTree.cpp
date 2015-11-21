@@ -33,7 +33,7 @@ using namespace std;
 
 #define STRINGIFY(A)  #A
 
-DataElement::DataElement() : data_type(DATA_NULL), data_val(NULL), data_size(0), unit_size(0) {
+DataElement::DataElement() : data_type(DATA_NULL), data_size(0), unit_size(0), data_val(NULL) {
 }
 
 DataElement::~DataElement() {
@@ -393,11 +393,11 @@ void DataElement::setSerialized(char *ser_str) {
 
 /* DataNode class */
 
-DataNode::DataNode(): ptr(0), parentNode(NULL) {
+DataNode::DataNode(): parentNode(NULL), ptr(0) {
     data_elem = new DataElement();
 }
 
-DataNode::DataNode(const char *name_in): ptr(0), parentNode(NULL) {
+DataNode::DataNode(const char *name_in): parentNode(NULL), ptr(0) {
     node_name = name_in;
     data_elem = new DataElement();
 }
@@ -1528,7 +1528,7 @@ bool DataTree::SaveToFileXML(const std::string& filename) {
 
 bool DataTree::SaveToFile(const std::string& filename, bool compress, int compress_level) {
     long dataSize, compressedSize, headerSize;
-    char *serialized, *hdr_serialized, *compressed;
+    char *serialized = nullptr, *hdr_serialized = nullptr, *compressed = nullptr;
     DataTree dtHeader;
 
     dataSize = getSerialized(&serialized);
@@ -1580,7 +1580,10 @@ bool DataTree::SaveToFile(const std::string& filename, bool compress, int compre
 }
 
 bool DataTree::LoadFromFile(const std::string& filename) {
-    char *compressed, *serialized, *hdr_serialized;
+#if USE_FASTLZ
+    char *compressed;
+#endif
+    char *serialized, *hdr_serialized;
     long dataSize, headerSize, compressedSize;
 
     ifstream fin(filename.c_str(), ios::binary);
