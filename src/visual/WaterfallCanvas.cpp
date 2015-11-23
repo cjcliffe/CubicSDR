@@ -461,7 +461,7 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
                 bwDiff = -bwDiff;
             }
 
-            int currentBW = demod->getBandwidth();
+            int currentBW = dragBW;
 
             currentBW = currentBW + bwDiff;
             if (currentBW > CHANNELIZER_RATE_MAX) {
@@ -472,6 +472,7 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
             }
 
             demod->setBandwidth(currentBW);
+            dragBW = currentBW;
         }
 
         if (dragState == WF_DRAG_FREQUENCY) {
@@ -601,6 +602,7 @@ void WaterfallCanvas::OnMouseDown(wxMouseEvent& event) {
         DemodulatorInstance *demod = wxGetApp().getDemodMgr().getActiveDemodulator();
         if (demod) {
             dragOfs = (long long) (mouseTracker.getMouseX() * (float) getBandwidth()) + getCenterFrequency() - (getBandwidth() / 2) - demod->getFrequency();
+            dragBW = demod->getBandwidth();
         }
         wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getActiveDemodulator(), false);
     }

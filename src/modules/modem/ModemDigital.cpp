@@ -8,6 +8,10 @@ std::string ModemDigital::getType() {
     return "digital";
 }
 
+int ModemDigital::checkSampleRate(long long sampleRate, int audioSampleRate) {
+    return sampleRate;
+}
+
 ModemKit *ModemDigital::buildKit(long long sampleRate, int audioSampleRate) {
     ModemKitDigital *dkit = new ModemKitDigital;
     

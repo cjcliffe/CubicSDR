@@ -30,6 +30,14 @@ Modem *ModemFMStereo::factory() {
     return new ModemFMStereo;
 }
 
+int ModemFMStereo::checkSampleRate(long long sampleRate, int audioSampleRate) {
+    if (sampleRate < 100000) {
+        return 100000;
+    } else {
+        return sampleRate;
+    }
+}
+
 ModemKit *ModemFMStereo::buildKit(long long sampleRate, int audioSampleRate) {
     ModemKitFMStereo *kit = new ModemKitFMStereo;
     

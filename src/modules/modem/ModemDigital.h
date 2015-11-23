@@ -13,10 +13,11 @@ class ModemDigital : public Modem {
 public:
     ModemDigital();
     std::string getType();
-    ModemKit *buildKit(long long sampleRate, int audioSampleRate);
-    void disposeKit(ModemKit *kit);
-    void digitalStart(ModemKitDigital *kit, modem mod, ModemIQData *input);
-    void digitalFinish(ModemKitDigital *kit, modem mod);
+    virtual int checkSampleRate(long long sampleRate, int audioSampleRate);
+    virtual ModemKit *buildKit(long long sampleRate, int audioSampleRate);
+    virtual void disposeKit(ModemKit *kit);
+    virtual void digitalStart(ModemKitDigital *kit, modem mod, ModemIQData *input);
+    virtual void digitalFinish(ModemKitDigital *kit, modem mod);
 
     virtual void setDemodulatorLock(bool demod_lock_in);
     virtual int getDemodulatorLock();

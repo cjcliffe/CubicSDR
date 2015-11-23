@@ -8,6 +8,7 @@ public:
     ~ModemLSB();
     std::string getName();
     Modem *factory();
+    int checkSampleRate(long long sampleRate, int audioSampleRate);
     void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
     
 private:

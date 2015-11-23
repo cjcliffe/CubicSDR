@@ -44,6 +44,7 @@ public:
     Modem();
     virtual ~Modem();
     
+    virtual int checkSampleRate(long long sampleRate, int audioSampleRate) = 0;
     virtual ModemKit *buildKit(long long sampleRate, int audioSampleRate) = 0;
     virtual void disposeKit(ModemKit *kit) = 0;
     virtual void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) = 0;

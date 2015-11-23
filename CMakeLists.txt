@@ -237,16 +237,6 @@ SET (cubicsdr_sources
     src/modules/modem/Modem.cpp
     src/modules/modem/ModemAnalog.cpp
     src/modules/modem/ModemDigital.cpp
-    src/modules/modem/digital/ModemASK.cpp
-    src/modules/modem/digital/ModemAPSK.cpp
-    src/modules/modem/digital/ModemBPSK.cpp
-    src/modules/modem/digital/ModemDPSK.cpp
-    src/modules/modem/digital/ModemPSK.cpp
-    src/modules/modem/digital/ModemOOK.cpp
-    src/modules/modem/digital/ModemST.cpp
-    src/modules/modem/digital/ModemSQAM.cpp
-    src/modules/modem/digital/ModemQAM.cpp
-    src/modules/modem/digital/ModemQPSK.cpp
     src/modules/modem/analog/ModemAM.cpp
     src/modules/modem/analog/ModemDSB.cpp
     src/modules/modem/analog/ModemFM.cpp
@@ -296,6 +286,23 @@ SET (cubicsdr_sources
 	external/cubicvr2/math/cubic_math.cpp
 )
 
+IF(ENABLE_DIGITAL_LAB)
+    SET (cubicsdr_sources 
+        ${cubicsdr_sources}
+        src/modules/modem/digital/ModemASK.cpp
+        src/modules/modem/digital/ModemAPSK.cpp
+        src/modules/modem/digital/ModemBPSK.cpp
+        src/modules/modem/digital/ModemDPSK.cpp
+        src/modules/modem/digital/ModemFSK.cpp
+        src/modules/modem/digital/ModemPSK.cpp
+        src/modules/modem/digital/ModemOOK.cpp
+        src/modules/modem/digital/ModemST.cpp
+        src/modules/modem/digital/ModemSQAM.cpp
+        src/modules/modem/digital/ModemQAM.cpp
+        src/modules/modem/digital/ModemQPSK.cpp
+    )
+ENDIF()
+
 SET (cubicsdr_headers
 	src/CubicSDRDefs.h
 	src/CubicSDR.h
@@ -316,16 +323,6 @@ SET (cubicsdr_headers
     src/modules/modem/Modem.h
     src/modules/modem/ModemAnalog.h
     src/modules/modem/ModemDigital.h
-    src/modules/modem/digital/ModemASK.h
-    src/modules/modem/digital/ModemAPSK.h
-    src/modules/modem/digital/ModemBPSK.h
-    src/modules/modem/digital/ModemDPSK.h
-    src/modules/modem/digital/ModemPSK.h
-    src/modules/modem/digital/ModemOOK.h
-    src/modules/modem/digital/ModemST.h
-    src/modules/modem/digital/ModemSQAM.h
-    src/modules/modem/digital/ModemQAM.h
-    src/modules/modem/digital/ModemQPSK.h
     src/modules/modem/analog/ModemAM.h
     src/modules/modem/analog/ModemDSB.h
     src/modules/modem/analog/ModemFM.h
@@ -391,6 +388,23 @@ SET (cubicsdr_headers
 	external/cubicvr2/math/vec4.h
 )
 
+IF(ENABLE_DIGITAL_LAB)
+SET(cubicsdr_headers 
+    ${cubicsdr_headers}
+    src/modules/modem/digital/ModemASK.h
+    src/modules/modem/digital/ModemAPSK.h
+    src/modules/modem/digital/ModemBPSK.h
+    src/modules/modem/digital/ModemDPSK.h
+    src/modules/modem/digital/ModemFSK.h
+    src/modules/modem/digital/ModemPSK.h
+    src/modules/modem/digital/ModemOOK.h
+    src/modules/modem/digital/ModemST.h
+    src/modules/modem/digital/ModemSQAM.h
+    src/modules/modem/digital/ModemQAM.h
+    src/modules/modem/digital/ModemQPSK.h
+)    
+ENDIF()
+
 SET (CUBICSDR_RESOURCES 
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12.fnt
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16.fnt
@@ -414,7 +428,9 @@ SOURCE_GROUP("SDR" REGULAR_EXPRESSION "src/sdr/${REG_EXT}")
 SOURCE_GROUP("Demodulator" REGULAR_EXPRESSION "src/demod/${REG_EXT}")
 SOURCE_GROUP("Modem" REGULAR_EXPRESSION "src/modules/modem/${REG_EXT}")
 SOURCE_GROUP("Modem-Analog" REGULAR_EXPRESSION "src/modules/modem/analog/${REG_EXT}")
+IF(ENABLE_DIGITAL_LAB)
 SOURCE_GROUP("Modem-Digital" REGULAR_EXPRESSION "src/modules/modem/digital/${REG_EXT}")
+ENDIF()
 SOURCE_GROUP("Audio" REGULAR_EXPRESSION "src/audio/${REG_EXT}")
 SOURCE_GROUP("Utility" REGULAR_EXPRESSION "src/util/${REG_EXT}")
 SOURCE_GROUP("Visual" REGULAR_EXPRESSION "src/visual/${REG_EXT}")

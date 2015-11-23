@@ -8,6 +8,10 @@ std::string ModemAnalog::getType() {
     return "analog";
 }
 
+int ModemAnalog::checkSampleRate(long long sampleRate, int audioSampleRate) {
+    return sampleRate;
+}
+
 ModemKit *ModemAnalog::buildKit(long long sampleRate, int audioSampleRate) {
     ModemKitAnalog *akit = new ModemKitAnalog;
     

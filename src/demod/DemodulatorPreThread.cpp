@@ -7,10 +7,12 @@
 
 #include "DemodulatorPreThread.h"
 #include "CubicSDR.h"
+#include "DemodulatorInstance.h"
 
-DemodulatorPreThread::DemodulatorPreThread() : IOThread(), iqResampler(NULL), iqResampleRatio(1), cModem(nullptr), cModemKit(nullptr), iqInputQueue(NULL), iqOutputQueue(NULL), threadQueueNotify(NULL), commandQueue(NULL)
+DemodulatorPreThread::DemodulatorPreThread(DemodulatorInstance *parent) : IOThread(), iqResampler(NULL), iqResampleRatio(1), cModem(nullptr), cModemKit(nullptr), iqInputQueue(NULL), iqOutputQueue(NULL), threadQueueNotify(NULL), commandQueue(NULL)
  {
 	initialized.store(false);
+    this->parent = parent;
 
     freqShifter = nco_crcf_create(LIQUID_VCO);
     shiftFrequency = 0;
@@ -82,11 +84,7 @@ void DemodulatorPreThread::run() {
                     if (command.llong_value < 1500) {
                         command.llong_value = 1500;
                     }
-                    if (command.llong_value > params.sampleRate) {
-                        tempParams.bandwidth = params.sampleRate;
-                    } else {
-                        tempParams.bandwidth = command.llong_value;
-                    }
+                    tempParams.bandwidth = command.llong_value;
                     bandwidthChanged = true;
                     break;
                 case DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_FREQUENCY:
@@ -257,6 +255,7 @@ void DemodulatorPreThread::setParams(DemodulatorThreadParameters &params_in) {
 void DemodulatorPreThread::setDemodType(std::string demodType) {
     this->newDemodType = demodType;
     DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_MAKE_DEMOD);
+    command.sampleRate = params.sampleRate;
     command.demodType = demodType;
     command.bandwidth = params.bandwidth;
     command.audioSampleRate = params.audioSampleRate;

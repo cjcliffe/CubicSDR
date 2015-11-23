@@ -19,6 +19,13 @@ ModemLSB::~ModemLSB() {
     ampmodem_destroy(demodAM_LSB);
 }
 
+int ModemLSB::checkSampleRate(long long sampleRate, int audioSampleRate) {
+    if (sampleRate % 2 == 0) {
+        return sampleRate;
+    }
+    return sampleRate+1;
+}
+
 void ModemLSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
     ModemKitAnalog *akit = (ModemKitAnalog *)kit;
     

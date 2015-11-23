@@ -172,17 +172,20 @@ bool CubicSDR::OnInit() {
     Modem::addModemFactory(new ModemDSB);
     Modem::addModemFactory(new ModemIQ);
 
+#ifdef ENABLE_DIGITAL_LAB
     Modem::addModemFactory(new ModemAPSK);
     Modem::addModemFactory(new ModemASK);
     Modem::addModemFactory(new ModemBPSK);
     Modem::addModemFactory(new ModemDPSK);
+    Modem::addModemFactory(new ModemFSK);
     Modem::addModemFactory(new ModemOOK);
     Modem::addModemFactory(new ModemPSK);
     Modem::addModemFactory(new ModemQAM);
     Modem::addModemFactory(new ModemQPSK);
     Modem::addModemFactory(new ModemSQAM);
     Modem::addModemFactory(new ModemST);
-
+#endif
+    
     frequency = wxGetApp().getConfig()->getCenterFreq();
     offset = 0;
     ppm = 0;

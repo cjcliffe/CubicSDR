@@ -26,62 +26,62 @@ void DemodulatorWorkerThread::run() {
         while (!done) {
             commandQueue->pop(command);
             switch (command.cmd) {
-            case DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS:
-                filterChanged = true;
-                filterCommand = command;
-                break;
-            case DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_MAKE_DEMOD:
-                makeDemod = true;
-                demodCommand = command;
-                break;
-            default:
-                break;
+                case DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS:
+                    filterChanged = true;
+                    filterCommand = command;
+                    break;
+                case DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_MAKE_DEMOD:
+                    makeDemod = true;
+                    demodCommand = command;
+                    break;
+                default:
+                    break;
             }
             done = commandQueue->empty();
         }
-        
 
         if ((makeDemod || filterChanged) && !terminated) {
             DemodulatorWorkerThreadResult result(DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS);
-
-            float As = 60.0f;         // stop-band attenuation [dB]
-
-            if (filterCommand.sampleRate && filterCommand.bandwidth) {
-                result.iqResampleRatio = (double) (filterCommand.bandwidth) / (double) filterCommand.sampleRate;
-                result.iqResampler = msresamp_crcf_create(result.iqResampleRatio, As);
+            
+            
+            if (filterCommand.sampleRate) {
+                result.sampleRate = filterCommand.sampleRate;
             }
-
+            
             if (makeDemod) {
                 cModem = Modem::makeModem(demodCommand.demodType);
                 cModemType = demodCommand.demodType;
+                result.sampleRate = demodCommand.sampleRate;
             }
             result.modem = cModem;
 
             if (makeDemod && demodCommand.bandwidth && demodCommand.audioSampleRate) {
                 if (cModem != nullptr) {
-                    cModemKit = cModem->buildKit(demodCommand.bandwidth, demodCommand.audioSampleRate);
+                    result.bandwidth = cModem->checkSampleRate(demodCommand.bandwidth, demodCommand.audioSampleRate);
+                    cModemKit = cModem->buildKit(result.bandwidth, demodCommand.audioSampleRate);
                 } else {
                     cModemKit = nullptr;
                 }
             } else if (filterChanged && filterCommand.bandwidth && filterCommand.audioSampleRate) {
                 if (cModem != nullptr) {
-                    cModemKit = cModem->buildKit(filterCommand.bandwidth, filterCommand.audioSampleRate);
+                    result.bandwidth = cModem->checkSampleRate(filterCommand.bandwidth, filterCommand.audioSampleRate);
+                    cModemKit = cModem->buildKit(result.bandwidth, filterCommand.audioSampleRate);
                 } else {
                     cModemKit = nullptr;
                 }
             } else if (makeDemod) {
                 cModemKit = nullptr;
             }
+            
+            float As = 60.0f;         // stop-band attenuation [dB]
+            
+            if (result.sampleRate && result.bandwidth) {
+                result.bandwidth = cModem->checkSampleRate(result.bandwidth, makeDemod?demodCommand.audioSampleRate:filterCommand.audioSampleRate);
+                result.iqResampleRatio = (double) (result.bandwidth) / (double) result.sampleRate;
+                result.iqResampler = msresamp_crcf_create(result.iqResampleRatio, As);
+            }
+
             result.modemKit = cModemKit;
-
-            if (filterCommand.bandwidth) {
-                result.bandwidth = filterCommand.bandwidth;
-            }
-
-            if (filterCommand.sampleRate) {
-                result.sampleRate = filterCommand.sampleRate;
-            }
-
             result.modemType = cModemType;
             
             resultQueue->push(result);

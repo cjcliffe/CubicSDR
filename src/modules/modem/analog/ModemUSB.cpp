@@ -19,6 +19,13 @@ ModemUSB::~ModemUSB() {
     ampmodem_destroy(demodAM_USB);
 }
 
+int ModemUSB::checkSampleRate(long long sampleRate, int audioSampleRate) {
+    if (sampleRate % 2 == 0) {
+        return sampleRate;
+    }
+    return sampleRate+1;
+}
+
 void ModemUSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
     ModemKitAnalog *akit = (ModemKitAnalog *)kit;
     

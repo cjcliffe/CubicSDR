@@ -85,11 +85,12 @@ AppFrame::AppFrame() :
     demodModeSelectorAdv->addChoice(2, "BPSK");
     demodModeSelectorAdv->addChoice(3, "DPSK");
     demodModeSelectorAdv->addChoice(4, "PSK");
-    demodModeSelectorAdv->addChoice(5, "OOK");
-    demodModeSelectorAdv->addChoice(6, "ST");
-    demodModeSelectorAdv->addChoice(7, "SQAM");
-    demodModeSelectorAdv->addChoice(8, "QAM");
-    demodModeSelectorAdv->addChoice(9, "QPSK");
+    demodModeSelectorAdv->addChoice(5, "FSK");
+    demodModeSelectorAdv->addChoice(6, "OOK");
+    demodModeSelectorAdv->addChoice(7, "ST");
+    demodModeSelectorAdv->addChoice(8, "SQAM");
+    demodModeSelectorAdv->addChoice(9, "QAM");
+    demodModeSelectorAdv->addChoice(10, "QPSK");
     demodModeSelectorAdv->setHelpTip("Choose advanced modulation types.");
     demodTray->Add(demodModeSelectorAdv, 3, wxEXPAND | wxALL, 0);
     

@@ -10,6 +10,8 @@ Modem *ModemIQ::factory() {
 
 ModemKit *ModemIQ::buildKit(long long sampleRate, int audioSampleRate) {
     ModemKit *kit = new ModemKit;
+    kit->sampleRate = sampleRate;
+    kit->audioSampleRate = audioSampleRate;
     return kit;
 }
 
@@ -23,6 +25,10 @@ std::string ModemIQ::getName() {
 
 void ModemIQ::disposeKit(ModemKit *kit) {
     delete kit;
+}
+
+int ModemIQ::checkSampleRate(long long sampleRate, int audioSampleRate) {
+    return audioSampleRate;
 }
 
 void ModemIQ::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {

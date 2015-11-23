@@ -7,10 +7,12 @@
 #include "DemodDefs.h"
 #include "DemodulatorWorkerThread.h"
 
+class DemodulatorInstance;
+
 class DemodulatorPreThread : public IOThread {
 public:
 
-    DemodulatorPreThread();
+    DemodulatorPreThread(DemodulatorInstance *parent);
     ~DemodulatorPreThread();
 
     void run();
@@ -28,6 +30,7 @@ public:
     ModemKit *getModemKit();
     
 protected:
+    DemodulatorInstance *parent;
     msresamp_crcf iqResampler;
     double iqResampleRatio;
     std::vector<liquid_float_complex> resampledData;

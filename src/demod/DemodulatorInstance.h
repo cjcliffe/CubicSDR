@@ -97,8 +97,6 @@ protected:
 
 private:
 
-    void checkBandwidth();
-    
     std::atomic<std::string *> label; //
     std::atomic_bool terminated; //
     std::atomic_bool demodTerminated; //
@@ -109,7 +107,6 @@ private:
     std::atomic_bool muted;
 
     std::atomic_llong currentFrequency;
-    std::atomic_int currentBandwidth;
     std::string currentDemodType;
     std::atomic_int currentOutputDevice;
     std::atomic_int currentAudioSampleRate;

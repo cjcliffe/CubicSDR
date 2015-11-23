@@ -14,7 +14,6 @@ DemodulatorInstance::DemodulatorInstance() :
 	follow.store(false);
 	currentAudioSampleRate.store(0);
 	currentFrequency.store(0);
-	currentBandwidth.store(0);
 	currentOutputDevice.store(-1);
     currentAudioGain.store(1.0);
 
@@ -24,7 +23,7 @@ DemodulatorInstance::DemodulatorInstance() :
     pipeDemodCommand = new DemodulatorThreadCommandQueue;
     pipeDemodNotify = new DemodulatorThreadCommandQueue;
     
-    demodulatorPreThread = new DemodulatorPreThread();
+    demodulatorPreThread = new DemodulatorPreThread(this);
     demodulatorPreThread->setInputQueue("IQDataInput",pipeIQInputData);
     demodulatorPreThread->setOutputQueue("IQDataOutput",pipeIQDemodData);
     demodulatorPreThread->setOutputQueue("NotifyQueue",pipeDemodNotify);
@@ -254,12 +253,6 @@ int DemodulatorInstance::getOutputDevice() {
     return currentOutputDevice;
 }
 
-void DemodulatorInstance::checkBandwidth() {
-//    if ((currentDemodType == DEMOD_TYPE_USB || currentDemodType == DEMOD_TYPE_LSB) && (getBandwidth() % 2)) {
-//        setBandwidth(getBandwidth()+1);
-//    }
-}
-
 void DemodulatorInstance::setDemodulatorType(std::string demod_type_in) {
     currentDemodType = demod_type_in;
 
@@ -274,7 +267,6 @@ void DemodulatorInstance::setDemodulatorType(std::string demod_type_in) {
 
     demodulatorPreThread->getParams().demodType = currentDemodType;
     if (!active) {
-        checkBandwidth();
         demodulatorPreThread->setDemodType(currentDemodType);
     } else if (demodulatorThread && threadQueueControl) {
         demodulatorPreThread->setDemodType(currentDemodType);
@@ -318,32 +310,18 @@ int DemodulatorInstance::getDemodulatorCons() {
 }
 
 void DemodulatorInstance::setBandwidth(int bw) {
-    if (currentDemodType == "I/Q") {
-        if (currentAudioSampleRate) {
-            bw = currentAudioSampleRate;
-        } else {
-            bw = AudioThread::deviceSampleRate[getOutputDevice()];
-        }
-    }
     if (!active && demodulatorPreThread != NULL) {
-        currentBandwidth = bw;
-        checkBandwidth();
-        demodulatorPreThread->getParams().bandwidth = currentBandwidth;
+        demodulatorPreThread->getParams().bandwidth = bw;
     } else if (demodulatorPreThread && pipeDemodCommand) {
         DemodulatorThreadCommand command;
         command.cmd = DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_BANDWIDTH;
-        currentBandwidth = bw;
-        checkBandwidth();
-        command.llong_value = currentBandwidth;
+        command.llong_value = bw;
         pipeDemodCommand->push(command);
     }
 }
 
 int DemodulatorInstance::getBandwidth() {
-    if (!currentBandwidth) {
-        currentBandwidth = demodulatorPreThread->getParams().bandwidth;
-    }
-    return currentBandwidth;
+    return demodulatorPreThread->getParams().bandwidth;
 }
 
 void DemodulatorInstance::setFrequency(long long freq) {
@@ -387,9 +365,9 @@ void DemodulatorInstance::setAudioSampleRate(int sampleRate) {
 }
 
 int DemodulatorInstance::getAudioSampleRate() {
-    if (!currentAudioSampleRate) {
-        currentAudioSampleRate = audioThread->getSampleRate();
-    }
+    currentAudioSampleRate = audioThread->getSampleRate();
+    demodulatorPreThread->getParams().audioSampleRate = currentAudioSampleRate;
+
     return currentAudioSampleRate;
 }
 

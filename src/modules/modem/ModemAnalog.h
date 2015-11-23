@@ -16,12 +16,13 @@ class ModemAnalog : public Modem {
 public:
     ModemAnalog();
     std::string getType();
-    ModemKit *buildKit(long long sampleRate, int audioSampleRate);
-    void disposeKit(ModemKit *kit);
-    void initOutputBuffers(ModemKitAnalog *akit, ModemIQData *input);
-    void buildAudioOutput(ModemKitAnalog *akit, AudioThreadInput *audioOut, bool autoGain);
-    std::vector<float> *getDemodOutputData();
-    std::vector<float> *getResampledOutputData();
+    virtual int checkSampleRate(long long sampleRate, int audioSampleRate);
+    virtual ModemKit *buildKit(long long sampleRate, int audioSampleRate);
+    virtual void disposeKit(ModemKit *kit);
+    virtual void initOutputBuffers(ModemKitAnalog *akit, ModemIQData *input);
+    virtual void buildAudioOutput(ModemKitAnalog *akit, AudioThreadInput *audioOut, bool autoGain);
+    virtual std::vector<float> *getDemodOutputData();
+    virtual std::vector<float> *getResampledOutputData();
 protected:
     int bufSize;
     std::vector<float> demodOutputData;
