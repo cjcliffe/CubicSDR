@@ -18,6 +18,20 @@ Modem *Modem::makeModem(std::string modemType) {
     return nullptr;
 }
 
+ModemArgInfoList Modem::getSettings() {
+    ModemArgInfoList args;
+    
+    return args;
+}
+
+void Modem::writeSetting(std::string setting, std::string value) {
+    // ...
+}
+
+std::string Modem::readSetting(std::string setting) {
+    return "";
+}
+
 Modem::Modem() {
     
 }

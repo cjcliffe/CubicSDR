@@ -3,7 +3,6 @@
 #include <map>
 #include <vector>
 
-#include "SDRDevices.h"
 #include "SDRDevicesForm.h"
 #include "SoapySDRThread.h"
 #include "SDREnumerator.h"

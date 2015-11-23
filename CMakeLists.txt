@@ -287,7 +287,7 @@ SET (cubicsdr_sources
 )
 
 IF(ENABLE_DIGITAL_LAB)
-    SET (cubicsdr_sources 
+    SET (cubicsdr_sources
         ${cubicsdr_sources}
         src/modules/modem/digital/ModemASK.cpp
         src/modules/modem/digital/ModemAPSK.cpp
@@ -389,7 +389,7 @@ SET (cubicsdr_headers
 )
 
 IF(ENABLE_DIGITAL_LAB)
-SET(cubicsdr_headers 
+SET (cubicsdr_headers
     ${cubicsdr_headers}
     src/modules/modem/digital/ModemASK.h
     src/modules/modem/digital/ModemAPSK.h
