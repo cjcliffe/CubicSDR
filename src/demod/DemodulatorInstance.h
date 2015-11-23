@@ -73,7 +73,7 @@ public:
 
     void setAudioSampleRate(int sampleRate);
     int getAudioSampleRate();
-
+    
     bool isFollow();
     void setFollow(bool follow);
 
@@ -89,7 +89,6 @@ protected:
     DemodulatorThreadInputQueue* pipeIQInputData;
     DemodulatorThreadPostInputQueue* pipeIQDemodData;
     AudioThreadInputQueue *pipeAudioData;
-    DemodulatorThreadCommandQueue* pipeDemodCommand;
     DemodulatorThreadCommandQueue* pipeDemodNotify;
     DemodulatorPreThread *demodulatorPreThread;
     DemodulatorThread *demodulatorThread;
@@ -106,10 +105,7 @@ private:
     std::atomic_bool squelch;
     std::atomic_bool muted;
 
-    std::atomic_llong currentFrequency;
-    std::string currentDemodType;
     std::atomic_int currentOutputDevice;
-    std::atomic_int currentAudioSampleRate;
     std::atomic<float> currentAudioGain;
     std::atomic_bool follow, tracking;
   };

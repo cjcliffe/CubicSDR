@@ -42,7 +42,9 @@ ModemKit *ModemFMStereo::buildKit(long long sampleRate, int audioSampleRate) {
     ModemKitFMStereo *kit = new ModemKitFMStereo;
     
     kit->audioResampleRatio = double(audioSampleRate) / double(sampleRate);
-    
+    kit->sampleRate = sampleRate;
+    kit->audioSampleRate = audioSampleRate;
+   
     float As = 60.0f;         // stop-band attenuation [dB]
     
     kit->audioResampler = msresamp_rrrf_create(kit->audioResampleRatio, As);

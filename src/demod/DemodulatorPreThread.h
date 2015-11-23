@@ -16,13 +16,22 @@ public:
     ~DemodulatorPreThread();
 
     void run();
-
-    DemodulatorThreadParameters &getParams();
-    void setParams(DemodulatorThreadParameters &params_in);
     
     void setDemodType(std::string demodType);
     std::string getDemodType();
 
+    void setFrequency(long long sampleRate);
+    long long getFrequency();
+
+    void setSampleRate(long long sampleRate);
+    long long getSampleRate();
+    
+    void setBandwidth(int bandwidth);
+    int getBandwidth();
+    
+    void setAudioSampleRate(int rate);
+    int getAudioSampleRate();
+    
     void initialize();
     void terminate();
 
@@ -37,10 +46,14 @@ protected:
 
     Modem *cModem;
     ModemKit *cModemKit;
+    
+    long long currentSampleRate, newSampleRate;
+    long long currentFrequency, newFrequency;
+    int currentBandwidth, newBandwidth;
+    int currentAudioSampleRate, newAudioSampleRate;
 
-    DemodulatorThreadParameters params;
-    DemodulatorThreadParameters lastParams;
-
+    std::atomic_bool sampleRateChanged, frequencyChanged, bandwidthChanged, audioSampleRateChanged;
+    
     nco_crcf freqShifter;
     int shiftFrequency;
 
@@ -58,5 +71,4 @@ protected:
     DemodulatorThreadInputQueue* iqInputQueue;
     DemodulatorThreadPostInputQueue* iqOutputQueue;
     DemodulatorThreadCommandQueue* threadQueueNotify;
-    DemodulatorThreadCommandQueue* commandQueue;
 };

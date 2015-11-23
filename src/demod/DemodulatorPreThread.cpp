@@ -9,7 +9,7 @@
 #include "CubicSDR.h"
 #include "DemodulatorInstance.h"
 
-DemodulatorPreThread::DemodulatorPreThread(DemodulatorInstance *parent) : IOThread(), iqResampler(NULL), iqResampleRatio(1), cModem(nullptr), cModemKit(nullptr), iqInputQueue(NULL), iqOutputQueue(NULL), threadQueueNotify(NULL), commandQueue(NULL)
+DemodulatorPreThread::DemodulatorPreThread(DemodulatorInstance *parent) : IOThread(), iqResampler(NULL), iqResampleRatio(1), cModem(nullptr), cModemKit(nullptr), iqInputQueue(NULL), iqOutputQueue(NULL), threadQueueNotify(NULL)
  {
 	initialized.store(false);
     this->parent = parent;
@@ -23,18 +23,20 @@ DemodulatorPreThread::DemodulatorPreThread(DemodulatorInstance *parent) : IOThre
     workerThread = new DemodulatorWorkerThread();
     workerThread->setInputQueue("WorkerCommandQueue",workerQueue);
     workerThread->setOutputQueue("WorkerResultQueue",workerResults);
+     
+    newSampleRate = currentSampleRate = 0;
+    newBandwidth = currentBandwidth = 0;
+    newAudioSampleRate = currentAudioSampleRate = 0;
+    newFrequency = currentFrequency = 0;
+
+    sampleRateChanged.store(false);
+    frequencyChanged.store(false);
+    bandwidthChanged.store(false);
+    audioSampleRateChanged.store(false);
 }
 
 void DemodulatorPreThread::initialize() {
-    iqResampleRatio = (double) (params.bandwidth) / (double) params.sampleRate;
-
-    float As = 60.0f;         // stop-band attenuation [dB]
-
-    iqResampler = msresamp_crcf_create(iqResampleRatio, As);
-
     initialized.store(true);
-    
-    lastParams = params;
 }
 
 DemodulatorPreThread::~DemodulatorPreThread() {
@@ -59,83 +61,86 @@ void DemodulatorPreThread::run() {
     iqInputQueue = (DemodulatorThreadInputQueue*)getInputQueue("IQDataInput");
     iqOutputQueue = (DemodulatorThreadPostInputQueue*)getOutputQueue("IQDataOutput");
     threadQueueNotify = (DemodulatorThreadCommandQueue*)getOutputQueue("NotifyQueue");
-    commandQueue = ( DemodulatorThreadCommandQueue*)getInputQueue("CommandQueue");
     
     std::vector<liquid_float_complex> in_buf_data;
     std::vector<liquid_float_complex> out_buf_data;
 
-    setDemodType(params.demodType);
     t_Worker = new std::thread(&DemodulatorWorkerThread::threadMain, workerThread);
     
     while (!terminated) {
         DemodulatorThreadIQData *inp;
         iqInputQueue->pop(inp);
-
-        bool bandwidthChanged = false;
-        bool rateChanged = false;
-        DemodulatorThreadParameters tempParams = params;
-
-        if (!commandQueue->empty()) {
-            while (!commandQueue->empty()) {
-                DemodulatorThreadCommand command;
-                commandQueue->pop(command);
-                switch (command.cmd) {
-                case DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_BANDWIDTH:
-                    if (command.llong_value < 1500) {
-                        command.llong_value = 1500;
-                    }
-                    tempParams.bandwidth = command.llong_value;
-                    bandwidthChanged = true;
-                    break;
-                case DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_FREQUENCY:
-                    params.frequency = tempParams.frequency = command.llong_value;
-                    break;
-                case DemodulatorThreadCommand::DEMOD_THREAD_CMD_SET_AUDIO_RATE:
-                    tempParams.audioSampleRate = (int)command.llong_value;
-                    rateChanged = true;
-                    break;
-                default:
-                    break;
-                }
+        
+        if (frequencyChanged.load()) {
+            currentFrequency = newFrequency;
+            frequencyChanged.store(false);
+        }
+        
+        if (inp->sampleRate != currentSampleRate) {
+            newSampleRate = inp->sampleRate;
+            if (newSampleRate) {
+                sampleRateChanged.store(true);
             }
         }
-
-        if (inp->sampleRate != tempParams.sampleRate && inp->sampleRate) {
-            tempParams.sampleRate = inp->sampleRate;
-            rateChanged = true;
+        
+        if (!newAudioSampleRate) {
+            newAudioSampleRate = parent->getAudioSampleRate();
+            if (newAudioSampleRate) {
+                audioSampleRateChanged.store(true);
+            }
+        } else if (parent->getAudioSampleRate() != newAudioSampleRate) {
+            int newRate;
+            if ((newRate = parent->getAudioSampleRate())) {
+                newAudioSampleRate = parent->getAudioSampleRate();
+                audioSampleRateChanged.store(true);
+            }
         }
-
-        if (bandwidthChanged || rateChanged) {
+        
+        if (demodTypeChanged.load() && (newSampleRate && newAudioSampleRate && newBandwidth)) {
+            DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_MAKE_DEMOD);
+            command.frequency = newFrequency;
+            command.sampleRate = newSampleRate;
+            command.demodType = newDemodType;
+            command.bandwidth = newBandwidth;
+            command.audioSampleRate = newAudioSampleRate;
+            workerQueue->push(command);
+            demodType = newDemodType;
+            sampleRateChanged.store(false);
+            audioSampleRateChanged.store(false);
+            demodTypeChanged.store(false);
+        } else if (cModemKit && cModem && (bandwidthChanged.load() || sampleRateChanged.load() || audioSampleRateChanged.load()) && (newSampleRate && newAudioSampleRate && newBandwidth)) {
             DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS);
-            command.sampleRate = tempParams.sampleRate;
-            command.audioSampleRate = tempParams.audioSampleRate;
-            command.bandwidth = tempParams.bandwidth;
-            command.frequency = tempParams.frequency;
-
+            command.frequency = newFrequency;
+            command.sampleRate = newSampleRate;
+            command.bandwidth = newBandwidth;
+            command.audioSampleRate = newAudioSampleRate;
+            bandwidthChanged.store(false);
+            sampleRateChanged.store(false);
+            audioSampleRateChanged.store(false);
             workerQueue->push(command);
         }
-
+        
         if (!initialized) {
             inp->decRefCount();
             continue;
         }
 
         // Requested frequency is not center, shift it into the center!
-        if ((params.frequency - inp->frequency) != shiftFrequency || rateChanged) {
-            shiftFrequency = params.frequency - inp->frequency;
+        if ((currentFrequency - inp->frequency) != shiftFrequency) {
+            shiftFrequency = currentFrequency - inp->frequency;
             if (abs(shiftFrequency) <= (int) ((double) (inp->sampleRate / 2) * 1.5)) {
                 nco_crcf_set_frequency(freqShifter, (2.0 * M_PI) * (((double) abs(shiftFrequency)) / ((double) inp->sampleRate)));
             }
         }
 
-        if (abs(shiftFrequency) > (int) ((double) (inp->sampleRate / 2) * 1.5)) {
+        if (cModem && cModemKit && abs(shiftFrequency) > (int) ((double) (inp->sampleRate / 2) * 1.5)) {
             inp->decRefCount();
             continue;
         }
 
 //        std::lock_guard < std::mutex > lock(inp->m_mutex);
         std::vector<liquid_float_complex> *data = &inp->data;
-        if (data->size() && (inp->sampleRate == params.sampleRate)) {
+        if (data->size() && (inp->sampleRate == currentSampleRate) && cModem && cModemKit) {
             int bufSize = data->size();
 
             if (in_buf_data.size() != bufSize) {
@@ -184,7 +189,7 @@ void DemodulatorPreThread::run() {
             resamp->modemType = demodType;
             resamp->modem = cModem;
             resamp->modemKit = cModemKit;
-            resamp->sampleRate = params.bandwidth;
+            resamp->sampleRate = currentBandwidth;
 
             iqOutputQueue->push(resamp);
         }
@@ -198,7 +203,6 @@ void DemodulatorPreThread::run() {
 
                 switch (result.cmd) {
                 case DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS:
-
                     if (result.iqResampler) {
                         if (iqResampler) {
                             msresamp_crcf_destroy(iqResampler);
@@ -213,21 +217,23 @@ void DemodulatorPreThread::run() {
                     
                     if (result.modemKit != nullptr) {
                         cModemKit = result.modemKit;
+                        currentAudioSampleRate = cModemKit->audioSampleRate;
                     }
                         
                     if (result.bandwidth) {
-                        params.bandwidth = result.bandwidth;
+                        currentBandwidth = result.bandwidth;
                     }
 
                     if (result.sampleRate) {
-                        params.sampleRate = result.sampleRate;
+                        currentSampleRate = result.sampleRate;
                     }
                         
                     if (result.modemType != "") {
                         demodType = result.modemType;
-                        params.demodType = result.modemType;
                         demodTypeChanged.store(false);
                     }
+                        
+                    shiftFrequency = inp->frequency-1;
                     break;
                 default:
                     break;
@@ -244,22 +250,8 @@ void DemodulatorPreThread::run() {
     std::cout << "Demodulator preprocessor thread done." << std::endl;
 }
 
-DemodulatorThreadParameters &DemodulatorPreThread::getParams() {
-    return params;
-}
-
-void DemodulatorPreThread::setParams(DemodulatorThreadParameters &params_in) {
-    params = params_in;
-}
-
 void DemodulatorPreThread::setDemodType(std::string demodType) {
-    this->newDemodType = demodType;
-    DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_MAKE_DEMOD);
-    command.sampleRate = params.sampleRate;
-    command.demodType = demodType;
-    command.bandwidth = params.bandwidth;
-    command.audioSampleRate = params.audioSampleRate;
-    workerQueue->push(command);
+    newDemodType = demodType;
     demodTypeChanged.store(true);
 }
 
@@ -268,6 +260,55 @@ std::string DemodulatorPreThread::getDemodType() {
         return newDemodType;
     }
     return demodType;
+}
+
+void DemodulatorPreThread::setFrequency(long long freq) {
+    frequencyChanged.store(true);
+    newFrequency = freq;
+}
+
+long long DemodulatorPreThread::getFrequency() {
+    if (frequencyChanged.load()) {
+        return newFrequency;
+    }
+    return currentFrequency;
+}
+
+void DemodulatorPreThread::setSampleRate(long long sampleRate) {
+    sampleRateChanged.store(true);
+    newSampleRate = sampleRate;
+}
+
+long long DemodulatorPreThread::getSampleRate() {
+    if (sampleRateChanged.load()) {
+        return newSampleRate;
+    }
+    return currentSampleRate;
+}
+
+void DemodulatorPreThread::setBandwidth(int bandwidth) {
+    bandwidthChanged.store(true);
+    newBandwidth = bandwidth;
+}
+
+int DemodulatorPreThread::getBandwidth() {
+//    if (bandwidthChanged.load()) {
+//        return newBandwidth;
+//    }
+    
+    return currentBandwidth;
+}
+
+void DemodulatorPreThread::setAudioSampleRate(int rate) {
+    audioSampleRateChanged.store(true);
+    newAudioSampleRate = rate;
+}
+
+int DemodulatorPreThread::getAudioSampleRate() {
+    if (audioSampleRateChanged.load()) {
+        return newAudioSampleRate;
+    }
+    return currentAudioSampleRate;
 }
 
 void DemodulatorPreThread::terminate() {
@@ -283,7 +324,6 @@ void DemodulatorPreThread::terminate() {
     delete workerResults;
     delete workerQueue;
 }
-
 
 Modem *DemodulatorPreThread::getModem() {
     return cModem;

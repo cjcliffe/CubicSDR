@@ -12,7 +12,7 @@
 #include <pthread.h>
 #endif
 
-DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent) : IOThread(), audioSampleRate(0), squelchLevel(-100), signalLevel(-100), squelchEnabled(false), cModem(nullptr), cModemKit(nullptr), iqInputQueue(NULL), audioOutputQueue(NULL), audioVisOutputQueue(NULL), threadQueueControl(NULL), threadQueueNotify(NULL) {
+DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent) : IOThread(), squelchLevel(-100), signalLevel(-100), squelchEnabled(false), cModem(nullptr), cModemKit(nullptr), iqInputQueue(NULL), audioOutputQueue(NULL), audioVisOutputQueue(NULL), threadQueueControl(NULL), threadQueueNotify(NULL) {
     
     demodInstance = parent;
     muted.store(false);
@@ -73,8 +73,6 @@ void DemodulatorThread::run() {
         iqInputQueue->pop(inp);
         //        std::lock_guard < std::mutex > lock(inp->m_mutex);
         
-        audioSampleRate = demodInstance->getAudioSampleRate();
-        
         int bufSize = inp->data.size();
         
         if (!bufSize) {
@@ -127,7 +125,7 @@ void DemodulatorThread::run() {
         if (modemAnalog != nullptr) {
             ati = outputBuffers.getBuffer();
             
-            ati->sampleRate = audioSampleRate;
+            ati->sampleRate = cModemKit->audioSampleRate;
             ati->inputRate = inp->sampleRate;
             ati->setRefCount(1);
         }
@@ -178,7 +176,7 @@ void DemodulatorThread::run() {
                     }
                 } else {
                     for (int i = 0; i < stereoSize / 2; i++) {
-                        ati_vis->inputRate = audioSampleRate;
+                        ati_vis->inputRate = cModemKit->audioSampleRate;
                         ati_vis->sampleRate = 36000;
                         ati_vis->data[i] = ati->data[i * 2];
                         ati_vis->data[i + stereoSize / 2] = ati->data[i * 2 + 1];
@@ -189,7 +187,7 @@ void DemodulatorThread::run() {
                 ati_vis->channels = 1;
                 std::vector<float> *demodOutData = (modemAnalog != nullptr)?modemAnalog->getDemodOutputData():nullptr;
                 if ((numAudioWritten > bufSize) || (demodOutData == nullptr)) {
-                    ati_vis->inputRate = audioSampleRate;
+                    ati_vis->inputRate = cModemKit->audioSampleRate;
                     if (num_vis > numAudioWritten) {
                         num_vis = numAudioWritten;
                     }
