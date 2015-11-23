@@ -9,6 +9,9 @@ std::string ModemDigital::getType() {
 }
 
 int ModemDigital::checkSampleRate(long long sampleRate, int audioSampleRate) {
+    if (sampleRate < 1500) {
+        return 1500;
+    }
     return sampleRate;
 }
 

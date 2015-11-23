@@ -33,6 +33,8 @@ Modem *ModemFMStereo::factory() {
 int ModemFMStereo::checkSampleRate(long long sampleRate, int audioSampleRate) {
     if (sampleRate < 100000) {
         return 100000;
+    } else if (sampleRate < 1500) {
+        return 1500;
     } else {
         return sampleRate;
     }

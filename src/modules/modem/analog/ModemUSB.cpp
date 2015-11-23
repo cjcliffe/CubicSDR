@@ -20,6 +20,9 @@ ModemUSB::~ModemUSB() {
 }
 
 int ModemUSB::checkSampleRate(long long sampleRate, int audioSampleRate) {
+    if (sampleRate < 1500) {
+        return 1500;
+    }
     if (sampleRate % 2 == 0) {
         return sampleRate;
     }
