@@ -3,7 +3,6 @@
 
 class ModemKitFSK : public ModemKitDigital {
 public:
-    float sps, spacing, bandwidth;
     unsigned int m, k;
     
     fskdem demodFSK;
@@ -20,6 +19,8 @@ public:
     
     Modem *factory();
     
+    int checkSampleRate(long long sampleRate, int audioSampleRate);
+
     ModemArgInfoList getSettings();
     void writeSetting(std::string setting, std::string value);
     std::string readSetting(std::string setting);
@@ -30,6 +31,7 @@ public:
     void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
 
 private:
-    int bps, spacing;
+    int sps;
+    int bps;
 };
 

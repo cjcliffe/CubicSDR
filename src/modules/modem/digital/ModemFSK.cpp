@@ -2,12 +2,22 @@
 
 ModemFSK::ModemFSK() {
     // DMR defaults?
-    bps = 9600;
-    spacing = 7000;
+    bps = 1;
+    sps = 9600;
 }
 
 Modem *ModemFSK::factory() {
     return new ModemFSK;
+}
+
+int ModemFSK::checkSampleRate(long long sampleRate, int audioSampleRate) {
+    float minSps = pow(2.0,bps);
+    float nextSps = (float(sampleRate) / float(sps));
+    if (nextSps < minSps) {
+        return 2 * bps * sps;
+    } else {
+        return sampleRate;
+    }
 }
 
 ModemArgInfoList ModemFSK::getSettings() {
@@ -15,30 +25,39 @@ ModemArgInfoList ModemFSK::getSettings() {
     
     ModemArgInfo bpsArg;
     bpsArg.key = "bps";
-    bpsArg.name = "Bits per-symbol";
+    bpsArg.name = "Bits/symbol";
     bpsArg.value = std::to_string(bps);
-    bpsArg.description = "FSK modem bits-per-symbol";
+    bpsArg.description = "Modem bits-per-symbol";
     bpsArg.type = ModemArgInfo::STRING;
     
     std::vector<std::string> bpsOpts;
-    bpsOpts.push_back("9600");
+    bpsOpts.push_back("1");
+    bpsOpts.push_back("2");
+    bpsOpts.push_back("4");
+    bpsOpts.push_back("8");
     bpsArg.options = bpsOpts;
     
     args.push_back(bpsArg);
-
-    ModemArgInfo spacingArg;
-    spacingArg.key = "spacing";
-    spacingArg.name = "Symbol Spacing?";
-    spacingArg.description = "Not quite sure yet :-)";
-    spacingArg.type = ModemArgInfo::STRING;
-    spacingArg.value = std::to_string(spacing);
-
-    std::vector<std::string> spacingOpts;
-    spacingOpts.push_back("7000");
-    spacingArg.options = spacingOpts;
     
-    args.push_back(spacingArg);
+    ModemArgInfo spsArg;
+    spsArg.key = "sps";
+    spsArg.name = "Symbols/second";
+    spsArg.value = std::to_string(sps);
+    spsArg.description = "Modem symbols-per-second";
+    spsArg.type = ModemArgInfo::STRING;
     
+    std::vector<std::string> spsOpts;
+    // some common modem rates ..?
+    spsOpts.push_back("1200");
+    spsOpts.push_back("2400");
+    spsOpts.push_back("4800");
+    spsOpts.push_back("9600");
+    spsOpts.push_back("19200");
+    spsOpts.push_back("38400");
+    spsArg.options = spsOpts;
+    
+    args.push_back(spsArg);
+
     return args;
 }
 
@@ -46,8 +65,8 @@ void ModemFSK::writeSetting(std::string setting, std::string value) {
     if (setting == "bps") {
         bps = std::stoi(value);
         rebuildKit();
-    } else if (setting == "spacing") {
-        spacing = std::stoi(value);
+    } else if (setting == "sps") {
+        sps = std::stoi(value);
         rebuildKit();
     }
 }
@@ -55,19 +74,18 @@ void ModemFSK::writeSetting(std::string setting, std::string value) {
 std::string ModemFSK::readSetting(std::string setting) {
     if (setting == "bps") {
         return std::to_string(bps);
-    } else if (setting == "spacing") {
-        return std::to_string(spacing);
+    } else if (setting == "sps") {
+        return std::to_string(sps);
     }
     return "";
 }
 
 ModemKit *ModemFSK::buildKit(long long sampleRate, int audioSampleRate) {
     ModemKitFSK *dkit = new ModemKitFSK;
-    dkit->m           = 1;
-    dkit->k           = sampleRate / bps;
-    dkit->bandwidth   = double(spacing) / sampleRate;
+    dkit->m           = bps;
+    dkit->k           = sampleRate / sps;
 
-    dkit->demodFSK = fskdem_create(dkit->m, dkit->k, dkit->bandwidth);
+    dkit->demodFSK = fskdem_create(dkit->m, dkit->k, 0.45);
 
     dkit->sampleRate = sampleRate;
     dkit->audioSampleRate = audioSampleRate;
@@ -77,6 +95,8 @@ ModemKit *ModemFSK::buildKit(long long sampleRate, int audioSampleRate) {
 
 void ModemFSK::disposeKit(ModemKit *kit) {
     ModemKitFSK *dkit = (ModemKitFSK *)kit;
+    
+    fskdem_destroy(dkit->demodFSK);
     
     delete dkit;
 }
@@ -100,7 +120,8 @@ void ModemFSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *a
         unsigned int sym_out;
 
         sym_out = fskdem_demodulate(dkit->demodFSK, &dkit->inputBuffer[0]);
-//        std::cout << "ferror: " << fskdem_get_frequency_error(dkit->demodFSK) << std::endl;
+//        float err = fskdem_get_frequency_error(dkit->demodFSK);
+//        std::cout << "ferror: " << err << std::endl;
         printf("%01X", sym_out);
         dkit->inputBuffer.erase(dkit->inputBuffer.begin(),dkit->inputBuffer.begin()+dkit->k);
     }
