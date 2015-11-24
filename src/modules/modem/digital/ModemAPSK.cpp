@@ -68,37 +68,28 @@ std::string ModemAPSK::readSetting(std::string setting) {
 }
 
 void ModemAPSK::updateDemodulatorCons(int cons) {
+    this->cons = cons;
     switch (cons) {
         case 4:
             demodAPSK = demodAPSK4;
-            updateDemodulatorCons(4);
             break;
         case 8:
             demodAPSK = demodAPSK8;
-            updateDemodulatorCons(8);
             break;
         case 16:
             demodAPSK = demodAPSK16;
-            updateDemodulatorCons(16);
             break;
         case 32:
             demodAPSK = demodAPSK32;
-            updateDemodulatorCons(32);
             break;
         case 64:
             demodAPSK = demodAPSK64;
-            updateDemodulatorCons(64);
             break;
         case 128:
             demodAPSK = demodAPSK128;
-            updateDemodulatorCons(128);
             break;
         case 256:
             demodAPSK = demodAPSK256;
-            updateDemodulatorCons(256);
-            break;
-        default:
-            demodAPSK = demodAPSK4;
             break;
     }
 }

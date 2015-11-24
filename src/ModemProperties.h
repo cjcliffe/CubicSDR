@@ -20,11 +20,13 @@ public:
     ~ModemProperties();
     
     void initProperties(ModemArgInfoList newArgs);
-    
+
 private:
     wxPGProperty *addArgInfoProperty(wxPropertyGrid *pg, ModemArgInfo arg);
+    std::string readProperty(std::string);
+    void OnChange(wxPropertyGridEvent &event);
 
     wxPropertyGrid* m_propertyGrid;
     ModemArgInfoList args;
-    std::vector<wxPGProperty *> props;
+    std::map<std::string, wxPGProperty *> props;
 };

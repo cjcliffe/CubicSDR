@@ -1,4 +1,5 @@
 #include "ModemProperties.h"
+#include "CubicSDR.h"
 
 ModemProperties::ModemProperties(wxWindow *parent, wxWindowID winid,
          const wxPoint& pos, const wxSize& size, long style, const wxString& name) : wxPanel(parent, winid, pos, size, style, name) {
@@ -12,6 +13,8 @@ ModemProperties::ModemProperties(wxWindow *parent, wxWindowID winid,
     bSizer->Add(m_propertyGrid, 1, wxEXPAND | wxALL, 5);
     
     this->SetSizer(bSizer);
+    
+    m_propertyGrid->Connect( wxEVT_PG_CHANGED, wxPropertyGridEventHandler( ModemProperties::OnChange ), NULL, this );
 }
 
 ModemProperties::~ModemProperties() {
@@ -21,8 +24,6 @@ ModemProperties::~ModemProperties() {
 void ModemProperties::initProperties(ModemArgInfoList newArgs) {
     args = newArgs;
     
-//    props.erase(props.begin(), props.end());
-
     m_propertyGrid->Clear();
     m_propertyGrid->Append(new wxPropertyCategory("Modem Settings"));
     
@@ -30,7 +31,7 @@ void ModemProperties::initProperties(ModemArgInfoList newArgs) {
     
     for (args_i = args.begin(); args_i != args.end(); args_i++) {
         ModemArgInfo arg = (*args_i);
-        props.push_back(addArgInfoProperty(m_propertyGrid, arg));
+        props[arg.key] = addArgInfoProperty(m_propertyGrid, arg);
     }
 }
 
@@ -106,3 +107,39 @@ wxPGProperty *ModemProperties::addArgInfoProperty(wxPropertyGrid *pg, ModemArgIn
     return prop;
 }
 
+std::string ModemProperties::readProperty(std::string key) {
+    int i = 0;
+    ModemArgInfoList::const_iterator args_i;
+
+    for (args_i = args.begin(); args_i != args.end(); args_i++) {
+        ModemArgInfo arg = (*args_i);
+        if (arg.key == key) {
+            wxPGProperty *prop = props[key];
+            
+            std::string result = "";
+            if (arg.type == ModemArgInfo::STRING && arg.options.size()) {
+                return arg.options[prop->GetChoiceSelection()];
+            } else if (arg.type == ModemArgInfo::BOOL) {
+                return (prop->GetValueAsString()=="True")?"true":"false";
+            } else {
+                return prop->GetValueAsString().ToStdString();
+            }
+        }
+        i++;
+    }
+    return "";
+}
+
+void ModemProperties::OnChange(wxPropertyGridEvent &event) {
+    DemodulatorInstance *inst = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    
+    std::map<std::string, wxPGProperty *>::const_iterator prop_i;
+    for (prop_i = props.begin(); prop_i != props.end(); prop_i++) {
+        if (prop_i->second == event.m_property) {
+            std::string key = prop_i->first;
+            std::string value = readProperty(prop_i->first);
+            inst->writeModemSetting(key, value);
+            return;
+        }
+    }
+}
