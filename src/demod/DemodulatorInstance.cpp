@@ -330,3 +330,30 @@ void DemodulatorInstance::setMuted(bool muted) {
 DemodulatorThreadInputQueue *DemodulatorInstance::getIQInputDataPipe() {
     return pipeIQInputData;
 }
+
+ModemArgInfoList DemodulatorInstance::getModemArgs() {
+    Modem *m = demodulatorPreThread->getModem();
+    
+    ModemArgInfoList args;
+    if (m != nullptr) {
+        args = m->getSettings();
+    }
+    return args;
+}
+
+std::string DemodulatorInstance::readModemSetting(std::string setting) {
+    Modem *m = demodulatorPreThread->getModem();
+    
+    if (m) {
+        return m->readSetting(setting);
+    }
+    return "";
+}
+
+void DemodulatorInstance::writeModemSetting(std::string setting, std::string value) {
+    Modem *m = demodulatorPreThread->getModem();
+    
+    if (m) {
+        m->writeSetting(setting, value);
+    }
+}

@@ -856,6 +856,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             demodModeSelectorAdv->setSelection(dType);
 #endif
             demodMuteButton->setSelection(demod->isMuted()?1:-1);
+            newModemArgs = demod->getModemArgs();
+            modemPropertiesUpdated.store(true);
         }
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
             long long centerFreq = demod->getFrequency();

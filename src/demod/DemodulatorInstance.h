@@ -82,6 +82,10 @@ public:
 
     DemodulatorThreadInputQueue *getIQInputDataPipe();
 
+    ModemArgInfoList getModemArgs();
+    std::string readModemSetting(std::string setting);
+    void writeModemSetting(std::string setting, std::string value);
+    
 protected:
     DemodulatorThreadInputQueue* pipeIQInputData;
     DemodulatorThreadPostInputQueue* pipeIQDemodData;
