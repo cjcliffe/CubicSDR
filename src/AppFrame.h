@@ -16,6 +16,7 @@
 #include "GainCanvas.h"
 #include "FFTVisualDataThread.h"
 #include "SDRDeviceInfo.h"
+#include "ModemProperties.h"
 //#include "UITestCanvas.h"
 
 #include <map>
@@ -120,6 +121,8 @@ private:
     std::thread *t_FFTData;
     SDRDeviceInfo *devInfo;
     std::atomic_bool deviceChanged;
+    
+    ModemProperties *modemProps;
 
     wxDECLARE_EVENT_TABLE();
 };

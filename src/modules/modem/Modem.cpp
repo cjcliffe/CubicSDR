@@ -14,6 +14,16 @@ ModemRange::ModemRange(const double minimum, const double maximum) {
     _max = maximum;
 }
 
+//! Get the range minimum
+double ModemRange::minimum(void) const {
+    return _min;
+}
+
+//! Get the range maximum
+double ModemRange::maximum(void) const {
+    return _max;
+}
+
 ModemArgInfo::ModemArgInfo(void) {
     
 }

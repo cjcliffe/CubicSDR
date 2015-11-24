@@ -14,7 +14,7 @@ SET(CPACK_PACKAGE_VERSION_PATCH ${CUBICSDR_VERSION_PATCH})
 SET (VERSION_SUFFIX "" CACHE STRING "Add custom version suffix to CubicSDR application title.")
 
 ADD_DEFINITIONS(
-    -DCUBICSDR_VERSION="${CUBICSDR_VERSION}-${VERSION_SUFFIX}"
+    -DCUBICSDR_VERSION="${CUBICSDR_VERSION}${VERSION_SUFFIX}"
 )
 
 SET (ENABLE_DIGITAL_LAB OFF CACHE BOOL "Enable 'Digital Lab' testing features.")
@@ -225,6 +225,7 @@ SET (cubicsdr_sources
 	src/AppConfig.cpp
 	src/FrequencyDialog.cpp
     src/IOThread.cpp
+    src/ModemProperties.cpp
 	src/sdr/SDRDeviceInfo.cpp
 	src/sdr/SDRPostThread.cpp
 	src/sdr/SDREnumerator.cpp
@@ -310,6 +311,7 @@ SET (cubicsdr_headers
 	src/AppConfig.h
 	src/FrequencyDialog.h
     src/IOThread.h
+    src/ModemProperties.h
 	src/sdr/SDRDeviceInfo.h
 	src/sdr/SDRPostThread.h
 	src/sdr/SDREnumerator.h

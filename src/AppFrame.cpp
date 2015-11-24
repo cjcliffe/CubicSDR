@@ -79,7 +79,7 @@ AppFrame::AppFrame() :
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
     
 #ifdef ENABLE_DIGITAL_LAB
-    demodModeSelectorAdv = new ModeSelectorCanvas(this, attribList);
+    demodModeSelectorAdv = new ModeSelectorCanvas(demodPanel, attribList);
     demodModeSelectorAdv->addChoice(0, "ASK");
     demodModeSelectorAdv->addChoice(1, "APSK");
     demodModeSelectorAdv->addChoice(2, "BPSK");
@@ -93,6 +93,9 @@ AppFrame::AppFrame() :
     demodModeSelectorAdv->addChoice(10, "QPSK");
     demodModeSelectorAdv->setHelpTip("Choose advanced modulation types.");
     demodTray->Add(demodModeSelectorAdv, 3, wxEXPAND | wxALL, 0);
+            
+    modemProps = new ModemProperties(demodPanel, wxID_ANY);
+    demodTray->Add(modemProps, 10, wxEXPAND | wxALL, 0);
 #endif
             
     wxGetApp().getDemodSpectrumProcessor()->setup(1024);
