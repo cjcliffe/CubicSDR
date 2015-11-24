@@ -108,7 +108,12 @@ void DemodulatorPreThread::run() {
             sampleRateChanged.store(false);
             audioSampleRateChanged.store(false);
             demodTypeChanged.store(false);
-        } else if (cModemKit && cModem && (bandwidthChanged.load() || sampleRateChanged.load() || audioSampleRateChanged.load()) && (newSampleRate && newAudioSampleRate && newBandwidth)) {
+        }
+        else if (
+            cModemKit && cModem &&
+            (bandwidthChanged.load() || sampleRateChanged.load() || audioSampleRateChanged.load() || cModem->shouldRebuildKit()) &&
+            (newSampleRate && newAudioSampleRate && newBandwidth)
+        ) {
             DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS);
             command.frequency = newFrequency;
             command.sampleRate = newSampleRate;

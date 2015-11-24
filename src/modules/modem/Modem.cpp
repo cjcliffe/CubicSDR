@@ -55,3 +55,15 @@ Modem::Modem() {
 Modem::~Modem() {
     
 }
+
+bool Modem::shouldRebuildKit() {
+    return refreshKit.load();
+}
+
+void Modem::rebuildKit() {
+    refreshKit.store(true);
+}
+
+void Modem::clearRebuildKit() {
+    refreshKit.store(false);
+}

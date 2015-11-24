@@ -4,6 +4,7 @@
 #include "IOThread.h"
 #include "AudioThread.h"
 #include <cmath>
+#include <atomic>
 
 class ModemKit {
 public:
@@ -108,9 +109,12 @@ class Modem  {
 public:
     static void addModemFactory(Modem *factorySingle);
     static ModemFactoryList getFactories();
+    
     static Modem *makeModem(std::string modemType);
+    
     virtual std::string getType() = 0;
     virtual std::string getName() = 0;
+    
     virtual Modem *factory() = 0;
 
     Modem();
@@ -126,6 +130,12 @@ public:
     virtual void disposeKit(ModemKit *kit) = 0;
     
     virtual void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) = 0;
+    
+    bool shouldRebuildKit();
+    void rebuildKit();
+    void clearRebuildKit();
+    
 private:
     static ModemFactoryList modemFactories;
+    std::atomic_bool refreshKit;
 };

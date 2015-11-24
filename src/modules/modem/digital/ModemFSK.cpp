@@ -1,6 +1,7 @@
 #include "ModemFSK.h"
 
 ModemFSK::ModemFSK() {
+    // DMR defaults?
     bps = 9600;
     spacing = 7000;
 }
@@ -12,14 +13,42 @@ Modem *ModemFSK::factory() {
 ModemArgInfoList ModemFSK::getSettings() {
     ModemArgInfoList args;
     
+    ModemArgInfo bpsArg;
+    bpsArg.key = "bps";
+    bpsArg.name = "Bits per-symbol";
+    bpsArg.value = std::to_string(bps);
+    bpsArg.description = "FSK modem bits-per-symbol";
+    bpsArg.type = ModemArgInfo::STRING;
+    
+    std::vector<std::string> bpsOpts;
+    bpsOpts.push_back("9600");
+    bpsArg.options = bpsOpts;
+    
+    args.push_back(bpsArg);
+
+    ModemArgInfo spacingArg;
+    spacingArg.key = "spacing";
+    spacingArg.name = "Symbol Spacing?";
+    spacingArg.description = "Not quite sure yet :-)";
+    spacingArg.type = ModemArgInfo::STRING;
+    spacingArg.value = std::to_string(spacing);
+
+    std::vector<std::string> spacingOpts;
+    spacingOpts.push_back("7000");
+    spacingArg.options = spacingOpts;
+    
+    args.push_back(spacingArg);
+    
     return args;
 }
 
 void ModemFSK::writeSetting(std::string setting, std::string value) {
     if (setting == "bps") {
-        
+        bps = std::stoi(value);
+        rebuildKit();
     } else if (setting == "spacing") {
-        
+        spacing = std::stoi(value);
+        rebuildKit();
     }
 }
 
@@ -35,8 +64,8 @@ std::string ModemFSK::readSetting(std::string setting) {
 ModemKit *ModemFSK::buildKit(long long sampleRate, int audioSampleRate) {
     ModemKitFSK *dkit = new ModemKitFSK;
     dkit->m           = 1;
-    dkit->k           = sampleRate / 9600;
-    dkit->bandwidth   = 7000.0 / sampleRate;
+    dkit->k           = sampleRate / bps;
+    dkit->bandwidth   = double(spacing) / sampleRate;
 
     dkit->demodFSK = fskdem_create(dkit->m, dkit->k, dkit->bandwidth);
 

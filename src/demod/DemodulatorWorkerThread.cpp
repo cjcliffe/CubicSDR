@@ -72,6 +72,9 @@ void DemodulatorWorkerThread::run() {
             } else if (makeDemod) {
                 cModemKit = nullptr;
             }
+            if (cModem != nullptr) {
+                cModem->clearRebuildKit();
+            }
             
             float As = 60.0f;         // stop-band attenuation [dB]
             
