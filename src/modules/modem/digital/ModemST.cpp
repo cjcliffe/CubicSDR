@@ -16,12 +16,6 @@ ModemST::~ModemST() {
     modem_destroy(demodST);
 }
 
-void ModemST::updateDemodulatorCons(int cons) {
-    if (currentDemodCons.load() != cons) {
-        currentDemodCons = cons;
-    }
-}
-
 void ModemST::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
     ModemKitDigital *dkit = (ModemKitDigital *)kit;
     digitalStart(dkit, demodST, input);

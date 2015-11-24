@@ -93,19 +93,6 @@ AppFrame::AppFrame() :
     demodModeSelectorAdv->addChoice(10, "QPSK");
     demodModeSelectorAdv->setHelpTip("Choose advanced modulation types.");
     demodTray->Add(demodModeSelectorAdv, 3, wxEXPAND | wxALL, 0);
-    
-    demodModeSelectorCons = new ModeSelectorCanvas(this, attribList);
-    demodModeSelectorCons->addChoice(1, "auto");
-    demodModeSelectorCons->addChoice(2, "2");
-    demodModeSelectorCons->addChoice(4, "4");
-    demodModeSelectorCons->addChoice(8, "8");
-    demodModeSelectorCons->addChoice(16, "16");
-    demodModeSelectorCons->addChoice(32, "32");
-    demodModeSelectorCons->addChoice(64, "64");
-    demodModeSelectorCons->addChoice(128, "128");
-    demodModeSelectorCons->addChoice(256, "256");
-    demodModeSelectorCons->setHelpTip("Choose number of constallations types.");
-    demodTray->Add(demodModeSelectorCons, 2, wxEXPAND | wxALL, 0);
 #endif
             
     wxGetApp().getDemodSpectrumProcessor()->setup(1024);
@@ -862,9 +849,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             std::string dType = demod->getDemodulatorType();
             demodModeSelector->setSelection(dType);
 #ifdef ENABLE_DIGITAL_LAB
-            int dCons = demod->getDemodulatorCons();
             demodModeSelectorAdv->setSelection(dType);
-            demodModeSelectorCons->setSelection(dCons);
 #endif
             demodMuteButton->setSelection(demod->isMuted()?1:-1);
         }
@@ -896,7 +881,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             std::string dSelection = demodModeSelector->getSelectionLabel();
 #ifdef ENABLE_DIGITAL_LAB
             std::string dSelectionadv = demodModeSelectorAdv->getSelectionLabel();
-			int dSelectionCons = demodModeSelectorCons->getSelection();
 
             // basic demodulators
             if (dSelection != "" && dSelection != demod->getDemodulatorType()) {
@@ -908,11 +892,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 				demod->setDemodulatorType(dSelectionadv);
 				demodModeSelector->setSelection(-1);
             }
-
-			// set constellations
-			if (dSelectionCons != demod->getDemodulatorCons()) {
-				demod->setDemodulatorCons(dSelectionCons);
-			}
 #else
             // basic demodulators
             if (dSelection != "" && dSelection != demod->getDemodulatorType()) {
@@ -958,7 +937,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         std::string dSelection = demodModeSelector->getSelectionLabel();
 #ifdef ENABLE_DIGITAL_LAB
         std::string dSelectionadv = demodModeSelectorAdv->getSelectionLabel();
-		int dSelectionCons = demodModeSelectorCons->getSelection();
 
         // basic demodulators
         if (dSelection != "" && dSelection != mgr->getLastDemodulatorType()) {
@@ -970,11 +948,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             mgr->setLastDemodulatorType(dSelectionadv);
             demodModeSelector->setSelection(-1);
         }
-
-		// set constellations
-		if (dSelectionCons != mgr->getLastDemodulatorCons()) {
-			mgr->setLastDemodulatorCons(dSelectionCons);
-		}
 #else
         // basic demodulators
         if (dSelection != "" && dSelection != mgr->getLastDemodulatorType()) {

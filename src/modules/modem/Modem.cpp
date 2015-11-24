@@ -2,6 +2,22 @@
 
 ModemFactoryList Modem::modemFactories;
 
+//! Create an empty range (0.0, 0.0)
+ModemRange::ModemRange(void) {
+    _min = 0;
+    _max = 0;
+}
+
+//! Create a min/max range
+ModemRange::ModemRange(const double minimum, const double maximum) {
+    _min = minimum;
+    _max = maximum;
+}
+
+ModemArgInfo::ModemArgInfo(void) {
+    
+}
+
 void Modem::addModemFactory(Modem *factorySingle) {
     modemFactories[factorySingle->getName()] = factorySingle;
 }

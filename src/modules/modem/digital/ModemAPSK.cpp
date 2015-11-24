@@ -8,9 +8,8 @@ ModemAPSK::ModemAPSK() {
     demodAPSK64 = modem_create(LIQUID_MODEM_APSK64);
     demodAPSK128 = modem_create(LIQUID_MODEM_APSK128);
     demodAPSK256 = modem_create(LIQUID_MODEM_APSK256);
-    demodulatorCons.store(4);
-    currentDemodCons.store(0);
-    updateDemodulatorCons(4);
+    demodAPSK = demodAPSK4;
+    cons = 4;
 }
 
 Modem *ModemAPSK::factory() {
@@ -31,46 +30,76 @@ std::string ModemAPSK::getName() {
     return "APSK";
 }
 
+ModemArgInfoList ModemAPSK::getSettings() {
+    ModemArgInfoList args;
+    
+    ModemArgInfo consArg;
+    consArg.key = "cons";
+    consArg.name = "Constellation";
+    consArg.description = "Modem Constellation Pattern";
+    consArg.value = std::to_string(cons);
+    consArg.type = ModemArgInfo::STRING;
+    std::vector<std::string> consOpts;
+    consOpts.push_back("4");
+    consOpts.push_back("8");
+    consOpts.push_back("16");
+    consOpts.push_back("32");
+    consOpts.push_back("64");
+    consOpts.push_back("128");
+    consOpts.push_back("256");
+    consArg.options = consOpts;
+    args.push_back(consArg);
+    
+    return args;
+}
+
+void ModemAPSK::writeSetting(std::string setting, std::string value) {
+    if (setting == "cons") {
+        int newCons = std::stoi(value);
+        updateDemodulatorCons(newCons);
+    }
+}
+
+std::string ModemAPSK::readSetting(std::string setting) {
+    if (setting == "cons") {
+        return std::to_string(cons);
+    }
+    return "";
+}
+
 void ModemAPSK::updateDemodulatorCons(int cons) {
-    if (currentDemodCons.load() != cons) {
-        currentDemodCons = cons;
-        switch (demodulatorCons.load()) {
-            case 2:
-                demodAPSK = demodAPSK4;
-                updateDemodulatorCons(4);
-                break;
-            case 4:
-                demodAPSK = demodAPSK4;
-                updateDemodulatorCons(4);
-                break;
-            case 8:
-                demodAPSK = demodAPSK8;
-                updateDemodulatorCons(8);
-                break;
-            case 16:
-                demodAPSK = demodAPSK16;
-                updateDemodulatorCons(16);
-                break;
-            case 32:
-                demodAPSK = demodAPSK32;
-                updateDemodulatorCons(32);
-                break;
-            case 64:
-                demodAPSK = demodAPSK64;
-                updateDemodulatorCons(64);
-                break;
-            case 128:
-                demodAPSK = demodAPSK128;
-                updateDemodulatorCons(128);
-                break;
-            case 256:
-                demodAPSK = demodAPSK256;
-                updateDemodulatorCons(256);
-                break;
-            default:
-                demodAPSK = demodAPSK4;
-                break;
-        }
+    switch (cons) {
+        case 4:
+            demodAPSK = demodAPSK4;
+            updateDemodulatorCons(4);
+            break;
+        case 8:
+            demodAPSK = demodAPSK8;
+            updateDemodulatorCons(8);
+            break;
+        case 16:
+            demodAPSK = demodAPSK16;
+            updateDemodulatorCons(16);
+            break;
+        case 32:
+            demodAPSK = demodAPSK32;
+            updateDemodulatorCons(32);
+            break;
+        case 64:
+            demodAPSK = demodAPSK64;
+            updateDemodulatorCons(64);
+            break;
+        case 128:
+            demodAPSK = demodAPSK128;
+            updateDemodulatorCons(128);
+            break;
+        case 256:
+            demodAPSK = demodAPSK256;
+            updateDemodulatorCons(256);
+            break;
+        default:
+            demodAPSK = demodAPSK4;
+            break;
     }
 }
 

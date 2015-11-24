@@ -29,7 +29,6 @@ public:
     }
 };
 
-
 // Copy of SoapySDR::Range, original comments
 class ModemRange
 {
@@ -50,7 +49,6 @@ public:
 private:
     double _min, _max;
 };
-
 
 // Modified version of SoapySDR::ArgInfo, original comments
 class ModemArgInfo
@@ -121,9 +119,12 @@ public:
     virtual ModemArgInfoList getSettings();
     virtual void writeSetting(std::string setting, std::string value);
     virtual std::string readSetting(std::string setting);
+    
     virtual int checkSampleRate(long long sampleRate, int audioSampleRate) = 0;
+    
     virtual ModemKit *buildKit(long long sampleRate, int audioSampleRate) = 0;
     virtual void disposeKit(ModemKit *kit) = 0;
+    
     virtual void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) = 0;
 private:
     static ModemFactoryList modemFactories;

@@ -230,9 +230,9 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
     }
     // advanced demodulators start here
 
-	if (demod->getDemodulatorCons() > 0) {
-		demodStr = demodStr + std::to_string(demod->getDemodulatorCons());
-	}
+//	if (demod->getDemodulatorCons() > 0) {
+//		demodStr = demodStr + std::to_string(demod->getDemodulatorCons());
+//	}
     
     // add lock to string if we have an lock
     if(demod->getDemodulatorLock()) {

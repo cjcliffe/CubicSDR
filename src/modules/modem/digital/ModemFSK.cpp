@@ -1,13 +1,35 @@
 #include "ModemFSK.h"
 
 ModemFSK::ModemFSK() {
-    demodulatorCons.store(2);
-    currentDemodCons.store(0);
-    updateDemodulatorCons(2);
+    bps = 9600;
+    spacing = 7000;
 }
 
 Modem *ModemFSK::factory() {
     return new ModemFSK;
+}
+
+ModemArgInfoList ModemFSK::getSettings() {
+    ModemArgInfoList args;
+    
+    return args;
+}
+
+void ModemFSK::writeSetting(std::string setting, std::string value) {
+    if (setting == "bps") {
+        
+    } else if (setting == "spacing") {
+        
+    }
+}
+
+std::string ModemFSK::readSetting(std::string setting) {
+    if (setting == "bps") {
+        return std::to_string(bps);
+    } else if (setting == "spacing") {
+        return std::to_string(spacing);
+    }
+    return "";
 }
 
 ModemKit *ModemFSK::buildKit(long long sampleRate, int audioSampleRate) {
@@ -36,10 +58,6 @@ std::string ModemFSK::getName() {
 
 ModemFSK::~ModemFSK() {
 
-}
-
-void ModemFSK::updateDemodulatorCons(int cons) {
-   
 }
 
 void ModemFSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {

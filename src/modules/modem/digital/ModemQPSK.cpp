@@ -16,12 +16,6 @@ std::string ModemQPSK::getName() {
     return "QPSK";
 }
 
-void ModemQPSK::updateDemodulatorCons(int cons) {
-    if (currentDemodCons.load() != cons) {
-        currentDemodCons = cons;
-    }
-}
-
 void ModemQPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
     ModemKitDigital *dkit = (ModemKitDigital *)kit;
     digitalStart(dkit, demodQPSK, input);

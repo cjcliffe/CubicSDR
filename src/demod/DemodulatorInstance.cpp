@@ -261,21 +261,6 @@ int DemodulatorInstance::getDemodulatorLock() {
     return 0;
 }
 
-void DemodulatorInstance::setDemodulatorCons(int demod_cons_in) {
-    Modem *cModem = demodulatorPreThread->getModem();
-    if (cModem && cModem->getType() == "digital") {
-        ((ModemDigital *)cModem)->setDemodulatorCons(demod_cons_in);
-    }
-}
-
-int DemodulatorInstance::getDemodulatorCons() {
-    Modem *cModem = demodulatorPreThread->getModem();
-    if (cModem && cModem->getType() == "digital") {
-        return ((ModemDigital *)cModem)->getDemodulatorCons();
-    }
-    return 0;
-}
-
 void DemodulatorInstance::setBandwidth(int bw) {
     demodulatorPreThread->setBandwidth(bw);
 }

@@ -27,9 +27,6 @@ public:
 
     std::string getLastDemodulatorType() const;
     void setLastDemodulatorType(std::string lastDemodType);
-    
-    int getLastDemodulatorCons() const;
-    void setLastDemodulatorCons(int lastDemodCons);
 
     float getLastGain() const;
     void setLastGain(float lastGain);
@@ -56,7 +53,6 @@ private:
     int lastBandwidth;
     std::string lastDemodType;
     bool lastDemodLock;
-    int lastDemodCons;
     bool lastSquelchEnabled;
     float lastSquelch;
     float lastGain;

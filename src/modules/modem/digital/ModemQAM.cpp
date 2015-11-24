@@ -8,9 +8,8 @@ ModemQAM::ModemQAM() {
     demodQAM64 = modem_create(LIQUID_MODEM_QAM64);
     demodQAM128 = modem_create(LIQUID_MODEM_QAM128);
     demodQAM256 = modem_create(LIQUID_MODEM_QAM256);
-    demodulatorCons.store(4);
-    currentDemodCons.store(0);
-    updateDemodulatorCons(4);
+    demodQAM = demodQAM4;
+    cons = 4;
 }
 
 Modem *ModemQAM::factory() {
@@ -31,47 +30,67 @@ ModemQAM::~ModemQAM() {
     modem_destroy(demodQAM256);
 }
 
+ModemArgInfoList ModemQAM::getSettings() {
+    ModemArgInfoList args;
+    
+    ModemArgInfo consArg;
+    consArg.key = "cons";
+    consArg.name = "Constellation";
+    consArg.description = "Modem Constellation Pattern";
+    consArg.value = std::to_string(cons);
+    consArg.type = ModemArgInfo::STRING;
+    std::vector<std::string> consOpts;
+    consOpts.push_back("4");
+    consOpts.push_back("8");
+    consOpts.push_back("16");
+    consOpts.push_back("32");
+    consOpts.push_back("64");
+    consOpts.push_back("128");
+    consOpts.push_back("256");
+    consArg.options = consOpts;
+    args.push_back(consArg);
+    
+    return args;
+}
+
+void ModemQAM::writeSetting(std::string setting, std::string value) {
+    if (setting == "cons") {
+        int newCons = std::stoi(value);
+        updateDemodulatorCons(newCons);
+    }
+}
+
+std::string ModemQAM::readSetting(std::string setting) {
+    if (setting == "cons") {
+        return std::to_string(cons);
+    }
+    return "";
+}
+
 void ModemQAM::updateDemodulatorCons(int cons) {
-    if (currentDemodCons.load() != cons) {
-        currentDemodCons = cons;
-        
-        switch (demodulatorCons.load()) {
-            case 2:
-                demodQAM = demodQAM4;
-                updateDemodulatorCons(4);
-                break;
-            case 4:
-                demodQAM = demodQAM4;
-                updateDemodulatorCons(4);
-                break;
-            case 8:
-                demodQAM = demodQAM8;
-                updateDemodulatorCons(8);
-                break;
-            case 16:
-                demodQAM = demodQAM16;
-                updateDemodulatorCons(16);
-                break;
-            case 32:
-                demodQAM = demodQAM32;
-                updateDemodulatorCons(32);
-                break;
-            case 64:
-                demodQAM = demodQAM64;
-                updateDemodulatorCons(64);
-                break;
-            case 128:
-                demodQAM = demodQAM128;
-                updateDemodulatorCons(128);
-                break;
-            case 256:
-                demodQAM = demodQAM256;
-                updateDemodulatorCons(256);
-                break;
-            default:
-                demodQAM = demodQAM4;
-                break;
-        }
+    this->cons = cons;
+    switch (cons) {
+        case 4:
+            demodQAM = demodQAM4;
+            break;
+        case 8:
+            demodQAM = demodQAM8;
+            break;
+        case 16:
+            demodQAM = demodQAM16;
+            break;
+        case 32:
+            demodQAM = demodQAM32;
+            break;
+        case 64:
+            demodQAM = demodQAM64;
+            break;
+        case 128:
+            demodQAM = demodQAM128;
+            break;
+        case 256:
+            demodQAM = demodQAM256;
+            break;
     }
 }
 

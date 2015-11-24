@@ -38,22 +38,8 @@ int ModemDigital::getDemodulatorLock() {
     return currentDemodLock.load();
 }
 
-void ModemDigital::setDemodulatorCons(int demod_cons_in) {
-    demodulatorCons.store(demod_cons_in);
-}
-
-int ModemDigital::getDemodulatorCons() {
-    return currentDemodCons.load();
-}
-
 void ModemDigital::updateDemodulatorLock(modem mod, float sensitivity) {
     setDemodulatorLock(modem_get_demodulator_evm(mod) <= sensitivity);
-}
-
-void ModemDigital::updateDemodulatorCons(int cons) {
-    if (currentDemodCons.load() != cons) {
-        currentDemodCons = cons;
-    }
 }
 
 void ModemDigital::digitalStart(ModemKitDigital *kit, modem mod, ModemIQData *input) {
@@ -64,11 +50,6 @@ void ModemDigital::digitalStart(ModemKitDigital *kit, modem mod, ModemIQData *in
             demodOutputDataDigital.reserve(bufSize);
         }
         demodOutputDataDigital.resize(bufSize);
-    }
-    
-    if (demodulatorCons.load() != currentDemodCons.load()) {
-        updateDemodulatorCons(demodulatorCons.load());
-        currentDemodLock.store(false);
     }
 }
 

@@ -58,9 +58,6 @@ public:
     
     void setDemodulatorLock(bool demod_lock_in);
     int getDemodulatorLock();
-    
-    void setDemodulatorCons(int demod_cons_in);
-    int getDemodulatorCons();
 
     void setBandwidth(int bw);
     int getBandwidth();

@@ -81,7 +81,6 @@ private:
     ModeSelectorCanvas *demodModeSelector;
 #ifdef ENABLE_DIGITAL_LAB
     ModeSelectorCanvas *demodModeSelectorAdv;
-    ModeSelectorCanvas *demodModeSelectorCons;
 #endif
     SpectrumCanvas *demodSpectrumCanvas;
     WaterfallCanvas *demodWaterfallCanvas;
