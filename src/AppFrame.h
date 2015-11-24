@@ -68,6 +68,8 @@ public:
 
     FFTVisualDataThread *getWaterfallDataThread();
 
+    void updateModemProperties(ModemArgInfoList args);
+    
 private:
     void OnMenu(wxCommandEvent& event);
     void OnClose(wxCloseEvent& event);
@@ -123,6 +125,8 @@ private:
     std::atomic_bool deviceChanged;
     
     ModemProperties *modemProps;
+    std::atomic_bool modemPropertiesUpdated;
+    ModemArgInfoList newModemArgs;
 
     wxDECLARE_EVENT_TABLE();
 };

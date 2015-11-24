@@ -1,5 +1,6 @@
 #include "DemodulatorWorkerThread.h"
 #include "CubicSDRDefs.h"
+#include "CubicSDR.h"
 #include <vector>
 
 DemodulatorWorkerThread::DemodulatorWorkerThread() : IOThread(),
@@ -52,6 +53,7 @@ void DemodulatorWorkerThread::run() {
                 cModem = Modem::makeModem(demodCommand.demodType);
                 cModemType = demodCommand.demodType;
                 result.sampleRate = demodCommand.sampleRate;
+                wxGetApp().getAppFrame()->updateModemProperties(cModem->getSettings());
             }
             result.modem = cModem;
 

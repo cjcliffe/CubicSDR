@@ -94,8 +94,9 @@ AppFrame::AppFrame() :
     demodModeSelectorAdv->setHelpTip("Choose advanced modulation types.");
     demodTray->Add(demodModeSelectorAdv, 3, wxEXPAND | wxALL, 0);
             
+    modemPropertiesUpdated.store(false);
     modemProps = new ModemProperties(demodPanel, wxID_ANY);
-    demodTray->Add(modemProps, 10, wxEXPAND | wxALL, 0);
+    demodTray->Add(modemProps, 15, wxEXPAND | wxALL, 0);
 #endif
             
     wxGetApp().getDemodSpectrumProcessor()->setup(1024);
@@ -1046,6 +1047,10 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     wproc->setCenterFrequency(waterfallCanvas->getCenterFrequency());
     wxGetApp().getSDRPostThread()->setIQVisualRange(waterfallCanvas->getCenterFrequency(), waterfallCanvas->getBandwidth());
     
+    if (modemPropertiesUpdated.load()) {
+        modemProps->initProperties(newModemArgs);
+        modemPropertiesUpdated.store(false);
+    }
 //    waterfallCanvas->processInputQueue();
 //    waterfallCanvas->Refresh();
 //    demodWaterfallCanvas->processInputQueue();
@@ -1244,5 +1249,10 @@ bool AppFrame::loadSession(std::string fileName) {
 
 FFTVisualDataThread *AppFrame::getWaterfallDataThread() {
     return waterfallDataThread;
+}
+
+void AppFrame::updateModemProperties(ModemArgInfoList args) {
+    newModemArgs = args;
+    modemPropertiesUpdated.store(true);
 }
 

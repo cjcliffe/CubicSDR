@@ -9,7 +9,7 @@ ModemProperties::ModemProperties(wxWindow *parent, wxWindowID winid,
 
     bSizer = new wxBoxSizer( wxVERTICAL );
     
-    bSizer->Add(m_propertyGrid, wxEXPAND );
+    bSizer->Add(m_propertyGrid, 1, wxEXPAND | wxALL, 5);
     
     this->SetSizer(bSizer);
 }
