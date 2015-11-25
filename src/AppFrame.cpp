@@ -96,6 +96,7 @@ AppFrame::AppFrame() :
             
     modemPropertiesUpdated.store(false);
     modemProps = new ModemProperties(demodPanel, wxID_ANY);
+    modemProps->Hide();
     demodTray->Add(modemProps, 15, wxEXPAND | wxALL, 0);
 #endif
             
@@ -1052,6 +1053,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     if (modemPropertiesUpdated.load()) {
         modemProps->initProperties(newModemArgs);
         modemPropertiesUpdated.store(false);
+        demodTray->Layout();
     }
 //    waterfallCanvas->processInputQueue();
 //    waterfallCanvas->Refresh();

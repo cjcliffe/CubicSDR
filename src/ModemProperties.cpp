@@ -5,8 +5,6 @@ ModemProperties::ModemProperties(wxWindow *parent, wxWindowID winid,
          const wxPoint& pos, const wxSize& size, long style, const wxString& name) : wxPanel(parent, winid, pos, size, style, name) {
     
    	m_propertyGrid = new wxPropertyGrid(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPG_DEFAULT_STYLE);
-    
-    wxBoxSizer* bSizer;
 
     bSizer = new wxBoxSizer( wxVERTICAL );
     
@@ -15,6 +13,11 @@ ModemProperties::ModemProperties(wxWindow *parent, wxWindowID winid,
     this->SetSizer(bSizer);
     
     m_propertyGrid->Connect( wxEVT_PG_CHANGED, wxPropertyGridEventHandler( ModemProperties::OnChange ), NULL, this );
+    this->Connect( wxEVT_SHOW, wxShowEventHandler( ModemProperties::OnShow ), NULL, this );
+}
+
+void ModemProperties::OnShow(wxShowEvent &event) {
+    m_propertyGrid->FitColumns();
 }
 
 ModemProperties::~ModemProperties() {
@@ -23,8 +26,19 @@ ModemProperties::~ModemProperties() {
 
 void ModemProperties::initProperties(ModemArgInfoList newArgs) {
     args = newArgs;
-    
+
     m_propertyGrid->Clear();
+
+    if (newArgs.size() == 0) {
+        Hide();
+        return;
+    } else {
+        Show();
+    }
+
+    bSizer->Layout();
+    Layout();
+    
     m_propertyGrid->Append(new wxPropertyCategory("Modem Settings"));
     
     ModemArgInfoList::const_iterator args_i;
@@ -33,6 +47,8 @@ void ModemProperties::initProperties(ModemArgInfoList newArgs) {
         ModemArgInfo arg = (*args_i);
         props[arg.key] = addArgInfoProperty(m_propertyGrid, arg);
     }
+    
+    m_propertyGrid->FitColumns();
 }
 
 wxPGProperty *ModemProperties::addArgInfoProperty(wxPropertyGrid *pg, ModemArgInfo arg) {

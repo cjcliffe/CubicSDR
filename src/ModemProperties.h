@@ -25,7 +25,9 @@ private:
     wxPGProperty *addArgInfoProperty(wxPropertyGrid *pg, ModemArgInfo arg);
     std::string readProperty(std::string);
     void OnChange(wxPropertyGridEvent &event);
-
+    void OnShow(wxShowEvent &event);
+    
+    wxBoxSizer* bSizer;
     wxPropertyGrid* m_propertyGrid;
     ModemArgInfoList args;
     std::map<std::string, wxPGProperty *> props;
