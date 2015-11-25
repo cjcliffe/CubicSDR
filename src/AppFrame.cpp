@@ -93,12 +93,12 @@ AppFrame::AppFrame() :
     demodModeSelectorAdv->addChoice(10, "QPSK");
     demodModeSelectorAdv->setHelpTip("Choose advanced modulation types.");
     demodTray->Add(demodModeSelectorAdv, 3, wxEXPAND | wxALL, 0);
+#endif
             
     modemPropertiesUpdated.store(false);
     modemProps = new ModemProperties(demodPanel, wxID_ANY);
     modemProps->Hide();
     demodTray->Add(modemProps, 15, wxEXPAND | wxALL, 0);
-#endif
             
     wxGetApp().getDemodSpectrumProcessor()->setup(1024);
     demodSpectrumCanvas = new SpectrumCanvas(demodPanel, attribList);
