@@ -105,6 +105,8 @@ typedef std::vector<ModemArgInfo> ModemArgInfoList;
 class Modem;
 typedef std::map<std::string,Modem *> ModemFactoryList;
 
+typedef std::map<std::string, std::string> ModemSettings;
+
 class Modem  {
 public:
     static void addModemFactory(Modem *factorySingle);
@@ -122,7 +124,9 @@ public:
     
     virtual ModemArgInfoList getSettings();
     virtual void writeSetting(std::string setting, std::string value);
+    virtual void writeSettings(ModemSettings settings);
     virtual std::string readSetting(std::string setting);
+    virtual ModemSettings readSettings();
     
     virtual int checkSampleRate(long long sampleRate, int audioSampleRate) = 0;
     

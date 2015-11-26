@@ -62,6 +62,7 @@ public:
     unsigned int bandwidth;
     unsigned int audioSampleRate;
     std::string demodType;
+    ModemSettings settings;
 };
 
 typedef ThreadQueue<DemodulatorWorkerThreadCommand> DemodulatorThreadWorkerCommandQueue;

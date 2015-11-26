@@ -1,4 +1,5 @@
 #include "DemodulatorInstance.h"
+#include "CubicSDR.h"
 
 DemodulatorInstance::DemodulatorInstance() :
         t_PreDemod(NULL), t_Demod(NULL), t_Audio(NULL) {
@@ -20,6 +21,8 @@ DemodulatorInstance::DemodulatorInstance() :
     pipeIQDemodData = new DemodulatorThreadPostInputQueue;
     pipeDemodNotify = new DemodulatorThreadCommandQueue;
     
+    audioThread = new AudioThread();
+            
     demodulatorPreThread = new DemodulatorPreThread(this);
     demodulatorPreThread->setInputQueue("IQDataInput",pipeIQInputData);
     demodulatorPreThread->setOutputQueue("IQDataOutput",pipeIQDemodData);
@@ -34,7 +37,6 @@ DemodulatorInstance::DemodulatorInstance() :
     demodulatorThread->setOutputQueue("NotifyQueue",pipeDemodNotify);
     demodulatorThread->setOutputQueue("AudioDataOutput", pipeAudioData);
 
-    audioThread = new AudioThread();
     audioThread->setInputQueue("AudioDataInput", pipeAudioData);
     audioThread->setOutputQueue("NotifyQueue", pipeDemodNotify);
 }
@@ -204,6 +206,8 @@ float DemodulatorInstance::getSignalLevel() {
 
 void DemodulatorInstance::setSquelchLevel(float signal_level_in) {
     demodulatorThread->setSquelchLevel(signal_level_in);
+    wxGetApp().getDemodMgr().setLastSquelchLevel(signal_level_in);
+    wxGetApp().getDemodMgr().setLastSquelchEnabled(true);
 }
 
 float DemodulatorInstance::getSquelchLevel() {
@@ -263,6 +267,7 @@ int DemodulatorInstance::getDemodulatorLock() {
 
 void DemodulatorInstance::setBandwidth(int bw) {
     demodulatorPreThread->setBandwidth(bw);
+    wxGetApp().getDemodMgr().setLastBandwidth(bw);
 }
 
 int DemodulatorInstance::getBandwidth() {
@@ -296,6 +301,7 @@ int DemodulatorInstance::getAudioSampleRate() {
 void DemodulatorInstance::setGain(float gain_in) {
 	currentAudioGain = gain_in;
     audioThread->setGain(gain_in);
+    wxGetApp().getDemodMgr().setLastGain(gain_in);
 }
 
 float DemodulatorInstance::getGain() {
@@ -325,6 +331,7 @@ bool DemodulatorInstance::isMuted() {
 void DemodulatorInstance::setMuted(bool muted) {
     this->muted = muted;
     demodulatorThread->setMuted(muted);
+    wxGetApp().getDemodMgr().setLastMuted(muted);
 }
 
 DemodulatorThreadInputQueue *DemodulatorInstance::getIQInputDataPipe() {
@@ -342,18 +349,21 @@ ModemArgInfoList DemodulatorInstance::getModemArgs() {
 }
 
 std::string DemodulatorInstance::readModemSetting(std::string setting) {
-    Modem *m = demodulatorPreThread->getModem();
-    
-    if (m) {
-        return m->readSetting(setting);
-    }
-    return "";
+    return demodulatorPreThread->readModemSetting(setting);
 }
 
 void DemodulatorInstance::writeModemSetting(std::string setting, std::string value) {
-    Modem *m = demodulatorPreThread->getModem();
-    
-    if (m) {
-        m->writeSetting(setting, value);
-    }
+    demodulatorPreThread->writeModemSetting(setting, value);
+}
+
+ModemSettings DemodulatorInstance::readModemSettings() {
+    return demodulatorPreThread->readModemSettings();
+}
+
+void DemodulatorInstance::writeModemSettings(ModemSettings settings) {
+    demodulatorPreThread->writeModemSettings(settings);
+}
+
+bool DemodulatorInstance::isModemInitialized() {
+    return demodulatorPreThread->isInitialized();
 }

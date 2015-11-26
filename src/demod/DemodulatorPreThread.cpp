@@ -33,10 +33,11 @@ DemodulatorPreThread::DemodulatorPreThread(DemodulatorInstance *parent) : IOThre
     frequencyChanged.store(false);
     bandwidthChanged.store(false);
     audioSampleRateChanged.store(false);
+    modemSettingsChanged.store(false);
 }
 
-void DemodulatorPreThread::initialize() {
-    initialized.store(true);
+bool DemodulatorPreThread::isInitialized() {
+    return initialized.load();
 }
 
 DemodulatorPreThread::~DemodulatorPreThread() {
@@ -49,10 +50,6 @@ void DemodulatorPreThread::run() {
     sched_param prio = {priority}; // scheduling priority of thread
     pthread_setschedparam(tID, SCHED_FIFO, &prio);
 #endif
-
-    if (!initialized) {
-        initialize();
-    }
 
     std::cout << "Demodulator preprocessor thread started.." << std::endl;
 
@@ -103,10 +100,17 @@ void DemodulatorPreThread::run() {
             command.demodType = newDemodType;
             command.bandwidth = newBandwidth;
             command.audioSampleRate = newAudioSampleRate;
-            workerQueue->push(command);
             demodType = newDemodType;
             sampleRateChanged.store(false);
             audioSampleRateChanged.store(false);
+            if (modemSettingsBuffered.size()) {
+                command.settings = modemSettingsBuffered;
+            }
+            modemSettingsBuffered.clear();
+            modemSettingsChanged.store(false);
+            workerQueue->push(command);
+            cModem = nullptr;
+            cModemKit = nullptr;
             demodTypeChanged.store(false);
         }
         else if (
@@ -122,14 +126,10 @@ void DemodulatorPreThread::run() {
             bandwidthChanged.store(false);
             sampleRateChanged.store(false);
             audioSampleRateChanged.store(false);
+            modemSettingsBuffered.clear();
             workerQueue->push(command);
         }
         
-        if (!initialized) {
-            inp->decRefCount();
-            continue;
-        }
-
         // Requested frequency is not center, shift it into the center!
         if ((currentFrequency - inp->frequency) != shiftFrequency) {
             shiftFrequency = currentFrequency - inp->frequency;
@@ -239,11 +239,18 @@ void DemodulatorPreThread::run() {
                     }
                         
                     shiftFrequency = inp->frequency-1;
+                    initialized.store(cModem != nullptr);
                     break;
                 default:
                     break;
                 }
             }
+        }
+        
+        if ((cModem != nullptr) && modemSettingsChanged.load()) {
+            cModem->writeSettings(modemSettingsBuffered);
+            modemSettingsBuffered.clear();
+            modemSettingsChanged.store(false);
         }
     }
 
@@ -296,11 +303,7 @@ void DemodulatorPreThread::setBandwidth(int bandwidth) {
     newBandwidth = bandwidth;
 }
 
-int DemodulatorPreThread::getBandwidth() {
-//    if (bandwidthChanged.load()) {
-//        return newBandwidth;
-//    }
-    
+int DemodulatorPreThread::getBandwidth() {    
     return currentBandwidth;
 }
 
@@ -336,4 +339,32 @@ Modem *DemodulatorPreThread::getModem() {
 
 ModemKit *DemodulatorPreThread::getModemKit() {
     return cModemKit;
+}
+
+
+std::string DemodulatorPreThread::readModemSetting(std::string setting) {
+    if (cModem) {
+        return cModem->readSetting(setting);
+    } else if (modemSettingsBuffered.find(setting) != modemSettingsBuffered.end()) {
+        return modemSettingsBuffered[setting];
+    }
+    return "";
+}
+
+void DemodulatorPreThread::writeModemSetting(std::string setting, std::string value) {
+    modemSettingsBuffered[setting] = value;
+    modemSettingsChanged.store(true);
+}
+
+ModemSettings DemodulatorPreThread::readModemSettings() {
+    if (cModem) {
+        return cModem->readSettings();
+    } else {
+        return modemSettingsBuffered;
+    }
+}
+
+void DemodulatorPreThread::writeModemSettings(ModemSettings settings) {
+    modemSettingsBuffered = settings;
+    modemSettingsChanged.store(true);
 }

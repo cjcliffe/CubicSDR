@@ -25,6 +25,9 @@ public:
     int getLastBandwidth() const;
     void setLastBandwidth(int lastBandwidth);
 
+    int getLastBandwidth(std::string modemType);
+    void setLastBandwidth(std::string modemType, int lastBandwidth);
+
     std::string getLastDemodulatorType() const;
     void setLastDemodulatorType(std::string lastDemodType);
 
@@ -40,9 +43,13 @@ public:
     bool isLastMuted() const;
     void setLastMuted(bool lastMuted);
 
+    ModemSettings getLastModemSettings(std::string);
+    void setLastModemSettings(std::string, ModemSettings);
+
+    void updateLastState();
+
 private:
     void garbageCollect();
-    void updateLastState();
 
     std::vector<DemodulatorInstance *> demods;
     std::vector<DemodulatorInstance *> demods_deleted;
@@ -50,6 +57,7 @@ private:
     DemodulatorInstance *lastActiveDemodulator;
     DemodulatorInstance *activeVisualDemodulator;
 
+    std::map<std::string, int> lastBandwidthNamed;
     int lastBandwidth;
     std::string lastDemodType;
     bool lastDemodLock;
@@ -57,4 +65,6 @@ private:
     float lastSquelch;
     float lastGain;
     bool lastMuted;
+    
+    std::map<std::string, ModemSettings> lastModemSettings;
 };

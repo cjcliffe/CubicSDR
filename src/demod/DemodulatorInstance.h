@@ -84,8 +84,12 @@ public:
 
     ModemArgInfoList getModemArgs();
     std::string readModemSetting(std::string setting);
+    ModemSettings readModemSettings();
     void writeModemSetting(std::string setting, std::string value);
+    void writeModemSettings(ModemSettings settings);
     
+    bool isModemInitialized();
+
 protected:
     DemodulatorThreadInputQueue* pipeIQInputData;
     DemodulatorThreadPostInputQueue* pipeIQDemodData;

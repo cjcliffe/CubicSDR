@@ -126,7 +126,6 @@ public:
     void setDeviceSelectorClosed();
 	bool isDeviceSelectorOpen();
     void closeDeviceSelector();
-
     
     void setAGCMode(bool mode);
     bool getAGCMode();

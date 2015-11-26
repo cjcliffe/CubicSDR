@@ -28,6 +28,14 @@ ModemArgInfo::ModemArgInfo(void) {
     
 }
 
+Modem::Modem() {
+    
+}
+
+Modem::~Modem() {
+    
+}
+
 void Modem::addModemFactory(Modem *factorySingle) {
     modemFactories[factorySingle->getName()] = factorySingle;
 }
@@ -58,12 +66,19 @@ std::string Modem::readSetting(std::string setting) {
     return "";
 }
 
-Modem::Modem() {
-    
+void Modem::writeSettings(ModemSettings settings) {
+    for (ModemSettings::const_iterator i = settings.begin(); i != settings.end(); i++) {
+        writeSetting(i->first, i->second);
+    }
 }
 
-Modem::~Modem() {
-    
+ModemSettings Modem::readSettings() {
+    ModemArgInfoList args = getSettings();
+    ModemSettings rs;
+    for (ModemArgInfoList::const_iterator i = args.begin(); i != args.end(); i++) {
+        rs[i->key] = readSetting(i->key);
+    }
+    return rs;
 }
 
 bool Modem::shouldRebuildKit() {

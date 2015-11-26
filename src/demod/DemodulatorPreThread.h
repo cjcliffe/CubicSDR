@@ -32,12 +32,18 @@ public:
     void setAudioSampleRate(int rate);
     int getAudioSampleRate();
     
-    void initialize();
+    bool isInitialized();
+    
     void terminate();
 
     Modem *getModem();
     ModemKit *getModemKit();
     
+    std::string readModemSetting(std::string setting);
+    void writeModemSetting(std::string setting, std::string value);
+    ModemSettings readModemSettings();
+    void writeModemSettings(ModemSettings settings);
+
 protected:
     DemodulatorInstance *parent;
     msresamp_crcf iqResampler;
@@ -53,6 +59,9 @@ protected:
     int currentAudioSampleRate, newAudioSampleRate;
 
     std::atomic_bool sampleRateChanged, frequencyChanged, bandwidthChanged, audioSampleRateChanged;
+
+    ModemSettings modemSettingsBuffered;
+    std::atomic_bool modemSettingsChanged;
     
     nco_crcf freqShifter;
     int shiftFrequency;

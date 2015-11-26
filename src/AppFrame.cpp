@@ -826,7 +826,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
-    if (demod) {
+    if (demod && demod->isModemInitialized()) {
         if (demod->isTracking()) {
             if (spectrumCanvas->getViewState()) {
                 long long diff = abs(demod->getFrequency() - spectrumCanvas->getCenterFrequency()) + (demod->getBandwidth()/2) + (demod->getBandwidth()/4);
@@ -844,6 +844,10 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
                 demod->setTracking(false);
             }
         }
+        
+        if (demod->getBandwidth() != wxGetApp().getDemodMgr().getLastBandwidth()) {
+            wxGetApp().getDemodMgr().setLastBandwidth(demod->getBandwidth());
+        }
 
         if (demod != activeDemodulator) {
             demodSignalMeter->setInputValue(demod->getSquelchLevel());
@@ -857,7 +861,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             demodModeSelectorAdv->setSelection(dType);
 #endif
             demodMuteButton->setSelection(demod->isMuted()?1:-1);
-            newModemArgs = demod->getModemArgs();
             modemPropertiesUpdated.store(true);
         }
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
@@ -893,16 +896,25 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             if (dSelection != "" && dSelection != demod->getDemodulatorType()) {
                 demod->setDemodulatorType(dSelection);
                 demodModeSelectorAdv->setSelection(-1);
+                if (int lastDemodBw = wxGetApp().getDemodMgr().getLastBandwidth(dSelection)) {
+                    demod->setBandwidth(lastDemodBw);
+                }
             }
             // advanced demodulators
 			else if (dSelectionadv != "" && dSelectionadv != demod->getDemodulatorType()) {
 				demod->setDemodulatorType(dSelectionadv);
 				demodModeSelector->setSelection(-1);
+                if (int lastDemodBw = wxGetApp().getDemodMgr().getLastBandwidth(dSelection)) {
+                    demod->setBandwidth(lastDemodBw);
+                }
             }
 #else
             // basic demodulators
             if (dSelection != "" && dSelection != demod->getDemodulatorType()) {
                 demod->setDemodulatorType(dSelection);
+                if (int lastDemodBw = wxGetApp().getDemodMgr().getLastBandwidth(dSelection)) {
+                    demod->setBandwidth(lastDemodBw);
+                }
             }
 #endif
 
@@ -1050,8 +1062,10 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     wproc->setCenterFrequency(waterfallCanvas->getCenterFrequency());
     wxGetApp().getSDRPostThread()->setIQVisualRange(waterfallCanvas->getCenterFrequency(), waterfallCanvas->getBandwidth());
     
+    demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    
     if (modemPropertiesUpdated.load()) {
-        modemProps->initProperties(newModemArgs);
+        modemProps->initProperties(demod->getModemArgs());
         modemPropertiesUpdated.store(false);
         demodTray->Layout();
     }
