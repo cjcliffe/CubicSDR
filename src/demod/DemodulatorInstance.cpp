@@ -369,6 +369,9 @@ void DemodulatorInstance::writeModemSettings(ModemSettings settings) {
 }
 
 bool DemodulatorInstance::isModemInitialized() {
+    if (!demodulatorPreThread || isTerminated()) {
+        return false;
+    }
     return demodulatorPreThread->isInitialized();
 }
 

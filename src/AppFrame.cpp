@@ -1066,7 +1066,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     
     demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
     
-    if (modemPropertiesUpdated.load()) {
+    if (modemPropertiesUpdated.load() && demod && demod->isModemInitialized()) {
         modemProps->initProperties(demod->getModemArgs());
         modemPropertiesUpdated.store(false);
         demodTray->Layout();
@@ -1136,6 +1136,14 @@ void AppFrame::saveSession(std::string fileName) {
         *demod->newChild("output_device") = outputDevices[(*instance_i)->getOutputDevice()].name;
         *demod->newChild("gain") = (*instance_i)->getGain();
         *demod->newChild("muted") = (*instance_i)->isMuted() ? 1 : 0;
+
+        ModemSettings saveSettings = (*instance_i)->readModemSettings();
+        if (saveSettings.size()) {
+            DataNode *settingsNode = demod->newChild("settings");
+            for (ModemSettings::const_iterator msi = saveSettings.begin(); msi != saveSettings.end(); msi++) {
+                *settingsNode->newChild(msi->first.c_str()) = msi->second;
+            }
+        }
     }
 
     s.SaveToFileXML(fileName);
@@ -1179,35 +1187,77 @@ bool AppFrame::loadSession(std::string fileName) {
 
             long bandwidth = *demod->getNext("bandwidth");
             long long freq = *demod->getNext("frequency");
-            std::string type = demod->hasAnother("type") ? string(*demod->getNext("type")) : "FM";
             float squelch_level = demod->hasAnother("squelch_level") ? (float) *demod->getNext("squelch_level") : 0;
             int squelch_enabled = demod->hasAnother("squelch_enabled") ? (int) *demod->getNext("squelch_enabled") : 0;
             int muted = demod->hasAnother("muted") ? (int) *demod->getNext("muted") : 0;
             std::string output_device = demod->hasAnother("output_device") ? string(*(demod->getNext("output_device"))) : "";
             float gain = demod->hasAnother("gain") ? (float) *demod->getNext("gain") : 1.0;
 
-            // TODO: Check if "type" is numeric and perform update to new values
-            //#define DEMOD_TYPE_NULL 0
-            //#define DEMOD_TYPE_FM 1
-            //#define DEMOD_TYPE_AM 2
-            //#define DEMOD_TYPE_LSB 3
-            //#define DEMOD_TYPE_USB 4
-            //#define DEMOD_TYPE_DSB 5
-            //#define DEMOD_TYPE_ASK 6
-            //#define DEMOD_TYPE_APSK 7
-            //#define DEMOD_TYPE_BPSK 8
-            //#define DEMOD_TYPE_DPSK 9
-            //#define DEMOD_TYPE_PSK 10
-            //#define DEMOD_TYPE_OOK 11
-            //#define DEMOD_TYPE_ST 12
-            //#define DEMOD_TYPE_SQAM 13
-            //#define DEMOD_TYPE_QAM 14
-            //#define DEMOD_TYPE_QPSK 15
-            //#define DEMOD_TYPE_RAW 16
+            std::string type = demod->hasAnother("type") ? string(*demod->getNext("type")) : "FM";
+            std::istringstream typeCheck(type);
+            
+            int legacyType = 0;
+            if (!(typeCheck >> legacyType).fail()) {
+                int legacyStereo = demod->hasAnother("stereo") ? (int) *demod->getNext("stereo") : 0;
+                switch (legacyType) {   // legacy demod ID
+                    case 1: type = legacyStereo?"FMS":"FM"; break;
+                    case 2: type = "AM"; break;
+                    case 3: type = "LSB"; break;
+                    case 4: type = "USB"; break;
+                    case 5: type = "DSB"; break;
+                    case 6: type = "ASK"; break;
+                    case 7: type = "APSK"; break;
+                    case 8: type = "BPSK"; break;
+                    case 9: type = "DPSK"; break;
+                    case 10: type = "PSK"; break;
+                    case 11: type = "OOK"; break;
+                    case 12: type = "ST"; break;
+                    case 13: type = "SQAM"; break;
+                    case 14: type = "QAM"; break;
+                    case 15: type = "QPSK"; break;
+                    case 16: type = "I/Q"; break;
+                    default: type = "FM"; break;
+                }
+            }
 
+
+            ModemSettings mSettings;
+            
+            if (demod->hasAnother("settings")) {
+                DataNode *modemSettings = demod->getNext("settings");
+                for (int msi = 0, numSettings = modemSettings->numChildren(); msi < numSettings; msi++) {
+                    DataNode *settingNode = modemSettings->child(msi);
+                    std::string keyName = settingNode->getName();
+                    std::string strSettingValue = "";
+                    
+                    int dataType = settingNode->element()->getDataType();
+                    
+                    try {
+                        if (dataType == DATA_STRING) {
+                            settingNode->element()->get(strSettingValue);
+                        } else if (dataType == DATA_INT || dataType == DATA_LONG || dataType == DATA_LONGLONG) {
+                            long long intSettingValue = *settingNode;
+                            strSettingValue = std::to_string(intSettingValue);
+                        } else if (dataType == DATA_FLOAT || dataType == DATA_DOUBLE) {
+                            double floatSettingValue = *settingNode;
+                            strSettingValue = std::to_string(floatSettingValue);
+                        } else {
+                            std::cout << "Unhandled setting data type: " << dataType  << std::endl;
+                        }
+                    } catch (DataTypeMismatchException e) {
+                        std::cout << "Setting data type mismatch: " << dataType  << std::endl;
+                    }
+                    
+                    if (keyName != "" && strSettingValue != "") {
+                        mSettings[keyName] = strSettingValue;
+                    }
+                }
+            }
+            
             DemodulatorInstance *newDemod = wxGetApp().getDemodMgr().newThread();
             loadedDemod = newDemod;
             numDemodulators++;
+            newDemod->writeModemSettings(mSettings);
             newDemod->setDemodulatorType(type);
             newDemod->setBandwidth(bandwidth);
             newDemod->setFrequency(freq);
