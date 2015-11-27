@@ -159,6 +159,7 @@ void ModeSelectorCanvas::setSelection(std::string label) {
     for (int i = 0; i < numChoices; i++) {
         if (selections[i].label == label) {
             currentSelection = i;
+            Refresh();
             return;
         }
     }

@@ -1193,11 +1193,12 @@ bool AppFrame::loadSession(std::string fileName) {
             std::string output_device = demod->hasAnother("output_device") ? string(*(demod->getNext("output_device"))) : "";
             float gain = demod->hasAnother("gain") ? (float) *demod->getNext("gain") : 1.0;
 
-            std::string type = demod->hasAnother("type") ? string(*demod->getNext("type")) : "FM";
-            std::istringstream typeCheck(type);
+            std::string type = "FM";
+
+            DataNode *demodTypeNode = demod->hasAnother("type")?demod->getNext("type"):nullptr;
             
-            int legacyType = 0;
-            if (!(typeCheck >> legacyType).fail()) {
+            if (demodTypeNode->element()->getDataType() == DATA_INT) {
+                int legacyType = *demodTypeNode;
                 int legacyStereo = demod->hasAnother("stereo") ? (int) *demod->getNext("stereo") : 0;
                 switch (legacyType) {   // legacy demod ID
                     case 1: type = legacyStereo?"FMS":"FM"; break;
@@ -1218,8 +1219,9 @@ bool AppFrame::loadSession(std::string fileName) {
                     case 16: type = "I/Q"; break;
                     default: type = "FM"; break;
                 }
+            } else if (demodTypeNode->element()->getDataType() == DATA_STRING) {
+                demodTypeNode->element()->get(type);
             }
-
 
             ModemSettings mSettings;
             
