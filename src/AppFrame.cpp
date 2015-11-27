@@ -950,6 +950,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             demodGainMeter->setLevel(demodGainMeter->getInputValue());
         }
         activeDemodulator = demod;
+    } else if (demod) {
+        // Wait state for current demodulator modem to activate..
     } else {
         DemodulatorMgr *mgr = &wxGetApp().getDemodMgr();
 

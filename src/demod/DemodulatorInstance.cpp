@@ -240,6 +240,10 @@ int DemodulatorInstance::getOutputDevice() {
 void DemodulatorInstance::setDemodulatorType(std::string demod_type_in) {
     setGain(getGain());
     if (demodulatorPreThread) {
+        std::string currentDemodType = demodulatorPreThread->getDemodType();
+        if ((currentDemodType != "") && (currentDemodType != demod_type_in)) {
+            lastModemSettings[currentDemodType] = demodulatorPreThread->readModemSettings();
+        }
         demodulatorPreThread->setDemodType(demod_type_in);
     }
 }
@@ -366,4 +370,13 @@ void DemodulatorInstance::writeModemSettings(ModemSettings settings) {
 
 bool DemodulatorInstance::isModemInitialized() {
     return demodulatorPreThread->isInitialized();
+}
+
+ModemSettings DemodulatorInstance::getLastModemSettings(std::string demodType) {
+    if (lastModemSettings.find(demodType) != lastModemSettings.end()) {
+        return lastModemSettings[demodType];
+    } else {
+        ModemSettings mods;
+        return mods;
+    }
 }

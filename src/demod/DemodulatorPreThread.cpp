@@ -103,7 +103,15 @@ void DemodulatorPreThread::run() {
             demodType = newDemodType;
             sampleRateChanged.store(false);
             audioSampleRateChanged.store(false);
-            if (modemSettingsBuffered.size()) {
+            ModemSettings lastSettings = parent->getLastModemSettings(newDemodType);
+            if (lastSettings.size() != 0) {
+                command.settings = lastSettings;
+                if (modemSettingsBuffered.size()) {
+                    for (ModemSettings::const_iterator msi = modemSettingsBuffered.begin(); msi != modemSettingsBuffered.end(); msi++) {
+                        command.settings[msi->first] = msi->second;
+                    }
+                }
+            } else {
                 command.settings = modemSettingsBuffered;
             }
             modemSettingsBuffered.clear();

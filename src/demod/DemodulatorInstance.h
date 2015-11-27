@@ -89,7 +89,8 @@ public:
     void writeModemSettings(ModemSettings settings);
     
     bool isModemInitialized();
-
+    ModemSettings getLastModemSettings(std::string demodType);
+    
 protected:
     DemodulatorThreadInputQueue* pipeIQInputData;
     DemodulatorThreadPostInputQueue* pipeIQDemodData;
@@ -113,4 +114,5 @@ private:
     std::atomic_int currentOutputDevice;
     std::atomic<float> currentAudioGain;
     std::atomic_bool follow, tracking;
+    std::map<std::string, ModemSettings> lastModemSettings;
   };
