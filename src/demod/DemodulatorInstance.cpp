@@ -184,7 +184,7 @@ void DemodulatorInstance::setActive(bool state) {
         audioThread->setActive(state);
     } else if (!active && state) {
 #if ENABLE_DIGITAL_LAB
-        if (activeOutput) {
+        if (activeOutput && getModemType() == "digital") {
             activeOutput->Show();
         }
 #endif
