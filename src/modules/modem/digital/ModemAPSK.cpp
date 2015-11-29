@@ -1,6 +1,6 @@
 #include "ModemAPSK.h"
 
-ModemAPSK::ModemAPSK() {
+ModemAPSK::ModemAPSK() : ModemDigital() {
     demodAPSK4 = modem_create(LIQUID_MODEM_APSK4);
     demodAPSK8 = modem_create(LIQUID_MODEM_APSK8);
     demodAPSK16 = modem_create(LIQUID_MODEM_APSK16);

@@ -1,9 +1,11 @@
 #include "ModemFSK.h"
+#include <iomanip>
 
-ModemFSK::ModemFSK() {
+ModemFSK::ModemFSK() : ModemDigital()  {
     // DMR defaults?
     bps = 1;
     sps = 9600;
+    outStream << std::hex;
 }
 
 Modem *ModemFSK::factory() {
@@ -35,6 +37,7 @@ ModemArgInfoList ModemFSK::getSettings() {
     bpsOpts.push_back("2");
     bpsOpts.push_back("4");
     bpsOpts.push_back("8");
+    bpsOpts.push_back("16");
     bpsArg.options = bpsOpts;
     
     args.push_back(bpsArg);
@@ -48,6 +51,8 @@ ModemArgInfoList ModemFSK::getSettings() {
     
     std::vector<std::string> spsOpts;
     // some common modem rates ..?
+    spsOpts.push_back("300");
+    spsOpts.push_back("600");
     spsOpts.push_back("1200");
     spsOpts.push_back("2400");
     spsOpts.push_back("4800");
@@ -117,12 +122,9 @@ void ModemFSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *a
     dkit->inputBuffer.insert(dkit->inputBuffer.end(),input->data.begin(),input->data.end());
 
     while (dkit->inputBuffer.size() >= dkit->k) {
-        unsigned int sym_out;
-
-        sym_out = fskdem_demodulate(dkit->demodFSK, &dkit->inputBuffer[0]);
+        outStream << fskdem_demodulate(dkit->demodFSK, &dkit->inputBuffer[0]);
+        
 //        float err = fskdem_get_frequency_error(dkit->demodFSK);
-//        std::cout << "ferror: " << err << std::endl;
-        printf("%01X", sym_out);
         dkit->inputBuffer.erase(dkit->inputBuffer.begin(),dkit->inputBuffer.begin()+dkit->k);
     }
     

@@ -76,6 +76,8 @@ AppFrame::AppFrame() :
     demodModeSelector->addChoice(6, "I/Q");
     demodModeSelector->setSelection("FM");
     demodModeSelector->setHelpTip("Choose modulation type: Frequency Modulation, Amplitude Modulation and Lower, Upper or Double Side-Band.");
+    demodModeSelector->SetMinSize(wxSize(40,-1));
+    demodModeSelector->SetMaxSize(wxSize(40,-1));
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
     
 #ifdef ENABLE_DIGITAL_LAB
@@ -92,11 +94,16 @@ AppFrame::AppFrame() :
     demodModeSelectorAdv->addChoice(9, "QAM");
     demodModeSelectorAdv->addChoice(10, "QPSK");
     demodModeSelectorAdv->setHelpTip("Choose advanced modulation types.");
+    demodModeSelectorAdv->SetMinSize(wxSize(40,-1));
+    demodModeSelectorAdv->SetMaxSize(wxSize(40,-1));
     demodTray->Add(demodModeSelectorAdv, 3, wxEXPAND | wxALL, 0);
 #endif
             
     modemPropertiesUpdated.store(false);
     modemProps = new ModemProperties(demodPanel, wxID_ANY);
+    modemProps->SetMinSize(wxSize(200,-1));
+    modemProps->SetMaxSize(wxSize(200,-1));
+
     modemProps->Hide();
     demodTray->Add(modemProps, 15, wxEXPAND | wxALL, 0);
             
@@ -117,6 +124,8 @@ AppFrame::AppFrame() :
     wxGetApp().getDemodSpectrumProcessor()->attachOutput(demodWaterfallCanvas->getVisualDataQueue());
     demodWaterfallCanvas->getVisualDataQueue()->set_max_num_items(3);
 
+    demodVisuals->SetMinSize(wxSize(128,-1));
+
     demodTray->Add(demodVisuals, 30, wxEXPAND | wxALL, 0);
 
     demodTray->AddSpacer(1);
@@ -135,6 +144,7 @@ AppFrame::AppFrame() :
 
     scopeCanvas = new ScopeCanvas(demodPanel, attribList);
     scopeCanvas->setHelpTip("Audio Visuals, drag left/right to toggle Scope or Spectrum.");
+    scopeCanvas->SetMinSize(wxSize(128,-1));
     demodScopeTray->Add(scopeCanvas, 8, wxEXPAND | wxALL, 0);
     wxGetApp().getScopeProcessor()->setup(2048);
     wxGetApp().getScopeProcessor()->attachOutput(scopeCanvas->getInputQueue());
@@ -1021,7 +1031,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     wxGetApp().getAudioVisualQueue()->set_max_num_items((scopeCanvas->scopeVisible()?1:0) + (scopeCanvas->spectrumVisible()?1:0));
     
     wxGetApp().getScopeProcessor()->run();
-//    wxGetApp().getSpectrumDistributor()->run();
 
     SpectrumVisualProcessor *proc = wxGetApp().getSpectrumProcessor();
 
@@ -1070,12 +1079,18 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         modemProps->initProperties(demod->getModemArgs());
         modemPropertiesUpdated.store(false);
         demodTray->Layout();
+#if ENABLE_DIGITAL_LAB
+        if (demod->getModemType() == "digital") {
+            ModemDigitalOutputConsole *outp = (ModemDigitalOutputConsole *)demod->getOutput();
+            if (!outp->getDialog()) {
+                outp->setTitle(demod->getDemodulatorType() + ": " + frequencyToStr(demod->getFrequency()));
+                outp->setDialog(new DigitalConsole(this, outp));
+            }
+            demod->showOutput();
+        }
+#endif
     }
-//    waterfallCanvas->processInputQueue();
-//    waterfallCanvas->Refresh();
-//    demodWaterfallCanvas->processInputQueue();
-//    demodWaterfallCanvas->Refresh();
-
+    
     if (!this->IsActive()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(25));
     }

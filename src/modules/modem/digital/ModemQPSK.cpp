@@ -1,6 +1,6 @@
 #include "ModemQPSK.h"
 
-ModemQPSK::ModemQPSK() {
+ModemQPSK::ModemQPSK() : ModemDigital()  {
     demodQPSK = modem_create(LIQUID_MODEM_QPSK);
 }
 

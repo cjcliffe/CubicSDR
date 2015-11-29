@@ -1,7 +1,18 @@
 #include "ModemDigital.h"
 
-ModemDigital::ModemDigital() {
 
+ModemDigitalOutput::ModemDigitalOutput() {
+    
+}
+
+ModemDigital::ModemDigital() {
+#if ENABLE_DIGITAL_LAB
+    digitalOut = nullptr;
+#endif
+}
+
+ModemDigitalOutput::~ModemDigitalOutput() {
+    
 }
 
 std::string ModemDigital::getType() {
@@ -54,6 +65,18 @@ void ModemDigital::digitalStart(ModemKitDigital *kit, modem mod, ModemIQData *in
 }
 
 void ModemDigital::digitalFinish(ModemKitDigital *kit, modem mod) {
-    demodOutputDataDigital.empty();
+#if ENABLE_DIGITAL_LAB
+    if (digitalOut && outStream.str().length()) {
+        digitalOut->write(outStream.str());
+        outStream.str("");
+    } else {
+        outStream.str("");
+    }
+#endif
 }
- 
+
+#if ENABLE_DIGITAL_LAB
+void ModemDigital::setOutput(ModemDigitalOutput *modemDigitalOutput) {
+    digitalOut = modemDigitalOutput;
+}
+#endif

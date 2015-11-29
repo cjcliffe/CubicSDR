@@ -20,20 +20,20 @@
 
 IMPLEMENT_APP(CubicSDR)
 
-#ifdef ENABLE_DIGITAL_LAB
-// console output buffer for windows
-#ifdef _WINDOWS
-class outbuf : public std::streambuf {
-	public:
-	outbuf() {
-		setp(0, 0);
-	}
-	virtual int_type overflow(int_type c = traits_type::eof()) {
-		return fputc(c, stdout) == EOF ? traits_type::eof() : c;
-	}
-};
-#endif
-#endif
+//#ifdef ENABLE_DIGITAL_LAB
+//// console output buffer for windows
+//#ifdef _WINDOWS
+//class outbuf : public std::streambuf {
+//	public:
+//	outbuf() {
+//		setp(0, 0);
+//	}
+//	virtual int_type overflow(int_type c = traits_type::eof()) {
+//		return fputc(c, stdout) == EOF ? traits_type::eof() : c;
+//	}
+//};
+//#endif
+//#endif
 
 #ifdef MINGW_PATCH
 	FILE _iob[] = { *stdin, *stdout, *stderr };
@@ -149,18 +149,18 @@ bool CubicSDR::OnInit() {
         return false;
     }
 
-#ifdef ENABLE_DIGITAL_LAB
-	// console output for windows
-	#ifdef _WINDOWS
-	if (AllocConsole()) {
-		freopen("CONOUT$", "w", stdout);
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
-	}
-	outbuf ob;
-	std::streambuf *sb = std::cout.rdbuf(&ob);
-	std::cout.rdbuf(sb);
-	#endif
-#endif
+//#ifdef ENABLE_DIGITAL_LAB
+//	// console output for windows
+//	#ifdef _WINDOWS
+//	if (AllocConsole()) {
+//		freopen("CONOUT$", "w", stdout);
+//		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
+//	}
+//	outbuf ob;
+//	std::streambuf *sb = std::cout.rdbuf(&ob);
+//	std::cout.rdbuf(sb);
+//	#endif
+//#endif
     
     wxApp::SetAppName("CubicSDR");
 

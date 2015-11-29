@@ -1,5 +1,6 @@
 #pragma once
 #include "ModemDigital.h"
+#include <sstream>
 
 class ModemKitFSK : public ModemKitDigital {
 public:

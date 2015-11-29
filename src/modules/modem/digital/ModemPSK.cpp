@@ -1,6 +1,6 @@
 #include "ModemPSK.h"
 
-ModemPSK::ModemPSK() {
+ModemPSK::ModemPSK() : ModemDigital()  {
     demodPSK2 = modem_create(LIQUID_MODEM_PSK2);
     demodPSK4 = modem_create(LIQUID_MODEM_PSK4);
     demodPSK8 = modem_create(LIQUID_MODEM_PSK8);

@@ -2,8 +2,11 @@
 #include "CubicSDR.h"
 
 DemodulatorInstance::DemodulatorInstance() :
-        t_PreDemod(NULL), t_Demod(NULL), t_Audio(NULL) {
+        t_PreDemod(nullptr), t_Demod(nullptr), t_Audio(nullptr) {
 
+#if ENABLE_DIGITAL_LAB
+    activeOutput = nullptr;
+#endif
 	terminated.store(true);
 	audioTerminated.store(true);
 	demodTerminated.store(true);
@@ -42,6 +45,9 @@ DemodulatorInstance::DemodulatorInstance() :
 }
 
 DemodulatorInstance::~DemodulatorInstance() {
+#if ENABLE_DIGITAL_LAB
+    delete activeOutput;
+#endif
     delete audioThread;
     delete demodulatorThread;
     delete demodulatorPreThread;
@@ -138,6 +144,11 @@ bool DemodulatorInstance::isTerminated() {
             t_Demod->join();
             delete t_Demod;
 #endif
+#if ENABLE_DIGITAL_LAB
+            if (activeOutput) {
+                closeOutput();
+            }
+#endif
             demodTerminated = true;
             break;
         case DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_PREPROCESS_TERMINATED:
@@ -165,8 +176,18 @@ bool DemodulatorInstance::isActive() {
 
 void DemodulatorInstance::setActive(bool state) {
     if (active && !state) {
+#if ENABLE_DIGITAL_LAB
+        if (activeOutput && !isTerminated()) {
+            activeOutput->Hide();
+        }
+#endif
         audioThread->setActive(state);
     } else if (!active && state) {
+#if ENABLE_DIGITAL_LAB
+        if (activeOutput) {
+            activeOutput->Show();
+        }
+#endif
         audioThread->setActive(state);
     }
     if (!state) {
@@ -244,6 +265,11 @@ void DemodulatorInstance::setDemodulatorType(std::string demod_type_in) {
         if ((currentDemodType != "") && (currentDemodType != demod_type_in)) {
             lastModemSettings[currentDemodType] = demodulatorPreThread->readModemSettings();
         }
+#if ENABLE_DIGITAL_LAB
+        if (activeOutput) {
+            activeOutput->Hide();
+        }
+#endif
         demodulatorPreThread->setDemodType(demod_type_in);
     }
 }
@@ -284,6 +310,14 @@ void DemodulatorInstance::setFrequency(long long freq) {
     }
     
     demodulatorPreThread->setFrequency(freq);
+#if ENABLE_DIGITAL_LAB
+    if (activeOutput) {
+        if (isModemInitialized() && getModemType() == "digital") {
+            ModemDigitalOutputConsole *outp = (ModemDigitalOutputConsole *)getOutput();
+            outp->setTitle(getDemodulatorType() + ": " + frequencyToStr(getFrequency()));
+        }
+    }
+#endif
 }
 
 long long DemodulatorInstance::getFrequency() {
@@ -375,6 +409,13 @@ bool DemodulatorInstance::isModemInitialized() {
     return demodulatorPreThread->isInitialized();
 }
 
+std::string DemodulatorInstance::getModemType() {
+    if (isModemInitialized()) {
+        return demodulatorPreThread->getModem()->getType();
+    }
+    return "";
+}
+
 ModemSettings DemodulatorInstance::getLastModemSettings(std::string demodType) {
     if (lastModemSettings.find(demodType) != lastModemSettings.end()) {
         return lastModemSettings[demodType];
@@ -383,3 +424,36 @@ ModemSettings DemodulatorInstance::getLastModemSettings(std::string demodType) {
         return mods;
     }
 }
+
+#if ENABLE_DIGITAL_LAB
+ModemDigitalOutput *DemodulatorInstance::getOutput() {
+    if (activeOutput == nullptr) {
+        activeOutput = new ModemDigitalOutputConsole();
+    }
+    return activeOutput;
+}
+
+void DemodulatorInstance::showOutput() {
+    if (activeOutput != nullptr) {
+        activeOutput->Show();
+    }
+}
+
+void DemodulatorInstance::hideOutput() {
+    if (activeOutput != nullptr) {
+        activeOutput->Hide();
+    }
+}
+
+void DemodulatorInstance::closeOutput() {
+    if (isModemInitialized()) {
+        if (getModemType() == "digital") {
+            ModemDigital *dModem = (ModemDigital *)demodulatorPreThread->getModem();
+            dModem->setOutput(nullptr);
+        }
+    }
+    if (activeOutput) {
+        activeOutput->Close();
+    }
+}
+#endif

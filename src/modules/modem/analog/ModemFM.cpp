@@ -1,6 +1,6 @@
 #include "ModemFM.h"
 
-ModemFM::ModemFM() {
+ModemFM::ModemFM() : ModemAnalog() {
     demodFM = freqdem_create(0.5);
 }
 

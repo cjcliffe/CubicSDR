@@ -1,6 +1,6 @@
 #include "ModemBPSK.h"
 
-ModemBPSK::ModemBPSK() {
+ModemBPSK::ModemBPSK() : ModemDigital()  {
     demodBPSK = modem_create(LIQUID_MODEM_BPSK);
 }
 

@@ -1,6 +1,6 @@
 #include "ModemSQAM.h"
 
-ModemSQAM::ModemSQAM() {
+ModemSQAM::ModemSQAM() : ModemDigital()  {
     demodSQAM32 = modem_create(LIQUID_MODEM_SQAM32);
     demodSQAM128 = modem_create(LIQUID_MODEM_SQAM128);
     demodSQAM = demodSQAM32;

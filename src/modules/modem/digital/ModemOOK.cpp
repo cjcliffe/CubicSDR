@@ -1,6 +1,6 @@
 #include "ModemOOK.h"
 
-ModemOOK::ModemOOK() {
+ModemOOK::ModemOOK() : ModemDigital()  {
     demodOOK = modem_create(LIQUID_MODEM_OOK);
 }
 

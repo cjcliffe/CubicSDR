@@ -1,6 +1,6 @@
 #include "ModemUSB.h"
 
-ModemUSB::ModemUSB() {
+ModemUSB::ModemUSB() : ModemAnalog() {
     // half band filter used for side-band elimination
     ssbFilt = resamp2_crcf_create(12,-0.25f,60.0f);
     demodAM_USB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_USB, 1);

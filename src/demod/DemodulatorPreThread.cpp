@@ -120,6 +120,7 @@ void DemodulatorPreThread::run() {
             cModem = nullptr;
             cModemKit = nullptr;
             demodTypeChanged.store(false);
+            initialized.store(false);
         }
         else if (
             cModemKit && cModem &&
@@ -226,6 +227,12 @@ void DemodulatorPreThread::run() {
 
                     if (result.modem != nullptr) {
                         cModem = result.modem;
+#if ENABLE_DIGITAL_LAB
+                        if (cModem->getType() == "digital") {
+                            ModemDigital *mDigi = (ModemDigital *)cModem;
+                            mDigi->setOutput(parent->getOutput());
+                        }
+#endif
                     }
                     
                     if (result.modemKit != nullptr) {

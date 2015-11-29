@@ -290,6 +290,8 @@ SET (cubicsdr_sources
 IF(ENABLE_DIGITAL_LAB)
     SET (cubicsdr_sources
         ${cubicsdr_sources}
+        src/forms/DigitalConsole/DigitalConsole.cpp
+        src/forms/DigitalConsole/DigitalConsoleFrame.cpp
         src/modules/modem/digital/ModemASK.cpp
         src/modules/modem/digital/ModemAPSK.cpp
         src/modules/modem/digital/ModemBPSK.cpp
@@ -393,6 +395,8 @@ SET (cubicsdr_headers
 IF(ENABLE_DIGITAL_LAB)
 SET (cubicsdr_headers
     ${cubicsdr_headers}
+    src/forms/DigitalConsole/DigitalConsole.h
+    src/forms/DigitalConsole/DigitalConsoleFrame.h
     src/modules/modem/digital/ModemASK.h
     src/modules/modem/digital/ModemAPSK.h
     src/modules/modem/digital/ModemBPSK.h
@@ -429,9 +433,10 @@ SOURCE_GROUP("Forms\\SDRDevices" REGULAR_EXPRESSION "src/forms/SDRDevices/${REG_
 SOURCE_GROUP("SDR" REGULAR_EXPRESSION "src/sdr/${REG_EXT}")
 SOURCE_GROUP("Demodulator" REGULAR_EXPRESSION "src/demod/${REG_EXT}")
 SOURCE_GROUP("Modem" REGULAR_EXPRESSION "src/modules/modem/${REG_EXT}")
-SOURCE_GROUP("Modem-Analog" REGULAR_EXPRESSION "src/modules/modem/analog/${REG_EXT}")
+SOURCE_GROUP("Modem\\Analog" REGULAR_EXPRESSION "src/modules/modem/analog/${REG_EXT}")
 IF(ENABLE_DIGITAL_LAB)
-SOURCE_GROUP("Modem-Digital" REGULAR_EXPRESSION "src/modules/modem/digital/${REG_EXT}")
+SOURCE_GROUP("Modem\\Digital" REGULAR_EXPRESSION "src/modules/modem/digital/${REG_EXT}")
+SOURCE_GROUP("Forms\\DigitalConsole" REGULAR_EXPRESSION "src/forms/DigitalConsole/${REG_EXT}")
 ENDIF()
 SOURCE_GROUP("Audio" REGULAR_EXPRESSION "src/audio/${REG_EXT}")
 SOURCE_GROUP("Utility" REGULAR_EXPRESSION "src/util/${REG_EXT}")
@@ -446,6 +451,7 @@ SOURCE_GROUP("_ext-CubicVR2" REGULAR_EXPRESSION "external/cubicvr2/.*${REG_EXT}"
 
 include_directories ( 
 	${PROJECT_SOURCE_DIR}/src/forms/SDRDevices
+	${PROJECT_SOURCE_DIR}/src/forms/DigitalConsole
 	${PROJECT_SOURCE_DIR}/src/sdr 
 	${PROJECT_SOURCE_DIR}/src/demod
 	${PROJECT_SOURCE_DIR}/src/modules

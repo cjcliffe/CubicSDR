@@ -1,6 +1,6 @@
 #include "ModemDPSK.h"
 
-ModemDPSK::ModemDPSK() {
+ModemDPSK::ModemDPSK() : ModemDigital() {
     demodDPSK2 = modem_create(LIQUID_MODEM_DPSK2);
     demodDPSK4 = modem_create(LIQUID_MODEM_DPSK4);
     demodDPSK8 = modem_create(LIQUID_MODEM_DPSK8);

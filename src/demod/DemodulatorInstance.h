@@ -10,6 +10,10 @@
 #include "ModemDigital.h"
 #include "ModemAnalog.h"
 
+#if ENABLE_DIGITAL_LAB
+#include "DigitalConsole.h"
+#endif
+
 class DemodulatorInstance {
 public:
 
@@ -89,8 +93,16 @@ public:
     void writeModemSettings(ModemSettings settings);
     
     bool isModemInitialized();
+    std::string getModemType();
     ModemSettings getLastModemSettings(std::string demodType);
-    
+
+#if ENABLE_DIGITAL_LAB
+    ModemDigitalOutput *getOutput();
+    void showOutput();
+    void hideOutput();
+    void closeOutput();
+#endif
+        
 protected:
     DemodulatorThreadInputQueue* pipeIQInputData;
     DemodulatorThreadPostInputQueue* pipeIQDemodData;
@@ -115,4 +127,7 @@ private:
     std::atomic<float> currentAudioGain;
     std::atomic_bool follow, tracking;
     std::map<std::string, ModemSettings> lastModemSettings;
-  };
+#if ENABLE_DIGITAL_LAB
+    ModemDigitalOutput *activeOutput;
+#endif
+};

@@ -1,6 +1,6 @@
 #include "ModemST.h"
 
-ModemST::ModemST() {
+ModemST::ModemST() : ModemDigital()  {
     demodST = modem_create(LIQUID_MODEM_V29);
 }
 

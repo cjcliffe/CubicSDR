@@ -1,6 +1,6 @@
 #include "ModemASK.h"
 
-ModemASK::ModemASK() {
+ModemASK::ModemASK() : ModemDigital()  {
     demodASK2 = modem_create(LIQUID_MODEM_ASK2);
     demodASK4 = modem_create(LIQUID_MODEM_ASK4);
     demodASK8 = modem_create(LIQUID_MODEM_ASK8);

@@ -1,6 +1,6 @@
 #include "ModemQAM.h"
 
-ModemQAM::ModemQAM() {
+ModemQAM::ModemQAM() : ModemDigital()  {
     demodQAM4 = modem_create(LIQUID_MODEM_QAM4);
     demodQAM8 = modem_create(LIQUID_MODEM_QAM8);
     demodQAM16 = modem_create(LIQUID_MODEM_QAM16);
