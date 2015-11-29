@@ -37,6 +37,7 @@ public:
     Modem *modem;
     ModemKit *modemKit;
     std::string modemType;
+    std::string modemName;
 };
 
 class DemodulatorWorkerThreadCommand {
@@ -93,4 +94,5 @@ protected:
     Modem *cModem;
     ModemKit *cModemKit;
     std::string cModemType;
+    std::string cModemName;
 };

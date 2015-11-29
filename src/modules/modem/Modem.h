@@ -112,7 +112,7 @@ public:
     static void addModemFactory(Modem *factorySingle);
     static ModemFactoryList getFactories();
     
-    static Modem *makeModem(std::string modemType);
+    static Modem *makeModem(std::string modemName);
     
     virtual std::string getType() = 0;
     virtual std::string getName() = 0;

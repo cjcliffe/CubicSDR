@@ -16,8 +16,8 @@
 #include <wx/font.h>
 #include <wx/colour.h>
 #include <wx/settings.h>
-#include <wx/button.h>
 #include <wx/sizer.h>
+#include <wx/button.h>
 #include <wx/timer.h>
 #include <wx/frame.h>
 

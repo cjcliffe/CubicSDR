@@ -11,7 +11,7 @@ class ScopeContext: public PrimaryGLContext {
 public:
     ScopeContext(ScopeCanvas *canvas, wxGLContext *sharedContext);
 
-    void DrawBegin();
+    void DrawBegin(bool clear=true);
     void DrawTunerTitles(bool ppmMode=false);
     void DrawDeviceName(std::string deviceName);
     void DrawDivider();

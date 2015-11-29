@@ -3,10 +3,12 @@
 #include "VisualProcessor.h"
 #include "AudioThread.h"
 #include "fftw3.h"
+#include "ScopePanel.h"
 
 class ScopeRenderData: public ReferenceCounter {
 public:
 	std::vector<float> waveform_points;
+    ScopePanel::ScopeMode mode;
     int inputRate;
     int sampleRate;
 	int channels;

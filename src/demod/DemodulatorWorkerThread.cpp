@@ -51,7 +51,8 @@ void DemodulatorWorkerThread::run() {
             
             if (makeDemod) {
                 cModem = Modem::makeModem(demodCommand.demodType);
-                cModemType = demodCommand.demodType;
+                cModemName = cModem->getName();
+                cModemType = cModem->getType();
                 if (demodCommand.settings.size()) {
                     cModem->writeSettings(demodCommand.settings);
                 }
@@ -91,6 +92,7 @@ void DemodulatorWorkerThread::run() {
 
             result.modemKit = cModemKit;
             result.modemType = cModemType;
+            result.modemName = cModemName;
             
             resultQueue->push(result);
         }

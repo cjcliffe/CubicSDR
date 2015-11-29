@@ -200,7 +200,8 @@ void DemodulatorPreThread::run() {
             resamp->setRefCount(1);
             resamp->data.assign(resampledData.begin(), resampledData.begin() + numWritten);
 
-            resamp->modemType = demodType;
+            resamp->modemType = cModem->getType();
+            resamp->modemName = cModem->getName();
             resamp->modem = cModem;
             resamp->modemKit = cModemKit;
             resamp->sampleRate = currentBandwidth;
@@ -248,8 +249,8 @@ void DemodulatorPreThread::run() {
                         currentSampleRate = result.sampleRate;
                     }
                         
-                    if (result.modemType != "") {
-                        demodType = result.modemType;
+                    if (result.modemName != "") {
+                        demodType = result.modemName;
                         demodTypeChanged.store(false);
                     }
                         

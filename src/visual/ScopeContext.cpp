@@ -12,10 +12,12 @@ ScopeContext::ScopeContext(ScopeCanvas *canvas, wxGLContext *sharedContext) :
     glLoadIdentity();
 }
 
-void ScopeContext::DrawBegin() {
-    glClearColor(ThemeMgr::mgr.currentTheme->scopeBackground.r, ThemeMgr::mgr.currentTheme->scopeBackground.g,
-            ThemeMgr::mgr.currentTheme->scopeBackground.b, 1.0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+void ScopeContext::DrawBegin(bool clear) {
+    if (clear) {
+        glClearColor(ThemeMgr::mgr.currentTheme->scopeBackground.r, ThemeMgr::mgr.currentTheme->scopeBackground.g,
+                ThemeMgr::mgr.currentTheme->scopeBackground.b, 1.0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
 
     glMatrixMode (GL_MODELVIEW);
     glLoadIdentity();

@@ -120,7 +120,7 @@ void DemodulatorThread::run() {
         AudioThreadInput *ati = NULL;
         
         ModemAnalog *modemAnalog = (cModem->getType() == "analog")?((ModemAnalog *)cModem):nullptr;
-//        ModemDigital *modemDigital = (cModem->getType() == "digital")?((ModemDigital *)cModem):nullptr;
+        ModemDigital *modemDigital = (cModem->getType() == "digital")?((ModemDigital *)cModem):nullptr;
         
         if (modemAnalog != nullptr) {
             ati = outputBuffers.getBuffer();
@@ -128,7 +128,14 @@ void DemodulatorThread::run() {
             ati->sampleRate = cModemKit->audioSampleRate;
             ati->inputRate = inp->sampleRate;
             ati->setRefCount(1);
+        } else if (modemDigital != nullptr) {
+            ati = outputBuffers.getBuffer();
+            
+            ati->sampleRate = cModemKit->sampleRate;
+            ati->inputRate = inp->sampleRate;
+            ati->setRefCount(1);
         }
+
         cModem->demodulate(cModemKit, &modemData, ati);
         
         if (currentSignalLevel > signalLevel) {
@@ -160,7 +167,15 @@ void DemodulatorThread::run() {
             ati_vis->inputRate = inp->sampleRate;
             
             int num_vis = DEMOD_VIS_SIZE;
-            if (ati->channels==2) {
+            if (modemDigital) {
+                ati_vis->data.resize(inputData->size());
+                ati_vis->channels = 2;
+                for (int i = 0, iMax = inputData->size() / 2; i < iMax; i++) {
+                    ati_vis->data[i * 2] = (*inputData)[i].real;
+                    ati_vis->data[i * 2 + 1] = (*inputData)[i].imag;
+                }
+                ati_vis->type = 2;
+            } else if (ati->channels==2) {
                 ati_vis->channels = 2;
                 int stereoSize = ati->data.size();
                 if (stereoSize > DEMOD_VIS_SIZE * 2) {
@@ -169,7 +184,7 @@ void DemodulatorThread::run() {
                 
                 ati_vis->data.resize(stereoSize);
                 
-                if (inp->modemType == "I/Q") {
+                if (inp->modemName == "I/Q") {
                     for (int i = 0; i < stereoSize / 2; i++) {
                         ati_vis->data[i] = (*inputData)[i].real * 0.75;
                         ati_vis->data[i + stereoSize / 2] = (*inputData)[i].imag * 0.75;
@@ -182,6 +197,7 @@ void DemodulatorThread::run() {
                         ati_vis->data[i + stereoSize / 2] = ati->data[i * 2 + 1];
                     }
                 }
+                ati_vis->type = 1;
             } else {
                 int numAudioWritten = ati->data.size();
                 ati_vis->channels = 1;
@@ -198,7 +214,7 @@ void DemodulatorThread::run() {
                     }
                     ati_vis->data.assign(demodOutData->begin(), demodOutData->begin() + num_vis);
                 }
-                
+                ati_vis->type = 0;
             }
             
             audioVisOutputQueue->push(ati_vis);

@@ -44,9 +44,9 @@ ModemFactoryList Modem::getFactories() {
     return modemFactories;
 }
 
-Modem *Modem::makeModem(std::string modemType) {
-    if (modemFactories.find(modemType) != modemFactories.end()) {
-        return modemFactories[modemType]->factory();
+Modem *Modem::makeModem(std::string modemName) {
+    if (modemFactories.find(modemName) != modemFactories.end()) {
+        return modemFactories[modemName]->factory();
     }
     
     return nullptr;
