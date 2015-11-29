@@ -65,17 +65,17 @@ void ScopePanel::drawPanelContents() {
 
     } else if (scopeMode == SCOPE_MODE_XY) {
         RGBA4f bg1(ThemeMgr::mgr.currentTheme->scopeBackground), bg2(ThemeMgr::mgr.currentTheme->scopeBackground * 2.0);
-        bg1.a = 0.1;
-        bg2.a = 0.1;
+        bg1.a = 0.05;
+        bg2.a = 0.05;
         bgPanel.setFillColor(bg1, bg2);
         bgPanel.calcTransform(transform);
         bgPanel.draw();
         glLineWidth(1.0);
         glEnable(GL_POINT_SMOOTH);
-        glPointSize(2.0);
+        glPointSize(1.0);
         glLoadMatrixf(transform);
-        glColor3f(ThemeMgr::mgr.currentTheme->scopeLine.r * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.g * 0.35,
-                  ThemeMgr::mgr.currentTheme->scopeLine.b * 0.35);
+        glColor3f(ThemeMgr::mgr.currentTheme->scopeLine.r * 0.15, ThemeMgr::mgr.currentTheme->scopeLine.g * 0.15,
+                  ThemeMgr::mgr.currentTheme->scopeLine.b * 0.15);
     }
     
     if (points.size()) {
@@ -83,7 +83,7 @@ void ScopePanel::drawPanelContents() {
         glEnable (GL_LINE_SMOOTH);
         glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
         if (scopeMode == SCOPE_MODE_XY) {
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            glBlendFunc(GL_ONE, GL_ONE);
         } else {
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         }
