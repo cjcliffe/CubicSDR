@@ -22,6 +22,10 @@ int ModemFSK::checkSampleRate(long long sampleRate, int audioSampleRate) {
     }
 }
 
+int ModemFSK::getDefaultSampleRate() {
+    return 19200;
+}
+
 ModemArgInfoList ModemFSK::getSettings() {
     ModemArgInfoList args;
     

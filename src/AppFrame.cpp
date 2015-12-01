@@ -67,13 +67,13 @@ AppFrame::AppFrame() :
     gainSpacerItem->Show(false);
             
     demodModeSelector = new ModeSelectorCanvas(demodPanel, attribList);
-    demodModeSelector->addChoice(0, "FM");
-    demodModeSelector->addChoice(1, "FMS");
-    demodModeSelector->addChoice(2, "AM");
-    demodModeSelector->addChoice(3, "LSB");
-    demodModeSelector->addChoice(4, "USB");
-    demodModeSelector->addChoice(5, "DSB");
-    demodModeSelector->addChoice(6, "I/Q");
+    demodModeSelector->addChoice("FM");
+    demodModeSelector->addChoice("FMS");
+    demodModeSelector->addChoice("AM");
+    demodModeSelector->addChoice("LSB");
+    demodModeSelector->addChoice("USB");
+    demodModeSelector->addChoice("DSB");
+    demodModeSelector->addChoice("I/Q");
     demodModeSelector->setSelection("FM");
     demodModeSelector->setHelpTip("Choose modulation type: Frequency Modulation, Amplitude Modulation and Lower, Upper or Double Side-Band.");
     demodModeSelector->SetMinSize(wxSize(40,-1));
@@ -82,17 +82,18 @@ AppFrame::AppFrame() :
     
 #ifdef ENABLE_DIGITAL_LAB
     demodModeSelectorAdv = new ModeSelectorCanvas(demodPanel, attribList);
-    demodModeSelectorAdv->addChoice(0, "ASK");
-    demodModeSelectorAdv->addChoice(1, "APSK");
-    demodModeSelectorAdv->addChoice(2, "BPSK");
-    demodModeSelectorAdv->addChoice(3, "DPSK");
-    demodModeSelectorAdv->addChoice(4, "PSK");
-    demodModeSelectorAdv->addChoice(5, "FSK");
-    demodModeSelectorAdv->addChoice(6, "OOK");
-    demodModeSelectorAdv->addChoice(7, "ST");
-    demodModeSelectorAdv->addChoice(8, "SQAM");
-    demodModeSelectorAdv->addChoice(9, "QAM");
-    demodModeSelectorAdv->addChoice(10, "QPSK");
+    demodModeSelectorAdv->addChoice("ASK");
+    demodModeSelectorAdv->addChoice("APSK");
+    demodModeSelectorAdv->addChoice("BPSK");
+    demodModeSelectorAdv->addChoice("DPSK");
+    demodModeSelectorAdv->addChoice("PSK");
+    demodModeSelectorAdv->addChoice("FSK");
+    demodModeSelectorAdv->addChoice("GMSK");
+    demodModeSelectorAdv->addChoice("OOK");
+    demodModeSelectorAdv->addChoice("ST");
+    demodModeSelectorAdv->addChoice("SQAM");
+    demodModeSelectorAdv->addChoice("QAM");
+    demodModeSelectorAdv->addChoice("QPSK");
     demodModeSelectorAdv->setHelpTip("Choose advanced modulation types.");
     demodModeSelectorAdv->SetMinSize(wxSize(40,-1));
     demodModeSelectorAdv->SetMaxSize(wxSize(40,-1));
@@ -906,25 +907,16 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             if (dSelection != "" && dSelection != demod->getDemodulatorType()) {
                 demod->setDemodulatorType(dSelection);
                 demodModeSelectorAdv->setSelection(-1);
-                if (int lastDemodBw = wxGetApp().getDemodMgr().getLastBandwidth(dSelection)) {
-                    demod->setBandwidth(lastDemodBw);
-                }
             }
             // advanced demodulators
 			else if (dSelectionadv != "" && dSelectionadv != demod->getDemodulatorType()) {
 				demod->setDemodulatorType(dSelectionadv);
 				demodModeSelector->setSelection(-1);
-                if (int lastDemodBw = wxGetApp().getDemodMgr().getLastBandwidth(dSelection)) {
-                    demod->setBandwidth(lastDemodBw);
-                }
             }
 #else
             // basic demodulators
             if (dSelection != "" && dSelection != demod->getDemodulatorType()) {
                 demod->setDemodulatorType(dSelection);
-                if (int lastDemodBw = wxGetApp().getDemodMgr().getLastBandwidth(dSelection)) {
-                    demod->setBandwidth(lastDemodBw);
-                }
             }
 #endif
 
@@ -1017,7 +1009,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         if (!demodTuner->HasFocus()) {
             demodTuner->SetFocus();
         }
-    } else if (!wxGetApp().isDeviceSelectorOpen()) {
+    } else if (!wxGetApp().isDeviceSelectorOpen() && (!modemProps || !modemProps->isMouseInView())) {
 		if (!waterfallCanvas->HasFocus()) {
 			waterfallCanvas->SetFocus();
 		}

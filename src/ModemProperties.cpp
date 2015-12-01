@@ -14,10 +14,14 @@ ModemProperties::ModemProperties(wxWindow *parent, wxWindowID winid,
     
     m_propertyGrid->Connect( wxEVT_PG_CHANGED, wxPropertyGridEventHandler( ModemProperties::OnChange ), NULL, this );
     this->Connect( wxEVT_SHOW, wxShowEventHandler( ModemProperties::OnShow ), NULL, this );
+    
+    this->Connect( wxEVT_ENTER_WINDOW, wxMouseEventHandler( ModemProperties::OnMouseEnter ), NULL, this);
+    this->Connect( wxEVT_LEAVE_WINDOW, wxMouseEventHandler( ModemProperties::OnMouseLeave ), NULL, this);
+    
+    mouseInView = false;
 }
 
 void ModemProperties::OnShow(wxShowEvent &event) {
-    m_propertyGrid->FitColumns();
 }
 
 ModemProperties::~ModemProperties() {
@@ -27,6 +31,7 @@ ModemProperties::~ModemProperties() {
 void ModemProperties::initProperties(ModemArgInfoList newArgs) {
     args = newArgs;
 
+    bSizer->Layout();
     m_propertyGrid->Clear();
 
     if (newArgs.size() == 0) {
@@ -35,9 +40,6 @@ void ModemProperties::initProperties(ModemArgInfoList newArgs) {
     } else {
         Show();
     }
-
-    bSizer->Layout();
-    Layout();
     
     m_propertyGrid->Append(new wxPropertyCategory("Modem Settings"));
     
@@ -149,6 +151,10 @@ std::string ModemProperties::readProperty(std::string key) {
 void ModemProperties::OnChange(wxPropertyGridEvent &event) {
     DemodulatorInstance *inst = wxGetApp().getDemodMgr().getLastActiveDemodulator();
     
+    if (!inst) {
+        return;
+    }
+    
     std::map<std::string, wxPGProperty *>::const_iterator prop_i;
     for (prop_i = props.begin(); prop_i != props.end(); prop_i++) {
         if (prop_i->second == event.m_property) {
@@ -158,4 +164,16 @@ void ModemProperties::OnChange(wxPropertyGridEvent &event) {
             return;
         }
     }
+}
+
+void ModemProperties::OnMouseEnter(wxMouseEvent &event) {
+    mouseInView = true;
+}
+
+void ModemProperties::OnMouseLeave(wxMouseEvent &event) {
+    mouseInView = false;
+}
+
+bool ModemProperties::isMouseInView() {
+    return mouseInView;
 }

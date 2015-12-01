@@ -27,6 +27,7 @@ public:
     Modem *factory();
     
     int checkSampleRate(long long sampleRate, int audioSampleRate);
+    int getDefaultSampleRate();
     
     ModemKit *buildKit(long long sampleRate, int audioSampleRate);
     void disposeKit(ModemKit *kit);

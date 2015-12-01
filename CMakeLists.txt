@@ -297,6 +297,7 @@ IF(ENABLE_DIGITAL_LAB)
         src/modules/modem/digital/ModemBPSK.cpp
         src/modules/modem/digital/ModemDPSK.cpp
         src/modules/modem/digital/ModemFSK.cpp
+        src/modules/modem/digital/ModemGMSK.cpp
         src/modules/modem/digital/ModemPSK.cpp
         src/modules/modem/digital/ModemOOK.cpp
         src/modules/modem/digital/ModemST.cpp
@@ -402,6 +403,7 @@ SET (cubicsdr_headers
     src/modules/modem/digital/ModemBPSK.h
     src/modules/modem/digital/ModemDPSK.h
     src/modules/modem/digital/ModemFSK.h
+    src/modules/modem/digital/ModemGMSK.h
     src/modules/modem/digital/ModemPSK.h
     src/modules/modem/digital/ModemOOK.h
     src/modules/modem/digital/ModemST.h

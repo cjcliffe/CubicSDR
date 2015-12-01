@@ -4,12 +4,20 @@ ModemFM::ModemFM() : ModemAnalog() {
     demodFM = freqdem_create(0.5);
 }
 
+ModemFM::~ModemFM() {
+    freqdem_destroy(demodFM);
+}
+
 Modem *ModemFM::factory() {
     return new ModemFM;
 }
 
 std::string ModemFM::getName() {
     return "FM";
+}
+
+int ModemFM::getDefaultSampleRate() {
+    return 200000;
 }
 
 void ModemFM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {

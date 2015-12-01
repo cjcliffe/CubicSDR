@@ -43,6 +43,7 @@
 #include "ModemBPSK.h"
 #include "ModemDPSK.h"
 #include "ModemFSK.h"
+#include "ModemGMSK.h"
 #include "ModemOOK.h"
 #include "ModemPSK.h"
 #include "ModemQAM.h"

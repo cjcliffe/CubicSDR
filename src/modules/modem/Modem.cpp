@@ -1,4 +1,6 @@
 #include "Modem.h"
+#include "CubicSDR.h"
+
 
 ModemFactoryList Modem::modemFactories;
 
@@ -52,10 +54,22 @@ Modem *Modem::makeModem(std::string modemName) {
     return nullptr;
 }
 
+int Modem::getModemDefaultSampleRate(std::string modemName) {
+    if (modemFactories.find(modemName) != modemFactories.end()) {
+        return modemFactories[modemName]->getDefaultSampleRate();
+    }
+    
+    return 0;
+}
+
 ModemArgInfoList Modem::getSettings() {
     ModemArgInfoList args;
     
     return args;
+}
+
+int Modem::getDefaultSampleRate() {
+    return 200000;
 }
 
 void Modem::writeSetting(std::string setting, std::string value) {

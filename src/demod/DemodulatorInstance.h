@@ -127,6 +127,7 @@ private:
     std::atomic<float> currentAudioGain;
     std::atomic_bool follow, tracking;
     std::map<std::string, ModemSettings> lastModemSettings;
+    std::map<std::string, int> lastModemBandwidth;
 #if ENABLE_DIGITAL_LAB
     ModemDigitalOutput *activeOutput;
 #endif

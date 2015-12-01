@@ -8,13 +8,6 @@
 DemodulatorMgr::DemodulatorMgr() :
         activeDemodulator(NULL), lastActiveDemodulator(NULL), activeVisualDemodulator(NULL), lastBandwidth(DEFAULT_DEMOD_BW), lastDemodType(
                 DEFAULT_DEMOD_TYPE), lastSquelchEnabled(false), lastSquelch(-100), lastGain(1.0), lastMuted(false) {
-    setLastBandwidth("FM",200000);
-    setLastBandwidth("FMS",200000);
-    setLastBandwidth("AM",6000);
-    setLastBandwidth("USB",5400);
-    setLastBandwidth("LSB",5400);
-    setLastBandwidth("DSB",5400);
-    setLastBandwidth("IQ",48000);
 }
 
 DemodulatorMgr::~DemodulatorMgr() {
@@ -171,7 +164,6 @@ void DemodulatorMgr::updateLastState() {
         lastSquelch = lastActiveDemodulator->getSquelchLevel();
         lastGain = lastActiveDemodulator->getGain();
         lastModemSettings[lastDemodType] = lastActiveDemodulator->readModemSettings();
-        lastBandwidthNamed[lastDemodType] = lastBandwidth;
     }
 
 }
@@ -235,11 +227,4 @@ ModemSettings DemodulatorMgr::getLastModemSettings(std::string modemType) {
 
 void DemodulatorMgr::setLastModemSettings(std::string modemType, ModemSettings settings) {
     lastModemSettings[modemType] = settings;
-}
-
-int DemodulatorMgr::getLastBandwidth(std::string modemType) {
-    return lastBandwidthNamed[modemType];
-}
-void DemodulatorMgr::setLastBandwidth(std::string modemType, int lastBandwidth_in) {
-    lastBandwidthNamed[modemType] = lastBandwidth_in;
 }

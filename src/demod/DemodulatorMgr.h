@@ -25,9 +25,6 @@ public:
     int getLastBandwidth() const;
     void setLastBandwidth(int lastBandwidth);
 
-    int getLastBandwidth(std::string modemType);
-    void setLastBandwidth(std::string modemType, int lastBandwidth);
-
     std::string getLastDemodulatorType() const;
     void setLastDemodulatorType(std::string lastDemodType);
 
@@ -57,7 +54,6 @@ private:
     DemodulatorInstance *lastActiveDemodulator;
     DemodulatorInstance *activeVisualDemodulator;
 
-    std::map<std::string, int> lastBandwidthNamed;
     int lastBandwidth;
     std::string lastDemodType;
     bool lastDemodLock;

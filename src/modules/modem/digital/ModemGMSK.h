@@ -2,19 +2,20 @@
 #include "ModemDigital.h"
 #include <sstream>
 
-class ModemKitFSK : public ModemKitDigital {
+class ModemKitGMSK : public ModemKitDigital {
 public:
-    unsigned int m, k;
+    unsigned int fdelay, sps;
+    float ebf;
     
-    fskdem demodFSK;
+    gmskdem demodGMSK;
     std::vector<liquid_float_complex> inputBuffer;
 };
 
 
-class ModemFSK : public ModemDigital {
+class ModemGMSK : public ModemDigital {
 public:
-    ModemFSK();
-    ~ModemFSK();
+    ModemGMSK();
+    ~ModemGMSK();
 
     std::string getName();
     
@@ -33,7 +34,8 @@ public:
     void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
 
 private:
-    int sps;
-    int bps;
+    int _sps;    // samples per symbol
+    int _fdelay;    // filter delay
+    float _ebf;
 };
 

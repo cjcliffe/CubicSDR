@@ -264,13 +264,25 @@ void DemodulatorInstance::setDemodulatorType(std::string demod_type_in) {
         std::string currentDemodType = demodulatorPreThread->getDemodType();
         if ((currentDemodType != "") && (currentDemodType != demod_type_in)) {
             lastModemSettings[currentDemodType] = demodulatorPreThread->readModemSettings();
+            lastModemBandwidth[currentDemodType] = demodulatorPreThread->getBandwidth();
         }
 #if ENABLE_DIGITAL_LAB
         if (activeOutput) {
             activeOutput->Hide();
         }
 #endif
+
         demodulatorPreThread->setDemodType(demod_type_in);
+        int lastbw = 0;
+        if (currentDemodType != "" && lastModemBandwidth.find(demod_type_in) != lastModemBandwidth.end()) {
+            lastbw = lastModemBandwidth[demod_type_in];
+        }
+        if (!lastbw) {
+            lastbw = Modem::getModemDefaultSampleRate(demod_type_in);
+        }
+        if (lastbw) {
+            setBandwidth(lastbw);
+        }
     }
 }
 
@@ -297,7 +309,6 @@ int DemodulatorInstance::getDemodulatorLock() {
 
 void DemodulatorInstance::setBandwidth(int bw) {
     demodulatorPreThread->setBandwidth(bw);
-    wxGetApp().getDemodMgr().setLastBandwidth(bw);
 }
 
 int DemodulatorInstance::getBandwidth() {

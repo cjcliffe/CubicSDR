@@ -29,6 +29,10 @@ int ModemUSB::checkSampleRate(long long sampleRate, int audioSampleRate) {
     return sampleRate+1;
 }
 
+int ModemUSB::getDefaultSampleRate() {
+    return 5400;
+}
+
 void ModemUSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
     ModemKitAnalog *akit = (ModemKitAnalog *)kit;
     

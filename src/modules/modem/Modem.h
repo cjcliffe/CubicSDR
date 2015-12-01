@@ -113,6 +113,7 @@ public:
     static ModemFactoryList getFactories();
     
     static Modem *makeModem(std::string modemName);
+    static int getModemDefaultSampleRate(std::string modemName);
     
     virtual std::string getType() = 0;
     virtual std::string getName() = 0;
@@ -123,6 +124,7 @@ public:
     virtual ~Modem();
     
     virtual ModemArgInfoList getSettings();
+    virtual int getDefaultSampleRate();
     virtual void writeSetting(std::string setting, std::string value);
     virtual void writeSettings(ModemSettings settings);
     virtual std::string readSetting(std::string setting);

@@ -178,6 +178,7 @@ bool CubicSDR::OnInit() {
     Modem::addModemFactory(new ModemBPSK);
     Modem::addModemFactory(new ModemDPSK);
     Modem::addModemFactory(new ModemFSK);
+    Modem::addModemFactory(new ModemGMSK);
     Modem::addModemFactory(new ModemOOK);
     Modem::addModemFactory(new ModemPSK);
     Modem::addModemFactory(new ModemQAM);

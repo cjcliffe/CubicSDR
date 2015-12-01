@@ -4,6 +4,14 @@ ModemIQ::ModemIQ() {
     
 }
 
+std::string ModemIQ::getType() {
+    return "analog";
+}
+
+std::string ModemIQ::getName() {
+    return "I/Q";
+}
+
 Modem *ModemIQ::factory() {
     return new ModemIQ;
 }
@@ -15,20 +23,16 @@ ModemKit *ModemIQ::buildKit(long long sampleRate, int audioSampleRate) {
     return kit;
 }
 
-std::string ModemIQ::getType() {
-    return "analog";
-}
-
-std::string ModemIQ::getName() {
-    return "I/Q";
-}
-
 void ModemIQ::disposeKit(ModemKit *kit) {
     delete kit;
 }
 
 int ModemIQ::checkSampleRate(long long sampleRate, int audioSampleRate) {
     return audioSampleRate;
+}
+
+int ModemIQ::getDefaultSampleRate() {
+    return 48000;
 }
 
 void ModemIQ::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
