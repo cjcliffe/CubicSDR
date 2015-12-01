@@ -17,8 +17,6 @@
 
 #include <wx/numformatter.h>
 
-#define MIN_BANDWIDTH 1500
-
 wxBEGIN_EVENT_TABLE(WaterfallCanvas, wxGLCanvas)
 EVT_PAINT(WaterfallCanvas::OnPaint)
 EVT_KEY_DOWN(WaterfallCanvas::OnKeyDown)
@@ -44,6 +42,7 @@ WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
     preBuf = false;
     SetCursor(wxCURSOR_CROSS);
     scaleMove = 0;
+    minBandwidth = 30000;
 }
 
 WaterfallCanvas::~WaterfallCanvas() {
@@ -179,8 +178,8 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
         if (currentZoom < 1) {
             bw = (long long) ceil((long double) bw * currentZoom);
-            if (bw < 30000) {
-                bw = 30000;
+            if (bw < minBandwidth) {
+                bw = minBandwidth;
             }
             if (mouseInView) {
                 long long mfreqA = getFrequencyAt(mpos);
@@ -852,4 +851,6 @@ void WaterfallCanvas::setLinesPerSecond(int lps) {
     tex_update.unlock();
 }
 
-
+void WaterfallCanvas::setMinBandwidth(int min) {
+    minBandwidth = min;
+}

@@ -9,8 +9,8 @@ std::string ModemAnalog::getType() {
 }
 
 int ModemAnalog::checkSampleRate(long long sampleRate, int audioSampleRate) {
-    if (sampleRate < 1500) {
-        return 1500;
+    if (sampleRate < MIN_BANDWIDTH) {
+        return MIN_BANDWIDTH;
     }
     return sampleRate;
 }

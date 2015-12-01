@@ -5,6 +5,7 @@
 class ModemKitFSK : public ModemKitDigital {
 public:
     unsigned int m, k;
+    float bw;
     
     fskdem demodFSK;
     std::vector<liquid_float_complex> inputBuffer;
@@ -33,7 +34,7 @@ public:
     void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
 
 private:
-    int sps;
-    int bps;
+    int sps, bps;
+    float bw;
 };
 

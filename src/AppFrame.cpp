@@ -120,6 +120,7 @@ AppFrame::AppFrame() :
     demodWaterfallCanvas->setup(1024, 128);
     demodWaterfallCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
     demodWaterfallCanvas->attachSpectrumCanvas(demodSpectrumCanvas);
+    demodWaterfallCanvas->setMinBandwidth(8000);
     demodSpectrumCanvas->attachWaterfallCanvas(demodWaterfallCanvas);
     demodVisuals->Add(demodWaterfallCanvas, 6, wxEXPAND | wxALL, 0);
     wxGetApp().getDemodSpectrumProcessor()->attachOutput(demodWaterfallCanvas->getVisualDataQueue());

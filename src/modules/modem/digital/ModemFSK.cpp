@@ -5,6 +5,7 @@ ModemFSK::ModemFSK() : ModemDigital()  {
     // DMR defaults?
     bps = 1;
     sps = 9600;
+    bw = 0.45;
     outStream << std::hex;
 }
 
@@ -35,6 +36,7 @@ ModemArgInfoList ModemFSK::getSettings() {
     bpsArg.value = std::to_string(bps);
     bpsArg.description = "Modem bits-per-symbol";
     bpsArg.type = ModemArgInfo::STRING;
+    bpsArg.units = "bits";
     
     std::vector<std::string> bpsOpts;
     bpsOpts.push_back("1");
@@ -51,21 +53,20 @@ ModemArgInfoList ModemFSK::getSettings() {
     spsArg.name = "Symbols/second";
     spsArg.value = std::to_string(sps);
     spsArg.description = "Modem symbols-per-second";
-    spsArg.type = ModemArgInfo::STRING;
-    
+    spsArg.type = ModemArgInfo::INT;
+    spsArg.range = ModemRange(10,115200);
     std::vector<std::string> spsOpts;
-    // some common modem rates ..?
-    spsOpts.push_back("300");
-    spsOpts.push_back("600");
-    spsOpts.push_back("1200");
-    spsOpts.push_back("2400");
-    spsOpts.push_back("4800");
-    spsOpts.push_back("9600");
-    spsOpts.push_back("19200");
-    spsOpts.push_back("38400");
-    spsArg.options = spsOpts;
     
     args.push_back(spsArg);
+    
+    ModemArgInfo bwArg;
+    bwArg.key = "bw";
+    bwArg.name = "Signal bandwidth";
+    bwArg.value = std::to_string(bw);
+    bwArg.description = "Total signal bandwidth";
+    bwArg.type = ModemArgInfo::FLOAT;
+    bwArg.range = ModemRange(0.1,0.49);
+    args.push_back(bwArg);
 
     return args;
 }
@@ -77,6 +78,9 @@ void ModemFSK::writeSetting(std::string setting, std::string value) {
     } else if (setting == "sps") {
         sps = std::stoi(value);
         rebuildKit();
+    }  else if (setting == "bw") {
+        bw = std::stof(value);
+        rebuildKit();
     }
 }
 
@@ -85,6 +89,8 @@ std::string ModemFSK::readSetting(std::string setting) {
         return std::to_string(bps);
     } else if (setting == "sps") {
         return std::to_string(sps);
+    } else if (setting == "bw") {
+        return std::to_string(bw);
     }
     return "";
 }
@@ -93,8 +99,9 @@ ModemKit *ModemFSK::buildKit(long long sampleRate, int audioSampleRate) {
     ModemKitFSK *dkit = new ModemKitFSK;
     dkit->m           = bps;
     dkit->k           = sampleRate / sps;
+    dkit->bw          = bw;
 
-    dkit->demodFSK = fskdem_create(dkit->m, dkit->k, 0.45);
+    dkit->demodFSK = fskdem_create(dkit->m, dkit->k, dkit->bw);
 
     dkit->sampleRate = sampleRate;
     dkit->audioSampleRate = audioSampleRate;

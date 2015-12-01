@@ -6,6 +6,8 @@
 #include <cmath>
 #include <atomic>
 
+#define MIN_BANDWIDTH 500
+
 class ModemKit {
 public:
     ModemKit() : sampleRate(0), audioSampleRate(0) {

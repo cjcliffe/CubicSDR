@@ -173,8 +173,8 @@ int DemodulatorMgr::getLastBandwidth() const {
 }
 
 void DemodulatorMgr::setLastBandwidth(int lastBandwidth) {
-    if (lastBandwidth < 1500) {
-        lastBandwidth = 1500;
+    if (lastBandwidth < MIN_BANDWIDTH) {
+        lastBandwidth = MIN_BANDWIDTH;
     } else  if (lastBandwidth > wxGetApp().getSampleRate()) {
         lastBandwidth = wxGetApp().getSampleRate();
     }
