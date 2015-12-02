@@ -1,11 +1,29 @@
 #include "ModemDigital.h"
 
-ModemDigital::ModemDigital() {
 
+ModemDigitalOutput::ModemDigitalOutput() {
+    
+}
+
+ModemDigital::ModemDigital() {
+#if ENABLE_DIGITAL_LAB
+    digitalOut = nullptr;
+#endif
+}
+
+ModemDigitalOutput::~ModemDigitalOutput() {
+    
 }
 
 std::string ModemDigital::getType() {
     return "digital";
+}
+
+int ModemDigital::checkSampleRate(long long sampleRate, int audioSampleRate) {
+    if (sampleRate < MIN_BANDWIDTH) {
+        return MIN_BANDWIDTH;
+    }
+    return sampleRate;
 }
 
 ModemKit *ModemDigital::buildKit(long long sampleRate, int audioSampleRate) {
@@ -31,22 +49,8 @@ int ModemDigital::getDemodulatorLock() {
     return currentDemodLock.load();
 }
 
-void ModemDigital::setDemodulatorCons(int demod_cons_in) {
-    demodulatorCons.store(demod_cons_in);
-}
-
-int ModemDigital::getDemodulatorCons() {
-    return currentDemodCons.load();
-}
-
 void ModemDigital::updateDemodulatorLock(modem mod, float sensitivity) {
     setDemodulatorLock(modem_get_demodulator_evm(mod) <= sensitivity);
-}
-
-void ModemDigital::updateDemodulatorCons(int cons) {
-    if (currentDemodCons.load() != cons) {
-        currentDemodCons = cons;
-    }
 }
 
 void ModemDigital::digitalStart(ModemKitDigital *kit, modem mod, ModemIQData *input) {
@@ -58,14 +62,21 @@ void ModemDigital::digitalStart(ModemKitDigital *kit, modem mod, ModemIQData *in
         }
         demodOutputDataDigital.resize(bufSize);
     }
-    
-    if (demodulatorCons.load() != currentDemodCons.load()) {
-        updateDemodulatorCons(demodulatorCons.load());
-        currentDemodLock.store(false);
-    }
 }
 
 void ModemDigital::digitalFinish(ModemKitDigital *kit, modem mod) {
-    demodOutputDataDigital.empty();
+#if ENABLE_DIGITAL_LAB
+    if (digitalOut && outStream.str().length()) {
+        digitalOut->write(outStream.str());
+        outStream.str("");
+    } else {
+        outStream.str("");
+    }
+#endif
 }
- 
+
+#if ENABLE_DIGITAL_LAB
+void ModemDigital::setOutput(ModemDigitalOutput *modemDigitalOutput) {
+    digitalOut = modemDigitalOutput;
+}
+#endif

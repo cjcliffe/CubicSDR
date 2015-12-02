@@ -20,20 +20,20 @@
 
 IMPLEMENT_APP(CubicSDR)
 
-#ifdef ENABLE_DIGITAL_LAB
-// console output buffer for windows
-#ifdef _WINDOWS
-class outbuf : public std::streambuf {
-	public:
-	outbuf() {
-		setp(0, 0);
-	}
-	virtual int_type overflow(int_type c = traits_type::eof()) {
-		return fputc(c, stdout) == EOF ? traits_type::eof() : c;
-	}
-};
-#endif
-#endif
+//#ifdef ENABLE_DIGITAL_LAB
+//// console output buffer for windows
+//#ifdef _WINDOWS
+//class outbuf : public std::streambuf {
+//	public:
+//	outbuf() {
+//		setp(0, 0);
+//	}
+//	virtual int_type overflow(int_type c = traits_type::eof()) {
+//		return fputc(c, stdout) == EOF ? traits_type::eof() : c;
+//	}
+//};
+//#endif
+//#endif
 
 #ifdef MINGW_PATCH
 	FILE _iob[] = { *stdin, *stdout, *stderr };
@@ -149,18 +149,18 @@ bool CubicSDR::OnInit() {
         return false;
     }
 
-#ifdef ENABLE_DIGITAL_LAB
-	// console output for windows
-	#ifdef _WINDOWS
-	if (AllocConsole()) {
-		freopen("CONOUT$", "w", stdout);
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
-	}
-	outbuf ob;
-	std::streambuf *sb = std::cout.rdbuf(&ob);
-	std::cout.rdbuf(sb);
-	#endif
-#endif
+//#ifdef ENABLE_DIGITAL_LAB
+//	// console output for windows
+//	#ifdef _WINDOWS
+//	if (AllocConsole()) {
+//		freopen("CONOUT$", "w", stdout);
+//		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
+//	}
+//	outbuf ob;
+//	std::streambuf *sb = std::cout.rdbuf(&ob);
+//	std::cout.rdbuf(sb);
+//	#endif
+//#endif
     
     wxApp::SetAppName("CubicSDR");
 
@@ -172,17 +172,23 @@ bool CubicSDR::OnInit() {
     Modem::addModemFactory(new ModemDSB);
     Modem::addModemFactory(new ModemIQ);
 
+#ifdef ENABLE_DIGITAL_LAB
     Modem::addModemFactory(new ModemAPSK);
     Modem::addModemFactory(new ModemASK);
     Modem::addModemFactory(new ModemBPSK);
     Modem::addModemFactory(new ModemDPSK);
+#if ENABLE_LIQUID_EXPERIMENTAL
+    Modem::addModemFactory(new ModemFSK);
+#endif
+    Modem::addModemFactory(new ModemGMSK);
     Modem::addModemFactory(new ModemOOK);
     Modem::addModemFactory(new ModemPSK);
     Modem::addModemFactory(new ModemQAM);
     Modem::addModemFactory(new ModemQPSK);
     Modem::addModemFactory(new ModemSQAM);
     Modem::addModemFactory(new ModemST);
-
+#endif
+    
     frequency = wxGetApp().getConfig()->getCenterFreq();
     offset = 0;
     ppm = 0;

@@ -10,6 +10,7 @@ public:
     ScopePanel();
     
     void setMode(ScopeMode scopeMode);
+    ScopeMode getMode();
     void setPoints(std::vector<float> &points);
     
 protected:

@@ -1,7 +1,11 @@
 #include "ModemDSB.h"
 
-ModemDSB::ModemDSB() {
+ModemDSB::ModemDSB() : ModemAnalog() {
     demodAM_DSB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_DSB, 1);
+}
+
+ModemDSB::~ModemDSB() {
+    ampmodem_destroy(demodAM_DSB);
 }
 
 Modem *ModemDSB::factory() {
@@ -10,6 +14,10 @@ Modem *ModemDSB::factory() {
 
 std::string ModemDSB::getName() {
     return "DSB";
+}
+
+int ModemDSB::getDefaultSampleRate() {
+    return 5400;
 }
 
 void ModemDSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {

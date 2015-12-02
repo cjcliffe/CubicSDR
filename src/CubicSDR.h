@@ -37,16 +37,22 @@
 #include "ModemDSB.h"
 #include "ModemIQ.h"
 
+#ifdef ENABLE_DIGITAL_LAB
 #include "ModemAPSK.h"
 #include "ModemASK.h"
 #include "ModemBPSK.h"
 #include "ModemDPSK.h"
+#if ENABLE_LIQUID_EXPERIMENTAL
+#include "ModemFSK.h"
+#endif
+#include "ModemGMSK.h"
 #include "ModemOOK.h"
 #include "ModemPSK.h"
 #include "ModemQAM.h"
 #include "ModemQPSK.h"
 #include "ModemSQAM.h"
 #include "ModemST.h"
+#endif
 
 #include <wx/cmdline.h>
 
@@ -123,7 +129,6 @@ public:
     void setDeviceSelectorClosed();
 	bool isDeviceSelectorOpen();
     void closeDeviceSelector();
-
     
     void setAGCMode(bool mode);
     bool getAGCMode();

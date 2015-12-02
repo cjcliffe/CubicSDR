@@ -18,7 +18,6 @@ public:
     ScopeCanvas(wxWindow *parent, int *attribList = NULL);
     ~ScopeCanvas();
 
-    void setStereo(bool state);
     void setDeviceName(std::string device_name);
     void setPPMMode(bool ppmMode);
     bool getPPMMode();
@@ -50,7 +49,6 @@ private:
     GLPanel bgPanel;
     ScopeContext *glContext;
     std::string deviceName;
-    bool stereo;
     bool ppmMode;
     bool showDb;
     float panelSpacing;

@@ -29,6 +29,5 @@ public:
     void setHoverAlpha(float hoverAlpha);
 
 private:
-    DemodulatorThreadParameters defaultDemodParams;
     float hoverAlpha;
 };

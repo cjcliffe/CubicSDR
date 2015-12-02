@@ -1,6 +1,6 @@
 #include "ModemDPSK.h"
 
-ModemDPSK::ModemDPSK() {
+ModemDPSK::ModemDPSK() : ModemDigital() {
     demodDPSK2 = modem_create(LIQUID_MODEM_DPSK2);
     demodDPSK4 = modem_create(LIQUID_MODEM_DPSK4);
     demodDPSK8 = modem_create(LIQUID_MODEM_DPSK8);
@@ -9,9 +9,8 @@ ModemDPSK::ModemDPSK() {
     demodDPSK64 = modem_create(LIQUID_MODEM_DPSK64);
     demodDPSK128 = modem_create(LIQUID_MODEM_DPSK128);
     demodDPSK256 = modem_create(LIQUID_MODEM_DPSK256);
-    demodulatorCons.store(2);
-    currentDemodCons.store(0);
-    updateDemodulatorCons(2);
+    demodDPSK = demodDPSK2;
+    cons = 2;
 }
 
 Modem *ModemDPSK::factory() {
@@ -33,47 +32,71 @@ ModemDPSK::~ModemDPSK() {
     modem_destroy(demodDPSK256);
 }
 
+ModemArgInfoList ModemDPSK::getSettings() {
+    ModemArgInfoList args;
+    
+    ModemArgInfo consArg;
+    consArg.key = "cons";
+    consArg.name = "Constellation";
+    consArg.description = "Modem Constellation Pattern";
+    consArg.value = std::to_string(cons);
+    consArg.type = ModemArgInfo::STRING;
+    std::vector<std::string> consOpts;
+    consOpts.push_back("2");
+    consOpts.push_back("4");
+    consOpts.push_back("8");
+    consOpts.push_back("16");
+    consOpts.push_back("32");
+    consOpts.push_back("64");
+    consOpts.push_back("128");
+    consOpts.push_back("256");
+    consArg.options = consOpts;
+    args.push_back(consArg);
+    
+    return args;
+}
+
+void ModemDPSK::writeSetting(std::string setting, std::string value) {
+    if (setting == "cons") {
+        int newCons = std::stoi(value);
+        updateDemodulatorCons(newCons);
+    }
+}
+
+std::string ModemDPSK::readSetting(std::string setting) {
+    if (setting == "cons") {
+        return std::to_string(cons);
+    }
+    return "";
+}
+
 void ModemDPSK::updateDemodulatorCons(int cons) {
-    if (currentDemodCons.load() != cons) {
-        currentDemodCons = cons;
-        
-        switch (demodulatorCons.load()) {
-            case 2:
-                demodDPSK = demodDPSK2;
-                updateDemodulatorCons(2);
-                break;
-            case 4:
-                demodDPSK = demodDPSK4;
-                updateDemodulatorCons(4);
-                break;
-            case 8:
-                demodDPSK = demodDPSK8;
-                updateDemodulatorCons(8);
-                break;
-            case 16:
-                demodDPSK = demodDPSK16;
-                updateDemodulatorCons(16);
-                break;
-            case 32:
-                demodDPSK = demodDPSK32;
-                updateDemodulatorCons(32);
-                break;
-            case 64:
-                demodDPSK = demodDPSK64;
-                updateDemodulatorCons(64);
-                break;
-            case 128:
-                demodDPSK = demodDPSK128;
-                updateDemodulatorCons(128);
-                break;
-            case 256:
-                demodDPSK = demodDPSK256;
-                updateDemodulatorCons(256);
-                break;
-            default:
-                demodDPSK = demodDPSK2;
-                break;
-        }
+    this->cons = cons;
+    switch (cons) {
+        case 2:
+            demodDPSK = demodDPSK2;
+            break;
+        case 4:
+            demodDPSK = demodDPSK4;
+            break;
+        case 8:
+            demodDPSK = demodDPSK8;
+            break;
+        case 16:
+            demodDPSK = demodDPSK16;
+            break;
+        case 32:
+            demodDPSK = demodDPSK32;
+            break;
+        case 64:
+            demodDPSK = demodDPSK64;
+            break;
+        case 128:
+            demodDPSK = demodDPSK128;
+            break;
+        case 256:
+            demodDPSK = demodDPSK256;
+            break;
     }
 }
 

@@ -30,6 +30,7 @@ public:
     SpectrumVisualDataQueue *getVisualDataQueue();
 
     void setLinesPerSecond(int lps);
+    void setMinBandwidth(int min);
 
 private:
     void OnPaint(wxPaintEvent& event);
@@ -68,12 +69,14 @@ private:
     float hoverAlpha;
     int linesPerSecond;
     float scaleMove;
+    int dragBW;
     
     SpectrumVisualDataQueue visualDataQueue;
     Timer gTimer;
     double lpsIndex;
     bool preBuf;
     std::mutex tex_update;
+    int minBandwidth;
     // event table
 wxDECLARE_EVENT_TABLE();
 };

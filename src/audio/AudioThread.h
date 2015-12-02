@@ -18,6 +18,7 @@ public:
     int sampleRate;
     int channels;
     float peak;
+    int type;
     std::vector<float> data;
     std::mutex busy_update;
 

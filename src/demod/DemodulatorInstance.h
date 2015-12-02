@@ -10,6 +10,10 @@
 #include "ModemDigital.h"
 #include "ModemAnalog.h"
 
+#if ENABLE_DIGITAL_LAB
+#include "DigitalConsole.h"
+#endif
+
 class DemodulatorInstance {
 public:
 
@@ -58,9 +62,6 @@ public:
     
     void setDemodulatorLock(bool demod_lock_in);
     int getDemodulatorLock();
-    
-    void setDemodulatorCons(int demod_cons_in);
-    int getDemodulatorCons();
 
     void setBandwidth(int bw);
     int getBandwidth();
@@ -73,7 +74,7 @@ public:
 
     void setAudioSampleRate(int sampleRate);
     int getAudioSampleRate();
-
+    
     bool isFollow();
     void setFollow(bool follow);
 
@@ -85,11 +86,27 @@ public:
 
     DemodulatorThreadInputQueue *getIQInputDataPipe();
 
+    ModemArgInfoList getModemArgs();
+    std::string readModemSetting(std::string setting);
+    ModemSettings readModemSettings();
+    void writeModemSetting(std::string setting, std::string value);
+    void writeModemSettings(ModemSettings settings);
+    
+    bool isModemInitialized();
+    std::string getModemType();
+    ModemSettings getLastModemSettings(std::string demodType);
+
+#if ENABLE_DIGITAL_LAB
+    ModemDigitalOutput *getOutput();
+    void showOutput();
+    void hideOutput();
+    void closeOutput();
+#endif
+        
 protected:
     DemodulatorThreadInputQueue* pipeIQInputData;
     DemodulatorThreadPostInputQueue* pipeIQDemodData;
     AudioThreadInputQueue *pipeAudioData;
-    DemodulatorThreadCommandQueue* pipeDemodCommand;
     DemodulatorThreadCommandQueue* pipeDemodNotify;
     DemodulatorPreThread *demodulatorPreThread;
     DemodulatorThread *demodulatorThread;
@@ -97,8 +114,6 @@ protected:
 
 private:
 
-    void checkBandwidth();
-    
     std::atomic<std::string *> label; //
     std::atomic_bool terminated; //
     std::atomic_bool demodTerminated; //
@@ -108,11 +123,12 @@ private:
     std::atomic_bool squelch;
     std::atomic_bool muted;
 
-    std::atomic_llong currentFrequency;
-    std::atomic_int currentBandwidth;
-    std::string currentDemodType;
     std::atomic_int currentOutputDevice;
-    std::atomic_int currentAudioSampleRate;
     std::atomic<float> currentAudioGain;
     std::atomic_bool follow, tracking;
-  };
+    std::map<std::string, ModemSettings> lastModemSettings;
+    std::map<std::string, int> lastModemBandwidth;
+#if ENABLE_DIGITAL_LAB
+    ModemDigitalOutput *activeOutput;
+#endif
+};

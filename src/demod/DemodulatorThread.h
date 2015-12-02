@@ -43,7 +43,6 @@ protected:
     ReBuffer<AudioThreadInput> outputBuffers;
 
     std::atomic_bool muted;
-    int audioSampleRate;
 
     std::atomic<float> squelchLevel;
     std::atomic<float> signalLevel;

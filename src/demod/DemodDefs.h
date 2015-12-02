@@ -14,9 +14,6 @@ class DemodulatorThreadCommand {
 public:
     enum DemodulatorThreadCommandEnum {
         DEMOD_THREAD_CMD_NULL,
-        DEMOD_THREAD_CMD_SET_BANDWIDTH,
-        DEMOD_THREAD_CMD_SET_FREQUENCY,
-        DEMOD_THREAD_CMD_SET_AUDIO_RATE,
         DEMOD_THREAD_CMD_DEMOD_PREPROCESS_TERMINATED,
         DEMOD_THREAD_CMD_DEMOD_TERMINATED,
         DEMOD_THREAD_CMD_AUDIO_TERMINATED
@@ -82,6 +79,7 @@ class DemodulatorThreadPostIQData: public ReferenceCounter {
 public:
     std::vector<liquid_float_complex> data;
     long long sampleRate;
+    std::string modemName;
     std::string modemType;
     Modem *modem;
     ModemKit *modemKit;
@@ -124,23 +122,3 @@ typedef ThreadQueue<DemodulatorThreadIQData *> DemodulatorThreadInputQueue;
 typedef ThreadQueue<DemodulatorThreadPostIQData *> DemodulatorThreadPostInputQueue;
 typedef ThreadQueue<DemodulatorThreadCommand> DemodulatorThreadCommandQueue;
 typedef ThreadQueue<DemodulatorThreadControlCommand> DemodulatorThreadControlCommandQueue;
-
-class DemodulatorThreadParameters {
-public:
-    long long frequency;
-    long long sampleRate;
-    unsigned int bandwidth; // set equal to disable second stage re-sampling?
-    unsigned int audioSampleRate;
-
-    std::string demodType;
-
-    DemodulatorThreadParameters() :
-            frequency(0), sampleRate(DEFAULT_SAMPLE_RATE), bandwidth(200000), audioSampleRate(0),
-            demodType("FM") {
-
-    }
-
-    ~DemodulatorThreadParameters() {
-
-    }
-};

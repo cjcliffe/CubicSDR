@@ -30,11 +30,27 @@ Modem *ModemFMStereo::factory() {
     return new ModemFMStereo;
 }
 
+int ModemFMStereo::checkSampleRate(long long sampleRate, int audioSampleRate) {
+    if (sampleRate < 100000) {
+        return 100000;
+    } else if (sampleRate < 1500) {
+        return 1500;
+    } else {
+        return sampleRate;
+    }
+}
+
+int ModemFMStereo::getDefaultSampleRate() {
+    return 200000;
+}
+
 ModemKit *ModemFMStereo::buildKit(long long sampleRate, int audioSampleRate) {
     ModemKitFMStereo *kit = new ModemKitFMStereo;
     
     kit->audioResampleRatio = double(audioSampleRate) / double(sampleRate);
-    
+    kit->sampleRate = sampleRate;
+    kit->audioSampleRate = audioSampleRate;
+   
     float As = 60.0f;         // stop-band attenuation [dB]
     
     kit->audioResampler = msresamp_rrrf_create(kit->audioResampleRatio, As);

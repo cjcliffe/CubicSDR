@@ -1,6 +1,6 @@
 #include "ModemPSK.h"
 
-ModemPSK::ModemPSK() {
+ModemPSK::ModemPSK() : ModemDigital()  {
     demodPSK2 = modem_create(LIQUID_MODEM_PSK2);
     demodPSK4 = modem_create(LIQUID_MODEM_PSK4);
     demodPSK8 = modem_create(LIQUID_MODEM_PSK8);
@@ -9,9 +9,8 @@ ModemPSK::ModemPSK() {
     demodPSK64 = modem_create(LIQUID_MODEM_PSK64);
     demodPSK128 = modem_create(LIQUID_MODEM_PSK128);
     demodPSK256 = modem_create(LIQUID_MODEM_PSK256);
-    demodulatorCons.store(2);
-    currentDemodCons.store(0);
-    updateDemodulatorCons(2);
+    demodPSK = demodPSK2;
+    cons = 2;
 }
 
 Modem *ModemPSK::factory() {
@@ -33,47 +32,72 @@ ModemPSK::~ModemPSK() {
     modem_destroy(demodPSK256);
 }
 
+
+ModemArgInfoList ModemPSK::getSettings() {
+    ModemArgInfoList args;
+    
+    ModemArgInfo consArg;
+    consArg.key = "cons";
+    consArg.name = "Constellation";
+    consArg.description = "Modem Constellation Pattern";
+    consArg.value = std::to_string(cons);
+    consArg.type = ModemArgInfo::STRING;
+    std::vector<std::string> consOpts;
+    consOpts.push_back("2");
+    consOpts.push_back("4");
+    consOpts.push_back("8");
+    consOpts.push_back("16");
+    consOpts.push_back("32");
+    consOpts.push_back("64");
+    consOpts.push_back("128");
+    consOpts.push_back("256");
+    consArg.options = consOpts;
+    args.push_back(consArg);
+    
+    return args;
+}
+
+void ModemPSK::writeSetting(std::string setting, std::string value) {
+    if (setting == "cons") {
+        int newCons = std::stoi(value);
+        updateDemodulatorCons(newCons);
+    }
+}
+
+std::string ModemPSK::readSetting(std::string setting) {
+    if (setting == "cons") {
+        return std::to_string(cons);
+    }
+    return "";
+}
+
 void ModemPSK::updateDemodulatorCons(int cons) {
-    if (currentDemodCons.load() != cons) {
-        currentDemodCons = cons;
-                
-        switch (demodulatorCons.load()) {
-            case 2:
-                demodPSK = demodPSK2;
-                updateDemodulatorCons(2);
-                break;
-            case 4:
-                demodPSK = demodPSK4;
-                updateDemodulatorCons(4);
-                break;
-            case 8:
-                demodPSK = demodPSK8;
-                updateDemodulatorCons(8);
-                break;
-            case 16:
-                demodPSK = demodPSK16;
-                updateDemodulatorCons(16);
-                break;
-            case 32:
-                demodPSK = demodPSK32;
-                updateDemodulatorCons(32);
-                break;
-            case 64:
-                demodPSK = demodPSK64;
-                updateDemodulatorCons(64);
-                break;
-            case 128:
-                demodPSK = demodPSK128;
-                updateDemodulatorCons(128);
-                break;
-            case 256:
-                demodPSK = demodPSK256;
-                updateDemodulatorCons(256);
-                break;
-            default:
-                demodPSK = demodPSK2;
-                break;
-        }
+    this->cons = cons;
+    switch (cons) {
+        case 2:
+            demodPSK = demodPSK2;
+            break;
+        case 4:
+            demodPSK = demodPSK4;
+            break;
+        case 8:
+            demodPSK = demodPSK8;
+            break;
+        case 16:
+            demodPSK = demodPSK16;
+            break;
+        case 32:
+            demodPSK = demodPSK32;
+            break;
+        case 64:
+            demodPSK = demodPSK64;
+            break;
+        case 128:
+            demodPSK = demodPSK128;
+            break;
+        case 256:
+            demodPSK = demodPSK256;
+            break;
     }
 }
 

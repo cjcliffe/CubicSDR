@@ -16,6 +16,7 @@
 #include "GainCanvas.h"
 #include "FFTVisualDataThread.h"
 #include "SDRDeviceInfo.h"
+#include "ModemProperties.h"
 //#include "UITestCanvas.h"
 
 #include <map>
@@ -67,6 +68,8 @@ public:
 
     FFTVisualDataThread *getWaterfallDataThread();
 
+    void updateModemProperties(ModemArgInfoList args);
+    
 private:
     void OnMenu(wxCommandEvent& event);
     void OnClose(wxCloseEvent& event);
@@ -81,7 +84,6 @@ private:
     ModeSelectorCanvas *demodModeSelector;
 #ifdef ENABLE_DIGITAL_LAB
     ModeSelectorCanvas *demodModeSelectorAdv;
-    ModeSelectorCanvas *demodModeSelectorCons;
 #endif
     SpectrumCanvas *demodSpectrumCanvas;
     WaterfallCanvas *demodWaterfallCanvas;
@@ -121,6 +123,10 @@ private:
     std::thread *t_FFTData;
     SDRDeviceInfo *devInfo;
     std::atomic_bool deviceChanged;
+    
+    ModemProperties *modemProps;
+    std::atomic_bool modemPropertiesUpdated;
+    ModemArgInfoList newModemArgs;
 
     wxDECLARE_EVENT_TABLE();
 };

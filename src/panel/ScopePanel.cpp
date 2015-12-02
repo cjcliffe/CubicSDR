@@ -16,6 +16,9 @@ void ScopePanel::setMode(ScopeMode scopeMode) {
     this->scopeMode = scopeMode;
 }
 
+ScopePanel::ScopeMode ScopePanel::getMode() {
+    return this->scopeMode;
+}
 
 void ScopePanel::setPoints(std::vector<float> &points) {
     this->points.assign(points.begin(),points.end());
@@ -61,14 +64,29 @@ void ScopePanel::drawPanelContents() {
         glEnd();
 
     } else if (scopeMode == SCOPE_MODE_XY) {
-        // ...
+        RGBA4f bg1(ThemeMgr::mgr.currentTheme->scopeBackground), bg2(ThemeMgr::mgr.currentTheme->scopeBackground * 2.0);
+        bg1.a = 0.05;
+        bg2.a = 0.05;
+        bgPanel.setFillColor(bg1, bg2);
+        bgPanel.calcTransform(transform);
+        bgPanel.draw();
+        glLineWidth(1.0);
+        glEnable(GL_POINT_SMOOTH);
+        glPointSize(1.0);
+        glLoadMatrixf(transform);
+        glColor3f(ThemeMgr::mgr.currentTheme->scopeLine.r * 0.15, ThemeMgr::mgr.currentTheme->scopeLine.g * 0.15,
+                  ThemeMgr::mgr.currentTheme->scopeLine.b * 0.15);
     }
     
     if (points.size()) {
         glEnable (GL_BLEND);
         glEnable (GL_LINE_SMOOTH);
         glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        if (scopeMode == SCOPE_MODE_XY) {
+            glBlendFunc(GL_ONE, GL_ONE);
+        } else {
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        }
         glColor4f(ThemeMgr::mgr.currentTheme->scopeLine.r, ThemeMgr::mgr.currentTheme->scopeLine.g, ThemeMgr::mgr.currentTheme->scopeLine.b, 1.0);
         glEnableClientState (GL_VERTEX_ARRAY);
         glVertexPointer(2, GL_FLOAT, 0, &points[0]);
@@ -83,7 +101,8 @@ void ScopePanel::drawPanelContents() {
             glLoadMatrixf(bgPanelStereo[1].transform);
             glDrawArrays(GL_LINE_STRIP, points.size() / 4, points.size() / 4);
         } else if (scopeMode == SCOPE_MODE_XY) {
-            // ...
+            glLoadMatrixf(bgPanel.transform);
+            glDrawArrays(GL_POINTS, 0, points.size() / 2);
         }
         glLineWidth(1.0);
         glDisableClientState(GL_VERTEX_ARRAY);

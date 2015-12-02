@@ -5,12 +5,20 @@ class ModemQAM : public ModemDigital {
 public:
     ModemQAM();
     ~ModemQAM();
+    
     std::string getName();
+    
     Modem *factory();
+    
+    ModemArgInfoList getSettings();
+    void writeSetting(std::string setting, std::string value);
+    std::string readSetting(std::string setting);
+    
     void updateDemodulatorCons(int cons);
     void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
     
 private:
+    int cons;
     modem demodQAM;
     modem demodQAM4;
     modem demodQAM8;

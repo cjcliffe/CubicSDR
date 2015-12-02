@@ -1,6 +1,6 @@
 #include "ModemST.h"
 
-ModemST::ModemST() {
+ModemST::ModemST() : ModemDigital()  {
     demodST = modem_create(LIQUID_MODEM_V29);
 }
 
@@ -14,12 +14,6 @@ std::string ModemST::getName() {
 
 ModemST::~ModemST() {
     modem_destroy(demodST);
-}
-
-void ModemST::updateDemodulatorCons(int cons) {
-    if (currentDemodCons.load() != cons) {
-        currentDemodCons = cons;
-    }
 }
 
 void ModemST::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {

@@ -8,7 +8,6 @@
 DemodulatorMgr::DemodulatorMgr() :
         activeDemodulator(NULL), lastActiveDemodulator(NULL), activeVisualDemodulator(NULL), lastBandwidth(DEFAULT_DEMOD_BW), lastDemodType(
                 DEFAULT_DEMOD_TYPE), lastSquelchEnabled(false), lastSquelch(-100), lastGain(1.0), lastMuted(false) {
-
 }
 
 DemodulatorMgr::~DemodulatorMgr() {
@@ -88,6 +87,7 @@ void DemodulatorMgr::setActiveDemodulator(DemodulatorInstance *demod, bool tempo
     if (!temporary) {
         if (activeDemodulator != NULL) {
             lastActiveDemodulator = activeDemodulator;
+            updateLastState();
         } else {
             lastActiveDemodulator = demod;
         }
@@ -121,8 +121,6 @@ DemodulatorInstance *DemodulatorMgr::getActiveDemodulator() {
 }
 
 DemodulatorInstance *DemodulatorMgr::getLastActiveDemodulator() {
-    updateLastState();
-
     return lastActiveDemodulator;
 }
 
@@ -162,10 +160,10 @@ void DemodulatorMgr::updateLastState() {
         lastBandwidth = lastActiveDemodulator->getBandwidth();
         lastDemodType = lastActiveDemodulator->getDemodulatorType();
         lastDemodLock = lastActiveDemodulator->getDemodulatorLock();
-        lastDemodCons = lastActiveDemodulator->getDemodulatorCons();
         lastSquelchEnabled = lastActiveDemodulator->isSquelchEnabled();
         lastSquelch = lastActiveDemodulator->getSquelchLevel();
         lastGain = lastActiveDemodulator->getGain();
+        lastModemSettings[lastDemodType] = lastActiveDemodulator->readModemSettings();
     }
 
 }
@@ -175,8 +173,8 @@ int DemodulatorMgr::getLastBandwidth() const {
 }
 
 void DemodulatorMgr::setLastBandwidth(int lastBandwidth) {
-    if (lastBandwidth < 1500) {
-        lastBandwidth = 1500;
+    if (lastBandwidth < MIN_BANDWIDTH) {
+        lastBandwidth = MIN_BANDWIDTH;
     } else  if (lastBandwidth > wxGetApp().getSampleRate()) {
         lastBandwidth = wxGetApp().getSampleRate();
     }
@@ -189,14 +187,6 @@ std::string DemodulatorMgr::getLastDemodulatorType() const {
 
 void DemodulatorMgr::setLastDemodulatorType(std::string lastDemodType) {
     this->lastDemodType = lastDemodType;
-}
-
-int DemodulatorMgr::getLastDemodulatorCons() const {
-    return lastDemodCons;
-}
-
-void DemodulatorMgr::setLastDemodulatorCons(int lastDemodCons) {
-    this->lastDemodCons = lastDemodCons;
 }
 
 float DemodulatorMgr::getLastGain() const {
@@ -231,3 +221,10 @@ void DemodulatorMgr::setLastMuted(bool lastMuted) {
     this->lastMuted = lastMuted;
 }
 
+ModemSettings DemodulatorMgr::getLastModemSettings(std::string modemType) {
+    return lastModemSettings[modemType];
+}
+
+void DemodulatorMgr::setLastModemSettings(std::string modemType, ModemSettings settings) {
+    lastModemSettings[modemType] = settings;
+}

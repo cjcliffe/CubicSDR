@@ -17,8 +17,6 @@
 
 #include <wx/numformatter.h>
 
-#define MIN_BANDWIDTH 1500
-
 wxBEGIN_EVENT_TABLE(WaterfallCanvas, wxGLCanvas)
 EVT_PAINT(WaterfallCanvas::OnPaint)
 EVT_KEY_DOWN(WaterfallCanvas::OnKeyDown)
@@ -44,6 +42,7 @@ WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
     preBuf = false;
     SetCursor(wxCURSOR_CROSS);
     scaleMove = 0;
+    minBandwidth = 30000;
 }
 
 WaterfallCanvas::~WaterfallCanvas() {
@@ -179,8 +178,8 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
         if (currentZoom < 1) {
             bw = (long long) ceil((long double) bw * currentZoom);
-            if (bw < 30000) {
-                bw = 30000;
+            if (bw < minBandwidth) {
+                bw = minBandwidth;
             }
             if (mouseInView) {
                 long long mfreqA = getFrequencyAt(mpos);
@@ -461,7 +460,7 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
                 bwDiff = -bwDiff;
             }
 
-            int currentBW = demod->getBandwidth();
+            int currentBW = dragBW;
 
             currentBW = currentBW + bwDiff;
             if (currentBW > CHANNELIZER_RATE_MAX) {
@@ -472,6 +471,7 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
             }
 
             demod->setBandwidth(currentBW);
+            dragBW = currentBW;
         }
 
         if (dragState == WF_DRAG_FREQUENCY) {
@@ -596,11 +596,13 @@ void WaterfallCanvas::OnMouseDown(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseDown(event);
 
     dragState = nextDragState;
+    wxGetApp().getDemodMgr().updateLastState();
 
     if (dragState && dragState != WF_DRAG_RANGE) {
         DemodulatorInstance *demod = wxGetApp().getDemodMgr().getActiveDemodulator();
         if (demod) {
             dragOfs = (long long) (mouseTracker.getMouseX() * (float) getBandwidth()) + getCenterFrequency() - (getBandwidth() / 2) - demod->getFrequency();
+            dragBW = demod->getBandwidth();
         }
         wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getActiveDemodulator(), false);
     }
@@ -615,6 +617,7 @@ void WaterfallCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
 
 void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseReleased(event);
+    wxGetApp().getDemodMgr().updateLastState();
 
     bool isNew = shiftDown || (wxGetApp().getDemodMgr().getLastActiveDemodulator() == NULL)
             || (wxGetApp().getDemodMgr().getLastActiveDemodulator() && !wxGetApp().getDemodMgr().getLastActiveDemodulator()->isActive());
@@ -651,6 +654,7 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
 
         if (dragState == WF_DRAG_NONE) {
             if (!isNew && wxGetApp().getDemodMgr().getDemodulators().size()) {
+                mgr->updateLastState();
                 demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
             } else {
                 isNew = true;
@@ -663,7 +667,7 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
                 demod->setSquelchEnabled(mgr->isLastSquelchEnabled());
                 demod->setGain(mgr->getLastGain());
                 demod->setMuted(mgr->isLastMuted());
-
+                demod->writeModemSettings(mgr->getLastModemSettings(mgr->getLastDemodulatorType()));
                 demod->run();
 
                 wxGetApp().bindDemodulator(demod);
@@ -676,7 +680,7 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
 
             demod->updateLabel(freq);
             demod->setFrequency(freq);
-
+  
             if (isNew) {
                 setStatusText("New demodulator at frequency: %s", freq);
             } else {
@@ -684,13 +688,14 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
             }
 
             wxGetApp().getDemodMgr().setActiveDemodulator(demod, false);
-            SetCursor(wxCURSOR_SIZING);
+          SetCursor(wxCURSOR_SIZING);
             nextDragState = WF_DRAG_FREQUENCY;
             mouseTracker.setVertDragLock(true);
             mouseTracker.setHorizDragLock(false);
         } else {
             if (activeDemod) {
                 wxGetApp().getDemodMgr().setActiveDemodulator(activeDemod, false);
+                mgr->updateLastState();
                 activeDemod->setTracking(true);
                 nextDragState = WF_DRAG_FREQUENCY;
             } else {
@@ -740,6 +745,7 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
 
 
         if (!isNew && wxGetApp().getDemodMgr().getDemodulators().size()) {
+            mgr->updateLastState();
             demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
         } else {
             demod = wxGetApp().getDemodMgr().newThread();
@@ -749,6 +755,8 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
             demod->setSquelchLevel(mgr->getLastSquelchLevel());
             demod->setSquelchEnabled(mgr->isLastSquelchEnabled());
             demod->setGain(mgr->getLastGain());
+            demod->setMuted(mgr->isLastMuted());
+            demod->writeModemSettings(mgr->getLastModemSettings(mgr->getLastDemodulatorType()));
 
             demod->run();
 
@@ -765,7 +773,8 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
         demod->updateLabel(freq);
         demod->setFrequency(freq);
         demod->setBandwidth(bw);
-        wxGetApp().getDemodMgr().setActiveDemodulator(demod, false);
+        mgr->setActiveDemodulator(demod, false);
+        mgr->updateLastState();
     }
 
     dragState = WF_DRAG_NONE;
@@ -842,4 +851,6 @@ void WaterfallCanvas::setLinesPerSecond(int lps) {
     tex_update.unlock();
 }
 
-
+void WaterfallCanvas::setMinBandwidth(int min) {
+    minBandwidth = min;
+}

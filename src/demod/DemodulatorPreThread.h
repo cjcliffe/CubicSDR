@@ -7,37 +7,62 @@
 #include "DemodDefs.h"
 #include "DemodulatorWorkerThread.h"
 
+class DemodulatorInstance;
+
 class DemodulatorPreThread : public IOThread {
 public:
 
-    DemodulatorPreThread();
+    DemodulatorPreThread(DemodulatorInstance *parent);
     ~DemodulatorPreThread();
 
     void run();
-
-    DemodulatorThreadParameters &getParams();
-    void setParams(DemodulatorThreadParameters &params_in);
     
     void setDemodType(std::string demodType);
     std::string getDemodType();
 
-    void initialize();
+    void setFrequency(long long sampleRate);
+    long long getFrequency();
+
+    void setSampleRate(long long sampleRate);
+    long long getSampleRate();
+    
+    void setBandwidth(int bandwidth);
+    int getBandwidth();
+    
+    void setAudioSampleRate(int rate);
+    int getAudioSampleRate();
+    
+    bool isInitialized();
+    
     void terminate();
 
     Modem *getModem();
     ModemKit *getModemKit();
     
+    std::string readModemSetting(std::string setting);
+    void writeModemSetting(std::string setting, std::string value);
+    ModemSettings readModemSettings();
+    void writeModemSettings(ModemSettings settings);
+
 protected:
+    DemodulatorInstance *parent;
     msresamp_crcf iqResampler;
     double iqResampleRatio;
     std::vector<liquid_float_complex> resampledData;
 
     Modem *cModem;
     ModemKit *cModemKit;
+    
+    long long currentSampleRate, newSampleRate;
+    long long currentFrequency, newFrequency;
+    int currentBandwidth, newBandwidth;
+    int currentAudioSampleRate, newAudioSampleRate;
 
-    DemodulatorThreadParameters params;
-    DemodulatorThreadParameters lastParams;
+    std::atomic_bool sampleRateChanged, frequencyChanged, bandwidthChanged, audioSampleRateChanged;
 
+    ModemSettings modemSettingsBuffered;
+    std::atomic_bool modemSettingsChanged;
+    
     nco_crcf freqShifter;
     int shiftFrequency;
 
@@ -55,5 +80,4 @@ protected:
     DemodulatorThreadInputQueue* iqInputQueue;
     DemodulatorThreadPostInputQueue* iqOutputQueue;
     DemodulatorThreadCommandQueue* threadQueueNotify;
-    DemodulatorThreadCommandQueue* commandQueue;
 };

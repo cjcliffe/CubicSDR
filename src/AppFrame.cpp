@@ -67,45 +67,46 @@ AppFrame::AppFrame() :
     gainSpacerItem->Show(false);
             
     demodModeSelector = new ModeSelectorCanvas(demodPanel, attribList);
-    demodModeSelector->addChoice(0, "FM");
-    demodModeSelector->addChoice(1, "FMS");
-    demodModeSelector->addChoice(2, "AM");
-    demodModeSelector->addChoice(3, "LSB");
-    demodModeSelector->addChoice(4, "USB");
-    demodModeSelector->addChoice(5, "DSB");
-    demodModeSelector->addChoice(6, "I/Q");
+    demodModeSelector->addChoice("FM");
+    demodModeSelector->addChoice("FMS");
+    demodModeSelector->addChoice("AM");
+    demodModeSelector->addChoice("LSB");
+    demodModeSelector->addChoice("USB");
+    demodModeSelector->addChoice("DSB");
+    demodModeSelector->addChoice("I/Q");
     demodModeSelector->setSelection("FM");
     demodModeSelector->setHelpTip("Choose modulation type: Frequency Modulation, Amplitude Modulation and Lower, Upper or Double Side-Band.");
+    demodModeSelector->SetMinSize(wxSize(40,-1));
+    demodModeSelector->SetMaxSize(wxSize(40,-1));
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
     
 #ifdef ENABLE_DIGITAL_LAB
-    demodModeSelectorAdv = new ModeSelectorCanvas(this, attribList);
-    demodModeSelectorAdv->addChoice(0, "ASK");
-    demodModeSelectorAdv->addChoice(1, "APSK");
-    demodModeSelectorAdv->addChoice(2, "BPSK");
-    demodModeSelectorAdv->addChoice(3, "DPSK");
-    demodModeSelectorAdv->addChoice(4, "PSK");
-    demodModeSelectorAdv->addChoice(5, "OOK");
-    demodModeSelectorAdv->addChoice(6, "ST");
-    demodModeSelectorAdv->addChoice(7, "SQAM");
-    demodModeSelectorAdv->addChoice(8, "QAM");
-    demodModeSelectorAdv->addChoice(9, "QPSK");
+    demodModeSelectorAdv = new ModeSelectorCanvas(demodPanel, attribList);
+    demodModeSelectorAdv->addChoice("ASK");
+    demodModeSelectorAdv->addChoice("APSK");
+    demodModeSelectorAdv->addChoice("BPSK");
+    demodModeSelectorAdv->addChoice("DPSK");
+    demodModeSelectorAdv->addChoice("PSK");
+    demodModeSelectorAdv->addChoice("FSK");
+    demodModeSelectorAdv->addChoice("GMSK");
+    demodModeSelectorAdv->addChoice("OOK");
+    demodModeSelectorAdv->addChoice("ST");
+    demodModeSelectorAdv->addChoice("SQAM");
+    demodModeSelectorAdv->addChoice("QAM");
+    demodModeSelectorAdv->addChoice("QPSK");
     demodModeSelectorAdv->setHelpTip("Choose advanced modulation types.");
+    demodModeSelectorAdv->SetMinSize(wxSize(40,-1));
+    demodModeSelectorAdv->SetMaxSize(wxSize(40,-1));
     demodTray->Add(demodModeSelectorAdv, 3, wxEXPAND | wxALL, 0);
-    
-    demodModeSelectorCons = new ModeSelectorCanvas(this, attribList);
-    demodModeSelectorCons->addChoice(1, "auto");
-    demodModeSelectorCons->addChoice(2, "2");
-    demodModeSelectorCons->addChoice(4, "4");
-    demodModeSelectorCons->addChoice(8, "8");
-    demodModeSelectorCons->addChoice(16, "16");
-    demodModeSelectorCons->addChoice(32, "32");
-    demodModeSelectorCons->addChoice(64, "64");
-    demodModeSelectorCons->addChoice(128, "128");
-    demodModeSelectorCons->addChoice(256, "256");
-    demodModeSelectorCons->setHelpTip("Choose number of constallations types.");
-    demodTray->Add(demodModeSelectorCons, 2, wxEXPAND | wxALL, 0);
 #endif
+            
+    modemPropertiesUpdated.store(false);
+    modemProps = new ModemProperties(demodPanel, wxID_ANY);
+    modemProps->SetMinSize(wxSize(200,-1));
+    modemProps->SetMaxSize(wxSize(200,-1));
+
+    modemProps->Hide();
+    demodTray->Add(modemProps, 15, wxEXPAND | wxALL, 0);
             
     wxGetApp().getDemodSpectrumProcessor()->setup(1024);
     demodSpectrumCanvas = new SpectrumCanvas(demodPanel, attribList);
@@ -119,10 +120,13 @@ AppFrame::AppFrame() :
     demodWaterfallCanvas->setup(1024, 128);
     demodWaterfallCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
     demodWaterfallCanvas->attachSpectrumCanvas(demodSpectrumCanvas);
+    demodWaterfallCanvas->setMinBandwidth(8000);
     demodSpectrumCanvas->attachWaterfallCanvas(demodWaterfallCanvas);
     demodVisuals->Add(demodWaterfallCanvas, 6, wxEXPAND | wxALL, 0);
     wxGetApp().getDemodSpectrumProcessor()->attachOutput(demodWaterfallCanvas->getVisualDataQueue());
     demodWaterfallCanvas->getVisualDataQueue()->set_max_num_items(3);
+
+    demodVisuals->SetMinSize(wxSize(128,-1));
 
     demodTray->Add(demodVisuals, 30, wxEXPAND | wxALL, 0);
 
@@ -142,6 +146,7 @@ AppFrame::AppFrame() :
 
     scopeCanvas = new ScopeCanvas(demodPanel, attribList);
     scopeCanvas->setHelpTip("Audio Visuals, drag left/right to toggle Scope or Spectrum.");
+    scopeCanvas->SetMinSize(wxSize(128,-1));
     demodScopeTray->Add(scopeCanvas, 8, wxEXPAND | wxALL, 0);
     wxGetApp().getScopeProcessor()->setup(2048);
     wxGetApp().getScopeProcessor()->attachOutput(scopeCanvas->getInputQueue());
@@ -833,7 +838,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
-    if (demod) {
+    if (demod && demod->isModemInitialized()) {
         if (demod->isTracking()) {
             if (spectrumCanvas->getViewState()) {
                 long long diff = abs(demod->getFrequency() - spectrumCanvas->getCenterFrequency()) + (demod->getBandwidth()/2) + (demod->getBandwidth()/4);
@@ -851,6 +856,10 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
                 demod->setTracking(false);
             }
         }
+        
+        if (demod->getBandwidth() != wxGetApp().getDemodMgr().getLastBandwidth()) {
+            wxGetApp().getDemodMgr().setLastBandwidth(demod->getBandwidth());
+        }
 
         if (demod != activeDemodulator) {
             demodSignalMeter->setInputValue(demod->getSquelchLevel());
@@ -861,11 +870,10 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             std::string dType = demod->getDemodulatorType();
             demodModeSelector->setSelection(dType);
 #ifdef ENABLE_DIGITAL_LAB
-            int dCons = demod->getDemodulatorCons();
             demodModeSelectorAdv->setSelection(dType);
-            demodModeSelectorCons->setSelection(dCons);
 #endif
             demodMuteButton->setSelection(demod->isMuted()?1:-1);
+            modemPropertiesUpdated.store(true);
         }
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
             long long centerFreq = demod->getFrequency();
@@ -895,7 +903,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             std::string dSelection = demodModeSelector->getSelectionLabel();
 #ifdef ENABLE_DIGITAL_LAB
             std::string dSelectionadv = demodModeSelectorAdv->getSelectionLabel();
-			int dSelectionCons = demodModeSelectorCons->getSelection();
 
             // basic demodulators
             if (dSelection != "" && dSelection != demod->getDemodulatorType()) {
@@ -907,11 +914,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 				demod->setDemodulatorType(dSelectionadv);
 				demodModeSelector->setSelection(-1);
             }
-
-			// set constellations
-			if (dSelectionCons != demod->getDemodulatorCons()) {
-				demod->setDemodulatorCons(dSelectionCons);
-			}
 #else
             // basic demodulators
             if (dSelection != "" && dSelection != demod->getDemodulatorType()) {
@@ -951,13 +953,14 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             demodGainMeter->setLevel(demodGainMeter->getInputValue());
         }
         activeDemodulator = demod;
+    } else if (demod) {
+        // Wait state for current demodulator modem to activate..
     } else {
         DemodulatorMgr *mgr = &wxGetApp().getDemodMgr();
 
         std::string dSelection = demodModeSelector->getSelectionLabel();
 #ifdef ENABLE_DIGITAL_LAB
         std::string dSelectionadv = demodModeSelectorAdv->getSelectionLabel();
-		int dSelectionCons = demodModeSelectorCons->getSelection();
 
         // basic demodulators
         if (dSelection != "" && dSelection != mgr->getLastDemodulatorType()) {
@@ -969,11 +972,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             mgr->setLastDemodulatorType(dSelectionadv);
             demodModeSelector->setSelection(-1);
         }
-
-		// set constellations
-		if (dSelectionCons != mgr->getLastDemodulatorCons()) {
-			mgr->setLastDemodulatorCons(dSelectionCons);
-		}
 #else
         // basic demodulators
         if (dSelection != "" && dSelection != mgr->getLastDemodulatorType()) {
@@ -1012,7 +1010,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         if (!demodTuner->HasFocus()) {
             demodTuner->SetFocus();
         }
-    } else if (!wxGetApp().isDeviceSelectorOpen()) {
+    } else if (!wxGetApp().isDeviceSelectorOpen() && (!modemProps || !modemProps->isMouseInView())) {
 		if (!waterfallCanvas->HasFocus()) {
 			waterfallCanvas->SetFocus();
 		}
@@ -1026,7 +1024,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     wxGetApp().getAudioVisualQueue()->set_max_num_items((scopeCanvas->scopeVisible()?1:0) + (scopeCanvas->spectrumVisible()?1:0));
     
     wxGetApp().getScopeProcessor()->run();
-//    wxGetApp().getSpectrumDistributor()->run();
 
     SpectrumVisualProcessor *proc = wxGetApp().getSpectrumProcessor();
 
@@ -1069,11 +1066,24 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     wproc->setCenterFrequency(waterfallCanvas->getCenterFrequency());
     wxGetApp().getSDRPostThread()->setIQVisualRange(waterfallCanvas->getCenterFrequency(), waterfallCanvas->getBandwidth());
     
-//    waterfallCanvas->processInputQueue();
-//    waterfallCanvas->Refresh();
-//    demodWaterfallCanvas->processInputQueue();
-//    demodWaterfallCanvas->Refresh();
-
+    demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    
+    if (modemPropertiesUpdated.load() && demod && demod->isModemInitialized()) {
+        modemProps->initProperties(demod->getModemArgs());
+        modemPropertiesUpdated.store(false);
+        demodTray->Layout();
+#if ENABLE_DIGITAL_LAB
+        if (demod->getModemType() == "digital") {
+            ModemDigitalOutputConsole *outp = (ModemDigitalOutputConsole *)demod->getOutput();
+            if (!outp->getDialog()) {
+                outp->setTitle(demod->getDemodulatorType() + ": " + frequencyToStr(demod->getFrequency()));
+                outp->setDialog(new DigitalConsole(this, outp));
+            }
+            demod->showOutput();
+        }
+#endif
+    }
+    
     if (!this->IsActive()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(25));
     }
@@ -1134,6 +1144,14 @@ void AppFrame::saveSession(std::string fileName) {
         *demod->newChild("output_device") = outputDevices[(*instance_i)->getOutputDevice()].name;
         *demod->newChild("gain") = (*instance_i)->getGain();
         *demod->newChild("muted") = (*instance_i)->isMuted() ? 1 : 0;
+
+        ModemSettings saveSettings = (*instance_i)->readModemSettings();
+        if (saveSettings.size()) {
+            DataNode *settingsNode = demod->newChild("settings");
+            for (ModemSettings::const_iterator msi = saveSettings.begin(); msi != saveSettings.end(); msi++) {
+                *settingsNode->newChild(msi->first.c_str()) = msi->second;
+            }
+        }
     }
 
     s.SaveToFileXML(fileName);
@@ -1177,35 +1195,79 @@ bool AppFrame::loadSession(std::string fileName) {
 
             long bandwidth = *demod->getNext("bandwidth");
             long long freq = *demod->getNext("frequency");
-            std::string type = demod->hasAnother("type") ? string(*demod->getNext("type")) : "FM";
             float squelch_level = demod->hasAnother("squelch_level") ? (float) *demod->getNext("squelch_level") : 0;
             int squelch_enabled = demod->hasAnother("squelch_enabled") ? (int) *demod->getNext("squelch_enabled") : 0;
             int muted = demod->hasAnother("muted") ? (int) *demod->getNext("muted") : 0;
             std::string output_device = demod->hasAnother("output_device") ? string(*(demod->getNext("output_device"))) : "";
             float gain = demod->hasAnother("gain") ? (float) *demod->getNext("gain") : 1.0;
 
-            // TODO: Check if "type" is numeric and perform update to new values
-            //#define DEMOD_TYPE_NULL 0
-            //#define DEMOD_TYPE_FM 1
-            //#define DEMOD_TYPE_AM 2
-            //#define DEMOD_TYPE_LSB 3
-            //#define DEMOD_TYPE_USB 4
-            //#define DEMOD_TYPE_DSB 5
-            //#define DEMOD_TYPE_ASK 6
-            //#define DEMOD_TYPE_APSK 7
-            //#define DEMOD_TYPE_BPSK 8
-            //#define DEMOD_TYPE_DPSK 9
-            //#define DEMOD_TYPE_PSK 10
-            //#define DEMOD_TYPE_OOK 11
-            //#define DEMOD_TYPE_ST 12
-            //#define DEMOD_TYPE_SQAM 13
-            //#define DEMOD_TYPE_QAM 14
-            //#define DEMOD_TYPE_QPSK 15
-            //#define DEMOD_TYPE_RAW 16
+            std::string type = "FM";
 
+            DataNode *demodTypeNode = demod->hasAnother("type")?demod->getNext("type"):nullptr;
+            
+            if (demodTypeNode->element()->getDataType() == DATA_INT) {
+                int legacyType = *demodTypeNode;
+                int legacyStereo = demod->hasAnother("stereo") ? (int) *demod->getNext("stereo") : 0;
+                switch (legacyType) {   // legacy demod ID
+                    case 1: type = legacyStereo?"FMS":"FM"; break;
+                    case 2: type = "AM"; break;
+                    case 3: type = "LSB"; break;
+                    case 4: type = "USB"; break;
+                    case 5: type = "DSB"; break;
+                    case 6: type = "ASK"; break;
+                    case 7: type = "APSK"; break;
+                    case 8: type = "BPSK"; break;
+                    case 9: type = "DPSK"; break;
+                    case 10: type = "PSK"; break;
+                    case 11: type = "OOK"; break;
+                    case 12: type = "ST"; break;
+                    case 13: type = "SQAM"; break;
+                    case 14: type = "QAM"; break;
+                    case 15: type = "QPSK"; break;
+                    case 16: type = "I/Q"; break;
+                    default: type = "FM"; break;
+                }
+            } else if (demodTypeNode->element()->getDataType() == DATA_STRING) {
+                demodTypeNode->element()->get(type);
+            }
+
+            ModemSettings mSettings;
+            
+            if (demod->hasAnother("settings")) {
+                DataNode *modemSettings = demod->getNext("settings");
+                for (int msi = 0, numSettings = modemSettings->numChildren(); msi < numSettings; msi++) {
+                    DataNode *settingNode = modemSettings->child(msi);
+                    std::string keyName = settingNode->getName();
+                    std::string strSettingValue = "";
+                    
+                    int dataType = settingNode->element()->getDataType();
+                    
+                    try {
+                        if (dataType == DATA_STRING) {
+                            settingNode->element()->get(strSettingValue);
+                        } else if (dataType == DATA_INT || dataType == DATA_LONG || dataType == DATA_LONGLONG) {
+                            long long intSettingValue = *settingNode;
+                            strSettingValue = std::to_string(intSettingValue);
+                        } else if (dataType == DATA_FLOAT || dataType == DATA_DOUBLE) {
+                            double floatSettingValue = *settingNode;
+                            strSettingValue = std::to_string(floatSettingValue);
+                        } else {
+                            std::cout << "Unhandled setting data type: " << dataType  << std::endl;
+                        }
+                    } catch (DataTypeMismatchException e) {
+                        std::cout << "Setting data type mismatch: " << dataType  << std::endl;
+                    }
+                    
+                    if (keyName != "" && strSettingValue != "") {
+                        mSettings[keyName] = strSettingValue;
+                    }
+                }
+            }
+            
             DemodulatorInstance *newDemod = wxGetApp().getDemodMgr().newThread();
             loadedDemod = newDemod;
             numDemodulators++;
+            newDemod->writeModemSettings(mSettings);
             newDemod->setDemodulatorType(type);
             newDemod->setBandwidth(bandwidth);
             newDemod->setFrequency(freq);
@@ -1267,5 +1329,10 @@ bool AppFrame::loadSession(std::string fileName) {
 
 FFTVisualDataThread *AppFrame::getWaterfallDataThread() {
     return waterfallDataThread;
+}
+
+void AppFrame::updateModemProperties(ModemArgInfoList args) {
+    newModemArgs = args;
+    modemPropertiesUpdated.store(true);
 }
 

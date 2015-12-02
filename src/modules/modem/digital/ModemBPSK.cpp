@@ -1,6 +1,6 @@
 #include "ModemBPSK.h"
 
-ModemBPSK::ModemBPSK() {
+ModemBPSK::ModemBPSK() : ModemDigital()  {
     demodBPSK = modem_create(LIQUID_MODEM_BPSK);
 }
 
@@ -14,12 +14,6 @@ ModemBPSK::~ModemBPSK() {
 
 std::string ModemBPSK::getName() {
     return "BPSK";
-}
-
-void ModemBPSK::updateDemodulatorCons(int cons) {
-    if (currentDemodCons.load() != cons) {
-        currentDemodCons = cons;
-    }
 }
 
 void ModemBPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {

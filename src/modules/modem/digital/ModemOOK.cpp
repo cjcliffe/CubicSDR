@@ -1,11 +1,7 @@
 #include "ModemOOK.h"
 
-ModemOOK::ModemOOK() {
+ModemOOK::ModemOOK() : ModemDigital()  {
     demodOOK = modem_create(LIQUID_MODEM_OOK);
-}
-
-Modem *ModemOOK::factory() {
-    return new ModemOOK;
 }
 
 ModemOOK::~ModemOOK() {
@@ -16,10 +12,15 @@ std::string ModemOOK::getName() {
     return "OOK";
 }
 
-void ModemOOK::updateDemodulatorCons(int cons) {
-    if (currentDemodCons.load() != cons) {
-        currentDemodCons = cons;
+Modem *ModemOOK::factory() {
+    return new ModemOOK;
+}
+
+int ModemOOK::checkSampleRate(long long sampleRate, int audioSampleRate) {
+    if (sampleRate < 100) {
+        return 100;
     }
+    return sampleRate;
 }
 
 void ModemOOK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {

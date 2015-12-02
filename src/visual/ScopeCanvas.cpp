@@ -28,7 +28,7 @@ EVT_LEAVE_WINDOW(ScopeCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(ScopeCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
-ScopeCanvas::ScopeCanvas(wxWindow *parent, int *attribList) : InteractiveCanvas(parent, attribList), stereo(false), ppmMode(false), ctr(0), ctrTarget(0), dragAccel(0), helpTip("") {
+ScopeCanvas::ScopeCanvas(wxWindow *parent, int *attribList) : InteractiveCanvas(parent, attribList), ppmMode(false), ctr(0), ctrTarget(0), dragAccel(0), helpTip("") {
 
     glContext = new ScopeContext(this, &wxGetApp().GetContext(this));
     inputData.set_max_num_items(2);
@@ -65,16 +65,12 @@ bool ScopeCanvas::spectrumVisible() {
     float panelInterval = (2.0 + panelSpacing);
     
     ctrTarget = abs(round(ctr / panelInterval));
-
+ 
     if (ctrTarget == 1 || dragAccel || (ctr != ctrTarget)) {
         return true;
     }
     
     return false;
-}
-
-void ScopeCanvas::setStereo(bool state) {
-    stereo = state;
 }
 
 void ScopeCanvas::setDeviceName(std::string device_name) {
@@ -106,12 +102,12 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         ScopeRenderData *avData;
         inputData.pop(avData);
 
+        
         if (!avData->spectrum) {
+            scopePanel.setMode(avData->mode);
             if (avData->waveform_points.size()) {
                 scopePanel.setPoints(avData->waveform_points);
-                setStereo(avData->channels == 2);
             }
-            
             avData->decRefCount();
         } else {
             if (avData->waveform_points.size()) {
@@ -133,14 +129,18 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
     glViewport(0, 0, ClientSize.x, ClientSize.y);
     
-    glContext->DrawBegin();
+    if (scopePanel.getMode() == ScopePanel::SCOPE_MODE_XY && !spectrumVisible()) {
+        glDrawBuffer(GL_FRONT);
+        glContext->DrawBegin(false);
+    } else {
+        glDrawBuffer(GL_BACK);
+        glContext->DrawBegin();
+        
+        bgPanel.setFillColor(ThemeMgr::mgr.currentTheme->scopeBackground * 3.0, RGBA4f(0,0,0,1));
+        bgPanel.calcTransform(CubicVR::mat4::identity());
+        bgPanel.draw();
+    }
     
-    bgPanel.setFillColor(ThemeMgr::mgr.currentTheme->scopeBackground * 3.0, RGBA4f(0,0,0,0));
-    bgPanel.calcTransform(CubicVR::mat4::identity());
-    bgPanel.draw();
-
-    scopePanel.setMode(stereo?ScopePanel::SCOPE_MODE_2Y:ScopePanel::SCOPE_MODE_Y);
-
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glLoadMatrixf(CubicVR::mat4::perspective(45.0, 1.0, 1.0, 1000.0));
@@ -190,7 +190,7 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     
     spectrumPanel.setPosition(panelInterval+ctr, 0);
     if (spectrumVisible()) {
-        spectrumPanel.setFillColor(ThemeMgr::mgr.currentTheme->scopeBackground * 2.0, RGBA4f(0,0,0,0));
+        spectrumPanel.setFillColor(ThemeMgr::mgr.currentTheme->scopeBackground * 2.0, RGBA4f(0,0,0,1));
         spectrumPanel.contentsVisible = true;
         roty = atan2(spectrumPanel.pos[0],1.2);
         spectrumPanel.rot[1] = -(roty * (180.0 / M_PI));
@@ -217,7 +217,9 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->DrawTunerTitles(ppmMode);
     glContext->DrawEnd();
 
-    SwapBuffers();
+    if (scopePanel.getMode() != ScopePanel::SCOPE_MODE_XY || spectrumVisible()) {
+        SwapBuffers();
+    }
 }
 
 

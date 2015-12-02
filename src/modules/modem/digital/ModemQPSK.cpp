@@ -1,6 +1,6 @@
 #include "ModemQPSK.h"
 
-ModemQPSK::ModemQPSK() {
+ModemQPSK::ModemQPSK() : ModemDigital()  {
     demodQPSK = modem_create(LIQUID_MODEM_QPSK);
 }
 
@@ -14,12 +14,6 @@ ModemQPSK::~ModemQPSK() {
 
 std::string ModemQPSK::getName() {
     return "QPSK";
-}
-
-void ModemQPSK::updateDemodulatorCons(int cons) {
-    if (currentDemodCons.load() != cons) {
-        currentDemodCons = cons;
-    }
 }
 
 void ModemQPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {

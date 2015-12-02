@@ -8,6 +8,13 @@ std::string ModemAnalog::getType() {
     return "analog";
 }
 
+int ModemAnalog::checkSampleRate(long long sampleRate, int audioSampleRate) {
+    if (sampleRate < MIN_BANDWIDTH) {
+        return MIN_BANDWIDTH;
+    }
+    return sampleRate;
+}
+
 ModemKit *ModemAnalog::buildKit(long long sampleRate, int audioSampleRate) {
     ModemKitAnalog *akit = new ModemKitAnalog;
     

@@ -1,6 +1,6 @@
 #include "ModemUSB.h"
 
-ModemUSB::ModemUSB() {
+ModemUSB::ModemUSB() : ModemAnalog() {
     // half band filter used for side-band elimination
     ssbFilt = resamp2_crcf_create(12,-0.25f,60.0f);
     demodAM_USB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_USB, 1);
@@ -17,6 +17,20 @@ std::string ModemUSB::getName() {
 ModemUSB::~ModemUSB() {
     resamp2_crcf_destroy(ssbFilt);
     ampmodem_destroy(demodAM_USB);
+}
+
+int ModemUSB::checkSampleRate(long long sampleRate, int audioSampleRate) {
+    if (sampleRate < MIN_BANDWIDTH) {
+        return MIN_BANDWIDTH;
+    }
+    if (sampleRate % 2 == 0) {
+        return sampleRate;
+    }
+    return sampleRate+1;
+}
+
+int ModemUSB::getDefaultSampleRate() {
+    return 5400;
 }
 
 void ModemUSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
