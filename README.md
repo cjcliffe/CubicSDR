@@ -59,7 +59,7 @@ Features and Status:
       - [x] Waterfall
       - [x] Add faint grid for sense of scale
       - [x] Audio Spectrum
-      - [ ] X/Y Scope
+      - [x] X/Y Scope
       - [ ] Indicate outer spectrum edges when zoomed
     - [ ] 3D visuals
       - [ ] I/Q helix
