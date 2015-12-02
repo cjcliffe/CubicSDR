@@ -42,7 +42,9 @@
 #include "ModemASK.h"
 #include "ModemBPSK.h"
 #include "ModemDPSK.h"
+#if ENABLE_LIQUID_EXPERIMENTAL
 #include "ModemFSK.h"
+#endif
 #include "ModemGMSK.h"
 #include "ModemOOK.h"
 #include "ModemPSK.h"

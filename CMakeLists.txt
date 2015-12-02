@@ -22,6 +22,16 @@ IF(ENABLE_DIGITAL_LAB)
 ADD_DEFINITIONS(
     -DENABLE_DIGITAL_LAB=1
 )
+IF(MSVC)
+	SET (ENABLE_LIQUID_EXPERIMENTAL OFF CACHE BOOL "Enable experimental liquid-dsp features (requires latest liquid-dsp installed)")
+ELSE()
+	SET (ENABLE_LIQUID_EXPERIMENTAL ON CACHE BOOL "Enable experimental liquid-dsp features (requires latest liquid-dsp installed)")
+ENDIF()
+IF(ENABLE_LIQUID_EXPERIMENTAL)
+ADD_DEFINITIONS(
+    -DENABLE_LIQUID_EXPERIMENTAL=1
+)
+ENDIF()
 ENDIF()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
@@ -296,7 +306,6 @@ IF(ENABLE_DIGITAL_LAB)
         src/modules/modem/digital/ModemAPSK.cpp
         src/modules/modem/digital/ModemBPSK.cpp
         src/modules/modem/digital/ModemDPSK.cpp
-        src/modules/modem/digital/ModemFSK.cpp
         src/modules/modem/digital/ModemGMSK.cpp
         src/modules/modem/digital/ModemPSK.cpp
         src/modules/modem/digital/ModemOOK.cpp
@@ -305,6 +314,12 @@ IF(ENABLE_DIGITAL_LAB)
         src/modules/modem/digital/ModemQAM.cpp
         src/modules/modem/digital/ModemQPSK.cpp
     )
+	IF(ENABLE_LIQUID_EXPERIMENTAL)
+    SET (cubicsdr_sources
+        ${cubicsdr_sources}
+        src/modules/modem/digital/ModemFSK.cpp
+    )
+	ENDIF()
 ENDIF()
 
 SET (cubicsdr_headers
@@ -402,7 +417,6 @@ SET (cubicsdr_headers
     src/modules/modem/digital/ModemAPSK.h
     src/modules/modem/digital/ModemBPSK.h
     src/modules/modem/digital/ModemDPSK.h
-    src/modules/modem/digital/ModemFSK.h
     src/modules/modem/digital/ModemGMSK.h
     src/modules/modem/digital/ModemPSK.h
     src/modules/modem/digital/ModemOOK.h
@@ -411,6 +425,12 @@ SET (cubicsdr_headers
     src/modules/modem/digital/ModemQAM.h
     src/modules/modem/digital/ModemQPSK.h
 )    
+IF(ENABLE_LIQUID_EXPERIMENTAL)
+    SET (cubicsdr_sources
+        ${cubicsdr_sources}
+        src/modules/modem/digital/ModemFSK.h
+    )
+ENDIF()
 ENDIF()
 
 SET (CUBICSDR_RESOURCES 

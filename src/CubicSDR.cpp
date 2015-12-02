@@ -177,7 +177,9 @@ bool CubicSDR::OnInit() {
     Modem::addModemFactory(new ModemASK);
     Modem::addModemFactory(new ModemBPSK);
     Modem::addModemFactory(new ModemDPSK);
+#if ENABLE_LIQUID_EXPERIMENTAL
     Modem::addModemFactory(new ModemFSK);
+#endif
     Modem::addModemFactory(new ModemGMSK);
     Modem::addModemFactory(new ModemOOK);
     Modem::addModemFactory(new ModemPSK);
