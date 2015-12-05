@@ -5,7 +5,7 @@
 #include <string>
 
 
-SDRThread::SDRThread() : IOThread() {
+SDRThread::SDRThread() : IOThread(), buffers("SDRThreadBuffers") {
     device = NULL;
 
     deviceConfig.store(NULL);

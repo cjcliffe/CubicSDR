@@ -53,7 +53,7 @@ void DemodulatorPreThread::run() {
 
     std::cout << "Demodulator preprocessor thread started.." << std::endl;
 
-    ReBuffer<DemodulatorThreadPostIQData> buffers;
+    ReBuffer<DemodulatorThreadPostIQData> buffers("DemodulatorPreThreadBuffers");
 
     iqInputQueue = (DemodulatorThreadInputQueue*)getInputQueue("IQDataInput");
     iqOutputQueue = (DemodulatorThreadPostInputQueue*)getOutputQueue("IQDataOutput");

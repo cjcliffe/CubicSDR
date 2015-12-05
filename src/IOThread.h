@@ -45,6 +45,10 @@ template<class BufferType = ReferenceCounter>
 class ReBuffer {
     
 public:
+    ReBuffer(std::string bufferId) : bufferId(bufferId) {
+        
+    }
+    
     BufferType *getBuffer() {
         BufferType* buf = NULL;
         for (outputBuffersI = outputBuffers.begin(); outputBuffersI != outputBuffers.end(); outputBuffersI++) {
@@ -65,10 +69,11 @@ public:
             return buf;
         }
         
-//        if (outputBuffers.size() > 100) {
-//            std::cout << "Buffer over 100.." << std::endl;
-//        }
-        
+#define REBUFFER_WARNING_THRESHOLD 100
+        if (outputBuffers.size() > REBUFFER_WARNING_THRESHOLD) {
+            std::cout << "Warning: ReBuffer '" << bufferId << "' count '" << outputBuffers.size() << "' exceeds threshold of '" << REBUFFER_WARNING_THRESHOLD << "'" << std::endl;
+        }
+
         buf = new BufferType();
         outputBuffers.push_back(buf);
         
@@ -83,6 +88,7 @@ public:
         }
     }
 private:
+    std::string bufferId;
     std::deque<BufferType*> outputBuffers;
     typename std::deque<BufferType*>::iterator outputBuffersI;
 };

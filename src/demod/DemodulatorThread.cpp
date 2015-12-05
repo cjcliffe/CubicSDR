@@ -12,7 +12,7 @@
 #include <pthread.h>
 #endif
 
-DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent) : IOThread(), squelchLevel(-100), signalLevel(-100), squelchEnabled(false), cModem(nullptr), cModemKit(nullptr), iqInputQueue(NULL), audioOutputQueue(NULL), audioVisOutputQueue(NULL), threadQueueControl(NULL), threadQueueNotify(NULL) {
+DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent) : IOThread(), squelchLevel(-100), signalLevel(-100), squelchEnabled(false), cModem(nullptr), cModemKit(nullptr), iqInputQueue(NULL), audioOutputQueue(NULL), audioVisOutputQueue(NULL), threadQueueControl(NULL), threadQueueNotify(NULL), outputBuffers("DemodulatorThreadBuffers") {
     
     demodInstance = parent;
     muted.store(false);
@@ -57,7 +57,7 @@ void DemodulatorThread::run() {
     pthread_setschedparam(tID, SCHED_FIFO, &prio);
 #endif
     
-    ReBuffer<AudioThreadInput> audioVisBuffers;
+    ReBuffer<AudioThreadInput> audioVisBuffers("DemodulatorThreadAudioBuffers");
     
     std::cout << "Demodulator thread started.." << std::endl;
     
