@@ -5,7 +5,7 @@
 #include <vector>
 #include <deque>
 
-SDRPostThread::SDRPostThread() : IOThread() {
+SDRPostThread::SDRPostThread() : IOThread(), buffers("SDRPostThreadBuffers"), visualDataBuffers("SDRPostThreadVisualDataBuffers") {
     iqDataInQueue = NULL;
     iqDataOutQueue = NULL;
     iqVisualQueue = NULL;
@@ -238,7 +238,7 @@ void SDRPostThread::run() {
                     firpfbch_crcf_analyzer_execute(channelizer, &data_in->data[i], &dataOut[i]);
                 }
 
-                for (int i = 0, iMax = numChannels; i < iMax; i++) {
+                for (int i = 0, iMax = numChannels+1; i < iMax; i++) {
                     demodChannelActive[i] = 0;
                 }
                 
@@ -276,6 +276,8 @@ void SDRPostThread::run() {
                     demodDataOut->frequency = chanCenters[i];
                     demodDataOut->sampleRate = chanBw;
 
+//                    std::cout << "Active channel(" << i << "/" << numChannels <<  ") nRunDemods:" << nRunDemods << ", doVis: " << doVis << ", demodVis: " << doDemodVis << std::endl;
+                    
                     // Calculate channel buffer size
                     int chanDataSize = (outSize/numChannels);
 
