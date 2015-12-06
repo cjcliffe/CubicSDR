@@ -141,6 +141,8 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
 			}
         }
         
+        DeviceConfig *cfg = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
+        
         if (deviceArgs.count("remote")) {
             isRemote = true;
         } else {
@@ -148,12 +150,10 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
         }
         
         dev->setRemote(isRemote);
-
-        dev->setDeviceArgs(deviceArgs);
         
         std::cout << "Make device " << i << std::endl;
         try {
-            SoapySDR::Device *device = SoapySDR::Device::make(dev->getDeviceArgs());
+            SoapySDR::Device *device = SoapySDR::Device::make(deviceArgs);
             SoapySDR::Kwargs info = device->getHardwareInfo();
             for (SoapySDR::Kwargs::const_iterator it = info.begin(); it != info.end(); ++it) {
                 std::cout << "  " << it->first << "=" << it->second << std::endl;
@@ -167,7 +167,24 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
             } else {
                 wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Querying device #") + std::to_string(i) + ": " + dev->getName());
             }
+
+            SoapySDR::ArgInfoList settingsInfo = device->getSettingInfo();
             
+            ConfigSettings devSettings = cfg->getSettings();
+            if (devSettings.size()) {
+                for (ConfigSettings::const_iterator set_i = devSettings.begin(); set_i != devSettings.end(); set_i++) {
+                    deviceArgs[set_i->first] = set_i->second;
+                }
+                for (int j = 0; j < settingsInfo.size(); j++) {
+                    if (deviceArgs.find(settingsInfo[j].key) != deviceArgs.end()) {
+                        settingsInfo[j].value = deviceArgs[settingsInfo[j].key];
+                    }
+                }
+            }
+            
+            dev->setDeviceArgs(deviceArgs);
+            dev->setSettingsInfo(settingsInfo);
+
             int numChan = device->getNumChannels(SOAPY_SDR_RX);
             for (int i = 0; i < numChan; i++) {
                 SDRDeviceChannel *chan = new SDRDeviceChannel();
@@ -200,7 +217,21 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
                     chan->getSampleRates().push_back((long)(*i));
                 }
                 
-                chan->setStreamArgsInfo(device->getStreamArgsInfo(SOAPY_SDR_RX, i));
+                ConfigSettings devStreamOpts = cfg->getStreamOpts();
+                if (devStreamOpts.size()) {
+                    dev->setStreamArgs(devStreamOpts);
+                }
+                
+                SoapySDR::ArgInfoList optArgs = device->getStreamArgsInfo(SOAPY_SDR_RX, i);
+
+                if (devStreamOpts.size()) {
+                    for (int j = 0, jMax = optArgs.size(); j < jMax; j++) {
+                        if (devStreamOpts.find(optArgs[j].key) != devStreamOpts.end()) {
+                            optArgs[j].value = devStreamOpts[optArgs[j].key];
+                        }
+                    }
+                }
+                chan->setStreamArgsInfo(optArgs);
                 
                 std::vector<std::string> gainNames = device->listGains(SOAPY_SDR_RX, i);
                 
@@ -210,8 +241,6 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
                 
                 dev->addChannel(chan);
             }
-            
-            dev->setSettingsInfo(device->getSettingInfo());
             
             SoapySDR::Device::unmake(device);
             

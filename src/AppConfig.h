@@ -9,6 +9,8 @@
 
 #include "DataTree.h"
 
+typedef std::map<std::string, std::string> ConfigSettings;
+
 class DeviceConfig {
 public:
     DeviceConfig();
@@ -23,6 +25,16 @@ public:
     void setDeviceId(std::string deviceId);
     std::string getDeviceId();
 
+    void setStreamOpts(ConfigSettings opts);
+    ConfigSettings getStreamOpts();
+    void setStreamOpt(std::string key, std::string value);
+    std::string getStreamOpt(std::string key, std::string defaultValue);
+    
+    void setSettings(ConfigSettings settings);
+    ConfigSettings getSettings();
+    void setSetting(std::string key, std::string value);
+    std::string getSetting(std::string key, std::string defaultValue);
+    
     void save(DataNode *node);
     void load(DataNode *node);
 
@@ -32,6 +44,8 @@ private:
 
     std::atomic_int ppm;
     std::atomic_llong offset;
+    ConfigSettings streamOpts;
+    std::map<std::string, std::string> settings;
 };
 
 class AppConfig {

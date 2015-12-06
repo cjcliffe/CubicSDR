@@ -109,6 +109,16 @@ void SDRDevicesDialog::OnSelectionChanged( wxTreeEvent& event ) {
         
         if (dev->getRxChannel()) {
             args = dev->getRxChannel()->getStreamArgsInfo();
+            
+            DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
+            ConfigSettings devStreamOpts = devConfig->getStreamOpts();
+            if (devStreamOpts.size()) {
+                for (int j = 0, jMax = args.size(); j < jMax; j++) {
+                    if (devStreamOpts.find(args[j].key) != devStreamOpts.end()) {
+                        args[j].value = devStreamOpts[args[j].key];
+                    }
+                }
+            }
 
             if (args.size()) {
                 m_propertyGrid->Append(new wxPropertyCategory("Stream Settings"));
@@ -202,7 +212,10 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event ) {
             }
         }
         
-
+        AppConfig *cfg = wxGetApp().getConfig();
+        DeviceConfig *devConfig = cfg->getDevice(dev->getDeviceId());
+        devConfig->setSettings(settingArgs);
+        devConfig->setStreamOpts(streamArgs);
         wxGetApp().setDeviceArgs(settingArgs);
         wxGetApp().setStreamArgs(streamArgs);
         wxGetApp().setDevice(dev);

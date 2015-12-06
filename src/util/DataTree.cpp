@@ -356,6 +356,31 @@ DataElementGetNumericVectorDef(DATA_FLOAT_VECTOR, float, DATA_DOUBLE_VECTOR, DAT
 DataElementGetNumericVectorDef(DATA_DOUBLE_VECTOR, double, DATA_FLOAT_VECTOR, DATA_LONGDOUBLE_VECTOR);
 DataElementGetNumericVectorDef(DATA_LONGDOUBLE_VECTOR, long double, DATA_DOUBLE_VECTOR, DATA_FLOAT_VECTOR);
 
+std::string DataElement::toString() {
+    int dataType = getDataType();
+    std::string strValue = "";
+    
+    try {
+        if (dataType == DATA_STRING) {
+            get(strValue);
+        } else if (dataType == DATA_INT || dataType == DATA_LONG || dataType == DATA_LONGLONG) {
+            long long intSettingValue;
+            get(intSettingValue);
+            strValue = std::to_string(intSettingValue);
+        } else if (dataType == DATA_FLOAT || dataType == DATA_DOUBLE) {
+            double floatSettingValue;
+            get(floatSettingValue);
+            strValue = std::to_string(floatSettingValue);
+        } else {
+            std::cout << "Unhandled DataElement toString for type: " << dataType  << std::endl;
+        }
+    } catch (DataTypeMismatchException e) {
+        std::cout << "toString() DataTypeMismatch: " << dataType  << std::endl;
+    }
+    
+    return strValue;
+}
+
 
 long DataElement::getSerializedSize() {
     return sizeof(int) + sizeof(long) + data_size;

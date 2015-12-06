@@ -66,7 +66,10 @@ void SDRThread::init() {
     
     wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Initializing device."));
     device = SoapySDR::Device::make(args);
-    stream = device->setupStream(SOAPY_SDR_RX,"CF32", std::vector<size_t>(), combineArgs(devInfo->getStreamArgs(),streamArgs));
+    SoapySDR::Kwargs currentStreamArgs = combineArgs(devInfo->getStreamArgs(),streamArgs);
+    stream = device->setupStream(SOAPY_SDR_RX,"CF32", std::vector<size_t>(), currentStreamArgs);
+    deviceInfo.load()->setStreamArgs(currentStreamArgs);
+    deviceConfig.load()->setStreamOpts(currentStreamArgs);
     
     wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Activating stream."));
     device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
@@ -115,6 +118,17 @@ void SDRThread::init() {
         }
     }
     setting_value_changed.store(false);
+    
+    SoapySDR::ArgInfoList devSettings = deviceInfo.load()->getSettingsArgInfo();
+    if (devSettings.size()) {
+        for (int j = 0; j < settingsInfo.size(); j++) {
+            if (settings.find(settingsInfo[j].key) != settings.end()) {
+                devSettings[j].value = settings[devSettings[j].key];
+            }
+        }
+    }
+    deviceInfo.load()->setSettingsInfo(devSettings);
+
     setting_busy.unlock();
     
     wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_INITIALIZED, std::string("Device Initialized."));
@@ -404,6 +418,9 @@ void SDRThread::writeSetting(std::string name, std::string value) {
     settings[name] = value;
     settingChanged[name] = true;
     setting_value_changed.store(true);
+    if (deviceConfig.load() != nullptr) {
+        deviceConfig.load()->setSetting(name, value);
+    }
     setting_busy.unlock();
 }
 

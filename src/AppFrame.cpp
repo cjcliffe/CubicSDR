@@ -1238,25 +1238,7 @@ bool AppFrame::loadSession(std::string fileName) {
                 for (int msi = 0, numSettings = modemSettings->numChildren(); msi < numSettings; msi++) {
                     DataNode *settingNode = modemSettings->child(msi);
                     std::string keyName = settingNode->getName();
-                    std::string strSettingValue = "";
-                    
-                    int dataType = settingNode->element()->getDataType();
-                    
-                    try {
-                        if (dataType == DATA_STRING) {
-                            settingNode->element()->get(strSettingValue);
-                        } else if (dataType == DATA_INT || dataType == DATA_LONG || dataType == DATA_LONGLONG) {
-                            long long intSettingValue = *settingNode;
-                            strSettingValue = std::to_string(intSettingValue);
-                        } else if (dataType == DATA_FLOAT || dataType == DATA_DOUBLE) {
-                            double floatSettingValue = *settingNode;
-                            strSettingValue = std::to_string(floatSettingValue);
-                        } else {
-                            std::cout << "Unhandled setting data type: " << dataType  << std::endl;
-                        }
-                    } catch (DataTypeMismatchException e) {
-                        std::cout << "Setting data type mismatch: " << dataType  << std::endl;
-                    }
+                    std::string strSettingValue = settingNode->element()->toString();
                     
                     if (keyName != "" && strSettingValue != "") {
                         mSettings[keyName] = strSettingValue;

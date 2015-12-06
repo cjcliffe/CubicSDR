@@ -207,6 +207,7 @@ public:
     double getDouble() throw (DataTypeMismatchException)  { double d_get; get(d_get); return d_get; };
     long double getLongDouble() throw (DataTypeMismatchException)  { long double d_get; get(d_get); return d_get; };
     
+    std::string toString();
     
     /* serialize functions */
     long getSerializedSize();

@@ -47,6 +47,14 @@ void DeviceConfig::save(DataNode *node) {
     *node->newChild("id") = deviceId;
     *node->newChild("ppm") = (int)ppm;
     *node->newChild("offset") = offset;
+    DataNode *streamOptsNode = node->newChild("streamOpts");
+    for (ConfigSettings::const_iterator opt_i = streamOpts.begin(); opt_i != streamOpts.end(); opt_i++) {
+        *streamOptsNode->newChild(opt_i->first.c_str()) = opt_i->second;
+    }
+    DataNode *settingsNode = node->newChild("settings");
+    for (ConfigSettings::const_iterator set_i = settings.begin(); set_i != settings.end(); set_i++) {
+        *settingsNode->newChild(set_i->first.c_str()) = set_i->second;
+    }
     busy_lock.unlock();
 }
 
@@ -66,8 +74,72 @@ void DeviceConfig::load(DataNode *node) {
         setOffset(offsetValue);
         std::cout << "Loaded offset for device '" << deviceId << "' at " << offsetValue << "Hz" << std::endl;
     }
+    if (node->hasAnother("streamOpts")) {
+        DataNode *streamOptsNode = node->getNext("streamOpts");
+        for (int i = 0, iMax = streamOptsNode->numChildren(); i<iMax; i++) {
+            DataNode *streamOptNode = streamOptsNode->child(i);
+            std::string keyName = streamOptNode->getName();
+            std::string strSettingValue = streamOptNode->element()->toString();
+            
+            if (keyName != "" && strSettingValue != "") {
+                setStreamOpt(keyName, strSettingValue);
+            }
+        }
+    }
+    if (node->hasAnother("settings")) {
+        DataNode *settingsNode = node->getNext("settings");
+        for (int i = 0, iMax = settingsNode->numChildren(); i<iMax; i++) {
+            DataNode *settingNode = settingsNode->child(i);
+            std::string keyName = settingNode->getName();
+            std::string strSettingValue = settingNode->element()->toString();
+            
+            if (keyName != "" && strSettingValue != "") {
+                setSetting(keyName, strSettingValue);
+            }
+        }
+    }
     busy_lock.unlock();
 }
+
+void DeviceConfig::setStreamOpts(ConfigSettings opts) {
+    streamOpts = opts;
+}
+
+ConfigSettings DeviceConfig::getStreamOpts() {
+    return streamOpts;
+}
+
+void DeviceConfig::setStreamOpt(std::string key, std::string value) {
+    streamOpts[key] = value;
+}
+
+std::string DeviceConfig::getStreamOpt(std::string key, std::string defaultValue) {
+    if (streamOpts.find(key) == streamOpts.end()) {
+        return defaultValue;
+    }
+    
+    return streamOpts[key];
+}
+
+void DeviceConfig::setSettings(ConfigSettings settings) {
+    this->settings = settings;
+}
+
+void DeviceConfig::setSetting(std::string key, std::string value) {
+    this->settings[key] = value;
+}
+
+std::string DeviceConfig::getSetting(std::string key, std::string defaultValue) {
+    if (settings.find(key) == settings.end()) {
+        return defaultValue;
+    }
+    return settings[key];
+}
+
+ConfigSettings DeviceConfig::getSettings() {
+    return settings;
+}
+
 
 AppConfig::AppConfig() : configName("") {
     winX.store(0);
@@ -81,8 +153,6 @@ AppConfig::AppConfig() : configName("") {
     waterfallLinesPerSec.store(DEFAULT_WATERFALL_LPS);
     spectrumAvgSpeed.store(0.65f);
 }
-
-
 
 DeviceConfig *AppConfig::getDevice(std::string deviceId) {
 	if (deviceConfig.find(deviceId) == deviceConfig.end()) {
@@ -134,7 +204,6 @@ wxRect *AppConfig::getWindow() {
     }
     return r;
 }
-
 
 void AppConfig::setTheme(int themeId) {
     this->themeId.store(themeId);
