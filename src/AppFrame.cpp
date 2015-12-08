@@ -874,6 +874,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 #endif
             demodMuteButton->setSelection(demod->isMuted()?1:-1);
             modemPropertiesUpdated.store(true);
+            demodTuner->setHalfBand(dType=="USB" || dType=="LSB");
         }
         if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
             long long centerFreq = demod->getFrequency();
@@ -907,17 +908,20 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             // basic demodulators
             if (dSelection != "" && dSelection != demod->getDemodulatorType()) {
                 demod->setDemodulatorType(dSelection);
+                demodTuner->setHalfBand(dSelection=="USB" || dSelection=="LSB");
                 demodModeSelectorAdv->setSelection(-1);
             }
             // advanced demodulators
 			else if (dSelectionadv != "" && dSelectionadv != demod->getDemodulatorType()) {
 				demod->setDemodulatorType(dSelectionadv);
+                demodTuner->setHalfBand(false);
 				demodModeSelector->setSelection(-1);
             }
 #else
             // basic demodulators
             if (dSelection != "" && dSelection != demod->getDemodulatorType()) {
                 demod->setDemodulatorType(dSelection);
+                demodTuner->setHalfBand(dSelection=="USB" || dSelection=="LSB");
             }
 #endif
 

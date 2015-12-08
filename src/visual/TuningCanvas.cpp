@@ -31,7 +31,7 @@ EVT_KEY_UP(TuningCanvas::OnKeyUp)
 wxEND_EVENT_TABLE()
 
 TuningCanvas::TuningCanvas(wxWindow *parent, int *attribList) :
-        InteractiveCanvas(parent, attribList), dragAccum(0), uxDown(0), top(false), bottom(false), freq(-1), bw(-1), center(-1) {
+        InteractiveCanvas(parent, attribList), dragAccum(0), uxDown(0), top(false), bottom(false), freq(-1), bw(-1), center(-1), halfBand(false) {
 
     glContext = new TuningContext(this, &wxGetApp().GetContext(this));
 
@@ -72,6 +72,10 @@ bool TuningCanvas::changed() {
     }
     
     return false;
+}
+
+void TuningCanvas::setHalfBand(bool hb) {
+    halfBand = hb;
 }
 
 void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
@@ -146,7 +150,7 @@ void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
             glContext->DrawTunerDigitBox((int)log10(snap), 11, freqDP, freqW, RGBA4f(1.0,0.0,0.0));
         }
     }
-    glContext->DrawTuner(bw, 7, bwDP, bwW);
+    glContext->DrawTuner(halfBand?(bw/2):bw, 7, bwDP, bwW);
     glContext->DrawTuner(center, 11, centerDP, centerW);
 
     glContext->DrawEnd();
@@ -158,6 +162,10 @@ void TuningCanvas::StepTuner(ActiveState state, int exponent, bool up) {
     double exp = pow(10, exponent);
     long long amount = up?exp:-exp;
 
+    if (halfBand && exp == 1) {
+        amount *= 2;
+    }
+    
     DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
     if (state == TUNING_HOVER_FREQ && activeDemod) {
         long long freq = activeDemod->getFrequency();

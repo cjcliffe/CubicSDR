@@ -24,6 +24,8 @@ public:
     void setHelpTip(std::string tip);
     bool changed();
     
+    void setHalfBand(bool hb);
+    
 private:
     void OnPaint(wxPaintEvent& event);
     void OnIdle(wxIdleEvent &event);
@@ -68,6 +70,7 @@ private:
     int lastPPM;
 
     long long freq, bw, center;
+    bool halfBand;
     //
 wxDECLARE_EVENT_TABLE();
 };
