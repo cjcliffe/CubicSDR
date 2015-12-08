@@ -105,6 +105,10 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
         if (factories.empty()) {
             std::cout << "No factories found!" << std::endl;
         }
+        if ((factories.size() == 1) && factories.find("null") != factories.end()) {
+            std::cout << "Just 'null' factory found." << std::endl;
+            wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_FAILED, std::string("No modules available."));
+        }
         std::cout << std::endl;
         soapy_initialized = true;
     }
