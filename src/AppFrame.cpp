@@ -390,9 +390,9 @@ AppFrame::AppFrame() :
 
     sampleRateMenu = new wxMenu;
 
-    menuBar->Append(sampleRateMenu, wxT("&Input Bandwidth"));
+    menuBar->Append(sampleRateMenu, wxT("Sample &Rate"));
 
-    menuBar->Append(menu, wxT("Audio &Bandwidth"));
+    menuBar->Append(menu, wxT("Audio &Sample Rate"));
 
     SetMenuBar(menuBar);
 
@@ -545,7 +545,7 @@ void AppFrame::updateDeviceParams() {
         sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Check(true);
     }
    
-    menuBar->Replace(4, newSampleRateMenu, wxT("&Input Bandwidth"));
+    menuBar->Replace(4, newSampleRateMenu, wxT("Sample &Rate"));
     sampleRateMenu = newSampleRateMenu;
 
     if (!wxGetApp().getAGCMode()) {
@@ -762,7 +762,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
                                           + "min: " + std::to_string(rateLow) + " Hz"
                                           + ", max: " + std::to_string(rateHigh) + " Hz\n",
                                           "Sample Rate in Hz",
-                                          "Manual Bandwidth Entry",
+                                          "Manual Sample Rate Entry",
                                           wxGetApp().getSampleRate(),
                                           rateLow,
                                           rateHigh,
