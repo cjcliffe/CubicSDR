@@ -148,7 +148,7 @@ AppFrame::AppFrame() :
     scopeCanvas->setHelpTip("Audio Visuals, drag left/right to toggle Scope or Spectrum.");
     scopeCanvas->SetMinSize(wxSize(128,-1));
     demodScopeTray->Add(scopeCanvas, 8, wxEXPAND | wxALL, 0);
-    wxGetApp().getScopeProcessor()->setup(2048);
+    wxGetApp().getScopeProcessor()->setup(1024);
     wxGetApp().getScopeProcessor()->attachOutput(scopeCanvas->getInputQueue());
 
     demodScopeTray->AddSpacer(1);

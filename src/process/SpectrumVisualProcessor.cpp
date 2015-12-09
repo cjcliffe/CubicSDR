@@ -72,28 +72,29 @@ void SpectrumVisualProcessor::setup(int fftSize_in) {
     busy_run.lock();
 
     fftSize = fftSize_in;
-    desiredInputSize.store(fftSize);
+    fftSizeInternal = fftSize_in * SPECTRUM_VZM;
+    desiredInputSize.store(fftSizeInternal);
     
     if (fftwInput) {
         free(fftwInput);
     }
-    fftwInput = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex) * fftSize);
+    fftwInput = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex) * fftSizeInternal);
     if (fftInData) {
         free(fftInData);
     }
-    fftInData = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex) * fftSize);
+    fftInData = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex) * fftSizeInternal);
     if (fftLastData) {
         free(fftLastData);
     }
-    fftLastData = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex) * fftSize);
+    fftLastData = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex) * fftSizeInternal);
     if (fftwOutput) {
         free(fftwOutput);
     }
-    fftwOutput = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex) * fftSize);
+    fftwOutput = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex) * fftSizeInternal);
     if (fftw_plan) {
         fftwf_destroy_plan(fftw_plan);
     }
-    fftw_plan = fftwf_plan_dft_1d(fftSize, fftwInput, fftwOutput, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_plan = fftwf_plan_dft_1d(fftSizeInternal, fftwInput, fftwOutput, FFTW_FORWARD, FFTW_ESTIMATE);
     busy_run.unlock();
 }
 
@@ -131,7 +132,8 @@ void SpectrumVisualProcessor::process() {
         }
         
         unsigned int num_written;
-        
+        long resampleBw = iqData->sampleRate;
+
         if (is_view.load()) {
             if (!iqData->frequency || !iqData->sampleRate) {
                 iqData->decRefCount();
@@ -140,9 +142,14 @@ void SpectrumVisualProcessor::process() {
                 return;
             }
             
-            resamplerRatio = (double) (bandwidth) / (double) iqData->sampleRate;
+//            resamplerRatio = (double) (bandwidth) / (double) iqData->sampleRate;
+            while (resampleBw / SPECTRUM_VZM >= bandwidth) {
+                resampleBw /= SPECTRUM_VZM;
+            }
             
-            int desired_input_size = fftSize / resamplerRatio;
+            resamplerRatio = (double) (resampleBw) / (double) iqData->sampleRate;
+            
+            int desired_input_size = fftSizeInternal / resamplerRatio;
             
             this->desiredInputSize.store(desired_input_size);
             
@@ -176,7 +183,7 @@ void SpectrumVisualProcessor::process() {
                 shiftBuffer.assign(iqData->data.begin(), iqData->data.end());
             }
             
-            if (!resampler || bandwidth != lastBandwidth || lastInputBandwidth != iqData->sampleRate) {
+            if (!resampler || resampleBw != lastBandwidth || lastInputBandwidth != iqData->sampleRate) {
                 float As = 60.0f;
                 
                 if (resampler) {
@@ -184,7 +191,7 @@ void SpectrumVisualProcessor::process() {
                 }
                 resampler = msresamp_crcf_create(resamplerRatio, As);
                 
-                lastBandwidth = bandwidth;
+                lastBandwidth = resampleBw;
                 lastInputBandwidth = iqData->sampleRate;
             }
             
@@ -201,36 +208,36 @@ void SpectrumVisualProcessor::process() {
             
             msresamp_crcf_execute(resampler, &shiftBuffer[0], desired_input_size, &resampleBuffer[0], &num_written);
             
-            resampleBuffer.resize(fftSize);
+            resampleBuffer.resize(fftSizeInternal);
             
-            if (num_written < fftSize) {
+            if (num_written < fftSizeInternal) {
                 for (int i = 0; i < num_written; i++) {
                     fftInData[i][0] = resampleBuffer[i].real;
                     fftInData[i][1] = resampleBuffer[i].imag;
                 }
-                for (int i = num_written; i < fftSize; i++) {
+                for (int i = num_written; i < fftSizeInternal; i++) {
                     fftInData[i][0] = 0;
                     fftInData[i][1] = 0;
                 }
             } else {
-                for (int i = 0; i < fftSize; i++) {
+                for (int i = 0; i < fftSizeInternal; i++) {
                     fftInData[i][0] = resampleBuffer[i].real;
                     fftInData[i][1] = resampleBuffer[i].imag;
                 }
             }
         } else {
             num_written = data->size();
-            if (data->size() < fftSize) {
+            if (data->size() < fftSizeInternal) {
                 for (int i = 0, iMax = data->size(); i < iMax; i++) {
                     fftInData[i][0] = (*data)[i].real;
                     fftInData[i][1] = (*data)[i].imag;
                 }
-                for (int i = data->size(); i < fftSize; i++) {
+                for (int i = data->size(); i < fftSizeInternal; i++) {
                     fftInData[i][0] = 0;
                     fftInData[i][1] = 0;
                 }
             } else {
-                for (int i = 0; i < fftSize; i++) {
+                for (int i = 0; i < fftSizeInternal; i++) {
                     fftInData[i][0] = (*data)[i].real;
                     fftInData[i][1] = (*data)[i].imag;
                 }
@@ -239,24 +246,24 @@ void SpectrumVisualProcessor::process() {
         
         bool execute = false;
         
-        if (num_written >= fftSize) {
+        if (num_written >= fftSizeInternal) {
             execute = true;
-            memcpy(fftwInput, fftInData, fftSize * sizeof(fftwf_complex));
-            memcpy(fftLastData, fftwInput, fftSize * sizeof(fftwf_complex));
+            memcpy(fftwInput, fftInData, fftSizeInternal * sizeof(fftwf_complex));
+            memcpy(fftLastData, fftwInput, fftSizeInternal * sizeof(fftwf_complex));
             
         } else {
-            if (lastDataSize + num_written < fftSize) { // priming
-                unsigned int num_copy = fftSize - lastDataSize;
+            if (lastDataSize + num_written < fftSizeInternal) { // priming
+                unsigned int num_copy = fftSizeInternal - lastDataSize;
                 if (num_written > num_copy) {
                     num_copy = num_written;
                 }
                 memcpy(fftLastData, fftInData, num_copy * sizeof(fftwf_complex));
                 lastDataSize += num_copy;
             } else {
-                unsigned int num_last = (fftSize - num_written);
+                unsigned int num_last = (fftSizeInternal - num_written);
                 memcpy(fftwInput, fftLastData + (lastDataSize - num_last), num_last * sizeof(fftwf_complex));
                 memcpy(fftwInput + num_last, fftInData, num_written * sizeof(fftwf_complex));
-                memcpy(fftLastData, fftwInput, fftSize * sizeof(fftwf_complex));
+                memcpy(fftLastData, fftwInput, fftSizeInternal * sizeof(fftwf_complex));
                 execute = true;
             }
         }
@@ -266,26 +273,26 @@ void SpectrumVisualProcessor::process() {
             
             float fft_ceil = 0, fft_floor = 1;
             
-            if (fft_result.size() < fftSize) {
-                fft_result.resize(fftSize);
-                fft_result_ma.resize(fftSize);
-                fft_result_maa.resize(fftSize);
+            if (fft_result.size() < fftSizeInternal) {
+                fft_result.resize(fftSizeInternal);
+                fft_result_ma.resize(fftSizeInternal);
+                fft_result_maa.resize(fftSizeInternal);
             }
             
-            for (int i = 0, iMax = fftSize / 2; i < iMax; i++) {
+            for (int i = 0, iMax = fftSizeInternal / 2; i < iMax; i++) {
                 float a = fftwOutput[i][0];
                 float b = fftwOutput[i][1];
                 float c = sqrt(a * a + b * b);
                 
-                float x = fftwOutput[fftSize / 2 + i][0];
-                float y = fftwOutput[fftSize / 2 + i][1];
+                float x = fftwOutput[fftSizeInternal / 2 + i][0];
+                float y = fftwOutput[fftSizeInternal / 2 + i][1];
                 float z = sqrt(x * x + y * y);
                 
                 fft_result[i] = (z);
-                fft_result[fftSize / 2 + i] = (c);
+                fft_result[fftSizeInternal / 2 + i] = (c);
             }
             
-            for (int i = 0, iMax = fftSize; i < iMax; i++) {
+            for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
                 if (is_view.load()) {
                     fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * fft_average_rate;
                     fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * fft_average_rate;
@@ -310,12 +317,40 @@ void SpectrumVisualProcessor::process() {
             
             float sf = scaleFactor.load();
             
-            for (int i = 0, iMax = fftSize; i < iMax; i++) {
-                float v = (log10(fft_result_maa[i]+0.25 - (fft_floor_maa-0.75)) / log10((fft_ceil_maa+0.25) - (fft_floor_maa-0.75)));
-                output->spectrum_points[i * 2] = ((float) i / (float) iMax);
-                output->spectrum_points[i * 2 + 1] = v*sf;
+//            for (int i = 0, iMax = fftSize; i < iMax; i++) {
+//                float v = (log10(fft_result_maa[i*SPECTRUM_VZM]+0.25 - (fft_floor_maa-0.75)) / log10((fft_ceil_maa+0.25) - (fft_floor_maa-0.75)));
+//                output->spectrum_points[i * 2] = ((float) i / (float) iMax);
+//                output->spectrum_points[i * 2 + 1] = v*sf;
+//            }
+            double visualRatio = (double(bandwidth) / double(resampleBw));
+            int visualStart = fftSizeInternal/2 - floor((double(fftSizeInternal) * visualRatio) / 2.0);
+            double visualAccum = 0;
+            double acc = 0, accCount = 0;
+            
+            for (int x = 0, xMax = output->spectrum_points.size() / 2, i = 0; x < xMax; x++) {
+                visualAccum += visualRatio * double(SPECTRUM_VZM);
+//                while (visualAccum >= 1.0) {
+//                    visualAccum -= 1.0;
+//                    i++;
+//                }
+//                acc = (log10(fft_result_maa[visualStart+i]+0.25 - (fft_floor_maa-0.75)) / log10((fft_ceil_maa+0.25) - (fft_floor_maa-0.75)));
+//                output->spectrum_points[x * 2] = (float(x) / float(xMax));
+//                output->spectrum_points[x * 2 + 1] = acc*sf;
+
+                while (visualAccum >= 1.0) {
+                    acc += (log10(fft_result_maa[visualStart+i]+0.25 - (fft_floor_maa-0.75)) / log10((fft_ceil_maa+0.25) - (fft_floor_maa-0.75)));
+                    accCount += 1.0;
+                    visualAccum -= 1.0;
+                    i++;
+                }
+                if (accCount) {
+                    output->spectrum_points[x * 2] = ((float) x / (float) xMax);
+                    output->spectrum_points[x * 2 + 1] = (acc/accCount)*sf;
+                    acc = 0.0;
+                    accCount = 0.0;
+                }
             }
-                
+            
             if (hideDC.load()) { // DC-spike removal
                 long long freqMin = centerFreq-(bandwidth/2);
                 long long freqMax = centerFreq+(bandwidth/2);

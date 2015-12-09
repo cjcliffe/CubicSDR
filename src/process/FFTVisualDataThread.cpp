@@ -31,7 +31,7 @@ void FFTVisualDataThread::run() {
     fftDistrib.attachOutput(&fftQueue);
     wproc.setInput(&fftQueue);
     wproc.attachOutput(pipeFFTDataOut);
-    wproc.setup(2048);
+    wproc.setup(DEFAULT_FFT_SIZE);
 
     std::cout << "FFT visual data thread started." << std::endl;
     
@@ -45,7 +45,7 @@ void FFTVisualDataThread::run() {
         if (fftSize) {
             fftDistrib.setFFTSize(fftSize);
         } else {
-            fftDistrib.setFFTSize(DEFAULT_FFT_SIZE);
+            fftDistrib.setFFTSize(DEFAULT_FFT_SIZE * SPECTRUM_VZM);
         }
     
         if (lpsChanged.load()) {

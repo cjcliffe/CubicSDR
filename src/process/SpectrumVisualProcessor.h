@@ -5,6 +5,8 @@
 #include "fftw3.h"
 #include <cmath>
 
+#define SPECTRUM_VZM 2
+
 class SpectrumVisualData : public ReferenceCounter {
 public:
     std::vector<float> spectrum_points;
@@ -44,6 +46,7 @@ protected:
     ReBuffer<SpectrumVisualData> outputBuffers;
     std::atomic_bool is_view;
     std::atomic_int fftSize;
+    std::atomic_int fftSizeInternal;
     std::atomic_llong centerFreq;
     std::atomic_long bandwidth;
     
