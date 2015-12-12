@@ -134,6 +134,13 @@ void SpectrumVisualProcessor::process() {
         unsigned int num_written;
         long resampleBw = iqData->sampleRate;
 
+        if (bandwidth > resampleBw) {
+            iqData->decRefCount();
+            iqData->busy_rw.unlock();
+            busy_run.unlock();
+            return;
+        }
+        
         if (is_view.load()) {
             if (!iqData->frequency || !iqData->sampleRate) {
                 iqData->decRefCount();
@@ -189,6 +196,7 @@ void SpectrumVisualProcessor::process() {
                 if (resampler) {
                     msresamp_crcf_destroy(resampler);
                 }
+                
                 resampler = msresamp_crcf_create(resamplerRatio, As);
                 
                 lastBandwidth = resampleBw;
@@ -323,11 +331,11 @@ void SpectrumVisualProcessor::process() {
 //                output->spectrum_points[i * 2 + 1] = v*sf;
 //            }
             double visualRatio = (double(bandwidth) / double(resampleBw));
-            int visualStart = fftSizeInternal/2 - floor((double(fftSizeInternal) * visualRatio) / 2.0);
+            double visualStart = (double(fftSizeInternal) / 2.0) - (double(fftSizeInternal) * (visualRatio / 2.0));
             double visualAccum = 0;
-            double acc = 0, accCount = 0;
+            double acc = 0, accCount = 0, i = 0;
             
-            for (int x = 0, xMax = output->spectrum_points.size() / 2, i = 0; x < xMax; x++) {
+            for (int x = 0, xMax = output->spectrum_points.size() / 2; x < xMax; x++) {
                 visualAccum += visualRatio * double(SPECTRUM_VZM);
 //                while (visualAccum >= 1.0) {
 //                    visualAccum -= 1.0;
@@ -338,14 +346,21 @@ void SpectrumVisualProcessor::process() {
 //                output->spectrum_points[x * 2 + 1] = acc*sf;
 
                 while (visualAccum >= 1.0) {
-                    acc += (log10(fft_result_maa[visualStart+i]+0.25 - (fft_floor_maa-0.75)) / log10((fft_ceil_maa+0.25) - (fft_floor_maa-0.75)));
+                    int idx = round(visualStart+i);
+                    if (idx < 0) {
+                        idx = 0;
+                    }
+                    if (idx > fftSizeInternal) {
+                        idx = fftSizeInternal;
+                    }
+                    acc += fft_result_maa[idx];
                     accCount += 1.0;
                     visualAccum -= 1.0;
                     i++;
                 }
                 if (accCount) {
                     output->spectrum_points[x * 2] = ((float) x / (float) xMax);
-                    output->spectrum_points[x * 2 + 1] = (acc/accCount)*sf;
+                    output->spectrum_points[x * 2 + 1] = ((log10((acc/accCount)+0.25 - (fft_floor_maa-0.75)) / log10((fft_ceil_maa+0.25) - (fft_floor_maa-0.75))))*sf;
                     acc = 0.0;
                     accCount = 0.0;
                 }
@@ -391,6 +406,8 @@ void SpectrumVisualProcessor::process() {
             output->fft_floor = fft_floor_maa;
         }
         
+        output->centerFreq = centerFreq;
+        output->bandwidth = bandwidth;
         distribute(output);
     }
  

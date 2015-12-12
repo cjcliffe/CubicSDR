@@ -11,6 +11,8 @@ class SpectrumVisualData : public ReferenceCounter {
 public:
     std::vector<float> spectrum_points;
     double fft_ceiling, fft_floor;
+    long long centerFreq;
+    int bandwidth;
 };
 
 typedef ThreadQueue<SpectrumVisualData *> SpectrumVisualDataQueue;
