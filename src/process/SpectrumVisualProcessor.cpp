@@ -145,12 +145,12 @@ void SpectrumVisualProcessor::process() {
         bool newResampler = false;
         int bwDiff;
         
-        if (bandwidth > resampleBw) {
-            iqData->decRefCount();
-            iqData->busy_rw.unlock();
-            busy_run.unlock();
-            return;
-        }
+//        if (bandwidth > resampleBw) {
+//            iqData->decRefCount();
+//            iqData->busy_rw.unlock();
+//            busy_run.unlock();
+//            return;
+//        }
         
         if (is_view.load()) {
             if (!iqData->frequency || !iqData->sampleRate) {
@@ -331,7 +331,7 @@ void SpectrumVisualProcessor::process() {
                     for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
                         if (i < fftSizeInternal/4) {
                             fft_result_temp[i] = 0;
-                        } else if (i > fftSizeInternal - fftSizeInternal/4) {
+                        } else if (i >= fftSizeInternal - fftSizeInternal/4) {
                             fft_result_temp[i] = 0;
                         } else {
                             fft_result_temp[i] = fft_result_ma[(i-fftSizeInternal/4)*2];
@@ -342,7 +342,7 @@ void SpectrumVisualProcessor::process() {
                         
                         if (i < fftSizeInternal/4) {
                             fft_result_temp[i] = 0;
-                        } else if (i > fftSizeInternal - fftSizeInternal/4) {
+                        } else if (i >= fftSizeInternal - fftSizeInternal/4) {
                             fft_result_temp[i] = 0;
                         } else {
                             fft_result_temp[i] = fft_result_maa[(i-fftSizeInternal/4)*2];
