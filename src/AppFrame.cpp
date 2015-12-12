@@ -969,17 +969,22 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         // basic demodulators
         if (dSelection != "" && dSelection != mgr->getLastDemodulatorType()) {
             mgr->setLastDemodulatorType(dSelection);
+            mgr->setLastBandwidth(Modem::getModemDefaultSampleRate(dSelection));
+            demodTuner->setHalfBand(dSelection=="USB" || dSelection=="LSB");
             demodModeSelectorAdv->setSelection(-1);
         }
         // advanced demodulators
         else if(dSelectionadv != "" && dSelectionadv != mgr->getLastDemodulatorType()) {
             mgr->setLastDemodulatorType(dSelectionadv);
+            mgr->setLastBandwidth(Modem::getModemDefaultSampleRate(dSelectionadv));
+            demodTuner->setHalfBand(false);
             demodModeSelector->setSelection(-1);
         }
 #else
         // basic demodulators
         if (dSelection != "" && dSelection != mgr->getLastDemodulatorType()) {
             mgr->setLastDemodulatorType(dSelection);
+            demodTuner->setHalfBand(dSelection=="USB" || dSelection=="LSB");
         }
 #endif
         demodGainMeter->setLevel(mgr->getLastGain());
