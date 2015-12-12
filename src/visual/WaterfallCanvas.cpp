@@ -182,9 +182,8 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
                 bw = minBandwidth;
             }
             if (mouseInView) {
-                long long mfreqA = getFrequencyAt(mpos);
-                setBandwidth(bw);
-                long long mfreqB = getFrequencyAt(mpos);
+                long long mfreqA = getFrequencyAt(mpos, centerFreq, getBandwidth());
+                long long mfreqB = getFrequencyAt(mpos, centerFreq, bw);
                 centerFreq += mfreqA - mfreqB;
             }
             
@@ -198,12 +197,14 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
                     if (spectrumCanvas) {
                         spectrumCanvas->disableView();
                     }
+                    bw = wxGetApp().getSampleRate();
+                    centerFreq = wxGetApp().getFrequency();
                 } else {
                     if (mouseInView) {
-                        long long mfreqA = getFrequencyAt(mpos);
-                        setBandwidth(bw);
-                        long long mfreqB = getFrequencyAt(mpos);
+                        long long mfreqA = getFrequencyAt(mpos, centerFreq, getBandwidth());
+                        long long mfreqB = getFrequencyAt(mpos, centerFreq, bw);
                         centerFreq += mfreqA - mfreqB;
+                        setBandwidth(bw);
                     } else {
                         setBandwidth(bw);
                     }
@@ -822,11 +823,11 @@ void WaterfallCanvas::updateCenterFrequency(long long freq) {
         long long minFreq = wxGetApp().getFrequency()-(wxGetApp().getSampleRate()/2);
         long long maxFreq = wxGetApp().getFrequency()+(wxGetApp().getSampleRate()/2);
         
-        if (freq < minFreq) {
-            wxGetApp().setFrequency(freq+(wxGetApp().getSampleRate()/2));
+        if (freq - bandwidth / 2 < minFreq) {
+            wxGetApp().setFrequency(wxGetApp().getFrequency() - (minFreq - (freq - bandwidth/2)));
         }
-        if (freq > maxFreq) {
-            wxGetApp().setFrequency(freq-(wxGetApp().getSampleRate()/2));
+        if (freq + bandwidth / 2 > maxFreq) {
+            wxGetApp().setFrequency(wxGetApp().getFrequency() + ((freq + bandwidth/2) - maxFreq));
         }
     } else {
         if (spectrumCanvas) {

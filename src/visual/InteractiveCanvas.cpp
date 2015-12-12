@@ -53,6 +53,12 @@ long long InteractiveCanvas::getFrequencyAt(float x) {
     return freq;
 }
 
+long long InteractiveCanvas::getFrequencyAt(float x, long long iqCenterFreq, long long iqBandwidth) {
+    long long freq = iqCenterFreq - (long long)(0.5 * (long double) iqBandwidth) + ((long double) x * (long double) iqBandwidth);
+    
+    return freq;
+}
+
 void InteractiveCanvas::setCenterFrequency(long long center_freq_in) {
     centerFreq = center_freq_in;
 }
