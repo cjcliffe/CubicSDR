@@ -34,6 +34,15 @@ void SpectrumVisualProcessor::setView(bool bView) {
     busy_run.unlock();
 }
 
+void SpectrumVisualProcessor::setView(bool bView, long long centerFreq_in, long bandwidth_in) {
+    busy_run.lock();
+    is_view.store(bView);
+    bandwidth.store(bandwidth_in);
+    centerFreq.store(centerFreq_in);
+    busy_run.unlock();
+}
+
+
 void SpectrumVisualProcessor::setFFTAverageRate(float fftAverageRate) {
     busy_run.lock();
     this->fft_average_rate.store(fftAverageRate);
@@ -133,7 +142,9 @@ void SpectrumVisualProcessor::process() {
         
         unsigned int num_written;
         long resampleBw = iqData->sampleRate;
-
+        bool newResampler = false;
+        int bwDiff;
+        
         if (bandwidth > resampleBw) {
             iqData->decRefCount();
             iqData->busy_rw.unlock();
@@ -199,8 +210,10 @@ void SpectrumVisualProcessor::process() {
                 
                 resampler = msresamp_crcf_create(resamplerRatio, As);
                 
+                bwDiff = resampleBw-lastBandwidth;
                 lastBandwidth = resampleBw;
                 lastInputBandwidth = iqData->sampleRate;
+                newResampler = true;
             }
             
             
@@ -285,6 +298,7 @@ void SpectrumVisualProcessor::process() {
                 fft_result.resize(fftSizeInternal);
                 fft_result_ma.resize(fftSizeInternal);
                 fft_result_maa.resize(fftSizeInternal);
+                fft_result_temp.resize(fftSizeInternal);
             }
             
             for (int i = 0, iMax = fftSizeInternal / 2; i < iMax; i++) {
@@ -300,14 +314,49 @@ void SpectrumVisualProcessor::process() {
                 fft_result[fftSizeInternal / 2 + i] = (c);
             }
             
-            for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
-                if (is_view.load()) {
-                    fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * fft_average_rate;
-                    fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * fft_average_rate;
+            if (newResampler) {
+                if (bwDiff < 0) {
+                    for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
+                        fft_result_temp[i] = fft_result_ma[(fftSizeInternal/4) + (i/2)];
+                    }
+                    for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
+                        fft_result_ma[i] = fft_result_temp[i];
+                        
+                        fft_result_temp[i] = fft_result_maa[(fftSizeInternal/4) + (i/2)];
+                    }
+                    for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
+                        fft_result_maa[i] = fft_result_temp[i];
+                    }
                 } else {
-                    fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * fft_average_rate;
-                    fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * fft_average_rate;
+                    for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
+                        if (i < fftSizeInternal/4) {
+                            fft_result_temp[i] = 0;
+                        } else if (i > fftSizeInternal - fftSizeInternal/4) {
+                            fft_result_temp[i] = 0;
+                        } else {
+                            fft_result_temp[i] = fft_result_ma[(i-fftSizeInternal/4)*2];
+                        }
+                    }
+                    for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
+                        fft_result_ma[i] = fft_result_temp[i];
+                        
+                        if (i < fftSizeInternal/4) {
+                            fft_result_temp[i] = 0;
+                        } else if (i > fftSizeInternal - fftSizeInternal/4) {
+                            fft_result_temp[i] = 0;
+                        } else {
+                            fft_result_temp[i] = fft_result_maa[(i-fftSizeInternal/4)*2];
+                        }
+                    }
+                    for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
+                        fft_result_maa[i] = fft_result_temp[i];
+                    }
                 }
+            }
+            
+            for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
+                fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * fft_average_rate;
+                fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * fft_average_rate;
                 
                 if (fft_result_maa[i] > fft_ceil) {
                     fft_ceil = fft_result_maa[i];

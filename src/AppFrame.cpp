@@ -1050,15 +1050,9 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         GetStatusBar()->SetStatusText(wxString::Format(wxT("Spectrum averaging speed changed to %0.2f%%."),val*100.0));
     }
     
-    proc->setView(waterfallCanvas->getViewState());
-    proc->setBandwidth(waterfallCanvas->getBandwidth());
-    proc->setCenterFrequency(waterfallCanvas->getCenterFrequency());
-    
     SpectrumVisualProcessor *dproc = wxGetApp().getDemodSpectrumProcessor();
     
-    dproc->setView(demodWaterfallCanvas->getViewState());
-    dproc->setBandwidth(demodWaterfallCanvas->getBandwidth());
-    dproc->setCenterFrequency(demodWaterfallCanvas->getCenterFrequency());
+    dproc->setView(demodWaterfallCanvas->getViewState(), demodWaterfallCanvas->getCenterFrequency(),demodWaterfallCanvas->getBandwidth());
 
     SpectrumVisualProcessor *wproc = waterfallDataThread->getProcessor();
     
@@ -1070,10 +1064,10 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         GetStatusBar()->SetStatusText(wxString::Format(wxT("Waterfall max speed changed to %d lines per second."),(int)ceil(val*val)));
     }
 
-    wproc->setView(waterfallCanvas->getViewState());
-    wproc->setBandwidth(waterfallCanvas->getBandwidth());
-    wproc->setCenterFrequency(waterfallCanvas->getCenterFrequency());
+    wproc->setView(waterfallCanvas->getViewState(), waterfallCanvas->getCenterFrequency(), waterfallCanvas->getBandwidth());
     wxGetApp().getSDRPostThread()->setIQVisualRange(waterfallCanvas->getCenterFrequency(), waterfallCanvas->getBandwidth());
+    
+    proc->setView(wproc->isView(), wproc->getCenterFrequency(), wproc->getBandwidth());
     
     demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
     

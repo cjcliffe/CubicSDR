@@ -24,6 +24,7 @@ public:
     
     bool isView();
     void setView(bool bView);
+    void setView(bool bView, long long centerFreq_in, long bandwidth_in);
     
     void setFFTAverageRate(float fftAverageRate);
     float getFFTAverageRate();
@@ -67,6 +68,7 @@ private:
     std::vector<double> fft_result;
     std::vector<double> fft_result_ma;
     std::vector<double> fft_result_maa;
+    std::vector<double> fft_result_temp;
     
     msresamp_crcf resampler;
     double resamplerRatio;
