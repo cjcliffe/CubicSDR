@@ -56,6 +56,7 @@ protected:
 private:
     long lastInputBandwidth;
     long lastBandwidth;
+    bool lastView;
     
     fftwf_complex *fftwInput, *fftwOutput, *fftInData, *fftLastData;
     unsigned int lastDataSize;

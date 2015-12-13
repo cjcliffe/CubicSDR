@@ -18,6 +18,7 @@ SpectrumVisualProcessor::SpectrumVisualProcessor() : lastInputBandwidth(0), last
     desiredInputSize.store(0);
     fft_average_rate = 0.65;
     scaleFactor.store(1.0);
+    lastView = false;
 }
 
 SpectrumVisualProcessor::~SpectrumVisualProcessor() {
@@ -334,7 +335,7 @@ void SpectrumVisualProcessor::process() {
                 fft_result[fftSizeInternal / 2 + i] = (c);
             }
             
-            if (newResampler) {
+            if (newResampler && lastView) {
                 if (bwDiff < 0) {
                     for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
                         fft_result_temp[i] = fft_result_ma[(fftSizeInternal/4) + (i/2)];
@@ -350,9 +351,9 @@ void SpectrumVisualProcessor::process() {
                 } else {
                     for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
                         if (i < fftSizeInternal/4) {
-                            fft_result_temp[i] = 0;
+                            fft_result_temp[i] = fft_result_ma[fftSizeInternal/4];
                         } else if (i >= fftSizeInternal - fftSizeInternal/4) {
-                            fft_result_temp[i] = 0;
+                            fft_result_temp[i] = fft_result_ma[fftSizeInternal - fftSizeInternal/4-1];
                         } else {
                             fft_result_temp[i] = fft_result_ma[(i-fftSizeInternal/4)*2];
                         }
@@ -361,9 +362,9 @@ void SpectrumVisualProcessor::process() {
                         fft_result_ma[i] = fft_result_temp[i];
                         
                         if (i < fftSizeInternal/4) {
-                            fft_result_temp[i] = 0;
+                            fft_result_temp[i] = fft_result_maa[fftSizeInternal/4];
                         } else if (i >= fftSizeInternal - fftSizeInternal/4) {
-                            fft_result_temp[i] = 0;
+                            fft_result_temp[i] = fft_result_maa[fftSizeInternal - fftSizeInternal/4-1];
                         } else {
                             fft_result_temp[i] = fft_result_maa[(i-fftSizeInternal/4)*2];
                         }
@@ -483,6 +484,8 @@ void SpectrumVisualProcessor::process() {
     iqData->decRefCount();
     iqData->busy_rw.unlock();
     busy_run.unlock();
+    
+    lastView = is_view.load();
 }
 
 
