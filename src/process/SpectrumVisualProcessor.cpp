@@ -179,9 +179,27 @@ void SpectrumVisualProcessor::process() {
             if (centerFreq != iqData->frequency) {
                 if ((centerFreq - iqData->frequency) != shiftFrequency || lastInputBandwidth != iqData->sampleRate) {
                     if (abs(iqData->frequency - centerFreq) < (wxGetApp().getSampleRate() / 2)) {
+                        long lastShiftFrequency = shiftFrequency;
                         shiftFrequency = centerFreq - iqData->frequency;
-                        nco_crcf_reset(freqShifter);
                         nco_crcf_set_frequency(freqShifter, (2.0 * M_PI) * (((double) abs(shiftFrequency)) / ((double) iqData->sampleRate)));
+                        
+                        if (is_view.load()) {
+                            long freqDiff = shiftFrequency - lastShiftFrequency;
+                            
+                            double binPerHz = double(bandwidth) / double(fftSizeInternal);
+                            
+                            int numShift = round(double(abs(freqDiff)) / binPerHz);
+                            
+                            if (numShift < fftSizeInternal/2) {
+                                if (freqDiff > 0) {
+                                    memmove(&fft_result_ma[0], &fft_result_ma[numShift], (fftSizeInternal-numShift) * sizeof(double));
+                                    memmove(&fft_result_maa[0], &fft_result_maa[numShift], (fftSizeInternal-numShift) * sizeof(double));
+                                } else {
+                                    memmove(&fft_result_ma[numShift], &fft_result_ma[0], (fftSizeInternal-numShift) * sizeof(double));
+                                    memmove(&fft_result_maa[numShift], &fft_result_maa[0], (fftSizeInternal-numShift) * sizeof(double));
+                                }
+                            }
+                        }
                     }
                 }
                 
