@@ -12,7 +12,8 @@ public:
     ~InteractiveCanvas();
 
     long long getFrequencyAt(float x);
-
+    long long getFrequencyAt(float x, long long iqCenterFreq, long long iqBandwidth);
+    
     virtual void setView(long long center_freq_in, int bandwidth_in);
     virtual void disableView();
     bool getViewState();

@@ -148,7 +148,7 @@ AppFrame::AppFrame() :
     scopeCanvas->setHelpTip("Audio Visuals, drag left/right to toggle Scope or Spectrum.");
     scopeCanvas->SetMinSize(wxSize(128,-1));
     demodScopeTray->Add(scopeCanvas, 8, wxEXPAND | wxALL, 0);
-    wxGetApp().getScopeProcessor()->setup(2048);
+    wxGetApp().getScopeProcessor()->setup(1024);
     wxGetApp().getScopeProcessor()->attachOutput(scopeCanvas->getInputQueue());
 
     demodScopeTray->AddSpacer(1);
@@ -969,17 +969,22 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         // basic demodulators
         if (dSelection != "" && dSelection != mgr->getLastDemodulatorType()) {
             mgr->setLastDemodulatorType(dSelection);
+            mgr->setLastBandwidth(Modem::getModemDefaultSampleRate(dSelection));
+            demodTuner->setHalfBand(dSelection=="USB" || dSelection=="LSB");
             demodModeSelectorAdv->setSelection(-1);
         }
         // advanced demodulators
         else if(dSelectionadv != "" && dSelectionadv != mgr->getLastDemodulatorType()) {
             mgr->setLastDemodulatorType(dSelectionadv);
+            mgr->setLastBandwidth(Modem::getModemDefaultSampleRate(dSelectionadv));
+            demodTuner->setHalfBand(false);
             demodModeSelector->setSelection(-1);
         }
 #else
         // basic demodulators
         if (dSelection != "" && dSelection != mgr->getLastDemodulatorType()) {
             mgr->setLastDemodulatorType(dSelection);
+            demodTuner->setHalfBand(dSelection=="USB" || dSelection=="LSB");
         }
 #endif
         demodGainMeter->setLevel(mgr->getLastGain());
@@ -1045,15 +1050,9 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         GetStatusBar()->SetStatusText(wxString::Format(wxT("Spectrum averaging speed changed to %0.2f%%."),val*100.0));
     }
     
-    proc->setView(waterfallCanvas->getViewState());
-    proc->setBandwidth(waterfallCanvas->getBandwidth());
-    proc->setCenterFrequency(waterfallCanvas->getCenterFrequency());
-    
     SpectrumVisualProcessor *dproc = wxGetApp().getDemodSpectrumProcessor();
     
-    dproc->setView(demodWaterfallCanvas->getViewState());
-    dproc->setBandwidth(demodWaterfallCanvas->getBandwidth());
-    dproc->setCenterFrequency(demodWaterfallCanvas->getCenterFrequency());
+    dproc->setView(demodWaterfallCanvas->getViewState(), demodWaterfallCanvas->getCenterFrequency(),demodWaterfallCanvas->getBandwidth());
 
     SpectrumVisualProcessor *wproc = waterfallDataThread->getProcessor();
     
@@ -1065,10 +1064,10 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         GetStatusBar()->SetStatusText(wxString::Format(wxT("Waterfall max speed changed to %d lines per second."),(int)ceil(val*val)));
     }
 
-    wproc->setView(waterfallCanvas->getViewState());
-    wproc->setBandwidth(waterfallCanvas->getBandwidth());
-    wproc->setCenterFrequency(waterfallCanvas->getCenterFrequency());
+    wproc->setView(waterfallCanvas->getViewState(), waterfallCanvas->getCenterFrequency(), waterfallCanvas->getBandwidth());
     wxGetApp().getSDRPostThread()->setIQVisualRange(waterfallCanvas->getCenterFrequency(), waterfallCanvas->getBandwidth());
+    
+    proc->setView(wproc->isView(), wproc->getCenterFrequency(), wproc->getBandwidth());
     
     demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
     

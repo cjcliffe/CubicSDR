@@ -5,10 +5,14 @@
 #include "fftw3.h"
 #include <cmath>
 
+#define SPECTRUM_VZM 2
+
 class SpectrumVisualData : public ReferenceCounter {
 public:
     std::vector<float> spectrum_points;
     double fft_ceiling, fft_floor;
+    long long centerFreq;
+    int bandwidth;
 };
 
 typedef ThreadQueue<SpectrumVisualData *> SpectrumVisualDataQueue;
@@ -20,6 +24,7 @@ public:
     
     bool isView();
     void setView(bool bView);
+    void setView(bool bView, long long centerFreq_in, long bandwidth_in);
     
     void setFFTAverageRate(float fftAverageRate);
     float getFFTAverageRate();
@@ -44,12 +49,14 @@ protected:
     ReBuffer<SpectrumVisualData> outputBuffers;
     std::atomic_bool is_view;
     std::atomic_int fftSize;
+    std::atomic_int fftSizeInternal;
     std::atomic_llong centerFreq;
     std::atomic_long bandwidth;
     
 private:
     long lastInputBandwidth;
     long lastBandwidth;
+    bool lastView;
     
     fftwf_complex *fftwInput, *fftwOutput, *fftInData, *fftLastData;
     unsigned int lastDataSize;
@@ -62,6 +69,7 @@ private:
     std::vector<double> fft_result;
     std::vector<double> fft_result_ma;
     std::vector<double> fft_result_maa;
+    std::vector<double> fft_result_temp;
     
     msresamp_crcf resampler;
     double resamplerRatio;

@@ -27,11 +27,12 @@ void FFTVisualDataThread::run() {
     DemodulatorThreadInputQueue *pipeIQDataIn = (DemodulatorThreadInputQueue *)getInputQueue("IQDataInput");
     SpectrumVisualDataQueue *pipeFFTDataOut = (SpectrumVisualDataQueue *)getOutputQueue("FFTDataOutput");
     
+    pipeFFTDataOut->set_max_num_items(512);
     fftDistrib.setInput(pipeIQDataIn);
     fftDistrib.attachOutput(&fftQueue);
     wproc.setInput(&fftQueue);
     wproc.attachOutput(pipeFFTDataOut);
-    wproc.setup(2048);
+    wproc.setup(DEFAULT_FFT_SIZE);
 
     std::cout << "FFT visual data thread started." << std::endl;
     
@@ -45,7 +46,7 @@ void FFTVisualDataThread::run() {
         if (fftSize) {
             fftDistrib.setFFTSize(fftSize);
         } else {
-            fftDistrib.setFFTSize(DEFAULT_FFT_SIZE);
+            fftDistrib.setFFTSize(DEFAULT_FFT_SIZE * SPECTRUM_VZM);
         }
     
         if (lpsChanged.load()) {
