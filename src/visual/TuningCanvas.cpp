@@ -162,7 +162,7 @@ void TuningCanvas::StepTuner(ActiveState state, int exponent, bool up) {
     double exp = pow(10, exponent);
     long long amount = up?exp:-exp;
 
-    if (halfBand && exp == 1) {
+    if (halfBand) {
         amount *= 2;
     }
     

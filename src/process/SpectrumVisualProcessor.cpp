@@ -186,17 +186,19 @@ void SpectrumVisualProcessor::process() {
                         if (is_view.load()) {
                             long freqDiff = shiftFrequency - lastShiftFrequency;
                             
-                            double binPerHz = double(bandwidth) / double(fftSizeInternal);
-                            
-                            int numShift = round(double(abs(freqDiff)) / binPerHz);
-                            
-                            if (numShift < fftSizeInternal/2) {
-                                if (freqDiff > 0) {
-                                    memmove(&fft_result_ma[0], &fft_result_ma[numShift], (fftSizeInternal-numShift) * sizeof(double));
-                                    memmove(&fft_result_maa[0], &fft_result_maa[numShift], (fftSizeInternal-numShift) * sizeof(double));
-                                } else {
-                                    memmove(&fft_result_ma[numShift], &fft_result_ma[0], (fftSizeInternal-numShift) * sizeof(double));
-                                    memmove(&fft_result_maa[numShift], &fft_result_maa[0], (fftSizeInternal-numShift) * sizeof(double));
+                            if (lastBandwidth!=0) {
+                                double binPerHz = double(lastBandwidth) / double(fftSizeInternal);
+                                
+                                int numShift = floor(double(abs(freqDiff)) / binPerHz);
+                                
+                                if (numShift < fftSizeInternal/2 && numShift) {
+                                    if (freqDiff > 0) {
+                                        memmove(&fft_result_ma[0], &fft_result_ma[numShift], (fftSizeInternal-numShift) * sizeof(double));
+                                        memmove(&fft_result_maa[0], &fft_result_maa[numShift], (fftSizeInternal-numShift) * sizeof(double));
+                                    } else {
+                                        memmove(&fft_result_ma[numShift], &fft_result_ma[0], (fftSizeInternal-numShift) * sizeof(double));
+                                        memmove(&fft_result_maa[numShift], &fft_result_maa[0], (fftSizeInternal-numShift) * sizeof(double));
+                                    }
                                 }
                             }
                         }
