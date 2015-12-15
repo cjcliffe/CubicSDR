@@ -76,6 +76,7 @@ bool TuningCanvas::changed() {
 
 void TuningCanvas::setHalfBand(bool hb) {
     halfBand = hb;
+	Refresh();
 }
 
 void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
