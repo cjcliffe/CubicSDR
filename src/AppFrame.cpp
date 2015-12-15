@@ -984,6 +984,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         // basic demodulators
         if (dSelection != "" && dSelection != mgr->getLastDemodulatorType()) {
             mgr->setLastDemodulatorType(dSelection);
+			mgr->setLastBandwidth(Modem::getModemDefaultSampleRate(dSelection));
             demodTuner->setHalfBand(dSelection=="USB" || dSelection=="LSB");
         }
 #endif

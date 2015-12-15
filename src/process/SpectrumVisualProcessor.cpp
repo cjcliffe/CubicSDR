@@ -404,7 +404,8 @@ void SpectrumVisualProcessor::process() {
             double visualStart = (double(fftSizeInternal) / 2.0) - (double(fftSizeInternal) * (visualRatio / 2.0));
             double visualAccum = 0;
             double acc = 0, accCount = 0, i = 0;
-            
+   
+
             for (int x = 0, xMax = output->spectrum_points.size() / 2; x < xMax; x++) {
                 visualAccum += visualRatio * double(SPECTRUM_VZM);
 //                while (visualAccum >= 1.0) {
@@ -420,8 +421,8 @@ void SpectrumVisualProcessor::process() {
                     if (idx < 0) {
                         idx = 0;
                     }
-                    if (idx > fftSizeInternal) {
-                        idx = fftSizeInternal;
+                    if (idx > fftSizeInternal-1) {
+                        idx = fftSizeInternal-1;
                     }
                     acc += fft_result_maa[idx];
                     accCount += 1.0;
