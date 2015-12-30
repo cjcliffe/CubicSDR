@@ -442,7 +442,11 @@ void CubicSDR::setSampleRate(long long rate_in) {
     sdrThread->setSampleRate(sampleRate);
     setFrequency(frequency);
 
-    if (rate_in <= CHANNELIZER_RATE_MAX) {
+    if (rate_in <= CHANNELIZER_RATE_MAX / 2) {
+        appframe->setMainWaterfallFFTSize(512);
+        appframe->getWaterfallDataThread()->getProcessor()->setHideDC(false);
+        spectrumVisualThread->getProcessor()->setHideDC(false);
+    } else if (rate_in <= CHANNELIZER_RATE_MAX) {
         appframe->setMainWaterfallFFTSize(1024);
         appframe->getWaterfallDataThread()->getProcessor()->setHideDC(false);
         spectrumVisualThread->getProcessor()->setHideDC(false);
