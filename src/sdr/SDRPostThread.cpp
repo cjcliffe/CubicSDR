@@ -210,6 +210,7 @@ void SDRPostThread::terminate() {
 void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
     if (sampleRate != data_in->sampleRate) {
         sampleRate = data_in->sampleRate;
+        numChannels = 1;
         doRefresh.store(true);
     }
     
@@ -232,28 +233,7 @@ void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
         updateActiveDemodulators();
         doRefresh.store(false);
     }
-
-//    if (iqDataOutQueue != NULL && !iqDataOutQueue->full()) {
-//        DemodulatorThreadIQData *iqDataOut = visualDataBuffers.getBuffer();
-//        
-//        bool doVis = false;
-//        
-//        if (iqVisualQueue != NULL && !iqVisualQueue->full()) {
-//            doVis = true;
-//        }
-//        
-//        iqDataOut->setRefCount(1 + (doVis?1:0));
-//        
-//        iqDataOut->frequency = data_in->frequency;
-//        iqDataOut->sampleRate = data_in->sampleRate;
-//        iqDataOut->data.assign(data_in->data.begin(), data_in->data.begin() + dataSize);
-//        
-//        iqDataOutQueue->push(iqDataOut);
-//        if (doVis) {
-//            iqVisualQueue->push(iqDataOut);
-//        }
-//    }
-
+    
     int refCount = nRunDemods;
     bool doIQDataOut = (iqDataOutQueue != NULL && !iqDataOutQueue->full());
     bool doDemodVisOut = (nRunDemods && iqActiveDemodVisualQueue != NULL && !iqActiveDemodVisualQueue->full());
