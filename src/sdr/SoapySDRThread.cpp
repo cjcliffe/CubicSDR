@@ -333,6 +333,10 @@ int SDRThread::getOptimalElementCount(long long sampleRate, int fps) {
 }
 
 int SDRThread::getOptimalChannelCount(long long sampleRate) {
+    if (sampleRate <= CHANNELIZER_RATE_MAX) {
+        return 1;
+    }
+    
     int optimal_rate = CHANNELIZER_RATE_MAX;
     int optimal_count = int(ceil(double(sampleRate)/double(optimal_rate)));
     

@@ -208,7 +208,7 @@ void AudioThread::enumerateDevices(std::vector<RtAudio::DeviceInfo> &devs) {
 
         std::cout << "Audio Device #" << i << " " << info.name << std::endl;
         std::cout << "\tDefault Output? " << (info.isDefaultOutput ? "Yes" : "No") << std::endl;
-        std::cout << "\tDefault Input? " << (info.isDefaultOutput ? "Yes" : "No") << std::endl;
+        std::cout << "\tDefault Input? " << (info.isDefaultInput ? "Yes" : "No") << std::endl;
         std::cout << "\tInput channels: " << info.inputChannels << std::endl;
         std::cout << "\tOutput channels: " << info.outputChannels << std::endl;
         std::cout << "\tDuplex channels: " << info.duplexChannels << std::endl;

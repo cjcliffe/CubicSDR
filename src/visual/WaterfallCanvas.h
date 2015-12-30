@@ -20,6 +20,7 @@ public:
 
     WaterfallCanvas(wxWindow *parent, int *attribList = NULL);
     void setup(int fft_size_in, int waterfall_lines_in);
+    void setFFTSize(int fft_size_in);
     ~WaterfallCanvas();
 
     DragState getDragState();
@@ -59,7 +60,7 @@ private:
     DragState dragState;
     DragState nextDragState;
 
-    int fft_size;
+    int fft_size, new_fft_size;
     int waterfall_lines;
     int dragOfs;
 
@@ -77,6 +78,7 @@ private:
     bool preBuf;
     std::mutex tex_update;
     int minBandwidth;
+    std::atomic_bool fft_size_changed;
     // event table
 wxDECLARE_EVENT_TABLE();
 };

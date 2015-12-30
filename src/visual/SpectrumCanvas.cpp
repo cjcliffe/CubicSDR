@@ -169,6 +169,9 @@ void SpectrumCanvas::setScaleFactorEnabled(bool en) {
     scaleFactorEnabled = en;
 }
 
+void SpectrumCanvas::setFFTSize(int fftSize) {
+    spectrumPanel.setFFTSize(fftSize);
+}
 
 void SpectrumCanvas::updateScaleFactor(float factor) {
     SpectrumVisualProcessor *sp = wxGetApp().getSpectrumProcessor();

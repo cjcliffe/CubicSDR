@@ -33,7 +33,7 @@ EVT_MOUSEWHEEL(WaterfallCanvas::OnMouseWheelMoved)
 wxEND_EVENT_TABLE()
 
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
-        InteractiveCanvas(parent, attribList), dragState(WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), fft_size(0), waterfall_lines(0),
+        InteractiveCanvas(parent, attribList), dragState(WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), fft_size(0), new_fft_size(0), waterfall_lines(0),
         dragOfs(0), mouseZoom(1), zoom(1), freqMoving(false), freqMove(0.0), hoverAlpha(1.0) {
 
     glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this));
@@ -43,6 +43,7 @@ WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
     SetCursor(wxCURSOR_CROSS);
     scaleMove = 0;
     minBandwidth = 30000;
+    fft_size_changed.store(false);
 }
 
 WaterfallCanvas::~WaterfallCanvas() {
@@ -57,6 +58,14 @@ void WaterfallCanvas::setup(int fft_size_in, int waterfall_lines_in) {
 
     waterfallPanel.setup(fft_size, waterfall_lines);
     gTimer.start();
+}
+
+void WaterfallCanvas::setFFTSize(int fft_size_in) {
+    if (fft_size_in == fft_size) {
+        return;
+    }
+    new_fft_size = fft_size_in;
+    fft_size_changed.store(true);
 }
 
 WaterfallCanvas::DragState WaterfallCanvas::getDragState() {
@@ -88,7 +97,9 @@ void WaterfallCanvas::processInputQueue() {
                     visualDataQueue.pop(vData);
                     
                     if (vData) {
-                        waterfallPanel.setPoints(vData->spectrum_points);
+                        if (vData->spectrum_points.size() == fft_size * 2) {
+                            waterfallPanel.setPoints(vData->spectrum_points);
+                        }
                         waterfallPanel.step();
                         vData->decRefCount();
                         updated = true;
@@ -111,7 +122,7 @@ void WaterfallCanvas::processInputQueue() {
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     tex_update.lock();
     wxPaintDC dc(this);
-
+    
     const wxSize ClientSize = GetClientSize();
     long double currentZoom = zoom;
     
@@ -235,6 +246,12 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->SetCurrent(*this);
     initGLExtensions();
     glViewport(0, 0, ClientSize.x, ClientSize.y);
+    
+    if (fft_size_changed.load()) {
+        fft_size = new_fft_size;
+        waterfallPanel.setup(fft_size, waterfall_lines);
+        fft_size_changed.store(false);
+    }
 
     glContext->BeginDraw(0,0,0);
 

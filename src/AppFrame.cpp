@@ -1322,3 +1322,9 @@ void AppFrame::updateModemProperties(ModemArgInfoList args) {
     modemPropertiesUpdated.store(true);
 }
 
+void AppFrame::setMainWaterfallFFTSize(int fftSize) {
+    wxGetApp().getSpectrumProcessor()->setFFTSize(fftSize);
+    spectrumCanvas->setFFTSize(fftSize);
+    waterfallDataThread->getProcessor()->setFFTSize(fftSize);
+    waterfallCanvas->setFFTSize(fftSize);
+}

@@ -26,6 +26,7 @@ public:
     void disableView();
 
     void setScaleFactorEnabled(bool en);
+    void setFFTSize(int fftSize);
     
     SpectrumVisualDataQueue *getVisualDataQueue();
     
