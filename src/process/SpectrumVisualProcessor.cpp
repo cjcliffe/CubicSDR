@@ -92,26 +92,30 @@ void SpectrumVisualProcessor::setup(int fftSize_in) {
     if (fftwInput) {
         free(fftwInput);
     }
-    fftwInput = (fftwf_complex*) fftwf_malloc(memSize);
+    //fftwInput = (fftwf_complex*) fftwf_malloc(memSize);
+	fftwInput = (fftwf_complex*)malloc(memSize);
     memset(fftwInput,0,memSize);
 
     if (fftInData) {
         free(fftInData);
     }
-    fftInData = (fftwf_complex*) fftwf_malloc(memSize);
+    //fftInData = (fftwf_complex*) fftwf_malloc(memSize);
+	fftInData = (fftwf_complex*)malloc(memSize);
     memset(fftwInput,0,memSize);
     
     if (fftLastData) {
         free(fftLastData);
     }
-    fftLastData = (fftwf_complex*) fftwf_malloc(memSize);
+    //fftLastData = (fftwf_complex*) fftwf_malloc(memSize);
+	fftLastData = (fftwf_complex*)malloc(memSize);
     memset(fftwInput,0,memSize);
     
     if (fftwOutput) {
         free(fftwOutput);
     }
-    fftwOutput = (fftwf_complex*) fftwf_malloc(memSize);
-    memset(fftwInput,0,memSize);
+    //fftwOutput = (fftwf_complex*) fftwf_malloc(memSize);
+	fftwOutput = (fftwf_complex*)malloc(memSize);
+	memset(fftwInput,0,memSize);
     
     if (fftw_plan) {
         fftwf_destroy_plan(fftw_plan);
