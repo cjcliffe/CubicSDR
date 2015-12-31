@@ -156,186 +156,47 @@ void SDRPostThread::run() {
     iqActiveDemodVisualQueue = (DemodulatorThreadInputQueue*)getOutputQueue("IQActiveDemodVisualDataOutput");
 
     iqDataInQueue->set_max_num_items(0);
-
-    std::vector<liquid_float_complex> dcBuf;
     
     while (!terminated) {
         SDRThreadIQData *data_in;
         
         iqDataInQueue->pop(data_in);
         //        std::lock_guard < std::mutex > lock(data_in->m_mutex);
-        
-        if (data_in && data_in->data.size() && data_in->numChannels) {
-            if (numChannels != data_in->numChannels || sampleRate != data_in->sampleRate) {
-                numChannels = data_in->numChannels;
-                sampleRate = data_in->sampleRate;
-                initPFBChannelizer();
-                doRefresh.store(true);
-            }
-            
-            int dataSize = data_in->data.size();
-            int outSize = data_in->data.size();
 
-            if (outSize > dataOut.capacity()) {
-                dataOut.reserve(outSize);
-            }
-            if (outSize != dataOut.size()) {
-                dataOut.resize(outSize);
-            }
-            int activeVisChannel = -1;
-            
-            if (iqDataOutQueue != NULL && !iqDataOutQueue->full() && activeVisChannel < 0) {
-                DemodulatorThreadIQData *iqDataOut = visualDataBuffers.getBuffer();
-                
-                bool doVis = false;
-                
-                if (iqVisualQueue != NULL && !iqVisualQueue->full()) {
-                    doVis = true;
-                }
-                
-                iqDataOut->setRefCount(1 + (doVis?1:0));
-                
-                iqDataOut->frequency = data_in->frequency;
-                iqDataOut->sampleRate = data_in->sampleRate;
-                iqDataOut->data.assign(data_in->data.begin(), data_in->data.begin() + dataSize);
+        busy_demod.lock();
 
-                iqDataOutQueue->push(iqDataOut);
-                if (doVis) {
-                    iqVisualQueue->push(iqDataOut);
-                }
+        if (data_in && data_in->data.size()) {
+            if(data_in->numChannels > 1) {
+                runPFBCH(data_in);
+            } else {
+                runSingleCH(data_in);
             }
-
-            busy_demod.lock();
-            
-            if (frequency != data_in->frequency) {
-                frequency = data_in->frequency;
-                doRefresh.store(true);
-            }
-
-            if (doRefresh.load()) {
-                updateActiveDemodulators();
-                updateChannels();
-                doRefresh.store(false);
-            }
-
-            DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
-            int activeDemodChannel = -1;
-            
-            // Find active demodulators
-            if (nRunDemods || (activeVisChannel >= 0)) {
-                
-                // channelize data
-                // firpfbch output rate is (input rate / channels)
-                for (int i = 0, iMax = dataSize; i < iMax; i+=numChannels) {
-                    firpfbch_crcf_analyzer_execute(channelizer, &data_in->data[i], &dataOut[i]);
-                }
-
-                for (int i = 0, iMax = numChannels+1; i < iMax; i++) {
-                    demodChannelActive[i] = 0;
-                }
-                
-                // Find nearest channel for each demodulator
-                for (int i = 0; i < nRunDemods; i++) {
-                    DemodulatorInstance *demod = runDemods[i];
-                    demodChannel[i] = getChannelAt(demod->getFrequency());
-                    if (demod == activeDemod) {
-                        activeDemodChannel = demodChannel[i];
-                    }
-                }
-                
-                for (int i = 0; i < nRunDemods; i++) {
-                    // cache channel usage refcounts
-                    if (demodChannel[i] >= 0) {
-                        demodChannelActive[demodChannel[i]]++;
-                    }
-                }
-                
-                // Run channels
-                for (int i = 0; i < numChannels+1; i++) {
-                    int doDemodVis = ((activeDemodChannel == i) && (iqActiveDemodVisualQueue != NULL) && !iqActiveDemodVisualQueue->full())?1:0;
-                    
-                    if (!doDemodVis && demodChannelActive[i] == 0) {
-                        continue;
-                    }
-                    
-                    DemodulatorThreadIQData *demodDataOut = buffers.getBuffer();
-                    demodDataOut->setRefCount(demodChannelActive[i] + doDemodVis);
-                    demodDataOut->frequency = chanCenters[i];
-                    demodDataOut->sampleRate = chanBw;
-                    
-                    // Calculate channel buffer size
-                    int chanDataSize = (outSize/numChannels);
-
-                    if (demodDataOut->data.size() != chanDataSize) {
-                        if (demodDataOut->data.capacity() < chanDataSize) {
-                            demodDataOut->data.reserve(chanDataSize);
-                        }
-                        demodDataOut->data.resize(chanDataSize);
-                    }
-
-                    int idx = i;
-                    
-                    // Extra channel wraps lower side band of lowest channel
-                    // to fix frequency gap on upper side of spectrum
-                    if (i == numChannels) {
-                        idx = (numChannels/2);
-                    }
-                    
-                    // prepare channel data buffer
-                    if (i == 0) {   // Channel 0 requires DC correction
-                        if (dcBuf.size() != chanDataSize) {
-                            dcBuf.resize(chanDataSize);
-                        }
-                        for (int j = 0; j < chanDataSize; j++) {
-                            dcBuf[j] = dataOut[idx];
-							idx += numChannels;
-						}
-                        iirfilt_crcf_execute_block(dcFilter, &dcBuf[0], chanDataSize, &demodDataOut->data[0]);
-                    } else {
-                        for (int j = 0; j < chanDataSize; j++) {
-                            demodDataOut->data[j] = dataOut[idx];
-							idx += numChannels;
-						}
-                    }
-
-                    if (doDemodVis) {
-                        iqActiveDemodVisualQueue->push(demodDataOut);
-                    }
-                    
-                    for (int j = 0; j < nRunDemods; j++) {
-                        if (demodChannel[j] == i) {
-                            DemodulatorInstance *demod = runDemods[j];
-                            demod->getIQInputDataPipe()->push(demodDataOut);
-                        }
-                    }
-                }
-            }
-            
-            bool doUpdate = false;
-            for (int j = 0; j < nRunDemods; j++) {
-                DemodulatorInstance *demod = runDemods[j];
-                if (abs(frequency - demod->getFrequency()) > (sampleRate / 2)) {
-                    doUpdate = true;
-                }
-            }
-            
-            if (doUpdate) {
-                updateActiveDemodulators();
-            }
-            
-            busy_demod.unlock();
         }
-        data_in->decRefCount();
-    }
 
-//    buffers.purge();
+        data_in->decRefCount();
+
+        bool doUpdate = false;
+        for (int j = 0; j < nRunDemods; j++) {
+            DemodulatorInstance *demod = runDemods[j];
+            if (abs(frequency - demod->getFrequency()) > (sampleRate / 2)) {
+                doUpdate = true;
+            }
+        }
+        
+        if (doUpdate) {
+            updateActiveDemodulators();
+        }
+        
+        busy_demod.unlock();
+    }
     
     if (iqVisualQueue && !iqVisualQueue->empty()) {
         DemodulatorThreadIQData *visualDataDummy;
         iqVisualQueue->pop(visualDataDummy);
     }
 
-//    visualDataBuffers.purge();
+    //    buffers.purge();
+    //    visualDataBuffers.purge();
 
     std::cout << "SDR post-processing thread done." << std::endl;
 }
@@ -344,4 +205,223 @@ void SDRPostThread::terminate() {
     terminated = true;
     SDRThreadIQData *dummy = new SDRThreadIQData;
     iqDataInQueue->push(dummy);
+}
+
+void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
+    if (sampleRate != data_in->sampleRate) {
+        sampleRate = data_in->sampleRate;
+        numChannels = 1;
+        doRefresh.store(true);
+    }
+    
+    int dataSize = data_in->data.size();
+    int outSize = data_in->data.size();
+    
+    if (outSize > dataOut.capacity()) {
+        dataOut.reserve(outSize);
+    }
+    if (outSize != dataOut.size()) {
+        dataOut.resize(outSize);
+    }
+    
+    if (frequency != data_in->frequency) {
+        frequency = data_in->frequency;
+        doRefresh.store(true);
+    }
+    
+    if (doRefresh.load()) {
+        updateActiveDemodulators();
+        doRefresh.store(false);
+    }
+    
+    int refCount = nRunDemods;
+    bool doIQDataOut = (iqDataOutQueue != NULL && !iqDataOutQueue->full());
+    bool doDemodVisOut = (nRunDemods && iqActiveDemodVisualQueue != NULL && !iqActiveDemodVisualQueue->full());
+    bool doVisOut = (iqVisualQueue != NULL && !iqVisualQueue->full());
+    
+    if (doIQDataOut) {
+        refCount++;
+    }
+    if (doDemodVisOut) {
+        refCount++;
+    }
+    if (doVisOut) {
+        refCount++;
+    }
+    
+    if (refCount) {
+        DemodulatorThreadIQData *demodDataOut = buffers.getBuffer();
+        demodDataOut->setRefCount(refCount);
+        demodDataOut->frequency = frequency;
+        demodDataOut->sampleRate = sampleRate;
+        
+        if (demodDataOut->data.size() != dataSize) {
+            if (demodDataOut->data.capacity() < dataSize) {
+                demodDataOut->data.reserve(dataSize);
+            }
+            demodDataOut->data.resize(dataSize);
+        }
+        
+        iirfilt_crcf_execute_block(dcFilter, &data_in->data[0], dataSize, &demodDataOut->data[0]);
+
+        if (doDemodVisOut) {
+            iqActiveDemodVisualQueue->push(demodDataOut);
+        }
+        
+        if (doIQDataOut) {
+            iqDataOutQueue->push(demodDataOut);
+        }
+
+        if (doVisOut) {
+            iqVisualQueue->push(demodDataOut);
+        }
+        
+        for (int i = 0; i < nRunDemods; i++) {
+            runDemods[i]->getIQInputDataPipe()->push(demodDataOut);
+        }
+    }
+}
+
+void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
+    if (numChannels != data_in->numChannels || sampleRate != data_in->sampleRate) {
+        numChannels = data_in->numChannels;
+        sampleRate = data_in->sampleRate;
+        initPFBChannelizer();
+        doRefresh.store(true);
+    }
+    
+    int dataSize = data_in->data.size();
+    int outSize = data_in->data.size();
+    
+    if (outSize > dataOut.capacity()) {
+        dataOut.reserve(outSize);
+    }
+    if (outSize != dataOut.size()) {
+        dataOut.resize(outSize);
+    }
+    
+    if (iqDataOutQueue != NULL && !iqDataOutQueue->full()) {
+        DemodulatorThreadIQData *iqDataOut = visualDataBuffers.getBuffer();
+        
+        bool doVis = false;
+        
+        if (iqVisualQueue != NULL && !iqVisualQueue->full()) {
+            doVis = true;
+        }
+        
+        iqDataOut->setRefCount(1 + (doVis?1:0));
+        
+        iqDataOut->frequency = data_in->frequency;
+        iqDataOut->sampleRate = data_in->sampleRate;
+        iqDataOut->data.assign(data_in->data.begin(), data_in->data.begin() + dataSize);
+        
+        iqDataOutQueue->push(iqDataOut);
+        if (doVis) {
+            iqVisualQueue->push(iqDataOut);
+        }
+    }
+    
+    if (frequency != data_in->frequency) {
+        frequency = data_in->frequency;
+        doRefresh.store(true);
+    }
+    
+    if (doRefresh.load()) {
+        updateActiveDemodulators();
+        updateChannels();
+        doRefresh.store(false);
+    }
+    
+    DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    int activeDemodChannel = -1;
+    
+    // Find active demodulators
+    if (nRunDemods) {
+        
+        // channelize data
+        // firpfbch output rate is (input rate / channels)
+        for (int i = 0, iMax = dataSize; i < iMax; i+=numChannels) {
+            firpfbch_crcf_analyzer_execute(channelizer, &data_in->data[i], &dataOut[i]);
+        }
+        
+        for (int i = 0, iMax = numChannels+1; i < iMax; i++) {
+            demodChannelActive[i] = 0;
+        }
+        
+        // Find nearest channel for each demodulator
+        for (int i = 0; i < nRunDemods; i++) {
+            DemodulatorInstance *demod = runDemods[i];
+            demodChannel[i] = getChannelAt(demod->getFrequency());
+            if (demod == activeDemod) {
+                activeDemodChannel = demodChannel[i];
+            }
+        }
+        
+        for (int i = 0; i < nRunDemods; i++) {
+            // cache channel usage refcounts
+            if (demodChannel[i] >= 0) {
+                demodChannelActive[demodChannel[i]]++;
+            }
+        }
+        
+        // Run channels
+        for (int i = 0; i < numChannels+1; i++) {
+            int doDemodVis = ((activeDemodChannel == i) && (iqActiveDemodVisualQueue != NULL) && !iqActiveDemodVisualQueue->full())?1:0;
+            
+            if (!doDemodVis && demodChannelActive[i] == 0) {
+                continue;
+            }
+            
+            DemodulatorThreadIQData *demodDataOut = buffers.getBuffer();
+            demodDataOut->setRefCount(demodChannelActive[i] + doDemodVis);
+            demodDataOut->frequency = chanCenters[i];
+            demodDataOut->sampleRate = chanBw;
+            
+            // Calculate channel buffer size
+            int chanDataSize = (outSize/numChannels);
+            
+            if (demodDataOut->data.size() != chanDataSize) {
+                if (demodDataOut->data.capacity() < chanDataSize) {
+                    demodDataOut->data.reserve(chanDataSize);
+                }
+                demodDataOut->data.resize(chanDataSize);
+            }
+            
+            int idx = i;
+            
+            // Extra channel wraps lower side band of lowest channel
+            // to fix frequency gap on upper side of spectrum
+            if (i == numChannels) {
+                idx = (numChannels/2);
+            }
+            
+            // prepare channel data buffer
+            if (i == 0) {   // Channel 0 requires DC correction
+                if (dcBuf.size() != chanDataSize) {
+                    dcBuf.resize(chanDataSize);
+                }
+                for (int j = 0; j < chanDataSize; j++) {
+                    dcBuf[j] = dataOut[idx];
+                    idx += numChannels;
+                }
+                iirfilt_crcf_execute_block(dcFilter, &dcBuf[0], chanDataSize, &demodDataOut->data[0]);
+            } else {
+                for (int j = 0; j < chanDataSize; j++) {
+                    demodDataOut->data[j] = dataOut[idx];
+                    idx += numChannels;
+                }
+            }
+            
+            if (doDemodVis) {
+                iqActiveDemodVisualQueue->push(demodDataOut);
+            }
+            
+            for (int j = 0; j < nRunDemods; j++) {
+                if (demodChannel[j] == i) {
+                    DemodulatorInstance *demod = runDemods[j];
+                    demod->getIQInputDataPipe()->push(demodDataOut);
+                }
+            }
+        }
+    }
 }

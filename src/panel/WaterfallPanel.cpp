@@ -16,14 +16,6 @@ void WaterfallPanel::setup(int fft_size_in, int num_waterfall_lines_in) {
         points.resize(fft_size);
     }
     
-    for (int i = 0; i < 2; i++) {
-        if (waterfall[i]) {
-            glDeleteTextures(1, &waterfall[i]);
-            waterfall[i] = 0;
-        }
-        
-        waterfall_ofs[i] = waterfall_lines - 1;
-    }
     texInitialized.store(false);
     bufferInitialized.store(false);
 }
@@ -65,7 +57,7 @@ void WaterfallPanel::step() {
         return;
     }
     
-    if (points.size()) {
+    if (points.size() && points.size() == fft_size) {
         for (int j = 0; j < 2; j++) {
             for (int i = 0, iMax = half_fft_size; i < iMax; i++) {
                 float v = points[j * half_fft_size + i];
@@ -94,6 +86,15 @@ void WaterfallPanel::update() {
     }
     
     if (!texInitialized.load()) {
+        for (int i = 0; i < 2; i++) {
+            if (waterfall[i]) {
+                glDeleteTextures(1, &waterfall[i]);
+                waterfall[i] = 0;
+            }
+            
+            waterfall_ofs[i] = waterfall_lines - 1;
+        }
+
         glGenTextures(2, waterfall);
         
         unsigned char *waterfall_tex;
@@ -110,12 +111,13 @@ void WaterfallPanel::update() {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             
-            glBindTexture(GL_TEXTURE_2D, waterfall[i]);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, half_fft_size, waterfall_lines, 0, GL_COLOR_INDEX, GL_UNSIGNED_BYTE, (GLvoid *) waterfall_tex);
         }
         
         delete[] waterfall_tex;
-        
+
+        refreshTheme();
+
         texInitialized.store(true);
     }
     

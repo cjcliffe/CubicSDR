@@ -69,7 +69,8 @@ public:
     FFTVisualDataThread *getWaterfallDataThread();
 
     void updateModemProperties(ModemArgInfoList args);
-    
+    void setMainWaterfallFFTSize(int fftSize);
+
 private:
     void OnMenu(wxCommandEvent& event);
     void OnClose(wxCloseEvent& event);

@@ -18,6 +18,8 @@ public:
     void run();
     void terminate();
 
+    void runSingleCH(SDRThreadIQData *data_in);
+    void runPFBCH(SDRThreadIQData *data_in);
     void setIQVisualRange(long long frequency, int bandwidth);
         
 protected:
@@ -54,4 +56,5 @@ private:
     long long frequency;
     firpfbch_crcf channelizer;
     iirfilt_crcf dcFilter;
+    std::vector<liquid_float_complex> dcBuf;
 };

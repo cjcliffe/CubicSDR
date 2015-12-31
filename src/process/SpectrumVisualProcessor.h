@@ -38,6 +38,7 @@ public:
     int getDesiredInputSize();
     
     void setup(int fftSize);
+    void setFFTSize(int fftSize);
     void setHideDC(bool hideDC);
     
     void setScaleFactor(float sf);
@@ -48,7 +49,7 @@ protected:
     
     ReBuffer<SpectrumVisualData> outputBuffers;
     std::atomic_bool is_view;
-    std::atomic_int fftSize;
+    std::atomic_int fftSize, newFFTSize;
     std::atomic_int fftSizeInternal;
     std::atomic_llong centerFreq;
     std::atomic_long bandwidth;
@@ -82,4 +83,5 @@ private:
     std::mutex busy_run;
     std::atomic_bool hideDC;
     std::atomic<float> scaleFactor;
+    std::atomic_bool fftSizeChanged;
 };
