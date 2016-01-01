@@ -206,18 +206,33 @@ AppFrame::AppFrame() :
     spectrumCanvas->setShowDb(true);
     spectrumCanvas->setScaleFactorEnabled(true);
     wxGetApp().getSpectrumProcessor()->attachOutput(spectrumCanvas->getVisualDataQueue());
+           
+    wxBoxSizer *spectrumCtlTray = new wxBoxSizer(wxVERTICAL);
             
+    peakHoldButton = new ModeSelectorCanvas(spectrumPanel, attribList);
+    peakHoldButton->addChoice(1, "P");
+    peakHoldButton->setPadding(-1,-1);
+    peakHoldButton->setHighlightColor(RGBA4f(0.2,0.8,0.2));
+    peakHoldButton->setHelpTip("Peak Hold Toggle");
+    peakHoldButton->setToggleMode(true);
+    peakHoldButton->setSelection(-1);
+    peakHoldButton->SetMinSize(wxSize(12,24));
+
+    spectrumCtlTray->Add(peakHoldButton, 1, wxEXPAND | wxALL, 0);
+    spectrumCtlTray->AddSpacer(1);
+
     spectrumAvgMeter = new MeterCanvas(spectrumPanel, attribList);
     spectrumAvgMeter->setHelpTip("Spectrum averaging speed, click or drag to adjust.");
     spectrumAvgMeter->setMax(1.0);
     spectrumAvgMeter->setLevel(0.65);
     spectrumAvgMeter->setShowUserInput(false);
     spectrumAvgMeter->SetMinSize(wxSize(12,24));
-
+            
+    spectrumCtlTray->Add(spectrumAvgMeter, 8, wxEXPAND | wxALL, 0);
 
     spectrumSizer->Add(spectrumCanvas, 63, wxEXPAND | wxALL, 0);
     spectrumSizer->AddSpacer(1);
-    spectrumSizer->Add(spectrumAvgMeter, 1, wxEXPAND | wxALL, 0);
+    spectrumSizer->Add(spectrumCtlTray, 1, wxEXPAND | wxALL, 0);
     spectrumPanel->SetSizer(spectrumSizer);
             
 //    vbox->Add(spectrumSizer, 5, wxEXPAND | wxALL, 0);
@@ -1086,6 +1101,12 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             demod->showOutput();
         }
 #endif
+    }
+    
+    int peakHoldMode = peakHoldButton->getSelection();
+    if (peakHoldButton->modeChanged()) {
+        wxGetApp().getSpectrumProcessor()->setPeakHold(peakHoldMode == 1);
+        peakHoldButton->clearModeChanged();
     }
     
     if (!this->IsActive()) {

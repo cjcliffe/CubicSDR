@@ -94,7 +94,7 @@ private:
 //    UITestCanvas *testCanvas;
     MeterCanvas *spectrumAvgMeter;
     MeterCanvas *waterfallSpeedMeter;
-    ModeSelectorCanvas *demodMuteButton;
+    ModeSelectorCanvas *demodMuteButton, *peakHoldButton;
     GainCanvas *gainCanvas;
     wxSizerItem *gainSizerItem, *gainSpacerItem;
     wxSplitterWindow *mainVisSplitter, *mainSplitter;
