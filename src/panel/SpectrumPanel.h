@@ -7,6 +7,7 @@ public:
     SpectrumPanel();
     
     void setPoints(std::vector<float> &points);
+    void setPeakPoints(std::vector<float> &points);
     
     float getFloorValue();
     void setFloorValue(float floorValue);
@@ -35,6 +36,7 @@ private:
     long long freq;
     long long bandwidth;
     std::vector<float> points;
+    std::vector<float> peak_points;
     
     GLTextPanel dbPanelCeil;
     GLTextPanel dbPanelFloor;

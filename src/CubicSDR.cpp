@@ -420,6 +420,7 @@ void CubicSDR::setFrequency(long long freq) {
     }
     frequency = freq;
     sdrThread->setFrequency(freq);
+    getSpectrumProcessor()->setPeakHold(getSpectrumProcessor()->getPeakHold());
 }
 
 long long CubicSDR::getOffset() {

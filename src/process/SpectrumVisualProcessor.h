@@ -10,6 +10,7 @@
 class SpectrumVisualData : public ReferenceCounter {
 public:
     std::vector<float> spectrum_points;
+    std::vector<float> spectrum_hold_points;
     double fft_ceiling, fft_floor;
     long long centerFreq;
     int bandwidth;
@@ -34,6 +35,9 @@ public:
     
     void setBandwidth(long bandwidth_in);
     long getBandwidth();
+    
+    void setPeakHold(bool peakHold_in);
+    bool getPeakHold();
     
     int getDesiredInputSize();
     
@@ -65,11 +69,13 @@ private:
     
     double fft_ceil_ma, fft_ceil_maa;
     double fft_floor_ma, fft_floor_maa;
+    double fft_ceil_peak, fft_floor_peak;
     std::atomic<float> fft_average_rate;
     
     std::vector<double> fft_result;
     std::vector<double> fft_result_ma;
     std::vector<double> fft_result_maa;
+    std::vector<double> fft_result_peak;
     std::vector<double> fft_result_temp;
     
     msresamp_crcf resampler;
@@ -81,7 +87,7 @@ private:
     std::vector<liquid_float_complex> resampleBuffer;
     std::atomic_int desiredInputSize;
     std::mutex busy_run;
-    std::atomic_bool hideDC;
+    std::atomic_bool hideDC, peakHold;
     std::atomic<float> scaleFactor;
     std::atomic_bool fftSizeChanged;
 };

@@ -88,6 +88,10 @@ void SpectrumPanel::setPoints(std::vector<float> &points) {
     this->points.assign(points.begin(), points.end());
 }
 
+void SpectrumPanel::setPeakPoints(std::vector<float> &points) {
+    this->peak_points.assign(points.begin(), points.end());
+}
+
 
 void SpectrumPanel::drawPanelContents() {
     glDisable(GL_TEXTURE_2D);
@@ -135,6 +139,12 @@ void SpectrumPanel::drawPanelContents() {
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(2, GL_FLOAT, 0, &points[0]);
         glDrawArrays(GL_LINE_STRIP, 0, points.size() / 2);
+        if (peak_points.size()) {
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glColor4f(0, 1.0, 0, 0.5);
+            glVertexPointer(2, GL_FLOAT, 0, &peak_points[0]);
+            glDrawArrays(GL_LINE_STRIP, 0, peak_points.size() / 2);
+        }
         glDisableClientState(GL_VERTEX_ARRAY);
     }
   

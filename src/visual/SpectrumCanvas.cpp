@@ -58,6 +58,7 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         
         if (vData) {
             spectrumPanel.setPoints(vData->spectrum_points);
+            spectrumPanel.setPeakPoints(vData->spectrum_hold_points);
             spectrumPanel.setFloorValue(vData->fft_floor);
             spectrumPanel.setCeilValue(vData->fft_ceiling);
             vData->decRefCount();
