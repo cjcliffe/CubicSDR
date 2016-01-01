@@ -432,6 +432,8 @@ void SpectrumVisualProcessor::process() {
                 for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
                     fft_result_peak[i] = fft_floor_maa;
                 }
+                fft_ceil_peak = fft_floor_maa;
+                fft_floor_peak = fft_ceil_maa;
             }
             
             for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
