@@ -24,7 +24,12 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
     }
             
     if (targetMode == FDIALOG_TARGET_BANDWIDTH) {
-        freqStr = frequencyToStr(wxGetApp().getDemodMgr().getLastBandwidth());
+        std::string lastDemodType = activeDemod?activeDemod->getDemodulatorType():wxGetApp().getDemodMgr().getLastDemodulatorType();
+        if (lastDemodType == "USB" || lastDemodType == "LSB") {
+            freqStr = frequencyToStr(wxGetApp().getDemodMgr().getLastBandwidth()/2);
+        } else {
+            freqStr = frequencyToStr(wxGetApp().getDemodMgr().getLastBandwidth());
+        }
     }
 
     dialogText = new wxTextCtrl(this, wxID_FREQ_INPUT, freqStr, wxPoint(6, 1), wxSize(size.GetWidth() - 20, size.GetHeight() - 70),
@@ -40,29 +45,34 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
 void FrequencyDialog::OnChar(wxKeyEvent& event) {
     int c = event.GetKeyCode();
     long long freq;
+    std::string lastDemodType = activeDemod?activeDemod->getDemodulatorType():wxGetApp().getDemodMgr().getLastDemodulatorType();
 
     switch (c) {
     case WXK_RETURN:
     case WXK_NUMPAD_ENTER:
         // Do Stuff
         freq = strToFrequency(dialogText->GetValue().ToStdString());
-            if (targetMode == FDIALOG_TARGET_DEFAULT) {
-                if (activeDemod) {
-                    activeDemod->setTracking(true);
-                    activeDemod->setFollow(true);
-                    activeDemod->setFrequency(freq);
-                    activeDemod->updateLabel(freq);
-                } else {
-                    wxGetApp().setFrequency(freq);
-                }
+        if (lastDemodType == "USB" || lastDemodType == "LSB") {
+            freq *= 2;
+        }
+
+        if (targetMode == FDIALOG_TARGET_DEFAULT) {
+            if (activeDemod) {
+                activeDemod->setTracking(true);
+                activeDemod->setFollow(true);
+                activeDemod->setFrequency(freq);
+                activeDemod->updateLabel(freq);
+            } else {
+                wxGetApp().setFrequency(freq);
             }
-            if (targetMode == FDIALOG_TARGET_BANDWIDTH) {
-                if (activeDemod) {
-                    activeDemod->setBandwidth(freq);
-                } else {
-                    wxGetApp().getDemodMgr().setLastBandwidth(freq);
-                }
+        }
+        if (targetMode == FDIALOG_TARGET_BANDWIDTH) {
+            if (activeDemod) {
+                activeDemod->setBandwidth(freq);
+            } else {
+                wxGetApp().getDemodMgr().setLastBandwidth(freq);
             }
+        }
         Close();
         break;
     case WXK_ESCAPE:
