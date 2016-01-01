@@ -141,7 +141,6 @@ void SpectrumCanvas::moveCenterFrequency(long long freqChange) {
             freq -= freqChange;
         }
         wxGetApp().setFrequency(freq);
-        wxGetApp().getSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
     }
 }
 

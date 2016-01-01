@@ -81,7 +81,7 @@ void SpectrumVisualProcessor::setPeakHold(bool peakHold_in) {
     fft_ceil_peak = fft_floor_maa;
     fft_floor_peak = fft_ceil_maa;
     
-    for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
+    for (int i = 0, iMax = fft_result_peak.size(); i < iMax; i++) {
         fft_result_peak[i] = fft_floor_maa;
     }
     peakHold.store(peakHold_in);
@@ -405,9 +405,9 @@ void SpectrumVisualProcessor::process() {
                 } else {
                     for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
                         if (i < fftSizeInternal/4) {
-                            fft_result_temp[i] = fft_result_ma[fftSizeInternal/4];
+                            fft_result_temp[i] = 0; // fft_result_ma[fftSizeInternal/4];
                         } else if (i >= fftSizeInternal - fftSizeInternal/4) {
-                            fft_result_temp[i] = fft_result_ma[fftSizeInternal - fftSizeInternal/4-1];
+                            fft_result_temp[i] = 0; // fft_result_ma[fftSizeInternal - fftSizeInternal/4-1];
                         } else {
                             fft_result_temp[i] = fft_result_ma[(i-fftSizeInternal/4)*2];
                         }
@@ -416,9 +416,9 @@ void SpectrumVisualProcessor::process() {
                         fft_result_ma[i] = fft_result_temp[i];
                         
                         if (i < fftSizeInternal/4) {
-                            fft_result_temp[i] = fft_result_maa[fftSizeInternal/4];
+                            fft_result_temp[i] = 0; //fft_result_maa[fftSizeInternal/4];
                         } else if (i >= fftSizeInternal - fftSizeInternal/4) {
-                            fft_result_temp[i] = fft_result_maa[fftSizeInternal - fftSizeInternal/4-1];
+                            fft_result_temp[i] = 0; // fft_result_maa[fftSizeInternal - fftSizeInternal/4-1];
                         } else {
                             fft_result_temp[i] = fft_result_maa[(i-fftSizeInternal/4)*2];
                         }
@@ -427,8 +427,10 @@ void SpectrumVisualProcessor::process() {
                         fft_result_maa[i] = fft_result_temp[i];
                     }
                 }
+            }
+            if (newResampler) {
                 for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
-                    fft_result_peak[i] = fft_result_maa[i];
+                    fft_result_peak[i] = fft_floor_maa;
                 }
             }
             
@@ -485,15 +487,16 @@ void SpectrumVisualProcessor::process() {
 
                 while (visualAccum >= 1.0) {
                     int idx = round(visualStart+i);
-                    if (idx < 0) {
-                        idx = 0;
-                    }
-                    if (idx > fftSizeInternal-1) {
-                        idx = fftSizeInternal-1;
-                    }
-                    acc += fft_result_maa[idx];
-                    if (doPeak) {
-                        peak_acc += fft_result_peak[idx];
+                    if (idx > 0 && idx < fftSizeInternal) {
+                        acc += fft_result_maa[idx];
+                        if (doPeak) {
+                            peak_acc += fft_result_peak[idx];
+                        }
+                    } else {
+                        acc += fft_floor_maa;
+                        if (doPeak) {
+                            peak_acc += fft_floor_maa;
+                        }
                     }
                     accCount += 1.0;
                     visualAccum -= 1.0;
