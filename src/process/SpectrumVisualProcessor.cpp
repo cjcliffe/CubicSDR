@@ -228,10 +228,12 @@ void SpectrumVisualProcessor::process() {
                                         memmove(&fft_result_ma[0], &fft_result_ma[numShift], (fftSizeInternal-numShift) * sizeof(double));
                                         memmove(&fft_result_maa[0], &fft_result_maa[numShift], (fftSizeInternal-numShift) * sizeof(double));
                                         memmove(&fft_result_peak[0], &fft_result_peak[numShift], (fftSizeInternal-numShift) * sizeof(double));
+                                        memset(&fft_result_peak[fftSizeInternal-numShift], 0, numShift * sizeof(double));
                                     } else {
                                         memmove(&fft_result_ma[numShift], &fft_result_ma[0], (fftSizeInternal-numShift) * sizeof(double));
                                         memmove(&fft_result_maa[numShift], &fft_result_maa[0], (fftSizeInternal-numShift) * sizeof(double));
                                         memmove(&fft_result_peak[numShift], &fft_result_peak[0], (fftSizeInternal-numShift) * sizeof(double));
+                                        memset(&fft_result_peak[0], 0, numShift * sizeof(double));
                                     }
                                 }
                             }
