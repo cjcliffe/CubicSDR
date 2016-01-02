@@ -22,6 +22,7 @@ SpectrumVisualProcessor::SpectrumVisualProcessor() : lastInputBandwidth(0), last
     newFFTSize.store(0);
     lastView = false;
     peakHold.store(false);
+    peakReset.store(false);
 }
 
 SpectrumVisualProcessor::~SpectrumVisualProcessor() {
@@ -78,13 +79,12 @@ long SpectrumVisualProcessor::getBandwidth() {
 }
 
 void SpectrumVisualProcessor::setPeakHold(bool peakHold_in) {
-    fft_ceil_peak = fft_floor_maa;
-    fft_floor_peak = fft_ceil_maa;
-    
-    for (int i = 0, iMax = fft_result_peak.size(); i < iMax; i++) {
-        fft_result_peak[i] = fft_floor_maa;
+    if (peakHold.load() && peakHold_in) {
+        peakReset.store(PEAK_RESET_COUNT);
+    } else {
+        peakHold.store(peakHold_in);
+        peakReset.store(1);
     }
-    peakHold.store(peakHold_in);
 }
 
 bool SpectrumVisualProcessor::getPeakHold() {
@@ -175,7 +175,32 @@ void SpectrumVisualProcessor::process() {
     
     iqData->busy_rw.lock();
     busy_run.lock();
-    bool doPeak = peakHold.load();
+    bool doPeak = peakHold.load() && (peakReset.load() == 0);
+    
+    if (fft_result.size() != fftSizeInternal) {
+        if (fft_result.capacity() < fftSizeInternal) {
+            fft_result.reserve(fftSizeInternal);
+            fft_result_ma.reserve(fftSizeInternal);
+            fft_result_maa.reserve(fftSizeInternal);
+            fft_result_peak.reserve(fftSizeInternal);
+        }
+        fft_result.resize(fftSizeInternal);
+        fft_result_ma.resize(fftSizeInternal);
+        fft_result_maa.resize(fftSizeInternal);
+        fft_result_temp.resize(fftSizeInternal);
+        fft_result_peak.resize(fftSizeInternal);
+    }
+    
+    if (peakReset.load() != 0) {
+        peakReset--;
+        if (peakReset.load() == 0) {
+            for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
+                fft_result_peak[i] = fft_floor_maa;
+            }
+            fft_ceil_peak = fft_floor_maa;
+            fft_floor_peak = fft_ceil_maa;
+        }
+    }
     
     std::vector<liquid_float_complex> *data = &iqData->data;
     
@@ -227,18 +252,19 @@ void SpectrumVisualProcessor::process() {
                                     if (freqDiff > 0) {
                                         memmove(&fft_result_ma[0], &fft_result_ma[numShift], (fftSizeInternal-numShift) * sizeof(double));
                                         memmove(&fft_result_maa[0], &fft_result_maa[numShift], (fftSizeInternal-numShift) * sizeof(double));
-                                        memmove(&fft_result_peak[0], &fft_result_peak[numShift], (fftSizeInternal-numShift) * sizeof(double));
-                                        memset(&fft_result_peak[fftSizeInternal-numShift], 0, numShift * sizeof(double));
+//                                        memmove(&fft_result_peak[0], &fft_result_peak[numShift], (fftSizeInternal-numShift) * sizeof(double));
+//                                        memset(&fft_result_peak[fftSizeInternal-numShift], 0, numShift * sizeof(double));
                                     } else {
                                         memmove(&fft_result_ma[numShift], &fft_result_ma[0], (fftSizeInternal-numShift) * sizeof(double));
                                         memmove(&fft_result_maa[numShift], &fft_result_maa[0], (fftSizeInternal-numShift) * sizeof(double));
-                                        memmove(&fft_result_peak[numShift], &fft_result_peak[0], (fftSizeInternal-numShift) * sizeof(double));
-                                        memset(&fft_result_peak[0], 0, numShift * sizeof(double));
+//                                        memmove(&fft_result_peak[numShift], &fft_result_peak[0], (fftSizeInternal-numShift) * sizeof(double));
+//                                        memset(&fft_result_peak[0], 0, numShift * sizeof(double));
                                     }
                                 }
                             }
                         }
                     }
+                    peakReset.store(PEAK_RESET_COUNT);
                 }
                 
                 if (shiftBuffer.size() != desired_input_size) {
@@ -270,6 +296,7 @@ void SpectrumVisualProcessor::process() {
                 lastBandwidth = resampleBw;
                 lastInputBandwidth = iqData->sampleRate;
                 newResampler = true;
+                peakReset.store(PEAK_RESET_COUNT);
             }
             
             
@@ -362,20 +389,6 @@ void SpectrumVisualProcessor::process() {
             
             float fft_ceil = 0, fft_floor = 1;
             
-            if (fft_result.size() != fftSizeInternal) {
-                if (fft_result.capacity() < fftSizeInternal) {
-                    fft_result.reserve(fftSizeInternal);
-                    fft_result_ma.reserve(fftSizeInternal);
-                    fft_result_maa.reserve(fftSizeInternal);
-                    fft_result_peak.reserve(fftSizeInternal);
-                }
-                fft_result.resize(fftSizeInternal);
-                fft_result_ma.resize(fftSizeInternal);
-                fft_result_maa.resize(fftSizeInternal);
-                fft_result_temp.resize(fftSizeInternal);
-                fft_result_peak.resize(fftSizeInternal);
-            }
-            
             for (int i = 0, iMax = fftSizeInternal / 2; i < iMax; i++) {
                 float a = fftwOutput[i][0];
                 float b = fftwOutput[i][1];
@@ -427,13 +440,6 @@ void SpectrumVisualProcessor::process() {
                         fft_result_maa[i] = fft_result_temp[i];
                     }
                 }
-            }
-            if (newResampler) {
-                for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
-                    fft_result_peak[i] = fft_floor_maa;
-                }
-                fft_ceil_peak = fft_floor_maa;
-                fft_floor_peak = fft_ceil_maa;
             }
             
             for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {

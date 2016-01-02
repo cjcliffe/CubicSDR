@@ -6,6 +6,7 @@
 #include <cmath>
 
 #define SPECTRUM_VZM 2
+#define PEAK_RESET_COUNT 30
 
 class SpectrumVisualData : public ReferenceCounter {
 public:
@@ -88,6 +89,7 @@ private:
     std::atomic_int desiredInputSize;
     std::mutex busy_run;
     std::atomic_bool hideDC, peakHold;
+    std::atomic_int peakReset;
     std::atomic<float> scaleFactor;
     std::atomic_bool fftSizeChanged;
 };

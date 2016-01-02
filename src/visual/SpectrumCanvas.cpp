@@ -260,6 +260,7 @@ void SpectrumCanvas::OnMouseRightReleased(wxMouseEvent& event) {
 	mouseTracker.setHorizDragLock(false);
     if (!mouseTracker.getOriginDeltaMouseY()) {
         resetScaleFactor = true;
+        wxGetApp().getSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
     }
     mouseTracker.OnMouseRightReleased(event);
 }
