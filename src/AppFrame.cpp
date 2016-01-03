@@ -716,7 +716,11 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
                     wxGetApp().getSDRThread()->writeSetting(arg.key, (wxGetApp().getSDRThread()->readSetting(arg.key)=="true")?"false":"true");
                     break;
                 } else if (arg.type == SoapySDR::ArgInfo::STRING) {
-                    menuIdx++;
+                    wxString stringVal = wxGetTextFromUser(arg.description, arg.name, wxGetApp().getSDRThread()->readSetting(arg.key));
+                    if (stringVal.ToStdString() != "") {
+                        wxGetApp().getSDRThread()->writeSetting(arg.key, stringVal.ToStdString());
+                    }
+                    break;
                 } else if (arg.type == SoapySDR::ArgInfo::INT) {
                     int currentVal;
                     try {

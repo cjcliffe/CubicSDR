@@ -3,6 +3,7 @@
 #include <vector>
 #include "CubicSDR.h"
 #include <string>
+#include <SoapySDR/Logger.h>
 
 
 SDRThread::SDRThread() : IOThread(), buffers("SDRThreadBuffers") {
@@ -51,6 +52,8 @@ SoapySDR::Kwargs SDRThread::combineArgs(SoapySDR::Kwargs a, SoapySDR::Kwargs b) 
 }
 
 void SDRThread::init() {
+//    SoapySDR_setLogLevel(SOAPY_SDR_DEBUG);
+    
     SDRDeviceInfo *devInfo = deviceInfo.load();
     deviceConfig.store(wxGetApp().getConfig()->getDevice(devInfo->getDeviceId()));
     DeviceConfig *devConfig = deviceConfig.load();
@@ -240,6 +243,11 @@ void SDRThread::updateSettings() {
     if (freq_changed.load()) {
         device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency.load() - offset.load());
         freq_changed.store(false);
+    }
+    
+    double devFreq = device->getFrequency(SOAPY_SDR_RX,0);
+    if (devFreq != frequency.load()) {
+        wxGetApp().setFrequency((long long)devFreq);
     }
     
     if (agc_mode_changed.load()) {

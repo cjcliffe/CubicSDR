@@ -81,7 +81,7 @@ void DeviceConfig::load(DataNode *node) {
             std::string keyName = streamOptNode->getName();
             std::string strSettingValue = streamOptNode->element()->toString();
             
-            if (keyName != "" && strSettingValue != "") {
+            if (keyName != "") {
                 setStreamOpt(keyName, strSettingValue);
             }
         }
@@ -93,7 +93,7 @@ void DeviceConfig::load(DataNode *node) {
             std::string keyName = settingNode->getName();
             std::string strSettingValue = settingNode->element()->toString();
             
-            if (keyName != "" && strSettingValue != "") {
+            if (keyName != "") {
                 setSetting(keyName, strSettingValue);
             }
         }
