@@ -246,8 +246,8 @@ void SDRThread::updateSettings() {
     }
     
     double devFreq = device->getFrequency(SOAPY_SDR_RX,0);
-    if (devFreq != frequency.load()) {
-        wxGetApp().setFrequency((long long)devFreq);
+    if (((long long)devFreq + offset.load()) != frequency.load()) {
+        wxGetApp().setFrequency((long long)devFreq + offset.load());
     }
     
     if (agc_mode_changed.load()) {
