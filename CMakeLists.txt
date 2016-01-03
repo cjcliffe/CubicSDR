@@ -36,6 +36,25 @@ ENDIF()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
+option(USE_HAMLIB ON "Support hamlib for radio control functions.")
+
+if (USE_HAMLIB)
+    find_package(hamlib REQUIRED)
+    
+    if (NOT hamlib_FOUND)
+        message(FATAL_ERROR "hamlib development files not found...")
+    endif ()
+    
+    include_directories(${hamlib_INCLUDE_DIRS})
+    if (${hamlib_STATIC_FOUND})
+        link_libraries(${hamlib_STATIC_LIBRARIES})
+    else()
+        link_libraries(${hamlib_LIBRARIES})
+    endif()
+
+	ADD_DEFINITIONS(-DUSE_HAMLIB)	    
+endif ()
+
 macro(configure_files srcDir destDir globStr)
     message(STATUS "Copying ${srcDir}/${globStr} to directory ${destDir}")
     make_directory(${destDir})
@@ -433,6 +452,19 @@ IF(ENABLE_LIQUID_EXPERIMENTAL)
 ENDIF()
 ENDIF()
 
+
+IF (USE_HAMLIB)
+    SET (cubicsdr_headers
+        ${cubicsdr_headers}
+        src/rig/RigThread.h
+    )    
+    SET (cubicsdr_sources
+        ${cubicsdr_sources}
+        src/rig/RigThread.cpp
+    )
+ENDIF()
+
+
 SET (CUBICSDR_RESOURCES 
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12.fnt
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16.fnt
@@ -453,6 +485,9 @@ set(REG_EXT "[^/]*([.]cpp|[.]c|[.]h|[.]hpp)$")
 SOURCE_GROUP("Base" REGULAR_EXPRESSION "src/${REG_EXT}")
 SOURCE_GROUP("Forms\\SDRDevices" REGULAR_EXPRESSION "src/forms/SDRDevices/${REG_EXT}")
 SOURCE_GROUP("SDR" REGULAR_EXPRESSION "src/sdr/${REG_EXT}")
+IF(USE_HAMLIB)
+    SOURCE_GROUP("Rig" REGULAR_EXPRESSION "src/rig/${REG_EXT}")    
+ENDIF()
 SOURCE_GROUP("Demodulator" REGULAR_EXPRESSION "src/demod/${REG_EXT}")
 SOURCE_GROUP("Modem" REGULAR_EXPRESSION "src/modules/modem/${REG_EXT}")
 SOURCE_GROUP("Modem\\Analog" REGULAR_EXPRESSION "src/modules/modem/analog/${REG_EXT}")
