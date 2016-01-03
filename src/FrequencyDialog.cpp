@@ -52,9 +52,6 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
     case WXK_NUMPAD_ENTER:
         // Do Stuff
         freq = strToFrequency(dialogText->GetValue().ToStdString());
-        if (lastDemodType == "USB" || lastDemodType == "LSB") {
-            freq *= 2;
-        }
 
         if (targetMode == FDIALOG_TARGET_DEFAULT) {
             if (activeDemod) {
@@ -67,6 +64,9 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
             }
         }
         if (targetMode == FDIALOG_TARGET_BANDWIDTH) {
+            if (lastDemodType == "USB" || lastDemodType == "LSB") {
+                freq *= 2;
+            }
             if (activeDemod) {
                 activeDemod->setBandwidth(freq);
             } else {
