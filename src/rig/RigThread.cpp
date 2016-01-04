@@ -83,6 +83,7 @@ void RigThread::run() {
     }
     
     rig_close(rig);
+    rig_cleanup(rig);
     
     std::cout << "Rig thread exiting." << std::endl;
 };
