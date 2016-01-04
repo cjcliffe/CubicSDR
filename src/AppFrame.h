@@ -53,6 +53,13 @@
 #define wxID_AUDIO_BANDWIDTH_BASE 9000
 #define wxID_AUDIO_DEVICE_MULTIPLIER 50
 
+#ifdef USE_HAMLIB
+#define wxID_RIG_TOGGLE 11900
+#define wxID_RIG_PORT 11901
+#define wxID_RIG_SERIAL_BASE 11950
+#define wxID_RIG_MODEL_BASE 12000
+#endif
+
 // Define a new frame type
 class AppFrame: public wxFrame {
 public:
@@ -128,6 +135,19 @@ private:
     ModemProperties *modemProps;
     std::atomic_bool modemPropertiesUpdated;
     ModemArgInfoList newModemArgs;
+
+#ifdef USE_HAMLIB
+    wxMenu *rigMenu;
+    wxMenuItem *rigEnableMenuItem;
+    wxMenuItem *rigPortMenuItem;
+    std::map<int, wxMenuItem *> rigSerialMenuItems;
+    std::map<int, wxMenuItem *> rigModelMenuItems;
+    int rigModel;
+    int rigSerialRate;
+    std::vector<int> rigSerialRates;
+    std::string rigPort;
+    int numRigs;
+#endif
 
     wxDECLARE_EVENT_TABLE();
 };

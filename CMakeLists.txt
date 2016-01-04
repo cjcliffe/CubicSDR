@@ -521,6 +521,7 @@ include_directories (
 	${PROJECT_SOURCE_DIR}/src/visual
 	${PROJECT_SOURCE_DIR}/src/process
 	${PROJECT_SOURCE_DIR}/src/ui
+	${PROJECT_SOURCE_DIR}/src/rig
 	${PROJECT_SOURCE_DIR}/src
 	${PROJECT_SOURCE_DIR}/external/rtaudio
 	${PROJECT_SOURCE_DIR}/external/lodepng 

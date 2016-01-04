@@ -75,6 +75,17 @@ public:
     void setSpectrumAvgSpeed(float avgSpeed);
     float getSpectrumAvgSpeed();
     
+#if USE_HAMLIB
+    int getRigModel();
+    void setRigModel(int rigModel);
+
+    int getRigRate();
+    void setRigRate(int rigRate);
+    
+    std::string getRigPort();
+    void setRigPort(std::string rigPort);
+#endif
+    
     void setConfigName(std::string configName);
     std::string getConfigFileName(bool ignoreName=false);
     bool save();
@@ -91,4 +102,8 @@ private:
     std::atomic_llong centerFreq;
     std::atomic_int waterfallLinesPerSec;
     std::atomic<float> spectrumAvgSpeed;
+#if USE_HAMLIB
+    std::atomic_int rigModel, rigRate;
+    std::string rigPort;
+#endif
 };

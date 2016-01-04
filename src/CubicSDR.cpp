@@ -18,6 +18,10 @@
 #include "CoreFoundation/CoreFoundation.h"
 #endif
 
+#ifdef USE_HAMLIB
+#include "RigThread.h"
+#endif
+
 IMPLEMENT_APP(CubicSDR)
 
 //#ifdef ENABLE_DIGITAL_LAB
@@ -163,6 +167,13 @@ bool CubicSDR::OnInit() {
 //#endif
     
     wxApp::SetAppName("CubicSDR");
+
+#ifdef USE_HAMLIB
+    t_Rig = nullptr;
+    rigThread = nullptr;
+    
+    RigThread::enumerate();
+#endif
 
     Modem::addModemFactory(new ModemFM);
     Modem::addModemFactory(new ModemFMStereo);
@@ -712,3 +723,51 @@ bool CubicSDR::getUseLocalMod() {
 std::string CubicSDR::getModulePath() {
     return modulePath;
 }
+
+#ifdef USE_HAMLIB
+RigThread *CubicSDR::getRigThread() {
+    return rigThread;
+}
+
+void CubicSDR::initRig(int rigModel, std::string rigPort, int rigSerialRate) {
+    if (rigThread) {
+        if (!rigThread->isTerminated()) {
+            rigThread->terminate();
+        }
+        delete rigThread;
+        rigThread = nullptr;
+    }
+    if (t_Rig && t_Rig->joinable()) {
+        t_Rig->join();
+        delete t_Rig;
+        t_Rig = nullptr;
+    }
+    rigThread = new RigThread();
+    rigThread->initRig(rigModel, rigPort, rigSerialRate);
+    t_Rig = new std::thread(&RigThread::threadMain, rigThread);
+}
+
+void CubicSDR::stopRig() {
+    if (!rigThread) {
+        return;
+    }
+    
+    if (rigThread) {
+        if (!rigThread->isTerminated()) {
+            rigThread->terminate();
+        }
+        delete rigThread;
+        rigThread = nullptr;
+    }
+    if (t_Rig && t_Rig->joinable()) {
+        t_Rig->join();
+        delete t_Rig;
+        t_Rig = nullptr;
+    }
+}
+
+bool CubicSDR::rigIsActive() {
+    return (rigThread && !rigThread->isTerminated());
+}
+
+#endif

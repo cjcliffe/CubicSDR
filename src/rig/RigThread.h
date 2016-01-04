@@ -14,6 +14,8 @@ struct rigGreater
     }
 };
 
+typedef std::vector<const struct rig_caps *> RigList;
+
 class RigThread : public IOThread {
 public:
     RigThread();
@@ -25,7 +27,7 @@ public:
     freq_t getFrequency();
     void setFrequency(freq_t new_freq);
     
-    static void enumerate();
+    static RigList &enumerate();
     static int add_hamlib_rig(const struct rig_caps *rc, void* f);
     
 private:
@@ -37,5 +39,5 @@ private:
     freq_t freq;
     freq_t newFreq;
     std::atomic_bool freqChanged;
-    static std::vector<const struct rig_caps *> rigCaps;
+    static RigList rigCaps;
 };

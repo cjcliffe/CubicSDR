@@ -54,6 +54,10 @@
 #include "ModemST.h"
 #endif
 
+#ifdef USE_HAMLIB
+class RigThread;
+#endif
+
 #include <wx/cmdline.h>
 
 #define NUM_DEMODULATORS 1
@@ -142,6 +146,13 @@ public:
     bool getUseLocalMod();
     std::string getModulePath();
     
+#ifdef USE_HAMLIB
+    RigThread *getRigThread();
+    void initRig(int rigModel, std::string rigPort, int rigSerialRate);
+    void stopRig();
+    bool rigIsActive();
+#endif
+    
 private:
     AppFrame *appframe;
     AppConfig config;
@@ -184,6 +195,10 @@ private:
     std::string notifyMessage;
     std::string modulePath;
     std::mutex notify_busy;
+#ifdef USE_HAMLIB
+    RigThread *rigThread;
+    std::thread *t_Rig;
+#endif
 };
 
 #ifdef BUNDLE_SOAPY_MODS

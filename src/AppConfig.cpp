@@ -152,6 +152,11 @@ AppConfig::AppConfig() : configName("") {
     centerFreq.store(100000000);
     waterfallLinesPerSec.store(DEFAULT_WATERFALL_LPS);
     spectrumAvgSpeed.store(0.65f);
+#ifdef USE_HAMLIB
+    rigModel.store(1);
+    rigRate.store(57600);
+    rigPort = "/dev/ttyUSB0";
+#endif
 }
 
 DeviceConfig *AppConfig::getDevice(std::string deviceId) {
@@ -297,6 +302,13 @@ bool AppConfig::save() {
         DataNode *device_node = devices_node->newChild("device");
         device_config_i->second->save(device_node);
     }
+
+#ifdef USE_HAMLIB
+    DataNode *rig_node = cfg.rootNode()->newChild("rig");
+    *rig_node->newChild("model") = rigModel.load();
+    *rig_node->newChild("rate") = rigRate.load();
+    *rig_node->newChild("port") = rigPort;
+#endif
     
     std::string cfgFileName = getConfigFileName();
     
@@ -411,6 +423,27 @@ bool AppConfig::load() {
             }
         }
     }
+    
+#ifdef USE_HAMLIB
+    if (cfg.rootNode()->hasAnother("rig")) {
+        DataNode *rig_node = cfg.rootNode()->getNext("rig");
+
+        if (rig_node->hasAnother("model")) {
+            int loadModel;
+            rig_node->getNext("model")->element()->get(loadModel);
+            winMax.store(loadModel?loadModel:1);
+        }
+        if (rig_node->hasAnother("rate")) {
+            int loadRate;
+            rig_node->getNext("rate")->element()->get(loadRate);
+            winMax.store(loadRate?loadRate:57600);
+        }
+        if (rig_node->hasAnother("port")) {
+            rigPort = rig_node->getNext("port")->element()->toString();
+        }
+    }
+#endif
+
 
     return true;
 }
@@ -419,3 +452,32 @@ bool AppConfig::reset() {
 
     return true;
 }
+
+
+#if USE_HAMLIB
+
+int AppConfig::getRigModel() {
+    return rigModel.load();
+}
+
+void AppConfig::setRigModel(int rigModel) {
+    this->rigModel.store(rigModel);
+}
+
+int AppConfig::getRigRate() {
+    return rigRate.load();
+}
+
+void AppConfig::setRigRate(int rigRate) {
+    this->rigRate.store(rigRate);
+}
+
+std::string AppConfig::getRigPort() {
+    return rigPort;
+}
+
+void AppConfig::setRigPort(std::string rigPort) {
+    this->rigPort = rigPort;
+}
+
+#endif
