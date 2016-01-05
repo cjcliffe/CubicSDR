@@ -4,6 +4,7 @@
 # Change Log: Charles J. Cliffe <cj@cubicproductions.com>
 #  Updates: 
 #       Jan 2015 - Add /opt/ paths for OSX MacPorts
+#                - Fix HAMLIB_INCLUDE_DIR absolute search
 #  TODO: 
 #       Windows support
 #       Static support
@@ -15,15 +16,11 @@
 set(HAMLIB_FOUND FALSE)
 
 find_path(HAMLIB_INCLUDE_DIR
-	NAMES rig.h
+	NAMES hamlib/rig.h
 	PATHS
-		/usr/include/hamlib
 		/usr/include
-		/usr/local/include/hamlib
 		/usr/local/include
-		/opt/local/include/hamlib
 		/opt/local/include
-		/opt/local/include/hamlib
 )
 
 find_library(HAMLIB_LIBRARY
@@ -43,7 +40,7 @@ find_library(HAMLIB_LIBRARY
 
 if(HAMLIB_INCLUDE_DIR AND HAMLIB_LIBRARY)
 	set(HAMLIB_FOUND TRUE)
-	message(STATUS "Hamlib version: ${VERSION}")
+    # message(STATUS "Hamlib version: ${VERSION}")
 	message(STATUS "Found hamlib library directory at: ${HAMLIB_LIBRARY}")
 	message(STATUS "Found hamlib include directory at: ${HAMLIB_INCLUDE_DIR}")
 endif(HAMLIB_INCLUDE_DIR AND HAMLIB_LIBRARY)
