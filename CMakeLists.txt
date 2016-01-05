@@ -1,5 +1,9 @@
 cmake_minimum_required (VERSION 2.8)
 
+project (CubicSDR)
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
+
 SET(CUBICSDR_VERSION_MAJOR "0")
 SET(CUBICSDR_VERSION_MINOR "1")
 SET(CUBICSDR_VERSION_PATCH "20")
@@ -34,23 +38,18 @@ ADD_DEFINITIONS(
 ENDIF()
 ENDIF()
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
-option(USE_HAMLIB ON "Support hamlib for radio control functions.")
+set(USE_HAMLIB ON CACHE BOOL "Support hamlib for radio control functions.")
 
 if (USE_HAMLIB)
     find_package(hamlib REQUIRED)
     
-    if (NOT hamlib_FOUND)
+    if (NOT HAMLIB_FOUND)
         message(FATAL_ERROR "hamlib development files not found...")
     endif ()
     
-    include_directories(${hamlib_INCLUDE_DIRS})
-    if (${hamlib_STATIC_FOUND})
-        link_libraries(${hamlib_STATIC_LIBRARIES})
-    else()
-        link_libraries(${hamlib_LIBRARIES})
-    endif()
+    include_directories(${HAMLIB_INCLUDE_DIR})
+    link_libraries(${HAMLIB_LIBRARY})
 
 	ADD_DEFINITIONS(-DUSE_HAMLIB)	    
 endif ()
@@ -88,8 +87,6 @@ macro(configure_files_recurse srcDir destDir)
         endif(NOT IS_DIRECTORY ${srcTemplatePath})
     endforeach(templateFile)
 endmacro(configure_files_recurse)
-
-project (CubicSDR)
 
 if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
     MESSAGE( "64 bit compiler detected" )

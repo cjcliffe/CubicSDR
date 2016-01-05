@@ -1,59 +1,59 @@
-# - Try to find hamlib
-# Once done, this will define:
+# - Try to find Hamlib
+# Author: George L. Emigh - AB4BD
+# 
+# Change Log: Charles J. Cliffe <cj@cubicproductions.com>
+#  Updates: 
+#       Jan 2015 - Add /opt/ paths for OSX MacPorts
+#  TODO: 
+#       Windows support
+#       Static support
 #
-#  hamlib_FOUND - system has Hamlib-2
-#  hamlib_INCLUDE_DIRS - the Hamlib-2 include directories
-#  hamlib_LIBRARIES - link these to use Hamlib-2
-#  hamlib_STATIC_FOUND - system has Hamlib-2 static archive
-#  hamlib_STATIC_LIBRARIES - link these to use Hamlib-2 static archive
+# HAMLIB_FOUND - system has Hamlib
+# HAMLIB_LIBRARY - location of the library for hamlib
+# HAMLIB_INCLUDE_DIR - location of the include files for hamlib
 
-include (LibFindMacros)
+set(HAMLIB_FOUND FALSE)
 
-# pkg-config?
-find_path (__hamlib_pc_path NAMES hamlib.pc
-  PATH_SUFFIXES lib/pkgconfig
+find_path(HAMLIB_INCLUDE_DIR
+	NAMES rig.h
+	PATHS
+		/usr/include/hamlib
+		/usr/include
+		/usr/local/include/hamlib
+		/usr/local/include
+		/opt/local/include/hamlib
+		/opt/local/include
+		/opt/local/include/hamlib
 )
-if (__hamlib_pc_path)
-  set (ENV{PKG_CONFIG_PATH} "${__hamlib_pc_path}" "$ENV{PKG_CONFIG_PATH}")
-  unset (__hamlib_pc_path CACHE)
-endif ()
 
-# Use pkg-config to get hints about paths, libs and, flags
-unset (__pkg_config_checked_hamlib CACHE)
-libfind_pkg_check_modules (PC_HAMLIB hamlib)
+find_library(HAMLIB_LIBRARY
+	NAMES hamlib
+	PATHS
+		/usr/lib64/hamlib
+		/usr/lib/hamlib
+		/usr/lib64
+		/usr/lib
+		/usr/local/lib64/hamlib
+		/usr/local/lib/hamlib
+		/usr/local/lib64
+		/usr/local/lib
+		/opt/local/lib
+		/opt/local/lib/hamlib
+)
 
-if (NOT PC_HAMLIB_STATIC_LIBRARIES)
-  if (WIN32)
-    set (PC_HAMLIB_STATIC_LIBRARIES hamlib ws2_32)
-  else ()
-    set (PC_HAMLIB_STATIC_LIBRARIES hamlib m dl usb)
-  endif ()
-endif ()
+if(HAMLIB_INCLUDE_DIR AND HAMLIB_LIBRARY)
+	set(HAMLIB_FOUND TRUE)
+	message(STATUS "Hamlib version: ${VERSION}")
+	message(STATUS "Found hamlib library directory at: ${HAMLIB_LIBRARY}")
+	message(STATUS "Found hamlib include directory at: ${HAMLIB_INCLUDE_DIR}")
+endif(HAMLIB_INCLUDE_DIR AND HAMLIB_LIBRARY)
 
-# The libraries
-libfind_library (hamlib hamlib)
-libfind_library (hamlib_STATIC libhamlib.a)
-
-find_path (hamlib_INCLUDE_DIR hamlib/rig.h)
-
-# Set the include dir variables and the libraries and let libfind_process do the rest
-set (hamlib_PROCESS_INCLUDES hamlib_INCLUDE_DIR)
-set (hamlib_PROCESS_LIBS hamlib_LIBRARY)
-libfind_process (hamlib)
-
-set (hamlib_STATIC_PROCESS_INCLUDES hamlib_STATIC_INCLUDE_DIR)
-set (hamlib_STATIC_PROCESS_LIBS hamlib_STATIC_LIBRARY PC_HAMLIB_STATIC_LIBRARIES)
-libfind_process (hamlib_STATIC)
-
-# make sure we return a full path for the library we return
-if (hamlib_FOUND)
-  list (REMOVE_ITEM hamlib_LIBRARIES hamlib)
-  if (hamlib_STATIC_LIBRARIES)
-    list (REMOVE_ITEM hamlib_STATIC_LIBRARIES hamlib)
-  endif ()
-endif ()
-
-# Handle the  QUIETLY and REQUIRED  arguments and set  HAMLIB_FOUND to
-# TRUE if all listed variables are TRUE
-include (FindPackageHandleStandardArgs)
-find_package_handle_standard_args (hamlib DEFAULT_MSG hamlib_INCLUDE_DIRS hamlib_LIBRARY hamlib_LIBRARIES)
+IF(NOT HAMLIB_FOUND)
+  IF(NOT HAMLIB_FIND_QUIETLY)
+    MESSAGE(STATUS "HAMLIB was not found.")
+  ELSE(NOT HAMLIB_FIND_QUIETLY)
+    IF(HAMLIB_FIND_REQUIRED)
+      MESSAGE(FATAL_ERROR "HAMLIB was not found.")
+    ENDIF(HAMLIB_FIND_REQUIRED)
+  ENDIF(NOT HAMLIB_FIND_QUIETLY)
+ENDIF(NOT HAMLIB_FOUND)
