@@ -84,6 +84,10 @@ public:
     
     void setFrequency(long long freq);
     long long getFrequency();
+    
+    void lockFrequency(long long freq);
+    bool isFrequencyLocked();
+    void unlockFrequency();
 
     void setOffset(long long ofs);
     long long getOffset();
@@ -195,6 +199,8 @@ private:
     std::string notifyMessage;
     std::string modulePath;
     std::mutex notify_busy;
+    std::atomic_bool frequency_locked;
+    std::atomic_llong lock_freq;
 #ifdef USE_HAMLIB
     RigThread *rigThread;
     std::thread *t_Rig;

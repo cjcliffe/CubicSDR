@@ -449,6 +449,25 @@ long long CubicSDR::getFrequency() {
     return frequency;
 }
 
+
+void CubicSDR::lockFrequency(long long freq) {
+    frequency_locked.store(true);
+    lock_freq.store(freq);
+    
+    if (sdrThread && !sdrThread->isTerminated()) {
+        sdrThread->lockFrequency(freq);
+    }
+}
+
+bool CubicSDR::isFrequencyLocked() {
+    return frequency_locked.load();
+}
+
+void CubicSDR::unlockFrequency() {
+    frequency_locked.store(false);
+    sdrThread->unlockFrequency();
+}
+
 void CubicSDR::setSampleRate(long long rate_in) {
     sampleRate = rate_in;
     sdrThread->setSampleRate(sampleRate);

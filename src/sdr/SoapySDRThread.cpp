@@ -33,6 +33,9 @@ SDRThread::SDRThread() : IOThread(), buffers("SDRThreadBuffers") {
     agc_mode_changed.store(false);
     gain_value_changed.store(false);
     setting_value_changed.store(false);
+    frequency_lock_init.store(false);
+    frequency_locked.store(false);
+    lock_freq.store(0);
 }
 
 SDRThread::~SDRThread() {
@@ -241,7 +244,12 @@ void SDRThread::updateSettings() {
     }
     
     if (freq_changed.load()) {
-        device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency.load() - offset.load());
+        if (frequency_locked.load() && !frequency_lock_init.load()) {
+            device->setFrequency(SOAPY_SDR_RX,0,"RF",lock_freq.load());
+            frequency_lock_init.store(true);
+        } else if (!frequency_locked.load()) {
+            device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency.load() - offset.load());
+        }
         freq_changed.store(false);
     }
     
@@ -370,6 +378,23 @@ void SDRThread::setFrequency(long long freq) {
 
 long long SDRThread::getFrequency() {
     return frequency.load();
+}
+
+void SDRThread::lockFrequency(long long freq) {
+    lock_freq.store(freq);
+    frequency_locked.store(true);
+    frequency_lock_init.store(false);
+    setFrequency(freq);
+}
+
+bool SDRThread::isFrequencyLocked() {
+    return frequency_locked.load();
+}
+
+void SDRThread::unlockFrequency() {
+    frequency_locked.store(false);
+    frequency_lock_init.store(false);
+    freq_changed.store(true);
 }
 
 void SDRThread::setOffset(long long ofs) {
