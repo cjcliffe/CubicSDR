@@ -35,6 +35,9 @@ public:
     void setSetting(std::string key, std::string value);
     std::string getSetting(std::string key, std::string defaultValue);
     
+    void setRigIF(int rigType, long long freq);
+    long long getRigIF(int rigType);
+    
     void save(DataNode *node);
     void load(DataNode *node);
 
@@ -46,6 +49,7 @@ private:
     std::atomic_llong offset;
     ConfigSettings streamOpts;
     std::map<std::string, std::string> settings;
+    std::map<int, long long> rigIF;
 };
 
 class AppConfig {

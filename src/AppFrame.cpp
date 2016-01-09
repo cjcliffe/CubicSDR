@@ -417,11 +417,13 @@ AppFrame::AppFrame() :
     rigModel = wxGetApp().getConfig()->getRigModel();
     rigSerialRate = wxGetApp().getConfig()->getRigRate();
     rigPort = wxGetApp().getConfig()->getRigPort();
-    
+            
     rigMenu = new wxMenu;
 
     rigEnableMenuItem = rigMenu->AppendCheckItem(wxID_RIG_TOGGLE, wxT("Enable Rig"));
 
+    rigMenu->Append(wxID_RIG_SDR_IF, wxT("SDR-IF"));
+            
     wxMenu *rigModelMenu = new wxMenu;
     RigList &rl = RigThread::enumerate();
     numRigs = rl.size();
@@ -435,7 +437,7 @@ AppFrame::AppFrame() :
         rigModelMenuItems[(*ri)->rig_model] = rigModelMenu->AppendRadioItem(modelMenuId, modelString, wxT("Description?"));
         
         if (rigModel == (*ri)->rig_model) {
-            rigModelMenuItems[(*ri)->rig_model]->Check();
+            rigModelMenuItems[(*ri)->rig_model]->Check(true);
         }
         
         modelMenuId++;
@@ -465,7 +467,7 @@ AppFrame::AppFrame() :
         rigSerialMenuItems[(*rate_i)] = rigSerialMenu->AppendRadioItem(rateMenuId, rateString, wxT("Description?"));
         
         if (rigSerialRate == (*rate_i)) {
-            rigSerialMenuItems[(*rate_i)]->Check();
+            rigSerialMenuItems[(*rate_i)]->Check(true);
         }
         
         rateMenuId++;
@@ -590,7 +592,7 @@ void AppFrame::updateDeviceParams() {
                     }
                     wxMenuItem *item = subMenu->AppendRadioItem(wxID_SETTINGS_BASE+i, displayName);
                     if (currentVal == (*str_i)) {
-                        item->Check();
+                        item->Check(true);
                     }
                     j++;
                     i++;
@@ -648,6 +650,21 @@ void AppFrame::updateDeviceParams() {
     
     agcMenuItem->Check(wxGetApp().getAGCMode());
     
+
+#if USE_HAMLIB
+    std::string deviceId = devInfo->getDeviceId();
+    DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
+
+    if (wxGetApp().rigIsActive()) {
+        rigSDRIF = devConfig->getRigIF(rigModel);
+        if (rigSDRIF) {
+            wxGetApp().lockFrequency(rigSDRIF);
+        } else {
+            wxGetApp().unlockFrequency();
+        }
+    }
+#endif
+    
     deviceChanged.store(false);
 }
 
@@ -681,7 +698,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
 //        iqSwapMenuItem->Check(swap_state);
     } else if (event.GetId() == wxID_AGC_CONTROL) {
         if (wxGetApp().getDevice() == NULL) {
-            agcMenuItem->Check();
+            agcMenuItem->Check(true);
             return;
         }
         if (!wxGetApp().getAGCMode()) {
@@ -891,11 +908,24 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
     }
     
 #ifdef USE_HAMLIB
+
     bool resetRig = false;
     if (event.GetId() >= wxID_RIG_MODEL_BASE && event.GetId() < wxID_RIG_MODEL_BASE+numRigs) {
         int rigIdx = event.GetId()-wxID_RIG_MODEL_BASE;
         RigList &rl = RigThread::enumerate();
         rigModel = rl[rigIdx]->rig_model;
+        if (devInfo != nullptr) {
+            std::string deviceId = devInfo->getDeviceId();
+            DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
+            rigSDRIF = devConfig->getRigIF(rigModel);
+            if (rigSDRIF) {
+                wxGetApp().lockFrequency(rigSDRIF);
+            } else {
+                wxGetApp().unlockFrequency();
+            }
+        } else {
+            wxGetApp().unlockFrequency();
+        }
         resetRig = true;
     }
 
@@ -919,8 +949,39 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         if (!wxGetApp().rigIsActive()) {
             wxGetApp().stopRig();
             wxGetApp().initRig(rigModel, rigPort, rigSerialRate);
+            
+            if (devInfo != nullptr) {
+                std::string deviceId = devInfo->getDeviceId();
+                DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
+                rigSDRIF = devConfig->getRigIF(rigModel);
+                if (rigSDRIF) {
+                    wxGetApp().lockFrequency(rigSDRIF);
+                } else {
+                    wxGetApp().unlockFrequency();
+                }
+            } else {
+                wxGetApp().unlockFrequency();
+            }
         } else {
             wxGetApp().stopRig();
+            wxGetApp().unlockFrequency();
+        }
+    }
+    
+    if (event.GetId() == wxID_RIG_SDR_IF) {
+        if (devInfo != nullptr) {
+            std::string deviceId = devInfo->getDeviceId();
+            DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
+            long long freqRigIF = wxGetNumberFromUser("Rig SDR-IF Frequency", "Frequency (Hz)", "Frequency", devConfig->getRigIF(rigModel), 0, 2000000000);
+            if (freqRigIF != -1) {
+                rigSDRIF = freqRigIF;
+                devConfig->setRigIF(rigModel, rigSDRIF);
+            }
+            if (rigSDRIF && wxGetApp().rigIsActive()) {
+                wxGetApp().lockFrequency(rigSDRIF);
+            } else {
+                wxGetApp().unlockFrequency();
+            }
         }
     }
     

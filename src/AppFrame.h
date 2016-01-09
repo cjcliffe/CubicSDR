@@ -56,6 +56,7 @@
 #ifdef USE_HAMLIB
 #define wxID_RIG_TOGGLE 11900
 #define wxID_RIG_PORT 11901
+#define wxID_RIG_SDR_IF 11902
 #define wxID_RIG_SERIAL_BASE 11950
 #define wxID_RIG_MODEL_BASE 12000
 #endif
@@ -140,10 +141,12 @@ private:
     wxMenu *rigMenu;
     wxMenuItem *rigEnableMenuItem;
     wxMenuItem *rigPortMenuItem;
+    wxMenuItem *sdrIFMenuItem;
     std::map<int, wxMenuItem *> rigSerialMenuItems;
     std::map<int, wxMenuItem *> rigModelMenuItems;
     int rigModel;
     int rigSerialRate;
+    long long rigSDRIF;
     std::vector<int> rigSerialRates;
     std::string rigPort;
     int numRigs;

@@ -55,6 +55,12 @@ void DeviceConfig::save(DataNode *node) {
     for (ConfigSettings::const_iterator set_i = settings.begin(); set_i != settings.end(); set_i++) {
         *settingsNode->newChild(set_i->first.c_str()) = set_i->second;
     }
+    DataNode *rigIFs = node->newChild("rig_ifs");
+    for (std::map<int, long long>::const_iterator rigIF_i = rigIF.begin(); rigIF_i != rigIF.end(); rigIF_i++) {
+        DataNode *ifNode = rigIFs->newChild("rig_if");
+        *ifNode->newChild("model") = rigIF_i->first;
+        *ifNode->newChild("sdr_if") = rigIF_i->second;
+    }
     busy_lock.unlock();
 }
 
@@ -95,6 +101,21 @@ void DeviceConfig::load(DataNode *node) {
             
             if (keyName != "") {
                 setSetting(keyName, strSettingValue);
+            }
+        }
+    }
+    if (node->hasAnother("rig_ifs")) {
+        DataNode *rigIFNodes = node->getNext("rig_ifs");
+        while (rigIFNodes->hasAnother("rig_if")) {
+            DataNode *rigIFNode = rigIFNodes->getNext("rig_if");
+            if (rigIFNode->hasAnother("model") && rigIFNode->hasAnother("sdr_if")) {
+                int load_model;
+                long long load_freq;
+                
+                rigIFNode->getNext("model")->element()->get(load_model);
+                rigIFNode->getNext("sdr_if")->element()->get(load_freq);
+                
+                rigIF[load_model] = load_freq;
             }
         }
     }
@@ -140,6 +161,16 @@ ConfigSettings DeviceConfig::getSettings() {
     return settings;
 }
 
+void DeviceConfig::setRigIF(int rigType, long long freq) {
+    rigIF[rigType] = freq;
+}
+
+long long DeviceConfig::getRigIF(int rigType) {
+    if (rigIF.find(rigType) != rigIF.end()) {
+        return rigIF[rigType];
+    }
+    return 0;
+}
 
 AppConfig::AppConfig() : configName("") {
     winX.store(0);
