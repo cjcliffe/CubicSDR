@@ -16,6 +16,7 @@ public:
     void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
     
 private:
-    resamp2_crcf ssbFilt;
+    firfilt_crcf ssbFilt;
+    nco_crcf ssbShift;
     ampmodem demodAM_USB;
 };
