@@ -1333,7 +1333,8 @@ void AppFrame::saveSession(std::string fileName) {
     DataNode *header = s.rootNode()->newChild("header");
     *header->newChild("version") = std::string(CUBICSDR_VERSION);
     *header->newChild("center_freq") = wxGetApp().getFrequency();
-
+    *header->newChild("sample_rate") = wxGetApp().getSampleRate();
+    
     DataNode *demods = s.rootNode()->newChild("demodulators");
 
     std::vector<DemodulatorInstance *> &instances = wxGetApp().getDemodMgr().getDemodulators();
@@ -1378,10 +1379,28 @@ bool AppFrame::loadSession(std::string fileName) {
         DataNode *header = l.rootNode()->getNext("header");
 
         std::string version(*header->getNext("version"));
-        long long center_freq = *header->getNext("center_freq");
-
         std::cout << "Loading " << version << " session file" << std::endl;
+
+        long long center_freq = *header->getNext("center_freq");
         std::cout << "\tCenter Frequency: " << center_freq << std::endl;
+        
+        if (header->hasAnother("sample_rate")) {
+            int sample_rate = *header->getNext("sample_rate");
+            
+            SDRDeviceInfo *dev = wxGetApp().getSDRThread()->getDevice();
+            if (dev) {
+                SDRDeviceChannel *chan = dev->getRxChannel();
+                if (chan) {
+                    // Try for a reasonable default sample rate.
+                    sample_rate = chan->getSampleRateNear(sample_rate);
+                }
+                wxGetApp().setSampleRate(sample_rate);
+                deviceChanged.store(true);
+            } else {
+                wxGetApp().setSampleRate(sample_rate);
+            }
+            
+        }
 
         wxGetApp().setFrequency(center_freq);
 
@@ -1453,8 +1472,8 @@ bool AppFrame::loadSession(std::string fileName) {
             DemodulatorInstance *newDemod = wxGetApp().getDemodMgr().newThread();
             loadedDemod = newDemod;
             numDemodulators++;
-            newDemod->writeModemSettings(mSettings);
             newDemod->setDemodulatorType(type);
+            newDemod->writeModemSettings(mSettings);
             newDemod->setBandwidth(bandwidth);
             newDemod->setFrequency(freq);
             newDemod->setGain(gain);
@@ -1493,7 +1512,7 @@ bool AppFrame::loadSession(std::string fileName) {
             loadedDemod->setActive(true);
             loadedDemod->setFollow(true);
             loadedDemod->setTracking(true);
-            wxGetApp().getDemodMgr().setActiveDemodulator(loadedDemod);
+            wxGetApp().getDemodMgr().setActiveDemodulator(loadedDemod, false);
         }
     } catch (DataInvalidChildException &e) {
         std::cout << e.what() << std::endl;
