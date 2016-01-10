@@ -55,6 +55,12 @@ void DeviceConfig::save(DataNode *node) {
     for (ConfigSettings::const_iterator set_i = settings.begin(); set_i != settings.end(); set_i++) {
         *settingsNode->newChild(set_i->first.c_str()) = set_i->second;
     }
+    DataNode *rigIFs = node->newChild("rig_ifs");
+    for (std::map<int, long long>::const_iterator rigIF_i = rigIF.begin(); rigIF_i != rigIF.end(); rigIF_i++) {
+        DataNode *ifNode = rigIFs->newChild("rig_if");
+        *ifNode->newChild("model") = rigIF_i->first;
+        *ifNode->newChild("sdr_if") = rigIF_i->second;
+    }
     busy_lock.unlock();
 }
 
@@ -95,6 +101,21 @@ void DeviceConfig::load(DataNode *node) {
             
             if (keyName != "") {
                 setSetting(keyName, strSettingValue);
+            }
+        }
+    }
+    if (node->hasAnother("rig_ifs")) {
+        DataNode *rigIFNodes = node->getNext("rig_ifs");
+        while (rigIFNodes->hasAnother("rig_if")) {
+            DataNode *rigIFNode = rigIFNodes->getNext("rig_if");
+            if (rigIFNode->hasAnother("model") && rigIFNode->hasAnother("sdr_if")) {
+                int load_model;
+                long long load_freq;
+                
+                rigIFNode->getNext("model")->element()->get(load_model);
+                rigIFNode->getNext("sdr_if")->element()->get(load_freq);
+                
+                rigIF[load_model] = load_freq;
             }
         }
     }
@@ -140,6 +161,16 @@ ConfigSettings DeviceConfig::getSettings() {
     return settings;
 }
 
+void DeviceConfig::setRigIF(int rigType, long long freq) {
+    rigIF[rigType] = freq;
+}
+
+long long DeviceConfig::getRigIF(int rigType) {
+    if (rigIF.find(rigType) != rigIF.end()) {
+        return rigIF[rigType];
+    }
+    return 0;
+}
 
 AppConfig::AppConfig() : configName("") {
     winX.store(0);
@@ -152,6 +183,11 @@ AppConfig::AppConfig() : configName("") {
     centerFreq.store(100000000);
     waterfallLinesPerSec.store(DEFAULT_WATERFALL_LPS);
     spectrumAvgSpeed.store(0.65f);
+#ifdef USE_HAMLIB
+    rigModel.store(1);
+    rigRate.store(57600);
+    rigPort = "/dev/ttyUSB0";
+#endif
 }
 
 DeviceConfig *AppConfig::getDevice(std::string deviceId) {
@@ -297,6 +333,13 @@ bool AppConfig::save() {
         DataNode *device_node = devices_node->newChild("device");
         device_config_i->second->save(device_node);
     }
+
+#ifdef USE_HAMLIB
+    DataNode *rig_node = cfg.rootNode()->newChild("rig");
+    *rig_node->newChild("model") = rigModel.load();
+    *rig_node->newChild("rate") = rigRate.load();
+    *rig_node->newChild("port") = rigPort;
+#endif
     
     std::string cfgFileName = getConfigFileName();
     
@@ -411,6 +454,27 @@ bool AppConfig::load() {
             }
         }
     }
+    
+#ifdef USE_HAMLIB
+    if (cfg.rootNode()->hasAnother("rig")) {
+        DataNode *rig_node = cfg.rootNode()->getNext("rig");
+
+        if (rig_node->hasAnother("model")) {
+            int loadModel;
+            rig_node->getNext("model")->element()->get(loadModel);
+            rigModel.store(loadModel?loadModel:1);
+        }
+        if (rig_node->hasAnother("rate")) {
+            int loadRate;
+            rig_node->getNext("rate")->element()->get(loadRate);
+            rigRate.store(loadRate?loadRate:57600);
+        }
+        if (rig_node->hasAnother("port")) {
+            rigPort = rig_node->getNext("port")->element()->toString();
+        }
+    }
+#endif
+
 
     return true;
 }
@@ -419,3 +483,32 @@ bool AppConfig::reset() {
 
     return true;
 }
+
+
+#if USE_HAMLIB
+
+int AppConfig::getRigModel() {
+    return rigModel.load();
+}
+
+void AppConfig::setRigModel(int rigModel) {
+    this->rigModel.store(rigModel);
+}
+
+int AppConfig::getRigRate() {
+    return rigRate.load();
+}
+
+void AppConfig::setRigRate(int rigRate) {
+    this->rigRate.store(rigRate);
+}
+
+std::string AppConfig::getRigPort() {
+    return rigPort;
+}
+
+void AppConfig::setRigPort(std::string rigPort) {
+    this->rigPort = rigPort;
+}
+
+#endif

@@ -1,9 +1,13 @@
 cmake_minimum_required (VERSION 2.8)
 
+project (CubicSDR)
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
+
 SET(CUBICSDR_VERSION_MAJOR "0")
 SET(CUBICSDR_VERSION_MINOR "1")
-SET(CUBICSDR_VERSION_PATCH "20")
-SET(CUBICSDR_VERSION_REL "alpha")
+SET(CUBICSDR_VERSION_PATCH "21")
+SET(CUBICSDR_VERSION_REL "alpha-rig_control")
 SET(CUBICSDR_VERSION "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}-${CUBICSDR_VERSION_REL}")
 
 SET(CPACK_PACKAGE_VERSION "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}")
@@ -34,7 +38,21 @@ ADD_DEFINITIONS(
 ENDIF()
 ENDIF()
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+
+set(USE_HAMLIB ON CACHE BOOL "Support hamlib for radio control functions.")
+
+if (USE_HAMLIB)
+    find_package(hamlib REQUIRED)
+    
+    if (NOT HAMLIB_FOUND)
+        message(FATAL_ERROR "hamlib development files not found...")
+    endif ()
+    
+    include_directories(${HAMLIB_INCLUDE_DIR})
+    link_libraries(${HAMLIB_LIBRARY})
+
+	ADD_DEFINITIONS(-DUSE_HAMLIB)	    
+endif ()
 
 macro(configure_files srcDir destDir globStr)
     message(STATUS "Copying ${srcDir}/${globStr} to directory ${destDir}")
@@ -69,8 +87,6 @@ macro(configure_files_recurse srcDir destDir)
         endif(NOT IS_DIRECTORY ${srcTemplatePath})
     endforeach(templateFile)
 endmacro(configure_files_recurse)
-
-project (CubicSDR)
 
 if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
     MESSAGE( "64 bit compiler detected" )
@@ -433,6 +449,19 @@ IF(ENABLE_LIQUID_EXPERIMENTAL)
 ENDIF()
 ENDIF()
 
+
+IF (USE_HAMLIB)
+    SET (cubicsdr_headers
+        ${cubicsdr_headers}
+        src/rig/RigThread.h
+    )    
+    SET (cubicsdr_sources
+        ${cubicsdr_sources}
+        src/rig/RigThread.cpp
+    )
+ENDIF()
+
+
 SET (CUBICSDR_RESOURCES 
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12.fnt
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16.fnt
@@ -453,6 +482,9 @@ set(REG_EXT "[^/]*([.]cpp|[.]c|[.]h|[.]hpp)$")
 SOURCE_GROUP("Base" REGULAR_EXPRESSION "src/${REG_EXT}")
 SOURCE_GROUP("Forms\\SDRDevices" REGULAR_EXPRESSION "src/forms/SDRDevices/${REG_EXT}")
 SOURCE_GROUP("SDR" REGULAR_EXPRESSION "src/sdr/${REG_EXT}")
+IF(USE_HAMLIB)
+    SOURCE_GROUP("Rig" REGULAR_EXPRESSION "src/rig/${REG_EXT}")    
+ENDIF()
 SOURCE_GROUP("Demodulator" REGULAR_EXPRESSION "src/demod/${REG_EXT}")
 SOURCE_GROUP("Modem" REGULAR_EXPRESSION "src/modules/modem/${REG_EXT}")
 SOURCE_GROUP("Modem\\Analog" REGULAR_EXPRESSION "src/modules/modem/analog/${REG_EXT}")
@@ -486,6 +518,7 @@ include_directories (
 	${PROJECT_SOURCE_DIR}/src/visual
 	${PROJECT_SOURCE_DIR}/src/process
 	${PROJECT_SOURCE_DIR}/src/ui
+	${PROJECT_SOURCE_DIR}/src/rig
 	${PROJECT_SOURCE_DIR}/src
 	${PROJECT_SOURCE_DIR}/external/rtaudio
 	${PROJECT_SOURCE_DIR}/external/lodepng 

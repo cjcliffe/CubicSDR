@@ -38,6 +38,9 @@ EVT_SPLITTER_DCLICK(wxID_ANY, AppFrame::OnDoubleClickSash)
 EVT_SPLITTER_UNSPLIT(wxID_ANY, AppFrame::OnUnSplit)
 wxEND_EVENT_TABLE()
 
+#ifdef USE_HAMLIB
+#include "RigThread.h"
+#endif
 
 AppFrame::AppFrame() :
         wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
@@ -409,6 +412,74 @@ AppFrame::AppFrame() :
 
     menuBar->Append(menu, wxT("Audio &Sample Rate"));
 
+#ifdef USE_HAMLIB
+            
+    rigModel = wxGetApp().getConfig()->getRigModel();
+    rigSerialRate = wxGetApp().getConfig()->getRigRate();
+    rigPort = wxGetApp().getConfig()->getRigPort();
+            
+    rigMenu = new wxMenu;
+
+    rigEnableMenuItem = rigMenu->AppendCheckItem(wxID_RIG_TOGGLE, wxT("Enable Rig"));
+
+    rigMenu->Append(wxID_RIG_SDR_IF, wxT("SDR-IF"));
+            
+    wxMenu *rigModelMenu = new wxMenu;
+    RigList &rl = RigThread::enumerate();
+    numRigs = rl.size();
+            
+    int modelMenuId = wxID_RIG_MODEL_BASE;
+    for (RigList::const_iterator ri = rl.begin(); ri != rl.end(); ri++) {
+        std::string modelString((*ri)->mfg_name);
+        modelString.append(" ");
+        modelString.append((*ri)->model_name);
+        
+        rigModelMenuItems[(*ri)->rig_model] = rigModelMenu->AppendRadioItem(modelMenuId, modelString, wxT("Description?"));
+        
+        if (rigModel == (*ri)->rig_model) {
+            rigModelMenuItems[(*ri)->rig_model]->Check(true);
+        }
+        
+        modelMenuId++;
+    }
+
+    rigMenu->AppendSubMenu(rigModelMenu, wxT("Model"));
+
+    wxMenu *rigSerialMenu = new wxMenu;
+            
+    rigSerialRates.push_back(1200);
+    rigSerialRates.push_back(2400);
+    rigSerialRates.push_back(4800);
+    rigSerialRates.push_back(9600);
+    rigSerialRates.push_back(19200);
+    rigSerialRates.push_back(38400);
+    rigSerialRates.push_back(57600);
+    rigSerialRates.push_back(115200);
+    rigSerialRates.push_back(128000);
+    rigSerialRates.push_back(256000);
+
+    int rateMenuId = wxID_RIG_SERIAL_BASE;
+    for (std::vector<int>::const_iterator rate_i = rigSerialRates.begin(); rate_i != rigSerialRates.end(); rate_i++) {
+        std::string rateString;
+        rateString.append(std::to_string((*rate_i)));
+        rateString.append(" baud");
+        
+        rigSerialMenuItems[(*rate_i)] = rigSerialMenu->AppendRadioItem(rateMenuId, rateString, wxT("Description?"));
+        
+        if (rigSerialRate == (*rate_i)) {
+            rigSerialMenuItems[(*rate_i)]->Check(true);
+        }
+        
+        rateMenuId++;
+    }
+    
+    rigMenu->AppendSubMenu(rigSerialMenu, wxT("Serial Rate"));
+
+    rigPortMenuItem = rigMenu->Append(wxID_RIG_PORT, wxT("Control Port"));
+
+    menuBar->Append(rigMenu, wxT("&Rig Control"));
+#endif
+            
     SetMenuBar(menuBar);
 
     CreateStatusBar();
@@ -521,7 +592,7 @@ void AppFrame::updateDeviceParams() {
                     }
                     wxMenuItem *item = subMenu->AppendRadioItem(wxID_SETTINGS_BASE+i, displayName);
                     if (currentVal == (*str_i)) {
-                        item->Check();
+                        item->Check(true);
                     }
                     j++;
                     i++;
@@ -579,6 +650,21 @@ void AppFrame::updateDeviceParams() {
     
     agcMenuItem->Check(wxGetApp().getAGCMode());
     
+
+#if USE_HAMLIB
+    std::string deviceId = devInfo->getDeviceId();
+    DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
+
+    if (wxGetApp().rigIsActive()) {
+        rigSDRIF = devConfig->getRigIF(rigModel);
+        if (rigSDRIF) {
+            wxGetApp().lockFrequency(rigSDRIF);
+        } else {
+            wxGetApp().unlockFrequency();
+        }
+    }
+#endif
+    
     deviceChanged.store(false);
 }
 
@@ -612,7 +698,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
 //        iqSwapMenuItem->Check(swap_state);
     } else if (event.GetId() == wxID_AGC_CONTROL) {
         if (wxGetApp().getDevice() == NULL) {
-            agcMenuItem->Check();
+            agcMenuItem->Check(true);
             return;
         }
         if (!wxGetApp().getAGCMode()) {
@@ -820,6 +906,90 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             i++;
         }
     }
+    
+#ifdef USE_HAMLIB
+
+    bool resetRig = false;
+    if (event.GetId() >= wxID_RIG_MODEL_BASE && event.GetId() < wxID_RIG_MODEL_BASE+numRigs) {
+        int rigIdx = event.GetId()-wxID_RIG_MODEL_BASE;
+        RigList &rl = RigThread::enumerate();
+        rigModel = rl[rigIdx]->rig_model;
+        if (devInfo != nullptr) {
+            std::string deviceId = devInfo->getDeviceId();
+            DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
+            rigSDRIF = devConfig->getRigIF(rigModel);
+            if (rigSDRIF) {
+                wxGetApp().lockFrequency(rigSDRIF);
+            } else {
+                wxGetApp().unlockFrequency();
+            }
+        } else {
+            wxGetApp().unlockFrequency();
+        }
+        resetRig = true;
+    }
+
+    if (event.GetId() >= wxID_RIG_SERIAL_BASE && event.GetId() < wxID_RIG_SERIAL_BASE+rigSerialRates.size()) {
+        int serialIdx = event.GetId()-wxID_RIG_SERIAL_BASE;
+        rigSerialRate = rigSerialRates[serialIdx];
+        resetRig = true;
+    }
+
+    if (event.GetId() == wxID_RIG_PORT) {
+        wxString stringVal = wxGetTextFromUser("Rig Serial / COM / Address", "Rig Control Port", rigPort);
+        std::string rigPortStr = stringVal.ToStdString();
+        if (rigPortStr != "") {
+            rigPort = rigPortStr;
+            resetRig = true;
+        }
+    }
+
+    if (event.GetId() == wxID_RIG_TOGGLE) {
+        resetRig = false;
+        if (!wxGetApp().rigIsActive()) {
+            wxGetApp().stopRig();
+            wxGetApp().initRig(rigModel, rigPort, rigSerialRate);
+            
+            if (devInfo != nullptr) {
+                std::string deviceId = devInfo->getDeviceId();
+                DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
+                rigSDRIF = devConfig->getRigIF(rigModel);
+                if (rigSDRIF) {
+                    wxGetApp().lockFrequency(rigSDRIF);
+                } else {
+                    wxGetApp().unlockFrequency();
+                }
+            } else {
+                wxGetApp().unlockFrequency();
+            }
+        } else {
+            wxGetApp().stopRig();
+            wxGetApp().unlockFrequency();
+        }
+    }
+    
+    if (event.GetId() == wxID_RIG_SDR_IF) {
+        if (devInfo != nullptr) {
+            std::string deviceId = devInfo->getDeviceId();
+            DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
+            long long freqRigIF = wxGetNumberFromUser("Rig SDR-IF Frequency", "Frequency (Hz)", "Frequency", devConfig->getRigIF(rigModel), 0, 2000000000);
+            if (freqRigIF != -1) {
+                rigSDRIF = freqRigIF;
+                devConfig->setRigIF(rigModel, rigSDRIF);
+            }
+            if (rigSDRIF && wxGetApp().rigIsActive()) {
+                wxGetApp().lockFrequency(rigSDRIF);
+            } else {
+                wxGetApp().unlockFrequency();
+            }
+        }
+    }
+    
+    if (wxGetApp().rigIsActive() && resetRig) {
+        wxGetApp().stopRig();
+        wxGetApp().initRig(rigModel, rigPort, rigSerialRate);
+    }
+#endif
 
 }
 
@@ -837,6 +1007,11 @@ void AppFrame::OnClose(wxCloseEvent& event) {
     wxGetApp().getConfig()->setCenterFreq(wxGetApp().getFrequency());
     wxGetApp().getConfig()->setSpectrumAvgSpeed(wxGetApp().getSpectrumProcessor()->getFFTAverageRate());
     wxGetApp().getConfig()->setWaterfallLinesPerSec(waterfallDataThread->getLinesPerSecond());
+#ifdef USE_HAMLIB
+    wxGetApp().getConfig()->setRigModel(rigModel);
+    wxGetApp().getConfig()->setRigRate(rigSerialRate);
+    wxGetApp().getConfig()->setRigPort(rigPort);
+#endif
     wxGetApp().getConfig()->save();
     event.Skip();
 }
@@ -1116,7 +1291,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     if (!this->IsActive()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(25));
     }
-
+    
     event.RequestMore();
 }
 

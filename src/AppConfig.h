@@ -35,6 +35,9 @@ public:
     void setSetting(std::string key, std::string value);
     std::string getSetting(std::string key, std::string defaultValue);
     
+    void setRigIF(int rigType, long long freq);
+    long long getRigIF(int rigType);
+    
     void save(DataNode *node);
     void load(DataNode *node);
 
@@ -46,6 +49,7 @@ private:
     std::atomic_llong offset;
     ConfigSettings streamOpts;
     std::map<std::string, std::string> settings;
+    std::map<int, long long> rigIF;
 };
 
 class AppConfig {
@@ -75,6 +79,17 @@ public:
     void setSpectrumAvgSpeed(float avgSpeed);
     float getSpectrumAvgSpeed();
     
+#if USE_HAMLIB
+    int getRigModel();
+    void setRigModel(int rigModel);
+
+    int getRigRate();
+    void setRigRate(int rigRate);
+    
+    std::string getRigPort();
+    void setRigPort(std::string rigPort);
+#endif
+    
     void setConfigName(std::string configName);
     std::string getConfigFileName(bool ignoreName=false);
     bool save();
@@ -91,4 +106,8 @@ private:
     std::atomic_llong centerFreq;
     std::atomic_int waterfallLinesPerSec;
     std::atomic<float> spectrumAvgSpeed;
+#if USE_HAMLIB
+    std::atomic_int rigModel, rigRate;
+    std::string rigPort;
+#endif
 };

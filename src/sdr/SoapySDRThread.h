@@ -60,6 +60,10 @@ public:
     void setFrequency(long long freq);
     long long getFrequency();
     
+    void lockFrequency(long long freq);
+    bool isFrequencyLocked();
+    void unlockFrequency();
+    
     void setOffset(long long ofs);
     long long getOffset();
     
@@ -98,11 +102,11 @@ protected:
     std::map<std::string, bool> settingChanged;
 
     std::atomic<uint32_t> sampleRate;
-    std::atomic_llong frequency, offset;
+    std::atomic_llong frequency, offset, lock_freq;
     std::atomic_int ppm, numElems, numChannels;
     std::atomic_bool hasPPM, hasHardwareDC;
     std::atomic_bool agc_mode, rate_changed, freq_changed, offset_changed,
-        ppm_changed, device_changed, agc_mode_changed, gain_value_changed, setting_value_changed;
+        ppm_changed, device_changed, agc_mode_changed, gain_value_changed, setting_value_changed, frequency_locked, frequency_lock_init;
 
     std::mutex gain_busy;
     std::map<std::string, float> gainValues;
