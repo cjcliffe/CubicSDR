@@ -462,12 +462,12 @@ bool AppConfig::load() {
         if (rig_node->hasAnother("model")) {
             int loadModel;
             rig_node->getNext("model")->element()->get(loadModel);
-            winMax.store(loadModel?loadModel:1);
+            rigModel.store(loadModel?loadModel:1);
         }
         if (rig_node->hasAnother("rate")) {
             int loadRate;
             rig_node->getNext("rate")->element()->get(loadRate);
-            winMax.store(loadRate?loadRate:57600);
+            rigRate.store(loadRate?loadRate:57600);
         }
         if (rig_node->hasAnother("port")) {
             rigPort = rig_node->getNext("port")->element()->toString();
