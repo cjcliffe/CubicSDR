@@ -22,7 +22,7 @@ Utilizes:
 Features and Status:
 --------------------
   - Please see the issues on GitHub or visit https://github.com/cjcliffe/CubicSDR/wiki/CubicSDR-Roadmap-and-Ideas for more information.
-  - A Manual is in development at https://github.com/cjcliffe/CubicSDR/issues/248 if you would like to contribute.
+  - A manual is in development at https://github.com/cjcliffe/CubicSDR/issues/248 if you would like to contribute.
 
 Target Platforms:
 ----------------
