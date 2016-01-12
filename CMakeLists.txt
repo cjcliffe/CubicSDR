@@ -49,7 +49,16 @@ if (USE_HAMLIB)
     endif ()
     
     include_directories(${HAMLIB_INCLUDE_DIR})
+    # IF(HAMLIB_STATIC_LIBRARY)
+    #     link_libraries(${HAMLIB_STATIC_LIBRARY} usb ltdl)
+    #     foreach(HAMLIB_STATIC_MOD ${HAMLIB_STATIC_MODS})
+    #         link_libraries(${HAMLIB_STATIC_MOD})
+    #         message(STATUS "Adding hamlib linkage ${HAMLIB_STATIC_MOD}")
+    #     endforeach()
+    #
+    # ELSE()
     link_libraries(${HAMLIB_LIBRARY})
+    # ENDIF()
 
 	ADD_DEFINITIONS(-DUSE_HAMLIB)	    
 endif ()
@@ -657,6 +666,26 @@ IF (APPLE AND BUNDLE_APP)
               " COMPONENT Runtime)
        ENDFOREACH()
    ENDIF(BUNDLE_SOAPY_MODS)
+
+  #  IF (USE_HAMLIB)
+  #     get_filename_component(HAMLIB_LIBFOLDER ${HAMLIB_LIBRARY} DIRECTORY)
+  #     file(GLOB HAMLIB_MODS ${HAMLIB_LIBFOLDER}/hamlib-*.so)
+  #
+  #     FOREACH(HAMLIB_MOD_FILE ${HAMLIB_MODS})
+  #             INSTALL( FILES "${HAMLIB_MOD_FILE}"
+  #                 DESTINATION "${APPS}/Contents/MacOS/Resources"
+  #                 COMPONENT Runtime
+  #             )
+  #     ENDFOREACH()
+  #
+  #     FOREACH(HAMLIB_MOD_FILE ${HAMLIB_MODS})
+  #         GET_FILENAME_COMPONENT(HAMLIB_MOD_NAME ${HAMLIB_MOD_FILE} NAME)
+  #         message(STATUS "Bundling ${HAMLIB_MOD_NAME} from ${HAMLIB_MOD_FILE}")
+  #         INSTALL(CODE "
+  #             fixup_bundle(\"${APPS}\"   \"${APPS}/Contents/MacOS/Resources/${HAMLIB_MOD_NAME}\"   \"${HAMLIB_LIBFOLDER}\")
+  #            " COMPONENT Runtime)
+  #     ENDFOREACH()
+  # ENDIF()
    
    INSTALL(CODE "
        VERIFY_APP(\"${APPS}\")

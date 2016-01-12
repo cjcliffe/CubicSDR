@@ -5,9 +5,9 @@
 #  Updates: 
 #       Jan 2015 - Add /opt/ paths for OSX MacPorts
 #                - Fix HAMLIB_INCLUDE_DIR absolute search
+#                - Add static lib support
 #  TODO: 
 #       Windows support
-#       Static support
 #
 # HAMLIB_FOUND - system has Hamlib
 # HAMLIB_LIBRARY - location of the library for hamlib
@@ -38,10 +38,31 @@ find_library(HAMLIB_LIBRARY
 		/opt/local/lib/hamlib
 )
 
+find_library(HAMLIB_STATIC_LIBRARY
+	NAMES libhamlib.a
+	PATHS
+		/usr/lib64/hamlib
+		/usr/lib/hamlib
+		/usr/lib64
+		/usr/lib
+		/usr/local/lib64/hamlib
+		/usr/local/lib/hamlib
+		/usr/local/lib64
+		/usr/local/lib
+		/opt/local/lib
+		/opt/local/lib/hamlib
+)
+
+GET_FILENAME_COMPONENT(HAMLIB_LIB_FOLDER ${HAMLIB_STATIC_LIBRARY} DIRECTORY)
+
+file(GLOB HAMLIB_STATIC_MODS ${HAMLIB_LIB_FOLDER}/hamlib-*.a)
+
 if(HAMLIB_INCLUDE_DIR AND HAMLIB_LIBRARY)
 	set(HAMLIB_FOUND TRUE)
     # message(STATUS "Hamlib version: ${VERSION}")
-	message(STATUS "Found hamlib library directory at: ${HAMLIB_LIBRARY}")
+	message(STATUS "Found hamlib library at: ${HAMLIB_LIBRARY}")
+	message(STATUS "Found hamlib static library at: ${HAMLIB_STATIC_LIBRARY}")
+	message(STATUS "Found hamlib static modules: ${HAMLIB_STATIC_MODS}")
 	message(STATUS "Found hamlib include directory at: ${HAMLIB_INCLUDE_DIR}")
 endif(HAMLIB_INCLUDE_DIR AND HAMLIB_LIBRARY)
 
