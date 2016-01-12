@@ -39,7 +39,7 @@ ENDIF()
 ENDIF()
 
 
-set(USE_HAMLIB ON CACHE BOOL "Support hamlib for radio control functions.")
+set(USE_HAMLIB OFF CACHE BOOL "Support hamlib for radio control functions.")
 
 if (USE_HAMLIB)
     find_package(hamlib REQUIRED)
