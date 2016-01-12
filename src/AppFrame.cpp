@@ -1349,6 +1349,9 @@ void AppFrame::saveSession(std::string fileName) {
         *demod->newChild("output_device") = outputDevices[(*instance_i)->getOutputDevice()].name;
         *demod->newChild("gain") = (*instance_i)->getGain();
         *demod->newChild("muted") = (*instance_i)->isMuted() ? 1 : 0;
+        if ((*instance_i) == wxGetApp().getDemodMgr().getLastActiveDemodulator()) {
+            *demod->newChild("active") = 1;
+        }
 
         ModemSettings saveSettings = (*instance_i)->readModemSettings();
         if (saveSettings.size()) {
@@ -1408,6 +1411,7 @@ bool AppFrame::loadSession(std::string fileName) {
 
         int numDemodulators = 0;
         DemodulatorInstance *loadedDemod = NULL;
+        DemodulatorInstance *newDemod = NULL;
         
         while (demodulators->hasAnother("demodulator")) {
             DataNode *demod = demodulators->getNext("demodulator");
@@ -1469,8 +1473,16 @@ bool AppFrame::loadSession(std::string fileName) {
                 }
             }
             
-            DemodulatorInstance *newDemod = wxGetApp().getDemodMgr().newThread();
-            loadedDemod = newDemod;
+            bool isActive = false;
+            
+            
+            newDemod = wxGetApp().getDemodMgr().newThread();
+
+            if (demod->hasAnother("active")) {
+                isActive = true;    // active only written to active demod, no need to parse..
+                loadedDemod = newDemod;
+            }
+
             numDemodulators++;
             newDemod->setDemodulatorType(type);
             newDemod->writeModemSettings(mSettings);
@@ -1508,11 +1520,13 @@ bool AppFrame::loadSession(std::string fileName) {
             std::cout << "\t\tOutput Device: " << output_device << std::endl;
         }
         
-        if ((numDemodulators == 1) && loadedDemod) {
-            loadedDemod->setActive(true);
-            loadedDemod->setFollow(true);
-            loadedDemod->setTracking(true);
-            wxGetApp().getDemodMgr().setActiveDemodulator(loadedDemod, false);
+        DemodulatorInstance *focusDemod = loadedDemod?loadedDemod:newDemod;
+        
+        if (focusDemod) {
+            focusDemod->setActive(true);
+            focusDemod->setFollow(true);
+            focusDemod->setTracking(true);
+            wxGetApp().getDemodMgr().setActiveDemodulator(focusDemod, false);
         }
     } catch (DataInvalidChildException &e) {
         std::cout << e.what() << std::endl;
