@@ -24,6 +24,15 @@ Features and Status:
   - Please see the issues on GitHub or visit https://github.com/cjcliffe/CubicSDR/wiki/CubicSDR-Roadmap-and-Ideas for more information.
   - A manual is in development at https://github.com/cjcliffe/CubicSDR/issues/248 if you would like to contribute.
 
+Recommended minimum requirements:
+--------------------
+  - Multi-core processor system with at least 1GB RAM.
+  - Graphics card with at least 128MB video memory and OpenGL 3.x or ES 2.0 support.
+  - OSX 10.10+ for Mac binary releases.
+  - Windows 7+ for 64 or 32-bit Windows binary releases.
+  - Linux and other embedded distribution support yet to be indexed, known to at least work on Debian 8+ and Ubuntu 14+.
+  - Raspberry Pi2 support is being experimented with; earlier versions of CubicSDR known to work with Banana Pi.
+
 Target Platforms:
 ----------------
   - [x] OSX
