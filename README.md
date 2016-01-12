@@ -3,7 +3,8 @@ CubicSDR
 
 Cross-Platform Software-Defined Radio Application
 
-Please see the [CubicSDR GitHub Wiki](https://github.com/cjcliffe/CubicSDR/wiki) for build instructions.
+- Please see the [CubicSDR GitHub Wiki](https://github.com/cjcliffe/CubicSDR/wiki) for build instructions.
+- See also the current [CubicSDR Releases](https://github.com/cjcliffe/CubicSDR/releases) page for available binaries.
 
 Utilizes: 
 --------
