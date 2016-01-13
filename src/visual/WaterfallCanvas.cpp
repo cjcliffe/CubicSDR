@@ -601,14 +601,14 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
 
                 mouseTracker.setVertDragLock(true);
                 mouseTracker.setHorizDragLock(false);
-                setStatusText("Click and drag to change demodulator bandwidth. SPACE for direct frequency input. M for mute, D to delete.");
+                setStatusText("Click and drag to change demodulator bandwidth. SPACE for direct frequency input. M for mute, D to delete, C to center.");
             } else {
                 SetCursor(wxCURSOR_SIZING);
                 nextDragState = WF_DRAG_FREQUENCY;
 
                 mouseTracker.setVertDragLock(true);
                 mouseTracker.setHorizDragLock(false);
-                setStatusText("Click and drag to change demodulator frequency; SPACE for direct input. M for mute, D to delete.");
+                setStatusText("Click and drag to change demodulator frequency; SPACE for direct input. M for mute, D to delete, C to center.");
             }
         } else {
             SetCursor(wxCURSOR_CROSS);
@@ -617,7 +617,7 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
                 setStatusText("Click to create a new demodulator or hold ALT to drag range, SPACE for direct center frequency input.");
             } else {
                 setStatusText(
-                        "Click to move active demodulator frequency or hold ALT to drag range; hold SHIFT to create new.  Right drag or wheel to Zoom.  Arrow keys to navigate/zoom.");
+                        "Click to move active demodulator frequency or hold ALT to drag range; hold SHIFT to create new.  Right drag or wheel to Zoom.  Arrow keys to navigate/zoom, C to center.");
             }
         }
 
