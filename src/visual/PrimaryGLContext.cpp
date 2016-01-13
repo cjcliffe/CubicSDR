@@ -151,6 +151,86 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, l
 
 }
 
+void PrimaryGLContext::DrawFreqBwInfo(long long freq, int bw, RGBA4f color, long long center_freq, long long srate) {
+    if (!srate) {
+        srate = wxGetApp().getSampleRate();
+    }
+    
+    GLint vp[4];
+    glGetIntegerv( GL_VIEWPORT, vp);
+    
+    float viewHeight = (float) vp[3];
+    float viewWidth = (float) vp[2];
+    
+    if (center_freq == -1) {
+        center_freq = wxGetApp().getFrequency();
+    }
+    
+    float uxPos = (float) (freq - (center_freq - srate / 2)) / (float) srate;
+    uxPos = (uxPos - 0.5) * 2.0;
+    
+    glDisable(GL_TEXTURE_2D);
+
+    glEnable(GL_BLEND);
+//    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//    glColor4f(color.r, color.g, color.b, 0.6);
+//    
+    std::string lastType = wxGetApp().getDemodMgr().getLastDemodulatorType();
+
+    float ofs = (float) bw / (float) srate;
+    float ofsLeft = (lastType!="USB")?ofs:0, ofsRight = (lastType!="LSB")?ofs:0;
+//
+    float labelHeight = 20.0 / viewHeight;
+    float hPos = -1.0 + labelHeight;
+    
+//    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//    
+//    glBegin(GL_QUADS);
+//    glVertex3f(uxPos - ofsLeft, hPos + labelHeight, 0.0);
+//    glVertex3f(uxPos - ofsLeft, -1.0, 0.0);
+//    
+//    glVertex3f(uxPos + ofsRight, -1.0, 0.0);
+//    glVertex3f(uxPos + ofsRight, hPos + labelHeight, 0.0);
+//    glEnd();
+    
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    
+    glColor4f(color.r, color.g, color.b, 0.2);
+    glBegin(GL_QUADS);
+    glVertex3f(uxPos - ofsLeft, 1.0, 0.0);
+    glVertex3f(uxPos - ofsLeft, -1.0, 0.0);
+    
+    glVertex3f(uxPos + ofsRight, -1.0, 0.0);
+    glVertex3f(uxPos + ofsRight, 1.0, 0.0);
+    glEnd();
+    
+    if (ofs * 2.0 < 16.0 / viewWidth) {
+        glColor4f(color.r, color.g, color.b, 0.2);
+        glBegin(GL_QUADS);
+        glVertex3f(uxPos - ofsLeft, hPos + labelHeight, 0.0);
+        glVertex3f(uxPos - ofsLeft, -1.0, 0.0);
+        
+        glVertex3f(uxPos + ofsRight, -1.0, 0.0);
+        glVertex3f(uxPos + ofsRight, hPos + labelHeight, 0.0);
+        glEnd();
+    }
+    
+    
+    glColor4f(1.0, 1.0, 1.0, 0.8);
+    
+    std::string demodLabel = std::to_string((double)freq/1000000.0);
+    
+    if (lastType == "USB") {
+        GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos, hPos, 16, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
+    } else if (lastType == "LSB") {
+        GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos, hPos, 16, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
+    } else {
+        GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos, hPos, 16, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+    }
+    
+    glDisable(GL_BLEND);
+}
+
 void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long long center_freq, long long srate) {
     if (!demod) {
         return;

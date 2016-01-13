@@ -96,6 +96,21 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         glContext->DrawDemodInfo(demods[i], ThemeMgr::mgr.currentTheme->fftHighlight, getCenterFrequency(), getBandwidth());
     }
 
+    if (waterfallCanvas) {
+        MouseTracker *wfmt = waterfallCanvas->getMouseTracker();
+        if (wfmt->mouseInView() && !wxGetApp().getDemodMgr().getActiveDemodulator()) {
+            int snap = wxGetApp().getFrequencySnap();
+            
+            long long freq = getFrequencyAt(wfmt->getMouseX());
+            
+            if (snap > 1) {
+                freq = roundf((float)freq/(float)snap)*snap;
+            }
+
+            glContext->DrawFreqBwInfo(freq, wxGetApp().getDemodMgr().getLastBandwidth(), ThemeMgr::mgr.currentTheme->fftHighlight*0.35, getCenterFrequency(), getBandwidth());
+        }
+    }
+    
     glContext->EndDraw();
 
     spectrumPanel.drawChildren();

@@ -25,6 +25,7 @@ public:
     void DrawRangeSelector(float uxPos1, float uxPos2, RGBA4f color);
     void DrawDemod(DemodulatorInstance *demod, RGBA4f color, long long center_freq = -1, long long srate = 0);
     void DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, long long center_freq = -1, long long srate = 0);
+    void DrawFreqBwInfo(long long freq, int bw, RGBA4f color, long long center_freq = - 1, long long srate = 0);
 
     void setHoverAlpha(float hoverAlpha);
 
