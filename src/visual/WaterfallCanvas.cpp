@@ -441,6 +441,21 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     case WXK_SPACE:
         wxGetApp().showFrequencyInput();
         break;
+    case 'C':
+        if (wxGetApp().getDemodMgr().getActiveDemodulator()) {
+            wxGetApp().setFrequency(wxGetApp().getDemodMgr().getActiveDemodulator()->getFrequency());
+        } else if (mouseTracker.mouseInView()) {
+            long long freq = getFrequencyAt(mouseTracker.getMouseX());
+            
+            int snap = wxGetApp().getFrequencySnap();
+            
+            if (snap > 1) {
+                freq = roundf((float)freq/(float)snap)*snap;
+            }
+            
+            wxGetApp().setFrequency(freq);
+        }
+        break;
     default:
         event.Skip();
         return;
