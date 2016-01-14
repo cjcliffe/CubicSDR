@@ -83,6 +83,26 @@ std::vector<DemodulatorInstance *> *DemodulatorMgr::getDemodulatorsAt(long long 
     return foundDemods;
 }
 
+bool DemodulatorMgr::anyDemodulatorsAt(long long freq, int bandwidth) {
+    
+    for (int i = 0, iMax = demods.size(); i < iMax; i++) {
+        DemodulatorInstance *testDemod = demods[i];
+
+        long long freqTest = testDemod->getFrequency();
+        long long bandwidthTest = testDemod->getBandwidth();
+        long long halfBandwidthTest = bandwidthTest / 2;
+        
+        long long halfBuffer = bandwidth / 2;
+        
+        if ((freq <= (freqTest + ((testDemod->getDemodulatorType() != "LSB")?halfBandwidthTest:0) + halfBuffer)) && (freq >= (freqTest - ((testDemod->getDemodulatorType() != "USB")?halfBandwidthTest:0) - halfBuffer))) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+
 void DemodulatorMgr::setActiveDemodulator(DemodulatorInstance *demod, bool temporary) {
     if (!temporary) {
         if (activeDemodulator != NULL) {

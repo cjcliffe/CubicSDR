@@ -107,7 +107,11 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
                 freq = roundf((float)freq/(float)snap)*snap;
             }
 
-            glContext->DrawFreqBwInfo(freq, wxGetApp().getDemodMgr().getLastBandwidth(), ThemeMgr::mgr.currentTheme->fftHighlight*0.35, getCenterFrequency(), getBandwidth());
+            DemodulatorInstance *lastActiveDemodulator = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+
+            bool isNew = (((waterfallCanvas->isShiftDown() || (lastActiveDemodulator && !lastActiveDemodulator->isActive())) && lastActiveDemodulator) || (!lastActiveDemodulator));
+            
+            glContext->DrawFreqBwInfo(freq, wxGetApp().getDemodMgr().getLastBandwidth(), isNew?ThemeMgr::mgr.currentTheme->waterfallNew:ThemeMgr::mgr.currentTheme->waterfallHover, getCenterFrequency(), getBandwidth(), true);
         }
     }
     
