@@ -57,7 +57,7 @@ AppFrame::AppFrame() :
     int attribList[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 
     mainSplitter = new wxSplitterWindow( this, wxID_MAIN_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
-    mainSplitter->SetSashGravity(12.0/37.0);
+    mainSplitter->SetSashGravity(10.0/37.0);
     mainSplitter->SetMinimumPaneSize(1);
 
     wxPanel *demodPanel = new wxPanel(mainSplitter, wxID_ANY);
@@ -158,7 +158,7 @@ AppFrame::AppFrame() :
 
     demodTuner = new TuningCanvas(demodPanel, attribList);
     demodTuner->setHelpTip("Testing tuner");
-    demodTuner->SetMinClientSize(wxSize(200,24));
+    demodTuner->SetMinClientSize(wxSize(200,28));
     demodScopeTray->Add(demodTuner, 1, wxEXPAND | wxALL, 0);
 
     demodTray->Add(demodScopeTray, 30, wxEXPAND | wxALL, 0);
@@ -196,7 +196,7 @@ AppFrame::AppFrame() :
 //    vbox->AddSpacer(1);
             
     mainVisSplitter = new wxSplitterWindow( mainSplitter, wxID_VIS_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
-    mainVisSplitter->SetSashGravity(5.0/25.0);
+    mainVisSplitter->SetSashGravity(6.0/25.0);
     mainVisSplitter->SetMinimumPaneSize(1);
         
 //    mainVisSplitter->Connect( wxEVT_IDLE, wxIdleEventHandler( AppFrame::mainVisSplitterIdle ), NULL, this );
@@ -1304,10 +1304,10 @@ void AppFrame::OnDoubleClickSash(wxSplitterEvent& event)
 
     if (event.GetId() == wxID_MAIN_SPLITTER) {
         w = mainSplitter;
-        g = 12.0/37.0;
+        g = 10.0/37.0;
     } else if (event.GetId() == wxID_VIS_SPLITTER) {
         w = mainVisSplitter;
-        g = 7.4/37.0;
+        g = 6.0/25.0;
     }
 
     if (w != NULL) {
