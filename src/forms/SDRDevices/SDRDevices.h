@@ -23,7 +23,7 @@ private:
     SDRDeviceInfo *getSelectedDevice(wxTreeItemId selId);
     wxPGProperty *addArgInfoProperty(wxPropertyGrid *pg, SoapySDR::ArgInfo arg);
 
-    bool refresh;
+    bool refresh, failed;
     std::map<std::string, std::vector<SDRDeviceInfo *>* > devs;
     std::vector<SDRDeviceInfo *>::iterator devs_i;
     std::map<wxTreeItemId, SDRDeviceInfo *> devItems;

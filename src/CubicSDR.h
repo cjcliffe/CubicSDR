@@ -129,6 +129,7 @@ public:
     
     bool areDevicesReady();
     bool areDevicesEnumerating();
+    bool areModulesMissing();
     std::string getNotification();
     
     void addRemote(std::string remoteAddr);
@@ -193,6 +194,7 @@ private:
     
     std::thread *t_SDR, *t_SDREnum, *t_PostSDR, *t_SpectrumVisual, *t_DemodVisual;
     std::atomic_bool devicesReady;
+    std::atomic_bool devicesFailed;
     std::atomic_bool deviceSelectorOpen;
     std::atomic_bool sampleRateInitialized;
     std::atomic_bool useLocalMod;

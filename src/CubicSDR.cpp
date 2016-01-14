@@ -204,6 +204,7 @@ bool CubicSDR::OnInit() {
     offset = 0;
     ppm = 0;
     devicesReady.store(false);
+    devicesFailed.store(false);
     deviceSelectorOpen.store(false);
 
     // Visual Data
@@ -414,14 +415,12 @@ void CubicSDR::sdrEnumThreadNotify(SDREnumerator::SDREnumState state, std::strin
         devs = SDREnumerator::enumerate_devices("", true);
         devicesReady.store(true);
     }
+    if (state == SDREnumerator::SDR_ENUM_FAILED) {
+        devicesFailed.store(true);
+    }
     //if (appframe) { appframe->SetStatusText(message); }
     notify_busy.unlock();
 
-    if (state == SDREnumerator::SDR_ENUM_FAILED) {
-        wxMessageDialog *info;
-        info = new wxMessageDialog(NULL, wxT("\nNo SoapySDR modules were found.\n\nCubicSDR requires at least one SoapySDR device support module to be installed.\n\nPlease visit https://github.com/cjcliffe/CubicSDR/wiki and in the build instructions for your platform read the 'Support Modules' section for more information."), wxT("\x28\u256F\xB0\u25A1\xB0\uFF09\u256F\uFE35\x20\u253B\u2501\u253B"), wxOK | wxICON_ERROR);
-        info->ShowModal();
-    }
 }
 
 
@@ -691,6 +690,10 @@ bool CubicSDR::areDevicesReady() {
 
 bool CubicSDR::areDevicesEnumerating() {
     return !sdrEnum->isTerminated();
+}
+
+bool CubicSDR::areModulesMissing() {
+    return devicesFailed.load();
 }
 
 std::string CubicSDR::getNotification() {
