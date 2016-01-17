@@ -112,7 +112,7 @@ void GainCanvas::SetLevel() {
     if (panelHit >= 0) {
         gainInfo[panelHit]->levelPanel.setSize(1.0, hitResult.y);
         gainInfo[panelHit]->levelPanel.setPosition(0.0, (-1.0+(hitResult.y)));
-        gainInfo[panelHit]->current = gainInfo[panelHit]->low+(hitResult.y * (gainInfo[panelHit]->high-gainInfo[panelHit]->low));
+        gainInfo[panelHit]->current = round(gainInfo[panelHit]->low+(hitResult.y * (gainInfo[panelHit]->high-gainInfo[panelHit]->low)));
         gainInfo[panelHit]->changed = true;
         gainInfo[panelHit]->valuePanel.setText(std::to_string(int(gainInfo[panelHit]->current)));
     }
