@@ -337,7 +337,11 @@ SDRDeviceInfo *SDRThread::getDevice() {
 
 void SDRThread::setDevice(SDRDeviceInfo *dev) {
     deviceInfo.store(dev);
-    deviceConfig.store(wxGetApp().getConfig()->getDevice(dev->getDeviceId()));
+    if (dev) {
+        deviceConfig.store(wxGetApp().getConfig()->getDevice(dev->getDeviceId()));
+    } else {
+        deviceConfig.store(nullptr);
+    }
 }
 
 int SDRThread::getOptimalElementCount(long long sampleRate, int fps) {

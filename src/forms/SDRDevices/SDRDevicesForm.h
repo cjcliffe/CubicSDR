@@ -45,6 +45,7 @@ class devFrame : public wxFrame
 		wxPanel* m_panel6;
 		wxTreeCtrl* devTree;
 		wxPanel* m_panel4;
+		wxButton* m_refreshButton;
 		wxButton* m_addRemoteButton;
 		wxButton* m_useSelectedButton;
 		wxPanel* m_panel61;
@@ -57,6 +58,7 @@ class devFrame : public wxFrame
 		virtual void OnTreeDoubleClick( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnDeleteItem( wxTreeEvent& event ) { event.Skip(); }
 		virtual void OnSelectionChanged( wxTreeEvent& event ) { event.Skip(); }
+		virtual void OnRefreshDevices( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnAddRemote( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnUseSelected( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnDeviceTimer( wxTimerEvent& event ) { event.Skip(); }

@@ -326,3 +326,10 @@ std::vector<std::string> &SDREnumerator::getRemotes() {
 bool SDREnumerator::hasRemoteModule() {
     return SDREnumerator::has_remote;
 }
+
+void SDREnumerator::reset() {
+    soapy_initialized = false;
+    factories.erase(factories.begin(), factories.end());
+    modules.erase(modules.begin(), modules.end());
+    devs.erase(devs.begin(), devs.end());
+}

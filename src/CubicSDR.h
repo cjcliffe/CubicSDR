@@ -97,6 +97,7 @@ public:
 
     std::vector<SDRDeviceInfo *> *getDevices();
     void setDevice(SDRDeviceInfo *dev);
+    void stopDevice();
     SDRDeviceInfo * getDevice();
 
     ScopeVisualProcessor *getScopeProcessor();
@@ -136,7 +137,8 @@ public:
     void removeRemote(std::string remoteAddr);
 
     void setDeviceSelectorClosed();
-	bool isDeviceSelectorOpen();
+    void reEnumerateDevices();
+    bool isDeviceSelectorOpen();
     void closeDeviceSelector();
     
     void setAGCMode(bool mode);

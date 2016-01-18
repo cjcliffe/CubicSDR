@@ -29,6 +29,7 @@ public:
     static void removeRemote(std::string remoteAddr);
     static std::vector<std::string> &getRemotes();
     static bool hasRemoteModule();
+    static void reset();
     
 protected:
     static bool soapy_initialized, has_remote;

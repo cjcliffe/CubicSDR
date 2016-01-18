@@ -34,6 +34,9 @@ devFrame::devFrame( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	wxBoxSizer* bSizer5;
 	bSizer5 = new wxBoxSizer( wxHORIZONTAL );
 	
+	m_refreshButton = new wxButton( m_panel4, wxID_ANY, wxT("Refresh"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer5->Add( m_refreshButton, 0, wxALL, 5 );
+	
 	m_addRemoteButton = new wxButton( m_panel4, wxID_ANY, wxT("Add Remote"), wxDefaultPosition, wxDefaultSize, 0 );
 	bSizer5->Add( m_addRemoteButton, 1, wxALL, 5 );
 	
@@ -87,6 +90,7 @@ devFrame::devFrame( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	devTree->Connect( wxEVT_LEFT_DCLICK, wxMouseEventHandler( devFrame::OnTreeDoubleClick ), NULL, this );
 	devTree->Connect( wxEVT_COMMAND_TREE_DELETE_ITEM, wxTreeEventHandler( devFrame::OnDeleteItem ), NULL, this );
 	devTree->Connect( wxEVT_COMMAND_TREE_SEL_CHANGED, wxTreeEventHandler( devFrame::OnSelectionChanged ), NULL, this );
+	m_refreshButton->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnRefreshDevices ), NULL, this );
 	m_addRemoteButton->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnAddRemote ), NULL, this );
 	m_useSelectedButton->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnUseSelected ), NULL, this );
 	this->Connect( wxID_ANY, wxEVT_TIMER, wxTimerEventHandler( devFrame::OnDeviceTimer ) );
@@ -99,6 +103,7 @@ devFrame::~devFrame()
 	devTree->Disconnect( wxEVT_LEFT_DCLICK, wxMouseEventHandler( devFrame::OnTreeDoubleClick ), NULL, this );
 	devTree->Disconnect( wxEVT_COMMAND_TREE_DELETE_ITEM, wxTreeEventHandler( devFrame::OnDeleteItem ), NULL, this );
 	devTree->Disconnect( wxEVT_COMMAND_TREE_SEL_CHANGED, wxTreeEventHandler( devFrame::OnSelectionChanged ), NULL, this );
+	m_refreshButton->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnRefreshDevices ), NULL, this );
 	m_addRemoteButton->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnAddRemote ), NULL, this );
 	m_useSelectedButton->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnUseSelected ), NULL, this );
 	this->Disconnect( wxID_ANY, wxEVT_TIMER, wxTimerEventHandler( devFrame::OnDeviceTimer ) );

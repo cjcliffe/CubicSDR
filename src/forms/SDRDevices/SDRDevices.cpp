@@ -8,11 +8,11 @@
 SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent ): devFrame( parent ) {
     refresh = true;
     failed = false;
+    m_refreshButton->Disable();
     m_addRemoteButton->Disable();
     m_useSelectedButton->Disable();
     m_deviceTimer.Start(250);
-    
-   }
+}
 
 void SDRDevicesDialog::OnClose( wxCloseEvent& event ) {
     wxGetApp().setDeviceSelectorClosed();
@@ -284,6 +284,7 @@ void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
             }
         }
         
+        m_refreshButton->Enable();
         m_addRemoteButton->Enable();
         m_useSelectedButton->Enable();
         devTree->Enable();
@@ -293,4 +294,15 @@ void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
 
         refresh = false;
     }
+}
+
+void SDRDevicesDialog::OnRefreshDevices( wxMouseEvent& event ) {
+    wxGetApp().stopDevice();
+    devTree->DeleteAllItems();
+    devTree->Disable();
+    m_refreshButton->Disable();
+    m_addRemoteButton->Disable();
+    m_useSelectedButton->Disable();
+    wxGetApp().reEnumerateDevices();
+    refresh = true;
 }

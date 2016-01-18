@@ -487,6 +487,26 @@ void CubicSDR::setSampleRate(long long rate_in) {
     }
 }
 
+void CubicSDR::stopDevice() {
+    sdrThread->setDevice(nullptr);
+
+    if (!sdrThread->isTerminated()) {
+        sdrThread->terminate();
+        if (t_SDR) {
+            t_SDR->join();
+            delete t_SDR;
+            t_SDR = nullptr;
+        }
+    }
+}
+
+void CubicSDR::reEnumerateDevices() {
+    devicesReady.store(false);
+    devs = nullptr;
+    SDREnumerator::reset();
+    t_SDREnum = new std::thread(&SDREnumerator::threadMain, sdrEnum);
+}
+
 void CubicSDR::setDevice(SDRDeviceInfo *dev) {
     if (!sdrThread->isTerminated()) {
         sdrThread->terminate();
@@ -511,14 +531,6 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev) {
         
         freqHigh = chan->getRFRange().getHigh();
         freqLow = chan->getRFRange().getLow();
-        
-// upconverter settings don't like this, need to handle elsewhere..
-//        if (frequency > freqHigh) {
-//            frequency = freqHigh;
-//        }
-//        else if (frequency < freqLow) {
-//            frequency = freqLow;
-//        }
         
         // Try for a reasonable default sample rate.
         if (!sampleRateInitialized.load()) {

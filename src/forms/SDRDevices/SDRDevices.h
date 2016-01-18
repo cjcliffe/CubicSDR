@@ -18,6 +18,7 @@ public:
     void OnUseSelected( wxMouseEvent& event );
     void OnTreeDoubleClick( wxMouseEvent& event );
     void OnDeviceTimer( wxTimerEvent& event );
+    void OnRefreshDevices( wxMouseEvent& event );
 
 private:
     SDRDeviceInfo *getSelectedDevice(wxTreeItemId selId);
