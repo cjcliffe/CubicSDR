@@ -12,7 +12,8 @@ SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent ): devFrame( parent ) {
     m_addRemoteButton->Disable();
     m_useSelectedButton->Disable();
     m_deviceTimer.Start(250);
-    selId = 0;
+    selId = nullptr;
+    editId = nullptr;
 }
 
 void SDRDevicesDialog::OnClose( wxCloseEvent& event ) {
@@ -177,7 +178,6 @@ SDRDeviceInfo *SDRDevicesDialog::getSelectedDevice(wxTreeItemId selId) {
 
 void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event ) {
     if (dev != NULL) {
-        
         int i = 0;
         SoapySDR::ArgInfoList::const_iterator args_i;
         SoapySDR::ArgInfoList args = dev->getSettingsArgInfo();
@@ -318,20 +318,25 @@ void SDRDevicesDialog::OnRefreshDevices( wxMouseEvent& event ) {
     m_addRemoteButton->Disable();
     m_useSelectedButton->Disable();
     wxGetApp().reEnumerateDevices();
-    selId = 0;
+    selId = nullptr;
+    editId = nullptr;
     dev = nullptr;
     refresh = true;
 }
 
 void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
-    if (dev && event.GetProperty() == devSettings["name"]) {
+    if (!editId) {
+        return;
+    }
+    SDRDeviceInfo *dev = getSelectedDevice(editId);
+    if (editId && event.GetProperty() == devSettings["name"]) {
         DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
         
         wxString devName = event.GetPropertyValue().GetString();
         
         devConfig->setDeviceName(devName.ToStdString());
-        if (selId) {
-            devTree->SetItemText(selId, devConfig->getDeviceName());
+        if (editId) {
+            devTree->SetItemText(editId, devConfig->getDeviceName());
         }
         if (devName == "") {
             event.GetProperty()->SetValueFromString(devConfig->getDeviceName());
@@ -344,4 +349,8 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
         
         devConfig->setOffset(offset);
     }
+}
+
+void SDRDevicesDialog::OnPropGridFocus( wxFocusEvent& event ) {
+    editId = selId;
 }

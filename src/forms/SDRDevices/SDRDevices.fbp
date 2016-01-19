@@ -1002,12 +1002,12 @@
                                                 <event name="OnMouseEvents"></event>
                                                 <event name="OnMouseWheel"></event>
                                                 <event name="OnPaint"></event>
-                                                <event name="OnPropertyGridChanged"></event>
+                                                <event name="OnPropertyGridChanged">OnPropGridChanged</event>
                                                 <event name="OnPropertyGridChanging"></event>
                                                 <event name="OnRightDClick"></event>
                                                 <event name="OnRightDown"></event>
                                                 <event name="OnRightUp"></event>
-                                                <event name="OnSetFocus"></event>
+                                                <event name="OnSetFocus">OnPropGridFocus</event>
                                                 <event name="OnSize"></event>
                                                 <event name="OnUpdateUI"></event>
                                             </object>

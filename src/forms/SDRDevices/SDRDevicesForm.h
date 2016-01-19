@@ -62,6 +62,7 @@ class devFrame : public wxFrame
 		virtual void OnAddRemote( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnUseSelected( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnPropGridChanged( wxPropertyGridEvent& event ) { event.Skip(); }
+		virtual void OnPropGridFocus( wxFocusEvent& event ) { event.Skip(); }
 		virtual void OnDeviceTimer( wxTimerEvent& event ) { event.Skip(); }
 		
 	
