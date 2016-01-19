@@ -42,9 +42,26 @@ std::string DeviceConfig::getDeviceId() {
     return tmp;
 }
 
+void DeviceConfig::setDeviceName(std::string deviceName) {
+    busy_lock.lock();
+    this->deviceName = deviceName;
+    busy_lock.unlock();
+}
+
+std::string DeviceConfig::getDeviceName() {
+    std::string tmp;
+    
+    busy_lock.lock();
+    tmp = (deviceName=="")?deviceId:deviceName;
+    busy_lock.unlock();
+    
+    return tmp;
+}
+
 void DeviceConfig::save(DataNode *node) {
     busy_lock.lock();
     *node->newChild("id") = deviceId;
+    *node->newChild("name") = deviceName;
     *node->newChild("ppm") = (int)ppm;
     *node->newChild("offset") = offset;
     DataNode *streamOptsNode = node->newChild("streamOpts");
@@ -66,6 +83,9 @@ void DeviceConfig::save(DataNode *node) {
 
 void DeviceConfig::load(DataNode *node) {
     busy_lock.lock();
+    if (node->hasAnother("name")) {
+        deviceName = node->getNext("name")->element()->toString();
+    }
     if (node->hasAnother("ppm")) {
         DataNode *ppm_node = node->getNext("ppm");
         int ppmValue = 0;

@@ -93,6 +93,7 @@ devFrame::devFrame( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	m_refreshButton->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnRefreshDevices ), NULL, this );
 	m_addRemoteButton->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnAddRemote ), NULL, this );
 	m_useSelectedButton->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnUseSelected ), NULL, this );
+	m_propertyGrid->Connect( wxEVT_PG_CHANGED, wxPropertyGridEventHandler( devFrame::OnPropGridChanged ), NULL, this );
 	this->Connect( wxID_ANY, wxEVT_TIMER, wxTimerEventHandler( devFrame::OnDeviceTimer ) );
 }
 
@@ -106,6 +107,7 @@ devFrame::~devFrame()
 	m_refreshButton->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnRefreshDevices ), NULL, this );
 	m_addRemoteButton->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnAddRemote ), NULL, this );
 	m_useSelectedButton->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnUseSelected ), NULL, this );
+	m_propertyGrid->Disconnect( wxEVT_PG_CHANGED, wxPropertyGridEventHandler( devFrame::OnPropGridChanged ), NULL, this );
 	this->Disconnect( wxID_ANY, wxEVT_TIMER, wxTimerEventHandler( devFrame::OnDeviceTimer ) );
 	
 }

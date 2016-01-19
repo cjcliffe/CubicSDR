@@ -19,6 +19,7 @@ public:
     void OnTreeDoubleClick( wxMouseEvent& event );
     void OnDeviceTimer( wxTimerEvent& event );
     void OnRefreshDevices( wxMouseEvent& event );
+    void OnPropGridChanged( wxPropertyGridEvent& event );
 
 private:
     SDRDeviceInfo *getSelectedDevice(wxTreeItemId selId);
@@ -31,4 +32,6 @@ private:
     std::map<wxTreeItemId, SDRDeviceInfo *>::iterator devItems_i;
     SDRDeviceInfo *dev = NULL;
     std::vector<wxPGProperty *> props;
+    std::map<std::string, wxPGProperty *> devSettings;
+    wxTreeItemId selId;
 };

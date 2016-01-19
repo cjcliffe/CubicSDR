@@ -12,6 +12,7 @@ SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent ): devFrame( parent ) {
     m_addRemoteButton->Disable();
     m_useSelectedButton->Disable();
     m_deviceTimer.Start(250);
+    selId = 0;
 }
 
 void SDRDevicesDialog::OnClose( wxCloseEvent& event ) {
@@ -91,21 +92,31 @@ wxPGProperty *SDRDevicesDialog::addArgInfoProperty(wxPropertyGrid *pg, SoapySDR:
 }
 
 void SDRDevicesDialog::OnSelectionChanged( wxTreeEvent& event ) {
-    wxTreeItemId selId = devTree->GetSelection();
 
-    dev = getSelectedDevice(selId);
-    props.erase(props.begin(), props.end());
-    if (dev) {
+    SDRDeviceInfo *selDev = getSelectedDevice(devTree->GetSelection());
+    if (selDev) {
+        dev = selDev;
+        selId = devTree->GetSelection();
+        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getName());
         m_propertyGrid->Clear();
-        m_propertyGrid->Append(new wxPropertyCategory("Run-time Settings"));
-        
-        SoapySDR::ArgInfoList::const_iterator args_i;
 
         SoapySDR::ArgInfoList args = dev->getSettingsArgInfo();
+        SoapySDR::ArgInfoList::const_iterator args_i;
+
+        m_propertyGrid->Append(new wxPropertyCategory("General Settings"));
         
-        for (args_i = args.begin(); args_i != args.end(); args_i++) {
-            SoapySDR::ArgInfo arg = (*args_i);
-            props.push_back(addArgInfoProperty(m_propertyGrid, arg));
+        devSettings.erase(devSettings.begin(),devSettings.end());
+        devSettings["name"] = m_propertyGrid->Append( new wxStringProperty("Name", wxPG_LABEL, devConfig->getDeviceName()) );
+        devSettings["offset"] = m_propertyGrid->Append( new wxIntProperty("Offset (Hz)", wxPG_LABEL, devConfig->getOffset()) );
+        
+        if (args.size()) {
+            m_propertyGrid->Append(new wxPropertyCategory("Run-time Settings"));
+            
+            
+            for (args_i = args.begin(); args_i != args.end(); args_i++) {
+                SoapySDR::ArgInfo arg = (*args_i);
+                props.push_back(addArgInfoProperty(m_propertyGrid, arg));
+            }
         }
         
         if (dev->getRxChannel()) {
@@ -165,9 +176,6 @@ SDRDeviceInfo *SDRDevicesDialog::getSelectedDevice(wxTreeItemId selId) {
 }
 
 void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event ) {
-    wxTreeItemId selId = devTree->GetSelection();
-    
-    dev = getSelectedDevice(selId);
     if (dev != NULL) {
         
         int i = 0;
@@ -259,10 +267,11 @@ void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
         devs[""] = SDREnumerator::enumerate_devices("",true);
         if (devs[""] != NULL) {
             for (devs_i = devs[""]->begin(); devs_i != devs[""]->end(); devs_i++) {
+                DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice((*devs_i)->getDeviceId());
                 if ((*devs_i)->isRemote()) {
-                    devItems[devTree->AppendItem(dsBranch, (*devs_i)->getName())] = (*devs_i);
+                    devItems[devTree->AppendItem(dsBranch, devConfig->getDeviceName())] = (*devs_i);
                 } else {
-                    devItems[devTree->AppendItem(localBranch, (*devs_i)->getName())] = (*devs_i);
+                    devItems[devTree->AppendItem(localBranch, devConfig->getDeviceName())] = (*devs_i);
                 }
             }
         }
@@ -274,7 +283,9 @@ void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
         if (remotes.size()) {
             for (remotes_i = remotes.begin(); remotes_i != remotes.end(); remotes_i++) {
                 devs[*remotes_i] = SDREnumerator::enumerate_devices(*remotes_i, true);
-                wxTreeItemId remoteNode = devTree->AppendItem(remoteBranch, *remotes_i);
+                DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(*remotes_i);
+
+                wxTreeItemId remoteNode = devTree->AppendItem(remoteBranch, devConfig->getDeviceName());
                 
                 if (devs[*remotes_i] != NULL) {
                     for (remoteDevs_i = devs[*remotes_i]->begin(); remoteDevs_i != devs[*remotes_i]->end(); remoteDevs_i++) {
@@ -300,9 +311,37 @@ void SDRDevicesDialog::OnRefreshDevices( wxMouseEvent& event ) {
     wxGetApp().stopDevice();
     devTree->DeleteAllItems();
     devTree->Disable();
+    m_propertyGrid->Clear();
+    props.erase(props.begin(),props.end());
+    devSettings.erase(devSettings.begin(), devSettings.end());
     m_refreshButton->Disable();
     m_addRemoteButton->Disable();
     m_useSelectedButton->Disable();
     wxGetApp().reEnumerateDevices();
+    selId = 0;
+    dev = nullptr;
     refresh = true;
+}
+
+void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
+    if (dev && event.GetProperty() == devSettings["name"]) {
+        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
+        
+        wxString devName = event.GetPropertyValue().GetString();
+        
+        devConfig->setDeviceName(devName.ToStdString());
+        if (selId) {
+            devTree->SetItemText(selId, devConfig->getDeviceName());
+        }
+        if (devName == "") {
+            event.GetProperty()->SetValueFromString(devConfig->getDeviceName());
+        }
+    }
+    if (dev && event.GetProperty() == devSettings["offset"]) {
+        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
+        
+        long offset = event.GetPropertyValue().GetInteger();
+        
+        devConfig->setOffset(offset);
+    }
 }

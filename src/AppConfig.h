@@ -25,6 +25,9 @@ public:
     void setDeviceId(std::string deviceId);
     std::string getDeviceId();
 
+    void setDeviceName(std::string deviceName);
+    std::string getDeviceName();
+
     void setStreamOpts(ConfigSettings opts);
     ConfigSettings getStreamOpts();
     void setStreamOpt(std::string key, std::string value);
@@ -43,6 +46,7 @@ public:
 
 private:
     std::string deviceId;
+    std::string deviceName;
     std::mutex busy_lock;
 
     std::atomic_int ppm;
