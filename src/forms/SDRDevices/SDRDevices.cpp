@@ -14,6 +14,7 @@ SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent ): devFrame( parent ) {
     m_deviceTimer.Start(250);
     selId = nullptr;
     editId = nullptr;
+    devAddDialog = nullptr;
 }
 
 void SDRDevicesDialog::OnClose( wxCloseEvent& event ) {
@@ -95,7 +96,7 @@ wxPGProperty *SDRDevicesDialog::addArgInfoProperty(wxPropertyGrid *pg, SoapySDR:
 void SDRDevicesDialog::OnSelectionChanged( wxTreeEvent& event ) {
 
     SDRDeviceInfo *selDev = getSelectedDevice(devTree->GetSelection());
-    if (selDev) {
+    if (selDev && selDev->isAvailable()) {
         dev = selDev;
         selId = devTree->GetSelection();
         DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getName());
@@ -109,7 +110,9 @@ void SDRDevicesDialog::OnSelectionChanged( wxTreeEvent& event ) {
         devSettings.erase(devSettings.begin(),devSettings.end());
         devSettings["name"] = m_propertyGrid->Append( new wxStringProperty("Name", wxPG_LABEL, devConfig->getDeviceName()) );
         devSettings["offset"] = m_propertyGrid->Append( new wxIntProperty("Offset (Hz)", wxPG_LABEL, devConfig->getOffset()) );
-        
+
+        props.erase(props.begin(), props.end());
+
         if (args.size()) {
             m_propertyGrid->Append(new wxPropertyCategory("Run-time Settings"));
             
@@ -143,29 +146,54 @@ void SDRDevicesDialog::OnSelectionChanged( wxTreeEvent& event ) {
             }
         }
         
+        if (selDev->isManual()) {
+            // TODO: add remove button
+        }
+        
+    } else if (selDev && !selDev->isAvailable() && selDev->isManual()) {
+        m_propertyGrid->Clear();
+        devSettings.erase(devSettings.begin(),devSettings.end());
+        props.erase(props.begin(), props.end());
+        dev = nullptr;
+        selId = nullptr;
+        editId = nullptr;
+        // TODO: add remove option
+        
     }
     event.Skip();
 }
 
 void SDRDevicesDialog::OnAddRemote( wxMouseEvent& event ) {
-    if (!SDREnumerator::hasRemoteModule()) {
-        wxMessageDialog *info;
-        info = new wxMessageDialog(NULL, wxT("Install SoapyRemote module to add remote servers.\n\nhttps://github.com/pothosware/SoapyRemote"), wxT("SoapyRemote not found."), wxOK | wxICON_ERROR);
-        info->ShowModal();
-        return;
-    }
+    devAddDialog = new SDRDeviceAddDialog(this);
+    devAddDialog->ShowModal();
     
-    wxString remoteAddr =
-        wxGetTextFromUser("Remote Address (address[:port])\n\ni.e. 'raspberrypi.local', '192.168.1.103:1234'\n","SoapySDR Remote Address", "", this);
+    if (devAddDialog->wasOkPressed()) {
+        std::string module = devAddDialog->getSelectedModule();
+        
+        if (module == "SoapyRemote") {
+            if (!SDREnumerator::hasRemoteModule()) {
+                wxMessageDialog *info;
+                info = new wxMessageDialog(NULL, wxT("Install SoapyRemote module to add remote servers.\n\nhttps://github.com/pothosware/SoapyRemote"), wxT("SoapyRemote not found."), wxOK | wxICON_ERROR);
+                info->ShowModal();
+                return;
+            }
 
-    if (!remoteAddr.Trim().empty()) {
-        wxGetApp().addRemote(remoteAddr.Trim().ToStdString());
+            wxString remoteAddr = devAddDialog->getModuleParam();
+        
+            if (!remoteAddr.Trim().empty()) {
+                wxGetApp().addRemote(remoteAddr.Trim().ToStdString());
+            }
+            devTree->Disable();
+            m_addRemoteButton->Disable();
+            m_useSelectedButton->Disable();
+            refresh = true;
+        } else {
+            std::string mod = devAddDialog->getSelectedModule();
+            std::string param = devAddDialog->getModuleParam();
+            SDREnumerator::addManual(mod, param);
+            doRefreshDevices();
+        }
     }
-    devTree->Disable();
-    m_addRemoteButton->Disable();
-    m_useSelectedButton->Disable();
-    refresh = true;
-
 }
 
 SDRDeviceInfo *SDRDevicesDialog::getSelectedDevice(wxTreeItemId selId) {
@@ -263,12 +291,15 @@ void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
         wxTreeItemId localBranch = devTree->AppendItem(devRoot, "Local");
         wxTreeItemId dsBranch = devTree->AppendItem(devRoot, "Local Net");
         wxTreeItemId remoteBranch = devTree->AppendItem(devRoot, "Remote");
+        wxTreeItemId manualBranch = devTree->AppendItem(devRoot, "Manual");
         
         devs[""] = SDREnumerator::enumerate_devices("",true);
         if (devs[""] != NULL) {
             for (devs_i = devs[""]->begin(); devs_i != devs[""]->end(); devs_i++) {
                 DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice((*devs_i)->getDeviceId());
-                if ((*devs_i)->isRemote()) {
+                if ((*devs_i)->isManual()) {
+                    devItems[devTree->AppendItem(manualBranch, devConfig->getDeviceName())] = (*devs_i);
+                } else if ((*devs_i)->isRemote()) {
                     devItems[devTree->AppendItem(dsBranch, devConfig->getDeviceName())] = (*devs_i);
                 } else {
                     devItems[devTree->AppendItem(localBranch, devConfig->getDeviceName())] = (*devs_i);
@@ -308,20 +339,7 @@ void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
 }
 
 void SDRDevicesDialog::OnRefreshDevices( wxMouseEvent& event ) {
-    wxGetApp().stopDevice();
-    devTree->DeleteAllItems();
-    devTree->Disable();
-    m_propertyGrid->Clear();
-    props.erase(props.begin(),props.end());
-    devSettings.erase(devSettings.begin(), devSettings.end());
-    m_refreshButton->Disable();
-    m_addRemoteButton->Disable();
-    m_useSelectedButton->Disable();
-    wxGetApp().reEnumerateDevices();
-    selId = nullptr;
-    editId = nullptr;
-    dev = nullptr;
-    refresh = true;
+    doRefreshDevices();
 }
 
 void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
@@ -353,4 +371,22 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
 
 void SDRDevicesDialog::OnPropGridFocus( wxFocusEvent& event ) {
     editId = selId;
+}
+
+
+void SDRDevicesDialog::doRefreshDevices() {
+    wxGetApp().stopDevice();
+    devTree->DeleteAllItems();
+    devTree->Disable();
+    m_propertyGrid->Clear();
+    props.erase(props.begin(),props.end());
+    devSettings.erase(devSettings.begin(), devSettings.end());
+    m_refreshButton->Disable();
+    m_addRemoteButton->Disable();
+    m_useSelectedButton->Disable();
+    wxGetApp().reEnumerateDevices();
+    selId = nullptr;
+    editId = nullptr;
+    dev = nullptr;
+    refresh = true;
 }

@@ -139,7 +139,13 @@ public:
 
     bool isRemote() const;
     void setRemote(bool remote);
+
+    bool isManual() const;
+    void setManual(bool manual);
     
+    void setManualParams(std::string manualParams);
+    std::string getManualParams();
+
     void addChannel(SDRDeviceChannel *chan);
     std::vector<SDRDeviceChannel *> &getChannels();
     SDRDeviceChannel * getRxChannel();
@@ -159,8 +165,8 @@ public:
 private:
     int index;
     std::string name, serial, product, manufacturer, tuner;
-    std::string driver, hardware;
-    bool timestamps, available, remote;
+    std::string driver, hardware, manual_params;
+    bool timestamps, available, remote, manual;
     
     SoapySDR::Kwargs deviceArgs, streamArgs;
     SoapySDR::ArgInfoList settingInfo;

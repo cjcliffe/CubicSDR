@@ -160,7 +160,7 @@ std::vector<std::string> SDRDeviceChannel::getStreamArgNames() {
 }
 
 
-SDRDeviceInfo::SDRDeviceInfo() : name(""), serial(""), available(false), remote(false) {
+SDRDeviceInfo::SDRDeviceInfo() : name(""), serial(""), available(false), remote(false), manual(false) {
 
 }
 
@@ -260,6 +260,22 @@ bool SDRDeviceInfo::isRemote() const {
 
 void SDRDeviceInfo::setRemote(bool remote) {
     this->remote = remote;
+}
+
+bool SDRDeviceInfo::isManual() const {
+    return manual;
+}
+
+void SDRDeviceInfo::setManual(bool manual) {
+    this->manual = manual;
+}
+
+void SDRDeviceInfo::setManualParams(std::string manualParams) {
+    this->manual_params = manualParams;
+}
+
+std::string SDRDeviceInfo::getManualParams() {
+    return manual_params;
 }
 
 void SDRDeviceInfo::setDeviceArgs(SoapySDR::Kwargs deviceArgs) {

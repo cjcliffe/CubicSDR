@@ -313,6 +313,8 @@ SET (cubicsdr_sources
 	src/ui/GLPanel.cpp
     src/forms/SDRDevices/SDRDevices.cpp
     src/forms/SDRDevices/SDRDevicesForm.cpp
+    src/forms/SDRDevices/SDRDeviceAdd.cpp
+    src/forms/SDRDevices/SDRDeviceAddForm.cpp
 	external/rtaudio/RtAudio.cpp
 	external/lodepng/lodepng.cpp
 	external/tinyxml/tinyxml.cpp
@@ -413,6 +415,8 @@ SET (cubicsdr_headers
 	src/ui/UITestContext.h    
     src/forms/SDRDevices/SDRDevices.h
     src/forms/SDRDevices/SDRDevicesForm.h
+    src/forms/SDRDevices/SDRDeviceAdd.h
+    src/forms/SDRDevices/SDRDeviceAddForm.h
 	external/rtaudio/RtAudio.h
 	external/lodepng/lodepng.h
 	external/tinyxml/tinyxml.h
