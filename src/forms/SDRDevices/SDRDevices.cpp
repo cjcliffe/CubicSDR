@@ -296,12 +296,21 @@ void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
         devs[""] = SDREnumerator::enumerate_devices("",true);
         if (devs[""] != NULL) {
             for (devs_i = devs[""]->begin(); devs_i != devs[""]->end(); devs_i++) {
-                DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice((*devs_i)->getDeviceId());
+                DeviceConfig *devConfig = nullptr;
                 if ((*devs_i)->isManual()) {
-                    devItems[devTree->AppendItem(manualBranch, devConfig->getDeviceName())] = (*devs_i);
+                    std::string devName = "Unknown";
+                    if ((*devs_i)->isAvailable()) {
+                        devConfig = wxGetApp().getConfig()->getDevice((*devs_i)->getDeviceId());
+                        devName = devConfig->getDeviceName();
+                    } else {
+                        devName = (*devs_i)->getDeviceId();
+                    }
+                    devItems[devTree->AppendItem(manualBranch, devName)] = (*devs_i);
                 } else if ((*devs_i)->isRemote()) {
+                    devConfig = wxGetApp().getConfig()->getDevice((*devs_i)->getDeviceId());
                     devItems[devTree->AppendItem(dsBranch, devConfig->getDeviceName())] = (*devs_i);
                 } else {
+                    devConfig = wxGetApp().getConfig()->getDevice((*devs_i)->getDeviceId());
                     devItems[devTree->AppendItem(localBranch, devConfig->getDeviceName())] = (*devs_i);
                 }
             }

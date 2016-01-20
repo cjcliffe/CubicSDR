@@ -189,7 +189,8 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
                 }
             } else {
                 SoapySDR::Kwargs failedEnum;
-                failedEnum = argsStrToKwargs(strDevArgs+",label=Not Found ("+m_i->factory+")");
+                failedEnum = argsStrToKwargs(strDevArgs);
+                failedEnum["label"] = "Not Found ("+m_i->factory+")";
                 results.push_back(failedEnum);
                 manualResult.push_back(false);
             }
@@ -228,7 +229,6 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
         
         std::cout << "Make device " << i << std::endl;
         if (i<manualsIdx || manualResult[i-manualsIdx]) try {
-            DeviceConfig *cfg = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
             SoapySDR::Device *device = SoapySDR::Device::make(deviceArgs);
             SoapySDR::Kwargs info = device->getHardwareInfo();
             for (SoapySDR::Kwargs::const_iterator it = info.begin(); it != info.end(); ++it) {
@@ -245,7 +245,9 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
             }
 
             SoapySDR::ArgInfoList settingsInfo = device->getSettingInfo();
-            
+
+            DeviceConfig *cfg = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
+
             ConfigSettings devSettings = cfg->getSettings();
             if (devSettings.size()) {
                 for (ConfigSettings::const_iterator set_i = devSettings.begin(); set_i != devSettings.end(); set_i++) {

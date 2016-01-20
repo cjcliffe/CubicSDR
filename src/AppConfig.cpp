@@ -467,8 +467,7 @@ bool AppConfig::load() {
         while (devices_node->hasAnother("device")) {
             DataNode *device_node = devices_node->getNext("device");
             if (device_node->hasAnother("id")) {
-                std::string deviceId;
-                device_node->getNext("id")->element()->get(deviceId);
+                std::string deviceId = device_node->getNext("id")->element()->toString();
 
                 getDevice(deviceId)->load(device_node);
             }
