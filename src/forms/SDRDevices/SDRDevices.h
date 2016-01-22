@@ -6,6 +6,7 @@
 #include "SDRDevicesForm.h"
 #include "SoapySDRThread.h"
 #include "SDREnumerator.h"
+#include "SDRDeviceAdd.h"
 
 class SDRDevicesDialog: public devFrame {
 public:
@@ -23,6 +24,8 @@ public:
     void OnPropGridFocus( wxFocusEvent& event );
 
 private:
+    void doRefreshDevices();
+    
     SDRDeviceInfo *getSelectedDevice(wxTreeItemId selId);
     wxPGProperty *addArgInfoProperty(wxPropertyGrid *pg, SoapySDR::ArgInfo arg);
 
@@ -36,4 +39,6 @@ private:
     std::map<std::string, wxPGProperty *> devSettings;
     wxTreeItemId selId;
     wxTreeItemId editId;
+    wxTreeItemId removeId;
+    SDRDeviceAddDialog *devAddDialog;
 };

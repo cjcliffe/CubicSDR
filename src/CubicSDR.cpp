@@ -247,6 +247,8 @@ bool CubicSDR::OnInit() {
     t_DemodVisual = new std::thread(&SpectrumVisualDataThread::threadMain, demodVisualThread);
 
     sdrEnum = new SDREnumerator();
+    
+    SDREnumerator::setManuals(config.getManualDevices());
 
     appframe = new AppFrame();
 	t_SDREnum = new std::thread(&SDREnumerator::threadMain, sdrEnum);

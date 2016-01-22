@@ -303,6 +303,14 @@ float AppConfig::getSpectrumAvgSpeed() {
     return spectrumAvgSpeed.load();
 }
 
+void AppConfig::setManualDevices(std::vector<SDRManualDef> manuals) {
+    manualDevices = manuals;
+}
+
+std::vector<SDRManualDef> AppConfig::getManualDevices() {
+    return manualDevices;
+}
+
 void AppConfig::setConfigName(std::string configName) {
     this->configName = configName;
 }
@@ -354,6 +362,15 @@ bool AppConfig::save() {
         device_config_i->second->save(device_node);
     }
 
+    if (manualDevices.size()) {
+        DataNode *manual_node = cfg.rootNode()->newChild("manual_devices");
+        for (std::vector<SDRManualDef>::const_iterator i = manualDevices.begin(); i != manualDevices.end(); i++) {
+            DataNode *rig_node = manual_node->newChild("device");
+            *rig_node->newChild("factory") = i->factory;
+            *rig_node->newChild("params") = i->params;
+        }
+    }
+    
 #ifdef USE_HAMLIB
     DataNode *rig_node = cfg.rootNode()->newChild("rig");
     *rig_node->newChild("model") = rigModel.load();
@@ -467,10 +484,25 @@ bool AppConfig::load() {
         while (devices_node->hasAnother("device")) {
             DataNode *device_node = devices_node->getNext("device");
             if (device_node->hasAnother("id")) {
-                std::string deviceId;
-                device_node->getNext("id")->element()->get(deviceId);
+                std::string deviceId = device_node->getNext("id")->element()->toString();
 
                 getDevice(deviceId)->load(device_node);
+            }
+        }
+    }
+    
+    if (cfg.rootNode()->hasAnother("manual_devices")) {
+        DataNode *manuals_node = cfg.rootNode()->getNext("manual_devices");
+        
+        while (manuals_node->hasAnother("device")) {
+            DataNode *manual_node = manuals_node->getNext("device");
+            if (manual_node->hasAnother("factory") && manual_node->hasAnother("params")) {
+                SDRManualDef mdef;
+                
+                mdef.factory = manual_node->getNext("factory")->element()->toString();
+                mdef.params = manual_node->getNext("params")->element()->toString();
+
+                manualDevices.push_back(mdef);
             }
         }
     }

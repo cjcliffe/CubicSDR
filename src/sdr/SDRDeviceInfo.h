@@ -5,32 +5,10 @@
 
 #include <SoapySDR/Types.hpp>
 
-/*
-    ----------------------------------------------------
-    -- Device identification
-    ----------------------------------------------------
-    driver=rtl
-    hardware=rtl
-
-    ----------------------------------------------------
-    -- Peripheral summary
-    ----------------------------------------------------
-    Channels: 1 Rx, 0 Tx
-    Timestamps: NO
-
-    ----------------------------------------------------
-    -- RX Channel 0
-    ----------------------------------------------------
-    Full-duplex: YES
-    Antennas: RX
-    Full gain range: [0, 49.6] dB
-    LNA gain range: [0, 49.6] dB
-    Full freq range: [24, 1766] MHz
-    RF freq range: [24, 1766] MHz
-    CORR freq range:  MHz
-    Sample rates: [0.25, 2.56] MHz
-    Filter bandwidths: [] MHz
-*/
+typedef struct _SDRManualDef {
+    std::string factory;
+    std::string params;
+} SDRManualDef;
 
 class SDRDeviceRange {
 public:
@@ -139,7 +117,13 @@ public:
 
     bool isRemote() const;
     void setRemote(bool remote);
+
+    bool isManual() const;
+    void setManual(bool manual);
     
+    void setManualParams(std::string manualParams);
+    std::string getManualParams();
+
     void addChannel(SDRDeviceChannel *chan);
     std::vector<SDRDeviceChannel *> &getChannels();
     SDRDeviceChannel * getRxChannel();
@@ -159,8 +143,8 @@ public:
 private:
     int index;
     std::string name, serial, product, manufacturer, tuner;
-    std::string driver, hardware;
-    bool timestamps, available, remote;
+    std::string driver, hardware, manual_params;
+    bool timestamps, available, remote, manual;
     
     SoapySDR::Kwargs deviceArgs, streamArgs;
     SoapySDR::ArgInfoList settingInfo;

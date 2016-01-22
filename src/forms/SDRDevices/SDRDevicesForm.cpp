@@ -35,12 +35,12 @@ devFrame::devFrame( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	bSizer5 = new wxBoxSizer( wxHORIZONTAL );
 	
 	m_refreshButton = new wxButton( m_panel4, wxID_ANY, wxT("Refresh"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer5->Add( m_refreshButton, 0, wxALL, 5 );
+	bSizer5->Add( m_refreshButton, 1, wxALL, 5 );
 	
-	m_addRemoteButton = new wxButton( m_panel4, wxID_ANY, wxT("Add Remote"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_addRemoteButton = new wxButton( m_panel4, wxID_ANY, wxT("Add"), wxDefaultPosition, wxDefaultSize, 0 );
 	bSizer5->Add( m_addRemoteButton, 1, wxALL, 5 );
 	
-	m_useSelectedButton = new wxButton( m_panel4, wxID_ANY, wxT("Use Selected"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_useSelectedButton = new wxButton( m_panel4, wxID_ANY, wxT("Start"), wxDefaultPosition, wxDefaultSize, 0 );
 	bSizer5->Add( m_useSelectedButton, 1, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 	
 	

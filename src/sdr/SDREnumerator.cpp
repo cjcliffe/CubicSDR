@@ -11,6 +11,7 @@ std::vector<std::string> SDREnumerator::remotes;
 std::map< std::string, std::vector<SDRDeviceInfo *> > SDREnumerator::devs;
 bool SDREnumerator::soapy_initialized = false;
 bool SDREnumerator::has_remote = false;
+std::vector<SDRManualDef> SDREnumerator::manuals;
 
 SDREnumerator::SDREnumerator() : IOThread() {
   
@@ -18,6 +19,48 @@ SDREnumerator::SDREnumerator() : IOThread() {
 
 SDREnumerator::~SDREnumerator() {
 
+}
+
+// Some utility from SoapySDR :)
+static std::string trim(const std::string &s)
+{
+    std::string out = s;
+    while (not out.empty() and std::isspace(out[0])) out = out.substr(1);
+    while (not out.empty() and std::isspace(out[out.size()-1])) out = out.substr(0, out.size()-1);
+    return out;
+}
+
+SoapySDR::Kwargs SDREnumerator::argsStrToKwargs(const std::string &args)
+{
+    SoapySDR::Kwargs kwargs;
+    
+    bool inKey = true;
+    std::string key, val;
+    for (size_t i = 0; i < args.size(); i++)
+    {
+        const char ch = args[i];
+        if (inKey)
+        {
+            if (ch == '=') inKey = false;
+            else if (ch == ',') inKey = true;
+            else key += ch;
+        }
+        else
+        {
+            if (ch == ',') inKey = true;
+            else val += ch;
+        }
+        if ((inKey and not val.empty()) or ((i+1) == args.size()))
+        {
+            key = trim(key);
+            val = trim(val);
+            if (not key.empty()) kwargs[key] = val;
+            key = "";
+            val = "";
+        }
+    }
+    
+    return kwargs;
 }
 
 
@@ -77,14 +120,7 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
             #endif
 
         }
-//        modules = SoapySDR::listModules();
-//        for (size_t i = 0; i < modules.size(); i++) {
-//            std::cout << "\tModule found: " << modules[i] << std::endl;
-//        }
-//        if (modules.empty()) {
-//            std::cout << "No modules found!" << std::endl;
-//        }
-
+        
         if (SDREnumerator::factories.size()) {
             SDREnumerator::factories.erase(SDREnumerator::factories.begin(), SDREnumerator::factories.end());
         }
@@ -113,6 +149,8 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
         soapy_initialized = true;
     }
     
+    modules = SoapySDR::listModules();
+
     std::vector<SoapySDR::Kwargs> results;
     SoapySDR::Kwargs enumArgs;
     bool isRemote = false;
@@ -126,6 +164,37 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
         results = SoapySDR::Device::enumerate(enumArgs);
     } else {
         results = SoapySDR::Device::enumerate();
+    }
+    
+    int manualsIdx = results.size();
+    std::vector<std::string> manualParams;
+    std::vector<bool> manualResult;
+    
+    if (manuals.size()) {
+        for (std::vector<SDRManualDef>::const_iterator m_i = manuals.begin(); m_i != manuals.end(); m_i++) {
+            std::vector<SoapySDR::Kwargs> manual_result;
+
+            std::string strDevArgs = "driver="+m_i->factory+","+m_i->params;
+            
+            manualParams.push_back(m_i->params);
+            
+            wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Enumerating manual device '") + strDevArgs + "'..");
+
+            manual_result = SoapySDR::Device::enumerate(strDevArgs);
+            
+            if (manual_result.size()) {
+                for (std::vector<SoapySDR::Kwargs>::const_iterator i = manual_result.begin(); i != manual_result.end(); i++) {
+                    results.push_back(*i);
+                    manualResult.push_back(true);
+                }
+            } else {
+                SoapySDR::Kwargs failedEnum;
+                failedEnum = argsStrToKwargs(strDevArgs);
+                failedEnum["label"] = "Not Found ("+m_i->factory+")";
+                results.push_back(failedEnum);
+                manualResult.push_back(false);
+            }
+        }
     }
     
     if (isRemote) {
@@ -145,7 +214,6 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
 			}
         }
         
-        DeviceConfig *cfg = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
         
         if (deviceArgs.count("remote")) {
             isRemote = true;
@@ -154,9 +222,13 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
         }
         
         dev->setRemote(isRemote);
+        dev->setManual(i>=manualsIdx);
+        if (i>=manualsIdx) {
+            dev->setManualParams(manualParams[i-manualsIdx]);
+        }
         
         std::cout << "Make device " << i << std::endl;
-        try {
+        if (i<manualsIdx || manualResult[i-manualsIdx]) try {
             SoapySDR::Device *device = SoapySDR::Device::make(deviceArgs);
             SoapySDR::Kwargs info = device->getHardwareInfo();
             for (SoapySDR::Kwargs::const_iterator it = info.begin(); it != info.end(); ++it) {
@@ -173,7 +245,9 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
             }
 
             SoapySDR::ArgInfoList settingsInfo = device->getSettingInfo();
-            
+
+            DeviceConfig *cfg = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
+
             ConfigSettings devSettings = cfg->getSettings();
             if (devSettings.size()) {
                 for (ConfigSettings::const_iterator set_i = devSettings.begin(); set_i != devSettings.end(); set_i++) {
@@ -253,6 +327,8 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
             std::cerr << "Error making device: " << ex.what() << std::endl;
             wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Error querying device #") + std::to_string(i));
             dev->setAvailable(false);
+        } else {
+            dev->setAvailable(false);
         }
         std::cout << std::endl;
 
@@ -323,6 +399,36 @@ std::vector<std::string> &SDREnumerator::getRemotes() {
     return remotes;
 }
 
+void SDREnumerator::addManual(std::string factory, std::string params) {
+    SDRManualDef def;
+    def.factory = factory;
+    def.params = params;
+    manuals.push_back(def);
+}
+
+void SDREnumerator::removeManual(std::string factory, std::string params) {
+    for (std::vector<SDRManualDef>::const_iterator i = manuals.begin(); i != manuals.end(); i++) {
+        if (i->factory == factory && i->params == params) {
+            manuals.erase(i);
+            for (std::vector<SDRDeviceInfo *>::const_iterator subdevs_i = devs[""].begin(); subdevs_i != devs[""].end(); subdevs_i++) {
+                if ((*subdevs_i)->isManual() && (*subdevs_i)->getDriver() == factory && (*subdevs_i)->getManualParams() == params) {
+                    devs[""].erase(subdevs_i);
+                    break;
+                }
+            }
+            break;
+        }
+    }
+}
+
+std::vector<SDRManualDef> &SDREnumerator::getManuals() {
+    return SDREnumerator::manuals;
+}
+
+void SDREnumerator::setManuals(std::vector<SDRManualDef> manuals) {
+    SDREnumerator::manuals = manuals;
+}
+
 bool SDREnumerator::hasRemoteModule() {
     return SDREnumerator::has_remote;
 }
@@ -332,4 +438,8 @@ void SDREnumerator::reset() {
     factories.erase(factories.begin(), factories.end());
     modules.erase(modules.begin(), modules.end());
     devs.erase(devs.begin(), devs.end());
+}
+
+std::vector<std::string> &SDREnumerator::getFactories() {
+    return SDREnumerator::factories;
 }
