@@ -39,5 +39,6 @@ private:
     std::map<std::string, wxPGProperty *> devSettings;
     wxTreeItemId selId;
     wxTreeItemId editId;
+    wxTreeItemId removeId;
     SDRDeviceAddDialog *devAddDialog;
 };

@@ -176,7 +176,7 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
 
             std::string strDevArgs = "driver="+m_i->factory+","+m_i->params;
             
-            manualParams.push_back(strDevArgs);
+            manualParams.push_back(m_i->params);
             
             wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Enumerating manual device '") + strDevArgs + "'..");
 
@@ -404,6 +404,29 @@ void SDREnumerator::addManual(std::string factory, std::string params) {
     def.factory = factory;
     def.params = params;
     manuals.push_back(def);
+}
+
+void SDREnumerator::removeManual(std::string factory, std::string params) {
+    for (std::vector<SDRManualDef>::const_iterator i = manuals.begin(); i != manuals.end(); i++) {
+        if (i->factory == factory && i->params == params) {
+            manuals.erase(i);
+            for (std::vector<SDRDeviceInfo *>::const_iterator subdevs_i = devs[""].begin(); subdevs_i != devs[""].end(); subdevs_i++) {
+                if ((*subdevs_i)->isManual() && (*subdevs_i)->getDriver() == factory && (*subdevs_i)->getManualParams() == params) {
+                    devs[""].erase(subdevs_i);
+                    break;
+                }
+            }
+            break;
+        }
+    }
+}
+
+std::vector<SDRManualDef> &SDREnumerator::getManuals() {
+    return SDREnumerator::manuals;
+}
+
+void SDREnumerator::setManuals(std::vector<SDRManualDef> manuals) {
+    SDREnumerator::manuals = manuals;
 }
 
 bool SDREnumerator::hasRemoteModule() {

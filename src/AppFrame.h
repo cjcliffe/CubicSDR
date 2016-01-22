@@ -25,10 +25,6 @@
 #define wxID_SET_FREQ_OFFSET 2001
 #define wxID_RESET 2002
 #define wxID_SET_PPM 2003
-#define wxID_SET_DS_OFF 2004
-#define wxID_SET_DS_I 2005
-#define wxID_SET_DS_Q 2006
-#define wxID_SET_SWAP_IQ 2007
 #define wxID_SDR_DEVICES 2008
 #define wxID_AGC_CONTROL 2009
 

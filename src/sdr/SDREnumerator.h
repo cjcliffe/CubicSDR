@@ -12,11 +12,6 @@
 #include <SoapySDR/Registry.hpp>
 #include <SoapySDR/Device.hpp>
 
-typedef struct _SDRManualDef {
-    std::string factory;
-    std::string params;
-} SDRManualDef;
-
 
 class SDREnumerator: public IOThread {
 private:
@@ -36,7 +31,9 @@ public:
     static std::vector<std::string> &getRemotes();
     static bool hasRemoteModule();
     static void addManual(std::string factory, std::string params);
-    //    static void removeManual(std::string factory, std::string params);
+    static void removeManual(std::string factory, std::string params);
+    static std::vector<SDRManualDef> &getManuals();
+    static void setManuals(std::vector<SDRManualDef> manuals);
     static void reset();
     static std::vector<std::string> &getFactories();
     
@@ -47,4 +44,5 @@ protected:
     static std::vector<std::string> remotes;
     static std::map< std::string, std::vector<SDRDeviceInfo *> > devs;
     static std::vector<SDRManualDef> manuals;
+    static std::mutex devs_busy;
 };

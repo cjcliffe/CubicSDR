@@ -8,6 +8,8 @@
 #include <mutex>
 
 #include "DataTree.h"
+#include "CubicSDRDefs.h"
+#include "SDRDeviceInfo.h"
 
 typedef std::map<std::string, std::string> ConfigSettings;
 
@@ -40,7 +42,7 @@ public:
     
     void setRigIF(int rigType, long long freq);
     long long getRigIF(int rigType);
-    
+
     void save(DataNode *node);
     void load(DataNode *node);
 
@@ -83,6 +85,9 @@ public:
     void setSpectrumAvgSpeed(float avgSpeed);
     float getSpectrumAvgSpeed();
     
+    void setManualDevices(std::vector<SDRManualDef> manuals);
+    std::vector<SDRManualDef> getManualDevices();
+    
 #if USE_HAMLIB
     int getRigModel();
     void setRigModel(int rigModel);
@@ -110,6 +115,7 @@ private:
     std::atomic_llong centerFreq;
     std::atomic_int waterfallLinesPerSec;
     std::atomic<float> spectrumAvgSpeed;
+    std::vector<SDRManualDef> manualDevices;
 #if USE_HAMLIB
     std::atomic_int rigModel, rigRate;
     std::string rigPort;

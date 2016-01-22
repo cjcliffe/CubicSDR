@@ -14,6 +14,7 @@ SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent ): devFrame( parent ) {
     m_deviceTimer.Start(250);
     selId = nullptr;
     editId = nullptr;
+    removeId = nullptr;
     devAddDialog = nullptr;
 }
 
@@ -147,23 +148,50 @@ void SDRDevicesDialog::OnSelectionChanged( wxTreeEvent& event ) {
         }
         
         if (selDev->isManual()) {
-            // TODO: add remove button
+            m_addRemoteButton->SetLabel("Remove");
+            removeId = selId;
+        } else {
+            m_addRemoteButton->SetLabel("Add");
+            removeId = nullptr;
         }
         
     } else if (selDev && !selDev->isAvailable() && selDev->isManual()) {
         m_propertyGrid->Clear();
         devSettings.erase(devSettings.begin(),devSettings.end());
         props.erase(props.begin(), props.end());
+        removeId = devTree->GetSelection();
         dev = nullptr;
         selId = nullptr;
         editId = nullptr;
-        // TODO: add remove option
         
+        m_addRemoteButton->SetLabel("Remove");
+    } else if (!selDev) {
+        m_addRemoteButton->SetLabel("Add");
+        removeId = nullptr;
     }
     event.Skip();
 }
 
 void SDRDevicesDialog::OnAddRemote( wxMouseEvent& event ) {
+    if (removeId != nullptr) {
+        SDRDeviceInfo *selDev = getSelectedDevice(removeId);
+
+        if (selDev) {
+            SDREnumerator::removeManual(selDev->getDriver(),selDev->getManualParams());
+            m_propertyGrid->Clear();
+            devSettings.erase(devSettings.begin(),devSettings.end());
+            props.erase(props.begin(), props.end());
+            dev = nullptr;
+            selId = nullptr;
+            editId = nullptr;
+            devTree->Delete(removeId);
+            removeId = nullptr;
+            m_addRemoteButton->SetLabel("Add");
+        }
+        
+        return;
+    }
+    
     devAddDialog = new SDRDeviceAddDialog(this);
     devAddDialog->ShowModal();
     
@@ -396,6 +424,8 @@ void SDRDevicesDialog::doRefreshDevices() {
     wxGetApp().reEnumerateDevices();
     selId = nullptr;
     editId = nullptr;
+    removeId = nullptr;
     dev = nullptr;
     refresh = true;
+    m_addRemoteButton->SetLabel("Add");
 }
