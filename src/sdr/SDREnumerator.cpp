@@ -4,6 +4,10 @@
 #include "CubicSDR.h"
 #include <string>
 
+#ifdef WIN32
+#include <locale>
+#endif
+
 
 std::vector<std::string> SDREnumerator::factories;
 std::vector<std::string> SDREnumerator::modules;
@@ -24,10 +28,18 @@ SDREnumerator::~SDREnumerator() {
 // Some utility from SoapySDR :)
 static std::string trim(const std::string &s)
 {
-    std::string out = s;
+#if WIN32
+	std::string out = s;
+	locale loc("");
+	while (not out.empty() and std::isspace(out[0], loc)) out = out.substr(1);
+	while (not out.empty() and std::isspace(out[out.size() - 1], loc)) out = out.substr(0, out.size() - 1);
+	return out;
+#else
+	std::string out = s;
     while (not out.empty() and std::isspace(out[0])) out = out.substr(1);
     while (not out.empty() and std::isspace(out[out.size()-1])) out = out.substr(0, out.size()-1);
     return out;
+#endif
 }
 
 SoapySDR::Kwargs SDREnumerator::argsStrToKwargs(const std::string &args)
