@@ -419,10 +419,10 @@ void SDREnumerator::addManual(std::string factory, std::string params) {
 }
 
 void SDREnumerator::removeManual(std::string factory, std::string params) {
-    for (std::vector<SDRManualDef>::const_iterator i = manuals.begin(); i != manuals.end(); i++) {
+    for (std::vector<SDRManualDef>::iterator i = manuals.begin(); i != manuals.end(); i++) {
         if (i->factory == factory && i->params == params) {
             manuals.erase(i);
-            for (std::vector<SDRDeviceInfo *>::const_iterator subdevs_i = devs[""].begin(); subdevs_i != devs[""].end(); subdevs_i++) {
+            for (std::vector<SDRDeviceInfo *>::iterator subdevs_i = devs[""].begin(); subdevs_i != devs[""].end(); subdevs_i++) {
                 if ((*subdevs_i)->isManual() && (*subdevs_i)->getDriver() == factory && (*subdevs_i)->getManualParams() == params) {
                     devs[""].erase(subdevs_i);
                     break;
