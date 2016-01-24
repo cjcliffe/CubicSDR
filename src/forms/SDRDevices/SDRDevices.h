@@ -34,7 +34,7 @@ private:
     std::vector<SDRDeviceInfo *>::iterator devs_i;
     std::map<wxTreeItemId, SDRDeviceInfo *> devItems;
     std::map<wxTreeItemId, SDRDeviceInfo *>::iterator devItems_i;
-    SDRDeviceInfo *dev = NULL;
+    SDRDeviceInfo *dev;
     std::vector<wxPGProperty *> props;
     std::map<std::string, wxPGProperty *> devSettings;
     wxTreeItemId selId;

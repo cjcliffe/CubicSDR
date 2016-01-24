@@ -16,6 +16,7 @@ SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent ): devFrame( parent ) {
     editId = nullptr;
     removeId = nullptr;
     devAddDialog = nullptr;
+    dev = nullptr;
 }
 
 void SDRDevicesDialog::OnClose( wxCloseEvent& event ) {
