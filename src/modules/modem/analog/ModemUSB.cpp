@@ -11,11 +11,12 @@ ModemUSB::ModemUSB() : ModemAnalog() {
     
     // estimate required filter length and generate filter
     unsigned int h_len = estimate_req_filter_len(ft,As);
-    float h[h_len];
+    float *h = (float *) malloc(h_len * sizeof(float));
     liquid_firdes_kaiser(h_len,fc,As,mu,h);
     ssbFilt = firfilt_crcf_create(h,h_len);
     ssbShift = nco_crcf_create(LIQUID_NCO);
     nco_crcf_set_frequency(ssbShift,  (2.0 * M_PI) * 0.25);
+	free(h);
 }
 
 Modem *ModemUSB::factory() {

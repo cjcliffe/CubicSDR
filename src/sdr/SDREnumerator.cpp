@@ -4,6 +4,10 @@
 #include "CubicSDR.h"
 #include <string>
 
+#ifdef WIN32
+#include <locale>
+#endif
+
 
 std::vector<std::string> SDREnumerator::factories;
 std::vector<std::string> SDREnumerator::modules;
@@ -24,10 +28,18 @@ SDREnumerator::~SDREnumerator() {
 // Some utility from SoapySDR :)
 static std::string trim(const std::string &s)
 {
-    std::string out = s;
+#if WIN32
+	std::string out = s;
+	locale loc("");
+	while (not out.empty() and std::isspace(out[0], loc)) out = out.substr(1);
+	while (not out.empty() and std::isspace(out[out.size() - 1], loc)) out = out.substr(0, out.size() - 1);
+	return out;
+#else
+	std::string out = s;
     while (not out.empty() and std::isspace(out[0])) out = out.substr(1);
     while (not out.empty() and std::isspace(out[out.size()-1])) out = out.substr(0, out.size()-1);
     return out;
+#endif
 }
 
 SoapySDR::Kwargs SDREnumerator::argsStrToKwargs(const std::string &args)
@@ -407,10 +419,10 @@ void SDREnumerator::addManual(std::string factory, std::string params) {
 }
 
 void SDREnumerator::removeManual(std::string factory, std::string params) {
-    for (std::vector<SDRManualDef>::const_iterator i = manuals.begin(); i != manuals.end(); i++) {
+    for (std::vector<SDRManualDef>::iterator i = manuals.begin(); i != manuals.end(); i++) {
         if (i->factory == factory && i->params == params) {
             manuals.erase(i);
-            for (std::vector<SDRDeviceInfo *>::const_iterator subdevs_i = devs[""].begin(); subdevs_i != devs[""].end(); subdevs_i++) {
+            for (std::vector<SDRDeviceInfo *>::iterator subdevs_i = devs[""].begin(); subdevs_i != devs[""].end(); subdevs_i++) {
                 if ((*subdevs_i)->isManual() && (*subdevs_i)->getDriver() == factory && (*subdevs_i)->getManualParams() == params) {
                     devs[""].erase(subdevs_i);
                     break;
