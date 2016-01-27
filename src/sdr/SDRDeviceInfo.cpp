@@ -174,7 +174,7 @@ std::string SDRDeviceInfo::getDeviceId() {
     return deviceId;
 }
 
-const int SDRDeviceInfo::getIndex() const {
+int SDRDeviceInfo::getIndex() const {
     return index;
 }
 
