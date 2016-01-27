@@ -211,23 +211,15 @@ private:
 #endif
 };
 
+static const wxCmdLineEntryDesc commandLineInfo [] =
+{
+    { wxCMD_LINE_SWITCH, "h", "help", "Command line parameter help", wxCMD_LINE_VAL_NONE, wxCMD_LINE_OPTION_HELP },
+    { wxCMD_LINE_OPTION, "c", "config", "Specify a named configuration to use, i.e. '-c ham'", wxCMD_LINE_VAL_STRING, 0 },
+    { wxCMD_LINE_OPTION, "m", "modpath", "Load modules from suppplied path, i.e. '-m ~/SoapyMods/'", wxCMD_LINE_VAL_STRING, 0 },
 #ifdef BUNDLE_SOAPY_MODS
-static const wxCmdLineEntryDesc commandLineInfo [] =
-{
-    { wxCMD_LINE_SWITCH, "h", "help", "Command line parameter help", wxCMD_LINE_VAL_NONE, wxCMD_LINE_OPTION_HELP },
-    { wxCMD_LINE_OPTION, "c", "config", "Specify a named configuration to use, i.e. '-c ham'" },
-    { wxCMD_LINE_OPTION, "m", "modpath", "Load modules from suppplied path, i.e. '-m ~/SoapyMods/'" },
-    { wxCMD_LINE_SWITCH, "b", "bundled", "Use bundled SoapySDR modules first instead of local." },
-    { wxCMD_LINE_NONE }
-};
-#else
-static const wxCmdLineEntryDesc commandLineInfo [] =
-{
-    { wxCMD_LINE_SWITCH, "h", "help", "Command line parameter help", wxCMD_LINE_VAL_NONE, wxCMD_LINE_OPTION_HELP },
-    { wxCMD_LINE_OPTION, "c", "config", "Specify a named configuration to use, i.e. '-c ham'" },
-    { wxCMD_LINE_OPTION, "m", "modpath", "Load modules from suppplied path, i.e. '-m ~/SoapyMods/'" },
-    { wxCMD_LINE_NONE }
-};
+    { wxCMD_LINE_SWITCH, "b", "bundled", "Use bundled SoapySDR modules first instead of local.", wxCMD_LINE_VAL_NONE, 0 },
 #endif
+    { wxCMD_LINE_NONE, nullptr, nullptr, nullptr, wxCMD_LINE_VAL_NONE, 0 }
+};
 
 DECLARE_APP(CubicSDR)

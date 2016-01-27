@@ -349,7 +349,7 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
 
 }
 
-void PrimaryGLContext::DrawFreqSelector(float uxPos, RGBA4f color, float w, long long center_freq, long long srate) {
+void PrimaryGLContext::DrawFreqSelector(float uxPos, RGBA4f color, float w, long long /* center_freq */, long long srate) {
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     long long bw = 0;
