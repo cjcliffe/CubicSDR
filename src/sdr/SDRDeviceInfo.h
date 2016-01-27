@@ -85,7 +85,7 @@ public:
     
     std::string getDeviceId();
     
-    const int getIndex() const;
+    int getIndex() const;
     void setIndex(const int index);
     
     bool isAvailable() const;

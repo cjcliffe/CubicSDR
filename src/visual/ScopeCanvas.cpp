@@ -240,7 +240,7 @@ void ScopeCanvas::OnMouseMoved(wxMouseEvent& event) {
     }
 }
 
-void ScopeCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
+void ScopeCanvas::OnMouseWheelMoved(wxMouseEvent& /* event */) {
     
 }
 

@@ -42,7 +42,7 @@ namespace CubicVR {
             return mat4(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
         }
         
-        static mat4 multiply(mat4 mLeft, mat4 mRight, bool updated) {
+        static mat4 multiply(mat4 mLeft, mat4 mRight, bool /* updated */) {
             mat4 mOut;
             
             mOut[0] = mLeft[0] * mRight[0] + mLeft[4] * mRight[1] + mLeft[8] * mRight[2] + mLeft[12] * mRight[3];
@@ -65,7 +65,7 @@ namespace CubicVR {
             return mOut;
         };
         
-        static vec3 multiply(mat4 m1, vec3 m2, bool updated) {
+        static vec3 multiply(mat4 m1, vec3 m2, bool /* updated */) {
             vec3 mOut;
             
             mOut[0] = m1[0] * m2[0] + m1[4] * m2[1] + m1[8] * m2[2] + m1[12];
@@ -312,7 +312,7 @@ namespace CubicVR {
             return mat4::translate(-eyex,-eyey,-eyez) * mat4( side[0], up[0], -forward[0], 0, side[1], up[1], -forward[1], 0, side[2], up[2], -forward[2], 0, 0, 0, 0, 1);
         };
         
-        static vec3 unProject(mat4 pMatrix, mat4 mvMatrix, float width, float height, float winx, float winy, float winz) {
+        static vec3 unProject(mat4 pMatrix, mat4 mvMatrix, float width, float height, float winx, float winy, float /* winz */) {
             vec4 p(((winx / width) * 2.0) - 1.0, -(((winy / height) * 2.0) - 1.0), 1.0, 1.0);
             
             vec4 invp = mat4::vec4_multiply(mat4::vec4_multiply(p, mat4::inverse(pMatrix)), mat4::inverse(mvMatrix));

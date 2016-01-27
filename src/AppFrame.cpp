@@ -1458,13 +1458,9 @@ bool AppFrame::loadSession(std::string fileName) {
                 }
             }
             
-            bool isActive = false;
-            
-            
             newDemod = wxGetApp().getDemodMgr().newThread();
 
             if (demod->hasAnother("active")) {
-                isActive = true;    // active only written to active demod, no need to parse..
                 loadedDemod = newDemod;
             }
 
