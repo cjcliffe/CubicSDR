@@ -52,7 +52,7 @@ void UITestCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     SwapBuffers();
 }
 
-void UITestCanvas::OnIdle(wxIdleEvent &event) {
+void UITestCanvas::OnIdle(wxIdleEvent& /* event */) {
     Refresh(false);
 }
 

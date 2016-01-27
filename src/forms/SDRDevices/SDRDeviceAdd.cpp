@@ -21,7 +21,7 @@ SDRDeviceAddDialog::SDRDeviceAddDialog( wxWindow* parent ): SDRDeviceAddForm( pa
     }
 }
 
-void SDRDeviceAddDialog::OnSoapyModuleChanged( wxCommandEvent& event ) {
+void SDRDeviceAddDialog::OnSoapyModuleChanged( wxCommandEvent& /* event */) {
     wxString strSel = m_soapyModule->GetStringSelection();
     
     selectedModule = strSel.ToStdString();
@@ -33,12 +33,12 @@ void SDRDeviceAddDialog::OnSoapyModuleChanged( wxCommandEvent& event ) {
     }
 }
 
-void SDRDeviceAddDialog::OnCancelButton( wxCommandEvent& event ) {
+void SDRDeviceAddDialog::OnCancelButton( wxCommandEvent& /* event */) {
     okPressed = false;
     Close(true);
 }
 
-void SDRDeviceAddDialog::OnOkButton( wxCommandEvent& event ) {
+void SDRDeviceAddDialog::OnOkButton( wxCommandEvent& /* event */) {
     wxString strSel = m_soapyModule->GetStringSelection();
     selectedModule = strSel.ToStdString();
     moduleParam = m_paramText->GetValue().ToStdString();
