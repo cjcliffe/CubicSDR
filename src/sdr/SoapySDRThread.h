@@ -26,7 +26,7 @@ public:
 
     }
 
-    SDRThreadIQData(long long bandwidth, long long frequency, std::vector<signed char> *data) :
+    SDRThreadIQData(long long bandwidth, long long frequency, std::vector<signed char> * /* data */) :
             frequency(frequency), sampleRate(bandwidth) {
 
     }

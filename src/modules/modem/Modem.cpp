@@ -72,11 +72,11 @@ int Modem::getDefaultSampleRate() {
     return 200000;
 }
 
-void Modem::writeSetting(std::string setting, std::string value) {
+void Modem::writeSetting(std::string /* setting */, std::string /* value */) {
     // ...
 }
 
-std::string Modem::readSetting(std::string setting) {
+std::string Modem::readSetting(std::string /* setting */) {
     return "";
 }
 

@@ -49,7 +49,7 @@ void AudioThread::deviceCleanup() {
     }
 }
 
-static int audioCallback(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames, double streamTime, RtAudioStreamStatus status,
+static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned int nBufferFrames, double /* streamTime */, RtAudioStreamStatus status,
         void *userData) {
     AudioThread *src = (AudioThread *) userData;
     float *out = (float*) outputBuffer;

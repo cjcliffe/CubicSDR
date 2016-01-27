@@ -21,7 +21,7 @@ ModemProperties::ModemProperties(wxWindow *parent, wxWindowID winid,
     mouseInView = false;
 }
 
-void ModemProperties::OnShow(wxShowEvent &event) {
+void ModemProperties::OnShow(wxShowEvent & /* event */) {
 }
 
 ModemProperties::~ModemProperties() {
@@ -166,11 +166,11 @@ void ModemProperties::OnChange(wxPropertyGridEvent &event) {
     }
 }
 
-void ModemProperties::OnMouseEnter(wxMouseEvent &event) {
+void ModemProperties::OnMouseEnter(wxMouseEvent & /* event */) {
     mouseInView = true;
 }
 
-void ModemProperties::OnMouseLeave(wxMouseEvent &event) {
+void ModemProperties::OnMouseLeave(wxMouseEvent & /* event */) {
     mouseInView = false;
 }
 

@@ -19,7 +19,7 @@ SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent ): devFrame( parent ) {
     dev = nullptr;
 }
 
-void SDRDevicesDialog::OnClose( wxCloseEvent& event ) {
+void SDRDevicesDialog::OnClose( wxCloseEvent& /* event */) {
     wxGetApp().setDeviceSelectorClosed();
     Destroy();
 }
@@ -173,7 +173,7 @@ void SDRDevicesDialog::OnSelectionChanged( wxTreeEvent& event ) {
     event.Skip();
 }
 
-void SDRDevicesDialog::OnAddRemote( wxMouseEvent& event ) {
+void SDRDevicesDialog::OnAddRemote( wxMouseEvent& /* event */) {
     if (removeId != nullptr) {
         SDRDeviceInfo *selDev = getSelectedDevice(removeId);
 
@@ -233,7 +233,7 @@ SDRDeviceInfo *SDRDevicesDialog::getSelectedDevice(wxTreeItemId selId) {
     return NULL;
 }
 
-void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event ) {
+void SDRDevicesDialog::OnUseSelected( wxMouseEvent& /* event */) {
     if (dev != NULL) {
         int i = 0;
         SoapySDR::ArgInfoList::const_iterator args_i;
@@ -376,7 +376,7 @@ void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
     }
 }
 
-void SDRDevicesDialog::OnRefreshDevices( wxMouseEvent& event ) {
+void SDRDevicesDialog::OnRefreshDevices( wxMouseEvent& /* event */) {
     doRefreshDevices();
 }
 
@@ -407,7 +407,7 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
     }
 }
 
-void SDRDevicesDialog::OnPropGridFocus( wxFocusEvent& event ) {
+void SDRDevicesDialog::OnPropGridFocus( wxFocusEvent& /* event */) {
     editId = selId;
 }
 
