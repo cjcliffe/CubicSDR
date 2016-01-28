@@ -2,7 +2,7 @@
 #include "CubicSDR.h"
 
 
-SpectrumVisualProcessor::SpectrumVisualProcessor() : lastInputBandwidth(0), lastBandwidth(0), fftwInput(NULL), fftwOutput(NULL), fftInData(NULL), fftLastData(NULL), lastDataSize(0), fftw_plan(NULL), resampler(NULL), resamplerRatio(0), outputBuffers("SpectrumVisualProcessorBuffers") {
+SpectrumVisualProcessor::SpectrumVisualProcessor() : outputBuffers("SpectrumVisualProcessorBuffers"), lastInputBandwidth(0), lastBandwidth(0), fftwInput(NULL), fftwOutput(NULL), fftInData(NULL), fftLastData(NULL), lastDataSize(0), fftw_plan(NULL), resampler(NULL), resamplerRatio(0) {
     
     is_view.store(false);
     fftSize.store(0);

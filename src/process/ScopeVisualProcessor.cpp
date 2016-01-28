@@ -2,7 +2,7 @@
 #include <cstring>
 #include <string>
 
-ScopeVisualProcessor::ScopeVisualProcessor(): fftInData(NULL), fftwOutput(NULL), fftw_plan(NULL), maxScopeSamples(1024), outputBuffers("ScopeVisualProcessorBuffers") {
+ScopeVisualProcessor::ScopeVisualProcessor(): outputBuffers("ScopeVisualProcessorBuffers"), fftInData(NULL), fftwOutput(NULL), fftw_plan(NULL), maxScopeSamples(1024) {
     scopeEnabled.store(true);
     spectrumEnabled.store(true);
     fft_average_rate = 0.65;

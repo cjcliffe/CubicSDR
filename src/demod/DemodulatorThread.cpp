@@ -12,7 +12,7 @@
 #include <pthread.h>
 #endif
 
-DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent) : IOThread(), squelchLevel(-100), signalLevel(-100), squelchEnabled(false), cModem(nullptr), cModemKit(nullptr), iqInputQueue(NULL), audioOutputQueue(NULL), audioVisOutputQueue(NULL), threadQueueControl(NULL), threadQueueNotify(NULL), outputBuffers("DemodulatorThreadBuffers") {
+DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent) : IOThread(), outputBuffers("DemodulatorThreadBuffers"), squelchLevel(-100), signalLevel(-100), squelchEnabled(false), cModem(nullptr), cModemKit(nullptr), iqInputQueue(NULL), audioOutputQueue(NULL), audioVisOutputQueue(NULL), threadQueueControl(NULL), threadQueueNotify(NULL) {
     
     demodInstance = parent;
     muted.store(false);

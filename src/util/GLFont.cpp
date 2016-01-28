@@ -304,12 +304,16 @@ void GLFont::loadFont(std::string fontFile) {
         unsigned int imgWidth = imageWidth, imgHeight = imageHeight;
         unsigned error = lodepng::decode(image, imgWidth, imgHeight, imageFile);
 
+        if (error) {
+            std::cout << "Error loading PNG image file: '" << imageFile << "'" << std::endl;
+        }
+        
         glGenTextures(1, &texId);
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, texId);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexImage2D(GL_TEXTURE_2D, 0, 4, imageWidth, imageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image[0]);
+        glTexImage2D(GL_TEXTURE_2D, 0, 4, imageWidth, imageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, error?nullptr:(&image[0]));
         glDisable(GL_TEXTURE_2D);
 
         std::map<int, GLFontChar *>::iterator char_i;
