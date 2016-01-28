@@ -27,7 +27,7 @@ void ModemIQ::disposeKit(ModemKit *kit) {
     delete kit;
 }
 
-int ModemIQ::checkSampleRate(long long sampleRate, int audioSampleRate) {
+int ModemIQ::checkSampleRate(long long /* sampleRate */, int audioSampleRate) {
     return audioSampleRate;
 }
 
@@ -35,7 +35,7 @@ int ModemIQ::getDefaultSampleRate() {
     return 48000;
 }
 
-void ModemIQ::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
+void ModemIQ::demodulate(ModemKit * /* kit */, ModemIQData *input, AudioThreadInput *audioOut) {
     int bufSize = input->data.size();
     
     if (!bufSize) {
