@@ -361,15 +361,15 @@ AppFrame::AppFrame() :
     menu = new wxMenu;
 
 #define NUM_RATES_DEFAULT 4
-    int desired_rates[NUM_RATES_DEFAULT] = { 48000, 44100, 96000, 192000 };
+    unsigned int desired_rates[NUM_RATES_DEFAULT] = { 48000, 44100, 96000, 192000 };
 
     for (mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
-        int desired_rate = 0;
-        int desired_rank = NUM_RATES_DEFAULT + 1;
+        unsigned int desired_rate = 0;
+        unsigned int desired_rank = NUM_RATES_DEFAULT + 1;
 
         for (std::vector<unsigned int>::iterator srate = mdevices_i->second.sampleRates.begin(); srate != mdevices_i->second.sampleRates.end();
                 srate++) {
-            for (i = 0; i < NUM_RATES_DEFAULT; i++) {
+            for (unsigned int i = 0; i < NUM_RATES_DEFAULT; i++) {
                 if (desired_rates[i] == (*srate)) {
                     if (desired_rank > i) {
                         desired_rank = i;
@@ -670,7 +670,7 @@ void AppFrame::updateDeviceParams() {
 
 
 void AppFrame::OnMenu(wxCommandEvent& event) {
-    if (event.GetId() >= wxID_RT_AUDIO_DEVICE && event.GetId() < wxID_RT_AUDIO_DEVICE + devices.size()) {
+    if (event.GetId() >= wxID_RT_AUDIO_DEVICE && event.GetId() < wxID_RT_AUDIO_DEVICE + (int)devices.size()) {
         if (activeDemodulator) {
             activeDemodulator->setOutputDevice(event.GetId() - wxID_RT_AUDIO_DEVICE);
             activeDemodulator = NULL;
@@ -775,7 +775,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         for (std::vector<SoapySDR::ArgInfo>::iterator arg_i = settingArgs.begin(); arg_i != settingArgs.end(); arg_i++) {
             SoapySDR::ArgInfo &arg = (*arg_i);
 
-            if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size() && setIdx >= menuIdx && setIdx < menuIdx+arg.options.size()) {
+            if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size() && setIdx >= menuIdx && setIdx < menuIdx+(int)arg.options.size()) {
                 int optIdx = setIdx-menuIdx;
                 wxGetApp().getSDRThread()->writeSetting(arg.key, arg.options[optIdx]);
                 break;
@@ -862,7 +862,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             break;
     }
     
-    if (event.GetId() >= wxID_BANDWIDTH_BASE && event.GetId() < wxID_BANDWIDTH_BASE+sampleRates.size()) {
+    if (event.GetId() >= wxID_BANDWIDTH_BASE && event.GetId() < wxID_BANDWIDTH_BASE + (int)sampleRates.size()) {
         wxGetApp().setSampleRate(sampleRates[event.GetId()-wxID_BANDWIDTH_BASE]);
     }
     

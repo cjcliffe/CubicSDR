@@ -33,7 +33,7 @@ ModemUSB::~ModemUSB() {
     ampmodem_destroy(demodAM_USB);
 }
 
-int ModemUSB::checkSampleRate(long long sampleRate, int audioSampleRate) {
+int ModemUSB::checkSampleRate(long long sampleRate, int /* audioSampleRate */) {
     if (sampleRate < MIN_BANDWIDTH) {
         return MIN_BANDWIDTH;
     }

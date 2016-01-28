@@ -36,9 +36,9 @@ protected:
     float *fftInData;
     fftwf_complex *fftwOutput;
     fftwf_plan fftw_plan;
-    int fftSize;
+    unsigned int fftSize;
     int desiredInputSize;
-    int maxScopeSamples;
+    unsigned int maxScopeSamples;
     
     double fft_ceil_ma, fft_ceil_maa;
     double fft_floor_ma, fft_floor_maa;

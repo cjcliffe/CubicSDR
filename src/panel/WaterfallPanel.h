@@ -6,7 +6,7 @@
 class WaterfallPanel : public GLPanel {
 public:
     WaterfallPanel();
-    void setup(int fft_size_in, int num_waterfall_lines_in);
+    void setup(unsigned int fft_size_in, int num_waterfall_lines_in);
     void refreshTheme();
     void setPoints(std::vector<float> &points);
     void step();
@@ -20,7 +20,7 @@ private:
 
     GLuint waterfall[2];
     int waterfall_ofs[2];
-    int fft_size;
+    unsigned int fft_size;
     int waterfall_lines;
     unsigned char *waterfall_slice;
     std::vector<unsigned char> lineBuffer[2];

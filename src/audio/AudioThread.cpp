@@ -69,7 +69,7 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
 
     float peak = 0.0;
 
-    for (int j = 0; j < src->boundThreads.load()->size(); j++) {
+    for (size_t j = 0; j < src->boundThreads.load()->size(); j++) {
         AudioThread *srcmix = (*(src->boundThreads.load()))[j];
         if (srcmix->isTerminated() || !srcmix->inputQueue || srcmix->inputQueue->empty() || !srcmix->isActive()) {
             continue;
@@ -130,7 +130,7 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
         float mixPeak = srcmix->currentInput->peak * srcmix->gain;
 
         if (srcmix->currentInput->channels == 1) {
-            for (int i = 0; i < nBufferFrames; i++) {
+            for (unsigned int i = 0; i < nBufferFrames; i++) {
                 if (srcmix->audioQueuePtr >= srcmix->currentInput->data.size()) {
                     srcmix->audioQueuePtr = 0;
                     if (srcmix->currentInput) {
@@ -187,7 +187,7 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
     }
 
     if (peak > 1.0) {
-        for (int i = 0; i < nBufferFrames * 2; i++) {
+        for (unsigned int i = 0; i < nBufferFrames * 2; i++) {
             out[i] /= peak;
         }
     }
@@ -262,7 +262,7 @@ void AudioThread::setSampleRate(int sampleRate) {
         dac.stopStream();
         dac.closeStream();
 
-        for (int j = 0; j < boundThreads.load()->size(); j++) {
+        for (size_t j = 0; j < boundThreads.load()->size(); j++) {
             AudioThread *srcmix = (*(boundThreads.load()))[j];
             srcmix->setSampleRate(sampleRate);
         }

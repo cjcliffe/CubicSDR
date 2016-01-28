@@ -34,6 +34,7 @@ DemodulatorPreThread::DemodulatorPreThread(DemodulatorInstance *parent) : IOThre
     bandwidthChanged.store(false);
     audioSampleRateChanged.store(false);
     modemSettingsChanged.store(false);
+    demodTypeChanged.store(false);
 }
 
 bool DemodulatorPreThread::isInitialized() {
@@ -155,7 +156,7 @@ void DemodulatorPreThread::run() {
 //        std::lock_guard < std::mutex > lock(inp->m_mutex);
         std::vector<liquid_float_complex> *data = &inp->data;
         if (data->size() && (inp->sampleRate == currentSampleRate) && cModem && cModemKit) {
-            int bufSize = data->size();
+            size_t bufSize = data->size();
 
             if (in_buf_data.size() != bufSize) {
                 if (in_buf_data.capacity() < bufSize) {
@@ -185,7 +186,7 @@ void DemodulatorPreThread::run() {
 
             DemodulatorThreadPostIQData *resamp = buffers.getBuffer();
 
-            int out_size = ceil((double) (bufSize) * iqResampleRatio) + 512;
+            size_t out_size = ceil((double) (bufSize) * iqResampleRatio) + 512;
 
             if (resampledData.size() != out_size) {
                 if (resampledData.capacity() < out_size) {
