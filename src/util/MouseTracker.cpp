@@ -47,7 +47,7 @@ void MouseTracker::OnMouseMoved(wxMouseEvent& event) {
     lastMouseY = mouseY;
 }
 
-void MouseTracker::OnMouseWheelMoved(wxMouseEvent& event) {
+void MouseTracker::OnMouseWheelMoved(wxMouseEvent& /* event */) {
 //    std::cout << "wheel?" << std::endl;
 }
 
@@ -67,7 +67,7 @@ void MouseTracker::OnMouseDown(wxMouseEvent& event) {
     isMouseDown = true;
 }
 
-void MouseTracker::OnMouseReleased(wxMouseEvent& event) {
+void MouseTracker::OnMouseReleased(wxMouseEvent& /* event */) {
     isMouseDown = false;
 }
 
@@ -87,17 +87,17 @@ void MouseTracker::OnMouseRightDown(wxMouseEvent& event) {
     isMouseRightDown = true;
 }
 
-void MouseTracker::OnMouseRightReleased(wxMouseEvent& event) {
+void MouseTracker::OnMouseRightReleased(wxMouseEvent& /* event */) {
     isMouseRightDown = false;
 }
 
-void MouseTracker::OnMouseEnterWindow(wxMouseEvent& event) {
+void MouseTracker::OnMouseEnterWindow(wxMouseEvent& /* event */) {
     isMouseInView = true;
     isMouseDown = false;
     isMouseRightDown = false;
 }
 
-void MouseTracker::OnMouseLeftWindow(wxMouseEvent& event) {
+void MouseTracker::OnMouseLeftWindow(wxMouseEvent& /* event */) {
     isMouseDown = false;
     isMouseRightDown = false;
     isMouseInView = false;

@@ -166,7 +166,7 @@ void DemodulatorThread::run() {
             ati_vis->sampleRate = inp->sampleRate;
             ati_vis->inputRate = inp->sampleRate;
             
-            int num_vis = DEMOD_VIS_SIZE;
+            size_t num_vis = DEMOD_VIS_SIZE;
             if (modemDigital) {
                 ati_vis->data.resize(inputData->size());
                 ati_vis->channels = 2;
@@ -199,7 +199,7 @@ void DemodulatorThread::run() {
                 }
                 ati_vis->type = 1;
             } else {
-                int numAudioWritten = ati->data.size();
+                size_t numAudioWritten = ati->data.size();
                 ati_vis->channels = 1;
                 std::vector<float> *demodOutData = (modemAnalog != nullptr)?modemAnalog->getDemodOutputData():nullptr;
                 if ((numAudioWritten > bufSize) || (demodOutData == nullptr)) {

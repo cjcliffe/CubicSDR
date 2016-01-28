@@ -49,7 +49,7 @@ WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
 WaterfallCanvas::~WaterfallCanvas() {
 }
 
-void WaterfallCanvas::setup(int fft_size_in, int waterfall_lines_in) {
+void WaterfallCanvas::setup(unsigned int fft_size_in, int waterfall_lines_in) {
     if (fft_size == fft_size_in && waterfall_lines_in == waterfall_lines) {
         return;
     }
@@ -60,7 +60,7 @@ void WaterfallCanvas::setup(int fft_size_in, int waterfall_lines_in) {
     gTimer.start();
 }
 
-void WaterfallCanvas::setFFTSize(int fft_size_in) {
+void WaterfallCanvas::setFFTSize(unsigned int fft_size_in) {
     if (fft_size_in == fft_size) {
         return;
     }

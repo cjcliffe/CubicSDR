@@ -19,7 +19,7 @@ std::string ModemDigital::getType() {
     return "digital";
 }
 
-int ModemDigital::checkSampleRate(long long sampleRate, int audioSampleRate) {
+int ModemDigital::checkSampleRate(long long sampleRate, int /* audioSampleRate */) {
     if (sampleRate < MIN_BANDWIDTH) {
         return MIN_BANDWIDTH;
     }
@@ -53,7 +53,7 @@ void ModemDigital::updateDemodulatorLock(modem mod, float sensitivity) {
     setDemodulatorLock(modem_get_demodulator_evm(mod) <= sensitivity);
 }
 
-void ModemDigital::digitalStart(ModemKitDigital *kit, modem mod, ModemIQData *input) {
+void ModemDigital::digitalStart(ModemKitDigital * /* kit */, modem /* mod */, ModemIQData *input) {
     int bufSize = input->data.size();
     
     if (demodOutputDataDigital.size() != bufSize) {
@@ -64,7 +64,7 @@ void ModemDigital::digitalStart(ModemKitDigital *kit, modem mod, ModemIQData *in
     }
 }
 
-void ModemDigital::digitalFinish(ModemKitDigital *kit, modem mod) {
+void ModemDigital::digitalFinish(ModemKitDigital * /* kit */, modem /* mod */) {
 #if ENABLE_DIGITAL_LAB
     if (digitalOut && outStream.str().length()) {
         digitalOut->write(outStream.str());

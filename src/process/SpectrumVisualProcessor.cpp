@@ -95,7 +95,7 @@ int SpectrumVisualProcessor::getDesiredInputSize() {
     return desiredInputSize.load();
 }
 
-void SpectrumVisualProcessor::setup(int fftSize_in) {
+void SpectrumVisualProcessor::setup(unsigned int fftSize_in) {
     busy_run.lock();
 
     fftSize = fftSize_in;
@@ -139,7 +139,7 @@ void SpectrumVisualProcessor::setup(int fftSize_in) {
     busy_run.unlock();
 }
 
-void SpectrumVisualProcessor::setFFTSize(int fftSize_in) {
+void SpectrumVisualProcessor::setFFTSize(unsigned int fftSize_in) {
     if (fftSize_in == fftSize) {
         return;
     }
@@ -194,7 +194,7 @@ void SpectrumVisualProcessor::process() {
     if (peakReset.load() != 0) {
         peakReset--;
         if (peakReset.load() == 0) {
-            for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
+            for (unsigned int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
                 fft_result_peak[i] = fft_floor_maa;
             }
             fft_ceil_peak = fft_floor_maa;
@@ -224,7 +224,7 @@ void SpectrumVisualProcessor::process() {
             
             resamplerRatio = (double) (resampleBw) / (double) iqData->sampleRate;
             
-            int desired_input_size = fftSizeInternal / resamplerRatio;
+            size_t desired_input_size = fftSizeInternal / resamplerRatio;
             
             this->desiredInputSize.store(desired_input_size);
             
@@ -246,7 +246,7 @@ void SpectrumVisualProcessor::process() {
                             if (lastBandwidth!=0) {
                                 double binPerHz = double(lastBandwidth) / double(fftSizeInternal);
                                 
-                                int numShift = floor(double(abs(freqDiff)) / binPerHz);
+                                unsigned int numShift = floor(double(abs(freqDiff)) / binPerHz);
                                 
                                 if (numShift < fftSizeInternal/2 && numShift) {
                                     if (freqDiff > 0) {
@@ -300,7 +300,7 @@ void SpectrumVisualProcessor::process() {
             }
             
             
-            int out_size = ceil((double) (desired_input_size) * resamplerRatio) + 512;
+            unsigned int out_size = ceil((double) (desired_input_size) * resamplerRatio) + 512;
             
             if (resampleBuffer.size() != out_size) {
                 if (resampleBuffer.capacity() < out_size) {
@@ -312,16 +312,16 @@ void SpectrumVisualProcessor::process() {
             msresamp_crcf_execute(resampler, &shiftBuffer[0], desired_input_size, &resampleBuffer[0], &num_written);
             
             if (num_written < fftSizeInternal) {
-                for (int i = 0; i < num_written; i++) {
+                for (unsigned int i = 0; i < num_written; i++) {
                     fftInData[i][0] = resampleBuffer[i].real;
                     fftInData[i][1] = resampleBuffer[i].imag;
                 }
-                for (int i = num_written; i < fftSizeInternal; i++) {
+                for (unsigned int i = num_written; i < fftSizeInternal; i++) {
                     fftInData[i][0] = 0;
                     fftInData[i][1] = 0;
                 }
             } else {
-                for (int i = 0; i < fftSizeInternal; i++) {
+                for (unsigned int i = 0; i < fftSizeInternal; i++) {
                     fftInData[i][0] = resampleBuffer[i].real;
                     fftInData[i][1] = resampleBuffer[i].imag;
                 }
@@ -331,16 +331,16 @@ void SpectrumVisualProcessor::process() {
 
             num_written = data->size();
             if (data->size() < fftSizeInternal) {
-                for (int i = 0, iMax = data->size(); i < iMax; i++) {
+                for (size_t i = 0, iMax = data->size(); i < iMax; i++) {
                     fftInData[i][0] = (*data)[i].real;
                     fftInData[i][1] = (*data)[i].imag;
                 }
-                for (int i = data->size(); i < fftSizeInternal; i++) {
+                for (size_t i = data->size(); i < fftSizeInternal; i++) {
                     fftInData[i][0] = 0;
                     fftInData[i][1] = 0;
                 }
             } else {
-                for (int i = 0; i < fftSizeInternal; i++) {
+                for (unsigned int i = 0; i < fftSizeInternal; i++) {
                     fftInData[i][0] = (*data)[i].real;
                     fftInData[i][1] = (*data)[i].imag;
                 }
@@ -404,19 +404,19 @@ void SpectrumVisualProcessor::process() {
             
             if (newResampler && lastView) {
                 if (bwDiff < 0) {
-                    for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
+                    for (unsigned int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
                         fft_result_temp[i] = fft_result_ma[(fftSizeInternal/4) + (i/2)];
                     }
-                    for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
+                    for (unsigned int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
                         fft_result_ma[i] = fft_result_temp[i];
                         
                         fft_result_temp[i] = fft_result_maa[(fftSizeInternal/4) + (i/2)];
                     }
-                    for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
+                    for (unsigned int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
                         fft_result_maa[i] = fft_result_temp[i];
                     }
                 } else {
-                    for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
+                    for (size_t i = 0, iMax = fftSizeInternal; i < iMax; i++) {
                         if (i < fftSizeInternal/4) {
                             fft_result_temp[i] = 0; // fft_result_ma[fftSizeInternal/4];
                         } else if (i >= fftSizeInternal - fftSizeInternal/4) {
@@ -425,7 +425,7 @@ void SpectrumVisualProcessor::process() {
                             fft_result_temp[i] = fft_result_ma[(i-fftSizeInternal/4)*2];
                         }
                     }
-                    for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
+                    for (unsigned int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
                         fft_result_ma[i] = fft_result_temp[i];
                         
                         if (i < fftSizeInternal/4) {
@@ -436,7 +436,7 @@ void SpectrumVisualProcessor::process() {
                             fft_result_temp[i] = fft_result_maa[(i-fftSizeInternal/4)*2];
                         }
                     }
-                    for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
+                    for (unsigned int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
                         fft_result_maa[i] = fft_result_temp[i];
                     }
                 }
@@ -494,7 +494,7 @@ void SpectrumVisualProcessor::process() {
                 visualAccum += visualRatio * double(SPECTRUM_VZM);
 
                 while (visualAccum >= 1.0) {
-                    int idx = round(visualStart+i);
+                    unsigned int idx = round(visualStart+i);
                     if (idx > 0 && idx < fftSizeInternal) {
                         acc += fft_result_maa[idx];
                         if (doPeak) {
@@ -547,7 +547,7 @@ void SpectrumVisualProcessor::process() {
                     int numSteps = (fftEnd-fftStart);
                     int halfWay = fftStart+(numSteps/2);
 
-                    if ((fftEnd+numSteps/2+1 < fftSize) && (fftStart-numSteps/2-1 >= 0) && (fftEnd > fftStart)) {
+                    if ((fftEnd+numSteps/2+1 < (long long) fftSize) && (fftStart-numSteps/2-1 >= 0) && (fftEnd > fftStart)) {
                         int n = 1;
                         for (int i = fftStart; i < halfWay; i++) {
                             output->spectrum_points[i * 2 + 1] = output->spectrum_points[(fftStart - n) * 2 + 1];

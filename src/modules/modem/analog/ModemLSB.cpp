@@ -33,7 +33,7 @@ ModemLSB::~ModemLSB() {
     ampmodem_destroy(demodAM_LSB);
 }
 
-int ModemLSB::checkSampleRate(long long sampleRate, int audioSampleRate) {
+int ModemLSB::checkSampleRate(long long sampleRate, int /* audioSampleRate */) {
     if (sampleRate < MIN_BANDWIDTH) {
         return MIN_BANDWIDTH;
     }

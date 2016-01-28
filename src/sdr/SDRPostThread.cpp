@@ -176,7 +176,7 @@ void SDRPostThread::run() {
         data_in->decRefCount();
 
         bool doUpdate = false;
-        for (int j = 0; j < nRunDemods; j++) {
+        for (size_t j = 0; j < nRunDemods; j++) {
             DemodulatorInstance *demod = runDemods[j];
             if (abs(frequency - demod->getFrequency()) > (sampleRate / 2)) {
                 doUpdate = true;
@@ -214,8 +214,8 @@ void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
         doRefresh.store(true);
     }
     
-    int dataSize = data_in->data.size();
-    int outSize = data_in->data.size();
+    size_t dataSize = data_in->data.size();
+    size_t outSize = data_in->data.size();
     
     if (outSize > dataOut.capacity()) {
         dataOut.reserve(outSize);
@@ -234,7 +234,7 @@ void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
         doRefresh.store(false);
     }
     
-    int refCount = nRunDemods;
+    size_t refCount = nRunDemods;
     bool doIQDataOut = (iqDataOutQueue != NULL && !iqDataOutQueue->full());
     bool doDemodVisOut = (nRunDemods && iqActiveDemodVisualQueue != NULL && !iqActiveDemodVisualQueue->full());
     bool doVisOut = (iqVisualQueue != NULL && !iqVisualQueue->full());
@@ -276,7 +276,7 @@ void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
             iqVisualQueue->push(demodDataOut);
         }
         
-        for (int i = 0; i < nRunDemods; i++) {
+        for (size_t i = 0; i < nRunDemods; i++) {
             runDemods[i]->getIQInputDataPipe()->push(demodDataOut);
         }
     }
@@ -290,8 +290,8 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
         doRefresh.store(true);
     }
     
-    int dataSize = data_in->data.size();
-    int outSize = data_in->data.size();
+    size_t dataSize = data_in->data.size();
+    size_t outSize = data_in->data.size();
     
     if (outSize > dataOut.capacity()) {
         dataOut.reserve(outSize);
@@ -349,7 +349,7 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
         }
         
         // Find nearest channel for each demodulator
-        for (int i = 0; i < nRunDemods; i++) {
+        for (size_t i = 0; i < nRunDemods; i++) {
             DemodulatorInstance *demod = runDemods[i];
             demodChannel[i] = getChannelAt(demod->getFrequency());
             if (demod == activeDemod) {
@@ -357,7 +357,7 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
             }
         }
         
-        for (int i = 0; i < nRunDemods; i++) {
+        for (size_t i = 0; i < nRunDemods; i++) {
             // cache channel usage refcounts
             if (demodChannel[i] >= 0) {
                 demodChannelActive[demodChannel[i]]++;
@@ -378,7 +378,7 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
             demodDataOut->sampleRate = chanBw;
             
             // Calculate channel buffer size
-            int chanDataSize = (outSize/numChannels);
+            size_t chanDataSize = (outSize/numChannels);
             
             if (demodDataOut->data.size() != chanDataSize) {
                 if (demodDataOut->data.capacity() < chanDataSize) {
@@ -400,13 +400,13 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
                 if (dcBuf.size() != chanDataSize) {
                     dcBuf.resize(chanDataSize);
                 }
-                for (int j = 0; j < chanDataSize; j++) {
+                for (size_t j = 0; j < chanDataSize; j++) {
                     dcBuf[j] = dataOut[idx];
                     idx += numChannels;
                 }
                 iirfilt_crcf_execute_block(dcFilter, &dcBuf[0], chanDataSize, &demodDataOut->data[0]);
             } else {
-                for (int j = 0; j < chanDataSize; j++) {
+                for (size_t j = 0; j < chanDataSize; j++) {
                     demodDataOut->data[j] = dataOut[idx];
                     idx += numChannels;
                 }
@@ -416,7 +416,7 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
                 iqActiveDemodVisualQueue->push(demodDataOut);
             }
             
-            for (int j = 0; j < nRunDemods; j++) {
+            for (size_t j = 0; j < nRunDemods; j++) {
                 if (demodChannel[j] == i) {
                     DemodulatorInstance *demod = runDemods[j];
                     demod->getIQInputDataPipe()->push(demodDataOut);

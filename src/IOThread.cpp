@@ -37,11 +37,11 @@ void IOThread::terminate() {
     terminated.store(true);
 };
 
-void IOThread::onBindOutput(std::string name, ThreadQueueBase* threadQueue) {
+void IOThread::onBindOutput(std::string /* name */, ThreadQueueBase* /* threadQueue */) {
     
 };
 
-void IOThread::onBindInput(std::string name, ThreadQueueBase* threadQueue) {
+void IOThread::onBindInput(std::string /* name */, ThreadQueueBase* /* threadQueue */) {
     
 };
 
