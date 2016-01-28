@@ -34,6 +34,7 @@ DemodulatorPreThread::DemodulatorPreThread(DemodulatorInstance *parent) : IOThre
     bandwidthChanged.store(false);
     audioSampleRateChanged.store(false);
     modemSettingsChanged.store(false);
+    demodTypeChanged.store(false);
 }
 
 bool DemodulatorPreThread::isInitialized() {
