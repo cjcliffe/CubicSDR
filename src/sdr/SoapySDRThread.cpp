@@ -55,6 +55,7 @@ SoapySDR::Kwargs SDRThread::combineArgs(SoapySDR::Kwargs a, SoapySDR::Kwargs b) 
 }
 
 void SDRThread::init() {
+//#warning Debug On
 //    SoapySDR_setLogLevel(SOAPY_SDR_DEBUG);
     
     SDRDeviceInfo *devInfo = deviceInfo.load();
@@ -71,9 +72,17 @@ void SDRThread::init() {
     SoapySDR::Kwargs args = devInfo->getDeviceArgs();
     
     wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Initializing device."));
+    
     device = SoapySDR::Device::make(args);
+    
     SoapySDR::Kwargs currentStreamArgs = combineArgs(devInfo->getStreamArgs(),streamArgs);
     stream = device->setupStream(SOAPY_SDR_RX,"CF32", std::vector<size_t>(), currentStreamArgs);
+    
+    int streamMTU = device->getStreamMTU(stream);
+    mtuElems.store(streamMTU);
+    
+    std::cout << "Stream MTU: " << mtuElems.load() << std::endl << std::flush;
+    
     deviceInfo.load()->setStreamArgs(currentStreamArgs);
     deviceConfig.load()->setStreamOpts(currentStreamArgs);
     
@@ -100,9 +109,14 @@ void SDRThread::init() {
     
     numChannels.store(getOptimalChannelCount(sampleRate.load()));
     numElems.store(getOptimalElementCount(sampleRate.load(), 30));
+    if (!mtuElems.load()) {
+        mtuElems.store(numElems.load());
+    }
     inpBuffer.data.resize(numElems.load());
+    overflowBuffer.data.resize(mtuElems.load());
     
-    buffs[0] = malloc(numElems * 2 * sizeof(float));
+    buffs[0] = malloc(mtuElems.load() * 4 * sizeof(float));
+    numOverflow = 0;
     
     SoapySDR::ArgInfoList settingsInfo = device->getSettingInfo();
     SoapySDR::ArgInfoList::const_iterator settings_i;
@@ -151,11 +165,35 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
     int flags;
     long long timeNs;
 
-
     int n_read = 0;
-    while (n_read != numElems && !terminated) {
-        int n_stream_read = device->readStream(stream, buffs, numElems-n_read, flags, timeNs);
-        if (n_stream_read > 0) {
+    int nElems = numElems.load();
+    int mtElems = mtuElems.load();
+
+    if (numOverflow > 0) {
+        int n_overflow = numOverflow;
+        if (n_overflow > nElems) {
+            n_overflow = nElems;
+        }
+        memcpy(&inpBuffer.data[0], &overflowBuffer.data[0], n_overflow * sizeof(float) * 2);
+        n_read = n_overflow;
+        numOverflow -= n_overflow;
+        
+        if (numOverflow) { // still some left..
+            memmove(&overflowBuffer.data[0], &overflowBuffer.data[n_overflow], numOverflow * sizeof(float) * 2);
+        }
+    }
+    
+    while (n_read < nElems && !terminated) {
+        int n_requested = nElems-n_read;
+        int n_stream_read = device->readStream(stream, buffs, mtElems, flags, timeNs);
+        if ((n_read + n_stream_read) > nElems) {
+            memcpy(&inpBuffer.data[n_read], buffs[0], n_requested * sizeof(float) * 2);
+            numOverflow = n_stream_read-n_requested;
+            liquid_float_complex **pp = (liquid_float_complex **)buffs[0];
+            pp += n_requested;
+            memcpy(&overflowBuffer.data[0], pp, numOverflow * sizeof(float) * 2);
+            n_read += n_requested;
+        } else if (n_stream_read > 0) {
             memcpy(&inpBuffer.data[n_read], buffs[0], n_stream_read * sizeof(float) * 2);
             n_read += n_stream_read;
         } else {
@@ -232,9 +270,16 @@ void SDRThread::updateSettings() {
         sampleRate.store(device->getSampleRate(SOAPY_SDR_RX,0));
         numChannels.store(getOptimalChannelCount(sampleRate.load()));
         numElems.store(getOptimalElementCount(sampleRate.load(), 60));
+        int streamMTU = device->getStreamMTU(stream);
+        mtuElems.store(streamMTU);
+        if (!mtuElems.load()) {
+            mtuElems.store(numElems.load());
+        }
         inpBuffer.data.resize(numElems.load());
+        overflowBuffer.data.resize(mtuElems.load());
         free(buffs[0]);
-        buffs[0] = malloc(numElems.load() * 2 * sizeof(float));
+        buffs[0] = malloc(mtuElems.load() * 4 * sizeof(float));
+        numOverflow = 0;
         rate_changed.store(false);
     }
     

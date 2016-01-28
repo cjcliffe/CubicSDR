@@ -94,6 +94,8 @@ protected:
     void *buffs[1];
     ReBuffer<SDRThreadIQData> buffers;
     SDRThreadIQData inpBuffer;
+    SDRThreadIQData overflowBuffer;
+    int numOverflow;
     std::atomic<DeviceConfig *> deviceConfig;
     std::atomic<SDRDeviceInfo *> deviceInfo;
     
@@ -103,7 +105,7 @@ protected:
 
     std::atomic<uint32_t> sampleRate;
     std::atomic_llong frequency, offset, lock_freq;
-    std::atomic_int ppm, numElems, numChannels;
+    std::atomic_int ppm, numElems, mtuElems, numChannels;
     std::atomic_bool hasPPM, hasHardwareDC;
     std::atomic_bool agc_mode, rate_changed, freq_changed, offset_changed,
         ppm_changed, device_changed, agc_mode_changed, gain_value_changed, setting_value_changed, frequency_locked, frequency_lock_init;
