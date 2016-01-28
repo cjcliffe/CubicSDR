@@ -119,12 +119,12 @@ class DataElement
 {
 private:
     int data_type;
-    long data_size;
-    int unit_size;
+    size_t data_size;
+    unsigned int unit_size;
 
     char *data_val;
     
-    void data_init(long data_size_in);
+    void data_init(size_t data_size_in);
     
 public:
     DataElement();
@@ -132,8 +132,8 @@ public:
     
     int getDataType();
     char *getDataPointer();
-    long getDataSize();
-    int getUnitSize();
+    size_t getDataSize();
+    unsigned int getUnitSize();
     
     /* set overloads */		
     void set(const char &char_in);

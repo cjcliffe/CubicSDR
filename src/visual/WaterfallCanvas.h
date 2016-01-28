@@ -19,8 +19,8 @@ public:
     };
 
     WaterfallCanvas(wxWindow *parent, int *attribList = NULL);
-    void setup(int fft_size_in, int waterfall_lines_in);
-    void setFFTSize(int fft_size_in);
+    void setup(unsigned int fft_size_in, int waterfall_lines_in);
+    void setFFTSize(unsigned int fft_size_in);
     ~WaterfallCanvas();
 
     DragState getDragState();
@@ -60,7 +60,7 @@ private:
     DragState dragState;
     DragState nextDragState;
 
-    int fft_size, new_fft_size;
+    unsigned int fft_size, new_fft_size;
     int waterfall_lines;
     int dragOfs;
 

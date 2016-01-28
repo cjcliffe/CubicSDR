@@ -127,7 +127,7 @@ void SDRThread::init() {
     
     SoapySDR::ArgInfoList devSettings = deviceInfo.load()->getSettingsArgInfo();
     if (devSettings.size()) {
-        for (int j = 0; j < settingsInfo.size(); j++) {
+        for (size_t j = 0; j < settingsInfo.size(); j++) {
             if (settings.find(settingsInfo[j].key) != settings.end()) {
                 devSettings[j].value = settings[devSettings[j].key];
             }

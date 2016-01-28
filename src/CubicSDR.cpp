@@ -96,7 +96,7 @@ std::string frequencyToStr(long long freq) {
 long long strToFrequency(std::string freqStr) {
     std::string filterStr = filterChars(freqStr, std::string("0123456789.MKGHmkgh"));
     
-    int numLen = filterStr.find_first_not_of("0123456789.");
+    size_t numLen = filterStr.find_first_not_of("0123456789.");
     
     if (numLen == std::string::npos) {
         numLen = freqStr.length();

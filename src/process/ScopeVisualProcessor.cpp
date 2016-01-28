@@ -63,7 +63,7 @@ void ScopeVisualProcessor::process() {
         if (!audioInputData) {
             return;
         }
-        int i, iMax = audioInputData->data.size();
+        size_t i, iMax = audioInputData->data.size();
         if (!iMax) {
             audioInputData->decRefCount();
             return;
@@ -191,7 +191,7 @@ void ScopeVisualProcessor::process() {
             fft_floor_ma = fft_floor_ma + (fft_floor - fft_floor_ma) * 0.05;
             fft_floor_maa = fft_floor_maa + (fft_floor_ma - fft_floor_maa) * 0.05;
 
-            int outSize = fftSize/2;
+            unsigned int outSize = fftSize/2;
             
             if (renderData->sampleRate != renderData->inputRate) {
                 outSize = (int)floor((float)outSize * ((float)renderData->sampleRate/(float)renderData->inputRate));

@@ -178,7 +178,7 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
         results = SoapySDR::Device::enumerate();
     }
     
-    int manualsIdx = results.size();
+    size_t manualsIdx = results.size();
     std::vector<std::string> manualParams;
     std::vector<bool> manualResult;
     
@@ -265,7 +265,7 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
                 for (ConfigSettings::const_iterator set_i = devSettings.begin(); set_i != devSettings.end(); set_i++) {
                     deviceArgs[set_i->first] = set_i->second;
                 }
-                for (int j = 0; j < settingsInfo.size(); j++) {
+                for (size_t j = 0; j < settingsInfo.size(); j++) {
                     if (deviceArgs.find(settingsInfo[j].key) != deviceArgs.end()) {
                         settingsInfo[j].value = deviceArgs[settingsInfo[j].key];
                     }

@@ -43,7 +43,7 @@ private:
     std::vector<long long> chanCenters;
     long long chanBw;
     
-    int nRunDemods;
+    size_t nRunDemods;
     std::vector<DemodulatorInstance *> runDemods;
     std::vector<int> demodChannel;
     std::vector<int> demodChannelActive;

@@ -7,7 +7,7 @@ WaterfallPanel::WaterfallPanel() : GLPanel(), fft_size(0), waterfall_lines(0), w
     }
 }
 
-void WaterfallPanel::setup(int fft_size_in, int num_waterfall_lines_in) {
+void WaterfallPanel::setup(unsigned int fft_size_in, int num_waterfall_lines_in) {
     waterfall_lines = num_waterfall_lines_in;
     fft_size = fft_size_in;
     lines_buffered.store(0);
@@ -34,9 +34,9 @@ void WaterfallPanel::refreshTheme() {
 }
 
 void WaterfallPanel::setPoints(std::vector<float> &points) {
-    int halfPts = points.size()/2;
+    size_t halfPts = points.size()/2;
     if (halfPts == fft_size) {
-        for (int i = 0; i < fft_size; i++) {
+        for (unsigned int i = 0; i < fft_size; i++) {
             this->points[i] = points[i*2+1];
         }
     } else {
@@ -45,7 +45,7 @@ void WaterfallPanel::setPoints(std::vector<float> &points) {
 }
 
 void WaterfallPanel::step() {
-    int half_fft_size = fft_size / 2;
+    unsigned int half_fft_size = fft_size / 2;
 
     if (!bufferInitialized.load()) {
         delete waterfall_slice;
@@ -67,7 +67,7 @@ void WaterfallPanel::step() {
                 waterfall_slice[i] = (unsigned char) floor(wv * 255.0);
             }
             
-            int newBufSize = (half_fft_size*lines_buffered.load()+half_fft_size);
+            unsigned int newBufSize = (half_fft_size*lines_buffered.load()+half_fft_size);
             if (lineBuffer[j].size() < newBufSize) {
                 lineBuffer[j].resize(newBufSize);
                 rLineBuffer[j].resize(newBufSize);

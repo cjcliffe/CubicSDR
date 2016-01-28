@@ -43,7 +43,7 @@ DataElement::~DataElement() {
     }
 }
 
-void DataElement::data_init(long data_size_in) {
+void DataElement::data_init(size_t data_size_in) {
     if (data_val) {
         delete data_val;
         data_val = NULL;
@@ -62,11 +62,11 @@ int DataElement::getDataType() {
     return data_type;
 }
 
-long DataElement::getDataSize() {
+size_t DataElement::getDataSize() {
     return data_size;
 }
 
-int DataElement::getUnitSize() {
+unsigned int DataElement::getUnitSize() {
     return unit_size;
 }
 
@@ -170,7 +170,7 @@ return; \
     int _compat[] = {__VA_ARGS__}; \
     if (data_type != enumtype) { \
         bool compat = false; \
-        for (int i = 0; i < sizeof(_compat)/sizeof(int); i++) { \
+        for (size_t i = 0; i < sizeof(_compat)/sizeof(int); i++) { \
               if (_compat[i] == data_type) { \
                   compat = true; \
                   break; \
@@ -213,7 +213,7 @@ return; \
     int _compat[] = {__VA_ARGS__}; \
     if (data_type != enumtype) { \
         bool compat = false; \
-        for (int i = 0; i < sizeof(_compat)/sizeof(int); i++) { \
+        for (size_t i = 0; i < sizeof(_compat)/sizeof(int); i++) { \
               if (_compat[i] == data_type) { \
                   compat = true; \
                   break; \
@@ -275,7 +275,7 @@ void DataElement::get(string &str_in) throw (DataTypeMismatchException) {
 }
 
 void DataElement::get(vector<string> &strvect_in) throw (DataTypeMismatchException) {
-    long ptr;
+    size_t ptr;
     if (!data_type)
         return;
 
@@ -313,7 +313,7 @@ if (!data_type || !unit_size) return; \
 if (data_type != enumtype) { \
        int _compat[] = {__VA_ARGS__}; \
        bool compat = false; \
-       for (int i = 0; i < sizeof(_compat)/sizeof(int); i++) { \
+       for (size_t i = 0; i < sizeof(_compat)/sizeof(int); i++) { \
              if (_compat[i] == data_type) { \
                  compat = true; \
                  break; \
@@ -326,7 +326,7 @@ if (data_type != enumtype) { \
            std::cout << "Warning, data type mismatch for vector<" #datatype ">; " #datatype " size " << sizeof(datatype) << " is less than unit size " << unit_size << "; possible loss of data."; \
        } \
        datatype temp_val; \
-       long ptr = 0; \
+       size_t ptr = 0; \
            while (ptr < data_size) { \
                temp_val = 0; \
                memcpy(&temp_val, data_val + ptr, (unit_size > sizeof(datatype))?sizeof(datatype):unit_size); \
