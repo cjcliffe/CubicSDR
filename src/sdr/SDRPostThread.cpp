@@ -5,7 +5,7 @@
 #include <vector>
 #include <deque>
 
-SDRPostThread::SDRPostThread() : IOThread(), buffers("SDRPostThreadBuffers"), visualDataBuffers("SDRPostThreadVisualDataBuffers") {
+SDRPostThread::SDRPostThread() : IOThread(), buffers("SDRPostThreadBuffers"), visualDataBuffers("SDRPostThreadVisualDataBuffers"), frequency(0) {
     iqDataInQueue = NULL;
     iqDataOutQueue = NULL;
     iqVisualQueue = NULL;
