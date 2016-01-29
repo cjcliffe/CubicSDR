@@ -45,7 +45,7 @@ DataElement::~DataElement() {
 
 void DataElement::data_init(size_t data_size_in) {
     if (data_val) {
-        delete data_val;
+        delete[] data_val;
         data_val = NULL;
     }
     data_size = data_size_in;
@@ -837,7 +837,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
                 text = new TiXmlText(tmp_pstr);
                 element->LinkEndChild(text);
             }
-            delete tmp_pstr;
+            delete[] tmp_pstr;
             break;
         case DATA_CHAR:
             child->element()->get(tmp_char);
@@ -1598,7 +1598,7 @@ bool DataTree::SaveToFile(const std::string& filename, bool compress, int /* com
     if (!compress) {
         free(serialized);
     } else {
-        delete compressed;
+        delete[] compressed;
     }
 
     return true;
@@ -1639,7 +1639,7 @@ bool DataTree::LoadFromFile(const std::string& filename) {
         serialized = new char[dataSize];
         fastlz_decompress(compressed, compressedSize, serialized, dataSize);
 
-        delete compressed;
+        delete[] compressed;
     } else {
         serialized = new char[dataSize];
         fin.read(serialized, dataSize);
