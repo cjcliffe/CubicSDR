@@ -104,7 +104,7 @@ void SDRDevicesDialog::OnSelectionChanged( wxTreeEvent& event ) {
         DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getName());
         m_propertyGrid->Clear();
 
-        SoapySDR::ArgInfoList args = dev->getSettingsArgInfo();
+        SoapySDR::ArgInfoList args = dev->getSoapyDevice()->getSettingInfo();
         SoapySDR::ArgInfoList::const_iterator args_i;
 
         m_propertyGrid->Append(new wxPropertyCategory("General Settings"));
@@ -125,8 +125,8 @@ void SDRDevicesDialog::OnSelectionChanged( wxTreeEvent& event ) {
             }
         }
         
-        if (dev->getRxChannel()) {
-            args = dev->getRxChannel()->getStreamArgsInfo();
+        if (dev) {
+            args = dev->getSoapyDevice()->getStreamArgsInfo(SOAPY_SDR_RX, 0);
             
             DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
             ConfigSettings devStreamOpts = devConfig->getStreamOpts();
@@ -237,7 +237,7 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& /* event */) {
     if (dev != NULL) {
         int i = 0;
         SoapySDR::ArgInfoList::const_iterator args_i;
-        SoapySDR::ArgInfoList args = dev->getSettingsArgInfo();
+        SoapySDR::ArgInfoList args = dev->getSoapyDevice()->getSettingInfo();
         
         SoapySDR::Kwargs settingArgs;
         SoapySDR::Kwargs streamArgs;
@@ -257,8 +257,8 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& /* event */) {
             i++;
         }
         
-        if (dev->getRxChannel()) {
-            args = dev->getRxChannel()->getStreamArgsInfo();
+        if (dev) {
+            args = dev->getSoapyDevice()->getStreamArgsInfo(SOAPY_SDR_RX, 0);
             
             if (args.size()) {
                 for (args_i = args.begin(); args_i != args.end(); args_i++) {

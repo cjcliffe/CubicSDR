@@ -556,7 +556,7 @@ void AppFrame::updateDeviceParams() {
     // Build settings menu
     wxMenu *newSettingsMenu = new wxMenu;
     newSettingsMenu->Append(wxID_SET_FREQ_OFFSET, "Frequency Offset");
-    if (devInfo->getRxChannel()->hasCORR()) {
+    if (devInfo->hasCORR(SOAPY_SDR_RX, 0)) {
         newSettingsMenu->Append(wxID_SET_PPM, "Device PPM");
     }
     
@@ -566,7 +566,7 @@ void AppFrame::updateDeviceParams() {
     SoapySDR::ArgInfoList::const_iterator args_i;
     
     int i = 0;
-    settingArgs = devInfo->getSettingsArgInfo();
+    settingArgs = devInfo->getSoapyDevice()->getSettingInfo();
     for (args_i = settingArgs.begin(); args_i != settingArgs.end(); args_i++) {
         SoapySDR::ArgInfo arg = (*args_i);
         std::string currentVal = wxGetApp().getSDRThread()->readSetting(arg.key);
@@ -610,7 +610,7 @@ void AppFrame::updateDeviceParams() {
     settingsMenu = newSettingsMenu;
     
     // Build sample rate menu
-    sampleRates = devInfo->getRxChannel()->getSampleRates();
+    sampleRates = devInfo->getSampleRates(SOAPY_SDR_RX, 0);
     sampleRateMenuItems.erase(sampleRateMenuItems.begin(),sampleRateMenuItems.end());
     
     wxMenu *newSampleRateMenu = new wxMenu;
@@ -637,7 +637,7 @@ void AppFrame::updateDeviceParams() {
     if (!wxGetApp().getAGCMode()) {
         gainSpacerItem->Show(true);
         gainSizerItem->Show(true);
-        gainSizerItem->SetMinSize(devInfo->getRxChannel()->getGains().size()*50,0);
+        gainSizerItem->SetMinSize(devInfo->getSoapyDevice()->listGains(SOAPY_SDR_RX,0).size()*50,0);
         demodTray->Layout();
         gainCanvas->updateGainUI();
         gainCanvas->Refresh();
@@ -695,7 +695,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             wxGetApp().setAGCMode(false);
             gainSpacerItem->Show(true);
             gainSizerItem->Show(true);
-            gainSizerItem->SetMinSize(wxGetApp().getDevice()->getRxChannel()->getGains().size()*40,0);
+            gainSizerItem->SetMinSize(wxGetApp().getDevice()->getSoapyDevice()->listGains(SOAPY_SDR_RX, 0).size()*40,0);
             demodTray->Layout();
             gainCanvas->updateGainUI();
             gainCanvas->Refresh();
@@ -837,14 +837,14 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
                 break;
             }
             
-            SDRDeviceChannel *chan = dev->getRxChannel();
+            std::vector<long> sampleRates = dev->getSampleRates(SOAPY_SDR_RX, 0);
             
             rateLow = 2000000;
             rateHigh = 30000000;
             
-            if (chan->getSampleRates().size()) {
-                rateLow = chan->getSampleRates()[0];
-                rateHigh = chan->getSampleRates()[chan->getSampleRates().size()-1];
+            if (sampleRates.size()) {
+                rateLow = sampleRates[0];
+                rateHigh = sampleRates[sampleRates.size()-1];
             }
 
             long bw = wxGetNumberFromUser("\n" + dev->getName() + "\n\n  "
@@ -1377,11 +1377,8 @@ bool AppFrame::loadSession(std::string fileName) {
             
             SDRDeviceInfo *dev = wxGetApp().getSDRThread()->getDevice();
             if (dev) {
-                SDRDeviceChannel *chan = dev->getRxChannel();
-                if (chan) {
-                    // Try for a reasonable default sample rate.
-                    sample_rate = chan->getSampleRateNear(sample_rate);
-                }
+                // Try for a reasonable default sample rate.
+                sample_rate = dev->getSampleRateNear(SOAPY_SDR_RX, 0, sample_rate);
                 wxGetApp().setSampleRate(sample_rate);
                 deviceChanged.store(true);
             } else {
