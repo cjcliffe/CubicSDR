@@ -137,18 +137,10 @@ void SDRThread::init() {
         }
     }
     setting_value_changed.store(false);
-    
-    SoapySDR::ArgInfoList devSettings = deviceInfo.load()->getSoapyDevice()->getSettingInfo();
-    if (devSettings.size()) {
-        for (size_t j = 0; j < settingsInfo.size(); j++) {
-            if (settings.find(settingsInfo[j].key) != settings.end()) {
-                devSettings[j].value = settings[devSettings[j].key];
-            }
-        }
-    }
-//    deviceInfo.load()->setSettingsInfo(devSettings);
 
     setting_busy.unlock();
+    
+    updateSettings();
     
     wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_INITIALIZED, std::string("Device Initialized."));
 }

@@ -95,33 +95,34 @@ wxPGProperty *SDRDevicesDialog::addArgInfoProperty(wxPropertyGrid *pg, SoapySDR:
     return prop;
 }
 
-void SDRDevicesDialog::OnSelectionChanged( wxTreeEvent& event ) {
-
+void SDRDevicesDialog::refreshDeviceProperties() {
     SDRDeviceInfo *selDev = getSelectedDevice(devTree->GetSelection());
     if (selDev && selDev->isAvailable()) {
         dev = selDev;
         selId = devTree->GetSelection();
         DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getName());
         m_propertyGrid->Clear();
-
-        SoapySDR::ArgInfoList args = dev->getSoapyDevice()->getSettingInfo();
+        
+        SoapySDR::Device *soapyDev = dev->getSoapyDevice();
+        SoapySDR::ArgInfoList args = soapyDev->getSettingInfo();
         SoapySDR::ArgInfoList::const_iterator args_i;
-
+        
         m_propertyGrid->Append(new wxPropertyCategory("General Settings"));
         
         devSettings.erase(devSettings.begin(),devSettings.end());
         devSettings["name"] = m_propertyGrid->Append( new wxStringProperty("Name", wxPG_LABEL, devConfig->getDeviceName()) );
         devSettings["offset"] = m_propertyGrid->Append( new wxIntProperty("Offset (Hz)", wxPG_LABEL, devConfig->getOffset()) );
-
-        props.erase(props.begin(), props.end());
-
+        
+        runtimeProps.erase(runtimeProps.begin(), runtimeProps.end());
+        streamProps.erase(streamProps.begin(), streamProps.end());
+        
         if (args.size()) {
             m_propertyGrid->Append(new wxPropertyCategory("Run-time Settings"));
             
-            
             for (args_i = args.begin(); args_i != args.end(); args_i++) {
                 SoapySDR::ArgInfo arg = (*args_i);
-                props.push_back(addArgInfoProperty(m_propertyGrid, arg));
+                arg.value = soapyDev->readSetting(arg.key);
+                runtimeProps[arg.key] = addArgInfoProperty(m_propertyGrid, arg);
             }
         }
         
@@ -137,13 +138,13 @@ void SDRDevicesDialog::OnSelectionChanged( wxTreeEvent& event ) {
                     }
                 }
             }
-
+            
             if (args.size()) {
                 m_propertyGrid->Append(new wxPropertyCategory("Stream Settings"));
-
+                
                 for (args_i = args.begin(); args_i != args.end(); args_i++) {
                     SoapySDR::ArgInfo arg = (*args_i);
-                    props.push_back(addArgInfoProperty(m_propertyGrid, arg));
+                    streamProps[arg.key] = addArgInfoProperty(m_propertyGrid, arg);
                 }
             }
         }
@@ -159,7 +160,8 @@ void SDRDevicesDialog::OnSelectionChanged( wxTreeEvent& event ) {
     } else if (selDev && !selDev->isAvailable() && selDev->isManual()) {
         m_propertyGrid->Clear();
         devSettings.erase(devSettings.begin(),devSettings.end());
-        props.erase(props.begin(), props.end());
+        runtimeProps.erase(runtimeProps.begin(), runtimeProps.end());
+        streamProps.erase(streamProps.begin(), streamProps.end());
         removeId = devTree->GetSelection();
         dev = nullptr;
         selId = nullptr;
@@ -170,6 +172,10 @@ void SDRDevicesDialog::OnSelectionChanged( wxTreeEvent& event ) {
         m_addRemoteButton->SetLabel("Add");
         removeId = nullptr;
     }
+}
+
+void SDRDevicesDialog::OnSelectionChanged( wxTreeEvent& event ) {
+    refreshDeviceProperties();
     event.Skip();
 }
 
@@ -181,7 +187,8 @@ void SDRDevicesDialog::OnAddRemote( wxMouseEvent& /* event */) {
             SDREnumerator::removeManual(selDev->getDriver(),selDev->getManualParams());
             m_propertyGrid->Clear();
             devSettings.erase(devSettings.begin(),devSettings.end());
-            props.erase(props.begin(), props.end());
+            runtimeProps.erase(runtimeProps.begin(), runtimeProps.end());
+            streamProps.erase(streamProps.begin(), streamProps.end());
             dev = nullptr;
             selId = nullptr;
             editId = nullptr;
@@ -233,9 +240,8 @@ SDRDeviceInfo *SDRDevicesDialog::getSelectedDevice(wxTreeItemId selId) {
     return NULL;
 }
 
-void SDRDevicesDialog::OnUseSelected( wxMouseEvent& /* event */) {
+void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event) {
     if (dev != NULL) {
-        int i = 0;
         SoapySDR::ArgInfoList::const_iterator args_i;
         SoapySDR::ArgInfoList args = dev->getSoapyDevice()->getSettingInfo();
         
@@ -244,7 +250,7 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& /* event */) {
         
         for (args_i = args.begin(); args_i != args.end(); args_i++) {
             SoapySDR::ArgInfo arg = (*args_i);
-            wxPGProperty *prop = props[i];
+            wxPGProperty *prop = runtimeProps[arg.key];
             
             if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size()) {
                 settingArgs[arg.key] = arg.options[prop->GetChoiceSelection()];
@@ -253,8 +259,6 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& /* event */) {
             } else {
                 settingArgs[arg.key] = prop->GetValueAsString();
             }
-            
-            i++;
         }
         
         if (dev) {
@@ -263,7 +267,7 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& /* event */) {
             if (args.size()) {
                 for (args_i = args.begin(); args_i != args.end(); args_i++) {
                     SoapySDR::ArgInfo arg = (*args_i);
-                    wxPGProperty *prop = props[i];
+                    wxPGProperty *prop = streamProps[arg.key];
             
                     if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size()) {
                         streamArgs[arg.key] = arg.options[prop->GetChoiceSelection()];
@@ -272,8 +276,6 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& /* event */) {
                     } else {
                         streamArgs[arg.key] = prop->GetValueAsString();
                     }
-                    
-                    i++;
                 }
             }
         }
@@ -287,6 +289,7 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& /* event */) {
         wxGetApp().setDevice(dev);
         Close();
     }
+    event.Skip();
 }
 
 void SDRDevicesDialog::OnTreeDoubleClick( wxMouseEvent& event ) {
@@ -381,10 +384,6 @@ void SDRDevicesDialog::OnRefreshDevices( wxMouseEvent& /* event */) {
 }
 
 void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
-    if (!editId) {
-        return;
-    }
-    SDRDeviceInfo *dev = getSelectedDevice(editId);
     if (editId && event.GetProperty() == devSettings["name"]) {
         DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
         
@@ -397,13 +396,23 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
         if (devName == "") {
             event.GetProperty()->SetValueFromString(devConfig->getDeviceName());
         }
-    }
-    if (dev && event.GetProperty() == devSettings["offset"]) {
+    } else if (dev && event.GetProperty() == devSettings["offset"]) {
         DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
         
         long offset = event.GetPropertyValue().GetInteger();
         
         devConfig->setOffset(offset);
+    } else if (editId && dev) {
+        wxPGProperty *prop = event.GetProperty();
+        
+        for (std::map<std::string, wxPGProperty *>::iterator rtp = runtimeProps.begin(); rtp != runtimeProps.end(); rtp++) {
+            if (rtp->second == prop) {
+                SoapySDR::Device *soapyDev = dev->getSoapyDevice();
+                soapyDev->writeSetting(rtp->first, prop->GetValueAsString().ToStdString());
+                refreshDeviceProperties();
+                return;
+            }
+        }
     }
 }
 
@@ -417,7 +426,8 @@ void SDRDevicesDialog::doRefreshDevices() {
     devTree->DeleteAllItems();
     devTree->Disable();
     m_propertyGrid->Clear();
-    props.erase(props.begin(),props.end());
+    runtimeProps.erase(runtimeProps.begin(), runtimeProps.end());
+    streamProps.erase(streamProps.begin(), streamProps.end());
     devSettings.erase(devSettings.begin(), devSettings.end());
     m_refreshButton->Disable();
     m_addRemoteButton->Disable();

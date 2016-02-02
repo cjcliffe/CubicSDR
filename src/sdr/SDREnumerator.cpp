@@ -273,64 +273,6 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
             }
             
             dev->setDeviceArgs(deviceArgs);
-//            dev->setSettingsInfo(settingsInfo);
-
-//            int numChan = device->getNumChannels(SOAPY_SDR_RX);
-//            for (int i = 0; i < numChan; i++) {
-//                SDRDeviceChannel *chan = new SDRDeviceChannel();
-//
-//                SoapySDR::RangeList rfRange = device->getFrequencyRange(SOAPY_SDR_RX, i);
-//                double rfMin = rfRange[0].minimum();
-//                double rfMax = rfRange[rfRange.size()-1].maximum();
-//                chan->setChannel(i);
-//                chan->setFullDuplex(device->getFullDuplex(SOAPY_SDR_RX, i));
-//                chan->setRx(true);
-//                chan->setTx(false);
-//                chan->getRFRange().setLow(rfMin);
-//                chan->getRFRange().setHigh(rfMax);
-//
-//                std::vector<std::string> freqs = device->listFrequencies(SOAPY_SDR_RX,i);
-//                if (std::find(freqs.begin(), freqs.end(), "CORR") != freqs.end()) {
-//                    chan->setCORR(true);
-//                } else {
-//                    chan->setCORR(false);
-//                }
-//                
-//                if (device->hasDCOffsetMode(SOAPY_SDR_RX, i)) {
-//                    chan->setHardwareDC(true);
-//                } else {
-//                    chan->setHardwareDC(false);
-//                }
-//                
-//                std::vector<double> rates = device->listSampleRates(SOAPY_SDR_RX, i);
-//                for (std::vector<double>::iterator i = rates.begin(); i != rates.end(); i++) {
-//                    chan->getSampleRates().push_back((long)(*i));
-//                }
-//                
-//                ConfigSettings devStreamOpts = cfg->getStreamOpts();
-//                if (devStreamOpts.size()) {
-//                    dev->setStreamArgs(devStreamOpts);
-//                }
-//                
-//                SoapySDR::ArgInfoList optArgs = device->getStreamArgsInfo(SOAPY_SDR_RX, i);
-//
-//                if (devStreamOpts.size()) {
-//                    for (int j = 0, jMax = optArgs.size(); j < jMax; j++) {
-//                        if (devStreamOpts.find(optArgs[j].key) != devStreamOpts.end()) {
-//                            optArgs[j].value = devStreamOpts[optArgs[j].key];
-//                        }
-//                    }
-//                }
-//                chan->setStreamArgsInfo(optArgs);
-//                
-//                std::vector<std::string> gainNames = device->listGains(SOAPY_SDR_RX, i);
-//                
-//                for (std::vector<std::string>::iterator gname = gainNames.begin(); gname!= gainNames.end(); gname++) {
-//                    chan->addGain((*gname),device->getGainRange(SOAPY_SDR_RX, i, (*gname)));
-//                }
-//                
-//                dev->addChannel(chan);
-//            }
             
             SoapySDR::Device::unmake(device);
             dev->setAvailable(true);
