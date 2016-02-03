@@ -2,12 +2,12 @@
 
 ModemLSB::ModemLSB() : ModemAnalog() {
     // half band filter used for side-band elimination
-    demodAM_LSB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_LSB, 1);
+    demodAM_LSB = ampmodem_create(0.25, 0.25, LIQUID_AMPMODEM_LSB, 1);
     // options
     float fc = 0.25f;         // filter cutoff frequency
     float ft = 0.05f;         // filter transition
     float As = 90.0f;         // stop-band attenuation [dB]
-    float mu = 0.0f;          // fractional timing offset
+    float mu = 0.5f;          // fractional timing offset
     
     // estimate required filter length and generate filter
     unsigned int h_len = estimate_req_filter_len(ft,As);
@@ -57,14 +57,13 @@ void ModemLSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *a
         return;
     }
     
-    liquid_float_complex x, y;
+    liquid_float_complex x;
     for (int i = 0; i < bufSize; i++) { // Reject upper band
         nco_crcf_step(ssbShift);
         nco_crcf_mix_up(ssbShift, input->data[i], &x);
         firfilt_crcf_push(ssbFilt, x);
         firfilt_crcf_execute(ssbFilt, &x);
-        nco_crcf_mix_down(ssbShift, x, &y);
-        ampmodem_demodulate(demodAM_LSB, y, &demodOutputData[i]);
+        ampmodem_demodulate(demodAM_LSB, x, &demodOutputData[i]);
     }
     
     buildAudioOutput(akit, audioOut, true);
