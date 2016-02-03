@@ -249,6 +249,8 @@ void SDRThread::updateGains() {
 }
 
 void SDRThread::updateSettings() {
+    bool doUpdate = false;
+    
     if (offset_changed.load()) {
         if (!freq_changed.load()) {
             frequency.store(frequency.load());
@@ -273,6 +275,7 @@ void SDRThread::updateSettings() {
         buffs[0] = malloc(mtuElems.load() * 4 * sizeof(float));
         numOverflow = 0;
         rate_changed.store(false);
+        doUpdate = true;
     }
     
     if (ppm_changed.load() && hasPPM.load()) {
@@ -301,6 +304,7 @@ void SDRThread::updateSettings() {
         if (!agc_mode.load()) {
             updateGains();
         }
+        doUpdate = true;
     }
     
     if (gain_value_changed.load() && !agc_mode.load()) {
@@ -329,6 +333,12 @@ void SDRThread::updateSettings() {
         
         setting_value_changed.store(false);
         setting_busy.unlock();
+        
+        doUpdate = true;
+    }
+    
+    if (doUpdate) {
+        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_INITIALIZED, std::string("Settings updated."));
     }
 }
 

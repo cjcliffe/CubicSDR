@@ -566,10 +566,11 @@ void AppFrame::updateDeviceParams() {
     SoapySDR::ArgInfoList::const_iterator args_i;
     
     int i = 0;
-    settingArgs = devInfo->getSoapyDevice()->getSettingInfo();
+    SoapySDR::Device *soapyDev = devInfo->getSoapyDevice();
+    settingArgs = soapyDev->getSettingInfo();
     for (args_i = settingArgs.begin(); args_i != settingArgs.end(); args_i++) {
         SoapySDR::ArgInfo arg = (*args_i);
-        std::string currentVal = wxGetApp().getSDRThread()->readSetting(arg.key);
+        std::string currentVal = soapyDev->readSetting(arg.key);
         if (arg.type == SoapySDR::ArgInfo::BOOL) {
             wxMenuItem *item = newSettingsMenu->AppendCheckItem(wxID_SETTINGS_BASE+i, arg.name, arg.description);
             item->Check(currentVal=="true");
