@@ -408,7 +408,11 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
         for (std::map<std::string, wxPGProperty *>::iterator rtp = runtimeProps.begin(); rtp != runtimeProps.end(); rtp++) {
             if (rtp->second == prop) {
                 SoapySDR::Device *soapyDev = dev->getSoapyDevice();
-                soapyDev->writeSetting(rtp->first, prop->GetValueAsString().ToStdString());
+                std::string settingValue = prop->GetValueAsString().ToStdString();
+                soapyDev->writeSetting(rtp->first, settingValue);
+                if (dev->isActive()) {
+                    wxGetApp().getSDRThread()->writeSetting(rtp->first, settingValue);
+                }
                 refreshDeviceProperties();
                 return;
             }
@@ -422,6 +426,10 @@ void SDRDevicesDialog::OnPropGridFocus( wxFocusEvent& /* event */) {
 
 
 void SDRDevicesDialog::doRefreshDevices() {
+    selId = nullptr;
+    editId = nullptr;
+    removeId = nullptr;
+    dev = nullptr;
     wxGetApp().stopDevice();
     devTree->DeleteAllItems();
     devTree->Disable();
@@ -433,10 +441,6 @@ void SDRDevicesDialog::doRefreshDevices() {
     m_addRemoteButton->Disable();
     m_useSelectedButton->Disable();
     wxGetApp().reEnumerateDevices();
-    selId = nullptr;
-    editId = nullptr;
-    removeId = nullptr;
-    dev = nullptr;
     refresh = true;
     m_addRemoteButton->SetLabel("Add");
 }

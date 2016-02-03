@@ -146,10 +146,8 @@ void SDRThread::init() {
 }
 
 void SDRThread::deinit() {
-    SDRDeviceInfo *devInfo = deviceInfo.load();
     device->deactivateStream(stream);
     device->closeStream(stream);
-    devInfo->setSoapyDevice(nullptr);
     free(buffs[0]);
 }
 
@@ -353,11 +351,15 @@ void SDRThread::run() {
     std::cout << "SDR thread starting." << std::endl;
     terminated.store(false);
     
-    if (deviceInfo.load() != NULL) {
+    SDRDeviceInfo *activeDev = deviceInfo.load();
+    
+    if (activeDev != NULL) {
         std::cout << "device init()" << std::endl;
         init();
         std::cout << "starting readLoop()" << std::endl;
+        activeDev->setActive(true);
         readLoop();
+        activeDev->setActive(false);
         std::cout << "readLoop() ended." << std::endl;
         deinit();
         std::cout << "device deinit()" << std::endl;

@@ -25,7 +25,10 @@ public:
     
     bool isAvailable() const;
     void setAvailable(bool available);
-    
+
+    bool isActive() const;
+    void setActive(bool active);
+
     const std::string& getName() const;
     void setName(const std::string& name);
     
@@ -86,6 +89,7 @@ private:
     std::string name, serial, product, manufacturer, tuner;
     std::string driver, hardware, manual_params;
     bool timestamps, available, remote, manual;
+    std::atomic_bool active;
     
     SoapySDR::Kwargs deviceArgs, streamArgs;
     SoapySDR::Device *soapyDevice;

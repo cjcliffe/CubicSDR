@@ -1,7 +1,7 @@
 #include "SDRDeviceInfo.h"
 #include <cstdlib>
 
-SDRDeviceInfo::SDRDeviceInfo() : name(""), serial(""), available(false), remote(false), manual(false), soapyDevice(nullptr) {
+SDRDeviceInfo::SDRDeviceInfo() : name(""), serial(""), available(false), remote(false), manual(false), active(false), soapyDevice(nullptr) {
 
 }
 
@@ -35,6 +35,14 @@ bool SDRDeviceInfo::isAvailable() const {
 
 void SDRDeviceInfo::setAvailable(bool available) {
     this->available = available;
+}
+
+bool SDRDeviceInfo::isActive() const {
+    return active.load();
+}
+
+void SDRDeviceInfo::setActive(bool active) {
+    this->active.store(active);
 }
 
 const std::string& SDRDeviceInfo::getName() const {
