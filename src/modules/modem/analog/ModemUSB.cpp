@@ -17,7 +17,7 @@ std::string ModemUSB::getName() {
 }
 
 ModemUSB::~ModemUSB() {
-    firfilt_crcf_destroy(ssbFilt);
+    iirfilt_crcf_destroy(ssbFilt);
     nco_crcf_destroy(ssbShift);
     ampmodem_destroy(demodAM_USB);
 }
@@ -46,13 +46,12 @@ void ModemUSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *a
         return;
     }
     
-    liquid_float_complex x;
+    liquid_float_complex x,y;
     for (int i = 0; i < bufSize; i++) { // Reject lower band
         nco_crcf_step(ssbShift);
         nco_crcf_mix_down(ssbShift, input->data[i], &x);
-        firfilt_crcf_push(ssbFilt, x);
-        firfilt_crcf_execute(ssbFilt, &x);
-        ampmodem_demodulate(demodAM_USB, x, &demodOutputData[i]);
+        iirfilt_crcf_execute(ssbFilt, x, &y);
+        ampmodem_demodulate(demodAM_USB, y, &demodOutputData[i]);
     }
     
     buildAudioOutput(akit, audioOut, true);
