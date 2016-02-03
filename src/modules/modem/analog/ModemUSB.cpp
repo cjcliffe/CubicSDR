@@ -3,20 +3,9 @@
 ModemUSB::ModemUSB() : ModemAnalog() {
     // half band filter used for side-band elimination
     demodAM_USB = ampmodem_create(0.25, -0.25, LIQUID_AMPMODEM_USB, 1);
-    // options
-    float fc = 0.25f;         // filter cutoff frequency
-    float ft = 0.05f;         // filter transition
-    float As = 90.0f;         // stop-band attenuation [dB]
-    float mu = 0.5f;          // fractional timing offset
-    
-    // estimate required filter length and generate filter
-    unsigned int h_len = estimate_req_filter_len(ft,As);
-    float *h = (float *) malloc(h_len * sizeof(float));
-    liquid_firdes_kaiser(h_len,fc,As,mu,h);
-    ssbFilt = firfilt_crcf_create(h,h_len);
+    ssbFilt = iirfilt_crcf_create_lowpass(6, 0.25);
     ssbShift = nco_crcf_create(LIQUID_NCO);
     nco_crcf_set_frequency(ssbShift,  (2.0 * M_PI) * 0.25);
-	free(h);
 }
 
 Modem *ModemUSB::factory() {

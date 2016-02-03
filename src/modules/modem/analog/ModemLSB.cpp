@@ -3,20 +3,9 @@
 ModemLSB::ModemLSB() : ModemAnalog() {
     // half band filter used for side-band elimination
     demodAM_LSB = ampmodem_create(0.25, 0.25, LIQUID_AMPMODEM_LSB, 1);
-    // options
-    float fc = 0.25f;         // filter cutoff frequency
-    float ft = 0.05f;         // filter transition
-    float As = 90.0f;         // stop-band attenuation [dB]
-    float mu = 0.5f;          // fractional timing offset
-    
-    // estimate required filter length and generate filter
-    unsigned int h_len = estimate_req_filter_len(ft,As);
-    float *h = (float *) malloc(h_len * sizeof(float));
-    liquid_firdes_kaiser(h_len,fc,As,mu,h);
-    ssbFilt = firfilt_crcf_create(h,h_len);
+    ssbFilt = iirfilt_crcf_create_lowpass(6, 0.25);
     ssbShift = nco_crcf_create(LIQUID_NCO);
     nco_crcf_set_frequency(ssbShift,  (2.0 * M_PI) * 0.25);
-	free(h);
 }
 
 Modem *ModemLSB::factory() {
@@ -28,7 +17,7 @@ std::string ModemLSB::getName() {
 }
 
 ModemLSB::~ModemLSB() {
-    firfilt_crcf_destroy(ssbFilt);
+    iirfilt_crcf_destroy(ssbFilt);
     nco_crcf_destroy(ssbShift);
     ampmodem_destroy(demodAM_LSB);
 }
@@ -57,13 +46,12 @@ void ModemLSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *a
         return;
     }
     
-    liquid_float_complex x;
+    liquid_float_complex x, y;
     for (int i = 0; i < bufSize; i++) { // Reject upper band
         nco_crcf_step(ssbShift);
         nco_crcf_mix_up(ssbShift, input->data[i], &x);
-        firfilt_crcf_push(ssbFilt, x);
-        firfilt_crcf_execute(ssbFilt, &x);
-        ampmodem_demodulate(demodAM_LSB, x, &demodOutputData[i]);
+        iirfilt_crcf_execute(ssbFilt, x, &y);
+        ampmodem_demodulate(demodAM_LSB, y, &demodOutputData[i]);
     }
     
     buildAudioOutput(akit, audioOut, true);
