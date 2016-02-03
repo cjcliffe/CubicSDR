@@ -390,6 +390,12 @@ void SDREnumerator::reset() {
     soapy_initialized = false;
     factories.erase(factories.begin(), factories.end());
     modules.erase(modules.begin(), modules.end());
+    for (std::map< std::string, std::vector<SDRDeviceInfo *> >::iterator di = devs.begin(); di != devs.end(); di++) {
+        for (std::vector<SDRDeviceInfo *>::iterator i = di->second.begin(); i != di->second.end(); i++) {
+            (*i)->setSoapyDevice(nullptr);
+        }
+        
+    }
     devs.erase(devs.begin(), devs.end());
 }
 
