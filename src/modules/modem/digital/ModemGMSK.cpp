@@ -121,7 +121,7 @@ void ModemGMSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *
     dkit->inputBuffer.insert(dkit->inputBuffer.end(),input->data.begin(),input->data.end());
 
     int numProcessed = 0;
-    for (int i = 0, iMax = dkit->inputBuffer.size()/dkit->sps; i < iMax; i+= dkit->sps) {
+    for (size_t i = 0, iMax = dkit->inputBuffer.size()/dkit->sps; i < iMax; i+= dkit->sps) {
         gmskdem_demodulate(dkit->demodGMSK, &input->data[i],&sym_out);
         outStream << sym_out;
         numProcessed += dkit->sps;

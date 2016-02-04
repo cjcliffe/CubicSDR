@@ -529,12 +529,12 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev) {
     SoapySDR::Device *soapyDev = dev->getSoapyDevice();
     
     if (soapyDev) {
-        long long freqHigh, freqLow;
+        //long long freqHigh, freqLow;
         
-        SoapySDR::RangeList freqRange = soapyDev->getFrequencyRange(SOAPY_SDR_RX, 0);
+        //SoapySDR::RangeList freqRange = soapyDev->getFrequencyRange(SOAPY_SDR_RX, 0);
         
-        freqLow = freqRange[0].minimum();
-        freqHigh = freqRange[freqRange.size()-1].maximum();
+        //freqLow = freqRange[0].minimum();
+        //freqHigh = freqRange[freqRange.size()-1].maximum();
 
         // Try for a reasonable default sample rate.
         if (!sampleRateInitialized.load()) {

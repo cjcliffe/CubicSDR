@@ -4,15 +4,15 @@ FFTDataDistributor::FFTDataDistributor() : outputBuffers("FFTDataDistributorBuff
     bufferedItems = 0;
 }
 
-void FFTDataDistributor::setFFTSize(int fftSize) {
+void FFTDataDistributor::setFFTSize(unsigned int fftSize) {
 	this->fftSize = fftSize;
 }
 
-void FFTDataDistributor::setLinesPerSecond(int lines) {
+void FFTDataDistributor::setLinesPerSecond(unsigned int lines) {
 	this->linesPerSecond = lines;
 }
 
-int FFTDataDistributor::getLinesPerSecond() {
+unsigned int FFTDataDistributor::getLinesPerSecond() {
 	return this->linesPerSecond;
 }
 
@@ -63,7 +63,7 @@ void FFTDataDistributor::process() {
 				lineRateAccum += (lineRateStep * ((double)bufferedItems/(double)fftSize));
 				numProcessed = bufferedItems;
 			} else {
-				for (int i = 0, iMax = bufferedItems; i < iMax; i += fftSize) {
+				for (unsigned int i = 0, iMax = bufferedItems; i < iMax; i += fftSize) {
 					if ((i + fftSize) > iMax) {
 						break;
 					}

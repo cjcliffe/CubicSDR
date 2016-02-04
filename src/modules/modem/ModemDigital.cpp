@@ -54,7 +54,7 @@ void ModemDigital::updateDemodulatorLock(modem mod, float sensitivity) {
 }
 
 void ModemDigital::digitalStart(ModemKitDigital * /* kit */, modem /* mod */, ModemIQData *input) {
-    int bufSize = input->data.size();
+    size_t bufSize = input->data.size();
     
     if (demodOutputDataDigital.size() != bufSize) {
         if (demodOutputDataDigital.capacity() < bufSize) {

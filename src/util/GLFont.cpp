@@ -130,7 +130,7 @@ std::string GLFont::nextParam(std::istringstream &str) {
 std::string GLFont::getParamKey(std::string param_str) {
     std::string keyName;
 
-    int eqpos = param_str.find("=");
+    size_t eqpos = param_str.find("=");
 
     if (eqpos != std::string::npos) {
         keyName = param_str.substr(0, eqpos);
@@ -142,7 +142,7 @@ std::string GLFont::getParamKey(std::string param_str) {
 std::string GLFont::getParamValue(std::string param_str) {
     std::string value;
 
-    int eqpos = param_str.find("=");
+    size_t eqpos = param_str.find("=");
 
     if (eqpos != std::string::npos) {
         value = param_str.substr(eqpos + 1);

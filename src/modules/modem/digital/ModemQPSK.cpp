@@ -20,7 +20,7 @@ void ModemQPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *
     ModemKitDigital *dkit = (ModemKitDigital *)kit;
     digitalStart(dkit, demodQPSK, input);
 
-    for (int i = 0, bufSize = input->data.size(); i < bufSize; i++) {
+    for (size_t i = 0, bufSize = input->data.size(); i < bufSize; i++) {
         modem_demodulate(demodQPSK, input->data[i], &demodOutputDataDigital[i]);
     }
     updateDemodulatorLock(demodQPSK, 0.8f);

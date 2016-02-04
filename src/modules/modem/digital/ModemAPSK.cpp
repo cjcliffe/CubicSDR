@@ -99,7 +99,7 @@ void ModemAPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *
     
     digitalStart(dkit, demodAPSK, input);
     
-    for (int i = 0, bufSize = input->data.size(); i < bufSize; i++) {
+    for (size_t i = 0, bufSize = input->data.size(); i < bufSize; i++) {
         modem_demodulate(demodAPSK, input->data[i], &demodOutputDataDigital[i]);
     }
     

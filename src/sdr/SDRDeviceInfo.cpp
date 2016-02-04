@@ -1,5 +1,6 @@
 #include "SDRDeviceInfo.h"
 #include <cstdlib>
+#include <algorithm>
 
 SDRDeviceInfo::SDRDeviceInfo() : name(""), serial(""), available(false), remote(false), manual(false), active(false), soapyDevice(nullptr) {
 

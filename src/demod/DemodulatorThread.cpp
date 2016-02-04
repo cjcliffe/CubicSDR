@@ -73,7 +73,7 @@ void DemodulatorThread::run() {
         iqInputQueue->pop(inp);
         //        std::lock_guard < std::mutex > lock(inp->m_mutex);
         
-        int bufSize = inp->data.size();
+        size_t bufSize = inp->data.size();
         
         if (!bufSize) {
             inp->decRefCount();

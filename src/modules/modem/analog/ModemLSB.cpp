@@ -49,7 +49,7 @@ void ModemLSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *a
     }
     
     liquid_float_complex x, y;
-    for (int i = 0; i < bufSize; i++) { // Reject upper band
+    for (size_t i = 0; i < bufSize; i++) { // Reject upper band
         nco_crcf_step(ssbShift);
         nco_crcf_mix_up(ssbShift, input->data[i], &x);
         iirfilt_crcf_execute(ssbFilt, x, &y);

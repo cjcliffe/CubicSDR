@@ -24,7 +24,7 @@ public:
     virtual std::vector<float> *getDemodOutputData();
     virtual std::vector<float> *getResampledOutputData();
 protected:
-    int bufSize;
+    size_t bufSize;
     std::vector<float> demodOutputData;
     std::vector<float> resampledOutputData;
 

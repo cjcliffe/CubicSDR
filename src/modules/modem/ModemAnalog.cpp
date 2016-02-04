@@ -8,7 +8,7 @@ std::string ModemAnalog::getType() {
     return "analog";
 }
 
-int ModemAnalog::checkSampleRate(long long sampleRate, int audioSampleRate) {
+int ModemAnalog::checkSampleRate(long long sampleRate, int /* audioSampleRate */) {
     if (sampleRate < MIN_BANDWIDTH) {
         return MIN_BANDWIDTH;
     }
@@ -45,7 +45,7 @@ void ModemAnalog::initOutputBuffers(ModemKitAnalog *akit, ModemIQData *input) {
     
     double audio_resample_ratio = akit->audioResampleRatio;
     
-    int audio_out_size = ceil((double) (bufSize) * audio_resample_ratio) + 512;
+    size_t audio_out_size = ceil((double) (bufSize) * audio_resample_ratio) + 512;
     
     if (demodOutputData.size() != bufSize) {
         if (demodOutputData.capacity() < bufSize) {
@@ -69,7 +69,7 @@ void ModemAnalog::buildAudioOutput(ModemKitAnalog *akit, AudioThreadInput *audio
         aOutputCeilMAA = aOutputCeilMAA + (aOutputCeilMA - aOutputCeilMAA) * 0.025;
         aOutputCeil = 0;
         
-        for (int i = 0; i < bufSize; i++) {
+        for (size_t i = 0; i < bufSize; i++) {
             if (demodOutputData[i] > aOutputCeil) {
                 aOutputCeil = demodOutputData[i];
             }
@@ -77,7 +77,7 @@ void ModemAnalog::buildAudioOutput(ModemKitAnalog *akit, AudioThreadInput *audio
         
         float gain = 0.5 / aOutputCeilMAA;
         
-        for (int i = 0; i < bufSize; i++) {
+        for (size_t i = 0; i < bufSize; i++) {
             demodOutputData[i] *= gain;
         }
     }

@@ -8,17 +8,17 @@
 class FFTDataDistributor : public VisualProcessor<DemodulatorThreadIQData, DemodulatorThreadIQData> {
 public:
     FFTDataDistributor();
-    void setFFTSize(int fftSize);
-    void setLinesPerSecond(int lines);
-    int getLinesPerSecond();
+    void setFFTSize(unsigned int fftSize);
+    void setLinesPerSecond(unsigned int lines);
+    unsigned int getLinesPerSecond();
 
 protected:
     void process();
     
     DemodulatorThreadIQData inputBuffer, tempBuffer;
     ReBuffer<DemodulatorThreadIQData> outputBuffers;
-    int fftSize;
-    int linesPerSecond;
+    unsigned int fftSize;
+    unsigned int linesPerSecond;
     double lineRateAccum;
-    int bufferMax, bufferOffset, bufferedItems;
+    size_t bufferMax, bufferOffset, bufferedItems;
 };

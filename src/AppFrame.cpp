@@ -397,7 +397,7 @@ AppFrame::AppFrame() :
             srateName << ((float) (*srate) / 1000.0f) << "kHz";
             wxMenuItem *itm = subMenu->AppendRadioItem(menu_id + j, srateName.str(), wxT("Description?"));
 
-            if ((*srate) == AudioThread::deviceSampleRate[mdevices_i->first]) {
+            if ((int)(*srate) == AudioThread::deviceSampleRate[mdevices_i->first]) {
                 itm->Check(true);
             }
             audioSampleRateMenuItems[menu_id + j] = itm;
@@ -1024,7 +1024,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
                 long long diff = abs(demod->getFrequency() - spectrumCanvas->getCenterFrequency()) + (demod->getBandwidth()/2) + (demod->getBandwidth()/4);
 
                 if (diff > spectrumCanvas->getBandwidth()/2) {
-                    if (demod->getBandwidth() > spectrumCanvas->getBandwidth()) {
+                    if (demod->getBandwidth() > (int)spectrumCanvas->getBandwidth()) {
                         diff = abs(demod->getFrequency() - spectrumCanvas->getCenterFrequency());
                     } else {
                         diff = diff - spectrumCanvas->getBandwidth()/2;

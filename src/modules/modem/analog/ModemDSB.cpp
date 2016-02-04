@@ -30,7 +30,7 @@ void ModemDSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *a
         return;
     }
     
-	for (int i = 0; i < bufSize; i++) {
+	for (size_t i = 0; i < bufSize; i++) {
 		ampmodem_demodulate(demodAM_DSB, input->data[i], &demodOutputData[i]);
 	}
     

@@ -36,7 +36,7 @@ int ModemIQ::getDefaultSampleRate() {
 }
 
 void ModemIQ::demodulate(ModemKit * /* kit */, ModemIQData *input, AudioThreadInput *audioOut) {
-    int bufSize = input->data.size();
+    size_t bufSize = input->data.size();
     
     if (!bufSize) {
         input->decRefCount();
@@ -49,7 +49,7 @@ void ModemIQ::demodulate(ModemKit * /* kit */, ModemIQData *input, AudioThreadIn
     }
     
     audioOut->data.resize(bufSize * 2);
-    for (int i = 0; i < bufSize; i++) {
+    for (size_t i = 0; i < bufSize; i++) {
         audioOut->data[i * 2] = input->data[i].imag;
         audioOut->data[i * 2 + 1] = input->data[i].real;
     }

@@ -21,9 +21,9 @@ std::vector<float> &Gradient::getBlue() {
 }
 
 void Gradient::generate(unsigned int len) {
-    int chunk_size = len / (colors.size() - 1);
+    unsigned int chunk_size = len / (colors.size() - 1);
 
-    int p = 0;
+    unsigned int p = 0;
     r_val.resize(len);
     g_val.resize(len);
     b_val.resize(len);

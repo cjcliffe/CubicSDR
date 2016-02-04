@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <atomic>
 
 #include <SoapySDR/Types.hpp>
 #include <SoapySDR/Device.hpp>

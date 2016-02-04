@@ -105,7 +105,7 @@ void ModemFMStereo::disposeKit(ModemKit *kit) {
 
 void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
     ModemKitFMStereo *fmkit = (ModemKitFMStereo *)kit;
-    int bufSize = input->data.size();
+    size_t bufSize = input->data.size();
     liquid_float_complex u, v, w, x, y;
     
     double audio_resample_ratio = fmkit->audioResampleRatio;
@@ -117,7 +117,7 @@ void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInp
         demodOutputData.resize(bufSize);
     }
     
-    int audio_out_size = ceil((double) (bufSize) * audio_resample_ratio) + 512;
+    size_t audio_out_size = ceil((double) (bufSize) * audio_resample_ratio) + 512;
     
     freqdem_demodulate_block(demodFM, &input->data[0], bufSize, &demodOutputData[0]);
     
@@ -141,7 +141,7 @@ void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInp
     
     float phase_error = 0;
     
-    for (int i = 0; i < bufSize; i++) {
+    for (size_t i = 0; i < bufSize; i++) {
         // real -> complex
         firhilbf_r2c_execute(firStereoR2C, demodOutputData[i], &x);
         
@@ -187,7 +187,7 @@ void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInp
         audioOut->data.reserve(numAudioWritten * 2);
     }
     audioOut->data.resize(numAudioWritten * 2);
-    for (int i = 0; i < numAudioWritten; i++) {
+    for (size_t i = 0; i < numAudioWritten; i++) {
         float l, r;
         
         firfilt_rrrf_push(fmkit->firStereoLeft, 0.568 * (resampledOutputData[i] - (resampledStereoData[i])));

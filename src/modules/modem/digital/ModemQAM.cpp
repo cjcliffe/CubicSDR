@@ -98,7 +98,7 @@ void ModemQAM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *a
     ModemKitDigital *dkit = (ModemKitDigital *)kit;
     digitalStart(dkit, demodQAM, input);
    
-    for (int i = 0, bufSize = input->data.size(); i < bufSize; i++) {
+    for (size_t i = 0, bufSize = input->data.size(); i < bufSize; i++) {
         modem_demodulate(demodQAM, input->data[i], &demodOutputDataDigital[i]);
     }
     updateDemodulatorLock(demodQAM, 0.5f);

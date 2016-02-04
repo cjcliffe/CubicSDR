@@ -104,7 +104,7 @@ void ModemASK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *a
     
     digitalStart(dkit, demodASK, input);
 
-    for (int i = 0, bufSize = input->data.size(); i < bufSize; i++) {
+    for (size_t i = 0, bufSize = input->data.size(); i < bufSize; i++) {
         modem_demodulate(demodASK, input->data[i], &demodOutputDataDigital[i]);
     }
     updateDemodulatorLock(demodASK, 0.005f);

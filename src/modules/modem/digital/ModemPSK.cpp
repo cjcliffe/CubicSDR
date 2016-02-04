@@ -106,7 +106,7 @@ void ModemPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *a
 
     digitalStart(dkit, demodPSK, input);
     
-    for (int i = 0, bufSize = input->data.size(); i < bufSize; i++) {
+    for (size_t i = 0, bufSize = input->data.size(); i < bufSize; i++) {
         modem_demodulate(demodPSK, input->data[i], &demodOutputDataDigital[i]);
     }
     updateDemodulatorLock(demodPSK, 0.005f);
