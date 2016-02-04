@@ -17,7 +17,8 @@ public:
     
 private:
     iirfilt_crcf ssbFilt;
-//    firfilt_crcf ssbFilt;
+    firhilbf c2rFilt;
     nco_crcf ssbShift;
-    ampmodem demodAM_LSB;
+    //    firfilt_crcf ssbFilt;
+    //    ampmodem demodAM_LSB;
 };

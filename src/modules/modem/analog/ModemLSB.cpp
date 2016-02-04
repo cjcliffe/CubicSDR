@@ -2,10 +2,11 @@
 
 ModemLSB::ModemLSB() : ModemAnalog() {
     // half band filter used for side-band elimination
-    demodAM_LSB = ampmodem_create(0.25, 0.25, LIQUID_AMPMODEM_LSB, 1);
+    //    demodAM_LSB = ampmodem_create(0.25, 0.25, LIQUID_AMPMODEM_LSB, 1);
     ssbFilt = iirfilt_crcf_create_lowpass(6, 0.25);
     ssbShift = nco_crcf_create(LIQUID_NCO);
     nco_crcf_set_frequency(ssbShift,  (2.0 * M_PI) * 0.25);
+    c2rFilt = firhilbf_create(5, 90.0);
 }
 
 Modem *ModemLSB::factory() {
@@ -19,7 +20,8 @@ std::string ModemLSB::getName() {
 ModemLSB::~ModemLSB() {
     iirfilt_crcf_destroy(ssbFilt);
     nco_crcf_destroy(ssbShift);
-    ampmodem_destroy(demodAM_LSB);
+    firhilbf_destroy(c2rFilt);
+    //    ampmodem_destroy(demodAM_LSB);
 }
 
 int ModemLSB::checkSampleRate(long long sampleRate, int /* audioSampleRate */) {
@@ -51,7 +53,10 @@ void ModemLSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *a
         nco_crcf_step(ssbShift);
         nco_crcf_mix_up(ssbShift, input->data[i], &x);
         iirfilt_crcf_execute(ssbFilt, x, &y);
-        ampmodem_demodulate(demodAM_LSB, y, &demodOutputData[i]);
+        nco_crcf_mix_down(ssbShift, y, &x);
+        // Liquid-DSP AMPModem SSB drifts with strong signals near baseband (like a carrier?)
+        // ampmodem_demodulate(demodAM_LSB, y, &demodOutputData[i]);
+        firhilbf_c2r_execute(c2rFilt, x, &demodOutputData[i]);
     }
     
     buildAudioOutput(akit, audioOut, true);
