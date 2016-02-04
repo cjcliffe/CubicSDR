@@ -18,7 +18,7 @@ SDRDeviceAddForm::SDRDeviceAddForm( wxWindow* parent, wxWindowID id, const wxStr
 	
 	m_staticText4 = new wxStaticText( this, wxID_ANY, wxT("Manually add a SoapyRemote or SoapySDR device.  \n\nUseful for a device that is not detected automatically."), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText4->Wrap( -1 );
-	bSizer6->Add( m_staticText4, 0, wxALL, 10 );
+	bSizer6->Add( m_staticText4, 0, wxALL, 8 );
 	
 	
 	bSizer6->Add( 0, 0, 1, wxEXPAND, 5 );
@@ -26,17 +26,17 @@ SDRDeviceAddForm::SDRDeviceAddForm( wxWindow* parent, wxWindowID id, const wxStr
 	wxArrayString m_soapyModuleChoices;
 	m_soapyModule = new wxChoice( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_soapyModuleChoices, 0 );
 	m_soapyModule->SetSelection( 0 );
-	bSizer6->Add( m_soapyModule, 0, wxALL, 10 );
+	bSizer6->Add( m_soapyModule, 0, wxALL, 8 );
 	
 	
 	bSizer6->Add( 0, 0, 1, wxEXPAND, 5 );
 	
 	m_paramLabel = new wxStaticText( this, wxID_ANY, wxT("<Parameter>"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_paramLabel->Wrap( -1 );
-	bSizer6->Add( m_paramLabel, 0, wxALL, 10 );
+	bSizer6->Add( m_paramLabel, 0, wxALL, 8 );
 	
-	m_paramText = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_DONTWRAP );
-	bSizer6->Add( m_paramText, 0, wxALL|wxEXPAND, 10 );
+	m_paramText = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_DONTWRAP|wxHSCROLL );
+	bSizer6->Add( m_paramText, 0, wxALL|wxEXPAND, 8 );
 	
 	
 	bSizer6->Add( 0, 0, 1, wxEXPAND, 5 );
@@ -48,13 +48,13 @@ SDRDeviceAddForm::SDRDeviceAddForm( wxWindow* parent, wxWindowID id, const wxStr
 	bSizer7->Add( 0, 0, 1, wxEXPAND, 5 );
 	
 	m_cancelButton = new wxButton( this, wxID_ANY, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer7->Add( m_cancelButton, 0, wxALL, 5 );
+	bSizer7->Add( m_cancelButton, 0, wxALL, 2 );
 	
 	m_OkButton = new wxButton( this, wxID_ANY, wxT("Ok"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer7->Add( m_OkButton, 0, wxALL, 5 );
+	bSizer7->Add( m_OkButton, 0, wxALL, 2 );
 	
 	
-	bSizer6->Add( bSizer7, 1, wxEXPAND, 5 );
+	bSizer6->Add( bSizer7, 1, wxEXPAND, 8 );
 	
 	
 	bSizer6->Add( 0, 0, 1, wxEXPAND, 5 );
