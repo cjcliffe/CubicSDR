@@ -19,5 +19,5 @@ private:
     iirfilt_crcf ssbFilt;
     firhilbf c2rFilt;
     nco_crcf ssbShift;
-    ampmodem demodAM_USB;
+//    ampmodem demodAM_USB;
 };
