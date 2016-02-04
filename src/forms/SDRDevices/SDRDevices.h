@@ -24,6 +24,7 @@ public:
     void OnPropGridFocus( wxFocusEvent& event );
 
 private:
+    void refreshDeviceProperties();
     void doRefreshDevices();
     
     SDRDeviceInfo *getSelectedDevice(wxTreeItemId selId);
@@ -35,7 +36,9 @@ private:
     std::map<wxTreeItemId, SDRDeviceInfo *> devItems;
     std::map<wxTreeItemId, SDRDeviceInfo *>::iterator devItems_i;
     SDRDeviceInfo *dev;
-    std::vector<wxPGProperty *> props;
+    std::map<std::string, wxPGProperty *> runtimeProps;
+    std::map<std::string, SoapySDR::ArgInfo> runtimeArgs;
+    std::map<std::string, wxPGProperty *> streamProps;
     std::map<std::string, wxPGProperty *> devSettings;
     wxTreeItemId selId;
     wxTreeItemId editId;

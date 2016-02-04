@@ -1,167 +1,14 @@
 #include "SDRDeviceInfo.h"
 #include <cstdlib>
 
-SDRDeviceRange::SDRDeviceRange() {
-    low = 0;
-    high = 0;
+SDRDeviceInfo::SDRDeviceInfo() : name(""), serial(""), available(false), remote(false), manual(false), active(false), soapyDevice(nullptr) {
+
 }
 
-SDRDeviceRange::SDRDeviceRange(double low, double high) {
-    this->low = low;
-    this->high = high;
-}
-
-SDRDeviceRange::SDRDeviceRange(std::string name, double low, double high) : SDRDeviceRange(low, high) {
-    this->name = name;
-}
-
-double SDRDeviceRange::getLow() {
-    return low;
-}
-void SDRDeviceRange::setLow(double low) {
-    this->low = low;
-}
-double SDRDeviceRange::getHigh() {
-    return high;
-}
-void SDRDeviceRange::setHigh(double high) {
-    this->high = high;
-}
-
-std::string SDRDeviceRange::getName() {
-    return this->name;
-}
-
-void SDRDeviceRange::setName(std::string name) {
-    this->name = name;
-}
-
-SDRDeviceChannel::SDRDeviceChannel() {
-    hardwareDC = false;
-    hasCorr = false;
-}
-
-SDRDeviceChannel::~SDRDeviceChannel() {
-    
-}
-
-int SDRDeviceChannel::getChannel() {
-    return channel;
-}
-
-void SDRDeviceChannel::setChannel(int channel) {
-    this->channel = channel;
-}
-
-bool SDRDeviceChannel::isFullDuplex() {
-    return fullDuplex;
-}
-
-void SDRDeviceChannel::setFullDuplex(bool fullDuplex) {
-    this->fullDuplex = fullDuplex;
-}
-
-bool SDRDeviceChannel::isTx() {
-    return tx;
-}
-
-void SDRDeviceChannel::setTx(bool tx) {
-    this->tx = tx;
-}
-
-bool SDRDeviceChannel::isRx() {
-    return rx;
-}
-
-void SDRDeviceChannel::setRx(bool rx) {
-    this->rx = rx;
-}
-
-SDRDeviceRange &SDRDeviceChannel::getGain() {
-    return rangeGain;
-}
-
-SDRDeviceRange &SDRDeviceChannel::getLNAGain() {
-    return rangeLNA;
-}
-
-SDRDeviceRange &SDRDeviceChannel::getFreqRange() {
-    return rangeFull;
-}
-
-SDRDeviceRange &SDRDeviceChannel::getRFRange() {
-    return rangeRF;
-}
-
-void SDRDeviceChannel::addGain(SDRDeviceRange range) {
-    gainInfo.push_back(range);
-}
-
-std::vector<SDRDeviceRange> &SDRDeviceChannel::getGains() {
-    return gainInfo;
-}
-
-void SDRDeviceChannel::addGain(std::string name, SoapySDR::Range range) {
-    gainInfo.push_back(SDRDeviceRange(name,range.minimum(),range.maximum()));
-}
-
-std::vector<long> &SDRDeviceChannel::getSampleRates() {
-    return sampleRates;
-}
-
-long SDRDeviceChannel::getSampleRateNear(long sampleRate_in) {
-    long returnRate = sampleRates[0];
-    long sDelta = (long)sampleRate_in-sampleRates[0];
-    long minDelta = std::abs(sDelta);
-    for (std::vector<long>::iterator i = sampleRates.begin(); i != sampleRates.end(); i++) {
-        long thisDelta = std::abs(sampleRate_in - (*i));
-        if (thisDelta < minDelta) {
-            minDelta = thisDelta;
-            returnRate = (*i);
-        }
+SDRDeviceInfo::~SDRDeviceInfo() {
+    if (soapyDevice != nullptr) {
+        SoapySDR::Device::unmake(soapyDevice);
     }
-    return returnRate;
-}
-
-std::vector<long long> &SDRDeviceChannel::getFilterBandwidths() {
-    return filterBandwidths;
-}
-
-const bool& SDRDeviceChannel::hasHardwareDC() const {
-    return hardwareDC;
-}
-
-void SDRDeviceChannel::setHardwareDC(const bool& hardware) {
-    hardwareDC = hardware;
-}
-
-const bool& SDRDeviceChannel::hasCORR() const {
-    return hasCorr;
-}
-
-void SDRDeviceChannel::setCORR(const bool& hasCorr) {
-	this->hasCorr = hasCorr;
-}
-
-void SDRDeviceChannel::setStreamArgsInfo(SoapySDR::ArgInfoList streamArgs) {
-    streamArgInfo = streamArgs;
-}
-
-SoapySDR::ArgInfoList SDRDeviceChannel::getStreamArgsInfo() {
-    return streamArgInfo;
-}
-
-std::vector<std::string> SDRDeviceChannel::getStreamArgNames() {
-    std::vector<std::string> names;
-    for (SoapySDR::ArgInfoList::const_iterator i = streamArgInfo.begin(); i != streamArgInfo.end(); i++) {
-        names.push_back((*i).key);
-    }
-    return names;
-}
-
-
-SDRDeviceInfo::SDRDeviceInfo() : name(""), serial(""), available(false), remote(false), manual(false) {
-
 }
 
 std::string SDRDeviceInfo::getDeviceId() {
@@ -188,6 +35,14 @@ bool SDRDeviceInfo::isAvailable() const {
 
 void SDRDeviceInfo::setAvailable(bool available) {
     this->available = available;
+}
+
+bool SDRDeviceInfo::isActive() const {
+    return active.load();
+}
+
+void SDRDeviceInfo::setActive(bool active) {
+    this->active.store(active);
 }
 
 const std::string& SDRDeviceInfo::getName() const {
@@ -294,48 +149,66 @@ SoapySDR::Kwargs SDRDeviceInfo::getStreamArgs() {
     return streamArgs;
 }
 
-void SDRDeviceInfo::setSettingsInfo(SoapySDR::ArgInfoList settingsArgs) {
-    settingInfo = settingsArgs;
-}
-
-SoapySDR::ArgInfoList SDRDeviceInfo::getSettingsArgInfo() {
-    return settingInfo;
-}
-
-std::vector<std::string> SDRDeviceInfo::getSettingNames() {
-    std::vector<std::string> names;
-    for (SoapySDR::ArgInfoList::const_iterator i = settingInfo.begin(); i != settingInfo.end(); i++) {
-        names.push_back((*i).key);
+void SDRDeviceInfo::setSoapyDevice(SoapySDR::Device *dev) {
+    if (soapyDevice) {
+        SoapySDR::Device::unmake(soapyDevice);
     }
-    return names;
+    soapyDevice = dev;
 }
 
-
-void SDRDeviceInfo::addChannel(SDRDeviceChannel *chan) {
-    channels.push_back(chan);
+SoapySDR::Device *SDRDeviceInfo::getSoapyDevice() {
+    if (soapyDevice == nullptr) {
+        soapyDevice = SoapySDR::Device::make(deviceArgs);
+    }
+    return soapyDevice;
 }
 
-std::vector<SDRDeviceChannel *> &SDRDeviceInfo::getChannels() {
-    return channels;
+bool SDRDeviceInfo::hasCORR(int direction, size_t channel) {
+    SoapySDR::Device *dev = getSoapyDevice();
+    
+    std::vector<std::string> freqs = dev->listFrequencies(direction, channel);
+    if (std::find(freqs.begin(), freqs.end(), "CORR") != freqs.end()) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
-SDRDeviceChannel * SDRDeviceInfo::getRxChannel() {
-    std::vector<SDRDeviceChannel *>::iterator channel_i;
-    for (channel_i = channels.begin(); channel_i != channels.end(); channel_i++) {
-        if ((*channel_i)->isRx()) {
-            return (*channel_i);
+std::vector<long> SDRDeviceInfo::getSampleRates(int direction, size_t channel) {
+    SoapySDR::Device *dev = getSoapyDevice();
+    
+    std::vector<long> result;
+    std::vector<double> sampleRates = dev->listSampleRates(direction, channel);
+    for (std::vector<double>::iterator si = sampleRates.begin(); si != sampleRates.end(); si++) {
+        result.push_back((long)(*si));
+    }
+    
+    return result;
+}
+
+long SDRDeviceInfo::getSampleRateNear(int direction, size_t channel, long sampleRate_in) {
+    std::vector<long> sampleRates = getSampleRates(direction, channel);
+    long returnRate = sampleRates[0];
+    long sDelta = (long)sampleRate_in-sampleRates[0];
+    long minDelta = std::abs(sDelta);
+    for (std::vector<long>::iterator i = sampleRates.begin(); i != sampleRates.end(); i++) {
+        long thisDelta = std::abs(sampleRate_in - (*i));
+        if (thisDelta < minDelta) {
+            minDelta = thisDelta;
+            returnRate = (*i);
         }
     }
-    return NULL;
+    return returnRate;
 }
 
-SDRDeviceChannel * SDRDeviceInfo::getTxChannel() {
-    std::vector<SDRDeviceChannel *>::iterator channel_i;
-    for (channel_i = channels.begin(); channel_i != channels.end(); channel_i++) {
-        if ((*channel_i)->isTx()) {
-            return (*channel_i);
-        }
+SDRRangeMap SDRDeviceInfo::getGains(int direction, size_t channel) {
+    SoapySDR::Device *dev = getSoapyDevice();
+    std::vector<std::string> gainNames = dev->listGains(direction, channel);
+    std::map<std::string, SoapySDR::Range> gainMap;
+    
+    for (std::vector<std::string>::iterator gname = gainNames.begin(); gname!= gainNames.end(); gname++) {
+        gainMap[(*gname)] = dev->getGainRange(direction, channel, (*gname));
     }
-    return NULL;
+    
+    return gainMap;
 }
-

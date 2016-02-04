@@ -526,45 +526,34 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev) {
     
     DeviceConfig *devConfig = config.getDevice(dev->getDeviceId());
     
-    SDRDeviceChannel *chan = dev->getRxChannel();
+    SoapySDR::Device *soapyDev = dev->getSoapyDevice();
     
-    if (chan) {
+    if (soapyDev) {
         long long freqHigh, freqLow;
         
-        freqHigh = chan->getRFRange().getHigh();
-        freqLow = chan->getRFRange().getLow();
+        SoapySDR::RangeList freqRange = soapyDev->getFrequencyRange(SOAPY_SDR_RX, 0);
         
+        freqLow = freqRange[0].minimum();
+        freqHigh = freqRange[freqRange.size()-1].maximum();
+
         // Try for a reasonable default sample rate.
         if (!sampleRateInitialized.load()) {
-            sampleRate = chan->getSampleRateNear(DEFAULT_SAMPLE_RATE);
+            sampleRate = dev->getSampleRateNear(SOAPY_SDR_RX, 0, DEFAULT_SAMPLE_RATE);
             sampleRateInitialized.store(true);
+        } else {
+            sampleRate = dev->getSampleRateNear(SOAPY_SDR_RX, 0, sampleRate);
         }
 
-        int rateHigh, rateLow;
-
-        rateHigh = rateLow = sampleRate;
-        
-        if (chan->getSampleRates().size()) {
-            rateLow = chan->getSampleRates()[0];
-            rateHigh = chan->getSampleRates()[chan->getSampleRates().size()-1];
-        }
-        
-        if (sampleRate > rateHigh) {
-            sampleRate = rateHigh;
-        } else if (sampleRate < rateLow) {
-            sampleRate = rateLow;
-        }
-        
         if (frequency < sampleRate/2) {
             frequency = sampleRate/2;
         }
-        
+
         setFrequency(frequency);
         setSampleRate(sampleRate);
 
         setPPM(devConfig->getPPM());
         setOffset(devConfig->getOffset());
-        
+
         t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
     }
 }

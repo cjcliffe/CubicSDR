@@ -184,8 +184,8 @@ void GainCanvas::updateGainUI() {
 
     SDRDeviceInfo *devInfo = wxGetApp().getDevice();
     
-    std::vector<SDRDeviceRange> &gains = devInfo->getRxChannel()->getGains();
-    std::vector<SDRDeviceRange>::iterator gi;
+    SDRRangeMap gains = devInfo->getGains(SOAPY_SDR_RX, 0);
+    SDRRangeMap::iterator gi;
     
     numGains = gains.size();
     float i = 0;
@@ -217,9 +217,9 @@ void GainCanvas::updateGainUI() {
         GainInfo *gInfo = new GainInfo;
         float midPos = -1.0+startPos+spacing*i;
         
-        gInfo->name = (*gi).getName();
-        gInfo->low = (*gi).getLow();
-        gInfo->high = (*gi).getHigh();
+        gInfo->name = gi->first;
+        gInfo->low = gi->second.minimum();
+        gInfo->high = gi->second.maximum();
         gInfo->current = wxGetApp().getGain(gInfo->name);
         
         gInfo->panel.setBorderPx(1);
@@ -251,7 +251,7 @@ void GainCanvas::updateGainUI() {
         
         gInfo->labelPanel.setSize(spacing/2.0,(15.0/float(ClientSize.y)));
         gInfo->labelPanel.setPosition(midPos, -barHeight-(20.0/float(ClientSize.y)));
-        gInfo->labelPanel.setText((*gi).getName());
+        gInfo->labelPanel.setText(gi->first);
         gInfo->labelPanel.setFill(GLPanel::GLPANEL_FILL_NONE);
         
         bgPanel.addChild(&(gInfo->labelPanel));

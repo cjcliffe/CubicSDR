@@ -2,21 +2,11 @@
 
 ModemUSB::ModemUSB() : ModemAnalog() {
     // half band filter used for side-band elimination
-    demodAM_USB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_USB, 1);
-    // options
-    float fc = 0.25f;         // filter cutoff frequency
-    float ft = 0.05f;         // filter transition
-    float As = 90.0f;         // stop-band attenuation [dB]
-    float mu = 0.0f;          // fractional timing offset
-    
-    // estimate required filter length and generate filter
-    unsigned int h_len = estimate_req_filter_len(ft,As);
-    float *h = (float *) malloc(h_len * sizeof(float));
-    liquid_firdes_kaiser(h_len,fc,As,mu,h);
-    ssbFilt = firfilt_crcf_create(h,h_len);
+    //    demodAM_USB = ampmodem_create(0.25, -0.25, LIQUID_AMPMODEM_USB, 1);
+    ssbFilt = iirfilt_crcf_create_lowpass(6, 0.25);
     ssbShift = nco_crcf_create(LIQUID_NCO);
     nco_crcf_set_frequency(ssbShift,  (2.0 * M_PI) * 0.25);
-	free(h);
+    c2rFilt = firhilbf_create(5, 90.0);
 }
 
 Modem *ModemUSB::factory() {
@@ -28,9 +18,10 @@ std::string ModemUSB::getName() {
 }
 
 ModemUSB::~ModemUSB() {
-    firfilt_crcf_destroy(ssbFilt);
+    iirfilt_crcf_destroy(ssbFilt);
     nco_crcf_destroy(ssbShift);
-    ampmodem_destroy(demodAM_USB);
+    firhilbf_destroy(c2rFilt);
+    //    ampmodem_destroy(demodAM_USB);
 }
 
 int ModemUSB::checkSampleRate(long long sampleRate, int /* audioSampleRate */) {
@@ -61,10 +52,11 @@ void ModemUSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *a
     for (int i = 0; i < bufSize; i++) { // Reject lower band
         nco_crcf_step(ssbShift);
         nco_crcf_mix_down(ssbShift, input->data[i], &x);
-        firfilt_crcf_push(ssbFilt, x);
-        firfilt_crcf_execute(ssbFilt, &x);
-        nco_crcf_mix_up(ssbShift, x, &y);
-        ampmodem_demodulate(demodAM_USB, y, &demodOutputData[i]);
+        iirfilt_crcf_execute(ssbFilt, x, &y);
+        nco_crcf_mix_up(ssbShift, y, &x);
+        // Liquid-DSP AMPModem SSB drifts with strong signals near baseband (like a carrier?)
+        // ampmodem_demodulate(demodAM_USB, y, &demodOutputData[i]);
+        firhilbf_c2r_execute(c2rFilt, x, &demodOutputData[i]);
     }
     
     buildAudioOutput(akit, audioOut, true);

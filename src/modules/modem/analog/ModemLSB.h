@@ -16,7 +16,9 @@ public:
     void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
     
 private:
-    firfilt_crcf ssbFilt;
+    iirfilt_crcf ssbFilt;
+    firhilbf c2rFilt;
     nco_crcf ssbShift;
-    ampmodem demodAM_LSB;
+    //    firfilt_crcf ssbFilt;
+    //    ampmodem demodAM_LSB;
 };
