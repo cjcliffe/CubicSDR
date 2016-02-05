@@ -52,7 +52,12 @@ void RigThread::run() {
     }
     
 	char *info_buf = (char *)rig_get_info(rig);
-    std::cout << "Rig info: " << info_buf << std::endl;
+
+    if (info_buf) {
+        std::cout << "Rig info: " << info_buf << std::endl;
+    } else {
+        std::cout << "Rig info was NULL." << std::endl;
+    }
     
     while (!terminated.load()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(150));
