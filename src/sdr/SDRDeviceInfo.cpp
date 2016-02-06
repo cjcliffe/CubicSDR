@@ -2,8 +2,8 @@
 #include <cstdlib>
 #include <algorithm>
 
-SDRDeviceInfo::SDRDeviceInfo() : name(""), serial(""), available(false), remote(false), manual(false), active(false), soapyDevice(nullptr) {
-
+SDRDeviceInfo::SDRDeviceInfo() : name(""), serial(""), available(false), remote(false), manual(false), soapyDevice(nullptr) {
+    active.store(false);
 }
 
 SDRDeviceInfo::~SDRDeviceInfo() {
