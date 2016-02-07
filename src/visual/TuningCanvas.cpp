@@ -26,8 +26,8 @@ EVT_RIGHT_UP(TuningCanvas::OnMouseRightReleased)
 EVT_LEAVE_WINDOW(TuningCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(TuningCanvas::OnMouseEnterWindow)
 EVT_MOUSEWHEEL(TuningCanvas::OnMouseWheelMoved)
-EVT_KEY_DOWN(TuningCanvas::OnKeyDown)
-EVT_KEY_UP(TuningCanvas::OnKeyUp)
+//EVT_KEY_DOWN(TuningCanvas::OnKeyDown)
+//EVT_KEY_UP(TuningCanvas::OnKeyUp)
 wxEND_EVENT_TABLE()
 
 TuningCanvas::TuningCanvas(wxWindow *parent, int *attribList) :

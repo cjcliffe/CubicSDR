@@ -288,7 +288,7 @@ AppFrame::AppFrame() :
     this->SetSizer(vbox);
 
     //    waterfallCanvas->SetFocusFromKbd();
-    waterfallCanvas->SetFocus();
+//    waterfallCanvas->SetFocus();
 
     //    SetIcon(wxICON(sample));
 
@@ -1196,15 +1196,15 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         }
     }
 
-    if (demodTuner->getMouseTracker()->mouseInView()) {
-        if (!demodTuner->HasFocus()) {
-            demodTuner->SetFocus();
-        }
-    } else if (!wxGetApp().isDeviceSelectorOpen() && (!modemProps || !modemProps->isMouseInView())) {
-		if (!waterfallCanvas->HasFocus()) {
-			waterfallCanvas->SetFocus();
-		}
-    }
+//    if (demodTuner->getMouseTracker()->mouseInView()) {
+//        if (!demodTuner->HasFocus()) {
+//            demodTuner->SetFocus();
+//        }
+//    } else if (!wxGetApp().isDeviceSelectorOpen() && (!modemProps || !modemProps->isMouseInView())) {
+//		if (!waterfallCanvas->HasFocus()) {
+//			waterfallCanvas->SetFocus();
+//		}
+//    }
 
     scopeCanvas->setPPMMode(demodTuner->isAltDown());
     
@@ -1276,6 +1276,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     
     if (!this->IsActive()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(25));
+    } else {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     
     event.RequestMore();
@@ -1540,3 +1542,96 @@ void AppFrame::setMainWaterfallFFTSize(int fftSize) {
     waterfallDataThread->getProcessor()->setFFTSize(fftSize);
     waterfallCanvas->setFFTSize(fftSize);
 }
+
+int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
+    if (!this->IsActive()) {
+        return -1;
+    }
+    
+    switch (event.GetKeyCode()) {
+        case WXK_UP:
+        case WXK_NUMPAD_UP:
+        case WXK_DOWN:
+        case WXK_NUMPAD_DOWN:
+        case WXK_LEFT:
+        case WXK_NUMPAD_LEFT:
+        case WXK_RIGHT:
+        case WXK_NUMPAD_RIGHT:
+            waterfallCanvas->OnKeyDown(event);
+            return 0;
+        case 'A':
+        case 'F':
+        case 'L':
+        case 'U':
+            return 0;
+        default:
+            break;
+    }
+    
+    if (demodTuner->getMouseTracker()->mouseInView()) {
+        demodTuner->OnKeyDown(event);
+        return 0;
+    } else if (waterfallCanvas->getMouseTracker()->mouseInView()) {
+        waterfallCanvas->OnKeyDown(event);
+        return 0;
+    }
+    
+    return 0;
+}
+
+int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
+    if (!this->IsActive()) {
+        return -1;
+    }
+
+    switch (event.GetKeyCode()) {
+        case WXK_SPACE:
+            if (!demodTuner->getMouseTracker()->mouseInView()) {
+                wxGetApp().showFrequencyInput();
+                return 0;
+            }
+            break;
+        case WXK_UP:
+        case WXK_NUMPAD_UP:
+        case WXK_DOWN:
+        case WXK_NUMPAD_DOWN:
+        case WXK_LEFT:
+        case WXK_NUMPAD_LEFT:
+        case WXK_RIGHT:
+        case WXK_NUMPAD_RIGHT:
+            waterfallCanvas->OnKeyUp(event);
+            return 0;
+        case 'A':
+            demodModeSelector->setSelection("AM");
+            break;
+        case 'F':
+            if (demodModeSelector->getSelectionLabel() == "FM") {
+                demodModeSelector->setSelection("FMS");
+            } else {
+                demodModeSelector->setSelection("FM");
+            }
+            break;
+        case 'L':
+            demodModeSelector->setSelection("LSB");
+            break;
+        case 'U':
+            demodModeSelector->setSelection("USB");
+            break;
+        default:
+            break;
+    }
+    
+    if (demodTuner->getMouseTracker()->mouseInView()) {
+        demodTuner->OnKeyUp(event);
+        return 0;
+    } else if (waterfallCanvas->getMouseTracker()->mouseInView()) {
+        waterfallCanvas->OnKeyUp(event);
+        return 0;
+    }
+    
+    
+    // TODO: Catch key-ups outside of original target
+
+    return 0;
+}
+

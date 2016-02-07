@@ -75,6 +75,9 @@ public:
     void updateModemProperties(ModemArgInfoList args);
     void setMainWaterfallFFTSize(int fftSize);
 
+    int OnGlobalKeyDown(wxKeyEvent &event);
+    int OnGlobalKeyUp(wxKeyEvent &event);
+    
 private:
     void OnMenu(wxCommandEvent& event);
     void OnClose(wxCloseEvent& event);

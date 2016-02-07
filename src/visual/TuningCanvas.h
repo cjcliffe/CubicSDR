@@ -25,6 +25,8 @@ public:
     bool changed();
     
     void setHalfBand(bool hb);
+    void OnKeyDown(wxKeyEvent& event);
+    void OnKeyUp(wxKeyEvent& event);
     
 private:
     void OnPaint(wxPaintEvent& event);
@@ -36,8 +38,6 @@ private:
     void OnMouseReleased(wxMouseEvent& event);
     void OnMouseEnterWindow(wxMouseEvent& event);
     void OnMouseLeftWindow(wxMouseEvent& event);
-    void OnKeyDown(wxKeyEvent& event);
-    void OnKeyUp(wxKeyEvent& event);
     void OnMouseRightDown(wxMouseEvent& event);
     void OnMouseRightReleased(wxMouseEvent& event);
 

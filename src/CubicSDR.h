@@ -161,6 +161,8 @@ public:
 #endif
     
 private:
+    int FilterEvent(wxEvent& event);
+    
     AppFrame *appframe;
     AppConfig config;
     PrimaryGLContext *m_glContext;

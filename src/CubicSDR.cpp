@@ -749,6 +749,22 @@ std::string CubicSDR::getModulePath() {
     return modulePath;
 }
 
+int CubicSDR::FilterEvent(wxEvent& event) {
+    if (!appframe) {
+        return -1;
+    }
+
+    if (event.GetEventType() == wxEVT_KEY_DOWN) {
+        return appframe->OnGlobalKeyDown((wxKeyEvent&)event);
+    }
+    
+    if (event.GetEventType() == wxEVT_KEY_UP) {
+        return appframe->OnGlobalKeyUp((wxKeyEvent&)event);
+    }
+    
+    return -1;  // process normally
+}
+
 #ifdef USE_HAMLIB
 RigThread *CubicSDR::getRigThread() {
     return rigThread;

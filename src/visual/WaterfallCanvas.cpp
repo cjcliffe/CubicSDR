@@ -19,8 +19,8 @@
 
 wxBEGIN_EVENT_TABLE(WaterfallCanvas, wxGLCanvas)
 EVT_PAINT(WaterfallCanvas::OnPaint)
-EVT_KEY_DOWN(WaterfallCanvas::OnKeyDown)
-EVT_KEY_UP(WaterfallCanvas::OnKeyUp)
+//EVT_KEY_DOWN(WaterfallCanvas::OnKeyDown)
+//EVT_KEY_UP(WaterfallCanvas::OnKeyUp)
 EVT_IDLE(WaterfallCanvas::OnIdle)
 EVT_MOTION(WaterfallCanvas::OnMouseMoved)
 EVT_LEFT_DOWN(WaterfallCanvas::OnMouseDown)
@@ -345,7 +345,6 @@ void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
     altDown = event.AltDown();
     ctrlDown = event.ControlDown();
     switch (event.GetKeyCode()) {
-    case 'A':
     case WXK_UP:
     case WXK_NUMPAD_UP:
             scaleMove = 0.0;
@@ -354,7 +353,6 @@ void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
                 mouseZoom = 0.95;
             }
         break;
-    case 'Z':
     case WXK_DOWN:
     case WXK_NUMPAD_DOWN:
             scaleMove = 0.0;
@@ -381,7 +379,6 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     long long freq = originalFreq;
 
     switch (event.GetKeyCode()) {
-    case 'A':
     case WXK_UP:
     case WXK_NUMPAD_UP:
             if (!shiftDown) {
@@ -391,7 +388,6 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
                 scaleMove = 1.0;
             }
         break;
-    case 'Z':
     case WXK_DOWN:
     case WXK_NUMPAD_DOWN:
             if (!shiftDown) {
