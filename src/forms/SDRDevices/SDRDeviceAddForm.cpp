@@ -36,7 +36,9 @@ SDRDeviceAddForm::SDRDeviceAddForm( wxWindow* parent, wxWindowID id, const wxStr
 	bSizer6->Add( m_paramLabel, 0, wxALL, 8 );
 	
 	m_paramText = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_DONTWRAP|wxHSCROLL );
-	bSizer6->Add( m_paramText, 0, wxALL|wxEXPAND, 8 );
+	m_paramText->SetMinSize( wxSize( -1,48 ) );
+	
+	bSizer6->Add( m_paramText, 1, wxALL|wxEXPAND, 8 );
 	
 	
 	bSizer6->Add( 0, 0, 1, wxEXPAND, 5 );
