@@ -9,7 +9,7 @@ EVT_CHAR_HOOK(FrequencyDialog::OnChar)
 wxEND_EVENT_TABLE()
 
 FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxString & title, DemodulatorInstance *demod, const wxPoint & position,
-        const wxSize & size, long style, FrequencyDialogTarget targetMode) :
+        const wxSize & size, long style, FrequencyDialogTarget targetMode, wxString initString) :
         wxDialog(parent, id, title, position, size, style) {
     wxString freqStr;
     activeDemod = demod;
@@ -38,7 +38,13 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
 
     Centre();
 
-    dialogText->SetSelection(-1, -1);
+    if (initString != "") {
+        dialogText->SetValue(initString);
+        dialogText->SetSelection(initString.length(), initString.length());
+        dialogText->SetFocus();
+    } else {
+        dialogText->SetSelection(-1, -1);
+    }
 }
 
 

@@ -125,7 +125,7 @@ public:
     void setPPM(int ppm_in);
     int getPPM();
 
-    void showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode = FrequencyDialog::FDIALOG_TARGET_DEFAULT);
+    void showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode = FrequencyDialog::FDIALOG_TARGET_DEFAULT, wxString initString = "");
     AppFrame *getAppFrame();
     
     bool areDevicesReady();

@@ -1564,6 +1564,19 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case 'L':
         case 'U':
             return 0;
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+            wxGetApp().showFrequencyInput(FrequencyDialog::FDIALOG_TARGET_DEFAULT, std::to_string(event.GetKeyCode() - '0'));
+            return 0;
+            break;
         default:
             break;
     }

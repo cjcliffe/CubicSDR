@@ -17,7 +17,8 @@ public:
                   const wxPoint & pos = wxDefaultPosition,
                   const wxSize & size = wxDefaultSize,
                   long style = wxDEFAULT_DIALOG_STYLE,
-                  FrequencyDialogTarget targetMode = FDIALOG_TARGET_DEFAULT);
+                  FrequencyDialogTarget targetMode = FDIALOG_TARGET_DEFAULT,
+                  wxString initString = "");
 
     wxTextCtrl * dialogText;
 
