@@ -287,9 +287,6 @@ AppFrame::AppFrame() :
             
     this->SetSizer(vbox);
 
-    //    waterfallCanvas->SetFocusFromKbd();
-//    waterfallCanvas->SetFocus();
-
     //    SetIcon(wxICON(sample));
 
     // Make a menubar
@@ -1196,16 +1193,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         }
     }
 
-//    if (demodTuner->getMouseTracker()->mouseInView()) {
-//        if (!demodTuner->HasFocus()) {
-//            demodTuner->SetFocus();
-//        }
-//    } else if (!wxGetApp().isDeviceSelectorOpen() && (!modemProps || !modemProps->isMouseInView())) {
-//		if (!waterfallCanvas->HasFocus()) {
-//			waterfallCanvas->SetFocus();
-//		}
-//    }
-
     scopeCanvas->setPPMMode(demodTuner->isAltDown());
     
     scopeCanvas->setShowDb(spectrumCanvas->getShowDb());
@@ -1543,6 +1530,13 @@ void AppFrame::setMainWaterfallFFTSize(int fftSize) {
     waterfallCanvas->setFFTSize(fftSize);
 }
 
+
+void AppFrame::refreshGainUI() {
+    gainCanvas->updateGainUI();
+    gainCanvas->Refresh();
+}
+
+
 FrequencyDialog::FrequencyDialogTarget AppFrame::getFrequencyDialogTarget() {
     FrequencyDialog::FrequencyDialogTarget target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_DEFAULT;
     
@@ -1551,7 +1545,8 @@ FrequencyDialog::FrequencyDialogTarget AppFrame::getFrequencyDialogTarget() {
     }
     else if (spectrumAvgMeter->getMouseTracker()->mouseInView()) {
         target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_SPECTRUM_AVG;
-    } else if (demodTuner->getMouseTracker()->mouseInView()) {
+    }
+    else if (demodTuner->getMouseTracker()->mouseInView()) {
         switch (demodTuner->getHoverState()) {
             case TuningCanvas::ActiveState::TUNING_HOVER_BW:
                 target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_BANDWIDTH;
@@ -1565,6 +1560,9 @@ FrequencyDialog::FrequencyDialogTarget AppFrame::getFrequencyDialogTarget() {
                 break;
                 
         }
+    }
+    else if (gainCanvas->getMouseTracker()->mouseInView()) {
+        target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_GAIN;
     }
     return target;
 }

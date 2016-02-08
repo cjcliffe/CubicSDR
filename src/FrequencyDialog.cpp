@@ -39,6 +39,12 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
     if (targetMode == FDIALOG_TARGET_SPECTRUM_AVG) {
         freqStr = std::to_string(wxGetApp().getSpectrumProcessor()->getFFTAverageRate());
     }
+
+    if (targetMode == FDIALOG_TARGET_GAIN) {
+        if (wxGetApp().getActiveGainEntry() != "") {
+            freqStr = std::to_string((int)wxGetApp().getGain(wxGetApp().getActiveGainEntry()));
+        }
+    }
             
     dialogText = new wxTextCtrl(this, wxID_FREQ_INPUT, freqStr, wxPoint(6, 1), wxSize(size.GetWidth() - 20, size.GetHeight() - 70),
     wxTE_PROCESS_ENTER);
@@ -123,6 +129,29 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
             }
             wxGetApp().getAppFrame()->setSpectrumAvgSpeed(dblval);
         }
+        
+        if (targetMode == FDIALOG_TARGET_GAIN) {
+            try {
+                freq = std::stoi(strValue);
+            } catch (exception e) {
+                break;
+            }
+            SDRDeviceInfo *devInfo = wxGetApp().getDevice();
+            std::string gainName = wxGetApp().getActiveGainEntry();
+            if (gainName == "") {
+                break;
+            }
+            SDRRangeMap gains = devInfo->getGains(SOAPY_SDR_RX, 0);
+            if (freq > gains[gainName].maximum()) {
+                freq = gains[gainName].maximum();
+            }
+            if (freq < gains[gainName].minimum()) {
+                freq = gains[gainName].minimum();
+            }
+            wxGetApp().setGain(gainName, freq);
+            wxGetApp().getAppFrame()->refreshGainUI();
+        }
+
         Close();
         break;
     case WXK_ESCAPE:

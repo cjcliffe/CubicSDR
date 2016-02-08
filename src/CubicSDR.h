@@ -125,7 +125,6 @@ public:
     void setPPM(int ppm_in);
     int getPPM();
 
-    void setFrequencyInputTarget(FrequencyDialog::FrequencyDialogTarget targetMode);
     void showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode = FrequencyDialog::FDIALOG_TARGET_DEFAULT, wxString initString = "");
     AppFrame *getAppFrame();
     
@@ -154,6 +153,9 @@ public:
     bool getUseLocalMod();
     std::string getModulePath();
     
+    void setActiveGainEntry(std::string gainName);
+    std::string getActiveGainEntry();
+
 #ifdef USE_HAMLIB
     RigThread *getRigThread();
     void initRig(int rigModel, std::string rigPort, int rigSerialRate);
@@ -209,6 +211,7 @@ private:
     std::atomic_bool frequency_locked;
     std::atomic_llong lock_freq;
     FrequencyDialog::FrequencyDialogTarget fdlgTarget;
+    std::string activeGain;
 #ifdef USE_HAMLIB
     RigThread *rigThread;
     std::thread *t_Rig;

@@ -83,6 +83,7 @@ public:
     void setSpectrumAvgSpeed(double avg);
     
     FrequencyDialog::FrequencyDialogTarget getFrequencyDialogTarget();
+    void refreshGainUI();
         
 private:
     void OnMenu(wxCommandEvent& event);

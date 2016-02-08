@@ -650,22 +650,15 @@ int CubicSDR::getPPM() {
     return ppm;
 }
 
-void CubicSDR::setFrequencyInputTarget(FrequencyDialog::FrequencyDialogTarget targetMode) {
-    fdlgTarget = targetMode;
-}
-
 void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode, wxString initString) {
     const wxString demodTitle("Set Demodulator Frequency");
     const wxString freqTitle("Set Center Frequency");
     const wxString bwTitle("Modem Bandwidth (150Hz - 500KHz)");
     const wxString lpsTitle("Lines-Per-Second (1-1024)");
     const wxString avgTitle("Average Rate (0.1 - 0.99)");
+    const wxString gainTitle("Gain Entry: "+wxGetApp().getActiveGainEntry());
 
     wxString title;
-    
-//    if (targetMode == FrequencyDialog::FDIALOG_TARGET_DEFAULT && fdlgTarget != FrequencyDialog::FDIALOG_TARGET_DEFAULT) {
-//        targetMode = fdlgTarget;
-//    }
     
     switch (targetMode) {
         case FrequencyDialog::FDIALOG_TARGET_DEFAULT:
@@ -679,6 +672,12 @@ void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetM
             break;
         case FrequencyDialog::FDIALOG_TARGET_SPECTRUM_AVG:
             title = avgTitle;
+            break;
+        case FrequencyDialog::FDIALOG_TARGET_GAIN:
+            title = gainTitle;
+            if (wxGetApp().getActiveGainEntry() == "") {
+                return;
+            }
             break;
         default:
             break;
@@ -763,6 +762,14 @@ bool CubicSDR::getUseLocalMod() {
 
 std::string CubicSDR::getModulePath() {
     return modulePath;
+}
+
+void CubicSDR::setActiveGainEntry(std::string gainName) {
+    activeGain = gainName;
+}
+
+std::string CubicSDR::getActiveGainEntry() {
+    return activeGain;
 }
 
 int CubicSDR::FilterEvent(wxEvent& event) {

@@ -17,7 +17,8 @@ public:
         FDIALOG_TARGET_FREQ,
         FDIALOG_TARGET_BANDWIDTH,
         FDIALOG_TARGET_WATERFALL_LPS,
-        FDIALOG_TARGET_SPECTRUM_AVG
+        FDIALOG_TARGET_SPECTRUM_AVG,
+        FDIALOG_TARGET_GAIN
     } FrequencyDialogTarget;
     FrequencyDialog ( wxWindow * parent, wxWindowID id, const wxString & title,
                   DemodulatorInstance *demod = NULL,
