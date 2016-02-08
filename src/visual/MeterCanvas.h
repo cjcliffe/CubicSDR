@@ -24,6 +24,7 @@ public:
     void setMax(float max_in);
     void setMin(float max_in);
 
+    void setUserInputValue(float slider_in);
     void setInputValue(float slider_in);
     bool inputChanged();
     float getInputValue();

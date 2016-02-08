@@ -18,6 +18,7 @@
 #include "SDRDeviceInfo.h"
 #include "ModemProperties.h"
 //#include "UITestCanvas.h"
+#include "FrequencyDialog.h"
 
 #include <map>
 
@@ -78,6 +79,11 @@ public:
     int OnGlobalKeyDown(wxKeyEvent &event);
     int OnGlobalKeyUp(wxKeyEvent &event);
     
+    void setWaterfallLinesPerSecond(int lps);
+    void setSpectrumAvgSpeed(double avg);
+    
+    FrequencyDialog::FrequencyDialogTarget getFrequencyDialogTarget();
+        
 private:
     void OnMenu(wxCommandEvent& event);
     void OnClose(wxCloseEvent& event);

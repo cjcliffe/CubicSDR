@@ -1543,6 +1543,32 @@ void AppFrame::setMainWaterfallFFTSize(int fftSize) {
     waterfallCanvas->setFFTSize(fftSize);
 }
 
+FrequencyDialog::FrequencyDialogTarget AppFrame::getFrequencyDialogTarget() {
+    FrequencyDialog::FrequencyDialogTarget target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_DEFAULT;
+    
+    if (waterfallSpeedMeter->getMouseTracker()->mouseInView()) {
+        target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_WATERFALL_LPS;
+    }
+    else if (spectrumAvgMeter->getMouseTracker()->mouseInView()) {
+        target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_SPECTRUM_AVG;
+    } else if (demodTuner->getMouseTracker()->mouseInView()) {
+        switch (demodTuner->getHoverState()) {
+            case TuningCanvas::ActiveState::TUNING_HOVER_BW:
+                target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_BANDWIDTH;
+                break;
+            case TuningCanvas::ActiveState::TUNING_HOVER_FREQ:
+                target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_FREQ;
+                break;
+            case TuningCanvas::ActiveState::TUNING_HOVER_CENTER:
+            default:
+                target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_DEFAULT;
+                break;
+                
+        }
+    }
+    return target;
+}
+
 int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     if (!this->IsActive()) {
         return -1;
@@ -1574,7 +1600,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case '7':
         case '8':
         case '9':
-            wxGetApp().showFrequencyInput(FrequencyDialog::FDIALOG_TARGET_DEFAULT, std::to_string(event.GetKeyCode() - '0'));
+            wxGetApp().showFrequencyInput(getFrequencyDialogTarget(), std::to_string(event.GetKeyCode() - '0'));
             return 0;
             break;
         default:
@@ -1600,7 +1626,7 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     switch (event.GetKeyCode()) {
         case WXK_SPACE:
             if (!demodTuner->getMouseTracker()->mouseInView()) {
-                wxGetApp().showFrequencyInput();
+                wxGetApp().showFrequencyInput(getFrequencyDialogTarget());
                 return 0;
             }
             break;
@@ -1646,5 +1672,14 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     // TODO: Catch key-ups outside of original target
 
     return 0;
+}
+
+
+void AppFrame::setWaterfallLinesPerSecond(int lps) {
+    waterfallSpeedMeter->setUserInputValue(sqrt(lps));
+}
+
+void AppFrame::setSpectrumAvgSpeed(double avg) {
+    spectrumAvgMeter->setUserInputValue(avg);
 }
 

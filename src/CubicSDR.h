@@ -125,6 +125,7 @@ public:
     void setPPM(int ppm_in);
     int getPPM();
 
+    void setFrequencyInputTarget(FrequencyDialog::FrequencyDialogTarget targetMode);
     void showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode = FrequencyDialog::FDIALOG_TARGET_DEFAULT, wxString initString = "");
     AppFrame *getAppFrame();
     
@@ -207,6 +208,7 @@ private:
     std::mutex notify_busy;
     std::atomic_bool frequency_locked;
     std::atomic_llong lock_freq;
+    FrequencyDialog::FrequencyDialogTarget fdlgTarget;
 #ifdef USE_HAMLIB
     RigThread *rigThread;
     std::thread *t_Rig;

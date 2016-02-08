@@ -28,6 +28,8 @@ public:
     void OnKeyDown(wxKeyEvent& event);
     void OnKeyUp(wxKeyEvent& event);
     
+    ActiveState getHoverState();
+    
 private:
     void OnPaint(wxPaintEvent& event);
     void OnIdle(wxIdleEvent &event);

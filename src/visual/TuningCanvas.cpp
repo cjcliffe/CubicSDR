@@ -428,3 +428,7 @@ void TuningCanvas::OnKeyDown(wxKeyEvent& event) {
 void TuningCanvas::OnKeyUp(wxKeyEvent& event) {
     InteractiveCanvas::OnKeyUp(event);
 }
+
+TuningCanvas::ActiveState TuningCanvas::getHoverState() {
+    return hoverState;
+}

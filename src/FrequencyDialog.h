@@ -11,7 +11,14 @@
 class FrequencyDialog: public wxDialog
 {
 public:
-    typedef enum FrequencyDialogTarget { FDIALOG_TARGET_DEFAULT, FDIALOG_TARGET_CENTERFREQ, FDIALOG_TARGET_FREQ, FDIALOG_TARGET_BANDWIDTH } FrequencyDialogTarget;
+    typedef enum FrequencyDialogTarget {
+        FDIALOG_TARGET_DEFAULT,
+        FDIALOG_TARGET_CENTERFREQ,
+        FDIALOG_TARGET_FREQ,
+        FDIALOG_TARGET_BANDWIDTH,
+        FDIALOG_TARGET_WATERFALL_LPS,
+        FDIALOG_TARGET_SPECTRUM_AVG
+    } FrequencyDialogTarget;
     FrequencyDialog ( wxWindow * parent, wxWindowID id, const wxString & title,
                   DemodulatorInstance *demod = NULL,
                   const wxPoint & pos = wxDefaultPosition,

@@ -31,18 +31,29 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
             freqStr = frequencyToStr(wxGetApp().getDemodMgr().getLastBandwidth());
         }
     }
+            
+    if (targetMode == FDIALOG_TARGET_WATERFALL_LPS) {
+        freqStr = std::to_string(wxGetApp().getAppFrame()->getWaterfallDataThread()->getLinesPerSecond());
+    }
 
+    if (targetMode == FDIALOG_TARGET_SPECTRUM_AVG) {
+        freqStr = std::to_string(wxGetApp().getSpectrumProcessor()->getFFTAverageRate());
+    }
+            
     dialogText = new wxTextCtrl(this, wxID_FREQ_INPUT, freqStr, wxPoint(6, 1), wxSize(size.GetWidth() - 20, size.GetHeight() - 70),
     wxTE_PROCESS_ENTER);
     dialogText->SetFont(wxFont(20, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
 
     Centre();
 
-    if (initString != "") {
+    if (initString != "" && initString.length() == 1) {
         dialogText->SetValue(initString);
         dialogText->SetSelection(initString.length(), initString.length());
         dialogText->SetFocus();
     } else {
+        if (initString != "") {
+            dialogText->SetValue(initString);
+        }
         dialogText->SetSelection(-1, -1);
     }
 }
@@ -51,15 +62,17 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
 void FrequencyDialog::OnChar(wxKeyEvent& event) {
     int c = event.GetKeyCode();
     long long freq;
+    double dblval;
     std::string lastDemodType = activeDemod?activeDemod->getDemodulatorType():wxGetApp().getDemodMgr().getLastDemodulatorType();
-
+    std::string strValue = dialogText->GetValue().ToStdString();
+    
     switch (c) {
     case WXK_RETURN:
     case WXK_NUMPAD_ENTER:
         // Do Stuff
-        freq = strToFrequency(dialogText->GetValue().ToStdString());
 
         if (targetMode == FDIALOG_TARGET_DEFAULT) {
+            freq = strToFrequency(strValue);
             if (activeDemod) {
                 activeDemod->setTracking(true);
                 activeDemod->setFollow(true);
@@ -70,6 +83,7 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
             }
         }
         if (targetMode == FDIALOG_TARGET_BANDWIDTH) {
+            freq = strToFrequency(strValue);
             if (lastDemodType == "USB" || lastDemodType == "LSB") {
                 freq *= 2;
             }
@@ -78,6 +92,36 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
             } else {
                 wxGetApp().getDemodMgr().setLastBandwidth(freq);
             }
+        }
+        if (targetMode == FDIALOG_TARGET_WATERFALL_LPS) {
+            try {
+                freq = std::stoi(strValue);
+            } catch (exception e) {
+                Close();
+                break;
+            }
+            if (freq > 1024) {
+                freq = 1024;
+            }
+            if (freq < 1) {
+                freq = 1;
+            }
+            wxGetApp().getAppFrame()->setWaterfallLinesPerSecond(freq);
+        }
+        if (targetMode == FDIALOG_TARGET_SPECTRUM_AVG) {
+            try {
+                dblval = std::stod(strValue);
+            } catch (exception e) {
+                Close();
+                break;
+            }
+            if (dblval > 0.99) {
+                dblval = 0.99;
+            }
+            if (dblval < 0.1) {
+                dblval = 0.1;
+            }
+            wxGetApp().getAppFrame()->setSpectrumAvgSpeed(dblval);
         }
         Close();
         break;

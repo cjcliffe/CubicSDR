@@ -134,6 +134,7 @@ CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0
     sdrThread(NULL), sdrPostThread(NULL), spectrumVisualThread(NULL), demodVisualThread(NULL), pipeSDRIQData(NULL), pipeIQVisualData(NULL), pipeAudioVisualData(NULL), t_SDR(NULL), t_PostSDR(NULL) {
         sampleRateInitialized.store(false);
         agcMode.store(true);
+        fdlgTarget = FrequencyDialog::FDIALOG_TARGET_DEFAULT;
 }
 
 bool CubicSDR::OnInit() {
@@ -649,13 +650,22 @@ int CubicSDR::getPPM() {
     return ppm;
 }
 
+void CubicSDR::setFrequencyInputTarget(FrequencyDialog::FrequencyDialogTarget targetMode) {
+    fdlgTarget = targetMode;
+}
 
 void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode, wxString initString) {
     const wxString demodTitle("Set Demodulator Frequency");
     const wxString freqTitle("Set Center Frequency");
-    const wxString bwTitle("Set Demodulator Bandwidth");
+    const wxString bwTitle("Modem Bandwidth (150Hz - 500KHz)");
+    const wxString lpsTitle("Lines-Per-Second (1-1024)");
+    const wxString avgTitle("Average Rate (0.1 - 0.99)");
 
     wxString title;
+    
+//    if (targetMode == FrequencyDialog::FDIALOG_TARGET_DEFAULT && fdlgTarget != FrequencyDialog::FDIALOG_TARGET_DEFAULT) {
+//        targetMode = fdlgTarget;
+//    }
     
     switch (targetMode) {
         case FrequencyDialog::FDIALOG_TARGET_DEFAULT:
@@ -664,11 +674,17 @@ void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetM
         case FrequencyDialog::FDIALOG_TARGET_BANDWIDTH:
             title = bwTitle;
             break;
+        case FrequencyDialog::FDIALOG_TARGET_WATERFALL_LPS:
+            title = lpsTitle;
+            break;
+        case FrequencyDialog::FDIALOG_TARGET_SPECTRUM_AVG:
+            title = avgTitle;
+            break;
         default:
             break;
     }
     
-    FrequencyDialog fdialog(appframe, -1, title, demodMgr.getActiveDemodulator(), wxPoint(-100,-100), wxSize(320, 75 ), wxDEFAULT_DIALOG_STYLE, targetMode, initString);
+    FrequencyDialog fdialog(appframe, -1, title, demodMgr.getActiveDemodulator(), wxPoint(-100,-100), wxSize(350, 75), wxDEFAULT_DIALOG_STYLE, targetMode, initString);
     fdialog.ShowModal();
 }
 
