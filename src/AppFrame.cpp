@@ -552,6 +552,10 @@ void AppFrame::updateDeviceParams() {
     
     // Build settings menu
     wxMenu *newSettingsMenu = new wxMenu;
+    showTipMenuItem = newSettingsMenu->AppendCheckItem(wxID_SET_TIPS, "Show Hover Tips");
+    if (wxGetApp().getConfig()->getShowTips()) {
+        showTipMenuItem->Check();
+    }
     newSettingsMenu->Append(wxID_SET_FREQ_OFFSET, "Frequency Offset");
     if (devInfo->hasCORR(SOAPY_SDR_RX, 0)) {
         newSettingsMenu->Append(wxID_SET_PPM, "Device PPM");
@@ -672,6 +676,12 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         if (activeDemodulator) {
             activeDemodulator->setOutputDevice(event.GetId() - wxID_RT_AUDIO_DEVICE);
             activeDemodulator = NULL;
+        }
+    } else if (event.GetId() == wxID_SET_TIPS ) {
+        if (wxGetApp().getConfig()->getShowTips()) {
+            wxGetApp().getConfig()->setShowTips(false);
+        } else {
+            wxGetApp().getConfig()->setShowTips(true);
         }
     } else if (event.GetId() == wxID_SET_FREQ_OFFSET) {
         long ofs = wxGetNumberFromUser("Shift the displayed frequency by this amount.\ni.e. -125000000 for -125 MHz", "Frequency (Hz)",

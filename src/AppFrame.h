@@ -26,6 +26,7 @@
 #define wxID_SET_FREQ_OFFSET 2001
 #define wxID_RESET 2002
 #define wxID_SET_PPM 2003
+#define wxID_SET_TIPS 2004
 #define wxID_SDR_DEVICES 2008
 #define wxID_AGC_CONTROL 2009
 
@@ -150,6 +151,7 @@ private:
     wxMenuItem *sdrIFMenuItem;
     std::map<int, wxMenuItem *> rigSerialMenuItems;
     std::map<int, wxMenuItem *> rigModelMenuItems;
+    wxMenuItem *showTipMenuItem;
     int rigModel;
     int rigSerialRate;
     long long rigSDRIF;

@@ -157,6 +157,11 @@ void InteractiveCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
 
 void InteractiveCanvas::setStatusText(std::string statusText) {
     wxGetApp().getAppFrame()->GetStatusBar()->SetStatusText(statusText);
+    if (wxGetApp().getConfig()->getShowTips()) {
+        this->SetToolTip(statusText);
+    } else {
+        this->SetToolTip("");
+    }
 }
 
 void InteractiveCanvas::setStatusText(std::string statusText, int value) {
