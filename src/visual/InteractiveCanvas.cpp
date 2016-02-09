@@ -157,8 +157,14 @@ void InteractiveCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
 
 void InteractiveCanvas::setStatusText(std::string statusText) {
     wxGetApp().getAppFrame()->GetStatusBar()->SetStatusText(statusText);
-    if (wxGetApp().getConfig()->getShowTips()) {
-        this->SetToolTip(statusText);
+	if (wxGetApp().getConfig()->getShowTips()) {
+		if (statusText != lastToolTip) {
+			wxToolTip::Enable(false);
+			this->SetToolTip(statusText);
+			lastToolTip = statusText;
+			wxToolTip::SetDelay(1000);
+			wxToolTip::Enable(true);
+		}
     } else {
         this->SetToolTip("");
     }

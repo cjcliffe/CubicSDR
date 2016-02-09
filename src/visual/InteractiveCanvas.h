@@ -58,5 +58,6 @@ protected:
     unsigned int lastBandwidth;
 
     bool isView;
+	std::string lastToolTip;
 };
 
