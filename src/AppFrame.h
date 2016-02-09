@@ -143,6 +143,7 @@ private:
     ModemProperties *modemProps;
     std::atomic_bool modemPropertiesUpdated;
     ModemArgInfoList newModemArgs;
+	wxMenuItem *showTipMenuItem;
 
 #ifdef USE_HAMLIB
     wxMenu *rigMenu;
@@ -151,7 +152,6 @@ private:
     wxMenuItem *sdrIFMenuItem;
     std::map<int, wxMenuItem *> rigSerialMenuItems;
     std::map<int, wxMenuItem *> rigModelMenuItems;
-    wxMenuItem *showTipMenuItem;
     int rigModel;
     int rigSerialRate;
     long long rigSDRIF;
