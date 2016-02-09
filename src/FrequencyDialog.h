@@ -34,6 +34,8 @@ private:
     DemodulatorInstance *activeDemod;
     void OnEnter ( wxCommandEvent &event );
     void OnChar ( wxKeyEvent &event );
+	void OnShow(wxShowEvent &event);
     FrequencyDialogTarget targetMode;
+	std::string initialString;
     DECLARE_EVENT_TABLE()
 };

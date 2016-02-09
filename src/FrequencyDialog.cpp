@@ -6,6 +6,7 @@
 
 wxBEGIN_EVENT_TABLE(FrequencyDialog, wxDialog)
 EVT_CHAR_HOOK(FrequencyDialog::OnChar)
+EVT_SHOW(FrequencyDialog::OnShow)
 wxEND_EVENT_TABLE()
 
 FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxString & title, DemodulatorInstance *demod, const wxPoint & position,
@@ -14,6 +15,7 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
     wxString freqStr;
     activeDemod = demod;
     this->targetMode = targetMode;
+	this->initialString = initString;
 
     if (targetMode == FDIALOG_TARGET_DEFAULT) {
         if (activeDemod) {
@@ -54,7 +56,7 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
 
     if (initString != "" && initString.length() == 1) {
         dialogText->SetValue(initString);
-        dialogText->SetSelection(initString.length(), initString.length());
+        dialogText->SetSelection(2, 2);
         dialogText->SetFocus();
     } else {
         if (initString != "") {
@@ -182,4 +184,11 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
     } else if (c == WXK_RIGHT || c == WXK_LEFT || event.ControlDown()) {
         event.Skip();
     }
+}
+
+void FrequencyDialog::OnShow(wxShowEvent &event) {
+	if (initialString.length() == 1) {
+		dialogText->SetSelection(2, 2);
+		dialogText->SetFocus();
+	}
 }
