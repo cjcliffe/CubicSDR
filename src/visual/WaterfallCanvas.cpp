@@ -19,8 +19,6 @@
 
 wxBEGIN_EVENT_TABLE(WaterfallCanvas, wxGLCanvas)
 EVT_PAINT(WaterfallCanvas::OnPaint)
-//EVT_KEY_DOWN(WaterfallCanvas::OnKeyDown)
-//EVT_KEY_UP(WaterfallCanvas::OnKeyUp)
 EVT_IDLE(WaterfallCanvas::OnIdle)
 EVT_MOTION(WaterfallCanvas::OnMouseMoved)
 EVT_LEFT_DOWN(WaterfallCanvas::OnMouseDown)

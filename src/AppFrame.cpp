@@ -1592,12 +1592,12 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case WXK_RIGHT:
         case WXK_NUMPAD_RIGHT:
             waterfallCanvas->OnKeyDown(event);
-            return 0;
+            return 1;
         case 'A':
         case 'F':
         case 'L':
         case 'U':
-            return 0;
+            return 1;
         case '0':
         case '1':
         case '2':
@@ -1609,7 +1609,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case '8':
         case '9':
             wxGetApp().showFrequencyInput(getFrequencyDialogTarget(), std::to_string(event.GetKeyCode() - '0'));
-            return 0;
+            return 1;
             break;
         default:
             break;
@@ -1617,13 +1617,11 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     
     if (demodTuner->getMouseTracker()->mouseInView()) {
         demodTuner->OnKeyDown(event);
-        return 0;
     } else if (waterfallCanvas->getMouseTracker()->mouseInView()) {
         waterfallCanvas->OnKeyDown(event);
-        return 0;
     }
     
-    return 0;
+    return 1;
 }
 
 int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
@@ -1635,7 +1633,7 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
         case WXK_SPACE:
             if (!demodTuner->getMouseTracker()->mouseInView()) {
                 wxGetApp().showFrequencyInput(getFrequencyDialogTarget());
-                return 0;
+                return 1;
             }
             break;
         case WXK_UP:
@@ -1647,7 +1645,7 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
         case WXK_RIGHT:
         case WXK_NUMPAD_RIGHT:
             waterfallCanvas->OnKeyUp(event);
-            return 0;
+            return 1;
         case 'A':
             demodModeSelector->setSelection("AM");
             break;
@@ -1670,16 +1668,14 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     
     if (demodTuner->getMouseTracker()->mouseInView()) {
         demodTuner->OnKeyUp(event);
-        return 0;
     } else if (waterfallCanvas->getMouseTracker()->mouseInView()) {
         waterfallCanvas->OnKeyUp(event);
-        return 0;
     }
     
     
     // TODO: Catch key-ups outside of original target
 
-    return 0;
+    return 1;
 }
 
 
