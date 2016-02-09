@@ -187,8 +187,9 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
 }
 
 void FrequencyDialog::OnShow(wxShowEvent &event) {
-	if (initialString.length() == 1) {
-		dialogText->SetSelection(2, 2);
-		dialogText->SetFocus();
+	if (initialString.length() == 1) {	
+	    dialogText->SetFocus();
+	    dialogText->SetSelection(2, 2);
 	}
+	event.Skip();
 }
