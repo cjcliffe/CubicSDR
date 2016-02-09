@@ -19,8 +19,6 @@
 
 wxBEGIN_EVENT_TABLE(WaterfallCanvas, wxGLCanvas)
 EVT_PAINT(WaterfallCanvas::OnPaint)
-EVT_KEY_DOWN(WaterfallCanvas::OnKeyDown)
-EVT_KEY_UP(WaterfallCanvas::OnKeyUp)
 EVT_IDLE(WaterfallCanvas::OnIdle)
 EVT_MOTION(WaterfallCanvas::OnMouseMoved)
 EVT_LEFT_DOWN(WaterfallCanvas::OnMouseDown)
@@ -345,7 +343,6 @@ void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
     altDown = event.AltDown();
     ctrlDown = event.ControlDown();
     switch (event.GetKeyCode()) {
-    case 'A':
     case WXK_UP:
     case WXK_NUMPAD_UP:
             scaleMove = 0.0;
@@ -354,7 +351,6 @@ void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
                 mouseZoom = 0.95;
             }
         break;
-    case 'Z':
     case WXK_DOWN:
     case WXK_NUMPAD_DOWN:
             scaleMove = 0.0;
@@ -381,7 +377,6 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     long long freq = originalFreq;
 
     switch (event.GetKeyCode()) {
-    case 'A':
     case WXK_UP:
     case WXK_NUMPAD_UP:
             if (!shiftDown) {
@@ -391,7 +386,6 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
                 scaleMove = 1.0;
             }
         break;
-    case 'Z':
     case WXK_DOWN:
     case WXK_NUMPAD_DOWN:
             if (!shiftDown) {
@@ -601,20 +595,20 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
 
                 mouseTracker.setVertDragLock(true);
                 mouseTracker.setHorizDragLock(false);
-                setStatusText("Click and drag to change demodulator bandwidth. SPACE for direct frequency input. M for mute, D to delete, C to center.");
+                setStatusText("Click and drag to change demodulator bandwidth. SPACE or numeric key for direct frequency input. M for mute, D to delete, C to center.");
             } else {
                 SetCursor(wxCURSOR_SIZING);
                 nextDragState = WF_DRAG_FREQUENCY;
 
                 mouseTracker.setVertDragLock(true);
                 mouseTracker.setHorizDragLock(false);
-                setStatusText("Click and drag to change demodulator frequency; SPACE for direct input. M for mute, D to delete, C to center.");
+                setStatusText("Click and drag to change demodulator frequency; SPACE or numeric key for direct input. M for mute, D to delete, C to center.");
             }
         } else {
             SetCursor(wxCURSOR_CROSS);
             nextDragState = WF_DRAG_NONE;
             if (shiftDown) {
-                setStatusText("Click to create a new demodulator or hold ALT to drag range, SPACE for direct center frequency input.");
+                setStatusText("Click to create a new demodulator or hold ALT to drag range, SPACE or numeric key for direct center frequency input.");
             } else {
                 setStatusText(
                         "Click to move active demodulator frequency or hold ALT to drag range; hold SHIFT to create new.  Right drag or wheel to Zoom.  Arrow keys to navigate/zoom, C to center.");

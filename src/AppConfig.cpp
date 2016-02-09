@@ -198,6 +198,7 @@ AppConfig::AppConfig() : configName("") {
     winW.store(0);
     winH.store(0);
     winMax.store(false);
+    showTips.store(true);
     themeId.store(0);
     snap.store(1);
     centerFreq.store(100000000);
@@ -251,6 +252,14 @@ void AppConfig::setWindowMaximized(bool max) {
 
 bool AppConfig::getWindowMaximized() {
     return winMax.load();
+}
+
+void AppConfig::setShowTips(bool show) {
+    showTips.store(show);
+}
+
+bool AppConfig::getShowTips() {
+    return showTips.load();
 }
 
 wxRect *AppConfig::getWindow() {
@@ -347,6 +356,7 @@ bool AppConfig::save() {
         *window_node->newChild("h") = winH.load();
 
         *window_node->newChild("max") = winMax.load();
+        *window_node->newChild("tips") = showTips.load();
         *window_node->newChild("theme") = themeId.load();
         *window_node->newChild("snap") = snap.load();
         *window_node->newChild("center_freq") = centerFreq.load();
@@ -426,7 +436,7 @@ bool AppConfig::load() {
 
     if (cfg.rootNode()->hasAnother("window")) {
         int x,y,w,h;
-        int max;
+        int max,tips;
         
         DataNode *win_node = cfg.rootNode()->getNext("window");
         
@@ -445,6 +455,11 @@ bool AppConfig::load() {
         if (win_node->hasAnother("max")) {
             win_node->getNext("max")->element()->get(max);
             winMax.store(max?true:false);
+        }
+
+        if (win_node->hasAnother("tips")) {
+            win_node->getNext("tips")->element()->get(tips);
+            showTips.store(tips?true:false);
         }
 
         if (win_node->hasAnother("theme")) {

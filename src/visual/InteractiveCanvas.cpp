@@ -19,7 +19,7 @@
 
 InteractiveCanvas::InteractiveCanvas(wxWindow *parent, int *attribList) :
         wxGLCanvas(parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE| wxWANTS_CHARS), parent(parent), shiftDown(false), altDown(false), ctrlDown(false), centerFreq(0), bandwidth(0), lastBandwidth(0), isView(
+        wxFULL_REPAINT_ON_RESIZE), parent(parent), shiftDown(false), altDown(false), ctrlDown(false), centerFreq(0), bandwidth(0), lastBandwidth(0), isView(
         false) {
     mouseTracker.setTarget(this);
 }
@@ -157,6 +157,17 @@ void InteractiveCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
 
 void InteractiveCanvas::setStatusText(std::string statusText) {
     wxGetApp().getAppFrame()->GetStatusBar()->SetStatusText(statusText);
+	if (wxGetApp().getConfig()->getShowTips()) {
+		if (statusText != lastToolTip) {
+			wxToolTip::Enable(false);
+			this->SetToolTip(statusText);
+			lastToolTip = statusText;
+			wxToolTip::SetDelay(1000);
+			wxToolTip::Enable(true);
+		}
+    } else {
+        this->SetToolTip("");
+    }
 }
 
 void InteractiveCanvas::setStatusText(std::string statusText, int value) {

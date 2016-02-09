@@ -132,6 +132,9 @@ void GainCanvas::OnMouseMoved(wxMouseEvent& event) {
     int i = 0;
     for (std::vector<GainInfo *>::iterator gi = gainInfo.begin(); gi != gainInfo.end(); gi++) {
         (*gi)->highlightPanel.visible = (i==panelHit);
+        if (i==panelHit) {
+            wxGetApp().setActiveGainEntry((*gi)->name);
+        }
         i++;
     }
     

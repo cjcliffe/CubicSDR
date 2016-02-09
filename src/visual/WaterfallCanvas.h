@@ -33,11 +33,11 @@ public:
     void setLinesPerSecond(int lps);
     void setMinBandwidth(int min);
 
-private:
-    void OnPaint(wxPaintEvent& event);
     void OnKeyDown(wxKeyEvent& event);
     void OnKeyUp(wxKeyEvent& event);
 
+private:
+    void OnPaint(wxPaintEvent& event);
     void OnIdle(wxIdleEvent &event);
 
     void OnMouseMoved(wxMouseEvent& event);

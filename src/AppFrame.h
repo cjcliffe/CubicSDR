@@ -18,6 +18,7 @@
 #include "SDRDeviceInfo.h"
 #include "ModemProperties.h"
 //#include "UITestCanvas.h"
+#include "FrequencyDialog.h"
 
 #include <map>
 
@@ -25,6 +26,7 @@
 #define wxID_SET_FREQ_OFFSET 2001
 #define wxID_RESET 2002
 #define wxID_SET_PPM 2003
+#define wxID_SET_TIPS 2004
 #define wxID_SDR_DEVICES 2008
 #define wxID_AGC_CONTROL 2009
 
@@ -75,6 +77,15 @@ public:
     void updateModemProperties(ModemArgInfoList args);
     void setMainWaterfallFFTSize(int fftSize);
 
+    int OnGlobalKeyDown(wxKeyEvent &event);
+    int OnGlobalKeyUp(wxKeyEvent &event);
+    
+    void setWaterfallLinesPerSecond(int lps);
+    void setSpectrumAvgSpeed(double avg);
+    
+    FrequencyDialog::FrequencyDialogTarget getFrequencyDialogTarget();
+    void refreshGainUI();
+        
 private:
     void OnMenu(wxCommandEvent& event);
     void OnClose(wxCloseEvent& event);
@@ -132,6 +143,7 @@ private:
     ModemProperties *modemProps;
     std::atomic_bool modemPropertiesUpdated;
     ModemArgInfoList newModemArgs;
+	wxMenuItem *showTipMenuItem;
 
 #ifdef USE_HAMLIB
     wxMenu *rigMenu;

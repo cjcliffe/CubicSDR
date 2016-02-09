@@ -134,6 +134,7 @@ CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0
     sdrThread(NULL), sdrPostThread(NULL), spectrumVisualThread(NULL), demodVisualThread(NULL), pipeSDRIQData(NULL), pipeIQVisualData(NULL), pipeAudioVisualData(NULL), t_SDR(NULL), t_PostSDR(NULL) {
         sampleRateInitialized.store(false);
         agcMode.store(true);
+        fdlgTarget = FrequencyDialog::FDIALOG_TARGET_DEFAULT;
 }
 
 bool CubicSDR::OnInit() {
@@ -649,11 +650,13 @@ int CubicSDR::getPPM() {
     return ppm;
 }
 
-
-void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode) {
+void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode, wxString initString) {
     const wxString demodTitle("Set Demodulator Frequency");
     const wxString freqTitle("Set Center Frequency");
-    const wxString bwTitle("Set Demodulator Bandwidth");
+    const wxString bwTitle("Modem Bandwidth (150Hz - 500KHz)");
+    const wxString lpsTitle("Lines-Per-Second (1-1024)");
+    const wxString avgTitle("Average Rate (0.1 - 0.99)");
+    const wxString gainTitle("Gain Entry: "+wxGetApp().getActiveGainEntry());
 
     wxString title;
     
@@ -664,11 +667,23 @@ void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetM
         case FrequencyDialog::FDIALOG_TARGET_BANDWIDTH:
             title = bwTitle;
             break;
+        case FrequencyDialog::FDIALOG_TARGET_WATERFALL_LPS:
+            title = lpsTitle;
+            break;
+        case FrequencyDialog::FDIALOG_TARGET_SPECTRUM_AVG:
+            title = avgTitle;
+            break;
+        case FrequencyDialog::FDIALOG_TARGET_GAIN:
+            title = gainTitle;
+            if (wxGetApp().getActiveGainEntry() == "") {
+                return;
+            }
+            break;
         default:
             break;
     }
     
-    FrequencyDialog fdialog(appframe, -1, title, demodMgr.getActiveDemodulator(), wxPoint(-100,-100), wxSize(320, 75 ), wxDEFAULT_DIALOG_STYLE, targetMode);
+    FrequencyDialog fdialog(appframe, -1, title, demodMgr.getActiveDemodulator(), wxPoint(-100,-100), wxSize(350, 75), wxDEFAULT_DIALOG_STYLE, targetMode, initString);
     fdialog.ShowModal();
 }
 
@@ -747,6 +762,30 @@ bool CubicSDR::getUseLocalMod() {
 
 std::string CubicSDR::getModulePath() {
     return modulePath;
+}
+
+void CubicSDR::setActiveGainEntry(std::string gainName) {
+    activeGain = gainName;
+}
+
+std::string CubicSDR::getActiveGainEntry() {
+    return activeGain;
+}
+
+int CubicSDR::FilterEvent(wxEvent& event) {
+    if (!appframe) {
+        return -1;
+    }
+
+    if (event.GetEventType() == wxEVT_KEY_DOWN) {
+        return appframe->OnGlobalKeyDown((wxKeyEvent&)event);
+    }
+    
+    if (event.GetEventType() == wxEVT_KEY_UP) {
+        return appframe->OnGlobalKeyUp((wxKeyEvent&)event);
+    }
+    
+    return -1;  // process normally
 }
 
 #ifdef USE_HAMLIB

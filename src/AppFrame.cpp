@@ -78,7 +78,7 @@ AppFrame::AppFrame() :
     demodModeSelector->addChoice("DSB");
     demodModeSelector->addChoice("I/Q");
     demodModeSelector->setSelection("FM");
-    demodModeSelector->setHelpTip("Choose modulation type: Frequency Modulation, Amplitude Modulation and Lower, Upper or Double Side-Band.");
+    demodModeSelector->setHelpTip("Choose modulation type: Frequency Modulation (Hotkey F), Amplitude Modulation (A) and Lower (L), Upper (U), Double Side-Band and more.");
     demodModeSelector->SetMinSize(wxSize(40,-1));
     demodModeSelector->SetMaxSize(wxSize(40,-1));
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
@@ -286,9 +286,6 @@ AppFrame::AppFrame() :
 // */
             
     this->SetSizer(vbox);
-
-    //    waterfallCanvas->SetFocusFromKbd();
-    waterfallCanvas->SetFocus();
 
     //    SetIcon(wxICON(sample));
 
@@ -555,6 +552,10 @@ void AppFrame::updateDeviceParams() {
     
     // Build settings menu
     wxMenu *newSettingsMenu = new wxMenu;
+    showTipMenuItem = newSettingsMenu->AppendCheckItem(wxID_SET_TIPS, "Show Hover Tips");
+    if (wxGetApp().getConfig()->getShowTips()) {
+        showTipMenuItem->Check();
+    }
     newSettingsMenu->Append(wxID_SET_FREQ_OFFSET, "Frequency Offset");
     if (devInfo->hasCORR(SOAPY_SDR_RX, 0)) {
         newSettingsMenu->Append(wxID_SET_PPM, "Device PPM");
@@ -675,6 +676,12 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         if (activeDemodulator) {
             activeDemodulator->setOutputDevice(event.GetId() - wxID_RT_AUDIO_DEVICE);
             activeDemodulator = NULL;
+        }
+    } else if (event.GetId() == wxID_SET_TIPS ) {
+        if (wxGetApp().getConfig()->getShowTips()) {
+            wxGetApp().getConfig()->setShowTips(false);
+        } else {
+            wxGetApp().getConfig()->setShowTips(true);
         }
     } else if (event.GetId() == wxID_SET_FREQ_OFFSET) {
         long ofs = wxGetNumberFromUser("Shift the displayed frequency by this amount.\ni.e. -125000000 for -125 MHz", "Frequency (Hz)",
@@ -1196,16 +1203,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         }
     }
 
-    if (demodTuner->getMouseTracker()->mouseInView()) {
-        if (!demodTuner->HasFocus()) {
-            demodTuner->SetFocus();
-        }
-    } else if (!wxGetApp().isDeviceSelectorOpen() && (!modemProps || !modemProps->isMouseInView())) {
-		if (!waterfallCanvas->HasFocus()) {
-			waterfallCanvas->SetFocus();
-		}
-    }
-
     scopeCanvas->setPPMMode(demodTuner->isAltDown());
     
     scopeCanvas->setShowDb(spectrumCanvas->getShowDb());
@@ -1276,6 +1273,8 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     
     if (!this->IsActive()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(25));
+    } else {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     
     event.RequestMore();
@@ -1540,3 +1539,151 @@ void AppFrame::setMainWaterfallFFTSize(int fftSize) {
     waterfallDataThread->getProcessor()->setFFTSize(fftSize);
     waterfallCanvas->setFFTSize(fftSize);
 }
+
+
+void AppFrame::refreshGainUI() {
+    gainCanvas->updateGainUI();
+    gainCanvas->Refresh();
+}
+
+
+FrequencyDialog::FrequencyDialogTarget AppFrame::getFrequencyDialogTarget() {
+    FrequencyDialog::FrequencyDialogTarget target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_DEFAULT;
+    
+    if (waterfallSpeedMeter->getMouseTracker()->mouseInView()) {
+        target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_WATERFALL_LPS;
+    }
+    else if (spectrumAvgMeter->getMouseTracker()->mouseInView()) {
+        target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_SPECTRUM_AVG;
+    }
+    else if (demodTuner->getMouseTracker()->mouseInView()) {
+        switch (demodTuner->getHoverState()) {
+            case TuningCanvas::ActiveState::TUNING_HOVER_BW:
+                target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_BANDWIDTH;
+                break;
+            case TuningCanvas::ActiveState::TUNING_HOVER_FREQ:
+                target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_FREQ;
+                break;
+            case TuningCanvas::ActiveState::TUNING_HOVER_CENTER:
+            default:
+                target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_DEFAULT;
+                break;
+                
+        }
+    }
+    else if (gainCanvas->getMouseTracker()->mouseInView()) {
+        target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_GAIN;
+    }
+    return target;
+}
+
+int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
+    if (!this->IsActive()) {
+        return -1;
+    }
+    
+    switch (event.GetKeyCode()) {
+        case WXK_UP:
+        case WXK_NUMPAD_UP:
+        case WXK_DOWN:
+        case WXK_NUMPAD_DOWN:
+        case WXK_LEFT:
+        case WXK_NUMPAD_LEFT:
+        case WXK_RIGHT:
+        case WXK_NUMPAD_RIGHT:
+            waterfallCanvas->OnKeyDown(event);
+            return 1;
+        case 'A':
+        case 'F':
+        case 'L':
+        case 'U':
+            return 1;
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+            wxGetApp().showFrequencyInput(getFrequencyDialogTarget(), std::to_string(event.GetKeyCode() - '0'));
+            return 1;
+            break;
+        default:
+            break;
+    }
+    
+    if (demodTuner->getMouseTracker()->mouseInView()) {
+        demodTuner->OnKeyDown(event);
+    } else if (waterfallCanvas->getMouseTracker()->mouseInView()) {
+        waterfallCanvas->OnKeyDown(event);
+    }
+    
+    return 1;
+}
+
+int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
+    if (!this->IsActive()) {
+        return -1;
+    }
+
+    switch (event.GetKeyCode()) {
+        case WXK_SPACE:
+            if (!demodTuner->getMouseTracker()->mouseInView()) {
+                wxGetApp().showFrequencyInput(getFrequencyDialogTarget());
+                return 1;
+            }
+            break;
+        case WXK_UP:
+        case WXK_NUMPAD_UP:
+        case WXK_DOWN:
+        case WXK_NUMPAD_DOWN:
+        case WXK_LEFT:
+        case WXK_NUMPAD_LEFT:
+        case WXK_RIGHT:
+        case WXK_NUMPAD_RIGHT:
+            waterfallCanvas->OnKeyUp(event);
+            return 1;
+        case 'A':
+            demodModeSelector->setSelection("AM");
+            break;
+        case 'F':
+            if (demodModeSelector->getSelectionLabel() == "FM") {
+                demodModeSelector->setSelection("FMS");
+            } else {
+                demodModeSelector->setSelection("FM");
+            }
+            break;
+        case 'L':
+            demodModeSelector->setSelection("LSB");
+            break;
+        case 'U':
+            demodModeSelector->setSelection("USB");
+            break;
+        default:
+            break;
+    }
+    
+    if (demodTuner->getMouseTracker()->mouseInView()) {
+        demodTuner->OnKeyUp(event);
+    } else if (waterfallCanvas->getMouseTracker()->mouseInView()) {
+        waterfallCanvas->OnKeyUp(event);
+    }
+    
+    
+    // TODO: Catch key-ups outside of original target
+
+    return 1;
+}
+
+
+void AppFrame::setWaterfallLinesPerSecond(int lps) {
+    waterfallSpeedMeter->setUserInputValue(sqrt(lps));
+}
+
+void AppFrame::setSpectrumAvgSpeed(double avg) {
+    spectrumAvgMeter->setUserInputValue(avg);
+}
+

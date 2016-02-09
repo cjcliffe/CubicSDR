@@ -52,6 +52,11 @@ void MeterCanvas::setMin(float min_in) {
     Refresh();
 }
 
+void MeterCanvas::setUserInputValue(float slider_in) {
+    userInputValue = slider_in;
+    Refresh();
+}
+
 void MeterCanvas::setInputValue(float slider_in) {
     userInputValue = inputValue = slider_in;
     Refresh();
