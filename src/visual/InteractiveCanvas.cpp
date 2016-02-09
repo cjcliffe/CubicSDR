@@ -167,6 +167,7 @@ void InteractiveCanvas::setStatusText(std::string statusText) {
 		}
     } else {
         this->SetToolTip("");
+        lastToolTip = "";
     }
 }
 
