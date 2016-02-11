@@ -150,7 +150,7 @@ void DemodulatorThread::run() {
         
         if (squelchEnabled) {
             if (!squelched && !squelchBreak) {
-                if (wxGetApp().getSoloMode()) {
+                if (wxGetApp().getSoloMode() && !muted.load()) {
                     wxGetApp().getDemodMgr().setActiveDemodulator(demodInstance, false);
                 }
                 squelchBreak = true;
