@@ -156,6 +156,9 @@ public:
     void setActiveGainEntry(std::string gainName);
     std::string getActiveGainEntry();
 
+    void setSoloMode(bool solo);
+    bool getSoloMode();
+    
 #ifdef USE_HAMLIB
     RigThread *getRigThread();
     void initRig(int rigModel, std::string rigPort, int rigSerialRate);
@@ -212,6 +215,7 @@ private:
     std::atomic_llong lock_freq;
     FrequencyDialog::FrequencyDialogTarget fdlgTarget;
     std::string activeGain;
+    std::atomic_bool soloMode;
 #ifdef USE_HAMLIB
     RigThread *rigThread;
     std::thread *t_Rig;

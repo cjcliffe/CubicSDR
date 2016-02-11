@@ -1,6 +1,7 @@
 #include "CubicSDRDefs.h"
 #include "DemodulatorThread.h"
 #include "DemodulatorInstance.h"
+#include "CubicSDR.h"
 #include <vector>
 
 #include <cmath>
@@ -222,7 +223,7 @@ void DemodulatorThread::run() {
         
         
         if (ati != NULL) {
-            if (!muted.load()) {
+            if (!muted.load() && (!wxGetApp().getSoloMode() || (demodInstance == wxGetApp().getDemodMgr().getLastActiveDemodulator()))) {
                 audioOutputQueue->push(ati);
             } else {
                 ati->setRefCount(0);

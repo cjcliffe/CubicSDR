@@ -174,6 +174,18 @@ AppFrame::AppFrame() :
     demodGainMeter->SetMinSize(wxSize(12,24));
     demodGainTray->Add(demodGainMeter, 8, wxEXPAND | wxALL, 0);
 
+    demodGainTray->AddSpacer(1);
+    
+    soloModeButton = new ModeSelectorCanvas(demodPanel, attribList);
+    soloModeButton->addChoice(1, "S");
+    soloModeButton->setPadding(-1,-1);
+    soloModeButton->setHighlightColor(RGBA4f(0.8,0.8,0.2));
+    soloModeButton->setHelpTip("Solo Mode Toggle");
+    soloModeButton->setToggleMode(true);
+    soloModeButton->setSelection(-1);
+    soloModeButton->SetMinSize(wxSize(12,28));
+    
+    demodGainTray->Add(soloModeButton, 1, wxEXPAND | wxALL, 0);
 
     demodGainTray->AddSpacer(1);
 
@@ -184,7 +196,7 @@ AppFrame::AppFrame() :
     demodMuteButton->setHelpTip("Demodulator Mute Toggle");
     demodMuteButton->setToggleMode(true);
 	demodMuteButton->setSelection(-1);
-    demodMuteButton->SetMinSize(wxSize(12,24));
+    demodMuteButton->SetMinSize(wxSize(12,28));
             
     demodGainTray->Add(demodMuteButton, 1, wxEXPAND | wxALL, 0);
 
@@ -1129,8 +1141,24 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
                     demodMuteButton->setSelection(-1);
                     wxGetApp().getDemodMgr().setLastMuted(demod->isMuted());
                 }
+                demodMuteButton->Refresh();
             }
 
+            int soloMode = soloModeButton->getSelection();
+            if (soloModeButton->modeChanged()) {
+                if (soloMode == 1) {
+                    wxGetApp().setSoloMode(true);
+                } else {
+                    wxGetApp().setSoloMode(false);
+                }
+                soloModeButton->clearModeChanged();
+            } else {
+                if (wxGetApp().getSoloMode() != (soloMode==1)) {
+                    soloModeButton->setSelection(wxGetApp().getSoloMode()?1:-1);
+                    soloModeButton->Refresh();
+                }
+            }
+            
             demodWaterfallCanvas->setBandwidth(demodBw);
             demodSpectrumCanvas->setBandwidth(demodBw);
         }
@@ -1599,6 +1627,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case 'F':
         case 'L':
         case 'U':
+        case 'S':
             return 1;
         case '0':
         case '1':
@@ -1665,6 +1694,7 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
             return 1;
         case 'A':
             demodModeSelector->setSelection("AM");
+            return 1;
             break;
         case 'F':
             if (demodModeSelector->getSelectionLabel() == "FM") {
@@ -1672,12 +1702,19 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
             } else {
                 demodModeSelector->setSelection("FM");
             }
+            return 1;
             break;
         case 'L':
             demodModeSelector->setSelection("LSB");
+            return 1;
             break;
         case 'U':
             demodModeSelector->setSelection("USB");
+            return 1;
+            break;
+        case 'S':
+            wxGetApp().setSoloMode(!wxGetApp().getSoloMode());
+            return 1;
             break;
         default:
             break;

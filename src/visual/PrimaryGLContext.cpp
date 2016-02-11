@@ -94,8 +94,15 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, l
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    if (demod->isMuted()) {
+    bool soloMode = wxGetApp().getSoloMode();
+    bool isSolo = soloMode && demod == wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    
+    if (isSolo) {
+        glColor4f(0.8, 0.8, 0, 0.35);
+    } else if (demod->isMuted()) {
         glColor4f(0.8, 0, 0, 0.35);
+    } else if (soloMode) {
+        glColor4f(0.2, 0, 0, 0.35);
     } else {
         glColor4f(0, 0, 0, 0.35);
     }
@@ -137,6 +144,8 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, l
     
     if (demod->isMuted()) {
         demodLabel = std::string("[M] ") + demodLabel;
+    } else if (isSolo) {
+        demodLabel = std::string("[S] ") + demodLabel;
     }
     
     if (demod->getDemodulatorType() == "USB") {

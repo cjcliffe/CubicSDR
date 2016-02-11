@@ -134,6 +134,7 @@ CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0
     sdrThread(NULL), sdrPostThread(NULL), spectrumVisualThread(NULL), demodVisualThread(NULL), pipeSDRIQData(NULL), pipeIQVisualData(NULL), pipeAudioVisualData(NULL), t_SDR(NULL), t_PostSDR(NULL) {
         sampleRateInitialized.store(false);
         agcMode.store(true);
+        soloMode.store(false);
         fdlgTarget = FrequencyDialog::FDIALOG_TARGET_DEFAULT;
 }
 
@@ -770,6 +771,14 @@ void CubicSDR::setActiveGainEntry(std::string gainName) {
 
 std::string CubicSDR::getActiveGainEntry() {
     return activeGain;
+}
+
+void CubicSDR::setSoloMode(bool solo) {
+    soloMode.store(solo);
+}
+
+bool CubicSDR::getSoloMode() {
+    return soloMode.load();
 }
 
 int CubicSDR::FilterEvent(wxEvent& event) {
