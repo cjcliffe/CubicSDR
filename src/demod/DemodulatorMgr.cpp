@@ -4,6 +4,10 @@
 #include "CubicSDR.h"
 #include <string>
 #include <sstream>
+#include <algorithm>
+
+bool demodFreqCompare (DemodulatorInstance *i, DemodulatorInstance *j) { return (i->getFrequency()<j->getFrequency()); }
+bool inactiveCompare (DemodulatorInstance *i, DemodulatorInstance *j) { return (i->isActive()<j->isActive()); }
 
 DemodulatorMgr::DemodulatorMgr() :
         activeDemodulator(NULL), lastActiveDemodulator(NULL), activeVisualDemodulator(NULL), lastBandwidth(DEFAULT_DEMOD_BW), lastDemodType(
@@ -36,6 +40,69 @@ void DemodulatorMgr::terminateAll() {
 
 std::vector<DemodulatorInstance *> &DemodulatorMgr::getDemodulators() {
     return demods;
+}
+
+std::vector<DemodulatorInstance *> DemodulatorMgr::getOrderedDemodulators(bool actives) {
+    std::vector<DemodulatorInstance *> demods_ordered = demods;
+    if (actives) {
+        std::sort(demods_ordered.begin(), demods_ordered.end(), inactiveCompare);
+        std::vector<DemodulatorInstance *>::iterator i;
+        for (i = demods_ordered.begin(); i != demods_ordered.end(); i++) {
+            if ((*i)->isActive()) {
+                break;
+            }
+        }
+        if (i == demods_ordered.end()) {
+            demods_ordered.erase(demods_ordered.begin(), demods_ordered.end());
+        } else if ((*i) != demods_ordered.front()) {
+            demods_ordered.erase(demods_ordered.begin(), i);
+        }
+    }
+    std::sort(demods_ordered.begin(), demods_ordered.end(), demodFreqCompare);
+    return demods_ordered;
+}
+
+DemodulatorInstance *DemodulatorMgr::getPreviousDemodulator(DemodulatorInstance *demod, bool actives) {
+    if (!getLastActiveDemodulator()) {
+        return nullptr;
+    }
+    std::vector<DemodulatorInstance *> demods_ordered = getOrderedDemodulators(actives);
+    std::vector<DemodulatorInstance *>::iterator p = std::find(demods_ordered.begin(), demods_ordered.end(), demod);
+    if (p == demods_ordered.end()) {
+        return nullptr;
+    }
+    if (*p == demods_ordered.front()) {
+        return demods_ordered.back();
+    }
+    return *(--p);
+}
+
+DemodulatorInstance *DemodulatorMgr::getNextDemodulator(DemodulatorInstance *demod, bool actives) {
+    if (!getLastActiveDemodulator()) {
+        return nullptr;
+    }
+    std::vector<DemodulatorInstance *> demods_ordered = getOrderedDemodulators(actives);
+    std::vector<DemodulatorInstance *>::iterator p = std::find(demods_ordered.begin(), demods_ordered.end(), demod);
+    if (actives) {
+        
+    }
+    if (p == demods_ordered.end()) {
+        return nullptr;
+    }
+    if (*p == demods_ordered.back()) {
+        return demods_ordered.front();
+    }
+    return *(++p);
+}
+
+DemodulatorInstance *DemodulatorMgr::getLastDemodulator() {
+    std::vector<DemodulatorInstance *> demods_ordered = getOrderedDemodulators();
+    return *(demods_ordered.end());
+}
+
+DemodulatorInstance *DemodulatorMgr::getFirstDemodulator() {
+    std::vector<DemodulatorInstance *> demods_ordered = getOrderedDemodulators();
+    return *(demods_ordered.begin());
 }
 
 void DemodulatorMgr::deleteThread(DemodulatorInstance *demod) {

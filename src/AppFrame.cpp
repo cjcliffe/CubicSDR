@@ -1582,6 +1582,8 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         return -1;
     }
     
+    DemodulatorInstance *demod = nullptr, *lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    
     switch (event.GetKeyCode()) {
         case WXK_UP:
         case WXK_NUMPAD_UP:
@@ -1610,6 +1612,21 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case '9':
             wxGetApp().showFrequencyInput(getFrequencyDialogTarget(), std::to_string(event.GetKeyCode() - '0'));
             return 1;
+            break;
+        case WXK_TAB:
+            lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+            if (!lastDemod) {
+                break;
+            }
+            if (event.ShiftDown()) {
+                demod = wxGetApp().getDemodMgr().getPreviousDemodulator(lastDemod);
+            } else {
+                demod = wxGetApp().getDemodMgr().getNextDemodulator(lastDemod);
+            }
+            if (demod) {
+                wxGetApp().getDemodMgr().setActiveDemodulator(nullptr);
+                wxGetApp().getDemodMgr().setActiveDemodulator(demod, false);
+            }
             break;
         default:
             break;
