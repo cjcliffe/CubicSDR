@@ -33,6 +33,7 @@ public:
     void setSquelchLevel(float signal_level_in);
     float getSquelchLevel();
 
+    bool getSquelchBreak();
     
 protected:
     
@@ -46,7 +47,7 @@ protected:
 
     std::atomic<float> squelchLevel;
     std::atomic<float> signalLevel;
-    bool squelchEnabled;
+    bool squelchEnabled, squelchBreak;
     
     Modem *cModem;
     ModemKit *cModemKit;

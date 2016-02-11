@@ -17,6 +17,7 @@ DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent) : IOThread(), 
     
     demodInstance = parent;
     muted.store(false);
+    squelchBreak = false;
 }
 
 DemodulatorThread::~DemodulatorThread() {
@@ -146,6 +147,17 @@ void DemodulatorThread::run() {
         }
         
         bool squelched = (squelchEnabled && (signalLevel < squelchLevel));
+        
+        if (squelchEnabled) {
+            if (!squelched && !squelchBreak) {
+                if (wxGetApp().getSoloMode()) {
+                    wxGetApp().getDemodMgr().setActiveDemodulator(demodInstance, false);
+                }
+                squelchBreak = true;
+            } else if (squelched && squelchBreak) {
+                squelchBreak = false;
+            }
+        }
         
         if (audioOutputQueue != NULL && ati && !squelched) {
             std::vector<float>::iterator data_i;
