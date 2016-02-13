@@ -40,6 +40,8 @@ private:
     void OnPaint(wxPaintEvent& event);
     void OnIdle(wxIdleEvent &event);
 
+    void updateHoverState();
+    
     void OnMouseMoved(wxMouseEvent& event);
     void OnMouseWheelMoved(wxMouseEvent& event);
     void OnMouseDown(wxMouseEvent& event);

@@ -471,6 +471,105 @@ void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
     event.RequestMore();
 }
 
+void WaterfallCanvas::updateHoverState() {
+    long long freqPos = getFrequencyAt(mouseTracker.getMouseX());
+    
+    std::vector<DemodulatorInstance *> *demodsHover = wxGetApp().getDemodMgr().getDemodulatorsAt(freqPos, 15000);
+    
+    wxGetApp().getDemodMgr().setActiveDemodulator(NULL);
+    
+    if (altDown) {
+        nextDragState = WF_DRAG_RANGE;
+        mouseTracker.setVertDragLock(true);
+        mouseTracker.setHorizDragLock(false);
+        if (shiftDown) {
+            setStatusText("Click and drag to create a new demodulator by range.");
+        } else {
+            setStatusText("Click and drag to set the current demodulator range.");
+        }
+    } else if (demodsHover->size() && !shiftDown) {
+        long near_dist = getBandwidth();
+        
+        DemodulatorInstance *activeDemodulator = NULL;
+        
+        for (int i = 0, iMax = demodsHover->size(); i < iMax; i++) {
+            DemodulatorInstance *demod = (*demodsHover)[i];
+            long long freqDiff = demod->getFrequency() - freqPos;
+            long halfBw = (demod->getBandwidth() / 2);
+            long long currentBw = getBandwidth();
+            long long globalBw = wxGetApp().getSampleRate();
+            long dist = abs(freqDiff);
+            double bufferBw = 10000.0 * ((double)currentBw / (double)globalBw);
+            double maxDist = ((double)halfBw + bufferBw);
+            
+            if ((double)dist <= maxDist) {
+                if ((freqDiff > 0 && demod->getDemodulatorType() == "USB") ||
+                    (freqDiff < 0 && demod->getDemodulatorType() == "LSB")) {
+                    continue;
+                }
+                
+                if (dist < near_dist) {
+                    activeDemodulator = demod;
+                    near_dist = dist;
+                }
+                
+                long edge_dist = abs(halfBw - dist);
+                if (edge_dist < near_dist) {
+                    activeDemodulator = demod;
+                    near_dist = edge_dist;
+                }
+            }
+        }
+        
+        if (activeDemodulator == NULL) {
+            nextDragState = WF_DRAG_NONE;
+            SetCursor(wxCURSOR_CROSS);
+            return;
+        }
+        
+        wxGetApp().getDemodMgr().setActiveDemodulator(activeDemodulator);
+        
+        long long freqDiff = activeDemodulator->getFrequency() - freqPos;
+        
+        if (abs(freqDiff) > (activeDemodulator->getBandwidth() / 3)) {
+            
+            if (freqDiff > 0) {
+                if (activeDemodulator->getDemodulatorType() != "USB") {
+                    nextDragState = WF_DRAG_BANDWIDTH_LEFT;
+                    SetCursor(wxCURSOR_SIZEWE);
+                }
+            } else {
+                if (activeDemodulator->getDemodulatorType() != "LSB") {
+                    nextDragState = WF_DRAG_BANDWIDTH_RIGHT;
+                    SetCursor(wxCURSOR_SIZEWE);
+                }
+            }
+            
+            mouseTracker.setVertDragLock(true);
+            mouseTracker.setHorizDragLock(false);
+            setStatusText("Click and drag to change demodulator bandwidth. SPACE or numeric key for direct frequency input. M for mute, D to delete, C to center.");
+        } else {
+            SetCursor(wxCURSOR_SIZING);
+            nextDragState = WF_DRAG_FREQUENCY;
+            
+            mouseTracker.setVertDragLock(true);
+            mouseTracker.setHorizDragLock(false);
+            setStatusText("Click and drag to change demodulator frequency; SPACE or numeric key for direct input. M for mute, D to delete, C to center.");
+        }
+    } else {
+        SetCursor(wxCURSOR_CROSS);
+        nextDragState = WF_DRAG_NONE;
+        if (shiftDown) {
+            setStatusText("Click to create a new demodulator or hold ALT to drag range, SPACE or numeric key for direct center frequency input.");
+        } else {
+            setStatusText(
+                          "Click to move active demodulator frequency or hold ALT to drag range; hold SHIFT to create new.  Right drag or wheel to Zoom.  Arrow keys to navigate/zoom, C to center.");
+        }
+    }
+    
+    delete demodsHover;
+}
+
 void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseMoved(event);
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getActiveDemodulator();
@@ -520,108 +619,14 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
     } else if (mouseTracker.mouseRightDown()) {
         mouseZoom = mouseZoom + ((1.0 - (mouseTracker.getDeltaMouseY() * 4.0)) - mouseZoom) * 0.1;
     } else {
-        long long freqPos = getFrequencyAt(mouseTracker.getMouseX());
-
-        std::vector<DemodulatorInstance *> *demodsHover = wxGetApp().getDemodMgr().getDemodulatorsAt(freqPos, 15000);
-
-        wxGetApp().getDemodMgr().setActiveDemodulator(NULL);
-
-        if (altDown) {
-            nextDragState = WF_DRAG_RANGE;
-            mouseTracker.setVertDragLock(true);
-            mouseTracker.setHorizDragLock(false);
-            if (shiftDown) {
-                setStatusText("Click and drag to create a new demodulator by range.");
-            } else {
-                setStatusText("Click and drag to set the current demodulator range.");
-            }
-        } else if (demodsHover->size() && !shiftDown) {
-            long near_dist = getBandwidth();
-
-            DemodulatorInstance *activeDemodulator = NULL;
-
-            for (int i = 0, iMax = demodsHover->size(); i < iMax; i++) {
-                DemodulatorInstance *demod = (*demodsHover)[i];
-                long long freqDiff = demod->getFrequency() - freqPos;
-                long halfBw = (demod->getBandwidth() / 2);
-                long long currentBw = getBandwidth();
-                long long globalBw = wxGetApp().getSampleRate();
-                long dist = abs(freqDiff);
-                double bufferBw = 10000.0 * ((double)currentBw / (double)globalBw);
-                double maxDist = ((double)halfBw + bufferBw);
-
-                if ((double)dist <= maxDist) {
-                    if ((freqDiff > 0 && demod->getDemodulatorType() == "USB") ||
-                            (freqDiff < 0 && demod->getDemodulatorType() == "LSB")) {
-                        continue;
-                    }
-
-                    if (dist < near_dist) {
-                        activeDemodulator = demod;
-                        near_dist = dist;
-                    }
-
-                    long edge_dist = abs(halfBw - dist);
-                    if (edge_dist < near_dist) {
-                        activeDemodulator = demod;
-                        near_dist = edge_dist;
-                    }
-                }
-            }
-
-            if (activeDemodulator == NULL) {
-                nextDragState = WF_DRAG_NONE;
-                SetCursor(wxCURSOR_CROSS);
-                return;
-            }
-
-            wxGetApp().getDemodMgr().setActiveDemodulator(activeDemodulator);
-
-            long long freqDiff = activeDemodulator->getFrequency() - freqPos;
-
-            if (abs(freqDiff) > (activeDemodulator->getBandwidth() / 3)) {
-
-                if (freqDiff > 0) {
-                    if (activeDemodulator->getDemodulatorType() != "USB") {
-                        nextDragState = WF_DRAG_BANDWIDTH_LEFT;
-                        SetCursor(wxCURSOR_SIZEWE);
-                    }
-                } else {
-                    if (activeDemodulator->getDemodulatorType() != "LSB") {
-                        nextDragState = WF_DRAG_BANDWIDTH_RIGHT;
-                        SetCursor(wxCURSOR_SIZEWE);
-                    }
-                }
-
-                mouseTracker.setVertDragLock(true);
-                mouseTracker.setHorizDragLock(false);
-                setStatusText("Click and drag to change demodulator bandwidth. SPACE or numeric key for direct frequency input. M for mute, D to delete, C to center.");
-            } else {
-                SetCursor(wxCURSOR_SIZING);
-                nextDragState = WF_DRAG_FREQUENCY;
-
-                mouseTracker.setVertDragLock(true);
-                mouseTracker.setHorizDragLock(false);
-                setStatusText("Click and drag to change demodulator frequency; SPACE or numeric key for direct input. M for mute, D to delete, C to center.");
-            }
-        } else {
-            SetCursor(wxCURSOR_CROSS);
-            nextDragState = WF_DRAG_NONE;
-            if (shiftDown) {
-                setStatusText("Click to create a new demodulator or hold ALT to drag range, SPACE or numeric key for direct center frequency input.");
-            } else {
-                setStatusText(
-                        "Click to move active demodulator frequency or hold ALT to drag range; hold SHIFT to create new.  Right drag or wheel to Zoom.  Arrow keys to navigate/zoom, C to center.");
-            }
-        }
-
-        delete demodsHover;
+        updateHoverState();
     }
 }
 
 void WaterfallCanvas::OnMouseDown(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseDown(event);
 
+    updateHoverState();
     dragState = nextDragState;
     wxGetApp().getDemodMgr().updateLastState();
 
