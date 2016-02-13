@@ -1611,6 +1611,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     }
     
     DemodulatorInstance *demod = nullptr, *lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    int snap = wxGetApp().getFrequencySnap();
     
     switch (event.GetKeyCode()) {
         case WXK_UP:
@@ -1621,8 +1622,20 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case WXK_NUMPAD_LEFT:
         case WXK_RIGHT:
         case WXK_NUMPAD_RIGHT:
-            waterfallCanvas->OnKeyDown(event);
+            waterfallCanvas->OnKeyDown(event);  // TODO: Move the stuff from there to here
             return 1;
+        case ']':
+            if (lastDemod) {
+                lastDemod->setFrequency(lastDemod->getFrequency()+snap);
+            }
+            return 1;
+            break;
+        case '[':
+            if (lastDemod) {
+                lastDemod->setFrequency(lastDemod->getFrequency()-snap);
+            }
+            return 1;
+            break;
         case 'A':
         case 'F':
         case 'L':
@@ -1716,6 +1729,9 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
             wxGetApp().setSoloMode(!wxGetApp().getSoloMode());
             return 1;
             break;
+        case ']':
+        case '[':
+            return 1;
         default:
             break;
     }
