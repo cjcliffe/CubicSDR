@@ -1613,6 +1613,12 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     DemodulatorInstance *demod = nullptr, *lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
     int snap = wxGetApp().getFrequencySnap();
     
+    if (event.ShiftDown()) {
+        if (snap != 1) {
+            snap /= 2;
+        }
+    }
+    
     switch (event.GetKeyCode()) {
         case WXK_UP:
         case WXK_NUMPAD_UP:
