@@ -80,7 +80,12 @@ public:
 
     bool isTracking();
     void setTracking(bool tracking);
-    
+
+    bool isDeltaLock();
+    void setDeltaLock(bool lock);
+    void setDeltaLockOfs(int lockOfs);
+    int getDeltaLockOfs();
+
     bool isMuted();
     void setMuted(bool muted);
 
@@ -122,6 +127,8 @@ private:
     std::atomic_bool active;
     std::atomic_bool squelch;
     std::atomic_bool muted;
+    std::atomic_bool deltaLock;
+    std::atomic_int deltaLockOfs;
 
     std::atomic_int currentOutputDevice;
     std::atomic<float> currentAudioGain;

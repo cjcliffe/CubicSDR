@@ -373,6 +373,22 @@ void DemodulatorInstance::setTracking(bool tracking) {
     this->tracking = tracking;
 }
 
+bool DemodulatorInstance::isDeltaLock() {
+    return deltaLock.load();
+}
+
+void DemodulatorInstance::setDeltaLock(bool lock) {
+    deltaLock.store(lock);
+}
+
+void DemodulatorInstance::setDeltaLockOfs(int lockOfs) {
+    deltaLockOfs.store(lockOfs);
+}
+
+int DemodulatorInstance::getDeltaLockOfs() {
+    return deltaLockOfs.load();
+}
+
 bool DemodulatorInstance::isMuted() {
     return demodulatorThread->isMuted();
 }

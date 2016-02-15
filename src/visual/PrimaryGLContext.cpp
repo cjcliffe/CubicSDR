@@ -148,6 +148,10 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, l
         demodLabel = std::string("[S] ") + demodLabel;
     }
     
+    if (demod->isDeltaLock()) {
+        demodLabel.append(" [V]");
+    }
+    
     if (demod->getDemodulatorType() == "USB") {
         GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos, hPos, 16, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
     } else if (demod->getDemodulatorType() == "LSB") {
