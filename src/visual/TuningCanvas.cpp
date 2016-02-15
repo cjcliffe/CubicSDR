@@ -186,6 +186,9 @@ void TuningCanvas::StepTuner(ActiveState state, int exponent, bool up) {
         activeDemod->setTracking(true);
         activeDemod->setFollow(true);
         activeDemod->setFrequency(freq);
+        if (activeDemod->isDeltaLock()) {
+            activeDemod->setDeltaLockOfs(activeDemod->getFrequency() - wxGetApp().getFrequency());
+        }
         activeDemod->updateLabel(freq);
     }
 

@@ -11,7 +11,7 @@ bool inactiveCompare (DemodulatorInstance *i, DemodulatorInstance *j) { return (
 
 DemodulatorMgr::DemodulatorMgr() :
         activeDemodulator(NULL), lastActiveDemodulator(NULL), activeVisualDemodulator(NULL), lastBandwidth(DEFAULT_DEMOD_BW), lastDemodType(
-                DEFAULT_DEMOD_TYPE), lastSquelchEnabled(false), lastSquelch(-100), lastGain(1.0), lastMuted(false) {
+                DEFAULT_DEMOD_TYPE), lastSquelchEnabled(false), lastSquelch(-100), lastGain(1.0), lastMuted(false), lastDeltaLock(false) {
 }
 
 DemodulatorMgr::~DemodulatorMgr() {
@@ -282,6 +282,15 @@ float DemodulatorMgr::getLastGain() const {
 
 void DemodulatorMgr::setLastGain(float lastGain) {
     this->lastGain = lastGain;
+}
+
+
+bool DemodulatorMgr::getLastDeltaLock() const {
+    return lastDeltaLock;
+}
+
+void DemodulatorMgr::setLastDeltaLock(bool lock) {
+    lastDeltaLock = lock;
 }
 
 float DemodulatorMgr::getLastSquelchLevel() const {

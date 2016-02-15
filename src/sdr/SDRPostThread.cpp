@@ -69,11 +69,22 @@ void SDRPostThread::updateActiveDemodulators() {
     
     nRunDemods = 0;
     
+    long long centerFreq = wxGetApp().getFrequency();
+    
     for (demod_i = demodulators.begin(); demod_i != demodulators.end(); demod_i++) {
         DemodulatorInstance *demod = *demod_i;
         DemodulatorThreadInputQueue *demodQueue = demod->getIQInputDataPipe();
         
         // not in range?
+        if (demod->isDeltaLock()) {
+            if (demod->getFrequency() != centerFreq + demod->getDeltaLockOfs()) {
+                demod->setFrequency(centerFreq + demod->getDeltaLockOfs());
+                demod->updateLabel(demod->getFrequency());
+                demod->setFollow(false);
+                demod->setTracking(false);
+            }
+        }
+        
         if (abs(frequency - demod->getFrequency()) > (sampleRate / 2)) {
             // deactivate if active
             if (demod->isActive() && !demod->isFollow() && !demod->isTracking()) {
@@ -85,7 +96,7 @@ void SDRPostThread::updateActiveDemodulators() {
             }
             
             // follow if follow mode
-            if (demod->isFollow() && wxGetApp().getFrequency() != demod->getFrequency()) {
+            if (demod->isFollow() && centerFreq != demod->getFrequency()) {
                 wxGetApp().setFrequency(demod->getFrequency());
                 demod->setFollow(false);
             }

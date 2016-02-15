@@ -37,6 +37,9 @@ public:
     float getLastGain() const;
     void setLastGain(float lastGain);
 
+    bool getLastDeltaLock() const;
+    void setLastDeltaLock(bool lock);
+
     float getLastSquelchLevel() const;
     void setLastSquelchLevel(float lastSquelch);
 
@@ -67,6 +70,7 @@ private:
     float lastSquelch;
     float lastGain;
     bool lastMuted;
+    bool lastDeltaLock;
     
     std::map<std::string, ModemSettings> lastModemSettings;
 };

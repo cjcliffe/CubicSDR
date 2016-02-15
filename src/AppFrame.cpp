@@ -53,6 +53,7 @@ AppFrame::AppFrame() :
     wxBoxSizer *demodVisuals = new wxBoxSizer(wxVERTICAL);
     demodTray = new wxBoxSizer(wxHORIZONTAL);
     wxBoxSizer *demodScopeTray = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *demodTunerTray = new wxBoxSizer(wxHORIZONTAL);
 
     int attribList[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 
@@ -156,10 +157,23 @@ AppFrame::AppFrame() :
 
     demodScopeTray->AddSpacer(1);
 
+    deltaLockButton = new ModeSelectorCanvas(demodPanel, attribList);
+    deltaLockButton->addChoice(1, "V");
+    deltaLockButton->setPadding(-1,-1);
+    deltaLockButton->setHighlightColor(RGBA4f(0.8,0.8,0.2));
+    deltaLockButton->setHelpTip("Delta Lock Toggle (V) - Enable to lock modem relative to center frequency.");
+    deltaLockButton->setToggleMode(true);
+    deltaLockButton->setSelection(-1);
+    deltaLockButton->SetMinSize(wxSize(20,28));
+    
+    demodTunerTray->Add(deltaLockButton, 0, wxEXPAND | wxALL, 0);
+    demodTunerTray->AddSpacer(1);
+            
     demodTuner = new TuningCanvas(demodPanel, attribList);
-    demodTuner->setHelpTip("Testing tuner");
     demodTuner->SetMinClientSize(wxSize(200,28));
-    demodScopeTray->Add(demodTuner, 1, wxEXPAND | wxALL, 0);
+    demodTunerTray->Add(demodTuner, 1, wxEXPAND | wxALL, 0);
+            
+    demodScopeTray->Add(demodTunerTray, 1, wxEXPAND | wxALL, 0);
 
     demodTray->Add(demodScopeTray, 30, wxEXPAND | wxALL, 0);
 
@@ -1078,6 +1092,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 #ifdef ENABLE_DIGITAL_LAB
             demodModeSelectorAdv->setSelection(dType);
 #endif
+            deltaLockButton->setSelection(demod->isDeltaLock()?1:-1);
             demodMuteButton->setSelection(demod->isMuted()?1:-1);
             modemPropertiesUpdated.store(true);
             demodTuner->setHalfBand(dType=="USB" || dType=="LSB");
@@ -1144,11 +1159,34 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
                 if (demod->isMuted() && muteMode == -1) {
                     demodMuteButton->setSelection(1);
                     wxGetApp().getDemodMgr().setLastMuted(demod->isMuted());
+                    demodMuteButton->Refresh();
                 } else if (!demod->isMuted() && muteMode == 1) {
                     demodMuteButton->setSelection(-1);
                     wxGetApp().getDemodMgr().setLastMuted(demod->isMuted());
+                    demodMuteButton->Refresh();
                 }
-                demodMuteButton->Refresh();
+            }
+
+            int deltaMode = deltaLockButton->getSelection();
+            if (deltaLockButton->modeChanged()) {
+                if (demod->isDeltaLock() && deltaMode == -1) {
+                    demod->setDeltaLock(false);
+                } else if (!demod->isDeltaLock() && deltaMode == 1) {
+                    demod->setDeltaLockOfs(demod->getFrequency()-wxGetApp().getFrequency());
+                    demod->setDeltaLock(true);
+                }
+                wxGetApp().getDemodMgr().setLastDeltaLock(demod->isDeltaLock());
+                deltaLockButton->clearModeChanged();
+            } else {
+                if (demod->isDeltaLock() && deltaMode == -1) {
+                    deltaLockButton->setSelection(1);
+                    wxGetApp().getDemodMgr().setLastDeltaLock(true);
+                    deltaLockButton->Refresh();
+                } else if (!demod->isDeltaLock() && deltaMode == 1) {
+                    deltaLockButton->setSelection(-1);
+                    wxGetApp().getDemodMgr().setLastDeltaLock(false);
+                    deltaLockButton->Refresh();
+                }
             }
 
             int soloMode = soloModeButton->getSelection();
@@ -1377,6 +1415,10 @@ void AppFrame::saveSession(std::string fileName) {
         *demod->newChild("output_device") = outputDevices[(*instance_i)->getOutputDevice()].name;
         *demod->newChild("gain") = (*instance_i)->getGain();
         *demod->newChild("muted") = (*instance_i)->isMuted() ? 1 : 0;
+        if ((*instance_i)->isDeltaLock()) {
+            *demod->newChild("delta_lock") = (*instance_i)->isDeltaLock() ? 1 : 0;
+            *demod->newChild("delta_ofs") = (*instance_i)->getDeltaLockOfs();
+        }
         if ((*instance_i) == wxGetApp().getDemodMgr().getLastActiveDemodulator()) {
             *demod->newChild("active") = 1;
         }
@@ -1450,9 +1492,11 @@ bool AppFrame::loadSession(std::string fileName) {
             float squelch_level = demod->hasAnother("squelch_level") ? (float) *demod->getNext("squelch_level") : 0;
             int squelch_enabled = demod->hasAnother("squelch_enabled") ? (int) *demod->getNext("squelch_enabled") : 0;
             int muted = demod->hasAnother("muted") ? (int) *demod->getNext("muted") : 0;
+            int delta_locked = demod->hasAnother("delta_lock") ? (int) *demod->getNext("delta_lock") : 0;
+            int delta_ofs = demod->hasAnother("delta_ofs") ? (int) *demod->getNext("delta_ofs") : 0;
             std::string output_device = demod->hasAnother("output_device") ? string(*(demod->getNext("output_device"))) : "";
             float gain = demod->hasAnother("gain") ? (float) *demod->getNext("gain") : 1.0;
-
+            
             std::string type = "FM";
 
             DataNode *demodTypeNode = demod->hasAnother("type")?demod->getNext("type"):nullptr;
@@ -1512,6 +1556,10 @@ bool AppFrame::loadSession(std::string fileName) {
             newDemod->setGain(gain);
             newDemod->updateLabel(freq);
             newDemod->setMuted(muted?true:false);
+            if (delta_locked) {
+                newDemod->setDeltaLock(true);
+                newDemod->setDeltaLockOfs(delta_ofs);
+            }
             if (squelch_enabled) {
                 newDemod->setSquelchEnabled(true);
                 newDemod->setSquelchLevel(squelch_level);
@@ -1645,6 +1693,8 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case WXK_NUMPAD_RIGHT:
             waterfallCanvas->OnKeyDown(event);  // TODO: Move the stuff from there to here
             return 1;
+        case 'V':
+            return 1;
         case ']':
             if (lastDemod) {
                 lastDemod->setFrequency(lastDemod->getFrequency()+snap);
@@ -1709,6 +1759,8 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
         return -1;
     }
 
+    DemodulatorInstance *lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    
     switch (event.GetKeyCode()) {
         case WXK_SPACE:
             if (!demodTuner->getMouseTracker()->mouseInView()) {
@@ -1726,6 +1778,14 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
         case WXK_NUMPAD_RIGHT:
             waterfallCanvas->OnKeyUp(event);
             return 1;
+        case 'V':
+            if (lastDemod && lastDemod->isDeltaLock()) {
+                lastDemod->setDeltaLock(false);
+            } else if (lastDemod) {
+                lastDemod->setDeltaLockOfs(lastDemod->getFrequency() - wxGetApp().getFrequency());
+                lastDemod->setDeltaLock(true);
+            }
+            break;
         case 'A':
             demodModeSelector->setSelection("AM");
             return 1;

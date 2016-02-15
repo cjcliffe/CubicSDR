@@ -183,6 +183,7 @@ void ModeSelectorCanvas::setSelection(int value) {
     for (int i = 0; i < numChoices; i++) {
         if (selections[i].value == value) {
             currentSelection = i;
+            Refresh();
             return;
         }
     }
