@@ -1299,6 +1299,14 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         peakHoldButton->clearModeChanged();
     }
     
+#if USE_HAMLIB
+    if (rigEnableMenuItem->IsChecked()) {
+        if (!wxGetApp().rigIsActive()) {
+            rigEnableMenuItem->Check(false);
+        }
+    }
+#endif
+    
     if (!this->IsActive()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(25));
     } else {

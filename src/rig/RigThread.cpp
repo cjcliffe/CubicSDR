@@ -7,6 +7,7 @@ RigThread::RigThread() {
     freq = wxGetApp().getFrequency();
     newFreq = freq;
     freqChanged.store(true);
+    termStatus = 0;
 }
 
 RigThread::~RigThread() {
@@ -40,6 +41,8 @@ void RigThread::initRig(rig_model_t rig_model, std::string rig_file, int serial_
 void RigThread::run() {
     int retcode, status;
 
+    termStatus = 0;
+
     std::cout << "Rig thread starting." << std::endl;
 
     rig = rig_init(rigModel);
@@ -65,24 +68,34 @@ void RigThread::run() {
         std::this_thread::sleep_for(std::chrono::milliseconds(150));
         if (freqChanged.load()) {
             status = rig_get_freq(rig, RIG_VFO_CURR, &freq);
-            if (freq != newFreq) {
-                freq = newFreq;
-                rig_set_freq(rig, RIG_VFO_CURR, freq);
-//                std::cout << "Set Rig Freq: %f" <<  newFreq << std::endl;
+            if (status == 0) {
+                if (freq != newFreq) {
+                    freq = newFreq;
+                    rig_set_freq(rig, RIG_VFO_CURR, freq);
+    //                std::cout << "Set Rig Freq: %f" <<  newFreq << std::endl;
+                }
+                
+                freqChanged.store(false);
+            } else {
+                termStatus = 0;
+                terminate();
             }
-            
-            freqChanged.store(false);
         } else {
             freq_t checkFreq;
 
             status = rig_get_freq(rig, RIG_VFO_CURR, &checkFreq);
             
-            if (checkFreq != freq) {
-                freq = checkFreq;
-                wxGetApp().setFrequency((long long)checkFreq);
-            } else if (wxGetApp().getFrequency() != freq) {
-                freq = wxGetApp().getFrequency();
-                rig_set_freq(rig, RIG_VFO_CURR, freq);
+            if (status == 0) {
+                if (checkFreq != freq) {
+                    freq = checkFreq;
+                    wxGetApp().setFrequency((long long)checkFreq);
+                } else if (wxGetApp().getFrequency() != freq) {
+                    freq = wxGetApp().getFrequency();
+                    rig_set_freq(rig, RIG_VFO_CURR, freq);
+                }
+            } else {
+                termStatus = 0;
+                terminate();
             }
         }
         
@@ -92,7 +105,7 @@ void RigThread::run() {
     rig_close(rig);
     rig_cleanup(rig);
     
-    std::cout << "Rig thread exiting." << std::endl;
+    std::cout << "Rig thread exiting status " << termStatus << "." << std::endl;
 };
 
 freq_t RigThread::getFrequency() {

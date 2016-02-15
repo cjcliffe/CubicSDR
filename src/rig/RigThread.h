@@ -24,6 +24,8 @@ public:
     void initRig(rig_model_t rig_model, std::string rig_file, int serial_rate);
     void run();
     
+    int terminationStatus();
+    
     freq_t getFrequency();
     void setFrequency(freq_t new_freq);
     
@@ -35,7 +37,7 @@ private:
     rig_model_t rigModel;
     std::string rigFile;
     int serialRate;
-    
+    int termStatus;
     freq_t freq;
     freq_t newFreq;
     std::atomic_bool freqChanged;
