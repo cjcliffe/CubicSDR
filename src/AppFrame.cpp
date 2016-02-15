@@ -561,26 +561,31 @@ void AppFrame::updateDeviceParams() {
         return;
     }
     
+    int i = 0;
+    SoapySDR::Device *soapyDev = devInfo->getSoapyDevice();
     
     // Build settings menu
     wxMenu *newSettingsMenu = new wxMenu;
     showTipMenuItem = newSettingsMenu->AppendCheckItem(wxID_SET_TIPS, "Show Hover Tips");
-    if (wxGetApp().getConfig()->getShowTips()) {
-        showTipMenuItem->Check();
-    }
+    showTipMenuItem->Check(wxGetApp().getConfig()->getShowTips());
+
     newSettingsMenu->Append(wxID_SET_FREQ_OFFSET, "Frequency Offset");
+
     if (devInfo->hasCORR(SOAPY_SDR_RX, 0)) {
         newSettingsMenu->Append(wxID_SET_PPM, "Device PPM");
     }
-    
+
+    if (devInfo->getDriver() != "rtlsdr") {
+        iqSwapMenuItem = newSettingsMenu->AppendCheckItem(wxID_SET_IQSWAP, "I/Q Swap");
+        iqSwapMenuItem->Check(wxGetApp().getSDRThread()->getIQSwap());
+    }
+
     agcMenuItem = newSettingsMenu->AppendCheckItem(wxID_AGC_CONTROL, "Automatic Gain");
     agcMenuItem->Check(wxGetApp().getAGCMode());
     
     SoapySDR::ArgInfoList::const_iterator args_i;
-    
-    int i = 0;
-    SoapySDR::Device *soapyDev = devInfo->getSoapyDevice();
     settingArgs = soapyDev->getSettingInfo();
+    
     for (args_i = settingArgs.begin(); args_i != settingArgs.end(); args_i++) {
         SoapySDR::ArgInfo arg = (*args_i);
         std::string currentVal = soapyDev->readSetting(arg.key);
@@ -695,6 +700,8 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         } else {
             wxGetApp().getConfig()->setShowTips(true);
         }
+    } else if (event.GetId() == wxID_SET_IQSWAP) {
+        wxGetApp().getSDRThread()->setIQSwap(!wxGetApp().getSDRThread()->getIQSwap());
     } else if (event.GetId() == wxID_SET_FREQ_OFFSET) {
         long ofs = wxGetNumberFromUser("Shift the displayed frequency by this amount.\ni.e. -125000000 for -125 MHz", "Frequency (Hz)",
                 "Frequency Offset", wxGetApp().getOffset(), -2000000000, 2000000000, this);

@@ -76,6 +76,9 @@ public:
     void setAGCMode(bool mode);
     bool getAGCMode();
 
+    void setIQSwap(bool swap);
+    bool getIQSwap();
+
     void setGain(std::string name, float value);
     float getGain(std::string name);
     
@@ -108,7 +111,7 @@ protected:
     std::atomic_int ppm, numElems, mtuElems, numChannels;
     std::atomic_bool hasPPM, hasHardwareDC;
     std::atomic_bool agc_mode, rate_changed, freq_changed, offset_changed,
-        ppm_changed, device_changed, agc_mode_changed, gain_value_changed, setting_value_changed, frequency_locked, frequency_lock_init;
+        ppm_changed, device_changed, agc_mode_changed, gain_value_changed, setting_value_changed, frequency_locked, frequency_lock_init, iq_swap;
 
     std::mutex gain_busy;
     std::map<std::string, float> gainValues;

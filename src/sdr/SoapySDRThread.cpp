@@ -36,6 +36,7 @@ SDRThread::SDRThread() : IOThread(), buffers("SDRThreadBuffers") {
     frequency_lock_init.store(false);
     frequency_locked.store(false);
     lock_freq.store(0);
+    iq_swap.store(false);
 }
 
 SDRThread::~SDRThread() {
@@ -194,15 +195,15 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
     if (n_read > 0 && !terminated) {
         SDRThreadIQData *dataOut = buffers.getBuffer();
 
-//        if (hasHardwareDC) {
+        if (iq_swap.load()) {
+            dataOut->data.resize(n_read);
+            for (int i = 0; i < n_read; i++) {
+                dataOut->data[i].imag = inpBuffer.data[i].real;
+                dataOut->data[i].real = inpBuffer.data[i].imag;
+            }
+        } else {
             dataOut->data.assign(inpBuffer.data.begin(), inpBuffer.data.begin()+n_read);
-//        } else {
-//            if (dataOut->data.size() != n_read) {
-//                dataOut->data.resize(n_read);
-//            }
-//            iirfilt_crcf_execute_block(dcFilter, &inpBuffer.data[0], n_read, &dataOut->data[0]);
-//        }
-
+        }
         
         dataOut->setRefCount(1);
         dataOut->frequency = frequency.load();
@@ -482,6 +483,14 @@ void SDRThread::setAGCMode(bool mode) {
 
 bool SDRThread::getAGCMode() {
     return agc_mode.load();
+}
+
+void SDRThread::setIQSwap(bool swap) {
+    iq_swap.store(swap);
+}
+
+bool SDRThread::getIQSwap() {
+    return iq_swap.load();
 }
 
 void SDRThread::setGain(std::string name, float value) {

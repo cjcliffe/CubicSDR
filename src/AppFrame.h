@@ -27,6 +27,7 @@
 #define wxID_RESET 2002
 #define wxID_SET_PPM 2003
 #define wxID_SET_TIPS 2004
+#define wxID_SET_IQSWAP 2005
 #define wxID_SDR_DEVICES 2008
 #define wxID_AGC_CONTROL 2009
 
@@ -127,6 +128,7 @@ private:
     wxMenuBar *menuBar;
     wxMenu *sampleRateMenu;
     wxMenuItem *agcMenuItem;
+    wxMenuItem *iqSwapMenuItem;
     wxMenu *settingsMenu;
     SoapySDR::ArgInfoList settingArgs;
     int settingsIdMax;
