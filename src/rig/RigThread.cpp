@@ -5,6 +5,8 @@ std::vector<const struct rig_caps *> RigThread::rigCaps;
 RigThread::RigThread() {
     terminated.store(true);
     freq = wxGetApp().getFrequency();
+    newFreq = freq;
+    freqChanged.store(true);
 }
 
 RigThread::~RigThread() {
