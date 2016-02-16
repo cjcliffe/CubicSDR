@@ -15,6 +15,10 @@
 #include "AppFrame.h"
 #include <algorithm>
 
+#ifdef USE_HAMLIB
+#include "RigThread.h"
+#endif
+
 #include <wx/numformatter.h>
 
 wxBEGIN_EVENT_TABLE(WaterfallCanvas, wxGLCanvas)
@@ -449,6 +453,11 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
             
             wxGetApp().setFrequency(freq);
         }
+#ifdef USE_HAMLIB
+            if (wxGetApp().rigIsActive() && !wxGetApp().getRigThread()->getControlMode()) {
+                wxGetApp().getRigThread()->setFrequency(wxGetApp().getFrequency(),true);
+            }
+#endif
         break;
     default:
         event.Skip();
