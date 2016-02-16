@@ -269,6 +269,13 @@ bool CubicSDR::OnInit() {
 }
 
 int CubicSDR::OnExit() {
+#if USE_HAMLIB
+    if (rigIsActive()) {
+        std::cout << "Terminating Rig thread.." << std::endl;
+        stopRig();
+    }
+#endif
+    
     demodMgr.terminateAll();
     
     std::cout << "Terminating SDR thread.." << std::endl;
@@ -817,6 +824,9 @@ void CubicSDR::initRig(int rigModel, std::string rigPort, int rigSerialRate) {
     }
     rigThread = new RigThread();
     rigThread->initRig(rigModel, rigPort, rigSerialRate);
+    rigThread->setControlMode(wxGetApp().getConfig()->getRigControlMode());
+    rigThread->setFollowMode(wxGetApp().getConfig()->getRigFollowMode());
+
     t_Rig = new std::thread(&RigThread::threadMain, rigThread);
 }
 

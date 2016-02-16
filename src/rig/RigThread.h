@@ -27,7 +27,12 @@ public:
     int terminationStatus();
     
     freq_t getFrequency();
-    void setFrequency(freq_t new_freq);
+    void setFrequency(freq_t new_freq, bool oneShot);
+    
+    void setControlMode(bool cMode);
+    bool getControlMode();
+    void setFollowMode(bool fMode);
+    bool getFollowMode();
     
     static RigList &enumerate();
     static int add_hamlib_rig(const struct rig_caps *rc, void* f);
@@ -40,6 +45,7 @@ private:
     int termStatus;
     freq_t freq;
     freq_t newFreq;
-    std::atomic_bool freqChanged;
+    std::atomic_bool freqChanged, setOneShot;
+    std::atomic_bool controlMode, followMode;
     static RigList rigCaps;
 };

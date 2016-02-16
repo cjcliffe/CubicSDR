@@ -100,6 +100,15 @@ public:
     
     std::string getRigPort();
     void setRigPort(std::string rigPort);
+    
+    void setRigControlMode(bool cMode);
+    bool getRigControlMode();
+
+    void setRigFollowMode(bool fMode);
+    bool getRigFollowMode();
+
+    void setRigEnabled(bool enabled);
+    bool getRigEnabled();
 #endif
     
     void setConfigName(std::string configName);
@@ -122,5 +131,6 @@ private:
 #if USE_HAMLIB
     std::atomic_int rigModel, rigRate;
     std::string rigPort;
+    std::atomic_bool rigEnabled, rigFollowMode, rigControlMode;
 #endif
 };

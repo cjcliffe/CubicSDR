@@ -205,9 +205,12 @@ AppConfig::AppConfig() : configName("") {
     waterfallLinesPerSec.store(DEFAULT_WATERFALL_LPS);
     spectrumAvgSpeed.store(0.65f);
 #ifdef USE_HAMLIB
+    rigEnabled.store(false);
     rigModel.store(1);
     rigRate.store(57600);
     rigPort = "/dev/ttyUSB0";
+    rigControlMode.store(true);
+    rigFollowMode.store(true);
 #endif
 }
 
@@ -383,9 +386,12 @@ bool AppConfig::save() {
     
 #ifdef USE_HAMLIB
     DataNode *rig_node = cfg.rootNode()->newChild("rig");
+    *rig_node->newChild("enabled") = rigEnabled.load()?1:0;
     *rig_node->newChild("model") = rigModel.load();
     *rig_node->newChild("rate") = rigRate.load();
     *rig_node->newChild("port") = rigPort;
+    *rig_node->newChild("control") = rigControlMode.load()?1:0;
+    *rig_node->newChild("follow") = rigFollowMode.load()?1:0;
 #endif
     
     std::string cfgFileName = getConfigFileName();
@@ -526,6 +532,11 @@ bool AppConfig::load() {
     if (cfg.rootNode()->hasAnother("rig")) {
         DataNode *rig_node = cfg.rootNode()->getNext("rig");
 
+        if (rig_node->hasAnother("enabled")) {
+            int loadEnabled;
+            rig_node->getNext("enabled")->element()->get(loadEnabled);
+            rigEnabled.store(loadEnabled?true:false);
+        }
         if (rig_node->hasAnother("model")) {
             int loadModel;
             rig_node->getNext("model")->element()->get(loadModel);
@@ -538,6 +549,16 @@ bool AppConfig::load() {
         }
         if (rig_node->hasAnother("port")) {
             rigPort = rig_node->getNext("port")->element()->toString();
+        }
+        if (rig_node->hasAnother("control")) {
+            int loadControl;
+            rig_node->getNext("control")->element()->get(loadControl);
+            rigControlMode.store(loadControl?true:false);
+        }
+        if (rig_node->hasAnother("follow")) {
+            int loadFollow;
+            rig_node->getNext("follow")->element()->get(loadFollow);
+            rigFollowMode.store(loadFollow?true:false);
         }
     }
 #endif
@@ -576,6 +597,30 @@ std::string AppConfig::getRigPort() {
 
 void AppConfig::setRigPort(std::string rigPort) {
     this->rigPort = rigPort;
+}
+
+void AppConfig::setRigControlMode(bool cMode) {
+    rigControlMode.store(cMode);
+}
+
+bool AppConfig::getRigControlMode() {
+    return rigControlMode.load();
+}
+
+void AppConfig::setRigFollowMode(bool fMode) {
+    rigFollowMode.store(fMode);
+}
+
+bool AppConfig::getRigFollowMode() {
+    return rigFollowMode.load();
+}
+
+void AppConfig::setRigEnabled(bool enabled) {
+    rigEnabled.store(enabled);
+}
+
+bool AppConfig::getRigEnabled() {
+    return rigEnabled.load();
 }
 
 #endif
