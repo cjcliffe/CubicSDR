@@ -446,7 +446,13 @@ AppFrame::AppFrame() :
     rigEnableMenuItem = rigMenu->AppendCheckItem(wxID_RIG_TOGGLE, wxT("Enable Rig"));
 
     rigMenu->Append(wxID_RIG_SDR_IF, wxT("SDR-IF"));
+
+    rigControlMenuItem = rigMenu->AppendCheckItem(wxID_RIG_CONTROL, wxT("Control Rig"));
+    rigControlMenuItem->Check(wxGetApp().getConfig()->getRigControlMode());
             
+    rigFollowMenuItem = rigMenu->AppendCheckItem(wxID_RIG_FOLLOW, wxT("Follow Rig"));
+    rigFollowMenuItem->Check(wxGetApp().getConfig()->getRigFollowMode());
+
     wxMenu *rigModelMenu = new wxMenu;
     RigList &rl = RigThread::enumerate();
     numRigs = rl.size();
@@ -685,6 +691,11 @@ void AppFrame::updateDeviceParams() {
     
 
 #if USE_HAMLIB
+    if (wxGetApp().getConfig()->getRigEnabled() && !wxGetApp().rigIsActive()) {
+        enableRig();
+        rigEnableMenuItem->Check(true);
+    }
+    
     std::string deviceId = devInfo->getDeviceId();
     DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
 
@@ -701,6 +712,33 @@ void AppFrame::updateDeviceParams() {
     deviceChanged.store(false);
 }
 
+#ifdef USE_HAMLIB
+void AppFrame::enableRig() {
+    wxGetApp().stopRig();
+    wxGetApp().initRig(rigModel, rigPort, rigSerialRate);
+
+    if (devInfo != nullptr) {
+        std::string deviceId = devInfo->getDeviceId();
+        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
+        rigSDRIF = devConfig->getRigIF(rigModel);
+        if (rigSDRIF) {
+            wxGetApp().lockFrequency(rigSDRIF);
+        } else {
+            wxGetApp().unlockFrequency();
+        }
+    } else {
+        wxGetApp().unlockFrequency();
+    }
+    
+    wxGetApp().getConfig()->setRigEnabled(true);
+}
+
+void AppFrame::disableRig() {
+    wxGetApp().stopRig();
+    wxGetApp().unlockFrequency();
+    wxGetApp().getConfig()->setRigEnabled(false);
+}
+#endif
 
 void AppFrame::OnMenu(wxCommandEvent& event) {
     if (event.GetId() >= wxID_RT_AUDIO_DEVICE && event.GetId() < wxID_RT_AUDIO_DEVICE + (int)devices.size()) {
@@ -972,24 +1010,9 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
     if (event.GetId() == wxID_RIG_TOGGLE) {
         resetRig = false;
         if (!wxGetApp().rigIsActive()) {
-            wxGetApp().stopRig();
-            wxGetApp().initRig(rigModel, rigPort, rigSerialRate);
-            
-            if (devInfo != nullptr) {
-                std::string deviceId = devInfo->getDeviceId();
-                DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
-                rigSDRIF = devConfig->getRigIF(rigModel);
-                if (rigSDRIF) {
-                    wxGetApp().lockFrequency(rigSDRIF);
-                } else {
-                    wxGetApp().unlockFrequency();
-                }
-            } else {
-                wxGetApp().unlockFrequency();
-            }
+            enableRig();
         } else {
-            wxGetApp().stopRig();
-            wxGetApp().unlockFrequency();
+            disableRig();
         }
     }
     
@@ -1007,6 +1030,28 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             } else {
                 wxGetApp().unlockFrequency();
             }
+        }
+    }
+    
+    if (event.GetId() == wxID_RIG_CONTROL) {
+        if (wxGetApp().rigIsActive()) {
+            RigThread *rt = wxGetApp().getRigThread();
+            rt->setControlMode(!rt->getControlMode());
+            rigControlMenuItem->Check(rt->getControlMode());
+            wxGetApp().getConfig()->setRigControlMode(rt->getControlMode());
+        } else {
+            wxGetApp().getConfig()->setRigControlMode(rigControlMenuItem->IsChecked());
+        }
+    }
+
+    if (event.GetId() == wxID_RIG_FOLLOW) {
+        if (wxGetApp().rigIsActive()) {
+            RigThread *rt = wxGetApp().getRigThread();
+            rt->setFollowMode(!rt->getFollowMode());
+            rigFollowMenuItem->Check(rt->getFollowMode());
+            wxGetApp().getConfig()->setRigFollowMode(rt->getFollowMode());
+        } else {
+            wxGetApp().getConfig()->setRigFollowMode(rigFollowMenuItem->IsChecked());
         }
     }
     
@@ -1034,9 +1079,12 @@ void AppFrame::OnClose(wxCloseEvent& event) {
     wxGetApp().getConfig()->setWaterfallLinesPerSec(waterfallDataThread->getLinesPerSecond());
     wxGetApp().getConfig()->setManualDevices(SDREnumerator::getManuals());
 #ifdef USE_HAMLIB
+    wxGetApp().getConfig()->setRigEnabled(rigEnableMenuItem->IsChecked());
     wxGetApp().getConfig()->setRigModel(rigModel);
     wxGetApp().getConfig()->setRigRate(rigSerialRate);
     wxGetApp().getConfig()->setRigPort(rigPort);
+    wxGetApp().getConfig()->setRigFollowMode(rigFollowMenuItem->IsChecked());
+    wxGetApp().getConfig()->setRigControlMode(rigControlMenuItem->IsChecked());
 #endif
     wxGetApp().getConfig()->save();
     event.Skip();
@@ -1348,6 +1396,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     if (rigEnableMenuItem->IsChecked()) {
         if (!wxGetApp().rigIsActive()) {
             rigEnableMenuItem->Check(false);
+            wxGetApp().getConfig()->setRigEnabled(false);
         }
     }
 #endif

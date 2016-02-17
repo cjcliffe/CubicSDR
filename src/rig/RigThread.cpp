@@ -8,6 +8,8 @@ RigThread::RigThread() {
     newFreq = freq;
     freqChanged.store(true);
     termStatus = 0;
+    controlMode.store(true);
+    followMode.store(true);
 }
 
 RigThread::~RigThread() {
@@ -42,6 +44,7 @@ void RigThread::run() {
     int retcode, status;
 
     termStatus = 0;
+    terminated.store(false);
 
     std::cout << "Rig thread starting." << std::endl;
 
@@ -66,9 +69,9 @@ void RigThread::run() {
     
     while (!terminated.load()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(150));
-        if (freqChanged.load()) {
+        if (freqChanged.load() && (controlMode.load() || setOneShot.load())) {
             status = rig_get_freq(rig, RIG_VFO_CURR, &freq);
-            if (status == 0) {
+            if (status == 0 && !terminated.load()) {
                 if (freq != newFreq) {
                     freq = newFreq;
                     rig_set_freq(rig, RIG_VFO_CURR, freq);
@@ -76,26 +79,27 @@ void RigThread::run() {
                 }
                 
                 freqChanged.store(false);
+                setOneShot.store(false);
             } else {
                 termStatus = 0;
-                terminate();
+                break;
             }
         } else {
             freq_t checkFreq;
 
             status = rig_get_freq(rig, RIG_VFO_CURR, &checkFreq);
             
-            if (status == 0) {
-                if (checkFreq != freq) {
+            if (status == 0 && !terminated.load()) {
+                if (checkFreq != freq && followMode.load()) {
                     freq = checkFreq;
                     wxGetApp().setFrequency((long long)checkFreq);
-                } else if (wxGetApp().getFrequency() != freq) {
+                } else if (wxGetApp().getFrequency() != freq && controlMode.load()) {
                     freq = wxGetApp().getFrequency();
                     rig_set_freq(rig, RIG_VFO_CURR, freq);
                 }
             } else {
                 termStatus = 0;
-                terminate();
+                break;
             }
         }
         
@@ -109,15 +113,31 @@ void RigThread::run() {
 };
 
 freq_t RigThread::getFrequency() {
-    if (freqChanged.load()) {
+    if (freqChanged.load() && (setOneShot.load() || controlMode.load())) {
         return newFreq;
     } else {
         return freq;
     }
 }
 
-void RigThread::setFrequency(freq_t new_freq) {
+void RigThread::setFrequency(freq_t new_freq, bool oneShot) {
     newFreq = new_freq;
     freqChanged.store(true);
+    setOneShot.store(oneShot);
 }
 
+void RigThread::setControlMode(bool cMode) {
+    controlMode.store(cMode);
+}
+
+bool RigThread::getControlMode() {
+    return controlMode.load();
+}
+
+void RigThread::setFollowMode(bool fMode) {
+    followMode.store(fMode);
+}
+
+bool RigThread::getFollowMode() {
+    return followMode.load();
+}

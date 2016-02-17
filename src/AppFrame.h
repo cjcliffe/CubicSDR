@@ -56,6 +56,8 @@
 #define wxID_RIG_TOGGLE 11900
 #define wxID_RIG_PORT 11901
 #define wxID_RIG_SDR_IF 11902
+#define wxID_RIG_CONTROL 11903
+#define wxID_RIG_FOLLOW 11904
 #define wxID_RIG_SERIAL_BASE 11950
 #define wxID_RIG_MODEL_BASE 12000
 #endif
@@ -148,9 +150,14 @@ private:
 	wxMenuItem *showTipMenuItem;
 
 #ifdef USE_HAMLIB
+    void enableRig();
+    void disableRig();
+    
     wxMenu *rigMenu;
     wxMenuItem *rigEnableMenuItem;
     wxMenuItem *rigPortMenuItem;
+    wxMenuItem *rigControlMenuItem;
+    wxMenuItem *rigFollowMenuItem;
     wxMenuItem *sdrIFMenuItem;
     std::map<int, wxMenuItem *> rigSerialMenuItems;
     std::map<int, wxMenuItem *> rigModelMenuItems;
@@ -160,6 +167,7 @@ private:
     std::vector<int> rigSerialRates;
     std::string rigPort;
     int numRigs;
+    bool rigInit;
 #endif
 
     wxDECLARE_EVENT_TABLE();
