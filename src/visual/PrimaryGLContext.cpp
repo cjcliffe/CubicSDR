@@ -80,7 +80,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, l
     long long demodFreq = demod->getFrequency();
 
     if (demod->isDeltaLock()) {
-        demodFreq = center_freq + demod->getDeltaLockOfs();
+        demodFreq = wxGetApp().getFrequency() + demod->getDeltaLockOfs();
     }
     
     float uxPos = (float) (demodFreq - (center_freq - srate / 2)) / (float) srate;
@@ -282,7 +282,7 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
     long long demodFreq = demod->getFrequency();
 
     if (demod->isDeltaLock()) {
-        demodFreq = center_freq + demod->getDeltaLockOfs();
+        demodFreq = wxGetApp().getFrequency() + demod->getDeltaLockOfs();
     }
     
     float uxPos = (float) (demodFreq - (center_freq - srate / 2)) / (float) srate;
