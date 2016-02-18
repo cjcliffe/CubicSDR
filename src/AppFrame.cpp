@@ -1828,6 +1828,9 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
             waterfallCanvas->OnKeyUp(event);
             return 1;
         case 'V':
+            if (wxGetApp().getDemodMgr().getActiveDemodulator()) {
+                lastDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
+            }
             if (lastDemod && lastDemod->isDeltaLock()) {
                 lastDemod->setDeltaLock(false);
             } else if (lastDemod) {
