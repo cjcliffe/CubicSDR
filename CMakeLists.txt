@@ -730,6 +730,19 @@ IF(APPLE AND NOT BUNDLE_APP)
           
 ENDIF ()
 
+
+IF (WIN32 AND NOT BUILD_INSTALLER)
+    ADD_DEFINITIONS(
+        -DRES_FOLDER="../share/cubicsdr/"
+    )   
+
+    INSTALL(TARGETS CubicSDR DESTINATION bin)
+        install(FILES 
+            ${CUBICSDR_RESOURCES}
+            ${PROJECT_SOURCE_DIR}/src/CubicSDR.png
+    DESTINATION share/cubicsdr)
+ENDIF()
+
 IF (WIN32 AND BUILD_INSTALLER)
     set(BUNDLE_SOAPY_MODS OFF CACHE BOOL "Bundle local SoapySDR modules")
 
