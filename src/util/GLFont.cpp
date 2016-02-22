@@ -4,6 +4,25 @@
 #include <fstream>
 #include <algorithm>
 
+#ifdef _MSC_VER
+#include <windows.h>
+
+static std::string getExePath(void)
+{
+    HMODULE hModule = GetModuleHandle(NULL);
+    char path[MAX_PATH];
+    GetModuleFileNameA(hModule, path, MAX_PATH);
+
+    char drive[_MAX_DRIVE];
+    char dir[_MAX_DIR];
+    char fname[_MAX_FNAME];
+    char ext[_MAX_EXT];
+    _splitpath_s(path, drive, dir, fname, ext);
+
+    return std::string(drive) + std::string(dir);
+}
+#endif
+
 #ifndef RES_FOLDER
 #define RES_FOLDER ""
 #endif
@@ -158,6 +177,9 @@ std::string GLFont::getParamValue(std::string param_str) {
 void GLFont::loadFont(std::string fontFile) {
     
     std::string resourceFolder = RES_FOLDER;
+    #ifdef _MSC_VER
+    resourceFolder = getExePath() + "/" + resourceFolder;
+    #endif
 
     wxFileName fontFileName = wxFileName(resourceFolder, fontFile);
     
