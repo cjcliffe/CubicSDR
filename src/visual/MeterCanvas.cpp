@@ -20,6 +20,9 @@ EVT_IDLE(MeterCanvas::OnIdle)
 EVT_MOTION(MeterCanvas::OnMouseMoved)
 EVT_LEFT_DOWN(MeterCanvas::OnMouseDown)
 EVT_LEFT_UP(MeterCanvas::OnMouseReleased)
+EVT_MOUSEWHEEL(MeterCanvas::OnMouseWheelMoved)
+EVT_RIGHT_DOWN(MeterCanvas::OnMouseRightDown)
+EVT_RIGHT_UP(MeterCanvas::OnMouseRightReleased)
 EVT_LEAVE_WINDOW(MeterCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(MeterCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
@@ -126,14 +129,27 @@ void MeterCanvas::OnMouseDown(wxMouseEvent& event) {
     Refresh();
 }
 
-void MeterCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
-    InteractiveCanvas::OnMouseWheelMoved(event);
-    Refresh();
-}
-
 void MeterCanvas::OnMouseReleased(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseReleased(event);
     userInputValue = mouseTracker.getMouseY() * (level_max-level_min) + level_min;
+    Refresh();
+}
+
+void MeterCanvas::OnMouseRightDown(wxMouseEvent& event) {
+    InteractiveCanvas::OnMouseRightDown(event);
+    Refresh();
+}
+
+void MeterCanvas::OnMouseRightReleased(wxMouseEvent& event) {
+    InteractiveCanvas::OnMouseRightReleased(event);
+    userInputValue = level - level * 0.02;
+    Refresh();
+}
+
+void MeterCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
+    InteractiveCanvas::OnMouseWheelMoved(event);
+	float movement = (float)event.GetWheelRotation() / (float)event.GetLinesPerAction();
+    userInputValue = userInputValue + movement / 1000;
     Refresh();
 }
 

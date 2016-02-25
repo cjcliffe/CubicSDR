@@ -141,7 +141,7 @@ AppFrame::AppFrame() :
     demodSignalMeter->setMin(DEMOD_SIGNAL_MIN);
     demodSignalMeter->setLevel(DEMOD_SIGNAL_MIN);
     demodSignalMeter->setInputValue(DEMOD_SIGNAL_MIN);
-    demodSignalMeter->setHelpTip("Current Signal Level.  Click / Drag to set Squelch level.");
+    demodSignalMeter->setHelpTip("Current Signal Level.  Click / Drag to set Squelch level.  Right-Click to Auto-Zero Squelch");
     demodSignalMeter->SetMinSize(wxSize(12,24));
     demodTray->Add(demodSignalMeter, 1, wxEXPAND | wxALL, 0);
 

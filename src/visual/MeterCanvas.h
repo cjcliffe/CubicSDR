@@ -38,8 +38,10 @@ private:
 
     void OnMouseMoved(wxMouseEvent& event);
     void OnMouseDown(wxMouseEvent& event);
-    void OnMouseWheelMoved(wxMouseEvent& event);
     void OnMouseReleased(wxMouseEvent& event);
+	void OnMouseWheelMoved(wxMouseEvent& event);
+	void OnMouseRightDown(wxMouseEvent& event);
+	void OnMouseRightReleased(wxMouseEvent& event);
     void OnMouseEnterWindow(wxMouseEvent& event);
     void OnMouseLeftWindow(wxMouseEvent& event);
 
