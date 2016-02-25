@@ -20,6 +20,7 @@ EVT_IDLE(MeterCanvas::OnIdle)
 EVT_MOTION(MeterCanvas::OnMouseMoved)
 EVT_LEFT_DOWN(MeterCanvas::OnMouseDown)
 EVT_LEFT_UP(MeterCanvas::OnMouseReleased)
+EVT_MOUSEWHEEL(MeterCanvas::OnMouseWheelMoved)
 EVT_RIGHT_DOWN(MeterCanvas::OnMouseRightDown)
 EVT_RIGHT_UP(MeterCanvas::OnMouseRightReleased)
 EVT_LEAVE_WINDOW(MeterCanvas::OnMouseLeftWindow)
@@ -147,6 +148,8 @@ void MeterCanvas::OnMouseRightReleased(wxMouseEvent& event) {
 
 void MeterCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseWheelMoved(event);
+	float movement = (float)event.GetWheelRotation() / (float)event.GetLinesPerAction();
+    userInputValue = userInputValue + movement / 1000;
     Refresh();
 }
 
