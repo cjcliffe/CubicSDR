@@ -443,7 +443,7 @@ void SDRDevicesDialog::doRefreshDevices() {
     editId = nullptr;
     removeId = nullptr;
     dev = nullptr;
-    wxGetApp().stopDevice();
+    wxGetApp().stopDevice(false);
     devTree->DeleteAllItems();
     devTree->Disable();
     m_propertyGrid->Clear();

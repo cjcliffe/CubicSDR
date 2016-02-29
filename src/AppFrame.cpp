@@ -321,6 +321,8 @@ AppFrame::AppFrame() :
     
     menu->Append(wxID_SDR_DEVICES, "SDR Devices");
     menu->AppendSeparator();
+    menu->Append(wxID_SDR_START_STOP, "Stop / Start Device");
+    menu->AppendSeparator();
     menu->Append(wxID_OPEN, "&Open Session");
     menu->Append(wxID_SAVE, "&Save Session");
     menu->Append(wxID_SAVEAS, "Save Session &As..");
@@ -755,9 +757,22 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             activeDemodulator->setOutputDevice(event.GetId() - wxID_RT_AUDIO_DEVICE);
             activeDemodulator = NULL;
         }
-    } else if (event.GetId() == wxApp::s_macAboutMenuItemId) {
+    }
+#ifdef __APPLE__
+    else if (event.GetId() == wxApp::s_macAboutMenuItemId) {
         wxMessageDialog *aboutDlg = new wxMessageDialog(NULL, wxT("CubicSDR v" CUBICSDR_VERSION "\nby Charles J. Cliffe (@ccliffe)\nwww.cubicsdr.com"), wxT("CubicSDR v" CUBICSDR_VERSION), wxOK);
         aboutDlg->ShowModal();
+    }
+#endif
+    else if (event.GetId() == wxID_SDR_START_STOP) {
+        if (!wxGetApp().getSDRThread()->isTerminated()) {
+            wxGetApp().stopDevice(true);
+        } else {
+            SDRDeviceInfo *dev = wxGetApp().getDevice();
+            if (dev != nullptr) {
+                wxGetApp().setDevice(dev);
+            }
+        }
     } else if (event.GetId() == wxID_SET_TIPS ) {
         if (wxGetApp().getConfig()->getShowTips()) {
             wxGetApp().getConfig()->setShowTips(false);

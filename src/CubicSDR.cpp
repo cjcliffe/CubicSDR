@@ -136,6 +136,7 @@ CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0
         agcMode.store(true);
         soloMode.store(false);
         fdlgTarget = FrequencyDialog::FDIALOG_TARGET_DEFAULT;
+        stoppedDev = nullptr;
 }
 
 bool CubicSDR::OnInit() {
@@ -498,7 +499,12 @@ void CubicSDR::setSampleRate(long long rate_in) {
     }
 }
 
-void CubicSDR::stopDevice() {
+void CubicSDR::stopDevice(bool store) {
+    if (store) {
+        stoppedDev = sdrThread->getDevice();
+    } else {
+        stoppedDev = nullptr;
+    }
     sdrThread->setDevice(nullptr);
 
     if (!sdrThread->isTerminated()) {
@@ -565,9 +571,15 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev) {
 
         t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
     }
+    
+    stoppedDev = nullptr;
 }
 
 SDRDeviceInfo *CubicSDR::getDevice() {
+    if (!sdrThread->getDevice() && stoppedDev) {
+        return stoppedDev;
+    }
+
     return sdrThread->getDevice();
 }
 

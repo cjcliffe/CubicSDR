@@ -97,7 +97,7 @@ public:
 
     std::vector<SDRDeviceInfo *> *getDevices();
     void setDevice(SDRDeviceInfo *dev);
-    void stopDevice();
+    void stopDevice(bool store);
     SDRDeviceInfo * getDevice();
 
     ScopeVisualProcessor *getScopeProcessor();
@@ -216,6 +216,7 @@ private:
     FrequencyDialog::FrequencyDialogTarget fdlgTarget;
     std::string activeGain;
     std::atomic_bool soloMode;
+    SDRDeviceInfo *stoppedDev;
 #ifdef USE_HAMLIB
     RigThread *rigThread;
     std::thread *t_Rig;
