@@ -600,8 +600,13 @@ void AppFrame::updateDeviceParams() {
         iqSwapMenuItem->Check(wxGetApp().getSDRThread()->getIQSwap());
     }
 
-    agcMenuItem = newSettingsMenu->AppendCheckItem(wxID_AGC_CONTROL, "Automatic Gain");
-    agcMenuItem->Check(wxGetApp().getAGCMode());
+    agcMenuItem = nullptr;
+    if (soapyDev->listGains(SOAPY_SDR_RX, 0).size()) {
+        agcMenuItem = newSettingsMenu->AppendCheckItem(wxID_AGC_CONTROL, "Automatic Gain");
+        agcMenuItem->Check(wxGetApp().getAGCMode());
+    } else if (wxGetApp().getAGCMode()) {
+        wxGetApp().setAGCMode(false);
+    }
     
     SoapySDR::ArgInfoList::const_iterator args_i;
     settingArgs = soapyDev->getSettingInfo();
@@ -686,9 +691,7 @@ void AppFrame::updateDeviceParams() {
         gainSizerItem->Show(false);
         demodTray->Layout();
     }
-    
-    agcMenuItem->Check(wxGetApp().getAGCMode());
-    
+
 
 #if USE_HAMLIB
     if (wxGetApp().getConfig()->getRigEnabled() && !wxGetApp().rigIsActive()) {
