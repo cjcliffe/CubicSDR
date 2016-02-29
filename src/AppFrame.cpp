@@ -328,10 +328,16 @@ AppFrame::AppFrame() :
     menu->Append(wxID_RESET, "&Reset Session");
             
 #ifndef __APPLE__
-    menu->AppendSeparator();
-    menu->Append(wxID_CLOSE);
+        menu->AppendSeparator();
+        menu->Append(wxID_CLOSE);
+#else
+        if ( wxApp::s_macAboutMenuItemId != wxID_NONE ) {
+            wxString aboutLabel;
+            aboutLabel.Printf(_("About %s"), wxTheApp->GetAppDisplayName());
+            menu->Append( wxApp::s_macAboutMenuItemId, aboutLabel);
+        }
 #endif
-            
+
     menuBar->Append(menu, wxT("&File"));
             
     settingsMenu = new wxMenu;
@@ -542,7 +548,7 @@ AppFrame::AppFrame() :
     waterfallCanvas->setLinesPerSecond(wflps);
             
     ThemeMgr::mgr.setTheme(wxGetApp().getConfig()->getTheme());
-
+            
     Show();
 
 #ifdef _WIN32
@@ -604,8 +610,8 @@ void AppFrame::updateDeviceParams() {
     if (soapyDev->listGains(SOAPY_SDR_RX, 0).size()) {
         agcMenuItem = newSettingsMenu->AppendCheckItem(wxID_AGC_CONTROL, "Automatic Gain");
         agcMenuItem->Check(wxGetApp().getAGCMode());
-    } else if (wxGetApp().getAGCMode()) {
-        wxGetApp().setAGCMode(false);
+    } else if (!wxGetApp().getAGCMode()) {
+        wxGetApp().setAGCMode(true);
     }
     
     SoapySDR::ArgInfoList::const_iterator args_i;
@@ -749,6 +755,9 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             activeDemodulator->setOutputDevice(event.GetId() - wxID_RT_AUDIO_DEVICE);
             activeDemodulator = NULL;
         }
+    } else if (event.GetId() == wxApp::s_macAboutMenuItemId) {
+        wxMessageDialog *aboutDlg = new wxMessageDialog(NULL, wxT("CubicSDR v" CUBICSDR_VERSION "\nby Charles J. Cliffe (@ccliffe)\nwww.cubicsdr.com"), wxT("CubicSDR v" CUBICSDR_VERSION), wxOK);
+        aboutDlg->ShowModal();
     } else if (event.GetId() == wxID_SET_TIPS ) {
         if (wxGetApp().getConfig()->getShowTips()) {
             wxGetApp().getConfig()->setShowTips(false);

@@ -27,8 +27,8 @@ void FFTVisualDataThread::run() {
     DemodulatorThreadInputQueue *pipeIQDataIn = (DemodulatorThreadInputQueue *)getInputQueue("IQDataInput");
     SpectrumVisualDataQueue *pipeFFTDataOut = (SpectrumVisualDataQueue *)getOutputQueue("FFTDataOutput");
     
-    fftQueue.set_max_num_items(256);
-    pipeFFTDataOut->set_max_num_items(512);
+    fftQueue.set_max_num_items(100);
+    pipeFFTDataOut->set_max_num_items(100);
     fftDistrib.setInput(pipeIQDataIn);
     fftDistrib.attachOutput(&fftQueue);
     wproc.setInput(&fftQueue);
