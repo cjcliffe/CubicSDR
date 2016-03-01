@@ -838,6 +838,8 @@ void CubicSDR::initRig(int rigModel, std::string rigPort, int rigSerialRate) {
     rigThread->initRig(rigModel, rigPort, rigSerialRate);
     rigThread->setControlMode(wxGetApp().getConfig()->getRigControlMode());
     rigThread->setFollowMode(wxGetApp().getConfig()->getRigFollowMode());
+    rigThread->setCenterLock(wxGetApp().getConfig()->getRigCenterLock());
+    rigThread->setFollowModem(wxGetApp().getConfig()->getRigFollowModem());
 
     t_Rig = new std::thread(&RigThread::threadMain, rigThread);
 }

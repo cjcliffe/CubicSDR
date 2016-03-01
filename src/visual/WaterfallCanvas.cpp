@@ -454,9 +454,9 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
             wxGetApp().setFrequency(freq);
         }
 #ifdef USE_HAMLIB
-            if (wxGetApp().rigIsActive() && !wxGetApp().getRigThread()->getControlMode()) {
-                wxGetApp().getRigThread()->setFrequency(wxGetApp().getFrequency(),true);
-            }
+        if (wxGetApp().rigIsActive() && (!wxGetApp().getRigThread()->getControlMode() || wxGetApp().getRigThread()->getCenterLock())) {
+            wxGetApp().getRigThread()->setFrequency(wxGetApp().getFrequency(),true);
+        }
 #endif
         break;
     default:

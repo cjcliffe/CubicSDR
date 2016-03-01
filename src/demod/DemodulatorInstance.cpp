@@ -1,6 +1,10 @@
 #include "DemodulatorInstance.h"
 #include "CubicSDR.h"
 
+#if USE_HAMLIB
+#include "RigThread.h"
+#endif
+
 DemodulatorInstance::DemodulatorInstance() :
         t_PreDemod(nullptr), t_Demod(nullptr), t_Audio(nullptr) {
 
@@ -327,6 +331,11 @@ void DemodulatorInstance::setFrequency(long long freq) {
             ModemDigitalOutputConsole *outp = (ModemDigitalOutputConsole *)getOutput();
             outp->setTitle(getDemodulatorType() + ": " + frequencyToStr(getFrequency()));
         }
+    }
+#endif
+#if USE_HAMLIB
+    if (wxGetApp().rigIsActive() && wxGetApp().getRigThread()->getFollowModem() && wxGetApp().getDemodMgr().getLastActiveDemodulator() == this) {
+        wxGetApp().getRigThread()->setFrequency(freq,true);
     }
 #endif
 }

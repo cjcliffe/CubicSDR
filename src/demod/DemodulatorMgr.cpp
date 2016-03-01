@@ -6,6 +6,10 @@
 #include <sstream>
 #include <algorithm>
 
+#if USE_HAMLIB
+#include "RigThread.h"
+#endif
+
 bool demodFreqCompare (DemodulatorInstance *i, DemodulatorInstance *j) { return (i->getFrequency()<j->getFrequency()); }
 bool inactiveCompare (DemodulatorInstance *i, DemodulatorInstance *j) { return (i->isActive()<j->isActive()); }
 
@@ -179,6 +183,11 @@ void DemodulatorMgr::setActiveDemodulator(DemodulatorInstance *demod, bool tempo
             lastActiveDemodulator = demod;
         }
         updateLastState();
+#if USE_HAMLIB
+        if (wxGetApp().rigIsActive() && wxGetApp().getRigThread()->getFollowModem() && lastActiveDemodulator) {
+            wxGetApp().getRigThread()->setFrequency(lastActiveDemodulator->getFrequency(),true);
+        }
+#endif
     }
 
     if (activeVisualDemodulator) {

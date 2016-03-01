@@ -106,6 +106,12 @@ public:
 
     void setRigFollowMode(bool fMode);
     bool getRigFollowMode();
+    
+    void setRigCenterLock(bool cLock);
+    bool getRigCenterLock();
+    
+    void setRigFollowModem(bool fMode);
+    bool getRigFollowModem();
 
     void setRigEnabled(bool enabled);
     bool getRigEnabled();
@@ -131,6 +137,6 @@ private:
 #if USE_HAMLIB
     std::atomic_int rigModel, rigRate;
     std::string rigPort;
-    std::atomic_bool rigEnabled, rigFollowMode, rigControlMode;
+    std::atomic_bool rigEnabled, rigFollowMode, rigControlMode, rigCenterLock, rigFollowModem;
 #endif
 };

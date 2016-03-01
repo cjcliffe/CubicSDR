@@ -461,6 +461,12 @@ AppFrame::AppFrame() :
     rigFollowMenuItem = rigMenu->AppendCheckItem(wxID_RIG_FOLLOW, wxT("Follow Rig"));
     rigFollowMenuItem->Check(wxGetApp().getConfig()->getRigFollowMode());
 
+    rigCenterLockMenuItem = rigMenu->AppendCheckItem(wxID_RIG_CENTERLOCK, wxT("Floating Center"));
+    rigCenterLockMenuItem->Check(wxGetApp().getConfig()->getRigCenterLock());
+
+    rigFollowModemMenuItem = rigMenu->AppendCheckItem(wxID_RIG_FOLLOW_MODEM, wxT("Track Modem"));
+    rigFollowModemMenuItem->Check(wxGetApp().getConfig()->getRigFollowModem());
+
     wxMenu *rigModelMenu = new wxMenu;
     RigList &rl = RigThread::enumerate();
     numRigs = rl.size();
@@ -1082,6 +1088,28 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         }
     }
     
+    if (event.GetId() == wxID_RIG_CENTERLOCK) {
+        if (wxGetApp().rigIsActive()) {
+            RigThread *rt = wxGetApp().getRigThread();
+            rt->setCenterLock(!rt->getCenterLock());
+            rigCenterLockMenuItem->Check(rt->getCenterLock());
+            wxGetApp().getConfig()->setRigCenterLock(rt->getCenterLock());
+        } else {
+            wxGetApp().getConfig()->setRigCenterLock(rigCenterLockMenuItem->IsChecked());
+        }
+    }
+
+    if (event.GetId() == wxID_RIG_FOLLOW_MODEM) {
+        if (wxGetApp().rigIsActive()) {
+            RigThread *rt = wxGetApp().getRigThread();
+            rt->setFollowModem(!rt->getFollowModem());
+            rigFollowModemMenuItem->Check(rt->getFollowModem());
+            wxGetApp().getConfig()->setRigFollowModem(rt->getFollowModem());
+        } else {
+            wxGetApp().getConfig()->setRigFollowModem(rigFollowModemMenuItem->IsChecked());
+        }
+    }
+
     if (wxGetApp().rigIsActive() && resetRig) {
         wxGetApp().stopRig();
         wxGetApp().initRig(rigModel, rigPort, rigSerialRate);
@@ -1112,6 +1140,8 @@ void AppFrame::OnClose(wxCloseEvent& event) {
     wxGetApp().getConfig()->setRigPort(rigPort);
     wxGetApp().getConfig()->setRigFollowMode(rigFollowMenuItem->IsChecked());
     wxGetApp().getConfig()->setRigControlMode(rigControlMenuItem->IsChecked());
+    wxGetApp().getConfig()->setRigCenterLock(rigCenterLockMenuItem->IsChecked());
+    wxGetApp().getConfig()->setRigFollowModem(rigFollowModemMenuItem->IsChecked());
 #endif
     wxGetApp().getConfig()->save();
     event.Skip();
@@ -1774,12 +1804,14 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case ']':
             if (lastDemod) {
                 lastDemod->setFrequency(lastDemod->getFrequency()+snap);
+                lastDemod->updateLabel(lastDemod->getFrequency());
             }
             return 1;
             break;
         case '[':
             if (lastDemod) {
                 lastDemod->setFrequency(lastDemod->getFrequency()-snap);
+                lastDemod->updateLabel(lastDemod->getFrequency());
             }
             return 1;
             break;

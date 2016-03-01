@@ -10,6 +10,8 @@ RigThread::RigThread() {
     termStatus = 0;
     controlMode.store(true);
     followMode.store(true);
+    centerLock.store(false);
+    followModem.store(false);
 }
 
 RigThread::~RigThread() {
@@ -69,10 +71,15 @@ void RigThread::run() {
     
     while (!terminated.load()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(150));
+        
+        DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
+        DemodulatorInstance *lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+
         if (freqChanged.load() && (controlMode.load() || setOneShot.load())) {
             status = rig_get_freq(rig, RIG_VFO_CURR, &freq);
             if (status == 0 && !terminated.load()) {
-                if (freq != newFreq) {
+                
+                if (freq != newFreq && setOneShot.load()) {
                     freq = newFreq;
                     rig_set_freq(rig, RIG_VFO_CURR, freq);
     //                std::cout << "Set Rig Freq: %f" <<  newFreq << std::endl;
@@ -86,21 +93,41 @@ void RigThread::run() {
             }
         } else {
             freq_t checkFreq;
-
-            status = rig_get_freq(rig, RIG_VFO_CURR, &checkFreq);
             
+            status = rig_get_freq(rig, RIG_VFO_CURR, &checkFreq);
+
             if (status == 0 && !terminated.load()) {
                 if (checkFreq != freq && followMode.load()) {
                     freq = checkFreq;
-                    wxGetApp().setFrequency((long long)checkFreq);
-                } else if (wxGetApp().getFrequency() != freq && controlMode.load()) {
+                    if (followModem.load()) {
+                        if (lastDemod) {
+                            lastDemod->setFrequency(freq);
+                            lastDemod->updateLabel(freq);
+                            lastDemod->setFollow(true);
+                        }
+                    } else {
+                        wxGetApp().setFrequency((long long)checkFreq);
+                    }
+                } else if (wxGetApp().getFrequency() != freq && controlMode.load() && !centerLock.load() && !followModem.load()) {
                     freq = wxGetApp().getFrequency();
                     rig_set_freq(rig, RIG_VFO_CURR, freq);
+                } else if (followModem.load()) {
+                    if (lastDemod) {
+                        if (lastDemod->getFrequency() != freq) {
+                            lastDemod->setFrequency(freq);
+                            lastDemod->updateLabel(freq);
+                            lastDemod->setFollow(true);
+                        }
+                    }
                 }
             } else {
                 termStatus = 0;
                 break;
             }
+        }
+        
+        if (!centerLock.load() && followModem.load() && wxGetApp().getFrequency() != freq && (lastDemod && lastDemod != activeDemod)) {
+            wxGetApp().setFrequency((long long)freq);
         }
         
 //        std::cout <<  "Rig Freq: " << freq << std::endl;
@@ -140,4 +167,20 @@ void RigThread::setFollowMode(bool fMode) {
 
 bool RigThread::getFollowMode() {
     return followMode.load();
+}
+
+void RigThread::setCenterLock(bool cLock) {
+    centerLock.store(cLock);
+}
+
+bool RigThread::getCenterLock() {
+    return centerLock.load();
+}
+
+void RigThread::setFollowModem(bool mFollow) {
+    followModem.store(mFollow);
+}
+
+bool RigThread::getFollowModem() {
+    return followModem.load();
 }

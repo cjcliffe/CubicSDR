@@ -59,6 +59,8 @@
 #define wxID_RIG_SDR_IF 11902
 #define wxID_RIG_CONTROL 11903
 #define wxID_RIG_FOLLOW 11904
+#define wxID_RIG_CENTERLOCK 11905
+#define wxID_RIG_FOLLOW_MODEM 11906
 #define wxID_RIG_SERIAL_BASE 11950
 #define wxID_RIG_MODEL_BASE 12000
 #endif
@@ -159,6 +161,8 @@ private:
     wxMenuItem *rigPortMenuItem;
     wxMenuItem *rigControlMenuItem;
     wxMenuItem *rigFollowMenuItem;
+    wxMenuItem *rigCenterLockMenuItem;
+    wxMenuItem *rigFollowModemMenuItem;
     wxMenuItem *sdrIFMenuItem;
     std::map<int, wxMenuItem *> rigSerialMenuItems;
     std::map<int, wxMenuItem *> rigModelMenuItems;

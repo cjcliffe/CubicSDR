@@ -31,9 +31,16 @@ public:
     
     void setControlMode(bool cMode);
     bool getControlMode();
+
     void setFollowMode(bool fMode);
     bool getFollowMode();
+
+    void setCenterLock(bool cLock);
+    bool getCenterLock();
     
+    void setFollowModem(bool mFollow);
+    bool getFollowModem();
+
     static RigList &enumerate();
     static int add_hamlib_rig(const struct rig_caps *rc, void* f);
     
@@ -46,6 +53,6 @@ private:
     freq_t freq;
     freq_t newFreq;
     std::atomic_bool freqChanged, setOneShot;
-    std::atomic_bool controlMode, followMode;
+    std::atomic_bool controlMode, followMode, centerLock, followModem;
     static RigList rigCaps;
 };

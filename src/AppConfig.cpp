@@ -392,6 +392,8 @@ bool AppConfig::save() {
     *rig_node->newChild("port") = rigPort;
     *rig_node->newChild("control") = rigControlMode.load()?1:0;
     *rig_node->newChild("follow") = rigFollowMode.load()?1:0;
+    *rig_node->newChild("center_lock") = rigCenterLock.load()?1:0;
+    *rig_node->newChild("follow_modem") = rigFollowModem.load()?1:0;
 #endif
     
     std::string cfgFileName = getConfigFileName();
@@ -560,6 +562,16 @@ bool AppConfig::load() {
             rig_node->getNext("follow")->element()->get(loadFollow);
             rigFollowMode.store(loadFollow?true:false);
         }
+        if (rig_node->hasAnother("center_lock")) {
+            int loadCenterLock;
+            rig_node->getNext("center_lock")->element()->get(loadCenterLock);
+            rigCenterLock.store(loadCenterLock?true:false);
+        }
+        if (rig_node->hasAnother("follow_modem")) {
+            int loadFollow;
+            rig_node->getNext("follow_modem")->element()->get(loadFollow);
+            rigFollowModem.store(loadFollow?true:false);
+        }
     }
 #endif
 
@@ -613,6 +625,22 @@ void AppConfig::setRigFollowMode(bool fMode) {
 
 bool AppConfig::getRigFollowMode() {
     return rigFollowMode.load();
+}
+
+void AppConfig::setRigCenterLock(bool cLock) {
+    rigCenterLock.store(cLock);
+}
+
+bool AppConfig::getRigCenterLock() {
+    return rigCenterLock.load();
+}
+
+void AppConfig::setRigFollowModem(bool fMode) {
+    rigFollowModem.store(fMode);
+}
+
+bool AppConfig::getRigFollowModem() {
+    return rigFollowModem.load();
 }
 
 void AppConfig::setRigEnabled(bool enabled) {
