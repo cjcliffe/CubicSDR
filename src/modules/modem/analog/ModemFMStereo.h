@@ -13,6 +13,11 @@ public:
     firfilt_rrrf firStereoLeft;
     firfilt_rrrf firStereoRight;
     iirfilt_crcf iirStereoPilot;
+    
+    firhilbf firStereoR2C;
+    firhilbf firStereoC2R;
+    
+    nco_crcf stereoPilot;
 };
 
 
@@ -40,9 +45,4 @@ private:
     std::vector<float> resampledOutputData;
     std::vector<float> resampledStereoData;
     freqdem demodFM;
-        
-    firhilbf firStereoR2C;
-    firhilbf firStereoC2R;
-    
-    nco_crcf stereoPilot;
 };

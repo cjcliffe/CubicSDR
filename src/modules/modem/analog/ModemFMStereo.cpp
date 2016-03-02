@@ -2,20 +2,10 @@
 
 ModemFMStereo::ModemFMStereo() {
     demodFM = freqdem_create(0.5);
-
-    firStereoR2C = firhilbf_create(5, 60.0f);
-    firStereoC2R = firhilbf_create(5, 60.0f);
-    
-    stereoPilot = nco_crcf_create(LIQUID_VCO);
-    nco_crcf_reset(stereoPilot);
-    nco_crcf_pll_set_bandwidth(stereoPilot, 0.25f);
 }
 
 ModemFMStereo::~ModemFMStereo() {
-    firhilbf_destroy(firStereoR2C);
-    firhilbf_destroy(firStereoC2R);
-    
-    nco_crcf_destroy(stereoPilot);
+    freqdem_destroy(demodFM);
 }
 
 std::string ModemFMStereo::getType() {
@@ -90,6 +80,13 @@ ModemKit *ModemFMStereo::buildKit(long long sampleRate, int audioSampleRate) {
     
     kit->iirStereoPilot = iirfilt_crcf_create_prototype(LIQUID_IIRDES_CHEBY2, LIQUID_IIRDES_BANDPASS, LIQUID_IIRDES_SOS, order, fc, f0, Ap, As);
     
+    kit->firStereoR2C = firhilbf_create(5, 60.0f);
+    kit->firStereoC2R = firhilbf_create(5, 60.0f);
+    
+    kit->stereoPilot = nco_crcf_create(LIQUID_VCO);
+    nco_crcf_reset(kit->stereoPilot);
+    nco_crcf_pll_set_bandwidth(kit->stereoPilot, 0.25f);
+    
     return kit;
 }
 
@@ -100,6 +97,9 @@ void ModemFMStereo::disposeKit(ModemKit *kit) {
     msresamp_rrrf_destroy(fmkit->stereoResampler);
     firfilt_rrrf_destroy(fmkit->firStereoLeft);
     firfilt_rrrf_destroy(fmkit->firStereoRight);
+    firhilbf_destroy(fmkit->firStereoR2C);
+    firhilbf_destroy(fmkit->firStereoC2R);
+    nco_crcf_destroy(fmkit->stereoPilot);
 }
 
 
@@ -143,11 +143,11 @@ void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInp
     
     for (size_t i = 0; i < bufSize; i++) {
         // real -> complex
-        firhilbf_r2c_execute(firStereoR2C, demodOutputData[i], &x);
+        firhilbf_r2c_execute(fmkit->firStereoR2C, demodOutputData[i], &x);
         
         // 19khz pilot band-pass
         iirfilt_crcf_execute(fmkit->iirStereoPilot, x, &v);
-        nco_crcf_cexpf(stereoPilot, &w);
+        nco_crcf_cexpf(fmkit->stereoPilot, &w);
         
         w.imag = -w.imag; // conjf(w)
         
@@ -159,15 +159,15 @@ void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInp
         phase_error = atan2f(u.imag,u.real);
         
         // step pll
-        nco_crcf_pll_step(stereoPilot, phase_error);
-        nco_crcf_step(stereoPilot);
+        nco_crcf_pll_step(fmkit->stereoPilot, phase_error);
+        nco_crcf_step(fmkit->stereoPilot);
         
         // 38khz down-mix
-        nco_crcf_mix_down(stereoPilot, x, &y);
-        nco_crcf_mix_down(stereoPilot, y, &x);
+        nco_crcf_mix_down(fmkit->stereoPilot, x, &y);
+        nco_crcf_mix_down(fmkit->stereoPilot, y, &x);
         
         // complex -> real
-        firhilbf_c2r_execute(firStereoC2R, x, &demodStereoData[i]);
+        firhilbf_c2r_execute(fmkit->firStereoC2R, x, &demodStereoData[i]);
     }
     
     //            std::cout << "[PLL] phase error: " << phase_error;
