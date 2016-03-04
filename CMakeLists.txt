@@ -734,13 +734,16 @@ ENDIF ()
 IF (WIN32 AND NOT BUILD_INSTALLER)
     ADD_DEFINITIONS(
         -DRES_FOLDER="../share/cubicsdr/"
-    )   
-
+    )
     INSTALL(TARGETS CubicSDR DESTINATION bin)
-        install(FILES 
+	INSTALL(FILES 		
+		${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM}/libfftw3f-3.dll
+		${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/libliquid.dll
+	DESTINATION bin)
+    INSTALL(FILES 
             ${CUBICSDR_RESOURCES}
             ${PROJECT_SOURCE_DIR}/src/CubicSDR.png
-    DESTINATION share/cubicsdr)
+	 DESTINATION share/cubicsdr)
 ENDIF()
 
 IF (WIN32 AND BUILD_INSTALLER)

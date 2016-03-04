@@ -805,11 +805,11 @@ int CubicSDR::FilterEvent(wxEvent& event) {
         return -1;
     }
 
-    if (event.GetEventType() == wxEVT_KEY_DOWN) {
-        return appframe->OnGlobalKeyDown((wxKeyEvent&)event);
+    if (event.GetEventType() == wxEVT_KEY_DOWN || event.GetEventType() == wxEVT_CHAR_HOOK) {
+		return appframe->OnGlobalKeyDown((wxKeyEvent&)event);
     }
     
-    if (event.GetEventType() == wxEVT_KEY_UP) {
+    if (event.GetEventType() == wxEVT_KEY_UP || event.GetEventType() == wxEVT_CHAR_HOOK) {
         return appframe->OnGlobalKeyUp((wxKeyEvent&)event);
     }
     
