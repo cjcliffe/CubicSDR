@@ -116,8 +116,10 @@ IF (MSVC)
 	include_directories ("${PROJECT_SOURCE_DIR}/external/wglext")
 	SET(FFTW_INCLUDES "${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/" CACHE STRING "FFTW Include Directory")
 	SET(FFTW_LIBRARIES "${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM}/libfftw3f-3.lib" CACHE STRING "FFTW Library")
+	SET(FFTW_DLL "${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM}/libfftw3f-3.dll" CACHE STRING "FFTW DLL")
 	SET(LIQUID_INCLUDES "${PROJECT_SOURCE_DIR}/external/liquid-dsp/include/" CACHE STRING "Liquid-DSP include directory")
 	SET(LIQUID_LIBRARIES "${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/libliquid.lib" CACHE STRING "Liquid-DSP Library")
+	SET(LIQUID_DLL "${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/libliquid.dll" CACHE STRING "Liquid-DSP DLL")
 ELSE (MSVC)
 	ADD_DEFINITIONS(
 		-std=c++0x 
@@ -735,14 +737,17 @@ IF (WIN32 AND NOT BUILD_INSTALLER)
     ADD_DEFINITIONS(
         -DRES_FOLDER="../share/cubicsdr/"
     )
+	
+	
+	
     INSTALL(TARGETS CubicSDR DESTINATION bin)
 	INSTALL(FILES 		
-		${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM}/libfftw3f-3.dll
-		${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/libliquid.dll
+		${FFTW_DLL}
+		${LIQUID_DLL}
 	DESTINATION bin)
     INSTALL(FILES 
-            ${CUBICSDR_RESOURCES}
-            ${PROJECT_SOURCE_DIR}/src/CubicSDR.png
+		${CUBICSDR_RESOURCES}
+		${PROJECT_SOURCE_DIR}/src/CubicSDR.png
 	 DESTINATION share/cubicsdr)
 ENDIF()
 
@@ -775,8 +780,8 @@ IF (WIN32 AND BUILD_INSTALLER)
 	install(FILES 
         ${CUBICSDR_RESOURCES}
         ${PROJECT_SOURCE_DIR}/icon/CubicSDR.ico
-		${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM}/libfftw3f-3.dll
-		${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/libliquid.dll
+		${FFTW_DLL}
+		${LIQUID_DLL}
 		DESTINATION .)
 
 	IF (BUNDLE_SOAPY_MODS)
