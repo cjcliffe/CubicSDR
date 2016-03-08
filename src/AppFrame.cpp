@@ -1189,6 +1189,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         if (demod != activeDemodulator) {
             demodSignalMeter->setInputValue(demod->getSquelchLevel());
             demodGainMeter->setInputValue(demod->getGain());
+            wxGetApp().getDemodMgr().setLastGain(demod->getGain());
             int outputDevice = demod->getOutputDevice();
             scopeCanvas->setDeviceName(outputDevices[outputDevice].name);
             outputDeviceMenuItems[outputDevice]->Check(true);
@@ -1848,6 +1849,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
                 wxGetApp().getDemodMgr().setActiveDemodulator(nullptr);
                 wxGetApp().getDemodMgr().setActiveDemodulator(demod, false);
             }
+            return 1;
             break;
         default:
             break;

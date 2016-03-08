@@ -359,7 +359,6 @@ int DemodulatorInstance::getAudioSampleRate() {
 void DemodulatorInstance::setGain(float gain_in) {
 	currentAudioGain = gain_in;
     audioThread->setGain(gain_in);
-    wxGetApp().getDemodMgr().setLastGain(gain_in);
 }
 
 float DemodulatorInstance::getGain() {
