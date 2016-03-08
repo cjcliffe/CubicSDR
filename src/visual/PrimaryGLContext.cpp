@@ -59,7 +59,7 @@ PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContex
 //#endif
 }
 
-void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, long long center_freq, long long srate) {
+void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, long long center_freq, long long srate, bool centerline) {
     if (!demod) {
         return;
     }
@@ -143,6 +143,13 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, l
         glEnd();
     }
 
+    if (centerline) {
+        glColor4f(color.r, color.g, color.b, 0.5);
+        glBegin(GL_LINES);
+        glVertex3f(uxPos, 1.0, 0.0);
+        glVertex3f(uxPos, -1.0, 0.0);
+        glEnd();
+    }
 
     glColor4f(1.0, 1.0, 1.0, 0.8);
 
@@ -170,7 +177,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, l
 
 }
 
-void PrimaryGLContext::DrawFreqBwInfo(long long freq, int bw, RGBA4f color, long long center_freq, long long srate, bool stack) {
+void PrimaryGLContext::DrawFreqBwInfo(long long freq, int bw, RGBA4f color, long long center_freq, long long srate, bool stack, bool centerline) {
     if (!srate) {
         srate = wxGetApp().getSampleRate();
     }
@@ -229,6 +236,14 @@ void PrimaryGLContext::DrawFreqBwInfo(long long freq, int bw, RGBA4f color, long
         
         glVertex3f(uxPos + ofsRight, -1.0, 0.0);
         glVertex3f(uxPos + ofsRight, hPos + labelHeight, 0.0);
+        glEnd();
+    }
+
+    if (centerline) {
+        glColor4f(color.r, color.g, color.b, 0.5);
+        glBegin(GL_LINES);
+        glVertex3f(uxPos, 1.0, 0.0);
+        glVertex3f(uxPos, -1.0, 0.0);
         glEnd();
     }
     

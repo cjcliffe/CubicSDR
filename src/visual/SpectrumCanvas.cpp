@@ -92,13 +92,18 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     
     std::vector<DemodulatorInstance *> &demods = wxGetApp().getDemodMgr().getDemodulators();
 
+    DemodulatorInstance *activeDemodulator = wxGetApp().getDemodMgr().getActiveDemodulator();
+
     for (int i = 0, iMax = demods.size(); i < iMax; i++) {
-        glContext->DrawDemodInfo(demods[i], ThemeMgr::mgr.currentTheme->fftHighlight, getCenterFrequency(), getBandwidth());
+        if (!demods[i]->isActive()) {
+            continue;
+        }
+        glContext->DrawDemodInfo(demods[i], ThemeMgr::mgr.currentTheme->fftHighlight, getCenterFrequency(), getBandwidth(), activeDemodulator==demods[i]);
     }
 
-    if (waterfallCanvas) {
+    if (waterfallCanvas && !activeDemodulator) {
         MouseTracker *wfmt = waterfallCanvas->getMouseTracker();
-        if (wfmt->mouseInView() && !wxGetApp().getDemodMgr().getActiveDemodulator()) {
+        if (wfmt->mouseInView()) {
             int snap = wxGetApp().getFrequencySnap();
             
             long long freq = getFrequencyAt(wfmt->getMouseX());
@@ -111,7 +116,7 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
             bool isNew = (((waterfallCanvas->isShiftDown() || (lastActiveDemodulator && !lastActiveDemodulator->isActive())) && lastActiveDemodulator) || (!lastActiveDemodulator));
             
-            glContext->DrawFreqBwInfo(freq, wxGetApp().getDemodMgr().getLastBandwidth(), isNew?ThemeMgr::mgr.currentTheme->waterfallNew:ThemeMgr::mgr.currentTheme->waterfallHover, getCenterFrequency(), getBandwidth(), true);
+            glContext->DrawFreqBwInfo(freq, wxGetApp().getDemodMgr().getLastBandwidth(), isNew?ThemeMgr::mgr.currentTheme->waterfallNew:ThemeMgr::mgr.currentTheme->waterfallHover, getCenterFrequency(), getBandwidth(), true, true);
         }
     }
     

@@ -329,6 +329,9 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->setHoverAlpha(0);
 
     for (int i = 0, iMax = demods.size(); i < iMax; i++) {
+        if (!demods[i]->isActive()) {
+            continue;
+        }
         if (activeDemodulator == demods[i] || lastActiveDemodulator == demods[i]) {
             continue;
         }
