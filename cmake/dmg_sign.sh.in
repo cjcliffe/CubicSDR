@@ -1,2 +1,2 @@
 #!/bin/bash
-/usr/bin/codesign -s "${CUBICSDR_CERT}" CubicSDR-${CPACK_PACKAGE_VERSION}-Darwin.dmg
+/usr/bin/codesign --force --verify --verbose --sign "${CUBICSDR_CERT}" CubicSDR-${CPACK_PACKAGE_VERSION}-Darwin.dmg

@@ -629,9 +629,9 @@ IF (APPLE AND BUNDLE_APP)
         MACOSX_BUNDLE TRUE
         MACOSX_BUNDLE_INFO_STRING "CubicSDR Open-Source Software-Defined Radio Application"
         MACOSX_BUNDLE_BUNDLE_NAME "CubicSDR"
-        MACOSX_BUNDLE_BUNDLE_VERSION "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}"
-        MACOSX_BUNDLE_LONG_VERSION_STRING "${CUBICSDR_VERSION}.${CUBICSDR_VERSION_MINOR}"
-        MACOSX_BUNDLE_SHORT_VERSION_STRING "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_REL}"
+        MACOSX_BUNDLE_BUNDLE_VERSION "${CUBICSDR_VERSION}"
+        MACOSX_BUNDLE_LONG_VERSION_STRING "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}.${CUBICSDR_VERSION_REL}"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}"
         MACOSX_BUNDLE_GUI_IDENTIFIER "com.cubicproductions.cubicsdr"
         MACOSX_BUNDLE_ICON_FILE "CubicSDR.icns"
         MACOSX_BUNDLE_COPYRIGHT "Copyright 2015 Charles J. Cliffe. All Rights Reserved."
@@ -651,15 +651,8 @@ IF (APPLE AND BUNDLE_APP)
                 DESTINATION "${APPS}/Contents/MacOS/modules"
                 COMPONENT Runtime
             )
-            # IF (CUBICSDR_CODE_SIGN)
-            #     LIST(APPEND CPACK_BUNDLE_APPLE_CODESIGN_FILES "${APPS}/Contents/MacOS/modules/${SOAPY_MOD_FILE}")
-            # ENDIF()
     ENDFOREACH()
-    
-    # IF (CUBICSDR_CODE_SIGN)
-    #     message(STATUS "Will sign modules: ${CPACK_BUNDLE_APPLE_CODESIGN_FILES}")
-    # ENDIF()
-    
+        
     ENDIF(BUNDLE_SOAPY_MODS)
 
     SET_TARGET_PROPERTIES(CubicSDR PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${PROJECT_SOURCE_DIR}/cmake/CubicSDRInfo.plist.in")
@@ -724,16 +717,21 @@ IF (APPLE AND BUNDLE_APP)
             TARGET CubicSDR
             COMMAND chmod ARGS +x ${CMAKE_CURRENT_BINARY_DIR}/code_sign.sh ${CMAKE_CURRENT_BINARY_DIR}/dmg_sign.sh
         )
+
+        INSTALL(CODE "
+            execute_process(
+                COMMAND ${CMAKE_COMMAND} -E echo \"Signing code..\"
+                COMMAND \"${CMAKE_CURRENT_BINARY_DIR}/code_sign.sh\"
+            )"
+        COMPONENT Runtime)
+  
         ADD_CUSTOM_COMMAND(
             TARGET CubicSDR
-            POST_BUILD 
-            COMMAND "${CMAKE_CURRENT_BINARY_DIR}/code_sign.sh"
-            COMMAND ${CMAKE_COMMAND} -E echo "Running CPack.."
+            POST_BUILD
             COMMAND ${CMAKE_CPACK_COMMAND}
             COMMAND ${CMAKE_COMMAND} -E echo "Signing package.."
             COMMAND "${CMAKE_CURRENT_BINARY_DIR}/dmg_sign.sh" WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         )
-
    ENDIF(CUBICSDR_CODE_SIGN)
    
    

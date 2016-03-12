@@ -1,2 +1,11 @@
 #!/bin/bash
-/usr/bin/codesign -s "${CUBICSDR_CERT}" ${APPS}
+for f in ${APPS}/Contents/MacOS/*.dylib
+do
+    /usr/bin/codesign --force --verify --verbose --sign "${CUBICSDR_CERT}" $f
+done
+for f in ${APPS}/Contents/MacOS/modules/*.so
+do
+    /usr/bin/codesign --force --verify --verbose --sign "${CUBICSDR_CERT}" $f
+done
+
+/usr/bin/codesign --force --verify --verbose --sign "${CUBICSDR_CERT}" ${APPS}
