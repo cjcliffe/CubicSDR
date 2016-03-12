@@ -6,7 +6,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 
 SET(CUBICSDR_VERSION_MAJOR "0")
 SET(CUBICSDR_VERSION_MINOR "1")
-SET(CUBICSDR_VERSION_PATCH "25")
+SET(CUBICSDR_VERSION_PATCH "26")
 SET(CUBICSDR_VERSION_REL "alpha")
 SET(CUBICSDR_VERSION "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}-${CUBICSDR_VERSION_REL}")
 
@@ -588,7 +588,11 @@ ENDIF(APPLE)
 
 IF (APPLE AND BUNDLE_APP)
     PROJECT(CubicSDR)
+    set(CPACK_BINARY_DRAGNDROP ON)
+ 
     SET(MACOSX_BUNDLE_BUNDLE_NAME CubicSDR)
+    SET(CPACK_APPLE_BUNDLE_ID "com.cubicproductions.cubicsdr")    
+    set(CUBICSDR_CODE_SIGN OFF CACHE BOOL "Code Signing")
     
     set(BUNDLE_SOAPY_MODS OFF CACHE BOOL "Bundle local SoapySDR modules")
     set(BUNDLE_MIR_SDR OFF CACHE BOOL "Bundle mir_sdr for personal use only -- do not distribute.")
@@ -621,23 +625,22 @@ IF (APPLE AND BUNDLE_APP)
     )
 
     target_link_libraries(CubicSDR ${LIQUID_LIB} ${FFTW_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
-    SET_TARGET_PROPERTIES(CubicSDR PROPERTIES MACOSX_BUNDLE TRUE)
-
     SET_TARGET_PROPERTIES(CubicSDR PROPERTIES
-         MACOSX_BUNDLE_BUNDLE_NAME "CubicSDR"
-         # MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
-         # MACOSX_BUNDLE_LONG_VERSION_STRING "${PROJECT_VERSION}"
-         # MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
-         MACOSX_BUNDLE_GUI_IDENTIFIER "com.cubicproductions.cubicsdr"
-         MACOSX_BUNDLE_ICON_FILE CubicSDR.icns
+        MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_INFO_STRING "CubicSDR Open-Source Software-Defined Radio Application"
+        MACOSX_BUNDLE_BUNDLE_NAME "CubicSDR"
+        MACOSX_BUNDLE_BUNDLE_VERSION "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}"
+        MACOSX_BUNDLE_LONG_VERSION_STRING "${CUBICSDR_VERSION}.${CUBICSDR_VERSION_MINOR}"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_REL}"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "com.cubicproductions.cubicsdr"
+        MACOSX_BUNDLE_ICON_FILE "CubicSDR.icns"
+        MACOSX_BUNDLE_COPYRIGHT "Copyright 2015 Charles J. Cliffe. All Rights Reserved."
     )
     
     SET(APPS "${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME}/CubicSDR.app")
     # SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
     # SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-    
-    SET_TARGET_PROPERTIES(CubicSDR PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${PROJECT_SOURCE_DIR}/cmake/CubicSDRInfo.plist.in")
-    
+        
     IF (BUNDLE_SOAPY_MODS)
 
     message(STATUS "SOAPY_ROOT: ${SOAPY_SDR_ROOT}")
@@ -648,9 +651,18 @@ IF (APPLE AND BUNDLE_APP)
                 DESTINATION "${APPS}/Contents/MacOS/modules"
                 COMPONENT Runtime
             )
+            # IF (CUBICSDR_CODE_SIGN)
+            #     LIST(APPEND CPACK_BUNDLE_APPLE_CODESIGN_FILES "${APPS}/Contents/MacOS/modules/${SOAPY_MOD_FILE}")
+            # ENDIF()
     ENDFOREACH()
     
+    # IF (CUBICSDR_CODE_SIGN)
+    #     message(STATUS "Will sign modules: ${CPACK_BUNDLE_APPLE_CODESIGN_FILES}")
+    # ENDIF()
+    
     ENDIF(BUNDLE_SOAPY_MODS)
+
+    SET_TARGET_PROPERTIES(CubicSDR PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${PROJECT_SOURCE_DIR}/cmake/CubicSDRInfo.plist.in")
 
     INSTALL(CODE "
        SET(BU_COPY_FULL_FRAMEWORK_CONTENTS ON)
@@ -695,6 +707,36 @@ IF (APPLE AND BUNDLE_APP)
   #     ENDFOREACH()
   # ENDIF()
    
+   IF (CUBICSDR_CODE_SIGN)
+       SET (CUBICSDR_CERT "3rd Party Mac Developer Application: [Name]" CACHE STRING "Code signing certificate name.")
+       MESSAGE(STATUS "Code Signing Enabled: ${CUBICSDR_CERT}")        
+  
+       CONFIGURE_FILE(
+         "${PROJECT_SOURCE_DIR}/cmake/code_sign.sh.in"
+         "${CMAKE_CURRENT_BINARY_DIR}/code_sign.sh"
+        )
+        CONFIGURE_FILE(
+          "${PROJECT_SOURCE_DIR}/cmake/dmg_sign.sh.in"
+          "${CMAKE_CURRENT_BINARY_DIR}/dmg_sign.sh"
+         )
+  
+        ADD_CUSTOM_COMMAND(
+            TARGET CubicSDR
+            COMMAND chmod ARGS +x ${CMAKE_CURRENT_BINARY_DIR}/code_sign.sh ${CMAKE_CURRENT_BINARY_DIR}/dmg_sign.sh
+        )
+        ADD_CUSTOM_COMMAND(
+            TARGET CubicSDR
+            POST_BUILD 
+            COMMAND "${CMAKE_CURRENT_BINARY_DIR}/code_sign.sh"
+            COMMAND ${CMAKE_COMMAND} -E echo "Running CPack.."
+            COMMAND ${CMAKE_CPACK_COMMAND}
+            COMMAND ${CMAKE_COMMAND} -E echo "Signing package.."
+            COMMAND "${CMAKE_CURRENT_BINARY_DIR}/dmg_sign.sh" WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        )
+
+   ENDIF(CUBICSDR_CODE_SIGN)
+   
+   
    INSTALL(CODE "
        VERIFY_APP(\"${APPS}\")
        " COMPONENT Runtime)
@@ -703,7 +745,6 @@ IF (APPLE AND BUNDLE_APP)
        BUNDLE DESTINATION . COMPONENT Runtime
    )       
 
-   set(CPACK_BINARY_DRAGNDROP ON)
    include(CPack)
 ENDIF()
 IF(APPLE AND NOT BUNDLE_APP)
@@ -737,8 +778,6 @@ IF (WIN32 AND NOT BUILD_INSTALLER)
     ADD_DEFINITIONS(
         -DRES_FOLDER="../share/cubicsdr/"
     )
-	
-	
 	
     INSTALL(TARGETS CubicSDR DESTINATION bin)
 	INSTALL(FILES 		

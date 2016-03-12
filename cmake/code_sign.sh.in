@@ -1,0 +1,2 @@
+#!/bin/bash
+/usr/bin/codesign -s "${CUBICSDR_CERT}" ${APPS}
