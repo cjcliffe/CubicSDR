@@ -222,8 +222,15 @@ void SpectrumPanel::drawPanelContents() {
         fontEnumSize = GLFont::GLFONT_SIZE16;
         hPos = 1.0 - (18.0 / viewHeight);
     }
-
+    
     for (double m = -1.0 + mhzStart, mMax = 1.0 + ((mhzStart>0)?mhzStart:-mhzStart); m <= mMax; m += mhzStep) {
+        if (m < -1.0) {
+            currentMhz += mhzVisualStep;
+            continue;
+        }
+        if (m > 1.0) {
+            break;
+        }
         label << std::fixed << currentMhz;
         
         double fractpart, intpart;
