@@ -707,6 +707,16 @@ void GLFont::doCacheGC() {
             GLFontStringCache *fc = (*removals_i)->second;
             stringCache[fc->vpx][fc->vpy][fc->pxHeight].erase(*removals_i);
             delete (*removals_i)->second;
+            
+            if (!stringCache[fc->vpx][fc->vpy][fc->pxHeight].size()) {
+                stringCache[fc->vpx][fc->vpy].erase(stringCache[fc->vpx][fc->vpy].find(fc->pxHeight));
+                if (!stringCache[fc->vpx][fc->vpy].size()) {
+                    stringCache[fc->vpx].erase(stringCache[fc->vpx].find(fc->vpy));
+                    if (!stringCache[fc->vpx].size()) {
+                        stringCache.erase(stringCache.find(fc->vpx));
+                    }
+                }
+            }
         }
     }
 }
