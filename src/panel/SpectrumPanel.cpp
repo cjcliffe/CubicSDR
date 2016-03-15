@@ -254,7 +254,7 @@ void SpectrumPanel::drawPanelContents() {
         
         glColor4f(ThemeMgr::mgr.currentTheme->text.r, ThemeMgr::mgr.currentTheme->text.g, ThemeMgr::mgr.currentTheme->text.b,1.0);
         
-        GLFont::getFont(fontEnumSize).drawString(label.str(), m, hPos, fontSize, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+        GLFont::getFont(fontEnumSize).drawString(label.str(), m, hPos, fontSize, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
         
         label.str(std::string());
         
