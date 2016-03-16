@@ -3,6 +3,7 @@
 #include <map>
 #include <string>
 #include <sstream>
+#include <mutex>
 #include "lodepng.h"
 #include "wx/glcanvas.h"
 #include "wx/filename.h"
