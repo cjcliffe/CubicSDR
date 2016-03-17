@@ -12,22 +12,30 @@ mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.AppDir/usr/local/lib/
 cp -R /usr/local/lib/SoapySDR ${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.AppDir/usr/local/lib/
 mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.AppDir/usr/lib
 
-pushd .
-cd ${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.AppDir/usr/ 
-find . -type f -exec sed -i -e 's|/usr|././|g' {} \; 
-popd
 
-IGNORE_PKG="libc6.* libusb.* libgcc.* libstd.* libudev.* libgtk.* libgdk.* libx.* libpango.* libglib.* libgl.* libcairo.* libfont.* libatk.* libwayland.* libthai.* libpixman.* zlib.* libpcre.* libice.* libuuid.* libpulse.* libjson.* libdbus.* libatspi.* libharf.* libselinux.* libmir.* libboost-system.* libprotobuf.* libdatrie.* libsystem.* libwrap.* libsndfile.* libasync.* libgraphite.* liblzma.* libgcrypt.* libflac.* libvorbis.* libgpg.* libogg.* libsm6 libpng.* libexpat.* libdrm.* libffi.* libfreetype.* libboost-filesystem.*"
+IGNORE_PKG="libc6.* libusb.* libgcc.* libstd.* libudev.* libgtk.* libgdk.* libx.* libpango.* libglib.* libgl.* libcairo.* libfont.* libatk.* libwayland.* libthai.* libpixman.* zlib.* libpcre.* libice.* libuuid.* libpulse.* libjson.* libdbus.* libatspi.* libharf.* libselinux.* libmir.* libboost-system.* libprotobuf.* libdatrie.* libsystem.* libwrap.* libsndfile.* libasync.* libgraphite.* liblzma.* libgcrypt.* libflac.* libvorbis.* libgpg.* libogg.* libsm6 libpng.* libexpat.* libdrm.* libffi.* libfreetype.* libboost-filesystem.* libmirsdr.*"
+
+IGNORE_LIB="^.*libmirsdr.*"
+
 
 for f in `find ${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.AppDir/usr/local/lib/SoapySDR/modules/ -type f` ${CMAKE_CURRENT_BINARY_DIR}/${EX_PLATFORM_NAME}/CubicSDR
 do
 	for l in `ldd $f | grep so | sed -e '/^[^\t]/ d' | sed -e 's/\t//' | sed -e 's/.*=..//' | sed -e 's/ (0.*)//'`
-	do
+	do		
 		echo "Checking what package owns $l: "
 		OWNER_PKG=`apt-file --package-only find $l`
 		SKIP_PKG=0
-		if [ "$OWNER_PKG" = "" ]; then
-			echo "$l has no package, copying to AppDir.."
+
+		for i in $IGNORE_LIB
+		do
+			if [[ $l =~ $i ]]; then
+				echo "Ignoring lib $l matching explicit library ignore regex $i"
+				SKIP_PKG=1
+			fi
+		done
+
+		if [ "$OWNER_PKG" = "" ] && [ $SKIP_PKG = 0 ]; then
+			echo "*** $l has no package, copying to AppDir.."
 			cp $l ${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.AppDir/usr/lib/
 			SKIP_PKG=1
 		fi
@@ -39,13 +47,19 @@ do
 				SKIP_PKG=1
 			fi
 		done
+
 		if [ $SKIP_PKG = 0 ]; then
 			#SO_FILE=`echo $l | sed 's/\.so\.[^\.]*$//'`.so
-			echo "$OWNER_PKG not in ignore list, copying $l to AppDir.."
+			echo "*** $OWNER_PKG not in ignore list, copying $l to AppDir.."
 			cp $l ${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.AppDir/usr/lib/
 		fi
 	done
 done
+
+pushd .
+cd ${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.AppDir/usr/ 
+find . -type f -exec sed -i -e 's|/usr|././|g' {} \; 
+popd
 
 pushd .
 cd ${CMAKE_CURRENT_BINARY_DIR}
