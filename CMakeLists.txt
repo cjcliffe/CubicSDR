@@ -238,7 +238,7 @@ ENDIF(USE_AUDIO_OSS)
 ENDIF(UNIX AND NOT APPLE)
 
 IF (APPLE)
-    SET(CMAKE_OSX_DEPLOYMENT_TARGET, "10.10")
+    SET(CMAKE_OSX_DEPLOYMENT_TARGET, "10.9")
   
     SET(FFTW_LIB fftw3f)
     SET(LIQUID_LIB liquid)
@@ -582,7 +582,7 @@ ENDIF(MSVC)
 IF (APPLE)
     ADD_DEFINITIONS(
         -DHAVE_TYPE_TRAITS=1
-        -mmacosx-version-min=10.10
+        -mmacosx-version-min=10.9
     )
 ENDIF(APPLE)
 
