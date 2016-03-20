@@ -10,7 +10,6 @@
 #include "ScopeVisualProcessor.h"
 #include "ScopePanel.h"
 #include "SpectrumPanel.h"
-#include "fftw3.h"
 #include "InteractiveCanvas.h"
 
 class ScopeCanvas: public InteractiveCanvas {

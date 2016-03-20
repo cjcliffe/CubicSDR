@@ -11,7 +11,6 @@
 #include "GLPanel.h"
 #include "PrimaryGLContext.h"
 
-#include "fftw3.h"
 #include "Timer.h"
 
 class GainInfo {

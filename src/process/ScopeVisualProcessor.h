@@ -2,8 +2,11 @@
 
 #include "VisualProcessor.h"
 #include "AudioThread.h"
-#include "fftw3.h"
 #include "ScopePanel.h"
+
+#if USE_FFTW3
+#include "fftw3.h"
+#endif
 
 class ScopeRenderData: public ReferenceCounter {
 public:
@@ -33,9 +36,16 @@ protected:
     std::atomic_bool scopeEnabled;
     std::atomic_bool spectrumEnabled;
     
+#if USE_FFTW3
     float *fftInData;
     fftwf_complex *fftwOutput;
     fftwf_plan fftw_plan;
+#else
+    liquid_float_complex *fftInData;
+    liquid_float_complex *fftOutput;
+    fftplan fftPlan;
+#endif
+    
     unsigned int fftSize;
     int desiredInputSize;
     unsigned int maxScopeSamples;

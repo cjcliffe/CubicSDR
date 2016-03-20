@@ -2,31 +2,54 @@
 #include <cstring>
 #include <string>
 
-ScopeVisualProcessor::ScopeVisualProcessor(): outputBuffers("ScopeVisualProcessorBuffers"), fftInData(NULL), fftwOutput(NULL), fftw_plan(NULL), maxScopeSamples(1024) {
+ScopeVisualProcessor::ScopeVisualProcessor(): outputBuffers("ScopeVisualProcessorBuffers") {
     scopeEnabled.store(true);
     spectrumEnabled.store(true);
     fft_average_rate = 0.65;
 	fft_ceil_ma = fft_ceil_maa = 0;
 	fft_floor_ma = fft_floor_maa = 0;
+    maxScopeSamples = 1024;
+#if USE_FFTW3
+    fftInData = nullptr;
+    fftwOutput = nullptr;
+    fftw_plan = nullptr;
+#else
+    fftInData = nullptr;
+    fftOutput = nullptr;
+    fftPlan = nullptr;
+#endif
 }
 
 ScopeVisualProcessor::~ScopeVisualProcessor() {
-    /*if (fftInData) {
+#if USE_FFTW3
+    if (fftw_plan) {
+        fftwf_destroy_plan(fftw_plan);
+    }
+    if (fftInData) {
         free(fftInData);
     }
     if (fftwOutput) {
         free(fftwOutput);
-    }*/
-    if (fftw_plan) {
-        fftwf_destroy_plan(fftw_plan);
     }
+#else
+    if (fftPlan) {
+        fft_destroy_plan(fftPlan);
+    }
+    if (fftInData) {
+        free(fftInData);
+    }
+    if (fftOutput) {
+        free(fftOutput);
+    }
+#endif
 }
 
 
 void ScopeVisualProcessor::setup(int fftSize_in) {
     fftSize = fftSize_in;
     desiredInputSize = fftSize;
-    
+
+#if USE_FFTW3
     if (fftInData) {
         free(fftInData);
     }
@@ -39,9 +62,20 @@ void ScopeVisualProcessor::setup(int fftSize_in) {
         fftwf_destroy_plan(fftw_plan);
     }
     fftw_plan = fftwf_plan_dft_r2c_1d(fftSize, fftInData, fftwOutput, FFTW_ESTIMATE);
-    //(fftSize, fftInData, fftwOutput, 0);
-    //(fftSize, fftwInput, fftwOutput, FFTW_R2HC, FFTW_ESTIMATE);
-    
+#else
+    if (fftInData) {
+        free(fftInData);
+    }
+    fftInData = (liquid_float_complex*) malloc(sizeof(liquid_float_complex) * fftSize);
+    if (fftOutput) {
+        free(fftOutput);
+    }
+    fftOutput = (liquid_float_complex*) malloc(sizeof(liquid_float_complex) * fftSize);
+    if (fftPlan) {
+        fft_destroy_plan(fftPlan);
+    }
+    fftPlan = fft_create_plan(fftSize, fftInData, fftOutput, LIQUID_FFT_FORWARD, 0);
+#endif
 }
 
 void ScopeVisualProcessor::setScopeEnabled(bool scopeEnable) {
@@ -130,6 +164,7 @@ void ScopeVisualProcessor::process() {
         if (spectrumEnabled) {
             iMax = audioInputData->data.size();
 
+#if USE_FFTW3
             if (audioInputData->channels==1) {
                 for (i = 0; i < fftSize; i++) {
                     if (i < iMax) {
@@ -148,6 +183,29 @@ void ScopeVisualProcessor::process() {
                     }
                 }
             }
+#else
+            if (audioInputData->channels==1) {
+                for (i = 0; i < fftSize; i++) {
+                    if (i < iMax) {
+                        fftInData[i].real = audioInputData->data[i];
+                        fftInData[i].imag = 0;
+                    } else {
+                        fftInData[i].real = 0;
+                    }
+                }
+            } else if (audioInputData->channels==2) {
+                iMax = iMax/2;
+                for (i = 0; i < fftSize; i++) {
+                    if (i < iMax) {
+                        fftInData[i].real = audioInputData->data[i] + audioInputData->data[iMax+i];
+                        fftInData[i].imag = 0;
+                    } else {
+                        fftInData[i].real = 0;
+                        fftInData[i].imag = 0;
+                    }
+                }
+            }
+#endif
             
             renderData = outputBuffers.getBuffer();
 
@@ -156,9 +214,7 @@ void ScopeVisualProcessor::process() {
             renderData->sampleRate = audioInputData->sampleRate;
             
             audioInputData->decRefCount();
-            
-            fftwf_execute(fftw_plan);
-            
+
             float fft_ceil = 0, fft_floor = 1;
             
             if (fft_result.size() < (fftSize/2)) {
@@ -166,12 +222,23 @@ void ScopeVisualProcessor::process() {
                 fft_result_ma.resize((fftSize/2));
                 fft_result_maa.resize((fftSize/2));
             }
+
+#if USE_FFTW3
+            fftwf_execute(fftw_plan);
             
             for (i = 0; i < (fftSize/2); i++) {
                 float a = fftwOutput[i][0];
                 float b = fftwOutput[i][1];
                 fft_result[i] = sqrt( a * a + b * b);
             }
+#else
+            fft_execute(fftPlan);
+            for (i = 0; i < (fftSize/2); i++) {
+                float a = fftOutput[i].real;
+                float b = fftOutput[i].imag;
+                fft_result[i] = sqrt( a * a + b * b);
+            }
+#endif
             
             for (i = 0; i < (fftSize/2); i++) {
                 fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * fft_average_rate;

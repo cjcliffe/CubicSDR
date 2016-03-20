@@ -10,7 +10,6 @@
 #include "TuningContext.h"
 #include "MouseTracker.h"
 
-#include "fftw3.h"
 #include "Timer.h"
 
 class TuningCanvas: public InteractiveCanvas {
