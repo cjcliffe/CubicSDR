@@ -24,8 +24,8 @@ EVT_LEAVE_WINDOW(GainCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(GainCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
-GainCanvas::GainCanvas(wxWindow *parent, int *attribList) :
-        InteractiveCanvas(parent, attribList) {
+GainCanvas::GainCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
+        InteractiveCanvas(parent, dispAttrs) {
 
     glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this));
     bgPanel.setCoordinateSystem(GLPanel::GLPANEL_Y_UP);

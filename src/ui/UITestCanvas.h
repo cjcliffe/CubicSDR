@@ -14,7 +14,7 @@
 
 class UITestCanvas: public InteractiveCanvas {
 public:
-    UITestCanvas(wxWindow *parent, int *attribList = NULL);
+    UITestCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
     ~UITestCanvas();
     
 private:

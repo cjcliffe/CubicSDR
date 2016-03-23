@@ -27,7 +27,7 @@ public:
 
 class GainCanvas: public InteractiveCanvas {
 public:
-    GainCanvas(wxWindow *parent, int *attribList = NULL);
+    GainCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
     ~GainCanvas();
 
     void setHelpTip(std::string tip);

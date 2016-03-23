@@ -452,30 +452,24 @@ void GLFont::drawString(std::string str, float xpos, float ypos, int pxHeight, A
         
         GLFontStringCache *fc = nullptr;
 
-        std::map<int, std::map<int, std::map<int, std::map<std::string, GLFontStringCache * > > > >::iterator i1;
-        std::map<int, std::map<int, std::map<std::string, GLFontStringCache * > > >::iterator i2;
-        std::map<int, std::map<std::string, GLFontStringCache * > >::iterator i3;
-        std::map<std::string, GLFontStringCache * >::iterator i4;
+        std::map<std::string, GLFontStringCache * >::iterator cache_iter;
         
-        i1 = stringCache.find(vpx);
-        if (i1 != stringCache.end()) {
-            i2 = i1->second.find(vpy);
-            if (i2 != i1->second.end()) {
-                i3 = i2->second.find(pxHeight);
-                if (i3 != i2->second.end()) {
-                    i4 = i3->second.find(str);
-                    if (i4 != i3->second.end()) {
-                        fc = i4->second;
-                        fc->gc = 0;
-                    }
-                }
-            }
+        std::stringstream sscacheIdx;
+        
+        sscacheIdx << vpx << "." << vpy << "." << pxHeight << "." << str;
+        
+        std::string cacheIdx(sscacheIdx.str());
+        
+        cache_iter = stringCache.find(cacheIdx);
+        if (cache_iter != stringCache.end()) {
+            fc = cache_iter->second;
+            fc->gc = 0;
         }
         
         if (fc == nullptr) {
 //            std::cout << "cache miss" << std::endl;
             fc = cacheString(str, pxHeight, vpx, vpy);
-            stringCache[vpx][vpy][pxHeight][str] = fc;
+            stringCache[cacheIdx] = fc;
         }
 
         drawCacheString(fc, xpos, ypos, hAlign, vAlign);
@@ -680,43 +674,14 @@ GLFontStringCache *GLFont::cacheString(std::string str, int pxHeight, int vpx, i
 }
 
 void GLFont::doCacheGC() {
-    std::map<int, std::map<int, std::map<int, std::map<std::string, GLFontStringCache * > > > >::iterator i1;
-    std::map<int, std::map<int, std::map<std::string, GLFontStringCache * > > >::iterator i2;
-    std::map<int, std::map<std::string, GLFontStringCache * > >::iterator i3;
-    std::map<std::string, GLFontStringCache * >::iterator i4;
+    std::map<std::string, GLFontStringCache * >::iterator cache_iter;
     
-    std::vector<std::map<std::string, GLFontStringCache * >::iterator> removals;
-    std::vector<std::map<std::string, GLFontStringCache * >::iterator>::iterator removals_i;
-    
-    for (i1 = stringCache.begin(); i1 != stringCache.end(); i1++) {
-        for (i2 = i1->second.begin(); i2 != i1->second.end(); i2++) {
-            for (i3 = i2->second.begin(); i3 != i2->second.end(); i3++) {
-                for (i4 = i3->second.begin(); i4 != i3->second.end(); i4++) {
-                    i4->second->gc--;
-                    if (i4->second->gc < -10) {
-                        removals.push_back(i4);
-                    }
-                }
-            }
-        }
-    }
-
-    if (removals.size()) {
-        for (removals_i = removals.begin(); removals_i != removals.end(); removals_i++) {
-//            std::cout << "gc'd " << (*removals_i)->first << std::endl;
-            GLFontStringCache *fc = (*removals_i)->second;
-            stringCache[fc->vpx][fc->vpy][fc->pxHeight].erase(*removals_i);
-            delete (*removals_i)->second;
-            
-            if (!stringCache[fc->vpx][fc->vpy][fc->pxHeight].size()) {
-                stringCache[fc->vpx][fc->vpy].erase(stringCache[fc->vpx][fc->vpy].find(fc->pxHeight));
-                if (!stringCache[fc->vpx][fc->vpy].size()) {
-                    stringCache[fc->vpx].erase(stringCache[fc->vpx].find(fc->vpy));
-                    if (!stringCache[fc->vpx].size()) {
-                        stringCache.erase(stringCache.find(fc->vpx));
-                    }
-                }
-            }
+    for (cache_iter = stringCache.begin(); cache_iter != stringCache.end(); cache_iter++) {
+        cache_iter->second->gc--;
+        if (cache_iter->second->gc < -10) {
+//            std::cout << "gc'd " << cache_iter->first << std::endl;
+            stringCache.erase(cache_iter);
+            return;
         }
     }
 }

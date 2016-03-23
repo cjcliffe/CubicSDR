@@ -14,7 +14,7 @@
 
 class ScopeCanvas: public InteractiveCanvas {
 public:
-    ScopeCanvas(wxWindow *parent, int *attribList = NULL);
+    ScopeCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
     ~ScopeCanvas();
 
     void setDeviceName(std::string device_name);

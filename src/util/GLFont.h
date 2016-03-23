@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include <mutex>
+#include <atomic>
 #include "lodepng.h"
 #include "wx/glcanvas.h"
 #include "wx/filename.h"
@@ -16,7 +17,7 @@ public:
     int vpx, vpy;
     int pxHeight;
     float msgWidth;
-    int gc;
+    std::atomic_int gc;
     std::vector<float> gl_vertices;
     std::vector<float> gl_uv;
 };
@@ -89,7 +90,7 @@ public:
 
     void doCacheGC();
 private:
-    std::map<int, std::map<int, std::map<int, std::map<std::string, GLFontStringCache * > > > > stringCache;
+    std::map<std::string, GLFontStringCache * > stringCache;
     
     std::string nextParam(std::istringstream &str);
     std::string getParamKey(std::string param_str);

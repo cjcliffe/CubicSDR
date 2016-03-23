@@ -14,7 +14,7 @@
 
 class MeterCanvas: public InteractiveCanvas {
 public:
-    MeterCanvas(wxWindow *parent, int *attribList = NULL);
+    MeterCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
     ~MeterCanvas();
 
     void setLevel(float level_in);

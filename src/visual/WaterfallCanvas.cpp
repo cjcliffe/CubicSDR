@@ -34,8 +34,8 @@ EVT_ENTER_WINDOW(WaterfallCanvas::OnMouseEnterWindow)
 EVT_MOUSEWHEEL(WaterfallCanvas::OnMouseWheelMoved)
 wxEND_EVENT_TABLE()
 
-WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *attribList) :
-        InteractiveCanvas(parent, attribList), dragState(WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), fft_size(0), new_fft_size(0), waterfall_lines(0),
+WaterfallCanvas::WaterfallCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
+        InteractiveCanvas(parent, dispAttrs), dragState(WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), fft_size(0), new_fft_size(0), waterfall_lines(0),
         dragOfs(0), mouseZoom(1), zoom(1), freqMoving(false), freqMove(0.0), hoverAlpha(1.0) {
 
     glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this));
