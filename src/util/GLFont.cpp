@@ -445,7 +445,7 @@ void GLFont::drawString(std::string str, float xpos, float ypos, int pxHeight, A
 
         std::lock_guard<std::mutex> lock(cache_busy);
         
-        if (gcCounter > 200) {
+        if (gcCounter > 50) {
             doCacheGC();
             gcCounter = 0;
         }
@@ -678,6 +678,8 @@ void GLFont::doCacheGC() {
     
     for (cache_iter = stringCache.begin(); cache_iter != stringCache.end(); cache_iter++) {
         cache_iter->second->gc--;
+    }
+    for (cache_iter = stringCache.begin(); cache_iter != stringCache.end(); cache_iter++) {
         if (cache_iter->second->gc < -10) {
 //            std::cout << "gc'd " << cache_iter->first << std::endl;
             stringCache.erase(cache_iter);
