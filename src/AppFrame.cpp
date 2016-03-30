@@ -1610,7 +1610,7 @@ bool AppFrame::loadSession(std::string fileName) {
 
             DataNode *demodTypeNode = demod->hasAnother("type")?demod->getNext("type"):nullptr;
             
-            if (demodTypeNode->element()->getDataType() == DATA_INT) {
+            if (demodTypeNode && demodTypeNode->element()->getDataType() == DATA_INT) {
                 int legacyType = *demodTypeNode;
                 int legacyStereo = demod->hasAnother("stereo") ? (int) *demod->getNext("stereo") : 0;
                 switch (legacyType) {   // legacy demod ID
@@ -1632,7 +1632,7 @@ bool AppFrame::loadSession(std::string fileName) {
                     case 16: type = "I/Q"; break;
                     default: type = "FM"; break;
                 }
-            } else if (demodTypeNode->element()->getDataType() == DATA_STRING) {
+            } else if (demodTypeNode && demodTypeNode->element()->getDataType() == DATA_STRING) {
                 demodTypeNode->element()->get(type);
             }
 

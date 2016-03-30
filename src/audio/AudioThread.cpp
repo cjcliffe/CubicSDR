@@ -20,11 +20,13 @@ AudioThread::AudioThread() : IOThread(),
 	outputDevice.store(-1);
     gain.store(1.0);
 
-    boundThreads.store(new std::vector<AudioThread *>);
+    vBoundThreads = new std::vector<AudioThread *>;
+    boundThreads.store(vBoundThreads);
 }
 
 AudioThread::~AudioThread() {
-    delete boundThreads.load();
+    boundThreads.store(nullptr);
+    delete vBoundThreads;
 }
 
 void AudioThread::bindThread(AudioThread *other) {

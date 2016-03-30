@@ -84,7 +84,7 @@ void DemodulatorWorkerThread::run() {
             
             float As = 60.0f;         // stop-band attenuation [dB]
             
-            if (result.sampleRate && result.bandwidth) {
+            if (cModem && result.sampleRate && result.bandwidth) {
                 result.bandwidth = cModem->checkSampleRate(result.bandwidth, makeDemod?demodCommand.audioSampleRate:filterCommand.audioSampleRate);
                 result.iqResampleRatio = (double) (result.bandwidth) / (double) result.sampleRate;
                 result.iqResampler = msresamp_crcf_create(result.iqResampleRatio, As);

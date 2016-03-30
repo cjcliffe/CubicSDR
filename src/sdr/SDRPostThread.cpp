@@ -184,7 +184,9 @@ void SDRPostThread::run() {
             }
         }
 
-        data_in->decRefCount();
+        if (data_in) {
+            data_in->decRefCount();   
+        }
 
         bool doUpdate = false;
         for (size_t j = 0; j < nRunDemods; j++) {
