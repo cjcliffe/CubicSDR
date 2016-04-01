@@ -73,6 +73,9 @@ public:
     void setShowTips(bool show);
     bool getShowTips();
 
+    void setLowPerfMode(bool lpm);
+    bool getLowPerfMode();
+    
     void setTheme(int themeId);
     int getTheme();
 
@@ -127,7 +130,7 @@ private:
     std::string configName;
     std::map<std::string, DeviceConfig *> deviceConfig;
     std::atomic_int winX,winY,winW,winH;
-    std::atomic_bool winMax, showTips;
+    std::atomic_bool winMax, showTips, lowPerfMode;
     std::atomic_int themeId;
     std::atomic_llong snap;
     std::atomic_llong centerFreq;

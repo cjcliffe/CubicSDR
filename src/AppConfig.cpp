@@ -199,6 +199,7 @@ AppConfig::AppConfig() : configName("") {
     winH.store(0);
     winMax.store(false);
     showTips.store(true);
+    lowPerfMode.store(false);
     themeId.store(0);
     snap.store(1);
     centerFreq.store(100000000);
@@ -263,6 +264,14 @@ void AppConfig::setShowTips(bool show) {
 
 bool AppConfig::getShowTips() {
     return showTips.load();
+}
+
+void AppConfig::setLowPerfMode(bool show) {
+    lowPerfMode.store(show);
+}
+
+bool AppConfig::getLowPerfMode() {
+    return lowPerfMode.load();
 }
 
 wxRect *AppConfig::getWindow() {
@@ -360,6 +369,7 @@ bool AppConfig::save() {
 
         *window_node->newChild("max") = winMax.load();
         *window_node->newChild("tips") = showTips.load();
+        *window_node->newChild("low_perf_mode") = lowPerfMode.load();
         *window_node->newChild("theme") = themeId.load();
         *window_node->newChild("snap") = snap.load();
         *window_node->newChild("center_freq") = centerFreq.load();
@@ -444,7 +454,7 @@ bool AppConfig::load() {
 
     if (cfg.rootNode()->hasAnother("window")) {
         int x,y,w,h;
-        int max,tips;
+        int max,tips,lpm;
         
         DataNode *win_node = cfg.rootNode()->getNext("window");
         
@@ -468,6 +478,11 @@ bool AppConfig::load() {
         if (win_node->hasAnother("tips")) {
             win_node->getNext("tips")->element()->get(tips);
             showTips.store(tips?true:false);
+        }
+
+        if (win_node->hasAnother("low_perf_mode")) {
+            win_node->getNext("low_perf_mode")->element()->get(lpm);
+            lowPerfMode.store(lpm?true:false);
         }
 
         if (win_node->hasAnother("theme")) {

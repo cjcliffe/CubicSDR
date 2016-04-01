@@ -31,6 +31,7 @@
 #define wxID_SDR_DEVICES 2008
 #define wxID_AGC_CONTROL 2009
 #define wxID_SDR_START_STOP 2010
+#define wxID_LOW_PERF 2011
 
 #define wxID_MAIN_SPLITTER 2050
 #define wxID_VIS_SPLITTER 2051
@@ -134,6 +135,7 @@ private:
     wxMenu *sampleRateMenu;
     wxMenuItem *agcMenuItem;
     wxMenuItem *iqSwapMenuItem;
+    wxMenuItem *lowPerfMenuItem;
     wxMenu *settingsMenu;
     SoapySDR::ArgInfoList settingArgs;
     int settingsIdMax;
@@ -152,6 +154,8 @@ private:
     ModemArgInfoList newModemArgs;
 	wxMenuItem *showTipMenuItem;
 
+    bool lowPerfMode;
+    
 #ifdef USE_HAMLIB
     void enableRig();
     void disableRig();

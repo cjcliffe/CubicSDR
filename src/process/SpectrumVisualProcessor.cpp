@@ -201,6 +201,14 @@ void SpectrumVisualProcessor::setFFTSize(unsigned int fftSize_in) {
     fftSizeChanged.store(true);
 }
 
+unsigned int SpectrumVisualProcessor::getFFTSize() {
+    if (fftSizeChanged.load()) {
+        return newFFTSize;
+    }
+    return fftSize.load();
+}
+
+
 void SpectrumVisualProcessor::setHideDC(bool hideDC) {
     this->hideDC.store(hideDC);
 }
