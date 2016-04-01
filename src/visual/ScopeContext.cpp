@@ -51,9 +51,9 @@ void ScopeContext::DrawDeviceName(std::string deviceName) {
 }
 
 void ScopeContext::DrawEnd() {
-    glFlush();
+//    glFlush();
 
-    CheckGLError();
+//    CheckGLError();
 }
 
 void ScopeContext::DrawDivider() {

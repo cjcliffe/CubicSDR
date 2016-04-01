@@ -483,9 +483,9 @@ void PrimaryGLContext::BeginDraw(float r, float g, float b) {
 }
 
 void PrimaryGLContext::EndDraw() {
-    glFlush();
+//    glFlush();
 
-    CheckGLError();
+//    CheckGLError();
 }
 
 void PrimaryGLContext::setHoverAlpha(float hoverAlpha) {
