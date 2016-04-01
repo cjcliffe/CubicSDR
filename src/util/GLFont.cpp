@@ -3,6 +3,8 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include "cubic_math.h"
+
 
 #ifdef _MSC_VER
 #include <windows.h>
@@ -27,6 +29,9 @@ static std::string getExePath(void)
 #define RES_FOLDER ""
 #endif
 
+GLFontStringCache::GLFontStringCache() {
+    gc = 0;
+}
 
 GLFont GLFont::fonts[GLFONT_MAX];
 
@@ -122,7 +127,7 @@ int GLFontChar::getIndex() {
 }
 
 GLFont::GLFont() :
-        lineHeight(0), base(0), imageWidth(0), imageHeight(0), loaded(false), texId(0) {
+        lineHeight(0), base(0), imageWidth(0), imageHeight(0), loaded(false), texId(0), gcCounter(0) {
 
 }
 
@@ -423,16 +428,53 @@ float GLFont::getStringWidth(std::string str, float size, float viewAspect) {
     return width;
 }
 
-void GLFont::drawString(std::string str, float xpos, float ypos, int pxHeight, Align hAlign, Align vAlign, int vpx, int vpy) {
-
-
+// Draw string, immediate
+void GLFont::drawString(std::string str, float xpos, float ypos, int pxHeight, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
+    
     pxHeight *= 2;
-
+    
     if (!vpx || !vpy) {
         GLint vp[4];
         glGetIntegerv( GL_VIEWPORT, vp);
         vpx = vp[2];
         vpy = vp[3];
+    }
+    
+    if (cacheable) {
+        gcCounter++;
+
+        std::lock_guard<std::mutex> lock(cache_busy);
+        
+        if (gcCounter > 50) {
+            doCacheGC();
+            gcCounter = 0;
+        }
+        
+        GLFontStringCache *fc = nullptr;
+
+        std::map<std::string, GLFontStringCache * >::iterator cache_iter;
+        
+        std::stringstream sscacheIdx;
+        
+        sscacheIdx << vpx << "." << vpy << "." << pxHeight << "." << str;
+        
+        std::string cacheIdx(sscacheIdx.str());
+        
+        cache_iter = stringCache.find(cacheIdx);
+        if (cache_iter != stringCache.end()) {
+            fc = cache_iter->second;
+            fc->gc = 0;
+        }
+        
+        if (fc == nullptr) {
+//            std::cout << "cache miss" << std::endl;
+            fc = cacheString(str, pxHeight, vpx, vpy);
+            stringCache[cacheIdx] = fc;
+        }
+
+        drawCacheString(fc, xpos, ypos, hAlign, vAlign);
+        
+        return;
     }
     
     float size = (float) pxHeight / (float) vpy;
@@ -499,6 +541,9 @@ void GLFont::drawString(std::string str, float xpos, float ypos, int pxHeight, A
         glTranslatef(fchar->getAspect() + advx, 0.0, 0.0);
     }
 
+    glVertexPointer(2, GL_FLOAT, 0, nullptr);
+    glTexCoordPointer(2, GL_FLOAT, 0, nullptr);
+
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glPopMatrix();
@@ -508,6 +553,140 @@ void GLFont::drawString(std::string str, float xpos, float ypos, int pxHeight, A
     glDisable(GL_TEXTURE_2D);
 }
 
+// Draw cached GLFontCacheString
+void GLFont::drawCacheString(GLFontStringCache *fc, float xpos, float ypos, Align hAlign, Align vAlign) {
+    
+    float size = (float) fc->pxHeight / (float) fc->vpy;
+    
+    glPushMatrix();
+    glTranslatef(xpos, ypos, 0.0f);
+    
+    switch (vAlign) {
+        case GLFONT_ALIGN_TOP:
+            glTranslatef(0.0, -size, 0.0);
+            break;
+        case GLFONT_ALIGN_CENTER:
+            glTranslatef(0.0, -size/2.0, 0.0);
+            break;
+        default:
+            break;
+    }
+    
+    switch (hAlign) {
+        case GLFONT_ALIGN_RIGHT:
+            glTranslatef(-fc->msgWidth, 0.0, 0.0);
+            break;
+        case GLFONT_ALIGN_CENTER:
+            glTranslatef(-fc->msgWidth / 2.0, 0.0, 0.0);
+            break;
+        default:
+            break;
+    }
+    
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, texId);
+    
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glVertexPointer(2, GL_FLOAT, 0, &fc->gl_vertices[0]);
+    glTexCoordPointer(2, GL_FLOAT, 0, &fc->gl_uv[0]);
+    
+    glDrawArrays(GL_QUADS, 0, 4 * fc->drawlen);
+    
+    glVertexPointer(2, GL_FLOAT, 0, nullptr);
+    glTexCoordPointer(2, GL_FLOAT, 0, nullptr);
+
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    
+    glPopMatrix();
+
+    glDisable(GL_BLEND);
+    glDisable(GL_TEXTURE_2D);
+}
+
+// Compile optimized GLFontCacheString
+GLFontStringCache *GLFont::cacheString(std::string str, int pxHeight, int vpx, int vpy) {
+    GLFontStringCache *fc = new GLFontStringCache;
+    
+    fc->pxHeight = pxHeight;
+    fc->vpx = vpx;
+    fc->vpy = vpy;
+    
+    float size = (float) pxHeight / (float) vpy;
+    float viewAspect = (float) vpx / (float) vpy;
+    
+    fc->msgWidth = getStringWidth(str, size, viewAspect);
+
+    int nChar = 0;
+    for (int i = 0, iMax = str.length(); i < iMax; i++) {
+        int charId = str.at(i);
+
+        if (characters.find(charId) == characters.end()) {
+            continue;
+        }
+        nChar++;
+    }
+    
+    fc->drawlen = nChar;
+    fc->gl_vertices.resize(nChar*8);
+    fc->gl_uv.resize(nChar*8);
+    
+    
+    CubicVR::mat4 trans = CubicVR::mat4::scale(size / viewAspect, size, 1.0f);
+    
+    int c = 0;
+    for (int i = 0, iMax = str.length(); i < iMax; i++) {
+        int charId = str.at(i);
+        
+        if (characters.find(charId) == characters.end()) {
+            continue;
+        }
+        
+        GLFontChar *fchar = characters[charId];
+        
+        float ofsx = (float) fchar->getXOffset() / (float) imageWidth;
+        float advx = (float) fchar->getXAdvance() / (float) imageWidth;
+        
+        if (charId == 32) {
+            advx = characters['_']->getAspect();
+        }
+        
+        // freeze transform to buffer
+        trans *= CubicVR::mat4::translate(ofsx, 0.0, 0.0);
+        int charIdx = fchar->getIndex();
+        for (int j = 0; j < 8; j+=2) {
+            CubicVR::vec3 pt(gl_vertices[charIdx + j],gl_vertices[charIdx + j + 1], 0.0);
+            pt = CubicVR::mat4::multiply(trans, pt, true);
+            fc->gl_vertices[c * 8 + j] = pt[0];
+            fc->gl_vertices[c * 8 + j + 1] = pt[1];
+            fc->gl_uv[c * 8 + j] = gl_uv[charIdx + j];
+            fc->gl_uv[c * 8 + j + 1] = gl_uv[charIdx + j + 1];
+        }
+        trans *= CubicVR::mat4::translate(fchar->getAspect() + advx, 0.0, 0.0);
+        c++;
+    }
+    
+    return fc;
+}
+
+void GLFont::doCacheGC() {
+    std::map<std::string, GLFontStringCache * >::iterator cache_iter;
+    
+    for (cache_iter = stringCache.begin(); cache_iter != stringCache.end(); cache_iter++) {
+        cache_iter->second->gc--;
+    }
+    for (cache_iter = stringCache.begin(); cache_iter != stringCache.end(); cache_iter++) {
+        if (cache_iter->second->gc < -10) {
+//            std::cout << "gc'd " << cache_iter->first << std::endl;
+            stringCache.erase(cache_iter);
+            return;
+        }
+    }
+}
 
 
 GLFont &GLFont::getFont(GLFontSize esize) {

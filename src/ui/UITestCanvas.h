@@ -10,12 +10,11 @@
 #include "UITestContext.h"
 #include "MouseTracker.h"
 
-#include "fftw3.h"
 #include "Timer.h"
 
 class UITestCanvas: public InteractiveCanvas {
 public:
-    UITestCanvas(wxWindow *parent, int *attribList = NULL);
+    UITestCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
     ~UITestCanvas();
     
 private:

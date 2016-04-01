@@ -63,8 +63,8 @@ void UITestContext::Draw() {
 }
 
 void UITestContext::DrawEnd() {
-    glFlush();
+//    glFlush();
     
-    CheckGLError();
+//    CheckGLError();
 }
 

@@ -10,7 +10,6 @@
 #include "ModeSelectorContext.h"
 #include "MouseTracker.h"
 
-#include "fftw3.h"
 #include "Timer.h"
 
 class ModeSelectorMode {
@@ -25,7 +24,7 @@ public:
 
 class ModeSelectorCanvas: public InteractiveCanvas {
 public:
-    ModeSelectorCanvas(wxWindow *parent, int *attribList = NULL);
+    ModeSelectorCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
     ~ModeSelectorCanvas();
 
     int getHoveredSelection();

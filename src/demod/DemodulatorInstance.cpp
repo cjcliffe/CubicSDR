@@ -137,17 +137,23 @@ bool DemodulatorInstance::isTerminated() {
 
         switch (cmd.cmd) {
         case DemodulatorThreadCommand::DEMOD_THREAD_CMD_AUDIO_TERMINATED:
-            t_Audio->join();
-            audioTerminated = true;
-            delete t_Audio;
+            if (t_Audio) {
+                t_Audio->join();
+                audioTerminated = true;
+                delete t_Audio;
+                t_Audio = nullptr;
+            }
             break;
         case DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_TERMINATED:
-#ifdef __APPLE__
-            pthread_join(t_Demod, NULL);
-#else
-            t_Demod->join();
-            delete t_Demod;
-#endif
+            if (t_Demod) {
+                #ifdef __APPLE__
+                pthread_join(t_Demod, nullptr);
+                #else
+                t_Demod->join();
+                delete t_Demod;
+                #endif
+                t_Demod = nullptr;
+            }
 #if ENABLE_DIGITAL_LAB
             if (activeOutput) {
                 closeOutput();
@@ -156,13 +162,16 @@ bool DemodulatorInstance::isTerminated() {
             demodTerminated = true;
             break;
         case DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_PREPROCESS_TERMINATED:
-#ifdef __APPLE__
-            pthread_join(t_PreDemod, NULL);
-#else
-            t_PreDemod->join();
-            delete t_PreDemod;
-#endif
-            preDemodTerminated = true;
+            if (t_PreDemod) {
+                #ifdef __APPLE__
+                pthread_join(t_PreDemod, NULL);
+                #else
+                t_PreDemod->join();
+                delete t_PreDemod;
+                #endif
+                preDemodTerminated = true;
+                t_PreDemod = nullptr;
+            }
             break;
         default:
             break;

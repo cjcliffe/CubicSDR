@@ -27,8 +27,8 @@ EVT_LEAVE_WINDOW(MeterCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(MeterCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
-MeterCanvas::MeterCanvas(wxWindow *parent, int *attribList) :
-        InteractiveCanvas(parent, attribList), level(0), level_min(0), level_max(1), inputValue(0), userInputValue(0), showUserInput(true) {
+MeterCanvas::MeterCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
+        InteractiveCanvas(parent, dispAttrs), level(0), level_min(0), level_max(1), inputValue(0), userInputValue(0), showUserInput(true) {
 
     glContext = new MeterContext(this, &wxGetApp().GetContext(this));
 }

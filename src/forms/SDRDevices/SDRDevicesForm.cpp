@@ -28,7 +28,7 @@ devFrame::devFrame( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	devTree = new wxTreeCtrl( m_panel6, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_DEFAULT_STYLE );
 	devTree->Enable( false );
 	
-	bSizer6->Add( devTree, 1, wxEXPAND|wxALIGN_RIGHT, 5 );
+	bSizer6->Add( devTree, 1, wxEXPAND, 5 );
 	
 	m_panel4 = new wxPanel( m_panel6, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer5;

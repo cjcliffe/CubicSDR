@@ -10,7 +10,6 @@
 #include "TuningContext.h"
 #include "MouseTracker.h"
 
-#include "fftw3.h"
 #include "Timer.h"
 
 class TuningCanvas: public InteractiveCanvas {
@@ -18,7 +17,7 @@ public:
     enum ActiveState {
         TUNING_HOVER_NONE, TUNING_HOVER_FREQ, TUNING_HOVER_BW, TUNING_HOVER_PPM, TUNING_HOVER_CENTER
     };
-    TuningCanvas(wxWindow *parent, int *attribList = NULL);
+    TuningCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
     ~TuningCanvas();
 
     void setHelpTip(std::string tip);

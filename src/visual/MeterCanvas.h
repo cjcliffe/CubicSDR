@@ -10,12 +10,11 @@
 #include "MeterContext.h"
 #include "MouseTracker.h"
 
-#include "fftw3.h"
 #include "Timer.h"
 
 class MeterCanvas: public InteractiveCanvas {
 public:
-    MeterCanvas(wxWindow *parent, int *attribList = NULL);
+    MeterCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
     ~MeterCanvas();
 
     void setLevel(float level_in);

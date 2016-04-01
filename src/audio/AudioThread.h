@@ -100,5 +100,6 @@ public:
     static void deviceCleanup();
     static void setDeviceSampleRate(int deviceId, int sampleRate);
     std::atomic<std::vector<AudioThread *> *> boundThreads;
+    std::vector<AudioThread *> *vBoundThreads;
 };
 

@@ -66,8 +66,8 @@ void ModeSelectorContext::DrawSelector(std::string label, int c, int cMax, bool 
 }
 
 void ModeSelectorContext::DrawEnd() {
-    glFlush();
+//    glFlush();
 
-    CheckGLError();
+//    CheckGLError();
 }
 

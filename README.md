@@ -10,7 +10,6 @@ Utilizes:
 --------
   - liquid-dsp (http://liquidsdr.org/ -- https://github.com/jgaeddert/liquid-dsp)
   - SoapySDR (http://www.pothosware.com/ -- https://github.com/pothosware/SoapySDR)
-  - FFTW (http://www.fftw.org/ -- https://github.com/FFTW/fftw3)
   - RtAudio (http://www.music.mcgill.ca/~gary/rtaudio/ -- http://github.com/thestk/rtaudio/)
   - LodePNG (http://lodev.org/lodepng/)
   - BMFont (http://www.angelcode.com/ -- http://www.angelcode.com/products/bmfont/)
@@ -18,6 +17,11 @@ Utilizes:
   - OpenGL (https://www.opengl.org/)
   - wxWidgets (https://www.wxwidgets.org/)
   - CMake (http://www.cmake.org/)
+
+Optional Libs:
+--------
+  - FFTW (http://www.fftw.org/ -- https://github.com/FFTW/fftw3)
+  - hamlib (https://sourceforge.net/p/hamlib/wiki/Hamlib/ -- https://sourceforge.net/p/hamlib/code/ci/master/tree/)
 
 Features and Status:
 --------------------

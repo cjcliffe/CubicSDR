@@ -11,7 +11,6 @@
 #include "GLPanel.h"
 #include "PrimaryGLContext.h"
 
-#include "fftw3.h"
 #include "Timer.h"
 
 class GainInfo {
@@ -28,7 +27,7 @@ public:
 
 class GainCanvas: public InteractiveCanvas {
 public:
-    GainCanvas(wxWindow *parent, int *attribList = NULL);
+    GainCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
     ~GainCanvas();
 
     void setHelpTip(std::string tip);

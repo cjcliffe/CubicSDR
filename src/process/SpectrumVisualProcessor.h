@@ -2,8 +2,11 @@
 
 #include "VisualProcessor.h"
 #include "DemodDefs.h"
-#include "fftw3.h"
 #include <cmath>
+
+#if USE_FFTW3
+#include "fftw3.h"
+#endif
 
 #define SPECTRUM_VZM 2
 #define PEAK_RESET_COUNT 30
@@ -44,6 +47,7 @@ public:
     
     void setup(unsigned int fftSize);
     void setFFTSize(unsigned int fftSize);
+    unsigned int getFFTSize();
     void setHideDC(bool hideDC);
     
     void setScaleFactor(float sf);
@@ -63,10 +67,16 @@ private:
     long lastInputBandwidth;
     long lastBandwidth;
     bool lastView;
-    
+
+#if USE_FFTW3
     fftwf_complex *fftwInput, *fftwOutput, *fftInData, *fftLastData;
-    unsigned int lastDataSize;
     fftwf_plan fftw_plan;
+#else
+    liquid_float_complex *fftInput, *fftOutput, *fftInData, *fftLastData;
+    fftplan fftPlan;
+#endif
+
+    unsigned int lastDataSize;
     
     double fft_ceil_ma, fft_ceil_maa;
     double fft_floor_ma, fft_floor_maa;

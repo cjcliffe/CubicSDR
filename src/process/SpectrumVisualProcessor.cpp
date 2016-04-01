@@ -2,7 +2,26 @@
 #include "CubicSDR.h"
 
 
-SpectrumVisualProcessor::SpectrumVisualProcessor() : outputBuffers("SpectrumVisualProcessorBuffers"), lastInputBandwidth(0), lastBandwidth(0), fftwInput(NULL), fftwOutput(NULL), fftInData(NULL), fftLastData(NULL), lastDataSize(0), fftw_plan(NULL), resampler(NULL), resamplerRatio(0) {
+SpectrumVisualProcessor::SpectrumVisualProcessor() : outputBuffers("SpectrumVisualProcessorBuffers") {
+    lastInputBandwidth = 0;
+    lastBandwidth = 0;
+    lastDataSize = 0;
+    resampler = nullptr;
+    resamplerRatio = 0;
+
+#if USE_FFTW3
+    fftwInput = nullptr;
+    fftwOutput = nullptr;
+    fftInData = nullptr;
+    fftLastData = nullptr;
+    fftw_plan = nullptr;
+#else
+    fftInput = nullptr;
+    fftOutput = nullptr;
+    fftInData = nullptr;
+    fftLastData = nullptr;
+    fftPlan = nullptr;
+#endif
     
     is_view.store(false);
     fftSize.store(0);
@@ -23,6 +42,7 @@ SpectrumVisualProcessor::SpectrumVisualProcessor() : outputBuffers("SpectrumVisu
     lastView = false;
     peakHold.store(false);
     peakReset.store(false);
+    
 }
 
 SpectrumVisualProcessor::~SpectrumVisualProcessor() {
@@ -101,7 +121,8 @@ void SpectrumVisualProcessor::setup(unsigned int fftSize_in) {
     fftSize = fftSize_in;
     fftSizeInternal = fftSize_in * SPECTRUM_VZM;
     lastDataSize = 0;
-    
+
+#if USE_FFTW3
     int memSize = sizeof(fftwf_complex) * fftSizeInternal;
     
     if (fftwInput) {
@@ -136,6 +157,39 @@ void SpectrumVisualProcessor::setup(unsigned int fftSize_in) {
         fftwf_destroy_plan(fftw_plan);
     }
     fftw_plan = fftwf_plan_dft_1d(fftSizeInternal, fftwInput, fftwOutput, FFTW_FORWARD, FFTW_ESTIMATE);
+#else
+    int memSize = sizeof(liquid_float_complex) * fftSizeInternal;
+    
+    if (fftInput) {
+        free(fftInput);
+    }
+    fftInput = (liquid_float_complex*)malloc(memSize);
+    memset(fftInput,0,memSize);
+    
+    if (fftInData) {
+        free(fftInData);
+    }
+    fftInData = (liquid_float_complex*)malloc(memSize);
+    memset(fftInput,0,memSize);
+    
+    if (fftLastData) {
+        free(fftLastData);
+    }
+    fftLastData = (liquid_float_complex*)malloc(memSize);
+    memset(fftInput,0,memSize);
+    
+    if (fftOutput) {
+        free(fftOutput);
+    }
+    fftOutput = (liquid_float_complex*)malloc(memSize);
+    memset(fftInput,0,memSize);
+    
+    if (fftPlan) {
+        fft_destroy_plan(fftPlan);
+    }
+    fftPlan = fft_create_plan(fftSizeInternal, fftInput, fftOutput, LIQUID_FFT_FORWARD, 0);
+#endif
+    
     busy_run.unlock();
 }
 
@@ -146,6 +200,14 @@ void SpectrumVisualProcessor::setFFTSize(unsigned int fftSize_in) {
     newFFTSize = fftSize_in;
     fftSizeChanged.store(true);
 }
+
+unsigned int SpectrumVisualProcessor::getFFTSize() {
+    if (fftSizeChanged.load()) {
+        return newFFTSize;
+    }
+    return fftSize.load();
+}
+
 
 void SpectrumVisualProcessor::setHideDC(bool hideDC) {
     this->hideDC.store(hideDC);
@@ -311,6 +373,7 @@ void SpectrumVisualProcessor::process() {
             
             msresamp_crcf_execute(resampler, &shiftBuffer[0], desired_input_size, &resampleBuffer[0], &num_written);
             
+#if USE_FFTW3
             if (num_written < fftSizeInternal) {
                 for (unsigned int i = 0; i < num_written; i++) {
                     fftInData[i][0] = resampleBuffer[i].real;
@@ -326,10 +389,19 @@ void SpectrumVisualProcessor::process() {
                     fftInData[i][1] = resampleBuffer[i].imag;
                 }
             }
+#else
+            if (num_written < fftSizeInternal) {
+                memcpy(fftInData, resampleBuffer.data(), num_written * sizeof(liquid_float_complex));
+                memset(&(fftInData[num_written]), 0, (fftSizeInternal-num_written) * sizeof(liquid_float_complex));
+            } else {
+                memcpy(fftInData, resampleBuffer.data(), fftSizeInternal * sizeof(liquid_float_complex));
+            }
+#endif
         } else {
             this->desiredInputSize.store(fftSizeInternal);
 
             num_written = data->size();
+#if USE_FFTW3
             if (data->size() < fftSizeInternal) {
                 for (size_t i = 0, iMax = data->size(); i < iMax; i++) {
                     fftInData[i][0] = (*data)[i].real;
@@ -345,10 +417,19 @@ void SpectrumVisualProcessor::process() {
                     fftInData[i][1] = (*data)[i].imag;
                 }
             }
+#else
+            if (data->size() < fftSizeInternal) {
+                memcpy(fftInData, data->data(), data->size() * sizeof(liquid_float_complex));
+                memset(&fftInData[data->size()], 0, (fftSizeInternal - data->size()) * sizeof(liquid_float_complex));
+            } else {
+                memcpy(fftInData, data->data(), fftSizeInternal * sizeof(liquid_float_complex));
+            }
+#endif
         }
         
         bool execute = false;
-        
+
+#if USE_FFTW3
         if (num_written >= fftSizeInternal) {
             execute = true;
             memcpy(fftwInput, fftInData, fftSizeInternal * sizeof(fftwf_complex));
@@ -370,6 +451,29 @@ void SpectrumVisualProcessor::process() {
                 execute = true;
             }
         }
+#else
+        if (num_written >= fftSizeInternal) {
+            execute = true;
+            memcpy(fftInput, fftInData, fftSizeInternal * sizeof(liquid_float_complex));
+            memcpy(fftLastData, fftInput, fftSizeInternal * sizeof(liquid_float_complex));
+            
+        } else {
+            if (lastDataSize + num_written < fftSizeInternal) { // priming
+                unsigned int num_copy = fftSizeInternal - lastDataSize;
+                if (num_written > num_copy) {
+                    num_copy = num_written;
+                }
+                memcpy(fftLastData, fftInData, num_copy * sizeof(liquid_float_complex));
+                lastDataSize += num_copy;
+            } else {
+                unsigned int num_last = (fftSizeInternal - num_written);
+                memcpy(fftInput, fftLastData + (lastDataSize - num_last), num_last * sizeof(liquid_float_complex));
+                memcpy(fftInput + num_last, fftInData, num_written * sizeof(liquid_float_complex));
+                memcpy(fftLastData, fftInput, fftSizeInternal * sizeof(liquid_float_complex));
+                execute = true;
+            }
+        }
+#endif
         
         if (execute) {
             SpectrumVisualData *output = outputBuffers.getBuffer();
@@ -385,9 +489,10 @@ void SpectrumVisualProcessor::process() {
                 output->spectrum_hold_points.resize(0);
             }
             
-            fftwf_execute(fftw_plan);
-            
             float fft_ceil = 0, fft_floor = 1;
+
+#if USE_FFTW3
+            fftwf_execute(fftw_plan);
             
             for (int i = 0, iMax = fftSizeInternal / 2; i < iMax; i++) {
                 float a = fftwOutput[i][0];
@@ -401,6 +506,22 @@ void SpectrumVisualProcessor::process() {
                 fft_result[i] = (z);
                 fft_result[fftSizeInternal / 2 + i] = (c);
             }
+#else
+            fft_execute(fftPlan);
+            
+            for (int i = 0, iMax = fftSizeInternal / 2; i < iMax; i++) {
+                float a = fftOutput[i].real;
+                float b = fftOutput[i].imag;
+                float c = sqrt(a * a + b * b);
+                
+                float x = fftOutput[fftSizeInternal / 2 + i].real;
+                float y = fftOutput[fftSizeInternal / 2 + i].imag;
+                float z = sqrt(x * x + y * y);
+                
+                fft_result[i] = (z);
+                fft_result[fftSizeInternal / 2 + i] = (c);
+            }
+#endif
             
             if (newResampler && lastView) {
                 if (bwDiff < 0) {

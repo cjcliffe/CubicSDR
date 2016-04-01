@@ -59,9 +59,9 @@ void TuningContext::Draw(float r, float g, float b, float a, float p1, float p2)
 }
 
 void TuningContext::DrawEnd() {
-    glFlush();
+//    glFlush();
 
-    CheckGLError();
+//    CheckGLError();
 }
 
 void TuningContext::DrawTuner(long long freq, int count, float displayPos, float displayWidth) {

@@ -3,10 +3,24 @@
 #include <map>
 #include <string>
 #include <sstream>
+#include <mutex>
+#include <atomic>
 #include "lodepng.h"
 #include "wx/glcanvas.h"
 #include "wx/filename.h"
 #include "wx/stdpaths.h"
+
+class GLFontStringCache {
+public:
+    GLFontStringCache();
+    int drawlen;
+    int vpx, vpy;
+    int pxHeight;
+    float msgWidth;
+    std::atomic_int gc;
+    std::vector<float> gl_vertices;
+    std::vector<float> gl_uv;
+};
 
 class GLFontChar {
 public:
@@ -66,12 +80,18 @@ public:
     bool isLoaded();
 
     float getStringWidth(std::string str, float size, float viewAspect);
-    void drawString(std::string str, float xpos, float ypos, int pxHeight, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx=0, int vpy=0);
+    void drawString(std::string str, float xpos, float ypos, int pxHeight, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx=0, int vpy=0, bool cacheable = false);
 
     static GLFont fonts[GLFONT_MAX];
     static GLFont &getFont(GLFontSize esize);
 
+    GLFontStringCache *cacheString(std::string str, int pxHeight, int vpx, int vpy);
+    void drawCacheString(GLFontStringCache *fc, float xpos, float ypos, Align hAlign, Align vAlign);
+
+    void doCacheGC();
 private:
+    std::map<std::string, GLFontStringCache * > stringCache;
+    
     std::string nextParam(std::istringstream &str);
     std::string getParamKey(std::string param_str);
     std::string getParamValue(std::string param_str);
@@ -90,4 +110,6 @@ private:
     std::string imageFile;
     std::string fontFileSource;
     GLuint texId;
+    int gcCounter;
+    std::mutex cache_busy;
 };

@@ -44,8 +44,8 @@ void MeterContext::Draw(float r, float g, float b, float a, float level) {
 }
 
 void MeterContext::DrawEnd() {
-    glFlush();
+//    glFlush();
 
-    CheckGLError();
+//    CheckGLError();
 }
 

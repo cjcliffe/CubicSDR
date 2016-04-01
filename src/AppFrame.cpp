@@ -55,7 +55,9 @@ AppFrame::AppFrame() :
     wxBoxSizer *demodScopeTray = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodTunerTray = new wxBoxSizer(wxHORIZONTAL);
 
-    int attribList[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
+//    int attribList[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
+    wxGLAttributes attribList;
+    attribList.PlatformDefaults().RGBA().DoubleBuffer().EndList();
 
     mainSplitter = new wxSplitterWindow( this, wxID_MAIN_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
     mainSplitter->SetSashGravity(10.0/37.0);
@@ -603,6 +605,14 @@ void AppFrame::updateDeviceParams() {
     showTipMenuItem = newSettingsMenu->AppendCheckItem(wxID_SET_TIPS, "Show Hover Tips");
     showTipMenuItem->Check(wxGetApp().getConfig()->getShowTips());
 
+    lowPerfMode = wxGetApp().getConfig()->getLowPerfMode();
+    lowPerfMenuItem = newSettingsMenu->AppendCheckItem(wxID_LOW_PERF, "Reduce CPU Usage");
+    if (lowPerfMode) {
+        lowPerfMenuItem->Check(true);
+    }
+
+    newSettingsMenu->AppendSeparator();
+
     newSettingsMenu->Append(wxID_SET_FREQ_OFFSET, "Frequency Offset");
 
     if (devInfo->hasCORR(SOAPY_SDR_RX, 0)) {
@@ -624,6 +634,10 @@ void AppFrame::updateDeviceParams() {
     
     SoapySDR::ArgInfoList::const_iterator args_i;
     settingArgs = soapyDev->getSettingInfo();
+
+    if (settingArgs.size()) {
+        newSettingsMenu->AppendSeparator();
+    }
     
     for (args_i = settingArgs.begin(); args_i != settingArgs.end(); args_i++) {
         SoapySDR::ArgInfo arg = (*args_i);
@@ -779,6 +793,21 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
                 wxGetApp().setDevice(dev);
             }
         }
+    } else if (event.GetId() == wxID_LOW_PERF) {
+        lowPerfMode = lowPerfMenuItem->IsChecked();
+        wxGetApp().getConfig()->setLowPerfMode(lowPerfMode);
+
+//        long srate = wxGetApp().getSampleRate();
+//        if (srate > CHANNELIZER_RATE_MAX && lowPerfMode) {
+//            if (wxGetApp().getSpectrumProcessor()->getFFTSize() != 1024) {
+//                setMainWaterfallFFTSize(1024);
+//            }
+//        } else if (srate > CHANNELIZER_RATE_MAX) {
+//            if (wxGetApp().getSpectrumProcessor()->getFFTSize() != 2048) {
+//                setMainWaterfallFFTSize(2048);
+//            }
+//        }
+
     } else if (event.GetId() == wxID_SET_TIPS ) {
         if (wxGetApp().getConfig()->getShowTips()) {
             wxGetApp().getConfig()->setShowTips(false);
@@ -1460,9 +1489,13 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 #endif
     
     if (!this->IsActive()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(25));
+        std::this_thread::sleep_for(std::chrono::milliseconds(30));
     } else {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        if (lowPerfMode) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(30));
+        } else {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
     }
     
     event.RequestMore();
@@ -1608,7 +1641,7 @@ bool AppFrame::loadSession(std::string fileName) {
 
             DataNode *demodTypeNode = demod->hasAnother("type")?demod->getNext("type"):nullptr;
             
-            if (demodTypeNode->element()->getDataType() == DATA_INT) {
+            if (demodTypeNode && demodTypeNode->element()->getDataType() == DATA_INT) {
                 int legacyType = *demodTypeNode;
                 int legacyStereo = demod->hasAnother("stereo") ? (int) *demod->getNext("stereo") : 0;
                 switch (legacyType) {   // legacy demod ID
@@ -1630,7 +1663,7 @@ bool AppFrame::loadSession(std::string fileName) {
                     case 16: type = "I/Q"; break;
                     default: type = "FM"; break;
                 }
-            } else if (demodTypeNode->element()->getDataType() == DATA_STRING) {
+            } else if (demodTypeNode && demodTypeNode->element()->getDataType() == DATA_STRING) {
                 demodTypeNode->element()->get(type);
             }
 

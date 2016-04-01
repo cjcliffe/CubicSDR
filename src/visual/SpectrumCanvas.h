@@ -13,7 +13,7 @@ class WaterfallCanvas;
 
 class SpectrumCanvas: public InteractiveCanvas {
 public:
-    SpectrumCanvas(wxWindow *parent, int *attribList = NULL);
+    SpectrumCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
     ~SpectrumCanvas();
 
     void attachWaterfallCanvas(WaterfallCanvas *canvas_in);

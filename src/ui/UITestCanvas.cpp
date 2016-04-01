@@ -24,8 +24,8 @@ EVT_LEAVE_WINDOW(UITestCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(UITestCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
-UITestCanvas::UITestCanvas(wxWindow *parent, int *attribList) :
-InteractiveCanvas(parent, attribList) {
+UITestCanvas::UITestCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
+InteractiveCanvas(parent, dispAttrs) {
     
     glContext = new UITestContext(this, &wxGetApp().GetContext(this));
 }
