@@ -106,6 +106,15 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
             }
         } else {
             #ifdef BUNDLE_SOAPY_MODS
+			#ifdef BUNDLED_MODS_ONLY
+			wxFileName exePath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
+			std::vector<std::string> localMods = SoapySDR::listModules(exePath.GetPath().ToStdString() + "/modules/");
+			for (std::vector<std::string>::iterator mods_i = localMods.begin(); mods_i != localMods.end(); mods_i++) {
+				wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Initializing bundled SoapySDR module " + (*mods_i) + "..");
+				std::cout << "Loading bundled SoapySDR module " << (*mods_i) << ".." << std::endl;
+				SoapySDR::loadModule(*mods_i);
+			}
+			#else
             bool localModPref = wxGetApp().getUseLocalMod();
             if (localModPref) {
                 wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Loading SoapySDR modules..");
@@ -126,6 +135,7 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
                 std::cout << "Checking system SoapySDR modules.." << std::flush;
                 SoapySDR::loadModules();
             }
+			#endif
             #else
             wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Loading SoapySDR modules..");
             SoapySDR::loadModules();
