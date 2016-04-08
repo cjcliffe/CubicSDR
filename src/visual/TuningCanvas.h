@@ -17,7 +17,7 @@ public:
     enum ActiveState {
         TUNING_HOVER_NONE, TUNING_HOVER_FREQ, TUNING_HOVER_BW, TUNING_HOVER_PPM, TUNING_HOVER_CENTER
     };
-    TuningCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
+    TuningCanvas(wxWindow *parent, int *dispAttrs);
     ~TuningCanvas();
 
     void setHelpTip(std::string tip);

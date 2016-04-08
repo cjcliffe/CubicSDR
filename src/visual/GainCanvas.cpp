@@ -24,7 +24,7 @@ EVT_LEAVE_WINDOW(GainCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(GainCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
-GainCanvas::GainCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
+GainCanvas::GainCanvas(wxWindow *parent, int *dispAttrs) :
         InteractiveCanvas(parent, dispAttrs) {
 
     glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this));
