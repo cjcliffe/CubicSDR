@@ -55,9 +55,10 @@ AppFrame::AppFrame() :
     wxBoxSizer *demodScopeTray = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodTunerTray = new wxBoxSizer(wxHORIZONTAL);
 
-//    int attribList[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
-    wxGLAttributes attribList;
-    attribList.PlatformDefaults().RGBA().DoubleBuffer().EndList();
+    int attribList[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
+    //wxGLAttributes attribList;
+    //attribList.PlatformDefaults().RGBA().DoubleBuffer().EndList();
+    //attribList.PlatformDefaults().MinRGBA(8, 8, 8, 8).DoubleBuffer().Depth(16).EndList();
 
     mainSplitter = new wxSplitterWindow( this, wxID_MAIN_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
     mainSplitter->SetSashGravity(10.0/37.0);
@@ -558,7 +559,7 @@ AppFrame::AppFrame() :
     waterfallCanvas->setLinesPerSecond(wflps);
             
     ThemeMgr::mgr.setTheme(wxGetApp().getConfig()->getTheme());
-            
+
     Show();
 
 #ifdef _WIN32

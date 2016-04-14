@@ -8,7 +8,7 @@
 
 class InteractiveCanvas: public wxGLCanvas {
 public:
-    InteractiveCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
+    InteractiveCanvas(wxWindow *parent, int *dispAttrs);
     ~InteractiveCanvas();
 
     long long getFrequencyAt(float x);
