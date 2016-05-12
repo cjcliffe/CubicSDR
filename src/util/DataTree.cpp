@@ -371,6 +371,8 @@ std::string DataElement::toString() {
             double floatSettingValue;
             get(floatSettingValue);
             strValue = std::to_string(floatSettingValue);
+        } else if (dataType == DATA_NULL) {
+            strValue = "";
         } else {
             std::cout << "Unhandled DataElement toString for type: " << dataType  << std::endl;
         }

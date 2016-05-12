@@ -36,6 +36,7 @@ private:
     std::map<wxTreeItemId, SDRDeviceInfo *> devItems;
     std::map<wxTreeItemId, SDRDeviceInfo *>::iterator devItems_i;
     SDRDeviceInfo *dev;
+    std::map<std::string, SoapySDR::ArgInfo> deviceArgs;
     std::map<std::string, wxPGProperty *> runtimeProps;
     std::map<std::string, SoapySDR::ArgInfo> runtimeArgs;
     std::map<std::string, wxPGProperty *> streamProps;

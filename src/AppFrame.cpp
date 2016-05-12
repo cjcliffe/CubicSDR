@@ -1597,7 +1597,9 @@ bool AppFrame::loadSession(std::string fileName) {
 
         long long center_freq = *header->getNext("center_freq");
         std::cout << "\tCenter Frequency: " << center_freq << std::endl;
-        
+
+        wxGetApp().setFrequency(center_freq);
+
         if (header->hasAnother("sample_rate")) {
             int sample_rate = *header->getNext("sample_rate");
             
@@ -1612,8 +1614,6 @@ bool AppFrame::loadSession(std::string fileName) {
             }
             
         }
-
-        wxGetApp().setFrequency(center_freq);
 
         DataNode *demodulators = l.rootNode()->getNext("demodulators");
 

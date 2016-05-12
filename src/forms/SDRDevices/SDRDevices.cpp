@@ -113,6 +113,30 @@ void SDRDevicesDialog::refreshDeviceProperties() {
         devSettings["name"] = m_propertyGrid->Append( new wxStringProperty("Name", wxPG_LABEL, devConfig->getDeviceName()) );
         devSettings["offset"] = m_propertyGrid->Append( new wxIntProperty("Offset (Hz)", wxPG_LABEL, devConfig->getOffset()) );
         
+        int currentSampleRate = wxGetApp().getSampleRate();
+        int deviceSampleRate = devConfig->getSampleRate();
+        
+        if (!deviceSampleRate) {
+            deviceSampleRate = selDev->getSampleRateNear(SOAPY_SDR_RX, 0, currentSampleRate);
+        }
+        
+        SoapySDR::ArgInfo sampleRateArg;
+        std::vector<long> rateOpts = selDev->getSampleRates(SOAPY_SDR_RX, 0);
+
+        for (std::vector<long>::iterator rate_i = rateOpts.begin(); rate_i != rateOpts.end(); rate_i++) {
+            sampleRateArg.options.push_back(std::to_string(*rate_i));
+            sampleRateArg.optionNames.push_back(frequencyToStr(*rate_i));
+        }
+        
+        sampleRateArg.type = SoapySDR::ArgInfo::STRING;
+        sampleRateArg.units = "Hz";
+        sampleRateArg.name = "Sample Rate";
+        sampleRateArg.key = "sample_rate";
+        sampleRateArg.value = std::to_string(deviceSampleRate);
+        
+        devSettings["sample_rate"] = addArgInfoProperty(m_propertyGrid, sampleRateArg);
+        deviceArgs["sample_rate"] = sampleRateArg;
+        
         runtimeArgs.erase(runtimeArgs.begin(), runtimeArgs.end());
         runtimeProps.erase(runtimeProps.begin(), runtimeProps.end());
         streamProps.erase(streamProps.begin(), streamProps.end());
@@ -291,6 +315,7 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event) {
         wxGetApp().setDeviceArgs(settingArgs);
         wxGetApp().setStreamArgs(streamArgs);
         wxGetApp().setDevice(dev);
+                
         Close();
     }
     event.Skip();
@@ -406,6 +431,21 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
         long offset = event.GetPropertyValue().GetInteger();
         
         devConfig->setOffset(offset);
+    } else if (dev && event.GetProperty() == devSettings["sample_rate"]) {
+        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
+        
+        std::string strRate = deviceArgs["sample_rate"].options[event.GetPropertyValue().GetInteger()];
+        int srate = 0;
+        try {
+            srate = std::stoi(strRate);
+            devConfig->setSampleRate(srate);
+            
+            if (dev->isActive() || !wxGetApp().getDevice()) {
+                wxGetApp().setSampleRate(srate);
+            }            
+        } catch (std::invalid_argument e) {
+            // nop
+        }
     } else if (editId && dev) {
         wxPGProperty *prop = event.GetProperty();
         

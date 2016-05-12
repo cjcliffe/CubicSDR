@@ -12,6 +12,7 @@
 #include "SDRDeviceInfo.h"
 
 typedef std::map<std::string, std::string> ConfigSettings;
+typedef std::map<std::string, float> ConfigGains;
 
 class DeviceConfig {
 public:
@@ -24,6 +25,12 @@ public:
     void setOffset(long long offset);
     long long getOffset();
 
+    void setSampleRate(long srate);
+    long getSampleRate();
+
+    void setAGCMode(bool agcMode);
+    bool getAGCMode();
+    
     void setDeviceId(std::string deviceId);
     std::string getDeviceId();
 
@@ -39,7 +46,12 @@ public:
     ConfigSettings getSettings();
     void setSetting(std::string key, std::string value);
     std::string getSetting(std::string key, std::string defaultValue);
-    
+
+    void setGains(ConfigGains gains);
+    ConfigGains getGains();
+    void setGain(std::string key, float value);
+    float getGain(std::string key, float defaultValue);
+
     void setRigIF(int rigType, long long freq);
     long long getRigIF(int rigType);
 
@@ -53,7 +65,10 @@ private:
 
     std::atomic_int ppm;
     std::atomic_llong offset;
+    std::atomic_bool agcMode;
+    std::atomic_long sampleRate;
     ConfigSettings streamOpts;
+    ConfigGains gains;
     std::map<std::string, std::string> settings;
     std::map<int, long long> rigIF;
 };

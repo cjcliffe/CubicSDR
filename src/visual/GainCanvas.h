@@ -10,7 +10,7 @@
 #include "MouseTracker.h"
 #include "GLPanel.h"
 #include "PrimaryGLContext.h"
-
+#include "SDRDeviceInfo.h"
 #include "Timer.h"
 
 class GainInfo {
@@ -53,8 +53,10 @@ private:
     std::string helpTip;
     std::vector<GainInfo *> gainInfo;
     GLPanel bgPanel;
+    SDRRangeMap gains;
     
     float spacing, barWidth, startPos, barHeight, numGains;
+    int refreshCounter;
     wxSize clientSize;
     //
 wxDECLARE_EVENT_TABLE();
