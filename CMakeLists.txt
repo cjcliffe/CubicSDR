@@ -287,6 +287,7 @@ SET (cubicsdr_sources
     src/modules/modem/analog/ModemAM.cpp
     src/modules/modem/analog/ModemDSB.cpp
     src/modules/modem/analog/ModemFM.cpp
+    src/modules/modem/analog/ModemNBFM.cpp
     src/modules/modem/analog/ModemFMStereo.cpp
     src/modules/modem/analog/ModemIQ.cpp
     src/modules/modem/analog/ModemLSB.cpp
@@ -384,6 +385,7 @@ SET (cubicsdr_headers
     src/modules/modem/analog/ModemAM.h
     src/modules/modem/analog/ModemDSB.h
     src/modules/modem/analog/ModemFM.h
+    src/modules/modem/analog/ModemNBFM.h
     src/modules/modem/analog/ModemFMStereo.h
     src/modules/modem/analog/ModemIQ.h
     src/modules/modem/analog/ModemLSB.h

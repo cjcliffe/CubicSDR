@@ -76,6 +76,7 @@ AppFrame::AppFrame() :
     demodModeSelector = new ModeSelectorCanvas(demodPanel, attribList);
     demodModeSelector->addChoice("FM");
     demodModeSelector->addChoice("FMS");
+    demodModeSelector->addChoice("NBFM");
     demodModeSelector->addChoice("AM");
     demodModeSelector->addChoice("LSB");
     demodModeSelector->addChoice("USB");
@@ -1940,7 +1941,9 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
         case 'F':
             if (demodModeSelector->getSelectionLabel() == "FM") {
                 demodModeSelector->setSelection("FMS");
-            } else {
+            } else if (demodModeSelector->getSelectionLabel() == "FMS") {
+                demodModeSelector->setSelection("NBFM");
+            } else if (demodModeSelector->getSelectionLabel() == "NBFM") {
                 demodModeSelector->setSelection("FM");
             }
             return 1;
