@@ -33,7 +33,7 @@ void ModeSelectorContext::DrawSelector(std::string label, int c, int cMax, bool 
 
     int fontHeight = 16;
 
-    if (viewWidth < 30) {
+    if (viewWidth < 30 || viewHeight < 200) {
         fontSize = GLFont::GLFONT_SIZE12;
         fontHeight = 12;
     }

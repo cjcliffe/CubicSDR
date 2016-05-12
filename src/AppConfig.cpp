@@ -4,6 +4,8 @@
 DeviceConfig::DeviceConfig() : deviceId("") {
 	ppm.store(0);
 	offset.store(0);
+    agcMode.store(true);
+    sampleRate.store(0);
 }
 
 DeviceConfig::DeviceConfig(std::string deviceId) : DeviceConfig() {
@@ -25,6 +27,24 @@ void DeviceConfig::setOffset(long long offset) {
 long long DeviceConfig::getOffset() {
     return offset.load();
 }
+
+
+void DeviceConfig::setSampleRate(long srate) {
+    sampleRate.store(srate);
+}
+
+long DeviceConfig::getSampleRate() {
+    return sampleRate.load();
+}
+
+void DeviceConfig::setAGCMode(bool agcMode) {
+    this->agcMode.store(agcMode);
+}
+
+bool DeviceConfig::getAGCMode() {
+    return agcMode.load();
+}
+
 
 void DeviceConfig::setDeviceId(std::string deviceId) {
     busy_lock.lock();
@@ -62,21 +82,38 @@ void DeviceConfig::save(DataNode *node) {
     busy_lock.lock();
     *node->newChild("id") = deviceId;
     *node->newChild("name") = deviceName;
-    *node->newChild("ppm") = (int)ppm;
-    *node->newChild("offset") = offset;
-    DataNode *streamOptsNode = node->newChild("streamOpts");
-    for (ConfigSettings::const_iterator opt_i = streamOpts.begin(); opt_i != streamOpts.end(); opt_i++) {
-        *streamOptsNode->newChild(opt_i->first.c_str()) = opt_i->second;
+    *node->newChild("ppm") = (int)ppm.load();
+    *node->newChild("offset") = offset.load();
+    *node->newChild("sample_rate") = sampleRate.load();
+    *node->newChild("agc_mode") = agcMode.load()?1:0;
+
+    if (streamOpts.size()) {
+        DataNode *streamOptsNode = node->newChild("streamOpts");
+        for (ConfigSettings::const_iterator opt_i = streamOpts.begin(); opt_i != streamOpts.end(); opt_i++) {
+            *streamOptsNode->newChild(opt_i->first.c_str()) = opt_i->second;
+        }
     }
-    DataNode *settingsNode = node->newChild("settings");
-    for (ConfigSettings::const_iterator set_i = settings.begin(); set_i != settings.end(); set_i++) {
-        *settingsNode->newChild(set_i->first.c_str()) = set_i->second;
+    if (settings.size()) {
+        DataNode *settingsNode = node->newChild("settings");
+        for (ConfigSettings::const_iterator set_i = settings.begin(); set_i != settings.end(); set_i++) {
+            *settingsNode->newChild(set_i->first.c_str()) = set_i->second;
+        }
     }
-    DataNode *rigIFs = node->newChild("rig_ifs");
-    for (std::map<int, long long>::const_iterator rigIF_i = rigIF.begin(); rigIF_i != rigIF.end(); rigIF_i++) {
-        DataNode *ifNode = rigIFs->newChild("rig_if");
-        *ifNode->newChild("model") = rigIF_i->first;
-        *ifNode->newChild("sdr_if") = rigIF_i->second;
+    if (rigIF.size()) {
+        DataNode *rigIFs = node->newChild("rig_ifs");
+        for (std::map<int, long long>::const_iterator rigIF_i = rigIF.begin(); rigIF_i != rigIF.end(); rigIF_i++) {
+            DataNode *ifNode = rigIFs->newChild("rig_if");
+            *ifNode->newChild("model") = rigIF_i->first;
+            *ifNode->newChild("sdr_if") = rigIF_i->second;
+        }
+    }
+    if (gains.size()) {
+        DataNode *gainsNode = node->newChild("gains");
+        for (ConfigGains::const_iterator gain_i = gains.begin(); gain_i != gains.end(); gain_i++) {
+            DataNode *gainNode = gainsNode->newChild("gain");
+            *gainNode->newChild("id") = gain_i->first;
+            *gainNode->newChild("value") = gain_i->second;
+        }
     }
     busy_lock.unlock();
 }
@@ -91,14 +128,24 @@ void DeviceConfig::load(DataNode *node) {
         int ppmValue = 0;
         ppm_node->element()->get(ppmValue);
         setPPM(ppmValue);
-        std::cout << "Loaded PPM for device '" << deviceId << "' at " << ppmValue << "ppm" << std::endl;
     }
     if (node->hasAnother("offset")) {
         DataNode *offset_node = node->getNext("offset");
         long long offsetValue = 0;
         offset_node->element()->get(offsetValue);
         setOffset(offsetValue);
-        std::cout << "Loaded offset for device '" << deviceId << "' at " << offsetValue << "Hz" << std::endl;
+    }
+    if (node->hasAnother("agc_mode")) {
+        DataNode *agc_node = node->getNext("agc_mode");
+        int agcModeValue = 0;
+        agc_node->element()->get(agcModeValue);
+        setAGCMode(agcModeValue?true:false);
+    }
+    if (node->hasAnother("sample_rate")) {
+        DataNode *sample_rate_node = node->getNext("sample_rate");
+        long sampleRateValue = 0;
+        sample_rate_node->element()->get(sampleRateValue);
+        setSampleRate(sampleRateValue);
     }
     if (node->hasAnother("streamOpts")) {
         DataNode *streamOptsNode = node->getNext("streamOpts");
@@ -136,6 +183,21 @@ void DeviceConfig::load(DataNode *node) {
                 rigIFNode->getNext("sdr_if")->element()->get(load_freq);
                 
                 rigIF[load_model] = load_freq;
+            }
+        }
+    }
+    if (node->hasAnother("gains")) {
+        DataNode *gainsNode = node->getNext("gains");
+        while (gainsNode->hasAnother("gain")) {
+            DataNode *gainNode = gainsNode->getNext("gain");
+            std::string keyName;
+            float fltSettingValue;
+            
+            gainNode->getNext("id")->element()->get(keyName);
+            gainNode->getNext("value")->element()->get(fltSettingValue);
+
+            if (keyName != "" && !(fltSettingValue!=fltSettingValue)) {
+                setGain(keyName, fltSettingValue);
             }
         }
     }
@@ -180,6 +242,27 @@ std::string DeviceConfig::getSetting(std::string key, std::string defaultValue) 
 ConfigSettings DeviceConfig::getSettings() {
     return settings;
 }
+
+
+void DeviceConfig::setGains(ConfigGains gains) {
+    this->gains = gains;
+}
+
+ConfigGains DeviceConfig::getGains() {
+    return gains;
+}
+
+void DeviceConfig::setGain(std::string key, float value) {
+    gains[key] = value;
+}
+
+float DeviceConfig::getGain(std::string key, float defaultValue) {
+    if (gains.find(key) != gains.end()) {
+        return gains[key];
+    }
+    return defaultValue;
+}
+
 
 void DeviceConfig::setRigIF(int rigType, long long freq) {
     rigIF[rigType] = freq;

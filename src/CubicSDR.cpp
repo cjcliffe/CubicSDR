@@ -179,6 +179,7 @@ bool CubicSDR::OnInit() {
 #endif
 
     Modem::addModemFactory(new ModemFM);
+    Modem::addModemFactory(new ModemNBFM);
     Modem::addModemFactory(new ModemFMStereo);
     Modem::addModemFactory(new ModemAM);
     Modem::addModemFactory(new ModemLSB);
@@ -544,14 +545,11 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev) {
     SoapySDR::Device *soapyDev = dev->getSoapyDevice();
     
     if (soapyDev) {
-        //long long freqHigh, freqLow;
+        if (long devSampleRate = devConfig->getSampleRate()) {
+            sampleRate = dev->getSampleRateNear(SOAPY_SDR_RX, 0, devSampleRate);
+            sampleRateInitialized.store(true);
+        }
         
-        //SoapySDR::RangeList freqRange = soapyDev->getFrequencyRange(SOAPY_SDR_RX, 0);
-        
-        //freqLow = freqRange[0].minimum();
-        //freqHigh = freqRange[freqRange.size()-1].maximum();
-
-        // Try for a reasonable default sample rate.
         if (!sampleRateInitialized.load()) {
             sampleRate = dev->getSampleRateNear(SOAPY_SDR_RX, 0, DEFAULT_SAMPLE_RATE);
             sampleRateInitialized.store(true);
@@ -568,9 +566,16 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev) {
 
         setPPM(devConfig->getPPM());
         setOffset(devConfig->getOffset());
+        
+
+        if (devConfig->getAGCMode()) {
+            setAGCMode(true);
+        } else {
+            setAGCMode(false);
+        }
 
         t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
-    }
+}
     
     stoppedDev = nullptr;
 }

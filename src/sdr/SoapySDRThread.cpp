@@ -302,6 +302,15 @@ void SDRThread::updateSettings() {
         agc_mode_changed.store(false);
         if (!agc_mode.load()) {
             updateGains();
+            
+            DeviceConfig *devConfig = deviceConfig.load();
+            ConfigGains gains = devConfig->getGains();
+            
+            if (gains.size()) {
+                for (ConfigGains::iterator gain_i = gains.begin(); gain_i != gains.end(); gain_i++) {
+                    setGain(gain_i->first, gain_i->second);
+                }
+            }
         }
         doUpdate = true;
     }
@@ -394,7 +403,7 @@ int SDRThread::getOptimalElementCount(long long sampleRate, int fps) {
     int elemCount = (int)floor((double)sampleRate/(double)fps);
     int nch = numChannels.load();
     elemCount = int(ceil((double)elemCount/(double)nch))*nch;
-    std::cout << "Calculated optimal " << numChannels.load() << " channel element count of " << elemCount << std::endl;
+//    std::cout << "Calculated optimal " << numChannels.load() << " channel element count of " << elemCount << std::endl;
     return elemCount;
 }
 
@@ -450,7 +459,7 @@ void SDRThread::unlockFrequency() {
 void SDRThread::setOffset(long long ofs) {
     offset.store(ofs);
     offset_changed.store(true);
-    std::cout << "Set offset: " << offset.load() << std::endl;
+//    std::cout << "Set offset: " << offset.load() << std::endl;
 }
 
 long long SDRThread::getOffset() {
@@ -460,7 +469,11 @@ long long SDRThread::getOffset() {
 void SDRThread::setSampleRate(int rate) {
     sampleRate.store(rate);
     rate_changed = true;
-    std::cout << "Set sample rate: " << sampleRate.load() << std::endl;
+    DeviceConfig *devConfig = deviceConfig.load();
+    if (devConfig) {
+        devConfig->setSampleRate(rate);
+    }
+//    std::cout << "Set sample rate: " << sampleRate.load() << std::endl;
 }
 int SDRThread::getSampleRate() {
     return sampleRate.load();
@@ -469,7 +482,7 @@ int SDRThread::getSampleRate() {
 void SDRThread::setPPM(int ppm) {
     this->ppm.store(ppm);
     ppm_changed.store(true);
-    std::cout << "Set PPM: " << this->ppm.load() << std::endl;
+//    std::cout << "Set PPM: " << this->ppm.load() << std::endl;
 }
 
 int SDRThread::getPPM() {
@@ -479,6 +492,10 @@ int SDRThread::getPPM() {
 void SDRThread::setAGCMode(bool mode) {
     agc_mode.store(mode);
     agc_mode_changed.store(true);
+    DeviceConfig *devConfig = deviceConfig.load();
+    if (devConfig) {
+        devConfig->setAGCMode(mode);
+    }
 }
 
 bool SDRThread::getAGCMode() {
@@ -499,6 +516,11 @@ void SDRThread::setGain(std::string name, float value) {
     gainChanged[name] = true;
     gain_value_changed.store(true);
     gain_busy.unlock();
+    
+    DeviceConfig *devConfig = deviceConfig.load();
+    if (devConfig) {
+        devConfig->setGain(name, value);
+    }
 }
 
 float SDRThread::getGain(std::string name) {

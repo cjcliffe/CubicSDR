@@ -36,6 +36,7 @@ GainCanvas::GainCanvas(wxWindow *parent, int *dispAttrs) :
     barWidth = (1.0/numGains)*0.8;
     startPos = spacing/2.0;
     barHeight = 0.8;
+    refreshCounter = 0;
 }
 
 GainCanvas::~GainCanvas() {
@@ -186,8 +187,9 @@ void GainCanvas::updateGainUI() {
     const wxSize ClientSize = GetClientSize();
 
     SDRDeviceInfo *devInfo = wxGetApp().getDevice();
+    DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(devInfo->getDeviceId());
     
-    SDRRangeMap gains = devInfo->getGains(SOAPY_SDR_RX, 0);
+    gains = devInfo->getGains(SOAPY_SDR_RX, 0);
     SDRRangeMap::iterator gi;
     
     numGains = gains.size();
@@ -223,7 +225,8 @@ void GainCanvas::updateGainUI() {
         gInfo->name = gi->first;
         gInfo->low = gi->second.minimum();
         gInfo->high = gi->second.maximum();
-        gInfo->current = wxGetApp().getGain(gInfo->name);
+        gInfo->current = devConfig->getGain(gInfo->name,wxGetApp().getGain(gInfo->name));
+        gInfo->changed = false;
         
         gInfo->panel.setBorderPx(1);
         gInfo->panel.setFill(GLPanel::GLPANEL_FILL_GRAD_BAR_X);
