@@ -1810,6 +1810,20 @@ FrequencyDialog::FrequencyDialogTarget AppFrame::getFrequencyDialogTarget() {
     return target;
 }
 
+void AppFrame::gkNudgeLeft(DemodulatorInstance *demod, int snap) {
+    if (demod) {
+        demod->setFrequency(demod->getFrequency()-snap);
+        demod->updateLabel(demod->getFrequency());
+    }
+}
+
+void AppFrame::gkNudgeRight(DemodulatorInstance *demod, int snap) {
+    if (demod) {
+        demod->setFrequency(demod->getFrequency()+snap);
+        demod->updateLabel(demod->getFrequency());
+    }
+}
+
 int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     if (!this->IsActive()) {
         return -1;
@@ -1823,6 +1837,18 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
             snap /= 2;
         }
     }
+    
+    #ifdef wxHAS_RAW_KEY_CODES
+    switch (event.GetRawKeyCode()) {
+        case 30:
+            gkNudgeRight(lastDemod, snap);
+            return 1;
+        case 33:
+            gkNudgeLeft(lastDemod, snap);
+            return 1;
+    }
+    #endif
+    
     
     switch (event.GetKeyCode()) {
         case WXK_UP:
@@ -1838,19 +1864,11 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case 'V':
             return 1;
         case ']':
-            if (lastDemod) {
-                lastDemod->setFrequency(lastDemod->getFrequency()+snap);
-                lastDemod->updateLabel(lastDemod->getFrequency());
-            }
+            gkNudgeRight(lastDemod, snap);
             return 1;
-            break;
         case '[':
-            if (lastDemod) {
-                lastDemod->setFrequency(lastDemod->getFrequency()-snap);
-                lastDemod->updateLabel(lastDemod->getFrequency());
-            }
+            gkNudgeLeft(lastDemod, snap);
             return 1;
-            break;
         case 'A':
         case 'F':
         case 'L':
@@ -1885,7 +1903,6 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
                 wxGetApp().getDemodMgr().setActiveDemodulator(demod, false);
             }
             return 1;
-            break;
         default:
             break;
     }
@@ -1905,6 +1922,15 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     }
 
     DemodulatorInstance *lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    
+#ifdef wxHAS_RAW_KEY_CODES
+    switch (event.GetRawKeyCode()) {
+        case 30:
+            return 1;
+        case 33:
+            return 1;
+    }
+#endif
     
     switch (event.GetKeyCode()) {
         case WXK_SPACE:

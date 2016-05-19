@@ -84,6 +84,9 @@ public:
     void updateModemProperties(ModemArgInfoList args);
     void setMainWaterfallFFTSize(int fftSize);
 
+    void gkNudgeLeft(DemodulatorInstance *demod, int snap);
+    void gkNudgeRight(DemodulatorInstance *demod, int snap);
+
     int OnGlobalKeyDown(wxKeyEvent &event);
     int OnGlobalKeyUp(wxKeyEvent &event);
     
