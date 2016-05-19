@@ -1828,6 +1828,9 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     if (!this->IsActive()) {
         return -1;
     }
+    if (modemProps && (modemProps->HasFocus() || modemProps->isMouseInView())) {
+        return -1;
+    }
     
     DemodulatorInstance *demod = nullptr, *lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
     int snap = wxGetApp().getFrequencySnap();
@@ -1918,6 +1921,9 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
 
 int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     if (!this->IsActive()) {
+        return -1;
+    }
+    if (modemProps && (modemProps->HasFocus() || modemProps->isMouseInView())) {
         return -1;
     }
 

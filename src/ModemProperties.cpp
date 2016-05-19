@@ -175,5 +175,5 @@ void ModemProperties::OnMouseLeave(wxMouseEvent & /* event */) {
 }
 
 bool ModemProperties::isMouseInView() {
-    return mouseInView;
+    return mouseInView || (m_propertyGrid && m_propertyGrid->IsEditorFocused());
 }
