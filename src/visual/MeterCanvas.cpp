@@ -163,6 +163,7 @@ void MeterCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
     InteractiveCanvas::mouseTracker.OnMouseEnterWindow(event);
     SetCursor(wxCURSOR_CROSS);
     Refresh();
+	this->SetFocus();
 }
 
 void MeterCanvas::setHelpTip(std::string tip) {
