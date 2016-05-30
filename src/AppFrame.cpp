@@ -1780,6 +1780,10 @@ void AppFrame::refreshGainUI() {
 }
 
 
+bool AppFrame::canFocus() {
+	return (!wxGetApp().isDeviceSelectorOpen() && (!modemProps || !modemProps->isMouseInView()));
+}
+
 FrequencyDialog::FrequencyDialogTarget AppFrame::getFrequencyDialogTarget() {
     FrequencyDialog::FrequencyDialogTarget target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_DEFAULT;
     

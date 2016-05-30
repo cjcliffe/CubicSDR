@@ -95,6 +95,8 @@ public:
     
     FrequencyDialog::FrequencyDialogTarget getFrequencyDialogTarget();
     void refreshGainUI();
+
+	bool canFocus();
         
 private:
     void OnMenu(wxCommandEvent& event);

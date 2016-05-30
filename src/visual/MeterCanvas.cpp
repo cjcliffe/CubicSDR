@@ -142,15 +142,35 @@ void MeterCanvas::OnMouseRightDown(wxMouseEvent& event) {
 
 void MeterCanvas::OnMouseRightReleased(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseRightReleased(event);
-    userInputValue = level - level * 0.02;
-    Refresh();
+	if (showUserInput) {
+		userInputValue = level - level * 0.02;
+	}
+	Refresh();
 }
 
 void MeterCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseWheelMoved(event);
 	float movement = (float)event.GetWheelRotation() / (float)event.GetLinesPerAction();
-    userInputValue = userInputValue + movement / 1000;
-    Refresh();
+	
+	float currentValue = 0;
+	if (showUserInput) {
+		currentValue = userInputValue;
+	} else {
+		currentValue = level;
+	}
+
+    currentValue = currentValue + ((movement / 100.0) * ((level_max - level_min) / 100.0));
+  
+	if (currentValue > level_max) {
+		currentValue = level_max;
+	}
+	if (currentValue < level_min) {
+		currentValue = level_min;
+	}
+
+	userInputValue = currentValue;
+	
+	Refresh();
 }
 
 void MeterCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
@@ -163,7 +183,9 @@ void MeterCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
     InteractiveCanvas::mouseTracker.OnMouseEnterWindow(event);
     SetCursor(wxCURSOR_CROSS);
     Refresh();
-	this->SetFocus();
+	if (wxGetApp().getAppFrame()->canFocus()) {
+		this->SetFocus();
+	}
 }
 
 void MeterCanvas::setHelpTip(std::string tip) {
