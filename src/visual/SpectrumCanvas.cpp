@@ -248,6 +248,9 @@ void SpectrumCanvas::OnMouseDown(wxMouseEvent& event) {
 
 void SpectrumCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseWheelMoved(event);
+    if (waterfallCanvas) {
+        waterfallCanvas->OnMouseWheelMoved(event);
+    }
 }
 
 void SpectrumCanvas::OnMouseReleased(wxMouseEvent& event) {

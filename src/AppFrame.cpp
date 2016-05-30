@@ -1491,7 +1491,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 #endif
     
 #ifdef _WIN32
-    if (scopeCanvas->HasFocus() || spectrumCanvas->HasFocus()) {
+    if (scopeCanvas->HasFocus()) {
         waterfallCanvas->SetFocus();
     }
 #endif
