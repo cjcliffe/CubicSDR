@@ -1490,6 +1490,12 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     }
 #endif
     
+#ifdef _WIN32
+    if (scopeCanvas->HasFocus() || spectrumCanvas->HasFocus()) {
+        waterfallCanvas->SetFocus();
+    }
+#endif
+    
     if (!this->IsActive()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(30));
     } else {
