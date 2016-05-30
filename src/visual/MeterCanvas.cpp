@@ -126,18 +126,15 @@ void MeterCanvas::OnMouseDown(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseDown(event);
     userInputValue = mouseTracker.getMouseY() * (level_max-level_min) + level_min;
     mouseTracker.setHorizDragLock(true);
-    Refresh();
 }
 
 void MeterCanvas::OnMouseReleased(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseReleased(event);
     userInputValue = mouseTracker.getMouseY() * (level_max-level_min) + level_min;
-    Refresh();
 }
 
 void MeterCanvas::OnMouseRightDown(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseRightDown(event);
-    Refresh();
 }
 
 void MeterCanvas::OnMouseRightReleased(wxMouseEvent& event) {
@@ -145,7 +142,6 @@ void MeterCanvas::OnMouseRightReleased(wxMouseEvent& event) {
 	if (showUserInput) {
 		userInputValue = level - level * 0.02;
 	}
-	Refresh();
 }
 
 void MeterCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
@@ -169,8 +165,6 @@ void MeterCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
 	}
 
 	userInputValue = currentValue;
-	
-	Refresh();
 }
 
 void MeterCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
@@ -182,10 +176,11 @@ void MeterCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
 void MeterCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
     InteractiveCanvas::mouseTracker.OnMouseEnterWindow(event);
     SetCursor(wxCURSOR_CROSS);
-    Refresh();
+#ifdef _WIN32
 	if (wxGetApp().getAppFrame()->canFocus()) {
 		this->SetFocus();
 	}
+#endif
 }
 
 void MeterCanvas::setHelpTip(std::string tip) {

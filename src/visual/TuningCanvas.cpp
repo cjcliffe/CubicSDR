@@ -410,9 +410,11 @@ void TuningCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
     hoverIndex = 0;
     hoverState = TUNING_HOVER_NONE;
     lastPPM = currentPPM = wxGetApp().getPPM();
+#ifdef _WIN32
 	if (wxGetApp().getAppFrame()->canFocus()) {
 		this->SetFocus();
 	}
+#endif
 }
 
 void TuningCanvas::setHelpTip(std::string tip) {

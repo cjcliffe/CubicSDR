@@ -1779,10 +1779,11 @@ void AppFrame::refreshGainUI() {
     gainCanvas->Refresh();
 }
 
-
+#ifdef _WIN32
 bool AppFrame::canFocus() {
 	return (!wxGetApp().isDeviceSelectorOpen() && (!modemProps || !modemProps->isMouseInView()));
 }
+#endif
 
 FrequencyDialog::FrequencyDialogTarget AppFrame::getFrequencyDialogTarget() {
     FrequencyDialog::FrequencyDialogTarget target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_DEFAULT;

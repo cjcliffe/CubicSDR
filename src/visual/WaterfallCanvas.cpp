@@ -852,9 +852,11 @@ void WaterfallCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
 void WaterfallCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseEnterWindow(event);
     SetCursor(wxCURSOR_CROSS);
+#ifdef _WIN32
 	if (wxGetApp().getAppFrame()->canFocus()) {
 		this->SetFocus();
 	}
+#endif
 }
 
 void WaterfallCanvas::OnMouseRightDown(wxMouseEvent& event) {
