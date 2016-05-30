@@ -22,6 +22,7 @@ EVT_LEFT_DOWN(GainCanvas::OnMouseDown)
 EVT_LEFT_UP(GainCanvas::OnMouseReleased)
 EVT_LEAVE_WINDOW(GainCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(GainCanvas::OnMouseEnterWindow)
+EVT_MOUSEWHEEL(GainCanvas::OnMouseWheelMoved)
 wxEND_EVENT_TABLE()
 
 GainCanvas::GainCanvas(wxWindow *parent, int *dispAttrs) :
@@ -151,12 +152,31 @@ void GainCanvas::OnMouseDown(wxMouseEvent& event) {
 
 void GainCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseWheelMoved(event);
-//    Refresh();
+    
+    CubicVR::vec2 hitResult;
+    int panelHit = GetPanelHit(hitResult);
+
+    if (panelHit >= 0) {
+        float movement = 3.0 * (float)event.GetWheelRotation();
+        
+        GainInfo *gInfo;
+        
+        gInfo = gainInfo[panelHit];
+        
+        gInfo->current = gInfo->current + ((movement / 100.0) * ((gInfo->high - gInfo->low) / 100.0));
+        gInfo->changed = true;
+        
+        float levelVal = float(gInfo->current-gInfo->low)/float(gInfo->high-gInfo->low);
+        gInfo->levelPanel.setSize(1.0, levelVal);
+        gInfo->levelPanel.setPosition(0.0, levelVal-1.0);
+
+        gInfo->valuePanel.setText(std::to_string(int(gInfo->current)));
+    }
+
 }
 
 void GainCanvas::OnMouseReleased(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseReleased(event);
-//    Refresh();
 }
 
 void GainCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
@@ -174,7 +194,6 @@ void GainCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
 void GainCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
     InteractiveCanvas::mouseTracker.OnMouseEnterWindow(event);
     SetCursor(wxCURSOR_CROSS);
-//    Refresh();
 }
 
 

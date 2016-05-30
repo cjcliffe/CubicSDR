@@ -146,8 +146,8 @@ void MeterCanvas::OnMouseRightReleased(wxMouseEvent& event) {
 
 void MeterCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseWheelMoved(event);
-	float movement = (float)event.GetWheelRotation() / (float)event.GetLinesPerAction();
-	
+    float movement = 3.0 * (float)event.GetWheelRotation();
+
 	float currentValue = 0;
 	if (showUserInput) {
 		currentValue = userInputValue;
