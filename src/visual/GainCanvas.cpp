@@ -194,6 +194,11 @@ void GainCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
 void GainCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
     InteractiveCanvas::mouseTracker.OnMouseEnterWindow(event);
     SetCursor(wxCURSOR_CROSS);
+#ifdef _WIN32
+	if (wxGetApp().getAppFrame()->canFocus()) {
+		this->SetFocus();
+	}
+#endif
 }
 
 
