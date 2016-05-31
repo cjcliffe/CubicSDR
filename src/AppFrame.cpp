@@ -1627,6 +1627,7 @@ bool AppFrame::loadSession(std::string fileName) {
         int numDemodulators = 0;
         DemodulatorInstance *loadedDemod = NULL;
         DemodulatorInstance *newDemod = NULL;
+        std::vector<DemodulatorInstance *> demodsLoaded;
         
         while (demodulators->hasAnother("demodulator")) {
             DataNode *demod = demodulators->getNext("demodulator");
@@ -1727,8 +1728,9 @@ bool AppFrame::loadSession(std::string fileName) {
             }
 
             newDemod->run();
-            newDemod->setActive(false);
-            wxGetApp().bindDemodulator(newDemod);
+            newDemod->setActive(true);
+            demodsLoaded.push_back(newDemod);
+//            wxGetApp().bindDemodulator(newDemod);
 
             std::cout << "\tAdded demodulator at frequency " << freq << " type " << type << std::endl;
             std::cout << "\t\tBandwidth: " << bandwidth << std::endl;
@@ -1740,9 +1742,7 @@ bool AppFrame::loadSession(std::string fileName) {
         DemodulatorInstance *focusDemod = loadedDemod?loadedDemod:newDemod;
         
         if (focusDemod) {
-            focusDemod->setActive(true);
-            focusDemod->setFollow(true);
-            focusDemod->setTracking(true);
+            wxGetApp().bindDemodulators(&demodsLoaded);
             wxGetApp().getDemodMgr().setActiveDemodulator(focusDemod, false);
         }
     } catch (DataInvalidChildException &e) {

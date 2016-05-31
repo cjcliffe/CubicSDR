@@ -72,5 +72,7 @@ private:
     bool lastMuted;
     bool lastDeltaLock;
     
+    std::mutex demods_busy;
+    
     std::map<std::string, ModemSettings> lastModemSettings;
 };

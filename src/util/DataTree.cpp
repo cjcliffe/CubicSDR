@@ -1554,7 +1554,7 @@ bool DataTree::SaveToFileXML(const std::string& filename) {
  */
 
 bool DataTree::SaveToFile(const std::string& filename, bool compress, int /* compress_level */) {
-    long dataSize, compressedSize, headerSize;
+    long dataSize, compressedSize = 0, headerSize;
     char *serialized = nullptr, *hdr_serialized = nullptr, *compressed = nullptr;
     DataTree dtHeader;
 

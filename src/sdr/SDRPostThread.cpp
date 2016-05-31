@@ -33,6 +33,18 @@ void SDRPostThread::bindDemodulator(DemodulatorInstance *demod) {
     busy_demod.unlock();
 }
 
+void SDRPostThread::bindDemodulators(std::vector<DemodulatorInstance *> *demods) {
+    if (!demods) {
+        return;
+    }
+    busy_demod.lock();
+    for (std::vector<DemodulatorInstance *>::iterator di = demods->begin(); di != demods->end(); di++) {
+        demodulators.push_back(*di);
+        doRefresh.store(true);
+    }
+    busy_demod.unlock();
+}
+
 void SDRPostThread::removeDemodulator(DemodulatorInstance *demod) {
     if (!demod) {
         return;
