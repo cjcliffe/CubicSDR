@@ -248,6 +248,9 @@ void SpectrumCanvas::OnMouseDown(wxMouseEvent& event) {
 
 void SpectrumCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseWheelMoved(event);
+    if (waterfallCanvas) {
+        waterfallCanvas->OnMouseWheelMoved(event);
+    }
 }
 
 void SpectrumCanvas::OnMouseReleased(wxMouseEvent& event) {
@@ -259,9 +262,11 @@ void SpectrumCanvas::OnMouseReleased(wxMouseEvent& event) {
 void SpectrumCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseEnterWindow(event);
     SetCursor(wxCURSOR_SIZEWE);
-	if (waterfallCanvas) {
-		waterfallCanvas->SetFocus();
-	}
+#ifdef _WIN32
+    if (wxGetApp().getAppFrame()->canFocus()) {
+        this->SetFocus();
+    }
+#endif
 }
 
 void SpectrumCanvas::OnMouseLeftWindow(wxMouseEvent& event) {

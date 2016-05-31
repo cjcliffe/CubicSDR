@@ -126,31 +126,45 @@ void MeterCanvas::OnMouseDown(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseDown(event);
     userInputValue = mouseTracker.getMouseY() * (level_max-level_min) + level_min;
     mouseTracker.setHorizDragLock(true);
-    Refresh();
 }
 
 void MeterCanvas::OnMouseReleased(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseReleased(event);
     userInputValue = mouseTracker.getMouseY() * (level_max-level_min) + level_min;
-    Refresh();
 }
 
 void MeterCanvas::OnMouseRightDown(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseRightDown(event);
-    Refresh();
 }
 
 void MeterCanvas::OnMouseRightReleased(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseRightReleased(event);
-    userInputValue = level - level * 0.02;
-    Refresh();
+	if (showUserInput) {
+		userInputValue = level - level * 0.02;
+	}
 }
 
 void MeterCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseWheelMoved(event);
-	float movement = (float)event.GetWheelRotation() / (float)event.GetLinesPerAction();
-    userInputValue = userInputValue + movement / 1000;
-    Refresh();
+    float movement = 3.0 * (float)event.GetWheelRotation();
+
+	float currentValue = 0;
+	if (showUserInput) {
+		currentValue = userInputValue;
+	} else {
+		currentValue = level;
+	}
+
+    currentValue = currentValue + ((movement / 100.0) * ((level_max - level_min) / 100.0));
+  
+	if (currentValue > level_max) {
+		currentValue = level_max;
+	}
+	if (currentValue < level_min) {
+		currentValue = level_min;
+	}
+
+	userInputValue = currentValue;
 }
 
 void MeterCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
@@ -162,8 +176,11 @@ void MeterCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
 void MeterCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
     InteractiveCanvas::mouseTracker.OnMouseEnterWindow(event);
     SetCursor(wxCURSOR_CROSS);
-    Refresh();
-	this->SetFocus();
+#ifdef _WIN32
+	if (wxGetApp().getAppFrame()->canFocus()) {
+		this->SetFocus();
+	}
+#endif
 }
 
 void MeterCanvas::setHelpTip(std::string tip) {
