@@ -21,21 +21,27 @@ struct map_string_less : public std::binary_function<std::string,std::string,boo
 
 class ReferenceCounter {
 public:
-    mutable std::mutex m_mutex;
     
     void setRefCount(int rc) {
-        refCount.store(rc);
+        std::lock_guard < std::recursive_mutex > lock(m_mutex);
+        refCount = rc;
     }
     
     void decRefCount() {
-        refCount.store(refCount.load()-1);
+        std::lock_guard < std::recursive_mutex > lock(m_mutex);
+        refCount--;
     }
     
     int getRefCount() {
-        return refCount.load();
+        std::lock_guard < std::recursive_mutex > lock(m_mutex);
+        return refCount;
     }
 protected:
-    std::atomic_int refCount;
+    //this is a basic mutex for all ReferenceCounter derivatives operations INCLUDING the counter itself for consistency !
+   mutable std::recursive_mutex m_mutex;
+
+private:
+   int refCount;
 };
 
 

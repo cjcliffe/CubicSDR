@@ -28,7 +28,7 @@ public:
     }
 
     ~AudioThreadInput() {
-        std::lock_guard < std::mutex > lock(m_mutex);
+        std::lock_guard < std::recursive_mutex > lock(m_mutex);
     }
 };
 
