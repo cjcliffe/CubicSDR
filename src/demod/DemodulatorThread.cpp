@@ -13,7 +13,9 @@
 #include <pthread.h>
 #endif
 
-DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent) : IOThread(), outputBuffers("DemodulatorThreadBuffers"), squelchLevel(-100), signalLevel(-100), squelchEnabled(false), cModem(nullptr), cModemKit(nullptr), iqInputQueue(NULL), audioOutputQueue(NULL), audioVisOutputQueue(NULL), threadQueueControl(NULL), threadQueueNotify(NULL) {
+DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent) 
+    : IOThread(), outputBuffers("DemodulatorThreadBuffers"), squelchLevel(-100), 
+      signalLevel(-100), squelchEnabled(false) {
     
     demodInstance = parent;
     muted.store(false);
@@ -26,6 +28,10 @@ DemodulatorThread::~DemodulatorThread() {
 
 void DemodulatorThread::onBindOutput(std::string name, ThreadQueueBase *threadQueue) {
     if (name == "AudioVisualOutput") {
+        
+        //protects because it may be changed at runtime
+        std::lock_guard < std::mutex > lock(m_mutexAudioVisOutputQueue);
+
         audioVisOutputQueue = (DemodulatorThreadOutputQueue *)threadQueue;
     }
 }
@@ -119,7 +125,7 @@ void DemodulatorThread::run() {
         modemData.data.assign(inputData->begin(), inputData->end());
         modemData.setRefCount(1);
         
-        AudioThreadInput *ati = NULL;
+        AudioThreadInput *ati = nullptr;
         
         ModemAnalog *modemAnalog = (cModem->getType() == "analog")?((ModemAnalog *)cModem):nullptr;
         ModemDigital *modemDigital = (cModem->getType() == "digital")?((ModemDigital *)cModem):nullptr;
@@ -159,7 +165,7 @@ void DemodulatorThread::run() {
             }
         }
         
-        if (audioOutputQueue != NULL && ati && !squelched) {
+        if (audioOutputQueue != nullptr && ati && !squelched) {
             std::vector<float>::iterator data_i;
             ati->peak = 0;
             for (data_i = ati->data.begin(); data_i != ati->data.end(); data_i++) {
@@ -173,8 +179,17 @@ void DemodulatorThread::run() {
             ati = nullptr;
         }
         
-        if (ati && audioVisOutputQueue != NULL && audioVisOutputQueue->empty()) {
+        //At that point, capture the current state of audioVisOutputQueue in a local 
+        //variable, and works with it with now on until the next while-turn.
+        DemodulatorThreadOutputQueue* localAudioVisOutputQueue = nullptr;
+        {
+            std::lock_guard < std::mutex > lock(m_mutexAudioVisOutputQueue);
+            localAudioVisOutputQueue = audioVisOutputQueue;
+        }
+
+        if (ati && localAudioVisOutputQueue != nullptr && localAudioVisOutputQueue->empty()) {
             AudioThreadInput *ati_vis = audioVisBuffers.getBuffer();
+
             ati_vis->setRefCount(1);
             ati_vis->sampleRate = inp->sampleRate;
             ati_vis->inputRate = inp->sampleRate;
@@ -230,11 +245,11 @@ void DemodulatorThread::run() {
                 ati_vis->type = 0;
             }
             
-            audioVisOutputQueue->push(ati_vis);
+            localAudioVisOutputQueue->push(ati_vis);
         }
         
         
-        if (ati != NULL) {
+        if (ati != nullptr) {
             if (!muted.load() && (!wxGetApp().getSoloMode() || (demodInstance == wxGetApp().getDemodMgr().getLastActiveDemodulator()))) {
                 audioOutputQueue->push(ati);
             } else {
@@ -266,7 +281,10 @@ void DemodulatorThread::run() {
     
     outputBuffers.purge();
     
-    if (audioVisOutputQueue && !audioVisOutputQueue->empty()) {
+    //Guard the cleanup of audioVisOutputQueue properly.
+    std::lock_guard < std::mutex > lock(m_mutexAudioVisOutputQueue);
+
+    if (audioVisOutputQueue != nullptr && !audioVisOutputQueue->empty()) {
         AudioThreadInput *dummy_vis;
         audioVisOutputQueue->pop(dummy_vis);
     }
