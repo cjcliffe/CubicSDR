@@ -13,9 +13,17 @@
 bool demodFreqCompare (DemodulatorInstance *i, DemodulatorInstance *j) { return (i->getFrequency()<j->getFrequency()); }
 bool inactiveCompare (DemodulatorInstance *i, DemodulatorInstance *j) { return (i->isActive()<j->isActive()); }
 
-DemodulatorMgr::DemodulatorMgr() :
-        activeDemodulator(NULL), lastActiveDemodulator(NULL), activeVisualDemodulator(NULL), lastBandwidth(DEFAULT_DEMOD_BW), lastDemodType(
-                DEFAULT_DEMOD_TYPE), lastSquelchEnabled(false), lastSquelch(-100), lastGain(1.0), lastMuted(false), lastDeltaLock(false) {
+DemodulatorMgr::DemodulatorMgr() {
+    activeDemodulator = NULL;
+    lastActiveDemodulator = NULL;
+    activeVisualDemodulator = NULL;
+    lastBandwidth = DEFAULT_DEMOD_BW;
+    lastDemodType = DEFAULT_DEMOD_TYPE;
+    lastSquelchEnabled = false;
+    lastSquelch = -100;
+    lastGain = 1.0;
+    lastMuted = false;
+    lastDeltaLock = false;
 }
 
 DemodulatorMgr::~DemodulatorMgr() {
@@ -23,26 +31,35 @@ DemodulatorMgr::~DemodulatorMgr() {
 }
 
 DemodulatorInstance *DemodulatorMgr::newThread() {
+    garbageCollect();
+
+    demods_busy.lock();
     DemodulatorInstance *newDemod = new DemodulatorInstance;
-    demods.push_back(newDemod);
 
     std::stringstream label;
     label << demods.size();
     newDemod->setLabel(label.str());
-
+    
+    demods.push_back(newDemod);
+    demods_busy.unlock();
+    
     return newDemod;
 }
 
 void DemodulatorMgr::terminateAll() {
     while (demods.size()) {
+        demods_busy.lock();
         DemodulatorInstance *d = demods.back();
         demods.pop_back();
+        demods_busy.unlock();
         wxGetApp().removeDemodulator(d);
         deleteThread(d);
     }
 }
 
 std::vector<DemodulatorInstance *> &DemodulatorMgr::getDemodulators() {
+    demods_busy.lock();
+    demods_busy.unlock();
     return demods;
 }
 
@@ -110,6 +127,8 @@ DemodulatorInstance *DemodulatorMgr::getFirstDemodulator() {
 }
 
 void DemodulatorMgr::deleteThread(DemodulatorInstance *demod) {
+    demods_busy.lock();
+    
     std::vector<DemodulatorInstance *>::iterator i;
 
     i = std::find(demods.begin(), demods.end(), demod);
@@ -131,10 +150,13 @@ void DemodulatorMgr::deleteThread(DemodulatorInstance *demod) {
 
     demods_deleted.push_back(demod);
 
+    demods_busy.unlock();
+    
     garbageCollect();
 }
 
 std::vector<DemodulatorInstance *> *DemodulatorMgr::getDemodulatorsAt(long long freq, int bandwidth) {
+    demods_busy.lock();
     std::vector<DemodulatorInstance *> *foundDemods = new std::vector<DemodulatorInstance *>();
 
     for (int i = 0, iMax = demods.size(); i < iMax; i++) {
@@ -150,12 +172,13 @@ std::vector<DemodulatorInstance *> *DemodulatorMgr::getDemodulatorsAt(long long 
             foundDemods->push_back(testDemod);
         }
     }
+    demods_busy.unlock();
 
     return foundDemods;
 }
 
 bool DemodulatorMgr::anyDemodulatorsAt(long long freq, int bandwidth) {
-    
+    demods_busy.lock();
     for (int i = 0, iMax = demods.size(); i < iMax; i++) {
         DemodulatorInstance *testDemod = demods[i];
 
@@ -166,10 +189,12 @@ bool DemodulatorMgr::anyDemodulatorsAt(long long freq, int bandwidth) {
         long long halfBuffer = bandwidth / 2;
         
         if ((freq <= (freqTest + ((testDemod->getDemodulatorType() != "LSB")?halfBandwidthTest:0) + halfBuffer)) && (freq >= (freqTest - ((testDemod->getDemodulatorType() != "USB")?halfBandwidthTest:0) - halfBuffer))) {
+            demods_busy.unlock();
             return true;
         }
     }
     
+    demods_busy.unlock();
     return false;
 }
 
@@ -206,7 +231,7 @@ void DemodulatorMgr::setActiveDemodulator(DemodulatorInstance *demod, bool tempo
 
     activeDemodulator = demod;
 
-    garbageCollect();
+//    garbageCollect();
 }
 
 DemodulatorInstance *DemodulatorMgr::getActiveDemodulator() {
@@ -222,6 +247,7 @@ DemodulatorInstance *DemodulatorMgr::getLastActiveDemodulator() {
 
 void DemodulatorMgr::garbageCollect() {
     if (demods_deleted.size()) {
+        demods_busy.lock();
         std::vector<DemodulatorInstance *>::iterator i;
 
         for (i = demods_deleted.begin(); i != demods_deleted.end(); i++) {
@@ -232,9 +258,12 @@ void DemodulatorMgr::garbageCollect() {
                 std::cout << "Garbage collected demodulator instance " << deleted->getLabel() << std::endl;
 
                 delete deleted;
+
+                demods_busy.unlock();
                 return;
             }
         }
+        demods_busy.unlock();
     }
 }
 
@@ -255,7 +284,7 @@ void DemodulatorMgr::updateLastState() {
     if (lastActiveDemodulator) {
         lastBandwidth = lastActiveDemodulator->getBandwidth();
         lastDemodType = lastActiveDemodulator->getDemodulatorType();
-        lastDemodLock = lastActiveDemodulator->getDemodulatorLock();
+        lastDemodLock = lastActiveDemodulator->getDemodulatorLock()?true:false;
         lastSquelchEnabled = lastActiveDemodulator->isSquelchEnabled();
         lastSquelch = lastActiveDemodulator->getSquelchLevel();
         lastGain = lastActiveDemodulator->getGain();

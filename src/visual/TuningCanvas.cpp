@@ -42,13 +42,13 @@ TuningCanvas::TuningCanvas(wxWindow *parent, int *dispAttrs) :
     dragging = false;
 
     freqDP = -1.0;
-    freqW = (1.0 / 3.0) * 2.0;
+    freqW = (1.0f / 3.0f) * 2.0f;
 
     bwDP = -1.0 + (2.25 / 3.0);
     bwW = (1.0 / 4.0) * 2.0;
 
-    centerDP = -1.0 + (2.0 / 3.0) * 2.0;
-    centerW = (1.0 / 3.0) * 2.0;
+    centerDP = -1.0f + (2.0f / 3.0f) * 2.0f;
+    centerW = (1.0f / 3.0f) * 2.0f;
 
     currentPPM = lastPPM = 0;
 }

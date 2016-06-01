@@ -78,11 +78,11 @@ namespace CubicVR {
             __float A = (right + left) / (right - left);
             __float B = (top + bottom) / (top - bottom);
             __float C = - (zFar + zNear) / (zFar - zNear);
-            __float D = - (-2.0 * zFar * zNear) / (zFar - zNear);
+            __float D = - (-2.0f * zFar * zNear) / (zFar - zNear);
             
             
-            return mat4((2.0 * zNear) / (right - left), 0, A, 0,
-                        0, (2.0 * zNear) / (top - bottom), B, 0,
+            return mat4((2.0f * zNear) / (right - left), 0, A, 0,
+                        0, (2.0f * zNear) / (top - bottom), B, 0,
                         0, 0, C, D,
                         0, 0, -1, 0);
         };
@@ -313,7 +313,7 @@ namespace CubicVR {
         };
         
         static vec3 unProject(mat4 pMatrix, mat4 mvMatrix, float width, float height, float winx, float winy, float /* winz */) {
-            vec4 p(((winx / width) * 2.0) - 1.0, -(((winy / height) * 2.0) - 1.0), 1.0, 1.0);
+            vec4 p(((winx / width) * 2.0f) - 1.0, -(((winy / height) * 2.0f) - 1.0), 1.0, 1.0);
             
             vec4 invp = mat4::vec4_multiply(mat4::vec4_multiply(p, mat4::inverse(pMatrix)), mat4::inverse(mvMatrix));
             

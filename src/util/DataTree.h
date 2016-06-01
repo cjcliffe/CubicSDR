@@ -167,45 +167,45 @@ public:
     
     
     /* get overloads */
-    void get(char &char_in) throw (DataTypeMismatchException);
-    void get(unsigned char &uchar_in) throw (DataTypeMismatchException);
-    void get(int &int_in) throw (DataTypeMismatchException);
-    void get(unsigned int &uint_in) throw (DataTypeMismatchException);
-    void get(long &long_in) throw (DataTypeMismatchException);
-    void get(unsigned long &ulong_in) throw (DataTypeMismatchException);
-    void get(long long &long_in) throw (DataTypeMismatchException);
-    void get(float &float_in) throw (DataTypeMismatchException);
-    void get(double &double_in) throw (DataTypeMismatchException);
-    void get(long double &ldouble_in) throw (DataTypeMismatchException);
+    void get(char &char_in);
+	void get(unsigned char &uchar_in);
+    void get(int &int_in);
+    void get(unsigned int &uint_in);
+    void get(long &long_in);
+    void get(unsigned long &ulong_in);
+    void get(long long &long_in);
+    void get(float &float_in);
+    void get(double &double_in);
+    void get(long double &ldouble_in);
     
-    void get(char **data_in) throw (DataTypeMismatchException); /* getting a void or string */
-    void get(string &str_in) throw (DataTypeMismatchException); 
-    void get(std::set<string> &strset_in) throw (DataTypeMismatchException);
+    void get(char **data_in); /* getting a void or string */
+    void get(string &str_in); 
+    void get(std::set<string> &strset_in);
     
-    void get(vector<string> &strvect_in) throw (DataTypeMismatchException);
-    void get(vector<char> &charvect_in) throw (DataTypeMismatchException);
-    void get(vector<unsigned char> &ucharvect_in) throw (DataTypeMismatchException);
-    void get(vector<int> &intvect_in) throw (DataTypeMismatchException);
-    void get(vector<unsigned int> &uintvect_in) throw (DataTypeMismatchException);
-    void get(vector<long> &longvect_in) throw (DataTypeMismatchException);
-    void get(vector<unsigned long> &ulongvect_in) throw (DataTypeMismatchException);
-    void get(vector<long long> &llongvect_in) throw (DataTypeMismatchException);
-    void get(vector<float> &floatvect_in) throw (DataTypeMismatchException);
-    void get(vector<double> &doublevect_in) throw (DataTypeMismatchException);
-    void get(vector<long double> &ldoublevect_in) throw (DataTypeMismatchException);
+    void get(vector<string> &strvect_in);
+    void get(vector<char> &charvect_in);
+    void get(vector<unsigned char> &ucharvect_in);
+    void get(vector<int> &intvect_in);
+    void get(vector<unsigned int> &uintvect_in);
+    void get(vector<long> &longvect_in);
+    void get(vector<unsigned long> &ulongvect_in);
+    void get(vector<long long> &llongvect_in);
+    void get(vector<float> &floatvect_in);
+    void get(vector<double> &doublevect_in);
+    void get(vector<long double> &ldoublevect_in);
     
     
     /* special get functions, saves creating unnecessary vars */
-    int getChar() throw (DataTypeMismatchException) { char i_get; get(i_get); return i_get; };
-    unsigned int getUChar() throw (DataTypeMismatchException) { unsigned char i_get; get(i_get); return i_get; };
-    int getInt() throw (DataTypeMismatchException) { int i_get; get(i_get); return i_get; };
-    unsigned int getUInt() throw (DataTypeMismatchException) { unsigned int i_get; get(i_get); return i_get; };
-    long getLong() throw (DataTypeMismatchException)  { long l_get; get(l_get); return l_get; };
-    unsigned long getULong() throw (DataTypeMismatchException)  { unsigned long l_get; get(l_get); return l_get; };
-    long getLongLong() throw (DataTypeMismatchException)  { long long l_get; get(l_get); return l_get; };
-    float getFloat() throw (DataTypeMismatchException)  { float f_get; get(f_get); return f_get; };
-    double getDouble() throw (DataTypeMismatchException)  { double d_get; get(d_get); return d_get; };
-    long double getLongDouble() throw (DataTypeMismatchException)  { long double d_get; get(d_get); return d_get; };
+    int getChar() { char i_get; get(i_get); return i_get; };
+    unsigned int getUChar() { unsigned char i_get; get(i_get); return i_get; };
+    int getInt() { int i_get; get(i_get); return i_get; };
+    unsigned int getUInt() { unsigned int i_get; get(i_get); return i_get; };
+    long getLong()  { long l_get; get(l_get); return l_get; };
+    unsigned long getULong()  { unsigned long l_get; get(l_get); return l_get; };
+    long getLongLong()  { long long l_get; get(l_get); return l_get; };
+    float getFloat()  { float f_get; get(f_get); return f_get; };
+    double getDouble()  { double d_get; get(d_get); return d_get; };
+    long double getLongDouble()  { long double d_get; get(d_get); return d_get; };
     
     std::string toString();
     
@@ -248,14 +248,14 @@ public:
     DataElement *element(); /* DataElement at this node */
     
     DataNode *newChild(const char *name_in);
-    DataNode *child(const char *name_in, int index = 0) throw (DataInvalidChildException);
-    DataNode *child(int index) throw (DataInvalidChildException);
+    DataNode *child(const char *name_in, int index = 0);
+    DataNode *child(int index);
     
     
     bool hasAnother(const char *name_in);	/* useful for while() loops in conjunction with getNext() */
     bool hasAnother();
-    DataNode *getNext(const char *name_in) throw (DataInvalidChildException); /* get next of specified name */
-    DataNode *getNext() throw (DataInvalidChildException);	/* get next child */
+    DataNode *getNext(const char *name_in); /* get next of specified name */
+    DataNode *getNext();	/* get next child */
     void rewind(const char *name_in);	/* rewind specific */
     void rewind();	/* rewind generic */
         

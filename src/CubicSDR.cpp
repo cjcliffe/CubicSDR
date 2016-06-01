@@ -632,6 +632,13 @@ void CubicSDR::bindDemodulator(DemodulatorInstance *demod) {
     sdrPostThread->bindDemodulator(demod);
 }
 
+void CubicSDR::bindDemodulators(std::vector<DemodulatorInstance *> *demods) {
+    if (!demods) {
+        return;
+    }
+    sdrPostThread->bindDemodulators(demods);
+}
+
 long long CubicSDR::getSampleRate() {
     return sampleRate;
 }

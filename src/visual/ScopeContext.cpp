@@ -33,11 +33,11 @@ void ScopeContext::DrawTunerTitles(bool ppmMode) {
     float viewHeight = (float) vp[3];
     float hPos = (float) (13) / viewHeight;
 
-    glColor3f(0.65, 0.65, 0.65);
+    glColor3f(0.65f, 0.65f, 0.65f);
 
-    GLFont::getFont(GLFont::GLFONT_SIZE12).drawString(ppmMode?"Device PPM":"Frequency", -0.66, -1.0+hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+    GLFont::getFont(GLFont::GLFONT_SIZE12).drawString(ppmMode?"Device PPM":"Frequency", -0.66f, -1.0+hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
     GLFont::getFont(GLFont::GLFONT_SIZE12).drawString("Bandwidth", 0.0, -1.0+hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
-    GLFont::getFont(GLFont::GLFONT_SIZE12).drawString("Center Frequency", 0.66, -1.0+hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+    GLFont::getFont(GLFont::GLFONT_SIZE12).drawString("Center Frequency", 0.66f, -1.0+hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
 }
 
 void ScopeContext::DrawDeviceName(std::string deviceName) {
@@ -46,7 +46,7 @@ void ScopeContext::DrawDeviceName(std::string deviceName) {
     float viewHeight = (float) vp[3];
     float hPos = (float) (viewHeight - 20) / viewHeight;
 
-    glColor3f(0.65, 0.65, 0.65);
+    glColor3f(0.65f, 0.65f, 0.65f);
     GLFont::getFont(GLFont::GLFONT_SIZE12).drawString(deviceName.c_str(), 1.0, hPos, 12, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
 }
 

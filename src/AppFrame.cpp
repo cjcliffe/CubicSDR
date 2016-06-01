@@ -164,7 +164,7 @@ AppFrame::AppFrame() :
     deltaLockButton = new ModeSelectorCanvas(demodPanel, attribList);
     deltaLockButton->addChoice(1, "V");
     deltaLockButton->setPadding(-1,-1);
-    deltaLockButton->setHighlightColor(RGBA4f(0.8,0.8,0.2));
+    deltaLockButton->setHighlightColor(RGBA4f(0.8f,0.8f,0.2f));
     deltaLockButton->setHelpTip("Delta Lock Toggle (V) - Enable to lock modem relative to center frequency.");
     deltaLockButton->setToggleMode(true);
     deltaLockButton->setSelection(-1);
@@ -197,7 +197,7 @@ AppFrame::AppFrame() :
     soloModeButton = new ModeSelectorCanvas(demodPanel, attribList);
     soloModeButton->addChoice(1, "S");
     soloModeButton->setPadding(-1,-1);
-    soloModeButton->setHighlightColor(RGBA4f(0.8,0.8,0.2));
+    soloModeButton->setHighlightColor(RGBA4f(0.8f,0.8f,0.2f));
     soloModeButton->setHelpTip("Solo Mode Toggle");
     soloModeButton->setToggleMode(true);
     soloModeButton->setSelection(-1);
@@ -210,7 +210,7 @@ AppFrame::AppFrame() :
     demodMuteButton = new ModeSelectorCanvas(demodPanel, attribList);
     demodMuteButton->addChoice(1, "M");
     demodMuteButton->setPadding(-1,-1);
-    demodMuteButton->setHighlightColor(RGBA4f(0.8,0.2,0.2));
+    demodMuteButton->setHighlightColor(RGBA4f(0.8f,0.2f,0.2f));
     demodMuteButton->setHelpTip("Demodulator Mute Toggle");
     demodMuteButton->setToggleMode(true);
 	demodMuteButton->setSelection(-1);
@@ -245,7 +245,7 @@ AppFrame::AppFrame() :
     peakHoldButton = new ModeSelectorCanvas(spectrumPanel, attribList);
     peakHoldButton->addChoice(1, "P");
     peakHoldButton->setPadding(-1,-1);
-    peakHoldButton->setHighlightColor(RGBA4f(0.2,0.8,0.2));
+    peakHoldButton->setHighlightColor(RGBA4f(0.2f,0.8f,0.2f));
     peakHoldButton->setHelpTip("Peak Hold Toggle");
     peakHoldButton->setToggleMode(true);
     peakHoldButton->setSelection(-1);
@@ -257,7 +257,7 @@ AppFrame::AppFrame() :
     spectrumAvgMeter = new MeterCanvas(spectrumPanel, attribList);
     spectrumAvgMeter->setHelpTip("Spectrum averaging speed, click or drag to adjust.");
     spectrumAvgMeter->setMax(1.0);
-    spectrumAvgMeter->setLevel(0.65);
+    spectrumAvgMeter->setLevel(0.65f);
     spectrumAvgMeter->setShowUserInput(false);
     spectrumAvgMeter->SetMinSize(wxSize(12,24));
             
@@ -888,8 +888,8 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         waterfallDataThread->setLinesPerSecond(DEFAULT_WATERFALL_LPS);
         waterfallCanvas->setLinesPerSecond(DEFAULT_WATERFALL_LPS);
         waterfallSpeedMeter->setLevel(sqrt(DEFAULT_WATERFALL_LPS));
-        wxGetApp().getSpectrumProcessor()->setFFTAverageRate(0.65);
-        spectrumAvgMeter->setLevel(0.65);
+        wxGetApp().getSpectrumProcessor()->setFFTAverageRate(0.65f);
+        spectrumAvgMeter->setLevel(0.65f);
         demodModeSelector->Refresh();
         demodTuner->Refresh();
         SetTitle(CUBICSDR_TITLE);
@@ -1427,10 +1427,10 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     if (spectrumAvgMeter->inputChanged()) {
         float val = spectrumAvgMeter->getInputValue();
         if (val < 0.01) {
-            val = 0.01;
+            val = 0.01f;
         }
         if (val > 0.99) {
-            val = 0.99;
+            val = 0.99f;
         }
         spectrumAvgMeter->setLevel(val);
         proc->setFFTAverageRate(val);
@@ -1518,10 +1518,10 @@ void AppFrame::OnDoubleClickSash(wxSplitterEvent& event)
 
     if (event.GetId() == wxID_MAIN_SPLITTER) {
         w = mainSplitter;
-        g = 10.0/37.0;
+        g = 10.0f/37.0f;
     } else if (event.GetId() == wxID_VIS_SPLITTER) {
         w = mainVisSplitter;
-        g = 6.0/25.0;
+        g = 6.0f/25.0f;
     }
 
     if (w != NULL) {
@@ -1627,6 +1627,7 @@ bool AppFrame::loadSession(std::string fileName) {
         int numDemodulators = 0;
         DemodulatorInstance *loadedDemod = NULL;
         DemodulatorInstance *newDemod = NULL;
+        std::vector<DemodulatorInstance *> demodsLoaded;
         
         while (demodulators->hasAnother("demodulator")) {
             DataNode *demod = demodulators->getNext("demodulator");
@@ -1727,8 +1728,9 @@ bool AppFrame::loadSession(std::string fileName) {
             }
 
             newDemod->run();
-            newDemod->setActive(false);
-            wxGetApp().bindDemodulator(newDemod);
+            newDemod->setActive(true);
+            demodsLoaded.push_back(newDemod);
+//            wxGetApp().bindDemodulator(newDemod);
 
             std::cout << "\tAdded demodulator at frequency " << freq << " type " << type << std::endl;
             std::cout << "\t\tBandwidth: " << bandwidth << std::endl;
@@ -1740,9 +1742,7 @@ bool AppFrame::loadSession(std::string fileName) {
         DemodulatorInstance *focusDemod = loadedDemod?loadedDemod:newDemod;
         
         if (focusDemod) {
-            focusDemod->setActive(true);
-            focusDemod->setFollow(true);
-            focusDemod->setTracking(true);
+            wxGetApp().bindDemodulators(&demodsLoaded);
             wxGetApp().getDemodMgr().setActiveDemodulator(focusDemod, false);
         }
     } catch (DataInvalidChildException &e) {

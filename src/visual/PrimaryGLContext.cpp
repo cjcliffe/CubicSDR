@@ -90,7 +90,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, l
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glColor4f(color.r, color.g, color.b, 0.6);
+    glColor4f(color.r, color.g, color.b, 0.6f);
 
     float ofs = ((float) demod->getBandwidth()) / (float) srate;
     float ofsLeft = (demod->getDemodulatorType()!="USB")?ofs:0, ofsRight = (demod->getDemodulatorType()!="LSB")?ofs:0;
@@ -104,13 +104,13 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, l
     bool isSolo = soloMode && demod == wxGetApp().getDemodMgr().getLastActiveDemodulator();
     
     if (isSolo) {
-        glColor4f(0.8, 0.8, 0, 0.35);
+        glColor4f(0.8f, 0.8f, 0, 0.35f);
     } else if (demod->isMuted()) {
-        glColor4f(0.8, 0, 0, 0.35);
+        glColor4f(0.8f, 0, 0, 0.35f);
     } else if (soloMode) {
-        glColor4f(0.2, 0, 0, 0.35);
+        glColor4f(0.2f, 0, 0, 0.35f);
     } else {
-        glColor4f(0, 0, 0, 0.35);
+        glColor4f(0, 0, 0, 0.35f);
     }
     
     glBegin(GL_QUADS);
@@ -123,7 +123,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, l
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
-    glColor4f(color.r, color.g, color.b, 0.2);
+    glColor4f(color.r, color.g, color.b, 0.2f);
     glBegin(GL_QUADS);
     glVertex3f(uxPos - ofsLeft, 1.0, 0.0);
     glVertex3f(uxPos - ofsLeft, -1.0, 0.0);
@@ -133,7 +133,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, l
     glEnd();
 
     if (ofs * 2.0 < 16.0 / viewWidth) {
-        glColor4f(color.r, color.g, color.b, 0.2);
+        glColor4f(color.r, color.g, color.b, 0.2f);
         glBegin(GL_QUADS);
         glVertex3f(uxPos - ofsLeft, hPos + labelHeight, 0.0);
         glVertex3f(uxPos - ofsLeft, -1.0, 0.0);
@@ -151,7 +151,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, l
         glEnd();
     }
 
-    glColor4f(1.0, 1.0, 1.0, 0.8);
+    glColor4f(1.0, 1.0, 1.0, 0.8f);
 
     std::string demodLabel = demod->getLabel();
     
@@ -207,7 +207,7 @@ void PrimaryGLContext::DrawFreqBwInfo(long long freq, int bw, RGBA4f color, long
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glColor4f(0, 0, 0, 0.35);
+    glColor4f(0, 0, 0, 0.35f);
     
     glBegin(GL_QUADS);
     glVertex3f(uxPos - ofsLeft, hPos + labelHeight, 0.0);
@@ -219,7 +219,7 @@ void PrimaryGLContext::DrawFreqBwInfo(long long freq, int bw, RGBA4f color, long
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     
-    glColor4f(color.r, color.g, color.b, 0.1);
+    glColor4f(color.r, color.g, color.b, 0.1f);
     glBegin(GL_QUADS);
     glVertex3f(uxPos - ofsLeft, 1.0, 0.0);
     glVertex3f(uxPos - ofsLeft, -1.0, 0.0);
@@ -229,7 +229,7 @@ void PrimaryGLContext::DrawFreqBwInfo(long long freq, int bw, RGBA4f color, long
     glEnd();
     
     if (ofs * 2.0 < 16.0 / viewWidth) {
-        glColor4f(color.r, color.g, color.b, 0.1);
+        glColor4f(color.r, color.g, color.b, 0.1f);
         glBegin(GL_QUADS);
         glVertex3f(uxPos - ofsLeft, hPos + labelHeight, 0.0);
         glVertex3f(uxPos - ofsLeft, -1.0, 0.0);
@@ -247,7 +247,7 @@ void PrimaryGLContext::DrawFreqBwInfo(long long freq, int bw, RGBA4f color, long
         glEnd();
     }
     
-    glColor4f(1.0, 1.0, 1.0, 0.8);
+    glColor4f(1.0, 1.0, 1.0, 0.8f);
     
     std::string demodLabel = std::to_string((double)freq/1000000.0);
     
@@ -306,7 +306,7 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-    glColor4f(color.r, color.g, color.b, 0.6);
+    glColor4f(color.r, color.g, color.b, 0.6f);
 
     float ofs = ((float) demod->getBandwidth()) / (float) srate;
     float ofsLeft = (demod->getDemodulatorType()!="USB")?ofs:0, ofsRight = (demod->getDemodulatorType()!="LSB")?ofs:0;
@@ -410,7 +410,7 @@ void PrimaryGLContext::DrawFreqSelector(float uxPos, RGBA4f color, float w, long
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-    glColor4f(color.r, color.g, color.b, 0.6);
+    glColor4f(color.r, color.g, color.b, 0.6f);
 
     glBegin(GL_LINES);
 
@@ -453,7 +453,7 @@ void PrimaryGLContext::DrawRangeSelector(float uxPos1, float uxPos2, RGBA4f colo
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-    glColor4f(color.r, color.g, color.b, 0.6);
+    glColor4f(color.r, color.g, color.b, 0.6f);
 
     glLineWidth((last_type == "USB")?2.0:1.0);
 

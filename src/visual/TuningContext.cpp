@@ -98,7 +98,7 @@ void TuningContext::DrawTuner(long long freq, int count, float displayPos, float
         GLFont::getFont(fontSize).drawString(freqStr.str().substr(i - ofs, 1), xpos, 0, fontHeight, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
     }
 
-    glColor4f(0.65, 0.65, 0.65, 0.25);
+    glColor4f(0.65f, 0.65f, 0.65f, 0.25f);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBegin(GL_LINES);
@@ -158,7 +158,7 @@ bool bottom) {
     float p2 = displayPos + ofs * (float) (count - start + 1);
     float p1 = displayPos + ofs * (float) (count - end);
 
-    float r = color.r, g = color.g, b = color.b, a = 0.6;
+    float r = color.r, g = color.g, b = color.b, a = 0.6f;
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
@@ -184,8 +184,8 @@ bool bottom) {
 }
 
 void TuningContext::DrawDemodFreqBw(long long freq, unsigned int bw, long long center) {
-    DrawTuner(freq, 11, -1.0, (1.0 / 3.0) * 2.0);
-    DrawTuner(bw, 7, -1.0 + (2.25 / 3.0), (1.0 / 4.0) * 2.0);
-    DrawTuner(center, 11, -1.0 + (2.0 / 3.0) * 2.0, (1.0 / 3.0) * 2.0);
+    DrawTuner(freq, 11, -1.0, (1.0f / 3.0f) * 2.0f);
+    DrawTuner(bw, 7, -1.0 + (2.25f / 3.0f), (1.0f / 4.0f) * 2.0f);
+    DrawTuner(center, 11, -1.0 + (2.0f / 3.0f) * 2.0, (1.0f / 3.0f) * 2.0f);
 }
 

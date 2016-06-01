@@ -355,7 +355,7 @@ void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
             scaleMove = 0.0;
             zoom = 1.0;
             if (mouseZoom != 1.0) {
-                mouseZoom = 0.95;
+                mouseZoom = 0.95f;
             }
         break;
     case WXK_DOWN:
@@ -363,7 +363,7 @@ void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
             scaleMove = 0.0;
             zoom = 1.0;
             if (mouseZoom != 1.0) {
-                mouseZoom = 1.05;
+                mouseZoom = 1.05f;
             }
         break;
     case WXK_LEFT:
@@ -388,7 +388,7 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     case WXK_NUMPAD_UP:
             if (!shiftDown) {
                 mouseZoom = 1.0;
-                zoom = 0.95;
+                zoom = 0.95f;
             } else {
                 scaleMove = 1.0;
             }
@@ -397,7 +397,7 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     case WXK_NUMPAD_DOWN:
             if (!shiftDown) {
                 mouseZoom = 1.0;
-                zoom = 1.05;
+                zoom = 1.05f;
             } else {
                 scaleMove = -1.0;
             }

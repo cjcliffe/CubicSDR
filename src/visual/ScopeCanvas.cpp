@@ -33,9 +33,9 @@ ScopeCanvas::ScopeCanvas(wxWindow *parent, int *dispAttrs) : InteractiveCanvas(p
     glContext = new ScopeContext(this, &wxGetApp().GetContext(this));
     inputData.set_max_num_items(2);
     bgPanel.setFill(GLPanel::GLPANEL_FILL_GRAD_Y);
-    bgPanel.setSize(1.0, 0.5);
-    bgPanel.setPosition(0.0, -0.5);
-    panelSpacing = 0.4;
+    bgPanel.setSize(1.0, 0.5f);
+    bgPanel.setPosition(0.0, -0.5f);
+    panelSpacing = 0.4f;
     
     parentPanel.addChild(&scopePanel);
     parentPanel.addChild(&spectrumPanel);
@@ -147,7 +147,7 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     
-    CubicVR::mat4 modelView = CubicVR::mat4::lookat(0, 0, -1.205, 0, 0, 0, 0, -1, 0);
+    CubicVR::mat4 modelView = CubicVR::mat4::lookat(0, 0, -1.205f, 0, 0, 0, 0, -1, 0);
 
     float panelWidth = 1.0;
     float panelInterval = (panelWidth * 2.0 + panelSpacing);

@@ -164,7 +164,7 @@ DataElementSetNumericVectorDef(DATA_DOUBLE_VECTOR, double)
 DataElementSetNumericVectorDef(DATA_LONGDOUBLE_VECTOR, long double)
 
 
-#define DataElementGetNumericDef(enumtype, datatype, ...) void DataElement::get(datatype& val_out) throw (DataTypeMismatchException) { \
+#define DataElementGetNumericDef(enumtype, datatype, ...) void DataElement::get(datatype& val_out) { \
 if (!data_type) \
 return; \
     int _compat[] = {__VA_ARGS__}; \
@@ -207,7 +207,7 @@ DataElementGetNumericDef(DATA_LONG, long, DATA_CHAR, DATA_UCHAR, DATA_UINT, DATA
 
 
 
-#define DataElementGetFloatingPointDef(enumtype, datatype, ...) void DataElement::get(datatype& val_out) throw (DataTypeMismatchException) { \
+#define DataElementGetFloatingPointDef(enumtype, datatype, ...) void DataElement::get(datatype& val_out) { \
 if (!data_type) \
 return; \
     int _compat[] = {__VA_ARGS__}; \
@@ -250,14 +250,14 @@ DataElementGetFloatingPointDef(DATA_FLOAT, float, DATA_DOUBLE, DATA_CHAR, DATA_U
 DataElementGetFloatingPointDef(DATA_DOUBLE, double, DATA_FLOAT, DATA_CHAR, DATA_UCHAR, DATA_UINT, DATA_ULONG, DATA_LONGLONG, DATA_LONGDOUBLE, DATA_INT,
         DATA_LONG)
 
-void DataElement::get(char **data_in) throw (DataTypeMismatchException) {
+void DataElement::get(char **data_in) {
     if (data_type != DATA_VOID)
         throw(new DataTypeMismatchException("Type mismatch, not a CHAR*"));
     *data_in = new char[data_size];
     memcpy(*data_in, data_val, data_size);
 }
 
-void DataElement::get(string &str_in) throw (DataTypeMismatchException) {
+void DataElement::get(string &str_in) {
     if (!data_type)
         return;
 
@@ -274,7 +274,7 @@ void DataElement::get(string &str_in) throw (DataTypeMismatchException) {
     }
 }
 
-void DataElement::get(vector<string> &strvect_in) throw (DataTypeMismatchException) {
+void DataElement::get(vector<string> &strvect_in) {
     size_t ptr;
     if (!data_type)
         return;
@@ -291,7 +291,7 @@ void DataElement::get(vector<string> &strvect_in) throw (DataTypeMismatchExcepti
 
 }
 
-void DataElement::get(std::set<string> &strset_in) throw (DataTypeMismatchException) {
+void DataElement::get(std::set<string> &strset_in) {
     if (!data_type)
         return;
 
@@ -308,7 +308,7 @@ void DataElement::get(std::set<string> &strset_in) throw (DataTypeMismatchExcept
     }
 }
 
-#define DataElementGetNumericVectorDef(enumtype, datatype, ...) void DataElement::get(vector<datatype>& val_out) throw (DataTypeMismatchException) { \
+#define DataElementGetNumericVectorDef(enumtype, datatype, ...) void DataElement::get(vector<datatype>& val_out) { \
 if (!data_type || !unit_size) return; \
 if (data_type != enumtype) { \
        int _compat[] = {__VA_ARGS__}; \
@@ -457,7 +457,7 @@ DataNode *DataNode::newChild(const char *name_in) {
     return children.back();
 }
 
-DataNode *DataNode::child(const char *name_in, int index) throw (DataInvalidChildException) {
+DataNode *DataNode::child(const char *name_in, int index) {
     DataNode *child_ret;
 
     child_ret = childmap[name_in][index];
@@ -471,7 +471,7 @@ DataNode *DataNode::child(const char *name_in, int index) throw (DataInvalidChil
     return child_ret;
 }
 
-DataNode *DataNode::child(int index) throw (DataInvalidChildException) {
+DataNode *DataNode::child(int index) {
 
     DataNode *child_ret;
 
@@ -502,11 +502,11 @@ bool DataNode::hasAnother(const char *name_in) {
     return childmap[name_in].size() != childmap_ptr[name_in];
 }
 
-DataNode *DataNode::getNext() throw (DataInvalidChildException) {
+DataNode *DataNode::getNext() {
     return child(ptr++);
 }
 
-DataNode *DataNode::getNext(const char *name_in) throw (DataInvalidChildException) {
+DataNode *DataNode::getNext(const char *name_in) {
     return child(name_in, childmap_ptr[name_in]++);
 }
 
@@ -1554,7 +1554,7 @@ bool DataTree::SaveToFileXML(const std::string& filename) {
  */
 
 bool DataTree::SaveToFile(const std::string& filename, bool compress, int /* compress_level */) {
-    long dataSize, compressedSize, headerSize;
+    long dataSize, compressedSize = 0, headerSize;
     char *serialized = nullptr, *hdr_serialized = nullptr, *compressed = nullptr;
     DataTree dtHeader;
 

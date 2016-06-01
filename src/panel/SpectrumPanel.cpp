@@ -19,11 +19,11 @@ SpectrumPanel::SpectrumPanel() {
     
     dbPanelCeil.setMarginPx(0);
     dbPanelCeil.setFill(GLPanel::GLPANEL_FILL_GRAD_X);
-    dbPanelCeil.setFillColor(RGBA4f(0.2,0.2,0.2,5.0), RGBA4f(0.2,0.2,0.2,0.0));
+    dbPanelCeil.setFillColor(RGBA4f(0.2f,0.2f,0.2f,5.0f), RGBA4f(0.2f,0.2f,0.2f,0.0f));
     
     dbPanelFloor.setMarginPx(0);
     dbPanelFloor.setFill(GLPanel::GLPANEL_FILL_GRAD_X);
-    dbPanelFloor.setFillColor(RGBA4f(0.2,0.2,0.2,5.), RGBA4f(0.2,0.2,0.2,0.0));
+    dbPanelFloor.setFillColor(RGBA4f(0.2f,0.2f,0.2f,5.0f), RGBA4f(0.2f,0.2f,0.2f,0.0f));
 }
 
 
@@ -124,7 +124,7 @@ void SpectrumPanel::drawPanelContents() {
                     a *= (rangeTrans-(range-(rangeMax-rangeTrans)))/rangeTrans;
                 }
                 
-                glColor4f(0.12, 0.12, 0.12, a);
+                glColor4f(0.12f, 0.12f, 0.12f, a);
                 glBegin(GL_LINES);
                 for (double l = floorValue; l<=ceilValue+rangeStep; l+=rangeStep) {
                     p += rangeStep/range;

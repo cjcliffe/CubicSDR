@@ -13,6 +13,7 @@ public:
     ~SDRPostThread();
 
     void bindDemodulator(DemodulatorInstance *demod);
+    void bindDemodulators(std::vector<DemodulatorInstance *> *demods);
     void removeDemodulator(DemodulatorInstance *demod);
     
     void run();
