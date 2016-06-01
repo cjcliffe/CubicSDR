@@ -20,6 +20,7 @@ struct map_string_less : public std::binary_function<std::string,std::string,boo
 
 
 class ReferenceCounter {
+
 public:
     
     void setRefCount(int rc) {
@@ -56,17 +57,19 @@ public:
     }
     
     BufferType *getBuffer() {
-        BufferType* buf = NULL;
+        std::lock_guard < std::mutex > lock(m_mutex);
+
+        BufferType* buf = nullptr;
         for (outputBuffersI = outputBuffers.begin(); outputBuffersI != outputBuffers.end(); outputBuffersI++) {
-            if (!buf && (*outputBuffersI)->getRefCount() <= 0) {
+            if (buf == nullptr && (*outputBuffersI)->getRefCount() <= 0) {
                 buf = (*outputBuffersI);
-                (*outputBuffersI)->setRefCount(0);
+                buf->setRefCount(0);
             } else if ((*outputBuffersI)->getRefCount() <= 0) {
                 (*outputBuffersI)->decRefCount();
             }
         }
         
-        if (buf) {
+        if (buf != nullptr) {
             if (outputBuffers.back()->getRefCount() < -REBUFFER_GC_LIMIT) {
                 BufferType *ref = outputBuffers.back();
                 outputBuffers.pop_back();
@@ -87,6 +90,7 @@ public:
     }
     
     void purge() {
+        std::lock_guard < std::mutex > lock(m_mutex);
         while (!outputBuffers.empty()) {
             BufferType *ref = outputBuffers.front();
             outputBuffers.pop_front();
@@ -97,6 +101,7 @@ private:
     std::string bufferId;
     std::deque<BufferType*> outputBuffers;
     typename std::deque<BufferType*>::iterator outputBuffersI;
+    mutable std::mutex m_mutex;
 };
 
 
