@@ -1594,6 +1594,7 @@ bool AppFrame::loadSession(std::string fileName) {
         return false;
     }
 
+	wxGetApp().getDemodMgr().setActiveDemodulator(nullptr, false);
     wxGetApp().getDemodMgr().terminateAll();
 
     try {
