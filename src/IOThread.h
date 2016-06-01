@@ -115,9 +115,9 @@ public:
     virtual void onBindInput(std::string name, ThreadQueueBase* threadQueue);
 
     void setInputQueue(std::string qname, ThreadQueueBase *threadQueue);
-    void *getInputQueue(std::string qname);
+    ThreadQueueBase *getInputQueue(std::string qname);
     void setOutputQueue(std::string qname, ThreadQueueBase *threadQueue);
-    void *getOutputQueue(std::string qname);
+    ThreadQueueBase *getOutputQueue(std::string qname);
     
 protected:
     std::map<std::string, ThreadQueueBase *, map_string_less> input_queues;

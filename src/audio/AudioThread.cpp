@@ -379,8 +379,8 @@ void AudioThread::run() {
 
     std::cout << "Audio thread started." << std::endl;
 
-    inputQueue = (AudioThreadInputQueue *)getInputQueue("AudioDataInput");
-    threadQueueNotify = (DemodulatorThreadCommandQueue*)getOutputQueue("NotifyQueue");
+    inputQueue = static_cast<AudioThreadInputQueue *>(getInputQueue("AudioDataInput"));
+    threadQueueNotify = static_cast<DemodulatorThreadCommandQueue*>(getOutputQueue("NotifyQueue"));
     
     while (!terminated) {
         AudioThreadCommand command;

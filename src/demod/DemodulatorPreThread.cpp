@@ -56,9 +56,9 @@ void DemodulatorPreThread::run() {
 
     ReBuffer<DemodulatorThreadPostIQData> buffers("DemodulatorPreThreadBuffers");
 
-    iqInputQueue = (DemodulatorThreadInputQueue*)getInputQueue("IQDataInput");
-    iqOutputQueue = (DemodulatorThreadPostInputQueue*)getOutputQueue("IQDataOutput");
-    threadQueueNotify = (DemodulatorThreadCommandQueue*)getOutputQueue("NotifyQueue");
+    iqInputQueue = static_cast<DemodulatorThreadInputQueue*>(getInputQueue("IQDataInput"));
+    iqOutputQueue = static_cast<DemodulatorThreadPostInputQueue*>(getOutputQueue("IQDataOutput"));
+    threadQueueNotify = static_cast<DemodulatorThreadCommandQueue*>(getOutputQueue("NotifyQueue"));
     
     std::vector<liquid_float_complex> in_buf_data;
     std::vector<liquid_float_complex> out_buf_data;

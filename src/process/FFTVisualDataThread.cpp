@@ -24,8 +24,8 @@ SpectrumVisualProcessor *FFTVisualDataThread::getProcessor() {
 }
 
 void FFTVisualDataThread::run() {
-    DemodulatorThreadInputQueue *pipeIQDataIn = (DemodulatorThreadInputQueue *)getInputQueue("IQDataInput");
-    SpectrumVisualDataQueue *pipeFFTDataOut = (SpectrumVisualDataQueue *)getOutputQueue("FFTDataOutput");
+    DemodulatorThreadInputQueue *pipeIQDataIn = static_cast<DemodulatorThreadInputQueue *>(getInputQueue("IQDataInput"));
+    SpectrumVisualDataQueue *pipeFFTDataOut = static_cast<SpectrumVisualDataQueue *>(getOutputQueue("FFTDataOutput"));
     
     fftQueue.set_max_num_items(100);
     pipeFFTDataOut->set_max_num_items(100);

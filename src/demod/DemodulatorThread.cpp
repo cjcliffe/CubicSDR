@@ -32,7 +32,7 @@ void DemodulatorThread::onBindOutput(std::string name, ThreadQueueBase *threadQu
         //protects because it may be changed at runtime
         std::lock_guard < std::mutex > lock(m_mutexAudioVisOutputQueue);
 
-        audioVisOutputQueue = (DemodulatorThreadOutputQueue *)threadQueue;
+        audioVisOutputQueue = static_cast<DemodulatorThreadOutputQueue*>(threadQueue);
     }
 }
 
@@ -69,10 +69,10 @@ void DemodulatorThread::run() {
     
     std::cout << "Demodulator thread started.." << std::endl;
     
-    iqInputQueue = (DemodulatorThreadPostInputQueue*)getInputQueue("IQDataInput");
-    audioOutputQueue = (AudioThreadInputQueue*)getOutputQueue("AudioDataOutput");
-    threadQueueControl = (DemodulatorThreadControlCommandQueue *)getInputQueue("ControlQueue");
-    threadQueueNotify = (DemodulatorThreadCommandQueue*)getOutputQueue("NotifyQueue");
+    iqInputQueue = static_cast<DemodulatorThreadPostInputQueue*>(getInputQueue("IQDataInput"));
+    audioOutputQueue = static_cast<AudioThreadInputQueue*>(getOutputQueue("AudioDataOutput"));
+    threadQueueControl = static_cast<DemodulatorThreadControlCommandQueue *>(getInputQueue("ControlQueue"));
+    threadQueueNotify = static_cast<DemodulatorThreadCommandQueue*>(getOutputQueue("NotifyQueue"));
     
     ModemIQData modemData;
     
