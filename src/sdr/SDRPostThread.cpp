@@ -20,7 +20,7 @@ SDRPostThread::SDRPostThread() : IOThread(), buffers("SDRPostThreadBuffers"), vi
     visBandwidth.store(0);
     
     doRefresh.store(false);
-    dcFilter = iirfilt_crcf_create_dc_blocker(0.0005);
+    dcFilter = iirfilt_crcf_create_dc_blocker(0.0005f);
 }
 
 SDRPostThread::~SDRPostThread() {

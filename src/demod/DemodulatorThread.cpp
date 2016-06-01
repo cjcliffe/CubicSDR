@@ -46,7 +46,7 @@ float DemodulatorThread::linearToDb(float linear) {
     //        http://dspguru.com/dsp/tricks/magnitude-estimator
     #define SMALL 1e-20
     if (linear <= SMALL) {
-        linear = SMALL;
+        linear = float(SMALL);
     }
     return 20.0 * log10(linear);
 }

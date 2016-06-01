@@ -49,7 +49,7 @@ ModemKit *ModemFMStereo::buildKit(long long sampleRate, int audioSampleRate) {
     // Stereo filters / shifters
     double firStereoCutoff = 16000.0 / double(audioSampleRate);
     // filter transition
-    float ft = 1000.0 / double(audioSampleRate);
+    float ft = 1000.0f / double(audioSampleRate);
     // fractional timing offset
     float mu = 0.0f;
     
@@ -69,13 +69,13 @@ ModemKit *ModemFMStereo::buildKit(long long sampleRate, int audioSampleRate) {
     kit->firStereoRight = firfilt_rrrf_create(h, h_len);
     
     // stereo pilot filter
-    float bw = sampleRate;
+    float bw = float(sampleRate);
     if (bw < 100000.0) {
         bw = 100000.0;
     }
     unsigned int order =   5;       // filter order
-    float        f0    =   ((double) 19000 / bw);
-    float        fc    =   ((double) 19500 / bw);
+    float        f0    =   ((float) 19000 / bw);
+    float        fc    =   ((float) 19500 / bw);
     float        Ap    =   1.0f;
     
     kit->iirStereoPilot = iirfilt_crcf_create_prototype(LIQUID_IIRDES_CHEBY2, LIQUID_IIRDES_BANDPASS, LIQUID_IIRDES_SOS, order, fc, f0, Ap, As);
@@ -117,7 +117,7 @@ void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInp
         demodOutputData.resize(bufSize);
     }
     
-    size_t audio_out_size = ceil((double) (bufSize) * audio_resample_ratio) + 512;
+    size_t audio_out_size = (size_t)ceil((double) (bufSize) * audio_resample_ratio) + 512;
     
     freqdem_demodulate_block(demodFM, &input->data[0], bufSize, &demodOutputData[0]);
     
@@ -190,10 +190,10 @@ void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInp
     for (size_t i = 0; i < numAudioWritten; i++) {
         float l, r;
         
-        firfilt_rrrf_push(fmkit->firStereoLeft, 0.568 * (resampledOutputData[i] - (resampledStereoData[i])));
+        firfilt_rrrf_push(fmkit->firStereoLeft, 0.568f * (resampledOutputData[i] - (resampledStereoData[i])));
         firfilt_rrrf_execute(fmkit->firStereoLeft, &l);
         
-        firfilt_rrrf_push(fmkit->firStereoRight, 0.568 * (resampledOutputData[i] + (resampledStereoData[i])));
+        firfilt_rrrf_push(fmkit->firStereoRight, 0.568f * (resampledOutputData[i] + (resampledStereoData[i])));
         firfilt_rrrf_execute(fmkit->firStereoRight, &r);
         
         audioOut->data[i * 2] = l;

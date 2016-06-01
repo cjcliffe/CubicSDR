@@ -13,22 +13,22 @@ PrimaryGLContext(canvas, sharedContext) {
     
     testChildPanel.setPosition(0.0, 0.0);
     testChildPanel.setMarginPx(5);
-    testChildPanel.setSize(1.0, 0.33);
+    testChildPanel.setSize(1.0f, 0.33f);
     testChildPanel.setCoordinateSystem(GLPanel::GLPANEL_Y_DOWN_ZERO_ONE);
     testChildPanel.setFill(GLPanel::GLPANEL_FILL_GRAD_BAR_X);
     testChildPanel.setFillColor(RGBA4f(0.0,0.0,1.0), RGBA4f(0.0,1.0,0.0));
     testChildPanel.setBorderPx(1);
 
-    testChildPanel2.setPosition(0.0, -0.66);
-    testChildPanel2.setSize(1.0, 0.33);
+    testChildPanel2.setPosition(0.0f, -0.66f);
+    testChildPanel2.setSize(1.0f, 0.33f);
     testChildPanel2.setMarginPx(5);
     testChildPanel2.setFill(GLPanel::GLPANEL_FILL_GRAD_X);
     testChildPanel2.setFillColor(RGBA4f(0.0,0.0,1.0), RGBA4f(0.0,1.0,0.0));
     testChildPanel2.setBorderColor(RGBA4f(1.0,0.0,0.0));
     testChildPanel2.setBorderPx(1);
 
-    testChildPanel3.setPosition(0.0, 0.66);
-    testChildPanel3.setSize(1.0, 0.33);
+    testChildPanel3.setPosition(0.0f, 0.66f);
+    testChildPanel3.setSize(1.0f, 0.33f);
     testChildPanel3.setMarginPx(5);
     testChildPanel3.setFill(GLPanel::GLPANEL_FILL_GRAD_X);
     testChildPanel3.setFillColor(RGBA4f(0.0,0.0,1.0), RGBA4f(0.0,1.0,0.0));

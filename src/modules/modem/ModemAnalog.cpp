@@ -45,7 +45,7 @@ void ModemAnalog::initOutputBuffers(ModemKitAnalog *akit, ModemIQData *input) {
     
     double audio_resample_ratio = akit->audioResampleRatio;
     
-    size_t audio_out_size = ceil((double) (bufSize) * audio_resample_ratio) + 512;
+    size_t audio_out_size = (size_t)ceil((double) (bufSize) * audio_resample_ratio) + 512;
     
     if (demodOutputData.size() != bufSize) {
         if (demodOutputData.capacity() < bufSize) {
@@ -65,8 +65,8 @@ void ModemAnalog::buildAudioOutput(ModemKitAnalog *akit, AudioThreadInput *audio
     unsigned int numAudioWritten;
 
     if (autoGain) {
-        aOutputCeilMA = aOutputCeilMA + (aOutputCeil - aOutputCeilMA) * 0.025;
-        aOutputCeilMAA = aOutputCeilMAA + (aOutputCeilMA - aOutputCeilMAA) * 0.025;
+        aOutputCeilMA = aOutputCeilMA + (aOutputCeil - aOutputCeilMA) * 0.025f;
+        aOutputCeilMAA = aOutputCeilMAA + (aOutputCeilMA - aOutputCeilMAA) * 0.025f;
         aOutputCeil = 0;
         
         for (size_t i = 0; i < bufSize; i++) {
@@ -75,7 +75,7 @@ void ModemAnalog::buildAudioOutput(ModemKitAnalog *akit, AudioThreadInput *audio
             }
         }
         
-        float gain = 0.5 / aOutputCeilMAA;
+        float gain = 0.5f / aOutputCeilMAA;
         
         for (size_t i = 0; i < bufSize; i++) {
             demodOutputData[i] *= gain;

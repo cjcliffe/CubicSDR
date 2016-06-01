@@ -35,7 +35,7 @@ SpectrumVisualProcessor::SpectrumVisualProcessor() : outputBuffers("SpectrumVisu
     fft_ceil_ma = fft_ceil_maa = 100.0;
     fft_floor_ma = fft_floor_maa = 0.0;
     desiredInputSize.store(0);
-    fft_average_rate = 0.65;
+    fft_average_rate = 0.65f;
     scaleFactor.store(1.0);
     fftSizeChanged.store(false);
     newFFTSize.store(0);

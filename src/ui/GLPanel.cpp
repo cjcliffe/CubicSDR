@@ -13,9 +13,9 @@ GLPanel::GLPanel() : fillType(GLPANEL_FILL_SOLID), contentsVisible(true), visibl
     rot[2] = 0.0f;
     size[0] = 1.0f;
     size[1] = 1.0f;
-    fill[0] = RGBA4f(0.5,0.5,0.5);
-    fill[1] = RGBA4f(0.1,0.1,0.1);
-    borderColor = RGBA4f(0.8, 0.8, 0.8);
+    fill[0] = RGBA4f(0.5f,0.5f,0.5f);
+    fill[1] = RGBA4f(0.1f,0.1f,0.1f);
+    borderColor = RGBA4f(0.8f, 0.8f, 0.8f);
     setCoordinateSystem(GLPANEL_Y_UP);
     setMarginPx(0);
     setBorderPx(0);

@@ -5,7 +5,7 @@
 ScopeVisualProcessor::ScopeVisualProcessor(): outputBuffers("ScopeVisualProcessorBuffers") {
     scopeEnabled.store(true);
     spectrumEnabled.store(true);
-    fft_average_rate = 0.65;
+    fft_average_rate = 0.65f;
 	fft_ceil_ma = fft_ceil_maa = 0;
 	fft_floor_ma = fft_floor_maa = 0;
     maxScopeSamples = 1024;

@@ -65,8 +65,8 @@ void ScopePanel::drawPanelContents() {
 
     } else if (scopeMode == SCOPE_MODE_XY) {
         RGBA4f bg1(ThemeMgr::mgr.currentTheme->scopeBackground), bg2(ThemeMgr::mgr.currentTheme->scopeBackground * 2.0);
-        bg1.a = 0.05;
-        bg2.a = 0.05;
+        bg1.a = 0.05f;
+        bg2.a = 0.05f;
         bgPanel.setFillColor(bg1, bg2);
         bgPanel.calcTransform(transform);
         bgPanel.draw();

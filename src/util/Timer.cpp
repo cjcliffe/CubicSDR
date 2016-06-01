@@ -41,7 +41,7 @@ void Timer::reset(void)
 
 void Timer::lockFramerate(float f_rate)
 {
-	lock_rate = 1.0/f_rate;
+	lock_rate = 1.0f/f_rate;
 	lock_state = true;
 }
 

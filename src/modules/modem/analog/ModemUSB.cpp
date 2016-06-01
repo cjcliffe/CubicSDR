@@ -9,7 +9,7 @@ ModemUSB::ModemUSB() : ModemAnalog() {
 	ssbFilt = iirfilt_crcf_create_lowpass(6, 0.25);
 #endif
 	ssbShift = nco_crcf_create(LIQUID_NCO);
-    nco_crcf_set_frequency(ssbShift,  (2.0 * M_PI) * 0.25);
+    nco_crcf_set_frequency(ssbShift,  (2.0f * M_PI) * 0.25f);
     c2rFilt = firhilbf_create(5, 90.0);
 }
 

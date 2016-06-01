@@ -284,7 +284,7 @@ void DemodulatorMgr::updateLastState() {
     if (lastActiveDemodulator) {
         lastBandwidth = lastActiveDemodulator->getBandwidth();
         lastDemodType = lastActiveDemodulator->getDemodulatorType();
-        lastDemodLock = lastActiveDemodulator->getDemodulatorLock();
+        lastDemodLock = lastActiveDemodulator->getDemodulatorLock()?true:false;
         lastSquelchEnabled = lastActiveDemodulator->isSquelchEnabled();
         lastSquelch = lastActiveDemodulator->getSquelchLevel();
         lastGain = lastActiveDemodulator->getGain();

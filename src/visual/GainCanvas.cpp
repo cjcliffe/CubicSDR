@@ -36,7 +36,7 @@ GainCanvas::GainCanvas(wxWindow *parent, int *dispAttrs) :
     spacing = 2.0/numGains;
     barWidth = (1.0/numGains)*0.8;
     startPos = spacing/2.0;
-    barHeight = 0.8;
+    barHeight = 0.8f;
     refreshCounter = 0;
 }
 
@@ -226,7 +226,7 @@ void GainCanvas::updateGainUI() {
     spacing = 2.0/numGains;
     barWidth = (1.0/numGains)*0.7;
     startPos = spacing/2.0;
-    barHeight = 0.8;
+    barHeight = 0.8f;
     
     RGBA4f c1, c2;
     
@@ -260,7 +260,7 @@ void GainCanvas::updateGainUI() {
 
         gInfo->levelPanel.setBorderPx(0);
         gInfo->levelPanel.setMarginPx(1);
-        gInfo->levelPanel.setSize(1.0,0.8);
+        gInfo->levelPanel.setSize(1.0,0.8f);
         float levelVal = float(gInfo->current-gInfo->low)/float(gInfo->high-gInfo->low);
         gInfo->levelPanel.setSize(1.0, levelVal);
         gInfo->levelPanel.setPosition(0.0, (-1.0+(levelVal)));
@@ -271,8 +271,8 @@ void GainCanvas::updateGainUI() {
 
         gInfo->highlightPanel.setBorderPx(0);
         gInfo->highlightPanel.setMarginPx(1);
-        gInfo->highlightPanel.setSize(1.0,0.8);
-        gInfo->highlightPanel.setPosition(0.0,-0.2);
+        gInfo->highlightPanel.setSize(1.0,0.8f);
+        gInfo->highlightPanel.setPosition(0.0,-0.2f);
         gInfo->highlightPanel.setFill(GLPanel::GLPANEL_FILL_GRAD_BAR_X);
         gInfo->highlightPanel.setBlend(GL_ONE, GL_ONE);
         gInfo->highlightPanel.visible = false;
@@ -326,8 +326,8 @@ void GainCanvas::setThemeColors() {
         c2.a = 1.0;
         gInfo->levelPanel.setFillColor(c1, c2);
         
-        c1 = RGBA4f(0.3,0.3,0.3,1.0);
-        c2 = RGBA4f(0.65,0.65,0.65,1.0);;
+        c1 = RGBA4f(0.3f,0.3f,0.3f,1.0f);
+        c2 = RGBA4f(0.65f,0.65f,0.65f,1.0f);;
         gInfo->highlightPanel.setFillColor(c1, c2);
     }
     Refresh();
