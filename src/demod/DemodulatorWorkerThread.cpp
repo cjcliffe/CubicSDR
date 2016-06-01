@@ -14,8 +14,8 @@ void DemodulatorWorkerThread::run() {
 
     std::cout << "Demodulator worker thread started.." << std::endl;
     
-    commandQueue = (DemodulatorThreadWorkerCommandQueue *)getInputQueue("WorkerCommandQueue");
-    resultQueue = (DemodulatorThreadWorkerResultQueue *)getOutputQueue("WorkerResultQueue");
+    commandQueue = static_cast<DemodulatorThreadWorkerCommandQueue *>(getInputQueue("WorkerCommandQueue"));
+    resultQueue = static_cast<DemodulatorThreadWorkerResultQueue *>(getOutputQueue("WorkerResultQueue"));
     
     while (!terminated) {
         bool filterChanged = false;

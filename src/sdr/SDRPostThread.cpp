@@ -161,10 +161,10 @@ void SDRPostThread::run() {
 
     std::cout << "SDR post-processing thread started.." << std::endl;
 
-    iqDataInQueue = (SDRThreadIQDataQueue*)getInputQueue("IQDataInput");
-    iqDataOutQueue = (DemodulatorThreadInputQueue*)getOutputQueue("IQDataOutput");
-    iqVisualQueue = (DemodulatorThreadInputQueue*)getOutputQueue("IQVisualDataOutput");
-    iqActiveDemodVisualQueue = (DemodulatorThreadInputQueue*)getOutputQueue("IQActiveDemodVisualDataOutput");
+    iqDataInQueue = static_cast<SDRThreadIQDataQueue*>(getInputQueue("IQDataInput"));
+    iqDataOutQueue = static_cast<DemodulatorThreadInputQueue*>(getOutputQueue("IQDataOutput"));
+    iqVisualQueue = static_cast<DemodulatorThreadInputQueue*>(getOutputQueue("IQVisualDataOutput"));
+    iqActiveDemodVisualQueue = static_cast<DemodulatorThreadInputQueue*>(getOutputQueue("IQActiveDemodVisualDataOutput"));
 
     iqDataInQueue->set_max_num_items(0);
     

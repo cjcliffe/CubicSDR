@@ -216,7 +216,7 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
 }
 
 void SDRThread::readLoop() {
-    SDRThreadIQDataQueue* iqDataOutQueue = (SDRThreadIQDataQueue*) getOutputQueue("IQDataOutput");
+    SDRThreadIQDataQueue* iqDataOutQueue = static_cast<SDRThreadIQDataQueue*>( getOutputQueue("IQDataOutput"));
     
     if (iqDataOutQueue == NULL) {
         return;

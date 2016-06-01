@@ -50,7 +50,7 @@ void IOThread::setInputQueue(std::string qname, ThreadQueueBase *threadQueue) {
     this->onBindInput(qname, threadQueue);
 };
 
-void *IOThread::getInputQueue(std::string qname) {
+ThreadQueueBase *IOThread::getInputQueue(std::string qname) {
     return input_queues[qname];
 };
 
@@ -59,7 +59,7 @@ void IOThread::setOutputQueue(std::string qname, ThreadQueueBase *threadQueue) {
     this->onBindOutput(qname, threadQueue);
 };
 
-void *IOThread::getOutputQueue(std::string qname) {
+ThreadQueueBase *IOThread::getOutputQueue(std::string qname) {
     return output_queues[qname];
 };
 

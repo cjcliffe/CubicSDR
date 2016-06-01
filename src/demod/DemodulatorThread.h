@@ -40,8 +40,8 @@ protected:
     float abMagnitude(double alpha, double beta, float inphase, float quadrature);
     float linearToDb(float linear);
 
-    DemodulatorInstance *demodInstance;
-    ReBuffer<AudioThreadInput> outputBuffers;
+    DemodulatorInstance *demodInstance = nullptr;
+    ReBuffer<AudioThreadInput> outputBuffers = nullptr;
 
     std::atomic_bool muted;
 
@@ -49,12 +49,15 @@ protected:
     std::atomic<float> signalLevel;
     bool squelchEnabled, squelchBreak;
     
-    Modem *cModem;
-    ModemKit *cModemKit;
+    Modem *cModem = nullptr;
+    ModemKit *cModemKit = nullptr;
     
-    DemodulatorThreadPostInputQueue* iqInputQueue;
-    AudioThreadInputQueue *audioOutputQueue;
-    DemodulatorThreadOutputQueue* audioVisOutputQueue;
-    DemodulatorThreadControlCommandQueue *threadQueueControl;
-    DemodulatorThreadCommandQueue* threadQueueNotify;
+    DemodulatorThreadPostInputQueue* iqInputQueue = nullptr;
+    AudioThreadInputQueue *audioOutputQueue = nullptr;
+    DemodulatorThreadOutputQueue* audioVisOutputQueue = nullptr;
+    DemodulatorThreadControlCommandQueue *threadQueueControl = nullptr;
+    DemodulatorThreadCommandQueue* threadQueueNotify = nullptr;
+
+    //protects the audioVisOutputQueue dynamic binding change at runtime (in DemodulatorMgr)
+    mutable std::mutex m_mutexAudioVisOutputQueue;
 };
