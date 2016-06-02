@@ -23,7 +23,6 @@ DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent)
 }
 
 DemodulatorThread::~DemodulatorThread() {
-    
 }
 
 void DemodulatorThread::onBindOutput(std::string name, ThreadQueueBase *threadQueue) {
@@ -64,8 +63,6 @@ void DemodulatorThread::run() {
     sched_param prio = {priority}; // scheduling priority of thread
     pthread_setschedparam(tID, SCHED_FIFO, &prio);
 #endif
-    
-    ReBuffer<AudioThreadInput> audioVisBuffers("DemodulatorThreadAudioBuffers");
     
     std::cout << "Demodulator thread started.." << std::endl;
     
@@ -188,7 +185,7 @@ void DemodulatorThread::run() {
         }
 
         if (ati && localAudioVisOutputQueue != nullptr && localAudioVisOutputQueue->empty()) {
-            AudioThreadInput *ati_vis = audioVisBuffers.getBuffer();
+            AudioThreadInput *ati_vis = new AudioThreadInput;
 
             ati_vis->setRefCount(1);
             ati_vis->sampleRate = inp->sampleRate;
@@ -284,11 +281,10 @@ void DemodulatorThread::run() {
     //Guard the cleanup of audioVisOutputQueue properly.
     std::lock_guard < std::mutex > lock(m_mutexAudioVisOutputQueue);
 
-    if (audioVisOutputQueue != nullptr && !audioVisOutputQueue->empty()) {
-        AudioThreadInput *dummy_vis;
-        audioVisOutputQueue->pop(dummy_vis);
-    }
-    audioVisBuffers.purge();
+//    if (audioVisOutputQueue != nullptr && !audioVisOutputQueue->empty()) {
+//        AudioThreadInput *dummy_vis;
+//        audioVisOutputQueue->pop(dummy_vis);
+//    }
     
     DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_TERMINATED);
     tCmd.context = this;
