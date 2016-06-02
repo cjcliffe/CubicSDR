@@ -1741,7 +1741,7 @@ bool AppFrame::loadSession(std::string fileName) {
                 demodsLoaded.push_back(newDemod);
     //            wxGetApp().bindDemodulator(newDemod);
 
-//                std::cout << "\tAdded demodulator at frequency " << freq << " type " << type << std::endl;
+                std::cout << "\tAdded demodulator at frequency " << newDemod->getFrequency() << " type " << type << std::endl;
 //                std::cout << "\t\tBandwidth: " << bandwidth << std::endl;
 //                std::cout << "\t\tSquelch Level: " << squelch_level << std::endl;
 //                std::cout << "\t\tSquelch Enabled: " << (squelch_enabled ? "true" : "false") << std::endl;

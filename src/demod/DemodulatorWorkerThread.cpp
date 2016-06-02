@@ -12,7 +12,7 @@ DemodulatorWorkerThread::~DemodulatorWorkerThread() {
 
 void DemodulatorWorkerThread::run() {
 
-    std::cout << "Demodulator worker thread started.." << std::endl;
+//    std::cout << "Demodulator worker thread started.." << std::endl;
     
     commandQueue = static_cast<DemodulatorThreadWorkerCommandQueue *>(getInputQueue("WorkerCommandQueue"));
     resultQueue = static_cast<DemodulatorThreadWorkerResultQueue *>(getOutputQueue("WorkerResultQueue"));
@@ -99,7 +99,7 @@ void DemodulatorWorkerThread::run() {
 
     }
 
-    std::cout << "Demodulator worker thread done." << std::endl;
+//    std::cout << "Demodulator worker thread done." << std::endl;
 }
 
 void DemodulatorWorkerThread::terminate() {

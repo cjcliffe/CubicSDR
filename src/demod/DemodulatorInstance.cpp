@@ -89,7 +89,7 @@ void DemodulatorInstance::run() {
     pthread_create(&t_Demod, &attr, &DemodulatorThread::pthread_helper, demodulatorThread);
     pthread_attr_destroy(&attr);
 
-    std::cout << "Initialized demodulator stack size of " << size << std::endl;
+//    std::cout << "Initialized demodulator stack size of " << size << std::endl;
 
 #else
     t_PreDemod = new std::thread(&DemodulatorPreThread::threadMain, demodulatorPreThread);
@@ -109,11 +109,11 @@ void DemodulatorInstance::updateLabel(long long freq) {
 }
 
 void DemodulatorInstance::terminate() {
-    std::cout << "Terminating demodulator audio thread.." << std::endl;
+//    std::cout << "Terminating demodulator audio thread.." << std::endl;
     audioThread->terminate();
-    std::cout << "Terminating demodulator thread.." << std::endl;
+//    std::cout << "Terminating demodulator thread.." << std::endl;
     demodulatorThread->terminate();
-    std::cout << "Terminating demodulator preprocessor thread.." << std::endl;
+//    std::cout << "Terminating demodulator preprocessor thread.." << std::endl;
     demodulatorPreThread->terminate();
 }
 

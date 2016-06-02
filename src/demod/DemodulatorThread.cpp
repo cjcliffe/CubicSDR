@@ -64,7 +64,7 @@ void DemodulatorThread::run() {
     pthread_setschedparam(tID, SCHED_FIFO, &prio);
 #endif
     
-    std::cout << "Demodulator thread started.." << std::endl;
+//    std::cout << "Demodulator thread started.." << std::endl;
     
     iqInputQueue = static_cast<DemodulatorThreadPostInputQueue*>(getInputQueue("IQDataInput"));
     audioOutputQueue = static_cast<AudioThreadInputQueue*>(getOutputQueue("AudioDataOutput"));
@@ -290,7 +290,7 @@ void DemodulatorThread::run() {
     tCmd.context = this;
     threadQueueNotify->push(tCmd);
     
-    std::cout << "Demodulator thread done." << std::endl;
+//    std::cout << "Demodulator thread done." << std::endl;
 }
 
 void DemodulatorThread::terminate() {

@@ -171,7 +171,7 @@ void SDRPostThread::run() {
     pthread_setschedparam(tID, SCHED_FIFO, &prio);
 #endif
 
-    std::cout << "SDR post-processing thread started.." << std::endl;
+//    std::cout << "SDR post-processing thread started.." << std::endl;
 
     iqDataInQueue = static_cast<SDRThreadIQDataQueue*>(getInputQueue("IQDataInput"));
     iqDataOutQueue = static_cast<DemodulatorThreadInputQueue*>(getOutputQueue("IQDataOutput"));
@@ -223,7 +223,7 @@ void SDRPostThread::run() {
     //    buffers.purge();
     //    visualDataBuffers.purge();
 
-    std::cout << "SDR post-processing thread done." << std::endl;
+//    std::cout << "SDR post-processing thread done." << std::endl;
 }
 
 void SDRPostThread::terminate() {
