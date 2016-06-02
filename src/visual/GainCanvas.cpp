@@ -164,6 +164,15 @@ void GainCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
         gInfo = gainInfo[panelHit];
         
         gInfo->current = gInfo->current + ((movement / 100.0) * ((gInfo->high - gInfo->low) / 100.0));
+        
+        //BEGIN Clamp to prevent the meter to escape
+        if (gInfo->current > gInfo->high) {
+            gInfo->current = gInfo->high;
+        }
+        if (gInfo->current < gInfo->low) {
+            gInfo->current = gInfo->low;
+        }
+       
         gInfo->changed = true;
         
         float levelVal = float(gInfo->current-gInfo->low)/float(gInfo->high-gInfo->low);
