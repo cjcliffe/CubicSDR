@@ -397,7 +397,10 @@ void CubicSDR::removeRemote(std::string remoteAddr) {
 }
 
 void CubicSDR::sdrThreadNotify(SDRThread::SDRThreadState state, std::string message) {
-    notify_busy.lock();
+
+    std::lock_guard < std::mutex > lock(notify_busy);
+
+   
     if (state == SDRThread::SDR_THREAD_INITIALIZED) {
         appframe->initDeviceParams(getDevice());
     }
@@ -415,12 +418,13 @@ void CubicSDR::sdrThreadNotify(SDRThread::SDRThreadState state, std::string mess
 //        info->ShowModal();
     }
     //if (appframe) { appframe->SetStatusText(message); }
-    notify_busy.unlock();
+  
 }
 
 
 void CubicSDR::sdrEnumThreadNotify(SDREnumerator::SDREnumState state, std::string message) {
-    notify_busy.lock();
+    std::lock_guard < std::mutex > lock(notify_busy);
+
     if (state == SDREnumerator::SDR_ENUM_MESSAGE) {
         notifyMessage = message;
     }
@@ -432,7 +436,7 @@ void CubicSDR::sdrEnumThreadNotify(SDREnumerator::SDREnumState state, std::strin
         devicesFailed.store(true);
     }
     //if (appframe) { appframe->SetStatusText(message); }
-    notify_busy.unlock();
+   
 
 }
 
@@ -748,9 +752,9 @@ bool CubicSDR::areModulesMissing() {
 
 std::string CubicSDR::getNotification() {
     std::string msg;
-    notify_busy.lock();
+    std::lock_guard < std::mutex > lock(notify_busy);
     msg = notifyMessage;
-    notify_busy.unlock();
+   
     return msg;
 }
 

@@ -97,6 +97,7 @@ private:
     std::vector<liquid_float_complex> shiftBuffer;
     std::vector<liquid_float_complex> resampleBuffer;
     std::atomic_int desiredInputSize;
+   
     std::mutex busy_run;
     std::atomic_bool hideDC, peakHold;
     std::atomic_int peakReset;

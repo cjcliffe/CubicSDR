@@ -126,20 +126,22 @@ void SDRThread::init() {
         settingChanged.erase(settingChanged.begin(), settingChanged.end());
     }
     
-    setting_busy.lock();
-    for (settings_i = settingsInfo.begin(); settings_i != settingsInfo.end(); settings_i++) {
-        SoapySDR::ArgInfo setting = (*settings_i);
-        if ((settingChanged.find(setting.key) != settingChanged.end()) && (settings.find(setting.key) != settings.end())) {
-            device->writeSetting(setting.key, settings[setting.key]);
-            settingChanged[setting.key] = false;
-        } else {
-            settings[setting.key] = device->readSetting(setting.key);
-            settingChanged[setting.key] = false;
-        }
-    }
-    setting_value_changed.store(false);
+    { //enter scoped-lock
+        std::lock_guard < std::mutex > lock(setting_busy);
 
-    setting_busy.unlock();
+        for (settings_i = settingsInfo.begin(); settings_i != settingsInfo.end(); settings_i++) {
+            SoapySDR::ArgInfo setting = (*settings_i);
+            if ((settingChanged.find(setting.key) != settingChanged.end()) && (settings.find(setting.key) != settings.end())) {
+                device->writeSetting(setting.key, settings[setting.key]);
+                settingChanged[setting.key] = false;
+            } else {
+                settings[setting.key] = device->readSetting(setting.key);
+                settingChanged[setting.key] = false;
+            }
+        }
+        setting_value_changed.store(false);
+
+    } //leave lock guard scope
     
     updateSettings();
     
@@ -316,21 +318,22 @@ void SDRThread::updateSettings() {
     }
     
     if (gain_value_changed.load() && !agc_mode.load()) {
-        gain_busy.lock();
+        std::lock_guard < std::mutex > lock(gain_busy); 
+
         for (std::map<std::string,bool>::iterator gci = gainChanged.begin(); gci != gainChanged.end(); gci++) {
             if (gci->second) {
                 device->setGain(SOAPY_SDR_RX, 0, gci->first, gainValues[gci->first]);
                 gainChanged[gci->first] = false;
             }
         }
-        gain_busy.unlock();
         
         gain_value_changed.store(false);
     }
     
     
     if (setting_value_changed.load()) {
-        setting_busy.lock();
+
+        std::lock_guard < std::mutex > lock(setting_busy);
         
         for (std::map<std::string, bool>::iterator sci = settingChanged.begin(); sci != settingChanged.end(); sci++) {
             if (sci->second) {
@@ -340,7 +343,6 @@ void SDRThread::updateSettings() {
         }
         
         setting_value_changed.store(false);
-        setting_busy.unlock();
         
         doUpdate = true;
     }
@@ -511,11 +513,10 @@ bool SDRThread::getIQSwap() {
 }
 
 void SDRThread::setGain(std::string name, float value) {
-    gain_busy.lock();
+    std::lock_guard < std::mutex > lock(gain_busy);
     gainValues[name] = value;
     gainChanged[name] = true;
     gain_value_changed.store(true);
-    gain_busy.unlock();
     
     DeviceConfig *devConfig = deviceConfig.load();
     if (devConfig) {
@@ -524,28 +525,30 @@ void SDRThread::setGain(std::string name, float value) {
 }
 
 float SDRThread::getGain(std::string name) {
-	gain_busy.lock();
+    std::lock_guard < std::mutex > lock(gain_busy);
 	float val = gainValues[name];
-	gain_busy.unlock();
+	
 	return val;
 }
 
 void SDRThread::writeSetting(std::string name, std::string value) {
-    setting_busy.lock();
+
+    std::lock_guard < std::mutex > lock(setting_busy);
+
     settings[name] = value;
     settingChanged[name] = true;
     setting_value_changed.store(true);
     if (deviceConfig.load() != nullptr) {
         deviceConfig.load()->setSetting(name, value);
     }
-    setting_busy.unlock();
 }
 
 std::string SDRThread::readSetting(std::string name) {
     std::string val;
-    setting_busy.lock();
+    std::lock_guard < std::mutex > lock(setting_busy);
+
     val = device->readSetting(name);
-    setting_busy.unlock();
+   
     return val;
 }
 
