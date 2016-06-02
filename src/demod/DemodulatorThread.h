@@ -41,7 +41,7 @@ protected:
     float linearToDb(float linear);
 
     DemodulatorInstance *demodInstance = nullptr;
-    ReBuffer<AudioThreadInput> outputBuffers = nullptr;
+    ReBuffer<AudioThreadInput> outputBuffers;
 
     std::atomic_bool muted;
 
