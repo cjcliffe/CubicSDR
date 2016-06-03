@@ -368,7 +368,7 @@ void AudioThread::run() {
     pthread_setschedparam(tID, SCHED_RR, &prio);
 #endif
 
-    std::cout << "Audio thread initializing.." << std::endl;
+//    std::cout << "Audio thread initializing.." << std::endl;
 
     if (dac.getDeviceCount() < 1) {
         std::cout << "No audio devices found!" << std::endl;
@@ -377,7 +377,7 @@ void AudioThread::run() {
 
     setupDevice((outputDevice.load() == -1) ? (dac.getDefaultOutputDevice()) : outputDevice.load());
 
-    std::cout << "Audio thread started." << std::endl;
+//    std::cout << "Audio thread started." << std::endl;
 
     inputQueue = static_cast<AudioThreadInputQueue *>(getInputQueue("AudioDataInput"));
     threadQueueNotify = static_cast<DemodulatorThreadCommandQueue*>(getOutputQueue("NotifyQueue"));
@@ -414,7 +414,7 @@ void AudioThread::run() {
         tCmd.context = this;
         threadQueueNotify->push(tCmd);
     }
-    std::cout << "Audio thread done." << std::endl;
+//    std::cout << "Audio thread done." << std::endl;
 }
 
 void AudioThread::terminate() {

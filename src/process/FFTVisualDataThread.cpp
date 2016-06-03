@@ -35,7 +35,7 @@ void FFTVisualDataThread::run() {
     wproc.attachOutput(pipeFFTDataOut);
     wproc.setup(DEFAULT_FFT_SIZE);
 
-    std::cout << "FFT visual data thread started." << std::endl;
+//    std::cout << "FFT visual data thread started." << std::endl;
     
     while(!terminated) {
         
@@ -63,6 +63,6 @@ void FFTVisualDataThread::run() {
         }
     }
     
-    std::cout << "FFT visual data thread done." << std::endl;
+//    std::cout << "FFT visual data thread done." << std::endl;
 }
 

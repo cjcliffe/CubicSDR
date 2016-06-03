@@ -99,7 +99,7 @@ void ScopeVisualProcessor::process() {
         }
         size_t i, iMax = audioInputData->data.size();
         if (!iMax) {
-            audioInputData->decRefCount();
+            delete audioInputData; //->decRefCount();
             return;
         }
                 
@@ -213,7 +213,7 @@ void ScopeVisualProcessor::process() {
             renderData->inputRate = audioInputData->inputRate;
             renderData->sampleRate = audioInputData->sampleRate;
             
-            audioInputData->decRefCount();
+            delete audioInputData; //->decRefCount();
 
             float fft_ceil = 0, fft_floor = 1;
             
@@ -280,7 +280,7 @@ void ScopeVisualProcessor::process() {
             renderData->spectrum = true;
             distribute(renderData);
         } else {
-            audioInputData->decRefCount();
+            delete audioInputData; //->decRefCount();
         }
     }
 }

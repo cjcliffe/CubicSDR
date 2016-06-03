@@ -11,17 +11,19 @@ DemodulatorInstance::DemodulatorInstance() :
 #if ENABLE_DIGITAL_LAB
     activeOutput = nullptr;
 #endif
-	terminated.store(true);
-	audioTerminated.store(true);
+    terminated.store(true);
 	demodTerminated.store(true);
+    audioTerminated.store(true);
 	preDemodTerminated.store(true);
 	active.store(false);
 	squelch.store(false);
     muted.store(false);
-	tracking.store(false);
-	follow.store(false);
+    deltaLock.store(false);
+    deltaLockOfs.store(0);
 	currentOutputDevice.store(-1);
     currentAudioGain.store(1.0);
+    follow.store(false);
+    tracking.store(false);
 
     label = new std::string("Unnamed");
     pipeIQInputData = new DemodulatorThreadInputQueue;
@@ -89,7 +91,7 @@ void DemodulatorInstance::run() {
     pthread_create(&t_Demod, &attr, &DemodulatorThread::pthread_helper, demodulatorThread);
     pthread_attr_destroy(&attr);
 
-    std::cout << "Initialized demodulator stack size of " << size << std::endl;
+//    std::cout << "Initialized demodulator stack size of " << size << std::endl;
 
 #else
     t_PreDemod = new std::thread(&DemodulatorPreThread::threadMain, demodulatorPreThread);
@@ -109,11 +111,11 @@ void DemodulatorInstance::updateLabel(long long freq) {
 }
 
 void DemodulatorInstance::terminate() {
-    std::cout << "Terminating demodulator audio thread.." << std::endl;
+//    std::cout << "Terminating demodulator audio thread.." << std::endl;
     audioThread->terminate();
-    std::cout << "Terminating demodulator thread.." << std::endl;
+//    std::cout << "Terminating demodulator thread.." << std::endl;
     demodulatorThread->terminate();
-    std::cout << "Terminating demodulator preprocessor thread.." << std::endl;
+//    std::cout << "Terminating demodulator preprocessor thread.." << std::endl;
     demodulatorPreThread->terminate();
 }
 

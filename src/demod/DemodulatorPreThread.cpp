@@ -52,7 +52,7 @@ void DemodulatorPreThread::run() {
     pthread_setschedparam(tID, SCHED_FIFO, &prio);
 #endif
 
-    std::cout << "Demodulator preprocessor thread started.." << std::endl;
+//    std::cout << "Demodulator preprocessor thread started.." << std::endl;
 
     ReBuffer<DemodulatorThreadPostIQData> buffers("DemodulatorPreThreadBuffers");
 
@@ -276,7 +276,7 @@ void DemodulatorPreThread::run() {
     DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_PREPROCESS_TERMINATED);
     tCmd.context = this;
     threadQueueNotify->push(tCmd);
-    std::cout << "Demodulator preprocessor thread done." << std::endl;
+//    std::cout << "Demodulator preprocessor thread done." << std::endl;
 }
 
 void DemodulatorPreThread::setDemodType(std::string demodType) {

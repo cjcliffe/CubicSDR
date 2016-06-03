@@ -13,7 +13,7 @@ SpectrumVisualProcessor *SpectrumVisualDataThread::getProcessor() {
 }
 
 void SpectrumVisualDataThread::run() {
-    std::cout << "Spectrum visual data thread started." << std::endl;
+//    std::cout << "Spectrum visual data thread started." << std::endl;
     
     while(!terminated) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -21,6 +21,6 @@ void SpectrumVisualDataThread::run() {
         sproc.run();
     }
     
-    std::cout << "Spectrum visual data thread done." << std::endl;
+//    std::cout << "Spectrum visual data thread done." << std::endl;
 }
 
