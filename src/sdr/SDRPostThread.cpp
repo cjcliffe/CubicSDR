@@ -27,22 +27,20 @@ SDRPostThread::~SDRPostThread() {
 }
 
 void SDRPostThread::bindDemodulator(DemodulatorInstance *demod) {
-    busy_demod.lock();
+    std::lock_guard < std::mutex > lock(busy_demod);
     demodulators.push_back(demod);
     doRefresh.store(true);
-    busy_demod.unlock();
 }
 
 void SDRPostThread::bindDemodulators(std::vector<DemodulatorInstance *> *demods) {
     if (!demods) {
         return;
     }
-    busy_demod.lock();
+    std::lock_guard < std::mutex > lock(busy_demod);
     for (std::vector<DemodulatorInstance *>::iterator di = demods->begin(); di != demods->end(); di++) {
         demodulators.push_back(*di);
         doRefresh.store(true);
     }
-    busy_demod.unlock();
 }
 
 void SDRPostThread::removeDemodulator(DemodulatorInstance *demod) {
@@ -50,14 +48,13 @@ void SDRPostThread::removeDemodulator(DemodulatorInstance *demod) {
         return;
     }
 
-    busy_demod.lock();
+    std::lock_guard < std::mutex > lock(busy_demod);
     std::vector<DemodulatorInstance *>::iterator i = std::find(demodulators.begin(), demodulators.end(), demod);
     
     if (i != demodulators.end()) {
         demodulators.erase(i);
         doRefresh.store(true);
     }
-    busy_demod.unlock();
 }
 
 void SDRPostThread::initPFBChannelizer() {
@@ -186,7 +183,7 @@ void SDRPostThread::run() {
         iqDataInQueue->pop(data_in);
         //        std::lock_guard < std::mutex > lock(data_in->m_mutex);
 
-        busy_demod.lock();
+        std::lock_guard < std::mutex > lock(busy_demod);
 
         if (data_in && data_in->data.size()) {
             if(data_in->numChannels > 1) {
@@ -211,8 +208,6 @@ void SDRPostThread::run() {
         if (doUpdate) {
             updateActiveDemodulators();
         }
-        
-        busy_demod.unlock();
     }
     
     if (iqVisualQueue && !iqVisualQueue->empty()) {
