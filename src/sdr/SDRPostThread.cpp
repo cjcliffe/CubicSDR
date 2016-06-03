@@ -27,9 +27,12 @@ SDRPostThread::~SDRPostThread() {
 }
 
 void SDRPostThread::bindDemodulator(DemodulatorInstance *demod) {
+    
     std::lock_guard < std::mutex > lock(busy_demod);
+
     demodulators.push_back(demod);
     doRefresh.store(true);
+   
 }
 
 void SDRPostThread::bindDemodulators(std::vector<DemodulatorInstance *> *demods) {
@@ -37,10 +40,12 @@ void SDRPostThread::bindDemodulators(std::vector<DemodulatorInstance *> *demods)
         return;
     }
     std::lock_guard < std::mutex > lock(busy_demod);
+
     for (std::vector<DemodulatorInstance *>::iterator di = demods->begin(); di != demods->end(); di++) {
         demodulators.push_back(*di);
         doRefresh.store(true);
     }
+   
 }
 
 void SDRPostThread::removeDemodulator(DemodulatorInstance *demod) {
@@ -49,12 +54,14 @@ void SDRPostThread::removeDemodulator(DemodulatorInstance *demod) {
     }
 
     std::lock_guard < std::mutex > lock(busy_demod);
+
     std::vector<DemodulatorInstance *>::iterator i = std::find(demodulators.begin(), demodulators.end(), demod);
     
     if (i != demodulators.end()) {
         demodulators.erase(i);
         doRefresh.store(true);
     }
+  
 }
 
 void SDRPostThread::initPFBChannelizer() {
@@ -79,7 +86,7 @@ void SDRPostThread::updateActiveDemodulators() {
     nRunDemods = 0;
     
     long long centerFreq = wxGetApp().getFrequency();
-    
+  
     for (demod_i = demodulators.begin(); demod_i != demodulators.end(); demod_i++) {
         DemodulatorInstance *demod = *demod_i;
         DemodulatorThreadInputQueue *demodQueue = demod->getIQInputDataPipe();

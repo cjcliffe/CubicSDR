@@ -47,39 +47,39 @@ bool DeviceConfig::getAGCMode() {
 
 
 void DeviceConfig::setDeviceId(std::string deviceId) {
-    busy_lock.lock();
+    std::lock_guard < std::mutex > lock(busy_lock);
     this->deviceId = deviceId;
-    busy_lock.unlock();
+    
 }
 
 std::string DeviceConfig::getDeviceId() {
     std::string tmp;
 
-    busy_lock.lock();
+    std::lock_guard < std::mutex > lock(busy_lock);
     tmp = deviceId;
-    busy_lock.unlock();
+    
 
     return tmp;
 }
 
 void DeviceConfig::setDeviceName(std::string deviceName) {
-    busy_lock.lock();
+    std::lock_guard < std::mutex > lock(busy_lock);
     this->deviceName = deviceName;
-    busy_lock.unlock();
+   
 }
 
 std::string DeviceConfig::getDeviceName() {
     std::string tmp;
     
-    busy_lock.lock();
+    std::lock_guard < std::mutex > lock(busy_lock);
     tmp = (deviceName=="")?deviceId:deviceName;
-    busy_lock.unlock();
+   
     
     return tmp;
 }
 
 void DeviceConfig::save(DataNode *node) {
-    busy_lock.lock();
+    std::lock_guard < std::mutex > lock(busy_lock);
     *node->newChild("id") = deviceId;
     *node->newChild("name") = deviceName;
     *node->newChild("ppm") = (int)ppm.load();
@@ -115,11 +115,11 @@ void DeviceConfig::save(DataNode *node) {
             *gainNode->newChild("value") = gain_i->second;
         }
     }
-    busy_lock.unlock();
+   
 }
 
 void DeviceConfig::load(DataNode *node) {
-    busy_lock.lock();
+    std::lock_guard < std::mutex > lock(busy_lock);
     if (node->hasAnother("name")) {
         deviceName = node->getNext("name")->element()->toString();
     }
@@ -201,7 +201,7 @@ void DeviceConfig::load(DataNode *node) {
             }
         }
     }
-    busy_lock.unlock();
+   
 }
 
 void DeviceConfig::setStreamOpts(ConfigSettings opts) {

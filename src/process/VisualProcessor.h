@@ -13,10 +13,14 @@ public:
 	}
     
     bool isInputEmpty() {
+        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+
         return input->empty();
     }
     
     bool isOutputEmpty() {
+        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+
         for (outputs_i = outputs.begin(); outputs_i != outputs.end(); outputs_i++) {
             if ((*outputs_i)->full()) {
                 return false;
@@ -26,6 +30,8 @@ public:
     }
     
     bool isAnyOutputEmpty() {
+        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+
         for (outputs_i = outputs.begin(); outputs_i != outputs.end(); outputs_i++) {
             if (!(*outputs_i)->full()) {
                 return true;
@@ -35,34 +41,37 @@ public:
     }
 
     void setInput(ThreadQueue<InputDataType *> *vis_in) {
-        busy_update.lock();
+        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
         input = vis_in;
-        busy_update.unlock();
+        
     }
     
     void attachOutput(ThreadQueue<OutputDataType *> *vis_out) {
         // attach an output queue
-        busy_update.lock();
+        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
         outputs.push_back(vis_out);
-        busy_update.unlock();
+       
     }
     
     void removeOutput(ThreadQueue<OutputDataType *> *vis_out) {
         // remove an output queue
-        busy_update.lock();
+        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+
         typename std::vector<ThreadQueue<OutputDataType *> *>::iterator i = std::find(outputs.begin(), outputs.end(), vis_out);
         if (i != outputs.end()) {
             outputs.erase(i);
         }
-        busy_update.unlock();
+      
     }
     
     void run() {
-        busy_update.lock();
+        
+        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+
         if (input && !input->empty()) {
             process();
         }
-        busy_update.unlock();
+       
     }
     
 protected:
@@ -73,6 +82,8 @@ protected:
 
     void distribute(OutputDataType *output) {
         // distribute outputs
+        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+
         output->setRefCount(outputs.size());
         for (outputs_i = outputs.begin(); outputs_i != outputs.end(); outputs_i++) {
         	if ((*outputs_i)->full()) {
@@ -86,7 +97,9 @@ protected:
     ThreadQueue<InputDataType *> *input;
     std::vector<ThreadQueue<OutputDataType *> *> outputs;
 	typename std::vector<ThreadQueue<OutputDataType *> *>::iterator outputs_i;
-    std::mutex busy_update;
+
+    //protects input and outputs, must be recursive because ao reentrance
+    std::recursive_mutex busy_update;
 };
 
 

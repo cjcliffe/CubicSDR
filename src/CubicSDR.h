@@ -212,7 +212,9 @@ private:
     std::atomic_bool useLocalMod;
     std::string notifyMessage;
     std::string modulePath;
+    
     std::mutex notify_busy;
+    
     std::atomic_bool frequency_locked;
     std::atomic_llong lock_freq;
     FrequencyDialog::FrequencyDialogTarget fdlgTarget;

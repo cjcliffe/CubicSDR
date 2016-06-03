@@ -72,7 +72,9 @@ private:
     bool lastMuted;
     bool lastDeltaLock;
     
-    std::mutex demods_busy;
+    //protects access to demods lists and such, need to be recursive
+    //because of the usage of public re-entrant methods 
+    std::recursive_mutex demods_busy;
     
     std::map<std::string, ModemSettings> lastModemSettings;
 };

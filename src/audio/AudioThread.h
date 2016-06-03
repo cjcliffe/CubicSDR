@@ -20,7 +20,6 @@ public:
     float peak;
     int type;
     std::vector<float> data;
-    std::mutex busy_update;
 
     AudioThreadInput() :
             frequency(0), sampleRate(0), channels(0), peak(0) {

@@ -83,7 +83,7 @@ void WaterfallCanvas::attachSpectrumCanvas(SpectrumCanvas *canvas_in) {
 }
 
 void WaterfallCanvas::processInputQueue() {
-    tex_update.lock();
+    std::lock_guard < std::mutex > lock(tex_update);
     
     gTimer.update();
     
@@ -118,11 +118,11 @@ void WaterfallCanvas::processInputQueue() {
         glContext->SetCurrent(*this);
         waterfallPanel.update();
     }
-    tex_update.unlock();
+   
 }
 
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
-    tex_update.lock();
+    std::lock_guard < std::mutex > lock(tex_update);
     wxPaintDC dc(this);
     
     const wxSize ClientSize = GetClientSize();
@@ -341,7 +341,6 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->EndDraw();
 
     SwapBuffers();
-    tex_update.unlock();
 }
 
 void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
@@ -905,17 +904,16 @@ void WaterfallCanvas::updateCenterFrequency(long long freq) {
 }
 
 void WaterfallCanvas::setLinesPerSecond(int lps) {
-    tex_update.lock();
+    std::lock_guard < std::mutex > lock(tex_update);
     linesPerSecond = lps;
     while (!visualDataQueue.empty()) {
         SpectrumVisualData *vData;
         visualDataQueue.pop(vData);
-        
+
         if (vData) {
             vData->decRefCount();
         }
     }
-    tex_update.unlock();
 }
 
 void WaterfallCanvas::setMinBandwidth(int min) {

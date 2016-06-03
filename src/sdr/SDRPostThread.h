@@ -29,10 +29,14 @@ protected:
     DemodulatorThreadInputQueue *iqVisualQueue;
     DemodulatorThreadInputQueue *iqActiveDemodVisualQueue;
     
+    //protects access to demodulators lists and such
     std::mutex busy_demod;
     std::vector<DemodulatorInstance *> demodulators;
 
+    
+
 private:
+
     void initPFBChannelizer();
     void updateActiveDemodulators();
     void updateChannels();

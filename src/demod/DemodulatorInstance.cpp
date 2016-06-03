@@ -11,9 +11,9 @@ DemodulatorInstance::DemodulatorInstance() :
 #if ENABLE_DIGITAL_LAB
     activeOutput = nullptr;
 #endif
-    terminated.store(true);
+	terminated.store(true);
 	demodTerminated.store(true);
-    audioTerminated.store(true);
+	audioTerminated.store(true);
 	preDemodTerminated.store(true);
 	active.store(false);
 	squelch.store(false);

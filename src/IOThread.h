@@ -37,6 +37,12 @@ public:
         std::lock_guard < std::recursive_mutex > lock(m_mutex);
         return refCount;
     }
+
+    // Access to the own mutex protecting the ReferenceCounter, i.e the monitor of the class
+     std::recursive_mutex& getMonitor() const {
+        return m_mutex;
+    }
+
 protected:
     //this is a basic mutex for all ReferenceCounter derivatives operations INCLUDING the counter itself for consistency !
    mutable std::recursive_mutex m_mutex;
