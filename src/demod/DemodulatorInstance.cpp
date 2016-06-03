@@ -11,17 +11,19 @@ DemodulatorInstance::DemodulatorInstance() :
 #if ENABLE_DIGITAL_LAB
     activeOutput = nullptr;
 #endif
-	terminated.store(true);
-	audioTerminated.store(true);
+    terminated.store(true);
 	demodTerminated.store(true);
+    audioTerminated.store(true);
 	preDemodTerminated.store(true);
 	active.store(false);
 	squelch.store(false);
     muted.store(false);
-	tracking.store(false);
-	follow.store(false);
+    deltaLock.store(false);
+    deltaLockOfs.store(0);
 	currentOutputDevice.store(-1);
     currentAudioGain.store(1.0);
+    follow.store(false);
+    tracking.store(false);
 
     label = new std::string("Unnamed");
     pipeIQInputData = new DemodulatorThreadInputQueue;
