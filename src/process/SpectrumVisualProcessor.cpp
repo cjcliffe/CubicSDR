@@ -286,7 +286,7 @@ void SpectrumVisualProcessor::process() {
         int bwDiff;
         
         if (is_view.load()) {
-            if (!iqData->frequency || !iqData->sampleRate) {
+            if (!iqData->sampleRate) {
                 iqData->decRefCount();
                
                 return;
