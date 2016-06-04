@@ -338,6 +338,16 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         glContext->DrawDemod(demods[i], currentTheme->waterfallHighlight, currentCenterFreq, currentBandwidth);
     }
 
+    for (int i = 0, iMax = demods.size(); i < iMax; i++) {
+        demods[i]->getVisualCue()->step();
+
+        int squelchBreak = demods[i]->getVisualCue()->getSquelchBreak();
+        if (squelchBreak) {
+            glContext->setHoverAlpha((float(squelchBreak) / 60.0));
+            glContext->DrawDemod(demods[i], currentTheme->waterfallHover, currentCenterFreq, currentBandwidth);
+        }
+    }
+    
     glContext->EndDraw();
 
     SwapBuffers();

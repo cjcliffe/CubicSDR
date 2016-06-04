@@ -14,6 +14,20 @@
 #include "DigitalConsole.h"
 #endif
 
+class DemodVisualCue {
+public:
+    DemodVisualCue();
+    ~DemodVisualCue();
+    
+    void triggerSquelchBreak(int counter);
+    int getSquelchBreak();
+    
+    void step();
+private:
+    std::atomic_int squelchBreak;
+};
+
+
 class DemodulatorInstance {
 public:
 
@@ -89,6 +103,8 @@ public:
     bool isMuted();
     void setMuted(bool muted);
 
+    DemodVisualCue *getVisualCue();
+    
     DemodulatorThreadInputQueue *getIQInputDataPipe();
 
     ModemArgInfoList getModemArgs();
@@ -135,6 +151,7 @@ private:
     std::atomic_bool follow, tracking;
     std::map<std::string, ModemSettings> lastModemSettings;
     std::map<std::string, int> lastModemBandwidth;
+    DemodVisualCue visualCue;
 #if ENABLE_DIGITAL_LAB
     ModemDigitalOutput *activeOutput;
 #endif

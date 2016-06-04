@@ -5,6 +5,31 @@
 #include "RigThread.h"
 #endif
 
+DemodVisualCue::DemodVisualCue() {
+    squelchBreak.store(false);
+}
+
+DemodVisualCue::~DemodVisualCue() {
+    
+}
+
+void DemodVisualCue::triggerSquelchBreak(int counter) {
+    squelchBreak.store(counter);
+}
+
+int DemodVisualCue::getSquelchBreak() {
+    return squelchBreak.load();
+}
+
+void DemodVisualCue::step() {
+    if (squelchBreak.load()) {
+        squelchBreak--;
+        if (squelchBreak.load() < 0) {
+            squelchBreak.store(0);
+        }
+    }
+}
+
 DemodulatorInstance::DemodulatorInstance() :
         t_PreDemod(nullptr), t_Demod(nullptr), t_Audio(nullptr) {
 
@@ -416,6 +441,10 @@ void DemodulatorInstance::setMuted(bool muted) {
     this->muted = muted;
     demodulatorThread->setMuted(muted);
     wxGetApp().getDemodMgr().setLastMuted(muted);
+}
+
+DemodVisualCue *DemodulatorInstance::getVisualCue() {
+    return &visualCue;
 }
 
 DemodulatorThreadInputQueue *DemodulatorInstance::getIQInputDataPipe() {

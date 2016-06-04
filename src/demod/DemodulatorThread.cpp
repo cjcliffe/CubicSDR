@@ -157,6 +157,7 @@ void DemodulatorThread::run() {
                     wxGetApp().getDemodMgr().setActiveDemodulator(demodInstance, false);
                 }
                 squelchBreak = true;
+                demodInstance->getVisualCue()->triggerSquelchBreak(120);
             } else if (squelched && squelchBreak) {
                 squelchBreak = false;
             }
