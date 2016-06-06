@@ -687,11 +687,11 @@ void DataTree::setFromXML(DataNode *elem, TiXmlNode *elxml, bool root_node, DT_F
     string tmp_str;
 
     switch (t) {
-    case TiXmlNode::DOCUMENT:
+    case TiXmlNode::TINYXML_DOCUMENT:
         //				printf( "Document" );
         break;
 
-    case TiXmlNode::ELEMENT:
+    case TiXmlNode::TINYXML_ELEMENT:
         if (!root_node)
             elem = elem->newChild(elxml->Value());
 
@@ -712,15 +712,15 @@ void DataTree::setFromXML(DataNode *elem, TiXmlNode *elxml, bool root_node, DT_F
         //				printf( "Element \"%s\"", elxml->Value());
         break;
 
-    case TiXmlNode::COMMENT:
+    case TiXmlNode::TINYXML_COMMENT:
 //				printf( "Comment: \"%s\"", elxml->Value());
         break;
 
-    case TiXmlNode::UNKNOWN:
+    case TiXmlNode::TINYXML_UNKNOWN:
 //				printf( "Unknown" );
         break;
 
-    case TiXmlNode::TEXT:
+    case TiXmlNode::TINYXML_TEXT:
         pText = elxml->ToText();
 
         decodeXMLText(elem, pText->Value(), fpp);
@@ -729,7 +729,7 @@ void DataTree::setFromXML(DataNode *elem, TiXmlNode *elxml, bool root_node, DT_F
 //				printf( "Text: [%s]", pText->Value() );
         break;
 
-    case TiXmlNode::DECLARATION:
+    case TiXmlNode::TINYXML_DECLARATION:
 //				printf( "Declaration" );
         break;
     default:
@@ -741,7 +741,7 @@ void DataTree::setFromXML(DataNode *elem, TiXmlNode *elxml, bool root_node, DT_F
     TiXmlNode * pChild;
 
     if (!elxml->NoChildren()) {
-        if (elxml->FirstChild()->Type() == TiXmlNode::ELEMENT) {
+        if (elxml->FirstChild()->Type() == TiXmlNode::TINYXML_ELEMENT) {
             if (elxml->FirstChild()->Value() == TIXML_STRING("str")) {
                 std::vector<std::string> tmp_strvect;
 

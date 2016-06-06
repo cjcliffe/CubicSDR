@@ -19,11 +19,15 @@
 
 #include "tinyxml.h"
 
+bool XmlTest (const char* testString, const char* expected, const char* found, bool noEcho = false);
+bool XmlTest( const char* testString, int expected, int found, bool noEcho = false );
+
 static int gPass = 0;
 static int gFail = 0;
 
 
-bool XmlTest (const char* testString, const char* expected, const char* found, bool noEcho = false)
+
+bool XmlTest (const char* testString, const char* expected, const char* found, bool noEcho )
 {
 	bool pass = !strcmp( expected, found );
 	if ( pass )
@@ -44,7 +48,7 @@ bool XmlTest (const char* testString, const char* expected, const char* found, b
 }
 
 
-bool XmlTest( const char* testString, int expected, int found, bool noEcho = false )
+bool XmlTest( const char* testString, int expected, int found, bool noEcho )
 {
 	bool pass = ( expected == found );
 	if ( pass )
@@ -65,6 +69,17 @@ bool XmlTest( const char* testString, int expected, int found, bool noEcho = fal
 }
 
 
+void NullLineEndings( char* p )
+{
+	while( p && *p ) {
+		if ( *p == '\n' || *p == '\r' ) {
+			*p = 0;
+			return;
+		}
+		++p;
+	}
+}
+
 //
 // This file demonstrates some basic functionality of TinyXml.
 // Note that the example is very contrived. It presumes you know
@@ -74,6 +89,7 @@ bool XmlTest( const char* testString, int expected, int found, bool noEcho = fal
 
 int main()
 {
+
 	//
 	// We start with the 'demoStart' todo list. Process it. And
 	// should hopefully end up with the todo list as illustrated.
@@ -91,8 +107,8 @@ int main()
 	{
 
 	#ifdef TIXML_USE_STL
-		/*	What the todo list should look like after processing.
-			In stream (no formatting) representation. */
+		//	What the todo list should look like after processing.
+		// In stream (no formatting) representation.
 		const char* demoEnd =
 			"<?xml version=\"1.0\" standalone=\"no\" ?>"
 			"<!-- Our to do list data -->"
@@ -399,7 +415,7 @@ int main()
 		}
 	#endif
 	}
-	
+
 	{
 		const char* str = "<doc attr0='1' attr1='2.0' attr2='foo' />";
 
@@ -423,6 +439,30 @@ int main()
 		XmlTest( "Query attribute: not a number", result, TIXML_WRONG_TYPE );
 		result = ele->QueryIntAttribute( "bar", &iVal );
 		XmlTest( "Query attribute: does not exist", result, TIXML_NO_ATTRIBUTE );
+	}
+
+	{
+		const char* str = "<doc/>";
+
+		TiXmlDocument doc;
+		doc.Parse( str );
+
+		TiXmlElement* ele = doc.FirstChildElement();
+
+		int iVal;
+		double dVal;
+
+		ele->SetAttribute( "str", "strValue" );
+		ele->SetAttribute( "int", 1 );
+		ele->SetDoubleAttribute( "double", -1.0 );
+
+		const char* cStr = ele->Attribute( "str" );
+		ele->QueryIntAttribute( "int", &iVal );
+		ele->QueryDoubleAttribute( "double", &dVal );
+
+		XmlTest( "Attribute round trip. c-string.", "strValue", cStr );
+		XmlTest( "Attribute round trip. int.", 1, iVal );
+		XmlTest( "Attribute round trip. double.", -1, (int)dVal );
 	}
 	
 	{
@@ -558,20 +598,30 @@ int main()
 
 			FILE* saved  = fopen( "utf8testout.xml", "r" );
 			FILE* verify = fopen( "utf8testverify.xml", "r" );
+
+			//bool firstLineBOM=true;
 			if ( saved && verify )
 			{
 				while ( fgets( verifyBuf, 256, verify ) )
 				{
 					fgets( savedBuf, 256, saved );
-					if ( strcmp( verifyBuf, savedBuf ) )
+					NullLineEndings( verifyBuf );
+					NullLineEndings( savedBuf );
+
+					if ( /*!firstLineBOM && */ strcmp( verifyBuf, savedBuf ) )
 					{
+						printf( "verify:%s<\n", verifyBuf );
+						printf( "saved :%s<\n", savedBuf );
 						okay = 0;
 						break;
 					}
+					//firstLineBOM = false;
 				}
-				fclose( saved );
-				fclose( verify );
 			}
+			if ( saved )
+				fclose( saved );
+			if ( verify )
+				fclose( verify );
 			XmlTest( "UTF-8: Verified multi-language round trip.", 1, okay );
 
 			// On most Western machines, this is an element that contains
@@ -1063,8 +1113,8 @@ int main()
 		TiXmlDocument doc;
 		doc.Parse( doctype );
 		
-		XmlTest( "Parsing repeated attributes.", 0, (int)doc.Error() );	// not an  error to tinyxml
-		XmlTest( "Parsing repeated attributes.", "blue", doc.FirstChildElement( "element" )->Attribute( "attr" ) );
+		XmlTest( "Parsing repeated attributes.", true, doc.Error() );	// is an  error to tinyxml (didn't use to be, but caused issues)
+		//XmlTest( "Parsing repeated attributes.", "blue", doc.FirstChildElement( "element" )->Attribute( "attr" ) );
 	}
 
 	{
@@ -1161,19 +1211,19 @@ int main()
 		int i;
 		float f;
 		bool b;
-		//std::string str;
+		std::string str;
 
 		XmlTest( "QueryValueAttribute", ele->QueryValueAttribute( "bar", &d ), TIXML_SUCCESS );
 		XmlTest( "QueryValueAttribute", ele->QueryValueAttribute( "bar", &i ), TIXML_SUCCESS );
 		XmlTest( "QueryValueAttribute", ele->QueryValueAttribute( "bar", &f ), TIXML_SUCCESS );
 		XmlTest( "QueryValueAttribute", ele->QueryValueAttribute( "bar", &b ), TIXML_WRONG_TYPE );
 		XmlTest( "QueryValueAttribute", ele->QueryValueAttribute( "nobar", &b ), TIXML_NO_ATTRIBUTE );
-		//XmlTest( "QueryValueAttribute", ele->QueryValueAttribute( "barStr", &str ), TIXML_SUCCESS );
+		XmlTest( "QueryValueAttribute", ele->QueryValueAttribute( "barStr", &str ), TIXML_SUCCESS );
 
 		XmlTest( "QueryValueAttribute", (d==3.0), true );
 		XmlTest( "QueryValueAttribute", (i==3), true );
 		XmlTest( "QueryValueAttribute", (f==3.0f), true );
-		//XmlTest( "QueryValueAttribute", (str==std::string( "a string" )), true );
+		XmlTest( "QueryValueAttribute", (str==std::string( "a string" )), true );
 	}
 	#endif
 
@@ -1256,16 +1306,66 @@ int main()
 		XmlTest( "Comments ignore entities.", " declarations for <head> & <body> ", c0->Value(), true );
 		XmlTest( "Comments ignore entities.", " far &amp; away ", c1->Value(), true );
 	}
-	/*
+
 	{
 		TiXmlDocument xml;
-		xml.Parse( "<tag>/</tag>" );
-		xml.Print();
-		xml.FirstChild()->Print( stdout, 0 );
-		xml.FirstChild()->Type();
+		xml.Parse( "<Parent>"
+						"<child1 att=''/>"
+						"<!-- With this comment, child2 will not be parsed! -->"
+						"<child2 att=''/>"
+					"</Parent>" );
+		int count = 0;
+
+		TiXmlNode* ele = 0;
+		while ( (ele = xml.FirstChildElement( "Parent" )->IterateChildren( ele ) ) != 0 ) {
+			++count;
+		}
+		XmlTest( "Comments iterate correctly.", 3, count );
 	}
-	*/
-	
+
+	{
+		// trying to repro ]1874301]. If it doesn't go into an infinite loop, all is well.
+		unsigned char buf[] = "<?xml version=\"1.0\" encoding=\"utf-8\"?><feed><![CDATA[Test XMLblablablalblbl";
+		buf[60] = 239;
+		buf[61] = 0;
+
+		TiXmlDocument doc;
+		doc.Parse( (const char*)buf);
+	} 
+
+
+	{
+		// bug 1827248 Error while parsing a little bit malformed file
+		// Actually not malformed - should work.
+		TiXmlDocument xml;
+		xml.Parse( "<attributelist> </attributelist >" );
+		XmlTest( "Handle end tag whitespace", false, xml.Error() );
+	}
+
+	{
+		// This one must not result in an infinite loop
+		TiXmlDocument xml;
+		xml.Parse( "<infinite>loop" );
+		XmlTest( "Infinite loop test.", true, true );
+	}
+
+	{
+		// 1709904 - can not repro the crash
+		{
+			TiXmlDocument xml;
+			xml.Parse( "<tag>/</tag>" );
+			XmlTest( "Odd XML parsing.", xml.FirstChild()->Value(), "tag" );
+		}
+		/* Could not repro. {
+			TiXmlDocument xml;
+			xml.LoadFile( "EQUI_Inventory.xml" );
+			//XmlTest( "Odd XML parsing.", xml.FirstChildElement()->Value(), "XML" );
+			TiXmlPrinter printer;
+			xml.Accept( &printer );
+			fprintf( stdout, "%s", printer.CStr() );
+		}*/
+	}
+
 	/*  1417717 experiment
 	{
 		TiXmlDocument xml;
@@ -1278,6 +1378,7 @@ int main()
 		xml.Print(stdout);
 	}
 	*/
+
 	#if defined( WIN32 ) && defined( TUNE )
 	_CrtMemCheckpoint( &endMemState );
 	//_CrtMemDumpStatistics( &endMemState );
@@ -1290,5 +1391,3 @@ int main()
 	printf ("\nPass %d, Fail %d\n", gPass, gFail);
 	return gFail;
 }
-
-
