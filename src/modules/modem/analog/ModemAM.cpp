@@ -34,7 +34,5 @@ void ModemAM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *au
 		ampmodem_demodulate(demodAM, input->data[i], &demodOutputData[i]);
 	}
     
-    input->decRefCount();
-    
     buildAudioOutput(amkit,audioOut,true);
 }
