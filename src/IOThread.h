@@ -4,6 +4,7 @@
 #include <atomic>
 #include <deque>
 #include <map>
+#include <set>
 #include <string>
 #include <iostream>
 
@@ -54,6 +55,43 @@ private:
 
 #define REBUFFER_GC_LIMIT 100
 
+class ReBufferGC {
+public:
+    static void garbageCollect() {
+        std::lock_guard < std::mutex > lock(g_mutex);
+        
+        std::deque<ReferenceCounter *> garbageRemoval;
+        for (typename std::set<ReferenceCounter *>::iterator i = garbage.begin(); i != garbage.end(); i++) {
+            if ((*i)->getRefCount() <= 0) {
+                garbageRemoval.push_back(*i);
+            }
+            else {
+                std::cout << "Garbage in queue " << (*i)->getRefCount() << " usage(s)" << std::endl;
+            }
+        }
+        if ( garbageRemoval.size() ) {
+            std::cout << "Garbage collecting " << garbageRemoval.size() << " ReBuffer(s)" << std::endl;
+            while (!garbageRemoval.empty()) {
+                ReferenceCounter *ref = garbageRemoval.back();
+                garbageRemoval.pop_back();
+                garbage.erase(ref);
+                delete ref;
+            }
+        }
+    }
+    
+    static void addGarbage(ReferenceCounter *ref) {
+        std::lock_guard < std::mutex > lock(g_mutex);
+        std::cout << "Added garbage.." << std::endl;
+        garbage.insert(ref);
+    }
+    
+private:
+    static std::mutex g_mutex;
+    static std::set<ReferenceCounter *> garbage;
+};
+
+
 template<class BufferType = ReferenceCounter>
 class ReBuffer {
     
@@ -100,10 +138,17 @@ public:
         while (!outputBuffers.empty()) {
             BufferType *ref = outputBuffers.front();
             outputBuffers.pop_front();
-            delete ref;
+            if (ref->getRefCount() <= 0) {
+                delete ref;
+            } else {
+                // Something isn't done with it yet; throw it on the pile..
+                std::cout << bufferId << "pushed garbage.." << std::endl;
+                ReBufferGC::addGarbage(ref);
+            }
         }
     }
-private:
+
+   private:
     std::string bufferId;
     std::deque<BufferType*> outputBuffers;
     typename std::deque<BufferType*>::iterator outputBuffersI;
