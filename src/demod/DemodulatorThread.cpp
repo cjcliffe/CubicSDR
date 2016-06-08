@@ -277,6 +277,17 @@ void DemodulatorThread::run() {
     }
     // end while !terminated
     
+    // Purge any unused inputs
+    while (!iqInputQueue->empty()) {
+        DemodulatorThreadPostIQData *inp;
+        iqInputQueue->pop(inp);
+        inp->setRefCount(0);
+    }
+    while (!audioOutputQueue->empty()) {
+        AudioThreadInput *ati;
+        audioOutputQueue->pop(ati);
+        ati->setRefCount(0);
+    }
     outputBuffers.purge();
     
     //Guard the cleanup of audioVisOutputQueue properly.

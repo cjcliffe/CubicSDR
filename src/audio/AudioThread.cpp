@@ -421,6 +421,14 @@ void AudioThread::terminate() {
     terminated = true;
     AudioThreadCommand endCond;   // push an empty input to bump the queue
     cmdQueue.push(endCond);
+    
+    while (!inputQueue->empty()) {  // flush queue
+        AudioThreadInput *dummy;
+        inputQueue->pop(dummy);
+        if (dummy) {
+            dummy->decRefCount();
+        }
+    }
 }
 
 bool AudioThread::isActive() {

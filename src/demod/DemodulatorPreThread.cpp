@@ -271,6 +271,11 @@ void DemodulatorPreThread::run() {
         }
     }
 
+    while (!iqOutputQueue->empty()) {
+        DemodulatorThreadPostIQData *tmp;
+        iqOutputQueue->pop(tmp);
+        tmp->decRefCount();
+    }
     buffers.purge();
 
     DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_PREPROCESS_TERMINATED);
