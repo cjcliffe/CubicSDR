@@ -393,6 +393,15 @@ void AudioThread::run() {
             setSampleRate(command.int_value);
         }
     }
+    
+    // Drain any remaining inputs
+    while (!inputQueue->empty()) {
+        AudioThreadInput *ref;
+        inputQueue->pop(ref);
+        if (ref) {
+            ref->decRefCount();
+        }
+    }
 
     if (deviceController[parameters.deviceId] != this) {
         deviceController[parameters.deviceId]->removeThread(this);
@@ -406,14 +415,6 @@ void AudioThread::run() {
             }
         } catch (RtAudioError& e) {
             e.printMessage();
-        }
-    }
-
-    while (!inputQueue->empty()) {  // flush queue
-        AudioThreadInput *dummy;
-        inputQueue->pop(dummy);
-        if (dummy) {
-            dummy->setRefCount(0);
         }
     }
     
@@ -439,21 +440,17 @@ void AudioThread::setActive(bool state) {
 
     AudioThreadInput *dummy;
     if (state && !active && inputQueue) {
+        deviceController[parameters.deviceId]->bindThread(this);
+    } else if (!state && active) {
+        deviceController[parameters.deviceId]->removeThread(this);
+    }
+
+    // Activity state changing, clear any inputs
+    if(inputQueue) {
         while (!inputQueue->empty()) {  // flush queue
             inputQueue->pop(dummy);
             if (dummy) {
                 dummy->decRefCount();
-            }
-        }
-        deviceController[parameters.deviceId]->bindThread(this);
-    } else if (!state && active) {
-        deviceController[parameters.deviceId]->removeThread(this);
-        if(inputQueue) {
-            while (!inputQueue->empty()) {  // flush queue
-                inputQueue->pop(dummy);
-                if (dummy) {
-                    dummy->decRefCount();
-                }
             }
         }
     }

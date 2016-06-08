@@ -132,13 +132,11 @@ void DemodulatorThread::run() {
             
             ati->sampleRate = cModemKit->audioSampleRate;
             ati->inputRate = inp->sampleRate;
-            ati->setRefCount(1);
         } else if (modemDigital != nullptr) {
             ati = outputBuffers.getBuffer();
             
             ati->sampleRate = cModemKit->sampleRate;
             ati->inputRate = inp->sampleRate;
-            ati->setRefCount(1);
         }
 
         cModem->demodulate(cModemKit, &modemData, ati);
@@ -281,14 +279,14 @@ void DemodulatorThread::run() {
     while (!iqInputQueue->empty()) {
         DemodulatorThreadPostIQData *ref;
         iqInputQueue->pop(ref);
-        if (ref) {
-            ref->setRefCount(0);
+        if (ref) {  // May have other consumers; just decrement
+            ref->decRefCount();
         }
     }
     while (!audioOutputQueue->empty()) {
         AudioThreadInput *ref;
         audioOutputQueue->pop(ref);
-        if (ref) {
+        if (ref) { // Originated here; set RefCount to 0
             ref->setRefCount(0);
         }
     }

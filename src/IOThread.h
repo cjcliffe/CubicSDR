@@ -82,7 +82,6 @@ public:
     
     static void addGarbage(ReferenceCounter *ref) {
         std::lock_guard < std::mutex > lock(g_mutex);
-        std::cout << "Added garbage.." << std::endl;
         garbage.insert(ref);
     }
     
@@ -107,7 +106,7 @@ public:
         for (outputBuffersI = outputBuffers.begin(); outputBuffersI != outputBuffers.end(); outputBuffersI++) {
             if (buf == nullptr && (*outputBuffersI)->getRefCount() <= 0) {
                 buf = (*outputBuffersI);
-                buf->setRefCount(0);
+                buf->setRefCount(1);
             } else if ((*outputBuffersI)->getRefCount() <= 0) {
                 (*outputBuffersI)->decRefCount();
             }
@@ -128,6 +127,7 @@ public:
         }
 
         buf = new BufferType();
+        buf->setRefCount(1);
         outputBuffers.push_back(buf);
         
         return buf;
@@ -142,7 +142,7 @@ public:
                 delete ref;
             } else {
                 // Something isn't done with it yet; throw it on the pile..
-                std::cout << bufferId << "pushed garbage.." << std::endl;
+                std::cout << "'" << bufferId << "' pushed garbage.." << std::endl;
                 ReBufferGC::addGarbage(ref);
             }
         }
