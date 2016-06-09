@@ -393,7 +393,7 @@ void AudioThread::run() {
     }
     
     // Drain any remaining inputs
-    while (!inputQueue->empty()) {
+    if (inputQueue) while (!inputQueue->empty()) {
         AudioThreadInput *ref;
         inputQueue->pop(ref);
         if (ref) {
