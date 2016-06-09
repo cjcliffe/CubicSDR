@@ -147,16 +147,16 @@ public:
     
     void purge() {
         std::lock_guard < std::mutex > lock(m_mutex);
-        if (bufferId == "DemodulatorThreadBuffers") {
-            std::cout << "'" << bufferId << "' purging.. total indexes: " << indexCounter.load() << std::endl;
-        }
+//        if (bufferId == "DemodulatorThreadBuffers") {
+//            std::cout << "'" << bufferId << "' purging.. total indexes: " << indexCounter.load() << std::endl;
+//        }
         while (!outputBuffers.empty()) {
             BufferType *ref = outputBuffers.front();
             outputBuffers.pop_front();
             if (ref->getRefCount() <= 0) {
                 delete ref;
             } else {
-                // Something isn't done with it yet; throw it on the pile..
+                // Something isn't done with it yet; throw it on the pile.. keep this as a bug indicator for now..
                 std::cout << "'" << bufferId << "' pushed garbage.." << std::endl;
                 ReBufferGC::addGarbage(ref);
             }
