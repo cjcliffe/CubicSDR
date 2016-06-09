@@ -24,6 +24,8 @@
 
 IMPLEMENT_APP(CubicSDR)
 
+#include <fstream>
+
 //#ifdef ENABLE_DIGITAL_LAB
 //// console output buffer for windows
 //#ifdef _WINDOWS
@@ -156,18 +158,21 @@ bool CubicSDR::OnInit() {
         return false;
     }
 
-//#ifdef ENABLE_DIGITAL_LAB
-//	// console output for windows
-//	#ifdef _WINDOWS
-//	if (AllocConsole()) {
-//		freopen("CONOUT$", "w", stdout);
-//		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
-//	}
-//	outbuf ob;
-//	std::streambuf *sb = std::cout.rdbuf(&ob);
-//	std::cout.rdbuf(sb);
-//	#endif
-//#endif
+    //	// console output for Windows: available in DEBUG or in case of ENABLE_DIGITAL_LAB
+#if (defined(WIN32) && (defined(ENABLE_DIGITAL_LAB) || defined(_DEBUG)))
+    	if (AllocConsole()) {
+    		freopen("CONOUT$", "w", stdout);
+    		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
+            SetConsoleTitle(L"CubicSDR: stdout");
+          
+    	}
+
+        //refresh
+        ofstream ob;
+        std::streambuf *sb = std::cout.rdbuf();
+        std::cout.rdbuf(sb);
+#endif
+
     
     wxApp::SetAppName("CubicSDR");
 
