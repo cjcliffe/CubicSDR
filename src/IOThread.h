@@ -23,6 +23,11 @@ struct map_string_less : public std::binary_function<std::string,std::string,boo
 class ReferenceCounter {
 
 public:
+
+    //default constructor, initialized with refcont 1, sounds very natural
+    ReferenceCounter() {
+        refCount = 1;
+    }
     
 //    void setIndex(int idx) {
 //        std::lock_guard < std::recursive_mutex > lock(m_mutex);
@@ -139,8 +144,8 @@ public:
             std::cout << "Warning: ReBuffer '" << bufferId << "' count '" << outputBuffers.size() << "' exceeds threshold of '" << REBUFFER_WARNING_THRESHOLD << "'" << std::endl;
         }
 
+        //by default created with refcount = 1
         buf = new BufferType();
-        buf->setRefCount(1);
 //        buf->setIndex(indexCounter++);
         outputBuffers.push_back(buf);
         

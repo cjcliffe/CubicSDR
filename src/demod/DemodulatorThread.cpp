@@ -120,7 +120,6 @@ void DemodulatorThread::run() {
         
         modemData.sampleRate = inp->sampleRate;
         modemData.data.assign(inputData->begin(), inputData->end());
-        modemData.setRefCount(1);
         
         AudioThreadInput *ati = nullptr;
         
@@ -186,7 +185,6 @@ void DemodulatorThread::run() {
         if (ati && localAudioVisOutputQueue != nullptr && localAudioVisOutputQueue->empty()) {
             AudioThreadInput *ati_vis = new AudioThreadInput;
 
-            ati_vis->setRefCount(1);
             ati_vis->sampleRate = inp->sampleRate;
             ati_vis->inputRate = inp->sampleRate;
             

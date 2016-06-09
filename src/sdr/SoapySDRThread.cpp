@@ -207,7 +207,6 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
             dataOut->data.assign(inpBuffer.data.begin(), inpBuffer.data.begin()+n_read);
         }
         
-        dataOut->setRefCount(1);
         dataOut->frequency = frequency.load();
         dataOut->sampleRate = sampleRate.load();
         dataOut->dcCorrected = hasHardwareDC.load();

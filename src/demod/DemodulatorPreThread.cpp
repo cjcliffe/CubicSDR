@@ -198,7 +198,6 @@ void DemodulatorPreThread::run() {
             unsigned int numWritten;
             msresamp_crcf_execute(iqResampler, in_buf, bufSize, &resampledData[0], &numWritten);
 
-            resamp->setRefCount(1);
             resamp->data.assign(resampledData.begin(), resampledData.begin() + numWritten);
 
             resamp->modemType = cModem->getType();
