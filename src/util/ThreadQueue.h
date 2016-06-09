@@ -231,8 +231,9 @@ public:
     /**
      *  Remove any items in the queue.
      */
-    void flush() const {
+    void flush() {
         std::lock_guard < std::mutex > lock(m_mutex);
+        m_queue = std::queue<T, Container>();
         std::queue<T, Container> emptyQueue;
         std::swap(m_queue, emptyQueue);
     }

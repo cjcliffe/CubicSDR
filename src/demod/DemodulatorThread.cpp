@@ -132,13 +132,11 @@ void DemodulatorThread::run() {
             
             ati->sampleRate = cModemKit->audioSampleRate;
             ati->inputRate = inp->sampleRate;
-            ati->setRefCount(1);
         } else if (modemDigital != nullptr) {
             ati = outputBuffers.getBuffer();
             
             ati->sampleRate = cModemKit->sampleRate;
             ati->inputRate = inp->sampleRate;
-            ati->setRefCount(1);
         }
 
         cModem->demodulate(cModemKit, &modemData, ati);
@@ -173,7 +171,7 @@ void DemodulatorThread::run() {
                 }
             }
         } else if (ati) {
-            ati->decRefCount();
+            ati->setRefCount(0);
             ati = nullptr;
         }
         
@@ -277,15 +275,25 @@ void DemodulatorThread::run() {
     }
     // end while !terminated
     
+    // Purge any unused inputs
+    while (!iqInputQueue->empty()) {
+        DemodulatorThreadPostIQData *ref;
+        iqInputQueue->pop(ref);
+        if (ref) {  // May have other consumers; just decrement
+            ref->decRefCount();
+        }
+    }
+    while (!audioOutputQueue->empty()) {
+        AudioThreadInput *ref;
+        audioOutputQueue->pop(ref);
+        if (ref) { // Originated here; set RefCount to 0
+            ref->setRefCount(0);
+        }
+    }
     outputBuffers.purge();
     
     //Guard the cleanup of audioVisOutputQueue properly.
     std::lock_guard < std::mutex > lock(m_mutexAudioVisOutputQueue);
-
-//    if (audioVisOutputQueue != nullptr && !audioVisOutputQueue->empty()) {
-//        AudioThreadInput *dummy_vis;
-//        audioVisOutputQueue->pop(dummy_vis);
-//    }
     
     DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_TERMINATED);
     tCmd.context = this;

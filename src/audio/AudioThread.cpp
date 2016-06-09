@@ -89,8 +89,6 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
             continue;
         }
 
-//        std::lock_guard < std::mutex > lock(srcmix->currentInput->m_mutex);
-
         if (srcmix->currentInput->sampleRate != src->getSampleRate()) {
             while (srcmix->inputQueue->size()) {
                 srcmix->inputQueue->pop(srcmix->currentInput);
@@ -393,6 +391,20 @@ void AudioThread::run() {
             setSampleRate(command.int_value);
         }
     }
+    
+    // Drain any remaining inputs
+    if (inputQueue) while (!inputQueue->empty()) {
+        AudioThreadInput *ref;
+        inputQueue->pop(ref);
+        if (ref) {
+            ref->decRefCount();
+        }
+    }
+    
+    if (currentInput) {
+        currentInput->setRefCount(0);
+        currentInput = nullptr;
+    }
 
     if (deviceController[parameters.deviceId] != this) {
         deviceController[parameters.deviceId]->removeThread(this);
@@ -408,7 +420,7 @@ void AudioThread::run() {
             e.printMessage();
         }
     }
-
+    
     if (threadQueueNotify != NULL) {
         DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_AUDIO_TERMINATED);
         tCmd.context = this;
@@ -431,21 +443,17 @@ void AudioThread::setActive(bool state) {
 
     AudioThreadInput *dummy;
     if (state && !active && inputQueue) {
+        deviceController[parameters.deviceId]->bindThread(this);
+    } else if (!state && active) {
+        deviceController[parameters.deviceId]->removeThread(this);
+    }
+
+    // Activity state changing, clear any inputs
+    if(inputQueue) {
         while (!inputQueue->empty()) {  // flush queue
             inputQueue->pop(dummy);
             if (dummy) {
                 dummy->decRefCount();
-            }
-        }
-        deviceController[parameters.deviceId]->bindThread(this);
-    } else if (!state && active) {
-        deviceController[parameters.deviceId]->removeThread(this);
-        if(inputQueue) {
-            while (!inputQueue->empty()) {  // flush queue
-                inputQueue->pop(dummy);
-                if (dummy) {
-                    dummy->decRefCount();
-                }
             }
         }
     }

@@ -212,6 +212,7 @@ void DemodulatorMgr::setActiveDemodulator(DemodulatorInstance *demod, bool tempo
 #endif
     } else {
         garbageCollect();
+        ReBufferGC::garbageCollect();
     }
 
     if (activeVisualDemodulator) {

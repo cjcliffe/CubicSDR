@@ -1,5 +1,8 @@
 #include "IOThread.h"
 
+std::mutex ReBufferGC::g_mutex;
+std::set<ReferenceCounter *> ReBufferGC::garbage;
+
 IOThread::IOThread() {
     terminated.store(false);
 }
