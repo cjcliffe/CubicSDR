@@ -1478,6 +1478,9 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     int peakHoldMode = peakHoldButton->getSelection();
     if (peakHoldButton->modeChanged()) {
         wxGetApp().getSpectrumProcessor()->setPeakHold(peakHoldMode == 1);
+
+        //make the peak hold act on the current dmod also, like a zoomed-in version.
+        wxGetApp().getDemodSpectrumProcessor()->setPeakHold(peakHoldMode == 1);
         peakHoldButton->clearModeChanged();
     }
     
