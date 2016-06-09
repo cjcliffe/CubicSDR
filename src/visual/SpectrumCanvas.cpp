@@ -293,6 +293,9 @@ void SpectrumCanvas::OnMouseRightReleased(wxMouseEvent& event) {
     if (!mouseTracker.getOriginDeltaMouseY()) {
         resetScaleFactor = true;
         wxGetApp().getSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
+
+        //make the peak hold act on the current dmod also, like a zoomed-in version.
+        wxGetApp().getDemodSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
     }
     mouseTracker.OnMouseRightReleased(event);
 }

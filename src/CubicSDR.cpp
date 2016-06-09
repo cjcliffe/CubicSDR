@@ -448,6 +448,9 @@ void CubicSDR::setFrequency(long long freq) {
     frequency = freq;
     sdrThread->setFrequency(freq);
     getSpectrumProcessor()->setPeakHold(getSpectrumProcessor()->getPeakHold());
+
+    //make the peak hold act on the current dmod also, like a zoomed-in version.
+    getDemodSpectrumProcessor()->setPeakHold(getSpectrumProcessor()->getPeakHold());
 }
 
 long long CubicSDR::getOffset() {
