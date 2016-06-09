@@ -84,6 +84,9 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
             }
             srcmix->inputQueue->pop(srcmix->currentInput);
             if (srcmix->isTerminated()) {
+                if (srcmix->currentInput) {
+                    srcmix->currentInput->decRefCount();
+                }
                 continue;
             }
             continue;
@@ -123,6 +126,9 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
                 }
                 srcmix->inputQueue->pop(srcmix->currentInput);
                 if (srcmix->isTerminated()) {
+                    if (srcmix->currentInput) {
+                        srcmix->currentInput->decRefCount();
+                    }
                     continue;
                 }
             }
@@ -144,6 +150,9 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
                     }
                     srcmix->inputQueue->pop(srcmix->currentInput);
                     if (srcmix->isTerminated()) {
+                        if (srcmix->currentInput) {
+                            srcmix->currentInput->decRefCount();
+                        }
                         break;
                     }
                     float srcPeak = srcmix->currentInput->peak * srcmix->gain;
@@ -171,6 +180,9 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
                     }
                     srcmix->inputQueue->pop(srcmix->currentInput);
                     if (srcmix->isTerminated()) {
+                        if (srcmix->currentInput) {
+                            srcmix->currentInput->decRefCount();
+                        }
                         break;
                     }
                     float srcPeak = srcmix->currentInput->peak * srcmix->gain;

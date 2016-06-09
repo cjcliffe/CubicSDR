@@ -24,6 +24,16 @@ class ReferenceCounter {
 
 public:
     
+    void setIndex(int idx) {
+        std::lock_guard < std::recursive_mutex > lock(m_mutex);
+        index = idx;
+    }
+
+    int getIndex() {
+        std::lock_guard < std::recursive_mutex > lock(m_mutex);
+        return index;
+    }
+
     void setRefCount(int rc) {
         std::lock_guard < std::recursive_mutex > lock(m_mutex);
         refCount = rc;
@@ -49,7 +59,7 @@ protected:
    mutable std::recursive_mutex m_mutex;
 
 private:
-   int refCount;
+   int index, refCount;
 };
 
 
@@ -66,7 +76,7 @@ public:
                 garbageRemoval.push_back(*i);
             }
             else {
-                std::cout << "Garbage in queue " << (*i)->getRefCount() << " usage(s)" << std::endl;
+                std::cout << "Garbage in queue buffer idx #" << (*i)->getIndex() << ", " << (*i)->getRefCount() << " usage(s)" << std::endl;
             }
         }
         if ( garbageRemoval.size() ) {
@@ -96,7 +106,7 @@ class ReBuffer {
     
 public:
     ReBuffer(std::string bufferId) : bufferId(bufferId) {
-        
+        indexCounter.store(0);
     }
     
     BufferType *getBuffer() {
@@ -118,6 +128,7 @@ public:
                 outputBuffers.pop_back();
                 delete ref;
             }
+            buf->setIndex(indexCounter++);
             return buf;
         }
         
@@ -128,6 +139,7 @@ public:
 
         buf = new BufferType();
         buf->setRefCount(1);
+        buf->setIndex(indexCounter++);
         outputBuffers.push_back(buf);
         
         return buf;
@@ -135,6 +147,9 @@ public:
     
     void purge() {
         std::lock_guard < std::mutex > lock(m_mutex);
+        if (bufferId == "DemodulatorThreadBuffers") {
+            std::cout << "'" << bufferId << "' purging.. total indexes: " << indexCounter.load() << std::endl;
+        }
         while (!outputBuffers.empty()) {
             BufferType *ref = outputBuffers.front();
             outputBuffers.pop_front();
@@ -153,6 +168,7 @@ public:
     std::deque<BufferType*> outputBuffers;
     typename std::deque<BufferType*>::iterator outputBuffersI;
     mutable std::mutex m_mutex;
+    std::atomic_int indexCounter;
 };
 
 
