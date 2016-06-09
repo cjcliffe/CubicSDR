@@ -1898,6 +1898,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case 'L':
         case 'U':
         case 'S':
+        case 'P':
             return 1;
         case '0':
         case '1':
@@ -2012,6 +2013,12 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
         case 'S':
             wxGetApp().setSoloMode(!wxGetApp().getSoloMode());
             return 1;
+            break;
+        case 'P':
+            wxGetApp().getSpectrumProcessor()->setPeakHold(!wxGetApp().getSpectrumProcessor()->getPeakHold());
+            wxGetApp().getDemodSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
+            peakHoldButton->setSelection(wxGetApp().getSpectrumProcessor()->getPeakHold()?1:0);
+            peakHoldButton->clearModeChanged();
             break;
         case ']':
         case '[':
