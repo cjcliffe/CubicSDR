@@ -84,15 +84,10 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
             }
             srcmix->inputQueue->pop(srcmix->currentInput);
             if (srcmix->isTerminated()) {
-                if (srcmix->currentInput) {
-                    srcmix->currentInput->decRefCount();
-                }
                 continue;
             }
             continue;
         }
-
-//        std::lock_guard < std::mutex > lock(srcmix->currentInput->m_mutex);
 
         if (srcmix->currentInput->sampleRate != src->getSampleRate()) {
             while (srcmix->inputQueue->size()) {
@@ -126,9 +121,6 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
                 }
                 srcmix->inputQueue->pop(srcmix->currentInput);
                 if (srcmix->isTerminated()) {
-                    if (srcmix->currentInput) {
-                        srcmix->currentInput->decRefCount();
-                    }
                     continue;
                 }
             }
@@ -150,9 +142,6 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
                     }
                     srcmix->inputQueue->pop(srcmix->currentInput);
                     if (srcmix->isTerminated()) {
-                        if (srcmix->currentInput) {
-                            srcmix->currentInput->decRefCount();
-                        }
                         break;
                     }
                     float srcPeak = srcmix->currentInput->peak * srcmix->gain;
@@ -180,9 +169,6 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
                     }
                     srcmix->inputQueue->pop(srcmix->currentInput);
                     if (srcmix->isTerminated()) {
-                        if (srcmix->currentInput) {
-                            srcmix->currentInput->decRefCount();
-                        }
                         break;
                     }
                     float srcPeak = srcmix->currentInput->peak * srcmix->gain;
@@ -413,6 +399,11 @@ void AudioThread::run() {
         if (ref) {
             ref->decRefCount();
         }
+    }
+    
+    if (currentInput) {
+        currentInput->setRefCount(0);
+        currentInput = nullptr;
     }
 
     if (deviceController[parameters.deviceId] != this) {
