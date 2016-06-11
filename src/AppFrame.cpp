@@ -1695,9 +1695,12 @@ bool AppFrame::loadSession(std::string fileName) {
 
             DataNode *demodUserLabel = demod->hasAnother("user_label") ? demod->getNext("user_label") : nullptr;
 
-            if (demodUserLabel && demodUserLabel->element()->getDataType() == DATA_STRING) {
-                demodUserLabel->element()->get(user_label);
+            if (demodUserLabel) {
+                //toString() re-formats strings recognized as numerals, but at least it works for
+                //all kind of data.
+                user_label = demodUserLabel->element()->toString();
             }
+           
 
             ModemSettings mSettings;
             
