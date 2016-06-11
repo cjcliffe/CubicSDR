@@ -731,6 +731,19 @@ void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetM
     fdialog.ShowModal();
 }
 
+void CubicSDR::showLabelInput() {
+
+    DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
+
+    if (activeDemod != nullptr) {
+
+        const wxString demodTitle("Set Demodulator label");
+
+        DemodLabelDialog labelDialog(appframe, -1, demodTitle, activeDemod, wxPoint(-100, -100), wxSize(500, 75), wxDEFAULT_DIALOG_STYLE);
+        labelDialog.ShowModal();
+    }
+}
+
 AppFrame *CubicSDR::getAppFrame() {
     return appframe;
 }

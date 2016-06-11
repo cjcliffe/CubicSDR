@@ -1691,7 +1691,6 @@ bool AppFrame::loadSession(std::string fileName) {
             }
 
             //read the user label associated with the demodulator
-            //manage other languages than English if you please...
             std::string user_label = "";
 
             DataNode *demodUserLabel = demod->hasAnother("user_label") ? demod->getNext("user_label") : nullptr;

@@ -381,14 +381,14 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
 
     //demodulator user label if present: type is displayed above the label, which is at the bottom of the screen.
     if (!demod->getDemodulatorUserLabel().empty()) {
-        hPos += 2 * labelHeight;
+        hPos += 1.3 * labelHeight;
     }
 
     drawSingleDemodLabel(demodStr, uxPos, hPos, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
 
     //revert...
     if (!demod->getDemodulatorUserLabel().empty()) {
-       hPos -= 2 * labelHeight;
+       hPos -= 1.3 * labelHeight;
        drawSingleDemodLabel(demod->getDemodulatorUserLabel(), uxPos, hPos, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
     }
 

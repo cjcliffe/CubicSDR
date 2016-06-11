@@ -22,6 +22,7 @@
 #include "AppConfig.h"
 #include "AppFrame.h"
 #include "FrequencyDialog.h"
+#include "DemodLabelDialog.h"
 
 #include "ScopeVisualProcessor.h"
 #include "SpectrumVisualProcessor.h"
@@ -128,6 +129,7 @@ public:
     int getPPM();
 
     void showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode = FrequencyDialog::FDIALOG_TARGET_DEFAULT, wxString initString = "");
+    void showLabelInput();
     AppFrame *getAppFrame();
     
     bool areDevicesReady();
