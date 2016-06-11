@@ -737,7 +737,7 @@ void CubicSDR::showLabelInput() {
 
     if (activeDemod != nullptr) {
 
-        const wxString demodTitle("Set Demodulator label");
+        const wxString demodTitle("Edit Demodulator label");
 
         DemodLabelDialog labelDialog(appframe, -1, demodTitle, activeDemod, wxPoint(-100, -100), wxSize(500, 75), wxDEFAULT_DIALOG_STYLE);
         labelDialog.ShowModal();
