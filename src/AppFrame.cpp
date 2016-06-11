@@ -1561,6 +1561,7 @@ void AppFrame::saveSession(std::string fileName) {
         *demod->newChild("bandwidth") = (*instance_i)->getBandwidth();
         *demod->newChild("frequency") = (*instance_i)->getFrequency();
         *demod->newChild("type") = (*instance_i)->getDemodulatorType();
+        *demod->newChild("user_label") = (*instance_i)->getDemodulatorUserLabel();
         *demod->newChild("squelch_level") = (*instance_i)->getSquelchLevel();
         *demod->newChild("squelch_enabled") = (*instance_i)->isSquelchEnabled() ? 1 : 0;
         *demod->newChild("output_device") = outputDevices[(*instance_i)->getOutputDevice()].name;
@@ -1659,6 +1660,7 @@ bool AppFrame::loadSession(std::string fileName) {
             float gain = demod->hasAnother("gain") ? (float) *demod->getNext("gain") : 1.0;
             
             std::string type = "FM";
+            
 
             DataNode *demodTypeNode = demod->hasAnother("type")?demod->getNext("type"):nullptr;
             
@@ -1688,6 +1690,16 @@ bool AppFrame::loadSession(std::string fileName) {
                 demodTypeNode->element()->get(type);
             }
 
+            //read the user label associated with the demodulator
+            //manage other languages than English if you please...
+            std::string user_label = "";
+
+            DataNode *demodUserLabel = demod->hasAnother("user_label") ? demod->getNext("user_label") : nullptr;
+
+            if (demodUserLabel && demodUserLabel->element()->getDataType() == DATA_STRING) {
+                demodUserLabel->element()->get(user_label);
+            }
+
             ModemSettings mSettings;
             
             if (demod->hasAnother("settings")) {
@@ -1702,6 +1714,8 @@ bool AppFrame::loadSession(std::string fileName) {
                     }
                 }
             }
+
+           
             
             newDemod = wxGetApp().getDemodMgr().newThread();
 
@@ -1711,6 +1725,7 @@ bool AppFrame::loadSession(std::string fileName) {
 
             numDemodulators++;
             newDemod->setDemodulatorType(type);
+            newDemod->setDemodulatorUserLabel(user_label);
             newDemod->writeModemSettings(mSettings);
             newDemod->setBandwidth(bandwidth);
             newDemod->setFrequency(freq);

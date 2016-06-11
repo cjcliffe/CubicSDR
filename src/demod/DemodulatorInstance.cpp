@@ -30,8 +30,7 @@ void DemodVisualCue::step() {
     }
 }
 
-DemodulatorInstance::DemodulatorInstance() :
-        t_PreDemod(nullptr), t_Demod(nullptr), t_Audio(nullptr) {
+DemodulatorInstance::DemodulatorInstance() {
 
 #if ENABLE_DIGITAL_LAB
     activeOutput = nullptr;
@@ -50,7 +49,9 @@ DemodulatorInstance::DemodulatorInstance() :
     follow.store(false);
     tracking.store(false);
 
-    label = new std::string("Unnamed");
+    label.store(new std::string("Unnamed"));
+    user_label.store(new std::string());
+
     pipeIQInputData = new DemodulatorThreadInputQueue;
     pipeIQDemodData = new DemodulatorThreadPostInputQueue;
     pipeDemodNotify = new DemodulatorThreadCommandQueue;
@@ -149,12 +150,8 @@ std::string DemodulatorInstance::getLabel() {
 }
 
 void DemodulatorInstance::setLabel(std::string labelStr) {
-    std::string *newLabel = new std::string;
-    newLabel->append(labelStr);
-    std::string *oldLabel;
-    oldLabel = label;
-    label = newLabel;
-    delete oldLabel;
+   
+    delete label.exchange(new std::string(labelStr));
 }
 
 bool DemodulatorInstance::isTerminated() {
@@ -328,6 +325,15 @@ void DemodulatorInstance::setDemodulatorType(std::string demod_type_in) {
 
 std::string DemodulatorInstance::getDemodulatorType() {
     return demodulatorPreThread->getDemodType();
+}
+
+std::string DemodulatorInstance::getDemodulatorUserLabel() {
+    return *(user_label.load());
+}
+
+void DemodulatorInstance::setDemodulatorUserLabel(const std::string& demod_user_label) {
+   
+    delete user_label.exchange(new std::string(demod_user_label));
 }
 
 void DemodulatorInstance::setDemodulatorLock(bool demod_lock_in) {

@@ -351,10 +351,9 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
 
     glEnable(GL_BLEND);
 
-    std::string demodStr = "";
     GLFont::Align demodAlign = GLFont::GLFONT_ALIGN_CENTER;
 
-    demodStr = demod->getDemodulatorType();
+    std::string demodStr = demod->getDemodulatorType();
 
     demodAlign = GLFont::GLFONT_ALIGN_CENTER;
 
@@ -373,20 +372,40 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
     
     // add lock to string if we have an lock
     if(demod->getDemodulatorLock()) {
-        demodStr = demodStr + " Lock";
-    } 
+        demodStr += " Lock";
+    }
+
     // else {
     //     demodStr = demodStr + " UnLock";
     // }
 
-    glColor3f(0, 0, 0);
-    GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodStr, 2.0 * (uxPos - 0.5) + xOfs, -1.0 + hPos - yOfs, 16, demodAlign,
-            GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
-    glColor3f(1, 1, 1);
-    GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodStr, 2.0 * (uxPos - 0.5), -1.0 + hPos, 16, demodAlign, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+    //demodulator user label if present: type is displayed above the label, which is at the bottom of the screen.
+    if (!demod->getDemodulatorUserLabel().empty()) {
+        hPos += 2 * labelHeight;
+    }
+
+    drawSingleDemodLabel(demodStr, uxPos, hPos, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
+
+    //revert...
+    if (!demod->getDemodulatorUserLabel().empty()) {
+       hPos -= 2 * labelHeight;
+       drawSingleDemodLabel(demod->getDemodulatorUserLabel(), uxPos, hPos, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
+    }
 
     glDisable(GL_BLEND);
 
+}
+
+void PrimaryGLContext::drawSingleDemodLabel(std::string demodStr, float uxPos, float hPos, float xOfs, float yOfs, GLFont::Align demodAlign) {
+
+    glColor3f(0, 0, 0);
+    GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodStr, 2.0 * (uxPos - 0.5) + xOfs,
+        -1.0 + hPos - yOfs, 16, demodAlign,
+        GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+    glColor3f(1, 1, 1);
+    GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodStr, 2.0 * (uxPos - 0.5),
+        -1.0 + hPos, 16, demodAlign,
+        GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
 }
 
 void PrimaryGLContext::DrawFreqSelector(float uxPos, RGBA4f color, float w, long long /* center_freq */, long long srate) {

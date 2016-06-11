@@ -91,7 +91,7 @@ public:
     void doCacheGC();
 private:
     std::map<std::string, GLFontStringCache * > stringCache;
-    
+  
     std::string nextParam(std::istringstream &str);
     std::string getParamKey(std::string param_str);
     std::string getParamValue(std::string param_str);

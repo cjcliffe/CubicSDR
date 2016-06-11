@@ -35,12 +35,12 @@ public:
     pthread_t t_PreDemod;
     pthread_t t_Demod;
 #else
-    std::thread *t_PreDemod;
-    std::thread *t_Demod;
+    std::thread *t_PreDemod = nullptr;
+    std::thread *t_Demod = nullptr;
 #endif
 
-    AudioThread *audioThread;
-    std::thread *t_Audio;
+    AudioThread *audioThread = nullptr;
+    std::thread *t_Audio = nullptr;
 
     DemodulatorInstance();
     ~DemodulatorInstance();
@@ -73,7 +73,10 @@ public:
 
     void setDemodulatorType(std::string demod_type_in);
     std::string getDemodulatorType();
-    
+
+    std::string getDemodulatorUserLabel();
+    void setDemodulatorUserLabel(const std::string& demod_user_label);
+ 
     void setDemodulatorLock(bool demod_lock_in);
     int getDemodulatorLock();
 
@@ -136,6 +139,7 @@ protected:
 private:
 
     std::atomic<std::string *> label; //
+    std::atomic<std::string *> user_label; //
     std::atomic_bool terminated; //
     std::atomic_bool demodTerminated; //
     std::atomic_bool audioTerminated; //
