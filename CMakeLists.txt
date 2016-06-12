@@ -271,6 +271,7 @@ SET (cubicsdr_sources
 	src/AppFrame.cpp
 	src/AppConfig.cpp
 	src/FrequencyDialog.cpp
+    src/DemodLabelDialog.cpp
     src/IOThread.cpp
     src/ModemProperties.cpp
 	src/sdr/SDRDeviceInfo.cpp
@@ -368,6 +369,7 @@ SET (cubicsdr_headers
 	src/AppFrame.h
 	src/AppConfig.h
 	src/FrequencyDialog.h
+    src/DemodLabelDialog.h
     src/IOThread.h
     src/ModemProperties.h
 	src/sdr/SDRDeviceInfo.h

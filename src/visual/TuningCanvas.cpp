@@ -430,7 +430,7 @@ void TuningCanvas::OnKeyDown(wxKeyEvent& event) {
         } else if (hoverState == TUNING_HOVER_BW) {
             wxGetApp().showFrequencyInput(FrequencyDialog::FDIALOG_TARGET_BANDWIDTH);
         }
-    }
+    } 
 }
 
 void TuningCanvas::OnKeyUp(wxKeyEvent& event) {

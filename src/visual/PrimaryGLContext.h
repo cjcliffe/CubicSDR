@@ -24,6 +24,7 @@ public:
     void DrawFreqSelector(float uxPos, RGBA4f color, float w = 0, long long center_freq = -1, long long srate = 0);
     void DrawRangeSelector(float uxPos1, float uxPos2, RGBA4f color);
     void DrawDemod(DemodulatorInstance *demod, RGBA4f color, long long center_freq = -1, long long srate = 0);
+    
     void DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, long long center_freq = -1, long long srate = 0, bool centerline = false);
     void DrawFreqBwInfo(long long freq, int bw, RGBA4f color, long long center_freq = - 1, long long srate = 0, bool stack = false, bool centerline = false);
 
@@ -31,4 +32,5 @@ public:
 
 private:
     float hoverAlpha;
+    void drawSingleDemodLabel(std::string demodStr, float uxPos, float hPos, float xOfs, float yOfs, GLFont::Align demodAlign);
 };

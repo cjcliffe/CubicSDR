@@ -451,6 +451,9 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     case WXK_SPACE:
         wxGetApp().showFrequencyInput();
         break;
+    case 'E': //E is for 'Edit the label' of the active demodulator. 
+        wxGetApp().showLabelInput();
+        break;
     case 'C':
         if (wxGetApp().getDemodMgr().getActiveDemodulator()) {
             wxGetApp().setFrequency(wxGetApp().getDemodMgr().getActiveDemodulator()->getFrequency());
@@ -568,14 +571,14 @@ void WaterfallCanvas::updateHoverState() {
             
             mouseTracker.setVertDragLock(true);
             mouseTracker.setHorizDragLock(false);
-            setStatusText("Click and drag to change demodulator bandwidth. SPACE or numeric key for direct frequency input. [, ] to nudge, M for mute, D to delete, C to center.");
+            setStatusText("Click and drag to change demodulator bandwidth. SPACE or numeric key for direct frequency input. [, ] to nudge, M for mute, D to delete, C to center, E to edit label.");
         } else {
             SetCursor(wxCURSOR_SIZING);
             nextDragState = WF_DRAG_FREQUENCY;
             
             mouseTracker.setVertDragLock(true);
             mouseTracker.setHorizDragLock(false);
-            setStatusText("Click and drag to change demodulator frequency; SPACE or numeric key for direct input. [, ] to nudge, M for mute, D to delete, C to center.");
+            setStatusText("Click and drag to change demodulator frequency; SPACE or numeric key for direct input. [, ] to nudge, M for mute, D to delete, C to center, E to edit label.");
         }
     } else {
         SetCursor(wxCURSOR_CROSS);
