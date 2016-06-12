@@ -189,7 +189,7 @@ AppFrame::AppFrame() :
     demodGainMeter->setMax(2.0);
     demodGainMeter->setHelpTip("Current Demodulator Gain Level.  Click / Drag to set Gain level.");
     demodGainMeter->setShowUserInput(false);
-    demodGainMeter->SetMinSize(wxSize(12,24));
+    demodGainMeter->SetMinSize(wxSize(13,24));
     demodGainTray->Add(demodGainMeter, 8, wxEXPAND | wxALL, 0);
 
     demodGainTray->AddSpacer(1);
