@@ -32,5 +32,5 @@ public:
 
 private:
     float hoverAlpha;
-    void drawSingleDemodLabel(std::string demodStr, float uxPos, float hPos, float xOfs, float yOfs, GLFont::Align demodAlign);
+    void drawSingleDemodLabel(std::wstring demodStr, float uxPos, float hPos, float xOfs, float yOfs, GLFont::Align demodAlign);
 };

@@ -41,7 +41,8 @@ DemodLabelDialog::DemodLabelDialog(wxWindow * parent, wxWindowID id, const wxStr
 void DemodLabelDialog::OnChar(wxKeyEvent& event) {
     int c = event.GetKeyCode();
 
-    std::string strValue = dialogText->GetValue().ToStdString();
+    //we support 16 bit strings for user labels internally.
+    std::wstring strValue = dialogText->GetValue().ToStdWstring();
 
     switch (c) {
     case WXK_RETURN:
@@ -52,7 +53,7 @@ void DemodLabelDialog::OnChar(wxKeyEvent& event) {
             activeDemod->setDemodulatorUserLabel(strValue);
         }
         else {
-            activeDemod->setDemodulatorUserLabel("");
+            activeDemod->setDemodulatorUserLabel(L"");
         }
 
         Close();
@@ -67,7 +68,7 @@ void DemodLabelDialog::OnChar(wxKeyEvent& event) {
         wxTheClipboard->Open();
         wxTextDataObject data;
         wxTheClipboard->GetData(data);
-        std::string clipText = data.GetText().ToStdString();
+        std::wstring clipText = data.GetText().ToStdWstring();
         wxTheClipboard->SetData(new wxTextDataObject(clipText));
         wxTheClipboard->Close();
         event.Skip();

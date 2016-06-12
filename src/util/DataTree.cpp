@@ -383,7 +383,6 @@ std::string DataElement::toString() {
     return strValue;
 }
 
-
 long DataElement::getSerializedSize() {
     return sizeof(int) + sizeof(long) + data_size;
 }

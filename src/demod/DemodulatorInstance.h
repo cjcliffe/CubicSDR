@@ -74,8 +74,8 @@ public:
     void setDemodulatorType(std::string demod_type_in);
     std::string getDemodulatorType();
 
-    std::string getDemodulatorUserLabel();
-    void setDemodulatorUserLabel(const std::string& demod_user_label);
+    std::wstring getDemodulatorUserLabel();
+    void setDemodulatorUserLabel(const std::wstring& demod_user_label);
  
     void setDemodulatorLock(bool demod_lock_in);
     int getDemodulatorLock();
@@ -139,7 +139,8 @@ protected:
 private:
 
     std::atomic<std::string *> label; //
-    std::atomic<std::string *> user_label; //
+    // User editable buffer, 16 bit string.
+    std::atomic<std::wstring *> user_label; 
     std::atomic_bool terminated; //
     std::atomic_bool demodTerminated; //
     std::atomic_bool audioTerminated; //

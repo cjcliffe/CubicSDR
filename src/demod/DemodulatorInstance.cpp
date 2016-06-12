@@ -50,7 +50,7 @@ DemodulatorInstance::DemodulatorInstance() {
     tracking.store(false);
 
     label.store(new std::string("Unnamed"));
-    user_label.store(new std::string());
+    user_label.store(new std::wstring());
 
     pipeIQInputData = new DemodulatorThreadInputQueue;
     pipeIQDemodData = new DemodulatorThreadPostInputQueue;
@@ -327,13 +327,13 @@ std::string DemodulatorInstance::getDemodulatorType() {
     return demodulatorPreThread->getDemodType();
 }
 
-std::string DemodulatorInstance::getDemodulatorUserLabel() {
+std::wstring DemodulatorInstance::getDemodulatorUserLabel() {
     return *(user_label.load());
 }
 
-void DemodulatorInstance::setDemodulatorUserLabel(const std::string& demod_user_label) {
+void DemodulatorInstance::setDemodulatorUserLabel(const std::wstring& demod_user_label) {
    
-    delete user_label.exchange(new std::string(demod_user_label));
+    delete user_label.exchange(new std::wstring(demod_user_label));
 }
 
 void DemodulatorInstance::setDemodulatorLock(bool demod_lock_in) {

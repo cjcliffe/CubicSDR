@@ -28,6 +28,8 @@ public:
     ~GLFontChar();
 
     void setId(int idval);
+    
+    // Returns the code point of the 16bit character, supposely Unicode.    
     int getId();
 
     void setXOffset(int xofs);
@@ -57,7 +59,8 @@ public:
     int getIndex();
 
 private:
-    int id;
+    // this is the code point of the 16bit character, supposely Unicode.
+    int id; 
     int x, y, width, height;
     int xoffset, yoffset;
     int xadvance;
@@ -76,25 +79,38 @@ public:
 
     GLFont();
     ~GLFont();
-    void loadFont(std::string fontFile);
-    bool isLoaded();
 
-    float getStringWidth(std::string str, float size, float viewAspect);
-    void drawString(std::string str, float xpos, float ypos, int pxHeight, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx=0, int vpy=0, bool cacheable = false);
+    void loadFont(const std::wstring& fontFile);
 
-    static GLFont fonts[GLFONT_MAX];
     static GLFont &getFont(GLFontSize esize);
+   
+    //Public drawing font, 16 bit char version.
+    void drawString(const std::wstring& str, float xpos, float ypos, int pxHeight, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx=0, int vpy=0, bool cacheable = false);
 
-    GLFontStringCache *cacheString(std::string str, int pxHeight, int vpx, int vpy);
+    //Public drawing font, 8 bit char version.
+    void drawString(const std::string& str, float xpos, float ypos, int pxHeight, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx = 0, int vpy = 0, bool cacheable = false);
+   
+private:
+   
+    std::wstring nextParam(std::wistringstream &str);
+    std::wstring getParamKey(std::wstring param_str);
+    std::wstring getParamValue(std::wstring param_str);
+
+   
+    static GLFont fonts[GLFONT_MAX];
+    
+
+    GLFontStringCache *cacheString(const std::wstring& str, int pxHeight, int vpx, int vpy);
     void drawCacheString(GLFontStringCache *fc, float xpos, float ypos, Align hAlign, Align vAlign);
 
     void doCacheGC();
-private:
-    std::map<std::string, GLFontStringCache * > stringCache;
-  
-    std::string nextParam(std::istringstream &str);
-    std::string getParamKey(std::string param_str);
-    std::string getParamValue(std::string param_str);
+
+   
+    bool isLoaded();
+
+    float getStringWidth(const std::wstring& str, float size, float viewAspect);
+
+    std::map<std::wstring, GLFontStringCache * > stringCache;
 
     int lineHeight;
     int base;
@@ -106,9 +122,9 @@ private:
     std::vector<float> gl_vertices;
     std::vector<float> gl_uv;
 
-    std::string fontName;
-    std::string imageFile;
-    std::string fontFileSource;
+    std::wstring fontName;
+    std::wstring imageFile;
+    std::wstring fontFileSource;
     GLuint texId;
     int gcCounter;
     std::mutex cache_busy;

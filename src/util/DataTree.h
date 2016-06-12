@@ -355,4 +355,3 @@ public:
     bool SaveToFile(const std::string& filename, bool compress = true, int compress_level = 2);
     bool LoadFromFile(const std::string& filename);
 };
-

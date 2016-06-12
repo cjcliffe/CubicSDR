@@ -5,25 +5,12 @@
 #include <algorithm>
 #include "cubic_math.h"
 
-
-#ifdef _MSC_VER
-#include <windows.h>
-
-static std::string getExePath(void)
+static std::wstring getExePath(void)
 {
-    HMODULE hModule = GetModuleHandle(NULL);
-    char path[MAX_PATH];
-    GetModuleFileNameA(hModule, path, MAX_PATH);
-
-    char drive[_MAX_DRIVE];
-    char dir[_MAX_DIR];
-    char fname[_MAX_FNAME];
-    char ext[_MAX_EXT];
-    _splitpath_s(path, drive, dir, fname, ext);
-
-    return std::string(drive) + std::string(dir);
+    wxString exePath = wxStandardPaths::Get().GetExecutablePath();
+    
+    return  std::wstring(exePath.ToStdWstring());
 }
-#endif
 
 #ifndef RES_FOLDER
 #define RES_FOLDER ""
@@ -135,13 +122,13 @@ GLFont::~GLFont() {
 
 }
 
-std::string GLFont::nextParam(std::istringstream &str) {
-    std::string param_str;
+std::wstring GLFont::nextParam(std::wistringstream &str) {
+    std::wstring param_str;
 
     str >> param_str;
 
-    if (param_str.find('"') != std::string::npos) {
-        std::string rest;
+    if (param_str.find('"') != std::wstring::npos) {
+        std::wstring rest;
         while (!str.eof() && (std::count(param_str.begin(), param_str.end(), '"') % 2)) {
             str >> rest;
             param_str.append(" " + rest);
@@ -151,24 +138,24 @@ std::string GLFont::nextParam(std::istringstream &str) {
     return param_str;
 }
 
-std::string GLFont::getParamKey(std::string param_str) {
-    std::string keyName;
+std::wstring GLFont::getParamKey(std::wstring param_str) {
+    std::wstring keyName;
 
-    size_t eqpos = param_str.find("=");
+    size_t eqpos = param_str.find(L"=");
 
-    if (eqpos != std::string::npos) {
+    if (eqpos != std::wstring::npos) {
         keyName = param_str.substr(0, eqpos);
     }
 
     return keyName;
 }
 
-std::string GLFont::getParamValue(std::string param_str) {
-    std::string value;
+std::wstring GLFont::getParamValue(std::wstring param_str) {
+    std::wstring value;
 
-    size_t eqpos = param_str.find("=");
+    size_t eqpos = param_str.find(L"=");
 
-    if (eqpos != std::string::npos) {
+    if (eqpos != std::wstring::npos) {
         value = param_str.substr(eqpos + 1);
     }
 
@@ -179,12 +166,13 @@ std::string GLFont::getParamValue(std::string param_str) {
     return value;
 }
 
-void GLFont::loadFont(std::string fontFile) {
+void GLFont::loadFont(const std::wstring& fontFile) {
     
     std::string resourceFolder = RES_FOLDER;
-    #ifdef _MSC_VER
-    resourceFolder = getExePath() + "/" + resourceFolder;
-    #endif
+
+#ifdef WIN32   
+    resourceFolder = getExePath() + L"/" + resourceFolder;
+#endif
 
     wxFileName fontFileName = wxFileName(resourceFolder, fontFile);
     
@@ -194,7 +182,7 @@ void GLFont::loadFont(std::string fontFile) {
         resourceFolder = exePath.GetPath();
     }
 
-    fontFileSource = fontFileName.GetFullPath(wxPATH_NATIVE).ToStdString();
+    fontFileSource = fontFileName.GetFullPath(wxPATH_NATIVE).ToStdWstring();
     
     if (!fontFileName.FileExists()) {
         std::cout << "Font file " << fontFileSource << " does not exist?" << std::endl;
@@ -207,24 +195,24 @@ void GLFont::loadFont(std::string fontFile) {
     }
 
     
-    std::ifstream input;
+    std::wifstream input;
     input.open(fontFileSource.c_str(), std::ios::in);
 
-    std::string op;
+    std::wstring op;
 
     while (!input.eof()) {
         input >> op;
 
-        if (op == "info") {
-            std::string info_param_str;
+        if (op == L"info") {
+            std::wstring info_param_str;
             getline(input, info_param_str);
-            std::istringstream info_param(info_param_str);
+            std::wistringstream info_param(info_param_str);
 
             while (!info_param.eof()) {
-                std::string param = nextParam(info_param);
+                std::wstring param = nextParam(info_param);
 
-                std::string paramKey = getParamKey(param);
-                std::string paramValue = getParamValue(param);
+                std::wstring paramKey = getParamKey(param);
+                std::wstring paramValue = getParamValue(param);
 
                 if (paramKey == "face") {
                     fontName = paramValue;
@@ -232,83 +220,83 @@ void GLFont::loadFont(std::string fontFile) {
 
 //                std::cout << "[" << paramKey << "] = '" << paramValue << "'" << std::endl;
             }
-        } else if (op == "common") {
-            std::string common_param_str;
+        } else if (op == L"common") {
+            std::wstring common_param_str;
             getline(input, common_param_str);
-            std::istringstream common_param(common_param_str);
+            std::wistringstream common_param(common_param_str);
 
             while (!common_param.eof()) {
-                std::string param = nextParam(common_param);
+                std::wstring param = nextParam(common_param);
 
-                std::string paramKey = getParamKey(param);
-                std::istringstream paramValue(getParamValue(param));
+                std::wstring paramKey = getParamKey(param);
+                std::wistringstream paramValue(getParamValue(param));
 
-                if (paramKey == "lineHeight") {
+                if (paramKey == L"lineHeight") {
                     paramValue >> lineHeight;
-                } else if (paramKey == "base") {
+                } else if (paramKey == L"base") {
                     paramValue >> base;
-                } else if (paramKey == "scaleW") {
+                } else if (paramKey == L"scaleW") {
                     paramValue >> imageWidth;
-                } else if (paramKey == "scaleH") {
+                } else if (paramKey == L"scaleH") {
                     paramValue >> imageHeight;
                 }
 //                std::cout << "[" << paramKey << "] = '" << getParamValue(param) << "'" << std::endl;
             }
-        } else if (op == "page") {
-            std::string page_param_str;
+        } else if (op == L"page") {
+            std::wstring page_param_str;
             getline(input, page_param_str);
-            std::istringstream page_param(page_param_str);
+            std::wistringstream page_param(page_param_str);
 
             while (!page_param.eof()) {
-                std::string param = nextParam(page_param);
+                std::wstring param = nextParam(page_param);
 
-                std::string paramKey = getParamKey(param);
-                std::string paramValue = getParamValue(param);
+                std::wstring paramKey = getParamKey(param);
+                std::wstring paramValue = getParamValue(param);
 
-                if (paramKey == "file") {
+                if (paramKey == L"file") {
                     wxFileName imgFileName = wxFileName(resourceFolder, paramValue);
-                    imageFile = imgFileName.GetFullPath(wxPATH_NATIVE).ToStdString();
+                    imageFile = imgFileName.GetFullPath(wxPATH_NATIVE).ToStdWstring();
                 }
 //                std::cout << "[" << paramKey << "] = '" << paramValue << "'" << std::endl;
             }
 
-        } else if (op == "char") {
-            std::string char_param_str;
+        } else if (op == L"char") {
+            std::wstring char_param_str;
             getline(input, char_param_str);
-            std::istringstream char_param(char_param_str);
+            std::wistringstream char_param(char_param_str);
 
             GLFontChar *newChar = new GLFontChar;
 
             while (!char_param.eof()) {
-                std::string param = nextParam(char_param);
+                std::wstring param = nextParam(char_param);
 
-                std::string paramKey = getParamKey(param);
-                std::istringstream paramValue(getParamValue(param));
+                std::wstring paramKey = getParamKey(param);
+                std::wistringstream paramValue(getParamValue(param));
 
                 int val;
 
-                if (paramKey == "id") {
+                if (paramKey == L"id") {
                     paramValue >> val;
                     newChar->setId(val);
-                } else if (paramKey == "x") {
+                } else if (paramKey == L"x") {
                     paramValue >> val;
                     newChar->setX(val);
-                } else if (paramKey == "y") {
+                } else if (paramKey == L"y") {
                     paramValue >> val;
                     newChar->setY(val);
-                } else if (paramKey == "width") {
+                } else if (paramKey == L"width") {
                     paramValue >> val;
                     newChar->setWidth(val);
-                } else if (paramKey == "height") {
+                } else if (paramKey == L"height") {
                     paramValue >> val;
                     newChar->setHeight(val);
-                } else if (paramKey == "xoffset") {
+                } else if (paramKey == L"xoffset") {
                     paramValue >> val;
                     newChar->setXOffset(val);
-                } else if (paramKey == "yoffset") {
+                } else if (paramKey == L"yoffset") {
                     paramValue >> val;
                     newChar->setYOffset(val);
-                } else if (paramKey == "xadvance") {
+                } else if (paramKey == L"xadvance") {
                     paramValue >> val;
                     newChar->setXAdvance(val);
                 }
@@ -319,7 +307,7 @@ void GLFont::loadFont(std::string fontFile) {
             characters[newChar->getId()] = newChar;
 
         } else {
-            std::string dummy;
+            std::wstring dummy;
             getline(input, dummy);
         }
     }
@@ -328,13 +316,37 @@ void GLFont::loadFont(std::string fontFile) {
 
         // Load file and decode image.
         std::vector<unsigned char> image;
+
         unsigned int imgWidth = imageWidth, imgHeight = imageHeight;
-        unsigned error = lodepng::decode(image, imgWidth, imgHeight, imageFile);
+
+        //1) First load the raw file to memory using wstring filenames
+        wxFile png_file(imageFile);
+
+        int png_size = png_file.Length();
+        
+        unsigned char* raw_image = new unsigned char[png_size];
+
+        if (png_size > 0) {
+
+            int nbRead = png_file.Read((void*)raw_image, png_size);
+
+            if (png_size != nbRead) {
+
+                std::cout << "Error loading the full PNG image file in memory: '" << imageFile << "'" << std::endl;
+            }
+        }
+
+        //2) then load from memory
+        lodepng::State state;
+        unsigned error = lodepng::decode(image, imgWidth, imgHeight, raw_image, png_size);
+
+        delete raw_image;
+        png_file.Close();
 
         if (error) {
-            std::cout << "Error loading PNG image file: '" << imageFile << "'" << std::endl;
+            std::cout << "Error decoding PNG image file: '" << imageFile << "'" << std::endl;
         }
-        
+ 
         glGenTextures(1, &texId);
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, texId);
@@ -398,7 +410,7 @@ bool GLFont::isLoaded() {
     return loaded;
 }
 
-float GLFont::getStringWidth(std::string str, float size, float viewAspect) {
+float GLFont::getStringWidth(const std::wstring& str, float size, float viewAspect) {
 
     float scalex = size / viewAspect;
 
@@ -417,7 +429,7 @@ float GLFont::getStringWidth(std::string str, float size, float viewAspect) {
         float advx = (float) fchar->getXAdvance() / (float) imageWidth;
 
         if (charId == 32) {
-            advx = characters['_']->getAspect();
+            advx = characters[L'_']->getAspect();
         }
 
         width += fchar->getAspect() + advx + ofsx;
@@ -429,7 +441,7 @@ float GLFont::getStringWidth(std::string str, float size, float viewAspect) {
 }
 
 // Draw string, immediate
-void GLFont::drawString(std::string str, float xpos, float ypos, int pxHeight, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
+void GLFont::drawString(const std::wstring& str, float xpos, float ypos, int pxHeight, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
     
     pxHeight *= 2;
     
@@ -452,13 +464,13 @@ void GLFont::drawString(std::string str, float xpos, float ypos, int pxHeight, A
         
         GLFontStringCache *fc = nullptr;
 
-        std::map<std::string, GLFontStringCache * >::iterator cache_iter;
+        std::map<std::wstring, GLFontStringCache * >::iterator cache_iter;
         
-        std::stringstream sscacheIdx;
+        std::wstringstream sscacheIdx;
         
         sscacheIdx << vpx << "." << vpy << "." << pxHeight << "." << str;
         
-        std::string cacheIdx(sscacheIdx.str());
+        std::wstring cacheIdx(sscacheIdx.str());
         
         cache_iter = stringCache.find(cacheIdx);
         if (cache_iter != stringCache.end()) {
@@ -553,6 +565,17 @@ void GLFont::drawString(std::string str, float xpos, float ypos, int pxHeight, A
     glDisable(GL_TEXTURE_2D);
 }
 
+// Draw string, immediate, 8 bit version
+void GLFont::drawString(const std::string& str, float xpos, float ypos, int pxHeight, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
+
+    //This a thread-safe wsTmp buffer to convert to wstring, reusing the same memory
+    static thread_local std::wstring wsTmp;
+    wsTmp.clear();
+    wsTmp.assign(str.begin(), str.end());
+
+    drawString(wsTmp, xpos, ypos, pxHeight, hAlign, vAlign, vpx, vpy, cacheable);
+}
+
 // Draw cached GLFontCacheString
 void GLFont::drawCacheString(GLFontStringCache *fc, float xpos, float ypos, Align hAlign, Align vAlign) {
     
@@ -609,7 +632,7 @@ void GLFont::drawCacheString(GLFontStringCache *fc, float xpos, float ypos, Alig
 }
 
 // Compile optimized GLFontCacheString
-GLFontStringCache *GLFont::cacheString(std::string str, int pxHeight, int vpx, int vpy) {
+GLFontStringCache *GLFont::cacheString(const std::wstring& str, int pxHeight, int vpx, int vpy) {
     GLFontStringCache *fc = new GLFontStringCache;
     
     fc->pxHeight = pxHeight;
@@ -674,7 +697,7 @@ GLFontStringCache *GLFont::cacheString(std::string str, int pxHeight, int vpx, i
 }
 
 void GLFont::doCacheGC() {
-    std::map<std::string, GLFontStringCache * >::iterator cache_iter;
+    std::map<std::wstring, GLFontStringCache * >::iterator cache_iter;
     
     for (cache_iter = stringCache.begin(); cache_iter != stringCache.end(); cache_iter++) {
         cache_iter->second->gc--;
@@ -692,28 +715,28 @@ void GLFont::doCacheGC() {
 GLFont &GLFont::getFont(GLFontSize esize) {
     if (!fonts[esize].isLoaded()) {
         
-        std::string fontName;
+        std::wstring fontName;
         switch (esize) {
             case GLFONT_SIZE12:
-                fontName = "vera_sans_mono12.fnt";
+                fontName = L"vera_sans_mono12.fnt";
                 break;
             case GLFONT_SIZE16:
-                fontName = "vera_sans_mono16.fnt";
+                fontName = L"vera_sans_mono16.fnt";
                 break;
             case GLFONT_SIZE18:
-                fontName = "vera_sans_mono18.fnt";
+                fontName = L"vera_sans_mono18.fnt";
                 break;
             case GLFONT_SIZE24:
-                fontName = "vera_sans_mono24.fnt";
+                fontName = L"vera_sans_mono24.fnt";
                 break;
             case GLFONT_SIZE32:
-                fontName = "vera_sans_mono32.fnt";
+                fontName = L"vera_sans_mono32.fnt";
                 break;
             case GLFONT_SIZE48:
-                fontName = "vera_sans_mono48.fnt";
+                fontName = L"vera_sans_mono48.fnt";
                 break;
             default:
-                fontName = "vera_sans_mono12.fnt";
+                fontName = L"vera_sans_mono12.fnt";
                 break;
         }
         

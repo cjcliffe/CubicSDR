@@ -355,6 +355,9 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
 
     std::string demodStr = demod->getDemodulatorType();
 
+    //Displayed string is 16 bit, so fill from a 8bit character by charater...
+    std::wstring demodStrW(demodStr.begin(), demodStr.end());
+
     demodAlign = GLFont::GLFONT_ALIGN_CENTER;
 
     if (demodStr == "LSB") {
@@ -384,7 +387,7 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
         hPos += 1.3 * labelHeight;
     }
 
-    drawSingleDemodLabel(demodStr, uxPos, hPos, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
+    drawSingleDemodLabel(demodStrW, uxPos, hPos, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
 
     //revert...
     if (!demod->getDemodulatorUserLabel().empty()) {
@@ -396,7 +399,7 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
 
 }
 
-void PrimaryGLContext::drawSingleDemodLabel(std::string demodStr, float uxPos, float hPos, float xOfs, float yOfs, GLFont::Align demodAlign) {
+void PrimaryGLContext::drawSingleDemodLabel(std::wstring demodStr, float uxPos, float hPos, float xOfs, float yOfs, GLFont::Align demodAlign) {
 
     glColor3f(0, 0, 0);
     GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodStr, 2.0 * (uxPos - 0.5) + xOfs,
