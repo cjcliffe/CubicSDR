@@ -7,9 +7,10 @@
 
 static std::wstring getExePath(void)
 {
-    wxString exePath = wxStandardPaths::Get().GetExecutablePath();
-    
-    return  std::wstring(exePath.ToStdWstring());
+    //get the dir path of the executable
+    wxFileName exePath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
+   
+    return  std::wstring(exePath.GetPath().ToStdWstring());
 }
 
 #ifndef RES_FOLDER
@@ -168,7 +169,7 @@ std::wstring GLFont::getParamValue(std::wstring param_str) {
 
 void GLFont::loadFont(const std::wstring& fontFile) {
     
-    std::string resourceFolder = RES_FOLDER;
+    wxString resourceFolder = RES_FOLDER;
 
 #ifdef WIN32   
     resourceFolder = getExePath() + L"/" + resourceFolder;
