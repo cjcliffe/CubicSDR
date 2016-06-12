@@ -1916,6 +1916,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case 'U':
         case 'S':
         case 'P':
+        case 'M':
             return 1;
         case '0':
         case '1':
@@ -1966,6 +1967,7 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
         return -1;
     }
 
+    DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
     DemodulatorInstance *lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
     
 #ifdef wxHAS_RAW_KEY_CODES
@@ -1995,8 +1997,8 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
             waterfallCanvas->OnKeyUp(event);
             return 1;
         case 'V':
-            if (wxGetApp().getDemodMgr().getActiveDemodulator()) {
-                lastDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
+            if (activeDemod) {
+                lastDemod = activeDemod;
             }
             if (lastDemod && lastDemod->isDeltaLock()) {
                 lastDemod->setDeltaLock(false);
@@ -2040,6 +2042,14 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
         case ']':
         case '[':
             return 1;
+        case 'M':
+            if (activeDemod) {
+                lastDemod = activeDemod;
+            }
+            if (lastDemod) {
+                lastDemod->setMuted(!lastDemod->isMuted());
+            }
+            break;
         default:
             break;
     }
