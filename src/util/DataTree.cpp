@@ -29,6 +29,7 @@
 #include <iomanip>
 #include <locale>
 #include <stdlib.h>
+#include <algorithm>
 
 /* DataElement class */
 
