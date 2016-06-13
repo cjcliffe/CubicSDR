@@ -1563,8 +1563,8 @@ void AppFrame::saveSession(std::string fileName) {
         *demod->newChild("type") = (*instance_i)->getDemodulatorType();
 
         //TODO: now we can only 7 bit strings properly, so convert back to Ascii...
-        wxString intermediate((*instance_i)->getDemodulatorUserLabel());
-        demod->newChild("user_label")->element()->set(intermediate.ToAscii());
+//        wxString intermediate((*instance_i)->getDemodulatorUserLabel());
+        demod->newChild("user_label")->element()->set((*instance_i)->getDemodulatorUserLabel());
 
         *demod->newChild("squelch_level") = (*instance_i)->getSquelchLevel();
         *demod->newChild("squelch_enabled") = (*instance_i)->isSquelchEnabled() ? 1 : 0;
@@ -1703,8 +1703,9 @@ bool AppFrame::loadSession(std::string fileName) {
                 //toString() re-formats strings recognized as numerals, but at least it works for
                 //all kind of data.
                 //TODO: DataTree do not support 16 bit strings, so...
-                std::string rawStr = demodUserLabel->element()->toString();
-                user_label.assign(rawStr.begin(), rawStr.end());
+//                std::string rawStr = demodUserLabel->element()->toString();
+//                user_label.assign(rawStr.begin(), rawStr.end());
+                demodUserLabel->element()->get(user_label);
             }
            
 

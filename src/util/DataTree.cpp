@@ -26,6 +26,9 @@
 #include "DataTree.h"
 #include <fstream>
 #include <math.h>
+#include <iomanip>
+#include <locale>
+#include <codecvt>
 
 /* DataElement class */
 
@@ -105,6 +108,16 @@ void DataElement::set(const string &str_in) {
     data_type = DATA_STRING;
     data_init(str_in.length() + 1);
     memcpy(data_val, str_in.c_str(), data_size);
+}
+
+void DataElement::set(const wstring &wstr_in) {
+    data_type = DATA_WSTRING;
+
+    std::wstring_convert<std::codecvt_utf8<wchar_t> > utf8conv;
+    std::string wstrVal = utf8conv.to_bytes(wstr_in);
+
+    data_init(wstrVal.length() + 1);
+    memcpy(data_val, wstrVal.c_str(), data_size);
 }
 
 void DataElement::set(vector<string> &strvect_in) {
@@ -271,6 +284,26 @@ void DataElement::get(string &str_in) {
 
     if (data_val) {
         str_in.append(data_val);
+    }
+}
+
+void DataElement::get(wstring &wstr_in) {
+    if (!data_type)
+        return;
+    
+    if (data_type != DATA_WSTRING)
+        throw(new DataTypeMismatchException("Type mismatch, not a WSTRING"));
+
+    std::wstring_convert<std::codecvt_utf8<wchar_t> > utf8conv;
+    std::wstring wstrVal = utf8conv.from_bytes((char *)data_val);
+
+    if (!wstr_in.empty())	// flush the string
+    {
+        wstr_in.erase(wstr_in.begin(), wstr_in.end());
+    }
+    
+    if (data_val) {
+        wstr_in.append(wstrVal);
     }
 }
 
@@ -540,6 +573,44 @@ std::string trim(std::string& s, const std::string& drop = " ") {
     return r.erase(0, r.find_first_not_of(drop));
 }
 
+string DataTree::wsEncode(const wstring wstr) {
+    stringstream encStream;
+    
+    std::wstring_convert<std::codecvt_utf8<wchar_t> > utf8conv;
+    std::string byte_str = utf8conv.to_bytes(wstr);
+
+    encStream << std::hex;
+
+    for(auto i = byte_str.begin(); i != byte_str.end(); i++) {
+        encStream << '%' << setfill('0') << (unsigned int)((unsigned char)(*i));
+    }
+    
+    return encStream.str();
+}
+
+wstring DataTree::wsDecode(const string str) {
+    
+    std::stringstream decStream;
+    std::stringstream utf8str;
+    unsigned int x;
+    
+    string decStr = str;
+    std::replace( decStr.begin(), decStr.end(), '%', ' ');
+    decStream << trim(decStr);
+    
+    string sResult;
+    wstring wsResult;
+
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> utf8conv;
+
+    while (!decStream.eof()) {
+        decStream >> std::hex >> x;
+        utf8str << (unsigned char) x;
+    }
+
+    return utf8conv.from_bytes(utf8str.str().c_str());
+}
+
 void DataTree::decodeXMLText(DataNode *elem, const char *src_text, DT_FloatingPointPolicy fpp) {
 
     int tmp_char;
@@ -673,6 +744,8 @@ void DataTree::decodeXMLText(DataNode *elem, const char *src_text, DT_FloatingPo
         } else {
             elem->element()->set(tmp_doublevect);
         }
+    } else if (in_text.find_first_not_of("0123456789abcdef%") == string::npos) {
+        elem->element()->set(wsDecode(src_text));
     } else {
         elem->element()->set(src_text);
         //					printf( "Unhandled DataTree XML Field: [%s]", tmp_str.c_str() );
@@ -787,6 +860,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
 
         element = new TiXmlElement(nodeName.length() ? nodeName.c_str() : "node");
         std::string tmp;
+        std::wstring wtmp;
         std::stringstream tmp_stream;
         TiXmlText *text;
         std::vector<float> tmp_floatvect;
@@ -951,7 +1025,18 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
                 element->LinkEndChild(text);
             }
             break;
-
+        case DATA_WSTRING:
+            child->element()->get(wtmp);
+            tmp = wsEncode(wtmp);
+            if (nodeName.substr(0, 1) == string("@")) {
+                elxml->SetAttribute(nodeName.substr(1).c_str(), tmp.c_str());
+                delete element;
+                element = NULL;
+            } else {
+                text = new TiXmlText(tmp.c_str());
+                element->LinkEndChild(text);
+            }
+            break;
         case DATA_STR_VECTOR:
             child->element()->get(tmp_stringvect);
 

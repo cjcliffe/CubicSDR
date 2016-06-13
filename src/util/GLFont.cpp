@@ -341,7 +341,7 @@ void GLFont::loadFont(const std::wstring& fontFile) {
         lodepng::State state;
         unsigned error = lodepng::decode(image, imgWidth, imgHeight, raw_image, png_size);
 
-        delete raw_image;
+        delete[] raw_image;
         png_file.Close();
 
         if (error) {

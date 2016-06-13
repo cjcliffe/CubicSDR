@@ -67,7 +67,7 @@ using namespace std;
 #define DATA_DOUBLE_VECTOR		21
 #define DATA_LONGDOUBLE_VECTOR  22
 #define DATA_VOID               23
-
+#define DATA_WSTRING            24
 
 /* map comparison function */
 struct string_less : public std::binary_function<std::string,std::string,bool>
@@ -151,6 +151,7 @@ public:
     void set(const char *data_in);	/* strings, stops at NULL, returns as string */
     
     void set(const string &str_in);
+    void set(const wstring &wstr_in);
     
     void set(vector<string> &strvect_in);
     void set(std::set<string> &strset_in);
@@ -180,6 +181,7 @@ public:
     
     void get(char **data_in); /* getting a void or string */
     void get(string &str_in); 
+    void get(wstring &wstr_in);
     void get(std::set<string> &strset_in);
     
     void get(vector<string> &strvect_in);
@@ -330,6 +332,9 @@ class DataTree
 private:
     DataNode dn_root;
     
+    string wsEncode(const wstring wstr);
+    wstring wsDecode(const string str);
+
 public:
     DataTree(const char *name_in);
     DataTree();
