@@ -332,8 +332,8 @@ class DataTree
 private:
     DataNode dn_root;
     
-    string wsEncode(const wstring wstr);
-    wstring wsDecode(const string str);
+    string wsEncode(const wstring& wstr);
+    wstring wsDecode(const string& str);
 
 public:
     DataTree(const char *name_in);
