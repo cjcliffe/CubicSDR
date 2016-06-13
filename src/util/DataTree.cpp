@@ -30,6 +30,8 @@
 #include <locale>
 #include <stdlib.h>
 #include <algorithm>
+#include <cwchar>
+
 
 /* DataElement class */
 
@@ -55,6 +57,8 @@ void DataElement::data_init(size_t data_size_in) {
     data_size = data_size_in;
     if (data_size) {
         data_val = new char[data_size];
+        //memset to zero
+        std::fill_n(data_val, data_size, 0);
     }
 }
 
@@ -114,11 +118,18 @@ void DataElement::set(const string &str_in) {
 void DataElement::set(const wstring &wstr_in) {
     data_type = DATA_WSTRING;
 
-    int maxLen = wstr_in.length()*2+1;
-    char *tmp_str = (char *)malloc(maxLen);
-    wcstombs(tmp_str, wstr_in.c_str(), maxLen);
+    //wchar_t is tricky, the terminating zero is actually a (wchar_t)0 !
+    size_t maxLenBytes = (wstr_in.length()+1) * sizeof(wchar_t);
 
-    data_init(strlen(tmp_str) + 1);
+    //be paranoid, zero the buffer
+    char *tmp_str = (char *)calloc(maxLenBytes, sizeof(char));
+
+    //if something awful happens, the last sizeof(wchar_t) is at least zero...
+    wcstombs(tmp_str, wstr_in.c_str(), maxLenBytes - sizeof(wchar_t));
+
+    //fine the encoded size is in bytes, but nbBytesWritten do not count the zero, which is actually (wchar_t)0 
+    data_init(maxLenBytes);
+
     memcpy(data_val, tmp_str, data_size);
     free(tmp_str);
 }
@@ -297,16 +308,22 @@ void DataElement::get(wstring &wstr_in) {
     if (data_type != DATA_WSTRING)
         throw(new DataTypeMismatchException("Type mismatch, not a WSTRING"));
 
-    if (!wstr_in.empty())	// flush the string
-    {
-        wstr_in.erase(wstr_in.begin(), wstr_in.end());
-    }
-    
+    // flush the string
+    wstr_in.clear();
+       
     if (data_val) {
-        int maxLen = strlen(data_val)*2+1;
-        wchar_t *tmp_wstr = (wchar_t *)malloc(maxLen*sizeof(wchar_t));
-        mbstowcs(tmp_wstr, data_val, maxLen);
-        wstr_in.append(tmp_wstr);
+
+        // 
+        int maxNbWchars = (data_size - sizeof(wchar_t)) / sizeof(wchar_t);
+
+        //be paranoid, zero the buffer
+        wchar_t *tmp_wstr = (wchar_t *)calloc(maxNbWchars + 1, sizeof(wchar_t));
+
+        //the last wchar_t is actually zero if anything goes wrong...
+        mbstowcs(tmp_wstr, data_val, maxNbWchars);
+
+        wstr_in.assign(tmp_wstr);
+
         free(tmp_wstr);
     }
 }
@@ -577,13 +594,14 @@ std::string trim(std::string& s, const std::string& drop = " ") {
     return r.erase(0, r.find_first_not_of(drop));
 }
 
-string DataTree::wsEncode(const wstring wstr) {
+string DataTree::wsEncode(const wstring& wstr) {
     stringstream encStream;
     
-    int bufSize = wstr.length()*2+1;
-    char *data_str = (char *)malloc(bufSize);
+    int bufSizeBytes = (wstr.length()+1) * sizeof(wchar_t);
+
+    char *data_str = (char *)calloc(bufSizeBytes, sizeof(char));
     
-    wcstombs(data_str, wstr.c_str(), bufSize);
+    wcstombs(data_str, wstr.c_str(), bufSizeBytes - sizeof(wchar_t));
     
     std::string byte_str(data_str);
 
@@ -598,7 +616,7 @@ string DataTree::wsEncode(const wstring wstr) {
     return encStream.str();
 }
 
-wstring DataTree::wsDecode(const string str) {
+wstring DataTree::wsDecode(const string& str) {
     
     std::stringstream decStream;
     std::stringstream mbstr;
@@ -607,21 +625,25 @@ wstring DataTree::wsDecode(const string str) {
     string decStr = str;
     std::replace( decStr.begin(), decStr.end(), '%', ' ');
     decStream << trim(decStr);
-    
+  
     string sResult;
     int maxLen = decStr.length();
-    wchar_t *wc_str = (wchar_t *) malloc(maxLen * sizeof(wchar_t));
+    wchar_t *wc_str = (wchar_t *) calloc(maxLen  + 1, sizeof(wchar_t));
 
     while (!decStream.eof()) {
         decStream >> std::hex >> x;
+        //extract actually 2 chars by 2 chars to form a char.
         mbstr << (unsigned char) x;
     }
 
     mbstowcs(wc_str, mbstr.str().c_str(), maxLen);
     
+    wstring result(wc_str);
+
+    //it is better not to free before use...
     free(wc_str);
     
-    return wstring(wc_str);
+    return result;
 }
 
 void DataTree::decodeXMLText(DataNode *elem, const char *src_text, DT_FloatingPointPolicy fpp) {
@@ -1568,6 +1590,7 @@ void DataTree::setSerialized(char *ser_str, bool debug) {
 
 bool DataTree::LoadFromFileXML(const std::string& filename, DT_FloatingPointPolicy fpp) {
     TiXmlDocument doc(filename.c_str());
+
     bool loadOkay = doc.LoadFile();
 
     if (!loadOkay) {
