@@ -197,13 +197,13 @@ void GLFont::loadFont(const std::wstring& fontFile) {
 
     
     std::wifstream input;
-    input.open(fontFileSource.c_str(), std::ios::in);
+    std::string inpFileStr(fontFileSource.begin(), fontFileSource.end());
+    input.open(inpFileStr, std::ios::in);
 
     std::wstring op;
 
     while (!input.eof()) {
         input >> op;
-
         if (op == L"info") {
             std::wstring info_param_str;
             getline(input, info_param_str);
@@ -569,8 +569,13 @@ void GLFont::drawString(const std::wstring& str, float xpos, float ypos, int pxH
 // Draw string, immediate, 8 bit version
 void GLFont::drawString(const std::string& str, float xpos, float ypos, int pxHeight, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
 
-    //This a thread-safe wsTmp buffer to convert to wstring, reusing the same memory
+#ifdef WIN32
+    //This a thread-safe wsTmp buffer to convert to wstring, reusing the same memory, unsupported: OSX?
     static thread_local std::wstring wsTmp;
+#else
+    std::wstring wsTmp;
+#endif
+    
     wsTmp.clear();
     wsTmp.assign(str.begin(), str.end());
 
