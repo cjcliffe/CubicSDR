@@ -128,18 +128,18 @@ std::wstring GLFont::nextParam(std::wistringstream &str) {
 
     str >> param_str;
 
-    if (param_str.find('"') != std::wstring::npos) {
+    if (param_str.find(L'"') != std::wstring::npos) {
         std::wstring rest;
-        while (!str.eof() && (std::count(param_str.begin(), param_str.end(), '"') % 2)) {
+        while (!str.eof() && (std::count(param_str.begin(), param_str.end(), L'"') % 2)) {
             str >> rest;
-            param_str.append(" " + rest);
+            param_str.append(L" " + rest);
         }
     }
 
     return param_str;
 }
 
-std::wstring GLFont::getParamKey(std::wstring param_str) {
+std::wstring GLFont::getParamKey(const std::wstring& param_str) {
     std::wstring keyName;
 
     size_t eqpos = param_str.find(L"=");
@@ -151,7 +151,7 @@ std::wstring GLFont::getParamKey(std::wstring param_str) {
     return keyName;
 }
 
-std::wstring GLFont::getParamValue(std::wstring param_str) {
+std::wstring GLFont::getParamValue(const std::wstring& param_str) {
     std::wstring value;
 
     size_t eqpos = param_str.find(L"=");
@@ -160,7 +160,7 @@ std::wstring GLFont::getParamValue(std::wstring param_str) {
         value = param_str.substr(eqpos + 1);
     }
 
-    if (value[0] == '"' && value[value.length() - 1] == '"') {
+    if (value[0] == L'"' && value[value.length() - 1] == L'"') {
         value = value.substr(1, value.length() - 2);
     }
 
@@ -215,7 +215,7 @@ void GLFont::loadFont(const std::wstring& fontFile) {
                 std::wstring paramKey = getParamKey(param);
                 std::wstring paramValue = getParamValue(param);
 
-                if (paramKey == "face") {
+                if (paramKey == L"face") {
                     fontName = paramValue;
                 }
 
@@ -546,7 +546,7 @@ void GLFont::drawString(const std::wstring& str, float xpos, float ypos, int pxH
         float advx = (float) fchar->getXAdvance() / (float) imageWidth;
 
         if (charId == 32) {
-            advx = characters['_']->getAspect();
+            advx = characters[L'_']->getAspect();
         }
 
         glTranslatef(ofsx, 0.0, 0.0);
@@ -569,17 +569,17 @@ void GLFont::drawString(const std::wstring& str, float xpos, float ypos, int pxH
 // Draw string, immediate, 8 bit version
 void GLFont::drawString(const std::string& str, float xpos, float ypos, int pxHeight, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
 
+    //Displayed string is wstring, so use wxString to do the heavy lifting of converting  str...
 #ifdef WIN32
-    //This a thread-safe wsTmp buffer to convert to wstring, reusing the same memory, unsupported: OSX?
-    static thread_local std::wstring wsTmp;
+    //try to reuse the memory with thread_local, unsupported on OSX ? 
+    static thread_local wxString wsTmp;
 #else
-    std::wstring wsTmp;
+    wxString wsTmp;
 #endif
     
-    wsTmp.clear();
-    wsTmp.assign(str.begin(), str.end());
+    wsTmp.assign(str);
 
-    drawString(wsTmp, xpos, ypos, pxHeight, hAlign, vAlign, vpx, vpy, cacheable);
+    drawString(wsTmp.ToStdWstring(), xpos, ypos, pxHeight, hAlign, vAlign, vpx, vpy, cacheable);
 }
 
 // Draw cached GLFontCacheString
@@ -681,7 +681,7 @@ GLFontStringCache *GLFont::cacheString(const std::wstring& str, int pxHeight, in
         float advx = (float) fchar->getXAdvance() / (float) imageWidth;
         
         if (charId == 32) {
-            advx = characters['_']->getAspect();
+            advx = characters[L'_']->getAspect();
         }
         
         // freeze transform to buffer

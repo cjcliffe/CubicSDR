@@ -30,7 +30,6 @@
 #include <locale>
 #include <stdlib.h>
 #include <algorithm>
-#include <cwchar>
 
 
 /* DataElement class */
@@ -119,6 +118,7 @@ void DataElement::set(const wstring &wstr_in) {
     data_type = DATA_WSTRING;
 
     //wchar_t is tricky, the terminating zero is actually a (wchar_t)0 !
+    //wchar_t is typically 16 bits on windows, and 32 bits on Unix, so use sizeof(wchar_t) everywhere.
     size_t maxLenBytes = (wstr_in.length()+1) * sizeof(wchar_t);
 
     //be paranoid, zero the buffer
@@ -127,7 +127,6 @@ void DataElement::set(const wstring &wstr_in) {
     //if something awful happens, the last sizeof(wchar_t) is at least zero...
     wcstombs(tmp_str, wstr_in.c_str(), maxLenBytes - sizeof(wchar_t));
 
-    //fine the encoded size is in bytes, but nbBytesWritten do not count the zero, which is actually (wchar_t)0 
     data_init(maxLenBytes);
 
     memcpy(data_val, tmp_str, data_size);
@@ -313,7 +312,8 @@ void DataElement::get(wstring &wstr_in) {
        
     if (data_val) {
 
-        // 
+        //data_val is an array of bytes holding wchar_t characters, plus a terminating (wchar_t)0
+        //wchar_t is typically 16 bits on windows, and 32 bits on Unix, so use sizeof(wchar_t) everywhere.
         int maxNbWchars = (data_size - sizeof(wchar_t)) / sizeof(wchar_t);
 
         //be paranoid, zero the buffer
@@ -597,6 +597,7 @@ std::string trim(std::string& s, const std::string& drop = " ") {
 string DataTree::wsEncode(const wstring& wstr) {
     stringstream encStream;
     
+    //wchar_t is typically 16 bits on windows, and 32 bits on Unix, so use sizeof(wchar_t) everywhere.
     int bufSizeBytes = (wstr.length()+1) * sizeof(wchar_t);
 
     char *data_str = (char *)calloc(bufSizeBytes, sizeof(char));
@@ -627,12 +628,17 @@ wstring DataTree::wsDecode(const string& str) {
     decStream << trim(decStr);
   
     string sResult;
+
+    //this actually assume we will get as many char as wchar_t from the decodes string,
+    //who cares ?
     int maxLen = decStr.length();
+
+    //wchar_t is typically 16 bits on windows, and 32 bits on Unix, so use sizeof(wchar_t) everywhere.
     wchar_t *wc_str = (wchar_t *) calloc(maxLen  + 1, sizeof(wchar_t));
 
     while (!decStream.eof()) {
         decStream >> std::hex >> x;
-        //extract actually 2 chars by 2 chars to form a char.
+        //extract actually 2 hex-chars by 2 hex-chars to form a char value.
         mbstr << (unsigned char) x;
     }
 
@@ -640,7 +646,6 @@ wstring DataTree::wsDecode(const string& str) {
     
     wstring result(wc_str);
 
-    //it is better not to free before use...
     free(wc_str);
     
     return result;

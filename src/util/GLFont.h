@@ -93,8 +93,8 @@ public:
 private:
    
     std::wstring nextParam(std::wistringstream &str);
-    std::wstring getParamKey(std::wstring param_str);
-    std::wstring getParamValue(std::wstring param_str);
+    std::wstring getParamKey(const std::wstring& param_str);
+    std::wstring getParamValue(const std::wstring& param_str);
 
    
     static GLFont fonts[GLFONT_MAX];
