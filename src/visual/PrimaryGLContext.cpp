@@ -353,10 +353,14 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
 
     GLFont::Align demodAlign = GLFont::GLFONT_ALIGN_CENTER;
 
-    std::string demodStr = demod->getDemodulatorType();
-
-    //Displayed string is 16 bit, so fill from a 8bit character by charater...
-    std::wstring demodStrW(demodStr.begin(), demodStr.end());
+    //Displayed string is wstring, so use wxString to do the heavy lifting of converting  getDemodulatorType()...
+#ifdef WIN32
+    //try to reuse the memory with thread_local, unsupported on OSX ? 
+    static thread_local wxString demodStr;
+#else
+    wxString demodStr;
+#endif
+    demodStr.assign(demod->getDemodulatorType());
 
     demodAlign = GLFont::GLFONT_ALIGN_CENTER;
 
@@ -387,7 +391,7 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
         hPos += 1.3 * labelHeight;
     }
 
-    drawSingleDemodLabel(demodStrW, uxPos, hPos, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
+    drawSingleDemodLabel(demodStr.ToStdWstring(), uxPos, hPos, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
 
     //revert...
     if (!demod->getDemodulatorUserLabel().empty()) {
@@ -399,12 +403,13 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
 
 }
 
-void PrimaryGLContext::drawSingleDemodLabel(std::wstring demodStr, float uxPos, float hPos, float xOfs, float yOfs, GLFont::Align demodAlign) {
+void PrimaryGLContext::drawSingleDemodLabel(const std::wstring& demodStr, float uxPos, float hPos, float xOfs, float yOfs, GLFont::Align demodAlign) {
 
     glColor3f(0, 0, 0);
     GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodStr, 2.0 * (uxPos - 0.5) + xOfs,
         -1.0 + hPos - yOfs, 16, demodAlign,
         GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+    
     glColor3f(1, 1, 1);
     GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodStr, 2.0 * (uxPos - 0.5),
         -1.0 + hPos, 16, demodAlign,
