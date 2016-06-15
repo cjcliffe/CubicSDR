@@ -47,6 +47,8 @@
 #define wxID_BANDWIDTH_BASE 2150
 #define wxID_BANDWIDTH_MANUAL 2200
 
+#define wxID_DISPLAY_BASE 2250
+
 #define wxID_SETTINGS_BASE 2300
 
 #define wxID_DEVICE_ID 3500
@@ -140,6 +142,7 @@ private:
     std::map<int, wxMenuItem *> directSamplingMenuItems;
     wxMenuBar *menuBar;
     wxMenu *sampleRateMenu;
+    wxMenu *displayMenu;
     wxMenuItem *agcMenuItem;
     wxMenuItem *iqSwapMenuItem;
     wxMenuItem *lowPerfMenuItem;

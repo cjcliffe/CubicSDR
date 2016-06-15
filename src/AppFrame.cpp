@@ -447,6 +447,15 @@ AppFrame::AppFrame() :
 
     menuBar->Append(menu, wxT("Audio &Sample Rate"));
 
+    displayMenu = new wxMenu;
+
+    menuBar->Append(displayMenu, wxT("&Display"));
+    wxMenuItem *itmNormal  = displayMenu->AppendRadioItem(wxID_DISPLAY_BASE, "Normal font (1x)");
+    displayMenu->AppendRadioItem(wxID_DISPLAY_BASE + 1, "Medium font (1.3x)");
+    displayMenu->AppendRadioItem(wxID_DISPLAY_BASE + 2, "Large font (2x)");
+
+    itmNormal->Check(true);
+
 #ifdef USE_HAMLIB
             
     rigModel = wxGetApp().getConfig()->getRigModel();
@@ -910,6 +919,16 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         ThemeMgr::mgr.setTheme(COLOR_THEME_HD);
     } else if (event.GetId() == wxID_THEME_RADAR) {
         ThemeMgr::mgr.setTheme(COLOR_THEME_RADAR);
+    }
+    //Display : font sizes
+    else if (event.GetId() == wxID_DISPLAY_BASE) {
+        GLFont::setScale(GLFont::GLFONT_SCALE_NORMAL);
+    }
+    else if (event.GetId() == wxID_DISPLAY_BASE + 1) {
+        GLFont::setScale(GLFont::GLFONT_SCALE_MEDIUM);
+    }
+    else if (event.GetId() == wxID_DISPLAY_BASE + 2) {
+        GLFont::setScale(GLFont::GLFONT_SCALE_LARGE);
     }
 
     if (event.GetId() >= wxID_SETTINGS_BASE && event.GetId() < settingsIdMax) {
