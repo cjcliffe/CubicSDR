@@ -28,13 +28,13 @@ GLFont GLFont::fonts[GLFont::GLFontSize::GLFONT_SIZE_MAX] = {
     { GLFont::GLFontSize::GLFONT_SIZE12, L"vera_sans_mono12.fnt" },
     { GLFont::GLFontSize::GLFONT_SIZE16, L"vera_sans_mono16.fnt" },
     { GLFont::GLFontSize::GLFONT_SIZE18, L"vera_sans_mono18.fnt" },
-    { GLFont::GLFontSize::GLFONT_SIZE22, L"vera_sans_mono22.fnt" },
     { GLFont::GLFontSize::GLFONT_SIZE24, L"vera_sans_mono24.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE27, L"vera_sans_mono27.fnt" },
     { GLFont::GLFontSize::GLFONT_SIZE32, L"vera_sans_mono32.fnt" },
     { GLFont::GLFontSize::GLFONT_SIZE36, L"vera_sans_mono36.fnt" },
-    { GLFont::GLFontSize::GLFONT_SIZE42, L"vera_sans_mono42.fnt" },
     { GLFont::GLFontSize::GLFONT_SIZE48, L"vera_sans_mono48.fnt" },
     { GLFont::GLFontSize::GLFONT_SIZE64, L"vera_sans_mono64.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE72, L"vera_sans_mono72.fnt" },
     { GLFont::GLFontSize::GLFONT_SIZE96, L"vera_sans_mono96.fnt" },
 
 };
@@ -44,13 +44,13 @@ GLFont::GLFontSize GLFont::userFontZoomMapping[GLFont::GLFontSize::GLFONT_SIZE_M
     GLFont::GLFontSize::GLFONT_SIZE12,
     GLFont::GLFontSize::GLFONT_SIZE16,
     GLFont::GLFontSize::GLFONT_SIZE18,
-    GLFont::GLFontSize::GLFONT_SIZE22,
     GLFont::GLFontSize::GLFONT_SIZE24,
+    GLFont::GLFontSize::GLFONT_SIZE27,
     GLFont::GLFontSize::GLFONT_SIZE32,
     GLFont::GLFontSize::GLFONT_SIZE36,
-    GLFont::GLFontSize::GLFONT_SIZE42,
     GLFont::GLFontSize::GLFONT_SIZE48,
     GLFont::GLFontSize::GLFONT_SIZE64,
+    GLFont::GLFontSize::GLFONT_SIZE72,
     GLFont::GLFontSize::GLFONT_SIZE96
 };
 
@@ -785,10 +785,12 @@ void GLFont::flushGC() {
 GLFont &GLFont::getFont(GLFontSize esize) {
 
     //really load the internal font instead!
-
-    std::lock_guard<std::mutex> lock(g_userFontZoomMappingMutex);
-
-    GLFontSize internalFontSize = userFontZoomMapping[esize];
+ 
+    GLFontSize internalFontSize = GLFONT_SIZE12;
+    { //guard block
+        std::lock_guard<std::mutex> lock(g_userFontZoomMappingMutex);
+        internalFontSize = userFontZoomMapping[esize];
+    }
 
     //load lazily...
     fonts[internalFontSize].loadFontOnce();
@@ -808,28 +810,29 @@ void GLFont::setScale(GLFontScale scale) {
     userFontZoomMapping[GLFont::GLFONT_SIZE12] = GLFont::GLFONT_SIZE12;
     userFontZoomMapping[GLFont::GLFONT_SIZE16] = GLFont::GLFONT_SIZE16;
     userFontZoomMapping[GLFont::GLFONT_SIZE18] = GLFont::GLFONT_SIZE18;
-    userFontZoomMapping[GLFont::GLFONT_SIZE22] = GLFont::GLFONT_SIZE22;
     userFontZoomMapping[GLFont::GLFONT_SIZE24] = GLFont::GLFONT_SIZE24;
+    userFontZoomMapping[GLFont::GLFONT_SIZE27] = GLFont::GLFONT_SIZE27;
     userFontZoomMapping[GLFont::GLFONT_SIZE32] = GLFont::GLFONT_SIZE32;
     userFontZoomMapping[GLFont::GLFONT_SIZE36] = GLFont::GLFONT_SIZE36;
-    userFontZoomMapping[GLFont::GLFONT_SIZE42] = GLFont::GLFONT_SIZE42;
     userFontZoomMapping[GLFont::GLFONT_SIZE48] = GLFont::GLFONT_SIZE48;
     userFontZoomMapping[GLFont::GLFONT_SIZE64] = GLFont::GLFONT_SIZE64;
+    userFontZoomMapping[GLFont::GLFONT_SIZE72] = GLFont::GLFONT_SIZE72;
     userFontZoomMapping[GLFont::GLFONT_SIZE96] = GLFont::GLFONT_SIZE96;
    
     //override depending of zoom level:
-    //Medium : more or less 1.333 x
+    //Medium : more or less 1.5 x
     if (currentScaleFactor == GLFontScale::GLFONT_SCALE_MEDIUM) {
 
-        userFontZoomMapping[GLFont::GLFONT_SIZE12] = GLFont::GLFONT_SIZE16;
-        userFontZoomMapping[GLFont::GLFONT_SIZE16] = GLFont::GLFONT_SIZE22;
-        userFontZoomMapping[GLFont::GLFONT_SIZE18] = GLFont::GLFONT_SIZE24;
-        userFontZoomMapping[GLFont::GLFONT_SIZE22] = GLFont::GLFONT_SIZE32;
-        userFontZoomMapping[GLFont::GLFONT_SIZE24] = GLFont::GLFONT_SIZE32;
-        userFontZoomMapping[GLFont::GLFONT_SIZE32] = GLFont::GLFONT_SIZE42;
+        userFontZoomMapping[GLFont::GLFONT_SIZE12] = GLFont::GLFONT_SIZE18;
+        userFontZoomMapping[GLFont::GLFONT_SIZE16] = GLFont::GLFONT_SIZE24;
+        userFontZoomMapping[GLFont::GLFONT_SIZE18] = GLFont::GLFONT_SIZE27;
+        userFontZoomMapping[GLFont::GLFONT_SIZE24] = GLFont::GLFONT_SIZE36;
+        userFontZoomMapping[GLFont::GLFONT_SIZE27] = GLFont::GLFONT_SIZE36;
+        userFontZoomMapping[GLFont::GLFONT_SIZE32] = GLFont::GLFONT_SIZE48;
         userFontZoomMapping[GLFont::GLFONT_SIZE36] = GLFont::GLFONT_SIZE48;
-        userFontZoomMapping[GLFont::GLFONT_SIZE42] = GLFont::GLFONT_SIZE64;
-        userFontZoomMapping[GLFont::GLFONT_SIZE48] = GLFont::GLFONT_SIZE64;
+        userFontZoomMapping[GLFont::GLFONT_SIZE48] = GLFont::GLFONT_SIZE72;
+        userFontZoomMapping[GLFont::GLFONT_SIZE64] = GLFont::GLFONT_SIZE96;
+       
     
     }
     //Large : 2x normal, more or less
@@ -838,12 +841,12 @@ void GLFont::setScale(GLFontScale scale) {
         userFontZoomMapping[GLFont::GLFONT_SIZE12] = GLFont::GLFONT_SIZE24;
         userFontZoomMapping[GLFont::GLFONT_SIZE16] = GLFont::GLFONT_SIZE32;
         userFontZoomMapping[GLFont::GLFONT_SIZE18] = GLFont::GLFONT_SIZE36;
-        userFontZoomMapping[GLFont::GLFONT_SIZE22] = GLFont::GLFONT_SIZE42;
         userFontZoomMapping[GLFont::GLFONT_SIZE24] = GLFont::GLFONT_SIZE48;
+        userFontZoomMapping[GLFont::GLFONT_SIZE27] = GLFont::GLFONT_SIZE48;
         userFontZoomMapping[GLFont::GLFONT_SIZE32] = GLFont::GLFONT_SIZE64;
-        userFontZoomMapping[GLFont::GLFONT_SIZE36] = GLFont::GLFONT_SIZE64;
-        userFontZoomMapping[GLFont::GLFONT_SIZE42] = GLFont::GLFONT_SIZE96;
+        userFontZoomMapping[GLFont::GLFONT_SIZE36] = GLFont::GLFONT_SIZE72;
         userFontZoomMapping[GLFont::GLFONT_SIZE48] = GLFont::GLFONT_SIZE96;
+      
     }
 
     //Not overridden mapping stays normal, like the biggest fonts.
@@ -854,9 +857,11 @@ void GLFont::setScale(GLFontScale scale) {
 
 double GLFont::getScaleFactor() {
 
+    std::lock_guard<std::mutex> lock(g_userFontZoomMappingMutex);
+
     if (currentScaleFactor == GLFONT_SCALE_MEDIUM) {
 
-        return 1.33333;
+        return 1.5;
     }
     else if (currentScaleFactor == GLFONT_SCALE_LARGE) {
 

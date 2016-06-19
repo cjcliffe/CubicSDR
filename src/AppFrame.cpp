@@ -451,7 +451,7 @@ AppFrame::AppFrame() :
 
     menuBar->Append(displayMenu, wxT("&Display"));
     wxMenuItem *itmNormal  = displayMenu->AppendRadioItem(wxID_DISPLAY_BASE, "Normal font (1x)");
-    displayMenu->AppendRadioItem(wxID_DISPLAY_BASE + 1, "Medium font (1.3x)");
+    displayMenu->AppendRadioItem(wxID_DISPLAY_BASE + 1, "Medium font (1.5x)");
     displayMenu->AppendRadioItem(wxID_DISPLAY_BASE + 2, "Large font (2x)");
 
     itmNormal->Check(true);

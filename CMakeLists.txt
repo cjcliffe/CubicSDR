@@ -495,24 +495,25 @@ SET (CUBICSDR_RESOURCES
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12.fnt
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16.fnt
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18.fnt
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono22.fnt
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24.fnt
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono27.fnt
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32.fnt
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono36.fnt
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono42.fnt
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48.fnt
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono64.fnt
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono72.fnt
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono96.fnt
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12_0.png
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16_0.png
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18_0.png
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono22_0.png
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24_0.png
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono27_0.png
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32_0.png
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono36_0.png
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono42_0.png
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48_0.png
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono64_0.png
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono72_0.png
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono96_0.png
 )
 

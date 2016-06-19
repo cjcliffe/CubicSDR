@@ -77,20 +77,20 @@ public:
         GLFONT_SIZE12, 
         GLFONT_SIZE16, 
         GLFONT_SIZE18,
-        GLFONT_SIZE22, //new
         GLFONT_SIZE24, 
+        GLFONT_SIZE27, //new
         GLFONT_SIZE32, 
         GLFONT_SIZE36, //new
-        GLFONT_SIZE42, //new
         GLFONT_SIZE48, 
         GLFONT_SIZE64, //new
+        GLFONT_SIZE72, //new
         GLFONT_SIZE96, //new
         GLFONT_SIZE_MAX
     };
 
     enum GLFontScale {
         GLFONT_SCALE_NORMAL,
-        GLFONT_SCALE_MEDIUM, // x1.33
+        GLFONT_SCALE_MEDIUM, // x1.5
         GLFONT_SCALE_LARGE,  // x2
         GLFONT_SCALE_MAX
     };
@@ -105,7 +105,7 @@ public:
     //Called to change the scale of the rendered fonts
     static void setScale(GLFontScale scale);
 
-    //Return the current scale factor in use (1.0 for normal, 1.333 for medium, 2.0 for large for ex.)
+    //Return the current scale factor in use (1.0 for normal, 1.5 for medium, 2.0 for large for ex.)
     static double getScaleFactor();
 
     //Public drawing font, 16 bit char version.

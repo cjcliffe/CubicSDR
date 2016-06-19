@@ -5,7 +5,7 @@ fileVersion=1
 fontName=Bitstream Vera Sans Mono
 fontFile=VeraMoBd.ttf
 charSet=0
-fontSize=22
+fontSize=72
 aa=1
 scaleH=100
 useSmoothing=1
@@ -30,8 +30,8 @@ useFixedHeight=1
 forceZero=0
 
 # output file
-outWidth=512
-outHeight=256
+outWidth=1024
+outHeight=1024
 outBitDepth=32
 fontDescFormat=0
 fourChnlPacked=0
