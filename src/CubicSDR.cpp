@@ -25,6 +25,7 @@
 IMPLEMENT_APP(CubicSDR)
 
 #include <fstream>
+#include <clocale>
 
 //#ifdef ENABLE_DIGITAL_LAB
 //// console output buffer for windows
@@ -142,6 +143,12 @@ CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0
 }
 
 bool CubicSDR::OnInit() {
+
+    //use the current locale most appropriate to this system,
+    //so that character-related functions are likely to handle Unicode
+    //better (by default, was "C" locale).
+    std::setlocale(LC_ALL, "");
+
 #ifdef _OSX_APP_
     CFBundleRef mainBundle = CFBundleGetMainBundle();
     CFURLRef resourcesURL = CFBundleCopyResourcesDirectoryURL(mainBundle);
@@ -172,7 +179,7 @@ bool CubicSDR::OnInit() {
         std::streambuf *sb = std::cout.rdbuf();
         std::cout.rdbuf(sb);
 #endif
-
+        
     
     wxApp::SetAppName("CubicSDR");
 
