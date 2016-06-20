@@ -25,17 +25,17 @@ GLFontStringCache::GLFontStringCache() {
 //using aggregate syntax (Cx11+)
 GLFont GLFont::fonts[GLFont::GLFontSize::GLFONT_SIZE_MAX] = {
 
-    { GLFont::GLFontSize::GLFONT_SIZE12, L"vera_sans_mono12.fnt" },
-    { GLFont::GLFontSize::GLFONT_SIZE16, L"vera_sans_mono16.fnt" },
-    { GLFont::GLFontSize::GLFONT_SIZE18, L"vera_sans_mono18.fnt" },
-    { GLFont::GLFontSize::GLFONT_SIZE24, L"vera_sans_mono24.fnt" },
-    { GLFont::GLFontSize::GLFONT_SIZE27, L"vera_sans_mono27.fnt" },
-    { GLFont::GLFontSize::GLFONT_SIZE32, L"vera_sans_mono32.fnt" },
-    { GLFont::GLFontSize::GLFONT_SIZE36, L"vera_sans_mono36.fnt" },
-    { GLFont::GLFontSize::GLFONT_SIZE48, L"vera_sans_mono48.fnt" },
-    { GLFont::GLFontSize::GLFONT_SIZE64, L"vera_sans_mono64.fnt" },
-    { GLFont::GLFontSize::GLFONT_SIZE72, L"vera_sans_mono72.fnt" },
-    { GLFont::GLFontSize::GLFONT_SIZE96, L"vera_sans_mono96.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE12, L"fonts/vera_sans_mono12.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE16, L"fonts/vera_sans_mono16.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE18, L"fonts/vera_sans_mono18.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE24, L"fonts/vera_sans_mono24.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE27, L"fonts/vera_sans_mono27.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE32, L"fonts/vera_sans_mono32.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE36, L"fonts/vera_sans_mono36.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE48, L"fonts/vera_sans_mono48.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE64, L"fonts/vera_sans_mono64.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE72, L"fonts/vera_sans_mono72.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE96, L"fonts/vera_sans_mono96.fnt" },
 
 };
 
@@ -154,7 +154,7 @@ GLFont::GLFont(GLFontSize size, std::wstring fontFileName):
         lineHeight(0), base(0), imageWidth(0), imageHeight(0), loaded(false), texId(0), gcCounter(0) {
 
     fontSizeClass = size;
-    //relative path to RES_FOLDER
+  
     fontFileSource = fontFileName;
 }
 
@@ -212,6 +212,7 @@ void GLFont::loadFontOnce() {
         return;
     }
 
+    //relative path with filename where the font is
     std::wstring fontFile = fontFileSource;
 
     wxString resourceFolder = RES_FOLDER;
@@ -220,12 +221,19 @@ void GLFont::loadFontOnce() {
     resourceFolder = getExePath() + L"/" + resourceFolder;
 #endif
 
-    wxFileName fontFileName = wxFileName(resourceFolder, fontFile);
+    //full font file path
+    wxFileName fontFileName = wxFileName(resourceFolder + L"/" + fontFile);
+
+   // wxFileName fontFileName = wxFileName(resourceFolder, fontFile);
     
     if (!fontFileName.Exists()) {
         wxFileName exePath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
-        fontFileName = wxFileName(exePath.GetPath(), fontFile);
-        resourceFolder = exePath.GetPath();
+       
+        //Full Path where the fonts are, including file name
+        fontFileName = wxFileName(exePath.GetPath() + L"/" + fontFile);
+
+        //Dir where the fonts are
+        resourceFolder = fontFileName.GetPath();
     }
 
     //overwrite with the full path
