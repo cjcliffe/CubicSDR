@@ -17,6 +17,9 @@ static std::wstring getExePath(void)
 #define RES_FOLDER ""
 #endif
 
+#define GC_PERIOD 50
+#define GC_DRAW_COUNT_LIMIT 10
+
 GLFontStringCache::GLFontStringCache() {
     gc = 0;
 }
@@ -512,7 +515,7 @@ void GLFont::drawString(const std::wstring& str, float xpos, float ypos, int pxH
 
         std::lock_guard<std::mutex> lock(cache_busy);
         
-        if (gcCounter > 50) {
+        if (gcCounter > GC_PERIOD) {
             
             doCacheGC();
             gcCounter = 0;
@@ -759,19 +762,30 @@ GLFontStringCache *GLFont::cacheString(const std::wstring& str, int pxHeight, in
 }
 
 void GLFont::doCacheGC() {
+
     std::map<std::wstring, GLFontStringCache * >::iterator cache_iter;
-    
-    for (cache_iter = stringCache.begin(); cache_iter != stringCache.end(); cache_iter++) {
+
+    bool flushDone = false;
+
+    //do aging and remove in one pass.
+    cache_iter = stringCache.begin();
+
+    while (cache_iter != stringCache.end()) {
+
+        //aging
         cache_iter->second->gc--;
-    }
-    for (cache_iter = stringCache.begin(); cache_iter != stringCache.end(); cache_iter++) {
-        if (cache_iter->second->gc < -10) {
-//            std::cout << "gc'd " << cache_iter->first << std::endl;
+
+        //only flush 1 element per call
+        if (!flushDone && cache_iter->second->gc < -GC_DRAW_COUNT_LIMIT) {
+
             delete cache_iter->second;
-            stringCache.erase(cache_iter);
-            return;
+            cache_iter = stringCache.erase(cache_iter);
+            flushDone = true;
         }
-    }
+        else {
+            cache_iter++;
+        }
+    } //end while
 }
 
 void GLFont::flushGC() {
