@@ -94,6 +94,9 @@ public:
     void setTheme(int themeId);
     int getTheme();
 
+    void setFontScale(int scaleValue);
+    int getFontScale();
+
     void setSnap(long long snapVal);
     long long getSnap();
     
@@ -147,6 +150,7 @@ private:
     std::atomic_int winX,winY,winW,winH;
     std::atomic_bool winMax, showTips, lowPerfMode;
     std::atomic_int themeId;
+    std::atomic_int fontScale;
     std::atomic_llong snap;
     std::atomic_llong centerFreq;
     std::atomic_int waterfallLinesPerSec;

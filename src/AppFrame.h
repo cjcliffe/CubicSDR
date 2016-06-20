@@ -109,7 +109,7 @@ private:
     void OnIdle(wxIdleEvent& event);
     void OnDoubleClickSash(wxSplitterEvent& event);
     void OnUnSplit(wxSplitterEvent& event);
-  
+   
     ScopeCanvas *scopeCanvas;
     SpectrumCanvas *spectrumCanvas;
     WaterfallCanvas *waterfallCanvas;
@@ -141,12 +141,14 @@ private:
     std::map<int, wxMenuItem *> audioSampleRateMenuItems;
     std::map<int, wxMenuItem *> directSamplingMenuItems;
     wxMenuBar *menuBar;
+    
     wxMenu *sampleRateMenu;
     wxMenu *displayMenu;
     wxMenuItem *agcMenuItem;
     wxMenuItem *iqSwapMenuItem;
     wxMenuItem *lowPerfMenuItem;
     wxMenu *settingsMenu;
+    
     SoapySDR::ArgInfoList settingArgs;
     int settingsIdMax;
     std::vector<long> sampleRates;

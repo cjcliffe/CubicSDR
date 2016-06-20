@@ -811,8 +811,7 @@ void GLFont::setScale(GLFontScale scale) {
     //0) Normal:
     std::lock_guard<std::mutex> lock(g_userFontZoomMappingMutex);
 
-    currentScaleFactor = scale;
-
+   
     userFontZoomMapping[GLFont::GLFONT_SIZE12] = GLFont::GLFONT_SIZE12;
     userFontZoomMapping[GLFont::GLFONT_SIZE16] = GLFont::GLFONT_SIZE16;
     userFontZoomMapping[GLFont::GLFONT_SIZE18] = GLFont::GLFONT_SIZE18;
@@ -824,6 +823,14 @@ void GLFont::setScale(GLFontScale scale) {
     userFontZoomMapping[GLFont::GLFONT_SIZE64] = GLFont::GLFONT_SIZE64;
     userFontZoomMapping[GLFont::GLFONT_SIZE72] = GLFont::GLFONT_SIZE72;
     userFontZoomMapping[GLFont::GLFONT_SIZE96] = GLFont::GLFONT_SIZE96;
+
+    currentScaleFactor = scale;
+
+    //safety vs. inputs
+    if (currentScaleFactor < GLFONT_SCALE_NORMAL || currentScaleFactor > GLFONT_SCALE_LARGE) {
+
+        currentScaleFactor = GLFontScale::GLFONT_SCALE_NORMAL;
+    }
    
     //override depending of zoom level:
     //Medium : more or less 1.5 x
@@ -875,5 +882,12 @@ double GLFont::getScaleFactor() {
     }
 
     return 1.0;
+}
+
+GLFont::GLFontScale GLFont::getScale() {
+
+    std::lock_guard<std::mutex> lock(g_userFontZoomMappingMutex);
+
+    return currentScaleFactor;
 }
 

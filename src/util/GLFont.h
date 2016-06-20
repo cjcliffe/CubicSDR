@@ -105,6 +105,8 @@ public:
     //Called to change the scale of the rendered fonts
     static void setScale(GLFontScale scale);
 
+    static GLFontScale getScale();
+
     //Return the current scale factor in use (1.0 for normal, 1.5 for medium, 2.0 for large for ex.)
     static double getScaleFactor();
 
