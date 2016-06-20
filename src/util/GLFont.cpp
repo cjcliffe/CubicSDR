@@ -223,8 +223,6 @@ void GLFont::loadFontOnce() {
 
     //full font file path
     wxFileName fontFileName = wxFileName(resourceFolder + L"/" + fontFile);
-
-   // wxFileName fontFileName = wxFileName(resourceFolder, fontFile);
     
     if (!fontFileName.Exists()) {
         wxFileName exePath = wxFileName(wxStandardPaths::Get().GetExecutablePath());

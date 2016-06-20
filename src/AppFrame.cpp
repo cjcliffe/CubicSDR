@@ -923,12 +923,18 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
     //Display : font sizes
     else if (event.GetId() == wxID_DISPLAY_BASE) {
         GLFont::setScale(GLFont::GLFONT_SCALE_NORMAL);
+        //force all windows refresh
+        Refresh();
     }
     else if (event.GetId() == wxID_DISPLAY_BASE + 1) {
         GLFont::setScale(GLFont::GLFONT_SCALE_MEDIUM);
+        //force all windows refresh
+        Refresh();
     }
     else if (event.GetId() == wxID_DISPLAY_BASE + 2) {
         GLFont::setScale(GLFont::GLFONT_SCALE_LARGE);
+        //force all windows refresh
+        Refresh();
     }
 
     if (event.GetId() >= wxID_SETTINGS_BASE && event.GetId() < settingsIdMax) {
