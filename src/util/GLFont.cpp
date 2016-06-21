@@ -793,7 +793,10 @@ void GLFont::doCacheGC() {
     } //end while
 }
 
-void GLFont::flushGC() {
+void GLFont::clearCache() {
+
+    std::lock_guard<std::mutex> lock(cache_busy);
+
     std::map<std::wstring, GLFontStringCache * >::iterator cache_iter;
 
     cache_iter = stringCache.begin();
@@ -803,6 +806,14 @@ void GLFont::flushGC() {
         delete cache_iter->second;
         cache_iter = stringCache.erase(cache_iter);
                
+    }
+}
+
+void GLFont::clearAllCaches() {
+
+    for (int i = 0; i < GLFont::GLFONT_SIZE_MAX; i++) {
+
+        fonts[i].clearCache();
     }
 }
 
@@ -864,8 +875,6 @@ void GLFont::setScale(GLFontScale scale) {
         userFontZoomMapping[GLFont::GLFONT_SIZE36] = GLFont::GLFONT_SIZE48;
         userFontZoomMapping[GLFont::GLFONT_SIZE48] = GLFont::GLFONT_SIZE72;
         userFontZoomMapping[GLFont::GLFONT_SIZE64] = GLFont::GLFONT_SIZE96;
-       
-    
     }
     //Large : 2x normal, more or less
     else if (currentScaleFactor == GLFontScale::GLFONT_SCALE_LARGE) {
@@ -880,10 +889,8 @@ void GLFont::setScale(GLFontScale scale) {
         userFontZoomMapping[GLFont::GLFONT_SIZE48] = GLFont::GLFONT_SIZE96;
     }
 
-    //Not overridden mapping stays normal, like the biggest fonts.
-
-    //Note that there is no need to flush the GC, no longer used fonts will be purged auto-magically by aging,
-    //and the new fonts will show up.
+    //Flush all the GC stuff
+    clearAllCaches();
 }
 
 GLFont::GLFontScale GLFont::getScale() {

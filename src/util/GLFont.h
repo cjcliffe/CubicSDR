@@ -137,7 +137,10 @@ private:
     void drawCacheString(GLFontStringCache *fc, float xpos, float ypos, Align hAlign, Align vAlign);
 
     void doCacheGC();
-    void flushGC();
+    void clearCache();
+
+    //force GC of all available fonts
+    static void clearAllCaches();
    
     float getStringWidth(const std::wstring& str, float size, float viewAspect);
 
