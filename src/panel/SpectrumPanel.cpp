@@ -214,11 +214,10 @@ void SpectrumPanel::drawPanelContents() {
     double hPos = 1.0 - (16.0 / viewHeight);
     double lMhzPos = 1.0 - (5.0 / viewHeight);
     
-    int fontSize = 12;
     GLFont::GLFontSize fontEnumSize = GLFont::GLFONT_SIZE12;
     
     if (viewHeight > 135) {
-        fontSize = 16;
+
         fontEnumSize = GLFont::GLFONT_SIZE16;
         hPos = 1.0 - (18.0 / viewHeight);
     }
@@ -254,7 +253,7 @@ void SpectrumPanel::drawPanelContents() {
         
         glColor4f(ThemeMgr::mgr.currentTheme->text.r, ThemeMgr::mgr.currentTheme->text.g, ThemeMgr::mgr.currentTheme->text.b,1.0);
         
-        GLFont::getFont(fontEnumSize).drawString(label.str(), m, hPos, fontSize, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+        GLFont::getFont(fontEnumSize).drawString(label.str(), m, hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
         
         label.str(std::string());
         

@@ -107,14 +107,11 @@ public:
 
     static GLFontScale getScale();
 
-    //Return the current scale factor in use (1.0 for normal, 1.5 for medium, 2.0 for large for ex.)
-    static double getScaleFactor();
-
     //Public drawing font, 16 bit char version.
-    void drawString(const std::wstring& str, float xpos, float ypos, int pxHeight, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx=0, int vpy=0, bool cacheable = false);
+    void drawString(const std::wstring& str, float xpos, float ypos, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx=0, int vpy=0, bool cacheable = false);
 
     //Public drawing font, 8 bit char version.
-    void drawString(const std::string& str, float xpos, float ypos, int pxHeight, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx = 0, int vpy = 0, bool cacheable = false);
+    void drawString(const std::string& str, float xpos, float ypos, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx = 0, int vpy = 0, bool cacheable = false);
    
 private:
    
@@ -149,7 +146,7 @@ private:
 
     int lineHeight;
     int base;
-    int imageWidth, imageHeight;
+    int imageWidth, imageHeight, pixHeight;
     bool loaded;
     GLFontSize fontSizeClass;
 

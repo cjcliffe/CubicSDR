@@ -75,19 +75,19 @@ void TuningContext::DrawTuner(long long freq, int count, float displayPos, float
     std::string freqChars = freqStr.str();
 
     GLFont::GLFontSize fontSize = GLFont::GLFONT_SIZE24;
-    int fontHeight = 24;
+
 
     if (viewHeight < 28) {
         fontSize = GLFont::GLFONT_SIZE18;
-        fontHeight = 18;
+
     }
     if (viewHeight < 24) {
         fontSize = GLFont::GLFONT_SIZE16;
-        fontHeight = 16;
+
     }
     if (viewHeight < 18) {
         fontSize = GLFont::GLFONT_SIZE12;
-        fontHeight = 12;
+
     }
 
     glColor3f(ThemeMgr::mgr.currentTheme->text.r, ThemeMgr::mgr.currentTheme->text.g, ThemeMgr::mgr.currentTheme->text.b);
@@ -95,7 +95,7 @@ void TuningContext::DrawTuner(long long freq, int count, float displayPos, float
     int ofs = count - numChars;
     for (int i = ofs; i < count; i++) {
         float xpos = displayPos + (displayWidth / (float) count) * (float) i + ((displayWidth / 2.0) / (float) count);
-        GLFont::getFont(fontSize).drawString(freqStr.str().substr(i - ofs, 1), xpos, 0, fontHeight, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+        GLFont::getFont(fontSize).drawString(freqStr.str().substr(i - ofs, 1), xpos, 0, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
     }
 
     glColor4f(0.65f, 0.65f, 0.65f, 0.25f);

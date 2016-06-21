@@ -267,11 +267,17 @@ void GLFont::loadFontOnce() {
             while (!info_param.eof()) {
                 std::wstring param = nextParam(info_param);
 
-                std::wstring paramKey = getParamKey(param);
-                std::wstring paramValue = getParamValue(param);
-
+                std::wstring paramKey = getParamKey(param);               
                 if (paramKey == L"face") {
-                    fontName = paramValue;
+                    fontName = getParamValue(param);
+                }
+
+                param = nextParam(info_param);
+                paramKey = getParamKey(param);
+                if (paramKey == L"size") {
+
+                    std::wistringstream paramValue(getParamValue(param));
+                    paramValue >> pixHeight;
                 }
 
 //                std::cout << "[" << paramKey << "] = '" << paramValue << "'" << std::endl;
@@ -495,14 +501,13 @@ float GLFont::getStringWidth(const std::wstring& str, float size, float viewAspe
 }
 
 // Draw string, immediate
-void GLFont::drawString(const std::wstring& str, float xpos, float ypos, int pxHeight, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
+void GLFont::drawString(const std::wstring& str, float xpos, float ypos, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
 
-    // Why another scale ?
+    //load pxHeight from the font itself, but because it is an "internal font", the scaling has already been applied.
+    int pxHeight = pixHeight;
+
     pxHeight *= 2;
-
-    //Rise the pixel hight by the scale factor
-    pxHeight *= getScaleFactor();
-    
+  
     if (!vpx || !vpy) {
         GLint vp[4];
         glGetIntegerv( GL_VIEWPORT, vp);
@@ -625,7 +630,7 @@ void GLFont::drawString(const std::wstring& str, float xpos, float ypos, int pxH
 }
 
 // Draw string, immediate, 8 bit version
-void GLFont::drawString(const std::string& str, float xpos, float ypos, int pxHeight, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
+void GLFont::drawString(const std::string& str, float xpos, float ypos, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
 
     //Displayed string is wstring, so use wxString to do the heavy lifting of converting  str...
 #ifdef WIN32
@@ -637,7 +642,7 @@ void GLFont::drawString(const std::string& str, float xpos, float ypos, int pxHe
     
     wsTmp.assign(str);
 
-    drawString(wsTmp.ToStdWstring(), xpos, ypos, pxHeight, hAlign, vAlign, vpx, vpy, cacheable);
+    drawString(wsTmp.ToStdWstring(), xpos, ypos, hAlign, vAlign, vpx, vpy, cacheable);
 }
 
 // Draw cached GLFontCacheString
@@ -873,29 +878,12 @@ void GLFont::setScale(GLFontScale scale) {
         userFontZoomMapping[GLFont::GLFONT_SIZE32] = GLFont::GLFONT_SIZE64;
         userFontZoomMapping[GLFont::GLFONT_SIZE36] = GLFont::GLFONT_SIZE72;
         userFontZoomMapping[GLFont::GLFONT_SIZE48] = GLFont::GLFONT_SIZE96;
-      
     }
 
     //Not overridden mapping stays normal, like the biggest fonts.
 
     //Note that there is no need to flush the GC, no longer used fonts will be purged auto-magically by aging,
     //and the new fonts will show up.
-}
-
-double GLFont::getScaleFactor() {
-
-    std::lock_guard<std::mutex> lock(g_userFontZoomMappingMutex);
-
-    if (currentScaleFactor == GLFONT_SCALE_MEDIUM) {
-
-        return 1.5;
-    }
-    else if (currentScaleFactor == GLFONT_SCALE_LARGE) {
-
-        return 2.0;
-    }
-
-    return 1.0;
 }
 
 GLFont::GLFontScale GLFont::getScale() {
