@@ -93,9 +93,12 @@ void TuningContext::DrawTuner(long long freq, int count, float displayPos, float
     glColor3f(ThemeMgr::mgr.currentTheme->text.r, ThemeMgr::mgr.currentTheme->text.g, ThemeMgr::mgr.currentTheme->text.b);
     int numChars = freqChars.length();
     int ofs = count - numChars;
+
+    GLFont& refDrawingFont = GLFont::getFont(fontSize);
+
     for (int i = ofs; i < count; i++) {
         float xpos = displayPos + (displayWidth / (float) count) * (float) i + ((displayWidth / 2.0) / (float) count);
-        GLFont::getFont(fontSize).drawString(freqStr.str().substr(i - ofs, 1), xpos, 0, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+        refDrawingFont.drawString(freqStr.str().substr(i - ofs, 1), xpos, 0, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
     }
 
     glColor4f(0.65f, 0.65f, 0.65f, 0.25f);

@@ -35,9 +35,11 @@ void ScopeContext::DrawTunerTitles(bool ppmMode) {
 
     glColor3f(0.65f, 0.65f, 0.65f);
 
-    GLFont::getFont(GLFont::GLFONT_SIZE12).drawString(ppmMode?"Device PPM":"Frequency", -0.66f, -1.0+hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
-    GLFont::getFont(GLFont::GLFONT_SIZE12).drawString("Bandwidth", 0.0, -1.0+hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
-    GLFont::getFont(GLFont::GLFONT_SIZE12).drawString("Center Frequency", 0.66f, -1.0+hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+    GLFont& refDrawingFont = GLFont::getFont(GLFont::GLFONT_SIZE12);
+
+    refDrawingFont.drawString(ppmMode?"Device PPM":"Frequency", -0.66f, -1.0+hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+    refDrawingFont.drawString("Bandwidth", 0.0, -1.0+hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+    refDrawingFont.drawString("Center Frequency", 0.66f, -1.0+hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
 }
 
 void ScopeContext::DrawDeviceName(std::string deviceName) {
