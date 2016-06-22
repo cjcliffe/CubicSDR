@@ -102,6 +102,9 @@ public:
     //it will be translated to another font depending of the scale level
     static GLFont& getFont(GLFontSize esize);
 
+    //Return the requested raw font, without applying scaling.
+    static GLFont &GLFont::getRawFont(GLFontSize esize);
+
     //Called to change the scale of the rendered fonts
     static void setScale(GLFontScale scale);
 

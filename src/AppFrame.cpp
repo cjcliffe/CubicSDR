@@ -84,8 +84,8 @@ AppFrame::AppFrame() :
     demodModeSelector->addChoice("I/Q");
     demodModeSelector->setSelection("FM");
     demodModeSelector->setHelpTip("Choose modulation type: Frequency Modulation (Hotkey F), Amplitude Modulation (A) and Lower (L), Upper (U), Double Side-Band and more.");
-    demodModeSelector->SetMinSize(wxSize(40,-1));
-    demodModeSelector->SetMaxSize(wxSize(40,-1));
+    demodModeSelector->SetMinSize(wxSize(44,-1));
+    demodModeSelector->SetMaxSize(wxSize(44,-1));
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
     
 #ifdef ENABLE_DIGITAL_LAB
@@ -103,8 +103,8 @@ AppFrame::AppFrame() :
     demodModeSelectorAdv->addChoice("QAM");
     demodModeSelectorAdv->addChoice("QPSK");
     demodModeSelectorAdv->setHelpTip("Choose advanced modulation types.");
-    demodModeSelectorAdv->SetMinSize(wxSize(40,-1));
-    demodModeSelectorAdv->SetMaxSize(wxSize(40,-1));
+    demodModeSelectorAdv->SetMinSize(wxSize(44,-1));
+    demodModeSelectorAdv->SetMaxSize(wxSize(44,-1));
     demodTray->Add(demodModeSelectorAdv, 3, wxEXPAND | wxALL, 0);
 #endif
             

@@ -834,6 +834,17 @@ GLFont &GLFont::getFont(GLFontSize esize) {
     return fonts[internalFontSize];
 }
 
+GLFont &GLFont::getRawFont(GLFontSize esize) {
+
+    //Do not apply the scaling, really returns the requested font.
+
+   
+    //load lazily...
+    fonts[esize].loadFontOnce();
+
+    return fonts[esize];
+}
+
 
 void GLFont::setScale(GLFontScale scale) {
     

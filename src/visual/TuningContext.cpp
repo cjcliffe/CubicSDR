@@ -94,7 +94,8 @@ void TuningContext::DrawTuner(long long freq, int count, float displayPos, float
     int numChars = freqChars.length();
     int ofs = count - numChars;
 
-    GLFont& refDrawingFont = GLFont::getFont(fontSize);
+    //do not zoom this one:
+    GLFont& refDrawingFont = GLFont::getRawFont(fontSize);
 
     for (int i = ofs; i < count; i++) {
         float xpos = displayPos + (displayWidth / (float) count) * (float) i + ((displayWidth / 2.0) / (float) count);

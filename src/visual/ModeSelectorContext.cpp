@@ -29,10 +29,10 @@ void ModeSelectorContext::DrawSelector(std::string label, int c, int cMax, bool 
     float viewHeight = (float) vp[3];
     float viewWidth = (float) vp[2];
 
-    GLFont::GLFontSize fontSize = GLFont::GLFONT_SIZE16;
+    GLFont::GLFontSize fontSize = GLFont::GLFONT_SIZE18;
 
     if (viewWidth < 30 || viewHeight < 200) {
-        fontSize = GLFont::GLFONT_SIZE12;
+        fontSize = GLFont::GLFONT_SIZE16;
     }
 
     glColor4f(r, g, b, a);
@@ -59,7 +59,8 @@ void ModeSelectorContext::DrawSelector(std::string label, int c, int cMax, bool 
         glColor4f(0, 0, 0, a);
     }
 
-    GLFont::getFont(fontSize).drawString(label, 0.0, y + height / 2.0, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+    //Do not zoom the selectors
+    GLFont::getRawFont(fontSize).drawString(label, 0.0, y + height / 2.0, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
 }
 
 void ModeSelectorContext::DrawEnd() {
