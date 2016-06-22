@@ -62,6 +62,8 @@ public:
     GLPanel();
     
     void setPosition(float x, float y);
+
+
     void setSize(float w, float h);
     float getWidth();
     float getHeight();

@@ -107,6 +107,9 @@ public:
 
     static GLFontScale getScale();
 
+    //Mean current scale factor: 1.0 in normal, 1.5 medium, 2.0 for large
+    static double getScaleFactor();
+
     //Public drawing font, 16 bit char version.
     void drawString(const std::wstring& str, float xpos, float ypos, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx=0, int vpy=0, bool cacheable = false);
 
@@ -128,7 +131,7 @@ private:
     //which map a user-requested font to a final one depending of the zoom level.
     static GLFontSize userFontZoomMapping[GLFontSize::GLFONT_SIZE_MAX];
 
-    static GLFontScale currentScaleFactor;
+    static std::atomic<GLFontScale> currentScale;
 
     //load a given font file, (lazy loading) 
     void loadFontOnce();

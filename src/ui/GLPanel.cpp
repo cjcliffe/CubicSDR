@@ -391,24 +391,48 @@ void GLTextPanel::drawPanelContents() {
     glColor4f(1, 1, 1, 1.0);
     
     GLFont::GLFontSize sz;
-
     
-    if (pdim.y <= 16) {
+    //beware here: the really applied font may have been scaled up compared to the "user" requested one, so that
+    //we must negate it here to compute "user" font selection.  
+    float pdimy = pdim.y / GLFont::getScaleFactor();
+    
+    if (pdimy <= 16) {
         sz = GLFont::GLFONT_SIZE12;
 
-    } else if (pdim.y <= 18) {
+    } else if (pdimy <= 18) {
         sz = GLFont::GLFONT_SIZE16;
 
-    } else if(pdim.y <= 24) {
+    } else if(pdimy <= 24) {
         sz = GLFont::GLFONT_SIZE18;
 
-    } else if(pdim.y <= 32) {
+    }else if (pdimy <= 27) {
         sz = GLFont::GLFONT_SIZE24;
+    }
+    else if (pdimy <= 32) {
+        sz = GLFont::GLFONT_SIZE27;
 
-    } else if(pdim.y <= 48) {
+    }
+    else if (pdimy <= 36) {
         sz = GLFont::GLFONT_SIZE32;
 
-    } else {
+    }
+    else if (pdimy <= 48) {
+        sz = GLFont::GLFONT_SIZE36;
+
+    }
+    else if (pdimy <= 64) {
+        sz = GLFont::GLFONT_SIZE48;
+
+    }
+    else if (pdimy <= 72) {
+        sz = GLFont::GLFONT_SIZE64;
+
+    }
+    else if (pdimy <= 96) {
+        sz = GLFont::GLFONT_SIZE72;
+
+    }
+    else {
         sz = GLFont::GLFONT_SIZE48;
 
     }

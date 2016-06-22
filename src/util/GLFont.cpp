@@ -17,7 +17,7 @@ static std::wstring getExePath(void)
 #define RES_FOLDER ""
 #endif
 
-#define GC_PERIOD 50
+#define GC_DRAW_COUNT_PERIOD 50
 #define GC_DRAW_COUNT_LIMIT 10
 
 GLFontStringCache::GLFontStringCache() {
@@ -57,7 +57,7 @@ GLFont::GLFontSize GLFont::userFontZoomMapping[GLFont::GLFontSize::GLFONT_SIZE_M
     GLFont::GLFontSize::GLFONT_SIZE96
 };
 
-GLFont::GLFontScale GLFont::currentScaleFactor = GLFont::GLFontScale::GLFONT_SCALE_NORMAL;
+std::atomic<GLFont::GLFontScale> GLFont::currentScale{ GLFont::GLFontScale::GLFONT_SCALE_NORMAL };
 
 std::mutex GLFont::g_userFontZoomMappingMutex;
 
@@ -520,7 +520,7 @@ void GLFont::drawString(const std::wstring& str, float xpos, float ypos, Align h
 
         std::lock_guard<std::mutex> lock(cache_busy);
         
-        if (gcCounter > GC_PERIOD) {
+        if (gcCounter > GC_DRAW_COUNT_PERIOD) {
             
             doCacheGC();
             gcCounter = 0;
@@ -837,34 +837,33 @@ GLFont &GLFont::getFont(GLFontSize esize) {
 
 void GLFont::setScale(GLFontScale scale) {
     
-    //By default, populate with normal font (1:1 matching) then overrides
-    //0) Normal:
+    //safety vs. inputs
+    if (scale < GLFONT_SCALE_NORMAL || scale > GLFONT_SCALE_LARGE) {
+
+        scale = GLFontScale::GLFONT_SCALE_NORMAL;
+    }
+  
     std::lock_guard<std::mutex> lock(g_userFontZoomMappingMutex);
 
-   
-    userFontZoomMapping[GLFont::GLFONT_SIZE12] = GLFont::GLFONT_SIZE12;
-    userFontZoomMapping[GLFont::GLFONT_SIZE16] = GLFont::GLFONT_SIZE16;
-    userFontZoomMapping[GLFont::GLFONT_SIZE18] = GLFont::GLFONT_SIZE18;
-    userFontZoomMapping[GLFont::GLFONT_SIZE24] = GLFont::GLFONT_SIZE24;
-    userFontZoomMapping[GLFont::GLFONT_SIZE27] = GLFont::GLFONT_SIZE27;
-    userFontZoomMapping[GLFont::GLFONT_SIZE32] = GLFont::GLFONT_SIZE32;
-    userFontZoomMapping[GLFont::GLFONT_SIZE36] = GLFont::GLFONT_SIZE36;
-    userFontZoomMapping[GLFont::GLFONT_SIZE48] = GLFont::GLFONT_SIZE48;
-    userFontZoomMapping[GLFont::GLFONT_SIZE64] = GLFont::GLFONT_SIZE64;
-    userFontZoomMapping[GLFont::GLFONT_SIZE72] = GLFont::GLFONT_SIZE72;
-    userFontZoomMapping[GLFont::GLFONT_SIZE96] = GLFont::GLFONT_SIZE96;
+    //Normal font (1:1 matching)
+    if (scale == GLFontScale::GLFONT_SCALE_NORMAL) {
 
-    currentScaleFactor = scale;
+        userFontZoomMapping[GLFont::GLFONT_SIZE12] = GLFont::GLFONT_SIZE12;
+        userFontZoomMapping[GLFont::GLFONT_SIZE16] = GLFont::GLFONT_SIZE16;
+        userFontZoomMapping[GLFont::GLFONT_SIZE18] = GLFont::GLFONT_SIZE18;
+        userFontZoomMapping[GLFont::GLFONT_SIZE24] = GLFont::GLFONT_SIZE24;
+        userFontZoomMapping[GLFont::GLFONT_SIZE27] = GLFont::GLFONT_SIZE27;
+        userFontZoomMapping[GLFont::GLFONT_SIZE32] = GLFont::GLFONT_SIZE32;
+        userFontZoomMapping[GLFont::GLFONT_SIZE36] = GLFont::GLFONT_SIZE36;
+        userFontZoomMapping[GLFont::GLFONT_SIZE48] = GLFont::GLFONT_SIZE48;
+        userFontZoomMapping[GLFont::GLFONT_SIZE64] = GLFont::GLFONT_SIZE64;
+        userFontZoomMapping[GLFont::GLFONT_SIZE72] = GLFont::GLFONT_SIZE72;
+        userFontZoomMapping[GLFont::GLFONT_SIZE96] = GLFont::GLFONT_SIZE96;
 
-    //safety vs. inputs
-    if (currentScaleFactor < GLFONT_SCALE_NORMAL || currentScaleFactor > GLFONT_SCALE_LARGE) {
-
-        currentScaleFactor = GLFontScale::GLFONT_SCALE_NORMAL;
+        //override depending of zoom level:
+        //Medium : more or less 1.5 x
     }
-   
-    //override depending of zoom level:
-    //Medium : more or less 1.5 x
-    if (currentScaleFactor == GLFontScale::GLFONT_SCALE_MEDIUM) {
+    else if (scale == GLFontScale::GLFONT_SCALE_MEDIUM) {
 
         userFontZoomMapping[GLFont::GLFONT_SIZE12] = GLFont::GLFONT_SIZE18;
         userFontZoomMapping[GLFont::GLFONT_SIZE16] = GLFont::GLFONT_SIZE24;
@@ -875,9 +874,13 @@ void GLFont::setScale(GLFontScale scale) {
         userFontZoomMapping[GLFont::GLFONT_SIZE36] = GLFont::GLFONT_SIZE48;
         userFontZoomMapping[GLFont::GLFONT_SIZE48] = GLFont::GLFONT_SIZE72;
         userFontZoomMapping[GLFont::GLFONT_SIZE64] = GLFont::GLFONT_SIZE96;
+
+        //too big:  not-scaled properly and saturating:
+        userFontZoomMapping[GLFont::GLFONT_SIZE72] = GLFont::GLFONT_SIZE96;
+        userFontZoomMapping[GLFont::GLFONT_SIZE96] = GLFont::GLFONT_SIZE96;
     }
     //Large : 2x normal, more or less
-    else if (currentScaleFactor == GLFontScale::GLFONT_SCALE_LARGE) {
+    else if (scale == GLFontScale::GLFONT_SCALE_LARGE) {
 
         userFontZoomMapping[GLFont::GLFONT_SIZE12] = GLFont::GLFONT_SIZE24;
         userFontZoomMapping[GLFont::GLFONT_SIZE16] = GLFont::GLFONT_SIZE32;
@@ -887,7 +890,14 @@ void GLFont::setScale(GLFontScale scale) {
         userFontZoomMapping[GLFont::GLFONT_SIZE32] = GLFont::GLFONT_SIZE64;
         userFontZoomMapping[GLFont::GLFONT_SIZE36] = GLFont::GLFONT_SIZE72;
         userFontZoomMapping[GLFont::GLFONT_SIZE48] = GLFont::GLFONT_SIZE96;
+
+        //too big: not-scaled properly or saturating:
+        userFontZoomMapping[GLFont::GLFONT_SIZE64] = GLFont::GLFONT_SIZE96;
+        userFontZoomMapping[GLFont::GLFONT_SIZE72] = GLFont::GLFONT_SIZE96;
+        userFontZoomMapping[GLFont::GLFONT_SIZE96] = GLFont::GLFONT_SIZE96;
     }
+    
+    currentScale.store(scale);
 
     //Flush all the GC stuff
     clearAllCaches();
@@ -895,8 +905,22 @@ void GLFont::setScale(GLFontScale scale) {
 
 GLFont::GLFontScale GLFont::getScale() {
 
-    std::lock_guard<std::mutex> lock(g_userFontZoomMappingMutex);
+    return currentScale.load();
+}
 
-    return currentScaleFactor;
+double GLFont::getScaleFactor() {
+
+    GLFontScale scale = currentScale.load();
+
+    if (scale == GLFONT_SCALE_MEDIUM) {
+
+        return 1.5;
+    }
+    else if (scale == GLFONT_SCALE_LARGE) {
+
+        return 2.0;
+    }
+
+    return 1.0;
 }
 
