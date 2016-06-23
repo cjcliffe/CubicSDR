@@ -74,28 +74,28 @@ void TuningContext::DrawTuner(long long freq, int count, float displayPos, float
     freqStr << freq;
     std::string freqChars = freqStr.str();
 
-    GLFont::GLFontSize fontSize = GLFont::GLFONT_SIZE24;
-
+    int fontSize = 32;
 
     if (viewHeight < 28) {
-        fontSize = GLFont::GLFONT_SIZE18;
+        fontSize = 18;
 
     }
     if (viewHeight < 24) {
-        fontSize = GLFont::GLFONT_SIZE16;
+        fontSize = 16;
 
     }
     if (viewHeight < 18) {
-        fontSize = GLFont::GLFONT_SIZE12;
+        fontSize = 12;
 
     }
+
 
     glColor3f(ThemeMgr::mgr.currentTheme->text.r, ThemeMgr::mgr.currentTheme->text.g, ThemeMgr::mgr.currentTheme->text.b);
     int numChars = freqChars.length();
     int ofs = count - numChars;
 
     //do not zoom this one:
-    GLFont& refDrawingFont = GLFont::getRawFont(fontSize);
+    GLFont::Drawer refDrawingFont = GLFont::getFont(fontSize);
 
     for (int i = ofs; i < count; i++) {
         float xpos = displayPos + (displayWidth / (float) count) * (float) i + ((displayWidth / 2.0) / (float) count);

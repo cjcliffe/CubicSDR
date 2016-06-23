@@ -26,6 +26,8 @@ GLFontStringCache::GLFontStringCache() {
 
 //Static initialization of all available fonts,
 //using aggregate syntax (Cx11+)
+
+//Fonts must be listed in increasing size for Drawer to work !
 GLFont GLFont::fonts[GLFont::GLFontSize::GLFONT_SIZE_MAX] = {
 
     { GLFont::GLFontSize::GLFONT_SIZE12, L"fonts/vera_sans_mono12.fnt" },
@@ -42,24 +44,8 @@ GLFont GLFont::fonts[GLFont::GLFontSize::GLFONT_SIZE_MAX] = {
 
 };
 
-//default mapping: one-to-one (normal scale factor)
-GLFont::GLFontSize GLFont::userFontZoomMapping[GLFont::GLFontSize::GLFONT_SIZE_MAX] = {
-    GLFont::GLFontSize::GLFONT_SIZE12,
-    GLFont::GLFontSize::GLFONT_SIZE16,
-    GLFont::GLFontSize::GLFONT_SIZE18,
-    GLFont::GLFontSize::GLFONT_SIZE24,
-    GLFont::GLFontSize::GLFONT_SIZE27,
-    GLFont::GLFontSize::GLFONT_SIZE32,
-    GLFont::GLFontSize::GLFONT_SIZE36,
-    GLFont::GLFontSize::GLFONT_SIZE48,
-    GLFont::GLFontSize::GLFONT_SIZE64,
-    GLFont::GLFontSize::GLFONT_SIZE72,
-    GLFont::GLFontSize::GLFONT_SIZE96
-};
 
 std::atomic<GLFont::GLFontScale> GLFont::currentScale{ GLFont::GLFontScale::GLFONT_SCALE_NORMAL };
-
-std::mutex GLFont::g_userFontZoomMappingMutex;
 
 
 GLFontChar::GLFontChar() :
@@ -460,13 +446,13 @@ void GLFont::loadFontOnce() {
         }
 
         std::cout << "Loaded font '" << fontName << "' from '" << fontFileSource << "', parsed " << characters.size() << " characters." << std::endl;
+
         loaded = true;
     } else {
         std::cout << "Error loading font file " << fontFileSource << std::endl;
     }
 
     input.close();
-
     loaded = true;
 }
 
@@ -501,10 +487,7 @@ float GLFont::getStringWidth(const std::wstring& str, float size, float viewAspe
 }
 
 // Draw string, immediate
-void GLFont::drawString(const std::wstring& str, float xpos, float ypos, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
-
-    //load pxHeight from the font itself, but because it is an "internal font", the scaling has already been applied.
-    int pxHeight = pixHeight;
+void GLFont::drawString(const std::wstring& str, int pxHeight, float xpos, float ypos, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
 
     pxHeight *= 2;
   
@@ -630,7 +613,7 @@ void GLFont::drawString(const std::wstring& str, float xpos, float ypos, Align h
 }
 
 // Draw string, immediate, 8 bit version
-void GLFont::drawString(const std::string& str, float xpos, float ypos, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
+void GLFont::drawString(const std::string& str, int pxHeight, float xpos, float ypos, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
 
     //Displayed string is wstring, so use wxString to do the heavy lifting of converting  str...
 #ifdef WIN32
@@ -642,7 +625,7 @@ void GLFont::drawString(const std::string& str, float xpos, float ypos, Align hA
     
     wsTmp.assign(str);
 
-    drawString(wsTmp.ToStdWstring(), xpos, ypos, hAlign, vAlign, vpx, vpy, cacheable);
+    drawString(wsTmp.ToStdWstring(), pxHeight, xpos, ypos, hAlign, vAlign, vpx, vpy, cacheable);
 }
 
 // Draw cached GLFontCacheString
@@ -818,32 +801,11 @@ void GLFont::clearAllCaches() {
 }
 
 
-GLFont &GLFont::getFont(GLFontSize esize) {
+GLFont::Drawer GLFont::getFont(int requestedSize, double scaleFactor) {
 
-    //really load the internal font instead!
- 
-    GLFontSize internalFontSize = GLFONT_SIZE12;
-    { //guard block
-        std::lock_guard<std::mutex> lock(g_userFontZoomMappingMutex);
-        internalFontSize = userFontZoomMapping[esize];
-    }
-
-    //load lazily...
-    fonts[internalFontSize].loadFontOnce();
-   
-    return fonts[internalFontSize];
+    return GLFont::Drawer(requestedSize, scaleFactor);
 }
 
-GLFont &GLFont::getRawFont(GLFontSize esize) {
-
-    //Do not apply the scaling, really returns the requested font.
-
-   
-    //load lazily...
-    fonts[esize].loadFontOnce();
-
-    return fonts[esize];
-}
 
 
 void GLFont::setScale(GLFontScale scale) {
@@ -852,60 +814,6 @@ void GLFont::setScale(GLFontScale scale) {
     if (scale < GLFONT_SCALE_NORMAL || scale > GLFONT_SCALE_LARGE) {
 
         scale = GLFontScale::GLFONT_SCALE_NORMAL;
-    }
-  
-    std::lock_guard<std::mutex> lock(g_userFontZoomMappingMutex);
-
-    //Normal font (1:1 matching)
-    if (scale == GLFontScale::GLFONT_SCALE_NORMAL) {
-
-        userFontZoomMapping[GLFont::GLFONT_SIZE12] = GLFont::GLFONT_SIZE12;
-        userFontZoomMapping[GLFont::GLFONT_SIZE16] = GLFont::GLFONT_SIZE16;
-        userFontZoomMapping[GLFont::GLFONT_SIZE18] = GLFont::GLFONT_SIZE18;
-        userFontZoomMapping[GLFont::GLFONT_SIZE24] = GLFont::GLFONT_SIZE24;
-        userFontZoomMapping[GLFont::GLFONT_SIZE27] = GLFont::GLFONT_SIZE27;
-        userFontZoomMapping[GLFont::GLFONT_SIZE32] = GLFont::GLFONT_SIZE32;
-        userFontZoomMapping[GLFont::GLFONT_SIZE36] = GLFont::GLFONT_SIZE36;
-        userFontZoomMapping[GLFont::GLFONT_SIZE48] = GLFont::GLFONT_SIZE48;
-        userFontZoomMapping[GLFont::GLFONT_SIZE64] = GLFont::GLFONT_SIZE64;
-        userFontZoomMapping[GLFont::GLFONT_SIZE72] = GLFont::GLFONT_SIZE72;
-        userFontZoomMapping[GLFont::GLFONT_SIZE96] = GLFont::GLFONT_SIZE96;
-
-        //override depending of zoom level:
-        //Medium : more or less 1.5 x
-    }
-    else if (scale == GLFontScale::GLFONT_SCALE_MEDIUM) {
-
-        userFontZoomMapping[GLFont::GLFONT_SIZE12] = GLFont::GLFONT_SIZE18;
-        userFontZoomMapping[GLFont::GLFONT_SIZE16] = GLFont::GLFONT_SIZE24;
-        userFontZoomMapping[GLFont::GLFONT_SIZE18] = GLFont::GLFONT_SIZE27;
-        userFontZoomMapping[GLFont::GLFONT_SIZE24] = GLFont::GLFONT_SIZE36;
-        userFontZoomMapping[GLFont::GLFONT_SIZE27] = GLFont::GLFONT_SIZE36;
-        userFontZoomMapping[GLFont::GLFONT_SIZE32] = GLFont::GLFONT_SIZE48;
-        userFontZoomMapping[GLFont::GLFONT_SIZE36] = GLFont::GLFONT_SIZE48;
-        userFontZoomMapping[GLFont::GLFONT_SIZE48] = GLFont::GLFONT_SIZE72;
-        userFontZoomMapping[GLFont::GLFONT_SIZE64] = GLFont::GLFONT_SIZE96;
-
-        //too big:  not-scaled properly and saturating:
-        userFontZoomMapping[GLFont::GLFONT_SIZE72] = GLFont::GLFONT_SIZE96;
-        userFontZoomMapping[GLFont::GLFONT_SIZE96] = GLFont::GLFONT_SIZE96;
-    }
-    //Large : 2x normal, more or less
-    else if (scale == GLFontScale::GLFONT_SCALE_LARGE) {
-
-        userFontZoomMapping[GLFont::GLFONT_SIZE12] = GLFont::GLFONT_SIZE24;
-        userFontZoomMapping[GLFont::GLFONT_SIZE16] = GLFont::GLFONT_SIZE32;
-        userFontZoomMapping[GLFont::GLFONT_SIZE18] = GLFont::GLFONT_SIZE36;
-        userFontZoomMapping[GLFont::GLFONT_SIZE24] = GLFont::GLFONT_SIZE48;
-        userFontZoomMapping[GLFont::GLFONT_SIZE27] = GLFont::GLFONT_SIZE48;
-        userFontZoomMapping[GLFont::GLFONT_SIZE32] = GLFont::GLFONT_SIZE64;
-        userFontZoomMapping[GLFont::GLFONT_SIZE36] = GLFont::GLFONT_SIZE72;
-        userFontZoomMapping[GLFont::GLFONT_SIZE48] = GLFont::GLFONT_SIZE96;
-
-        //too big: not-scaled properly or saturating:
-        userFontZoomMapping[GLFont::GLFONT_SIZE64] = GLFont::GLFONT_SIZE96;
-        userFontZoomMapping[GLFont::GLFONT_SIZE72] = GLFont::GLFONT_SIZE96;
-        userFontZoomMapping[GLFont::GLFONT_SIZE96] = GLFont::GLFONT_SIZE96;
     }
     
     currentScale.store(scale);
@@ -933,5 +841,52 @@ double GLFont::getScaleFactor() {
     }
 
     return 1.0;
+}
+
+GLFont::Drawer::Drawer(int basicFontSize, double scaleFactor) {
+
+    //Selection of the final font: scan GLFont::fonts to find the biggest font such as 
+    // its pixHeight <= basicFontSize * scaleFactor.
+    //then compute finalScaleFactor the zooming factor of renderingFont to reach a 
+    //final font size of  basicFontSize* scaleFactor:
+    renderingFontIndex = 0;
+
+    double targetSize = basicFontSize * scaleFactor;
+
+    fonts[0].loadFontOnce();
+
+    for (int i = 0; i < GLFONT_SIZE_MAX - 1; i++) {
+
+        fonts[i + 1].loadFontOnce();
+
+        if (fonts[i + 1].pixHeight <= targetSize) {
+
+            renderingFontIndex = i + 1;
+        }
+        else {
+            break;
+        }
+    } //end for
+
+      //
+    double rawSize = fonts[renderingFontIndex].pixHeight;
+
+    //targetSize may not be reached yet, so the effective rendering font: fonts[renderingFontIndex] must be scaled up a bit.
+    renderingFontScaleFactor = targetSize / rawSize;
+}
+
+void GLFont::Drawer::drawString(const std::wstring& str, float xpos, float ypos, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
+
+    GLFont& appliedFont = fonts[renderingFontIndex];
+
+    appliedFont.drawString(str, round(appliedFont.pixHeight * renderingFontScaleFactor), xpos, ypos, hAlign, vAlign, vpx, vpy, cacheable);
+}
+
+//Public drawing font, 8 bit char version.
+void GLFont::Drawer::drawString(const std::string& str, float xpos, float ypos, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
+
+    GLFont& appliedFont = fonts[renderingFontIndex];
+
+    appliedFont.drawString(str, round(appliedFont.pixHeight * renderingFontScaleFactor), xpos, ypos, hAlign, vAlign, vpx, vpy, cacheable);
 }
 

@@ -214,15 +214,15 @@ void SpectrumPanel::drawPanelContents() {
     double hPos = 1.0 - (16.0 / viewHeight);
     double lMhzPos = 1.0 - (5.0 / viewHeight);
     
-    GLFont::GLFontSize fontEnumSize = GLFont::GLFONT_SIZE12;
+    int fontSize = 12;
     
     if (viewHeight > 135) {
 
-        fontEnumSize = GLFont::GLFONT_SIZE16;
+        fontSize = 16;
         hPos = 1.0 - (18.0 / viewHeight);
     }
     
-    GLFont& refDrawingFont = GLFont::getFont(fontEnumSize);
+    GLFont::Drawer refDrawingFont = GLFont::getFont(fontSize, GLFont::getScaleFactor());
 
     for (double m = -1.0 + mhzStart, mMax = 1.0 + ((mhzStart>0)?mhzStart:-mhzStart); m <= mMax; m += mhzStep) {
         if (m < -1.0) {

@@ -68,20 +68,26 @@ private:
     int index;
 };
 
+
+
 class GLFont {
 public:
+
+
+
+
     enum Align {
         GLFONT_ALIGN_LEFT, GLFONT_ALIGN_RIGHT, GLFONT_ALIGN_CENTER, GLFONT_ALIGN_TOP, GLFONT_ALIGN_BOTTOM
     };
     enum GLFontSize {
-        GLFONT_SIZE12, 
-        GLFONT_SIZE16, 
+        GLFONT_SIZE12,
+        GLFONT_SIZE16,
         GLFONT_SIZE18,
-        GLFONT_SIZE24, 
+        GLFONT_SIZE24,
         GLFONT_SIZE27, //new
-        GLFONT_SIZE32, 
+        GLFONT_SIZE32,
         GLFONT_SIZE36, //new
-        GLFONT_SIZE48, 
+        GLFONT_SIZE48,
         GLFONT_SIZE64, //new
         GLFONT_SIZE72, //new
         GLFONT_SIZE96, //new
@@ -98,13 +104,7 @@ public:
     GLFont(GLFontSize size, std::wstring fontFileName);
     ~GLFont();
 
-    //The User request a font to display, but internally
-    //it will be translated to another font depending of the scale level
-    static GLFont& getFont(GLFontSize esize);
-
-    //Return the requested raw font, without applying scaling.
-    static GLFont &GLFont::getRawFont(GLFontSize esize);
-
+   
     //Called to change the scale of the rendered fonts
     static void setScale(GLFontScale scale);
 
@@ -113,14 +113,9 @@ public:
     //Mean current scale factor: 1.0 in normal, 1.5 medium, 2.0 for large
     static double getScaleFactor();
 
-    //Public drawing font, 16 bit char version.
-    void drawString(const std::wstring& str, float xpos, float ypos, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx=0, int vpy=0, bool cacheable = false);
-
-    //Public drawing font, 8 bit char version.
-    void drawString(const std::string& str, float xpos, float ypos, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx = 0, int vpy = 0, bool cacheable = false);
    
 private:
-   
+
     std::wstring nextParam(std::wistringstream &str);
     std::wstring getParamKey(const std::wstring& param_str);
     std::wstring getParamValue(const std::wstring& param_str);
@@ -128,16 +123,16 @@ private:
     //Repository of all loaded fonts
     static GLFont fonts[GLFontSize::GLFONT_SIZE_MAX];
 
-    //Map of user requested font to internal font, which changes
-    //changes with the requested scale.
-    // this is rebuilt by the user calling setScale(GLFontScale) and changed atomically,
-    //which map a user-requested font to a final one depending of the zoom level.
-    static GLFontSize userFontZoomMapping[GLFontSize::GLFONT_SIZE_MAX];
-
     static std::atomic<GLFontScale> currentScale;
 
     //load a given font file, (lazy loading) 
     void loadFontOnce();
+
+    //private drawing font, 16 bit char version, called by Drawer object
+    void drawString(const std::wstring& str, int pxHeight, float xpos, float ypos, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx = 0, int vpy = 0, bool cacheable = false);
+
+    //private drawing font, 8 bit char version, called by Drawer object
+    void drawString(const std::string& str, int pxHeight, float xpos, float ypos, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx = 0, int vpy = 0, bool cacheable = false);
 
     GLFontStringCache *cacheString(const std::wstring& str, int pxHeight, int vpx, int vpy);
     void drawCacheString(GLFontStringCache *fc, float xpos, float ypos, Align hAlign, Align vAlign);
@@ -147,7 +142,7 @@ private:
 
     //force GC of all available fonts
     static void clearAllCaches();
-   
+
     float getStringWidth(const std::wstring& str, float size, float viewAspect);
 
     //the string cache is per-front (internal font)
@@ -171,5 +166,33 @@ private:
     int gcCounter;
     std::mutex cache_busy;
 
-    static std::mutex g_userFontZoomMappingMutex;
+public:
+
+    //Proxy class computing and caching the selection of the underlying fonts
+    //depending of the user input and requested scale for the fonts.
+    class Drawer {
+
+    private:
+       
+        //result of the computation
+        int renderingFontIndex = 0;
+
+        double renderingFontScaleFactor = 1.0;
+
+    public:
+
+        Drawer(int basicFontSize, double scaleFactor);
+
+        //Public drawing font, 16 bit char version.
+        void drawString(const std::wstring& str, float xpos, float ypos, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx = 0, int vpy = 0, bool cacheable = false);
+
+        //Public drawing font, 8 bit char version.
+        void drawString(const std::string& str, float xpos, float ypos, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx = 0, int vpy = 0, bool cacheable = false);
+          
+    }; //end class Drawer
+
+    //The User request a font of size requestedSize to display, with an additional 
+    //optional scale factor scaleFactor.
+    static GLFont::Drawer getFont(int requestedSize, double scaleFactor = 1.0);
+
 };

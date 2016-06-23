@@ -166,11 +166,11 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, l
     }
     
     if (demod->getDemodulatorType() == "USB") {
-        GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos, hPos, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+        GLFont::getFont(16, GLFont::getScaleFactor()).drawString(demodLabel, uxPos, hPos, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
     } else if (demod->getDemodulatorType() == "LSB") {
-        GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos, hPos, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+        GLFont::getFont(16, GLFont::getScaleFactor()).drawString(demodLabel, uxPos, hPos, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
     } else {
-        GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos, hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+        GLFont::getFont(16, GLFont::getScaleFactor()).drawString(demodLabel, uxPos, hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
     }
 
     glDisable(GL_BLEND);
@@ -253,7 +253,7 @@ void PrimaryGLContext::DrawFreqBwInfo(long long freq, int bw, RGBA4f color, long
     
     double shadowOfsX = 4.0 / viewWidth, shadowOfsY = 2.0 / viewHeight;
 
-    GLFont& refDrawingFont = GLFont::getFont(GLFont::GLFONT_SIZE16);
+    GLFont::Drawer refDrawingFont = GLFont::getFont(16, GLFont::getScaleFactor());
     
     if (lastType == "USB") {
         glColor4f(0,0,0, 1.0);
@@ -407,7 +407,7 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
 
 void PrimaryGLContext::drawSingleDemodLabel(const std::wstring& demodStr, float uxPos, float hPos, float xOfs, float yOfs, GLFont::Align demodAlign) {
 
-    GLFont& refDrawingFont = GLFont::getFont(GLFont::GLFONT_SIZE16);
+    GLFont::Drawer refDrawingFont = GLFont::getFont(16, GLFont::getScaleFactor());
 
     glColor3f(0, 0, 0);
     refDrawingFont.drawString(demodStr, 2.0 * (uxPos - 0.5) + xOfs,

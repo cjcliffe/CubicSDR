@@ -390,63 +390,30 @@ GLTextPanel::GLTextPanel() : GLPanel() {
 
 void GLTextPanel::drawPanelContents() {
     glColor4f(1, 1, 1, 1.0);
+   
     
-    GLFont::GLFontSize sz;
     
-    //beware here: the really applied font may have been scaled up compared to the "user" requested one, so that
-    //we must negate it here to compute "user" font selection. 
     float pdimy = pdim.y;
+
+    double appliedScaleFactor = GLFont::getScaleFactor();
         
-    if (!useNativeFont) {
-        pdimy /= GLFont::getScaleFactor();
-    }
-    
-    if (pdimy <= 14) {
-        sz = GLFont::GLFONT_SIZE12;
-
-    } else if (pdimy <= 18) {
-        sz = GLFont::GLFONT_SIZE16;
-
-    } else if(pdimy <= 24) {
-        sz = GLFont::GLFONT_SIZE18;
-
-    }else if (pdimy <= 27) {
-        sz = GLFont::GLFONT_SIZE24;
-    }
-    else if (pdimy <= 32) {
-        sz = GLFont::GLFONT_SIZE27;
-    }
-    else if (pdimy <= 36) {
-        sz = GLFont::GLFONT_SIZE32;
-
-    }
-    else if (pdimy <= 48) {
-        sz = GLFont::GLFONT_SIZE36;
-
-    }
-    else if (pdimy <= 64) {
-        sz = GLFont::GLFONT_SIZE48;
-
-    }
-    else if (pdimy <= 72) {
-        sz = GLFont::GLFONT_SIZE64;
-
-    }
-    else if (pdimy <= 96) {
-        sz = GLFont::GLFONT_SIZE72;
-
-    }
-    else {
-        sz = GLFont::GLFONT_SIZE48;
-
-    }
-    
     if (useNativeFont) {
-        GLFont::getRawFont(sz).drawString(textVal, mid, mid, horizAlign, vertAlign, (int)pdim.x, (int)pdim.y);
+        appliedScaleFactor = 1.0;
     }
-    else {
-        GLFont::getFont(sz).drawString(textVal, mid, mid, horizAlign, vertAlign, (int)pdim.x, (int)pdim.y);
-    }
+    
+    //pdimy is considered un-scaled 
+    pdimy = round(pdimy / appliedScaleFactor);
+ 
+    //target font size: a bit smaller than pdimy:
+    int sz = 12;
+
+    if (pdimy > 14) {
+        //make the font a little smaller that the TextPanel
+        sz = pdimy - 2;
+
+    } 
+
+    GLFont::getFont(sz, appliedScaleFactor).drawString(textVal, mid, mid, horizAlign, vertAlign, (int)pdim.x, (int)pdim.y);
 }
 
 void GLTextPanel::setText(std::string text, GLFont::Align hAlign, GLFont::Align vAlign, bool useNative) {
