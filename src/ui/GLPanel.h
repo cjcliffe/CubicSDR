@@ -99,7 +99,7 @@ private:
     std::string textVal;
     GLFont::Align horizAlign;
     GLFont::Align vertAlign;
-    boolean useNativeFont;
+    bool useNativeFont;
 public:
     GLTextPanel();
     
