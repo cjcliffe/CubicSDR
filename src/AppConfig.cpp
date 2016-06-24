@@ -86,6 +86,7 @@ void DeviceConfig::save(DataNode *node) {
     *node->newChild("offset") = offset.load();
     *node->newChild("sample_rate") = sampleRate.load();
     *node->newChild("agc_mode") = agcMode.load()?1:0;
+    *node->newChild("font_scale") = GLFont::getScale();
 
     if (streamOpts.size()) {
         DataNode *streamOptsNode = node->newChild("streamOpts");
@@ -140,6 +141,14 @@ void DeviceConfig::load(DataNode *node) {
         int agcModeValue = 0;
         agc_node->element()->get(agcModeValue);
         setAGCMode(agcModeValue?true:false);
+    }
+    if (node->hasAnother("font_scale")) {
+        DataNode *agc_node = node->getNext("font_scale");
+        int fontScaleValue = 0;
+        agc_node->element()->get(fontScaleValue);
+        if (fontScaleValue > 0 && fontScaleValue < GLFont::GLFONT_SCALE_MAX) {
+            GLFont::setScale((GLFont::GLFontScale) fontScaleValue);
+        }
     }
     if (node->hasAnother("sample_rate")) {
         DataNode *sample_rate_node = node->getNext("sample_rate");
