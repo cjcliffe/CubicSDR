@@ -167,40 +167,42 @@ void SpectrumPanel::drawPanelContents() {
     std::stringstream label;
     label.precision(1);
 
-    if (mhzStep * 0.5 * viewWidth < 40) {
+    double fontScale = GLFont::getScaleFactor();
+
+    if (mhzStep * 0.5 * viewWidth < 40 * fontScale) {
         mhzStep = (250000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
         mhzVisualStep = 0.25;
 
-        if (mhzStep * 0.5 * viewWidth < 40) {
+        if (mhzStep * 0.5 * viewWidth < 40 * fontScale) {
             mhzStep = (500000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
             mhzVisualStep = 0.5;
         }
 
-        if (mhzStep * 0.5 * viewWidth < 40) {
+        if (mhzStep * 0.5 * viewWidth < 40 * fontScale) {
             mhzStep = (1000000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
             mhzVisualStep = 1.0;
         }
         
-        if (mhzStep * 0.5 * viewWidth < 40) {
+        if (mhzStep * 0.5 * viewWidth < 40 * fontScale) {
             mhzStep = (2500000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
             mhzVisualStep = 2.5;
         }
         
-        if (mhzStep * 0.5 * viewWidth < 40) {
+        if (mhzStep * 0.5 * viewWidth < 40 * fontScale) {
             mhzStep = (5000000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
             mhzVisualStep = 5.0;
         }
 
-        if (mhzStep * 0.5 * viewWidth < 40) {
+        if (mhzStep * 0.5 * viewWidth < 40 * fontScale) {
             mhzStep = (10000000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
             mhzVisualStep = 10.0;
         }
 
-        if (mhzStep * 0.5 * viewWidth < 40) {
+        if (mhzStep * 0.5 * viewWidth < 40 * fontScale) {
             mhzStep = (50000000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
             mhzVisualStep = 50.0;
         }
-    } else if (mhzStep * 0.5 * viewWidth > 350) {
+    } else if (mhzStep * 0.5 * viewWidth > 350 * fontScale) {
         mhzStep = (10000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
         mhzVisualStep = 0.01;
         label.precision(2);
@@ -211,7 +213,7 @@ void SpectrumPanel::drawPanelContents() {
     long double currentMhz = trunc(floor(firstMhz / (long double)1000000.0));
     
     
-    double hPos = 1.0 - (16.0 / viewHeight);
+    double hPos = 1.0 - (16.0 / viewHeight) *  GLFont::getScaleFactor();
     double lMhzPos = 1.0 - (5.0 / viewHeight);
     
     int fontSize = 12;
@@ -219,7 +221,7 @@ void SpectrumPanel::drawPanelContents() {
     if (viewHeight > 135) {
 
         fontSize = 16;
-        hPos = 1.0 - (18.0 / viewHeight);
+        hPos = 1.0 - (18.0 / viewHeight) *  GLFont::getScaleFactor();
     }
     
     GLFont::Drawer refDrawingFont = GLFont::getFont(fontSize, GLFont::getScaleFactor());
