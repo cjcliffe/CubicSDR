@@ -454,9 +454,9 @@ AppFrame::AppFrame() :
     menuBar->Append(displayMenu, wxT("&Display"));
     int fontScale = wxGetApp().getConfig()->getFontScale();
 
-    displayMenu->AppendRadioItem(wxID_DISPLAY_BASE, "Normal font (1x)")->Check(GLFont::GLFONT_SCALE_NORMAL == fontScale);
-    displayMenu->AppendRadioItem(wxID_DISPLAY_BASE + 1, "Medium font (1.5x)")->Check(GLFont::GLFONT_SCALE_MEDIUM == fontScale);
-    displayMenu->AppendRadioItem(wxID_DISPLAY_BASE + 2, "Large font (2x)")->Check(GLFont::GLFONT_SCALE_LARGE == fontScale);
+    displayMenu->AppendRadioItem(wxID_DISPLAY_BASE, "Text Size: Normal")->Check(GLFont::GLFONT_SCALE_NORMAL == fontScale);
+    displayMenu->AppendRadioItem(wxID_DISPLAY_BASE + 1, "Text Size: 1.5x")->Check(GLFont::GLFONT_SCALE_MEDIUM == fontScale);
+    displayMenu->AppendRadioItem(wxID_DISPLAY_BASE + 2, "Text Size: 2.0x")->Check(GLFont::GLFONT_SCALE_LARGE == fontScale);
 
     GLFont::setScale((GLFont::GLFontScale)fontScale);
 
