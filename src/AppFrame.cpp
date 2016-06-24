@@ -84,8 +84,8 @@ AppFrame::AppFrame() :
     demodModeSelector->addChoice("I/Q");
     demodModeSelector->setSelection("FM");
     demodModeSelector->setHelpTip("Choose modulation type: Frequency Modulation (Hotkey F), Amplitude Modulation (A) and Lower (L), Upper (U), Double Side-Band and more.");
-    demodModeSelector->SetMinSize(wxSize(40,-1));
-    demodModeSelector->SetMaxSize(wxSize(40,-1));
+    demodModeSelector->SetMinSize(wxSize(50,-1));
+    demodModeSelector->SetMaxSize(wxSize(50,-1));
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
     
 #ifdef ENABLE_DIGITAL_LAB
@@ -103,8 +103,8 @@ AppFrame::AppFrame() :
     demodModeSelectorAdv->addChoice("QAM");
     demodModeSelectorAdv->addChoice("QPSK");
     demodModeSelectorAdv->setHelpTip("Choose advanced modulation types.");
-    demodModeSelectorAdv->SetMinSize(wxSize(40,-1));
-    demodModeSelectorAdv->SetMaxSize(wxSize(40,-1));
+    demodModeSelectorAdv->SetMinSize(wxSize(44,-1));
+    demodModeSelectorAdv->SetMaxSize(wxSize(44,-1));
     demodTray->Add(demodModeSelectorAdv, 3, wxEXPAND | wxALL, 0);
 #endif
             
@@ -447,6 +447,19 @@ AppFrame::AppFrame() :
 
     menuBar->Append(menu, wxT("Audio &Sample Rate"));
 
+
+    //Add Display menu
+    displayMenu = new wxMenu;
+
+    menuBar->Append(displayMenu, wxT("&Display"));
+    int fontScale = wxGetApp().getConfig()->getFontScale();
+
+    displayMenu->AppendRadioItem(wxID_DISPLAY_BASE, "Text Size: Normal")->Check(GLFont::GLFONT_SCALE_NORMAL == fontScale);
+    displayMenu->AppendRadioItem(wxID_DISPLAY_BASE + 1, "Text Size: 1.5x")->Check(GLFont::GLFONT_SCALE_MEDIUM == fontScale);
+    displayMenu->AppendRadioItem(wxID_DISPLAY_BASE + 2, "Text Size: 2.0x")->Check(GLFont::GLFONT_SCALE_LARGE == fontScale);
+
+    GLFont::setScale((GLFont::GLFontScale)fontScale);
+
 #ifdef USE_HAMLIB
             
     rigModel = wxGetApp().getConfig()->getRigModel();
@@ -581,6 +594,9 @@ AppFrame::AppFrame() :
 //    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 //    wxLogStatus("Double-buffered display %s supported", wxGLCanvas::IsDisplaySupported(attribs) ? "is" : "not");
 //    ShowFullScreen(true);
+
+    //Force refresh of all
+    Refresh();
 }
 
 AppFrame::~AppFrame() {
@@ -773,7 +789,9 @@ void AppFrame::disableRig() {
 }
 #endif
 
+
 void AppFrame::OnMenu(wxCommandEvent& event) {
+
     if (event.GetId() >= wxID_RT_AUDIO_DEVICE && event.GetId() < wxID_RT_AUDIO_DEVICE + (int)devices.size()) {
         if (activeDemodulator) {
             activeDemodulator->setOutputDevice(event.GetId() - wxID_RT_AUDIO_DEVICE);
@@ -910,6 +928,22 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         ThemeMgr::mgr.setTheme(COLOR_THEME_HD);
     } else if (event.GetId() == wxID_THEME_RADAR) {
         ThemeMgr::mgr.setTheme(COLOR_THEME_RADAR);
+    }
+    //Display : font sizes
+    else if (event.GetId() == wxID_DISPLAY_BASE) {
+        GLFont::setScale(GLFont::GLFONT_SCALE_NORMAL);
+        //force all windows refresh
+        Refresh();
+    }
+    else if (event.GetId() == wxID_DISPLAY_BASE + 1) {
+        GLFont::setScale(GLFont::GLFONT_SCALE_MEDIUM);
+        //force all windows refresh
+        Refresh();
+    }
+    else if (event.GetId() == wxID_DISPLAY_BASE + 2) {
+        GLFont::setScale(GLFont::GLFONT_SCALE_LARGE);
+        //force all windows refresh
+        Refresh();
     }
 
     if (event.GetId() >= wxID_SETTINGS_BASE && event.GetId() < settingsIdMax) {
@@ -1159,6 +1193,7 @@ void AppFrame::OnClose(wxCloseEvent& event) {
     wxGetApp().getConfig()->setWindow(this->GetPosition(), this->GetClientSize());
     wxGetApp().getConfig()->setWindowMaximized(this->IsMaximized());
     wxGetApp().getConfig()->setTheme(ThemeMgr::mgr.getTheme());
+    wxGetApp().getConfig()->setFontScale(GLFont::getScale());
     wxGetApp().getConfig()->setSnap(wxGetApp().getFrequencySnap());
     wxGetApp().getConfig()->setCenterFreq(wxGetApp().getFrequency());
     wxGetApp().getConfig()->setSpectrumAvgSpeed(wxGetApp().getSpectrumProcessor()->getFFTAverageRate());
@@ -1545,6 +1580,8 @@ void AppFrame::OnUnSplit(wxSplitterEvent& event)
     event.Veto();
 }
 
+
+
 void AppFrame::saveSession(std::string fileName) {
     DataTree s("cubicsdr_session");
     DataNode *header = s.rootNode()->newChild("header");
@@ -1584,7 +1621,7 @@ void AppFrame::saveSession(std::string fileName) {
                 *settingsNode->newChild(msi->first.c_str()) = msi->second;
             }
         }
-    }
+    } //end for demodulators
 
     s.SaveToFileXML(fileName);
 

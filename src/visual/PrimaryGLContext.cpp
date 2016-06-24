@@ -166,11 +166,11 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, l
     }
     
     if (demod->getDemodulatorType() == "USB") {
-        GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos, hPos, 16, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+        GLFont::getFont(16, GLFont::getScaleFactor()).drawString(demodLabel, uxPos, hPos, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
     } else if (demod->getDemodulatorType() == "LSB") {
-        GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos, hPos, 16, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+        GLFont::getFont(16, GLFont::getScaleFactor()).drawString(demodLabel, uxPos, hPos, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
     } else {
-        GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos, hPos, 16, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+        GLFont::getFont(16, GLFont::getScaleFactor()).drawString(demodLabel, uxPos, hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
     }
 
     glDisable(GL_BLEND);
@@ -252,31 +252,33 @@ void PrimaryGLContext::DrawFreqBwInfo(long long freq, int bw, RGBA4f color, long
     std::string demodLabel = std::to_string((double)freq/1000000.0);
     
     double shadowOfsX = 4.0 / viewWidth, shadowOfsY = 2.0 / viewHeight;
+
+    GLFont::Drawer refDrawingFont = GLFont::getFont(16, GLFont::getScaleFactor());
     
     if (lastType == "USB") {
         glColor4f(0,0,0, 1.0);
         glBlendFunc(GL_ONE, GL_ZERO);
-        GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos+shadowOfsX, hPos+shadowOfsY, 16, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
-        GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos-shadowOfsX, hPos-shadowOfsY, 16, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
+        refDrawingFont.drawString(demodLabel, uxPos+shadowOfsX, hPos+shadowOfsY, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
+        refDrawingFont.drawString(demodLabel, uxPos-shadowOfsX, hPos-shadowOfsY, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
         glColor4f(color.r, color.g, color.b, 1.0);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-        GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos, hPos, 16, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
+        refDrawingFont.drawString(demodLabel, uxPos, hPos, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
     } else if (lastType == "LSB") {
         glBlendFunc(GL_ONE, GL_ZERO);
         glColor4f(0,0,0, 1.0);
-        GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos+shadowOfsX, hPos+shadowOfsY, 16, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
-        GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos-shadowOfsX, hPos-shadowOfsY, 16, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
+        refDrawingFont.drawString(demodLabel, uxPos+shadowOfsX, hPos+shadowOfsY, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
+        refDrawingFont.drawString(demodLabel, uxPos-shadowOfsX, hPos-shadowOfsY, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
         glColor4f(color.r, color.g, color.b, 1.0);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-        GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos, hPos, 16, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
+        refDrawingFont.drawString(demodLabel, uxPos, hPos, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
     } else {
         glBlendFunc(GL_ONE, GL_ZERO);
         glColor4f(0,0,0, 1.0);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-        GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos+shadowOfsX, hPos+shadowOfsY, 16, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
-        GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos-shadowOfsX, hPos-shadowOfsY, 16, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+        refDrawingFont.drawString(demodLabel, uxPos+shadowOfsX, hPos+shadowOfsY, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+        refDrawingFont.drawString(demodLabel, uxPos-shadowOfsX, hPos-shadowOfsY, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
         glColor4f(color.r, color.g, color.b, 1.0);
-        GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodLabel, uxPos, hPos, 16, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+        refDrawingFont.drawString(demodLabel, uxPos, hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
     }
     
     glDisable(GL_BLEND);
@@ -353,10 +355,14 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
 
     GLFont::Align demodAlign = GLFont::GLFONT_ALIGN_CENTER;
 
-    std::string demodStr = demod->getDemodulatorType();
-
-    //Displayed string is 16 bit, so fill from a 8bit character by charater...
-    std::wstring demodStrW(demodStr.begin(), demodStr.end());
+    //Displayed string is wstring, so use wxString to do the heavy lifting of converting  getDemodulatorType()...
+#ifdef WIN32
+    //try to reuse the memory with thread_local, unsupported on OSX ? 
+    static thread_local wxString demodStr;
+#else
+    wxString demodStr;
+#endif
+    demodStr.assign(demod->getDemodulatorType());
 
     demodAlign = GLFont::GLFONT_ALIGN_CENTER;
 
@@ -387,7 +393,7 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
         hPos += 1.3 * labelHeight;
     }
 
-    drawSingleDemodLabel(demodStrW, uxPos, hPos, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
+    drawSingleDemodLabel(demodStr.ToStdWstring(), uxPos, hPos, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
 
     //revert...
     if (!demod->getDemodulatorUserLabel().empty()) {
@@ -399,15 +405,18 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
 
 }
 
-void PrimaryGLContext::drawSingleDemodLabel(std::wstring demodStr, float uxPos, float hPos, float xOfs, float yOfs, GLFont::Align demodAlign) {
+void PrimaryGLContext::drawSingleDemodLabel(const std::wstring& demodStr, float uxPos, float hPos, float xOfs, float yOfs, GLFont::Align demodAlign) {
+
+    GLFont::Drawer refDrawingFont = GLFont::getFont(16, GLFont::getScaleFactor());
 
     glColor3f(0, 0, 0);
-    GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodStr, 2.0 * (uxPos - 0.5) + xOfs,
-        -1.0 + hPos - yOfs, 16, demodAlign,
+    refDrawingFont.drawString(demodStr, 2.0 * (uxPos - 0.5) + xOfs,
+        -1.0 + hPos - yOfs, demodAlign,
         GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+    
     glColor3f(1, 1, 1);
-    GLFont::getFont(GLFont::GLFONT_SIZE16).drawString(demodStr, 2.0 * (uxPos - 0.5),
-        -1.0 + hPos, 16, demodAlign,
+    refDrawingFont.drawString(demodStr, 2.0 * (uxPos - 0.5),
+        -1.0 + hPos, demodAlign,
         GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
 }
 

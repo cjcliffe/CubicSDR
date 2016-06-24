@@ -35,9 +35,11 @@ void ScopeContext::DrawTunerTitles(bool ppmMode) {
 
     glColor3f(0.65f, 0.65f, 0.65f);
 
-    GLFont::getFont(GLFont::GLFONT_SIZE12).drawString(ppmMode?"Device PPM":"Frequency", -0.66f, -1.0+hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
-    GLFont::getFont(GLFont::GLFONT_SIZE12).drawString("Bandwidth", 0.0, -1.0+hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
-    GLFont::getFont(GLFont::GLFONT_SIZE12).drawString("Center Frequency", 0.66f, -1.0+hPos, 12, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+    GLFont::Drawer refDrawingFont = GLFont::getFont(12, GLFont::getScaleFactor());
+
+    refDrawingFont.drawString(ppmMode?"Device PPM":"Frequency", -0.66f, -1.0+hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+    refDrawingFont.drawString("Bandwidth", 0.0, -1.0+hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+    refDrawingFont.drawString("Center Frequency", 0.66f, -1.0+hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
 }
 
 void ScopeContext::DrawDeviceName(std::string deviceName) {
@@ -47,7 +49,8 @@ void ScopeContext::DrawDeviceName(std::string deviceName) {
     float hPos = (float) (viewHeight - 20) / viewHeight;
 
     glColor3f(0.65f, 0.65f, 0.65f);
-    GLFont::getFont(GLFont::GLFONT_SIZE12).drawString(deviceName.c_str(), 1.0, hPos, 12, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+
+    GLFont::getFont(12, GLFont::getScaleFactor()).drawString(deviceName.c_str(), 1.0, hPos, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
 }
 
 void ScopeContext::DrawEnd() {

@@ -496,14 +496,25 @@ SET (CUBICSDR_RESOURCES
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16.fnt
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18.fnt
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24.fnt
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono27.fnt
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32.fnt
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono36.fnt
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48.fnt
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono64.fnt
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono72.fnt
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono96.fnt
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12_0.png
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16_0.png
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18_0.png
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24_0.png
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono27_0.png
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32_0.png
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono36_0.png
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono42_0.png
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48_0.png
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono64_0.png
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono72_0.png
+    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono96_0.png
 )
 
 set(REG_EXT "[^/]*([.]cpp|[.]c|[.]h|[.]hpp)$")
@@ -570,8 +581,8 @@ if(MINGW OR MSVC)
 endif(MINGW OR MSVC)
 
 IF (NOT BUNDLE_APP)
-    configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.fnt")
-    configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.png")
+    configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME}/fonts "*.fnt")
+    configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME}/fonts "*.png")
     configure_files(${PROJECT_SOURCE_DIR}/icon ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} CubicSDR.ico)
 	IF(MSVC)	
         IF(ENABLE_FFTW3)

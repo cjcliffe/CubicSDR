@@ -17,11 +17,36 @@ static std::wstring getExePath(void)
 #define RES_FOLDER ""
 #endif
 
+#define GC_DRAW_COUNT_PERIOD 50
+#define GC_DRAW_COUNT_LIMIT 10
+
 GLFontStringCache::GLFontStringCache() {
     gc = 0;
 }
 
-GLFont GLFont::fonts[GLFONT_MAX];
+//Static initialization of all available fonts,
+//using aggregate syntax (Cx11+)
+
+//Fonts must be listed in increasing size for Drawer to work !
+GLFont GLFont::fonts[GLFont::GLFontSize::GLFONT_SIZE_MAX] = {
+
+    { GLFont::GLFontSize::GLFONT_SIZE12, L"fonts/vera_sans_mono12.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE16, L"fonts/vera_sans_mono16.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE18, L"fonts/vera_sans_mono18.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE24, L"fonts/vera_sans_mono24.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE27, L"fonts/vera_sans_mono27.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE32, L"fonts/vera_sans_mono32.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE36, L"fonts/vera_sans_mono36.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE48, L"fonts/vera_sans_mono48.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE64, L"fonts/vera_sans_mono64.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE72, L"fonts/vera_sans_mono72.fnt" },
+    { GLFont::GLFontSize::GLFONT_SIZE96, L"fonts/vera_sans_mono96.fnt" },
+
+};
+
+
+std::atomic<GLFont::GLFontScale> GLFont::currentScale{ GLFont::GLFontScale::GLFONT_SCALE_NORMAL };
+
 
 GLFontChar::GLFontChar() :
         id(0), x(0), y(0), width(0), height(0), xoffset(0), yoffset(0), xadvance(0), aspect(1), index(0) {
@@ -114,9 +139,12 @@ int GLFontChar::getIndex() {
     return index;
 }
 
-GLFont::GLFont() :
+GLFont::GLFont(GLFontSize size, std::wstring fontFileName):
         lineHeight(0), base(0), imageWidth(0), imageHeight(0), loaded(false), texId(0), gcCounter(0) {
 
+    fontSizeClass = size;
+  
+    fontFileSource = fontFileName;
 }
 
 GLFont::~GLFont() {
@@ -128,18 +156,18 @@ std::wstring GLFont::nextParam(std::wistringstream &str) {
 
     str >> param_str;
 
-    if (param_str.find('"') != std::wstring::npos) {
+    if (param_str.find(L'"') != std::wstring::npos) {
         std::wstring rest;
-        while (!str.eof() && (std::count(param_str.begin(), param_str.end(), '"') % 2)) {
+        while (!str.eof() && (std::count(param_str.begin(), param_str.end(), L'"') % 2)) {
             str >> rest;
-            param_str.append(" " + rest);
+            param_str.append(L" " + rest);
         }
     }
 
     return param_str;
 }
 
-std::wstring GLFont::getParamKey(std::wstring param_str) {
+std::wstring GLFont::getParamKey(const std::wstring& param_str) {
     std::wstring keyName;
 
     size_t eqpos = param_str.find(L"=");
@@ -151,7 +179,7 @@ std::wstring GLFont::getParamKey(std::wstring param_str) {
     return keyName;
 }
 
-std::wstring GLFont::getParamValue(std::wstring param_str) {
+std::wstring GLFont::getParamValue(const std::wstring& param_str) {
     std::wstring value;
 
     size_t eqpos = param_str.find(L"=");
@@ -160,29 +188,42 @@ std::wstring GLFont::getParamValue(std::wstring param_str) {
         value = param_str.substr(eqpos + 1);
     }
 
-    if (value[0] == '"' && value[value.length() - 1] == '"') {
+    if (value[0] == L'"' && value[value.length() - 1] == L'"') {
         value = value.substr(1, value.length() - 2);
     }
 
     return value;
 }
 
-void GLFont::loadFont(const std::wstring& fontFile) {
-    
+void GLFont::loadFontOnce() {
+
+    if (loaded) {
+        return;
+    }
+
+    //relative path with filename where the font is
+    std::wstring fontFile = fontFileSource;
+
     wxString resourceFolder = RES_FOLDER;
 
 #ifdef WIN32   
     resourceFolder = getExePath() + L"/" + resourceFolder;
 #endif
 
-    wxFileName fontFileName = wxFileName(resourceFolder, fontFile);
+    //full font file path
+    wxFileName fontFileName = wxFileName(resourceFolder + L"/" + fontFile);
     
     if (!fontFileName.Exists()) {
         wxFileName exePath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
-        fontFileName = wxFileName(exePath.GetPath(), fontFile);
-        resourceFolder = exePath.GetPath();
+       
+        //Full Path where the fonts are, including file name
+        fontFileName = wxFileName(exePath.GetPath() + L"/" + fontFile);
+
+        //Dir where the fonts are
+        resourceFolder = fontFileName.GetPath();
     }
 
+    //overwrite with the full path
     fontFileSource = fontFileName.GetFullPath(wxPATH_NATIVE).ToStdWstring();
     
     if (!fontFileName.FileExists()) {
@@ -212,11 +253,17 @@ void GLFont::loadFont(const std::wstring& fontFile) {
             while (!info_param.eof()) {
                 std::wstring param = nextParam(info_param);
 
-                std::wstring paramKey = getParamKey(param);
-                std::wstring paramValue = getParamValue(param);
+                std::wstring paramKey = getParamKey(param);               
+                if (paramKey == L"face") {
+                    fontName = getParamValue(param);
+                }
 
-                if (paramKey == "face") {
-                    fontName = paramValue;
+                param = nextParam(info_param);
+                paramKey = getParamKey(param);
+                if (paramKey == L"size") {
+
+                    std::wistringstream paramValue(getParamValue(param));
+                    paramValue >> pixHeight;
                 }
 
 //                std::cout << "[" << paramKey << "] = '" << paramValue << "'" << std::endl;
@@ -399,16 +446,14 @@ void GLFont::loadFont(const std::wstring& fontFile) {
         }
 
         std::cout << "Loaded font '" << fontName << "' from '" << fontFileSource << "', parsed " << characters.size() << " characters." << std::endl;
+
         loaded = true;
     } else {
         std::cout << "Error loading font file " << fontFileSource << std::endl;
     }
 
     input.close();
-}
-
-bool GLFont::isLoaded() {
-    return loaded;
+    loaded = true;
 }
 
 float GLFont::getStringWidth(const std::wstring& str, float size, float viewAspect) {
@@ -442,10 +487,10 @@ float GLFont::getStringWidth(const std::wstring& str, float size, float viewAspe
 }
 
 // Draw string, immediate
-void GLFont::drawString(const std::wstring& str, float xpos, float ypos, int pxHeight, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
-    
+void GLFont::drawString(const std::wstring& str, int pxHeight, float xpos, float ypos, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
+
     pxHeight *= 2;
-    
+  
     if (!vpx || !vpy) {
         GLint vp[4];
         glGetIntegerv( GL_VIEWPORT, vp);
@@ -458,7 +503,8 @@ void GLFont::drawString(const std::wstring& str, float xpos, float ypos, int pxH
 
         std::lock_guard<std::mutex> lock(cache_busy);
         
-        if (gcCounter > 50) {
+        if (gcCounter > GC_DRAW_COUNT_PERIOD) {
+            
             doCacheGC();
             gcCounter = 0;
         }
@@ -546,7 +592,7 @@ void GLFont::drawString(const std::wstring& str, float xpos, float ypos, int pxH
         float advx = (float) fchar->getXAdvance() / (float) imageWidth;
 
         if (charId == 32) {
-            advx = characters['_']->getAspect();
+            advx = characters[L'_']->getAspect();
         }
 
         glTranslatef(ofsx, 0.0, 0.0);
@@ -567,19 +613,19 @@ void GLFont::drawString(const std::wstring& str, float xpos, float ypos, int pxH
 }
 
 // Draw string, immediate, 8 bit version
-void GLFont::drawString(const std::string& str, float xpos, float ypos, int pxHeight, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
+void GLFont::drawString(const std::string& str, int pxHeight, float xpos, float ypos, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
 
+    //Displayed string is wstring, so use wxString to do the heavy lifting of converting  str...
 #ifdef WIN32
-    //This a thread-safe wsTmp buffer to convert to wstring, reusing the same memory, unsupported: OSX?
-    static thread_local std::wstring wsTmp;
+    //try to reuse the memory with thread_local, unsupported on OSX ? 
+    static thread_local wxString wsTmp;
 #else
-    std::wstring wsTmp;
+    wxString wsTmp;
 #endif
     
-    wsTmp.clear();
-    wsTmp.assign(str.begin(), str.end());
+    wsTmp.assign(str);
 
-    drawString(wsTmp, xpos, ypos, pxHeight, hAlign, vAlign, vpx, vpy, cacheable);
+    drawString(wsTmp.ToStdWstring(), pxHeight, xpos, ypos, hAlign, vAlign, vpx, vpy, cacheable);
 }
 
 // Draw cached GLFontCacheString
@@ -639,6 +685,7 @@ void GLFont::drawCacheString(GLFontStringCache *fc, float xpos, float ypos, Alig
 
 // Compile optimized GLFontCacheString
 GLFontStringCache *GLFont::cacheString(const std::wstring& str, int pxHeight, int vpx, int vpy) {
+
     GLFontStringCache *fc = new GLFontStringCache;
     
     fc->pxHeight = pxHeight;
@@ -681,7 +728,7 @@ GLFontStringCache *GLFont::cacheString(const std::wstring& str, int pxHeight, in
         float advx = (float) fchar->getXAdvance() / (float) imageWidth;
         
         if (charId == 32) {
-            advx = characters['_']->getAspect();
+            advx = characters[L'_']->getAspect();
         }
         
         // freeze transform to buffer
@@ -703,51 +750,143 @@ GLFontStringCache *GLFont::cacheString(const std::wstring& str, int pxHeight, in
 }
 
 void GLFont::doCacheGC() {
+
     std::map<std::wstring, GLFontStringCache * >::iterator cache_iter;
-    
-    for (cache_iter = stringCache.begin(); cache_iter != stringCache.end(); cache_iter++) {
+
+    bool flushDone = false;
+
+    //do aging and remove in one pass.
+    cache_iter = stringCache.begin();
+
+    while (cache_iter != stringCache.end()) {
+
+        //aging
         cache_iter->second->gc--;
-    }
-    for (cache_iter = stringCache.begin(); cache_iter != stringCache.end(); cache_iter++) {
-        if (cache_iter->second->gc < -10) {
-//            std::cout << "gc'd " << cache_iter->first << std::endl;
-            stringCache.erase(cache_iter);
-            return;
+
+        //only flush 1 element per call
+        if (!flushDone && cache_iter->second->gc < -GC_DRAW_COUNT_LIMIT) {
+
+            delete cache_iter->second;
+            cache_iter = stringCache.erase(cache_iter);
+            flushDone = true;
         }
+        else {
+            cache_iter++;
+        }
+    } //end while
+}
+
+void GLFont::clearCache() {
+
+    std::lock_guard<std::mutex> lock(cache_busy);
+
+    std::map<std::wstring, GLFontStringCache * >::iterator cache_iter;
+
+    cache_iter = stringCache.begin();
+
+    while (cache_iter != stringCache.end()) {
+        
+        delete cache_iter->second;
+        cache_iter = stringCache.erase(cache_iter);
+               
+    }
+}
+
+void GLFont::clearAllCaches() {
+
+    for (int i = 0; i < GLFont::GLFONT_SIZE_MAX; i++) {
+
+        fonts[i].clearCache();
     }
 }
 
 
-GLFont &GLFont::getFont(GLFontSize esize) {
-    if (!fonts[esize].isLoaded()) {
-        
-        std::wstring fontName;
-        switch (esize) {
-            case GLFONT_SIZE12:
-                fontName = L"vera_sans_mono12.fnt";
-                break;
-            case GLFONT_SIZE16:
-                fontName = L"vera_sans_mono16.fnt";
-                break;
-            case GLFONT_SIZE18:
-                fontName = L"vera_sans_mono18.fnt";
-                break;
-            case GLFONT_SIZE24:
-                fontName = L"vera_sans_mono24.fnt";
-                break;
-            case GLFONT_SIZE32:
-                fontName = L"vera_sans_mono32.fnt";
-                break;
-            case GLFONT_SIZE48:
-                fontName = L"vera_sans_mono48.fnt";
-                break;
-            default:
-                fontName = L"vera_sans_mono12.fnt";
-                break;
-        }
-        
-        fonts[esize].loadFont(fontName);
+GLFont::Drawer GLFont::getFont(int requestedSize, double scaleFactor) {
+
+    return GLFont::Drawer(requestedSize, scaleFactor);
+}
+
+
+
+void GLFont::setScale(GLFontScale scale) {
+    
+    //safety vs. inputs
+    if (scale < GLFONT_SCALE_NORMAL || scale > GLFONT_SCALE_LARGE) {
+
+        scale = GLFontScale::GLFONT_SCALE_NORMAL;
     }
     
-    return fonts[esize];
+    currentScale.store(scale);
+
+    //Flush all the GC stuff
+    clearAllCaches();
 }
+
+GLFont::GLFontScale GLFont::getScale() {
+
+    return currentScale.load();
+}
+
+double GLFont::getScaleFactor() {
+
+    GLFontScale scale = currentScale.load();
+
+    if (scale == GLFONT_SCALE_MEDIUM) {
+
+        return 1.5;
+    }
+    else if (scale == GLFONT_SCALE_LARGE) {
+
+        return 2.0;
+    }
+
+    return 1.0;
+}
+
+GLFont::Drawer::Drawer(int basicFontSize, double scaleFactor) {
+
+    //Selection of the final font: scan GLFont::fonts to find the biggest font such as 
+    // its pixHeight <= basicFontSize * scaleFactor.
+    //then compute finalScaleFactor the zooming factor of renderingFont to reach a 
+    //final font size of  basicFontSize* scaleFactor:
+    renderingFontIndex = 0;
+
+    double targetSize = basicFontSize * scaleFactor;
+
+    fonts[0].loadFontOnce();
+
+    for (int i = 0; i < GLFONT_SIZE_MAX - 1; i++) {
+
+        fonts[i + 1].loadFontOnce();
+
+        if (fonts[i + 1].pixHeight <= targetSize) {
+
+            renderingFontIndex = i + 1;
+        }
+        else {
+            break;
+        }
+    } //end for
+
+      //
+    double rawSize = fonts[renderingFontIndex].pixHeight;
+
+    //targetSize may not be reached yet, so the effective rendering font: fonts[renderingFontIndex] must be scaled up a bit.
+    renderingFontScaleFactor = targetSize / rawSize;
+}
+
+void GLFont::Drawer::drawString(const std::wstring& str, float xpos, float ypos, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
+
+    GLFont& appliedFont = fonts[renderingFontIndex];
+
+    appliedFont.drawString(str, round(appliedFont.pixHeight * renderingFontScaleFactor), xpos, ypos, hAlign, vAlign, vpx, vpy, cacheable);
+}
+
+//Public drawing font, 8 bit char version.
+void GLFont::Drawer::drawString(const std::string& str, float xpos, float ypos, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
+
+    GLFont& appliedFont = fonts[renderingFontIndex];
+
+    appliedFont.drawString(str, round(appliedFont.pixHeight * renderingFontScaleFactor), xpos, ypos, hAlign, vAlign, vpx, vpy, cacheable);
+}
+

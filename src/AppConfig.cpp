@@ -284,6 +284,7 @@ AppConfig::AppConfig() : configName("") {
     showTips.store(true);
     lowPerfMode.store(false);
     themeId.store(0);
+    fontScale.store(0);
     snap.store(1);
     centerFreq.store(100000000);
     waterfallLinesPerSec.store(DEFAULT_WATERFALL_LPS);
@@ -373,6 +374,14 @@ int AppConfig::getTheme() {
     return themeId.load();
 }
 
+void AppConfig::setFontScale(int fontScale) {
+    this->fontScale.store(fontScale);
+}
+
+int AppConfig::getFontScale() {
+    return fontScale.load();
+}
+
 
 void AppConfig::setSnap(long long snapVal) {
     this->snap.store(snapVal);
@@ -454,6 +463,7 @@ bool AppConfig::save() {
         *window_node->newChild("tips") = showTips.load();
         *window_node->newChild("low_perf_mode") = lowPerfMode.load();
         *window_node->newChild("theme") = themeId.load();
+        *window_node->newChild("font_scale") = fontScale.load();
         *window_node->newChild("snap") = snap.load();
         *window_node->newChild("center_freq") = centerFreq.load();
         *window_node->newChild("waterfall_lps") = waterfallLinesPerSec.load();
@@ -572,6 +582,12 @@ bool AppConfig::load() {
             int theme;
             win_node->getNext("theme")->element()->get(theme);
             themeId.store(theme);
+        }
+
+        if (win_node->hasAnother("font_scale")) {
+            int fscale;
+            win_node->getNext("font_scale")->element()->get(fscale);
+            fontScale.store(fscale);
         }
 
         if (win_node->hasAnother("snap")) {

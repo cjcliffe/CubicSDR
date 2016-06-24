@@ -385,43 +385,42 @@ GLTextPanel::GLTextPanel() : GLPanel() {
     coord = GLPANEL_Y_UP;
     horizAlign = GLFont::GLFONT_ALIGN_CENTER;
     vertAlign = GLFont::GLFONT_ALIGN_CENTER;
+    useNativeFont = true;
 }
 
 void GLTextPanel::drawPanelContents() {
     glColor4f(1, 1, 1, 1.0);
+   
     
-    GLFont::GLFontSize sz;
-    float size;
+    
+    float pdimy = pdim.y;
 
-    
-    if (pdim.y <= 16) {
-        sz = GLFont::GLFONT_SIZE12;
-        size = 12;
-    } else if (pdim.y <= 18) {
-        sz = GLFont::GLFONT_SIZE16;
-        size = 16;
-    } else if(pdim.y <= 24) {
-        sz = GLFont::GLFONT_SIZE18;
-        size = 18;
-    } else if(pdim.y <= 32) {
-        sz = GLFont::GLFONT_SIZE24;
-        size = 24;
-    } else if(pdim.y <= 48) {
-        sz = GLFont::GLFONT_SIZE32;
-        size = 32;
-    } else {
-        sz = GLFont::GLFONT_SIZE48;
-        size = 48;
+    double appliedScaleFactor = GLFont::getScaleFactor();
+        
+    if (useNativeFont) {
+        appliedScaleFactor = 1.0;
     }
     
+    //pdimy is considered un-scaled 
+    pdimy = round(pdimy / appliedScaleFactor);
+ 
+    //target font size: a bit smaller than pdimy:
+    int sz = 12;
 
-    GLFont::getFont(sz).drawString(textVal, mid,  mid,  size, horizAlign, vertAlign, (int)pdim.x, (int)pdim.y);
+    if (pdimy > 14) {
+        //make the font a little smaller that the TextPanel
+        sz = pdimy - 2;
+
+    } 
+
+    GLFont::getFont(sz, appliedScaleFactor).drawString(textVal, mid, mid, horizAlign, vertAlign, (int)pdim.x, (int)pdim.y);
 }
 
-void GLTextPanel::setText(std::string text, GLFont::Align hAlign, GLFont::Align vAlign) {
+void GLTextPanel::setText(std::string text, GLFont::Align hAlign, GLFont::Align vAlign, bool useNative) {
     textVal = text;
     horizAlign = hAlign;
     vertAlign = vAlign;
+    useNativeFont = useNative;
 }
 
 std::string GLTextPanel::getText() {

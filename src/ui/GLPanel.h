@@ -62,6 +62,8 @@ public:
     GLPanel();
     
     void setPosition(float x, float y);
+
+
     void setSize(float w, float h);
     float getWidth();
     float getHeight();
@@ -97,11 +99,13 @@ private:
     std::string textVal;
     GLFont::Align horizAlign;
     GLFont::Align vertAlign;
+    bool useNativeFont;
 public:
     GLTextPanel();
     
     void drawPanelContents();
-    void setText(std::string text, GLFont::Align hAlign = GLFont::GLFONT_ALIGN_CENTER, GLFont::Align vAlign = GLFont::GLFONT_ALIGN_CENTER);
+    
+    void setText(std::string text, GLFont::Align hAlign = GLFont::GLFONT_ALIGN_CENTER, GLFont::Align vAlign = GLFont::GLFONT_ALIGN_CENTER , bool useNativeFont = false);
     std::string getText();
 };
 

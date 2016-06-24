@@ -58,10 +58,10 @@ void GainCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         GainInfo *gInfo = (*gi);
         float midPos = -1.0+startPos+spacing*i;
 
-        gInfo->labelPanel.setSize(spacing/2.0,(15.0/float(ClientSize.y)));
+        gInfo->labelPanel.setSize(spacing/2.0,(14.0/float(ClientSize.y)));
         gInfo->labelPanel.setPosition(midPos, -barHeight-(20.0/float(ClientSize.y)));
         
-        gInfo->valuePanel.setSize(spacing/2.0,(15.0/float(ClientSize.y)));
+        gInfo->valuePanel.setSize(spacing/2.0,(14.0/float(ClientSize.y)));
         gInfo->valuePanel.setPosition(midPos, barHeight+(20.0/float(ClientSize.y)));
         
         i+=1.0;
@@ -116,7 +116,7 @@ void GainCanvas::SetLevel() {
         gainInfo[panelHit]->levelPanel.setPosition(0.0, (-1.0+(hitResult.y)));
         gainInfo[panelHit]->current = round(gainInfo[panelHit]->low+(hitResult.y * (gainInfo[panelHit]->high-gainInfo[panelHit]->low)));
         gainInfo[panelHit]->changed = true;
-        gainInfo[panelHit]->valuePanel.setText(std::to_string(int(gainInfo[panelHit]->current)));
+        gainInfo[panelHit]->valuePanel.setText(std::to_string(int(gainInfo[panelHit]->current)),GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, true);
     }
 }
 
@@ -179,7 +179,7 @@ void GainCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
         gInfo->levelPanel.setSize(1.0, levelVal);
         gInfo->levelPanel.setPosition(0.0, levelVal-1.0);
 
-        gInfo->valuePanel.setText(std::to_string(int(gInfo->current)));
+        gInfo->valuePanel.setText(std::to_string(int(gInfo->current)),GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, true);
     }
 
 }
@@ -288,16 +288,18 @@ void GainCanvas::updateGainUI() {
         
         gInfo->panel.addChild(&gInfo->highlightPanel);
         
-        gInfo->labelPanel.setSize(spacing/2.0,(15.0/float(ClientSize.y)));
+        gInfo->labelPanel.setSize(spacing/2.0,(14.0/float(ClientSize.y)));
         gInfo->labelPanel.setPosition(midPos, -barHeight-(20.0/float(ClientSize.y)));
-        gInfo->labelPanel.setText(gi->first);
+
+        gInfo->labelPanel.setText(gi->first,GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, true);
         gInfo->labelPanel.setFill(GLPanel::GLPANEL_FILL_NONE);
         
         bgPanel.addChild(&(gInfo->labelPanel));
         
-        gInfo->valuePanel.setSize(spacing/2.0,(15.0/float(ClientSize.y)));
+        gInfo->valuePanel.setSize(spacing/2.0,(14.0/float(ClientSize.y)));
         gInfo->valuePanel.setPosition(midPos, barHeight+(20.0/float(ClientSize.y)));
-        gInfo->valuePanel.setText(std::to_string(int(gInfo->current)));
+        
+        gInfo->valuePanel.setText(std::to_string(int(gInfo->current)), GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, true);
         gInfo->valuePanel.setFill(GLPanel::GLPANEL_FILL_NONE);
         
         bgPanel.addChild(&(gInfo->valuePanel));

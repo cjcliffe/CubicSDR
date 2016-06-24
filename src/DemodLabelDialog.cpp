@@ -42,15 +42,17 @@ void DemodLabelDialog::OnChar(wxKeyEvent& event) {
     int c = event.GetKeyCode();
 
     //we support 16 bit strings for user labels internally.
-    std::wstring strValue = dialogText->GetValue().ToStdWstring();
+    wxString strValue = dialogText->GetValue();
 
     switch (c) {
     case WXK_RETURN:
     case WXK_NUMPAD_ENTER:
 
-        //No need to display the demodulator type twice if the user do not change the default value... 
-        if (strValue != activeDemod->getDemodulatorType()) {
-            activeDemod->setDemodulatorUserLabel(strValue);
+        //No need to display the demodulator type twice if the user do not change the default value...
+        //when comparing getDemodulatorType() std::string, take care of "upgrading" it to wxString which will 
+        //try to its best... 
+        if (strValue != wxString(activeDemod->getDemodulatorType())) {
+            activeDemod->setDemodulatorUserLabel(strValue.ToStdWstring());
         }
         else {
             activeDemod->setDemodulatorUserLabel(L"");

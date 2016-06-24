@@ -47,6 +47,8 @@
 #define wxID_BANDWIDTH_BASE 2150
 #define wxID_BANDWIDTH_MANUAL 2200
 
+#define wxID_DISPLAY_BASE 2250
+
 #define wxID_SETTINGS_BASE 2300
 
 #define wxID_DEVICE_ID 3500
@@ -107,7 +109,7 @@ private:
     void OnIdle(wxIdleEvent& event);
     void OnDoubleClickSash(wxSplitterEvent& event);
     void OnUnSplit(wxSplitterEvent& event);
-  
+   
     ScopeCanvas *scopeCanvas;
     SpectrumCanvas *spectrumCanvas;
     WaterfallCanvas *waterfallCanvas;
@@ -139,11 +141,14 @@ private:
     std::map<int, wxMenuItem *> audioSampleRateMenuItems;
     std::map<int, wxMenuItem *> directSamplingMenuItems;
     wxMenuBar *menuBar;
+    
     wxMenu *sampleRateMenu;
+    wxMenu *displayMenu;
     wxMenuItem *agcMenuItem;
     wxMenuItem *iqSwapMenuItem;
     wxMenuItem *lowPerfMenuItem;
     wxMenu *settingsMenu;
+    
     SoapySDR::ArgInfoList settingArgs;
     int settingsIdMax;
     std::vector<long> sampleRates;
