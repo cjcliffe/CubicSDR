@@ -267,7 +267,7 @@ void SpectrumPanel::drawPanelContents() {
     glLineWidth(1.0);
 
     if (showDb) {
-        float dbPanelWidth = (1.0 / viewWidth)*75.0 * GLFont::getScaleFactor();
+        float dbPanelWidth = (1.0 / viewWidth)*88.0 * GLFont::getScaleFactor();
         float dbPanelHeight = (1.0/viewHeight)*14.0 * GLFont::getScaleFactor();
         
         
@@ -282,7 +282,7 @@ void SpectrumPanel::drawPanelContents() {
         
         ssLabel.str("");
         if (getCeilValue() != getFloorValue() && fftSize) {
-            ssLabel << (20.0 * log10(2.0*(getFloorValue())/(double)fftSize)) << "dB";
+            ssLabel <<  (20.0 * log10(2.0*(getFloorValue())/(double)fftSize)) << "dB";
         }
 
         dbPanelFloor.setText(ssLabel.str(), GLFont::GLFONT_ALIGN_RIGHT);

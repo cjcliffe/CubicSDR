@@ -103,8 +103,8 @@ AppFrame::AppFrame() :
     demodModeSelectorAdv->addChoice("QAM");
     demodModeSelectorAdv->addChoice("QPSK");
     demodModeSelectorAdv->setHelpTip("Choose advanced modulation types.");
-    demodModeSelectorAdv->SetMinSize(wxSize(44,-1));
-    demodModeSelectorAdv->SetMaxSize(wxSize(44,-1));
+    demodModeSelectorAdv->SetMinSize(wxSize(50,-1));
+    demodModeSelectorAdv->SetMaxSize(wxSize(50,-1));
     demodTray->Add(demodModeSelectorAdv, 3, wxEXPAND | wxALL, 0);
 #endif
             

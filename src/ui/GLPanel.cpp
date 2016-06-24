@@ -404,16 +404,29 @@ void GLTextPanel::drawPanelContents() {
     //pdimy is considered un-scaled 
     pdimy = round(pdimy / appliedScaleFactor);
  
-    //target font size: a bit smaller than pdimy:
-    int sz = 12;
+    int size = 12;
 
-    if (pdimy > 14) {
-        //make the font a little smaller that the TextPanel
-        sz = pdimy - 2;
+    if (pdimy <= 16) {
+    
+        size = 12;
+    } else if (pdimy <= 18) {
+      
+        size = 16;
+    } else if(pdimy <= 24) {
+      
+        size = 18;
+    } else if(pdimy <= 32) {
+      
+        size = 24;
+    } else if(pdimy <= 48) {
+      
+        size = 32;
+    } else {
+     
+        size = 48;
+    }
 
-    } 
-
-    GLFont::getFont(sz, appliedScaleFactor).drawString(textVal, mid, mid, horizAlign, vertAlign, (int)pdim.x, (int)pdim.y);
+    GLFont::getFont(size, appliedScaleFactor).drawString(textVal, mid, mid, horizAlign, vertAlign, (int)pdim.x, (int)pdim.y);
 }
 
 void GLTextPanel::setText(std::string text, GLFont::Align hAlign, GLFont::Align vAlign, bool useNative) {

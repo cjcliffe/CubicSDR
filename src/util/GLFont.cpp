@@ -851,7 +851,8 @@ GLFont::Drawer::Drawer(int basicFontSize, double scaleFactor) {
     //final font size of  basicFontSize* scaleFactor:
     renderingFontIndex = 0;
 
-    double targetSize = basicFontSize * scaleFactor;
+    //try to align on an integer pixel size if the targetSize font is available
+    int targetSize = round(basicFontSize * scaleFactor);
 
     fonts[0].loadFontOnce();
 
@@ -869,10 +870,10 @@ GLFont::Drawer::Drawer(int basicFontSize, double scaleFactor) {
     } //end for
 
       //
-    double rawSize = fonts[renderingFontIndex].pixHeight;
+    int rawSize = fonts[renderingFontIndex].pixHeight;
 
     //targetSize may not be reached yet, so the effective rendering font: fonts[renderingFontIndex] must be scaled up a bit.
-    renderingFontScaleFactor = targetSize / rawSize;
+    renderingFontScaleFactor = (double) targetSize / rawSize;
 }
 
 void GLFont::Drawer::drawString(const std::wstring& str, float xpos, float ypos, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
