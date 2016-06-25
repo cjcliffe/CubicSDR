@@ -37,12 +37,12 @@ protected:
     std::atomic_bool spectrumEnabled;
     
 #if USE_FFTW3
-    float *fftInData;
-    fftwf_complex *fftwOutput;
-    fftwf_plan fftw_plan;
+    std::vector<float> fftInData;
+    std::vector<fftwf_complex> fftwOutput;
+    std::vector<fftwf_plan> fftw_plan;
 #else
-    liquid_float_complex *fftInData;
-    liquid_float_complex *fftOutput;
+    std::vector<liquid_float_complex> fftInData;
+    std::vector<liquid_float_complex> fftOutput;
     fftplan fftPlan;
 #endif
     
@@ -52,7 +52,7 @@ protected:
     
     double fft_ceil_ma, fft_ceil_maa;
     double fft_floor_ma, fft_floor_maa;
-    float fft_average_rate;
+    double fft_average_rate;
     
     std::vector<double> fft_result;
     std::vector<double> fft_result_ma;
