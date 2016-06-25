@@ -139,12 +139,12 @@ int GLFontChar::getIndex() {
     return index;
 }
 
-GLFont::GLFont(GLFontSize size, std::wstring fontFileName):
+GLFont::GLFont(GLFontSize size, std::wstring defFileName):
         lineHeight(0), base(0), imageWidth(0), imageHeight(0), loaded(false), texId(0), gcCounter(0) {
 
     fontSizeClass = size;
   
-    fontFileSource = fontFileName;
+    fontDefFileSource = defFileName;
 }
 
 GLFont::~GLFont() {
@@ -201,44 +201,42 @@ void GLFont::loadFontOnce() {
         return;
     }
 
-    //relative path with filename where the font is
-    std::wstring fontFile = fontFileSource;
-
     wxString resourceFolder = RES_FOLDER;
 
-#ifdef WIN32   
-    resourceFolder = getExePath() + L"/" + resourceFolder;
-#endif
-
     //full font file path
-    wxFileName fontFileName = wxFileName(resourceFolder + L"/" + fontFile);
+    wxFileName fontDefFileName = wxFileName(resourceFolder + L"/" + fontDefFileSource);
     
-    if (!fontFileName.Exists()) {
+    if (!fontDefFileName.Exists()) {
         wxFileName exePath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
        
         //Full Path where the fonts are, including file name
-        fontFileName = wxFileName(exePath.GetPath() + L"/" + fontFile);
+        fontDefFileName = wxFileName(exePath.GetPath() + L"/"+ fontDefFileSource);
 
-        //Dir where the fonts are
-        resourceFolder = fontFileName.GetPath();
+        if (!fontDefFileName.FileExists()) {
+            std::cout << "Font file " << fontDefFileName.GetFullPath() << " does not exist?" << std::endl;
+            return;
+        }
+
+        if (!fontDefFileName.IsFileReadable()) {
+            std::cout << "Font file " << fontDefFileName.GetFullPath() << " is not readable?" << std::endl;
+            return;
+        }
+    }
+    else {
+
+        if (!fontDefFileName.IsFileReadable()) {
+            std::cout << "Font file " << fontDefFileName.GetFullPath() << " is not readable?" << std::endl;
+            return;
+        }
     }
 
-    //overwrite with the full path
-    fontFileSource = fontFileName.GetFullPath(wxPATH_NATIVE).ToStdWstring();
-    
-    if (!fontFileName.FileExists()) {
-        std::cout << "Font file " << fontFileSource << " does not exist?" << std::endl;
-        return;
-    }
-    
-    if (!fontFileName.IsFileReadable()) {
-        std::cout << "Font file " << fontFileSource << " is not readable?" << std::endl;
-        return;
-    }
+    //Re-compute the resource dir.
+    resourceFolder = fontDefFileName.GetPath();
 
+    std::wstring fontDefFileNamePath = fontDefFileName.GetFullPath(wxPATH_NATIVE).ToStdWstring();
     
     std::wifstream input;
-    std::string inpFileStr(fontFileSource.begin(), fontFileSource.end());
+    std::string inpFileStr(fontDefFileNamePath.begin(), fontDefFileNamePath.end());
     input.open(inpFileStr, std::ios::in);
 
     std::wstring op;
@@ -445,11 +443,11 @@ void GLFont::loadFontOnce() {
             ofs += 8;
         }
 
-        std::cout << "Loaded font '" << fontName << "' from '" << fontFileSource << "', parsed " << characters.size() << " characters." << std::endl;
+        std::cout << "Loaded font '" << fontName << "' from '" << imageFile << "', parsed " << characters.size() << " characters." << std::endl;
 
         loaded = true;
     } else {
-        std::cout << "Error loading font file " << fontFileSource << std::endl;
+        std::cout << "Error loading font file " << imageFile << std::endl;
     }
 
     input.close();

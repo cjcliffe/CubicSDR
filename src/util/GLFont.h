@@ -159,9 +159,15 @@ private:
     std::vector<float> gl_vertices;
     std::vector<float> gl_uv;
 
+    //The font name as written in the def file.
     std::wstring fontName;
+
+    //The full path font PNG filename
     std::wstring imageFile;
-    std::wstring fontFileSource;
+
+    //the real path location of the font definition file
+    std::wstring fontDefFileSource;
+
     GLuint texId;
     int gcCounter;
     std::mutex cache_busy;
