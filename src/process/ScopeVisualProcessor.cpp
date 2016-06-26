@@ -10,12 +10,8 @@ ScopeVisualProcessor::ScopeVisualProcessor(): outputBuffers("ScopeVisualProcesso
 	fft_floor_ma = fft_floor_maa = 0;
     maxScopeSamples = 1024;
 #if USE_FFTW3
-    fftInData = nullptr;
-    fftwOutput = nullptr;
     fftw_plan = nullptr;
 #else
-    fftInData = nullptr;
-    fftOutput = nullptr;
     fftPlan = nullptr;
 #endif
 }
@@ -25,22 +21,12 @@ ScopeVisualProcessor::~ScopeVisualProcessor() {
     if (fftw_plan) {
         fftwf_destroy_plan(fftw_plan);
     }
-    if (fftInData) {
-        free(fftInData);
-    }
-    if (fftwOutput) {
-        free(fftwOutput);
-    }
+    
 #else
     if (fftPlan) {
         fft_destroy_plan(fftPlan);
     }
-    if (fftInData) {
-        free(fftInData);
-    }
-    if (fftOutput) {
-        free(fftOutput);
-    }
+    
 #endif
 }
 
@@ -50,31 +36,23 @@ void ScopeVisualProcessor::setup(int fftSize_in) {
     desiredInputSize = fftSize;
 
 #if USE_FFTW3
-    if (fftInData) {
-        free(fftInData);
-    }
-    fftInData = (float*) fftwf_malloc(sizeof(float) * fftSize);
-    if (fftwOutput) {
-        free(fftwOutput);
-    }
-    fftwOutput = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex) * fftSize);
+   
+    fftInData.resize(fftSize);  
+    fftwOutput.resize(fftSize);
+
     if (fftw_plan) {
         fftwf_destroy_plan(fftw_plan);
     }
-    fftw_plan = fftwf_plan_dft_r2c_1d(fftSize, fftInData, fftwOutput, FFTW_ESTIMATE);
+    fftw_plan = fftwf_plan_dft_r2c_1d(fftSize, fftInData.data(), fftwOutput.data(), FFTW_ESTIMATE);
 #else
-    if (fftInData) {
-        free(fftInData);
-    }
-    fftInData = (liquid_float_complex*) malloc(sizeof(liquid_float_complex) * fftSize);
-    if (fftOutput) {
-        free(fftOutput);
-    }
-    fftOutput = (liquid_float_complex*) malloc(sizeof(liquid_float_complex) * fftSize);
+ 
+    fftInData.resize(fftSize);
+    fftOutput.resize(fftSize);
+
     if (fftPlan) {
         fft_destroy_plan(fftPlan);
     }
-    fftPlan = fft_create_plan(fftSize, fftInData, fftOutput, LIQUID_FFT_FORWARD, 0);
+    fftPlan = fft_create_plan(fftSize, fftInData.data(), fftOutput.data(), LIQUID_FFT_FORWARD, 0);
 #endif
 }
 
@@ -191,6 +169,7 @@ void ScopeVisualProcessor::process() {
                         fftInData[i].imag = 0;
                     } else {
                         fftInData[i].real = 0;
+                        fftInData[i].imag = 0;
                     }
                 }
             } else if (audioInputData->channels==2) {
@@ -215,7 +194,7 @@ void ScopeVisualProcessor::process() {
             
             delete audioInputData; //->decRefCount();
 
-            float fft_ceil = 0, fft_floor = 1;
+            double fft_ceil = 0, fft_floor = 1;
             
             if (fft_result.size() < (fftSize/2)) {
                 fft_result.resize((fftSize/2));
@@ -227,16 +206,25 @@ void ScopeVisualProcessor::process() {
             fftwf_execute(fftw_plan);
             
             for (i = 0; i < (fftSize/2); i++) {
-                float a = fftwOutput[i][0];
-                float b = fftwOutput[i][1];
-                fft_result[i] = sqrt( a * a + b * b);
+                //cast result to double to prevent overflows / excessive precision losses in the following computations...
+                double a = (double) fftwOutput[i][0];
+                double b = (double) fftwOutput[i][1];
+
+                //computes norm = sqrt(a**2 + b**2)
+                //being actually floats cast into doubles, we are indeed overflow-free here.
+                fft_result[i] = sqrt(a*a + b*b);
             }
 #else
             fft_execute(fftPlan);
             for (i = 0; i < (fftSize/2); i++) {
-                float a = fftOutput[i].real;
-                float b = fftOutput[i].imag;
-                fft_result[i] = sqrt( a * a + b * b);
+
+                //cast result to double to prevent overflows / excessive precision losses in the following computations...
+                double a = (double) fftOutput[i].real;
+                double b = (double) fftOutput[i].imag;
+
+                //computes norm = sqrt(a**2 + b**2)
+                //being actually floats cast into doubles, we are indeed overflow-free here.
+                fft_result[i] = sqrt(a*a + b*b);
             }
 #endif
             
@@ -278,6 +266,7 @@ void ScopeVisualProcessor::process() {
             renderData->fft_ceil = fft_ceil_maa;
             renderData->fft_size = fftSize/2;
             renderData->spectrum = true;
+
             distribute(renderData);
         } else {
             delete audioInputData; //->decRefCount();
