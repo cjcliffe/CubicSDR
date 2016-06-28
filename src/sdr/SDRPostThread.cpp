@@ -184,7 +184,7 @@ void SDRPostThread::run() {
 
     iqDataInQueue->set_max_num_items(0);
     
-    while (!terminated) {
+    while (!stopping) {
         SDRThreadIQData *data_in;
         
         iqDataInQueue->pop(data_in);
@@ -229,7 +229,7 @@ void SDRPostThread::run() {
 }
 
 void SDRPostThread::terminate() {
-    terminated = true;
+    IOThread::terminate();
     SDRThreadIQData *dummy = new SDRThreadIQData;
     iqDataInQueue->push(dummy);
 }

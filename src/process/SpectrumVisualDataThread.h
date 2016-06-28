@@ -9,7 +9,7 @@ public:
     ~SpectrumVisualDataThread();
     SpectrumVisualProcessor *getProcessor();
     
-    void run();
+    virtual void run();
     
 protected:
     SpectrumVisualProcessor sproc;

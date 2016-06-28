@@ -141,10 +141,7 @@ private:
     std::atomic<std::string *> label; //
     // User editable buffer, 16 bit string.
     std::atomic<std::wstring *> user_label; 
-    std::atomic_bool terminated; //
-    std::atomic_bool demodTerminated; //
-    std::atomic_bool audioTerminated; //
-    std::atomic_bool preDemodTerminated;
+
     std::atomic_bool active;
     std::atomic_bool squelch;
     std::atomic_bool muted;

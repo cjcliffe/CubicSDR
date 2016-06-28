@@ -16,8 +16,8 @@ public:
     void bindDemodulators(std::vector<DemodulatorInstance *> *demods);
     void removeDemodulator(DemodulatorInstance *demod);
     
-    void run();
-    void terminate();
+    virtual void run();
+    virtual void terminate();
 
     void runSingleCH(SDRThreadIQData *data_in);
     void runPFBCH(SDRThreadIQData *data_in);

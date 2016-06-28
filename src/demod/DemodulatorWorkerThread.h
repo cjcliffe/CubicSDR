@@ -75,7 +75,7 @@ public:
     DemodulatorWorkerThread();
     ~DemodulatorWorkerThread();
 
-    void run();
+    virtual void run();
 
     void setCommandQueue(DemodulatorThreadWorkerCommandQueue *tQueue) {
         commandQueue = tQueue;
@@ -85,7 +85,7 @@ public:
         resultQueue = tQueue;
     }
 
-    void terminate();
+    virtual void terminate();
 
 protected:
 

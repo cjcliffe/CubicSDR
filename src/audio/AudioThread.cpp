@@ -380,7 +380,7 @@ void AudioThread::run() {
     inputQueue = static_cast<AudioThreadInputQueue *>(getInputQueue("AudioDataInput"));
     threadQueueNotify = static_cast<DemodulatorThreadCommandQueue*>(getOutputQueue("NotifyQueue"));
     
-    while (!terminated) {
+    while (!stopping) {
         AudioThreadCommand command;
         cmdQueue.pop(command);
 
@@ -430,7 +430,7 @@ void AudioThread::run() {
 }
 
 void AudioThread::terminate() {
-    terminated = true;
+    IOThread::terminate();
     AudioThreadCommand endCond;   // push an empty input to bump the queue
     cmdQueue.push(endCond);
 }

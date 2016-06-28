@@ -7,6 +7,7 @@
 #include <set>
 #include <string>
 #include <iostream>
+#include <thread>
 
 #include "ThreadQueue.h"
 #include "Timer.h"
@@ -189,13 +190,23 @@ public:
 #ifdef __APPLE__
     virtual void *threadMain();
 #else
+
+    //the thread Main call back itself
     virtual void threadMain();
 #endif
 
     virtual void setup();
     virtual void run();
+
+    //Request for termination (asynchronous)
     virtual void terminate();
-    bool isTerminated();
+
+    //Returns true if the thread is indeed terminated, i.e the run() method
+    //has returned. 
+    //If wait > 0 ms, the call is blocking at most 'waitMs' milliseconds for the thread to die, then returns.
+    //If wait < 0, the wait in infinite until the thread dies.
+    bool isTerminated(int waitMs = 0);
+    
     virtual void onBindOutput(std::string name, ThreadQueueBase* threadQueue);
     virtual void onBindInput(std::string name, ThreadQueueBase* threadQueue);
 
@@ -207,6 +218,13 @@ public:
 protected:
     std::map<std::string, ThreadQueueBase *, map_string_less> input_queues;
     std::map<std::string, ThreadQueueBase *, map_string_less> output_queues;
-    std::atomic_bool terminated;
+    
+    //true when a termination is ordered
+    std::atomic_bool stopping;
     Timer gTimer;
+
+private:
+    //true when the thread has really ended, i.e run() from threadMain() has returned.
+    std::atomic_bool terminated;
+
 };

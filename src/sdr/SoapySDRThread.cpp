@@ -176,7 +176,7 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
         }
     }
     
-    while (n_read < nElems && !terminated) {
+    while (n_read < nElems && !stopping) {
         int n_requested = nElems-n_read;
         int n_stream_read = device->readStream(stream, buffs, mtElems, flags, timeNs);
         if ((n_read + n_stream_read) > nElems) {
@@ -194,7 +194,7 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
         }
     }
     
-    if (n_read > 0 && !terminated) {
+    if (n_read > 0 && !stopping) {
         SDRThreadIQData *dataOut = buffers.getBuffer();
 
         if (iq_swap.load()) {
@@ -225,7 +225,7 @@ void SDRThread::readLoop() {
     
     updateGains();
 
-    while (!terminated.load()) {
+    while (!stopping.load()) {
         updateSettings();
         readStream(iqDataOutQueue);
     }
@@ -360,7 +360,6 @@ void SDRThread::run() {
 //#endif
 
     std::cout << "SDR thread starting." << std::endl;
-    terminated.store(false);
     
     SDRDeviceInfo *activeDev = deviceInfo.load();
     
@@ -380,8 +379,8 @@ void SDRThread::run() {
     
     std::cout << "SDR thread done." << std::endl;
     
-    if (!terminated.load()) {
-        terminated.store(true);
+    if (!stopping.load()) {
+        stopping.store(true);
         wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_TERMINATED, "Done.");
     }
 }
