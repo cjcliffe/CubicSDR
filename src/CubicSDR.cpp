@@ -149,17 +149,17 @@ bool CubicSDR::OnInit() {
     //better (by default, was "C" locale).
     std::setlocale(LC_ALL, "");
 
-#ifdef _OSX_APP_
-    CFBundleRef mainBundle = CFBundleGetMainBundle();
-    CFURLRef resourcesURL = CFBundleCopyResourcesDirectoryURL(mainBundle);
-    char path[PATH_MAX];
-    if (!CFURLGetFileSystemRepresentation(resourcesURL, TRUE, (UInt8 *)path, PATH_MAX))
-    {
-        // error!
-    }
-    CFRelease(resourcesURL);
-    chdir(path);
-#endif
+//#ifdef _OSX_APP_
+//    CFBundleRef mainBundle = CFBundleGetMainBundle();
+//    CFURLRef resourcesURL = CFBundleCopyResourcesDirectoryURL(mainBundle);
+//    char path[PATH_MAX];
+//    if (!CFURLGetFileSystemRepresentation(resourcesURL, TRUE, (UInt8 *)path, PATH_MAX))
+//    {
+//        // error!
+//    }
+//    CFRelease(resourcesURL);
+//    chdir(path);
+//#endif
 
     if (!wxApp::OnInit()) {
         return false;
