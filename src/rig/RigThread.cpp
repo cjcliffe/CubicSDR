@@ -3,7 +3,6 @@
 std::vector<const struct rig_caps *> RigThread::rigCaps;
 
 RigThread::RigThread() {
-    terminated.store(true);
     freq = wxGetApp().getFrequency();
     newFreq = freq;
     freqChanged.store(true);
@@ -46,8 +45,7 @@ void RigThread::run() {
     int retcode, status;
 
     termStatus = 0;
-    terminated.store(false);
-
+    
     std::cout << "Rig thread starting." << std::endl;
 
     rig = rig_init(rigModel);
@@ -57,7 +55,7 @@ void RigThread::run() {
     
     if (retcode != 0) {
         std::cout << "Rig failed to init. " << std::endl;
-        terminated.store(true);
+        IOThread::terminate();
         return;
     }
     
@@ -69,7 +67,7 @@ void RigThread::run() {
         std::cout << "Rig info was NULL." << std::endl;
     }
     
-    while (!terminated.load()) {
+    while (!stopping) {
         std::this_thread::sleep_for(std::chrono::milliseconds(150));
         
         DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
@@ -77,7 +75,7 @@ void RigThread::run() {
 
         if (freqChanged.load() && (controlMode.load() || setOneShot.load())) {
             status = rig_get_freq(rig, RIG_VFO_CURR, &freq);
-            if (status == 0 && !terminated.load()) {
+            if (status == 0 && !stopping) {
                 
                 if (freq != newFreq && setOneShot.load()) {
                     freq = newFreq;
@@ -96,7 +94,7 @@ void RigThread::run() {
             
             status = rig_get_freq(rig, RIG_VFO_CURR, &checkFreq);
 
-            if (status == 0 && !terminated.load()) {
+            if (status == 0 && !stopping) {
                 if (checkFreq != freq && followMode.load()) {
                     freq = checkFreq;
                     if (followModem.load()) {
