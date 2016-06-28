@@ -23,7 +23,7 @@ public:
     
     static std::vector<SDRDeviceInfo *> *enumerate_devices(std::string remoteAddr = "", bool noInit=false);
 
-    void run();
+    virtual void run();
 
     static SoapySDR::Kwargs argsStrToKwargs(const std::string &args);
     static void addRemote(std::string remoteAddr);

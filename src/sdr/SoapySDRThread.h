@@ -50,7 +50,7 @@ public:
     ~SDRThread();
     enum SDRThreadState { SDR_THREAD_MESSAGE, SDR_THREAD_INITIALIZED, SDR_THREAD_TERMINATED, SDR_THREAD_FAILED };
     
-    void run();
+    virtual void run();
 
     SDRDeviceInfo *getDevice();
     void setDevice(SDRDeviceInfo *dev);

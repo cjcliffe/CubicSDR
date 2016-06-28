@@ -73,7 +73,7 @@ void DemodulatorThread::run() {
     
     ModemIQData modemData;
     
-    while (!terminated) {
+    while (!stopping) {
         DemodulatorThreadPostIQData *inp;
         iqInputQueue->pop(inp);
         //        std::lock_guard < std::mutex > lock(inp->m_mutex);
@@ -271,7 +271,7 @@ void DemodulatorThread::run() {
         
         inp->decRefCount();
     }
-    // end while !terminated
+    // end while !stopping
     
     // Purge any unused inputs
     while (!iqInputQueue->empty()) {
@@ -301,7 +301,7 @@ void DemodulatorThread::run() {
 }
 
 void DemodulatorThread::terminate() {
-    terminated = true;
+    IOThread::terminate();
     DemodulatorThreadPostIQData *inp = new DemodulatorThreadPostIQData;    // push dummy to nudge queue
     iqInputQueue->push(inp);
 }

@@ -35,10 +35,7 @@ DemodulatorInstance::DemodulatorInstance() {
 #if ENABLE_DIGITAL_LAB
     activeOutput = nullptr;
 #endif
-	terminated.store(true);
-	demodTerminated.store(true);
-	audioTerminated.store(true);
-	preDemodTerminated.store(true);
+	
 	active.store(false);
 	squelch.store(false);
     muted.store(false);
@@ -125,7 +122,6 @@ void DemodulatorInstance::run() {
 #endif
 
     active = true;
-    audioTerminated = demodTerminated = preDemodTerminated = terminated = false;
 
 }
 
@@ -163,7 +159,7 @@ bool DemodulatorInstance::isTerminated() {
         case DemodulatorThreadCommand::DEMOD_THREAD_CMD_AUDIO_TERMINATED:
             if (t_Audio) {
                 t_Audio->join();
-                audioTerminated = true;
+               
                 delete t_Audio;
                 t_Audio = nullptr;
             }
@@ -183,7 +179,6 @@ bool DemodulatorInstance::isTerminated() {
                 closeOutput();
             }
 #endif
-            demodTerminated = true;
             break;
         case DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_PREPROCESS_TERMINATED:
             if (t_PreDemod) {
@@ -193,7 +188,6 @@ bool DemodulatorInstance::isTerminated() {
                 t_PreDemod->join();
                 delete t_PreDemod;
                 #endif
-                preDemodTerminated = true;
                 t_PreDemod = nullptr;
             }
             break;
@@ -202,7 +196,12 @@ bool DemodulatorInstance::isTerminated() {
         }
     }
 
-    terminated = audioTerminated && demodTerminated && preDemodTerminated;
+    //
+    bool audioTerminated = audioThread->isTerminated();
+    bool demodTerminated = demodulatorThread->isTerminated();
+    bool preDemodTerminated = demodulatorPreThread->isTerminated();
+
+    bool terminated = audioTerminated && demodTerminated && preDemodTerminated;
 
     return terminated;
 }

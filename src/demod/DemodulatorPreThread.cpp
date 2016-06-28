@@ -65,7 +65,7 @@ void DemodulatorPreThread::run() {
 
     t_Worker = new std::thread(&DemodulatorWorkerThread::threadMain, workerThread);
     
-    while (!terminated) {
+    while (!stopping) {
         DemodulatorThreadIQData *inp;
         iqInputQueue->pop(inp);
         
@@ -211,7 +211,7 @@ void DemodulatorPreThread::run() {
 
         inp->decRefCount();
 
-        if (!terminated && !workerResults->empty()) {
+        if (!stopping && !workerResults->empty()) {
             while (!workerResults->empty()) {
                 DemodulatorWorkerThreadResult result;
                 workerResults->pop(result);
@@ -341,7 +341,7 @@ int DemodulatorPreThread::getAudioSampleRate() {
 }
 
 void DemodulatorPreThread::terminate() {
-    terminated = true;
+    IOThread::terminate();
     DemodulatorThreadIQData *inp = new DemodulatorThreadIQData;    // push dummy to nudge queue
     iqInputQueue->push(inp);
     DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_NULL);

@@ -309,7 +309,7 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(std::string remot
 void SDREnumerator::run() {
 
     std::cout << "SDR enumerator starting." << std::endl;
-    terminated.store(false);
+    
 
     wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Scanning local devices, please wait..");
     SDREnumerator::enumerate_devices("");
@@ -323,7 +323,6 @@ void SDREnumerator::run() {
     }
     
     std::cout << "Reporting enumeration complete." << std::endl;
-    terminated.store(true);
     wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_DEVICES_READY, "Finished scanning devices.");
     std::cout << "SDR enumerator done." << std::endl;
 

@@ -15,7 +15,7 @@ public:
     DemodulatorPreThread(DemodulatorInstance *parent);
     ~DemodulatorPreThread();
 
-    void run();
+    virtual void run();
     
     void setDemodType(std::string demodType);
     std::string getDemodType();
@@ -34,7 +34,7 @@ public:
     
     bool isInitialized();
     
-    void terminate();
+    virtual void terminate();
 
     Modem *getModem();
     ModemKit *getModemKit();

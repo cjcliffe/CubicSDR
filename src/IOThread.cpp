@@ -3,18 +3,33 @@
 std::mutex ReBufferGC::g_mutex;
 std::set<ReferenceCounter *> ReBufferGC::garbage;
 
+#define SPIN_WAIT_SLEEP_MS 5
+
 IOThread::IOThread() {
     terminated.store(false);
+    stopping.store(false);
 }
 
 IOThread::~IOThread() {
-
+    terminated.store(true);
+    stopping.store(true);
 }
 
 #ifdef __APPLE__
 void *IOThread::threadMain() {
     terminated.store(false);
-    run();
+    stopping.store(false);
+    try {
+        run();
+    }
+    catch (...) {
+        terminated.store(true);
+        stopping.store(true);
+        throw;
+    }
+
+    terminated.store(true);
+    stopping.store(true);
     return this;
 };
 
@@ -24,20 +39,32 @@ void *IOThread::pthread_helper(void *context) {
 #else
 void IOThread::threadMain() {
     terminated.store(false);
-    run();
+    stopping.store(false);
+    try {
+        run();
+    }
+    catch (...) {
+        terminated.store(true);
+        stopping.store(true);
+        throw;
+    }
+  
+    terminated.store(true);
+    stopping.store(true);
 };
 #endif
 
 void IOThread::setup() {
-    
+    //redefined in subclasses
 };
 
 void IOThread::run() {
-    
+    //redefined in subclasses
 };
 
+
 void IOThread::terminate() {
-    terminated.store(true);
+    stopping.store(true);
 };
 
 void IOThread::onBindOutput(std::string /* name */, ThreadQueueBase* /* threadQueue */) {
@@ -66,6 +93,34 @@ ThreadQueueBase *IOThread::getOutputQueue(std::string qname) {
     return output_queues[qname];
 };
 
-bool IOThread::isTerminated() {
+bool IOThread::isTerminated(int waitMs) {
+
+    if (terminated.load()) {
+        return true;
+    }
+    else if (waitMs == 0) {
+        return false;
+    }
+
+    //this is a stupid busy plus sleep loop
+    int nbCyclesToWait = 0;
+
+    if (waitMs < 0) {
+        nbCyclesToWait = std::numeric_limits<int>::max();
+    }
+    else {
+
+        nbCyclesToWait = (waitMs / SPIN_WAIT_SLEEP_MS) + 1;
+    }
+
+    for ( int i = 0; i < nbCyclesToWait; i++) {
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(SPIN_WAIT_SLEEP_MS));
+
+        if (terminated.load()) {
+            return true;
+        }
+    }
+
     return terminated.load();
 }

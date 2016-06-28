@@ -310,6 +310,11 @@ int CubicSDR::OnExit() {
     demodVisualThread->terminate();
     t_DemodVisual->join();
 
+    //Poor man join
+    sdrPostThread->isTerminated(1000);
+    spectrumVisualThread->isTerminated(1000);
+    demodVisualThread->isTerminated(1000);
+
     delete sdrThread;
 
     delete sdrPostThread;

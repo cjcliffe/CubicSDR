@@ -13,7 +13,7 @@ public:
     int getLinesPerSecond();
     SpectrumVisualProcessor *getProcessor();
     
-    void run();
+    virtual void run();
     
 protected:
     FFTDataDistributor fftDistrib;

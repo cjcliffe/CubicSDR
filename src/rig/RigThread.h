@@ -22,7 +22,7 @@ public:
     ~RigThread();
 
     void initRig(rig_model_t rig_model, std::string rig_file, int serial_rate);
-    void run();
+    virtual void run();
     
     int terminationStatus();
     

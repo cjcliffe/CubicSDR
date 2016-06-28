@@ -17,7 +17,7 @@ void DemodulatorWorkerThread::run() {
     commandQueue = static_cast<DemodulatorThreadWorkerCommandQueue *>(getInputQueue("WorkerCommandQueue"));
     resultQueue = static_cast<DemodulatorThreadWorkerResultQueue *>(getOutputQueue("WorkerResultQueue"));
     
-    while (!terminated) {
+    while (!stopping) {
         bool filterChanged = false;
         bool makeDemod = false;
         DemodulatorWorkerThreadCommand filterCommand, demodCommand;
@@ -41,7 +41,7 @@ void DemodulatorWorkerThread::run() {
             done = commandQueue->empty();
         }
 
-        if ((makeDemod || filterChanged) && !terminated) {
+        if ((makeDemod || filterChanged) && !stopping) {
             DemodulatorWorkerThreadResult result(DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS);
             
             
@@ -103,7 +103,7 @@ void DemodulatorWorkerThread::run() {
 }
 
 void DemodulatorWorkerThread::terminate() {
-    terminated = true;
+    IOThread::terminate();
     DemodulatorWorkerThreadCommand inp;    // push dummy to nudge queue
     commandQueue->push(inp);
 }

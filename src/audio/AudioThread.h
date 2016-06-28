@@ -69,8 +69,8 @@ public:
     int getOutputDevice();
     void setSampleRate(int sampleRate);
     int getSampleRate();
-    void run();
-    void terminate();
+    virtual void run();
+    virtual void terminate();
 
     bool isActive();
     void setActive(bool state);
