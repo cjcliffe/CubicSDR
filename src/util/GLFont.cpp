@@ -5,6 +5,10 @@
 #include <algorithm>
 #include "cubic_math.h"
 
+#ifdef _OSX_APP_
+#include "CoreFoundation/CoreFoundation.h"
+#endif
+
 static std::wstring getExePath(void)
 {
     //get the dir path of the executable
@@ -201,8 +205,21 @@ void GLFont::loadFontOnce() {
         return;
     }
 
+#if _OSX_APP_
+    CFBundleRef mainBundle = CFBundleGetMainBundle();
+    CFURLRef resourcesURL = CFBundleCopyResourcesDirectoryURL(mainBundle);
+    char path[PATH_MAX];
+    if (!CFURLGetFileSystemRepresentation(resourcesURL, TRUE, (UInt8 *)path, PATH_MAX))
+    {
+        // error!
+    }
+    CFRelease(resourcesURL);
+    wxString resourceFolder = std::string(path) + "/";
+    
+#else
     wxString resourceFolder = RES_FOLDER;
-
+#endif
+    
     //full font file path
     wxFileName fontDefFileName = wxFileName(resourceFolder + L"/" + fontDefFileSource);
     

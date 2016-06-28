@@ -491,7 +491,7 @@ IF (USE_HAMLIB)
 ENDIF()
 
 
-SET (CUBICSDR_RESOURCES 
+SET (CUBICSDR_FONTS 
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12.fnt
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16.fnt
     ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18.fnt
@@ -648,15 +648,20 @@ IF (APPLE AND BUNDLE_APP)
         MACOSX_BUNDLE 
         ${cubicsdr_sources}
         ${cubicsdr_headers} 
-        ${CUBICSDR_RESOURCES}
+        ${CUBICSDR_FONTS}
         ${PROJECT_SOURCE_DIR}/icon/CubicSDR.icns
     ) 
     
     SET_SOURCE_FILES_PROPERTIES(
-        ${CUBICSDR_RESOURCES}
         ${PROJECT_SOURCE_DIR}/icon/CubicSDR.icns
         PROPERTIES
         MACOSX_PACKAGE_LOCATION Resources
+    )
+
+    SET_SOURCE_FILES_PROPERTIES(
+        ${CUBICSDR_FONTS}
+        PROPERTIES
+        MACOSX_PACKAGE_LOCATION Resources/fonts
     )
 
     IF(ENABLE_FFTW3)
@@ -777,7 +782,7 @@ IF(APPLE AND NOT BUNDLE_APP)
 
 	INSTALL(TARGETS CubicSDR DESTINATION bin)
         install(FILES 
-            ${CUBICSDR_RESOURCES}
+            ${CUBICSDR_FONTS}
             ${PROJECT_SOURCE_DIR}/src/CubicSDR.png
 	    DESTINATION share/cubicsdr)
 
@@ -817,7 +822,7 @@ IF (WIN32 AND NOT BUILD_INSTALLER)
 	ENDIF()
 
     INSTALL(FILES 
-		${CUBICSDR_RESOURCES}
+		${CUBICSDR_FONTS}
 		${PROJECT_SOURCE_DIR}/src/CubicSDR.png
 	 DESTINATION share/cubicsdr)
 ENDIF()
@@ -849,7 +854,7 @@ IF (WIN32 AND BUILD_INSTALLER)
 	install(TARGETS CubicSDR RUNTIME DESTINATION .)
 
 	install(FILES 
-        ${CUBICSDR_RESOURCES}
+        ${CUBICSDR_FONTS}
         ${PROJECT_SOURCE_DIR}/icon/CubicSDR.ico
 		${LIQUID_DLL}
 		DESTINATION .)
@@ -939,7 +944,7 @@ IF (UNIX AND NOT APPLE AND BUILD_DEB)
 
 	INSTALL(TARGETS CubicSDR DESTINATION bin)
         install(FILES 
-            ${CUBICSDR_RESOURCES}
+            ${CUBICSDR_FONTS}
             ${PROJECT_SOURCE_DIR}/src/CubicSDR.png
 	    DESTINATION share/cubicsdr)
         
@@ -964,7 +969,7 @@ IF(UNIX AND NOT APPLE AND NOT BUILD_DEB)
 
 	INSTALL(TARGETS CubicSDR DESTINATION bin)
         install(FILES 
-            ${CUBICSDR_RESOURCES}
+            ${CUBICSDR_FONTS}
             ${PROJECT_SOURCE_DIR}/src/CubicSDR.png
     DESTINATION share/cubicsdr)
         INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.desktop"
