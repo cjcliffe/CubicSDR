@@ -782,9 +782,12 @@ IF(APPLE AND NOT BUNDLE_APP)
 
 	INSTALL(TARGETS CubicSDR DESTINATION bin)
         install(FILES 
-            ${CUBICSDR_FONTS}
             ${PROJECT_SOURCE_DIR}/src/CubicSDR.png
 	    DESTINATION share/cubicsdr)
+
+        install(FILES 
+            ${CUBICSDR_FONTS}
+	    DESTINATION share/cubicsdr/fonts)
 
     CONFIGURE_FILE(
       "${PROJECT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
@@ -822,9 +825,12 @@ IF (WIN32 AND NOT BUILD_INSTALLER)
 	ENDIF()
 
     INSTALL(FILES 
-		${CUBICSDR_FONTS}
 		${PROJECT_SOURCE_DIR}/src/CubicSDR.png
 	 DESTINATION share/cubicsdr)
+
+    INSTALL(FILES 
+		${CUBICSDR_FONTS}
+	 DESTINATION share/cubicsdr/fonts)
 ENDIF()
 
 IF (WIN32 AND BUILD_INSTALLER)
@@ -944,9 +950,12 @@ IF (UNIX AND NOT APPLE AND BUILD_DEB)
 
 	INSTALL(TARGETS CubicSDR DESTINATION bin)
         install(FILES 
-            ${CUBICSDR_FONTS}
             ${PROJECT_SOURCE_DIR}/src/CubicSDR.png
 	    DESTINATION share/cubicsdr)
+
+        install(FILES 
+            ${CUBICSDR_FONTS}
+	    DESTINATION share/cubicsdr/fonts)
         
     INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.desktop" 
         DESTINATION share/applications)
@@ -968,14 +977,19 @@ IF(UNIX AND NOT APPLE AND NOT BUILD_DEB)
 			"${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.desktop" @ONLY IMMEDIATE)
 
 	INSTALL(TARGETS CubicSDR DESTINATION bin)
-        install(FILES 
-            ${CUBICSDR_FONTS}
+ 
+    INSTALL(FILES 
             ${PROJECT_SOURCE_DIR}/src/CubicSDR.png
-    DESTINATION share/cubicsdr)
-        INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.desktop"
-        DESTINATION share/applications)
+		    DESTINATION share/cubicsdr)
+
+    INSTALL(FILES 
+            ${CUBICSDR_FONTS}
+		    DESTINATION share/cubicsdr/fonts)
+
+    INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.desktop"
+        	DESTINATION share/applications)
         
-    	CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/external/deb/deb_post.sh.in" 
+    CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/external/deb/deb_post.sh.in" 
 			"${CMAKE_CURRENT_BINARY_DIR}/deb_post.sh" @ONLY IMMEDIATE)
     CONFIGURE_FILE(
       "${PROJECT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
