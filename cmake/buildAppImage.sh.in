@@ -8,7 +8,9 @@ cp ${CMAKE_CURRENT_SOURCE_DIR}/src/CubicSDR.png ${CMAKE_CURRENT_BINARY_DIR}/Cubi
 cp ${APPIMAGEKIT_APPRUN} ${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.AppDir/
 chmod +x ${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.AppDir/AppRun
 mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.AppDir/usr/bin
+mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.AppDir/usr/bin/fonts
 cp ${CMAKE_CURRENT_BINARY_DIR}/${EX_PLATFORM_NAME}/* ${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.AppDir/usr/bin
+cp ${CMAKE_CURRENT_BINARY_DIR}/${EX_PLATFORM_NAME}/fonts/* ${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.AppDir/usr/bin/fonts/
 mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.AppDir/usr/local/lib/
 cp -R /usr/local/lib/SoapySDR ${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.AppDir/usr/local/lib/
 mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.AppDir/usr/lib
