@@ -1584,6 +1584,10 @@ void AppFrame::OnUnSplit(wxSplitterEvent& event)
 
 
 void AppFrame::saveSession(std::string fileName) {
+
+    //disable event processing the time of saving
+    wxEventBlocker disableEvents(this);
+
     DataTree s("cubicsdr_session");
     DataNode *header = s.rootNode()->newChild("header");
     *header->newChild("version") = std::string(CUBICSDR_VERSION);
@@ -1633,6 +1637,10 @@ void AppFrame::saveSession(std::string fileName) {
 }
 
 bool AppFrame::loadSession(std::string fileName) {
+
+    //disable event processing the time of loading
+    wxEventBlocker disableEvents(this);
+
     DataTree l;
     if (!l.LoadFromFileXML(fileName)) {
         return false;
