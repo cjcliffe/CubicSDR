@@ -298,6 +298,8 @@ int CubicSDR::OnExit() {
    
     if (t_SDR) {
        t_SDR->join();
+       delete t_SDR;
+       t_SDR = nullptr;
     }
    
     std::cout << "Terminating SDR post-processing thread.." << std::endl;
@@ -443,11 +445,6 @@ void CubicSDR::sdrThreadNotify(SDRThread::SDRThreadState state, std::string mess
     }
     if (state == SDRThread::SDR_THREAD_MESSAGE) {
         notifyMessage = message;
-    }
-    if (state == SDRThread::SDR_THREAD_TERMINATED) {
-        t_SDR->join();
-        delete t_SDR;
-        t_SDR = nullptr;
     }
     if (state == SDRThread::SDR_THREAD_FAILED) {
         notifyMessage = message;

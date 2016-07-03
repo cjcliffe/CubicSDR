@@ -378,11 +378,6 @@ void SDRThread::run() {
     }
     
     std::cout << "SDR thread done." << std::endl;
-    
-    if (!stopping.load()) {
-        stopping.store(true);
-        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_TERMINATED, "Done.");
-    }
 }
 
 
