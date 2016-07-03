@@ -148,14 +148,18 @@ void DemodulatorMgr::deleteThread(DemodulatorInstance *demod) {
     if (i != demods.end()) {
         demods.erase(i);
     }
+
+    //Ask for termination
     demod->terminate();
 
+    //Do not cleanup immediatly
     demods_deleted.push_back(demod);
 }
 
-std::vector<DemodulatorInstance *> *DemodulatorMgr::getDemodulatorsAt(long long freq, int bandwidth) {
+std::vector<DemodulatorInstance *> DemodulatorMgr::getDemodulatorsAt(long long freq, int bandwidth) {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
-    std::vector<DemodulatorInstance *> *foundDemods = new std::vector<DemodulatorInstance *>();
+    
+    std::vector<DemodulatorInstance *> foundDemods;
 
     for (int i = 0, iMax = demods.size(); i < iMax; i++) {
         DemodulatorInstance *testDemod = demods[i];
@@ -167,7 +171,7 @@ std::vector<DemodulatorInstance *> *DemodulatorMgr::getDemodulatorsAt(long long 
         long long halfBuffer = bandwidth / 2;
 
         if ((freq <= (freqTest + ((testDemod->getDemodulatorType() != "LSB")?halfBandwidthTest:0) + halfBuffer)) && (freq >= (freqTest - ((testDemod->getDemodulatorType() != "USB")?halfBandwidthTest:0) - halfBuffer))) {
-            foundDemods->push_back(testDemod);
+            foundDemods.push_back(testDemod);
         }
     }
 

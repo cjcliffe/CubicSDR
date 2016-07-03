@@ -86,7 +86,6 @@ private:
     RtAudio::StreamOptions opts;
     RtAudio::StreamParameters parameters;
     AudioThreadCommandQueue cmdQueue;
-    DemodulatorThreadCommandQueue* threadQueueNotify;
     int sampleRate;
 
 public:

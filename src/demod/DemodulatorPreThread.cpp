@@ -9,7 +9,7 @@
 #include "CubicSDR.h"
 #include "DemodulatorInstance.h"
 
-DemodulatorPreThread::DemodulatorPreThread(DemodulatorInstance *parent) : IOThread(), iqResampler(NULL), iqResampleRatio(1), cModem(nullptr), cModemKit(nullptr), iqInputQueue(NULL), iqOutputQueue(NULL), threadQueueNotify(NULL)
+DemodulatorPreThread::DemodulatorPreThread(DemodulatorInstance *parent) : IOThread(), iqResampler(NULL), iqResampleRatio(1), cModem(nullptr), cModemKit(nullptr), iqInputQueue(NULL), iqOutputQueue(NULL)
  {
 	initialized.store(false);
     this->parent = parent;
@@ -58,7 +58,6 @@ void DemodulatorPreThread::run() {
 
     iqInputQueue = static_cast<DemodulatorThreadInputQueue*>(getInputQueue("IQDataInput"));
     iqOutputQueue = static_cast<DemodulatorThreadPostInputQueue*>(getOutputQueue("IQDataOutput"));
-    threadQueueNotify = static_cast<DemodulatorThreadCommandQueue*>(getOutputQueue("NotifyQueue"));
     
     std::vector<liquid_float_complex> in_buf_data;
     std::vector<liquid_float_complex> out_buf_data;
@@ -276,11 +275,6 @@ void DemodulatorPreThread::run() {
         tmp->decRefCount();
     }
     buffers.purge();
-
-    DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_PREPROCESS_TERMINATED);
-    tCmd.context = this;
-    threadQueueNotify->push(tCmd);
-//    std::cout << "Demodulator preprocessor thread done." << std::endl;
 }
 
 void DemodulatorPreThread::setDemodType(std::string demodType) {
@@ -346,12 +340,22 @@ void DemodulatorPreThread::terminate() {
     iqInputQueue->push(inp);
     DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_NULL);
     workerQueue->push(command);
+    
     workerThread->terminate();
+    workerThread->isTerminated(1000);
+
     t_Worker->join();
     delete t_Worker;
+    t_Worker = nullptr;
+
     delete workerThread;
+    workerThread = nullptr;
+
     delete workerResults;
+    workerResults = nullptr;
+
     delete workerQueue;
+    workerQueue = nullptr;
 }
 
 Modem *DemodulatorPreThread::getModem() {

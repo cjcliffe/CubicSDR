@@ -79,5 +79,4 @@ protected:
 
     DemodulatorThreadInputQueue* iqInputQueue;
     DemodulatorThreadPostInputQueue* iqOutputQueue;
-    DemodulatorThreadCommandQueue* threadQueueNotify;
 };

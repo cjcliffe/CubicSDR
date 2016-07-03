@@ -400,7 +400,6 @@ void GLFont::loadFontOnce() {
         }
 
         //2) then load from memory
-        lodepng::State state;
         unsigned error = lodepng::decode(image, imgWidth, imgHeight, raw_image, png_size);
 
         delete[] raw_image;

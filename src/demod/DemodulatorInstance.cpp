@@ -51,14 +51,12 @@ DemodulatorInstance::DemodulatorInstance() {
 
     pipeIQInputData = new DemodulatorThreadInputQueue;
     pipeIQDemodData = new DemodulatorThreadPostInputQueue;
-    pipeDemodNotify = new DemodulatorThreadCommandQueue;
     
     audioThread = new AudioThread();
             
     demodulatorPreThread = new DemodulatorPreThread(this);
     demodulatorPreThread->setInputQueue("IQDataInput",pipeIQInputData);
     demodulatorPreThread->setOutputQueue("IQDataOutput",pipeIQDemodData);
-    demodulatorPreThread->setOutputQueue("NotifyQueue",pipeDemodNotify);
             
     pipeAudioData = new AudioThreadInputQueue;
     threadQueueControl = new DemodulatorThreadControlCommandQueue;
@@ -66,11 +64,9 @@ DemodulatorInstance::DemodulatorInstance() {
     demodulatorThread = new DemodulatorThread(this);
     demodulatorThread->setInputQueue("IQDataInput",pipeIQDemodData);
     demodulatorThread->setInputQueue("ControlQueue",threadQueueControl);
-    demodulatorThread->setOutputQueue("NotifyQueue",pipeDemodNotify);
     demodulatorThread->setOutputQueue("AudioDataOutput", pipeAudioData);
 
     audioThread->setInputQueue("AudioDataInput", pipeAudioData);
-    audioThread->setOutputQueue("NotifyQueue", pipeDemodNotify);
 }
 
 DemodulatorInstance::~DemodulatorInstance() {
@@ -82,7 +78,6 @@ DemodulatorInstance::~DemodulatorInstance() {
     delete demodulatorPreThread;
     delete pipeIQInputData;
     delete pipeIQDemodData;
-    delete pipeDemodNotify;
     delete threadQueueControl;
     delete pipeAudioData;
 }
@@ -151,56 +146,59 @@ void DemodulatorInstance::setLabel(std::string labelStr) {
 }
 
 bool DemodulatorInstance::isTerminated() {
-    while (!pipeDemodNotify->empty()) {
-        DemodulatorThreadCommand cmd;
-        pipeDemodNotify->pop(cmd);
-
-        switch (cmd.cmd) {
-        case DemodulatorThreadCommand::DEMOD_THREAD_CMD_AUDIO_TERMINATED:
-            if (t_Audio) {
-                t_Audio->join();
-               
-                delete t_Audio;
-                t_Audio = nullptr;
-            }
-            break;
-        case DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_TERMINATED:
-            if (t_Demod) {
-                #ifdef __APPLE__
-                pthread_join(t_Demod, nullptr);
-                #else
-                t_Demod->join();
-                delete t_Demod;
-                #endif
-                t_Demod = nullptr;
-            }
-#if ENABLE_DIGITAL_LAB
-            if (activeOutput) {
-                closeOutput();
-            }
-#endif
-            break;
-        case DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_PREPROCESS_TERMINATED:
-            if (t_PreDemod) {
-                #ifdef __APPLE__
-                pthread_join(t_PreDemod, NULL);
-                #else
-                t_PreDemod->join();
-                delete t_PreDemod;
-                #endif
-                t_PreDemod = nullptr;
-            }
-            break;
-        default:
-            break;
-        }
-    }
 
     //
     bool audioTerminated = audioThread->isTerminated();
     bool demodTerminated = demodulatorThread->isTerminated();
     bool preDemodTerminated = demodulatorPreThread->isTerminated();
 
+
+    //Cleanup the worker threads, if the threads are indeed terminated
+    if (audioTerminated) {
+
+        if (t_Audio) {
+
+            t_Audio->join();
+
+            delete t_Audio;
+            t_Audio = nullptr;
+        }
+    }
+
+    if (demodTerminated) {
+
+        if (t_Demod) {
+
+#ifdef __APPLE__
+            pthread_join(t_Demod, nullptr);
+#else
+            t_Demod->join();
+            delete t_Demod;
+#endif
+            t_Demod = nullptr;
+        }
+#if ENABLE_DIGITAL_LAB
+        if (activeOutput) {
+            closeOutput();
+        }
+#endif
+    }
+
+    if (preDemodTerminated) {
+
+        if (t_PreDemod) {
+
+#ifdef __APPLE__
+            pthread_join(t_PreDemod, NULL);
+#else
+            t_PreDemod->join();
+            delete t_PreDemod;
+#endif
+            t_PreDemod = nullptr;
+        }
+    }
+
+   
     bool terminated = audioTerminated && demodTerminated && preDemodTerminated;
 
     return terminated;

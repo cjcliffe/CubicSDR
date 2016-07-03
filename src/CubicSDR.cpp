@@ -293,43 +293,63 @@ int CubicSDR::OnExit() {
     demodMgr.terminateAll();
     
     std::cout << "Terminating SDR thread.." << std::endl;
-    if (!sdrThread->isTerminated()) {
-        sdrThread->terminate();
-        if (t_SDR) {
-            t_SDR->join();
-        }
+    sdrThread->terminate();
+    sdrThread->isTerminated(1000);
+   
+    if (t_SDR) {
+       t_SDR->join();
     }
+   
     std::cout << "Terminating SDR post-processing thread.." << std::endl;
     sdrPostThread->terminate();
-    t_PostSDR->join();
     
     std::cout << "Terminating Visual Processor threads.." << std::endl;
     spectrumVisualThread->terminate();
-    t_SpectrumVisual->join();
-
     demodVisualThread->terminate();
-    t_DemodVisual->join();
 
-    //Poor man join
+    //Wait nicely
     sdrPostThread->isTerminated(1000);
     spectrumVisualThread->isTerminated(1000);
     demodVisualThread->isTerminated(1000);
 
+    //Then join the thread themselves
+    t_PostSDR->join();
+    t_DemodVisual->join();
+    t_SpectrumVisual->join();
+
+    //Now only we can delete
     delete sdrThread;
+    sdrThread = nullptr;
 
     delete sdrPostThread;
+    sdrPostThread = nullptr;
+
     delete t_PostSDR;
+    t_PostSDR = nullptr;
 
     delete t_SpectrumVisual;
+    t_SpectrumVisual = nullptr;
+
     delete spectrumVisualThread;
+    spectrumVisualThread = nullptr;
+
     delete t_DemodVisual;
+    t_DemodVisual = nullptr;
+
     delete demodVisualThread;
+    demodVisualThread = nullptr;
     
     delete pipeIQVisualData;
+    pipeIQVisualData = nullptr;
+
     delete pipeAudioVisualData;
+    pipeAudioVisualData = nullptr;
+
     delete pipeSDRIQData;
+    pipeSDRIQData = nullptr;
 
     delete m_glContext;
+    m_glContext = nullptr;
 
 #ifdef __APPLE__
     AudioThread::deviceCleanup();
@@ -427,6 +447,7 @@ void CubicSDR::sdrThreadNotify(SDRThread::SDRThreadState state, std::string mess
     if (state == SDRThread::SDR_THREAD_TERMINATED) {
         t_SDR->join();
         delete t_SDR;
+        t_SDR = nullptr;
     }
     if (state == SDRThread::SDR_THREAD_FAILED) {
         notifyMessage = message;
@@ -532,14 +553,15 @@ void CubicSDR::stopDevice(bool store) {
     }
     sdrThread->setDevice(nullptr);
 
-    if (!sdrThread->isTerminated()) {
-        sdrThread->terminate();
-        if (t_SDR) {
-            t_SDR->join();
-            delete t_SDR;
-            t_SDR = nullptr;
-        }
+    sdrThread->terminate();
+    sdrThread->isTerminated(1000);
+
+    if (t_SDR) {
+        t_SDR->join();
+        delete t_SDR;
+        t_SDR = nullptr;
     }
+    
 }
 
 void CubicSDR::reEnumerateDevices() {
@@ -550,12 +572,14 @@ void CubicSDR::reEnumerateDevices() {
 }
 
 void CubicSDR::setDevice(SDRDeviceInfo *dev) {
-    if (!sdrThread->isTerminated()) {
-        sdrThread->terminate();
-        if (t_SDR) {
-            t_SDR->join();
-            delete t_SDR;
-        }
+
+    sdrThread->terminate();
+    sdrThread->isTerminated(1000);
+    
+    if (t_SDR) {
+       t_SDR->join();
+       delete t_SDR;
+       t_SDR = nullptr;
     }
     
     for (SoapySDR::Kwargs::const_iterator i = settingArgs.begin(); i != settingArgs.end(); i++) {
@@ -872,17 +896,27 @@ RigThread *CubicSDR::getRigThread() {
 
 void CubicSDR::initRig(int rigModel, std::string rigPort, int rigSerialRate) {
     if (rigThread) {
-        if (!rigThread->isTerminated()) {
-            rigThread->terminate();
-        }
+
+        rigThread->terminate();
+        rigThread->isTerminated(1000);
+    }
+
+    if (t_Rig && t_Rig->joinable()) {
+        t_Rig->join();
+    }
+
+    //now we can delete
+    if (rigThread) {
+
         delete rigThread;
         rigThread = nullptr;
     }
-    if (t_Rig && t_Rig->joinable()) {
-        t_Rig->join();
+    if (t_Rig) {
+      
         delete t_Rig;
         t_Rig = nullptr;
     }
+
     rigThread = new RigThread();
     rigThread->initRig(rigModel, rigPort, rigSerialRate);
     rigThread->setControlMode(wxGetApp().getConfig()->getRigControlMode());
@@ -899,14 +933,24 @@ void CubicSDR::stopRig() {
     }
     
     if (rigThread) {
-        if (!rigThread->isTerminated()) {
-            rigThread->terminate();
-        }
+        
+        rigThread->terminate();
+        rigThread->isTerminated(1000);
+    }
+
+    if (t_Rig && t_Rig->joinable()) {
+        t_Rig->join();   
+    }
+
+    //now we can delete
+    if (rigThread) {
+
         delete rigThread;
         rigThread = nullptr;
     }
-    if (t_Rig && t_Rig->joinable()) {
-        t_Rig->join();
+
+    if (t_Rig) {
+       
         delete t_Rig;
         t_Rig = nullptr;
     }

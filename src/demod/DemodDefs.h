@@ -10,29 +10,7 @@
 #include "IOThread.h"
 
 class DemodulatorThread;
-class DemodulatorThreadCommand {
-public:
-    enum DemodulatorThreadCommandEnum {
-        DEMOD_THREAD_CMD_NULL,
-        DEMOD_THREAD_CMD_DEMOD_PREPROCESS_TERMINATED,
-        DEMOD_THREAD_CMD_DEMOD_TERMINATED,
-        DEMOD_THREAD_CMD_AUDIO_TERMINATED
-    };
 
-    DemodulatorThreadCommand() :
-            cmd(DEMOD_THREAD_CMD_NULL), context(NULL), llong_value(0) {
-
-    }
-
-    DemodulatorThreadCommand(DemodulatorThreadCommandEnum cmd) :
-            cmd(cmd), context(NULL), llong_value(0) {
-
-    }
-
-    DemodulatorThreadCommandEnum cmd;
-    void *context;
-    long long llong_value;
-};
 
 class DemodulatorThreadControlCommand {
 public:
@@ -120,5 +98,4 @@ public:
 
 typedef ThreadQueue<DemodulatorThreadIQData *> DemodulatorThreadInputQueue;
 typedef ThreadQueue<DemodulatorThreadPostIQData *> DemodulatorThreadPostInputQueue;
-typedef ThreadQueue<DemodulatorThreadCommand> DemodulatorThreadCommandQueue;
 typedef ThreadQueue<DemodulatorThreadControlCommand> DemodulatorThreadControlCommandQueue;

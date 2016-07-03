@@ -69,8 +69,7 @@ void DemodulatorThread::run() {
     iqInputQueue = static_cast<DemodulatorThreadPostInputQueue*>(getInputQueue("IQDataInput"));
     audioOutputQueue = static_cast<AudioThreadInputQueue*>(getOutputQueue("AudioDataOutput"));
     threadQueueControl = static_cast<DemodulatorThreadControlCommandQueue *>(getInputQueue("ControlQueue"));
-    threadQueueNotify = static_cast<DemodulatorThreadCommandQueue*>(getOutputQueue("NotifyQueue"));
-    
+     
     ModemIQData modemData;
     
     while (!stopping) {
@@ -289,13 +288,6 @@ void DemodulatorThread::run() {
         }
     }
     outputBuffers.purge();
-    
-    //Guard the cleanup of audioVisOutputQueue properly.
-    std::lock_guard < std::mutex > lock(m_mutexAudioVisOutputQueue);
-    
-    DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_DEMOD_TERMINATED);
-    tCmd.context = this;
-    threadQueueNotify->push(tCmd);
     
 //    std::cout << "Demodulator thread done." << std::endl;
 }
