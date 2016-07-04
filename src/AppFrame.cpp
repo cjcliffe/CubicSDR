@@ -1294,6 +1294,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
                 demodWaterfallCanvas->setCenterFrequency(centerFreq);
                 demodSpectrumCanvas->setCenterFrequency(centerFreq);
             }
+
             std::string dSelection = demodModeSelector->getSelectionLabel();
 #ifdef ENABLE_DIGITAL_LAB
             std::string dSelectionadv = demodModeSelectorAdv->getSelectionLabel();
@@ -1583,6 +1584,10 @@ void AppFrame::OnUnSplit(wxSplitterEvent& event)
 
 
 void AppFrame::saveSession(std::string fileName) {
+
+    //disable event processing the time of saving
+    wxEventBlocker disableEvents(this);
+
     DataTree s("cubicsdr_session");
     DataNode *header = s.rootNode()->newChild("header");
     *header->newChild("version") = std::string(CUBICSDR_VERSION);
@@ -1632,6 +1637,10 @@ void AppFrame::saveSession(std::string fileName) {
 }
 
 bool AppFrame::loadSession(std::string fileName) {
+
+    //disable event processing the time of loading
+    wxEventBlocker disableEvents(this);
+
     DataTree l;
     if (!l.LoadFromFileXML(fileName)) {
         return false;
@@ -1811,6 +1820,13 @@ bool AppFrame::loadSession(std::string fileName) {
         if (focusDemod) {
             wxGetApp().bindDemodulators(&demodsLoaded);
             wxGetApp().getDemodMgr().setActiveDemodulator(focusDemod, false);
+
+            long long focusCenterFreq = focusDemod->getFrequency();
+            //on loading, force center of the main Waterfall / Spectrum on the active demodulator: 
+            waterfallCanvas->setCenterFrequency(focusCenterFreq);
+            spectrumCanvas->setCenterFrequency(focusCenterFreq);
+            
+
         }
         }
     } catch (DataTypeMismatchException &e) {
