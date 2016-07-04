@@ -14,7 +14,7 @@ public:
     DemodulatorInstance *newThread();
     std::vector<DemodulatorInstance *> &getDemodulators();
     std::vector<DemodulatorInstance *> getOrderedDemodulators(bool actives = true);
-    std::vector<DemodulatorInstance *> *getDemodulatorsAt(long long freq, int bandwidth);
+    std::vector<DemodulatorInstance *> getDemodulatorsAt(long long freq, int bandwidth);
     DemodulatorInstance *getPreviousDemodulator(DemodulatorInstance *demod, bool actives = true);
     DemodulatorInstance *getNextDemodulator(DemodulatorInstance *demod, bool actives = true);
     DemodulatorInstance *getLastDemodulator();

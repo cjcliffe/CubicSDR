@@ -56,7 +56,6 @@ protected:
     AudioThreadInputQueue *audioOutputQueue = nullptr;
     DemodulatorThreadOutputQueue* audioVisOutputQueue = nullptr;
     DemodulatorThreadControlCommandQueue *threadQueueControl = nullptr;
-    DemodulatorThreadCommandQueue* threadQueueNotify = nullptr;
 
     //protects the audioVisOutputQueue dynamic binding change at runtime (in DemodulatorMgr)
     mutable std::mutex m_mutexAudioVisOutputQueue;

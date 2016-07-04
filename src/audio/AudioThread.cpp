@@ -12,7 +12,7 @@ std::map<int, int> AudioThread::deviceSampleRate;
 std::map<int, std::thread *> AudioThread::deviceThread;
 
 AudioThread::AudioThread() : IOThread(),
-        currentInput(NULL), inputQueue(NULL), nBufferFrames(1024), threadQueueNotify(NULL), sampleRate(0) {
+        currentInput(NULL), inputQueue(NULL), nBufferFrames(1024), sampleRate(0) {
 
 	audioQueuePtr.store(0); 
 	underflowCount.store(0);
@@ -378,7 +378,6 @@ void AudioThread::run() {
 //    std::cout << "Audio thread started." << std::endl;
 
     inputQueue = static_cast<AudioThreadInputQueue *>(getInputQueue("AudioDataInput"));
-    threadQueueNotify = static_cast<DemodulatorThreadCommandQueue*>(getOutputQueue("NotifyQueue"));
     
     while (!stopping) {
         AudioThreadCommand command;
@@ -420,12 +419,7 @@ void AudioThread::run() {
             e.printMessage();
         }
     }
-    
-    if (threadQueueNotify != NULL) {
-        DemodulatorThreadCommand tCmd(DemodulatorThreadCommand::DEMOD_THREAD_CMD_AUDIO_TERMINATED);
-        tCmd.context = this;
-        threadQueueNotify->push(tCmd);
-    }
+
 //    std::cout << "Audio thread done." << std::endl;
 }
 

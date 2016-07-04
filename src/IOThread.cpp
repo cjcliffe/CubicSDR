@@ -1,4 +1,5 @@
 #include "IOThread.h"
+#include <typeinfo>
 
 std::mutex ReBufferGC::g_mutex;
 std::set<ReferenceCounter *> ReBufferGC::garbage;
@@ -121,6 +122,8 @@ bool IOThread::isTerminated(int waitMs) {
             return true;
         }
     }
+
+    std::cout << "ERROR: thread '" << typeid(*this).name() << "' has not terminated in time ! (> " << waitMs << " ms)" << std::endl;
 
     return terminated.load();
 }

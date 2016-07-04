@@ -180,10 +180,10 @@ private:
 
     DemodulatorMgr demodMgr;
 
-    long long frequency;
-    long long offset;
-    int ppm, snap;
-    long long sampleRate;
+    std::atomic_llong frequency;
+    std::atomic_llong offset;
+    std::atomic_int ppm, snap;
+    std::atomic_llong sampleRate;
     std::atomic_bool agcMode;
 
     SDRThread *sdrThread;
@@ -224,7 +224,7 @@ private:
     std::atomic_bool soloMode;
     SDRDeviceInfo *stoppedDev;
 #ifdef USE_HAMLIB
-    RigThread *rigThread;
+    RigThread* rigThread;
     std::thread *t_Rig;
 #endif
 };
