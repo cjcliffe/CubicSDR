@@ -96,7 +96,7 @@ int GainCanvas::GetPanelHit(CubicVR::vec2 &result) {
         GainInfo *gInfo = (*gi);
         
         CubicVR::vec2 hitResult;
-        if (gInfo->panel.hitTest(CubicVR::vec2((mouseTracker.getMouseX()-0.5)*2.0, (mouseTracker.getMouseY()-0.5)*2.0), hitResult)) {
+        if (gInfo->panel.hitTest(mouseTracker.getGLXY(), hitResult)) {
 //            std::cout << "Hit #" << i << " result: " << hitResult << std::endl;
             result = (hitResult + CubicVR::vec2(1.0,1.0)) * 0.5;
             return i;

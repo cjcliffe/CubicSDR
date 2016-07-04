@@ -12,6 +12,7 @@
 #include "PrimaryGLContext.h"
 #include "SDRDeviceInfo.h"
 #include "Timer.h"
+#include "MeterPanel.h"
 
 class GainInfo {
 public:
@@ -52,6 +53,7 @@ private:
     PrimaryGLContext *glContext;
     std::string helpTip;
     std::vector<GainInfo *> gainInfo;
+    std::vector<MeterPanel *> gainPanels;
     GLPanel bgPanel;
     SDRRangeMap gains;
     
