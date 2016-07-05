@@ -97,11 +97,10 @@ bool ScopeCanvas::getShowDb() {
 void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
     const wxSize ClientSize = GetClientSize();
-
-    while (!inputData.empty()) {
-        ScopeRenderData *avData;
-        inputData.pop(avData);
-
+    
+    ScopeRenderData *avData;
+    while (inputData.try_pop(avData)) {
+       
         
         if (!avData->spectrum) {
             scopePanel.setMode(avData->mode);

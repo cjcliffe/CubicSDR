@@ -210,12 +210,11 @@ void DemodulatorPreThread::run() {
 
         inp->decRefCount();
 
-        if (!stopping && !workerResults->empty()) {
-            while (!workerResults->empty()) {
-                DemodulatorWorkerThreadResult result;
-                workerResults->pop(result);
-
-                switch (result.cmd) {
+        DemodulatorWorkerThreadResult result;
+        //process all worker results until 
+        while (!stopping && workerResults->try_pop(result)) {
+              
+            switch (result.cmd) {
                 case DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS:
                     if (result.iqResampler) {
                         if (iqResampler) {
@@ -258,20 +257,19 @@ void DemodulatorPreThread::run() {
                     break;
                 default:
                     break;
-                }
             }
-        }
+        } //end while
         
         if ((cModem != nullptr) && modemSettingsChanged.load()) {
             cModem->writeSettings(modemSettingsBuffered);
             modemSettingsBuffered.clear();
             modemSettingsChanged.store(false);
         }
-    }
+    } //end while stopping
 
-    while (!iqOutputQueue->empty()) {
-        DemodulatorThreadPostIQData *tmp;
-        iqOutputQueue->pop(tmp);
+    DemodulatorThreadPostIQData *tmp;
+    while (iqOutputQueue->try_pop(tmp)) {
+        
         tmp->decRefCount();
     }
     buffers.purge();

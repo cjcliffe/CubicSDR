@@ -88,7 +88,13 @@ private:
     AudioThreadCommandQueue cmdQueue;
     int sampleRate;
 
+    //The own m_mutex protecting this AudioThread
+    std::recursive_mutex m_mutex;
+
 public:
+    //give access to the this AudioThread lock
+    std::recursive_mutex& getMutex();
+
     void bindThread(AudioThread *other);
     void removeThread(AudioThread *other);
 

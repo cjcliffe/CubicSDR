@@ -215,11 +215,14 @@ void SDRPostThread::run() {
         if (doUpdate) {
             updateActiveDemodulators();
         }
-    }
+    } //end while
     
-    if (iqVisualQueue && !iqVisualQueue->empty()) {
-        DemodulatorThreadIQData *visualDataDummy;
-        iqVisualQueue->pop(visualDataDummy);
+    //TODO: Why only 1 element was removed before ?
+    DemodulatorThreadIQData *visualDataDummy;
+    while (iqVisualQueue && iqVisualQueue->try_pop(visualDataDummy)) {
+        //nothing
+        //TODO: What about the refcounts ?
+        
     }
 
     //    buffers.purge();

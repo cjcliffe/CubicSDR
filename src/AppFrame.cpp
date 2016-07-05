@@ -806,11 +806,11 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
 #endif
     else if (event.GetId() == wxID_SDR_START_STOP) {
         if (!wxGetApp().getSDRThread()->isTerminated()) {
-            wxGetApp().stopDevice(true);
+            wxGetApp().stopDevice(true, 2000);
         } else {
             SDRDeviceInfo *dev = wxGetApp().getDevice();
             if (dev != nullptr) {
-                wxGetApp().setDevice(dev);
+                wxGetApp().setDevice(dev, 0);
             }
         }
     } else if (event.GetId() == wxID_LOW_PERF) {

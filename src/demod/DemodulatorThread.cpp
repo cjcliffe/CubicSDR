@@ -250,43 +250,45 @@ void DemodulatorThread::run() {
             }
         }
         
-        if (!threadQueueControl->empty()) {
-            while (!threadQueueControl->empty()) {
-                DemodulatorThreadControlCommand command;
-                threadQueueControl->pop(command);
-                
-                switch (command.cmd) {
-                    case DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_ON:
-                        squelchEnabled = true;
-                        break;
-                    case DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_OFF:
-                        squelchEnabled = false;
-                        break;
-                    default:
-                        break;
-                }
+        DemodulatorThreadControlCommand command;
+        
+        //empty command queue, execute commands
+        while (threadQueueControl->try_pop(command)) {
+                       
+            switch (command.cmd) {
+                case DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_ON:
+                    squelchEnabled = true;
+                    break;
+                case DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_OFF:
+                    squelchEnabled = false;
+                    break;
+                default:
+                    break;
             }
         }
+        
         
         inp->decRefCount();
     }
     // end while !stopping
     
-    // Purge any unused inputs
-    while (!iqInputQueue->empty()) {
-        DemodulatorThreadPostIQData *ref;
-        iqInputQueue->pop(ref);
+    // Purge any unused inputs, with a non-blocking pop
+    DemodulatorThreadPostIQData *ref;
+    while (iqInputQueue->try_pop(ref)) {
+        
         if (ref) {  // May have other consumers; just decrement
             ref->decRefCount();
         }
     }
-    while (!audioOutputQueue->empty()) {
-        AudioThreadInput *ref;
-        audioOutputQueue->pop(ref);
-        if (ref) { // Originated here; set RefCount to 0
-            ref->setRefCount(0);
+
+    AudioThreadInput *ref_audio;
+    while (audioOutputQueue->try_pop(ref_audio)) {
+      
+        if (ref_audio) { // Originated here; set RefCount to 0
+            ref_audio->setRefCount(0);
         }
     }
+
     outputBuffers.purge();
     
 //    std::cout << "Demodulator thread done." << std::endl;
