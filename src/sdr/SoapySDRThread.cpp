@@ -204,7 +204,7 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
         }
     }
     
-    if (n_read > 0 && !stopping) {
+    if (n_read > 0 && !stopping && !iqDataOutQueue->full()) {
         SDRThreadIQData *dataOut = buffers.getBuffer();
 
         if (iq_swap.load()) {
@@ -222,7 +222,16 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
         dataOut->dcCorrected = hasHardwareDC.load();
         dataOut->numChannels = numChannels.load();
         
-        iqDataOutQueue->push(dataOut);
+        if (!iqDataOutQueue->push(dataOut)) {
+            //The rest of the system saturates,
+            //finally the push didn't suceeded, recycle dataOut immediatly.
+            dataOut->setRefCount(0);
+            
+            std::cout << "SDRThread::readStream(): iqDataOutQueue output queue is full, discard processing ! " << std::endl;
+
+            //saturation, let a chance to the other threads to consume the existing samples
+            std::this_thread::yield();
+        }
     }
 }
 

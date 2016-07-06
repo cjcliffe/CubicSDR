@@ -254,6 +254,7 @@ bool CubicSDR::OnInit() {
 
     sdrPostThread = new SDRPostThread();
     sdrPostThread->setInputQueue("IQDataInput", pipeSDRIQData);
+
     sdrPostThread->setOutputQueue("IQVisualDataOutput", pipeIQVisualData);
     sdrPostThread->setOutputQueue("IQDataOutput", pipeWaterfallIQVisualData);
     sdrPostThread->setOutputQueue("IQActiveDemodVisualDataOutput", pipeDemodIQVisualData);

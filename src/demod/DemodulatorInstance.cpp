@@ -152,7 +152,6 @@ bool DemodulatorInstance::isTerminated() {
     bool demodTerminated = demodulatorThread->isTerminated();
     bool preDemodTerminated = demodulatorPreThread->isTerminated();
 
-
     //Cleanup the worker threads, if the threads are indeed terminated
     if (audioTerminated) {
 
@@ -168,7 +167,6 @@ bool DemodulatorInstance::isTerminated() {
     if (demodTerminated) {
 
         if (t_Demod) {
-
 #ifdef __APPLE__
             pthread_join(t_Demod, nullptr);
 #else
@@ -185,8 +183,8 @@ bool DemodulatorInstance::isTerminated() {
     }
 
     if (preDemodTerminated) {
-
-        if (t_PreDemod) {
+        
+         if (t_PreDemod) {
 
 #ifdef __APPLE__
             pthread_join(t_PreDemod, NULL);
@@ -195,10 +193,9 @@ bool DemodulatorInstance::isTerminated() {
             delete t_PreDemod;
 #endif
             t_PreDemod = nullptr;
-        }
+         }
     }
 
-   
     bool terminated = audioTerminated && demodTerminated && preDemodTerminated;
 
     return terminated;

@@ -86,7 +86,7 @@ void SDRPostThread::updateActiveDemodulators() {
     nRunDemods = 0;
     
     long long centerFreq = wxGetApp().getFrequency();
-  
+
     for (demod_i = demodulators.begin(); demod_i != demodulators.end(); demod_i++) {
         DemodulatorInstance *demod = *demod_i;
         DemodulatorThreadInputQueue *demodQueue = demod->getIQInputDataPipe();
@@ -108,7 +108,9 @@ void SDRPostThread::updateActiveDemodulators() {
                 DemodulatorThreadIQData *dummyDataOut = new DemodulatorThreadIQData;
                 dummyDataOut->frequency = frequency;
                 dummyDataOut->sampleRate = sampleRate;
-                demodQueue->push(dummyDataOut);
+                if (!demodQueue->push(dummyDataOut)) {
+                    delete dummyDataOut;
+                }
             }
             
             // follow if follow mode
@@ -119,6 +121,7 @@ void SDRPostThread::updateActiveDemodulators() {
         } else if (!demod->isActive()) { // in range, activate if not activated
             demod->setActive(true);
             if (wxGetApp().getDemodMgr().getLastActiveDemodulator() == NULL) {
+
                 wxGetApp().getDemodMgr().setActiveDemodulator(demod);
             }
         }
@@ -181,8 +184,6 @@ void SDRPostThread::run() {
     iqDataOutQueue = static_cast<DemodulatorThreadInputQueue*>(getOutputQueue("IQDataOutput"));
     iqVisualQueue = static_cast<DemodulatorThreadInputQueue*>(getOutputQueue("IQVisualDataOutput"));
     iqActiveDemodVisualQueue = static_cast<DemodulatorThreadInputQueue*>(getOutputQueue("IQActiveDemodVisualDataOutput"));
-
-    iqDataInQueue->set_max_num_items(0);
     
     while (!stopping) {
         SDRThreadIQData *data_in;
@@ -212,17 +213,16 @@ void SDRPostThread::run() {
             }
         }
         
+        //Only update the list of demodulators here
         if (doUpdate) {
             updateActiveDemodulators();
         }
     } //end while
     
-    //TODO: Why only 1 element was removed before ?
+    //Be safe, remove as many elements as possible
     DemodulatorThreadIQData *visualDataDummy;
     while (iqVisualQueue && iqVisualQueue->try_pop(visualDataDummy)) {
-        //nothing
-        //TODO: What about the refcounts ?
-        
+        visualDataDummy->decRefCount();        
     }
 
     //    buffers.purge();
@@ -234,7 +234,9 @@ void SDRPostThread::run() {
 void SDRPostThread::terminate() {
     IOThread::terminate();
     SDRThreadIQData *dummy = new SDRThreadIQData;
-    iqDataInQueue->push(dummy);
+    if (!iqDataInQueue->push(dummy)) {
+        delete dummy;
+    }
 }
 
 void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
@@ -295,19 +297,34 @@ void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
         iirfilt_crcf_execute_block(dcFilter, &data_in->data[0], dataSize, &demodDataOut->data[0]);
 
         if (doDemodVisOut) {
-            iqActiveDemodVisualQueue->push(demodDataOut);
+            if (!iqActiveDemodVisualQueue->push(demodDataOut)) {
+                demodDataOut->decRefCount();
+                std::cout << "SDRPostThread::runSingleCH() cannot push demodDataOut into iqActiveDemodVisualQueue, is full !" << std::endl;
+                std::this_thread::yield();
+            }
         }
         
         if (doIQDataOut) {
-            iqDataOutQueue->push(demodDataOut);
+            if (!iqDataOutQueue->push(demodDataOut)) {
+                demodDataOut->decRefCount();
+                std::cout << "SDRPostThread::runSingleCH() cannot push demodDataOut into iqDataOutQueue, is full !" << std::endl;
+                std::this_thread::yield();
+            }
         }
 
         if (doVisOut) {
-            iqVisualQueue->push(demodDataOut);
+            if (!iqVisualQueue->push(demodDataOut)) {
+                demodDataOut->decRefCount();
+                std::cout << "SDRPostThread::runSingleCH() cannot push demodDataOut into iqVisualQueue, is full !" << std::endl;
+                std::this_thread::yield();
+            }
         }
         
         for (size_t i = 0; i < nRunDemods; i++) {
-            runDemods[i]->getIQInputDataPipe()->push(demodDataOut);
+            if (!runDemods[i]->getIQInputDataPipe()->push(demodDataOut)) {
+                demodDataOut->decRefCount();
+                std::this_thread::yield();
+           }
         }
     }
 }
@@ -345,9 +362,19 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
         iqDataOut->sampleRate = data_in->sampleRate;
         iqDataOut->data.assign(data_in->data.begin(), data_in->data.begin() + dataSize);
         
-        iqDataOutQueue->push(iqDataOut);
-        if (doVis) {
-            iqVisualQueue->push(iqDataOut);
+        if (!iqDataOutQueue->push(iqDataOut)) {
+            std::cout << "SDRPostThread::runPFBCH() cannot push iqDataOut into iqDataOutQueue, is full !" << std::endl;
+            iqDataOut->decRefCount();
+            std::this_thread::yield();
+        }
+
+
+        if (doVis) {           
+            if (!iqVisualQueue->push(iqDataOut)) {
+                std::cout << "SDRPostThread::runPFBCH() cannot push iqDataOut into iqVisualQueue, is full !" << std::endl;
+                iqDataOut->decRefCount();               
+                std::this_thread::yield();
+            }
         }
     }
     
@@ -443,13 +470,21 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
             }
             
             if (doDemodVis) {
-                iqActiveDemodVisualQueue->push(demodDataOut);
+                if (!iqActiveDemodVisualQueue->push(demodDataOut)) {
+                    std::cout << "SDRPostThread::runPFBCH() cannot push demodDataOut into iqActiveDemodVisualQueue, is full !" << std::endl;
+                    demodDataOut->decRefCount();
+                    std::this_thread::yield();
+                }
             }
             
             for (size_t j = 0; j < nRunDemods; j++) {
                 if (demodChannel[j] == i) {
                     DemodulatorInstance *demod = runDemods[j];
-                    demod->getIQInputDataPipe()->push(demodDataOut);
+                    
+                    if (!demod->getIQInputDataPipe()->push(demodDataOut)) {
+                        demodDataOut->decRefCount();
+                        std::this_thread::yield();
+                    }
                 }
             }
         }

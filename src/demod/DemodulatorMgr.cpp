@@ -136,13 +136,13 @@ void DemodulatorMgr::deleteThread(DemodulatorInstance *demod) {
     i = std::find(demods.begin(), demods.end(), demod);
 
     if (activeDemodulator == demod) {
-        activeDemodulator = NULL;
+        activeDemodulator = nullptr;
     }
     if (lastActiveDemodulator == demod) {
-        lastActiveDemodulator = NULL;
+        lastActiveDemodulator = nullptr;
     }
     if (activeVisualDemodulator == demod) {
-        activeVisualDemodulator = NULL;
+        activeVisualDemodulator = nullptr;
     }
 
     if (i != demods.end()) {
@@ -150,6 +150,7 @@ void DemodulatorMgr::deleteThread(DemodulatorInstance *demod) {
     }
 
     //Ask for termination
+    demod->setActive(false);
     demod->terminate();
 
     //Do not cleanup immediatly
@@ -200,27 +201,28 @@ bool DemodulatorMgr::anyDemodulatorsAt(long long freq, int bandwidth) {
 
 
 void DemodulatorMgr::setActiveDemodulator(DemodulatorInstance *demod, bool temporary) {
-    std::lock_guard < std::recursive_mutex > lock(demods_busy);
+    
     if (!temporary) {
-        if (activeDemodulator != NULL) {
-            lastActiveDemodulator = activeDemodulator;
+        if (activeDemodulator.load() != nullptr) {
+            lastActiveDemodulator = activeDemodulator.load();
             updateLastState();
         } else {
             lastActiveDemodulator = demod;
         }
         updateLastState();
 #if USE_HAMLIB
-        if (wxGetApp().rigIsActive() && wxGetApp().getRigThread()->getFollowModem() && lastActiveDemodulator) {
-            wxGetApp().getRigThread()->setFrequency(lastActiveDemodulator->getFrequency(),true);
+        if (wxGetApp().rigIsActive() && wxGetApp().getRigThread()->getFollowModem() && lastActiveDemodulator.load()) {
+            wxGetApp().getRigThread()->setFrequency(lastActiveDemodulator.load()->getFrequency(),true);
         }
 #endif
     } else {
+        std::lock_guard < std::recursive_mutex > lock(demods_busy);
         garbageCollect();
         ReBufferGC::garbageCollect();
     }
 
-    if (activeVisualDemodulator) {
-        activeVisualDemodulator->setVisualOutputQueue(NULL);
+    if (activeVisualDemodulator.load()) {
+        activeVisualDemodulator.load()->setVisualOutputQueue(nullptr);
     }
     if (demod) {
         demod->setVisualOutputQueue(wxGetApp().getAudioVisualQueue());
@@ -238,7 +240,7 @@ void DemodulatorMgr::setActiveDemodulator(DemodulatorInstance *demod, bool tempo
 }
 
 DemodulatorInstance *DemodulatorMgr::getActiveDemodulator() {
-    if (activeDemodulator && !activeDemodulator->isActive()) {
+    if (activeDemodulator.load() && !activeDemodulator.load()->isActive()) {
         activeDemodulator = getLastActiveDemodulator();
     }
     return activeDemodulator;
@@ -262,8 +264,6 @@ void DemodulatorMgr::garbageCollect() {
                 std::cout << "Garbage collected demodulator instance " << deleted->getLabel() << std::endl;
 
                 delete deleted;
-
-              
                 return;
             }
         }
@@ -273,27 +273,28 @@ void DemodulatorMgr::garbageCollect() {
 
 void DemodulatorMgr::updateLastState() {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
+
     if (std::find(demods.begin(), demods.end(), lastActiveDemodulator) == demods.end()) {
-        if (activeDemodulator && activeDemodulator->isActive()) {
-            lastActiveDemodulator = activeDemodulator;
-        } else if (activeDemodulator && !activeDemodulator->isActive()){
-            activeDemodulator = NULL;
-            lastActiveDemodulator = NULL;
+        if (activeDemodulator.load() && activeDemodulator.load()->isActive()) {
+            lastActiveDemodulator = activeDemodulator.load();
+        } else if (activeDemodulator.load() && !activeDemodulator.load()->isActive()){
+            activeDemodulator = nullptr;
+            lastActiveDemodulator = nullptr;
         }
     }
 
-    if (lastActiveDemodulator && !lastActiveDemodulator->isActive()) {
-        lastActiveDemodulator = NULL;
+    if (lastActiveDemodulator.load() && !lastActiveDemodulator.load()->isActive()) {
+        lastActiveDemodulator = nullptr;
     }
 
-    if (lastActiveDemodulator) {
-        lastBandwidth = lastActiveDemodulator->getBandwidth();
-        lastDemodType = lastActiveDemodulator->getDemodulatorType();
-        lastDemodLock = lastActiveDemodulator->getDemodulatorLock()?true:false;
-        lastSquelchEnabled = lastActiveDemodulator->isSquelchEnabled();
-        lastSquelch = lastActiveDemodulator->getSquelchLevel();
-        lastGain = lastActiveDemodulator->getGain();
-        lastModemSettings[lastDemodType] = lastActiveDemodulator->readModemSettings();
+    if (lastActiveDemodulator.load()) {
+        lastBandwidth = lastActiveDemodulator.load()->getBandwidth();
+        lastDemodType = lastActiveDemodulator.load()->getDemodulatorType();
+        lastDemodLock = lastActiveDemodulator.load()->getDemodulatorLock()?true:false;
+        lastSquelchEnabled = lastActiveDemodulator.load()->isSquelchEnabled();
+        lastSquelch = lastActiveDemodulator.load()->getSquelchLevel();
+        lastGain = lastActiveDemodulator.load()->getGain();
+        lastModemSettings[lastDemodType] = lastActiveDemodulator.load()->readModemSettings();
     }
 
 }

@@ -66,6 +66,7 @@ void DemodulatorPreThread::run() {
     
     while (!stopping) {
         DemodulatorThreadIQData *inp;
+
         iqInputQueue->pop(inp);
         
         if (frequencyChanged.load()) {
@@ -205,7 +206,11 @@ void DemodulatorPreThread::run() {
             resamp->modemKit = cModemKit;
             resamp->sampleRate = currentBandwidth;
 
-            iqOutputQueue->push(resamp);
+            if (!iqOutputQueue->push(resamp)) {
+                resamp->setRefCount(0);
+                std::cout << "DemodulatorPreThread::run() cannot push resamp into iqOutputQueue, is full !" << std::endl;
+                std::this_thread::yield();
+            }
         }
 
         inp->decRefCount();
@@ -335,7 +340,10 @@ int DemodulatorPreThread::getAudioSampleRate() {
 void DemodulatorPreThread::terminate() {
     IOThread::terminate();
     DemodulatorThreadIQData *inp = new DemodulatorThreadIQData;    // push dummy to nudge queue
-    iqInputQueue->push(inp);
+    if (!iqInputQueue->push(inp)) {
+        delete inp;
+    }
+
     DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_NULL);
     workerQueue->push(command);
     

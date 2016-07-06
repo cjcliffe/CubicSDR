@@ -68,11 +68,13 @@ public:
     bool push(const value_type& item) {
         std::lock_guard < std::mutex > lock(m_mutex);
 
-        if (m_max_num_items.load() > 0 && m_queue.size() > m_max_num_items.load())
+        if (m_max_num_items.load() > 0 && m_queue.size() > m_max_num_items.load()) {
+            m_condition.notify_all();
             return false;
+        }
 
         m_queue.push(item);
-        m_condition.notify_one();
+        m_condition.notify_all();
         return true;
     }
 
@@ -84,11 +86,13 @@ public:
     bool push(const value_type&& item) {
         std::lock_guard < std::mutex > lock(m_mutex);
 
-        if (m_max_num_items.load() > 0 && m_queue.size() > m_max_num_items.load())
+        if (m_max_num_items.load() > 0 && m_queue.size() > m_max_num_items.load()) {
+            m_condition.notify_all();
             return false;
+        }
 
         m_queue.push(item);
-        m_condition.notify_one();
+        m_condition.notify_all();
         return true;
     }
 
