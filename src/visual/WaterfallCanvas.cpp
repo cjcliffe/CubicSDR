@@ -492,7 +492,7 @@ void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
 void WaterfallCanvas::updateHoverState() {
     long long freqPos = getFrequencyAt(mouseTracker.getMouseX());
     
-    std::vector<DemodulatorInstance *> *demodsHover = wxGetApp().getDemodMgr().getDemodulatorsAt(freqPos, 15000);
+    std::vector<DemodulatorInstance *> demodsHover = wxGetApp().getDemodMgr().getDemodulatorsAt(freqPos, 15000);
     
     wxGetApp().getDemodMgr().setActiveDemodulator(NULL);
     
@@ -505,13 +505,13 @@ void WaterfallCanvas::updateHoverState() {
         } else {
             setStatusText("Click and drag to set the current demodulator range.");
         }
-    } else if (demodsHover->size() && !shiftDown) {
+    } else if (demodsHover.size() && !shiftDown) {
         long near_dist = getBandwidth();
         
         DemodulatorInstance *activeDemodulator = NULL;
         
-        for (int i = 0, iMax = demodsHover->size(); i < iMax; i++) {
-            DemodulatorInstance *demod = (*demodsHover)[i];
+        for (int i = 0, iMax = demodsHover.size(); i < iMax; i++) {
+            DemodulatorInstance *demod = demodsHover[i];
             long long freqDiff = demod->getFrequency() - freqPos;
             long halfBw = (demod->getBandwidth() / 2);
             long long currentBw = getBandwidth();
@@ -574,18 +574,18 @@ void WaterfallCanvas::updateHoverState() {
             mouseTracker.setHorizDragLock(false);
             setStatusText("Click and drag to change demodulator frequency; SPACE or numeric key for direct input. [, ] to nudge, M for mute, D to delete, C to center, E to edit label.");
         }
-    } else {
+    }
+    else {
         SetCursor(wxCURSOR_CROSS);
         nextDragState = WF_DRAG_NONE;
         if (shiftDown) {
             setStatusText("Click to create a new demodulator or hold ALT to drag range, SPACE or numeric key for direct center frequency input.");
-        } else {
+        }
+        else {
             setStatusText(
-                          "Click to set active demodulator frequency or hold ALT to drag range; hold SHIFT to create new.  Right drag or wheel to Zoom.  Arrow keys to navigate/zoom, C to center.");
+                "Click to set active demodulator frequency or hold ALT to drag range; hold SHIFT to create new.  Right drag or wheel to Zoom.  Arrow keys to navigate/zoom, C to center.");
         }
     }
-    
-    delete demodsHover;
 }
 
 void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {

@@ -48,7 +48,7 @@ private:
 public:
     SDRThread();
     ~SDRThread();
-    enum SDRThreadState { SDR_THREAD_MESSAGE, SDR_THREAD_INITIALIZED, SDR_THREAD_TERMINATED, SDR_THREAD_FAILED };
+    enum SDRThreadState { SDR_THREAD_MESSAGE, SDR_THREAD_INITIALIZED, SDR_THREAD_FAILED };
     
     virtual void run();
 

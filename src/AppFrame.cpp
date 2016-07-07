@@ -1589,6 +1589,13 @@ void AppFrame::saveSession(std::string fileName) {
     *header->newChild("center_freq") = wxGetApp().getFrequency();
     *header->newChild("sample_rate") = wxGetApp().getSampleRate();
     
+    if (waterfallCanvas->getViewState()) {
+        DataNode *viewState = header->newChild("view_state");
+        
+        *viewState->newChild("center_freq") = waterfallCanvas->getCenterFrequency();
+        *viewState->newChild("bandwidth") = waterfallCanvas->getBandwidth();
+    }
+    
     DataNode *demods = s.rootNode()->newChild("demodulators");
 
     std::vector<DemodulatorInstance *> &instances = wxGetApp().getDemodMgr().getDemodulators();
@@ -1651,13 +1658,6 @@ bool AppFrame::loadSession(std::string fileName) {
 //            std::cout << "Loading " << version << " session file" << std::endl;
         }
 
-        if (header->hasAnother("center_freq")) {
-        long long center_freq = *header->getNext("center_freq");
-//            std::cout << "\tCenter Frequency: " << center_freq << std::endl;
-
-        wxGetApp().setFrequency(center_freq);
-        }
-
         if (header->hasAnother("sample_rate")) {
             int sample_rate = *header->getNext("sample_rate");
             
@@ -1673,12 +1673,14 @@ bool AppFrame::loadSession(std::string fileName) {
             
         }
 
+        DemodulatorInstance *loadedActiveDemod = nullptr;
+        DemodulatorInstance *newDemod = nullptr;
+        
         if (l.rootNode()->hasAnother("demodulators")) {
+            
         DataNode *demodulators = l.rootNode()->getNext("demodulators");
 
         int numDemodulators = 0;
-        DemodulatorInstance *loadedDemod = NULL;
-        DemodulatorInstance *newDemod = NULL;
         std::vector<DemodulatorInstance *> demodsLoaded;
         
         while (demodulators->hasAnother("demodulator")) {
@@ -1760,7 +1762,7 @@ bool AppFrame::loadSession(std::string fileName) {
             newDemod = wxGetApp().getDemodMgr().newThread();
 
             if (demod->hasAnother("active")) {
-                loadedDemod = newDemod;
+                loadedActiveDemod = newDemod;
             }
 
             numDemodulators++;
@@ -1806,12 +1808,36 @@ bool AppFrame::loadSession(std::string fileName) {
 //                std::cout << "\t\tOutput Device: " << output_device << std::endl;
         }
         
-        DemodulatorInstance *focusDemod = loadedDemod?loadedDemod:newDemod;
-        
-        if (focusDemod) {
+        if (demodsLoaded.size()) {
             wxGetApp().bindDemodulators(&demodsLoaded);
-            wxGetApp().getDemodMgr().setActiveDemodulator(focusDemod, false);
         }
+            
+        } // if l.rootNode()->hasAnother("demodulators")
+        
+        if (header->hasAnother("center_freq")) {
+            long long center_freq = *header->getNext("center_freq");
+            wxGetApp().setFrequency(center_freq);
+            //            std::cout << "\tCenter Frequency: " << center_freq << std::endl;
+        }
+
+        if (header->hasAnother("view_state")) {
+            DataNode *viewState = header->getNext("view_state");
+            
+            if (viewState->hasAnother("center_freq") && viewState->hasAnother("bandwidth")) {
+                long long center_freq = *viewState->getNext("center_freq");
+                int bandwidth = *viewState->getNext("bandwidth");
+                spectrumCanvas->setView(center_freq, bandwidth);
+                waterfallCanvas->setView(center_freq, bandwidth);
+            }
+        } else {
+            spectrumCanvas->disableView();
+            waterfallCanvas->disableView();
+            spectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
+            waterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
+        }
+        
+        if (loadedActiveDemod || newDemod) {
+            wxGetApp().getDemodMgr().setActiveDemodulator(loadedActiveDemod?loadedActiveDemod:newDemod, false);
         }
     } catch (DataTypeMismatchException &e) {
         std::cout << e.what() << std::endl;

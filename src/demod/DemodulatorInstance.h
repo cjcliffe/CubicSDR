@@ -47,8 +47,6 @@ public:
 
     void setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue);
 
-    DemodulatorThreadCommandQueue *getCommandQueue();
-
     void run();
     void terminate();
     std::string getLabel();
@@ -131,7 +129,6 @@ protected:
     DemodulatorThreadInputQueue* pipeIQInputData;
     DemodulatorThreadPostInputQueue* pipeIQDemodData;
     AudioThreadInputQueue *pipeAudioData;
-    DemodulatorThreadCommandQueue* pipeDemodNotify;
     DemodulatorPreThread *demodulatorPreThread;
     DemodulatorThread *demodulatorThread;
     DemodulatorThreadControlCommandQueue *threadQueueControl;
