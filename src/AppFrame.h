@@ -17,7 +17,7 @@
 #include "FFTVisualDataThread.h"
 #include "SDRDeviceInfo.h"
 #include "ModemProperties.h"
-//#include "UITestCanvas.h"
+#include "UITestCanvas.h"
 #include "FrequencyDialog.h"
 
 #include <map>
@@ -122,7 +122,7 @@ private:
     MeterCanvas *demodSignalMeter;
     MeterCanvas *demodGainMeter;
     TuningCanvas *demodTuner;
-//    UITestCanvas *testCanvas;
+    UITestCanvas *testCanvas;
     MeterCanvas *spectrumAvgMeter;
     MeterCanvas *waterfallSpeedMeter;
     ModeSelectorCanvas *demodMuteButton, *peakHoldButton, *soloModeButton, *deltaLockButton;

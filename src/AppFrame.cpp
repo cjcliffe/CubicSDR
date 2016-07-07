@@ -309,7 +309,7 @@ AppFrame::AppFrame() :
     waterfallCanvas->attachSpectrumCanvas(spectrumCanvas);
     spectrumCanvas->attachWaterfallCanvas(waterfallCanvas);
 
-/*
+/* */
     vbox->AddSpacer(1);
     testCanvas = new UITestCanvas(this, attribList);
     vbox->Add(testCanvas, 20, wxEXPAND | wxALL, 0);

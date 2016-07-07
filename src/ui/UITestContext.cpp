@@ -3,13 +3,13 @@
 #include "ColorTheme.h"
 
 UITestContext::UITestContext(UITestCanvas *canvas, wxGLContext *sharedContext) :
-PrimaryGLContext(canvas, sharedContext) {
+PrimaryGLContext(canvas, sharedContext), testMeter("TEST",0,100,50) {
     
     testPanel.setPosition(0.0, 0.0);
     testPanel.setSize(1.0, 1.0);
     testPanel.setMarginPx(10);
-    testPanel.setFill(GLPanel::GLPANEL_FILL_GRAD_BAR_Y);
-    testPanel.setFillColor(RGBA4f(0.0,0.0,1.0), RGBA4f(0.0,1.0,0.0));
+    testPanel.setFill(GLPanel::GLPANEL_FILL_SOLID);
+    testPanel.setFillColor(RGBA4f(0.0,0.0,1.0));
     
     testChildPanel.setPosition(0.0, 0.0);
     testChildPanel.setMarginPx(5);
@@ -39,9 +39,11 @@ PrimaryGLContext(canvas, sharedContext) {
     testText1.setFill(GLPanel::GLPANEL_FILL_NONE);
     testChildPanel2.addChild(&testText1);
     
-    testPanel.addChild(&testChildPanel);
-    testPanel.addChild(&testChildPanel2);
-    testPanel.addChild(&testChildPanel3);
+//    testPanel.addChild(&testChildPanel);
+//    testPanel.addChild(&testChildPanel2);
+//    testPanel.addChild(&testChildPanel3);
+    testMeter.setSize(0.1,0.9);
+    testPanel.addChild(&testMeter);
 }
 
 void UITestContext::DrawBegin() {
