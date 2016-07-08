@@ -56,8 +56,17 @@ MeterPanel::MeterPanel(std::string name, float low, float high, float current) {
     addChild(&valuePanel);
 }
 
+MeterPanel::~MeterPanel() {
+    
+}
+
+
 void MeterPanel::setName(std::string name_in) {
     name = name_in;
+}
+
+std::string MeterPanel::getName() {
+    return name;
 }
 
 void MeterPanel::setRange(float low, float high) {
@@ -73,7 +82,7 @@ void MeterPanel::setValue(float value) {
         value = low;
     }
     
-    current = low + (value * (high-low));
+    current = value;
     setValueLabel(std::to_string(int(current)));
     setPanelLevel(value, levelPanel);
 }
@@ -86,12 +95,11 @@ void MeterPanel::setHighlight(float value) {
         value = low;
     }
     
-    if (value == 0) {
-        highlightPanel.visible = false;
-    } else {
-        setPanelLevel(value, highlightPanel);
-        highlightPanel.visible = true;
-    }
+    setPanelLevel(value, highlightPanel);
+}
+
+void MeterPanel::setHighlightVisible(bool vis) {
+    highlightPanel.visible = vis;
 }
 
 float MeterPanel::getValue() {
@@ -112,7 +120,7 @@ float MeterPanel::getMeterHitValue(CubicVR::vec2 mousePoint, GLPanel &panel) {
     CubicVR::vec2 hitResult;
     
     if (bgPanel.hitTest(mousePoint, hitResult)) {
-        float hitLevel = hitResult.y;
+        float hitLevel = ((hitResult.y + 1.0) * 0.5);
         
         if (hitLevel < 0.0f) {
             hitLevel = 0.0f;
@@ -145,7 +153,7 @@ void MeterPanel::drawPanelContents() {
     float labelPad = 8.0f;
     
     if (viewHeight > 400.0f) {
-        labelHeight *= 2.0f;
+        labelHeight = 32.0f;
     }
     
     float pScale = (1.0f/viewHeight);
@@ -186,4 +194,12 @@ void MeterPanel::setPanelLevel(float setValue, GLPanel &panel) {
     float valueNorm = (setValue - low) / (high - low);
     panel.setSize(1.0, valueNorm);
     panel.setPosition(0.0, (-1.0+(valueNorm)));
+}
+
+bool MeterPanel::getChanged() {
+    return changed;
+}
+
+void MeterPanel::setChanged(bool changed) {
+    this->changed = changed;
 }
