@@ -304,6 +304,8 @@ SET (cubicsdr_sources
     src/panel/ScopePanel.cpp
     src/panel/SpectrumPanel.cpp
     src/panel/WaterfallPanel.cpp
+    src/panel/MeterPanel.cpp
+    src/panel/MeterPanel.h
 	src/visual/ColorTheme.cpp
 	src/visual/PrimaryGLContext.cpp
 	src/visual/InteractiveCanvas.cpp

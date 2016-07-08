@@ -135,6 +135,10 @@ float MouseTracker::getLastMouseY() {
     return lastMouseY;
 }
 
+CubicVR::vec2 MouseTracker::getGLXY() {
+    return CubicVR::vec2((getMouseX()-0.5)*2.0, (getMouseY()-0.5)*2.0);
+}
+
 float MouseTracker::getMouseX() {
     return mouseX;
 }

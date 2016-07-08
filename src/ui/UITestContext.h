@@ -2,6 +2,7 @@
 
 #include "PrimaryGLContext.h"
 #include "GLPanel.h"
+#include "MeterPanel.h"
 
 class UITestCanvas;
 
@@ -19,4 +20,5 @@ private:
     GLPanel testChildPanel2;
     GLPanel testChildPanel3;
     GLTextPanel testText1;
+    MeterPanel testMeter;
 };

@@ -53,20 +53,8 @@ void GainCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
     glViewport(0, 0, ClientSize.x, ClientSize.y);
 
-    float i = 0;
-    for (std::vector<GainInfo *>::iterator gi = gainInfo.begin(); gi != gainInfo.end(); gi++) {
-        GainInfo *gInfo = (*gi);
-        float midPos = -1.0+startPos+spacing*i;
-
-        gInfo->labelPanel.setSize(spacing/2.0,(14.0/float(ClientSize.y)));
-        gInfo->labelPanel.setPosition(midPos, -barHeight-(20.0/float(ClientSize.y)));
-        
-        gInfo->valuePanel.setSize(spacing/2.0,(14.0/float(ClientSize.y)));
-        gInfo->valuePanel.setPosition(midPos, barHeight+(20.0/float(ClientSize.y)));
-        
-        i+=1.0;
-    }
-
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
     bgPanel.draw();
     
     SwapBuffers();
@@ -79,65 +67,44 @@ void GainCanvas::OnIdle(wxIdleEvent &event) {
 		event.Skip();
 	}
     
-    for (std::vector<GainInfo *>::iterator gi = gainInfo.begin(); gi != gainInfo.end(); gi++) {
-        GainInfo *gInfo = (*gi);
-        if (gInfo->changed) {
-            wxGetApp().setGain(gInfo->name, gInfo->current);
-            gInfo->changed = false;
+    for (auto gi : gainPanels) {
+        if (gi->getChanged()) {
+            wxGetApp().setGain(gi->getName(), gi->getValue());
+            gi->setChanged(false);
         }
     }
 }
-
-int GainCanvas::GetPanelHit(CubicVR::vec2 &result) {
-    std::vector<GainInfo *>::iterator gi;
-
-    int i = 0;
-    for (gi = gainInfo.begin(); gi != gainInfo.end(); gi++) {
-        GainInfo *gInfo = (*gi);
-        
-        CubicVR::vec2 hitResult;
-        if (gInfo->panel.hitTest(CubicVR::vec2((mouseTracker.getMouseX()-0.5)*2.0, (mouseTracker.getMouseY()-0.5)*2.0), hitResult)) {
-//            std::cout << "Hit #" << i << " result: " << hitResult << std::endl;
-            result = (hitResult + CubicVR::vec2(1.0,1.0)) * 0.5;
-            return i;
-        }
-        i++;
-    }
-    return -1;
-}
-
 
 void GainCanvas::SetLevel() {
-    CubicVR::vec2 hitResult;
-    int panelHit = GetPanelHit(hitResult);
+    CubicVR::vec2 mpos = mouseTracker.getGLXY();
     
-    if (panelHit >= 0) {
-        gainInfo[panelHit]->levelPanel.setSize(1.0, hitResult.y);
-        gainInfo[panelHit]->levelPanel.setPosition(0.0, (-1.0+(hitResult.y)));
-        gainInfo[panelHit]->current = round(gainInfo[panelHit]->low+(hitResult.y * (gainInfo[panelHit]->high-gainInfo[panelHit]->low)));
-        gainInfo[panelHit]->changed = true;
-        gainInfo[panelHit]->valuePanel.setText(std::to_string(int(gainInfo[panelHit]->current)),GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, true);
+    for (auto gi : gainPanels) {
+        if (gi->isMeterHit(mpos)) {
+            float value = gi->getMeterHitValue(mpos, *gi);
+            
+            gi->setValue(value);
+            gi->setChanged(true);
+            
+            break;
+        }
     }
 }
 
 void GainCanvas::OnMouseMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseMoved(event);
 
-    CubicVR::vec2 hitResult;
-    int panelHit = GetPanelHit(hitResult);
+    CubicVR::vec2 mpos = mouseTracker.getGLXY();
     
-    if (panelHit >= 0) {
-        gainInfo[panelHit]->highlightPanel.setSize(1.0, hitResult.y);
-        gainInfo[panelHit]->highlightPanel.setPosition(0.0, (-1.0+(hitResult.y)));
-    }
-    
-    int i = 0;
-    for (std::vector<GainInfo *>::iterator gi = gainInfo.begin(); gi != gainInfo.end(); gi++) {
-        (*gi)->highlightPanel.visible = (i==panelHit);
-        if (i==panelHit) {
-            wxGetApp().setActiveGainEntry((*gi)->name);
+    for (auto gi : gainPanels) {
+        if (gi->isMeterHit(mpos)) {
+            float value = gi->getMeterHitValue(mpos, *gi);
+        
+            gi->setHighlight(value);
+            gi->setHighlightVisible(true);
+            wxGetApp().setActiveGainEntry(gi->getName());
+        } else {
+            gi->setHighlightVisible(false);
         }
-        i++;
     }
     
     if (mouseTracker.mouseDown()) {
@@ -154,34 +121,17 @@ void GainCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseWheelMoved(event);
     
     CubicVR::vec2 hitResult;
-    int panelHit = GetPanelHit(hitResult);
-
-    if (panelHit >= 0) {
-        float movement = 3.0 * (float)event.GetWheelRotation();
-        
-        GainInfo *gInfo;
-        
-        gInfo = gainInfo[panelHit];
-        
-        gInfo->current = gInfo->current + ((movement / 100.0) * ((gInfo->high - gInfo->low) / 100.0));
-        
-        //BEGIN Clamp to prevent the meter to escape
-        if (gInfo->current > gInfo->high) {
-            gInfo->current = gInfo->high;
+    
+    CubicVR::vec2 mpos = mouseTracker.getGLXY();
+    
+    for (auto gi : gainPanels) {
+        if (gi->isMeterHit(mpos)) {
+            float movement = 3.0 * (float)event.GetWheelRotation();
+            gi->setValue(gi->getValue() + ((movement / 100.0) * ((gi->getHigh() - gi->getLow()) / 100.0)));
+            gi->setChanged(true);
+            break;
         }
-        if (gInfo->current < gInfo->low) {
-            gInfo->current = gInfo->low;
-        }
-       
-        gInfo->changed = true;
-        
-        float levelVal = float(gInfo->current-gInfo->low)/float(gInfo->high-gInfo->low);
-        gInfo->levelPanel.setSize(1.0, levelVal);
-        gInfo->levelPanel.setPosition(0.0, levelVal-1.0);
-
-        gInfo->valuePanel.setText(std::to_string(int(gInfo->current)),GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, true);
     }
-
 }
 
 void GainCanvas::OnMouseReleased(wxMouseEvent& event) {
@@ -191,12 +141,11 @@ void GainCanvas::OnMouseReleased(wxMouseEvent& event) {
 void GainCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseLeftWindow(event);
     SetCursor(wxCURSOR_CROSS);
-    
-    int i = 0;
-    for (std::vector<GainInfo *>::iterator gi = gainInfo.begin(); gi != gainInfo.end(); gi++) {
-        (*gi)->highlightPanel.visible = false;
-        i++;
+   
+    for (auto gi : gainPanels) {
+        gi->setHighlightVisible(false);
     }
+    
     Refresh();
 }
 
@@ -217,8 +166,6 @@ void GainCanvas::setHelpTip(std::string tip) {
 }
 
 void GainCanvas::updateGainUI() {
-    const wxSize ClientSize = GetClientSize();
-
     SDRDeviceInfo *devInfo = wxGetApp().getDevice();
     DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(devInfo->getDeviceId());
     
@@ -235,77 +182,24 @@ void GainCanvas::updateGainUI() {
     spacing = 2.0/numGains;
     barWidth = (1.0/numGains)*0.7;
     startPos = spacing/2.0;
-    barHeight = 0.8f;
+    barHeight = 1.0f;
     
-    RGBA4f c1, c2;
-    
-    while (gainInfo.size()) {
-        GainInfo *giDel;
-        giDel = gainInfo.back();
-        gainInfo.pop_back();
-        
-        giDel->panel.removeChild(&giDel->levelPanel);
-        bgPanel.removeChild(&(giDel->labelPanel));
-        bgPanel.removeChild(&(giDel->valuePanel));
-        bgPanel.removeChild(&(giDel->panel));
-        delete giDel;
+    while (gainPanels.size()) {
+        MeterPanel *mDel = gainPanels.back();
+        gainPanels.pop_back();
+        bgPanel.removeChild(mDel);
+        delete mDel;
     }
     
-    for (gi = gains.begin(); gi != gains.end(); gi++) {
-        GainInfo *gInfo = new GainInfo;
+    for (auto gi : gains) {
+        MeterPanel *mPanel = new MeterPanel(gi.first, gi.second.minimum(), gi.second.maximum(), devConfig->getGain(gi.first,wxGetApp().getGain(gi.first)));
+
         float midPos = -1.0+startPos+spacing*i;
+        mPanel->setPosition(midPos, 0);
+        mPanel->setSize(barWidth, barHeight);
+        bgPanel.addChild(mPanel);
         
-        gInfo->name = gi->first;
-        gInfo->low = gi->second.minimum();
-        gInfo->high = gi->second.maximum();
-        gInfo->current = devConfig->getGain(gInfo->name,wxGetApp().getGain(gInfo->name));
-        gInfo->changed = false;
-        
-        gInfo->panel.setBorderPx(1);
-        gInfo->panel.setFill(GLPanel::GLPANEL_FILL_GRAD_BAR_X);
-        gInfo->panel.setPosition(midPos, 0);
-        gInfo->panel.setSize(barWidth, barHeight);
-        gInfo->panel.setBlend(GL_ONE, GL_ONE);
-
-        gInfo->levelPanel.setBorderPx(0);
-        gInfo->levelPanel.setMarginPx(1);
-        gInfo->levelPanel.setSize(1.0,0.8f);
-        float levelVal = float(gInfo->current-gInfo->low)/float(gInfo->high-gInfo->low);
-        gInfo->levelPanel.setSize(1.0, levelVal);
-        gInfo->levelPanel.setPosition(0.0, (-1.0+(levelVal)));
-        gInfo->levelPanel.setFill(GLPanel::GLPANEL_FILL_GRAD_BAR_X);
-        gInfo->levelPanel.setBlend(GL_ONE, GL_ONE);
-
-        gInfo->panel.addChild(&gInfo->levelPanel);
-
-        gInfo->highlightPanel.setBorderPx(0);
-        gInfo->highlightPanel.setMarginPx(1);
-        gInfo->highlightPanel.setSize(1.0,0.8f);
-        gInfo->highlightPanel.setPosition(0.0,-0.2f);
-        gInfo->highlightPanel.setFill(GLPanel::GLPANEL_FILL_GRAD_BAR_X);
-        gInfo->highlightPanel.setBlend(GL_ONE, GL_ONE);
-        gInfo->highlightPanel.visible = false;
-        
-        gInfo->panel.addChild(&gInfo->highlightPanel);
-        
-        gInfo->labelPanel.setSize(spacing/2.0,(14.0/float(ClientSize.y)));
-        gInfo->labelPanel.setPosition(midPos, -barHeight-(20.0/float(ClientSize.y)));
-
-        gInfo->labelPanel.setText(gi->first,GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, true);
-        gInfo->labelPanel.setFill(GLPanel::GLPANEL_FILL_NONE);
-        
-        bgPanel.addChild(&(gInfo->labelPanel));
-        
-        gInfo->valuePanel.setSize(spacing/2.0,(14.0/float(ClientSize.y)));
-        gInfo->valuePanel.setPosition(midPos, barHeight+(20.0/float(ClientSize.y)));
-        
-        gInfo->valuePanel.setText(std::to_string(int(gInfo->current)), GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, true);
-        gInfo->valuePanel.setFill(GLPanel::GLPANEL_FILL_NONE);
-        
-        bgPanel.addChild(&(gInfo->valuePanel));
-        
-        bgPanel.addChild(&(gInfo->panel));
-        gainInfo.push_back(gInfo);
+        gainPanels.push_back(mPanel);
         i++;
     }
     
@@ -313,34 +207,14 @@ void GainCanvas::updateGainUI() {
 }
 
 void GainCanvas::setThemeColors() {
-    std::vector<GainInfo *>::iterator gi;
-
     RGBA4f c1, c2;
     
     c1 = ThemeMgr::mgr.currentTheme->generalBackground;
     c2 = ThemeMgr::mgr.currentTheme->generalBackground * 0.5;
-    
+    c1.a = 1.0;
+    c2.a = 1.0;
     bgPanel.setFillColor(c1, c2);
 
-    for (gi = gainInfo.begin(); gi != gainInfo.end(); gi++) {
-        GainInfo *gInfo = (*gi);
-        
-        c1 = ThemeMgr::mgr.currentTheme->generalBackground;
-        c2 = ThemeMgr::mgr.currentTheme->generalBackground * 0.5;
-        c1.a = 1.0;
-        c2.a = 1.0;
-        gInfo->panel.setFillColor(c1, c2);
-
-        c1 = ThemeMgr::mgr.currentTheme->meterLevel * 0.5;
-        c2 = ThemeMgr::mgr.currentTheme->meterLevel;
-        c1.a = 1.0;
-        c2.a = 1.0;
-        gInfo->levelPanel.setFillColor(c1, c2);
-        
-        c1 = RGBA4f(0.3f,0.3f,0.3f,1.0f);
-        c2 = RGBA4f(0.65f,0.65f,0.65f,1.0f);;
-        gInfo->highlightPanel.setFillColor(c1, c2);
-    }
     Refresh();
 }
 

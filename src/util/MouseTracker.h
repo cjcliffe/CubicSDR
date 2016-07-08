@@ -1,6 +1,7 @@
 #pragma once
 
 #include "wx/window.h"
+#include "cubic_math.h"
 
 class MouseTracker {
 public:
@@ -24,6 +25,7 @@ public:
     float getDeltaMouseY();
     float getLastMouseX();
     float getLastMouseY();
+    CubicVR::vec2 getGLXY();
     float getMouseX();
     float getMouseY();
 
