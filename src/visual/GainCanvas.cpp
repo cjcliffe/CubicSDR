@@ -121,34 +121,17 @@ void GainCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseWheelMoved(event);
     
     CubicVR::vec2 hitResult;
-//    int panelHit = GetPanelHit(hitResult);
-//
-//    if (panelHit >= 0) {
-//        float movement = 3.0 * (float)event.GetWheelRotation();
-//        
-//        GainInfo *gInfo;
-//        
-//        gInfo = gainInfo[panelHit];
-//        
-//        gInfo->current = gInfo->current + ((movement / 100.0) * ((gInfo->high - gInfo->low) / 100.0));
-//        
-//        //BEGIN Clamp to prevent the meter to escape
-//        if (gInfo->current > gInfo->high) {
-//            gInfo->current = gInfo->high;
-//        }
-//        if (gInfo->current < gInfo->low) {
-//            gInfo->current = gInfo->low;
-//        }
-//       
-//        gInfo->changed = true;
-//        
-//        float levelVal = float(gInfo->current-gInfo->low)/float(gInfo->high-gInfo->low);
-//        gInfo->levelPanel.setSize(1.0, levelVal);
-//        gInfo->levelPanel.setPosition(0.0, levelVal-1.0);
-//
-//        gInfo->valuePanel.setText(std::to_string(int(gInfo->current)),GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, true);
-//    }
-
+    
+    CubicVR::vec2 mpos = mouseTracker.getGLXY();
+    
+    for (auto gi : gainPanels) {
+        if (gi->isMeterHit(mpos)) {
+            float movement = 3.0 * (float)event.GetWheelRotation();
+            gi->setValue(gi->getValue() + ((movement / 100.0) * ((gi->getHigh() - gi->getLow()) / 100.0)));
+            gi->setChanged(true);
+            break;
+        }
+    }
 }
 
 void GainCanvas::OnMouseReleased(wxMouseEvent& event) {
@@ -224,6 +207,14 @@ void GainCanvas::updateGainUI() {
 }
 
 void GainCanvas::setThemeColors() {
+    RGBA4f c1, c2;
+    
+    c1 = ThemeMgr::mgr.currentTheme->generalBackground;
+    c2 = ThemeMgr::mgr.currentTheme->generalBackground * 0.5;
+    c1.a = 1.0;
+    c2.a = 1.0;
+    bgPanel.setFillColor(c1, c2);
+
     Refresh();
 }
 

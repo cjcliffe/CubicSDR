@@ -74,6 +74,14 @@ void MeterPanel::setRange(float low, float high) {
     this->high = high;
 }
 
+float MeterPanel::getLow() {
+    return this->low;
+}
+
+float MeterPanel::getHigh() {
+    return this->high;
+}
+
 void MeterPanel::setValue(float value) {
     if (value > high) {
         value = high;

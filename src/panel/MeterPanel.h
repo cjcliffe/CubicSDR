@@ -10,6 +10,8 @@ public:
     void setName(std::string name_in);
     std::string getName();
     void setRange(float low, float high);
+    float getLow();
+    float getHigh();
     void setValue(float value);
     void setHighlight(float value);
     void setHighlightVisible(bool vis);
