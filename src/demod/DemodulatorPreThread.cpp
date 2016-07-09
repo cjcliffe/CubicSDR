@@ -66,6 +66,7 @@ void DemodulatorPreThread::run() {
     
     while (!stopping) {
         DemodulatorThreadIQData *inp;
+
         iqInputQueue->pop(inp);
         
         if (frequencyChanged.load()) {
@@ -205,17 +206,20 @@ void DemodulatorPreThread::run() {
             resamp->modemKit = cModemKit;
             resamp->sampleRate = currentBandwidth;
 
-            iqOutputQueue->push(resamp);
+            if (!iqOutputQueue->push(resamp)) {
+                resamp->setRefCount(0);
+                std::cout << "DemodulatorPreThread::run() cannot push resamp into iqOutputQueue, is full !" << std::endl;
+                std::this_thread::yield();
+            }
         }
 
         inp->decRefCount();
 
-        if (!stopping && !workerResults->empty()) {
-            while (!workerResults->empty()) {
-                DemodulatorWorkerThreadResult result;
-                workerResults->pop(result);
-
-                switch (result.cmd) {
+        DemodulatorWorkerThreadResult result;
+        //process all worker results until 
+        while (!stopping && workerResults->try_pop(result)) {
+              
+            switch (result.cmd) {
                 case DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS:
                     if (result.iqResampler) {
                         if (iqResampler) {
@@ -258,20 +262,19 @@ void DemodulatorPreThread::run() {
                     break;
                 default:
                     break;
-                }
             }
-        }
+        } //end while
         
         if ((cModem != nullptr) && modemSettingsChanged.load()) {
             cModem->writeSettings(modemSettingsBuffered);
             modemSettingsBuffered.clear();
             modemSettingsChanged.store(false);
         }
-    }
+    } //end while stopping
 
-    while (!iqOutputQueue->empty()) {
-        DemodulatorThreadPostIQData *tmp;
-        iqOutputQueue->pop(tmp);
+    DemodulatorThreadPostIQData *tmp;
+    while (iqOutputQueue->try_pop(tmp)) {
+        
         tmp->decRefCount();
     }
     buffers.purge();
@@ -337,7 +340,10 @@ int DemodulatorPreThread::getAudioSampleRate() {
 void DemodulatorPreThread::terminate() {
     IOThread::terminate();
     DemodulatorThreadIQData *inp = new DemodulatorThreadIQData;    // push dummy to nudge queue
-    iqInputQueue->push(inp);
+    if (!iqInputQueue->push(inp)) {
+        delete inp;
+    }
+
     DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_NULL);
     workerQueue->push(command);
     

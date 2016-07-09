@@ -24,8 +24,12 @@ void DemodulatorWorkerThread::run() {
         DemodulatorWorkerThreadCommand command;
 
         bool done = false;
+        //Beware of the subtility here,
+        //we are waiting for the first command to show up (blocking!)
+        //then consuming the commands until done. 
         while (!done) {
             commandQueue->pop(command);
+
             switch (command.cmd) {
                 case DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS:
                     filterChanged = true;

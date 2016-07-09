@@ -68,10 +68,10 @@ void ScopeVisualProcessor::process() {
     if (!isOutputEmpty()) {
         return;
     }
-    if (!input->empty()) {
-        AudioThreadInput *audioInputData;
-        input->pop(audioInputData);
-        
+    AudioThreadInput *audioInputData;
+
+    if (input->try_pop(audioInputData)) {
+          
         if (!audioInputData) {
             return;
         }
@@ -271,5 +271,5 @@ void ScopeVisualProcessor::process() {
         } else {
             delete audioInputData; //->decRefCount();
         }
-    }
+    } //end if try_pop()
 }

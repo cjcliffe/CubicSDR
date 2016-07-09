@@ -53,15 +53,17 @@ public:
     void setLastModemSettings(std::string, ModemSettings);
 
     void updateLastState();
-
+    
 private:
+    
     void garbageCollect();
 
     std::vector<DemodulatorInstance *> demods;
     std::vector<DemodulatorInstance *> demods_deleted;
-    DemodulatorInstance *activeDemodulator;
-    DemodulatorInstance *lastActiveDemodulator;
-    DemodulatorInstance *activeVisualDemodulator;
+    
+    std::atomic<DemodulatorInstance *> activeDemodulator;
+    std::atomic<DemodulatorInstance *> lastActiveDemodulator;
+    std::atomic<DemodulatorInstance *> activeVisualDemodulator;
 
     int lastBandwidth;
     std::string lastDemodType;

@@ -98,8 +98,8 @@ public:
     long long getSampleRate();
 
     std::vector<SDRDeviceInfo *> *getDevices();
-    void setDevice(SDRDeviceInfo *dev);
-    void stopDevice(bool store);
+    void setDevice(SDRDeviceInfo *dev, int waitMsForTermination);
+    void stopDevice(bool store, int waitMsForTermination);
     SDRDeviceInfo * getDevice();
 
     ScopeVisualProcessor *getScopeProcessor();
@@ -173,10 +173,10 @@ public:
 private:
     int FilterEvent(wxEvent& event);
     
-    AppFrame *appframe;
+    AppFrame *appframe = nullptr;
     AppConfig config;
-    PrimaryGLContext *m_glContext;
-    std::vector<SDRDeviceInfo *> *devs;
+    PrimaryGLContext *m_glContext = nullptr;
+    std::vector<SDRDeviceInfo *> *devs = nullptr;
 
     DemodulatorMgr demodMgr;
 
@@ -186,27 +186,31 @@ private:
     std::atomic_llong sampleRate;
     std::atomic_bool agcMode;
 
-    SDRThread *sdrThread;
-    SDREnumerator *sdrEnum;
-    SDRPostThread *sdrPostThread;
-    SpectrumVisualDataThread *spectrumVisualThread;
-    SpectrumVisualDataThread *demodVisualThread;
+    SDRThread *sdrThread = nullptr;
+    SDREnumerator *sdrEnum = nullptr;
+    SDRPostThread *sdrPostThread = nullptr;
+    SpectrumVisualDataThread *spectrumVisualThread = nullptr;
+    SpectrumVisualDataThread *demodVisualThread = nullptr;
 
-    SDRThreadIQDataQueue* pipeSDRIQData;
-    DemodulatorThreadInputQueue* pipeIQVisualData;
-    DemodulatorThreadOutputQueue* pipeAudioVisualData;
-    DemodulatorThreadInputQueue* pipeDemodIQVisualData;
-    DemodulatorThreadInputQueue* pipeWaterfallIQVisualData;
-    DemodulatorThreadInputQueue* pipeActiveDemodIQVisualData;
+    SDRThreadIQDataQueue* pipeSDRIQData = nullptr;
+    DemodulatorThreadInputQueue* pipeIQVisualData = nullptr;
+    DemodulatorThreadOutputQueue* pipeAudioVisualData = nullptr;
+    DemodulatorThreadInputQueue* pipeDemodIQVisualData = nullptr;
+    DemodulatorThreadInputQueue* pipeWaterfallIQVisualData = nullptr;
+    DemodulatorThreadInputQueue* pipeActiveDemodIQVisualData = nullptr;
 
     ScopeVisualProcessor scopeProcessor;
     
-    SDRDevicesDialog *deviceSelectorDialog;
+    SDRDevicesDialog *deviceSelectorDialog = nullptr;
 
     SoapySDR::Kwargs streamArgs;
     SoapySDR::Kwargs settingArgs;
     
-    std::thread *t_SDR, *t_SDREnum, *t_PostSDR, *t_SpectrumVisual, *t_DemodVisual;
+    std::thread *t_SDR = nullptr;
+    std::thread *t_SDREnum = nullptr;
+    std::thread *t_PostSDR = nullptr;
+    std::thread *t_SpectrumVisual = nullptr;
+    std::thread *t_DemodVisual = nullptr;
     std::atomic_bool devicesReady;
     std::atomic_bool devicesFailed;
     std::atomic_bool deviceSelectorOpen;
@@ -224,8 +228,8 @@ private:
     std::atomic_bool soloMode;
     SDRDeviceInfo *stoppedDev;
 #ifdef USE_HAMLIB
-    RigThread* rigThread;
-    std::thread *t_Rig;
+    RigThread* rigThread = nullptr;
+    std::thread *t_Rig = nullptr;
 #endif
 };
 

@@ -57,7 +57,7 @@ public:
     std::atomic_bool initialized;
     std::atomic_bool active;
     std::atomic_int outputDevice;
-    std::atomic<float> gain;
+    float gain;
 
     AudioThread();
     ~AudioThread();
@@ -88,7 +88,13 @@ private:
     AudioThreadCommandQueue cmdQueue;
     int sampleRate;
 
+    //The own m_mutex protecting this AudioThread, in particular boundThreads
+    std::recursive_mutex m_mutex;
+
 public:
+    //give access to the this AudioThread lock
+    std::recursive_mutex& getMutex();
+
     void bindThread(AudioThread *other);
     void removeThread(AudioThread *other);
 
@@ -97,7 +103,8 @@ public:
     static std::map<int,std::thread *> deviceThread;
     static void deviceCleanup();
     static void setDeviceSampleRate(int deviceId, int sampleRate);
-    std::atomic<std::vector<AudioThread *> *> boundThreads;
-    std::vector<AudioThread *> *vBoundThreads;
+
+    //protected by m_mutex
+   std::vector<AudioThread *> boundThreads;
 };
 

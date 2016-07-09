@@ -86,11 +86,10 @@ protected:
 
         output->setRefCount(outputs.size());
         for (outputs_i = outputs.begin(); outputs_i != outputs.end(); outputs_i++) {
-        	if ((*outputs_i)->full()) {
+
+        	if (!(*outputs_i)->push(output)) {
         		output->decRefCount();
-        	} else {
-        		(*outputs_i)->push(output);
-        	}
+        	} 
         }
     }
 
@@ -107,12 +106,16 @@ template<class OutputDataType = ReferenceCounter>
 class VisualDataDistributor : public VisualProcessor<OutputDataType, OutputDataType> {
 protected:
     void process() {
-        while (!VisualProcessor<OutputDataType, OutputDataType>::input->empty()) {
+        OutputDataType *inp;
+        while (VisualProcessor<OutputDataType, OutputDataType>::input->try_pop(inp)) {
+            
             if (!VisualProcessor<OutputDataType, OutputDataType>::isAnyOutputEmpty()) {
+                if (inp) {
+            	    inp->decRefCount();
+                }
                 return;
             }
-        	OutputDataType *inp;
-        	VisualProcessor<OutputDataType, OutputDataType>::input->pop(inp);
+      
             if (inp) {
             	VisualProcessor<OutputDataType, OutputDataType>::distribute(inp);
             }
@@ -125,12 +128,15 @@ template<class OutputDataType = ReferenceCounter>
 class VisualDataReDistributor : public VisualProcessor<OutputDataType, OutputDataType> {
 protected:
     void process() {
-        while (!VisualProcessor<OutputDataType, OutputDataType>::input->empty()) {
+        OutputDataType *inp;
+        while (VisualProcessor<OutputDataType, OutputDataType>::input->try_pop(inp)) {
+            
             if (!VisualProcessor<OutputDataType, OutputDataType>::isAnyOutputEmpty()) {
+                if (inp) {
+            	    inp->decRefCount();
+                }
                 return;
             }
-            OutputDataType *inp;
-            VisualProcessor<OutputDataType, OutputDataType>::input->pop(inp);
             
             if (inp) {
                 OutputDataType *outp = buffers.getBuffer();

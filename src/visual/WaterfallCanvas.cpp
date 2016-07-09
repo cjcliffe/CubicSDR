@@ -95,8 +95,8 @@ void WaterfallCanvas::processInputQueue() {
         if (lpsIndex >= targetVis) {
             while (lpsIndex >= targetVis) {
                 SpectrumVisualData *vData;
-                if (!visualDataQueue.empty()) {
-                    visualDataQueue.pop(vData);
+
+                if (visualDataQueue.try_pop(vData)) {
                     
                     if (vData) {
                         if (vData->spectrum_points.size() == fft_size * 2) {
@@ -912,11 +912,13 @@ void WaterfallCanvas::updateCenterFrequency(long long freq) {
 
 void WaterfallCanvas::setLinesPerSecond(int lps) {
     std::lock_guard < std::mutex > lock(tex_update);
+    
     linesPerSecond = lps;
-    while (!visualDataQueue.empty()) {
-        SpectrumVisualData *vData;
-        visualDataQueue.pop(vData);
 
+    //empty all
+    SpectrumVisualData *vData;
+    while (visualDataQueue.try_pop(vData)) {
+        
         if (vData) {
             vData->decRefCount();
         }

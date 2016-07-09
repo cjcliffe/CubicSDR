@@ -133,8 +133,8 @@ long long strToFrequency(std::string freqStr) {
 }
 
 
-CubicSDR::CubicSDR() : appframe(NULL), m_glContext(NULL), frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE),
-    sdrThread(NULL), sdrPostThread(NULL), spectrumVisualThread(NULL), demodVisualThread(NULL), pipeSDRIQData(NULL), pipeIQVisualData(NULL), pipeAudioVisualData(NULL), t_SDR(NULL), t_PostSDR(NULL) {
+CubicSDR::CubicSDR() : frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE),agcMode(false)
+       {
         sampleRateInitialized.store(false);
         agcMode.store(true);
         soloMode.store(false);
@@ -254,6 +254,7 @@ bool CubicSDR::OnInit() {
 
     sdrPostThread = new SDRPostThread();
     sdrPostThread->setInputQueue("IQDataInput", pipeSDRIQData);
+
     sdrPostThread->setOutputQueue("IQVisualDataOutput", pipeIQVisualData);
     sdrPostThread->setOutputQueue("IQDataOutput", pipeWaterfallIQVisualData);
     sdrPostThread->setOutputQueue("IQActiveDemodVisualDataOutput", pipeDemodIQVisualData);
@@ -289,22 +290,24 @@ int CubicSDR::OnExit() {
         stopRig();
     }
 #endif
-    
-    demodMgr.terminateAll();
-    
+
+    //The thread feeding them all should be terminated first, so: 
     std::cout << "Terminating SDR thread.." << std::endl;
     sdrThread->terminate();
-    sdrThread->isTerminated(1000);
+    sdrThread->isTerminated(3000);
    
     if (t_SDR) {
        t_SDR->join();
        delete t_SDR;
        t_SDR = nullptr;
     }
-   
+
     std::cout << "Terminating SDR post-processing thread.." << std::endl;
     sdrPostThread->terminate();
-    
+
+    std::cout << "Terminating All Demodulators.." << std::endl;
+    demodMgr.terminateAll();
+   
     std::cout << "Terminating Visual Processor threads.." << std::endl;
     spectrumVisualThread->terminate();
     demodVisualThread->terminate();
@@ -542,16 +545,11 @@ void CubicSDR::setSampleRate(long long rate_in) {
     }
 }
 
-void CubicSDR::stopDevice(bool store) {
-    if (store) {
-        stoppedDev = sdrThread->getDevice();
-    } else {
-        stoppedDev = nullptr;
-    }
-    sdrThread->setDevice(nullptr);
-
+void CubicSDR::stopDevice(bool store, int waitMsForTermination) {
+    
+    //Firt we must stop the threads
     sdrThread->terminate();
-    sdrThread->isTerminated(1000);
+    sdrThread->isTerminated(waitMsForTermination);
 
     if (t_SDR) {
         t_SDR->join();
@@ -559,6 +557,15 @@ void CubicSDR::stopDevice(bool store) {
         t_SDR = nullptr;
     }
     
+    //Only now we can nullify devices
+    if (store) {
+        stoppedDev = sdrThread->getDevice();
+    }
+    else {
+        stoppedDev = nullptr;
+    }
+
+    sdrThread->setDevice(nullptr);
 }
 
 void CubicSDR::reEnumerateDevices() {
@@ -568,10 +575,10 @@ void CubicSDR::reEnumerateDevices() {
     t_SDREnum = new std::thread(&SDREnumerator::threadMain, sdrEnum);
 }
 
-void CubicSDR::setDevice(SDRDeviceInfo *dev) {
+void CubicSDR::setDevice(SDRDeviceInfo *dev, int waitMsForTermination) {
 
     sdrThread->terminate();
-    sdrThread->isTerminated(1000);
+    sdrThread->isTerminated(waitMsForTermination);
     
     if (t_SDR) {
        t_SDR->join();

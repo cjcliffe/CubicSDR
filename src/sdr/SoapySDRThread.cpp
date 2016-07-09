@@ -162,6 +162,7 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
     int nElems = numElems.load();
     int mtElems = mtuElems.load();
 
+    //If overflow occured on the previous readStream(), transfer it in inpBuffer now
     if (numOverflow > 0) {
         int n_overflow = numOverflow;
         if (n_overflow > nElems) {
@@ -176,9 +177,18 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
         }
     }
     
+    //attempt readStream() at most nElems, by mtElems-sized chunks, append inpBuffer.
     while (n_read < nElems && !stopping) {
         int n_requested = nElems-n_read;
+        
         int n_stream_read = device->readStream(stream, buffs, mtElems, flags, timeNs);
+
+        //if the n_stream_read <= 0, bail out from reading. 
+        if (n_stream_read <= 0) {
+            break;
+        }
+
+        //sucess read beyond nElems, with overflow
         if ((n_read + n_stream_read) > nElems) {
             memcpy(&inpBuffer.data[n_read], buffs[0], n_requested * sizeof(float) * 2);
             numOverflow = n_stream_read-n_requested;
@@ -194,7 +204,7 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
         }
     }
     
-    if (n_read > 0 && !stopping) {
+    if (n_read > 0 && !stopping && !iqDataOutQueue->full()) {
         SDRThreadIQData *dataOut = buffers.getBuffer();
 
         if (iq_swap.load()) {
@@ -212,7 +222,16 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
         dataOut->dcCorrected = hasHardwareDC.load();
         dataOut->numChannels = numChannels.load();
         
-        iqDataOutQueue->push(dataOut);
+        if (!iqDataOutQueue->push(dataOut)) {
+            //The rest of the system saturates,
+            //finally the push didn't suceeded, recycle dataOut immediatly.
+            dataOut->setRefCount(0);
+            
+            std::cout << "SDRThread::readStream(): iqDataOutQueue output queue is full, discard processing ! " << std::endl;
+
+            //saturation, let a chance to the other threads to consume the existing samples
+            std::this_thread::yield();
+        }
     }
 }
 

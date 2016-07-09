@@ -17,6 +17,7 @@ unsigned int FFTDataDistributor::getLinesPerSecond() {
 }
 
 void FFTDataDistributor::process() {
+
 	while (!input->empty()) {
 		if (!isAnyOutputEmpty()) {
 			return;
