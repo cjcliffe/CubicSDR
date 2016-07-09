@@ -1,0 +1,56 @@
+{
+    "app-id": "org.gnome.CubicSDR",
+    "runtime": "org.gnome.Platform",
+    "runtime-version": "3.20",
+    "sdk": "org.gnome.Sdk",
+    "command": "CubicSDR",
+    "finish-args": [
+        "--socket=x11",
+        "--share=network",
+        "--device=dri"
+    ],
+    "modules": [
+        {
+            "name": "SoapySDR",
+            "cmake": true,
+            "config-opts": ["-DCMAKE_BUILD_TYPE=Release"],
+            "make-args": ["-j4"],
+            "sources": [ {"type": "git", "url": "https://github.com/pothosware/SoapySDR.git" } ]
+        },
+        {
+            "name": "SoapyAudio",
+            "cmake": true,
+            "config-opts": ["-DCMAKE_BUILD_TYPE=Release"],
+            "make-args": ["-j4"],
+            "sources": [ { "type": "git", "url": "https://github.com/pothosware/SoapyAudio.git" } ]
+        },
+        {
+            "name": "liquid-dsp",
+            "config-opts": ["--enable-fftoverride"],
+            "make-args": ["-j4"],
+            "sources": [    { "type": "git", "url": "https://github.com/jgaeddert/liquid-dsp" },
+                            { "type": "shell", "commands": ["cp bootstrap.sh bootstrap"] }
+            ]
+        },
+        {
+            "name": "glu",
+            "config-opts": ["" ],
+            "cxxflags": [ "" ],
+            "make-args": ["-j4"],
+            "sources": [ {  "type": "archive", "path": "../SOURCES/glu-9.0.0.tar.gz" } ]
+        },
+        {
+            "name": "wxWidgets",
+            "config-opts": ["--with-opengl", "--with-libjpeg", "--disable-shared", "--enable-monolithic", "--with-libtiff", "--with-libpng", "--with-zlib", "--disable-sdltest", "--enable-unicode", "--enable-display", "--enable-propgrid", "--disable-webkit", "--disable-webview", "--disable-webviewwebkit", "--with-libiconv=/usr" ],
+            "cxxflags": [ "-std=c++0x" ],
+            "make-args": ["-j4"],
+            "sources": [ {  "type": "archive", "path": "../SOURCES/wxWidgets-3.1.0.tar.bz2" } ]
+        },
+        {
+            "name": "CubicSDR",
+            "cmake": true,
+            "config-opts": [ "-DCMAKE_BUILD_TYPE=Release" ],
+            "sources": [ { "type": "git", "url": "https://github.com/cjcliffe/CubicSDR.git" } ]
+        }
+    ]
+}
