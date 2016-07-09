@@ -6,8 +6,10 @@
     "command": "CubicSDR",
     "finish-args": [
         "--socket=x11",
+        "--share=ipc",
         "--share=network",
-        "--device=dri"
+        "--device=dri",
+        "--socket=pulseaudio"
     ],
     "modules": [
         {
