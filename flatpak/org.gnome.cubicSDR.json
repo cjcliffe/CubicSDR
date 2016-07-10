@@ -28,6 +28,13 @@
             "sources": [ {  "type": "archive", "path": "../SOURCES/glu-9.0.0.tar.gz" } ]
         },
         {
+            "name": "hamlib",
+            "config-opts": ["" ],
+            "cxxflags": [ "" ],
+            "make-args": ["-j4"],
+            "sources": [ {  "type": "archive", "path": "../SOURCES/hamlib-3.0.1.tar.gz" } ]
+        },
+        {
             "name": "SoapySDR",
             "cmake": true,
             "config-opts": ["-DCMAKE_BUILD_TYPE=Release"],
@@ -74,7 +81,7 @@
         {
             "name": "SoapyAudio",
             "cmake": true,
-            "config-opts": ["-DCMAKE_BUILD_TYPE=Release"],
+            "config-opts": ["-DCMAKE_BUILD_TYPE=Release", "-DUSE_HAMLIB=1", "-DUSE_AUDIO_PULSE=1", "-DUSE_AUDIO_ALSA=0" ],
             "make-args": ["-j4"],
             "sources": [ { "type": "git", "url": "https://github.com/pothosware/SoapyAudio.git" } ]
         },
@@ -84,12 +91,6 @@
             "cxxflags": [ "-std=c++0x" ],
             "make-args": ["-j4"],
             "sources": [ {  "type": "archive", "path": "../SOURCES/wxWidgets-3.1.0.tar.bz2" } ]
-        },{
-            "name": "hamlib",
-            "config-opts": ["" ],
-            "cxxflags": [ "" ],
-            "make-args": ["-j4"],
-            "sources": [ {  "type": "archive", "path": "../SOURCES/hamlib-3.0.1.tar.gz" } ]
         },
         {
             "name": "CubicSDR",
