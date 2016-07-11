@@ -862,11 +862,14 @@ IF (WIN32 AND BUILD_INSTALLER)
 	install(TARGETS CubicSDR RUNTIME DESTINATION .)
 
 	install(FILES 
-        ${CUBICSDR_FONTS}
         ${PROJECT_SOURCE_DIR}/icon/CubicSDR.ico
 		${LIQUID_DLL}
 		DESTINATION .)
 
+	install(FILES 
+        ${CUBICSDR_FONTS}
+		DESTINATION fonts)
+		
 	IF(USE_HAMLIB)
 		FOREACH(HAMLIB_DLL ${HAMLIB_DLLS})
 			message(STATUS "Copying Hamlib DLL: ${HAMLIB_DLL}")
