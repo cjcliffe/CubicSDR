@@ -105,12 +105,12 @@ void SDRPostThread::updateActiveDemodulators() {
             // deactivate if active
             if (demod->isActive() && !demod->isFollow() && !demod->isTracking()) {
                 demod->setActive(false);
-                DemodulatorThreadIQData *dummyDataOut = new DemodulatorThreadIQData;
-                dummyDataOut->frequency = frequency;
-                dummyDataOut->sampleRate = sampleRate;
-                if (!demodQueue->push(dummyDataOut)) {
-                    delete dummyDataOut;
-                }
+            //    DemodulatorThreadIQData *dummyDataOut = new DemodulatorThreadIQData;
+            //    dummyDataOut->frequency = frequency;
+            //    dummyDataOut->sampleRate = sampleRate;
+            //    if (!demodQueue->push(dummyDataOut)) {
+            //        delete dummyDataOut;
+            //    }
             }
             
             // follow if follow mode
