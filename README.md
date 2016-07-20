@@ -20,7 +20,7 @@ Utilizes:
 
 Optional Libs:
 --------
-  - FFTW (http://www.fftw.org/ -- https://github.com/FFTW/fftw3)
+  - FFTW3 (can be compiled into liquid-dsp if desired) (http://www.fftw.org/ -- https://github.com/FFTW/fftw3)
   - hamlib (https://sourceforge.net/p/hamlib/wiki/Hamlib/ -- https://sourceforge.net/p/hamlib/code/ci/master/tree/)
 
 Features and Status:
