@@ -950,21 +950,4 @@ IF(UNIX AND NOT APPLE AND NOT BUILD_DEB)
     ADD_CUSTOM_TARGET(uninstall
       "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake") 
 
-
-	SET (ENABLE_APPIMAGEKIT OFF CACHE BOOL "Generate AppImageKit build script.")
-
-	IF (ENABLE_APPIMAGEKIT)
-		SET (APPIMAGEKIT_APPRUN "~/Develop/AppImageKit/AppRun" CACHE STRING "AppImageKit AppRun binary path")
-		SET (APPIMAGEKIT_APPASSIST "~/Develop/AppImageKit/AppImageAssistant" CACHE STRING "AppImageKit AppImageAssistant binary path")
-		
-		CONFIGURE_FILE(
-			  "${PROJECT_SOURCE_DIR}/cmake/buildAppImage.sh.in"
-			  "${CMAKE_CURRENT_BINARY_DIR}/buildAppImage.sh"
-		)
-
- 		ADD_CUSTOM_COMMAND(
-            TARGET CubicSDR
-            COMMAND chmod ARGS +x ${CMAKE_CURRENT_BINARY_DIR}/buildAppImage.sh
-        )
-	ENDIF(ENABLE_APPIMAGEKIT)
 ENDIF()
