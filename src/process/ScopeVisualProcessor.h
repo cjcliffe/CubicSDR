@@ -4,10 +4,6 @@
 #include "AudioThread.h"
 #include "ScopePanel.h"
 
-#if USE_FFTW3
-#include "fftw3.h"
-#endif
-
 class ScopeRenderData: public ReferenceCounter {
 public:
 	std::vector<float> waveform_points;
@@ -36,15 +32,9 @@ protected:
     std::atomic_bool scopeEnabled;
     std::atomic_bool spectrumEnabled;
     
-#if USE_FFTW3
-    std::vector<float> fftInData;
-    std::vector<fftwf_complex> fftwOutput;
-    std::vector<fftwf_plan> fftw_plan;
-#else
     std::vector<liquid_float_complex> fftInData;
     std::vector<liquid_float_complex> fftOutput;
     fftplan fftPlan;
-#endif
     
     unsigned int fftSize;
     int desiredInputSize;

@@ -4,10 +4,6 @@
 #include "DemodDefs.h"
 #include <cmath>
 
-#if USE_FFTW3
-#include "fftw3.h"
-#endif
-
 #define SPECTRUM_VZM 2
 #define PEAK_RESET_COUNT 30
 
@@ -68,13 +64,8 @@ private:
     long lastBandwidth;
     bool lastView;
 
-#if USE_FFTW3
-    fftwf_complex *fftwInput, *fftwOutput, *fftInData, *fftLastData;
-    fftwf_plan fftw_plan;
-#else
     liquid_float_complex *fftInput, *fftOutput, *fftInData, *fftLastData;
     fftplan fftPlan;
-#endif
 
     unsigned int lastDataSize;
     
