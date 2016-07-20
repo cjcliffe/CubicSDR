@@ -38,13 +38,6 @@ ADD_DEFINITIONS(
 ENDIF()
 ENDIF()
 
-SET (ENABLE_FFTW3 OFF CACHE BOOL "Use fftw3 instead of liquid-dsp internal fft.")
-IF(ENABLE_FFTW3)
-    ADD_DEFINITIONS(
-        -DUSE_FFTW3=1
-    )
-ENDIF()
-
 set(USE_HAMLIB OFF CACHE BOOL "Support hamlib for radio control functions.")
 
 if (USE_HAMLIB)
@@ -111,11 +104,6 @@ SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_BINARY_DIR}/${EX_PLATFORM_
 
 IF (MSVC) 
 	include_directories ("${PROJECT_SOURCE_DIR}/external/wglext")
-    IF(ENABLE_FFTW3)
-    	SET(FFTW_INCLUDES "${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/" CACHE STRING "FFTW Include Directory")
-    	SET(FFTW_LIBRARIES "${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM}/libfftw3f-3.lib" CACHE STRING "FFTW Library")
-    	SET(FFTW_DLL "${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM}/libfftw3f-3.dll" CACHE STRING "FFTW DLL")
-    ENDIF()
 	SET(LIQUID_INCLUDES "${PROJECT_SOURCE_DIR}/external/liquid-dsp/include/" CACHE STRING "Liquid-DSP include directory")
 	SET(LIQUID_LIBRARIES "${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/libliquid.lib" CACHE STRING "Liquid-DSP Library")
 	SET(LIQUID_DLL "${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/libliquid.dll" CACHE STRING "Liquid-DSP DLL")
@@ -128,13 +116,6 @@ ELSE (MSVC)
 ENDIF(MSVC)
 
 find_package(OpenGL REQUIRED)
-
-IF(ENABLE_FFTW3)
-    find_package(FFTW REQUIRED)
-    include_directories(${FFTW_INCLUDES})
-    SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} ${FFTW_LIBRARIES})
-ENDIF()
-
 find_package(Liquid REQUIRED)
 include_directories(${LIQUID_INCLUDES})
 SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} ${LIQUID_LIBRARIES})
@@ -202,10 +183,6 @@ IF (UNIX AND NOT APPLE)
     SET(USE_AUDIO_ALSA OFF CACHE BOOL "Use ALSA Audio")
     SET(USE_AUDIO_OSS OFF CACHE BOOL "Use OSS Audio")
   
-    IF(ENABLE_FFTW3)
-        SET(FFTW_LIB fftw3f)
-    ENDIF()
-
     SET(LIQUID_LIB liquid)
     SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} dl)
 
@@ -247,10 +224,6 @@ ENDIF(UNIX AND NOT APPLE)
 IF (APPLE)
     SET(CMAKE_OSX_DEPLOYMENT_TARGET, "10.9")
   
-    IF(ENABLE_FFTW3)
-        SET(FFTW_LIB fftw3f)
-    ENDIF()
-
     SET(LIQUID_LIB liquid)
     link_directories(/usr/local/lib)
     link_directories(/opt/local/lib)
@@ -586,15 +559,9 @@ IF (NOT BUNDLE_APP)
     configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME}/fonts "*.png")
     configure_files(${PROJECT_SOURCE_DIR}/icon ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} CubicSDR.ico)
 	IF(MSVC)	
-        IF(ENABLE_FFTW3)
-            configure_files(${PROJECT_SOURCE_DIR}/external/fftw-3.3.4/${EX_PLATFORM}/ ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
-        ENDIF()
 		configure_files(${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/ ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
 	ENDIF()
     add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers} ${RES_FILES})
-    IF(ENABLE_FFTW3)
-        target_link_libraries(CubicSDR ${FFTW_LIB})
-    ENDIF()
     target_link_libraries(CubicSDR ${LIQUID_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
 ENDIF (NOT BUNDLE_APP)
 
@@ -666,10 +633,6 @@ IF (APPLE AND BUNDLE_APP)
         MACOSX_PACKAGE_LOCATION Resources/fonts
     )
 
-    IF(ENABLE_FFTW3)
-        target_link_libraries(CubicSDR ${FFTW_LIB})    
-    ENDIF()
-    
     target_link_libraries(CubicSDR ${LIQUID_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
     SET_TARGET_PROPERTIES(CubicSDR PROPERTIES
         MACOSX_BUNDLE TRUE
@@ -811,12 +774,6 @@ IF (WIN32 AND NOT BUILD_INSTALLER)
 		${LIQUID_DLL}
 	DESTINATION bin)
 
-    IF(ENABLE_FFTW3)
-    	INSTALL(FILES 		
-    		${FFTW_DLL}
-    	DESTINATION bin)
-    ENDIF()
-	
 	IF(USE_HAMLIB)
 		FOREACH(HAMLIB_DLL ${HAMLIB_DLLS})
 			message(STATUS "Copying Hamlib DLL: ${HAMLIB_DLL}")
@@ -879,13 +836,6 @@ IF (WIN32 AND BUILD_INSTALLER)
 		ENDFOREACH()
 	ENDIF()
 
-		
-    IF(ENABLE_FFTW3)
-    	install(FILES 
-    		${FFTW_DLL}
-        DESTINATION .)
-    ENDIF()
-        
 	IF (BUNDLE_SOAPY_MODS)
 		ADD_DEFINITIONS(
 			-DBUNDLE_SOAPY_MODS=1
@@ -927,9 +877,6 @@ IF (UNIX AND NOT APPLE AND BUILD_DEB)
     set(CPACK_GENERATOR DEB)
 	set(CPACK_PACKAGE_NAME "CubicSDR")
 	SET(CPACK_DEBIAN_PACKAGE_DEPENDS " libwxgtk3.0-0, libpulse0")
-    IF(ENABLE_FFTW3)
-    	SET(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libfftw3-single3")    
-    ENDIF()
  	SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "Charles J. Cliffe <cj@cubicproductions.com>")
 	SET(CPACK_DEBIAN_PACKAGE_DESCRIPTION "CubicSDR Software Defined Radio application v${CUBICSDR_VERSION}")
 	SET(CPACK_DEBIAN_PACKAGE_SECTION "comm")
