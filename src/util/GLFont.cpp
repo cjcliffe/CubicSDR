@@ -857,6 +857,30 @@ double GLFont::getScaleFactor() {
     return 1.0;
 }
 
+int GLFont::getScaledPx(int basicFontSize, double scaleFactor) {
+    //try to align on an integer pixel size if the targetSize font is available
+    int targetSize = round(basicFontSize * scaleFactor);
+    int resultIndex = 0;
+    
+    fonts[0].loadFontOnce();
+    
+    for (int i = 0; i < GLFONT_SIZE_MAX - 1; i++) {
+        
+        fonts[i + 1].loadFontOnce();
+        
+        if (fonts[i + 1].pixHeight <= targetSize) {
+            resultIndex = i + 1;
+        }
+        else {
+            break;
+        }
+    } //end for
+    
+    // return font height px
+    return fonts[resultIndex].pixHeight;
+}
+
+
 GLFont::Drawer::Drawer(int basicFontSize, double scaleFactor) {
 
     //Selection of the final font: scan GLFont::fonts to find the biggest font such as 

@@ -112,6 +112,9 @@ public:
 
     //Mean current scale factor: 1.0 in normal, 1.5 medium, 2.0 for large
     static double getScaleFactor();
+    
+    //Return a valid font px height given the font size and scale factor
+    static int getScaledPx(int basicFontSize, double scaleFactor);
 
    
 private:

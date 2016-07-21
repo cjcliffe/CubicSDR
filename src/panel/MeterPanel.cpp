@@ -148,32 +148,28 @@ void MeterPanel::drawPanelContents() {
 
     glGetIntegerv( GL_VIEWPORT, vp);
     
-    float viewHeight = (float) vp[3];
+    double viewHeight = vp[3];
     
     CubicVR::vec4 t = CubicVR::mat4::vec4_multiply(CubicVR::vec4(0,0.5,0,1), transform);
     CubicVR::vec4 b = CubicVR::mat4::vec4_multiply(CubicVR::vec4(0,-0.5,0,1), transform);
     
-    float hScale = t.y-b.y;
+    double hScale = t.y-b.y;
     
-    viewHeight = round(viewHeight * hScale);
+    viewHeight = viewHeight * hScale;
     
-    float labelHeight = 24.0f;
-    float labelPad = 8.0f;
+    double labelHeight = GLFont::getScaledPx(18, GLFont::getScaleFactor());
+    double labelPad = 8.0;
     
-    if (viewHeight > 400.0f) {
-        labelHeight = 32.0f;
-    }
-    
-    float pScale = (1.0f/viewHeight);
+    double pScale = (1.0/viewHeight);
     RGBA4f c1, c2;
     
-    bgPanel.setSize(1.0f, 1.0f - pScale * (labelHeight + labelPad * 2.0f));
+    bgPanel.setSize(1.0f, 1.0 - pScale * (labelHeight + labelPad * 2.0));
     
-    valuePanel.setPosition(0.0f, (pScale * (labelHeight / 2.0f + labelPad) ) - 1.0f);
-    valuePanel.setSize(1.0f, pScale*labelHeight);
+    valuePanel.setPosition(0.0, (pScale * (labelHeight / 2.0 + labelPad) ) - 1.0);
+    valuePanel.setSize(1.0, pScale*labelHeight);
     
-    labelPanel.setPosition(0.0f, 1.0f - (pScale * (labelHeight / 2.0f + labelPad)));
-    labelPanel.setSize(1.0f, pScale*labelHeight);
+    labelPanel.setPosition(0.0, 1.0 - (pScale * (labelHeight / 2.0 + labelPad)));
+    labelPanel.setSize(1.0, pScale*labelHeight);
 
     c1 = ThemeMgr::mgr.currentTheme->generalBackground;
     c2 = ThemeMgr::mgr.currentTheme->generalBackground * 0.5;
