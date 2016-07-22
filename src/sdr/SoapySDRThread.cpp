@@ -91,7 +91,7 @@ void SDRThread::init() {
     device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
     
     // TODO: explore bandwidth setting option to see if this is necessary for others
-    if (device->getDriverKey() == "bladerf") {
+    if (device->getDriverKey() == "bladeRF") {
         device->setBandwidth(SOAPY_SDR_RX, 0, sampleRate.load());
     }
         
@@ -287,7 +287,7 @@ void SDRThread::updateSettings() {
     if (rate_changed.load()) {
         device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
         // TODO: explore bandwidth setting option to see if this is necessary for others
-        if (device->getDriverKey() == "bladerf") {
+        if (device->getDriverKey() == "bladeRF") {
             device->setBandwidth(SOAPY_SDR_RX, 0, sampleRate.load());
         }
         sampleRate.store(device->getSampleRate(SOAPY_SDR_RX,0));
