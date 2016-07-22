@@ -89,6 +89,12 @@ void SDRThread::init() {
     
     wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Activating stream."));
     device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
+    
+    // TODO: explore bandwidth setting option to see if this is necessary for others
+    if (device->getDriverKey() == "bladerf") {
+        device->setBandwidth(SOAPY_SDR_RX, 0, sampleRate.load());
+    }
+        
     device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency - offset.load());
     device->activateStream(stream);
     if (devInfo->hasCORR(SOAPY_SDR_RX, 0)) {
@@ -280,6 +286,10 @@ void SDRThread::updateSettings() {
     
     if (rate_changed.load()) {
         device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
+        // TODO: explore bandwidth setting option to see if this is necessary for others
+        if (device->getDriverKey() == "bladerf") {
+            device->setBandwidth(SOAPY_SDR_RX, 0, sampleRate.load());
+        }
         sampleRate.store(device->getSampleRate(SOAPY_SDR_RX,0));
         numChannels.store(getOptimalChannelCount(sampleRate.load()));
         numElems.store(getOptimalElementCount(sampleRate.load(), 60));
