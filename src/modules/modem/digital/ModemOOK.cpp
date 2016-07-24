@@ -12,7 +12,7 @@ std::string ModemOOK::getName() {
     return "OOK";
 }
 
-Modem *ModemOOK::factory() {
+ModemBase *ModemOOK::factory() {
     return new ModemOOK;
 }
 

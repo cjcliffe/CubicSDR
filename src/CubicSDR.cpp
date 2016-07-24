@@ -190,30 +190,30 @@ bool CubicSDR::OnInit() {
     RigThread::enumerate();
 #endif
 
-    Modem::addModemFactory(new ModemFM);
-    Modem::addModemFactory(new ModemNBFM);
-    Modem::addModemFactory(new ModemFMStereo);
-    Modem::addModemFactory(new ModemAM);
-    Modem::addModemFactory(new ModemLSB);
-    Modem::addModemFactory(new ModemUSB);
-    Modem::addModemFactory(new ModemDSB);
-    Modem::addModemFactory(new ModemIQ);
+    Modem::addModemFactory(ModemFM::factory, "FM", 200000);
+    Modem::addModemFactory(ModemNBFM::factory, "NBFM", 12500);
+    Modem::addModemFactory(ModemFMStereo::factory, "FMS", 200000);
+    Modem::addModemFactory(ModemAM::factory, "AM", 6000);
+    Modem::addModemFactory(ModemLSB::factory, "LSB", 5400);
+    Modem::addModemFactory(ModemUSB::factory, "USB", 5400);
+    Modem::addModemFactory(ModemDSB::factory, "DSB", 5400);
+    Modem::addModemFactory(ModemIQ::factory, "I/Q", 48000);
 
 #ifdef ENABLE_DIGITAL_LAB
-    Modem::addModemFactory(new ModemAPSK);
-    Modem::addModemFactory(new ModemASK);
-    Modem::addModemFactory(new ModemBPSK);
-    Modem::addModemFactory(new ModemDPSK);
+    Modem::addModemFactory(ModemAPSK::factory, "APSK", 200000);
+    Modem::addModemFactory(ModemASK::factory, "ASK", 200000);
+    Modem::addModemFactory(ModemBPSK::factory, "BPSK", 200000);
+    Modem::addModemFactory(ModemDPSK::factory, "DPSK", 200000);
 #if ENABLE_LIQUID_EXPERIMENTAL
-    Modem::addModemFactory(new ModemFSK);
+    Modem::addModemFactory(ModemFSK::factory, "FSK", 19200);
 #endif
-    Modem::addModemFactory(new ModemGMSK);
-    Modem::addModemFactory(new ModemOOK);
-    Modem::addModemFactory(new ModemPSK);
-    Modem::addModemFactory(new ModemQAM);
-    Modem::addModemFactory(new ModemQPSK);
-    Modem::addModemFactory(new ModemSQAM);
-    Modem::addModemFactory(new ModemST);
+    Modem::addModemFactory(ModemGMSK::factory, "GMSK", 19200);
+    Modem::addModemFactory(ModemOOK::factory, "OOK", 200000);
+    Modem::addModemFactory(ModemPSK::factory, "PSK", 200000);
+    Modem::addModemFactory(ModemQAM::factory, "QAM", 200000);
+    Modem::addModemFactory(ModemQPSK::factory, "QPSK", 200000);
+    Modem::addModemFactory(ModemSQAM::factory, "SQAM", 200000);
+    Modem::addModemFactory(ModemST::factory, "ST", 200000);
 #endif
     
     frequency = wxGetApp().getConfig()->getCenterFreq();

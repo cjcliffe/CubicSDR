@@ -4,7 +4,7 @@ ModemQPSK::ModemQPSK() : ModemDigital()  {
     demodQPSK = modem_create(LIQUID_MODEM_QPSK);
 }
 
-Modem *ModemQPSK::factory() {
+ModemBase *ModemQPSK::factory() {
     return new ModemQPSK;
 }
 

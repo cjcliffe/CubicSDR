@@ -8,7 +8,7 @@ public:
     
     std::string getName();
     
-    Modem *factory();
+    static ModemBase *factory();
     
     ModemArgInfoList getSettings();
     void writeSetting(std::string setting, std::string value);

@@ -3,6 +3,7 @@
 
 
 ModemFactoryList Modem::modemFactories;
+DefaultRatesList Modem::modemDefaultRates;
 
 //! Create an empty range (0.0, 0.0)
 ModemRange::ModemRange(void) {
@@ -38,8 +39,9 @@ Modem::~Modem() {
     
 }
 
-void Modem::addModemFactory(Modem *factorySingle) {
-    modemFactories[factorySingle->getName()] = factorySingle;
+void Modem::addModemFactory(ModemFactoryFn factoryFunc, std::string modemName, int defaultRate) {
+    modemFactories[modemName] = factoryFunc;
+    modemDefaultRates[modemName] = defaultRate;
 }
 
 ModemFactoryList Modem::getFactories() {
@@ -48,15 +50,15 @@ ModemFactoryList Modem::getFactories() {
 
 Modem *Modem::makeModem(std::string modemName) {
     if (modemFactories.find(modemName) != modemFactories.end()) {
-        return modemFactories[modemName]->factory();
+        return (Modem *)modemFactories[modemName]();
     }
     
     return nullptr;
 }
 
 int Modem::getModemDefaultSampleRate(std::string modemName) {
-    if (modemFactories.find(modemName) != modemFactories.end()) {
-        return modemFactories[modemName]->getDefaultSampleRate();
+    if (modemDefaultRates.find(modemName) != modemDefaultRates.end()) {
+        return modemDefaultRates[modemName];
     }
     
     return 0;

@@ -13,7 +13,7 @@ ModemLSB::ModemLSB() : ModemAnalog() {
     c2rFilt = firhilbf_create(5, 90.0);
 }
 
-Modem *ModemLSB::factory() {
+ModemBase *ModemLSB::factory() {
     return new ModemLSB;
 }
 

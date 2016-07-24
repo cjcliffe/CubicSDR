@@ -108,14 +108,21 @@ public:
 
 typedef std::vector<ModemArgInfo> ModemArgInfoList;
 
-class Modem;
-typedef std::map<std::string,Modem *> ModemFactoryList;
+class ModemBase {
+    
+};
+
+typedef ModemBase *(*ModemFactoryFn)();
+
+
+typedef std::map<std::string, ModemFactoryFn> ModemFactoryList;
+typedef std::map<std::string, int> DefaultRatesList;
 
 typedef std::map<std::string, std::string> ModemSettings;
 
-class Modem  {
+class Modem : public ModemBase  {
 public:
-    static void addModemFactory(Modem *factorySingle);
+    static void addModemFactory(ModemFactoryFn, std::string modemName, int defaultRate);
     static ModemFactoryList getFactories();
     
     static Modem *makeModem(std::string modemName);
@@ -124,8 +131,6 @@ public:
     virtual std::string getType() = 0;
     virtual std::string getName() = 0;
     
-    virtual Modem *factory() = 0;
-
     Modem();
     virtual ~Modem();
     
@@ -149,5 +154,6 @@ public:
     
 private:
     static ModemFactoryList modemFactories;
+    static DefaultRatesList modemDefaultRates;
     std::atomic_bool refreshKit;
 };

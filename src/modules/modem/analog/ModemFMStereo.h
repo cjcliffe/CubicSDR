@@ -29,7 +29,7 @@ public:
     std::string getType();
     std::string getName();
     
-    Modem *factory();
+    static ModemBase *factory();
     
     int checkSampleRate(long long sampleRate, int audioSampleRate);
     int getDefaultSampleRate();

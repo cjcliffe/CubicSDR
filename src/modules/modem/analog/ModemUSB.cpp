@@ -13,7 +13,7 @@ ModemUSB::ModemUSB() : ModemAnalog() {
     c2rFilt = firhilbf_create(5, 90.0);
 }
 
-Modem *ModemUSB::factory() {
+ModemBase *ModemUSB::factory() {
     return new ModemUSB;
 }
 

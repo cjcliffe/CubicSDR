@@ -12,7 +12,7 @@ ModemAPSK::ModemAPSK() : ModemDigital() {
     cons = 4;
 }
 
-Modem *ModemAPSK::factory() {
+ModemBase *ModemAPSK::factory() {
     return new ModemAPSK;
 }
 

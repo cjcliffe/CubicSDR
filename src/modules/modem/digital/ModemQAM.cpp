@@ -12,7 +12,7 @@ ModemQAM::ModemQAM() : ModemDigital()  {
     cons = 4;
 }
 
-Modem *ModemQAM::factory() {
+ModemBase *ModemQAM::factory() {
     return new ModemQAM;
 }
 

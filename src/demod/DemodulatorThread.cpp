@@ -136,6 +136,7 @@ void DemodulatorThread::run() {
             
             ati->sampleRate = cModemKit->sampleRate;
             ati->inputRate = inp->sampleRate;
+            ati->data.resize(0);
         }
 
         cModem->demodulate(cModemKit, &modemData, ati);
@@ -160,7 +161,7 @@ void DemodulatorThread::run() {
             }
         }
         
-        if (audioOutputQueue != nullptr && ati && !squelched) {
+        if (audioOutputQueue != nullptr && ati && ati->data.size() && !squelched) {
             std::vector<float>::iterator data_i;
             ati->peak = 0;
             for (data_i = ati->data.begin(); data_i != ati->data.end(); data_i++) {

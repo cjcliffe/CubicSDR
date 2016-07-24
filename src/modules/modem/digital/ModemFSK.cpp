@@ -9,7 +9,7 @@ ModemFSK::ModemFSK() : ModemDigital()  {
     outStream << std::hex;
 }
 
-Modem *ModemFSK::factory() {
+ModemBase *ModemFSK::factory() {
     return new ModemFSK;
 }
 
