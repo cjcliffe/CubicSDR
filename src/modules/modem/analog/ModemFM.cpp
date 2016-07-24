@@ -8,7 +8,7 @@ ModemFM::~ModemFM() {
     freqdem_destroy(demodFM);
 }
 
-Modem *ModemFM::factory() {
+ModemBase *ModemFM::factory() {
     return new ModemFM;
 }
 

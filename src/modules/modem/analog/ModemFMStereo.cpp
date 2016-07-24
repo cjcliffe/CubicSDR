@@ -16,7 +16,7 @@ std::string ModemFMStereo::getName() {
     return "FMS";
 }
 
-Modem *ModemFMStereo::factory() {
+ModemBase *ModemFMStereo::factory() {
     return new ModemFMStereo;
 }
 

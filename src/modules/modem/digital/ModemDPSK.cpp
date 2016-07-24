@@ -13,7 +13,7 @@ ModemDPSK::ModemDPSK() : ModemDigital() {
     cons = 2;
 }
 
-Modem *ModemDPSK::factory() {
+ModemBase *ModemDPSK::factory() {
     return new ModemDPSK;
 }
 

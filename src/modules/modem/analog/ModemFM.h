@@ -9,7 +9,7 @@ public:
     
     std::string getName();
     
-    Modem *factory();
+    static ModemBase *factory();
 
     int getDefaultSampleRate();
 

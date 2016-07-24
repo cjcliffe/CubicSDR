@@ -8,7 +8,7 @@ ModemDSB::~ModemDSB() {
     ampmodem_destroy(demodAM_DSB);
 }
 
-Modem *ModemDSB::factory() {
+ModemBase *ModemDSB::factory() {
     return new ModemDSB;
 }
 

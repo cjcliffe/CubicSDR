@@ -128,6 +128,13 @@ void DemodulatorInstance::updateLabel(long long freq) {
 }
 
 void DemodulatorInstance::terminate() {
+
+#if ENABLE_DIGITAL_LAB
+    if (activeOutput) {
+        closeOutput();
+    }
+#endif
+
 //    std::cout << "Terminating demodulator audio thread.." << std::endl;
     audioThread->terminate();
 //    std::cout << "Terminating demodulator thread.." << std::endl;
@@ -156,7 +163,6 @@ bool DemodulatorInstance::isTerminated() {
     if (audioTerminated) {
 
         if (t_Audio) {
-
             t_Audio->join();
 
             delete t_Audio;
@@ -175,11 +181,6 @@ bool DemodulatorInstance::isTerminated() {
 #endif
             t_Demod = nullptr;
         }
-#if ENABLE_DIGITAL_LAB
-        if (activeOutput) {
-            closeOutput();
-        }
-#endif
     }
 
     if (preDemodTerminated) {
@@ -208,7 +209,7 @@ bool DemodulatorInstance::isActive() {
 void DemodulatorInstance::setActive(bool state) {
     if (active && !state) {
 #if ENABLE_DIGITAL_LAB
-        if (activeOutput && !isTerminated()) {
+        if (activeOutput) {
             activeOutput->Hide();
         }
 #endif
@@ -314,7 +315,14 @@ void DemodulatorInstance::setDemodulatorType(std::string demod_type_in) {
         if (lastbw) {
             setBandwidth(lastbw);
         }
-    }
+
+#if ENABLE_DIGITAL_LAB
+        if (isModemInitialized() && getModemType() == "digital") {
+            ModemDigitalOutputConsole *outp = (ModemDigitalOutputConsole *)getOutput();
+            outp->setTitle(getDemodulatorType() + ": " + frequencyToStr(getFrequency()));
+        }
+#endif
+}
 }
 
 std::string DemodulatorInstance::getDemodulatorType() {

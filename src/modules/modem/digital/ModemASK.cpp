@@ -13,7 +13,7 @@ ModemASK::ModemASK() : ModemDigital()  {
     cons = 2;
 }
 
-Modem *ModemASK::factory() {
+ModemBase *ModemASK::factory() {
     return new ModemASK;
 }
 

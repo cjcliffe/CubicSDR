@@ -16,7 +16,7 @@ std::string ModemGMSK::getName() {
     return "GMSK";
 }
 
-Modem *ModemGMSK::factory() {
+ModemBase *ModemGMSK::factory() {
     return new ModemGMSK;
 }
 

@@ -4,7 +4,7 @@ ModemST::ModemST() : ModemDigital()  {
     demodST = modem_create(LIQUID_MODEM_V29);
 }
 
-Modem *ModemST::factory() {
+ModemBase *ModemST::factory() {
     return new ModemST;
 }
 

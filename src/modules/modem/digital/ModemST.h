@@ -8,7 +8,7 @@ public:
     
     std::string getName();
     
-    Modem *factory();
+    static ModemBase *factory();
     
     void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
     

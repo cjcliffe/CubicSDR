@@ -12,7 +12,7 @@ std::string ModemIQ::getName() {
     return "I/Q";
 }
 
-Modem *ModemIQ::factory() {
+ModemBase *ModemIQ::factory() {
     return new ModemIQ;
 }
 

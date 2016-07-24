@@ -8,7 +8,7 @@ public:
     
     std::string getName();
     
-    Modem *factory();
+    static ModemBase *factory();
     
     int checkSampleRate(long long sampleRate, int audioSampleRate);
 

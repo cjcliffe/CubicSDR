@@ -40,7 +40,7 @@ typedef ThreadQueue<SDRThreadIQData *> SDRThreadIQDataQueue;
 
 class SDRThread : public IOThread {
 private:
-    void init();
+    bool init();
     void deinit();
     void readStream(SDRThreadIQDataQueue* iqDataOutQueue);
     void readLoop();

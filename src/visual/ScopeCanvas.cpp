@@ -128,17 +128,18 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
     glViewport(0, 0, ClientSize.x, ClientSize.y);
     
-    if (scopePanel.getMode() == ScopePanel::SCOPE_MODE_XY && !spectrumVisible()) {
-        glDrawBuffer(GL_FRONT);
-        glContext->DrawBegin(false);
-    } else {
-        glDrawBuffer(GL_BACK);
+    // TODO: find out why frontbuffer drawing has stopped working in wx 3.1.0?
+//    if (scopePanel.getMode() == ScopePanel::SCOPE_MODE_XY && !spectrumVisible()) {
+//        glDrawBuffer(GL_FRONT);
+//        glContext->DrawBegin(false);
+//    } else {
+//        glDrawBuffer(GL_BACK);
         glContext->DrawBegin();
-        
+
         bgPanel.setFillColor(ThemeMgr::mgr.currentTheme->scopeBackground * 3.0, RGBA4f(0,0,0,1));
         bgPanel.calcTransform(CubicVR::mat4::identity());
         bgPanel.draw();
-    }
+//    }
     
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -216,9 +217,9 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->DrawTunerTitles(ppmMode);
     glContext->DrawEnd();
 
-    if (scopePanel.getMode() != ScopePanel::SCOPE_MODE_XY || spectrumVisible()) {
+//    if (scopePanel.getMode() != ScopePanel::SCOPE_MODE_XY || spectrumVisible()) {
         SwapBuffers();
-    }
+//    }
 }
 
 

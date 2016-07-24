@@ -8,7 +8,7 @@ ModemAM::~ModemAM() {
     ampmodem_destroy(demodAM);
 }
 
-Modem *ModemAM::factory() {
+ModemBase *ModemAM::factory() {
     return new ModemAM;
 }
 

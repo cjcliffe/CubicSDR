@@ -4,7 +4,7 @@ ModemBPSK::ModemBPSK() : ModemDigital()  {
     demodBPSK = modem_create(LIQUID_MODEM_BPSK);
 }
 
-Modem *ModemBPSK::factory() {
+ModemBase *ModemBPSK::factory() {
     return new ModemBPSK;
 }
 

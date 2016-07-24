@@ -136,6 +136,7 @@ void DemodulatorThread::run() {
             
             ati->sampleRate = cModemKit->sampleRate;
             ati->inputRate = inp->sampleRate;
+            ati->data.resize(0);
         }
 
         cModem->demodulate(cModemKit, &modemData, ati);
@@ -160,7 +161,7 @@ void DemodulatorThread::run() {
             }
         }
         
-        if (audioOutputQueue != nullptr && ati && !squelched) {
+        if (audioOutputQueue != nullptr && ati && ati->data.size() && !squelched) {
             std::vector<float>::iterator data_i;
             ati->peak = 0;
             for (data_i = ati->data.begin(); data_i != ati->data.end(); data_i++) {
@@ -182,7 +183,7 @@ void DemodulatorThread::run() {
             localAudioVisOutputQueue = audioVisOutputQueue;
         }
 
-        if (ati && localAudioVisOutputQueue != nullptr && localAudioVisOutputQueue->empty()) {
+        if ((ati || modemDigital) && localAudioVisOutputQueue != nullptr && localAudioVisOutputQueue->empty()) {
             AudioThreadInput *ati_vis = new AudioThreadInput;
 
             ati_vis->sampleRate = inp->sampleRate;
@@ -190,6 +191,10 @@ void DemodulatorThread::run() {
             
             size_t num_vis = DEMOD_VIS_SIZE;
             if (modemDigital) {
+                if (ati) {  // TODO: handle digital modems with audio output
+                    ati->setRefCount(0);
+                    ati = nullptr;
+                }
                 ati_vis->data.resize(inputData->size());
                 ati_vis->channels = 2;
                 for (int i = 0, iMax = inputData->size() / 2; i < iMax; i++) {
