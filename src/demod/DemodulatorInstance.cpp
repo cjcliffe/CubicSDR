@@ -209,7 +209,7 @@ bool DemodulatorInstance::isActive() {
 void DemodulatorInstance::setActive(bool state) {
     if (active && !state) {
 #if ENABLE_DIGITAL_LAB
-        if (activeOutput && !isTerminated()) {
+        if (activeOutput) {
             activeOutput->Hide();
         }
 #endif
