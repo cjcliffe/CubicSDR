@@ -55,7 +55,7 @@ SoapySDR::Kwargs SDRThread::combineArgs(SoapySDR::Kwargs a, SoapySDR::Kwargs b) 
     return c;
 }
 
-void SDRThread::init() {
+bool SDRThread::init() {
 //#warning Debug On
 //    SoapySDR_setLogLevel(SOAPY_SDR_DEBUG);
     
@@ -77,7 +77,20 @@ void SDRThread::init() {
     device = devInfo->getSoapyDevice();
     
     SoapySDR::Kwargs currentStreamArgs = combineArgs(devInfo->getStreamArgs(),streamArgs);
-    stream = device->setupStream(SOAPY_SDR_RX,"CF32", std::vector<size_t>(), currentStreamArgs);
+    
+    std::string streamExceptionStr("");
+    
+    try {
+        stream = device->setupStream(SOAPY_SDR_RX,"CF32", std::vector<size_t>(), currentStreamArgs);
+    } catch(exception e) {
+        streamExceptionStr = e.what();
+    }
+
+    if (!stream) {
+        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Stream setup failed, stream is null. ") + streamExceptionStr);
+        std::cout << "Stream setup failed, stream is null. " << streamExceptionStr << std::endl;
+        return false;
+    }
     
     int streamMTU = device->getStreamMTU(stream);
     mtuElems.store(streamMTU);
@@ -152,6 +165,8 @@ void SDRThread::init() {
     updateSettings();
     
     wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_INITIALIZED, std::string("Device Initialized."));
+    
+    return true;
 }
 
 void SDRThread::deinit() {
@@ -276,6 +291,10 @@ void SDRThread::updateGains() {
 void SDRThread::updateSettings() {
     bool doUpdate = false;
     
+    if (!stream) {
+        return;
+    }
+    
     if (offset_changed.load()) {
         if (!freq_changed.load()) {
             frequency.store(frequency.load());
@@ -394,7 +413,10 @@ void SDRThread::run() {
     
     if (activeDev != NULL) {
         std::cout << "device init()" << std::endl;
-        init();
+        if (!init()) {
+            std::cout << "SDR Thread stream init error." << std::endl;
+            return;
+        }
         std::cout << "starting readLoop()" << std::endl;
         activeDev->setActive(true);
         readLoop();
