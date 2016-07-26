@@ -2,6 +2,7 @@
 
 ModemFMStereo::ModemFMStereo() {
     demodFM = freqdem_create(0.5);
+    _demph = 75;
 }
 
 ModemFMStereo::~ModemFMStereo() {
@@ -32,6 +33,48 @@ int ModemFMStereo::checkSampleRate(long long sampleRate, int /* audioSampleRate 
 
 int ModemFMStereo::getDefaultSampleRate() {
     return 200000;
+}
+
+ModemArgInfoList ModemFMStereo::getSettings() {
+    ModemArgInfoList args;
+    
+    ModemArgInfo demphArg;
+    demphArg.key = "demph";
+    demphArg.name = "De-emphasis";
+    demphArg.value = std::to_string(_demph);
+    demphArg.description = "FM Stereo De-Emphasis, typically 75us in US/Canada, 50us elsewhere.";
+    
+    demphArg.type = ModemArgInfo::STRING;
+    
+    std::vector<std::string> demphOptNames;
+    demphOptNames.push_back("None");
+    demphOptNames.push_back("50μs");
+    demphOptNames.push_back("75μs");
+    demphArg.optionNames = demphOptNames;
+    
+    std::vector<std::string> demphOpts;
+    demphOpts.push_back("0");
+    demphOpts.push_back("50");
+    demphOpts.push_back("75");
+    demphArg.options = demphOpts;
+
+    args.push_back(demphArg);
+    
+    return args;
+}
+
+void ModemFMStereo::writeSetting(std::string setting, std::string value) {
+    if (setting == "demph") {
+        _demph = std::stoi(value);
+        rebuildKit();
+    }
+}
+
+std::string ModemFMStereo::readSetting(std::string setting) {
+    if (setting == "demph") {
+        return std::to_string(_demph);
+    }
+    return "";
 }
 
 ModemKit *ModemFMStereo::buildKit(long long sampleRate, int audioSampleRate) {
