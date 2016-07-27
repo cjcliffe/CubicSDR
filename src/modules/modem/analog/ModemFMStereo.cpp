@@ -48,12 +48,18 @@ ModemArgInfoList ModemFMStereo::getSettings() {
     
     std::vector<std::string> demphOptNames;
     demphOptNames.push_back("None");
+    demphOptNames.push_back("10us");
+    demphOptNames.push_back("25us");
+    demphOptNames.push_back("32us");
     demphOptNames.push_back("50us");
     demphOptNames.push_back("75us");
     demphArg.optionNames = demphOptNames;
     
     std::vector<std::string> demphOpts;
     demphOpts.push_back("0");
+    demphOpts.push_back("10");
+    demphOpts.push_back("25");
+    demphOpts.push_back("32");
     demphOpts.push_back("50");
     demphOpts.push_back("75");
     demphArg.options = demphOpts;
