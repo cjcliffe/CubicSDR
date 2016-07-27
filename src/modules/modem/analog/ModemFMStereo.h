@@ -13,7 +13,11 @@ public:
     firfilt_rrrf firStereoLeft;
     firfilt_rrrf firStereoRight;
     iirfilt_crcf iirStereoPilot;
-    
+
+    int demph;
+    iirfilt_rrrf iirDemphR;
+    iirfilt_rrrf iirDemphL;
+
     firhilbf firStereoR2C;
     firhilbf firStereoC2R;
     
