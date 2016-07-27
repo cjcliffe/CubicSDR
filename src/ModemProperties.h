@@ -21,12 +21,18 @@ public:
     
     void initProperties(ModemArgInfoList newArgs);
     bool isMouseInView();
-
+    bool isCollapsed();
+    void fitColumns();
+    
+    void updateTheme();
+    
 private:
     wxPGProperty *addArgInfoProperty(wxPropertyGrid *pg, ModemArgInfo arg);
     std::string readProperty(std::string);
     void OnChange(wxPropertyGridEvent &event);
     void OnShow(wxShowEvent &event);
+    void OnCollapse(wxPropertyGridEvent &event);
+    void OnExpand(wxPropertyGridEvent &event);
 
     void OnMouseEnter(wxMouseEvent &event);
     void OnMouseLeave(wxMouseEvent &event);
@@ -35,5 +41,5 @@ private:
     wxPropertyGrid* m_propertyGrid;
     ModemArgInfoList args;
     std::map<std::string, wxPGProperty *> props;
-    bool mouseInView;
+    bool mouseInView, collapsed;
 };

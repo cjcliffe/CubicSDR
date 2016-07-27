@@ -1003,6 +1003,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         waterfallSpeedMeter->Refresh();
         spectrumAvgMeter->Refresh();
         gainCanvas->setThemeColors();
+        modemProps->updateTheme();
     }
 
     switch (event.GetId()) {
@@ -1498,6 +1499,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         modemProps->initProperties(demod->getModemArgs());
         modemPropertiesUpdated.store(false);
         demodTray->Layout();
+        modemProps->fitColumns();
 #if ENABLE_DIGITAL_LAB
         if (demod->getModemType() == "digital") {
             ModemDigitalOutputConsole *outp = (ModemDigitalOutputConsole *)demod->getOutput();
@@ -1508,6 +1510,18 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             demod->showOutput();
         }
 #endif
+    }
+    
+    if (modemProps->isCollapsed() && modemProps->GetMinWidth() > 22) {
+        modemProps->SetMinSize(wxSize(22,-1));
+        modemProps->SetMaxSize(wxSize(22,-1));
+        demodTray->Layout();
+        modemProps->fitColumns();
+    } else if (!modemProps->isCollapsed() && modemProps->GetMinWidth() < 200) {
+        modemProps->SetMinSize(wxSize(200,-1));
+        modemProps->SetMaxSize(wxSize(200,-1));
+        demodTray->Layout();
+        modemProps->fitColumns();
     }
     
     int peakHoldMode = peakHoldButton->getSelection();
