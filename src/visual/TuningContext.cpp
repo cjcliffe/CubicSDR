@@ -68,6 +68,7 @@ void TuningContext::DrawTuner(long long freq, int count, float displayPos, float
     GLint vp[4];
     glGetIntegerv( GL_VIEWPORT, vp);
 
+    float viewWidth = (float) vp[2];
     float viewHeight = (float) vp[3];
 
     freqStr.str("");
@@ -76,19 +77,19 @@ void TuningContext::DrawTuner(long long freq, int count, float displayPos, float
 
     int fontSize = 32;
 
-    if (viewHeight < 28) {
+    if (viewWidth < 300) {
         fontSize = 18;
-
+    } else if (viewWidth < 500) {
+        fontSize = 24;
     }
-    if (viewHeight < 24) {
-        fontSize = 16;
-
-    }
+    
     if (viewHeight < 18) {
         fontSize = 12;
-
+    } else if (viewHeight < 24) {
+        fontSize = 16;
+    } else if (viewHeight < 28) {
+        fontSize = 18;
     }
-
 
     glColor3f(ThemeMgr::mgr.currentTheme->text.r, ThemeMgr::mgr.currentTheme->text.g, ThemeMgr::mgr.currentTheme->text.b);
     int numChars = freqChars.length();
