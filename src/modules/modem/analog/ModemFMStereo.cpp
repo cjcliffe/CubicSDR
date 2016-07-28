@@ -139,9 +139,9 @@ ModemKit *ModemFMStereo::buildKit(long long sampleRate, int audioSampleRate) {
     kit->demph = _demph;
     
     if (_demph) {
-        float f = (1.0 / (2.0 * M_PI * double(_demph) * 1e-6));
-        float t = 1/(2* M_PI * f);
-        t = 1.0 / (2.0 * float(audioSampleRate) * tan(1.0 / (2.0 * float(audioSampleRate) * t)));
+        float f = (1.0f / (2.0f * M_PI * double(_demph) * 1e-6));
+        float t = 1.0f / (2.0f * M_PI * f);
+        t = 1.0f / (2.0f * float(audioSampleRate) * tan(1.0f / (2.0f * float(audioSampleRate) * t)));
         
         float tb = (1.0f + 2.0f * t * float(audioSampleRate));
         float b_demph[2] = { 1.0f / tb, 1.0f / tb };
