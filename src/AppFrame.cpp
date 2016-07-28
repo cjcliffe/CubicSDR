@@ -1496,8 +1496,12 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
     
     if (modemPropertiesUpdated.load() && demod && demod->isModemInitialized()) {
-        modemProps->initProperties(demod->getModemArgs());
+        
+        //reset notification flag
         modemPropertiesUpdated.store(false);
+
+        modemProps->initProperties(demod->getModemArgs());
+       
         demodTray->Layout();
         modemProps->fitColumns();
 #if ENABLE_DIGITAL_LAB
@@ -1509,7 +1513,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             }
             demod->showOutput();
         }
-#endif
+#endif       
     }
     
     if (modemProps->isCollapsed() && modemProps->GetMinWidth() > 22) {
@@ -1873,8 +1877,8 @@ FFTVisualDataThread *AppFrame::getWaterfallDataThread() {
     return waterfallDataThread;
 }
 
-void AppFrame::updateModemProperties(ModemArgInfoList args) {
-    newModemArgs = args;
+void AppFrame::notifyUpdateModemProperties() {
+   
     modemPropertiesUpdated.store(true);
 }
 

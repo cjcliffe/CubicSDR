@@ -83,7 +83,7 @@ public:
 
     FFTVisualDataThread *getWaterfallDataThread();
 
-    void updateModemProperties(ModemArgInfoList args);
+    void notifyUpdateModemProperties();
     void setMainWaterfallFFTSize(int fftSize);
 
     void gkNudgeLeft(DemodulatorInstance *demod, int snap);
@@ -163,7 +163,6 @@ private:
     
     ModemProperties *modemProps;
     std::atomic_bool modemPropertiesUpdated;
-    ModemArgInfoList newModemArgs;
 	wxMenuItem *showTipMenuItem;
 
     bool lowPerfMode;

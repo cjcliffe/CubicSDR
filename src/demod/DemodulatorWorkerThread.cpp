@@ -61,7 +61,7 @@ void DemodulatorWorkerThread::run() {
                     cModem->writeSettings(demodCommand.settings);
                 }
                 result.sampleRate = demodCommand.sampleRate;
-                wxGetApp().getAppFrame()->updateModemProperties(cModem->getSettings());
+                wxGetApp().getAppFrame()->notifyUpdateModemProperties();
             }
             result.modem = cModem;
 
