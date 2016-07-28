@@ -378,21 +378,11 @@ AppFrame::AppFrame() :
     }
 
     menuBar->Append(menu, wxT("Audio &Output"));
-
-    menu = new wxMenu;
-
-    int themeId = wxGetApp().getConfig()->getTheme();
             
-    menu->AppendRadioItem(wxID_THEME_DEFAULT, "Default")->Check(themeId==COLOR_THEME_DEFAULT);
-    menu->AppendRadioItem(wxID_THEME_RADAR, "RADAR")->Check(themeId==COLOR_THEME_RADAR);
-    menu->AppendRadioItem(wxID_THEME_BW, "Black & White")->Check(themeId==COLOR_THEME_BW);
-    menu->AppendRadioItem(wxID_THEME_SHARP, "Sharp")->Check(themeId==COLOR_THEME_SHARP);
-    menu->AppendRadioItem(wxID_THEME_RAD, "Rad")->Check(themeId==COLOR_THEME_RAD);
-    menu->AppendRadioItem(wxID_THEME_TOUCH, "Touch")->Check(themeId==COLOR_THEME_TOUCH);
-    menu->AppendRadioItem(wxID_THEME_HD, "HD")->Check(themeId==COLOR_THEME_HD);
+    sampleRateMenu = new wxMenu;
+    menuBar->Append(sampleRateMenu, wxT("Sample &Rate"));
 
-    menuBar->Append(menu, wxT("&Color Scheme"));
-
+    // Audio Sample Rates
     menu = new wxMenu;
 
 #define NUM_RATES_DEFAULT 4
@@ -441,23 +431,37 @@ AppFrame::AppFrame() :
         }
     }
 
-    sampleRateMenu = new wxMenu;
-
-    menuBar->Append(sampleRateMenu, wxT("Sample &Rate"));
-
     menuBar->Append(menu, wxT("Audio &Sample Rate"));
-
 
     //Add Display menu
     displayMenu = new wxMenu;
+        
+    wxMenu *fontMenu = new wxMenu;
 
-    menuBar->Append(displayMenu, wxT("&Display"));
     int fontScale = wxGetApp().getConfig()->getFontScale();
 
-    displayMenu->AppendRadioItem(wxID_DISPLAY_BASE, "Text Size: Normal")->Check(GLFont::GLFONT_SCALE_NORMAL == fontScale);
-    displayMenu->AppendRadioItem(wxID_DISPLAY_BASE + 1, "Text Size: 1.5x")->Check(GLFont::GLFONT_SCALE_MEDIUM == fontScale);
-    displayMenu->AppendRadioItem(wxID_DISPLAY_BASE + 2, "Text Size: 2.0x")->Check(GLFont::GLFONT_SCALE_LARGE == fontScale);
+    fontMenu->AppendRadioItem(wxID_DISPLAY_BASE, "Normal")->Check(GLFont::GLFONT_SCALE_NORMAL == fontScale);
+    fontMenu->AppendRadioItem(wxID_DISPLAY_BASE + 1, "1.5x")->Check(GLFont::GLFONT_SCALE_MEDIUM == fontScale);
+    fontMenu->AppendRadioItem(wxID_DISPLAY_BASE + 2, "2.0x")->Check(GLFont::GLFONT_SCALE_LARGE == fontScale);
 
+    displayMenu->AppendSubMenu(fontMenu, "&Text Size");
+            
+    wxMenu *themeMenu = new wxMenu;
+    
+    int themeId = wxGetApp().getConfig()->getTheme();
+    
+    themeMenu->AppendRadioItem(wxID_THEME_DEFAULT, "Default")->Check(themeId==COLOR_THEME_DEFAULT);
+    themeMenu->AppendRadioItem(wxID_THEME_RADAR, "RADAR")->Check(themeId==COLOR_THEME_RADAR);
+    themeMenu->AppendRadioItem(wxID_THEME_BW, "Black & White")->Check(themeId==COLOR_THEME_BW);
+    themeMenu->AppendRadioItem(wxID_THEME_SHARP, "Sharp")->Check(themeId==COLOR_THEME_SHARP);
+    themeMenu->AppendRadioItem(wxID_THEME_RAD, "Rad")->Check(themeId==COLOR_THEME_RAD);
+    themeMenu->AppendRadioItem(wxID_THEME_TOUCH, "Touch")->Check(themeId==COLOR_THEME_TOUCH);
+    themeMenu->AppendRadioItem(wxID_THEME_HD, "HD")->Check(themeId==COLOR_THEME_HD);
+
+    displayMenu->AppendSubMenu(themeMenu, wxT("&Color Scheme"));
+            
+    menuBar->Append(displayMenu, wxT("&Display"));
+            
     GLFont::setScale((GLFont::GLFontScale)fontScale);
 
 #ifdef USE_HAMLIB
@@ -721,7 +725,7 @@ void AppFrame::updateDeviceParams() {
         sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Check(true);
     }
    
-    menuBar->Replace(4, newSampleRateMenu, wxT("Sample &Rate"));
+    menuBar->Replace(3, newSampleRateMenu, wxT("Sample &Rate"));
     sampleRateMenu = newSampleRateMenu;
 
     if (!wxGetApp().getAGCMode()) {
