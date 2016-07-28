@@ -4,24 +4,62 @@
 ModemProperties::ModemProperties(wxWindow *parent, wxWindowID winid,
          const wxPoint& pos, const wxSize& size, long style, const wxString& name) : wxPanel(parent, winid, pos, size, style, name) {
     
-   	m_propertyGrid = new wxPropertyGrid(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPG_DEFAULT_STYLE);
-    
+   	m_propertyGrid = new wxPropertyGrid(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPG_DEFAULT_STYLE | wxPG_NO_INTERNAL_BORDER);
+
     bSizer = new wxBoxSizer( wxVERTICAL );
     
-    bSizer->Add(m_propertyGrid, 1, wxEXPAND, 5);
+    bSizer->Add(m_propertyGrid, 1, wxEXPAND, 0);
     
     this->SetSizer(bSizer);
     
+    m_propertyGrid->Connect( wxEVT_PG_ITEM_COLLAPSED, wxPropertyGridEventHandler( ModemProperties::OnCollapse ), NULL, this );
+    m_propertyGrid->Connect( wxEVT_PG_ITEM_EXPANDED, wxPropertyGridEventHandler( ModemProperties::OnExpand ), NULL, this );
     m_propertyGrid->Connect( wxEVT_PG_CHANGED, wxPropertyGridEventHandler( ModemProperties::OnChange ), NULL, this );
     this->Connect( wxEVT_SHOW, wxShowEventHandler( ModemProperties::OnShow ), NULL, this );
     
     this->Connect( wxEVT_ENTER_WINDOW, wxMouseEventHandler( ModemProperties::OnMouseEnter ), NULL, this);
     this->Connect( wxEVT_LEAVE_WINDOW, wxMouseEventHandler( ModemProperties::OnMouseLeave ), NULL, this);
-    
+
+    updateTheme();
+
     mouseInView = false;
+    collapsed = false;
 }
 
 void ModemProperties::OnShow(wxShowEvent & /* event */) {
+    updateTheme();
+}
+
+void ModemProperties::updateTheme() {
+    wxColour bgColor(
+                 (unsigned char) (ThemeMgr::mgr.currentTheme->generalBackground.r * 255.0),
+                 (unsigned char) (ThemeMgr::mgr.currentTheme->generalBackground.g * 255.0),
+                 (unsigned char) (ThemeMgr::mgr.currentTheme->generalBackground.b * 255.0));
+
+    wxColour textColor(
+                       (unsigned char) (ThemeMgr::mgr.currentTheme->text.r * 255.0),
+                       (unsigned char) (ThemeMgr::mgr.currentTheme->text.g * 255.0),
+                       (unsigned char) (ThemeMgr::mgr.currentTheme->text.b * 255.0));
+    
+    wxColour btn(
+                       (unsigned char) (ThemeMgr::mgr.currentTheme->button.r * 255.0),
+                       (unsigned char) (ThemeMgr::mgr.currentTheme->button.g * 255.0),
+                       (unsigned char) (ThemeMgr::mgr.currentTheme->button.b * 255.0));
+
+    wxColour btnHl(
+                 (unsigned char) (ThemeMgr::mgr.currentTheme->buttonHighlight.r * 255.0),
+                 (unsigned char) (ThemeMgr::mgr.currentTheme->buttonHighlight.g * 255.0),
+                 (unsigned char) (ThemeMgr::mgr.currentTheme->buttonHighlight.b * 255.0));
+
+
+    m_propertyGrid->SetEmptySpaceColour(bgColor);
+    m_propertyGrid->SetCellBackgroundColour(bgColor);
+    m_propertyGrid->SetCellTextColour(textColor);
+    m_propertyGrid->SetSelectionTextColour(bgColor);
+    m_propertyGrid->SetSelectionBackgroundColour(btnHl);
+    m_propertyGrid->SetCaptionTextColour(bgColor);
+    m_propertyGrid->SetCaptionBackgroundColour(btn);
+    m_propertyGrid->SetLineColour(btn);
 }
 
 ModemProperties::~ModemProperties() {
@@ -51,6 +89,10 @@ void ModemProperties::initProperties(ModemArgInfoList newArgs) {
     }
     
     m_propertyGrid->FitColumns();
+    
+    if (collapsed) {
+        m_propertyGrid->CollapseAll();
+    }
 }
 
 wxPGProperty *ModemProperties::addArgInfoProperty(wxPropertyGrid *pg, ModemArgInfo arg) {
@@ -166,6 +208,14 @@ void ModemProperties::OnChange(wxPropertyGridEvent &event) {
     }
 }
 
+void ModemProperties::OnCollapse(wxPropertyGridEvent &event) {
+    collapsed = true;
+}
+
+void ModemProperties::OnExpand(wxPropertyGridEvent &event) {
+    collapsed = false;
+}
+
 void ModemProperties::OnMouseEnter(wxMouseEvent & /* event */) {
     mouseInView = true;
 }
@@ -176,4 +226,12 @@ void ModemProperties::OnMouseLeave(wxMouseEvent & /* event */) {
 
 bool ModemProperties::isMouseInView() {
     return mouseInView || (m_propertyGrid && m_propertyGrid->IsEditorFocused());
+}
+
+bool ModemProperties::isCollapsed() {
+    return collapsed;
+}
+
+void ModemProperties::fitColumns() {
+    m_propertyGrid->FitColumns();
 }

@@ -2,6 +2,7 @@
 
 ModemFMStereo::ModemFMStereo() {
     demodFM = freqdem_create(0.5);
+    _demph = 75;
 }
 
 ModemFMStereo::~ModemFMStereo() {
@@ -32,6 +33,54 @@ int ModemFMStereo::checkSampleRate(long long sampleRate, int /* audioSampleRate 
 
 int ModemFMStereo::getDefaultSampleRate() {
     return 200000;
+}
+
+ModemArgInfoList ModemFMStereo::getSettings() {
+    ModemArgInfoList args;
+    
+    ModemArgInfo demphArg;
+    demphArg.key = "demph";
+    demphArg.name = "De-emphasis";
+    demphArg.value = std::to_string(_demph);
+    demphArg.description = "FM Stereo De-Emphasis, typically 75us in US/Canada, 50us elsewhere.";
+    
+    demphArg.type = ModemArgInfo::STRING;
+    
+    std::vector<std::string> demphOptNames;
+    demphOptNames.push_back("None");
+    demphOptNames.push_back("10us");
+    demphOptNames.push_back("25us");
+    demphOptNames.push_back("32us");
+    demphOptNames.push_back("50us");
+    demphOptNames.push_back("75us");
+    demphArg.optionNames = demphOptNames;
+    
+    std::vector<std::string> demphOpts;
+    demphOpts.push_back("0");
+    demphOpts.push_back("10");
+    demphOpts.push_back("25");
+    demphOpts.push_back("32");
+    demphOpts.push_back("50");
+    demphOpts.push_back("75");
+    demphArg.options = demphOpts;
+
+    args.push_back(demphArg);
+    
+    return args;
+}
+
+void ModemFMStereo::writeSetting(std::string setting, std::string value) {
+    if (setting == "demph") {
+        _demph = std::stoi(value);
+        rebuildKit();
+    }
+}
+
+std::string ModemFMStereo::readSetting(std::string setting) {
+    if (setting == "demph") {
+        return std::to_string(_demph);
+    }
+    return "";
 }
 
 ModemKit *ModemFMStereo::buildKit(long long sampleRate, int audioSampleRate) {
@@ -87,6 +136,24 @@ ModemKit *ModemFMStereo::buildKit(long long sampleRate, int audioSampleRate) {
     nco_crcf_reset(kit->stereoPilot);
     nco_crcf_pll_set_bandwidth(kit->stereoPilot, 0.25f);
     
+    kit->demph = _demph;
+    
+    if (_demph) {
+        float f = (1.0f / (2.0f * M_PI * double(_demph) * 1e-6));
+        float t = 1.0f / (2.0f * M_PI * f);
+        t = 1.0f / (2.0f * float(audioSampleRate) * tan(1.0f / (2.0f * float(audioSampleRate) * t)));
+        
+        float tb = (1.0f + 2.0f * t * float(audioSampleRate));
+        float b_demph[2] = { 1.0f / tb, 1.0f / tb };
+        float a_demph[2] = { 1.0f, (1.0f - 2.0f * t * float(audioSampleRate)) / tb };
+        
+        kit->iirDemphL = iirfilt_rrrf_create(b_demph, 2, a_demph, 2);
+        kit->iirDemphR = iirfilt_rrrf_create(b_demph, 2, a_demph, 2);
+    } else {
+        kit->iirDemphL = nullptr;
+        kit->iirDemphR = nullptr;
+        kit->demph = 0;
+    }
     return kit;
 }
 
@@ -100,6 +167,8 @@ void ModemFMStereo::disposeKit(ModemKit *kit) {
     firhilbf_destroy(fmkit->firStereoR2C);
     firhilbf_destroy(fmkit->firStereoC2R);
     nco_crcf_destroy(fmkit->stereoPilot);
+    if (fmkit->iirDemphR) { iirfilt_rrrf_destroy(fmkit->iirDemphR); }
+    if (fmkit->iirDemphL) { iirfilt_rrrf_destroy(fmkit->iirDemphL); }
 }
 
 
@@ -189,12 +258,24 @@ void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInp
     audioOut->data.resize(numAudioWritten * 2);
     for (size_t i = 0; i < numAudioWritten; i++) {
         float l, r;
-        
-        firfilt_rrrf_push(fmkit->firStereoLeft, 0.568f * (resampledOutputData[i] - (resampledStereoData[i])));
-        firfilt_rrrf_execute(fmkit->firStereoLeft, &l);
-        
-        firfilt_rrrf_push(fmkit->firStereoRight, 0.568f * (resampledOutputData[i] + (resampledStereoData[i])));
-        firfilt_rrrf_execute(fmkit->firStereoRight, &r);
+        float ld, rd;
+
+        if (fmkit->demph) {
+            iirfilt_rrrf_execute(fmkit->iirDemphL, 0.568f * (resampledOutputData[i] - (resampledStereoData[i])), &ld);
+            iirfilt_rrrf_execute(fmkit->iirDemphR, 0.568f * (resampledOutputData[i] + (resampledStereoData[i])), &rd);
+            
+            firfilt_rrrf_push(fmkit->firStereoLeft, ld);
+            firfilt_rrrf_execute(fmkit->firStereoLeft, &l);
+            
+            firfilt_rrrf_push(fmkit->firStereoRight, rd);
+            firfilt_rrrf_execute(fmkit->firStereoRight, &r);
+        } else {
+            firfilt_rrrf_push(fmkit->firStereoLeft, 0.568f * (resampledOutputData[i] - (resampledStereoData[i])));
+            firfilt_rrrf_execute(fmkit->firStereoLeft, &l);
+            
+            firfilt_rrrf_push(fmkit->firStereoRight, 0.568f * (resampledOutputData[i] + (resampledStereoData[i])));
+            firfilt_rrrf_execute(fmkit->firStereoRight, &r);
+        }
         
         audioOut->data[i * 2] = l;
         audioOut->data[i * 2 + 1] = r;

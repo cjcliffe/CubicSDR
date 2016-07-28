@@ -13,7 +13,11 @@ public:
     firfilt_rrrf firStereoLeft;
     firfilt_rrrf firStereoRight;
     iirfilt_crcf iirStereoPilot;
-    
+
+    int demph;
+    iirfilt_rrrf iirDemphR;
+    iirfilt_rrrf iirDemphL;
+
     firhilbf firStereoR2C;
     firhilbf firStereoC2R;
     
@@ -34,6 +38,10 @@ public:
     int checkSampleRate(long long sampleRate, int audioSampleRate);
     int getDefaultSampleRate();
     
+    ModemArgInfoList getSettings();
+    void writeSetting(std::string setting, std::string value);
+    std::string readSetting(std::string setting);
+
     ModemKit *buildKit(long long sampleRate, int audioSampleRate);
     void disposeKit(ModemKit *kit);
     
@@ -45,4 +53,6 @@ private:
     std::vector<float> resampledOutputData;
     std::vector<float> resampledStereoData;
     freqdem demodFM;
+    
+    int _demph;
 };
