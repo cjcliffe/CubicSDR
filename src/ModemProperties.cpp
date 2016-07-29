@@ -27,7 +27,6 @@ ModemProperties::ModemProperties(wxWindow *parent, wxWindowID winid,
 }
 
 void ModemProperties::OnShow(wxShowEvent & /* event */) {
-    updateTheme();
 }
 
 void ModemProperties::updateTheme() {
