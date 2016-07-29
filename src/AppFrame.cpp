@@ -1523,7 +1523,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         modemPropertiesUpdated.store(false);
 
         modemProps->initProperties(demod->getModemArgs(), demod);
-       
+        modemProps->updateTheme(); 
         demodTray->Layout();
         modemProps->fitColumns();
 #if ENABLE_DIGITAL_LAB
