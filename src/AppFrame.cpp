@@ -118,6 +118,10 @@ AppFrame::AppFrame() :
 
     modemProps->Hide();
     demodTray->Add(modemProps, 15, wxEXPAND | wxALL, 0);
+
+#ifndef __APPLE__
+    demodTray->AddSpacer(1);
+#endif
             
     wxGetApp().getDemodSpectrumProcessor()->setup(1024);
     demodSpectrumCanvas = new SpectrumCanvas(demodPanel, attribList);
