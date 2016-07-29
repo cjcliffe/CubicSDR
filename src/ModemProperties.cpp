@@ -66,20 +66,72 @@ ModemProperties::~ModemProperties() {
     
 }
 
-void ModemProperties::initProperties(ModemArgInfoList newArgs) {
-    args = newArgs;
 
+void ModemProperties::initDefaultProperties() {
+    
+    if (!audioOutputDevices.size()) {
+        std::vector<string> outputOpts;
+        std::vector<string> outputOptNames;
+
+        AudioThread::enumerateDevices(audioDevices);
+        
+        int i = 0;
+        
+        for (auto aDev : audioDevices) {
+            if (aDev.inputChannels) {
+                audioInputDevices[i] = aDev;
+            }
+            if (aDev.outputChannels) {
+                audioOutputDevices[i] = aDev;
+            }
+            i++;
+        }
+        
+        int defaultDevice = 0;
+        int dc = 0;
+        
+        for (auto mdevices_i : audioOutputDevices) {
+            outputOpts.push_back(std::to_string(mdevices_i.first));
+            outputOptNames.push_back(mdevices_i.second.name);
+            
+            if (mdevices_i.second.isDefaultOutput) {
+                defaultDevice = dc;
+            }
+            dc++;
+        }
+        
+        outputArg.key ="._audio_output";
+        outputArg.name = "Audio Out";
+        outputArg.description = "Set the current modem's audio output device.";
+        outputArg.type = ModemArgInfo::STRING;
+        outputArg.options = outputOpts;
+        outputArg.optionNames = outputOptNames;
+    }
+    
+    int currentOutput = demodContext->getOutputDevice();
+
+    outputArg.value = std::to_string(currentOutput);
+    
+    defaultProps["._audio_output"] = addArgInfoProperty(m_propertyGrid, outputArg);
+}
+
+void ModemProperties::initProperties(ModemArgInfoList newArgs, DemodulatorInstance *demodInstance) {
+    args = newArgs;
+    demodContext = demodInstance;
+    
     bSizer->Layout();
     m_propertyGrid->Clear();
 
-    if (newArgs.size() == 0) {
+    if (!demodInstance) {
         Hide();
         return;
     } else {
         Show();
     }
     
-    m_propertyGrid->Append(new wxPropertyCategory("Modem Settings"));
+    m_propertyGrid->Append(new wxPropertyCategory(demodInstance->getDemodulatorType() + " Settings"));
+    
+    initDefaultProperties();
     
     ModemArgInfoList::const_iterator args_i;
     
@@ -161,7 +213,7 @@ wxPGProperty *ModemProperties::addArgInfoProperty(wxPropertyGrid *pg, ModemArgIn
     }
     
     if (prop != NULL) {
-        prop->SetHelpString(arg.key + ": " + arg.description);
+        prop->SetHelpString(arg.name + ": " + arg.description);
     }
     
     return prop;
@@ -191,18 +243,35 @@ std::string ModemProperties::readProperty(std::string key) {
 }
 
 void ModemProperties::OnChange(wxPropertyGridEvent &event) {
-    DemodulatorInstance *inst = wxGetApp().getDemodMgr().getLastActiveDemodulator();
-    
-    if (!inst) {
+    if (!demodContext || !demodContext->isActive()) {
         return;
     }
     
     std::map<std::string, wxPGProperty *>::const_iterator prop_i;
+    
+    if (event.m_property == defaultProps["._audio_output"]) {
+        int sel = event.m_property->GetChoiceSelection();
+        
+        outputArg.value = outputArg.options[sel];
+        
+        if (demodContext) {
+            try {
+                demodContext->setOutputDevice(std::stoi(outputArg.value));
+            } catch (exception e) {
+                // .. this should never happen ;)
+            }
+
+            wxGetApp().getAppFrame()->setScopeDeviceName(outputArg.optionNames[sel]);
+        }
+        
+        return;
+    }
+    
     for (prop_i = props.begin(); prop_i != props.end(); prop_i++) {
         if (prop_i->second == event.m_property) {
             std::string key = prop_i->first;
             std::string value = readProperty(prop_i->first);
-            inst->writeModemSetting(key, value);
+            demodContext->writeModemSetting(key, value);
             return;
         }
     }
@@ -226,6 +295,17 @@ void ModemProperties::OnMouseLeave(wxMouseEvent & /* event */) {
 
 bool ModemProperties::isMouseInView() {
     return mouseInView || (m_propertyGrid && m_propertyGrid->IsEditorFocused());
+}
+
+void ModemProperties::setCollapsed(bool state) {
+    collapsed = state;
+    if (m_propertyGrid) {
+        if (state) {
+            m_propertyGrid->CollapseAll();
+        } else {
+            m_propertyGrid->ExpandAll();
+        }
+    }
 }
 
 bool ModemProperties::isCollapsed() {

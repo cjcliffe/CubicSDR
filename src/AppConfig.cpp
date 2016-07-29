@@ -289,6 +289,7 @@ AppConfig::AppConfig() : configName("") {
     centerFreq.store(100000000);
     waterfallLinesPerSec.store(DEFAULT_WATERFALL_LPS);
     spectrumAvgSpeed.store(0.65f);
+    modemPropsCollapsed.store(false);
 #ifdef USE_HAMLIB
     rigEnabled.store(false);
     rigModel.store(1);
@@ -340,6 +341,14 @@ void AppConfig::setWindowMaximized(bool max) {
 
 bool AppConfig::getWindowMaximized() {
     return winMax.load();
+}
+
+void AppConfig::setModemPropsCollapsed(bool collapse) {
+    modemPropsCollapsed.store(collapse);
+}
+
+bool AppConfig::getModemPropsCollapsed() {
+    return modemPropsCollapsed.load();
 }
 
 void AppConfig::setShowTips(bool show) {
@@ -468,6 +477,7 @@ bool AppConfig::save() {
         *window_node->newChild("center_freq") = centerFreq.load();
         *window_node->newChild("waterfall_lps") = waterfallLinesPerSec.load();
         *window_node->newChild("spectrum_avg") = spectrumAvgSpeed.load();
+        *window_node->newChild("modemprops_collapsed") = modemPropsCollapsed.load();;
     }
     
     DataNode *devices_node = cfg.rootNode()->newChild("devices");
@@ -547,7 +557,7 @@ bool AppConfig::load() {
 
     if (cfg.rootNode()->hasAnother("window")) {
         int x,y,w,h;
-        int max,tips,lpm;
+        int max,tips,lpm,mpc;
         
         DataNode *win_node = cfg.rootNode()->getNext("window");
         
@@ -612,6 +622,11 @@ bool AppConfig::load() {
             float avgVal;
             win_node->getNext("spectrum_avg")->element()->get(avgVal);
             spectrumAvgSpeed.store(avgVal);
+        }
+
+        if (win_node->hasAnother("modemprops_collapsed")) {
+            win_node->getNext("modemprops_collapsed")->element()->get(mpc);
+            modemPropsCollapsed.store(mpc?true:false);
         }
     }
     

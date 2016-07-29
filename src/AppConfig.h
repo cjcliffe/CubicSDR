@@ -85,6 +85,9 @@ public:
     void setWindowMaximized(bool max);
     bool getWindowMaximized();
 
+    void setModemPropsCollapsed(bool collapse);
+    bool getModemPropsCollapsed();
+
     void setShowTips(bool show);
     bool getShowTips();
 
@@ -148,7 +151,7 @@ private:
     std::string configName;
     std::map<std::string, DeviceConfig *> deviceConfig;
     std::atomic_int winX,winY,winW,winH;
-    std::atomic_bool winMax, showTips, lowPerfMode;
+    std::atomic_bool winMax, showTips, lowPerfMode, modemPropsCollapsed;
     std::atomic_int themeId;
     std::atomic_int fontScale;
     std::atomic_llong snap;
