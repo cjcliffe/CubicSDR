@@ -4,7 +4,7 @@
 ModemProperties::ModemProperties(wxWindow *parent, wxWindowID winid,
          const wxPoint& pos, const wxSize& size, long style, const wxString& name) : wxPanel(parent, winid, pos, size, style, name) {
     
-   	m_propertyGrid = new wxPropertyGrid(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPG_DEFAULT_STYLE | wxPG_NO_INTERNAL_BORDER);
+   	m_propertyGrid = new wxPropertyGrid(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPG_DEFAULT_STYLE);
 
     bSizer = new wxBoxSizer( wxVERTICAL );
     

@@ -42,7 +42,8 @@ wxEND_EVENT_TABLE()
 #include "RigThread.h"
 #endif
 
-#define APPFRAME_MODEMPROPS_SIZE 240
+#define APPFRAME_MODEMPROPS_MINSIZE 20
+#define APPFRAME_MODEMPROPS_MAXSIZE 240
 
 AppFrame::AppFrame() :
         wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
@@ -112,8 +113,8 @@ AppFrame::AppFrame() :
             
     modemPropertiesUpdated.store(false);
     modemProps = new ModemProperties(demodPanel, wxID_ANY);
-    modemProps->SetMinSize(wxSize(APPFRAME_MODEMPROPS_SIZE,-1));
-    modemProps->SetMaxSize(wxSize(APPFRAME_MODEMPROPS_SIZE,-1));
+    modemProps->SetMinSize(wxSize(APPFRAME_MODEMPROPS_MAXSIZE,-1));
+    modemProps->SetMaxSize(wxSize(APPFRAME_MODEMPROPS_MAXSIZE,-1));
 
     modemProps->Hide();
     demodTray->Add(modemProps, 15, wxEXPAND | wxALL, 0);
@@ -1537,13 +1538,13 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     }
     
     if (modemProps->IsShown() && modemProps->isCollapsed() && modemProps->GetMinWidth() > 22) {
-        modemProps->SetMinSize(wxSize(22,-1));
-        modemProps->SetMaxSize(wxSize(22,-1));
+        modemProps->SetMinSize(wxSize(APPFRAME_MODEMPROPS_MINSIZE,-1));
+        modemProps->SetMaxSize(wxSize(APPFRAME_MODEMPROPS_MINSIZE,-1));
         demodTray->Layout();
         modemProps->fitColumns();
     } else if (modemProps->IsShown() && !modemProps->isCollapsed() && modemProps->GetMinWidth() < 200) {
-        modemProps->SetMinSize(wxSize(APPFRAME_MODEMPROPS_SIZE,-1));
-        modemProps->SetMaxSize(wxSize(APPFRAME_MODEMPROPS_SIZE,-1));
+        modemProps->SetMinSize(wxSize(APPFRAME_MODEMPROPS_MAXSIZE,-1));
+        modemProps->SetMaxSize(wxSize(APPFRAME_MODEMPROPS_MAXSIZE,-1));
         demodTray->Layout();
         modemProps->fitColumns();
     }
