@@ -5,6 +5,7 @@
 #include <wx/propgrid/propgrid.h>
 #include <wx/propgrid/advprops.h>
 
+#include "DemodulatorInstance.h"
 #include "Modem.h"
 
 class ModemProperties : public wxPanel {
@@ -19,8 +20,10 @@ public:
     );
     ~ModemProperties();
     
-    void initProperties(ModemArgInfoList newArgs);
+    void initDefaultProperties();
+    void initProperties(ModemArgInfoList newArgs, DemodulatorInstance *demodInstance);
     bool isMouseInView();
+    void setCollapsed(bool state);
     bool isCollapsed();
     void fitColumns();
     
@@ -40,6 +43,15 @@ private:
     wxBoxSizer* bSizer;
     wxPropertyGrid* m_propertyGrid;
     ModemArgInfoList args;
+    DemodulatorInstance *demodContext;
     std::map<std::string, wxPGProperty *> props;
     bool mouseInView, collapsed;
+    
+    ModemArgInfoList defaultArgs;
+    ModemArgInfo outputArg;
+    std::map<std::string, wxPGProperty *> defaultProps;
+    
+    std::vector<RtAudio::DeviceInfo> audioDevices;
+    std::map<int,RtAudio::DeviceInfo> audioInputDevices;
+    std::map<int,RtAudio::DeviceInfo> audioOutputDevices;
 };

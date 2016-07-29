@@ -42,6 +42,8 @@ wxEND_EVENT_TABLE()
 #include "RigThread.h"
 #endif
 
+#define APPFRAME_MODEMPROPS_SIZE 240
+
 AppFrame::AppFrame() :
         wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
 
@@ -110,8 +112,8 @@ AppFrame::AppFrame() :
             
     modemPropertiesUpdated.store(false);
     modemProps = new ModemProperties(demodPanel, wxID_ANY);
-    modemProps->SetMinSize(wxSize(200,-1));
-    modemProps->SetMaxSize(wxSize(200,-1));
+    modemProps->SetMinSize(wxSize(APPFRAME_MODEMPROPS_SIZE,-1));
+    modemProps->SetMaxSize(wxSize(APPFRAME_MODEMPROPS_SIZE,-1));
 
     modemProps->Hide();
     demodTray->Add(modemProps, 15, wxEXPAND | wxALL, 0);
@@ -367,17 +369,17 @@ AppFrame::AppFrame() :
         }
         i++;
     }
-
-    for (mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
-        wxMenuItem *itm = menu->AppendRadioItem(wxID_RT_AUDIO_DEVICE + mdevices_i->first, mdevices_i->second.name, wxT("Description?"));
-        itm->SetId(wxID_RT_AUDIO_DEVICE + mdevices_i->first);
-        if (mdevices_i->second.isDefaultOutput) {
-            itm->Check(true);
-        }
-        outputDeviceMenuItems[mdevices_i->first] = itm;
-    }
-
-    menuBar->Append(menu, wxT("Audio &Output"));
+//
+//    for (mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
+//        wxMenuItem *itm = menu->AppendRadioItem(wxID_RT_AUDIO_DEVICE + mdevices_i->first, mdevices_i->second.name, wxT("Description?"));
+//        itm->SetId(wxID_RT_AUDIO_DEVICE + mdevices_i->first);
+//        if (mdevices_i->second.isDefaultOutput) {
+//            itm->Check(true);
+//        }
+//        outputDeviceMenuItems[mdevices_i->first] = itm;
+//    }
+//
+//    menuBar->Append(menu, wxT("Audio &Output"));
             
     sampleRateMenu = new wxMenu;
     menuBar->Append(sampleRateMenu, wxT("Sample &Rate"));
@@ -460,8 +462,6 @@ AppFrame::AppFrame() :
 
     displayMenu->AppendSubMenu(themeMenu, wxT("&Color Scheme"));
             
-    menuBar->Append(displayMenu, wxT("&Display"));
-            
     GLFont::setScale((GLFont::GLFontScale)fontScale);
 
 #ifdef USE_HAMLIB
@@ -543,7 +543,9 @@ AppFrame::AppFrame() :
 
     menuBar->Append(rigMenu, wxT("&Rig Control"));
 #endif
-            
+
+    menuBar->Append(displayMenu, wxT("&Display"));
+
     SetMenuBar(menuBar);
 
     CreateStatusBar();
@@ -578,6 +580,12 @@ AppFrame::AppFrame() :
             
     ThemeMgr::mgr.setTheme(wxGetApp().getConfig()->getTheme());
 
+    int mpc =wxGetApp().getConfig()->getModemPropsCollapsed();
+
+    if (mpc) {
+        modemProps->setCollapsed(true);
+    }
+            
     Show();
 
 #ifdef _WIN32
@@ -725,7 +733,7 @@ void AppFrame::updateDeviceParams() {
         sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Check(true);
     }
    
-    menuBar->Replace(3, newSampleRateMenu, wxT("Sample &Rate"));
+    menuBar->Replace(2, newSampleRateMenu, wxT("Sample &Rate"));
     sampleRateMenu = newSampleRateMenu;
 
     if (!wxGetApp().getAGCMode()) {
@@ -796,19 +804,23 @@ void AppFrame::disableRig() {
 
 void AppFrame::OnMenu(wxCommandEvent& event) {
 
-    if (event.GetId() >= wxID_RT_AUDIO_DEVICE && event.GetId() < wxID_RT_AUDIO_DEVICE + (int)devices.size()) {
-        if (activeDemodulator) {
-            activeDemodulator->setOutputDevice(event.GetId() - wxID_RT_AUDIO_DEVICE);
-            activeDemodulator = NULL;
-        }
-    }
+//    if (event.GetId() >= wxID_RT_AUDIO_DEVICE && event.GetId() < wxID_RT_AUDIO_DEVICE + (int)devices.size()) {
+//        if (activeDemodulator) {
+//            activeDemodulator->setOutputDevice(event.GetId() - wxID_RT_AUDIO_DEVICE);
+//            activeDemodulator = NULL;
+//        }
+//        return;
+//    }
+
 #ifdef __APPLE__
-    else if (event.GetId() == wxApp::s_macAboutMenuItemId) {
+    if (event.GetId() == wxApp::s_macAboutMenuItemId) {
         wxMessageDialog *aboutDlg = new wxMessageDialog(NULL, wxT("CubicSDR v" CUBICSDR_VERSION "\nby Charles J. Cliffe (@ccliffe)\nwww.cubicsdr.com"), wxT("CubicSDR v" CUBICSDR_VERSION), wxOK);
         aboutDlg->ShowModal();
+        return;
     }
 #endif
-    else if (event.GetId() == wxID_SDR_START_STOP) {
+
+    if (event.GetId() == wxID_SDR_START_STOP) {
         if (!wxGetApp().getSDRThread()->isTerminated()) {
             wxGetApp().stopDevice(true, 2000);
         } else {
@@ -1204,6 +1216,7 @@ void AppFrame::OnClose(wxCloseEvent& event) {
     wxGetApp().getConfig()->setSpectrumAvgSpeed(wxGetApp().getSpectrumProcessor()->getFFTAverageRate());
     wxGetApp().getConfig()->setWaterfallLinesPerSec(waterfallDataThread->getLinesPerSecond());
     wxGetApp().getConfig()->setManualDevices(SDREnumerator::getManuals());
+    wxGetApp().getConfig()->setModemPropsCollapsed(modemProps->isCollapsed());
 #ifdef USE_HAMLIB
     wxGetApp().getConfig()->setRigEnabled(rigEnableMenuItem->IsChecked());
     wxGetApp().getConfig()->setRigModel(rigModel);
@@ -1263,7 +1276,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             wxGetApp().getDemodMgr().setLastGain(demod->getGain());
             int outputDevice = demod->getOutputDevice();
             scopeCanvas->setDeviceName(outputDevices[outputDevice].name);
-            outputDeviceMenuItems[outputDevice]->Check(true);
+//            outputDeviceMenuItems[outputDevice]->Check(true);
             std::string dType = demod->getDemodulatorType();
             demodModeSelector->setSelection(dType);
 #ifdef ENABLE_DIGITAL_LAB
@@ -1504,7 +1517,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         //reset notification flag
         modemPropertiesUpdated.store(false);
 
-        modemProps->initProperties(demod->getModemArgs());
+        modemProps->initProperties(demod->getModemArgs(), demod);
        
         demodTray->Layout();
         modemProps->fitColumns();
@@ -1517,17 +1530,20 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             }
             demod->showOutput();
         }
-#endif       
+#endif
+    } else if (!demod) {
+        modemProps->Hide();
+        demodTray->Layout();
     }
     
-    if (modemProps->isCollapsed() && modemProps->GetMinWidth() > 22) {
+    if (modemProps->IsShown() && modemProps->isCollapsed() && modemProps->GetMinWidth() > 22) {
         modemProps->SetMinSize(wxSize(22,-1));
         modemProps->SetMaxSize(wxSize(22,-1));
         demodTray->Layout();
         modemProps->fitColumns();
-    } else if (!modemProps->isCollapsed() && modemProps->GetMinWidth() < 200) {
-        modemProps->SetMinSize(wxSize(200,-1));
-        modemProps->SetMaxSize(wxSize(200,-1));
+    } else if (modemProps->IsShown() && !modemProps->isCollapsed() && modemProps->GetMinWidth() < 200) {
+        modemProps->SetMinSize(wxSize(APPFRAME_MODEMPROPS_SIZE,-1));
+        modemProps->SetMaxSize(wxSize(APPFRAME_MODEMPROPS_SIZE,-1));
         demodTray->Layout();
         modemProps->fitColumns();
     }
@@ -1891,6 +1907,10 @@ void AppFrame::setMainWaterfallFFTSize(int fftSize) {
     spectrumCanvas->setFFTSize(fftSize);
     waterfallDataThread->getProcessor()->setFFTSize(fftSize);
     waterfallCanvas->setFFTSize(fftSize);
+}
+
+void AppFrame::setScopeDeviceName(std::string deviceName) {
+    scopeCanvas->setDeviceName(deviceName);
 }
 
 

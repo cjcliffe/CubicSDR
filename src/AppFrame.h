@@ -85,6 +85,7 @@ public:
 
     void notifyUpdateModemProperties();
     void setMainWaterfallFFTSize(int fftSize);
+    void setScopeDeviceName(std::string deviceName);
 
     void gkNudgeLeft(DemodulatorInstance *demod, int snap);
     void gkNudgeRight(DemodulatorInstance *demod, int snap);
