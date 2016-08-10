@@ -15,7 +15,7 @@
 
 DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent) 
     : IOThread(), outputBuffers("DemodulatorThreadBuffers"), squelchLevel(-100), 
-      signalLevel(-100), squelchEnabled(false) {
+      signalLevel(-100), signalFloor(-30), signalCeil(30), squelchEnabled(false) {
     
     demodInstance = parent;
     muted.store(false);
@@ -113,6 +113,33 @@ void DemodulatorThread::run() {
         if (currentSignalLevel < DEMOD_SIGNAL_MIN+1) {
             currentSignalLevel = DEMOD_SIGNAL_MIN+1;
         }
+        
+        float sampleTime = float(inp->data.size()) / float(inp->sampleRate);
+        float sf = signalFloor.load(), sc = signalCeil.load(), sl = squelchLevel.load();
+        
+        if (currentSignalLevel > sc) {
+            sc = currentSignalLevel;
+        }
+
+        if (currentSignalLevel < sf) {
+            sf = currentSignalLevel;
+        }
+        
+        if (sl+1.0f > sc) {
+            sc = sl+1.0f;
+        }
+
+        if ((sf+2.0f) > sc) {
+            sc = sf+2.0f;
+        }
+        
+        sc -= (sc - (currentSignalLevel + 2.0f)) * sampleTime * 0.15f;
+        sf += ((currentSignalLevel - 5.0f) - sf) * sampleTime * 0.15f;
+        
+        signalFloor.store(sf);
+        signalCeil.store(sc);
+        
+//        std::cout << "sf:" << sf << "sc: " << sc << std::endl;
         
         std::vector<liquid_float_complex> *inputData;
         
@@ -328,6 +355,14 @@ void DemodulatorThread::setMuted(bool muted) {
 
 float DemodulatorThread::getSignalLevel() {
     return signalLevel.load();
+}
+
+float DemodulatorThread::getSignalFloor() {
+    return signalFloor.load();
+}
+
+float DemodulatorThread::getSignalCeil() {
+    return signalCeil.load();
 }
 
 void DemodulatorThread::setSquelchLevel(float signal_level_in) {

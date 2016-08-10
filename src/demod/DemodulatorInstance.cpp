@@ -257,6 +257,14 @@ float DemodulatorInstance::getSignalLevel() {
     return demodulatorThread->getSignalLevel();
 }
 
+float DemodulatorInstance::getSignalFloor() {
+    return demodulatorThread->getSignalFloor();
+}
+
+float DemodulatorInstance::getSignalCeil() {
+    return demodulatorThread->getSignalCeil();
+}
+
 void DemodulatorInstance::setSquelchLevel(float signal_level_in) {
     demodulatorThread->setSquelchLevel(signal_level_in);
     wxGetApp().getDemodMgr().setLastSquelchLevel(signal_level_in);
