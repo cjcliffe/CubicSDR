@@ -313,7 +313,7 @@ void SpectrumVisualProcessor::process() {
             }
             
             if (!resampler || resampleBw != lastBandwidth || lastInputBandwidth != iqData->sampleRate) {
-                float As = 60.0f;
+                float As = 120.0f;
                 
                 if (resampler) {
                     msresamp_crcf_destroy(resampler);

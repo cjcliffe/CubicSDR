@@ -130,18 +130,26 @@ void DemodulatorThread::run() {
         cModem->demodulate(cModemKit, &modemData, ati);
 
         float currentSignalLevel = 0;
-        float accum = 0;
         float sampleTime = float(inp->data.size()) / float(inp->sampleRate);
 
         if (audioOutputQueue != nullptr && ati && ati->data.size()) {
-            for (std::vector<float>::iterator i = ati->data.begin(); i != ati->data.end(); i++) {
-                accum += abMagnitude(0.948059448969, 0.392699081699, *i, 0.0);
+            float accum = 0;
+
+            for (auto i : ati->data) {
+                accum += abMagnitude(0.948059448969, 0.392699081699, i, 0.0);
             }
+
+            float audioSignalLevel = linearToDb(accum / float(ati->data.size()));
+
+            accum = 0;
             
-            currentSignalLevel = linearToDb(accum / float(inp->data.size()));
-            if (currentSignalLevel < DEMOD_SIGNAL_MIN+1) {
-                currentSignalLevel = DEMOD_SIGNAL_MIN+1;
+            for (auto i : inp->data) {
+                accum += abMagnitude(0.948059448969, 0.392699081699, i.real, i.imag);
             }
+
+            float iqSignalLevel = linearToDb(accum / float(inp->data.size()));
+            
+            currentSignalLevel = iqSignalLevel>audioSignalLevel?iqSignalLevel:audioSignalLevel;
             
             float sf = signalFloor.load(), sc = signalCeil.load(), sl = squelchLevel.load();
             
@@ -161,7 +169,7 @@ void DemodulatorThread::run() {
                 sc = sf+2.0f;
             }
             
-            sc -= (sc - (currentSignalLevel + 2.0f)) * sampleTime * 0.15f;
+            sc -= (sc - (currentSignalLevel + 2.0f)) * sampleTime * 0.05f;
             sf += ((currentSignalLevel - 5.0f) - sf) * sampleTime * 0.15f;
             
             signalFloor.store(sf);
@@ -169,9 +177,9 @@ void DemodulatorThread::run() {
         }
         
         if (currentSignalLevel > signalLevel) {
-            signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.5 * sampleTime * 10.0;
+            signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.5;
         } else {
-            signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.05 * sampleTime * 10.0;
+            signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.05 * sampleTime * 30.0;
         }
         
         bool squelched = (squelchEnabled && (signalLevel < squelchLevel));
@@ -191,8 +199,8 @@ void DemodulatorThread::run() {
         if (audioOutputQueue != nullptr && ati && ati->data.size() && !squelched) {
             std::vector<float>::iterator data_i;
             ati->peak = 0;
-            for (data_i = ati->data.begin(); data_i != ati->data.end(); data_i++) {
-                float p = fabs(*data_i);
+            for (auto data_i : ati->data) {
+                float p = fabs(data_i);
                 if (p > ati->peak) {
                     ati->peak = p;
                 }
