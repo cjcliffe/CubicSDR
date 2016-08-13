@@ -39,23 +39,22 @@ void DemodulatorThread::onBindOutput(std::string name, ThreadQueueBase *threadQu
     }
 }
 
-float DemodulatorThread::abMagnitude(double alpha, double beta, float inphase, float quadrature) {
-    //        http://dspguru.com/dsp/tricks/magnitude-estimator
-    /* magnitude ~= alpha * max(|I|, |Q|) + beta * min(|I|, |Q|) */
-    double abs_inphase = fabs(inphase);
-    double abs_quadrature = fabs(quadrature);
-    if (abs_inphase > abs_quadrature) {
-        return alpha * abs_inphase + beta * abs_quadrature;
-    } else {
-        return alpha * abs_quadrature + beta * abs_inphase;
-    }
+double DemodulatorThread::abMagnitude(float inphase, float quadrature) {
+    
+    // cast to double, so we keep precision despite the **2 op later.
+    double dinphase = (double)inphase;
+    double dquadrature = (double)quadrature;
+
+    //sqrt() has been an insanely fast intrinsic for years, use it !
+    return sqrt(dinphase * dinphase + dquadrature * dquadrature);
+
 }
 
-float DemodulatorThread::linearToDb(float linear) {
-    //        http://dspguru.com/dsp/tricks/magnitude-estimator
+double DemodulatorThread::linearToDb(double linear) {
+  
     #define SMALL 1e-20
     if (linear <= SMALL) {
-        linear = float(SMALL);
+        linear = double(SMALL);
     }
     return 20.0 * log10(linear);
 }
@@ -133,31 +132,32 @@ void DemodulatorThread::run() {
 
         cModem->demodulate(cModemKit, &modemData, ati);
 
-        float currentSignalLevel = 0;
-        float sampleTime = float(inp->data.size()) / float(inp->sampleRate);
+        double currentSignalLevel = 0;
+        double sampleTime = double(inp->data.size()) / double(inp->sampleRate);
 
         if (audioOutputQueue != nullptr && ati && ati->data.size()) {
-            float accum = 0;
+            double accum = 0;
 
-            if (cModem->useSignalOutput()) {
-                
+             if (cModem->useSignalOutput()) {
+
                 for (auto i : ati->data) {
-                    accum += abMagnitude(0.948059448969, 0.392699081699, i, 0.0);
+                    accum += abMagnitude(i, 0.0);
                 }
 
-                currentSignalLevel = linearToDb(accum / float(ati->data.size()));
+                currentSignalLevel = linearToDb(accum / double(ati->data.size()));
 
             } else {
-            
+   
                 for (auto i : inp->data) {
-                    accum += abMagnitude(0.948059448969, 0.392699081699, i.real, i.imag);
+                    accum += abMagnitude(i.real, i.imag);
                 }
 
-                currentSignalLevel = linearToDb(accum / float(inp->data.size()));
+                currentSignalLevel = linearToDb(accum / double(inp->data.size()));
             }
             
             float sf = signalFloor.load(), sc = signalCeil.load(), sl = squelchLevel.load();
             
+         
             if (currentSignalLevel > sc) {
                 sc = currentSignalLevel;
             }
@@ -166,6 +166,7 @@ void DemodulatorThread::run() {
                 sf = currentSignalLevel;
             }
             
+
             if (sl+1.0f > sc) {
                 sc = sl+1.0f;
             }

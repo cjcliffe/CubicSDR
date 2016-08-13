@@ -34,15 +34,14 @@ public:
     float getSignalFloor();
     void setSquelchLevel(float signal_level_in);
     float getSquelchLevel();
-
+   
     bool getSquelchBreak();
 
     static void releaseSquelchLock(DemodulatorInstance *inst);
-    
 protected:
     
-    float abMagnitude(double alpha, double beta, float inphase, float quadrature);
-    float linearToDb(float linear);
+    double abMagnitude(float inphase, float quadrature);
+    double linearToDb(double linear);
 
     DemodulatorInstance *demodInstance = nullptr;
     ReBuffer<AudioThreadInput> outputBuffers;
