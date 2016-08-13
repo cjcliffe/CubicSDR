@@ -13,7 +13,10 @@
 #include <pthread.h>
 #endif
 
-DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent) 
+std::atomic<DemodulatorInstance *> DemodulatorThread::squelchLock(nullptr);
+std::mutex DemodulatorThread::squelchLockMutex;
+
+DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent)
     : IOThread(), outputBuffers("DemodulatorThreadBuffers"), squelchLevel(-100), 
       signalLevel(-100), signalFloor(-30), signalCeil(30), squelchEnabled(false) {
     
@@ -23,6 +26,10 @@ DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent)
 }
 
 DemodulatorThread::~DemodulatorThread() {
+    std::lock_guard < std::mutex > lock(squelchLockMutex);
+    if (squelchLock.load() == demodInstance) {
+        squelchLock.store(nullptr);
+    }
 }
 
 void DemodulatorThread::onBindOutput(std::string name, ThreadQueueBase *threadQueue) {
@@ -182,16 +189,29 @@ void DemodulatorThread::run() {
             signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.05 * sampleTime * 30.0;
         }
         
-        bool squelched = (squelchEnabled && (signalLevel < squelchLevel));
+        bool squelched = (muted.load() || (squelchEnabled && (signalLevel < squelchLevel)));
         
         if (squelchEnabled) {
             if (!squelched && !squelchBreak) {
-                if (wxGetApp().getSoloMode() && !muted.load()) {
-                    wxGetApp().getDemodMgr().setActiveDemodulator(demodInstance, false);
-                }
-                squelchBreak = true;
-                demodInstance->getVisualCue()->triggerSquelchBreak(120);
+                    if (wxGetApp().getSoloMode()) {
+                        std::lock_guard < std::mutex > lock(squelchLockMutex);
+                        if (squelchLock.load() == nullptr) {
+                            squelchLock.store(demodInstance);
+                            wxGetApp().getDemodMgr().setActiveDemodulator(nullptr);
+                            wxGetApp().getDemodMgr().setActiveDemodulator(demodInstance, false);
+                            squelchBreak = true;
+                            demodInstance->getVisualCue()->triggerSquelchBreak(120);
+                        }
+                    } else {
+                        squelchBreak = true;
+                        demodInstance->getVisualCue()->triggerSquelchBreak(120);
+                    }
+                
             } else if (squelched && squelchBreak) {
+                std::lock_guard < std::mutex > lock(squelchLockMutex);
+                if (squelchLock.load() == demodInstance) {
+                    squelchLock.store(nullptr);
+                }
                 squelchBreak = false;
             }
         }

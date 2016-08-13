@@ -51,6 +51,10 @@ protected:
     std::atomic<float> signalLevel, signalFloor, signalCeil;
     bool squelchEnabled, squelchBreak;
     
+    static std::atomic<DemodulatorInstance *> squelchLock;
+    static std::mutex squelchLockMutex;
+    
+    
     Modem *cModem = nullptr;
     ModemKit *cModemKit = nullptr;
     
