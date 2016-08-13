@@ -165,8 +165,11 @@ bool CubicSDR::OnInit() {
         return false;
     }
 
-    //	// console output for Windows: available in DEBUG or in case of ENABLE_DIGITAL_LAB
-#if (defined(WIN32) && (defined(ENABLE_DIGITAL_LAB) || defined(_DEBUG)))
+    //Deactivated code to allocate an explicit Console on Windows.
+    //This tends to hang the apllication on heavy demod (re)creation.
+    //To continue to debug with std::cout traces, simply run CubicSDR in a MINSYS2 compatble shell on Windows:
+    //ex: Cygwin shell, Git For Windows Bash shell....
+#if (0)
     	if (AllocConsole()) {
     		freopen("CONOUT$", "w", stdout);
     		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
