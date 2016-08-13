@@ -26,10 +26,7 @@ DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent)
 }
 
 DemodulatorThread::~DemodulatorThread() {
-    std::lock_guard < std::mutex > lock(squelchLockMutex);
-    if (squelchLock.load() == demodInstance) {
-        squelchLock.store(nullptr);
-    }
+    releaseSquelchLock(demodInstance);
 }
 
 void DemodulatorThread::onBindOutput(std::string name, ThreadQueueBase *threadQueue) {
@@ -208,10 +205,7 @@ void DemodulatorThread::run() {
                     }
                 
             } else if (squelched && squelchBreak) {
-                std::lock_guard < std::mutex > lock(squelchLockMutex);
-                if (squelchLock.load() == demodInstance) {
-                    squelchLock.store(nullptr);
-                }
+                releaseSquelchLock(demodInstance);
                 squelchBreak = false;
             }
         }
@@ -402,4 +396,15 @@ void DemodulatorThread::setSquelchLevel(float signal_level_in) {
 
 float DemodulatorThread::getSquelchLevel() {
     return squelchLevel;
+}
+
+bool DemodulatorThread::getSquelchBreak() {
+    return squelchBreak;
+}
+
+void DemodulatorThread::releaseSquelchLock(DemodulatorInstance *inst) {
+    std::lock_guard < std::mutex > lock(squelchLockMutex);
+    if (squelchLock.load() == inst) {
+        squelchLock.store(nullptr);
+    }
 }

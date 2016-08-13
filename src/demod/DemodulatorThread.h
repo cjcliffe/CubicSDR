@@ -36,6 +36,8 @@ public:
     float getSquelchLevel();
 
     bool getSquelchBreak();
+
+    static void releaseSquelchLock(DemodulatorInstance *inst);
     
 protected:
     
