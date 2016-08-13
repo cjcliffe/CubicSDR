@@ -139,21 +139,22 @@ void DemodulatorThread::run() {
         if (audioOutputQueue != nullptr && ati && ati->data.size()) {
             float accum = 0;
 
-            for (auto i : ati->data) {
-                accum += abMagnitude(0.948059448969, 0.392699081699, i, 0.0);
-            }
+            if (cModem->useSignalOutput()) {
+                
+                for (auto i : ati->data) {
+                    accum += abMagnitude(0.948059448969, 0.392699081699, i, 0.0);
+                }
 
-            float audioSignalLevel = linearToDb(accum / float(ati->data.size()));
+                currentSignalLevel = linearToDb(accum / float(ati->data.size()));
 
-            accum = 0;
+            } else {
             
-            for (auto i : inp->data) {
-                accum += abMagnitude(0.948059448969, 0.392699081699, i.real, i.imag);
-            }
+                for (auto i : inp->data) {
+                    accum += abMagnitude(0.948059448969, 0.392699081699, i.real, i.imag);
+                }
 
-            float iqSignalLevel = linearToDb(accum / float(inp->data.size()));
-            
-            currentSignalLevel = iqSignalLevel>audioSignalLevel?iqSignalLevel:audioSignalLevel;
+                currentSignalLevel = linearToDb(accum / float(inp->data.size()));
+            }
             
             float sf = signalFloor.load(), sc = signalCeil.load(), sl = squelchLevel.load();
             

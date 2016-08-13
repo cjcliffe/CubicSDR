@@ -11,6 +11,7 @@ ModemUSB::ModemUSB() : ModemAnalog() {
 	ssbShift = nco_crcf_create(LIQUID_NCO);
     nco_crcf_set_frequency(ssbShift,  (2.0f * M_PI) * 0.25f);
     c2rFilt = firhilbf_create(5, 90.0);
+    useSignalOutput(true);
 }
 
 ModemBase *ModemUSB::factory() {

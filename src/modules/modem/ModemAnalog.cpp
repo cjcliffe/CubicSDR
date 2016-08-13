@@ -1,6 +1,6 @@
 #include "ModemAnalog.h"
 
-ModemAnalog::ModemAnalog() : aOutputCeil(1), aOutputCeilMA(1), aOutputCeilMAA(1) {
+ModemAnalog::ModemAnalog() : Modem(), aOutputCeil(1), aOutputCeilMA(1), aOutputCeilMAA(1) {
     
 }
 

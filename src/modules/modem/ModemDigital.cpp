@@ -5,7 +5,7 @@ ModemDigitalOutput::ModemDigitalOutput() {
     
 }
 
-ModemDigital::ModemDigital() {
+ModemDigital::ModemDigital() : Modem() {
 #if ENABLE_DIGITAL_LAB
     digitalOut = nullptr;
 #endif

@@ -11,6 +11,7 @@ ModemLSB::ModemLSB() : ModemAnalog() {
 	ssbShift = nco_crcf_create(LIQUID_NCO);
     nco_crcf_set_frequency(ssbShift,  (2.0 * M_PI) * 0.25);
     c2rFilt = firhilbf_create(5, 90.0);
+    useSignalOutput(true);
 }
 
 ModemBase *ModemLSB::factory() {

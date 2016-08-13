@@ -2,6 +2,7 @@
 
 ModemDSB::ModemDSB() : ModemAnalog() {
     demodAM_DSB = ampmodem_create(0.5, 0.0, LIQUID_AMPMODEM_DSB, 1);
+    useSignalOutput(true);
 }
 
 ModemDSB::~ModemDSB() {

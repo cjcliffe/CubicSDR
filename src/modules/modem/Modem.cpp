@@ -32,7 +32,7 @@ ModemArgInfo::ModemArgInfo(void) {
 }
 
 Modem::Modem() {
-    
+    useSignalOutput(false);
 }
 
 Modem::~Modem() {
@@ -107,4 +107,13 @@ void Modem::rebuildKit() {
 
 void Modem::clearRebuildKit() {
     refreshKit.store(false);
+}
+
+
+bool Modem::useSignalOutput() {
+    return _useSignalOutput.load();
+}
+
+void Modem::useSignalOutput(bool useOutput) {
+    _useSignalOutput.store(useOutput);
 }

@@ -152,8 +152,11 @@ public:
     void rebuildKit();
     void clearRebuildKit();
     
+    bool useSignalOutput();
+    void useSignalOutput(bool useOutput);
+    
 private:
     static ModemFactoryList modemFactories;
     static DefaultRatesList modemDefaultRates;
-    std::atomic_bool refreshKit;
+    std::atomic_bool refreshKit, _useSignalOutput;
 };
