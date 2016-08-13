@@ -13,9 +13,12 @@
 #include <pthread.h>
 #endif
 
-DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent) 
+std::atomic<DemodulatorInstance *> DemodulatorThread::squelchLock(nullptr);
+std::mutex DemodulatorThread::squelchLockMutex;
+
+DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent)
     : IOThread(), outputBuffers("DemodulatorThreadBuffers"), squelchLevel(-100), 
-      signalLevel(-100), squelchEnabled(false) {
+      signalLevel(-100), signalFloor(-30), signalCeil(30), squelchEnabled(false) {
     
     demodInstance = parent;
     muted.store(false);
@@ -23,6 +26,10 @@ DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent)
 }
 
 DemodulatorThread::~DemodulatorThread() {
+    std::lock_guard < std::mutex > lock(squelchLockMutex);
+    if (squelchLock.load() == demodInstance) {
+        squelchLock.store(nullptr);
+    }
 }
 
 void DemodulatorThread::onBindOutput(std::string name, ThreadQueueBase *threadQueue) {
@@ -102,18 +109,6 @@ void DemodulatorThread::run() {
             continue;
         }
         
-        float currentSignalLevel = 0;
-        float accum = 0;
-        
-        for (std::vector<liquid_float_complex>::iterator i = inp->data.begin(); i != inp->data.end(); i++) {
-            accum += abMagnitude(0.948059448969, 0.392699081699, i->real, i->imag);
-        }
-        
-        currentSignalLevel = linearToDb(accum / float(inp->data.size()));
-        if (currentSignalLevel < DEMOD_SIGNAL_MIN+1) {
-            currentSignalLevel = DEMOD_SIGNAL_MIN+1;
-        }
-        
         std::vector<liquid_float_complex> *inputData;
         
         inputData = &inp->data;
@@ -140,23 +135,83 @@ void DemodulatorThread::run() {
         }
 
         cModem->demodulate(cModemKit, &modemData, ati);
+
+        float currentSignalLevel = 0;
+        float sampleTime = float(inp->data.size()) / float(inp->sampleRate);
+
+        if (audioOutputQueue != nullptr && ati && ati->data.size()) {
+            float accum = 0;
+
+            for (auto i : ati->data) {
+                accum += abMagnitude(0.948059448969, 0.392699081699, i, 0.0);
+            }
+
+            float audioSignalLevel = linearToDb(accum / float(ati->data.size()));
+
+            accum = 0;
+            
+            for (auto i : inp->data) {
+                accum += abMagnitude(0.948059448969, 0.392699081699, i.real, i.imag);
+            }
+
+            float iqSignalLevel = linearToDb(accum / float(inp->data.size()));
+            
+            currentSignalLevel = iqSignalLevel>audioSignalLevel?iqSignalLevel:audioSignalLevel;
+            
+            float sf = signalFloor.load(), sc = signalCeil.load(), sl = squelchLevel.load();
+            
+            if (currentSignalLevel > sc) {
+                sc = currentSignalLevel;
+            }
+            
+            if (currentSignalLevel < sf) {
+                sf = currentSignalLevel;
+            }
+            
+            if (sl+1.0f > sc) {
+                sc = sl+1.0f;
+            }
+            
+            if ((sf+2.0f) > sc) {
+                sc = sf+2.0f;
+            }
+            
+            sc -= (sc - (currentSignalLevel + 2.0f)) * sampleTime * 0.05f;
+            sf += ((currentSignalLevel - 5.0f) - sf) * sampleTime * 0.15f;
+            
+            signalFloor.store(sf);
+            signalCeil.store(sc);
+        }
         
         if (currentSignalLevel > signalLevel) {
             signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.5;
         } else {
-            signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.05;
+            signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.05 * sampleTime * 30.0;
         }
         
-        bool squelched = (squelchEnabled && (signalLevel < squelchLevel));
+        bool squelched = (muted.load() || (squelchEnabled && (signalLevel < squelchLevel)));
         
         if (squelchEnabled) {
             if (!squelched && !squelchBreak) {
-                if (wxGetApp().getSoloMode() && !muted.load()) {
-                    wxGetApp().getDemodMgr().setActiveDemodulator(demodInstance, false);
-                }
-                squelchBreak = true;
-                demodInstance->getVisualCue()->triggerSquelchBreak(120);
+                    if (wxGetApp().getSoloMode()) {
+                        std::lock_guard < std::mutex > lock(squelchLockMutex);
+                        if (squelchLock.load() == nullptr) {
+                            squelchLock.store(demodInstance);
+                            wxGetApp().getDemodMgr().setActiveDemodulator(nullptr);
+                            wxGetApp().getDemodMgr().setActiveDemodulator(demodInstance, false);
+                            squelchBreak = true;
+                            demodInstance->getVisualCue()->triggerSquelchBreak(120);
+                        }
+                    } else {
+                        squelchBreak = true;
+                        demodInstance->getVisualCue()->triggerSquelchBreak(120);
+                    }
+                
             } else if (squelched && squelchBreak) {
+                std::lock_guard < std::mutex > lock(squelchLockMutex);
+                if (squelchLock.load() == demodInstance) {
+                    squelchLock.store(nullptr);
+                }
                 squelchBreak = false;
             }
         }
@@ -164,8 +219,8 @@ void DemodulatorThread::run() {
         if (audioOutputQueue != nullptr && ati && ati->data.size() && !squelched) {
             std::vector<float>::iterator data_i;
             ati->peak = 0;
-            for (data_i = ati->data.begin(); data_i != ati->data.end(); data_i++) {
-                float p = fabs(*data_i);
+            for (auto data_i : ati->data) {
+                float p = fabs(data_i);
                 if (p > ati->peak) {
                     ati->peak = p;
                 }
@@ -328,6 +383,14 @@ void DemodulatorThread::setMuted(bool muted) {
 
 float DemodulatorThread::getSignalLevel() {
     return signalLevel.load();
+}
+
+float DemodulatorThread::getSignalFloor() {
+    return signalFloor.load();
+}
+
+float DemodulatorThread::getSignalCeil() {
+    return signalCeil.load();
 }
 
 void DemodulatorThread::setSquelchLevel(float signal_level_in) {

@@ -1402,7 +1402,11 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             demodWaterfallCanvas->setBandwidth(demodBw);
             demodSpectrumCanvas->setBandwidth(demodBw);
         }
+
         demodSignalMeter->setLevel(demod->getSignalLevel());
+        demodSignalMeter->setMin(demod->getSignalFloor());
+        demodSignalMeter->setMax(demod->getSignalCeil());
+        
         demodGainMeter->setLevel(demod->getGain());
         if (demodSignalMeter->inputChanged()) {
             demod->setSquelchLevel(demodSignalMeter->getInputValue());

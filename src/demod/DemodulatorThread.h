@@ -30,6 +30,8 @@ public:
     bool isMuted();
     
     float getSignalLevel();
+    float getSignalCeil();
+    float getSignalFloor();
     void setSquelchLevel(float signal_level_in);
     float getSquelchLevel();
 
@@ -46,8 +48,12 @@ protected:
     std::atomic_bool muted;
 
     std::atomic<float> squelchLevel;
-    std::atomic<float> signalLevel;
+    std::atomic<float> signalLevel, signalFloor, signalCeil;
     bool squelchEnabled, squelchBreak;
+    
+    static std::atomic<DemodulatorInstance *> squelchLock;
+    static std::mutex squelchLockMutex;
+    
     
     Modem *cModem = nullptr;
     ModemKit *cModemKit = nullptr;

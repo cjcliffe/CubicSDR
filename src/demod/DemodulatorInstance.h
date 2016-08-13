@@ -63,6 +63,8 @@ public:
     void setSquelchEnabled(bool state);
 
     float getSignalLevel();
+    float getSignalFloor();
+    float getSignalCeil();
     void setSquelchLevel(float signal_level_in);
     float getSquelchLevel();
 
