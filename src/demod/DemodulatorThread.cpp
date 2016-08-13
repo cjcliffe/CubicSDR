@@ -102,45 +102,6 @@ void DemodulatorThread::run() {
             continue;
         }
         
-        float currentSignalLevel = 0;
-        float accum = 0;
-        
-        for (std::vector<liquid_float_complex>::iterator i = inp->data.begin(); i != inp->data.end(); i++) {
-            accum += abMagnitude(0.948059448969, 0.392699081699, i->real, i->imag);
-        }
-        
-        currentSignalLevel = linearToDb(accum / float(inp->data.size()));
-        if (currentSignalLevel < DEMOD_SIGNAL_MIN+1) {
-            currentSignalLevel = DEMOD_SIGNAL_MIN+1;
-        }
-        
-        float sampleTime = float(inp->data.size()) / float(inp->sampleRate);
-        float sf = signalFloor.load(), sc = signalCeil.load(), sl = squelchLevel.load();
-        
-        if (currentSignalLevel > sc) {
-            sc = currentSignalLevel;
-        }
-
-        if (currentSignalLevel < sf) {
-            sf = currentSignalLevel;
-        }
-        
-        if (sl+1.0f > sc) {
-            sc = sl+1.0f;
-        }
-
-        if ((sf+2.0f) > sc) {
-            sc = sf+2.0f;
-        }
-        
-        sc -= (sc - (currentSignalLevel + 2.0f)) * sampleTime * 0.15f;
-        sf += ((currentSignalLevel - 5.0f) - sf) * sampleTime * 0.15f;
-        
-        signalFloor.store(sf);
-        signalCeil.store(sc);
-        
-//        std::cout << "sf:" << sf << "sc: " << sc << std::endl;
-        
         std::vector<liquid_float_complex> *inputData;
         
         inputData = &inp->data;
@@ -167,11 +128,50 @@ void DemodulatorThread::run() {
         }
 
         cModem->demodulate(cModemKit, &modemData, ati);
+
+        float currentSignalLevel = 0;
+        float accum = 0;
+        float sampleTime = float(inp->data.size()) / float(inp->sampleRate);
+
+        if (audioOutputQueue != nullptr && ati && ati->data.size()) {
+            for (std::vector<float>::iterator i = ati->data.begin(); i != ati->data.end(); i++) {
+                accum += abMagnitude(0.948059448969, 0.392699081699, *i, 0.0);
+            }
+            
+            currentSignalLevel = linearToDb(accum / float(inp->data.size()));
+            if (currentSignalLevel < DEMOD_SIGNAL_MIN+1) {
+                currentSignalLevel = DEMOD_SIGNAL_MIN+1;
+            }
+            
+            float sf = signalFloor.load(), sc = signalCeil.load(), sl = squelchLevel.load();
+            
+            if (currentSignalLevel > sc) {
+                sc = currentSignalLevel;
+            }
+            
+            if (currentSignalLevel < sf) {
+                sf = currentSignalLevel;
+            }
+            
+            if (sl+1.0f > sc) {
+                sc = sl+1.0f;
+            }
+            
+            if ((sf+2.0f) > sc) {
+                sc = sf+2.0f;
+            }
+            
+            sc -= (sc - (currentSignalLevel + 2.0f)) * sampleTime * 0.15f;
+            sf += ((currentSignalLevel - 5.0f) - sf) * sampleTime * 0.15f;
+            
+            signalFloor.store(sf);
+            signalCeil.store(sc);
+        }
         
         if (currentSignalLevel > signalLevel) {
-            signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.5;
+            signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.5 * sampleTime * 10.0;
         } else {
-            signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.05;
+            signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.05 * sampleTime * 10.0;
         }
         
         bool squelched = (squelchEnabled && (signalLevel < squelchLevel));
