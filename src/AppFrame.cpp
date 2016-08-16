@@ -14,6 +14,7 @@
 #endif
 
 #include <vector>
+#include <algorithm>
 #include "AudioThread.h"
 #include "CubicSDR.h"
 #include "DataTree.h"
@@ -1677,6 +1678,14 @@ void AppFrame::saveSession(std::string fileName) {
         }
     } //end for demodulators
 
+    // Make sure the file name actually ends in .xml
+    std::string lcFileName = fileName;
+    std::transform(lcFileName.begin(), lcFileName.end(), lcFileName.begin(), ::tolower);
+    
+    if (lcFileName.find_last_of(".xml") != lcFileName.length()-1) {
+        fileName.append(".xml");
+    }
+    
     s.SaveToFileXML(fileName);
 
     currentSessionFile = fileName;
@@ -1999,6 +2008,10 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     DemodulatorInstance *demod = nullptr, *lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
     int snap = wxGetApp().getFrequencySnap();
     
+    if (event.ControlDown()) {
+        return 1;
+    }
+    
     if (event.ShiftDown()) {
         if (snap != 1) {
             snap /= 2;
@@ -2091,6 +2104,10 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     }
     if (modemProps && (modemProps->HasFocus() || modemProps->isMouseInView())) {
         return -1;
+    }
+
+    if (event.ControlDown()) {
+        return 1;
     }
 
     DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
