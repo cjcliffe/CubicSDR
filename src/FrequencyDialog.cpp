@@ -69,25 +69,68 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
 
 void FrequencyDialog::OnChar(wxKeyEvent& event) {
     int c = event.GetKeyCode();
-    long long freq;
+    long long freq, freq2, freq_ctr, range_bw;
     double dblval;
     std::string lastDemodType = activeDemod?activeDemod->getDemodulatorType():wxGetApp().getDemodMgr().getLastDemodulatorType();
     std::string strValue = dialogText->GetValue().ToStdString();
+    bool ranged = false;
+    std::string strValue2;
+    size_t range_pos;
+    
     
     switch (c) {
     case WXK_RETURN:
     case WXK_NUMPAD_ENTER:
         // Do Stuff
+        ranged = false;
+        if ((range_pos = strValue.find_first_of("-")) > 0) {
+            strValue2 = strValue.substr(range_pos+1);
+            strValue = strValue.substr(0,range_pos);
+
+            if (targetMode == FDIALOG_TARGET_DEFAULT && !activeDemod && strValue.length() && strValue2.length()) {
+                ranged = true;
+            }
+        }
 
         if (targetMode == FDIALOG_TARGET_DEFAULT) {
-            freq = strToFrequency(strValue);
+            if (ranged) {
+                freq = strToFrequency(strValue);
+                freq2 = strToFrequency(strValue2);
+            } else {
+                freq = strToFrequency(strValue);
+            }
             if (activeDemod) {
                 activeDemod->setTracking(true);
                 activeDemod->setFollow(true);
                 activeDemod->setFrequency(freq);
                 activeDemod->updateLabel(freq);
             } else {
-                wxGetApp().setFrequency(freq);
+                if (ranged && (freq || freq2)) {
+                    if (freq > freq2) {
+                        std::swap(freq,freq2);
+                    }
+                    range_bw = (freq2-freq);
+                    freq_ctr = freq + (range_bw/2);
+                    if (range_bw > wxGetApp().getSampleRate()) {
+                        range_bw = wxGetApp().getSampleRate();
+                    }
+                    if (range_bw < 30000) {
+                        range_bw = 30000;
+                    }
+                    if (freq == freq2) {
+                        wxGetApp().setFrequency(freq_ctr);
+                        wxGetApp().getAppFrame()->setViewState(freq_ctr);
+                    } else {
+                        if (wxGetApp().getSampleRate()/4 > range_bw) {
+                            wxGetApp().setFrequency(freq_ctr + wxGetApp().getSampleRate()/4);
+                        } else {
+                            wxGetApp().setFrequency(freq_ctr);
+                        }
+                        wxGetApp().getAppFrame()->setViewState(freq_ctr, range_bw);
+                    }
+                } else {
+                    wxGetApp().setFrequency(freq);
+                }
             }
         }
         if (targetMode == FDIALOG_TARGET_BANDWIDTH) {
@@ -162,6 +205,11 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
     }
 
     std::string allowed("0123456789.MKGHZmkghz");
+
+    // Support '-' for range
+    if (targetMode == FDIALOG_TARGET_DEFAULT && !activeDemod && strValue.length() > 0) {
+        allowed.append("-");
+    }
 
     if (allowed.find_first_of(c) != std::string::npos || c == WXK_DELETE || c == WXK_BACK || c == WXK_NUMPAD_DECIMAL
             || (c >= WXK_NUMPAD0 && c <= WXK_NUMPAD9)) {
