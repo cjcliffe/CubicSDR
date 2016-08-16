@@ -192,7 +192,7 @@ void DemodulatorThread::run() {
         
         if (squelchEnabled) {
             if (!squelched && !squelchBreak) {
-                    if (wxGetApp().getSoloMode()) {
+                    if (wxGetApp().getSoloMode() && !wxGetApp().getAppFrame()->isUserDemodBusy()) {
                         std::lock_guard < std::mutex > lock(squelchLockMutex);
                         if (squelchLock.load() == nullptr) {
                             squelchLock.store(demodInstance);
@@ -406,7 +406,7 @@ bool DemodulatorThread::getSquelchBreak() {
 
 void DemodulatorThread::releaseSquelchLock(DemodulatorInstance *inst) {
     std::lock_guard < std::mutex > lock(squelchLockMutex);
-    if (squelchLock.load() == inst) {
+    if (inst == nullptr || squelchLock.load() == inst) {
         squelchLock.store(nullptr);
     }
 }

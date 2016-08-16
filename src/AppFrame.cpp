@@ -1928,6 +1928,16 @@ void AppFrame::refreshGainUI() {
     gainCanvas->Refresh();
 }
 
+bool AppFrame::isUserDemodBusy() {
+    return (modemProps && modemProps->isMouseInView())
+        || (waterfallCanvas->isMouseInView() && waterfallCanvas->isMouseDown())
+        || (demodWaterfallCanvas->isMouseInView() && demodWaterfallCanvas->isMouseDown())
+        || (wxGetApp().getDemodMgr().getLastActiveDemodulator() &&
+            wxGetApp().getDemodMgr().getActiveDemodulator() &&
+            wxGetApp().getDemodMgr().getLastActiveDemodulator() != wxGetApp().getDemodMgr().getActiveDemodulator());
+}
+
+
 #ifdef _WIN32
 bool AppFrame::canFocus() {
 	return (!wxGetApp().isDeviceSelectorOpen() && (!modemProps || !modemProps->isMouseInView()));

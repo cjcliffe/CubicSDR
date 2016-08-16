@@ -25,7 +25,9 @@ public:
     unsigned int getBandwidth();
 
     MouseTracker *getMouseTracker();
-
+    bool isMouseInView();
+    bool isMouseDown();
+    
     bool isAltDown();
     bool isCtrlDown();
     bool isShiftDown();

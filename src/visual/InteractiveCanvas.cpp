@@ -183,3 +183,11 @@ void InteractiveCanvas::OnMouseRightDown(wxMouseEvent& event) {
 void InteractiveCanvas::OnMouseRightReleased(wxMouseEvent& event) {
     mouseTracker.OnMouseRightReleased(event);
 }
+
+bool InteractiveCanvas::isMouseInView() {
+    return mouseTracker.mouseInView();
+}
+
+bool InteractiveCanvas::isMouseDown() {
+    return mouseTracker.mouseInView() && mouseTracker.mouseDown();
+}

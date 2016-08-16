@@ -101,6 +101,8 @@ public:
     void setViewState(long long center_freq, int bandwidth);
     void setViewState(long long center_freq);
     
+    bool isUserDemodBusy();
+        
 #ifdef _WIN32
 	bool canFocus();
 #endif
