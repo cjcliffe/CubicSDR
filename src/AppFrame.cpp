@@ -2191,3 +2191,14 @@ void AppFrame::setSpectrumAvgSpeed(double avg) {
     spectrumAvgMeter->setUserInputValue(avg);
 }
 
+void AppFrame::setViewState(long long center_freq, int bandwidth) {
+    spectrumCanvas->setView(center_freq, bandwidth);
+    waterfallCanvas->setView(center_freq, bandwidth);
+}
+
+void AppFrame::setViewState(long long center_freq) {
+    spectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
+    waterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
+    spectrumCanvas->disableView();
+    waterfallCanvas->disableView();
+}

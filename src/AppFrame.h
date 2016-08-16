@@ -98,7 +98,9 @@ public:
     
     FrequencyDialog::FrequencyDialogTarget getFrequencyDialogTarget();
     void refreshGainUI();
-
+    void setViewState(long long center_freq, int bandwidth);
+    void setViewState(long long center_freq);
+    
 #ifdef _WIN32
 	bool canFocus();
 #endif
