@@ -204,7 +204,12 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
         break;
     }
 
-    std::string allowed("0123456789.MKGHZmkghz-");
+    std::string allowed("0123456789.MKGHZmkghz");
+
+    // Support '-' for range
+    if (targetMode == FDIALOG_TARGET_DEFAULT && !activeDemod && strValue.length() > 0) {
+        allowed.append("-");
+    }
 
     if (allowed.find_first_of(c) != std::string::npos || c == WXK_DELETE || c == WXK_BACK || c == WXK_NUMPAD_DECIMAL
             || (c >= WXK_NUMPAD0 && c <= WXK_NUMPAD9)) {
