@@ -1633,7 +1633,9 @@ void AppFrame::OnUnSplit(wxSplitterEvent& event)
 void AppFrame::saveSession(std::string fileName) {
     DataTree s("cubicsdr_session");
     DataNode *header = s.rootNode()->newChild("header");
-    *header->newChild("version") = std::string(CUBICSDR_VERSION);
+    //save as wstring to prevent problems 
+    header->newChild("version")->element()->set(wxString(CUBICSDR_VERSION).ToStdWstring());
+    
     *header->newChild("center_freq") = wxGetApp().getFrequency();
     *header->newChild("sample_rate") = wxGetApp().getSampleRate();
     
@@ -1711,8 +1713,20 @@ bool AppFrame::loadSession(std::string fileName) {
         DataNode *header = l.rootNode()->getNext("header");
 
         if (header->hasAnother("version")) {
-        std::string version(*header->getNext("version"));
-//            std::cout << "Loading " << version << " session file" << std::endl;
+              //"Force" the retreiving of the value as string, even if its look like a number internally ! (ex: "0.2.0")
+              DataNode *versionNode = header->getNext("version");
+              std::wstring version;
+              try {
+                  versionNode->element()->get(version);
+
+                  std::cout << "Loading session file version: '" << version << "'..." << std::endl;
+              }
+              catch (DataTypeMismatchException* e) {
+                  //this is for managing the old session format NOT encoded as std:wstring,
+                  //force current version
+                  std::cout << "Warning while Loading session file version, probably old format :'" << e->what() << "' please consider re-saving the current session..." << std::endl;
+                  version = wxString(CUBICSDR_VERSION).ToStdWstring();
+              }    
         }
 
         if (header->hasAnother("sample_rate")) {
