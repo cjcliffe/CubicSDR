@@ -19,6 +19,8 @@
 #include "ModemProperties.h"
 //#include "UITestCanvas.h"
 #include "FrequencyDialog.h"
+#include "BookmarkMgr.h"
+#include "BookmarkView.h"
 
 #include <map>
 

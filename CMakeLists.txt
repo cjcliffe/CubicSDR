@@ -247,6 +247,7 @@ SET (cubicsdr_sources
     src/DemodLabelDialog.cpp
     src/IOThread.cpp
     src/ModemProperties.cpp
+    src/BookmarkMgr.cpp
 	src/sdr/SDRDeviceInfo.cpp
 	src/sdr/SDRPostThread.cpp
 	src/sdr/SDREnumerator.cpp
@@ -349,6 +350,7 @@ SET (cubicsdr_headers
     src/DemodLabelDialog.h
     src/IOThread.h
     src/ModemProperties.h
+    src/BookmarkMgr.h
 	src/sdr/SDRDeviceInfo.h
 	src/sdr/SDRPostThread.h
 	src/sdr/SDREnumerator.h
@@ -525,6 +527,7 @@ SOURCE_GROUP("_ext-CubicVR2" REGULAR_EXPRESSION "external/cubicvr2/.*${REG_EXT}"
 include_directories ( 
 	${PROJECT_SOURCE_DIR}/src/forms/SDRDevices
 	${PROJECT_SOURCE_DIR}/src/forms/DigitalConsole
+	${PROJECT_SOURCE_DIR}/src/forms/Bookmark
 	${PROJECT_SOURCE_DIR}/src/sdr 
 	${PROJECT_SOURCE_DIR}/src/demod
 	${PROJECT_SOURCE_DIR}/src/modules

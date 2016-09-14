@@ -2,13 +2,13 @@
 
 #include "BookmarkPanel.h"
 
+#include "BookmarkMgr.h"
+
 class BookmarkView : public BookmarkPanel {
 public:
     BookmarkView( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1, -1 ), long style = wxTAB_TRAVERSAL );
     
     void updateActiveList();
-    void saveToFile(std::string bookmarkFn);
-    void loadFromFile(std::string bookmarkFn);
     
 protected:
     void onTreeBeginLabelEdit( wxTreeEvent& event );
@@ -22,5 +22,6 @@ protected:
     void onBookmark( wxCommandEvent& event );
     void onActivate( wxCommandEvent& event );
     void onRemove( wxCommandEvent& event );
-
+    
+    
 };
