@@ -304,6 +304,8 @@ SET (cubicsdr_sources
     src/forms/SDRDevices/SDRDevicesForm.cpp
     src/forms/SDRDevices/SDRDeviceAdd.cpp
     src/forms/SDRDevices/SDRDeviceAddForm.cpp
+    src/forms/Bookmark/BookmarkPanel.cpp
+    src/forms/Bookmark/BookmarkView.cpp
 	external/rtaudio/RtAudio.cpp
 	external/lodepng/lodepng.cpp
 	external/tinyxml/tinyxml.cpp
@@ -408,6 +410,8 @@ SET (cubicsdr_headers
     src/forms/SDRDevices/SDRDevicesForm.h
     src/forms/SDRDevices/SDRDeviceAdd.h
     src/forms/SDRDevices/SDRDeviceAddForm.h
+    src/forms/Bookmark/BookmarkPanel.h
+    src/forms/Bookmark/BookmarkView.h
 	external/rtaudio/RtAudio.h
 	external/lodepng/lodepng.h
 	external/tinyxml/tinyxml.h
@@ -495,6 +499,7 @@ set(REG_EXT "[^/]*([.]cpp|[.]c|[.]h|[.]hpp)$")
 
 SOURCE_GROUP("Base" REGULAR_EXPRESSION "src/${REG_EXT}")
 SOURCE_GROUP("Forms\\SDRDevices" REGULAR_EXPRESSION "src/forms/SDRDevices/${REG_EXT}")
+SOURCE_GROUP("Forms\\Bookmark" REGULAR_EXPRESSION "src/forms/Bookmark/${REG_EXT}")
 SOURCE_GROUP("SDR" REGULAR_EXPRESSION "src/sdr/${REG_EXT}")
 IF(USE_HAMLIB)
     SOURCE_GROUP("Rig" REGULAR_EXPRESSION "src/rig/${REG_EXT}")    
