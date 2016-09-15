@@ -11,6 +11,9 @@ public:
     void updateActiveList();
     
 protected:
+    void onUpdateTimer( wxTimerEvent& event );
+    void doUpdateActiveList();
+
     void onTreeBeginLabelEdit( wxTreeEvent& event );
     void onTreeEndLabelEdit( wxTreeEvent& event );
     void onTreeActivate( wxTreeEvent& event );

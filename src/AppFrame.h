@@ -103,7 +103,9 @@ public:
     void setViewState(long long center_freq);
     
     bool isUserDemodBusy();
-        
+    
+    BookmarkView *getBookmarkView();
+    
 #ifdef _WIN32
 	bool canFocus();
 #endif
@@ -136,7 +138,7 @@ private:
     wxSizerItem *gainSizerItem, *gainSpacerItem;
     wxSplitterWindow *mainVisSplitter, *mainSplitter, *bookmarkSplitter;
     wxBoxSizer *demodTray;
-    BookmarkPanel *bookmarkPanel;
+    BookmarkView *bookmarkView;
     
     DemodulatorInstance *activeDemodulator;
 

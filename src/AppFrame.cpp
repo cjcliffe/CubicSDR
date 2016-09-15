@@ -313,9 +313,9 @@ AppFrame::AppFrame() :
 
     mainVisSplitter->SplitHorizontally( spectrumPanel, waterfallPanel, 0 );
     
-    bookmarkPanel = new BookmarkPanel(bookmarkSplitter, wxID_ANY, wxDefaultPosition, wxSize(120,-1));
+    bookmarkView = new BookmarkView(bookmarkSplitter, wxID_ANY, wxDefaultPosition, wxSize(120,-1));
             
-    bookmarkSplitter->SplitVertically( bookmarkPanel, mainVisSplitter );
+    bookmarkSplitter->SplitVertically( bookmarkView, mainVisSplitter );
     mainSplitter->SplitHorizontally( demodPanel, bookmarkSplitter );
             
     vbox->Add(mainSplitter, 1, wxEXPAND | wxALL, 0);
@@ -1834,6 +1834,10 @@ bool AppFrame::isUserDemodBusy() {
         || (wxGetApp().getDemodMgr().getLastActiveDemodulator() &&
             wxGetApp().getDemodMgr().getActiveDemodulator() &&
             wxGetApp().getDemodMgr().getLastActiveDemodulator() != wxGetApp().getDemodMgr().getActiveDemodulator());
+}
+
+BookmarkView *AppFrame::getBookmarkView() {
+    return bookmarkView;
 }
 
 

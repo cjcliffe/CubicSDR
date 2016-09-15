@@ -73,6 +73,7 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	
 	this->SetSizer( bSizer1 );
 	this->Layout();
+	m_updateTimer.SetOwner( this, wxID_ANY );
 	
 	// Connect Events
 	m_treeView->Connect( wxEVT_COMMAND_TREE_BEGIN_LABEL_EDIT, wxTreeEventHandler( BookmarkPanel::onTreeBeginLabelEdit ), NULL, this );
@@ -86,6 +87,7 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	m_bookmarkButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onBookmark ), NULL, this );
 	m_activateButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onActivate ), NULL, this );
 	m_removeButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onRemove ), NULL, this );
+	this->Connect( wxID_ANY, wxEVT_TIMER, wxTimerEventHandler( BookmarkPanel::onUpdateTimer ) );
 }
 
 BookmarkPanel::~BookmarkPanel()
@@ -102,5 +104,6 @@ BookmarkPanel::~BookmarkPanel()
 	m_bookmarkButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onBookmark ), NULL, this );
 	m_activateButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onActivate ), NULL, this );
 	m_removeButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onRemove ), NULL, this );
+	this->Disconnect( wxID_ANY, wxEVT_TIMER, wxTimerEventHandler( BookmarkPanel::onUpdateTimer ) );
 	
 }

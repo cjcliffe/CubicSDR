@@ -1215,6 +1215,15 @@
                     </object>
                 </object>
             </object>
+            <object class="wxTimer" expanded="1">
+                <property name="enabled">0</property>
+                <property name="id">wxID_ANY</property>
+                <property name="name">m_updateTimer</property>
+                <property name="oneshot">0</property>
+                <property name="period">500</property>
+                <property name="permission">protected</property>
+                <event name="OnTimer">onUpdateTimer</event>
+            </object>
         </object>
     </object>
 </wxFormBuilder_Project>

@@ -2,20 +2,32 @@
 #include "CubicSDR.h"
 
 BookmarkView::BookmarkView( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style) : BookmarkPanel(parent, id, pos, size, style) {
-    doUpdateActive = false;
+
+    activeBranch = m_treeView->AddRoot("Active");
+    doUpdateActive = true;
+    m_updateTimer.Start(500);
+}
+
+void BookmarkView::onUpdateTimer( wxTimerEvent& event ) {
+    if (doUpdateActive) {
+        doUpdateActiveList();
+        
+//        doUpdateActive = false;
+    }
 }
 
 void BookmarkView::updateActiveList() {
+    doUpdateActive = true;
+}
+
+void BookmarkView::doUpdateActiveList() {
     std::vector<DemodulatorInstance *> &demods = wxGetApp().getDemodMgr().getDemodulators();
     
-    DemodulatorInstance *activeDemodulator = wxGetApp().getDemodMgr().getActiveDemodulator();
-    DemodulatorInstance *lastActiveDemodulator = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+//    DemodulatorInstance *activeDemodulator = wxGetApp().getDemodMgr().getActiveDemodulator();
+//    DemodulatorInstance *lastActiveDemodulator = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
-    m_treeView->Disable();
-    m_treeView->DeleteAllItems();
     activeItems.erase(activeItems.begin(),activeItems.end());
-    
-    activeBranch = m_treeView->AddRoot("Active");
+    m_treeView->DeleteChildren(activeBranch);
     
     for (auto demod_i : demods) {
         wxTreeItemId itm = m_treeView->AppendItem(activeBranch,demod_i->getLabel());
@@ -24,6 +36,7 @@ void BookmarkView::updateActiveList() {
     
     m_treeView->Enable();
     m_treeView->ExpandAll();
+    
 }
 
 void BookmarkView::onTreeBeginLabelEdit( wxTreeEvent& event ) {

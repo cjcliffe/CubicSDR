@@ -21,6 +21,7 @@
 #include <wx/sizer.h>
 #include <wx/panel.h>
 #include <wx/button.h>
+#include <wx/timer.h>
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -46,6 +47,7 @@ class BookmarkPanel : public wxPanel
 		wxButton* m_bookmarkButton;
 		wxButton* m_activateButton;
 		wxButton* m_removeButton;
+		wxTimer m_updateTimer;
 		
 		// Virtual event handlers, overide them in your derived class
 		virtual void onTreeBeginLabelEdit( wxTreeEvent& event ) { event.Skip(); }
@@ -59,6 +61,7 @@ class BookmarkPanel : public wxPanel
 		virtual void onBookmark( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onActivate( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onRemove( wxCommandEvent& event ) { event.Skip(); }
+		virtual void onUpdateTimer( wxTimerEvent& event ) { event.Skip(); }
 		
 	
 	public:
