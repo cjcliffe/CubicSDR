@@ -232,10 +232,13 @@ AppFrame::AppFrame() :
 
 //    vbox->Add(demodTray, 12, wxEXPAND | wxALL, 0);
 //    vbox->AddSpacer(1);
-            
-    mainVisSplitter = new wxSplitterWindow( mainSplitter, wxID_VIS_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
-    mainVisSplitter->SetSashGravity(6.0/25.0);
+    bookmarkSplitter = new wxSplitterWindow( mainSplitter, wxID_VIS_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
+    bookmarkSplitter->SetMinimumPaneSize(1);
+    bookmarkSplitter->SetSashGravity(1.0/20.0);
+        
+    mainVisSplitter = new wxSplitterWindow( bookmarkSplitter, wxID_VIS_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
     mainVisSplitter->SetMinimumPaneSize(1);
+    mainVisSplitter->SetSashGravity(6.0/25.0);
         
 //    mainVisSplitter->Connect( wxEVT_IDLE, wxIdleEventHandler( AppFrame::mainVisSplitterIdle ), NULL, this );
 
@@ -309,7 +312,11 @@ AppFrame::AppFrame() :
 //    vbox->Add(wfSizer, 20, wxEXPAND | wxALL, 0);
 
     mainVisSplitter->SplitHorizontally( spectrumPanel, waterfallPanel, 0 );
-    mainSplitter->SplitHorizontally( demodPanel, mainVisSplitter );
+    
+    bookmarkPanel = new BookmarkPanel(bookmarkSplitter, wxID_ANY, wxDefaultPosition, wxSize(120,-1));
+            
+    bookmarkSplitter->SplitVertically( bookmarkPanel, mainVisSplitter );
+    mainSplitter->SplitHorizontally( demodPanel, bookmarkSplitter );
             
     vbox->Add(mainSplitter, 1, wxEXPAND | wxALL, 0);
             

@@ -19,7 +19,6 @@
 #include "ModemProperties.h"
 //#include "UITestCanvas.h"
 #include "FrequencyDialog.h"
-#include "BookmarkMgr.h"
 #include "BookmarkView.h"
 
 #include <map>
@@ -135,8 +134,9 @@ private:
     ModeSelectorCanvas *demodMuteButton, *peakHoldButton, *soloModeButton, *deltaLockButton;
     GainCanvas *gainCanvas;
     wxSizerItem *gainSizerItem, *gainSpacerItem;
-    wxSplitterWindow *mainVisSplitter, *mainSplitter;
+    wxSplitterWindow *mainVisSplitter, *mainSplitter, *bookmarkSplitter;
     wxBoxSizer *demodTray;
+    BookmarkPanel *bookmarkPanel;
     
     DemodulatorInstance *activeDemodulator;
 

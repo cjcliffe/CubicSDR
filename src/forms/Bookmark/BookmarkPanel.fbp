@@ -277,7 +277,7 @@
                             <property name="vgap">0</property>
                             <object class="sizeritem" expanded="0">
                                 <property name="border">5</property>
-                                <property name="flag">wxALIGN_RIGHT|wxALL</property>
+                                <property name="flag">wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT</property>
                                 <property name="proportion">0</property>
                                 <object class="wxStaticText" expanded="0">
                                     <property name="BottomDockable">1</property>
@@ -360,7 +360,7 @@
                             </object>
                             <object class="sizeritem" expanded="0">
                                 <property name="border">5</property>
-                                <property name="flag">wxALL|wxEXPAND|wxLEFT|wxTOP</property>
+                                <property name="flag">wxALL|wxEXPAND</property>
                                 <property name="proportion">0</property>
                                 <object class="wxTextCtrl" expanded="0">
                                     <property name="BottomDockable">1</property>
@@ -451,7 +451,7 @@
                             </object>
                             <object class="sizeritem" expanded="1">
                                 <property name="border">5</property>
-                                <property name="flag">wxALIGN_RIGHT|wxALL</property>
+                                <property name="flag">wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT</property>
                                 <property name="proportion">0</property>
                                 <object class="wxStaticText" expanded="1">
                                     <property name="BottomDockable">1</property>
@@ -617,7 +617,7 @@
                             </object>
                             <object class="sizeritem" expanded="1">
                                 <property name="border">5</property>
-                                <property name="flag">wxALIGN_RIGHT|wxALL</property>
+                                <property name="flag">wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT</property>
                                 <property name="proportion">0</property>
                                 <object class="wxStaticText" expanded="1">
                                     <property name="BottomDockable">1</property>
@@ -783,7 +783,7 @@
                             </object>
                             <object class="sizeritem" expanded="1">
                                 <property name="border">5</property>
-                                <property name="flag">wxALIGN_RIGHT|wxALL</property>
+                                <property name="flag">wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT</property>
                                 <property name="proportion">0</property>
                                 <object class="wxStaticText" expanded="1">
                                     <property name="BottomDockable">1</property>
@@ -952,7 +952,7 @@
                 </object>
                 <object class="sizeritem" expanded="1">
                     <property name="border">5</property>
-                    <property name="flag">wxALIGN_RIGHT|wxALL|wxEXPAND</property>
+                    <property name="flag">wxALL|wxEXPAND</property>
                     <property name="proportion">0</property>
                     <object class="wxButton" expanded="1">
                         <property name="BottomDockable">1</property>
@@ -1040,7 +1040,7 @@
                 </object>
                 <object class="sizeritem" expanded="1">
                     <property name="border">5</property>
-                    <property name="flag">wxALIGN_RIGHT|wxALL|wxEXPAND</property>
+                    <property name="flag">wxALL|wxEXPAND</property>
                     <property name="proportion">0</property>
                     <object class="wxButton" expanded="1">
                         <property name="BottomDockable">1</property>

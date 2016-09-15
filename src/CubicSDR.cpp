@@ -671,6 +671,10 @@ DemodulatorMgr &CubicSDR::getDemodMgr() {
     return demodMgr;
 }
 
+BookmarkMgr &CubicSDR::getBookmarkMgr() {
+    return bookmarkMgr;
+}
+
 SDRPostThread *CubicSDR::getSDRPostThread() {
     return sdrPostThread;
 }

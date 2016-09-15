@@ -23,5 +23,7 @@ protected:
     void onActivate( wxCommandEvent& event );
     void onRemove( wxCommandEvent& event );
     
-    
+    bool doUpdateActive;
+    wxTreeItemId activeBranch;
+    std::map<wxTreeItemId, DemodulatorInstance *> activeItems;
 };

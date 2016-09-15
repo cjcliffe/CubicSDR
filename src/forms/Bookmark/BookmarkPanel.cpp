@@ -26,14 +26,14 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	
 	m_staticText1 = new wxStaticText( m_propPanel, wxID_ANY, wxT("Label"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText1->Wrap( -1 );
-	fgPropSizer->Add( m_staticText1, 0, wxALIGN_RIGHT|wxALL, 5 );
+	fgPropSizer->Add( m_staticText1, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT, 5 );
 	
 	m_labelText = new wxTextCtrl( m_propPanel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-	fgPropSizer->Add( m_labelText, 0, wxALL|wxEXPAND|wxLEFT|wxTOP, 5 );
+	fgPropSizer->Add( m_labelText, 0, wxALL|wxEXPAND, 5 );
 	
 	m_frequencyLabel = new wxStaticText( m_propPanel, wxID_ANY, wxT("Freq"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_frequencyLabel->Wrap( -1 );
-	fgPropSizer->Add( m_frequencyLabel, 0, wxALIGN_RIGHT|wxALL, 5 );
+	fgPropSizer->Add( m_frequencyLabel, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT, 5 );
 	
 	m_frequencyVal = new wxStaticText( m_propPanel, wxID_ANY, wxT("FrequencyVal"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_frequencyVal->Wrap( -1 );
@@ -41,7 +41,7 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	
 	m_bandwidthLabel = new wxStaticText( m_propPanel, wxID_ANY, wxT("BW"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_bandwidthLabel->Wrap( -1 );
-	fgPropSizer->Add( m_bandwidthLabel, 0, wxALIGN_RIGHT|wxALL, 5 );
+	fgPropSizer->Add( m_bandwidthLabel, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT, 5 );
 	
 	m_bandwidthVal = new wxStaticText( m_propPanel, wxID_ANY, wxT("BandwidthVal"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_bandwidthVal->Wrap( -1 );
@@ -49,7 +49,7 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	
 	m_modulationLabel = new wxStaticText( m_propPanel, wxID_ANY, wxT("Type"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_modulationLabel->Wrap( -1 );
-	fgPropSizer->Add( m_modulationLabel, 0, wxALIGN_RIGHT|wxALL, 5 );
+	fgPropSizer->Add( m_modulationLabel, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT, 5 );
 	
 	m_typeVal = new wxStaticText( m_propPanel, wxID_ANY, wxT("TypeVal"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_typeVal->Wrap( -1 );
@@ -62,10 +62,10 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	bSizer1->Add( m_propPanel, 1, wxBOTTOM|wxEXPAND|wxTOP, 5 );
 	
 	m_bookmarkButton = new wxButton( this, wxID_ANY, wxT("Bookmark"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer1->Add( m_bookmarkButton, 0, wxALIGN_RIGHT|wxALL|wxEXPAND, 5 );
+	bSizer1->Add( m_bookmarkButton, 0, wxALL|wxEXPAND, 5 );
 	
 	m_activateButton = new wxButton( this, wxID_ANY, wxT("Activate"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer1->Add( m_activateButton, 0, wxALIGN_RIGHT|wxALL|wxEXPAND, 5 );
+	bSizer1->Add( m_activateButton, 0, wxALL|wxEXPAND, 5 );
 	
 	m_removeButton = new wxButton( this, wxID_ANY, wxT("Remove"), wxDefaultPosition, wxDefaultSize, 0 );
 	bSizer1->Add( m_removeButton, 0, wxALL|wxEXPAND, 5 );
