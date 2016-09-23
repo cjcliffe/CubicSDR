@@ -58,3 +58,11 @@ BookmarkList BookmarkMgr::getBookmarks(std::string group, std::string folder) {
     
     return results;
 }
+
+void BookmarkMgr::updateActiveList() {
+    BookmarkView *bmv = wxGetApp().getAppFrame()->getBookmarkView();
+    
+    if (bmv) {
+        bmv->updateActiveList();
+    }
+}

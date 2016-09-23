@@ -42,6 +42,8 @@ public:
     void removeBookmark(std::string group, BookmarkEntry *be);
     BookmarkList getBookmarks(std::string group, std::string folder = "");
     
+    void updateActiveList();
+    
 protected:
     
     BookmarkMap bmData;

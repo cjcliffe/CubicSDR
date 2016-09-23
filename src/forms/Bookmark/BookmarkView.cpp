@@ -4,7 +4,7 @@
 BookmarkView::BookmarkView( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style) : BookmarkPanel(parent, id, pos, size, style) {
 
     activeBranch = m_treeView->AddRoot("Active");
-    doUpdateActive = true;
+//    doUpdateActive = true;
     m_updateTimer.Start(500);
 }
 
@@ -12,7 +12,7 @@ void BookmarkView::onUpdateTimer( wxTimerEvent& event ) {
     if (doUpdateActive) {
         doUpdateActiveList();
         
-//        doUpdateActive = false;
+        doUpdateActive = false;
     }
 }
 
