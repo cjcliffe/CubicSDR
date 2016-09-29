@@ -36,14 +36,14 @@ class BookmarkPanel : public wxPanel
 	protected:
 		wxTreeCtrl* m_treeView;
 		wxPanel* m_propPanel;
-		wxStaticText* m_staticText1;
+		wxStaticText* m_labelLabel;
 		wxTextCtrl* m_labelText;
 		wxStaticText* m_frequencyLabel;
 		wxStaticText* m_frequencyVal;
 		wxStaticText* m_bandwidthLabel;
 		wxStaticText* m_bandwidthVal;
 		wxStaticText* m_modulationLabel;
-		wxStaticText* m_typeVal;
+		wxStaticText* m_modulationVal;
 		wxButton* m_bookmarkButton;
 		wxButton* m_activateButton;
 		wxButton* m_removeButton;

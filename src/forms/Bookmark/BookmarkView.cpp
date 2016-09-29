@@ -4,8 +4,11 @@
 BookmarkView::BookmarkView( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style) : BookmarkPanel(parent, id, pos, size, style) {
 
     activeBranch = m_treeView->AddRoot("Active");
-//    doUpdateActive = true;
+    doUpdateActive = false;
+    activeSel = nullptr;
     m_updateTimer.Start(500);
+    hideProps();
+    m_propPanel->Hide();
 }
 
 void BookmarkView::onUpdateTimer( wxTimerEvent& event ) {
@@ -59,8 +62,68 @@ void BookmarkView::onTreeExpanded( wxTreeEvent& event ) {
     event.Skip();
 }
 
+void BookmarkView::hideProps() {
+    m_frequencyLabel->Hide();
+    m_frequencyVal->Hide();
+    
+    m_bandwidthLabel->Hide();
+    m_bandwidthVal->Hide();
+    
+    m_modulationVal->Hide();
+    m_modulationLabel->Hide();
+    
+    m_labelText->Hide();
+    m_labelLabel->Hide();
+    
+    m_bookmarkButton->Hide();
+    m_activateButton->Hide();
+    m_removeButton->Hide();
+}
+
+void BookmarkView::activeSelection(DemodulatorInstance *dsel) {
+    activeSel = dsel;
+    
+    m_frequencyVal->SetLabelText(frequencyToStr(dsel->getFrequency()));
+    m_bandwidthVal->SetLabelText(frequencyToStr(dsel->getBandwidth()));
+    m_modulationVal->SetLabelText(dsel->getDemodulatorType());
+    m_labelText->SetValue(dsel->getLabel());
+    
+    hideProps();
+    
+    m_frequencyVal->Show();
+    m_frequencyLabel->Show();
+
+    m_bandwidthVal->Show();
+    m_bandwidthLabel->Show();
+    
+    m_modulationVal->Show();
+    m_modulationLabel->Show();
+    
+    m_labelText->Show();
+    m_labelLabel->Show();
+    
+    m_bookmarkButton->Show();
+    m_removeButton->Show();
+    
+    this->Layout();
+}
+
 void BookmarkView::onTreeSelect( wxTreeEvent& event ) {
-    event.Skip();
+    if (activeItems.find(event.GetItem()) != activeItems.end()) {
+        DemodulatorInstance *dsel = activeItems[event.GetItem()];
+        m_propPanel->Show();
+        activeSelection(dsel);
+        wxGetApp().getDemodMgr().setActiveDemodulator(activeSel, false);
+    } else {
+        activeSel = nullptr;
+        
+        m_propPanel->Hide();
+        hideProps();
+        this->Layout();
+        
+        wxGetApp().getDemodMgr().setActiveDemodulator(activeSel, false);
+        event.Skip();
+    }
 }
 
 void BookmarkView::onTreeSelectChanging( wxTreeEvent& event ) {
@@ -80,6 +143,13 @@ void BookmarkView::onActivate( wxCommandEvent& event ) {
 }
 
 void BookmarkView::onRemove( wxCommandEvent& event ) {
-    event.Skip();
+    if (activeSel != nullptr) {
+        wxGetApp().getDemodMgr().setActiveDemodulator(nullptr, false);
+        wxGetApp().removeDemodulator(activeSel);
+        wxGetApp().getDemodMgr().deleteThread(activeSel);
+        activeSel = nullptr;
+    } else {
+        event.Skip();
+    }
 }
 

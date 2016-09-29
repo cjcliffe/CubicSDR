@@ -9,8 +9,12 @@ public:
     BookmarkView( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1, -1 ), long style = wxTAB_TRAVERSAL );
     
     void updateActiveList();
+    void activeSelection(DemodulatorInstance *dsel);
     
 protected:
+    
+    void hideProps();
+    
     void onUpdateTimer( wxTimerEvent& event );
     void doUpdateActiveList();
 
@@ -29,4 +33,5 @@ protected:
     bool doUpdateActive;
     wxTreeItemId activeBranch;
     std::map<wxTreeItemId, DemodulatorInstance *> activeItems;
+    DemodulatorInstance *activeSel;
 };

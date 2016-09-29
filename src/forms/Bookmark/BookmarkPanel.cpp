@@ -24,9 +24,9 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgPropSizer->SetFlexibleDirection( wxBOTH );
 	fgPropSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	
-	m_staticText1 = new wxStaticText( m_propPanel, wxID_ANY, wxT("Label"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText1->Wrap( -1 );
-	fgPropSizer->Add( m_staticText1, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT, 5 );
+	m_labelLabel = new wxStaticText( m_propPanel, wxID_ANY, wxT("Label"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_labelLabel->Wrap( -1 );
+	fgPropSizer->Add( m_labelLabel, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT, 5 );
 	
 	m_labelText = new wxTextCtrl( m_propPanel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgPropSizer->Add( m_labelText, 0, wxALL|wxEXPAND, 5 );
@@ -51,9 +51,9 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	m_modulationLabel->Wrap( -1 );
 	fgPropSizer->Add( m_modulationLabel, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT, 5 );
 	
-	m_typeVal = new wxStaticText( m_propPanel, wxID_ANY, wxT("TypeVal"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_typeVal->Wrap( -1 );
-	fgPropSizer->Add( m_typeVal, 0, wxALL, 5 );
+	m_modulationVal = new wxStaticText( m_propPanel, wxID_ANY, wxT("TypeVal"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_modulationVal->Wrap( -1 );
+	fgPropSizer->Add( m_modulationVal, 0, wxALL, 5 );
 	
 	
 	m_propPanel->SetSizer( fgPropSizer );
