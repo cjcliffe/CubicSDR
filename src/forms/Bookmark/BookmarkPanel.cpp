@@ -62,13 +62,13 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	bSizer1->Add( m_propPanel, 1, wxBOTTOM|wxEXPAND|wxTOP, 5 );
 	
 	m_bookmarkButton = new wxButton( this, wxID_ANY, wxT("Bookmark"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer1->Add( m_bookmarkButton, 0, wxALL|wxEXPAND, 5 );
+	bSizer1->Add( m_bookmarkButton, 0, wxEXPAND, 5 );
 	
 	m_activateButton = new wxButton( this, wxID_ANY, wxT("Activate"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer1->Add( m_activateButton, 0, wxALL|wxEXPAND, 5 );
+	bSizer1->Add( m_activateButton, 0, wxEXPAND, 5 );
 	
 	m_removeButton = new wxButton( this, wxID_ANY, wxT("Remove"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer1->Add( m_removeButton, 0, wxALL|wxEXPAND, 5 );
+	bSizer1->Add( m_removeButton, 0, wxEXPAND, 5 );
 	
 	
 	this->SetSizer( bSizer1 );

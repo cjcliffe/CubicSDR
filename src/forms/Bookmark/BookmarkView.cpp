@@ -20,6 +20,32 @@ void BookmarkView::onUpdateTimer( wxTimerEvent& event ) {
     }
 }
 
+void BookmarkView::updateTheme() {
+    wxColour bgColor(ThemeMgr::mgr.currentTheme->generalBackground);
+    wxColour textColor(ThemeMgr::mgr.currentTheme->text);
+    wxColour btn(ThemeMgr::mgr.currentTheme->button);
+    wxColour btnHl(ThemeMgr::mgr.currentTheme->buttonHighlight);
+    
+    m_treeView->SetBackgroundColour(bgColor);
+    m_treeView->SetForegroundColour(textColor);
+    
+    m_propPanel->SetBackgroundColour(bgColor);
+    m_propPanel->SetForegroundColour(textColor);
+    
+    m_labelLabel->SetForegroundColour(textColor);
+    m_frequencyVal->SetForegroundColour(textColor);
+    m_frequencyLabel->SetForegroundColour(textColor);
+    m_bandwidthVal->SetForegroundColour(textColor);
+    m_bandwidthLabel->SetForegroundColour(textColor);
+    m_modulationVal->SetForegroundColour(textColor);
+    m_modulationLabel->SetForegroundColour(textColor);
+    
+    m_bookmarkButton->SetBackgroundColour(bgColor);
+    m_removeButton->SetBackgroundColour(bgColor);
+    m_activateButton->SetBackgroundColour(bgColor);
+}
+
+
 void BookmarkView::updateActiveList() {
     doUpdateActive = true;
 }
@@ -53,7 +79,6 @@ void BookmarkView::doUpdateActiveList() {
     
     m_treeView->Enable();
     m_treeView->ExpandAll();
-    
 }
 
 void BookmarkView::onTreeBeginLabelEdit( wxTreeEvent& event ) {

@@ -10,6 +10,7 @@ public:
     
     void updateActiveList();
     void activeSelection(DemodulatorInstance *dsel);
+    void updateTheme();
     
 protected:
     

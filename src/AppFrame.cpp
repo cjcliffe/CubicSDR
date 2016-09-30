@@ -594,6 +594,7 @@ AppFrame::AppFrame() :
     waterfallCanvas->setLinesPerSecond(wflps);
             
     ThemeMgr::mgr.setTheme(wxGetApp().getConfig()->getTheme());
+    bookmarkView->updateTheme();
 
     int mpc =wxGetApp().getConfig()->getModemPropsCollapsed();
 
@@ -1035,6 +1036,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         spectrumAvgMeter->Refresh();
         gainCanvas->setThemeColors();
         modemProps->updateTheme();
+        bookmarkView->updateTheme();
     }
 
     switch (event.GetId()) {

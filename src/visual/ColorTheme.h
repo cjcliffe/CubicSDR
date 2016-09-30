@@ -5,6 +5,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <wx/colour.h>
 
 #define COLOR_THEME_DEFAULT 0
 #define COLOR_THEME_BW 1
@@ -38,6 +39,14 @@ public:
     }
     
     RGBA4f operator*(float v) { return RGBA4f(r*v, g*v, b*v); }
+    
+    operator wxColour() {
+        return wxColour(
+                       (unsigned char) (r * 255.0),
+                       (unsigned char) (g * 255.0),
+                       (unsigned char) (b * 255.0));
+
+    }
 
 };
 

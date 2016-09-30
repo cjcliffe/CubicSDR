@@ -337,7 +337,9 @@ void DemodulatorInstance::setDemodulatorType(std::string demod_type_in) {
             outp->setTitle(getDemodulatorType() + ": " + frequencyToStr(getFrequency()));
         }
 #endif
-}
+    }
+    
+    wxGetApp().getBookmarkMgr().updateActiveList();
 }
 
 std::string DemodulatorInstance::getDemodulatorType() {
