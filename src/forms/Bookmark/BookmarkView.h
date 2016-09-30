@@ -26,12 +26,16 @@ protected:
     void onTreeSelect( wxTreeEvent& event );
     void onTreeSelectChanging( wxTreeEvent& event );
     void onLabelText( wxCommandEvent& event );
+    void onDoubleClickFreq( wxMouseEvent& event );
+    void onDoubleClickBandwidth( wxMouseEvent& event );
     void onBookmark( wxCommandEvent& event );
     void onActivate( wxCommandEvent& event );
     void onRemove( wxCommandEvent& event );
     
     bool doUpdateActive;
-    wxTreeItemId activeBranch;
+    wxTreeItemId rootBranch, activeBranch, bookmarkBranch;
+    std::map<std::string, wxTreeItemId> groups;
+    
     std::map<wxTreeItemId, DemodulatorInstance *> activeItems;
     DemodulatorInstance *activeSel;
 };

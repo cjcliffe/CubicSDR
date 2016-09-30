@@ -753,6 +753,7 @@ void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetM
     
     switch (targetMode) {
         case FrequencyDialog::FDIALOG_TARGET_DEFAULT:
+        case FrequencyDialog::FDIALOG_TARGET_FREQ:
             title = demodMgr.getActiveDemodulator()?demodTitle:freqTitle;
             break;
         case FrequencyDialog::FDIALOG_TARGET_BANDWIDTH:

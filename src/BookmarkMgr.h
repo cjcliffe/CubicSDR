@@ -31,7 +31,9 @@ struct BookmarkEntryCompare : public std::binary_function<BookmarkEntry *,Bookma
 
 
 typedef std::vector<BookmarkEntry *> BookmarkList;
-typedef std::map<std::string, std::set<BookmarkEntry *, BookmarkEntryCompare> > BookmarkMap;
+typedef std::set<BookmarkEntry *, BookmarkEntryCompare> BookmarkGroup;
+typedef std::map<std::string, BookmarkGroup > BookmarkMap;
+typedef std::vector<std::string> BookmarkNames;
 
 class BookmarkMgr {
 public:
@@ -41,7 +43,8 @@ public:
     void addBookmark(std::string group, DemodulatorInstance *demod, std::string folder = "");
     void removeBookmark(std::string group, BookmarkEntry *be);
     BookmarkList getBookmarks(std::string group, std::string folder = "");
-    
+    BookmarkGroup getGroup(std::string group);
+    BookmarkNames getGroups();
     void updateActiveList();
     
 protected:

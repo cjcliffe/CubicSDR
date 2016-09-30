@@ -59,6 +59,19 @@ BookmarkList BookmarkMgr::getBookmarks(std::string group, std::string folder) {
     return results;
 }
 
+BookmarkGroup BookmarkMgr::getGroup(std::string group) {
+    return bmData[group];
+}
+
+BookmarkNames BookmarkMgr::getGroups() {
+    BookmarkNames results;
+    for (BookmarkMap::iterator i = bmData.begin(); i!= bmData.end(); ++i) {
+        results.push_back(i->first);
+    }
+    return results;
+}
+
+
 void BookmarkMgr::updateActiveList() {
     BookmarkView *bmv = wxGetApp().getAppFrame()->getBookmarkView();
     

@@ -217,6 +217,7 @@ void DemodulatorMgr::setActiveDemodulator(DemodulatorInstance *demod, bool tempo
             wxGetApp().getRigThread()->setFrequency(lastActiveDemodulator.load()->getFrequency(),true);
         }
 #endif
+        wxGetApp().getBookmarkMgr().updateActiveList();
     } else {
         std::lock_guard < std::recursive_mutex > lock(demods_busy);
         garbageCollect();

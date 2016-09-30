@@ -14,7 +14,7 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	wxBoxSizer* bSizer1;
 	bSizer1 = new wxBoxSizer( wxVERTICAL );
 	
-	m_treeView = new wxTreeCtrl( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_DEFAULT_STYLE );
+	m_treeView = new wxTreeCtrl( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_DEFAULT_STYLE|wxTR_HIDE_ROOT );
 	bSizer1->Add( m_treeView, 5, wxEXPAND, 5 );
 	
 	m_propPanel = new wxPanel( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
@@ -84,6 +84,8 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	m_treeView->Connect( wxEVT_COMMAND_TREE_SEL_CHANGED, wxTreeEventHandler( BookmarkPanel::onTreeSelect ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_SEL_CHANGING, wxTreeEventHandler( BookmarkPanel::onTreeSelectChanging ), NULL, this );
 	m_labelText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( BookmarkPanel::onLabelText ), NULL, this );
+	m_frequencyVal->Connect( wxEVT_LEFT_DCLICK, wxMouseEventHandler( BookmarkPanel::onDoubleClickFreq ), NULL, this );
+	m_bandwidthVal->Connect( wxEVT_LEFT_DCLICK, wxMouseEventHandler( BookmarkPanel::onDoubleClickBandwidth ), NULL, this );
 	m_bookmarkButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onBookmark ), NULL, this );
 	m_activateButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onActivate ), NULL, this );
 	m_removeButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onRemove ), NULL, this );
@@ -101,6 +103,8 @@ BookmarkPanel::~BookmarkPanel()
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_SEL_CHANGED, wxTreeEventHandler( BookmarkPanel::onTreeSelect ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_SEL_CHANGING, wxTreeEventHandler( BookmarkPanel::onTreeSelectChanging ), NULL, this );
 	m_labelText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( BookmarkPanel::onLabelText ), NULL, this );
+	m_frequencyVal->Disconnect( wxEVT_LEFT_DCLICK, wxMouseEventHandler( BookmarkPanel::onDoubleClickFreq ), NULL, this );
+	m_bandwidthVal->Disconnect( wxEVT_LEFT_DCLICK, wxMouseEventHandler( BookmarkPanel::onDoubleClickBandwidth ), NULL, this );
 	m_bookmarkButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onBookmark ), NULL, this );
 	m_activateButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onActivate ), NULL, this );
 	m_removeButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onRemove ), NULL, this );

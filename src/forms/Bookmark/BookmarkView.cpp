@@ -2,8 +2,9 @@
 #include "CubicSDR.h"
 
 BookmarkView::BookmarkView( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style) : BookmarkPanel(parent, id, pos, size, style) {
-
-    activeBranch = m_treeView->AddRoot("Active");
+    rootBranch = m_treeView->AddRoot("Root");
+    activeBranch = m_treeView->AppendItem(rootBranch, "Active");
+    bookmarkBranch = m_treeView->AppendItem(rootBranch, "Bookmarks");
     doUpdateActive = false;
     activeSel = nullptr;
     m_updateTimer.Start(500);
@@ -26,15 +27,28 @@ void BookmarkView::updateActiveList() {
 void BookmarkView::doUpdateActiveList() {
     std::vector<DemodulatorInstance *> &demods = wxGetApp().getDemodMgr().getDemodulators();
     
-//    DemodulatorInstance *activeDemodulator = wxGetApp().getDemodMgr().getActiveDemodulator();
+    DemodulatorInstance *activeDemodulator = wxGetApp().getDemodMgr().getActiveDemodulator();
 //    DemodulatorInstance *lastActiveDemodulator = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     activeItems.erase(activeItems.begin(),activeItems.end());
     m_treeView->DeleteChildren(activeBranch);
     
+    wxTreeItemId selItem = nullptr;
     for (auto demod_i : demods) {
         wxTreeItemId itm = m_treeView->AppendItem(activeBranch,demod_i->getLabel());
         activeItems[itm] = demod_i;
+        if (activeDemodulator) {
+            if (activeDemodulator == demod_i) {
+                selItem = itm;
+                activeSel = demod_i;
+            }
+        }
+        else if (activeSel == demod_i) {
+            selItem = itm;
+        }
+    }
+    if (selItem != nullptr) {
+        m_treeView->SelectItem(selItem);
     }
     
     m_treeView->Enable();
@@ -132,6 +146,24 @@ void BookmarkView::onTreeSelectChanging( wxTreeEvent& event ) {
 
 void BookmarkView::onLabelText( wxCommandEvent& event ) {
     event.Skip();
+}
+
+void BookmarkView::onDoubleClickFreq( wxMouseEvent& event ) {
+    if (activeSel) {
+        wxGetApp().getDemodMgr().setActiveDemodulator(activeSel, false);
+        wxGetApp().showFrequencyInput(FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_DEFAULT);
+    } else {
+        event.Skip();
+    }
+}
+
+void BookmarkView::onDoubleClickBandwidth( wxMouseEvent& event ) {
+    if (activeSel) {
+        wxGetApp().getDemodMgr().setActiveDemodulator(activeSel, false);
+        wxGetApp().showFrequencyInput(FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_BANDWIDTH);
+    } else {
+        event.Skip();
+    }
 }
 
 void BookmarkView::onBookmark( wxCommandEvent& event ) {
