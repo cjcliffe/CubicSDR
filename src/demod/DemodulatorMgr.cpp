@@ -132,6 +132,8 @@ DemodulatorInstance *DemodulatorMgr::getFirstDemodulator() {
 
 void DemodulatorMgr::deleteThread(DemodulatorInstance *demod) {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
+
+    wxGetApp().getBookmarkMgr().addRecent(demod);
     
     std::vector<DemodulatorInstance *>::iterator i;
 
@@ -408,6 +410,8 @@ void DemodulatorMgr::saveInstance(DataNode *node, DemodulatorInstance *inst) {
 
 DemodulatorInstance *DemodulatorMgr::loadInstance(DataNode *node) {
     DemodulatorInstance *newDemod = nullptr;
+    
+    node->rewindAll();
     
     long bandwidth = *node->getNext("bandwidth");
     long long freq = *node->getNext("frequency");

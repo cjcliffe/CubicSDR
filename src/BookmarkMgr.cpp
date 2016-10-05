@@ -14,16 +14,11 @@ void BookmarkMgr::loadFromFile(std::string bookmarkFn) {
     
 }
 
-void BookmarkMgr::addBookmark(std::string group, DemodulatorInstance *demod, std::string folder) {
+
+void BookmarkMgr::addBookmark(std::string group, DemodulatorInstance *demod) {
     std::lock_guard < std::mutex > lock(busy_lock);
     
-    BookmarkEntry *be = new BookmarkEntry;
-    
-    be->bandwidth = demod->getBandwidth();
-    be->type = demod->getDemodulatorType();
-    be->label = demod->getLabel();
-    be->frequency = demod->getFrequency();
-    be->folder = folder;
+    BookmarkEntry *be = demodToBookmarkEntry(demod);
     
     wxGetApp().getDemodMgr().saveInstance(be->node, demod);
     
@@ -38,22 +33,13 @@ void BookmarkMgr::removeBookmark(std::string group, BookmarkEntry *be) {
 }
 
 
-BookmarkList BookmarkMgr::getBookmarks(std::string group, std::string folder) {
+BookmarkList BookmarkMgr::getBookmarks(std::string group) {
     std::lock_guard < std::mutex > lock(busy_lock);
 
     BookmarkList results;
     
-    if (folder != "") {
-        for (auto be_i : bmData[group]) {
-            results.push_back(be_i);
-        }
-    } else {
-        for (auto be_i : bmData[group]) {
-            if (be_i->folder != folder) {
-                continue;
-            }
-            results.push_back(be_i);
-        }
+    for (auto be_i : bmData[group]) {
+        results.push_back(be_i);
     }
     
     return results;
@@ -78,4 +64,33 @@ void BookmarkMgr::updateActiveList() {
     if (bmv) {
         bmv->updateActiveList();
     }
+}
+
+void BookmarkMgr::addRecent(DemodulatorInstance *demod) {
+    std::lock_guard < std::mutex > lock(busy_lock);
+    recents.push_back(demodToBookmarkEntry(demod));
+    if (recents.size() > 10) {
+        delete *(recents.begin());
+        recents.erase(recents.begin(), recents.begin()+1);
+    }
+}
+
+
+BookmarkList BookmarkMgr::getRecents() {
+    return recents;
+}
+
+
+BookmarkEntry *BookmarkMgr::demodToBookmarkEntry(DemodulatorInstance *demod) {
+    BookmarkEntry *be = new BookmarkEntry;
+    
+    be->bandwidth = demod->getBandwidth();
+    be->type = demod->getDemodulatorType();
+    be->label = demod->getLabel();
+    be->frequency = demod->getFrequency();
+
+    be->node = new DataNode;
+    wxGetApp().getDemodMgr().saveInstance(be->node, demod);
+    
+    return be;
 }

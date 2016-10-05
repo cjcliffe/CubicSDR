@@ -260,7 +260,8 @@ public:
     DataNode *getNext();	/* get next child */
     void rewind(const char *name_in);	/* rewind specific */
     void rewind();	/* rewind generic */
-        
+    void rewindAll();
+    
     void findAll(const char *name_in, vector<DataNode *> &node_list_out);
     
 //    operator string () { string s; element()->get(s); return s; }
@@ -316,7 +317,6 @@ public:
     bool operator() () { return hasAnother(); }
 
     DataNode *operator ^(const char *name_in) { return newChild(name_in); }
-
 };
 
 

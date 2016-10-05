@@ -565,6 +565,7 @@ DataNode *DataNode::getNext(const char *name_in) {
 
 void DataNode::rewind() {
     ptr = 0;
+    childmap_ptr.erase(childmap_ptr.begin(),childmap_ptr.end());
 }
 
 void DataNode::rewind(const char *name_in) {
@@ -1340,6 +1341,38 @@ long DataTree::getSerializedSize(DataElement &de_node_names, bool debug) /* get 
     total_size += de_node_names.getSerializedSize();
 
     return total_size;
+}
+
+void DataNode::rewindAll() {
+    stack<DataNode *> dn_stack;
+    
+    /* start at the root */
+    dn_stack.push(this);
+    
+    while (!dn_stack.empty()) {
+        dn_stack.top()->rewind();
+        
+        /* if it has children, traverse into them */
+        if (dn_stack.top()->hasAnother()) {
+            dn_stack.push(dn_stack.top()->getNext());
+            dn_stack.top()->rewind();
+        } else {
+            /* no more children, back out until we have children, then add next child to the top */
+            while (!dn_stack.empty()) {
+                if (!dn_stack.top()->hasAnother()) {
+                    dn_stack.top()->rewind();
+                    dn_stack.pop();
+                } else
+                    break;
+            }
+            
+            if (!dn_stack.empty()) {
+                dn_stack.push(dn_stack.top()->getNext());
+                dn_stack.top()->rewind();
+            }
+        }
+    }
+    
 }
 
 void DataNode::findAll(const char *name_in, vector<DataNode *> &node_list_out) {

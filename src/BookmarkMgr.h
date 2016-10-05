@@ -11,7 +11,6 @@ class BookmarkEntry {
 public:
     std::mutex busy_lock;
 
-    std::string folder;
     std::string type;
     std::string label;
     
@@ -40,15 +39,25 @@ public:
     void saveToFile(std::string bookmarkFn);
     void loadFromFile(std::string bookmarkFn);
     
-    void addBookmark(std::string group, DemodulatorInstance *demod, std::string folder = "");
+    void addBookmark(std::string group, DemodulatorInstance *demod);
     void removeBookmark(std::string group, BookmarkEntry *be);
-    BookmarkList getBookmarks(std::string group, std::string folder = "");
+    
+    BookmarkList getBookmarks(std::string group);
+    
     BookmarkGroup getGroup(std::string group);
     BookmarkNames getGroups();
+    
     void updateActiveList();
+
+    void addRecent(DemodulatorInstance *demod);
+    BookmarkList getRecents();
+
     
 protected:
     
+    BookmarkEntry *demodToBookmarkEntry(DemodulatorInstance *demod);
+    
     BookmarkMap bmData;
+    BookmarkList recents;
     std::mutex busy_lock;
 };

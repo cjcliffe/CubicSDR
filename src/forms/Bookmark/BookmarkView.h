@@ -10,6 +10,9 @@ public:
     
     void updateActiveList();
     void activeSelection(DemodulatorInstance *dsel);
+    void bookmarkSelection(BookmarkEntry *bmSel);
+    void activateBookmark(BookmarkEntry *bmEnt);
+    void recentSelection(BookmarkEntry *bmSel);
     void updateTheme();
     
 protected:
@@ -34,9 +37,13 @@ protected:
     void onRemove( wxCommandEvent& event );
     
     bool doUpdateActive;
-    wxTreeItemId rootBranch, activeBranch, bookmarkBranch;
+    wxTreeItemId rootBranch, activeBranch, bookmarkBranch, recentBranch;
     std::map<std::string, wxTreeItemId> groups;
     
     std::map<wxTreeItemId, DemodulatorInstance *> activeItems;
+    std::map<wxTreeItemId, BookmarkEntry *> recentItems;
     DemodulatorInstance *activeSel;
+    BookmarkEntry *recentSel;
+    BookmarkEntry *bookmarkSel;
+    
 };
