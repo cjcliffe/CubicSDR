@@ -48,6 +48,8 @@ public:
     BookmarkNames getGroups();
     
     void updateActiveList();
+    void updateBookmarks();
+    void updateBookmarks(std::string group);
 
     void addRecent(DemodulatorInstance *demod);
     BookmarkList getRecents();

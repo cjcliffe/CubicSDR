@@ -3,6 +3,7 @@
 
 #include <wx/menu.h>
 #include <wx/textdlg.h>
+#include <algorithm>
 #define wxCONTEXT_ADD_GROUP_ID 1000
 
 BookmarkView::BookmarkView( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style) : BookmarkPanel(parent, id, pos, size, style) {
@@ -28,6 +29,13 @@ void BookmarkView::onUpdateTimer( wxTimerEvent& event ) {
         doUpdateActiveList();
         
         doUpdateActive.store(false);
+    }
+    if (doUpdateBookmarks.load()) {
+        wxTreeItemId bmSel = refreshBookmarks();
+        if (bmSel) {
+            m_treeView->SelectItem(bmSel);
+        }
+        doUpdateBookmarks.store(false);
     }
 }
 
@@ -61,13 +69,28 @@ void BookmarkView::updateActiveList() {
     doUpdateActive.store(true);
 }
 
-void BookmarkView::refreshBookmarks() {
+void BookmarkView::updateBookmarks() {
+    doUpdateBookmarks.store(true);
+}
+
+void BookmarkView::updateBookmarks(std::string group) {
+    doUpdateBookmarkGroup.insert(group);
+    doUpdateBookmarks.store(true);
+}
+
+
+wxTreeItemId BookmarkView::refreshBookmarks() {
 //    if (!bookmarksInitialized) {
     groupNames = wxGetApp().getBookmarkMgr().getGroups();
     if (!groupNames.size()) {
-        wxGetApp().getBookmarkMgr().getGroup("Uncategorized");
+        wxGetApp().getBookmarkMgr().getGroup("Ungrouped");
         groupNames = wxGetApp().getBookmarkMgr().getGroups();
     }
+    if (doUpdateBookmarkGroup.size()) { // Nothing for the moment..
+        doUpdateBookmarkGroup.erase(doUpdateBookmarkGroup.begin(), doUpdateBookmarkGroup.end());
+    }
+
+    wxTreeItemId bmSelFound = nullptr;
     for (auto gn_i : groupNames) {
         if (groups.find(gn_i) == groups.end()) {
             groups[gn_i] = m_treeView->AppendItem(bookmarkBranch, gn_i);
@@ -77,15 +100,23 @@ void BookmarkView::refreshBookmarks() {
         m_treeView->DeleteChildren(groupItem);
         
         std::vector<wxTreeItemId> &groupEnts = groupEntries[groupItem];
+        std::vector<BookmarkEntry *> &groupBMEnts = groupBookmarkEntries[groupItem];
         groupEnts.erase(groupEnts.begin(),groupEnts.end());
+        groupBMEnts.erase(groupBMEnts.begin(),groupBMEnts.end());
         
         BookmarkGroup bmList = wxGetApp().getBookmarkMgr().getGroup(gn_i);
         for (auto bmEnt : bmList) {
             wxTreeItemId bmItem = m_treeView->AppendItem(groupItem, bmEnt->label);
             groupEnts.push_back(bmItem);
+            groupBMEnts.push_back(bmEnt);
+            if (bookmarkSel == bmEnt) {
+                bmSelFound = bmItem;
+            }
         }
     }
-//        bookmarksInitialized = true;
+    
+    return bmSelFound;
+    //        bookmarksInitialized = true;
 //    }
 }
 
@@ -113,9 +144,6 @@ void BookmarkView::doUpdateActiveList() {
             selItem = itm;
         }
     }
-    
-    // Bookmarks
-    refreshBookmarks();
     
     // Recents
     BookmarkList bmRecents = wxGetApp().getBookmarkMgr().getRecents();
@@ -149,6 +177,9 @@ void BookmarkView::onTreeEndLabelEdit( wxTreeEvent& event ) {
 void BookmarkView::onTreeActivate( wxTreeEvent& event ) {
     if (recentSel) {
         activateBookmark(recentSel);
+    }
+    if (bookmarkSel) {
+        activateBookmark(bookmarkSel);
     }
 }
 
@@ -313,14 +344,31 @@ void BookmarkView::onTreeSelect( wxTreeEvent& event ) {
         m_propPanel->Show();
         recentSelection(recentSel);
     } else {
+        bool bFound = false;
+        bookmarkSel = nullptr;
+        
+        for (auto ge_i : groupEntries) {
+            wxTreeItemId itm = event.GetItem();
+            for (int i = 0, iMax = ge_i.second.size(); i < iMax; i++) {
+                if (ge_i.second[i] == itm) {
+                    bookmarkSel = groupBookmarkEntries[ge_i.first][i];
+                    bFound = true;
+                }
+            }
+        }
+        
         activeSel = nullptr;
         recentSel = nullptr;
-        
-        m_propPanel->Hide();
-        hideProps();
+
+        if (bFound) {
+            m_propPanel->Show();
+            bookmarkSelection(bookmarkSel);
+        } else {
+            m_propPanel->Hide();
+            hideProps();
+            wxGetApp().getDemodMgr().setActiveDemodulator(activeSel, false);
+        }
         this->Layout();
-        
-        wxGetApp().getDemodMgr().setActiveDemodulator(activeSel, false);
     }
 }
 
@@ -347,12 +395,18 @@ void BookmarkView::onDoubleClickBandwidth( wxMouseEvent& event ) {
 }
 
 void BookmarkView::onBookmark( wxCommandEvent& event ) {
-    event.Skip();
+    if (activeSel) {
+        wxGetApp().getBookmarkMgr().addBookmark("Ungrouped", activeSel);
+        wxGetApp().getBookmarkMgr().updateBookmarks();
+    }
 }
 
 void BookmarkView::onActivate( wxCommandEvent& event ) {
     if (recentSel) {
         activateBookmark(recentSel);
+    }
+    if (bookmarkSel) {
+        activateBookmark(bookmarkSel);
     }
 }
 

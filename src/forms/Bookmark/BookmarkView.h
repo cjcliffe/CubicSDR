@@ -9,11 +9,13 @@ public:
     BookmarkView( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1, -1 ), long style = wxTAB_TRAVERSAL );
     
     void updateActiveList();
+    void updateBookmarks();
+    void updateBookmarks(std::string group);
     void activeSelection(DemodulatorInstance *dsel);
     void bookmarkSelection(BookmarkEntry *bmSel);
     void activateBookmark(BookmarkEntry *bmEnt);
     void recentSelection(BookmarkEntry *bmSel);
-    void refreshBookmarks();
+    wxTreeItemId refreshBookmarks();
     void updateTheme();
     void onMenuItem(wxCommandEvent& event);
     
@@ -39,17 +41,21 @@ protected:
     void onActivate( wxCommandEvent& event );
     void onRemove( wxCommandEvent& event );
     
-    std::atomic_bool doUpdateActive;
     wxTreeItemId rootBranch, activeBranch, bookmarkBranch, recentBranch;
     
     // Bookmarks
+    std::atomic_bool doUpdateBookmarks;
+    std::set< std::string > doUpdateBookmarkGroup;
     BookmarkNames groupNames;
     std::map<std::string, wxTreeItemId> groups;
     std::map<wxTreeItemId, std::vector<wxTreeItemId> > groupEntries;
+    std::map<wxTreeItemId, std::vector<BookmarkEntry * > > groupBookmarkEntries;
     BookmarkEntry *bookmarkSel;
     bool bookmarksInitialized;
     
+    
     // Active
+    std::atomic_bool doUpdateActive;
     std::map<wxTreeItemId, DemodulatorInstance *> activeItems;
     DemodulatorInstance *activeSel;
     

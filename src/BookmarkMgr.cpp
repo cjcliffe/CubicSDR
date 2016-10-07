@@ -66,6 +66,23 @@ void BookmarkMgr::updateActiveList() {
     }
 }
 
+void BookmarkMgr::updateBookmarks() {
+    BookmarkView *bmv = wxGetApp().getAppFrame()->getBookmarkView();
+    
+    if (bmv) {
+        bmv->updateBookmarks();
+    }
+}
+
+void BookmarkMgr::updateBookmarks(std::string group) {
+    BookmarkView *bmv = wxGetApp().getAppFrame()->getBookmarkView();
+    
+    if (bmv) {
+        bmv->updateBookmarks(group);
+    }
+}
+
+
 void BookmarkMgr::addRecent(DemodulatorInstance *demod) {
     std::lock_guard < std::mutex > lock(busy_lock);
     recents.push_back(demodToBookmarkEntry(demod));
