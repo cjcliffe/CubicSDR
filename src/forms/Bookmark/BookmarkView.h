@@ -13,7 +13,9 @@ public:
     void bookmarkSelection(BookmarkEntry *bmSel);
     void activateBookmark(BookmarkEntry *bmEnt);
     void recentSelection(BookmarkEntry *bmSel);
+    void refreshBookmarks();
     void updateTheme();
+    void onMenuItem(wxCommandEvent& event);
     
 protected:
     
@@ -27,6 +29,7 @@ protected:
     void onTreeActivate( wxTreeEvent& event );
     void onTreeCollapse( wxTreeEvent& event );
     void onTreeExpanded( wxTreeEvent& event );
+    void onTreeItemMenu( wxTreeEvent& event );
     void onTreeSelect( wxTreeEvent& event );
     void onTreeSelectChanging( wxTreeEvent& event );
     void onLabelText( wxCommandEvent& event );
@@ -36,14 +39,22 @@ protected:
     void onActivate( wxCommandEvent& event );
     void onRemove( wxCommandEvent& event );
     
-    bool doUpdateActive;
+    std::atomic_bool doUpdateActive;
     wxTreeItemId rootBranch, activeBranch, bookmarkBranch, recentBranch;
-    std::map<std::string, wxTreeItemId> groups;
     
-    std::map<wxTreeItemId, DemodulatorInstance *> activeItems;
-    std::map<wxTreeItemId, BookmarkEntry *> recentItems;
-    DemodulatorInstance *activeSel;
-    BookmarkEntry *recentSel;
+    // Bookmarks
+    BookmarkNames groupNames;
+    std::map<std::string, wxTreeItemId> groups;
+    std::map<wxTreeItemId, std::vector<wxTreeItemId> > groupEntries;
     BookmarkEntry *bookmarkSel;
+    bool bookmarksInitialized;
+    
+    // Active
+    std::map<wxTreeItemId, DemodulatorInstance *> activeItems;
+    DemodulatorInstance *activeSel;
+    
+    // Recent
+    std::map<wxTreeItemId, BookmarkEntry *> recentItems;
+    BookmarkEntry *recentSel;
     
 };

@@ -1,6 +1,10 @@
 #include "BookmarkView.h"
 #include "CubicSDR.h"
 
+#include <wx/menu.h>
+#include <wx/textdlg.h>
+#define wxCONTEXT_ADD_GROUP_ID 1000
+
 BookmarkView::BookmarkView( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style) : BookmarkPanel(parent, id, pos, size, style) {
 
     rootBranch = m_treeView->AddRoot("Root");
@@ -8,9 +12,10 @@ BookmarkView::BookmarkView( wxWindow* parent, wxWindowID id, const wxPoint& pos,
     bookmarkBranch = m_treeView->AppendItem(rootBranch, "Bookmarks");
     recentBranch = m_treeView->AppendItem(rootBranch, "Recents");
     
-    doUpdateActive = false;
+    doUpdateActive.store(true);
     activeSel = nullptr;
     recentSel = nullptr;
+    bookmarksInitialized = false;
     
     hideProps();
     m_propPanel->Hide();
@@ -19,10 +24,10 @@ BookmarkView::BookmarkView( wxWindow* parent, wxWindowID id, const wxPoint& pos,
 }
 
 void BookmarkView::onUpdateTimer( wxTimerEvent& event ) {
-    if (doUpdateActive) {
+    if (doUpdateActive.load()) {
         doUpdateActiveList();
         
-        doUpdateActive = false;
+        doUpdateActive.store(false);
     }
 }
 
@@ -53,7 +58,35 @@ void BookmarkView::updateTheme() {
 
 
 void BookmarkView::updateActiveList() {
-    doUpdateActive = true;
+    doUpdateActive.store(true);
+}
+
+void BookmarkView::refreshBookmarks() {
+//    if (!bookmarksInitialized) {
+    groupNames = wxGetApp().getBookmarkMgr().getGroups();
+    if (!groupNames.size()) {
+        wxGetApp().getBookmarkMgr().getGroup("Uncategorized");
+        groupNames = wxGetApp().getBookmarkMgr().getGroups();
+    }
+    for (auto gn_i : groupNames) {
+        if (groups.find(gn_i) == groups.end()) {
+            groups[gn_i] = m_treeView->AppendItem(bookmarkBranch, gn_i);
+        }
+        
+        wxTreeItemId groupItem = groups[gn_i];
+        m_treeView->DeleteChildren(groupItem);
+        
+        std::vector<wxTreeItemId> &groupEnts = groupEntries[groupItem];
+        groupEnts.erase(groupEnts.begin(),groupEnts.end());
+        
+        BookmarkGroup bmList = wxGetApp().getBookmarkMgr().getGroup(gn_i);
+        for (auto bmEnt : bmList) {
+            wxTreeItemId bmItem = m_treeView->AppendItem(groupItem, bmEnt->label);
+            groupEnts.push_back(bmItem);
+        }
+    }
+//        bookmarksInitialized = true;
+//    }
 }
 
 void BookmarkView::doUpdateActiveList() {
@@ -80,6 +113,9 @@ void BookmarkView::doUpdateActiveList() {
             selItem = itm;
         }
     }
+    
+    // Bookmarks
+    refreshBookmarks();
     
     // Recents
     BookmarkList bmRecents = wxGetApp().getBookmarkMgr().getRecents();
@@ -123,6 +159,26 @@ void BookmarkView::onTreeCollapse( wxTreeEvent& event ) {
 void BookmarkView::onTreeExpanded( wxTreeEvent& event ) {
     event.Skip();
 }
+
+void BookmarkView::onTreeItemMenu( wxTreeEvent& event ) {
+    if (m_treeView->GetSelection() == bookmarkBranch) {
+        wxMenu menu;
+        menu.Append(wxCONTEXT_ADD_GROUP_ID, "Add Group");
+        menu.Connect(wxCONTEXT_ADD_GROUP_ID, wxEVT_MENU, (wxObjectEventFunction)&BookmarkView::onMenuItem);
+        PopupMenu(&menu);
+    }
+}
+
+void BookmarkView::onMenuItem(wxCommandEvent& event) {
+    if (event.GetId() == wxCONTEXT_ADD_GROUP_ID) {
+        wxString stringVal = wxGetTextFromUser("Enter Group Name", "Add Group", "");
+        if (stringVal.ToStdString() != "") {
+            wxGetApp().getBookmarkMgr().getGroup(stringVal.ToStdString());
+            wxGetApp().getBookmarkMgr().updateActiveList();
+        }
+    }
+}
+
 
 void BookmarkView::hideProps() {
     m_frequencyLabel->Hide();
