@@ -4,6 +4,27 @@
 
 #include "BookmarkMgr.h"
 
+class TreeViewItem : public wxTreeItemData {
+public:
+    enum TreeViewItemType {
+        TREEVIEW_ITEM_TYPE_GROUP,
+        TREEVIEW_ITEM_TYPE_ACTIVE,
+        TREEVIEW_ITEM_TYPE_RECENT,
+        TREEVIEW_ITEM_TYPE_BOOKMARK
+    };
+    
+    TreeViewItem() {
+        bookmarkEnt = nullptr;
+        demod = nullptr;
+    };
+    
+    TreeViewItemType type;
+    BookmarkEntry *bookmarkEnt;
+    DemodulatorInstance *demod;
+    std::string groupName;
+};
+
+
 class BookmarkView : public BookmarkPanel {
 public:
     BookmarkView( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1, -1 ), long style = wxTAB_TRAVERSAL );
@@ -48,19 +69,14 @@ protected:
     std::set< std::string > doUpdateBookmarkGroup;
     BookmarkNames groupNames;
     std::map<std::string, wxTreeItemId> groups;
-    std::map<wxTreeItemId, std::vector<wxTreeItemId> > groupEntries;
-    std::map<wxTreeItemId, std::vector<BookmarkEntry * > > groupBookmarkEntries;
     BookmarkEntry *bookmarkSel;
     bool bookmarksInitialized;
     
     
     // Active
     std::atomic_bool doUpdateActive;
-    std::map<wxTreeItemId, DemodulatorInstance *> activeItems;
     DemodulatorInstance *activeSel;
     
     // Recent
-    std::map<wxTreeItemId, BookmarkEntry *> recentItems;
-    BookmarkEntry *recentSel;
-    
+    BookmarkEntry *recentSel;    
 };
