@@ -1901,6 +1901,10 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         return -1;
     }
     
+    if (bookmarkView && bookmarkView->isMouseInView()) {
+        return -1;
+    }
+    
     DemodulatorInstance *demod = nullptr, *lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
     int snap = wxGetApp().getFrequencySnap();
     
@@ -1999,6 +2003,10 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
         return -1;
     }
     if (modemProps && (modemProps->HasFocus() || modemProps->isMouseInView())) {
+        return -1;
+    }
+
+    if (bookmarkView && bookmarkView->isMouseInView()) {
         return -1;
     }
 

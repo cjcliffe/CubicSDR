@@ -40,6 +40,7 @@ public:
     void loadFromFile(std::string bookmarkFn);
     
     void addBookmark(std::string group, DemodulatorInstance *demod);
+    void addBookmark(std::string group, BookmarkEntry *be);
     void removeBookmark(std::string group, BookmarkEntry *be);
     
     BookmarkList getBookmarks(std::string group);
@@ -52,6 +53,7 @@ public:
     void updateBookmarks(std::string group);
 
     void addRecent(DemodulatorInstance *demod);
+    void removeRecent(BookmarkEntry *be);
     BookmarkList getRecents();
 
     

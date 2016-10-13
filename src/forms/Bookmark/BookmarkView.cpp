@@ -14,15 +14,21 @@ BookmarkView::BookmarkView( wxWindow* parent, wxWindowID id, const wxPoint& pos,
     recentBranch = m_treeView->AppendItem(rootBranch, "Recents");
     
     doUpdateActive.store(true);
+    doUpdateBookmarks.store(true);
     activeSel = nullptr;
     recentSel = nullptr;
-    bookmarksInitialized = false;
+    dragItem = nullptr;
+    dragItemId = nullptr;
     
     hideProps();
     m_propPanel->Hide();
     
     m_updateTimer.Start(500);
+//    m_treeView->SetDropEffectAboveItem();
+    mouseInView.store(false);
+
 }
+
 
 void BookmarkView::onUpdateTimer( wxTimerEvent& event ) {
     if (doUpdateActive.load()) {
@@ -38,6 +44,7 @@ void BookmarkView::onUpdateTimer( wxTimerEvent& event ) {
         doUpdateBookmarks.store(false);
     }
 }
+
 
 void BookmarkView::updateTheme() {
     wxColour bgColor(ThemeMgr::mgr.currentTheme->generalBackground);
@@ -69,9 +76,11 @@ void BookmarkView::updateActiveList() {
     doUpdateActive.store(true);
 }
 
+
 void BookmarkView::updateBookmarks() {
     doUpdateBookmarks.store(true);
 }
+
 
 void BookmarkView::updateBookmarks(std::string group) {
     doUpdateBookmarkGroup.insert(group);
@@ -80,7 +89,6 @@ void BookmarkView::updateBookmarks(std::string group) {
 
 
 wxTreeItemId BookmarkView::refreshBookmarks() {
-//    if (!bookmarksInitialized) {
     groupNames = wxGetApp().getBookmarkMgr().getGroups();
     if (!groupNames.size()) {
         wxGetApp().getBookmarkMgr().getGroup("Ungrouped");
@@ -119,9 +127,8 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
     }
     
     return bmSelFound;
-    //        bookmarksInitialized = true;
-//    }
 }
+
 
 void BookmarkView::doUpdateActiveList() {
     std::vector<DemodulatorInstance *> &demods = wxGetApp().getDemodMgr().getDemodulators();
@@ -171,18 +178,35 @@ void BookmarkView::doUpdateActiveList() {
     if (selItem != nullptr) {
         m_treeView->SelectItem(selItem);
     }
-
-    m_treeView->Enable();
-    m_treeView->ExpandAll();
 }
+
 
 void BookmarkView::onTreeBeginLabelEdit( wxTreeEvent& event ) {
-    event.Skip();
+    TreeViewItem* tvi = dynamic_cast<TreeViewItem*>(m_treeView->GetItemData(event.GetItem()));
+
+    if (!tvi) {
+        event.Veto();
+        return;
+    }
+    
+    if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
+        event.Allow();
+    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
+        event.Veto();
+    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK) {
+        event.Allow();
+    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_GROUP) {
+        event.Allow();
+    } else {
+        event.Veto();
+    }
 }
+
 
 void BookmarkView::onTreeEndLabelEdit( wxTreeEvent& event ) {
     event.Skip();
 }
+
 
 void BookmarkView::onTreeActivate( wxTreeEvent& event ) {
     if (recentSel) {
@@ -193,13 +217,16 @@ void BookmarkView::onTreeActivate( wxTreeEvent& event ) {
     }
 }
 
+
 void BookmarkView::onTreeCollapse( wxTreeEvent& event ) {
     event.Skip();
 }
 
+
 void BookmarkView::onTreeExpanded( wxTreeEvent& event ) {
     event.Skip();
 }
+
 
 void BookmarkView::onTreeItemMenu( wxTreeEvent& event ) {
     if (m_treeView->GetSelection() == bookmarkBranch) {
@@ -210,6 +237,7 @@ void BookmarkView::onTreeItemMenu( wxTreeEvent& event ) {
     }
 }
 
+
 void BookmarkView::onMenuItem(wxCommandEvent& event) {
     if (event.GetId() == wxCONTEXT_ADD_GROUP_ID) {
         wxString stringVal = wxGetTextFromUser("Enter Group Name", "Add Group", "");
@@ -218,6 +246,11 @@ void BookmarkView::onMenuItem(wxCommandEvent& event) {
             wxGetApp().getBookmarkMgr().updateActiveList();
         }
     }
+}
+
+
+bool BookmarkView::isMouseInView() {
+    return mouseInView.load();
 }
 
 
@@ -238,6 +271,7 @@ void BookmarkView::hideProps() {
     m_activateButton->Hide();
     m_removeButton->Hide();
 }
+
 
 void BookmarkView::activeSelection(DemodulatorInstance *dsel) {
     activeSel = dsel;
@@ -268,6 +302,7 @@ void BookmarkView::activeSelection(DemodulatorInstance *dsel) {
     this->Layout();
 }
 
+
 void BookmarkView::activateBookmark(BookmarkEntry *bmEnt) {
     DemodulatorInstance *newDemod = wxGetApp().getDemodMgr().loadInstance(bmEnt->node);
     newDemod->run();
@@ -279,6 +314,7 @@ void BookmarkView::activateBookmark(BookmarkEntry *bmEnt) {
     }
     doUpdateActiveList();
 }
+
 
 void BookmarkView::bookmarkSelection(BookmarkEntry *bmSel) {
     bookmarkSel = bmSel;
@@ -343,6 +379,7 @@ void BookmarkView::recentSelection(BookmarkEntry *bmSel) {
     this->Layout();
 }
 
+
 void BookmarkView::onTreeSelect( wxTreeEvent& event ) {
     TreeViewItem* tvi = dynamic_cast<TreeViewItem*>(m_treeView->GetItemData(event.GetItem()));
 
@@ -367,13 +404,16 @@ void BookmarkView::onTreeSelect( wxTreeEvent& event ) {
     }
 }
 
+
 void BookmarkView::onTreeSelectChanging( wxTreeEvent& event ) {
     event.Skip();
 }
 
+
 void BookmarkView::onLabelText( wxCommandEvent& event ) {
     event.Skip();
 }
+
 
 void BookmarkView::onDoubleClickFreq( wxMouseEvent& event ) {
     if (activeSel) {
@@ -382,6 +422,7 @@ void BookmarkView::onDoubleClickFreq( wxMouseEvent& event ) {
     }
 }
 
+
 void BookmarkView::onDoubleClickBandwidth( wxMouseEvent& event ) {
     if (activeSel) {
         wxGetApp().getDemodMgr().setActiveDemodulator(activeSel, false);
@@ -389,12 +430,14 @@ void BookmarkView::onDoubleClickBandwidth( wxMouseEvent& event ) {
     }
 }
 
+
 void BookmarkView::onBookmark( wxCommandEvent& event ) {
     if (activeSel) {
         wxGetApp().getBookmarkMgr().addBookmark("Ungrouped", activeSel);
         wxGetApp().getBookmarkMgr().updateBookmarks();
     }
 }
+
 
 void BookmarkView::onActivate( wxCommandEvent& event ) {
     if (recentSel) {
@@ -405,6 +448,7 @@ void BookmarkView::onActivate( wxCommandEvent& event ) {
     }
 }
 
+
 void BookmarkView::onRemove( wxCommandEvent& event ) {
     if (activeSel != nullptr) {
         wxGetApp().getDemodMgr().setActiveDemodulator(nullptr, false);
@@ -414,3 +458,125 @@ void BookmarkView::onRemove( wxCommandEvent& event ) {
     }
 }
 
+
+void BookmarkView::onTreeBeginDrag( wxTreeEvent& event ) {
+    TreeViewItem* tvi = dynamic_cast<TreeViewItem*>(m_treeView->GetItemData(event.GetItem()));
+    
+    dragItem = nullptr;
+    dragItemId = nullptr;
+    
+    if (!tvi) {
+        event.Veto();
+        return;
+    }
+    
+    bool bAllow = false;
+    std::string dragItemName;
+    
+    if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
+        bAllow = true;
+        dragItemName = tvi->demod->getLabel();
+    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
+        bAllow = true;
+        dragItemName = tvi->bookmarkEnt->label;
+    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK) {
+        bAllow = true;
+        dragItemName = tvi->bookmarkEnt->label;
+    }
+    
+    if (bAllow) {
+        wxColour bgColor(ThemeMgr::mgr.currentTheme->generalBackground);
+        wxColour textColor(ThemeMgr::mgr.currentTheme->text);
+        
+        m_treeView->SetBackgroundColour(textColor);
+        m_treeView->SetForegroundColour(bgColor);
+        m_treeView->SetToolTip("Dragging " + dragItemName);
+        
+        dragItem = tvi;
+        dragItemId = event.GetItem();
+
+        event.Allow();
+    } else {
+        event.Veto();
+    }
+}
+
+
+void BookmarkView::onTreeEndDrag( wxTreeEvent& event ) {
+
+    wxColour bgColor(ThemeMgr::mgr.currentTheme->generalBackground);
+    wxColour textColor(ThemeMgr::mgr.currentTheme->text);
+    
+    m_treeView->SetBackgroundColour(bgColor);
+    m_treeView->SetForegroundColour(textColor);
+    m_treeView->UnsetToolTip();
+
+    if (!event.GetItem()) {
+        event.Veto();
+        return;
+    }
+
+    TreeViewItem* tvi = dynamic_cast<TreeViewItem*>(m_treeView->GetItemData(event.GetItem()));
+
+    if (!tvi) {
+        if (event.GetItem() == bookmarkBranch) {
+            if (dragItem && dragItem->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
+                wxGetApp().getBookmarkMgr().addBookmark("Ungrouped", dragItem->demod);
+                wxGetApp().getBookmarkMgr().updateBookmarks();
+            }else if (dragItem && dragItem->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
+                wxGetApp().getBookmarkMgr().removeRecent(dragItem->bookmarkEnt);
+                wxGetApp().getBookmarkMgr().addBookmark("Ungrouped", dragItem->bookmarkEnt);
+                m_treeView->Delete(dragItemId);
+                wxGetApp().getBookmarkMgr().updateBookmarks();
+                wxGetApp().getBookmarkMgr().updateActiveList();
+            }
+        }
+        
+        return;
+    }
+    
+    if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_GROUP) {
+        if (dragItem && dragItem->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) { // Active -> Group Item
+            wxGetApp().getBookmarkMgr().addBookmark(tvi->groupName, dragItem->demod);
+            wxGetApp().getBookmarkMgr().updateBookmarks();
+        } else if (dragItem && dragItem->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) { // Recent -> Group Item
+            wxGetApp().getBookmarkMgr().removeRecent(dragItem->bookmarkEnt);
+            wxGetApp().getBookmarkMgr().addBookmark(tvi->groupName, dragItem->bookmarkEnt);
+            m_treeView->Delete(dragItemId);
+            wxGetApp().getBookmarkMgr().updateBookmarks();
+            wxGetApp().getBookmarkMgr().updateActiveList();
+        }
+    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK) {
+        if (dragItem && dragItem->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) { // Active -> Same Group
+            wxGetApp().getBookmarkMgr().addBookmark(tvi->groupName, dragItem->demod);
+            wxGetApp().getBookmarkMgr().updateBookmarks();
+        } else if (dragItem && dragItem->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) { // Recent -> Same Group
+            wxGetApp().getBookmarkMgr().removeRecent(dragItem->bookmarkEnt);
+            wxGetApp().getBookmarkMgr().addBookmark(tvi->groupName, dragItem->bookmarkEnt);
+            m_treeView->Delete(dragItemId);
+            wxGetApp().getBookmarkMgr().updateBookmarks();
+            wxGetApp().getBookmarkMgr().updateActiveList();
+        }
+    }
+}
+
+
+void BookmarkView::onTreeDeleteItem( wxTreeEvent& event ) {
+    event.Skip();
+}
+
+
+void BookmarkView::onTreeItemGetTooltip( wxTreeEvent& event ) {
+    
+    event.Skip();
+}
+
+
+void BookmarkView::onEnterWindow( wxMouseEvent& event ) {
+    mouseInView.store(true);
+}
+
+
+void BookmarkView::onLeaveWindow( wxMouseEvent& event ) {
+    mouseInView.store(false);
+}

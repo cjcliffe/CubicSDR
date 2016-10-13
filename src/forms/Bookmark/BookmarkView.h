@@ -39,6 +39,8 @@ public:
     wxTreeItemId refreshBookmarks();
     void updateTheme();
     void onMenuItem(wxCommandEvent& event);
+    bool isMouseInView();
+    
     
 protected:
     
@@ -61,8 +63,19 @@ protected:
     void onBookmark( wxCommandEvent& event );
     void onActivate( wxCommandEvent& event );
     void onRemove( wxCommandEvent& event );
+    void onTreeBeginDrag( wxTreeEvent& event );
+    void onTreeEndDrag( wxTreeEvent& event );
+    void onTreeDeleteItem( wxTreeEvent& event );
+    void onTreeItemGetTooltip( wxTreeEvent& event );
+    void onEnterWindow( wxMouseEvent& event );
+    void onLeaveWindow( wxMouseEvent& event );
+
+    std::atomic_bool mouseInView;
     
     wxTreeItemId rootBranch, activeBranch, bookmarkBranch, recentBranch;
+    
+    TreeViewItem *dragItem;
+    wxTreeItemId dragItemId;
     
     // Bookmarks
     std::atomic_bool doUpdateBookmarks;
@@ -70,7 +83,6 @@ protected:
     BookmarkNames groupNames;
     std::map<std::string, wxTreeItemId> groups;
     BookmarkEntry *bookmarkSel;
-    bool bookmarksInitialized;
     
     
     // Active

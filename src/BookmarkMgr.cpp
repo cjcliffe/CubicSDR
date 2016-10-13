@@ -25,6 +25,13 @@ void BookmarkMgr::addBookmark(std::string group, DemodulatorInstance *demod) {
     bmData[group].insert(be);
 }
 
+void BookmarkMgr::addBookmark(std::string group, BookmarkEntry *be) {
+    std::lock_guard < std::mutex > lock(busy_lock);
+    
+    bmData[group].insert(be);
+}
+
+
 void BookmarkMgr::removeBookmark(std::string group, BookmarkEntry *be) {
     std::lock_guard < std::mutex > lockData(busy_lock);
     std::lock_guard < std::mutex > lockEnt(be->busy_lock);
@@ -89,6 +96,17 @@ void BookmarkMgr::addRecent(DemodulatorInstance *demod) {
     if (recents.size() > 10) {
         delete *(recents.begin());
         recents.erase(recents.begin(), recents.begin()+1);
+    }
+}
+
+
+void BookmarkMgr::removeRecent(BookmarkEntry *be) {
+    std::lock_guard < std::mutex > lock(busy_lock);
+    
+    BookmarkList::iterator bm_i = std::find(recents.begin(),recents.end(), be);
+    
+    if (bm_i != recents.end()) {
+        recents.erase(bm_i);
     }
 }
 

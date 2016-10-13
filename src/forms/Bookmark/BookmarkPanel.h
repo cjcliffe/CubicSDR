@@ -50,11 +50,17 @@ class BookmarkPanel : public wxPanel
 		wxTimer m_updateTimer;
 		
 		// Virtual event handlers, overide them in your derived class
+		virtual void onEnterWindow( wxMouseEvent& event ) { event.Skip(); }
+		virtual void onLeaveWindow( wxMouseEvent& event ) { event.Skip(); }
+		virtual void onTreeBeginDrag( wxTreeEvent& event ) { event.Skip(); }
 		virtual void onTreeBeginLabelEdit( wxTreeEvent& event ) { event.Skip(); }
+		virtual void onTreeDeleteItem( wxTreeEvent& event ) { event.Skip(); }
+		virtual void onTreeEndDrag( wxTreeEvent& event ) { event.Skip(); }
 		virtual void onTreeEndLabelEdit( wxTreeEvent& event ) { event.Skip(); }
 		virtual void onTreeActivate( wxTreeEvent& event ) { event.Skip(); }
 		virtual void onTreeCollapse( wxTreeEvent& event ) { event.Skip(); }
 		virtual void onTreeExpanded( wxTreeEvent& event ) { event.Skip(); }
+		virtual void onTreeItemGetTooltip( wxTreeEvent& event ) { event.Skip(); }
 		virtual void onTreeItemMenu( wxTreeEvent& event ) { event.Skip(); }
 		virtual void onTreeSelect( wxTreeEvent& event ) { event.Skip(); }
 		virtual void onTreeSelectChanging( wxTreeEvent& event ) { event.Skip(); }

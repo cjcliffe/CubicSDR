@@ -14,7 +14,7 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	wxBoxSizer* bSizer1;
 	bSizer1 = new wxBoxSizer( wxVERTICAL );
 	
-	m_treeView = new wxTreeCtrl( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_DEFAULT_STYLE|wxTR_HIDE_ROOT );
+	m_treeView = new wxTreeCtrl( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_DEFAULT_STYLE|wxTR_EDIT_LABELS|wxTR_HAS_VARIABLE_ROW_HEIGHT|wxTR_HIDE_ROOT|wxTR_SINGLE );
 	bSizer1->Add( m_treeView, 5, wxEXPAND, 5 );
 	
 	m_propPanel = new wxPanel( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
@@ -76,11 +76,17 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	m_updateTimer.SetOwner( this, wxID_ANY );
 	
 	// Connect Events
+	this->Connect( wxEVT_ENTER_WINDOW, wxMouseEventHandler( BookmarkPanel::onEnterWindow ) );
+	this->Connect( wxEVT_LEAVE_WINDOW, wxMouseEventHandler( BookmarkPanel::onLeaveWindow ) );
+	m_treeView->Connect( wxEVT_COMMAND_TREE_BEGIN_DRAG, wxTreeEventHandler( BookmarkPanel::onTreeBeginDrag ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_BEGIN_LABEL_EDIT, wxTreeEventHandler( BookmarkPanel::onTreeBeginLabelEdit ), NULL, this );
+	m_treeView->Connect( wxEVT_COMMAND_TREE_DELETE_ITEM, wxTreeEventHandler( BookmarkPanel::onTreeDeleteItem ), NULL, this );
+	m_treeView->Connect( wxEVT_COMMAND_TREE_END_DRAG, wxTreeEventHandler( BookmarkPanel::onTreeEndDrag ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_END_LABEL_EDIT, wxTreeEventHandler( BookmarkPanel::onTreeEndLabelEdit ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_ITEM_ACTIVATED, wxTreeEventHandler( BookmarkPanel::onTreeActivate ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_ITEM_COLLAPSED, wxTreeEventHandler( BookmarkPanel::onTreeCollapse ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_ITEM_EXPANDED, wxTreeEventHandler( BookmarkPanel::onTreeExpanded ), NULL, this );
+	m_treeView->Connect( wxEVT_COMMAND_TREE_ITEM_GETTOOLTIP, wxTreeEventHandler( BookmarkPanel::onTreeItemGetTooltip ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_ITEM_MENU, wxTreeEventHandler( BookmarkPanel::onTreeItemMenu ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_SEL_CHANGED, wxTreeEventHandler( BookmarkPanel::onTreeSelect ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_SEL_CHANGING, wxTreeEventHandler( BookmarkPanel::onTreeSelectChanging ), NULL, this );
@@ -96,11 +102,17 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 BookmarkPanel::~BookmarkPanel()
 {
 	// Disconnect Events
+	this->Disconnect( wxEVT_ENTER_WINDOW, wxMouseEventHandler( BookmarkPanel::onEnterWindow ) );
+	this->Disconnect( wxEVT_LEAVE_WINDOW, wxMouseEventHandler( BookmarkPanel::onLeaveWindow ) );
+	m_treeView->Disconnect( wxEVT_COMMAND_TREE_BEGIN_DRAG, wxTreeEventHandler( BookmarkPanel::onTreeBeginDrag ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_BEGIN_LABEL_EDIT, wxTreeEventHandler( BookmarkPanel::onTreeBeginLabelEdit ), NULL, this );
+	m_treeView->Disconnect( wxEVT_COMMAND_TREE_DELETE_ITEM, wxTreeEventHandler( BookmarkPanel::onTreeDeleteItem ), NULL, this );
+	m_treeView->Disconnect( wxEVT_COMMAND_TREE_END_DRAG, wxTreeEventHandler( BookmarkPanel::onTreeEndDrag ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_END_LABEL_EDIT, wxTreeEventHandler( BookmarkPanel::onTreeEndLabelEdit ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_ITEM_ACTIVATED, wxTreeEventHandler( BookmarkPanel::onTreeActivate ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_ITEM_COLLAPSED, wxTreeEventHandler( BookmarkPanel::onTreeCollapse ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_ITEM_EXPANDED, wxTreeEventHandler( BookmarkPanel::onTreeExpanded ), NULL, this );
+	m_treeView->Disconnect( wxEVT_COMMAND_TREE_ITEM_GETTOOLTIP, wxTreeEventHandler( BookmarkPanel::onTreeItemGetTooltip ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_ITEM_MENU, wxTreeEventHandler( BookmarkPanel::onTreeItemMenu ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_SEL_CHANGED, wxTreeEventHandler( BookmarkPanel::onTreeSelect ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_SEL_CHANGING, wxTreeEventHandler( BookmarkPanel::onTreeSelectChanging ), NULL, this );
