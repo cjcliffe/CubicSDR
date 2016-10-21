@@ -93,6 +93,9 @@ public:
 
     void setOffset(long long ofs);
     long long getOffset();
+    
+    void setDBOffset(int ofs);
+    int getDBOffset();
 
     void setSampleRate(long long rate_in);
     long long getSampleRate();

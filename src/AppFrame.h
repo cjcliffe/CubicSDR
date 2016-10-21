@@ -32,6 +32,7 @@
 #define wxID_AGC_CONTROL 2009
 #define wxID_SDR_START_STOP 2010
 #define wxID_LOW_PERF 2011
+#define wxID_SET_DB_OFFSET 2012
 
 #define wxID_MAIN_SPLITTER 2050
 #define wxID_VIS_SPLITTER 2051

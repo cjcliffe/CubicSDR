@@ -43,6 +43,10 @@ wxEND_EVENT_TABLE()
 #include "RigThread.h"
 #endif
 
+
+/* split a string by 'seperator' into a vector of string */
+std::vector<std::string> str_explode(const std::string &seperator, const std::string &in_str);
+
 #define APPFRAME_MODEMPROPS_MINSIZE 20
 #define APPFRAME_MODEMPROPS_MAXSIZE 240
 
@@ -54,7 +58,6 @@ AppFrame::AppFrame() :
 #endif
 
     wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
-    wxBoxSizer *demodVisuals = new wxBoxSizer(wxVERTICAL);
     demodTray = new wxBoxSizer(wxHORIZONTAL);
     wxBoxSizer *demodScopeTray = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodTunerTray = new wxBoxSizer(wxHORIZONTAL);
@@ -69,6 +72,21 @@ AppFrame::AppFrame() :
     mainSplitter->SetMinimumPaneSize(1);
 
     wxPanel *demodPanel = new wxPanel(mainSplitter, wxID_ANY);
+
+#ifdef CUBICSDR_HEADER_IMAGE
+    //get the dir path of the executable
+    wxFileName exePath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
+    std::string headerPath = exePath.GetPath().ToStdString();
+    headerPath += filePathSeparator + std::string("" CUBICSDR_HEADER_IMAGE);
+    wxInitAllImageHandlers();
+    wxStaticBitmap *headerImgStatic = new wxStaticBitmap(demodPanel, wxID_ANY, wxBitmap( headerPath, wxBITMAP_TYPE_ANY ));
+    std::string headerBgColor = "" CUBICSDR_HEADER_BG;
+    if (headerBgColor != "") {
+        demodPanel->SetBackgroundColour(wxColour(headerBgColor));
+    }
+    demodTray->Add(headerImgStatic, 0, wxALIGN_CENTER_VERTICAL | wxALL, 0);
+    demodTray->AddSpacer(1);
+#endif
             
     gainCanvas = new GainCanvas(demodPanel, attribList);
     
@@ -77,16 +95,24 @@ AppFrame::AppFrame() :
     gainSpacerItem = demodTray->AddSpacer(1);
     gainSpacerItem->Show(false);
             
+    std::string modemListArr[] = { "FM", "FMS", "NBFM", "AM", "LSB", "USB", "DSB", "I/Q" };
+    std::vector<std::string> modemList( modemListArr, modemListArr + 8 );
+
+#ifdef CUBICSDR_MODEM_EXCLUDE
+    std::string excludeListStr = "" CUBICSDR_MODEM_EXCLUDE;
+    std::vector<std::string> excludeList = str_explode(",",excludeListStr);
+    for (auto ex_i : excludeList) {
+        std::vector<std::string>::iterator found_i = std::find(modemList.begin(),modemList.end(),ex_i);
+        if (found_i != modemList.end()) {
+            modemList.erase(found_i);
+        }
+    }
+#endif
+            
     demodModeSelector = new ModeSelectorCanvas(demodPanel, attribList);
-    demodModeSelector->addChoice("FM");
-    demodModeSelector->addChoice("FMS");
-    demodModeSelector->addChoice("NBFM");
-    demodModeSelector->addChoice("AM");
-    demodModeSelector->addChoice("LSB");
-    demodModeSelector->addChoice("USB");
-    demodModeSelector->addChoice("DSB");
-    demodModeSelector->addChoice("I/Q");
-    demodModeSelector->setSelection("FM");
+    for (auto mt_i : modemList) {
+        demodModeSelector->addChoice(mt_i);
+    }
     demodModeSelector->setHelpTip("Choose modulation type: Frequency Modulation (Hotkey F), Amplitude Modulation (A) and Lower (L), Upper (U), Double Side-Band and more.");
     demodModeSelector->SetMinSize(wxSize(50,-1));
     demodModeSelector->SetMaxSize(wxSize(50,-1));
@@ -117,13 +143,19 @@ AppFrame::AppFrame() :
     modemProps->SetMinSize(wxSize(APPFRAME_MODEMPROPS_MAXSIZE,-1));
     modemProps->SetMaxSize(wxSize(APPFRAME_MODEMPROPS_MAXSIZE,-1));
 
-    modemProps->Hide();
+    ModemArgInfoList dummyInfo;
+    modemProps->initProperties(dummyInfo, nullptr);
+    modemProps->updateTheme();
+
     demodTray->Add(modemProps, 15, wxEXPAND | wxALL, 0);
 
 #ifndef __APPLE__
     demodTray->AddSpacer(1);
 #endif
-            
+      
+#if CUBICSDR_ENABLE_VIEW_DEMOD
+    wxBoxSizer *demodVisuals = new wxBoxSizer(wxVERTICAL);
+
     wxGetApp().getDemodSpectrumProcessor()->setup(1024);
     demodSpectrumCanvas = new SpectrumCanvas(demodPanel, attribList);
     demodSpectrumCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
@@ -147,7 +179,11 @@ AppFrame::AppFrame() :
     demodTray->Add(demodVisuals, 30, wxEXPAND | wxALL, 0);
 
     demodTray->AddSpacer(1);
-
+#else
+    demodSpectrumCanvas = nullptr;
+    demodWaterfallCanvas = nullptr;
+#endif
+            
     demodSignalMeter = new MeterCanvas(demodPanel, attribList);
     demodSignalMeter->setMax(DEMOD_SIGNAL_MAX);
     demodSignalMeter->setMin(DEMOD_SIGNAL_MIN);
@@ -160,6 +196,7 @@ AppFrame::AppFrame() :
 
     demodTray->AddSpacer(1);
 
+#if CUBICSDR_ENABLE_VIEW_SCOPE
     scopeCanvas = new ScopeCanvas(demodPanel, attribList);
     scopeCanvas->setHelpTip("Audio Visuals, drag left/right to toggle Scope or Spectrum.");
     scopeCanvas->SetMinSize(wxSize(128,-1));
@@ -168,7 +205,10 @@ AppFrame::AppFrame() :
     wxGetApp().getScopeProcessor()->attachOutput(scopeCanvas->getInputQueue());
 
     demodScopeTray->AddSpacer(1);
-
+#else
+    scopeCanvas = nullptr;
+#endif
+            
     deltaLockButton = new ModeSelectorCanvas(demodPanel, attribList);
     deltaLockButton->addChoice(1, "V");
     deltaLockButton->setPadding(-1,-1);
@@ -245,6 +285,7 @@ AppFrame::AppFrame() :
     wxGetApp().getSpectrumProcessor()->setup(2048);
     spectrumCanvas = new SpectrumCanvas(spectrumPanel, attribList);
     spectrumCanvas->setShowDb(true);
+    spectrumCanvas->setUseDBOfs(true);
     spectrumCanvas->setScaleFactorEnabled(true);
     wxGetApp().getSpectrumProcessor()->attachOutput(spectrumCanvas->getVisualDataQueue());
            
@@ -649,6 +690,7 @@ void AppFrame::updateDeviceParams() {
 
     newSettingsMenu->AppendSeparator();
 
+    newSettingsMenu->Append(wxID_SET_DB_OFFSET, "Power Level Offset");
     newSettingsMenu->Append(wxID_SET_FREQ_OFFSET, "Frequency Offset");
 
     if (devInfo->hasCORR(SOAPY_SDR_RX, 0)) {
@@ -863,6 +905,12 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
                 "Frequency Offset", wxGetApp().getOffset(), -2000000000, 2000000000, this);
         if (ofs != -1) {
             wxGetApp().setOffset(ofs);
+        }
+    } else if (event.GetId() == wxID_SET_DB_OFFSET) {
+        long ofs = wxGetNumberFromUser("Shift the displayed RF power level by this amount.\ni.e. -30 for -30 dB", "Decibels (dB)",
+                                       "Power Level Offset", wxGetApp().getConfig()->getDBOffset(), -1000, 1000, this);
+        if (ofs != -1) {
+            wxGetApp().getConfig()->setDBOffset(ofs);
         }
     } else if (event.GetId() == wxID_AGC_CONTROL) {
         if (wxGetApp().getDevice() == NULL) {
@@ -1209,8 +1257,10 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
 void AppFrame::OnClose(wxCloseEvent& event) {
     wxGetApp().closeDeviceSelector();
 
-    wxGetApp().getDemodSpectrumProcessor()->removeOutput(demodSpectrumCanvas->getVisualDataQueue());
-    wxGetApp().getDemodSpectrumProcessor()->removeOutput(demodWaterfallCanvas->getVisualDataQueue());
+    if (wxGetApp().getDemodSpectrumProcessor()) {
+        wxGetApp().getDemodSpectrumProcessor()->removeOutput(demodSpectrumCanvas->getVisualDataQueue());
+        wxGetApp().getDemodSpectrumProcessor()->removeOutput(demodWaterfallCanvas->getVisualDataQueue());
+    }
     wxGetApp().getSpectrumProcessor()->removeOutput(spectrumCanvas->getVisualDataQueue());
 
     wxGetApp().getConfig()->setWindow(this->GetPosition(), this->GetClientSize());
@@ -1281,7 +1331,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             demodGainMeter->setInputValue(demod->getGain());
             wxGetApp().getDemodMgr().setLastGain(demod->getGain());
             int outputDevice = demod->getOutputDevice();
-            scopeCanvas->setDeviceName(outputDevices[outputDevice].name);
+            if (scopeCanvas) scopeCanvas->setDeviceName(outputDevices[outputDevice].name);
 //            outputDeviceMenuItems[outputDevice]->Check(true);
             std::string dType = demod->getDemodulatorType();
             demodModeSelector->setSelection(dType);
@@ -1293,7 +1343,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             modemPropertiesUpdated.store(true);
             demodTuner->setHalfBand(dType=="USB" || dType=="LSB");
         }
-        if (demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
+        if (!demodWaterfallCanvas || demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
             long long centerFreq = demod->getFrequency();
             unsigned int demodBw = (unsigned int) ceil((float) demod->getBandwidth() * 2.25);
 
@@ -1314,7 +1364,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
                 demodBw = 20000;
             }
 
-            if (centerFreq != demodWaterfallCanvas->getCenterFrequency()) {
+            if (demodWaterfallCanvas && centerFreq != demodWaterfallCanvas->getCenterFrequency()) {
                 demodWaterfallCanvas->setCenterFrequency(centerFreq);
                 demodSpectrumCanvas->setCenterFrequency(centerFreq);
             }
@@ -1400,8 +1450,10 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
                 }
             }
             
-            demodWaterfallCanvas->setBandwidth(demodBw);
-            demodSpectrumCanvas->setBandwidth(demodBw);
+            if (demodWaterfallCanvas) {
+                demodWaterfallCanvas->setBandwidth(demodBw);
+                demodSpectrumCanvas->setBandwidth(demodBw);
+            }
         }
 
         demodSignalMeter->setLevel(demod->getSignalLevel());
@@ -1457,9 +1509,9 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             demodGainMeter->setLevel(demodGainMeter->getInputValue());
         }
 
-        if (wxGetApp().getFrequency() != demodWaterfallCanvas->getCenterFrequency()) {
+        if (demodWaterfallCanvas && wxGetApp().getFrequency() != demodWaterfallCanvas->getCenterFrequency()) {
             demodWaterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
-            demodSpectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
+            if (demodSpectrumCanvas) demodSpectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
         }
         if (spectrumCanvas->getViewState() && abs(wxGetApp().getFrequency()-spectrumCanvas->getCenterFrequency()) > (wxGetApp().getSampleRate()/2)) {
             spectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
@@ -1476,15 +1528,17 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         }
     }
 
-    scopeCanvas->setPPMMode(demodTuner->isAltDown());
+    if (scopeCanvas) {
+        scopeCanvas->setPPMMode(demodTuner->isAltDown());
+        
+        scopeCanvas->setShowDb(spectrumCanvas->getShowDb());
+        wxGetApp().getScopeProcessor()->setScopeEnabled(scopeCanvas->scopeVisible());
+        wxGetApp().getScopeProcessor()->setSpectrumEnabled(scopeCanvas->spectrumVisible());
+        wxGetApp().getAudioVisualQueue()->set_max_num_items((scopeCanvas->scopeVisible()?1:0) + (scopeCanvas->spectrumVisible()?1:0));
+        
+        wxGetApp().getScopeProcessor()->run();
+    }
     
-    scopeCanvas->setShowDb(spectrumCanvas->getShowDb());
-    wxGetApp().getScopeProcessor()->setScopeEnabled(scopeCanvas->scopeVisible());
-    wxGetApp().getScopeProcessor()->setSpectrumEnabled(scopeCanvas->spectrumVisible());
-    wxGetApp().getAudioVisualQueue()->set_max_num_items((scopeCanvas->scopeVisible()?1:0) + (scopeCanvas->spectrumVisible()?1:0));
-    
-    wxGetApp().getScopeProcessor()->run();
-
     SpectrumVisualProcessor *proc = wxGetApp().getSpectrumProcessor();
 
     if (spectrumAvgMeter->inputChanged()) {
@@ -1502,9 +1556,11 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     }
     
     SpectrumVisualProcessor *dproc = wxGetApp().getDemodSpectrumProcessor();
-    
-    dproc->setView(demodWaterfallCanvas->getViewState(), demodWaterfallCanvas->getCenterFrequency(),demodWaterfallCanvas->getBandwidth());
 
+    if (dproc) {
+        dproc->setView(demodWaterfallCanvas->getViewState(), demodWaterfallCanvas->getCenterFrequency(),demodWaterfallCanvas->getBandwidth());
+    }
+    
     SpectrumVisualProcessor *wproc = waterfallDataThread->getProcessor();
     
     if (waterfallSpeedMeter->inputChanged()) {
@@ -1536,13 +1592,15 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             ModemDigitalOutputConsole *outp = (ModemDigitalOutputConsole *)demod->getOutput();
             if (!outp->getDialog()) {
                 outp->setTitle(demod->getDemodulatorType() + ": " + frequencyToStr(demod->getFrequency()));
-                outp->setDialog(new DigitalConsole(this, outp));
+                outp->setDialog(new DigitalConsole(this, outp)) ;
             }
             demod->showOutput();
         }
 #endif
-    } else if (!demod) {
-        modemProps->Hide();
+    } else if (!demod && modemPropertiesUpdated.load()) {
+        ModemArgInfoList dummyInfo;
+        modemProps->initProperties(dummyInfo, nullptr);
+        modemProps->updateTheme();
         demodTray->Layout();
     }
     
@@ -1563,7 +1621,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         wxGetApp().getSpectrumProcessor()->setPeakHold(peakHoldMode == 1);
 
         //make the peak hold act on the current dmod also, like a zoomed-in version.
-        wxGetApp().getDemodSpectrumProcessor()->setPeakHold(peakHoldMode == 1);
+        if (wxGetApp().getDemodSpectrumProcessor()) wxGetApp().getDemodSpectrumProcessor()->setPeakHold(peakHoldMode == 1);
         peakHoldButton->clearModeChanged();
     }
     
@@ -1577,7 +1635,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 #endif
     
 #ifdef _WIN32
-    if (scopeCanvas->HasFocus()) {
+    if (scopeCanvas && scopeCanvas->HasFocus()) {
         waterfallCanvas->SetFocus();
     }
 #endif
@@ -1942,7 +2000,7 @@ void AppFrame::setMainWaterfallFFTSize(int fftSize) {
 }
 
 void AppFrame::setScopeDeviceName(std::string deviceName) {
-    scopeCanvas->setDeviceName(deviceName);
+    if (scopeCanvas) scopeCanvas->setDeviceName(deviceName);
 }
 
 
@@ -1954,7 +2012,7 @@ void AppFrame::refreshGainUI() {
 bool AppFrame::isUserDemodBusy() {
     return (modemProps && modemProps->isMouseInView())
         || (waterfallCanvas->isMouseInView() && waterfallCanvas->isMouseDown())
-        || (demodWaterfallCanvas->isMouseInView() && demodWaterfallCanvas->isMouseDown())
+        || (demodWaterfallCanvas && demodWaterfallCanvas->isMouseInView() && demodWaterfallCanvas->isMouseDown())
         || (wxGetApp().getDemodMgr().getLastActiveDemodulator() &&
             wxGetApp().getDemodMgr().getActiveDemodulator() &&
             wxGetApp().getDemodMgr().getLastActiveDemodulator() != wxGetApp().getDemodMgr().getActiveDemodulator());
@@ -2192,7 +2250,7 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
             break;
         case 'P':
             wxGetApp().getSpectrumProcessor()->setPeakHold(!wxGetApp().getSpectrumProcessor()->getPeakHold());
-            wxGetApp().getDemodSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
+            if (wxGetApp().getDemodSpectrumProcessor()) wxGetApp().getDemodSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
             peakHoldButton->setSelection(wxGetApp().getSpectrumProcessor()->getPeakHold()?1:0);
             peakHoldButton->clearModeChanged();
             break;
@@ -2242,4 +2300,32 @@ void AppFrame::setViewState(long long center_freq) {
     waterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
     spectrumCanvas->disableView();
     waterfallCanvas->disableView();
+}
+
+
+/* split a string by 'seperator' into a vector of string */
+std::vector<std::string> str_explode(const std::string &seperator, const std::string &in_str)
+{
+    std::vector<std::string> vect_out;
+    
+    int i = 0, j = 0;
+    int seperator_len = seperator.length();
+    int str_len = in_str.length();
+    
+    while(i < str_len)
+    {
+        j = in_str.find_first_of(seperator,i);
+        
+        if (j == std::string::npos && i < str_len)  j = str_len;
+        
+        if (j == std::string::npos) break;
+        
+        vect_out.push_back(in_str.substr(i,j-i));
+        
+        i = j;
+        
+        i+=seperator_len;
+    }
+    
+    return vect_out;
 }
