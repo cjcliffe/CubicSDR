@@ -80,6 +80,7 @@ AppFrame::AppFrame() :
     headerPath += filePathSeparator + std::string("" CUBICSDR_HEADER_IMAGE);
     wxInitAllImageHandlers();
     wxStaticBitmap *headerImgStatic = new wxStaticBitmap(demodPanel, wxID_ANY, wxBitmap( headerPath, wxBITMAP_TYPE_ANY ));
+    headerImgStatic->SetScaleMode(wxStaticBitmapBase::ScaleMode::Scale_AspectFit);
     std::string headerBgColor = "" CUBICSDR_HEADER_BG;
     if (headerBgColor != "") {
         demodPanel->SetBackgroundColour(wxColour(headerBgColor));
