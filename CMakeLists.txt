@@ -45,7 +45,7 @@ IF(CUSTOM_BUILD)
         )
     ENDIF()
 ELSE()
-    SET (CUBICSDR_BUILD_TITLE "CubicSDR v{$CUBICSDR_VERSION} by Charles J. Cliffe (@ccliffe)  ::  www.cubicsdr.com")
+    SET (CUBICSDR_BUILD_TITLE "CubicSDR v${CUBICSDR_VERSION} by Charles J. Cliffe (@ccliffe)  ::  www.cubicsdr.com")
     # bundle flags
     SET (CUBICSDR_INSTALL_NAME "CubicSDR")
     SET (CUBICSDR_INSTALL_TITLE "CubicSDR ${CUBICSDR_VERSION} Installer")
