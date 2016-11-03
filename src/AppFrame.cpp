@@ -20,6 +20,7 @@
 #include "DataTree.h"
 #include "ColorTheme.h"
 #include "DemodulatorMgr.h"
+#include "ImagePanel.h"
 
 #include <thread>
 
@@ -74,18 +75,21 @@ AppFrame::AppFrame() :
     wxPanel *demodPanel = new wxPanel(mainSplitter, wxID_ANY);
 
 #ifdef CUBICSDR_HEADER_IMAGE
-    //get the dir path of the executable
     wxFileName exePath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
     std::string headerPath = exePath.GetPath().ToStdString();
     headerPath += filePathSeparator + std::string("" CUBICSDR_HEADER_IMAGE);
     wxInitAllImageHandlers();
-    wxStaticBitmap *headerImgStatic = new wxStaticBitmap(demodPanel, wxID_ANY, wxBitmap( headerPath, wxBITMAP_TYPE_ANY ));
-    headerImgStatic->SetScaleMode(wxStaticBitmapBase::ScaleMode::Scale_AspectFit);
+
+    ImagePanel *imgPanel = new ImagePanel(demodPanel, headerPath, wxBITMAP_TYPE_ANY);
+
     std::string headerBgColor = "" CUBICSDR_HEADER_BG;
     if (headerBgColor != "") {
-        demodPanel->SetBackgroundColour(wxColour(headerBgColor));
+        imgPanel->SetBackgroundColour(wxColour(headerBgColor));
     }
-    demodTray->Add(headerImgStatic, 0, wxALIGN_CENTER_VERTICAL | wxALL, 0);
+
+    imgPanel->SetBestFittingSize(wxSize(200, 0));
+
+    demodTray->Add(imgPanel, 0, wxEXPAND | wxALL, 0);
     demodTray->AddSpacer(1);
 #endif
             
@@ -1291,6 +1295,7 @@ void AppFrame::OnClose(wxCloseEvent& event) {
 void AppFrame::OnNewWindow(wxCommandEvent& WXUNUSED(event)) {
     new AppFrame();
 }
+
 
 void AppFrame::OnThread(wxCommandEvent& event) {
     event.Skip();

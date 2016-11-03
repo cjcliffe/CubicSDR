@@ -4,6 +4,8 @@
 #include <wx/panel.h>
 #include <wx/splitter.h>
 #include <wx/sizer.h>
+#include <wx/bitmap.h>
+#include <wx/statbmp.h>
 
 #include "PrimaryGLContext.h"
 
@@ -74,6 +76,7 @@ class AppFrame: public wxFrame {
 public:
     AppFrame();
     ~AppFrame();
+
     void OnThread(wxCommandEvent& event);
     void OnEventInput(wxThreadEvent& event);
     void initDeviceParams(SDRDeviceInfo *devInfo);
@@ -172,7 +175,7 @@ private:
 	wxMenuItem *showTipMenuItem;
 
     bool lowPerfMode;
-    
+
 #ifdef USE_HAMLIB
     void enableRig();
     void disableRig();
