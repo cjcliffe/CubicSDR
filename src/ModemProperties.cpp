@@ -106,10 +106,8 @@ void ModemProperties::initProperties(ModemArgInfoList newArgs, DemodulatorInstan
     m_propertyGrid->Clear();
 
     if (!demodInstance) {
-        Hide();
+        m_propertyGrid->Append(new wxPropertyCategory("Modem Settings"));
         return;
-    } else {
-        Show();
     }
     
     m_propertyGrid->Append(new wxPropertyCategory(demodInstance->getDemodulatorType() + " Settings"));

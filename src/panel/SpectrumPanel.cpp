@@ -3,6 +3,7 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include "CubicSDR.h"
 #include "ColorTheme.h"
 #include "CubicSDRDefs.h"
 
@@ -10,6 +11,7 @@ SpectrumPanel::SpectrumPanel() {
     floorValue = 0;
     ceilValue = 1;
     showDb = false;
+    useDbOfs = false;
     fftSize = DEFAULT_FFT_SIZE;
     bandwidth = DEFAULT_DEMOD_BW;
     freq = 0;
@@ -81,6 +83,14 @@ void SpectrumPanel::setShowDb(bool showDb) {
 
 bool SpectrumPanel::getShowDb() {
     return showDb;
+}
+
+void SpectrumPanel::setUseDBOffset(bool useOfs) {
+    this->useDbOfs = useOfs;
+}
+
+bool SpectrumPanel::getUseDBOffset() {
+    return useDbOfs;
 }
 
 
@@ -269,11 +279,11 @@ void SpectrumPanel::drawPanelContents() {
     if (showDb) {
         float dbPanelWidth = (1.0 / viewWidth)*88.0 * GLFont::getScaleFactor();
         float dbPanelHeight = (1.0/viewHeight)*14.0 * GLFont::getScaleFactor();
-        
+        float dbOfs = useDbOfs?wxGetApp().getConfig()->getDBOffset():0;
         
         std::stringstream ssLabel("");
         if (getCeilValue() != getFloorValue() && fftSize) {
-            ssLabel << std::fixed << std::setprecision(1) << (20.0 * log10(2.0*(getCeilValue())/(double)fftSize)) << "dB";
+            ssLabel << std::fixed << std::setprecision(1) << (dbOfs + 20.0 * log10(2.0*(getCeilValue())/(double)fftSize)) << "dB";
         }
         dbPanelCeil.setText(ssLabel.str(), GLFont::GLFONT_ALIGN_RIGHT);
         dbPanelCeil.setSize(dbPanelWidth, dbPanelHeight);
@@ -282,7 +292,7 @@ void SpectrumPanel::drawPanelContents() {
         
         ssLabel.str("");
         if (getCeilValue() != getFloorValue() && fftSize) {
-            ssLabel <<  (20.0 * log10(2.0*(getFloorValue())/(double)fftSize)) << "dB";
+            ssLabel <<  (dbOfs + 20.0 * log10(2.0*(getFloorValue())/(double)fftSize)) << "dB";
         }
 
         dbPanelFloor.setText(ssLabel.str(), GLFont::GLFONT_ALIGN_RIGHT);
