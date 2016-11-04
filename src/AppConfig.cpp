@@ -28,7 +28,6 @@ long long DeviceConfig::getOffset() {
     return offset.load();
 }
 
-
 void DeviceConfig::setSampleRate(long srate) {
     sampleRate.store(srate);
 }
@@ -289,6 +288,7 @@ AppConfig::AppConfig() : configName("") {
     centerFreq.store(100000000);
     waterfallLinesPerSec.store(DEFAULT_WATERFALL_LPS);
     spectrumAvgSpeed.store(0.65f);
+    dbOffset.store(0);
     modemPropsCollapsed.store(false);
 #ifdef USE_HAMLIB
     rigEnabled.store(false);
@@ -425,6 +425,14 @@ float AppConfig::getSpectrumAvgSpeed() {
     return spectrumAvgSpeed.load();
 }
 
+void AppConfig::setDBOffset(int offset) {
+    this->dbOffset.store(offset);
+}
+
+int AppConfig::getDBOffset() {
+    return dbOffset.load();
+}
+
 void AppConfig::setManualDevices(std::vector<SDRManualDef> manuals) {
     manualDevices = manuals;
 }
@@ -478,6 +486,7 @@ bool AppConfig::save() {
         *window_node->newChild("waterfall_lps") = waterfallLinesPerSec.load();
         *window_node->newChild("spectrum_avg") = spectrumAvgSpeed.load();
         *window_node->newChild("modemprops_collapsed") = modemPropsCollapsed.load();;
+        *window_node->newChild("db_offset") = dbOffset.load();
     }
     
     DataNode *devices_node = cfg.rootNode()->newChild("devices");
@@ -627,6 +636,13 @@ bool AppConfig::load() {
         if (win_node->hasAnother("modemprops_collapsed")) {
             win_node->getNext("modemprops_collapsed")->element()->get(mpc);
             modemPropsCollapsed.store(mpc?true:false);
+        }
+        
+        if (win_node->hasAnother("db_offset")) {
+            DataNode *offset_node = win_node->getNext("db_offset");
+            int offsetValue = 0;
+            offset_node->element()->get(offsetValue);
+            setDBOffset(offsetValue);
         }
     }
     

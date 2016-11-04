@@ -228,25 +228,16 @@ bool CubicSDR::OnInit() {
 
     // Visual Data
     spectrumVisualThread = new SpectrumVisualDataThread();
-    demodVisualThread = new SpectrumVisualDataThread();
     
     pipeIQVisualData = new DemodulatorThreadInputQueue();
     pipeIQVisualData->set_max_num_items(1);
-
-    pipeDemodIQVisualData = new DemodulatorThreadInputQueue();
-    pipeDemodIQVisualData->set_max_num_items(1);
     
     pipeWaterfallIQVisualData = new DemodulatorThreadInputQueue();
     pipeWaterfallIQVisualData->set_max_num_items(128);
     
-    getDemodSpectrumProcessor()->setInput(pipeDemodIQVisualData);
     getSpectrumProcessor()->setInput(pipeIQVisualData);
     getSpectrumProcessor()->setHideDC(true);
     
-    pipeAudioVisualData = new DemodulatorThreadOutputQueue();
-    pipeAudioVisualData->set_max_num_items(1);
-    
-    scopeProcessor.setInput(pipeAudioVisualData);
     
     // I/Q Data
     pipeSDRIQData = new SDRThreadIQDataQueue();
@@ -260,12 +251,32 @@ bool CubicSDR::OnInit() {
 
     sdrPostThread->setOutputQueue("IQVisualDataOutput", pipeIQVisualData);
     sdrPostThread->setOutputQueue("IQDataOutput", pipeWaterfallIQVisualData);
-    sdrPostThread->setOutputQueue("IQActiveDemodVisualDataOutput", pipeDemodIQVisualData);
     
     t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
     t_SpectrumVisual = new std::thread(&SpectrumVisualDataThread::threadMain, spectrumVisualThread);
+    
+#if CUBICSDR_ENABLE_VIEW_SCOPE
+    pipeAudioVisualData = new DemodulatorThreadOutputQueue();
+    pipeAudioVisualData->set_max_num_items(1);
+    
+    scopeProcessor.setInput(pipeAudioVisualData);
+#else
+    pipeAudioVisualData = nullptr;
+#endif
+    
+#if CUBICSDR_ENABLE_VIEW_DEMOD
+    demodVisualThread = new SpectrumVisualDataThread();
+    pipeDemodIQVisualData = new DemodulatorThreadInputQueue();
+    pipeDemodIQVisualData->set_max_num_items(1);
+    if (getDemodSpectrumProcessor()) getDemodSpectrumProcessor()->setInput(pipeDemodIQVisualData);
+    sdrPostThread->setOutputQueue("IQActiveDemodVisualDataOutput", pipeDemodIQVisualData);
     t_DemodVisual = new std::thread(&SpectrumVisualDataThread::threadMain, demodVisualThread);
-
+#else
+    demodVisualThread = nullptr;
+    pipeDemodIQVisualData = nullptr;
+    t_DemodVisual = nullptr;
+#endif
+    
     sdrEnum = new SDREnumerator();
     
     SDREnumerator::setManuals(config.getManualDevices());
@@ -313,16 +324,20 @@ int CubicSDR::OnExit() {
    
     std::cout << "Terminating Visual Processor threads.." << std::endl;
     spectrumVisualThread->terminate();
-    demodVisualThread->terminate();
-
+    if (demodVisualThread) {
+        demodVisualThread->terminate();
+    }
+    
     //Wait nicely
     sdrPostThread->isTerminated(1000);
     spectrumVisualThread->isTerminated(1000);
-    demodVisualThread->isTerminated(1000);
+    if (demodVisualThread) {
+        demodVisualThread->isTerminated(1000);
+    }
 
     //Then join the thread themselves
     t_PostSDR->join();
-    t_DemodVisual->join();
+    if (t_DemodVisual) t_DemodVisual->join();
     t_SpectrumVisual->join();
 
     //Now only we can delete
@@ -491,7 +506,9 @@ void CubicSDR::setFrequency(long long freq) {
     getSpectrumProcessor()->setPeakHold(getSpectrumProcessor()->getPeakHold());
 
     //make the peak hold act on the current dmod also, like a zoomed-in version.
-    getDemodSpectrumProcessor()->setPeakHold(getSpectrumProcessor()->getPeakHold());
+    if (getDemodSpectrumProcessor()) {
+        getDemodSpectrumProcessor()->setPeakHold(getSpectrumProcessor()->getPeakHold());
+    }
 }
 
 long long CubicSDR::getOffset() {
@@ -652,7 +669,11 @@ SpectrumVisualProcessor *CubicSDR::getSpectrumProcessor() {
 }
 
 SpectrumVisualProcessor *CubicSDR::getDemodSpectrumProcessor() {
-    return demodVisualThread->getProcessor();
+    if (demodVisualThread) {
+        return demodVisualThread->getProcessor();
+    } else {
+        return nullptr;
+    }
 }
 
 DemodulatorThreadOutputQueue* CubicSDR::getAudioVisualQueue() {
@@ -704,6 +725,7 @@ void CubicSDR::removeDemodulator(DemodulatorInstance *demod) {
     }
     demod->setActive(false);
     sdrPostThread->removeDemodulator(demod);
+    wxGetApp().getAppFrame()->notifyUpdateModemProperties();
 }
 
 std::vector<SDRDeviceInfo*>* CubicSDR::getDevices() {

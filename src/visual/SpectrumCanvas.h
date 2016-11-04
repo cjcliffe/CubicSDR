@@ -22,6 +22,9 @@ public:
     void setShowDb(bool showDb);
     bool getShowDb();
     
+    void setUseDBOfs(bool showDb);
+    bool getUseDBOfs();
+    
     void setView(long long center_freq_in, int bandwidth_in);
     void disableView();
 

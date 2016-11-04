@@ -112,6 +112,9 @@ public:
     void setSpectrumAvgSpeed(float avgSpeed);
     float getSpectrumAvgSpeed();
     
+    void setDBOffset(int offset);
+    int getDBOffset();
+    
     void setManualDevices(std::vector<SDRManualDef> manuals);
     std::vector<SDRManualDef> getManualDevices();
     
@@ -158,6 +161,7 @@ private:
     std::atomic_llong centerFreq;
     std::atomic_int waterfallLinesPerSec;
     std::atomic<float> spectrumAvgSpeed;
+    std::atomic_int dbOffset;
     std::vector<SDRManualDef> manualDevices;
 #if USE_HAMLIB
     std::atomic_int rigModel, rigRate;
