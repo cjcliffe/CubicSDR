@@ -20,7 +20,6 @@
 #include <wx/textctrl.h>
 #include <wx/sizer.h>
 #include <wx/panel.h>
-#include <wx/button.h>
 #include <wx/timer.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -44,9 +43,7 @@ class BookmarkPanel : public wxPanel
 		wxStaticText* m_bandwidthVal;
 		wxStaticText* m_modulationLabel;
 		wxStaticText* m_modulationVal;
-		wxButton* m_bookmarkButton;
-		wxButton* m_activateButton;
-		wxButton* m_removeButton;
+		wxPanel* m_buttonPanel;
 		wxTimer m_updateTimer;
 		
 		// Virtual event handlers, overide them in your derived class
@@ -67,9 +64,6 @@ class BookmarkPanel : public wxPanel
 		virtual void onLabelText( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onDoubleClickFreq( wxMouseEvent& event ) { event.Skip(); }
 		virtual void onDoubleClickBandwidth( wxMouseEvent& event ) { event.Skip(); }
-		virtual void onBookmark( wxCommandEvent& event ) { event.Skip(); }
-		virtual void onActivate( wxCommandEvent& event ) { event.Skip(); }
-		virtual void onRemove( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onUpdateTimer( wxTimerEvent& event ) { event.Skip(); }
 		
 	

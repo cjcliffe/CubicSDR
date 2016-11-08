@@ -60,9 +60,6 @@ protected:
     void onLabelText( wxCommandEvent& event );
     void onDoubleClickFreq( wxMouseEvent& event );
     void onDoubleClickBandwidth( wxMouseEvent& event );
-    void onBookmark( wxCommandEvent& event );
-    void onActivate( wxCommandEvent& event );
-    void onRemove( wxCommandEvent& event );
     void onTreeBeginDrag( wxTreeEvent& event );
     void onTreeEndDrag( wxTreeEvent& event );
     void onTreeDeleteItem( wxTreeEvent& event );
@@ -70,6 +67,23 @@ protected:
     void onEnterWindow( wxMouseEvent& event );
     void onLeaveWindow( wxMouseEvent& event );
 
+    
+    void clearButtons();
+    void showButtons();
+
+    wxButton *makeButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler);
+    wxButton *addButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler);
+
+    void onBookmarkActive( wxCommandEvent& event );
+    void onBookmarkRecent( wxCommandEvent& event );
+
+    void onRemoveActive( wxCommandEvent& event );
+    void onRemoveBookmark( wxCommandEvent& event );
+    
+    void onActivateBookmark( wxCommandEvent& event );
+    void onActivateRecent( wxCommandEvent& event );
+    
+    
     std::atomic_bool mouseInView;
     
     wxTreeItemId rootBranch, activeBranch, bookmarkBranch, recentBranch;

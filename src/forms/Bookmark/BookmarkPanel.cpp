@@ -61,14 +61,15 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	fgPropSizer->Fit( m_propPanel );
 	bSizer1->Add( m_propPanel, 1, wxBOTTOM|wxEXPAND|wxTOP, 5 );
 	
-	m_bookmarkButton = new wxButton( this, wxID_ANY, wxT("Bookmark"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer1->Add( m_bookmarkButton, 0, wxEXPAND, 5 );
+	m_buttonPanel = new wxPanel( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxBoxSizer* m_buttonPanelSizer;
+	m_buttonPanelSizer = new wxBoxSizer( wxVERTICAL );
 	
-	m_activateButton = new wxButton( this, wxID_ANY, wxT("Activate"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer1->Add( m_activateButton, 0, wxEXPAND, 5 );
 	
-	m_removeButton = new wxButton( this, wxID_ANY, wxT("Remove"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer1->Add( m_removeButton, 0, wxEXPAND, 5 );
+	m_buttonPanel->SetSizer( m_buttonPanelSizer );
+	m_buttonPanel->Layout();
+	m_buttonPanelSizer->Fit( m_buttonPanel );
+	bSizer1->Add( m_buttonPanel, 1, wxEXPAND, 5 );
 	
 	
 	this->SetSizer( bSizer1 );
@@ -93,9 +94,6 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	m_labelText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( BookmarkPanel::onLabelText ), NULL, this );
 	m_frequencyVal->Connect( wxEVT_LEFT_DCLICK, wxMouseEventHandler( BookmarkPanel::onDoubleClickFreq ), NULL, this );
 	m_bandwidthVal->Connect( wxEVT_LEFT_DCLICK, wxMouseEventHandler( BookmarkPanel::onDoubleClickBandwidth ), NULL, this );
-	m_bookmarkButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onBookmark ), NULL, this );
-	m_activateButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onActivate ), NULL, this );
-	m_removeButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onRemove ), NULL, this );
 	this->Connect( wxID_ANY, wxEVT_TIMER, wxTimerEventHandler( BookmarkPanel::onUpdateTimer ) );
 }
 
@@ -119,9 +117,6 @@ BookmarkPanel::~BookmarkPanel()
 	m_labelText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( BookmarkPanel::onLabelText ), NULL, this );
 	m_frequencyVal->Disconnect( wxEVT_LEFT_DCLICK, wxMouseEventHandler( BookmarkPanel::onDoubleClickFreq ), NULL, this );
 	m_bandwidthVal->Disconnect( wxEVT_LEFT_DCLICK, wxMouseEventHandler( BookmarkPanel::onDoubleClickBandwidth ), NULL, this );
-	m_bookmarkButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onBookmark ), NULL, this );
-	m_activateButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onActivate ), NULL, this );
-	m_removeButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onRemove ), NULL, this );
 	this->Disconnect( wxID_ANY, wxEVT_TIMER, wxTimerEventHandler( BookmarkPanel::onUpdateTimer ) );
 	
 }

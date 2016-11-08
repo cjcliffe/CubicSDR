@@ -52,6 +52,8 @@ void BookmarkView::updateTheme() {
     wxColour btn(ThemeMgr::mgr.currentTheme->button);
     wxColour btnHl(ThemeMgr::mgr.currentTheme->buttonHighlight);
     
+    this->SetBackgroundColour(ThemeMgr::mgr.currentTheme->generalBackground * 4.0);
+
     m_treeView->SetBackgroundColour(bgColor);
     m_treeView->SetForegroundColour(textColor);
     
@@ -65,10 +67,11 @@ void BookmarkView::updateTheme() {
     m_bandwidthLabel->SetForegroundColour(textColor);
     m_modulationVal->SetForegroundColour(textColor);
     m_modulationLabel->SetForegroundColour(textColor);
-    
-    m_bookmarkButton->SetBackgroundColour(bgColor);
-    m_removeButton->SetBackgroundColour(bgColor);
-    m_activateButton->SetBackgroundColour(bgColor);
+
+    m_buttonPanel->SetBackgroundColour(bgColor);
+    for (auto p : m_buttonPanel->GetChildren()) {
+        p->SetBackgroundColour(bgColor);
+    }
 }
 
 
@@ -243,7 +246,7 @@ void BookmarkView::onMenuItem(wxCommandEvent& event) {
         wxString stringVal = wxGetTextFromUser("Enter Group Name", "Add Group", "");
         if (stringVal.ToStdString() != "") {
             wxGetApp().getBookmarkMgr().getGroup(stringVal.ToStdString());
-            wxGetApp().getBookmarkMgr().updateActiveList();
+            wxGetApp().getBookmarkMgr().updateBookmarks();
         }
     }
 }
@@ -267,9 +270,34 @@ void BookmarkView::hideProps() {
     m_labelText->Hide();
     m_labelLabel->Hide();
     
-    m_bookmarkButton->Hide();
-    m_activateButton->Hide();
-    m_removeButton->Hide();
+    m_buttonPanel->Hide();
+}
+
+
+void BookmarkView::clearButtons() {
+    m_buttonPanel->DestroyChildren();
+    m_buttonPanel->Hide();
+}
+
+void BookmarkView::showButtons() {
+    m_buttonPanel->Show();
+//    m_buttonPanel->Layout();
+    m_buttonPanel->GetSizer()->Layout();
+}
+
+
+wxButton *BookmarkView::makeButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler) {
+    wxButton *nButton = new wxButton( m_buttonPanel, wxID_ANY, labelVal);
+    nButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, handler, NULL, this);
+    nButton->SetBackgroundColour(ThemeMgr::mgr.currentTheme->generalBackground);
+    return nButton;
+}
+
+
+wxButton *BookmarkView::addButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler) {
+    wxButton *nButton = makeButton(parent, labelVal, handler);
+    parent->GetSizer()->Add( nButton, 0, wxEXPAND);
+    return nButton;
 }
 
 
@@ -286,7 +314,7 @@ void BookmarkView::activeSelection(DemodulatorInstance *dsel) {
     
     m_frequencyVal->Show();
     m_frequencyLabel->Show();
-
+    
     m_bandwidthVal->Show();
     m_bandwidthLabel->Show();
     
@@ -296,9 +324,13 @@ void BookmarkView::activeSelection(DemodulatorInstance *dsel) {
     m_labelText->Show();
     m_labelLabel->Show();
     
-    m_bookmarkButton->Show();
-    m_removeButton->Show();
+    clearButtons();
     
+    addButton(m_buttonPanel, "Bookmark Active", wxCommandEventHandler( BookmarkView::onBookmarkActive ));
+    addButton(m_buttonPanel, "Remove Active", wxCommandEventHandler( BookmarkView::onRemoveActive ));
+
+    showButtons();
+
     this->Layout();
 }
 
@@ -340,10 +372,13 @@ void BookmarkView::bookmarkSelection(BookmarkEntry *bmSel) {
     m_labelText->Show();
     m_labelLabel->Show();
     
-    m_activateButton->Show();
-    m_bookmarkButton->Hide();
-    m_removeButton->Show();
+    clearButtons();
     
+    addButton(m_buttonPanel, "Activate Bookmark", wxCommandEventHandler( BookmarkView::onActivateBookmark ));
+    addButton(m_buttonPanel, "Remove Bookmark", wxCommandEventHandler( BookmarkView::onRemoveBookmark ));
+    
+    showButtons();
+
     this->Layout();
 }
 
@@ -372,10 +407,13 @@ void BookmarkView::recentSelection(BookmarkEntry *bmSel) {
     m_labelText->Show();
     m_labelLabel->Show();
     
-    m_activateButton->Show();
-    m_bookmarkButton->Show();
-    m_removeButton->Hide();
+    clearButtons();
     
+    addButton(m_buttonPanel, "Activate Recent", wxCommandEventHandler( BookmarkView::onActivateRecent ));
+    addButton(m_buttonPanel, "Bookmark Recent", wxCommandEventHandler( BookmarkView::onBookmarkRecent ));
+    
+    showButtons();
+
     this->Layout();
 }
 
@@ -384,6 +422,9 @@ void BookmarkView::onTreeSelect( wxTreeEvent& event ) {
     TreeViewItem* tvi = dynamic_cast<TreeViewItem*>(m_treeView->GetItemData(event.GetItem()));
 
     if (!tvi) {
+        m_propPanel->Hide();
+        hideProps();
+        this->Layout();
         return;
     }
                                                     
@@ -431,30 +472,46 @@ void BookmarkView::onDoubleClickBandwidth( wxMouseEvent& event ) {
 }
 
 
-void BookmarkView::onBookmark( wxCommandEvent& event ) {
+void BookmarkView::onBookmarkActive( wxCommandEvent& event ) {
     if (activeSel) {
         wxGetApp().getBookmarkMgr().addBookmark("Ungrouped", activeSel);
         wxGetApp().getBookmarkMgr().updateBookmarks();
     }
 }
 
-
-void BookmarkView::onActivate( wxCommandEvent& event ) {
-    if (recentSel) {
-        activateBookmark(recentSel);
+void BookmarkView::onBookmarkRecent( wxCommandEvent& event ) {
+    if (bookmarkSel) {
+        wxGetApp().getBookmarkMgr().removeRecent(bookmarkSel);
+        wxGetApp().getBookmarkMgr().addBookmark("Ungrouped", bookmarkSel);
     }
+}
+
+
+void BookmarkView::onRemoveActive( wxCommandEvent& event ) {
+    if (activeSel != nullptr) {
+        wxGetApp().getDemodMgr().setActiveDemodulator(nullptr, false);
+        wxGetApp().removeDemodulator(activeSel);
+        wxGetApp().getDemodMgr().deleteThread(activeSel);
+        activeSel = nullptr;
+    }
+}
+
+
+void BookmarkView::onRemoveBookmark( wxCommandEvent& event ) {
+    // todo
+}
+
+
+void BookmarkView::onActivateBookmark( wxCommandEvent& event ) {
     if (bookmarkSel) {
         activateBookmark(bookmarkSel);
     }
 }
 
 
-void BookmarkView::onRemove( wxCommandEvent& event ) {
-    if (activeSel != nullptr) {
-        wxGetApp().getDemodMgr().setActiveDemodulator(nullptr, false);
-        wxGetApp().removeDemodulator(activeSel);
-        wxGetApp().getDemodMgr().deleteThread(activeSel);
-        activeSel = nullptr;
+void BookmarkView::onActivateRecent( wxCommandEvent& event ) {
+    if (recentSel) {
+        activateBookmark(recentSel);
     }
 }
 
