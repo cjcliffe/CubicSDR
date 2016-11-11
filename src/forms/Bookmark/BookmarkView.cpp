@@ -243,11 +243,7 @@ void BookmarkView::onTreeItemMenu( wxTreeEvent& event ) {
 
 void BookmarkView::onMenuItem(wxCommandEvent& event) {
     if (event.GetId() == wxCONTEXT_ADD_GROUP_ID) {
-        wxString stringVal = wxGetTextFromUser("Enter Group Name", "Add Group", "");
-        if (stringVal.ToStdString() != "") {
-            wxGetApp().getBookmarkMgr().getGroup(stringVal.ToStdString());
-            wxGetApp().getBookmarkMgr().updateBookmarks();
-        }
+        onAddGroup(event);
     }
 }
 
@@ -417,14 +413,74 @@ void BookmarkView::recentSelection(BookmarkEntry *bmSel) {
     this->Layout();
 }
 
+void BookmarkView::groupSelection(std::string groupName) {
+    recentSel = nullptr;
+    activeSel = nullptr;
+    bookmarkSel = nullptr;
+    groupSel = groupName;
+
+    clearButtons();
+    
+    hideProps();
+
+    addButton(m_buttonPanel, "Remove Group", wxCommandEventHandler( BookmarkView::onRemoveGroup ));
+    addButton(m_buttonPanel, "Rename Group", wxCommandEventHandler( BookmarkView::onRenameGroup ));
+    
+    showButtons();
+    
+    this->Layout();
+}
+
+
+void BookmarkView::bookmarkBranchSelection() {
+    recentSel = nullptr;
+    activeSel = nullptr;
+    bookmarkSel = nullptr;
+    
+    clearButtons();
+    
+    hideProps();
+    
+    addButton(m_buttonPanel, "Add Group", wxCommandEventHandler( BookmarkView::onAddGroup ));
+    
+    showButtons();
+    
+    this->Layout();
+}
+
+
+void BookmarkView::recentBranchSelection() {
+    m_propPanel->Hide();
+    hideProps();
+    this->Layout();
+}
+
+
+void BookmarkView::activeBranchSelection() {
+    m_propPanel->Hide();
+    hideProps();
+    this->Layout();
+}
+
 
 void BookmarkView::onTreeSelect( wxTreeEvent& event ) {
-    TreeViewItem* tvi = dynamic_cast<TreeViewItem*>(m_treeView->GetItemData(event.GetItem()));
+    wxTreeItemId itm = event.GetItem();
+    TreeViewItem* tvi = dynamic_cast<TreeViewItem*>(m_treeView->GetItemData(itm));
 
     if (!tvi) {
-        m_propPanel->Hide();
-        hideProps();
-        this->Layout();
+        
+        if (itm == bookmarkBranch) {
+            
+        } else if (itm == activeBranch) {
+            
+        } else if (itm == recentBranch) {
+            
+        } else {
+            m_propPanel->Hide();
+            hideProps();
+            this->Layout();
+        }
+        
         return;
     }
                                                     
@@ -438,6 +494,9 @@ void BookmarkView::onTreeSelect( wxTreeEvent& event ) {
     } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK) {
         m_propPanel->Show();
         bookmarkSelection(tvi->bookmarkEnt);
+    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_GROUP) {
+        m_propPanel->Show();
+        groupSelection(tvi->groupName);
     } else {
         m_propPanel->Hide();
         hideProps();
@@ -513,6 +572,25 @@ void BookmarkView::onActivateRecent( wxCommandEvent& event ) {
     if (recentSel) {
         activateBookmark(recentSel);
     }
+}
+
+
+void BookmarkView::onAddGroup( wxCommandEvent& event ) {
+    wxString stringVal = wxGetTextFromUser("Enter Group Name", "Add Group", "");
+    if (stringVal.ToStdString() != "") {
+        wxGetApp().getBookmarkMgr().getGroup(stringVal.ToStdString());
+        wxGetApp().getBookmarkMgr().updateBookmarks();
+        groupSel = stringVal;
+    }
+}
+
+void BookmarkView::onRemoveGroup( wxCommandEvent& event ) {
+    
+}
+
+
+void BookmarkView::onRenameGroup( wxCommandEvent& event ) {
+    
 }
 
 

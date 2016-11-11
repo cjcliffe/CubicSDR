@@ -36,6 +36,11 @@ public:
     void bookmarkSelection(BookmarkEntry *bmSel);
     void activateBookmark(BookmarkEntry *bmEnt);
     void recentSelection(BookmarkEntry *bmSel);
+    void groupSelection(std::string groupName);
+    void bookmarkBranchSelection();
+    void recentBranchSelection();
+    void activeBranchSelection();
+    
     wxTreeItemId refreshBookmarks();
     void updateTheme();
     void onMenuItem(wxCommandEvent& event);
@@ -83,6 +88,10 @@ protected:
     void onActivateBookmark( wxCommandEvent& event );
     void onActivateRecent( wxCommandEvent& event );
     
+    void onAddGroup( wxCommandEvent& event );
+    void onRemoveGroup( wxCommandEvent& event );
+    void onRenameGroup( wxCommandEvent& event );
+    
     
     std::atomic_bool mouseInView;
     
@@ -94,6 +103,7 @@ protected:
     // Bookmarks
     std::atomic_bool doUpdateBookmarks;
     std::set< std::string > doUpdateBookmarkGroup;
+    std::string groupSel;
     BookmarkNames groupNames;
     std::map<std::string, wxTreeItemId> groups;
     BookmarkEntry *bookmarkSel;
