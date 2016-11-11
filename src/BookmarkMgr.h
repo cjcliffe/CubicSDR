@@ -42,6 +42,7 @@ public:
     void addBookmark(std::string group, DemodulatorInstance *demod);
     void addBookmark(std::string group, BookmarkEntry *be);
     void removeBookmark(std::string group, BookmarkEntry *be);
+    void removeBookmark(BookmarkEntry *be);
     
     BookmarkList getBookmarks(std::string group);
     

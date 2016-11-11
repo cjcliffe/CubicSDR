@@ -470,11 +470,11 @@ void BookmarkView::onTreeSelect( wxTreeEvent& event ) {
     if (!tvi) {
         
         if (itm == bookmarkBranch) {
-            
+            bookmarkBranchSelection();
         } else if (itm == activeBranch) {
-            
+            activeBranchSelection();
         } else if (itm == recentBranch) {
-            
+            recentBranchSelection();
         } else {
             m_propPanel->Hide();
             hideProps();
@@ -539,9 +539,11 @@ void BookmarkView::onBookmarkActive( wxCommandEvent& event ) {
 }
 
 void BookmarkView::onBookmarkRecent( wxCommandEvent& event ) {
-    if (bookmarkSel) {
-        wxGetApp().getBookmarkMgr().removeRecent(bookmarkSel);
-        wxGetApp().getBookmarkMgr().addBookmark("Ungrouped", bookmarkSel);
+    if (recentSel) {
+        wxGetApp().getBookmarkMgr().removeRecent(recentSel);
+        wxGetApp().getBookmarkMgr().addBookmark("Ungrouped", recentSel);
+        wxGetApp().getBookmarkMgr().updateBookmarks();
+        wxGetApp().getBookmarkMgr().updateActiveList();
     }
 }
 
@@ -557,7 +559,11 @@ void BookmarkView::onRemoveActive( wxCommandEvent& event ) {
 
 
 void BookmarkView::onRemoveBookmark( wxCommandEvent& event ) {
-    // todo
+    if (bookmarkSel) {
+        wxGetApp().getBookmarkMgr().removeBookmark(bookmarkSel);
+        bookmarkSel = nullptr;
+        wxGetApp().getBookmarkMgr().updateBookmarks();
+    }
 }
 
 

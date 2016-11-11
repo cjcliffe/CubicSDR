@@ -39,6 +39,17 @@ void BookmarkMgr::removeBookmark(std::string group, BookmarkEntry *be) {
     bmData[group].erase(be);
 }
 
+void BookmarkMgr::removeBookmark(BookmarkEntry *be) {
+    std::lock_guard < std::mutex > lockData(busy_lock);
+    std::lock_guard < std::mutex > lockEnt(be->busy_lock);
+    
+    for (auto &bmd_i : bmData) {
+        if (bmd_i.second.find(be) != bmd_i.second.end()) {
+            bmd_i.second.erase(be);
+        }
+    }
+
+}
 
 BookmarkList BookmarkMgr::getBookmarks(std::string group) {
     std::lock_guard < std::mutex > lock(busy_lock);
