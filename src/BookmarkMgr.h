@@ -12,7 +12,7 @@ public:
     std::mutex busy_lock;
 
     std::string type;
-    std::string label;
+    std::wstring label;
     
     long long frequency;
     int bandwidth;

@@ -132,7 +132,11 @@ BookmarkEntry *BookmarkMgr::demodToBookmarkEntry(DemodulatorInstance *demod) {
     
     be->bandwidth = demod->getBandwidth();
     be->type = demod->getDemodulatorType();
-    be->label = demod->getLabel();
+    be->label = demod->getDemodulatorUserLabel();
+    if (be->label == "") {
+        std::string wstr = demod->getLabel();
+        be->label = std::wstring(wstr.begin(),wstr.end());
+    }
     be->frequency = demod->getFrequency();
 
     be->node = new DataNode;

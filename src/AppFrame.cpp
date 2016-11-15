@@ -1864,6 +1864,8 @@ bool AppFrame::loadSession(std::string fileName) {
     GetStatusBar()->SetStatusText(wxString::Format(wxT("Loaded session file: %s"), currentSessionFile.c_str()));
     SetTitle(wxString::Format(wxT("%s: %s"), CUBICSDR_TITLE, filePart.c_str()));
 
+    wxGetApp().getBookmarkMgr().updateActiveList();
+
     return true;
 }
 

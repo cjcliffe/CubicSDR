@@ -57,7 +57,7 @@ void DemodLabelDialog::OnChar(wxKeyEvent& event) {
         else {
             activeDemod->setDemodulatorUserLabel(L"");
         }
-
+        wxGetApp().getBookmarkMgr().updateActiveList();
         Close();
         break;
     case WXK_ESCAPE:

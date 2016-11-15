@@ -143,7 +143,12 @@ void BookmarkView::doUpdateActiveList() {
         tvi->type = TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE;
         tvi->demod = demod_i;
         
-        wxTreeItemId itm = m_treeView->AppendItem(activeBranch,demod_i->getLabel());
+        wxString activeLabel = demod_i->getDemodulatorUserLabel();
+        if (activeLabel == "") {
+            activeLabel = demod_i->getLabel();
+        }
+        
+        wxTreeItemId itm = m_treeView->AppendItem(activeBranch,activeLabel);
         m_treeView->SetItemData(itm, tvi);
         
         if (activeDemodulator) {
@@ -310,7 +315,7 @@ void BookmarkView::activeSelection(DemodulatorInstance *dsel) {
     m_frequencyVal->SetLabelText(frequencyToStr(dsel->getFrequency()));
     m_bandwidthVal->SetLabelText(frequencyToStr(dsel->getBandwidth()));
     m_modulationVal->SetLabelText(dsel->getDemodulatorType());
-    m_labelText->SetValue(dsel->getLabel());
+    m_labelText->SetValue(dsel->getDemodulatorUserLabel());
     
     hideProps();
     
@@ -607,11 +612,15 @@ void BookmarkView::onTreeBeginDrag( wxTreeEvent& event ) {
     }
     
     bool bAllow = false;
-    std::string dragItemName;
+    std::wstring dragItemName;
     
     if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
         bAllow = true;
-        dragItemName = tvi->demod->getLabel();
+        dragItemName = tvi->demod->getDemodulatorUserLabel();
+        if (dragItemName == "") {
+            std::string wstr = tvi->demod->getLabel();
+            dragItemName = std::wstring(wstr.begin(),wstr.end());
+        }
     } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
         bAllow = true;
         dragItemName = tvi->bookmarkEnt->label;
