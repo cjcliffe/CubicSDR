@@ -15,7 +15,7 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	bSizer1 = new wxBoxSizer( wxVERTICAL );
 	
 	m_treeView = new wxTreeCtrl( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_DEFAULT_STYLE|wxTR_EDIT_LABELS|wxTR_HAS_VARIABLE_ROW_HEIGHT|wxTR_HIDE_ROOT|wxTR_SINGLE );
-	bSizer1->Add( m_treeView, 5, wxEXPAND, 5 );
+	bSizer1->Add( m_treeView, 1, wxEXPAND, 5 );
 	
 	m_propPanel = new wxPanel( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxFlexGridSizer* fgPropSizer;
@@ -59,7 +59,7 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	m_propPanel->SetSizer( fgPropSizer );
 	m_propPanel->Layout();
 	fgPropSizer->Fit( m_propPanel );
-	bSizer1->Add( m_propPanel, 1, wxBOTTOM|wxEXPAND|wxTOP, 5 );
+	bSizer1->Add( m_propPanel, 0, wxALL|wxBOTTOM|wxEXPAND|wxTOP, 5 );
 	
 	m_buttonPanel = new wxPanel( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* m_buttonPanelSizer;
@@ -69,7 +69,7 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	m_buttonPanel->SetSizer( m_buttonPanelSizer );
 	m_buttonPanel->Layout();
 	m_buttonPanelSizer->Fit( m_buttonPanel );
-	bSizer1->Add( m_buttonPanel, 1, wxEXPAND, 5 );
+	bSizer1->Add( m_buttonPanel, 0, wxALL|wxEXPAND, 5 );
 	
 	
 	this->SetSizer( bSizer1 );

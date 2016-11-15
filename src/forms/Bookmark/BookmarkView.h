@@ -50,6 +50,7 @@ public:
 protected:
     
     void hideProps();
+    void showProps();
     
     void onUpdateTimer( wxTimerEvent& event );
     void doUpdateActiveList();
@@ -75,6 +76,7 @@ protected:
     
     void clearButtons();
     void showButtons();
+    void refreshLayout();
 
     wxButton *makeButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler);
     wxButton *addButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler);
