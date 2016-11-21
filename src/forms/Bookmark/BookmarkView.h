@@ -1,8 +1,8 @@
 #pragma once
 
 #include "BookmarkPanel.h"
-
 #include "BookmarkMgr.h"
+#include "wx/choice.h"
 
 class TreeViewItem : public wxTreeItemData {
 public:
@@ -81,9 +81,10 @@ protected:
     wxButton *makeButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler);
     wxButton *addButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler);
 
-    void onBookmarkActive( wxCommandEvent& event );
-    void onBookmarkRecent( wxCommandEvent& event );
-
+    void updateBookmarkChoices();
+    void addBookmarkChoice(wxWindow *parent);    
+    void onBookmarkChoice( wxCommandEvent &event );
+    
     void onRemoveActive( wxCommandEvent& event );
     void onRemoveBookmark( wxCommandEvent& event );
     
@@ -109,7 +110,8 @@ protected:
     BookmarkNames groupNames;
     std::map<std::string, wxTreeItemId> groups;
     BookmarkEntry *bookmarkSel;
-    
+    wxArrayString bookmarkChoices;
+    wxChoice *bookmarkChoice;
     
     // Active
     std::atomic_bool doUpdateActive;

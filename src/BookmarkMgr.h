@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <set>
+#include <wx/arrstr.h>
 
 #include "DemodulatorInstance.h"
 
@@ -48,6 +49,7 @@ public:
     
     BookmarkGroup getGroup(std::string group);
     BookmarkNames getGroups();
+    void getGroups(wxArrayString &arr);
     
     void updateActiveList();
     void updateBookmarks();

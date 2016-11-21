@@ -4,7 +4,11 @@
 #include <wx/menu.h>
 #include <wx/textdlg.h>
 #include <algorithm>
+
 #define wxCONTEXT_ADD_GROUP_ID 1000
+
+#define BOOKMARK_VIEW_CHOICE_DEFAULT "Bookmark.."
+#define BOOKMARK_VIEW_CHOICE_NEW "(New Group..)"
 
 BookmarkView::BookmarkView( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style) : BookmarkPanel(parent, id, pos, size, style) {
 
@@ -15,6 +19,7 @@ BookmarkView::BookmarkView( wxWindow* parent, wxWindowID id, const wxPoint& pos,
     
     doUpdateActive.store(true);
     doUpdateBookmarks.store(true);
+    bookmarkChoice = nullptr;
     activeSel = nullptr;
     recentSel = nullptr;
     dragItem = nullptr;
@@ -89,7 +94,6 @@ void BookmarkView::updateBookmarks(std::string group) {
 wxTreeItemId BookmarkView::refreshBookmarks() {
     groupNames = wxGetApp().getBookmarkMgr().getGroups();
     if (!groupNames.size()) {
-        wxGetApp().getBookmarkMgr().getGroup("Ungrouped");
         groupNames = wxGetApp().getBookmarkMgr().getGroups();
     }
     if (doUpdateBookmarkGroup.size()) { // Nothing for the moment..
@@ -280,6 +284,7 @@ void BookmarkView::showProps() {
 void BookmarkView::clearButtons() {
     m_buttonPanel->Hide();
     m_buttonPanel->DestroyChildren();
+    bookmarkChoice = nullptr;
 }
 
 void BookmarkView::showButtons() {
@@ -295,7 +300,7 @@ void BookmarkView::refreshLayout() {
 
 wxButton *BookmarkView::makeButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler) {
     wxButton *nButton = new wxButton( m_buttonPanel, wxID_ANY, labelVal);
-    nButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, handler, NULL, this);
+    nButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, handler, nullptr, this);
     nButton->SetBackgroundColour(ThemeMgr::mgr.currentTheme->generalBackground);
     return nButton;
 }
@@ -305,6 +310,60 @@ wxButton *BookmarkView::addButton(wxWindow *parent, std::string labelVal, wxObje
     wxButton *nButton = makeButton(parent, labelVal, handler);
     parent->GetSizer()->Add( nButton, 0, wxEXPAND);
     return nButton;
+}
+
+void BookmarkView::updateBookmarkChoices() {
+    if (!bookmarkChoices.empty()) {
+        bookmarkChoices.erase(bookmarkChoices.begin(),bookmarkChoices.end());
+    }
+    bookmarkChoices.push_back(BOOKMARK_VIEW_CHOICE_DEFAULT);
+    wxGetApp().getBookmarkMgr().getGroups(bookmarkChoices);
+    bookmarkChoices.push_back(BOOKMARK_VIEW_CHOICE_NEW);
+}
+
+void BookmarkView::addBookmarkChoice(wxWindow *parent) {
+    updateBookmarkChoices();
+    bookmarkChoice = new wxChoice(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, bookmarkChoices, wxALL|wxEXPAND, wxDefaultValidator, "Bookmark");
+    bookmarkChoice->Connect( wxEVT_COMMAND_CHOICE_SELECTED, (wxObjectEventFunction)&BookmarkView::onBookmarkChoice, nullptr, this);
+    parent->GetSizer()->Add(bookmarkChoice, 0, wxALL | wxEXPAND);
+}
+
+
+void BookmarkView::onBookmarkChoice( wxCommandEvent &event ) {
+    
+    int numSel = bookmarkChoice->GetCount();
+    int sel = bookmarkChoice->GetSelection();
+    
+    if (sel == 0) {
+        return;
+    }
+    
+    wxString stringVal = "";
+    
+    if (sel == (numSel-1)) {
+        stringVal = wxGetTextFromUser("Enter Group Name", "Add Group", "");
+    } else {
+        stringVal = bookmarkChoices[sel];
+    }
+    
+    if (stringVal == "") {
+        return;
+    }
+
+    groupSel = stringVal;
+
+    if (activeSel) {
+        wxGetApp().getBookmarkMgr().addBookmark(groupSel, activeSel);
+        wxGetApp().getBookmarkMgr().updateBookmarks();
+        activeSelection(activeSel);
+    }
+    if (recentSel) {
+        wxGetApp().getBookmarkMgr().removeRecent(recentSel);
+        wxGetApp().getBookmarkMgr().addBookmark(groupSel, recentSel);
+        wxGetApp().getBookmarkMgr().updateBookmarks();
+        wxGetApp().getBookmarkMgr().updateActiveList();
+        bookmarkSelection(recentSel);
+    }
 }
 
 
@@ -332,8 +391,8 @@ void BookmarkView::activeSelection(DemodulatorInstance *dsel) {
     m_labelLabel->Show();
     
     clearButtons();
-    
-    addButton(m_buttonPanel, "Bookmark Active", wxCommandEventHandler( BookmarkView::onBookmarkActive ));
+
+    addBookmarkChoice(m_buttonPanel);
     addButton(m_buttonPanel, "Remove Active", wxCommandEventHandler( BookmarkView::onRemoveActive ));
 
     showProps();
@@ -417,7 +476,7 @@ void BookmarkView::recentSelection(BookmarkEntry *bmSel) {
     clearButtons();
     
     addButton(m_buttonPanel, "Activate Recent", wxCommandEventHandler( BookmarkView::onActivateRecent ));
-    addButton(m_buttonPanel, "Bookmark Recent", wxCommandEventHandler( BookmarkView::onBookmarkRecent ));
+    addBookmarkChoice(m_buttonPanel);
     
     showProps();
     showButtons();
@@ -527,23 +586,6 @@ void BookmarkView::onDoubleClickBandwidth( wxMouseEvent& event ) {
     if (activeSel) {
         wxGetApp().getDemodMgr().setActiveDemodulator(activeSel, false);
         wxGetApp().showFrequencyInput(FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_BANDWIDTH);
-    }
-}
-
-
-void BookmarkView::onBookmarkActive( wxCommandEvent& event ) {
-    if (activeSel) {
-        wxGetApp().getBookmarkMgr().addBookmark("Ungrouped", activeSel);
-        wxGetApp().getBookmarkMgr().updateBookmarks();
-    }
-}
-
-void BookmarkView::onBookmarkRecent( wxCommandEvent& event ) {
-    if (recentSel) {
-        wxGetApp().getBookmarkMgr().removeRecent(recentSel);
-        wxGetApp().getBookmarkMgr().addBookmark("Ungrouped", recentSel);
-        wxGetApp().getBookmarkMgr().updateBookmarks();
-        wxGetApp().getBookmarkMgr().updateActiveList();
     }
 }
 
@@ -668,7 +710,7 @@ void BookmarkView::onTreeEndDrag( wxTreeEvent& event ) {
             if (dragItem && dragItem->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
                 wxGetApp().getBookmarkMgr().addBookmark("Ungrouped", dragItem->demod);
                 wxGetApp().getBookmarkMgr().updateBookmarks();
-            }else if (dragItem && dragItem->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
+            } else if (dragItem && dragItem->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
                 wxGetApp().getBookmarkMgr().removeRecent(dragItem->bookmarkEnt);
                 wxGetApp().getBookmarkMgr().addBookmark("Ungrouped", dragItem->bookmarkEnt);
                 m_treeView->Delete(dragItemId);

@@ -75,6 +75,12 @@ BookmarkNames BookmarkMgr::getGroups() {
     return results;
 }
 
+void BookmarkMgr::getGroups(wxArrayString &arr) {
+    for (BookmarkMap::iterator i = bmData.begin(); i!= bmData.end(); ++i) {
+        arr.push_back(i->first);
+    }
+}
+
 
 void BookmarkMgr::updateActiveList() {
     BookmarkView *bmv = wxGetApp().getAppFrame()->getBookmarkView();
