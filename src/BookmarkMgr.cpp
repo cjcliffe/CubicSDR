@@ -62,6 +62,16 @@ void BookmarkMgr::removeBookmark(BookmarkEntry *be) {
 
 }
 
+
+void BookmarkMgr::addGroup(std::string group) {
+    std::lock_guard < std::mutex > lock(busy_lock);
+    
+    if (bmData.find(group) == bmData.end()) {
+        BookmarkList dummy = bmData[group];
+    }
+}
+
+
 BookmarkList BookmarkMgr::getBookmarks(std::string group) {
     std::lock_guard < std::mutex > lock(busy_lock);
     
@@ -77,6 +87,7 @@ BookmarkList BookmarkMgr::getBookmarks(std::string group) {
     
     return bmData[group];
 }
+
 
 void BookmarkMgr::getGroups(BookmarkNames &arr) {
     for (BookmarkMap::iterator i = bmData.begin(); i!= bmData.end(); ++i) {

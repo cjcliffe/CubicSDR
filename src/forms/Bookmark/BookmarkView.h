@@ -81,6 +81,9 @@ protected:
     wxButton *makeButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler);
     wxButton *addButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler);
 
+    void doBookmarkActive(std::string group, DemodulatorInstance *demod);
+    void doBookmarkRecent(std::string group, BookmarkEntry *be);
+    
     void updateBookmarkChoices();
     void addBookmarkChoice(wxWindow *parent);    
     void onBookmarkChoice( wxCommandEvent &event );
