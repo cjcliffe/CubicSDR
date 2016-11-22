@@ -92,10 +92,10 @@ void BookmarkView::updateBookmarks(std::string group) {
 
 
 wxTreeItemId BookmarkView::refreshBookmarks() {
-    groupNames = wxGetApp().getBookmarkMgr().getGroups();
-    if (!groupNames.size()) {
-        groupNames = wxGetApp().getBookmarkMgr().getGroups();
-    }
+    
+    BookmarkNames groupNames;
+    wxGetApp().getBookmarkMgr().getGroups(groupNames);
+
     if (doUpdateBookmarkGroup.size()) { // Nothing for the moment..
         doUpdateBookmarkGroup.erase(doUpdateBookmarkGroup.begin(), doUpdateBookmarkGroup.end());
     }
@@ -114,7 +114,7 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
         wxTreeItemId groupItem = groups[gn_i];
         m_treeView->DeleteChildren(groupItem);
         
-        BookmarkGroup bmList = wxGetApp().getBookmarkMgr().getGroup(gn_i);
+        BookmarkList bmList = wxGetApp().getBookmarkMgr().getBookmarks(gn_i);
         for (auto bmEnt : bmList) {
             TreeViewItem* tvi = new TreeViewItem();
             tvi->type = TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK;
@@ -626,7 +626,7 @@ void BookmarkView::onActivateRecent( wxCommandEvent& event ) {
 void BookmarkView::onAddGroup( wxCommandEvent& event ) {
     wxString stringVal = wxGetTextFromUser("Enter Group Name", "Add Group", "");
     if (stringVal.ToStdString() != "") {
-        wxGetApp().getBookmarkMgr().getGroup(stringVal.ToStdString());
+        wxGetApp().getBookmarkMgr().getBookmarks(stringVal.ToStdString());
         wxGetApp().getBookmarkMgr().updateBookmarks();
         groupSel = stringVal;
     }

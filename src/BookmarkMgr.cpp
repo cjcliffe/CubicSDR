@@ -22,21 +22,31 @@ void BookmarkMgr::addBookmark(std::string group, DemodulatorInstance *demod) {
     
     wxGetApp().getDemodMgr().saveInstance(be->node, demod);
     
-    bmData[group].insert(be);
+    bmData[group].push_back(be);
+    bmDataSorted[group] = false;
 }
 
 void BookmarkMgr::addBookmark(std::string group, BookmarkEntry *be) {
     std::lock_guard < std::mutex > lock(busy_lock);
     
-    bmData[group].insert(be);
+    bmData[group].push_back(be);
+    bmDataSorted[group] = false;
 }
 
 
 void BookmarkMgr::removeBookmark(std::string group, BookmarkEntry *be) {
     std::lock_guard < std::mutex > lockData(busy_lock);
     std::lock_guard < std::mutex > lockEnt(be->busy_lock);
+
+    if (bmData.find(group) == bmData.end()) {
+        return;
+    }
+
+    BookmarkList::iterator i = std::find(bmData[group].begin(), bmData[group].end(), be);
     
-    bmData[group].erase(be);
+    if (i != bmData[group].end()) {
+        bmData[group].erase(i);
+    }
 }
 
 void BookmarkMgr::removeBookmark(BookmarkEntry *be) {
@@ -44,8 +54,9 @@ void BookmarkMgr::removeBookmark(BookmarkEntry *be) {
     std::lock_guard < std::mutex > lockEnt(be->busy_lock);
     
     for (auto &bmd_i : bmData) {
-        if (bmd_i.second.find(be) != bmd_i.second.end()) {
-            bmd_i.second.erase(be);
+        BookmarkList::iterator i = std::find(bmd_i.second.begin(), bmd_i.second.end(), be);
+        if (i != bmd_i.second.end()) {
+            bmd_i.second.erase(i);
         }
     }
 
@@ -53,26 +64,24 @@ void BookmarkMgr::removeBookmark(BookmarkEntry *be) {
 
 BookmarkList BookmarkMgr::getBookmarks(std::string group) {
     std::lock_guard < std::mutex > lock(busy_lock);
-
-    BookmarkList results;
     
-    for (auto be_i : bmData[group]) {
-        results.push_back(be_i);
+    if (bmData.find(group) == bmData.end()) {
+        BookmarkList results;
+        return results;
     }
     
-    return results;
-}
-
-BookmarkGroup BookmarkMgr::getGroup(std::string group) {
+    if (!bmDataSorted[group]) {
+        std::sort(bmData[group].begin(), bmData[group].end(), BookmarkEntryCompare());
+        bmDataSorted[group] = true;
+    }
+    
     return bmData[group];
 }
 
-BookmarkNames BookmarkMgr::getGroups() {
-    BookmarkNames results;
+void BookmarkMgr::getGroups(BookmarkNames &arr) {
     for (BookmarkMap::iterator i = bmData.begin(); i!= bmData.end(); ++i) {
-        results.push_back(i->first);
+        arr.push_back(i->first);
     }
-    return results;
 }
 
 void BookmarkMgr::getGroups(wxArrayString &arr) {
