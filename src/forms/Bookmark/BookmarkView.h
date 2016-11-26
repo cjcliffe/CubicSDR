@@ -109,6 +109,8 @@ protected:
     TreeViewItem *dragItem;
     wxTreeItemId dragItemId;
     
+    bool editingLabel;
+    
     // Bookmarks
     std::atomic_bool doUpdateBookmarks;
     std::set< std::string > doUpdateBookmarkGroup;
