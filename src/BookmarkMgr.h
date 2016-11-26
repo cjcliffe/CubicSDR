@@ -44,8 +44,11 @@ public:
     void addBookmark(std::string group, BookmarkEntry *be);
     void removeBookmark(std::string group, BookmarkEntry *be);
     void removeBookmark(BookmarkEntry *be);
+    void moveBookmark(BookmarkEntry *be, std::string group);
     
     void addGroup(std::string group);
+    void removeGroup(std::string group);
+    void renameGroup(std::string group, std::string ngroup);
     BookmarkList getBookmarks(std::string group);
     void getGroups(BookmarkNames &arr);
     void getGroups(wxArrayString &arr);

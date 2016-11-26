@@ -45,6 +45,7 @@ void BookmarkMgr::removeBookmark(std::string group, BookmarkEntry *be) {
     BookmarkList::iterator i = std::find(bmData[group].begin(), bmData[group].end(), be);
     
     if (i != bmData[group].end()) {
+        delete *i;
         bmData[group].erase(i);
     }
 }
@@ -59,7 +60,22 @@ void BookmarkMgr::removeBookmark(BookmarkEntry *be) {
             bmd_i.second.erase(i);
         }
     }
+}
 
+void BookmarkMgr::moveBookmark(BookmarkEntry *be, std::string group) {
+    std::lock_guard < std::mutex > lockData(busy_lock);
+    std::lock_guard < std::mutex > lockEnt(be->busy_lock);
+    
+    for (auto &bmd_i : bmData) {
+        BookmarkList::iterator i = std::find(bmd_i.second.begin(), bmd_i.second.end(), be);
+        if (i != bmd_i.second.end()) {
+            bmData[group].push_back(*i);
+            bmd_i.second.erase(i);
+            bmDataSorted[group] = false;
+            bmDataSorted[bmd_i.first] = false;
+            return;
+        }
+    }
 }
 
 
@@ -71,6 +87,35 @@ void BookmarkMgr::addGroup(std::string group) {
     }
 }
 
+void BookmarkMgr::removeGroup(std::string group) {
+    std::lock_guard < std::mutex > lock(busy_lock);
+    
+    BookmarkMap::iterator i = bmData.find(group);
+    
+    if (i != bmData.end()) {
+        for (auto ii : bmData[group]) {
+            delete ii;
+        }
+        bmData.erase(group);
+    }
+}
+
+void BookmarkMgr::renameGroup(std::string group, std::string ngroup) {
+    std::lock_guard < std::mutex > lock(busy_lock);
+    
+    BookmarkMap::iterator i = bmData.find(group);
+    BookmarkMap::iterator it = bmData.find(group);
+    
+    if (i != bmData.end() && it != bmData.end()) {
+        for (auto ii : bmData[group]) {
+            bmData[ngroup].push_back(ii);
+        }
+        bmData.erase(group);
+    } else if (i != bmData.end()) {
+        bmData[ngroup] = bmData[group];
+        bmData.erase(group);
+    }
+}
 
 BookmarkList BookmarkMgr::getBookmarks(std::string group) {
     std::lock_guard < std::mutex > lock(busy_lock);

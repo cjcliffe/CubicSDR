@@ -83,7 +83,8 @@ protected:
 
     void doBookmarkActive(std::string group, DemodulatorInstance *demod);
     void doBookmarkRecent(std::string group, BookmarkEntry *be);
-    
+    void doMoveBookmark(BookmarkEntry *be, std::string group);
+        
     void updateBookmarkChoices();
     void addBookmarkChoice(wxWindow *parent);    
     void onBookmarkChoice( wxCommandEvent &event );
@@ -102,6 +103,8 @@ protected:
     std::atomic_bool mouseInView;
     
     wxTreeItemId rootBranch, activeBranch, bookmarkBranch, recentBranch;
+    
+    std::map<std::string, bool> expandState;
     
     TreeViewItem *dragItem;
     wxTreeItemId dragItemId;
