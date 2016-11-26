@@ -256,13 +256,11 @@ void BookmarkView::onTreeBeginLabelEdit( wxTreeEvent& event ) {
         return;
     }
     
-    if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
-        event.Allow();
-    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
-        event.Veto();
-    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK) {
-        event.Allow();
-    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_GROUP) {
+    if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE ||
+        tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT ||
+        tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK ||
+        tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_GROUP)
+    {
         event.Allow();
     } else {
         event.Veto();
@@ -271,7 +269,33 @@ void BookmarkView::onTreeBeginLabelEdit( wxTreeEvent& event ) {
 
 
 void BookmarkView::onTreeEndLabelEdit( wxTreeEvent& event ) {
-    event.Skip();
+    wxTreeItemId itm = event.GetItem();
+    TreeViewItem* tvi = dynamic_cast<TreeViewItem*>(m_treeView->GetItemData(itm));
+    
+    std::wstring newText = m_treeView->GetEditControl()->GetValue().ToStdWstring();
+    
+    if (!tvi) {
+        return;
+    }
+    
+    if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
+        tvi->demod->setDemodulatorUserLabel(newText);
+        wxGetApp().getBookmarkMgr().updateActiveList();
+    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
+        recentSel->label = newText;
+        recentSel->node->child("user_label")->element()->set(newText);
+        wxGetApp().getBookmarkMgr().updateActiveList();
+    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK) {
+        tvi->bookmarkEnt->label = newText;
+        tvi->bookmarkEnt->node->child("user_label")->element()->set(newText);
+        wxGetApp().getBookmarkMgr().updateBookmarks();
+    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_GROUP) {
+        std::string newGroup = m_treeView->GetEditControl()->GetValue().ToStdString();
+        wxGetApp().getBookmarkMgr().renameGroup(tvi->groupName, newGroup);
+        groupSel = newGroup;
+        wxGetApp().getBookmarkMgr().renameGroup(tvi->groupName, groupSel);
+        wxGetApp().getBookmarkMgr().updateBookmarks();
+    }
 }
 
 
