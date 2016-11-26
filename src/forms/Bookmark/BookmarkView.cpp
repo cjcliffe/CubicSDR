@@ -150,6 +150,13 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
             tvi->type = TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK;
             tvi->bookmarkEnt = bmEnt;
             tvi->groupName = gn_i;
+
+            std::wstring labelVal;
+            if (bmEnt->label == "") {
+                std::string wstr = frequencyToStr(tvi->bookmarkEnt->frequency) + " " + tvi->bookmarkEnt->type;
+                bmEnt->label = std::wstring(wstr.begin(),wstr.end());
+            }
+            
             wxTreeItemId itm = m_treeView->AppendItem(groupItem, bmEnt->label);
             m_treeView->SetItemData(itm, tvi);
             if (bookmarkSel == bmEnt && groupExpanded) {
@@ -186,7 +193,8 @@ void BookmarkView::doUpdateActiveList() {
         
         wxString activeLabel = demod_i->getDemodulatorUserLabel();
         if (activeLabel == "") {
-            activeLabel = demod_i->getLabel();
+            std::string wstr = frequencyToStr(demod_i->getFrequency()) + " " + demod_i->getDemodulatorType();
+            activeLabel  = std::wstring(wstr.begin(),wstr.end());
         }
         
         wxTreeItemId itm = m_treeView->AppendItem(activeBranch,activeLabel);
@@ -214,7 +222,14 @@ void BookmarkView::doUpdateActiveList() {
         tvi->type = TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT;
         tvi->bookmarkEnt = bmr_i;
 
-        wxTreeItemId itm = m_treeView->AppendItem(recentBranch, bmr_i->label);
+        std::wstring labelVal;
+        bmr_i->node->child("user_label")->element()->get(labelVal);
+        if (labelVal == "") {
+            std::string wstr = frequencyToStr(bmr_i->frequency) + " " + bmr_i->type;
+            labelVal = std::wstring(wstr.begin(),wstr.end());
+        }
+        
+        wxTreeItemId itm = m_treeView->AppendItem(recentBranch, labelVal);
         m_treeView->SetItemData(itm, tvi);
         if (recentSel == bmr_i && recentExpandState) {
             selItem = itm;
@@ -658,7 +673,20 @@ void BookmarkView::onTreeSelectChanging( wxTreeEvent& event ) {
 
 
 void BookmarkView::onLabelText( wxCommandEvent& event ) {
-    event.Skip();
+    std::wstring newLabel = m_labelText->GetValue().ToStdWstring();
+    
+    if (activeSel) {
+        activeSel->setDemodulatorUserLabel(newLabel);
+        wxGetApp().getBookmarkMgr().updateActiveList();
+    } else if (bookmarkSel) {
+        bookmarkSel->label = m_labelText->GetValue().ToStdWstring();
+        bookmarkSel->node->child("user_label")->element()->set(newLabel);
+        wxGetApp().getBookmarkMgr().updateBookmarks();
+    } else if (recentSel) {
+        recentSel->label = m_labelText->GetValue().ToStdWstring();
+        recentSel->node->child("user_label")->element()->set(newLabel);
+        wxGetApp().getBookmarkMgr().updateActiveList();
+    }
 }
 
 

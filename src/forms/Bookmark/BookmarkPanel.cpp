@@ -28,7 +28,7 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	m_labelLabel->Wrap( -1 );
 	fgPropSizer->Add( m_labelLabel, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT, 5 );
 	
-	m_labelText = new wxTextCtrl( m_propPanel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	m_labelText = new wxTextCtrl( m_propPanel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER );
 	fgPropSizer->Add( m_labelText, 0, wxALL|wxEXPAND, 5 );
 	
 	m_frequencyLabel = new wxStaticText( m_propPanel, wxID_ANY, wxT("Freq"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -91,7 +91,7 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	m_treeView->Connect( wxEVT_COMMAND_TREE_ITEM_MENU, wxTreeEventHandler( BookmarkPanel::onTreeItemMenu ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_SEL_CHANGED, wxTreeEventHandler( BookmarkPanel::onTreeSelect ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_SEL_CHANGING, wxTreeEventHandler( BookmarkPanel::onTreeSelectChanging ), NULL, this );
-	m_labelText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( BookmarkPanel::onLabelText ), NULL, this );
+	m_labelText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( BookmarkPanel::onLabelText ), NULL, this );
 	m_frequencyVal->Connect( wxEVT_LEFT_DCLICK, wxMouseEventHandler( BookmarkPanel::onDoubleClickFreq ), NULL, this );
 	m_bandwidthVal->Connect( wxEVT_LEFT_DCLICK, wxMouseEventHandler( BookmarkPanel::onDoubleClickBandwidth ), NULL, this );
 	this->Connect( wxID_ANY, wxEVT_TIMER, wxTimerEventHandler( BookmarkPanel::onUpdateTimer ) );
@@ -114,7 +114,7 @@ BookmarkPanel::~BookmarkPanel()
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_ITEM_MENU, wxTreeEventHandler( BookmarkPanel::onTreeItemMenu ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_SEL_CHANGED, wxTreeEventHandler( BookmarkPanel::onTreeSelect ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_SEL_CHANGING, wxTreeEventHandler( BookmarkPanel::onTreeSelectChanging ), NULL, this );
-	m_labelText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( BookmarkPanel::onLabelText ), NULL, this );
+	m_labelText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( BookmarkPanel::onLabelText ), NULL, this );
 	m_frequencyVal->Disconnect( wxEVT_LEFT_DCLICK, wxMouseEventHandler( BookmarkPanel::onDoubleClickFreq ), NULL, this );
 	m_bandwidthVal->Disconnect( wxEVT_LEFT_DCLICK, wxMouseEventHandler( BookmarkPanel::onDoubleClickBandwidth ), NULL, this );
 	this->Disconnect( wxID_ANY, wxEVT_TIMER, wxTimerEventHandler( BookmarkPanel::onUpdateTimer ) );
