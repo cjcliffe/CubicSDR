@@ -507,7 +507,7 @@ void BookmarkView::onBookmarkChoice( wxCommandEvent &event ) {
     if (recentSel) {
         doBookmarkRecent(groupSel, recentSel);
     }
-    if (bookmarkSel) {
+    if (bookmarkSel && groupSel != "") {
         doMoveBookmark(bookmarkSel, groupSel);
     }
 }

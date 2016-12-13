@@ -128,6 +128,7 @@ private:
     
 public:
     DataElement();
+    DataElement(DataElement &cloneFrom);
     ~DataElement();
     
     int getDataType();
@@ -235,6 +236,7 @@ private:
 public:
     DataNode();
     DataNode(const char *name_in);
+    DataNode(const char *name_in, DataElement &cloneFrom);
     
     ~DataNode();		
     
@@ -250,6 +252,8 @@ public:
     DataElement *element(); /* DataElement at this node */
     
     DataNode *newChild(const char *name_in);
+    DataNode *newChild(const char *name_in, DataNode *otherNode);
+    DataNode *newChildCloneFrom(const char *name_in, DataNode *cloneFrom);
     DataNode *child(const char *name_in, int index = 0);
     DataNode *child(int index);
     

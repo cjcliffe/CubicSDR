@@ -1300,6 +1300,7 @@ void AppFrame::OnClose(wxCloseEvent& event) {
     wxGetApp().getConfig()->setRigFollowModem(rigFollowModemMenuItem->IsChecked());
 #endif
     wxGetApp().getConfig()->save();
+    wxGetApp().getBookmarkMgr().saveToFile("bookmarks.xml");
     event.Skip();
 }
 

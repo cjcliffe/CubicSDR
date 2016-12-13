@@ -41,6 +41,14 @@ using namespace std;
 DataElement::DataElement() : data_type(DATA_NULL), data_size(0), unit_size(0), data_val(NULL) {
 }
 
+DataElement::DataElement(DataElement &cloneFrom) : data_type(cloneFrom.getDataType()), unit_size(cloneFrom.getUnitSize()) {
+    data_val = NULL;
+    data_init(cloneFrom.getDataSize());
+    if (data_size) {
+        memcpy(data_val, cloneFrom.getDataPointer(), data_size);
+    }
+}
+
 DataElement::~DataElement() {
     if (data_val) {
         delete[] data_val;
@@ -482,6 +490,12 @@ DataNode::DataNode(const char *name_in): parentNode(NULL), ptr(0) {
     data_elem = new DataElement();
 }
 
+
+DataNode::DataNode(const char *name_in, DataElement &cloneFrom): parentNode(NULL), ptr(0) {
+    node_name = name_in;
+    data_elem = new DataElement(cloneFrom);
+}
+
 DataNode::~DataNode() {
     while (children.size()) {
         DataNode *del = children.back();
@@ -509,6 +523,31 @@ DataNode *DataNode::newChild(const char *name_in) {
 
     return children.back();
 }
+
+DataNode *DataNode::newChild(const char *name_in, DataNode *otherNode) {
+    children.push_back(otherNode);
+    childmap[name_in].push_back(children.back());
+    
+    children.back()->setParentNode(*this);
+    
+    return children.back();
+}
+
+DataNode *DataNode::newChildCloneFrom(const char *name_in, DataNode *cloneFrom) {
+    DataNode *cloneNode = new DataNode(name_in, *cloneFrom->element());
+    
+    children.push_back(cloneNode);
+    childmap[name_in].push_back(children.back());
+    children.back()->setParentNode(*this);
+    
+    while (cloneFrom->hasAnother()) {
+        DataNode *cNode = cloneFrom->getNext();
+        cloneNode->newChildCloneFrom(cNode->getName().c_str(), cNode);
+    }
+    
+    return children.back();
+}
+
 
 DataNode *DataNode::child(const char *name_in, int index) {
     DataNode *child_ret;

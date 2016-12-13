@@ -2,10 +2,41 @@
 #include "CubicSDR.h"
 #include "DataTree.h"
 
+#define BOOKMARK_RECENTS_MAX 25
+
 
 void BookmarkMgr::saveToFile(std::string bookmarkFn) {
+    DataTree s("cubicsdr_bookmarks");
+    DataNode *header = s.rootNode()->newChild("header");
+    header->newChild("version")->element()->set(wxString(CUBICSDR_VERSION).ToStdWstring());
     
+    DataNode *modems = s.rootNode()->newChild("modems");
     
+    std::lock_guard < std::mutex > lockData(busy_lock);
+    
+    for (auto &bmd_i : bmData) {
+        DataNode *group = modems->newChild("group");
+        *group->newChild("@name") = bmd_i.first;
+
+        for (auto &bm_i : bmd_i.second ) {
+            std::lock_guard < std::mutex > lockEnt(bm_i->busy_lock);
+            group->newChildCloneFrom("modem", bm_i->node);
+        }
+    }
+
+    DataNode *recent = s.rootNode()->newChild("recent");
+    DataNode *recent_modems = recent->newChild("recent_modems");
+    
+    for (auto demod : wxGetApp().getDemodMgr().getDemodulators()) {
+        wxGetApp().getDemodMgr().saveInstance(recent_modems->newChild("modem"),demod);
+    }
+
+    for (auto &r_i : this->recents) {
+        std::lock_guard < std::mutex > lockEnt(r_i->busy_lock);
+        recent_modems->newChildCloneFrom("modem", r_i->node);
+    }
+
+    s.SaveToFileXML(wxFileName(wxGetApp().getConfig()->getConfigDir(), bookmarkFn).GetFullPath(wxPATH_NATIVE).ToStdString());
 }
 
 
@@ -178,7 +209,7 @@ void BookmarkMgr::updateBookmarks(std::string group) {
 void BookmarkMgr::addRecent(DemodulatorInstance *demod) {
     std::lock_guard < std::mutex > lock(busy_lock);
     recents.push_back(demodToBookmarkEntry(demod));
-    if (recents.size() > 10) {
+    if (recents.size() > BOOKMARK_RECENTS_MAX) {
         delete *(recents.begin());
         recents.erase(recents.begin(), recents.begin()+1);
     }
