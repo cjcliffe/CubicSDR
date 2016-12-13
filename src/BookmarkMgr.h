@@ -14,6 +14,7 @@ public:
 
     std::string type;
     std::wstring label;
+    std::wstring userLabel;
     
     long long frequency;
     int bandwidth;

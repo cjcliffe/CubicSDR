@@ -8,10 +8,12 @@
 #define wxCONTEXT_ADD_GROUP_ID 1000
 
 #define BOOKMARK_VIEW_CHOICE_DEFAULT "Bookmark.."
+#define BOOKMARK_VIEW_CHOICE_MOVE "Move to.."
 #define BOOKMARK_VIEW_CHOICE_NEW "(New Group..)"
 
 #define BOOKMARK_VIEW_STR_ADD_GROUP "Add Group"
 #define BOOKMARK_VIEW_STR_ADD_GROUP_DESC "Enter Group Name"
+#define BOOKMARK_VIEW_STR_UNNAMED "Unnamed"
 
 BookmarkView::BookmarkView( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style) : BookmarkPanel(parent, id, pos, size, style) {
 
@@ -128,6 +130,9 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
         wxTreeItemId group_itm = m_treeView->AppendItem(bookmarkBranch, gn_i);
         m_treeView->SetItemData(group_itm, tvi);
         groups[gn_i] = group_itm;
+        if (gn_i == groupSel) {
+            bmSelFound = group_itm;
+        }
     }
 
     if (bmExpandState) {
@@ -152,13 +157,14 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
             tvi->bookmarkEnt = bmEnt;
             tvi->groupName = gn_i;
 
-            std::wstring labelVal;
-            if (bmEnt->label == "") {
-                std::string wstr = frequencyToStr(tvi->bookmarkEnt->frequency) + " " + tvi->bookmarkEnt->type;
-                bmEnt->label = std::wstring(wstr.begin(),wstr.end());
+            std::wstring labelVal = bmEnt->label;
+            
+            if (labelVal == "") {
+                std::string freqStr = frequencyToStr(bmEnt->frequency) + " " + bmEnt->type;
+                labelVal = wstring(freqStr.begin(),freqStr.end());
             }
             
-            wxTreeItemId itm = m_treeView->AppendItem(groupItem, bmEnt->label);
+            wxTreeItemId itm = m_treeView->AppendItem(groupItem, labelVal);
             m_treeView->SetItemData(itm, tvi);
             if (bookmarkSel == bmEnt && groupExpanded) {
                 bmSelFound = itm;
@@ -459,7 +465,7 @@ void BookmarkView::updateBookmarkChoices() {
     if (!bookmarkChoices.empty()) {
         bookmarkChoices.erase(bookmarkChoices.begin(),bookmarkChoices.end());
     }
-    bookmarkChoices.push_back(BOOKMARK_VIEW_CHOICE_DEFAULT);
+    bookmarkChoices.push_back((bookmarkSel!=nullptr)?BOOKMARK_VIEW_CHOICE_MOVE:BOOKMARK_VIEW_CHOICE_DEFAULT);
     wxGetApp().getBookmarkMgr().getGroups(bookmarkChoices);
     bookmarkChoices.push_back(BOOKMARK_VIEW_CHOICE_NEW);
 }
@@ -500,6 +506,9 @@ void BookmarkView::onBookmarkChoice( wxCommandEvent &event ) {
     }
     if (recentSel) {
         doBookmarkRecent(groupSel, recentSel);
+    }
+    if (bookmarkSel) {
+        doMoveBookmark(bookmarkSel, groupSel);
     }
 }
 
@@ -589,9 +598,10 @@ void BookmarkView::bookmarkSelection(BookmarkEntry *bmSel) {
     
     clearButtons();
     
+    addBookmarkChoice(m_buttonPanel);
     addButton(m_buttonPanel, "Activate Bookmark", wxCommandEventHandler( BookmarkView::onActivateBookmark ));
     addButton(m_buttonPanel, "Remove Bookmark", wxCommandEventHandler( BookmarkView::onRemoveBookmark ));
-    
+   
     showProps();
     showButtons();
     refreshLayout();
@@ -643,9 +653,16 @@ void BookmarkView::groupSelection(std::string groupName) {
     
     hideProps();
 
+//    m_labelText->SetValue(groupSel);
+
+//    m_labelText->Show();
+//    m_labelLabel->Show();
+    
     addButton(m_buttonPanel, "Remove Group", wxCommandEventHandler( BookmarkView::onRemoveGroup ));
     addButton(m_buttonPanel, "Rename Group", wxCommandEventHandler( BookmarkView::onRenameGroup ));
     
+//    showProps();
+
     showButtons();
     refreshLayout();
 }
@@ -737,6 +754,12 @@ void BookmarkView::onLabelText( wxCommandEvent& event ) {
         recentSel->node->child("user_label")->element()->set(newLabel);
         wxGetApp().getBookmarkMgr().updateActiveList();
     }
+//    else if (groupSel != "") {
+//        std::string newGroupName = m_labelText->GetValue().ToStdString();
+//        wxGetApp().getBookmarkMgr().renameGroup(groupSel, newGroupName);
+//        groupSel = newGroupName;
+//        wxGetApp().getBookmarkMgr().updateBookmarks();
+//    }
 }
 
 
@@ -806,6 +829,7 @@ void BookmarkView::onAddGroup( wxCommandEvent& event ) {
         groupSel = stringVal;
     }
 }
+
 
 void BookmarkView::onRemoveGroup( wxCommandEvent& event ) {
     if (editingLabel) {
@@ -908,9 +932,11 @@ void BookmarkView::onTreeEndDrag( wxTreeEvent& event ) {
     if (!tvi) {
         if (event.GetItem() == bookmarkBranch) {
             if (dragItem && dragItem->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
-                doBookmarkActive("Ungrouped", dragItem->demod);
+                doBookmarkActive(BOOKMARK_VIEW_STR_UNNAMED, dragItem->demod);
             } else if (dragItem && dragItem->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
-                doBookmarkRecent("Ungrouped", dragItem->bookmarkEnt);
+                doBookmarkRecent(BOOKMARK_VIEW_STR_UNNAMED, dragItem->bookmarkEnt);
+            } else if (dragItem && dragItem->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK) {
+                doMoveBookmark(dragItem->bookmarkEnt, BOOKMARK_VIEW_STR_UNNAMED);
             }
         }
         return;

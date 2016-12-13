@@ -69,6 +69,9 @@ void BookmarkMgr::moveBookmark(BookmarkEntry *be, std::string group) {
     for (auto &bmd_i : bmData) {
         BookmarkList::iterator i = std::find(bmd_i.second.begin(), bmd_i.second.end(), be);
         if (i != bmd_i.second.end()) {
+            if (bmd_i.first == group) {
+                return;
+            }
             bmData[group].push_back(*i);
             bmd_i.second.erase(i);
             bmDataSorted[group] = false;
@@ -104,7 +107,7 @@ void BookmarkMgr::renameGroup(std::string group, std::string ngroup) {
     std::lock_guard < std::mutex > lock(busy_lock);
     
     BookmarkMap::iterator i = bmData.find(group);
-    BookmarkMap::iterator it = bmData.find(group);
+    BookmarkMap::iterator it = bmData.find(ngroup);
     
     if (i != bmData.end() && it != bmData.end()) {
         for (auto ii : bmData[group]) {
