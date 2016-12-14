@@ -435,7 +435,12 @@ std::string DataElement::toString() {
             strValue = std::to_string(floatSettingValue);
         } else if (dataType == DATA_NULL) {
             strValue = "";
-        } else {
+        } else if (dataType == DATA_WSTRING) {
+            std::wstring wstr;
+            get(wstr);
+            strValue = *wstr.c_str();
+        }
+        else {
             std::cout << "Unhandled DataElement toString for type: " << dataType  << std::endl;
         }
     } catch (DataTypeMismatchException e) {
@@ -490,6 +495,16 @@ DataNode::DataNode(const char *name_in): parentNode(NULL), ptr(0) {
     data_elem = new DataElement();
 }
 
+DataNode::DataNode(const char *name_in, DataNode &cloneFrom): parentNode(NULL), ptr(0) {
+    node_name = name_in;
+    data_elem = new DataElement(*cloneFrom.element());
+    
+    // TODO: stack recursion optimization
+    while (cloneFrom.hasAnother()) {
+        DataNode *cNode = cloneFrom.getNext();
+        newChildCloneFrom(cNode->getName().c_str(), cNode);
+    }
+}
 
 DataNode::DataNode(const char *name_in, DataElement &cloneFrom): parentNode(NULL), ptr(0) {
     node_name = name_in;
@@ -540,6 +555,7 @@ DataNode *DataNode::newChildCloneFrom(const char *name_in, DataNode *cloneFrom) 
     childmap[name_in].push_back(children.back());
     children.back()->setParentNode(*this);
     
+    // TODO: stack recursion optimization
     while (cloneFrom->hasAnother()) {
         DataNode *cNode = cloneFrom->getNext();
         cloneNode->newChildCloneFrom(cNode->getName().c_str(), cNode);

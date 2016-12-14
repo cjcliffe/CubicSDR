@@ -405,6 +405,7 @@ bool CubicSDR::OnCmdLineParsed(wxCmdLineParser& parser) {
     }
     
     config.load();
+    wxGetApp().getBookmarkMgr().loadFromFile("bookmarks.xml");
 
 #ifdef BUNDLE_SOAPY_MODS
     if (parser.Found("b")) {

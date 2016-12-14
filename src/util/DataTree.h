@@ -237,8 +237,9 @@ public:
     DataNode();
     DataNode(const char *name_in);
     DataNode(const char *name_in, DataElement &cloneFrom);
-    
-    ~DataNode();		
+    DataNode(const char *name_in, DataNode &cloneFrom);
+
+    ~DataNode();
     
     void setName(const char *name_in);
     string &getName() { return node_name; }

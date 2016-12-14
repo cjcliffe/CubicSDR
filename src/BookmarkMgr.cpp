@@ -24,8 +24,7 @@ void BookmarkMgr::saveToFile(std::string bookmarkFn) {
         }
     }
 
-    DataNode *recent = s.rootNode()->newChild("recent");
-    DataNode *recent_modems = recent->newChild("recent_modems");
+    DataNode *recent_modems = s.rootNode()->newChild("recent_modems");
     
     for (auto demod : wxGetApp().getDemodMgr().getDemodulators()) {
         wxGetApp().getDemodMgr().saveInstance(recent_modems->newChild("modem"),demod);
@@ -36,15 +35,67 @@ void BookmarkMgr::saveToFile(std::string bookmarkFn) {
         recent_modems->newChildCloneFrom("modem", r_i->node);
     }
 
-    s.SaveToFileXML(wxFileName(wxGetApp().getConfig()->getConfigDir(), bookmarkFn).GetFullPath(wxPATH_NATIVE).ToStdString());
+    wxFileName saveFile(wxGetApp().getConfig()->getConfigDir(), bookmarkFn);
+    wxFileName saveFileBackup(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".backup");
+    
+    if (saveFile.IsDirWritable()) {
+        // Hopefully leave at least a readable backup in case of failure..
+        if (saveFile.FileExists() && (!saveFileBackup.FileExists() || saveFileBackup.IsFileWritable())) {
+            wxCopyFile(saveFile.GetFullPath(wxPATH_NATIVE).ToStdString(), saveFileBackup.GetFullPath(wxPATH_NATIVE).ToStdString());
+        }
+        s.SaveToFileXML(saveFile.GetFullPath(wxPATH_NATIVE).ToStdString());
+    }
 }
 
 
 void BookmarkMgr::loadFromFile(std::string bookmarkFn) {
-    
-    
-}
+    wxFileName loadFile(wxGetApp().getConfig()->getConfigDir(), bookmarkFn);
 
+    DataTree s;
+
+    if (!loadFile.IsFileReadable()) {
+        return;
+    }
+
+    if (!s.LoadFromFileXML(loadFile.GetFullPath(wxPATH_NATIVE).ToStdString())) {
+        // TODO: if exists; inform user & optionally load backup
+        return;
+    }
+ 
+    if (s.rootNode()->hasAnother("modems")) {
+        DataNode *modems = s.rootNode()->getNext("modems");
+        while (modems->hasAnother("group")) {
+            DataNode *group = modems->getNext("group");
+            std::string groupName = "Unnamed";
+            if (group->hasAnother("@name")) {
+                groupName = group->getNext("@name")->element()->toString();
+            }
+            while (group->hasAnother("modem")) {
+                DataNode *modem = group->getNext("modem");
+                BookmarkEntry *be = nodeToBookmark("modem", modem);
+                if (be) {
+                    addBookmark(groupName.c_str(), be);
+                } else {
+                    std::cout << "error loading bookmarked modem.." << std::endl;
+                }
+            }
+        }
+    }
+    
+    if (s.rootNode()->hasAnother("recent_modems")) {
+        DataNode *recent_modems = s.rootNode()->getNext("recent_modems");
+        
+        while (recent_modems->hasAnother("modem")) {
+            DataNode *modem = recent_modems->getNext("modem");
+            BookmarkEntry *be = nodeToBookmark("modem", modem);
+            if (be) {
+                addRecent(be);
+            } else {
+                std::cout << "error loading recent modem.." << std::endl;
+            }
+        }
+    }
+}
 
 void BookmarkMgr::addBookmark(std::string group, DemodulatorInstance *demod) {
     std::lock_guard < std::mutex > lock(busy_lock);
@@ -209,11 +260,18 @@ void BookmarkMgr::updateBookmarks(std::string group) {
 void BookmarkMgr::addRecent(DemodulatorInstance *demod) {
     std::lock_guard < std::mutex > lock(busy_lock);
     recents.push_back(demodToBookmarkEntry(demod));
-    if (recents.size() > BOOKMARK_RECENTS_MAX) {
-        delete *(recents.begin());
-        recents.erase(recents.begin(), recents.begin()+1);
-    }
+
+    trimRecents();
 }
+
+void BookmarkMgr::addRecent(BookmarkEntry *be) {
+    std::lock_guard < std::mutex > lock(busy_lock);
+
+    recents.push_back(be);
+
+    trimRecents();
+}
+
 
 
 void BookmarkMgr::removeRecent(BookmarkEntry *be) {
@@ -232,6 +290,14 @@ BookmarkList BookmarkMgr::getRecents() {
 }
 
 
+
+void BookmarkMgr::trimRecents() {
+    if (recents.size() > BOOKMARK_RECENTS_MAX) {
+        delete *(recents.begin());
+        recents.erase(recents.begin(), recents.begin()+1);
+    }
+}
+
 BookmarkEntry *BookmarkMgr::demodToBookmarkEntry(DemodulatorInstance *demod) {
     BookmarkEntry *be = new BookmarkEntry;
     
@@ -245,3 +311,23 @@ BookmarkEntry *BookmarkMgr::demodToBookmarkEntry(DemodulatorInstance *demod) {
     
     return be;
 }
+
+BookmarkEntry *BookmarkMgr::nodeToBookmark(const char *name_in, DataNode *node) {
+    if (!node->hasAnother("frequency") || !node->hasAnother("type") || !node->hasAnother("bandwidth")) {
+        return nullptr;
+    }
+    
+    BookmarkEntry *be = new BookmarkEntry();
+    node->getNext("frequency")->element()->get(be->frequency);
+    node->getNext("type")->element()->get(be->type);
+    node->getNext("bandwidth")->element()->get(be->bandwidth);
+
+    if (node->hasAnother("user_label")) {
+        node->getNext("user_label")->element()->get(be->label);
+    }
+    
+    be->node = new DataNode("node",*node);
+    
+    return be;
+}
+

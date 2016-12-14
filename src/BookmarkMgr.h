@@ -40,7 +40,7 @@ class BookmarkMgr {
 public:
     void saveToFile(std::string bookmarkFn);
     void loadFromFile(std::string bookmarkFn);
-    
+
     void addBookmark(std::string group, DemodulatorInstance *demod);
     void addBookmark(std::string group, BookmarkEntry *be);
     void removeBookmark(std::string group, BookmarkEntry *be);
@@ -59,13 +59,17 @@ public:
     void updateBookmarks(std::string group);
 
     void addRecent(DemodulatorInstance *demod);
+    void addRecent(BookmarkEntry *be);
     void removeRecent(BookmarkEntry *be);
     BookmarkList getRecents();
 
     
 protected:
+
+    void trimRecents();
     
-    BookmarkEntry *demodToBookmarkEntry(DemodulatorInstance *demod);
+    BookmarkEntry *demodToBookmarkEntry(DemodulatorInstance *demod);    
+    BookmarkEntry *nodeToBookmark(const char *name_in, DataNode *node);
     
     BookmarkMap bmData;
     BookmarkMapSorted bmDataSorted;
