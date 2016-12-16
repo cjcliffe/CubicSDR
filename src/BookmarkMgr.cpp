@@ -186,6 +186,10 @@ void BookmarkMgr::removeGroup(std::string group) {
 }
 
 void BookmarkMgr::renameGroup(std::string group, std::string ngroup) {
+    if (group == ngroup) {
+        return;
+    }
+    
     std::lock_guard < std::mutex > lock(busy_lock);
     
     BookmarkMap::iterator i = bmData.find(group);

@@ -99,6 +99,8 @@ protected:
     void onRemoveGroup( wxCommandEvent& event );
     void onRenameGroup( wxCommandEvent& event );
     
+    TreeViewItem *itemToTVI(wxTreeItemId item);
+
     
     std::atomic_bool mouseInView;
     
@@ -114,17 +116,11 @@ protected:
     // Bookmarks
     std::atomic_bool doUpdateBookmarks;
     std::set< std::string > doUpdateBookmarkGroup;
-    std::string groupSel;
     BookmarkNames groupNames;
     std::map<std::string, wxTreeItemId> groups;
-    BookmarkEntry *bookmarkSel;
     wxArrayString bookmarkChoices;
     wxChoice *bookmarkChoice;
     
     // Active
     std::atomic_bool doUpdateActive;
-    DemodulatorInstance *activeSel;
-    
-    // Recent
-    BookmarkEntry *recentSel;    
 };
