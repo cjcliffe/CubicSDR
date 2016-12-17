@@ -79,6 +79,8 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	// Connect Events
 	this->Connect( wxEVT_ENTER_WINDOW, wxMouseEventHandler( BookmarkPanel::onEnterWindow ) );
 	this->Connect( wxEVT_LEAVE_WINDOW, wxMouseEventHandler( BookmarkPanel::onLeaveWindow ) );
+	this->Connect( wxEVT_MOTION, wxMouseEventHandler( BookmarkPanel::onMotion ) );
+	m_treeView->Connect( wxEVT_MOTION, wxMouseEventHandler( BookmarkPanel::onMotion ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_BEGIN_DRAG, wxTreeEventHandler( BookmarkPanel::onTreeBeginDrag ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_BEGIN_LABEL_EDIT, wxTreeEventHandler( BookmarkPanel::onTreeBeginLabelEdit ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_DELETE_ITEM, wxTreeEventHandler( BookmarkPanel::onTreeDeleteItem ), NULL, this );
@@ -102,6 +104,8 @@ BookmarkPanel::~BookmarkPanel()
 	// Disconnect Events
 	this->Disconnect( wxEVT_ENTER_WINDOW, wxMouseEventHandler( BookmarkPanel::onEnterWindow ) );
 	this->Disconnect( wxEVT_LEAVE_WINDOW, wxMouseEventHandler( BookmarkPanel::onLeaveWindow ) );
+	this->Disconnect( wxEVT_MOTION, wxMouseEventHandler( BookmarkPanel::onMotion ) );
+	m_treeView->Disconnect( wxEVT_MOTION, wxMouseEventHandler( BookmarkPanel::onMotion ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_BEGIN_DRAG, wxTreeEventHandler( BookmarkPanel::onTreeBeginDrag ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_BEGIN_LABEL_EDIT, wxTreeEventHandler( BookmarkPanel::onTreeBeginLabelEdit ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_DELETE_ITEM, wxTreeEventHandler( BookmarkPanel::onTreeDeleteItem ), NULL, this );

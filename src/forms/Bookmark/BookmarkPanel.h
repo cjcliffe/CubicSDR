@@ -49,6 +49,7 @@ class BookmarkPanel : public wxPanel
 		// Virtual event handlers, overide them in your derived class
 		virtual void onEnterWindow( wxMouseEvent& event ) { event.Skip(); }
 		virtual void onLeaveWindow( wxMouseEvent& event ) { event.Skip(); }
+		virtual void onMotion( wxMouseEvent& event ) { event.Skip(); }
 		virtual void onTreeBeginDrag( wxTreeEvent& event ) { event.Skip(); }
 		virtual void onTreeBeginLabelEdit( wxTreeEvent& event ) { event.Skip(); }
 		virtual void onTreeDeleteItem( wxTreeEvent& event ) { event.Skip(); }

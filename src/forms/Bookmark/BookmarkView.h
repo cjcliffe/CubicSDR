@@ -3,6 +3,7 @@
 #include "BookmarkPanel.h"
 #include "BookmarkMgr.h"
 #include "wx/choice.h"
+#include "wx/dialog.h"
 
 class TreeViewItem : public wxTreeItemData {
 public:
@@ -23,6 +24,13 @@ public:
     DemodulatorInstance *demod;
     std::string groupName;
 };
+
+
+class BookmarkViewVisualDragItem : public wxDialog {
+public:
+    BookmarkViewVisualDragItem(wxString labelValue = L"Popup");
+};
+
 
 
 class BookmarkView : public BookmarkPanel {
@@ -53,6 +61,9 @@ protected:
     void showProps();
     
     void onUpdateTimer( wxTimerEvent& event );
+
+    std::wstring getBookmarkEntryDisplayName(BookmarkEntry *bmEnt);
+    std::wstring getActiveDisplayName(DemodulatorInstance *demod);
     void doUpdateActiveList();
 
     void onTreeBeginLabelEdit( wxTreeEvent& event );
@@ -72,6 +83,7 @@ protected:
     void onTreeItemGetTooltip( wxTreeEvent& event );
     void onEnterWindow( wxMouseEvent& event );
     void onLeaveWindow( wxMouseEvent& event );
+    void onMotion( wxMouseEvent& event );
 
     
     void clearButtons();
@@ -110,6 +122,7 @@ protected:
     
     TreeViewItem *dragItem;
     wxTreeItemId dragItemId;
+    BookmarkViewVisualDragItem *visualDragItem;
     
     bool editingLabel;
     

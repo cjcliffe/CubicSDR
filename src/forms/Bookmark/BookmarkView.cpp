@@ -15,6 +15,20 @@
 #define BOOKMARK_VIEW_STR_ADD_GROUP_DESC "Enter Group Name"
 #define BOOKMARK_VIEW_STR_UNNAMED "Unnamed"
 
+
+BookmarkViewVisualDragItem::BookmarkViewVisualDragItem(wxString labelValue) : wxDialog(NULL, wxID_ANY, L"", wxPoint(20,20), wxSize(-1,-1), wxSTAY_ON_TOP | wxALL ) {
+    
+    wxBoxSizer *sizer = new wxBoxSizer(wxVERTICAL);
+    wxStaticText *label = new wxStaticText( this, wxID_ANY, labelValue, wxDefaultPosition, wxDefaultSize, wxEXPAND );
+    
+    sizer->Add(label, 1, wxALL | wxEXPAND, 5);
+    
+    SetSizerAndFit(sizer);
+    
+    Show();
+}
+
+
 BookmarkView::BookmarkView( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style) : BookmarkPanel(parent, id, pos, size, style) {
 
     rootBranch = m_treeView->AddRoot("Root");
@@ -38,6 +52,7 @@ BookmarkView::BookmarkView( wxWindow* parent, wxWindowID id, const wxPoint& pos,
     m_updateTimer.Start(500);
     mouseInView.store(false);
 
+    visualDragItem = nullptr;
 }
 
 
@@ -156,12 +171,7 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
             tvi->bookmarkEnt = bmEnt;
             tvi->groupName = gn_i;
 
-            std::wstring labelVal = bmEnt->label;
-            
-            if (labelVal == "") {
-                std::string freqStr = frequencyToStr(bmEnt->frequency) + " " + bmEnt->type;
-                labelVal = wstring(freqStr.begin(),freqStr.end());
-            }
+            std::wstring labelVal = getBookmarkEntryDisplayName(bmEnt);
             
             wxTreeItemId itm = m_treeView->AppendItem(groupItem, labelVal);
             m_treeView->SetItemData(itm, tvi);
@@ -177,6 +187,29 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
 
     
     return bmSelFound;
+}
+
+
+std::wstring BookmarkView::getBookmarkEntryDisplayName(BookmarkEntry *bmEnt) {
+    std::wstring dispName = bmEnt->label;
+    
+    if (dispName == "") {
+        std::string freqStr = frequencyToStr(bmEnt->frequency) + " " + bmEnt->type;
+        dispName = wstring(freqStr.begin(),freqStr.end());
+    }
+    
+    return dispName;
+}
+
+std::wstring BookmarkView::getActiveDisplayName(DemodulatorInstance *demod) {
+    std::wstring activeName = demod->getDemodulatorUserLabel();
+    
+    if (activeName == "") {
+        std::string wstr = frequencyToStr(demod->getFrequency()) + " " + demod->getDemodulatorType();
+        activeName = std::wstring(wstr.begin(),wstr.end());
+    }
+    
+    return activeName;
 }
 
 
@@ -199,11 +232,7 @@ void BookmarkView::doUpdateActiveList() {
         tvi->type = TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE;
         tvi->demod = demod_i;
         
-        wxString activeLabel = demod_i->getDemodulatorUserLabel();
-        if (activeLabel == "") {
-            std::string wstr = frequencyToStr(demod_i->getFrequency()) + " " + demod_i->getDemodulatorType();
-            activeLabel  = std::wstring(wstr.begin(),wstr.end());
-        }
+        wxString activeLabel = getActiveDisplayName(demod_i);
         
         wxTreeItemId itm = m_treeView->AppendItem(activeBranch,activeLabel);
         m_treeView->SetItemData(itm, tvi);
@@ -865,7 +894,9 @@ void BookmarkView::onTreeBeginDrag( wxTreeEvent& event ) {
     
     dragItem = nullptr;
     dragItemId = nullptr;
-    
+
+    SetCursor(wxCURSOR_CROSS);
+
     if (!tvi) {
         event.Veto();
         return;
@@ -876,17 +907,10 @@ void BookmarkView::onTreeBeginDrag( wxTreeEvent& event ) {
     
     if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
         bAllow = true;
-        dragItemName = tvi->demod->getDemodulatorUserLabel();
-        if (dragItemName == "") {
-            std::string wstr = tvi->demod->getLabel();
-            dragItemName = std::wstring(wstr.begin(),wstr.end());
-        }
-    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
+        dragItemName = getActiveDisplayName(tvi->demod);
+    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT || tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK) {
         bAllow = true;
-        dragItemName = tvi->bookmarkEnt->label;
-    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK) {
-        bAllow = true;
-        dragItemName = tvi->bookmarkEnt->label;
+        dragItemName = getBookmarkEntryDisplayName(tvi->bookmarkEnt);
     }
     
     if (bAllow) {
@@ -895,11 +919,13 @@ void BookmarkView::onTreeBeginDrag( wxTreeEvent& event ) {
         
         m_treeView->SetBackgroundColour(textColor);
         m_treeView->SetForegroundColour(bgColor);
-        m_treeView->SetToolTip("Dragging " + dragItemName);
+//        m_treeView->SetToolTip("Dragging " + dragItemName);
         
         dragItem = tvi;
         dragItemId = event.GetItem();
 
+        visualDragItem = new BookmarkViewVisualDragItem(dragItemName);
+        
         event.Allow();
     } else {
         event.Veto();
@@ -916,6 +942,14 @@ void BookmarkView::onTreeEndDrag( wxTreeEvent& event ) {
     m_treeView->SetForegroundColour(textColor);
     m_treeView->UnsetToolTip();
 
+    SetCursor(wxCURSOR_ARROW);
+
+    if (visualDragItem != nullptr) {
+        visualDragItem->Destroy();
+        delete visualDragItem;
+        visualDragItem = nullptr;
+    }
+    
     if (!event.GetItem()) {
         event.Veto();
         return;
@@ -976,6 +1010,18 @@ void BookmarkView::onEnterWindow( wxMouseEvent& event ) {
 
 void BookmarkView::onLeaveWindow( wxMouseEvent& event ) {
     mouseInView.store(false);
+}
+
+void BookmarkView::onMotion( wxMouseEvent& event ) {
+    wxPoint pos = ClientToScreen(event.GetPosition());
+    
+    pos += wxPoint(30,-10);
+    
+    if (visualDragItem != nullptr) {
+        visualDragItem->SetPosition(pos);
+    }
+    
+    event.Skip();
 }
 
 TreeViewItem *BookmarkView::itemToTVI(wxTreeItemId item) {
