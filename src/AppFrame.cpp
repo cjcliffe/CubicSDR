@@ -69,8 +69,9 @@ AppFrame::AppFrame() :
     //attribList.PlatformDefaults().MinRGBA(8, 8, 8, 8).DoubleBuffer().Depth(16).EndList();
 
     mainSplitter = new wxSplitterWindow( this, wxID_MAIN_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
-    mainSplitter->SetSashGravity(10.0/37.0);
+    mainSplitter->SetSashGravity(10.0f / 37.0f);
     mainSplitter->SetMinimumPaneSize(1);
+    
 
     wxPanel *demodPanel = new wxPanel(mainSplitter, wxID_ANY);
 
@@ -277,13 +278,13 @@ AppFrame::AppFrame() :
 
 //    vbox->Add(demodTray, 12, wxEXPAND | wxALL, 0);
 //    vbox->AddSpacer(1);
-    bookmarkSplitter = new wxSplitterWindow( mainSplitter, wxID_VIS_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
+    bookmarkSplitter = new wxSplitterWindow( mainSplitter, wxID_BM_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
     bookmarkSplitter->SetMinimumPaneSize(1);
-    bookmarkSplitter->SetSashGravity(1.0/20.0);
+    bookmarkSplitter->SetSashGravity(1.0f / 20.0f);
         
     mainVisSplitter = new wxSplitterWindow( bookmarkSplitter, wxID_VIS_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
     mainVisSplitter->SetMinimumPaneSize(1);
-    mainVisSplitter->SetSashGravity(6.0/25.0);
+    mainVisSplitter->SetSashGravity(6.0f / 25.0f);
         
 //    mainVisSplitter->Connect( wxEVT_IDLE, wxIdleEventHandler( AppFrame::mainVisSplitterIdle ), NULL, this );
 
@@ -365,7 +366,7 @@ AppFrame::AppFrame() :
     mainSplitter->SplitHorizontally( demodPanel, bookmarkSplitter );
             
     vbox->Add(mainSplitter, 1, wxEXPAND | wxALL, 0);
-            
+
     // TODO: refactor these..
     waterfallCanvas->attachSpectrumCanvas(spectrumCanvas);
     spectrumCanvas->attachWaterfallCanvas(waterfallCanvas);
@@ -647,7 +648,20 @@ AppFrame::AppFrame() :
     if (mpc) {
         modemProps->setCollapsed(true);
     }
-            
+
+    int msPos = wxGetApp().getConfig()->getMainSplit();
+    if (msPos != -1) {
+        mainSplitter->SetSashPosition(msPos);
+    }
+    int bsPos = wxGetApp().getConfig()->getBookmarkSplit();
+    if (bsPos != -1) {
+        bookmarkSplitter->SetSashPosition(bsPos);
+    }
+    int vsPos = wxGetApp().getConfig()->getVisSplit();
+    if (vsPos != -1) {
+        mainVisSplitter->SetSashPosition(vsPos);
+    }
+    
     Show();
 
 #ifdef _WIN32
@@ -1289,6 +1303,9 @@ void AppFrame::OnClose(wxCloseEvent& event) {
     wxGetApp().getConfig()->setWaterfallLinesPerSec(waterfallDataThread->getLinesPerSecond());
     wxGetApp().getConfig()->setManualDevices(SDREnumerator::getManuals());
     wxGetApp().getConfig()->setModemPropsCollapsed(modemProps->isCollapsed());
+    wxGetApp().getConfig()->setMainSplit(mainSplitter->GetSashPosition());
+    wxGetApp().getConfig()->setVisSplit(mainVisSplitter->GetSashPosition());
+    wxGetApp().getConfig()->setBookmarkSplit(bookmarkSplitter->GetSashPosition());
 #ifdef USE_HAMLIB
     wxGetApp().getConfig()->setRigEnabled(rigEnableMenuItem->IsChecked());
     wxGetApp().getConfig()->setRigModel(rigModel);

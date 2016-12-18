@@ -290,6 +290,10 @@ AppConfig::AppConfig() : configName("") {
     spectrumAvgSpeed.store(0.65f);
     dbOffset.store(0);
     modemPropsCollapsed.store(false);
+    mainSplit = -1;
+    visSplit = -1;
+    bookmarkSplit = -1;
+    
 #ifdef USE_HAMLIB
     rigEnabled.store(false);
     rigModel.store(1);
@@ -441,6 +445,31 @@ std::vector<SDRManualDef> AppConfig::getManualDevices() {
     return manualDevices;
 }
 
+void AppConfig::setMainSplit(float value) {
+    mainSplit.store(value);
+}
+
+float AppConfig::getMainSplit() {
+    return mainSplit.load();
+}
+
+void AppConfig::setVisSplit(float value) {
+    visSplit.store(value);
+}
+
+float AppConfig::getVisSplit() {
+    return visSplit.load();
+}
+
+void AppConfig::setBookmarkSplit(float value) {
+    bookmarkSplit.store(value);
+}
+
+float AppConfig::getBookmarkSplit() {
+    return bookmarkSplit.load();
+}
+
+
 void AppConfig::setConfigName(std::string configName) {
     this->configName = configName;
 }
@@ -487,6 +516,10 @@ bool AppConfig::save() {
         *window_node->newChild("spectrum_avg") = spectrumAvgSpeed.load();
         *window_node->newChild("modemprops_collapsed") = modemPropsCollapsed.load();;
         *window_node->newChild("db_offset") = dbOffset.load();
+
+        *window_node->newChild("main_split") = mainSplit.load();
+        *window_node->newChild("vis_split") = visSplit.load();
+        *window_node->newChild("bookmark_split") = bookmarkSplit.load();
     }
     
     DataNode *devices_node = cfg.rootNode()->newChild("devices");
@@ -643,6 +676,24 @@ bool AppConfig::load() {
             int offsetValue = 0;
             offset_node->element()->get(offsetValue);
             setDBOffset(offsetValue);
+        }
+
+        if (win_node->hasAnother("main_split")) {
+            float gVal;
+            win_node->getNext("main_split")->element()->get(gVal);
+            mainSplit.store(gVal);
+        }
+        
+        if (win_node->hasAnother("vis_split")) {
+            float gVal;
+            win_node->getNext("vis_split")->element()->get(gVal);
+            visSplit.store(gVal);
+        }
+        
+        if (win_node->hasAnother("bookmark_split")) {
+            float gVal;
+            win_node->getNext("bookmark_split")->element()->get(gVal);
+            bookmarkSplit.store(gVal);
         }
     }
     

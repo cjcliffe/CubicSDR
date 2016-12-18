@@ -39,6 +39,7 @@
 
 #define wxID_MAIN_SPLITTER 2050
 #define wxID_VIS_SPLITTER 2051
+#define wxID_BM_SPLITTER 2052
 
 #define wxID_THEME_DEFAULT 2100
 #define wxID_THEME_SHARP 2101
