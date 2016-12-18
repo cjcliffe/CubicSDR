@@ -62,6 +62,7 @@ public:
     void addRecent(BookmarkEntry *be);
     void removeRecent(BookmarkEntry *be);
     BookmarkList getRecents();
+    void clearRecents();
 
     
 protected:

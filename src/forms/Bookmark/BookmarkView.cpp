@@ -14,7 +14,8 @@
 #define BOOKMARK_VIEW_STR_ADD_GROUP "Add Group"
 #define BOOKMARK_VIEW_STR_ADD_GROUP_DESC "Enter Group Name"
 #define BOOKMARK_VIEW_STR_UNNAMED "Unnamed"
-
+#define BOOKMARK_VIEW_STR_CLEAR_RECENT "Clear Recents"
+#define BOOKMARK_VIEW_STR_RENAME_GROUP "Rename Group"
 
 BookmarkViewVisualDragItem::BookmarkViewVisualDragItem(wxString labelValue) : wxDialog(NULL, wxID_ANY, L"", wxPoint(20,20), wxSize(-1,-1), wxSTAY_ON_TOP | wxALL ) {
     
@@ -505,6 +506,17 @@ void BookmarkView::doRemoveActive(DemodulatorInstance *demod) {
 }
 
 
+void BookmarkView::doRemoveRecent(BookmarkEntry *be) {
+    wxGetApp().getBookmarkMgr().removeRecent(be);
+    wxGetApp().getBookmarkMgr().updateActiveList();
+}
+
+void BookmarkView::doClearRecents() {
+    wxGetApp().getBookmarkMgr().clearRecents();
+    wxGetApp().getBookmarkMgr().updateActiveList();
+}
+
+
 void BookmarkView::updateBookmarkChoices() {
     if (!bookmarkChoices.empty()) {
         bookmarkChoices.erase(bookmarkChoices.begin(),bookmarkChoices.end());
@@ -677,6 +689,7 @@ void BookmarkView::recentSelection(BookmarkEntry *bmSel) {
     
     addBookmarkChoice(m_buttonPanel);
     addButton(m_buttonPanel, "Activate Recent", wxCommandEventHandler( BookmarkView::onActivateRecent ));
+    addButton(m_buttonPanel, "Remove Recent", wxCommandEventHandler( BookmarkView::onRemoveRecent ));
     
     showProps();
     showButtons();
@@ -695,7 +708,7 @@ void BookmarkView::groupSelection(std::string groupName) {
 //    m_labelLabel->Show();
     
     addButton(m_buttonPanel, "Remove Group", wxCommandEventHandler( BookmarkView::onRemoveGroup ));
-    addButton(m_buttonPanel, "Rename Group", wxCommandEventHandler( BookmarkView::onRenameGroup ));
+    addButton(m_buttonPanel, BOOKMARK_VIEW_STR_RENAME_GROUP, wxCommandEventHandler( BookmarkView::onRenameGroup ));
     
 //    showProps();
 
@@ -717,7 +730,14 @@ void BookmarkView::bookmarkBranchSelection() {
 
 
 void BookmarkView::recentBranchSelection() {
+    clearButtons();
     hideProps();
+    
+    addButton(m_buttonPanel, BOOKMARK_VIEW_STR_CLEAR_RECENT, wxCommandEventHandler( BookmarkView::onClearRecents ));
+    
+    showButtons();
+    refreshLayout();
+
     this->Layout();
 }
 
@@ -871,6 +891,28 @@ void BookmarkView::onActivateRecent( wxCommandEvent& event ) {
 }
 
 
+void BookmarkView::onRemoveRecent ( wxCommandEvent& event ) {
+    if (editingLabel) {
+        return;
+    }
+    
+    TreeViewItem *curSel = itemToTVI(m_treeView->GetSelection());
+    
+    if (curSel && curSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
+        wxGetApp().getBookmarkMgr().removeRecent(curSel->bookmarkEnt);
+        m_treeView->Delete(m_treeView->GetSelection());
+        wxGetApp().getBookmarkMgr().updateActiveList();
+    }
+}
+
+void BookmarkView::onClearRecents ( wxCommandEvent& event ) {
+    if (editingLabel) {
+        return;
+    }
+    doClearRecents();
+}
+
+
 void BookmarkView::onAddGroup( wxCommandEvent& event ) {
     wxString stringVal = wxGetTextFromUser(BOOKMARK_VIEW_STR_ADD_GROUP_DESC, BOOKMARK_VIEW_STR_ADD_GROUP, "");
     if (stringVal.ToStdString() != "") {
@@ -903,7 +945,7 @@ void BookmarkView::onRenameGroup( wxCommandEvent& event ) {
     }
     
     wxString stringVal = "";
-    stringVal = wxGetTextFromUser("Rename Group", "New Group Name", curSel->groupName);
+    stringVal = wxGetTextFromUser(BOOKMARK_VIEW_STR_RENAME_GROUP, "New Group Name", curSel->groupName);
     
     std::string newGroupName = stringVal.ToStdString();
     

@@ -294,6 +294,12 @@ BookmarkList BookmarkMgr::getRecents() {
 }
 
 
+void BookmarkMgr::clearRecents() {
+    std::lock_guard < std::mutex > lock(busy_lock);
+    
+    recents.erase(recents.begin(),recents.end());
+}
+
 
 void BookmarkMgr::trimRecents() {
     if (recents.size() > BOOKMARK_RECENTS_MAX) {

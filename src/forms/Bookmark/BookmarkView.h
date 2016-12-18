@@ -96,7 +96,9 @@ protected:
     void doBookmarkRecent(std::string group, BookmarkEntry *be);
     void doMoveBookmark(BookmarkEntry *be, std::string group);
     void doRemoveActive(DemodulatorInstance *demod);
-        
+    void doRemoveRecent(BookmarkEntry *be);
+    void doClearRecents();
+    
     void updateBookmarkChoices();
     void addBookmarkChoice(wxWindow *parent);    
     void onBookmarkChoice( wxCommandEvent &event );
@@ -106,13 +108,14 @@ protected:
     
     void onActivateBookmark( wxCommandEvent& event );
     void onActivateRecent( wxCommandEvent& event );
+    void onRemoveRecent ( wxCommandEvent& event );
+    void onClearRecents ( wxCommandEvent& event );
     
     void onAddGroup( wxCommandEvent& event );
     void onRemoveGroup( wxCommandEvent& event );
     void onRenameGroup( wxCommandEvent& event );
     
     TreeViewItem *itemToTVI(wxTreeItemId item);
-
     
     std::atomic_bool mouseInView;
     
