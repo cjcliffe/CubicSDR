@@ -79,7 +79,6 @@ protected:
     void onDoubleClickBandwidth( wxMouseEvent& event );
     void onTreeBeginDrag( wxTreeEvent& event );
     void onTreeEndDrag( wxTreeEvent& event );
-    void onTreeDeleteItem( wxTreeEvent& event );
     void onTreeItemGetTooltip( wxTreeEvent& event );
     void onEnterWindow( wxMouseEvent& event );
     void onLeaveWindow( wxMouseEvent& event );
@@ -96,6 +95,7 @@ protected:
     void doBookmarkActive(std::string group, DemodulatorInstance *demod);
     void doBookmarkRecent(std::string group, BookmarkEntry *be);
     void doMoveBookmark(BookmarkEntry *be, std::string group);
+    void doRemoveActive(DemodulatorInstance *demod);
         
     void updateBookmarkChoices();
     void addBookmarkChoice(wxWindow *parent);    
@@ -136,4 +136,8 @@ protected:
     
     // Active
     std::atomic_bool doUpdateActive;
+    
+    // Focus
+    BookmarkEntry *nextEnt;
+    DemodulatorInstance *nextDemod;
 };

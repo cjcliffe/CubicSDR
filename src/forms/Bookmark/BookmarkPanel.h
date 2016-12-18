@@ -52,7 +52,6 @@ class BookmarkPanel : public wxPanel
 		virtual void onMotion( wxMouseEvent& event ) { event.Skip(); }
 		virtual void onTreeBeginDrag( wxTreeEvent& event ) { event.Skip(); }
 		virtual void onTreeBeginLabelEdit( wxTreeEvent& event ) { event.Skip(); }
-		virtual void onTreeDeleteItem( wxTreeEvent& event ) { event.Skip(); }
 		virtual void onTreeEndDrag( wxTreeEvent& event ) { event.Skip(); }
 		virtual void onTreeEndLabelEdit( wxTreeEvent& event ) { event.Skip(); }
 		virtual void onTreeActivate( wxTreeEvent& event ) { event.Skip(); }

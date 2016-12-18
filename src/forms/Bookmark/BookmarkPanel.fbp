@@ -164,7 +164,7 @@
                         <event name="OnTreeBeginDrag">onTreeBeginDrag</event>
                         <event name="OnTreeBeginLabelEdit">onTreeBeginLabelEdit</event>
                         <event name="OnTreeBeginRDrag"></event>
-                        <event name="OnTreeDeleteItem">onTreeDeleteItem</event>
+                        <event name="OnTreeDeleteItem"></event>
                         <event name="OnTreeEndDrag">onTreeEndDrag</event>
                         <event name="OnTreeEndLabelEdit">onTreeEndLabelEdit</event>
                         <event name="OnTreeGetInfo"></event>
