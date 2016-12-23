@@ -341,3 +341,26 @@ BookmarkEntry *BookmarkMgr::nodeToBookmark(const char *name_in, DataNode *node) 
     return be;
 }
 
+
+std::wstring BookmarkMgr::getBookmarkEntryDisplayName(BookmarkEntry *bmEnt) {
+    std::wstring dispName = bmEnt->label;
+    
+    if (dispName == "") {
+        std::string freqStr = frequencyToStr(bmEnt->frequency) + " " + bmEnt->type;
+        dispName = wstring(freqStr.begin(),freqStr.end());
+    }
+    
+    return dispName;
+}
+
+std::wstring BookmarkMgr::getActiveDisplayName(DemodulatorInstance *demod) {
+    std::wstring activeName = demod->getDemodulatorUserLabel();
+    
+    if (activeName == "") {
+        std::string wstr = frequencyToStr(demod->getFrequency()) + " " + demod->getDemodulatorType();
+        activeName = std::wstring(wstr.begin(),wstr.end());
+    }
+    
+    return activeName;
+}
+

@@ -64,7 +64,9 @@ public:
     BookmarkList getRecents();
     void clearRecents();
 
-    
+    static std::wstring getBookmarkEntryDisplayName(BookmarkEntry *bmEnt);
+    static std::wstring getActiveDisplayName(DemodulatorInstance *demod);
+
 protected:
 
     void trimRecents();

@@ -62,8 +62,6 @@ protected:
     
     void onUpdateTimer( wxTimerEvent& event );
 
-    std::wstring getBookmarkEntryDisplayName(BookmarkEntry *bmEnt);
-    std::wstring getActiveDisplayName(DemodulatorInstance *demod);
     void doUpdateActiveList();
 
     void onTreeBeginLabelEdit( wxTreeEvent& event );
