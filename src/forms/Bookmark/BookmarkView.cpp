@@ -365,9 +365,10 @@ void BookmarkView::onTreeActivate( wxTreeEvent& event ) {
     if (tvi) {
         if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
             if (!tvi->demod->isActive()) {
-                wxGetApp().setFrequency(tvi->demod->getFrequency());
-                wxGetApp().getDemodMgr().setActiveDemodulator(nullptr,true);
+                
+                wxGetApp().getDemodMgr().setActiveDemodulator(tvi->demod,true);
                 wxGetApp().getDemodMgr().setActiveDemodulator(tvi->demod,false);
+                wxGetApp().setFrequency(tvi->demod->getFrequency());
                 nextDemod = tvi->demod;
             }
         } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
