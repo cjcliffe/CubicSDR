@@ -5,6 +5,7 @@
 #include <wx/menu.h>
 #include <wx/textdlg.h>
 #include <algorithm>
+#include <wchar.h>
 
 #define wxCONTEXT_ADD_GROUP_ID 1000
 
@@ -83,6 +84,7 @@ BookmarkView::BookmarkView( wxWindow* parent, wxWindowID id, const wxPoint& pos,
     dragItemId = nullptr;
     editingLabel = false;
     
+    m_clearSearchButton->Hide();
     hideProps();
     
     m_updateTimer.Start(500);
@@ -151,6 +153,19 @@ void BookmarkView::updateBookmarks(std::string group) {
     doUpdateBookmarks.store(true);
 }
 
+bool BookmarkView::isKeywordMatch(std::wstring search_str, std::vector<std::wstring> &keywords) {
+    wstring str = search_str;
+    std::transform(str.begin(), str.end(), str.begin(), towlower);
+
+    for (auto k : keywords) {
+        if (str.find(k) != wstring::npos) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 wxTreeItemId BookmarkView::refreshBookmarks() {
     
     TreeViewItem *prevSel = itemToTVI(m_treeView->GetSelection());
@@ -165,10 +180,7 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
     wxTreeItemId bmSelFound = nullptr;
     
     std::map<std::string, bool> groupExpandState;
-    
-    for (auto g_i : groups) {
-        groupExpandState[g_i.first] = m_treeView->IsExpanded(g_i.second);
-    }
+    bool searchState = (searchKeywords.size() != 0);
     
     groups.erase(groups.begin(),groups.end());
     m_treeView->DeleteChildren(bookmarkBranch);
@@ -187,29 +199,41 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
         }
     }
 
-    if (bmExpandState) {
+    if (searchState || bmExpandState) {
         m_treeView->Expand(bookmarkBranch);
     }
 
     for (auto gn_i : groupNames) {
         wxTreeItemId groupItem = groups[gn_i];
 
-        bool groupExpanded = false;
-        
-        if (groupExpandState.find(gn_i) != groupExpandState.end()) {
-            groupExpanded = groupExpandState[gn_i];
-        } else { // New
-            groupExpanded = true;
-        }
+        bool groupExpanded = searchState || wxGetApp().getBookmarkMgr().getExpandState(gn_i);
 
         BookmarkList bmList = wxGetApp().getBookmarkMgr().getBookmarks(gn_i);
         for (auto &bmEnt : bmList) {
+            std::wstring labelVal = BookmarkMgr::getBookmarkEntryDisplayName(bmEnt);
+
+            if (searchState) {
+                
+                bool match = isKeywordMatch(labelVal, searchKeywords);
+
+                std::string freqStr = frequencyToStr(bmEnt->frequency);
+                std::string bwStr = frequencyToStr(bmEnt->bandwidth);
+                
+                match = match || isKeywordMatch(bmEnt->userLabel, searchKeywords);
+                match = match || isKeywordMatch(std::to_wstring(bmEnt->frequency), searchKeywords);
+                match = match || isKeywordMatch(std::wstring(freqStr.begin(),freqStr.end()), searchKeywords);
+                match = match || isKeywordMatch(std::wstring(bwStr.begin(),bwStr.end()), searchKeywords);
+                match = match || isKeywordMatch(std::wstring(bmEnt->type.begin(),bmEnt->type.end()), searchKeywords);
+
+                if (!match) {
+                    continue;
+                }
+            }
+            
             TreeViewItem* tvi = new TreeViewItem();
             tvi->type = TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK;
             tvi->bookmarkEnt = bmEnt;
             tvi->groupName = gn_i;
-
-            std::wstring labelVal = BookmarkMgr::getBookmarkEntryDisplayName(bmEnt);
             
             wxTreeItemId itm = m_treeView->AppendItem(groupItem, labelVal);
             m_treeView->SetItemData(itm, tvi);
@@ -244,6 +268,7 @@ void BookmarkView::doUpdateActiveList() {
     m_treeView->DeleteChildren(activeBranch);
     
     bool activeExpandState = expandState["active"];
+    bool searchState = (searchKeywords.size() != 0);
     
     wxTreeItemId selItem = nullptr;
     for (auto demod_i : demods) {
@@ -264,7 +289,7 @@ void BookmarkView::doUpdateActiveList() {
         }
     }
 
-    bool recentExpandState = expandState["recent"];
+    bool recentExpandState = searchState || expandState["recent"];
     
     // Recents
     BookmarkList bmRecents = wxGetApp().getBookmarkMgr().getRecents();
@@ -277,10 +302,27 @@ void BookmarkView::doUpdateActiveList() {
 
         std::wstring labelVal;
         bmr_i->node->child("user_label")->element()->get(labelVal);
-        
+
         if (labelVal == "") {
             std::string wstr = frequencyToStr(bmr_i->frequency) + " " + bmr_i->type;
             labelVal = std::wstring(wstr.begin(),wstr.end());
+        }
+        
+        if (searchKeywords.size()) {
+            
+            std::string freqStr = frequencyToStr(bmr_i->frequency);
+            std::string bwStr = frequencyToStr(bmr_i->bandwidth);
+            
+            bool match = isKeywordMatch(labelVal, searchKeywords);
+            match = match || isKeywordMatch(bmr_i->userLabel, searchKeywords);
+            match = match || isKeywordMatch(std::to_wstring(bmr_i->frequency), searchKeywords);
+            match = match || isKeywordMatch(std::wstring(freqStr.begin(),freqStr.end()), searchKeywords);
+            match = match || isKeywordMatch(std::wstring(bwStr.begin(),bwStr.end()), searchKeywords);
+            match = match || isKeywordMatch(std::wstring(bmr_i->type.begin(),tvi->bookmarkEnt->type.end()), searchKeywords);
+            
+            if (!match) {
+                continue;
+            }
         }
         
         wxTreeItemId itm = m_treeView->AppendItem(recentBranch, labelVal);
@@ -384,19 +426,39 @@ void BookmarkView::onTreeActivate( wxTreeEvent& event ) {
 
 
 void BookmarkView::onTreeCollapse( wxTreeEvent& event ) {
+    bool searchState = (searchKeywords.size() != 0);
+    
+    if (searchState) {
+        event.Skip();
+        return;
+    }
+    
     if (event.GetItem() == activeBranch) {
         expandState["active"] = false;
     } else if (event.GetItem() == bookmarkBranch) {
         expandState["bookmark"] = false;
     } else if (event.GetItem() == recentBranch) {
         expandState["recent"] = false;
-    }
+    } else {
+        TreeViewItem *tvi = itemToTVI(event.GetItem());
+        
+        if (tvi != nullptr) {
+            if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_GROUP) {
+                wxGetApp().getBookmarkMgr().setExpandState(tvi->groupName,false);
+            }
+        }
 
-    event.Skip();
+    }
 }
 
 
 void BookmarkView::onTreeExpanded( wxTreeEvent& event ) {
+    bool searchState = (searchKeywords.size() != 0);
+    
+    if (searchState) {
+        event.Skip();
+        return;
+    }
     
     if (event.GetItem() == activeBranch) {
         expandState["active"] = true;
@@ -404,9 +466,16 @@ void BookmarkView::onTreeExpanded( wxTreeEvent& event ) {
         expandState["bookmark"] = true;
     } else if (event.GetItem() == recentBranch) {
         expandState["recent"] = true;
+    } else {
+        TreeViewItem *tvi = itemToTVI(event.GetItem());
+        
+        if (tvi != nullptr) {
+            if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_GROUP) {
+                wxGetApp().getBookmarkMgr().setExpandState(tvi->groupName,true);
+            }
+        }
+        
     }
-
-    event.Skip();
 }
 
 
@@ -1105,4 +1174,57 @@ TreeViewItem *BookmarkView::itemToTVI(wxTreeItemId item) {
     return tvi;
 }
 
+void BookmarkView::onSearchTextFocus( wxMouseEvent& event ) {
+    if (!m_searchText->IsEmpty()) {
+        if (m_searchText->GetValue() == L"Search..") {
+            m_searchText->SetValue(L"");
+        }
+    }
+}
+
+
+void BookmarkView::onSearchText( wxCommandEvent& event ) {
+    wstring searchText = m_searchText->GetValue().Trim().Lower().ToStdWstring();
+    
+    if (!searchKeywords.empty()) {
+        searchKeywords.erase(searchKeywords.begin(),searchKeywords.end());
+    }
+    
+    if (searchText.length() != 0) {
+        std::wstringstream searchTextLo(searchText);
+        wstring tmp;
+        
+        while(std::getline(searchTextLo, tmp, L';')) {
+            if (tmp.length() != 0 && tmp.find(L"search.") == wstring::npos) {
+                searchKeywords.push_back(tmp);
+                std::wcout << L"Keyword: " << tmp << '\n';
+            }
+
+        }
+    }
+    
+    if (searchKeywords.size() != 0 && !m_clearSearchButton->IsShown()) {
+        m_clearSearchButton->Show();
+        refreshLayout();
+    } else if (searchKeywords.size() == 0 && m_clearSearchButton->IsShown()) {
+        m_clearSearchButton->Hide();
+        refreshLayout();
+    }
+    
+    wxGetApp().getBookmarkMgr().updateActiveList();
+    wxGetApp().getBookmarkMgr().updateBookmarks();
+}
+
+
+void BookmarkView::onClearSearch( wxCommandEvent& event ) {
+    m_searchText->SetValue(L"Search..");
+    m_treeView->SetFocus();
+    if (!searchKeywords.empty()) {
+        searchKeywords.erase(searchKeywords.begin(),searchKeywords.end());
+    }
+    wxGetApp().getBookmarkMgr().updateActiveList();
+    wxGetApp().getBookmarkMgr().updateBookmarks();
+    m_clearSearchButton->Hide();
+    refreshLayout();
+}
 

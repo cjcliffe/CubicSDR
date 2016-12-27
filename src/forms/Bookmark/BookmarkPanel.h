@@ -10,14 +10,15 @@
 
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
-#include <wx/treectrl.h>
+#include <wx/string.h>
+#include <wx/textctrl.h>
 #include <wx/gdicmn.h>
 #include <wx/font.h>
 #include <wx/colour.h>
 #include <wx/settings.h>
-#include <wx/string.h>
+#include <wx/button.h>
+#include <wx/treectrl.h>
 #include <wx/stattext.h>
-#include <wx/textctrl.h>
 #include <wx/sizer.h>
 #include <wx/panel.h>
 #include <wx/timer.h>
@@ -33,6 +34,8 @@ class BookmarkPanel : public wxPanel
 	private:
 	
 	protected:
+		wxTextCtrl* m_searchText;
+		wxButton* m_clearSearchButton;
 		wxTreeCtrl* m_treeView;
 		wxPanel* m_propPanel;
 		wxStaticText* m_labelLabel;
@@ -50,6 +53,9 @@ class BookmarkPanel : public wxPanel
 		virtual void onEnterWindow( wxMouseEvent& event ) { event.Skip(); }
 		virtual void onLeaveWindow( wxMouseEvent& event ) { event.Skip(); }
 		virtual void onMotion( wxMouseEvent& event ) { event.Skip(); }
+		virtual void onSearchTextFocus( wxMouseEvent& event ) { event.Skip(); }
+		virtual void onSearchText( wxCommandEvent& event ) { event.Skip(); }
+		virtual void onClearSearch( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onTreeBeginDrag( wxTreeEvent& event ) { event.Skip(); }
 		virtual void onTreeBeginLabelEdit( wxTreeEvent& event ) { event.Skip(); }
 		virtual void onTreeEndDrag( wxTreeEvent& event ) { event.Skip(); }

@@ -35,6 +35,7 @@ typedef std::vector<BookmarkEntry *> BookmarkList;
 typedef std::map<std::string, BookmarkList > BookmarkMap;
 typedef std::map<std::string, bool > BookmarkMapSorted;
 typedef std::vector<std::string> BookmarkNames;
+typedef std::map<std::string, bool> BookmarkExpandState;
 
 class BookmarkMgr {
 public:
@@ -53,7 +54,10 @@ public:
     BookmarkList getBookmarks(std::string group);
     void getGroups(BookmarkNames &arr);
     void getGroups(wxArrayString &arr);
-    
+
+    void setExpandState(std::string groupName, bool state);
+    bool getExpandState(std::string groupName);
+
     void updateActiveList();
     void updateBookmarks();
     void updateBookmarks(std::string group);
@@ -78,4 +82,6 @@ protected:
     BookmarkMapSorted bmDataSorted;
     BookmarkList recents;
     std::mutex busy_lock;
+    
+    BookmarkExpandState expandState;
 };

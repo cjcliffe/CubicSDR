@@ -236,6 +236,19 @@ void BookmarkMgr::getGroups(wxArrayString &arr) {
 }
 
 
+void BookmarkMgr::setExpandState(std::string groupName, bool state) {
+    expandState[groupName] = state;
+}
+
+
+bool BookmarkMgr::getExpandState(std::string groupName) {
+    if (expandState.find(groupName) == expandState.end()) {
+        return true;
+    }
+    return expandState[groupName];
+}
+
+
 void BookmarkMgr::updateActiveList() {
     BookmarkView *bmv = wxGetApp().getAppFrame()->getBookmarkView();
     

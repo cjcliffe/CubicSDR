@@ -39,6 +39,7 @@ public:
     
     void updateActiveList();
     void updateBookmarks();
+    bool isKeywordMatch(std::wstring str, std::vector<std::wstring> &keywords);
     void updateBookmarks(std::string group);
     void activeSelection(DemodulatorInstance *dsel);
     void bookmarkSelection(BookmarkEntry *bmSel);
@@ -82,6 +83,9 @@ protected:
     void onLeaveWindow( wxMouseEvent& event );
     void onMotion( wxMouseEvent& event );
 
+    void onSearchTextFocus( wxMouseEvent& event );
+    void onSearchText( wxCommandEvent& event );
+    void onClearSearch( wxCommandEvent& event );
     
     void clearButtons();
     void showButtons();
@@ -141,4 +145,7 @@ protected:
     // Focus
     BookmarkEntry *nextEnt;
     DemodulatorInstance *nextDemod;
+    
+    // Search
+    std::vector<std::wstring> searchKeywords;
 };
