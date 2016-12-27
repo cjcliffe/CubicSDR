@@ -42,9 +42,9 @@ public:
     
     operator wxColour() {
         return wxColour(
-                       (unsigned char) (r * 255.0),
-                       (unsigned char) (g * 255.0),
-                       (unsigned char) (b * 255.0));
+                        (unsigned char) std::min((r * 255.0), 255.0),
+                       (unsigned char) std::min((g * 255.0), 255.0),
+                       (unsigned char) std::min((b * 255.0), 255.0));
 
     }
 

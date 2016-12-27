@@ -153,6 +153,8 @@ void BookmarkView::updateTheme() {
     m_treeView->SetForegroundColour(textColor);
     
     m_propPanel->SetBackgroundColour(bgColor);
+    m_buttonPanel->SetBackgroundColour(bgColor);
+
     m_propPanel->SetForegroundColour(textColor);
     
     m_labelLabel->SetForegroundColour(textColor);
@@ -163,7 +165,7 @@ void BookmarkView::updateTheme() {
     m_modulationVal->SetForegroundColour(textColor);
     m_modulationLabel->SetForegroundColour(textColor);
 
-    m_buttonPanel->SetBackgroundColour(bgColor);
+    refreshLayout();
 }
 
 
@@ -653,6 +655,7 @@ void BookmarkView::showButtons() {
 void BookmarkView::refreshLayout() {
     GetSizer()->Layout();
     Update();
+    Refresh();
 }
 
 
