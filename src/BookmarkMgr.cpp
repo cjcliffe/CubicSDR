@@ -12,17 +12,24 @@ void BookmarkMgr::saveToFile(std::string bookmarkFn) {
     DataTree s("cubicsdr_bookmarks");
     DataNode *header = s.rootNode()->newChild("header");
     header->newChild("version")->element()->set(wxString(CUBICSDR_VERSION).ToStdWstring());
-    
+
+    DataNode *view_ranges = s.rootNode()->newChild("ranges");
+
+    for (auto re_i : ranges) {
+        DataNode *range = view_ranges->newChild("range");
+        *range->newChild("label") = re_i->label;
+        *range->newChild("freq") = re_i->freq;
+        *range->newChild("start") = re_i->startFreq;
+        *range->newChild("end") = re_i->endFreq;
+    }
+
     DataNode *modems = s.rootNode()->newChild("modems");
-    
-    std::lock_guard < std::mutex > lockData(busy_lock);
     
     for (auto &bmd_i : bmData) {
         DataNode *group = modems->newChild("group");
         *group->newChild("@name") = bmd_i.first;
 
         for (auto &bm_i : bmd_i.second ) {
-            std::lock_guard < std::mutex > lockEnt(bm_i->busy_lock);
             group->newChildCloneFrom("modem", bm_i->node);
         }
     }
@@ -34,7 +41,6 @@ void BookmarkMgr::saveToFile(std::string bookmarkFn) {
     }
 
     for (auto &r_i : this->recents) {
-        std::lock_guard < std::mutex > lockEnt(r_i->busy_lock);
         recent_modems->newChildCloneFrom("modem", r_i->node);
     }
 
@@ -63,6 +69,22 @@ void BookmarkMgr::loadFromFile(std::string bookmarkFn) {
     if (!s.LoadFromFileXML(loadFile.GetFullPath(wxPATH_NATIVE).ToStdString())) {
         // TODO: if exists; inform user & optionally load backup
         return;
+    }
+
+    if (s.rootNode()->hasAnother("ranges")) {
+        DataNode *view_ranges = s.rootNode()->getNext("ranges");
+        while (view_ranges->hasAnother("range")) {
+            DataNode *range = view_ranges->getNext("range");
+            
+            BookmarkRangeEntry *re = new BookmarkRangeEntry;
+            
+            range->getNext("label")->element()->get(re->label);
+            range->getNext("freq")->element()->get(re->freq);
+            range->getNext("start")->element()->get(re->startFreq);
+            range->getNext("end")->element()->get(re->endFreq);
+            
+            addRange(re);
+        }
     }
  
     if (s.rootNode()->hasAnother("modems")) {

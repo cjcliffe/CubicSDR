@@ -29,6 +29,7 @@ public:
     
     std::wstring label;
     
+    long long freq;
     long long startFreq;
     long long endFreq;
 };
@@ -47,7 +48,7 @@ struct BookmarkRangeEntryCompare : public std::binary_function<BookmarkRangeEntr
 {
     bool operator()(const BookmarkRangeEntry *a, BookmarkRangeEntry *b) const
     {
-        return a->startFreq < b->startFreq;
+        return a->freq < b->freq;
     }
 };
 

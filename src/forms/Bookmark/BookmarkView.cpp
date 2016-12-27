@@ -792,6 +792,7 @@ void BookmarkView::activateBookmark(BookmarkEntry *bmEnt) {
 
 
 void BookmarkView::activateRange(BookmarkRangeEntry *rangeEnt) {
+    wxGetApp().setFrequency(rangeEnt->freq);
     wxGetApp().getAppFrame()->setViewState(rangeEnt->startFreq + (rangeEnt->endFreq - rangeEnt->startFreq) / 2, rangeEnt->endFreq - rangeEnt->startFreq);
 }
 
@@ -1173,6 +1174,7 @@ void BookmarkView::onRenameGroup( wxCommandEvent& event ) {
 
 void BookmarkView::onAddRange( wxCommandEvent& event ) {
     BookmarkRangeEntry *re = new BookmarkRangeEntry;
+    re->freq = wxGetApp().getFrequency();
     re->startFreq = wxGetApp().getAppFrame()->getViewCenterFreq() - (wxGetApp().getAppFrame()->getViewBandwidth()/2);
     re->endFreq = wxGetApp().getAppFrame()->getViewCenterFreq() + (wxGetApp().getAppFrame()->getViewBandwidth()/2);
     re->label = m_labelText->GetValue();

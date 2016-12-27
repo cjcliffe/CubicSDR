@@ -293,6 +293,7 @@ public:
     operator vector<long double> () { vector<long double> v; element()->get(v);  return v; }
     
     const string &operator= (const string &s) { element()->set(s); return s; }
+    const wstring &operator= (const wstring &s) { element()->set(s); return s; }
 
     char operator= (char i) { element()->set(i); return i; }
     unsigned char operator= (unsigned char i) { element()->set(i); return i; }
