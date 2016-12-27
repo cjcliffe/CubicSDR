@@ -34,18 +34,20 @@ void ActionDialog::setActiveDialog(ActionDialog *dlg) {
 
 
 void ActionDialog::onClickCancel( wxCommandEvent& event ) {
-    doClickCancel();
-    activeDialog->EndModal(0);
+    ActionDialog *dlg = activeDialog;
     ActionDialog::setActiveDialog(nullptr);
-    delete activeDialog;
+    dlg->EndModal(0);
+    doClickCancel();
+    delete dlg;
 }
 
 
 void ActionDialog::onClickOK( wxCommandEvent& event ) {
-    doClickOK();
-    activeDialog->EndModal(0);
+    ActionDialog *dlg = activeDialog;
     ActionDialog::setActiveDialog(nullptr);
-    delete activeDialog;
+    dlg->EndModal(0);
+    doClickOK();
+    delete dlg;
 }
 
 

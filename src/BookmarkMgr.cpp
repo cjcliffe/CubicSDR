@@ -8,10 +8,17 @@ BookmarkMgr::BookmarkMgr() {
     rangesSorted = false;
 }
 
-void BookmarkMgr::saveToFile(std::string bookmarkFn) {
+void BookmarkMgr::saveToFile(std::string bookmarkFn, bool backup) {
     DataTree s("cubicsdr_bookmarks");
     DataNode *header = s.rootNode()->newChild("header");
     header->newChild("version")->element()->set(wxString(CUBICSDR_VERSION).ToStdWstring());
+
+    DataNode *branches = s.rootNode()->newChild("branches");
+    
+    *branches->newChild("active") = wxGetApp().getAppFrame()->getBookmarkView()->getExpandState("active")?1:0;
+    *branches->newChild("range") = wxGetApp().getAppFrame()->getBookmarkView()->getExpandState("range")?1:0;
+    *branches->newChild("bookmark") = wxGetApp().getAppFrame()->getBookmarkView()->getExpandState("bookmark")?1:0;
+    *branches->newChild("recent") = wxGetApp().getAppFrame()->getBookmarkView()->getExpandState("recent")?1:0;
 
     DataNode *view_ranges = s.rootNode()->newChild("ranges");
 
@@ -50,7 +57,7 @@ void BookmarkMgr::saveToFile(std::string bookmarkFn) {
     
     if (saveFile.IsDirWritable()) {
         // Hopefully leave at least a readable backup in case of failure..
-        if (saveFile.FileExists() && (!saveFileBackup.FileExists() || saveFileBackup.IsFileWritable())) {
+        if (backup && saveFile.FileExists() && (!saveFileBackup.FileExists() || saveFileBackup.IsFileWritable())) {
             wxCopyFile(saveFile.GetFullPath(wxPATH_NATIVE).ToStdString(), saveFileBackup.GetFullPath(wxPATH_NATIVE).ToStdString());
         }
         s.SaveToFileXML(saveFile.GetFullPath(wxPATH_NATIVE).ToStdString());
@@ -58,20 +65,50 @@ void BookmarkMgr::saveToFile(std::string bookmarkFn) {
 }
 
 
-void BookmarkMgr::loadFromFile(std::string bookmarkFn) {
+bool BookmarkMgr::loadFromFile(std::string bookmarkFn, bool backup) {
     wxFileName loadFile(wxGetApp().getConfig()->getConfigDir(), bookmarkFn);
+    wxFileName failFile(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".failedload");
+    wxFileName lastLoaded(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".lastloaded");
+    wxFileName backupFile(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".backup");
 
     DataTree s;
+    bool loadStatusOk = true;
 
-    if (!loadFile.IsFileReadable()) {
-        return;
+    // Clear any active data
+    bmData.erase(bmData.begin(),bmData.end());
+    recents.erase(recents.begin(),recents.end());
+    ranges.erase(ranges.begin(),ranges.end());
+    bmDataSorted.erase(bmDataSorted.begin(),bmDataSorted.end());
+    
+    // File exists but is not readable
+    if (loadFile.FileExists() && !loadFile.IsFileReadable()) {
+        return false;
     }
 
+    // New instance of bookmark savefiles
+    if (backup && !loadFile.FileExists() && !lastLoaded.FileExists() && !backupFile.FileExists()) {
+        wxGetApp().getAppFrame()->getBookmarkView()->loadDefaultRanges();
+        return true;
+    }
+    
+    // Attempt to load file
     if (!s.LoadFromFileXML(loadFile.GetFullPath(wxPATH_NATIVE).ToStdString())) {
-        // TODO: if exists; inform user & optionally load backup
-        return;
+        return false;
     }
-
+    
+    if (s.rootNode()->hasAnother("branches")) {
+        DataNode *branches = s.rootNode()->getNext("branches");
+        int bActive = 1, bRange = 0, bBookmark = 1, bRecent = 1;
+        if (branches->hasAnother("active")) branches->getNext("active")->element()->get(bActive);
+        if (branches->hasAnother("range")) branches->getNext("range")->element()->get(bRange);
+        if (branches->hasAnother("bookmark")) branches->getNext("bookmark")->element()->get(bBookmark);
+        if (branches->hasAnother("recent")) branches->getNext("recent")->element()->get(bRecent);
+        wxGetApp().getAppFrame()->getBookmarkView()->setExpandState("active", bActive?true:false);
+        wxGetApp().getAppFrame()->getBookmarkView()->setExpandState("range", bRange?true:false);
+        wxGetApp().getAppFrame()->getBookmarkView()->setExpandState("bookmark", bBookmark?true:false);
+        wxGetApp().getAppFrame()->getBookmarkView()->setExpandState("recent", bRecent?true:false);
+    }
+    
     if (s.rootNode()->hasAnother("ranges")) {
         DataNode *view_ranges = s.rootNode()->getNext("ranges");
         while (view_ranges->hasAnother("range")) {
@@ -79,10 +116,10 @@ void BookmarkMgr::loadFromFile(std::string bookmarkFn) {
             
             BookmarkRangeEntry *re = new BookmarkRangeEntry;
             
-            range->getNext("label")->element()->get(re->label);
-            range->getNext("freq")->element()->get(re->freq);
-            range->getNext("start")->element()->get(re->startFreq);
-            range->getNext("end")->element()->get(re->endFreq);
+            if (range->hasAnother("label")) range->getNext("label")->element()->get(re->label);
+            if (range->hasAnother("freq")) range->getNext("freq")->element()->get(re->freq);
+            if (range->hasAnother("start")) range->getNext("start")->element()->get(re->startFreq);
+            if (range->hasAnother("end")) range->getNext("end")->element()->get(re->endFreq);
             
             addRange(re);
         }
@@ -108,6 +145,7 @@ void BookmarkMgr::loadFromFile(std::string bookmarkFn) {
                     addBookmark(groupName.c_str(), be);
                 } else {
                     std::cout << "error loading bookmarked modem.." << std::endl;
+                    loadStatusOk = false;
                 }
             }
         }
@@ -123,9 +161,39 @@ void BookmarkMgr::loadFromFile(std::string bookmarkFn) {
                 addRecent(be);
             } else {
                 std::cout << "error loading recent modem.." << std::endl;
+                loadStatusOk = false;
             }
         }
     }
+
+    if (backup) {
+        if (loadStatusOk) {  // Loaded OK; keep a copy
+            if (loadFile.IsDirWritable()) {
+                if (loadFile.FileExists() && (!lastLoaded.FileExists() || lastLoaded.IsFileWritable())) {
+                    wxCopyFile(loadFile.GetFullPath(wxPATH_NATIVE).ToStdString(), lastLoaded.GetFullPath(wxPATH_NATIVE).ToStdString());
+                }
+            }
+        } else if (!loadStatusOk) {
+            if (loadFile.IsDirWritable()) { // Load failed; keep a copy of the failed bookmark file for analysis?
+                if (loadFile.FileExists() && (!failFile.FileExists() || failFile.IsFileWritable())) {
+                    wxCopyFile(loadFile.GetFullPath(wxPATH_NATIVE).ToStdString(), failFile.GetFullPath(wxPATH_NATIVE).ToStdString());
+                }
+            }
+        }
+    }
+    
+    return loadStatusOk;
+}
+
+
+bool BookmarkMgr::hasLastLoad(std::string bookmarkFn) {
+    wxFileName lastLoaded(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".lastloaded");
+    return lastLoaded.FileExists() && lastLoaded.IsFileReadable();
+}
+
+bool BookmarkMgr::hasBackup(std::string bookmarkFn) {
+    wxFileName backupFile(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".backup");
+    return backupFile.FileExists() && backupFile.IsFileReadable();
 }
 
 void BookmarkMgr::addBookmark(std::string group, DemodulatorInstance *demod) {
@@ -419,7 +487,9 @@ BookmarkEntry *BookmarkMgr::nodeToBookmark(const char *name_in, DataNode *node) 
     if (node->hasAnother("user_label")) {
         node->getNext("user_label")->element()->get(be->label);
     }
-    
+
+    node->rewindAll();
+
     be->node = new DataNode("node",*node);
     
     return be;

@@ -25,6 +25,12 @@ public:
 
 class BookmarkRangeEntry {
 public:
+    BookmarkRangeEntry() : label(L""), freq(0), startFreq(0), endFreq(0) {
+        
+    }
+    BookmarkRangeEntry(std::wstring label, long long freq, long long startFreq, long long endFreq) : label(label), freq(freq), startFreq(startFreq), endFreq(endFreq) {
+    }
+    
     std::mutex busy_lock;
     
     std::wstring label;
@@ -63,8 +69,11 @@ class BookmarkMgr {
 public:
     BookmarkMgr();
     
-    void saveToFile(std::string bookmarkFn);
-    void loadFromFile(std::string bookmarkFn);
+    void saveToFile(std::string bookmarkFn, bool backup = true);
+    bool loadFromFile(std::string bookmarkFn, bool backup = true);
+
+    bool hasLastLoad(std::string bookmarkFn);
+    bool hasBackup(std::string bookmarkFn);
 
     void addBookmark(std::string group, DemodulatorInstance *demod);
     void addBookmark(std::string group, BookmarkEntry *be);

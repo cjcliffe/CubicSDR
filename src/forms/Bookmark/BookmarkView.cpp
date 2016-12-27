@@ -102,7 +102,7 @@ BookmarkView::BookmarkView( wxWindow* parent, wxWindowID id, const wxPoint& pos,
     recentBranch = m_treeView->AppendItem(rootBranch, "Recents");
     
     expandState["active"] = true;
-    expandState["range"] = true;
+    expandState["range"] = false;
     expandState["bookmark"] = true;
     expandState["recent"] = true;
     
@@ -579,6 +579,16 @@ bool BookmarkView::isMouseInView() {
 }
 
 
+bool BookmarkView::getExpandState(std::string branchName) {
+    return expandState[branchName];
+}
+
+
+void BookmarkView::setExpandState(std::string branchName, bool state) {
+    expandState[branchName] = state;
+}
+
+
 void BookmarkView::hideProps() {
     m_frequencyLabel->Hide();
     m_frequencyVal->Hide();
@@ -940,7 +950,7 @@ void BookmarkView::rangeBranchSelection() {
     clearButtons();
     hideProps();
     
-    m_labelText->Clear();
+    m_labelText->SetValue(wxT(""));
     m_labelText->Show();
     m_labelLabel->Show();
 
@@ -1386,7 +1396,7 @@ void BookmarkView::onSearchText( wxCommandEvent& event ) {
         while(std::getline(searchTextLo, tmp, L' ')) {
             if (tmp.length() != 0 && tmp.find(L"search.") == wstring::npos) {
                 searchKeywords.push_back(tmp);
-                std::wcout << L"Keyword: " << tmp << '\n';
+//                std::wcout << L"Keyword: " << tmp << '\n';
             }
 
         }
@@ -1406,6 +1416,7 @@ void BookmarkView::onSearchText( wxCommandEvent& event ) {
 
 
 void BookmarkView::onClearSearch( wxCommandEvent& event ) {
+    m_clearSearchButton->Hide();
     m_searchText->SetValue(L"Search..");
     m_treeView->SetFocus();
     if (!searchKeywords.empty()) {
@@ -1413,7 +1424,19 @@ void BookmarkView::onClearSearch( wxCommandEvent& event ) {
     }
     wxGetApp().getBookmarkMgr().updateActiveList();
     wxGetApp().getBookmarkMgr().updateBookmarks();
-    m_clearSearchButton->Hide();
     refreshLayout();
+}
+
+void BookmarkView::loadDefaultRanges() {
+    wxGetApp().getBookmarkMgr().addRange(new BookmarkRangeEntry(L"160 Meters",1900000,1800000,2000000));
+    wxGetApp().getBookmarkMgr().addRange(new BookmarkRangeEntry(L"80 Meters",3750000,3500000,4000000));
+    wxGetApp().getBookmarkMgr().addRange(new BookmarkRangeEntry(L"60 Meters",5368500,5332000,5405000));
+    wxGetApp().getBookmarkMgr().addRange(new BookmarkRangeEntry(L"40 Meters",7150000,7000000,7300000));
+    wxGetApp().getBookmarkMgr().addRange(new BookmarkRangeEntry(L"30 Meters",10125000,10100000,10150000));
+    wxGetApp().getBookmarkMgr().addRange(new BookmarkRangeEntry(L"20 Meters",14175000,14000000,14350000));
+    wxGetApp().getBookmarkMgr().addRange(new BookmarkRangeEntry(L"17 Meters",18068180,17044180,19092180));
+    wxGetApp().getBookmarkMgr().addRange(new BookmarkRangeEntry(L"15 Meters",21225000,21000000,21450000));
+    wxGetApp().getBookmarkMgr().addRange(new BookmarkRangeEntry(L"12 Meters",24940000,24890000,24990000));
+    wxGetApp().getBookmarkMgr().addRange(new BookmarkRangeEntry(L"10 Meters",28850000,28000000,29700000));
 }
 

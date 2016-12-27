@@ -112,6 +112,7 @@ public:
     bool isUserDemodBusy();
     
     BookmarkView *getBookmarkView();
+    void disableSave(bool state);
     
 #ifdef _WIN32
 	bool canFocus();
@@ -204,6 +205,7 @@ private:
     std::string rigPort;
     int numRigs;
     bool rigInit;
+    bool saveDisabled;
 #endif
 
     wxDECLARE_EVENT_TABLE();

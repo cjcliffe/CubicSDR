@@ -561,6 +561,8 @@ DataNode *DataNode::newChildCloneFrom(const char *name_in, DataNode *cloneFrom) 
         cloneNode->newChildCloneFrom(cNode->getName().c_str(), cNode);
     }
     
+    cloneFrom->rewind();
+    
     return children.back();
 }
 

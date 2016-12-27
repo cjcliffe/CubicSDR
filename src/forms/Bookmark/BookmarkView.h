@@ -50,6 +50,10 @@ public:
     void onMenuItem(wxCommandEvent& event);
     bool isMouseInView();
     
+    bool getExpandState(std::string branchName);
+    void setExpandState(std::string branchName, bool state);
+    
+    void loadDefaultRanges();
     
 protected:
     void activeSelection(DemodulatorInstance *dsel);

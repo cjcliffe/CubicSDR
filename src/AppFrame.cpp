@@ -678,6 +678,7 @@ AppFrame::AppFrame() :
     deviceChanged.store(false);
     devInfo = NULL;
     wxGetApp().deviceSelector();
+    saveDisabled = false;
             
 //    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 //    wxLogStatus("Double-buffered display %s supported", wxGLCanvas::IsDisplaySupported(attribs) ? "is" : "not");
@@ -1293,6 +1294,11 @@ void AppFrame::OnClose(wxCloseEvent& event) {
     }
     wxGetApp().getSpectrumProcessor()->removeOutput(spectrumCanvas->getVisualDataQueue());
 
+    if (saveDisabled) {
+        event.Skip();
+        return;
+    }
+    
     wxGetApp().getConfig()->setWindow(this->GetPosition(), this->GetClientSize());
     wxGetApp().getConfig()->setWindowMaximized(this->IsMaximized());
     wxGetApp().getConfig()->setTheme(ThemeMgr::mgr.getTheme());
@@ -1924,6 +1930,10 @@ bool AppFrame::isUserDemodBusy() {
 
 BookmarkView *AppFrame::getBookmarkView() {
     return bookmarkView;
+}
+
+void AppFrame::disableSave(bool state) {
+    saveDisabled = state;
 }
 
 
