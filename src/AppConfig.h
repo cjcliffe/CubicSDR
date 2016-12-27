@@ -127,6 +127,9 @@ public:
     void setBookmarkSplit(float value);
     float getBookmarkSplit();
     
+    void setBookmarksVisible(bool state);
+    bool getBookmarksVisible();
+    
     
 #if USE_HAMLIB
     int getRigModel();
@@ -176,6 +179,6 @@ private:
 #if USE_HAMLIB
     std::atomic_int rigModel, rigRate;
     std::string rigPort;
-    std::atomic_bool rigEnabled, rigFollowMode, rigControlMode, rigCenterLock, rigFollowModem;
+    std::atomic_bool rigEnabled, rigFollowMode, rigControlMode, rigCenterLock, rigFollowModem, bookmarksVisible;
 #endif
 };

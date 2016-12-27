@@ -126,6 +126,9 @@ BookmarkView::BookmarkView( wxWindow* parent, wxWindowID id, const wxPoint& pos,
 
 
 void BookmarkView::onUpdateTimer( wxTimerEvent& event ) {
+    if (!this->IsShown()) {
+        return;
+    }
     if (doUpdateActive.load()) {
         doUpdateActiveList();
         

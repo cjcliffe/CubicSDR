@@ -293,6 +293,7 @@ AppConfig::AppConfig() : configName("") {
     mainSplit = -1;
     visSplit = -1;
     bookmarkSplit = -1;
+    bookmarksVisible.store(true);
     
 #ifdef USE_HAMLIB
     rigEnabled.store(false);
@@ -469,6 +470,14 @@ float AppConfig::getBookmarkSplit() {
     return bookmarkSplit.load();
 }
 
+void AppConfig::setBookmarksVisible(bool state) {
+    bookmarksVisible.store(state);
+}
+
+bool AppConfig::getBookmarksVisible() {
+    return bookmarksVisible.load();
+}
+
 
 void AppConfig::setConfigName(std::string configName) {
     this->configName = configName;
@@ -520,6 +529,7 @@ bool AppConfig::save() {
         *window_node->newChild("main_split") = mainSplit.load();
         *window_node->newChild("vis_split") = visSplit.load();
         *window_node->newChild("bookmark_split") = bookmarkSplit.load();
+        *window_node->newChild("bookmark_visible") = bookmarksVisible.load();
     }
     
     DataNode *devices_node = cfg.rootNode()->newChild("devices");
@@ -694,6 +704,12 @@ bool AppConfig::load() {
             float gVal;
             win_node->getNext("bookmark_split")->element()->get(gVal);
             bookmarkSplit.store(gVal);
+        }
+
+        if (win_node->hasAnother("bookmark_visible")) {
+            int bVal;
+            win_node->getNext("bookmark_visible")->element()->get(bVal);
+            bookmarksVisible.store(bVal);
         }
     }
     

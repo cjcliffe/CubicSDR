@@ -364,6 +364,11 @@ AppFrame::AppFrame() :
             
     bookmarkSplitter->SplitVertically( bookmarkView, mainVisSplitter );
     mainSplitter->SplitHorizontally( demodPanel, bookmarkSplitter );
+    
+    if (!wxGetApp().getConfig()->getBookmarksVisible()) {
+        bookmarkSplitter->Unsplit(bookmarkView);
+        bookmarkSplitter->Layout();
+    }
             
     vbox->Add(mainSplitter, 1, wxEXPAND | wxALL, 0);
 
@@ -523,6 +528,9 @@ AppFrame::AppFrame() :
     themeMenu->AppendRadioItem(wxID_THEME_HD, "HD")->Check(themeId==COLOR_THEME_HD);
 
     displayMenu->AppendSubMenu(themeMenu, wxT("&Color Scheme"));
+
+    hideBookmarksItem = displayMenu->AppendCheckItem(wxID_DISPLAY_BOOKMARKS, wxT("Hide Bookmarks"));
+    hideBookmarksItem->Check(!wxGetApp().getConfig()->getBookmarksVisible());
             
     GLFont::setScale((GLFont::GLFontScale)fontScale);
 
@@ -1012,6 +1020,9 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         demodTuner->Refresh();
         SetTitle(CUBICSDR_TITLE);
         currentSessionFile = "";
+        bookmarkSplitter->Unsplit(bookmarkView);
+        bookmarkSplitter->SplitVertically( bookmarkView, mainVisSplitter, wxGetApp().getConfig()->getBookmarkSplit() );
+        hideBookmarksItem->Check(false);
     } else if (event.GetId() == wxID_CLOSE || event.GetId() == wxID_EXIT) {
         Close(false);
     } else if (event.GetId() == wxID_THEME_DEFAULT) {
@@ -1044,6 +1055,14 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         GLFont::setScale(GLFont::GLFONT_SCALE_LARGE);
         //force all windows refresh
         Refresh();
+    } else if (event.GetId() == wxID_DISPLAY_BOOKMARKS) {
+        if (hideBookmarksItem->IsChecked()) {
+            bookmarkSplitter->Unsplit(bookmarkView);
+            bookmarkSplitter->Layout();
+        } else {
+            bookmarkSplitter->SplitVertically( bookmarkView, mainVisSplitter, wxGetApp().getConfig()->getBookmarkSplit() );
+            bookmarkSplitter->Layout();
+        }
     }
 
     if (event.GetId() >= wxID_SETTINGS_BASE && event.GetId() < settingsIdMax) {
@@ -1311,7 +1330,8 @@ void AppFrame::OnClose(wxCloseEvent& event) {
     wxGetApp().getConfig()->setModemPropsCollapsed(modemProps->isCollapsed());
     wxGetApp().getConfig()->setMainSplit(mainSplitter->GetSashPosition());
     wxGetApp().getConfig()->setVisSplit(mainVisSplitter->GetSashPosition());
-    wxGetApp().getConfig()->setBookmarkSplit(bookmarkSplitter->GetSashPosition());
+    if (!hideBookmarksItem->IsChecked()) wxGetApp().getConfig()->setBookmarkSplit(bookmarkSplitter->GetSashPosition());
+    wxGetApp().getConfig()->setBookmarksVisible(!hideBookmarksItem->IsChecked());
 #ifdef USE_HAMLIB
     wxGetApp().getConfig()->setRigEnabled(rigEnableMenuItem->IsChecked());
     wxGetApp().getConfig()->setRigModel(rigModel);

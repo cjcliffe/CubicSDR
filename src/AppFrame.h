@@ -49,6 +49,8 @@
 #define wxID_THEME_HD 2105
 #define wxID_THEME_RADAR 2106
 
+#define wxID_DISPLAY_BOOKMARKS 2107
+
 #define wxID_BANDWIDTH_BASE 2150
 #define wxID_BANDWIDTH_MANUAL 2200
 
@@ -196,6 +198,7 @@ private:
     wxMenuItem *rigCenterLockMenuItem;
     wxMenuItem *rigFollowModemMenuItem;
     wxMenuItem *sdrIFMenuItem;
+    wxMenuItem *hideBookmarksItem;
     std::map<int, wxMenuItem *> rigSerialMenuItems;
     std::map<int, wxMenuItem *> rigModelMenuItems;
     int rigModel;
