@@ -2219,6 +2219,17 @@ void AppFrame::setViewState(long long center_freq) {
 }
 
 
+long long AppFrame::getViewCenterFreq() {
+    return waterfallCanvas->getCenterFrequency();
+
+}
+
+
+int AppFrame::getViewBandwidth() {
+    return waterfallCanvas->getBandwidth();
+}
+
+
 /* split a string by 'seperator' into a vector of string */
 std::vector<std::string> str_explode(const std::string &seperator, const std::string &in_str)
 {

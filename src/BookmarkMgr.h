@@ -22,6 +22,18 @@ public:
     DataNode *node;
 };
 
+
+class BookmarkRangeEntry {
+public:
+    std::mutex busy_lock;
+    
+    std::wstring label;
+    
+    long long startFreq;
+    long long endFreq;
+};
+
+
 struct BookmarkEntryCompare : public std::binary_function<BookmarkEntry *,BookmarkEntry *,bool>
 {
     bool operator()(const BookmarkEntry *a, BookmarkEntry *b) const
@@ -31,7 +43,16 @@ struct BookmarkEntryCompare : public std::binary_function<BookmarkEntry *,Bookma
 };
 
 
+struct BookmarkRangeEntryCompare : public std::binary_function<BookmarkRangeEntry *,BookmarkRangeEntry *,bool>
+{
+    bool operator()(const BookmarkRangeEntry *a, BookmarkRangeEntry *b) const
+    {
+        return a->startFreq < b->startFreq;
+    }
+};
+
 typedef std::vector<BookmarkEntry *> BookmarkList;
+typedef std::vector<BookmarkRangeEntry *> BookmarkRangeList;
 typedef std::map<std::string, BookmarkList > BookmarkMap;
 typedef std::map<std::string, bool > BookmarkMapSorted;
 typedef std::vector<std::string> BookmarkNames;
@@ -39,6 +60,8 @@ typedef std::map<std::string, bool> BookmarkExpandState;
 
 class BookmarkMgr {
 public:
+    BookmarkMgr();
+    
     void saveToFile(std::string bookmarkFn);
     void loadFromFile(std::string bookmarkFn);
 
@@ -68,6 +91,12 @@ public:
     BookmarkList getRecents();
     void clearRecents();
 
+    void addRange(BookmarkRangeEntry *re);
+    void removeRange(BookmarkRangeEntry *re);
+    BookmarkRangeList getRanges();
+    void clearRanges();
+    
+
     static std::wstring getBookmarkEntryDisplayName(BookmarkEntry *bmEnt);
     static std::wstring getActiveDisplayName(DemodulatorInstance *demod);
 
@@ -81,6 +110,8 @@ protected:
     BookmarkMap bmData;
     BookmarkMapSorted bmDataSorted;
     BookmarkList recents;
+    BookmarkRangeList ranges;
+    bool rangesSorted;
     std::mutex busy_lock;
     
     BookmarkExpandState expandState;

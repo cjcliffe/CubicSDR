@@ -11,16 +11,19 @@ public:
         TREEVIEW_ITEM_TYPE_GROUP,
         TREEVIEW_ITEM_TYPE_ACTIVE,
         TREEVIEW_ITEM_TYPE_RECENT,
-        TREEVIEW_ITEM_TYPE_BOOKMARK
+        TREEVIEW_ITEM_TYPE_BOOKMARK,
+        TREEVIEW_ITEM_TYPE_RANGE
     };
     
     TreeViewItem() {
         bookmarkEnt = nullptr;
         demod = nullptr;
+        rangeEnt = nullptr;
     };
     
     TreeViewItemType type;
     BookmarkEntry *bookmarkEnt;
+    BookmarkRangeEntry *rangeEnt;
     DemodulatorInstance *demod;
     std::string groupName;
 };
@@ -41,14 +44,6 @@ public:
     void updateBookmarks();
     bool isKeywordMatch(std::wstring str, std::vector<std::wstring> &keywords);
     void updateBookmarks(std::string group);
-    void activeSelection(DemodulatorInstance *dsel);
-    void bookmarkSelection(BookmarkEntry *bmSel);
-    void activateBookmark(BookmarkEntry *bmEnt);
-    void recentSelection(BookmarkEntry *bmSel);
-    void groupSelection(std::string groupName);
-    void bookmarkBranchSelection();
-    void recentBranchSelection();
-    void activeBranchSelection();
     
     wxTreeItemId refreshBookmarks();
     void updateTheme();
@@ -57,6 +52,17 @@ public:
     
     
 protected:
+    void activeSelection(DemodulatorInstance *dsel);
+    void bookmarkSelection(BookmarkEntry *bmSel);
+    void rangeSelection(BookmarkRangeEntry *re);
+    void activateBookmark(BookmarkEntry *bmEnt);
+    void activateRange(BookmarkRangeEntry *rangeEnt);
+    void recentSelection(BookmarkEntry *bmSel);
+    void groupSelection(std::string groupName);
+    void bookmarkBranchSelection();
+    void recentBranchSelection();
+    void rangeBranchSelection();
+    void activeBranchSelection();
     
     void hideProps();
     void showProps();
@@ -116,12 +122,17 @@ protected:
     void onAddGroup( wxCommandEvent& event );
     void onRemoveGroup( wxCommandEvent& event );
     void onRenameGroup( wxCommandEvent& event );
-    
+
+    void onAddRange( wxCommandEvent& event );
+    void onRemoveRange( wxCommandEvent& event );
+    void onRenameRange( wxCommandEvent& event );
+    void onActivateRange( wxCommandEvent& event );
+
     TreeViewItem *itemToTVI(wxTreeItemId item);
     
     std::atomic_bool mouseInView;
     
-    wxTreeItemId rootBranch, activeBranch, bookmarkBranch, recentBranch;
+    wxTreeItemId rootBranch, activeBranch, bookmarkBranch, recentBranch, rangeBranch;
     
     std::map<std::string, bool> expandState;
     
@@ -144,6 +155,7 @@ protected:
     
     // Focus
     BookmarkEntry *nextEnt;
+    BookmarkRangeEntry *nextRange;
     DemodulatorInstance *nextDemod;
     
     // Search

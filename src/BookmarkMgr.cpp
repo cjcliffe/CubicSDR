@@ -4,6 +4,9 @@
 
 #define BOOKMARK_RECENTS_MAX 25
 
+BookmarkMgr::BookmarkMgr() {
+    rangesSorted = false;
+}
 
 void BookmarkMgr::saveToFile(std::string bookmarkFn) {
     DataTree s("cubicsdr_bookmarks");
@@ -320,6 +323,46 @@ void BookmarkMgr::trimRecents() {
         recents.erase(recents.begin(), recents.begin()+1);
     }
 }
+
+
+void BookmarkMgr::addRange(BookmarkRangeEntry *re) {
+    std::lock_guard < std::mutex > lock(busy_lock);
+    
+    ranges.push_back(re);
+    rangesSorted = false;
+}
+
+
+
+void BookmarkMgr::removeRange(BookmarkRangeEntry *re) {
+    std::lock_guard < std::mutex > lock(busy_lock);
+    
+    BookmarkRangeList::iterator re_i = std::find(ranges.begin(), ranges.end(), re);
+    
+    if (re_i != ranges.end()) {
+        ranges.erase(re_i);
+    }
+}
+
+
+BookmarkRangeList BookmarkMgr::getRanges() {
+    std::lock_guard < std::mutex > lock(busy_lock);
+
+    if (!rangesSorted) {
+        std::sort(ranges.begin(), ranges.end(), BookmarkRangeEntryCompare());
+        rangesSorted = true;
+    }
+    
+    return ranges;
+}
+
+
+void BookmarkMgr::clearRanges() {
+    std::lock_guard < std::mutex > lock(busy_lock);
+    
+    ranges.erase(ranges.begin(),ranges.end());
+}
+
 
 BookmarkEntry *BookmarkMgr::demodToBookmarkEntry(DemodulatorInstance *demod) {
     BookmarkEntry *be = new BookmarkEntry;

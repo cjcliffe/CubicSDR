@@ -106,7 +106,9 @@ public:
     void refreshGainUI();
     void setViewState(long long center_freq, int bandwidth);
     void setViewState(long long center_freq);
-    
+
+    long long getViewCenterFreq();
+    int getViewBandwidth();
     bool isUserDemodBusy();
     
     BookmarkView *getBookmarkView();
