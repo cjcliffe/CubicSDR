@@ -28,6 +28,7 @@ void BookmarkMgr::saveToFile(std::string bookmarkFn) {
     for (auto &bmd_i : bmData) {
         DataNode *group = modems->newChild("group");
         *group->newChild("@name") = bmd_i.first;
+        *group->newChild("@expanded") = (getExpandState(bmd_i.first)?std::string("true"):std::string("false"));
 
         for (auto &bm_i : bmd_i.second ) {
             group->newChildCloneFrom("modem", bm_i->node);
@@ -91,10 +92,15 @@ void BookmarkMgr::loadFromFile(std::string bookmarkFn) {
         DataNode *modems = s.rootNode()->getNext("modems");
         while (modems->hasAnother("group")) {
             DataNode *group = modems->getNext("group");
+            std::string expandState = "true";
             std::string groupName = "Unnamed";
             if (group->hasAnother("@name")) {
                 groupName = group->getNext("@name")->element()->toString();
             }
+            if (group->hasAnother("@expanded")) {
+                expandState = group->getNext("@expanded")->element()->toString();
+            }
+            setExpandState(groupName, (expandState == "true"));
             while (group->hasAnother("modem")) {
                 DataNode *modem = group->getNext("modem");
                 BookmarkEntry *be = nodeToBookmark("modem", modem);
