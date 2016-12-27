@@ -230,6 +230,8 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
 
     if (searchState || bmExpandState) {
         m_treeView->Expand(bookmarkBranch);
+    } else {
+        m_treeView->Collapse(bookmarkBranch);
     }
 
     for (auto gn_i : groupNames) {
@@ -299,12 +301,29 @@ void BookmarkView::doUpdateActiveList() {
     
     wxTreeItemId selItem = nullptr;
     for (auto demod_i : demods) {
+        wxString activeLabel = BookmarkMgr::getActiveDisplayName(demod_i);
+        
+        if (searchState) {
+            std::string freqStr = frequencyToStr(demod_i->getFrequency());
+            std::string bwStr = frequencyToStr(demod_i->getBandwidth());
+            std::string mtype = demod_i->getDemodulatorType();
+            
+            std::wstring fullText = activeLabel.ToStdWstring() +
+            L" " + demod_i->getDemodulatorUserLabel() +
+            L" " + std::to_wstring(demod_i->getFrequency()) +
+            L" " + std::wstring(freqStr.begin(),freqStr.end()) +
+            L" " + std::wstring(bwStr.begin(),bwStr.end()) +
+            L" " + std::wstring(mtype.begin(),mtype.end());
+            
+            if (!isKeywordMatch(fullText, searchKeywords)) {
+                continue;
+            }
+        }
+
         TreeViewItem* tvi = new TreeViewItem();
         tvi->type = TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE;
         tvi->demod = demod_i;
-        
-        wxString activeLabel = BookmarkMgr::getActiveDisplayName(demod_i);
-        
+
         wxTreeItemId itm = m_treeView->AppendItem(activeBranch,activeLabel);
         m_treeView->SetItemData(itm, tvi);
         
@@ -316,7 +335,7 @@ void BookmarkView::doUpdateActiveList() {
         }
     }
 
-    bool rangeExpandState = expandState["range"];
+    bool rangeExpandState = searchState?false:expandState["range"];
     
     BookmarkRangeList bmRanges = wxGetApp().getBookmarkMgr().getRanges();
     m_treeView->DeleteChildren(rangeBranch);
@@ -394,13 +413,20 @@ void BookmarkView::doUpdateActiveList() {
     
     if (activeExpandState) {
         m_treeView->Expand(activeBranch);
+    } else {
+        m_treeView->Collapse(activeBranch);
     }
     if (recentExpandState) {
         m_treeView->Expand(recentBranch);
+    } else {
+        m_treeView->Collapse(recentBranch);
     }
     if (rangeExpandState) {
         m_treeView->Expand(rangeBranch);
+    } else {
+        m_treeView->Collapse(rangeBranch);
     }
+
     if (selItem != nullptr) {
         m_treeView->SelectItem(selItem);
     }
