@@ -934,7 +934,7 @@ IF (WIN32 AND BUILD_INSTALLER)
         ENDIF()
         
         file(GLOB SOAPY_BINS ${SOAPY_SDR_ROOT}/bin/*.dll)
-        file(GLOB SOAPY_MODS ${SOAPY_SDR_ROOT}/lib/SoapySDR/modules/*.dll)
+        file(GLOB SOAPY_MODS ${SOAPY_SDR_ROOT}/lib/SoapySDR/modules${SOAPY_SDR_ABI_VERSION}/*.dll)
         message(STATUS "SOAPY_BINS: ${SOAPY_BINS}")
         message(STATUS "SOAPY_MODS: ${SOAPY_MODS}")
         install(FILES ${SOAPY_BINS} DESTINATION .)
