@@ -1,11 +1,13 @@
+#include <wx/menu.h>
+#include <wx/textdlg.h>
+
+#include <algorithm>
+#include <wchar.h>
+
 #include "BookmarkView.h"
 #include "CubicSDR.h"
 #include "ActionDialog.h"
 
-#include <wx/menu.h>
-#include <wx/textdlg.h>
-#include <algorithm>
-#include <wchar.h>
 
 #define wxCONTEXT_ADD_GROUP_ID 1000
 

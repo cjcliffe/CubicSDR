@@ -1,8 +1,9 @@
 #pragma once
 
+#include <wx/arrstr.h>
+
 #include <vector>
 #include <set>
-#include <wx/arrstr.h>
 
 #include "DemodulatorInstance.h"
 

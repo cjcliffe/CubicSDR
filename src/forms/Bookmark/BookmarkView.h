@@ -1,9 +1,11 @@
 #pragma once
 
-#include "BookmarkPanel.h"
-#include "BookmarkMgr.h"
 #include "wx/choice.h"
 #include "wx/dialog.h"
+
+#include "BookmarkPanel.h"
+#include "BookmarkMgr.h"
+
 
 class TreeViewItem : public wxTreeItemData {
 public:
