@@ -27,6 +27,9 @@ IMPLEMENT_APP(CubicSDR)
 #include <fstream>
 #include <clocale>
 
+#include "ActionDialog.h"
+
+
 //#ifdef ENABLE_DIGITAL_LAB
 //// console output buffer for windows
 //#ifdef _WINDOWS
@@ -133,8 +136,65 @@ long long strToFrequency(std::string freqStr) {
 }
 
 
-CubicSDR::CubicSDR() : frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE),agcMode(false)
-       {
+
+class ActionDialogBookmarkCatastophe : public ActionDialog {
+public:
+    ActionDialogBookmarkCatastophe() : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Bookmark Last-Loaded Backup Failure :( :( :(")) {
+        m_questionText->SetLabelText(wxT("All attempts to recover bookmarks have failed. \nWould you like to exit without touching any more save files?\nClick OK to exit without saving; or Cancel to continue anyways."));
+    }
+    
+    void doClickOK() {
+        wxGetApp().getAppFrame()->disableSave(true);
+        wxGetApp().getAppFrame()->Close(false);
+    }
+};
+
+
+
+class ActionDialogBookmarkBackupLoadFailed : public ActionDialog {
+public:
+    ActionDialogBookmarkBackupLoadFailed() : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Bookmark Backup Load Failure :( :(")) {
+        m_questionText->SetLabelText(wxT("Sorry; unable to load your bookmarks backup file. \nWould you like to attempt to load the last succssfully loaded bookmarks file?"));
+    }
+    
+    void doClickOK() {
+        if (wxGetApp().getBookmarkMgr().hasLastLoad("bookmarks.xml")) {
+            if (wxGetApp().getBookmarkMgr().loadFromFile("bookmarks.xml.lastloaded",false)) {
+                wxGetApp().getBookmarkMgr().updateBookmarks();
+                wxGetApp().getBookmarkMgr().updateActiveList();
+            } else {
+                ActionDialog::showDialog(new ActionDialogBookmarkCatastophe());
+            }
+        }
+    }
+};
+
+
+class ActionDialogBookmarkLoadFailed : public ActionDialog {
+public:
+    ActionDialogBookmarkLoadFailed() : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Bookmark Load Failure :(")) {
+        m_questionText->SetLabelText(wxT("Sorry; unable to load your bookmarks file. \nWould you like to attempt to load the backup file?"));
+    }
+    
+    void doClickOK() {
+        bool loadOk = false;
+        if (wxGetApp().getBookmarkMgr().hasBackup("bookmarks.xml")) {
+            loadOk = wxGetApp().getBookmarkMgr().loadFromFile("bookmarks.xml.backup",false);
+        }
+        if (loadOk) {
+            wxGetApp().getBookmarkMgr().updateBookmarks();
+            wxGetApp().getBookmarkMgr().updateActiveList();
+        } else if (wxGetApp().getBookmarkMgr().hasLastLoad("bookmarks.xml")) {
+            ActionDialog::showDialog(new ActionDialogBookmarkBackupLoadFailed());
+        } else {
+            ActionDialog::showDialog(new ActionDialogBookmarkCatastophe());
+        }
+    }
+};
+
+
+CubicSDR::CubicSDR() : frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE), agcMode(false)
+{
         sampleRateInitialized.store(false);
         agcMode.store(true);
         soloMode.store(false);
@@ -294,6 +354,19 @@ bool CubicSDR::OnInit() {
 //    pthread_setschedparam(pthread_self(), main_policy, &main_param);
 //#endif
 
+    if (!wxGetApp().getBookmarkMgr().loadFromFile("bookmarks.xml")) {
+        if (wxGetApp().getBookmarkMgr().hasBackup("bookmarks.xml")) {
+            ActionDialog::showDialog(new ActionDialogBookmarkLoadFailed());
+        } else if (wxGetApp().getBookmarkMgr().hasLastLoad("bookmarks.xml")) {
+            ActionDialog::showDialog(new ActionDialogBookmarkBackupLoadFailed());
+        } else {
+            ActionDialog::showDialog(new ActionDialogBookmarkCatastophe());
+        }
+    } else {
+        getBookmarkMgr().updateActiveList();
+        getBookmarkMgr().updateBookmarks();
+    }
+    
     return true;
 }
 
@@ -692,6 +765,10 @@ DemodulatorMgr &CubicSDR::getDemodMgr() {
     return demodMgr;
 }
 
+BookmarkMgr &CubicSDR::getBookmarkMgr() {
+    return bookmarkMgr;
+}
+
 SDRPostThread *CubicSDR::getSDRPostThread() {
     return sdrPostThread;
 }
@@ -771,6 +848,7 @@ void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetM
     
     switch (targetMode) {
         case FrequencyDialog::FDIALOG_TARGET_DEFAULT:
+        case FrequencyDialog::FDIALOG_TARGET_FREQ:
             title = demodMgr.getActiveDemodulator()?demodTitle:freqTitle;
             break;
         case FrequencyDialog::FDIALOG_TARGET_BANDWIDTH:

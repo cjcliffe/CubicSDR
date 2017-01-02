@@ -80,6 +80,8 @@ DemodulatorInstance::~DemodulatorInstance() {
     delete pipeIQDemodData;
     delete threadQueueControl;
     delete pipeAudioData;
+    
+    wxGetApp().getBookmarkMgr().updateActiveList();
 }
 
 void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {
@@ -118,6 +120,7 @@ void DemodulatorInstance::run() {
 
     active = true;
 
+    wxGetApp().getBookmarkMgr().updateActiveList();
 }
 
 void DemodulatorInstance::updateLabel(long long freq) {
@@ -125,6 +128,7 @@ void DemodulatorInstance::updateLabel(long long freq) {
     newLabel.precision(3);
     newLabel << std::fixed << ((long double) freq / 1000000.0);
     setLabel(newLabel.str());
+    wxGetApp().getBookmarkMgr().updateActiveList();
 }
 
 void DemodulatorInstance::terminate() {
@@ -227,6 +231,8 @@ void DemodulatorInstance::setActive(bool state) {
         tracking = false;
     }
     active = state;
+    
+    wxGetApp().getBookmarkMgr().updateActiveList();
 }
 
 void DemodulatorInstance::squelchAuto() {
@@ -331,7 +337,9 @@ void DemodulatorInstance::setDemodulatorType(std::string demod_type_in) {
             outp->setTitle(getDemodulatorType() + ": " + frequencyToStr(getFrequency()));
         }
 #endif
-}
+    }
+    
+    wxGetApp().getBookmarkMgr().updateActiveList();
 }
 
 std::string DemodulatorInstance::getDemodulatorType() {
@@ -391,6 +399,10 @@ void DemodulatorInstance::setFrequency(long long freq) {
         wxGetApp().getRigThread()->setFrequency(freq,true);
     }
 #endif
+    
+    if (this->isActive()) {
+        wxGetApp().getBookmarkMgr().updateActiveList();
+    }
 }
 
 long long DemodulatorInstance::getFrequency() {

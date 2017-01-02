@@ -41,6 +41,14 @@ using namespace std;
 DataElement::DataElement() : data_type(DATA_NULL), data_size(0), unit_size(0), data_val(NULL) {
 }
 
+DataElement::DataElement(DataElement &cloneFrom) : data_type(cloneFrom.getDataType()), unit_size(cloneFrom.getUnitSize()) {
+    data_val = NULL;
+    data_init(cloneFrom.getDataSize());
+    if (data_size) {
+        memcpy(data_val, cloneFrom.getDataPointer(), data_size);
+    }
+}
+
 DataElement::~DataElement() {
     if (data_val) {
         delete[] data_val;
@@ -427,7 +435,12 @@ std::string DataElement::toString() {
             strValue = std::to_string(floatSettingValue);
         } else if (dataType == DATA_NULL) {
             strValue = "";
-        } else {
+        } else if (dataType == DATA_WSTRING) {
+            std::wstring wstr;
+            get(wstr);
+            strValue = *wstr.c_str();
+        }
+        else {
             std::cout << "Unhandled DataElement toString for type: " << dataType  << std::endl;
         }
     } catch (DataTypeMismatchException e) {
@@ -482,6 +495,22 @@ DataNode::DataNode(const char *name_in): parentNode(NULL), ptr(0) {
     data_elem = new DataElement();
 }
 
+DataNode::DataNode(const char *name_in, DataNode &cloneFrom): parentNode(NULL), ptr(0) {
+    node_name = name_in;
+    data_elem = new DataElement(*cloneFrom.element());
+    
+    // TODO: stack recursion optimization
+    while (cloneFrom.hasAnother()) {
+        DataNode *cNode = cloneFrom.getNext();
+        newChildCloneFrom(cNode->getName().c_str(), cNode);
+    }
+}
+
+DataNode::DataNode(const char *name_in, DataElement &cloneFrom): parentNode(NULL), ptr(0) {
+    node_name = name_in;
+    data_elem = new DataElement(cloneFrom);
+}
+
 DataNode::~DataNode() {
     while (children.size()) {
         DataNode *del = children.back();
@@ -509,6 +538,34 @@ DataNode *DataNode::newChild(const char *name_in) {
 
     return children.back();
 }
+
+DataNode *DataNode::newChild(const char *name_in, DataNode *otherNode) {
+    children.push_back(otherNode);
+    childmap[name_in].push_back(children.back());
+    
+    children.back()->setParentNode(*this);
+    
+    return children.back();
+}
+
+DataNode *DataNode::newChildCloneFrom(const char *name_in, DataNode *cloneFrom) {
+    DataNode *cloneNode = new DataNode(name_in, *cloneFrom->element());
+    
+    children.push_back(cloneNode);
+    childmap[name_in].push_back(children.back());
+    children.back()->setParentNode(*this);
+    
+    // TODO: stack recursion optimization
+    while (cloneFrom->hasAnother()) {
+        DataNode *cNode = cloneFrom->getNext();
+        cloneNode->newChildCloneFrom(cNode->getName().c_str(), cNode);
+    }
+    
+    cloneFrom->rewind();
+    
+    return children.back();
+}
+
 
 DataNode *DataNode::child(const char *name_in, int index) {
     DataNode *child_ret;
@@ -565,6 +622,7 @@ DataNode *DataNode::getNext(const char *name_in) {
 
 void DataNode::rewind() {
     ptr = 0;
+    childmap_ptr.erase(childmap_ptr.begin(),childmap_ptr.end());
 }
 
 void DataNode::rewind(const char *name_in) {
@@ -1340,6 +1398,38 @@ long DataTree::getSerializedSize(DataElement &de_node_names, bool debug) /* get 
     total_size += de_node_names.getSerializedSize();
 
     return total_size;
+}
+
+void DataNode::rewindAll() {
+    stack<DataNode *> dn_stack;
+    
+    /* start at the root */
+    dn_stack.push(this);
+    
+    while (!dn_stack.empty()) {
+        dn_stack.top()->rewind();
+        
+        /* if it has children, traverse into them */
+        if (dn_stack.top()->hasAnother()) {
+            dn_stack.push(dn_stack.top()->getNext());
+            dn_stack.top()->rewind();
+        } else {
+            /* no more children, back out until we have children, then add next child to the top */
+            while (!dn_stack.empty()) {
+                if (!dn_stack.top()->hasAnother()) {
+                    dn_stack.top()->rewind();
+                    dn_stack.pop();
+                } else
+                    break;
+            }
+            
+            if (!dn_stack.empty()) {
+                dn_stack.push(dn_stack.top()->getNext());
+                dn_stack.top()->rewind();
+            }
+        }
+    }
+    
 }
 
 void DataNode::findAll(const char *name_in, vector<DataNode *> &node_list_out) {

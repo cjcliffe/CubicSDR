@@ -6,6 +6,8 @@
 
 #include "DemodulatorInstance.h"
 
+class DataNode;
+
 class DemodulatorMgr {
 public:
     DemodulatorMgr();
@@ -54,6 +56,10 @@ public:
 
     void updateLastState();
     
+    void setOutputDevices(std::map<int,RtAudio::DeviceInfo> devs);
+    void saveInstance(DataNode *node, DemodulatorInstance *inst);
+    DemodulatorInstance *loadInstance(DataNode *node);
+    
 private:
     
     void garbageCollect();
@@ -79,4 +85,5 @@ private:
     std::recursive_mutex demods_busy;
     
     std::map<std::string, ModemSettings> lastModemSettings;
+    std::map<int,RtAudio::DeviceInfo> outputDevices;
 };

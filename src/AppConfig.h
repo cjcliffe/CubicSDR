@@ -118,6 +118,19 @@ public:
     void setManualDevices(std::vector<SDRManualDef> manuals);
     std::vector<SDRManualDef> getManualDevices();
     
+    void setMainSplit(float value);
+    float getMainSplit();
+    
+    void setVisSplit(float value);
+    float getVisSplit();
+    
+    void setBookmarkSplit(float value);
+    float getBookmarkSplit();
+    
+    void setBookmarksVisible(bool state);
+    bool getBookmarksVisible();
+    
+    
 #if USE_HAMLIB
     int getRigModel();
     void setRigModel(int rigModel);
@@ -160,12 +173,12 @@ private:
     std::atomic_llong snap;
     std::atomic_llong centerFreq;
     std::atomic_int waterfallLinesPerSec;
-    std::atomic<float> spectrumAvgSpeed;
+    std::atomic<float> spectrumAvgSpeed, mainSplit, visSplit, bookmarkSplit;
     std::atomic_int dbOffset;
     std::vector<SDRManualDef> manualDevices;
 #if USE_HAMLIB
     std::atomic_int rigModel, rigRate;
     std::string rigPort;
-    std::atomic_bool rigEnabled, rigFollowMode, rigControlMode, rigCenterLock, rigFollowModem;
+    std::atomic_bool rigEnabled, rigFollowMode, rigControlMode, rigCenterLock, rigFollowModem, bookmarksVisible;
 #endif
 };

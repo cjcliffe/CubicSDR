@@ -21,6 +21,7 @@
 #include "ModemProperties.h"
 //#include "UITestCanvas.h"
 #include "FrequencyDialog.h"
+#include "BookmarkView.h"
 
 #include <map>
 
@@ -38,6 +39,7 @@
 
 #define wxID_MAIN_SPLITTER 2050
 #define wxID_VIS_SPLITTER 2051
+#define wxID_BM_SPLITTER 2052
 
 #define wxID_THEME_DEFAULT 2100
 #define wxID_THEME_SHARP 2101
@@ -46,6 +48,8 @@
 #define wxID_THEME_TOUCH 2104
 #define wxID_THEME_HD 2105
 #define wxID_THEME_RADAR 2106
+
+#define wxID_DISPLAY_BOOKMARKS 2107
 
 #define wxID_BANDWIDTH_BASE 2150
 #define wxID_BANDWIDTH_MANUAL 2200
@@ -104,9 +108,14 @@ public:
     void refreshGainUI();
     void setViewState(long long center_freq, int bandwidth);
     void setViewState(long long center_freq);
-    
+
+    long long getViewCenterFreq();
+    int getViewBandwidth();
     bool isUserDemodBusy();
-        
+    
+    BookmarkView *getBookmarkView();
+    void disableSave(bool state);
+    
 #ifdef _WIN32
 	bool canFocus();
 #endif
@@ -137,8 +146,9 @@ private:
     ModeSelectorCanvas *demodMuteButton, *peakHoldButton, *soloModeButton, *deltaLockButton;
     GainCanvas *gainCanvas;
     wxSizerItem *gainSizerItem, *gainSpacerItem;
-    wxSplitterWindow *mainVisSplitter, *mainSplitter;
+    wxSplitterWindow *mainVisSplitter, *mainSplitter, *bookmarkSplitter;
     wxBoxSizer *demodTray;
+    BookmarkView *bookmarkView;
     
     DemodulatorInstance *activeDemodulator;
 
@@ -188,6 +198,7 @@ private:
     wxMenuItem *rigCenterLockMenuItem;
     wxMenuItem *rigFollowModemMenuItem;
     wxMenuItem *sdrIFMenuItem;
+    wxMenuItem *hideBookmarksItem;
     std::map<int, wxMenuItem *> rigSerialMenuItems;
     std::map<int, wxMenuItem *> rigModelMenuItems;
     int rigModel;
@@ -197,6 +208,7 @@ private:
     std::string rigPort;
     int numRigs;
     bool rigInit;
+    bool saveDisabled;
 #endif
 
     wxDECLARE_EVENT_TABLE();
