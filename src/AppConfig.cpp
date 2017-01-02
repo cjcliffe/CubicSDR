@@ -292,7 +292,7 @@ AppConfig::AppConfig() : configName("") {
     modemPropsCollapsed.store(false);
     mainSplit = -1;
     visSplit = -1;
-    bookmarkSplit = -1;
+    bookmarkSplit = 200;
     bookmarksVisible.store(true);
     
 #ifdef USE_HAMLIB
