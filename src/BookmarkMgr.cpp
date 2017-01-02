@@ -402,7 +402,8 @@ void BookmarkMgr::removeRecent(BookmarkEntry *be) {
 
 
 BookmarkList BookmarkMgr::getRecents() {
-    return recents;
+    
+    return BookmarkList(recents.rbegin(), recents.rend());
 }
 
 
