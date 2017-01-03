@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once
 
 #define CUBICSDR_TITLE "" CUBICSDR_BUILD_TITLE

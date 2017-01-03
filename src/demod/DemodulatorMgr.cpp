@@ -1,3 +1,7 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
+#include <DemodulatorMgr.h>
 #include <sstream>
 #include <algorithm>
 #include <string>
