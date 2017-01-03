@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #include "DemodulatorWorkerThread.h"
 #include "CubicSDRDefs.h"
 #include "CubicSDR.h"

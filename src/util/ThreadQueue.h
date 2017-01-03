@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once 
 
 /* Credit to Alfredo Pons / https://plus.google.com/109903449837592676231
