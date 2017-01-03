@@ -179,9 +179,10 @@ private:
     std::atomic<float> spectrumAvgSpeed, mainSplit, visSplit, bookmarkSplit;
     std::atomic_int dbOffset;
     std::vector<SDRManualDef> manualDevices;
+    std::atomic_bool bookmarksVisible;
 #if USE_HAMLIB
     std::atomic_int rigModel, rigRate;
     std::string rigPort;
-    std::atomic_bool rigEnabled, rigFollowMode, rigControlMode, rigCenterLock, rigFollowModem, bookmarksVisible;
+    std::atomic_bool rigEnabled, rigFollowMode, rigControlMode, rigCenterLock, rigFollowModem;
 #endif
 };

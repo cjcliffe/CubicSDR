@@ -189,6 +189,9 @@ private:
 
     bool lowPerfMode;
 
+    wxMenuItem *hideBookmarksItem;
+    bool saveDisabled;
+
 #ifdef USE_HAMLIB
     void enableRig();
     void disableRig();
@@ -201,7 +204,7 @@ private:
     wxMenuItem *rigCenterLockMenuItem;
     wxMenuItem *rigFollowModemMenuItem;
     wxMenuItem *sdrIFMenuItem;
-    wxMenuItem *hideBookmarksItem;
+    
     std::map<int, wxMenuItem *> rigSerialMenuItems;
     std::map<int, wxMenuItem *> rigModelMenuItems;
     int rigModel;
@@ -211,7 +214,6 @@ private:
     std::string rigPort;
     int numRigs;
     bool rigInit;
-    bool saveDisabled;
 #endif
 
     wxDECLARE_EVENT_TABLE();

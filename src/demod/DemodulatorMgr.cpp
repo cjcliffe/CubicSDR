@@ -9,6 +9,7 @@
 #include <algorithm>
 
 #include "DemodulatorMgr.h"
+#include "CubicSDR.h"
 
 #if USE_HAMLIB
 #include "RigThread.h"
