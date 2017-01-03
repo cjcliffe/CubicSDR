@@ -13,12 +13,8 @@
 #include "PrimaryGLContext.h"
 
 #include "ThreadQueue.h"
-#ifdef USE_RTL_SDR
-    #include "SDRThread.h"
-#else
-    #include "SoapySDRThread.h"
-    #include "SDREnumerator.h"
-#endif
+#include "SoapySDRThread.h"
+#include "SDREnumerator.h"
 #include "SDRPostThread.h"
 #include "AudioThread.h"
 #include "DemodulatorMgr.h"

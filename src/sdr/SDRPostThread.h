@@ -3,11 +3,7 @@
 
 #pragma once
 
-#if USE_RTL_SDR
-#include "SDRThread.h"
-#else
 #include "SoapySDRThread.h"
-#endif
 #include <algorithm>
 
 class SDRPostThread : public IOThread {
