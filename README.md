@@ -48,4 +48,4 @@ Target Platforms:
 
 License:
 -------
-  - GPL
+  - GPL-2.0+
