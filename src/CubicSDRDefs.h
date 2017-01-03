@@ -3,7 +3,7 @@
 
 #pragma once
 
-#define CUBICSDR_TITLE "CubicSDR v" CUBICSDR_VERSION " by Charles J. Cliffe (@ccliffe)  ::  www.cubicsdr.com"
+#define CUBICSDR_TITLE "" CUBICSDR_BUILD_TITLE
 
 #ifndef __BYTE_ORDER
     #ifdef _WIN32

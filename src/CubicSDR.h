@@ -26,6 +26,7 @@
 #include "AppFrame.h"
 #include "FrequencyDialog.h"
 #include "DemodLabelDialog.h"
+#include "BookmarkMgr.h"
 
 #include "ScopeVisualProcessor.h"
 #include "SpectrumVisualProcessor.h"
@@ -96,6 +97,9 @@ public:
 
     void setOffset(long long ofs);
     long long getOffset();
+    
+    void setDBOffset(int ofs);
+    int getDBOffset();
 
     void setSampleRate(long long rate_in);
     long long getSampleRate();
@@ -114,6 +118,7 @@ public:
     DemodulatorThreadInputQueue* getWaterfallVisualQueue();
     DemodulatorThreadInputQueue* getActiveDemodVisualQueue();
     DemodulatorMgr &getDemodMgr();
+    BookmarkMgr &getBookmarkMgr();
 
     SDRPostThread *getSDRPostThread();
     SDRThread *getSDRThread();
@@ -182,6 +187,7 @@ private:
     std::vector<SDRDeviceInfo *> *devs = nullptr;
 
     DemodulatorMgr demodMgr;
+    BookmarkMgr bookmarkMgr;
 
     std::atomic_llong frequency;
     std::atomic_llong offset;

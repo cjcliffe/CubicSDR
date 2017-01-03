@@ -177,6 +177,14 @@ bool SpectrumCanvas::getShowDb() {
     return spectrumPanel.getShowDb();
 }
 
+void SpectrumCanvas::setUseDBOfs(bool showDb) {
+    spectrumPanel.setUseDBOffset(showDb);
+}
+
+bool SpectrumCanvas::getUseDBOfs() {
+    return spectrumPanel.getUseDBOffset();
+}
+
 void SpectrumCanvas::setView(long long center_freq_in, int bandwidth_in) {
     bwChange += bandwidth_in-bandwidth;
     #define BW_RESET_TH 400000
@@ -296,7 +304,9 @@ void SpectrumCanvas::OnMouseRightReleased(wxMouseEvent& event) {
         wxGetApp().getSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
 
         //make the peak hold act on the current dmod also, like a zoomed-in version.
-        wxGetApp().getDemodSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
+        if (wxGetApp().getDemodSpectrumProcessor()) {
+            wxGetApp().getDemodSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
+        }
     }
     mouseTracker.OnMouseRightReleased(event);
 }

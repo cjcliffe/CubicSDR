@@ -128,6 +128,7 @@ private:
     
 public:
     DataElement();
+    DataElement(DataElement &cloneFrom);
     ~DataElement();
     
     int getDataType();
@@ -235,8 +236,10 @@ private:
 public:
     DataNode();
     DataNode(const char *name_in);
-    
-    ~DataNode();		
+    DataNode(const char *name_in, DataElement &cloneFrom);
+    DataNode(const char *name_in, DataNode &cloneFrom);
+
+    ~DataNode();
     
     void setName(const char *name_in);
     string &getName() { return node_name; }
@@ -250,6 +253,8 @@ public:
     DataElement *element(); /* DataElement at this node */
     
     DataNode *newChild(const char *name_in);
+    DataNode *newChild(const char *name_in, DataNode *otherNode);
+    DataNode *newChildCloneFrom(const char *name_in, DataNode *cloneFrom);
     DataNode *child(const char *name_in, int index = 0);
     DataNode *child(int index);
     
@@ -260,7 +265,8 @@ public:
     DataNode *getNext();	/* get next child */
     void rewind(const char *name_in);	/* rewind specific */
     void rewind();	/* rewind generic */
-        
+    void rewindAll();
+    
     void findAll(const char *name_in, vector<DataNode *> &node_list_out);
     
 //    operator string () { string s; element()->get(s); return s; }
@@ -287,6 +293,7 @@ public:
     operator vector<long double> () { vector<long double> v; element()->get(v);  return v; }
     
     const string &operator= (const string &s) { element()->set(s); return s; }
+    const wstring &operator= (const wstring &s) { element()->set(s); return s; }
 
     char operator= (char i) { element()->set(i); return i; }
     unsigned char operator= (unsigned char i) { element()->set(i); return i; }
@@ -316,7 +323,6 @@ public:
     bool operator() () { return hasAnother(); }
 
     DataNode *operator ^(const char *name_in) { return newChild(name_in); }
-
 };
 
 

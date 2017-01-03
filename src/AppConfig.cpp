@@ -31,7 +31,6 @@ long long DeviceConfig::getOffset() {
     return offset.load();
 }
 
-
 void DeviceConfig::setSampleRate(long srate) {
     sampleRate.store(srate);
 }
@@ -292,7 +291,13 @@ AppConfig::AppConfig() : configName("") {
     centerFreq.store(100000000);
     waterfallLinesPerSec.store(DEFAULT_WATERFALL_LPS);
     spectrumAvgSpeed.store(0.65f);
+    dbOffset.store(0);
     modemPropsCollapsed.store(false);
+    mainSplit = -1;
+    visSplit = -1;
+    bookmarkSplit = 200;
+    bookmarksVisible.store(true);
+    
 #ifdef USE_HAMLIB
     rigEnabled.store(false);
     rigModel.store(1);
@@ -428,6 +433,14 @@ float AppConfig::getSpectrumAvgSpeed() {
     return spectrumAvgSpeed.load();
 }
 
+void AppConfig::setDBOffset(int offset) {
+    this->dbOffset.store(offset);
+}
+
+int AppConfig::getDBOffset() {
+    return dbOffset.load();
+}
+
 void AppConfig::setManualDevices(std::vector<SDRManualDef> manuals) {
     manualDevices = manuals;
 }
@@ -435,6 +448,39 @@ void AppConfig::setManualDevices(std::vector<SDRManualDef> manuals) {
 std::vector<SDRManualDef> AppConfig::getManualDevices() {
     return manualDevices;
 }
+
+void AppConfig::setMainSplit(float value) {
+    mainSplit.store(value);
+}
+
+float AppConfig::getMainSplit() {
+    return mainSplit.load();
+}
+
+void AppConfig::setVisSplit(float value) {
+    visSplit.store(value);
+}
+
+float AppConfig::getVisSplit() {
+    return visSplit.load();
+}
+
+void AppConfig::setBookmarkSplit(float value) {
+    bookmarkSplit.store(value);
+}
+
+float AppConfig::getBookmarkSplit() {
+    return bookmarkSplit.load();
+}
+
+void AppConfig::setBookmarksVisible(bool state) {
+    bookmarksVisible.store(state);
+}
+
+bool AppConfig::getBookmarksVisible() {
+    return bookmarksVisible.load();
+}
+
 
 void AppConfig::setConfigName(std::string configName) {
     this->configName = configName;
@@ -481,6 +527,12 @@ bool AppConfig::save() {
         *window_node->newChild("waterfall_lps") = waterfallLinesPerSec.load();
         *window_node->newChild("spectrum_avg") = spectrumAvgSpeed.load();
         *window_node->newChild("modemprops_collapsed") = modemPropsCollapsed.load();;
+        *window_node->newChild("db_offset") = dbOffset.load();
+
+        *window_node->newChild("main_split") = mainSplit.load();
+        *window_node->newChild("vis_split") = visSplit.load();
+        *window_node->newChild("bookmark_split") = bookmarkSplit.load();
+        *window_node->newChild("bookmark_visible") = bookmarksVisible.load();
     }
     
     DataNode *devices_node = cfg.rootNode()->newChild("devices");
@@ -630,6 +682,37 @@ bool AppConfig::load() {
         if (win_node->hasAnother("modemprops_collapsed")) {
             win_node->getNext("modemprops_collapsed")->element()->get(mpc);
             modemPropsCollapsed.store(mpc?true:false);
+        }
+        
+        if (win_node->hasAnother("db_offset")) {
+            DataNode *offset_node = win_node->getNext("db_offset");
+            int offsetValue = 0;
+            offset_node->element()->get(offsetValue);
+            setDBOffset(offsetValue);
+        }
+
+        if (win_node->hasAnother("main_split")) {
+            float gVal;
+            win_node->getNext("main_split")->element()->get(gVal);
+            mainSplit.store(gVal);
+        }
+        
+        if (win_node->hasAnother("vis_split")) {
+            float gVal;
+            win_node->getNext("vis_split")->element()->get(gVal);
+            visSplit.store(gVal);
+        }
+        
+        if (win_node->hasAnother("bookmark_split")) {
+            float gVal;
+            win_node->getNext("bookmark_split")->element()->get(gVal);
+            bookmarkSplit.store(gVal);
+        }
+
+        if (win_node->hasAnother("bookmark_visible")) {
+            int bVal;
+            win_node->getNext("bookmark_visible")->element()->get(bVal);
+            bookmarksVisible.store(bVal);
         }
     }
     
