@@ -301,7 +301,6 @@ bool CubicSDR::OnInit() {
     getSpectrumProcessor()->setInput(pipeIQVisualData);
     getSpectrumProcessor()->setHideDC(true);
     
-    
     // I/Q Data
     pipeSDRIQData = new SDRThreadIQDataQueue();
     pipeSDRIQData->set_max_num_items(100);
@@ -314,10 +313,7 @@ bool CubicSDR::OnInit() {
 
     sdrPostThread->setOutputQueue("IQVisualDataOutput", pipeIQVisualData);
     sdrPostThread->setOutputQueue("IQDataOutput", pipeWaterfallIQVisualData);
-    
-    t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
-    t_SpectrumVisual = new std::thread(&SpectrumVisualDataThread::threadMain, spectrumVisualThread);
-    
+     
 #if CUBICSDR_ENABLE_VIEW_SCOPE
     pipeAudioVisualData = new DemodulatorThreadOutputQueue();
     pipeAudioVisualData->set_max_num_items(1);
@@ -331,15 +327,29 @@ bool CubicSDR::OnInit() {
     demodVisualThread = new SpectrumVisualDataThread();
     pipeDemodIQVisualData = new DemodulatorThreadInputQueue();
     pipeDemodIQVisualData->set_max_num_items(1);
-    if (getDemodSpectrumProcessor()) getDemodSpectrumProcessor()->setInput(pipeDemodIQVisualData);
+    
+    if (getDemodSpectrumProcessor()) {
+        getDemodSpectrumProcessor()->setInput(pipeDemodIQVisualData);
+    }
     sdrPostThread->setOutputQueue("IQActiveDemodVisualDataOutput", pipeDemodIQVisualData);
-    t_DemodVisual = new std::thread(&SpectrumVisualDataThread::threadMain, demodVisualThread);
 #else
     demodVisualThread = nullptr;
     pipeDemodIQVisualData = nullptr;
     t_DemodVisual = nullptr;
 #endif
+
+    // Now that input/output queue plumbing is completely done, we can
+    //safely starts all the threads:
+    t_SpectrumVisual = new std::thread(&SpectrumVisualDataThread::threadMain, spectrumVisualThread);
+
+    if (demodVisualThread != nullptr) {
+        t_DemodVisual = new std::thread(&SpectrumVisualDataThread::threadMain, demodVisualThread);
+    }
+
+    //Start SDRPostThread last.
+    t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
     
+
     sdrEnum = new SDREnumerator();
     
     SDREnumerator::setManuals(config.getManualDevices());

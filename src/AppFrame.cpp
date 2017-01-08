@@ -281,7 +281,7 @@ AppFrame::AppFrame() :
 
 //    vbox->Add(demodTray, 12, wxEXPAND | wxALL, 0);
 //    vbox->AddSpacer(1);
-    bookmarkSplitter = new wxSplitterWindow( mainSplitter, wxID_BM_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
+    bookmarkSplitter = new wxSplitterWindow(mainSplitter, wxID_BM_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
     bookmarkSplitter->SetMinimumPaneSize(1);
     bookmarkSplitter->SetSashGravity(1.0f / 20.0f);
         
@@ -1395,7 +1395,9 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             demodGainMeter->setInputValue(demod->getGain());
             wxGetApp().getDemodMgr().setLastGain(demod->getGain());
             int outputDevice = demod->getOutputDevice();
-            if (scopeCanvas) scopeCanvas->setDeviceName(outputDevices[outputDevice].name);
+            if (scopeCanvas) {
+                scopeCanvas->setDeviceName(outputDevices[outputDevice].name);
+            }
 //            outputDeviceMenuItems[outputDevice]->Check(true);
             std::string dType = demod->getDemodulatorType();
             demodModeSelector->setSelection(dType);
@@ -1575,12 +1577,16 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 
         if (demodWaterfallCanvas && wxGetApp().getFrequency() != demodWaterfallCanvas->getCenterFrequency()) {
             demodWaterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
-            if (demodSpectrumCanvas) demodSpectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
+            if (demodSpectrumCanvas) {
+                demodSpectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
+            }
         }
+
         if (spectrumCanvas->getViewState() && abs(wxGetApp().getFrequency()-spectrumCanvas->getCenterFrequency()) > (wxGetApp().getSampleRate()/2)) {
             spectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
             waterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
         }
+
         if (demodMuteButton->modeChanged()) {
             int muteMode = demodMuteButton->getSelection();
             if (muteMode == -1) {
@@ -1685,7 +1691,9 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         wxGetApp().getSpectrumProcessor()->setPeakHold(peakHoldMode == 1);
 
         //make the peak hold act on the current dmod also, like a zoomed-in version.
-        if (wxGetApp().getDemodSpectrumProcessor()) wxGetApp().getDemodSpectrumProcessor()->setPeakHold(peakHoldMode == 1);
+        if (wxGetApp().getDemodSpectrumProcessor()) {
+            wxGetApp().getDemodSpectrumProcessor()->setPeakHold(peakHoldMode == 1);
+        }
         peakHoldButton->clearModeChanged();
     }
     
@@ -1933,7 +1941,9 @@ void AppFrame::setMainWaterfallFFTSize(int fftSize) {
 }
 
 void AppFrame::setScopeDeviceName(std::string deviceName) {
-    if (scopeCanvas) scopeCanvas->setDeviceName(deviceName);
+    if (scopeCanvas) {
+        scopeCanvas->setDeviceName(deviceName);
+    }
 }
 
 
@@ -2199,7 +2209,9 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
             break;
         case 'P':
             wxGetApp().getSpectrumProcessor()->setPeakHold(!wxGetApp().getSpectrumProcessor()->getPeakHold());
-            if (wxGetApp().getDemodSpectrumProcessor()) wxGetApp().getDemodSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
+            if (wxGetApp().getDemodSpectrumProcessor()) {
+                wxGetApp().getDemodSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
+            }
             peakHoldButton->setSelection(wxGetApp().getSpectrumProcessor()->getPeakHold()?1:0);
             peakHoldButton->clearModeChanged();
             break;
