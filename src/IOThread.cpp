@@ -72,7 +72,7 @@ void IOThread::terminate() {
 };
 
 void IOThread::onBindOutput(std::string /* name */, ThreadQueueBase* /* threadQueue */) {
-    
+   
 };
 
 void IOThread::onBindInput(std::string /* name */, ThreadQueueBase* /* threadQueue */) {
@@ -80,20 +80,24 @@ void IOThread::onBindInput(std::string /* name */, ThreadQueueBase* /* threadQue
 };
 
 void IOThread::setInputQueue(std::string qname, ThreadQueueBase *threadQueue) {
+    std::lock_guard < std::mutex > lock(m_queue_bindings_mutex);
     input_queues[qname] = threadQueue;
     this->onBindInput(qname, threadQueue);
 };
 
 ThreadQueueBase *IOThread::getInputQueue(std::string qname) {
+    std::lock_guard < std::mutex > lock(m_queue_bindings_mutex);
     return input_queues[qname];
 };
 
 void IOThread::setOutputQueue(std::string qname, ThreadQueueBase *threadQueue) {
+    std::lock_guard < std::mutex > lock(m_queue_bindings_mutex);
     output_queues[qname] = threadQueue;
     this->onBindOutput(qname, threadQueue);
 };
 
 ThreadQueueBase *IOThread::getOutputQueue(std::string qname) {
+    std::lock_guard < std::mutex > lock(m_queue_bindings_mutex);
     return output_queues[qname];
 };
 
