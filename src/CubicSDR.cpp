@@ -270,9 +270,7 @@ bool CubicSDR::OnInit() {
     Modem::addModemFactory(ModemASK::factory, "ASK", 200000);
     Modem::addModemFactory(ModemBPSK::factory, "BPSK", 200000);
     Modem::addModemFactory(ModemDPSK::factory, "DPSK", 200000);
-#if ENABLE_LIQUID_EXPERIMENTAL
     Modem::addModemFactory(ModemFSK::factory, "FSK", 19200);
-#endif
     Modem::addModemFactory(ModemGMSK::factory, "GMSK", 19200);
     Modem::addModemFactory(ModemOOK::factory, "OOK", 200000);
     Modem::addModemFactory(ModemPSK::factory, "PSK", 200000);
