@@ -76,16 +76,6 @@ IF(ENABLE_DIGITAL_LAB)
 ADD_DEFINITIONS(
     -DENABLE_DIGITAL_LAB=1
 )
-IF(MSVC)
-    SET (ENABLE_LIQUID_EXPERIMENTAL OFF CACHE BOOL "Enable experimental liquid-dsp features (requires latest liquid-dsp installed)")
-ELSE()
-    SET (ENABLE_LIQUID_EXPERIMENTAL ON CACHE BOOL "Enable experimental liquid-dsp features (requires latest liquid-dsp installed)")
-ENDIF()
-IF(ENABLE_LIQUID_EXPERIMENTAL)
-ADD_DEFINITIONS(
-    -DENABLE_LIQUID_EXPERIMENTAL=1
-)
-ENDIF()
 ENDIF()
 
 set(USE_HAMLIB OFF CACHE BOOL "Support hamlib for radio control functions.")
@@ -385,13 +375,8 @@ IF(ENABLE_DIGITAL_LAB)
         src/modules/modem/digital/ModemSQAM.cpp
         src/modules/modem/digital/ModemQAM.cpp
         src/modules/modem/digital/ModemQPSK.cpp
-    )
-    IF(ENABLE_LIQUID_EXPERIMENTAL)
-    SET (cubicsdr_sources
-        ${cubicsdr_sources}
         src/modules/modem/digital/ModemFSK.cpp
     )
-    ENDIF()
 ENDIF()
 
 SET (cubicsdr_headers
@@ -506,13 +491,8 @@ SET (cubicsdr_headers
     src/modules/modem/digital/ModemSQAM.h
     src/modules/modem/digital/ModemQAM.h
     src/modules/modem/digital/ModemQPSK.h
+    src/modules/modem/digital/ModemFSK.h
 )    
-IF(ENABLE_LIQUID_EXPERIMENTAL)
-    SET (cubicsdr_sources
-        ${cubicsdr_sources}
-        src/modules/modem/digital/ModemFSK.h
-    )
-ENDIF()
 ENDIF()
 
 
@@ -942,9 +922,8 @@ IF (WIN32 AND BUILD_INSTALLER)
     ENDIF(BUNDLE_SOAPY_MODS)
     
     IF(MSVC AND EX_PLATFORM EQUAL 32)
-    install(FILES 
-        ${PROJECT_SOURCE_DIR}/external/msvc/${EX_PLATFORM_NAME}/libgcc_s_dw2-1.dll
-        DESTINATION .)
+        file(GLOB MSVC32_DEPS ${PROJECT_SOURCE_DIR}/external/msvc/${EX_PLATFORM_NAME}/*.dll)
+        install(FILES ${MSVC32_DEPS} DESTINATION .)
     ENDIF(MSVC AND EX_PLATFORM EQUAL 32)
 
         set(CPACK_PACKAGE_EXECUTABLES CubicSDR "CubicSDR")
