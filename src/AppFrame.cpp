@@ -1321,8 +1321,15 @@ void AppFrame::OnClose(wxCloseEvent& event) {
         return;
     }
     
+#ifdef __APPLE__
+    if (!this->IsMaximized()) {
+        wxGetApp().getConfig()->setWindow(this->GetPosition(), this->GetClientSize());
+        wxGetApp().getConfig()->setWindowMaximized(this->IsMaximized());
+    }
+#else
     wxGetApp().getConfig()->setWindow(this->GetPosition(), this->GetClientSize());
     wxGetApp().getConfig()->setWindowMaximized(this->IsMaximized());
+#endif
     wxGetApp().getConfig()->setTheme(ThemeMgr::mgr.getTheme());
     wxGetApp().getConfig()->setFontScale(GLFont::getScale());
     wxGetApp().getConfig()->setSnap(wxGetApp().getFrequencySnap());
