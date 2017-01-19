@@ -1322,7 +1322,7 @@ void AppFrame::OnClose(wxCloseEvent& event) {
     }
     
 #ifdef __APPLE__
-    if (!this->IsMaximized()) {
+    if (this->GetPosition().y > 0) {
         wxGetApp().getConfig()->setWindow(this->GetPosition(), this->GetClientSize());
         wxGetApp().getConfig()->setWindowMaximized(this->IsMaximized());
     }
