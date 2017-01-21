@@ -30,7 +30,7 @@ InteractiveCanvas::InteractiveCanvas(wxWindow *parent, int *dispAttrs) :
 InteractiveCanvas::~InteractiveCanvas() {
 }
 
-void InteractiveCanvas::setView(long long center_freq_in, int bandwidth_in) {
+void InteractiveCanvas::setView(long long center_freq_in, long long bandwidth_in) {
     isView = true;
     centerFreq = center_freq_in;
     bandwidth = bandwidth_in;
@@ -74,11 +74,11 @@ long long InteractiveCanvas::getCenterFrequency() {
     }
 }
 
-void InteractiveCanvas::setBandwidth(unsigned int bandwidth_in) {
+void InteractiveCanvas::setBandwidth(long long bandwidth_in) {
     bandwidth = bandwidth_in;
 }
 
-unsigned int InteractiveCanvas::getBandwidth() {
+long long InteractiveCanvas::getBandwidth() {
     if (isView) {
         return bandwidth;
     } else {

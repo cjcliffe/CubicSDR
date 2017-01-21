@@ -170,6 +170,13 @@ void GainCanvas::setHelpTip(std::string tip) {
 
 void GainCanvas::updateGainUI() {
     SDRDeviceInfo *devInfo = wxGetApp().getDevice();
+
+    //possible if we 'Refresh Devices' then devInfo becomes null
+    //until a new device is selected.
+    if (devInfo == nullptr) {
+        return;
+    }
+
     DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(devInfo->getDeviceId());
     
     gains = devInfo->getGains(SOAPY_SDR_RX, 0);

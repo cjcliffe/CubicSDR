@@ -709,9 +709,13 @@ void AppFrame::initDeviceParams(SDRDeviceInfo *devInfo) {
     deviceChanged.store(true);
 }
 
+void AppFrame::notifyDeviceChanged() {
+    deviceChanged.store(true);
+}
+
 void AppFrame::updateDeviceParams() {
     
-    if (!deviceChanged.load()) {
+    if (!deviceChanged.load() || devInfo == nullptr) {
         return;
     }
     
@@ -800,16 +804,35 @@ void AppFrame::updateDeviceParams() {
     menuBar->Replace(1, newSettingsMenu, wxT("&Settings"));
     settingsMenu = newSettingsMenu;
     
-    // Build sample rate menu
+    // Build/Rebuild the sample rate menu :
     sampleRates = devInfo->getSampleRates(SOAPY_SDR_RX, 0);
-    sampleRateMenuItems.erase(sampleRateMenuItems.begin(),sampleRateMenuItems.end());
+    sampleRateMenuItems.clear();
     
     wxMenu *newSampleRateMenu = new wxMenu;
     int ofs = 0;
+    
+    //Current sample rate, try to keep it as is.
     long sampleRate = wxGetApp().getSampleRate();
+   
+    long minRate = sampleRates.front();
+    long maxRate = sampleRates.back();
+
+    //If it is beyond limits, make device choose a reasonable value
+    if (sampleRate < minRate || sampleRate > maxRate) {
+        sampleRate = devInfo->getSampleRateNear(SOAPY_SDR_RX, 0, sampleRate);
+    }
+
+    //Check if a manual entry was previously set: if so, check its value is still within the limits of the device. If not so, reset it.
+    if (manualSampleRate > 0 && 
+        manualSampleRate < minRate || manualSampleRate > maxRate) {
+        manualSampleRate = -1;
+    }
+
     bool checked = false;
     for (vector<long>::iterator i = sampleRates.begin(); i != sampleRates.end(); i++) {
+
         sampleRateMenuItems[wxID_BANDWIDTH_BASE+ofs] = newSampleRateMenu->AppendRadioItem(wxID_BANDWIDTH_BASE+ofs, frequencyToStr(*i));
+        
         if (sampleRate == (*i)) {
             sampleRateMenuItems[wxID_BANDWIDTH_BASE+ofs]->Check(true);
             checked = true;
@@ -817,10 +840,26 @@ void AppFrame::updateDeviceParams() {
         ofs++;
     }
     
-    sampleRateMenuItems[wxID_BANDWIDTH_MANUAL] = newSampleRateMenu->AppendRadioItem(wxID_BANDWIDTH_MANUAL, wxT("Manual Entry")); 
+    //Add a manual sample value radio button, but disabled by default in case the user 
+    //never ever uses manual entry.
+    if (manualSampleRate <= 0) {
+        sampleRateMenuItems[wxID_BANDWIDTH_MANUAL] = newSampleRateMenu->AppendRadioItem(wxID_BANDWIDTH_MANUAL, wxT("Manual :  N/A"));
+        sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Enable(false);
+    }
+    else {
+        sampleRateMenuItems[wxID_BANDWIDTH_MANUAL] = newSampleRateMenu->AppendRadioItem(wxID_BANDWIDTH_MANUAL, wxT("Manual :  ") + frequencyToStr(manualSampleRate));
+        sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Enable(true);
+    }
+
+    //We apply the current sample rate after all 
     if (!checked) {
         sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Check(true);
     }
+
+    //Append a normal button (NOT a radio-button) for manual entry dialog at the end
+    newSampleRateMenu->AppendSeparator();
+    sampleRateMenuItems[wxID_BANDWIDTH_MANUAL_DIALOG] = newSampleRateMenu->Append(wxID_BANDWIDTH_MANUAL_DIALOG, wxT("Manual Entry..."));
+
    
     menuBar->Replace(2, newSampleRateMenu, wxT("Sample &Rate"));
     sampleRateMenu = newSampleRateMenu;
@@ -889,7 +928,6 @@ void AppFrame::disableRig() {
     wxGetApp().getConfig()->setRigEnabled(false);
 }
 #endif
-
 
 void AppFrame::OnMenu(wxCommandEvent& event) {
 
@@ -1129,41 +1167,51 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         bookmarkView->updateTheme();
     }
 
-    switch (event.GetId()) {
-        case wxID_BANDWIDTH_MANUAL:
-            int rateHigh, rateLow;
-            
-            SDRDeviceInfo *dev = wxGetApp().getDevice();
-            if (dev == NULL) {
-                break;
-            }
-            
+    if (event.GetId() == wxID_BANDWIDTH_MANUAL) {
+        wxGetApp().setSampleRate(manualSampleRate);
+    }
+    else if (event.GetId() == wxID_BANDWIDTH_MANUAL_DIALOG) {
+
+        int rateHigh, rateLow;
+
+        SDRDeviceInfo *dev = wxGetApp().getDevice();
+        if (dev != nullptr) {
+
             std::vector<long> sampleRates = dev->getSampleRates(SOAPY_SDR_RX, 0);
-            
-            rateLow = 2000000;
-            rateHigh = 30000000;
-            
+
+            //default
+            rateLow = MANUAL_SAMPLE_RATE_MIN;
+            rateHigh = MANUAL_SAMPLE_RATE_MAX;
+
             if (sampleRates.size()) {
-                rateLow = sampleRates[0];
-                rateHigh = sampleRates[sampleRates.size()-1];
+                rateLow = sampleRates.front();
+                rateHigh = sampleRates.back();
             }
 
             long bw = wxGetNumberFromUser("\n" + dev->getName() + "\n\n  "
-                                          + "min: " + std::to_string(rateLow) + " Hz"
-                                          + ", max: " + std::to_string(rateHigh) + " Hz\n",
-                                          "Sample Rate in Hz",
-                                          "Manual Sample Rate Entry",
-                                          wxGetApp().getSampleRate(),
-                                          rateLow,
-                                          rateHigh,
-                                          this);
+                + "min: " + std::to_string(rateLow) + " Hz"
+                + ", max: " + std::to_string(rateHigh) + " Hz\n",
+                "Sample Rate in Hz",
+                "Manual Sample Rate Entry",
+                //If a manual sample rate has already been input, recall this one.
+                manualSampleRate > 0? manualSampleRate :wxGetApp().getSampleRate(),
+                rateLow,
+                rateHigh,
+                this);
+
             if (bw != -1) {
-                wxGetApp().setSampleRate(bw);
+
+                manualSampleRate = bw;
+                sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Enable(true);
+                
+                sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->SetItemLabel(wxT("Manual :  ") + frequencyToStr(manualSampleRate));
+                sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Check(true);
+                wxGetApp().setSampleRate(manualSampleRate);
             }
-            break;
+        }
     }
-    
-    if (event.GetId() >= wxID_BANDWIDTH_BASE && event.GetId() < wxID_BANDWIDTH_BASE + (int)sampleRates.size()) {
+    else if (event.GetId() >= wxID_BANDWIDTH_BASE && event.GetId() < wxID_BANDWIDTH_BASE + (int)sampleRates.size()) {
+
         wxGetApp().setSampleRate(sampleRates[event.GetId()-wxID_BANDWIDTH_BASE]);
     }
     
@@ -1842,18 +1890,54 @@ bool AppFrame::loadSession(std::string fileName) {
         }
 
         if (header->hasAnother("sample_rate")) {
-            int sample_rate = *header->getNext("sample_rate");
-            
+
+            long sample_rate = *header->getNext("sample_rate");
+
             SDRDeviceInfo *dev = wxGetApp().getSDRThread()->getDevice();
             if (dev) {
-                // Try for a reasonable default sample rate.
-                sample_rate = dev->getSampleRateNear(SOAPY_SDR_RX, 0, sample_rate);
+                //retreive the available sample rates. A valid previously chosen manual
+                //value is constrained within these limits. If it doesn't behave, lets the device choose
+                //for us.
+                long minRate = MANUAL_SAMPLE_RATE_MIN;
+                long maxRate = MANUAL_SAMPLE_RATE_MAX;
+
+                std::vector<long> sampleRates = dev->getSampleRates(SOAPY_SDR_RX, 0);
+
+                if (sampleRates.size()) {
+                    minRate = sampleRates.front();
+                    maxRate = sampleRates.back();
+                }
+
+                //If it is beyond limits, make device choose a reasonable value
+                if (sample_rate < minRate || sample_rate > maxRate) {
+                    sample_rate = dev->getSampleRateNear(SOAPY_SDR_RX, 0, sample_rate);
+                }
+               
+                //scan the available sample rates and see if it matches a predifined one
+                int menuIndex = -1;
+                for (auto discreteRate : sampleRates) {
+                    if (discreteRate == sample_rate) {
+                        menuIndex++;
+                        //activate Bandwidth Menu entry matching this predefined sample_rate.
+                        sampleRateMenuItems[wxID_BANDWIDTH_BASE + menuIndex]->Check(true);
+                        break;
+                    }
+                } //end for
+                //this is a manual entry
+                if (menuIndex == -1) {
+                    manualSampleRate = sample_rate;
+                    sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Enable(true);
+                    // Apply the manual value, activate the menu entry
+                    
+                    sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->SetItemLabel(wxString("Manual Entry :  ") + frequencyToStr(sample_rate));
+                    sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Check(true);
+                }
+                //update applied value
                 wxGetApp().setSampleRate(sample_rate);
                 deviceChanged.store(true);
             } else {
                 wxGetApp().setSampleRate(sample_rate);
             }
-            
         }
 
         DemodulatorInstance *loadedActiveDemod = nullptr;

@@ -40,4 +40,6 @@ const char filePathSeparator =
 
 #define CHANNELIZER_RATE_MAX 500000
 
+#define MANUAL_SAMPLE_RATE_MIN 2000000 // 2MHz
+#define MANUAL_SAMPLE_RATE_MAX 200000000 // 200MHz (We are 2017+ after all)
 

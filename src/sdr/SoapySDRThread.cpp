@@ -208,7 +208,12 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
         int n_stream_read = device->readStream(stream, buffs, mtElems, flags, timeNs);
 
         //if the n_stream_read <= 0, bail out from reading. 
-        if (n_stream_read <= 0) {
+        if (n_stream_read == 0) {
+             std::cout << "SDRThread::readStream(): read blocking..." << std::endl;
+             break;
+        }
+        else if (n_stream_read < 0) {
+            std::cout << "SDRThread::readStream(): read failed with code: " << n_stream_read << std::endl;
             break;
         }
 
@@ -226,7 +231,7 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
         } else {
             break;
         }
-    }
+    } //end while
     
     if (n_read > 0 && !stopping && !iqDataOutQueue->full()) {
         SDRThreadIQData *dataOut = buffers.getBuffer();
@@ -515,7 +520,7 @@ long long SDRThread::getOffset() {
     return offset.load();
 }
 
-void SDRThread::setSampleRate(int rate) {
+void SDRThread::setSampleRate(long rate) {
     sampleRate.store(rate);
     rate_changed = true;
     DeviceConfig *devConfig = deviceConfig.load();
@@ -524,7 +529,7 @@ void SDRThread::setSampleRate(int rate) {
     }
 //    std::cout << "Set sample rate: " << sampleRate.load() << std::endl;
 }
-int SDRThread::getSampleRate() {
+long SDRThread::getSampleRate() {
     return sampleRate.load();
 }
 
