@@ -55,6 +55,7 @@
 #define wxID_DISPLAY_BOOKMARKS 2107
 
 #define wxID_BANDWIDTH_BASE 2150
+#define wxID_BANDWIDTH_MANUAL_DIALOG 2199
 #define wxID_BANDWIDTH_MANUAL 2200
 
 #define wxID_DISPLAY_BASE 2250
@@ -118,6 +119,12 @@ public:
     
     BookmarkView *getBookmarkView();
     void disableSave(bool state);
+
+    //call this in case the main UI is not 
+    //the origin of device changes / sample rate by operator,
+    //and must be notified back to update its UI elements
+    //(ex: SDR Devices dialog changing the configuration)
+    void notifyDeviceChanged();
     
 #ifdef _WIN32
 	bool canFocus();
@@ -174,6 +181,7 @@ private:
     SoapySDR::ArgInfoList settingArgs;
     int settingsIdMax;
     std::vector<long> sampleRates;
+    long manualSampleRate = -1;
     
     std::string currentSessionFile;
     

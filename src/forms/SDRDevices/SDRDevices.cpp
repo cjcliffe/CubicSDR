@@ -116,8 +116,8 @@ void SDRDevicesDialog::refreshDeviceProperties() {
         devSettings["name"] = m_propertyGrid->Append( new wxStringProperty("Name", wxPG_LABEL, devConfig->getDeviceName()) );
         devSettings["offset"] = m_propertyGrid->Append( new wxIntProperty("Offset (Hz)", wxPG_LABEL, devConfig->getOffset()) );
         
-        int currentSampleRate = wxGetApp().getSampleRate();
-        int deviceSampleRate = devConfig->getSampleRate();
+        long currentSampleRate = wxGetApp().getSampleRate();
+        long deviceSampleRate = devConfig->getSampleRate();
         
         if (!deviceSampleRate) {
             deviceSampleRate = selDev->getSampleRateNear(SOAPY_SDR_RX, 0, currentSampleRate);
@@ -318,7 +318,7 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event) {
         wxGetApp().setDeviceArgs(settingArgs);
         wxGetApp().setStreamArgs(streamArgs);
         wxGetApp().setDevice(dev,0);
-                
+        wxGetApp().notifyMainUIOfDeviceChange();
         Close();
     }
     event.Skip();
@@ -438,13 +438,14 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
         DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
         
         std::string strRate = deviceArgs["sample_rate"].options[event.GetPropertyValue().GetInteger()];
-        int srate = 0;
+        long srate = 0;
         try {
-            srate = std::stoi(strRate);
+            srate = std::stol(strRate);
             devConfig->setSampleRate(srate);
             
             if (dev->isActive() || !wxGetApp().getDevice()) {
                 wxGetApp().setSampleRate(srate);
+                wxGetApp().notifyMainUIOfDeviceChange();
             }            
         } catch (std::invalid_argument e) {
             // nop

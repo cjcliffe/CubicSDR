@@ -138,6 +138,8 @@ public:
     bool areDevicesEnumerating();
     bool areModulesMissing();
     std::string getNotification();
+
+    void notifyMainUIOfDeviceChange();
     
     void addRemote(std::string remoteAddr);
     void removeRemote(std::string remoteAddr);

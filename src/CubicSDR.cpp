@@ -917,6 +917,10 @@ bool CubicSDR::areDevicesReady() {
     return devicesReady.load();
 }
 
+void CubicSDR::notifyMainUIOfDeviceChange() {
+    appframe->notifyDeviceChanged();
+}
+
 bool CubicSDR::areDevicesEnumerating() {
     return !sdrEnum->isTerminated();
 }
