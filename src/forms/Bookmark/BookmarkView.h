@@ -59,7 +59,8 @@ public:
     void setExpandState(std::string branchName, bool state);
     
     void loadDefaultRanges();
-    
+    static BookmarkRangeEntry *makeActiveRangeEntry();
+
 protected:
     void activeSelection(DemodulatorInstance *dsel);
     void bookmarkSelection(BookmarkEntry *bmSel);
@@ -136,6 +137,8 @@ protected:
     void onRemoveRange( wxCommandEvent& event );
     void onRenameRange( wxCommandEvent& event );
     void onActivateRange( wxCommandEvent& event );
+    void onUpdateRange( wxCommandEvent& event );
+
 
     TreeViewItem *itemToTVI(wxTreeItemId item);
     

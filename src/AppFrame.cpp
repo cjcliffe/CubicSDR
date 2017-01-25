@@ -824,7 +824,7 @@ void AppFrame::updateDeviceParams() {
 
     //Check if a manual entry was previously set: if so, check its value is still within the limits of the device. If not so, reset it.
     if (manualSampleRate > 0 && 
-        manualSampleRate < minRate || manualSampleRate > maxRate) {
+        (manualSampleRate < minRate || manualSampleRate > maxRate)) {
         manualSampleRate = -1;
     }
 
