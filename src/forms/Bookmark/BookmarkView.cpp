@@ -33,7 +33,6 @@ BookmarkViewVisualDragItem::BookmarkViewVisualDragItem(wxString labelValue) : wx
     sizer->Add(label, 1, wxALL | wxEXPAND, 5);
     
     SetSizerAndFit(sizer);
-    
     Show();
 }
 
@@ -192,9 +191,10 @@ void BookmarkView::updateTheme() {
     m_treeView->SetForegroundColour(textColor);
     
     m_propPanel->SetBackgroundColour(bgColor);
-    m_buttonPanel->SetBackgroundColour(bgColor);
-
     m_propPanel->SetForegroundColour(textColor);
+
+    m_buttonPanel->SetBackgroundColour(bgColor);
+    m_buttonPanel->SetForegroundColour(textColor);
     
     m_labelLabel->SetForegroundColour(textColor);
     m_frequencyVal->SetForegroundColour(textColor);
@@ -203,6 +203,7 @@ void BookmarkView::updateTheme() {
     m_bandwidthLabel->SetForegroundColour(textColor);
     m_modulationVal->SetForegroundColour(textColor);
     m_modulationLabel->SetForegroundColour(textColor);
+    
 
     refreshLayout();
 }
@@ -701,7 +702,12 @@ void BookmarkView::refreshLayout() {
 wxButton *BookmarkView::makeButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler) {
     wxButton *nButton = new wxButton( m_buttonPanel, wxID_ANY, labelVal);
     nButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, handler, nullptr, this);
-    nButton->SetBackgroundColour(ThemeMgr::mgr.currentTheme->generalBackground);
+    
+    wxColour bgColor(ThemeMgr::mgr.currentTheme->generalBackground);
+    wxColour textColor(ThemeMgr::mgr.currentTheme->text);
+
+    nButton->SetBackgroundColour(bgColor);
+    nButton->SetForegroundColour(textColor);
     return nButton;
 }
 
