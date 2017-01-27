@@ -440,11 +440,6 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         wxGetApp().removeDemodulator(activeDemod);
         wxGetApp().getDemodMgr().deleteThread(activeDemod);
         break;
-    case 'B':
-        if (spectrumCanvas) {
-            spectrumCanvas->setShowDb(!spectrumCanvas->getShowDb());
-        }
-        break;
     case WXK_SPACE:
         wxGetApp().showFrequencyInput();
         break;

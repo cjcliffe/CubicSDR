@@ -207,7 +207,7 @@ AppFrame::AppFrame() :
 
 #if CUBICSDR_ENABLE_VIEW_SCOPE
     scopeCanvas = new ScopeCanvas(demodPanel, attribList);
-    scopeCanvas->setHelpTip("Audio Visuals, drag left/right to toggle Scope or Spectrum.");
+    scopeCanvas->setHelpTip("Audio Visuals, drag left/right to toggle Scope or Spectrum, 'B' to toggle decibels display.");
     scopeCanvas->SetMinSize(wxSize(128,-1));
     demodScopeTray->Add(scopeCanvas, 8, wxEXPAND | wxALL, 0);
     wxGetApp().getScopeProcessor()->setup(1024);
@@ -1681,7 +1681,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     if (scopeCanvas) {
         scopeCanvas->setPPMMode(demodTuner->isAltDown());
         
-        scopeCanvas->setShowDb(spectrumCanvas->getShowDb());
         wxGetApp().getScopeProcessor()->setScopeEnabled(scopeCanvas->scopeVisible());
         wxGetApp().getScopeProcessor()->setSpectrumEnabled(scopeCanvas->spectrumVisible());
         wxGetApp().getAudioVisualQueue()->set_max_num_items((scopeCanvas->scopeVisible()?1:0) + (scopeCanvas->spectrumVisible()?1:0));
@@ -2232,12 +2231,21 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
             break;
     }
     
+    //Re-dispatch the key events if the mouse cursor is within a given
+    //widget region, effectively activating its specific key shortcuts,
+    //which else are overriden by this global key handler.
     if (demodTuner->getMouseTracker()->mouseInView()) {
         demodTuner->OnKeyDown(event);
     } else if (waterfallCanvas->getMouseTracker()->mouseInView()) {
         waterfallCanvas->OnKeyDown(event);
     }
-    
+    else if (spectrumCanvas->getMouseTracker()->mouseInView()) {
+        spectrumCanvas->OnKeyDown(event);
+    }
+    else if (scopeCanvas->getMouseTracker()->mouseInView()) {
+        scopeCanvas->OnKeyDown(event);
+    }
+
     return 1;
 }
 
@@ -2345,13 +2353,22 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
         default:
             break;
     }
-    
+
+    //Re-dispatch the key events if the mouse cursor is within a given
+    //widget region, effectively activating its specific key shortcuts,
+    //which else are overriden by this global key handler.
     if (demodTuner->getMouseTracker()->mouseInView()) {
         demodTuner->OnKeyUp(event);
-    } else if (waterfallCanvas->getMouseTracker()->mouseInView()) {
+    }
+    else if (waterfallCanvas->getMouseTracker()->mouseInView()) {
         waterfallCanvas->OnKeyUp(event);
     }
-    
+    else if (spectrumCanvas->getMouseTracker()->mouseInView()) {
+        spectrumCanvas->OnKeyUp(event);
+    }
+    else if (scopeCanvas->getMouseTracker()->mouseInView()) {
+        scopeCanvas->OnKeyUp(event);
+    }
     
     // TODO: Catch key-ups outside of original target
 

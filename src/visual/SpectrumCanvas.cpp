@@ -310,3 +310,20 @@ void SpectrumCanvas::OnMouseRightReleased(wxMouseEvent& event) {
     }
     mouseTracker.OnMouseRightReleased(event);
 }
+
+void SpectrumCanvas::OnKeyDown(wxKeyEvent& event) {
+    InteractiveCanvas::OnKeyDown(event);
+
+    switch (event.GetKeyCode()) {
+  
+    case 'B':
+       setShowDb(!getShowDb());
+       break;
+    default:
+        event.Skip();
+    }
+}
+
+void SpectrumCanvas::OnKeyUp(wxKeyEvent& event) {
+    InteractiveCanvas::OnKeyUp(event);
+}
