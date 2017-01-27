@@ -8,6 +8,10 @@
 
 #include "CubicSDR.h"
 
+#ifdef __linux__
+#include "CubicSDR.xpm"
+#endif
+
 SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent ): devFrame( parent, wxID_ANY, wxT(CUBICSDR_INSTALL_NAME " :: SDR Devices")) {
     refresh = true;
     failed = false;
@@ -20,6 +24,13 @@ SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent ): devFrame( parent, wxID_A
     removeId = nullptr;
     devAddDialog = nullptr;
     dev = nullptr;
+
+#ifdef __linux__
+    SetIcon(wxICON(cubicsdr));
+#elif _WIN32
+    SetIcon(wxICON(frame_icon));
+#endif
+
 }
 
 void SDRDevicesDialog::OnClose( wxCloseEvent& /* event */) {
