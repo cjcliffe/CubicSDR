@@ -45,7 +45,10 @@ ScopeCanvas::ScopeCanvas(wxWindow *parent, int *dispAttrs) : InteractiveCanvas(p
     parentPanel.setFill(GLPanel::GLPANEL_FILL_NONE);
     scopePanel.setSize(1.0,-1.0);
     spectrumPanel.setSize(1.0,-1.0);
-    spectrumPanel.setShowDb(true);
+    showDb = true;
+    spectrumPanel.setShowDb(showDb);
+    //dB offset is a RF value, has no meaning in audio, disable it.
+    spectrumPanel.setUseDBOffset(false);
 }
 
 ScopeCanvas::~ScopeCanvas() {
@@ -89,8 +92,8 @@ bool ScopeCanvas::getPPMMode() {
     return ppmMode;
 }
 
-void ScopeCanvas::setShowDb(bool showDb) {
-    this->showDb = showDb;
+void ScopeCanvas::setShowDb(bool show) {
+    this->showDb = show;
 }
 
 bool ScopeCanvas::getShowDb() {
@@ -273,5 +276,22 @@ void ScopeCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
 
 void ScopeCanvas::setHelpTip(std::string tip) {
     helpTip = tip;
+}
+
+void ScopeCanvas::OnKeyDown(wxKeyEvent& event) {
+    InteractiveCanvas::OnKeyDown(event);
+
+    switch (event.GetKeyCode()) {
+
+    case 'B':
+        setShowDb(!getShowDb());
+        break;
+    default:
+        event.Skip();
+    }
+}
+
+void ScopeCanvas::OnKeyUp(wxKeyEvent& event) {
+    InteractiveCanvas::OnKeyUp(event);
 }
 

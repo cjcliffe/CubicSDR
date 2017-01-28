@@ -207,7 +207,7 @@ AppFrame::AppFrame() :
 
 #if CUBICSDR_ENABLE_VIEW_SCOPE
     scopeCanvas = new ScopeCanvas(demodPanel, attribList);
-    scopeCanvas->setHelpTip("Audio Visuals, drag left/right to toggle Scope or Spectrum.");
+    scopeCanvas->setHelpTip("Audio Visuals, drag left/right to toggle Scope or Spectrum, 'B' to toggle decibels display.");
     scopeCanvas->SetMinSize(wxSize(128,-1));
     demodScopeTray->Add(scopeCanvas, 8, wxEXPAND | wxALL, 0);
     wxGetApp().getScopeProcessor()->setup(1024);
@@ -929,6 +929,72 @@ void AppFrame::disableRig() {
 }
 #endif
 
+bool AppFrame::actionOnMenuDisplay(wxCommandEvent& event) {
+
+    //by default, is managed.
+    bool bManaged = true;
+
+    if (event.GetId() == wxID_THEME_DEFAULT) {
+        ThemeMgr::mgr.setTheme(COLOR_THEME_DEFAULT);
+    }
+    else if (event.GetId() == wxID_THEME_SHARP) {
+        ThemeMgr::mgr.setTheme(COLOR_THEME_SHARP);
+    }
+    else if (event.GetId() == wxID_THEME_BW) {
+        ThemeMgr::mgr.setTheme(COLOR_THEME_BW);
+    }
+    else if (event.GetId() == wxID_THEME_RAD) {
+        ThemeMgr::mgr.setTheme(COLOR_THEME_RAD);
+    }
+    else if (event.GetId() == wxID_THEME_TOUCH) {
+        ThemeMgr::mgr.setTheme(COLOR_THEME_TOUCH);
+    }
+    else if (event.GetId() == wxID_THEME_HD) {
+        ThemeMgr::mgr.setTheme(COLOR_THEME_HD);
+    }
+    else if (event.GetId() == wxID_THEME_RADAR) {
+        ThemeMgr::mgr.setTheme(COLOR_THEME_RADAR);
+    }
+    //Display : font sizes
+    else if (event.GetId() == wxID_DISPLAY_BASE) {
+        GLFont::setScale(GLFont::GLFONT_SCALE_NORMAL);
+    }
+    else if (event.GetId() == wxID_DISPLAY_BASE + 1) {
+        GLFont::setScale(GLFont::GLFONT_SCALE_MEDIUM);
+    }
+    else if (event.GetId() == wxID_DISPLAY_BASE + 2) {
+        GLFont::setScale(GLFont::GLFONT_SCALE_LARGE);
+    }
+    else if (event.GetId() == wxID_DISPLAY_BOOKMARKS) {
+        if (hideBookmarksItem->IsChecked()) {
+            bookmarkSplitter->Unsplit(bookmarkView);
+            bookmarkSplitter->Layout();
+        }
+        else {
+            bookmarkSplitter->SplitVertically(bookmarkView, mainVisSplitter, wxGetApp().getConfig()->getBookmarkSplit());
+            bookmarkSplitter->Layout();
+        }
+    }
+    else {
+        bManaged = false;
+    }
+
+    //update theme choice in children elements:  
+    if (event.GetId() >= wxID_THEME_DEFAULT && event.GetId() <= wxID_THEME_RADAR) {
+       
+        gainCanvas->setThemeColors();
+        modemProps->updateTheme();
+        bookmarkView->updateTheme();
+    }
+
+    //force all windows refresh
+    if (bManaged) {
+        Refresh();
+    }
+
+    return bManaged;
+}
+
 void AppFrame::OnMenu(wxCommandEvent& event) {
 
 //    if (event.GetId() >= wxID_RT_AUDIO_DEVICE && event.GetId() < wxID_RT_AUDIO_DEVICE + (int)devices.size()) {
@@ -1057,56 +1123,23 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         waterfallSpeedMeter->setLevel(sqrt(DEFAULT_WATERFALL_LPS));
         wxGetApp().getSpectrumProcessor()->setFFTAverageRate(0.65f);
         spectrumAvgMeter->setLevel(0.65f);
-        demodModeSelector->Refresh();
-        demodTuner->Refresh();
+ 
         SetTitle(CUBICSDR_TITLE);
         currentSessionFile = "";
         bookmarkSplitter->Unsplit(bookmarkView);
         bookmarkSplitter->SplitVertically( bookmarkView, mainVisSplitter, wxGetApp().getConfig()->getBookmarkSplit() );
         hideBookmarksItem->Check(false);
+        //force all windows refresh
+        Refresh();
+
     } else if (event.GetId() == wxID_CLOSE || event.GetId() == wxID_EXIT) {
         Close(false);
-    } else if (event.GetId() == wxID_THEME_DEFAULT) {
-        ThemeMgr::mgr.setTheme(COLOR_THEME_DEFAULT);
-    } else if (event.GetId() == wxID_THEME_SHARP) {
-        ThemeMgr::mgr.setTheme(COLOR_THEME_SHARP);
-    } else if (event.GetId() == wxID_THEME_BW) {
-        ThemeMgr::mgr.setTheme(COLOR_THEME_BW);
-    } else if (event.GetId() == wxID_THEME_RAD) {
-        ThemeMgr::mgr.setTheme(COLOR_THEME_RAD);
-    } else if (event.GetId() == wxID_THEME_TOUCH) {
-        ThemeMgr::mgr.setTheme(COLOR_THEME_TOUCH);
-    } else if (event.GetId() == wxID_THEME_HD) {
-        ThemeMgr::mgr.setTheme(COLOR_THEME_HD);
-    } else if (event.GetId() == wxID_THEME_RADAR) {
-        ThemeMgr::mgr.setTheme(COLOR_THEME_RADAR);
     }
-    //Display : font sizes
-    else if (event.GetId() == wxID_DISPLAY_BASE) {
-        GLFont::setScale(GLFont::GLFONT_SCALE_NORMAL);
-        //force all windows refresh
-        Refresh();
+    else if (actionOnMenuDisplay(event)) {
+        //done in actionOnMenuDisplay
+        return;
     }
-    else if (event.GetId() == wxID_DISPLAY_BASE + 1) {
-        GLFont::setScale(GLFont::GLFONT_SCALE_MEDIUM);
-        //force all windows refresh
-        Refresh();
-    }
-    else if (event.GetId() == wxID_DISPLAY_BASE + 2) {
-        GLFont::setScale(GLFont::GLFONT_SCALE_LARGE);
-        //force all windows refresh
-        Refresh();
-    } else if (event.GetId() == wxID_DISPLAY_BOOKMARKS) {
-        if (hideBookmarksItem->IsChecked()) {
-            bookmarkSplitter->Unsplit(bookmarkView);
-            bookmarkSplitter->Layout();
-        } else {
-            bookmarkSplitter->SplitVertically( bookmarkView, mainVisSplitter, wxGetApp().getConfig()->getBookmarkSplit() );
-            bookmarkSplitter->Layout();
-        }
-    }
-
-    if (event.GetId() >= wxID_SETTINGS_BASE && event.GetId() < settingsIdMax) {
+    else if (event.GetId() >= wxID_SETTINGS_BASE && event.GetId() < settingsIdMax) {
         int setIdx = event.GetId()-wxID_SETTINGS_BASE;
         int menuIdx = 0;
         for (std::vector<SoapySDR::ArgInfo>::iterator arg_i = settingArgs.begin(); arg_i != settingArgs.end(); arg_i++) {
@@ -1157,15 +1190,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         }
     }
     
-    if (event.GetId() >= wxID_THEME_DEFAULT && event.GetId() <= wxID_THEME_RADAR) {
-    	demodTuner->Refresh();
-    	demodModeSelector->Refresh();
-        waterfallSpeedMeter->Refresh();
-        spectrumAvgMeter->Refresh();
-        gainCanvas->setThemeColors();
-        modemProps->updateTheme();
-        bookmarkView->updateTheme();
-    }
+   
 
     if (event.GetId() == wxID_BANDWIDTH_MANUAL) {
         wxGetApp().setSampleRate(manualSampleRate);
@@ -1656,7 +1681,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     if (scopeCanvas) {
         scopeCanvas->setPPMMode(demodTuner->isAltDown());
         
-        scopeCanvas->setShowDb(spectrumCanvas->getShowDb());
         wxGetApp().getScopeProcessor()->setScopeEnabled(scopeCanvas->scopeVisible());
         wxGetApp().getScopeProcessor()->setSpectrumEnabled(scopeCanvas->spectrumVisible());
         wxGetApp().getAudioVisualQueue()->set_max_num_items((scopeCanvas->scopeVisible()?1:0) + (scopeCanvas->spectrumVisible()?1:0));
@@ -2207,12 +2231,21 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
             break;
     }
     
+    //Re-dispatch the key events if the mouse cursor is within a given
+    //widget region, effectively activating its specific key shortcuts,
+    //which else are overriden by this global key handler.
     if (demodTuner->getMouseTracker()->mouseInView()) {
         demodTuner->OnKeyDown(event);
     } else if (waterfallCanvas->getMouseTracker()->mouseInView()) {
         waterfallCanvas->OnKeyDown(event);
     }
-    
+    else if (spectrumCanvas->getMouseTracker()->mouseInView()) {
+        spectrumCanvas->OnKeyDown(event);
+    }
+    else if (scopeCanvas->getMouseTracker()->mouseInView()) {
+        scopeCanvas->OnKeyDown(event);
+    }
+
     return 1;
 }
 
@@ -2320,13 +2353,22 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
         default:
             break;
     }
-    
+
+    //Re-dispatch the key events if the mouse cursor is within a given
+    //widget region, effectively activating its specific key shortcuts,
+    //which else are overriden by this global key handler.
     if (demodTuner->getMouseTracker()->mouseInView()) {
         demodTuner->OnKeyUp(event);
-    } else if (waterfallCanvas->getMouseTracker()->mouseInView()) {
+    }
+    else if (waterfallCanvas->getMouseTracker()->mouseInView()) {
         waterfallCanvas->OnKeyUp(event);
     }
-    
+    else if (spectrumCanvas->getMouseTracker()->mouseInView()) {
+        spectrumCanvas->OnKeyUp(event);
+    }
+    else if (scopeCanvas->getMouseTracker()->mouseInView()) {
+        scopeCanvas->OnKeyUp(event);
+    }
     
     // TODO: Catch key-ups outside of original target
 

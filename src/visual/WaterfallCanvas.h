@@ -36,9 +36,20 @@ public:
     void setLinesPerSecond(int lps);
     void setMinBandwidth(int min);
 
+    //This is public because it is indeed forwarded from
+    //AppFrame::OnGlobalKeyDown, because global key handler intercepts 
+    //calls in all windows.
     void OnKeyDown(wxKeyEvent& event);
+
+    //This is public because it is indeed forwarded from
+    //AppFrame::OnGlobalKeyUp, because global key handler intercepts 
+    //calls in all windows.
     void OnKeyUp(wxKeyEvent& event);
+
+    //public because called by SpectrumCanvas.
     void OnMouseWheelMoved(wxMouseEvent& event);
+    
+    
     
 private:
     void OnPaint(wxPaintEvent& event);

@@ -138,6 +138,10 @@ private:
     void OnDoubleClickSash(wxSplitterEvent& event);
     void OnUnSplit(wxSplitterEvent& event);
    
+    //manage Display menu actions, return true if the event has been
+    //treated.
+    bool actionOnMenuDisplay(wxCommandEvent& event);
+
     ScopeCanvas *scopeCanvas;
     SpectrumCanvas *spectrumCanvas;
     WaterfallCanvas *waterfallCanvas;

@@ -13,8 +13,8 @@
 SpectrumPanel::SpectrumPanel() {
     floorValue = 0;
     ceilValue = 1;
-    showDb = false;
-    useDbOfs = false;
+    showDb = true;
+    useDbOfs = true;
     fftSize = DEFAULT_FFT_SIZE;
     bandwidth = DEFAULT_DEMOD_BW;
     freq = 0;

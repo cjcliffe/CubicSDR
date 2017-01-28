@@ -19,6 +19,16 @@ public:
     SpectrumCanvas(wxWindow *parent, int *dispAttrs);
     ~SpectrumCanvas();
 
+    //This is public because it is indeed forwarded from
+    //AppFrame::OnGlobalKeyDown, because global key handler intercepts 
+    //calls in all windows.
+    void OnKeyDown(wxKeyEvent& event);
+
+    //This is public because it is indeed forwarded from
+    //AppFrame::OnGlobalKeyUp, because global key handler intercepts 
+    //calls in all windows.
+    void OnKeyUp(wxKeyEvent& event);
+
     void attachWaterfallCanvas(WaterfallCanvas *canvas_in);
     void moveCenterFrequency(long long freqChange);
 
@@ -50,6 +60,7 @@ private:
     void OnMouseRightDown(wxMouseEvent& event);
     void OnMouseRightReleased(wxMouseEvent& event);
 
+   
     void updateScaleFactor(float factor);
     
     PrimaryGLContext *glContext;
