@@ -32,7 +32,7 @@ EVT_RIGHT_DOWN(SpectrumCanvas::OnMouseRightDown)
 EVT_RIGHT_UP(SpectrumCanvas::OnMouseRightReleased)
 wxEND_EVENT_TABLE()
 
-SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *dispAttrs) :
+SpectrumCanvas::SpectrumCanvas(wxWindow *parent, std::vector<int> dispAttrs) :
         InteractiveCanvas(parent, dispAttrs), waterfallCanvas(NULL) {
 
     glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this));

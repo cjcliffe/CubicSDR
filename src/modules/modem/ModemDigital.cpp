@@ -26,7 +26,7 @@ int ModemDigital::checkSampleRate(long long sampleRate, int /* audioSampleRate *
     if (sampleRate < MIN_BANDWIDTH) {
         return MIN_BANDWIDTH;
     }
-    return sampleRate;
+    return (int)sampleRate;
 }
 
 ModemKit *ModemDigital::buildKit(long long sampleRate, int audioSampleRate) {

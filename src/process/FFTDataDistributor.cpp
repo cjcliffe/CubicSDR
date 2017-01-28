@@ -4,7 +4,7 @@
 #include "FFTDataDistributor.h"
 
 FFTDataDistributor::FFTDataDistributor() : outputBuffers("FFTDataDistributorBuffers"), fftSize(DEFAULT_FFT_SIZE), linesPerSecond(DEFAULT_WATERFALL_LPS), lineRateAccum(0.0) {
-    bufferedItems = 0;
+
 }
 
 void FFTDataDistributor::setFFTSize(unsigned int fftSize) {
@@ -60,14 +60,14 @@ void FFTDataDistributor::process() {
 		double lineRateStep = ((double)linesPerSecond * inputTime)/(double)inputLines;
 
 		if (bufferedItems >= fftSize) {
-			int numProcessed = 0;
+			size_t numProcessed = 0;
 
 			if (lineRateAccum + (lineRateStep * ((double)bufferedItems/(double)fftSize)) < 1.0) {
 				// move along, nothing to see here..
 				lineRateAccum += (lineRateStep * ((double)bufferedItems/(double)fftSize));
 				numProcessed = bufferedItems;
 			} else {
-				for (unsigned int i = 0, iMax = bufferedItems; i < iMax; i += fftSize) {
+				for (size_t i = 0, iMax = bufferedItems; i < iMax; i += fftSize) {
 					if ((i + fftSize) > iMax) {
 						break;
 					}

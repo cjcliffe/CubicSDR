@@ -17,7 +17,7 @@
 
 class ScopeCanvas: public InteractiveCanvas {
 public:
-    ScopeCanvas(wxWindow *parent, int *dispAttrs);
+    ScopeCanvas(wxWindow *parent, std::vector<int> dispAttrs);
     ~ScopeCanvas();
 
     //This is public because it is indeed forwarded from

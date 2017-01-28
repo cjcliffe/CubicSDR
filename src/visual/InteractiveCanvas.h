@@ -8,10 +8,11 @@
 
 #include "MouseTracker.h"
 #include <string>
+#include <vector>
 
 class InteractiveCanvas: public wxGLCanvas {
 public:
-    InteractiveCanvas(wxWindow *parent, int *dispAttrs);
+    InteractiveCanvas(wxWindow *parent, std::vector<int> dispAttrs);
     ~InteractiveCanvas();
 
     long long getFrequencyAt(float x);

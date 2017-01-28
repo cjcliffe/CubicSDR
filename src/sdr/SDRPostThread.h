@@ -45,7 +45,7 @@ private:
     std::vector<liquid_float_complex> fpData;
     std::vector<liquid_float_complex> dataOut;
     std::vector<long long> chanCenters;
-    long long chanBw;
+    long long chanBw = 0;
     
     size_t nRunDemods;
     std::vector<DemodulatorInstance *> runDemods;
