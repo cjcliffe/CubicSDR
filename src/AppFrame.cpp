@@ -66,7 +66,7 @@ AppFrame::AppFrame() :
     wxBoxSizer *demodScopeTray = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodTunerTray = new wxBoxSizer(wxHORIZONTAL);
 
-    int attribList[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
+    std::vector<int> attribList = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
     //wxGLAttributes attribList;
     //attribList.PlatformDefaults().RGBA().DoubleBuffer().EndList();
     //attribList.PlatformDefaults().MinRGBA(8, 8, 8, 8).DoubleBuffer().Depth(16).EndList();
@@ -104,9 +104,8 @@ AppFrame::AppFrame() :
     gainSpacerItem = demodTray->AddSpacer(1);
     gainSpacerItem->Show(false);
             
-    std::string modemListArr[] = { "FM", "FMS", "NBFM", "AM", "LSB", "USB", "DSB", "I/Q" };
-    std::vector<std::string> modemList( modemListArr, modemListArr + 8 );
-
+    std::vector<std::string> modemList = { "FM", "FMS", "NBFM", "AM", "LSB", "USB", "DSB", "I/Q" };
+  
 #ifdef CUBICSDR_MODEM_EXCLUDE
     std::string excludeListStr = "" CUBICSDR_MODEM_EXCLUDE;
     std::vector<std::string> excludeList = str_explode(",",excludeListStr);
@@ -1197,7 +1196,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
     }
     else if (event.GetId() == wxID_BANDWIDTH_MANUAL_DIALOG) {
 
-        int rateHigh, rateLow;
+        int rateHigh = 0, rateLow = 0;
 
         SDRDeviceInfo *dev = wxGetApp().getDevice();
         if (dev != nullptr) {

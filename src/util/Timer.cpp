@@ -56,7 +56,7 @@ void Timer::unlock()
 
 	update();
 	
-	last_update = system_milliseconds-lock_rate;
+	last_update = system_milliseconds-(unsigned long)lock_rate;
 	
 	offset += msec_tmp-system_milliseconds;
 	

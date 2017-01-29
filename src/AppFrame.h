@@ -175,12 +175,12 @@ private:
     std::map<int, wxMenuItem *> directSamplingMenuItems;
     wxMenuBar *menuBar;
     
-    wxMenu *sampleRateMenu;
-    wxMenu *displayMenu;
-    wxMenuItem *agcMenuItem;
-    wxMenuItem *iqSwapMenuItem;
-    wxMenuItem *lowPerfMenuItem;
-    wxMenu *settingsMenu;
+    wxMenu *sampleRateMenu = nullptr;
+    wxMenu *displayMenu = nullptr;
+    wxMenuItem *agcMenuItem = nullptr;
+    wxMenuItem *iqSwapMenuItem = nullptr;
+    wxMenuItem *lowPerfMenuItem = nullptr;
+    wxMenu *settingsMenu = nullptr;
     
     SoapySDR::ArgInfoList settingArgs;
     int settingsIdMax;

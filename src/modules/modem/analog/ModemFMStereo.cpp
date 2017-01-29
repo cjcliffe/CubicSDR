@@ -30,7 +30,7 @@ int ModemFMStereo::checkSampleRate(long long sampleRate, int /* audioSampleRate 
     } else if (sampleRate < 1500) {
         return 1500;
     } else {
-        return sampleRate;
+        return (int)sampleRate;
     }
 }
 
@@ -95,13 +95,13 @@ ModemKit *ModemFMStereo::buildKit(long long sampleRate, int audioSampleRate) {
    
     float As = 60.0f;         // stop-band attenuation [dB]
     
-    kit->audioResampler = msresamp_rrrf_create(kit->audioResampleRatio, As);
-    kit->stereoResampler = msresamp_rrrf_create(kit->audioResampleRatio, As);
+    kit->audioResampler = msresamp_rrrf_create((float)kit->audioResampleRatio, As);
+    kit->stereoResampler = msresamp_rrrf_create((float)kit->audioResampleRatio, As);
     
     // Stereo filters / shifters
-    double firStereoCutoff = 16000.0 / double(audioSampleRate);
+    float firStereoCutoff = 16000.0f / float(audioSampleRate);
     // filter transition
-    float ft = 1000.0f / double(audioSampleRate);
+    float ft = 1000.0f / float(audioSampleRate);
     // fractional timing offset
     float mu = 0.0f;
     
@@ -142,13 +142,13 @@ ModemKit *ModemFMStereo::buildKit(long long sampleRate, int audioSampleRate) {
     kit->demph = _demph;
     
     if (_demph) {
-        float f = (1.0f / (2.0f * M_PI * double(_demph) * 1e-6));
-        float t = 1.0f / (2.0f * M_PI * f);
-        t = 1.0f / (2.0f * float(audioSampleRate) * tan(1.0f / (2.0f * float(audioSampleRate) * t)));
+        double f = (1.0 / (2.0 * M_PI * double(_demph) * 1e-6));
+        double t = 1.0 / (2.0 * M_PI * f);
+        t = 1.0 / (2.0 * double(audioSampleRate) * tan(1.0 / (2.0 * double(audioSampleRate) * t)));
         
-        float tb = (1.0f + 2.0f * t * float(audioSampleRate));
-        float b_demph[2] = { 1.0f / tb, 1.0f / tb };
-        float a_demph[2] = { 1.0f, (1.0f - 2.0f * t * float(audioSampleRate)) / tb };
+        double tb = (1.0 + 2.0 * t * double(audioSampleRate));
+        float b_demph[2] = { (float)(1.0 / tb), (float)(1.0 / tb) };
+        float a_demph[2] = { 1.0, (float)((1.0 - 2.0 * t * double(audioSampleRate)) / tb) };
         
         kit->iirDemphL = iirfilt_rrrf_create(b_demph, 2, a_demph, 2);
         kit->iirDemphR = iirfilt_rrrf_create(b_demph, 2, a_demph, 2);
@@ -191,7 +191,7 @@ void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInp
     
     size_t audio_out_size = (size_t)ceil((double) (bufSize) * audio_resample_ratio) + 512;
     
-    freqdem_demodulate_block(demodFM, &input->data[0], bufSize, &demodOutputData[0]);
+    freqdem_demodulate_block(demodFM, &input->data[0], (int)bufSize, &demodOutputData[0]);
     
     if (resampledOutputData.size() != audio_out_size) {
         if (resampledOutputData.capacity() < audio_out_size) {
@@ -202,7 +202,7 @@ void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInp
     
     unsigned int numAudioWritten;
     
-    msresamp_rrrf_execute(fmkit->audioResampler, &demodOutputData[0], bufSize, &resampledOutputData[0], &numAudioWritten);
+    msresamp_rrrf_execute(fmkit->audioResampler, &demodOutputData[0], (int)bufSize, &resampledOutputData[0], &numAudioWritten);
     
     if (demodStereoData.size() != bufSize) {
         if (demodStereoData.capacity() < bufSize) {
@@ -252,7 +252,7 @@ void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInp
         resampledStereoData.resize(audio_out_size);
     }
     
-    msresamp_rrrf_execute(fmkit->stereoResampler, &demodStereoData[0], bufSize, &resampledStereoData[0], &numAudioWritten);
+    msresamp_rrrf_execute(fmkit->stereoResampler, &demodStereoData[0], (int)bufSize, &resampledStereoData[0], &numAudioWritten);
     
     audioOut->channels = 2;
     if (audioOut->data.capacity() < (numAudioWritten * 2)) {

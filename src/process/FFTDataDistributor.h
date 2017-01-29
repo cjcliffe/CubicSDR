@@ -23,5 +23,7 @@ protected:
     unsigned int fftSize;
     unsigned int linesPerSecond;
     double lineRateAccum;
-    size_t bufferMax, bufferOffset, bufferedItems;
+    size_t bufferMax = 0;
+    size_t bufferOffset = 0;
+    size_t bufferedItems = 0;
 };

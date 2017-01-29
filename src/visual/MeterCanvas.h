@@ -17,7 +17,7 @@
 
 class MeterCanvas: public InteractiveCanvas {
 public:
-    MeterCanvas(wxWindow *parent, int *dispAttrs);
+    MeterCanvas(wxWindow *parent, std::vector<int> dispAttrs);
     ~MeterCanvas();
 
     void setLevel(float level_in);

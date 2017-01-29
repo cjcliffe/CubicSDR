@@ -10,7 +10,7 @@
 class ScopeRenderData: public ReferenceCounter {
 public:
 	std::vector<float> waveform_points;
-    ScopePanel::ScopeMode mode;
+    ScopePanel::ScopeMode mode = ScopePanel::SCOPE_MODE_Y;
     int inputRate;
     int sampleRate;
 	int channels;
@@ -39,7 +39,7 @@ protected:
     std::vector<liquid_float_complex> fftOutput;
     fftplan fftPlan;
     
-    unsigned int fftSize;
+    unsigned int fftSize = 0;
     int desiredInputSize;
     unsigned int maxScopeSamples;
     

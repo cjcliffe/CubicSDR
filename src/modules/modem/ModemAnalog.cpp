@@ -15,7 +15,7 @@ int ModemAnalog::checkSampleRate(long long sampleRate, int /* audioSampleRate */
     if (sampleRate < MIN_BANDWIDTH) {
         return MIN_BANDWIDTH;
     }
-    return sampleRate;
+    return (int)sampleRate;
 }
 
 ModemKit *ModemAnalog::buildKit(long long sampleRate, int audioSampleRate) {
@@ -27,7 +27,7 @@ ModemKit *ModemAnalog::buildKit(long long sampleRate, int audioSampleRate) {
     akit->sampleRate = sampleRate;
     akit->audioSampleRate = audioSampleRate;
     akit->audioResampleRatio = double(audioSampleRate) / double(sampleRate);
-    akit->audioResampler = msresamp_rrrf_create(akit->audioResampleRatio, As);
+    akit->audioResampler = msresamp_rrrf_create((float)akit->audioResampleRatio, As);
     
     return akit;
 }
@@ -85,7 +85,7 @@ void ModemAnalog::buildAudioOutput(ModemKitAnalog *akit, AudioThreadInput *audio
         }
     }
     
-    msresamp_rrrf_execute(akit->audioResampler, &demodOutputData[0], demodOutputData.size(), &resampledOutputData[0], &numAudioWritten);
+    msresamp_rrrf_execute(akit->audioResampler, &demodOutputData[0], (int)demodOutputData.size(), &resampledOutputData[0], &numAudioWritten);
     
     audioOut->channels = 1;
     audioOut->sampleRate = akit->audioSampleRate;

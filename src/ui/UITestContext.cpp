@@ -45,7 +45,7 @@ PrimaryGLContext(canvas, sharedContext), testMeter("TEST",0,100,50) {
 //    testPanel.addChild(&testChildPanel);
 //    testPanel.addChild(&testChildPanel2);
 //    testPanel.addChild(&testChildPanel3);
-    testMeter.setSize(0.1,0.9);
+    testMeter.setSize(0.1f,0.9f);
     testPanel.addChild(&testMeter);
 }
 

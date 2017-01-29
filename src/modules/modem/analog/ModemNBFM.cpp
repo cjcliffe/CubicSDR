@@ -33,7 +33,7 @@ void ModemNBFM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *
         return;
     }
     
-    freqdem_demodulate_block(demodFM, &input->data[0], bufSize, &demodOutputData[0]);
+    freqdem_demodulate_block(demodFM, &input->data[0], (unsigned int)bufSize, &demodOutputData[0]);
 
     buildAudioOutput(fmkit, audioOut, false);
 }

@@ -12,7 +12,7 @@ ModemUSB::ModemUSB() : ModemAnalog() {
 	ssbFilt = iirfilt_crcf_create_lowpass(6, 0.25);
 #endif
 	ssbShift = nco_crcf_create(LIQUID_NCO);
-    nco_crcf_set_frequency(ssbShift,  (2.0f * M_PI) * 0.25f);
+    nco_crcf_set_frequency(ssbShift,  (float)((2.0 * M_PI) * 0.25));
     c2rFilt = firhilbf_create(5, 90.0);
     useSignalOutput(true);
 }
@@ -41,9 +41,9 @@ int ModemUSB::checkSampleRate(long long sampleRate, int /* audioSampleRate */) {
         return MIN_BANDWIDTH;
     }
     if (sampleRate % 2 == 0) {
-        return sampleRate;
+        return (int)sampleRate;
     }
-    return sampleRate+1;
+    return (int)(sampleRate+1);
 }
 
 int ModemUSB::getDefaultSampleRate() {

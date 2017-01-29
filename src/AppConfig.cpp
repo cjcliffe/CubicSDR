@@ -84,7 +84,7 @@ void DeviceConfig::save(DataNode *node) {
     std::lock_guard < std::mutex > lock(busy_lock);
     *node->newChild("id") = deviceId;
     *node->newChild("name") = deviceName;
-    *node->newChild("ppm") = (int)ppm.load();
+    *node->newChild("ppm") = ppm.load();
     *node->newChild("offset") = offset.load();
     *node->newChild("sample_rate") = sampleRate.load();
     *node->newChild("agc_mode") = agcMode.load()?1:0;
@@ -611,12 +611,13 @@ bool AppConfig::load() {
     }
 
     if (cfg.rootNode()->hasAnother("window")) {
-        int x,y,w,h;
-        int max,tips,lpm,mpc;
+        int x = 0 ,y = 0 ,w = 0 ,h = 0;
+        int max = 0 ,tips = 0 ,lpm = 0 ,mpc = 0;
         
         DataNode *win_node = cfg.rootNode()->getNext("window");
         
         if (win_node->hasAnother("w") && win_node->hasAnother("h") && win_node->hasAnother("x") && win_node->hasAnother("y")) {
+
             win_node->getNext("x")->element()->get(x);
             win_node->getNext("y")->element()->get(y);
             win_node->getNext("w")->element()->get(w);

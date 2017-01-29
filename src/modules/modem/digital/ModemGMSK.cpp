@@ -7,7 +7,7 @@
 ModemGMSK::ModemGMSK() : ModemDigital()  {
     _sps = 4;
     _fdelay = 3;
-    _ebf = 0.3;
+    _ebf = 0.3f;
     outStream << std::hex;
 }
 
@@ -27,7 +27,7 @@ int ModemGMSK::checkSampleRate(long long sampleRate, int audioSampleRate) {
     if (sampleRate < MIN_BANDWIDTH) {
         return MIN_BANDWIDTH;
     }
-    return sampleRate;
+    return (int)sampleRate;
 }
 
 int ModemGMSK::getDefaultSampleRate() {

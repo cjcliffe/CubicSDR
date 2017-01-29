@@ -33,7 +33,7 @@ EVT_MOUSEWHEEL(TuningCanvas::OnMouseWheelMoved)
 //EVT_KEY_UP(TuningCanvas::OnKeyUp)
 wxEND_EVENT_TABLE()
 
-TuningCanvas::TuningCanvas(wxWindow *parent, int *dispAttrs) :
+TuningCanvas::TuningCanvas(wxWindow *parent, std::vector<int> dispAttrs) :
         InteractiveCanvas(parent, dispAttrs), dragAccum(0), uxDown(0), top(false), bottom(false), freq(-1), bw(-1), center(-1), halfBand(false) {
 
     glContext = new TuningContext(this, &wxGetApp().GetContext(this));

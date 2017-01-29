@@ -87,7 +87,7 @@ protected:
         // distribute outputs
         std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
 
-        output->setRefCount(outputs.size());
+        output->setRefCount((int)outputs.size());
         for (outputs_i = outputs.begin(); outputs_i != outputs.end(); outputs_i++) {
 
         	if (!(*outputs_i)->push(output)) {
@@ -96,7 +96,7 @@ protected:
         }
     }
 
-    ThreadQueue<InputDataType *> *input;
+    ThreadQueue<InputDataType *> *input = nullptr;
     std::vector<ThreadQueue<OutputDataType *> *> outputs;
 	typename std::vector<ThreadQueue<OutputDataType *> *>::iterator outputs_i;
 
