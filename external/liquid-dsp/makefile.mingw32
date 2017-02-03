@@ -66,7 +66,7 @@ RANLIB		:= ranlib
 INCLUDE_CFLAGS	= $(addprefix -I ,$(include_dirs))
 
 #MINGW: optimizations goes here 
-CONFIG_CFLAGS	= -m32 -O3 -msse3 
+CONFIG_CFLAGS	= -m32 -O3 -msse3 -ffast-math 
    
 # -g : debugging info
 CFLAGS		+= $(INCLUDE_CFLAGS) -Wall -fPIC $(CONFIG_CFLAGS)
