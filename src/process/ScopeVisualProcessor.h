@@ -29,7 +29,7 @@ public:
     void setScopeEnabled(bool scopeEnable);
     void setSpectrumEnabled(bool spectrumEnable);
 protected:
-    void process();
+    virtual void process();
     ReBuffer<ScopeRenderData> outputBuffers;
 
     std::atomic_bool scopeEnabled;

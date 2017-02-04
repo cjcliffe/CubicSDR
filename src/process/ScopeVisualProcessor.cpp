@@ -11,7 +11,7 @@ ScopeVisualProcessor::ScopeVisualProcessor(): outputBuffers("ScopeVisualProcesso
     fft_average_rate = 0.65f;
 	fft_ceil_ma = fft_ceil_maa = 0;
 	fft_floor_ma = fft_floor_maa = 0;
-    maxScopeSamples = 1024;
+    maxScopeSamples = DEFAULT_DMOD_FFT_SIZE;
     fftPlan = nullptr;
 }
 

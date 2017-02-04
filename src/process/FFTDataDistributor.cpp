@@ -2,13 +2,15 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "FFTDataDistributor.h"
+#include <algorithm>
 
 FFTDataDistributor::FFTDataDistributor() : outputBuffers("FFTDataDistributorBuffers"), fftSize(DEFAULT_FFT_SIZE), linesPerSecond(DEFAULT_WATERFALL_LPS), lineRateAccum(0.0) {
 
 }
 
-void FFTDataDistributor::setFFTSize(unsigned int fftSize) {
-	this->fftSize = fftSize;
+void FFTDataDistributor::setFFTSize(unsigned int size) {
+	 
+    fftSize.store(size);
 }
 
 void FFTDataDistributor::setLinesPerSecond(unsigned int lines) {
@@ -29,25 +31,50 @@ void FFTDataDistributor::process() {
 		input->pop(inp);
 
 		if (inp) {
+            //Settings have changed, set new values and dump all previous samples stored in inputBuffer: 
 			if (inputBuffer.sampleRate != inp->sampleRate || inputBuffer.frequency != inp->frequency) {
-                
-                bufferMax = inp->sampleRate / 4;
+
+                //bufferMax must be at least fftSize (+ margin), else the waterfall get frozen, because no longer updated.
+                bufferMax = std::max((size_t)(inp->sampleRate * FFT_DISTRIBUTOR_BUFFER_IN_SECONDS), (size_t)(1.2 * fftSize.load()));
+
 //                std::cout << "Buffer Max: " << bufferMax << std::endl;
                 bufferOffset = 0;
-                
+                bufferedItems = 0;
 				inputBuffer.sampleRate = inp->sampleRate;
 				inputBuffer.frequency = inp->frequency;
                 inputBuffer.data.resize(bufferMax);
 			}
+
+            //adjust (bufferMax ; inputBuffer.data) in case of FFT size change only.
+            if (bufferMax < (size_t)(1.2 * fftSize.load())) {
+                bufferMax = (size_t)(1.2 * fftSize.load());
+                inputBuffer.data.resize(bufferMax);
+            }
+
+            size_t nbSamplesToAdd = inp->data.size();
+
+            //No room left in inputBuffer.data to accept inp->data.size() more samples.
+            //so make room by sliding left of bufferOffset, which is fine because 
+            //those samples has already been processed.
             if ((bufferOffset + bufferedItems + inp->data.size()) > bufferMax) {
                 memmove(&inputBuffer.data[0], &inputBuffer.data[bufferOffset], bufferedItems*sizeof(liquid_float_complex));
                 bufferOffset = 0;
-            } else {
-                memcpy(&inputBuffer.data[bufferOffset+bufferedItems],&inp->data[0],inp->data.size()*sizeof(liquid_float_complex));
-                bufferedItems += inp->data.size();
+                //if there are too much samples, we may even overflow !
+                //as a fallback strategy, drop the last incomming new samples not fitting in inputBuffer.data.
+                if (bufferedItems + inp->data.size() > bufferMax) {
+                    //clamp nbSamplesToAdd
+                    nbSamplesToAdd = bufferMax - bufferedItems;
+                    std::cout << "FFTDataDistributor::process() incoming samples overflow, dropping the last " << (inp->data.size() - nbSamplesToAdd) << " input samples..." << std::endl;
+                }
             }
+            
+            //store nbSamplesToAdd incoming samples. 
+            memcpy(&inputBuffer.data[bufferOffset+bufferedItems],&inp->data[0], nbSamplesToAdd *sizeof(liquid_float_complex));
+            bufferedItems += nbSamplesToAdd;
+            //
 			inp->decRefCount();
 		} else {
+            //empty inp, wait for another.
 			continue;
 		}
 
@@ -56,12 +83,14 @@ void FFTDataDistributor::process() {
 		// number of lines in input
 		double inputLines = (double)bufferedItems / (double)fftSize;
 
-		// ratio required to achieve the desired rate
+		// ratio required to achieve the desired rate:
+        // it means we can achieive 'lineRateStep' times the target linesPerSecond.
+        // < 1 means we cannot reach it by lack of samples.
 		double lineRateStep = ((double)linesPerSecond * inputTime)/(double)inputLines;
 
+        //we have enough samples to FFT at least one 'line' of 'fftSize' frequencies for display:
 		if (bufferedItems >= fftSize) {
 			size_t numProcessed = 0;
-
 			if (lineRateAccum + (lineRateStep * ((double)bufferedItems/(double)fftSize)) < 1.0) {
 				// move along, nothing to see here..
 				lineRateAccum += (lineRateStep * ((double)bufferedItems/(double)fftSize));
@@ -74,10 +103,12 @@ void FFTDataDistributor::process() {
 					lineRateAccum += lineRateStep;
 
 					if (lineRateAccum >= 1.0) {
+                        //each i represents a FFT computation
 						DemodulatorThreadIQData *outp = outputBuffers.getBuffer();
 						outp->frequency = inputBuffer.frequency;
 						outp->sampleRate = inputBuffer.sampleRate;
-						outp->data.assign(inputBuffer.data.begin()+bufferOffset+i,inputBuffer.data.begin()+bufferOffset+i+fftSize);
+						outp->data.assign(inputBuffer.data.begin()+bufferOffset+i,
+                                          inputBuffer.data.begin()+bufferOffset+i+ fftSize);
 						distribute(outp);
 
 						while (lineRateAccum >= 1.0) {
@@ -86,16 +117,19 @@ void FFTDataDistributor::process() {
 					}
 
 					numProcessed += fftSize;
-				}
+				} //end for 
 			}
+            //advance bufferOffset read pointer, 
+            //reduce size of bufferedItems.
 			if (numProcessed) {
                 bufferedItems -= numProcessed;
                 bufferOffset += numProcessed;
             }
+            //clamp to zero the number of remaining items.
             if (bufferedItems <= 0) {
                 bufferedItems = 0;
                 bufferOffset = 0;
             }
-		}
-	}
+		} //end if bufferedItems >= fftSize
+	} //en while
 }

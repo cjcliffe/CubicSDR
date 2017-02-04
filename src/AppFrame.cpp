@@ -164,7 +164,7 @@ AppFrame::AppFrame() :
 #if CUBICSDR_ENABLE_VIEW_DEMOD
     wxBoxSizer *demodVisuals = new wxBoxSizer(wxVERTICAL);
 
-    wxGetApp().getDemodSpectrumProcessor()->setup(1024);
+    wxGetApp().getDemodSpectrumProcessor()->setup(DEFAULT_DMOD_FFT_SIZE);
     demodSpectrumCanvas = new SpectrumCanvas(demodPanel, attribList);
     demodSpectrumCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
     demodVisuals->Add(demodSpectrumCanvas, 3, wxEXPAND | wxALL, 0);
@@ -173,7 +173,7 @@ AppFrame::AppFrame() :
     demodVisuals->AddSpacer(1);
 
     demodWaterfallCanvas = new WaterfallCanvas(demodPanel, attribList);
-    demodWaterfallCanvas->setup(1024, 128);
+    demodWaterfallCanvas->setup(DEFAULT_DMOD_FFT_SIZE, DEFAULT_DEMOD_WATERFALL_LINES_NB);
     demodWaterfallCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
     demodWaterfallCanvas->attachSpectrumCanvas(demodSpectrumCanvas);
     demodWaterfallCanvas->setMinBandwidth(8000);
@@ -209,7 +209,7 @@ AppFrame::AppFrame() :
     scopeCanvas->setHelpTip("Audio Visuals, drag left/right to toggle Scope or Spectrum, 'B' to toggle decibels display.");
     scopeCanvas->SetMinSize(wxSize(128,-1));
     demodScopeTray->Add(scopeCanvas, 8, wxEXPAND | wxALL, 0);
-    wxGetApp().getScopeProcessor()->setup(1024);
+    wxGetApp().getScopeProcessor()->setup(DEFAULT_SCOPE_FFT_SIZE);
     wxGetApp().getScopeProcessor()->attachOutput(scopeCanvas->getInputQueue());
 
     demodScopeTray->AddSpacer(1);
@@ -293,7 +293,7 @@ AppFrame::AppFrame() :
     wxPanel *spectrumPanel = new wxPanel(mainVisSplitter, wxID_ANY);
     wxBoxSizer *spectrumSizer = new wxBoxSizer(wxHORIZONTAL);
 
-    wxGetApp().getSpectrumProcessor()->setup(2048);
+    wxGetApp().getSpectrumProcessor()->setup(DEFAULT_FFT_SIZE);
     spectrumCanvas = new SpectrumCanvas(spectrumPanel, attribList);
     spectrumCanvas->setShowDb(true);
     spectrumCanvas->setUseDBOfs(true);
@@ -336,7 +336,7 @@ AppFrame::AppFrame() :
     wxBoxSizer *wfSizer = new wxBoxSizer(wxHORIZONTAL);
            
     waterfallCanvas = new WaterfallCanvas(waterfallPanel, attribList);
-    waterfallCanvas->setup(2048, 512);
+    waterfallCanvas->setup(DEFAULT_FFT_SIZE, DEFAULT_MAIN_WATERFALL_LINES_NB);
 
     waterfallDataThread = new FFTVisualDataThread();
 
@@ -1024,17 +1024,6 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
     } else if (event.GetId() == wxID_LOW_PERF) {
         lowPerfMode = lowPerfMenuItem->IsChecked();
         wxGetApp().getConfig()->setLowPerfMode(lowPerfMode);
-
-//        long srate = wxGetApp().getSampleRate();
-//        if (srate > CHANNELIZER_RATE_MAX && lowPerfMode) {
-//            if (wxGetApp().getSpectrumProcessor()->getFFTSize() != 1024) {
-//                setMainWaterfallFFTSize(1024);
-//            }
-//        } else if (srate > CHANNELIZER_RATE_MAX) {
-//            if (wxGetApp().getSpectrumProcessor()->getFFTSize() != 2048) {
-//                setMainWaterfallFFTSize(2048);
-//            }
-//        }
 
     } else if (event.GetId() == wxID_SET_TIPS ) {
         if (wxGetApp().getConfig()->getShowTips()) {

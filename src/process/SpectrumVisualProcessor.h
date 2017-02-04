@@ -53,7 +53,7 @@ public:
     float getScaleFactor();
     
 protected:
-    void process();
+    virtual void process();
     
     ReBuffer<SpectrumVisualData> outputBuffers;
     std::atomic_bool is_view;
