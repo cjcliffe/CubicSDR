@@ -181,6 +181,8 @@ AppFrame::AppFrame() :
     demodVisuals->Add(demodWaterfallCanvas, 6, wxEXPAND | wxALL, 0);
     wxGetApp().getDemodSpectrumProcessor()->attachOutput(demodWaterfallCanvas->getVisualDataQueue());
     demodWaterfallCanvas->getVisualDataQueue()->set_max_num_items(3);
+    demodWaterfallCanvas->setLinesPerSecond((int)(DEFAULT_DEMOD_WATERFALL_LINES_NB / DEMOD_WATERFALL_DURATION_IN_SECONDS));
+
 
     demodVisuals->SetMinSize(wxSize(128,-1));
 

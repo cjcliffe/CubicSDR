@@ -38,13 +38,18 @@ const char filePathSeparator =
 #define DEFAULT_SCOPE_FFT_SIZE (DEFAULT_FFT_SIZE / 2)
 
 //Both must be a power of 2 to prevent terrible OpenGL performance.
-#define DEFAULT_MAIN_WATERFALL_LINES_NB 512
-#define DEFAULT_DEMOD_WATERFALL_LINES_NB 128
+#define DEFAULT_MAIN_WATERFALL_LINES_NB 1024
+#define DEFAULT_DEMOD_WATERFALL_LINES_NB 256
 
 #define DEFAULT_DEMOD_TYPE "FM"
 #define DEFAULT_DEMOD_BW 200000
 
 #define DEFAULT_WATERFALL_LPS 30
+
+//Dmod waterfall lines per second is adjusted 
+//so that the whole demod waterfall show DEMOD_WATERFALL_DURATION_IN_SECONDS
+//seconds.
+#define DEMOD_WATERFALL_DURATION_IN_SECONDS 4.0
 
 #define CHANNELIZER_RATE_MAX 500000
 

@@ -42,7 +42,7 @@ WaterfallCanvas::WaterfallCanvas(wxWindow *parent, std::vector<int> dispAttrs) :
         dragOfs(0), mouseZoom(1), zoom(1), freqMoving(false), freqMove(0.0), hoverAlpha(1.0) {
 
     glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this));
-    linesPerSecond = 30;
+    linesPerSecond = DEFAULT_WATERFALL_LPS;
     lpsIndex = 0;
     preBuf = false;
     SetCursor(wxCURSOR_CROSS);
