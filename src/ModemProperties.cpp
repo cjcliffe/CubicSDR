@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #include "ModemProperties.h"
 #include "CubicSDR.h"
 
@@ -30,26 +33,10 @@ void ModemProperties::OnShow(wxShowEvent & /* event */) {
 }
 
 void ModemProperties::updateTheme() {
-    wxColour bgColor(
-                 (unsigned char) (ThemeMgr::mgr.currentTheme->generalBackground.r * 255.0),
-                 (unsigned char) (ThemeMgr::mgr.currentTheme->generalBackground.g * 255.0),
-                 (unsigned char) (ThemeMgr::mgr.currentTheme->generalBackground.b * 255.0));
-
-    wxColour textColor(
-                       (unsigned char) (ThemeMgr::mgr.currentTheme->text.r * 255.0),
-                       (unsigned char) (ThemeMgr::mgr.currentTheme->text.g * 255.0),
-                       (unsigned char) (ThemeMgr::mgr.currentTheme->text.b * 255.0));
-    
-    wxColour btn(
-                       (unsigned char) (ThemeMgr::mgr.currentTheme->button.r * 255.0),
-                       (unsigned char) (ThemeMgr::mgr.currentTheme->button.g * 255.0),
-                       (unsigned char) (ThemeMgr::mgr.currentTheme->button.b * 255.0));
-
-    wxColour btnHl(
-                 (unsigned char) (ThemeMgr::mgr.currentTheme->buttonHighlight.r * 255.0),
-                 (unsigned char) (ThemeMgr::mgr.currentTheme->buttonHighlight.g * 255.0),
-                 (unsigned char) (ThemeMgr::mgr.currentTheme->buttonHighlight.b * 255.0));
-
+    wxColour bgColor(ThemeMgr::mgr.currentTheme->generalBackground);
+    wxColour textColor(ThemeMgr::mgr.currentTheme->text);
+    wxColour btn(ThemeMgr::mgr.currentTheme->button);
+    wxColour btnHl(ThemeMgr::mgr.currentTheme->buttonHighlight);
 
     m_propertyGrid->SetEmptySpaceColour(bgColor);
     m_propertyGrid->SetCellBackgroundColour(bgColor);
@@ -122,10 +109,8 @@ void ModemProperties::initProperties(ModemArgInfoList newArgs, DemodulatorInstan
     m_propertyGrid->Clear();
 
     if (!demodInstance) {
-        Hide();
+        m_propertyGrid->Append(new wxPropertyCategory("Modem Settings"));
         return;
-    } else {
-        Show();
     }
     
     m_propertyGrid->Append(new wxPropertyCategory(demodInstance->getDemodulatorType() + " Settings"));

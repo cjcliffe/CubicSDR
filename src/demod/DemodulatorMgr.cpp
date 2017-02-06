@@ -1,14 +1,21 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #include <DemodulatorMgr.h>
 #include <sstream>
 #include <algorithm>
-#include "CubicSDR.h"
 #include <string>
 #include <sstream>
 #include <algorithm>
 
+#include "DemodulatorMgr.h"
+#include "CubicSDR.h"
+
 #if USE_HAMLIB
 #include "RigThread.h"
 #endif
+
+#include "DataTree.h"
 
 bool demodFreqCompare (DemodulatorInstance *i, DemodulatorInstance *j) { return (i->getFrequency()<j->getFrequency()); }
 bool inactiveCompare (DemodulatorInstance *i, DemodulatorInstance *j) { return (i->isActive()<j->isActive()); }
@@ -130,6 +137,8 @@ DemodulatorInstance *DemodulatorMgr::getFirstDemodulator() {
 
 void DemodulatorMgr::deleteThread(DemodulatorInstance *demod) {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
+
+    wxGetApp().getBookmarkMgr().addRecent(demod);
     
     std::vector<DemodulatorInstance *>::iterator i;
 
@@ -215,6 +224,7 @@ void DemodulatorMgr::setActiveDemodulator(DemodulatorInstance *demod, bool tempo
             wxGetApp().getRigThread()->setFrequency(lastActiveDemodulator.load()->getFrequency(),true);
         }
 #endif
+        wxGetApp().getBookmarkMgr().updateActiveList();
     } else {
         std::lock_guard < std::recursive_mutex > lock(demods_busy);
         garbageCollect();
@@ -368,3 +378,138 @@ ModemSettings DemodulatorMgr::getLastModemSettings(std::string modemType) {
 void DemodulatorMgr::setLastModemSettings(std::string modemType, ModemSettings settings) {
     lastModemSettings[modemType] = settings;
 }
+
+void DemodulatorMgr::setOutputDevices(std::map<int,RtAudio::DeviceInfo> devs) {
+    outputDevices = devs;
+}
+
+void DemodulatorMgr::saveInstance(DataNode *node, DemodulatorInstance *inst) {
+    *node->newChild("bandwidth") = inst->getBandwidth();
+    *node->newChild("frequency") = inst->getFrequency();
+    *node->newChild("type") = inst->getDemodulatorType();
+    
+    node->newChild("user_label")->element()->set(inst->getDemodulatorUserLabel());
+    
+    *node->newChild("squelch_level") = inst->getSquelchLevel();
+    *node->newChild("squelch_enabled") = inst->isSquelchEnabled() ? 1 : 0;
+    *node->newChild("output_device") = outputDevices[inst->getOutputDevice()].name;
+    *node->newChild("gain") = inst->getGain();
+    *node->newChild("muted") = inst->isMuted() ? 1 : 0;
+    if (inst->isDeltaLock()) {
+        *node->newChild("delta_lock") = inst->isDeltaLock() ? 1 : 0;
+        *node->newChild("delta_ofs") = inst->getDeltaLockOfs();
+    }
+    if (inst == getLastActiveDemodulator()) {
+        *node->newChild("active") = 1;
+    }
+    
+    ModemSettings saveSettings = inst->readModemSettings();
+    if (saveSettings.size()) {
+        DataNode *settingsNode = node->newChild("settings");
+        for (ModemSettings::const_iterator msi = saveSettings.begin(); msi != saveSettings.end(); msi++) {
+            *settingsNode->newChild(msi->first.c_str()) = msi->second;
+        }
+    }
+
+}
+
+DemodulatorInstance *DemodulatorMgr::loadInstance(DataNode *node) {
+    DemodulatorInstance *newDemod = nullptr;
+    
+    node->rewindAll();
+    
+    long bandwidth = *node->getNext("bandwidth");
+    long long freq = *node->getNext("frequency");
+    float squelch_level = node->hasAnother("squelch_level") ? (float) *node->getNext("squelch_level") : 0;
+    int squelch_enabled = node->hasAnother("squelch_enabled") ? (int) *node->getNext("squelch_enabled") : 0;
+    int muted = node->hasAnother("muted") ? (int) *node->getNext("muted") : 0;
+    int delta_locked = node->hasAnother("delta_lock") ? (int) *node->getNext("delta_lock") : 0;
+    int delta_ofs = node->hasAnother("delta_ofs") ? (int) *node->getNext("delta_ofs") : 0;
+    std::string output_device = node->hasAnother("output_device") ? string(*(node->getNext("output_device"))) : "";
+    float gain = node->hasAnother("gain") ? (float) *node->getNext("gain") : 1.0;
+    
+    std::string type = "FM";
+    
+    DataNode *demodTypeNode = node->hasAnother("type")?node->getNext("type"):nullptr;
+    
+    if (demodTypeNode && demodTypeNode->element()->getDataType() == DATA_INT) {
+        int legacyType = *demodTypeNode;
+        int legacyStereo = node->hasAnother("stereo") ? (int) *node->getNext("stereo") : 0;
+        switch (legacyType) {   // legacy demod ID
+            case 1: type = legacyStereo?"FMS":"FM"; break;
+            case 2: type = "AM"; break;
+            case 3: type = "LSB"; break;
+            case 4: type = "USB"; break;
+            case 5: type = "DSB"; break;
+            case 6: type = "ASK"; break;
+            case 7: type = "APSK"; break;
+            case 8: type = "BPSK"; break;
+            case 9: type = "DPSK"; break;
+            case 10: type = "PSK"; break;
+            case 11: type = "OOK"; break;
+            case 12: type = "ST"; break;
+            case 13: type = "SQAM"; break;
+            case 14: type = "QAM"; break;
+            case 15: type = "QPSK"; break;
+            case 16: type = "I/Q"; break;
+            default: type = "FM"; break;
+        }
+    } else if (demodTypeNode && demodTypeNode->element()->getDataType() == DATA_STRING) {
+        demodTypeNode->element()->get(type);
+    }
+    
+    //read the user label associated with the demodulator
+    std::wstring user_label = L"";
+    
+    DataNode *demodUserLabel = node->hasAnother("user_label") ? node->getNext("user_label") : nullptr;
+    
+    if (demodUserLabel) {
+        demodUserLabel->element()->get(user_label);
+    }
+    
+    ModemSettings mSettings;
+    
+    if (node->hasAnother("settings")) {
+        DataNode *modemSettings = node->getNext("settings");
+        for (int msi = 0, numSettings = modemSettings->numChildren(); msi < numSettings; msi++) {
+            DataNode *settingNode = modemSettings->child(msi);
+            std::string keyName = settingNode->getName();
+            std::string strSettingValue = settingNode->element()->toString();
+            
+            if (keyName != "" && strSettingValue != "") {
+                mSettings[keyName] = strSettingValue;
+            }
+        }
+    }
+    
+    newDemod = wxGetApp().getDemodMgr().newThread();
+
+    newDemod->setDemodulatorType(type);
+    newDemod->setDemodulatorUserLabel(user_label);
+    newDemod->writeModemSettings(mSettings);
+    newDemod->setBandwidth(bandwidth);
+    newDemod->setFrequency(freq);
+    newDemod->setGain(gain);
+    newDemod->updateLabel(freq);
+    newDemod->setMuted(muted?true:false);
+    if (delta_locked) {
+        newDemod->setDeltaLock(true);
+        newDemod->setDeltaLockOfs(delta_ofs);
+    }
+    if (squelch_enabled) {
+        newDemod->setSquelchEnabled(true);
+        newDemod->setSquelchLevel(squelch_level);
+    }
+    
+    bool found_device = false;
+    std::map<int, RtAudio::DeviceInfo>::iterator i;
+    for (i = outputDevices.begin(); i != outputDevices.end(); i++) {
+        if (i->second.name == output_device) {
+            newDemod->setOutputDevice(i->first);
+            found_device = true;
+        }
+    }
+    
+    return newDemod;
+}
+

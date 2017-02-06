@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once
 
 #include "ThreadQueue.h"
@@ -56,6 +59,7 @@ class ModemKit;
 class DemodulatorThreadPostIQData: public ReferenceCounter {
 public:
     std::vector<liquid_float_complex> data;
+
     long long sampleRate;
     std::string modemName;
     std::string modemType;

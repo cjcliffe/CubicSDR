@@ -1,9 +1,14 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once
 
 #include <wx/frame.h>
 #include <wx/panel.h>
 #include <wx/splitter.h>
 #include <wx/sizer.h>
+#include <wx/bitmap.h>
+#include <wx/statbmp.h>
 
 #include "PrimaryGLContext.h"
 
@@ -19,6 +24,7 @@
 #include "ModemProperties.h"
 //#include "UITestCanvas.h"
 #include "FrequencyDialog.h"
+#include "BookmarkView.h"
 
 #include <map>
 
@@ -32,9 +38,11 @@
 #define wxID_AGC_CONTROL 2009
 #define wxID_SDR_START_STOP 2010
 #define wxID_LOW_PERF 2011
+#define wxID_SET_DB_OFFSET 2012
 
 #define wxID_MAIN_SPLITTER 2050
 #define wxID_VIS_SPLITTER 2051
+#define wxID_BM_SPLITTER 2052
 
 #define wxID_THEME_DEFAULT 2100
 #define wxID_THEME_SHARP 2101
@@ -44,7 +52,10 @@
 #define wxID_THEME_HD 2105
 #define wxID_THEME_RADAR 2106
 
+#define wxID_DISPLAY_BOOKMARKS 2107
+
 #define wxID_BANDWIDTH_BASE 2150
+#define wxID_BANDWIDTH_MANUAL_DIALOG 2199
 #define wxID_BANDWIDTH_MANUAL 2200
 
 #define wxID_DISPLAY_BASE 2250
@@ -73,6 +84,7 @@ class AppFrame: public wxFrame {
 public:
     AppFrame();
     ~AppFrame();
+
     void OnThread(wxCommandEvent& event);
     void OnEventInput(wxThreadEvent& event);
     void initDeviceParams(SDRDeviceInfo *devInfo);
@@ -100,9 +112,20 @@ public:
     void refreshGainUI();
     void setViewState(long long center_freq, int bandwidth);
     void setViewState(long long center_freq);
-    
+
+    long long getViewCenterFreq();
+    int getViewBandwidth();
     bool isUserDemodBusy();
-        
+    
+    BookmarkView *getBookmarkView();
+    void disableSave(bool state);
+
+    //call this in case the main UI is not 
+    //the origin of device changes / sample rate by operator,
+    //and must be notified back to update its UI elements
+    //(ex: SDR Devices dialog changing the configuration)
+    void notifyDeviceChanged();
+    
 #ifdef _WIN32
 	bool canFocus();
 #endif
@@ -115,6 +138,10 @@ private:
     void OnDoubleClickSash(wxSplitterEvent& event);
     void OnUnSplit(wxSplitterEvent& event);
    
+    //manage Display menu actions, return true if the event has been
+    //treated.
+    bool actionOnMenuDisplay(wxCommandEvent& event);
+
     ScopeCanvas *scopeCanvas;
     SpectrumCanvas *spectrumCanvas;
     WaterfallCanvas *waterfallCanvas;
@@ -133,8 +160,9 @@ private:
     ModeSelectorCanvas *demodMuteButton, *peakHoldButton, *soloModeButton, *deltaLockButton;
     GainCanvas *gainCanvas;
     wxSizerItem *gainSizerItem, *gainSpacerItem;
-    wxSplitterWindow *mainVisSplitter, *mainSplitter;
+    wxSplitterWindow *mainVisSplitter, *mainSplitter, *bookmarkSplitter;
     wxBoxSizer *demodTray;
+    BookmarkView *bookmarkView;
     
     DemodulatorInstance *activeDemodulator;
 
@@ -147,16 +175,17 @@ private:
     std::map<int, wxMenuItem *> directSamplingMenuItems;
     wxMenuBar *menuBar;
     
-    wxMenu *sampleRateMenu;
-    wxMenu *displayMenu;
-    wxMenuItem *agcMenuItem;
-    wxMenuItem *iqSwapMenuItem;
-    wxMenuItem *lowPerfMenuItem;
-    wxMenu *settingsMenu;
+    wxMenu *sampleRateMenu = nullptr;
+    wxMenu *displayMenu = nullptr;
+    wxMenuItem *agcMenuItem = nullptr;
+    wxMenuItem *iqSwapMenuItem = nullptr;
+    wxMenuItem *lowPerfMenuItem = nullptr;
+    wxMenu *settingsMenu = nullptr;
     
     SoapySDR::ArgInfoList settingArgs;
     int settingsIdMax;
     std::vector<long> sampleRates;
+    long manualSampleRate = -1;
     
     std::string currentSessionFile;
     
@@ -171,7 +200,10 @@ private:
 	wxMenuItem *showTipMenuItem;
 
     bool lowPerfMode;
-    
+
+    wxMenuItem *hideBookmarksItem;
+    bool saveDisabled;
+
 #ifdef USE_HAMLIB
     void enableRig();
     void disableRig();
@@ -184,6 +216,7 @@ private:
     wxMenuItem *rigCenterLockMenuItem;
     wxMenuItem *rigFollowModemMenuItem;
     wxMenuItem *sdrIFMenuItem;
+    
     std::map<int, wxMenuItem *> rigSerialMenuItems;
     std::map<int, wxMenuItem *> rigModelMenuItems;
     int rigModel;

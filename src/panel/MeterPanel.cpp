@@ -1,3 +1,5 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
 
 #include "MeterPanel.h"
 #include "ColorTheme.h"
@@ -40,14 +42,14 @@ MeterPanel::MeterPanel(std::string name, float low, float high, float current) {
     
     addChild(&bgPanel);
     
-    labelPanel.setSize(1.0, 0.1);
+    labelPanel.setSize(1.0f, 0.1f);
     labelPanel.setPosition(0.0, 1.0);
     labelPanel.setText(name,GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, true);
     labelPanel.setFill(GLPanel::GLPANEL_FILL_NONE);
     
     addChild(&labelPanel);
     
-    valuePanel.setSize(1.0, 0.1);
+    valuePanel.setSize(1.0f, 0.1f);
     valuePanel.setPosition(0.0, -1.0);
     
     setValueLabel(std::to_string(int(current)));

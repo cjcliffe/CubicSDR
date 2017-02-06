@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once
 
 #include "VisualProcessor.h"
@@ -7,7 +10,7 @@
 class ScopeRenderData: public ReferenceCounter {
 public:
 	std::vector<float> waveform_points;
-    ScopePanel::ScopeMode mode;
+    ScopePanel::ScopeMode mode = ScopePanel::SCOPE_MODE_Y;
     int inputRate;
     int sampleRate;
 	int channels;
@@ -26,7 +29,7 @@ public:
     void setScopeEnabled(bool scopeEnable);
     void setSpectrumEnabled(bool spectrumEnable);
 protected:
-    void process();
+    virtual void process();
     ReBuffer<ScopeRenderData> outputBuffers;
 
     std::atomic_bool scopeEnabled;
@@ -36,7 +39,7 @@ protected:
     std::vector<liquid_float_complex> fftOutput;
     fftplan fftPlan;
     
-    unsigned int fftSize;
+    unsigned int fftSize = 0;
     int desiredInputSize;
     unsigned int maxScopeSamples;
     

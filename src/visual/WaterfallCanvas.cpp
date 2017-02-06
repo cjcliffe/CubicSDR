@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #include "WaterfallCanvas.h"
 
 #include "wx/wxprec.h"
@@ -34,12 +37,12 @@ EVT_ENTER_WINDOW(WaterfallCanvas::OnMouseEnterWindow)
 EVT_MOUSEWHEEL(WaterfallCanvas::OnMouseWheelMoved)
 wxEND_EVENT_TABLE()
 
-WaterfallCanvas::WaterfallCanvas(wxWindow *parent, int *dispAttrs) :
+WaterfallCanvas::WaterfallCanvas(wxWindow *parent, std::vector<int> dispAttrs) :
         InteractiveCanvas(parent, dispAttrs), dragState(WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), fft_size(0), new_fft_size(0), waterfall_lines(0),
         dragOfs(0), mouseZoom(1), zoom(1), freqMoving(false), freqMove(0.0), hoverAlpha(1.0) {
 
     glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this));
-    linesPerSecond = 30;
+    linesPerSecond = DEFAULT_WATERFALL_LPS;
     lpsIndex = 0;
     preBuf = false;
     SetCursor(wxCURSOR_CROSS);
@@ -436,11 +439,6 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         }
         wxGetApp().removeDemodulator(activeDemod);
         wxGetApp().getDemodMgr().deleteThread(activeDemod);
-        break;
-    case 'B':
-        if (spectrumCanvas) {
-            spectrumCanvas->setShowDb(!spectrumCanvas->getShowDb());
-        }
         break;
     case WXK_SPACE:
         wxGetApp().showFrequencyInput();

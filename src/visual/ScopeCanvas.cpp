@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #include "ScopeCanvas.h"
 
 #include "wx/wxprec.h"
@@ -28,7 +31,7 @@ EVT_LEAVE_WINDOW(ScopeCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(ScopeCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
-ScopeCanvas::ScopeCanvas(wxWindow *parent, int *dispAttrs) : InteractiveCanvas(parent, dispAttrs), ppmMode(false), ctr(0), ctrTarget(0), dragAccel(0), helpTip("") {
+ScopeCanvas::ScopeCanvas(wxWindow *parent, std::vector<int> dispAttrs) : InteractiveCanvas(parent, dispAttrs), ppmMode(false), ctr(0), ctrTarget(0), dragAccel(0), helpTip("") {
 
     glContext = new ScopeContext(this, &wxGetApp().GetContext(this));
     inputData.set_max_num_items(2);
@@ -42,7 +45,10 @@ ScopeCanvas::ScopeCanvas(wxWindow *parent, int *dispAttrs) : InteractiveCanvas(p
     parentPanel.setFill(GLPanel::GLPANEL_FILL_NONE);
     scopePanel.setSize(1.0,-1.0);
     spectrumPanel.setSize(1.0,-1.0);
-    spectrumPanel.setShowDb(true);
+    showDb = true;
+    spectrumPanel.setShowDb(showDb);
+    //dB offset is a RF value, has no meaning in audio, disable it.
+    spectrumPanel.setUseDBOffset(false);
 }
 
 ScopeCanvas::~ScopeCanvas() {
@@ -86,8 +92,8 @@ bool ScopeCanvas::getPPMMode() {
     return ppmMode;
 }
 
-void ScopeCanvas::setShowDb(bool showDb) {
-    this->showDb = showDb;
+void ScopeCanvas::setShowDb(bool show) {
+    this->showDb = show;
 }
 
 bool ScopeCanvas::getShowDb() {
@@ -270,5 +276,22 @@ void ScopeCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
 
 void ScopeCanvas::setHelpTip(std::string tip) {
     helpTip = tip;
+}
+
+void ScopeCanvas::OnKeyDown(wxKeyEvent& event) {
+    InteractiveCanvas::OnKeyDown(event);
+
+    switch (event.GetKeyCode()) {
+
+    case 'B':
+        setShowDb(!getShowDb());
+        break;
+    default:
+        event.Skip();
+    }
+}
+
+void ScopeCanvas::OnKeyUp(wxKeyEvent& event) {
+    InteractiveCanvas::OnKeyUp(event);
 }
 

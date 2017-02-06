@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once
 
 #include "VisualProcessor.h"
@@ -50,7 +53,7 @@ public:
     float getScaleFactor();
     
 protected:
-    void process();
+    virtual void process();
     
     ReBuffer<SpectrumVisualData> outputBuffers;
     std::atomic_bool is_view;

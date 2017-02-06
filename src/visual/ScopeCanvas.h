@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once
 
 #include "wx/glcanvas.h"
@@ -14,8 +17,18 @@
 
 class ScopeCanvas: public InteractiveCanvas {
 public:
-    ScopeCanvas(wxWindow *parent, int *dispAttrs);
+    ScopeCanvas(wxWindow *parent, std::vector<int> dispAttrs);
     ~ScopeCanvas();
+
+    //This is public because it is indeed forwarded from
+    //AppFrame::OnGlobalKeyDown, because global key handler intercepts 
+    //calls in all windows.
+    void OnKeyDown(wxKeyEvent& event);
+
+    //This is public because it is indeed forwarded from
+    //AppFrame::OnGlobalKeyUp, because global key handler intercepts 
+    //calls in all windows.
+    void OnKeyUp(wxKeyEvent& event);
 
     void setDeviceName(std::string device_name);
     void setPPMMode(bool ppmMode);

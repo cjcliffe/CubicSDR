@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once
 
 #include <wx/stdpaths.h>
@@ -112,8 +115,24 @@ public:
     void setSpectrumAvgSpeed(float avgSpeed);
     float getSpectrumAvgSpeed();
     
+    void setDBOffset(int offset);
+    int getDBOffset();
+    
     void setManualDevices(std::vector<SDRManualDef> manuals);
     std::vector<SDRManualDef> getManualDevices();
+    
+    void setMainSplit(float value);
+    float getMainSplit();
+    
+    void setVisSplit(float value);
+    float getVisSplit();
+    
+    void setBookmarkSplit(float value);
+    float getBookmarkSplit();
+    
+    void setBookmarksVisible(bool state);
+    bool getBookmarksVisible();
+    
     
 #if USE_HAMLIB
     int getRigModel();
@@ -157,8 +176,10 @@ private:
     std::atomic_llong snap;
     std::atomic_llong centerFreq;
     std::atomic_int waterfallLinesPerSec;
-    std::atomic<float> spectrumAvgSpeed;
+    std::atomic<float> spectrumAvgSpeed, mainSplit, visSplit, bookmarkSplit;
+    std::atomic_int dbOffset;
     std::vector<SDRManualDef> manualDevices;
+    std::atomic_bool bookmarksVisible;
 #if USE_HAMLIB
     std::atomic_int rigModel, rigRate;
     std::string rigPort;

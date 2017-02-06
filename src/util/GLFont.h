@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once
 
 #include <map>
@@ -15,8 +18,8 @@ public:
     GLFontStringCache();
     int drawlen;
     int vpx, vpy;
-    int pxHeight;
-    float msgWidth;
+    int pxHeight = 0;
+    float msgWidth = 0.0f;
     std::atomic_int gc;
     std::vector<float> gl_vertices;
     std::vector<float> gl_uv;

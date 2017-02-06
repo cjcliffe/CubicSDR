@@ -1,4 +1,8 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #include "Gradient.h"
+#include <stddef.h>
 
 Gradient::Gradient() {
 
@@ -21,19 +25,19 @@ std::vector<float> &Gradient::getBlue() {
 }
 
 void Gradient::generate(unsigned int len) {
-    unsigned int chunk_size = len / (colors.size() - 1);
+    size_t chunk_size = len / (colors.size() - 1);
 
-    unsigned int p = 0;
+    size_t p = 0;
     r_val.resize(len);
     g_val.resize(len);
     b_val.resize(len);
 
-    for (unsigned int j = 0, jMax = colors.size() - 1; j < jMax; j++) {
+    for (size_t j = 0, jMax = colors.size() - 1; j < jMax; j++) {
         if ((chunk_size * (jMax)) < len && (j == jMax - 1)) {
             chunk_size += len - chunk_size * (jMax);
         }
 
-        for (unsigned int i = 0; i < chunk_size; i++) {
+        for (size_t i = 0; i < chunk_size; i++) {
             float idx = (float) (i) / (float) chunk_size;
 
             float r1 = colors[j].r;

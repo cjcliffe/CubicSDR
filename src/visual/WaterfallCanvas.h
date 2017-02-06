@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once
 
 #include "wx/glcanvas.h"
@@ -18,7 +21,7 @@ public:
         WF_DRAG_NONE, WF_DRAG_BANDWIDTH_LEFT, WF_DRAG_BANDWIDTH_RIGHT, WF_DRAG_FREQUENCY, WF_DRAG_RANGE
     };
 
-    WaterfallCanvas(wxWindow *parent, int *dispAttrs);
+    WaterfallCanvas(wxWindow *parent, std::vector<int> dispAttrs);
     void setup(unsigned int fft_size_in, int waterfall_lines_in);
     void setFFTSize(unsigned int fft_size_in);
     ~WaterfallCanvas();
@@ -33,9 +36,20 @@ public:
     void setLinesPerSecond(int lps);
     void setMinBandwidth(int min);
 
+    //This is public because it is indeed forwarded from
+    //AppFrame::OnGlobalKeyDown, because global key handler intercepts 
+    //calls in all windows.
     void OnKeyDown(wxKeyEvent& event);
+
+    //This is public because it is indeed forwarded from
+    //AppFrame::OnGlobalKeyUp, because global key handler intercepts 
+    //calls in all windows.
     void OnKeyUp(wxKeyEvent& event);
+
+    //public because called by SpectrumCanvas.
     void OnMouseWheelMoved(wxMouseEvent& event);
+    
+    
     
 private:
     void OnPaint(wxPaintEvent& event);
@@ -55,8 +69,8 @@ private:
     
     std::vector<float> spectrum_points;
 
-    SpectrumCanvas *spectrumCanvas;
-    PrimaryGLContext *glContext;
+    SpectrumCanvas *spectrumCanvas = nullptr;
+    PrimaryGLContext *glContext = nullptr;
     WaterfallPanel waterfallPanel;
 
     DragState dragState;

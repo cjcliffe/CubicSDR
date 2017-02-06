@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #include "SpectrumVisualProcessor.h"
 #include "CubicSDR.h"
 
@@ -26,6 +29,7 @@ SpectrumVisualProcessor::SpectrumVisualProcessor() : outputBuffers("SpectrumVisu
     
     fft_ceil_ma = fft_ceil_maa = 100.0;
     fft_floor_ma = fft_floor_maa = 0.0;
+    fft_floor_peak = 0.0;
     desiredInputSize.store(0);
     fft_average_rate = 0.65f;
     scaleFactor.store(1.0);

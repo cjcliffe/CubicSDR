@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once
 
 #include <mutex>
@@ -218,7 +221,10 @@ public:
 protected:
     std::map<std::string, ThreadQueueBase *, map_string_less> input_queues;
     std::map<std::string, ThreadQueueBase *, map_string_less> output_queues;
-    
+
+    //this protects against concurrent changes in input/output bindings: get/set/Input/OutPutQueue
+    mutable std::mutex m_queue_bindings_mutex;
+
     //true when a termination is ordered
     std::atomic_bool stopping;
     Timer gTimer;
@@ -227,4 +233,5 @@ private:
     //true when the thread has really ended, i.e run() from threadMain() has returned.
     std::atomic_bool terminated;
 
+   
 };

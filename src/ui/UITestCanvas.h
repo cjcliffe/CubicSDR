@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once
 
 #include "wx/glcanvas.h"
@@ -14,7 +17,7 @@
 
 class UITestCanvas: public InteractiveCanvas {
 public:
-    UITestCanvas(wxWindow *parent, int *dispAttrs);
+    UITestCanvas(wxWindow *parent, std::vector<int> dispAttrs);
     ~UITestCanvas();
     
 private:

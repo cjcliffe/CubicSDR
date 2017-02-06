@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once
 
 #include "wx/glcanvas.h"
@@ -17,7 +20,7 @@ public:
     enum ActiveState {
         TUNING_HOVER_NONE, TUNING_HOVER_FREQ, TUNING_HOVER_BW, TUNING_HOVER_PPM, TUNING_HOVER_CENTER
     };
-    TuningCanvas(wxWindow *parent, int *dispAttrs);
+    TuningCanvas(wxWindow *parent, std::vector<int> dispAttrs);
     ~TuningCanvas();
 
     void setHelpTip(std::string tip);

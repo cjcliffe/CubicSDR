@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #include "ModeSelectorCanvas.h"
 
 #include "wx/wxprec.h"
@@ -24,7 +27,7 @@ EVT_LEAVE_WINDOW(ModeSelectorCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(ModeSelectorCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
-ModeSelectorCanvas::ModeSelectorCanvas(wxWindow *parent, int *dispAttrs) :
+ModeSelectorCanvas::ModeSelectorCanvas(wxWindow *parent, std::vector<int> dispAttrs) :
 InteractiveCanvas(parent, dispAttrs), numChoices(0), currentSelection(-1), toggleMode(false), inputChanged(false), padX(4.0), padY(4.0), highlightOverride(false) {
 
     glContext = new ModeSelectorContext(this, &wxGetApp().GetContext(this));

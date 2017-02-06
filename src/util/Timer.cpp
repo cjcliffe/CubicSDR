@@ -1,3 +1,5 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
 
 #include "Timer.h"
 
@@ -54,7 +56,7 @@ void Timer::unlock()
 
 	update();
 	
-	last_update = system_milliseconds-lock_rate;
+	last_update = system_milliseconds-(unsigned long)lock_rate;
 	
 	offset += msec_tmp-system_milliseconds;
 	

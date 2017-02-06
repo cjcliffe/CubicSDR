@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #include "SpectrumCanvas.h"
 
 #include "wx/wxprec.h"
@@ -29,7 +32,7 @@ EVT_RIGHT_DOWN(SpectrumCanvas::OnMouseRightDown)
 EVT_RIGHT_UP(SpectrumCanvas::OnMouseRightReleased)
 wxEND_EVENT_TABLE()
 
-SpectrumCanvas::SpectrumCanvas(wxWindow *parent, int *dispAttrs) :
+SpectrumCanvas::SpectrumCanvas(wxWindow *parent, std::vector<int> dispAttrs) :
         InteractiveCanvas(parent, dispAttrs), waterfallCanvas(NULL) {
 
     glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this));
@@ -174,6 +177,14 @@ bool SpectrumCanvas::getShowDb() {
     return spectrumPanel.getShowDb();
 }
 
+void SpectrumCanvas::setUseDBOfs(bool showDb) {
+    spectrumPanel.setUseDBOffset(showDb);
+}
+
+bool SpectrumCanvas::getUseDBOfs() {
+    return spectrumPanel.getUseDBOffset();
+}
+
 void SpectrumCanvas::setView(long long center_freq_in, int bandwidth_in) {
     bwChange += bandwidth_in-bandwidth;
     #define BW_RESET_TH 400000
@@ -293,7 +304,26 @@ void SpectrumCanvas::OnMouseRightReleased(wxMouseEvent& event) {
         wxGetApp().getSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
 
         //make the peak hold act on the current dmod also, like a zoomed-in version.
-        wxGetApp().getDemodSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
+        if (wxGetApp().getDemodSpectrumProcessor()) {
+            wxGetApp().getDemodSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
+        }
     }
     mouseTracker.OnMouseRightReleased(event);
+}
+
+void SpectrumCanvas::OnKeyDown(wxKeyEvent& event) {
+    InteractiveCanvas::OnKeyDown(event);
+
+    switch (event.GetKeyCode()) {
+  
+    case 'B':
+       setShowDb(!getShowDb());
+       break;
+    default:
+        event.Skip();
+    }
+}
+
+void SpectrumCanvas::OnKeyUp(wxKeyEvent& event) {
+    InteractiveCanvas::OnKeyUp(event);
 }

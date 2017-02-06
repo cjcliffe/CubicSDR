@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once
 
 #include "Gradient.h"
@@ -5,6 +8,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <wx/colour.h>
 
 #define COLOR_THEME_DEFAULT 0
 #define COLOR_THEME_BW 1
@@ -38,6 +42,14 @@ public:
     }
     
     RGBA4f operator*(float v) { return RGBA4f(r*v, g*v, b*v); }
+    
+    operator wxColour() {
+        return wxColour(
+                        (unsigned char) std::min((r * 255.0), 255.0),
+                       (unsigned char) std::min((g * 255.0), 255.0),
+                       (unsigned char) std::min((b * 255.0), 255.0));
+
+    }
 
 };
 

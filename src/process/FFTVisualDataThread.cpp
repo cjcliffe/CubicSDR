@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #include "FFTVisualDataThread.h"
 #include "CubicSDR.h"
 
@@ -27,10 +30,18 @@ void FFTVisualDataThread::run() {
     DemodulatorThreadInputQueue *pipeIQDataIn = static_cast<DemodulatorThreadInputQueue *>(getInputQueue("IQDataInput"));
     SpectrumVisualDataQueue *pipeFFTDataOut = static_cast<SpectrumVisualDataQueue *>(getOutputQueue("FFTDataOutput"));
     
-    fftQueue.set_max_num_items(100);
+
+    fftQueue.set_max_num_items(100); 
     pipeFFTDataOut->set_max_num_items(100);
+
+    //FFT distributor plumbing:
+    // IQDataInput push samples to process to FFT Data distributor. 
     fftDistrib.setInput(pipeIQDataIn);
+
+    //The FFT distributor has actually 1 output only, so it doesn't distribute at all :) 
     fftDistrib.attachOutput(&fftQueue);
+    
+    //FFT Distributor output is ==> SpectrumVisualProcessor input.
     wproc.setInput(&fftQueue);
     wproc.attachOutput(pipeFFTDataOut);
     wproc.setup(DEFAULT_FFT_SIZE);
@@ -39,7 +50,9 @@ void FFTVisualDataThread::run() {
     
     while(!stopping) {
         
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        //this if fed by FFTDataDistributor which has a buffer of FFT_DISTRIBUTOR_BUFFER_IN_SECONDS
+        //so sleep for << FFT_DISTRIBUTOR_BUFFER_IN_SECONDS not to be overflown
+        std::this_thread::sleep_for(std::chrono::milliseconds((int)(FFT_DISTRIBUTOR_BUFFER_IN_SECONDS * 1000.0 / 25.0)));
 //        std::this_thread::yield();
         
         int fftSize = wproc.getDesiredInputSize();
@@ -56,8 +69,11 @@ void FFTVisualDataThread::run() {
             lpsChanged.store(false);
         }
         
+        //Make FFT Distributor process IQ samples
+        //and package them into ready-to-FFT sample sets (representing 1 line) by wproc
         fftDistrib.run();
-        
+      
+        // Make wproc do a FFT of each of the sample sets provided by fftDistrib: 
         while (!wproc.isInputEmpty()) {
             wproc.run();
         }

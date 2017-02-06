@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #include "DemodLabelDialog.h"
 
 #include "wx/clipbrd.h"
@@ -57,7 +60,7 @@ void DemodLabelDialog::OnChar(wxKeyEvent& event) {
         else {
             activeDemod->setDemodulatorUserLabel(L"");
         }
-
+        wxGetApp().getBookmarkMgr().updateActiveList();
         Close();
         break;
     case WXK_ESCAPE:

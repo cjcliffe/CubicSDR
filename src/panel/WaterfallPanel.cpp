@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #include "WaterfallPanel.h"
 
 WaterfallPanel::WaterfallPanel() : GLPanel(), fft_size(0), waterfall_lines(0), waterfall_slice(NULL), activeTheme(NULL) {
@@ -36,6 +39,7 @@ void WaterfallPanel::refreshTheme() {
 void WaterfallPanel::setPoints(std::vector<float> &points) {
     size_t halfPts = points.size()/2;
     if (halfPts == fft_size) {
+       
         for (unsigned int i = 0; i < fft_size; i++) {
             this->points[i] = points[i*2+1];
         }
@@ -99,6 +103,10 @@ void WaterfallPanel::update() {
         
         unsigned char *waterfall_tex;
         
+        //Creates 2x 2D textures into card memory.
+        //of size half_fft_size * waterfall_lines, which can be BIG.
+        //The limit of the size of Waterfall is the size of the maximum supported 2D texture 
+        //by the graphic card. (half_fft_size * waterfall_lines, i.e DEFAULT_DEMOD_WATERFALL_LINES_NB * DEFAULT_FFT_SIZE/2)
         waterfall_tex = new unsigned char[half_fft_size * waterfall_lines];
         memset(waterfall_tex, 0, half_fft_size * waterfall_lines);
         

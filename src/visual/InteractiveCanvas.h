@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once
 
 #include "wx/glcanvas.h"
@@ -5,24 +8,25 @@
 
 #include "MouseTracker.h"
 #include <string>
+#include <vector>
 
 class InteractiveCanvas: public wxGLCanvas {
 public:
-    InteractiveCanvas(wxWindow *parent, int *dispAttrs);
+    InteractiveCanvas(wxWindow *parent, std::vector<int> dispAttrs);
     ~InteractiveCanvas();
 
     long long getFrequencyAt(float x);
     long long getFrequencyAt(float x, long long iqCenterFreq, long long iqBandwidth);
     
-    virtual void setView(long long center_freq_in, int bandwidth_in);
+    virtual void setView(long long center_freq_in, long long bandwidth_in);
     virtual void disableView();
     bool getViewState();
 
     void setCenterFrequency(long long center_freq_in);
     long long getCenterFrequency();
 
-    void setBandwidth(unsigned int bandwidth_in);
-    unsigned int getBandwidth();
+    void setBandwidth(long long bandwidth_in);
+    long long getBandwidth();
 
     MouseTracker *getMouseTracker();
     bool isMouseInView();
@@ -56,8 +60,8 @@ protected:
     bool ctrlDown;
 
     long long centerFreq;
-    unsigned int bandwidth;
-    unsigned int lastBandwidth;
+    long long bandwidth;
+    long long lastBandwidth;
 
     bool isView;
 	std::string lastToolTip;

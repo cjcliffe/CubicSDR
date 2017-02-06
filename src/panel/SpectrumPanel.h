@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once
 
 #include "GLPanel.h"
@@ -26,7 +29,10 @@ public:
 
     void setShowDb(bool showDb);
     bool getShowDb();
-    
+
+    void setUseDBOffset(bool useOfs);
+    bool getUseDBOffset();
+
 protected:
     void drawPanelContents();
 
@@ -40,5 +46,5 @@ private:
     
     GLTextPanel dbPanelCeil;
     GLTextPanel dbPanelFloor;
-    bool showDb;
+    bool showDb, useDbOfs;
 };

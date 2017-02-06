@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once
 
 #include <atomic>
@@ -67,8 +70,8 @@ public:
     void setOffset(long long ofs);
     long long getOffset();
     
-    void setSampleRate(int rate);
-    int getSampleRate();
+    void setSampleRate(long rate);
+    long getSampleRate();
 
     void setPPM(int ppm);
     int getPPM();
@@ -106,7 +109,7 @@ protected:
     std::map<std::string, std::string> settings;
     std::map<std::string, bool> settingChanged;
 
-    std::atomic<uint32_t> sampleRate;
+    std::atomic_llong sampleRate;
     std::atomic_llong frequency, offset, lock_freq;
     std::atomic_int ppm, numElems, mtuElems, numChannels;
     std::atomic_bool hasPPM, hasHardwareDC;

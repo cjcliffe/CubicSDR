@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #include "GainCanvas.h"
 
 #include "wx/wxprec.h"
@@ -25,7 +28,7 @@ EVT_ENTER_WINDOW(GainCanvas::OnMouseEnterWindow)
 EVT_MOUSEWHEEL(GainCanvas::OnMouseWheelMoved)
 wxEND_EVENT_TABLE()
 
-GainCanvas::GainCanvas(wxWindow *parent, int *dispAttrs) :
+GainCanvas::GainCanvas(wxWindow *parent, std::vector<int> dispAttrs) :
         InteractiveCanvas(parent, dispAttrs) {
 
     glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this));
@@ -167,6 +170,13 @@ void GainCanvas::setHelpTip(std::string tip) {
 
 void GainCanvas::updateGainUI() {
     SDRDeviceInfo *devInfo = wxGetApp().getDevice();
+
+    //possible if we 'Refresh Devices' then devInfo becomes null
+    //until a new device is selected.
+    if (devInfo == nullptr) {
+        return;
+    }
+
     DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(devInfo->getDeviceId());
     
     gains = devInfo->getGains(SOAPY_SDR_RX, 0);

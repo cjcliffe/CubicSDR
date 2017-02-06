@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #include "ModemFSK.h"
 #include <iomanip>
 
@@ -5,7 +8,7 @@ ModemFSK::ModemFSK() : ModemDigital()  {
     // DMR defaults?
     bps = 1;
     sps = 9600;
-    bw = 0.45;
+    bw = 0.45f;
     outStream << std::hex;
 }
 
@@ -14,12 +17,12 @@ ModemBase *ModemFSK::factory() {
 }
 
 int ModemFSK::checkSampleRate(long long sampleRate, int audioSampleRate) {
-    float minSps = pow(2.0,bps);
-    float nextSps = (float(sampleRate) / float(sps));
+    double minSps = pow(2.0,bps);
+    double nextSps = (double(sampleRate) / double(sps));
     if (nextSps < minSps) {
         return 2 * bps * sps;
     } else {
-        return sampleRate;
+        return (int)sampleRate;
     }
 }
 
@@ -98,7 +101,7 @@ std::string ModemFSK::readSetting(std::string setting) {
 ModemKit *ModemFSK::buildKit(long long sampleRate, int audioSampleRate) {
     ModemKitFSK *dkit = new ModemKitFSK;
     dkit->m           = bps;
-    dkit->k           = sampleRate / sps;
+    dkit->k           = (unsigned int)(sampleRate / sps);
     dkit->bw          = bw;
 
     dkit->demodFSK = fskdem_create(dkit->m, dkit->k, dkit->bw);

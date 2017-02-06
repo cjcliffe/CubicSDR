@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once
 
 #include "wx/glcanvas.h"
@@ -17,7 +20,7 @@
 
 class GainCanvas: public InteractiveCanvas {
 public:
-    GainCanvas(wxWindow *parent, int *dispAttrs);
+    GainCanvas(wxWindow *parent, std::vector<int> dispAttrs);
     ~GainCanvas();
 
     void setHelpTip(std::string tip);

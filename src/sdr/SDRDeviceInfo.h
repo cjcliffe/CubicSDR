@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once
 
 #include <string>
@@ -86,7 +89,7 @@ public:
     SDRRangeMap getGains(int direction, size_t channel);
 
 private:
-    int index;
+    int index = 0;
     std::string name, serial, product, manufacturer, tuner;
     std::string driver, hardware, manual_params;
     bool timestamps, available, remote, manual;

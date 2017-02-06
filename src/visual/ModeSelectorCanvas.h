@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once
 
 #include "wx/glcanvas.h"
@@ -24,7 +27,7 @@ public:
 
 class ModeSelectorCanvas: public InteractiveCanvas {
 public:
-    ModeSelectorCanvas(wxWindow *parent, int *dispAttrs);
+    ModeSelectorCanvas(wxWindow *parent, std::vector<int> dispAttrs);
     ~ModeSelectorCanvas();
 
     int getHoveredSelection();

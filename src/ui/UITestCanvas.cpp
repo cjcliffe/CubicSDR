@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #include "UITestCanvas.h"
 
 #include "wx/wxprec.h"
@@ -24,7 +27,7 @@ EVT_LEAVE_WINDOW(UITestCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(UITestCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
-UITestCanvas::UITestCanvas(wxWindow *parent, int *dispAttrs) :
+UITestCanvas::UITestCanvas(wxWindow *parent, std::vector<int> dispAttrs) :
 InteractiveCanvas(parent, dispAttrs) {
     
     glContext = new UITestContext(this, &wxGetApp().GetContext(this));

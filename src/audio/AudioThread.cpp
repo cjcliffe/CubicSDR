@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #include "AudioThread.h"
 #include "CubicSDRDefs.h"
 #include <vector>
@@ -257,7 +260,7 @@ void AudioThread::enumerateDevices(std::vector<RtAudio::DeviceInfo> &devs) {
             std::cout << "\t\t32-bit float normalized between plus/minus 1.0." << std::endl;
         }
         if (nFormats & RTAUDIO_FLOAT64) {
-            std::cout << "\t\t32-bit float normalized between plus/minus 1.0." << std::endl;
+            std::cout << "\t\t64-bit float normalized between plus/minus 1.0." << std::endl;
         }
 
         std::vector<unsigned int>::iterator srate;

@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #include "InteractiveCanvas.h"
 
 #include "wx/wxprec.h"
@@ -17,8 +20,8 @@
 
 #include <wx/numformatter.h>
 
-InteractiveCanvas::InteractiveCanvas(wxWindow *parent, int *dispAttrs) :
-        wxGLCanvas(parent, wxID_ANY, dispAttrs, wxDefaultPosition, wxDefaultSize,
+InteractiveCanvas::InteractiveCanvas(wxWindow *parent, std::vector<int> dispAttrs) :
+        wxGLCanvas(parent, wxID_ANY, dispAttrs.data(), wxDefaultPosition, wxDefaultSize,
         wxFULL_REPAINT_ON_RESIZE), parent(parent), shiftDown(false), altDown(false), ctrlDown(false), centerFreq(0), bandwidth(0), lastBandwidth(0), isView(
         false) {
     mouseTracker.setTarget(this);
@@ -27,7 +30,7 @@ InteractiveCanvas::InteractiveCanvas(wxWindow *parent, int *dispAttrs) :
 InteractiveCanvas::~InteractiveCanvas() {
 }
 
-void InteractiveCanvas::setView(long long center_freq_in, int bandwidth_in) {
+void InteractiveCanvas::setView(long long center_freq_in, long long bandwidth_in) {
     isView = true;
     centerFreq = center_freq_in;
     bandwidth = bandwidth_in;
@@ -71,11 +74,11 @@ long long InteractiveCanvas::getCenterFrequency() {
     }
 }
 
-void InteractiveCanvas::setBandwidth(unsigned int bandwidth_in) {
+void InteractiveCanvas::setBandwidth(long long bandwidth_in) {
     bandwidth = bandwidth_in;
 }
 
-unsigned int InteractiveCanvas::getBandwidth() {
+long long InteractiveCanvas::getBandwidth() {
     if (isView) {
         return bandwidth;
     } else {

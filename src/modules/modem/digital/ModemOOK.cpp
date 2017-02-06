@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #include "ModemOOK.h"
 
 ModemOOK::ModemOOK() : ModemDigital()  {
@@ -20,7 +23,7 @@ int ModemOOK::checkSampleRate(long long sampleRate, int audioSampleRate) {
     if (sampleRate < 100) {
         return 100;
     }
-    return sampleRate;
+    return (int)sampleRate;
 }
 
 void ModemOOK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {

@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once
 
 //WX_GL_CORE_PROFILE 1
@@ -10,12 +13,8 @@
 #include "PrimaryGLContext.h"
 
 #include "ThreadQueue.h"
-#ifdef USE_RTL_SDR
-    #include "SDRThread.h"
-#else
-    #include "SoapySDRThread.h"
-    #include "SDREnumerator.h"
-#endif
+#include "SoapySDRThread.h"
+#include "SDREnumerator.h"
 #include "SDRPostThread.h"
 #include "AudioThread.h"
 #include "DemodulatorMgr.h"
@@ -23,6 +22,7 @@
 #include "AppFrame.h"
 #include "FrequencyDialog.h"
 #include "DemodLabelDialog.h"
+#include "BookmarkMgr.h"
 
 #include "ScopeVisualProcessor.h"
 #include "SpectrumVisualProcessor.h"
@@ -44,9 +44,7 @@
 #include "ModemASK.h"
 #include "ModemBPSK.h"
 #include "ModemDPSK.h"
-#if ENABLE_LIQUID_EXPERIMENTAL
 #include "ModemFSK.h"
-#endif
 #include "ModemGMSK.h"
 #include "ModemOOK.h"
 #include "ModemPSK.h"
@@ -93,6 +91,9 @@ public:
 
     void setOffset(long long ofs);
     long long getOffset();
+    
+    void setDBOffset(int ofs);
+    int getDBOffset();
 
     void setSampleRate(long long rate_in);
     long long getSampleRate();
@@ -111,6 +112,7 @@ public:
     DemodulatorThreadInputQueue* getWaterfallVisualQueue();
     DemodulatorThreadInputQueue* getActiveDemodVisualQueue();
     DemodulatorMgr &getDemodMgr();
+    BookmarkMgr &getBookmarkMgr();
 
     SDRPostThread *getSDRPostThread();
     SDRThread *getSDRThread();
@@ -136,6 +138,8 @@ public:
     bool areDevicesEnumerating();
     bool areModulesMissing();
     std::string getNotification();
+
+    void notifyMainUIOfDeviceChange();
     
     void addRemote(std::string remoteAddr);
     void removeRemote(std::string remoteAddr);
@@ -179,6 +183,7 @@ private:
     std::vector<SDRDeviceInfo *> *devs = nullptr;
 
     DemodulatorMgr demodMgr;
+    BookmarkMgr bookmarkMgr;
 
     std::atomic_llong frequency;
     std::atomic_llong offset;

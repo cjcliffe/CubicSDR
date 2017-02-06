@@ -1,5 +1,7 @@
-#include "SDRDeviceAdd.h"
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
 
+#include "SDRDeviceAdd.h"
 #include "SDREnumerator.h"
 
 SDRDeviceAddDialog::SDRDeviceAddDialog( wxWindow* parent ): SDRDeviceAddForm( parent ) {

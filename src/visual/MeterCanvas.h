@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #pragma once
 
 #include "wx/glcanvas.h"
@@ -14,7 +17,7 @@
 
 class MeterCanvas: public InteractiveCanvas {
 public:
-    MeterCanvas(wxWindow *parent, int *dispAttrs);
+    MeterCanvas(wxWindow *parent, std::vector<int> dispAttrs);
     ~MeterCanvas();
 
     void setLevel(float level_in);

@@ -1,3 +1,6 @@
+// Copyright (c) Charles J. Cliffe
+// SPDX-License-Identifier: GPL-2.0+
+
 #define OPENGL
 
 #include "CubicSDRDefs.h"
@@ -26,6 +29,9 @@ IMPLEMENT_APP(CubicSDR)
 
 #include <fstream>
 #include <clocale>
+
+#include "ActionDialog.h"
+
 
 //#ifdef ENABLE_DIGITAL_LAB
 //// console output buffer for windows
@@ -133,8 +139,65 @@ long long strToFrequency(std::string freqStr) {
 }
 
 
-CubicSDR::CubicSDR() : frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE),agcMode(false)
-       {
+
+class ActionDialogBookmarkCatastophe : public ActionDialog {
+public:
+    ActionDialogBookmarkCatastophe() : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Bookmark Last-Loaded Backup Failure :( :( :(")) {
+        m_questionText->SetLabelText(wxT("All attempts to recover bookmarks have failed. \nWould you like to exit without touching any more save files?\nClick OK to exit without saving; or Cancel to continue anyways."));
+    }
+    
+    void doClickOK() {
+        wxGetApp().getAppFrame()->disableSave(true);
+        wxGetApp().getAppFrame()->Close(false);
+    }
+};
+
+
+
+class ActionDialogBookmarkBackupLoadFailed : public ActionDialog {
+public:
+    ActionDialogBookmarkBackupLoadFailed() : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Bookmark Backup Load Failure :( :(")) {
+        m_questionText->SetLabelText(wxT("Sorry; unable to load your bookmarks backup file. \nWould you like to attempt to load the last succssfully loaded bookmarks file?"));
+    }
+    
+    void doClickOK() {
+        if (wxGetApp().getBookmarkMgr().hasLastLoad("bookmarks.xml")) {
+            if (wxGetApp().getBookmarkMgr().loadFromFile("bookmarks.xml.lastloaded",false)) {
+                wxGetApp().getBookmarkMgr().updateBookmarks();
+                wxGetApp().getBookmarkMgr().updateActiveList();
+            } else {
+                ActionDialog::showDialog(new ActionDialogBookmarkCatastophe());
+            }
+        }
+    }
+};
+
+
+class ActionDialogBookmarkLoadFailed : public ActionDialog {
+public:
+    ActionDialogBookmarkLoadFailed() : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Bookmark Load Failure :(")) {
+        m_questionText->SetLabelText(wxT("Sorry; unable to load your bookmarks file. \nWould you like to attempt to load the backup file?"));
+    }
+    
+    void doClickOK() {
+        bool loadOk = false;
+        if (wxGetApp().getBookmarkMgr().hasBackup("bookmarks.xml")) {
+            loadOk = wxGetApp().getBookmarkMgr().loadFromFile("bookmarks.xml.backup",false);
+        }
+        if (loadOk) {
+            wxGetApp().getBookmarkMgr().updateBookmarks();
+            wxGetApp().getBookmarkMgr().updateActiveList();
+        } else if (wxGetApp().getBookmarkMgr().hasLastLoad("bookmarks.xml")) {
+            ActionDialog::showDialog(new ActionDialogBookmarkBackupLoadFailed());
+        } else {
+            ActionDialog::showDialog(new ActionDialogBookmarkCatastophe());
+        }
+    }
+};
+
+
+CubicSDR::CubicSDR() : frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE), agcMode(false)
+{
         sampleRateInitialized.store(false);
         agcMode.store(true);
         soloMode.store(false);
@@ -207,9 +270,7 @@ bool CubicSDR::OnInit() {
     Modem::addModemFactory(ModemASK::factory, "ASK", 200000);
     Modem::addModemFactory(ModemBPSK::factory, "BPSK", 200000);
     Modem::addModemFactory(ModemDPSK::factory, "DPSK", 200000);
-#if ENABLE_LIQUID_EXPERIMENTAL
     Modem::addModemFactory(ModemFSK::factory, "FSK", 19200);
-#endif
     Modem::addModemFactory(ModemGMSK::factory, "GMSK", 19200);
     Modem::addModemFactory(ModemOOK::factory, "OOK", 200000);
     Modem::addModemFactory(ModemPSK::factory, "PSK", 200000);
@@ -228,25 +289,15 @@ bool CubicSDR::OnInit() {
 
     // Visual Data
     spectrumVisualThread = new SpectrumVisualDataThread();
-    demodVisualThread = new SpectrumVisualDataThread();
     
     pipeIQVisualData = new DemodulatorThreadInputQueue();
     pipeIQVisualData->set_max_num_items(1);
-
-    pipeDemodIQVisualData = new DemodulatorThreadInputQueue();
-    pipeDemodIQVisualData->set_max_num_items(1);
     
     pipeWaterfallIQVisualData = new DemodulatorThreadInputQueue();
     pipeWaterfallIQVisualData->set_max_num_items(128);
     
-    getDemodSpectrumProcessor()->setInput(pipeDemodIQVisualData);
     getSpectrumProcessor()->setInput(pipeIQVisualData);
     getSpectrumProcessor()->setHideDC(true);
-    
-    pipeAudioVisualData = new DemodulatorThreadOutputQueue();
-    pipeAudioVisualData->set_max_num_items(1);
-    
-    scopeProcessor.setInput(pipeAudioVisualData);
     
     // I/Q Data
     pipeSDRIQData = new SDRThreadIQDataQueue();
@@ -260,11 +311,42 @@ bool CubicSDR::OnInit() {
 
     sdrPostThread->setOutputQueue("IQVisualDataOutput", pipeIQVisualData);
     sdrPostThread->setOutputQueue("IQDataOutput", pipeWaterfallIQVisualData);
-    sdrPostThread->setOutputQueue("IQActiveDemodVisualDataOutput", pipeDemodIQVisualData);
+     
+#if CUBICSDR_ENABLE_VIEW_SCOPE
+    pipeAudioVisualData = new DemodulatorThreadOutputQueue();
+    pipeAudioVisualData->set_max_num_items(1);
     
-    t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
+    scopeProcessor.setInput(pipeAudioVisualData);
+#else
+    pipeAudioVisualData = nullptr;
+#endif
+    
+#if CUBICSDR_ENABLE_VIEW_DEMOD
+    demodVisualThread = new SpectrumVisualDataThread();
+    pipeDemodIQVisualData = new DemodulatorThreadInputQueue();
+    pipeDemodIQVisualData->set_max_num_items(1);
+    
+    if (getDemodSpectrumProcessor()) {
+        getDemodSpectrumProcessor()->setInput(pipeDemodIQVisualData);
+    }
+    sdrPostThread->setOutputQueue("IQActiveDemodVisualDataOutput", pipeDemodIQVisualData);
+#else
+    demodVisualThread = nullptr;
+    pipeDemodIQVisualData = nullptr;
+    t_DemodVisual = nullptr;
+#endif
+
+    // Now that input/output queue plumbing is completely done, we can
+    //safely starts all the threads:
     t_SpectrumVisual = new std::thread(&SpectrumVisualDataThread::threadMain, spectrumVisualThread);
-    t_DemodVisual = new std::thread(&SpectrumVisualDataThread::threadMain, demodVisualThread);
+
+    if (demodVisualThread != nullptr) {
+        t_DemodVisual = new std::thread(&SpectrumVisualDataThread::threadMain, demodVisualThread);
+    }
+
+    //Start SDRPostThread last.
+    t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
+    
 
     sdrEnum = new SDREnumerator();
     
@@ -283,6 +365,19 @@ bool CubicSDR::OnInit() {
 //    pthread_setschedparam(pthread_self(), main_policy, &main_param);
 //#endif
 
+    if (!wxGetApp().getBookmarkMgr().loadFromFile("bookmarks.xml")) {
+        if (wxGetApp().getBookmarkMgr().hasBackup("bookmarks.xml")) {
+            ActionDialog::showDialog(new ActionDialogBookmarkLoadFailed());
+        } else if (wxGetApp().getBookmarkMgr().hasLastLoad("bookmarks.xml")) {
+            ActionDialog::showDialog(new ActionDialogBookmarkBackupLoadFailed());
+        } else {
+            ActionDialog::showDialog(new ActionDialogBookmarkCatastophe());
+        }
+    } else {
+        getBookmarkMgr().updateActiveList();
+        getBookmarkMgr().updateBookmarks();
+    }
+    
     return true;
 }
 
@@ -313,16 +408,20 @@ int CubicSDR::OnExit() {
    
     std::cout << "Terminating Visual Processor threads.." << std::endl;
     spectrumVisualThread->terminate();
-    demodVisualThread->terminate();
-
+    if (demodVisualThread) {
+        demodVisualThread->terminate();
+    }
+    
     //Wait nicely
     sdrPostThread->isTerminated(1000);
     spectrumVisualThread->isTerminated(1000);
-    demodVisualThread->isTerminated(1000);
+    if (demodVisualThread) {
+        demodVisualThread->isTerminated(1000);
+    }
 
     //Then join the thread themselves
     t_PostSDR->join();
-    t_DemodVisual->join();
+    if (t_DemodVisual) t_DemodVisual->join();
     t_SpectrumVisual->join();
 
     //Now only we can delete
@@ -491,7 +590,9 @@ void CubicSDR::setFrequency(long long freq) {
     getSpectrumProcessor()->setPeakHold(getSpectrumProcessor()->getPeakHold());
 
     //make the peak hold act on the current dmod also, like a zoomed-in version.
-    getDemodSpectrumProcessor()->setPeakHold(getSpectrumProcessor()->getPeakHold());
+    if (getDemodSpectrumProcessor()) {
+        getDemodSpectrumProcessor()->setPeakHold(getSpectrumProcessor()->getPeakHold());
+    }
 }
 
 long long CubicSDR::getOffset() {
@@ -534,15 +635,15 @@ void CubicSDR::setSampleRate(long long rate_in) {
     setFrequency(frequency);
 
     if (rate_in <= CHANNELIZER_RATE_MAX / 8) {
-        appframe->setMainWaterfallFFTSize(512);
+        appframe->setMainWaterfallFFTSize(DEFAULT_FFT_SIZE / 4);
         appframe->getWaterfallDataThread()->getProcessor()->setHideDC(false);
         spectrumVisualThread->getProcessor()->setHideDC(false);
     } else if (rate_in <= CHANNELIZER_RATE_MAX) {
-        appframe->setMainWaterfallFFTSize(1024);
+        appframe->setMainWaterfallFFTSize(DEFAULT_FFT_SIZE / 2);
         appframe->getWaterfallDataThread()->getProcessor()->setHideDC(false);
         spectrumVisualThread->getProcessor()->setHideDC(false);
     } else if (rate_in > CHANNELIZER_RATE_MAX) {
-        appframe->setMainWaterfallFFTSize(2048);
+        appframe->setMainWaterfallFFTSize(DEFAULT_FFT_SIZE);
         appframe->getWaterfallDataThread()->getProcessor()->setHideDC(true);
         spectrumVisualThread->getProcessor()->setHideDC(true);
     }
@@ -652,7 +753,11 @@ SpectrumVisualProcessor *CubicSDR::getSpectrumProcessor() {
 }
 
 SpectrumVisualProcessor *CubicSDR::getDemodSpectrumProcessor() {
-    return demodVisualThread->getProcessor();
+    if (demodVisualThread) {
+        return demodVisualThread->getProcessor();
+    } else {
+        return nullptr;
+    }
 }
 
 DemodulatorThreadOutputQueue* CubicSDR::getAudioVisualQueue() {
@@ -669,6 +774,10 @@ DemodulatorThreadInputQueue* CubicSDR::getWaterfallVisualQueue() {
 
 DemodulatorMgr &CubicSDR::getDemodMgr() {
     return demodMgr;
+}
+
+BookmarkMgr &CubicSDR::getBookmarkMgr() {
+    return bookmarkMgr;
 }
 
 SDRPostThread *CubicSDR::getSDRPostThread() {
@@ -704,6 +813,7 @@ void CubicSDR::removeDemodulator(DemodulatorInstance *demod) {
     }
     demod->setActive(false);
     sdrPostThread->removeDemodulator(demod);
+    wxGetApp().getAppFrame()->notifyUpdateModemProperties();
 }
 
 std::vector<SDRDeviceInfo*>* CubicSDR::getDevices() {
@@ -749,6 +859,7 @@ void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetM
     
     switch (targetMode) {
         case FrequencyDialog::FDIALOG_TARGET_DEFAULT:
+        case FrequencyDialog::FDIALOG_TARGET_FREQ:
             title = demodMgr.getActiveDemodulator()?demodTitle:freqTitle;
             break;
         case FrequencyDialog::FDIALOG_TARGET_BANDWIDTH:
@@ -804,6 +915,10 @@ int CubicSDR::getFrequencySnap() {
 
 bool CubicSDR::areDevicesReady() {
     return devicesReady.load();
+}
+
+void CubicSDR::notifyMainUIOfDeviceChange() {
+    appframe->notifyDeviceChanged();
 }
 
 bool CubicSDR::areDevicesEnumerating() {
