@@ -214,51 +214,76 @@ IF (WIN32)
     ENDIF()
 ENDIF (WIN32)
 
+MACRO(use_included_rtaudio)
+    SET (cubicsdr_sources
+        ${cubicsdr_sources}
+        external/rtaudio/RtAudio.cpp
+    )
+    SET (cubicsdr_headers
+        ${cubicsdr_headers}
+        external/rtaudio/RtAudio.h
+    )
+    SOURCE_GROUP("_ext-RTAudio" REGULAR_EXPRESSION "external/rtaudio/.*${REG_EXT}")
+    include_directories(${PROJECT_SOURCE_DIR}/external/rtaudio)
+ENDMACRO(use_included_rtaudio)
+
 IF (UNIX AND NOT APPLE)
     set(BUILD_DEB OFF CACHE BOOL "Build DEB")
 
-  
-    SET(USE_AUDIO_PULSE ON CACHE BOOL "Use Pulse Audio")
-    SET(USE_AUDIO_JACK OFF CACHE BOOL "Use Jack Audio")
-    SET(USE_AUDIO_ALSA OFF CACHE BOOL "Use ALSA Audio")
-    SET(USE_AUDIO_OSS OFF CACHE BOOL "Use OSS Audio")
-  
+    SET(USE_SYSTEM_RTAUDIO OFF CACHE BOOL "Use the system RtAudio which in turn provides OSS, ALSA, JACK, PulseAudio support depending on how it was compiled")
+
     SET(LIQUID_LIB liquid)
     SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} dl)
 
-IF(USE_AUDIO_PULSE)
-   SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} pulse-simple pulse)
-   ADD_DEFINITIONS(
-        -D__LINUX_PULSE__
-   )
-ENDIF(USE_AUDIO_PULSE)
+    IF(USE_SYSTEM_RTAUDIO)
+        find_package(RtAudio)
+        SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} ${RTAUDIO_LIBRARIES})
+        ADD_DEFINITIONS(${RTAUDIO_DEFINITIONS})
+        include_directories(${RTAUDIO_INCLUDE_DIR})
+    ELSE(USE_SYSTEM_RTAUDIO)
+        use_included_rtaudio()
 
-IF(USE_AUDIO_JACK)
-   find_package(Jack)
-   SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} ${JACK_LIBRARIES})
-   ADD_DEFINITIONS(
-        -D__UNIX_JACK__
-   )
-   include_directories(${JACK_INCLUDE_DIRS})
-ENDIF(USE_AUDIO_JACK)
+        SET(USE_AUDIO_PULSE ON CACHE BOOL "Use Pulse Audio")
+        SET(USE_AUDIO_JACK OFF CACHE BOOL "Use Jack Audio")
+        SET(USE_AUDIO_ALSA OFF CACHE BOOL "Use ALSA Audio")
+        SET(USE_AUDIO_OSS OFF CACHE BOOL "Use OSS Audio")
+  
+        IF(USE_AUDIO_PULSE)
+           SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} pulse-simple pulse)
+           ADD_DEFINITIONS(
+                -D__LINUX_PULSE__
+           )
+        ENDIF(USE_AUDIO_PULSE)
 
-IF(USE_AUDIO_ALSA)
-   SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} asound)
-   set(ALSA_INCLUDE_DIR "/usr/include" CACHE FILEPATH "ALSA include path")
-   include_directories(${ALSA_INCLUDE_DIR})
-   set(ALSA_LIB_DIR "/usr/lib" CACHE FILEPATH "ALSA lib path")
-   link_directories(${ALSA_LIB_DIR})
-   ADD_DEFINITIONS(
-       -D__LINUX_ALSA__
-   )
-ENDIF(USE_AUDIO_ALSA)
+        IF(USE_AUDIO_JACK)
+           find_package(Jack)
+           SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} ${JACK_LIBRARIES})
+           ADD_DEFINITIONS(
+                -D__UNIX_JACK__
+           )
+           include_directories(${JACK_INCLUDE_DIRS})
+        ENDIF(USE_AUDIO_JACK)
 
-IF(USE_AUDIO_OSS)
-   SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} oss)
-   ADD_DEFINITIONS(
-        -D__LINUX_OSS__
-   )
-ENDIF(USE_AUDIO_OSS)
+        IF(USE_AUDIO_ALSA)
+           SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} asound)
+           set(ALSA_INCLUDE_DIR "/usr/include" CACHE FILEPATH "ALSA include path")
+           include_directories(${ALSA_INCLUDE_DIR})
+           set(ALSA_LIB_DIR "/usr/lib" CACHE FILEPATH "ALSA lib path")
+           link_directories(${ALSA_LIB_DIR})
+           ADD_DEFINITIONS(
+               -D__LINUX_ALSA__
+           )
+        ENDIF(USE_AUDIO_ALSA)
+
+        IF(USE_AUDIO_OSS)
+           SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} oss)
+           ADD_DEFINITIONS(
+                -D__LINUX_OSS__
+           )
+        ENDIF(USE_AUDIO_OSS)
+    ENDIF(USE_SYSTEM_RTAUDIO)
+ELSE(UNIX AND NOT APPLE)
+    use_included_rtaudio()
 ENDIF(UNIX AND NOT APPLE)
 
 IF (APPLE)
@@ -280,6 +305,7 @@ ENDIF (APPLE)
 
 
 SET (cubicsdr_sources
+    ${cubicsdr_sources}
     src/CubicSDR.cpp
     src/AppFrame.cpp
     src/AppConfig.cpp
@@ -350,7 +376,6 @@ SET (cubicsdr_sources
     src/forms/Bookmark/BookmarkView.cpp
     src/forms/Dialog/ActionDialogBase.cpp
     src/forms/Dialog/ActionDialog.cpp
-    external/rtaudio/RtAudio.cpp
     external/lodepng/lodepng.cpp
     external/tinyxml/tinyxml.cpp
     external/tinyxml/tinystr.cpp
@@ -380,6 +405,7 @@ IF(ENABLE_DIGITAL_LAB)
 ENDIF()
 
 SET (cubicsdr_headers
+    ${cubicsdr_headers}
     src/CubicSDRDefs.h
     src/CubicSDR.h
     src/AppFrame.h
@@ -455,7 +481,6 @@ SET (cubicsdr_headers
     src/forms/Bookmark/BookmarkView.h
     src/forms/Dialog/ActionDialogBase.h
     src/forms/Dialog/ActionDialog.h
-    external/rtaudio/RtAudio.h
     external/lodepng/lodepng.h
     external/tinyxml/tinyxml.h
     external/tinyxml/tinystr.h
@@ -556,7 +581,6 @@ SOURCE_GROUP("Visual" REGULAR_EXPRESSION "src/visual/${REG_EXT}")
 SOURCE_GROUP("Panel" REGULAR_EXPRESSION "src/panel/${REG_EXT}")
 SOURCE_GROUP("Process" REGULAR_EXPRESSION "src/process/${REG_EXT}")
 SOURCE_GROUP("UI" REGULAR_EXPRESSION "src/ui/${REG_EXT}")
-SOURCE_GROUP("_ext-RTAudio" REGULAR_EXPRESSION "external/rtaudio/.*${REG_EXT}")
 SOURCE_GROUP("_ext-LodePNG" REGULAR_EXPRESSION "external/lodepng/.*${REG_EXT}")
 SOURCE_GROUP("_ext-TinyXML" REGULAR_EXPRESSION "external/tinyxml/.*${REG_EXT}")
 SOURCE_GROUP("_ext-CubicVR2" REGULAR_EXPRESSION "external/cubicvr2/.*${REG_EXT}")
@@ -580,7 +604,6 @@ include_directories (
     ${PROJECT_SOURCE_DIR}/src/ui
     ${PROJECT_SOURCE_DIR}/src/rig
     ${PROJECT_SOURCE_DIR}/src
-    ${PROJECT_SOURCE_DIR}/external/rtaudio
     ${PROJECT_SOURCE_DIR}/external/lodepng 
     ${PROJECT_SOURCE_DIR}/external/tinyxml
     ${PROJECT_SOURCE_DIR}/external/cubicvr2/math
