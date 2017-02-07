@@ -232,11 +232,6 @@ IF (UNIX AND NOT APPLE)
 
     SET(USE_SYSTEM_RTAUDIO OFF CACHE BOOL "Use the system RtAudio which in turn provides OSS, ALSA, JACK, PulseAudio support depending on how it was compiled")
 
-    SET(USE_AUDIO_PULSE ON CACHE BOOL "Use Pulse Audio")
-    SET(USE_AUDIO_JACK OFF CACHE BOOL "Use Jack Audio")
-    SET(USE_AUDIO_ALSA OFF CACHE BOOL "Use ALSA Audio")
-    SET(USE_AUDIO_OSS OFF CACHE BOOL "Use OSS Audio")
-  
     SET(LIQUID_LIB liquid)
     SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} dl)
 
@@ -248,6 +243,11 @@ IF (UNIX AND NOT APPLE)
     ELSE(USE_SYSTEM_RTAUDIO)
         use_included_rtaudio()
 
+        SET(USE_AUDIO_PULSE ON CACHE BOOL "Use Pulse Audio")
+        SET(USE_AUDIO_JACK OFF CACHE BOOL "Use Jack Audio")
+        SET(USE_AUDIO_ALSA OFF CACHE BOOL "Use ALSA Audio")
+        SET(USE_AUDIO_OSS OFF CACHE BOOL "Use OSS Audio")
+  
         IF(USE_AUDIO_PULSE)
            SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} pulse-simple pulse)
            ADD_DEFINITIONS(
