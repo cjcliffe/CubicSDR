@@ -37,7 +37,6 @@ wxBEGIN_EVENT_TABLE(AppFrame, wxFrame)
 //EVT_MENU(wxID_NEW, AppFrame::OnNewWindow)
 EVT_CLOSE(AppFrame::OnClose)
 EVT_MENU(wxID_ANY, AppFrame::OnMenu)
-EVT_COMMAND(wxID_ANY, wxEVT_THREAD, AppFrame::OnThread)
 EVT_IDLE(AppFrame::OnIdle)
 EVT_SPLITTER_DCLICK(wxID_ANY, AppFrame::OnDoubleClickSash)
 EVT_SPLITTER_UNSPLIT(wxID_ANY, AppFrame::OnUnSplit)
@@ -393,7 +392,9 @@ AppFrame::AppFrame() :
     // Make a menubar
     menuBar = new wxMenuBar;
     wxMenu *menu = new wxMenu;
-    
+#ifndef __APPLE__
+    menu->Append(wxID_ABOUT_CUBICSDR, "About " CUBICSDR_INSTALL_NAME);
+#endif
     menu->Append(wxID_SDR_DEVICES, "SDR Devices");
     menu->AppendSeparator();
     menu->Append(wxID_SDR_START_STOP, "Stop / Start Device");
@@ -410,7 +411,7 @@ AppFrame::AppFrame() :
 #else
         if ( wxApp::s_macAboutMenuItemId != wxID_NONE ) {
             wxString aboutLabel;
-            aboutLabel.Printf(_("About %s"), wxTheApp->GetAppDisplayName());
+            aboutLabel.Printf(_("About %s"), CUBICSDR_INSTALL_NAME);
             menu->Append( wxApp::s_macAboutMenuItemId, aboutLabel);
         }
 #endif
@@ -691,6 +692,7 @@ AppFrame::AppFrame() :
     devInfo = NULL;
     wxGetApp().deviceSelector();
     saveDisabled = false;
+    aboutDlg = nullptr;
             
 //    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
 //    wxLogStatus("Double-buffered display %s supported", wxGLCanvas::IsDisplaySupported(attribs) ? "is" : "not");
@@ -1005,14 +1007,22 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
 //        }
 //        return;
 //    }
-
+    
 #ifdef __APPLE__
     if (event.GetId() == wxApp::s_macAboutMenuItemId) {
-        wxMessageDialog *aboutDlg = new wxMessageDialog(NULL, wxT("CubicSDR v" CUBICSDR_VERSION "\nby Charles J. Cliffe (@ccliffe)\nwww.cubicsdr.com"), wxT("CubicSDR v" CUBICSDR_VERSION), wxOK);
-        aboutDlg->ShowModal();
-        return;
-    }
+#else 
+    if (event.GetId() == wxID_ABOUT_CUBICSDR) {
 #endif
+        if (aboutDlg != nullptr) {
+            aboutDlg->Raise();
+            aboutDlg->SetFocus();
+        } else {
+            aboutDlg = new AboutDialog(NULL);
+            aboutDlg->Connect( wxEVT_CLOSE_WINDOW, wxCommandEventHandler( AppFrame::OnAboutDialogClose ), NULL, this );
+
+            aboutDlg->Show();
+        }
+    }
 
     if (event.GetId() == wxID_SDR_START_STOP) {
         if (!wxGetApp().getSDRThread()->isTerminated()) {
@@ -1372,6 +1382,9 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
 
 void AppFrame::OnClose(wxCloseEvent& event) {
     wxGetApp().closeDeviceSelector();
+    if (aboutDlg) {
+        aboutDlg->Destroy();
+    }
 
     if (wxGetApp().getDemodSpectrumProcessor()) {
         wxGetApp().getDemodSpectrumProcessor()->removeOutput(demodSpectrumCanvas->getVisualDataQueue());
@@ -1422,11 +1435,6 @@ void AppFrame::OnClose(wxCloseEvent& event) {
 
 void AppFrame::OnNewWindow(wxCommandEvent& WXUNUSED(event)) {
     new AppFrame();
-}
-
-
-void AppFrame::OnThread(wxCommandEvent& event) {
-    event.Skip();
 }
 
 void AppFrame::OnIdle(wxIdleEvent& event) {
@@ -1827,7 +1835,10 @@ void AppFrame::OnUnSplit(wxSplitterEvent& event)
     event.Veto();
 }
 
-
+void AppFrame::OnAboutDialogClose(wxCommandEvent& event) {
+    aboutDlg->Destroy();
+    aboutDlg = nullptr;
+}
 
 void AppFrame::saveSession(std::string fileName) {
     DataTree s("cubicsdr_session");

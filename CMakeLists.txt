@@ -45,7 +45,7 @@ IF(CUSTOM_BUILD)
         )
     ENDIF()
 ELSE()
-    SET (CUBICSDR_BUILD_TITLE "CubicSDR v${CUBICSDR_VERSION} by Charles J. Cliffe (@ccliffe)  ::  www.cubicsdr.com")
+    SET (CUBICSDR_BUILD_TITLE "CubicSDR v${CUBICSDR_VERSION} :: www.cubicsdr.com")
     # bundle flags
     SET (CUBICSDR_INSTALL_NAME "CubicSDR")
     SET (CUBICSDR_INSTALL_TITLE "CubicSDR ${CUBICSDR_VERSION} Installer")
@@ -376,6 +376,8 @@ SET (cubicsdr_sources
     src/forms/Bookmark/BookmarkView.cpp
     src/forms/Dialog/ActionDialogBase.cpp
     src/forms/Dialog/ActionDialog.cpp
+    src/forms/Dialog/AboutDialogBase.cpp
+    src/forms/Dialog/AboutDialog.cpp
     external/lodepng/lodepng.cpp
     external/tinyxml/tinyxml.cpp
     external/tinyxml/tinystr.cpp
@@ -481,6 +483,8 @@ SET (cubicsdr_headers
     src/forms/Bookmark/BookmarkView.h
     src/forms/Dialog/ActionDialogBase.h
     src/forms/Dialog/ActionDialog.h
+    src/forms/Dialog/AboutDialogBase.h
+    src/forms/Dialog/AboutDialog.h
     external/lodepng/lodepng.h
     external/tinyxml/tinyxml.h
     external/tinyxml/tinystr.h
