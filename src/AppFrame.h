@@ -25,6 +25,7 @@
 //#include "UITestCanvas.h"
 #include "FrequencyDialog.h"
 #include "BookmarkView.h"
+#include "AboutDialog.h"
 
 #include <map>
 
@@ -39,6 +40,7 @@
 #define wxID_SDR_START_STOP 2010
 #define wxID_LOW_PERF 2011
 #define wxID_SET_DB_OFFSET 2012
+#define wxID_ABOUT_CUBICSDR 2013
 
 #define wxID_MAIN_SPLITTER 2050
 #define wxID_VIS_SPLITTER 2051
@@ -85,8 +87,6 @@ public:
     AppFrame();
     ~AppFrame();
 
-    void OnThread(wxCommandEvent& event);
-    void OnEventInput(wxThreadEvent& event);
     void initDeviceParams(SDRDeviceInfo *devInfo);
     void updateDeviceParams();
 
@@ -137,6 +137,7 @@ private:
     void OnIdle(wxIdleEvent& event);
     void OnDoubleClickSash(wxSplitterEvent& event);
     void OnUnSplit(wxSplitterEvent& event);
+    void OnAboutDialogClose(wxCommandEvent& event);
    
     //manage Display menu actions, return true if the event has been
     //treated.
@@ -203,6 +204,8 @@ private:
 
     wxMenuItem *hideBookmarksItem;
     bool saveDisabled;
+    
+    AboutDialog *aboutDlg;
 
 #ifdef USE_HAMLIB
     void enableRig();
