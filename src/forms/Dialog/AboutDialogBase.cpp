@@ -86,10 +86,10 @@ AboutDialogBase::AboutDialogBase( wxWindow* parent, wxWindowID id, const wxStrin
 	m_dbSizer->Add( m_dbtVS, 0, wxALL, 5 );
 	
 	
-	m_dbPane->Add( m_dbSizer, 0, wxEXPAND, 5 );
+	m_dbPane->Add( m_dbSizer, 0, wxALL|wxEXPAND, 5 );
 	
 	m_dbDivider1 = new wxStaticLine( m_dbScroll, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
-	m_dbPane->Add( m_dbDivider1, 0, wxBOTTOM|wxEXPAND|wxTOP, 10 );
+	m_dbPane->Add( m_dbDivider1, 0, wxALL|wxEXPAND, 10 );
 	
 	wxFlexGridSizer* m_cSizer;
 	m_cSizer = new wxFlexGridSizer( 0, 2, 2, 20 );
@@ -173,7 +173,7 @@ AboutDialogBase::AboutDialogBase( wxWindow* parent, wxWindowID id, const wxStrin
 	m_cSizer->Add( m_cghIC, 0, wxALL, 5 );
 	
 	
-	m_dbPane->Add( m_cSizer, 0, wxEXPAND, 5 );
+	m_dbPane->Add( m_cSizer, 0, wxALL|wxEXPAND, 5 );
 	
 	
 	m_dbScroll->SetSizer( m_dbPane );
@@ -182,10 +182,11 @@ AboutDialogBase::AboutDialogBase( wxWindow* parent, wxWindowID id, const wxStrin
 	m_aboutNotebook->AddPage( m_dbScroll, wxT("Developers"), false );
 	m_dScroll = new wxScrolledWindow( m_aboutNotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxVSCROLL );
 	m_dScroll->SetScrollRate( 5, 5 );
-	wxFlexGridSizer* m_dSizer;
-	m_dSizer = new wxFlexGridSizer( 0, 1, 2, 20 );
-	m_dSizer->SetFlexibleDirection( wxBOTH );
-	m_dSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_ALL );
+	wxBoxSizer* m_dBSizer;
+	m_dBSizer = new wxBoxSizer( wxVERTICAL );
+	
+	wxBoxSizer* m_dSizer;
+	m_dSizer = new wxBoxSizer( wxVERTICAL );
 	
 	m_dHeader = new wxStaticText( m_dScroll, wxID_ANY, wxT("Thanks to everyone who donated at cubicsdr.com!"), wxDefaultPosition, wxDefaultSize, wxST_NO_AUTORESIZE );
 	m_dHeader->Wrap( -1 );
@@ -341,12 +342,18 @@ AboutDialogBase::AboutDialogBase( wxWindow* parent, wxWindowID id, const wxStrin
 	m_dSizer->Add( m_dKeshavlalPatel, 0, wxALL, 5 );
 	
 	
-	m_dScroll->SetSizer( m_dSizer );
+	m_dBSizer->Add( m_dSizer, 1, wxALL|wxEXPAND, 5 );
+	
+	
+	m_dScroll->SetSizer( m_dBSizer );
 	m_dScroll->Layout();
-	m_dSizer->Fit( m_dScroll );
+	m_dBSizer->Fit( m_dScroll );
 	m_aboutNotebook->AddPage( m_dScroll, wxT("Donations"), false );
 	m_stScroll = new wxScrolledWindow( m_aboutNotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxVSCROLL );
 	m_stScroll->SetScrollRate( 5, 5 );
+	wxBoxSizer* m_stBSizer;
+	m_stBSizer = new wxBoxSizer( wxVERTICAL );
+	
 	wxBoxSizer* m_stSizer;
 	m_stSizer = new wxBoxSizer( wxVERTICAL );
 	
@@ -432,9 +439,12 @@ AboutDialogBase::AboutDialogBase( wxWindow* parent, wxWindowID id, const wxStrin
 	m_stSizer->Add( m_stNominate, 0, wxALL, 5 );
 	
 	
-	m_stScroll->SetSizer( m_stSizer );
+	m_stBSizer->Add( m_stSizer, 1, wxALL|wxEXPAND, 5 );
+	
+	
+	m_stScroll->SetSizer( m_stBSizer );
 	m_stScroll->Layout();
-	m_stSizer->Fit( m_stScroll );
+	m_stBSizer->Fit( m_stScroll );
 	m_aboutNotebook->AddPage( m_stScroll, wxT("Special Thanks"), false );
 	
 	dlgSizer->Add( m_aboutNotebook, 1, wxEXPAND | wxALL, 5 );

@@ -131,7 +131,7 @@ class AboutDialogBase : public wxDialog
 	
 	public:
 		
-		AboutDialogBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("About"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 436,378 ), long style = wxDEFAULT_DIALOG_STYLE ); 
+		AboutDialogBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("About"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 530,420 ), long style = wxDEFAULT_DIALOG_STYLE ); 
 		~AboutDialogBase();
 	
 };
