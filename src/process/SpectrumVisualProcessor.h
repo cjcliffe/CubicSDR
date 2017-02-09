@@ -19,7 +19,7 @@ public:
     int bandwidth;
 };
 
-typedef ThreadQueue<SpectrumVisualData *> SpectrumVisualDataQueue;
+typedef ThreadBlockingQueue<SpectrumVisualData *> SpectrumVisualDataQueue;
 
 class SpectrumVisualProcessor : public VisualProcessor<DemodulatorThreadIQData, SpectrumVisualData> {
 public:

@@ -3,6 +3,7 @@
 
 #include "FFTDataDistributor.h"
 #include <algorithm>
+#include <ThreadBlockingQueue.h>
 
 FFTDataDistributor::FFTDataDistributor() : outputBuffers("FFTDataDistributorBuffers"), fftSize(DEFAULT_FFT_SIZE), linesPerSecond(DEFAULT_WATERFALL_LPS), lineRateAccum(0.0) {
 
@@ -109,7 +110,8 @@ void FFTDataDistributor::process() {
 						outp->sampleRate = inputBuffer.sampleRate;
 						outp->data.assign(inputBuffer.data.begin()+bufferOffset+i,
                                           inputBuffer.data.begin()+bufferOffset+i+ fftSize);
-						distribute(outp);
+                        //authorize distribute with losses
+						distribute(outp, NON_BLOCKING_TIMEOUT);
 
 						while (lineRateAccum >= 1.0) {
 							lineRateAccum -= 1.0;

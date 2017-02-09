@@ -10,7 +10,7 @@
 #include <atomic>
 
 #include "AudioThread.h"
-#include "ThreadQueue.h"
+#include "ThreadBlockingQueue.h"
 #include "RtAudio.h"
 #include "DemodDefs.h"
 
@@ -48,8 +48,8 @@ public:
     int int_value;
 };
 
-typedef ThreadQueue<AudioThreadInput *> AudioThreadInputQueue;
-typedef ThreadQueue<AudioThreadCommand> AudioThreadCommandQueue;
+typedef ThreadBlockingQueue<AudioThreadInput *> AudioThreadInputQueue;
+typedef ThreadBlockingQueue<AudioThreadCommand> AudioThreadCommandQueue;
 
 class AudioThread : public IOThread {
 public:

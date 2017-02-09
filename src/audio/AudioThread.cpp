@@ -282,6 +282,7 @@ void AudioThread::setDeviceSampleRate(int deviceId, int sampleRate) {
         AudioThreadCommand refreshDevice;
         refreshDevice.cmd = AudioThreadCommand::AUDIO_THREAD_CMD_SET_SAMPLE_RATE;
         refreshDevice.int_value = sampleRate;
+        //VSO : blocking push !
         deviceController[deviceId]->getCommandQueue()->push(refreshDevice);
     }
 }
@@ -479,6 +480,7 @@ void AudioThread::run() {
 void AudioThread::terminate() {
     IOThread::terminate();
     AudioThreadCommand endCond;   // push an empty input to bump the queue
+    //VSO: blocking push
     cmdQueue.push(endCond);
 }
 

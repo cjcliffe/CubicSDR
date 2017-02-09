@@ -12,7 +12,7 @@
 #include "GLExt.h"
 #include "PrimaryGLContext.h"
 
-#include "ThreadQueue.h"
+#include "ThreadBlockingQueue.h"
 #include "SoapySDRThread.h"
 #include "SDREnumerator.h"
 #include "SDRPostThread.h"

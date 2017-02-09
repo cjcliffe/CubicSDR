@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include "ThreadQueue.h"
+#include "ThreadBlockingQueue.h"
 #include "CubicSDRDefs.h"
 #include "liquid/liquid.h"
-
+#include <vector>
 #include <atomic>
 #include <mutex>
 
@@ -100,6 +100,6 @@ public:
     }
 };
 
-typedef ThreadQueue<DemodulatorThreadIQData *> DemodulatorThreadInputQueue;
-typedef ThreadQueue<DemodulatorThreadPostIQData *> DemodulatorThreadPostInputQueue;
-typedef ThreadQueue<DemodulatorThreadControlCommand> DemodulatorThreadControlCommandQueue;
+typedef ThreadBlockingQueue<DemodulatorThreadIQData *> DemodulatorThreadInputQueue;
+typedef ThreadBlockingQueue<DemodulatorThreadPostIQData *> DemodulatorThreadPostInputQueue;
+typedef ThreadBlockingQueue<DemodulatorThreadControlCommand> DemodulatorThreadControlCommandQueue;

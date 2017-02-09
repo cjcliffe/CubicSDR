@@ -53,7 +53,9 @@ DemodulatorInstance::DemodulatorInstance() {
     user_label.store(new std::wstring());
 
     pipeIQInputData = new DemodulatorThreadInputQueue;
+    pipeIQInputData->set_max_num_items(100);
     pipeIQDemodData = new DemodulatorThreadPostInputQueue;
+    pipeIQInputData->set_max_num_items(100);
     
     audioThread = new AudioThread();
             
@@ -62,7 +64,10 @@ DemodulatorInstance::DemodulatorInstance() {
     demodulatorPreThread->setOutputQueue("IQDataOutput",pipeIQDemodData);
             
     pipeAudioData = new AudioThreadInputQueue;
+    pipeAudioData->set_max_num_items(10);
+
     threadQueueControl = new DemodulatorThreadControlCommandQueue;
+    threadQueueControl->set_max_num_items(2);
 
     demodulatorThread = new DemodulatorThread(this);
     demodulatorThread->setInputQueue("IQDataInput",pipeIQDemodData);
@@ -241,6 +246,7 @@ void DemodulatorInstance::setActive(bool state) {
 void DemodulatorInstance::squelchAuto() {
     DemodulatorThreadControlCommand command;
     command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_ON;
+    //VSO: blocking push
     threadQueueControl->push(command);
     squelch = true;
 }
@@ -257,6 +263,7 @@ void DemodulatorInstance::setSquelchEnabled(bool state) {
     } else if (state && !squelch) {
         DemodulatorThreadControlCommand command;
         command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_ON;
+        //VSO: blocking push!
         threadQueueControl->push(command);
     }
 
@@ -292,6 +299,7 @@ void DemodulatorInstance::setOutputDevice(int device_id) {
         AudioThreadCommand command;
         command.cmd = AudioThreadCommand::AUDIO_THREAD_CMD_SET_DEVICE;
         command.int_value = device_id;
+        //VSO: blocking push
         audioThread->getCommandQueue()->push(command);
     }
     setAudioSampleRate(AudioThread::deviceSampleRate[device_id]);

@@ -101,11 +101,10 @@ void DemodulatorWorkerThread::run() {
             result.modemType = cModemType;
             result.modemName = cModemName;
             
+            //VSO: blocking push
             resultQueue->push(result);
         }
-
     }
-
 //    std::cout << "Demodulator worker thread done." << std::endl;
 }
 

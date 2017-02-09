@@ -4,7 +4,7 @@
 #pragma once
 
 #include "CubicSDRDefs.h"
-#include "ThreadQueue.h"
+#include "ThreadBlockingQueue.h"
 #include "IOThread.h"
 #include <algorithm>
 #include <vector>
@@ -12,8 +12,8 @@
 template<typename InputDataType = ReferenceCounter, typename OutputDataType = ReferenceCounter>
 class VisualProcessor {
     //
-    typedef  ThreadQueue<InputDataType*> VisualInputQueueType;
-    typedef  ThreadQueue<OutputDataType*> VisualOutputQueueType;
+    typedef typename ThreadBlockingQueue<InputDataType*> VisualInputQueueType;
+    typedef typename ThreadBlockingQueue<OutputDataType*> VisualOutputQueueType;
     typedef typename std::vector< VisualOutputQueueType *>::iterator outputs_i;
 public:
 	virtual ~VisualProcessor() {
@@ -94,7 +94,9 @@ protected:
     //To be used by derived classes implementing 
     //process() : will dispatch 'item' into as many 
     //available outputs, previously set by attachOutput().
-    void distribute(OutputDataType *item) {
+    //* \param[in] timeout The number of microseconds to wait to push an item in each one of the outputs, 0(default) means indefinite wait.
+    //* \param[in] errorMessage an error message written on std::cout in case pf push timeout.
+    void distribute(OutputDataType *item, std::uint64_t timeout = BLOCKING_INFINITE_TIMEOUT, const char* errorMessage = "") {
       
         std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
         //We will try to distribute 'output' among all 'outputs',
@@ -103,11 +105,11 @@ protected:
         item->setRefCount((int)outputs.size());
         for (outputs_i it = outputs.begin(); it != outputs.end(); it++) {
             //if 'output' failed to be given to an outputs_i, dec its ref count accordingly.
-        	if (!(*it)->push(item)) {
+            //blocking push, with a timeout
+        	if (!(*it)->push(item, timeout, errorMessage)) {
                 item->decRefCount();
         	} 
         }
-
         // Now 'item' refcount matches the times 'item' has been successfully distributed,
         //i.e shared among the outputs.
     }

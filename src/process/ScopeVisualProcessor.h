@@ -19,7 +19,7 @@ public:
     double fft_floor, fft_ceil;
 };
 
-typedef ThreadQueue<ScopeRenderData *> ScopeRenderDataQueue;
+typedef ThreadBlockingQueue<ScopeRenderData *> ScopeRenderDataQueue;
 
 class ScopeVisualProcessor : public VisualProcessor<AudioThreadInput, ScopeRenderData> {
 public:

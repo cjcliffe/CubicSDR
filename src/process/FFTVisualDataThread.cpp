@@ -53,7 +53,6 @@ void FFTVisualDataThread::run() {
         //this if fed by FFTDataDistributor which has a buffer of FFT_DISTRIBUTOR_BUFFER_IN_SECONDS
         //so sleep for << FFT_DISTRIBUTOR_BUFFER_IN_SECONDS not to be overflown
         std::this_thread::sleep_for(std::chrono::milliseconds((int)(FFT_DISTRIBUTOR_BUFFER_IN_SECONDS * 1000.0 / 25.0)));
-//        std::this_thread::yield();
         
         int fftSize = wproc.getDesiredInputSize();
         
@@ -65,7 +64,6 @@ void FFTVisualDataThread::run() {
     
         if (lpsChanged.load()) {
             fftDistrib.setLinesPerSecond(linesPerSecond.load());
-//            pipeIQDataIn->set_max_num_items(linesPerSecond.load());
             lpsChanged.store(false);
         }
         

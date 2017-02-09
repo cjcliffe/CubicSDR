@@ -5,7 +5,7 @@
 
 #include <atomic>
 
-#include "ThreadQueue.h"
+#include "ThreadBlockingQueue.h"
 #include "DemodulatorMgr.h"
 #include "SDRDeviceInfo.h"
 #include "AppConfig.h"
@@ -39,7 +39,7 @@ public:
     }
 };
 
-typedef ThreadQueue<SDRThreadIQData *> SDRThreadIQDataQueue;
+typedef ThreadBlockingQueue<SDRThreadIQData *> SDRThreadIQDataQueue;
 
 class SDRThread : public IOThread {
 private:

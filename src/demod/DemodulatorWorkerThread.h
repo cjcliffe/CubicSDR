@@ -8,7 +8,7 @@
 
 #include "liquid/liquid.h"
 #include "AudioThread.h"
-#include "ThreadQueue.h"
+#include "ThreadBlockingQueue.h"
 #include "CubicSDRDefs.h"
 #include "Modem.h"
 
@@ -69,8 +69,8 @@ public:
     ModemSettings settings;
 };
 
-typedef ThreadQueue<DemodulatorWorkerThreadCommand> DemodulatorThreadWorkerCommandQueue;
-typedef ThreadQueue<DemodulatorWorkerThreadResult> DemodulatorThreadWorkerResultQueue;
+typedef ThreadBlockingQueue<DemodulatorWorkerThreadCommand> DemodulatorThreadWorkerCommandQueue;
+typedef ThreadBlockingQueue<DemodulatorWorkerThreadResult> DemodulatorThreadWorkerResultQueue;
 
 class DemodulatorWorkerThread : public IOThread {
 public:
