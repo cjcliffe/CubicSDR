@@ -40,9 +40,17 @@ void ScopeContext::DrawTunerTitles(bool ppmMode) {
 
     GLFont::Drawer refDrawingFont = GLFont::getFont(12, GLFont::getScaleFactor());
 
-    refDrawingFont.drawString(ppmMode?"Device PPM":"Frequency", -0.66f, -1.0+hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
-    refDrawingFont.drawString("Bandwidth", 0.0, -1.0+hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
-    refDrawingFont.drawString("Center Frequency", 0.66f, -1.0+hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+    //better position frequency/bandwith labels according to font scale
+    double shiftFactor = 1.0;
+    if (GLFont::getScaleFactor() == GLFont::GLFONT_SCALE_MEDIUM) {
+        shiftFactor = 1.5;
+    } else if (GLFont::getScaleFactor() == GLFont::GLFONT_SCALE_LARGE) {
+        shiftFactor = 2.0;
+    }
+
+    refDrawingFont.drawString(ppmMode?"Device PPM":"Frequency", -0.66f, -1.0 +hPos*shiftFactor, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+    refDrawingFont.drawString("Bandwidth", 0.0, -1.0 +hPos*shiftFactor, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+    refDrawingFont.drawString("Center Frequency", 0.66f, -1.0  +hPos*shiftFactor, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
 }
 
 void ScopeContext::DrawDeviceName(std::string deviceName) {

@@ -391,16 +391,26 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
     //     demodStr = demodStr + " UnLock";
     // }
 
+    //Shift the user label from the modem label more for the bigger 
+    //font sizes so they do not step on each other...
+    double heightShiftFactor = 1.3;
+
+    if (GLFont::getScale() == GLFont::GLFONT_SCALE_MEDIUM) {
+        heightShiftFactor = 1.7;
+    } else if (GLFont::getScale() == GLFont::GLFONT_SCALE_LARGE) {
+        heightShiftFactor = 2.3;
+    }
+
     //demodulator user label if present: type is displayed above the label, which is at the bottom of the screen.
     if (!demod->getDemodulatorUserLabel().empty()) {
-        hPos += 1.3 * labelHeight;
+        hPos += heightShiftFactor * labelHeight;
     }
 
     drawSingleDemodLabel(demodStr.ToStdWstring(), uxPos, hPos, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
 
     //revert...
     if (!demod->getDemodulatorUserLabel().empty()) {
-       hPos -= 1.3 * labelHeight;
+       hPos -= heightShiftFactor * labelHeight;
        drawSingleDemodLabel(demod->getDemodulatorUserLabel(), uxPos, hPos, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
     }
 
