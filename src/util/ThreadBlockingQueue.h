@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <stddef.h>
 #include <condition_variable>
-#include <ThreadQueue.h>
+#include <typeinfo>
 
 #define MIN_ITEM_NB (1)
 
@@ -21,6 +21,9 @@
 //an indefnite timeout duration. 
 #define BLOCKING_INFINITE_TIMEOUT (0)
 
+class ThreadQueueBase {
+};
+
 /** A thread-safe asynchronous blocking queue */
 template<typename T>
 class ThreadBlockingQueue : public ThreadQueueBase {
@@ -29,7 +32,6 @@ class ThreadBlockingQueue : public ThreadQueueBase {
     typedef typename std::deque<T>::size_type size_type;
 
 public:
-    
 
     /*! Create safe blocking queue. */
     ThreadBlockingQueue() {
@@ -37,6 +39,7 @@ public:
         m_max_num_items = MIN_ITEM_NB;
     };
     
+    //Copy constructor
     ThreadBlockingQueue(const ThreadBlockingQueue& sq) {
         std::lock_guard < std::mutex > lock(sq.m_mutex);
         m_queue = sq.m_queue;
@@ -57,7 +60,7 @@ public:
         std::lock_guard < std::mutex > lock(m_mutex);
 
         if (max_num_items > m_max_num_items) {
-            //Only raise the existing max size, never squash it
+            //Only raise the existing max size, never reduce it
             //for simplification sake at runtime.
             m_max_num_items = max_num_items;
             m_cond_not_full.notify_all();

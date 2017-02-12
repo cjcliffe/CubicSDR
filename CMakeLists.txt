@@ -441,7 +441,6 @@ SET (cubicsdr_headers
     src/audio/AudioThread.h
     src/util/Gradient.h
     src/util/Timer.h
-    src/util/ThreadQueue.h
 	src/util/ThreadBlockingQueue.h
     src/util/MouseTracker.h
     src/util/GLExt.h

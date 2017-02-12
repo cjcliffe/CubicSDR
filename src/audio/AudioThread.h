@@ -9,7 +9,6 @@
 #include <string>
 #include <atomic>
 
-#include "AudioThread.h"
 #include "ThreadBlockingQueue.h"
 #include "RtAudio.h"
 #include "DemodDefs.h"
