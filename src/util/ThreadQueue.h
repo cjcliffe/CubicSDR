@@ -9,42 +9,41 @@
  * Changes:
  *   Charles J. Nov-19-2014
  *     - Renamed SafeQueue -> ThreadQueue 
+ *   Sonnier.V Feb-10-2017
+ *     - Simplified, various fixes
  */
 
-#include <queue>
+#include <deque>
 #include <list>
 #include <mutex>
 #include <thread>
 #include <cstdint>
 #include <condition_variable>
-#include <atomic>
 
-class ThreadQueueBase {
-    
+class ThreadQueueBase {   
 };
 
 /** A thread-safe asynchronous queue */
-template<class T, class Container = std::list<T>>
+template<typename T>
 class ThreadQueue : public ThreadQueueBase {
 
-    typedef typename Container::value_type value_type;
-    typedef typename Container::size_type size_type;
-    typedef Container container_type;
+    typedef typename std::deque<T>::value_type value_type;
+    typedef typename std::deque<T>::size_type size_type;
 
 public:
 
     /*! Create safe queue. */
     ThreadQueue() {
-        m_max_num_items.store(0);
+        m_max_num_items = 0;
     };
     ThreadQueue(ThreadQueue&& sq) {
         m_queue = std::move(sq.m_queue);
-        m_max_num_items.store(0);
+        m_max_num_items = sq.m_max_num_items;
     }
     ThreadQueue(const ThreadQueue& sq) {
         std::lock_guard < std::mutex > lock(sq.m_mutex);
         m_queue = sq.m_queue;
-        m_max_num_items.store(0);
+        m_max_num_items = sq.m_max_num_items;
     }
 
     /*! Destroy safe queue. */
@@ -58,9 +57,7 @@ public:
      */
     void set_max_num_items(unsigned int max_num_items) {
         std::lock_guard < std::mutex > lock(m_mutex);
-        if (m_max_num_items.load() != max_num_items) {
-            m_max_num_items.store(max_num_items);
-        }
+        m_max_num_items = max_num_items;  
     }
 
     /**
@@ -71,13 +68,12 @@ public:
     bool push(const value_type& item) {
         std::lock_guard < std::mutex > lock(m_mutex);
 
-        if (m_max_num_items.load() > 0 && m_queue.size() > m_max_num_items.load()) {
-            m_condition.notify_all();
+        if (m_max_num_items > 0 && m_queue.size() > m_max_num_items) {
             return false;
         }
 
-        m_queue.push(item);
-        m_condition.notify_all();
+        m_queue.push_back(item);
+        m_cond_not_empty.notify_all();
         return true;
     }
 
@@ -89,13 +85,12 @@ public:
     bool push(const value_type&& item) {
         std::lock_guard < std::mutex > lock(m_mutex);
 
-        if (m_max_num_items.load() > 0 && m_queue.size() > m_max_num_items.load()) {
-            m_condition.notify_all();
+        if (m_max_num_items > 0 && m_queue.size() > m_max_num_items) {
             return false;
         }
 
-        m_queue.push(item);
-        m_condition.notify_all();
+        m_queue.push_back(item);
+        m_cond_not_empty.notify_all();
         return true;
     }
 
@@ -105,12 +100,12 @@ public:
      */
     void pop(value_type& item) {
         std::unique_lock < std::mutex > lock(m_mutex);
-        m_condition.wait(lock, [this]() // Lambda funct
+        m_cond_not_empty.wait(lock, [this]() // Lambda funct
                 {
                     return !m_queue.empty();
                 });
         item = m_queue.front();
-        m_queue.pop();
+        m_queue.pop_front();
     }
 
     /**
@@ -121,12 +116,12 @@ public:
      */
     void move_pop(value_type& item) {
         std::unique_lock < std::mutex > lock(m_mutex);
-        m_condition.wait(lock, [this]() // Lambda funct
+        m_cond_not_empty.wait(lock, [this]() // Lambda funct
                 {
                     return !m_queue.empty();
                 });
         item = std::move(m_queue.front());
-        m_queue.pop();
+        m_queue.pop_front();
     }
 
     /**
@@ -135,13 +130,13 @@ public:
      * \return False is returned if no item is available.
      */
     bool try_pop(value_type& item) {
-        std::unique_lock < std::mutex > lock(m_mutex);
+        std::lock_guard < std::mutex > lock(m_mutex);
 
         if (m_queue.empty())
             return false;
 
         item = m_queue.front();
-        m_queue.pop();
+        m_queue.pop_front();
         return true;
     }
 
@@ -152,13 +147,13 @@ public:
      * \return False is returned if no item is available.
      */
     bool try_move_pop(value_type& item) {
-        std::unique_lock < std::mutex > lock(m_mutex);
+        std::lock_guard < std::mutex > lock(m_mutex);
 
         if (m_queue.empty())
             return false;
 
         item = std::move(m_queue.front());
-        m_queue.pop();
+        m_queue.pop_front();
         return true;
     }
 
@@ -175,12 +170,12 @@ public:
             if (timeout == 0)
                 return false;
 
-            if (m_condition.wait_for(lock, std::chrono::microseconds(timeout)) == std::cv_status::timeout)
+            if (m_cond_not_empty.wait_for(lock, std::chrono::microseconds(timeout)) == std::cv_status::timeout)
                 return false;
         }
 
         item = m_queue.front();
-        m_queue.pop();
+        m_queue.pop_front();
         return true;
     }
 
@@ -199,12 +194,12 @@ public:
             if (timeout == 0)
                 return false;
 
-            if (m_condition.wait_for(lock, std::chrono::microseconds(timeout)) == std::cv_status::timeout)
+            if (m_cond_not_empty.wait_for(lock, std::chrono::microseconds(timeout)) == std::cv_status::timeout)
                 return false;
         }
 
         item = std::move(m_queue.front());
-        m_queue.pop();
+        m_queue.pop_front();
         return true;
     }
 
@@ -232,7 +227,7 @@ public:
      */
     bool full() const {
         std::lock_guard < std::mutex > lock(m_mutex);
-        return (m_max_num_items.load() != 0) && (m_queue.size() >= m_max_num_items.load());
+        return (m_max_num_items != 0) && (m_queue.size() >= m_max_num_items);
     }
 
     /**
@@ -240,9 +235,7 @@ public:
      */
     void flush() {
         std::lock_guard < std::mutex > lock(m_mutex);
-        m_queue = std::queue<T, Container>();
-        std::queue<T, Container> emptyQueue;
-        std::swap(m_queue, emptyQueue);
+        m_queue.clear();
     }
 
     /**
@@ -254,12 +247,14 @@ public:
             std::lock_guard < std::mutex > lock1(m_mutex);
             std::lock_guard < std::mutex > lock2(sq.m_mutex);
             m_queue.swap(sq.m_queue);
+            std::swap(m_max_num_items, sq.m_max_num_items);
 
             if (!m_queue.empty())
-                m_condition.notify_all();
+                m_cond_not_empty.notify_all();
+   
 
             if (!sq.m_queue.empty())
-                sq.m_condition.notify_all();
+                sq.m_cond_not_empty.notify_all();
         }
     }
 
@@ -268,11 +263,12 @@ public:
         if (this != &sq) {
             std::lock_guard < std::mutex > lock1(m_mutex);
             std::lock_guard < std::mutex > lock2(sq.m_mutex);
-            std::queue<T, Container> temp { sq.m_queue };
-            m_queue.swap(temp);
+   
+            m_queue = sq.m_queue;
+            m_max_num_items = sq.m_max_num_items;
 
-            if (!m_queue.empty())
-                m_condition.notify_all();
+            if (!m_queue.empty()) 
+                m_cond_not_empty.notify_all();
         }
 
         return *this;
@@ -282,23 +278,25 @@ public:
     ThreadQueue& operator=(ThreadQueue && sq) {
         std::lock_guard < std::mutex > lock(m_mutex);
         m_queue = std::move(sq.m_queue);
+        m_max_num_items = sq.m_max_num_items;
 
-        if (!m_queue.empty())
-            m_condition.notify_all();
-
+        if (!m_queue.empty()) 
+            m_cond_not_empty.notify_all();
+      
         return *this;
     }
 
 private:
 
-    std::queue<T, Container> m_queue;
+    std::deque<T> m_queue;
+
     mutable std::mutex m_mutex;
-    std::condition_variable m_condition;
-    std::atomic_uint m_max_num_items;
+    std::condition_variable m_cond_not_empty;
+    size_t m_max_num_items;
 };
 
 /*! Swaps the contents of two ThreadQueue objects. */
-template<class T, class Container>
-void swap(ThreadQueue<T, Container>& q1, ThreadQueue<T, Container>& q2) {
+template<typename T>
+void swap(ThreadQueue<T>& q1, ThreadQueue<T>& q2) {
     q1.swap(q2);
 }

@@ -7,9 +7,14 @@
 #include "ThreadQueue.h"
 #include "IOThread.h"
 #include <algorithm>
+#include <vector>
 
-template<class InputDataType = ReferenceCounter, class OutputDataType = ReferenceCounter>
+template<typename InputDataType = ReferenceCounter, typename OutputDataType = ReferenceCounter>
 class VisualProcessor {
+    //
+    typedef typename ThreadQueue<InputDataType*> VisualInputQueueType;
+    typedef typename ThreadQueue<OutputDataType*> VisualOutputQueueType;
+    typedef typename std::vector< VisualOutputQueueType *>::iterator outputs_i;
 public:
 	virtual ~VisualProcessor() {
 
@@ -24,8 +29,8 @@ public:
     bool isOutputEmpty() {
         std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
 
-        for (outputs_i = outputs.begin(); outputs_i != outputs.end(); outputs_i++) {
-            if ((*outputs_i)->full()) {
+        for (outputs_i it = outputs.begin(); it != outputs.end(); it++) {
+            if ((*it)->full()) {
                 return false;
             }
         }
@@ -35,8 +40,8 @@ public:
     bool isAnyOutputEmpty() {
         std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
 
-        for (outputs_i = outputs.begin(); outputs_i != outputs.end(); outputs_i++) {
-            if (!(*outputs_i)->full()) {
+        for (outputs_i it = outputs.begin();  it != outputs.end(); it++) {
+            if (!(*it)->full()) {
                 return true;
             }
         }
@@ -44,7 +49,7 @@ public:
     }
 
     //Set a (new) 'input' queue for incoming data.
-    void setInput(ThreadQueue<InputDataType *> *vis_in) {
+    void setInput(VisualInputQueueType *vis_in) {
         std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
         input = vis_in;
         
@@ -52,18 +57,18 @@ public:
     
     //Add a vis_out queue where to consumed 'input' data will be
     //dispatched by distribute(). 
-    void attachOutput(ThreadQueue<OutputDataType *> *vis_out) {
+    void attachOutput(VisualOutputQueueType *vis_out) {
         // attach an output queue
         std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
         outputs.push_back(vis_out);
     }
     
     //reverse of attachOutput(), removed an existing attached vis_out.
-    void removeOutput(ThreadQueue<OutputDataType *> *vis_out) {
+    void removeOutput(VisualOutputQueueType *vis_out) {
         // remove an output queue
         std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
 
-        typename std::vector<ThreadQueue<OutputDataType *> *>::iterator i = std::find(outputs.begin(), outputs.end(), vis_out);
+        outputs_i i = std::find(outputs.begin(), outputs.end(), vis_out);
         if (i != outputs.end()) {
             outputs.erase(i);
         }
@@ -96,9 +101,9 @@ protected:
         //so 'output' will a-priori be shared among all 'outputs' so set its ref count to this 
         //amount.
         item->setRefCount((int)outputs.size());
-        for (outputs_i = outputs.begin(); outputs_i != outputs.end(); outputs_i++) {
+        for (outputs_i it = outputs.begin(); it != outputs.end(); it++) {
             //if 'output' failed to be given to an outputs_i, dec its ref count accordingly.
-        	if (!(*outputs_i)->push(item)) {
+        	if (!(*it)->push(item)) {
                 item->decRefCount();
         	} 
         }
@@ -108,12 +113,10 @@ protected:
     }
 
     //the incoming data queue 
-    ThreadQueue<InputDataType *> *input = nullptr;
+    VisualInputQueueType *input = nullptr;
     
     //the n-outputs where to process()-ed data is distribute()-ed.
-    std::vector<ThreadQueue<OutputDataType *> *> outputs;
-	
-    typename std::vector<ThreadQueue<OutputDataType *> *>::iterator outputs_i;
+    std::vector<VisualOutputQueueType *> outputs;
 
     //protects input and outputs, must be recursive because of re-entrance
     std::recursive_mutex busy_update;
@@ -122,7 +125,7 @@ protected:
 //Specialization much like VisualDataReDistributor, except 
 //the input (pointer) is directly re-dispatched
 //to outputs, so that all output indeed SHARE the same instance. 
-template<class OutputDataType = ReferenceCounter>
+template<typename OutputDataType = ReferenceCounter>
 class VisualDataDistributor : public VisualProcessor<OutputDataType, OutputDataType> {
 protected:
     virtual void process() {
@@ -145,7 +148,7 @@ protected:
 
 //specialization class which process() take an input item and re-dispatch
 //A COPY to every outputs, without further processing. This is a 1-to-n dispatcher. 
-template<class OutputDataType = ReferenceCounter>
+template<typename OutputDataType = ReferenceCounter>
 class VisualDataReDistributor : public VisualProcessor<OutputDataType, OutputDataType> {
 protected:
     virtual void process() {
