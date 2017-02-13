@@ -393,29 +393,18 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
 
     //Shift the user label from the modem label more for the bigger 
     //font sizes so they do not step on each other...
-    double heightShiftFactor = 1.3;
-
-    if (GLFont::getScale() == GLFont::GLFONT_SCALE_MEDIUM) {
-        heightShiftFactor = 1.7;
-    } else if (GLFont::getScale() == GLFont::GLFONT_SCALE_LARGE) {
-        heightShiftFactor = 2.3;
-    }
+    double heightShift = GLFont::getScaleFactor();
 
     //demodulator user label if present: type is displayed above the label, which is at the bottom of the screen.
     if (!demod->getDemodulatorUserLabel().empty()) {
-        hPos += heightShiftFactor * labelHeight;
+        drawSingleDemodLabel(demodStr.ToStdWstring(), uxPos, hPos * 1.2 + hPos * 1.2 * heightShift, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
+        drawSingleDemodLabel(demod->getDemodulatorUserLabel(), uxPos, hPos * 1.2, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
     }
-
-    drawSingleDemodLabel(demodStr.ToStdWstring(), uxPos, hPos, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
-
-    //revert...
-    if (!demod->getDemodulatorUserLabel().empty()) {
-       hPos -= heightShiftFactor * labelHeight;
-       drawSingleDemodLabel(demod->getDemodulatorUserLabel(), uxPos, hPos, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
+    else {
+        drawSingleDemodLabel(demodStr.ToStdWstring(), uxPos, hPos * 1.2, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
     }
 
     glDisable(GL_BLEND);
-
 }
 
 void PrimaryGLContext::drawSingleDemodLabel(const std::wstring& demodStr, float uxPos, float hPos, float xOfs, float yOfs, GLFont::Align demodAlign) {
@@ -423,14 +412,10 @@ void PrimaryGLContext::drawSingleDemodLabel(const std::wstring& demodStr, float 
     GLFont::Drawer refDrawingFont = GLFont::getFont(16, GLFont::getScaleFactor());
 
     glColor3f(0, 0, 0);
-    refDrawingFont.drawString(demodStr, 2.0 * (uxPos - 0.5) + xOfs,
-        -1.0 + hPos - yOfs, demodAlign,
-        GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+    refDrawingFont.drawString(demodStr, 2.0 * (uxPos - 0.5) + xOfs, -1.0 + hPos - yOfs, demodAlign, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
     
     glColor3f(1, 1, 1);
-    refDrawingFont.drawString(demodStr, 2.0 * (uxPos - 0.5),
-        -1.0 + hPos, demodAlign,
-        GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+    refDrawingFont.drawString(demodStr, 2.0 * (uxPos - 0.5), -1.0 + hPos, demodAlign, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
 }
 
 void PrimaryGLContext::DrawFreqSelector(float uxPos, RGBA4f color, float w, long long /* center_freq */, long long srate) {
