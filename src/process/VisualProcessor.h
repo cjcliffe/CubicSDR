@@ -12,8 +12,8 @@
 template<typename InputDataType = ReferenceCounter, typename OutputDataType = ReferenceCounter>
 class VisualProcessor {
     //
-    typedef typename ThreadQueue<InputDataType*> VisualInputQueueType;
-    typedef typename ThreadQueue<OutputDataType*> VisualOutputQueueType;
+    typedef  ThreadQueue<InputDataType*> VisualInputQueueType;
+    typedef  ThreadQueue<OutputDataType*> VisualOutputQueueType;
     typedef typename std::vector< VisualOutputQueueType *>::iterator outputs_i;
 public:
 	virtual ~VisualProcessor() {
