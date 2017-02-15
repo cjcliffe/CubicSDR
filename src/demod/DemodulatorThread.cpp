@@ -298,13 +298,17 @@ void DemodulatorThread::run() {
                 ati_vis->type = 0;
             }
             
-            //non-blocking push for audio-out
-            localAudioVisOutputQueue->try_push(ati_vis);
+            if (!localAudioVisOutputQueue->try_push(ati_vis)) {
+                //non-blocking push for audio-out
+                ati_vis->setRefCount(0);
+                std::cout << "DemodulatorThread::run() cannot push ati_vis into localAudioVisOutputQueue, is full !" << std::endl;
+                std::this_thread::yield();
+            }
         }
 
         if (ati != nullptr) {
             if (!muted.load() && (!wxGetApp().getSoloMode() || (demodInstance == wxGetApp().getDemodMgr().getLastActiveDemodulator()))) {
-                //non-blocking push for audio-out
+                
                 audioOutputQueue->push(ati);
             } else {
                 ati->setRefCount(0);
