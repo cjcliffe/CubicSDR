@@ -142,7 +142,12 @@ protected:
             }
       
             if (inp) {
+                int previousRefCount = inp->getRefCount();
             	VisualProcessor<OutputDataType, OutputDataType>::distribute(inp);
+                //inp is now shared through the distribute(), which overwrite the previous ref count,
+                //so increment it properly.
+                int distributeRefCount = inp->getRefCount();
+                inp->setRefCount(previousRefCount + distributeRefCount);
             }
         }
     }
