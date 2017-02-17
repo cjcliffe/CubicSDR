@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <condition_variable>
 #include <typeinfo>
+#include <iostream>
 
 #define MIN_ITEM_NB (1)
 
@@ -242,7 +243,7 @@ public:
             std::lock_guard < std::mutex > lock1(m_mutex);
             std::lock_guard < std::mutex > lock2(sq.m_mutex);
   
-            m_queue = sq.m_queue
+            m_queue = sq.m_queue;
             m_max_num_items = sq.m_max_num_items;
 
             if (!m_queue.empty()) {
