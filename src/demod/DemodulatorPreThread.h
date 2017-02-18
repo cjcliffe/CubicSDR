@@ -5,6 +5,7 @@
 
 #include <queue>
 #include <vector>
+#include <atomic>
 
 #include "CubicSDRDefs.h"
 #include "DemodDefs.h"
@@ -56,10 +57,10 @@ protected:
     Modem *cModem;
     ModemKit *cModemKit;
     
-    long long currentSampleRate, newSampleRate;
-    long long currentFrequency, newFrequency;
-    int currentBandwidth, newBandwidth;
-    int currentAudioSampleRate, newAudioSampleRate;
+    std::atomic_llong currentSampleRate, newSampleRate;
+    std::atomic_llong currentFrequency, newFrequency;
+    std::atomic_int currentBandwidth, newBandwidth;
+    std::atomic_int currentAudioSampleRate, newAudioSampleRate;
 
     std::atomic_bool sampleRateChanged, frequencyChanged, bandwidthChanged, audioSampleRateChanged;
 

@@ -385,7 +385,7 @@ void DemodulatorMgr::setOutputDevices(std::map<int,RtAudio::DeviceInfo> devs) {
 
 void DemodulatorMgr::saveInstance(DataNode *node, DemodulatorInstance *inst) {
     *node->newChild("bandwidth") = inst->getBandwidth();
-    *node->newChild("frequency") = inst->getFrequency();
+    *node->newChild("frequency") = inst->getFrequency();  
     *node->newChild("type") = inst->getDemodulatorType();
     
     node->newChild("user_label")->element()->set(inst->getDemodulatorUserLabel());

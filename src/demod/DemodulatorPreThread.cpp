@@ -76,7 +76,7 @@ void DemodulatorPreThread::run() {
         iqInputQueue->pop(inp);
         
         if (frequencyChanged.load()) {
-            currentFrequency = newFrequency;
+            currentFrequency.store(newFrequency);
             frequencyChanged.store(false);
         }
         
@@ -326,7 +326,11 @@ void DemodulatorPreThread::setBandwidth(int bandwidth) {
     newBandwidth = bandwidth;
 }
 
-int DemodulatorPreThread::getBandwidth() {    
+int DemodulatorPreThread::getBandwidth() {
+    if (bandwidthChanged.load()) {
+        return newBandwidth;
+    }
+
     return currentBandwidth;
 }
 
