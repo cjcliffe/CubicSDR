@@ -298,23 +298,22 @@ void DemodulatorThread::run() {
                 ati_vis->type = 0;
             }
             
-            if (!localAudioVisOutputQueue->push(ati_vis)) {
+            if (!localAudioVisOutputQueue->try_push(ati_vis)) {
+                //non-blocking push needed for audio vis out
                 ati_vis->setRefCount(0);
                 std::cout << "DemodulatorThread::run() cannot push ati_vis into localAudioVisOutputQueue, is full !" << std::endl;
                 std::this_thread::yield();
             }
         }
-        
-        
+
         if (ati != nullptr) {
             if (!muted.load() && (!wxGetApp().getSoloMode() || (demodInstance == wxGetApp().getDemodMgr().getLastActiveDemodulator()))) {
-                
-                if (!audioOutputQueue->push(ati)) {
+                //non-blocking push needed for audio out
+                if (!audioOutputQueue->try_push(ati)) {
                     ati->decRefCount();
                     std::cout << "DemodulatorThread::run() cannot push ati into audioOutputQueue, is full !" << std::endl;
                     std::this_thread::yield();
                 }
-
             } else {
                 ati->setRefCount(0);
             }
@@ -367,9 +366,9 @@ void DemodulatorThread::run() {
 void DemodulatorThread::terminate() {
     IOThread::terminate();
     DemodulatorThreadPostIQData *inp = new DemodulatorThreadPostIQData;    // push dummy to nudge queue
-    if (!iqInputQueue->push(inp)) {
-        delete inp;
-    }
+    
+    //VSO: blocking push
+    iqInputQueue->push(inp);
 }
 
 bool DemodulatorThread::isMuted() {

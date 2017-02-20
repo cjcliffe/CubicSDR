@@ -12,7 +12,7 @@
 #include <iostream>
 #include <thread>
 
-#include "ThreadQueue.h"
+#include "ThreadBlockingQueue.h"
 #include "Timer.h"
 
 struct map_string_less : public std::binary_function<std::string,std::string,bool>

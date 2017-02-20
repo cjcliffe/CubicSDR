@@ -21,7 +21,10 @@ DemodulatorPreThread::DemodulatorPreThread(DemodulatorInstance *parent) : IOThre
     shiftFrequency = 0;
 
     workerQueue = new DemodulatorThreadWorkerCommandQueue;
+    workerQueue->set_max_num_items(2);
+
     workerResults = new DemodulatorThreadWorkerResultQueue;
+    workerResults->set_max_num_items(100);
      
     workerThread = new DemodulatorWorkerThread();
     workerThread->setInputQueue("WorkerCommandQueue",workerQueue);
@@ -120,6 +123,7 @@ void DemodulatorPreThread::run() {
             }
             modemSettingsBuffered.clear();
             modemSettingsChanged.store(false);
+            //VSO: blocking push
             workerQueue->push(command);
             cModem = nullptr;
             cModemKit = nullptr;
@@ -140,6 +144,7 @@ void DemodulatorPreThread::run() {
             sampleRateChanged.store(false);
             audioSampleRateChanged.store(false);
             modemSettingsBuffered.clear();
+            //VSO: blocking
             workerQueue->push(command);
         }
         
@@ -209,11 +214,8 @@ void DemodulatorPreThread::run() {
             resamp->modemKit = cModemKit;
             resamp->sampleRate = currentBandwidth;
 
-            if (!iqOutputQueue->push(resamp)) {
-                resamp->setRefCount(0);
-                std::cout << "DemodulatorPreThread::run() cannot push resamp into iqOutputQueue, is full !" << std::endl;
-                std::this_thread::yield();
-            }
+            //VSO: blocking push
+            iqOutputQueue->push(resamp);   
         }
 
         inp->decRefCount();
@@ -343,11 +345,12 @@ int DemodulatorPreThread::getAudioSampleRate() {
 void DemodulatorPreThread::terminate() {
     IOThread::terminate();
     DemodulatorThreadIQData *inp = new DemodulatorThreadIQData;    // push dummy to nudge queue
-    if (!iqInputQueue->push(inp)) {
-        delete inp;
-    }
-
+    
+    //VSO: blocking push :
+    iqInputQueue->push(inp);
+ 
     DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_NULL);
+    
     workerQueue->push(command);
     
     workerThread->terminate();

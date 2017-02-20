@@ -251,7 +251,7 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
         dataOut->dcCorrected = hasHardwareDC.load();
         dataOut->numChannels = numChannels.load();
         
-        if (!iqDataOutQueue->push(dataOut)) {
+        if (!iqDataOutQueue->try_push(dataOut)) {
             //The rest of the system saturates,
             //finally the push didn't suceeded, recycle dataOut immediatly.
             dataOut->setRefCount(0);

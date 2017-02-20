@@ -10,7 +10,7 @@
 #include "AudioThread.h"
 #include "Modem.h"
 
-typedef ThreadQueue<AudioThreadInput *> DemodulatorThreadOutputQueue;
+typedef ThreadBlockingQueue<AudioThreadInput *> DemodulatorThreadOutputQueue;
 
 #define DEMOD_VIS_SIZE 2048
 #define DEMOD_SIGNAL_MIN -30
