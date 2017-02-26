@@ -998,114 +998,10 @@ bool AppFrame::actionOnMenuDisplay(wxCommandEvent& event) {
     return bManaged;
 }
 
-void AppFrame::OnMenu(wxCommandEvent& event) {
+bool AppFrame::actionOnMenuReset(wxCommandEvent& event) {
 
-//    if (event.GetId() >= wxID_RT_AUDIO_DEVICE && event.GetId() < wxID_RT_AUDIO_DEVICE + (int)devices.size()) {
-//        if (activeDemodulator) {
-//            activeDemodulator->setOutputDevice(event.GetId() - wxID_RT_AUDIO_DEVICE);
-//            activeDemodulator = NULL;
-//        }
-//        return;
-//    }
-    
-#ifdef __APPLE__
-    if (event.GetId() == wxApp::s_macAboutMenuItemId) {
-#else 
-    if (event.GetId() == wxID_ABOUT_CUBICSDR) {
-#endif
-        if (aboutDlg != nullptr) {
-            aboutDlg->Raise();
-            aboutDlg->SetFocus();
-        } else {
-            aboutDlg = new AboutDialog(NULL);
-            aboutDlg->Connect( wxEVT_CLOSE_WINDOW, wxCommandEventHandler( AppFrame::OnAboutDialogClose ), NULL, this );
+    if (event.GetId() == wxID_RESET) {
 
-            aboutDlg->Show();
-        }
-    }
-
-    if (event.GetId() == wxID_SDR_START_STOP) {
-        if (!wxGetApp().getSDRThread()->isTerminated()) {
-            wxGetApp().stopDevice(true, 2000);
-        } else {
-            SDRDeviceInfo *dev = wxGetApp().getDevice();
-            if (dev != nullptr) {
-                wxGetApp().setDevice(dev, 0);
-            }
-        }
-    } else if (event.GetId() == wxID_LOW_PERF) {
-        lowPerfMode = lowPerfMenuItem->IsChecked();
-        wxGetApp().getConfig()->setLowPerfMode(lowPerfMode);
-
-    } else if (event.GetId() == wxID_SET_TIPS ) {
-        if (wxGetApp().getConfig()->getShowTips()) {
-            wxGetApp().getConfig()->setShowTips(false);
-        } else {
-            wxGetApp().getConfig()->setShowTips(true);
-        }
-    } else if (event.GetId() == wxID_SET_IQSWAP) {
-        wxGetApp().getSDRThread()->setIQSwap(!wxGetApp().getSDRThread()->getIQSwap());
-    } else if (event.GetId() == wxID_SET_FREQ_OFFSET) {
-        long ofs = wxGetNumberFromUser("Shift the displayed frequency by this amount.\ni.e. -125000000 for -125 MHz", "Frequency (Hz)",
-                "Frequency Offset", wxGetApp().getOffset(), -2000000000, 2000000000, this);
-        if (ofs != -1) {
-            wxGetApp().setOffset(ofs);
-        }
-    } else if (event.GetId() == wxID_SET_DB_OFFSET) {
-        long ofs = wxGetNumberFromUser("Shift the displayed RF power level by this amount.\ni.e. -30 for -30 dB", "Decibels (dB)",
-                                       "Power Level Offset", wxGetApp().getConfig()->getDBOffset(), -1000, 1000, this);
-        if (ofs != -1) {
-            wxGetApp().getConfig()->setDBOffset(ofs);
-        }
-    } else if (event.GetId() == wxID_AGC_CONTROL) {
-        if (wxGetApp().getDevice() == NULL) {
-            agcMenuItem->Check(true);
-            return;
-        }
-        if (!wxGetApp().getAGCMode()) {
-            wxGetApp().setAGCMode(true);
-            gainSpacerItem->Show(false);
-            gainSizerItem->Show(false);
-            demodTray->Layout();
-        } else {
-            wxGetApp().setAGCMode(false);
-            gainSpacerItem->Show(true);
-            gainSizerItem->Show(true);
-            gainSizerItem->SetMinSize(wxGetApp().getDevice()->getSoapyDevice()->listGains(SOAPY_SDR_RX, 0).size()*40,0);
-            demodTray->Layout();
-            gainCanvas->updateGainUI();
-            gainCanvas->Refresh();
-            gainCanvas->Refresh();
-        }
-    } else if (event.GetId() == wxID_SDR_DEVICES) {
-        wxGetApp().deviceSelector();
-    } else if (event.GetId() == wxID_SET_PPM) {
-        long ofs = wxGetNumberFromUser("Frequency correction for device in PPM.\ni.e. -51 for -51 PPM\n\nNote: you can adjust PPM interactively\nby holding ALT over the frequency tuning bar.\n", "Parts per million (PPM)",
-                "Frequency Correction", wxGetApp().getPPM(), -1000, 1000, this);
-            wxGetApp().setPPM(ofs);
-    } else if (event.GetId() == wxID_SAVE) {
-        if (!currentSessionFile.empty()) {
-            saveSession(currentSessionFile);
-        } else {
-            wxFileDialog saveFileDialog(this, _("Save XML Session file"), "", "", "XML files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
-            if (saveFileDialog.ShowModal() == wxID_CANCEL) {
-                return;
-            }
-            saveSession(saveFileDialog.GetPath().ToStdString());
-        }
-    } else if (event.GetId() == wxID_OPEN) {
-        wxFileDialog openFileDialog(this, _("Open XML Session file"), "", "", "XML files (*.xml)|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
-        if (openFileDialog.ShowModal() == wxID_CANCEL) {
-            return;
-        }
-        loadSession(openFileDialog.GetPath().ToStdString());
-    } else if (event.GetId() == wxID_SAVEAS) {
-        wxFileDialog saveFileDialog(this, _("Save XML Session file"), "", "", "XML files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
-        if (saveFileDialog.ShowModal() == wxID_CANCEL) {
-            return;
-        }
-        saveSession(saveFileDialog.GetPath().ToStdString());
-    } else if (event.GetId() == wxID_RESET) {
         wxGetApp().getDemodMgr().terminateAll();
         wxGetApp().setFrequency(100000000);
         wxGetApp().getDemodMgr().setLastDemodulatorType("FM");
@@ -1123,49 +1019,81 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         waterfallSpeedMeter->setLevel(sqrt(DEFAULT_WATERFALL_LPS));
         wxGetApp().getSpectrumProcessor()->setFFTAverageRate(0.65f);
         spectrumAvgMeter->setLevel(0.65f);
- 
+
         SetTitle(CUBICSDR_TITLE);
         currentSessionFile = "";
         bookmarkSplitter->Unsplit(bookmarkView);
-        bookmarkSplitter->SplitVertically( bookmarkView, mainVisSplitter, wxGetApp().getConfig()->getBookmarkSplit() );
+        bookmarkSplitter->SplitVertically(bookmarkView, mainVisSplitter, wxGetApp().getConfig()->getBookmarkSplit());
         hideBookmarksItem->Check(false);
         //force all windows refresh
         Refresh();
 
-    } else if (event.GetId() == wxID_CLOSE || event.GetId() == wxID_EXIT) {
-        Close(false);
+        return true;
     }
-    else if (actionOnMenuDisplay(event)) {
-        //done in actionOnMenuDisplay
-        return;
+
+    return false;
+}
+
+bool AppFrame::actionOnMenuAbout(wxCommandEvent& event) {
+
+#ifdef __APPLE__
+    if (event.GetId() == wxApp::s_macAboutMenuItemId) {
+#else 
+    if (event.GetId() == wxID_ABOUT_CUBICSDR) {
+#endif
+        if (aboutDlg != nullptr) {
+            aboutDlg->Raise();
+            aboutDlg->SetFocus();
+        }
+        else {
+            aboutDlg = new AboutDialog(NULL);
+            aboutDlg->Connect(wxEVT_CLOSE_WINDOW, wxCommandEventHandler(AppFrame::OnAboutDialogClose), NULL, this);
+
+            aboutDlg->Show();
+        }
+
+        return true;
     }
-    else if (event.GetId() >= wxID_SETTINGS_BASE && event.GetId() < settingsIdMax) {
-        int setIdx = event.GetId()-wxID_SETTINGS_BASE;
+
+    return false;
+}
+
+bool AppFrame::actionOnMenuSettings(wxCommandEvent& event) {
+
+    if (event.GetId() >= wxID_SETTINGS_BASE && event.GetId() < settingsIdMax) {
+
+        int setIdx = event.GetId() - wxID_SETTINGS_BASE;
         int menuIdx = 0;
+
         for (std::vector<SoapySDR::ArgInfo>::iterator arg_i = settingArgs.begin(); arg_i != settingArgs.end(); arg_i++) {
             SoapySDR::ArgInfo &arg = (*arg_i);
 
-            if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size() && setIdx >= menuIdx && setIdx < menuIdx+(int)arg.options.size()) {
-                int optIdx = setIdx-menuIdx;
+            if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size() && setIdx >= menuIdx && setIdx < menuIdx + (int)arg.options.size()) {
+                int optIdx = setIdx - menuIdx;
                 wxGetApp().getSDRThread()->writeSetting(arg.key, arg.options[optIdx]);
                 break;
-            } else if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size()) {
+            }
+            else if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size()) {
                 menuIdx += arg.options.size();
-            } else if (menuIdx == setIdx) {
+            }
+            else if (menuIdx == setIdx) {
                 if (arg.type == SoapySDR::ArgInfo::BOOL) {
-                    wxGetApp().getSDRThread()->writeSetting(arg.key, (wxGetApp().getSDRThread()->readSetting(arg.key)=="true")?"false":"true");
+                    wxGetApp().getSDRThread()->writeSetting(arg.key, (wxGetApp().getSDRThread()->readSetting(arg.key) == "true") ? "false" : "true");
                     break;
-                } else if (arg.type == SoapySDR::ArgInfo::STRING) {
+                }
+                else if (arg.type == SoapySDR::ArgInfo::STRING) {
                     wxString stringVal = wxGetTextFromUser(arg.description, arg.name, wxGetApp().getSDRThread()->readSetting(arg.key));
                     if (stringVal.ToStdString() != "") {
                         wxGetApp().getSDRThread()->writeSetting(arg.key, stringVal.ToStdString());
                     }
                     break;
-                } else if (arg.type == SoapySDR::ArgInfo::INT) {
+                }
+                else if (arg.type == SoapySDR::ArgInfo::INT) {
                     int currentVal;
                     try {
                         currentVal = std::stoi(wxGetApp().getSDRThread()->readSetting(arg.key));
-                    } catch (std::invalid_argument e) {
+                    }
+                    catch (std::invalid_argument e) {
                         currentVal = 0;
                     }
                     int intVal = wxGetNumberFromUser(arg.description, arg.units, arg.name, currentVal, arg.range.minimum(), arg.range.maximum(), this);
@@ -1173,27 +1101,69 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
                         wxGetApp().getSDRThread()->writeSetting(arg.key, std::to_string(intVal));
                     }
                     break;
-                } else if (arg.type == SoapySDR::ArgInfo::FLOAT) {
+                }
+                else if (arg.type == SoapySDR::ArgInfo::FLOAT) {
                     wxString floatVal = wxGetTextFromUser(arg.description, arg.name, wxGetApp().getSDRThread()->readSetting(arg.key));
                     try {
                         wxGetApp().getSDRThread()->writeSetting(arg.key, floatVal.ToStdString());
-                    } catch (std::invalid_argument e) {
+                    }
+                    catch (std::invalid_argument e) {
                         // ...
                     }
                     break;
-                } else {
+                }
+                else {
                     menuIdx++;
                 }
-            } else {
+            }
+            else {
                 menuIdx++;
             }
-        }
+        } //end for
+
+        return true;
     }
-    
-   
+
+    return false;
+}
+
+bool AppFrame::actionOnMenuAGC(wxCommandEvent& event) {
+
+    if (event.GetId() == wxID_AGC_CONTROL) {
+
+        if (wxGetApp().getDevice() == NULL) {
+            agcMenuItem->Check(true);
+            return true;
+        }
+        if (!wxGetApp().getAGCMode()) {
+            wxGetApp().setAGCMode(true);
+            gainSpacerItem->Show(false);
+            gainSizerItem->Show(false);
+            demodTray->Layout();
+        }
+        else {
+            wxGetApp().setAGCMode(false);
+            gainSpacerItem->Show(true);
+            gainSizerItem->Show(true);
+            gainSizerItem->SetMinSize(wxGetApp().getDevice()->getSoapyDevice()->listGains(SOAPY_SDR_RX, 0).size() * 40, 0);
+            demodTray->Layout();
+            gainCanvas->updateGainUI();
+        }
+
+        //full Refresh, some graphical elements has changed
+        Refresh();
+
+        return true;
+    }
+
+    return false;
+}
+
+bool AppFrame::actionOnMenuSampleRate(wxCommandEvent& event) {
 
     if (event.GetId() == wxID_BANDWIDTH_MANUAL) {
         wxGetApp().setSampleRate(manualSampleRate);
+        return true;
     }
     else if (event.GetId() == wxID_BANDWIDTH_MANUAL_DIALOG) {
 
@@ -1219,7 +1189,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
                 "Sample Rate in Hz",
                 "Manual Sample Rate Entry",
                 //If a manual sample rate has already been input, recall this one.
-                manualSampleRate > 0? manualSampleRate :wxGetApp().getSampleRate(),
+                manualSampleRate > 0 ? manualSampleRate : wxGetApp().getSampleRate(),
                 rateLow,
                 rateHigh,
                 this);
@@ -1228,19 +1198,28 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
 
                 manualSampleRate = bw;
                 sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Enable(true);
-                
+
                 sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->SetItemLabel(wxT("Manual :  ") + frequencyToStr(manualSampleRate));
                 sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Check(true);
                 wxGetApp().setSampleRate(manualSampleRate);
             }
         }
+
+        return true;
     }
     else if (event.GetId() >= wxID_BANDWIDTH_BASE && event.GetId() < wxID_BANDWIDTH_BASE + (int)sampleRates.size()) {
 
-        wxGetApp().setSampleRate(sampleRates[event.GetId()-wxID_BANDWIDTH_BASE]);
+        wxGetApp().setSampleRate(sampleRates[event.GetId() - wxID_BANDWIDTH_BASE]);
+        return true;
     }
-    
+
+    return false;
+}
+
+bool AppFrame::actionOnMenuAudioSampleRate(wxCommandEvent& event) {
+
     if (event.GetId() >= wxID_AUDIO_BANDWIDTH_BASE) {
+
         int evId = event.GetId();
         std::vector<RtAudio::DeviceInfo>::iterator devices_i;
         std::map<int, RtAudio::DeviceInfo>::iterator mdevices_i;
@@ -1251,7 +1230,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
 
             int j = 0;
             for (std::vector<unsigned int>::iterator srate = mdevices_i->second.sampleRates.begin(); srate != mdevices_i->second.sampleRates.end();
-                    srate++) {
+                srate++) {
 
                 if (evId == menu_id + j) {
                     //audioSampleRateMenuItems[menu_id+j];
@@ -1263,13 +1242,61 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             }
             i++;
         }
+
+        return true;
     }
+
+    return false;
+}
+
+bool AppFrame::actionOnMenuLoadSave(wxCommandEvent& event) {
+
+    if (event.GetId() == wxID_SAVE) {
+
+        if (!currentSessionFile.empty()) {
+            saveSession(currentSessionFile);
+        }
+        else {
+            wxFileDialog saveFileDialog(this, _("Save XML Session file"), "", "", "XML files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+            if (saveFileDialog.ShowModal() == wxID_CANCEL) {
+                return true;
+            }
+            saveSession(saveFileDialog.GetPath().ToStdString());
+        }
+
+        return true;
+    }
+    else if (event.GetId() == wxID_OPEN) {
+        wxFileDialog openFileDialog(this, _("Open XML Session file"), "", "", "XML files (*.xml)|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+        if (openFileDialog.ShowModal() == wxID_CANCEL) {
+            return true;
+        }
+        loadSession(openFileDialog.GetPath().ToStdString());
+
+        return true;
+    }
+    else if (event.GetId() == wxID_SAVEAS) {
+        wxFileDialog saveFileDialog(this, _("Save XML Session file"), "", "", "XML files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+        if (saveFileDialog.ShowModal() == wxID_CANCEL) {
+            return true;
+        }
+        saveSession(saveFileDialog.GetPath().ToStdString());
+
+        return true;
+    }
+
+    return false;
+}
+
+bool AppFrame::actionOnMenuRig(wxCommandEvent& event) {
     
+    bool bManaged = false;
+
 #ifdef USE_HAMLIB
 
     bool resetRig = false;
-    if (event.GetId() >= wxID_RIG_MODEL_BASE && event.GetId() < wxID_RIG_MODEL_BASE+numRigs) {
-        int rigIdx = event.GetId()-wxID_RIG_MODEL_BASE;
+    if (event.GetId() >= wxID_RIG_MODEL_BASE && event.GetId() < wxID_RIG_MODEL_BASE + numRigs) {
+        int rigIdx = event.GetId() - wxID_RIG_MODEL_BASE;
         RigList &rl = RigThread::enumerate();
         rigModel = rl[rigIdx]->rig_model;
         if (devInfo != nullptr) {
@@ -1278,19 +1305,24 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             rigSDRIF = devConfig->getRigIF(rigModel);
             if (rigSDRIF) {
                 wxGetApp().lockFrequency(rigSDRIF);
-            } else {
+            }
+            else {
                 wxGetApp().unlockFrequency();
             }
-        } else {
+        }
+        else {
             wxGetApp().unlockFrequency();
         }
         resetRig = true;
+
+        bManaged = true;
     }
 
-    if (event.GetId() >= wxID_RIG_SERIAL_BASE && event.GetId() < wxID_RIG_SERIAL_BASE+rigSerialRates.size()) {
-        int serialIdx = event.GetId()-wxID_RIG_SERIAL_BASE;
+    if (event.GetId() >= wxID_RIG_SERIAL_BASE && event.GetId() < wxID_RIG_SERIAL_BASE + rigSerialRates.size()) {
+        int serialIdx = event.GetId() - wxID_RIG_SERIAL_BASE;
         rigSerialRate = rigSerialRates[serialIdx];
         resetRig = true;
+        bManaged = true;
     }
 
     if (event.GetId() == wxID_RIG_PORT) {
@@ -1300,17 +1332,21 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             rigPort = rigPortStr;
             resetRig = true;
         }
+        bManaged = true;
     }
 
     if (event.GetId() == wxID_RIG_TOGGLE) {
         resetRig = false;
         if (!wxGetApp().rigIsActive()) {
             enableRig();
-        } else {
+        }
+        else {
             disableRig();
         }
+
+        bManaged = true;
     }
-    
+
     if (event.GetId() == wxID_RIG_SDR_IF) {
         if (devInfo != nullptr) {
             std::string deviceId = devInfo->getDeviceId();
@@ -1322,21 +1358,25 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             }
             if (rigSDRIF && wxGetApp().rigIsActive()) {
                 wxGetApp().lockFrequency(rigSDRIF);
-            } else {
+            }
+            else {
                 wxGetApp().unlockFrequency();
             }
         }
+        bManaged = true;
     }
-    
+
     if (event.GetId() == wxID_RIG_CONTROL) {
         if (wxGetApp().rigIsActive()) {
             RigThread *rt = wxGetApp().getRigThread();
             rt->setControlMode(!rt->getControlMode());
             rigControlMenuItem->Check(rt->getControlMode());
             wxGetApp().getConfig()->setRigControlMode(rt->getControlMode());
-        } else {
+        }
+        else {
             wxGetApp().getConfig()->setRigControlMode(rigControlMenuItem->IsChecked());
         }
+        bManaged = true;
     }
 
     if (event.GetId() == wxID_RIG_FOLLOW) {
@@ -1345,20 +1385,26 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             rt->setFollowMode(!rt->getFollowMode());
             rigFollowMenuItem->Check(rt->getFollowMode());
             wxGetApp().getConfig()->setRigFollowMode(rt->getFollowMode());
-        } else {
+        }
+        else {
             wxGetApp().getConfig()->setRigFollowMode(rigFollowMenuItem->IsChecked());
         }
+
+        bManaged = true;
     }
-    
+
     if (event.GetId() == wxID_RIG_CENTERLOCK) {
         if (wxGetApp().rigIsActive()) {
             RigThread *rt = wxGetApp().getRigThread();
             rt->setCenterLock(!rt->getCenterLock());
             rigCenterLockMenuItem->Check(rt->getCenterLock());
             wxGetApp().getConfig()->setRigCenterLock(rt->getCenterLock());
-        } else {
+        }
+        else {
             wxGetApp().getConfig()->setRigCenterLock(rigCenterLockMenuItem->IsChecked());
         }
+
+        bManaged = true;
     }
 
     if (event.GetId() == wxID_RIG_FOLLOW_MODEM) {
@@ -1367,9 +1413,12 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             rt->setFollowModem(!rt->getFollowModem());
             rigFollowModemMenuItem->Check(rt->getFollowModem());
             wxGetApp().getConfig()->setRigFollowModem(rt->getFollowModem());
-        } else {
+        }
+        else {
             wxGetApp().getConfig()->setRigFollowModem(rigFollowModemMenuItem->IsChecked());
         }
+
+        bManaged = true;
     }
 
     if (wxGetApp().rigIsActive() && resetRig) {
@@ -1378,6 +1427,90 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
     }
 #endif
 
+    return bManaged;
+}
+
+
+void AppFrame::OnMenu(wxCommandEvent& event) {
+
+    if (actionOnMenuAbout(event)) {
+        return;
+    }
+    else if (event.GetId() == wxID_SDR_START_STOP) {
+        if (!wxGetApp().getSDRThread()->isTerminated()) {
+            wxGetApp().stopDevice(true, 2000);
+        } else {
+            SDRDeviceInfo *dev = wxGetApp().getDevice();
+            if (dev != nullptr) {
+                wxGetApp().setDevice(dev, 0);
+            }
+        }
+    } 
+    else if (event.GetId() == wxID_LOW_PERF) {
+        lowPerfMode = lowPerfMenuItem->IsChecked();
+        wxGetApp().getConfig()->setLowPerfMode(lowPerfMode);
+
+    } 
+    else if (event.GetId() == wxID_SET_TIPS ) {
+        if (wxGetApp().getConfig()->getShowTips()) {
+            wxGetApp().getConfig()->setShowTips(false);
+        } else {
+            wxGetApp().getConfig()->setShowTips(true);
+        }
+    } 
+    else if (event.GetId() == wxID_SET_IQSWAP) {
+        wxGetApp().getSDRThread()->setIQSwap(!wxGetApp().getSDRThread()->getIQSwap());
+    } 
+    else if (event.GetId() == wxID_SET_FREQ_OFFSET) {
+        long ofs = wxGetNumberFromUser("Shift the displayed frequency by this amount.\ni.e. -125000000 for -125 MHz", "Frequency (Hz)",
+                "Frequency Offset", wxGetApp().getOffset(), -2000000000, 2000000000, this);
+        if (ofs != -1) {
+            wxGetApp().setOffset(ofs);
+        }
+    } 
+    else if (event.GetId() == wxID_SET_DB_OFFSET) {
+        long ofs = wxGetNumberFromUser("Shift the displayed RF power level by this amount.\ni.e. -30 for -30 dB", "Decibels (dB)",
+                                       "Power Level Offset", wxGetApp().getConfig()->getDBOffset(), -1000, 1000, this);
+        if (ofs != -1) {
+            wxGetApp().getConfig()->setDBOffset(ofs);
+        }
+    } 
+    else if (actionOnMenuAGC(event)) {
+        return;
+    }
+    else if (event.GetId() == wxID_SDR_DEVICES) {
+        wxGetApp().deviceSelector();
+    }
+    else if (event.GetId() == wxID_SET_PPM) {
+        long ofs = wxGetNumberFromUser("Frequency correction for device in PPM.\ni.e. -51 for -51 PPM\n\nNote: you can adjust PPM interactively\nby holding ALT over the frequency tuning bar.\n", "Parts per million (PPM)",
+                "Frequency Correction", wxGetApp().getPPM(), -1000, 1000, this);
+            wxGetApp().setPPM(ofs);
+    } 
+    else if (actionOnMenuLoadSave(event)) {
+        return;
+    } 
+    else if (actionOnMenuReset(event)) {
+        return;
+    }
+    else if (event.GetId() == wxID_CLOSE || event.GetId() == wxID_EXIT) {
+        Close(false);
+    }
+    else if (actionOnMenuSettings(event)) {
+        return;
+    }
+    else if (actionOnMenuSampleRate(event)) {
+        return;
+    }
+    else if (actionOnMenuAudioSampleRate(event)) {
+        return;
+    }
+    else if (actionOnMenuDisplay(event)) {
+        return;
+    }
+    //Optional : Rig 
+    else if (actionOnMenuRig(event)) {
+        return;
+    }
 }
 
 void AppFrame::OnClose(wxCloseEvent& event) {

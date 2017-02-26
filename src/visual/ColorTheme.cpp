@@ -69,7 +69,7 @@ DefaultColorTheme::DefaultColorTheme() {
 
 
 RadarColorTheme::RadarColorTheme() {
-    name = "Rad";
+    name = "Radar";
     waterfallGradient.addColor(GradientColor(5.0f / 255.0f, 45.0f / 255.0f, 10.0f / 255.0f));
     waterfallGradient.addColor(GradientColor(30.0f / 255.0f, 150.0f / 255.0f, 40.0f / 255.0f));
     waterfallGradient.addColor(GradientColor(40.0f / 255.0f, 240.0f / 255.0f, 60.0f / 255.0f));

@@ -139,9 +139,17 @@ private:
     void OnUnSplit(wxSplitterEvent& event);
     void OnAboutDialogClose(wxCommandEvent& event);
    
-    //manage Display menu actions, return true if the event has been
+    //actionXXXX manage menu actions, return true if the event has been
     //treated.
+    bool actionOnMenuAbout(wxCommandEvent& event);
+    bool actionOnMenuReset(wxCommandEvent& event);
+    bool actionOnMenuSettings(wxCommandEvent& event);
+    bool actionOnMenuAGC(wxCommandEvent& event);
+    bool actionOnMenuSampleRate(wxCommandEvent& event);
+    bool actionOnMenuAudioSampleRate(wxCommandEvent& event);
     bool actionOnMenuDisplay(wxCommandEvent& event);
+    bool actionOnMenuLoadSave(wxCommandEvent& event);
+    bool actionOnMenuRig(wxCommandEvent& event);
 
     ScopeCanvas *scopeCanvas;
     SpectrumCanvas *spectrumCanvas;
