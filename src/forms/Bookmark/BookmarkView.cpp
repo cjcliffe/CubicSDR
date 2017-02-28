@@ -38,7 +38,7 @@ BookmarkViewVisualDragItem::BookmarkViewVisualDragItem(wxString labelValue) : wx
 
 class ActionDialogRemoveBookmark : public ActionDialog {
 public:
-    ActionDialogRemoveBookmark( BookmarkEntry *be ) : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Remove Bookmark?")) {
+    ActionDialogRemoveBookmark( BookmarkEntryPtr be ) : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Remove Bookmark?")) {
         subject = be;
         m_questionText->SetLabelText(wxT("Are you sure you want to remove the bookmark\n '" + BookmarkMgr::getBookmarkEntryDisplayName(subject) + "'?"));
     }
@@ -49,7 +49,7 @@ public:
     }
 
 private:
-    BookmarkEntry *subject;
+    BookmarkEntryPtr subject;
 };
 
 class ActionDialogRemoveGroup : public ActionDialog {
@@ -71,7 +71,7 @@ private:
 
 class ActionDialogRemoveRange : public ActionDialog {
 public:
-    ActionDialogRemoveRange( BookmarkRangeEntry *rangeEnt ) : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Remove Range?")) {
+    ActionDialogRemoveRange( BookmarkRangeEntryPtr rangeEnt ) : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Remove Range?")) {
         subject = rangeEnt;
         
         std::wstring name = rangeEnt->label;
@@ -90,13 +90,13 @@ public:
     }
     
 private:
-    BookmarkRangeEntry *subject;
+    BookmarkRangeEntryPtr subject;
 };
 
 
 class ActionDialogUpdateRange : public ActionDialog {
 public:
-    ActionDialogUpdateRange( BookmarkRangeEntry *rangeEnt ) : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Update Range?")) {
+    ActionDialogUpdateRange( BookmarkRangeEntryPtr rangeEnt ) : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Update Range?")) {
         subject = rangeEnt;
         
         std::wstring name = rangeEnt->label;
@@ -110,19 +110,17 @@ public:
     }
     
     void doClickOK() {
-        BookmarkRangeEntry *ue = BookmarkView::makeActiveRangeEntry();
+        BookmarkRangeEntryPtr ue = BookmarkView::makeActiveRangeEntry();
 
         subject->freq = ue->freq;
         subject->startFreq = ue->startFreq;
         subject->endFreq = ue->endFreq;
-        
-        delete ue;
-        
+          
         wxGetApp().getBookmarkMgr().updateActiveList();
     }
     
 private:
-    BookmarkRangeEntry *subject;
+    BookmarkRangeEntryPtr subject;
 };
 
 
@@ -152,11 +150,12 @@ BookmarkView::BookmarkView( wxWindow* parent, wxWindowID id, const wxPoint& pos,
     hideProps();
     
     m_updateTimer.Start(500);
-    mouseInView.store(false);
-
+   
     visualDragItem = nullptr;
     nextEnt = nullptr;
     nextDemod = nullptr;
+
+    mouseTracker.setTarget(this);
 }
 
 
@@ -204,7 +203,6 @@ void BookmarkView::updateTheme() {
     m_modulationVal->SetForegroundColour(textColor);
     m_modulationLabel->SetForegroundColour(textColor);
     
-
     refreshLayout();
 }
 
@@ -243,17 +241,16 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
     
     BookmarkNames groupNames;
     wxGetApp().getBookmarkMgr().getGroups(groupNames);
-
-    if (doUpdateBookmarkGroup.size()) { // Nothing for the moment..
-        doUpdateBookmarkGroup.erase(doUpdateBookmarkGroup.begin(), doUpdateBookmarkGroup.end());
-    }
-
+    
+    doUpdateBookmarkGroup.clear();
+   
     wxTreeItemId bmSelFound = nullptr;
     
     std::map<std::string, bool> groupExpandState;
     bool searchState = (searchKeywords.size() != 0);
     
-    groups.erase(groups.begin(),groups.end());
+    groups.clear();
+
     m_treeView->DeleteChildren(bookmarkBranch);
 
     bool bmExpandState = expandState["bookmark"];
@@ -321,8 +318,6 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
             m_treeView->Expand(groupItem);
         }
     }
-
-    
     return bmSelFound;
 }
 
@@ -535,6 +530,7 @@ void BookmarkView::onTreeEndLabelEdit( wxTreeEvent& event ) {
 
 
 void BookmarkView::onTreeActivate( wxTreeEvent& event ) {
+
     wxTreeItemId itm = event.GetItem();
     TreeViewItem* tvi = dynamic_cast<TreeViewItem*>(m_treeView->GetItemData(itm));
 
@@ -643,7 +639,10 @@ bool BookmarkView::isMouseInView() {
     if (m_labelText->HasFocus()) {
         return true;
     }
-    return mouseInView.load();
+    if (m_searchText->HasFocus()) {
+        return true;
+    }
+    return  mouseTracker.mouseInView();
 }
 
 
@@ -725,7 +724,7 @@ void BookmarkView::doBookmarkActive(std::string group, DemodulatorInstance *demo
 }
 
 
-void BookmarkView::doBookmarkRecent(std::string group, BookmarkEntry *be) {
+void BookmarkView::doBookmarkRecent(std::string group, BookmarkEntryPtr be) {
     wxGetApp().getBookmarkMgr().removeRecent(be);
     wxGetApp().getBookmarkMgr().addBookmark(group, be);
     nextEnt = be;
@@ -734,7 +733,7 @@ void BookmarkView::doBookmarkRecent(std::string group, BookmarkEntry *be) {
 }
 
 
-void BookmarkView::doMoveBookmark(BookmarkEntry *be, std::string group) {
+void BookmarkView::doMoveBookmark(BookmarkEntryPtr be, std::string group) {
     wxGetApp().getBookmarkMgr().moveBookmark(be, group);
     nextEnt = be;
     wxGetApp().getBookmarkMgr().updateBookmarks();
@@ -750,7 +749,7 @@ void BookmarkView::doRemoveActive(DemodulatorInstance *demod) {
 }
 
 
-void BookmarkView::doRemoveRecent(BookmarkEntry *be) {
+void BookmarkView::doRemoveRecent(BookmarkEntryPtr be) {
     wxGetApp().getBookmarkMgr().removeRecent(be);
     wxGetApp().getBookmarkMgr().updateActiveList();
 }
@@ -762,9 +761,9 @@ void BookmarkView::doClearRecents() {
 
 
 void BookmarkView::updateBookmarkChoices() {
-    if (!bookmarkChoices.empty()) {
-        bookmarkChoices.erase(bookmarkChoices.begin(),bookmarkChoices.end());
-    }
+
+    bookmarkChoices.clear();
+
     TreeViewItem *activeSel = itemToTVI(m_treeView->GetSelection());
     
     bookmarkChoices.push_back(((activeSel != nullptr && activeSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK))?BOOKMARK_VIEW_CHOICE_MOVE:BOOKMARK_VIEW_CHOICE_DEFAULT);
@@ -849,7 +848,7 @@ void BookmarkView::activeSelection(DemodulatorInstance *dsel) {
 }
 
 
-void BookmarkView::activateBookmark(BookmarkEntry *bmEnt) {
+void BookmarkView::activateBookmark(BookmarkEntryPtr bmEnt) {
     DemodulatorInstance *newDemod = wxGetApp().getDemodMgr().loadInstance(bmEnt->node);
     
     nextDemod = newDemod;
@@ -875,13 +874,13 @@ void BookmarkView::activateBookmark(BookmarkEntry *bmEnt) {
 }
 
 
-void BookmarkView::activateRange(BookmarkRangeEntry *rangeEnt) {
+void BookmarkView::activateRange(BookmarkRangeEntryPtr rangeEnt) {
     wxGetApp().setFrequency(rangeEnt->freq);
     wxGetApp().getAppFrame()->setViewState(rangeEnt->startFreq + (rangeEnt->endFreq - rangeEnt->startFreq) / 2, rangeEnt->endFreq - rangeEnt->startFreq);
 }
 
 
-void BookmarkView::bookmarkSelection(BookmarkEntry *bmSel) {
+void BookmarkView::bookmarkSelection(BookmarkEntryPtr bmSel) {
     
     m_frequencyVal->SetLabelText(frequencyToStr(bmSel->frequency));
     m_bandwidthVal->SetLabelText(frequencyToStr(bmSel->bandwidth));
@@ -914,7 +913,7 @@ void BookmarkView::bookmarkSelection(BookmarkEntry *bmSel) {
 }
 
 
-void BookmarkView::recentSelection(BookmarkEntry *bmSel) {
+void BookmarkView::recentSelection(BookmarkEntryPtr bmSel) {
     
     m_frequencyVal->SetLabelText(frequencyToStr(bmSel->frequency));
     m_bandwidthVal->SetLabelText(frequencyToStr(bmSel->bandwidth));
@@ -967,7 +966,7 @@ void BookmarkView::groupSelection(std::string groupName) {
 }
 
 
-void BookmarkView::rangeSelection(BookmarkRangeEntry *re) {
+void BookmarkView::rangeSelection(BookmarkRangeEntryPtr re) {
     
     clearButtons();
     
@@ -1126,6 +1125,7 @@ void BookmarkView::onLabelText( wxCommandEvent& /* event */ ) {
 
 
 void BookmarkView::onDoubleClickFreq( wxMouseEvent& /* event */ ) {
+
     TreeViewItem *curSel = itemToTVI(m_treeView->GetSelection());
     
     if (curSel && curSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
@@ -1259,7 +1259,7 @@ void BookmarkView::onRenameGroup( wxCommandEvent& /* event */ ) {
 
 void BookmarkView::onAddRange( wxCommandEvent& /* event */ ) {
     
-    BookmarkRangeEntry *re = BookmarkView::makeActiveRangeEntry();
+    BookmarkRangeEntryPtr re = BookmarkView::makeActiveRangeEntry();
     
     re->label = m_labelText->GetValue();
 
@@ -1424,16 +1424,25 @@ void BookmarkView::onTreeItemGetTooltip( wxTreeEvent& event ) {
 }
 
 
-void BookmarkView::onEnterWindow( wxMouseEvent& /* event */ ) {
-    mouseInView.store(true);
+void BookmarkView::onEnterWindow( wxMouseEvent&  event ) {
+    mouseTracker.OnMouseEnterWindow(event);
+
+#ifdef _WIN32
+    if (wxGetApp().getAppFrame()->canFocus()) {
+        this->SetFocus();
+    }
+#endif
+
 }
 
 
-void BookmarkView::onLeaveWindow( wxMouseEvent& /* event */ ) {
-    mouseInView.store(false);
+void BookmarkView::onLeaveWindow( wxMouseEvent& event ) {
+    mouseTracker.OnMouseLeftWindow(event);
 }
 
 void BookmarkView::onMotion( wxMouseEvent& event ) {
+    mouseTracker.OnMouseMoved(event);
+
     wxPoint pos = ClientToScreen(event.GetPosition());
     
     pos += wxPoint(30,-10);
@@ -1455,11 +1464,26 @@ TreeViewItem *BookmarkView::itemToTVI(wxTreeItemId item) {
     return tvi;
 }
 
-void BookmarkView::onSearchTextFocus( wxMouseEvent& /* event */ ) {
-    if (!m_searchText->IsEmpty()) {
-        if (m_searchText->GetValue() == L"Search..") {
-            m_searchText->SetValue(L"");
-        }
+void BookmarkView::onSearchTextFocus( wxMouseEvent&  event ) {
+    mouseTracker.OnMouseMoved(event);
+    
+    //apparently needed ???
+    m_searchText->SetFocus();
+
+    if (m_searchText->GetValue() == L"Search..") {
+        //select the whole field, so that typing 
+        //replaces the whole text by the new one right away.  
+        m_searchText->SetSelection(-1, -1);
+    }
+    else if (!m_searchText->GetValue().Trim().empty()) {
+        //position at the end of the existing field, so we can append 
+        //or truncate the existing field.
+        m_searchText->SetInsertionPointEnd();
+    }
+    else {
+        //empty field, restore displaying L"Search.."
+        m_searchText->SetValue(L"Search..");
+        m_searchText->SetSelection(-1, -1);
     }
 }
 
@@ -1467,11 +1491,9 @@ void BookmarkView::onSearchTextFocus( wxMouseEvent& /* event */ ) {
 void BookmarkView::onSearchText( wxCommandEvent& event ) {
     wstring searchText = m_searchText->GetValue().Trim().Lower().ToStdWstring();
     
-    if (!searchKeywords.empty()) {
-        searchKeywords.erase(searchKeywords.begin(),searchKeywords.end());
-    }
+   searchKeywords.clear();
     
-    if (searchText.length() != 0) {
+   if (searchText.length() != 0) {
         std::wstringstream searchTextLo(searchText);
         wstring tmp;
         
@@ -1480,7 +1502,6 @@ void BookmarkView::onSearchText( wxCommandEvent& event ) {
                 searchKeywords.push_back(tmp);
 //                std::wcout << L"Keyword: " << tmp << '\n';
             }
-
         }
     }
     
@@ -1501,30 +1522,42 @@ void BookmarkView::onClearSearch( wxCommandEvent& /* event */ ) {
     m_clearSearchButton->Hide();
     m_searchText->SetValue(L"Search..");
     m_treeView->SetFocus();
-    if (!searchKeywords.empty()) {
-        searchKeywords.erase(searchKeywords.begin(),searchKeywords.end());
-    }
+
+    searchKeywords.clear();
+
     wxGetApp().getBookmarkMgr().updateActiveList();
     wxGetApp().getBookmarkMgr().updateBookmarks();
     refreshLayout();
 }
 
 void BookmarkView::loadDefaultRanges() {
-    wxGetApp().getBookmarkMgr().addRange(new BookmarkRangeEntry(L"160 Meters",1900000,1800000,2000000));
-    wxGetApp().getBookmarkMgr().addRange(new BookmarkRangeEntry(L"80 Meters",3750000,3500000,4000000));
-    wxGetApp().getBookmarkMgr().addRange(new BookmarkRangeEntry(L"60 Meters",5368500,5332000,5405000));
-    wxGetApp().getBookmarkMgr().addRange(new BookmarkRangeEntry(L"40 Meters",7150000,7000000,7300000));
-    wxGetApp().getBookmarkMgr().addRange(new BookmarkRangeEntry(L"30 Meters",10125000,10100000,10150000));
-    wxGetApp().getBookmarkMgr().addRange(new BookmarkRangeEntry(L"20 Meters",14175000,14000000,14350000));
-    wxGetApp().getBookmarkMgr().addRange(new BookmarkRangeEntry(L"17 Meters",18068180,17044180,19092180));
-    wxGetApp().getBookmarkMgr().addRange(new BookmarkRangeEntry(L"15 Meters",21225000,21000000,21450000));
-    wxGetApp().getBookmarkMgr().addRange(new BookmarkRangeEntry(L"12 Meters",24940000,24890000,24990000));
-    wxGetApp().getBookmarkMgr().addRange(new BookmarkRangeEntry(L"10 Meters",28850000,28000000,29700000));
+
+    BookmarkRangeEntryPtr band_160meters(new BookmarkRangeEntry(L"160 Meters", 1900000, 1800000, 2000000));
+    BookmarkRangeEntryPtr band_80meters(new BookmarkRangeEntry(L"80 Meters", 3750000, 3500000, 4000000));
+    BookmarkRangeEntryPtr band_60meters(new BookmarkRangeEntry(L"60 Meters", 5368500, 5332000, 5405000));
+    BookmarkRangeEntryPtr band_40meters(new BookmarkRangeEntry(L"40 Meters", 7150000, 7000000, 7300000));
+    BookmarkRangeEntryPtr band_30meters(new BookmarkRangeEntry(L"30 Meters", 10125000, 10100000, 10150000));
+    BookmarkRangeEntryPtr band_20meters(new BookmarkRangeEntry(L"20 Meters", 14175000, 14000000, 14350000));
+    BookmarkRangeEntryPtr band_17meters(new BookmarkRangeEntry(L"17 Meters", 18068180, 17044180, 19092180));
+    BookmarkRangeEntryPtr band_15meters(new BookmarkRangeEntry(L"15 Meters", 21225000, 21000000, 21450000));
+    BookmarkRangeEntryPtr band_12meters(new BookmarkRangeEntry(L"12 Meters", 24940000, 24890000, 24990000));
+    BookmarkRangeEntryPtr band_10meters(new BookmarkRangeEntry(L"10 Meters", 28850000, 28000000, 29700000));
+
+    wxGetApp().getBookmarkMgr().addRange(band_160meters);
+    wxGetApp().getBookmarkMgr().addRange(band_80meters);
+    wxGetApp().getBookmarkMgr().addRange(band_60meters);
+    wxGetApp().getBookmarkMgr().addRange(band_40meters);
+    wxGetApp().getBookmarkMgr().addRange(band_30meters);
+    wxGetApp().getBookmarkMgr().addRange(band_20meters);
+    wxGetApp().getBookmarkMgr().addRange(band_17meters);
+    wxGetApp().getBookmarkMgr().addRange(band_15meters);
+    wxGetApp().getBookmarkMgr().addRange(band_12meters);
+    wxGetApp().getBookmarkMgr().addRange(band_10meters);
 }
 
 
-BookmarkRangeEntry *BookmarkView::makeActiveRangeEntry() {
-    BookmarkRangeEntry *re = new BookmarkRangeEntry;
+BookmarkRangeEntryPtr BookmarkView::makeActiveRangeEntry() {
+    BookmarkRangeEntryPtr re(new BookmarkRangeEntry);
     re->freq = wxGetApp().getFrequency();
     re->startFreq = wxGetApp().getAppFrame()->getViewCenterFreq() - (wxGetApp().getAppFrame()->getViewBandwidth()/2);
     re->endFreq = wxGetApp().getAppFrame()->getViewCenterFreq() + (wxGetApp().getAppFrame()->getViewBandwidth()/2);

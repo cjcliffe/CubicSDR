@@ -8,7 +8,7 @@
 
 #include "BookmarkPanel.h"
 #include "BookmarkMgr.h"
-
+#include "MouseTracker.h"
 
 class TreeViewItem : public wxTreeItemData {
 public:
@@ -27,8 +27,8 @@ public:
     };
     
     TreeViewItemType type;
-    BookmarkEntry *bookmarkEnt;
-    BookmarkRangeEntry *rangeEnt;
+    BookmarkEntryPtr bookmarkEnt;
+    BookmarkRangeEntryPtr rangeEnt;
     DemodulatorInstance *demod;
     std::string groupName;
 };
@@ -59,15 +59,15 @@ public:
     void setExpandState(std::string branchName, bool state);
     
     void loadDefaultRanges();
-    static BookmarkRangeEntry *makeActiveRangeEntry();
+    static BookmarkRangeEntryPtr makeActiveRangeEntry();
 
 protected:
     void activeSelection(DemodulatorInstance *dsel);
-    void bookmarkSelection(BookmarkEntry *bmSel);
-    void rangeSelection(BookmarkRangeEntry *re);
-    void activateBookmark(BookmarkEntry *bmEnt);
-    void activateRange(BookmarkRangeEntry *rangeEnt);
-    void recentSelection(BookmarkEntry *bmSel);
+    void bookmarkSelection(BookmarkEntryPtr bmSel);
+    void rangeSelection(BookmarkRangeEntryPtr re);
+    void activateBookmark(BookmarkEntryPtr bmEnt);
+    void activateRange(BookmarkRangeEntryPtr rangeEnt);
+    void recentSelection(BookmarkEntryPtr bmSel);
     void groupSelection(std::string groupName);
     void bookmarkBranchSelection();
     void recentBranchSelection();
@@ -111,10 +111,10 @@ protected:
     wxButton *addButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler);
 
     void doBookmarkActive(std::string group, DemodulatorInstance *demod);
-    void doBookmarkRecent(std::string group, BookmarkEntry *be);
-    void doMoveBookmark(BookmarkEntry *be, std::string group);
+    void doBookmarkRecent(std::string group, BookmarkEntryPtr be);
+    void doMoveBookmark(BookmarkEntryPtr be, std::string group);
     void doRemoveActive(DemodulatorInstance *demod);
-    void doRemoveRecent(BookmarkEntry *be);
+    void doRemoveRecent(BookmarkEntryPtr be);
     void doClearRecents();
     
     void updateBookmarkChoices();
@@ -141,8 +141,8 @@ protected:
 
 
     TreeViewItem *itemToTVI(wxTreeItemId item);
-    
-    std::atomic_bool mouseInView;
+
+    MouseTracker mouseTracker;
     
     wxTreeItemId rootBranch, activeBranch, bookmarkBranch, recentBranch, rangeBranch;
     
@@ -166,8 +166,8 @@ protected:
     std::atomic_bool doUpdateActive;
     
     // Focus
-    BookmarkEntry *nextEnt;
-    BookmarkRangeEntry *nextRange;
+    BookmarkEntryPtr nextEnt;
+    BookmarkRangeEntryPtr nextRange;
     DemodulatorInstance *nextDemod;
     
     // Search

@@ -78,10 +78,10 @@ bool BookmarkMgr::loadFromFile(std::string bookmarkFn, bool backup) {
     bool loadStatusOk = true;
 
     // Clear any active data
-    bmData.erase(bmData.begin(),bmData.end());
-    recents.erase(recents.begin(),recents.end());
-    ranges.erase(ranges.begin(),ranges.end());
-    bmDataSorted.erase(bmDataSorted.begin(),bmDataSorted.end());
+    bmData.clear();
+    clearRecents();
+    clearRanges();
+    bmDataSorted.clear();
     
     // File exists but is not readable
     if (loadFile.FileExists() && !loadFile.IsFileReadable()) {
@@ -117,7 +117,7 @@ bool BookmarkMgr::loadFromFile(std::string bookmarkFn, bool backup) {
         while (view_ranges->hasAnother("range")) {
             DataNode *range = view_ranges->getNext("range");
             
-            BookmarkRangeEntry *re = new BookmarkRangeEntry;
+            BookmarkRangeEntryPtr re(new BookmarkRangeEntry);
             
             if (range->hasAnother("label")) range->getNext("label")->element()->get(re->label);
             if (range->hasAnother("freq")) range->getNext("freq")->element()->get(re->freq);
@@ -143,7 +143,7 @@ bool BookmarkMgr::loadFromFile(std::string bookmarkFn, bool backup) {
             setExpandState(groupName, (expandState == "true"));
             while (group->hasAnother("modem")) {
                 DataNode *modem = group->getNext("modem");
-                BookmarkEntry *be = nodeToBookmark("modem", modem);
+                BookmarkEntryPtr be = nodeToBookmark("modem", modem);
                 if (be) {
                     addBookmark(groupName.c_str(), be);
                 } else {
@@ -159,7 +159,7 @@ bool BookmarkMgr::loadFromFile(std::string bookmarkFn, bool backup) {
         
         while (recent_modems->hasAnother("modem")) {
             DataNode *modem = recent_modems->getNext("modem");
-            BookmarkEntry *be = nodeToBookmark("modem", modem);
+            BookmarkEntryPtr be = nodeToBookmark("modem", modem);
             if (be) {
                 addRecent(be);
             } else {
@@ -202,7 +202,7 @@ bool BookmarkMgr::hasBackup(std::string bookmarkFn) {
 void BookmarkMgr::addBookmark(std::string group, DemodulatorInstance *demod) {
     std::lock_guard < std::mutex > lock(busy_lock);
     
-    BookmarkEntry *be = demodToBookmarkEntry(demod);
+    BookmarkEntryPtr be = demodToBookmarkEntry(demod);
     
     wxGetApp().getDemodMgr().saveInstance(be->node, demod);
     
@@ -210,7 +210,7 @@ void BookmarkMgr::addBookmark(std::string group, DemodulatorInstance *demod) {
     bmDataSorted[group] = false;
 }
 
-void BookmarkMgr::addBookmark(std::string group, BookmarkEntry *be) {
+void BookmarkMgr::addBookmark(std::string group, BookmarkEntryPtr be) {
     std::lock_guard < std::mutex > lock(busy_lock);
     
     bmData[group].push_back(be);
@@ -218,7 +218,7 @@ void BookmarkMgr::addBookmark(std::string group, BookmarkEntry *be) {
 }
 
 
-void BookmarkMgr::removeBookmark(std::string group, BookmarkEntry *be) {
+void BookmarkMgr::removeBookmark(std::string group, BookmarkEntryPtr be) {
     std::lock_guard < std::mutex > lockData(busy_lock);
     std::lock_guard < std::mutex > lockEnt(be->busy_lock);
 
@@ -229,12 +229,12 @@ void BookmarkMgr::removeBookmark(std::string group, BookmarkEntry *be) {
     BookmarkList::iterator i = std::find(bmData[group].begin(), bmData[group].end(), be);
     
     if (i != bmData[group].end()) {
-        delete *i;
+
         bmData[group].erase(i);
     }
 }
 
-void BookmarkMgr::removeBookmark(BookmarkEntry *be) {
+void BookmarkMgr::removeBookmark(BookmarkEntryPtr be) {
     std::lock_guard < std::mutex > lockData(busy_lock);
     std::lock_guard < std::mutex > lockEnt(be->busy_lock);
     
@@ -246,7 +246,7 @@ void BookmarkMgr::removeBookmark(BookmarkEntry *be) {
     }
 }
 
-void BookmarkMgr::moveBookmark(BookmarkEntry *be, std::string group) {
+void BookmarkMgr::moveBookmark(BookmarkEntryPtr be, std::string group) {
     std::lock_guard < std::mutex > lockData(busy_lock);
     std::lock_guard < std::mutex > lockEnt(be->busy_lock);
     
@@ -280,9 +280,7 @@ void BookmarkMgr::removeGroup(std::string group) {
     BookmarkMap::iterator i = bmData.find(group);
     
     if (i != bmData.end()) {
-        for (auto ii : bmData[group]) {
-            delete ii;
-        }
+       
         bmData.erase(group);
     }
 }
@@ -383,7 +381,7 @@ void BookmarkMgr::addRecent(DemodulatorInstance *demod) {
     trimRecents();
 }
 
-void BookmarkMgr::addRecent(BookmarkEntry *be) {
+void BookmarkMgr::addRecent(BookmarkEntryPtr be) {
     std::lock_guard < std::mutex > lock(busy_lock);
 
     recents.push_back(be);
@@ -393,11 +391,11 @@ void BookmarkMgr::addRecent(BookmarkEntry *be) {
 
 
 
-void BookmarkMgr::removeRecent(BookmarkEntry *be) {
+void BookmarkMgr::removeRecent(BookmarkEntryPtr be) {
     std::lock_guard < std::mutex > lock(busy_lock);
     
     BookmarkList::iterator bm_i = std::find(recents.begin(),recents.end(), be);
-    
+ 
     if (bm_i != recents.end()) {
         recents.erase(bm_i);
     }
@@ -412,20 +410,20 @@ BookmarkList BookmarkMgr::getRecents() {
 
 void BookmarkMgr::clearRecents() {
     std::lock_guard < std::mutex > lock(busy_lock);
-    
-    recents.erase(recents.begin(),recents.end());
+
+    recents.clear();
 }
 
 
 void BookmarkMgr::trimRecents() {
     if (recents.size() > BOOKMARK_RECENTS_MAX) {
-        delete *(recents.begin());
+       
         recents.erase(recents.begin(), recents.begin()+1);
     }
 }
 
 
-void BookmarkMgr::addRange(BookmarkRangeEntry *re) {
+void BookmarkMgr::addRange(BookmarkRangeEntryPtr re) {
     std::lock_guard < std::mutex > lock(busy_lock);
     
     ranges.push_back(re);
@@ -434,12 +432,13 @@ void BookmarkMgr::addRange(BookmarkRangeEntry *re) {
 
 
 
-void BookmarkMgr::removeRange(BookmarkRangeEntry *re) {
+void BookmarkMgr::removeRange(BookmarkRangeEntryPtr re) {
     std::lock_guard < std::mutex > lock(busy_lock);
     
     BookmarkRangeList::iterator re_i = std::find(ranges.begin(), ranges.end(), re);
     
     if (re_i != ranges.end()) {
+
         ranges.erase(re_i);
     }
 }
@@ -459,13 +458,14 @@ BookmarkRangeList BookmarkMgr::getRanges() {
 
 void BookmarkMgr::clearRanges() {
     std::lock_guard < std::mutex > lock(busy_lock);
-    
-    ranges.erase(ranges.begin(),ranges.end());
+
+    ranges.clear();
 }
 
 
-BookmarkEntry *BookmarkMgr::demodToBookmarkEntry(DemodulatorInstance *demod) {
-    BookmarkEntry *be = new BookmarkEntry;
+BookmarkEntryPtr BookmarkMgr::demodToBookmarkEntry(DemodulatorInstance *demod) {
+    
+    BookmarkEntryPtr be(new BookmarkEntry);
     
     be->bandwidth = demod->getBandwidth();
     be->type = demod->getDemodulatorType();
@@ -478,12 +478,13 @@ BookmarkEntry *BookmarkMgr::demodToBookmarkEntry(DemodulatorInstance *demod) {
     return be;
 }
 
-BookmarkEntry *BookmarkMgr::nodeToBookmark(const char *name_in, DataNode *node) {
+BookmarkEntryPtr BookmarkMgr::nodeToBookmark(const char *name_in, DataNode *node) {
     if (!node->hasAnother("frequency") || !node->hasAnother("type") || !node->hasAnother("bandwidth")) {
         return nullptr;
     }
     
-    BookmarkEntry *be = new BookmarkEntry();
+    BookmarkEntryPtr be(new BookmarkEntry());
+
     node->getNext("frequency")->element()->get(be->frequency);
     node->getNext("type")->element()->get(be->type);
     node->getNext("bandwidth")->element()->get(be->bandwidth);
@@ -500,7 +501,7 @@ BookmarkEntry *BookmarkMgr::nodeToBookmark(const char *name_in, DataNode *node) 
 }
 
 
-std::wstring BookmarkMgr::getBookmarkEntryDisplayName(BookmarkEntry *bmEnt) {
+std::wstring BookmarkMgr::getBookmarkEntryDisplayName(BookmarkEntryPtr bmEnt) {
     std::wstring dispName = bmEnt->label;
     
     if (dispName == "") {

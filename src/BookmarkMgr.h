@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <set>
+#include <memory>
 
 #include "DemodulatorInstance.h"
 
@@ -44,26 +45,28 @@ public:
     long long endFreq;
 };
 
+typedef std::shared_ptr<BookmarkEntry> BookmarkEntryPtr;
+typedef std::shared_ptr<BookmarkRangeEntry> BookmarkRangeEntryPtr;
 
-struct BookmarkEntryCompare : public std::binary_function<BookmarkEntry *,BookmarkEntry *,bool>
+struct BookmarkEntryCompare : public std::binary_function<BookmarkEntryPtr,BookmarkEntryPtr,bool>
 {
-    bool operator()(const BookmarkEntry *a, BookmarkEntry *b) const
+    bool operator()(const BookmarkEntryPtr a, BookmarkEntryPtr b) const
     {
         return a->frequency < b->frequency;
     }
 };
 
 
-struct BookmarkRangeEntryCompare : public std::binary_function<BookmarkRangeEntry *,BookmarkRangeEntry *,bool>
+struct BookmarkRangeEntryCompare : public std::binary_function<BookmarkRangeEntryPtr ,BookmarkRangeEntryPtr ,bool>
 {
-    bool operator()(const BookmarkRangeEntry *a, BookmarkRangeEntry *b) const
+    bool operator()(const BookmarkRangeEntryPtr a, BookmarkRangeEntryPtr b) const
     {
         return a->freq < b->freq;
     }
 };
 
-typedef std::vector<BookmarkEntry *> BookmarkList;
-typedef std::vector<BookmarkRangeEntry *> BookmarkRangeList;
+typedef std::vector<BookmarkEntryPtr> BookmarkList;
+typedef std::vector<BookmarkRangeEntryPtr> BookmarkRangeList;
 typedef std::map<std::string, BookmarkList > BookmarkMap;
 typedef std::map<std::string, bool > BookmarkMapSorted;
 typedef std::vector<std::string> BookmarkNames;
@@ -80,10 +83,10 @@ public:
     bool hasBackup(std::string bookmarkFn);
 
     void addBookmark(std::string group, DemodulatorInstance *demod);
-    void addBookmark(std::string group, BookmarkEntry *be);
-    void removeBookmark(std::string group, BookmarkEntry *be);
-    void removeBookmark(BookmarkEntry *be);
-    void moveBookmark(BookmarkEntry *be, std::string group);
+    void addBookmark(std::string group, BookmarkEntryPtr be);
+    void removeBookmark(std::string group, BookmarkEntryPtr be);
+    void removeBookmark(BookmarkEntryPtr be);
+    void moveBookmark(BookmarkEntryPtr be, std::string group);
     
     void addGroup(std::string group);
     void removeGroup(std::string group);
@@ -100,26 +103,26 @@ public:
     void updateBookmarks(std::string group);
 
     void addRecent(DemodulatorInstance *demod);
-    void addRecent(BookmarkEntry *be);
-    void removeRecent(BookmarkEntry *be);
+    void addRecent(BookmarkEntryPtr be);
+    void removeRecent(BookmarkEntryPtr be);
     BookmarkList getRecents();
     void clearRecents();
 
-    void addRange(BookmarkRangeEntry *re);
-    void removeRange(BookmarkRangeEntry *re);
+    void addRange(BookmarkRangeEntryPtr re);
+    void removeRange(BookmarkRangeEntryPtr re);
     BookmarkRangeList getRanges();
     void clearRanges();
     
 
-    static std::wstring getBookmarkEntryDisplayName(BookmarkEntry *bmEnt);
+    static std::wstring getBookmarkEntryDisplayName(BookmarkEntryPtr bmEnt);
     static std::wstring getActiveDisplayName(DemodulatorInstance *demod);
 
 protected:
 
     void trimRecents();
     
-    BookmarkEntry *demodToBookmarkEntry(DemodulatorInstance *demod);    
-    BookmarkEntry *nodeToBookmark(const char *name_in, DataNode *node);
+    BookmarkEntryPtr demodToBookmarkEntry(DemodulatorInstance *demod);
+    BookmarkEntryPtr nodeToBookmark(const char *name_in, DataNode *node);
     
     BookmarkMap bmData;
     BookmarkMapSorted bmDataSorted;
