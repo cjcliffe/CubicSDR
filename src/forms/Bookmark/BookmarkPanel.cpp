@@ -121,6 +121,11 @@ BookmarkPanel::~BookmarkPanel()
 	m_searchText->Disconnect( wxEVT_LEFT_DOWN, wxMouseEventHandler( BookmarkPanel::onSearchTextFocus ), NULL, this );
 	m_searchText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( BookmarkPanel::onSearchText ), NULL, this );
 	m_clearSearchButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onClearSearch ), NULL, this );
+
+    //VSO: Added m_treeView wxEVT_ENTER_WINDOW/wxEVT_LEAVE_WINDOW that was missing.
+    m_treeView->Disconnect(wxEVT_ENTER_WINDOW, wxMouseEventHandler(BookmarkPanel::onEnterWindow), NULL, this);
+    m_treeView->Disconnect(wxEVT_LEAVE_WINDOW, wxMouseEventHandler(BookmarkPanel::onLeaveWindow), NULL, this);
+
 	m_treeView->Disconnect( wxEVT_MOTION, wxMouseEventHandler( BookmarkPanel::onMotion ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_BEGIN_DRAG, wxTreeEventHandler( BookmarkPanel::onTreeBeginDrag ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_BEGIN_LABEL_EDIT, wxTreeEventHandler( BookmarkPanel::onTreeBeginLabelEdit ), NULL, this );
