@@ -1429,10 +1429,12 @@ void BookmarkView::onEnterWindow( wxMouseEvent&  event ) {
 
 #ifdef _WIN32
     if (wxGetApp().getAppFrame()->canFocus()) {
-        this->SetFocus();
+        //make mousewheel work in the tree view.
+        m_treeView->SetFocus();
     }
 #endif
 
+    setStatusText("You can mouse-drag a bookmark entry from one category to the next..etc. TODO: add more Bookmarks descriptions");
 }
 
 
@@ -1450,8 +1452,13 @@ void BookmarkView::onMotion( wxMouseEvent& event ) {
     if (visualDragItem != nullptr) {
         visualDragItem->SetPosition(pos);
     }
-    
+   
     event.Skip();
+}
+
+void BookmarkView::setStatusText(std::string statusText) {
+    //make tooltips active on the tree view.
+    wxGetApp().getAppFrame()->setStatusText(m_treeView, statusText);
 }
 
 TreeViewItem *BookmarkView::itemToTVI(wxTreeItemId item) {

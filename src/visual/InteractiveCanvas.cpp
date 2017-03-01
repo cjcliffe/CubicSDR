@@ -159,24 +159,13 @@ void InteractiveCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
 }
 
 void InteractiveCanvas::setStatusText(std::string statusText) {
-    wxGetApp().getAppFrame()->GetStatusBar()->SetStatusText(statusText);
-	if (wxGetApp().getConfig()->getShowTips()) {
-		if (statusText != lastToolTip) {
-			wxToolTip::Enable(false);
-			this->SetToolTip(statusText);
-			lastToolTip = statusText;
-			wxToolTip::SetDelay(1000);
-			wxToolTip::Enable(true);
-		}
-    } else {
-        this->SetToolTip("");
-        lastToolTip = "";
-    }
+
+    wxGetApp().getAppFrame()->setStatusText(this, statusText);
 }
 
 void InteractiveCanvas::setStatusText(std::string statusText, int value) {
-    wxGetApp().getAppFrame()->GetStatusBar()->SetStatusText(
-            wxString::Format(statusText.c_str(), wxNumberFormatter::ToString((long) value, wxNumberFormatter::Style_WithThousandsSep)));
+
+    wxGetApp().getAppFrame()->setStatusText(statusText, value);
 }
 
 void InteractiveCanvas::OnMouseRightDown(wxMouseEvent& event) {

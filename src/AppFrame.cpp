@@ -28,6 +28,7 @@
 #include <thread>
 
 #include <wx/panel.h>
+#include <wx/numformatter.h>
 
 #ifdef __linux__
 #include "CubicSDR.xpm"
@@ -97,7 +98,7 @@ AppFrame::AppFrame() :
 #endif
             
     gainCanvas = new GainCanvas(demodPanel, attribList);
-    
+    gainCanvas->setHelpTip("Tuner gains in dB. Click / use Mousewheel to change.");
     gainSizerItem = demodTray->Add(gainCanvas, 0, wxEXPAND | wxALL, 0);
     gainSizerItem->Show(false);
     gainSpacerItem = demodTray->AddSpacer(1);
@@ -181,8 +182,7 @@ AppFrame::AppFrame() :
     wxGetApp().getDemodSpectrumProcessor()->attachOutput(demodWaterfallCanvas->getVisualDataQueue());
     demodWaterfallCanvas->getVisualDataQueue()->set_max_num_items(3);
     demodWaterfallCanvas->setLinesPerSecond((int)(DEFAULT_DEMOD_WATERFALL_LINES_NB / DEMOD_WATERFALL_DURATION_IN_SECONDS));
-
-
+    
     demodVisuals->SetMinSize(wxSize(128,-1));
 
     demodTray->Add(demodVisuals, 30, wxEXPAND | wxALL, 0);
@@ -2567,4 +2567,26 @@ std::vector<std::string> str_explode(const std::string &seperator, const std::st
     }
     
     return vect_out;
+}
+
+void AppFrame::setStatusText(wxWindow* window, std::string statusText) {
+    GetStatusBar()->SetStatusText(statusText);
+    if (wxGetApp().getConfig()->getShowTips()) {
+        if (statusText != lastToolTip) {
+            wxToolTip::Enable(false);
+            window->SetToolTip(statusText);
+            lastToolTip = statusText;
+            wxToolTip::SetDelay(1000);
+            wxToolTip::Enable(true);
+        }
+    }
+    else {
+        window->SetToolTip("");
+        lastToolTip = "";
+    }
+}
+
+void AppFrame::setStatusText(std::string statusText, int value) {
+    GetStatusBar()->SetStatusText(
+        wxString::Format(statusText.c_str(), wxNumberFormatter::ToString((long)value, wxNumberFormatter::Style_WithThousandsSep)));
 }

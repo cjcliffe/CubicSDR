@@ -138,8 +138,7 @@ protected:
     void onRenameRange( wxCommandEvent& event );
     void onActivateRange( wxCommandEvent& event );
     void onUpdateRange( wxCommandEvent& event );
-
-
+    
     TreeViewItem *itemToTVI(wxTreeItemId item);
 
     MouseTracker mouseTracker;
@@ -172,4 +171,6 @@ protected:
     
     // Search
     std::vector<std::wstring> searchKeywords;
+
+    void setStatusText(std::string statusText);
 };

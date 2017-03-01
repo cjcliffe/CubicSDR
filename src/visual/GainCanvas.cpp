@@ -113,6 +113,11 @@ void GainCanvas::OnMouseMoved(wxMouseEvent& event) {
     if (mouseTracker.mouseDown()) {
         SetLevel();
     }
+    else {
+        if (!helpTip.empty()) {
+            setStatusText(helpTip);
+        }
+    }
 }
 
 void GainCanvas::OnMouseDown(wxMouseEvent& event) {

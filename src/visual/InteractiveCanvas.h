@@ -64,6 +64,5 @@ protected:
     long long lastBandwidth;
 
     bool isView;
-	std::string lastToolTip;
 };
 

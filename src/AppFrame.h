@@ -129,6 +129,9 @@ public:
 #ifdef _WIN32
 	bool canFocus();
 #endif
+    //set tooltip to window
+    void setStatusText(wxWindow* window, std::string statusText);
+    void AppFrame::setStatusText(std::string statusText, int value);
     
 private:
     void OnMenu(wxCommandEvent& event);
@@ -214,6 +217,8 @@ private:
     bool saveDisabled;
     
     AboutDialog *aboutDlg;
+
+    std::string lastToolTip;
 
 #ifdef USE_HAMLIB
     void enableRig();
