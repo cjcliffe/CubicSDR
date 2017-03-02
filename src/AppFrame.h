@@ -131,7 +131,7 @@ public:
 #endif
     //set tooltip to window
     void setStatusText(wxWindow* window, std::string statusText);
-    void AppFrame::setStatusText(std::string statusText, int value);
+    void setStatusText(std::string statusText, int value);
     
 private:
     void OnMenu(wxCommandEvent& event);
