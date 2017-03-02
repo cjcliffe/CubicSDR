@@ -21,15 +21,23 @@ public:
     };
     
     TreeViewItem() {
-        bookmarkEnt = nullptr;
         demod = nullptr;
+        bookmarkEnt = nullptr;
+        rangeEnt = nullptr;
+    };
+
+    virtual ~TreeViewItem() {
+        //dec ref count manually ???
+        bookmarkEnt = nullptr;
         rangeEnt = nullptr;
     };
     
     TreeViewItemType type;
-    BookmarkEntryPtr bookmarkEnt;
+    
+    BookmarkEntryPtr bookmarkEnt; 
     BookmarkRangeEntryPtr rangeEnt;
-    DemodulatorInstance *demod;
+    
+    DemodulatorInstance* demod;
     std::string groupName;
 };
 
@@ -44,6 +52,8 @@ public:
 class BookmarkView : public BookmarkPanel {
 public:
     BookmarkView( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1, -1 ), long style = wxTAB_TRAVERSAL );
+
+    virtual ~BookmarkView();
     
     void updateActiveList();
     void updateBookmarks();
@@ -140,6 +150,10 @@ protected:
     void onUpdateRange( wxCommandEvent& event );
     
     TreeViewItem *itemToTVI(wxTreeItemId item);
+    
+    void SetTreeItemData(const wxTreeItemId& item, wxTreeItemData *data);
+    void DeleteSingleItem(wxTreeItemId item);
+    void DeleteChildrenOfItem(wxTreeItemId item);
 
     MouseTracker mouseTracker;
     

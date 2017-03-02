@@ -703,6 +703,7 @@ AppFrame::AppFrame() :
 }
 
 AppFrame::~AppFrame() {
+
     waterfallDataThread->terminate();
     t_FFTData->join();
 }

@@ -112,8 +112,7 @@ public:
     void removeRange(BookmarkRangeEntryPtr re);
     BookmarkRangeList getRanges();
     void clearRanges();
-    
-
+ 
     static std::wstring getBookmarkEntryDisplayName(BookmarkEntryPtr bmEnt);
     static std::wstring getActiveDisplayName(DemodulatorInstance *demod);
 

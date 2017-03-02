@@ -67,7 +67,6 @@ void BookmarkMgr::saveToFile(std::string bookmarkFn, bool backup) {
     }
 }
 
-
 bool BookmarkMgr::loadFromFile(std::string bookmarkFn, bool backup) {
     wxFileName loadFile(wxGetApp().getConfig()->getConfigDir(), bookmarkFn);
     wxFileName failFile(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".failedload");
@@ -324,12 +323,16 @@ BookmarkList BookmarkMgr::getBookmarks(std::string group) {
 
 
 void BookmarkMgr::getGroups(BookmarkNames &arr) {
+    std::lock_guard < std::mutex > lockData(busy_lock);
+
     for (BookmarkMap::iterator i = bmData.begin(); i!= bmData.end(); ++i) {
         arr.push_back(i->first);
     }
 }
 
 void BookmarkMgr::getGroups(wxArrayString &arr) {
+    std::lock_guard < std::mutex > lockData(busy_lock);
+
     for (BookmarkMap::iterator i = bmData.begin(); i!= bmData.end(); ++i) {
         arr.push_back(i->first);
     }
@@ -350,7 +353,8 @@ bool BookmarkMgr::getExpandState(std::string groupName) {
 
 
 void BookmarkMgr::updateActiveList() {
-    BookmarkView *bmv = wxGetApp().getAppFrame()->getBookmarkView();
+
+  BookmarkView *bmv = wxGetApp().getAppFrame()->getBookmarkView();
     
     if (bmv) {
         bmv->updateActiveList();
@@ -358,6 +362,9 @@ void BookmarkMgr::updateActiveList() {
 }
 
 void BookmarkMgr::updateBookmarks() {
+
+    std::lock_guard < std::mutex > lockData(busy_lock);
+
     BookmarkView *bmv = wxGetApp().getAppFrame()->getBookmarkView();
     
     if (bmv) {
@@ -366,6 +373,9 @@ void BookmarkMgr::updateBookmarks() {
 }
 
 void BookmarkMgr::updateBookmarks(std::string group) {
+
+    std::lock_guard < std::mutex > lockData(busy_lock);
+
     BookmarkView *bmv = wxGetApp().getAppFrame()->getBookmarkView();
     
     if (bmv) {
@@ -376,6 +386,7 @@ void BookmarkMgr::updateBookmarks(std::string group) {
 
 void BookmarkMgr::addRecent(DemodulatorInstance *demod) {
     std::lock_guard < std::mutex > lock(busy_lock);
+
     recents.push_back(demodToBookmarkEntry(demod));
 
     trimRecents();
@@ -403,7 +414,7 @@ void BookmarkMgr::removeRecent(BookmarkEntryPtr be) {
 
 
 BookmarkList BookmarkMgr::getRecents() {
-    
+    std::lock_guard < std::mutex > lockData(busy_lock);
     return BookmarkList(recents.rbegin(), recents.rend());
 }
 
