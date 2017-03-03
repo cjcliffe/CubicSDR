@@ -27,9 +27,7 @@ public:
     };
 
     virtual ~TreeViewItem() {
-        //dec ref count manually ???
-        bookmarkEnt = nullptr;
-        rangeEnt = nullptr;
+      //
     };
     
     TreeViewItemType type;

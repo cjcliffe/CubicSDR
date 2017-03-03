@@ -561,9 +561,10 @@ void BookmarkView::onTreeActivate( wxTreeEvent& event ) {
                 nextDemod = tvi->demod;
             }
         } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
-            wxGetApp().getBookmarkMgr().removeRecent(tvi->bookmarkEnt);
+            
             activateBookmark(tvi->bookmarkEnt);
             nextEnt = tvi->bookmarkEnt;
+            wxGetApp().getBookmarkMgr().removeRecent(tvi->bookmarkEnt);
             wxGetApp().getBookmarkMgr().updateActiveList();
         } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK) {
             activateBookmark(tvi->bookmarkEnt);
@@ -742,9 +743,10 @@ void BookmarkView::doBookmarkActive(std::string group, DemodulatorInstance *demo
 
 
 void BookmarkView::doBookmarkRecent(std::string group, BookmarkEntryPtr be) {
-    wxGetApp().getBookmarkMgr().removeRecent(be);
+    
     wxGetApp().getBookmarkMgr().addBookmark(group, be);
     nextEnt = be;
+    wxGetApp().getBookmarkMgr().removeRecent(be);
     wxGetApp().getBookmarkMgr().updateBookmarks();
     bookmarkSelection(be);
 }
@@ -1203,10 +1205,10 @@ void BookmarkView::onActivateRecent( wxCommandEvent& /* event */ ) {
     TreeViewItem *curSel = itemToTVI(m_treeView->GetSelection());
     
     if (curSel && curSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
-
-        wxGetApp().getBookmarkMgr().removeRecent(curSel->bookmarkEnt);
+    
         activateBookmark(curSel->bookmarkEnt);
         DeleteSingleItem(m_treeView->GetSelection());
+        wxGetApp().getBookmarkMgr().removeRecent(curSel->bookmarkEnt);
         wxGetApp().getBookmarkMgr().updateActiveList();
     }
 }
@@ -1220,8 +1222,9 @@ void BookmarkView::onRemoveRecent ( wxCommandEvent& /* event */ ) {
     TreeViewItem *curSel = itemToTVI(m_treeView->GetSelection());
     
     if (curSel && curSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
-        wxGetApp().getBookmarkMgr().removeRecent(curSel->bookmarkEnt);
+   
         DeleteSingleItem(m_treeView->GetSelection());
+        wxGetApp().getBookmarkMgr().removeRecent(curSel->bookmarkEnt);
         wxGetApp().getBookmarkMgr().updateActiveList();
     }
 }
