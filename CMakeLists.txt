@@ -147,7 +147,7 @@ IF (MSVC)
     SET(LIQUID_INCLUDES "${PROJECT_SOURCE_DIR}/external/liquid-dsp/include/" CACHE STRING "Liquid-DSP include directory")
     SET(LIQUID_LIBRARIES "${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/libliquid.lib" CACHE STRING "Liquid-DSP Library")
     SET(LIQUID_DLL "${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/libliquid.dll" CACHE STRING "Liquid-DSP DLL")
-    SET(HAMLIB_DLLS "${PROJECT_SOURCE_DIR}/external/hamlib/${EX_PLATFORM}/libhamlib-2.dll;${PROJECT_SOURCE_DIR}/external/hamlib/${EX_PLATFORM}/libwinpthread-1.dll" CACHE STRING "HAMLIB DLLS")
+    SET(HAMLIB_DLLS "${PROJECT_SOURCE_DIR}/external/hamlib/${EX_PLATFORM}/libhamlib-2.dll" CACHE STRING "HAMLIB DLLS")
 ELSE (MSVC)
     ADD_DEFINITIONS(
         -std=c++0x 

@@ -74,6 +74,8 @@ __BEGIN_DECLS
 
 extern HAMLIB_EXPORT_VAR(const char) hamlib_version[];
 extern HAMLIB_EXPORT_VAR(const char) hamlib_copyright[];
+extern HAMLIB_EXPORT_VAR(const char *) hamlib_version2;
+extern HAMLIB_EXPORT_VAR(const char *) hamlib_copyright2;
 
 /**
  * \brief Hamlib error codes
@@ -172,7 +174,9 @@ typedef enum rig_port_e {
   RIG_PORT_PARALLEL,		/*!< Parallel port */
   RIG_PORT_USB,			/*!< USB port */
   RIG_PORT_UDP_NETWORK,		/*!< UDP Network socket type */
-  RIG_PORT_CM108		/*!< CM108 GPIO */
+  RIG_PORT_CM108,		/*!< CM108 GPIO */
+  RIG_PORT_GPIO,		/*!< GPIO */
+  RIG_PORT_GPION,		/*!< GPIO inverted */
 } rig_port_t;
 
 /**
@@ -419,7 +423,9 @@ typedef enum {
   RIG_PTT_SERIAL_RTS,		/*!< PTT control through serial RTS signal */
   RIG_PTT_PARALLEL,		/*!< PTT control through parallel port */
   RIG_PTT_RIG_MICDATA,		/*!< Legacy PTT (CAT PTT), supports RIG_PTT_ON_MIC/RIG_PTT_ON_DATA */
-  RIG_PTT_CM108		/*!< PTT control through CM108 GPIO pin */
+  RIG_PTT_CM108,		/*!< PTT control through CM108 GPIO pin */
+  RIG_PTT_GPIO,			/*!< PTT control through GPIO pin */
+  RIG_PTT_GPION,		/*!< PTT control through inverted GPIO pin */
 } ptt_type_t;
 
 /**
@@ -485,15 +491,15 @@ typedef enum {
  * \sa rig_parse_scan() rig_strscan()
  */
 typedef enum {
-	RIG_SCAN_NONE =		0,  /*!< '' No Scan */
-	RIG_SCAN_STOP =		RIG_SCAN_NONE, /*!< \c STOP -- Stop scanning */
+	RIG_SCAN_NONE =		0,  /*!< '' No-op value */
 	RIG_SCAN_MEM =		(1<<0),	/*!< \c MEM -- Scan all memory channels */
 	RIG_SCAN_SLCT =		(1<<1),	/*!< \c SLCT -- Scan all selected memory channels */
 	RIG_SCAN_PRIO =		(1<<2),	/*!< \c PRIO -- Priority watch (mem or call channel) */
 	RIG_SCAN_PROG =		(1<<3),	/*!< \c PROG -- Programmed(edge) scan */
 	RIG_SCAN_DELTA =	(1<<4),	/*!< \c DELTA -- delta-f scan */
 	RIG_SCAN_VFO =		(1<<5),	/*!< \c VFO -- most basic scan */
-	RIG_SCAN_PLT =		(1<<6)  /*!< \c PLT -- Scan using pipelined tuning */
+	RIG_SCAN_PLT =		(1<<6), /*!< \c PLT -- Scan using pipelined tuning */
+	RIG_SCAN_STOP =		(1<<7)  /*!< \c STOP -- Stop scanning */
 } scan_t;
 
 /**
@@ -1381,6 +1387,10 @@ typedef struct hamlib_port {
         char *vendor_name; /*!< Vendor name (opt.) */
         char *product;     /*!< Product (opt.) */
 	} usb;			/*!< USB attributes */
+	struct {
+		int on_value;
+		int value;
+	} gpio;
   } parm;			/*!< Port parameter union */
 } hamlib_port_t;
 
@@ -1732,6 +1742,10 @@ extern HAMLIB_EXPORT(vfo_op_t) rig_parse_vfo_op(const char *s);
 extern HAMLIB_EXPORT(scan_t) rig_parse_scan(const char *s);
 extern HAMLIB_EXPORT(rptr_shift_t) rig_parse_rptr_shift(const char *s);
 extern HAMLIB_EXPORT(chan_type_t) rig_parse_mtype(const char *s);
+
+extern HAMLIB_EXPORT(const char *) rig_license HAMLIB_PARAMS(());
+extern HAMLIB_EXPORT(const char *) rig_version HAMLIB_PARAMS(());
+extern HAMLIB_EXPORT(const char *) rig_copyright HAMLIB_PARAMS(());
 
 HAMLIB_EXPORT(void) rig_no_restore_ai();
 

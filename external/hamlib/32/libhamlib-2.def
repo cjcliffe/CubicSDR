@@ -1,261 +1,266 @@
 EXPORTS
-azimuth_long_path
-dec2dmmm
-dec2dms
-distance_long_path
-dmmm2dec
-dms2dec
-from_bcd
-from_bcd_be
-hamlib_copyright
-hamlib_version
-initrigs3_adat
-initrigs3_alinco
-initrigs3_aor
-initrigs3_drake
-initrigs3_dummy
-initrigs3_flexradio
-initrigs3_icmarine
-initrigs3_icom
-initrigs3_jrc
-initrigs3_kachina
-initrigs3_kenwood
-initrigs3_kit
-initrigs3_lowe
-initrigs3_pcr
-initrigs3_prm80
-initrigs3_racal
-initrigs3_rft
-initrigs3_rs
-initrigs3_skanti
-initrigs3_tapr
-initrigs3_tentec
-initrigs3_tuner
-initrigs3_uniden
-initrigs3_winradio
-initrigs3_wj
-initrigs3_yaesu
-initrots3_amsat
-initrots3_ars
-initrots3_celestron
-initrots3_cnctrk
-initrots3_dummy = _netrigctl_set_freq
-initrots3_easycomm
-initrots3_ether6
-initrots3_fodtrack = _initrots3_heathkit
-initrots3_gs232a
-initrots3_heathkit
-initrots3_kit
-initrots3_m2
-initrots3_prosistel
-initrots3_rotorez
-initrots3_sartek
-initrots3_spid
-initrots3_ts7400
-locator2longlat
-longlat2locator
-par_lock
-par_read_control
-par_read_data
-par_read_status
-par_unlock
-par_write_control
-par_write_data
-port_close
-port_open
-probeallrigs3_adat
-probeallrigs3_drake
-probeallrigs3_icom
-probeallrigs3_kenwood
-probeallrigs3_lowe
-probeallrigs3_uniden
-probeallrigs3_yaesu
-qrb
-read_block
-read_string
-rig_check_backend
-rig_check_cache_timeout
-rig_cleanup
-rig_close
-rig_confparam_lookup
-rig_debug
-rig_ext_level_foreach
-rig_ext_lookup
-rig_ext_lookup_tok
-rig_ext_parm_foreach
-rig_ext_token_lookup
-rig_force_cache_timeout
-rig_get_ant
-rig_get_caps
-rig_get_chan_all
-rig_get_chan_all_cb
-rig_get_channel
-rig_get_conf
-rig_get_ctcss_sql
-rig_get_ctcss_tone
-rig_get_dcd
-rig_get_dcs_code
-rig_get_dcs_sql
-rig_get_ext_level
-rig_get_ext_parm
-rig_get_freq
-rig_get_func
-rig_get_info
-rig_get_level
-rig_get_mem
-rig_get_mem_all = _rig_debug
-rig_get_mem_all_cb
-rig_get_mode
-rig_get_parm
-rig_get_powerstat
-rig_get_ptt
-rig_get_range
-rig_get_resolution
-rig_get_rit
-rig_get_rptr_offs
-rig_get_rptr_shift
-rig_get_split_freq
-rig_get_split_freq_mode
-rig_get_split_mode
-rig_get_split_vfo
-rig_get_trn
-rig_get_ts
-rig_get_vfo
-rig_get_xit
-rig_has_get_func
-rig_has_get_level
-rig_has_get_parm
-rig_has_scan
-rig_has_set_func
-rig_has_set_level
-rig_has_set_parm
-rig_has_vfo_op
-rig_init
-rig_list_foreach
-rig_load_all_backends
-rig_load_backend
-rig_lookup_mem_caps
-rig_mW2power
-rig_mem_count
-rig_need_debug
-rig_no_restore_ai
-rig_open
-rig_parse_func
-rig_parse_level
-rig_parse_mode
-rig_parse_mtype
-rig_parse_parm
-rig_parse_rptr_shift
-rig_parse_scan
-rig_parse_vfo
-rig_parse_vfo_op
-rig_passband_narrow
-rig_passband_normal
-rig_passband_wide
-rig_power2mW
-rig_probe
-rig_probe_all
-rig_raw2val = _rig_get_ctcss_tone
-rig_recv_dtmf
-rig_register
-rig_reset
-rig_scan
-rig_send_dtmf
-rig_send_morse
-rig_set_ant
-rig_set_bank
-rig_set_chan_all
-rig_set_chan_all_cb
-rig_set_channel
-rig_set_conf
-rig_set_ctcss_sql
-rig_set_ctcss_tone
-rig_set_dcd_callback
-rig_set_dcs_code
-rig_set_dcs_sql
-rig_set_debug
-rig_set_debug_callback
-rig_set_debug_file
-rig_set_ext_level
-rig_set_ext_parm
-rig_set_freq
-rig_set_freq_callback
-rig_set_func
-rig_set_level
-rig_set_mem
-rig_set_mem_all = _rig_set_func
-rig_set_mem_all_cb = _rig_has_set_level
-rig_set_mode
-rig_set_mode_callback
-rig_set_parm
-rig_set_pltune_callback
-rig_set_powerstat
-rig_set_ptt
-rig_set_ptt_callback
-rig_set_rit
-rig_set_rptr_offs
-rig_set_rptr_shift
-rig_set_split_freq
-rig_set_split_freq_mode
-rig_set_split_mode = _rig_reset
-rig_set_split_vfo
-rig_set_trn
-rig_set_ts
-rig_set_vfo
-rig_set_vfo_callback
-rig_set_xit
-rig_setting2idx
-rig_strfunc
-rig_strlevel
-rig_strmtype
-rig_strparm
-rig_strptrshift
-rig_strrmode
-rig_strscan
-rig_strstatus
-rig_strvfo
-rig_strvfop
-rig_token_foreach
-rig_token_lookup
-rig_unregister
-rig_vfo_op
-rigerror
-rot_check_backend
-rot_cleanup
-rot_close
-rot_confparam_lookup
-rot_get_caps
-rot_get_conf
-rot_get_info
-rot_get_position
-rot_init
-rot_list_foreach
-rot_load_all_backends
-rot_load_backend
-rot_move
-rot_open
-rot_park
-rot_probe_all
-rot_register
-rot_reset
-rot_set_conf
-rot_set_position
-rot_stop
-rot_token_foreach
-rot_token_lookup
-rot_unregister
-ser_get_car
-ser_get_cts
-ser_get_dsr
-ser_get_dtr
-ser_get_rts = _rig_check_backend
-ser_set_brk
-ser_set_dtr
-ser_set_rts
-serial_flush
-serial_open
-serial_setup
-sprintf_freq
-to_bcd
-to_bcd_be
-write_block
+    azimuth_long_path @1
+    dec2dmmm @2
+    dec2dms @3
+    distance_long_path @4
+    dmmm2dec @5
+    dms2dec @6
+    from_bcd @7
+    from_bcd_be @8
+    hamlib_copyright @9 DATA
+    hamlib_copyright2 @10 DATA
+    hamlib_version @11 DATA
+    hamlib_version2 @12 DATA
+    initrigs3_adat @13
+    initrigs3_alinco @14
+    initrigs3_aor @15
+    initrigs3_drake @16
+    initrigs3_dummy @17
+    initrigs3_flexradio @18
+    initrigs3_icmarine @19
+    initrigs3_icom @20
+    initrigs3_jrc @21
+    initrigs3_kachina @22
+    initrigs3_kenwood @23
+    initrigs3_kit @24
+    initrigs3_lowe @25
+    initrigs3_pcr @26
+    initrigs3_prm80 @27
+    initrigs3_racal @28
+    initrigs3_rft @29
+    initrigs3_rs @30
+    initrigs3_skanti @31
+    initrigs3_tapr @32
+    initrigs3_tentec @33
+    initrigs3_tuner @34
+    initrigs3_uniden @35
+    initrigs3_winradio @36
+    initrigs3_wj @37
+    initrigs3_yaesu @38
+    initrots3_amsat @39
+    initrots3_ars @40
+    initrots3_celestron @41
+    initrots3_cnctrk @42
+    initrots3_dummy @43
+    initrots3_easycomm @44
+    initrots3_ether6 @45
+    initrots3_fodtrack @46
+    initrots3_gs232a @47
+    initrots3_heathkit @48
+    initrots3_kit @49
+    initrots3_m2 @50
+    initrots3_prosistel @51
+    initrots3_rotorez @52
+    initrots3_sartek @53
+    initrots3_spid @54
+    initrots3_ts7400 @55
+    locator2longlat @56
+    longlat2locator @57
+    par_lock @58
+    par_read_control @59
+    par_read_data @60
+    par_read_status @61
+    par_unlock @62
+    par_write_control @63
+    par_write_data @64
+    port_close @65
+    port_open @66
+    probeallrigs3_adat @67
+    probeallrigs3_drake @68
+    probeallrigs3_icom @69
+    probeallrigs3_kenwood @70
+    probeallrigs3_lowe @71
+    probeallrigs3_uniden @72
+    probeallrigs3_yaesu @73
+    qrb @74
+    read_block @75
+    read_string @76
+    rig_check_backend @77
+    rig_check_cache_timeout @78
+    rig_cleanup @79
+    rig_close @80
+    rig_confparam_lookup @81
+    rig_copyright @82
+    rig_debug @83
+    rig_ext_level_foreach @84
+    rig_ext_lookup @85
+    rig_ext_lookup_tok @86
+    rig_ext_parm_foreach @87
+    rig_ext_token_lookup @88
+    rig_force_cache_timeout @89
+    rig_get_ant @90
+    rig_get_caps @91
+    rig_get_chan_all @92
+    rig_get_chan_all_cb @93
+    rig_get_channel @94
+    rig_get_conf @95
+    rig_get_ctcss_sql @96
+    rig_get_ctcss_tone @97
+    rig_get_dcd @98
+    rig_get_dcs_code @99
+    rig_get_dcs_sql @100
+    rig_get_ext_level @101
+    rig_get_ext_parm @102
+    rig_get_freq @103
+    rig_get_func @104
+    rig_get_info @105
+    rig_get_level @106
+    rig_get_mem @107
+    rig_get_mem_all @108
+    rig_get_mem_all_cb @109
+    rig_get_mode @110
+    rig_get_parm @111
+    rig_get_powerstat @112
+    rig_get_ptt @113
+    rig_get_range @114
+    rig_get_resolution @115
+    rig_get_rit @116
+    rig_get_rptr_offs @117
+    rig_get_rptr_shift @118
+    rig_get_split_freq @119
+    rig_get_split_freq_mode @120
+    rig_get_split_mode @121
+    rig_get_split_vfo @122
+    rig_get_trn @123
+    rig_get_ts @124
+    rig_get_vfo @125
+    rig_get_xit @126
+    rig_has_get_func @127
+    rig_has_get_level @128
+    rig_has_get_parm @129
+    rig_has_scan @130
+    rig_has_set_func @131
+    rig_has_set_level @132
+    rig_has_set_parm @133
+    rig_has_vfo_op @134
+    rig_init @135
+    rig_license @136
+    rig_list_foreach @137
+    rig_load_all_backends @138
+    rig_load_backend @139
+    rig_lookup_mem_caps @140
+    rig_mW2power @141
+    rig_mem_count @142
+    rig_need_debug @143
+    rig_no_restore_ai @144
+    rig_open @145
+    rig_parse_func @146
+    rig_parse_level @147
+    rig_parse_mode @148
+    rig_parse_mtype @149
+    rig_parse_parm @150
+    rig_parse_rptr_shift @151
+    rig_parse_scan @152
+    rig_parse_vfo @153
+    rig_parse_vfo_op @154
+    rig_passband_narrow @155
+    rig_passband_normal @156
+    rig_passband_wide @157
+    rig_power2mW @158
+    rig_probe @159
+    rig_probe_all @160
+    rig_raw2val @161
+    rig_recv_dtmf @162
+    rig_register @163
+    rig_reset @164
+    rig_scan @165
+    rig_send_dtmf @166
+    rig_send_morse @167
+    rig_set_ant @168
+    rig_set_bank @169
+    rig_set_chan_all @170
+    rig_set_chan_all_cb @171
+    rig_set_channel @172
+    rig_set_conf @173
+    rig_set_ctcss_sql @174
+    rig_set_ctcss_tone @175
+    rig_set_dcd_callback @176
+    rig_set_dcs_code @177
+    rig_set_dcs_sql @178
+    rig_set_debug @179
+    rig_set_debug_callback @180
+    rig_set_debug_file @181
+    rig_set_ext_level @182
+    rig_set_ext_parm @183
+    rig_set_freq @184
+    rig_set_freq_callback @185
+    rig_set_func @186
+    rig_set_level @187
+    rig_set_mem @188
+    rig_set_mem_all @189
+    rig_set_mem_all_cb @190
+    rig_set_mode @191
+    rig_set_mode_callback @192
+    rig_set_parm @193
+    rig_set_pltune_callback @194
+    rig_set_powerstat @195
+    rig_set_ptt @196
+    rig_set_ptt_callback @197
+    rig_set_rit @198
+    rig_set_rptr_offs @199
+    rig_set_rptr_shift @200
+    rig_set_split_freq @201
+    rig_set_split_freq_mode @202
+    rig_set_split_mode @203
+    rig_set_split_vfo @204
+    rig_set_trn @205
+    rig_set_ts @206
+    rig_set_vfo @207
+    rig_set_vfo_callback @208
+    rig_set_xit @209
+    rig_setting2idx @210
+    rig_strfunc @211
+    rig_strlevel @212
+    rig_strmtype @213
+    rig_strparm @214
+    rig_strptrshift @215
+    rig_strrmode @216
+    rig_strscan @217
+    rig_strstatus @218
+    rig_strvfo @219
+    rig_strvfop @220
+    rig_token_foreach @221
+    rig_token_lookup @222
+    rig_unregister @223
+    rig_version @224
+    rig_vfo_op @225
+    rigerror @226
+    rot_check_backend @227
+    rot_cleanup @228
+    rot_close @229
+    rot_confparam_lookup @230
+    rot_get_caps @231
+    rot_get_conf @232
+    rot_get_info @233
+    rot_get_position @234
+    rot_init @235
+    rot_list_foreach @236
+    rot_load_all_backends @237
+    rot_load_backend @238
+    rot_move @239
+    rot_open @240
+    rot_park @241
+    rot_probe_all @242
+    rot_register @243
+    rot_reset @244
+    rot_set_conf @245
+    rot_set_position @246
+    rot_stop @247
+    rot_token_foreach @248
+    rot_token_lookup @249
+    rot_unregister @250
+    ser_get_car @251
+    ser_get_cts @252
+    ser_get_dsr @253
+    ser_get_dtr @254
+    ser_get_rts @255
+    ser_set_brk @256
+    ser_set_dtr @257
+    ser_set_rts @258
+    serial_flush @259
+    serial_open @260
+    serial_setup @261
+    sprintf_freq @262
+    to_bcd @263
+    to_bcd_be @264
+    write_block @265

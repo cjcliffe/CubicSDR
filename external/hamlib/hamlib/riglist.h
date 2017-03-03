@@ -213,7 +213,8 @@
 #define RIG_MODEL_ID5100 RIG_MAKE_MODEL(RIG_ICOM, 71)
 #define RIG_MODEL_IC2730 RIG_MAKE_MODEL(RIG_ICOM, 72)
 #define RIG_MODEL_IC7300 RIG_MAKE_MODEL(RIG_ICOM, 73)
-/* next one is 74 */
+#define RIG_MODEL_PERSEUS RIG_MAKE_MODEL(RIG_ICOM, 74)
+/* next one is 75 */
 
 	/*
 	 * Optoelectronics (CI-V)
