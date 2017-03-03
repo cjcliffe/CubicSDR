@@ -1597,8 +1597,10 @@ BookmarkRangeEntryPtr BookmarkView::makeActiveRangeEntry() {
 
 void BookmarkView::DeleteSingleItem(wxTreeItemId item) {
 
-    //free the associated TreeItemData*, because contrary to doc, the associated data is not freed automatically by  m_treeView->Delete(item) !
-    // this is needed to dec the ref count of shared_ptr within TreeViewItem.
+    //free the associated TreeItemData*, because contrary to doc, 
+    // the associated data is not freed automatically by  m_treeView->Delete(item) !
+    // this is also needed to decrement the ref count of shared_ptr within TreeViewItem,
+    //and prevent further memory leaks.
     // (see source of vxWidgets 3.1)
     TreeViewItem *itemData = itemToTVI(item);
     if (itemData != NULL) {
@@ -1613,6 +1615,14 @@ void BookmarkView::DeleteSingleItem(wxTreeItemId item) {
 
 void BookmarkView::DeleteChildrenOfItem(wxTreeItemId item) {
 
+    FreeItemDataOfItemRecursively(item);
+
+    //this delete is naturally recursive.
+    m_treeView->DeleteChildren(item);
+}
+
+void BookmarkView::FreeItemDataOfItemRecursively(wxTreeItemId item) {
+
     wxTreeItemIdValue cookieSearch;
     wxTreeItemId currentChild = m_treeView->GetFirstChild(item, cookieSearch);
 
@@ -1620,15 +1630,16 @@ void BookmarkView::DeleteChildrenOfItem(wxTreeItemId item) {
 
         TreeViewItem *itemData = itemToTVI(currentChild);
         if (itemData != NULL) {
-         
+
             delete itemData;
             m_treeView->SetItemData(currentChild, NULL);
         }
 
+        //Search children and Free item data recursively.
+        FreeItemDataOfItemRecursively(currentChild);
+      
         currentChild = m_treeView->GetNextChild(item, cookieSearch);
-    }
-
-    m_treeView->DeleteChildren(item);
+    } //end while 
 }
 
 
