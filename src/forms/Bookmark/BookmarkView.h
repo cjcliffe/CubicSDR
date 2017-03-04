@@ -150,9 +150,6 @@ protected:
     TreeViewItem *itemToTVI(wxTreeItemId item);
     
     void SetTreeItemData(const wxTreeItemId& item, wxTreeItemData *data);
-    void DeleteSingleItem(wxTreeItemId item);
-    void DeleteChildrenOfItem(wxTreeItemId item);
-    void FreeItemDataOfItemRecursively(wxTreeItemId item);
 
     MouseTracker mouseTracker;
     
