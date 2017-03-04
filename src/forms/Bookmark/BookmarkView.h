@@ -25,6 +25,14 @@ public:
         bookmarkEnt = nullptr;
         rangeEnt = nullptr;
     };
+    // copy constructor
+    TreeViewItem(const TreeViewItem& src) {
+        demod = src.demod;
+        bookmarkEnt = src.bookmarkEnt;
+        rangeEnt = src.rangeEnt;
+        type = src.type;
+        groupName = src.groupName;
+    };
 
     virtual ~TreeViewItem() {
       //
@@ -53,11 +61,17 @@ public:
 
     virtual ~BookmarkView();
     
+    //order an asynchronous refresh/rebuild of the whole tree,
+    //will take effect at the next onUpdateTimer() occurence.
     void updateActiveList();
-    void updateBookmarks();
-    bool isKeywordMatch(std::wstring str, std::vector<std::wstring> &keywords);
-    void updateBookmarks(std::string group);
     
+    //order asynchronous updates of the bookmarks,
+    //will take effect at the next onUpdateTimer() occurence.
+    void updateBookmarks();
+    void updateBookmarks(std::string group);
+
+    bool isKeywordMatch(std::wstring str, std::vector<std::wstring> &keywords);
+   
     wxTreeItemId refreshBookmarks();
     void updateTheme();
     void onMenuItem(wxCommandEvent& event);
@@ -73,7 +87,9 @@ protected:
     void activeSelection(DemodulatorInstance *dsel);
     void bookmarkSelection(BookmarkEntryPtr bmSel);
     void rangeSelection(BookmarkRangeEntryPtr re);
+    
     void activateBookmark(BookmarkEntryPtr bmEnt);
+
     void activateRange(BookmarkRangeEntryPtr rangeEnt);
     void recentSelection(BookmarkEntryPtr bmSel);
     void groupSelection(std::string groupName);
@@ -87,6 +103,7 @@ protected:
     
     void onUpdateTimer( wxTimerEvent& event );
 
+    //refresh / rebuild the whole tree item immediatly
     void doUpdateActiveList();
 
     void onTreeBeginLabelEdit( wxTreeEvent& event );

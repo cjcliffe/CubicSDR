@@ -247,8 +247,15 @@ bool BookmarkView::isKeywordMatch(std::wstring search_str, std::vector<std::wstr
 
 wxTreeItemId BookmarkView::refreshBookmarks() {
     
-    TreeViewItem *prevSel = itemToTVI(m_treeView->GetSelection());
-    
+    //capture the previously selected item info BY COPY (because the original will be destroyed together with the destroyed tree items) to restore it again after 
+    //having rebuilding the whole tree.
+    TreeViewItem* prevSel = itemToTVI(m_treeView->GetSelection());
+    TreeViewItem* prevSelCopy = nullptr;
+
+    if (prevSel != NULL) {
+        prevSelCopy = new TreeViewItem(*prevSel);
+    }
+
     BookmarkNames groupNames;
     wxGetApp().getBookmarkMgr().getGroups(groupNames);
     
@@ -272,7 +279,7 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
         wxTreeItemId group_itm = m_treeView->AppendItem(bookmarkBranch, gn_i);
         SetTreeItemData(group_itm, tvi);
         groups[gn_i] = group_itm;
-        if (prevSel != nullptr && prevSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_GROUP && gn_i == prevSel->groupName) {
+        if (prevSelCopy != nullptr && prevSelCopy->type == TreeViewItem::TREEVIEW_ITEM_TYPE_GROUP && gn_i == prevSelCopy->groupName) {
             bmSelFound = group_itm;
         }
     }
@@ -315,7 +322,7 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
             
             wxTreeItemId itm = m_treeView->AppendItem(groupItem, labelVal);
             SetTreeItemData(itm, tvi);
-            if (prevSel != nullptr && prevSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK && prevSel->bookmarkEnt == bmEnt && groupExpanded) {
+            if (prevSelCopy != nullptr && prevSelCopy->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK && prevSelCopy->bookmarkEnt == bmEnt && groupExpanded) {
                 bmSelFound = itm;
             }
             if (nextEnt == bmEnt) {
@@ -328,6 +335,9 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
             m_treeView->Expand(groupItem);
         }
     }
+
+    delete prevSelCopy;
+
     return bmSelFound;
 }
 
@@ -338,7 +348,14 @@ void BookmarkView::doUpdateActiveList() {
 //    DemodulatorInstance *activeDemodulator = wxGetApp().getDemodMgr().getActiveDemodulator();
     DemodulatorInstance *lastActiveDemodulator = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
-    TreeViewItem *prevSel = itemToTVI(m_treeView->GetSelection());
+    //capture the previously selected item info BY COPY (because the original will be destroyed together with the destroyed tree items) to restore it again after 
+    //having rebuilding the whole tree.
+    TreeViewItem* prevSel = itemToTVI(m_treeView->GetSelection());
+    TreeViewItem* prevSelCopy = nullptr;
+   
+    if (prevSel != NULL) {
+        prevSelCopy = new TreeViewItem(*prevSel);
+    }
 
     // Actives
     m_treeView->DeleteChildren(activeBranch);
@@ -405,12 +422,11 @@ void BookmarkView::doUpdateActiveList() {
         if (nextRange == re_i) {
             selItem = itm;
             nextRange = nullptr;
-        } else if (!selItem && rangeExpandState && prevSel && prevSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RANGE && prevSel->rangeEnt == re_i) {
+        } else if (!selItem && rangeExpandState && prevSelCopy && prevSelCopy->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RANGE && prevSelCopy->rangeEnt == re_i) {
             selItem = itm;
         }
     }
-    
-    
+     
     bool recentExpandState = searchState || expandState["recent"];
     
     // Recents
@@ -453,7 +469,7 @@ void BookmarkView::doUpdateActiveList() {
         if (nextEnt == bmr_i) {
             selItem = itm;
             nextEnt = nullptr;
-        } else if (!selItem && recentExpandState && prevSel && prevSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT && prevSel->bookmarkEnt == bmr_i) {
+        } else if (!selItem && recentExpandState && prevSelCopy && prevSelCopy->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT && prevSelCopy->bookmarkEnt == bmr_i) {
             selItem = itm;
         }
     }
@@ -474,9 +490,12 @@ void BookmarkView::doUpdateActiveList() {
         m_treeView->Collapse(rangeBranch);
     }
 
+    //select the item having the same meaning as the previously selected item
     if (selItem != nullptr) {
         m_treeView->SelectItem(selItem);
     }
+
+    delete prevSelCopy;
 }
 
 
@@ -561,11 +580,11 @@ void BookmarkView::onTreeActivate( wxTreeEvent& event ) {
                 nextDemod = tvi->demod;
             }
         } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
-            
-            activateBookmark(tvi->bookmarkEnt);
+             
             nextEnt = tvi->bookmarkEnt;
             wxGetApp().getBookmarkMgr().removeRecent(tvi->bookmarkEnt);
-            wxGetApp().getBookmarkMgr().updateActiveList();
+
+            activateBookmark(tvi->bookmarkEnt);
         } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK) {
             activateBookmark(tvi->bookmarkEnt);
         } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RANGE) {
@@ -889,6 +908,7 @@ void BookmarkView::activateBookmark(BookmarkEntryPtr bmEnt) {
     newDemod->setActive(true);
     wxGetApp().bindDemodulator(newDemod);
     
+    //order immediate refresh of the whole tree.
     doUpdateActiveList();
 }
 
@@ -1205,11 +1225,11 @@ void BookmarkView::onActivateRecent( wxCommandEvent& /* event */ ) {
     TreeViewItem *curSel = itemToTVI(m_treeView->GetSelection());
     
     if (curSel && curSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
-    
-        activateBookmark(curSel->bookmarkEnt);
+        BookmarkEntryPtr bookmarkEntToActivate = curSel->bookmarkEnt;
         m_treeView->Delete(m_treeView->GetSelection());
-        wxGetApp().getBookmarkMgr().removeRecent(curSel->bookmarkEnt);
-        wxGetApp().getBookmarkMgr().updateActiveList();
+        
+        wxGetApp().getBookmarkMgr().removeRecent(bookmarkEntToActivate);
+        activateBookmark(bookmarkEntToActivate);   
     }
 }
 
@@ -1222,9 +1242,9 @@ void BookmarkView::onRemoveRecent ( wxCommandEvent& /* event */ ) {
     TreeViewItem *curSel = itemToTVI(m_treeView->GetSelection());
     
     if (curSel && curSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
-   
+        BookmarkEntryPtr bookmarkEntToRemove = curSel->bookmarkEnt;
         m_treeView->Delete(m_treeView->GetSelection());
-        wxGetApp().getBookmarkMgr().removeRecent(curSel->bookmarkEnt);
+        wxGetApp().getBookmarkMgr().removeRecent(bookmarkEntToRemove);
         wxGetApp().getBookmarkMgr().updateActiveList();
     }
 }
