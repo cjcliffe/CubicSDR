@@ -175,14 +175,14 @@ void BookmarkView::onUpdateTimer( wxTimerEvent& /* event */ ) {
     }
     if (doUpdateActive.load()) {
         doUpdateActiveList();
-        
         doUpdateActive.store(false);
     }
     if (doUpdateBookmarks.load()) {
+
         wxTreeItemId bmSel = refreshBookmarks();
         if (bmSel) {
             m_treeView->SelectItem(bmSel);
-        }
+        }  
         doUpdateBookmarks.store(false);
     }
 }
@@ -1226,9 +1226,11 @@ void BookmarkView::onActivateRecent( wxCommandEvent& /* event */ ) {
     
     if (curSel && curSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
         BookmarkEntryPtr bookmarkEntToActivate = curSel->bookmarkEnt;
-        m_treeView->Delete(m_treeView->GetSelection());
-        
+      
+        //let removeRecent() + activateBookmark() refresh the tree 
+        //and delete the recent node properly...
         wxGetApp().getBookmarkMgr().removeRecent(bookmarkEntToActivate);
+
         activateBookmark(bookmarkEntToActivate);   
     }
 }
@@ -1243,7 +1245,9 @@ void BookmarkView::onRemoveRecent ( wxCommandEvent& /* event */ ) {
     
     if (curSel && curSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
         BookmarkEntryPtr bookmarkEntToRemove = curSel->bookmarkEnt;
-        m_treeView->Delete(m_treeView->GetSelection());
+        
+        //let removeRecent() + updateActiveList() refresh the tree 
+        //and delete the recent node properly...
         wxGetApp().getBookmarkMgr().removeRecent(bookmarkEntToRemove);
         wxGetApp().getBookmarkMgr().updateActiveList();
     }
@@ -1442,7 +1446,6 @@ void BookmarkView::onTreeEndDrag( wxTreeEvent& event ) {
             doBookmarkActive(tvi->groupName, dragItem->demod);
         } else if (dragItem && dragItem->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) { // Recent -> Group Item
             doBookmarkRecent(tvi->groupName, dragItem->bookmarkEnt);
-   
             m_treeView->Delete(dragItemId);
         } else if (dragItem && dragItem->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK) { // Bookmark -> Group Item
             doMoveBookmark(dragItem->bookmarkEnt, tvi->groupName);
