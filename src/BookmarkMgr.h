@@ -8,10 +8,10 @@
 #include <vector>
 #include <set>
 #include <memory>
+#include "DataTree.h"
 
 #include "DemodulatorInstance.h"
 
-class DataNode;
 
 class BookmarkEntry {
 public:
@@ -25,6 +25,11 @@ public:
     int bandwidth;
     
     DataNode *node;
+    
+    virtual ~BookmarkEntry() {
+        //free node
+        delete node;
+    }
 };
 
 

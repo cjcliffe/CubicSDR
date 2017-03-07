@@ -203,6 +203,7 @@ void BookmarkMgr::addBookmark(std::string group, DemodulatorInstance *demod) {
     
     BookmarkEntryPtr be = demodToBookmarkEntry(demod);
     
+    //copy settings of demod into be->node
     wxGetApp().getDemodMgr().saveInstance(be->node, demod);
     
     bmData[group].push_back(be);
@@ -483,6 +484,8 @@ BookmarkEntryPtr BookmarkMgr::demodToBookmarkEntry(DemodulatorInstance *demod) {
     be->label = demod->getDemodulatorUserLabel();
     be->frequency = demod->getFrequency();
 
+    //fine to do so here, so long nobody overrides be->node, DataNode will be 
+    //deleted at last BookmarkEntryPtr be ref.
     be->node = new DataNode;
     wxGetApp().getDemodMgr().saveInstance(be->node, demod);
     
@@ -506,6 +509,9 @@ BookmarkEntryPtr BookmarkMgr::nodeToBookmark(const char *name_in, DataNode *node
 
     node->rewindAll();
 
+    //fine to do so here, so long nobody overrides be->node, DataNode will be 
+    //deleted at last BookmarkEntryPtr be ref.
+    //copy data from *node.
     be->node = new DataNode("node",*node);
     
     return be;

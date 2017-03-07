@@ -1584,27 +1584,16 @@ void BookmarkView::onClearSearch( wxCommandEvent& /* event */ ) {
 
 void BookmarkView::loadDefaultRanges() {
 
-    BookmarkRangeEntryPtr band_160meters(new BookmarkRangeEntry(L"160 Meters", 1900000, 1800000, 2000000));
-    BookmarkRangeEntryPtr band_80meters(new BookmarkRangeEntry(L"80 Meters", 3750000, 3500000, 4000000));
-    BookmarkRangeEntryPtr band_60meters(new BookmarkRangeEntry(L"60 Meters", 5368500, 5332000, 5405000));
-    BookmarkRangeEntryPtr band_40meters(new BookmarkRangeEntry(L"40 Meters", 7150000, 7000000, 7300000));
-    BookmarkRangeEntryPtr band_30meters(new BookmarkRangeEntry(L"30 Meters", 10125000, 10100000, 10150000));
-    BookmarkRangeEntryPtr band_20meters(new BookmarkRangeEntry(L"20 Meters", 14175000, 14000000, 14350000));
-    BookmarkRangeEntryPtr band_17meters(new BookmarkRangeEntry(L"17 Meters", 18068180, 17044180, 19092180));
-    BookmarkRangeEntryPtr band_15meters(new BookmarkRangeEntry(L"15 Meters", 21225000, 21000000, 21450000));
-    BookmarkRangeEntryPtr band_12meters(new BookmarkRangeEntry(L"12 Meters", 24940000, 24890000, 24990000));
-    BookmarkRangeEntryPtr band_10meters(new BookmarkRangeEntry(L"10 Meters", 28850000, 28000000, 29700000));
-
-    wxGetApp().getBookmarkMgr().addRange(band_160meters);
-    wxGetApp().getBookmarkMgr().addRange(band_80meters);
-    wxGetApp().getBookmarkMgr().addRange(band_60meters);
-    wxGetApp().getBookmarkMgr().addRange(band_40meters);
-    wxGetApp().getBookmarkMgr().addRange(band_30meters);
-    wxGetApp().getBookmarkMgr().addRange(band_20meters);
-    wxGetApp().getBookmarkMgr().addRange(band_17meters);
-    wxGetApp().getBookmarkMgr().addRange(band_15meters);
-    wxGetApp().getBookmarkMgr().addRange(band_12meters);
-    wxGetApp().getBookmarkMgr().addRange(band_10meters);
+    wxGetApp().getBookmarkMgr().addRange(std::make_shared<BookmarkRangeEntry>(L"160 Meters", 1900000, 1800000, 2000000));
+    wxGetApp().getBookmarkMgr().addRange(std::make_shared<BookmarkRangeEntry>(L"80 Meters", 3750000, 3500000, 4000000));
+    wxGetApp().getBookmarkMgr().addRange(std::make_shared<BookmarkRangeEntry>(L"60 Meters", 5368500, 5332000, 5405000));
+    wxGetApp().getBookmarkMgr().addRange(std::make_shared<BookmarkRangeEntry>(L"40 Meters", 7150000, 7000000, 7300000));
+    wxGetApp().getBookmarkMgr().addRange(std::make_shared<BookmarkRangeEntry>(L"30 Meters", 10125000, 10100000, 10150000));
+    wxGetApp().getBookmarkMgr().addRange(std::make_shared<BookmarkRangeEntry>(L"20 Meters", 14175000, 14000000, 14350000));
+    wxGetApp().getBookmarkMgr().addRange(std::make_shared<BookmarkRangeEntry>(L"17 Meters", 18068180, 17044180, 19092180));
+    wxGetApp().getBookmarkMgr().addRange(std::make_shared<BookmarkRangeEntry>(L"15 Meters", 21225000, 21000000, 21450000));
+    wxGetApp().getBookmarkMgr().addRange(std::make_shared<BookmarkRangeEntry>(L"12 Meters", 24940000, 24890000, 24990000));
+    wxGetApp().getBookmarkMgr().addRange(std::make_shared<BookmarkRangeEntry>(L"10 Meters", 28850000, 28000000, 29700000));
 }
 
 
