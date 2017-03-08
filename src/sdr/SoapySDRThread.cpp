@@ -192,12 +192,12 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
         if (n_overflow > nElems) {
             n_overflow = nElems;
         }
-        memcpy(&inpBuffer.data[0], &overflowBuffer.data[0], n_overflow * sizeof(float) * 2);
+        memcpy(&inpBuffer.data[0], &overflowBuffer.data[0], n_overflow * sizeof(liquid_float_complex));
         n_read = n_overflow;
         numOverflow -= n_overflow;
         
         if (numOverflow) { // still some left..
-            memmove(&overflowBuffer.data[0], &overflowBuffer.data[n_overflow], numOverflow * sizeof(float) * 2);
+            memmove(&overflowBuffer.data[0], &overflowBuffer.data[n_overflow], numOverflow * sizeof(liquid_float_complex));
         }
     }
     
@@ -219,14 +219,38 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
 
         //sucess read beyond nElems, with overflow
         if ((n_read + n_stream_read) > nElems) {
-            memcpy(&inpBuffer.data[n_read], buffs[0], n_requested * sizeof(float) * 2);
+
+            //Copy at most n_requested CF32 into inpBuffer.data liquid_float_complex,
+            //starting at n_read position.
+            //inspired from SoapyRTLSDR code, this mysterious void** is indeed an array of CF32(real/imag) samples,
+            //so interpret as a flat (float) array. There is indeed no garanteed that sizeof(liquid_float_complex) = sizeof ("CF32")
+            //nor that the Re/Im order of fields is the one expected. (hence the swap I/Q option !)
+            float *pp = (float *)buffs[0];
+
+            for (int i = 0; i < n_requested; i++) {
+                inpBuffer.data[n_read + i].real = pp[2 * i];
+                inpBuffer.data[n_read + i].imag = pp[2 * i + 1];
+            }
+
             numOverflow = n_stream_read-n_requested;
-            liquid_float_complex **pp = (liquid_float_complex **)buffs[0];
-            pp += n_requested;
-            memcpy(&overflowBuffer.data[0], pp, numOverflow * sizeof(float) * 2);
+           
+            //shift of n_requested * CF32 samples
+            pp += n_requested * 2;
+            //so push the remainder samples to overflowBuffer:
+            for (int i = 0; i < numOverflow; i++) {
+                overflowBuffer.data[i].real = pp[2 * i]; // suppose the real part comes first.
+                overflowBuffer.data[i].imag = pp[2 * i + 1];
+            }
             n_read += n_requested;
         } else if (n_stream_read > 0) {
-            memcpy(&inpBuffer.data[n_read], buffs[0], n_stream_read * sizeof(float) * 2);
+            
+            float *pp = (float *)buffs[0];
+
+            for (int i = 0; i < n_stream_read; i++) {
+                inpBuffer.data[n_read + i].real = pp[2 * i]; // suppose the real part comes first.
+                inpBuffer.data[n_read + i].imag = pp[2 * i + 1];
+            }
+
             n_read += n_stream_read;
         } else {
             break;
