@@ -222,9 +222,10 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
 
             //Copy at most n_requested CF32 into inpBuffer.data liquid_float_complex,
             //starting at n_read position.
-            //inspired from SoapyRTLSDR code, this mysterious void** is indeed an array of CF32(real/imag) samples,
-            //so interpret as a flat (float) array. There is indeed no garanteed that sizeof(liquid_float_complex) = sizeof ("CF32")
-            //nor that the Re/Im order of fields is the one expected. (hence the swap I/Q option !)
+            //inspired from SoapyRTLSDR code, this mysterious void** is indeed an array of CF32(real/imag) samples, indeed an array of 
+            //float with the following layout [sample 1 real part , sample 1 imag part,  sample 2 real part , sample 2 imag part,sample 3 real part , sample 3 imag part,...etc]
+            //Since there is indeed no garantee that sizeof(liquid_float_complex) = 2 * sizeof (float)
+            //nor that the Re/Im layout of fields matches the float array order, assign liquid_float_complex field by field.
             float *pp = (float *)buffs[0];
 
             for (int i = 0; i < n_requested; i++) {
@@ -234,11 +235,11 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
 
             numOverflow = n_stream_read-n_requested;
            
-            //shift of n_requested * CF32 samples
+            //shift of n_requested samples, each one made of 2 floats...
             pp += n_requested * 2;
             //so push the remainder samples to overflowBuffer:
             for (int i = 0; i < numOverflow; i++) {
-                overflowBuffer.data[i].real = pp[2 * i]; // suppose the real part comes first.
+                overflowBuffer.data[i].real = pp[2 * i];
                 overflowBuffer.data[i].imag = pp[2 * i + 1];
             }
             n_read += n_requested;
@@ -247,7 +248,7 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
             float *pp = (float *)buffs[0];
 
             for (int i = 0; i < n_stream_read; i++) {
-                inpBuffer.data[n_read + i].real = pp[2 * i]; // suppose the real part comes first.
+                inpBuffer.data[n_read + i].real = pp[2 * i];
                 inpBuffer.data[n_read + i].imag = pp[2 * i + 1];
             }
 
