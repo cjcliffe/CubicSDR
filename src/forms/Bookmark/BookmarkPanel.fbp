@@ -311,7 +311,7 @@
                         <property name="resize">Resizable</property>
                         <property name="show">1</property>
                         <property name="size"></property>
-                        <property name="style">wxTR_DEFAULT_STYLE|wxTR_EDIT_LABELS|wxTR_HAS_VARIABLE_ROW_HEIGHT|wxTR_HIDE_ROOT|wxTR_SINGLE</property>
+                        <property name="style">wxTR_DEFAULT_STYLE|wxTR_HAS_VARIABLE_ROW_HEIGHT|wxTR_HIDE_ROOT|wxTR_SINGLE</property>
                         <property name="subclass"></property>
                         <property name="toolbar_pane">0</property>
                         <property name="tooltip"></property>
@@ -319,12 +319,12 @@
                         <property name="window_name"></property>
                         <property name="window_style"></property>
                         <event name="OnChar"></event>
-                        <event name="OnEnterWindow"></event>
+                        <event name="OnEnterWindow">onEnterWindow</event>
                         <event name="OnEraseBackground"></event>
                         <event name="OnKeyDown"></event>
                         <event name="OnKeyUp"></event>
                         <event name="OnKillFocus"></event>
-                        <event name="OnLeaveWindow"></event>
+                        <event name="OnLeaveWindow">onLeaveWindow</event>
                         <event name="OnLeftDClick"></event>
                         <event name="OnLeftDown"></event>
                         <event name="OnLeftUp"></event>
@@ -341,11 +341,11 @@
                         <event name="OnSetFocus"></event>
                         <event name="OnSize"></event>
                         <event name="OnTreeBeginDrag">onTreeBeginDrag</event>
-                        <event name="OnTreeBeginLabelEdit">onTreeBeginLabelEdit</event>
+                        <event name="OnTreeBeginLabelEdit"></event>
                         <event name="OnTreeBeginRDrag"></event>
                         <event name="OnTreeDeleteItem"></event>
                         <event name="OnTreeEndDrag">onTreeEndDrag</event>
-                        <event name="OnTreeEndLabelEdit">onTreeEndLabelEdit</event>
+                        <event name="OnTreeEndLabelEdit"></event>
                         <event name="OnTreeGetInfo"></event>
                         <event name="OnTreeItemActivated">onTreeActivate</event>
                         <event name="OnTreeItemCollapsed">onTreeCollapse</event>

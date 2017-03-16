@@ -499,72 +499,6 @@ void BookmarkView::doUpdateActiveList() {
 }
 
 
-void BookmarkView::onTreeBeginLabelEdit( wxTreeEvent& event ) {
-    TreeViewItem* tvi = dynamic_cast<TreeViewItem*>(m_treeView->GetItemData(event.GetItem()));
-
-    //if edition do not work, m_treeView->GetEditControl() may be null...
-    if (!tvi || (m_treeView->GetEditControl() == NULL)) {
-        event.Veto();
-        return;
-    }
-    
-    if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE ||
-        tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT ||
-        tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK ||
-        tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_GROUP ||
-        tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RANGE)
-    {
-        event.Allow();
-        editingLabel = true;
-    } else {
-        event.Veto();
-    }
-}
-
-
-void BookmarkView::onTreeEndLabelEdit( wxTreeEvent& event ) {
-    wxTreeItemId itm = event.GetItem();
-    TreeViewItem* tvi = dynamic_cast<TreeViewItem*>(m_treeView->GetItemData(itm));
-    
-    //if edition do not work, m_treeView->GetEditControl() may be null...
-    if (m_treeView->GetEditControl() == NULL) {
-        event.Veto();
-        return;
-    }
-
-    std::wstring newText = m_treeView->GetEditControl()->GetValue().ToStdWstring();
-    
-    editingLabel = false;
-    
-    if (!tvi) {
-        return;
-    }
-    
-    if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
-        tvi->demod->setDemodulatorUserLabel(newText);
-        wxGetApp().getBookmarkMgr().updateActiveList();
-    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
-        tvi->bookmarkEnt->label = newText;
-        tvi->bookmarkEnt->node->child("user_label")->element()->set(newText);
-        wxGetApp().getBookmarkMgr().updateActiveList();
-    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK) {
-        tvi->bookmarkEnt->label = newText;
-        tvi->bookmarkEnt->node->child("user_label")->element()->set(newText);
-        wxGetApp().getBookmarkMgr().updateBookmarks();
-    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_GROUP) {
-        std::string newGroup = m_treeView->GetEditControl()->GetValue().ToStdString();
-        wxGetApp().getBookmarkMgr().renameGroup(tvi->groupName, newGroup);
-        wxGetApp().getBookmarkMgr().updateBookmarks();
-    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RANGE) {
-        std::wstring newName = m_treeView->GetEditControl()->GetValue().ToStdWstring();
-        if (newName.length() != 0) {
-            tvi->rangeEnt->label = newName;
-            wxGetApp().getBookmarkMgr().updateActiveList();
-        }
-    }
-}
-
-
 void BookmarkView::onTreeActivate( wxTreeEvent& event ) {
 
     wxTreeItemId itm = event.GetItem();
@@ -811,7 +745,7 @@ void BookmarkView::updateBookmarkChoices() {
 
 void BookmarkView::addBookmarkChoice(wxWindow *parent) {
     updateBookmarkChoices();
-    bookmarkChoice = new wxChoice(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, bookmarkChoices, wxALL|wxEXPAND, wxDefaultValidator, "Bookmark");
+    bookmarkChoice = new wxChoice(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, bookmarkChoices, wxEXPAND, wxDefaultValidator, "Bookmark");
     bookmarkChoice->Connect( wxEVT_COMMAND_CHOICE_SELECTED, (wxObjectEventFunction)&BookmarkView::onBookmarkChoice, nullptr, this);
     parent->GetSizer()->Add(bookmarkChoice, 0, wxALL | wxEXPAND);
 }
