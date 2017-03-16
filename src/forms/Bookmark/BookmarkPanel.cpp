@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Aug 23 2015)
+// C++ code generated with wxFormBuilder (version Jun 17 2015)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO "NOT" EDIT THIS FILE!
@@ -20,7 +20,7 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	m_clearSearchButton = new wxButton( this, wxID_ANY, wxT("Clear Search"), wxDefaultPosition, wxDefaultSize, 0 );
 	bSizer1->Add( m_clearSearchButton, 0, wxBOTTOM|wxEXPAND|wxLEFT|wxRIGHT, 5 );
 	
-	m_treeView = new wxTreeCtrl( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_DEFAULT_STYLE|wxTR_EDIT_LABELS|wxTR_HAS_VARIABLE_ROW_HEIGHT|wxTR_HIDE_ROOT|wxTR_SINGLE );
+	m_treeView = new wxTreeCtrl( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_DEFAULT_STYLE|wxTR_HAS_VARIABLE_ROW_HEIGHT|wxTR_HIDE_ROOT|wxTR_SINGLE );
 	bSizer1->Add( m_treeView, 1, wxEXPAND, 5 );
 	
 	m_propPanel = new wxPanel( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
@@ -89,16 +89,11 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	m_searchText->Connect( wxEVT_LEFT_DOWN, wxMouseEventHandler( BookmarkPanel::onSearchTextFocus ), NULL, this );
 	m_searchText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( BookmarkPanel::onSearchText ), NULL, this );
 	m_clearSearchButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onClearSearch ), NULL, this );
-    
-    //VSO: Added m_treeView wxEVT_ENTER_WINDOW/wxEVT_LEAVE_WINDOW that was missing.
-    m_treeView->Connect(wxEVT_ENTER_WINDOW, wxMouseEventHandler(BookmarkPanel::onEnterWindow), NULL, this);
-    m_treeView->Connect(wxEVT_LEAVE_WINDOW, wxMouseEventHandler(BookmarkPanel::onLeaveWindow), NULL, this);
-	
-    m_treeView->Connect( wxEVT_MOTION, wxMouseEventHandler( BookmarkPanel::onMotion ), NULL, this );
+	m_treeView->Connect( wxEVT_ENTER_WINDOW, wxMouseEventHandler( BookmarkPanel::onEnterWindow ), NULL, this );
+	m_treeView->Connect( wxEVT_LEAVE_WINDOW, wxMouseEventHandler( BookmarkPanel::onLeaveWindow ), NULL, this );
+	m_treeView->Connect( wxEVT_MOTION, wxMouseEventHandler( BookmarkPanel::onMotion ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_BEGIN_DRAG, wxTreeEventHandler( BookmarkPanel::onTreeBeginDrag ), NULL, this );
-	m_treeView->Connect( wxEVT_COMMAND_TREE_BEGIN_LABEL_EDIT, wxTreeEventHandler( BookmarkPanel::onTreeBeginLabelEdit ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_END_DRAG, wxTreeEventHandler( BookmarkPanel::onTreeEndDrag ), NULL, this );
-	m_treeView->Connect( wxEVT_COMMAND_TREE_END_LABEL_EDIT, wxTreeEventHandler( BookmarkPanel::onTreeEndLabelEdit ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_ITEM_ACTIVATED, wxTreeEventHandler( BookmarkPanel::onTreeActivate ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_ITEM_COLLAPSED, wxTreeEventHandler( BookmarkPanel::onTreeCollapse ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_ITEM_EXPANDED, wxTreeEventHandler( BookmarkPanel::onTreeExpanded ), NULL, this );
@@ -121,16 +116,11 @@ BookmarkPanel::~BookmarkPanel()
 	m_searchText->Disconnect( wxEVT_LEFT_DOWN, wxMouseEventHandler( BookmarkPanel::onSearchTextFocus ), NULL, this );
 	m_searchText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( BookmarkPanel::onSearchText ), NULL, this );
 	m_clearSearchButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onClearSearch ), NULL, this );
-
-    //VSO: Added m_treeView wxEVT_ENTER_WINDOW/wxEVT_LEAVE_WINDOW that was missing.
-    m_treeView->Disconnect(wxEVT_ENTER_WINDOW, wxMouseEventHandler(BookmarkPanel::onEnterWindow), NULL, this);
-    m_treeView->Disconnect(wxEVT_LEAVE_WINDOW, wxMouseEventHandler(BookmarkPanel::onLeaveWindow), NULL, this);
-
+	m_treeView->Disconnect( wxEVT_ENTER_WINDOW, wxMouseEventHandler( BookmarkPanel::onEnterWindow ), NULL, this );
+	m_treeView->Disconnect( wxEVT_LEAVE_WINDOW, wxMouseEventHandler( BookmarkPanel::onLeaveWindow ), NULL, this );
 	m_treeView->Disconnect( wxEVT_MOTION, wxMouseEventHandler( BookmarkPanel::onMotion ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_BEGIN_DRAG, wxTreeEventHandler( BookmarkPanel::onTreeBeginDrag ), NULL, this );
-	m_treeView->Disconnect( wxEVT_COMMAND_TREE_BEGIN_LABEL_EDIT, wxTreeEventHandler( BookmarkPanel::onTreeBeginLabelEdit ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_END_DRAG, wxTreeEventHandler( BookmarkPanel::onTreeEndDrag ), NULL, this );
-	m_treeView->Disconnect( wxEVT_COMMAND_TREE_END_LABEL_EDIT, wxTreeEventHandler( BookmarkPanel::onTreeEndLabelEdit ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_ITEM_ACTIVATED, wxTreeEventHandler( BookmarkPanel::onTreeActivate ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_ITEM_COLLAPSED, wxTreeEventHandler( BookmarkPanel::onTreeCollapse ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_ITEM_EXPANDED, wxTreeEventHandler( BookmarkPanel::onTreeExpanded ), NULL, this );

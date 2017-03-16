@@ -106,8 +106,6 @@ protected:
     //refresh / rebuild the whole tree item immediatly
     void doUpdateActiveList();
 
-    void onTreeBeginLabelEdit( wxTreeEvent& event );
-    void onTreeEndLabelEdit( wxTreeEvent& event );
     void onTreeActivate( wxTreeEvent& event );
     void onTreeCollapse( wxTreeEvent& event );
     void onTreeExpanded( wxTreeEvent& event );
