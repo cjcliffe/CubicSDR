@@ -154,7 +154,6 @@ protected:
     
     void onAddGroup( wxCommandEvent& event );
     void onRemoveGroup( wxCommandEvent& event );
-    void onRenameGroup( wxCommandEvent& event );
 
     void onAddRange( wxCommandEvent& event );
     void onRemoveRange( wxCommandEvent& event );

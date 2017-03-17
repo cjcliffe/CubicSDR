@@ -924,15 +924,14 @@ void BookmarkView::groupSelection(std::string groupName) {
     
     hideProps();
     
-    //    m_labelText->SetValue(groupSel);
+    m_labelText->SetValue(groupName);
     
-    //    m_labelText->Show();
-    //    m_labelLabel->Show();
+    m_labelText->Show();
+    m_labelLabel->Show();
     
     addButton(m_buttonPanel, "Remove Group", wxCommandEventHandler( BookmarkView::onRemoveGroup ));
-    addButton(m_buttonPanel, BOOKMARK_VIEW_STR_RENAME_GROUP, wxCommandEventHandler( BookmarkView::onRenameGroup ));
     
-    //    showProps();
+    showProps();
     
     showButtons();
     refreshLayout();
@@ -1085,6 +1084,13 @@ void BookmarkView::onLabelText( wxCommandEvent& /* event */ ) {
         } else if (curSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RANGE) {
             curSel->rangeEnt->label = m_labelText->GetValue().ToStdWstring();
             wxGetApp().getBookmarkMgr().updateActiveList();
+        } else if (curSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_GROUP) {
+            std::string newGroupName = m_labelText->GetValue().ToStdString();
+
+            if (newGroupName != "" && newGroupName != curSel->groupName) {
+                wxGetApp().getBookmarkMgr().renameGroup(curSel->groupName, newGroupName);
+                wxGetApp().getBookmarkMgr().updateBookmarks();
+            }
         }
     }
 
@@ -1213,25 +1219,6 @@ void BookmarkView::onRemoveGroup( wxCommandEvent& /* event */ ) {
 
     if (curSel && curSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_GROUP) {
         ActionDialog::showDialog(new ActionDialogRemoveGroup(curSel->groupName));
-    }
-}
-
-
-void BookmarkView::onRenameGroup( wxCommandEvent& /* event */ ) {
-    TreeViewItem *curSel = itemToTVI(m_treeView->GetSelection());
-    
-    if (!curSel || curSel->type != TreeViewItem::TREEVIEW_ITEM_TYPE_GROUP) {
-        return;
-    }
-    
-    wxString stringVal = "";
-    stringVal = wxGetTextFromUser(BOOKMARK_VIEW_STR_RENAME_GROUP, "New Group Name", curSel->groupName);
-    
-    std::string newGroupName = stringVal.Trim().ToStdString();
-    
-    if (newGroupName != "") {
-        wxGetApp().getBookmarkMgr().renameGroup(curSel->groupName, newGroupName);
-        wxGetApp().getBookmarkMgr().updateBookmarks();
     }
 }
 
