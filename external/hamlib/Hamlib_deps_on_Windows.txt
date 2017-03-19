@@ -1,8 +1,10 @@
-The Hamlib dependencies on Windows platforms are:
+The Hamlib specific dependencies on Windows platforms are:
 - libwinpthread-1.dll 
-- libusb-1.0.dll
 for both x86 and x64,
 and also
 - libgcc_s_sjlj-1.dll for x86 targets only. 
 
 Those dependencies are installed from external/msvc/[x86|x64] dirs.
+
+In addition, Hamlib also uses libusb but since it is a common
+dependency with SoapySDR, it is not included in the external dirs.
