@@ -121,7 +121,13 @@ AppFrame::AppFrame() :
     for (auto mt_i : modemList) {
         demodModeSelector->addChoice(mt_i);
     }
+            
+#ifdef CUBICSDR_MODEM_EXCLUDE
+    demodModeSelector->setHelpTip("Use buttons to choose modulation type.");
+#else
     demodModeSelector->setHelpTip("Choose modulation type: Frequency Modulation (Hotkey F), Amplitude Modulation (A) and Lower (L), Upper (U), Double Side-Band and more.");
+#endif
+            
     demodModeSelector->SetMinSize(wxSize(50,-1));
     demodModeSelector->SetMaxSize(wxSize(50,-1));
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
@@ -392,8 +398,10 @@ AppFrame::AppFrame() :
     // Make a menubar
     menuBar = new wxMenuBar;
     wxMenu *menu = new wxMenu;
-#ifndef __APPLE__
+#ifndef __APPLE__ 
+#ifdef CUBICSDR_ENABLE_ABOUT_DIALOG
     menu->Append(wxID_ABOUT_CUBICSDR, "About " CUBICSDR_INSTALL_NAME);
+#endif
 #endif
     menu->Append(wxID_SDR_DEVICES, "SDR Devices");
     menu->AppendSeparator();
@@ -406,14 +414,16 @@ AppFrame::AppFrame() :
     menu->Append(wxID_RESET, "&Reset Session");
             
 #ifndef __APPLE__
-        menu->AppendSeparator();
-        menu->Append(wxID_CLOSE);
+    menu->AppendSeparator();
+    menu->Append(wxID_CLOSE);
 #else
-        if ( wxApp::s_macAboutMenuItemId != wxID_NONE ) {
-            wxString aboutLabel;
-            aboutLabel.Printf(_("About %s"), CUBICSDR_INSTALL_NAME);
-            menu->Append( wxApp::s_macAboutMenuItemId, aboutLabel);
-        }
+#ifdef CUBICSDR_ENABLE_ABOUT_DIALOG
+    if ( wxApp::s_macAboutMenuItemId != wxID_NONE ) {
+        wxString aboutLabel;
+        aboutLabel.Printf(_("About %s"), CUBICSDR_INSTALL_NAME);
+        menu->Append( wxApp::s_macAboutMenuItemId, aboutLabel);
+    }
+#endif
 #endif
 
     menuBar->Append(menu, wxT("&File"));

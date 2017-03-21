@@ -296,7 +296,11 @@ AppConfig::AppConfig() : configName("") {
     mainSplit = -1;
     visSplit = -1;
     bookmarkSplit = 200;
+#ifdef CUBICSDR_DEFAULT_HIDE_BOOKMARKS
+    bookmarksVisible.store(false);
+#else
     bookmarksVisible.store(true);
+#endif
     
 #ifdef USE_HAMLIB
     rigEnabled.store(false);
