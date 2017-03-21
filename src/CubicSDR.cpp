@@ -247,7 +247,7 @@ bool CubicSDR::OnInit() {
 #endif
         
     
-    wxApp::SetAppName("CubicSDR");
+    wxApp::SetAppName(CUBICSDR_INSTALL_NAME);
 
 #ifdef USE_HAMLIB
     t_Rig = nullptr;
