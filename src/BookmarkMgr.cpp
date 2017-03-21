@@ -7,6 +7,10 @@
 
 #define BOOKMARK_RECENTS_MAX 25
 
+BookmarkEntry::~BookmarkEntry() {
+    delete node;
+}
+
 BookmarkMgr::BookmarkMgr() {
     rangesSorted = false;
 }
