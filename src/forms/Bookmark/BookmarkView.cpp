@@ -154,6 +154,7 @@ BookmarkView::BookmarkView( wxWindow* parent, wxWindowID id, const wxPoint& pos,
     visualDragItem = nullptr;
     nextEnt = nullptr;
     nextDemod = nullptr;
+    nextGroup = "";
 
     mouseTracker.setTarget(this);
 }
@@ -281,6 +282,9 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
         groups[gn_i] = group_itm;
         if (prevSelCopy != nullptr && prevSelCopy->type == TreeViewItem::TREEVIEW_ITEM_TYPE_GROUP && gn_i == prevSelCopy->groupName) {
             bmSelFound = group_itm;
+        } else if (nextGroup != "" && gn_i == nextGroup) {
+            bmSelFound = group_itm;
+            nextGroup = "";
         }
     }
 
@@ -393,6 +397,7 @@ void BookmarkView::doUpdateActiveList() {
         
         if (nextDemod != nullptr && nextDemod == demod_i) {
             selItem = itm;
+            wxGetApp().getDemodMgr().setActiveDemodulator(nextDemod, false);
             nextDemod = nullptr;
         } else if (!selItem && activeExpandState && lastActiveDemodulator && lastActiveDemodulator == demod_i) {
             selItem = itm;
@@ -506,10 +511,7 @@ void BookmarkView::onTreeActivate( wxTreeEvent& event ) {
 
     if (tvi) {
         if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
-            if (!tvi->demod->isActive()) {
-                
-                wxGetApp().getDemodMgr().setActiveDemodulator(tvi->demod,true);
-                wxGetApp().getDemodMgr().setActiveDemodulator(tvi->demod,false);
+            if (!tvi->demod->isActive()) {                
                 wxGetApp().setFrequency(tvi->demod->getFrequency());
                 nextDemod = tvi->demod;
             }
@@ -746,6 +748,7 @@ void BookmarkView::updateBookmarkChoices() {
 void BookmarkView::addBookmarkChoice(wxWindow *parent) {
     updateBookmarkChoices();
     bookmarkChoice = new wxChoice(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, bookmarkChoices, wxEXPAND, wxDefaultValidator, "Bookmark");
+    bookmarkChoice->Select(0);
     bookmarkChoice->Connect( wxEVT_COMMAND_CHOICE_SELECTED, (wxObjectEventFunction)&BookmarkView::onBookmarkChoice, nullptr, this);
     parent->GetSizer()->Add(bookmarkChoice, 0, wxALL | wxEXPAND);
 }
@@ -1044,6 +1047,7 @@ void BookmarkView::onTreeSelect( wxTreeEvent& event ) {
         if (tvi->demod->isActive()) {
             wxGetApp().getDemodMgr().setActiveDemodulator(nullptr, true);
             wxGetApp().getDemodMgr().setActiveDemodulator(tvi->demod, false);
+            tvi->demod->setTracking(true);
         }
     } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
         recentSelection(tvi->bookmarkEnt);
@@ -1089,17 +1093,11 @@ void BookmarkView::onLabelText( wxCommandEvent& /* event */ ) {
 
             if (newGroupName != "" && newGroupName != curSel->groupName) {
                 wxGetApp().getBookmarkMgr().renameGroup(curSel->groupName, newGroupName);
+                nextGroup = newGroupName;
                 wxGetApp().getBookmarkMgr().updateBookmarks();
             }
         }
     }
-
-    //    else if (groupSel != "") {
-//        std::string newGroupName = m_labelText->GetValue().ToStdString();
-//        wxGetApp().getBookmarkMgr().renameGroup(groupSel, newGroupName);
-//        groupSel = newGroupName;
-//        wxGetApp().getBookmarkMgr().updateBookmarks();
-//    }
 }
 
 

@@ -442,19 +442,19 @@ float DemodulatorInstance::getGain() {
 }
 
 bool DemodulatorInstance::isFollow()  {
-    return follow;
+    return follow.load();
 }
 
 void DemodulatorInstance::setFollow(bool follow) {
-    this->follow = follow;
+    this->follow.store(follow);
 }
 
 bool DemodulatorInstance::isTracking()  {
-    return tracking;
+    return tracking.load();
 }
 
 void DemodulatorInstance::setTracking(bool tracking) {
-    this->tracking = tracking;
+    this->tracking.store(tracking);
 }
 
 bool DemodulatorInstance::isDeltaLock() {
