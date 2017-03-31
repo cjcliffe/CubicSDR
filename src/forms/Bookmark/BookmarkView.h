@@ -192,6 +192,7 @@ protected:
     BookmarkEntryPtr nextEnt;
     BookmarkRangeEntryPtr nextRange;
     DemodulatorInstance *nextDemod;
+    std::string nextGroup;
     
     // Search
     std::vector<std::wstring> searchKeywords;
