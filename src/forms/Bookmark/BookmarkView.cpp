@@ -299,7 +299,8 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
 
         bool groupExpanded = searchState || wxGetApp().getBookmarkMgr().getExpandState(gn_i);
 
-        BookmarkList bmList = wxGetApp().getBookmarkMgr().getBookmarks(gn_i);
+        const BookmarkList& bmList = wxGetApp().getBookmarkMgr().getBookmarks(gn_i);
+
         for (auto &bmEnt : bmList) {
             std::wstring labelVal = BookmarkMgr::getBookmarkEntryDisplayName(bmEnt);
 
@@ -308,7 +309,7 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
                 std::string bwStr = frequencyToStr(bmEnt->bandwidth);
 
                 std::wstring fullText = labelVal +
-                    L" " + bmEnt->userLabel +
+                    L" " + bmEnt->label +
                     L" " + std::to_wstring(bmEnt->frequency) +
                     L" " + std::wstring(freqStr.begin(),freqStr.end()) +
                     L" " + std::wstring(bwStr.begin(),bwStr.end()) +
@@ -406,7 +407,9 @@ void BookmarkView::doUpdateActiveList() {
 
     bool rangeExpandState = searchState?false:expandState["range"];
     
-    BookmarkRangeList bmRanges = wxGetApp().getBookmarkMgr().getRanges();
+	//Ranges
+    const BookmarkRangeList& bmRanges = wxGetApp().getBookmarkMgr().getRanges();
+
     m_treeView->DeleteChildren(rangeBranch);
     
     for (auto &re_i: bmRanges) {
@@ -435,7 +438,7 @@ void BookmarkView::doUpdateActiveList() {
     bool recentExpandState = searchState || expandState["recent"];
     
     // Recents
-    BookmarkList bmRecents = wxGetApp().getBookmarkMgr().getRecents();
+    const BookmarkList& bmRecents = wxGetApp().getBookmarkMgr().getRecents();
     m_treeView->DeleteChildren(recentBranch);
     
     for (auto &bmr_i: bmRecents) {
@@ -457,7 +460,6 @@ void BookmarkView::doUpdateActiveList() {
             std::string bwStr = frequencyToStr(bmr_i->bandwidth);
             
             std::wstring fullText = labelVal +
-                L" " + bmr_i->userLabel +
                 L" " + std::to_wstring(bmr_i->frequency) +
                 L" " + std::wstring(freqStr.begin(),freqStr.end()) +
                 L" " + std::wstring(bwStr.begin(),bwStr.end()) +
@@ -716,10 +718,9 @@ void BookmarkView::doMoveBookmark(BookmarkEntryPtr be, std::string group) {
 
 
 void BookmarkView::doRemoveActive(DemodulatorInstance *demod) {
-    wxGetApp().getDemodMgr().setActiveDemodulator(nullptr, true);
-    wxGetApp().getDemodMgr().setActiveDemodulator(nullptr, false);
-    wxGetApp().removeDemodulator(demod);
-    wxGetApp().getDemodMgr().deleteThread(demod);
+
+	wxGetApp().getBookmarkMgr().removeActive(demod);
+	wxGetApp().getBookmarkMgr().updateActiveList();
 }
 
 
@@ -824,29 +825,42 @@ void BookmarkView::activeSelection(DemodulatorInstance *dsel) {
 
 
 void BookmarkView::activateBookmark(BookmarkEntryPtr bmEnt) {
-    DemodulatorInstance *newDemod = wxGetApp().getDemodMgr().loadInstance(bmEnt->node);
-    
-    nextDemod = newDemod;
-    
-    wxTreeItemId selItem = m_treeView->GetSelection();
-    if (selItem) {
-        m_treeView->SelectItem(selItem, false);
-    }
-    
-    long long freq = newDemod->getFrequency();
-    long long currentFreq = wxGetApp().getFrequency();
-    long long currentRate = wxGetApp().getSampleRate();
-    
-    if ( ( abs(freq - currentFreq) > currentRate / 2 ) || ( abs( currentFreq - freq) > currentRate / 2 ) ) {
-        wxGetApp().setFrequency(freq);
-    }
-    
-    newDemod->run();
-    newDemod->setActive(true);
-    wxGetApp().bindDemodulator(newDemod);
-    
-    //order immediate refresh of the whole tree.
-    doUpdateActiveList();
+
+	wxTreeItemId selItem = m_treeView->GetSelection();
+	if (selItem) {
+		m_treeView->SelectItem(selItem, false);
+	}
+
+	//if a matching DemodulatorInstance do not exist yet, create it and activate it, else use
+	//the already existing one:
+	// we search among the list of existing demodulators the one matching 
+	//bmEnt and activate it. The search is made backwards, to select the most recently created one.
+	DemodulatorInstance *matchingDemod = wxGetApp().getDemodMgr().getLastDemodulatorWith(
+																		bmEnt->type,
+																		bmEnt->label, 
+																		bmEnt->frequency, 
+																		bmEnt->bandwidth);
+	//not found, create a new demod instance: 
+	if (matchingDemod == nullptr) {
+
+		matchingDemod = wxGetApp().getDemodMgr().loadInstance(bmEnt->node);
+		matchingDemod->run();
+		wxGetApp().bindDemodulator(matchingDemod);
+	}
+
+	matchingDemod->setActive(true);
+
+	long long freq = matchingDemod->getFrequency();
+	long long currentFreq = wxGetApp().getFrequency();
+	long long currentRate = wxGetApp().getSampleRate();
+
+	if ((abs(freq - currentFreq) > currentRate / 2) || (abs(currentFreq - freq) > currentRate / 2)) {
+		wxGetApp().setFrequency(freq);
+	}
+
+	nextDemod = matchingDemod;
+  
+	wxGetApp().getBookmarkMgr().updateActiveList();
 }
 
 
@@ -1132,7 +1146,6 @@ void BookmarkView::onRemoveActive( wxCommandEvent& /* event */ ) {
             return;
         }
         doRemoveActive(curSel->demod);
-        m_treeView->Delete(m_treeView->GetSelection());
     }
 }
 

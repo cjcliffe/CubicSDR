@@ -32,6 +32,10 @@ public:
     void setActiveDemodulator(DemodulatorInstance *demod, bool temporary = true);
     DemodulatorInstance *getActiveDemodulator();
     DemodulatorInstance *getLastActiveDemodulator();
+	DemodulatorInstance *getLastDemodulatorWith(const std::string& type,
+												const std::wstring& userLabel,
+												long long frequency,
+												int bandwidth);
 
     int getLastBandwidth() const;
     void setLastBandwidth(int lastBandwidth);
@@ -61,6 +65,7 @@ public:
     
     void setOutputDevices(std::map<int,RtAudio::DeviceInfo> devs);
     void saveInstance(DataNode *node, DemodulatorInstance *inst);
+	
     DemodulatorInstance *loadInstance(DataNode *node);
     
 private:

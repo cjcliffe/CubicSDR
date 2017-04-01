@@ -260,6 +260,27 @@ DemodulatorInstance *DemodulatorMgr::getLastActiveDemodulator() {
     return lastActiveDemodulator;
 }
 
+DemodulatorInstance *DemodulatorMgr::getLastDemodulatorWith(const std::string& type,
+															const std::wstring& userLabel,
+															long long frequency,
+															int bandwidth) {
+	std::lock_guard < std::recursive_mutex > lock(demods_busy);
+
+	//backwards search: 
+	for (std::vector<DemodulatorInstance *>::reverse_iterator it = demods.rbegin(); it != demods.rend(); it++) {
+
+		if ((*it)->getDemodulatorType() == type &&
+			(*it)->getDemodulatorUserLabel() == userLabel &&
+			(*it)->getFrequency() == frequency &&
+			(*it)->getBandwidth() == bandwidth) {
+
+			return (*it);
+		}
+	}
+
+	return nullptr;
+}
+
 //Private internal method, no need to protect it with demods_busy
 void DemodulatorMgr::garbageCollect() {
     if (demods_deleted.size()) {
@@ -414,8 +435,11 @@ void DemodulatorMgr::saveInstance(DataNode *node, DemodulatorInstance *inst) {
 }
 
 DemodulatorInstance *DemodulatorMgr::loadInstance(DataNode *node) {
+
+	std::lock_guard < std::recursive_mutex > lock(demods_busy);
+
     DemodulatorInstance *newDemod = nullptr;
-    
+	 
     node->rewindAll();
     
     long bandwidth = *node->getNext("bandwidth");
@@ -482,7 +506,7 @@ DemodulatorInstance *DemodulatorMgr::loadInstance(DataNode *node) {
         }
     }
     
-    newDemod = wxGetApp().getDemodMgr().newThread();
+    newDemod = newThread();
 
     newDemod->setDemodulatorType(type);
     newDemod->setDemodulatorUserLabel(user_label);
@@ -501,12 +525,14 @@ DemodulatorInstance *DemodulatorMgr::loadInstance(DataNode *node) {
         newDemod->setSquelchLevel(squelch_level);
     }
     
+	//Attach to sound output:
     bool found_device = false;
     std::map<int, RtAudio::DeviceInfo>::iterator i;
     for (i = outputDevices.begin(); i != outputDevices.end(); i++) {
         if (i->second.name == output_device) {
             newDemod->setOutputDevice(i->first);
             found_device = true;
+			break;
         }
     }
     

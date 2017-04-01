@@ -19,8 +19,8 @@ public:
     std::mutex busy_lock;
 
     std::string type;
-    std::wstring label;
-    std::wstring userLabel;
+	//maps on the Demod user label.
+    std::wstring label; 
     
     long long frequency;
     int bandwidth;
@@ -94,7 +94,7 @@ public:
     void addGroup(std::string group);
     void removeGroup(std::string group);
     void renameGroup(std::string group, std::string ngroup);
-    BookmarkList getBookmarks(std::string group);
+    const BookmarkList& getBookmarks(std::string group);
     void getGroups(BookmarkNames &arr);
     void getGroups(wxArrayString &arr);
 
@@ -108,14 +108,16 @@ public:
     void addRecent(DemodulatorInstance *demod);
     void addRecent(BookmarkEntryPtr be);
     void removeRecent(BookmarkEntryPtr be);
-    BookmarkList getRecents();
+    const BookmarkList& getRecents();
     void clearRecents();
+
+	void removeActive(DemodulatorInstance *demod);
 
     void addRange(BookmarkRangeEntryPtr re);
     void removeRange(BookmarkRangeEntryPtr re);
-    BookmarkRangeList getRanges();
+    const BookmarkRangeList& getRanges();
     void clearRanges();
- 
+	
     static std::wstring getBookmarkEntryDisplayName(BookmarkEntryPtr bmEnt);
     static std::wstring getActiveDisplayName(DemodulatorInstance *demod);
 
@@ -131,7 +133,10 @@ protected:
     BookmarkList recents;
     BookmarkRangeList ranges;
     bool rangesSorted;
-    std::mutex busy_lock;
+    std::recursive_mutex busy_lock;
     
     BookmarkExpandState expandState;
+
+	//represents an empty BookMarkList that is returned by reference by some functions.
+	static const BookmarkList emptyResults;
 };
