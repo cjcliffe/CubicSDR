@@ -359,12 +359,8 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
     GLFont::Align demodAlign = GLFont::GLFONT_ALIGN_CENTER;
 
     //Displayed string is wstring, so use wxString to do the heavy lifting of converting  getDemodulatorType()...
-#ifdef WIN32
-    //try to reuse the memory with thread_local, unsupported on OSX ? 
-    static thread_local wxString demodStr;
-#else
     wxString demodStr;
-#endif
+
     demodStr.assign(demod->getDemodulatorType());
 
     demodAlign = GLFont::GLFONT_ALIGN_CENTER;

@@ -633,12 +633,7 @@ void GLFont::drawString(const std::wstring& str, int pxHeight, float xpos, float
 void GLFont::drawString(const std::string& str, int pxHeight, float xpos, float ypos, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
 
     //Displayed string is wstring, so use wxString to do the heavy lifting of converting  str...
-#ifdef WIN32
-    //try to reuse the memory with thread_local, unsupported on OSX ? 
-    static thread_local wxString wsTmp;
-#else
     wxString wsTmp;
-#endif
     
     wsTmp.assign(str);
 
