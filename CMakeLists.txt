@@ -390,6 +390,8 @@ SET (cubicsdr_sources
     src/forms/Dialog/ActionDialog.cpp
     src/forms/Dialog/AboutDialogBase.cpp
     src/forms/Dialog/AboutDialog.cpp
+    src/forms/Dialog/PortSelectorDialogBase.cpp
+    src/forms/Dialog/PortSelectorDialog.cpp
     external/lodepng/lodepng.cpp
     external/tinyxml/tinyxml.cpp
     external/tinyxml/tinystr.cpp
@@ -497,6 +499,8 @@ SET (cubicsdr_headers
     src/forms/Dialog/ActionDialog.h
     src/forms/Dialog/AboutDialogBase.h
     src/forms/Dialog/AboutDialog.h
+    src/forms/Dialog/PortSelectorDialogBase.h
+    src/forms/Dialog/PortSelectorDialog.h
     external/lodepng/lodepng.h
     external/tinyxml/tinyxml.h
     external/tinyxml/tinystr.h
@@ -541,10 +545,27 @@ IF (USE_HAMLIB)
     SET (cubicsdr_headers
         ${cubicsdr_headers}
         src/rig/RigThread.h
+        external/rs232/rs232.h
     )    
     SET (cubicsdr_sources
         ${cubicsdr_sources}
         src/rig/RigThread.cpp
+    )
+    
+    IF(WIN32)
+        SET (cubicsdr_sources
+            ${cubicsdr_sources}
+            external/rs232/rs232-win.cpp
+        )
+    ELSE()
+        SET (cubicsdr_sources
+            ${cubicsdr_sources}
+            external/rs232/rs232-linux.cpp
+        )
+    ENDIF()    
+    
+    include_directories ( 
+        external/rs232/
     )
 ENDIF()
 
@@ -583,6 +604,7 @@ SOURCE_GROUP("Forms\\Dialog" REGULAR_EXPRESSION "src/forms/Dialog/${REG_EXT}")
 SOURCE_GROUP("SDR" REGULAR_EXPRESSION "src/sdr/${REG_EXT}")
 IF(USE_HAMLIB)
     SOURCE_GROUP("Rig" REGULAR_EXPRESSION "src/rig/${REG_EXT}")    
+    SOURCE_GROUP("_ext-RS-232" REGULAR_EXPRESSION "external/rs232/${REG_EXT}")    
 ENDIF()
 SOURCE_GROUP("Demodulator" REGULAR_EXPRESSION "src/demod/${REG_EXT}")
 SOURCE_GROUP("Modem" REGULAR_EXPRESSION "src/modules/modem/${REG_EXT}")
