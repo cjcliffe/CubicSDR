@@ -9,7 +9,7 @@ PortSelectorDialog::PortSelectorDialog( wxWindow* parent, wxWindowID id, std::st
     int nPorts = comGetNoPorts();
     
     for (int i = 0; i < nPorts; i++) {
-        m_portList->Append(comGetPortName(i));
+        m_portList->Append(comGetInternalName(i));
     }
     
     comTerminate();
