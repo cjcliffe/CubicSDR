@@ -19,13 +19,7 @@ public:
     void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
     
 private:
-#ifdef WIN32
-	firfilt_crcf ssbFilt;
-#else
 	iirfilt_crcf ssbFilt;
-#endif
     firhilbf c2rFilt;
     nco_crcf ssbShift;
-    //    firfilt_crcf ssbFilt;
-    //    ampmodem demodAM_LSB;
 };
