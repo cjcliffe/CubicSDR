@@ -36,11 +36,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <Windows.h>
 
 /*****************************************************************************/
-typedef int        bool;
-#define true    -1
-#define false   0
 
 typedef struct {
     int port;
@@ -60,73 +58,6 @@ const char * findPattern(const char * string, const char * pattern, int * value)
 const char * portInternalName(int index);
 
 /*****************************************************************************/
-typedef struct _COMMTIMEOUTS {
-    uint32_t ReadIntervalTimeout;
-    uint32_t ReadTotalTimeoutMultiplier;
-    uint32_t ReadTotalTimeoutConstant;
-    uint32_t WriteTotalTimeoutMultiplier;
-    uint32_t WriteTotalTimeoutConstant;
-} COMMTIMEOUTS;
-
-typedef struct _DCB {
-    uint32_t DCBlength;
-    uint32_t BaudRate;
-    uint32_t fBinary  :1;
-    uint32_t fParity  :1;
-    uint32_t fOutxCtsFlow  :1;
-    uint32_t fOutxDsrFlow  :1;
-    uint32_t fDtrControl  :2;
-    uint32_t fDsrSensitivity  :1;
-    uint32_t fTXContinueOnXoff  :1;
-    uint32_t fOutX  :1;
-    uint32_t fInX  :1;
-    uint32_t fErrorChar  :1;
-    uint32_t fNull  :1;
-    uint32_t fRtsControl  :2;
-    uint32_t fAbortOnError  :1;
-    uint32_t fDummy2  :17;
-    uint16_t wReserved;
-    uint16_t XonLim;
-    uint16_t XoffLim;
-    uint8_t  ByteSize;
-    uint8_t  Parity;
-    uint8_t  StopBits;
-    int8_t  XonChar;
-    int8_t  XoffChar;
-    int8_t  ErrorChar;
-    int8_t  EofChar;
-    int8_t  EvtChar;
-    uint16_t wReserved1;
-} DCB;
-
-/*****************************************************************************/
-/** Windows system constants */
-#define ERROR_INSUFFICIENT_BUFFER   122
-#define INVALID_HANDLE_VALUE        ((void *) -1)
-#define GENERIC_READ                0x80000000
-#define GENERIC_WRITE               0x40000000
-#define OPEN_EXISTING               3
-#define MAX_DWORD                   0xFFFFFFFF
-
-/*****************************************************************************/
-/** Windows system functions */
-void * __stdcall CreateFileA(const char * lpFileName, uint32_t dwDesiredAccess, uint32_t dwShareMode, void * lpSecurityAttributes, uint32_t dwCreationDisposition, uint32_t dwFlagsAndAttributes, void * hTemplateFile);
-bool __stdcall WriteFile(void * hFile, const void * lpBuffer, uint32_t nNumberOfBytesToWrite, uint32_t * lpNumberOfBytesWritten, void * lpOverlapped);
-bool __stdcall ReadFile(void * hFile, void * lpBuffer, uint32_t nNumberOfBytesToRead, uint32_t * lpNumberOfBytesRead, void * lpOverlapped);
-bool __stdcall CloseHandle(void * hFile);
-
-uint32_t __stdcall GetLastError(void);
-void __stdcall SetLastError(uint32_t dwErrCode);
-
-uint32_t  __stdcall QueryDosDeviceA(const char * lpDeviceName, char * lpTargetPath, uint32_t ucchMax);
-
-bool __stdcall GetCommState(void * hFile, DCB * lpDCB);
-bool __stdcall GetCommTimeouts(void * hFile, COMMTIMEOUTS * lpCommTimeouts);
-bool __stdcall SetCommState(void * hFile, DCB * lpDCB);
-bool __stdcall SetCommTimeouts(void * hFile, COMMTIMEOUTS * lpCommTimeouts);
-bool __stdcall SetupComm(void * hFile, uint32_t dwInQueue, uint32_t dwOutQueue);
-
-/*****************************************************************************/
 int comEnumerate()
 {
 // Get devices information text
@@ -136,7 +67,7 @@ int comEnumerate()
     QueryDosDeviceA(NULL, list, size);
     while (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
         size *= 2;
-        char * nlist = realloc(list, size);
+        char * nlist = (char *) realloc(list, size);
         if (!nlist) {
             free(list);
             return 0;
@@ -215,7 +146,7 @@ int comOpen(int index, int baudrate)
     com->handle = handle;
 // Prepare read / write timeouts
     SetupComm(handle, 64, 64);
-    timeouts.ReadIntervalTimeout = MAX_DWORD;
+    timeouts.ReadIntervalTimeout = MAXDWORD;
     timeouts.ReadTotalTimeoutConstant = 0;
     timeouts.WriteTotalTimeoutConstant = 0;
     timeouts.ReadTotalTimeoutMultiplier = 0;
@@ -265,7 +196,7 @@ int comWrite(int index, const char * buffer, size_t len)
         return 0;
     COMDevice * com = &comDevices[index];
     uint32_t bytes = 0;
-    WriteFile(com->handle, buffer, len, &bytes, NULL);
+    WriteFile(com->handle, buffer, len, (LPDWORD)&bytes, NULL);
     return bytes;
 }
 
@@ -275,7 +206,7 @@ int comRead(int index, char * buffer, size_t len)
         return 0;
     COMDevice * com = &comDevices[index];
     uint32_t bytes = 0;
-    ReadFile(com->handle, buffer, len, &bytes, NULL);
+    ReadFile(com->handle, buffer, len, (LPDWORD)&bytes, NULL);
     return bytes;
 }
 
