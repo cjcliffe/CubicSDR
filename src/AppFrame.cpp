@@ -45,6 +45,8 @@ wxEND_EVENT_TABLE()
 
 #ifdef USE_HAMLIB
 #include "RigThread.h"
+#include "PortSelectorDialog.h"
+#include "rs232.h"
 #endif
 
 
@@ -554,7 +556,7 @@ AppFrame::AppFrame() :
     rigModel = wxGetApp().getConfig()->getRigModel();
     rigSerialRate = wxGetApp().getConfig()->getRigRate();
     rigPort = wxGetApp().getConfig()->getRigPort();
-            
+    rigPortDialog = nullptr;
     rigMenu = new wxMenu;
 
     rigEnableMenuItem = rigMenu->AppendCheckItem(wxID_RIG_TOGGLE, wxT("Enable Rig"));
@@ -941,6 +943,31 @@ void AppFrame::disableRig() {
     wxGetApp().unlockFrequency();
     wxGetApp().getConfig()->setRigEnabled(false);
 }
+
+void AppFrame::setRigControlPort(std::string portName) {
+    if (rigPortDialog == nullptr) {
+        return;
+    }
+    if (portName != "") {
+        rigPort = portName;
+
+        wxGetApp().stopRig();
+        wxGetApp().initRig(rigModel, rigPort, rigSerialRate);
+        
+        Refresh();
+    }
+    rigPortDialog->EndModal(0);
+    delete rigPortDialog;
+    rigPortDialog = nullptr;
+}
+
+
+void AppFrame::dismissRigControlPortDialog() {
+    rigPortDialog->EndModal(0);
+    delete rigPortDialog;
+    rigPortDialog = nullptr;
+}
+
 #endif
 
 bool AppFrame::actionOnMenuDisplay(wxCommandEvent& event) {
@@ -1247,6 +1274,8 @@ bool AppFrame::actionOnMenuAudioSampleRate(wxCommandEvent& event) {
                     //audioSampleRateMenuItems[menu_id+j];
                     //std::cout << "Would set audio sample rate on device " << mdevices_i->second.name << " (" << mdevices_i->first << ") to " << (*srate) << "Hz" << std::endl;
                     AudioThread::setDeviceSampleRate(mdevices_i->first, *srate);
+
+                    return true;
                 }
 
                 j++;
@@ -1254,7 +1283,6 @@ bool AppFrame::actionOnMenuAudioSampleRate(wxCommandEvent& event) {
             i++;
         }
 
-        return true;
     }
 
     return false;
@@ -1337,13 +1365,10 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent& event) {
     }
 
     if (event.GetId() == wxID_RIG_PORT) {
-        wxString stringVal = wxGetTextFromUser("Rig Serial / COM / Address", "Rig Control Port", rigPort);
-        std::string rigPortStr = stringVal.ToStdString();
-        if (rigPortStr != "") {
-            rigPort = rigPortStr;
-            resetRig = true;
+        if (rigPortDialog == nullptr) {
+            rigPortDialog = new PortSelectorDialog(this, wxID_ANY, rigPort);
+            rigPortDialog->ShowModal();
         }
-        bManaged = true;
     }
 
     if (event.GetId() == wxID_RIG_TOGGLE) {
@@ -2284,6 +2309,13 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     if (!this->IsActive()) {
         return -1;
     }
+    
+#ifdef USE_HAMLIB
+    if (rigPortDialog != nullptr) {
+        return -1;
+    }
+#endif
+    
     if (modemProps && (modemProps->HasFocus() || modemProps->isMouseInView())) {
         return -1;
     }
@@ -2398,6 +2430,13 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     if (!this->IsActive()) {
         return -1;
     }
+    
+#ifdef USE_HAMLIB
+    if (rigPortDialog != nullptr) {
+        return -1;
+    }
+#endif
+    
     if (modemProps && (modemProps->HasFocus() || modemProps->isMouseInView())) {
         return -1;
     }

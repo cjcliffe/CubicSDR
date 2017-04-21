@@ -81,6 +81,10 @@
 #define wxID_RIG_MODEL_BASE 12000
 #endif
 
+#ifdef USE_HAMLIB
+class PortSelectorDialog;
+#endif
+
 // Define a new frame type
 class AppFrame: public wxFrame {
 public:
@@ -132,6 +136,11 @@ public:
     //set tooltip to window
     void setStatusText(wxWindow* window, std::string statusText);
     void setStatusText(std::string statusText, int value);
+    
+#ifdef USE_HAMLIB
+    void setRigControlPort(std::string portName);
+    void dismissRigControlPortDialog();
+#endif
     
 private:
     void OnMenu(wxCommandEvent& event);
@@ -231,7 +240,6 @@ private:
     wxMenuItem *rigFollowMenuItem;
     wxMenuItem *rigCenterLockMenuItem;
     wxMenuItem *rigFollowModemMenuItem;
-    wxMenuItem *sdrIFMenuItem;
     
     std::map<int, wxMenuItem *> rigSerialMenuItems;
     std::map<int, wxMenuItem *> rigModelMenuItems;
@@ -241,7 +249,7 @@ private:
     std::vector<int> rigSerialRates;
     std::string rigPort;
     int numRigs;
-    bool rigInit;
+    PortSelectorDialog *rigPortDialog;
 #endif
 
     wxDECLARE_EVENT_TABLE();
