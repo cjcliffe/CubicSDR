@@ -547,14 +547,14 @@ IF (USE_HAMLIB)
     )    
     SET (cubicsdr_sources
         ${cubicsdr_sources}
+	src/forms/Dialog/PortSelectorDialogBase.cpp
+        src/forms/Dialog/PortSelectorDialog.cpp
         src/rig/RigThread.cpp
     )
     
     IF(WIN32)
         SET (cubicsdr_sources
             ${cubicsdr_sources}
-            src/forms/Dialog/PortSelectorDialogBase.cpp
-            src/forms/Dialog/PortSelectorDialog.cpp
             external/rs232/rs232-win.cpp
         )
     ELSE()
