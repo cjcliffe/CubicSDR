@@ -390,8 +390,6 @@ SET (cubicsdr_sources
     src/forms/Dialog/ActionDialog.cpp
     src/forms/Dialog/AboutDialogBase.cpp
     src/forms/Dialog/AboutDialog.cpp
-    src/forms/Dialog/PortSelectorDialogBase.cpp
-    src/forms/Dialog/PortSelectorDialog.cpp
     external/lodepng/lodepng.cpp
     external/tinyxml/tinyxml.cpp
     external/tinyxml/tinystr.cpp
@@ -499,8 +497,6 @@ SET (cubicsdr_headers
     src/forms/Dialog/ActionDialog.h
     src/forms/Dialog/AboutDialogBase.h
     src/forms/Dialog/AboutDialog.h
-    src/forms/Dialog/PortSelectorDialogBase.h
-    src/forms/Dialog/PortSelectorDialog.h
     external/lodepng/lodepng.h
     external/tinyxml/tinyxml.h
     external/tinyxml/tinystr.h
@@ -544,11 +540,15 @@ ENDIF()
 IF (USE_HAMLIB)
     SET (cubicsdr_headers
         ${cubicsdr_headers}
+        src/forms/Dialog/PortSelectorDialogBase.h
+        src/forms/Dialog/PortSelectorDialog.h
         src/rig/RigThread.h
         external/rs232/rs232.h
     )    
     SET (cubicsdr_sources
         ${cubicsdr_sources}
+	src/forms/Dialog/PortSelectorDialogBase.cpp
+        src/forms/Dialog/PortSelectorDialog.cpp
         src/rig/RigThread.cpp
     )
     
