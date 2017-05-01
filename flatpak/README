@@ -1,0 +1,67 @@
+** Quick and dirty directions: **
+
+This comes directly from  Flatpak's delveloper page at http://flatpak.org/developer.html
+
+Install flatpak
+
+$ sudo dnf install flatpak
+
+Install the gpg key and a repository
+
+$ wget https://sdk.gnome.org/keys/gnome-sdk.gpg
+
+I had to use sudo for the next step
+
+$ sudo flatpak remote-add --gpg-import=gnome-sdk.gpg gnome https://sdk.gnome.org/repo/
+
+Install a runtime, and sdk
+
+$ flatpak install gnome org.gnome.Platform 3.20
+$ flatpak install gnome org.gnome.Sdk 3.20
+
+Create the working directory
+
+mkdir flatpak
+mkdir flatpak/SOURCE
+mkdir flatpak/MANAFESTS
+
+Gather the source files
+
+$ wget https://mesa.freedesktop.org/archive/glu/glu-9.0.0.tar.bz2
+
+$ wget https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.0/wxWidgets-3.1.0.tar.bz2
+
+write or obtain a manifest
+
+$ wget https://raw.githubusercontent.com/digver/CubicSDR/master/flatpak/org.gnome.cubicSDR.json
+
+Build org.gnome.CubicSDR
+
+$ flatpak --user remote-add --no-gpg-verify CubicSDR-repo repo
+
+Add the repo to the repos available. Using the --user flag keeps it local -- good for testing builds.
+
+$ flatpak --user remote-add --no-gpg-verify CubicSDR-repo repo
+
+Check to see if its there
+
+$ flatpak --user remote-ls CubicSDR-repo
+
+Install the build
+
+$ flatpak --user install CubicSDR-repo org.gnome.CubicSDR
+
+the reason we did this
+
+$ flatpak run org.gnome.CubicSD
+
+Repos are better but for the moment bundle it up to make it available
+
+$ flatpak build-bundle ./repo CubicSDR.flatpak  org.gnome.CubicSDR
+
+And then add it to a repository elsewhere by importing it
+
+$ flatpak build-import-bundle ~/my_flatpak_repo CubicSDR.flatpak
+
+Now it can be installed and run look above for those steps
+
