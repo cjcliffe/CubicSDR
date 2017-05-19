@@ -15,6 +15,7 @@
 #include <SoapySDR/Registry.hpp>
 #include <SoapySDR/Device.hpp>
 
+#include <stddef.h>
 
 class SDRThreadIQData: public ReferenceCounter {
 public:
@@ -99,7 +100,6 @@ protected:
     SoapySDR::Device *device;
     void *buffs[1];
     ReBuffer<SDRThreadIQData> buffers;
-    SDRThreadIQData inpBuffer;
     SDRThreadIQData overflowBuffer;
     int numOverflow;
     std::atomic<DeviceConfig *> deviceConfig;
@@ -121,4 +121,7 @@ protected:
     std::map<std::string, bool> gainChanged;
     
     SoapySDR::Kwargs streamArgs;
+
+private:
+	void assureBufferMinSize(SDRThreadIQData * dataOut, size_t minSize);
 };
