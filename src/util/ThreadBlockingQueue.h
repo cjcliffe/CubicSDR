@@ -3,7 +3,7 @@
 
 #pragma once 
 
-#include <deque>
+#include <vector>
 #include <mutex>
 #include <thread>
 #include <cstdint>
@@ -29,22 +29,23 @@ class ThreadQueueBase {
 template<typename T>
 class ThreadBlockingQueue : public ThreadQueueBase {
 
-    typedef typename std::deque<T>::value_type value_type;
-    typedef typename std::deque<T>::size_type size_type;
+    typedef typename std::vector<T>::value_type value_type;
+    typedef typename std::vector<T>::size_type size_type;
 
 public:
 
     /*! Create safe blocking queue. */
     ThreadBlockingQueue() {
         //at least 1 (== Exchanger)
-        m_max_num_items = MIN_ITEM_NB;
+		m_circular_buffer.resize(MIN_ITEM_NB + 1); //there is one slot more than the size for internal management.
     };
     
     //Copy constructor
     ThreadBlockingQueue(const ThreadBlockingQueue& sq) {
         std::lock_guard < std::mutex > lock(sq.m_mutex);
-        m_queue = sq.m_queue;
-        m_max_num_items = sq.m_max_num_items;
+        m_circular_buffer = sq.m_circular_buffer;
+		m_head = sq.m_head;
+		m_tail = sq.m_tail;
     }
 
     /*! Destroy safe queue. */
@@ -60,10 +61,11 @@ public:
     void set_max_num_items(unsigned int max_num_items) {
         std::lock_guard < std::mutex > lock(m_mutex);
 
-        if (max_num_items > m_max_num_items) {
+        if (max_num_items > (unsigned int)privateMaxNumElements()) {
             //Only raise the existing max size, never reduce it
             //for simplification sake at runtime.
-            m_max_num_items = max_num_items;
+			m_circular_buffer.resize(max_num_items + 1); // there is 1 extra allocated slot.
+            //m_head and m_tail stays valid.
             m_cond_not_full.notify_all();
         }
     }
@@ -83,14 +85,14 @@ public:
         if (timeout == BLOCKING_INFINITE_TIMEOUT) {
             m_cond_not_full.wait(lock, [this]() // Lambda funct
             {
-                return m_queue.size() < m_max_num_items;
+                return privateSize() < privateMaxNumElements();
             });
-        } else if (timeout <= NON_BLOCKING_TIMEOUT && m_queue.size() >= m_max_num_items) {
+        } else if (timeout <= NON_BLOCKING_TIMEOUT && privateSize() >= privateMaxNumElements()) {
             // if the value is below a threshold, consider it is a try_push()
             return false;
         }
         else if (false == m_cond_not_full.wait_for(lock, std::chrono::microseconds(timeout),
-           [this]() { return m_queue.size() < m_max_num_items; })) {
+           [this]() { return privateSize() < privateMaxNumElements(); })) {
             std::thread::id currentThreadId = std::this_thread::get_id();
             std::cout << "WARNING: Thread 0x" << std::hex << currentThreadId << std::dec <<
                 " (" << currentThreadId << ") executing {" << typeid(*this).name() << "}.push() has failed with timeout > " <<
@@ -98,8 +100,11 @@ public:
            return false;
         }
 
-        m_queue.push_back(item);
-        m_cond_not_empty.notify_all();
+		//m_tail is already the next valid place an item can be put
+		m_circular_buffer[m_tail] = item;
+		m_tail = nextIndex(m_tail, (int)m_circular_buffer.size());
+        
+		m_cond_not_empty.notify_all();
         return true;
     }
 
@@ -111,11 +116,14 @@ public:
     bool try_push(const value_type& item) {
         std::lock_guard < std::mutex > lock(m_mutex);
 
-        if (m_queue.size() >= m_max_num_items) {
+        if (privateSize() >= privateMaxNumElements()) {
             return false;
         }
 
-        m_queue.push_back(item);
+		//m_tail is already the next valid place an item can be put
+		m_circular_buffer[m_tail] = item;
+		m_tail = nextIndex(m_tail, (int)m_circular_buffer.size());
+
         m_cond_not_empty.notify_all();
         return true;
     }
@@ -132,14 +140,14 @@ public:
         if (timeout == BLOCKING_INFINITE_TIMEOUT) {
             m_cond_not_empty.wait(lock, [this]() // Lambda funct
             {
-                return !m_queue.empty();
+                return privateSize() > 0;
             });
-        } else if (timeout <= NON_BLOCKING_TIMEOUT && m_queue.empty()) {
+        } else if (timeout <= NON_BLOCKING_TIMEOUT && privateSize() == 0) {
             // if the value is below a threshold, consider it is try_pop()
             return false;
         }
         else if (false == m_cond_not_empty.wait_for(lock, std::chrono::microseconds(timeout),
-            [this]() { return !m_queue.empty(); })) {
+            [this]() { return privateSize() > 0; })) {
             std::thread::id currentThreadId = std::this_thread::get_id();
             std::cout << "WARNING: Thread 0x" << std::hex << currentThreadId << std::dec <<
                 " (" << currentThreadId << ") executing {" << typeid(*this).name() << "}.pop() has failed with timeout > " <<
@@ -147,8 +155,9 @@ public:
             return false;
         }
 
-        item = m_queue.front();
-        m_queue.pop_front();
+        item = m_circular_buffer[m_head];
+		m_head = nextIndex(m_head, (int)m_circular_buffer.size());
+      
         m_cond_not_full.notify_all();
         return true;
     }
@@ -161,12 +170,13 @@ public:
     bool try_pop(value_type& item) {
         std::lock_guard < std::mutex > lock(m_mutex);
 
-        if (m_queue.empty()) {
+        if (privateSize() == 0) {
             return false;
         }
 
-        item = m_queue.front();
-        m_queue.pop_front();
+		item = m_circular_buffer[m_head];
+		m_head = nextIndex(m_head, (int)m_circular_buffer.size());
+
         m_cond_not_full.notify_all();
         return true;
     }
@@ -178,7 +188,7 @@ public:
      */
     size_type size() const {
         std::lock_guard < std::mutex > lock(m_mutex);
-        return m_queue.size();
+        return privateSize();
     }
 
     /**
@@ -187,7 +197,7 @@ public:
      */
     bool empty() const {
         std::lock_guard < std::mutex > lock(m_mutex);
-        return m_queue.empty();
+        return privateSize() == 0;
     }
 
     /**
@@ -196,7 +206,7 @@ public:
      */
     bool full() const {
         std::lock_guard < std::mutex > lock(m_mutex);
-        return (m_queue.size() >= m_max_num_items);
+        return (privateSize() >= privateMaxNumElements());
     }
 
     /**
@@ -204,7 +214,9 @@ public:
      */
     void flush() {
         std::lock_guard < std::mutex > lock(m_mutex);
-        m_queue.clear();
+		m_head = 0;
+		m_tail = 0;
+
         m_cond_not_full.notify_all();
     }
 
@@ -216,22 +228,24 @@ public:
         if (this != &sq) {
             std::lock_guard < std::mutex > lock1(m_mutex);
             std::lock_guard < std::mutex > lock2(sq.m_mutex);
-            m_queue.swap(sq.m_queue);
-            std::swap(m_max_num_items, sq.m_max_num_items);
+            m_circular_buffer.swap(sq.m_circular_buffer);
 
-            if (!m_queue.empty()) {
+            std::swap(m_head, sq.m_head);
+			std::swap(m_tail, sq.m_tail);
+
+            if (privateSize() > 0) {
                 m_cond_not_empty.notify_all();
             }
 
-            if (!sq.m_queue.empty()) {
+            if (sq.privateSize() > 0) {
                 sq.m_cond_not_empty.notify_all();
             }
 
-            if (!m_queue.full()) {
+            if (privateSize() < privateMaxNumElements()) {
                 m_cond_not_full.notify_all();
             }
 
-            if (!sq.m_queue.full()) {
+            if (sq.privateSize() < sq.privateMaxNumElements()) {
                 sq.m_cond_not_full.notify_all();
             }
         }
@@ -243,14 +257,16 @@ public:
             std::lock_guard < std::mutex > lock1(m_mutex);
             std::lock_guard < std::mutex > lock2(sq.m_mutex);
   
-            m_queue = sq.m_queue;
-            m_max_num_items = sq.m_max_num_items;
+			m_circular_buffer = sq.m_circular_buffer;
 
-            if (!m_queue.empty()) {
+			m_head = sq.m_head;
+			m_tail = sq.m_tail;
+
+            if (privateSize() > 0) {
                 m_cond_not_empty.notify_all();
             }
 
-            if (!m_queue.full()) {
+            if (privateSize() < privateMaxNumElements()) {
                 m_cond_not_full.notify_all();
             }
         }
@@ -258,13 +274,38 @@ public:
     }
 
 private:
-    //TODO: use a circular buffer structure ? (fixed array + modulo)
-    std::deque<T> m_queue;
+    /// use a circular buffer structure to prevent allocations / reallocations (fixed array + modulo)
+    std::vector<T> m_circular_buffer;
+
+	/**
+	* The 'head' index of the element at the head of the deque, 'tail'
+	* the next (valid !) index at which an element can be pushed.
+	* m_head == m_tail means empty.
+	*/
+	int m_head = 0, m_tail = 0;
+
+	//
+	inline int nextIndex(int index, int modulus) const {
+		return (index + 1 == modulus) ? 0 : index + 1;
+	}
+
+	//
+	inline int privateSize() const {
+		if (m_head <= m_tail) {
+			return m_tail - m_head;
+		}
+
+		return (m_tail - m_head + (int)m_circular_buffer.size());
+	}
+
+	//
+	inline int privateMaxNumElements() const {
+		return (int)m_circular_buffer.size() - 1;
+	}
 
     mutable std::mutex m_mutex;
     std::condition_variable m_cond_not_empty;
     std::condition_variable m_cond_not_full;
-    size_t m_max_num_items = MIN_ITEM_NB;
 };
 
 /*! Swaps the contents of two ThreadBlockingQueue objects. (external operator) */
