@@ -5,13 +5,18 @@
 
 #ifdef _WIN32
 	#include <windows.h>
-	#include <mmsystem.h>
 #endif
 
 #include <iostream>
 
 Timer::Timer(void) : time_elapsed(0), system_milliseconds(0), start_time(0), end_time(0), last_update(0), num_updates(0), paused_time(0), offset(0), paused_state(false), lock_state(false), lock_rate(0)
 {
+#ifdef _WIN32
+	// According to Microsoft, QueryPerformanceXXX API is perfectly
+	//fine for Windows 7+ systems, and use the highest appropriate counter.
+	//this only need to be done once.
+	::QueryPerformanceFrequency(&win_frequency);
+#endif;
 }
 
 
@@ -82,7 +87,12 @@ void Timer::update(void)
 	{
 #ifdef _WIN32
 
-		system_milliseconds = timeGetTime ();
+		//Use QuaryPerformanceCounter, imune to problems sometimes
+		//multimedia timers have.
+		LARGE_INTEGER win_current_count;
+		::QueryPerformanceCounter(&win_current_count);
+
+		system_milliseconds = (unsigned long)(win_current_count.QuadPart * 1000.0 / win_frequency.QuadPart);
 
 #else
 		gettimeofday(&time_val,&time_zone);

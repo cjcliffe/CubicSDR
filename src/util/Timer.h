@@ -18,6 +18,7 @@
 class Timer {
 private:
 
+	//units are microsecs:
     unsigned long time_elapsed;
     unsigned long system_milliseconds;
     unsigned long start_time;
@@ -30,7 +31,9 @@ private:
 #ifndef _WIN32
     struct timeval time_val;
     struct timezone time_zone;
-#endif
+#else
+	LARGE_INTEGER win_frequency;
+#endif;
 
     bool paused_state;
     bool lock_state;
@@ -91,6 +94,7 @@ public:
      *  \return Total time elapsed since the timer start() to the last update() excluding time paused() in milliseconds
      */
     unsigned long getMilliseconds(void);
+
     /// Alias of getMilliseconds() which returns time in seconds
     /**
      *  \return Total time elapsed since the timer start() to the last update() excluding time paused() in seconds
@@ -159,6 +163,7 @@ public:
      */
     bool paused();
     
+
     
     void timerTestFunc();
 };
