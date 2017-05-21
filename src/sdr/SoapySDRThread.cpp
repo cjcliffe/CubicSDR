@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <SoapySDR/Logger.h>
 
+#define TARGET_DISPLAY_FPS 60
 
 SDRThread::SDRThread() : IOThread(), buffers("SDRThreadBuffers") {
     device = NULL;
@@ -99,7 +100,7 @@ bool SDRThread::init() {
     int streamMTU = device->getStreamMTU(stream);
     mtuElems.store(streamMTU);
     
-    std::cout << "Stream MTU: " << mtuElems.load() << std::endl << std::flush;
+    std::cout << "Device Stream MTU: " << mtuElems.load() << std::endl << std::flush;
     
     deviceInfo.load()->setStreamArgs(currentStreamArgs);
     deviceConfig.load()->setStreamOpts(currentStreamArgs);
@@ -131,7 +132,8 @@ bool SDRThread::init() {
     device->setGainMode(SOAPY_SDR_RX,0,agc_mode.load());
     
     numChannels.store(getOptimalChannelCount(sampleRate.load()));
-    numElems.store(getOptimalElementCount(sampleRate.load(), 30));
+    numElems.store(getOptimalElementCount(sampleRate.load(), TARGET_DISPLAY_FPS));
+    //fallback if  mtuElems was wrong.
     if (!mtuElems.load()) {
         mtuElems.store(numElems.load());
     }
@@ -188,6 +190,7 @@ void SDRThread::assureBufferMinSize(SDRThreadIQData * dataOut, size_t minSize) {
 
 //Called in an infinite loop, read SaopySDR device to build 
 // a 'this.numElems' sized batch of samples (SDRThreadIQData) and push it into  iqDataOutQueue.
+//this batch of samples is built to represent 1 frame / TARGET_DISPLAY_FPS.
 void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
     int flags;
     long long timeNs;
@@ -195,6 +198,13 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
     int n_read = 0;
     int nElems = numElems.load();
     int mtElems = mtuElems.load();
+
+	// Warning: if MTU > numElems, i.e if device MTU is too big w.r.t the sample rate, the TARGET_DISPLAY_FPS cannot
+	//be reached and the CubicSDR displays "slows down". 
+	//To get back a TARGET_DISPLAY_FPS, the user need to adapt 
+	//the SoapySDR Device to use smaller buffer sizes, because  
+	// readStream() is suited to device MTU and cannot be really adapted dynamically.
+	//TODO: Add in doc the need to reduce SoapySDR device buffer length (if available) to restore higher fps.
 
 	//0. Retreive a new batch 
 	SDRThreadIQData *dataOut = buffers.getBuffer();
@@ -241,10 +251,6 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
         if ((n_read + n_stream_read) > nElems) {
 
             //n_requested is the exact number to reach nElems.
-			//note: setting n_requested = n_stream_read;
-			//lead to push the whole n_stream_read, so no overflow management occurs, 
-			//so dataOut->data can exess nElems by at most mtElems. 
-			//TODO: doesn't change CubicSDR behaviour, so why not ?
             int n_requested = nElems-n_read;
 	
             //Copy at most n_requested CF32 into .data liquid_float_complex,
@@ -399,6 +405,7 @@ void SDRThread::updateSettings() {
     }
     
     if (rate_changed.load()) {
+
         device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
         // TODO: explore bandwidth setting option to see if this is necessary for others
         if (device->getDriverKey() == "bladeRF") {
@@ -406,9 +413,10 @@ void SDRThread::updateSettings() {
         }
         sampleRate.store(device->getSampleRate(SOAPY_SDR_RX,0));
         numChannels.store(getOptimalChannelCount(sampleRate.load()));
-        numElems.store(getOptimalElementCount(sampleRate.load(), 60));
+        numElems.store(getOptimalElementCount(sampleRate.load(), TARGET_DISPLAY_FPS));
         int streamMTU = device->getStreamMTU(stream);
         mtuElems.store(streamMTU);
+        //fallback if  mtuElems was wrong
         if (!mtuElems.load()) {
             mtuElems.store(numElems.load());
         }
@@ -416,7 +424,9 @@ void SDRThread::updateSettings() {
         overflowBuffer.data.resize(mtuElems.load());
         free(buffs[0]);
         buffs[0] = malloc(mtuElems.load() * 4 * sizeof(float));
-        numOverflow = 0;
+        //clear overflow buffer
+		numOverflow = 0;
+
         rate_changed.store(false);
         doUpdate = true;
     }
