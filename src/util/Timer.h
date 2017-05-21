@@ -18,7 +18,6 @@
 class Timer {
 private:
 
-	//units are microsecs:
     unsigned long time_elapsed;
     unsigned long system_milliseconds;
     unsigned long start_time;
@@ -32,7 +31,7 @@ private:
     struct timeval time_val;
     struct timezone time_zone;
 #else
-	LARGE_INTEGER win_frequency;
+    LARGE_INTEGER win_frequency;
 #endif;
 
     bool paused_state;

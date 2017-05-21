@@ -182,10 +182,10 @@ void SDRThread::deinit() {
 }
 
 void SDRThread::assureBufferMinSize(SDRThreadIQData * dataOut, size_t minSize) {
-	
-	if (dataOut->data.size() < minSize) {
-		dataOut->data.resize(minSize);
-	}
+    
+    if (dataOut->data.size() < minSize) {
+        dataOut->data.resize(minSize);
+    }
 }
 
 //Called in an infinite loop, read SaopySDR device to build 
@@ -199,42 +199,42 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
     int nElems = numElems.load();
     int mtElems = mtuElems.load();
 
-	// Warning: if MTU > numElems, i.e if device MTU is too big w.r.t the sample rate, the TARGET_DISPLAY_FPS cannot
-	//be reached and the CubicSDR displays "slows down". 
-	//To get back a TARGET_DISPLAY_FPS, the user need to adapt 
-	//the SoapySDR Device to use smaller buffer sizes, because  
-	// readStream() is suited to device MTU and cannot be really adapted dynamically.
-	//TODO: Add in doc the need to reduce SoapySDR device buffer length (if available) to restore higher fps.
+    // Warning: if MTU > numElems, i.e if device MTU is too big w.r.t the sample rate, the TARGET_DISPLAY_FPS cannot
+    //be reached and the CubicSDR displays "slows down". 
+    //To get back a TARGET_DISPLAY_FPS, the user need to adapt 
+    //the SoapySDR Device to use smaller buffer sizes, because  
+    // readStream() is suited to device MTU and cannot be really adapted dynamically.
+    //TODO: Add in doc the need to reduce SoapySDR device buffer length (if available) to restore higher fps.
 
-	//0. Retreive a new batch 
-	SDRThreadIQData *dataOut = buffers.getBuffer();
+    //0. Retreive a new batch 
+    SDRThreadIQData *dataOut = buffers.getBuffer();
 
     //1.If overflow occured on the previous readStream(), transfer it in dataOut directly. 
-	//Take care of the iq_swap option.
+    //Take care of the iq_swap option.
     if (numOverflow > 0) {
         int n_overflow = std::min(numOverflow, nElems);
   
-		assureBufferMinSize(dataOut, n_overflow);
+        assureBufferMinSize(dataOut, n_overflow);
 
         ::memcpy(&dataOut->data[0], &overflowBuffer.data[0], n_overflow * sizeof(liquid_float_complex));
         n_read = n_overflow;
 
         numOverflow = std::min(0, numOverflow - n_overflow);
 
-		// std::cout << "SDRThread::readStream() 1.1 overflowBuffer not empty, collect the remaining " << n_overflow << " samples in it..." << std::endl;
+        // std::cout << "SDRThread::readStream() 1.1 overflowBuffer not empty, collect the remaining " << n_overflow << " samples in it..." << std::endl;
         
         if (numOverflow > 0) { // still some left, shift the remaining samples to the begining..
             ::memmove(&overflowBuffer.data[0], &overflowBuffer.data[n_overflow], numOverflow * sizeof(liquid_float_complex));
 
-			std::cout << "SDRThread::readStream() 1.2 overflowBuffer still not empty, compact the remaining " << numOverflow << " samples in it..." << std::endl;
+            std::cout << "SDRThread::readStream() 1.2 overflowBuffer still not empty, compact the remaining " << numOverflow << " samples in it..." << std::endl;
         }
     } //end if numOverflow > 0
     
     //2. attempt readStream() at most nElems, by mtElems-sized chunks, append in dataOut->data directly.
     while (n_read < nElems && !stopping) {
-		
-		//Whatever the number of remaining samples needed to reach nElems,  we always try to read a mtElems-size chunk,
-		//from which SoapySDR effectively returns n_stream_read.
+        
+        //Whatever the number of remaining samples needed to reach nElems,  we always try to read a mtElems-size chunk,
+        //from which SoapySDR effectively returns n_stream_read.
         int n_stream_read = device->readStream(stream, buffs, mtElems, flags, timeNs);
 
         //if the n_stream_read <= 0, bail out from reading. 
@@ -252,7 +252,7 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
 
             //n_requested is the exact number to reach nElems.
             int n_requested = nElems-n_read;
-	
+    
             //Copy at most n_requested CF32 into .data liquid_float_complex,
             //starting at n_read position.
             //inspired from SoapyRTLSDR code, this mysterious void** is indeed an array of CF32(real/imag) samples, indeed an array of 
@@ -261,67 +261,67 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
             //nor that the Re/Im layout of fields matches the float array order, assign liquid_float_complex field by field.
             float *pp = (float *)buffs[0];
 
-			assureBufferMinSize(dataOut, n_read + n_requested);
+            assureBufferMinSize(dataOut, n_read + n_requested);
 
-			if (iq_swap.load()) {
-				for (int i = 0; i < n_requested; i++) {
-					dataOut->data[n_read + i].imag = pp[2 * i];
-					dataOut->data[n_read + i].real = pp[2 * i + 1];
-				}
-			} else {
-				for (int i = 0; i < n_requested; i++) {
-					dataOut->data[n_read + i].real = pp[2 * i];
-					dataOut->data[n_read + i].imag = pp[2 * i + 1];
-				}
-			}
+            if (iq_swap.load()) {
+                for (int i = 0; i < n_requested; i++) {
+                    dataOut->data[n_read + i].imag = pp[2 * i];
+                    dataOut->data[n_read + i].real = pp[2 * i + 1];
+                }
+            } else {
+                for (int i = 0; i < n_requested; i++) {
+                    dataOut->data[n_read + i].real = pp[2 * i];
+                    dataOut->data[n_read + i].imag = pp[2 * i + 1];
+                }
+            }
            
            //shift of n_requested samples, each one made of 2 floats...
             pp += n_requested * 2;
 
             //numNewOverflow are in exess, they have to be added in the existing overflowBuffer.
-			int numNewOverflow = n_stream_read - n_requested;
+            int numNewOverflow = n_stream_read - n_requested;
 
             //so push the remainder samples to overflowBuffer:
-			if (numNewOverflow > 0) {
-			//	std::cout << "SDRThread::readStream(): 2. SoapySDR read make nElems overflow by " << numNewOverflow << " samples..." << std::endl;
-			}
-			
-			assureBufferMinSize(&overflowBuffer, numOverflow + numNewOverflow);
+            if (numNewOverflow > 0) {
+            //	std::cout << "SDRThread::readStream(): 2. SoapySDR read make nElems overflow by " << numNewOverflow << " samples..." << std::endl;
+            }
+            
+            assureBufferMinSize(&overflowBuffer, numOverflow + numNewOverflow);
 
-			if (iq_swap.load()) {
+            if (iq_swap.load()) {
 
-				for (int i = 0; i < numNewOverflow; i++) {
-					overflowBuffer.data[numOverflow + i].imag = pp[2 * i];
-					overflowBuffer.data[numOverflow + i].real = pp[2 * i + 1];
-				}
-			}
-			else {
-				for (int i = 0; i < numNewOverflow; i++) {
-					overflowBuffer.data[numOverflow + i].real = pp[2 * i];
-					overflowBuffer.data[numOverflow + i].imag = pp[2 * i + 1];
-				}
-			}
-			numOverflow += numNewOverflow;
+                for (int i = 0; i < numNewOverflow; i++) {
+                    overflowBuffer.data[numOverflow + i].imag = pp[2 * i];
+                    overflowBuffer.data[numOverflow + i].real = pp[2 * i + 1];
+                }
+            }
+            else {
+                for (int i = 0; i < numNewOverflow; i++) {
+                    overflowBuffer.data[numOverflow + i].real = pp[2 * i];
+                    overflowBuffer.data[numOverflow + i].imag = pp[2 * i + 1];
+                }
+            }
+            numOverflow += numNewOverflow;
            
             n_read += n_requested;
         } else if (n_stream_read > 0) { // no overflow, read the whole n_stream_read.
 
             float *pp = (float *)buffs[0];
 
-			assureBufferMinSize(dataOut, n_read + n_stream_read);
+            assureBufferMinSize(dataOut, n_read + n_stream_read);
 
-			if (iq_swap.load()) {
-				for (int i = 0; i < n_stream_read; i++) {
-					dataOut->data[n_read + i].imag = pp[2 * i];
-					dataOut->data[n_read + i].real = pp[2 * i + 1];
-				}
-			}
-			else {
-				for (int i = 0; i < n_stream_read; i++) {
-					dataOut->data[n_read + i].real = pp[2 * i];
-					dataOut->data[n_read + i].imag = pp[2 * i + 1];
-				}
-			} 
+            if (iq_swap.load()) {
+                for (int i = 0; i < n_stream_read; i++) {
+                    dataOut->data[n_read + i].imag = pp[2 * i];
+                    dataOut->data[n_read + i].real = pp[2 * i + 1];
+                }
+            }
+            else {
+                for (int i = 0; i < n_stream_read; i++) {
+                    dataOut->data[n_read + i].real = pp[2 * i];
+                    dataOut->data[n_read + i].imag = pp[2 * i + 1];
+                }
+            } 
 
             n_read += n_stream_read;
         } else {
@@ -329,11 +329,11 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
         }
     } //end while
     
-	//3. At that point, dataOut contains nElems (or less if a read has return an error), try to post in queue, else discard.
+    //3. At that point, dataOut contains nElems (or less if a read has return an error), try to post in queue, else discard.
     if (n_read > 0 && !stopping && !iqDataOutQueue->full()) {
         
-		//clamp result:
-		dataOut->data.resize(n_read);
+        //clamp result:
+        dataOut->data.resize(n_read);
 
         dataOut->frequency = frequency.load();
         dataOut->sampleRate = sampleRate.load();
@@ -350,11 +350,11 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
             //saturation, let a chance to the other threads to consume the existing samples
             std::this_thread::yield();
         }
-	}
-	else {
-		dataOut->setRefCount(0);
-		std::cout << "SDRThread::readStream(): 3.1 iqDataOutQueue output queue is full, discard processing of the batch..." << std::endl;
-	}
+    }
+    else {
+        dataOut->setRefCount(0);
+        std::cout << "SDRThread::readStream(): 3.1 iqDataOutQueue output queue is full, discard processing of the batch..." << std::endl;
+    }
 }
 
 void SDRThread::readLoop() {
@@ -425,7 +425,7 @@ void SDRThread::updateSettings() {
         free(buffs[0]);
         buffs[0] = malloc(mtuElems.load() * 4 * sizeof(float));
         //clear overflow buffer
-		numOverflow = 0;
+        numOverflow = 0;
 
         rate_changed.store(false);
         doUpdate = true;
@@ -675,9 +675,9 @@ void SDRThread::setGain(std::string name, float value) {
 
 float SDRThread::getGain(std::string name) {
     std::lock_guard < std::mutex > lock(gain_busy);
-	float val = gainValues[name];
-	
-	return val;
+    float val = gainValues[name];
+    
+    return val;
 }
 
 void SDRThread::writeSetting(std::string name, std::string value) {
