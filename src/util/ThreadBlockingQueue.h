@@ -37,15 +37,15 @@ public:
     /*! Create safe blocking queue. */
     ThreadBlockingQueue() {
         //at least 1 (== Exchanger)
-		m_circular_buffer.resize(MIN_ITEM_NB + 1); //there is one slot more than the size for internal management.
+        m_circular_buffer.resize(MIN_ITEM_NB + 1); //there is one slot more than the size for internal management.
     };
     
     //Copy constructor
     ThreadBlockingQueue(const ThreadBlockingQueue& sq) {
         std::lock_guard < std::mutex > lock(sq.m_mutex);
         m_circular_buffer = sq.m_circular_buffer;
-		m_head = sq.m_head;
-		m_tail = sq.m_tail;
+        m_head = sq.m_head;
+        m_tail = sq.m_tail;
     }
 
     /*! Destroy safe queue. */
@@ -64,7 +64,7 @@ public:
         if (max_num_items > (unsigned int)privateMaxNumElements()) {
             //Only raise the existing max size, never reduce it
             //for simplification sake at runtime.
-			m_circular_buffer.resize(max_num_items + 1); // there is 1 extra allocated slot.
+            m_circular_buffer.resize(max_num_items + 1); // there is 1 extra allocated slot.
             //m_head and m_tail stays valid.
             m_cond_not_full.notify_all();
         }
@@ -100,11 +100,11 @@ public:
            return false;
         }
 
-		//m_tail is already the next valid place an item can be put
-		m_circular_buffer[m_tail] = item;
-		m_tail = nextIndex(m_tail, (int)m_circular_buffer.size());
+        //m_tail is already the next valid place an item can be put
+        m_circular_buffer[m_tail] = item;
+        m_tail = nextIndex(m_tail, (int)m_circular_buffer.size());
         
-		m_cond_not_empty.notify_all();
+        m_cond_not_empty.notify_all();
         return true;
     }
 
@@ -120,9 +120,9 @@ public:
             return false;
         }
 
-		//m_tail is already the next valid place an item can be put
-		m_circular_buffer[m_tail] = item;
-		m_tail = nextIndex(m_tail, (int)m_circular_buffer.size());
+        //m_tail is already the next valid place an item can be put
+        m_circular_buffer[m_tail] = item;
+        m_tail = nextIndex(m_tail, (int)m_circular_buffer.size());
 
         m_cond_not_empty.notify_all();
         return true;
@@ -156,7 +156,7 @@ public:
         }
 
         item = m_circular_buffer[m_head];
-		m_head = nextIndex(m_head, (int)m_circular_buffer.size());
+        m_head = nextIndex(m_head, (int)m_circular_buffer.size());
       
         m_cond_not_full.notify_all();
         return true;
@@ -174,8 +174,8 @@ public:
             return false;
         }
 
-		item = m_circular_buffer[m_head];
-		m_head = nextIndex(m_head, (int)m_circular_buffer.size());
+        item = m_circular_buffer[m_head];
+        m_head = nextIndex(m_head, (int)m_circular_buffer.size());
 
         m_cond_not_full.notify_all();
         return true;
@@ -214,8 +214,8 @@ public:
      */
     void flush() {
         std::lock_guard < std::mutex > lock(m_mutex);
-		m_head = 0;
-		m_tail = 0;
+        m_head = 0;
+        m_tail = 0;
 
         m_cond_not_full.notify_all();
     }
@@ -231,7 +231,7 @@ public:
             m_circular_buffer.swap(sq.m_circular_buffer);
 
             std::swap(m_head, sq.m_head);
-			std::swap(m_tail, sq.m_tail);
+            std::swap(m_tail, sq.m_tail);
 
             if (privateSize() > 0) {
                 m_cond_not_empty.notify_all();
@@ -257,10 +257,10 @@ public:
             std::lock_guard < std::mutex > lock1(m_mutex);
             std::lock_guard < std::mutex > lock2(sq.m_mutex);
   
-			m_circular_buffer = sq.m_circular_buffer;
+            m_circular_buffer = sq.m_circular_buffer;
 
-			m_head = sq.m_head;
-			m_tail = sq.m_tail;
+            m_head = sq.m_head;
+            m_tail = sq.m_tail;
 
             if (privateSize() > 0) {
                 m_cond_not_empty.notify_all();
@@ -277,31 +277,31 @@ private:
     /// use a circular buffer structure to prevent allocations / reallocations (fixed array + modulo)
     std::vector<T> m_circular_buffer;
 
-	/**
-	* The 'head' index of the element at the head of the deque, 'tail'
-	* the next (valid !) index at which an element can be pushed.
-	* m_head == m_tail means empty.
-	*/
-	int m_head = 0, m_tail = 0;
+    /**
+    * The 'head' index of the element at the head of the deque, 'tail'
+    * the next (valid !) index at which an element can be pushed.
+    * m_head == m_tail means empty.
+    */
+    int m_head = 0, m_tail = 0; 
 
-	//
-	inline int nextIndex(int index, int modulus) const {
-		return (index + 1 == modulus) ? 0 : index + 1;
-	}
+    //
+    inline int nextIndex(int index, int modulus) const {
+        return (index + 1 == modulus) ? 0 : index + 1;
+    }
 
-	//
-	inline int privateSize() const {
-		if (m_head <= m_tail) {
-			return m_tail - m_head;
-		}
+    //
+    inline int privateSize() const {
+        if (m_head <= m_tail) {
+            return m_tail - m_head;
+        }
 
-		return (m_tail - m_head + (int)m_circular_buffer.size());
-	}
+        return (m_tail - m_head + (int)m_circular_buffer.size());
+    }
 
-	//
-	inline int privateMaxNumElements() const {
-		return (int)m_circular_buffer.size() - 1;
-	}
+    //
+    inline int privateMaxNumElements() const {
+        return (int)m_circular_buffer.size() - 1;
+    }
 
     mutable std::mutex m_mutex;
     std::condition_variable m_cond_not_empty;
