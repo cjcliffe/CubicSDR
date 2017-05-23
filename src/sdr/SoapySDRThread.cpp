@@ -209,11 +209,14 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
     //0. Retreive a new batch 
     SDRThreadIQData *dataOut = buffers.getBuffer();
 
+    //resize to the target size immedialetly, to minimize later reallocs:
+    assureBufferMinSize(dataOut, nElems);
+
     //1.If overflow occured on the previous readStream(), transfer it in dataOut directly. 
-    //Take care of the iq_swap option.
     if (numOverflow > 0) {
         int n_overflow = std::min(numOverflow, nElems);
-  
+        
+        //safety
         assureBufferMinSize(dataOut, n_overflow);
 
         ::memcpy(&dataOut->data[0], &overflowBuffer.data[0], n_overflow * sizeof(liquid_float_complex));
@@ -261,6 +264,7 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
             //nor that the Re/Im layout of fields matches the float array order, assign liquid_float_complex field by field.
             float *pp = (float *)buffs[0];
 
+            //safety
             assureBufferMinSize(dataOut, n_read + n_requested);
 
             if (iq_swap.load()) {
@@ -285,7 +289,8 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
             if (numNewOverflow > 0) {
             //	std::cout << "SDRThread::readStream(): 2. SoapySDR read make nElems overflow by " << numNewOverflow << " samples..." << std::endl;
             }
-            
+
+            //safety
             assureBufferMinSize(&overflowBuffer, numOverflow + numNewOverflow);
 
             if (iq_swap.load()) {
@@ -308,6 +313,7 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
 
             float *pp = (float *)buffs[0];
 
+            //safety
             assureBufferMinSize(dataOut, n_read + n_stream_read);
 
             if (iq_swap.load()) {
@@ -332,7 +338,7 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
     //3. At that point, dataOut contains nElems (or less if a read has return an error), try to post in queue, else discard.
     if (n_read > 0 && !stopping && !iqDataOutQueue->full()) {
         
-        //clamp result:
+        //clamp result to the actual read size:
         dataOut->data.resize(n_read);
 
         dataOut->frequency = frequency.load();
@@ -354,6 +360,8 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
     else {
         dataOut->setRefCount(0);
         std::cout << "SDRThread::readStream(): 3.1 iqDataOutQueue output queue is full, discard processing of the batch..." << std::endl;
+        //saturation, let a chance to the other threads to consume the existing samples
+        std::this_thread::yield();
     }
 }
 
