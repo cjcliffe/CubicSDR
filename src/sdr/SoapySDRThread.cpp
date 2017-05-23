@@ -222,14 +222,15 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
         ::memcpy(&dataOut->data[0], &overflowBuffer.data[0], n_overflow * sizeof(liquid_float_complex));
         n_read = n_overflow;
 
-        numOverflow = std::min(0, numOverflow - n_overflow);
+        //is still > 0 if MTU > nElements (low sample rate w.r.t the MTU !)
+        numOverflow -= n_overflow;
 
         // std::cout << "SDRThread::readStream() 1.1 overflowBuffer not empty, collect the remaining " << n_overflow << " samples in it..." << std::endl;
         
         if (numOverflow > 0) { // still some left, shift the remaining samples to the begining..
             ::memmove(&overflowBuffer.data[0], &overflowBuffer.data[n_overflow], numOverflow * sizeof(liquid_float_complex));
 
-            std::cout << "SDRThread::readStream() 1.2 overflowBuffer still not empty, compact the remaining " << numOverflow << " samples in it..." << std::endl;
+        //    std::cout << "SDRThread::readStream() 1.2 overflowBuffer still not empty, compact the remaining " << numOverflow << " samples in it..." << std::endl;
         }
     } //end if numOverflow > 0
     
