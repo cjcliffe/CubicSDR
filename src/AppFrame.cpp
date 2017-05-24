@@ -1612,6 +1612,9 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         updateDeviceParams();
     }
     
+    //try to garbage collect the retired demodulators.
+    wxGetApp().getDemodMgr().garbageCollect();
+
     DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     if (demod && demod->isModemInitialized()) {

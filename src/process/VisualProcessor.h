@@ -170,7 +170,7 @@ protected:
             if (inp) {
                 OutputDataTypePtr outp = buffers.getBuffer();
 
-                //'deep copy of the contents 
+                //'deep copy' of the contents 
                 (*outp) = (*inp);
   
                 VisualProcessor<OutputDataType, OutputDataType>::distribute(outp);

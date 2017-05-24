@@ -221,8 +221,8 @@ void SDRPostThread::run() {
         iqVisualQueue->flush();   
     }
 
-   buffers.purge();
-   visualDataBuffers.purge();
+    //    buffers.purge();
+    //    visualDataBuffers.purge();
 
 //    std::cout << "SDR post-processing thread done." << std::endl;
 }

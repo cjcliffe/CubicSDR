@@ -67,10 +67,11 @@ public:
     void saveInstance(DataNode *node, DemodulatorInstance *inst);
 	
     DemodulatorInstance *loadInstance(DataNode *node);
+
+    //to be called periodically to cleanup removed demodulators.
+    void garbageCollect();
     
 private:
-    
-    void garbageCollect();
 
     std::vector<DemodulatorInstance *> demods;
     std::vector<DemodulatorInstance *> demods_deleted;
@@ -91,6 +92,8 @@ private:
     //protects access to demods lists and such, need to be recursive
     //because of the usage of public re-entrant methods 
     std::recursive_mutex demods_busy;
+
+    mutable std::mutex deleted_demods_busy;
     
     std::map<std::string, ModemSettings> lastModemSettings;
     std::map<int,RtAudio::DeviceInfo> outputDevices;

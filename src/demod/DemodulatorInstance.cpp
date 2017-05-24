@@ -78,6 +78,7 @@ DemodulatorInstance::DemodulatorInstance() {
 }
 
 DemodulatorInstance::~DemodulatorInstance() {
+    std::lock_guard < std::mutex > lockData(m_thread_control_mutex);
 #if ENABLE_DIGITAL_LAB
     delete activeOutput;
 #endif
@@ -89,7 +90,7 @@ DemodulatorInstance::~DemodulatorInstance() {
     delete threadQueueControl;
     delete pipeAudioData;
     
-    wxGetApp().getBookmarkMgr().updateActiveList();
+   // wxGetApp().getBookmarkMgr().updateActiveList();
 }
 
 void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {
@@ -97,6 +98,9 @@ void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQu
 }
 
 void DemodulatorInstance::run() {
+
+    std::lock_guard < std::mutex > lockData(m_thread_control_mutex);
+
     if (active) {
         return;
     }
@@ -128,7 +132,7 @@ void DemodulatorInstance::run() {
 
     active = true;
 
-    wxGetApp().getBookmarkMgr().updateActiveList();
+ //   wxGetApp().getBookmarkMgr().updateActiveList();
 }
 
 void DemodulatorInstance::updateLabel(long long freq) {
@@ -166,7 +170,8 @@ void DemodulatorInstance::setLabel(std::string labelStr) {
 
 bool DemodulatorInstance::isTerminated() {
 
-    //
+    std::lock_guard < std::mutex > lockData(m_thread_control_mutex);
+
     bool audioTerminated = audioThread->isTerminated();
     bool demodTerminated = demodulatorThread->isTerminated();
     bool preDemodTerminated = demodulatorPreThread->isTerminated();

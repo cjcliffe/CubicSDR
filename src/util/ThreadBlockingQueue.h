@@ -36,7 +36,7 @@ public:
 
     /*! Create safe blocking queue. */
     ThreadBlockingQueue() {
-        //at least 1 (== Exchanger)
+        //at least 1 (== Java SynchronizedQueue)
         m_max_num_items = MIN_ITEM_NB;
     };
     
@@ -258,7 +258,7 @@ public:
     }
 
 private:
-    //TODO: use a circular buffer structure ? (fixed array + modulo)
+
     std::deque<T> m_queue;
 
     mutable std::mutex m_mutex;
