@@ -183,7 +183,7 @@ void SDRPostThread::run() {
     iqActiveDemodVisualQueue = static_cast<DemodulatorThreadInputQueue*>(getOutputQueue("IQActiveDemodVisualDataOutput"));
     
     while (!stopping) {
-        SDRThreadIQData *data_in;
+        SDRThreadIQDataPtr data_in;
         
         iqDataInQueue->pop(data_in);
         //        std::lock_guard < std::mutex > lock(data_in->m_mutex);
@@ -192,14 +192,14 @@ void SDRPostThread::run() {
 
         if (data_in && data_in->data.size()) {
             if(data_in->numChannels > 1) {
-                runPFBCH(data_in);
+                runPFBCH(data_in.get());
             } else {
-                runSingleCH(data_in);
+                runSingleCH(data_in.get());
             }
         }
 
         if (data_in) {
-            data_in->decRefCount();   
+            //nothing
         }
 
         bool doUpdate = false;
@@ -217,20 +217,19 @@ void SDRPostThread::run() {
     } //end while
     
     //Be safe, remove as many elements as possible
-    DemodulatorThreadIQData *visualDataDummy;
-    while (iqVisualQueue && iqVisualQueue->try_pop(visualDataDummy)) {
-        visualDataDummy->decRefCount();        
+    if (iqVisualQueue) {
+        iqVisualQueue->flush();   
     }
 
-    //    buffers.purge();
-    //    visualDataBuffers.purge();
+   buffers.purge();
+   visualDataBuffers.purge();
 
 //    std::cout << "SDR post-processing thread done." << std::endl;
 }
 
 void SDRPostThread::terminate() {
     IOThread::terminate();
-    SDRThreadIQData *dummy = new SDRThreadIQData;
+    SDRThreadIQDataPtr dummy(new SDRThreadIQData);
     //VSO: blocking push
     iqDataInQueue->push(dummy);
 }
@@ -278,8 +277,8 @@ void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
     }
     
     if (refCount) {
-        DemodulatorThreadIQData *demodDataOut = buffers.getBuffer();
-        demodDataOut->setRefCount(refCount);
+        DemodulatorThreadIQDataPtr demodDataOut = buffers.getBuffer();
+
         demodDataOut->frequency = frequency;
         demodDataOut->sampleRate = sampleRate;
         
@@ -333,15 +332,13 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
     }
     
     if (iqDataOutQueue != NULL && !iqDataOutQueue->full()) {
-        DemodulatorThreadIQData *iqDataOut = visualDataBuffers.getBuffer();
+        DemodulatorThreadIQDataPtr iqDataOut = visualDataBuffers.getBuffer();
         
         bool doVis = false;
         
         if (iqVisualQueue != NULL && !iqVisualQueue->full()) {
             doVis = true;
         }
-        
-        iqDataOut->setRefCount(1 + (doVis?1:0));
         
         iqDataOut->frequency = data_in->frequency;
         iqDataOut->sampleRate = data_in->sampleRate;
@@ -407,8 +404,7 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
                 continue;
             }
             
-            DemodulatorThreadIQData *demodDataOut = buffers.getBuffer();
-            demodDataOut->setRefCount(demodChannelActive[i] + doDemodVis);
+            DemodulatorThreadIQDataPtr demodDataOut = buffers.getBuffer();
             demodDataOut->frequency = chanCenters[i];
             demodDataOut->sampleRate = chanBw;
             

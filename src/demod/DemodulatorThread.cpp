@@ -79,15 +79,14 @@ void DemodulatorThread::run() {
     ModemIQData modemData;
     
     while (!stopping) {
-        DemodulatorThreadPostIQData *inp;
+        DemodulatorThreadPostIQDataPtr inp;
         
         iqInputQueue->pop(inp);
-        //        std::lock_guard < std::mutex > lock(inp->m_mutex);
-        
+         
         size_t bufSize = inp->data.size();
         
         if (!bufSize) {
-            inp->decRefCount();
+           
             continue;
         }
         
@@ -104,7 +103,7 @@ void DemodulatorThread::run() {
         }
         
         if (!cModem || !cModemKit) {
-            inp->decRefCount();
+           
             continue;
         }
         
@@ -115,7 +114,7 @@ void DemodulatorThread::run() {
         modemData.sampleRate = inp->sampleRate;
         modemData.data.assign(inputData->begin(), inputData->end());
         
-        AudioThreadInput *ati = nullptr;
+        AudioThreadInputPtr ati = nullptr;
         
         ModemAnalog *modemAnalog = (cModem->getType() == "analog")?((ModemAnalog *)cModem):nullptr;
         ModemDigital *modemDigital = (cModem->getType() == "digital")?((ModemDigital *)cModem):nullptr;
@@ -133,7 +132,7 @@ void DemodulatorThread::run() {
             ati->data.resize(0);
         }
 
-        cModem->demodulate(cModemKit, &modemData, ati);
+        cModem->demodulate(cModemKit, &modemData, ati.get());
 
         double currentSignalLevel = 0;
         double sampleTime = double(inp->data.size()) / double(inp->sampleRate);
@@ -225,7 +224,6 @@ void DemodulatorThread::run() {
                 }
             }
         } else if (ati) {
-            ati->setRefCount(0);
             ati = nullptr;
         }
         
@@ -238,7 +236,7 @@ void DemodulatorThread::run() {
         }
 
         if ((ati || modemDigital) && localAudioVisOutputQueue != nullptr && localAudioVisOutputQueue->empty()) {
-            AudioThreadInput *ati_vis = new AudioThreadInput;
+            AudioThreadInputPtr ati_vis(new AudioThreadInput);
 
             ati_vis->sampleRate = inp->sampleRate;
             ati_vis->inputRate = inp->sampleRate;
@@ -246,7 +244,7 @@ void DemodulatorThread::run() {
             size_t num_vis = DEMOD_VIS_SIZE;
             if (modemDigital) {
                 if (ati) {  // TODO: handle digital modems with audio output
-                    ati->setRefCount(0);
+                   
                     ati = nullptr;
                 }
                 ati_vis->data.resize(inputData->size());
@@ -300,7 +298,7 @@ void DemodulatorThread::run() {
             
             if (!localAudioVisOutputQueue->try_push(ati_vis)) {
                 //non-blocking push needed for audio vis out
-                ati_vis->setRefCount(0);
+            
                 std::cout << "DemodulatorThread::run() cannot push ati_vis into localAudioVisOutputQueue, is full !" << std::endl;
                 std::this_thread::yield();
             }
@@ -310,12 +308,10 @@ void DemodulatorThread::run() {
             if (!muted.load() && (!wxGetApp().getSoloMode() || (demodInstance == wxGetApp().getDemodMgr().getLastActiveDemodulator()))) {
                 //non-blocking push needed for audio out
                 if (!audioOutputQueue->try_push(ati)) {
-                    ati->decRefCount();
+
                     std::cout << "DemodulatorThread::run() cannot push ati into audioOutputQueue, is full !" << std::endl;
                     std::this_thread::yield();
                 }
-            } else {
-                ati->setRefCount(0);
             }
         }
         
@@ -335,28 +331,12 @@ void DemodulatorThread::run() {
                     break;
             }
         }
-        
-        
-        inp->decRefCount();
     }
     // end while !stopping
     
     // Purge any unused inputs, with a non-blocking pop
-    DemodulatorThreadPostIQData *ref;
-    while (iqInputQueue->try_pop(ref)) {
-        
-        if (ref) {  // May have other consumers; just decrement
-            ref->decRefCount();
-        }
-    }
-
-    AudioThreadInput *ref_audio;
-    while (audioOutputQueue->try_pop(ref_audio)) {
-      
-        if (ref_audio) { // Originated here; set RefCount to 0
-            ref_audio->setRefCount(0);
-        }
-    }
+    iqInputQueue->flush();
+    audioOutputQueue->flush();
 
     outputBuffers.purge();
     
@@ -365,7 +345,7 @@ void DemodulatorThread::run() {
 
 void DemodulatorThread::terminate() {
     IOThread::terminate();
-    DemodulatorThreadPostIQData *inp = new DemodulatorThreadPostIQData;    // push dummy to nudge queue
+    DemodulatorThreadPostIQDataPtr inp(new DemodulatorThreadPostIQData);    // push dummy to nudge queue
     
     //VSO: blocking push
     iqInputQueue->push(inp);

@@ -28,7 +28,7 @@ void FFTDataDistributor::process() {
 		if (!isAnyOutputEmpty()) {
 			return;
 		}
-		DemodulatorThreadIQData *inp;
+		DemodulatorThreadIQDataPtr inp;
 		input->pop(inp);
 
 		if (inp) {
@@ -73,7 +73,7 @@ void FFTDataDistributor::process() {
             memcpy(&inputBuffer.data[bufferOffset+bufferedItems],&inp->data[0], nbSamplesToAdd *sizeof(liquid_float_complex));
             bufferedItems += nbSamplesToAdd;
             //
-			inp->decRefCount();
+		
 		} else {
             //empty inp, wait for another.
 			continue;
@@ -105,7 +105,8 @@ void FFTDataDistributor::process() {
 
 					if (lineRateAccum >= 1.0) {
                         //each i represents a FFT computation
-						DemodulatorThreadIQData *outp = outputBuffers.getBuffer();
+                        DemodulatorThreadIQDataPtr outp = outputBuffers.getBuffer();
+
 						outp->frequency = inputBuffer.frequency;
 						outp->sampleRate = inputBuffer.sampleRate;
 						outp->data.assign(inputBuffer.data.begin()+bufferOffset+i,

@@ -228,7 +228,6 @@ void DemodulatorMgr::setActiveDemodulator(DemodulatorInstance *demod, bool tempo
     } else {
         std::lock_guard < std::recursive_mutex > lock(demods_busy);
         garbageCollect();
-        ReBufferGC::garbageCollect();
     }
 
     if (activeVisualDemodulator.load()) {
@@ -283,23 +282,24 @@ DemodulatorInstance *DemodulatorMgr::getLastDemodulatorWith(const std::string& t
 
 //Private internal method, no need to protect it with demods_busy
 void DemodulatorMgr::garbageCollect() {
-    if (demods_deleted.size()) {
-      
-        std::vector<DemodulatorInstance *>::iterator i;
 
-        for (i = demods_deleted.begin(); i != demods_deleted.end(); i++) {
-            if ((*i)->isTerminated()) {
-                DemodulatorInstance *deleted = (*i);
-                demods_deleted.erase(i);
+    std::vector<DemodulatorInstance *>::iterator it = demods_deleted.begin();
 
-                std::cout << "Garbage collected demodulator instance " << deleted->getLabel() << std::endl;
+    while (it != demods_deleted.end()) {
 
-                delete deleted;
-                return;
-            }
+        if ((*it)->isTerminated()) {
+           
+            DemodulatorInstance *deleted = (*it);
+            delete deleted;
+
+            it = demods_deleted.erase(it);
+
+            std::cout << "Garbage collected demodulator instance '" << deleted->getLabel() << "'... " << std::endl << std::flush;
         }
-      
-    }
+        else {
+            it++;
+        }
+    } //end while
 }
 
 void DemodulatorMgr::updateLastState() {

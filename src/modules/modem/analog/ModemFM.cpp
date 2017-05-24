@@ -29,7 +29,7 @@ void ModemFM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *au
     initOutputBuffers(fmkit, input);
     
     if (!bufSize) {
-        input->decRefCount();
+      
         return;
     }
     

@@ -9,6 +9,7 @@
 #include <vector>
 #include <atomic>
 #include <mutex>
+#include <memory>
 
 #include "IOThread.h"
 
@@ -29,7 +30,7 @@ public:
     std::string demodType;
 };
 
-class DemodulatorThreadIQData: public ReferenceCounter {
+class DemodulatorThreadIQData {
 public:
     long long frequency;
     long long sampleRate;
@@ -48,7 +49,7 @@ public:
         return *this;
     }
 
-    ~DemodulatorThreadIQData() {
+    virtual ~DemodulatorThreadIQData() {
 
     }
 };
@@ -56,7 +57,7 @@ public:
 class Modem;
 class ModemKit;
 
-class DemodulatorThreadPostIQData: public ReferenceCounter {
+class DemodulatorThreadPostIQData {
 public:
     std::vector<liquid_float_complex> data;
 
@@ -71,13 +72,13 @@ public:
 
     }
 
-    ~DemodulatorThreadPostIQData() {
-        std::lock_guard < std::recursive_mutex > lock(m_mutex);
+    virtual ~DemodulatorThreadPostIQData() {
+       
     }
 };
 
 
-class DemodulatorThreadAudioData: public ReferenceCounter {
+class DemodulatorThreadAudioData {
 public:
     long long frequency;
     unsigned int sampleRate;
@@ -95,11 +96,13 @@ public:
 
     }
 
-    ~DemodulatorThreadAudioData() {
+    virtual ~DemodulatorThreadAudioData() {
 
     }
 };
+typedef std::shared_ptr<DemodulatorThreadIQData> DemodulatorThreadIQDataPtr;
+typedef std::shared_ptr<DemodulatorThreadPostIQData> DemodulatorThreadPostIQDataPtr;
 
-typedef ThreadBlockingQueue<DemodulatorThreadIQData *> DemodulatorThreadInputQueue;
-typedef ThreadBlockingQueue<DemodulatorThreadPostIQData *> DemodulatorThreadPostInputQueue;
+typedef ThreadBlockingQueue< DemodulatorThreadIQDataPtr > DemodulatorThreadInputQueue;
+typedef ThreadBlockingQueue< DemodulatorThreadPostIQDataPtr > DemodulatorThreadPostInputQueue;
 typedef ThreadBlockingQueue<DemodulatorThreadControlCommand> DemodulatorThreadControlCommandQueue;

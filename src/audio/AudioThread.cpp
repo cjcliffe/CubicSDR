@@ -123,7 +123,7 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
                     if (srcmix->currentInput->sampleRate == src->getSampleRate()) {
                         break;
                     }
-                    srcmix->currentInput->decRefCount();
+                   
                 }
                 srcmix->currentInput = nullptr;
             } //end while
@@ -140,7 +140,7 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
             if (!srcmix->inputQueue->empty()) {
                 srcmix->audioQueuePtr = 0;
                 if (srcmix->currentInput) {
-                    srcmix->currentInput->decRefCount();
+                   
                     srcmix->currentInput = nullptr;
                 }
 
@@ -160,7 +160,7 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
                 if (srcmix->audioQueuePtr >= srcmix->currentInput->data.size()) {
                     srcmix->audioQueuePtr = 0;
                     if (srcmix->currentInput) {
-                        srcmix->currentInput->decRefCount();
+                       
                         srcmix->currentInput = nullptr;
                     }
 
@@ -187,7 +187,7 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
                 if (srcmix->audioQueuePtr >= srcmix->currentInput->data.size()) {
                     srcmix->audioQueuePtr = 0;
                     if (srcmix->currentInput) {
-                        srcmix->currentInput->decRefCount();
+                       
                         srcmix->currentInput = nullptr;
                     }
 
@@ -444,20 +444,13 @@ void AudioThread::run() {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
     // Drain any remaining inputs, with a non-blocking pop
-    AudioThreadInput *ref;
-    while (inputQueue && inputQueue->try_pop(ref)) {
-       
-        if (ref) {
-            ref->decRefCount();
-        }
-    } //end while
+    if (inputQueue != nullptr) {
+        inputQueue->flush();
+    }
     
     //Nullify currentInput...
-    if (currentInput) {
-        currentInput->setRefCount(0);
-        currentInput = nullptr;
-    }
-
+    currentInput = nullptr;
+  
     //Stop 
     if (deviceController[parameters.deviceId] != this) {
         deviceController[parameters.deviceId]->removeThread(this);
@@ -494,7 +487,6 @@ void AudioThread::setActive(bool state) {
     
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
-    AudioThreadInput *dummy;
     if (state && !active && inputQueue) {
         deviceController[parameters.deviceId]->bindThread(this);
     } else if (!state && active) {
@@ -504,12 +496,7 @@ void AudioThread::setActive(bool state) {
     // Activity state changing, clear any inputs
     if(inputQueue) {
 
-        while (inputQueue->try_pop(dummy)) {  // flush queue, non-blocking pop
-            
-            if (dummy) {
-                dummy->decRefCount();
-            }
-        }
+        inputQueue->flush();
     }
     active = state;
 }

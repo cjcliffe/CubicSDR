@@ -76,7 +76,7 @@ class DemodulatorWorkerThread : public IOThread {
 public:
 
     DemodulatorWorkerThread();
-    ~DemodulatorWorkerThread();
+    virtual ~DemodulatorWorkerThread();
 
     virtual void run();
 

@@ -4,9 +4,6 @@
 #include "IOThread.h"
 #include <typeinfo>
 
-std::mutex ReBufferGC::g_mutex;
-std::set<ReferenceCounter *> ReBufferGC::garbage;
-
 #define SPIN_WAIT_SLEEP_MS 5
 
 IOThread::IOThread() {
