@@ -10,7 +10,7 @@
 #include "AudioThread.h"
 #include "Modem.h"
 
-typedef ThreadBlockingQueue<AudioThreadInput *> DemodulatorThreadOutputQueue;
+typedef ThreadBlockingQueue<AudioThreadInputPtr> DemodulatorThreadOutputQueue;
 
 #define DEMOD_VIS_SIZE 2048
 #define DEMOD_SIGNAL_MIN -30
@@ -22,7 +22,7 @@ class DemodulatorThread : public IOThread {
 public:
 
     DemodulatorThread(DemodulatorInstance *parent);
-    ~DemodulatorThread();
+    virtual ~DemodulatorThread();
 
     void onBindOutput(std::string name, ThreadQueueBase *threadQueue);
     

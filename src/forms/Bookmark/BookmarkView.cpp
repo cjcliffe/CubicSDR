@@ -1411,7 +1411,7 @@ void BookmarkView::onEnterWindow( wxMouseEvent&  event ) {
     }
 #endif
 
-    setStatusText("You can mouse-drag a bookmark entry from one category to the next..etc. TODO: add more Bookmarks descriptions");
+    setStatusText("Drag & Drop to create / move bookmarks, Group and arrange bookmarks, quick Search by keywords.");
 }
 
 

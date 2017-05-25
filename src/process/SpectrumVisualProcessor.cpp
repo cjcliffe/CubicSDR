@@ -4,6 +4,8 @@
 #include "SpectrumVisualProcessor.h"
 #include "CubicSDR.h"
 
+//50 ms
+#define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
 
 SpectrumVisualProcessor::SpectrumVisualProcessor() : outputBuffers("SpectrumVisualProcessorBuffers") {
     lastInputBandwidth = 0;
@@ -192,22 +194,18 @@ void SpectrumVisualProcessor::process() {
         fftSizeChanged.store(false);
     }
 
-    DemodulatorThreadIQData *iqData;
+    DemodulatorThreadIQDataPtr iqData;
     
-    input->pop(iqData);
+    if (!input->pop(iqData, HEARTBEAT_CHECK_PERIOD_MICROS)) {
+        return;
+    }
     
     if (!iqData) {
         return;
     }
 
-   
-    //Start by locking concurrent access to iqData
-    std::lock_guard < std::recursive_mutex > lock(iqData->getMonitor());
-
     //then get the busy_lock
     std::lock_guard < std::mutex > busy_lock(busy_run);    
-
-
    
     bool doPeak = peakHold.load() && (peakReset.load() == 0);
     
@@ -246,7 +244,6 @@ void SpectrumVisualProcessor::process() {
         
         if (is_view.load()) {
             if (!iqData->sampleRate) {
-                iqData->decRefCount();
                
                 return;
             }
@@ -387,7 +384,7 @@ void SpectrumVisualProcessor::process() {
         }
         
         if (execute) {
-            SpectrumVisualData *output = outputBuffers.getBuffer();
+            SpectrumVisualDataPtr output = outputBuffers.getBuffer();
             
             if (output->spectrum_points.size() != fftSize * 2) {
                 output->spectrum_points.resize(fftSize * 2);
@@ -597,10 +594,7 @@ void SpectrumVisualProcessor::process() {
 
             distribute(output);
         }
-    }
- 
-    iqData->decRefCount();
-   
+    }  
     
     lastView = is_view.load();
 }

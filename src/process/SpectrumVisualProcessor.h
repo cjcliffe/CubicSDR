@@ -6,20 +6,24 @@
 #include "VisualProcessor.h"
 #include "DemodDefs.h"
 #include <cmath>
+#include <memory>
 
 #define SPECTRUM_VZM 2
 #define PEAK_RESET_COUNT 30
 
-class SpectrumVisualData : public ReferenceCounter {
+class SpectrumVisualData {
 public:
     std::vector<float> spectrum_points;
     std::vector<float> spectrum_hold_points;
     double fft_ceiling, fft_floor;
     long long centerFreq;
     int bandwidth;
+
+    virtual ~SpectrumVisualData() {};
 };
 
-typedef ThreadBlockingQueue<SpectrumVisualData *> SpectrumVisualDataQueue;
+typedef std::shared_ptr<SpectrumVisualData> SpectrumVisualDataPtr;
+typedef ThreadBlockingQueue<SpectrumVisualDataPtr> SpectrumVisualDataQueue;
 
 class SpectrumVisualProcessor : public VisualProcessor<DemodulatorThreadIQData, SpectrumVisualData> {
 public:

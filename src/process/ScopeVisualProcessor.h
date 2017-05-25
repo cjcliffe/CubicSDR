@@ -6,8 +6,9 @@
 #include "VisualProcessor.h"
 #include "AudioThread.h"
 #include "ScopePanel.h"
+#include <memory>
 
-class ScopeRenderData: public ReferenceCounter {
+class ScopeRenderData {
 public:
 	std::vector<float> waveform_points;
     ScopePanel::ScopeMode mode = ScopePanel::SCOPE_MODE_Y;
@@ -17,9 +18,15 @@ public:
     bool spectrum;
     int fft_size;
     double fft_floor, fft_ceil;
+
+    virtual ~ScopeRenderData() {
+
+    }
 };
 
-typedef ThreadBlockingQueue<ScopeRenderData *> ScopeRenderDataQueue;
+typedef std::shared_ptr<ScopeRenderData> ScopeRenderDataPtr;
+
+typedef ThreadBlockingQueue<ScopeRenderDataPtr> ScopeRenderDataQueue;
 
 class ScopeVisualProcessor : public VisualProcessor<AudioThreadInput, ScopeRenderData> {
 public:

@@ -97,7 +97,7 @@ void WaterfallCanvas::processInputQueue() {
     if (linesPerSecond) {
         if (lpsIndex >= targetVis) {
             while (lpsIndex >= targetVis) {
-                SpectrumVisualData *vData;
+                SpectrumVisualDataPtr vData;
 
                 if (visualDataQueue.try_pop(vData)) {
                     
@@ -106,7 +106,7 @@ void WaterfallCanvas::processInputQueue() {
                             waterfallPanel.setPoints(vData->spectrum_points);
                         }
                         waterfallPanel.step();
-                        vData->decRefCount();
+                      
                         updated = true;
                     }
                     lpsIndex-=targetVis;
@@ -915,13 +915,7 @@ void WaterfallCanvas::setLinesPerSecond(int lps) {
     linesPerSecond = lps;
 
     //empty all
-    SpectrumVisualData *vData;
-    while (visualDataQueue.try_pop(vData)) {
-        
-        if (vData) {
-            vData->decRefCount();
-        }
-    }
+    visualDataQueue.flush();
 }
 
 void WaterfallCanvas::setMinBandwidth(int min) {

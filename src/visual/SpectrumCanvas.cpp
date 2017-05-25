@@ -54,7 +54,7 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
     const wxSize ClientSize = GetClientSize();
     
-    SpectrumVisualData *vData;
+    SpectrumVisualDataPtr vData;
     if (visualDataQueue.try_pop(vData)) {
             
         if (vData) {
@@ -62,7 +62,6 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
             spectrumPanel.setPeakPoints(vData->spectrum_hold_points);
             spectrumPanel.setFloorValue(vData->fft_floor);
             spectrumPanel.setCeilValue(vData->fft_ceiling);
-            vData->decRefCount();
         }
     }
     

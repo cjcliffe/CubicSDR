@@ -9,11 +9,16 @@
 #include <algorithm>
 #include <vector>
 
-template<typename InputDataType = ReferenceCounter, typename OutputDataType = ReferenceCounter>
+template<typename InputDataType, typename OutputDataType>
 class VisualProcessor {
+    
     //
-    typedef  ThreadBlockingQueue<InputDataType*> VisualInputQueueType;
-    typedef  ThreadBlockingQueue<OutputDataType*> VisualOutputQueueType;
+    typedef std::shared_ptr<InputDataType> InputDataTypePtr;
+    typedef std::shared_ptr<OutputDataType> OutputDataTypePtr;
+
+    typedef  ThreadBlockingQueue<InputDataTypePtr> VisualInputQueueType;
+    typedef  ThreadBlockingQueue<OutputDataTypePtr> VisualOutputQueueType;
+
     typedef typename std::vector< VisualOutputQueueType *>::iterator outputs_i;
 public:
 	virtual ~VisualProcessor() {
@@ -96,22 +101,19 @@ protected:
     //available outputs, previously set by attachOutput().
     //* \param[in] timeout The number of microseconds to wait to push an item in each one of the outputs, 0(default) means indefinite wait.
     //* \param[in] errorMessage an error message written on std::cout in case pf push timeout.
-    void distribute(OutputDataType *item, std::uint64_t timeout = BLOCKING_INFINITE_TIMEOUT, const char* errorMessage = "") {
+    void distribute(OutputDataTypePtr item, std::uint64_t timeout = BLOCKING_INFINITE_TIMEOUT, const char* errorMessage = nullptr) {
       
         std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
         //We will try to distribute 'output' among all 'outputs',
-        //so 'output' will a-priori be shared among all 'outputs' so set its ref count to this 
-        //amount.
-        item->setRefCount((int)outputs.size());
+        //so 'output' will a-priori be shared among all 'outputs'.
+        
         for (outputs_i it = outputs.begin(); it != outputs.end(); it++) {
-            //if 'output' failed to be given to an outputs_i, dec its ref count accordingly.
-            //blocking push, with a timeout
+            //'output' can fail to be given to an outputs_i,
+            //using a blocking push, with a timeout
         	if (!(*it)->push(item, timeout, errorMessage)) {
-                item->decRefCount();
+                //TODO : trace ?
         	} 
         }
-        // Now 'item' refcount matches the times 'item' has been successfully distributed,
-        //i.e shared among the outputs.
     }
 
     //the incoming data queue 
@@ -127,7 +129,7 @@ protected:
 //Specialization much like VisualDataReDistributor, except 
 //the input (pointer) is directly re-dispatched
 //to outputs, so that all output indeed SHARE the same instance. 
-template<typename OutputDataType = ReferenceCounter>
+template<typename OutputDataType>
 class VisualDataDistributor : public VisualProcessor<OutputDataType, OutputDataType> {
 protected:
     virtual void process() {
@@ -136,18 +138,14 @@ protected:
             
             if (!VisualProcessor<OutputDataType, OutputDataType>::isAnyOutputEmpty()) {
                 if (inp) {
-            	    inp->decRefCount();
+            	    //nothing
                 }
                 return;
             }
       
             if (inp) {
-                int previousRefCount = inp->getRefCount();
             	VisualProcessor<OutputDataType, OutputDataType>::distribute(inp);
-                //inp is now shared through the distribute(), which overwrite the previous ref count,
-                //so increment it properly.
-                int distributeRefCount = inp->getRefCount();
-                inp->setRefCount(previousRefCount + distributeRefCount);
+                //inp is now shared through the distribute() call.
             }
         }
     }
@@ -155,7 +153,7 @@ protected:
 
 //specialization class which process() take an input item and re-dispatch
 //A COPY to every outputs, without further processing. This is a 1-to-n dispatcher. 
-template<typename OutputDataType = ReferenceCounter>
+template<typename OutputDataType>
 class VisualDataReDistributor : public VisualProcessor<OutputDataType, OutputDataType> {
 protected:
     virtual void process() {
@@ -164,15 +162,17 @@ protected:
             
             if (!VisualProcessor<OutputDataType, OutputDataType>::isAnyOutputEmpty()) {
                 if (inp) {
-            	    inp->decRefCount();
+            	    //nothing
                 }
                 return;
             }
             
             if (inp) {
-                OutputDataType *outp = buffers.getBuffer();
+                OutputDataTypePtr outp = buffers.getBuffer();
+
+                //'deep copy' of the contents 
                 (*outp) = (*inp);
-                inp->decRefCount();
+  
                 VisualProcessor<OutputDataType, OutputDataType>::distribute(outp);
             }
         }

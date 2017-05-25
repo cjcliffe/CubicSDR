@@ -8,12 +8,12 @@
 #include <map>
 #include <string>
 #include <atomic>
-
+#include <memory>
 #include "ThreadBlockingQueue.h"
 #include "RtAudio.h"
 #include "DemodDefs.h"
 
-class AudioThreadInput: public ReferenceCounter {
+class AudioThreadInput {
 public:
     long long frequency;
     int inputRate;
@@ -29,9 +29,11 @@ public:
     }
 
     ~AudioThreadInput() {
-        std::lock_guard < std::recursive_mutex > lock(m_mutex);
+       
     }
 };
+
+typedef std::shared_ptr<AudioThreadInput> AudioThreadInputPtr;
 
 class AudioThreadCommand {
 public:
@@ -47,12 +49,12 @@ public:
     int int_value;
 };
 
-typedef ThreadBlockingQueue<AudioThreadInput *> AudioThreadInputQueue;
+typedef ThreadBlockingQueue<AudioThreadInputPtr> AudioThreadInputQueue;
 typedef ThreadBlockingQueue<AudioThreadCommand> AudioThreadCommandQueue;
 
 class AudioThread : public IOThread {
 public:
-    AudioThreadInput *currentInput;
+    AudioThreadInputPtr currentInput;
     AudioThreadInputQueue *inputQueue;
     std::atomic_uint audioQueuePtr;
     std::atomic_uint underflowCount;

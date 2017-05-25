@@ -207,17 +207,17 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
     //TODO: Add in doc the need to reduce SoapySDR device buffer length (if available) to restore higher fps.
 
     //0. Retreive a new batch 
-    SDRThreadIQData *dataOut = buffers.getBuffer();
+    SDRThreadIQDataPtr dataOut = buffers.getBuffer();
 
     //resize to the target size immedialetly, to minimize later reallocs:
-    assureBufferMinSize(dataOut, nElems);
+    assureBufferMinSize(dataOut.get(), nElems);
 
     //1.If overflow occured on the previous readStream(), transfer it in dataOut directly. 
     if (numOverflow > 0) {
         int n_overflow = std::min(numOverflow, nElems);
         
         //safety
-        assureBufferMinSize(dataOut, n_overflow);
+        assureBufferMinSize(dataOut.get(), n_overflow);
 
         ::memcpy(&dataOut->data[0], &overflowBuffer.data[0], n_overflow * sizeof(liquid_float_complex));
         n_read = n_overflow;
@@ -266,7 +266,7 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
             float *pp = (float *)buffs[0];
 
             //safety
-            assureBufferMinSize(dataOut, n_read + n_requested);
+            assureBufferMinSize(dataOut.get(), n_read + n_requested);
 
             if (iq_swap.load()) {
                 for (int i = 0; i < n_requested; i++) {
@@ -315,7 +315,7 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
             float *pp = (float *)buffs[0];
 
             //safety
-            assureBufferMinSize(dataOut, n_read + n_stream_read);
+            assureBufferMinSize(dataOut.get(), n_read + n_stream_read);
 
             if (iq_swap.load()) {
                 for (int i = 0; i < n_stream_read; i++) {
@@ -349,8 +349,7 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
         
         if (!iqDataOutQueue->try_push(dataOut)) {
             //The rest of the system saturates,
-            //finally the push didn't suceeded, recycle dataOut immediatly.
-            dataOut->setRefCount(0);
+            //finally the push didn't suceeded.
             
             std::cout << "SDRThread::readStream(): 3.2 iqDataOutQueue output queue is full, discard processing of the batch..." << std::endl;
 
@@ -359,7 +358,6 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
         }
     }
     else {
-        dataOut->setRefCount(0);
         std::cout << "SDRThread::readStream(): 3.1 iqDataOutQueue output queue is full, discard processing of the batch..." << std::endl;
         //saturation, let a chance to the other threads to consume the existing samples
         std::this_thread::yield();

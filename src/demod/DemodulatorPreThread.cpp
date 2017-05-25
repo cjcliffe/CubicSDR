@@ -12,6 +12,9 @@
 #include "CubicSDR.h"
 #include "DemodulatorInstance.h"
 
+//50 ms
+#define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
+
 DemodulatorPreThread::DemodulatorPreThread(DemodulatorInstance *parent) : IOThread(), iqResampler(NULL), iqResampleRatio(1), cModem(nullptr), cModemKit(nullptr), iqInputQueue(NULL), iqOutputQueue(NULL)
  {
 	initialized.store(false);
@@ -71,9 +74,11 @@ void DemodulatorPreThread::run() {
     t_Worker = new std::thread(&DemodulatorWorkerThread::threadMain, workerThread);
     
     while (!stopping) {
-        DemodulatorThreadIQData *inp;
+        DemodulatorThreadIQDataPtr inp;
 
-        iqInputQueue->pop(inp);
+        if (!iqInputQueue->pop(inp, HEARTBEAT_CHECK_PERIOD_MICROS)) {
+            continue;
+        }
         
         if (frequencyChanged.load()) {
             currentFrequency.store(newFrequency);
@@ -157,7 +162,7 @@ void DemodulatorPreThread::run() {
         }
 
         if (cModem && cModemKit && abs(shiftFrequency) > (int) ((double) (inp->sampleRate / 2) * 1.5)) {
-            inp->decRefCount();
+          
             continue;
         }
 
@@ -192,7 +197,7 @@ void DemodulatorPreThread::run() {
                 out_buf = temp_buf;
             }
 
-            DemodulatorThreadPostIQData *resamp = buffers.getBuffer();
+            DemodulatorThreadPostIQDataPtr resamp = buffers.getBuffer();
 
             size_t out_size = ceil((double) (bufSize) * iqResampleRatio) + 512;
 
@@ -217,8 +222,6 @@ void DemodulatorPreThread::run() {
             //VSO: blocking push
             iqOutputQueue->push(resamp);   
         }
-
-        inp->decRefCount();
 
         DemodulatorWorkerThreadResult result;
         //process all worker results until 
@@ -277,11 +280,8 @@ void DemodulatorPreThread::run() {
         }
     } //end while stopping
 
-    DemodulatorThreadPostIQData *tmp;
-    while (iqOutputQueue->try_pop(tmp)) {
-        
-        tmp->decRefCount();
-    }
+   
+    iqOutputQueue->flush();
     buffers.purge();
 }
 
@@ -348,7 +348,7 @@ int DemodulatorPreThread::getAudioSampleRate() {
 
 void DemodulatorPreThread::terminate() {
     IOThread::terminate();
-    DemodulatorThreadIQData *inp = new DemodulatorThreadIQData;    // push dummy to nudge queue
+    DemodulatorThreadIQDataPtr inp(new DemodulatorThreadIQData);    // push dummy to nudge queue
     
     //VSO: blocking push :
     iqInputQueue->push(inp);

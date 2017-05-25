@@ -104,7 +104,7 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
     const wxSize ClientSize = GetClientSize();
     
-    ScopeRenderData *avData;
+    ScopeRenderDataPtr avData;
     while (inputData.try_pop(avData)) {
        
         
@@ -113,7 +113,7 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
             if (avData->waveform_points.size()) {
                 scopePanel.setPoints(avData->waveform_points);
             }
-            avData->decRefCount();
+
         } else {
             if (avData->waveform_points.size()) {
                 spectrumPanel.setPoints(avData->waveform_points);
@@ -124,8 +124,7 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
                 spectrumPanel.setFFTSize(avData->fft_size);
                 spectrumPanel.setShowDb(showDb);
             }
-            
-            avData->decRefCount();
+         
         }
     }
 

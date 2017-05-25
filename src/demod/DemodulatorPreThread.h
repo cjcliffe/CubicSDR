@@ -17,7 +17,7 @@ class DemodulatorPreThread : public IOThread {
 public:
 
     DemodulatorPreThread(DemodulatorInstance *parent);
-    ~DemodulatorPreThread();
+    virtual ~DemodulatorPreThread();
 
     virtual void run();
     

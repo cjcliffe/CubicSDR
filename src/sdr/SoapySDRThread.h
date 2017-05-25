@@ -4,7 +4,7 @@
 #pragma once
 
 #include <atomic>
-
+#include <memory>
 #include "ThreadBlockingQueue.h"
 #include "DemodulatorMgr.h"
 #include "SDRDeviceInfo.h"
@@ -17,7 +17,7 @@
 
 #include <stddef.h>
 
-class SDRThreadIQData: public ReferenceCounter {
+class SDRThreadIQData {
 public:
     long long frequency;
     long long sampleRate;
@@ -35,12 +35,12 @@ public:
 
     }
 
-    ~SDRThreadIQData() {
+    virtual ~SDRThreadIQData() {
 
     }
 };
-
-typedef ThreadBlockingQueue<SDRThreadIQData *> SDRThreadIQDataQueue;
+typedef std::shared_ptr<SDRThreadIQData> SDRThreadIQDataPtr;
+typedef ThreadBlockingQueue<SDRThreadIQDataPtr> SDRThreadIQDataQueue;
 
 class SDRThread : public IOThread {
 private:

@@ -24,13 +24,13 @@ int ModemAM::getDefaultSampleRate() {
     return 6000;
 }
 
-void ModemAM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
+void ModemAM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput* audioOut) {
     ModemKitAnalog *amkit = (ModemKitAnalog *)kit;
     
     initOutputBuffers(amkit,input);
     
     if (!bufSize) {
-        input->decRefCount();
+       
         return;
     }
     

@@ -163,6 +163,7 @@ void DemodulatorMgr::deleteThread(DemodulatorInstance *demod) {
     demod->terminate();
 
     //Do not cleanup immediatly
+    std::lock_guard < std::mutex > lock_deleted(deleted_demods_busy);
     demods_deleted.push_back(demod);
 }
 
@@ -225,11 +226,7 @@ void DemodulatorMgr::setActiveDemodulator(DemodulatorInstance *demod, bool tempo
         }
 #endif
         wxGetApp().getBookmarkMgr().updateActiveList();
-    } else {
-        std::lock_guard < std::recursive_mutex > lock(demods_busy);
-        garbageCollect();
-        ReBufferGC::garbageCollect();
-    }
+    } 
 
     if (activeVisualDemodulator.load()) {
         activeVisualDemodulator.load()->setVisualOutputQueue(nullptr);
@@ -281,25 +278,29 @@ DemodulatorInstance *DemodulatorMgr::getLastDemodulatorWith(const std::string& t
 	return nullptr;
 }
 
-//Private internal method, no need to protect it with demods_busy
 void DemodulatorMgr::garbageCollect() {
-    if (demods_deleted.size()) {
+    
+    std::lock_guard < std::mutex > lock(deleted_demods_busy);
+
+    std::vector<DemodulatorInstance *>::iterator it = demods_deleted.begin();
+
+    while (it != demods_deleted.end()) {
+
+        if ((*it)->isTerminated()) {
+           
+            DemodulatorInstance *deleted = (*it);
       
-        std::vector<DemodulatorInstance *>::iterator i;
+            std::cout << "Garbage collected demodulator instance '" << deleted->getLabel() << "'... " << std::endl << std::flush;
+            demods_deleted.erase(it);
+            delete deleted;
 
-        for (i = demods_deleted.begin(); i != demods_deleted.end(); i++) {
-            if ((*i)->isTerminated()) {
-                DemodulatorInstance *deleted = (*i);
-                demods_deleted.erase(i);
-
-                std::cout << "Garbage collected demodulator instance " << deleted->getLabel() << std::endl;
-
-                delete deleted;
-                return;
-            }
+            //only garbage collect 1 demod at a time.
+            return;
         }
-      
-    }
+        else {
+            it++;
+        }
+    } //end while
 }
 
 void DemodulatorMgr::updateLastState() {
@@ -431,7 +432,6 @@ void DemodulatorMgr::saveInstance(DataNode *node, DemodulatorInstance *inst) {
             *settingsNode->newChild(msi->first.c_str()) = msi->second;
         }
     }
-
 }
 
 DemodulatorInstance *DemodulatorMgr::loadInstance(DataNode *node) {

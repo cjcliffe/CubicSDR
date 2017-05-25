@@ -4,9 +4,6 @@
 #include "IOThread.h"
 #include <typeinfo>
 
-std::mutex ReBufferGC::g_mutex;
-std::set<ReferenceCounter *> ReBufferGC::garbage;
-
 #define SPIN_WAIT_SLEEP_MS 5
 
 IOThread::IOThread() {
@@ -130,7 +127,7 @@ bool IOThread::isTerminated(int waitMs) {
         }
     }
 
-    std::cout << "ERROR: thread '" << typeid(*this).name() << "' has not terminated in time ! (> " << waitMs << " ms)" << std::endl;
+    std::cout << "ERROR: thread '" << typeid(*this).name() << "' has not terminated in time ! (> " << waitMs << " ms)" << std::endl << std::flush;
 
     return terminated.load();
 }
