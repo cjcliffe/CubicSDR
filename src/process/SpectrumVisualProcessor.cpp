@@ -4,6 +4,8 @@
 #include "SpectrumVisualProcessor.h"
 #include "CubicSDR.h"
 
+//50 ms
+#define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
 
 SpectrumVisualProcessor::SpectrumVisualProcessor() : outputBuffers("SpectrumVisualProcessorBuffers") {
     lastInputBandwidth = 0;
@@ -194,7 +196,9 @@ void SpectrumVisualProcessor::process() {
 
     DemodulatorThreadIQDataPtr iqData;
     
-    input->pop(iqData);
+    if (!input->pop(iqData, HEARTBEAT_CHECK_PERIOD_MICROS)) {
+        return;
+    }
     
     if (!iqData) {
         return;

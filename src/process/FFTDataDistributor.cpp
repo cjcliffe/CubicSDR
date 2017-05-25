@@ -5,6 +5,9 @@
 #include <algorithm>
 #include <ThreadBlockingQueue.h>
 
+//50 ms
+#define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
+
 FFTDataDistributor::FFTDataDistributor() : outputBuffers("FFTDataDistributorBuffers"), fftSize(DEFAULT_FFT_SIZE), linesPerSecond(DEFAULT_WATERFALL_LPS), lineRateAccum(0.0) {
 
 }
@@ -29,7 +32,10 @@ void FFTDataDistributor::process() {
 			return;
 		}
 		DemodulatorThreadIQDataPtr inp;
-		input->pop(inp);
+
+        if (!input->pop(inp, HEARTBEAT_CHECK_PERIOD_MICROS)) {
+            continue;
+        }
 
 		if (inp) {
             //Settings have changed, set new values and dump all previous samples stored in inputBuffer: 

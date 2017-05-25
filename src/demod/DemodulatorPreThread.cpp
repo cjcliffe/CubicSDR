@@ -12,6 +12,9 @@
 #include "CubicSDR.h"
 #include "DemodulatorInstance.h"
 
+//50 ms
+#define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
+
 DemodulatorPreThread::DemodulatorPreThread(DemodulatorInstance *parent) : IOThread(), iqResampler(NULL), iqResampleRatio(1), cModem(nullptr), cModemKit(nullptr), iqInputQueue(NULL), iqOutputQueue(NULL)
  {
 	initialized.store(false);
@@ -73,7 +76,9 @@ void DemodulatorPreThread::run() {
     while (!stopping) {
         DemodulatorThreadIQDataPtr inp;
 
-        iqInputQueue->pop(inp);
+        if (!iqInputQueue->pop(inp, HEARTBEAT_CHECK_PERIOD_MICROS)) {
+            continue;
+        }
         
         if (frequencyChanged.load()) {
             currentFrequency.store(newFrequency);

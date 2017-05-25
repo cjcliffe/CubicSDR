@@ -8,6 +8,9 @@
 #include <vector>
 #include <deque>
 
+//50 ms
+#define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
+
 SDRPostThread::SDRPostThread() : IOThread(), buffers("SDRPostThreadBuffers"), visualDataBuffers("SDRPostThreadVisualDataBuffers"), frequency(0) {
     iqDataInQueue = NULL;
     iqDataOutQueue = NULL;
@@ -185,7 +188,9 @@ void SDRPostThread::run() {
     while (!stopping) {
         SDRThreadIQDataPtr data_in;
         
-        iqDataInQueue->pop(data_in);
+        if (!iqDataInQueue->pop(data_in, HEARTBEAT_CHECK_PERIOD_MICROS)) {
+            continue;
+        }
         //        std::lock_guard < std::mutex > lock(data_in->m_mutex);
 
         std::lock_guard < std::mutex > lock(busy_demod);

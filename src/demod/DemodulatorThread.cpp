@@ -12,6 +12,9 @@
 #define M_PI        3.14159265358979323846
 #endif
 
+//50 ms
+#define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
+
 #ifdef __APPLE__
 #include <pthread.h>
 #endif
@@ -81,7 +84,9 @@ void DemodulatorThread::run() {
     while (!stopping) {
         DemodulatorThreadPostIQDataPtr inp;
         
-        iqInputQueue->pop(inp);
+        if (!iqInputQueue->pop(inp, HEARTBEAT_CHECK_PERIOD_MICROS)) {
+            continue;
+        }
          
         size_t bufSize = inp->data.size();
         

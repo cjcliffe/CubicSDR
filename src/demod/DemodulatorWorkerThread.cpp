@@ -6,6 +6,9 @@
 #include "CubicSDR.h"
 #include <vector>
 
+//50 ms
+#define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
+
 DemodulatorWorkerThread::DemodulatorWorkerThread() : IOThread(),
         commandQueue(NULL), resultQueue(NULL), cModem(nullptr), cModemKit(nullptr) {
 }
@@ -31,7 +34,9 @@ void DemodulatorWorkerThread::run() {
         //we are waiting for the first command to show up (blocking!)
         //then consuming the commands until done. 
         while (!done) {
-            commandQueue->pop(command);
+            if (!commandQueue->pop(command, HEARTBEAT_CHECK_PERIOD_MICROS)) {
+                continue;
+            }
 
             switch (command.cmd) {
                 case DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS:

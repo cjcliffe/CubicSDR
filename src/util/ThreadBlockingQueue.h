@@ -74,10 +74,10 @@ public:
      * \param[in] item An item.
      * \param[in] timeout a max waiting timeout in microseconds for an item to be pushed. 
      * by default, = 0 means indefinite wait.
-     * \param[in] errorMessage an error message written on std::cout in case of the timeout wait
+     * \param[in] errorMessage if != nullptr (is nullptr by default) an error message written on std::cout in case of the timeout wait
      * \return true if an item was pushed into the queue, else a timeout has occured.
      */
-    bool push(const value_type& item, std::uint64_t timeout = BLOCKING_INFINITE_TIMEOUT,const char* errorMessage = "") {
+    bool push(const value_type& item, std::uint64_t timeout = BLOCKING_INFINITE_TIMEOUT,const char* errorMessage = nullptr) {
         std::unique_lock < std::mutex > lock(m_mutex);
 
         if (timeout == BLOCKING_INFINITE_TIMEOUT) {
@@ -90,12 +90,15 @@ public:
             return false;
         }
         else if (false == m_cond_not_full.wait_for(lock, std::chrono::microseconds(timeout),
-           [this]() { return m_queue.size() < m_max_num_items; })) {
-            std::thread::id currentThreadId = std::this_thread::get_id();
-            std::cout << "WARNING: Thread 0x" << std::hex << currentThreadId << std::dec <<
-                " (" << currentThreadId << ") executing {" << typeid(*this).name() << "}.push() has failed with timeout > " <<
-                (timeout * 0.001) << " ms, message: " << errorMessage << std::endl;
-           return false;
+            [this]() { return m_queue.size() < m_max_num_items; })) {
+
+            if (errorMessage != nullptr) {
+                std::thread::id currentThreadId = std::this_thread::get_id();
+                std::cout << "WARNING: Thread 0x" << std::hex << currentThreadId << std::dec <<
+                    " (" << currentThreadId << ") executing {" << typeid(*this).name() << "}.push() has failed with timeout > " <<
+                    (timeout * 0.001) << " ms, message: " << errorMessage << std::endl << std::flush;
+            } 
+            return false;
         }
 
         m_queue.push_back(item);
@@ -123,10 +126,10 @@ public:
     /**
      * Pops item from the queue. If the queue is empty, blocks for timeout microseconds, or until item becomes available.
      * \param[in] timeout The number of microseconds to wait. O (default) means indefinite wait.
-     * \param[in] errorMessage an error message written on std::cout in case of the timeout wait
+     * \param[in] errorMessage if != nullptr (is nullptr by default) an error message written on std::cout in case of the timeout wait
      * \return true if get an item from the queue, false if no item is received before the timeout.
      */
-    bool pop(value_type& item, std::uint64_t timeout = BLOCKING_INFINITE_TIMEOUT, const char* errorMessage = "") {
+    bool pop(value_type& item, std::uint64_t timeout = BLOCKING_INFINITE_TIMEOUT, const char* errorMessage = nullptr) {
         std::unique_lock < std::mutex > lock(m_mutex);
 
         if (timeout == BLOCKING_INFINITE_TIMEOUT) {
@@ -140,10 +143,13 @@ public:
         }
         else if (false == m_cond_not_empty.wait_for(lock, std::chrono::microseconds(timeout),
             [this]() { return !m_queue.empty(); })) {
-            std::thread::id currentThreadId = std::this_thread::get_id();
-            std::cout << "WARNING: Thread 0x" << std::hex << currentThreadId << std::dec <<
-                " (" << currentThreadId << ") executing {" << typeid(*this).name() << "}.pop() has failed with timeout > " <<
-                (timeout * 0.001) << " ms, message: " << errorMessage << std::endl;
+
+            if (errorMessage != nullptr) {
+                std::thread::id currentThreadId = std::this_thread::get_id();
+                std::cout << "WARNING: Thread 0x" << std::hex << currentThreadId << std::dec <<
+                    " (" << currentThreadId << ") executing {" << typeid(*this).name() << "}.pop() has failed with timeout > " <<
+                    (timeout * 0.001) << " ms, message: " << errorMessage << std::endl << std::flush;
+            }
             return false;
         }
 

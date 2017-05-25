@@ -11,6 +11,8 @@
 #include <memory.h>
 #include <mutex>
 
+//50 ms
+#define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
 
 std::map<int, AudioThread *> AudioThread::deviceController;
 std::map<int, int> AudioThread::deviceSampleRate;
@@ -429,7 +431,9 @@ void AudioThread::run() {
     while (!stopping) {
         AudioThreadCommand command;
 
-        cmdQueue.pop(command);
+        if (!cmdQueue.pop(command, HEARTBEAT_CHECK_PERIOD_MICROS)) {
+            continue;
+        }
 
         if (command.cmd == AudioThreadCommand::AUDIO_THREAD_CMD_SET_DEVICE) {
             setupDevice(command.int_value);

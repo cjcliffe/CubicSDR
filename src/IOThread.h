@@ -99,7 +99,7 @@ public:
         }
 
         if (outputBuffers.size() > REBUFFER_WARNING_THRESHOLD) {
-            std::cout << "Warning: ReBuffer '" << bufferId << "' count '" << outputBuffers.size() << "' exceeds threshold of '" << REBUFFER_WARNING_THRESHOLD << "'" << std::endl;
+            std::cout << "Warning: ReBuffer '" << bufferId << "' count '" << outputBuffers.size() << "' exceeds threshold of '" << REBUFFER_WARNING_THRESHOLD << "'" << std::endl << std::flush;
         }
         
         //3.We need to allocate a new buffer. 

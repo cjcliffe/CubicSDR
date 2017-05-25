@@ -101,7 +101,7 @@ protected:
     //available outputs, previously set by attachOutput().
     //* \param[in] timeout The number of microseconds to wait to push an item in each one of the outputs, 0(default) means indefinite wait.
     //* \param[in] errorMessage an error message written on std::cout in case pf push timeout.
-    void distribute(OutputDataTypePtr item, std::uint64_t timeout = BLOCKING_INFINITE_TIMEOUT, const char* errorMessage = "") {
+    void distribute(OutputDataTypePtr item, std::uint64_t timeout = BLOCKING_INFINITE_TIMEOUT, const char* errorMessage = nullptr) {
       
         std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
         //We will try to distribute 'output' among all 'outputs',

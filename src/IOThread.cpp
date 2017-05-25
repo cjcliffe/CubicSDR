@@ -127,7 +127,7 @@ bool IOThread::isTerminated(int waitMs) {
         }
     }
 
-    std::cout << "ERROR: thread '" << typeid(*this).name() << "' has not terminated in time ! (> " << waitMs << " ms)" << std::endl;
+    std::cout << "ERROR: thread '" << typeid(*this).name() << "' has not terminated in time ! (> " << waitMs << " ms)" << std::endl << std::flush;
 
     return terminated.load();
 }
