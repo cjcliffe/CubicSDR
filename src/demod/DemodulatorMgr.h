@@ -93,7 +93,7 @@ private:
     //because of the usage of public re-entrant methods 
     std::recursive_mutex demods_busy;
 
-    mutable std::mutex deleted_demods_busy;
+    std::mutex deleted_demods_busy;
     
     std::map<std::string, ModemSettings> lastModemSettings;
     std::map<int,RtAudio::DeviceInfo> outputDevices;

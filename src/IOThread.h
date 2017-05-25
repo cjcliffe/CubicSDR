@@ -5,7 +5,7 @@
 
 #include <mutex>
 #include <atomic>
-#include <vector>
+#include <deque>
 #include <map>
 #include <set>
 #include <string>
@@ -61,7 +61,11 @@ public:
 
        while (it != outputBuffers.end()) {
 
+           //careful here: take care of reading the use_count directly
+           //through the iterator, else it's value is wrong if a temp variable 
+           //is used.
            long use = it->ptr.use_count();
+
             //1. If we encounter a shared_ptr with a use count of 0, this
             //is a bug since it is supposed to be at least 1, because it is referenced here.
             //in this case, purge it from here and trace.
@@ -133,13 +137,14 @@ private:
     //name of the buffer cache kind
     std::string bufferId;
     
-    //the ReBuffer cache
-    std::vector< ReBufferAge < ReBufferPtr > > outputBuffers;
+    //the ReBuffer cache: use a std:deque to also release
+    //memory when ReBufferPtr are GCed.
+    std::deque< ReBufferAge < ReBufferPtr > > outputBuffers;
 
-    typedef typename std::vector< ReBufferAge < ReBufferPtr > >::iterator outputBuffersI;
+    typedef typename std::deque< ReBufferAge < ReBufferPtr > >::iterator outputBuffersI;
 
     //mutex protecting access to outputBuffers.
-    mutable std::mutex m_mutex;
+    std::mutex m_mutex;
 };
 
 
@@ -183,7 +188,7 @@ protected:
     std::map<std::string, ThreadQueueBase *, map_string_less> output_queues;
 
     //this protects against concurrent changes in input/output bindings: get/set/Input/OutPutQueue
-    mutable std::mutex m_queue_bindings_mutex;
+    std::mutex m_queue_bindings_mutex;
 
     //true when a termination is ordered
     std::atomic_bool stopping;

@@ -139,7 +139,7 @@ private:
     DemodulatorThreadControlCommandQueue *threadQueueControl;
 
     //protects child thread creation and termination 
-    mutable std::mutex m_thread_control_mutex;
+    std::mutex m_thread_control_mutex;
 
     std::atomic<std::string *> label; //
     // User editable buffer, 16 bit string.

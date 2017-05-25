@@ -68,5 +68,5 @@ protected:
     DemodulatorThreadControlCommandQueue *threadQueueControl = nullptr;
 
     //protects the audioVisOutputQueue dynamic binding change at runtime (in DemodulatorMgr)
-    mutable std::mutex m_mutexAudioVisOutputQueue;
+    std::mutex m_mutexAudioVisOutputQueue;
 };
