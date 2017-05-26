@@ -27,6 +27,12 @@ struct map_string_less : public std::binary_function<std::string,std::string,boo
 template <typename PtrType>
 class ReBufferAge {
 public:
+
+    ReBufferAge(PtrType p, int a) {
+        ptr = p;
+        age = a;
+    }
+
     PtrType ptr;
     int age;
 
@@ -50,10 +56,10 @@ public:
 
         std::lock_guard < std::mutex > lock(m_mutex);
 
-        // iterate the ReBuffer_ptr list: if the std::shared_ptr count == 1, it means 
+        // iterate the ReBufferAge list: if the std::shared_ptr count == 1, it means 
         //it is only referenced in outputBuffers itself, so available for re-use.
         //else if the std::shared_ptr count <= 1, make it age.
-        //else the ReBuffer_ptr is in use, don't use it.
+        //else the ReBufferPtr is in use, don't use it.
 
         ReBufferPtr buf = nullptr;
 
@@ -66,18 +72,18 @@ public:
            //is used.
            long use = it->ptr.use_count();
 
-            //1. If we encounter a shared_ptr with a use count of 0, this
+            //1. If we encounter a ReBufferPtr with a use count of 0, this
             //is a bug since it is supposed to be at least 1, because it is referenced here.
             //in this case, purge it from here and trace.
             if (use == 0) {
-                it = outputBuffers.erase(it);
                 std::cout << "Warning: in ReBuffer '" << bufferId << "' count '" << outputBuffers.size() << "', found 1 dangling buffer !" << std::endl << std::flush;
+                it = outputBuffers.erase(it);    
             } 
             else if (use == 1) {
                 if (buf == nullptr) {
                     it->age = 1;  //select this one.
                     buf = it->ptr;
-                    //std::cout << "**" << std::flush;
+                    // std::cout << "**" << std::flush;
                     it++;
                 }
                 else {
@@ -107,17 +113,11 @@ public:
         }
         
         //3.We need to allocate a new buffer. 
-        ReBufferAge < ReBufferPtr > newBuffer;
-
-        //careful here: newBuffer.ptr is already constructed, so we need to set "in place" its
-        //ownership to a (new BufferType()).
-        newBuffer.ptr.reset(new BufferType());
-        newBuffer.age = 1;
+        ReBufferAge < ReBufferPtr > newBuffer(std::make_shared<BufferType>(), 1);
 
         outputBuffers.push_back(newBuffer);
 
-        //std::cout << "++" << std::flush;
-        
+        // std::cout << "++" << std::flush;
         return newBuffer.ptr;
     }
     

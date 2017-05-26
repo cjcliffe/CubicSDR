@@ -28,7 +28,7 @@ public:
 
     }
 
-    ~AudioThreadInput() {
+    virtual ~AudioThreadInput() {
        
     }
 };
