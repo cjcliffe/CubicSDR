@@ -8,10 +8,12 @@
 #include "IOThread.h"
 #include <algorithm>
 #include <vector>
+#include <typeinfo>
 
 template<typename InputDataType, typename OutputDataType>
 class VisualProcessor {
-    
+
+public:
     //
     typedef std::shared_ptr<InputDataType> InputDataTypePtr;
     typedef std::shared_ptr<OutputDataType> OutputDataTypePtr;
@@ -20,9 +22,8 @@ class VisualProcessor {
     typedef  ThreadBlockingQueue<OutputDataTypePtr> VisualOutputQueueType;
 
     typedef typename std::vector< VisualOutputQueueType *>::iterator outputs_i;
-public:
-	virtual ~VisualProcessor() {
 
+	virtual ~VisualProcessor() {
 	}
     
     bool isInputEmpty() {
@@ -133,7 +134,8 @@ template<typename OutputDataType>
 class VisualDataDistributor : public VisualProcessor<OutputDataType, OutputDataType> {
 protected:
     virtual void process() {
-        OutputDataType *inp;
+        VisualProcessor<OutputDataType, OutputDataType>::OutputDataTypePtr inp;
+
         while (VisualProcessor<OutputDataType, OutputDataType>::input->try_pop(inp)) {
             
             if (!VisualProcessor<OutputDataType, OutputDataType>::isAnyOutputEmpty()) {
@@ -156,8 +158,12 @@ protected:
 template<typename OutputDataType>
 class VisualDataReDistributor : public VisualProcessor<OutputDataType, OutputDataType> {
 protected:
+
+    ReBuffer<OutputDataType> buffers{ std::string(typeid(*this).name()) };
+
     virtual void process() {
-        OutputDataType *inp;
+        VisualProcessor<OutputDataType, OutputDataType>::OutputDataTypePtr inp;
+
         while (VisualProcessor<OutputDataType, OutputDataType>::input->try_pop(inp)) {
             
             if (!VisualProcessor<OutputDataType, OutputDataType>::isAnyOutputEmpty()) {
@@ -168,7 +174,7 @@ protected:
             }
             
             if (inp) {
-                OutputDataTypePtr outp = buffers.getBuffer();
+                VisualProcessor<OutputDataType, OutputDataType>::OutputDataTypePtr outp = buffers.getBuffer();
 
                 //'deep copy' of the contents 
                 (*outp) = (*inp);
@@ -177,5 +183,5 @@ protected:
             }
         }
     }
-    ReBuffer<OutputDataType> buffers;
+    
 };
