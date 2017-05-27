@@ -16,7 +16,7 @@ Timer::Timer(void) : time_elapsed(0), system_milliseconds(0), start_time(0), end
     //fine for Windows 7+ systems, and use the highest appropriate counter.
     //this only need to be done once.
     ::QueryPerformanceFrequency(&win_frequency);
-#endif;
+#endif
 }
 
 
