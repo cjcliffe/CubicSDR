@@ -135,7 +135,8 @@ class VisualDataDistributor : public VisualProcessor<OutputDataType, OutputDataT
 protected:
 
     virtual void process() {
-        VisualProcessor<OutputDataType, OutputDataType>::OutputDataTypePtr inp;
+
+        typename VisualProcessor<OutputDataType, OutputDataType>::OutputDataTypePtr inp;
 
         while (VisualProcessor<OutputDataType, OutputDataType>::input->try_pop(inp)) {
             
@@ -168,7 +169,8 @@ protected:
     ReBuffer<OutputDataType> buffers;
 
     virtual void process() {
-        VisualProcessor<OutputDataType, OutputDataType>::OutputDataTypePtr inp;
+
+        typename VisualProcessor<OutputDataType, OutputDataType>::OutputDataTypePtr inp;
 
         while (VisualProcessor<OutputDataType, OutputDataType>::input->try_pop(inp)) {
             
@@ -180,7 +182,8 @@ protected:
             }
             
             if (inp) {
-                VisualProcessor<OutputDataType, OutputDataType>::OutputDataTypePtr outp = buffers.getBuffer();
+
+                typename VisualProcessor<OutputDataType, OutputDataType>::OutputDataTypePtr outp = buffers.getBuffer();
 
                 //'deep copy' of the contents 
                 (*outp) = (*inp);
