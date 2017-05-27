@@ -133,6 +133,7 @@ protected:
 template<typename OutputDataType>
 class VisualDataDistributor : public VisualProcessor<OutputDataType, OutputDataType> {
 protected:
+
     virtual void process() {
         VisualProcessor<OutputDataType, OutputDataType>::OutputDataTypePtr inp;
 
@@ -157,9 +158,14 @@ protected:
 //A COPY to every outputs, without further processing. This is a 1-to-n dispatcher. 
 template<typename OutputDataType>
 class VisualDataReDistributor : public VisualProcessor<OutputDataType, OutputDataType> {
+
 protected:
 
-    ReBuffer<OutputDataType> buffers{ std::string(typeid(*this).name()) };
+    VisualDataReDistributor() : buffers (std::string(typeid(*this).name())) {
+
+    }
+
+    ReBuffer<OutputDataType> buffers;
 
     virtual void process() {
         VisualProcessor<OutputDataType, OutputDataType>::OutputDataTypePtr inp;

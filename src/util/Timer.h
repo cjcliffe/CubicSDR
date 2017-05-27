@@ -32,7 +32,7 @@ private:
     struct timezone time_zone;
 #else
     LARGE_INTEGER win_frequency;
-#endif;
+#endif
 
     bool paused_state;
     bool lock_state;
