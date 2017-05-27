@@ -15,8 +15,8 @@ class VisualProcessor {
 
 public:
     //
-    typedef std::shared_ptr<InputDataType> InputDataTypePtr;
-    typedef std::shared_ptr<OutputDataType> OutputDataTypePtr;
+    typedef typename std::shared_ptr<InputDataType> InputDataTypePtr;
+    typedef typename std::shared_ptr<OutputDataType> OutputDataTypePtr;
 
     typedef  ThreadBlockingQueue<InputDataTypePtr> VisualInputQueueType;
     typedef  ThreadBlockingQueue<OutputDataTypePtr> VisualOutputQueueType;
