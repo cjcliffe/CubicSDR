@@ -42,7 +42,7 @@ namespace CubicVR {
         //To be accessed by GL API directly, accessed by pointer.
         //operator* overloading is way too dangerous, especially in ptr != NULL
         //tests.
-       inline  float* to_ptr() const { return (__float *)this; }
+       inline  __float* to_ptr() const { return (__float *)this; }
 
         mat4(__float ai,__float bi,__float ci,__float di,__float ei,__float fi,__float gi,__float hi,__float ii,__float ji,__float ki,__float li,__float mi,__float ni,__float oi,__float pi) {
             a = ai; b = bi; c = ci; d = di; e = ei; f = fi; g = gi; h = hi; i = ii; j = ji; k = ki; l = li; m = mi; n = ni; o = oi; p = pi;
