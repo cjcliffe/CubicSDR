@@ -39,12 +39,6 @@ namespace CubicVR {
             return (as_array[i]);
         }
 
-        //compare to ZERO-filled vector
-        inline operator bool() const {
-
-            return (x != 0.0f || y != 0.0f || z != 0.0f);
-        }
-
         vec3 (__float xi,__float yi,__float zi) { x = xi; y = yi; z = zi; }
         vec3 () { x = y = z = 0.0f; }
         

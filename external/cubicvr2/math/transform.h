@@ -73,7 +73,7 @@ namespace CubicVR {
         
         void pushMatrix(mat4 m) {
             c_stack++;
-            m_stack[c_stack] = (m ? m : getIdentity());
+            m_stack[c_stack] = m;
         }
         
         void popMatrix() {
@@ -91,11 +91,7 @@ namespace CubicVR {
 
             result = mat4::identity();
             
-            if (!init_mat) {
-                m_stack[0] = init_mat;
-            } else {
-                setIdentity();
-            }
+            m_stack[0] = init_mat; 
         }
         
         void translate(__float x, __float y, __float z) {

@@ -39,15 +39,6 @@ namespace CubicVR {
             return (as_array[i]);
         }
 
-        //compare to ZERO-filled matrix
-        inline operator bool() const {
-            
-            return (a != 0.0f || b != 0.0f || c != 0.0f || d != 0.0f ||
-                e != 0.0f || f != 0.0f || g != 0.0f || h != 0.0f ||
-                i != 0.0f || j != 0.0f || k != 0.0f || l != 0.0f ||
-                m != 0.0f || n != 0.0f || o != 0.0f || p != 0.0f);
-        }
-
         //To be accessed by GL API directly, accessed by pointer.
         //operator* overloading is way too dangerous, especially in ptr != NULL
         //tests.
@@ -286,22 +277,19 @@ namespace CubicVR {
         static mat4 transform(vec3 position, vec3 rotation, vec3 scale) {
             mat4 m = mat4::identity();
             
-            if (!position) {
-                m *= mat4::translate(position[0],position[1],position[2]);
+            m *= mat4::translate(position[0],position[1],position[2]);
+          
+            if (!(rotation[0] == 0 && rotation[1] == 0 && rotation[2] == 0)) {
+                m *= mat4::rotate(rotation[0], rotation[1], rotation[2]);    
             }
-            if (!rotation) {
-                if (!(rotation[0] == 0 && rotation[1] == 0 && rotation[2] == 0)) {
-                    m *= mat4::rotate(rotation[0],rotation[1],rotation[2]);
-                }
-            }
-            if (!scale) {
-                if (!(scale[0] == 1 && scale[1] == 1 && scale[2] == 1)) {
-                    m *= mat4::scale(scale[0],scale[1],scale[2]);
-                }
+             
+            if (!(scale[0] == 1 && scale[1] == 1 && scale[2] == 1)) {
+                m *= mat4::scale(scale[0],scale[1],scale[2]);
             }
             
             return m;
         };
+
         static vec4 vec4_multiply(vec4 m1, mat4 m2) {
             vec4 mOut;
 
