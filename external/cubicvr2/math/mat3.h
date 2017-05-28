@@ -12,7 +12,7 @@
 #include <iostream>
 #include "vec3.h"
 #include <cstring>
-
+#include <stddef.h>
 namespace CubicVR {
 
     #define mat3SG(c,x,y) \
@@ -20,14 +20,20 @@ namespace CubicVR {
         c & COMBINE(set,x)(mat3 value) { y = value; return *this; }
 
     struct mat3 {
+       
         __float a,b,c,d,e,f,g,h,i;
-
-        //        __float  operator [] (unsigned i) const { return ((__float *)this)[i]; }
-#ifndef _WIN32
-        __float& operator [] (unsigned i)       { return ((__float *)this)[i]; }
-#endif
-        operator __float*() const { return (__float *)this; }
+      
+        //access as-array:
+        inline __float& operator [] (size_t i) {
+            __float* as_array = (__float*)this;
+            return (as_array[i]);
+        }
         
+        inline const __float& operator [] (size_t i) const { 
+            __float* as_array = (__float*)this;
+            return (as_array[i]);
+        }
+    
         mat3(__float ai,__float bi,__float ci,__float di,__float ei,__float fi,__float gi,__float hi,__float ii) {
             a = ai; b = bi; c = ci; d = di; e = ei; f = fi; g = gi; h = hi; i = ii;
         };

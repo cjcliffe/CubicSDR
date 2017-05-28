@@ -12,6 +12,7 @@
 #include <iostream>
 #include <cmath>
 #include "cubic_types.h"
+#include <stddef.h>
 
 namespace CubicVR {
     #define vec2SG(c,x,y) \
@@ -20,20 +21,27 @@ namespace CubicVR {
 
     struct vec2 {
         __float x, y;
+
     public:
         __float& u() { return x; }
         __float& v() { return y; }
         
-//        __float  operator [] (unsigned i) const { return ((__float *)this)[i]; }
-#ifndef _WIN32
-		__float& operator [] (unsigned i)       { return ((__float *)this)[i]; }
-#endif        
+        //access as-array:
+        inline __float& operator [] (size_t i) {
+            __float* as_array = (__float*)this;
+            return (as_array[i]);
+        }
+
+        inline const __float& operator [] (size_t i) const {
+            __float* as_array = (__float*)this;
+            return (as_array[i]);
+        }
+
         vec2 (__float xi,__float yi) { x = xi; y = yi;  }
         vec2 () { x = y = 0.0f; }
-        
-        operator __float*() const { return (__float *)this; }
-        
+         
         vec2 operator*(__float v) { return vec2( x*v, y*v ); }
+
         //    vec2 operator*(vec2 v) { return vec2::cross(*this,v); }
         vec2 operator+(vec2 v) { return vec2::add(*this,v); }
         vec2 operator-(vec2 v) { return vec2::subtract(*this,v); }

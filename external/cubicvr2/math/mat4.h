@@ -15,21 +15,44 @@
 #include "vec4.h"
 #include "mat3.h"
 #include <cmath>
+#include <stddef.h>
 
 namespace CubicVR {
     using namespace std;
     #define mat4SG(c,x,y) \
         mat4 COMBINE(get,x)() { return y; } \
         c & COMBINE(set,x)(mat4 value) { y = value; return *this; }
+
     struct mat4 {
-        __float a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p;
+      
+         //16 elements
+         __float a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p;
+      
+        //access as-array:
+        inline __float& operator [] (size_t i) {
+            __float* as_array = (__float*)this;
+            return (as_array[i]);
+        }
 
-        //        __float  operator [] (unsigned i) const { return ((__float *)this)[i]; }
-#ifndef _WIN32
-        __float& operator [] (unsigned i)       { return ((__float *)this)[i]; }
-#endif
+        inline const __float& operator [] (size_t i) const {
+            __float* as_array = (__float*)this;
+            return (as_array[i]);
+        }
 
-        operator __float*() const { return (__float *)this; }
+        //compare to ZERO-filled matrix
+        inline operator bool() const {
+            
+            return (a != 0.0f || b != 0.0f || c != 0.0f || d != 0.0f ||
+                e != 0.0f || f != 0.0f || g != 0.0f || h != 0.0f ||
+                i != 0.0f || j != 0.0f || k != 0.0f || l != 0.0f ||
+                m != 0.0f || n != 0.0f || o != 0.0f || p != 0.0f);
+        }
+
+        //To be accessed by GL API directly, accessed by pointer.
+        //operator* overloading is way too dangerous, especially in ptr != NULL
+        //tests.
+       inline  float* to_ptr() const { return (__float *)this; }
+
         mat4(__float ai,__float bi,__float ci,__float di,__float ei,__float fi,__float gi,__float hi,__float ii,__float ji,__float ki,__float li,__float mi,__float ni,__float oi,__float pi) {
             a = ai; b = bi; c = ci; d = di; e = ei; f = fi; g = gi; h = hi; i = ii; j = ji; k = ki; l = li; m = mi; n = ni; o = oi; p = pi;
         }
@@ -263,15 +286,15 @@ namespace CubicVR {
         static mat4 transform(vec3 position, vec3 rotation, vec3 scale) {
             mat4 m = mat4::identity();
             
-            if (position!=NULL) {
+            if (!position) {
                 m *= mat4::translate(position[0],position[1],position[2]);
             }
-            if (rotation!=NULL) {
+            if (!rotation) {
                 if (!(rotation[0] == 0 && rotation[1] == 0 && rotation[2] == 0)) {
                     m *= mat4::rotate(rotation[0],rotation[1],rotation[2]);
                 }
             }
-            if (scale!=NULL) {
+            if (!scale) {
                 if (!(scale[0] == 1 && scale[1] == 1 && scale[2] == 1)) {
                     m *= mat4::scale(scale[0],scale[1],scale[2]);
                 }

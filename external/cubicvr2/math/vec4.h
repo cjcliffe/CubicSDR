@@ -12,6 +12,7 @@
 #include <iostream>
 #include "cubic_types.h"
 #include <cmath>
+#include <stddef.h>
 
 namespace CubicVR {
 
@@ -20,22 +21,28 @@ namespace CubicVR {
     c & COMBINE(set,x)(vec3 value) { y = value; return *this; }
 
     struct vec4 {
-        __float x,y,z,w;
+
+        __float x, y, z, w;
+
     public:
         __float& r() { return x; }
         __float& g() { return y; }
         __float& b() { return z; }
         __float& a() { return w; }
         
-//        __float  operator [] (unsigned i) const { return ((__float *)this)[i]; }
-#ifndef _WIN32
-        __float& operator [] (unsigned i)       { return ((__float *)this)[i]; }
-#endif
+        //access as-array:
+        inline __float& operator [] (size_t i) {
+            __float* as_array = (__float*)this;
+            return (as_array[i]);
+        }
+
+        inline const __float& operator [] (size_t i) const {
+            __float* as_array = (__float*)this;
+            return (as_array[i]);
+        }
 
         vec4 (__float xi,__float yi,__float zi,__float wi) { x = xi; y = yi; z = zi; w = wi; }
         vec4 () { x = y = z = w =  0.0f; }
-        
-        operator __float*() const { return (__float *)this; }
         
         vec4 operator*(__float v) { return vec4(x*v, y*v, z*v, w*v); }
 //        vec4 operator*(vec4 v) { return vec4::cross(*this,v); }

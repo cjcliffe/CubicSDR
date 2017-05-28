@@ -88,10 +88,10 @@ namespace CubicVR {
             m_cache.clear();
             c_stack = 0;
             valid = 0;
-            delete result;
+
             result = mat4::identity();
             
-            if (init_mat != NULL) {
+            if (!init_mat) {
                 m_stack[0] = init_mat;
             } else {
                 setIdentity();
