@@ -165,7 +165,7 @@ void WaterfallPanel::drawPanelContents() {
 
     int half_fft_size = fft_size / 2;
     
-    glLoadMatrixf(transform);
+    glLoadMatrixf(transform.to_ptr());
     
     glEnable (GL_TEXTURE_2D);
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);

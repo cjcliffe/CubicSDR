@@ -148,7 +148,7 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glLoadMatrixf(CubicVR::mat4::perspective(45.0, 1.0, 1.0, 1000.0));
+    glLoadMatrixf(CubicVR::mat4::perspective(45.0, 1.0, 1.0, 1000.0).to_ptr());
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     
@@ -210,7 +210,7 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         spectrumPanel.drawChildren();
     }
     
-    glLoadMatrixf(scopePanel.transform);
+    glLoadMatrixf(scopePanel.transform.to_ptr());
     if (!deviceName.empty()) {
         glContext->DrawDeviceName(deviceName);
     }
