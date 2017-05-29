@@ -240,7 +240,7 @@ void SpectrumVisualProcessor::process() {
         unsigned int num_written;
         long resampleBw = iqData->sampleRate;
         bool newResampler = false;
-        int bwDiff;
+        int bwDiff = 0;
         
         if (is_view.load()) {
             if (!iqData->sampleRate) {

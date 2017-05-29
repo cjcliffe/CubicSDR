@@ -29,6 +29,7 @@
 
 #include <wx/panel.h>
 #include <wx/numformatter.h>
+#include <stddef.h>
 
 #ifdef __linux__
 #include "CubicSDR.xpm"
@@ -2576,7 +2577,7 @@ void AppFrame::setViewState(long long center_freq, int bandwidth) {
     waterfallCanvas->setView(center_freq, bandwidth);
 }
 
-void AppFrame::setViewState(long long center_freq) {
+void AppFrame::setViewState() {
     spectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
     waterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
     spectrumCanvas->disableView();
@@ -2600,17 +2601,21 @@ std::vector<std::string> str_explode(const std::string &seperator, const std::st
 {
     std::vector<std::string> vect_out;
     
-    int i = 0, j = 0;
-    int seperator_len = seperator.length();
-    int str_len = in_str.length();
+    size_t i = 0, j = 0;
+    size_t seperator_len = seperator.length();
+    size_t str_len = in_str.length();
     
     while(i < str_len)
     {
         j = in_str.find_first_of(seperator,i);
         
-        if (j == std::string::npos && i < str_len)  j = str_len;
+        if (j == std::string::npos && i < str_len) {
+            j = str_len;
+        }
         
-        if (j == std::string::npos) break;
+        if (j == std::string::npos) {
+            break;
+        }
         
         vect_out.push_back(in_str.substr(i,j-i));
         

@@ -115,7 +115,7 @@ public:
     FrequencyDialog::FrequencyDialogTarget getFrequencyDialogTarget();
     void refreshGainUI();
     void setViewState(long long center_freq, int bandwidth);
-    void setViewState(long long center_freq);
+    void setViewState();
 
     long long getViewCenterFreq();
     int getViewBandwidth();

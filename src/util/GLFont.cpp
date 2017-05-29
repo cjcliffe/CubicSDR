@@ -12,14 +12,6 @@
 #include "CoreFoundation/CoreFoundation.h"
 #endif
 
-static std::wstring getExePath(void)
-{
-    //get the dir path of the executable
-    wxFileName exePath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
-   
-    return  std::wstring(exePath.GetPath().ToStdWstring());
-}
-
 #ifndef RES_FOLDER
 #define RES_FOLDER ""
 #endif

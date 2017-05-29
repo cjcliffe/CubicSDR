@@ -20,7 +20,7 @@ public:
     void setHighlightVisible(bool vis);
     float getValue();
     bool isMeterHit(CubicVR::vec2 mousePoint);
-    float getMeterHitValue(CubicVR::vec2 mousePoint, GLPanel &panel);
+    float getMeterHitValue(CubicVR::vec2 mousePoint);
     void setChanged(bool changed);
     bool getChanged();
     

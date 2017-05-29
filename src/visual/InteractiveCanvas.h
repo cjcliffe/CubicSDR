@@ -13,7 +13,7 @@
 class InteractiveCanvas: public wxGLCanvas {
 public:
     InteractiveCanvas(wxWindow *parent, std::vector<int> dispAttrs);
-    ~InteractiveCanvas();
+    virtual ~InteractiveCanvas();
 
     long long getFrequencyAt(float x);
     long long getFrequencyAt(float x, long long iqCenterFreq, long long iqBandwidth);

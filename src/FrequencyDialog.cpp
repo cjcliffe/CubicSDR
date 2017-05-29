@@ -122,7 +122,7 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
                     }
                     if (freq == freq2) {
                         wxGetApp().setFrequency(freq_ctr);
-                        wxGetApp().getAppFrame()->setViewState(freq_ctr);
+                        wxGetApp().getAppFrame()->setViewState();
                     } else {
                         if (wxGetApp().getSampleRate()/4 > range_bw) {
                             wxGetApp().setFrequency(freq_ctr + wxGetApp().getSampleRate()/4);

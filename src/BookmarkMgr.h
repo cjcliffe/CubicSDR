@@ -126,7 +126,7 @@ protected:
     void trimRecents();
     
     BookmarkEntryPtr demodToBookmarkEntry(DemodulatorInstance *demod);
-    BookmarkEntryPtr nodeToBookmark(const char *name_in, DataNode *node);
+    BookmarkEntryPtr nodeToBookmark(DataNode *node);
     
     BookmarkMap bmData;
     BookmarkMapSorted bmDataSorted;

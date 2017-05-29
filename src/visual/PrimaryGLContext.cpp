@@ -356,20 +356,14 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
 
     glEnable(GL_BLEND);
 
-    GLFont::Align demodAlign = GLFont::GLFONT_ALIGN_CENTER;
-
     //Displayed string is wstring, so use wxString to do the heavy lifting of converting  getDemodulatorType()...
     wxString demodStr;
 
     demodStr.assign(demod->getDemodulatorType());
 
-    demodAlign = GLFont::GLFONT_ALIGN_CENTER;
-
     if (demodStr == "LSB") {
-        demodAlign = GLFont::GLFONT_ALIGN_RIGHT;
         uxPos -= xOfs;
     } else if (demodStr == "USB") {
-        demodAlign = GLFont::GLFONT_ALIGN_LEFT;
         uxPos += xOfs;
     }
     // advanced demodulators start here

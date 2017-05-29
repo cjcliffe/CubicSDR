@@ -83,7 +83,7 @@ void GainCanvas::SetLevel() {
     
     for (auto gi : gainPanels) {
         if (gi->isMeterHit(mpos)) {
-            float value = gi->getMeterHitValue(mpos, *gi);
+            float value = gi->getMeterHitValue(mpos);
             
             gi->setValue(value);
             gi->setChanged(true);
@@ -100,7 +100,7 @@ void GainCanvas::OnMouseMoved(wxMouseEvent& event) {
     
     for (auto gi : gainPanels) {
         if (gi->isMeterHit(mpos)) {
-            float value = gi->getMeterHitValue(mpos, *gi);
+            float value = gi->getMeterHitValue(mpos);
         
             gi->setHighlight(value);
             gi->setHighlightVisible(true);

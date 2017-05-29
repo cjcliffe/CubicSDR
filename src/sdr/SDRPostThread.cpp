@@ -95,8 +95,7 @@ void SDRPostThread::updateActiveDemodulators() {
 
     for (demod_i = demodulators.begin(); demod_i != demodulators.end(); demod_i++) {
         DemodulatorInstance *demod = *demod_i;
-        DemodulatorThreadInputQueue *demodQueue = demod->getIQInputDataPipe();
-        
+         
         // not in range?
         if (demod->isDeltaLock()) {
             if (demod->getFrequency() != centerFreq + demod->getDeltaLockOfs()) {

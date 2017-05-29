@@ -526,12 +526,10 @@ DemodulatorInstance *DemodulatorMgr::loadInstance(DataNode *node) {
     }
     
 	//Attach to sound output:
-    bool found_device = false;
     std::map<int, RtAudio::DeviceInfo>::iterator i;
     for (i = outputDevices.begin(); i != outputDevices.end(); i++) {
         if (i->second.name == output_device) {
             newDemod->setOutputDevice(i->first);
-            found_device = true;
 			break;
         }
     }

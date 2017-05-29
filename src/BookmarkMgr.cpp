@@ -149,7 +149,7 @@ bool BookmarkMgr::loadFromFile(std::string bookmarkFn, bool backup) {
             setExpandState(groupName, (expandState == "true"));
             while (group->hasAnother("modem")) {
                 DataNode *modem = group->getNext("modem");
-                BookmarkEntryPtr be = nodeToBookmark("modem", modem);
+                BookmarkEntryPtr be = nodeToBookmark(modem);
                 if (be) {
                     addBookmark(groupName.c_str(), be);
                 } else {
@@ -165,7 +165,7 @@ bool BookmarkMgr::loadFromFile(std::string bookmarkFn, bool backup) {
         
         while (recent_modems->hasAnother("modem")) {
             DataNode *modem = recent_modems->getNext("modem");
-            BookmarkEntryPtr be = nodeToBookmark("modem", modem);
+            BookmarkEntryPtr be = nodeToBookmark(modem);
             if (be) {
                 addRecent(be);
             } else {
@@ -499,7 +499,7 @@ BookmarkEntryPtr BookmarkMgr::demodToBookmarkEntry(DemodulatorInstance *demod) {
     return be;
 }
 
-BookmarkEntryPtr BookmarkMgr::nodeToBookmark(const char *name_in, DataNode *node) {
+BookmarkEntryPtr BookmarkMgr::nodeToBookmark(DataNode *node) {
     if (!node->hasAnother("frequency") || !node->hasAnother("type") || !node->hasAnother("bandwidth")) {
         return nullptr;
     }
