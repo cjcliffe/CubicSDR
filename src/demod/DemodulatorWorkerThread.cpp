@@ -33,7 +33,7 @@ void DemodulatorWorkerThread::run() {
         //Beware of the subtility here,
         //we are waiting for the first command to show up (blocking!)
         //then consuming the commands until done. 
-        while (!done) {
+        while (!done && !stopping) {
             if (!commandQueue->pop(command, HEARTBEAT_CHECK_PERIOD_MICROS)) {
                 continue;
             }
@@ -51,7 +51,7 @@ void DemodulatorWorkerThread::run() {
                     break;
             }
             done = commandQueue->empty();
-        }
+        } //end while done.
 
         if ((makeDemod || filterChanged) && !stopping) {
             DemodulatorWorkerThreadResult result(DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS);

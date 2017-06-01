@@ -377,8 +377,7 @@ void SDRThread::readLoop() {
         updateSettings();
         readStream(iqDataOutQueue);
     }
-
-    buffers.purge();
+    iqDataOutQueue->flush();
 }
 
 void SDRThread::updateGains() {

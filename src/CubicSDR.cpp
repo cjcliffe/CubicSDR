@@ -393,18 +393,19 @@ int CubicSDR::OnExit() {
     std::cout << "Terminating SDR thread.." << std::endl;
     sdrThread->terminate();
     sdrThread->isTerminated(3000);
-   
-    if (t_SDR) {
-       t_SDR->join();
-       delete t_SDR;
-       t_SDR = nullptr;
-    }
-
+  
     std::cout << "Terminating SDR post-processing thread.." << std::endl;
     sdrPostThread->terminate();
 
+    //Wait for termination for sdrPostThread second:: since it is doing
+    //mostly blocking push() to the other threads, they must stay alive
+    //so that sdrPostThread can complete a processing loop and die.
+    sdrPostThread->isTerminated(3000);
+
     std::cout << "Terminating All Demodulators.." << std::endl;
     demodMgr.terminateAll();
+    //wait for effective death of all demodulators before continuing.
+    demodMgr.garbageCollect(true);
    
     std::cout << "Terminating Visual Processor threads.." << std::endl;
     spectrumVisualThread->terminate();
@@ -413,18 +414,28 @@ int CubicSDR::OnExit() {
     }
     
     //Wait nicely
-    sdrPostThread->isTerminated(1000);
     spectrumVisualThread->isTerminated(1000);
     if (demodVisualThread) {
         demodVisualThread->isTerminated(1000);
     }
 
-    //Then join the thread themselves
+    //Then join the thread themselves:
+    if (t_SDR) {
+        t_SDR->join();
+    }
+
     t_PostSDR->join();
-    if (t_DemodVisual) t_DemodVisual->join();
+    
+    if (t_DemodVisual) {
+        t_DemodVisual->join();
+    }
+    
     t_SpectrumVisual->join();
 
-    //Now only we can delete
+    //Now only we can delete:
+    delete t_SDR;
+    t_SDR = nullptr;
+
     delete sdrThread;
     sdrThread = nullptr;
 

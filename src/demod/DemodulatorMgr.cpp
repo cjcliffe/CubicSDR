@@ -278,29 +278,36 @@ DemodulatorInstance *DemodulatorMgr::getLastDemodulatorWith(const std::string& t
 	return nullptr;
 }
 
-void DemodulatorMgr::garbageCollect() {
+void DemodulatorMgr::garbageCollect(boolean forcedGC) {
     
     std::lock_guard < std::mutex > lock(deleted_demods_busy);
 
-    std::vector<DemodulatorInstance *>::iterator it = demods_deleted.begin();
+    while (!demods_deleted.empty()) {
 
-    while (it != demods_deleted.end()) {
+        std::vector<DemodulatorInstance *>::iterator it = demods_deleted.begin();
+        //make 1 pass over 
+        while (it != demods_deleted.end()) {
 
-        if ((*it)->isTerminated()) {
+            if ((*it)->isTerminated()) {
            
-            DemodulatorInstance *deleted = (*it);
+                DemodulatorInstance *deleted = (*it);
       
-            std::cout << "Garbage collected demodulator instance '" << deleted->getLabel() << "'... " << std::endl << std::flush;
-            demods_deleted.erase(it);
-            delete deleted;
+                std::cout << "Garbage collected demodulator instance '" << deleted->getLabel() << "'... " << std::endl << std::flush;
+                it = demods_deleted.erase(it);
+                delete deleted;
 
-            //only garbage collect 1 demod at a time.
-            return;
-        }
-        else {
-            it++;
-        }
-    } //end while
+                //only garbage collect 1 demod at a time.
+                if (!forcedGC) {
+                    return;
+                }
+            }
+            else {
+                it++;
+            }
+        } //end while
+        //stupid busy-wait loop
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    } //end while not empty
 }
 
 void DemodulatorMgr::updateLastState() {

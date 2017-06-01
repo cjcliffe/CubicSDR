@@ -76,6 +76,9 @@ void FFTVisualDataThread::run() {
             wproc.run();
         }
     }
+
+    pipeIQDataIn->flush();
+    pipeFFTDataOut->flush();
     
 //    std::cout << "FFT visual data thread done." << std::endl;
 }

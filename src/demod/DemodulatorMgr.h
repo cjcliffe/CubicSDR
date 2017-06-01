@@ -69,7 +69,11 @@ public:
     DemodulatorInstance *loadInstance(DataNode *node);
 
     //to be called periodically to cleanup removed demodulators.
-    void garbageCollect();
+    //if forcedGC = true, the methods waits until 
+    //all deleted demodulators are effectively GCed.
+    //else: (default) the method test for effective termination
+    //and GC one demod per call. 
+    void garbageCollect(boolean forcedGC = false);
     
 private:
 

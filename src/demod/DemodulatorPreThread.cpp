@@ -282,7 +282,7 @@ void DemodulatorPreThread::run() {
 
    
     iqOutputQueue->flush();
-    buffers.purge();
+    iqInputQueue->flush();
 }
 
 void DemodulatorPreThread::setDemodType(std::string demodType) {

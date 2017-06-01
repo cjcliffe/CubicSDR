@@ -342,8 +342,6 @@ void DemodulatorThread::run() {
     // Purge any unused inputs, with a non-blocking pop
     iqInputQueue->flush();
     audioOutputQueue->flush();
-
-    outputBuffers.purge();
     
 //    std::cout << "Demodulator thread done." << std::endl;
 }
