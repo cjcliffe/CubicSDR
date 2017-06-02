@@ -73,7 +73,7 @@ public:
     //all deleted demodulators are effectively GCed.
     //else: (default) the method test for effective termination
     //and GC one demod per call. 
-    void garbageCollect(boolean forcedGC = false);
+    void garbageCollect(bool forcedGC = false);
     
 private:
 
