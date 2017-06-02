@@ -278,7 +278,7 @@ DemodulatorInstance *DemodulatorMgr::getLastDemodulatorWith(const std::string& t
 	return nullptr;
 }
 
-void DemodulatorMgr::garbageCollect(boolean forcedGC) {
+void DemodulatorMgr::garbageCollect(bool forcedGC) {
     
     std::lock_guard < std::mutex > lock(deleted_demods_busy);
 
