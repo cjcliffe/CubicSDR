@@ -778,11 +778,14 @@ void AppFrame::updateDeviceParams() {
     if (settingArgs.size()) {
         newSettingsMenu->AppendSeparator();
     }
-    
+    //for each Runtime option of index i:
     for (args_i = settingArgs.begin(); args_i != settingArgs.end(); args_i++) {
+
         SoapySDR::ArgInfo arg = (*args_i);
+
         std::string currentVal = soapyDev->readSetting(arg.key);
-        if (arg.type == SoapySDR::ArgInfo::BOOL) {
+        
+		if (arg.type == SoapySDR::ArgInfo::BOOL) {
             wxMenuItem *item = newSettingsMenu->AppendCheckItem(wxID_SETTINGS_BASE+i, arg.name, arg.description);
             item->Check(currentVal=="true");
             i++;
@@ -796,14 +799,16 @@ void AppFrame::updateDeviceParams() {
             if (arg.options.size()) {
                 wxMenu *subMenu = new wxMenu;
                 int j = 0;
-                for (std::vector<std::string>::iterator str_i = arg.options.begin(); str_i != arg.options.end(); str_i++) {
-                    std::string optName = (*str_i);
+				//for each of this options
+                for (std::string optName : arg.options) {
+					//by default the option name is the same as the displayed name.
                     std::string displayName = optName;
-                    if (arg.optionNames.size()) {
+                    
+					if (arg.optionNames.size()) {
                         displayName = arg.optionNames[j];
                     }
                     wxMenuItem *item = subMenu->AppendRadioItem(wxID_SETTINGS_BASE+i, displayName);
-                    if (currentVal == (*str_i)) {
+                    if (currentVal == optName) {
                         item->Check(true);
                     }
                     j++;

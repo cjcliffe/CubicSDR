@@ -183,8 +183,8 @@ std::vector<long> SDRDeviceInfo::getSampleRates(int direction, size_t channel) {
     
     std::vector<long> result;
     std::vector<double> sampleRates = dev->listSampleRates(direction, channel);
-    for (std::vector<double>::iterator si = sampleRates.begin(); si != sampleRates.end(); si++) {
-        result.push_back((long)(*si));
+    for (double si : sampleRates) {
+        result.push_back((long)si);
     }
     
     return result;
@@ -195,11 +195,11 @@ long SDRDeviceInfo::getSampleRateNear(int direction, size_t channel, long sample
     long returnRate = sampleRates[0];
     long sDelta = (long)sampleRate_in-sampleRates[0];
     long minDelta = std::abs(sDelta);
-    for (std::vector<long>::iterator i = sampleRates.begin(); i != sampleRates.end(); i++) {
-        long thisDelta = std::abs(sampleRate_in - (*i));
+    for (long i : sampleRates) {
+        long thisDelta = std::abs(sampleRate_in - i);
         if (thisDelta < minDelta) {
             minDelta = thisDelta;
-            returnRate = (*i);
+            returnRate = i;
         }
     }
     return returnRate;
@@ -210,8 +210,8 @@ SDRRangeMap SDRDeviceInfo::getGains(int direction, size_t channel) {
     std::vector<std::string> gainNames = dev->listGains(direction, channel);
     std::map<std::string, SoapySDR::Range> gainMap;
     
-    for (std::vector<std::string>::iterator gname = gainNames.begin(); gname!= gainNames.end(); gname++) {
-        gainMap[(*gname)] = dev->getGainRange(direction, channel, (*gname));
+    for (std::string gname : gainNames) {
+        gainMap[gname] = dev->getGainRange(direction, channel, gname);
     }
     
     return gainMap;
