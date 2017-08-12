@@ -2026,6 +2026,7 @@ void AppFrame::saveSession(std::string fileName) {
     
     *header->newChild("center_freq") = wxGetApp().getFrequency();
     *header->newChild("sample_rate") = wxGetApp().getSampleRate();
+    *header->newChild("solo_mode") = wxGetApp().getSoloMode()?1:0;
     
     if (waterfallCanvas->getViewState()) {
         DataNode *viewState = header->newChild("view_state");
@@ -2141,6 +2142,16 @@ bool AppFrame::loadSession(std::string fileName) {
             } else {
                 wxGetApp().setSampleRate(sample_rate);
             }
+        }
+
+        if (header->hasAnother("solo_mode")) {
+            
+            int solo_mode_activated = *header->getNext("solo_mode");
+
+            wxGetApp().setSoloMode((solo_mode_activated > 0) ? true : false);
+        }
+        else {
+            wxGetApp().setSoloMode(false);
         }
 
         DemodulatorInstance *loadedActiveDemod = nullptr;
