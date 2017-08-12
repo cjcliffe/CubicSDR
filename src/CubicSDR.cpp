@@ -405,7 +405,7 @@ int CubicSDR::OnExit() {
     std::cout << "Terminating All Demodulators.." << std::endl;
     demodMgr.terminateAll();
     //wait for effective death of all demodulators before continuing.
-    demodMgr.garbageCollect(true);
+    demodMgr.garbageCollect(true, 3000);
    
     std::cout << "Terminating Visual Processor threads.." << std::endl;
     spectrumVisualThread->terminate();

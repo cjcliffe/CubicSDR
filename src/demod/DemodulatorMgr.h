@@ -73,7 +73,9 @@ public:
     //all deleted demodulators are effectively GCed.
     //else: (default) the method test for effective termination
     //and GC one demod per call. 
-    void garbageCollect(bool forcedGC = false);
+    // if forcedGC = true and maxWaitForTerminationMs > 0, do not
+    //block the method more than maxWaitForTerminationMs millisecs before returning.
+    void garbageCollect(bool forcedGC = false, int maxWaitForTerminationMs = 0);
     
 private:
 
