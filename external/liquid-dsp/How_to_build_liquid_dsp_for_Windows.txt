@@ -3,11 +3,8 @@
 - Install the Msys2 distribution as described on their site (https://msys2.github.io/) 
 - Add mingw32 and mingw64 compiler to the Msys2 installation.
 - Copy config.h, makefile.mingw32, makefile.mingw64 in the liquid-dsp root directory.
-- Run a Msys2 Win32 shell (mingw32.exe) and execute 'make -f makefile.mingw32 -j8' to compile a libliquid.dll 32bit Windows Dll.
-- Run a Msys2 Win64 shell (mingw64.exe) and execute 'make -f makefile.mingw64 -j8' to compile a libliquid.dll 64bit Windows Dll.
-
-Note that the Win32 dll needs libgcc_s_dw2-1.dll and libwinpthread-1.dll (as a libgcc_s_dw2-1.dll dependency) as dependencies. 
-On the other hand, Win64 dll has no external dependencies.
+- Run a Msys2 Win32 shell (mingw32.exe) and execute 'make -f makefile.mingw32 -j clean' then 'make -f makefile.mingw32 -j' to compile a libliquid.dll 32bit Windows Dll.
+- Run a Msys2 Win64 shell (mingw64.exe) and execute 'make -f makefile.mingw64 -j clean' then 'make -f makefile.mingw32 -j' to compile a libliquid.dll 64bit Windows Dll.
 
 This process generates a .dll, .a together with libliquid.def the listing exported functions, and libliquid.lib the import lib matching the dll.
 
