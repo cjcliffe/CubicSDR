@@ -23,10 +23,10 @@ DemodulatorPreThread::DemodulatorPreThread(DemodulatorInstance *parent) : IOThre
     freqShifter = nco_crcf_create(LIQUID_VCO);
     shiftFrequency = 0;
 
-    workerQueue = new DemodulatorThreadWorkerCommandQueue;
+    workerQueue = std::make_shared<DemodulatorThreadWorkerCommandQueue>();
     workerQueue->set_max_num_items(2);
 
-    workerResults = new DemodulatorThreadWorkerResultQueue;
+    workerResults = std::make_shared<DemodulatorThreadWorkerResultQueue>();
     workerResults->set_max_num_items(100);
      
     workerThread = new DemodulatorWorkerThread();
@@ -65,8 +65,8 @@ void DemodulatorPreThread::run() {
 
     ReBuffer<DemodulatorThreadPostIQData> buffers("DemodulatorPreThreadBuffers");
 
-    iqInputQueue = static_cast<DemodulatorThreadInputQueue*>(getInputQueue("IQDataInput"));
-    iqOutputQueue = static_cast<DemodulatorThreadPostInputQueue*>(getOutputQueue("IQDataOutput"));
+    iqInputQueue = std::static_pointer_cast<DemodulatorThreadInputQueue>(getInputQueue("IQDataInput"));
+    iqOutputQueue = std::static_pointer_cast<DemodulatorThreadPostInputQueue>(getOutputQueue("IQDataOutput"));
     
     std::vector<liquid_float_complex> in_buf_data;
     std::vector<liquid_float_complex> out_buf_data;
@@ -359,7 +359,7 @@ void DemodulatorPreThread::terminate() {
     DemodulatorWorkerThreadCommand command;
     //VSO: blocking push :
     workerQueue->push(command);
-    
+
     //wait blocking for termination here, it could be long with lots of modems and we MUST terminate properly,
     //else better kill the whole application...
     workerThread->isTerminated(5000);
@@ -370,12 +370,6 @@ void DemodulatorPreThread::terminate() {
 
     delete workerThread;
     workerThread = nullptr;
-
-    delete workerResults;
-    workerResults = nullptr;
-
-    delete workerQueue;
-    workerQueue = nullptr;
 }
 
 Modem *DemodulatorPreThread::getModem() {

@@ -34,7 +34,7 @@ wxEND_EVENT_TABLE()
 ScopeCanvas::ScopeCanvas(wxWindow *parent, std::vector<int> dispAttrs) : InteractiveCanvas(parent, dispAttrs), ppmMode(false), ctr(0), ctrTarget(0), dragAccel(0), helpTip("") {
 
     glContext = new ScopeContext(this, &wxGetApp().GetContext(this));
-    inputData.set_max_num_items(2);
+    inputData->set_max_num_items(2);
     bgPanel.setFill(GLPanel::GLPANEL_FILL_GRAD_Y);
     bgPanel.setSize(1.0, 0.5f);
     bgPanel.setPosition(0.0, -0.5f);
@@ -105,7 +105,7 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     const wxSize ClientSize = GetClientSize();
     
     ScopeRenderDataPtr avData;
-    while (inputData.try_pop(avData)) {
+    while (inputData->try_pop(avData)) {
        
         
         if (!avData->spectrum) {
@@ -233,8 +233,8 @@ void ScopeCanvas::OnIdle(wxIdleEvent &event) {
     event.RequestMore();
 }
 
-ScopeRenderDataQueue *ScopeCanvas::getInputQueue() {
-    return &inputData;
+ScopeRenderDataQueuePtr ScopeCanvas::getInputQueue() {
+    return inputData;
 }
 
 void ScopeCanvas::OnMouseMoved(wxMouseEvent& event) {

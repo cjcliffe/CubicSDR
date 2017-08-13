@@ -107,10 +107,10 @@ public:
     SpectrumVisualProcessor *getSpectrumProcessor();
     SpectrumVisualProcessor *getDemodSpectrumProcessor();
     
-    DemodulatorThreadOutputQueue* getAudioVisualQueue();
-    DemodulatorThreadInputQueue* getIQVisualQueue();
-    DemodulatorThreadInputQueue* getWaterfallVisualQueue();
-    DemodulatorThreadInputQueue* getActiveDemodVisualQueue();
+    DemodulatorThreadOutputQueuePtr getAudioVisualQueue();
+    DemodulatorThreadInputQueuePtr getIQVisualQueue();
+    DemodulatorThreadInputQueuePtr getWaterfallVisualQueue();
+    DemodulatorThreadInputQueuePtr getActiveDemodVisualQueue();
     DemodulatorMgr &getDemodMgr();
     BookmarkMgr &getBookmarkMgr();
 
@@ -197,12 +197,12 @@ private:
     SpectrumVisualDataThread *spectrumVisualThread = nullptr;
     SpectrumVisualDataThread *demodVisualThread = nullptr;
 
-    SDRThreadIQDataQueue* pipeSDRIQData = nullptr;
-    DemodulatorThreadInputQueue* pipeIQVisualData = nullptr;
-    DemodulatorThreadOutputQueue* pipeAudioVisualData = nullptr;
-    DemodulatorThreadInputQueue* pipeDemodIQVisualData = nullptr;
-    DemodulatorThreadInputQueue* pipeWaterfallIQVisualData = nullptr;
-    DemodulatorThreadInputQueue* pipeActiveDemodIQVisualData = nullptr;
+    SDRThreadIQDataQueuePtr pipeSDRIQData = nullptr;
+    DemodulatorThreadInputQueuePtr pipeIQVisualData = nullptr;
+    DemodulatorThreadOutputQueuePtr pipeAudioVisualData = nullptr;
+    DemodulatorThreadInputQueuePtr pipeDemodIQVisualData = nullptr;
+    DemodulatorThreadInputQueuePtr pipeWaterfallIQVisualData = nullptr;
+    DemodulatorThreadInputQueuePtr pipeActiveDemodIQVisualData = nullptr;
 
     ScopeVisualProcessor scopeProcessor;
     

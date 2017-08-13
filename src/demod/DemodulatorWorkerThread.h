@@ -5,7 +5,7 @@
 
 #include <queue>
 #include <vector>
-
+#include <memory>
 #include "liquid/liquid.h"
 #include "AudioThread.h"
 #include "ThreadBlockingQueue.h"
@@ -72,6 +72,9 @@ public:
 typedef ThreadBlockingQueue<DemodulatorWorkerThreadCommand> DemodulatorThreadWorkerCommandQueue;
 typedef ThreadBlockingQueue<DemodulatorWorkerThreadResult> DemodulatorThreadWorkerResultQueue;
 
+typedef std::shared_ptr<DemodulatorThreadWorkerCommandQueue> DemodulatorThreadWorkerCommandQueuePtr;
+typedef std::shared_ptr<DemodulatorThreadWorkerResultQueue> DemodulatorThreadWorkerResultQueuePtr;
+
 class DemodulatorWorkerThread : public IOThread {
 public:
 
@@ -80,11 +83,11 @@ public:
 
     virtual void run();
 
-    void setCommandQueue(DemodulatorThreadWorkerCommandQueue *tQueue) {
+    void setCommandQueue(DemodulatorThreadWorkerCommandQueuePtr tQueue) {
         commandQueue = tQueue;
     }
 
-    void setResultQueue(DemodulatorThreadWorkerResultQueue *tQueue) {
+    void setResultQueue(DemodulatorThreadWorkerResultQueuePtr tQueue) {
         resultQueue = tQueue;
     }
 
@@ -92,8 +95,8 @@ public:
 
 protected:
 
-    DemodulatorThreadWorkerCommandQueue *commandQueue;
-    DemodulatorThreadWorkerResultQueue *resultQueue;
+    DemodulatorThreadWorkerCommandQueuePtr commandQueue;
+    DemodulatorThreadWorkerResultQueuePtr resultQueue;
     Modem *cModem;
     ModemKit *cModemKit;
     std::string cModemType;

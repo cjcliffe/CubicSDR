@@ -25,6 +25,8 @@
 class ThreadQueueBase {
 };
 
+typedef std::shared_ptr<ThreadQueueBase> ThreadQueueBasePtr;
+
 /** A thread-safe asynchronous blocking queue */
 template<typename T>
 class ThreadBlockingQueue : public ThreadQueueBase {

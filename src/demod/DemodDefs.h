@@ -103,6 +103,10 @@ public:
 typedef std::shared_ptr<DemodulatorThreadIQData> DemodulatorThreadIQDataPtr;
 typedef std::shared_ptr<DemodulatorThreadPostIQData> DemodulatorThreadPostIQDataPtr;
 
-typedef ThreadBlockingQueue< DemodulatorThreadIQDataPtr > DemodulatorThreadInputQueue;
-typedef ThreadBlockingQueue< DemodulatorThreadPostIQDataPtr > DemodulatorThreadPostInputQueue;
+typedef ThreadBlockingQueue<DemodulatorThreadIQDataPtr> DemodulatorThreadInputQueue;
+typedef ThreadBlockingQueue<DemodulatorThreadPostIQDataPtr> DemodulatorThreadPostInputQueue;
 typedef ThreadBlockingQueue<DemodulatorThreadControlCommand> DemodulatorThreadControlCommandQueue;
+
+typedef std::shared_ptr<DemodulatorThreadInputQueue> DemodulatorThreadInputQueuePtr;
+typedef std::shared_ptr<DemodulatorThreadPostInputQueue> DemodulatorThreadPostInputQueuePtr;
+typedef std::shared_ptr<DemodulatorThreadControlCommandQueue> DemodulatorThreadControlCommandQueuePtr;

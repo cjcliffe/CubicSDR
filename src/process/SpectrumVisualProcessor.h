@@ -24,6 +24,7 @@ public:
 
 typedef std::shared_ptr<SpectrumVisualData> SpectrumVisualDataPtr;
 typedef ThreadBlockingQueue<SpectrumVisualDataPtr> SpectrumVisualDataQueue;
+typedef std::shared_ptr<SpectrumVisualDataQueue> SpectrumVisualDataQueuePtr;
 
 class SpectrumVisualProcessor : public VisualProcessor<DemodulatorThreadIQData, SpectrumVisualData> {
 public:

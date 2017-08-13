@@ -35,13 +35,13 @@ DemodulatorThread::~DemodulatorThread() {
     releaseSquelchLock(demodInstance);
 }
 
-void DemodulatorThread::onBindOutput(std::string name, ThreadQueueBase *threadQueue) {
+void DemodulatorThread::onBindOutput(std::string name, ThreadQueueBasePtr threadQueue) {
     if (name == "AudioVisualOutput") {
         
         //protects because it may be changed at runtime
         std::lock_guard < std::mutex > lock(m_mutexAudioVisOutputQueue);
 
-        audioVisOutputQueue = static_cast<DemodulatorThreadOutputQueue*>(threadQueue);
+        audioVisOutputQueue = std::static_pointer_cast<DemodulatorThreadOutputQueue>(threadQueue);
     }
 }
 
@@ -75,9 +75,9 @@ void DemodulatorThread::run() {
     
 //    std::cout << "Demodulator thread started.." << std::endl;
     
-    iqInputQueue = static_cast<DemodulatorThreadPostInputQueue*>(getInputQueue("IQDataInput"));
-    audioOutputQueue = static_cast<AudioThreadInputQueue*>(getOutputQueue("AudioDataOutput"));
-    threadQueueControl = static_cast<DemodulatorThreadControlCommandQueue *>(getInputQueue("ControlQueue"));
+    iqInputQueue = std::static_pointer_cast<DemodulatorThreadPostInputQueue>(getInputQueue("IQDataInput"));
+    audioOutputQueue = std::static_pointer_cast<AudioThreadInputQueue>(getOutputQueue("AudioDataOutput"));
+    threadQueueControl = std::static_pointer_cast<DemodulatorThreadControlCommandQueue>(getInputQueue("ControlQueue"));
      
     ModemIQData modemData;
     
@@ -234,7 +234,7 @@ void DemodulatorThread::run() {
         
         //At that point, capture the current state of audioVisOutputQueue in a local 
         //variable, and works with it with now on until the next while-turn.
-        DemodulatorThreadOutputQueue* localAudioVisOutputQueue = nullptr;
+        DemodulatorThreadOutputQueuePtr localAudioVisOutputQueue = nullptr;
         {
             std::lock_guard < std::mutex > lock(m_mutexAudioVisOutputQueue);
             localAudioVisOutputQueue = audioVisOutputQueue;

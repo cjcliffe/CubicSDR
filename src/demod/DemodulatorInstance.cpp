@@ -1,6 +1,7 @@
 // Copyright (c) Charles J. Cliffe
 // SPDX-License-Identifier: GPL-2.0+
 
+#include <memory>
 #include "DemodulatorInstance.h"
 #include "CubicSDR.h"
 
@@ -52,9 +53,9 @@ DemodulatorInstance::DemodulatorInstance() {
     label.store(new std::string("Unnamed"));
     user_label.store(new std::wstring());
 
-    pipeIQInputData = new DemodulatorThreadInputQueue;
+    pipeIQInputData = std::make_shared<DemodulatorThreadInputQueue>();
     pipeIQInputData->set_max_num_items(100);
-    pipeIQDemodData = new DemodulatorThreadPostInputQueue;
+    pipeIQDemodData = std::make_shared< DemodulatorThreadPostInputQueue>();
     pipeIQInputData->set_max_num_items(100);
     
     audioThread = new AudioThread();
@@ -63,10 +64,10 @@ DemodulatorInstance::DemodulatorInstance() {
     demodulatorPreThread->setInputQueue("IQDataInput",pipeIQInputData);
     demodulatorPreThread->setOutputQueue("IQDataOutput",pipeIQDemodData);
             
-    pipeAudioData = new AudioThreadInputQueue;
+    pipeAudioData = std::make_shared< AudioThreadInputQueue>();
     pipeAudioData->set_max_num_items(10);
 
-    threadQueueControl = new DemodulatorThreadControlCommandQueue;
+    threadQueueControl = std::make_shared< DemodulatorThreadControlCommandQueue>();
     threadQueueControl->set_max_num_items(2);
 
     demodulatorThread = new DemodulatorThread(this);
@@ -85,15 +86,9 @@ DemodulatorInstance::~DemodulatorInstance() {
     delete audioThread;
     delete demodulatorThread;
     delete demodulatorPreThread;
-    delete pipeIQInputData;
-    delete pipeIQDemodData;
-    delete threadQueueControl;
-    delete pipeAudioData;
-    
-   // wxGetApp().getBookmarkMgr().updateActiveList();
 }
 
-void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue) {
+void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueuePtr tQueue) {
     demodulatorThread->setOutputQueue("AudioVisualOutput", tQueue);
 }
 
@@ -131,8 +126,6 @@ void DemodulatorInstance::run() {
 #endif
 
     active = true;
-
- //   wxGetApp().getBookmarkMgr().updateActiveList();
 }
 
 void DemodulatorInstance::updateLabel(long long freq) {
@@ -492,7 +485,7 @@ DemodVisualCue *DemodulatorInstance::getVisualCue() {
     return &visualCue;
 }
 
-DemodulatorThreadInputQueue *DemodulatorInstance::getIQInputDataPipe() {
+DemodulatorThreadInputQueuePtr DemodulatorInstance::getIQInputDataPipe() {
     return pipeIQInputData;
 }
 

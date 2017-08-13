@@ -10,7 +10,7 @@
 #define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
 
 DemodulatorWorkerThread::DemodulatorWorkerThread() : IOThread(),
-        commandQueue(NULL), resultQueue(NULL), cModem(nullptr), cModemKit(nullptr) {
+        commandQueue(nullptr), resultQueue(nullptr), cModem(nullptr), cModemKit(nullptr) {
 }
 
 DemodulatorWorkerThread::~DemodulatorWorkerThread() {
@@ -20,8 +20,8 @@ void DemodulatorWorkerThread::run() {
 
 //    std::cout << "Demodulator worker thread started.." << std::endl;
     
-    commandQueue = static_cast<DemodulatorThreadWorkerCommandQueue *>(getInputQueue("WorkerCommandQueue"));
-    resultQueue = static_cast<DemodulatorThreadWorkerResultQueue *>(getOutputQueue("WorkerResultQueue"));
+    commandQueue = std::static_pointer_cast<DemodulatorThreadWorkerCommandQueue>(getInputQueue("WorkerCommandQueue"));
+    resultQueue = std::static_pointer_cast<DemodulatorThreadWorkerResultQueue>(getOutputQueue("WorkerResultQueue"));
     
     while (!stopping) {
         bool filterChanged = false;

@@ -23,10 +23,10 @@ public:
     void setIQVisualRange(long long frequency, int bandwidth);
         
 protected:
-    SDRThreadIQDataQueue *iqDataInQueue;
-    DemodulatorThreadInputQueue *iqDataOutQueue;
-    DemodulatorThreadInputQueue *iqVisualQueue;
-    DemodulatorThreadInputQueue *iqActiveDemodVisualQueue;
+    SDRThreadIQDataQueuePtr iqDataInQueue;
+    DemodulatorThreadInputQueuePtr iqDataOutQueue;
+    DemodulatorThreadInputQueuePtr iqVisualQueue;
+    DemodulatorThreadInputQueuePtr iqActiveDemodVisualQueue;
     
     //protects access to demodulators lists and such
     std::mutex busy_demod;

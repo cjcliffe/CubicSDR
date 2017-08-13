@@ -32,6 +32,8 @@ IMPLEMENT_APP(CubicSDR)
 
 #include "ActionDialog.h"
 
+#include <memory>
+
 
 //#ifdef ENABLE_DIGITAL_LAB
 //// console output buffer for windows
@@ -290,17 +292,17 @@ bool CubicSDR::OnInit() {
     // Visual Data
     spectrumVisualThread = new SpectrumVisualDataThread();
     
-    pipeIQVisualData = new DemodulatorThreadInputQueue();
+    pipeIQVisualData = std::make_shared<DemodulatorThreadInputQueue>();
     pipeIQVisualData->set_max_num_items(1);
     
-    pipeWaterfallIQVisualData = new DemodulatorThreadInputQueue();
+    pipeWaterfallIQVisualData = std::make_shared<DemodulatorThreadInputQueue>();
     pipeWaterfallIQVisualData->set_max_num_items(128);
     
     getSpectrumProcessor()->setInput(pipeIQVisualData);
     getSpectrumProcessor()->setHideDC(true);
     
     // I/Q Data
-    pipeSDRIQData = new SDRThreadIQDataQueue();
+    pipeSDRIQData = std::make_shared<SDRThreadIQDataQueue>();
     pipeSDRIQData->set_max_num_items(100);
     
     sdrThread = new SDRThread();
@@ -313,7 +315,7 @@ bool CubicSDR::OnInit() {
     sdrPostThread->setOutputQueue("IQDataOutput", pipeWaterfallIQVisualData);
      
 #if CUBICSDR_ENABLE_VIEW_SCOPE
-    pipeAudioVisualData = new DemodulatorThreadOutputQueue();
+    pipeAudioVisualData = std::make_shared<DemodulatorThreadOutputQueue>();
     pipeAudioVisualData->set_max_num_items(1);
     
     scopeProcessor.setInput(pipeAudioVisualData);
@@ -323,7 +325,7 @@ bool CubicSDR::OnInit() {
     
 #if CUBICSDR_ENABLE_VIEW_DEMOD
     demodVisualThread = new SpectrumVisualDataThread();
-    pipeDemodIQVisualData = new DemodulatorThreadInputQueue();
+    pipeDemodIQVisualData = std::make_shared<DemodulatorThreadInputQueue>();
     pipeDemodIQVisualData->set_max_num_items(1);
     
     if (getDemodSpectrumProcessor()) {
@@ -478,15 +480,6 @@ int CubicSDR::OnExit() {
 
     delete demodVisualThread;
     demodVisualThread = nullptr;
-    
-    delete pipeIQVisualData;
-    pipeIQVisualData = nullptr;
-
-    delete pipeAudioVisualData;
-    pipeAudioVisualData = nullptr;
-
-    delete pipeSDRIQData;
-    pipeSDRIQData = nullptr;
 
     delete m_glContext;
     m_glContext = nullptr;
@@ -795,15 +788,15 @@ SpectrumVisualProcessor *CubicSDR::getDemodSpectrumProcessor() {
     }
 }
 
-DemodulatorThreadOutputQueue* CubicSDR::getAudioVisualQueue() {
+DemodulatorThreadOutputQueuePtr CubicSDR::getAudioVisualQueue() {
     return pipeAudioVisualData;
 }
 
-DemodulatorThreadInputQueue* CubicSDR::getIQVisualQueue() {
+DemodulatorThreadInputQueuePtr CubicSDR::getIQVisualQueue() {
     return pipeIQVisualData;
 }
 
-DemodulatorThreadInputQueue* CubicSDR::getWaterfallVisualQueue() {
+DemodulatorThreadInputQueuePtr CubicSDR::getWaterfallVisualQueue() {
     return pipeWaterfallIQVisualData;
 }
 

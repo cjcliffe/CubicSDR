@@ -5,12 +5,15 @@
 
 #include <queue>
 #include <vector>
+#include <memory>
 
 #include "DemodDefs.h"
 #include "AudioThread.h"
 #include "Modem.h"
 
 typedef ThreadBlockingQueue<AudioThreadInputPtr> DemodulatorThreadOutputQueue;
+
+typedef std::shared_ptr<DemodulatorThreadOutputQueue> DemodulatorThreadOutputQueuePtr;
 
 #define DEMOD_VIS_SIZE 2048
 #define DEMOD_SIGNAL_MIN -30
@@ -24,7 +27,7 @@ public:
     DemodulatorThread(DemodulatorInstance *parent);
     virtual ~DemodulatorThread();
 
-    void onBindOutput(std::string name, ThreadQueueBase *threadQueue);
+    void onBindOutput(std::string name, ThreadQueueBasePtr threadQueue);
     
     void run();
     void terminate();
@@ -62,10 +65,10 @@ protected:
     Modem *cModem = nullptr;
     ModemKit *cModemKit = nullptr;
     
-    DemodulatorThreadPostInputQueue* iqInputQueue = nullptr;
-    AudioThreadInputQueue *audioOutputQueue = nullptr;
-    DemodulatorThreadOutputQueue* audioVisOutputQueue = nullptr;
-    DemodulatorThreadControlCommandQueue *threadQueueControl = nullptr;
+    DemodulatorThreadPostInputQueuePtr iqInputQueue = nullptr;
+    AudioThreadInputQueuePtr audioOutputQueue = nullptr;
+    DemodulatorThreadOutputQueuePtr audioVisOutputQueue = nullptr;
+    DemodulatorThreadControlCommandQueuePtr threadQueueControl = nullptr;
 
     //protects the audioVisOutputQueue dynamic binding change at runtime (in DemodulatorMgr)
     std::mutex m_mutexAudioVisOutputQueue;

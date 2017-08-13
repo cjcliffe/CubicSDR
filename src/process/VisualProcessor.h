@@ -21,7 +21,10 @@ public:
     typedef  ThreadBlockingQueue<InputDataTypePtr> VisualInputQueueType;
     typedef  ThreadBlockingQueue<OutputDataTypePtr> VisualOutputQueueType;
 
-    typedef typename std::vector< VisualOutputQueueType *>::iterator outputs_i;
+    typedef  std::shared_ptr<VisualInputQueueType> VisualInputQueueTypePtr;
+    typedef  std::shared_ptr<VisualOutputQueueType> VisualOutputQueueTypePtr;
+
+    typedef typename std::vector< VisualOutputQueueTypePtr >::iterator outputs_i;
 
 	virtual ~VisualProcessor() {
 	}
@@ -35,8 +38,8 @@ public:
     bool isOutputEmpty() {
         std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
 
-        for (outputs_i it = outputs.begin(); it != outputs.end(); it++) {
-            if ((*it)->full()) {
+        for (VisualOutputQueueTypePtr single_output :  outputs) {
+            if (single_output->full()) {
                 return false;
             }
         }
@@ -46,8 +49,8 @@ public:
     bool isAnyOutputEmpty() {
         std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
 
-        for (outputs_i it = outputs.begin();  it != outputs.end(); it++) {
-            if (!(*it)->full()) {
+        for (VisualOutputQueueTypePtr single_output : outputs) {
+            if (!(single_output)->full()) {
                 return true;
             }
         }
@@ -55,7 +58,7 @@ public:
     }
 
     //Set a (new) 'input' queue for incoming data.
-    void setInput(VisualInputQueueType *vis_in) {
+    void setInput(VisualInputQueueTypePtr vis_in) {
         std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
         input = vis_in;
         
@@ -63,14 +66,14 @@ public:
     
     //Add a vis_out queue where to consumed 'input' data will be
     //dispatched by distribute(). 
-    void attachOutput(VisualOutputQueueType *vis_out) {
+    void attachOutput(VisualOutputQueueTypePtr vis_out) {
         // attach an output queue
         std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
         outputs.push_back(vis_out);
     }
     
     //reverse of attachOutput(), removed an existing attached vis_out.
-    void removeOutput(VisualOutputQueueType *vis_out) {
+    void removeOutput(VisualOutputQueueTypePtr vis_out) {
         // remove an output queue
         std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
 
@@ -108,20 +111,20 @@ protected:
         //We will try to distribute 'output' among all 'outputs',
         //so 'output' will a-priori be shared among all 'outputs'.
         
-        for (outputs_i it = outputs.begin(); it != outputs.end(); it++) {
+        for (VisualOutputQueueTypePtr single_output : outputs) {
             //'output' can fail to be given to an outputs_i,
             //using a blocking push, with a timeout
-        	if (!(*it)->push(item, timeout, errorMessage)) {
+        	if (!(single_output)->push(item, timeout, errorMessage)) {
                 //TODO : trace ?
         	} 
         }
     }
 
     //the incoming data queue 
-    VisualInputQueueType *input = nullptr;
+    VisualInputQueueTypePtr input = nullptr;
     
     //the n-outputs where to process()-ed data is distribute()-ed.
-    std::vector<VisualOutputQueueType *> outputs;
+    std::vector<VisualOutputQueueTypePtr> outputs;
 
     //protects input and outputs, must be recursive because of re-entrance
     std::recursive_mutex busy_update;

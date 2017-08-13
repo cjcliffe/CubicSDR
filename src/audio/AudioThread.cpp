@@ -73,7 +73,7 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
 
     //Zero output buffer in all cases: this allow to mute audio if no AudioThread data is 
     //actually active.
-    memset(out, 0, nBufferFrames * 2 * sizeof(float));
+    ::memset(out, 0, nBufferFrames * 2 * sizeof(float));
 
     AudioThread *src = (AudioThread *) userData;
    
@@ -424,8 +424,8 @@ void AudioThread::run() {
     setupDevice((outputDevice.load() == -1) ? (dac.getDefaultOutputDevice()) : outputDevice.load());
 
 //    std::cout << "Audio thread started." << std::endl;
-
-    inputQueue = static_cast<AudioThreadInputQueue *>(getInputQueue("AudioDataInput"));
+    
+    inputQueue = std::static_pointer_cast<AudioThreadInputQueue>(getInputQueue("AudioDataInput"));
     
     //Infinite loop, witing for commands or for termination
     while (!stopping) {
@@ -451,7 +451,7 @@ void AudioThread::run() {
     if (inputQueue != nullptr) {
         inputQueue->flush();
     }
-    
+   
     //Nullify currentInput...
     currentInput = nullptr;
   
@@ -499,7 +499,6 @@ void AudioThread::setActive(bool state) {
 
     // Activity state changing, clear any inputs
     if(inputQueue) {
-
         inputQueue->flush();
     }
     active = state;

@@ -175,17 +175,17 @@ public:
     //If wait < 0, the wait in infinite until the thread dies.
     bool isTerminated(int waitMs = 0);
     
-    virtual void onBindOutput(std::string name, ThreadQueueBase* threadQueue);
-    virtual void onBindInput(std::string name, ThreadQueueBase* threadQueue);
+    virtual void onBindOutput(std::string name, ThreadQueueBasePtr threadQueue);
+    virtual void onBindInput(std::string name, ThreadQueueBasePtr threadQueue);
 
-    void setInputQueue(std::string qname, ThreadQueueBase *threadQueue);
-    ThreadQueueBase *getInputQueue(std::string qname);
-    void setOutputQueue(std::string qname, ThreadQueueBase *threadQueue);
-    ThreadQueueBase *getOutputQueue(std::string qname);
+    void setInputQueue(std::string qname, ThreadQueueBasePtr threadQueue);
+    ThreadQueueBasePtr getInputQueue(std::string qname);
+    void setOutputQueue(std::string qname, ThreadQueueBasePtr threadQueue);
+    ThreadQueueBasePtr getOutputQueue(std::string qname);
     
 protected:
-    std::map<std::string, ThreadQueueBase *, map_string_less> input_queues;
-    std::map<std::string, ThreadQueueBase *, map_string_less> output_queues;
+    std::map<std::string, ThreadQueueBasePtr, map_string_less> input_queues;
+    std::map<std::string, ThreadQueueBasePtr, map_string_less> output_queues;
 
     //this protects against concurrent changes in input/output bindings: get/set/Input/OutPutQueue
     std::mutex m_queue_bindings_mutex;

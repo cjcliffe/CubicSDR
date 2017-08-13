@@ -8,7 +8,7 @@
 
 #include <vector>
 #include <queue>
-
+#include <memory>
 #include "InteractiveCanvas.h"
 #include "MouseTracker.h"
 #include "SpectrumCanvas.h"
@@ -31,7 +31,7 @@ public:
     
     void attachSpectrumCanvas(SpectrumCanvas *canvas_in);
     void processInputQueue();
-    SpectrumVisualDataQueue *getVisualDataQueue();
+    SpectrumVisualDataQueuePtr getVisualDataQueue();
 
     void setLinesPerSecond(int lps);
     void setMinBandwidth(int min);
@@ -88,7 +88,8 @@ private:
     float scaleMove;
     int dragBW;
     
-    SpectrumVisualDataQueue visualDataQueue;
+    SpectrumVisualDataQueuePtr visualDataQueue = std::make_shared<SpectrumVisualDataQueue>();
+
     Timer gTimer;
     double lpsIndex;
     bool preBuf;

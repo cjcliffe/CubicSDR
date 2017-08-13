@@ -41,12 +41,13 @@ public:
 };
 typedef std::shared_ptr<SDRThreadIQData> SDRThreadIQDataPtr;
 typedef ThreadBlockingQueue<SDRThreadIQDataPtr> SDRThreadIQDataQueue;
+typedef std::shared_ptr<SDRThreadIQDataQueue> SDRThreadIQDataQueuePtr;
 
 class SDRThread : public IOThread {
 private:
     bool init();
     void deinit();
-    void readStream(SDRThreadIQDataQueue* iqDataOutQueue);
+    void readStream(SDRThreadIQDataQueuePtr iqDataOutQueue);
     void readLoop();
 
 public:

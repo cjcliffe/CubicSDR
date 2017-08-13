@@ -37,7 +37,7 @@ SpectrumCanvas::SpectrumCanvas(wxWindow *parent, std::vector<int> dispAttrs) :
 
     glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this));
 
-    visualDataQueue.set_max_num_items(1);
+    visualDataQueue->set_max_num_items(1);
             
     SetCursor(wxCURSOR_SIZEWE);
     scaleFactor = 1.0;
@@ -55,7 +55,7 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     const wxSize ClientSize = GetClientSize();
     
     SpectrumVisualDataPtr vData;
-    if (visualDataQueue.try_pop(vData)) {
+    if (visualDataQueue->try_pop(vData)) {
             
         if (vData) {
             spectrumPanel.setPoints(vData->spectrum_points);
@@ -286,8 +286,8 @@ void SpectrumCanvas::attachWaterfallCanvas(WaterfallCanvas* canvas_in) {
     waterfallCanvas = canvas_in;
 }
 
-SpectrumVisualDataQueue *SpectrumCanvas::getVisualDataQueue() {
-    return &visualDataQueue;
+SpectrumVisualDataQueuePtr SpectrumCanvas::getVisualDataQueue() {
+    return visualDataQueue;
 }
 
 void SpectrumCanvas::OnMouseRightDown(wxMouseEvent& event) {

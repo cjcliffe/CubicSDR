@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <queue>
+#include <memory>
 
 #include "InteractiveCanvas.h"
 #include "PrimaryGLContext.h"
@@ -44,7 +45,7 @@ public:
     void setScaleFactorEnabled(bool en);
     void setFFTSize(int fftSize);
     
-    SpectrumVisualDataQueue *getVisualDataQueue();
+    SpectrumVisualDataQueuePtr getVisualDataQueue();
     
 private:
     void OnPaint(wxPaintEvent& event);
@@ -70,7 +71,7 @@ private:
     int bwChange;
     bool resetScaleFactor, scaleFactorEnabled;
     
-    SpectrumVisualDataQueue visualDataQueue;
+    SpectrumVisualDataQueuePtr  visualDataQueue = std::make_shared<SpectrumVisualDataQueue>();
 
 // event table
 wxDECLARE_EVENT_TABLE();

@@ -6,6 +6,7 @@
 #include <queue>
 #include <vector>
 #include <atomic>
+#include <memory>
 
 #include "CubicSDRDefs.h"
 #include "DemodDefs.h"
@@ -78,9 +79,9 @@ protected:
     DemodulatorWorkerThread *workerThread;
     std::thread *t_Worker;
 
-    DemodulatorThreadWorkerCommandQueue *workerQueue;
-    DemodulatorThreadWorkerResultQueue *workerResults;
+    DemodulatorThreadWorkerCommandQueuePtr workerQueue;
+    DemodulatorThreadWorkerResultQueuePtr  workerResults;
 
-    DemodulatorThreadInputQueue* iqInputQueue;
-    DemodulatorThreadPostInputQueue* iqOutputQueue;
+    DemodulatorThreadInputQueuePtr iqInputQueue;
+    DemodulatorThreadPostInputQueuePtr iqOutputQueue;
 };

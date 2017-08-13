@@ -27,11 +27,12 @@ SpectrumVisualProcessor *FFTVisualDataThread::getProcessor() {
 }
 
 void FFTVisualDataThread::run() {
-    DemodulatorThreadInputQueue *pipeIQDataIn = static_cast<DemodulatorThreadInputQueue *>(getInputQueue("IQDataInput"));
-    SpectrumVisualDataQueue *pipeFFTDataOut = static_cast<SpectrumVisualDataQueue *>(getOutputQueue("FFTDataOutput"));
+
+    DemodulatorThreadInputQueuePtr pipeIQDataIn = std::static_pointer_cast<DemodulatorThreadInputQueue>(getInputQueue("IQDataInput"));
+    SpectrumVisualDataQueuePtr pipeFFTDataOut = std::static_pointer_cast<SpectrumVisualDataQueue>(getOutputQueue("FFTDataOutput"));
     
 
-    fftQueue.set_max_num_items(100); 
+    fftQueue->set_max_num_items(100); 
     pipeFFTDataOut->set_max_num_items(100);
 
     //FFT distributor plumbing:
@@ -39,10 +40,10 @@ void FFTVisualDataThread::run() {
     fftDistrib.setInput(pipeIQDataIn);
 
     //The FFT distributor has actually 1 output only, so it doesn't distribute at all :) 
-    fftDistrib.attachOutput(&fftQueue);
+    fftDistrib.attachOutput(fftQueue);
     
     //FFT Distributor output is ==> SpectrumVisualProcessor input.
-    wproc.setInput(&fftQueue);
+    wproc.setInput(fftQueue);
     wproc.attachOutput(pipeFFTDataOut);
     wproc.setup(DEFAULT_FFT_SIZE);
 

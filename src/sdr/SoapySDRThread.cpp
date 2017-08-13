@@ -191,7 +191,7 @@ void SDRThread::assureBufferMinSize(SDRThreadIQData * dataOut, size_t minSize) {
 //Called in an infinite loop, read SaopySDR device to build 
 // a 'this.numElems' sized batch of samples (SDRThreadIQData) and push it into  iqDataOutQueue.
 //this batch of samples is built to represent 1 frame / TARGET_DISPLAY_FPS.
-void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
+void SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
     int flags;
     long long timeNs;
 
@@ -365,9 +365,10 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
 }
 
 void SDRThread::readLoop() {
-    SDRThreadIQDataQueue* iqDataOutQueue = static_cast<SDRThreadIQDataQueue*>( getOutputQueue("IQDataOutput"));
+
+    SDRThreadIQDataQueuePtr iqDataOutQueue = std::static_pointer_cast<SDRThreadIQDataQueue>( getOutputQueue("IQDataOutput"));
     
-    if (iqDataOutQueue == NULL) {
+    if (iqDataOutQueue == nullptr) {
         return;
     }
     

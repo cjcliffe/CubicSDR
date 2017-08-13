@@ -52,10 +52,13 @@ public:
 typedef ThreadBlockingQueue<AudioThreadInputPtr> AudioThreadInputQueue;
 typedef ThreadBlockingQueue<AudioThreadCommand> AudioThreadCommandQueue;
 
+typedef std::shared_ptr<AudioThreadInputQueue> AudioThreadInputQueuePtr;
+typedef std::shared_ptr<AudioThreadCommandQueue> AudioThreadCommandQueuePtr;
+
 class AudioThread : public IOThread {
 public:
     AudioThreadInputPtr currentInput;
-    AudioThreadInputQueue *inputQueue;
+    AudioThreadInputQueuePtr inputQueue;
     std::atomic_uint audioQueuePtr;
     std::atomic_uint underflowCount;
     std::atomic_bool initialized;

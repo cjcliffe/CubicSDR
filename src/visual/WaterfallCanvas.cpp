@@ -99,7 +99,7 @@ void WaterfallCanvas::processInputQueue() {
             while (lpsIndex >= targetVis) {
                 SpectrumVisualDataPtr vData;
 
-                if (visualDataQueue.try_pop(vData)) {
+                if (visualDataQueue->try_pop(vData)) {
                     
                     if (vData) {
                         if (vData->spectrum_points.size() == fft_size * 2) {
@@ -880,8 +880,8 @@ void WaterfallCanvas::OnMouseRightReleased(wxMouseEvent& event) {
     mouseZoom = 1.0;
 }
 
-SpectrumVisualDataQueue *WaterfallCanvas::getVisualDataQueue() {
-    return &visualDataQueue;
+SpectrumVisualDataQueuePtr WaterfallCanvas::getVisualDataQueue() {
+    return visualDataQueue;
 }
 
 void WaterfallCanvas::updateCenterFrequency(long long freq) {
@@ -915,7 +915,7 @@ void WaterfallCanvas::setLinesPerSecond(int lps) {
     linesPerSecond = lps;
 
     //empty all
-    visualDataQueue.flush();
+    visualDataQueue->flush();
 }
 
 void WaterfallCanvas::setMinBandwidth(int min) {

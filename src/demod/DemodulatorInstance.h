@@ -48,7 +48,7 @@ public:
     DemodulatorInstance();
     ~DemodulatorInstance();
 
-    void setVisualOutputQueue(DemodulatorThreadOutputQueue *tQueue);
+    void setVisualOutputQueue(DemodulatorThreadOutputQueuePtr tQueue);
 
     void run();
     void terminate();
@@ -111,7 +111,7 @@ public:
 
     DemodVisualCue *getVisualCue();
     
-    DemodulatorThreadInputQueue *getIQInputDataPipe();
+    DemodulatorThreadInputQueuePtr getIQInputDataPipe();
 
     ModemArgInfoList getModemArgs();
     std::string readModemSetting(std::string setting);
@@ -131,12 +131,12 @@ public:
 #endif
         
 private:
-    DemodulatorThreadInputQueue* pipeIQInputData;
-    DemodulatorThreadPostInputQueue* pipeIQDemodData;
-    AudioThreadInputQueue *pipeAudioData;
+    DemodulatorThreadInputQueuePtr pipeIQInputData;
+    DemodulatorThreadPostInputQueuePtr pipeIQDemodData;
+    AudioThreadInputQueuePtr pipeAudioData;
     DemodulatorPreThread *demodulatorPreThread;
     DemodulatorThread *demodulatorThread;
-    DemodulatorThreadControlCommandQueue *threadQueueControl;
+    DemodulatorThreadControlCommandQueuePtr threadQueueControl;
 
     //protects child thread creation and termination 
     std::mutex m_thread_control_mutex;

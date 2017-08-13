@@ -28,6 +28,8 @@ typedef std::shared_ptr<ScopeRenderData> ScopeRenderDataPtr;
 
 typedef ThreadBlockingQueue<ScopeRenderDataPtr> ScopeRenderDataQueue;
 
+typedef std::shared_ptr<ScopeRenderDataQueue> ScopeRenderDataQueuePtr;
+
 class ScopeVisualProcessor : public VisualProcessor<AudioThreadInput, ScopeRenderData> {
 public:
     ScopeVisualProcessor();
