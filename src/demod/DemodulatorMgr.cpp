@@ -278,7 +278,7 @@ DemodulatorInstance *DemodulatorMgr::getLastDemodulatorWith(const std::string& t
 	return nullptr;
 }
 
-void DemodulatorMgr::garbageCollect(bool forcedGC, int maxWaitForTerminationMs) {
+bool DemodulatorMgr::garbageCollect(bool forcedGC, int maxWaitForTerminationMs) {
     
 #define SPIN_WAIT_SLEEP_MS 5
 
@@ -313,7 +313,7 @@ void DemodulatorMgr::garbageCollect(bool forcedGC, int maxWaitForTerminationMs) 
 
                 //only garbage collect 1 demod at a time.
                 if (!forcedGC) {
-                    return;
+                    return true;
                 }
             }
             else {
@@ -327,9 +327,11 @@ void DemodulatorMgr::garbageCollect(bool forcedGC, int maxWaitForTerminationMs) 
 
         if (currentWaitCycle >= nbCyclesToWait) {
             std::cout << "ERROR: DemodulatorMgr::garbageCollect() has not terminated in time ! (> " << (currentWaitCycle * SPIN_WAIT_SLEEP_MS) << " ms)" << std::endl << std::flush;
-            return;
+            return false;
         }
     } //end while not empty
+
+    return true;
 }
 
 void DemodulatorMgr::updateLastState() {

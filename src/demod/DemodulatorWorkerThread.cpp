@@ -34,6 +34,7 @@ void DemodulatorWorkerThread::run() {
         //we are waiting for the first command to show up (blocking!)
         //then consuming the commands until done. 
         while (!done && !stopping) {
+
             if (!commandQueue->pop(command, HEARTBEAT_CHECK_PERIOD_MICROS)) {
                 continue;
             }

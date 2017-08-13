@@ -384,39 +384,61 @@ bool CubicSDR::OnInit() {
 int CubicSDR::OnExit() {
 #if USE_HAMLIB
     if (rigIsActive()) {
-        std::cout << "Terminating Rig thread.." << std::endl;
+        std::cout << "Terminating Rig thread.."  << std::endl << std::flush;
         stopRig();
     }
 #endif
 
+    bool terminationSequenceOK = true;
+
     //The thread feeding them all should be terminated first, so: 
-    std::cout << "Terminating SDR thread.." << std::endl;
+    std::cout << "Terminating SDR thread.." << std::endl << std::flush ;
     sdrThread->terminate();
-    sdrThread->isTerminated(3000);
-  
-    std::cout << "Terminating SDR post-processing thread.." << std::endl;
+    terminationSequenceOK = terminationSequenceOK && sdrThread->isTerminated(3000);
+
+    //in case termination sequence goes wrong, kill App brutally now because it can get stuck. 
+    if (!terminationSequenceOK) {
+        //no trace here because it could occur if the device is not started.  
+        ::exit(11);
+    }
+
+    std::cout << "Terminating SDR post-processing thread.." << std::endl << std::flush;
     sdrPostThread->terminate();
 
     //Wait for termination for sdrPostThread second:: since it is doing
     //mostly blocking push() to the other threads, they must stay alive
     //so that sdrPostThread can complete a processing loop and die.
-    sdrPostThread->isTerminated(3000);
+    terminationSequenceOK = terminationSequenceOK && sdrPostThread->isTerminated(3000);
 
-    std::cout << "Terminating All Demodulators.." << std::endl;
+    //in case termination sequence goes wrong, kill App brutally now because it can get stuck. 
+    if (!terminationSequenceOK) {
+        std::cout << "Cannot terminate application properly, calling exit() now." << std::endl << std::flush;
+        ::exit(12);
+    }
+
+    std::cout << "Terminating All Demodulators.." << std::endl << std::flush;
     demodMgr.terminateAll();
+
     //wait for effective death of all demodulators before continuing.
-    demodMgr.garbageCollect(true, 3000);
+    terminationSequenceOK = terminationSequenceOK && demodMgr.garbageCollect(true, 3000);
    
-    std::cout << "Terminating Visual Processor threads.." << std::endl;
+    std::cout << "Terminating Visual Processor threads.." << std::endl << std::flush;
     spectrumVisualThread->terminate();
     if (demodVisualThread) {
         demodVisualThread->terminate();
     }
     
     //Wait nicely
-    spectrumVisualThread->isTerminated(1000);
+    terminationSequenceOK = terminationSequenceOK &&  spectrumVisualThread->isTerminated(1000);
+
     if (demodVisualThread) {
-        demodVisualThread->isTerminated(1000);
+        terminationSequenceOK = terminationSequenceOK && demodVisualThread->isTerminated(1000);
+    }
+
+    //in case termination sequence goes wrong, kill App brutally because it can get stuck. 
+    if (!terminationSequenceOK) {
+        std::cout << "Cannot terminate application properly, calling exit() now." << std::endl << std::flush;
+        ::exit(13);
     }
 
     //Then join the thread themselves:
@@ -468,6 +490,8 @@ int CubicSDR::OnExit() {
 
     delete m_glContext;
     m_glContext = nullptr;
+
+    std::cout << "Application termination complete." << std::endl << std::flush;
 
 #ifdef __APPLE__
     AudioThread::deviceCleanup();

@@ -75,7 +75,8 @@ public:
     //and GC one demod per call. 
     // if forcedGC = true and maxWaitForTerminationMs > 0, do not
     //block the method more than maxWaitForTerminationMs millisecs before returning.
-    void garbageCollect(bool forcedGC = false, int maxWaitForTerminationMs = 0);
+    //Returns: true if forcedGC = false, else true only if all deleted demodulators were GCs before maxWaitForTerminationMs.
+    bool garbageCollect(bool forcedGC = false, int maxWaitForTerminationMs = 0);
     
 private:
 
