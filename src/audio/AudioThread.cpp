@@ -84,7 +84,7 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
     }
 
     if (status) {
-       std::cout << "Audio buffer underflow.." << (src->underflowCount++) << std::endl;
+       std::cout << "Audio buffer underflow.." << (src->underflowCount++) << std::endl << std::flush;
     }
 
     if (src->boundThreads.empty()) {

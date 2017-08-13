@@ -47,13 +47,18 @@ class SDRThread : public IOThread {
 private:
     bool init();
     void deinit();
-    void readStream(SDRThreadIQDataQueuePtr iqDataOutQueue);
+    
+    //returns the SoapyDevice readStream return value,
+    //i.e if >= 0 the numbre of samples read, else if < 0 an error code.
+    int readStream(SDRThreadIQDataQueuePtr iqDataOutQueue);
+
     void readLoop();
 
 public:
     SDRThread();
     ~SDRThread();
-    enum SDRThreadState { SDR_THREAD_MESSAGE, SDR_THREAD_INITIALIZED, SDR_THREAD_FAILED };
+
+    enum SDRThreadState { SDR_THREAD_MESSAGE, SDR_THREAD_INITIALIZED, SDR_THREAD_FAILED};
     
     virtual void run();
 

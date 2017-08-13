@@ -8,6 +8,7 @@
 #include <string>
 #include <algorithm>
 #include <SoapySDR/Logger.h>
+#include <chrono>
 
 #define TARGET_DISPLAY_FPS 60
 
@@ -191,7 +192,7 @@ void SDRThread::assureBufferMinSize(SDRThreadIQData * dataOut, size_t minSize) {
 //Called in an infinite loop, read SaopySDR device to build 
 // a 'this.numElems' sized batch of samples (SDRThreadIQData) and push it into  iqDataOutQueue.
 //this batch of samples is built to represent 1 frame / TARGET_DISPLAY_FPS.
-void SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
+int SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
     int flags;
     long long timeNs;
 
@@ -234,12 +235,16 @@ void SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
         }
     } //end if numOverflow > 0
     
+    int readStreamCode = 0;
+
     //2. attempt readStream() at most nElems, by mtElems-sized chunks, append in dataOut->data directly.
     while (n_read < nElems && !stopping) {
         
         //Whatever the number of remaining samples needed to reach nElems,  we always try to read a mtElems-size chunk,
         //from which SoapySDR effectively returns n_stream_read.
         int n_stream_read = device->readStream(stream, buffs, mtElems, flags, timeNs);
+        
+        readStreamCode = n_stream_read;
 
         //if the n_stream_read <= 0, bail out from reading. 
         if (n_stream_read == 0) {
@@ -250,7 +255,7 @@ void SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
             std::cout << "SDRThread::readStream(): 2. SoapySDR read failed with code: " << n_stream_read << std::endl;
             break;
         }
-
+        
         //sucess read beyond nElems, so with overflow:
         if ((n_read + n_stream_read) > nElems) {
 
@@ -362,10 +367,15 @@ void SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
         //saturation, let a chance to the other threads to consume the existing samples
         std::this_thread::yield();
     }
+
+    return readStreamCode;
 }
+
 
 void SDRThread::readLoop() {
 
+    #define STREAM_READ_WATCHDOG_S (2)
+    
     SDRThreadIQDataQueuePtr iqDataOutQueue = std::static_pointer_cast<SDRThreadIQDataQueue>( getOutputQueue("IQDataOutput"));
     
     if (iqDataOutQueue == nullptr) {
@@ -373,11 +383,36 @@ void SDRThread::readLoop() {
     }
     
     updateGains();
+    
+    auto streamWatchDog = std::chrono::steady_clock::now();
 
     while (!stopping.load()) {
+
         updateSettings();
-        readStream(iqDataOutQueue);
-    }
+
+        if (readStream(iqDataOutQueue) > 0) {
+            // record the date of the last good read.
+            streamWatchDog = std::chrono::steady_clock::now();
+        }
+
+        auto now = std::chrono::steady_clock::now();
+
+        //check watchdog value: if the date is too old, deinit end init the device.
+        std::chrono::duration<double> diff = now - streamWatchDog;
+
+        if (diff.count() > STREAM_READ_WATCHDOG_S) {
+            
+            std::cout << "SDRThread::readStream(): Restarting stream after too many read erros..." << std::endl << std::flush;
+            
+            deinit();
+            init();
+
+            streamWatchDog = std::chrono::steady_clock::now();
+
+            std::cout << "SDRThread::readStream(): stream restarted." << std::endl << std::flush;
+        }
+    } //End while
+
     iqDataOutQueue->flush();
 }
 
