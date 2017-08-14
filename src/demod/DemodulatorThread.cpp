@@ -313,8 +313,8 @@ void DemodulatorThread::run() {
             if (!muted.load() && (!wxGetApp().getSoloMode() || (demodInstance == wxGetApp().getDemodMgr().getLastActiveDemodulator()))) {
                 //non-blocking push needed for audio out
                 if (!audioOutputQueue->try_push(ati)) {
-                    //Comment this trace, it creates to many false alarms :)
-                    //std::cout << "DemodulatorThread::run() cannot push ati into audioOutputQueue, is full !" << std::endl;
+                  
+                    std::cout << "DemodulatorThread::run() cannot push ati into audioOutputQueue, is full !" << std::endl;
                     std::this_thread::yield();
                 }
             }
@@ -348,10 +348,6 @@ void DemodulatorThread::run() {
 
 void DemodulatorThread::terminate() {
     IOThread::terminate();
-    DemodulatorThreadPostIQDataPtr inp(new DemodulatorThreadPostIQData);    // push dummy to nudge queue
-    
-    //VSO: blocking push
-    iqInputQueue->push(inp);
 }
 
 bool DemodulatorThread::isMuted() {

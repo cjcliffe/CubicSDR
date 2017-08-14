@@ -476,9 +476,6 @@ void AudioThread::run() {
 
 void AudioThread::terminate() {
     IOThread::terminate();
-    AudioThreadCommand endCond;   // push an empty input to bump the queue
-    //VSO: blocking push
-    cmdQueue.push(endCond);
 }
 
 bool AudioThread::isActive() {

@@ -32,8 +32,6 @@ public:
 
     msresamp_crcf iqResampler;
     double iqResampleRatio;
-    
-    DemodulatorThread *demodThread;
 
     long long sampleRate;
     unsigned int bandwidth;

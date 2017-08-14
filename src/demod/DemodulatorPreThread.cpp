@@ -348,17 +348,9 @@ int DemodulatorPreThread::getAudioSampleRate() {
 
 void DemodulatorPreThread::terminate() {
 
-    //make non-blocking calls to be sure threads are flagged for termination before attempting the blocking calls.
+    //make non-blocking calls to be sure threads are flagged for termination.
     IOThread::terminate();
     workerThread->terminate();
-
-    DemodulatorThreadIQDataPtr inp(new DemodulatorThreadIQData);    // push dummy to nudge queue
-    //VSO: blocking push :
-    iqInputQueue->push(inp);
- 
-    DemodulatorWorkerThreadCommand command;
-    //VSO: blocking push :
-    workerQueue->push(command);
 
     //wait blocking for termination here, it could be long with lots of modems and we MUST terminate properly,
     //else better kill the whole application...

@@ -235,9 +235,6 @@ void SDRPostThread::run() {
 
 void SDRPostThread::terminate() {
     IOThread::terminate();
-    SDRThreadIQDataPtr dummy(new SDRThreadIQData);
-    //VSO: blocking push
-    iqDataInQueue->push(dummy);
 }
 
 void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {

@@ -116,6 +116,4 @@ void DemodulatorWorkerThread::run() {
 
 void DemodulatorWorkerThread::terminate() {
     IOThread::terminate();
-    DemodulatorWorkerThreadCommand inp;    // push dummy to nudge queue
-    commandQueue->push(inp);
 }
