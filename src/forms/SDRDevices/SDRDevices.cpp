@@ -132,24 +132,10 @@ void SDRDevicesDialog::refreshDeviceProperties() {
         devSettings["name"] = m_propertyGrid->Append( new wxStringProperty("Name", wxPG_LABEL, devConfig->getDeviceName()) );
         //A-2) Offset
         devSettings["offset"] = m_propertyGrid->Append( new wxIntProperty("Offset (Hz)", wxPG_LABEL, devConfig->getOffset()) );
-        //A-3) ppm
-        devSettings["ppm"] = m_propertyGrid->Append(new wxIntProperty("Frequency Correction (ppm)", wxPG_LABEL, devConfig->getPPM()));
-
-
-        //A-4) AGC control
-        SoapySDR::ArgInfo agcArg;
-
-        agcArg.type = SoapySDR::ArgInfo::BOOL;
-        agcArg.units = "";
-        agcArg.name = "Automatic Gain";
-        agcArg.key = "agc_mode";
-        agcArg.value = devConfig->getAGCMode()?"true":"false"; //must be lowercase for addArgInfoProperty
-
-        devSettings["agc_mode"] = addArgInfoProperty(m_propertyGrid, agcArg);
-       
-        //A-5) Antennas, is there are more than 1 RX antenna, else do not expose the setting.
+        
+        //A-3) Antennas, is there are more than 1 RX antenna, else do not expose the setting.
         //get the saved setting
-        const std::string& currentSetAntenna = wxGetApp().getAntennaName();
+        const std::string& currentSetAntenna = devConfig->getAntennaName();
 
         //compare to the list of existing antennas
         SoapySDR::ArgInfo antennasArg;
@@ -184,7 +170,7 @@ void SDRDevicesDialog::refreshDeviceProperties() {
 
         } //end if more than 1 antenna
 
-        //A-6) Sample_rate:
+        //A-4) Sample_rate:
         long currentSampleRate = wxGetApp().getSampleRate();
         long deviceSampleRate = devConfig->getSampleRate();
         
@@ -524,30 +510,8 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
             wxGetApp().setOffset(offset);
         }
 
-    } else if (dev && event.GetProperty() == devSettings["ppm"]) {
-        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
-
-        int ppm = event.GetPropertyValue().GetInteger();
-
-        devConfig->setPPM(ppm);
-
-        if (dev->isActive() || !wxGetApp().getDevice()) {
-
-            wxGetApp().setPPM(ppm);
-        }
-    }
-    else if (dev && event.GetProperty() == devSettings["agc_mode"]) {
-
-        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
-
-        bool agcMode = event.GetPropertyValue().GetBool();
-
-        devConfig->setAGCMode(agcMode);
-        if (dev->isActive() || !wxGetApp().getDevice()) {
-            wxGetApp().setAGCMode(agcMode);
-        }
- 
-    } else if (dev && event.GetProperty() == devSettings["sample_rate"]) {
+    } 
+    else if (dev && event.GetProperty() == devSettings["sample_rate"]) {
 
         DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
         
