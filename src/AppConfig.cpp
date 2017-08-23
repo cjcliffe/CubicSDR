@@ -39,6 +39,14 @@ long DeviceConfig::getSampleRate() {
     return sampleRate.load();
 }
 
+void DeviceConfig::setAntennaName(const std::string& name) {
+    antennaName = name;
+}
+
+const std::string& DeviceConfig::getAntennaName() {
+    return antennaName;
+}
+
 void DeviceConfig::setAGCMode(bool agcMode) {
     this->agcMode.store(agcMode);
 }
@@ -81,13 +89,19 @@ std::string DeviceConfig::getDeviceName() {
 }
 
 void DeviceConfig::save(DataNode *node) {
+
     std::lock_guard < std::mutex > lock(busy_lock);
+    
     *node->newChild("id") = deviceId;
     *node->newChild("name") = deviceName;
     *node->newChild("ppm") = ppm.load();
     *node->newChild("offset") = offset.load();
     *node->newChild("sample_rate") = sampleRate.load();
     *node->newChild("agc_mode") = agcMode.load()?1:0;
+
+    if (!antennaName.empty()) {
+        *node->newChild("antenna") = antennaName;
+    }
 
     if (streamOpts.size()) {
         DataNode *streamOptsNode = node->newChild("streamOpts");
@@ -148,6 +162,12 @@ void DeviceConfig::load(DataNode *node) {
         long sampleRateValue = 0;
         sample_rate_node->element()->get(sampleRateValue);
         setSampleRate(sampleRateValue);
+    }
+    if (node->hasAnother("antenna")) {
+        DataNode *antenna_node = node->getNext("antenna");
+        std::string antennaNameValue;
+        antenna_node->element()->get(antennaNameValue);
+        setAntennaName(antennaNameValue);
     }
     if (node->hasAnother("streamOpts")) {
         DataNode *streamOptsNode = node->getNext("streamOpts");

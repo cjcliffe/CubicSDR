@@ -76,6 +76,9 @@ public:
     
     void setOffset(long long ofs);
     long long getOffset();
+
+    void setAntenna(const std::string& name);
+    std::string getAntenna();
     
     void setSampleRate(long rate);
     long getSampleRate();
@@ -119,7 +122,8 @@ protected:
     std::atomic_llong frequency, offset, lock_freq;
     std::atomic_int ppm, numElems, mtuElems, numChannels;
     std::atomic_bool hasPPM, hasHardwareDC;
-    std::atomic_bool agc_mode, rate_changed, freq_changed, offset_changed,
+    std::string antennaName;
+    std::atomic_bool agc_mode, rate_changed, freq_changed, offset_changed, antenna_changed,
         ppm_changed, device_changed, agc_mode_changed, gain_value_changed, setting_value_changed, frequency_locked, frequency_lock_init, iq_swap;
 
     std::mutex gain_busy;

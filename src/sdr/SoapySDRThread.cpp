@@ -28,6 +28,7 @@ SDRThread::SDRThread() : IOThread(), buffers("SDRThreadBuffers") {
     rate_changed.store(false);
     freq_changed.store(false);
     offset_changed.store(false);
+    antenna_changed.store(false);
     ppm_changed .store(false);
     device_changed.store(false);
 
@@ -437,6 +438,13 @@ void SDRThread::updateSettings() {
     if (!stream) {
         return;
     }
+
+    if (antenna_changed.load()) {
+        
+       device->setAntenna(SOAPY_SDR_RX, 0, antennaName);
+           
+       antenna_changed.store(false);
+    }
     
     if (offset_changed.load()) {
         if (!freq_changed.load()) {
@@ -523,7 +531,6 @@ void SDRThread::updateSettings() {
         
         gain_value_changed.store(false);
     }
-    
     
     if (setting_value_changed.load()) {
 
@@ -652,11 +659,31 @@ void SDRThread::unlockFrequency() {
 void SDRThread::setOffset(long long ofs) {
     offset.store(ofs);
     offset_changed.store(true);
+
+    DeviceConfig *devConfig = deviceConfig.load();
+    if (devConfig) {
+        devConfig->setOffset(ofs);
+    }
+
 //    std::cout << "Set offset: " << offset.load() << std::endl;
 }
 
 long long SDRThread::getOffset() {
     return offset.load();
+}
+
+void SDRThread::setAntenna(const std::string& name) {
+    antennaName = name;
+    antenna_changed.store(true);
+
+    DeviceConfig *devConfig = deviceConfig.load();
+    if (devConfig) {
+        devConfig->setAntennaName(antennaName);
+    }
+}
+
+std::string SDRThread::getAntenna() {
+    return antennaName;
 }
 
 void SDRThread::setSampleRate(long rate) {
@@ -675,6 +702,12 @@ long SDRThread::getSampleRate() {
 void SDRThread::setPPM(int ppm) {
     this->ppm.store(ppm);
     ppm_changed.store(true);
+
+    DeviceConfig *devConfig = deviceConfig.load();
+    if (devConfig) {
+        devConfig->setPPM(ppm);
+    }
+
 //    std::cout << "Set PPM: " << this->ppm.load() << std::endl;
 }
 
