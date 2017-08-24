@@ -166,6 +166,10 @@ private:
     bool actionOnMenuLoadSave(wxCommandEvent& event);
     bool actionOnMenuRig(wxCommandEvent& event);
 
+    wxString getSettingsLabel(const std::string& settingsName, 
+                              const std::string& settingsValue, 
+                              const std::string& settingsSuffix = "");
+
     ScopeCanvas *scopeCanvas;
     SpectrumCanvas *spectrumCanvas;
     WaterfallCanvas *waterfallCanvas;

@@ -152,6 +152,10 @@ void SDRDevicesDialog::refreshDeviceProperties() {
             if (found_i != antennaOpts.end()) {
                 antennaToSelect = currentSetAntenna;
             }
+            else {
+                //erroneous antenna name, re-write device config with the first choice of teh list.
+                devConfig->setAntennaName(antennaToSelect);
+            }
 
             //build device settings
             for (std::string antenna : antennaOpts) {
@@ -169,6 +173,9 @@ void SDRDevicesDialog::refreshDeviceProperties() {
             deviceArgs["antenna"] = antennasArg;
 
         } //end if more than 1 antenna
+        else {
+            devConfig->setAntennaName("");
+        }
 
         //A-4) Sample_rate:
         long currentSampleRate = wxGetApp().getSampleRate();

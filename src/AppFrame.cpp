@@ -26,6 +26,8 @@
 #include "ImagePanel.h"
 
 #include <thread>
+#include <iostream>
+#include <iomanip>
 
 #include <wx/panel.h>
 #include <wx/numformatter.h>
@@ -101,7 +103,7 @@ AppFrame::AppFrame() :
 #endif
             
     gainCanvas = new GainCanvas(demodPanel, attribList);
-    gainCanvas->setHelpTip("Tuner gains in dB. Click / use Mousewheel to change.");
+    gainCanvas->setHelpTip("Tuner gains, usually in dB. Click / use Mousewheel to change.");
     gainSizerItem = demodTray->Add(gainCanvas, 0, wxEXPAND | wxALL, 0);
     gainSizerItem->Show(false);
     gainSpacerItem = demodTray->AddSpacer(1);
@@ -754,11 +756,11 @@ void AppFrame::updateDeviceParams() {
 
     settingsMenuItems.clear();
 
-    settingsMenuItems[wxID_SET_DB_OFFSET] = newSettingsMenu->Append(wxID_SET_DB_OFFSET, wxT("Power Level Offset :  ") + std::to_string(wxGetApp().getConfig()->getDBOffset()) + wxT(" dB"));
-    settingsMenuItems[wxID_SET_FREQ_OFFSET] =  newSettingsMenu->Append(wxID_SET_FREQ_OFFSET, wxT("Frequency Offset :  ") + std::to_string(wxGetApp().getOffset()) + wxT(" Hz"));
+    settingsMenuItems[wxID_SET_DB_OFFSET] = newSettingsMenu->Append(wxID_SET_DB_OFFSET, getSettingsLabel("Power Level Offset",  std::to_string(wxGetApp().getConfig()->getDBOffset()), "dB"));
+    settingsMenuItems[wxID_SET_FREQ_OFFSET] =  newSettingsMenu->Append(wxID_SET_FREQ_OFFSET, getSettingsLabel("Frequency Offset", std::to_string(wxGetApp().getOffset()) , "Hz"));
 
     if (devInfo->hasCORR(SOAPY_SDR_RX, 0)) {
-        settingsMenuItems[wxID_SET_PPM] = newSettingsMenu->Append(wxID_SET_PPM, wxT("Device PPM :  ") + std::to_string(wxGetApp().getPPM()) + wxT(" ppm"));
+        settingsMenuItems[wxID_SET_PPM] = newSettingsMenu->Append(wxID_SET_PPM, getSettingsLabel("Device PPM", std::to_string(wxGetApp().getPPM()) , "ppm"));
     }
 
     if (devInfo->getDriver() != "rtlsdr") {
@@ -804,7 +806,8 @@ void AppFrame::updateDeviceParams() {
         
         //Change the Antenna label to indicate the current antenna.
         if (!antennaChecked.empty()) {
-            antennaMenuItems[wxID_ANTENNA_CURRENT]->SetItemLabel(wxT("Antenna :  ") + antennaChecked);
+        
+            antennaMenuItems[wxID_ANTENNA_CURRENT]->SetItemLabel(getSettingsLabel("Antenna", antennaChecked));
         }
     }
    
@@ -829,10 +832,10 @@ void AppFrame::updateDeviceParams() {
             i++;
         } else if (arg.type == SoapySDR::ArgInfo::INT) {
             
-            settingsMenuItems[wxID_SETTINGS_BASE + i] = newSettingsMenu->Append(wxID_SETTINGS_BASE + i, wxString(arg.name) + " :  "  + currentVal, arg.description);
+            settingsMenuItems[wxID_SETTINGS_BASE + i] = newSettingsMenu->Append(wxID_SETTINGS_BASE + i, getSettingsLabel(arg.name, currentVal, arg.units), arg.description);
             i++;
         } else if (arg.type == SoapySDR::ArgInfo::FLOAT) {
-            settingsMenuItems[wxID_SETTINGS_BASE + i] = newSettingsMenu->Append(wxID_SETTINGS_BASE + i, wxString(arg.name) + " :  " + currentVal, arg.description);
+            settingsMenuItems[wxID_SETTINGS_BASE + i] = newSettingsMenu->Append(wxID_SETTINGS_BASE + i, getSettingsLabel(arg.name, currentVal, arg.units), arg.description);
             i++;
         } else if (arg.type == SoapySDR::ArgInfo::STRING) {
             if (arg.options.size()) {
@@ -856,13 +859,13 @@ void AppFrame::updateDeviceParams() {
                     j++;
                     i++;
                 }
-                settingsMenuItems[wxID_SETTINGS_BASE + i] = newSettingsMenu->AppendSubMenu(subMenu, wxString(arg.name) + " :  " + currentVal, arg.description);
+                settingsMenuItems[wxID_SETTINGS_BASE + i] = newSettingsMenu->AppendSubMenu(subMenu, getSettingsLabel(arg.name, currentVal, arg.units), arg.description);
                 //map subitems ids to their parent item !
                 for (int currentSubId : subItemsIds) {
                     settingsMenuItems[currentSubId] = settingsMenuItems[wxID_SETTINGS_BASE + i];
                 }
             } else {
-                settingsMenuItems[wxID_SETTINGS_BASE + i] = newSettingsMenu->Append(wxID_SETTINGS_BASE + i, wxString(arg.name) + " :  " + currentVal, arg.description);
+                settingsMenuItems[wxID_SETTINGS_BASE + i] = newSettingsMenu->Append(wxID_SETTINGS_BASE + i, getSettingsLabel(arg.name, currentVal, arg.units), arg.description);
                 i++;
             }
         }
@@ -1153,8 +1156,8 @@ bool AppFrame::actionOnMenuSettings(wxCommandEvent& event) {
     if (event.GetId() >= wxID_ANTENNAS_BASE && event.GetId() < wxID_ANTENNAS_BASE + antennaNames.size()) {
 
         wxGetApp().setAntennaName(antennaNames[event.GetId() - wxID_ANTENNAS_BASE]);
-
-        antennaMenuItems[wxID_ANTENNA_CURRENT]->SetItemLabel(wxT("Antenna :  ") + wxGetApp().getAntennaName());
+      
+        antennaMenuItems[wxID_ANTENNA_CURRENT]->SetItemLabel(getSettingsLabel("Antenna", wxGetApp().getAntennaName()));
         return true;
     } 
     else if (event.GetId() >= wxID_SETTINGS_BASE && event.GetId() < settingsIdMax) {
@@ -1168,9 +1171,9 @@ bool AppFrame::actionOnMenuSettings(wxCommandEvent& event) {
             if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size() && setIdx >= menuIdx && setIdx < menuIdx + (int)arg.options.size()) {
                 int optIdx = setIdx - menuIdx;
                 wxGetApp().getSDRThread()->writeSetting(arg.key, arg.options[optIdx]);
+                
                 //update parent menu item label to display the current value
-                settingsMenuItems[menuIdx + wxID_SETTINGS_BASE]->SetItemLabel(wxString(arg.name) + " :  " + arg.options[optIdx]);
-              
+                settingsMenuItems[menuIdx + wxID_SETTINGS_BASE]->SetItemLabel(getSettingsLabel(arg.name, arg.options[optIdx], arg.units));             
                 break;
             }
             else if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size()) {
@@ -1184,7 +1187,7 @@ bool AppFrame::actionOnMenuSettings(wxCommandEvent& event) {
                 else if (arg.type == SoapySDR::ArgInfo::STRING) {
                     wxString stringVal = wxGetTextFromUser(arg.description, arg.name, wxGetApp().getSDRThread()->readSetting(arg.key));
 
-                    settingsMenuItems[menuIdx + wxID_SETTINGS_BASE]->SetItemLabel(wxString(arg.name) + " :  " + stringVal);
+                    settingsMenuItems[menuIdx + wxID_SETTINGS_BASE]->SetItemLabel(getSettingsLabel(arg.name, stringVal.ToStdString(), arg.units));
 
                     if (stringVal.ToStdString() != "") {
                         wxGetApp().getSDRThread()->writeSetting(arg.key, stringVal.ToStdString());
@@ -1201,7 +1204,7 @@ bool AppFrame::actionOnMenuSettings(wxCommandEvent& event) {
                     }
                     int intVal = wxGetNumberFromUser(arg.description, arg.units, arg.name, currentVal, arg.range.minimum(), arg.range.maximum(), this);
 
-                    settingsMenuItems[menuIdx + wxID_SETTINGS_BASE]->SetItemLabel(wxString(arg.name) + " :  " + std::to_string(intVal));
+                    settingsMenuItems[menuIdx + wxID_SETTINGS_BASE]->SetItemLabel(getSettingsLabel(arg.name, std::to_string(intVal), arg.units));
 
                     if (intVal != -1) {
                         wxGetApp().getSDRThread()->writeSetting(arg.key, std::to_string(intVal));
@@ -1216,7 +1219,7 @@ bool AppFrame::actionOnMenuSettings(wxCommandEvent& event) {
                     catch (std::invalid_argument e) {
                         // ...
                     }
-                    settingsMenuItems[menuIdx + wxID_SETTINGS_BASE]->SetItemLabel(wxString(arg.name) + " :  " + floatVal);
+                    settingsMenuItems[menuIdx + wxID_SETTINGS_BASE]->SetItemLabel(getSettingsLabel(arg.name, floatVal.ToStdString(), arg.units));
                     break;
                 }
                 else {
@@ -1572,7 +1575,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         if (ofs != -1) {
             wxGetApp().setOffset(ofs);
           
-            settingsMenuItems[wxID_SET_FREQ_OFFSET]->SetItemLabel(wxT("Frequency Offset :  ") + std::to_string(wxGetApp().getOffset()) + wxT(" Hz"));
+            settingsMenuItems[wxID_SET_FREQ_OFFSET]->SetItemLabel(getSettingsLabel("Frequency Offset", std::to_string(wxGetApp().getOffset()), "Hz"));
         }
     } 
     else if (event.GetId() == wxID_SET_DB_OFFSET) {
@@ -1580,7 +1583,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
                                        "Power Level Offset", wxGetApp().getConfig()->getDBOffset(), -1000, 1000, this);
         if (ofs != -1) {
             wxGetApp().getConfig()->setDBOffset(ofs);
-            settingsMenuItems[wxID_SET_DB_OFFSET]->SetItemLabel(wxT("Power Level Offset :  ") + std::to_string(wxGetApp().getConfig()->getDBOffset()) + wxT(" dB"));
+            settingsMenuItems[wxID_SET_DB_OFFSET]->SetItemLabel(getSettingsLabel("Power Level Offset", std::to_string(wxGetApp().getConfig()->getDBOffset()), "dB"));
         }
     } 
     else if (actionOnMenuAGC(event)) {
@@ -1594,7 +1597,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
                 "Frequency Correction", wxGetApp().getPPM(), -1000, 1000, this);
             wxGetApp().setPPM(ofs);
 
-            settingsMenuItems[wxID_SET_PPM]->SetItemLabel(wxT("Device PPM :  ") + std::to_string(wxGetApp().getPPM()) + wxT(" ppm"));
+            settingsMenuItems[wxID_SET_PPM]->SetItemLabel(getSettingsLabel("Device PPM", std::to_string(wxGetApp().getPPM()), "ppm"));
     } 
     else if (actionOnMenuLoadSave(event)) {
         return;
@@ -2733,4 +2736,20 @@ void AppFrame::setStatusText(wxWindow* window, std::string statusText) {
 void AppFrame::setStatusText(std::string statusText, int value) {
     GetStatusBar()->SetStatusText(
         wxString::Format(statusText.c_str(), wxNumberFormatter::ToString((long)value, wxNumberFormatter::Style_WithThousandsSep)));
+}
+
+wxString AppFrame::getSettingsLabel(const std::string& settingsName,
+                                    const std::string& settingsValue,
+                                    const std::string& settingsSuffix) {
+
+    size_t itemStringSize = 30;
+    int justifValueSize = itemStringSize - settingsName.length() - 1;
+
+    std::stringstream full_label;
+    
+    full_label << settingsName + " : ";
+    full_label << std::right << std::setw(justifValueSize);
+    full_label << settingsValue + " " + settingsSuffix;
+   
+    return wxString(full_label.str());
 }
