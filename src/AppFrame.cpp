@@ -1700,7 +1700,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     }
 
     //Refresh the current TX antenna on, if any:
-    if (devInfo) {
+    if ((antennaMenuItems.find(wxID_ANTENNA_CURRENT_TX) != antennaMenuItems.end()) && devInfo) {
         std::string actualTxAntenna = devInfo->getAntennaName(SOAPY_SDR_TX, 0);
         
         if (currentTXantennaName != actualTxAntenna) {

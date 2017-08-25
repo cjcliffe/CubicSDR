@@ -73,7 +73,7 @@ void FFTVisualDataThread::run() {
         fftDistrib.run();
       
         // Make wproc do a FFT of each of the sample sets provided by fftDistrib: 
-        while (!wproc.isInputEmpty()) {
+        while (!stopping && !wproc.isInputEmpty()) {
             wproc.run();
         }
     }
