@@ -91,6 +91,9 @@ public:
 
     void setOffset(long long ofs);
     long long getOffset();
+
+    void setAntennaName(const std::string& name);
+    const std::string& getAntennaName();
     
     void setDBOffset(int ofs);
     int getDBOffset();
@@ -98,6 +101,7 @@ public:
     void setSampleRate(long long rate_in);
     long long getSampleRate();
 
+   
     std::vector<SDRDeviceInfo *> *getDevices();
     void setDevice(SDRDeviceInfo *dev, int waitMsForTermination);
     void stopDevice(bool store, int waitMsForTermination);
@@ -189,6 +193,7 @@ private:
     std::atomic_llong offset;
     std::atomic_int ppm, snap;
     std::atomic_llong sampleRate;
+    std::string antennaName;
     std::atomic_bool agcMode;
 
     SDRThread *sdrThread = nullptr;

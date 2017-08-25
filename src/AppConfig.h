@@ -31,6 +31,9 @@ public:
     void setSampleRate(long srate);
     long getSampleRate();
 
+    void setAntennaName(const std::string& name);
+    const std::string& getAntennaName();
+
     void setAGCMode(bool agcMode);
     bool getAGCMode();
     
@@ -64,12 +67,14 @@ public:
 private:
     std::string deviceId;
     std::string deviceName;
+
     std::mutex busy_lock;
 
     std::atomic_int ppm;
     std::atomic_llong offset;
     std::atomic_bool agcMode;
     std::atomic_long sampleRate;
+    std::string antennaName;
     ConfigSettings streamOpts;
     ConfigGains gains;
     std::map<std::string, std::string> settings;

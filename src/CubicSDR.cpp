@@ -629,9 +629,22 @@ long long CubicSDR::getOffset() {
 
 void CubicSDR::setOffset(long long ofs) {
     offset = ofs;
-    sdrThread->setOffset(offset);
-    SDRDeviceInfo *dev = getDevice();
-    config.getDevice(dev->getDeviceId())->setOffset(ofs);
+    
+    if (sdrThread && !sdrThread->isTerminated()) {
+        sdrThread->setOffset(offset);
+    }
+}
+
+void CubicSDR::setAntennaName(const std::string& name) {
+    antennaName = name;
+     
+    if (sdrThread && !sdrThread->isTerminated()) {
+        sdrThread->setAntenna(antennaName);
+    }
+}
+
+const std::string& CubicSDR::getAntennaName() {
+    return antennaName;
 }
 
 long long CubicSDR::getFrequency() {
@@ -654,12 +667,18 @@ bool CubicSDR::isFrequencyLocked() {
 
 void CubicSDR::unlockFrequency() {
     frequency_locked.store(false);
-    sdrThread->unlockFrequency();
+    if (sdrThread && !sdrThread->isTerminated()) {
+        sdrThread->unlockFrequency();
+    }
 }
 
 void CubicSDR::setSampleRate(long long rate_in) {
     sampleRate = rate_in;
-    sdrThread->setSampleRate(sampleRate);
+    
+    if (sdrThread && !sdrThread->isTerminated()) {
+        sdrThread->setSampleRate(sampleRate);
+    }
+
     setFrequency(frequency);
 
     if (rate_in <= CHANNELIZER_RATE_MAX / 8) {
@@ -750,13 +769,8 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev, int waitMsForTermination) {
 
         setPPM(devConfig->getPPM());
         setOffset(devConfig->getOffset());
-        
-
-        if (devConfig->getAGCMode()) {
-            setAGCMode(true);
-        } else {
-            setAGCMode(false);
-        }
+        setAGCMode(devConfig->getAGCMode());
+        setAntennaName(devConfig->getAntennaName());
 
         t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
 }
@@ -859,11 +873,8 @@ void CubicSDR::saveConfig() {
 
 void CubicSDR::setPPM(int ppm_in) {
     ppm = ppm_in;
-    sdrThread->setPPM(ppm);
-
-    SDRDeviceInfo *dev = getDevice();
-    if (dev) {
-        config.getDevice(dev->getDeviceId())->setPPM(ppm_in);
+    if (sdrThread && !sdrThread->isTerminated()) {
+        sdrThread->setPPM(ppm);
     }
 }
 
@@ -975,7 +986,10 @@ bool CubicSDR::isDeviceSelectorOpen() {
 
 void CubicSDR::setAGCMode(bool mode) {
     agcMode.store(mode);
-    sdrThread->setAGCMode(mode);
+
+    if (sdrThread && !sdrThread->isTerminated()) {
+        sdrThread->setAGCMode(mode);
+    }
 }
 
 bool CubicSDR::getAGCMode() {

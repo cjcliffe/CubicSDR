@@ -190,6 +190,13 @@ std::vector<long> SDRDeviceInfo::getSampleRates(int direction, size_t channel) {
     return result;
 }
 
+std::vector<std::string> SDRDeviceInfo::getAntennaNames(int direction, size_t channel) {
+    SoapySDR::Device *dev = getSoapyDevice();
+
+    return  dev->listAntennas(direction, channel);
+   
+}
+
 long SDRDeviceInfo::getSampleRateNear(int direction, size_t channel, long sampleRate_in) {
     std::vector<long> sampleRates = getSampleRates(direction, channel);
     long returnRate = sampleRates[0];

@@ -64,6 +64,9 @@
 
 #define wxID_SETTINGS_BASE 2300
 
+#define wxID_ANTENNA_CURRENT 2500
+#define wxID_ANTENNAS_BASE 2501
+
 #define wxID_DEVICE_ID 3500
 
 #define wxID_AUDIO_BANDWIDTH_BASE 9000
@@ -163,6 +166,10 @@ private:
     bool actionOnMenuLoadSave(wxCommandEvent& event);
     bool actionOnMenuRig(wxCommandEvent& event);
 
+    wxString getSettingsLabel(const std::string& settingsName, 
+                              const std::string& settingsValue, 
+                              const std::string& settingsSuffix = "");
+
     ScopeCanvas *scopeCanvas;
     SpectrumCanvas *spectrumCanvas;
     WaterfallCanvas *waterfallCanvas;
@@ -192,6 +199,12 @@ private:
     std::map<int,RtAudio::DeviceInfo> outputDevices;
     std::map<int, wxMenuItem *> outputDeviceMenuItems;
     std::map<int, wxMenuItem *> sampleRateMenuItems;
+    std::map<int, wxMenuItem *> antennaMenuItems;
+    
+    //depending on context, maps the item id to wxMenuItem*,
+    //OR the submenu item id to its parent  wxMenuItem*.
+    std::map<int, wxMenuItem *> settingsMenuItems;
+    
     std::map<int, wxMenuItem *> audioSampleRateMenuItems;
     std::map<int, wxMenuItem *> directSamplingMenuItems;
     wxMenuBar *menuBar;
@@ -207,6 +220,8 @@ private:
     int settingsIdMax;
     std::vector<long> sampleRates;
     long manualSampleRate = -1;
+
+    std::vector<std::string> antennaNames;
     
     std::string currentSessionFile;
     

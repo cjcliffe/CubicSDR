@@ -245,6 +245,7 @@ void TuningCanvas::StepTuner(ActiveState state, int exponent, bool up) {
         }
 
         wxGetApp().setPPM(currentPPM);
+        wxGetApp().notifyMainUIOfDeviceChange();
     }
 }
 
