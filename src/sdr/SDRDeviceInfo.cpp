@@ -191,10 +191,26 @@ std::vector<long> SDRDeviceInfo::getSampleRates(int direction, size_t channel) {
 }
 
 std::vector<std::string> SDRDeviceInfo::getAntennaNames(int direction, size_t channel) {
+
     SoapySDR::Device *dev = getSoapyDevice();
 
-    return  dev->listAntennas(direction, channel);
-   
+    if (dev) {
+
+        return  dev->listAntennas(direction, channel);
+    }
+
+    return std::vector<std::string>(); 
+}
+
+std::string SDRDeviceInfo::getAntennaName(int direction, size_t channel) {
+    SoapySDR::Device *dev = getSoapyDevice();
+    
+    if (dev) {
+        return  dev->getAntenna(direction, channel);
+    }
+
+    return std::string("");
+
 }
 
 long SDRDeviceInfo::getSampleRateNear(int direction, size_t channel, long sampleRate_in) {

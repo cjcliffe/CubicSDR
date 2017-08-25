@@ -810,9 +810,19 @@ void AppFrame::updateDeviceParams() {
             antennaMenuItems[wxID_ANTENNA_CURRENT]->SetItemLabel(getSettingsLabel("Antenna", antennaChecked));
         }
     }
-   
+
+    //Add an informative, read-only menu entry to display the current TX selected antenna, if any.
+    if (devInfo->getAntennaNames(SOAPY_SDR_TX, 0).size() > 1) {
+
+        currentTXantennaName = devInfo->getAntennaName(SOAPY_SDR_TX, 0);
+        
+        newSettingsMenu->AppendSeparator();
+        
+        antennaMenuItems[wxID_ANTENNA_CURRENT_TX] = newSettingsMenu->Append(wxID_ANTENNA_CURRENT_TX, getSettingsLabel("TX Antenna", currentTXantennaName));
+        antennaMenuItems[wxID_ANTENNA_CURRENT_TX]->Enable(false);
+    }
+
     //Runtime settings part
-     
     SoapySDR::ArgInfoList::const_iterator args_i;
     settingArgs = soapyDev->getSettingInfo();
 
@@ -1687,6 +1697,16 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 
     if (deviceChanged.load()) {
         updateDeviceParams();
+    }
+
+    //Refresh the current TX antenna on, if any:
+    if (devInfo) {
+        std::string actualTxAntenna = devInfo->getAntennaName(SOAPY_SDR_TX, 0);
+        
+        if (currentTXantennaName != actualTxAntenna) {
+            currentTXantennaName = actualTxAntenna;
+            antennaMenuItems[wxID_ANTENNA_CURRENT_TX]->SetItemLabel(getSettingsLabel("TX Antenna", currentTXantennaName));
+        }
     }
     
     //try to garbage collect the retired demodulators.

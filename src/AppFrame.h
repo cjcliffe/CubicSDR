@@ -65,7 +65,8 @@
 #define wxID_SETTINGS_BASE 2300
 
 #define wxID_ANTENNA_CURRENT 2500
-#define wxID_ANTENNAS_BASE 2501
+#define wxID_ANTENNA_CURRENT_TX 2501
+#define wxID_ANTENNAS_BASE 2502
 
 #define wxID_DEVICE_ID 3500
 
@@ -222,6 +223,8 @@ private:
     long manualSampleRate = -1;
 
     std::vector<std::string> antennaNames;
+
+   std::string currentTXantennaName;
     
     std::string currentSessionFile;
     

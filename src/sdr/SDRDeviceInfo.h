@@ -85,6 +85,8 @@ public:
     std::vector<long> getSampleRates(int direction, size_t channel);
 
     std::vector<std::string> getAntennaNames(int direction, size_t channel);
+
+    std::string getAntennaName(int direction, size_t channel);
     
     long getSampleRateNear(int direction, size_t channel, long sampleRate_in);
 
