@@ -12,6 +12,9 @@
 //50 ms
 #define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
 
+//1s
+#define MAX_BLOCKING_DURATION_MICROS (1000 * 1000)
+
 SDRPostThread::SDRPostThread() : IOThread(), buffers("SDRPostThreadBuffers"), visualDataBuffers("SDRPostThreadVisualDataBuffers"), frequency(0) {
     iqDataInQueue = NULL;
     iqDataOutQueue = NULL;
@@ -203,10 +206,6 @@ void SDRPostThread::run() {
             }
         }
 
-        if (data_in) {
-            //nothing
-        }
-
         bool doUpdate = false;
         for (size_t j = 0; j < nRunDemods; j++) {
             DemodulatorInstance *demod = runDemods[j];
@@ -296,22 +295,22 @@ void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
 
         if (doDemodVisOut) {
             //VSO: blocking push
-            iqActiveDemodVisualQueue->push(demodDataOut);
+            iqActiveDemodVisualQueue->push(demodDataOut, MAX_BLOCKING_DURATION_MICROS, "runSingleCH() iqActiveDemodVisualQueue");
         }
         
         if (doIQDataOut) {
             //VSO: blocking push
-            iqDataOutQueue->push(demodDataOut);
+            iqDataOutQueue->push(demodDataOut, MAX_BLOCKING_DURATION_MICROS,"runSingleCH() iqDataOutQueue");
         }
 
         if (doVisOut) {
             //VSO: blocking push
-            iqVisualQueue->push(demodDataOut);
+            iqVisualQueue->push(demodDataOut, MAX_BLOCKING_DURATION_MICROS, "runSingleCH() iqVisualQueue");
         }
         
         for (size_t i = 0; i < nRunDemods; i++) {
             //VSO: blocking push
-            runDemods[i]->getIQInputDataPipe()->push(demodDataOut);
+            runDemods[i]->getIQInputDataPipe()->push(demodDataOut, MAX_BLOCKING_DURATION_MICROS, "runSingleCH() runDemods[i]->getIQInputDataPipe()");
         }
     }
 }
@@ -334,7 +333,7 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
         dataOut.resize(outSize);
     }
     
-    if (iqDataOutQueue != NULL && !iqDataOutQueue->full()) {
+    if (iqDataOutQueue != nullptr && !iqDataOutQueue->full()) {
         DemodulatorThreadIQDataPtr iqDataOut = visualDataBuffers.getBuffer();
         
         bool doVis = false;
@@ -348,11 +347,11 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
         iqDataOut->data.assign(data_in->data.begin(), data_in->data.begin() + dataSize);
         
         //VSO: blocking push
-        iqDataOutQueue->push(iqDataOut);
+        iqDataOutQueue->push(iqDataOut, MAX_BLOCKING_DURATION_MICROS, "runPFBCH() iqDataOutQueue");
    
         if (doVis) {
             //VSO: blocking push
-            iqVisualQueue->push(iqDataOut);
+            iqVisualQueue->push(iqDataOut, MAX_BLOCKING_DURATION_MICROS, "runPFBCH() iqVisualQueue");
         }
     }
     
@@ -448,14 +447,14 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
             
             if (doDemodVis) {
                 //VSO: blocking push
-                iqActiveDemodVisualQueue->push(demodDataOut);
+                iqActiveDemodVisualQueue->push(demodDataOut, MAX_BLOCKING_DURATION_MICROS, "runPFBCH() iqActiveDemodVisualQueue");
             }
             
             for (size_t j = 0; j < nRunDemods; j++) {
                 if (demodChannel[j] == i) {
                     DemodulatorInstance *demod = runDemods[j];
                     //VSO: blocking push
-                    demod->getIQInputDataPipe()->push(demodDataOut);
+                    demod->getIQInputDataPipe()->push(demodDataOut, MAX_BLOCKING_DURATION_MICROS, "runPFBCH() demod->getIQInputDataPipe()");
                 }
             }
         }

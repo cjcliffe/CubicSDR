@@ -9,6 +9,9 @@
 //50 ms
 #define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
 
+//1s
+#define MAX_BLOCKING_DURATION_MICROS (1000 * 1000)
+
 DemodulatorWorkerThread::DemodulatorWorkerThread() : IOThread(),
         commandQueue(nullptr), resultQueue(nullptr), cModem(nullptr), cModemKit(nullptr) {
 }
@@ -108,7 +111,7 @@ void DemodulatorWorkerThread::run() {
             result.modemName = cModemName;
             
             //VSO: blocking push
-            resultQueue->push(result);
+            resultQueue->push(result, MAX_BLOCKING_DURATION_MICROS, "resultQueue");
         }
     }
 //    std::cout << "Demodulator worker thread done." << std::endl;

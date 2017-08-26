@@ -357,6 +357,7 @@ int SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
             //The rest of the system saturates,
             //finally the push didn't suceeded.
             
+            readStreamCode = -32;
             std::cout << "SDRThread::readStream(): 3.2 iqDataOutQueue output queue is full, discard processing of the batch..." << std::endl;
 
             //saturation, let a chance to the other threads to consume the existing samples
@@ -364,6 +365,7 @@ int SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
         }
     }
     else {
+        readStreamCode = -31;
         std::cout << "SDRThread::readStream(): 3.1 iqDataOutQueue output queue is full, discard processing of the batch..." << std::endl;
         //saturation, let a chance to the other threads to consume the existing samples
         std::this_thread::yield();
@@ -374,9 +376,7 @@ int SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
 
 
 void SDRThread::readLoop() {
-
-    #define STREAM_READ_WATCHDOG_S (2)
-    
+  
     SDRThreadIQDataQueuePtr iqDataOutQueue = std::static_pointer_cast<SDRThreadIQDataQueue>( getOutputQueue("IQDataOutput"));
     
     if (iqDataOutQueue == nullptr) {
@@ -384,34 +384,13 @@ void SDRThread::readLoop() {
     }
     
     updateGains();
-    
-    auto streamWatchDog = std::chrono::steady_clock::now();
-
+ 
     while (!stopping.load()) {
 
         updateSettings();
 
-        if (readStream(iqDataOutQueue) > 0) {
-            // record the date of the last good read.
-            streamWatchDog = std::chrono::steady_clock::now();
-        }
+        readStream(iqDataOutQueue);
 
-        auto now = std::chrono::steady_clock::now();
-
-        //check watchdog value: if the date is too old, deinit end init the device.
-        std::chrono::duration<double> diff = now - streamWatchDog;
-
-        if (diff.count() > STREAM_READ_WATCHDOG_S) {
-            
-            std::cout << "SDRThread::readStream(): Restarting stream after too many read erros..." << std::endl << std::flush;
-            
-            deinit();
-            init();
-
-            streamWatchDog = std::chrono::steady_clock::now();
-
-            std::cout << "SDRThread::readStream(): stream restarted." << std::endl << std::flush;
-        }
     } //End while
 
     iqDataOutQueue->flush();
