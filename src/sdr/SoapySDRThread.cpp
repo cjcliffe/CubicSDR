@@ -13,10 +13,10 @@
 #define TARGET_DISPLAY_FPS 60
 
 SDRThread::SDRThread() : IOThread(), buffers("SDRThreadBuffers") {
-    device = NULL;
+    device = nullptr;
 
-    deviceConfig.store(NULL);
-    deviceInfo.store(NULL);
+    deviceConfig.store(nullptr);
+    deviceInfo.store(nullptr);
 
     sampleRate.store(DEFAULT_SAMPLE_RATE);
     frequency.store(0);

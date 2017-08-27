@@ -331,7 +331,7 @@ void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
     if (hoverState == TUNING_HOVER_BW || hoverState == TUNING_HOVER_FREQ) {
          wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getLastActiveDemodulator());
      } else {
-         wxGetApp().getDemodMgr().setActiveDemodulator(NULL);
+         wxGetApp().getDemodMgr().setActiveDemodulator(nullptr);
      }
 }
 
@@ -401,7 +401,7 @@ void TuningCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
     SetCursor(wxCURSOR_CROSS);
     hoverIndex = 0;
     hoverState = TUNING_HOVER_NONE;
-    wxGetApp().getDemodMgr().setActiveDemodulator(NULL);
+    wxGetApp().getDemodMgr().setActiveDemodulator(nullptr);
 
     if (currentPPM != lastPPM) {
         wxGetApp().saveConfig();

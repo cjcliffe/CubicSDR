@@ -309,9 +309,9 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
             }
         } else {
             if (lastActiveDemodulator) {
-                glContext->DrawDemod(lastActiveDemodulator, ((isNew && activeDemodulator == NULL) || (activeDemodulator != NULL))?currentTheme->waterfallHighlight:currentTheme->waterfallDestroy, currentCenterFreq, currentBandwidth);
+                glContext->DrawDemod(lastActiveDemodulator, ((isNew && activeDemodulator == nullptr) || (activeDemodulator != nullptr))?currentTheme->waterfallHighlight:currentTheme->waterfallDestroy, currentCenterFreq, currentBandwidth);
             }
-            if (activeDemodulator == NULL) {
+            if (activeDemodulator == nullptr) {
                 glContext->DrawFreqSelector(mouseTracker.getMouseX(), ((isNew && lastActiveDemodulator) || (!lastActiveDemodulator) )?currentTheme->waterfallNew:currentTheme->waterfallHover, 0, currentCenterFreq, currentBandwidth);
             } else {
                 glContext->DrawDemod(activeDemodulator, currentTheme->waterfallHover, currentCenterFreq, currentBandwidth);
@@ -539,7 +539,7 @@ void WaterfallCanvas::updateHoverState() {
             }
         }
         
-        if (activeDemodulator == NULL) {
+        if (activeDemodulator == nullptr) {
             nextDragState = WF_DRAG_NONE;
             SetCursor(wxCURSOR_CROSS);
             return;
@@ -593,7 +593,7 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
     auto demod = wxGetApp().getDemodMgr().getActiveDemodulator();
 
     if (mouseTracker.mouseDown()) {
-        if (demod == NULL) {
+        if (demod == nullptr) {
             return;
         }
         if (dragState == WF_DRAG_BANDWIDTH_LEFT || dragState == WF_DRAG_BANDWIDTH_RIGHT) {
@@ -672,7 +672,7 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseReleased(event);
     wxGetApp().getDemodMgr().updateLastState();
 
-    bool isNew = shiftDown || (wxGetApp().getDemodMgr().getLastActiveDemodulator() == NULL)
+    bool isNew = shiftDown || (wxGetApp().getDemodMgr().getLastActiveDemodulator() == nullptr)
             || (wxGetApp().getDemodMgr().getLastActiveDemodulator() && !wxGetApp().getDemodMgr().getLastActiveDemodulator()->isActive());
 
     mouseTracker.setVertDragLock(false);
@@ -832,7 +832,7 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
             wxGetApp().notifyDemodulatorsChanged();
         }
 
-        if (demod == NULL) {
+        if (demod == nullptr) {
             dragState = WF_DRAG_NONE;
             return;
         }
@@ -852,7 +852,7 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
 void WaterfallCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseLeftWindow(event);
     SetCursor(wxCURSOR_CROSS);
-    wxGetApp().getDemodMgr().setActiveDemodulator(NULL);
+    wxGetApp().getDemodMgr().setActiveDemodulator(nullptr);
     mouseZoom = 1.0;
 }
 

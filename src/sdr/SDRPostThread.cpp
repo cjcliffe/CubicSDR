@@ -16,12 +16,12 @@
 #define MAX_BLOCKING_DURATION_MICROS (1000 * 1000)
 
 SDRPostThread::SDRPostThread() : IOThread(), buffers("SDRPostThreadBuffers"), visualDataBuffers("SDRPostThreadVisualDataBuffers"), frequency(0) {
-    iqDataInQueue = NULL;
-    iqDataOutQueue = NULL;
-    iqVisualQueue = NULL;
+    iqDataInQueue = nullptr;
+    iqDataOutQueue = nullptr;
+    iqVisualQueue = nullptr;
 
     numChannels = 0;
-    channelizer = NULL;
+    channelizer = nullptr;
     
     sampleRate = 0;
     nRunDemods = 0;
@@ -92,7 +92,7 @@ void SDRPostThread::updateActiveDemodulators() {
             }
         } else if (!demod->isActive()) { // in range, activate if not activated
             demod->setActive(true);
-            if (wxGetApp().getDemodMgr().getLastActiveDemodulator() == NULL) {
+            if (wxGetApp().getDemodMgr().getLastActiveDemodulator() == nullptr) {
 
                 wxGetApp().getDemodMgr().setActiveDemodulator(demod);
             }
@@ -232,7 +232,7 @@ void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
     
     size_t refCount = nRunDemods;
     bool doIQDataOut = (iqDataOutQueue != nullptr && !iqDataOutQueue->full());
-    bool doDemodVisOut = (nRunDemods && iqActiveDemodVisualQueue != NULL && !iqActiveDemodVisualQueue->full());
+    bool doDemodVisOut = (nRunDemods && iqActiveDemodVisualQueue != nullptr && !iqActiveDemodVisualQueue->full());
     bool doVisOut = (iqVisualQueue != nullptr && !iqVisualQueue->full());
     
     if (doIQDataOut) {
@@ -309,7 +309,7 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
         
         bool doVis = false;
         
-        if (iqVisualQueue != NULL && !iqVisualQueue->full()) {
+        if (iqVisualQueue != nullptr && !iqVisualQueue->full()) {
             doVis = true;
         }
         
@@ -371,7 +371,7 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
         
         // Run channels
         for (int i = 0; i < numChannels+1; i++) {
-            int doDemodVis = ((activeDemodChannel == i) && (iqActiveDemodVisualQueue != NULL) && !iqActiveDemodVisualQueue->full())?1:0;
+            int doDemodVis = ((activeDemodChannel == i) && (iqActiveDemodVisualQueue != nullptr) && !iqActiveDemodVisualQueue->full())?1:0;
             
             if (!doDemodVis && demodChannelActive[i] == 0) {
                 continue;
