@@ -83,6 +83,8 @@ DemodulatorInstance::DemodulatorInstance() {
 }
 
 DemodulatorInstance::~DemodulatorInstance() {
+    
+    std::lock_guard < std::recursive_mutex > lockData(m_thread_control_mutex);
 
     //now that DemodulatorInstance are managed through shared_ptr, we 
     //should enter here ONLY when it is no longer used by any piece of code, anywhere.
@@ -119,6 +121,8 @@ void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueuePtr t
 }
 
 void DemodulatorInstance::run() {
+
+    std::lock_guard < std::recursive_mutex > lockData(m_thread_control_mutex);
 
     if (active) {
         return;
@@ -186,6 +190,8 @@ void DemodulatorInstance::setLabel(std::string labelStr) {
 }
 
 bool DemodulatorInstance::isTerminated() {
+
+    std::lock_guard < std::recursive_mutex > lockData(m_thread_control_mutex);
 
     bool audioTerminated = audioThread->isTerminated();
     bool demodTerminated = demodulatorThread->isTerminated();

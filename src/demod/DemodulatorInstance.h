@@ -139,6 +139,9 @@ private:
     DemodulatorThread *demodulatorThread;
     DemodulatorThreadControlCommandQueuePtr threadQueueControl;
 
+    //protects child thread creation and termination 
+    std::recursive_mutex m_thread_control_mutex;
+
     std::atomic<std::string *> label; //
     // User editable buffer, 16 bit string.
     std::atomic<std::wstring *> user_label; 
