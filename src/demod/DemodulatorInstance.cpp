@@ -85,10 +85,10 @@ DemodulatorInstance::DemodulatorInstance() {
 DemodulatorInstance::~DemodulatorInstance() {
 
     //now that DemodulatorInstance are managed through shared_ptr, we 
-    //should enter here ONLY when it is no longer used by any piece of code, anywahere.
+    //should enter here ONLY when it is no longer used by any piece of code, anywhere.
     //so active wait on IsTerminated(), then die.
 #define TERMINATION_SPIN_WAIT_MS (20)
-#define MAX_WAIT_FOR_TERMINATION_MS (1000.0)
+#define MAX_WAIT_FOR_TERMINATION_MS (3000.0)
     //this is a stupid busy plus sleep loop
     int  nbCyclesToWait = (MAX_WAIT_FOR_TERMINATION_MS / TERMINATION_SPIN_WAIT_MS) + 1;
     int currentCycle = 0;

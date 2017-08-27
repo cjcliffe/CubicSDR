@@ -2273,7 +2273,7 @@ bool AppFrame::loadSession(std::string fileName) {
         }
         
         if (demodsLoaded.size()) {
-            wxGetApp().bindDemodulators(demodsLoaded);
+            wxGetApp().notifyDemodulatorsChanged();
         }
             
         } // if l.rootNode()->hasAnother("demodulators")

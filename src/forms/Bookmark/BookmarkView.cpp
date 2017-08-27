@@ -845,7 +845,7 @@ void BookmarkView::activateBookmark(BookmarkEntryPtr bmEnt) {
 
 		matchingDemod = wxGetApp().getDemodMgr().loadInstance(bmEnt->node);
 		matchingDemod->run();
-		wxGetApp().bindDemodulator(matchingDemod);
+		wxGetApp().notifyDemodulatorsChanged();
 	}
 
 	matchingDemod->setActive(true);

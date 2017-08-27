@@ -729,7 +729,7 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
                 demod->writeModemSettings(mgr->getLastModemSettings(mgr->getLastDemodulatorType()));
                 demod->run();
 
-                wxGetApp().bindDemodulator(demod);
+                wxGetApp().notifyDemodulatorsChanged();
                 DemodulatorThread::releaseSquelchLock(nullptr);
             }
 
@@ -829,7 +829,7 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
 
             demod->run();
 
-            wxGetApp().bindDemodulator(demod);
+            wxGetApp().notifyDemodulatorsChanged();
         }
 
         if (demod == NULL) {

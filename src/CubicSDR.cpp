@@ -828,16 +828,9 @@ SDRThread *CubicSDR::getSDRThread() {
 }
 
 
-void CubicSDR::bindDemodulator(DemodulatorInstancePtr demod) {
-    if (!demod) {
-        return;
-    }
-    sdrPostThread->bindDemodulator(demod);
-}
-
-void CubicSDR::bindDemodulators(const std::vector<DemodulatorInstancePtr>& demods) {
+void CubicSDR::notifyDemodulatorsChanged() {
     
-    sdrPostThread->bindDemodulators(demods);
+    sdrPostThread->notifyDemodulatorsChanged();
 }
 
 long long CubicSDR::getSampleRate() {
@@ -849,7 +842,7 @@ void CubicSDR::removeDemodulator(DemodulatorInstancePtr demod) {
         return;
     }
     demod->setActive(false);
-    sdrPostThread->removeDemodulator(demod);
+    sdrPostThread->notifyDemodulatorsChanged();
     wxGetApp().getAppFrame()->notifyUpdateModemProperties();
 }
 
