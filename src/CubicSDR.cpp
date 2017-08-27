@@ -421,9 +421,6 @@ int CubicSDR::OnExit() {
     std::cout << "Terminating All Demodulators.." << std::endl << std::flush;
     demodMgr.terminateAll();
 
-    //wait for effective death of all demodulators before continuing.
-    terminationSequenceOK = terminationSequenceOK && demodMgr.garbageCollect(true, 3000);
-   
     std::cout << "Terminating Visual Processor threads.." << std::endl << std::flush;
     spectrumVisualThread->terminate();
     if (demodVisualThread) {
@@ -831,17 +828,15 @@ SDRThread *CubicSDR::getSDRThread() {
 }
 
 
-void CubicSDR::bindDemodulator(DemodulatorInstance *demod) {
+void CubicSDR::bindDemodulator(DemodulatorInstancePtr demod) {
     if (!demod) {
         return;
     }
     sdrPostThread->bindDemodulator(demod);
 }
 
-void CubicSDR::bindDemodulators(std::vector<DemodulatorInstance *> *demods) {
-    if (!demods) {
-        return;
-    }
+void CubicSDR::bindDemodulators(const std::vector<DemodulatorInstancePtr>& demods) {
+    
     sdrPostThread->bindDemodulators(demods);
 }
 
@@ -849,7 +844,7 @@ long long CubicSDR::getSampleRate() {
     return sampleRate;
 }
 
-void CubicSDR::removeDemodulator(DemodulatorInstance *demod) {
+void CubicSDR::removeDemodulator(DemodulatorInstancePtr demod) {
     if (!demod) {
         return;
     }
@@ -926,7 +921,7 @@ void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetM
 
 void CubicSDR::showLabelInput() {
 
-    DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
+    DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
 
     if (activeDemod != nullptr) {
 

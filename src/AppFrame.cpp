@@ -1709,10 +1709,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
         }
     }
     
-    //try to garbage collect the retired demodulators.
-    wxGetApp().getDemodMgr().garbageCollect();
-
-    DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    DemodulatorInstancePtr demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     if (demod && demod->isModemInitialized()) {
         if (demod->isTracking()) {
@@ -2129,11 +2126,12 @@ void AppFrame::saveSession(std::string fileName) {
     
     DataNode *demods = s.rootNode()->newChild("demodulators");
 
-    std::vector<DemodulatorInstance *> &instances = wxGetApp().getDemodMgr().getDemodulators();
+    //make a local copy snapshot of the list
+    std::vector<DemodulatorInstancePtr> instances = wxGetApp().getDemodMgr().getDemodulators();
     
-    for (auto instance_i : instances) {
+    for (auto instance : instances) {
         DataNode *demod = demods->newChild("demodulator");
-        wxGetApp().getDemodMgr().saveInstance(demod, instance_i);
+        wxGetApp().getDemodMgr().saveInstance(demod, instance);
     } //end for demodulators
 
     // Make sure the file name actually ends in .xml
@@ -2247,14 +2245,14 @@ bool AppFrame::loadSession(std::string fileName) {
             wxGetApp().setSoloMode(false);
         }
 
-        DemodulatorInstance *loadedActiveDemod = nullptr;
-        DemodulatorInstance *newDemod = nullptr;
+        DemodulatorInstancePtr loadedActiveDemod = nullptr;
+        DemodulatorInstancePtr newDemod = nullptr;
         
         if (l.rootNode()->hasAnother("demodulators")) {
             
         DataNode *demodulators = l.rootNode()->getNext("demodulators");
 
-        std::vector<DemodulatorInstance *> demodsLoaded;
+        std::vector<DemodulatorInstancePtr> demodsLoaded;
         
         while (demodulators->hasAnother("demodulator")) {
             DataNode *demod = demodulators->getNext("demodulator");
@@ -2275,7 +2273,7 @@ bool AppFrame::loadSession(std::string fileName) {
         }
         
         if (demodsLoaded.size()) {
-            wxGetApp().bindDemodulators(&demodsLoaded);
+            wxGetApp().bindDemodulators(demodsLoaded);
         }
             
         } // if l.rootNode()->hasAnother("demodulators")
@@ -2404,14 +2402,14 @@ FrequencyDialog::FrequencyDialogTarget AppFrame::getFrequencyDialogTarget() {
     return target;
 }
 
-void AppFrame::gkNudgeLeft(DemodulatorInstance *demod, int snap) {
+void AppFrame::gkNudgeLeft(DemodulatorInstancePtr demod, int snap) {
     if (demod) {
         demod->setFrequency(demod->getFrequency()-snap);
         demod->updateLabel(demod->getFrequency());
     }
 }
 
-void AppFrame::gkNudgeRight(DemodulatorInstance *demod, int snap) {
+void AppFrame::gkNudgeRight(DemodulatorInstancePtr demod, int snap) {
     if (demod) {
         demod->setFrequency(demod->getFrequency()+snap);
         demod->updateLabel(demod->getFrequency());
@@ -2437,7 +2435,10 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         return -1;
     }
     
-    DemodulatorInstance *demod = nullptr, *lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    DemodulatorInstancePtr demod = nullptr;
+     
+    DemodulatorInstancePtr lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    
     int snap = wxGetApp().getFrequencySnap();
     
     if (event.ControlDown()) {
@@ -2562,8 +2563,8 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
         return 1;
     }
 
-    DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
-    DemodulatorInstance *lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
+    DemodulatorInstancePtr lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
     
 #ifdef wxHAS_RAW_KEY_CODES
     switch (event.GetRawKeyCode()) {

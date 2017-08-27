@@ -26,7 +26,8 @@
 #include "FrequencyDialog.h"
 #include "BookmarkView.h"
 #include "AboutDialog.h"
-
+#include "DemodulatorInstance.h"
+#include "DemodulatorThread.h"
 #include <map>
 
 #define wxID_RT_AUDIO_DEVICE 1000
@@ -107,8 +108,8 @@ public:
     void setMainWaterfallFFTSize(int fftSize);
     void setScopeDeviceName(std::string deviceName);
 
-    void gkNudgeLeft(DemodulatorInstance *demod, int snap);
-    void gkNudgeRight(DemodulatorInstance *demod, int snap);
+    void gkNudgeLeft(DemodulatorInstancePtr demod, int snap);
+    void gkNudgeRight(DemodulatorInstancePtr demod, int snap);
 
     int OnGlobalKeyDown(wxKeyEvent &event);
     int OnGlobalKeyUp(wxKeyEvent &event);
@@ -193,7 +194,7 @@ private:
     wxBoxSizer *demodTray;
     BookmarkView *bookmarkView;
     
-    DemodulatorInstance *activeDemodulator;
+    DemodulatorInstancePtr activeDemodulator;
 
     std::vector<RtAudio::DeviceInfo> devices;
     std::map<int,RtAudio::DeviceInfo> inputDevices;

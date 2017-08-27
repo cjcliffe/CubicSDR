@@ -121,9 +121,9 @@ public:
     SDRPostThread *getSDRPostThread();
     SDRThread *getSDRThread();
 
-    void bindDemodulator(DemodulatorInstance *demod);
-    void bindDemodulators(std::vector<DemodulatorInstance *> *demods);
-    void removeDemodulator(DemodulatorInstance *demod);
+    void bindDemodulator(DemodulatorInstancePtr demod);
+    void bindDemodulators(const std::vector<DemodulatorInstancePtr>& demods);
+    void removeDemodulator(DemodulatorInstancePtr demod);
 
     void setFrequencySnap(int snap);
     int getFrequencySnap();

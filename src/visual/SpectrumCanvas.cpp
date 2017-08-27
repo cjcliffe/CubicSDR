@@ -90,9 +90,8 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     
     glLoadIdentity();
     
-    std::vector<DemodulatorInstance *> &demods = wxGetApp().getDemodMgr().getDemodulators();
-
-    DemodulatorInstance *activeDemodulator = wxGetApp().getDemodMgr().getActiveDemodulator();
+    auto demods = wxGetApp().getDemodMgr().getDemodulators();
+    auto activeDemodulator = wxGetApp().getDemodMgr().getActiveDemodulator();
 
     for (int i = 0, iMax = demods.size(); i < iMax; i++) {
         if (!demods[i]->isActive()) {
@@ -112,7 +111,7 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
                 freq = roundf((float)freq/(float)snap)*snap;
             }
 
-            DemodulatorInstance *lastActiveDemodulator = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+            auto lastActiveDemodulator = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
             bool isNew = (((waterfallCanvas->isShiftDown() || (lastActiveDemodulator && !lastActiveDemodulator->isActive())) && lastActiveDemodulator) || (!lastActiveDemodulator));
             

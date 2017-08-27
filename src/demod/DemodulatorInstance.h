@@ -6,12 +6,11 @@
 #include <vector>
 #include <map>
 #include <thread>
-
-#include "DemodulatorThread.h"
-#include "DemodulatorPreThread.h"
-
+#include <memory>
+#include "DemodDefs.h"
 #include "ModemDigital.h"
 #include "ModemAnalog.h"
+#include "AudioThread.h"
 
 #if ENABLE_DIGITAL_LAB
 #include "DigitalConsole.h"
@@ -30,6 +29,8 @@ private:
     std::atomic_int squelchBreak;
 };
 
+class DemodulatorThread;
+class DemodulatorPreThread;
 
 class DemodulatorInstance {
 public:
@@ -138,9 +139,6 @@ private:
     DemodulatorThread *demodulatorThread;
     DemodulatorThreadControlCommandQueuePtr threadQueueControl;
 
-    //protects child thread creation and termination 
-    std::mutex m_thread_control_mutex;
-
     std::atomic<std::string *> label; //
     // User editable buffer, 16 bit string.
     std::atomic<std::wstring *> user_label; 
@@ -161,3 +159,5 @@ private:
     ModemDigitalOutput *activeOutput;
 #endif
 };
+
+typedef std::shared_ptr<DemodulatorInstance> DemodulatorInstancePtr;

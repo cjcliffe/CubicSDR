@@ -12,11 +12,13 @@ EVT_CHAR_HOOK(FrequencyDialog::OnChar)
 EVT_SHOW(FrequencyDialog::OnShow)
 wxEND_EVENT_TABLE()
 
-FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxString & title, DemodulatorInstance *demod, const wxPoint & position,
+FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxString & title, DemodulatorInstancePtr demod, const wxPoint & position,
         const wxSize & size, long style, FrequencyDialogTarget targetMode, wxString initString) :
         wxDialog(parent, id, title, position, size, style) {
     wxString freqStr;
+    
     activeDemod = demod;
+    
     this->targetMode = targetMode;
 	this->initialString = initString;
 

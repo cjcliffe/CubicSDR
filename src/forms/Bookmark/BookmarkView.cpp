@@ -348,10 +348,9 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
 
 
 void BookmarkView::doUpdateActiveList() {
-    std::vector<DemodulatorInstance *> &demods = wxGetApp().getDemodMgr().getDemodulators();
-    
-//    DemodulatorInstance *activeDemodulator = wxGetApp().getDemodMgr().getActiveDemodulator();
-    DemodulatorInstance *lastActiveDemodulator = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+
+    auto demods = wxGetApp().getDemodMgr().getDemodulators();
+    auto lastActiveDemodulator = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     //capture the previously selected item info BY COPY (because the original will be destroyed together with the destroyed tree items) to restore it again after 
     //having rebuilding the whole tree.
@@ -693,7 +692,8 @@ wxButton *BookmarkView::addButton(wxWindow *parent, std::string labelVal, wxObje
 }
 
 
-void BookmarkView::doBookmarkActive(std::string group, DemodulatorInstance *demod) {
+void BookmarkView::doBookmarkActive(std::string group, DemodulatorInstancePtr demod) {
+
     wxGetApp().getBookmarkMgr().addBookmark(group, demod);
     wxGetApp().getBookmarkMgr().updateBookmarks();
 }
@@ -717,7 +717,7 @@ void BookmarkView::doMoveBookmark(BookmarkEntryPtr be, std::string group) {
 }
 
 
-void BookmarkView::doRemoveActive(DemodulatorInstance *demod) {
+void BookmarkView::doRemoveActive(DemodulatorInstancePtr demod) {
 
 	wxGetApp().getBookmarkMgr().removeActive(demod);
 	wxGetApp().getBookmarkMgr().updateActiveList();
@@ -792,7 +792,7 @@ void BookmarkView::onBookmarkChoice( wxCommandEvent & /* event */ ) {
 }
 
 
-void BookmarkView::activeSelection(DemodulatorInstance *dsel) {
+void BookmarkView::activeSelection(DemodulatorInstancePtr dsel) {
     
     m_frequencyVal->SetLabelText(frequencyToStr(dsel->getFrequency()));
     m_bandwidthVal->SetLabelText(frequencyToStr(dsel->getBandwidth()));
@@ -835,7 +835,7 @@ void BookmarkView::activateBookmark(BookmarkEntryPtr bmEnt) {
 	//the already existing one:
 	// we search among the list of existing demodulators the one matching 
 	//bmEnt and activate it. The search is made backwards, to select the most recently created one.
-	DemodulatorInstance *matchingDemod = wxGetApp().getDemodMgr().getLastDemodulatorWith(
+	DemodulatorInstancePtr matchingDemod = wxGetApp().getDemodMgr().getLastDemodulatorWith(
 																		bmEnt->type,
 																		bmEnt->label, 
 																		bmEnt->frequency, 

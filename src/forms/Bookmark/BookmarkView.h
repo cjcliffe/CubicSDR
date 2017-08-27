@@ -43,7 +43,7 @@ public:
     BookmarkEntryPtr bookmarkEnt; 
     BookmarkRangeEntryPtr rangeEnt;
     
-    DemodulatorInstance* demod;
+    DemodulatorInstancePtr demod;
     std::string groupName;
 };
 
@@ -84,7 +84,7 @@ public:
     static BookmarkRangeEntryPtr makeActiveRangeEntry();
 
 protected:
-    void activeSelection(DemodulatorInstance *dsel);
+    void activeSelection(DemodulatorInstancePtr dsel);
     void bookmarkSelection(BookmarkEntryPtr bmSel);
     void rangeSelection(BookmarkRangeEntryPtr re);
     
@@ -133,10 +133,10 @@ protected:
     wxButton *makeButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler);
     wxButton *addButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler);
 
-    void doBookmarkActive(std::string group, DemodulatorInstance *demod);
+    void doBookmarkActive(std::string group, DemodulatorInstancePtr demod);
     void doBookmarkRecent(std::string group, BookmarkEntryPtr be);
     void doMoveBookmark(BookmarkEntryPtr be, std::string group);
-    void doRemoveActive(DemodulatorInstance *demod);
+    void doRemoveActive(DemodulatorInstancePtr demod);
     void doRemoveRecent(BookmarkEntryPtr be);
     void doClearRecents();
     
@@ -191,7 +191,7 @@ protected:
     // Focus
     BookmarkEntryPtr nextEnt;
     BookmarkRangeEntryPtr nextRange;
-    DemodulatorInstance *nextDemod;
+    DemodulatorInstancePtr nextDemod;
     std::string nextGroup;
     
     // Search

@@ -85,7 +85,7 @@ public:
     bool hasLastLoad(std::string bookmarkFn);
     bool hasBackup(std::string bookmarkFn);
 
-    void addBookmark(std::string group, DemodulatorInstance *demod);
+    void addBookmark(std::string group, DemodulatorInstancePtr demod);
     void addBookmark(std::string group, BookmarkEntryPtr be);
     void removeBookmark(std::string group, BookmarkEntryPtr be);
     void removeBookmark(BookmarkEntryPtr be);
@@ -105,13 +105,13 @@ public:
     void updateBookmarks();
     void updateBookmarks(std::string group);
 
-    void addRecent(DemodulatorInstance *demod);
+    void addRecent(DemodulatorInstancePtr demod);
     void addRecent(BookmarkEntryPtr be);
     void removeRecent(BookmarkEntryPtr be);
     const BookmarkList& getRecents();
     void clearRecents();
 
-	void removeActive(DemodulatorInstance *demod);
+	void removeActive(DemodulatorInstancePtr demod);
 
     void addRange(BookmarkRangeEntryPtr re);
     void removeRange(BookmarkRangeEntryPtr re);
@@ -119,13 +119,13 @@ public:
     void clearRanges();
 	
     static std::wstring getBookmarkEntryDisplayName(BookmarkEntryPtr bmEnt);
-    static std::wstring getActiveDisplayName(DemodulatorInstance *demod);
+    static std::wstring getActiveDisplayName(DemodulatorInstancePtr demod);
 
 protected:
 
     void trimRecents();
     
-    BookmarkEntryPtr demodToBookmarkEntry(DemodulatorInstance *demod);
+    BookmarkEntryPtr demodToBookmarkEntry(DemodulatorInstancePtr demod);
     BookmarkEntryPtr nodeToBookmark(DataNode *node);
     
     BookmarkMap bmData;

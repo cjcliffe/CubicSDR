@@ -24,6 +24,8 @@
 
 #include <wx/numformatter.h>
 
+#include "DemodulatorThread.h"
+
 wxBEGIN_EVENT_TABLE(WaterfallCanvas, wxGLCanvas)
 EVT_PAINT(WaterfallCanvas::OnPaint)
 EVT_IDLE(WaterfallCanvas::OnIdle)
@@ -263,10 +265,10 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     waterfallPanel.calcTransform(CubicVR::mat4::identity());
     waterfallPanel.draw();
 
-    std::vector<DemodulatorInstance *> &demods = wxGetApp().getDemodMgr().getDemodulators();
+    auto demods = wxGetApp().getDemodMgr().getDemodulators();
 
-    DemodulatorInstance *activeDemodulator = wxGetApp().getDemodMgr().getActiveDemodulator();
-    DemodulatorInstance *lastActiveDemodulator = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    auto activeDemodulator = wxGetApp().getDemodMgr().getActiveDemodulator();
+    auto lastActiveDemodulator = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     bool isNew = shiftDown
             || (wxGetApp().getDemodMgr().getLastActiveDemodulator() && !wxGetApp().getDemodMgr().getLastActiveDemodulator()->isActive());
@@ -390,7 +392,7 @@ void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
 void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     InteractiveCanvas::OnKeyDown(event);
 
-    DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
+    auto activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
 
     long long originalFreq = getCenterFrequency();
     long long freq = originalFreq;
@@ -490,9 +492,9 @@ void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
 void WaterfallCanvas::updateHoverState() {
     long long freqPos = getFrequencyAt(mouseTracker.getMouseX());
     
-    std::vector<DemodulatorInstance *> demodsHover = wxGetApp().getDemodMgr().getDemodulatorsAt(freqPos, 15000);
+    auto demodsHover = wxGetApp().getDemodMgr().getDemodulatorsAt(freqPos, 15000);
     
-    wxGetApp().getDemodMgr().setActiveDemodulator(NULL);
+    wxGetApp().getDemodMgr().setActiveDemodulator(nullptr);
     
     if (altDown) {
         nextDragState = WF_DRAG_RANGE;
@@ -506,10 +508,10 @@ void WaterfallCanvas::updateHoverState() {
     } else if (demodsHover.size() && !shiftDown) {
         long near_dist = getBandwidth();
         
-        DemodulatorInstance *activeDemodulator = NULL;
+        DemodulatorInstancePtr activeDemodulator = nullptr;
         
         for (int i = 0, iMax = demodsHover.size(); i < iMax; i++) {
-            DemodulatorInstance *demod = demodsHover[i];
+            auto demod = demodsHover[i];
             long long freqDiff = demod->getFrequency() - freqPos;
             long halfBw = (demod->getBandwidth() / 2);
             long long currentBw = getBandwidth();
@@ -588,7 +590,7 @@ void WaterfallCanvas::updateHoverState() {
 
 void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseMoved(event);
-    DemodulatorInstance *demod = wxGetApp().getDemodMgr().getActiveDemodulator();
+    auto demod = wxGetApp().getDemodMgr().getActiveDemodulator();
 
     if (mouseTracker.mouseDown()) {
         if (demod == NULL) {
@@ -650,7 +652,7 @@ void WaterfallCanvas::OnMouseDown(wxMouseEvent& event) {
     wxGetApp().getDemodMgr().updateLastState();
 
     if (dragState && dragState != WF_DRAG_RANGE) {
-        DemodulatorInstance *demod = wxGetApp().getDemodMgr().getActiveDemodulator();
+        auto demod = wxGetApp().getDemodMgr().getActiveDemodulator();
         if (demod) {
             dragOfs = (long long) (mouseTracker.getMouseX() * (float) getBandwidth()) + getCenterFrequency() - (getBandwidth() / 2) - demod->getFrequency();
             dragBW = demod->getBandwidth();
@@ -676,8 +678,8 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
     mouseTracker.setVertDragLock(false);
     mouseTracker.setHorizDragLock(false);
 
-    DemodulatorInstance *demod = isNew?NULL:wxGetApp().getDemodMgr().getLastActiveDemodulator();
-    DemodulatorInstance *activeDemod = isNew?NULL:wxGetApp().getDemodMgr().getActiveDemodulator();
+    DemodulatorInstancePtr demod = isNew?nullptr:wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    DemodulatorInstancePtr activeDemod = isNew?nullptr:wxGetApp().getDemodMgr().getActiveDemodulator();
 
     DemodulatorMgr *mgr = &wxGetApp().getDemodMgr();
 

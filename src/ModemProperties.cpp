@@ -101,7 +101,7 @@ void ModemProperties::initDefaultProperties() {
     defaultProps["._audio_output"] = addArgInfoProperty(m_propertyGrid, outputArg);
 }
 
-void ModemProperties::initProperties(ModemArgInfoList newArgs, DemodulatorInstance *demodInstance) {
+void ModemProperties::initProperties(ModemArgInfoList newArgs, DemodulatorInstancePtr demodInstance) {
     args = newArgs;
     demodContext = demodInstance;
     

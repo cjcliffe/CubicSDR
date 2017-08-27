@@ -205,7 +205,7 @@ bool BookmarkMgr::hasBackup(std::string bookmarkFn) {
     return backupFile.FileExists() && backupFile.IsFileReadable();
 }
 
-void BookmarkMgr::addBookmark(std::string group, DemodulatorInstance *demod) {
+void BookmarkMgr::addBookmark(std::string group, DemodulatorInstancePtr demod) {
     std::lock_guard < std::recursive_mutex > lock(busy_lock);
     
 	//Create a BookmarkEntry from demod data, saving its
@@ -392,7 +392,7 @@ void BookmarkMgr::updateBookmarks(std::string group) {
 }
 
 
-void BookmarkMgr::addRecent(DemodulatorInstance *demod) {
+void BookmarkMgr::addRecent(DemodulatorInstancePtr demod) {
     std::lock_guard < std::recursive_mutex > lock(busy_lock);
 
     recents.push_back(demodToBookmarkEntry(demod));
@@ -482,7 +482,7 @@ void BookmarkMgr::clearRanges() {
 }
 
 
-BookmarkEntryPtr BookmarkMgr::demodToBookmarkEntry(DemodulatorInstance *demod) {
+BookmarkEntryPtr BookmarkMgr::demodToBookmarkEntry(DemodulatorInstancePtr demod) {
     
     BookmarkEntryPtr be(new BookmarkEntry);
     
@@ -536,7 +536,7 @@ std::wstring BookmarkMgr::getBookmarkEntryDisplayName(BookmarkEntryPtr bmEnt) {
     return dispName;
 }
 
-std::wstring BookmarkMgr::getActiveDisplayName(DemodulatorInstance *demod) {
+std::wstring BookmarkMgr::getActiveDisplayName(DemodulatorInstancePtr demod) {
     std::wstring activeName = demod->getDemodulatorUserLabel();
     
     if (activeName == "") {
@@ -547,7 +547,7 @@ std::wstring BookmarkMgr::getActiveDisplayName(DemodulatorInstance *demod) {
     return activeName;
 }
 
-void BookmarkMgr::removeActive(DemodulatorInstance *demod) {
+void BookmarkMgr::removeActive(DemodulatorInstancePtr demod) {
 	
 	std::lock_guard < std::recursive_mutex > lock(busy_lock);
 

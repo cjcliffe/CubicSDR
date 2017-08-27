@@ -5,6 +5,10 @@
 #include "DemodulatorInstance.h"
 #include "CubicSDR.h"
 
+#include "DemodulatorThread.h"
+#include "DemodulatorPreThread.h"
+
+
 #if USE_HAMLIB
 #include "RigThread.h"
 #endif
@@ -79,13 +83,35 @@ DemodulatorInstance::DemodulatorInstance() {
 }
 
 DemodulatorInstance::~DemodulatorInstance() {
-    std::lock_guard < std::mutex > lockData(m_thread_control_mutex);
+
+    //now that DemodulatorInstance are managed through shared_ptr, we 
+    //should enter here ONLY when it is no longer used by any piece of code, anywahere.
+    //so active wait on IsTerminated(), then die.
+#define TERMINATION_SPIN_WAIT_MS (20)
+#define MAX_WAIT_FOR_TERMINATION_MS (1000.0)
+    //this is a stupid busy plus sleep loop
+    int  nbCyclesToWait = (MAX_WAIT_FOR_TERMINATION_MS / TERMINATION_SPIN_WAIT_MS) + 1;
+    int currentCycle = 0;
+
+    while (currentCycle < nbCyclesToWait) {
+        
+        if (isTerminated()) {
+            std::cout << "Garbage collected demodulator instance '" << getLabel() << "'... " << std::endl << std::flush;
+
 #if ENABLE_DIGITAL_LAB
-    delete activeOutput;
+            delete activeOutput;
 #endif
-    delete audioThread;
-    delete demodulatorThread;
-    delete demodulatorPreThread;
+            delete audioThread;
+            delete demodulatorThread;
+            delete demodulatorPreThread;
+
+            break;
+        }
+        else {
+            std::this_thread::sleep_for(std::chrono::milliseconds(TERMINATION_SPIN_WAIT_MS));
+        }
+        currentCycle++;
+    } //end while
 }
 
 void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueuePtr tQueue) {
@@ -93,8 +119,6 @@ void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueuePtr t
 }
 
 void DemodulatorInstance::run() {
-
-    std::lock_guard < std::mutex > lockData(m_thread_control_mutex);
 
     if (active) {
         return;
@@ -163,8 +187,6 @@ void DemodulatorInstance::setLabel(std::string labelStr) {
 
 bool DemodulatorInstance::isTerminated() {
 
-    std::lock_guard < std::mutex > lockData(m_thread_control_mutex);
-
     bool audioTerminated = audioThread->isTerminated();
     bool demodTerminated = demodulatorThread->isTerminated();
     bool preDemodTerminated = demodulatorPreThread->isTerminated();
@@ -224,7 +246,9 @@ void DemodulatorInstance::setActive(bool state) {
         }
 #endif
         audioThread->setActive(state);
+        
         DemodulatorThread::releaseSquelchLock(this);
+
     } else if (!active && state) {
 #if ENABLE_DIGITAL_LAB
         if (activeOutput && getModemType() == "digital") {
@@ -404,7 +428,7 @@ void DemodulatorInstance::setFrequency(long long freq) {
     }
 #endif
 #if USE_HAMLIB
-    if (wxGetApp().rigIsActive() && wxGetApp().getRigThread()->getFollowModem() && wxGetApp().getDemodMgr().getLastActiveDemodulator() == this) {
+    if (wxGetApp().rigIsActive() && wxGetApp().getRigThread()->getFollowModem() && wxGetApp().getDemodMgr().getLastActiveDemodulator().get() == this) {
         wxGetApp().getRigThread()->setFrequency(freq,true);
     }
 #endif

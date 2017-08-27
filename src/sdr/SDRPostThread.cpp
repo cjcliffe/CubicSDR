@@ -36,7 +36,7 @@ SDRPostThread::SDRPostThread() : IOThread(), buffers("SDRPostThreadBuffers"), vi
 SDRPostThread::~SDRPostThread() {
 }
 
-void SDRPostThread::bindDemodulator(DemodulatorInstance *demod) {
+void SDRPostThread::bindDemodulator(DemodulatorInstancePtr demod) {
     
     std::lock_guard < std::mutex > lock(busy_demod);
 
@@ -45,30 +45,27 @@ void SDRPostThread::bindDemodulator(DemodulatorInstance *demod) {
    
 }
 
-void SDRPostThread::bindDemodulators(std::vector<DemodulatorInstance *> *demods) {
-    if (!demods) {
-        return;
-    }
+void SDRPostThread::bindDemodulators(const std::vector<DemodulatorInstancePtr >& demods) {
+    
     std::lock_guard < std::mutex > lock(busy_demod);
 
-    for (std::vector<DemodulatorInstance *>::iterator di = demods->begin(); di != demods->end(); di++) {
-        demodulators.push_back(*di);
+    for (auto di : demods) {
+        demodulators.push_back(di);
         doRefresh.store(true);
-    }
-   
+    }  
 }
 
-void SDRPostThread::removeDemodulator(DemodulatorInstance *demod) {
+void SDRPostThread::removeDemodulator(DemodulatorInstancePtr demod) {
     if (!demod) {
         return;
     }
 
     std::lock_guard < std::mutex > lock(busy_demod);
 
-    std::vector<DemodulatorInstance *>::iterator i = std::find(demodulators.begin(), demodulators.end(), demod);
+    auto it = std::find(demodulators.begin(), demodulators.end(), demod);
     
-    if (i != demodulators.end()) {
-        demodulators.erase(i);
+    if (it != demodulators.end()) {
+        demodulators.erase(it);
         doRefresh.store(true);
     }
   
@@ -91,15 +88,13 @@ void SDRPostThread::initPFBChannelizer() {
 
 void SDRPostThread::updateActiveDemodulators() {
     // In range?
-    std::vector<DemodulatorInstance *>::iterator demod_i;
     
     nRunDemods = 0;
     
     long long centerFreq = wxGetApp().getFrequency();
 
-    for (demod_i = demodulators.begin(); demod_i != demodulators.end(); demod_i++) {
-        DemodulatorInstance *demod = *demod_i;
-         
+    for (auto demod : demodulators) {
+          
         // not in range?
         if (demod->isDeltaLock()) {
             if (demod->getFrequency() != centerFreq + demod->getDeltaLockOfs()) {
@@ -208,7 +203,7 @@ void SDRPostThread::run() {
 
         bool doUpdate = false;
         for (size_t j = 0; j < nRunDemods; j++) {
-            DemodulatorInstance *demod = runDemods[j];
+            DemodulatorInstancePtr demod = runDemods[j];
             if (abs(frequency - demod->getFrequency()) > (sampleRate / 2)) {
                 doUpdate = true;
             }
@@ -366,7 +361,7 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
         doRefresh.store(false);
     }
     
-    DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
     int activeDemodChannel = -1;
     
     // Find active demodulators
@@ -384,7 +379,7 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
         
         // Find nearest channel for each demodulator
         for (size_t i = 0; i < nRunDemods; i++) {
-            DemodulatorInstance *demod = runDemods[i];
+            DemodulatorInstancePtr demod = runDemods[i];
             demodChannel[i] = getChannelAt(demod->getFrequency());
             if (demod == activeDemod) {
                 activeDemodChannel = demodChannel[i];
@@ -452,9 +447,9 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
             
             for (size_t j = 0; j < nRunDemods; j++) {
                 if (demodChannel[j] == i) {
-                    DemodulatorInstance *demod = runDemods[j];
+                    
                     //VSO: blocking push
-                    demod->getIQInputDataPipe()->push(demodDataOut, MAX_BLOCKING_DURATION_MICROS, "runPFBCH() demod->getIQInputDataPipe()");
+                    runDemods[j]->getIQInputDataPipe()->push(demodDataOut, MAX_BLOCKING_DURATION_MICROS, "runPFBCH() demod->getIQInputDataPipe()");
                 }
             }
         }

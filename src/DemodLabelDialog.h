@@ -16,7 +16,7 @@ class DemodLabelDialog : public wxDialog
 public:
   
     DemodLabelDialog( wxWindow * parent, wxWindowID id, const wxString & title,
-                  DemodulatorInstance *demod = NULL,
+                  DemodulatorInstancePtr demod = nullptr,
                   const wxPoint & pos = wxDefaultPosition,
                   const wxSize & size = wxDefaultSize,
                   long style = wxDEFAULT_DIALOG_STYLE);
@@ -24,7 +24,7 @@ public:
     wxTextCtrl * dialogText;
 
 private:
-    DemodulatorInstance *activeDemod = nullptr;
+    DemodulatorInstancePtr activeDemod = nullptr;
     void OnEnter ( wxCommandEvent &event );
     void OnChar ( wxKeyEvent &event );
 	void OnShow(wxShowEvent &event);

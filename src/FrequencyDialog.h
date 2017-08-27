@@ -24,7 +24,7 @@ public:
         FDIALOG_TARGET_GAIN
     } FrequencyDialogTarget;
     FrequencyDialog ( wxWindow * parent, wxWindowID id, const wxString & title,
-                  DemodulatorInstance *demod = NULL,
+                  DemodulatorInstancePtr demod = nullptr,
                   const wxPoint & pos = wxDefaultPosition,
                   const wxSize & size = wxDefaultSize,
                   long style = wxDEFAULT_DIALOG_STYLE,
@@ -34,7 +34,7 @@ public:
     wxTextCtrl * dialogText;
 
 private:
-    DemodulatorInstance *activeDemod;
+    DemodulatorInstancePtr activeDemod;
     void OnEnter ( wxCommandEvent &event );
     void OnChar ( wxKeyEvent &event );
 	void OnShow(wxShowEvent &event);

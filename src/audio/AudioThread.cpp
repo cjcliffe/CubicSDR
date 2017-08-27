@@ -304,14 +304,12 @@ void AudioThread::setSampleRate(int sampleRate) {
             srcmix->setSampleRate(sampleRate);
         }
 
-        std::vector<DemodulatorInstance *>::iterator demod_i;
-        std::vector<DemodulatorInstance *> *demodulators;
+        //make a local copy, snapshot of the list of demodulators
+        std::vector<DemodulatorInstancePtr> demodulators = wxGetApp().getDemodMgr().getDemodulators();
 
-        demodulators = &wxGetApp().getDemodMgr().getDemodulators();
-
-        for (demod_i = demodulators->begin(); demod_i != demodulators->end(); demod_i++) {
-            if ((*demod_i)->getOutputDevice() == outputDevice.load()) {
-                (*demod_i)->setAudioSampleRate(sampleRate);
+        for (auto demod : demodulators) {
+            if (demod->getOutputDevice() == outputDevice.load()) {
+                demod->setAudioSampleRate(sampleRate);
             }
         }
 
