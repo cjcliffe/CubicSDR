@@ -19,10 +19,10 @@
 #include <pthread.h>
 #endif
 
-std::atomic<DemodulatorInstance *> DemodulatorThread::squelchLock(nullptr);
+DemodulatorInstance* DemodulatorThread::squelchLock(nullptr);
 std::mutex DemodulatorThread::squelchLockMutex;
 
-DemodulatorThread::DemodulatorThread(DemodulatorInstance *parent)
+DemodulatorThread::DemodulatorThread(DemodulatorInstance* parent)
     : IOThread(), outputBuffers("DemodulatorThreadBuffers"), squelchLevel(-100), 
       signalLevel(-100), signalFloor(-30), signalCeil(30), squelchEnabled(false) {
     
@@ -201,10 +201,10 @@ void DemodulatorThread::run() {
             if (!squelched && !squelchBreak) {
                     if (wxGetApp().getSoloMode() && !wxGetApp().getAppFrame()->isUserDemodBusy()) {
                         std::lock_guard < std::mutex > lock(squelchLockMutex);
-                        if (squelchLock.load() == nullptr) {
-                            squelchLock.store(demodInstance);
+                        if (squelchLock == nullptr) {
+                            squelchLock = demodInstance;
                             wxGetApp().getDemodMgr().setActiveDemodulator(nullptr);
-                            wxGetApp().getDemodMgr().setActiveDemodulator(demodInstance, false);
+                            wxGetApp().getDemodMgr().setActiveDemodulatorByRawPointer(demodInstance, false);
                             squelchBreak = true;
                             demodInstance->getVisualCue()->triggerSquelchBreak(120);
                         }
@@ -310,7 +310,7 @@ void DemodulatorThread::run() {
         }
 
         if (ati != nullptr) {
-            if (!muted.load() && (!wxGetApp().getSoloMode() || (demodInstance == wxGetApp().getDemodMgr().getLastActiveDemodulator()))) {
+            if (!muted.load() && (!wxGetApp().getSoloMode() || (demodInstance == wxGetApp().getDemodMgr().getLastActiveDemodulator().get()))) {
                 //non-blocking push needed for audio out
                 if (!audioOutputQueue->try_push(ati)) {
                   
@@ -385,9 +385,11 @@ bool DemodulatorThread::getSquelchBreak() {
     return squelchBreak;
 }
 
-void DemodulatorThread::releaseSquelchLock(DemodulatorInstance *inst) {
+void DemodulatorThread::releaseSquelchLock(DemodulatorInstance* inst) {
+    
     std::lock_guard < std::mutex > lock(squelchLockMutex);
-    if (inst == nullptr || squelchLock.load() == inst) {
-        squelchLock.store(nullptr);
+
+    if (inst == nullptr || squelchLock == inst) {
+        squelchLock = nullptr;
     }
 }

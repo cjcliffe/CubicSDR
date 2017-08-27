@@ -13,7 +13,7 @@ EVT_SHOW(DemodLabelDialog::OnShow)
 wxEND_EVENT_TABLE()
 
 DemodLabelDialog::DemodLabelDialog(wxWindow * parent, wxWindowID id, const wxString & title, 
-        DemodulatorInstance *demod, const wxPoint & position,
+        DemodulatorInstancePtr demod, const wxPoint & position,
         const wxSize & size, long style) :
         wxDialog(parent, id, title, position, size, style) {
 

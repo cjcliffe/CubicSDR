@@ -17,7 +17,7 @@ class DemodulatorInstance;
 class DemodulatorPreThread : public IOThread {
 public:
 
-    DemodulatorPreThread(DemodulatorInstance *parent);
+    DemodulatorPreThread(DemodulatorInstance* parent);
     virtual ~DemodulatorPreThread();
 
     virtual void run();
@@ -50,7 +50,9 @@ public:
     void writeModemSettings(ModemSettings settings);
 
 protected:
-    DemodulatorInstance *parent;
+  
+    DemodulatorInstance* parent;
+
     msresamp_crcf iqResampler;
     double iqResampleRatio;
     std::vector<liquid_float_complex> resampledData;

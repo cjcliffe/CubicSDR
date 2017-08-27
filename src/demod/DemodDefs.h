@@ -15,7 +15,6 @@
 
 class DemodulatorThread;
 
-
 class DemodulatorThreadControlCommand {
 public:
     enum DemodulatorThreadControlCommandEnum {

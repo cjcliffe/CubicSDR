@@ -17,13 +17,11 @@
 
 #include "DataTree.h"
 
-bool demodFreqCompare (DemodulatorInstance *i, DemodulatorInstance *j) { return (i->getFrequency()<j->getFrequency()); }
-bool inactiveCompare (DemodulatorInstance *i, DemodulatorInstance *j) { return (i->isActive()<j->isActive()); }
+bool demodFreqCompare (DemodulatorInstancePtr i, DemodulatorInstancePtr j) { return (i->getFrequency() < j->getFrequency()); }
+bool inactiveCompare (DemodulatorInstancePtr i, DemodulatorInstancePtr j) { return (i->isActive() < j->isActive()); }
 
 DemodulatorMgr::DemodulatorMgr() {
-    activeDemodulator = NULL;
-    lastActiveDemodulator = NULL;
-    activeVisualDemodulator = NULL;
+
     lastBandwidth = DEFAULT_DEMOD_BW;
     lastDemodType = DEFAULT_DEMOD_TYPE;
     lastSquelchEnabled = false;
@@ -37,9 +35,11 @@ DemodulatorMgr::~DemodulatorMgr() {
     terminateAll();
 }
 
-DemodulatorInstance *DemodulatorMgr::newThread() {
+DemodulatorInstancePtr DemodulatorMgr::newThread() {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
-    DemodulatorInstance *newDemod = new DemodulatorInstance;
+    
+    //create a new instance of DemodulatorInstance here.
+    DemodulatorInstancePtr newDemod = std::make_shared<DemodulatorInstance>();
 
     std::stringstream label;
     label << demods.size();
@@ -51,27 +51,34 @@ DemodulatorInstance *DemodulatorMgr::newThread() {
 }
 
 void DemodulatorMgr::terminateAll() {
+
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
+    
     while (demods.size()) {
 
-        DemodulatorInstance *d = demods.back();
+        DemodulatorInstancePtr d = demods.back();
         demods.pop_back();
         wxGetApp().removeDemodulator(d);
         deleteThread(d);
     }
 }
 
-std::vector<DemodulatorInstance *> &DemodulatorMgr::getDemodulators() {
+std::vector<DemodulatorInstancePtr> DemodulatorMgr::getDemodulators() {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
     return demods;
 }
 
-std::vector<DemodulatorInstance *> DemodulatorMgr::getOrderedDemodulators(bool actives) {
+std::vector<DemodulatorInstancePtr> DemodulatorMgr::getOrderedDemodulators(bool actives) {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
-    std::vector<DemodulatorInstance *> demods_ordered = demods;
+    
+    auto demods_ordered = demods;
+    
     if (actives) {
+        
         std::sort(demods_ordered.begin(), demods_ordered.end(), inactiveCompare);
-        std::vector<DemodulatorInstance *>::iterator i;
+        
+        std::vector<DemodulatorInstancePtr>::iterator i;
+        
         for (i = demods_ordered.begin(); i != demods_ordered.end(); i++) {
             if ((*i)->isActive()) {
                 break;
@@ -88,13 +95,14 @@ std::vector<DemodulatorInstance *> DemodulatorMgr::getOrderedDemodulators(bool a
     return demods_ordered;
 }
 
-DemodulatorInstance *DemodulatorMgr::getPreviousDemodulator(DemodulatorInstance *demod, bool actives) {
+DemodulatorInstancePtr DemodulatorMgr::getPreviousDemodulator(DemodulatorInstancePtr demod, bool actives) {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
     if (!getLastActiveDemodulator()) {
         return nullptr;
     }
-    std::vector<DemodulatorInstance *> demods_ordered = getOrderedDemodulators(actives);
-    std::vector<DemodulatorInstance *>::iterator p = std::find(demods_ordered.begin(), demods_ordered.end(), demod);
+    auto demods_ordered = getOrderedDemodulators(actives);
+    auto p = std::find(demods_ordered.begin(), demods_ordered.end(), demod);
+
     if (p == demods_ordered.end()) {
         return nullptr;
     }
@@ -104,13 +112,14 @@ DemodulatorInstance *DemodulatorMgr::getPreviousDemodulator(DemodulatorInstance 
     return *(--p);
 }
 
-DemodulatorInstance *DemodulatorMgr::getNextDemodulator(DemodulatorInstance *demod, bool actives) {
+DemodulatorInstancePtr DemodulatorMgr::getNextDemodulator(DemodulatorInstancePtr demod, bool actives) {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
     if (!getLastActiveDemodulator()) {
         return nullptr;
     }
-    std::vector<DemodulatorInstance *> demods_ordered = getOrderedDemodulators(actives);
-    std::vector<DemodulatorInstance *>::iterator p = std::find(demods_ordered.begin(), demods_ordered.end(), demod);
+    auto demods_ordered = getOrderedDemodulators(actives);
+    auto p = std::find(demods_ordered.begin(), demods_ordered.end(), demod);
+
     if (actives) {
         
     }
@@ -123,26 +132,25 @@ DemodulatorInstance *DemodulatorMgr::getNextDemodulator(DemodulatorInstance *dem
     return *(++p);
 }
 
-DemodulatorInstance *DemodulatorMgr::getLastDemodulator() {
+DemodulatorInstancePtr DemodulatorMgr::getLastDemodulator() {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
-    std::vector<DemodulatorInstance *> demods_ordered = getOrderedDemodulators();
-    return *(demods_ordered.end());
+    
+    return getOrderedDemodulators().back();
 }
 
-DemodulatorInstance *DemodulatorMgr::getFirstDemodulator() {
+DemodulatorInstancePtr DemodulatorMgr::getFirstDemodulator() {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
-    std::vector<DemodulatorInstance *> demods_ordered = getOrderedDemodulators();
-    return *(demods_ordered.begin());
+    
+    return getOrderedDemodulators().front();
 }
 
-void DemodulatorMgr::deleteThread(DemodulatorInstance *demod) {
+void DemodulatorMgr::deleteThread(DemodulatorInstancePtr demod) {
+    
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
 
     wxGetApp().getBookmarkMgr().addRecent(demod);
-    
-    std::vector<DemodulatorInstance *>::iterator i;
-
-    i = std::find(demods.begin(), demods.end(), demod);
+  
+    auto i = std::find(demods.begin(), demods.end(), demod);
 
     if (activeDemodulator == demod) {
         activeDemodulator = nullptr;
@@ -161,19 +169,15 @@ void DemodulatorMgr::deleteThread(DemodulatorInstance *demod) {
     //Ask for termination
     demod->setActive(false);
     demod->terminate();
-
-    //Do not cleanup immediatly
-    std::lock_guard < std::mutex > lock_deleted(deleted_demods_busy);
-    demods_deleted.push_back(demod);
 }
 
-std::vector<DemodulatorInstance *> DemodulatorMgr::getDemodulatorsAt(long long freq, int bandwidth) {
+std::vector<DemodulatorInstancePtr> DemodulatorMgr::getDemodulatorsAt(long long freq, int bandwidth) {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
     
-    std::vector<DemodulatorInstance *> foundDemods;
+    std::vector<DemodulatorInstancePtr> foundDemods;
 
     for (int i = 0, iMax = demods.size(); i < iMax; i++) {
-        DemodulatorInstance *testDemod = demods[i];
+        DemodulatorInstancePtr testDemod = demods[i];
 
         long long freqTest = testDemod->getFrequency();
         long long bandwidthTest = testDemod->getBandwidth();
@@ -192,7 +196,7 @@ std::vector<DemodulatorInstance *> DemodulatorMgr::getDemodulatorsAt(long long f
 bool DemodulatorMgr::anyDemodulatorsAt(long long freq, int bandwidth) {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
     for (int i = 0, iMax = demods.size(); i < iMax; i++) {
-        DemodulatorInstance *testDemod = demods[i];
+        DemodulatorInstancePtr testDemod = demods[i];
 
         long long freqTest = testDemod->getFrequency();
         long long bandwidthTest = testDemod->getBandwidth();
@@ -210,32 +214,34 @@ bool DemodulatorMgr::anyDemodulatorsAt(long long freq, int bandwidth) {
 }
 
 
-void DemodulatorMgr::setActiveDemodulator(DemodulatorInstance *demod, bool temporary) {
+void DemodulatorMgr::setActiveDemodulator(DemodulatorInstancePtr demod, bool temporary) {
+    
+    std::lock_guard < std::recursive_mutex > lock(demods_busy);
     
     if (!temporary) {
-        if (activeDemodulator.load() != nullptr) {
-            lastActiveDemodulator = activeDemodulator.load();
+        if (activeDemodulator != nullptr) {
+            lastActiveDemodulator = activeDemodulator;
             updateLastState();
         } else {
             lastActiveDemodulator = demod;
         }
         updateLastState();
 #if USE_HAMLIB
-        if (wxGetApp().rigIsActive() && wxGetApp().getRigThread()->getFollowModem() && lastActiveDemodulator.load()) {
-            wxGetApp().getRigThread()->setFrequency(lastActiveDemodulator.load()->getFrequency(),true);
+        if (wxGetApp().rigIsActive() && wxGetApp().getRigThread()->getFollowModem() && lastActiveDemodulator) {
+            wxGetApp().getRigThread()->setFrequency(lastActiveDemodulator->getFrequency(),true);
         }
 #endif
         wxGetApp().getBookmarkMgr().updateActiveList();
     } 
 
-    if (activeVisualDemodulator.load()) {
-        activeVisualDemodulator.load()->setVisualOutputQueue(nullptr);
+    if (activeVisualDemodulator) {
+        activeVisualDemodulator->setVisualOutputQueue(nullptr);
     }
     if (demod) {
         demod->setVisualOutputQueue(wxGetApp().getAudioVisualQueue());
         activeVisualDemodulator = demod;
     } else {
-        DemodulatorInstance *last = getLastActiveDemodulator();
+        DemodulatorInstancePtr last = getLastActiveDemodulator();
         if (last) {
             last->setVisualOutputQueue(wxGetApp().getAudioVisualQueue());
         }
@@ -246,25 +252,41 @@ void DemodulatorMgr::setActiveDemodulator(DemodulatorInstance *demod, bool tempo
 
 }
 
-DemodulatorInstance *DemodulatorMgr::getActiveDemodulator() {
-    if (activeDemodulator.load() && !activeDemodulator.load()->isActive()) {
+//Dangerous: this is only intended by some internal classes
+void DemodulatorMgr::setActiveDemodulatorByRawPointer(DemodulatorInstance* demod, bool temporary) {
+    std::lock_guard < std::recursive_mutex > lock(demods_busy);
+
+    for (auto existing_demod : demods) {
+
+        if (existing_demod.get() == demod) {
+
+            setActiveDemodulator(existing_demod, temporary);
+            break;
+        }
+    }
+}
+
+DemodulatorInstancePtr DemodulatorMgr::getActiveDemodulator() {
+    std::lock_guard < std::recursive_mutex > lock(demods_busy);
+
+    if (activeDemodulator && !activeDemodulator->isActive()) {
         activeDemodulator = getLastActiveDemodulator();
     }
     return activeDemodulator;
 }
 
-DemodulatorInstance *DemodulatorMgr::getLastActiveDemodulator() {
+DemodulatorInstancePtr DemodulatorMgr::getLastActiveDemodulator() {
     return lastActiveDemodulator;
 }
 
-DemodulatorInstance *DemodulatorMgr::getLastDemodulatorWith(const std::string& type,
+DemodulatorInstancePtr DemodulatorMgr::getLastDemodulatorWith(const std::string& type,
 															const std::wstring& userLabel,
 															long long frequency,
 															int bandwidth) {
 	std::lock_guard < std::recursive_mutex > lock(demods_busy);
 
 	//backwards search: 
-	for (std::vector<DemodulatorInstance *>::reverse_iterator it = demods.rbegin(); it != demods.rend(); it++) {
+	for (auto it = demods.rbegin(); it != demods.rend(); it++) {
 
 		if ((*it)->getDemodulatorType() == type &&
 			(*it)->getDemodulatorUserLabel() == userLabel &&
@@ -278,86 +300,31 @@ DemodulatorInstance *DemodulatorMgr::getLastDemodulatorWith(const std::string& t
 	return nullptr;
 }
 
-bool DemodulatorMgr::garbageCollect(bool forcedGC, int maxWaitForTerminationMs) {
-    
-#define SPIN_WAIT_SLEEP_MS 5
-
-    //this is a stupid busy plus sleep loop
-    int nbCyclesToWait = 0;
-
-    if (maxWaitForTerminationMs <= 0) {
-        nbCyclesToWait = std::numeric_limits<int>::max();
-    }
-    else {
-
-        nbCyclesToWait = (maxWaitForTerminationMs / SPIN_WAIT_SLEEP_MS) + 1;
-    }
-
-    int currentWaitCycle = 0;
-
-    std::lock_guard < std::mutex > lock(deleted_demods_busy);
-
-    while (!demods_deleted.empty()) {
-
-        std::vector<DemodulatorInstance *>::iterator it = demods_deleted.begin();
-        //make 1 pass over 
-        while (it != demods_deleted.end()) {
-
-            if ((*it)->isTerminated()) {
-           
-                DemodulatorInstance *deleted = (*it);
-      
-                std::cout << "Garbage collected demodulator instance '" << deleted->getLabel() << "'... " << std::endl << std::flush;
-                it = demods_deleted.erase(it);
-                delete deleted;
-
-                //only garbage collect 1 demod at a time.
-                if (!forcedGC) {
-                    return true;
-                }
-            }
-            else {
-                it++;
-            }
-        } //end while
-        //stupid busy-wait loop
-        std::this_thread::sleep_for(std::chrono::milliseconds(SPIN_WAIT_SLEEP_MS));
-
-        currentWaitCycle++;
-
-        if (currentWaitCycle >= nbCyclesToWait) {
-            std::cout << "ERROR: DemodulatorMgr::garbageCollect() has not terminated in time ! (> " << (currentWaitCycle * SPIN_WAIT_SLEEP_MS) << " ms)" << std::endl << std::flush;
-            return false;
-        }
-    } //end while not empty
-
-    return true;
-}
 
 void DemodulatorMgr::updateLastState() {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
 
     if (std::find(demods.begin(), demods.end(), lastActiveDemodulator) == demods.end()) {
-        if (activeDemodulator.load() && activeDemodulator.load()->isActive()) {
-            lastActiveDemodulator = activeDemodulator.load();
-        } else if (activeDemodulator.load() && !activeDemodulator.load()->isActive()){
+        if (activeDemodulator && activeDemodulator->isActive()) {
+            lastActiveDemodulator = activeDemodulator;
+        } else if (activeDemodulator && !activeDemodulator->isActive()){
             activeDemodulator = nullptr;
             lastActiveDemodulator = nullptr;
         }
     }
 
-    if (lastActiveDemodulator.load() && !lastActiveDemodulator.load()->isActive()) {
+    if (lastActiveDemodulator && !lastActiveDemodulator->isActive()) {
         lastActiveDemodulator = nullptr;
     }
 
-    if (lastActiveDemodulator.load()) {
-        lastBandwidth = lastActiveDemodulator.load()->getBandwidth();
-        lastDemodType = lastActiveDemodulator.load()->getDemodulatorType();
-        lastDemodLock = lastActiveDemodulator.load()->getDemodulatorLock()?true:false;
-        lastSquelchEnabled = lastActiveDemodulator.load()->isSquelchEnabled();
-        lastSquelch = lastActiveDemodulator.load()->getSquelchLevel();
-        lastGain = lastActiveDemodulator.load()->getGain();
-        lastModemSettings[lastDemodType] = lastActiveDemodulator.load()->readModemSettings();
+    if (lastActiveDemodulator) {
+        lastBandwidth = lastActiveDemodulator->getBandwidth();
+        lastDemodType = lastActiveDemodulator->getDemodulatorType();
+        lastDemodLock = lastActiveDemodulator->getDemodulatorLock()?true:false;
+        lastSquelchEnabled = lastActiveDemodulator->isSquelchEnabled();
+        lastSquelch = lastActiveDemodulator->getSquelchLevel();
+        lastGain = lastActiveDemodulator->getGain();
+        lastModemSettings[lastDemodType] = lastActiveDemodulator->readModemSettings();
     }
 
 }
@@ -436,7 +403,8 @@ void DemodulatorMgr::setOutputDevices(std::map<int,RtAudio::DeviceInfo> devs) {
     outputDevices = devs;
 }
 
-void DemodulatorMgr::saveInstance(DataNode *node, DemodulatorInstance *inst) {
+void DemodulatorMgr::saveInstance(DataNode *node, DemodulatorInstancePtr inst) {
+
     *node->newChild("bandwidth") = inst->getBandwidth();
     *node->newChild("frequency") = inst->getFrequency();  
     *node->newChild("type") = inst->getDemodulatorType();
@@ -465,11 +433,11 @@ void DemodulatorMgr::saveInstance(DataNode *node, DemodulatorInstance *inst) {
     }
 }
 
-DemodulatorInstance *DemodulatorMgr::loadInstance(DataNode *node) {
+DemodulatorInstancePtr DemodulatorMgr::loadInstance(DataNode *node) {
 
 	std::lock_guard < std::recursive_mutex > lock(demods_busy);
 
-    DemodulatorInstance *newDemod = nullptr;
+    DemodulatorInstancePtr newDemod = nullptr;
 	 
     node->rewindAll();
     

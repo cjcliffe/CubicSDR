@@ -11,10 +11,6 @@
 #include "AudioThread.h"
 #include "Modem.h"
 
-typedef ThreadBlockingQueue<AudioThreadInputPtr> DemodulatorThreadOutputQueue;
-
-typedef std::shared_ptr<DemodulatorThreadOutputQueue> DemodulatorThreadOutputQueuePtr;
-
 #define DEMOD_VIS_SIZE 2048
 #define DEMOD_SIGNAL_MIN -30
 #define DEMOD_SIGNAL_MAX 30
@@ -24,7 +20,7 @@ class DemodulatorInstance;
 class DemodulatorThread : public IOThread {
 public:
 
-    DemodulatorThread(DemodulatorInstance *parent);
+    DemodulatorThread(DemodulatorInstance* parent);
     virtual ~DemodulatorThread();
 
     void onBindOutput(std::string name, ThreadQueueBasePtr threadQueue);
@@ -43,13 +39,14 @@ public:
    
     bool getSquelchBreak();
 
-    static void releaseSquelchLock(DemodulatorInstance *inst);
+
+    static void releaseSquelchLock(DemodulatorInstance* inst);
 protected:
     
     double abMagnitude(float inphase, float quadrature);
     double linearToDb(double linear);
 
-    DemodulatorInstance *demodInstance = nullptr;
+    DemodulatorInstance* demodInstance;
     ReBuffer<AudioThreadInput> outputBuffers;
 
     std::atomic_bool muted;
@@ -58,7 +55,7 @@ protected:
     std::atomic<float> signalLevel, signalFloor, signalCeil;
     bool squelchEnabled, squelchBreak;
     
-    static std::atomic<DemodulatorInstance *> squelchLock;
+    static DemodulatorInstance* squelchLock;
     static std::mutex squelchLockMutex;
     
     

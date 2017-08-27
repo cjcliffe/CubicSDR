@@ -11,10 +11,8 @@ public:
     SDRPostThread();
     ~SDRPostThread();
 
-    void bindDemodulator(DemodulatorInstance *demod);
-    void bindDemodulators(std::vector<DemodulatorInstance *> *demods);
-    void removeDemodulator(DemodulatorInstance *demod);
-    
+    void notifyDemodulatorsChanged();
+   
     virtual void run();
     virtual void terminate();
 
@@ -27,12 +25,6 @@ protected:
     DemodulatorThreadInputQueuePtr iqDataOutQueue;
     DemodulatorThreadInputQueuePtr iqVisualQueue;
     DemodulatorThreadInputQueuePtr iqActiveDemodVisualQueue;
-    
-    //protects access to demodulators lists and such
-    std::mutex busy_demod;
-    std::vector<DemodulatorInstance *> demodulators;
-
-    
 
 private:
 
@@ -48,7 +40,7 @@ private:
     long long chanBw = 0;
     
     size_t nRunDemods;
-    std::vector<DemodulatorInstance *> runDemods;
+    std::vector<DemodulatorInstancePtr> runDemods;
     std::vector<int> demodChannel;
     std::vector<int> demodChannelActive;
 

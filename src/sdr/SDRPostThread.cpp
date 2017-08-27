@@ -16,12 +16,12 @@
 #define MAX_BLOCKING_DURATION_MICROS (1000 * 1000)
 
 SDRPostThread::SDRPostThread() : IOThread(), buffers("SDRPostThreadBuffers"), visualDataBuffers("SDRPostThreadVisualDataBuffers"), frequency(0) {
-    iqDataInQueue = NULL;
-    iqDataOutQueue = NULL;
-    iqVisualQueue = NULL;
+    iqDataInQueue = nullptr;
+    iqDataOutQueue = nullptr;
+    iqVisualQueue = nullptr;
 
     numChannels = 0;
-    channelizer = NULL;
+    channelizer = nullptr;
     
     sampleRate = 0;
     nRunDemods = 0;
@@ -36,42 +36,10 @@ SDRPostThread::SDRPostThread() : IOThread(), buffers("SDRPostThreadBuffers"), vi
 SDRPostThread::~SDRPostThread() {
 }
 
-void SDRPostThread::bindDemodulator(DemodulatorInstance *demod) {
-    
-    std::lock_guard < std::mutex > lock(busy_demod);
-
-    demodulators.push_back(demod);
+void SDRPostThread::notifyDemodulatorsChanged() {
+  
     doRefresh.store(true);
    
-}
-
-void SDRPostThread::bindDemodulators(std::vector<DemodulatorInstance *> *demods) {
-    if (!demods) {
-        return;
-    }
-    std::lock_guard < std::mutex > lock(busy_demod);
-
-    for (std::vector<DemodulatorInstance *>::iterator di = demods->begin(); di != demods->end(); di++) {
-        demodulators.push_back(*di);
-        doRefresh.store(true);
-    }
-   
-}
-
-void SDRPostThread::removeDemodulator(DemodulatorInstance *demod) {
-    if (!demod) {
-        return;
-    }
-
-    std::lock_guard < std::mutex > lock(busy_demod);
-
-    std::vector<DemodulatorInstance *>::iterator i = std::find(demodulators.begin(), demodulators.end(), demod);
-    
-    if (i != demodulators.end()) {
-        demodulators.erase(i);
-        doRefresh.store(true);
-    }
-  
 }
 
 void SDRPostThread::initPFBChannelizer() {
@@ -91,15 +59,16 @@ void SDRPostThread::initPFBChannelizer() {
 
 void SDRPostThread::updateActiveDemodulators() {
     // In range?
-    std::vector<DemodulatorInstance *>::iterator demod_i;
     
     nRunDemods = 0;
     
     long long centerFreq = wxGetApp().getFrequency();
 
-    for (demod_i = demodulators.begin(); demod_i != demodulators.end(); demod_i++) {
-        DemodulatorInstance *demod = *demod_i;
-         
+    //retreive the current list of demodulators:
+    auto demodulators = wxGetApp().getDemodMgr().getDemodulators();
+
+    for (auto demod : demodulators) {
+          
         // not in range?
         if (demod->isDeltaLock()) {
             if (demod->getFrequency() != centerFreq + demod->getDeltaLockOfs()) {
@@ -123,7 +92,7 @@ void SDRPostThread::updateActiveDemodulators() {
             }
         } else if (!demod->isActive()) { // in range, activate if not activated
             demod->setActive(true);
-            if (wxGetApp().getDemodMgr().getLastActiveDemodulator() == NULL) {
+            if (wxGetApp().getDemodMgr().getLastActiveDemodulator() == nullptr) {
 
                 wxGetApp().getDemodMgr().setActiveDemodulator(demod);
             }
@@ -194,9 +163,8 @@ void SDRPostThread::run() {
         if (!iqDataInQueue->pop(data_in, HEARTBEAT_CHECK_PERIOD_MICROS)) {
             continue;
         }
-        //        std::lock_guard < std::mutex > lock(data_in->m_mutex);
-
-        std::lock_guard < std::mutex > lock(busy_demod);
+         
+        bool doUpdate = false;
 
         if (data_in && data_in->data.size()) {
             if(data_in->numChannels > 1) {
@@ -205,17 +173,16 @@ void SDRPostThread::run() {
                 runSingleCH(data_in.get());
             }
         }
-
-        bool doUpdate = false;
+        
         for (size_t j = 0; j < nRunDemods; j++) {
-            DemodulatorInstance *demod = runDemods[j];
+            DemodulatorInstancePtr demod = runDemods[j];
             if (abs(frequency - demod->getFrequency()) > (sampleRate / 2)) {
                 doUpdate = true;
             }
         }
         
         //Only update the list of demodulators here
-        if (doUpdate) {
+        if (doUpdate || doRefresh) {
             updateActiveDemodulators();
         }
     } //end while
@@ -264,9 +231,9 @@ void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
     }
     
     size_t refCount = nRunDemods;
-    bool doIQDataOut = (iqDataOutQueue != NULL && !iqDataOutQueue->full());
-    bool doDemodVisOut = (nRunDemods && iqActiveDemodVisualQueue != NULL && !iqActiveDemodVisualQueue->full());
-    bool doVisOut = (iqVisualQueue != NULL && !iqVisualQueue->full());
+    bool doIQDataOut = (iqDataOutQueue != nullptr && !iqDataOutQueue->full());
+    bool doDemodVisOut = (nRunDemods && iqActiveDemodVisualQueue != nullptr && !iqActiveDemodVisualQueue->full());
+    bool doVisOut = (iqVisualQueue != nullptr && !iqVisualQueue->full());
     
     if (doIQDataOut) {
         refCount++;
@@ -295,22 +262,26 @@ void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
 
         if (doDemodVisOut) {
             //VSO: blocking push
-            iqActiveDemodVisualQueue->push(demodDataOut, MAX_BLOCKING_DURATION_MICROS, "runSingleCH() iqActiveDemodVisualQueue");
+            iqActiveDemodVisualQueue->push(demodDataOut);
         }
         
         if (doIQDataOut) {
             //VSO: blocking push
-            iqDataOutQueue->push(demodDataOut, MAX_BLOCKING_DURATION_MICROS,"runSingleCH() iqDataOutQueue");
+            iqDataOutQueue->push(demodDataOut);
         }
 
         if (doVisOut) {
             //VSO: blocking push
-            iqVisualQueue->push(demodDataOut, MAX_BLOCKING_DURATION_MICROS, "runSingleCH() iqVisualQueue");
+            iqVisualQueue->push(demodDataOut);
         }
         
         for (size_t i = 0; i < nRunDemods; i++) {
-            //VSO: blocking push
-            runDemods[i]->getIQInputDataPipe()->push(demodDataOut, MAX_BLOCKING_DURATION_MICROS, "runSingleCH() runDemods[i]->getIQInputDataPipe()");
+            //VSO: timed-push
+            if (!runDemods[i]->getIQInputDataPipe()->push(demodDataOut, MAX_BLOCKING_DURATION_MICROS, "runSingleCH() runDemods[i]->getIQInputDataPipe()")) {
+                //some runDemods are no longer there, bail out from runSingleCH() entirely.
+                doRefresh = true;
+                return;
+            }
         }
     }
 }
@@ -338,7 +309,7 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
         
         bool doVis = false;
         
-        if (iqVisualQueue != NULL && !iqVisualQueue->full()) {
+        if (iqVisualQueue != nullptr && !iqVisualQueue->full()) {
             doVis = true;
         }
         
@@ -347,11 +318,11 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
         iqDataOut->data.assign(data_in->data.begin(), data_in->data.begin() + dataSize);
         
         //VSO: blocking push
-        iqDataOutQueue->push(iqDataOut, MAX_BLOCKING_DURATION_MICROS, "runPFBCH() iqDataOutQueue");
+        iqDataOutQueue->push(iqDataOut);
    
         if (doVis) {
             //VSO: blocking push
-            iqVisualQueue->push(iqDataOut, MAX_BLOCKING_DURATION_MICROS, "runPFBCH() iqVisualQueue");
+            iqVisualQueue->push(iqDataOut);
         }
     }
     
@@ -366,7 +337,7 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
         doRefresh.store(false);
     }
     
-    DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
     int activeDemodChannel = -1;
     
     // Find active demodulators
@@ -384,7 +355,7 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
         
         // Find nearest channel for each demodulator
         for (size_t i = 0; i < nRunDemods; i++) {
-            DemodulatorInstance *demod = runDemods[i];
+            DemodulatorInstancePtr demod = runDemods[i];
             demodChannel[i] = getChannelAt(demod->getFrequency());
             if (demod == activeDemod) {
                 activeDemodChannel = demodChannel[i];
@@ -400,7 +371,7 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
         
         // Run channels
         for (int i = 0; i < numChannels+1; i++) {
-            int doDemodVis = ((activeDemodChannel == i) && (iqActiveDemodVisualQueue != NULL) && !iqActiveDemodVisualQueue->full())?1:0;
+            int doDemodVis = ((activeDemodChannel == i) && (iqActiveDemodVisualQueue != nullptr) && !iqActiveDemodVisualQueue->full())?1:0;
             
             if (!doDemodVis && demodChannelActive[i] == 0) {
                 continue;
@@ -447,16 +418,20 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
             
             if (doDemodVis) {
                 //VSO: blocking push
-                iqActiveDemodVisualQueue->push(demodDataOut, MAX_BLOCKING_DURATION_MICROS, "runPFBCH() iqActiveDemodVisualQueue");
+                iqActiveDemodVisualQueue->push(demodDataOut);
             }
             
             for (size_t j = 0; j < nRunDemods; j++) {
                 if (demodChannel[j] == i) {
-                    DemodulatorInstance *demod = runDemods[j];
-                    //VSO: blocking push
-                    demod->getIQInputDataPipe()->push(demodDataOut, MAX_BLOCKING_DURATION_MICROS, "runPFBCH() demod->getIQInputDataPipe()");
+                    
+                    //VSO: timed- push
+                    if (!runDemods[j]->getIQInputDataPipe()->push(demodDataOut, MAX_BLOCKING_DURATION_MICROS, "runPFBCH() runDemods[j]->getIQInputDataPipe()")) {
+                        //Some runDemods are no longer there, bail out from runPFBCH() entirely.
+                        doRefresh = true;
+                        return;
+                    }
                 }
-            }
+            } //end for
         }
     }
 }

@@ -62,7 +62,7 @@ PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContex
 //#endif
 }
 
-void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, long long center_freq, long long srate, bool centerline) {
+void PrimaryGLContext::DrawDemodInfo(DemodulatorInstancePtr demod, RGBA4f color, long long center_freq, long long srate, bool centerline) {
     if (!demod) {
         return;
     }
@@ -287,7 +287,7 @@ void PrimaryGLContext::DrawFreqBwInfo(long long freq, int bw, RGBA4f color, long
     glDisable(GL_BLEND);
 }
 
-void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long long center_freq, long long srate) {
+void PrimaryGLContext::DrawDemod(DemodulatorInstancePtr demod, RGBA4f color, long long center_freq, long long srate) {
     if (!demod) {
         return;
     }
@@ -409,7 +409,8 @@ void PrimaryGLContext::drawSingleDemodLabel(const std::wstring& demodStr, float 
 }
 
 void PrimaryGLContext::DrawFreqSelector(float uxPos, RGBA4f color, float w, long long /* center_freq */, long long srate) {
-    DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    
+    DemodulatorInstancePtr demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     long long bw = 0;
 

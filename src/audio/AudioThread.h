@@ -35,6 +35,10 @@ public:
 
 typedef std::shared_ptr<AudioThreadInput> AudioThreadInputPtr;
 
+typedef ThreadBlockingQueue<AudioThreadInputPtr> DemodulatorThreadOutputQueue;
+
+typedef std::shared_ptr<DemodulatorThreadOutputQueue> DemodulatorThreadOutputQueuePtr;
+
 class AudioThreadCommand {
 public:
     enum AudioThreadCommandEnum {
