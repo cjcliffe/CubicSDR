@@ -68,10 +68,10 @@ DemodulatorInstance::DemodulatorInstance() {
     demodulatorPreThread->setInputQueue("IQDataInput",pipeIQInputData);
     demodulatorPreThread->setOutputQueue("IQDataOutput",pipeIQDemodData);
             
-    pipeAudioData = std::make_shared< AudioThreadInputQueue>();
+    pipeAudioData = std::make_shared<AudioThreadInputQueue>();
     pipeAudioData->set_max_num_items(10);
 
-    threadQueueControl = std::make_shared< DemodulatorThreadControlCommandQueue>();
+    threadQueueControl = std::make_shared<DemodulatorThreadControlCommandQueue>();
     threadQueueControl->set_max_num_items(2);
 
     demodulatorThread = new DemodulatorThread(this);
@@ -102,10 +102,10 @@ DemodulatorInstance::~DemodulatorInstance() {
 
 #if ENABLE_DIGITAL_LAB
             delete activeOutput;
-#endif
-            delete audioThread;
-            delete demodulatorThread;
+#endif           
             delete demodulatorPreThread;
+            delete demodulatorThread;
+            delete audioThread;
 
             break;
         }
@@ -174,10 +174,18 @@ void DemodulatorInstance::terminate() {
 
 //    std::cout << "Terminating demodulator audio thread.." << std::endl;
     audioThread->terminate();
+
 //    std::cout << "Terminating demodulator thread.." << std::endl;
     demodulatorThread->terminate();
+   
 //    std::cout << "Terminating demodulator preprocessor thread.." << std::endl;
     demodulatorPreThread->terminate();
+
+    //that will actually unblock the currently blocked push().
+    pipeIQInputData->flush();
+    pipeAudioData->flush();
+    pipeIQDemodData->flush();
+    threadQueueControl->flush();
 }
 
 std::string DemodulatorInstance::getLabel() {
@@ -197,15 +205,23 @@ bool DemodulatorInstance::isTerminated() {
     bool demodTerminated = demodulatorThread->isTerminated();
     bool preDemodTerminated = demodulatorPreThread->isTerminated();
 
-    //Cleanup the worker threads, if the threads are indeed terminated
-    if (audioTerminated) {
+    //Cleanup the worker threads, if the threads are indeed terminated.
+    // threads are linked as  t_PreDemod ==> t_Demod ==> t_Audio
+    //so terminate in the same order to starve the following threads in succession.
+    //i.e waiting on timed-pop so able to se their stopping flag.
 
-        if (t_Audio) {
-            t_Audio->join();
+    if (preDemodTerminated) {
+        
+         if (t_PreDemod) {
 
-            delete t_Audio;
-            t_Audio = nullptr;
-        }
+#ifdef __APPLE__
+            pthread_join(t_PreDemod, NULL);
+#else
+            t_PreDemod->join();
+            delete t_PreDemod;
+#endif
+            t_PreDemod = nullptr;
+         }
     }
 
     if (demodTerminated) {
@@ -221,18 +237,14 @@ bool DemodulatorInstance::isTerminated() {
         }
     }
 
-    if (preDemodTerminated) {
-        
-         if (t_PreDemod) {
+    if (audioTerminated) {
 
-#ifdef __APPLE__
-            pthread_join(t_PreDemod, NULL);
-#else
-            t_PreDemod->join();
-            delete t_PreDemod;
-#endif
-            t_PreDemod = nullptr;
-         }
+        if (t_Audio) {
+            t_Audio->join();
+
+            delete t_Audio;
+            t_Audio = nullptr;
+        }
     }
 
     bool terminated = audioTerminated && demodTerminated && preDemodTerminated;

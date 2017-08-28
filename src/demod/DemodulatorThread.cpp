@@ -241,7 +241,8 @@ void DemodulatorThread::run() {
         }
 
         if ((ati || modemDigital) && localAudioVisOutputQueue != nullptr && localAudioVisOutputQueue->empty()) {
-            AudioThreadInputPtr ati_vis(new AudioThreadInput);
+
+            AudioThreadInputPtr ati_vis = std::make_shared<AudioThreadInput>();
 
             ati_vis->sampleRate = inp->sampleRate;
             ati_vis->inputRate = inp->sampleRate;
@@ -348,6 +349,11 @@ void DemodulatorThread::run() {
 
 void DemodulatorThread::terminate() {
     IOThread::terminate();
+
+    //unblock the curretly blocked push()
+    iqInputQueue->flush();
+    audioOutputQueue->flush();
+    threadQueueControl->flush();
 }
 
 bool DemodulatorThread::isMuted() {

@@ -188,10 +188,7 @@ void SDRPostThread::run() {
     } //end while
     
     //Be safe, remove as many elements as possible
-    if (iqVisualQueue) {
-        iqVisualQueue->flush();   
-    }
-
+    iqVisualQueue->flush();   
     iqDataInQueue->flush();
     iqDataOutQueue->flush();
     iqActiveDemodVisualQueue->flush();
@@ -201,6 +198,11 @@ void SDRPostThread::run() {
 
 void SDRPostThread::terminate() {
     IOThread::terminate();
+    //unblock push()
+    iqVisualQueue->flush();
+    iqDataInQueue->flush();
+    iqDataOutQueue->flush();
+    iqActiveDemodVisualQueue->flush();
 }
 
 void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {

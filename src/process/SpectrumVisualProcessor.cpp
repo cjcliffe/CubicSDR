@@ -7,10 +7,6 @@
 //50 ms
 #define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
 
-//2s
-#define MAX_BLOCKING_DURATION_MICROS (2000 * 1000)
-
-
 SpectrumVisualProcessor::SpectrumVisualProcessor() : outputBuffers("SpectrumVisualProcessorBuffers") {
     lastInputBandwidth = 0;
     lastBandwidth = 0;
@@ -596,7 +592,7 @@ void SpectrumVisualProcessor::process() {
             output->centerFreq = centerFreq;
             output->bandwidth = bandwidth;
 
-            distribute(output, MAX_BLOCKING_DURATION_MICROS, "output");
+            distribute(output);
         }
     }  
     

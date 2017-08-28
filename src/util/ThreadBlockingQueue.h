@@ -98,7 +98,7 @@ public:
                 std::thread::id currentThreadId = std::this_thread::get_id();
                 std::cout << "WARNING: Thread 0x" << std::hex << currentThreadId << std::dec <<
                     " (" << currentThreadId << ") executing {" << typeid(*this).name() << "}.push() has failed with timeout > " <<
-                    (timeout * 0.001) << " ms, message: " << errorMessage << std::endl << std::flush;
+                    (timeout * 0.001) << " ms, message: '" << errorMessage << "'" << std::endl << std::flush;
             } 
             return false;
         }
@@ -150,7 +150,7 @@ public:
                 std::thread::id currentThreadId = std::this_thread::get_id();
                 std::cout << "WARNING: Thread 0x" << std::hex << currentThreadId << std::dec <<
                     " (" << currentThreadId << ") executing {" << typeid(*this).name() << "}.pop() has failed with timeout > " <<
-                    (timeout * 0.001) << " ms, message: " << errorMessage << std::endl << std::flush;
+                    (timeout * 0.001) << " ms, message: '" << errorMessage << "'" << std::endl << std::flush;
             }
             return false;
         }

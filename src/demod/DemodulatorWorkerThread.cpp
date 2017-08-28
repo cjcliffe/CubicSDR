@@ -116,4 +116,7 @@ void DemodulatorWorkerThread::run() {
 
 void DemodulatorWorkerThread::terminate() {
     IOThread::terminate();
+    //unblock the push()
+    resultQueue->flush();
+    commandQueue->flush();
 }

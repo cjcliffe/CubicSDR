@@ -5,10 +5,6 @@
 #include <cstring>
 #include <string>
 
-//2s
-#define MAX_BLOCKING_DURATION_MICROS (2000 * 1000)
-
-
 ScopeVisualProcessor::ScopeVisualProcessor(): outputBuffers("ScopeVisualProcessorBuffers") {
     scopeEnabled.store(true);
     spectrumEnabled.store(true);
@@ -120,7 +116,7 @@ void ScopeVisualProcessor::process() {
             }
 
             renderData->spectrum = false;
-            distribute(renderData, MAX_BLOCKING_DURATION_MICROS, "renderData");
+            distribute(renderData);
         }
         
         if (spectrumEnabled) {
@@ -216,7 +212,7 @@ void ScopeVisualProcessor::process() {
             renderData->fft_size = fftSize/2;
             renderData->spectrum = true;
 
-            distribute(renderData, MAX_BLOCKING_DURATION_MICROS, "renderData");
+            distribute(renderData);
         } 
     } //end if try_pop()
 }

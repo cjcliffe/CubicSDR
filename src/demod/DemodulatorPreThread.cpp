@@ -352,6 +352,10 @@ void DemodulatorPreThread::terminate() {
     IOThread::terminate();
     workerThread->terminate();
 
+    //unblock the push()
+    iqOutputQueue->flush();
+    iqInputQueue->flush();
+
     //wait blocking for termination here, it could be long with lots of modems and we MUST terminate properly,
     //else better kill the whole application...
     workerThread->isTerminated(5000);
