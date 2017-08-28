@@ -24,7 +24,6 @@ SDRPostThread::SDRPostThread() : IOThread(), buffers("SDRPostThreadBuffers"), vi
     channelizer = nullptr;
     
     sampleRate = 0;
-    nRunDemods = 0;
     
     visFrequency.store(0);
     visBandwidth.store(0);
@@ -59,16 +58,17 @@ void SDRPostThread::initPFBChannelizer() {
 
 void SDRPostThread::updateActiveDemodulators() {
     // In range?
-    
-    nRunDemods = 0;
-    
+   
+    runDemods.clear();
+    demodChannel.clear();
+
     long long centerFreq = wxGetApp().getFrequency();
 
     //retreive the current list of demodulators:
     auto demodulators = wxGetApp().getDemodMgr().getDemodulators();
 
     for (auto demod : demodulators) {
-          
+         
         // not in range?
         if (demod->isDeltaLock()) {
             if (demod->getFrequency() != centerFreq + demod->getDeltaLockOfs()) {
@@ -103,14 +103,8 @@ void SDRPostThread::updateActiveDemodulators() {
         }
         
         // Add to the current run
-        if (nRunDemods == runDemods.size()) {
-            runDemods.push_back(demod);
-            demodChannel.push_back(-1);
-        } else {
-            runDemods[nRunDemods] = demod;
-            demodChannel[nRunDemods] = -1;
-        }
-        nRunDemods++;
+        runDemods.push_back(demod);
+        demodChannel.push_back(-1);
     }
 }
 
@@ -174,7 +168,7 @@ void SDRPostThread::run() {
             }
         }
         
-        for (size_t j = 0; j < nRunDemods; j++) {
+        for (size_t j = 0; j < runDemods.size(); j++) {
             DemodulatorInstancePtr demod = runDemods[j];
             if (abs(frequency - demod->getFrequency()) > (sampleRate / 2)) {
                 doUpdate = true;
@@ -232,9 +226,9 @@ void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
         doRefresh.store(false);
     }
     
-    size_t refCount = nRunDemods;
+    size_t refCount = runDemods.size();
     bool doIQDataOut = (iqDataOutQueue != nullptr && !iqDataOutQueue->full());
-    bool doDemodVisOut = (nRunDemods && iqActiveDemodVisualQueue != nullptr && !iqActiveDemodVisualQueue->full());
+    bool doDemodVisOut = (runDemods.size() > 0 && iqActiveDemodVisualQueue != nullptr && !iqActiveDemodVisualQueue->full());
     bool doVisOut = (iqVisualQueue != nullptr && !iqVisualQueue->full());
     
     if (doIQDataOut) {
@@ -277,7 +271,7 @@ void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
             iqVisualQueue->push(demodDataOut);
         }
         
-        for (size_t i = 0; i < nRunDemods; i++) {
+        for (size_t i = 0; i < runDemods.size(); i++) {
             //VSO: timed-push
             if (!runDemods[i]->getIQInputDataPipe()->push(demodDataOut, MAX_BLOCKING_DURATION_MICROS, "runSingleCH() runDemods[i]->getIQInputDataPipe()")) {
                 //some runDemods are no longer there, bail out from runSingleCH() entirely.
@@ -343,7 +337,7 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
     int activeDemodChannel = -1;
     
     // Find active demodulators
-    if (nRunDemods) {
+    if (runDemods.size() > 0) {
         
         // channelize data
         // firpfbch output rate is (input rate / channels)
@@ -356,7 +350,7 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
         }
         
         // Find nearest channel for each demodulator
-        for (size_t i = 0; i < nRunDemods; i++) {
+        for (size_t i = 0; i < runDemods.size(); i++) {
             DemodulatorInstancePtr demod = runDemods[i];
             demodChannel[i] = getChannelAt(demod->getFrequency());
             if (demod == activeDemod) {
@@ -364,7 +358,7 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
             }
         }
         
-        for (size_t i = 0; i < nRunDemods; i++) {
+        for (size_t i = 0; i < runDemods.size(); i++) {
             // cache channel usage refcounts
             if (demodChannel[i] >= 0) {
                 demodChannelActive[demodChannel[i]]++;
@@ -423,7 +417,7 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
                 iqActiveDemodVisualQueue->push(demodDataOut);
             }
             
-            for (size_t j = 0; j < nRunDemods; j++) {
+            for (size_t j = 0; j < runDemods.size(); j++) {
                 if (demodChannel[j] == i) {
                     
                     //VSO: timed- push

@@ -39,7 +39,6 @@ private:
     std::vector<long long> chanCenters;
     long long chanBw = 0;
     
-    size_t nRunDemods;
     std::vector<DemodulatorInstancePtr> runDemods;
     std::vector<int> demodChannel;
     std::vector<int> demodChannelActive;
