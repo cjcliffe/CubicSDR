@@ -564,6 +564,15 @@ void SDRThread::run() {
     std::cout << "SDR thread done." << std::endl;
 }
 
+void SDRThread::terminate() {
+    IOThread::terminate();
+
+    SDRThreadIQDataQueuePtr iqDataOutQueue = std::static_pointer_cast<SDRThreadIQDataQueue>(getOutputQueue("IQDataOutput"));
+
+    if (iqDataOutQueue != nullptr) {
+        iqDataOutQueue->flush();
+    }
+}
 
 SDRDeviceInfo *SDRThread::getDevice() {
     return deviceInfo.load();

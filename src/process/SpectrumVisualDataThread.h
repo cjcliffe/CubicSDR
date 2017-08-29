@@ -13,6 +13,8 @@ public:
     SpectrumVisualProcessor *getProcessor();
     
     virtual void run();
+
+    virtual void terminate();
     
 protected:
     SpectrumVisualProcessor sproc;

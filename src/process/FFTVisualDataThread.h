@@ -17,6 +17,8 @@ public:
     SpectrumVisualProcessor *getProcessor();
     
     virtual void run();
+
+    virtual void terminate();
     
 protected:
     FFTDataDistributor fftDistrib;

@@ -25,8 +25,8 @@ public:
 
     void onBindOutput(std::string name, ThreadQueueBasePtr threadQueue);
     
-    void run();
-    void terminate();
+    virtual void run();
+    virtual void terminate();
     
     void setMuted(bool state);
     bool isMuted();

@@ -84,3 +84,9 @@ void FFTVisualDataThread::run() {
 //    std::cout << "FFT visual data thread done." << std::endl;
 }
 
+void FFTVisualDataThread::terminate() {
+    IOThread::terminate();
+    fftDistrib.flushQueues();
+    wproc.flushQueues();
+}
+

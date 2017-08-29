@@ -28,3 +28,7 @@ void SpectrumVisualDataThread::run() {
 //    std::cout << "Spectrum visual data thread done." << std::endl;
 }
 
+void SpectrumVisualDataThread::terminate() {
+    IOThread::terminate();
+    sproc.flushQueues();
+}

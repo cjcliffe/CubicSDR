@@ -82,6 +82,17 @@ public:
             outputs.erase(i);
         }
     }
+    //Flush all queues, either input or outputs clearing their accumulated messages.
+    //this is purposefully non-blocking call.
+    void flushQueues() {
+        //DO NOT take the busy_update, we want a never blocking op how imperfect it could be.
+        input->flush();
+
+        for (auto single_output : outputs) {
+
+            single_output->flush();
+        }
+    }
     
     //Call process() repeateadly until all available 'input' data is consumed.
     void run() {
