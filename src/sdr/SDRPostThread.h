@@ -33,6 +33,8 @@ private:
     void updateChannels();
     int getChannelAt(long long frequency);
 
+    void resetAllDemodulators();
+
     ReBuffer<DemodulatorThreadIQData> buffers;
     std::vector<liquid_float_complex> fpData;
     std::vector<liquid_float_complex> dataOut;

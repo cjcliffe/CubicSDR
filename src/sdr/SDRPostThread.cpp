@@ -66,9 +66,9 @@ void SDRPostThread::updateActiveDemodulators() {
 
     //retreive the current list of demodulators:
     auto demodulators = wxGetApp().getDemodMgr().getDemodulators();
-
+   
     for (auto demod : demodulators) {
-         
+            
         // not in range?
         if (demod->isDeltaLock()) {
             if (demod->getFrequency() != centerFreq + demod->getDeltaLockOfs()) {
@@ -81,9 +81,14 @@ void SDRPostThread::updateActiveDemodulators() {
         
         if (abs(frequency - demod->getFrequency()) > (sampleRate / 2)) {
             // deactivate if active
-            if (demod->isActive() && !demod->isFollow() && !demod->isTracking()) {
+           
+            if (wxGetApp().getDemodMgr().getLastActiveDemodulator() == demod) {
+
                 demod->setActive(false);
             }
+            else if (demod->isActive() && !demod->isFollow() && !demod->isTracking()) {
+                demod->setActive(false);
+            } 
             
             // follow if follow mode
             if (demod->isFollow() && centerFreq != demod->getFrequency()) {
@@ -102,10 +107,25 @@ void SDRPostThread::updateActiveDemodulators() {
             continue;
         }
         
-        // Add to the current run
+        // Add active demods to the current run:
+
         runDemods.push_back(demod);
         demodChannel.push_back(-1);
     }
+}
+
+void SDRPostThread::resetAllDemodulators() {
+    
+    //retreive the current list of demodulators:
+    auto demodulators = wxGetApp().getDemodMgr().getDemodulators();
+
+    for (auto demod : demodulators) {
+
+        demod->setActive(false);
+        demod->getIQInputDataPipe()->flush();
+    }
+
+    doRefresh = true;
 }
 
 void SDRPostThread::updateChannels() {
@@ -273,9 +293,9 @@ void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
         
         for (size_t i = 0; i < runDemods.size(); i++) {
             //VSO: timed-push
-            if (!runDemods[i]->getIQInputDataPipe()->push(demodDataOut, MAX_BLOCKING_DURATION_MICROS, "runSingleCH() runDemods[i]->getIQInputDataPipe()")) {
+            if (!runDemods[i]->getIQInputDataPipe()->push(demodDataOut , MAX_BLOCKING_DURATION_MICROS, "runSingleCH() runDemods[i]->getIQInputDataPipe()")) {
                 //some runDemods are no longer there, bail out from runSingleCH() entirely.
-                doRefresh = true;
+                resetAllDemodulators();
                 return;
             }
         }
@@ -421,9 +441,9 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
                 if (demodChannel[j] == i) {
                     
                     //VSO: timed- push
-                    if (!runDemods[j]->getIQInputDataPipe()->push(demodDataOut, MAX_BLOCKING_DURATION_MICROS, "runPFBCH() runDemods[j]->getIQInputDataPipe()")) {
+                    if (!runDemods[j]->getIQInputDataPipe()->push(demodDataOut  , MAX_BLOCKING_DURATION_MICROS, "runPFBCH() runDemods[j]->getIQInputDataPipe()")) {
                         //Some runDemods are no longer there, bail out from runPFBCH() entirely.
-                        doRefresh = true;
+                        resetAllDemodulators();
                         return;
                     }
                 }
