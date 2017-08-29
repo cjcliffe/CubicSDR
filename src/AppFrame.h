@@ -194,7 +194,8 @@ private:
     wxBoxSizer *demodTray;
     BookmarkView *bookmarkView;
     
-    DemodulatorInstancePtr activeDemodulator;
+    //Use a raw pointer here to prevent a dangling reference
+    DemodulatorInstance* activeDemodulator;
 
     std::vector<RtAudio::DeviceInfo> devices;
     std::map<int,RtAudio::DeviceInfo> inputDevices;

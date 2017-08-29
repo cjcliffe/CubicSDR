@@ -60,7 +60,7 @@ std::vector<std::string> str_explode(const std::string &seperator, const std::st
 #define APPFRAME_MODEMPROPS_MAXSIZE 240
 
 AppFrame::AppFrame() :
-        wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
+        wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(nullptr) {
 
 #ifdef __linux__
     SetIcon(wxICON(cubicsdr));
@@ -1734,7 +1734,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             wxGetApp().getDemodMgr().setLastBandwidth(demod->getBandwidth());
         }
 
-        if (demod != activeDemodulator) {
+        if (demod.get() != activeDemodulator) {
             demodSignalMeter->setInputValue(demod->getSquelchLevel());
             demodGainMeter->setInputValue(demod->getGain());
             wxGetApp().getDemodMgr().setLastGain(demod->getGain());
@@ -1878,7 +1878,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             demod->setGain(demodGainMeter->getInputValue());
             demodGainMeter->setLevel(demodGainMeter->getInputValue());
         }
-        activeDemodulator = demod;
+        activeDemodulator = demod.get();
     } else if (demod) {
         // Wait state for current demodulator modem to activate..
     } else {
