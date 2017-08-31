@@ -449,7 +449,7 @@ void AudioThread::run() {
     if (inputQueue != nullptr) {
         inputQueue->flush();
     }
-   
+
     //Nullify currentInput...
     currentInput = nullptr;
   
@@ -485,6 +485,10 @@ bool AudioThread::isActive() {
 void AudioThread::setActive(bool state) {
     
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
+
+    if (deviceController[parameters.deviceId] == nullptr) {
+        return;
+    }
 
     if (state && !active && inputQueue) {
         deviceController[parameters.deviceId]->bindThread(this);
