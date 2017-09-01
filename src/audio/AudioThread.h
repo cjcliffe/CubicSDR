@@ -60,26 +60,19 @@ typedef std::shared_ptr<AudioThreadInputQueue> AudioThreadInputQueuePtr;
 typedef std::shared_ptr<AudioThreadCommandQueue> AudioThreadCommandQueuePtr;
 
 class AudioThread : public IOThread {
-public:
-    AudioThreadInputPtr currentInput;
-    AudioThreadInputQueuePtr inputQueue;
-    std::atomic_uint audioQueuePtr;
-    std::atomic_uint underflowCount;
-    std::atomic_bool initialized;
-    std::atomic_bool active;
-    std::atomic_int outputDevice;
-    float gain;
 
+public:
+   
     AudioThread();
-    ~AudioThread();
+    virtual ~AudioThread();
 
     static void enumerateDevices(std::vector<RtAudio::DeviceInfo> &devs);
 
-    void setupDevice(int deviceId);
     void setInitOutputDevice(int deviceId, int sampleRate=-1);
     int getOutputDevice();
-    void setSampleRate(int sampleRate);
+   
     int getSampleRate();
+
     virtual void run();
     virtual void terminate();
 
@@ -87,11 +80,31 @@ public:
     void setActive(bool state);
 
     void setGain(float gain_in);
-    float getGain();
+   
+    static std::map<int, int> deviceSampleRate;
 
     AudioThreadCommandQueue *getCommandQueue();
 
+    //give access to the this AudioThread lock
+    std::recursive_mutex& getMutex();
+
+    static void deviceCleanup();
+    static void setDeviceSampleRate(int deviceId, int sampleRate);
+
+    //fields below, only to be used by other AudioThreads !
+    std::atomic_uint underflowCount;
+    //protected by m_mutex
+    std::vector<AudioThread *> boundThreads;
+    AudioThreadInputQueuePtr inputQueue;
+    AudioThreadInputPtr currentInput;
+    std::atomic_uint audioQueuePtr;
+    std::atomic<float> gain;
+
 private:
+
+    std::atomic_bool active;
+    std::atomic_int outputDevice;
+    
     RtAudio dac;
     unsigned int nBufferFrames;
     RtAudio::StreamOptions opts;
@@ -102,20 +115,14 @@ private:
     //The own m_mutex protecting this AudioThread, in particular boundThreads
     std::recursive_mutex m_mutex;
 
-public:
-    //give access to the this AudioThread lock
-    std::recursive_mutex& getMutex();
+    void setupDevice(int deviceId);
+    void setSampleRate(int sampleRate);
 
     void bindThread(AudioThread *other);
     void removeThread(AudioThread *other);
 
-    static std::map<int,AudioThread *> deviceController;
-    static std::map<int,int> deviceSampleRate;
-    static std::map<int,std::thread *> deviceThread;
-    static void deviceCleanup();
-    static void setDeviceSampleRate(int deviceId, int sampleRate);
-
-    //protected by m_mutex
-   std::vector<AudioThread *> boundThreads;
+    static std::map<int, AudioThread *> deviceController;
+   
+    static std::map<int, std::thread *> deviceThread;
 };
 

@@ -508,21 +508,12 @@ AudioThreadCommandQueue *AudioThread::getCommandQueue() {
 }
 
 void AudioThread::setGain(float gain_in) {
-    
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
-
-    if (gain < 0.0) {
-        gain = 0.0;
+   
+    if (gain_in < 0.0) {
+        gain_in = 0.0;
     }
-    if (gain > 2.0) {
-        gain = 2.0;
+    if (gain_in > 2.0) {
+        gain_in = 2.0;
     }
     gain = gain_in;
-}
-
-float AudioThread::getGain() {
-    
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
-
-    return gain;
 }
