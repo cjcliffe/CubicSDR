@@ -757,7 +757,7 @@ void AppFrame::updateDeviceParams() {
     settingsMenuItems.clear();
 
     settingsMenuItems[wxID_SET_DB_OFFSET] = newSettingsMenu->Append(wxID_SET_DB_OFFSET, getSettingsLabel("Power Level Offset",  std::to_string(wxGetApp().getConfig()->getDBOffset()), "dB"));
-    settingsMenuItems[wxID_SET_FREQ_OFFSET] =  newSettingsMenu->Append(wxID_SET_FREQ_OFFSET, getSettingsLabel("Frequency Offset", std::to_string(wxGetApp().getOffset()) , "Hz"));
+    settingsMenuItems[wxID_SET_FREQ_OFFSET] =  newSettingsMenu->Append(wxID_SET_FREQ_OFFSET, getSettingsLabel("Frequency Offset", std::to_string(wxGetApp().getOffset() / 1000 ) , "KHz"));
 
     if (devInfo->hasCORR(SOAPY_SDR_RX, 0)) {
         settingsMenuItems[wxID_SET_PPM] = newSettingsMenu->Append(wxID_SET_PPM, getSettingsLabel("Device PPM", std::to_string(wxGetApp().getPPM()) , "ppm"));
@@ -1580,12 +1580,13 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         wxGetApp().getSDRThread()->setIQSwap(!wxGetApp().getSDRThread()->getIQSwap());
     } 
     else if (event.GetId() == wxID_SET_FREQ_OFFSET) {
-        long ofs = wxGetNumberFromUser("Shift the displayed frequency by this amount.\ni.e. -125000000 for -125 MHz", "Frequency (Hz)",
-                "Frequency Offset", wxGetApp().getOffset(), -2000000000, 2000000000, this);
+        //enter in KHz to accomodate > 2GHz shifts for down/upconverters on 32 bit platforms.
+        long ofs = wxGetNumberFromUser("Shift the displayed frequency by this amount of KHz.\ni.e. -125000 for -125 MHz", "Frequency (KHz)",
+                "Frequency Offset", (long long)(wxGetApp().getOffset() / 1000.0) , -2000000000, 2000000000, this);
         if (ofs != -1) {
-            wxGetApp().setOffset(ofs);
+            wxGetApp().setOffset((long long) ofs * 1000);
           
-            settingsMenuItems[wxID_SET_FREQ_OFFSET]->SetItemLabel(getSettingsLabel("Frequency Offset", std::to_string(wxGetApp().getOffset()), "Hz"));
+            settingsMenuItems[wxID_SET_FREQ_OFFSET]->SetItemLabel(getSettingsLabel("Frequency Offset", std::to_string(wxGetApp().getOffset() / 1000), "KHz"));
         }
     } 
     else if (event.GetId() == wxID_SET_DB_OFFSET) {

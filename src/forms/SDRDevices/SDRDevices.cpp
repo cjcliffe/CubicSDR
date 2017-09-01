@@ -131,7 +131,7 @@ void SDRDevicesDialog::refreshDeviceProperties() {
         //A-1) Name
         devSettings["name"] = m_propertyGrid->Append( new wxStringProperty("Name", wxPG_LABEL, devConfig->getDeviceName()) );
         //A-2) Offset
-        devSettings["offset"] = m_propertyGrid->Append( new wxIntProperty("Offset (Hz)", wxPG_LABEL, devConfig->getOffset()) );
+        devSettings["offset"] = m_propertyGrid->Append( new wxIntProperty("Offset (KHz)", wxPG_LABEL, devConfig->getOffset() / 1000) );
         
         //A-3) Antennas, is there are more than 1 RX antenna, else do not expose the setting.
         //get the saved setting
