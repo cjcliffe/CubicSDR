@@ -293,8 +293,8 @@ void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
             //so in short never block here no matter what.
             if (!runDemods[i]->getIQInputDataPipe()->try_push(demodDataOut)) {
 
-                std::cout << "SDRPostThread::runSingleCH() attempt to push into demod '" << runDemods[i]->getLabel()
-                    << "' (" << runDemods[i]->getFrequency() << " Hz) failed, demod is either too busy, not-active, or dead..." << std::endl << std::flush;
+             //   std::cout << "SDRPostThread::runSingleCH() attempt to push into demod '" << runDemods[i]->getLabel()
+             //       << "' (" << runDemods[i]->getFrequency() << " Hz) failed, demod is either too busy, not-active, or dead..." << std::endl << std::flush;
                 std::this_thread::yield();
             }
         }
@@ -442,8 +442,8 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
                     // try-push() : we do our best to only stimulate active demods, but some could happen to be dead, full, or indeed non-active.
                     //so in short never block here no matter what.
                     if (!runDemods[j]->getIQInputDataPipe()->try_push(demodDataOut)) {
-                        std::cout << "SDRPostThread::runPFBCH() attempt to push into demod '" << runDemods[i]->getLabel()
-                            << "' (" << runDemods[i]->getFrequency() << " Hz) failed, demod is either too busy, not-active, or dead..." << std::endl << std::flush;
+                    //    std::cout << "SDRPostThread::runPFBCH() attempt to push into demod '" << runDemods[i]->getLabel()
+                    //        << "' (" << runDemods[i]->getFrequency() << " Hz) failed, demod is either too busy, not-active, or dead..." << std::endl << std::flush;
                         std::this_thread::yield();
                     }
                 }
