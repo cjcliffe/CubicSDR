@@ -256,17 +256,14 @@ bool DemodulatorInstance::isActive() {
     return active;
 }
 
-void DemodulatorInstance::setActive(bool state) {
-    
-    //always nudge the adio thread
-    audioThread->setActive(state);
-    
+void DemodulatorInstance::setActive(bool state) {    
     if (active && !state) {
 #if ENABLE_DIGITAL_LAB
         if (activeOutput) {
             activeOutput->Hide();
         }
 #endif
+        audioThread->setActive(state);
   
         DemodulatorThread::releaseSquelchLock(this);
 
@@ -276,6 +273,7 @@ void DemodulatorInstance::setActive(bool state) {
             activeOutput->Show();
         }
 #endif
+        audioThread->setActive(state);
     }
     if (!state) {
         tracking = false;

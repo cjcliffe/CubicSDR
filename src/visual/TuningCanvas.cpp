@@ -65,7 +65,7 @@ bool TuningCanvas::changed() {
     auto activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
     
     long long current_freq = 0;
-    if (activeDemod != NULL) {
+    if (activeDemod != nullptr) {
         freq = activeDemod->getFrequency();
     }
     long long current_bw = wxGetApp().getDemodMgr().getLastBandwidth();
@@ -96,7 +96,7 @@ void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     auto activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
     
     freq = 0;
-    if (activeDemod != NULL) {
+    if (activeDemod != nullptr) {
         freq = activeDemod->getFrequency();
     }
     bw = wxGetApp().getDemodMgr().getLastBandwidth();
