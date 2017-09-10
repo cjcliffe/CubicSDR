@@ -42,12 +42,11 @@ public:
         m_max_num_items = MIN_ITEM_NB;
     };
     
-    //Copy constructor
-    ThreadBlockingQueue(const ThreadBlockingQueue& sq) {
-        std::lock_guard < std::mutex > lock(sq.m_mutex);
-        m_queue = sq.m_queue;
-        m_max_num_items = sq.m_max_num_items;
-    }
+    //Forbid Copy construction.
+	ThreadBlockingQueue(const ThreadBlockingQueue& sq) = delete;
+
+	/*! Forbid copy assignment. */
+	ThreadBlockingQueue& operator=(const ThreadBlockingQueue& sq) = delete;
 
     /*! Destroy safe queue. */
     ~ThreadBlockingQueue() {
@@ -216,54 +215,7 @@ public:
         m_cond_not_full.notify_all();
     }
 
-    /**
-     *  Swaps the contents.
-     * \param[out] sq The ThreadBlockingQueue to swap with 'this'.
-     */
-    void swap(ThreadBlockingQueue& sq) {
-        if (this != &sq) {
-            std::lock_guard < std::mutex > lock1(m_mutex);
-            std::lock_guard < std::mutex > lock2(sq.m_mutex);
-            m_queue.swap(sq.m_queue);
-            std::swap(m_max_num_items, sq.m_max_num_items);
 
-            if (!m_queue.empty()) {
-                m_cond_not_empty.notify_all();
-            }
-
-            if (!sq.m_queue.empty()) {
-                sq.m_cond_not_empty.notify_all();
-            }
-
-            if (!m_queue.full()) {
-                m_cond_not_full.notify_all();
-            }
-
-            if (!sq.m_queue.full()) {
-                sq.m_cond_not_full.notify_all();
-            }
-        }
-    }
-
-    /*! The copy assignment operator */
-    ThreadBlockingQueue& operator=(const ThreadBlockingQueue& sq) {
-        if (this != &sq) {
-            std::lock_guard < std::mutex > lock1(m_mutex);
-            std::lock_guard < std::mutex > lock2(sq.m_mutex);
-  
-            m_queue = sq.m_queue;
-            m_max_num_items = sq.m_max_num_items;
-
-            if (!m_queue.empty()) {
-                m_cond_not_empty.notify_all();
-            }
-
-            if (!m_queue.full()) {
-                m_cond_not_full.notify_all();
-            }
-        }
-        return *this;
-    }
 
 private:
 
@@ -274,9 +226,3 @@ private:
     std::condition_variable m_cond_not_full;
     size_t m_max_num_items = MIN_ITEM_NB;
 };
-
-/*! Swaps the contents of two ThreadBlockingQueue objects. (external operator) */
-template<typename T>
-void swap(ThreadBlockingQueue<T>& q1, ThreadBlockingQueue<T>& q2) {
-    q1.swap(q2);
-}
