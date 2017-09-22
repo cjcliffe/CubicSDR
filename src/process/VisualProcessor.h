@@ -101,8 +101,7 @@ public:
 
         if (input && !input->empty()) {
             process();
-        }
-       
+		}
     }
     
 protected:

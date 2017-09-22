@@ -92,13 +92,13 @@ public:
     static void setDeviceSampleRate(int deviceId, int sampleRate);
 
     //fields below, only to be used by other AudioThreads !
-    std::atomic_uint underflowCount;
+    size_t underflowCount;
     //protected by m_mutex
     std::vector<AudioThread *> boundThreads;
     AudioThreadInputQueuePtr inputQueue;
     AudioThreadInputPtr currentInput;
-    std::atomic_uint audioQueuePtr;
-    std::atomic<float> gain;
+    size_t audioQueuePtr;
+    float gain;
 
 private:
 

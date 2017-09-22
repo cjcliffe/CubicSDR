@@ -21,8 +21,8 @@ std::map<int, std::thread *> AudioThread::deviceThread;
 AudioThread::AudioThread() : IOThread(),
         currentInput(nullptr), inputQueue(nullptr), nBufferFrames(1024), sampleRate(0) {
 
-	audioQueuePtr.store(0); 
-	underflowCount.store(0);
+	audioQueuePtr = 0; 
+	underflowCount = 0;
 	active.store(false);
 	outputDevice.store(-1);
     gain = 1.0;

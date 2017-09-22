@@ -48,7 +48,15 @@ class ReBuffer {
     typedef typename std::shared_ptr<BufferType> ReBufferPtr;
    
 public:
+
+	//Virtual destructor to assure correct freeing of all descendants.
+	virtual ~ReBuffer() {
+		//nothing
+	}
+
+	//constructor
     ReBuffer(std::string bufferId) : bufferId(bufferId) {
+		//nothing
     }
     
     /// Return a new ReBuffer_ptr usable by the application.
