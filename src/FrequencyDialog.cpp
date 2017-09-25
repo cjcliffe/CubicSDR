@@ -55,7 +55,7 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
             
     dialogText = new wxTextCtrl(this, wxID_FREQ_INPUT, freqStr, wxPoint(6, 1), wxSize(size.GetWidth() - 20, size.GetHeight() - 70),
     wxTE_PROCESS_ENTER);
-    dialogText->SetFont(wxFont(20, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
+    dialogText->SetFont(wxFont(15, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
 
     Centre();
 
