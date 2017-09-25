@@ -138,6 +138,8 @@ public:
     void setBookmarksVisible(bool state);
     bool getBookmarksVisible();
     
+    void setRecordingPath(std::string recPath);
+    std::string getRecordingPath();
     
 #if USE_HAMLIB
     int getRigModel();
@@ -185,6 +187,7 @@ private:
     std::atomic_int dbOffset;
     std::vector<SDRManualDef> manualDevices;
     std::atomic_bool bookmarksVisible;
+    std::string recordingPath;
 #if USE_HAMLIB
     std::atomic_int rigModel, rigRate;
     std::string rigPort;

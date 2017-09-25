@@ -24,7 +24,7 @@ public:
     std::vector<float> data;
 
     AudioThreadInput() :
-            frequency(0), sampleRate(0), channels(0), peak(0) {
+            frequency(0), sampleRate(0), inputRate(0), channels(0), peak(0), type(0) {
 
     }
 

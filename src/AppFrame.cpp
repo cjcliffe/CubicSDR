@@ -412,6 +412,8 @@ AppFrame::AppFrame() :
     menu->AppendSeparator();
     menu->Append(wxID_SDR_START_STOP, "Stop / Start Device");
     menu->AppendSeparator();
+    menu->Append(wxID_RECORDING_PATH, "Set Recording Path");
+    menu->AppendSeparator();
     menu->Append(wxID_OPEN, "&Open Session");
     menu->Append(wxID_SAVE, "&Save Session");
     menu->Append(wxID_SAVEAS, "Save Session &As..");
@@ -1564,6 +1566,16 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             }
         }
     } 
+    else if (event.GetId() == wxID_RECORDING_PATH) {
+        std::string recPath = wxGetApp().getConfig()->getRecordingPath();
+        
+        wxDirDialog recPathDialog(this, _("File Path for Recordings"), recPath, wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST);
+        if (recPathDialog.ShowModal() == wxID_CANCEL) {
+            return;
+        }
+
+        wxGetApp().getConfig()->setRecordingPath(recPathDialog.GetPath().ToStdString());
+    }
     else if (event.GetId() == wxID_LOW_PERF) {
         lowPerfMode = lowPerfMenuItem->IsChecked();
         wxGetApp().getConfig()->setLowPerfMode(lowPerfMode);

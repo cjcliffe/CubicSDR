@@ -505,6 +505,14 @@ bool AppConfig::getBookmarksVisible() {
     return bookmarksVisible.load();
 }
 
+void AppConfig::setRecordingPath(std::string recPath) {
+    recordingPath = recPath;
+}
+
+std::string AppConfig::getRecordingPath() {
+    return recordingPath;
+}
+
 
 void AppConfig::setConfigName(std::string configName) {
     this->configName = configName;
@@ -558,6 +566,9 @@ bool AppConfig::save() {
         *window_node->newChild("bookmark_split") = bookmarkSplit.load();
         *window_node->newChild("bookmark_visible") = bookmarksVisible.load();
     }
+    
+    DataNode *rec_node = cfg.rootNode()->newChild("recording");
+    *rec_node->newChild("path") = recordingPath;
     
     DataNode *devices_node = cfg.rootNode()->newChild("devices");
 
@@ -738,6 +749,15 @@ bool AppConfig::load() {
             int bVal;
             win_node->getNext("bookmark_visible")->element()->get(bVal);
             bookmarksVisible.store(bVal);
+        }
+    }
+    
+    if (cfg.rootNode()->hasAnother("recording")) {
+        DataNode *rec_node = cfg.rootNode()->getNext("recording");
+
+        if (rec_node->hasAnother("path")) {
+            DataNode *rec_path = cfg.rootNode()->getNext("path");
+            recordingPath = rec_path->element()->toString();
         }
     }
     
