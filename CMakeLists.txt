@@ -348,6 +348,9 @@ SET (cubicsdr_sources
     src/modules/modem/analog/ModemUSB.cpp
     src/audio/AudioThread.cpp
     src/audio/AudioSinkThread.cpp
+    src/audio/AudioSinkFileThread.cpp
+    src/audio/AudioFile.cpp
+    src/audio/AudioFileWAV.cpp
     src/util/Gradient.cpp
     src/util/Timer.cpp
     src/util/MouseTracker.cpp
@@ -453,6 +456,9 @@ SET (cubicsdr_headers
     src/modules/modem/analog/ModemUSB.h
     src/audio/AudioThread.h
     src/audio/AudioSinkThread.h
+    src/audio/AudioSinkFileThread.h
+    src/audio/AudioFile.h
+    src/audio/AudioFileWAV.h
     src/util/Gradient.h
     src/util/Timer.h
 	src/util/ThreadBlockingQueue.h

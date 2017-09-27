@@ -5,19 +5,16 @@
 
 #define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
 
-AudioSinkThread::AudioSinkThread()
-{
+AudioSinkThread::AudioSinkThread() {
     inputQueuePtr = std::make_shared<AudioThreadInputQueue>();
     setInputQueue("input", inputQueuePtr);
 }
 
-AudioSinkThread::~AudioSinkThread()
-{
+AudioSinkThread::~AudioSinkThread() {
 
 }
 
-void AudioSinkThread::run()
-{
+void AudioSinkThread::run() {
 #ifdef __APPLE__
     pthread_t tID = pthread_self();	 // ID of this thread
     int priority = sched_get_priority_max(SCHED_RR) - 1;
@@ -46,38 +43,18 @@ void AudioSinkThread::run()
             inputRef.sampleRate = inp->sampleRate;
         }
     }
+}
 
-    //Thread termination, prevent fancy things to happen, lock the whole thing:
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
-
-    // Drain any remaining inputs, with a non-blocking pop
+void AudioSinkThread::terminate() {
+    IOThread::terminate();
     inputQueuePtr->flush();
 }
 
-void AudioSinkThread::terminate()
-{
-    IOThread::terminate();
-}
-
-void AudioSinkThread::sink(AudioThreadInputPtr * input)
-{
-    // do something with the audio data
-}
-
-void AudioSinkThread::inputChanged(AudioThreadInput oldProps, AudioThreadInputPtr newProps)
-{
-    // handle changes in stream properties
-}
-
-void AudioSinkThread::setSinkName(std::string sinkName_in)
-{
+void AudioSinkThread::setSinkName(std::string sinkName_in) {
     sinkName = sinkName_in;
 }
 
-std::string AudioSinkThread::getSinkName()
-{
+std::string AudioSinkThread::getSinkName() {
     return sinkName;
 }
-
-
 

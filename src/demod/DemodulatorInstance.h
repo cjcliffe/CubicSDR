@@ -11,6 +11,7 @@
 #include "ModemDigital.h"
 #include "ModemAnalog.h"
 #include "AudioThread.h"
+#include "AudioSinkThread.h"
 
 #if ENABLE_DIGITAL_LAB
 #include "DigitalConsole.h"
@@ -138,6 +139,10 @@ private:
     DemodulatorPreThread *demodulatorPreThread;
     DemodulatorThread *demodulatorThread;
     DemodulatorThreadControlCommandQueuePtr threadQueueControl;
+
+    AudioSinkThread *audioSinkThread = nullptr;
+    std::thread *t_AudioSink = nullptr;
+    AudioThreadInputQueuePtr audioSinkInputQueue;
 
     //protects child thread creation and termination 
     std::recursive_mutex m_thread_control_mutex;
