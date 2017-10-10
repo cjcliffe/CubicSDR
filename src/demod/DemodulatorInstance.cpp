@@ -2,12 +2,15 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include <memory>
+#include <ctime>
+
 #include "DemodulatorInstance.h"
 #include "CubicSDR.h"
 
 #include "DemodulatorThread.h"
 #include "DemodulatorPreThread.h"
-
+#include "AudioSinkFileThread.h"
+#include "AudioFileWAV.h"
 
 #if USE_HAMLIB
 #include "RigThread.h"
@@ -47,6 +50,7 @@ DemodulatorInstance::DemodulatorInstance() {
 	active.store(false);
 	squelch.store(false);
     muted.store(false);
+    recording.store(false);
     deltaLock.store(false);
     deltaLockOfs.store(0);
 	currentOutputDevice.store(-1);
@@ -542,6 +546,21 @@ void DemodulatorInstance::setMuted(bool muted) {
     wxGetApp().getDemodMgr().setLastMuted(muted);
 }
 
+bool DemodulatorInstance::isRecording()
+{
+    return recording.load();
+}
+
+void DemodulatorInstance::setRecording(bool recording_in)
+{
+    if (!recording.load() && recording_in) {
+        startRecording();
+    }
+    else if (recording.load() && !recording_in) {
+        stopRecording();
+    }
+}
+
 DemodVisualCue *DemodulatorInstance::getVisualCue() {
     return &visualCue;
 }
@@ -598,6 +617,50 @@ ModemSettings DemodulatorInstance::getLastModemSettings(std::string demodType) {
         return mods;
     }
 }
+
+
+void DemodulatorInstance::startRecording() {
+    if (recording.load()) {
+        return;
+    }
+
+    AudioSinkFileThread *newSinkThread = new AudioSinkFileThread();
+    AudioFileWAV *afHandler = new AudioFileWAV();
+
+    std::stringstream fileName;
+    fileName << getLabel() << "_" << std::time(nullptr);
+
+    afHandler->setOutputFileName(fileName.str());
+    newSinkThread->setAudioFileHandler(afHandler);
+
+    audioSinkThread = newSinkThread;
+    t_AudioSink = new std::thread(&AudioSinkThread::threadMain, audioSinkThread);
+
+    demodulatorThread->setOutputQueue("AudioSink", audioSinkThread->getInputQueue("input"));
+
+    recording.store(true);
+}
+
+
+void DemodulatorInstance::stopRecording() {
+    if (!recording.load()) {
+        return;
+    }
+
+    demodulatorThread->setOutputQueue("AudioSink", nullptr);
+    audioSinkThread->terminate();
+    
+    t_AudioSink->join();
+
+    delete t_AudioSink;
+    delete audioSinkThread;
+
+    t_AudioSink = nullptr;
+    audioSinkThread = nullptr;
+
+    recording.store(false);
+}
+
 
 #if ENABLE_DIGITAL_LAB
 ModemDigitalOutput *DemodulatorInstance::getOutput() {

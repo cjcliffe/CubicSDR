@@ -111,6 +111,9 @@ public:
     bool isMuted();
     void setMuted(bool muted);
 
+    bool isRecording();
+    void setRecording(bool recording);
+
     DemodVisualCue *getVisualCue();
     
     DemodulatorThreadInputQueuePtr getIQInputDataPipe();
@@ -132,6 +135,10 @@ public:
     void closeOutput();
 #endif
         
+protected:
+    void startRecording();
+    void stopRecording();
+
 private:
     DemodulatorThreadInputQueuePtr pipeIQInputData;
     DemodulatorThreadPostInputQueuePtr pipeIQDemodData;
@@ -155,6 +162,8 @@ private:
     std::atomic_bool squelch;
     std::atomic_bool muted;
     std::atomic_bool deltaLock;
+    std::atomic_bool recording;
+
     std::atomic_int deltaLockOfs;
 
     std::atomic_int currentOutputDevice;

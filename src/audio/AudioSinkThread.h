@@ -18,12 +18,8 @@ public:
     virtual void sink(AudioThreadInputPtr input) = 0;
     virtual void inputChanged(AudioThreadInput oldProps, AudioThreadInputPtr newProps) = 0;
 
-    virtual void setSinkName(std::string sinkName_in);
-    virtual std::string getSinkName();
-
 protected:
     std::recursive_mutex m_mutex;
     AudioThreadInputQueuePtr inputQueuePtr;
-    std::string sinkName;
 
 };

@@ -42,6 +42,8 @@ void AudioSinkThread::run() {
             inputRef.inputRate = inp->inputRate;
             inputRef.sampleRate = inp->sampleRate;
         }
+
+        sink(inp);
     }
 }
 
@@ -49,12 +51,3 @@ void AudioSinkThread::terminate() {
     IOThread::terminate();
     inputQueuePtr->flush();
 }
-
-void AudioSinkThread::setSinkName(std::string sinkName_in) {
-    sinkName = sinkName_in;
-}
-
-std::string AudioSinkThread::getSinkName() {
-    return sinkName;
-}
-

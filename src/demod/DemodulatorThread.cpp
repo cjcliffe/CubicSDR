@@ -43,6 +43,12 @@ void DemodulatorThread::onBindOutput(std::string name, ThreadQueueBasePtr thread
 
         audioVisOutputQueue = std::static_pointer_cast<DemodulatorThreadOutputQueue>(threadQueue);
     }
+
+    if (name == "AudioSinkOutput") {
+        std::lock_guard < std::mutex > lock(m_mutexAudioVisOutputQueue);
+
+        audioSinkOutputQueue = std::static_pointer_cast<AudioThreadInputQueue>(threadQueue);
+    }
 }
 
 double DemodulatorThread::abMagnitude(float inphase, float quadrature) {
@@ -310,6 +316,13 @@ void DemodulatorThread::run() {
             }
         }
 
+        // Capture audioSinkOutputQueue state in a local
+        DemodulatorThreadOutputQueuePtr localAudioSinkOutputQueue = nullptr;
+        {
+            std::lock_guard < std::mutex > lock(m_mutexAudioVisOutputQueue);
+            localAudioSinkOutputQueue = audioSinkOutputQueue;
+        }
+
         if (ati != nullptr) {
             if (!muted.load() && (!wxGetApp().getSoloMode() || (demodInstance == wxGetApp().getDemodMgr().getLastActiveDemodulator().get()))) {
                 //non-blocking push needed for audio out
@@ -317,6 +330,13 @@ void DemodulatorThread::run() {
                   
                     std::cout << "DemodulatorThread::run() cannot push ati into audioOutputQueue, is full !" << std::endl;
                     std::this_thread::yield();
+                }
+
+                if (localAudioSinkOutputQueue != nullptr) {
+                    if (!audioSinkOutputQueue->try_push(ati)) {
+                        std::cout << "DemodulatorThread::run() cannot push ati into audioSinkOutputQueue, is full !" << std::endl;
+                        std::this_thread::yield();
+                    }
                 }
             }
         }

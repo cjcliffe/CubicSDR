@@ -8,27 +8,28 @@ AudioSinkFileThread::AudioSinkFileThread() : AudioSinkThread() {
 }
 
 AudioSinkFileThread::~AudioSinkFileThread() {
-    if (outputFileHandler != nullptr) {
-        outputFileHandler->closeFile();
+    if (audioFileHandler != nullptr) {
+        audioFileHandler->closeFile();
     }
 }
 
 void AudioSinkFileThread::sink(AudioThreadInputPtr input) {
-    if (!outputFileHandler) {
+    if (!audioFileHandler) {
         return;
     }
     // forward to output file handler
-    outputFileHandler->writeToFile(input);
+    audioFileHandler->writeToFile(input);
 }
 
 void AudioSinkFileThread::inputChanged(AudioThreadInput oldProps, AudioThreadInputPtr newProps) {
     // close, set new parameters, adjust file name sequence and re-open?
-    if (!outputFileHandler) {
+    if (!audioFileHandler) {
         return;
     }
+
+    audioFileHandler->closeFile();
 }
 
-void AudioSinkFileThread::setOutput(AudioFile * output) {
-    outputFileHandler = output;
-    outputFileHandler->setOutputFileName(sinkName);
+void AudioSinkFileThread::setAudioFileHandler(AudioFile * output) {
+    audioFileHandler = output;
 }

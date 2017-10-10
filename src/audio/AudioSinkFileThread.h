@@ -15,10 +15,10 @@ public:
     void sink(AudioThreadInputPtr input);
     void inputChanged(AudioThreadInput oldProps, AudioThreadInputPtr newProps);
 
-    void setOutput(AudioFile *output);
+    void setAudioFileHandler(AudioFile *output);
 
 protected:
-    AudioFile *outputFileHandler = nullptr;
+    AudioFile *audioFileHandler = nullptr;
 
 };
 
