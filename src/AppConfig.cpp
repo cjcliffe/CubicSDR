@@ -756,7 +756,7 @@ bool AppConfig::load() {
         DataNode *rec_node = cfg.rootNode()->getNext("recording");
 
         if (rec_node->hasAnother("path")) {
-            DataNode *rec_path = cfg.rootNode()->getNext("path");
+            DataNode *rec_path = rec_node->getNext("path");
             recordingPath = rec_path->element()->toString();
         }
     }

@@ -44,7 +44,7 @@ void DemodulatorThread::onBindOutput(std::string name, ThreadQueueBasePtr thread
         audioVisOutputQueue = std::static_pointer_cast<DemodulatorThreadOutputQueue>(threadQueue);
     }
 
-    if (name == "AudioSinkOutput") {
+    if (name == "AudioSink") {
         std::lock_guard < std::mutex > lock(m_mutexAudioVisOutputQueue);
 
         audioSinkOutputQueue = std::static_pointer_cast<AudioThreadInputQueue>(threadQueue);

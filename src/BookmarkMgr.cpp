@@ -360,7 +360,11 @@ bool BookmarkMgr::getExpandState(std::string groupName) {
 
 void BookmarkMgr::updateActiveList() {
 
-	std::lock_guard < std::recursive_mutex > lockData(busy_lock);
+    std::lock_guard < std::recursive_mutex > lockData(busy_lock);
+
+    if (wxGetApp().isShuttingDown()) {
+        return;
+    }
 	
 	BookmarkView *bmv = wxGetApp().getAppFrame()->getBookmarkView();
     

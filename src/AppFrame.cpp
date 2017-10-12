@@ -2502,6 +2502,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case 'S':
         case 'P':
         case 'M':
+        case 'R':
             return 1;
         case '0':
         case '1':
@@ -2641,6 +2642,11 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
         case 'S':
             wxGetApp().setSoloMode(!wxGetApp().getSoloMode());
             return 1;
+            break;
+        case 'R':
+            if (activeDemod) {
+                activeDemod->setRecording(!activeDemod->isRecording());
+            }
             break;
         case 'P':
             wxGetApp().getSpectrumProcessor()->setPeakHold(!wxGetApp().getSpectrumProcessor()->getPeakHold());

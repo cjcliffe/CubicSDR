@@ -170,6 +170,8 @@ public:
 
     void setSoloMode(bool solo);
     bool getSoloMode();
+
+    bool isShuttingDown();
     
 #ifdef USE_HAMLIB
     RigThread *getRigThread();
@@ -195,6 +197,7 @@ private:
     std::atomic_llong sampleRate;
     std::string antennaName;
     std::atomic_bool agcMode;
+    std::atomic_bool shuttingDown;
 
     SDRThread *sdrThread = nullptr;
     SDREnumerator *sdrEnum = nullptr;
