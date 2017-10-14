@@ -440,19 +440,19 @@ void AudioThread::run() {
             setSampleRate(command.int_value);
         }
     }
-    
-    //Thread termination, prevent fancy things to happen, lock the whole thing:
-    //This way audioThreadCallback is rightly protected from thread termination
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
-
+   
     // Drain any remaining inputs, with a non-blocking pop
     if (inputQueue != nullptr) {
         inputQueue->flush();
     }
 
-    //Nullify currentInput...
-    currentInput = nullptr;
-  
+	//Thread termination, prevent fancy things to happen, lock the whole thing:
+	//This way audioThreadCallback is rightly protected from thread termination
+	std::lock_guard<std::recursive_mutex> lock(m_mutex);
+
+	//Nullify currentInput...
+	currentInput = nullptr;
+
     //Stop 
     if (deviceController[parameters.deviceId] != this) {
         deviceController[parameters.deviceId]->removeThread(this);
