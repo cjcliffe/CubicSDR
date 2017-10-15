@@ -29,8 +29,12 @@ public:
     
     bool isInputEmpty() {
         std::lock_guard < std::mutex > busy_lock(busy_update);
+		
+		if (input) {
+			return input->empty();
+		}
 
-        return input->empty();
+		return true;
     }
     
     bool isOutputEmpty() {
@@ -84,7 +88,12 @@ public:
     //this is purposefully (almost) non-blocking call.
     void flushQueues() {
        
-        input->flush();
+		//capture a local copy atomically, so we don't need to protect input.
+		VisualInputQueueTypePtr localInput = input;
+
+		if (localInput) {
+			localInput->flush();
+		}
 
 		//scoped-lock: create a local copy of outputs, and work with it.
 		std::vector<VisualOutputQueueTypePtr> local_outputs;
