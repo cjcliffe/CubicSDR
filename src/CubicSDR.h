@@ -202,12 +202,12 @@ private:
     SpectrumVisualDataThread *spectrumVisualThread = nullptr;
     SpectrumVisualDataThread *demodVisualThread = nullptr;
 
-    SDRThreadIQDataQueuePtr pipeSDRIQData = nullptr;
-    DemodulatorThreadInputQueuePtr pipeIQVisualData = nullptr;
-    DemodulatorThreadOutputQueuePtr pipeAudioVisualData = nullptr;
-    DemodulatorThreadInputQueuePtr pipeDemodIQVisualData = nullptr;
-    DemodulatorThreadInputQueuePtr pipeWaterfallIQVisualData = nullptr;
-    DemodulatorThreadInputQueuePtr pipeActiveDemodIQVisualData = nullptr;
+    SDRThreadIQDataQueuePtr pipeSDRIQData;
+    DemodulatorThreadInputQueuePtr pipeIQVisualData;
+    DemodulatorThreadOutputQueuePtr pipeAudioVisualData;
+    DemodulatorThreadInputQueuePtr pipeDemodIQVisualData;
+    DemodulatorThreadInputQueuePtr pipeWaterfallIQVisualData;
+    DemodulatorThreadInputQueuePtr pipeActiveDemodIQVisualData;
 
     ScopeVisualProcessor scopeProcessor;
     

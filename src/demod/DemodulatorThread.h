@@ -62,10 +62,10 @@ protected:
     Modem *cModem = nullptr;
     ModemKit *cModemKit = nullptr;
     
-    DemodulatorThreadPostInputQueuePtr iqInputQueue = nullptr;
-    AudioThreadInputQueuePtr audioOutputQueue = nullptr;
-    DemodulatorThreadOutputQueuePtr audioVisOutputQueue = nullptr;
-    DemodulatorThreadControlCommandQueuePtr threadQueueControl = nullptr;
+    DemodulatorThreadPostInputQueuePtr iqInputQueue;
+    AudioThreadInputQueuePtr audioOutputQueue;
+    DemodulatorThreadOutputQueuePtr audioVisOutputQueue;
+    DemodulatorThreadControlCommandQueuePtr threadQueueControl;
 
     //protects the audioVisOutputQueue dynamic binding change at runtime (in DemodulatorMgr)
     std::mutex m_mutexAudioVisOutputQueue;

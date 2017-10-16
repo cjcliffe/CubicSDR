@@ -146,7 +146,7 @@ protected:
     }
 
     //the incoming data queue 
-    VisualInputQueueTypePtr input = nullptr;
+    VisualInputQueueTypePtr input;
     
     //the n-outputs where to process()-ed data is distribute()-ed.
     std::vector<VisualOutputQueueTypePtr> outputs;
