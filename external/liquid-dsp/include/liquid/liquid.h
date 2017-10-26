@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007 - 2016 Joseph Gaeddert
+ * Copyright (c) 2007 - 2017 Joseph Gaeddert
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -54,8 +54,8 @@ extern "C" {
 // LIQUID_VERSION = "X.Y.Z"
 // LIQUID_VERSION_NUMBER = (X*1000000 + Y*1000 + Z)
 //
-#define LIQUID_VERSION          "1.2.0"
-#define LIQUID_VERSION_NUMBER   1002000
+#define LIQUID_VERSION          "1.3.0"
+#define LIQUID_VERSION_NUMBER   1003000
 
 //
 // Run-time library version numbers
@@ -99,8 +99,20 @@ LIQUID_DEFINE_COMPLEX(double, liquid_double_complex);
 // MODULE : agc (automatic gain control)
 //
 
-#define AGC_MANGLE_CRCF(name)   LIQUID_CONCAT(agc_crcf, name)
-#define AGC_MANGLE_RRRF(name)   LIQUID_CONCAT(agc_rrrf, name)
+// available squelch modes
+typedef enum {
+    LIQUID_AGC_SQUELCH_UNKNOWN=0,   // unknown/unavailable squelch mode
+    LIQUID_AGC_SQUELCH_ENABLED,     // squelch enabled but signal not detected
+    LIQUID_AGC_SQUELCH_RISE,        // signal first hit/exceeded threshold
+    LIQUID_AGC_SQUELCH_SIGNALHI,    // signal level high (above threshold)
+    LIQUID_AGC_SQUELCH_FALL,        // signal first dropped below threshold
+    LIQUID_AGC_SQUELCH_SIGNALLO,    // signal level low (below threshold)
+    LIQUID_AGC_SQUELCH_TIMEOUT,     // signal level low (below threshold for a certain time)
+    LIQUID_AGC_SQUELCH_DISABLED,    // squelch not enabled
+} agc_squelch_mode;
+
+#define LIQUID_AGC_MANGLE_CRCF(name) LIQUID_CONCAT(agc_crcf, name)
+#define LIQUID_AGC_MANGLE_RRRF(name) LIQUID_CONCAT(agc_rrrf, name)
 
 // large macro
 //   AGC    : name-mangling macro
@@ -166,10 +178,40 @@ void  AGC(_set_gain)(AGC() _q, float _gain);                    \
 void AGC(_init)(AGC()        _q,                                \
                 TC *         _x,                                \
                 unsigned int _n);                               \
+                                                                \
+/* enable squelch mode                                      */  \
+void AGC(_squelch_enable)(AGC() _q);                            \
+                                                                \
+/* disable squelch mode                                     */  \
+void AGC(_squelch_disable)(AGC() _q);                           \
+                                                                \
+/* is squelch enabled?                                      */  \
+int  AGC(_squelch_is_enabled)(AGC() _q);                        \
+                                                                \
+/* set squelch threshold                                    */  \
+/*  _q          :   automatic gain control object           */  \
+/*  _thresh_dB  :   threshold for enabling squelch [dB]     */  \
+void AGC(_squelch_set_threshold)(AGC() _q,                      \
+                                 T     _threshold);             \
+                                                                \
+/* get squelch threshold [dB]                               */  \
+T    AGC(_squelch_get_threshold)(AGC() _q);                     \
+                                                                \
+/* set squelch timeout                                      */  \
+/*  _q       : automatic gain control object                */  \
+/*  _timeout : timeout before enabling squelch [samples]    */  \
+void AGC(_squelch_set_timeout)(AGC()        _q,                 \
+                               unsigned int _timeout);          \
+                                                                \
+/* get squelch timeout [samples]                            */  \
+unsigned int AGC(_squelch_get_timeout)(AGC() _q);               \
+                                                                \
+/* get squelch status                                       */  \
+int AGC(_squelch_get_status)(AGC() _q);                         \
 
 // Define agc APIs
-LIQUID_AGC_DEFINE_API(AGC_MANGLE_CRCF, float, liquid_float_complex)
-LIQUID_AGC_DEFINE_API(AGC_MANGLE_RRRF, float, float)
+LIQUID_AGC_DEFINE_API(LIQUID_AGC_MANGLE_CRCF, float, liquid_float_complex)
+LIQUID_AGC_DEFINE_API(LIQUID_AGC_MANGLE_RRRF, float, float)
 
 
 
@@ -209,8 +251,8 @@ void cvsd_decode8(cvsd _q, unsigned char _data, float * _audio);
 //
 
 // circular buffer
-#define CBUFFER_MANGLE_FLOAT(name)  LIQUID_CONCAT(cbufferf,  name)
-#define CBUFFER_MANGLE_CFLOAT(name) LIQUID_CONCAT(cbuffercf, name)
+#define LIQUID_CBUFFER_MANGLE_FLOAT(name)  LIQUID_CONCAT(cbufferf,  name)
+#define LIQUID_CBUFFER_MANGLE_CFLOAT(name) LIQUID_CONCAT(cbuffercf, name)
 
 // large macro
 //   CBUFFER : name-mangling macro
@@ -219,11 +261,14 @@ void cvsd_decode8(cvsd _q, unsigned char _data, float * _audio);
 typedef struct CBUFFER(_s) * CBUFFER();                         \
                                                                 \
 /* create circular buffer object of a particular size       */  \
+/*  _max_size  : maximum buffer size, _max_size > 0         */  \
 CBUFFER() CBUFFER(_create)(unsigned int _max_size);             \
                                                                 \
 /* create circular buffer object of a particular size and   */  \
 /* specify the maximum number of elements that can be read  */  \
 /* at any given time.                                       */  \
+/*  _max_size  : maximum buffer size, _max_size > 0         */  \
+/*  _max_read  : maximum size that will be read from buffer */  \
 CBUFFER() CBUFFER(_create_max)(unsigned int _max_size,          \
                                unsigned int _max_read);         \
                                                                 \
@@ -278,25 +323,27 @@ void CBUFFER(_pop)(CBUFFER() _q,                                \
 /*  _q              : circular buffer object                */  \
 /*  _num_requested  : number of elements requested          */  \
 /*  _v              : output pointer                        */  \
-/*  _nr             : number of elements referenced by _v   */  \
+/*  _num_read       : number of elements referenced by _v   */  \
 void CBUFFER(_read)(CBUFFER()      _q,                          \
                     unsigned int   _num_requested,              \
                     T **           _v,                          \
                     unsigned int * _num_read);                  \
                                                                 \
 /* release _n samples from the buffer                       */  \
+/*  _q : circular buffer object                             */  \
+/*  _n : number of elements to release                      */  \
 void CBUFFER(_release)(CBUFFER()    _q,                         \
                        unsigned int _n);                        \
 
 // Define buffer APIs
-LIQUID_CBUFFER_DEFINE_API(CBUFFER_MANGLE_FLOAT,  float)
-LIQUID_CBUFFER_DEFINE_API(CBUFFER_MANGLE_CFLOAT, liquid_float_complex)
+LIQUID_CBUFFER_DEFINE_API(LIQUID_CBUFFER_MANGLE_FLOAT,  float)
+LIQUID_CBUFFER_DEFINE_API(LIQUID_CBUFFER_MANGLE_CFLOAT, liquid_float_complex)
 
 
 
 // Windowing functions
-#define WINDOW_MANGLE_FLOAT(name)  LIQUID_CONCAT(windowf,  name)
-#define WINDOW_MANGLE_CFLOAT(name) LIQUID_CONCAT(windowcf, name)
+#define LIQUID_WINDOW_MANGLE_FLOAT(name)  LIQUID_CONCAT(windowf,  name)
+#define LIQUID_WINDOW_MANGLE_CFLOAT(name) LIQUID_CONCAT(windowcf, name)
 
 // large macro
 //   WINDOW : name-mangling macro
@@ -353,16 +400,16 @@ void WINDOW(_write)(WINDOW()     _q,                            \
                     unsigned int _n);                           \
 
 // Define window APIs
-LIQUID_WINDOW_DEFINE_API(WINDOW_MANGLE_FLOAT,  float)
-LIQUID_WINDOW_DEFINE_API(WINDOW_MANGLE_CFLOAT, liquid_float_complex)
-//LIQUID_WINDOW_DEFINE_API(WINDOW_MANGLE_UINT,   unsigned int)
+LIQUID_WINDOW_DEFINE_API(LIQUID_WINDOW_MANGLE_FLOAT,  float)
+LIQUID_WINDOW_DEFINE_API(LIQUID_WINDOW_MANGLE_CFLOAT, liquid_float_complex)
+//LIQUID_WINDOW_DEFINE_API(LIQUID_WINDOW_MANGLE_UINT,   unsigned int)
 
 
 // wdelay functions : windowed-delay
 // Implements an efficient z^-k delay with minimal memory
-#define WDELAY_MANGLE_FLOAT(name)   LIQUID_CONCAT(wdelayf,  name)
-#define WDELAY_MANGLE_CFLOAT(name)  LIQUID_CONCAT(wdelaycf, name)
-#define WDELAY_MANGLE_UINT(name)    LIQUID_CONCAT(wdelayui, name)
+#define LIQUID_WDELAY_MANGLE_FLOAT(name)  LIQUID_CONCAT(wdelayf,  name)
+#define LIQUID_WDELAY_MANGLE_CFLOAT(name) LIQUID_CONCAT(wdelaycf, name)
+//#define LIQUID_WDELAY_MANGLE_UINT(name)   LIQUID_CONCAT(wdelayui, name)
 
 // large macro
 //   WDELAY : name-mangling macro
@@ -401,9 +448,9 @@ void WDELAY(_push)(WDELAY() _q,                                 \
                    T        _v);                                \
 
 // Define wdelay APIs
-LIQUID_WDELAY_DEFINE_API(WDELAY_MANGLE_FLOAT,  float)
-LIQUID_WDELAY_DEFINE_API(WDELAY_MANGLE_CFLOAT, liquid_float_complex)
-//LIQUID_WDELAY_DEFINE_API(WDELAY_MANGLE_UINT,   unsigned int)
+LIQUID_WDELAY_DEFINE_API(LIQUID_WDELAY_MANGLE_FLOAT,  float)
+LIQUID_WDELAY_DEFINE_API(LIQUID_WDELAY_MANGLE_CFLOAT, liquid_float_complex)
+//LIQUID_WDELAY_DEFINE_API(LIQUID_WDELAY_MANGLE_UINT,   unsigned int)
 
 
 
@@ -411,7 +458,7 @@ LIQUID_WDELAY_DEFINE_API(WDELAY_MANGLE_CFLOAT, liquid_float_complex)
 // MODULE : channel
 //
 
-#define CHANNEL_MANGLE_CCCF(name)   LIQUID_CONCAT(channel_cccf,name)
+#define LIQUID_CHANNEL_MANGLE_CCCF(name) LIQUID_CONCAT(channel_cccf,name)
 
 // large macro
 //   CHANNEL    : name-mangling macro
@@ -432,16 +479,16 @@ void CHANNEL(_destroy)(CHANNEL() _q);                           \
 void CHANNEL(_print)(CHANNEL() _q);                             \
                                                                 \
 /* apply additive white Gausss noise impairment             */  \
-/*  _q              : channel object                        */  \
-/*  _noise_floor_dB : noise floor power spectral density    */  \
-/*  _SNR_dB         : signal-to-noise ratio [dB]            */  \
+/*  _q          : channel object                            */  \
+/*  _N0dB       : noise floor power spectral density [dB]   */  \
+/*  _SNRdB      : signal-to-noise ratio [dB]                */  \
 void CHANNEL(_add_awgn)(CHANNEL() _q,                           \
-                        float     _noise_floor_dB,              \
+                        float     _N0dB,                        \
                         float     _SNRdB);                      \
                                                                 \
 /* apply carrier offset impairment                          */  \
 /*  _q          : channel object                            */  \
-/*  _frequency  : carrier frequency offse [radians/sample   */  \
+/*  _frequency  : carrier frequency offset [radians/sample] */  \
 /*  _phase      : carrier phase offset    [radians]         */  \
 void CHANNEL(_add_carrier_offset)(CHANNEL() _q,                 \
                                   float     _frequency,         \
@@ -473,15 +520,15 @@ void CHANNEL(_execute)(CHANNEL()      _q,                       \
                                                                 \
 /* apply channel impairments on block of samples            */  \
 /*  _q      : channel object                                */  \
-/*  _x      : input array [size: _n x 1]                    */  \
-/*  _n      : input array length                            */  \
-/*  _y      : output array [size: _n x 1]                   */  \
+/*  _x      : input array, [size: _n x 1]                   */  \
+/*  _n      : input array, length                           */  \
+/*  _y      : output array, [size: _n x 1]                  */  \
 void CHANNEL(_execute_block)(CHANNEL()      _q,                 \
                              TI *           _x,                 \
                              unsigned int   _n,                 \
                              TO *           _y);                \
 
-LIQUID_CHANNEL_DEFINE_API(CHANNEL_MANGLE_CCCF,
+LIQUID_CHANNEL_DEFINE_API(LIQUID_CHANNEL_MANGLE_CCCF,
                           liquid_float_complex,
                           liquid_float_complex,
                           liquid_float_complex)
@@ -490,7 +537,7 @@ LIQUID_CHANNEL_DEFINE_API(CHANNEL_MANGLE_CCCF,
 //
 // time-varying multi-path channel
 //
-#define TVMPCH_MANGLE_CCCF(name)    LIQUID_CONCAT(tvmpch_cccf,name)
+#define LIQUID_TVMPCH_MANGLE_CCCF(name) LIQUID_CONCAT(tvmpch_cccf,name)
 
 // large macro
 //   TVMPCH    : name-mangling macro
@@ -541,7 +588,7 @@ void TVMPCH(_execute_block)(TVMPCH()     _q,                    \
                             unsigned int _nx,                   \
                             TO *         _y);                   \
 
-LIQUID_TVMPCH_DEFINE_API(TVMPCH_MANGLE_CCCF,
+LIQUID_TVMPCH_DEFINE_API(LIQUID_TVMPCH_MANGLE_CCCF,
                          liquid_float_complex,
                          liquid_float_complex,
                          liquid_float_complex)
@@ -551,9 +598,9 @@ LIQUID_TVMPCH_DEFINE_API(TVMPCH_MANGLE_CCCF,
 // MODULE : dotprod (vector dot product)
 //
 
-#define DOTPROD_MANGLE_RRRF(name)   LIQUID_CONCAT(dotprod_rrrf,name)
-#define DOTPROD_MANGLE_CCCF(name)   LIQUID_CONCAT(dotprod_cccf,name)
-#define DOTPROD_MANGLE_CRCF(name)   LIQUID_CONCAT(dotprod_crcf,name)
+#define LIQUID_DOTPROD_MANGLE_RRRF(name) LIQUID_CONCAT(dotprod_rrrf,name)
+#define LIQUID_DOTPROD_MANGLE_CCCF(name) LIQUID_CONCAT(dotprod_cccf,name)
+#define LIQUID_DOTPROD_MANGLE_CRCF(name) LIQUID_CONCAT(dotprod_crcf,name)
 
 // large macro
 //   DOTPROD    : name-mangling macro
@@ -600,17 +647,17 @@ void DOTPROD(_execute)(DOTPROD() _q,                            \
                        TI *      _x,                            \
                        TO *      _y);                           \
 
-LIQUID_DOTPROD_DEFINE_API(DOTPROD_MANGLE_RRRF,
+LIQUID_DOTPROD_DEFINE_API(LIQUID_DOTPROD_MANGLE_RRRF,
                           float,
                           float,
                           float)
 
-LIQUID_DOTPROD_DEFINE_API(DOTPROD_MANGLE_CCCF,
+LIQUID_DOTPROD_DEFINE_API(LIQUID_DOTPROD_MANGLE_CCCF,
                           liquid_float_complex,
                           liquid_float_complex,
                           liquid_float_complex)
 
-LIQUID_DOTPROD_DEFINE_API(DOTPROD_MANGLE_CRCF,
+LIQUID_DOTPROD_DEFINE_API(LIQUID_DOTPROD_MANGLE_CRCF,
                           liquid_float_complex,
                           float,
                           liquid_float_complex)
@@ -631,8 +678,8 @@ float liquid_sumsqcf(liquid_float_complex * _v,
 //
 
 // least mean-squares (LMS)
-#define EQLMS_MANGLE_RRRF(name)     LIQUID_CONCAT(eqlms_rrrf,name)
-#define EQLMS_MANGLE_CCCF(name)     LIQUID_CONCAT(eqlms_cccf,name)
+#define LIQUID_EQLMS_MANGLE_RRRF(name) LIQUID_CONCAT(eqlms_rrrf,name)
+#define LIQUID_EQLMS_MANGLE_CCCF(name) LIQUID_CONCAT(eqlms_cccf,name)
 
 // large macro
 //   EQLMS  : name-mangling macro
@@ -750,13 +797,13 @@ void EQLMS(_train)(EQLMS()      _q,                             \
                    T *          _d,                             \
                    unsigned int _n);                            \
 
-LIQUID_EQLMS_DEFINE_API(EQLMS_MANGLE_RRRF, float);
-LIQUID_EQLMS_DEFINE_API(EQLMS_MANGLE_CCCF, liquid_float_complex);
+LIQUID_EQLMS_DEFINE_API(LIQUID_EQLMS_MANGLE_RRRF, float)
+LIQUID_EQLMS_DEFINE_API(LIQUID_EQLMS_MANGLE_CCCF, liquid_float_complex)
 
 
 // recursive least-squares (RLS)
-#define EQRLS_MANGLE_RRRF(name)     LIQUID_CONCAT(eqrls_rrrf,name)
-#define EQRLS_MANGLE_CCCF(name)     LIQUID_CONCAT(eqrls_cccf,name)
+#define LIQUID_EQRLS_MANGLE_RRRF(name) LIQUID_CONCAT(eqrls_rrrf,name)
+#define LIQUID_EQRLS_MANGLE_CCCF(name) LIQUID_CONCAT(eqrls_cccf,name)
 
 // large macro
 //   EQRLS  : name-mangling macro
@@ -822,10 +869,10 @@ void EQRLS(_train)(EQRLS()      _q,                             \
                    T *          _w,                             \
                    T *          _x,                             \
                    T *          _d,                             \
-                   unsigned int _n);
+                   unsigned int _n);                            \
 
-LIQUID_EQRLS_DEFINE_API(EQRLS_MANGLE_RRRF, float);
-LIQUID_EQRLS_DEFINE_API(EQRLS_MANGLE_CCCF, liquid_float_complex);
+LIQUID_EQRLS_DEFINE_API(LIQUID_EQRLS_MANGLE_RRRF, float)
+LIQUID_EQRLS_DEFINE_API(LIQUID_EQRLS_MANGLE_CCCF, liquid_float_complex)
 
 
 
@@ -1195,7 +1242,7 @@ typedef enum {
     LIQUID_FFT_IMDCT    =  31,  // IMDCT
 } liquid_fft_type;
 
-#define LIQUID_FFT_MANGLE_FLOAT(name)   LIQUID_CONCAT(fft,name)
+#define LIQUID_FFT_MANGLE_FLOAT(name) LIQUID_CONCAT(fft,name)
 
 // Macro    :   FFT
 //  FFT     :   name-mangling macro
@@ -1297,7 +1344,7 @@ typedef struct SPGRAM(_s) * SPGRAM();                           \
                                                                 \
 /* create spgram object                                     */  \
 /*  _nfft       : FFT size                                  */  \
-/*  _window     : window [size: _window_len x 1]            */  \
+/*  _wtype      : window type, e.g. LIQUID_WINDOW_HAMMING   */  \
 /*  _window_len : window length, _window_len in [1,_nfft]   */  \
 /*  _delay      : delay between transforms, _delay > 0      */  \
 SPGRAM() SPGRAM(_create)(unsigned int _nfft,                    \
@@ -1311,7 +1358,11 @@ SPGRAM() SPGRAM(_create_default)(unsigned int _nfft);           \
 /* destroy spgram object                                    */  \
 void SPGRAM(_destroy)(SPGRAM() _q);                             \
                                                                 \
-/* resets the internal state of the spgram object           */  \
+/* clears the internal state of the spgram object, but not  */  \
+/* the internal buffer                                      */  \
+void SPGRAM(_clear)(SPGRAM() _q);                               \
+                                                                \
+/* reset the spgram object to its original state completely */  \
 void SPGRAM(_reset)(SPGRAM() _q);                               \
                                                                 \
 /* print internal state of the spgram object                */  \
@@ -1406,11 +1457,17 @@ void ASGRAM(_reset)(ASGRAM() _q);                               \
                                                                 \
 /* set scale and offset for spectrogram                     */  \
 /*  _q      :   asgram object                               */  \
-/*  _offset :   signal offset level [dB]                    */  \
-/*  _scale  :   signal scale [dB]                           */  \
+/*  _ref    :   signal reference level [dB]                 */  \
+/*  _div    :   signal division [dB]                        */  \
 void ASGRAM(_set_scale)(ASGRAM() _q,                            \
-                        float    _offset,                       \
-                        float    _scale);                       \
+                        float    _ref,                          \
+                        float    _div);                         \
+                                                                \
+/* set display characters for output string                 */  \
+/*  _q      :   asgram object                               */  \
+/*  _ascii  :   10-character display, default: " .,-+*&NM#" */  \
+void ASGRAM(_set_display)(ASGRAM()     _q,                      \
+                          const char * _ascii);                 \
                                                                 \
 /* push a single sample into the asgram object              */  \
 /*  _q      :   asgram object                               */  \
@@ -1450,6 +1507,83 @@ LIQUID_ASGRAM_DEFINE_API(LIQUID_ASGRAM_MANGLE_FLOAT,
                          float,
                          liquid_float_complex,
                          float)
+
+// 
+// spectral periodogram waterfall
+//
+
+#define LIQUID_SPWATERFALL_MANGLE_CFLOAT(name) LIQUID_CONCAT(spwaterfallcf,name)
+#define LIQUID_SPWATERFALL_MANGLE_FLOAT(name)  LIQUID_CONCAT(spwaterfallf, name)
+
+// Macro        :   SPWATERFALL
+//  SPWATERFALL :   name-mangling macro
+//  T           :   primitive data type
+//  TC          :   primitive data type (complex)
+//  TI          :   primitive data type (input)
+#define LIQUID_SPWATERFALL_DEFINE_API(SPWATERFALL,T,TC,TI)      \
+                                                                \
+typedef struct SPWATERFALL(_s) * SPWATERFALL();                 \
+                                                                \
+/* create spgram object                                     */  \
+/*  _nfft       : FFT size                                  */  \
+/*  _wtype      : window type, e.g. LIQUID_WINDOW_HAMMING   */  \
+/*  _window_len : window length, _window_len in [1,_nfft]   */  \
+/*  _delay      : delay between transforms, _delay > 0      */  \
+/*  _time       : number of aggregated transforms, _time > 0*/  \
+SPWATERFALL() SPWATERFALL(_create)(unsigned int _nfft,          \
+                                   int          _wtype,         \
+                                   unsigned int _window_len,    \
+                                   unsigned int _delay,         \
+                                   unsigned int _time);         \
+                                                                \
+/* create default spgram object (Kaiser-Bessel window)      */  \
+SPWATERFALL() SPWATERFALL(_create_default)(unsigned int _nfft,  \
+                                           unsigned int _time); \
+                                                                \
+/* destroy spgram object                                    */  \
+void SPWATERFALL(_destroy)(SPWATERFALL() _q);                   \
+                                                                \
+/* clears the internal state of the spgram object, but not  */  \
+/* the internal buffer                                      */  \
+void SPWATERFALL(_clear)(SPWATERFALL() _q);                     \
+                                                                \
+/* reset the spgram object to its original state completely */  \
+void SPWATERFALL(_reset)(SPWATERFALL() _q);                     \
+                                                                \
+/* print internal state of the spgram object                */  \
+void SPWATERFALL(_print)(SPWATERFALL() _q);                     \
+                                                                \
+/* push a single sample into the spgram object              */  \
+/*  _q      :   spgram object                               */  \
+/*  _x      :   input sample                                */  \
+void SPWATERFALL(_push)(SPWATERFALL() _q,                       \
+                        TI            _x);                      \
+                                                                \
+/* write a block of samples to the spgram object            */  \
+/*  _q      :   spgram object                               */  \
+/*  _x      :   input buffer [size: _n x 1]                 */  \
+/*  _n      :   input buffer length                         */  \
+void SPWATERFALL(_write)(SPWATERFALL() _q,                      \
+                         TI *          _x,                      \
+                         unsigned int  _n);                     \
+                                                                \
+/* export files for plotting                                */  \
+/*  _q             : spgram object                          */  \
+/*  _filename_base : base filename (will export files with  */  \
+/*                   .gnu, .bin, and .png extensions)       */  \
+int SPWATERFALL(_export)(SPWATERFALL() _q,                      \
+                         const char *  _filename_base);         \
+
+
+LIQUID_SPWATERFALL_DEFINE_API(LIQUID_SPWATERFALL_MANGLE_CFLOAT,
+                              float,
+                              liquid_float_complex,
+                              liquid_float_complex)
+
+LIQUID_SPWATERFALL_DEFINE_API(LIQUID_SPWATERFALL_MANGLE_FLOAT,
+                              float,
+                              liquid_float_complex,
+                              float)
 
 
 //
@@ -1551,14 +1685,36 @@ typedef enum {
 //  _wtype      :   weight types (e.g. LIQUID_FIRDESPM_FLATWEIGHT) [size: _num_bands x 1]
 //  _btype      :   band type (e.g. LIQUID_FIRDESPM_BANDPASS)
 //  _h          :   output coefficients array [size: _h_len x 1]
-void firdespm_run(unsigned int _h_len,
-                  unsigned int _num_bands,
-                  float * _bands,
-                  float * _des,
-                  float * _weights,
+void firdespm_run(unsigned int            _h_len,
+                  unsigned int            _num_bands,
+                  float *                 _bands,
+                  float *                 _des,
+                  float *                 _weights,
                   liquid_firdespm_wtype * _wtype,
-                  liquid_firdespm_btype _btype,
-                  float * _h);
+                  liquid_firdespm_btype   _btype,
+                  float *                 _h);
+
+// run filter design for basic low-pass filter
+//  _n      : filter length, _n > 0
+//  _fc     : cutoff frequency, 0 < _fc < 0.5
+//  _As     : stop-band attenuation [dB], _As > 0
+//  _mu     : fractional sample offset, -0.5 < _mu < 0.5 [ignored]
+//  _h      : output coefficient buffer, [size: _n x 1]
+void firdespm_lowpass(unsigned int _n,
+                      float        _fc,
+                      float        _As,
+                      float        _mu,
+                      float *      _h);
+
+// firdespm response callback function
+//  _frequency  : normalized frequency
+//  _userdata   : pointer to userdata
+//  _desired    : (return) desired response
+//  _weight     : (return) weight
+typedef int (*firdespm_callback)(double   _frequency,
+                                 void   * _userdata,
+                                 double * _desired,
+                                 double * _weight);
 
 // structured object
 typedef struct firdespm_s * firdespm;
@@ -1571,13 +1727,27 @@ typedef struct firdespm_s * firdespm;
 //  _weights    :   response weighting [size: _num_bands x 1]
 //  _wtype      :   weight types (e.g. LIQUID_FIRDESPM_FLATWEIGHT) [size: _num_bands x 1]
 //  _btype      :   band type (e.g. LIQUID_FIRDESPM_BANDPASS)
-firdespm firdespm_create(unsigned int _h_len,
-                         unsigned int _num_bands,
-                         float * _bands,
-                         float * _des,
-                         float * _weights,
+firdespm firdespm_create(unsigned int            _h_len,
+                         unsigned int            _num_bands,
+                         float *                 _bands,
+                         float *                 _des,
+                         float *                 _weights,
                          liquid_firdespm_wtype * _wtype,
-                         liquid_firdespm_btype _btype);
+                         liquid_firdespm_btype   _btype);
+
+// create firdespm object with user-defined callback
+//  _h_len      :   length of filter (number of taps)
+//  _num_bands  :   number of frequency bands
+//  _bands      :   band edges, f in [0,0.5], [size: _num_bands x 2]
+//  _btype      :   band type (e.g. LIQUID_FIRDESPM_BANDPASS)
+//  _callback   :   user-defined callback for specifying desired response & weights
+//  _userdata   :   user-defined data structure for callback function
+firdespm firdespm_create_callback(unsigned int          _h_len,
+                                  unsigned int          _num_bands,
+                                  float *               _bands,
+                                  liquid_firdespm_btype _btype,
+                                  firdespm_callback     _callback,
+                                  void *                _userdata);
 
 // destroy firdespm object
 void firdespm_destroy(firdespm _q);
@@ -1959,8 +2129,8 @@ void liquid_levinson(float * _r,
 // auto-correlator (delay cross-correlation)
 //
 
-#define AUTOCORR_MANGLE_CCCF(name)  LIQUID_CONCAT(autocorr_cccf,name)
-#define AUTOCORR_MANGLE_RRRF(name)  LIQUID_CONCAT(autocorr_rrrf,name)
+#define LIQUID_AUTOCORR_MANGLE_CCCF(name) LIQUID_CONCAT(autocorr_cccf,name)
+#define LIQUID_AUTOCORR_MANGLE_RRRF(name) LIQUID_CONCAT(autocorr_rrrf,name)
 
 // Macro:
 //   AUTOCORR   : name-mangling macro
@@ -2008,12 +2178,12 @@ void AUTOCORR(_execute_block)(AUTOCORR()   _q,                  \
 /* return sum of squares of buffered samples                */  \
 float AUTOCORR(_get_energy)(AUTOCORR() _q);                     \
 
-LIQUID_AUTOCORR_DEFINE_API(AUTOCORR_MANGLE_CCCF,
+LIQUID_AUTOCORR_DEFINE_API(LIQUID_AUTOCORR_MANGLE_CCCF,
                            liquid_float_complex,
                            liquid_float_complex,
                            liquid_float_complex)
 
-LIQUID_AUTOCORR_DEFINE_API(AUTOCORR_MANGLE_RRRF,
+LIQUID_AUTOCORR_DEFINE_API(LIQUID_AUTOCORR_MANGLE_RRRF,
                            float,
                            float,
                            float)
@@ -2023,9 +2193,9 @@ LIQUID_AUTOCORR_DEFINE_API(AUTOCORR_MANGLE_RRRF,
 // Finite impulse response filter
 //
 
-#define FIRFILT_MANGLE_RRRF(name)  LIQUID_CONCAT(firfilt_rrrf,name)
-#define FIRFILT_MANGLE_CRCF(name)  LIQUID_CONCAT(firfilt_crcf,name)
-#define FIRFILT_MANGLE_CCCF(name)  LIQUID_CONCAT(firfilt_cccf,name)
+#define LIQUID_FIRFILT_MANGLE_RRRF(name) LIQUID_CONCAT(firfilt_rrrf,name)
+#define LIQUID_FIRFILT_MANGLE_CRCF(name) LIQUID_CONCAT(firfilt_crcf,name)
+#define LIQUID_FIRFILT_MANGLE_CCCF(name) LIQUID_CONCAT(firfilt_cccf,name)
 
 // Macro:
 //   FIRFILT : name-mangling macro
@@ -2123,17 +2293,17 @@ void FIRFILT(_freqresponse)(FIRFILT()              _q,          \
 float FIRFILT(_groupdelay)(FIRFILT() _q,                        \
                            float     _fc);                      \
 
-LIQUID_FIRFILT_DEFINE_API(FIRFILT_MANGLE_RRRF,
+LIQUID_FIRFILT_DEFINE_API(LIQUID_FIRFILT_MANGLE_RRRF,
                           float,
                           float,
                           float)
 
-LIQUID_FIRFILT_DEFINE_API(FIRFILT_MANGLE_CRCF,
+LIQUID_FIRFILT_DEFINE_API(LIQUID_FIRFILT_MANGLE_CRCF,
                           liquid_float_complex,
                           float,
                           liquid_float_complex)
 
-LIQUID_FIRFILT_DEFINE_API(FIRFILT_MANGLE_CCCF,
+LIQUID_FIRFILT_DEFINE_API(LIQUID_FIRFILT_MANGLE_CCCF,
                           liquid_float_complex,
                           liquid_float_complex,
                           liquid_float_complex)
@@ -2144,8 +2314,8 @@ LIQUID_FIRFILT_DEFINE_API(FIRFILT_MANGLE_CCCF,
 //  1:2 complex-to-real interpolator
 //
 
-#define FIRHILB_MANGLE_FLOAT(name)  LIQUID_CONCAT(firhilbf, name)
-//#define FIRHILB_MANGLE_DOUBLE(name) LIQUID_CONCAT(firhilb, name)
+#define LIQUID_FIRHILB_MANGLE_FLOAT(name)  LIQUID_CONCAT(firhilbf, name)
+//#define LIQUID_FIRHILB_MANGLE_DOUBLE(name) LIQUID_CONCAT(firhilb, name)
 
 // NOTES:
 //   Although firhilb is a placeholder for both decimation and
@@ -2222,17 +2392,17 @@ void FIRHILB(_interp_execute_block)(FIRHILB()    _q,            \
                                     unsigned int _n,            \
                                     T *          _y);           \
 
-LIQUID_FIRHILB_DEFINE_API(FIRHILB_MANGLE_FLOAT, float, liquid_float_complex)
-//LIQUID_FIRHILB_DEFINE_API(FIRHILB_MANGLE_DOUBLE, double, liquid_double_complex)
+LIQUID_FIRHILB_DEFINE_API(LIQUID_FIRHILB_MANGLE_FLOAT, float, liquid_float_complex)
+//LIQUID_FIRHILB_DEFINE_API(LIQUID_FIRHILB_MANGLE_DOUBLE, double, liquid_double_complex)
 
 
 //
 // FFT-based finite impulse response filter
 //
 
-#define FFTFILT_MANGLE_RRRF(name)  LIQUID_CONCAT(fftfilt_rrrf,name)
-#define FFTFILT_MANGLE_CRCF(name)  LIQUID_CONCAT(fftfilt_crcf,name)
-#define FFTFILT_MANGLE_CCCF(name)  LIQUID_CONCAT(fftfilt_cccf,name)
+#define LIQUID_FFTFILT_MANGLE_RRRF(name) LIQUID_CONCAT(fftfilt_rrrf,name)
+#define LIQUID_FFTFILT_MANGLE_CRCF(name) LIQUID_CONCAT(fftfilt_crcf,name)
+#define LIQUID_FFTFILT_MANGLE_CCCF(name) LIQUID_CONCAT(fftfilt_cccf,name)
 
 // Macro:
 //   FFTFILT : name-mangling macro
@@ -2274,17 +2444,17 @@ void FFTFILT(_execute)(FFTFILT() _q,                            \
 /* return length of filter object's internal coefficients   */  \
 unsigned int FFTFILT(_get_length)(FFTFILT() _q);                \
 
-LIQUID_FFTFILT_DEFINE_API(FFTFILT_MANGLE_RRRF,
+LIQUID_FFTFILT_DEFINE_API(LIQUID_FFTFILT_MANGLE_RRRF,
                           float,
                           float,
                           float)
 
-LIQUID_FFTFILT_DEFINE_API(FFTFILT_MANGLE_CRCF,
+LIQUID_FFTFILT_DEFINE_API(LIQUID_FFTFILT_MANGLE_CRCF,
                           liquid_float_complex,
                           float,
                           liquid_float_complex)
 
-LIQUID_FFTFILT_DEFINE_API(FFTFILT_MANGLE_CCCF,
+LIQUID_FFTFILT_DEFINE_API(LIQUID_FFTFILT_MANGLE_CCCF,
                           liquid_float_complex,
                           liquid_float_complex,
                           liquid_float_complex)
@@ -2294,9 +2464,9 @@ LIQUID_FFTFILT_DEFINE_API(FFTFILT_MANGLE_CCCF,
 // Infinite impulse response filter
 //
 
-#define IIRFILT_MANGLE_RRRF(name)  LIQUID_CONCAT(iirfilt_rrrf,name)
-#define IIRFILT_MANGLE_CRCF(name)  LIQUID_CONCAT(iirfilt_crcf,name)
-#define IIRFILT_MANGLE_CCCF(name)  LIQUID_CONCAT(iirfilt_cccf,name)
+#define LIQUID_IIRFILT_MANGLE_RRRF(name) LIQUID_CONCAT(iirfilt_rrrf,name)
+#define LIQUID_IIRFILT_MANGLE_CRCF(name) LIQUID_CONCAT(iirfilt_crcf,name)
+#define LIQUID_IIRFILT_MANGLE_CCCF(name) LIQUID_CONCAT(iirfilt_cccf,name)
 
 // Macro:
 //   IIRFILT : name-mangling macro
@@ -2328,7 +2498,7 @@ IIRFILT() IIRFILT(_create_sos)(TC *         _B,                 \
 /*  _ftype  : filter type (e.g. LIQUID_IIRDES_BUTTER)       */  \
 /*  _btype  : band type (e.g. LIQUID_IIRDES_BANDPASS)       */  \
 /*  _format : coefficients format (e.g. LIQUID_IIRDES_SOS)  */  \
-/*  _n      : filter order                                  */  \
+/*  _order  : filter order                                  */  \
 /*  _fc     : low-pass prototype cut-off frequency          */  \
 /*  _f0     : center frequency (band-pass, band-stop)       */  \
 /*  _Ap     : pass-band ripple in dB                        */  \
@@ -2344,7 +2514,7 @@ IIRFILT() IIRFILT(_create_prototype)(                           \
             float _As);                                         \
                                                                 \
 /* create simplified low-pass Butterworth IIR filter */         \
-/*  _n      : filter order                                  */  \
+/*  _order  : filter order                                  */  \
 /*  _fc     : low-pass prototype cut-off frequency          */  \
 IIRFILT() IIRFILT(_create_lowpass)(                             \
             unsigned int _order,                                \
@@ -2411,17 +2581,17 @@ void IIRFILT(_freqresponse)(IIRFILT()              _q,          \
 /*  _fc     : frequency to evaluate                         */  \
 float IIRFILT(_groupdelay)(IIRFILT() _q, float _fc);            \
 
-LIQUID_IIRFILT_DEFINE_API(IIRFILT_MANGLE_RRRF,
+LIQUID_IIRFILT_DEFINE_API(LIQUID_IIRFILT_MANGLE_RRRF,
                           float,
                           float,
                           float)
 
-LIQUID_IIRFILT_DEFINE_API(IIRFILT_MANGLE_CRCF,
+LIQUID_IIRFILT_DEFINE_API(LIQUID_IIRFILT_MANGLE_CRCF,
                           liquid_float_complex,
                           float,
                           liquid_float_complex)
 
-LIQUID_IIRFILT_DEFINE_API(IIRFILT_MANGLE_CCCF,
+LIQUID_IIRFILT_DEFINE_API(LIQUID_IIRFILT_MANGLE_CCCF,
                           liquid_float_complex,
                           liquid_float_complex,
                           liquid_float_complex)
@@ -2430,9 +2600,9 @@ LIQUID_IIRFILT_DEFINE_API(IIRFILT_MANGLE_CCCF,
 //
 // FIR Polyphase filter bank
 //
-#define FIRPFB_MANGLE_RRRF(name)  LIQUID_CONCAT(firpfb_rrrf,name)
-#define FIRPFB_MANGLE_CRCF(name)  LIQUID_CONCAT(firpfb_crcf,name)
-#define FIRPFB_MANGLE_CCCF(name)  LIQUID_CONCAT(firpfb_cccf,name)
+#define LIQUID_FIRPFB_MANGLE_RRRF(name) LIQUID_CONCAT(firpfb_rrrf,name)
+#define LIQUID_FIRPFB_MANGLE_CRCF(name) LIQUID_CONCAT(firpfb_crcf,name)
+#define LIQUID_FIRPFB_MANGLE_CCCF(name) LIQUID_CONCAT(firpfb_cccf,name)
 
 // Macro:
 //   FIRPFB : name-mangling macro
@@ -2532,17 +2702,17 @@ void FIRPFB(_execute_block)(FIRPFB()     _q,                    \
                             unsigned int _n,                    \
                             TO *         _y);                   \
 
-LIQUID_FIRPFB_DEFINE_API(FIRPFB_MANGLE_RRRF,
+LIQUID_FIRPFB_DEFINE_API(LIQUID_FIRPFB_MANGLE_RRRF,
                          float,
                          float,
                          float)
 
-LIQUID_FIRPFB_DEFINE_API(FIRPFB_MANGLE_CRCF,
+LIQUID_FIRPFB_DEFINE_API(LIQUID_FIRPFB_MANGLE_CRCF,
                          liquid_float_complex,
                          float,
                          liquid_float_complex)
 
-LIQUID_FIRPFB_DEFINE_API(FIRPFB_MANGLE_CCCF,
+LIQUID_FIRPFB_DEFINE_API(LIQUID_FIRPFB_MANGLE_CCCF,
                          liquid_float_complex,
                          liquid_float_complex,
                          liquid_float_complex)
@@ -2552,9 +2722,9 @@ LIQUID_FIRPFB_DEFINE_API(FIRPFB_MANGLE_CCCF,
 //
 
 // firinterp : finite impulse response interpolator
-#define FIRINTERP_MANGLE_RRRF(name)  LIQUID_CONCAT(firinterp_rrrf,name)
-#define FIRINTERP_MANGLE_CRCF(name)  LIQUID_CONCAT(firinterp_crcf,name)
-#define FIRINTERP_MANGLE_CCCF(name)  LIQUID_CONCAT(firinterp_cccf,name)
+#define LIQUID_FIRINTERP_MANGLE_RRRF(name) LIQUID_CONCAT(firinterp_rrrf,name)
+#define LIQUID_FIRINTERP_MANGLE_CRCF(name) LIQUID_CONCAT(firinterp_crcf,name)
+#define LIQUID_FIRINTERP_MANGLE_CCCF(name) LIQUID_CONCAT(firinterp_cccf,name)
 
 #define LIQUID_FIRINTERP_DEFINE_API(FIRINTERP,TO,TC,TI)         \
                                                                 \
@@ -2615,25 +2785,25 @@ void FIRINTERP(_execute_block)(FIRINTERP()  _q,                 \
                                unsigned int _n,                 \
                                TO *         _y);                \
 
-LIQUID_FIRINTERP_DEFINE_API(FIRINTERP_MANGLE_RRRF,
+LIQUID_FIRINTERP_DEFINE_API(LIQUID_FIRINTERP_MANGLE_RRRF,
                             float,
                             float,
                             float)
 
-LIQUID_FIRINTERP_DEFINE_API(FIRINTERP_MANGLE_CRCF,
+LIQUID_FIRINTERP_DEFINE_API(LIQUID_FIRINTERP_MANGLE_CRCF,
                             liquid_float_complex,
                             float,
                             liquid_float_complex)
 
-LIQUID_FIRINTERP_DEFINE_API(FIRINTERP_MANGLE_CCCF,
+LIQUID_FIRINTERP_DEFINE_API(LIQUID_FIRINTERP_MANGLE_CCCF,
                             liquid_float_complex,
                             liquid_float_complex,
                             liquid_float_complex)
 
 // iirinterp : infinite impulse response interpolator
-#define IIRINTERP_MANGLE_RRRF(name)  LIQUID_CONCAT(iirinterp_rrrf,name)
-#define IIRINTERP_MANGLE_CRCF(name)  LIQUID_CONCAT(iirinterp_crcf,name)
-#define IIRINTERP_MANGLE_CCCF(name)  LIQUID_CONCAT(iirinterp_cccf,name)
+#define LIQUID_IIRINTERP_MANGLE_RRRF(name) LIQUID_CONCAT(iirinterp_rrrf,name)
+#define LIQUID_IIRINTERP_MANGLE_CRCF(name) LIQUID_CONCAT(iirinterp_crcf,name)
+#define LIQUID_IIRINTERP_MANGLE_CCCF(name) LIQUID_CONCAT(iirinterp_cccf,name)
 
 #define LIQUID_IIRINTERP_DEFINE_API(IIRINTERP,TO,TC,TI)         \
 typedef struct IIRINTERP(_s) * IIRINTERP();                     \
@@ -2699,17 +2869,17 @@ void IIRINTERP(_execute_block)(IIRINTERP()  _q,                 \
 /* get system group delay at frequency _fc                  */  \
 float IIRINTERP(_groupdelay)(IIRINTERP() _q, float _fc);        \
 
-LIQUID_IIRINTERP_DEFINE_API(IIRINTERP_MANGLE_RRRF,
+LIQUID_IIRINTERP_DEFINE_API(LIQUID_IIRINTERP_MANGLE_RRRF,
                             float,
                             float,
                             float)
 
-LIQUID_IIRINTERP_DEFINE_API(IIRINTERP_MANGLE_CRCF,
+LIQUID_IIRINTERP_DEFINE_API(LIQUID_IIRINTERP_MANGLE_CRCF,
                             liquid_float_complex,
                             float,
                             liquid_float_complex)
 
-LIQUID_IIRINTERP_DEFINE_API(IIRINTERP_MANGLE_CCCF,
+LIQUID_IIRINTERP_DEFINE_API(LIQUID_IIRINTERP_MANGLE_CCCF,
                             liquid_float_complex,
                             liquid_float_complex,
                             liquid_float_complex)
@@ -2719,9 +2889,9 @@ LIQUID_IIRINTERP_DEFINE_API(IIRINTERP_MANGLE_CCCF,
 //
 
 // firdecim : finite impulse response decimator
-#define FIRDECIM_MANGLE_RRRF(name) LIQUID_CONCAT(firdecim_rrrf,name)
-#define FIRDECIM_MANGLE_CRCF(name) LIQUID_CONCAT(firdecim_crcf,name)
-#define FIRDECIM_MANGLE_CCCF(name) LIQUID_CONCAT(firdecim_cccf,name)
+#define LIQUID_FIRDECIM_MANGLE_RRRF(name) LIQUID_CONCAT(firdecim_rrrf,name)
+#define LIQUID_FIRDECIM_MANGLE_CRCF(name) LIQUID_CONCAT(firdecim_crcf,name)
+#define LIQUID_FIRDECIM_MANGLE_CCCF(name) LIQUID_CONCAT(firdecim_cccf,name)
 
 #define LIQUID_FIRDECIM_DEFINE_API(FIRDECIM,TO,TC,TI)           \
 typedef struct FIRDECIM(_s) * FIRDECIM();                       \
@@ -2781,26 +2951,26 @@ void FIRDECIM(_execute_block)(FIRDECIM()   _q,                  \
                               unsigned int _n,                  \
                               TO *         _y);                 \
 
-LIQUID_FIRDECIM_DEFINE_API(FIRDECIM_MANGLE_RRRF,
+LIQUID_FIRDECIM_DEFINE_API(LIQUID_FIRDECIM_MANGLE_RRRF,
                            float,
                            float,
                            float)
 
-LIQUID_FIRDECIM_DEFINE_API(FIRDECIM_MANGLE_CRCF,
+LIQUID_FIRDECIM_DEFINE_API(LIQUID_FIRDECIM_MANGLE_CRCF,
                            liquid_float_complex,
                            float,
                            liquid_float_complex)
 
-LIQUID_FIRDECIM_DEFINE_API(FIRDECIM_MANGLE_CCCF,
+LIQUID_FIRDECIM_DEFINE_API(LIQUID_FIRDECIM_MANGLE_CCCF,
                            liquid_float_complex,
                            liquid_float_complex,
                            liquid_float_complex)
 
 
 // iirdecim : infinite impulse response decimator
-#define IIRDECIM_MANGLE_RRRF(name)  LIQUID_CONCAT(iirdecim_rrrf,name)
-#define IIRDECIM_MANGLE_CRCF(name)  LIQUID_CONCAT(iirdecim_crcf,name)
-#define IIRDECIM_MANGLE_CCCF(name)  LIQUID_CONCAT(iirdecim_cccf,name)
+#define LIQUID_IIRDECIM_MANGLE_RRRF(name) LIQUID_CONCAT(iirdecim_rrrf,name)
+#define LIQUID_IIRDECIM_MANGLE_CRCF(name) LIQUID_CONCAT(iirdecim_crcf,name)
+#define LIQUID_IIRDECIM_MANGLE_CCCF(name) LIQUID_CONCAT(iirdecim_cccf,name)
 
 #define LIQUID_IIRDECIM_DEFINE_API(IIRDECIM,TO,TC,TI)           \
 typedef struct IIRDECIM(_s) * IIRDECIM();                       \
@@ -2874,17 +3044,17 @@ void IIRDECIM(_execute_block)(IIRDECIM()   _q,                  \
 /* get system group delay at frequency _fc                  */  \
 float IIRDECIM(_groupdelay)(IIRDECIM() _q, float _fc);          \
 
-LIQUID_IIRDECIM_DEFINE_API(IIRDECIM_MANGLE_RRRF,
+LIQUID_IIRDECIM_DEFINE_API(LIQUID_IIRDECIM_MANGLE_RRRF,
                            float,
                            float,
                            float)
 
-LIQUID_IIRDECIM_DEFINE_API(IIRDECIM_MANGLE_CRCF,
+LIQUID_IIRDECIM_DEFINE_API(LIQUID_IIRDECIM_MANGLE_CRCF,
                            liquid_float_complex,
                            float,
                            liquid_float_complex)
 
-LIQUID_IIRDECIM_DEFINE_API(IIRDECIM_MANGLE_CCCF,
+LIQUID_IIRDECIM_DEFINE_API(LIQUID_IIRDECIM_MANGLE_CCCF,
                            liquid_float_complex,
                            liquid_float_complex,
                            liquid_float_complex)
@@ -2894,9 +3064,9 @@ LIQUID_IIRDECIM_DEFINE_API(IIRDECIM_MANGLE_CCCF,
 // 
 // Half-band resampler
 //
-#define RESAMP2_MANGLE_RRRF(name)   LIQUID_CONCAT(resamp2_rrrf,name)
-#define RESAMP2_MANGLE_CRCF(name)   LIQUID_CONCAT(resamp2_crcf,name)
-#define RESAMP2_MANGLE_CCCF(name)   LIQUID_CONCAT(resamp2_cccf,name)
+#define LIQUID_RESAMP2_MANGLE_RRRF(name) LIQUID_CONCAT(resamp2_rrrf,name)
+#define LIQUID_RESAMP2_MANGLE_CRCF(name) LIQUID_CONCAT(resamp2_crcf,name)
+#define LIQUID_RESAMP2_MANGLE_CCCF(name) LIQUID_CONCAT(resamp2_cccf,name)
 
 #define LIQUID_RESAMP2_DEFINE_API(RESAMP2,TO,TC,TI)             \
 typedef struct RESAMP2(_s) * RESAMP2();                         \
@@ -2973,17 +3143,17 @@ void RESAMP2(_interp_execute)(RESAMP2() _q,                     \
                               TI        _x,                     \
                               TO *      _y);                    \
 
-LIQUID_RESAMP2_DEFINE_API(RESAMP2_MANGLE_RRRF,
+LIQUID_RESAMP2_DEFINE_API(LIQUID_RESAMP2_MANGLE_RRRF,
                           float,
                           float,
                           float)
 
-LIQUID_RESAMP2_DEFINE_API(RESAMP2_MANGLE_CRCF,
+LIQUID_RESAMP2_DEFINE_API(LIQUID_RESAMP2_MANGLE_CRCF,
                           liquid_float_complex,
                           float,
                           liquid_float_complex)
 
-LIQUID_RESAMP2_DEFINE_API(RESAMP2_MANGLE_CCCF,
+LIQUID_RESAMP2_DEFINE_API(LIQUID_RESAMP2_MANGLE_CCCF,
                           liquid_float_complex,
                           liquid_float_complex,
                           liquid_float_complex)
@@ -2992,9 +3162,9 @@ LIQUID_RESAMP2_DEFINE_API(RESAMP2_MANGLE_CCCF,
 // 
 // Arbitrary resampler
 //
-#define RESAMP_MANGLE_RRRF(name)    LIQUID_CONCAT(resamp_rrrf,name)
-#define RESAMP_MANGLE_CRCF(name)    LIQUID_CONCAT(resamp_crcf,name)
-#define RESAMP_MANGLE_CCCF(name)    LIQUID_CONCAT(resamp_cccf,name)
+#define LIQUID_RESAMP_MANGLE_RRRF(name) LIQUID_CONCAT(resamp_rrrf,name)
+#define LIQUID_RESAMP_MANGLE_CRCF(name) LIQUID_CONCAT(resamp_crcf,name)
+#define LIQUID_RESAMP_MANGLE_CCCF(name) LIQUID_CONCAT(resamp_cccf,name)
 
 #define LIQUID_RESAMP_DEFINE_API(RESAMP,TO,TC,TI)               \
 typedef struct RESAMP(_s) * RESAMP();                           \
@@ -3013,10 +3183,10 @@ RESAMP() RESAMP(_create)(float        _rate,                    \
                                                                 \
 /* create arbitrary resampler object with a specified input */  \
 /* resampling rate and default parameters                   */  \
-/*  m (filter semi-length) = 7                              */  \
-/*  fc (filter cutoff frequency) = 0.25                     */  \
-/*  As (filter stop-band attenuation) = 60 dB               */  \
-/*  npfb (number of filters in the bank) = 64               */  \
+/*  m    : (filter semi-length) = 7                         */  \
+/*  fc   : (filter cutoff frequency) = 0.25                 */  \
+/*  As   : (filter stop-band attenuation) = 60 dB           */  \
+/*  npfb : (number of filters in the bank) = 64             */  \
 RESAMP() RESAMP(_create_default)(float _rate);                  \
                                                                 \
 /* destroy arbitrary resampler object                       */  \
@@ -3032,10 +3202,28 @@ void RESAMP(_reset)(RESAMP() _q);                               \
 unsigned int RESAMP(_get_delay)(RESAMP() _q);                   \
                                                                 \
 /* set rate of arbitrary resampler                          */  \
-void RESAMP(_set_rate)(RESAMP() _q, float _rate);               \
+/*  _q      : resampling object                             */  \
+/*  _rate   : new sampling rate, _rate > 0                  */  \
+void RESAMP(_set_rate)(RESAMP() _q,                             \
+                       float    _rate);                         \
                                                                 \
 /* adjust rate of arbitrary resampler                       */  \
-void RESAMP(_adjust_rate)(RESAMP() _q, float _delta);           \
+/*  _q      : resampling object                             */  \
+/*  _delta  : rate adjustment; _rate <- _rate + _delta      */  \
+void RESAMP(_adjust_rate)(RESAMP() _q,                          \
+                          float    _delta);                     \
+                                                                \
+/* set resampling timing phase                              */  \
+/*  _q      : resampling object                             */  \
+/*  _tau    : sample timing                                 */  \
+void RESAMP(_set_timing_phase)(RESAMP() _q,                     \
+                               float    _tau);                  \
+                                                                \
+/* adjust resampling timing phase                           */  \
+/*  _q      : resampling object                             */  \
+/*  _delta  : sample timing adjustment                      */  \
+void RESAMP(_adjust_timing_phase)(RESAMP() _q,                  \
+                                  float    _delta);             \
                                                                 \
 /* execute arbitrary resampler                              */  \
 /*  _q              :   resamp object                       */  \
@@ -3059,17 +3247,17 @@ void RESAMP(_execute_block)(RESAMP()       _q,                  \
                             TO *           _y,                  \
                             unsigned int * _ny);                \
 
-LIQUID_RESAMP_DEFINE_API(RESAMP_MANGLE_RRRF,
+LIQUID_RESAMP_DEFINE_API(LIQUID_RESAMP_MANGLE_RRRF,
                          float,
                          float,
                          float)
 
-LIQUID_RESAMP_DEFINE_API(RESAMP_MANGLE_CRCF,
+LIQUID_RESAMP_DEFINE_API(LIQUID_RESAMP_MANGLE_CRCF,
                          liquid_float_complex,
                          float,
                          liquid_float_complex)
 
-LIQUID_RESAMP_DEFINE_API(RESAMP_MANGLE_CCCF,
+LIQUID_RESAMP_DEFINE_API(LIQUID_RESAMP_MANGLE_CCCF,
                          liquid_float_complex,
                          liquid_float_complex,
                          liquid_float_complex)
@@ -3085,9 +3273,9 @@ typedef enum {
     LIQUID_RESAMP_DECIM,    // decimator
 } liquid_resamp_type;
 
-#define MSRESAMP2_MANGLE_RRRF(name) LIQUID_CONCAT(msresamp2_rrrf,name)
-#define MSRESAMP2_MANGLE_CRCF(name) LIQUID_CONCAT(msresamp2_crcf,name)
-#define MSRESAMP2_MANGLE_CCCF(name) LIQUID_CONCAT(msresamp2_cccf,name)
+#define LIQUID_MSRESAMP2_MANGLE_RRRF(name) LIQUID_CONCAT(msresamp2_rrrf,name)
+#define LIQUID_MSRESAMP2_MANGLE_CRCF(name) LIQUID_CONCAT(msresamp2_crcf,name)
+#define LIQUID_MSRESAMP2_MANGLE_CCCF(name) LIQUID_CONCAT(msresamp2_cccf,name)
 
 #define LIQUID_MSRESAMP2_DEFINE_API(MSRESAMP2,TO,TC,TI)         \
 typedef struct MSRESAMP2(_s) * MSRESAMP2();                     \
@@ -3126,17 +3314,17 @@ void MSRESAMP2(_execute)(MSRESAMP2() _q,                        \
                          TI *        _x,                        \
                          TO *        _y);                       \
 
-LIQUID_MSRESAMP2_DEFINE_API(MSRESAMP2_MANGLE_RRRF,
+LIQUID_MSRESAMP2_DEFINE_API(LIQUID_MSRESAMP2_MANGLE_RRRF,
                             float,
                             float,
                             float)
 
-LIQUID_MSRESAMP2_DEFINE_API(MSRESAMP2_MANGLE_CRCF,
+LIQUID_MSRESAMP2_DEFINE_API(LIQUID_MSRESAMP2_MANGLE_CRCF,
                             liquid_float_complex,
                             float,
                             liquid_float_complex)
 
-LIQUID_MSRESAMP2_DEFINE_API(MSRESAMP2_MANGLE_CCCF,
+LIQUID_MSRESAMP2_DEFINE_API(LIQUID_MSRESAMP2_MANGLE_CCCF,
                             liquid_float_complex,
                             liquid_float_complex,
                             liquid_float_complex)
@@ -3145,9 +3333,9 @@ LIQUID_MSRESAMP2_DEFINE_API(MSRESAMP2_MANGLE_CCCF,
 // 
 // Multi-stage arbitrary resampler
 //
-#define MSRESAMP_MANGLE_RRRF(name)    LIQUID_CONCAT(msresamp_rrrf,name)
-#define MSRESAMP_MANGLE_CRCF(name)    LIQUID_CONCAT(msresamp_crcf,name)
-#define MSRESAMP_MANGLE_CCCF(name)    LIQUID_CONCAT(msresamp_cccf,name)
+#define LIQUID_MSRESAMP_MANGLE_RRRF(name) LIQUID_CONCAT(msresamp_rrrf,name)
+#define LIQUID_MSRESAMP_MANGLE_CRCF(name) LIQUID_CONCAT(msresamp_crcf,name)
+#define LIQUID_MSRESAMP_MANGLE_CCCF(name) LIQUID_CONCAT(msresamp_cccf,name)
 
 #define LIQUID_MSRESAMP_DEFINE_API(MSRESAMP,TO,TC,TI)           \
 typedef struct MSRESAMP(_s) * MSRESAMP();                       \
@@ -3182,17 +3370,17 @@ void MSRESAMP(_execute)(MSRESAMP()     _q,                      \
                         TO *           _y,                      \
                         unsigned int * _ny);                    \
 
-LIQUID_MSRESAMP_DEFINE_API(MSRESAMP_MANGLE_RRRF,
+LIQUID_MSRESAMP_DEFINE_API(LIQUID_MSRESAMP_MANGLE_RRRF,
                            float,
                            float,
                            float)
 
-LIQUID_MSRESAMP_DEFINE_API(MSRESAMP_MANGLE_CRCF,
+LIQUID_MSRESAMP_DEFINE_API(LIQUID_MSRESAMP_MANGLE_CRCF,
                            liquid_float_complex,
                            float,
                            liquid_float_complex)
 
-LIQUID_MSRESAMP_DEFINE_API(MSRESAMP_MANGLE_CCCF,
+LIQUID_MSRESAMP_DEFINE_API(LIQUID_MSRESAMP_MANGLE_CCCF,
                            liquid_float_complex,
                            liquid_float_complex,
                            liquid_float_complex)
@@ -3201,8 +3389,8 @@ LIQUID_MSRESAMP_DEFINE_API(MSRESAMP_MANGLE_CCCF,
 // 
 // Symbol timing recovery (symbol synchronizer)
 //
-#define SYMSYNC_MANGLE_RRRF(name)   LIQUID_CONCAT(symsync_rrrf,name)
-#define SYMSYNC_MANGLE_CRCF(name)   LIQUID_CONCAT(symsync_crcf,name)
+#define LIQUID_SYMSYNC_MANGLE_RRRF(name) LIQUID_CONCAT(symsync_rrrf,name)
+#define LIQUID_SYMSYNC_MANGLE_CRCF(name) LIQUID_CONCAT(symsync_crcf,name)
 
 #define LIQUID_SYMSYNC_DEFINE_API(SYMSYNC,TO,TC,TI)             \
                                                                 \
@@ -3281,12 +3469,12 @@ void SYMSYNC(_execute)(SYMSYNC()      _q,                       \
                        TO *           _y,                       \
                        unsigned int * _ny);                     \
 
-LIQUID_SYMSYNC_DEFINE_API(SYMSYNC_MANGLE_RRRF,
+LIQUID_SYMSYNC_DEFINE_API(LIQUID_SYMSYNC_MANGLE_RRRF,
                           float,
                           float,
                           float)
 
-LIQUID_SYMSYNC_DEFINE_API(SYMSYNC_MANGLE_CRCF,
+LIQUID_SYMSYNC_DEFINE_API(LIQUID_SYMSYNC_MANGLE_CRCF,
                           liquid_float_complex,
                           float,
                           liquid_float_complex)
@@ -3296,9 +3484,9 @@ LIQUID_SYMSYNC_DEFINE_API(SYMSYNC_MANGLE_CRCF,
 // Finite impulse response Farrow filter
 //
 
-#define FIRFARROW_MANGLE_RRRF(name)     LIQUID_CONCAT(firfarrow_rrrf,name)
-#define FIRFARROW_MANGLE_CRCF(name)     LIQUID_CONCAT(firfarrow_crcf,name)
-//#define FIRFARROW_MANGLE_CCCF(name)     LIQUID_CONCAT(firfarrow_cccf,name)
+#define LIQUID_FIRFARROW_MANGLE_RRRF(name) LIQUID_CONCAT(firfarrow_rrrf,name)
+#define LIQUID_FIRFARROW_MANGLE_CRCF(name) LIQUID_CONCAT(firfarrow_crcf,name)
+//#define LIQUID_FIRFARROW_MANGLE_CCCF(name) LIQUID_CONCAT(firfarrow_cccf,name)
 
 // Macro:
 //   FIRFARROW  : name-mangling macro
@@ -3380,12 +3568,12 @@ void FIRFARROW(_freqresponse)(FIRFARROW()            _q,        \
 float FIRFARROW(_groupdelay)(FIRFARROW() _q,                    \
                              float       _fc);                  \
 
-LIQUID_FIRFARROW_DEFINE_API(FIRFARROW_MANGLE_RRRF,
+LIQUID_FIRFARROW_DEFINE_API(LIQUID_FIRFARROW_MANGLE_RRRF,
                             float,
                             float,
                             float)
 
-LIQUID_FIRFARROW_DEFINE_API(FIRFARROW_MANGLE_CRCF,
+LIQUID_FIRFARROW_DEFINE_API(LIQUID_FIRFARROW_MANGLE_CRCF,
                             liquid_float_complex,
                             float,
                             liquid_float_complex)
@@ -3743,6 +3931,9 @@ void flexframesync_print(flexframesync _q);
 // reset frame synchronizer internal state
 void flexframesync_reset(flexframesync _q);
 
+// has frame been detected?
+int flexframesync_is_frame_open(flexframesync _q);
+
 // push samples through frame synchronizer
 //  _q      :   frame synchronizer object
 //  _x      :   input samples [size: _n x 1]
@@ -3890,6 +4081,7 @@ gmskframesync gmskframesync_create(framesync_callback _callback,
 void gmskframesync_destroy(gmskframesync _q);
 void gmskframesync_print(gmskframesync _q);
 void gmskframesync_reset(gmskframesync _q);
+int  gmskframesync_is_frame_open(gmskframesync _q);
 void gmskframesync_execute(gmskframesync _q,
                            liquid_float_complex * _x,
                            unsigned int _n);
@@ -3994,6 +4186,7 @@ ofdmflexframesync ofdmflexframesync_create(unsigned int       _M,
 void ofdmflexframesync_destroy(ofdmflexframesync _q);
 void ofdmflexframesync_print(ofdmflexframesync _q);
 void ofdmflexframesync_reset(ofdmflexframesync _q);
+int  ofdmflexframesync_is_frame_open(ofdmflexframesync _q);
 void ofdmflexframesync_execute(ofdmflexframesync _q,
                                liquid_float_complex * _x,
                                unsigned int _n);
@@ -4015,9 +4208,9 @@ void ofdmflexframesync_debug_print(ofdmflexframesync _q,
 //
 // Binary P/N synchronizer
 //
-#define BSYNC_MANGLE_RRRF(name)     LIQUID_CONCAT(bsync_rrrf,name)
-#define BSYNC_MANGLE_CRCF(name)     LIQUID_CONCAT(bsync_crcf,name)
-#define BSYNC_MANGLE_CCCF(name)     LIQUID_CONCAT(bsync_cccf,name)
+#define LIQUID_BSYNC_MANGLE_RRRF(name) LIQUID_CONCAT(bsync_rrrf,name)
+#define LIQUID_BSYNC_MANGLE_CRCF(name) LIQUID_CONCAT(bsync_crcf,name)
+#define LIQUID_BSYNC_MANGLE_CCCF(name) LIQUID_CONCAT(bsync_cccf,name)
 
 // Macro:
 //   BSYNC  : name-mangling macro
@@ -4038,17 +4231,17 @@ void BSYNC(_destroy)(BSYNC() _fs);                              \
 void BSYNC(_print)(BSYNC() _fs);                                \
 void BSYNC(_correlate)(BSYNC() _fs, TI _sym, TO * _y);
 
-LIQUID_BSYNC_DEFINE_API(BSYNC_MANGLE_RRRF,
+LIQUID_BSYNC_DEFINE_API(LIQUID_BSYNC_MANGLE_RRRF,
                         float,
                         float,
                         float)
 
-LIQUID_BSYNC_DEFINE_API(BSYNC_MANGLE_CRCF,
+LIQUID_BSYNC_DEFINE_API(LIQUID_BSYNC_MANGLE_CRCF,
                         liquid_float_complex,
                         float,
                         liquid_float_complex)
 
-LIQUID_BSYNC_DEFINE_API(BSYNC_MANGLE_CCCF,
+LIQUID_BSYNC_DEFINE_API(LIQUID_BSYNC_MANGLE_CCCF,
                         liquid_float_complex,
                         liquid_float_complex,
                         liquid_float_complex)
@@ -4057,8 +4250,8 @@ LIQUID_BSYNC_DEFINE_API(BSYNC_MANGLE_CCCF,
 //
 // Pre-demodulation synchronizers (binary and otherwise)
 //
-#define  PRESYNC_MANGLE_CCCF(name)  LIQUID_CONCAT( presync_cccf,name)
-#define BPRESYNC_MANGLE_CCCF(name)  LIQUID_CONCAT(bpresync_cccf,name)
+#define  LIQUID_PRESYNC_MANGLE_CCCF(name) LIQUID_CONCAT( presync_cccf,name)
+#define LIQUID_BPRESYNC_MANGLE_CCCF(name) LIQUID_CONCAT(bpresync_cccf,name)
 
 // Macro:
 //   PRESYNC   : name-mangling macro
@@ -4102,13 +4295,13 @@ void PRESYNC(_correlate)(PRESYNC() _q,                          \
                          float *   _dphi_hat);                  \
 
 // non-binary pre-demodulation synchronizer
-LIQUID_PRESYNC_DEFINE_API(PRESYNC_MANGLE_CCCF,
+LIQUID_PRESYNC_DEFINE_API(LIQUID_PRESYNC_MANGLE_CCCF,
                           liquid_float_complex,
                           liquid_float_complex,
                           liquid_float_complex)
 
 // binary pre-demodulation synchronizer
-LIQUID_PRESYNC_DEFINE_API(BPRESYNC_MANGLE_CCCF,
+LIQUID_PRESYNC_DEFINE_API(LIQUID_BPRESYNC_MANGLE_CCCF,
                           liquid_float_complex,
                           liquid_float_complex,
                           liquid_float_complex)
@@ -4218,7 +4411,7 @@ int detector_cccf_correlate(detector_cccf        _q,
 // 
 // symbol streaming for testing (no meaningful data, just symbols)
 //
-#define SYMSTREAM_MANGLE_CFLOAT(name) LIQUID_CONCAT(symstreamcf,name)
+#define LIQUID_SYMSTREAM_MANGLE_CFLOAT(name) LIQUID_CONCAT(symstreamcf,name)
 
 #define LIQUID_SYMSTREAM_DEFINE_API(SYMSTREAM,TO)               \
                                                                 \
@@ -4257,14 +4450,14 @@ void SYMSTREAM(_write_samples)(SYMSTREAM()  _q,                 \
                                TO *         _buf,               \
                                unsigned int _buf_len);          \
     
-LIQUID_SYMSTREAM_DEFINE_API(SYMSTREAM_MANGLE_CFLOAT, liquid_float_complex)
+LIQUID_SYMSTREAM_DEFINE_API(LIQUID_SYMSTREAM_MANGLE_CFLOAT, liquid_float_complex)
 
 
 
 //
 // multi-signal source for testing (no meaningful data, just signals)
 //
-#define MSOURCE_MANGLE_CFLOAT(name) LIQUID_CONCAT(msourcecf,name)
+#define LIQUID_MSOURCE_MANGLE_CFLOAT(name) LIQUID_CONCAT(msourcecf,name)
 
 #define LIQUID_MSOURCE_DEFINE_API(MSOURCE,TO)                   \
                                                                 \
@@ -4322,7 +4515,7 @@ void MSOURCE(_write_samples)(MSOURCE()    _q,                   \
                              TO *         _buf,                 \
                              unsigned int _buf_len);            \
     
-LIQUID_MSOURCE_DEFINE_API(MSOURCE_MANGLE_CFLOAT, liquid_float_complex)
+LIQUID_MSOURCE_DEFINE_API(LIQUID_MSOURCE_MANGLE_CFLOAT, liquid_float_complex)
 
 
 
@@ -4330,8 +4523,8 @@ LIQUID_MSOURCE_DEFINE_API(MSOURCE_MANGLE_CFLOAT, liquid_float_complex)
 // 
 // Symbol tracking: AGC > symsync > EQ > carrier recovery
 //
-#define SYMTRACK_MANGLE_RRRF(name) LIQUID_CONCAT(symtrack_rrrf,name)
-#define SYMTRACK_MANGLE_CCCF(name) LIQUID_CONCAT(symtrack_cccf,name)
+#define LIQUID_SYMTRACK_MANGLE_RRRF(name) LIQUID_CONCAT(symtrack_rrrf,name)
+#define LIQUID_SYMTRACK_MANGLE_CCCF(name) LIQUID_CONCAT(symtrack_cccf,name)
 
 // large macro
 //   SYMTRACK   : name-mangling macro
@@ -4398,13 +4591,13 @@ void SYMTRACK(_execute_block)(SYMTRACK()     _q,                \
                               TO *           _y,                \
                               unsigned int * _ny);              \
     
-LIQUID_SYMTRACK_DEFINE_API(SYMTRACK_MANGLE_RRRF,
+LIQUID_SYMTRACK_DEFINE_API(LIQUID_SYMTRACK_MANGLE_RRRF,
                            float,
                            float,
                            float,
                            float)
 
-LIQUID_SYMTRACK_DEFINE_API(SYMTRACK_MANGLE_CCCF,
+LIQUID_SYMTRACK_DEFINE_API(LIQUID_SYMTRACK_MANGLE_CCCF,
                            float,
                            liquid_float_complex,
                            liquid_float_complex,
@@ -4579,11 +4772,11 @@ float liquid_rcostaper_windowf(unsigned int _n,
 // polynomials
 
 
-#define POLY_MANGLE_DOUBLE(name)    LIQUID_CONCAT(poly,   name)
-#define POLY_MANGLE_FLOAT(name)     LIQUID_CONCAT(polyf,  name)
+#define LIQUID_POLY_MANGLE_DOUBLE(name)  LIQUID_CONCAT(poly,   name)
+#define LIQUID_POLY_MANGLE_FLOAT(name)   LIQUID_CONCAT(polyf,  name)
 
-#define POLY_MANGLE_CDOUBLE(name)   LIQUID_CONCAT(polyc,  name)
-#define POLY_MANGLE_CFLOAT(name)    LIQUID_CONCAT(polycf, name)
+#define LIQUID_POLY_MANGLE_CDOUBLE(name) LIQUID_CONCAT(polyc,  name)
+#define LIQUID_POLY_MANGLE_CFLOAT(name)  LIQUID_CONCAT(polycf, name)
 
 // large macro
 //   POLY   : name-mangling macro
@@ -4693,19 +4886,19 @@ void POLY(_mul)(T *          _a,                                \
                 unsigned int _order_b,                          \
                 T *          _c);                               \
 
-LIQUID_POLY_DEFINE_API(POLY_MANGLE_DOUBLE,
+LIQUID_POLY_DEFINE_API(LIQUID_POLY_MANGLE_DOUBLE,
                        double,
                        liquid_double_complex)
 
-LIQUID_POLY_DEFINE_API(POLY_MANGLE_FLOAT,
+LIQUID_POLY_DEFINE_API(LIQUID_POLY_MANGLE_FLOAT,
                        float,
                        liquid_float_complex)
 
-LIQUID_POLY_DEFINE_API(POLY_MANGLE_CDOUBLE,
+LIQUID_POLY_DEFINE_API(LIQUID_POLY_MANGLE_CDOUBLE,
                        liquid_double_complex,
                        liquid_double_complex)
 
-LIQUID_POLY_DEFINE_API(POLY_MANGLE_CFLOAT,
+LIQUID_POLY_DEFINE_API(LIQUID_POLY_MANGLE_CFLOAT,
                        liquid_float_complex,
                        liquid_float_complex)
 
@@ -4764,11 +4957,11 @@ unsigned int liquid_totient(unsigned int _n);
 // MODULE : matrix
 //
 
-#define MATRIX_MANGLE_DOUBLE(name)  LIQUID_CONCAT(matrix,   name)
-#define MATRIX_MANGLE_FLOAT(name)   LIQUID_CONCAT(matrixf,  name)
+#define LIQUID_MATRIX_MANGLE_DOUBLE(name)  LIQUID_CONCAT(matrix,   name)
+#define LIQUID_MATRIX_MANGLE_FLOAT(name)   LIQUID_CONCAT(matrixf,  name)
 
-#define MATRIX_MANGLE_CDOUBLE(name) LIQUID_CONCAT(matrixc,  name)
-#define MATRIX_MANGLE_CFLOAT(name)  LIQUID_CONCAT(matrixcf, name)
+#define LIQUID_MATRIX_MANGLE_CDOUBLE(name) LIQUID_CONCAT(matrixc,  name)
+#define LIQUID_MATRIX_MANGLE_CFLOAT(name)  LIQUID_CONCAT(matrixcf, name)
 
 // large macro
 //   MATRIX : name-mangling macro
@@ -5080,16 +5273,16 @@ void MATRIX(_chol)(T *          _A,                             \
 #define matrixf_access(X,R,C,r,c)   matrix_access(X,R,C,r,c)
 #define matrixcf_access(X,R,C,r,c)  matrix_access(X,R,C,r,c)
 
-LIQUID_MATRIX_DEFINE_API(MATRIX_MANGLE_FLOAT,   float)
-LIQUID_MATRIX_DEFINE_API(MATRIX_MANGLE_DOUBLE,  double)
+LIQUID_MATRIX_DEFINE_API(LIQUID_MATRIX_MANGLE_FLOAT,   float)
+LIQUID_MATRIX_DEFINE_API(LIQUID_MATRIX_MANGLE_DOUBLE,  double)
 
-LIQUID_MATRIX_DEFINE_API(MATRIX_MANGLE_CFLOAT,  liquid_float_complex)
-LIQUID_MATRIX_DEFINE_API(MATRIX_MANGLE_CDOUBLE, liquid_double_complex)
+LIQUID_MATRIX_DEFINE_API(LIQUID_MATRIX_MANGLE_CFLOAT,  liquid_float_complex)
+LIQUID_MATRIX_DEFINE_API(LIQUID_MATRIX_MANGLE_CDOUBLE, liquid_double_complex)
 
 
-#define SMATRIX_MANGLE_BOOL(name)   LIQUID_CONCAT(smatrixb,  name)
-#define SMATRIX_MANGLE_FLOAT(name)  LIQUID_CONCAT(smatrixf,  name)
-#define SMATRIX_MANGLE_INT(name)    LIQUID_CONCAT(smatrixi,  name)
+#define LIQUID_SMATRIX_MANGLE_BOOL(name)  LIQUID_CONCAT(smatrixb,  name)
+#define LIQUID_SMATRIX_MANGLE_FLOAT(name) LIQUID_CONCAT(smatrixf,  name)
+#define LIQUID_SMATRIX_MANGLE_INT(name)   LIQUID_CONCAT(smatrixi,  name)
 
 // sparse 'alist' matrix type (similar to MacKay, Davey Lafferty convention)
 // large macro
@@ -5121,9 +5314,11 @@ void SMATRIX(_size)(SMATRIX()      _q,                          \
                     unsigned int * _m,                          \
                     unsigned int * _n);                         \
                                                                 \
-/* zero all elements */                                         \
-void SMATRIX(_clear)(SMATRIX() _q); /* zero and keep memory  */ \
-void SMATRIX(_reset)(SMATRIX() _q); /* zero and clear memory */ \
+/* zero all elements and keep memory                        */  \
+void SMATRIX(_clear)(SMATRIX() _q);                             \
+                                                                \
+/* zero all elements and clear memory                       */  \
+void SMATRIX(_reset)(SMATRIX() _q);                             \
                                                                 \
 /* determine if value has been set (allocated memory) */        \
 int SMATRIX(_isset)(SMATRIX()    _q,                            \
@@ -5164,9 +5359,9 @@ void SMATRIX(_vmul)(SMATRIX() _q,                               \
                     T *       _x,                               \
                     T *       _y);                              \
 
-LIQUID_SMATRIX_DEFINE_API(SMATRIX_MANGLE_BOOL,  unsigned char)
-LIQUID_SMATRIX_DEFINE_API(SMATRIX_MANGLE_FLOAT, float)
-LIQUID_SMATRIX_DEFINE_API(SMATRIX_MANGLE_INT,   short int)
+LIQUID_SMATRIX_DEFINE_API(LIQUID_SMATRIX_MANGLE_BOOL,  unsigned char)
+LIQUID_SMATRIX_DEFINE_API(LIQUID_SMATRIX_MANGLE_FLOAT, float)
+LIQUID_SMATRIX_DEFINE_API(LIQUID_SMATRIX_MANGLE_INT,   short int)
 
 // 
 // smatrix cross methods
@@ -5326,8 +5521,6 @@ void liquid_unpack_soft_bits(unsigned int _sym_in,
 //  T       :   primitive data type
 //  TC      :   primitive data type (complex)
 #define LIQUID_MODEM_DEFINE_API(MODEM,T,TC)                     \
-                                                                \
-/* define struct pointer */                                     \
 typedef struct MODEM(_s) * MODEM();                             \
                                                                 \
 /* create digital modem object                              */  \
@@ -5616,8 +5809,6 @@ float fskdem_get_frequency_error(fskdem _q);
 //  T       :   primitive data type
 //  TC      :   primitive data type (complex)
 #define LIQUID_FREQMOD_DEFINE_API(FREQMOD,T,TC)                 \
-                                                                \
-/* define struct pointer */                                     \
 typedef struct FREQMOD(_s) * FREQMOD();                         \
                                                                 \
 /* create freqmod object (frequency modulator)              */  \
@@ -5665,8 +5856,6 @@ LIQUID_FREQMOD_DEFINE_API(LIQUID_FREQMOD_MANGLE_FLOAT,float,liquid_float_complex
 //  T       :   primitive data type
 //  TC      :   primitive data type (complex)
 #define LIQUID_FREQDEM_DEFINE_API(FREQDEM,T,TC)                 \
-                                                                \
-/* define struct pointer */                                     \
 typedef struct FREQDEM(_s) * FREQDEM();                         \
                                                                 \
 /* create freqdem object (frequency modulator)              */  \
@@ -5769,8 +5958,8 @@ void ampmodem_demodulate_block(ampmodem _q,
 // Finite impulse response polyphase filterbank channelizer
 //
 
-#define FIRPFBCH_MANGLE_CRCF(name)  LIQUID_CONCAT(firpfbch_crcf,name)
-#define FIRPFBCH_MANGLE_CCCF(name)  LIQUID_CONCAT(firpfbch_cccf,name)
+#define LIQUID_FIRPFBCH_MANGLE_CRCF(name) LIQUID_CONCAT(firpfbch_crcf,name)
+#define LIQUID_FIRPFBCH_MANGLE_CCCF(name) LIQUID_CONCAT(firpfbch_cccf,name)
 
 // Macro:
 //   FIRPFBCH   : name-mangling macro
@@ -5841,12 +6030,12 @@ void FIRPFBCH(_analyzer_execute)(FIRPFBCH() _q,                 \
                                  TO *       _y);                \
 
 
-LIQUID_FIRPFBCH_DEFINE_API(FIRPFBCH_MANGLE_CRCF,
+LIQUID_FIRPFBCH_DEFINE_API(LIQUID_FIRPFBCH_MANGLE_CRCF,
                            liquid_float_complex,
                            float,
                            liquid_float_complex)
 
-LIQUID_FIRPFBCH_DEFINE_API(FIRPFBCH_MANGLE_CCCF,
+LIQUID_FIRPFBCH_DEFINE_API(LIQUID_FIRPFBCH_MANGLE_CCCF,
                            liquid_float_complex,
                            liquid_float_complex,
                            liquid_float_complex)
@@ -5857,7 +6046,7 @@ LIQUID_FIRPFBCH_DEFINE_API(FIRPFBCH_MANGLE_CCCF,
 // with output rate 2 Fs / M
 //
 
-#define FIRPFBCH2_MANGLE_CRCF(name) LIQUID_CONCAT(firpfbch2_crcf,name)
+#define LIQUID_FIRPFBCH2_MANGLE_CRCF(name) LIQUID_CONCAT(firpfbch2_crcf,name)
 
 // Macro:
 //   FIRPFBCH2  : name-mangling macro
@@ -5906,7 +6095,7 @@ void FIRPFBCH2(_execute)(FIRPFBCH2() _q,                        \
                          TO *        _y);                       \
 
 
-LIQUID_FIRPFBCH2_DEFINE_API(FIRPFBCH2_MANGLE_CRCF,
+LIQUID_FIRPFBCH2_DEFINE_API(LIQUID_FIRPFBCH2_MANGLE_CRCF,
                             liquid_float_complex,
                             float,
                             liquid_float_complex)
@@ -6020,6 +6209,7 @@ ofdmframesync ofdmframesync_create(unsigned int           _M,
 void ofdmframesync_destroy(ofdmframesync _q);
 void ofdmframesync_print(ofdmframesync _q);
 void ofdmframesync_reset(ofdmframesync _q);
+int  ofdmframesync_is_frame_open(ofdmframesync _q);
 void ofdmframesync_execute(ofdmframesync _q,
                            liquid_float_complex * _x,
                            unsigned int _n);
@@ -6046,7 +6236,7 @@ typedef enum {
     LIQUID_VCO
 } liquid_ncotype;
 
-#define NCO_MANGLE_FLOAT(name)  LIQUID_CONCAT(nco_crcf, name)
+#define LIQUID_NCO_MANGLE_FLOAT(name) LIQUID_CONCAT(nco_crcf, name)
 
 // large macro
 //   NCO    : name-mangling macro
@@ -6110,7 +6300,7 @@ void NCO(_mix_block_down)(NCO() _q,                             \
                           unsigned int _N);                     \
 
 // Define nco APIs
-LIQUID_NCO_DEFINE_API(NCO_MANGLE_FLOAT, float, liquid_float_complex)
+LIQUID_NCO_DEFINE_API(LIQUID_NCO_MANGLE_FLOAT, float, liquid_float_complex)
 
 
 // nco utilities
@@ -6391,8 +6581,8 @@ typedef enum {
     LIQUID_COMPANDER_ALAW
 } liquid_compander_type;
 
-#define QUANTIZER_MANGLE_FLOAT(name)    LIQUID_CONCAT(quantizerf,  name)
-#define QUANTIZER_MANGLE_CFLOAT(name)   LIQUID_CONCAT(quantizercf, name)
+#define LIQUID_QUANTIZER_MANGLE_FLOAT(name)  LIQUID_CONCAT(quantizerf,  name)
+#define LIQUID_QUANTIZER_MANGLE_CFLOAT(name) LIQUID_CONCAT(quantizercf, name)
 
 // large macro
 //   QUANTIZER  : name-mangling macro
@@ -6409,10 +6599,10 @@ void QUANTIZER(_execute_adc)(QUANTIZER() _q,                    \
                              unsigned int * _sample);           \
 void QUANTIZER(_execute_dac)(QUANTIZER() _q,                    \
                              unsigned int _sample,              \
-                             T * _x);
+                             T * _x);                           \
 
-LIQUID_QUANTIZER_DEFINE_API(QUANTIZER_MANGLE_FLOAT,  float)
-LIQUID_QUANTIZER_DEFINE_API(QUANTIZER_MANGLE_CFLOAT, liquid_float_complex)
+LIQUID_QUANTIZER_DEFINE_API(LIQUID_QUANTIZER_MANGLE_FLOAT,  float)
+LIQUID_QUANTIZER_DEFINE_API(LIQUID_QUANTIZER_MANGLE_CFLOAT, liquid_float_complex)
 
 
 //
@@ -6798,8 +6988,8 @@ unsigned int  liquid_reverse_uint32(unsigned int  _x);
 // MODULE : vector
 //
 
-#define VECTOR_MANGLE_RF(name)  LIQUID_CONCAT(liquid_vectorf, name)
-#define VECTOR_MANGLE_CF(name)  LIQUID_CONCAT(liquid_vectorcf,name)
+#define LIQUID_VECTOR_MANGLE_RF(name) LIQUID_CONCAT(liquid_vectorf, name)
+#define LIQUID_VECTOR_MANGLE_CF(name) LIQUID_CONCAT(liquid_vectorcf,name)
 
 // large macro
 //   VECTOR     : name-mangling macro
@@ -6865,8 +7055,8 @@ void VECTOR(_normalize)(T *          _x,                        \
                         unsigned int _n,                        \
                         T *          _y);                       \
 
-LIQUID_VECTOR_DEFINE_API(VECTOR_MANGLE_RF, float,                float);
-LIQUID_VECTOR_DEFINE_API(VECTOR_MANGLE_CF, liquid_float_complex, float);
+LIQUID_VECTOR_DEFINE_API(LIQUID_VECTOR_MANGLE_RF, float,                float)
+LIQUID_VECTOR_DEFINE_API(LIQUID_VECTOR_MANGLE_CF, liquid_float_complex, float)
 
 // 
 // mixed types
