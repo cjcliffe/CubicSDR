@@ -18,6 +18,8 @@ std::map<int, AudioThread *> AudioThread::deviceController;
 std::map<int, int> AudioThread::deviceSampleRate;
 std::map<int, std::thread *> AudioThread::deviceThread;
 
+std::recursive_mutex AudioThread::m_device_mutex;
+
 AudioThread::AudioThread() : IOThread(),
         currentInput(nullptr), inputQueue(nullptr), nBufferFrames(1024), sampleRate(0) {
 
@@ -29,7 +31,7 @@ AudioThread::AudioThread() : IOThread(),
 }
 
 AudioThread::~AudioThread() {
-
+	std::lock_guard<std::recursive_mutex> lock(m_mutex);
 }
 
 std::recursive_mutex & AudioThread::getMutex()
@@ -48,10 +50,10 @@ void AudioThread::bindThread(AudioThread *other) {
 
 void AudioThread::removeThread(AudioThread *other) {
     
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+	std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
-    std::vector<AudioThread *>::iterator i;
-    i = std::find(boundThreads.begin(), boundThreads.end(), other);
+    auto i = std::find(boundThreads.begin(), boundThreads.end(), other);
+
     if (i != boundThreads.end()) {
         boundThreads.erase(i);
     }
@@ -59,9 +61,9 @@ void AudioThread::removeThread(AudioThread *other) {
 
 void AudioThread::deviceCleanup() {
 
-    std::map<int, AudioThread *>::iterator i;
+	std::lock_guard<std::recursive_mutex> lock(m_device_mutex);
 
-    for (i = deviceController.begin(); i != deviceController.end(); i++) {
+    for (auto i = deviceController.begin(); i != deviceController.end(); i++) {
         i->second->terminate();
     }
 }
@@ -279,23 +281,47 @@ void AudioThread::enumerateDevices(std::vector<RtAudio::DeviceInfo> &devs) {
 
 void AudioThread::setDeviceSampleRate(int deviceId, int sampleRate) {
    
+	AudioThread* matchingAudioThread = nullptr;
 
-    if (deviceController.find(deviceId) != deviceController.end()) {
-        AudioThreadCommand refreshDevice;
-        refreshDevice.cmd = AudioThreadCommand::AUDIO_THREAD_CMD_SET_SAMPLE_RATE;
-        refreshDevice.int_value = sampleRate;
-        //VSO : blocking push !
-        deviceController[deviceId]->getCommandQueue()->push(refreshDevice);
-    }
+	//scope lock here to minimize the common unique static lock contention
+	{
+		std::lock_guard<std::recursive_mutex> lock(m_device_mutex);
+
+		if (deviceController.find(deviceId) != deviceController.end()) {
+
+			matchingAudioThread = deviceController[deviceId];
+		}
+	}
+
+	//out-of-lock test
+	if (matchingAudioThread != nullptr) {
+
+		AudioThreadCommand refreshDevice;
+		refreshDevice.cmd = AudioThreadCommand::AUDIO_THREAD_CMD_SET_SAMPLE_RATE;
+		refreshDevice.int_value = sampleRate;
+		//VSO : blocking push !
+		matchingAudioThread->getCommandQueue()->push(refreshDevice);
+	}
 }
 
 void AudioThread::setSampleRate(int sampleRate) {
 
+	bool outputIsThis = false;
+
+	//scope lock here to minimize the common unique static lock contention
+	{
+		std::lock_guard<std::recursive_mutex> lock(m_device_mutex);
+
+		if (deviceController[outputDevice.load()] == this) {
+			outputIsThis = true;
+			deviceSampleRate[outputDevice.load()] = sampleRate;
+		}
+	}
+
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
-    if (deviceController[outputDevice.load()] == this) {
-        deviceSampleRate[outputDevice.load()] = sampleRate;
-
+    if (outputIsThis) {
+       
         dac.stopStream();
         dac.closeStream();
 
@@ -328,7 +354,8 @@ int AudioThread::getSampleRate() {
 
 void AudioThread::setupDevice(int deviceId) {
 
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+	//global lock to setup the device...
+	std::lock_guard<std::recursive_mutex> lock(m_device_mutex);
 
     parameters.deviceId = deviceId;
     parameters.nChannels = 2;
@@ -381,6 +408,7 @@ void AudioThread::setupDevice(int deviceId) {
 }
 
 int AudioThread::getOutputDevice() {
+
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
     if (outputDevice == -1) {
@@ -391,7 +419,8 @@ int AudioThread::getOutputDevice() {
 
 void AudioThread::setInitOutputDevice(int deviceId, int sampleRate) {
     
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+	//global lock 
+    std::lock_guard<std::recursive_mutex> lock(m_device_mutex);
 
     outputDevice = deviceId;
     if (sampleRate == -1) {
@@ -453,7 +482,9 @@ void AudioThread::run() {
 	//Nullify currentInput...
 	currentInput = nullptr;
 
-    //Stop 
+    //Stop : this affects the device list , so must be protected globally.
+	std::lock_guard<std::recursive_mutex> global_lock(m_device_mutex);
+
     if (deviceController[parameters.deviceId] != this) {
         deviceController[parameters.deviceId]->removeThread(this);
     } else {
@@ -483,17 +514,29 @@ bool AudioThread::isActive() {
 }
 
 void AudioThread::setActive(bool state) {
-    
+
+	AudioThread* matchingAudioThread = nullptr;
+
+	//scope lock here to minimize the common unique static lock contention
+	{
+		std::lock_guard<std::recursive_mutex> lock(m_device_mutex);
+
+		if (deviceController.find(parameters.deviceId) != deviceController.end()) {
+
+			matchingAudioThread = deviceController[parameters.deviceId];
+		}
+	}
+
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
-    if (deviceController[parameters.deviceId] == nullptr) {
+    if (matchingAudioThread == nullptr) {
         return;
     }
 
     if (state && !active && inputQueue) {
-        deviceController[parameters.deviceId]->bindThread(this);
+		matchingAudioThread->bindThread(this);
     } else if (!state && active) {
-        deviceController[parameters.deviceId]->removeThread(this);
+		matchingAudioThread->removeThread(this);
     }
 
     // Activity state changing, clear any inputs

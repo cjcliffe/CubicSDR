@@ -122,7 +122,9 @@ private:
     void removeThread(AudioThread *other);
 
     static std::map<int, AudioThread *> deviceController;
-   
     static std::map<int, std::thread *> deviceThread;
+	
+	//The mutex protecting static deviceController, deviceThread and deviceSampleRate access.
+	static std::recursive_mutex m_device_mutex;
 };
 

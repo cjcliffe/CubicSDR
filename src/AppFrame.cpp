@@ -1364,7 +1364,6 @@ bool AppFrame::actionOnMenuAudioSampleRate(wxCommandEvent& event) {
             }
             i++;
         }
-
     }
 
     return false;
