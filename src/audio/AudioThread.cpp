@@ -20,8 +20,7 @@ std::map<int, std::thread *> AudioThread::deviceThread;
 
 std::recursive_mutex AudioThread::m_device_mutex;
 
-AudioThread::AudioThread() : IOThread(),
-        currentInput(nullptr), inputQueue(nullptr), nBufferFrames(1024), sampleRate(0) {
+AudioThread::AudioThread() : IOThread(), nBufferFrames(1024), sampleRate(0) {
 
 	audioQueuePtr = 0; 
 	underflowCount = 0;
