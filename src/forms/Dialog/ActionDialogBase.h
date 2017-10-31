@@ -1,8 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Aug 23 2015)
+// C++ code generated with wxFormBuilder (version Oct 27 2017)
 // http://www.wxformbuilder.org/
 //
-// PLEASE DO "NOT" EDIT THIS FILE!
+// PLEASE DO *NOT* EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
 
 #ifndef __ACTIONDIALOGBASE_H__
@@ -26,25 +26,25 @@
 ///////////////////////////////////////////////////////////////////////////////
 /// Class ActionDialogBase
 ///////////////////////////////////////////////////////////////////////////////
-class ActionDialogBase : public wxDialog 
+class ActionDialogBase : public wxDialog
 {
-	private:
-	
-	protected:
-		wxStaticText* m_questionText;
-		wxButton* m_cancelButton;
-		wxButton* m_okButton;
-		
-		// Virtual event handlers, overide them in your derived class
-		virtual void onClickCancel( wxCommandEvent& event ) { event.Skip(); }
-		virtual void onClickOK( wxCommandEvent& event ) { event.Skip(); }
-		
-	
-	public:
-		
-		ActionDialogBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("QuestionTitle"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE ); 
-		~ActionDialogBase();
-	
+private:
+
+protected:
+	wxStaticText* m_questionText;
+	wxButton* m_cancelButton;
+	wxButton* m_okButton;
+
+	// Virtual event handlers, overide them in your derived class
+	virtual void onClickCancel(wxCommandEvent& event) { event.Skip(); }
+	virtual void onClickOK(wxCommandEvent& event) { event.Skip(); }
+
+
+public:
+
+	ActionDialogBase(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("QuestionTitle"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE);
+	~ActionDialogBase();
+
 };
 
 #endif //__ACTIONDIALOGBASE_H__
