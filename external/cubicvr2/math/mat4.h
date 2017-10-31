@@ -324,7 +324,7 @@ namespace CubicVR {
         };
         
         static vec3 unProject(mat4 pMatrix, mat4 mvMatrix, float width, float height, float winx, float winy, float /* winz */) {
-            vec4 p(((winx / width) * 2.0f) - 1.0, -(((winy / height) * 2.0f) - 1.0), 1.0, 1.0);
+            vec4 p(((winx / width) * 2.0f) - 1.0f, -(((winy / height) * 2.0f) - 1.0f), 1.0f, 1.0f);
             
             vec4 invp = mat4::vec4_multiply(mat4::vec4_multiply(p, mat4::inverse(pMatrix)), mat4::inverse(mvMatrix));
             
