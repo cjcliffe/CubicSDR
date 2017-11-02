@@ -10,7 +10,7 @@
 #define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
 
 DemodulatorWorkerThread::DemodulatorWorkerThread() : IOThread(),
-        commandQueue(nullptr), resultQueue(nullptr), cModem(nullptr), cModemKit(nullptr) {
+         cModem(nullptr), cModemKit(nullptr) {
 }
 
 DemodulatorWorkerThread::~DemodulatorWorkerThread() {

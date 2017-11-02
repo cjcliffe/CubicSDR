@@ -43,7 +43,7 @@
 
 # autoconf initialization macros
 NAME		:= liquid-dsp
-VERSION		:= 1.3.0
+VERSION		:= 1.3.1
 BUGREPORT	:= support@liquidsdr.org
 
 # paths
@@ -64,17 +64,13 @@ RANLIB		:= ranlib
 
 # flags
 INCLUDE_CFLAGS	= $(addprefix -I ,$(include_dirs))
-
 #MINGW: optimizations goes here 
-CONFIG_CFLAGS	= -m32 -O3 -msse3 -ffast-math 
-   
-# -g : debugging info
-CFLAGS		+= $(INCLUDE_CFLAGS) -Wall -fPIC $(CONFIG_CFLAGS)
-
-#LDFLAGS		+=  -lm -lc
-#MINGW: 
-LDFLAGS		+= -lmsvcrt
-
+CONFIG_CFLAGS	= -m32 -O3 -msse3 -ffast-math
+CPPFLAGS	=  $(INCLUDE_CFLAGS)
+CFLAGS		= $(CONFIG_CFLAGS) -Wall -fPIC
+LDFLAGS		= 
+#MINGW:
+LIBS		+= -lmsvcrt
 ARFLAGS		= r
 PATHSEP		= /
 
@@ -347,8 +343,8 @@ src/fft/src/dct.o           : %.o : %.c $(include_headers)
 src/fft/src/fftf.o          : %.o : %.c $(include_headers)
 src/fft/src/fft_utilities.o : %.o : %.c $(include_headers)
 src/fft/src/mdct.o          : %.o : %.c $(include_headers)
-src/fft/src/spgramcf.o      : %.o : %.c $(include_headers) src/fft/src/asgram.c src/fft/src/spgram.c
-src/fft/src/spgramf.o       : %.o : %.c $(include_headers) src/fft/src/asgram.c src/fft/src/spgram.c
+src/fft/src/spgramcf.o      : %.o : %.c $(include_headers) src/fft/src/asgram.c src/fft/src/spgram.c src/fft/src/spwaterfall.c
+src/fft/src/spgramf.o       : %.o : %.c $(include_headers) src/fft/src/asgram.c src/fft/src/spgram.c src/fft/src/spwaterfall.c
 
 # fft autotest scripts
 fft_autotests :=						\
@@ -657,6 +653,7 @@ framing_benchmarks :=						\
 	src/framing/bench/flexframesync_benchmark.c		\
 	src/framing/bench/framesync64_benchmark.c		\
 	src/framing/bench/gmskframesync_benchmark.c		\
+	src/framing/bench/qdetector_benchmark.c			\
 
 
 # 
@@ -1158,8 +1155,6 @@ benchmark_sources :=						\
 .PHONY: all
 
 # Shared library
-#SHARED_LIB	= libliquid.so
-
 #MINGW:
 SHARED_LIB	= libliquid.dll
 
@@ -1172,15 +1167,14 @@ libliquid.a: $(objects)
 #
 # gcc -dynamiclib -install_name libliquid.dylib -o libliquid.dylib libmodem.a libutility.a 
 libliquid.dylib: $(objects)
-	$(CC) -dynamiclib -install_name $@ -o $@ $^ $(LDFLAGS)
+	$(CC) -dynamiclib -install_name $@ -o $@ $^ $(LDFLAGS) $(LIBS)
 
 # linux, et al
 libliquid.so: libliquid.a
-	$(CC) -shared -Xlinker -soname=$@ -o $@ -Wl,-whole-archive $^ -Wl,-no-whole-archive $(LDFLAGS)
-	
-# MINGW*
+	$(CC) $(CFLAGS) $(LDFLAGS) -shared -Xlinker -soname=$@ -o $@ -Wl,-whole-archive $^ -Wl,-no-whole-archive $(LIBS)
+#MINGW:
 libliquid.dll: libliquid.a
-	$(CC) -shared -Xlinker -soname=$@ -o $@ -Wl,-whole-archive $^ -Wl,-no-whole-archive -Wl,--output-def,libliquid.def -Wl,--out-implib,libliquid.lib $(LDFLAGS)
+	$(CC) -shared -Xlinker -soname=$@ -o $@ -Wl,-whole-archive $^ -Wl,-no-whole-archive -Wl,--output-def,libliquid.def -Wl,--out-implib,libliquid.lib $(LIBS)
 
 all: libliquid.a $(SHARED_LIB)
 
@@ -1236,10 +1230,10 @@ uninstall:
 autoscript : scripts/autoscript
 
 scripts/autoscript.o scripts/main.o : %.o : %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 scripts/autoscript : scripts/autoscript.o scripts/main.o
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 clean-autoscript :
 	$(RM) scripts/autoscript.o scripts/main.o scripts/autoscript
@@ -1265,23 +1259,23 @@ autotest_include.h : scripts/autoscript $(autotest_sources) $(include_headers)
 #       the '-x c' flag
 autotest_obj = $(patsubst %.c,%.o,$(autotest_sources))
 $(autotest_obj) : %.o : %.c $(include_headers)
-	$(CC) $(CFLAGS) $< -c -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -c -o $@
 
 # additional autotest objects
 $(autotest_extra_obj) : %.o : %.c $(include_headers)
 
 # compile the autotest internal library functions without linking
 autotest/autotestlib.o : autotest/autotestlib.c autotest/autotest.h
-	$(CC) $(CFLAGS) $< -c -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -c -o $@
 
 # compile the autotest program without linking
 $(autotest_prog).o : autotest/autotest.c autotest/autotest.h autotest_include.h
-	$(CC) $(CFLAGS) $< -c -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -c -o $@
 
 # link the autotest program with the objects
 # NOTE: linked libraries must come _after_ the target program
 $(autotest_prog): $(autotest_prog).o $(autotest_obj) $(autotest_extra_obj) autotest/autotestlib.o libliquid.a
-	$(CC) $^ -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBS)
 
 # run the autotest program
 check: $(autotest_prog)
@@ -1306,8 +1300,10 @@ clean-check:
 # on the target platform.
 .PHONY: bench
 bench_prog	= benchmark
-BENCH_CFLAGS	= -Wall $(INCLUDE_CFLAGS) $(CONFIG_CFLAGS)
+BENCH_CPPFLAGS	= $(CPPFLAGS)
+BENCH_CFLAGS	= -Wall $(CFLAGS)
 BENCH_LDFLAGS	= $(LDFLAGS)
+BENCH_LIBS	= $(LIBS)
 
 # run the benchmark generator script to create benchmark_include.h
 benchmark_include.h : scripts/autoscript $(benchmark_sources) $(include_headers)
@@ -1319,19 +1315,19 @@ benchmark_include.h : scripts/autoscript $(benchmark_sources) $(include_headers)
 #       the '-x c' flag
 benchmark_obj = $(patsubst %.c,%.o,$(benchmark_sources))
 $(benchmark_obj) : %.o : %.c $(include_headers)
-	$(CC) $(BENCH_CFLAGS) $< -c -o $@
+	$(CC) $(BENCH_CPPFLAGS) $(BENCH_CFLAGS) $< -c -o $@
 
 # additional benchmark objects
 $(benchmark_extra_obj) : %.o : %.c $(include_headers)
 
 # compile the benchmark program without linking
 $(bench_prog).o: bench/bench.c benchmark_include.h bench/bench.c
-	$(CC) $(BENCH_CFLAGS) $< -c -o $(bench_prog).o
+	$(CC) $(BENCH_CPPFLAGS) $(BENCH_CFLAGS) $< -c -o $(bench_prog).o
 
 # link the benchmark program with the library objects
 # NOTE: linked libraries must come _after_ the target program
 $(bench_prog): $(bench_prog).o $(benchmark_obj) $(benchmark_extra_obj) libliquid.a
-	$(CC) $^ -o $(bench_prog) $(BENCH_LDFLAGS)
+	$(CC) $(BENCH_CFLAGS) $(BENCH_LDFLAGS) $^ -o $(bench_prog) $(BENCH_LIBS)
 
 # run the benchmark program
 bench: $(bench_prog)
@@ -1339,14 +1335,14 @@ bench: $(bench_prog)
 
 # benchmark compare script
 scripts/benchmark_compare : % : %.c
-	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ $< $(LIBS)
 
 # fftbench program
 bench/fftbench.o : %.o : %.c
-	$(CC) $(BENCH_CFLAGS) $< -c -o $@
+	$(CC) $(BENCH_CPPFLAGS) $(BENCH_CFLAGS) $< -c -o $@
 
 bench/fftbench : % : %.o libliquid.a
-	$(CC) $^ -o $@ $(BENCH_LDFLAGS)
+	$(CC) $(BENCH_CFLAGS) $(BENCH_LDFLAGS) $^ -o $@ $(BENCH_LIBS)
 
 # clean up the generated files
 clean-bench:
@@ -1364,6 +1360,7 @@ clean-bench:
 .PHONY: examples
 example_programs :=						\
 	examples/agc_crcf_example				\
+	examples/agc_crcf_squelch_example			\
 	examples/agc_crcf_qpsk_example				\
 	examples/agc_rrrf_example				\
 	examples/ampmodem_example				\
@@ -1403,7 +1400,9 @@ example_programs :=						\
 	examples/firfilt_crcf_example				\
 	examples/firfilt_rrrf_example				\
 	examples/firdes_kaiser_example				\
+	examples/firdespm_callback_example			\
 	examples/firdespm_example				\
+	examples/firdespm_lowpass_example			\
 	examples/firhilb_example				\
 	examples/firhilb_decim_example				\
 	examples/firhilb_interp_example				\
@@ -1480,6 +1479,7 @@ example_programs :=						\
 	examples/spgramcf_example				\
 	examples/spgramcf_waterfall_example			\
 	examples/spgramf_example				\
+	examples/spwaterfallcf_example				\
 	examples/symsync_crcf_example				\
 	examples/symsync_crcf_full_example			\
 	examples/symsync_crcf_kaiser_example			\
@@ -1496,13 +1496,11 @@ example_programs :=						\
 example_objects	= $(patsubst %,%.o,$(example_programs))
 examples: $(example_programs)
 
-EXAMPLES_LDFLAGS = $(LDFLAGS)
-
 # NOTE: linked libraries must come _after_ the target program
 $(example_objects): %.o : %.c
 
 $(example_programs): % : %.o libliquid.a
-	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBS)
 
 # clean examples
 clean-examples:
@@ -1624,7 +1622,7 @@ SANDBOX_LDFLAGS = $(LDFLAGS) -lfftw3f
 $(sandbox_objects): %.o : %.c
 
 $(sandbox_programs): % : %.o libliquid.a
-	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS) $(LIBS)
 
 # clean sandbox
 clean-sandbox:

@@ -24,19 +24,21 @@ public:
     typedef  std::shared_ptr<VisualInputQueueType> VisualInputQueueTypePtr;
     typedef  std::shared_ptr<VisualOutputQueueType> VisualOutputQueueTypePtr;
 
-    typedef typename std::vector< VisualOutputQueueTypePtr >::iterator outputs_i;
-
 	virtual ~VisualProcessor() {
 	}
     
     bool isInputEmpty() {
-        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+        std::lock_guard < std::mutex > busy_lock(busy_update);
+		
+		if (input) {
+			return input->empty();
+		}
 
-        return input->empty();
+		return true;
     }
     
     bool isOutputEmpty() {
-        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+        std::lock_guard < std::mutex > busy_lock(busy_update);
 
         for (VisualOutputQueueTypePtr single_output :  outputs) {
             if (single_output->full()) {
@@ -47,7 +49,7 @@ public:
     }
     
     bool isAnyOutputEmpty() {
-        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+        std::lock_guard < std::mutex > busy_lock(busy_update);
 
         for (VisualOutputQueueTypePtr single_output : outputs) {
             if (!(single_output)->full()) {
@@ -59,7 +61,7 @@ public:
 
     //Set a (new) 'input' queue for incoming data.
     void setInput(VisualInputQueueTypePtr vis_in) {
-        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+        std::lock_guard < std::mutex > busy_lock(busy_update);
         input = vis_in;
         
     }
@@ -68,27 +70,39 @@ public:
     //dispatched by distribute(). 
     void attachOutput(VisualOutputQueueTypePtr vis_out) {
         // attach an output queue
-        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+        std::lock_guard < std::mutex > busy_lock(busy_update);
         outputs.push_back(vis_out);
     }
     
     //reverse of attachOutput(), removed an existing attached vis_out.
     void removeOutput(VisualOutputQueueTypePtr vis_out) {
         // remove an output queue
-        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+        std::lock_guard < std::mutex > busy_lock(busy_update);
 
-        outputs_i i = std::find(outputs.begin(), outputs.end(), vis_out);
-        if (i != outputs.end()) {
-            outputs.erase(i);
+        auto it = std::find(outputs.begin(), outputs.end(), vis_out);
+        if (it != outputs.end()) {
+            outputs.erase(it);
         }
     }
     //Flush all queues, either input or outputs clearing their accumulated messages.
-    //this is purposefully non-blocking call.
+    //this is purposefully (almost) non-blocking call.
     void flushQueues() {
-        //DO NOT take the busy_update, we want a never blocking op how imperfect it could be.
-        input->flush();
+       
+		//capture a local copy atomically, so we don't need to protect input.
+		VisualInputQueueTypePtr localInput = input;
 
-        for (auto single_output : outputs) {
+		if (localInput) {
+			localInput->flush();
+		}
+
+		//scoped-lock: create a local copy of outputs, and work with it.
+		std::vector<VisualOutputQueueTypePtr> local_outputs;
+		{
+			std::lock_guard < std::mutex > busy_lock(busy_update);
+			local_outputs = outputs;
+		}
+
+        for (auto single_output : local_outputs) {
 
             single_output->flush();
         }
@@ -96,17 +110,18 @@ public:
     
     //Call process() repeateadly until all available 'input' data is consumed.
     void run() {
-        
-        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+		
+		//capture a local copy atomically, so we don't need to protect input.
+		VisualInputQueueTypePtr localInput = input;
 
-        if (input && !input->empty()) {
+        if (localInput && !localInput->empty()) {
             process();
 		}
     }
     
 protected:
     // derived class must implement a  process() interface
-    //where typically 'input' data is consummed, procerssed, and then dispatched
+    //where typically 'input' data is consummed, processed, and then dispatched
     //with distribute() to all 'outputs'.
     virtual void process() = 0;
 
@@ -117,27 +132,27 @@ protected:
     //* \param[in] errorMessage an error message written on std::cout in case pf push timeout.
     void distribute(OutputDataTypePtr item, std::uint64_t timeout = BLOCKING_INFINITE_TIMEOUT, const char* errorMessage = nullptr) {
       
-        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+        std::lock_guard < std::mutex > busy_lock(busy_update);
         //We will try to distribute 'output' among all 'outputs',
         //so 'output' will a-priori be shared among all 'outputs'.
         
         for (VisualOutputQueueTypePtr single_output : outputs) {
-            //'output' can fail to be given to an outputs_i,
+            //'output' can fail to be given to an single_output,
             //using a blocking push, with a timeout
         	if (!(single_output)->push(item, timeout, errorMessage)) {
-                //TODO : trace ?
+                //trace  will be std::output if timeout != 0 is set and errorMessage != null.
         	} 
         }
     }
 
     //the incoming data queue 
-    VisualInputQueueTypePtr input = nullptr;
+    VisualInputQueueTypePtr input;
     
     //the n-outputs where to process()-ed data is distribute()-ed.
     std::vector<VisualOutputQueueTypePtr> outputs;
 
-    //protects input and outputs, must be recursive because of re-entrance
-    std::recursive_mutex busy_update;
+    //protects input and outputs
+    std::mutex busy_update;
 };
 
 //Specialization much like VisualDataReDistributor, except 
@@ -153,10 +168,9 @@ protected:
 
         while (VisualProcessor<OutputDataType, OutputDataType>::input->try_pop(inp)) {
             
+			//do not try to distribute if all outputs are already full.
             if (!VisualProcessor<OutputDataType, OutputDataType>::isAnyOutputEmpty()) {
-                if (inp) {
-            	    //nothing
-                }
+               
                 return;
             }
       
@@ -187,10 +201,9 @@ protected:
 
         while (VisualProcessor<OutputDataType, OutputDataType>::input->try_pop(inp)) {
             
+			//do not try to distribute if all outputs are already full.
             if (!VisualProcessor<OutputDataType, OutputDataType>::isAnyOutputEmpty()) {
-                if (inp) {
-            	    //nothing
-                }
+               
                 return;
             }
             

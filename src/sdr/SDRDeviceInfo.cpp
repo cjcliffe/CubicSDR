@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "SDRDeviceInfo.h"
+#include "CubicSDRDefs.h"
 #include <cstdlib>
 #include <algorithm>
 
@@ -179,14 +180,40 @@ bool SDRDeviceInfo::hasCORR(int direction, size_t channel) {
 }
 
 std::vector<long> SDRDeviceInfo::getSampleRates(int direction, size_t channel) {
+
     SoapySDR::Device *dev = getSoapyDevice();
+
+	size_t nbMaxDifferentRates = DEVICE_SAMPLE_RATES_MAX_NB;
     
     std::vector<long> result;
+
+	//the original list returned from the driver:
     std::vector<double> sampleRates = dev->listSampleRates(direction, channel);
-    for (double si : sampleRates) {
-        result.push_back((long)si);
-    }
-    
+
+	//be paranoid, sort by increasing rates...
+	std::sort(sampleRates.begin(), sampleRates.end(), [](double a, double b) -> bool { return a < b; });
+
+	//if sampleRates.size() > nbMaxDifferentRates, decimate this number to only return nbMaxDifferentRates sample 
+	//rates values.
+	size_t sampleRateSelectionStep = 1;
+
+	if (sampleRates.size() / nbMaxDifferentRates >= 2) {
+
+	   sampleRateSelectionStep = sampleRates.size() / nbMaxDifferentRates;
+	}
+	
+	for (size_t i = 0; sampleRateSelectionStep * i < sampleRates.size(); i++) {
+
+		//convert to longs...
+		result.push_back((long)sampleRates[sampleRateSelectionStep * i]);
+	}
+
+	//always include the biggest value:
+	if ((long)sampleRates.back() > result.back()) {
+
+		result.push_back((long)sampleRates.back());
+	}
+
     return result;
 }
 
@@ -230,10 +257,13 @@ long SDRDeviceInfo::getSampleRateNear(int direction, size_t channel, long sample
 
 SDRRangeMap SDRDeviceInfo::getGains(int direction, size_t channel) {
     SoapySDR::Device *dev = getSoapyDevice();
-    std::vector<std::string> gainNames = dev->listGains(direction, channel);
-    std::map<std::string, SoapySDR::Range> gainMap;
+    
+	std::vector<std::string> gainNames = dev->listGains(direction, channel);
+    
+	std::map<std::string, SoapySDR::Range> gainMap;
     
     for (std::string gname : gainNames) {
+
         gainMap[gname] = dev->getGainRange(direction, channel, gname);
     }
     
