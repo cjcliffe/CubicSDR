@@ -22,5 +22,5 @@ public:
 protected:
     std::ofstream outputFileStream;
     std::string suffix;
-
+    size_t dataChunkPos;
 };
