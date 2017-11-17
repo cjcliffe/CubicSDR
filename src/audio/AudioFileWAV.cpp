@@ -58,18 +58,11 @@ std::string AudioFileWAV::getExtension()
     return "wav";
 }
 
-std::string AudioFileWAV::getSuffix()
-{
-    return suffix;
-}
-
 bool AudioFileWAV::writeToFile(AudioThreadInputPtr input)
 {
     if (!outputFileStream.is_open()) {
-        suffix = "";
         std::string ofName = getOutputFileName();
                 
-        // TODO: Check if file exists, sequence the suffix
         outputFileStream.open(ofName.c_str(), std::ios::binary);
 
         // Based on simple wav file output code from
@@ -94,12 +87,12 @@ bool AudioFileWAV::writeToFile(AudioThreadInputPtr input)
     float intScale = (input->peak < 1.0) ? 32767.0f : (32767.0f / input->peak);
 
     if (input->channels == 1) {
-        for (int i = 0, iMax = input->data.size(); i < iMax; i++) {
+        for (size_t i = 0, iMax = input->data.size(); i < iMax; i++) {
             write_word(outputFileStream, int(input->data[i] * intScale), 2);
         }
     }
     else if (input->channels == 2) {
-        for (int i = 0, iMax = input->data.size() / 2; i < iMax; i++) {
+        for (size_t i = 0, iMax = input->data.size() / 2; i < iMax; i++) {
             write_word(outputFileStream, int(input->data[i * 2] * intScale), 2);
             write_word(outputFileStream, int(input->data[i * 2 + 1] * intScale), 2);
         }

@@ -14,13 +14,11 @@ public:
     ~AudioFileWAV();
 
     std::string getExtension();
-    std::string getSuffix();
 
     bool writeToFile(AudioThreadInputPtr input);
     bool closeFile();
 
 protected:
     std::ofstream outputFileStream;
-    std::string suffix;
     size_t dataChunkPos;
 };

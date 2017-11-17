@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <ctime>
+#include <iomanip>
 
 #include "DemodulatorInstance.h"
 #include "CubicSDR.h"
@@ -627,8 +628,23 @@ void DemodulatorInstance::startRecording() {
     AudioSinkFileThread *newSinkThread = new AudioSinkFileThread();
     AudioFileWAV *afHandler = new AudioFileWAV();
 
+    time_t t = std::time(nullptr);
+    tm ltm = *std::localtime(&t);
+    
     std::stringstream fileName;
-    fileName << getLabel() << "_" << std::time(nullptr);
+    
+    std::wstring userLabel = getDemodulatorUserLabel();
+
+    // TODO: Can we support wstring filenames for user labels?
+    std::string userLabelStr(userLabel.begin(), userLabel.end());
+
+    if (!userLabelStr.empty()) {
+        fileName << userLabelStr;
+    } else {
+        fileName << getLabel();
+    }
+    
+    fileName << "_" << std::put_time(&ltm, "%d-%m-%Y_%H-%M-%S");
 
     afHandler->setOutputFileName(fileName.str());
     newSinkThread->setAudioFileHandler(afHandler);
