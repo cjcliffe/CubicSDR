@@ -269,3 +269,24 @@ SDRRangeMap SDRDeviceInfo::getGains(int direction, size_t channel) {
     
     return gainMap;
 }
+
+//read the current gain of name gainName (must exit in getGains(), else return 0)
+//in the device.
+double  SDRDeviceInfo::getCurrentGain(int direction, size_t channel, const std::string& gainName) {
+
+	SoapySDR::Device *dev = getSoapyDevice();
+
+	if (dev) {
+
+		std::vector<std::string> gainNames = dev->listGains(direction, channel);
+
+		auto itFoundName = std::find(gainNames.begin(), gainNames.end(), gainName);
+
+		if (itFoundName != gainNames.end()) {
+
+			return  dev->getGain(direction, channel, gainName);
+		}
+	}
+
+	return 0.0;
+}

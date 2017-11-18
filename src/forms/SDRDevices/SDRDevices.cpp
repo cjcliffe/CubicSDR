@@ -395,7 +395,8 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event) {
         wxGetApp().setDeviceArgs(settingArgs);
         wxGetApp().setStreamArgs(streamArgs);
         wxGetApp().setDevice(dev,0);
-        wxGetApp().notifyMainUIOfDeviceChange();
+        wxGetApp().notifyMainUIOfDeviceChange(true);
+		Refresh();
         Close();
     }
     event.Skip();
@@ -570,13 +571,13 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
                     wxGetApp().getSDRThread()->writeSetting(rtp->first, settingValue);
                 }
 
-				wxGetApp().notifyMainUIOfDeviceChange();
+				wxGetApp().notifyMainUIOfDeviceChange(true);
                 return;
             }
         }
     }
     // general refresh.
-    wxGetApp().notifyMainUIOfDeviceChange();
+    wxGetApp().notifyMainUIOfDeviceChange(true);
 }
 
 void SDRDevicesDialog::OnPropGridFocus( wxFocusEvent& /* event */) {

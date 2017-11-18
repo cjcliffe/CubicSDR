@@ -69,13 +69,25 @@ void GainCanvas::OnIdle(wxIdleEvent &event) {
 	} else {
 		event.Skip();
 	}
+
+	bool areGainsChangedHere = false;
     
     for (auto gi : gainPanels) {
         if (gi->getChanged()) {
+			areGainsChangedHere = true;
             wxGetApp().setGain(gi->getName(), gi->getValue());
+			//A gain may be exposed as setting also so assure refresh of the menu also.
+			wxGetApp().notifyMainUIOfDeviceChange(false); //do not piggyback to us...
+
             gi->setChanged(false);
         }
     }
+
+	if (!areGainsChangedHere) {
+		if (updateGainValues()) {
+			Refresh();
+		}
+	}
 }
 
 void GainCanvas::SetLevel() {
@@ -167,8 +179,6 @@ void GainCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
 #endif
 }
 
-
-
 void GainCanvas::setHelpTip(std::string tip) {
     helpTip = tip;
 }
@@ -219,6 +229,62 @@ void GainCanvas::updateGainUI() {
     }
     
     setThemeColors();
+}
+
+// call this to refresh the gain values only, not the whole UI.
+bool GainCanvas::updateGainValues() {
+
+	bool isRefreshNeeded = false;
+
+	SDRDeviceInfo *devInfo = wxGetApp().getDevice();
+
+	//possible if we 'Refresh Devices' then devInfo becomes null
+	//until a new device is selected.
+	if (devInfo == nullptr) {
+		return false;
+	}
+
+	DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(devInfo->getDeviceId());
+
+	gains = devInfo->getGains(SOAPY_SDR_RX, 0);
+	SDRRangeMap::iterator gi;
+
+	size_t numGainsToRefresh = std::min(gains.size(), gainPanels.size());
+	size_t panelIndex = 0;
+
+	//actually the order of gains iteration should be constant because map of string,
+	//and gainPanels were built in that order in updateGainUI()
+	for (auto gi : gains) {
+
+		if (panelIndex >= numGainsToRefresh) {
+			break;
+		}
+
+		// do not update if a change is already pending.
+		if (!gainPanels[panelIndex]->getChanged()) {
+
+			//read the actual gain from the device.
+			float actualGain = (float)devInfo->getCurrentGain(SOAPY_SDR_RX, 0, gi.first);
+			
+			//do nothing if the difference is less than 1.0, since the panel do not show it anyway.
+			if (std::abs(actualGain - gainPanels[panelIndex]->getValue()) > 1.0) {
+
+				gainPanels[panelIndex]->setValue(actualGain);
+
+				//update the config with this value : 
+				//a consequence of such updates is that the use setting 
+				// is overriden by the current one in AGC mode.
+				//TODO: if it not desirable, do not update in AGC mode.
+				devConfig->setGain(gi.first, actualGain);
+
+				isRefreshNeeded = true;
+			}
+		} //end if no external change pending.
+
+		panelIndex++;
+	}
+
+	return isRefreshNeeded;
 }
 
 void GainCanvas::setThemeColors() {

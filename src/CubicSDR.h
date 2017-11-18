@@ -143,7 +143,7 @@ public:
     bool areModulesMissing();
     std::string getNotification();
 
-    void notifyMainUIOfDeviceChange();
+    void notifyMainUIOfDeviceChange(bool forceRefreshOfGains = false);
     
     void addRemote(std::string remoteAddr);
     void removeRemote(std::string remoteAddr);
