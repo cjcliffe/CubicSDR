@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <queue>
+#include <atomic>
 
 #include "InteractiveCanvas.h"
 #include "MouseTracker.h"
@@ -25,7 +26,7 @@ public:
 
     void setHelpTip(std::string tip);
     void updateGainUI();
-	 void setThemeColors();
+	void setThemeColors();
     
 private:
 
@@ -54,6 +55,9 @@ private:
     float spacing, barWidth, startPos, barHeight, numGains;
     int refreshCounter;
     wxSize clientSize;
+
+	std::atomic_bool userGainAsChanged;
+	Timer userGainAsChangedDelayTimer;
     //
 wxDECLARE_EVENT_TABLE();
 };

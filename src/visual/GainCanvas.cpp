@@ -42,6 +42,8 @@ GainCanvas::GainCanvas(wxWindow *parent, std::vector<int> dispAttrs) :
     startPos = spacing/2.0;
     barHeight = 0.8f;
     refreshCounter = 0;
+
+	userGainAsChanged = false;
 }
 
 GainCanvas::~GainCanvas() {
@@ -75,20 +77,33 @@ void GainCanvas::OnIdle(wxIdleEvent &event) {
     
     for (auto gi : gainPanels) {
         if (gi->getChanged()) {
-			areGainsChangedHere = true;
-			// Gain only displays integer gain values, so the applied gain 
+			areGainsChangedHere  = true;
+			// Gain only displays integer gain values, so set the applied gain 
 			//value to exactly that. 
             wxGetApp().setGain(gi->getName(), (int)(gi->getValue()));
 			//A gain may be exposed as setting also so assure refresh of the menu also.
-			wxGetApp().notifyMainUIOfDeviceChange(false); //do not piggyback to us...
+			wxGetApp().notifyMainUIOfDeviceChange(false); //do not rebuild the gain UI
 
             gi->setChanged(false);
         }
     }
 
-	if (!areGainsChangedHere) {
-		if (updateGainValues()) {
-			Refresh();
+	//User input has changed the gain, so schedule an update of values
+	//in 150ms in the future, else the device may not have taken the value into account.
+	if (areGainsChangedHere) {
+		userGainAsChanged = true;
+		userGainAsChangedDelayTimer.start();
+	}
+	else {
+		userGainAsChangedDelayTimer.update();
+
+		if (!userGainAsChanged || (userGainAsChanged && userGainAsChangedDelayTimer.getMilliseconds() > 150)) {
+			
+			if (updateGainValues()) {
+				Refresh();
+			}
+
+			userGainAsChanged = false;
 		}
 	}
 }
@@ -101,8 +116,7 @@ void GainCanvas::SetLevel() {
             float value = gi->getMeterHitValue(mpos);
             
             gi->setValue(value);
-            gi->setChanged(true);
-            
+            gi->setChanged(true);           
             break;
         }
     }
@@ -187,6 +201,7 @@ void GainCanvas::setHelpTip(std::string tip) {
 }
 
 void GainCanvas::updateGainUI() {
+
     SDRDeviceInfo *devInfo = wxGetApp().getDevice();
 
     //possible if we 'Refresh Devices' then devInfo becomes null
@@ -196,9 +211,14 @@ void GainCanvas::updateGainUI() {
     }
 
     DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(devInfo->getDeviceId());
-    
+	
+	//read the gains from the device.
+	//This may be wrong because the device is not started, or has yet 
+	//to take into account a user gain change. Doesn't matter,
+	//UpdateGainValues() takes cares of updating the true value realtime.
     gains = devInfo->getGains(SOAPY_SDR_RX, 0);
-    SDRRangeMap::iterator gi;
+    
+	SDRRangeMap::iterator gi;
     
     numGains = gains.size();
     float i = 0;
@@ -218,7 +238,7 @@ void GainCanvas::updateGainUI() {
         bgPanel.removeChild(mDel);
         delete mDel;
     }
-    
+
     for (auto gi : gains) {
         MeterPanel *mPanel = new MeterPanel(gi.first, gi.second.minimum(), gi.second.maximum(), devConfig->getGain(gi.first,wxGetApp().getGain(gi.first)));
 
@@ -230,7 +250,7 @@ void GainCanvas::updateGainUI() {
         gainPanels.push_back(mPanel);
         i++;
     }
-    
+	  
     setThemeColors();
 }
 
@@ -243,7 +263,8 @@ bool GainCanvas::updateGainValues() {
 
 	//possible if we 'Refresh Devices' then devInfo becomes null
 	//until a new device is selected.
-	if (devInfo == nullptr) {
+	//also, do not attempt an update with the device is not started.
+	if (devInfo == nullptr || !devInfo->isActive()) {
 		return false;
 	}
 

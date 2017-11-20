@@ -32,7 +32,7 @@ protected:
 private:
     std::string name;
     float low, high, current;
-    bool changed;
+    bool changed = false;
     GLPanel bgPanel;
     GLPanel levelPanel;
     GLPanel highlightPanel;

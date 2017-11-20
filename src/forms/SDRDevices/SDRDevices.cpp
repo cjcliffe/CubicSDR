@@ -395,8 +395,6 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event) {
         wxGetApp().setDeviceArgs(settingArgs);
         wxGetApp().setStreamArgs(streamArgs);
         wxGetApp().setDevice(dev,0);
-        wxGetApp().notifyMainUIOfDeviceChange(true);
-		Refresh();
         Close();
     }
     event.Skip();
@@ -495,7 +493,7 @@ void SDRDevicesDialog::OnRefreshDevices( wxMouseEvent& /* event */) {
 
 void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
 
-    if (editId && event.GetProperty() == devSettings["name"]) {
+    if (event.GetProperty() == devSettings["name"]) {
         DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
         
         wxString devName = event.GetPropertyValue().GetString();
@@ -550,7 +548,7 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
             // nop
         }
     }
-    else if (editId && dev) {
+    else if (dev) {
         wxPGProperty *prop = event.GetProperty();
         //change value of RuntimeProps
         for (std::map<std::string, wxPGProperty *>::iterator rtp = runtimeProps.begin(); rtp != runtimeProps.end(); rtp++) {
@@ -570,14 +568,10 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
                 if (dev->isActive()) {
                     wxGetApp().getSDRThread()->writeSetting(rtp->first, settingValue);
                 }
-
-				wxGetApp().notifyMainUIOfDeviceChange(true);
                 return;
             }
         }
     }
-    // general refresh.
-    wxGetApp().notifyMainUIOfDeviceChange(true);
 }
 
 void SDRDevicesDialog::OnPropGridFocus( wxFocusEvent& /* event */) {

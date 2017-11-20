@@ -1236,7 +1236,7 @@ bool AppFrame::actionOnMenuSettings(wxCommandEvent& event) {
                 menuIdx++;
             }
         } //end for
-
+		
         return true;
     }
 
