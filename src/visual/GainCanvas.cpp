@@ -17,6 +17,7 @@
 #include "CubicSDRDefs.h"
 #include "AppFrame.h"
 #include <algorithm>
+#include <cmath>
 
 wxBEGIN_EVENT_TABLE(GainCanvas, wxGLCanvas) EVT_PAINT(GainCanvas::OnPaint)
 EVT_IDLE(GainCanvas::OnIdle)
@@ -75,7 +76,9 @@ void GainCanvas::OnIdle(wxIdleEvent &event) {
     for (auto gi : gainPanels) {
         if (gi->getChanged()) {
 			areGainsChangedHere = true;
-            wxGetApp().setGain(gi->getName(), gi->getValue());
+			// Gain only displays integer gain values, so the applied gain 
+			//value to exactly that. 
+            wxGetApp().setGain(gi->getName(), (int)(gi->getValue()));
 			//A gain may be exposed as setting also so assure refresh of the menu also.
 			wxGetApp().notifyMainUIOfDeviceChange(false); //do not piggyback to us...
 
@@ -263,19 +266,19 @@ bool GainCanvas::updateGainValues() {
 		// do not update if a change is already pending.
 		if (!gainPanels[panelIndex]->getChanged()) {
 
-			//read the actual gain from the device.
-			float actualGain = (float)devInfo->getCurrentGain(SOAPY_SDR_RX, 0, gi.first);
+			//read the actual gain from the device, round it
+			float actualRoundedGain = (float)std::round(devInfo->getCurrentGain(SOAPY_SDR_RX, 0, gi.first));
 			
 			//do nothing if the difference is less than 1.0, since the panel do not show it anyway.
-			if (std::abs(actualGain - gainPanels[panelIndex]->getValue()) > 1.0) {
+			if ((int)actualRoundedGain != (int)(gainPanels[panelIndex]->getValue())) {
 
-				gainPanels[panelIndex]->setValue(actualGain);
+				gainPanels[panelIndex]->setValue(actualRoundedGain);
 
 				//update the config with this value : 
 				//a consequence of such updates is that the use setting 
 				// is overriden by the current one in AGC mode.
 				//TODO: if it not desirable, do not update in AGC mode.
-				devConfig->setGain(gi.first, actualGain);
+				devConfig->setGain(gi.first, actualRoundedGain);
 
 				isRefreshNeeded = true;
 			}
