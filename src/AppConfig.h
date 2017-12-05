@@ -141,6 +141,8 @@ public:
     void setRecordingPath(std::string recPath);
     std::string getRecordingPath();
     
+    bool verifyRecordingPath();
+    
 #if USE_HAMLIB
     int getRigModel();
     void setRigModel(int rigModel);

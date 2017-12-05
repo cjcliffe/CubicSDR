@@ -4,6 +4,8 @@
 #include "AppConfig.h"
 #include "CubicSDR.h"
 
+#include <wx/msgdlg.h>
+
 DeviceConfig::DeviceConfig() : deviceId("") {
 	ppm.store(0);
 	offset.store(0);
@@ -513,6 +515,25 @@ std::string AppConfig::getRecordingPath() {
     return recordingPath;
 }
 
+bool AppConfig::verifyRecordingPath() {
+    string recPathStr = wxGetApp().getConfig()->getRecordingPath();
+    
+    if (recPathStr.empty()) {
+        wxMessageBox( wxT("Recording path is not set.  Please use 'Set Recording Path' from the 'File' Menu."), wxT("Recording Path Error"), wxICON_INFORMATION);
+        
+        return false;
+    }
+    
+    wxFileName recPath(recPathStr);
+    
+    if (!recPath.Exists() || !recPath.IsDirWritable()) {
+        wxMessageBox( wxT("Recording path does not exist or is not writable.  Please use 'Set Recording Path' from the 'File' Menu."), wxT("Recording Path Error"), wxICON_INFORMATION);
+        
+        return false;
+    }
+    
+    return true;
+}
 
 void AppConfig::setConfigName(std::string configName) {
     this->configName = configName;

@@ -816,8 +816,16 @@ void BookmarkView::activeSelection(DemodulatorInstancePtr dsel) {
     clearButtons();
 
     addBookmarkChoice(m_buttonPanel);
-    addButton(m_buttonPanel, "Remove Active", wxCommandEventHandler( BookmarkView::onRemoveActive ));
+    
+    if (dsel->isActive() && !(dsel->isRecording())) {
+        addButton(m_buttonPanel, "Start Recording", wxCommandEventHandler( BookmarkView::onStartRecording ));
+    } else {
+        addButton(m_buttonPanel, "Stop Recording", wxCommandEventHandler( BookmarkView::onStopRecording ));
+    }
 
+    addButton(m_buttonPanel, "Remove Active", wxCommandEventHandler( BookmarkView::onRemoveActive ));
+    
+    
     showProps();
     showButtons();
     refreshLayout();
@@ -1148,6 +1156,30 @@ void BookmarkView::onRemoveActive( wxCommandEvent& /* event */ ) {
         doRemoveActive(curSel->demod);
     }
 }
+
+void BookmarkView::onStartRecording( wxCommandEvent& /* event */ ) {
+    TreeViewItem *curSel = itemToTVI(m_treeView->GetSelection());
+    
+    if (curSel && curSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
+        if (!curSel->demod->isRecording() && wxGetApp().getConfig()->verifyRecordingPath()) {
+            curSel->demod->setRecording(true);
+            wxGetApp().getBookmarkMgr().updateActiveList();
+        }
+    }
+}
+
+
+void BookmarkView::onStopRecording( wxCommandEvent& /* event */ ) {
+    TreeViewItem *curSel = itemToTVI(m_treeView->GetSelection());
+    
+    if (curSel && curSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
+        if (curSel->demod->isRecording()) {
+            curSel->demod->setRecording(false);
+            wxGetApp().getBookmarkMgr().updateActiveList();
+        }
+    }
+}
+
 
 
 void BookmarkView::onRemoveBookmark( wxCommandEvent& /* event */ ) {

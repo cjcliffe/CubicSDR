@@ -115,6 +115,8 @@ public:
     int OnGlobalKeyDown(wxKeyEvent &event);
     int OnGlobalKeyUp(wxKeyEvent &event);
     
+    void toggleActiveDemodRecording();
+    
     void setWaterfallLinesPerSecond(int lps);
     void setSpectrumAvgSpeed(double avg);
     

@@ -565,14 +565,14 @@ void WaterfallCanvas::updateHoverState() {
             
             mouseTracker.setVertDragLock(true);
             mouseTracker.setHorizDragLock(false);
-            setStatusText("Click and drag to change demodulator bandwidth. SPACE or numeric key for direct frequency input. [, ] to nudge, M for mute, D to delete, C to center, E to edit label.");
+            setStatusText("Click and drag to change demodulator bandwidth. SPACE or numeric key for direct frequency input. [, ] to nudge, M for mute, D to delete, C to center, E to edit label, R to record.");
         } else {
             SetCursor(wxCURSOR_SIZING);
             nextDragState = WF_DRAG_FREQUENCY;
             
             mouseTracker.setVertDragLock(true);
             mouseTracker.setHorizDragLock(false);
-            setStatusText("Click and drag to change demodulator frequency; SPACE or numeric key for direct input. [, ] to nudge, M for mute, D to delete, C to center, E to edit label.");
+            setStatusText("Click and drag to change demodulator frequency; SPACE or numeric key for direct input. [, ] to nudge, M for mute, D to delete, C to center, E to edit label, R to record.");
         }
     }
     else {

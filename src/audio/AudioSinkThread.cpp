@@ -7,6 +7,7 @@
 
 AudioSinkThread::AudioSinkThread() {
     inputQueuePtr = std::make_shared<AudioThreadInputQueue>();
+    inputQueuePtr->set_max_num_items(1000);
     setInputQueue("input", inputQueuePtr);
 }
 

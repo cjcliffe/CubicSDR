@@ -331,12 +331,11 @@ void DemodulatorThread::run() {
                     std::cout << "DemodulatorThread::run() cannot push ati into audioOutputQueue, is full !" << std::endl;
                     std::this_thread::yield();
                 }
-
-                if (localAudioSinkOutputQueue != nullptr) {
-                    if (!audioSinkOutputQueue->try_push(ati)) {
-                        std::cout << "DemodulatorThread::run() cannot push ati into audioSinkOutputQueue, is full !" << std::endl;
-                        std::this_thread::yield();
-                    }
+            }
+            
+            if (localAudioSinkOutputQueue != nullptr) {
+                if (!audioSinkOutputQueue->try_push(ati)) {
+                    std::cout << "DemodulatorThread::run() cannot push ati into audioSinkOutputQueue, is full !" << std::endl;
                 }
             }
         }
