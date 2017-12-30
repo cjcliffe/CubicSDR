@@ -201,7 +201,7 @@ void DemodulatorThread::run() {
             signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.05 * sampleTime * 30.0;
         }
         
-        bool squelched = (muted.load() || (squelchEnabled && (signalLevel < squelchLevel)));
+        bool squelched = squelchEnabled && (signalLevel < squelchLevel);
         
         if (squelchEnabled) {
             if (!squelched && !squelchBreak) {

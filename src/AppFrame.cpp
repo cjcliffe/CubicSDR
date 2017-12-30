@@ -2643,7 +2643,11 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
             return 1;
             break;
         case 'R':
-            toggleActiveDemodRecording();
+            if (event.ShiftDown()) {
+                toggleAllActiveDemodRecording();
+            } else {
+                toggleActiveDemodRecording();
+            }
             break;
         case 'P':
             wxGetApp().getSpectrumProcessor()->setPeakHold(!wxGetApp().getSpectrumProcessor()->getPeakHold());
@@ -2701,7 +2705,31 @@ void AppFrame::toggleActiveDemodRecording() {
         wxGetApp().getBookmarkMgr().updateActiveList();
     }
 }
-    
+
+void AppFrame::toggleAllActiveDemodRecording() {
+    if (!wxGetApp().getConfig()->verifyRecordingPath()) {
+        return;
+    }
+
+    auto activeDemods = wxGetApp().getDemodMgr().getDemodulators();
+
+    bool stateToSet = true;
+
+    for (auto i : activeDemods) {
+        if (i->isActive() && i->isRecording()) {
+            stateToSet = false;
+            break;
+        }
+    }
+
+    for (auto i : activeDemods) {
+        if (i->isActive() && i->isRecording() != stateToSet) {
+            i->setRecording(stateToSet);            
+        }
+    }
+}
+
+
 
 void AppFrame::setWaterfallLinesPerSecond(int lps) {
     waterfallSpeedMeter->setUserInputValue(sqrt(lps));

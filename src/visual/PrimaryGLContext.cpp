@@ -119,7 +119,8 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstancePtr demod, RGBA4f color,
 
     // TODO: Better recording indicator... pulsating red circle?
     if (isRecording) {
-        labelBg.g = 1.0f;
+        auto t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+        labelBg.g = sinf(2.0f * M_PI * (float(t) / 1000.0f)) * 0.25f + 0.75f;
     }
 
     glColor4f(labelBg.r, labelBg.g, labelBg.b, labelBg.a);
