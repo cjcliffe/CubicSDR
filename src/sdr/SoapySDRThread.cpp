@@ -153,13 +153,14 @@ bool SDRThread::init() {
         settingChanged.erase(settingChanged.begin(), settingChanged.end());
     }
     
+	//apply settings.
     { //enter scoped-lock
         std::lock_guard < std::mutex > lock(setting_busy);
 
         for (settings_i = settingsInfo.begin(); settings_i != settingsInfo.end(); settings_i++) {
             SoapySDR::ArgInfo setting = (*settings_i);
-            if ((settingChanged.find(setting.key) != settingChanged.end()) && (settings.find(setting.key) != settings.end())) {
-                device->writeSetting(setting.key, settings[setting.key]);
+            if ((settingChanged.find(setting.key) != settingChanged.end()) && (settings.find(setting.key) != settings.end())) {              
+				device->writeSetting(setting.key, settings[setting.key]);
                 settingChanged[setting.key] = false;
             } else {
                 settings[setting.key] = device->readSetting(setting.key);
@@ -173,7 +174,10 @@ bool SDRThread::init() {
     updateSettings();
     
     wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_INITIALIZED, std::string("Device Initialized."));
-    
+	
+	//rebuild menu now that settings are really been applied.
+	wxGetApp().notifyMainUIOfDeviceChange(true);
+
     return true;
 }
 
@@ -486,13 +490,12 @@ void SDRThread::updateSettings() {
         if (!agc_mode.load()) {
             updateGains();
             
+			//re-apply the saved configuration gains:
             DeviceConfig *devConfig = deviceConfig.load();
             ConfigGains gains = devConfig->getGains();
             
-            if (gains.size()) {
-                for (ConfigGains::iterator gain_i = gains.begin(); gain_i != gains.end(); gain_i++) {
-                    setGain(gain_i->first, gain_i->second);
-                }
+            for (ConfigGains::iterator gain_i = gains.begin(); gain_i != gains.end(); gain_i++) {
+                setGain(gain_i->first, gain_i->second);
             }
         }
         doUpdate = true;
@@ -544,7 +547,7 @@ void SDRThread::run() {
     
     SDRDeviceInfo *activeDev = deviceInfo.load();
     
-    if (activeDev != NULL) {
+    if (activeDev != nullptr) {
         std::cout << "device init()" << std::endl;
         if (!init()) {
             std::cout << "SDR Thread stream init error." << std::endl;

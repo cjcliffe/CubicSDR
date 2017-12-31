@@ -943,7 +943,6 @@ void AppFrame::updateDeviceParams() {
     newSampleRateMenu->AppendSeparator();
     sampleRateMenuItems[wxID_BANDWIDTH_MANUAL_DIALOG] = newSampleRateMenu->Append(wxID_BANDWIDTH_MANUAL_DIALOG, wxT("Manual Entry..."));
 
-   
     menuBar->Replace(2, newSampleRateMenu, wxT("Sample &Rate"));
     sampleRateMenu = newSampleRateMenu;
 
@@ -952,9 +951,6 @@ void AppFrame::updateDeviceParams() {
         gainSizerItem->Show(true);
         gainSizerItem->SetMinSize(devInfo->getSoapyDevice()->listGains(SOAPY_SDR_RX,0).size()*50,0);
         demodTray->Layout();
-        gainCanvas->updateGainUI();
-        gainCanvas->Refresh();
-        gainCanvas->Refresh();
     } else {
         gainSpacerItem->Show(false);
         gainSizerItem->Show(false);
@@ -1242,7 +1238,7 @@ bool AppFrame::actionOnMenuSettings(wxCommandEvent& event) {
                 menuIdx++;
             }
         } //end for
-
+		
         return true;
     }
 

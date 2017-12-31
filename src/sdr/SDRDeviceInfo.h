@@ -92,6 +92,10 @@ public:
 
     SDRRangeMap getGains(int direction, size_t channel);
 
+	//read the current gain of name gainName (must exist in getGains(), else return 0)
+	//in the device.
+	double getCurrentGain(int direction, size_t channel, const std::string& gainName);
+
 private:
     int index = 0;
     std::string name, serial, product, manufacturer, tuner;
