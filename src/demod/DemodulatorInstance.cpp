@@ -644,8 +644,14 @@ void DemodulatorInstance::startRecording() {
         fileName << getLabel();
     }
     
-    fileName << "_" << std::put_time(&ltm, "%d-%m-%Y_%H-%M-%S");
-
+    //  GCC 5+
+    //    fileName << "_" << std::put_time(&ltm, "%d-%m-%Y_%H-%M-%S");
+    
+    char timeStr[512];
+    strftime(timeStr, sizeof(timeStr), "%d-%m-%Y_%H-%M-%S", &ltm);
+    fileName << "_" << timeStr;
+    
+    
     afHandler->setOutputFileName(fileName.str());
     newSinkThread->setAudioFileHandler(afHandler);
 
