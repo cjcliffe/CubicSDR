@@ -1003,7 +1003,7 @@ IF (WIN32 AND BUILD_INSTALLER)
 
     IF (MSVC)
         install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/external/msvc/${EX_PLATFORM_NAME}/vc_redist.${EX_PLATFORM_NAME}.exe DESTINATION vc_redist)
-        set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "ExecWait '\\\"$INSTDIR\\\\vc_redist\\\\vc_redist.${EX_PLATFORM_NAME}.exe\\\" /q:a'")
+        set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "ExecWait '\\\"$INSTDIR\\\\vc_redist\\\\vc_redist.${EX_PLATFORM_NAME}.exe\\\" /passive /norestart'")
     ENDIF (MSVC)
           
           
