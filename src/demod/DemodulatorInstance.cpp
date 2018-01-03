@@ -635,8 +635,8 @@ void DemodulatorInstance::startRecording() {
     
     std::wstring userLabel = getDemodulatorUserLabel();
 
-    // TODO: Can we support wstring filenames for user labels?
-    std::string userLabelStr(userLabel.begin(), userLabel.end());
+    wxString userLabelForFileName(userLabel);
+    std::string userLabelStr = userLabelForFileName.ToStdString();
 
     if (!userLabelStr.empty()) {
         fileName << userLabelStr;

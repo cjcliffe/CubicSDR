@@ -97,6 +97,9 @@ public:
     AppFrame();
     ~AppFrame();
 
+    wxMenu *makeFileMenu();
+    void updateFileMenu();
+
     void initDeviceParams(SDRDeviceInfo *devInfo);
     void updateDeviceParams();
 
@@ -221,6 +224,7 @@ private:
     wxMenuItem *agcMenuItem = nullptr;
     wxMenuItem *iqSwapMenuItem = nullptr;
     wxMenuItem *lowPerfMenuItem = nullptr;
+    wxMenu *fileMenu = nullptr;
     wxMenu *settingsMenu = nullptr;
     
     SoapySDR::ArgInfoList settingArgs;

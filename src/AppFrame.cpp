@@ -402,45 +402,15 @@ AppFrame::AppFrame() :
 
     // Make a menubar
     menuBar = new wxMenuBar;
-    wxMenu *menu = new wxMenu;
-#ifndef __APPLE__ 
-#ifdef CUBICSDR_ENABLE_ABOUT_DIALOG
-    menu->Append(wxID_ABOUT_CUBICSDR, "About " CUBICSDR_INSTALL_NAME);
-#endif
-#endif
-    menu->Append(wxID_SDR_DEVICES, "SDR Devices");
-    menu->AppendSeparator();
-    menu->Append(wxID_SDR_START_STOP, "Stop / Start Device");
-    menu->AppendSeparator();
-    menu->Append(wxID_RECORDING_PATH, "Set Recording Path");
-    menu->AppendSeparator();
-    menu->Append(wxID_OPEN, "&Open Session");
-    menu->Append(wxID_SAVE, "&Save Session");
-    menu->Append(wxID_SAVEAS, "Save Session &As..");
-    menu->AppendSeparator();
-    menu->Append(wxID_RESET, "&Reset Session");
-            
-#ifndef __APPLE__
-    menu->AppendSeparator();
-    menu->Append(wxID_CLOSE);
-#else
-#ifdef CUBICSDR_ENABLE_ABOUT_DIALOG
-    if ( wxApp::s_macAboutMenuItemId != wxID_NONE ) {
-        wxString aboutLabel;
-        aboutLabel.Printf(_("About %s"), CUBICSDR_INSTALL_NAME);
-        menu->Append( wxApp::s_macAboutMenuItemId, aboutLabel);
-    }
-#endif
-#endif
+    
+    fileMenu = makeFileMenu();
 
-    menuBar->Append(menu, wxT("&File"));
+    menuBar->Append(fileMenu, wxT("&File"));
             
     settingsMenu = new wxMenu;
           
     menuBar->Append(settingsMenu, wxT("&Settings"));
             
-    menu = new wxMenu;
-
     std::vector<RtAudio::DeviceInfo>::iterator devices_i;
     std::map<int, RtAudio::DeviceInfo>::iterator mdevices_i;
     AudioThread::enumerateDevices(devices);
@@ -474,7 +444,7 @@ AppFrame::AppFrame() :
     menuBar->Append(sampleRateMenu, wxT("Sample &Rate"));
 
     // Audio Sample Rates
-    menu = new wxMenu;
+    wxMenu *audioSampleRateMenu = new wxMenu;
 
 #define NUM_RATES_DEFAULT 4
     unsigned int desired_rates[NUM_RATES_DEFAULT] = { 48000, 44100, 96000, 192000 };
@@ -504,7 +474,7 @@ AppFrame::AppFrame() :
     for (mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
         int menu_id = wxID_AUDIO_BANDWIDTH_BASE + wxID_AUDIO_DEVICE_MULTIPLIER * mdevices_i->first;
         wxMenu *subMenu = new wxMenu;
-        menu->AppendSubMenu(subMenu, mdevices_i->second.name, wxT("Description?"));
+        audioSampleRateMenu->AppendSubMenu(subMenu, mdevices_i->second.name, wxT("Description?"));
 
         int j = 0;
         for (std::vector<unsigned int>::iterator srate = mdevices_i->second.sampleRates.begin(); srate != mdevices_i->second.sampleRates.end();
@@ -522,7 +492,7 @@ AppFrame::AppFrame() :
         }
     }
 
-    menuBar->Append(menu, wxT("Audio &Sample Rate"));
+    menuBar->Append(audioSampleRateMenu, wxT("Audio &Sample Rate"));
 
     //Add Display menu
     displayMenu = new wxMenu;
@@ -531,7 +501,7 @@ AppFrame::AppFrame() :
 
     int fontScale = wxGetApp().getConfig()->getFontScale();
 
-    fontMenu->AppendRadioItem(wxID_DISPLAY_BASE, "Normal")->Check(GLFont::GLFONT_SCALE_NORMAL == fontScale);
+    fontMenu->AppendRadioItem(wxID_DISPLAY_BASE, "Default")->Check(GLFont::GLFONT_SCALE_NORMAL == fontScale);
     fontMenu->AppendRadioItem(wxID_DISPLAY_BASE + 1, "1.5x")->Check(GLFont::GLFONT_SCALE_MEDIUM == fontScale);
     fontMenu->AppendRadioItem(wxID_DISPLAY_BASE + 2, "2.0x")->Check(GLFont::GLFONT_SCALE_LARGE == fontScale);
 
@@ -724,6 +694,56 @@ AppFrame::~AppFrame() {
     waterfallDataThread->terminate();
     t_FFTData->join();
 }
+
+wxMenu *AppFrame::makeFileMenu() {
+    
+    wxMenu *menu = new wxMenu;
+#ifndef __APPLE__ 
+#ifdef CUBICSDR_ENABLE_ABOUT_DIALOG
+    menu->Append(wxID_ABOUT_CUBICSDR, "About " CUBICSDR_INSTALL_NAME);
+#endif
+#endif
+    menu->Append(wxID_SDR_DEVICES, "SDR Devices");
+    menu->AppendSeparator();
+    menu->Append(wxID_SDR_START_STOP, "Stop / Start Device");
+    menu->AppendSeparator();
+
+    std::string recPath = wxGetApp().getConfig()->getRecordingPath();
+    if (recPath.length() > 32) {
+        recPath = "..." + recPath.substr(recPath.length() - 32, 32);
+    }
+
+    menu->Append(wxID_RECORDING_PATH, getSettingsLabel("Set Recording Path", recPath.empty() ? "<Not Set>" : recPath));
+
+    menu->AppendSeparator();
+    menu->Append(wxID_OPEN, "&Open Session");
+    menu->Append(wxID_SAVE, "&Save Session");
+    menu->Append(wxID_SAVEAS, "Save Session &As..");
+    menu->AppendSeparator();
+    menu->Append(wxID_RESET, "&Reset Session");
+
+#ifndef __APPLE__
+    menu->AppendSeparator();
+    menu->Append(wxID_CLOSE);
+#else
+#ifdef CUBICSDR_ENABLE_ABOUT_DIALOG
+    if (wxApp::s_macAboutMenuItemId != wxID_NONE) {
+        wxString aboutLabel;
+        aboutLabel.Printf(_("About %s"), CUBICSDR_INSTALL_NAME);
+        menu->Append(wxApp::s_macAboutMenuItemId, aboutLabel);
+    }
+#endif
+#endif
+
+    return menu;
+}
+
+void AppFrame::updateFileMenu() {
+    wxMenu *newFileMenu = makeFileMenu();
+    menuBar->Replace(0, newFileMenu, wxT("&File"));
+    fileMenu = newFileMenu;
+}
+
 
 void AppFrame::initDeviceParams(SDRDeviceInfo *devInfo) {
     this->devInfo = devInfo;
@@ -1570,6 +1590,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         }
 
         wxGetApp().getConfig()->setRecordingPath(recPathDialog.GetPath().ToStdString());
+        updateFileMenu();
     }
     else if (event.GetId() == wxID_LOW_PERF) {
         lowPerfMode = lowPerfMenuItem->IsChecked();

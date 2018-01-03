@@ -165,21 +165,28 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstancePtr demod, RGBA4f color,
 
     glColor4f(1.0, 1.0, 1.0, 0.8f);
 
-    std::string demodLabel = demod->getLabel();
-    
-    if (demod->isMuted()) {
-        demodLabel = std::string("[M] ") + demodLabel;
-    } else if (isSolo) {
-        demodLabel = std::string("[S] ") + demodLabel;
-    }
-    
+    std::string demodLabel, demodPrefix;
+
     if (demod->isDeltaLock()) {
-        demodLabel.append(" [V]");
+        demodPrefix.append("V");
     }
 
     if (isRecording) {
-        demodLabel.append(" [R]");
+        demodPrefix.append("R");
     }
+
+    if (demod->isMuted()) {
+        demodPrefix.append("M");
+    } else if (isSolo) {
+        demodPrefix.append("S");
+    }
+
+    // Set the prefix
+    if (!demodPrefix.empty()) {
+        demodLabel = "[" + demodPrefix + "] ";
+    }    
+    // Append the default label
+    demodLabel.append(demod->getLabel());
 
     if (demod->getDemodulatorType() == "USB") {
         GLFont::getFont(16, GLFont::getScaleFactor()).drawString(demodLabel, uxPos, hPos, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
