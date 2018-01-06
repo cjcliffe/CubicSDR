@@ -250,7 +250,9 @@ void DemodulatorThread::run() {
 				ati->peak = 0;
 				ati->data.assign(ati->data.size(), 0.0f);
 
-				localAudioSinkOutputQueue->try_push(ati);
+				if (!localAudioSinkOutputQueue->try_push(ati)) {
+					std::cout << "DemodulatorThread::run() cannot push ati into audioSinkOutputQueue, is full !" << std::endl;
+				}
 			}
 
             ati = nullptr;
