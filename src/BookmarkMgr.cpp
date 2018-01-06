@@ -18,7 +18,8 @@ BookmarkMgr::BookmarkMgr() {
 //represents an empty BookMarkList that is returned by reference by some functions.
 const BookmarkList BookmarkMgr::emptyResults;
 
-void BookmarkMgr::saveToFile(std::string bookmarkFn, bool backup) {
+void BookmarkMgr::saveToFile(std::string bookmarkFn, bool backup, bool useFullpath) {
+
     DataTree s("cubicsdr_bookmarks");
     DataNode *header = s.rootNode()->newChild("header");
     header->newChild("version")->element()->set(wxString(CUBICSDR_VERSION).ToStdWstring());
@@ -62,9 +63,18 @@ void BookmarkMgr::saveToFile(std::string bookmarkFn, bool backup) {
         recent_modems->newChildCloneFrom("modem", r_i->node);
     }
 
-    wxFileName saveFile(wxGetApp().getConfig()->getConfigDir(), bookmarkFn);
-    wxFileName saveFileBackup(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".backup");
-    
+	wxFileName saveFile;
+	wxFileName saveFileBackup;
+
+	if (useFullpath) {
+		saveFile.Assign(bookmarkFn);
+		saveFileBackup.Assign(bookmarkFn + ".backup");
+	}
+	else {
+		saveFile.Assign(wxGetApp().getConfig()->getConfigDir(), bookmarkFn);
+		saveFileBackup.Assign(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".backup");
+	}
+
     if (saveFile.IsDirWritable()) {
         // Hopefully leave at least a readable backup in case of failure..
         if (backup && saveFile.FileExists() && (!saveFileBackup.FileExists() || saveFileBackup.IsFileWritable())) {
@@ -74,20 +84,28 @@ void BookmarkMgr::saveToFile(std::string bookmarkFn, bool backup) {
     }
 }
 
-bool BookmarkMgr::loadFromFile(std::string bookmarkFn, bool backup) {
-    wxFileName loadFile(wxGetApp().getConfig()->getConfigDir(), bookmarkFn);
-    wxFileName failFile(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".failedload");
-    wxFileName lastLoaded(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".lastloaded");
-    wxFileName backupFile(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".backup");
+bool BookmarkMgr::loadFromFile(std::string bookmarkFn, bool backup, bool useFullpath) {
+
+	wxFileName loadFile;
+	wxFileName failFile;
+	wxFileName lastLoaded;
+	wxFileName backupFile;
+
+	if (useFullpath) {
+		loadFile.Assign(bookmarkFn);
+		failFile.Assign(bookmarkFn + ".failedload");
+		lastLoaded.Assign(bookmarkFn + ".lastloaded");
+		backupFile.Assign(bookmarkFn + ".backup");	
+	}
+	else {
+		loadFile.Assign(wxGetApp().getConfig()->getConfigDir(), bookmarkFn);
+		failFile.Assign(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".failedload");
+		lastLoaded.Assign(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".lastloaded");
+		backupFile.Assign(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".backup");
+	}
 
     DataTree s;
     bool loadStatusOk = true;
-
-    // Clear any active data
-    bmData.clear();
-    clearRecents();
-    clearRanges();
-    bmDataSorted.clear();
     
     // File exists but is not readable
     if (loadFile.FileExists() && !loadFile.IsFileReadable()) {
@@ -104,6 +122,17 @@ bool BookmarkMgr::loadFromFile(std::string bookmarkFn, bool backup) {
     if (!s.LoadFromFileXML(loadFile.GetFullPath(wxPATH_NATIVE).ToStdString())) {
         return false;
     }
+
+	//Check if it is a bookmark file, read the root node.
+	if (s.rootNode()->getName() != "cubicsdr_bookmarks") {
+		return false;
+	}
+	
+	// Clear any active data
+	bmData.clear();
+	clearRecents();
+	clearRanges();
+	bmDataSorted.clear();
     
     if (s.rootNode()->hasAnother("branches")) {
         DataNode *branches = s.rootNode()->getNext("branches");

@@ -78,9 +78,10 @@ typedef std::map<std::string, bool> BookmarkExpandState;
 class BookmarkMgr {
 public:
     BookmarkMgr();
-    
-    void saveToFile(std::string bookmarkFn, bool backup = true);
-    bool loadFromFile(std::string bookmarkFn, bool backup = true);
+    //if useFullpath = false, use the application config dir.
+	//else assume bookmarkFn is a full path and use it for location.
+    void saveToFile(std::string bookmarkFn, bool backup = true, bool useFullpath = false);
+    bool loadFromFile(std::string bookmarkFn, bool backup = true, bool useFullpath = false);
 
     bool hasLastLoad(std::string bookmarkFn);
     bool hasBackup(std::string bookmarkFn);
