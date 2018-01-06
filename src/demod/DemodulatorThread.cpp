@@ -224,10 +224,18 @@ void DemodulatorThread::run() {
                 squelchBreak = false;
             }
         }
-        
+
+		// Capture audioSinkOutputQueue state in a local variable
+		DemodulatorThreadOutputQueuePtr localAudioSinkOutputQueue = nullptr;
+		{
+			std::lock_guard < std::mutex > lock(m_mutexAudioVisOutputQueue);
+			localAudioSinkOutputQueue = audioSinkOutputQueue;
+		}
+
         if (audioOutputQueue != nullptr && ati && ati->data.size() && !squelched) {
-            std::vector<float>::iterator data_i;
+           
             ati->peak = 0;
+
             for (auto data_i : ati->data) {
                 float p = fabs(data_i);
                 if (p > ati->peak) {
@@ -235,6 +243,16 @@ void DemodulatorThread::run() {
                 }
             }
         } else if (ati) {
+			//squelch situation, but recording is on-going, so record "silence" to AudioSink: 
+			if (localAudioSinkOutputQueue != nullptr) {
+
+				//Zero the ati samples
+				ati->peak = 0;
+				ati->data.assign(ati->data.size(), 0.0f);
+
+				localAudioSinkOutputQueue->try_push(ati);
+			}
+
             ati = nullptr;
         }
         
@@ -316,13 +334,6 @@ void DemodulatorThread::run() {
             }
         }
 
-        // Capture audioSinkOutputQueue state in a local
-        DemodulatorThreadOutputQueuePtr localAudioSinkOutputQueue = nullptr;
-        {
-            std::lock_guard < std::mutex > lock(m_mutexAudioVisOutputQueue);
-            localAudioSinkOutputQueue = audioSinkOutputQueue;
-        }
-
         if (ati != nullptr) {
             if (!muted.load() && (!wxGetApp().getSoloMode() || (demodInstance == wxGetApp().getDemodMgr().getLastActiveDemodulator().get()))) {
                 //non-blocking push needed for audio out
@@ -334,7 +345,7 @@ void DemodulatorThread::run() {
             }
             
             if (localAudioSinkOutputQueue != nullptr) {
-                if (!audioSinkOutputQueue->try_push(ati)) {
+                if (!localAudioSinkOutputQueue->try_push(ati)) {
                     std::cout << "DemodulatorThread::run() cannot push ati into audioSinkOutputQueue, is full !" << std::endl;
                 }
             }
