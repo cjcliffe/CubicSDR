@@ -3,6 +3,8 @@
 
 #include "AudioFile.h"
 #include "CubicSDR.h"
+#include <iomanip>
+#include <sstream>
 
 AudioFile::AudioFile() {
 
@@ -16,7 +18,8 @@ void AudioFile::setOutputFileName(std::string filename) {
     filenameBase = filename;
 }
 
-std::string AudioFile::getOutputFileName() {
+std::string AudioFile::getOutputFileName(int sequenceNumber) {
+
     std::string recPath = wxGetApp().getConfig()->getRecordingPath();
 
     // Strip any invalid characters from the name
@@ -30,16 +33,23 @@ std::string AudioFile::getOutputFileName() {
     }
     
     // Create output file name
-    std::string outputFileName = recPath + filePathSeparator + filenameBaseSafe + "." + getExtension();
+	std::stringstream outputFileName;
+	outputFileName << recPath << filePathSeparator << filenameBaseSafe;
+
+	if (sequenceNumber > 0) {
+		outputFileName << "_" << std::setfill('0') << std::setw(3) << sequenceNumber;
+	}
 
     int idx = 0;
 
     // If the file exists; then find the next non-existing file in sequence.
-    while (FILE *file = fopen(outputFileName.c_str(), "r")) {
+	std::string fileNameCandidate = outputFileName.str();
+
+    while (FILE *file = fopen((fileNameCandidate + "." + getExtension()).c_str(), "r")) {
         fclose(file);
-        outputFileName = recPath + filePathSeparator + filenameBaseSafe + "-" + std::to_string(++idx) + "." + getExtension();
+		fileNameCandidate = outputFileName.str() +  "-" + std::to_string(++idx);
     }
-    
-    return outputFileName;
+
+    return fileNameCandidate + "." + getExtension();
 }
 

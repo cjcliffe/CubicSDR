@@ -21,4 +21,15 @@ public:
 protected:
     std::ofstream outputFileStream;
     size_t dataChunkPos;
+	long long currentFileSize = 0;
+	int currentSequenceNumber = 0;
+
+private:
+
+	size_t getMaxWritableNumberOfSamples(AudioThreadInputPtr input);
+
+	void writeHeaderToFileStream(AudioThreadInputPtr input);
+
+	//write [startInputPosition; endInputPosition[ samples from input into the file.
+	void writePayloadToFileStream(AudioThreadInputPtr input, size_t startInputPosition, size_t endInputPosition);
 };

@@ -3,6 +3,8 @@
 
 #include "AudioFileWAV.h"
 
+//limit file size to 2GB (- margin) for maximum compatibility.
+#define MAX_WAV_FILE_SIZE (0x7FFFFFFF - 1024)
 
 // Simple endian io read/write handling from 
 // http://www.cplusplus.com/forum/beginner/31584/#msg171056
@@ -61,44 +63,34 @@ std::string AudioFileWAV::getExtension()
 bool AudioFileWAV::writeToFile(AudioThreadInputPtr input)
 {
     if (!outputFileStream.is_open()) {
-        std::string ofName = getOutputFileName();
+        std::string ofName = getOutputFileName(currentSequenceNumber);
                 
         outputFileStream.open(ofName.c_str(), std::ios::binary);
 
-        // Based on simple wav file output code from
-        // http://www.cplusplus.com/forum/beginner/166954/
-
-        // Write the wav file headers
-        outputFileStream << "RIFF----WAVEfmt "; // (chunk size to be filled in later)
-        write_word(outputFileStream, 16, 4); // no extension data
-        write_word(outputFileStream, 1, 2); // PCM - integer samples
-        write_word(outputFileStream, input->channels, 2); // channels
-        write_word(outputFileStream, input->sampleRate, 4); // samples per second (Hz)
-        write_word(outputFileStream, (input->sampleRate * 16 * input->channels) / 8, 4); // (Sample Rate * BitsPerSample * Channels) / 8
-        write_word(outputFileStream, input->channels * 2, 2); // data block size (size of integer samples, one for each channel, in bytes)
-        write_word(outputFileStream, 16, 2); // number of bits per sample (use a multiple of 8)
-
-        // Write the data chunk header
-        dataChunkPos = outputFileStream.tellp();
-        outputFileStream << "data----";  // (chunk size to be filled in later)
+		writeHeaderToFileStream(input);
     }
 
-    // Prevent clipping
-    float intScale = (input->peak < 1.0) ? 32767.0f : (32767.0f / input->peak);
+	size_t maxRoomInCurrentFileInSamples = getMaxWritableNumberOfSamples(input);
 
-    if (input->channels == 1) {
-        for (size_t i = 0, iMax = input->data.size(); i < iMax; i++) {
-            write_word(outputFileStream, int(input->data[i] * intScale), 2);
-        }
-    }
-    else if (input->channels == 2) {
-        for (size_t i = 0, iMax = input->data.size() / 2; i < iMax; i++) {
-            write_word(outputFileStream, int(input->data[i * 2] * intScale), 2);
-            write_word(outputFileStream, int(input->data[i * 2 + 1] * intScale), 2);
-        }
-    }
+	if (maxRoomInCurrentFileInSamples >= input->data.size()) {
+		writePayloadToFileStream(input, 0, input->data.size());
+	}
+	else {
+		//we complete the current file and open another:
+		writePayloadToFileStream(input, 0, maxRoomInCurrentFileInSamples);
 
-    // TODO: Periodically update the RIFF/data chunk size in case of crash?
+		closeFile();
+
+		// Open a new file with the next sequence number, and dump the rest of samples in it.
+		currentSequenceNumber++;
+		currentFileSize = 0;
+
+		std::string ofName = getOutputFileName(currentSequenceNumber);
+		outputFileStream.open(ofName.c_str(), std::ios::binary);
+		
+		writeHeaderToFileStream(input);
+		writePayloadToFileStream(input, maxRoomInCurrentFileInSamples, input->data.size());
+	}
 
     return true;
 }
@@ -120,4 +112,57 @@ bool AudioFileWAV::closeFile()
     }
 
     return true;
+}
+
+void AudioFileWAV::writeHeaderToFileStream(AudioThreadInputPtr input) {
+
+	// Based on simple wav file output code from
+	// http://www.cplusplus.com/forum/beginner/166954/
+
+	// Write the wav file headers
+	outputFileStream << "RIFF----WAVEfmt "; // (chunk size to be filled in later)
+	write_word(outputFileStream, 16, 4); // no extension data
+	write_word(outputFileStream, 1, 2); // PCM - integer samples
+	write_word(outputFileStream, input->channels, 2); // channels
+	write_word(outputFileStream, input->sampleRate, 4); // samples per second (Hz)
+	write_word(outputFileStream, (input->sampleRate * 16 * input->channels) / 8, 4); // (Sample Rate * BitsPerSample * Channels) / 8
+	write_word(outputFileStream, input->channels * 2, 2); // data block size (size of integer samples, one for each channel, in bytes)
+	write_word(outputFileStream, 16, 2); // number of bits per sample (use a multiple of 8)
+
+										 // Write the data chunk header
+	dataChunkPos = outputFileStream.tellp();
+	currentFileSize = dataChunkPos;
+	outputFileStream << "data----";  // (chunk size to be filled in later)
+}
+
+void AudioFileWAV::writePayloadToFileStream(AudioThreadInputPtr input, size_t startInputPosition, size_t endInputPosition) {
+
+	// Prevent clipping
+	float intScale = (input->peak < 1.0) ? 32767.0f : (32767.0f / input->peak);
+
+	if (input->channels == 1) {
+		for (size_t i = startInputPosition, iMax = endInputPosition; i < iMax; i++) {
+
+			write_word(outputFileStream, int(input->data[i] * intScale), 2);
+			
+			currentFileSize += 2;
+		}
+	}
+	else if (input->channels == 2) {
+		for (size_t i = startInputPosition, iMax = endInputPosition / 2; i < iMax; i++) {
+
+			write_word(outputFileStream, int(input->data[i * 2] * intScale), 2);
+			write_word(outputFileStream, int(input->data[i * 2 + 1] * intScale), 2);
+
+			currentFileSize += 4;
+		}
+	}
+}
+
+size_t AudioFileWAV::getMaxWritableNumberOfSamples(AudioThreadInputPtr input) {
+
+	long long remainingBytesInFile = (long long)(MAX_WAV_FILE_SIZE) - currentFileSize;
+
+    return (size_t)(remainingBytesInFile / (input->channels * 2));
+	
 }

@@ -648,7 +648,8 @@ void DemodulatorInstance::startRecording() {
     //    fileName << "_" << std::put_time(&ltm, "%d-%m-%Y_%H-%M-%S");
     
     char timeStr[512];
-    strftime(timeStr, sizeof(timeStr), "%d-%m-%Y_%H-%M-%S", &ltm);
+	//International format: Year.Month.Day, also lexicographically sortable
+    strftime(timeStr, sizeof(timeStr), "%Y-%m-%d_%H-%M-%S", &ltm);
     fileName << "_" << timeStr;
     
     
