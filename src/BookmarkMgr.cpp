@@ -4,6 +4,7 @@
 #include "BookmarkMgr.h"
 #include "CubicSDR.h"
 #include "DataTree.h"
+#include <wx/string.h>
 
 #define BOOKMARK_RECENTS_MAX 25
 
@@ -49,7 +50,21 @@ void BookmarkMgr::saveToFile(std::string bookmarkFn, bool backup, bool useFullpa
         *group->newChild("@expanded") = (getExpandState(bmd_i.first)?std::string("true"):std::string("false"));
 
         for (auto &bm_i : bmd_i.second ) {
-            group->newChildCloneFrom("modem", bm_i->node);
+
+			//if a matching demodulator exists, use its data instead to be be saved, because output_device could have been
+			//modified by the user. So, save that "live" version instead.
+			auto matchingDemod = wxGetApp().getDemodMgr().getLastDemodulatorWith(bm_i->type,
+				bm_i->label,
+				bm_i->frequency,
+				bm_i->bandwidth);
+
+			if (matchingDemod != nullptr) {
+
+				wxGetApp().getDemodMgr().saveInstance(group->newChild("modem"), matchingDemod);
+			}
+			else {
+				group->newChildCloneFrom("modem", bm_i->node);
+			}
         }
     }
 
@@ -557,9 +572,10 @@ BookmarkEntryPtr BookmarkMgr::nodeToBookmark(DataNode *node) {
 std::wstring BookmarkMgr::getBookmarkEntryDisplayName(BookmarkEntryPtr bmEnt) {
     std::wstring dispName = bmEnt->label;
     
-    if (dispName == "") {
+    if (dispName == L"") {
         std::string freqStr = frequencyToStr(bmEnt->frequency) + " " + bmEnt->type;
-        dispName = wstring(freqStr.begin(),freqStr.end());
+
+        dispName = wxString(freqStr).ToStdWstring();
     }
     
     return dispName;
@@ -568,9 +584,10 @@ std::wstring BookmarkMgr::getBookmarkEntryDisplayName(BookmarkEntryPtr bmEnt) {
 std::wstring BookmarkMgr::getActiveDisplayName(DemodulatorInstancePtr demod) {
     std::wstring activeName = demod->getDemodulatorUserLabel();
     
-    if (activeName == "") {
+    if (activeName == L"") {
         std::string wstr = frequencyToStr(demod->getFrequency()) + " " + demod->getDemodulatorType();
-        activeName = std::wstring(wstr.begin(),wstr.end());
+
+        activeName = wxString(wstr).ToStdWstring();
     }
     
     return activeName;

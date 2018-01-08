@@ -78,7 +78,8 @@ public:
         
         if (name.length() == 0) {
             std::string wstr = frequencyToStr(rangeEnt->startFreq) + " - " + frequencyToStr(rangeEnt->endFreq);
-            name = std::wstring(wstr.begin(),wstr.end());
+
+            name = wxString(wstr).ToStdWstring();
         }
         
         m_questionText->SetLabelText(L"Are you sure you want to remove the range\n '" + name + L"'?");
@@ -103,7 +104,8 @@ public:
         
         if (name.length() == 0) {
             std::string wstr = frequencyToStr(rangeEnt->startFreq) + " - " + frequencyToStr(rangeEnt->endFreq);
-            name = std::wstring(wstr.begin(),wstr.end());
+            
+			name = wxString(wstr).ToStdWstring();
         }
         
         m_questionText->SetLabelText(L"Are you sure you want to update the range\n '" + name + L"' to the active range?");
@@ -311,9 +313,9 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
                 std::wstring fullText = labelVal +
                     L" " + bmEnt->label +
                     L" " + std::to_wstring(bmEnt->frequency) +
-                    L" " + std::wstring(freqStr.begin(),freqStr.end()) +
-                    L" " + std::wstring(bwStr.begin(),bwStr.end()) +
-                    L" " + std::wstring(bmEnt->type.begin(),bmEnt->type.end());
+                    L" " + wxString(freqStr).ToStdWstring() +
+                    L" " + wxString(bwStr).ToStdWstring() +
+                    L" " + wxString(bmEnt->type).ToStdWstring();
                 
                 if (!isKeywordMatch(fullText, searchKeywords)) {
                     continue;
@@ -379,9 +381,9 @@ void BookmarkView::doUpdateActiveList() {
             std::wstring fullText = activeLabel.ToStdWstring() +
             L" " + demod_i->getDemodulatorUserLabel() +
             L" " + std::to_wstring(demod_i->getFrequency()) +
-            L" " + std::wstring(freqStr.begin(),freqStr.end()) +
-            L" " + std::wstring(bwStr.begin(),bwStr.end()) +
-            L" " + std::wstring(mtype.begin(),mtype.end());
+            L" " + wxString(freqStr).ToStdWstring() +
+            L" " + wxString(bwStr).ToStdWstring() +
+            L" " + wxString(mtype).ToStdWstring();
             
             if (!isKeywordMatch(fullText, searchKeywords)) {
                 continue;
@@ -418,9 +420,10 @@ void BookmarkView::doUpdateActiveList() {
         
         std::wstring labelVal = re_i->label;
         
-        if (labelVal == "") {
+        if (labelVal == L"") {
             std::string wstr = frequencyToStr(re_i->startFreq) + " - " + frequencyToStr(re_i->endFreq);
-            labelVal = std::wstring(wstr.begin(),wstr.end());
+
+            labelVal = wxString(wstr).ToStdWstring();
         }
         
         wxTreeItemId itm = m_treeView->AppendItem(rangeBranch, labelVal);
@@ -448,9 +451,10 @@ void BookmarkView::doUpdateActiveList() {
         std::wstring labelVal;
         bmr_i->node->child("user_label")->element()->get(labelVal);
 
-        if (labelVal == "") {
-            std::string wstr = frequencyToStr(bmr_i->frequency) + " " + bmr_i->type;
-            labelVal = std::wstring(wstr.begin(),wstr.end());
+        if (labelVal == L"") {
+            std::string str = frequencyToStr(bmr_i->frequency) + " " + bmr_i->type;
+
+            labelVal = wxString(str).ToStdWstring();
         }
         
         if (searchKeywords.size()) {
@@ -460,9 +464,10 @@ void BookmarkView::doUpdateActiveList() {
             
             std::wstring fullText = labelVal +
                 L" " + std::to_wstring(bmr_i->frequency) +
-                L" " + std::wstring(freqStr.begin(),freqStr.end()) +
-                L" " + std::wstring(bwStr.begin(),bwStr.end()) +
-                L" " + std::wstring(bmr_i->type.begin(),tvi->bookmarkEnt->type.end());
+
+                L" " + wxString(freqStr).ToStdWstring() +
+                L" " + wxString(bwStr).ToStdWstring() +
+                L" " + wxString(bmr_i->type).ToStdWstring();
             
             if (!isKeywordMatch(fullText, searchKeywords)) {
                 continue;
@@ -971,7 +976,7 @@ void BookmarkView::rangeSelection(BookmarkRangeEntryPtr re) {
 
     std::string strFreq = frequencyToStr(re->startFreq) + "-" + frequencyToStr(re->endFreq);
     
-    m_frequencyVal->SetLabelText(std::wstring(strFreq.begin(),strFreq.end()));
+    m_frequencyVal->SetLabelText(wxString(strFreq));
     
     showProps();
 
@@ -1473,16 +1478,16 @@ void BookmarkView::onSearchTextFocus( wxMouseEvent&  event ) {
 
 
 void BookmarkView::onSearchText( wxCommandEvent& event ) {
-    wstring searchText = m_searchText->GetValue().Trim().Lower().ToStdWstring();
+    std::wstring searchText = m_searchText->GetValue().Trim().Lower().ToStdWstring();
     
    searchKeywords.clear();
     
    if (searchText.length() != 0) {
         std::wstringstream searchTextLo(searchText);
-        wstring tmp;
+        std::wstring tmp;
         
         while(std::getline(searchTextLo, tmp, L' ')) {
-            if (tmp.length() != 0 && tmp.find(L"search.") == wstring::npos) {
+            if (tmp.length() != 0 && tmp.find(L"search.") == std::wstring::npos) {
                 searchKeywords.push_back(tmp);
 //                std::wcout << L"Keyword: " << tmp << '\n';
             }
