@@ -3,6 +3,8 @@
 
 #include "GLFont.h"
 
+#include <wx/string.h>
+
 #include <iostream>
 #include <fstream>
 #include <algorithm>
@@ -245,11 +247,11 @@ void GLFont::loadFontOnce() {
     //Re-compute the resource dir.
     resourceFolder = fontDefFileName.GetPath();
 
-    std::wstring fontDefFileNamePath = fontDefFileName.GetFullPath(wxPATH_NATIVE).ToStdWstring();
+    std::string fontDefFileNamePath = fontDefFileName.GetFullPath(wxPATH_NATIVE).ToStdString();
     
     std::wifstream input;
-    std::string inpFileStr(fontDefFileNamePath.begin(), fontDefFileNamePath.end());
-    input.open(inpFileStr, std::ios::in);
+   
+    input.open(fontDefFileNamePath, std::ios::in);
 
     std::wstring op;
 
