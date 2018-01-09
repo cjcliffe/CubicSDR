@@ -44,6 +44,10 @@
 #define wxID_ABOUT_CUBICSDR 2013
 #define wxID_RECORDING_PATH 2014
 
+#define wxID_OPEN_BOOKMARK 2020
+#define wxID_SAVE_BOOKMARK 2021
+#define wxID_SAVEAS_BOOKMARK 2022
+
 #define wxID_MAIN_SPLITTER 2050
 #define wxID_VIS_SPLITTER 2051
 #define wxID_BM_SPLITTER 2052
@@ -237,6 +241,7 @@ private:
    std::string currentTXantennaName;
     
     std::string currentSessionFile;
+	std::string currentBookmarkFile;
     
     FFTVisualDataThread *waterfallDataThread;
     

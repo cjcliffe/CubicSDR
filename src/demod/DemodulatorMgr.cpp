@@ -525,12 +525,20 @@ DemodulatorInstancePtr DemodulatorMgr::loadInstance(DataNode *node) {
     
 	//Attach to sound output:
     std::map<int, RtAudio::DeviceInfo>::iterator i;
+
+	bool matching_device_found = false;
+
     for (i = outputDevices.begin(); i != outputDevices.end(); i++) {
         if (i->second.name == output_device) {
             newDemod->setOutputDevice(i->first);
+			matching_device_found = true;
 			break;
         }
     }
+	//if no device is found, choose the first of the list anyway.
+	if (!matching_device_found) {
+		newDemod->setOutputDevice(outputDevices.begin()->first);
+	}
     
     return newDemod;
 }

@@ -721,6 +721,10 @@ wxMenu *AppFrame::makeFileMenu() {
     menu->Append(wxID_SAVEAS, "Save Session &As..");
     menu->AppendSeparator();
     menu->Append(wxID_RESET, "&Reset Session");
+    menu->AppendSeparator();
+	menu->Append(wxID_OPEN_BOOKMARK, "Open Bookmark");
+	menu->Append(wxID_SAVE_BOOKMARK, "Save Bookmark");
+	menu->Append(wxID_SAVEAS_BOOKMARK, "Save Bookmark As..");
 
 #ifndef __APPLE__
     menu->AppendSeparator();
@@ -1143,6 +1147,7 @@ bool AppFrame::actionOnMenuReset(wxCommandEvent& event) {
 
         SetTitle(CUBICSDR_TITLE);
         currentSessionFile = "";
+		currentBookmarkFile = "";
         bookmarkSplitter->Unsplit(bookmarkView);
         bookmarkSplitter->SplitVertically(bookmarkView, mainVisSplitter, wxGetApp().getConfig()->getBookmarkSplit());
         hideBookmarksItem->Check(false);
@@ -1422,6 +1427,77 @@ bool AppFrame::actionOnMenuLoadSave(wxCommandEvent& event) {
 
         return true;
     }
+
+	//save mecanic for bookmark files
+	else if (event.GetId() == wxID_SAVE_BOOKMARK) {
+
+		if (!currentBookmarkFile.empty()) {
+			wxGetApp().getBookmarkMgr().saveToFile(currentBookmarkFile, false, true);
+		}
+		else {
+			wxFileDialog saveFileDialog(this, _("Save XML Bookmark file"), "", "", "XML files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+			if (saveFileDialog.ShowModal() == wxID_CANCEL) {
+				return true;
+			}
+
+			// Make sure the file name actually ends in .xml
+			std::string fileName = saveFileDialog.GetPath().ToStdString();
+			std::string lcFileName = fileName;
+
+			std::transform(lcFileName.begin(), lcFileName.end(), lcFileName.begin(), ::tolower);
+
+			if (lcFileName.find_last_of(".xml") != lcFileName.length() - 1) {
+				fileName.append(".xml");
+			}
+
+			wxGetApp().getBookmarkMgr().saveToFile(fileName, false, true);
+			currentBookmarkFile = fileName;
+		}
+
+		return true;
+	}
+	else if (event.GetId() == wxID_OPEN_BOOKMARK) {
+
+		wxFileDialog openFileDialog(this, _("Open XML Bookmark file"), "", "", "XML files (*.xml)|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+		if (openFileDialog.ShowModal() == wxID_CANCEL) {
+			return true;
+		}
+		if (wxGetApp().getBookmarkMgr().loadFromFile(openFileDialog.GetPath().ToStdString(), false, true)) {
+			
+			wxGetApp().getBookmarkMgr().updateBookmarks();
+			wxGetApp().getBookmarkMgr().updateActiveList();
+
+			currentBookmarkFile = openFileDialog.GetPath().ToStdString();
+		}
+		else {
+			//failure at loading.
+			currentBookmarkFile = "";
+		}
+
+		return true;
+	}
+	else if (event.GetId() == wxID_SAVEAS_BOOKMARK) {
+
+		wxFileDialog saveFileDialog(this, _("Save XML Bookmark file"), "", "", "XML files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+		if (saveFileDialog.ShowModal() == wxID_CANCEL) {
+			return true;
+		}
+
+		// Make sure the file name actually ends in .xml
+		std::string fileName = saveFileDialog.GetPath().ToStdString();
+		std::string lcFileName = fileName;
+
+		std::transform(lcFileName.begin(), lcFileName.end(), lcFileName.begin(), ::tolower);
+
+		if (lcFileName.find_last_of(".xml") != lcFileName.length() - 1) {
+			fileName.append(".xml");
+		}
+
+		wxGetApp().getBookmarkMgr().saveToFile(fileName, false, true);
+		currentBookmarkFile = fileName;
+
+		return true;
+	}
 
     return false;
 }
@@ -2185,6 +2261,11 @@ bool AppFrame::loadSession(std::string fileName) {
     if (!l.LoadFromFileXML(fileName)) {
         return false;
     }
+
+	//Check if it is a session file, read the root node.
+	if (l.rootNode()->getName() != "cubicsdr_session") {
+		return false;
+	}
 
 	wxGetApp().getDemodMgr().setActiveDemodulator(nullptr, false);
 
