@@ -878,7 +878,11 @@ void BookmarkView::activateBookmark(BookmarkEntryPtr bmEnt) {
 
 
 void BookmarkView::activateRange(BookmarkRangeEntryPtr rangeEnt) {
-    wxGetApp().setFrequency(rangeEnt->freq);
+    
+	//the following oly works if rangeEnt->freq is the middle of [rangeEnt->startFreq ; rangeEnt->startFreq]
+	wxGetApp().setFrequency(rangeEnt->freq);
+	
+	// Change View limits to fit the range exactly.
     wxGetApp().getAppFrame()->setViewState(rangeEnt->startFreq + (rangeEnt->endFreq - rangeEnt->startFreq) / 2, rangeEnt->endFreq - rangeEnt->startFreq);
 }
 
@@ -1568,10 +1572,13 @@ void BookmarkView::loadDefaultRanges() {
 
 BookmarkRangeEntryPtr BookmarkView::makeActiveRangeEntry() {
     BookmarkRangeEntryPtr re(new BookmarkRangeEntry);
-    re->freq = wxGetApp().getFrequency();
+   
     re->startFreq = wxGetApp().getAppFrame()->getViewCenterFreq() - (wxGetApp().getAppFrame()->getViewBandwidth()/2);
     re->endFreq = wxGetApp().getAppFrame()->getViewCenterFreq() + (wxGetApp().getAppFrame()->getViewBandwidth()/2);
     
+	//to prevent problems, always make the re->freq the middle of the interval.
+	re->freq = (re->startFreq + re->endFreq) / 2;
+
     return re;
 }
 
