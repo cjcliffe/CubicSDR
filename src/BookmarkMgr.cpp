@@ -238,6 +238,17 @@ bool BookmarkMgr::loadFromFile(std::string bookmarkFn, bool backup, bool useFull
     return loadStatusOk;
 }
 
+void BookmarkMgr::resetBookmarks() {
+
+	// Clear any active data
+	bmData.clear();
+	clearRecents();
+	clearRanges();
+	bmDataSorted.clear();
+
+	wxGetApp().getAppFrame()->getBookmarkView()->loadDefaultRanges();
+
+}
 
 bool BookmarkMgr::hasLastLoad(std::string bookmarkFn) {
     wxFileName lastLoaded(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".lastloaded");

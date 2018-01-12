@@ -722,9 +722,11 @@ wxMenu *AppFrame::makeFileMenu() {
     menu->AppendSeparator();
     menu->Append(wxID_RESET, "&Reset Session");
     menu->AppendSeparator();
-	menu->Append(wxID_OPEN_BOOKMARK, "Open Bookmark");
-	menu->Append(wxID_SAVE_BOOKMARK, "Save Bookmark");
-	menu->Append(wxID_SAVEAS_BOOKMARK, "Save Bookmark As..");
+	menu->Append(wxID_OPEN_BOOKMARKS, "Open Bookmarks");
+	menu->Append(wxID_SAVE_BOOKMARKS, "Save Bookmarks");
+	menu->Append(wxID_SAVEAS_BOOKMARKS, "Save Bookmarks As..");
+	menu->AppendSeparator();
+	menu->Append(wxID_RESET_BOOKMARKS, "Reset Bookmarks");
 
 #ifndef __APPLE__
     menu->AppendSeparator();
@@ -1429,7 +1431,7 @@ bool AppFrame::actionOnMenuLoadSave(wxCommandEvent& event) {
     }
 
 	//save mecanic for bookmark files
-	else if (event.GetId() == wxID_SAVE_BOOKMARK) {
+	else if (event.GetId() == wxID_SAVE_BOOKMARKS) {
 
 		if (!currentBookmarkFile.empty()) {
 			wxGetApp().getBookmarkMgr().saveToFile(currentBookmarkFile, false, true);
@@ -1456,7 +1458,7 @@ bool AppFrame::actionOnMenuLoadSave(wxCommandEvent& event) {
 
 		return true;
 	}
-	else if (event.GetId() == wxID_OPEN_BOOKMARK) {
+	else if (event.GetId() == wxID_OPEN_BOOKMARKS) {
 
 		wxFileDialog openFileDialog(this, _("Open XML Bookmark file"), "", "", "XML files (*.xml)|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 		if (openFileDialog.ShowModal() == wxID_CANCEL) {
@@ -1476,7 +1478,7 @@ bool AppFrame::actionOnMenuLoadSave(wxCommandEvent& event) {
 
 		return true;
 	}
-	else if (event.GetId() == wxID_SAVEAS_BOOKMARK) {
+	else if (event.GetId() == wxID_SAVEAS_BOOKMARKS) {
 
 		wxFileDialog saveFileDialog(this, _("Save XML Bookmark file"), "", "", "XML files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
 		if (saveFileDialog.ShowModal() == wxID_CANCEL) {
@@ -1496,6 +1498,14 @@ bool AppFrame::actionOnMenuLoadSave(wxCommandEvent& event) {
 		wxGetApp().getBookmarkMgr().saveToFile(fileName, false, true);
 		currentBookmarkFile = fileName;
 
+		return true;
+	}
+	else if (event.GetId() == wxID_RESET_BOOKMARKS) {
+
+		wxGetApp().getBookmarkMgr().resetBookmarks();
+		wxGetApp().getBookmarkMgr().updateBookmarks();
+		wxGetApp().getBookmarkMgr().updateActiveList();
+	
 		return true;
 	}
 

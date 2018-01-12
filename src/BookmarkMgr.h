@@ -83,6 +83,8 @@ public:
     void saveToFile(std::string bookmarkFn, bool backup = true, bool useFullpath = false);
     bool loadFromFile(std::string bookmarkFn, bool backup = true, bool useFullpath = false);
 
+	void resetBookmarks();
+
     bool hasLastLoad(std::string bookmarkFn);
     bool hasBackup(std::string bookmarkFn);
 
