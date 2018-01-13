@@ -21,7 +21,7 @@ public:
     int channels;
     float peak;
     int type;
-	boolean is_squelch_active = false;
+	bool is_squelch_active = false;
 
     std::vector<float> data;
 
