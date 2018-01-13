@@ -115,21 +115,16 @@ void AudioSinkFileThread::setAudioFileHandler(AudioFile * output) {
 void AudioSinkFileThread::setSquelchOption(int squelchOptEnumValue) {
 
 	if (squelchOptEnumValue == AudioSinkFileThread::SQUELCH_RECORD_SILENCE) {
-
 		squelchOption = AudioSinkFileThread::SQUELCH_RECORD_SILENCE;
-
 	}
 	else if (squelchOptEnumValue == AudioSinkFileThread::SQUELCH_SKIP_SILENCE) {
-
 		squelchOption = AudioSinkFileThread::SQUELCH_SKIP_SILENCE;
 	}
 	else if (squelchOptEnumValue == AudioSinkFileThread::SQUELCH_RECORD_ALWAYS) {
-
 		squelchOption = AudioSinkFileThread::SQUELCH_RECORD_ALWAYS;
-
 	}
 	else {
-		squelchOption = AudioSinkFileThread::SQUELCH_SKIP_SILENCE;
+		squelchOption = AudioSinkFileThread::SQUELCH_RECORD_SILENCE;
 	}
 }
 
