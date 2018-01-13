@@ -535,6 +535,24 @@ bool AppConfig::verifyRecordingPath() {
     return true;
 }
 
+
+void  AppConfig::setRecordingSquelchOption(int enumChoice) {
+	recordingSquelchOption = enumChoice;
+}
+
+int  AppConfig::getRecordingSquelchOption() {
+	return recordingSquelchOption;
+}
+
+void  AppConfig::setRecordingFileTimeLimit(int nbSeconds) {
+	recordingFileTimeLimitSeconds = nbSeconds;
+}
+
+int  AppConfig::getRecordingFileTimeLimit() {
+	return recordingFileTimeLimitSeconds;
+}
+
+
 void AppConfig::setConfigName(std::string configName) {
     this->configName = configName;
 }
@@ -588,8 +606,11 @@ bool AppConfig::save() {
         *window_node->newChild("bookmark_visible") = bookmarksVisible.load();
     }
     
+	//Recording settings:
     DataNode *rec_node = cfg.rootNode()->newChild("recording");
     *rec_node->newChild("path") = recordingPath;
+	*rec_node->newChild("squelch") = recordingSquelchOption;
+	*rec_node->newChild("file_time_limit") = recordingFileTimeLimitSeconds;
     
     DataNode *devices_node = cfg.rootNode()->newChild("devices");
 
@@ -773,6 +794,7 @@ bool AppConfig::load() {
         }
     }
     
+	//Recording settings:
     if (cfg.rootNode()->hasAnother("recording")) {
         DataNode *rec_node = cfg.rootNode()->getNext("recording");
 
@@ -780,6 +802,16 @@ bool AppConfig::load() {
             DataNode *rec_path = rec_node->getNext("path");
             recordingPath = rec_path->element()->toString();
         }
+
+		if (rec_node->hasAnother("squelch")) {
+			DataNode *rec_squelch = rec_node->getNext("squelch");
+			rec_squelch->element()->get(recordingSquelchOption);
+		}
+
+		if (rec_node->hasAnother("file_time_limit")) {
+			DataNode *rec_file_time_limit = rec_node->getNext("file_time_limit");
+			rec_file_time_limit->element()->get(recordingFileTimeLimitSeconds);
+		}
     }
     
     if (cfg.rootNode()->hasAnother("devices")) {

@@ -42,7 +42,6 @@
 #define wxID_LOW_PERF 2011
 #define wxID_SET_DB_OFFSET 2012
 #define wxID_ABOUT_CUBICSDR 2013
-#define wxID_RECORDING_PATH 2014
 
 #define wxID_OPEN_BOOKMARKS 2020
 #define wxID_SAVE_BOOKMARKS 2021
@@ -77,6 +76,13 @@
 
 #define wxID_DEVICE_ID 3500
 
+#define  wxID_RECORDING_PATH 8500
+#define  wxID_RECORDING_SQUELCH_BASE 8501
+#define  wxID_RECORDING_SQUELCH_SILENCE 8502
+#define  wxID_RECORDING_SQUELCH_SKIP 8503
+#define  wxID_RECORDING_SQUELCH_ALWAYS 8504
+#define  wxID_RECORDING_FILE_TIME_LIMIT 8505
+
 #define wxID_AUDIO_BANDWIDTH_BASE 9000
 #define wxID_AUDIO_DEVICE_MULTIPLIER 50
 
@@ -103,7 +109,9 @@ public:
     ~AppFrame();
 
     wxMenu *makeFileMenu();
-    void updateFileMenu();
+   
+	wxMenu *makeRecordingMenu();
+	void updateRecordingMenu();
 
     void initDeviceParams(SDRDeviceInfo *devInfo);
     void updateDeviceParams();
@@ -178,6 +186,7 @@ private:
     bool actionOnMenuAudioSampleRate(wxCommandEvent& event);
     bool actionOnMenuDisplay(wxCommandEvent& event);
     bool actionOnMenuLoadSave(wxCommandEvent& event);
+	bool actionOnMenuRecording(wxCommandEvent& event);
     bool actionOnMenuRig(wxCommandEvent& event);
 
     wxString getSettingsLabel(const std::string& settingsName, 
@@ -221,6 +230,10 @@ private:
     std::map<int, wxMenuItem *> settingsMenuItems;
     
     std::map<int, wxMenuItem *> audioSampleRateMenuItems;
+
+	//
+	std::map<int, wxMenuItem *> recordingMenuItems;
+
     std::map<int, wxMenuItem *> directSamplingMenuItems;
     wxMenuBar *menuBar;
     
@@ -231,6 +244,7 @@ private:
     wxMenuItem *lowPerfMenuItem = nullptr;
     wxMenu *fileMenu = nullptr;
     wxMenu *settingsMenu = nullptr;
+	wxMenu *recordingMenu = nullptr;
     
     SoapySDR::ArgInfoList settingArgs;
     int settingsIdMax;

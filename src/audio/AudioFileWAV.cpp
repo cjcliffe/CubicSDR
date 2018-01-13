@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "AudioFileWAV.h"
+#include "CubicSDR.h"
+#include <iomanip>
 
 //limit file size to 2GB (- margin) for maximum compatibility.
 #define MAX_WAV_FILE_SIZE (0x7FFFFFFF - 1024)
@@ -63,7 +65,7 @@ std::string AudioFileWAV::getExtension()
 bool AudioFileWAV::writeToFile(AudioThreadInputPtr input)
 {
     if (!outputFileStream.is_open()) {
-        std::string ofName = getOutputFileName(currentSequenceNumber);
+        std::string ofName = getOutputFileName();
                 
         outputFileStream.open(ofName.c_str(), std::ios::binary);
 
@@ -85,7 +87,7 @@ bool AudioFileWAV::writeToFile(AudioThreadInputPtr input)
 		currentSequenceNumber++;
 		currentFileSize = 0;
 
-		std::string ofName = getOutputFileName(currentSequenceNumber);
+		std::string ofName = getOutputFileName();
 		outputFileStream.open(ofName.c_str(), std::ios::binary);
 		
 		writeHeaderToFileStream(input);
@@ -165,4 +167,40 @@ size_t AudioFileWAV::getMaxWritableNumberOfSamples(AudioThreadInputPtr input) {
 
     return (size_t)(remainingBytesInFile / (input->channels * 2));
 	
+}
+
+std::string AudioFileWAV::getOutputFileName() {
+
+	std::string recPath = wxGetApp().getConfig()->getRecordingPath();
+
+	// Strip any invalid characters from the name
+	std::string stripChars("<>:\"/\\|?*");
+	std::string filenameBaseSafe = filenameBase;
+
+	for (size_t i = 0, iMax = filenameBaseSafe.length(); i < iMax; i++) {
+		if (stripChars.find(filenameBaseSafe[i]) != std::string::npos) {
+			filenameBaseSafe.replace(i, 1, "_");
+		}
+	}
+
+	// Create output file name
+	std::stringstream outputFileName;
+	outputFileName << recPath << filePathSeparator << filenameBaseSafe;
+
+	//customized part: append a sequence number.
+	if (currentSequenceNumber > 0) {
+		outputFileName << "_" << std::setfill('0') << std::setw(3) << currentSequenceNumber;
+	}
+
+	int idx = 0;
+
+	// If the file exists; then find the next non-existing file in sequence.
+	std::string fileNameCandidate = outputFileName.str();
+
+	while (FILE *file = fopen((fileNameCandidate + "." + getExtension()).c_str(), "r")) {
+		fclose(file);
+		fileNameCandidate = outputFileName.str() + "-" + std::to_string(++idx);
+	}
+
+	return fileNameCandidate + "." + getExtension();
 }

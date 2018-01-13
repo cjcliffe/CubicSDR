@@ -18,7 +18,7 @@
 
 #include <vector>
 #include <algorithm>
-#include "AudioThread.h"
+#include "AudioSinkFileThread.h"
 #include "CubicSDR.h"
 #include "DataTree.h"
 #include "ColorTheme.h"
@@ -402,10 +402,8 @@ AppFrame::AppFrame() :
 
     // Make a menubar
     menuBar = new wxMenuBar;
-    
-    fileMenu = makeFileMenu();
-
-    menuBar->Append(fileMenu, wxT("&File"));
+   
+    menuBar->Append(makeFileMenu(), wxT("&File"));
             
     settingsMenu = new wxMenu;
           
@@ -493,6 +491,11 @@ AppFrame::AppFrame() :
     }
 
     menuBar->Append(audioSampleRateMenu, wxT("Audio &Sample Rate"));
+
+	//Add a Recording menu
+	menuBar->Append(makeRecordingMenu(), wxT("Recordin&g"));
+	//
+	updateRecordingMenu();
 
     //Add Display menu
     displayMenu = new wxMenu;
@@ -708,14 +711,6 @@ wxMenu *AppFrame::makeFileMenu() {
     menu->Append(wxID_SDR_START_STOP, "Stop / Start Device");
     menu->AppendSeparator();
 
-    std::string recPath = wxGetApp().getConfig()->getRecordingPath();
-    if (recPath.length() > 32) {
-        recPath = "..." + recPath.substr(recPath.length() - 32, 32);
-    }
-
-    menu->Append(wxID_RECORDING_PATH, getSettingsLabel("Set Recording Path", recPath.empty() ? "<Not Set>" : recPath));
-
-    menu->AppendSeparator();
     menu->Append(wxID_OPEN, "&Open Session");
     menu->Append(wxID_SAVE, "&Save Session");
     menu->Append(wxID_SAVEAS, "Save Session &As..");
@@ -741,15 +736,88 @@ wxMenu *AppFrame::makeFileMenu() {
 #endif
 #endif
 
+	fileMenu = menu;
+
     return menu;
 }
 
-void AppFrame::updateFileMenu() {
-    wxMenu *newFileMenu = makeFileMenu();
-    menuBar->Replace(0, newFileMenu, wxT("&File"));
-    fileMenu = newFileMenu;
+wxMenu *AppFrame::makeRecordingMenu() {
+	
+	recordingMenuItems.clear();
+
+	wxMenu *menu = new wxMenu;
+
+	recordingMenuItems[wxID_RECORDING_PATH] = menu->Append(wxID_RECORDING_PATH, getSettingsLabel("Set Recording Path", "<Not Set>"));
+
+	menu->AppendSeparator();
+
+	//Squelch options as sub-menu:
+	wxMenu *subMenu = new wxMenu;
+	recordingMenuItems[wxID_RECORDING_SQUELCH_BASE] = menu->AppendSubMenu(subMenu, "Squelch");
+
+	recordingMenuItems[wxID_RECORDING_SQUELCH_SILENCE] = subMenu->AppendRadioItem(wxID_RECORDING_SQUELCH_SILENCE, "Record Silence", 
+		"Record below squelch-break audio as silence, i.e records as the user may hear.");
+	recordingMenuItems[wxID_RECORDING_SQUELCH_SKIP] = subMenu->AppendRadioItem(wxID_RECORDING_SQUELCH_SKIP, "Skip Silence", 
+		"Do not record below squelch-break audio, i.e squelch-break audio parts are packed together.");
+	recordingMenuItems[wxID_RECORDING_SQUELCH_ALWAYS] = subMenu->AppendRadioItem(wxID_RECORDING_SQUELCH_ALWAYS, "Record Always", 
+		"Record everything irrespective of the squelch level.");
+	
+	recordingMenuItems[wxID_RECORDING_FILE_TIME_LIMIT] = menu->Append(wxID_RECORDING_FILE_TIME_LIMIT, getSettingsLabel("File time limit", "<Not Set>"), 
+		"Creates a new file automatically, each time the recording lasts longer than the limit, named according to the current time.");
+
+	recordingMenuItems[wxID_RECORDING_SQUELCH_SILENCE]->Check(true);
+
+	recordingMenu = menu;
+
+	return menu;
 }
 
+void AppFrame::updateRecordingMenu() {
+
+	// Recording path:
+	std::string recPath = wxGetApp().getConfig()->getRecordingPath();
+	if (recPath.length() > 32) {
+		recPath = "..." + recPath.substr(recPath.length() - 32, 32);
+	}
+
+	recordingMenuItems[wxID_RECORDING_PATH]->SetItemLabel(getSettingsLabel("Set Recording Path", recPath.empty() ? "<Not Set>" : recPath));
+
+	//Squelch options:
+	int squelchEnumValue = wxGetApp().getConfig()->getRecordingSquelchOption();
+
+	if (squelchEnumValue == AudioSinkFileThread::SQUELCH_RECORD_SILENCE) {
+
+		recordingMenuItems[wxID_RECORDING_SQUELCH_SILENCE]->Check(true);
+		recordingMenuItems[wxID_RECORDING_SQUELCH_BASE]->SetItemLabel(getSettingsLabel("Squelch", "Record Silence"));
+
+	} else if (squelchEnumValue == AudioSinkFileThread::SQUELCH_SKIP_SILENCE) {
+
+		recordingMenuItems[wxID_RECORDING_SQUELCH_SKIP]->Check(true);
+		recordingMenuItems[wxID_RECORDING_SQUELCH_BASE]->SetItemLabel(getSettingsLabel("Squelch", "Skip Silence"));
+
+	} else if (squelchEnumValue == AudioSinkFileThread::SQUELCH_RECORD_ALWAYS) {
+
+		recordingMenuItems[wxID_RECORDING_SQUELCH_ALWAYS]->Check(true);
+		recordingMenuItems[wxID_RECORDING_SQUELCH_BASE]->SetItemLabel(getSettingsLabel("Squelch", "Record Always"));
+	}
+	else {
+		recordingMenuItems[wxID_RECORDING_SQUELCH_SILENCE]->Check(true);
+		recordingMenuItems[wxID_RECORDING_SQUELCH_BASE]->SetItemLabel(getSettingsLabel("Squelch", "Record Silence"));
+
+	}
+
+	//File time limit:
+	int fileTimeLimitSeconds = wxGetApp().getConfig()->getRecordingFileTimeLimit();
+
+	if (fileTimeLimitSeconds <= 0) {
+		
+		recordingMenuItems[wxID_RECORDING_FILE_TIME_LIMIT]->SetItemLabel(getSettingsLabel("File time limit","<Not Set>"));
+	}
+	else {
+		recordingMenuItems[wxID_RECORDING_FILE_TIME_LIMIT]->SetItemLabel(getSettingsLabel("File time limit",
+			std::to_string(fileTimeLimitSeconds), "s"));
+	}
+}
 
 void AppFrame::initDeviceParams(SDRDeviceInfo *devInfo) {
     this->devInfo = devInfo;
@@ -1512,6 +1580,73 @@ bool AppFrame::actionOnMenuLoadSave(wxCommandEvent& event) {
     return false;
 }
 
+bool AppFrame::actionOnMenuRecording(wxCommandEvent& event) {
+
+	if (event.GetId() == wxID_RECORDING_PATH) {
+
+		std::string recPath = wxGetApp().getConfig()->getRecordingPath();
+
+		wxDirDialog recPathDialog(this, _("File Path for Recordings"), recPath, wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST);
+		if (recPathDialog.ShowModal() == wxID_CANCEL) {
+			return true;
+		}
+
+		wxGetApp().getConfig()->setRecordingPath(recPathDialog.GetPath().ToStdString());
+
+		updateRecordingMenu();
+		return true;
+
+	}
+	else if (event.GetId() == wxID_RECORDING_SQUELCH_SILENCE) {
+
+		wxGetApp().getConfig()->setRecordingSquelchOption(AudioSinkFileThread::SQUELCH_RECORD_SILENCE);
+
+		updateRecordingMenu();
+		return true;
+	}
+	else if (event.GetId() == wxID_RECORDING_SQUELCH_SKIP) {
+
+		wxGetApp().getConfig()->setRecordingSquelchOption(AudioSinkFileThread::SQUELCH_SKIP_SILENCE);
+
+		updateRecordingMenu();
+		return true;
+	}
+	else if (event.GetId() == wxID_RECORDING_SQUELCH_ALWAYS) {
+		
+		wxGetApp().getConfig()->setRecordingSquelchOption(AudioSinkFileThread::SQUELCH_RECORD_ALWAYS);
+
+		updateRecordingMenu();
+		return true;
+	}
+	else if (event.GetId() == wxID_RECORDING_FILE_TIME_LIMIT) {
+
+		int currentFileLimitSeconds = wxGetApp().getConfig()->getRecordingFileTimeLimit();
+
+		long newFileLimit = wxGetNumberFromUser(wxString("\nFile time limit:\n") + 
+			"\nCreates a new file automatically, each time the recording lasts longer than the limit, named according to the current time.\n\n  " + 
+			+ "min: 0 s (no limit)"
+			+ ", max: 36000 s (10 hours)\n",
+			"Time in seconds",
+			"File Time Limit",
+			//If a manual sample rate has already been input, recall this one.
+			currentFileLimitSeconds > 0 ? currentFileLimitSeconds : 0,
+			0,
+			36000,
+			this);
+
+		if (newFileLimit != -1) {
+
+			wxGetApp().getConfig()->setRecordingFileTimeLimit((int)newFileLimit);
+
+			updateRecordingMenu();
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 bool AppFrame::actionOnMenuRig(wxCommandEvent& event) {
     
     bool bManaged = false;
@@ -1667,17 +1802,6 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             }
         }
     } 
-    else if (event.GetId() == wxID_RECORDING_PATH) {
-        std::string recPath = wxGetApp().getConfig()->getRecordingPath();
-        
-        wxDirDialog recPathDialog(this, _("File Path for Recordings"), recPath, wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST);
-        if (recPathDialog.ShowModal() == wxID_CANCEL) {
-            return;
-        }
-
-        wxGetApp().getConfig()->setRecordingPath(recPathDialog.GetPath().ToStdString());
-        updateFileMenu();
-    }
     else if (event.GetId() == wxID_LOW_PERF) {
         lowPerfMode = lowPerfMenuItem->IsChecked();
         wxGetApp().getConfig()->setLowPerfMode(lowPerfMode);
@@ -1742,9 +1866,12 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
     else if (actionOnMenuAudioSampleRate(event)) {
         return;
     }
-    else if (actionOnMenuDisplay(event)) {
+    else if (actionOnMenuRecording(event)) {
         return;
     }
+	else if (actionOnMenuDisplay(event)) {
+		return;
+	}
     //Optional : Rig 
     else if (actionOnMenuRig(event)) {
         return;

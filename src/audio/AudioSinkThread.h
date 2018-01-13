@@ -12,8 +12,8 @@ public:
     AudioSinkThread();
     virtual ~AudioSinkThread();
 
-    virtual void run();
-    virtual void terminate();
+	virtual void run();
+	virtual void terminate();
 
     virtual void sink(AudioThreadInputPtr input) = 0;
     virtual void inputChanged(AudioThreadInput oldProps, AudioThreadInputPtr newProps) = 0;

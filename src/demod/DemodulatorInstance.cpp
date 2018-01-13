@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include <memory>
-#include <ctime>
 #include <iomanip>
 
 #include "DemodulatorInstance.h"
@@ -628,9 +627,6 @@ void DemodulatorInstance::startRecording() {
     AudioSinkFileThread *newSinkThread = new AudioSinkFileThread();
     AudioFileWAV *afHandler = new AudioFileWAV();
 
-    time_t t = std::time(nullptr);
-    tm ltm = *std::localtime(&t);
-    
     std::stringstream fileName;
     
     std::wstring userLabel = getDemodulatorUserLabel();
@@ -643,17 +639,13 @@ void DemodulatorInstance::startRecording() {
     } else {
         fileName << getLabel();
     }
-    
-    //  GCC 5+
-    //    fileName << "_" << std::put_time(&ltm, "%d-%m-%Y_%H-%M-%S");
-    
-    char timeStr[512];
-	//International format: Year.Month.Day, also lexicographically sortable
-    strftime(timeStr, sizeof(timeStr), "%Y-%m-%d_%H-%M-%S", &ltm);
-    fileName << "_" << timeStr;
-    
-    
-    afHandler->setOutputFileName(fileName.str());
+   
+	newSinkThread->setAudioFileNameBase(fileName.str());
+
+	//attach options:
+    newSinkThread->setSquelchOption(wxGetApp().getConfig()->getRecordingSquelchOption());
+	newSinkThread->setFileTimeLimit(wxGetApp().getConfig()->getRecordingFileTimeLimit());
+
     newSinkThread->setAudioFileHandler(afHandler);
 
     audioSinkThread = newSinkThread;

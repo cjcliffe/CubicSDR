@@ -3,7 +3,6 @@
 
 #include "AudioFile.h"
 #include "CubicSDR.h"
-#include <iomanip>
 #include <sstream>
 
 AudioFile::AudioFile() {
@@ -18,7 +17,7 @@ void AudioFile::setOutputFileName(std::string filename) {
     filenameBase = filename;
 }
 
-std::string AudioFile::getOutputFileName(int sequenceNumber) {
+std::string AudioFile::getOutputFileName() {
 
     std::string recPath = wxGetApp().getConfig()->getRecordingPath();
 
@@ -35,10 +34,6 @@ std::string AudioFile::getOutputFileName(int sequenceNumber) {
     // Create output file name
 	std::stringstream outputFileName;
 	outputFileName << recPath << filePathSeparator << filenameBaseSafe;
-
-	if (sequenceNumber > 0) {
-		outputFileName << "_" << std::setfill('0') << std::setw(3) << sequenceNumber;
-	}
 
     int idx = 0;
 

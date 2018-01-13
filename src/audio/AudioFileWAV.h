@@ -13,10 +13,14 @@ public:
     AudioFileWAV();
     ~AudioFileWAV();
 
-    std::string getExtension();
+	//override of the base method to generate multi-part 
+	//WAV to overcome the WAV format size limit.
+	virtual std::string getOutputFileName();
 
-    bool writeToFile(AudioThreadInputPtr input);
-    bool closeFile();
+    virtual std::string getExtension();
+
+    virtual bool writeToFile(AudioThreadInputPtr input);
+    virtual bool closeFile();
 
 protected:
     std::ofstream outputFileStream;

@@ -14,7 +14,7 @@ public:
 
     virtual void setOutputFileName(std::string filename);
     virtual std::string getExtension() = 0;
-    virtual std::string getOutputFileName(int sequenceNumber = 0);
+    virtual std::string getOutputFileName();
 
     virtual bool writeToFile(AudioThreadInputPtr input) = 0;
     virtual bool closeFile() = 0;

@@ -232,32 +232,39 @@ void DemodulatorThread::run() {
 			localAudioSinkOutputQueue = audioSinkOutputQueue;
 		}
 
-        if (audioOutputQueue != nullptr && ati && ati->data.size() && !squelched) {
-           
-            ati->peak = 0;
+		//compute audio peak:
+		if (audioOutputQueue != nullptr && ati) {
 
-            for (auto data_i : ati->data) {
-                float p = fabs(data_i);
-                if (p > ati->peak) {
-                    ati->peak = p;
-                }
-            }
-        } else if (ati) {
-			//squelch situation, but recording is on-going, so record "silence" to AudioSink: 
-			if (localAudioSinkOutputQueue != nullptr) {
+			ati->peak = 0;
 
-				//Zero the ati samples
-				ati->peak = 0;
-				ati->data.assign(ati->data.size(), 0.0f);
-
-				if (!localAudioSinkOutputQueue->try_push(ati)) {
-					std::cout << "DemodulatorThread::run() cannot push ati into audioSinkOutputQueue, is full !" << std::endl;
+			for (auto data_i : ati->data) {
+				float p = fabs(data_i);
+				if (p > ati->peak) {
+					ati->peak = p;
 				}
 			}
+		}
 
-            ati = nullptr;
-        }
-        
+		//attach squelch flag to samples, to be used by audio sink.
+		if (ati) {
+			ati->is_squelch_active = squelched;
+		}
+
+		//Push to audio sink, if any:
+		if (ati && localAudioSinkOutputQueue != nullptr) {
+
+			if (!localAudioSinkOutputQueue->try_push(ati)) {
+				std::cout << "DemodulatorThread::run() cannot push ati into audioSinkOutputQueue, is full !" << std::endl;
+				std::this_thread::yield();
+			}
+		}
+
+		//now we can nullify ati if squelched, to skip the next processing entirely.
+		if (ati && squelched) {
+
+			ati = nullptr;
+		}
+       
         //At that point, capture the current state of audioVisOutputQueue in a local 
         //variable, and works with it with now on until the next while-turn.
         DemodulatorThreadOutputQueuePtr localAudioVisOutputQueue = nullptr;
@@ -343,12 +350,6 @@ void DemodulatorThread::run() {
                   
                     std::cout << "DemodulatorThread::run() cannot push ati into audioOutputQueue, is full !" << std::endl;
                     std::this_thread::yield();
-                }
-            }
-            
-            if (localAudioSinkOutputQueue != nullptr) {
-                if (!localAudioSinkOutputQueue->try_push(ati)) {
-                    std::cout << "DemodulatorThread::run() cannot push ati into audioSinkOutputQueue, is full !" << std::endl;
                 }
             }
         }
