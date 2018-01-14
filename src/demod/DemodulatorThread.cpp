@@ -225,13 +225,6 @@ void DemodulatorThread::run() {
             }
         }
 
-		// Capture audioSinkOutputQueue state in a local variable
-		DemodulatorThreadOutputQueuePtr localAudioSinkOutputQueue = nullptr;
-		{
-			std::lock_guard < std::mutex > lock(m_mutexAudioVisOutputQueue);
-			localAudioSinkOutputQueue = audioSinkOutputQueue;
-		}
-
 		//compute audio peak:
 		if (audioOutputQueue != nullptr && ati) {
 
@@ -250,21 +243,6 @@ void DemodulatorThread::run() {
 			ati->is_squelch_active = squelched;
 		}
 
-		//Push to audio sink, if any:
-		if (ati && localAudioSinkOutputQueue != nullptr) {
-
-			if (!localAudioSinkOutputQueue->try_push(ati)) {
-				std::cout << "DemodulatorThread::run() cannot push ati into audioSinkOutputQueue, is full !" << std::endl;
-				std::this_thread::yield();
-			}
-		}
-
-		//now we can nullify ati if squelched, to skip the next processing entirely.
-		if (ati && squelched) {
-
-			ati = nullptr;
-		}
-       
         //At that point, capture the current state of audioVisOutputQueue in a local 
         //variable, and works with it with now on until the next while-turn.
         DemodulatorThreadOutputQueuePtr localAudioVisOutputQueue = nullptr;
@@ -273,7 +251,7 @@ void DemodulatorThread::run() {
             localAudioVisOutputQueue = audioVisOutputQueue;
         }
 
-        if ((ati || modemDigital) && localAudioVisOutputQueue != nullptr && localAudioVisOutputQueue->empty()) {
+        if (!squelched && (ati || modemDigital) && localAudioVisOutputQueue != nullptr && localAudioVisOutputQueue->empty()) {
 
             AudioThreadInputPtr ati_vis = std::make_shared<AudioThreadInput>();
 
@@ -343,7 +321,7 @@ void DemodulatorThread::run() {
             }
         }
 
-        if (ati != nullptr) {
+        if (!squelched && ati != nullptr) {
             if (!muted.load() && (!wxGetApp().getSoloMode() || (demodInstance == wxGetApp().getDemodMgr().getLastActiveDemodulator().get()))) {
                 //non-blocking push needed for audio out
                 if (!audioOutputQueue->try_push(ati)) {
@@ -354,6 +332,23 @@ void DemodulatorThread::run() {
             }
         }
         
+        
+        // Capture audioSinkOutputQueue state in a local variable
+        DemodulatorThreadOutputQueuePtr localAudioSinkOutputQueue = nullptr;
+        {
+            std::lock_guard < std::mutex > lock(m_mutexAudioVisOutputQueue);
+            localAudioSinkOutputQueue = audioSinkOutputQueue;
+        }
+
+        //Push to audio sink, if any:
+        if (ati && localAudioSinkOutputQueue != nullptr) {
+            
+            if (!localAudioSinkOutputQueue->try_push(ati)) {
+                std::cout << "DemodulatorThread::run() cannot push ati into audioSinkOutputQueue, is full !" << std::endl;
+                std::this_thread::yield();
+            }
+        }
+
         DemodulatorThreadControlCommand command;
         
         //empty command queue, execute commands

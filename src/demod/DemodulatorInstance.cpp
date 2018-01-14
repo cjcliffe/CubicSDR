@@ -187,7 +187,7 @@ void DemodulatorInstance::terminate() {
     demodulatorPreThread->terminate();
 
     if (audioSinkThread != nullptr) {
-        audioSinkThread->terminate();
+        stopRecording();
     }
 
     //that will actually unblock the currently blocked push().

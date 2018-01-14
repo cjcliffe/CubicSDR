@@ -24,6 +24,7 @@
 #include "ColorTheme.h"
 #include "DemodulatorMgr.h"
 #include "ImagePanel.h"
+#include "ActionDialog.h"
 
 #include <thread>
 #include <iostream>
@@ -51,6 +52,22 @@ wxEND_EVENT_TABLE()
 #include "PortSelectorDialog.h"
 #include "rs232.h"
 #endif
+
+
+
+class ActionDialogBookmarkReset : public ActionDialog {
+public:
+    ActionDialogBookmarkReset() : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Reset Bookmarks?")) {
+        m_questionText->SetLabelText(wxT("Resetting bookmarks will erase all current bookmarks; are you sure?"));
+    }
+    
+    void doClickOK() {
+        wxGetApp().getBookmarkMgr().resetBookmarks();
+        wxGetApp().getBookmarkMgr().updateBookmarks();
+        wxGetApp().getBookmarkMgr().updateActiveList();
+    }
+};
+
 
 
 /* split a string by 'seperator' into a vector of string */
@@ -711,18 +728,28 @@ wxMenu *AppFrame::makeFileMenu() {
     menu->Append(wxID_SDR_START_STOP, "Stop / Start Device");
     menu->AppendSeparator();
 
-    menu->Append(wxID_OPEN, "&Open Session");
-    menu->Append(wxID_SAVE, "&Save Session");
-    menu->Append(wxID_SAVEAS, "Save Session &As..");
-    menu->AppendSeparator();
-    menu->Append(wxID_RESET, "&Reset Session");
-    menu->AppendSeparator();
-	menu->Append(wxID_OPEN_BOOKMARKS, "Open Bookmarks");
-	menu->Append(wxID_SAVE_BOOKMARKS, "Save Bookmarks");
-	menu->Append(wxID_SAVEAS_BOOKMARKS, "Save Bookmarks As..");
-	menu->AppendSeparator();
-	menu->Append(wxID_RESET_BOOKMARKS, "Reset Bookmarks");
+    wxMenu *sessionMenu = new wxMenu;
+    
+    sessionMenu->Append(wxID_OPEN, "&Open Session");
+    sessionMenu->Append(wxID_SAVE, "&Save Session");
+    sessionMenu->Append(wxID_SAVEAS, "Save Session &As..");
+    sessionMenu->AppendSeparator();
+    sessionMenu->Append(wxID_RESET, "&Reset Session");
 
+    menu->AppendSubMenu(sessionMenu, "Session");
+
+    menu->AppendSeparator();
+
+    wxMenu *bookmarkMenu = new wxMenu;
+    
+    bookmarkMenu->Append(wxID_OPEN_BOOKMARKS, "Open Bookmarks");
+	bookmarkMenu->Append(wxID_SAVE_BOOKMARKS, "Save Bookmarks");
+	bookmarkMenu->Append(wxID_SAVEAS_BOOKMARKS, "Save Bookmarks As..");
+	bookmarkMenu->AppendSeparator();
+	bookmarkMenu->Append(wxID_RESET_BOOKMARKS, "Reset Bookmarks");
+
+    menu->AppendSubMenu(bookmarkMenu, "Bookmarks");
+    
 #ifndef __APPLE__
     menu->AppendSeparator();
     menu->Append(wxID_CLOSE);
@@ -1570,10 +1597,8 @@ bool AppFrame::actionOnMenuLoadSave(wxCommandEvent& event) {
 	}
 	else if (event.GetId() == wxID_RESET_BOOKMARKS) {
 
-		wxGetApp().getBookmarkMgr().resetBookmarks();
-		wxGetApp().getBookmarkMgr().updateBookmarks();
-		wxGetApp().getBookmarkMgr().updateActiveList();
-	
+        ActionDialog::showDialog(new ActionDialogBookmarkReset());
+
 		return true;
 	}
 

@@ -221,6 +221,7 @@ private:
     std::vector<RtAudio::DeviceInfo> devices;
     std::map<int,RtAudio::DeviceInfo> inputDevices;
     std::map<int,RtAudio::DeviceInfo> outputDevices;
+
     std::map<int, wxMenuItem *> outputDeviceMenuItems;
     std::map<int, wxMenuItem *> sampleRateMenuItems;
     std::map<int, wxMenuItem *> antennaMenuItems;
