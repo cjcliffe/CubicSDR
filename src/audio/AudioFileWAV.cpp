@@ -65,9 +65,11 @@ std::string AudioFileWAV::getExtension()
 bool AudioFileWAV::writeToFile(AudioThreadInputPtr input)
 {
     if (!outputFileStream.is_open()) {
+
         std::string ofName = getOutputFileName();
                 
         outputFileStream.open(ofName.c_str(), std::ios::binary);
+		currentFileSize = 0;
 
 		writeHeaderToFileStream(input);
     }
@@ -111,6 +113,7 @@ bool AudioFileWAV::closeFile()
         write_word(outputFileStream, file_length - 8, 4);
 
         outputFileStream.close();
+		currentFileSize = 0;
     }
 
     return true;
@@ -167,6 +170,16 @@ size_t AudioFileWAV::getMaxWritableNumberOfSamples(AudioThreadInputPtr input) {
 
     return (size_t)(remainingBytesInFile / (input->channels * 2));
 	
+}
+
+void AudioFileWAV::setOutputFileName(std::string filename) {
+
+	if (filename != filenameBase) {
+
+		currentSequenceNumber = 0;
+	}
+
+	AudioFile::setOutputFileName(filename);
 }
 
 std::string AudioFileWAV::getOutputFileName() {

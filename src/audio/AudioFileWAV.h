@@ -13,6 +13,9 @@ public:
     AudioFileWAV();
     ~AudioFileWAV();
 
+	//override to manage name change with multi-part WAV. 
+	virtual void setOutputFileName(std::string filename);
+
 	//override of the base method to generate multi-part 
 	//WAV to overcome the WAV format size limit.
 	virtual std::string getOutputFileName();
