@@ -179,7 +179,7 @@ AboutDialogBase::AboutDialogBase( wxWindow* parent, wxWindowID id, const wxStrin
 	m_dbScroll->SetSizer( m_dbPane );
 	m_dbScroll->Layout();
 	m_dbPane->Fit( m_dbScroll );
-	m_aboutNotebook->AddPage( m_dbScroll, wxT("Developers"), true );
+	m_aboutNotebook->AddPage( m_dbScroll, wxT("Developers"), false );
 	m_dScroll = new wxScrolledWindow( m_aboutNotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxVSCROLL );
 	m_dScroll->SetScrollRate( 5, 5 );
 	wxBoxSizer* m_dBSizer;
@@ -380,6 +380,10 @@ AboutDialogBase::AboutDialogBase( wxWindow* parent, wxWindowID id, const wxStrin
 	m_dRobertChave = new wxStaticText( m_dScroll, wxID_ANY, wxT("Robert Chave"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_dRobertChave->Wrap( -1 );
 	m_dSizer->Add( m_dRobertChave, 0, wxALL, 5 );
+	
+	m_dMarvinCalvert = new wxStaticText( m_dScroll, wxID_ANY, wxT("Marvin Calvert"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dMarvinCalvert->Wrap( -1 );
+	m_dSizer->Add( m_dMarvinCalvert, 0, wxALL, 5 );
 	
 	
 	m_dBSizer->Add( m_dSizer, 1, wxALL|wxEXPAND, 5 );
