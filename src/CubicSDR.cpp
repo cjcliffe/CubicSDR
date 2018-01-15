@@ -203,6 +203,7 @@ CubicSDR::CubicSDR() : frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFA
         sampleRateInitialized.store(false);
         agcMode.store(true);
         soloMode.store(false);
+        shuttingDown.store(false);
         fdlgTarget = FrequencyDialog::FDIALOG_TARGET_DEFAULT;
         stoppedDev = nullptr;
 }
@@ -384,6 +385,8 @@ bool CubicSDR::OnInit() {
 }
 
 int CubicSDR::OnExit() {
+    shuttingDown.store(true);
+
 #if USE_HAMLIB
     if (rigIsActive()) {
         std::cout << "Terminating Rig thread.."  << std::endl << std::flush;
@@ -1027,6 +1030,11 @@ void CubicSDR::setSoloMode(bool solo) {
 
 bool CubicSDR::getSoloMode() {
     return soloMode.load();
+}
+
+bool CubicSDR::isShuttingDown()
+{
+    return shuttingDown.load();
 }
 
 int CubicSDR::FilterEvent(wxEvent& event) {

@@ -2,12 +2,15 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include <memory>
+#include <iomanip>
+
 #include "DemodulatorInstance.h"
 #include "CubicSDR.h"
 
 #include "DemodulatorThread.h"
 #include "DemodulatorPreThread.h"
-
+#include "AudioSinkFileThread.h"
+#include "AudioFileWAV.h"
 
 #if USE_HAMLIB
 #include "RigThread.h"
@@ -47,6 +50,7 @@ DemodulatorInstance::DemodulatorInstance() {
 	active.store(false);
 	squelch.store(false);
     muted.store(false);
+    recording.store(false);
     deltaLock.store(false);
     deltaLockOfs.store(0);
 	currentOutputDevice.store(-1);
@@ -106,6 +110,7 @@ DemodulatorInstance::~DemodulatorInstance() {
             delete demodulatorPreThread;
             delete demodulatorThread;
             delete audioThread;
+            delete audioSinkThread;
 
             break;
         }
@@ -181,6 +186,10 @@ void DemodulatorInstance::terminate() {
 //    std::cout << "Terminating demodulator preprocessor thread.." << std::endl;
     demodulatorPreThread->terminate();
 
+    if (audioSinkThread != nullptr) {
+        stopRecording();
+    }
+
     //that will actually unblock the currently blocked push().
     pipeIQInputData->flush();
     pipeAudioData->flush();
@@ -204,6 +213,7 @@ bool DemodulatorInstance::isTerminated() {
     bool audioTerminated = audioThread->isTerminated();
     bool demodTerminated = demodulatorThread->isTerminated();
     bool preDemodTerminated = demodulatorPreThread->isTerminated();
+    bool audioSinkTerminated = (audioSinkThread == nullptr) || audioSinkThread->isTerminated();
 
     //Cleanup the worker threads, if the threads are indeed terminated.
     // threads are linked as  t_PreDemod ==> t_Demod ==> t_Audio
@@ -240,14 +250,27 @@ bool DemodulatorInstance::isTerminated() {
     if (audioTerminated) {
 
         if (t_Audio) {
+#ifdef __APPLE__
+            pthread_join(t_PreDemod, NULL);
+#else
             t_Audio->join();
-
             delete t_Audio;
+#endif
             t_Audio = nullptr;
         }
     }
 
-    bool terminated = audioTerminated && demodTerminated && preDemodTerminated;
+    if (audioSinkTerminated) {
+
+        if (t_AudioSink != nullptr) {
+            t_AudioSink->join();
+
+            delete t_AudioSink;
+            t_AudioSink = nullptr;
+        }
+    }
+
+    bool terminated = audioTerminated && demodTerminated && preDemodTerminated && audioSinkTerminated;
 
     return terminated;
 }
@@ -523,6 +546,21 @@ void DemodulatorInstance::setMuted(bool muted) {
     wxGetApp().getDemodMgr().setLastMuted(muted);
 }
 
+bool DemodulatorInstance::isRecording()
+{
+    return recording.load();
+}
+
+void DemodulatorInstance::setRecording(bool recording_in)
+{
+    if (!recording.load() && recording_in) {
+        startRecording();
+    }
+    else if (recording.load() && !recording_in) {
+        stopRecording();
+    }
+}
+
 DemodVisualCue *DemodulatorInstance::getVisualCue() {
     return &visualCue;
 }
@@ -579,6 +617,65 @@ ModemSettings DemodulatorInstance::getLastModemSettings(std::string demodType) {
         return mods;
     }
 }
+
+
+void DemodulatorInstance::startRecording() {
+    if (recording.load()) {
+        return;
+    }
+
+    AudioSinkFileThread *newSinkThread = new AudioSinkFileThread();
+    AudioFileWAV *afHandler = new AudioFileWAV();
+
+    std::stringstream fileName;
+    
+    std::wstring userLabel = getDemodulatorUserLabel();
+
+    wxString userLabelForFileName(userLabel);
+    std::string userLabelStr = userLabelForFileName.ToStdString();
+
+    if (!userLabelStr.empty()) {
+        fileName << userLabelStr;
+    } else {
+        fileName << getLabel();
+    }
+   
+	newSinkThread->setAudioFileNameBase(fileName.str());
+
+	//attach options:
+    newSinkThread->setSquelchOption(wxGetApp().getConfig()->getRecordingSquelchOption());
+	newSinkThread->setFileTimeLimit(wxGetApp().getConfig()->getRecordingFileTimeLimit());
+
+    newSinkThread->setAudioFileHandler(afHandler);
+
+    audioSinkThread = newSinkThread;
+    t_AudioSink = new std::thread(&AudioSinkThread::threadMain, audioSinkThread);
+
+    demodulatorThread->setOutputQueue("AudioSink", audioSinkThread->getInputQueue("input"));
+
+    recording.store(true);
+}
+
+
+void DemodulatorInstance::stopRecording() {
+    if (!recording.load()) {
+        return;
+    }
+
+    demodulatorThread->setOutputQueue("AudioSink", nullptr);
+    audioSinkThread->terminate();
+    
+    t_AudioSink->join();
+
+    delete t_AudioSink;
+    delete audioSinkThread;
+
+    t_AudioSink = nullptr;
+    audioSinkThread = nullptr;
+
+    recording.store(false);
+}
+
 
 #if ENABLE_DIGITAL_LAB
 ModemDigitalOutput *DemodulatorInstance::getOutput() {

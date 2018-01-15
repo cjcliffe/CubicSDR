@@ -18,12 +18,13 @@
 
 #include <vector>
 #include <algorithm>
-#include "AudioThread.h"
+#include "AudioSinkFileThread.h"
 #include "CubicSDR.h"
 #include "DataTree.h"
 #include "ColorTheme.h"
 #include "DemodulatorMgr.h"
 #include "ImagePanel.h"
+#include "ActionDialog.h"
 
 #include <thread>
 #include <iostream>
@@ -51,6 +52,22 @@ wxEND_EVENT_TABLE()
 #include "PortSelectorDialog.h"
 #include "rs232.h"
 #endif
+
+
+
+class ActionDialogBookmarkReset : public ActionDialog {
+public:
+    ActionDialogBookmarkReset() : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Reset Bookmarks?")) {
+        m_questionText->SetLabelText(wxT("Resetting bookmarks will erase all current bookmarks; are you sure?"));
+    }
+    
+    void doClickOK() {
+        wxGetApp().getBookmarkMgr().resetBookmarks();
+        wxGetApp().getBookmarkMgr().updateBookmarks();
+        wxGetApp().getBookmarkMgr().updateActiveList();
+    }
+};
+
 
 
 /* split a string by 'seperator' into a vector of string */
@@ -402,49 +419,13 @@ AppFrame::AppFrame() :
 
     // Make a menubar
     menuBar = new wxMenuBar;
-    wxMenu *menu = new wxMenu;
-#ifndef __APPLE__ 
-#ifdef CUBICSDR_ENABLE_ABOUT_DIALOG
-    menu->Append(wxID_ABOUT_CUBICSDR, "About " CUBICSDR_INSTALL_NAME);
-#endif
-#endif
-    menu->Append(wxID_SDR_DEVICES, "SDR Devices");
-    menu->AppendSeparator();
-    menu->Append(wxID_SDR_START_STOP, "Stop / Start Device");
-    menu->AppendSeparator();
-    menu->Append(wxID_OPEN, "&Open Session");
-    menu->Append(wxID_SAVE, "&Save Session");
-    menu->Append(wxID_SAVEAS, "Save Session &As..");
-    menu->AppendSeparator();
-    menu->Append(wxID_RESET, "&Reset Session");
-	menu->AppendSeparator();
-	menu->Append(wxID_OPEN_BOOKMARKS, "Open Bookmarks");
-	menu->Append(wxID_SAVE_BOOKMARKS, "Save Bookmarks");
-	menu->Append(wxID_SAVEAS_BOOKMARKS, "Save Bookmarks As..");
-	menu->AppendSeparator();
-	menu->Append(wxID_RESET_BOOKMARKS, "Reset Bookmarks");
-            
-#ifndef __APPLE__
-    menu->AppendSeparator();
-    menu->Append(wxID_CLOSE);
-#else
-#ifdef CUBICSDR_ENABLE_ABOUT_DIALOG
-    if ( wxApp::s_macAboutMenuItemId != wxID_NONE ) {
-        wxString aboutLabel;
-        aboutLabel.Printf(_("About %s"), CUBICSDR_INSTALL_NAME);
-        menu->Append( wxApp::s_macAboutMenuItemId, aboutLabel);
-    }
-#endif
-#endif
-
-    menuBar->Append(menu, wxT("&File"));
+   
+    menuBar->Append(makeFileMenu(), wxT("&File"));
             
     settingsMenu = new wxMenu;
           
     menuBar->Append(settingsMenu, wxT("&Settings"));
             
-    menu = new wxMenu;
-
     std::vector<RtAudio::DeviceInfo>::iterator devices_i;
     std::map<int, RtAudio::DeviceInfo>::iterator mdevices_i;
     AudioThread::enumerateDevices(devices);
@@ -478,7 +459,7 @@ AppFrame::AppFrame() :
     menuBar->Append(sampleRateMenu, wxT("Sample &Rate"));
 
     // Audio Sample Rates
-    menu = new wxMenu;
+    wxMenu *audioSampleRateMenu = new wxMenu;
 
 #define NUM_RATES_DEFAULT 4
     unsigned int desired_rates[NUM_RATES_DEFAULT] = { 48000, 44100, 96000, 192000 };
@@ -508,7 +489,7 @@ AppFrame::AppFrame() :
     for (mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
         int menu_id = wxID_AUDIO_BANDWIDTH_BASE + wxID_AUDIO_DEVICE_MULTIPLIER * mdevices_i->first;
         wxMenu *subMenu = new wxMenu;
-        menu->AppendSubMenu(subMenu, mdevices_i->second.name, wxT("Description?"));
+        audioSampleRateMenu->AppendSubMenu(subMenu, mdevices_i->second.name, wxT("Description?"));
 
         int j = 0;
         for (std::vector<unsigned int>::iterator srate = mdevices_i->second.sampleRates.begin(); srate != mdevices_i->second.sampleRates.end();
@@ -526,7 +507,12 @@ AppFrame::AppFrame() :
         }
     }
 
-    menuBar->Append(menu, wxT("Audio &Sample Rate"));
+    menuBar->Append(audioSampleRateMenu, wxT("Audio &Sample Rate"));
+
+	//Add a Recording menu
+	menuBar->Append(makeRecordingMenu(), wxT("Recordin&g"));
+	//
+	updateRecordingMenu();
 
     //Add Display menu
     displayMenu = new wxMenu;
@@ -535,7 +521,7 @@ AppFrame::AppFrame() :
 
     int fontScale = wxGetApp().getConfig()->getFontScale();
 
-    fontMenu->AppendRadioItem(wxID_DISPLAY_BASE, "Normal")->Check(GLFont::GLFONT_SCALE_NORMAL == fontScale);
+    fontMenu->AppendRadioItem(wxID_DISPLAY_BASE, "Default")->Check(GLFont::GLFONT_SCALE_NORMAL == fontScale);
     fontMenu->AppendRadioItem(wxID_DISPLAY_BASE + 1, "1.5x")->Check(GLFont::GLFONT_SCALE_MEDIUM == fontScale);
     fontMenu->AppendRadioItem(wxID_DISPLAY_BASE + 2, "2.0x")->Check(GLFont::GLFONT_SCALE_LARGE == fontScale);
 
@@ -727,6 +713,137 @@ AppFrame::~AppFrame() {
 
     waterfallDataThread->terminate();
     t_FFTData->join();
+}
+
+wxMenu *AppFrame::makeFileMenu() {
+    
+    wxMenu *menu = new wxMenu;
+#ifndef __APPLE__ 
+#ifdef CUBICSDR_ENABLE_ABOUT_DIALOG
+    menu->Append(wxID_ABOUT_CUBICSDR, "About " CUBICSDR_INSTALL_NAME);
+#endif
+#endif
+    menu->Append(wxID_SDR_DEVICES, "SDR Devices");
+    menu->AppendSeparator();
+    menu->Append(wxID_SDR_START_STOP, "Stop / Start Device");
+    menu->AppendSeparator();
+
+    wxMenu *sessionMenu = new wxMenu;
+    
+    sessionMenu->Append(wxID_OPEN, "&Open Session");
+    sessionMenu->Append(wxID_SAVE, "&Save Session");
+    sessionMenu->Append(wxID_SAVEAS, "Save Session &As..");
+    sessionMenu->AppendSeparator();
+    sessionMenu->Append(wxID_RESET, "&Reset Session");
+
+    menu->AppendSubMenu(sessionMenu, "Session");
+
+    menu->AppendSeparator();
+
+    wxMenu *bookmarkMenu = new wxMenu;
+    
+    bookmarkMenu->Append(wxID_OPEN_BOOKMARKS, "Open Bookmarks");
+	bookmarkMenu->Append(wxID_SAVE_BOOKMARKS, "Save Bookmarks");
+	bookmarkMenu->Append(wxID_SAVEAS_BOOKMARKS, "Save Bookmarks As..");
+	bookmarkMenu->AppendSeparator();
+	bookmarkMenu->Append(wxID_RESET_BOOKMARKS, "Reset Bookmarks");
+
+    menu->AppendSubMenu(bookmarkMenu, "Bookmarks");
+    
+#ifndef __APPLE__
+    menu->AppendSeparator();
+    menu->Append(wxID_CLOSE);
+#else
+#ifdef CUBICSDR_ENABLE_ABOUT_DIALOG
+    if (wxApp::s_macAboutMenuItemId != wxID_NONE) {
+        wxString aboutLabel;
+        aboutLabel.Printf(_("About %s"), CUBICSDR_INSTALL_NAME);
+        menu->Append(wxApp::s_macAboutMenuItemId, aboutLabel);
+    }
+#endif
+#endif
+
+	fileMenu = menu;
+
+    return menu;
+}
+
+wxMenu *AppFrame::makeRecordingMenu() {
+	
+	recordingMenuItems.clear();
+
+	wxMenu *menu = new wxMenu;
+
+	recordingMenuItems[wxID_RECORDING_PATH] = menu->Append(wxID_RECORDING_PATH, getSettingsLabel("Set Recording Path", "<Not Set>"));
+
+	menu->AppendSeparator();
+
+	//Squelch options as sub-menu:
+	wxMenu *subMenu = new wxMenu;
+	recordingMenuItems[wxID_RECORDING_SQUELCH_BASE] = menu->AppendSubMenu(subMenu, "Squelch");
+
+	recordingMenuItems[wxID_RECORDING_SQUELCH_SILENCE] = subMenu->AppendRadioItem(wxID_RECORDING_SQUELCH_SILENCE, "Record Silence", 
+		"Record below squelch-break audio as silence, i.e records as the user may hear.");
+	recordingMenuItems[wxID_RECORDING_SQUELCH_SKIP] = subMenu->AppendRadioItem(wxID_RECORDING_SQUELCH_SKIP, "Skip Silence", 
+		"Do not record below squelch-break audio, i.e squelch-break audio parts are packed together.");
+	recordingMenuItems[wxID_RECORDING_SQUELCH_ALWAYS] = subMenu->AppendRadioItem(wxID_RECORDING_SQUELCH_ALWAYS, "Record Always", 
+		"Record everything irrespective of the squelch level.");
+	
+	recordingMenuItems[wxID_RECORDING_FILE_TIME_LIMIT] = menu->Append(wxID_RECORDING_FILE_TIME_LIMIT, getSettingsLabel("File time limit", "<Not Set>"), 
+		"Creates a new file automatically, each time the recording lasts longer than the limit, named according to the current time.");
+
+	recordingMenuItems[wxID_RECORDING_SQUELCH_SILENCE]->Check(true);
+
+	recordingMenu = menu;
+
+	return menu;
+}
+
+void AppFrame::updateRecordingMenu() {
+
+	// Recording path:
+	std::string recPath = wxGetApp().getConfig()->getRecordingPath();
+	if (recPath.length() > 32) {
+		recPath = "..." + recPath.substr(recPath.length() - 32, 32);
+	}
+
+	recordingMenuItems[wxID_RECORDING_PATH]->SetItemLabel(getSettingsLabel("Set Recording Path", recPath.empty() ? "<Not Set>" : recPath));
+
+	//Squelch options:
+	int squelchEnumValue = wxGetApp().getConfig()->getRecordingSquelchOption();
+
+	if (squelchEnumValue == AudioSinkFileThread::SQUELCH_RECORD_SILENCE) {
+
+		recordingMenuItems[wxID_RECORDING_SQUELCH_SILENCE]->Check(true);
+		recordingMenuItems[wxID_RECORDING_SQUELCH_BASE]->SetItemLabel(getSettingsLabel("Squelch", "Record Silence"));
+
+	} else if (squelchEnumValue == AudioSinkFileThread::SQUELCH_SKIP_SILENCE) {
+
+		recordingMenuItems[wxID_RECORDING_SQUELCH_SKIP]->Check(true);
+		recordingMenuItems[wxID_RECORDING_SQUELCH_BASE]->SetItemLabel(getSettingsLabel("Squelch", "Skip Silence"));
+
+	} else if (squelchEnumValue == AudioSinkFileThread::SQUELCH_RECORD_ALWAYS) {
+
+		recordingMenuItems[wxID_RECORDING_SQUELCH_ALWAYS]->Check(true);
+		recordingMenuItems[wxID_RECORDING_SQUELCH_BASE]->SetItemLabel(getSettingsLabel("Squelch", "Record Always"));
+	}
+	else {
+		recordingMenuItems[wxID_RECORDING_SQUELCH_SILENCE]->Check(true);
+		recordingMenuItems[wxID_RECORDING_SQUELCH_BASE]->SetItemLabel(getSettingsLabel("Squelch", "Record Silence"));
+
+	}
+
+	//File time limit:
+	int fileTimeLimitSeconds = wxGetApp().getConfig()->getRecordingFileTimeLimit();
+
+	if (fileTimeLimitSeconds <= 0) {
+		
+		recordingMenuItems[wxID_RECORDING_FILE_TIME_LIMIT]->SetItemLabel(getSettingsLabel("File time limit","<Not Set>"));
+	}
+	else {
+		recordingMenuItems[wxID_RECORDING_FILE_TIME_LIMIT]->SetItemLabel(getSettingsLabel("File time limit",
+			std::to_string(fileTimeLimitSeconds), "s"));
+	}
 }
 
 void AppFrame::initDeviceParams(SDRDeviceInfo *devInfo) {
@@ -1480,14 +1597,79 @@ bool AppFrame::actionOnMenuLoadSave(wxCommandEvent& event) {
 	}
 	else if (event.GetId() == wxID_RESET_BOOKMARKS) {
 
-		wxGetApp().getBookmarkMgr().resetBookmarks();
-		wxGetApp().getBookmarkMgr().updateBookmarks();
-		wxGetApp().getBookmarkMgr().updateActiveList();
-	
+        ActionDialog::showDialog(new ActionDialogBookmarkReset());
+
 		return true;
 	}
 
     return false;
+}
+
+bool AppFrame::actionOnMenuRecording(wxCommandEvent& event) {
+
+	if (event.GetId() == wxID_RECORDING_PATH) {
+
+		std::string recPath = wxGetApp().getConfig()->getRecordingPath();
+
+		wxDirDialog recPathDialog(this, _("File Path for Recordings"), recPath, wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST);
+		if (recPathDialog.ShowModal() == wxID_CANCEL) {
+			return true;
+		}
+
+		wxGetApp().getConfig()->setRecordingPath(recPathDialog.GetPath().ToStdString());
+
+		updateRecordingMenu();
+		return true;
+
+	}
+	else if (event.GetId() == wxID_RECORDING_SQUELCH_SILENCE) {
+
+		wxGetApp().getConfig()->setRecordingSquelchOption(AudioSinkFileThread::SQUELCH_RECORD_SILENCE);
+
+		updateRecordingMenu();
+		return true;
+	}
+	else if (event.GetId() == wxID_RECORDING_SQUELCH_SKIP) {
+
+		wxGetApp().getConfig()->setRecordingSquelchOption(AudioSinkFileThread::SQUELCH_SKIP_SILENCE);
+
+		updateRecordingMenu();
+		return true;
+	}
+	else if (event.GetId() == wxID_RECORDING_SQUELCH_ALWAYS) {
+		
+		wxGetApp().getConfig()->setRecordingSquelchOption(AudioSinkFileThread::SQUELCH_RECORD_ALWAYS);
+
+		updateRecordingMenu();
+		return true;
+	}
+	else if (event.GetId() == wxID_RECORDING_FILE_TIME_LIMIT) {
+
+		int currentFileLimitSeconds = wxGetApp().getConfig()->getRecordingFileTimeLimit();
+
+		long newFileLimit = wxGetNumberFromUser(wxString("\nFile time limit:\n") + 
+			"\nCreates a new file automatically, each time the recording lasts longer than the limit, named according to the current time.\n\n  " + 
+			+ "min: 0 s (no limit)"
+			+ ", max: 36000 s (10 hours)\n",
+			"Time in seconds",
+			"File Time Limit",
+			//If a manual sample rate has already been input, recall this one.
+			currentFileLimitSeconds > 0 ? currentFileLimitSeconds : 0,
+			0,
+			36000,
+			this);
+
+		if (newFileLimit != -1) {
+
+			wxGetApp().getConfig()->setRecordingFileTimeLimit((int)newFileLimit);
+
+			updateRecordingMenu();
+		}
+
+		return true;
+	}
+
+	return false;
 }
 
 bool AppFrame::actionOnMenuRig(wxCommandEvent& event) {
@@ -1709,9 +1891,12 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
     else if (actionOnMenuAudioSampleRate(event)) {
         return;
     }
-    else if (actionOnMenuDisplay(event)) {
+    else if (actionOnMenuRecording(event)) {
         return;
     }
+	else if (actionOnMenuDisplay(event)) {
+		return;
+	}
     //Optional : Rig 
     else if (actionOnMenuRig(event)) {
         return;
@@ -2576,6 +2761,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case 'S':
         case 'P':
         case 'M':
+        case 'R':
             return 1;
         case '0':
         case '1':
@@ -2716,6 +2902,13 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
             wxGetApp().setSoloMode(!wxGetApp().getSoloMode());
             return 1;
             break;
+        case 'R':
+            if (event.ShiftDown()) {
+                toggleAllActiveDemodRecording();
+            } else {
+                toggleActiveDemodRecording();
+            }
+            break;
         case 'P':
             wxGetApp().getSpectrumProcessor()->setPeakHold(!wxGetApp().getSpectrumProcessor()->getPeakHold());
             if (wxGetApp().getDemodSpectrumProcessor()) {
@@ -2759,6 +2952,43 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
 
     return 1;
 }
+
+void AppFrame::toggleActiveDemodRecording() {
+    if (!wxGetApp().getConfig()->verifyRecordingPath()) {
+        return;
+    }
+    
+    DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
+    
+    if (activeDemod) {
+        activeDemod->setRecording(!activeDemod->isRecording());
+        wxGetApp().getBookmarkMgr().updateActiveList();
+    }
+}
+
+void AppFrame::toggleAllActiveDemodRecording() {
+    if (!wxGetApp().getConfig()->verifyRecordingPath()) {
+        return;
+    }
+
+    auto activeDemods = wxGetApp().getDemodMgr().getDemodulators();
+
+    bool stateToSet = true;
+
+    for (auto i : activeDemods) {
+        if (i->isActive() && i->isRecording()) {
+            stateToSet = false;
+            break;
+        }
+    }
+
+    for (auto i : activeDemods) {
+        if (i->isActive() && i->isRecording() != stateToSet) {
+            i->setRecording(stateToSet);            
+        }
+    }
+}
+
 
 
 void AppFrame::setWaterfallLinesPerSecond(int lps) {

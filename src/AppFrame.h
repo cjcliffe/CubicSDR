@@ -76,6 +76,13 @@
 
 #define wxID_DEVICE_ID 3500
 
+#define  wxID_RECORDING_PATH 8500
+#define  wxID_RECORDING_SQUELCH_BASE 8501
+#define  wxID_RECORDING_SQUELCH_SILENCE 8502
+#define  wxID_RECORDING_SQUELCH_SKIP 8503
+#define  wxID_RECORDING_SQUELCH_ALWAYS 8504
+#define  wxID_RECORDING_FILE_TIME_LIMIT 8505
+
 #define wxID_AUDIO_BANDWIDTH_BASE 9000
 #define wxID_AUDIO_DEVICE_MULTIPLIER 50
 
@@ -101,6 +108,11 @@ public:
     AppFrame();
     ~AppFrame();
 
+    wxMenu *makeFileMenu();
+   
+	wxMenu *makeRecordingMenu();
+	void updateRecordingMenu();
+
     void initDeviceParams(SDRDeviceInfo *devInfo);
     void updateDeviceParams();
 
@@ -118,6 +130,9 @@ public:
 
     int OnGlobalKeyDown(wxKeyEvent &event);
     int OnGlobalKeyUp(wxKeyEvent &event);
+    
+    void toggleActiveDemodRecording();
+    void toggleAllActiveDemodRecording();
     
     void setWaterfallLinesPerSecond(int lps);
     void setSpectrumAvgSpeed(double avg);
@@ -171,6 +186,7 @@ private:
     bool actionOnMenuAudioSampleRate(wxCommandEvent& event);
     bool actionOnMenuDisplay(wxCommandEvent& event);
     bool actionOnMenuLoadSave(wxCommandEvent& event);
+	bool actionOnMenuRecording(wxCommandEvent& event);
     bool actionOnMenuRig(wxCommandEvent& event);
 
     wxString getSettingsLabel(const std::string& settingsName, 
@@ -205,6 +221,7 @@ private:
     std::vector<RtAudio::DeviceInfo> devices;
     std::map<int,RtAudio::DeviceInfo> inputDevices;
     std::map<int,RtAudio::DeviceInfo> outputDevices;
+
     std::map<int, wxMenuItem *> outputDeviceMenuItems;
     std::map<int, wxMenuItem *> sampleRateMenuItems;
     std::map<int, wxMenuItem *> antennaMenuItems;
@@ -214,6 +231,10 @@ private:
     std::map<int, wxMenuItem *> settingsMenuItems;
     
     std::map<int, wxMenuItem *> audioSampleRateMenuItems;
+
+	//
+	std::map<int, wxMenuItem *> recordingMenuItems;
+
     std::map<int, wxMenuItem *> directSamplingMenuItems;
     wxMenuBar *menuBar;
     
@@ -222,7 +243,9 @@ private:
     wxMenuItem *agcMenuItem = nullptr;
     wxMenuItem *iqSwapMenuItem = nullptr;
     wxMenuItem *lowPerfMenuItem = nullptr;
+    wxMenu *fileMenu = nullptr;
     wxMenu *settingsMenu = nullptr;
+	wxMenu *recordingMenu = nullptr;
     
     SoapySDR::ArgInfoList settingArgs;
     int settingsIdMax;

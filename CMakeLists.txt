@@ -6,7 +6,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 
 SET(CUBICSDR_VERSION_MAJOR "0")
 SET(CUBICSDR_VERSION_MINOR "2")
-SET(CUBICSDR_VERSION_PATCH "2")
+SET(CUBICSDR_VERSION_PATCH "3")
 SET(CUBICSDR_VERSION_SUFFIX "")
 SET(CUBICSDR_VERSION "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}${CUBICSDR_VERSION_SUFFIX}")
 
@@ -347,6 +347,10 @@ SET (cubicsdr_sources
     src/modules/modem/analog/ModemLSB.cpp
     src/modules/modem/analog/ModemUSB.cpp
     src/audio/AudioThread.cpp
+    src/audio/AudioSinkThread.cpp
+    src/audio/AudioSinkFileThread.cpp
+    src/audio/AudioFile.cpp
+    src/audio/AudioFileWAV.cpp
     src/util/Gradient.cpp
     src/util/Timer.cpp
     src/util/MouseTracker.cpp
@@ -451,6 +455,10 @@ SET (cubicsdr_headers
     src/modules/modem/analog/ModemLSB.h
     src/modules/modem/analog/ModemUSB.h
     src/audio/AudioThread.h
+    src/audio/AudioSinkThread.h
+    src/audio/AudioSinkFileThread.h
+    src/audio/AudioFile.h
+    src/audio/AudioFileWAV.h
     src/util/Gradient.h
     src/util/Timer.h
 	src/util/ThreadBlockingQueue.h
@@ -995,7 +1003,7 @@ IF (WIN32 AND BUILD_INSTALLER)
 
     IF (MSVC)
         install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/external/msvc/${EX_PLATFORM_NAME}/vc_redist.${EX_PLATFORM_NAME}.exe DESTINATION vc_redist)
-        set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "ExecWait '\\\"$INSTDIR\\\\vc_redist\\\\vc_redist.${EX_PLATFORM_NAME}.exe\\\" /q:a'")
+        set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "ExecWait '\\\"$INSTDIR\\\\vc_redist\\\\vc_redist.${EX_PLATFORM_NAME}.exe\\\" /passive /norestart'")
     ENDIF (MSVC)
           
           

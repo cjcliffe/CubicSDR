@@ -58,7 +58,6 @@ void DemodulatorMgr::terminateAll() {
 
         DemodulatorInstancePtr d = demods.back();
         demods.pop_back();
-        wxGetApp().removeDemodulator(d);
         deleteThread(d);
     }
 }

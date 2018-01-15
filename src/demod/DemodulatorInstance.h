@@ -11,6 +11,7 @@
 #include "ModemDigital.h"
 #include "ModemAnalog.h"
 #include "AudioThread.h"
+#include "AudioSinkThread.h"
 
 #if ENABLE_DIGITAL_LAB
 #include "DigitalConsole.h"
@@ -110,6 +111,9 @@ public:
     bool isMuted();
     void setMuted(bool muted);
 
+    bool isRecording();
+    void setRecording(bool recording);
+
     DemodVisualCue *getVisualCue();
     
     DemodulatorThreadInputQueuePtr getIQInputDataPipe();
@@ -131,6 +135,10 @@ public:
     void closeOutput();
 #endif
         
+protected:
+    void startRecording();
+    void stopRecording();
+
 private:
     DemodulatorThreadInputQueuePtr pipeIQInputData;
     DemodulatorThreadPostInputQueuePtr pipeIQDemodData;
@@ -138,6 +146,10 @@ private:
     DemodulatorPreThread *demodulatorPreThread;
     DemodulatorThread *demodulatorThread;
     DemodulatorThreadControlCommandQueuePtr threadQueueControl;
+
+    AudioSinkThread *audioSinkThread = nullptr;
+    std::thread *t_AudioSink = nullptr;
+    AudioThreadInputQueuePtr audioSinkInputQueue;
 
     //protects child thread creation and termination 
     std::recursive_mutex m_thread_control_mutex;
@@ -150,6 +162,8 @@ private:
     std::atomic_bool squelch;
     std::atomic_bool muted;
     std::atomic_bool deltaLock;
+    std::atomic_bool recording;
+
     std::atomic_int deltaLockOfs;
 
     std::atomic_int currentOutputDevice;

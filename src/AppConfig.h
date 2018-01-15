@@ -138,6 +138,16 @@ public:
     void setBookmarksVisible(bool state);
     bool getBookmarksVisible();
     
+	//Recording settings:
+    void setRecordingPath(std::string recPath);
+    std::string getRecordingPath();
+	bool verifyRecordingPath();
+
+	void setRecordingSquelchOption(int enumChoice);
+	int getRecordingSquelchOption();
+    
+	void setRecordingFileTimeLimit(int nbSeconds);
+	int getRecordingFileTimeLimit();
     
 #if USE_HAMLIB
     int getRigModel();
@@ -185,6 +195,10 @@ private:
     std::atomic_int dbOffset;
     std::vector<SDRManualDef> manualDevices;
     std::atomic_bool bookmarksVisible;
+
+    std::string recordingPath = "";
+	int recordingSquelchOption = 0;
+	int recordingFileTimeLimitSeconds = 0;
 #if USE_HAMLIB
     std::atomic_int rigModel, rigRate;
     std::string rigPort;

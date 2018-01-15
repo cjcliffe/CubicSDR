@@ -21,13 +21,32 @@ public:
     int channels;
     float peak;
     int type;
+	bool is_squelch_active;
+
     std::vector<float> data;
 
     AudioThreadInput() :
-            frequency(0), sampleRate(0), channels(0), peak(0) {
+            frequency(0), inputRate(0), sampleRate(0), channels(0), peak(0), type(0), is_squelch_active(false) {
 
     }
 
+    
+    AudioThreadInput(AudioThreadInput *copyFrom) {
+        copy(copyFrom);
+    }
+    
+    void copy(AudioThreadInput *copyFrom) {
+        frequency = copyFrom->frequency;
+        inputRate = copyFrom->inputRate;
+        sampleRate = copyFrom->sampleRate;
+        channels = copyFrom->channels;
+        peak = copyFrom->peak;
+        type = copyFrom->type;
+        is_squelch_active = copyFrom->is_squelch_active;
+        data.assign(copyFrom->data.begin(), copyFrom->data.end());
+    }
+
+    
     virtual ~AudioThreadInput() {
        
     }

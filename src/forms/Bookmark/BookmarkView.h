@@ -145,6 +145,8 @@ protected:
     void onBookmarkChoice( wxCommandEvent &event );
     
     void onRemoveActive( wxCommandEvent& event );
+    void onStartRecording( wxCommandEvent& event );
+    void onStopRecording( wxCommandEvent& event );
     void onRemoveBookmark( wxCommandEvent& event );
     
     void onActivateBookmark( wxCommandEvent& event );

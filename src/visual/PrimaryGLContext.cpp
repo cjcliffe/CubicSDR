@@ -104,17 +104,26 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstancePtr demod, RGBA4f color,
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     bool soloMode = wxGetApp().getSoloMode();
+    bool isRecording = demod->isRecording();
     bool isSolo = soloMode && demod == wxGetApp().getDemodMgr().getLastActiveDemodulator();
     
+    RGBA4f labelBg(0, 0, 0, 0.35f);
+
     if (isSolo) {
-        glColor4f(0.8f, 0.8f, 0, 0.35f);
+        labelBg.r = labelBg.g = 0.8f;
     } else if (demod->isMuted()) {
-        glColor4f(0.8f, 0, 0, 0.35f);
+        labelBg.r = 0.8f;
     } else if (soloMode) {
-        glColor4f(0.2f, 0, 0, 0.35f);
-    } else {
-        glColor4f(0, 0, 0, 0.35f);
+        labelBg.r = 0.2f;
     }
+
+    // TODO: Better recording indicator... pulsating red circle?
+    if (isRecording) {
+        auto t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+        labelBg.g = sinf(2.0f * M_PI * (float(t) / 1000.0f)) * 0.25f + 0.75f;
+    }
+
+    glColor4f(labelBg.r, labelBg.g, labelBg.b, labelBg.a);
     
     glBegin(GL_QUADS);
     glVertex3f(uxPos - ofsLeft, hPos + labelHeight, 0.0);
@@ -156,18 +165,29 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstancePtr demod, RGBA4f color,
 
     glColor4f(1.0, 1.0, 1.0, 0.8f);
 
-    std::string demodLabel = demod->getLabel();
-    
-    if (demod->isMuted()) {
-        demodLabel = std::string("[M] ") + demodLabel;
-    } else if (isSolo) {
-        demodLabel = std::string("[S] ") + demodLabel;
-    }
-    
+    std::string demodLabel, demodPrefix;
+
     if (demod->isDeltaLock()) {
-        demodLabel.append(" [V]");
+        demodPrefix.append("V");
     }
-    
+
+    if (isRecording) {
+        demodPrefix.append("R");
+    }
+
+    if (demod->isMuted()) {
+        demodPrefix.append("M");
+    } else if (isSolo) {
+        demodPrefix.append("S");
+    }
+
+    // Set the prefix
+    if (!demodPrefix.empty()) {
+        demodLabel = "[" + demodPrefix + "] ";
+    }    
+    // Append the default label
+    demodLabel.append(demod->getLabel());
+
     if (demod->getDemodulatorType() == "USB") {
         GLFont::getFont(16, GLFont::getScaleFactor()).drawString(demodLabel, uxPos, hPos, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
     } else if (demod->getDemodulatorType() == "LSB") {
