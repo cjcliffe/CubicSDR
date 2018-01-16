@@ -15,11 +15,10 @@ BookmarkEntry::~BookmarkEntry() {
 BookmarkMgr::BookmarkMgr() {
     rangesSorted = false;
 }
-
-//represents an empty BookMarkList that is returned by reference by some functions.
-const BookmarkList BookmarkMgr::emptyResults;
-
+//
 void BookmarkMgr::saveToFile(std::string bookmarkFn, bool backup, bool useFullpath) {
+
+	std::lock_guard < std::recursive_mutex > lock(busy_lock);
 
     DataTree s("cubicsdr_bookmarks");
     DataNode *header = s.rootNode()->newChild("header");
@@ -100,6 +99,8 @@ void BookmarkMgr::saveToFile(std::string bookmarkFn, bool backup, bool useFullpa
 }
 
 bool BookmarkMgr::loadFromFile(std::string bookmarkFn, bool backup, bool useFullpath) {
+	
+	std::lock_guard < std::recursive_mutex > lock(busy_lock);
 
 	wxFileName loadFile;
 	wxFileName failFile;
@@ -129,7 +130,7 @@ bool BookmarkMgr::loadFromFile(std::string bookmarkFn, bool backup, bool useFull
 
     // New instance of bookmark savefiles
     if (backup && !loadFile.FileExists() && !lastLoaded.FileExists() && !backupFile.FileExists()) {
-        wxGetApp().getAppFrame()->getBookmarkView()->loadDefaultRanges();
+        loadDefaultRanges();
         return true;
     }
     
@@ -145,8 +146,8 @@ bool BookmarkMgr::loadFromFile(std::string bookmarkFn, bool backup, bool useFull
 	
 	// Clear any active data
 	bmData.clear();
-	clearRecents();
-	clearRanges();
+	recents.clear();
+	ranges.clear();
 	bmDataSorted.clear();
     
     if (s.rootNode()->hasAnother("branches")) {
@@ -238,15 +239,31 @@ bool BookmarkMgr::loadFromFile(std::string bookmarkFn, bool backup, bool useFull
     return loadStatusOk;
 }
 
+void BookmarkMgr::loadDefaultRanges() {
+
+	addRange(std::make_shared<BookmarkRangeEntry>(L"160 Meters", 1900000, 1800000, 2000000));
+	addRange(std::make_shared<BookmarkRangeEntry>(L"80 Meters", 3750000, 3500000, 4000000));
+	addRange(std::make_shared<BookmarkRangeEntry>(L"60 Meters", 5368500, 5332000, 5405000));
+	addRange(std::make_shared<BookmarkRangeEntry>(L"40 Meters", 7150000, 7000000, 7300000));
+	addRange(std::make_shared<BookmarkRangeEntry>(L"30 Meters", 10125000, 10100000, 10150000));
+	addRange(std::make_shared<BookmarkRangeEntry>(L"20 Meters", 14175000, 14000000, 14350000));
+	addRange(std::make_shared<BookmarkRangeEntry>(L"17 Meters", 18068180, 17044180, 19092180));
+	addRange(std::make_shared<BookmarkRangeEntry>(L"15 Meters", 21225000, 21000000, 21450000));
+	addRange(std::make_shared<BookmarkRangeEntry>(L"12 Meters", 24940000, 24890000, 24990000));
+	addRange(std::make_shared<BookmarkRangeEntry>(L"10 Meters", 28850000, 28000000, 29700000));
+}
+
 void BookmarkMgr::resetBookmarks() {
+
+	std::lock_guard < std::recursive_mutex > lock(busy_lock);
 
 	// Clear any active data
 	bmData.clear();
-	clearRecents();
-	clearRanges();
+	recents.clear();
+	ranges.clear();
 	bmDataSorted.clear();
 
-	wxGetApp().getAppFrame()->getBookmarkView()->loadDefaultRanges();
+	loadDefaultRanges();
 
 }
 
@@ -280,9 +297,8 @@ void BookmarkMgr::addBookmark(std::string group, BookmarkEntryPtr be) {
 
 
 void BookmarkMgr::removeBookmark(std::string group, BookmarkEntryPtr be) {
-    std::lock_guard < std::recursive_mutex > lockData(busy_lock);
-    std::lock_guard < std::mutex > lockEnt(be->busy_lock);
-
+    std::lock_guard < std::recursive_mutex > lock(busy_lock);
+   
     if (bmData.find(group) == bmData.end()) {
         return;
     }
@@ -296,8 +312,7 @@ void BookmarkMgr::removeBookmark(std::string group, BookmarkEntryPtr be) {
 }
 
 void BookmarkMgr::removeBookmark(BookmarkEntryPtr be) {
-    std::lock_guard < std::recursive_mutex > lockData(busy_lock);
-    std::lock_guard < std::mutex > lockEnt(be->busy_lock);
+    std::lock_guard < std::recursive_mutex > lock(busy_lock);
     
     for (auto &bmd_i : bmData) {
         BookmarkList::iterator i = std::find(bmd_i.second.begin(), bmd_i.second.end(), be);
@@ -308,8 +323,7 @@ void BookmarkMgr::removeBookmark(BookmarkEntryPtr be) {
 }
 
 void BookmarkMgr::moveBookmark(BookmarkEntryPtr be, std::string group) {
-    std::lock_guard < std::recursive_mutex > lockData(busy_lock);
-    std::lock_guard < std::mutex > lockEnt(be->busy_lock);
+    std::lock_guard < std::recursive_mutex > lock(busy_lock);
     
     for (auto &bmd_i : bmData) {
         BookmarkList::iterator i = std::find(bmd_i.second.begin(), bmd_i.second.end(), be);
@@ -367,11 +381,11 @@ void BookmarkMgr::renameGroup(std::string group, std::string ngroup) {
     }
 }
 
-const BookmarkList& BookmarkMgr::getBookmarks(std::string group) {
+BookmarkList BookmarkMgr::getBookmarks(std::string group) {
     std::lock_guard < std::recursive_mutex > lock(busy_lock);
     
     if (bmData.find(group) == bmData.end()) {
-        return emptyResults;
+        return BookmarkList();
     }
     
     if (!bmDataSorted[group]) {
@@ -384,7 +398,7 @@ const BookmarkList& BookmarkMgr::getBookmarks(std::string group) {
 
 
 void BookmarkMgr::getGroups(BookmarkNames &arr) {
-    std::lock_guard < std::recursive_mutex > lockData(busy_lock);
+    std::lock_guard < std::recursive_mutex > lock(busy_lock);
 
     for (BookmarkMap::iterator i = bmData.begin(); i!= bmData.end(); ++i) {
         arr.push_back(i->first);
@@ -392,7 +406,7 @@ void BookmarkMgr::getGroups(BookmarkNames &arr) {
 }
 
 void BookmarkMgr::getGroups(wxArrayString &arr) {
-    std::lock_guard < std::recursive_mutex > lockData(busy_lock);
+    std::lock_guard < std::recursive_mutex > lock(busy_lock);
 
     for (BookmarkMap::iterator i = bmData.begin(); i!= bmData.end(); ++i) {
         arr.push_back(i->first);
@@ -401,11 +415,16 @@ void BookmarkMgr::getGroups(wxArrayString &arr) {
 
 
 void BookmarkMgr::setExpandState(std::string groupName, bool state) {
+	std::lock_guard < std::recursive_mutex > lock(busy_lock);
+
     expandState[groupName] = state;
 }
 
 
 bool BookmarkMgr::getExpandState(std::string groupName) {
+	
+	std::lock_guard < std::recursive_mutex > lock(busy_lock);
+
     if (expandState.find(groupName) == expandState.end()) {
         return true;
     }
@@ -414,8 +433,6 @@ bool BookmarkMgr::getExpandState(std::string groupName) {
 
 
 void BookmarkMgr::updateActiveList() {
-
-    std::lock_guard < std::recursive_mutex > lockData(busy_lock);
 
     if (wxGetApp().isShuttingDown()) {
         return;
@@ -430,8 +447,6 @@ void BookmarkMgr::updateActiveList() {
 
 void BookmarkMgr::updateBookmarks() {
 
-    std::lock_guard < std::recursive_mutex > lockData(busy_lock);
-
     BookmarkView *bmv = wxGetApp().getAppFrame()->getBookmarkView();
     
     if (bmv) {
@@ -440,8 +455,6 @@ void BookmarkMgr::updateBookmarks() {
 }
 
 void BookmarkMgr::updateBookmarks(std::string group) {
-
-    std::lock_guard < std::recursive_mutex > lockData(busy_lock);
 
     BookmarkView *bmv = wxGetApp().getAppFrame()->getBookmarkView();
     
@@ -480,9 +493,10 @@ void BookmarkMgr::removeRecent(BookmarkEntryPtr be) {
 }
 
 
-const BookmarkList& BookmarkMgr::getRecents() {
-    std::lock_guard < std::recursive_mutex > lockData(busy_lock);
-    return recents;
+BookmarkList BookmarkMgr::getRecents() {
+    std::lock_guard < std::recursive_mutex > lock(busy_lock);
+    //return a copy 
+	return recents;
 }
 
 
@@ -508,8 +522,6 @@ void BookmarkMgr::addRange(BookmarkRangeEntryPtr re) {
     rangesSorted = false;
 }
 
-
-
 void BookmarkMgr::removeRange(BookmarkRangeEntryPtr re) {
     std::lock_guard < std::recursive_mutex > lock(busy_lock);
     
@@ -522,7 +534,7 @@ void BookmarkMgr::removeRange(BookmarkRangeEntryPtr re) {
 }
 
 
-const BookmarkRangeList& BookmarkMgr::getRanges() {
+BookmarkRangeList BookmarkMgr::getRanges() {
     std::lock_guard < std::recursive_mutex > lock(busy_lock);
 
     if (!rangesSorted) {
@@ -610,8 +622,6 @@ std::wstring BookmarkMgr::getActiveDisplayName(DemodulatorInstancePtr demod) {
 
 void BookmarkMgr::removeActive(DemodulatorInstancePtr demod) {
 	
-	std::lock_guard < std::recursive_mutex > lock(busy_lock);
-
 	if (demod == nullptr) {
 		return;
 	}

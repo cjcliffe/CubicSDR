@@ -16,8 +16,7 @@ class DataNode;
 
 class BookmarkEntry {
 public:
-    std::mutex busy_lock;
-
+ 
     std::string type;
 	//maps on the Demod user label.
     std::wstring label; 
@@ -38,9 +37,7 @@ public:
     }
     BookmarkRangeEntry(std::wstring label, long long freq, long long startFreq, long long endFreq) : label(label), freq(freq), startFreq(startFreq), endFreq(endFreq) {
     }
-    
-    std::mutex busy_lock;
-    
+     
     std::wstring label;
     
     long long freq;
@@ -97,7 +94,9 @@ public:
     void addGroup(std::string group);
     void removeGroup(std::string group);
     void renameGroup(std::string group, std::string ngroup);
-    const BookmarkList& getBookmarks(std::string group);
+	//return an independent copy on purpose 
+    BookmarkList getBookmarks(std::string group);
+
     void getGroups(BookmarkNames &arr);
     void getGroups(wxArrayString &arr);
 
@@ -111,22 +110,29 @@ public:
     void addRecent(DemodulatorInstancePtr demod);
     void addRecent(BookmarkEntryPtr be);
     void removeRecent(BookmarkEntryPtr be);
-    const BookmarkList& getRecents();
+    
+	//return an independent copy on purpose 
+	BookmarkList getRecents();
+
     void clearRecents();
 
 	void removeActive(DemodulatorInstancePtr demod);
 
     void addRange(BookmarkRangeEntryPtr re);
     void removeRange(BookmarkRangeEntryPtr re);
-    const BookmarkRangeList& getRanges();
-    void clearRanges();
-	
+
+	//return an independent copy on purpose 
+	BookmarkRangeList getRanges();
+    
+	void clearRanges();
+
     static std::wstring getBookmarkEntryDisplayName(BookmarkEntryPtr bmEnt);
     static std::wstring getActiveDisplayName(DemodulatorInstancePtr demod);
 
 protected:
 
     void trimRecents();
+	void loadDefaultRanges();
     
     BookmarkEntryPtr demodToBookmarkEntry(DemodulatorInstancePtr demod);
     BookmarkEntryPtr nodeToBookmark(DataNode *node);
@@ -136,10 +142,8 @@ protected:
     BookmarkList recents;
     BookmarkRangeList ranges;
     bool rangesSorted;
+
     std::recursive_mutex busy_lock;
     
     BookmarkExpandState expandState;
-
-	//represents an empty BookMarkList that is returned by reference by some functions.
-	static const BookmarkList emptyResults;
 };

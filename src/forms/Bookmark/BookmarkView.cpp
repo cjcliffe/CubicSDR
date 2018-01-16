@@ -301,7 +301,7 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
 
         bool groupExpanded = searchState || wxGetApp().getBookmarkMgr().getExpandState(gn_i);
 
-        const BookmarkList& bmList = wxGetApp().getBookmarkMgr().getBookmarks(gn_i);
+        BookmarkList bmList = wxGetApp().getBookmarkMgr().getBookmarks(gn_i);
 
         for (auto &bmEnt : bmList) {
             std::wstring labelVal = BookmarkMgr::getBookmarkEntryDisplayName(bmEnt);
@@ -409,7 +409,7 @@ void BookmarkView::doUpdateActiveList() {
     bool rangeExpandState = searchState?false:expandState["range"];
     
 	//Ranges
-    const BookmarkRangeList& bmRanges = wxGetApp().getBookmarkMgr().getRanges();
+    BookmarkRangeList bmRanges = wxGetApp().getBookmarkMgr().getRanges();
 
     m_treeView->DeleteChildren(rangeBranch);
     
@@ -440,8 +440,9 @@ void BookmarkView::doUpdateActiveList() {
     bool recentExpandState = searchState || expandState["recent"];
     
     // Recents
-    const BookmarkList& bmRecents = wxGetApp().getBookmarkMgr().getRecents();
-    m_treeView->DeleteChildren(recentBranch);
+    BookmarkList bmRecents = wxGetApp().getBookmarkMgr().getRecents();
+    
+	m_treeView->DeleteChildren(recentBranch);
     
     for (auto &bmr_i: bmRecents) {
         TreeViewItem* tvi = new TreeViewItem();
@@ -1554,21 +1555,6 @@ void BookmarkView::onClearSearch( wxCommandEvent& /* event */ ) {
     wxGetApp().getBookmarkMgr().updateBookmarks();
     refreshLayout();
 }
-
-void BookmarkView::loadDefaultRanges() {
-
-    wxGetApp().getBookmarkMgr().addRange(std::make_shared<BookmarkRangeEntry>(L"160 Meters", 1900000, 1800000, 2000000));
-    wxGetApp().getBookmarkMgr().addRange(std::make_shared<BookmarkRangeEntry>(L"80 Meters", 3750000, 3500000, 4000000));
-    wxGetApp().getBookmarkMgr().addRange(std::make_shared<BookmarkRangeEntry>(L"60 Meters", 5368500, 5332000, 5405000));
-    wxGetApp().getBookmarkMgr().addRange(std::make_shared<BookmarkRangeEntry>(L"40 Meters", 7150000, 7000000, 7300000));
-    wxGetApp().getBookmarkMgr().addRange(std::make_shared<BookmarkRangeEntry>(L"30 Meters", 10125000, 10100000, 10150000));
-    wxGetApp().getBookmarkMgr().addRange(std::make_shared<BookmarkRangeEntry>(L"20 Meters", 14175000, 14000000, 14350000));
-    wxGetApp().getBookmarkMgr().addRange(std::make_shared<BookmarkRangeEntry>(L"17 Meters", 18068180, 17044180, 19092180));
-    wxGetApp().getBookmarkMgr().addRange(std::make_shared<BookmarkRangeEntry>(L"15 Meters", 21225000, 21000000, 21450000));
-    wxGetApp().getBookmarkMgr().addRange(std::make_shared<BookmarkRangeEntry>(L"12 Meters", 24940000, 24890000, 24990000));
-    wxGetApp().getBookmarkMgr().addRange(std::make_shared<BookmarkRangeEntry>(L"10 Meters", 28850000, 28000000, 29700000));
-}
-
 
 BookmarkRangeEntryPtr BookmarkView::makeActiveRangeEntry() {
     BookmarkRangeEntryPtr re(new BookmarkRangeEntry);

@@ -80,7 +80,6 @@ public:
     bool getExpandState(std::string branchName);
     void setExpandState(std::string branchName, bool state);
     
-    void loadDefaultRanges();
     static BookmarkRangeEntryPtr makeActiveRangeEntry();
 
 protected:
