@@ -8,6 +8,7 @@
 #include <map>
 #include <string>
 #include <atomic>
+#include <algorithm>
 #include <memory>
 #include "ThreadBlockingQueue.h"
 #include "RtAudio.h"
@@ -110,6 +111,9 @@ public:
     static void deviceCleanup();
     static void setDeviceSampleRate(int deviceId, int sampleRate);
 
+	//
+	void attachControllerThread(std::thread* controllerThread);
+
     //fields below, only to be used by other AudioThreads !
     size_t underflowCount;
     //protected by m_mutex
@@ -131,6 +135,9 @@ private:
     AudioThreadCommandQueue cmdQueue;
     int sampleRate;
 
+	//if != nullptr, it mean AudioThread is a controller thread.
+	std::thread* controllerThread = nullptr;
+
     //The own m_mutex protecting this AudioThread, in particular boundThreads
     std::recursive_mutex m_mutex;
 
@@ -140,10 +147,8 @@ private:
     void bindThread(AudioThread *other);
     void removeThread(AudioThread *other);
 
-    static std::map<int, AudioThread *> deviceController;
-    static std::map<int, std::thread *> deviceThread;
-	
+	static std::map<int, AudioThread* > deviceController;
+
 	//The mutex protecting static deviceController, deviceThread and deviceSampleRate access.
 	static std::recursive_mutex m_device_mutex;
 };
-
