@@ -21,20 +21,20 @@ public:
     int channels;
     float peak;
     int type;
-	bool is_squelch_active;
+    bool is_squelch_active;
 
     std::vector<float> data;
 
     AudioThreadInput() :
-            frequency(0), inputRate(0), sampleRate(0), channels(0), peak(0), type(0), is_squelch_active(false) {
+        frequency(0), inputRate(0), sampleRate(0), channels(0), peak(0), type(0), is_squelch_active(false) {
 
     }
 
-    
+
     AudioThreadInput(AudioThreadInput *copyFrom) {
         copy(copyFrom);
     }
-    
+
     void copy(AudioThreadInput *copyFrom) {
         frequency = copyFrom->frequency;
         inputRate = copyFrom->inputRate;
@@ -46,9 +46,9 @@ public:
         data.assign(copyFrom->data.begin(), copyFrom->data.end());
     }
 
-    
+
     virtual ~AudioThreadInput() {
-       
+
     }
 };
 
@@ -65,7 +65,7 @@ public:
     };
 
     AudioThreadCommand() :
-            cmd(AUDIO_THREAD_CMD_NULL), int_value(0) {
+        cmd(AUDIO_THREAD_CMD_NULL), int_value(0) {
     }
 
     AudioThreadCommandEnum cmd;
@@ -81,15 +81,15 @@ typedef std::shared_ptr<AudioThreadCommandQueue> AudioThreadCommandQueuePtr;
 class AudioThread : public IOThread {
 
 public:
-   
+
     AudioThread();
     virtual ~AudioThread();
 
     static void enumerateDevices(std::vector<RtAudio::DeviceInfo> &devs);
 
-    void setInitOutputDevice(int deviceId, int sampleRate=-1);
+    void setInitOutputDevice(int deviceId, int sampleRate = -1);
     int getOutputDevice();
-   
+
     int getSampleRate();
 
     virtual void run();
@@ -99,7 +99,7 @@ public:
     void setActive(bool state);
 
     void setGain(float gain_in);
-   
+
     static std::map<int, int> deviceSampleRate;
 
     AudioThreadCommandQueue *getCommandQueue();
@@ -110,8 +110,8 @@ public:
     static void deviceCleanup();
     static void setDeviceSampleRate(int deviceId, int sampleRate);
 
-	//
-	void attachControllerThread(std::thread* controllerThread);
+    //
+    void attachControllerThread(std::thread* controllerThread);
 
     //fields below, only to be used by other AudioThreads !
     size_t underflowCount;
@@ -126,7 +126,7 @@ private:
 
     std::atomic_bool active;
     std::atomic_int outputDevice;
-    
+
     RtAudio dac;
     unsigned int nBufferFrames;
     RtAudio::StreamOptions opts;
@@ -134,8 +134,8 @@ private:
     AudioThreadCommandQueue cmdQueue;
     int sampleRate;
 
-	//if != nullptr, it mean AudioThread is a controller thread.
-	std::thread* controllerThread = nullptr;
+    //if != nullptr, it mean AudioThread is a controller thread.
+    std::thread* controllerThread = nullptr;
 
     //The own m_mutex protecting this AudioThread, in particular boundThreads
     std::recursive_mutex m_mutex;
@@ -146,8 +146,8 @@ private:
     void bindThread(AudioThread *other);
     void removeThread(AudioThread *other);
 
-	static std::map<int, AudioThread* > deviceController;
+    static std::map<int, AudioThread* > deviceController;
 
-	//The mutex protecting static deviceController, deviceThread and deviceSampleRate access.
-	static std::recursive_mutex m_device_mutex;
+    //The mutex protecting static deviceController, deviceThread and deviceSampleRate access.
+    static std::recursive_mutex m_device_mutex;
 };
