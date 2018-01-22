@@ -484,10 +484,10 @@ int CubicSDR::OnExit() {
     delete m_glContext;
     m_glContext = nullptr;
 
-    std::cout << "Application termination complete." << std::endl << std::flush;
-
-	//TODO ?
+    //
     AudioThread::deviceCleanup();
+
+    std::cout << "Application termination complete." << std::endl << std::flush;
 
     return wxApp::OnExit();
 }

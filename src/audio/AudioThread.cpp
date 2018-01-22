@@ -30,13 +30,17 @@ AudioThread::AudioThread() : IOThread(), nBufferFrames(1024), sampleRate(0), con
 }
 
 AudioThread::~AudioThread() {
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
-
+    
     if (controllerThread != nullptr) {
 
+        //
+        //NOT PROTECTED by m_mutex on purpose, to prevent deadlocks with controllerThread
+        // it doesn't matter, it is only called when all "normal" audio threads are detached from the controller.
+        //
+
+        terminate();
         controllerThread->join();
         delete controllerThread;
-
         controllerThread = nullptr;
     }
 }
@@ -47,13 +51,6 @@ std::recursive_mutex & AudioThread::getMutex()
 }
 
 void AudioThread::attachControllerThread(std::thread* controllerThread_in) {
-
-    //cleanup previous (should never happen)
-    if (controllerThread != nullptr) {
-
-        controllerThread->join();
-        delete controllerThread;
-    }
 
     controllerThread = controllerThread_in;
 }
@@ -79,12 +76,16 @@ void AudioThread::removeThread(AudioThread *other) {
 }
 
 void AudioThread::deviceCleanup() {
-
-    std::lock_guard<std::recursive_mutex> lock(m_device_mutex);
-    // only notify, let the thread die by itself.
+    //
+    //NOT PROTECTED by m_device_mutex on purpose, to prevent deadlocks with i->second->controllerThread
+    // it doesn't matter, it is only called when all "normal" audio threads are detached from the controller.
+    // 
     for (auto i = deviceController.begin(); i != deviceController.end(); i++) {
-        i->second->terminate();
+        
+        delete i->second;
     }
+
+    deviceController.clear();
 }
 
 static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned int nBufferFrames, double /* streamTime */, RtAudioStreamStatus status,
@@ -410,12 +411,13 @@ void AudioThread::setupDevice(int deviceId) {
         if (deviceController.find(parameters.deviceId) == deviceController.end()) {
 
             //Create a new controller thread for parameters.deviceId:
-            deviceController[parameters.deviceId] = new AudioThread();
+            AudioThread* newController = new AudioThread();
 
-            deviceController[parameters.deviceId]->setInitOutputDevice(parameters.deviceId, sampleRate);
-            deviceController[parameters.deviceId]->bindThread(this);
-            deviceController[parameters.deviceId]->attachControllerThread(new std::thread(&AudioThread::threadMain, deviceController[parameters.deviceId]));
+            newController->setInitOutputDevice(parameters.deviceId, sampleRate);
+            newController->bindThread(this);
+            newController->attachControllerThread(new std::thread(&AudioThread::threadMain, newController));
 
+            deviceController[parameters.deviceId] = newController;
         }
         else if (deviceController[parameters.deviceId] == this) {
 
@@ -515,26 +517,28 @@ void AudioThread::run() {
     //Nullify currentInput...
     currentInput = nullptr;
 
-    //Stop : this affects the device list , so must be protected globally.
-    std::lock_guard<std::recursive_mutex> global_lock(m_device_mutex);
+    //Stop : Retreive the matching controling thread in a scope lock:
+    AudioThread* controllerThread = nullptr;
+    {
+        std::lock_guard<std::recursive_mutex> global_lock(m_device_mutex);
+        controllerThread = deviceController[parameters.deviceId];
+    }
 
-    if (deviceController[parameters.deviceId] != this) {
+    if (controllerThread != this) {
         //'this' is not the controller, so remove it from the bounded list:
         //beware, we must take the controller mutex, because the audio callback may use the list of bounded
         //threads at that moment:
-        std::lock_guard<std::recursive_mutex> lock(deviceController[parameters.deviceId]->getMutex());
+        std::lock_guard<std::recursive_mutex> lock(controllerThread->getMutex());
 
-        deviceController[parameters.deviceId]->removeThread(this);
+        controllerThread->removeThread(this);
     }
     else {
         // 'this' is a controller thread:
         try {
             if (dac.isStreamOpen()) {
-                if (dac.isStreamRunning()) {
-                    dac.stopStream();
-                }
-                dac.closeStream();
+                dac.stopStream(); 
             }
+            dac.closeStream();
         }
         catch (RtAudioError& e) {
             e.printMessage();

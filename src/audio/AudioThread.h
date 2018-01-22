@@ -135,7 +135,7 @@ private:
     int sampleRate;
 
     //if != nullptr, it mean AudioThread is a controller thread.
-    std::thread* controllerThread = nullptr;
+    std::thread* controllerThread;
 
     //The own m_mutex protecting this AudioThread, in particular boundThreads
     std::recursive_mutex m_mutex;
