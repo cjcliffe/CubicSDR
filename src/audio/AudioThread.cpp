@@ -345,10 +345,7 @@ void AudioThread::setSampleRate(int sampleRate) {
         //Set bounded sample rate:
         for (size_t j = 0; j < boundThreads.size(); j++) {
             AudioThread *srcmix = boundThreads[j];
-            // the controller thread is part of the boundedThreads, so prevent infinite recursion:
-            if (srcmix != this) {
-                srcmix->setSampleRate(sampleRate);
-            }
+            srcmix->setSampleRate(sampleRate);  
         }
 
         //make a local copy, snapshot of the list of demodulators
