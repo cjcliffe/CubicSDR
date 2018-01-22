@@ -486,9 +486,8 @@ int CubicSDR::OnExit() {
 
     std::cout << "Application termination complete." << std::endl << std::flush;
 
-#ifdef __APPLE__
+	//TODO ?
     AudioThread::deviceCleanup();
-#endif
 
     return wxApp::OnExit();
 }

@@ -81,24 +81,10 @@ void AudioThread::removeThread(AudioThread *other) {
 void AudioThread::deviceCleanup() {
 
 	std::lock_guard<std::recursive_mutex> lock(m_device_mutex);
-
-	auto it = deviceController.begin();
-
-	std::cout << "Final audio management cleanup, terminating " << deviceController.size() << " device controllers..." << std::endl << std::flush;
-
-    while (it != deviceController.end()) {
-        
-		//notify termination...
-		it->second->terminate();
-
-		//deletion of it->second will take care of the controllerThread:
-		delete it->second;
-
-		//next device 
-		it++;
-    }
-
-	std::cout << "Final audio management cleanup complete..." << std::endl << std::flush;
+	// only notify, let the thread die by itself.
+	for (auto i = deviceController.begin(); i != deviceController.end(); i++) {
+		i->second->terminate();
+	}
 }
 
 static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned int nBufferFrames, double /* streamTime */, RtAudioStreamStatus status,
@@ -428,9 +414,7 @@ void AudioThread::setupDevice(int deviceId) {
             deviceController[parameters.deviceId] = new AudioThread();
 
             deviceController[parameters.deviceId]->setInitOutputDevice(parameters.deviceId, sampleRate);
-			// BEWARE: the controller add itself to the list of boundThreads !
             deviceController[parameters.deviceId]->bindThread(this);
-
 			deviceController[parameters.deviceId]->attachControllerThread(new std::thread(&AudioThread::threadMain, deviceController[parameters.deviceId]));
 
 		} else if (deviceController[parameters.deviceId] == this) {

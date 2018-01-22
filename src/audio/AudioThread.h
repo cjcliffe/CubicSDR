@@ -8,7 +8,6 @@
 #include <map>
 #include <string>
 #include <atomic>
-#include <algorithm>
 #include <memory>
 #include "ThreadBlockingQueue.h"
 #include "RtAudio.h"
