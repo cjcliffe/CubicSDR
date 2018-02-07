@@ -508,12 +508,12 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
     } else if (dev && event.GetProperty() == devSettings["offset"]) {
         DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
         
-        long offset = event.GetPropertyValue().GetInteger();
+        long offset_In_KHz = event.GetPropertyValue().GetInteger();
         
-        devConfig->setOffset(offset);
+        devConfig->setOffset((long long) offset_In_KHz * 1000);
         if (dev->isActive() || !wxGetApp().getDevice()) {
 
-            wxGetApp().setOffset(offset);
+            wxGetApp().setOffset((long long)offset_In_KHz * 1000);
         }
 
     } 
