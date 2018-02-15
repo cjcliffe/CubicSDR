@@ -15,7 +15,7 @@
 #endif
 
 #ifndef RES_FOLDER
-#define RES_FOLDER ""
+#define RES_FOLDER L""
 #endif
 
 #define GC_DRAW_COUNT_PERIOD 50
@@ -216,21 +216,30 @@ void GLFont::loadFontOnce() {
 #else
     wxString resourceFolder = RES_FOLDER;
 #endif
-    
-    //full font file path
+  
+    wxFileName exePath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
+
+    //1) First try : RES_FOLDER/fonts/*
     wxFileName fontDefFileName = wxFileName(resourceFolder + L"/" + fontDefFileSource);
+
+    bool fontFilePathFound = fontDefFileName.Exists();
+
+    // 2) Second try: [Cubic exe path]/RES_FOLDER/fonts/*
+    if (!fontFilePathFound) {
+        
+        fontDefFileName = wxFileName(exePath.GetPath() + L"/" + RES_FOLDER + L"/" + fontDefFileSource);
+        fontFilePathFound = fontDefFileName.Exists();
+    }
+
+    // 3) Third try: [Cubic exe path]/fonts/*
+    if (!fontFilePathFound) {
+
+        fontDefFileName = wxFileName(exePath.GetPath() + L"/" + fontDefFileSource);
+        fontFilePathFound = fontDefFileName.Exists();
+    }
     
-    if (!fontDefFileName.Exists()) {
-        wxFileName exePath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
+    if (fontFilePathFound) {
        
-        //Full Path where the fonts are, including file name
-        fontDefFileName = wxFileName(exePath.GetPath() + L"/"+ fontDefFileSource);
-
-        if (!fontDefFileName.FileExists()) {
-            std::cout << "Font file " << fontDefFileName.GetFullPath() << " does not exist?" << std::endl;
-            return;
-        }
-
         if (!fontDefFileName.IsFileReadable()) {
             std::cout << "Font file " << fontDefFileName.GetFullPath() << " is not readable?" << std::endl;
             return;
@@ -238,8 +247,8 @@ void GLFont::loadFontOnce() {
     }
     else {
 
-        if (!fontDefFileName.IsFileReadable()) {
-            std::cout << "Font file " << fontDefFileName.GetFullPath() << " is not readable?" << std::endl;
+        if (!fontDefFileName.FileExists()) {
+            std::cout << "Font file " << fontDefFileName.GetFullPath() << " does not exist?" << std::endl;
             return;
         }
     }
