@@ -6,6 +6,11 @@
 #include "SoapySDRThread.h"
 #include <algorithm>
 
+enum SDRPostThreadChannelizerType {
+    SDRPostThreadCh = 1,
+    SDRPostThreadCh2 = 2
+};
+
 class SDRPostThread : public IOThread {
 public:
     SDRPostThread();
@@ -16,10 +21,15 @@ public:
     virtual void run();
     virtual void terminate();
 
+    void pushVisualData(SDRThreadIQData *data_in);
     void runSingleCH(SDRThreadIQData *data_in);
     void runPFBCH(SDRThreadIQData *data_in);
+    void runPFBCH2(SDRThreadIQData *data_in);
     void setIQVisualRange(long long frequency, int bandwidth);
-        
+    void setChannelizerType(SDRPostThreadChannelizerType chType);
+    SDRPostThreadChannelizerType getChannelizerType();
+    
+    
 protected:
     SDRThreadIQDataQueuePtr iqDataInQueue;
     DemodulatorThreadInputQueuePtr iqDataOutQueue;
@@ -29,6 +39,7 @@ protected:
 private:
 
     void initPFBChannelizer();
+    void initPFBChannelizer2();
     void updateActiveDemodulators();
     void updateChannels();
     int getChannelAt(long long frequency);
@@ -49,9 +60,12 @@ private:
     atomic_bool doRefresh;
     atomic_llong visFrequency;
     atomic_int visBandwidth;
-    int numChannels, sampleRate;
+    atomic_int chanMode;
+
+    int numChannels, sampleRate, lastChanMode;
     long long frequency;
     firpfbch_crcf channelizer;
+    firpfbch2_crcf channelizer2;
     iirfilt_crcf dcFilter;
     std::vector<liquid_float_complex> dcBuf;
 };
