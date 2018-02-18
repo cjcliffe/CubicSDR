@@ -106,7 +106,7 @@ bool AudioFileWAV::closeFile()
 
         // Fix the data chunk header to contain the data size
         outputFileStream.seekp(dataChunkPos + 4);
-        write_word(outputFileStream, file_length - dataChunkPos + 8);
+        write_word(outputFileStream, file_length - (dataChunkPos + 8), 4);
 
         // Fix the file header to contain the proper RIFF chunk size, which is (file size - 8) bytes
         outputFileStream.seekp(0 + 4);
