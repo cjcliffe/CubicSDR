@@ -7,8 +7,8 @@
 #include <algorithm>
 
 enum SDRPostThreadChannelizerType {
-    SDRPostThreadCh = 1,
-    SDRPostThreadCh2 = 2
+    SDRPostPFBCH = 1,
+    SDRPostPFBCH2 = 2
 };
 
 class SDRPostThread : public IOThread {
@@ -21,11 +21,8 @@ public:
     virtual void run();
     virtual void terminate();
 
-    void pushVisualData(SDRThreadIQData *data_in);
-    void runSingleCH(SDRThreadIQData *data_in);
-    void runPFBCH(SDRThreadIQData *data_in);
-    void runPFBCH2(SDRThreadIQData *data_in);
-    void setIQVisualRange(long long frequency, int bandwidth);
+    void resetAllDemodulators();
+
     void setChannelizerType(SDRPostThreadChannelizerType chType);
     SDRPostThreadChannelizerType getChannelizerType();
     
@@ -38,16 +35,22 @@ protected:
 
 private:
 
-    void initPFBChannelizer();
-    void initPFBChannelizer2();
+    void pushVisualData(SDRThreadIQData *data_in);
+    void runSingleCH(SDRThreadIQData *data_in);
+
+    void runDemodChannels(int channelBandwidth);
+
+    void initPFBCH();
+    void runPFBCH(SDRThreadIQData *data_in);
+
+    void initPFBCH2();
+    void runPFBCH2(SDRThreadIQData *data_in);
+
     void updateActiveDemodulators();
-    void updateChannels();
+    void updateChannels();    
     int getChannelAt(long long frequency);
 
-    void resetAllDemodulators();
-
     ReBuffer<DemodulatorThreadIQData> buffers;
-    std::vector<liquid_float_complex> fpData;
     std::vector<liquid_float_complex> dataOut;
     std::vector<long long> chanCenters;
     long long chanBw = 0;
@@ -58,8 +61,6 @@ private:
 
     ReBuffer<DemodulatorThreadIQData> visualDataBuffers;
     atomic_bool doRefresh;
-    atomic_llong visFrequency;
-    atomic_int visBandwidth;
     atomic_int chanMode;
 
     int numChannels, sampleRate, lastChanMode;
