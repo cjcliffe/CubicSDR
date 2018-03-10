@@ -11,7 +11,7 @@ class UITestCanvas;
 
 class UITestContext: public PrimaryGLContext {
 public:
-    UITestContext(UITestCanvas *canvas, wxGLContext *sharedContext);
+    UITestContext(UITestCanvas *canvas, wxGLContext *sharedContext, wxGLContextAttrs *ctxAttrs);
     
     void DrawBegin();
     void Draw();

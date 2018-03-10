@@ -29,10 +29,10 @@ EVT_ENTER_WINDOW(GainCanvas::OnMouseEnterWindow)
 EVT_MOUSEWHEEL(GainCanvas::OnMouseWheelMoved)
 wxEND_EVENT_TABLE()
 
-GainCanvas::GainCanvas(wxWindow *parent, std::vector<int> dispAttrs) :
+GainCanvas::GainCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
         InteractiveCanvas(parent, dispAttrs) {
 
-    glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this));
+    glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this), wxGetApp().GetContextAttributes());
     bgPanel.setCoordinateSystem(GLPanel::GLPANEL_Y_UP);
     bgPanel.setFill(GLPanel::GLPANEL_FILL_GRAD_X);
 

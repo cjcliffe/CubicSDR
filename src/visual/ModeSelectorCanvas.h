@@ -27,7 +27,7 @@ public:
 
 class ModeSelectorCanvas: public InteractiveCanvas {
 public:
-    ModeSelectorCanvas(wxWindow *parent, std::vector<int> dispAttrs);
+    ModeSelectorCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
     ~ModeSelectorCanvas();
 
     int getHoveredSelection();

@@ -12,7 +12,7 @@ class MeterCanvas;
 
 class MeterContext: public PrimaryGLContext {
 public:
-    MeterContext(MeterCanvas *canvas, wxGLContext *sharedContext);
+    MeterContext(MeterCanvas *canvas, wxGLContext *sharedContext, wxGLContextAttrs *ctxAttrs);
 
     void DrawBegin();
     void Draw(float r, float g, float b, float a, float level);

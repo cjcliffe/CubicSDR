@@ -5,8 +5,8 @@
 #include "MeterCanvas.h"
 #include "ColorTheme.h"
 
-MeterContext::MeterContext(MeterCanvas *canvas, wxGLContext *sharedContext) :
-        PrimaryGLContext(canvas, sharedContext) {
+MeterContext::MeterContext(MeterCanvas *canvas, wxGLContext *sharedContext, wxGLContextAttrs *ctxAttrs) :
+        PrimaryGLContext(canvas, sharedContext, ctxAttrs) {
 }
 
 void MeterContext::DrawBegin() {

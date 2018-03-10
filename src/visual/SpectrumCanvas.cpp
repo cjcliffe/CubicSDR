@@ -32,10 +32,10 @@ EVT_RIGHT_DOWN(SpectrumCanvas::OnMouseRightDown)
 EVT_RIGHT_UP(SpectrumCanvas::OnMouseRightReleased)
 wxEND_EVENT_TABLE()
 
-SpectrumCanvas::SpectrumCanvas(wxWindow *parent, std::vector<int> dispAttrs) :
+SpectrumCanvas::SpectrumCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
         InteractiveCanvas(parent, dispAttrs), waterfallCanvas(NULL) {
 
-    glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this));
+    glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this), wxGetApp().GetContextAttributes());
 
     visualDataQueue->set_max_num_items(1);
             

@@ -27,10 +27,10 @@ EVT_LEAVE_WINDOW(UITestCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(UITestCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
-UITestCanvas::UITestCanvas(wxWindow *parent, std::vector<int> dispAttrs) :
+UITestCanvas::UITestCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
 InteractiveCanvas(parent, dispAttrs) {
     
-    glContext = new UITestContext(this, &wxGetApp().GetContext(this));
+    glContext = new UITestContext(this, &wxGetApp().GetContext(this), wxGetApp().GetContextAttributes());
 }
 
 UITestCanvas::~UITestCanvas() {

@@ -21,7 +21,7 @@ public:
         WF_DRAG_NONE, WF_DRAG_BANDWIDTH_LEFT, WF_DRAG_BANDWIDTH_RIGHT, WF_DRAG_FREQUENCY, WF_DRAG_RANGE
     };
 
-    WaterfallCanvas(wxWindow *parent, std::vector<int> dispAttrs);
+    WaterfallCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
     void setup(unsigned int fft_size_in, int waterfall_lines_in);
     void setFFTSize(unsigned int fft_size_in);
     ~WaterfallCanvas();

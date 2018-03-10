@@ -20,9 +20,9 @@
 
 #include <wx/numformatter.h>
 
-InteractiveCanvas::InteractiveCanvas(wxWindow *parent, std::vector<int> dispAttrs) :
-        wxGLCanvas(parent, wxID_ANY, dispAttrs.data(), wxDefaultPosition, wxDefaultSize,
-        wxFULL_REPAINT_ON_RESIZE), parent(parent), shiftDown(false), altDown(false), ctrlDown(false), centerFreq(0), bandwidth(0), lastBandwidth(0), isView(
+InteractiveCanvas::InteractiveCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
+        wxGLCanvas(parent, dispAttrs, wxID_ANY,  wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE), 
+        parent(parent), shiftDown(false), altDown(false), ctrlDown(false), centerFreq(0), bandwidth(0), lastBandwidth(0), isView(
         false) {
     mouseTracker.setTarget(this);
 }
