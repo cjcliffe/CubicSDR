@@ -583,7 +583,7 @@ void WaterfallCanvas::updateHoverState() {
         }
         else {
             setStatusText(
-                "Click to set demodulator frequency or hold ALT to drag range; hold SHIFT to create new.  Right drag or wheel to Zoom.  Arrow keys to navigate/zoom, C to center.  Shift-R record/stop all.");
+                "Click to set demodulator frequency or hold ALT to drag range; hold SHIFT to create new. Arrow keys or wheel to navigate/zoom bandwith, C to center. Right-drag or SHIFT+UP/DOWN to adjust vertical scale. Shift-R record/stop all.");
         }
     }
 }
@@ -637,8 +637,11 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
                 demod->updateLabel(currentFreq);
             }
         }
-    } else if (mouseTracker.mouseRightDown()) {
-        mouseZoom = mouseZoom + ((1.0 - (mouseTracker.getDeltaMouseY() * 4.0)) - mouseZoom) * 0.1;
+    } else if (mouseTracker.mouseRightDown() && spectrumCanvas) {
+       
+        //Right-drag has the same effect on both Waterfall and Spectrum.
+        spectrumCanvas->updateScaleFactorFromYMove(mouseTracker.getDeltaMouseY());
+
     } else {
         updateHoverState();
     }
@@ -879,7 +882,6 @@ void WaterfallCanvas::OnMouseRightReleased(wxMouseEvent& event) {
     SetCursor(wxCURSOR_CROSS);
     mouseTracker.setVertDragLock(false);
     mouseTracker.setHorizDragLock(false);
-    mouseZoom = 1.0;
 }
 
 SpectrumVisualDataQueuePtr WaterfallCanvas::getVisualDataQueue() {

@@ -215,6 +215,21 @@ void SpectrumCanvas::updateScaleFactor(float factor) {
     wp->setScaleFactor(factor);
 }
 
+void SpectrumCanvas::updateScaleFactorFromYMove(float yDeltaMouseMove) {
+
+    scaleFactor += yDeltaMouseMove * 2.0;
+
+    if (scaleFactor < 0.25) {
+        scaleFactor = 0.25;
+    }
+    if (scaleFactor > 10.0) {
+        scaleFactor = 10.0;
+    }
+
+    resetScaleFactor = false;
+    updateScaleFactor(scaleFactor);
+}
+
 void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseMoved(event);
     if (mouseTracker.mouseDown()) {
@@ -226,21 +241,11 @@ void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
     }
     else if (scaleFactorEnabled && mouseTracker.mouseRightDown()) {
         
-        float yDelta = mouseTracker.getDeltaMouseY();
+        updateScaleFactorFromYMove(mouseTracker.getDeltaMouseY());
 
-        scaleFactor += yDelta*2.0;
-        if (scaleFactor < 0.25) {
-            scaleFactor = 0.25;
-        }
-        if (scaleFactor > 10.0) {
-            scaleFactor = 10.0;
-        }
-        
-        resetScaleFactor = false;
-        updateScaleFactor(scaleFactor);
     } else {
         if (scaleFactorEnabled) {
-            setStatusText("Drag horizontal to adjust center frequency. Right-drag or SHIFT+UP/DOWN to adjust vertical scale; right-click to reset. 'B' to toggle decibels display.");
+            setStatusText("Drag horizontal to adjust center frequency. Arrow keys or wheel to navigate/zoom bandwith. Right-drag or SHIFT+UP/DOWN to adjust vertical scale, right-click to reset. 'B' to toggle decibels display.");
         } else {
             setStatusText("Displaying spectrum of active demodulator.");
         }
@@ -248,9 +253,9 @@ void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
 }
 
 void SpectrumCanvas::OnMouseDown(wxMouseEvent& event) {
+    SetCursor(wxCURSOR_SIZEWE);
 	mouseTracker.setVertDragLock(true);
     InteractiveCanvas::OnMouseDown(event);
-    SetCursor(wxCURSOR_CROSS);
 }
 
 void SpectrumCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
@@ -263,12 +268,12 @@ void SpectrumCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
 void SpectrumCanvas::OnMouseReleased(wxMouseEvent& event) {
 	mouseTracker.setVertDragLock(false);
 	InteractiveCanvas::OnMouseReleased(event);
-    SetCursor(wxCURSOR_SIZEWE);
+    SetCursor(wxCURSOR_CROSS);
 }
 
 void SpectrumCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseEnterWindow(event);
-    SetCursor(wxCURSOR_SIZEWE);
+    SetCursor(wxCURSOR_CROSS);
 #ifdef _WIN32
     if (wxGetApp().getAppFrame()->canFocus()) {
         this->SetFocus();
@@ -278,7 +283,7 @@ void SpectrumCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
 
 void SpectrumCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseLeftWindow(event);
-    SetCursor(wxCURSOR_SIZEWE);
+    SetCursor(wxCURSOR_CROSS);
 }
 
 void SpectrumCanvas::attachWaterfallCanvas(WaterfallCanvas* canvas_in) {
@@ -290,15 +295,19 @@ SpectrumVisualDataQueuePtr SpectrumCanvas::getVisualDataQueue() {
 }
 
 void SpectrumCanvas::OnMouseRightDown(wxMouseEvent& event) {
+    SetCursor(wxCURSOR_SIZENS);
 	mouseTracker.setHorizDragLock(true);
     mouseTracker.OnMouseRightDown(event);
     scaleFactor = wxGetApp().getSpectrumProcessor()->getScaleFactor();
 }
 
 void SpectrumCanvas::OnMouseRightReleased(wxMouseEvent& event) {
+    SetCursor(wxCURSOR_CROSS);
 	mouseTracker.setHorizDragLock(false);
+    
     if (!mouseTracker.getOriginDeltaMouseY()) {
         resetScaleFactor = true;
+
         wxGetApp().getSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
 
         //make the peak hold act on the current dmod also, like a zoomed-in version.
@@ -306,6 +315,7 @@ void SpectrumCanvas::OnMouseRightReleased(wxMouseEvent& event) {
             wxGetApp().getDemodSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
         }
     }
+
     mouseTracker.OnMouseRightReleased(event);
 }
 
