@@ -27,10 +27,10 @@ EVT_LEAVE_WINDOW(ModeSelectorCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(ModeSelectorCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
-ModeSelectorCanvas::ModeSelectorCanvas(wxWindow *parent, std::vector<int> dispAttrs) :
+ModeSelectorCanvas::ModeSelectorCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
 InteractiveCanvas(parent, dispAttrs), numChoices(0), currentSelection(-1), toggleMode(false), inputChanged(false), padX(4.0), padY(4.0), highlightOverride(false) {
 
-    glContext = new ModeSelectorContext(this, &wxGetApp().GetContext(this));
+    glContext = new ModeSelectorContext(this, &wxGetApp().GetContext(this), wxGetApp().GetContextAttributes());
     
     highlightColor = RGBA4f(1.0,1.0,1.0,1.0);
 }

@@ -5,8 +5,8 @@
 #include "UITestCanvas.h"
 #include "ColorTheme.h"
 
-UITestContext::UITestContext(UITestCanvas *canvas, wxGLContext *sharedContext) :
-PrimaryGLContext(canvas, sharedContext), testMeter("TEST",0,100,50) {
+UITestContext::UITestContext(UITestCanvas *canvas, wxGLContext *sharedContext, wxGLContextAttrs *ctxAttrs) :
+PrimaryGLContext(canvas, sharedContext, ctxAttrs), testMeter("TEST",0,100,50) {
     
     testPanel.setPosition(0.0, 0.0);
     testPanel.setSize(1.0, 1.0);

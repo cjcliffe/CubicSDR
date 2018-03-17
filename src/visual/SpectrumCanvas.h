@@ -17,7 +17,7 @@ class WaterfallCanvas;
 
 class SpectrumCanvas: public InteractiveCanvas {
 public:
-    SpectrumCanvas(wxWindow *parent, std::vector<int> dispAttrs);
+    SpectrumCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
     ~SpectrumCanvas();
 
     //This is public because it is indeed forwarded from

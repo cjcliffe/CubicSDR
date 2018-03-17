@@ -33,10 +33,10 @@ EVT_MOUSEWHEEL(TuningCanvas::OnMouseWheelMoved)
 //EVT_KEY_UP(TuningCanvas::OnKeyUp)
 wxEND_EVENT_TABLE()
 
-TuningCanvas::TuningCanvas(wxWindow *parent, std::vector<int> dispAttrs) :
+TuningCanvas::TuningCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
         InteractiveCanvas(parent, dispAttrs), dragAccum(0), uxDown(0), top(false), bottom(false), freq(-1), bw(-1), center(-1), halfBand(false) {
 
-    glContext = new TuningContext(this, &wxGetApp().GetContext(this));
+    glContext = new TuningContext(this, &wxGetApp().GetContext(this), wxGetApp().GetContextAttributes());
 
     hoverIndex = 0;
     downIndex = 0;
@@ -272,7 +272,6 @@ void TuningCanvas::OnIdle(wxIdleEvent &event) {
     if (mouseTracker.mouseInView() || changed()) {
         Refresh();
     }
-    event.RequestMore();
 }
 
 void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
