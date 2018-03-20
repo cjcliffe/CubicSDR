@@ -161,6 +161,8 @@ protected:
     void onRenameRange( wxCommandEvent& event );
     void onActivateRange( wxCommandEvent& event );
     void onUpdateRange( wxCommandEvent& event );
+
+    bool skipUserEvents();
     
     TreeViewItem *itemToTVI(wxTreeItemId item);
     

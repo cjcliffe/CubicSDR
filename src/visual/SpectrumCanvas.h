@@ -17,7 +17,7 @@ class WaterfallCanvas;
 
 class SpectrumCanvas: public InteractiveCanvas {
 public:
-    SpectrumCanvas(wxWindow *parent, std::vector<int> dispAttrs);
+    SpectrumCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
     ~SpectrumCanvas();
 
     //This is public because it is indeed forwarded from
@@ -47,6 +47,9 @@ public:
     
     SpectrumVisualDataQueuePtr getVisualDataQueue();
     
+    // called by Waterfall to forward the update of the vertical scale.
+    void updateScaleFactorFromYMove(float yDeltaMouseMove);
+    
 private:
     void OnPaint(wxPaintEvent& event);
 
@@ -60,7 +63,6 @@ private:
     void OnMouseLeftWindow(wxMouseEvent& event);
     void OnMouseRightDown(wxMouseEvent& event);
     void OnMouseRightReleased(wxMouseEvent& event);
-
    
     void updateScaleFactor(float factor);
     

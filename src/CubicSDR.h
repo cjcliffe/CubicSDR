@@ -71,6 +71,7 @@ public:
     CubicSDR();
 
     PrimaryGLContext &GetContext(wxGLCanvas *canvas);
+    wxGLContextAttrs* GetContextAttributes();
 
     virtual bool OnInit();
     virtual int OnExit();
@@ -94,9 +95,7 @@ public:
 
     void setAntennaName(const std::string& name);
     const std::string& getAntennaName();
-    
-    void setDBOffset(int ofs);
-    int getDBOffset();
+   
 
     void setSampleRate(long long rate_in);
     long long getSampleRate();
@@ -114,7 +113,7 @@ public:
     DemodulatorThreadOutputQueuePtr getAudioVisualQueue();
     DemodulatorThreadInputQueuePtr getIQVisualQueue();
     DemodulatorThreadInputQueuePtr getWaterfallVisualQueue();
-    DemodulatorThreadInputQueuePtr getActiveDemodVisualQueue();
+    
     DemodulatorMgr &getDemodMgr();
     BookmarkMgr &getBookmarkMgr();
 
@@ -186,6 +185,8 @@ private:
     AppFrame *appframe = nullptr;
     AppConfig config;
     PrimaryGLContext *m_glContext = nullptr;
+    wxGLContextAttrs *m_glContextAttributes = nullptr;
+
     std::vector<SDRDeviceInfo *> *devs = nullptr;
 
     DemodulatorMgr demodMgr;

@@ -50,8 +50,11 @@ void PrimaryGLContext::CheckGLError() {
     }
 }
 
-PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContext) :
-        wxGLContext(canvas, sharedContext), hoverAlpha(1.0) {
+PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContext, wxGLContextAttrs* ctxAttrs) :
+        wxGLContext(canvas, sharedContext, (const wxGLContextAttrs*) ctxAttrs), hoverAlpha(1.0) {
+
+
+
 //#ifndef __linux__
 //    SetCurrent(*canvas);
 //    // Pre-load fonts
