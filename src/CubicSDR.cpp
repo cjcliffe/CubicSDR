@@ -206,6 +206,14 @@ CubicSDR::CubicSDR() : frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFA
         shuttingDown.store(false);
         fdlgTarget = FrequencyDialog::FDIALOG_TARGET_DEFAULT;
         stoppedDev = nullptr;
+
+        //set OpenGL configuration:
+        m_glContextAttributes = new wxGLContextAttrs();
+        
+        wxGLContextAttrs glSettings;
+        glSettings.PlatformDefaults().EndList();
+
+        *m_glContextAttributes = glSettings;
 }
 
 bool CubicSDR::OnInit() {
@@ -495,11 +503,16 @@ int CubicSDR::OnExit() {
 PrimaryGLContext& CubicSDR::GetContext(wxGLCanvas *canvas) {
     PrimaryGLContext *glContext;
     if (!m_glContext) {
-        m_glContext = new PrimaryGLContext(canvas, NULL);
+        m_glContext = new PrimaryGLContext(canvas, NULL, GetContextAttributes());
     }
     glContext = m_glContext;
 
     return *glContext;
+}
+
+wxGLContextAttrs* CubicSDR::GetContextAttributes() {
+   
+    return m_glContextAttributes;
 }
 
 void CubicSDR::OnInitCmdLine(wxCmdLineParser& parser) {

@@ -31,9 +31,9 @@ EVT_LEAVE_WINDOW(ScopeCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(ScopeCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
-ScopeCanvas::ScopeCanvas(wxWindow *parent, std::vector<int> dispAttrs) : InteractiveCanvas(parent, dispAttrs), ppmMode(false), ctr(0), ctrTarget(0), dragAccel(0), helpTip("") {
+ScopeCanvas::ScopeCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) : InteractiveCanvas(parent, dispAttrs), ppmMode(false), ctr(0), ctrTarget(0), dragAccel(0), helpTip("") {
 
-    glContext = new ScopeContext(this, &wxGetApp().GetContext(this));
+    glContext = new ScopeContext(this, &wxGetApp().GetContext(this), wxGetApp().GetContextAttributes());
     inputData->set_max_num_items(2);
     bgPanel.setFill(GLPanel::GLPANEL_FILL_GRAD_Y);
     bgPanel.setSize(1.0, 0.5f);

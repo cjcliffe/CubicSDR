@@ -46,7 +46,8 @@ void initGLExtensions() {
 
 #ifdef _WIN32
     if (GLExtSupported("WGL_EXT_swap_control")) {
-        std::cout << "Initializing WGL swap control extensions.." << std::endl;
+        std::cout << "Initializing WGL swap control extensions.." << std::endl << std::flush;
+
         wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC) wglGetProcAddress("wglSwapIntervalEXT");
         wglGetSwapIntervalEXT = (PFNWGLGETSWAPINTERVALEXTPROC) wglGetProcAddress("wglGetSwapIntervalEXT");
 

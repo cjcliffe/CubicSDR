@@ -16,7 +16,7 @@
 
 class PrimaryGLContext: public wxGLContext {
 public:
-    PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContext);
+    PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContext, wxGLContextAttrs* ctxAttrs);
 
     static wxString glGetwxString(GLenum name);
     static void CheckGLError();
