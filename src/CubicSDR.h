@@ -113,7 +113,7 @@ public:
     DemodulatorThreadOutputQueuePtr getAudioVisualQueue();
     DemodulatorThreadInputQueuePtr getIQVisualQueue();
     DemodulatorThreadInputQueuePtr getWaterfallVisualQueue();
-    DemodulatorThreadInputQueuePtr getActiveDemodVisualQueue();
+    
     DemodulatorMgr &getDemodMgr();
     BookmarkMgr &getBookmarkMgr();
 
