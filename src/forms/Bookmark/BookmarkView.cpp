@@ -692,14 +692,6 @@ void BookmarkView::refreshLayout() {
 wxButton *BookmarkView::makeButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler) {
     wxButton *nButton = new wxButton( m_buttonPanel, wxID_ANY, labelVal);
     nButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, handler, nullptr, this);
-    
-    wxColour bgColor(ThemeMgr::mgr.currentTheme->generalBackground);
-   // wxColour fgColor(ThemeMgr::mgr.currentTheme->button);
-    //Force white color:
-    wxColour textColorWhite(RGBA4f(255,255,255));
-
-    nButton->SetBackgroundColour(bgColor);
-    nButton->SetForegroundColour(textColorWhite);
 
     return nButton;
 }
