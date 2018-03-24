@@ -2973,23 +2973,23 @@ void AppFrame::toggleAllActiveDemodRecording() {
 
     auto activeDemods = wxGetApp().getDemodMgr().getDemodulators();
 
+    //by default, do a false => true for all:
     bool stateToSet = true;
 
     for (auto i : activeDemods) {
-        if (i->isActive() && i->isRecording()) {
+        if (i->isRecording()) {
             stateToSet = false;
             break;
         }
     }
 
     for (auto i : activeDemods) {
-        if (i->isActive() && i->isRecording() != stateToSet) {
-            i->setRecording(stateToSet);            
-        }
+      
+        i->setRecording(stateToSet);               
     }
+    //this effectively refresh the BookmarkView buttons, including Recording buttons.
+    wxGetApp().getBookmarkMgr().updateActiveList();
 }
-
-
 
 void AppFrame::setWaterfallLinesPerSecond(int lps) {
     waterfallSpeedMeter->setUserInputValue(sqrt(lps));
