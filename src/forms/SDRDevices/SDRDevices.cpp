@@ -502,16 +502,12 @@ std::string SDRDevicesDialog::getSelectedChoiceOption(wxPGProperty* prop, const 
         if (choiceIndex >= 0 && choiceIndex < arg.options.size()) {
             //normal selection
             optionName = arg.options[choiceIndex];
-        } else if (choiceIndex >= arg.options.size()) {
-            //choose the last one of the list:
-            optionName = arg.options[arg.options.size() - 1];
-            prop->SetChoiceSelection(arg.options.size() - 1);
-        } else if (choiceIndex < 0) {
+        } else {
             //choose the first one of the list:
             optionName = arg.options[0];
             prop->SetChoiceSelection(0);
         }
-    }
+    } 
 
     return optionName;
 }
