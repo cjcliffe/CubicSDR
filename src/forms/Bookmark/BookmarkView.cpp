@@ -845,14 +845,12 @@ void BookmarkView::activeSelection(DemodulatorInstancePtr dsel) {
 
     addBookmarkChoice(m_buttonPanel);
     
-    if (dsel->isActive()) {
-        if (!(dsel->isRecording())) {
-            addButton(m_buttonPanel, "Start Recording", wxCommandEventHandler(BookmarkView::onStartRecording));
-        } else {
-            addButton(m_buttonPanel, "Stop Recording", wxCommandEventHandler(BookmarkView::onStopRecording));
-        }
-    }
-
+    if (!(dsel->isRecording())) {
+         addButton(m_buttonPanel, "Start Recording", wxCommandEventHandler(BookmarkView::onStartRecording));
+     } else {
+         addButton(m_buttonPanel, "Stop Recording", wxCommandEventHandler(BookmarkView::onStopRecording));
+     }
+   
     addButton(m_buttonPanel, "Remove Active", wxCommandEventHandler( BookmarkView::onRemoveActive ));
     
     showProps();

@@ -2971,19 +2971,21 @@ void AppFrame::toggleAllActiveDemodRecording() {
         return;
     }
 
-    auto activeDemods = wxGetApp().getDemodMgr().getDemodulators();
+    // All demods, irrespective of their active state:
+    // recording will start eventually when a demod come in range.
+    auto allDemods = wxGetApp().getDemodMgr().getDemodulators();
 
     //by default, do a false => true for all:
     bool stateToSet = true;
 
-    for (auto i : activeDemods) {
+    for (auto i : allDemods) {
         if (i->isRecording()) {
             stateToSet = false;
             break;
         }
     }
 
-    for (auto i : activeDemods) {
+    for (auto i : allDemods) {
       
         i->setRecording(stateToSet);               
     }
