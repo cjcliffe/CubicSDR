@@ -814,6 +814,11 @@ void BookmarkView::onBookmarkChoice( wxCommandEvent & /* event */ ) {
 void BookmarkView::activeSelection(DemodulatorInstancePtr dsel) {
    
     if (dsel == nullptr) {
+        hideProps();
+        clearButtons();
+        showProps();
+        showButtons();
+        refreshLayout();
         return;
     }
 
