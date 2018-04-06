@@ -42,15 +42,15 @@
 #  undef HAMLIB_DLL_EXPORT
 
 #  if defined (__BORLANDC__)
-#  define HAMLIB_DLL_IMPORT __import
-#  define HAMLIB_DLL_EXPORT __export
+#    define HAMLIB_DLL_IMPORT __import
+#    define HAMLIB_DLL_EXPORT __export
 #  else
-#  define HAMLIB_DLL_IMPORT __declspec(dllimport)
-#  define HAMLIB_DLL_EXPORT __declspec(dllexport)
+#    define HAMLIB_DLL_IMPORT __declspec(dllimport)
+#    define HAMLIB_DLL_EXPORT __declspec(dllexport)
 #  endif
 
 #  ifdef DLL_EXPORT
-     /* HAMLIB_API may be set to __stdcall for VB, .. */
+/* HAMLIB_API may be set to __stdcall for VB, .. */
 #    define HAMLIB_API __cdecl
 #    ifdef IN_HAMLIB
 #      define BACKEND_IMPEXP HAMLIB_DLL_EXPORT
@@ -60,8 +60,8 @@
 #      define HAMLIB_IMPEXP HAMLIB_DLL_IMPORT
 #    endif
 #  else
-       /* static build, only export the backend entry points for lt_dlsym */
-#      define BACKEND_IMPEXP HAMLIB_DLL_EXPORT
+/* static build, only export the backend entry points for lt_dlsym */
+#    define BACKEND_IMPEXP HAMLIB_DLL_EXPORT
 #  endif
 #endif
 
@@ -88,5 +88,3 @@
 #if !defined(BACKEND_EXPORT_VAR)
 #  define BACKEND_EXPORT_VAR(type) BACKEND_IMPEXP type
 #endif
-
-
