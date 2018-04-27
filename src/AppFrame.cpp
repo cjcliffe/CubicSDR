@@ -2970,25 +2970,27 @@ void AppFrame::toggleAllActiveDemodRecording() {
         return;
     }
 
-    auto activeDemods = wxGetApp().getDemodMgr().getDemodulators();
+    // All demods, irrespective of their active state:
+    // recording will start eventually when a demod come in range.
+    auto allDemods = wxGetApp().getDemodMgr().getDemodulators();
 
+    //by default, do a false => true for all:
     bool stateToSet = true;
 
-    for (auto i : activeDemods) {
-        if (i->isActive() && i->isRecording()) {
+    for (auto i : allDemods) {
+        if (i->isRecording()) {
             stateToSet = false;
             break;
         }
     }
 
-    for (auto i : activeDemods) {
-        if (i->isActive() && i->isRecording() != stateToSet) {
-            i->setRecording(stateToSet);            
-        }
+    for (auto i : allDemods) {
+      
+        i->setRecording(stateToSet);               
     }
+    //this effectively refresh the BookmarkView buttons, including Recording buttons.
+    wxGetApp().getBookmarkMgr().updateActiveList();
 }
-
-
 
 void AppFrame::setWaterfallLinesPerSecond(int lps) {
     waterfallSpeedMeter->setUserInputValue(sqrt(lps));

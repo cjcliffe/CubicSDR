@@ -190,7 +190,7 @@ void BookmarkView::onUpdateTimer( wxTimerEvent& /* event */ ) {
     }
 }
 
-bool BookmarkView::skipUserEvents() {
+bool BookmarkView::skipEvents() {
 
     return !this->IsShown() || doUpdateActive || doUpdateBookmarks;
 }
@@ -511,6 +511,9 @@ void BookmarkView::doUpdateActiveList() {
         m_treeView->SelectItem(selItem);
     }
 
+    // Add an extra refresh, that rebuilds the buttons from sratch.
+    activeSelection(lastActiveDemodulator);
+
     delete prevSelCopy;
 }
 
@@ -543,10 +546,6 @@ void BookmarkView::onTreeActivate( wxTreeEvent& event ) {
 
 void BookmarkView::onTreeCollapse( wxTreeEvent& event ) {
     
-    if (skipUserEvents()) {
-        return;
-    }
-
     bool searchState = (searchKeywords.size() != 0);
     
     if (searchState) {
@@ -576,10 +575,6 @@ void BookmarkView::onTreeCollapse( wxTreeEvent& event ) {
 
 
 void BookmarkView::onTreeExpanded( wxTreeEvent& event ) {
-
-    if (skipUserEvents()) {
-        return;
-    }
 
     bool searchState = (searchKeywords.size() != 0);
     
@@ -697,14 +692,6 @@ void BookmarkView::refreshLayout() {
 wxButton *BookmarkView::makeButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler) {
     wxButton *nButton = new wxButton( m_buttonPanel, wxID_ANY, labelVal);
     nButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, handler, nullptr, this);
-    
-    wxColour bgColor(ThemeMgr::mgr.currentTheme->generalBackground);
-   // wxColour fgColor(ThemeMgr::mgr.currentTheme->button);
-    //Force white color:
-    wxColour textColorWhite(RGBA4f(255,255,255));
-
-    nButton->SetBackgroundColour(bgColor);
-    nButton->SetForegroundColour(textColorWhite);
 
     return nButton;
 }
@@ -816,9 +803,17 @@ void BookmarkView::onBookmarkChoice( wxCommandEvent & /* event */ ) {
     }
 }
 
-
 void BookmarkView::activeSelection(DemodulatorInstancePtr dsel) {
-    
+   
+    if (dsel == nullptr) {
+        hideProps();
+        clearButtons();
+        showProps();
+        showButtons();
+        refreshLayout();
+        return;
+    }
+
     m_frequencyVal->SetLabelText(frequencyToStr(dsel->getFrequency()));
     m_bandwidthVal->SetLabelText(frequencyToStr(dsel->getBandwidth()));
     m_modulationVal->SetLabelText(dsel->getDemodulatorType());
@@ -842,14 +837,12 @@ void BookmarkView::activeSelection(DemodulatorInstancePtr dsel) {
 
     addBookmarkChoice(m_buttonPanel);
     
-    if (dsel->isActive()) {
-        if (!(dsel->isRecording())) {
-            addButton(m_buttonPanel, "Start Recording", wxCommandEventHandler(BookmarkView::onStartRecording));
-        } else {
-            addButton(m_buttonPanel, "Stop Recording", wxCommandEventHandler(BookmarkView::onStopRecording));
-        }
-    }
-
+    if (!(dsel->isRecording())) {
+         addButton(m_buttonPanel, "Start Recording", wxCommandEventHandler(BookmarkView::onStartRecording));
+     } else {
+         addButton(m_buttonPanel, "Stop Recording", wxCommandEventHandler(BookmarkView::onStopRecording));
+     }
+   
     addButton(m_buttonPanel, "Remove Active", wxCommandEventHandler( BookmarkView::onRemoveActive ));
     
     showProps();
@@ -1074,6 +1067,10 @@ void BookmarkView::activeBranchSelection() {
 
 void BookmarkView::onTreeSelect( wxTreeEvent& event ) {
 
+    if (skipEvents()) {
+        return;
+    }
+
     wxTreeItemId itm = event.GetItem();
     TreeViewItem* tvi = dynamic_cast<TreeViewItem*>(m_treeView->GetItemData(itm));
 
@@ -1118,10 +1115,6 @@ void BookmarkView::onTreeSelect( wxTreeEvent& event ) {
 
 
 void BookmarkView::onTreeSelectChanging( wxTreeEvent& event ) {
-
-    if (skipUserEvents()) {
-        return;
-    }
 
     event.Skip();
 }
@@ -1203,6 +1196,7 @@ void BookmarkView::onStartRecording( wxCommandEvent& /* event */ ) {
     if (curSel && curSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
         if (!curSel->demod->isRecording() && wxGetApp().getConfig()->verifyRecordingPath()) {
             curSel->demod->setRecording(true);
+          
             wxGetApp().getBookmarkMgr().updateActiveList();
         }
     }
@@ -1216,6 +1210,7 @@ void BookmarkView::onStopRecording( wxCommandEvent& /* event */ ) {
     if (curSel && curSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
         if (curSel->demod->isRecording()) {
             curSel->demod->setRecording(false);
+           
             wxGetApp().getBookmarkMgr().updateActiveList();
         }
     }
@@ -1481,10 +1476,6 @@ void BookmarkView::onTreeEndDrag( wxTreeEvent& event ) {
 
 
 void BookmarkView::onTreeItemGetTooltip( wxTreeEvent& event ) {
-    
-    if (skipUserEvents()) {
-        return;
-    }
 
     event.Skip();
 }

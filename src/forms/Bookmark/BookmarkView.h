@@ -162,8 +162,8 @@ protected:
     void onActivateRange( wxCommandEvent& event );
     void onUpdateRange( wxCommandEvent& event );
 
-    bool skipUserEvents();
-    
+    bool skipEvents();
+     
     TreeViewItem *itemToTVI(wxTreeItemId item);
     
     void SetTreeItemData(const wxTreeItemId& item, wxTreeItemData *data);
@@ -201,4 +201,5 @@ protected:
     std::vector<std::wstring> searchKeywords;
 
     void setStatusText(std::string statusText);
+
 };

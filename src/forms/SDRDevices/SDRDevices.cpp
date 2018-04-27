@@ -361,7 +361,7 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event) {
             wxPGProperty *prop = runtimeProps[arg.key];
             
             if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size()) {
-                settingArgs[arg.key] = arg.options[prop->GetChoiceSelection()];
+                settingArgs[arg.key] = getSelectedChoiceOption(prop, arg);
             } else if (arg.type == SoapySDR::ArgInfo::BOOL) {
                 settingArgs[arg.key] = (prop->GetValueAsString()=="True")?"true":"false";
             } else {
@@ -378,7 +378,7 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event) {
                     wxPGProperty *prop = streamProps[arg.key];
             
                     if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size()) {
-                        streamArgs[arg.key] = arg.options[prop->GetChoiceSelection()];
+                        streamArgs[arg.key] = getSelectedChoiceOption(prop, arg);
                     } else if (arg.type == SoapySDR::ArgInfo::BOOL) {
                         streamArgs[arg.key] = (prop->GetValueAsString()=="True")?"true":"false";
                     } else {
@@ -491,6 +491,27 @@ void SDRDevicesDialog::OnRefreshDevices( wxMouseEvent& /* event */) {
     doRefreshDevices();
 }
 
+std::string SDRDevicesDialog::getSelectedChoiceOption(wxPGProperty* prop, const SoapySDR::ArgInfo& arg) {
+
+    std::string optionName = "";
+
+    int choiceIndex = prop->GetChoiceSelection();
+    
+    if (arg.options.size() > 0) {
+
+        if (choiceIndex >= 0 && choiceIndex < arg.options.size()) {
+            //normal selection
+            optionName = arg.options[choiceIndex];
+        } else {
+            //choose the first one of the list:
+            optionName = arg.options[0];
+            prop->SetChoiceSelection(0);
+        }
+    } 
+
+    return optionName;
+}
+
 void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
 
     if (event.GetProperty() == devSettings["name"]) {
@@ -557,7 +578,7 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
                 std::string settingValue = prop->GetValueAsString().ToStdString();
                 SoapySDR::ArgInfo arg = runtimeArgs[rtp->first];
                 if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size()) {
-                    settingValue = arg.options[prop->GetChoiceSelection()];
+                    settingValue = getSelectedChoiceOption(prop, arg);
                 } else if (arg.type == SoapySDR::ArgInfo::BOOL) {
                     settingValue = (prop->GetValueAsString()=="True")?"true":"false";
                 } else {

@@ -553,10 +553,10 @@ bool DemodulatorInstance::isRecording()
 
 void DemodulatorInstance::setRecording(bool recording_in)
 {
-    if (!recording.load() && recording_in) {
+    if (recording_in) {
         startRecording();
     }
-    else if (recording.load() && !recording_in) {
+    else {
         stopRecording();
     }
 }
