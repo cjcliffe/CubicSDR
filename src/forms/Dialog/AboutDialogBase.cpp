@@ -385,6 +385,32 @@ AboutDialogBase::AboutDialogBase( wxWindow* parent, wxWindowID id, const wxStrin
 	m_dMarvinCalvert->Wrap( -1 );
 	m_dSizer->Add( m_dMarvinCalvert, 0, wxALL, 5 );
 	
+	m_dErfurterFeurblume = new wxStaticText( m_dScroll, wxID_ANY, wxT("Erfurter Feurblume"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dErfurterFeurblume->Wrap( -1 );
+	m_dSizer->Add( m_dErfurterFeurblume, 0, wxALL, 5 );
+	
+	m_dMakarenkoAleksey = new wxStaticText( m_dScroll, wxID_ANY, wxT("Makarenko Aleksey"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dMakarenkoAleksey->Wrap( -1 );
+	m_dSizer->Add( m_dMakarenkoAleksey, 0, wxALL, 5 );
+	
+	m_dAnthonyLambiris = new wxStaticText( m_dScroll, wxID_ANY, wxT("Anthony Lambiris"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dAnthonyLambiris->Wrap( -1 );
+	m_dSizer->Add( m_dAnthonyLambiris, 0, wxALL, 5 );
+	
+	m_dJoeBurtinsky = new wxStaticText( m_dScroll, wxID_ANY, wxT("Joe Burtinsky"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dJoeBurtinsky->Wrap( -1 );
+	m_dSizer->Add( m_dJoeBurtinsky, 0, wxALL, 5 );
+	
+	m_dDalePuckett
+	
+	= new wxStaticText( m_dScroll, wxID_ANY, wxT("Dale Puckett"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dDalePuckett
+	
+	->Wrap( -1 );
+	m_dSizer->Add( m_dDalePuckett
+	
+	, 0, wxALL, 5 );
+	
 	
 	m_dBSizer->Add( m_dSizer, 1, wxALL|wxEXPAND, 5 );
 	
