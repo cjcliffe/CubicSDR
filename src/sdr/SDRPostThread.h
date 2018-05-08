@@ -6,6 +6,11 @@
 #include "SoapySDRThread.h"
 #include <algorithm>
 
+enum SDRPostThreadChannelizerType {
+    SDRPostPFBCH = 1,
+    SDRPostPFBCH2 = 2
+};
+
 class SDRPostThread : public IOThread {
 public:
     SDRPostThread();
@@ -16,10 +21,12 @@ public:
     virtual void run();
     virtual void terminate();
 
-    void runSingleCH(SDRThreadIQData *data_in);
-    void runPFBCH(SDRThreadIQData *data_in);
-    void setIQVisualRange(long long frequency, int bandwidth);
-        
+    void resetAllDemodulators();
+
+    void setChannelizerType(SDRPostThreadChannelizerType chType);
+    SDRPostThreadChannelizerType getChannelizerType();
+    
+    
 protected:
     SDRThreadIQDataQueuePtr iqDataInQueue;
     DemodulatorThreadInputQueuePtr iqDataOutQueue;
@@ -28,15 +35,22 @@ protected:
 
 private:
 
-    void initPFBChannelizer();
+    void pushVisualData(SDRThreadIQData *data_in);
+    void runSingleCH(SDRThreadIQData *data_in);
+
+    void runDemodChannels(int channelBandwidth);
+
+    void initPFBCH();
+    void runPFBCH(SDRThreadIQData *data_in);
+
+    void initPFBCH2();
+    void runPFBCH2(SDRThreadIQData *data_in);
+
     void updateActiveDemodulators();
-    void updateChannels();
+    void updateChannels();    
     int getChannelAt(long long frequency);
 
-    void resetAllDemodulators();
-
     ReBuffer<DemodulatorThreadIQData> buffers;
-    std::vector<liquid_float_complex> fpData;
     std::vector<liquid_float_complex> dataOut;
     std::vector<long long> chanCenters;
     long long chanBw = 0;
@@ -47,11 +61,12 @@ private:
 
     ReBuffer<DemodulatorThreadIQData> visualDataBuffers;
     atomic_bool doRefresh;
-    atomic_llong visFrequency;
-    atomic_int visBandwidth;
-    int numChannels, sampleRate;
+    atomic_int chanMode;
+
+    int numChannels, sampleRate, lastChanMode;
     long long frequency;
     firpfbch_crcf channelizer;
+    firpfbch2_crcf channelizer2;
     iirfilt_crcf dcFilter;
     std::vector<liquid_float_complex> dcBuf;
 };
