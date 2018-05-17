@@ -83,6 +83,14 @@ private:
 
 class AppConfig {
 public:
+
+    enum PerfModeEnum {
+        PERF_LOW = 0,
+        PERF_NORMAL = 1,
+        PERF_HIGH = 2
+    };
+
+
     AppConfig();
     std::string getConfigDir();
     DeviceConfig *getDevice(std::string deviceId);
@@ -99,8 +107,8 @@ public:
     void setShowTips(bool show);
     bool getShowTips();
 
-    void setLowPerfMode(bool lpm);
-    bool getLowPerfMode();
+    void setPerfMode(PerfModeEnum mode);
+    PerfModeEnum getPerfMode();
     
     void setTheme(int themeId);
     int getTheme();
@@ -185,7 +193,7 @@ private:
     std::string configName;
     std::map<std::string, DeviceConfig *> deviceConfig;
     std::atomic_int winX,winY,winW,winH;
-    std::atomic_bool winMax, showTips, lowPerfMode, modemPropsCollapsed;
+    std::atomic_bool winMax, showTips, modemPropsCollapsed;
     std::atomic_int themeId;
     std::atomic_int fontScale;
     std::atomic_llong snap;
@@ -203,5 +211,7 @@ private:
     std::atomic_int rigModel, rigRate;
     std::string rigPort;
     std::atomic_bool rigEnabled, rigFollowMode, rigControlMode, rigCenterLock, rigFollowModem;
+
+    std::atomic<PerfModeEnum> perfMode;
 #endif
 };

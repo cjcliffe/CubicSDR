@@ -39,7 +39,6 @@
 #define wxID_SDR_DEVICES 2008
 #define wxID_AGC_CONTROL 2009
 #define wxID_SDR_START_STOP 2010
-#define wxID_LOW_PERF 2011
 #define wxID_SET_DB_OFFSET 2012
 #define wxID_ABOUT_CUBICSDR 2013
 
@@ -70,9 +69,12 @@
 
 #define wxID_SETTINGS_BASE 2300
 
-#define wxID_ANTENNA_CURRENT 2500
+#define wxID_ANTENNA_CURRENT 2350
 #define wxID_ANTENNA_CURRENT_TX 2501
-#define wxID_ANTENNAS_BASE 2502
+#define wxID_ANTENNAS_BASE 2352
+
+#define wxID_PERF_CURRENT 2400
+#define wxID_PERF_BASE 2401
 
 #define wxID_DEVICE_ID 3500
 
@@ -229,6 +231,8 @@ private:
     //depending on context, maps the item id to wxMenuItem*,
     //OR the submenu item id to its parent  wxMenuItem*.
     std::map<int, wxMenuItem *> settingsMenuItems;
+
+    std::map<int, wxMenuItem *> performanceMenuItems;
     
     std::map<int, wxMenuItem *> audioSampleRateMenuItems;
 
@@ -242,7 +246,7 @@ private:
     wxMenu *displayMenu = nullptr;
     wxMenuItem *agcMenuItem = nullptr;
     wxMenuItem *iqSwapMenuItem = nullptr;
-    wxMenuItem *lowPerfMenuItem = nullptr;
+
     wxMenu *fileMenu = nullptr;
     wxMenu *settingsMenu = nullptr;
 	wxMenu *recordingMenu = nullptr;
@@ -268,8 +272,6 @@ private:
     ModemProperties *modemProps;
     std::atomic_bool modemPropertiesUpdated;
 	wxMenuItem *showTipMenuItem;
-
-    bool lowPerfMode;
 
     wxMenuItem *hideBookmarksItem;
     bool saveDisabled;

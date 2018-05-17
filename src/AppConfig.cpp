@@ -306,7 +306,7 @@ AppConfig::AppConfig() : configName("") {
     winH.store(0);
     winMax.store(false);
     showTips.store(true);
-    lowPerfMode.store(false);
+    perfMode.store(PERF_NORMAL);
     themeId.store(0);
     fontScale.store(0);
     snap.store(1);
@@ -393,12 +393,12 @@ bool AppConfig::getShowTips() {
     return showTips.load();
 }
 
-void AppConfig::setLowPerfMode(bool show) {
-    lowPerfMode.store(show);
+void AppConfig::setPerfMode(PerfModeEnum show) {
+    perfMode.store(show);
 }
 
-bool AppConfig::getLowPerfMode() {
-    return lowPerfMode.load();
+AppConfig::PerfModeEnum AppConfig::getPerfMode() {
+    return perfMode.load();
 }
 
 wxRect *AppConfig::getWindow() {
@@ -590,7 +590,7 @@ bool AppConfig::save() {
 
         *window_node->newChild("max") = winMax.load();
         *window_node->newChild("tips") = showTips.load();
-        *window_node->newChild("low_perf_mode") = lowPerfMode.load();
+        *window_node->newChild("perf_mode") = (int)perfMode.load();
         *window_node->newChild("theme") = themeId.load();
         *window_node->newChild("font_scale") = fontScale.load();
         *window_node->newChild("snap") = snap.load();
@@ -689,7 +689,7 @@ bool AppConfig::load() {
 
     if (cfg.rootNode()->hasAnother("window")) {
         int x = 0 ,y = 0 ,w = 0 ,h = 0;
-        int max = 0 ,tips = 0 ,lpm = 0 ,mpc = 0;
+        int max = 0 ,tips = 0 ,perf_mode = 0 ,mpc = 0;
         
         DataNode *win_node = cfg.rootNode()->getNext("window");
         
@@ -716,11 +716,19 @@ bool AppConfig::load() {
             showTips.store(tips?true:false);
         }
 
-        if (win_node->hasAnother("low_perf_mode")) {
-            win_node->getNext("low_perf_mode")->element()->get(lpm);
-            lowPerfMode.store(lpm?true:false);
-        }
+        // default:
+        perfMode.store(PERF_NORMAL);
 
+        if (win_node->hasAnother("perf_mode")) {
+            win_node->getNext("perf_mode")->element()->get(perf_mode);
+
+            if (perf_mode == (int)PERF_LOW) {
+                perfMode.store(PERF_LOW);
+            } else if (perf_mode == (int)PERF_HIGH) {
+                perfMode.store(PERF_HIGH);
+            }
+        }
+       
         if (win_node->hasAnother("theme")) {
             int theme;
             win_node->getNext("theme")->element()->get(theme);

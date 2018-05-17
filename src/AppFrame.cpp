@@ -869,12 +869,30 @@ void AppFrame::updateDeviceParams() {
     showTipMenuItem = newSettingsMenu->AppendCheckItem(wxID_SET_TIPS, "Show Hover Tips");
     showTipMenuItem->Check(wxGetApp().getConfig()->getShowTips());
 
-    lowPerfMode = wxGetApp().getConfig()->getLowPerfMode();
-    lowPerfMenuItem = newSettingsMenu->AppendCheckItem(wxID_LOW_PERF, "Reduce CPU Usage");
-    if (lowPerfMode) {
-        lowPerfMenuItem->Check(true);
+    // CPU usage menu:
+    performanceMenuItems.clear();
+
+    wxMenu *subMenu = new wxMenu;
+
+    performanceMenuItems[wxID_PERF_BASE + (int)AppConfig::PERF_HIGH] = subMenu->AppendRadioItem(wxID_PERF_BASE + (int)AppConfig::PERF_HIGH, "High (enhanced)");
+    performanceMenuItems[wxID_PERF_BASE + (int)AppConfig::PERF_NORMAL] = subMenu->AppendRadioItem(wxID_PERF_BASE + (int)AppConfig::PERF_NORMAL, "Normal");
+    performanceMenuItems[wxID_PERF_BASE + (int)AppConfig::PERF_LOW] = subMenu->AppendRadioItem(wxID_PERF_BASE + (int)AppConfig::PERF_LOW, "Low (slow UI)");
+
+    AppConfig::PerfModeEnum perfMode = wxGetApp().getConfig()->getPerfMode();
+
+    if (perfMode == AppConfig::PERF_HIGH) {
+        wxGetApp().setChannelizerType(SDRPostThreadChannelizerType::SDRPostPFBCH2);
+    } else {
+        wxGetApp().setChannelizerType(SDRPostThreadChannelizerType::SDRPostPFBCH);
     }
 
+    performanceMenuItems[wxID_PERF_BASE + (int)perfMode]->Check(true);
+
+    wxMenuItem* selectedPerfModeItem = performanceMenuItems[wxID_PERF_BASE + (int)perfMode];
+
+    performanceMenuItems[wxID_PERF_CURRENT] = newSettingsMenu->AppendSubMenu(subMenu, "CPU usage");
+    performanceMenuItems[wxID_PERF_CURRENT]->SetItemLabel(getSettingsLabel("CPU usage", selectedPerfModeItem->GetItemLabel().ToStdString()));
+   
     newSettingsMenu->AppendSeparator();
 
     settingsMenuItems.clear();
@@ -1827,10 +1845,30 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             }
         }
     } 
-    else if (event.GetId() == wxID_LOW_PERF) {
-        lowPerfMode = lowPerfMenuItem->IsChecked();
-        wxGetApp().getConfig()->setLowPerfMode(lowPerfMode);
+    else if (event.GetId() >= wxID_PERF_BASE && event.GetId() <= wxID_PERF_BASE + (int)AppConfig::PERF_HIGH) {
 
+        int perfEnumAsInt = event.GetId() - wxID_PERF_BASE;
+        AppConfig::PerfModeEnum perfEnumSet = AppConfig::PERF_NORMAL;
+
+        if (perfEnumAsInt == (int)AppConfig::PERF_HIGH) {
+            perfEnumSet = AppConfig::PERF_HIGH;
+
+        } else if (perfEnumAsInt == (int)AppConfig::PERF_LOW) {
+            perfEnumSet = AppConfig::PERF_LOW;
+        }
+
+        wxGetApp().getConfig()->setPerfMode(perfEnumSet);
+
+        //update Channelizer mode:
+        if (perfEnumSet == AppConfig::PERF_HIGH) {
+            wxGetApp().setChannelizerType(SDRPostThreadChannelizerType::SDRPostPFBCH2);
+        } else {
+            wxGetApp().setChannelizerType(SDRPostThreadChannelizerType::SDRPostPFBCH);
+        }
+
+        //update UI
+        wxMenuItem* selectedPerfModeItem = performanceMenuItems[event.GetId()];
+        performanceMenuItems[wxID_PERF_CURRENT]->SetItemLabel(getSettingsLabel("CPU usage", selectedPerfModeItem->GetItemLabel().ToStdString()));
     } 
     else if (event.GetId() == wxID_SET_TIPS ) {
         if (wxGetApp().getConfig()->getShowTips()) {
@@ -2324,7 +2362,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     if (!this->IsActive()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(30));
     } else {
-        if (lowPerfMode) {
+        if (wxGetApp().getConfig()->getPerfMode() == AppConfig::PERF_LOW) {
             std::this_thread::sleep_for(std::chrono::milliseconds(30));
         } else {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));

@@ -21,8 +21,8 @@ SDRPostThread::SDRPostThread() : IOThread(), buffers("SDRPostThreadBuffers"), vi
     channelizer = nullptr;
     channelizer2 = nullptr;
     
-    // Channel mode default temporary for testing
-    chanMode = 1;
+    // Channel mode default is PFBCH
+    chanMode = (int)SDRPostPFBCH;
     lastChanMode = 0;
     
     sampleRate = 0;

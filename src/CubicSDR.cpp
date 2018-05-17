@@ -659,6 +659,21 @@ const std::string& CubicSDR::getAntennaName() {
     return antennaName;
 }
 
+void CubicSDR::setChannelizerType(SDRPostThreadChannelizerType chType) {
+    if (sdrPostThread && !sdrPostThread->isTerminated()) {
+        sdrPostThread->setChannelizerType(chType);
+    }
+}
+
+SDRPostThreadChannelizerType CubicSDR::getChannelizerType() {
+
+    if (sdrPostThread && !sdrPostThread->isTerminated()) {
+        return sdrPostThread->getChannelizerType();
+    }
+
+    return SDRPostThreadChannelizerType::SDRPostPFBCH;
+}
+
 long long CubicSDR::getFrequency() {
     return frequency;
 }

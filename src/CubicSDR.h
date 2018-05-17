@@ -95,6 +95,9 @@ public:
 
     void setAntennaName(const std::string& name);
     const std::string& getAntennaName();
+
+    void setChannelizerType(SDRPostThreadChannelizerType chType);
+    SDRPostThreadChannelizerType getChannelizerType();
    
 
     void setSampleRate(long long rate_in);
