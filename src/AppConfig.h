@@ -204,6 +204,8 @@ private:
     std::vector<SDRManualDef> manualDevices;
     std::atomic_bool bookmarksVisible;
 
+    std::atomic<PerfModeEnum> perfMode;
+
     std::string recordingPath = "";
 	int recordingSquelchOption = 0;
 	int recordingFileTimeLimitSeconds = 0;
@@ -211,7 +213,5 @@ private:
     std::atomic_int rigModel, rigRate;
     std::string rigPort;
     std::atomic_bool rigEnabled, rigFollowMode, rigControlMode, rigCenterLock, rigFollowModem;
-
-    std::atomic<PerfModeEnum> perfMode;
 #endif
 };
