@@ -874,9 +874,9 @@ void AppFrame::updateDeviceParams() {
 
     wxMenu *subMenu = new wxMenu;
 
-    performanceMenuItems[wxID_PERF_BASE + (int)AppConfig::PERF_HIGH] = subMenu->AppendRadioItem(wxID_PERF_BASE + (int)AppConfig::PERF_HIGH, "High (enhanced)");
+    performanceMenuItems[wxID_PERF_BASE + (int)AppConfig::PERF_HIGH] = subMenu->AppendRadioItem(wxID_PERF_BASE + (int)AppConfig::PERF_HIGH, "High (+enhanced DSP)");
     performanceMenuItems[wxID_PERF_BASE + (int)AppConfig::PERF_NORMAL] = subMenu->AppendRadioItem(wxID_PERF_BASE + (int)AppConfig::PERF_NORMAL, "Normal");
-    performanceMenuItems[wxID_PERF_BASE + (int)AppConfig::PERF_LOW] = subMenu->AppendRadioItem(wxID_PERF_BASE + (int)AppConfig::PERF_LOW, "Low (slow UI)");
+    performanceMenuItems[wxID_PERF_BASE + (int)AppConfig::PERF_LOW] = subMenu->AppendRadioItem(wxID_PERF_BASE + (int)AppConfig::PERF_LOW, "Low (-slow UI)");
 
     AppConfig::PerfModeEnum perfMode = wxGetApp().getConfig()->getPerfMode();
 
@@ -3119,14 +3119,19 @@ wxString AppFrame::getSettingsLabel(const std::string& settingsName,
                                     const std::string& settingsValue,
                                     const std::string& settingsSuffix) {
 
-    size_t itemStringSize = 30;
+    size_t itemStringSize = 40;
     int justifValueSize = itemStringSize - settingsName.length() - 1;
 
     std::stringstream full_label;
     
     full_label << settingsName + " : ";
     full_label << std::right << std::setw(justifValueSize);
-    full_label << settingsValue + " " + settingsSuffix;
-   
+
+    if (settingsSuffix.empty()) {
+        full_label << settingsValue;
+    } else {
+        full_label << settingsValue + " " + settingsSuffix;
+    }
+
     return wxString(full_label.str());
 }
