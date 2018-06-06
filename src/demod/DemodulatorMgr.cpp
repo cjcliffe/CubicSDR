@@ -16,6 +16,7 @@
 #endif
 
 #include "DataTree.h"
+#include <wx/string.h>
 
 bool demodFreqCompare (DemodulatorInstancePtr i, DemodulatorInstancePtr j) { return (i->getFrequency() < j->getFrequency()); }
 bool inactiveCompare (DemodulatorInstancePtr i, DemodulatorInstancePtr j) { return (i->isActive() < j->isActive()); }
@@ -432,6 +433,36 @@ void DemodulatorMgr::saveInstance(DataNode *node, DemodulatorInstancePtr inst) {
     }
 }
 
+std::wstring DemodulatorMgr::getSafeWstringValue(DataNode* node) {
+
+    std::wstring decodedWString = L"";
+
+    if (node != nullptr) {
+
+        //1) decode as encoded wstring:
+        try {
+            node->element()->get(decodedWString);
+
+        } catch (DataTypeMismatchException* e) {
+            //2) wstring decode fail, try simple std::string
+            std::string decodedStdString;
+            try {
+
+                node->element()->get(decodedStdString);
+
+                //use wxString for a clean conversion to a wstring:
+                decodedWString = wxString(decodedStdString).ToStdWstring();
+
+            } catch (DataTypeMismatchException* e) {
+                //nothing works, return an empty string.
+                decodedWString = L"";
+            }
+        }
+    }
+
+    return decodedWString;
+}
+
 DemodulatorInstancePtr DemodulatorMgr::loadInstance(DataNode *node) {
 
 	std::lock_guard < std::recursive_mutex > lock(demods_busy);
@@ -486,7 +517,8 @@ DemodulatorInstancePtr DemodulatorMgr::loadInstance(DataNode *node) {
     DataNode *demodUserLabel = node->hasAnother("user_label") ? node->getNext("user_label") : nullptr;
     
     if (demodUserLabel) {
-        demodUserLabel->element()->get(user_label);
+
+        user_label = DemodulatorMgr::getSafeWstringValue(demodUserLabel);
     }
     
     ModemSettings mSettings;

@@ -77,7 +77,12 @@ public:
 	
     DemodulatorInstancePtr loadInstance(DataNode *node);
 
+
 private:
+
+    //utility method that attemts to decode node value as std::wstring, else as std::string, else 
+    //return an empty string.
+    static std::wstring getSafeWstringValue(DataNode* node);
 
     std::vector<DemodulatorInstancePtr> demods;
     

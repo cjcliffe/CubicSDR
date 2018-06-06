@@ -570,6 +570,38 @@ BookmarkEntryPtr BookmarkMgr::demodToBookmarkEntry(DemodulatorInstancePtr demod)
     return be;
 }
 
+std::wstring BookmarkMgr::getSafeWstringValue(DataNode* node, const std::string& childNodeName) {
+    
+    std::wstring decodedWString = L"";
+
+    if (node != nullptr) {
+
+        DataNode* childNode = node->getNext(childNodeName.c_str());
+
+        //1) decode as encoded wstring:
+        try {
+            childNode->element()->get(decodedWString);
+
+        } catch (DataTypeMismatchException* e) {
+            //2) wstring decode fail, try simple std::string
+            std::string decodedStdString;
+            try {
+                
+                childNode->element()->get(decodedStdString);
+
+                //use wxString for a clean conversion to a wstring:
+                decodedWString = wxString(decodedStdString).ToStdWstring();
+
+            } catch (DataTypeMismatchException* e) {
+                //nothing works, return an empty string.
+                decodedWString = L"";
+            }
+        }
+    }
+
+    return decodedWString;
+}
+
 BookmarkEntryPtr BookmarkMgr::nodeToBookmark(DataNode *node) {
     if (!node->hasAnother("frequency") || !node->hasAnother("type") || !node->hasAnother("bandwidth")) {
         return nullptr;
@@ -582,7 +614,7 @@ BookmarkEntryPtr BookmarkMgr::nodeToBookmark(DataNode *node) {
     node->getNext("bandwidth")->element()->get(be->bandwidth);
 
     if (node->hasAnother("user_label")) {
-        node->getNext("user_label")->element()->get(be->label);
+        be->label = BookmarkMgr::getSafeWstringValue( node, "user_label");
     }
 
     node->rewindAll();
