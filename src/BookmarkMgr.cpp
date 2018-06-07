@@ -584,6 +584,7 @@ std::wstring BookmarkMgr::getSafeWstringValue(DataNode* node, const std::string&
 
         } catch (DataTypeMismatchException* e) {
             //2) wstring decode fail, try simple std::string
+            delete e;
             std::string decodedStdString;
             try {
                 
@@ -594,6 +595,7 @@ std::wstring BookmarkMgr::getSafeWstringValue(DataNode* node, const std::string&
 
             } catch (DataTypeMismatchException* e) {
                 //nothing works, return an empty string.
+                delete e;
                 decodedWString = L"";
             }
         }

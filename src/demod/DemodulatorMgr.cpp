@@ -445,6 +445,7 @@ std::wstring DemodulatorMgr::getSafeWstringValue(DataNode* node) {
 
         } catch (DataTypeMismatchException* e) {
             //2) wstring decode fail, try simple std::string
+            delete e;
             std::string decodedStdString;
             try {
 
@@ -454,6 +455,7 @@ std::wstring DemodulatorMgr::getSafeWstringValue(DataNode* node) {
                 decodedWString = wxString(decodedStdString).ToStdWstring();
 
             } catch (DataTypeMismatchException* e) {
+                delete e;
                 //nothing works, return an empty string.
                 decodedWString = L"";
             }
