@@ -2485,10 +2485,10 @@ bool AppFrame::loadSession(std::string fileName) {
 
                   std::cout << "Loading session file version: '" << version << "'..." << std::endl;
               }
-              catch (DataTypeMismatchException* e) {
+              catch (DataTypeMismatchException e) {
                   //this is for managing the old session format NOT encoded as std:wstring,
                   //force current version
-                  std::cout << "Warning while Loading session file version, probably old format :'" << e->what() << "' please consider re-saving the current session..." << std::endl;
+                  std::cout << "Warning while Loading session file version, probably old format :'" << e.what() << "' please consider re-saving the current session..." << std::endl << std::flush;
                   version = wxString(CUBICSDR_VERSION).ToStdWstring();
               }    
         }
@@ -2612,7 +2612,7 @@ bool AppFrame::loadSession(std::string fileName) {
         if (loadedActiveDemod || newDemod) {
             wxGetApp().getDemodMgr().setActiveDemodulator(loadedActiveDemod?loadedActiveDemod:newDemod, false);
         }
-    } catch (DataTypeMismatchException &e) {
+    } catch (DataTypeMismatchException e) {
         std::cout << e.what() << std::endl;
         return false;
     }

@@ -205,7 +205,7 @@ public:
     unsigned int getUInt() { unsigned int i_get; get(i_get); return i_get; };
     long getLong()  { long l_get; get(l_get); return l_get; };
     unsigned long getULong()  { unsigned long l_get; get(l_get); return l_get; };
-    long getLongLong()  { long long l_get; get(l_get); return l_get; };
+    long long getLongLong()  { long long l_get; get(l_get); return l_get; };
     float getFloat()  { float f_get; get(f_get); return f_get; };
     double getDouble()  { double d_get; get(d_get); return d_get; };
     long double getLongDouble()  { long double d_get; get(d_get); return d_get; };

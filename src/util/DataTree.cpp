@@ -211,7 +211,7 @@ return; \
               } \
         } \
         if (!compat) { \
-            throw(new DataTypeMismatchException("Type mismatch, element type " #enumtype " is not compatible with a " #datatype)); \
+            throw(DataTypeMismatchException("Type mismatch, element type " #enumtype " is not compatible with a " #datatype)); \
         } \
         if (sizeof(datatype) < data_size) { \
             std::cout << "Warning, data type mismatch requested size for '" << #datatype << "(" << sizeof(datatype) << ")' < data size '" << data_size << "'; possible loss of data."; \
@@ -254,7 +254,7 @@ return; \
               } \
         } \
         if (!compat) { \
-            throw(new DataTypeMismatchException("Type mismatch, element type " #enumtype " is not compatible with a " #datatype)); \
+            throw(DataTypeMismatchException("Type mismatch, element type " #enumtype " is not compatible with a " #datatype)); \
         } \
         if (data_type == DATA_FLOAT || data_type == DATA_DOUBLE) { \
             if (sizeof(datatype) < data_size) { \
@@ -286,7 +286,7 @@ DataElementGetFloatingPointDef(DATA_DOUBLE, double, DATA_FLOAT, DATA_CHAR, DATA_
 
 void DataElement::get(char **data_in) {
     if (data_type != DATA_VOID)
-        throw(new DataTypeMismatchException("Type mismatch, not a CHAR*"));
+        throw(DataTypeMismatchException("Type mismatch, not a CHAR*"));
     *data_in = new char[data_size];
     memcpy(*data_in, data_val, data_size);
 }
@@ -296,7 +296,7 @@ void DataElement::get(string &str_in) {
         return;
 
     if (data_type != DATA_STRING)
-        throw(new DataTypeMismatchException("Type mismatch, not a STRING"));
+        throw(DataTypeMismatchException("Type mismatch, not a STRING"));
 
     if (!str_in.empty())	// flush the string
     {
@@ -313,7 +313,7 @@ void DataElement::get(wstring &wstr_in) {
         return;
     
     if (data_type != DATA_WSTRING)
-        throw(new DataTypeMismatchException("Type mismatch, not a WSTRING"));
+        throw(DataTypeMismatchException("Type mismatch, not a WSTRING"));
 
     // flush the string
     wstr_in.clear();
@@ -342,7 +342,7 @@ void DataElement::get(vector<string> &strvect_in) {
         return;
 
     if (data_type != DATA_STR_VECTOR)
-        throw(new DataTypeMismatchException("Type mismatch, not a STRING VECTOR"));
+        throw(DataTypeMismatchException("Type mismatch, not a STRING VECTOR"));
 
     ptr = 0;
 
@@ -358,7 +358,7 @@ void DataElement::get(std::set<string> &strset_in) {
         return;
 
     if (data_type != DATA_STR_VECTOR)
-        throw(new DataTypeMismatchException("Type mismatch, not a STRING VECTOR/SET"));
+        throw(DataTypeMismatchException("Type mismatch, not a STRING VECTOR/SET"));
 
     std::vector<string> tmp_vect;
     std::vector<string>::iterator i;
@@ -382,7 +382,7 @@ if (data_type != enumtype) { \
              } \
        } \
        if (!compat) { \
-           throw(new DataTypeMismatchException("Type mismatch, element type is not compatible with a " #datatype)); \
+           throw(DataTypeMismatchException("Type mismatch, element type is not compatible with a " #datatype)); \
        } \
        if (sizeof(datatype) < unit_size) { \
            std::cout << "Warning, data type mismatch for vector<" #datatype ">; " #datatype " size " << sizeof(datatype) << " is less than unit size " << unit_size << "; possible loss of data."; \

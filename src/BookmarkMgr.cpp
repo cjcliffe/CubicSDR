@@ -582,9 +582,8 @@ std::wstring BookmarkMgr::getSafeWstringValue(DataNode* node, const std::string&
         try {
             childNode->element()->get(decodedWString);
 
-        } catch (DataTypeMismatchException* e) {
+        } catch (DataTypeMismatchException e) {
             //2) wstring decode fail, try simple std::string
-            delete e;
             std::string decodedStdString;
             try {
                 
@@ -593,9 +592,8 @@ std::wstring BookmarkMgr::getSafeWstringValue(DataNode* node, const std::string&
                 //use wxString for a clean conversion to a wstring:
                 decodedWString = wxString(decodedStdString).ToStdWstring();
 
-            } catch (DataTypeMismatchException* e) {
+            } catch (DataTypeMismatchException e) {
                 //nothing works, return an empty string.
-                delete e;
                 decodedWString = L"";
             }
         }
