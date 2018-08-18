@@ -411,6 +411,14 @@ AboutDialogBase::AboutDialogBase( wxWindow* parent, wxWindowID id, const wxStrin
 	
 	, 0, wxALL, 5 );
 	
+	m_dPatrickPreitner = new wxStaticText( m_dScroll, wxID_ANY, wxT("Patrick Preitner"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dPatrickPreitner->Wrap( -1 );
+	m_dSizer->Add( m_dPatrickPreitner, 0, wxALL, 5 );
+	
+	m_dWilliamSoley = new wxStaticText( m_dScroll, wxID_ANY, wxT("William Soley"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dWilliamSoley->Wrap( -1 );
+	m_dSizer->Add( m_dWilliamSoley, 0, wxALL, 5 );
+	
 	
 	m_dBSizer->Add( m_dSizer, 1, wxALL|wxEXPAND, 5 );
 	

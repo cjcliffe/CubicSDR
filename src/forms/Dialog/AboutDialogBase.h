@@ -126,6 +126,8 @@ class AboutDialogBase : public wxDialog
 		wxStaticText* m_dDalePuckett
 		
 		;
+		wxStaticText* m_dPatrickPreitner;
+		wxStaticText* m_dWilliamSoley;
 		wxScrolledWindow* m_stScroll;
 		wxStaticText* m_stHeader;
 		wxStaticLine* m_stDivider1;
