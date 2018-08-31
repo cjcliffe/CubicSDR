@@ -64,7 +64,7 @@ DemodulatorInstance::DemodulatorInstance() {
     pipeIQInputData = std::make_shared<DemodulatorThreadInputQueue>();
     pipeIQInputData->set_max_num_items(100);
     pipeIQDemodData = std::make_shared< DemodulatorThreadPostInputQueue>();
-    pipeIQInputData->set_max_num_items(100);
+    pipeIQDemodData->set_max_num_items(100);
     
     audioThread = new AudioThread();
             
@@ -73,7 +73,7 @@ DemodulatorInstance::DemodulatorInstance() {
     demodulatorPreThread->setOutputQueue("IQDataOutput",pipeIQDemodData);
             
     pipeAudioData = std::make_shared<AudioThreadInputQueue>();
-    pipeAudioData->set_max_num_items(10);
+    pipeAudioData->set_max_num_items(100);
 
     threadQueueControl = std::make_shared<DemodulatorThreadControlCommandQueue>();
     threadQueueControl->set_max_num_items(2);

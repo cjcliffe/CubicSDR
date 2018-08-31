@@ -40,7 +40,7 @@ public:
 };
 
 #define REBUFFER_GC_LIMIT 100
-#define REBUFFER_WARNING_THRESHOLD 150
+#define REBUFFER_WARNING_THRESHOLD 2000
 
 template<typename BufferType>
 class ReBuffer {
