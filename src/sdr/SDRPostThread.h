@@ -34,8 +34,10 @@ protected:
     DemodulatorThreadInputQueuePtr iqActiveDemodVisualQueue;
 
 private:
+    // Copy the full samplerate into a new DemodulatorThreadIQDataPtr.
+    DemodulatorThreadIQDataPtr getFullSampleRateIqData(SDRThreadIQData *data_in);
+    void pushVisualData(DemodulatorThreadIQDataPtr iqDataOut);
 
-    void pushVisualData(SDRThreadIQData *data_in);
     void runSingleCH(SDRThreadIQData *data_in);
 
     void runDemodChannels(int channelBandwidth);

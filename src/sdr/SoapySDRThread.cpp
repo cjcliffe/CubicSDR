@@ -360,7 +360,6 @@ int SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
         if (!iqDataOutQueue->try_push(dataOut)) {
             //The rest of the system saturates,
             //finally the push didn't suceeded.
-            
             readStreamCode = -32;
             std::cout << "SDRThread::readStream(): 3.2 iqDataOutQueue output queue is full, discard processing of the batch..." << std::endl;
 

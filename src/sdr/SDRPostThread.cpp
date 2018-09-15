@@ -95,7 +95,6 @@ void SDRPostThread::updateActiveDemodulators() {
         }
         
         // Add active demods to the current run:
-
         runDemods.push_back(demod);
         demodChannel.push_back(-1);
     }
@@ -178,9 +177,7 @@ void SDRPostThread::run() {
         bool doUpdate = false;
 
         if (data_in && data_in->data.size()) {
-            
-            pushVisualData(data_in.get());
-            
+           
             if(data_in->numChannels > 1) {
                 if (chanMode == 1) {
                     runPFBCH(data_in.get());
@@ -224,27 +221,29 @@ void SDRPostThread::terminate() {
     iqActiveDemodVisualQueue->flush();
 }
 
+// Copy the full badwidth into a new DemodulatorThreadIQDataPtr.
+DemodulatorThreadIQDataPtr SDRPostThread::getFullSampleRateIqData(SDRThreadIQData *data_in) {
+
+    DemodulatorThreadIQDataPtr iqDataOut = visualDataBuffers.getBuffer();
+
+    iqDataOut->frequency = data_in->frequency;
+    iqDataOut->sampleRate = data_in->sampleRate;
+    iqDataOut->data.assign(data_in->data.begin(), data_in->data.begin() + data_in->data.size());
+
+    return iqDataOut;
+}
+
 // Push visual data; i.e. Main Waterfall (all frames) and Spectrum (active frame)
-void SDRPostThread::pushVisualData(SDRThreadIQData *data_in) {
-    if (iqDataOutQueue != nullptr && !iqDataOutQueue->full()) {
-        DemodulatorThreadIQDataPtr iqDataOut = visualDataBuffers.getBuffer();
+void SDRPostThread::pushVisualData(DemodulatorThreadIQDataPtr iqDataOut) {
+
+    if (iqDataOutQueue != nullptr) {
         
-        bool doVis = false;
-        
-        if (iqVisualQueue != nullptr && !iqVisualQueue->full()) {
-            doVis = true;
-        }
-        
-        iqDataOut->frequency = data_in->frequency;
-        iqDataOut->sampleRate = data_in->sampleRate;
-        iqDataOut->data.assign(data_in->data.begin(), data_in->data.begin() + data_in->data.size());
-        
-        //VSO: blocking push
-        iqDataOutQueue->push(iqDataOut);
-        
-        if (doVis) {
-            //VSO: blocking push
-            iqVisualQueue->push(iqDataOut);
+        //non-blocking push here, we can afford to loose some samples for a ever-changing visual display.
+        iqDataOutQueue->try_push(iqDataOut);
+
+        if (iqVisualQueue != nullptr) {
+            //non-blocking push here, we can afford to loose some samples for a ever-changing visual display.
+            iqVisualQueue->try_push(iqDataOut);
         }
     }
 }
@@ -285,32 +284,21 @@ void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
         demodDataOut->data.resize(outSize);
     }
     
+    //Only 1 channel, apply DC blocker.
     iirfilt_crcf_execute_block(dcFilter, &data_in->data[0], data_in->data.size(), &demodDataOut->data[0]);
 
-    if (runDemods.size() > 0 && iqActiveDemodVisualQueue != nullptr && !iqActiveDemodVisualQueue->full()) {
-        //VSO: blocking push
-        iqActiveDemodVisualQueue->push(demodDataOut);
-    }
-    
-    if (iqDataOutQueue != nullptr && !iqDataOutQueue->full()) {
-        //VSO: blocking push
-        iqDataOutQueue->push(demodDataOut);
-    }
+    //push the DC-corrected data as Main Spactrum + Waterfall data.
+    pushVisualData(demodDataOut);
 
-    if (iqVisualQueue != nullptr && !iqVisualQueue->full()) {
-        //VSO: blocking push
-        iqVisualQueue->push(demodDataOut);
+    if (runDemods.size() > 0 && iqActiveDemodVisualQueue != nullptr) {
+        //non-blocking push here, we can afford to loose some samples for a ever-changing visual display.
+        iqActiveDemodVisualQueue->try_push(demodDataOut);
     }
     
     for (size_t i = 0; i < runDemods.size(); i++) {
         // try-push() : we do our best to only stimulate active demods, but some could happen to be dead, full, or indeed non-active.
         //so in short never block here no matter what.
-        if (!runDemods[i]->getIQInputDataPipe()->try_push(demodDataOut)) {
-
-         //   std::cout << "SDRPostThread::runSingleCH() attempt to push into demod '" << runDemods[i]->getLabel()
-         //       << "' (" << runDemods[i]->getFrequency() << " Hz) failed, demod is either too busy, not-active, or dead..." << std::endl << std::flush;
-            std::this_thread::yield();
-        }
+        runDemods[i]->getIQInputDataPipe()->try_push(demodDataOut);
     }
 }
 
@@ -347,7 +335,7 @@ void SDRPostThread::runDemodChannels(int channelBandwidth) {
 
     // Run channels
     for (int i = 0; i < numChannels+1; i++) {
-        bool doDemodVis = (activeDemodChannel == i) && (iqActiveDemodVisualQueue != nullptr) && !iqActiveDemodVisualQueue->full();
+        bool doDemodVis = (activeDemodChannel == i) && (iqActiveDemodVisualQueue != nullptr);
         
         if (!doDemodVis && demodChannelActive[i] == 0) {
             // Nothing to do for this channel? continue.
@@ -398,8 +386,8 @@ void SDRPostThread::runDemodChannels(int channelBandwidth) {
         }
         
         if (doDemodVis) {
-            //VSO: blocking push
-            iqActiveDemodVisualQueue->push(demodDataOut);
+            //non-blocking push here, we can afford to loose some samples for a ever-changing visual display.
+            iqActiveDemodVisualQueue->try_push(demodDataOut);
         }
         
         for (size_t j = 0; j < runDemods.size(); j++) {
@@ -407,11 +395,7 @@ void SDRPostThread::runDemodChannels(int channelBandwidth) {
                 
                 // try-push() : we do our best to only stimulate active demods, but some could happen to be dead, full, or indeed non-active.
                 //so in short never block here no matter what.
-                if (!runDemods[j]->getIQInputDataPipe()->try_push(demodDataOut)) {
-                    //    std::cout << "SDRPostThread::runPFBCH() attempt to push into demod '" << runDemods[i]->getLabel()
-                    //        << "' (" << runDemods[i]->getFrequency() << " Hz) failed, demod is either too busy, not-active, or dead..." << std::endl << std::flush;
-                    std::this_thread::yield();
-                }
+                runDemods[j]->getIQInputDataPipe()->try_push(demodDataOut);
             }
         } //end for
     }
@@ -448,6 +432,10 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
         updateActiveDemodulators();
         updateChannels();
     }
+
+    //push the full data_in into (Main spectrum + waterfall) visual queue:
+    DemodulatorThreadIQDataPtr fullSampleRateIQ = getFullSampleRateIqData(data_in);
+    pushVisualData(fullSampleRateIQ);
     
     size_t outSize = data_in->data.size();
     
@@ -500,6 +488,10 @@ void SDRPostThread::runPFBCH2(SDRThreadIQData *data_in) {
         updateActiveDemodulators();
         updateChannels();
     }
+
+    //push the full data_in into (Main spectrum + waterfall) visual queue:
+    DemodulatorThreadIQDataPtr fullSampleRateIQ = getFullSampleRateIqData(data_in);
+    pushVisualData(fullSampleRateIQ);
     
     size_t outSize = data_in->data.size() * 2;
     
