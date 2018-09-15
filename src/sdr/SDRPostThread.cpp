@@ -33,6 +33,7 @@ SDRPostThread::SDRPostThread() : IOThread(), buffers("SDRPostThreadBuffers"), vi
 
 
 SDRPostThread::~SDRPostThread() {
+    iirfilt_crcf_destroy(dcFilter);
 }
 
 
