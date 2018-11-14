@@ -484,7 +484,7 @@ long long DemodulatorInstance::getFrequency() {
 }
 
 void DemodulatorInstance::setAudioSampleRate(int sampleRate) {
-    demodulatorPreThread->setSampleRate(sampleRate);
+    demodulatorPreThread->setAudioSampleRate(sampleRate);
 }
 
 int DemodulatorInstance::getAudioSampleRate() {
