@@ -1,3 +1,4 @@
+cd $HOME
 # Liquid-DSP
 mkdir jgaeddert/
 git clone https://github.com/jgaeddert/liquid-dsp.git jgaeddert/liquid-dsp
@@ -7,8 +8,8 @@ cd jgaeddert/liquid-dsp/
 ./configure
 make
 sudo make install
-popd
 
+cd $HOME
 # Soapy SDR
 mkdir pothosware/
 git clone https://github.com/pothosware/SoapySDR.git pothosware/SoapySDR
@@ -20,6 +21,7 @@ make
 sudo make install
 popd
 
+cd $HOME
 # CubicSDR
 mkdir cjcliffe/CubicSDR-build
 cmake cjcliffe/CubicSDR cjcliffe/CubicSDR-build
