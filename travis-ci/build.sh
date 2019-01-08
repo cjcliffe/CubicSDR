@@ -27,10 +27,12 @@ cd $HOME/build
 mkdir -p $HOME/build/wxWidgets/staticlib
 cd wxWidgets
 wget https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.2/wxWidgets-3.1.2.tar.bz2
-tar -xvjf wxWidgets-3.1.2.tar.bz2  
+echo "Unpacking wxWidgets (output to null).."
+tar -xvjf wxWidgets-3.1.2.tar.bz2 > /dev/null
 cd wxWidgets-3.1.2/
 ./autogen.sh 
 ./configure --with-opengl --disable-shared --enable-monolithic --with-libjpeg --with-libtiff --with-libpng --with-zlib --disable-sdltest --enable-unicode --enable-display --enable-propgrid --disable-webkit --disable-webview --disable-webviewwebkit --prefix=`echo $HOME/build/wxWidgets/staticlib` CXXFLAGS="-std=c++0x"
+echo "Building wxWidgets (output to null).."
 make -j2 > /dev/null
 make install
 fi
