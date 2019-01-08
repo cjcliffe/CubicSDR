@@ -5,8 +5,10 @@ cd jgaeddert/
 git clone https://github.com/jgaeddert/liquid-dsp.git
 cd liquid-dsp/
 ./bootstrap.sh
-./configure
-make -j2
+echo "Configuring liquid-dsp.."
+./configure > /dev/null
+echo "Building liquid-dsp.."
+make -j2 > /dev/null
 sudo make install
 
 # Soapy SDR
@@ -17,22 +19,24 @@ git clone https://github.com/pothosware/SoapySDR.git
 mkdir SoapySDR-build
 cd SoapySDR-build
 cmake ../SoapySDR -DCMAKE_BUILD_TYPE=Release
-make -j2
+echo "Building SoapySDR.."
+make -j2 > /dev/null
 sudo make install
 
 # wxWidgets
 if [ ! -d "$HOME/build/wxWidgets/staticlib" ]
 then
+echo "wxWidgets cache not found; building."
 cd $HOME/build
 mkdir -p $HOME/build/wxWidgets/staticlib
 cd wxWidgets
 wget https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.2/wxWidgets-3.1.2.tar.bz2
-echo "Unpacking wxWidgets (output to null).."
+echo "Unpacking wxWidgets.."
 tar -xvjf wxWidgets-3.1.2.tar.bz2 > /dev/null
 cd wxWidgets-3.1.2/
 ./autogen.sh 
 ./configure --with-opengl --disable-shared --enable-monolithic --with-libjpeg --with-libtiff --with-libpng --with-zlib --disable-sdltest --enable-unicode --enable-display --enable-propgrid --disable-webkit --disable-webview --disable-webviewwebkit --prefix=`echo $HOME/build/wxWidgets/staticlib` CXXFLAGS="-std=c++0x"
-echo "Building wxWidgets (output to null).."
+echo "Building wxWidgets.."
 make -j2 > /dev/null
 make install
 fi
