@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Liquid-DSP
 mkdir jgaeddert/
 git clone https://github.com/jgaeddert/liquid-dsp.git jgaeddert/liquid-dsp
