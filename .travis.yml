@@ -8,3 +8,6 @@ addons:
       - freeglut3 
       - freeglut3-dev
 script: bash travis-ci/build.sh
+cache:
+    directories:
+     - wxWidgets
