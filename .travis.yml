@@ -10,4 +10,4 @@ addons:
 script: bash travis-ci/build.sh
 cache:
     directories:
-     - wxWidgets
+     - /home/travis/build/wxWidgets/staticlib
