@@ -21,9 +21,9 @@ make -j2
 sudo make install
 
 # wxWidgets
-cd $HOME/build
-if [ ! -d $HOME/build/wxWidgets/staticlib ]
+if [ ! -d "$HOME/build/wxWidgets/staticlib" ]
 then
+cd $HOME/build
 mkdir -p $HOME/build/wxWidgets/staticlib
 cd wxWidgets
 wget https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.2/wxWidgets-3.1.2.tar.bz2
