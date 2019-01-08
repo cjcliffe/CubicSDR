@@ -20,9 +20,23 @@ cmake ../SoapySDR -DCMAKE_BUILD_TYPE=Release
 make -j2
 sudo make install
 
+# wxWidgets - TODO: TRAVIS-CI CACHE!
+cd $HOME/build
+mkdir -p $HOME/build/wxWidgets/staticlib
+cd wxWidgets
+wget https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.2/wxWidgets-3.1.2.tar.bz2
+tar -xvjf wxWidgets-3.1.2.tar.bz2  
+cd wxWidgets-3.1.2/
+./autogen.sh 
+./configure --with-opengl --disable-shared --enable-monolithic --with-libjpeg --with-libtiff --with-libpng --with-zlib --disable-sdltest --enable-unicode --enable-display --enable-propgrid --disable-webkit --disable-webview --disable-webviewwebkit --prefix=`echo $HOME/build/wxWidgets/staticlib` CXXFLAGS="-std=c++0x"
+make -j2
+make install
+
+
 # CubicSDR
 cd $HOME/build
 mkdir cjcliffe/CubicSDR-build
 cd cjcliffe/CubicSDR-build
-cmake ../CubicSDR -DCMAKE_BUILD_TYPE=Release
+cmake ../CubicSDR -DCMAKE_BUILD_TYPE=Release -DwxWidgets_CONFIG_EXECUTABLE=$HOME/build/wxWidgets/staticlib/bin/wx-config
 make -j2
+
