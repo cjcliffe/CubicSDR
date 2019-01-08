@@ -24,8 +24,7 @@ make -j2 > /dev/null
 sudo make install
 
 # wxWidgets
-if [ ! -d "$HOME/build/wxWidgets/staticlib" ]
-then
+if [ ! -f "$HOME/build/wxWidgets/staticlib/bin/wx-config" ]; then
 echo "wxWidgets cache not found; building."
 cd $HOME/build
 mkdir -p $HOME/build/wxWidgets/staticlib
