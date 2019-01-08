@@ -1,0 +1,13 @@
+dist: trusty
+language: cpp
+addons:
+  apt:
+    packages:
+      - libpulse-dev 
+      - libgtk-3-dev
+      - freeglut3 
+      - freeglut3-dev
+script: bash travis-ci/build.sh
+cache:
+    directories:
+     - /home/travis/build/wxWidgets/staticlib
