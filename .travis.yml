@@ -1,0 +1,10 @@
+dist: trusty
+language: cpp
+script: cmake
+addons:
+  apt:
+    packages:
+      - ibpulse-dev 
+      - libgtk-3-dev
+      - freeglut3 
+      - freeglut3-dev
