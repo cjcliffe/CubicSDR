@@ -36,7 +36,7 @@ cd wxWidgets-3.1.2/
 ./autogen.sh 
 ./configure --with-opengl --disable-shared --enable-monolithic --with-libjpeg --with-libtiff --with-libpng --with-zlib --disable-sdltest --enable-unicode --enable-display --enable-propgrid --disable-webkit --disable-webview --disable-webviewwebkit --prefix=`echo $HOME/build/wxWidgets/staticlib` CXXFLAGS="-std=c++0x"
 echo "Building wxWidgets.."
-make -j2 > /dev/null
+make -j2
 make install
 fi
 
