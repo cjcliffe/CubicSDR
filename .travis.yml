@@ -1,3 +1,6 @@
+os: 
+    - linux
+    - osx
 dist: trusty
 language: cpp
 addons:
@@ -7,7 +10,10 @@ addons:
       - libgtk-3-dev
       - freeglut3 
       - freeglut3-dev
-script: bash travis-ci/build.sh
+script: 
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then bash travis-ci/build_macos.sh; fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then bash travis-ci/build_linux.sh; fi
 cache:
     directories:
      - /home/travis/build/wxWidgets/staticlib
+     - /Users/travis/build/wxWidgets/staticlib
