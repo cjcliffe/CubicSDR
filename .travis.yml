@@ -10,11 +10,11 @@ addons:
       - libgtk-3-dev
       - freeglut3 
       - freeglut3-dev
-before_install:
-    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then bash travis-ci/prep_macos.sh; fi
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then bash travis-ci/prep_linux.sh; fi
 script: 
-    - bash travis-ci/build_common.sh
+    - bash travis-ci/build_liquiddsp.sh
+    - bash travis-ci/build_soapysdr.sh
+    - bash travis-ci/build_wxwidgets.sh
+    - bash travis-ci/build_cubicsdr.sh
 cache:
     directories:
      - /home/travis/build/wxWidgets/staticlib
