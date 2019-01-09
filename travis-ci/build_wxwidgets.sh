@@ -12,11 +12,11 @@ tar -xvjf wxWidgets-3.1.2.tar.bz2 > /dev/null
 cd wxWidgets-3.1.2/
 ./autogen.sh 
 
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
+if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
 ./configure --with-opengl --disable-shared --enable-monolithic --with-libjpeg --with-libtiff --with-libpng --with-zlib --disable-sdltest --enable-unicode --enable-display --enable-propgrid --disable-webkit --disable-webview --disable-webviewwebkit --prefix=`echo $HOME/build/wxWidgets/staticlib` CXXFLAGS="-std=c++0x"
 fi
 
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
 ./configure --with-opengl --disable-shared --enable-monolithic --with-libjpeg --with-libtiff --with-libpng --with-zlib --with-mac --disable-sdltest --enable-unicode --enable-display --enable-propgrid --disable-webkit --disable-webview --disable-webviewwebkit --with-macosx-version-min=10.9  --prefix=`echo $HOME/build/wxWidgets/staticlib` CXXFLAGS="-std=c++0x" --with-libiconv=/usr
 
 echo "Building wxWidgets.."

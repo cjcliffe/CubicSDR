@@ -17,5 +17,4 @@ script:
     - bash travis-ci/build_cubicsdr.sh
 cache:
     directories:
-     - /home/travis/build/wxWidgets/staticlib
-     - /Users/travis/build/wxWidgets/staticlib
+     - $HOME/build/wxWidgets/staticlib
