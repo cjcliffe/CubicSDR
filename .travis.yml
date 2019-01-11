@@ -12,6 +12,7 @@ addons:
       - freeglut3-dev
       - libhamlib-dev
 script: 
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install hamlib; fi
     - bash travis-ci/build_liquiddsp.sh
     - bash travis-ci/build_soapysdr.sh

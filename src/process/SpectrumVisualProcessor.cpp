@@ -286,7 +286,7 @@ void SpectrumVisualProcessor::process() {
                 return;
             }
             
-            while (resampleBw / SPECTRUM_VZM >= bandwidth) {
+            while (resampleBw / SPECTRUM_VZM >= (long) bandwidth) {
                 resampleBw /= SPECTRUM_VZM;
             }
             

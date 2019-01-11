@@ -498,8 +498,9 @@ std::string SDRDevicesDialog::getSelectedChoiceOption(wxPGProperty* prop, const 
     int choiceIndex = prop->GetChoiceSelection();
     
     if (arg.options.size() > 0) {
-
-        if (choiceIndex >= 0 && choiceIndex < arg.options.size()) {
+        int choiceMax = arg.options.size();
+        
+        if (choiceIndex >= 0 && choiceIndex < choiceMax) {
             //normal selection
             optionName = arg.options[choiceIndex];
         } else {

@@ -1301,7 +1301,9 @@ bool AppFrame::actionOnMenuAbout(wxCommandEvent& event) {
 
 bool AppFrame::actionOnMenuSettings(wxCommandEvent& event) {
 
-    if (event.GetId() >= wxID_ANTENNAS_BASE && event.GetId() < wxID_ANTENNAS_BASE + antennaNames.size()) {
+    int antennaIdMax = wxID_ANTENNAS_BASE + antennaNames.size();
+    
+    if (event.GetId() >= wxID_ANTENNAS_BASE && event.GetId() < antennaIdMax) {
 
         wxGetApp().setAntennaName(antennaNames[event.GetId() - wxID_ANTENNAS_BASE]);
       
@@ -1720,7 +1722,9 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent& event) {
         bManaged = true;
     }
 
-    if (event.GetId() >= wxID_RIG_SERIAL_BASE && event.GetId() < wxID_RIG_SERIAL_BASE + rigSerialRates.size()) {
+    int rigSerialIdMax = wxID_RIG_SERIAL_BASE + rigSerialRates.size();
+    
+    if (event.GetId() >= wxID_RIG_SERIAL_BASE && event.GetId() < rigSerialIdMax) {
         int serialIdx = event.GetId() - wxID_RIG_SERIAL_BASE;
         rigSerialRate = rigSerialRates[serialIdx];
         resetRig = true;

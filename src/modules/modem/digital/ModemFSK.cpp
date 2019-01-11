@@ -16,7 +16,7 @@ ModemBase *ModemFSK::factory() {
     return new ModemFSK;
 }
 
-int ModemFSK::checkSampleRate(long long sampleRate, int audioSampleRate) {
+int ModemFSK::checkSampleRate(long long sampleRate, int /* audioSampleRate */) {
     double minSps = pow(2.0,bps);
     double nextSps = (double(sampleRate) / double(sps));
     if (nextSps < minSps) {
