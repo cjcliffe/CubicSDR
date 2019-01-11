@@ -483,7 +483,7 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     }
 
 }
-void WaterfallCanvas::OnIdle(wxIdleEvent &event) {
+void WaterfallCanvas::OnIdle(wxIdleEvent & /* event */) {
     processInputQueue();
     Refresh();
 }

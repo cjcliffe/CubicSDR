@@ -19,7 +19,7 @@ ModemST::~ModemST() {
     modem_destroy(demodST);
 }
 
-void ModemST::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
+void ModemST::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
     ModemKitDigital *dkit = (ModemKitDigital *)kit;
     digitalStart(dkit, demodST, input);
 

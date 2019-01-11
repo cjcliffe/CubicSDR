@@ -2405,7 +2405,7 @@ void AppFrame::OnUnSplit(wxSplitterEvent& event)
     event.Veto();
 }
 
-void AppFrame::OnAboutDialogClose(wxCommandEvent& event) {
+void AppFrame::OnAboutDialogClose(wxCommandEvent& /* event */) {
     aboutDlg->Destroy();
     aboutDlg = nullptr;
 }

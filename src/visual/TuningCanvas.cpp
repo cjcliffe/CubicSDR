@@ -250,7 +250,7 @@ void TuningCanvas::StepTuner(ActiveState state, int exponent, bool up) {
     }
 }
 
-void TuningCanvas::OnIdle(wxIdleEvent &event) {
+void TuningCanvas::OnIdle(wxIdleEvent & /* event */) {
     if (mouseTracker.mouseDown()) {
         if (downState != TUNING_HOVER_NONE) {
             dragAccum += 5.0*mouseTracker.getOriginDeltaMouseX();

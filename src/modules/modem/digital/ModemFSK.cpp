@@ -128,7 +128,7 @@ ModemFSK::~ModemFSK() {
 
 }
 
-void ModemFSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
+void ModemFSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
     ModemKitFSK *dkit = (ModemKitFSK *)kit;
     
     digitalStart(dkit, nullptr, input);

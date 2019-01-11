@@ -75,7 +75,7 @@ void AudioSinkFileThread::sink(AudioThreadInputPtr input) {
     audioFileHandler->writeToFile(input);
 }
 
-void AudioSinkFileThread::inputChanged(AudioThreadInput oldProps, AudioThreadInputPtr newProps) {
+void AudioSinkFileThread::inputChanged(AudioThreadInput /* oldProps */, AudioThreadInputPtr /* newProps */) {
     // close, set new parameters, adjust file name sequence and re-open?
     if (!audioFileHandler) {
         return;
