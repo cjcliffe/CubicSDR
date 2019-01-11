@@ -23,7 +23,7 @@ ModemBase *ModemGMSK::factory() {
     return new ModemGMSK;
 }
 
-int ModemGMSK::checkSampleRate(long long sampleRate, int audioSampleRate) {
+int ModemGMSK::checkSampleRate(long long sampleRate, int /* audioSampleRate */) {
     if (sampleRate < MIN_BANDWIDTH) {
         return MIN_BANDWIDTH;
     }
@@ -115,7 +115,7 @@ void ModemGMSK::disposeKit(ModemKit *kit) {
     delete dkit;
 }
 
-void ModemGMSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
+void ModemGMSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
     ModemKitGMSK *dkit = (ModemKitGMSK *)kit;
     unsigned int sym_out;
     

@@ -689,7 +689,7 @@ void BookmarkView::refreshLayout() {
 }
 
 
-wxButton *BookmarkView::makeButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler) {
+wxButton *BookmarkView::makeButton(wxWindow * /* parent */, std::string labelVal, wxObjectEventFunction handler) {
     wxButton *nButton = new wxButton( m_buttonPanel, wxID_ANY, labelVal);
     nButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, handler, nullptr, this);
 
@@ -1553,7 +1553,7 @@ void BookmarkView::onSearchTextFocus( wxMouseEvent&  event ) {
 }
 
 
-void BookmarkView::onSearchText( wxCommandEvent& event ) {
+void BookmarkView::onSearchText( wxCommandEvent& /* event */ ) {
 
     std::wstring searchText = m_searchText->GetValue().Trim().Lower().ToStdWstring();
     

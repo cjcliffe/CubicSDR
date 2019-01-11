@@ -10,7 +10,7 @@ ImagePanel::ImagePanel(wxPanel * parent, wxString file, wxBitmapType format) :
 	image.LoadFile(file, format);
 }
 
-void ImagePanel::paintEvent(wxPaintEvent & evt) {
+void ImagePanel::paintEvent(wxPaintEvent & /* evt */) {
     wxPaintDC dc(this);
     render(dc);
 }

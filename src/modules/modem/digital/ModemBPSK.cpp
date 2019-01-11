@@ -19,7 +19,7 @@ std::string ModemBPSK::getName() {
     return "BPSK";
 }
 
-void ModemBPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
+void ModemBPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
     ModemKitDigital *dkit = (ModemKitDigital *)kit;
     digitalStart(dkit, demodBPSK, input);
 

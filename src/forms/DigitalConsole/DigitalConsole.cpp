@@ -14,16 +14,16 @@ DigitalConsole::~DigitalConsole() {
     doParent->setDialog(nullptr);
 }
 
-void DigitalConsole::OnClose( wxCloseEvent& event ) {
+void DigitalConsole::OnClose( wxCloseEvent& /* event */ ) {
     doParent->setDialog(nullptr);
 }
 
-void DigitalConsole::OnCopy( wxCommandEvent& event ) {
+void DigitalConsole::OnCopy( wxCommandEvent& /* event */ ) {
     m_dataView->SelectAll();
     m_dataView->Copy();
 }
 
-void DigitalConsole::OnPause( wxCommandEvent& event ) {
+void DigitalConsole::OnPause( wxCommandEvent& /* event */ ) {
     if (streamPaused.load()) {
         m_pauseButton->SetLabel("Stop");
         streamPaused.store(false);
@@ -37,7 +37,7 @@ void DoRefresh( wxTimerEvent& event ) {
     event.Skip();
 }
 
-void DigitalConsole::DoRefresh( wxTimerEvent& event ) {
+void DigitalConsole::DoRefresh( wxTimerEvent& /* event */ ) {
     if (streamWritten.load()) {
         stream_busy.lock();
         m_dataView->AppendText(streamBuf.str());
@@ -47,7 +47,7 @@ void DigitalConsole::DoRefresh( wxTimerEvent& event ) {
     }
 }
 
-void DigitalConsole::OnClear( wxCommandEvent& event ) {
+void DigitalConsole::OnClear( wxCommandEvent& /* event */ ) {
     m_dataView->Clear();
 }
 

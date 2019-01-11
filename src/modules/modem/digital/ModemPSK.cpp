@@ -104,7 +104,7 @@ void ModemPSK::updateDemodulatorCons(int cons) {
     }
 }
 
-void ModemPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
+void ModemPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
     ModemKitDigital *dkit = (ModemKitDigital *)kit;
 
     digitalStart(dkit, demodPSK, input);

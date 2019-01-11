@@ -73,17 +73,17 @@ void ModemProperties::initDefaultProperties() {
             i++;
         }
         
-        int defaultDevice = 0;
-        int dc = 0;
+        // int defaultDevice = 0;
+        // int dc = 0;
         
         for (auto mdevices_i : audioOutputDevices) {
             outputOpts.push_back(std::to_string(mdevices_i.first));
             outputOptNames.push_back(mdevices_i.second.name);
             
-            if (mdevices_i.second.isDefaultOutput) {
-                defaultDevice = dc;
-            }
-            dc++;
+            // if (mdevices_i.second.isDefaultOutput) {
+            //     defaultDevice = dc;
+            // }
+            // dc++;
         }
         
         outputArg.key ="._audio_output";
@@ -261,11 +261,11 @@ void ModemProperties::OnChange(wxPropertyGridEvent &event) {
     }
 }
 
-void ModemProperties::OnCollapse(wxPropertyGridEvent &event) {
+void ModemProperties::OnCollapse(wxPropertyGridEvent & /* event */) {
     collapsed = true;
 }
 
-void ModemProperties::OnExpand(wxPropertyGridEvent &event) {
+void ModemProperties::OnExpand(wxPropertyGridEvent &/* event */) {
     collapsed = false;
 }
 
