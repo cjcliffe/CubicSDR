@@ -130,8 +130,10 @@ bool SDRThread::init() {
     } else {
         hasHardwareDC.store(false);
     }
-    
-    device->setGainMode(SOAPY_SDR_RX,0,agc_mode.load());
+
+	if (device->hasGainMode(SOAPY_SDR_RX, 0)) {
+		device->setGainMode(SOAPY_SDR_RX, 0, agc_mode.load());
+	}
     
     numChannels.store(getOptimalChannelCount(sampleRate.load()));
     numElems.store(getOptimalElementCount(sampleRate.load(), TARGET_DISPLAY_FPS));
@@ -484,7 +486,9 @@ void SDRThread::updateSettings() {
 //    }
     
     if (agc_mode_changed.load()) {
-        device->setGainMode(SOAPY_SDR_RX, 0, agc_mode.load());
+		if (device->hasGainMode(SOAPY_SDR_RX, 0)) {
+        	device->setGainMode(SOAPY_SDR_RX, 0, agc_mode.load());
+		}
         agc_mode_changed.store(false);
         if (!agc_mode.load()) {
             updateGains();
