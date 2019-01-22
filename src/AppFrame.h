@@ -220,11 +220,6 @@ private:
     //Use a raw pointer here to prevent a dangling reference
     DemodulatorInstance* activeDemodulator;
 
-    std::vector<RtAudio::DeviceInfo> devices;
-    std::map<int,RtAudio::DeviceInfo> inputDevices;
-    std::map<int,RtAudio::DeviceInfo> outputDevices;
-
-    std::map<int, wxMenuItem *> outputDeviceMenuItems;
     std::map<int, wxMenuItem *> sampleRateMenuItems;
     std::map<int, wxMenuItem *> antennaMenuItems;
     
@@ -239,7 +234,6 @@ private:
 	//
 	std::map<int, wxMenuItem *> recordingMenuItems;
 
-    std::map<int, wxMenuItem *> directSamplingMenuItems;
     wxMenuBar *menuBar;
     
     wxMenu *sampleRateMenu = nullptr;
@@ -304,4 +298,29 @@ private:
 #endif
 
     wxDECLARE_EVENT_TABLE();
+
+	ModeSelectorCanvas *makeModemSelectorPanel(wxWindow *parent, const wxGLAttributes &attribList);
+	WaterfallCanvas *makeWaterfallCanvas(wxWindow *parent, const wxGLAttributes &attribList);
+	SpectrumCanvas *makeDemodSpectrumCanvas(wxWindow *parent, const wxGLAttributes &attribList);
+	MeterCanvas *makeSignalMeter(wxWindow *parent, const wxGLAttributes &attribList);
+	ModeSelectorCanvas *makeDeltaLockButton(wxWindow *parent, const wxGLAttributes &attribList);
+	TuningCanvas *makeModemTuner(wxWindow *parent, const wxGLAttributes &attribList);
+	MeterCanvas *makeModemGainMeter(wxWindow *parent, const wxGLAttributes &attribList);
+	ModeSelectorCanvas *makeSoloModeButton(wxWindow *parent, const wxGLAttributes &attribList);
+	ModeSelectorCanvas *makeModemMuteButton(wxWindow *parent, const wxGLAttributes &attribList);
+	ModeSelectorCanvas *makePeakHoldButton(wxWindow *parent, const wxGLAttributes &attribList);
+	SpectrumCanvas *makeSpectrumCanvas(wxWindow *parent, const wxGLAttributes &attribList);
+	MeterCanvas *makeSpectrumAvgMeter(wxWindow *parent, const wxGLAttributes &attribList);
+	WaterfallCanvas *makeWaterfall(wxWindow *parent, const wxGLAttributes &attribList);
+	MeterCanvas *makeWaterfallSpeedMeter(wxWindow *parent, const wxGLAttributes &attribList);
+    ScopeCanvas *makeScopeCanvas(wxPanel *parent, const wxGLAttributes &attribList);
+    ModeSelectorCanvas *makeModemAdvSelectorPanel(wxPanel *parent, const wxGLAttributes &attribList);
+    ModemProperties *makeModemProperties(wxPanel *parent);
+
+    wxMenu *makeAudioSampleRateMenu();
+    wxMenu *makeDisplayMenu();
+#ifdef USE_HAMLIB
+    wxMenu *makeRigMenu();
+#endif
+
 };

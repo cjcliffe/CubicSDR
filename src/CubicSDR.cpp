@@ -216,6 +216,27 @@ CubicSDR::CubicSDR() : frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFA
         *m_glContextAttributes = glSettings;
 }
 
+void CubicSDR::initAudioDevices() const {
+    std::vector<RtAudio::DeviceInfo> devices;
+    std::map<int, RtAudio::DeviceInfo> inputDevices, outputDevices;
+
+    AudioThread::enumerateDevices(devices);
+
+    int i = 0;
+
+    for (auto devices_i = devices.begin(); devices_i != devices.end(); devices_i++) {
+        if (devices_i->inputChannels) {
+            inputDevices[i] = *devices_i;
+        }
+        if (devices_i->outputChannels) {
+            outputDevices[i] = *devices_i;
+        }
+        i++;
+    }
+
+    wxGetApp().getDemodMgr().setOutputDevices(outputDevices);
+}
+
 bool CubicSDR::OnInit() {
 
     //use the current locale most appropriate to this system,
@@ -297,6 +318,8 @@ bool CubicSDR::OnInit() {
     devicesReady.store(false);
     devicesFailed.store(false);
     deviceSelectorOpen.store(false);
+
+    initAudioDevices();
 
     // Visual Data
     spectrumVisualThread = new SpectrumVisualDataThread();

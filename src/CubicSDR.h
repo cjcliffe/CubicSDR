@@ -248,6 +248,8 @@ private:
     RigThread* rigThread = nullptr;
     std::thread *t_Rig = nullptr;
 #endif
+
+    void initAudioDevices() const;
 };
 
 static const wxCmdLineEntryDesc commandLineInfo [] =

@@ -403,6 +403,10 @@ void DemodulatorMgr::setOutputDevices(std::map<int,RtAudio::DeviceInfo> devs) {
     outputDevices = devs;
 }
 
+std::map<int, RtAudio::DeviceInfo> DemodulatorMgr::getOutputDevices() {
+    return outputDevices;
+}
+
 void DemodulatorMgr::saveInstance(DataNode *node, DemodulatorInstancePtr inst) {
 
     *node->newChild("bandwidth") = inst->getBandwidth();

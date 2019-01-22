@@ -96,7 +96,6 @@ AppFrame::AppFrame() :
     mainSplitter = new wxSplitterWindow( this, wxID_MAIN_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
     mainSplitter->SetSashGravity(10.0f / 37.0f);
     mainSplitter->SetMinimumPaneSize(1);
-    
 
     wxPanel *demodPanel = new wxPanel(mainSplitter, wxID_ANY);
 
@@ -125,63 +124,22 @@ AppFrame::AppFrame() :
     gainSizerItem->Show(false);
     gainSpacerItem = demodTray->AddSpacer(1);
     gainSpacerItem->Show(false);
-            
-    std::vector<std::string> modemList = { "FM", "FMS", "NBFM", "AM", "LSB", "USB", "DSB", "I/Q" };
-  
-#ifdef CUBICSDR_MODEM_EXCLUDE
-    std::string excludeListStr = "" CUBICSDR_MODEM_EXCLUDE;
-    std::vector<std::string> excludeList = str_explode(",",excludeListStr);
-    for (auto ex_i : excludeList) {
-        std::vector<std::string>::iterator found_i = std::find(modemList.begin(),modemList.end(),ex_i);
-        if (found_i != modemList.end()) {
-            modemList.erase(found_i);
-        }
-    }
-#endif
-            
-    demodModeSelector = new ModeSelectorCanvas(demodPanel, attribList);
-    for (auto mt_i : modemList) {
-        demodModeSelector->addChoice(mt_i);
-    }
-            
-#ifdef CUBICSDR_MODEM_EXCLUDE
-    demodModeSelector->setHelpTip("Use buttons to choose modulation type.");
-#else
-    demodModeSelector->setHelpTip("Choose modulation type: Frequency Modulation (Hotkey F), Amplitude Modulation (A) and Lower (L), Upper (U), Double Side-Band and more.");
-#endif
-            
-    demodModeSelector->SetMinSize(wxSize(50,-1));
-    demodModeSelector->SetMaxSize(wxSize(50,-1));
+
+    // Demod mode selector
+    demodModeSelector = makeModemSelectorPanel(demodPanel, attribList);
+
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
     
 #ifdef ENABLE_DIGITAL_LAB
-    demodModeSelectorAdv = new ModeSelectorCanvas(demodPanel, attribList);
-    demodModeSelectorAdv->addChoice("ASK");
-    demodModeSelectorAdv->addChoice("APSK");
-    demodModeSelectorAdv->addChoice("BPSK");
-    demodModeSelectorAdv->addChoice("DPSK");
-    demodModeSelectorAdv->addChoice("PSK");
-    demodModeSelectorAdv->addChoice("FSK");
-    demodModeSelectorAdv->addChoice("GMSK");
-    demodModeSelectorAdv->addChoice("OOK");
-    demodModeSelectorAdv->addChoice("ST");
-    demodModeSelectorAdv->addChoice("SQAM");
-    demodModeSelectorAdv->addChoice("QAM");
-    demodModeSelectorAdv->addChoice("QPSK");
-    demodModeSelectorAdv->setHelpTip("Choose advanced modulation types.");
-    demodModeSelectorAdv->SetMinSize(wxSize(50,-1));
-    demodModeSelectorAdv->SetMaxSize(wxSize(50,-1));
+    // Digital Lab Mode Selector
+    demodModeSelectorAdv = makeModemAdvSelectorPanel(demodPanel, attribList);
     demodTray->Add(demodModeSelectorAdv, 3, wxEXPAND | wxALL, 0);
 #endif
             
     modemPropertiesUpdated.store(false);
-    modemProps = new ModemProperties(demodPanel, wxID_ANY);
-    modemProps->SetMinSize(wxSize(APPFRAME_MODEMPROPS_MAXSIZE,-1));
-    modemProps->SetMaxSize(wxSize(APPFRAME_MODEMPROPS_MAXSIZE,-1));
 
-    ModemArgInfoList dummyInfo;
-    modemProps->initProperties(dummyInfo, nullptr);
-    modemProps->updateTheme();
+    // Modem properties panel
+    modemProps = makeModemProperties(demodPanel);
 
     demodTray->Add(modemProps, 15, wxEXPAND | wxALL, 0);
 
@@ -190,27 +148,26 @@ AppFrame::AppFrame() :
 #endif
       
 #if CUBICSDR_ENABLE_VIEW_DEMOD
+    // Demodulator View
     wxBoxSizer *demodVisuals = new wxBoxSizer(wxVERTICAL);
 
-    wxGetApp().getDemodSpectrumProcessor()->setup(DEFAULT_DMOD_FFT_SIZE);
-    demodSpectrumCanvas = new SpectrumCanvas(demodPanel, attribList);
-    demodSpectrumCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
+    // Demod Spectrum
+    demodSpectrumCanvas = makeDemodSpectrumCanvas(demodPanel, attribList);
     demodVisuals->Add(demodSpectrumCanvas, 3, wxEXPAND | wxALL, 0);
+
+    wxGetApp().getDemodSpectrumProcessor()->setup(DEFAULT_DMOD_FFT_SIZE);
     wxGetApp().getDemodSpectrumProcessor()->attachOutput(demodSpectrumCanvas->getVisualDataQueue());
 
     demodVisuals->AddSpacer(1);
 
-    demodWaterfallCanvas = new WaterfallCanvas(demodPanel, attribList);
-    demodWaterfallCanvas->setup(DEFAULT_DMOD_FFT_SIZE, DEFAULT_DEMOD_WATERFALL_LINES_NB);
-    demodWaterfallCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
+    // Demod Waterfall
+    demodWaterfallCanvas = makeWaterfallCanvas(demodPanel, attribList);
     demodWaterfallCanvas->attachSpectrumCanvas(demodSpectrumCanvas);
-    demodWaterfallCanvas->setMinBandwidth(8000);
-    demodSpectrumCanvas->attachWaterfallCanvas(demodWaterfallCanvas);
     demodVisuals->Add(demodWaterfallCanvas, 6, wxEXPAND | wxALL, 0);
+
+    demodSpectrumCanvas->attachWaterfallCanvas(demodWaterfallCanvas);
+
     wxGetApp().getDemodSpectrumProcessor()->attachOutput(demodWaterfallCanvas->getVisualDataQueue());
-    demodWaterfallCanvas->getVisualDataQueue()->set_max_num_items(3);
-    demodWaterfallCanvas->setLinesPerSecond((int)(DEFAULT_DEMOD_WATERFALL_LINES_NB / DEMOD_WATERFALL_DURATION_IN_SECONDS));
-    
     demodVisuals->SetMinSize(wxSize(128,-1));
 
     demodTray->Add(demodVisuals, 30, wxEXPAND | wxALL, 0);
@@ -220,24 +177,19 @@ AppFrame::AppFrame() :
     demodSpectrumCanvas = nullptr;
     demodWaterfallCanvas = nullptr;
 #endif
-            
-    demodSignalMeter = new MeterCanvas(demodPanel, attribList);
-    demodSignalMeter->setMax(DEMOD_SIGNAL_MAX);
-    demodSignalMeter->setMin(DEMOD_SIGNAL_MIN);
-    demodSignalMeter->setLevel(DEMOD_SIGNAL_MIN);
-    demodSignalMeter->setInputValue(DEMOD_SIGNAL_MIN);
-    demodSignalMeter->setHelpTip("Current Signal Level.  Click / Drag to set Squelch level.  Right-Click to Auto-Zero Squelch");
-    demodSignalMeter->SetMinSize(wxSize(12,24));
-    demodTray->Add(demodSignalMeter, 1, wxEXPAND | wxALL, 0);
 
+    // Demod Signal/Squelch Meter
+    demodSignalMeter = makeSignalMeter(demodPanel, attribList);
+    demodTray->Add(demodSignalMeter, 1, wxEXPAND | wxALL, 0);
 
     demodTray->AddSpacer(1);
 
 #if CUBICSDR_ENABLE_VIEW_SCOPE
-    scopeCanvas = new ScopeCanvas(demodPanel, attribList);
-    scopeCanvas->setHelpTip("Audio Visuals, drag left/right to toggle Scope or Spectrum, 'B' to toggle decibels display.");
-    scopeCanvas->SetMinSize(wxSize(128,-1));
+    // Scope
+    scopeCanvas = makeScopeCanvas(demodPanel, attribList);
+
     demodScopeTray->Add(scopeCanvas, 8, wxEXPAND | wxALL, 0);
+
     wxGetApp().getScopeProcessor()->setup(DEFAULT_SCOPE_FFT_SIZE);
     wxGetApp().getScopeProcessor()->attachOutput(scopeCanvas->getInputQueue());
 
@@ -245,23 +197,18 @@ AppFrame::AppFrame() :
 #else
     scopeCanvas = nullptr;
 #endif
-            
-    deltaLockButton = new ModeSelectorCanvas(demodPanel, attribList);
-    deltaLockButton->addChoice(1, "V");
-    deltaLockButton->setPadding(-1,-1);
-    deltaLockButton->setHighlightColor(RGBA4f(0.8f,0.8f,0.2f));
-    deltaLockButton->setHelpTip("Delta Lock Toggle (V) - Enable to lock modem relative to center frequency.");
-    deltaLockButton->setToggleMode(true);
-    deltaLockButton->setSelection(-1);
-    deltaLockButton->SetMinSize(wxSize(20,28));
-    
+
+    // Delta Lock Button
+    deltaLockButton = makeDeltaLockButton(demodPanel, attribList);
+
     demodTunerTray->Add(deltaLockButton, 0, wxEXPAND | wxALL, 0);
     demodTunerTray->AddSpacer(1);
-            
-    demodTuner = new TuningCanvas(demodPanel, attribList);
-    demodTuner->SetMinClientSize(wxSize(200,28));
+
+    // Modem Tuner
+    demodTuner = makeModemTuner(demodPanel, attribList);
+
     demodTunerTray->Add(demodTuner, 1, wxEXPAND | wxALL, 0);
-            
+
     demodScopeTray->Add(demodTunerTray, 1, wxEXPAND | wxALL, 0);
 
     demodTray->Add(demodScopeTray, 30, wxEXPAND | wxALL, 0);
@@ -269,46 +216,27 @@ AppFrame::AppFrame() :
     demodTray->AddSpacer(1);
 
     wxBoxSizer *demodGainTray = new wxBoxSizer(wxVERTICAL);
-            
-    demodGainMeter = new MeterCanvas(demodPanel, attribList);
-    demodGainMeter->setMax(2.0);
-    demodGainMeter->setHelpTip("Current Demodulator Gain Level.  Click / Drag to set Gain level.");
-    demodGainMeter->setShowUserInput(false);
-    demodGainMeter->SetMinSize(wxSize(13,24));
+
+    // Demod Gain Meter
+    demodGainMeter = makeModemGainMeter(demodPanel, attribList);
     demodGainTray->Add(demodGainMeter, 8, wxEXPAND | wxALL, 0);
 
     demodGainTray->AddSpacer(1);
-    
-    soloModeButton = new ModeSelectorCanvas(demodPanel, attribList);
-    soloModeButton->addChoice(1, "S");
-    soloModeButton->setPadding(-1,-1);
-    soloModeButton->setHighlightColor(RGBA4f(0.8f,0.8f,0.2f));
-    soloModeButton->setHelpTip("Solo Mode Toggle");
-    soloModeButton->setToggleMode(true);
-    soloModeButton->setSelection(-1);
-    soloModeButton->SetMinSize(wxSize(12,28));
-    
+
+    // Solo Button
+    soloModeButton = makeSoloModeButton(demodPanel, attribList);
     demodGainTray->Add(soloModeButton, 1, wxEXPAND | wxALL, 0);
 
     demodGainTray->AddSpacer(1);
 
-    demodMuteButton = new ModeSelectorCanvas(demodPanel, attribList);
-    demodMuteButton->addChoice(1, "M");
-    demodMuteButton->setPadding(-1,-1);
-    demodMuteButton->setHighlightColor(RGBA4f(0.8f,0.2f,0.2f));
-    demodMuteButton->setHelpTip("Demodulator Mute Toggle");
-    demodMuteButton->setToggleMode(true);
-	demodMuteButton->setSelection(-1);
-    demodMuteButton->SetMinSize(wxSize(12,28));
-            
+    // Mute Button
+    demodMuteButton = makeModemMuteButton(demodPanel, attribList);
     demodGainTray->Add(demodMuteButton, 1, wxEXPAND | wxALL, 0);
 
     demodTray->Add(demodGainTray, 1, wxEXPAND | wxALL, 0);
     
     demodPanel->SetSizer(demodTray);
 
-//    vbox->Add(demodTray, 12, wxEXPAND | wxALL, 0);
-//    vbox->AddSpacer(1);
     bookmarkSplitter = new wxSplitterWindow(mainSplitter, wxID_BM_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
     bookmarkSplitter->SetMinimumPaneSize(1);
     bookmarkSplitter->SetSashGravity(1.0f / 20.0f);
@@ -317,55 +245,38 @@ AppFrame::AppFrame() :
     mainVisSplitter->SetMinimumPaneSize(1);
     mainVisSplitter->SetSashGravity(6.0f / 25.0f);
         
-//    mainVisSplitter->Connect( wxEVT_IDLE, wxIdleEventHandler( AppFrame::mainVisSplitterIdle ), NULL, this );
-
     wxPanel *spectrumPanel = new wxPanel(mainVisSplitter, wxID_ANY);
     wxBoxSizer *spectrumSizer = new wxBoxSizer(wxHORIZONTAL);
 
+    // Spectrum Canvas
+    spectrumCanvas = makeSpectrumCanvas(spectrumPanel, attribList);
+
     wxGetApp().getSpectrumProcessor()->setup(DEFAULT_FFT_SIZE);
-    spectrumCanvas = new SpectrumCanvas(spectrumPanel, attribList);
-    spectrumCanvas->setShowDb(true);
-    spectrumCanvas->setUseDBOfs(true);
-    spectrumCanvas->setScaleFactorEnabled(true);
     wxGetApp().getSpectrumProcessor()->attachOutput(spectrumCanvas->getVisualDataQueue());
-           
+
+    spectrumSizer->Add(spectrumCanvas, 63, wxEXPAND | wxALL, 0);
+    spectrumSizer->AddSpacer(1);
+
     wxBoxSizer *spectrumCtlTray = new wxBoxSizer(wxVERTICAL);
-            
-    peakHoldButton = new ModeSelectorCanvas(spectrumPanel, attribList);
-    peakHoldButton->addChoice(1, "P");
-    peakHoldButton->setPadding(-1,-1);
-    peakHoldButton->setHighlightColor(RGBA4f(0.2f,0.8f,0.2f));
-    peakHoldButton->setHelpTip("Peak Hold Toggle");
-    peakHoldButton->setToggleMode(true);
-    peakHoldButton->setSelection(-1);
-    peakHoldButton->SetMinSize(wxSize(12,24));
+
+    // Peak Hold
+    peakHoldButton = makePeakHoldButton(spectrumPanel, attribList);
 
     spectrumCtlTray->Add(peakHoldButton, 1, wxEXPAND | wxALL, 0);
     spectrumCtlTray->AddSpacer(1);
 
-    spectrumAvgMeter = new MeterCanvas(spectrumPanel, attribList);
-    spectrumAvgMeter->setHelpTip("Spectrum averaging speed, click or drag to adjust.");
-    spectrumAvgMeter->setMax(1.0);
-    spectrumAvgMeter->setLevel(0.65f);
-    spectrumAvgMeter->setShowUserInput(false);
-    spectrumAvgMeter->SetMinSize(wxSize(12,24));
-            
-    spectrumCtlTray->Add(spectrumAvgMeter, 8, wxEXPAND | wxALL, 0);
+    // Spectrum Average Meter
+    spectrumAvgMeter = makeSpectrumAvgMeter(spectrumPanel, attribList);
 
-    spectrumSizer->Add(spectrumCanvas, 63, wxEXPAND | wxALL, 0);
-    spectrumSizer->AddSpacer(1);
+    spectrumCtlTray->Add(spectrumAvgMeter, 8, wxEXPAND | wxALL, 0);
     spectrumSizer->Add(spectrumCtlTray, 1, wxEXPAND | wxALL, 0);
     spectrumPanel->SetSizer(spectrumSizer);
-            
-//    vbox->Add(spectrumSizer, 5, wxEXPAND | wxALL, 0);
 
-//    vbox->AddSpacer(1);
-            
     wxPanel *waterfallPanel = new wxPanel(mainVisSplitter, wxID_ANY);
     wxBoxSizer *wfSizer = new wxBoxSizer(wxHORIZONTAL);
-           
-    waterfallCanvas = new WaterfallCanvas(waterfallPanel, attribList);
-    waterfallCanvas->setup(DEFAULT_FFT_SIZE, DEFAULT_MAIN_WATERFALL_LINES_NB);
+
+    // Waterfall
+    waterfallCanvas = makeWaterfall(waterfallPanel, attribList);
 
     waterfallDataThread = new FFTVisualDataThread();
 
@@ -375,24 +286,18 @@ AppFrame::AppFrame() :
 
     t_FFTData = new std::thread(&FFTVisualDataThread::threadMain, waterfallDataThread);
 
-    waterfallSpeedMeter = new MeterCanvas(waterfallPanel, attribList);
-    waterfallSpeedMeter->setHelpTip("Waterfall speed, click or drag to adjust (max 1024 lines per second)");
-    waterfallSpeedMeter->setMax(sqrt(1024));
-    waterfallSpeedMeter->setLevel(sqrt(DEFAULT_WATERFALL_LPS));
-    waterfallSpeedMeter->setShowUserInput(false);
-    waterfallSpeedMeter->SetMinSize(wxSize(12,24));
+    // Waterfall speed meter
+    waterfallSpeedMeter = makeWaterfallSpeedMeter(waterfallPanel, attribList);
 
     wfSizer->Add(waterfallCanvas, 63, wxEXPAND | wxALL, 0);
     wfSizer->AddSpacer(1);
     wfSizer->Add(waterfallSpeedMeter, 1, wxEXPAND | wxALL, 0);
     waterfallPanel->SetSizer(wfSizer);
-            
-//    vbox->Add(wfSizer, 20, wxEXPAND | wxALL, 0);
 
     mainVisSplitter->SplitHorizontally( spectrumPanel, waterfallPanel, 0 );
-    
+
+    // Bookmark View
     bookmarkView = new BookmarkView(bookmarkSplitter, wxID_ANY, wxDefaultPosition, wxSize(120,-1));
-            
     bookmarkSplitter->SplitVertically( bookmarkView, mainVisSplitter );
     mainSplitter->SplitHorizontally( demodPanel, bookmarkSplitter );
     
@@ -415,223 +320,52 @@ AppFrame::AppFrame() :
             
     this->SetSizer(vbox);
 
-    //    SetIcon(wxICON(sample));
-
-    // Make a menubar
+    // File Menu
     menuBar = new wxMenuBar;
-   
-    menuBar->Append(makeFileMenu(), wxT("&File"));
-            
+    fileMenu = makeFileMenu();
+    menuBar->Append(fileMenu, wxT("&File"));
+
+    // Settings Menu
     settingsMenu = new wxMenu;
-          
     menuBar->Append(settingsMenu, wxT("&Settings"));
-            
-    std::vector<RtAudio::DeviceInfo>::iterator devices_i;
-    std::map<int, RtAudio::DeviceInfo>::iterator mdevices_i;
-    AudioThread::enumerateDevices(devices);
 
-    int i = 0;
-
-    for (devices_i = devices.begin(); devices_i != devices.end(); devices_i++) {
-        if (devices_i->inputChannels) {
-            inputDevices[i] = *devices_i;
-        }
-        if (devices_i->outputChannels) {
-            outputDevices[i] = *devices_i;
-        }
-        i++;
-    }
-            
-    wxGetApp().getDemodMgr().setOutputDevices(outputDevices);
-//
-//    for (mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
-//        wxMenuItem *itm = menu->AppendRadioItem(wxID_RT_AUDIO_DEVICE + mdevices_i->first, mdevices_i->second.name, wxT("Description?"));
-//        itm->SetId(wxID_RT_AUDIO_DEVICE + mdevices_i->first);
-//        if (mdevices_i->second.isDefaultOutput) {
-//            itm->Check(true);
-//        }
-//        outputDeviceMenuItems[mdevices_i->first] = itm;
-//    }
-//
-//    menuBar->Append(menu, wxT("Audio &Output"));
-            
+    // Sample Rate Menu
     sampleRateMenu = new wxMenu;
     menuBar->Append(sampleRateMenu, wxT("Sample &Rate"));
 
-    // Audio Sample Rates
-    wxMenu *audioSampleRateMenu = new wxMenu;
-
-#define NUM_RATES_DEFAULT 4
-    unsigned int desired_rates[NUM_RATES_DEFAULT] = { 48000, 44100, 96000, 192000 };
-
-    for (mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
-        unsigned int desired_rate = 0;
-        unsigned int desired_rank = NUM_RATES_DEFAULT + 1;
-
-        for (std::vector<unsigned int>::iterator srate = mdevices_i->second.sampleRates.begin(); srate != mdevices_i->second.sampleRates.end();
-                srate++) {
-            for (unsigned int i = 0; i < NUM_RATES_DEFAULT; i++) {
-                if (desired_rates[i] == (*srate)) {
-                    if (desired_rank > i) {
-                        desired_rank = i;
-                        desired_rate = (*srate);
-                    }
-                }
-            }
-        }
-
-        if (desired_rank > NUM_RATES_DEFAULT) {
-            desired_rate = mdevices_i->second.sampleRates.back();
-        }
-        AudioThread::deviceSampleRate[mdevices_i->first] = desired_rate;
-    }
-
-    for (mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
-        int menu_id = wxID_AUDIO_BANDWIDTH_BASE + wxID_AUDIO_DEVICE_MULTIPLIER * mdevices_i->first;
-        wxMenu *subMenu = new wxMenu;
-        audioSampleRateMenu->AppendSubMenu(subMenu, mdevices_i->second.name, wxT("Description?"));
-
-        int j = 0;
-        for (std::vector<unsigned int>::iterator srate = mdevices_i->second.sampleRates.begin(); srate != mdevices_i->second.sampleRates.end();
-                srate++) {
-            std::stringstream srateName;
-            srateName << ((float) (*srate) / 1000.0f) << "kHz";
-            wxMenuItem *itm = subMenu->AppendRadioItem(menu_id + j, srateName.str(), wxT("Description?"));
-
-            if ((int)(*srate) == AudioThread::deviceSampleRate[mdevices_i->first]) {
-                itm->Check(true);
-            }
-            audioSampleRateMenuItems[menu_id + j] = itm;
-
-            j++;
-        }
-    }
-
-    menuBar->Append(audioSampleRateMenu, wxT("Audio &Sample Rate"));
+    // Audio Sample Rate Menu
+    menuBar->Append(makeAudioSampleRateMenu(), wxT("Audio &Sample Rate"));
 
 	//Add a Recording menu
-	menuBar->Append(makeRecordingMenu(), wxT("Recordin&g"));
-	//
+    recordingMenu = makeRecordingMenu();
+	menuBar->Append(recordingMenu, wxT("Recordin&g"));
 	updateRecordingMenu();
 
-    //Add Display menu
-    displayMenu = new wxMenu;
-        
-    wxMenu *fontMenu = new wxMenu;
-
-    int fontScale = wxGetApp().getConfig()->getFontScale();
-
-    fontMenu->AppendRadioItem(wxID_DISPLAY_BASE, "Default")->Check(GLFont::GLFONT_SCALE_NORMAL == fontScale);
-    fontMenu->AppendRadioItem(wxID_DISPLAY_BASE + 1, "1.5x")->Check(GLFont::GLFONT_SCALE_MEDIUM == fontScale);
-    fontMenu->AppendRadioItem(wxID_DISPLAY_BASE + 2, "2.0x")->Check(GLFont::GLFONT_SCALE_LARGE == fontScale);
-
-    displayMenu->AppendSubMenu(fontMenu, "&Text Size");
-            
-    wxMenu *themeMenu = new wxMenu;
-    
-    int themeId = wxGetApp().getConfig()->getTheme();
-    
-    themeMenu->AppendRadioItem(wxID_THEME_DEFAULT, "Default")->Check(themeId==COLOR_THEME_DEFAULT);
-    themeMenu->AppendRadioItem(wxID_THEME_RADAR, "RADAR")->Check(themeId==COLOR_THEME_RADAR);
-    themeMenu->AppendRadioItem(wxID_THEME_BW, "Black & White")->Check(themeId==COLOR_THEME_BW);
-    themeMenu->AppendRadioItem(wxID_THEME_SHARP, "Sharp")->Check(themeId==COLOR_THEME_SHARP);
-    themeMenu->AppendRadioItem(wxID_THEME_RAD, "Rad")->Check(themeId==COLOR_THEME_RAD);
-    themeMenu->AppendRadioItem(wxID_THEME_TOUCH, "Touch")->Check(themeId==COLOR_THEME_TOUCH);
-    themeMenu->AppendRadioItem(wxID_THEME_HD, "HD")->Check(themeId==COLOR_THEME_HD);
-
-    displayMenu->AppendSubMenu(themeMenu, wxT("&Color Scheme"));
-
-    hideBookmarksItem = displayMenu->AppendCheckItem(wxID_DISPLAY_BOOKMARKS, wxT("Hide Bookmarks"));
-    hideBookmarksItem->Check(!wxGetApp().getConfig()->getBookmarksVisible());
-            
-    GLFont::setScale((GLFont::GLFontScale)fontScale);
-
 #ifdef USE_HAMLIB
-            
     rigModel = wxGetApp().getConfig()->getRigModel();
     rigSerialRate = wxGetApp().getConfig()->getRigRate();
     rigPort = wxGetApp().getConfig()->getRigPort();
+
     rigPortDialog = nullptr;
-    rigMenu = new wxMenu;
 
-    rigEnableMenuItem = rigMenu->AppendCheckItem(wxID_RIG_TOGGLE, wxT("Enable Rig"));
-
-    rigMenu->Append(wxID_RIG_SDR_IF, wxT("SDR-IF"));
-
-    rigControlMenuItem = rigMenu->AppendCheckItem(wxID_RIG_CONTROL, wxT("Control Rig"));
-    rigControlMenuItem->Check(wxGetApp().getConfig()->getRigControlMode());
-            
-    rigFollowMenuItem = rigMenu->AppendCheckItem(wxID_RIG_FOLLOW, wxT("Follow Rig"));
-    rigFollowMenuItem->Check(wxGetApp().getConfig()->getRigFollowMode());
-
-    rigCenterLockMenuItem = rigMenu->AppendCheckItem(wxID_RIG_CENTERLOCK, wxT("Floating Center"));
-    rigCenterLockMenuItem->Check(wxGetApp().getConfig()->getRigCenterLock());
-
-    rigFollowModemMenuItem = rigMenu->AppendCheckItem(wxID_RIG_FOLLOW_MODEM, wxT("Track Modem"));
-    rigFollowModemMenuItem->Check(wxGetApp().getConfig()->getRigFollowModem());
-
-    wxMenu *rigModelMenu = new wxMenu;
-    RigList &rl = RigThread::enumerate();
-    numRigs = rl.size();
-            
-    int modelMenuId = wxID_RIG_MODEL_BASE;
-    for (RigList::const_iterator ri = rl.begin(); ri != rl.end(); ri++) {
-        std::string modelString((*ri)->mfg_name);
-        modelString.append(" ");
-        modelString.append((*ri)->model_name);
-        
-        rigModelMenuItems[(*ri)->rig_model] = rigModelMenu->AppendRadioItem(modelMenuId, modelString, wxT("Description?"));
-        
-        if (rigModel == (*ri)->rig_model) {
-            rigModelMenuItems[(*ri)->rig_model]->Check(true);
-        }
-        
-        modelMenuId++;
-    }
-
-    rigMenu->AppendSubMenu(rigModelMenu, wxT("Model"));
-
-    wxMenu *rigSerialMenu = new wxMenu;
-            
-    rigSerialRates.push_back(1200);
-    rigSerialRates.push_back(2400);
-    rigSerialRates.push_back(4800);
-    rigSerialRates.push_back(9600);
-    rigSerialRates.push_back(19200);
-    rigSerialRates.push_back(38400);
-    rigSerialRates.push_back(57600);
-    rigSerialRates.push_back(115200);
-    rigSerialRates.push_back(128000);
-    rigSerialRates.push_back(256000);
-
-    int rateMenuId = wxID_RIG_SERIAL_BASE;
-    for (std::vector<int>::const_iterator rate_i = rigSerialRates.begin(); rate_i != rigSerialRates.end(); rate_i++) {
-        std::string rateString;
-        rateString.append(std::to_string((*rate_i)));
-        rateString.append(" baud");
-        
-        rigSerialMenuItems[(*rate_i)] = rigSerialMenu->AppendRadioItem(rateMenuId, rateString, wxT("Description?"));
-        
-        if (rigSerialRate == (*rate_i)) {
-            rigSerialMenuItems[(*rate_i)]->Check(true);
-        }
-        
-        rateMenuId++;
-    }
-    
-    rigMenu->AppendSubMenu(rigSerialMenu, wxT("Serial Rate"));
-
-    rigPortMenuItem = rigMenu->Append(wxID_RIG_PORT, wxT("Control Port"));
-
+    // Rig Menu
+    rigMenu = makeRigMenu();
     menuBar->Append(rigMenu, wxT("&Rig Control"));
 #endif
 
+    // Display Menu
+    displayMenu = makeDisplayMenu();
     menuBar->Append(displayMenu, wxT("&Display"));
 
     SetMenuBar(menuBar);
 
     CreateStatusBar();
 
+    // Init Font Scale
+    int fontScale = wxGetApp().getConfig()->getFontScale();
+    GLFont::setScale((GLFont::GLFontScale)fontScale);
+
+    // Init window position from configuration
     wxRect *win = wxGetApp().getConfig()->getWindow();
     if (win) {
         this->SetPosition(win->GetPosition());
@@ -640,17 +374,15 @@ AppFrame::AppFrame() :
         SetClientSize(1280, 600);
         Centre();
     }
-    bool max = wxGetApp().getConfig()->getWindowMaximized();
 
-    if (max) {
+    // Maximized last time?
+    if (wxGetApp().getConfig()->getWindowMaximized()) {
         this->Maximize();
     }
 
-    long long freqSnap = wxGetApp().getConfig()->getSnap();
-    wxGetApp().setFrequencySnap(freqSnap);
+    wxGetApp().setFrequencySnap(wxGetApp().getConfig()->getSnap());
 
     float spectrumAvg = wxGetApp().getConfig()->getSpectrumAvgSpeed();
-            
     spectrumAvgMeter->setLevel(spectrumAvg);
     wxGetApp().getSpectrumProcessor()->setFFTAverageRate(spectrumAvg);
             
@@ -701,12 +433,368 @@ AppFrame::AppFrame() :
     saveDisabled = false;
     aboutDlg = nullptr;
             
-//    static const int attribs[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
-//    wxLogStatus("Double-buffered display %s supported", wxGLCanvas::IsDisplaySupported(attribs) ? "is" : "not");
-//    ShowFullScreen(true);
-
     //Force refresh of all
     Refresh();
+}
+
+ModemProperties *AppFrame::makeModemProperties(wxPanel *parent) {
+    ModemProperties *pProperties = new ModemProperties(parent, wxID_ANY);
+    pProperties->SetMinSize(wxSize(APPFRAME_MODEMPROPS_MAXSIZE, -1));
+    pProperties->SetMaxSize(wxSize(APPFRAME_MODEMPROPS_MAXSIZE, -1));
+
+    ModemArgInfoList dummyInfo;
+    pProperties->initProperties(dummyInfo, nullptr);
+    pProperties->updateTheme();
+    return pProperties;
+}
+
+ModeSelectorCanvas *AppFrame::makeModemAdvSelectorPanel(wxPanel *parent, const wxGLAttributes &attribList) {
+    ModeSelectorCanvas *pCanvas = new ModeSelectorCanvas(parent, attribList);
+    pCanvas->addChoice("ASK");
+    pCanvas->addChoice("APSK");
+    pCanvas->addChoice("BPSK");
+    pCanvas->addChoice("DPSK");
+    pCanvas->addChoice("PSK");
+    pCanvas->addChoice("FSK");
+    pCanvas->addChoice("GMSK");
+    pCanvas->addChoice("OOK");
+    pCanvas->addChoice("ST");
+    pCanvas->addChoice("SQAM");
+    pCanvas->addChoice("QAM");
+    pCanvas->addChoice("QPSK");
+    pCanvas->setHelpTip("Choose advanced modulation types.");
+    pCanvas->SetMinSize(wxSize(50, -1));
+    pCanvas->SetMaxSize(wxSize(50, -1));
+    return pCanvas;
+}
+
+#ifdef USE_HAMLIB
+wxMenu *AppFrame::makeRigMenu() {
+    wxMenu *pMenu = new wxMenu;
+
+    rigEnableMenuItem = pMenu->AppendCheckItem(wxID_RIG_TOGGLE, wxT("Enable Rig"));
+
+    pMenu->Append(wxID_RIG_SDR_IF, wxT("SDR-IF"));
+
+    rigControlMenuItem = pMenu->AppendCheckItem(wxID_RIG_CONTROL, wxT("Control Rig"));
+    rigControlMenuItem->Check(wxGetApp().getConfig()->getRigControlMode());
+
+    rigFollowMenuItem = pMenu->AppendCheckItem(wxID_RIG_FOLLOW, wxT("Follow Rig"));
+    rigFollowMenuItem->Check(wxGetApp().getConfig()->getRigFollowMode());
+
+    rigCenterLockMenuItem = pMenu->AppendCheckItem(wxID_RIG_CENTERLOCK, wxT("Floating Center"));
+    rigCenterLockMenuItem->Check(wxGetApp().getConfig()->getRigCenterLock());
+
+    rigFollowModemMenuItem = pMenu->AppendCheckItem(wxID_RIG_FOLLOW_MODEM, wxT("Track Modem"));
+    rigFollowModemMenuItem->Check(wxGetApp().getConfig()->getRigFollowModem());
+
+    wxMenu *rigModelMenu = new wxMenu;
+    RigList &rl = RigThread::enumerate();
+    numRigs = rl.size();
+
+    int modelMenuId = wxID_RIG_MODEL_BASE;
+    for (auto ri = rl.begin(); ri != rl.end(); ri++) {
+        string modelString((*ri)->mfg_name);
+        modelString.append(" ");
+        modelString.append((*ri)->model_name);
+
+        rigModelMenuItems[(*ri)->rig_model] = rigModelMenu->AppendRadioItem(modelMenuId, modelString, wxT("Description?"));
+
+        if (rigModel == (*ri)->rig_model) {
+            rigModelMenuItems[(*ri)->rig_model]->Check(true);
+        }
+
+        modelMenuId++;
+    }
+
+    pMenu->AppendSubMenu(rigModelMenu, wxT("Model"));
+
+    wxMenu *rigSerialMenu = new wxMenu;
+
+    rigSerialRates.push_back(1200);
+    rigSerialRates.push_back(2400);
+    rigSerialRates.push_back(4800);
+    rigSerialRates.push_back(9600);
+    rigSerialRates.push_back(19200);
+    rigSerialRates.push_back(38400);
+    rigSerialRates.push_back(57600);
+    rigSerialRates.push_back(115200);
+    rigSerialRates.push_back(128000);
+    rigSerialRates.push_back(256000);
+
+    int rateMenuId = wxID_RIG_SERIAL_BASE;
+    for (auto rate_i = rigSerialRates.begin(); rate_i != rigSerialRates.end(); rate_i++) {
+        string rateString;
+        rateString.append(std::to_string((*rate_i)));
+        rateString.append(" baud");
+
+        rigSerialMenuItems[(*rate_i)] = rigSerialMenu->AppendRadioItem(rateMenuId, rateString, wxT("Description?"));
+
+        if (rigSerialRate == (*rate_i)) {
+            rigSerialMenuItems[(*rate_i)]->Check(true);
+        }
+
+        rateMenuId++;
+    }
+
+    pMenu->AppendSubMenu(rigSerialMenu, wxT("Serial Rate"));
+
+    rigPortMenuItem = pMenu->Append(wxID_RIG_PORT, wxT("Control Port"));
+
+    return pMenu;
+}
+#endif
+
+
+ScopeCanvas *AppFrame::makeScopeCanvas(wxPanel *parent, const wxGLAttributes &attribList) {
+    ScopeCanvas *pCanvas = new ScopeCanvas(parent, attribList);
+    pCanvas->setHelpTip("Audio Visuals, drag left/right to toggle Scope or Spectrum, 'B' to toggle decibels display.");
+    pCanvas->SetMinSize(wxSize(128, -1));
+    return pCanvas;
+}
+
+wxMenu *AppFrame::makeDisplayMenu() {
+
+    //Add Display menu
+    wxMenu *dispMenu = new wxMenu;
+    wxMenu *fontMenu = new wxMenu;
+
+    int fontScale = wxGetApp().getConfig()->getFontScale();
+
+    fontMenu->AppendRadioItem(wxID_DISPLAY_BASE, "Default")->Check(GLFont::GLFONT_SCALE_NORMAL == fontScale);
+    fontMenu->AppendRadioItem(wxID_DISPLAY_BASE + 1, "1.5x")->Check(GLFont::GLFONT_SCALE_MEDIUM == fontScale);
+    fontMenu->AppendRadioItem(wxID_DISPLAY_BASE + 2, "2.0x")->Check(GLFont::GLFONT_SCALE_LARGE == fontScale);
+
+    dispMenu->AppendSubMenu(fontMenu, "&Text Size");
+
+    wxMenu *themeMenu = new wxMenu;
+
+    int themeId = wxGetApp().getConfig()->getTheme();
+
+    themeMenu->AppendRadioItem(wxID_THEME_DEFAULT, "Default")->Check(themeId==COLOR_THEME_DEFAULT);
+    themeMenu->AppendRadioItem(wxID_THEME_RADAR, "RADAR")->Check(themeId==COLOR_THEME_RADAR);
+    themeMenu->AppendRadioItem(wxID_THEME_BW, "Black & White")->Check(themeId==COLOR_THEME_BW);
+    themeMenu->AppendRadioItem(wxID_THEME_SHARP, "Sharp")->Check(themeId==COLOR_THEME_SHARP);
+    themeMenu->AppendRadioItem(wxID_THEME_RAD, "Rad")->Check(themeId==COLOR_THEME_RAD);
+    themeMenu->AppendRadioItem(wxID_THEME_TOUCH, "Touch")->Check(themeId==COLOR_THEME_TOUCH);
+    themeMenu->AppendRadioItem(wxID_THEME_HD, "HD")->Check(themeId==COLOR_THEME_HD);
+
+    dispMenu->AppendSubMenu(themeMenu, wxT("&Color Scheme"));
+
+    hideBookmarksItem = dispMenu->AppendCheckItem(wxID_DISPLAY_BOOKMARKS, wxT("Hide Bookmarks"));
+    hideBookmarksItem->Check(!wxGetApp().getConfig()->getBookmarksVisible());
+
+    return dispMenu;
+}
+
+wxMenu *AppFrame::makeAudioSampleRateMenu() {
+    // Audio Sample Rates
+    wxMenu *pMenu = new wxMenu;
+
+    auto outputDevices = wxGetApp().getDemodMgr().getOutputDevices();
+
+#define NUM_RATES_DEFAULT 4
+    unsigned int desired_rates[NUM_RATES_DEFAULT] = { 48000, 44100, 96000, 192000 };
+
+    for (auto mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
+        unsigned int desired_rate = 0;
+        unsigned int desired_rank = NUM_RATES_DEFAULT + 1;
+
+        for (auto srate = mdevices_i->second.sampleRates.begin(); srate != mdevices_i->second.sampleRates.end();
+             srate++) {
+            for (unsigned int i = 0; i < NUM_RATES_DEFAULT; i++) {
+                if (desired_rates[i] == (*srate)) {
+                    if (desired_rank > i) {
+                        desired_rank = i;
+                        desired_rate = (*srate);
+                    }
+                }
+            }
+        }
+
+        if (desired_rank > NUM_RATES_DEFAULT) {
+            desired_rate = mdevices_i->second.sampleRates.back();
+        }
+        AudioThread::deviceSampleRate[mdevices_i->first] = desired_rate;
+    }
+
+    for (auto mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
+        int menu_id = wxID_AUDIO_BANDWIDTH_BASE + wxID_AUDIO_DEVICE_MULTIPLIER * mdevices_i->first;
+        wxMenu *subMenu = new wxMenu;
+        pMenu->AppendSubMenu(subMenu, mdevices_i->second.name, wxT("Description?"));
+
+        int j = 0;
+        for (auto srate = mdevices_i->second.sampleRates.begin(); srate != mdevices_i->second.sampleRates.end();
+             srate++) {
+            stringstream srateName;
+            srateName << ((float) (*srate) / 1000.0f) << "kHz";
+            wxMenuItem *itm = subMenu->AppendRadioItem(menu_id + j, srateName.str(), wxT("Description?"));
+
+            if ((int)(*srate) == AudioThread::deviceSampleRate[mdevices_i->first]) {
+                itm->Check(true);
+            }
+            audioSampleRateMenuItems[menu_id + j] = itm;
+
+            j++;
+        }
+    }
+    return pMenu;
+}
+
+MeterCanvas *AppFrame::makeWaterfallSpeedMeter(wxWindow *parent, const wxGLAttributes &attribList) {
+    MeterCanvas *pCanvas = new MeterCanvas(parent, attribList);
+    pCanvas->setHelpTip("Waterfall speed, click or drag to adjust (max 1024 lines per second)");
+    pCanvas->setMax(sqrt(1024));
+    pCanvas->setLevel(sqrt(DEFAULT_WATERFALL_LPS));
+    pCanvas->setShowUserInput(false);
+    pCanvas->SetMinSize(wxSize(12, 24));
+    return pCanvas;
+}
+
+WaterfallCanvas *AppFrame::makeWaterfall(wxWindow *parent, const wxGLAttributes &attribList) {
+    WaterfallCanvas *pCanvas = new WaterfallCanvas(parent, attribList);
+    pCanvas->setup(DEFAULT_FFT_SIZE, DEFAULT_MAIN_WATERFALL_LINES_NB);
+    return pCanvas;
+}
+
+MeterCanvas * AppFrame::makeSpectrumAvgMeter(wxWindow *parent, const wxGLAttributes &attribList) {
+    MeterCanvas *pCanvas = new MeterCanvas(parent, attribList);
+    pCanvas->setHelpTip("Spectrum averaging speed, click or drag to adjust.");
+    pCanvas->setMax(1.0);
+    pCanvas->setLevel(0.65f);
+    pCanvas->setShowUserInput(false);
+    pCanvas->SetMinSize(wxSize(12, 24));
+    return pCanvas;
+}
+
+SpectrumCanvas *AppFrame::makeSpectrumCanvas(wxWindow *parent, const wxGLAttributes &attribList) {
+    SpectrumCanvas *pCanvas = new SpectrumCanvas(parent, attribList);
+    pCanvas->setShowDb(true);
+    pCanvas->setUseDBOfs(true);
+    pCanvas->setScaleFactorEnabled(true);
+    return pCanvas;
+}
+
+ModeSelectorCanvas *AppFrame::makePeakHoldButton(wxWindow *parent, const wxGLAttributes &attribList) {
+    ModeSelectorCanvas *pCanvas = new ModeSelectorCanvas(parent, attribList);
+    pCanvas->addChoice(1, "P");
+    pCanvas->setPadding(-1, -1);
+    pCanvas->setHighlightColor(RGBA4f(0.2f, 0.8f, 0.2f));
+    pCanvas->setHelpTip("Peak Hold Toggle");
+    pCanvas->setToggleMode(true);
+    pCanvas->setSelection(-1);
+    pCanvas->SetMinSize(wxSize(12, 24));
+    return pCanvas;
+}
+
+ModeSelectorCanvas *AppFrame::makeModemMuteButton(wxWindow *parent, const wxGLAttributes &attribList) {
+    ModeSelectorCanvas *pCanvas = new ModeSelectorCanvas(parent, attribList);
+    pCanvas->addChoice(1, "M");
+    pCanvas->setPadding(-1, -1);
+    pCanvas->setHighlightColor(RGBA4f(0.8f, 0.2f, 0.2f));
+    pCanvas->setHelpTip("Demodulator Mute Toggle");
+    pCanvas->setToggleMode(true);
+    pCanvas->setSelection(-1);
+    pCanvas->SetMinSize(wxSize(12, 28));
+    return pCanvas;
+}
+
+ModeSelectorCanvas *AppFrame::makeSoloModeButton(wxWindow *parent, const wxGLAttributes &attribList) {
+    ModeSelectorCanvas *pCanvas = new ModeSelectorCanvas(parent, attribList);
+    pCanvas->addChoice(1, "S");
+    pCanvas->setPadding(-1, -1);
+    pCanvas->setHighlightColor(RGBA4f(0.8f, 0.8f, 0.2f));
+    pCanvas->setHelpTip("Solo Mode Toggle");
+    pCanvas->setToggleMode(true);
+    pCanvas->setSelection(-1);
+    pCanvas->SetMinSize(wxSize(12, 28));
+    return pCanvas;
+}
+
+MeterCanvas *AppFrame::makeModemGainMeter(wxWindow *parent, const wxGLAttributes &attribList) {
+    MeterCanvas *pCanvas = new MeterCanvas(parent, attribList);
+    pCanvas->setMax(2.0);
+    pCanvas->setHelpTip("Current Demodulator Gain Level.  Click / Drag to set Gain level.");
+    pCanvas->setShowUserInput(false);
+    pCanvas->SetMinSize(wxSize(13, 24));
+    return pCanvas;
+}
+
+TuningCanvas *AppFrame::makeModemTuner(wxWindow *parent, const wxGLAttributes &attribList) {
+    TuningCanvas *pCanvas = new TuningCanvas(parent, attribList);
+    pCanvas->SetMinClientSize(wxSize(200, 28));
+    return pCanvas;
+}
+
+ModeSelectorCanvas * AppFrame::makeDeltaLockButton(wxWindow *parent, const wxGLAttributes &attribList) {
+    ModeSelectorCanvas *pCanvas = new ModeSelectorCanvas(parent, attribList);
+    pCanvas->addChoice(1, "V");
+    pCanvas->setPadding(-1, -1);
+    pCanvas->setHighlightColor(RGBA4f(0.8f, 0.8f, 0.2f));
+    pCanvas->setHelpTip("Delta Lock Toggle (V) - Enable to lock modem relative to center frequency.");
+    pCanvas->setToggleMode(true);
+    pCanvas->setSelection(-1);
+    pCanvas->SetMinSize(wxSize(20, 28));
+    return pCanvas;
+}
+
+MeterCanvas *AppFrame::makeSignalMeter(wxWindow *parent, const wxGLAttributes &attribList) {
+    MeterCanvas *pCanvas = new MeterCanvas(parent, attribList);
+    pCanvas->setMax(DEMOD_SIGNAL_MAX);
+    pCanvas->setMin(DEMOD_SIGNAL_MIN);
+    pCanvas->setLevel(DEMOD_SIGNAL_MIN);
+    pCanvas->setInputValue(DEMOD_SIGNAL_MIN);
+    pCanvas->setHelpTip("Current Signal Level.  Click / Drag to set Squelch level.  Right-Click to Auto-Zero Squelch");
+    pCanvas->SetMinSize(wxSize(12, 24));
+    return pCanvas;
+}
+
+SpectrumCanvas *AppFrame::makeDemodSpectrumCanvas(wxWindow *parent, const wxGLAttributes &attribList) {
+    SpectrumCanvas *pCanvas = new SpectrumCanvas(parent, attribList);
+    pCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
+    return pCanvas;
+}
+
+WaterfallCanvas *AppFrame::makeWaterfallCanvas(wxWindow *parent, const wxGLAttributes &attribList) {
+    WaterfallCanvas *pCanvas = new WaterfallCanvas(parent, attribList);
+    pCanvas->setup(DEFAULT_DMOD_FFT_SIZE, DEFAULT_DEMOD_WATERFALL_LINES_NB);
+    pCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
+    pCanvas->setMinBandwidth(8000);
+    pCanvas->getVisualDataQueue()->set_max_num_items(3);
+    pCanvas->setLinesPerSecond((int)(DEFAULT_DEMOD_WATERFALL_LINES_NB / DEMOD_WATERFALL_DURATION_IN_SECONDS));
+    return pCanvas;
+}
+
+ModeSelectorCanvas *AppFrame::makeModemSelectorPanel(wxWindow *parent, const wxGLAttributes &attribList) {
+    vector<string> modemList = {"FM", "FMS", "NBFM", "AM", "LSB", "USB", "DSB", "I/Q" };
+
+#ifdef CUBICSDR_MODEM_EXCLUDE
+    std::string excludeListStr = "" CUBICSDR_MODEM_EXCLUDE;
+    std::vector<std::string> excludeList = str_explode(",",excludeListStr);
+    for (auto ex_i : excludeList) {
+        std::vector<std::string>::iterator found_i = std::find(modemList.begin(),modemList.end(),ex_i);
+        if (found_i != modemList.end()) {
+            modemList.erase(found_i);
+        }
+    }
+#endif
+
+    ModeSelectorCanvas *pCanvas = new ModeSelectorCanvas(parent, attribList);
+
+    for (auto mt_i : modemList) {
+        pCanvas->addChoice(mt_i);
+    }
+
+#ifdef CUBICSDR_MODEM_EXCLUDE
+    demodModeSelector->setHelpTip("Use buttons to choose modulation type.");
+#else
+    pCanvas->setHelpTip("Choose modulation type: Frequency Modulation (Hotkey F), Amplitude Modulation (A) and Lower (L), Upper (U), Double Side-Band and more.");
+#endif
+
+    pCanvas->SetMinSize(wxSize(50, -1));
+    pCanvas->SetMaxSize(wxSize(50, -1));
+
+    return pCanvas;
 }
 
 AppFrame::~AppFrame() {
@@ -763,8 +851,6 @@ wxMenu *AppFrame::makeFileMenu() {
 #endif
 #endif
 
-	fileMenu = menu;
-
     return menu;
 }
 
@@ -793,8 +879,6 @@ wxMenu *AppFrame::makeRecordingMenu() {
 		"Creates a new file automatically, each time the recording lasts longer than the limit, named according to the current time.");
 
 	recordingMenuItems[wxID_RECORDING_SQUELCH_SILENCE]->Check(true);
-
-	recordingMenu = menu;
 
 	return menu;
 }
@@ -1481,11 +1565,11 @@ bool AppFrame::actionOnMenuAudioSampleRate(wxCommandEvent& event) {
     if (event.GetId() >= wxID_AUDIO_BANDWIDTH_BASE) {
 
         int evId = event.GetId();
-        std::vector<RtAudio::DeviceInfo>::iterator devices_i;
-        std::map<int, RtAudio::DeviceInfo>::iterator mdevices_i;
+
+        auto outputDevices = wxGetApp().getDemodMgr().getOutputDevices();
 
         int i = 0;
-        for (mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
+        for (auto mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
             int menu_id = wxID_AUDIO_BANDWIDTH_BASE + wxID_AUDIO_DEVICE_MULTIPLIER * mdevices_i->first;
 
             int j = 0;
@@ -2049,6 +2133,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             wxGetApp().getDemodMgr().setLastGain(demod->getGain());
             int outputDevice = demod->getOutputDevice();
             if (scopeCanvas) {
+                auto outputDevices = wxGetApp().getDemodMgr().getOutputDevices();
                 scopeCanvas->setDeviceName(outputDevices[outputDevice].name);
             }
 //            outputDeviceMenuItems[outputDevice]->Check(true);

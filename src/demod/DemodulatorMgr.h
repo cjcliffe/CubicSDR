@@ -73,6 +73,7 @@ public:
     void updateLastState();
     
     void setOutputDevices(std::map<int,RtAudio::DeviceInfo> devs);
+    std::map<int, RtAudio::DeviceInfo> getOutputDevices();
     void saveInstance(DataNode *node, DemodulatorInstancePtr inst);
 	
     DemodulatorInstancePtr loadInstance(DataNode *node);
