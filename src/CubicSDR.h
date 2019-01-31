@@ -23,6 +23,7 @@
 #include "FrequencyDialog.h"
 #include "DemodLabelDialog.h"
 #include "BookmarkMgr.h"
+#include "SessionMgr.h"
 
 #include "ScopeVisualProcessor.h"
 #include "SpectrumVisualProcessor.h"
@@ -119,6 +120,7 @@ public:
     
     DemodulatorMgr &getDemodMgr();
     BookmarkMgr &getBookmarkMgr();
+    SessionMgr &getSessionMgr();
 
     SDRPostThread *getSDRPostThread();
     SDRThread *getSDRThread();
@@ -194,6 +196,7 @@ private:
 
     DemodulatorMgr demodMgr;
     BookmarkMgr bookmarkMgr;
+    SessionMgr sessionMgr;
 
     std::atomic_llong frequency;
     std::atomic_llong offset;

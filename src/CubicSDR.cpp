@@ -864,12 +864,16 @@ DemodulatorThreadInputQueuePtr CubicSDR::getWaterfallVisualQueue() {
     return pipeWaterfallIQVisualData;
 }
 
+BookmarkMgr &CubicSDR::getBookmarkMgr() {
+    return bookmarkMgr;
+}
+
 DemodulatorMgr &CubicSDR::getDemodMgr() {
     return demodMgr;
 }
 
-BookmarkMgr &CubicSDR::getBookmarkMgr() {
-    return bookmarkMgr;
+SessionMgr &CubicSDR::getSessionMgr() {
+    return sessionMgr;
 }
 
 SDRPostThread *CubicSDR::getSDRPostThread() {

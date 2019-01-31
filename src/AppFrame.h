@@ -122,6 +122,8 @@ public:
     bool loadSession(std::string fileName);
 
     FFTVisualDataThread *getWaterfallDataThread();
+	WaterfallCanvas *getWaterfallCanvas();
+    SpectrumCanvas *getSpectrumCanvas();
 
     void notifyUpdateModemProperties();
     void setMainWaterfallFFTSize(int fftSize);
