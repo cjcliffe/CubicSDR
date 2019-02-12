@@ -356,7 +356,7 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
 void BookmarkView::doUpdateActiveList() {
 
     auto demods = wxGetApp().getDemodMgr().getDemodulators();
-    auto lastActiveDemodulator = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    auto lastActiveDemodulator = wxGetApp().getDemodMgr().getCurrentModem();
 
     //capture the previously selected item info BY COPY (because the original will be destroyed together with the destroyed tree items) to restore it again after 
     //having rebuilding the whole tree.

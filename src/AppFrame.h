@@ -325,4 +325,19 @@ private:
     wxMenu *makeRigMenu();
 #endif
 
+    void handleTXAntennaChange();
+    void handleCurrentModem();
+    void handleModeSelector();
+    void handleGainMeter();
+    void handleDemodWaterfallSpectrum();
+    void handleSpectrumWaterfall();
+    void handleMuteButton();
+    void handleScopeProcessor();
+    void handleScopeSpectrumProcessors();
+    void handleModemProperties();
+    void handlePeakHold();
+
+#if USE_HAMLIB
+    void handleRigMenu();
+#endif
 };

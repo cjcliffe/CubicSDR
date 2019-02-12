@@ -39,8 +39,8 @@ public:
     // and only set a pre-existing demod
     void setActiveDemodulatorByRawPointer(DemodulatorInstance* demod, bool temporary = true);
 
-    DemodulatorInstancePtr getActiveDemodulator();
-    DemodulatorInstancePtr getLastActiveDemodulator();
+    DemodulatorInstancePtr getActiveContextModem();
+    DemodulatorInstancePtr getCurrentModem();
     DemodulatorInstancePtr getLastDemodulatorWith(const std::string& type,
 												const std::wstring& userLabel,
 												long long frequency,
@@ -87,8 +87,8 @@ private:
 
     std::vector<DemodulatorInstancePtr> demods;
     
-    DemodulatorInstancePtr activeDemodulator;
-    DemodulatorInstancePtr lastActiveDemodulator;
+    DemodulatorInstancePtr activeContextModem;
+    DemodulatorInstancePtr currentModem;
     DemodulatorInstancePtr activeVisualDemodulator;
 
     int lastBandwidth;

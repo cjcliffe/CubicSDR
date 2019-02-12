@@ -69,7 +69,7 @@ void SDRPostThread::updateActiveDemodulators() {
         if (abs(frequency - demod->getFrequency()) > (sampleRate / 2)) {
             // deactivate if active
            
-            if (wxGetApp().getDemodMgr().getLastActiveDemodulator() == demod) {
+            if (wxGetApp().getDemodMgr().getCurrentModem() == demod) {
 
                 demod->setActive(false);
             }
@@ -84,7 +84,7 @@ void SDRPostThread::updateActiveDemodulators() {
             }
         } else if (!demod->isActive()) { // in range, activate if not activated
             demod->setActive(true);
-            if (wxGetApp().getDemodMgr().getLastActiveDemodulator() == nullptr) {
+            if (wxGetApp().getDemodMgr().getCurrentModem() == nullptr) {
 
                 wxGetApp().getDemodMgr().setActiveDemodulator(demod);
             }
@@ -305,7 +305,7 @@ void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
 
 // Handle active channels, channel 0 offset correction, de-interlacing and push data to demodulators
 void SDRPostThread::runDemodChannels(int channelBandwidth) {
-    DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getCurrentModem();
 
     // Calculate channel data size
     size_t chanDataSize = dataOut.size()/numChannels;

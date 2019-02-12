@@ -97,7 +97,7 @@ std::vector<DemodulatorInstancePtr> DemodulatorMgr::getOrderedDemodulators(bool 
 
 DemodulatorInstancePtr DemodulatorMgr::getPreviousDemodulator(DemodulatorInstancePtr demod, bool actives) {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
-    if (!getLastActiveDemodulator()) {
+    if (!getCurrentModem()) {
         return nullptr;
     }
     auto demods_ordered = getOrderedDemodulators(actives);
@@ -114,7 +114,7 @@ DemodulatorInstancePtr DemodulatorMgr::getPreviousDemodulator(DemodulatorInstanc
 
 DemodulatorInstancePtr DemodulatorMgr::getNextDemodulator(DemodulatorInstancePtr demod, bool actives) {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
-    if (!getLastActiveDemodulator()) {
+    if (!getCurrentModem()) {
         return nullptr;
     }
     auto demods_ordered = getOrderedDemodulators(actives);
@@ -152,11 +152,11 @@ void DemodulatorMgr::deleteThread(DemodulatorInstancePtr demod) {
   
     auto i = std::find(demods.begin(), demods.end(), demod);
 
-    if (activeDemodulator == demod) {
-        activeDemodulator = nullptr;
+    if (activeContextModem == demod) {
+        activeContextModem = nullptr;
     }
-    if (lastActiveDemodulator == demod) {
-        lastActiveDemodulator = nullptr;
+    if (currentModem == demod) {
+        currentModem = nullptr;
     }
     if (activeVisualDemodulator == demod) {
         activeVisualDemodulator = nullptr;
@@ -215,25 +215,30 @@ bool DemodulatorMgr::anyDemodulatorsAt(long long freq, int bandwidth) {
 
 
 void DemodulatorMgr::setActiveDemodulator(DemodulatorInstancePtr demod, bool temporary) {
-    
+
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
-    
+
+    // Should this be made the current modem (i.e. clicked, toggled)
     if (!temporary) {
-        if (activeDemodulator != nullptr) {
-            lastActiveDemodulator = activeDemodulator;
+        if (activeContextModem != nullptr) {
+            currentModem = activeContextModem;
             updateLastState();
         } else {
-            lastActiveDemodulator = demod;
+            currentModem = demod;
         }
+
         updateLastState();
+
+        wxGetApp().getBookmarkMgr().updateActiveList();
+
 #if USE_HAMLIB
-        if (wxGetApp().rigIsActive() && wxGetApp().getRigThread()->getFollowModem() && lastActiveDemodulator) {
-            wxGetApp().getRigThread()->setFrequency(lastActiveDemodulator->getFrequency(),true);
+        if (wxGetApp().rigIsActive() && wxGetApp().getRigThread()->getFollowModem() && currentModem) {
+            wxGetApp().getRigThread()->setFrequency(currentModem->getFrequency(),true);
         }
 #endif
-        wxGetApp().getBookmarkMgr().updateActiveList();
-    } 
+    }
 
+    // TODO: This is probably unnecessary and confusing
     if (activeVisualDemodulator) {
         activeVisualDemodulator->setVisualOutputQueue(nullptr);
     }
@@ -241,15 +246,15 @@ void DemodulatorMgr::setActiveDemodulator(DemodulatorInstancePtr demod, bool tem
         demod->setVisualOutputQueue(wxGetApp().getAudioVisualQueue());
         activeVisualDemodulator = demod;
     } else {
-        DemodulatorInstancePtr last = getLastActiveDemodulator();
+        DemodulatorInstancePtr last = getCurrentModem();
         if (last) {
             last->setVisualOutputQueue(wxGetApp().getAudioVisualQueue());
         }
         activeVisualDemodulator = last;
     }
+    // :ODOT
 
-    activeDemodulator = demod;
-
+    activeContextModem = demod;
 }
 
 //Dangerous: this is only intended by some internal classes
@@ -266,17 +271,27 @@ void DemodulatorMgr::setActiveDemodulatorByRawPointer(DemodulatorInstance* demod
     }
 }
 
-DemodulatorInstancePtr DemodulatorMgr::getActiveDemodulator() {
+/**
+ * Get the currently focused modem, i.e. the one hovered by interaction
+ * If no active context modem is available the current modem is returned
+ * @return Active Context Modem
+ */
+DemodulatorInstancePtr DemodulatorMgr::getActiveContextModem() {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
 
-    if (activeDemodulator && !activeDemodulator->isActive()) {
-        activeDemodulator = getLastActiveDemodulator();
+    if (activeContextModem && !activeContextModem->isActive()) {
+        activeContextModem = getCurrentModem();
     }
-    return activeDemodulator;
+    return activeContextModem;
 }
 
-DemodulatorInstancePtr DemodulatorMgr::getLastActiveDemodulator() {
-    return lastActiveDemodulator;
+/**
+ * Get the last selected / focused modem
+ * This is the currently active modem
+ * @return Current Modem
+ */
+DemodulatorInstancePtr DemodulatorMgr::getCurrentModem() {
+    return currentModem;
 }
 
 DemodulatorInstancePtr DemodulatorMgr::getLastDemodulatorWith(const std::string& type,
@@ -304,27 +319,27 @@ DemodulatorInstancePtr DemodulatorMgr::getLastDemodulatorWith(const std::string&
 void DemodulatorMgr::updateLastState() {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
 
-    if (std::find(demods.begin(), demods.end(), lastActiveDemodulator) == demods.end()) {
-        if (activeDemodulator && activeDemodulator->isActive()) {
-            lastActiveDemodulator = activeDemodulator;
-        } else if (activeDemodulator && !activeDemodulator->isActive()){
-            activeDemodulator = nullptr;
-            lastActiveDemodulator = nullptr;
+    if (std::find(demods.begin(), demods.end(), currentModem) == demods.end()) {
+        if (activeContextModem && activeContextModem->isActive()) {
+            currentModem = activeContextModem;
+        } else if (activeContextModem && !activeContextModem->isActive()){
+            activeContextModem = nullptr;
+            currentModem = nullptr;
         }
     }
 
-    if (lastActiveDemodulator && !lastActiveDemodulator->isActive()) {
-        lastActiveDemodulator = nullptr;
+    if (currentModem && !currentModem->isActive()) {
+        currentModem = nullptr;
     }
 
-    if (lastActiveDemodulator) {
-        lastBandwidth = lastActiveDemodulator->getBandwidth();
-        lastDemodType = lastActiveDemodulator->getDemodulatorType();
-        lastDemodLock = lastActiveDemodulator->getDemodulatorLock()?true:false;
-        lastSquelchEnabled = lastActiveDemodulator->isSquelchEnabled();
-        lastSquelch = lastActiveDemodulator->getSquelchLevel();
-        lastGain = lastActiveDemodulator->getGain();
-        lastModemSettings[lastDemodType] = lastActiveDemodulator->readModemSettings();
+    if (currentModem) {
+        lastBandwidth = currentModem->getBandwidth();
+        lastDemodType = currentModem->getDemodulatorType();
+        lastDemodLock = currentModem->getDemodulatorLock()?true:false;
+        lastSquelchEnabled = currentModem->isSquelchEnabled();
+        lastSquelch = currentModem->getSquelchLevel();
+        lastGain = currentModem->getGain();
+        lastModemSettings[lastDemodType] = currentModem->readModemSettings();
     }
 
 }
@@ -424,7 +439,7 @@ void DemodulatorMgr::saveInstance(DataNode *node, DemodulatorInstancePtr inst) {
         *node->newChild("delta_lock") = inst->isDeltaLock() ? 1 : 0;
         *node->newChild("delta_ofs") = inst->getDeltaLockOfs();
     }
-    if (inst == getLastActiveDemodulator()) {
+    if (inst == getCurrentModem()) {
         *node->newChild("active") = 1;
     }
     

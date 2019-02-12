@@ -108,7 +108,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstancePtr demod, RGBA4f color,
 
     bool soloMode = wxGetApp().getSoloMode();
     bool isRecording = demod->isRecording();
-    bool isSolo = soloMode && demod == wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    bool isSolo = soloMode && demod == wxGetApp().getDemodMgr().getCurrentModem();
     
     RGBA4f labelBg(0, 0, 0, 0.35f);
 
@@ -433,7 +433,7 @@ void PrimaryGLContext::drawSingleDemodLabel(const std::wstring& demodStr, float 
 
 void PrimaryGLContext::DrawFreqSelector(float uxPos, RGBA4f color, float w, long long /* center_freq */, long long srate) {
     
-    DemodulatorInstancePtr demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    DemodulatorInstancePtr demod = wxGetApp().getDemodMgr().getCurrentModem();
 
     long long bw = 0;
 
