@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #pragma once
+#include <sys/param.h>
 
 #define CUBICSDR_TITLE "" CUBICSDR_BUILD_TITLE
 
@@ -16,7 +17,11 @@
         #ifdef __APPLE__
             #include <machine/endian.h>
         #else
-            #include <endian.h>
+	    #ifdef __FreeBSD__
+		#include <sys/endian.h>
+	    #else
+		 #include <endian.h>
+	    #endif
         #endif
     #endif
 #endif
