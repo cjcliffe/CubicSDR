@@ -3,6 +3,10 @@
 
 #pragma once
 
+#if defined(__linux__) || defined(__FreeBSD__)
+#include <sys/param.h>
+#endif
+
 #define CUBICSDR_TITLE "" CUBICSDR_BUILD_TITLE
 
 #ifndef __BYTE_ORDER
@@ -16,7 +20,11 @@
         #ifdef __APPLE__
             #include <machine/endian.h>
         #else
-            #include <endian.h>
+	    #ifdef __FreeBSD__
+		#include <sys/endian.h>
+	    #else
+		 #include <endian.h>
+	    #endif
         #endif
     #endif
 #endif
