@@ -125,69 +125,71 @@ private:
     //keep the vector of types in a spearate vector of DataElementBuffer.
     DataElementBufferVector data_val_vector;
 
+   //specializations to extract type: (need to be declared/done OUTSIDE of class scope else "Error: explicit specialization is not allowed in the current scope")
+   //this is apparently fixed in C++17...
+   // so we need to workaround it with a partial specialization using a fake Dummy parameter.
+
     //if the exact right determineScalarDataType specialization was not used, throw exception at runtime.
-    template<typename U>
+    template<typename U, typename Dummy = int >
     DataElementTypeEnum determineScalarDataType(const U& type_in) { throw DataTypeMismatchException("determineScalarDataType(U) usage with unsupported type !"); }
 
-    //specializations to extract type:
-    template<>
-    DataElementTypeEnum determineScalarDataType(const char& type_in) { return DATA_CHAR; }
+    template< typename Dummy = int >
+   DataElementTypeEnum determineScalarDataType(const char& type_in) { return DATA_CHAR; }
 
-    template<>
+    template< typename Dummy = int >
     DataElementTypeEnum determineScalarDataType(const unsigned char& type_in) { return DATA_UCHAR; }
 
-    template<>
+    template< typename Dummy = int >
     DataElementTypeEnum determineScalarDataType(const int& type_in) { return DATA_INT; }
 
-    template<>
+    template< typename Dummy = int >
     DataElementTypeEnum determineScalarDataType(const unsigned int& type_in) { return DATA_UINT; }
 
-    template<>
+    template< typename Dummy = int >
     DataElementTypeEnum determineScalarDataType(const long& type_in) { return DATA_LONG; }
 
-    template<>
+    template< typename Dummy = int >
     DataElementTypeEnum determineScalarDataType(const unsigned long& type_in) { return DATA_ULONG; }
 
-    template<>
+    template< typename Dummy = int >
     DataElementTypeEnum determineScalarDataType(const long long& type_in) { return DATA_LONGLONG; }
 
-    template<>
+    template< typename Dummy = int >
     DataElementTypeEnum determineScalarDataType(const float& type_in) { return DATA_FLOAT; }
 
-    template<>
+    template< typename Dummy = int >
     DataElementTypeEnum determineScalarDataType(const double& type_in) { return DATA_DOUBLE; }
-
+  
     //vector versions:
     //if the exact right determineVectorDataType specialization was not used, throw exception at runtime.
-    template<typename V>
+    template<typename V, typename Dummy = int >
     DataElementTypeEnum determineVectorDataType(const vector<V>& type_in) { throw DataTypeMismatchException("determineVectorDataType(V) usage with unsupported type !"); }
 
-    //specializations to extract type:
-    template<>
+    template< typename Dummy = int >
     DataElementTypeEnum determineVectorDataType(const vector<char>& type_in) { return DATA_CHAR_VECTOR; }
 
-    template<>
-    DataElementTypeEnum determineVectorDataType(const vector<unsigned char>& type_in) { return DATA_UCHAR_VECTOR; }
+    template< typename Dummy = int >
+   DataElementTypeEnum determineVectorDataType(const vector<unsigned char>& type_in) { return DATA_UCHAR_VECTOR; }
 
-    template<>
+    template< typename Dummy = int >
     DataElementTypeEnum determineVectorDataType(const vector<int>& type_in) { return DATA_INT_VECTOR; }
 
-    template<>
+    template< typename Dummy = int >
     DataElementTypeEnum determineVectorDataType(const vector<unsigned int>& type_in) { return DATA_UINT_VECTOR; }
 
-    template<>
+    template< typename Dummy = int >
     DataElementTypeEnum determineVectorDataType(const vector<long>& type_in) { return DATA_LONG_VECTOR; }
 
-    template<>
+    template< typename Dummy = int >
     DataElementTypeEnum determineVectorDataType(const vector<unsigned long>& type_in) { return DATA_ULONG_VECTOR; }
 
-    template<>
+    template< typename Dummy = int >
     DataElementTypeEnum determineVectorDataType(const vector<long long>& type_in) { return DATA_LONGLONG_VECTOR; }
 
-    template<>
+    template< typename Dummy = int >
     DataElementTypeEnum determineVectorDataType(const vector<float>& type_in) { return DATA_FLOAT_VECTOR; }
 
-    template<>
+    template< typename Dummy = int >
     DataElementTypeEnum determineVectorDataType(const vector<double>& type_in) { return DATA_DOUBLE_VECTOR; }
 
 public: 
@@ -506,7 +508,7 @@ public:
     std::string toString();
 };
 
-
+///
 class DataNode
 {
 private:
