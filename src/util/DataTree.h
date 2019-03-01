@@ -206,7 +206,7 @@ public:
     //set overloads :
 
     // general templates : for scalars
-    template<typename T>
+    template<typename T, typename Dummy = int >
     void set(const T& scalar_in) {
 
         data_type = determineScalarDataType<T>(scalar_in);
@@ -220,7 +220,7 @@ public:
     }
 
     // general templates : for vector of scalars
-    template<typename T>
+    template<typename T, typename Dummy = int >
     void set(const vector<T>& scalar_vector_in) {
 
         data_type = determineVectorDataType<T>(scalar_vector_in);
@@ -244,7 +244,7 @@ public:
     }
 
     //template specialization : for string 
-    template<>
+    template< typename Dummy = int >
     void set(const string& str_in) {
 
         data_type = DATA_STRING;
@@ -253,7 +253,7 @@ public:
     }
 
     //template specialization : for wstring 
-    template<>
+    template< typename Dummy = int >
     void set(const wstring& wstr_in) {
 
         data_type = DATA_WSTRING;
@@ -274,7 +274,7 @@ public:
     }
 
     //template specialization : for vector<string> 
-    template<>
+    template< typename Dummy = int >
     void set(const vector<string>& vector_str_in) {
 
         data_type = DATA_STR_VECTOR;
@@ -300,7 +300,7 @@ public:
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /* get overloads */
 
-    template<typename T>
+    template<typename T, typename Dummy = int >
     void get(T& scalar_out) {
 
         if (getDataSize() < 0) {
@@ -351,7 +351,7 @@ public:
     }
 
     // general templates : for vector of scalars
-    template<typename T>
+    template<typename T, typename Dummy = int >
     void get(vector<T>& scalar_vector_out) {
 
         scalar_vector_out.clear();
@@ -413,7 +413,7 @@ public:
     }
 
     //template specialization : for string or void* returned as string
-    template<>
+    template< typename Dummy = int >
     void get(string& str_out) {
 
         //reset
@@ -435,7 +435,7 @@ public:
     }
 
     //template specialization : for wstring 
-    template<>
+    template< typename Dummy = int >
     void get(wstring& wstr_out) {
 
         //reset
@@ -470,7 +470,7 @@ public:
     }
 
     //template specialization : for vector<string> 
-    template<>
+    template< typename Dummy = int >
     void get(vector<string>& vector_str_out) {
 
         if (data_type != DATA_STR_VECTOR) {
