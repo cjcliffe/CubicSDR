@@ -10,6 +10,7 @@
 #include "DemodDefs.h"
 #include "AudioThread.h"
 #include "Modem.h"
+#include "SpinMutex.h"
 
 #define DEMOD_VIS_SIZE 2048
 #define DEMOD_SIGNAL_MIN -30
@@ -70,5 +71,5 @@ protected:
     DemodulatorThreadOutputQueuePtr audioSinkOutputQueue = nullptr;
 
     //protects the audioVisOutputQueue dynamic binding change at runtime (in DemodulatorMgr)
-    std::mutex m_mutexAudioVisOutputQueue;
+    SpinMutex m_mutexAudioVisOutputQueue;
 };

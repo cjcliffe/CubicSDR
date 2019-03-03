@@ -14,6 +14,7 @@
 #include "SpectrumCanvas.h"
 #include "WaterfallPanel.h"
 #include "Timer.h"
+#include "SpinMutex.h"
 
 class WaterfallCanvas: public InteractiveCanvas {
 public:
@@ -93,7 +94,7 @@ private:
     Timer gTimer;
     double lpsIndex;
     bool preBuf;
-    std::mutex tex_update;
+    SpinMutex tex_update;
     int minBandwidth;
     std::atomic_bool fft_size_changed;
     // event table

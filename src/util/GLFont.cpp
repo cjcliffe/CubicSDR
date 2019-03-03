@@ -521,7 +521,7 @@ void GLFont::drawString(const std::wstring& str, int pxHeight, float xpos, float
     if (cacheable) {
         gcCounter++;
 
-        std::lock_guard<std::mutex> lock(cache_busy);
+        std::lock_guard<SpinMutex> lock(cache_busy);
         
         if (gcCounter > GC_DRAW_COUNT_PERIOD) {
             
@@ -793,7 +793,7 @@ void GLFont::doCacheGC() {
 
 void GLFont::clearCache() {
 
-    std::lock_guard<std::mutex> lock(cache_busy);
+    std::lock_guard<SpinMutex> lock(cache_busy);
 
     std::map<std::wstring, GLFontStringCache * >::iterator cache_iter;
 
