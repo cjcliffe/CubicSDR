@@ -49,21 +49,21 @@ SpectrumVisualProcessor::~SpectrumVisualProcessor() {
 
 bool SpectrumVisualProcessor::isView() {
 	
-	std::lock_guard < std::mutex > busy_lock(busy_run);
+	std::lock_guard < SpinMutex > busy_lock(busy_run);
     
 	return is_view;
 }
 
 void SpectrumVisualProcessor::setView(bool bView) {
 	
-	std::lock_guard < std::mutex > busy_lock(busy_run);
+	std::lock_guard < SpinMutex > busy_lock(busy_run);
 
     is_view = bView;  
 }
 
 void SpectrumVisualProcessor::setView(bool bView, long long centerFreq_in, long bandwidth_in) {
     
-    std::lock_guard < std::mutex > busy_lock(busy_run);    
+    std::lock_guard < SpinMutex > busy_lock(busy_run);
     is_view = bView;
     bandwidth = bandwidth_in;
     centerFreq = centerFreq_in; 
@@ -72,49 +72,49 @@ void SpectrumVisualProcessor::setView(bool bView, long long centerFreq_in, long 
 
 void SpectrumVisualProcessor::setFFTAverageRate(float fftAverageRate) {
    
-    std::lock_guard < std::mutex > busy_lock(busy_run);    
+    std::lock_guard < SpinMutex > busy_lock(busy_run);
 
     this->fft_average_rate = fftAverageRate;    
 }
 
 float SpectrumVisualProcessor::getFFTAverageRate() {
 
-	std::lock_guard < std::mutex > busy_lock(busy_run);
+	std::lock_guard < SpinMutex > busy_lock(busy_run);
 
     return this->fft_average_rate;
 }
 
 void SpectrumVisualProcessor::setCenterFrequency(long long centerFreq_in) {
    
-    std::lock_guard < std::mutex > busy_lock(busy_run);  
+    std::lock_guard < SpinMutex > busy_lock(busy_run);
 
     centerFreq = centerFreq_in;  
 }
 
 long long SpectrumVisualProcessor::getCenterFrequency() {
 	
-	std::lock_guard < std::mutex > busy_lock(busy_run);
+	std::lock_guard < SpinMutex > busy_lock(busy_run);
 
     return centerFreq;
 }
 
 void SpectrumVisualProcessor::setBandwidth(long bandwidth_in) {
    
-    std::lock_guard < std::mutex > busy_lock(busy_run);    
+    std::lock_guard < SpinMutex > busy_lock(busy_run);
 
 	bandwidth = bandwidth_in;
 }
 
 long SpectrumVisualProcessor::getBandwidth() {
 
-	std::lock_guard < std::mutex > busy_lock(busy_run);
+	std::lock_guard < SpinMutex > busy_lock(busy_run);
 
     return bandwidth;
 }
 
 void SpectrumVisualProcessor::setPeakHold(bool peakHold_in) {
 	
-	std::lock_guard < std::mutex > busy_lock(busy_run);
+	std::lock_guard < SpinMutex > busy_lock(busy_run);
 
     if (peakHold && peakHold_in) {
         peakReset = PEAK_RESET_COUNT;
@@ -126,20 +126,20 @@ void SpectrumVisualProcessor::setPeakHold(bool peakHold_in) {
 
 bool SpectrumVisualProcessor::getPeakHold() {
 
-	std::lock_guard < std::mutex > busy_lock(busy_run);
+	std::lock_guard < SpinMutex > busy_lock(busy_run);
 
     return peakHold;
 }
 
 int SpectrumVisualProcessor::getDesiredInputSize() {
-	std::lock_guard < std::mutex > busy_lock(busy_run);
+	std::lock_guard < SpinMutex > busy_lock(busy_run);
 
     return desiredInputSize;
 }
 
 void SpectrumVisualProcessor::setup(unsigned int fftSize_in) {
 
-    std::lock_guard < std::mutex > busy_lock(busy_run);    
+    std::lock_guard < SpinMutex > busy_lock(busy_run);
 
     fftSize = fftSize_in;
     fftSizeInternal = fftSize_in * SPECTRUM_VZM;
@@ -180,7 +180,7 @@ void SpectrumVisualProcessor::setup(unsigned int fftSize_in) {
 void SpectrumVisualProcessor::setFFTSize(unsigned int fftSize_in) {
 
 	//then get the busy_lock
-	std::lock_guard < std::mutex > busy_lock(busy_run);
+	std::lock_guard < SpinMutex > busy_lock(busy_run);
 
     if (fftSize_in == fftSize) {
         return;
@@ -192,7 +192,7 @@ void SpectrumVisualProcessor::setFFTSize(unsigned int fftSize_in) {
 unsigned int SpectrumVisualProcessor::getFFTSize() {
 
 	//then get the busy_lock
-	std::lock_guard < std::mutex > busy_lock(busy_run);
+	std::lock_guard < SpinMutex > busy_lock(busy_run);
 
     if (fftSizeChanged) {
         return newFFTSize;
@@ -203,7 +203,7 @@ unsigned int SpectrumVisualProcessor::getFFTSize() {
 
 void SpectrumVisualProcessor::setHideDC(bool hideDC) {
 
-	std::lock_guard < std::mutex > busy_lock(busy_run);
+	std::lock_guard < SpinMutex > busy_lock(busy_run);
 
     this->hideDC = hideDC;
 }
@@ -220,7 +220,7 @@ void SpectrumVisualProcessor::process() {
 	bool executeSetup = false;
 
 	{ // scoped lock here
-		std::lock_guard < std::mutex > busy_lock(busy_run);
+		std::lock_guard < SpinMutex > busy_lock(busy_run);
 		if (fftSizeChanged) {
 			executeSetup = true;
 			fftSizeChanged = false;
@@ -242,7 +242,7 @@ void SpectrumVisualProcessor::process() {
     }
 
     //then get the busy_lock for the rest of the processing.
-    std::lock_guard < std::mutex > busy_lock(busy_run);    
+    std::lock_guard < SpinMutex > busy_lock(busy_run);
    
     bool doPeak = peakHold && (peakReset == 0);
     
@@ -638,14 +638,14 @@ void SpectrumVisualProcessor::process() {
 
 
 void SpectrumVisualProcessor::setScaleFactor(float sf) {
-	std::lock_guard < std::mutex > busy_lock(busy_run);
+	std::lock_guard < SpinMutex > busy_lock(busy_run);
 
     scaleFactor = sf;
 }
 
 
 float SpectrumVisualProcessor::getScaleFactor() {
-	std::lock_guard < std::mutex > busy_lock(busy_run);
+	std::lock_guard < SpinMutex > busy_lock(busy_run);
     return scaleFactor;
 }
 

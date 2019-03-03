@@ -13,6 +13,8 @@
 #include "wx/filename.h"
 #include "wx/stdpaths.h"
 
+#include "SpinMutex.h"
+
 class GLFontStringCache {
 public:
     GLFontStringCache();
@@ -75,9 +77,6 @@ private:
 
 class GLFont {
 public:
-
-
-
 
     enum Align {
         GLFONT_ALIGN_LEFT, GLFONT_ALIGN_RIGHT, GLFONT_ALIGN_CENTER, GLFONT_ALIGN_TOP, GLFONT_ALIGN_BOTTOM
@@ -176,7 +175,7 @@ private:
 
     GLuint texId;
     int gcCounter;
-    std::mutex cache_busy;
+    SpinMutex cache_busy;
 
 public:
 

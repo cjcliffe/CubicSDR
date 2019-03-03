@@ -466,6 +466,7 @@ SET (cubicsdr_headers
     src/util/GLExt.h
     src/util/GLFont.h
     src/util/DataTree.h
+	src/util/SpinMutex.h
     src/panel/ScopePanel.h
     src/panel/SpectrumPanel.h
     src/panel/WaterfallPanel.h
