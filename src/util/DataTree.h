@@ -303,7 +303,7 @@ public:
     template<typename T, typename Dummy = int >
     void get(T& scalar_out) {
 
-        if (getDataSize() < 0) {
+        if (getDataSize() == 0) {
             throw DataException("Cannot get() the scalar, DataElement is empty !");
         }
 
