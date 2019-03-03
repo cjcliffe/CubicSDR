@@ -133,11 +133,17 @@ protected:
     //* \param[in] errorMessage an error message written on std::cout in case pf push timeout.
     void distribute(OutputDataTypePtr item, std::uint64_t timeout = BLOCKING_INFINITE_TIMEOUT, const char* errorMessage = nullptr) {
       
-        std::lock_guard < SpinMutex > busy_lock(busy_update);
-        //We will try to distribute 'output' among all 'outputs',
-        //so 'output' will a-priori be shared among all 'outputs'.
+        //scoped-lock: create a local copy of outputs, and work with it.
+        std::vector<VisualOutputQueueTypePtr> local_outputs;
+        {
+            std::lock_guard < SpinMutex > busy_lock(busy_update);
+            local_outputs = outputs;
+        }
+
+        //We will try to distribute 'output' among all 'local_outputs',
+        //so 'output' will a-priori be shared among all 'local_outputs'.
         
-        for (VisualOutputQueueTypePtr single_output : outputs) {
+        for (VisualOutputQueueTypePtr single_output : local_outputs) {
             //'output' can fail to be given to an single_output,
             //using a blocking push, with a timeout
         	if (!(single_output)->push(item, timeout, errorMessage)) {
