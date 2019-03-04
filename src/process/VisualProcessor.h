@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <vector>
 #include <typeinfo>
-#include "SpinMutex.h"
 
 template<typename InputDataType, typename OutputDataType>
 class VisualProcessor {
@@ -29,7 +28,7 @@ public:
 	}
     
     bool isInputEmpty() {
-        std::lock_guard < SpinMutex > busy_lock(busy_update);
+        std::lock_guard < std::mutex > busy_lock(busy_update);
 		
 		if (input) {
 			return input->empty();
@@ -39,7 +38,7 @@ public:
     }
     
     bool isOutputEmpty() {
-        std::lock_guard < SpinMutex > busy_lock(busy_update);
+        std::lock_guard < std::mutex > busy_lock(busy_update);
 
         for (VisualOutputQueueTypePtr single_output :  outputs) {
             if (single_output->full()) {
@@ -50,7 +49,7 @@ public:
     }
     
     bool isAnyOutputEmpty() {
-        std::lock_guard < SpinMutex > busy_lock(busy_update);
+        std::lock_guard < std::mutex > busy_lock(busy_update);
 
         for (VisualOutputQueueTypePtr single_output : outputs) {
             if (!(single_output)->full()) {
@@ -62,7 +61,7 @@ public:
 
     //Set a (new) 'input' queue for incoming data.
     void setInput(VisualInputQueueTypePtr vis_in) {
-        std::lock_guard < SpinMutex > busy_lock(busy_update);
+        std::lock_guard < std::mutex > busy_lock(busy_update);
         input = vis_in;
         
     }
@@ -71,14 +70,14 @@ public:
     //dispatched by distribute(). 
     void attachOutput(VisualOutputQueueTypePtr vis_out) {
         // attach an output queue
-        std::lock_guard < SpinMutex > busy_lock(busy_update);
+        std::lock_guard < std::mutex > busy_lock(busy_update);
         outputs.push_back(vis_out);
     }
     
     //reverse of attachOutput(), removed an existing attached vis_out.
     void removeOutput(VisualOutputQueueTypePtr vis_out) {
         // remove an output queue
-        std::lock_guard < SpinMutex > busy_lock(busy_update);
+        std::lock_guard < std::mutex > busy_lock(busy_update);
 
         auto it = std::find(outputs.begin(), outputs.end(), vis_out);
         if (it != outputs.end()) {
@@ -99,7 +98,7 @@ public:
 		//scoped-lock: create a local copy of outputs, and work with it.
 		std::vector<VisualOutputQueueTypePtr> local_outputs;
 		{
-			std::lock_guard < SpinMutex > busy_lock(busy_update);
+			std::lock_guard < std::mutex > busy_lock(busy_update);
 			local_outputs = outputs;
 		}
 
@@ -133,17 +132,11 @@ protected:
     //* \param[in] errorMessage an error message written on std::cout in case pf push timeout.
     void distribute(OutputDataTypePtr item, std::uint64_t timeout = BLOCKING_INFINITE_TIMEOUT, const char* errorMessage = nullptr) {
       
-        //scoped-lock: create a local copy of outputs, and work with it.
-        std::vector<VisualOutputQueueTypePtr> local_outputs;
-        {
-            std::lock_guard < SpinMutex > busy_lock(busy_update);
-            local_outputs = outputs;
-        }
+        std::lock_guard < std::mutex > busy_lock(busy_update);
+        //We will try to distribute 'output' among all 'outputs',
+        //so 'output' will a-priori be shared among all 'outputs'.
 
-        //We will try to distribute 'output' among all 'local_outputs',
-        //so 'output' will a-priori be shared among all 'local_outputs'.
-        
-        for (VisualOutputQueueTypePtr single_output : local_outputs) {
+        for (VisualOutputQueueTypePtr single_output : outputs) {
             //'output' can fail to be given to an single_output,
             //using a blocking push, with a timeout
         	if (!(single_output)->push(item, timeout, errorMessage)) {
@@ -159,7 +152,7 @@ protected:
     std::vector<VisualOutputQueueTypePtr> outputs;
 
     //protects input and outputs
-    SpinMutex busy_update;
+    std::mutex busy_update;
 };
 
 //Specialization much like VisualDataReDistributor, except 

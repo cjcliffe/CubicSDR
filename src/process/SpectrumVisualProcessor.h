@@ -7,7 +7,6 @@
 #include "DemodDefs.h"
 #include <cmath>
 #include <memory>
-#include "SpinMutex.h"
 
 #define SPECTRUM_VZM 2
 #define PEAK_RESET_COUNT 30
@@ -66,7 +65,7 @@ protected:
     
 private:
 	//protects all access to fields below
-	SpinMutex busy_run;
+	std::mutex busy_run;
 
 	bool is_view;
 	size_t fftSize, newFFTSize;
