@@ -11,6 +11,7 @@
 #include <condition_variable>
 #include <typeinfo>
 #include <iostream>
+#include "SpinMutex.h"
 
 #define MIN_ITEM_NB (1)
 
@@ -50,7 +51,7 @@ public:
 
     /*! Destroy safe queue. */
     ~ThreadBlockingQueue() {
-        std::lock_guard < std::mutex > lock(m_mutex);
+        std::lock_guard < SpinMutex > lock(m_mutex);
     }
 
     /**
@@ -59,7 +60,7 @@ public:
      * \param[in] nb max of items
      */
     void set_max_num_items(unsigned int max_num_items) {
-        std::lock_guard < std::mutex > lock(m_mutex);
+        std::lock_guard < SpinMutex > lock(m_mutex);
 
         if (max_num_items > m_max_num_items) {
             //Only raise the existing max size, never reduce it
@@ -79,7 +80,7 @@ public:
      * \return true if an item was pushed into the queue, else a timeout has occured.
      */
     bool push(const value_type& item, std::uint64_t timeout = BLOCKING_INFINITE_TIMEOUT,const char* errorMessage = nullptr) {
-        std::unique_lock < std::mutex > lock(m_mutex);
+        std::unique_lock < SpinMutex > lock(m_mutex);
 
         if (timeout == BLOCKING_INFINITE_TIMEOUT) {
             m_cond_not_full.wait(lock, [this]() // Lambda funct
@@ -113,7 +114,7 @@ public:
     * \param[in] item An item.
     */
     bool try_push(const value_type& item) {
-        std::lock_guard < std::mutex > lock(m_mutex);
+        std::lock_guard < SpinMutex > lock(m_mutex);
 
         if (m_queue.size() >= m_max_num_items) {
             return false;
@@ -131,7 +132,7 @@ public:
      * \return true if get an item from the queue, false if no item is received before the timeout.
      */
     bool pop(value_type& item, std::uint64_t timeout = BLOCKING_INFINITE_TIMEOUT, const char* errorMessage = nullptr) {
-        std::unique_lock < std::mutex > lock(m_mutex);
+        std::unique_lock < SpinMutex > lock(m_mutex);
 
         if (timeout == BLOCKING_INFINITE_TIMEOUT) {
             m_cond_not_empty.wait(lock, [this]() // Lambda funct
@@ -166,7 +167,7 @@ public:
      * \return False is returned if no item is available.
      */
     bool try_pop(value_type& item) {
-        std::lock_guard < std::mutex > lock(m_mutex);
+        std::lock_guard < SpinMutex > lock(m_mutex);
 
         if (m_queue.empty()) {
             return false;
@@ -184,7 +185,7 @@ public:
      * \return Number of items in the queue.
      */
     size_type size() const {
-        std::lock_guard < std::mutex > lock(m_mutex);
+        std::lock_guard < SpinMutex > lock(m_mutex);
         return m_queue.size();
     }
 
@@ -193,7 +194,7 @@ public:
      * \return true if queue is empty.
      */
     bool empty() const {
-        std::lock_guard < std::mutex > lock(m_mutex);
+        std::lock_guard < SpinMutex > lock(m_mutex);
         return m_queue.empty();
     }
 
@@ -202,7 +203,7 @@ public:
      * \return true if queue is full.
      */
     bool full() const {
-        std::lock_guard < std::mutex > lock(m_mutex);
+        std::lock_guard < SpinMutex > lock(m_mutex);
         return (m_queue.size() >= m_max_num_items);
     }
 
@@ -210,7 +211,7 @@ public:
      *  Remove any items in the queue.
      */
     void flush() {
-        std::lock_guard < std::mutex > lock(m_mutex);
+        std::lock_guard < SpinMutex > lock(m_mutex);
         m_queue.clear();
         m_cond_not_full.notify_all();
     }
@@ -221,8 +222,8 @@ private:
 
     std::deque<T> m_queue;
 
-    mutable std::mutex m_mutex;
-    std::condition_variable m_cond_not_empty;
-    std::condition_variable m_cond_not_full;
+    mutable SpinMutex m_mutex;
+    std::condition_variable_any m_cond_not_empty;
+    std::condition_variable_any m_cond_not_full;
     size_t m_max_num_items = MIN_ITEM_NB;
 };
