@@ -200,8 +200,15 @@ void SDRThread::assureBufferMinSize(SDRThreadIQData * dataOut, size_t minSize) {
 // a 'this.numElems' sized batch of samples (SDRThreadIQData) and push it into  iqDataOutQueue.
 //this batch of samples is built to represent 1 frame / TARGET_DISPLAY_FPS.
 int SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
-    int flags = 0;
-    long long timeNs = 0;
+    
+    int flags(0);
+    
+    long long timeNs(0);
+
+    // Supply a huge timeout value to neutralize the readStream 'timeout' effect
+    // we are not interested in, but some modules may effectively use. 
+    //TODO: use something roughly (1 / TARGET_DISPLAY_FPS) seconds * (factor) instead.?
+    long long timeoutUs = (1 << 32);
 
     int n_read = 0;
     int nElems = numElems.load();
@@ -249,7 +256,7 @@ int SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
         
         //Whatever the number of remaining samples needed to reach nElems,  we always try to read a mtElems-size chunk,
         //from which SoapySDR effectively returns n_stream_read.
-        int n_stream_read = device->readStream(stream, buffs, mtElems, flags, timeNs);
+        int n_stream_read = device->readStream(stream, buffs, mtElems, flags, timeNs, timeoutUs);
         
         readStreamCode = n_stream_read;
 
