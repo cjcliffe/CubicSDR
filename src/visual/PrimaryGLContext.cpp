@@ -50,8 +50,11 @@ void PrimaryGLContext::CheckGLError() {
     }
 }
 
-PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContext) :
-        wxGLContext(canvas, sharedContext), hoverAlpha(1.0) {
+PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContext, wxGLContextAttrs* ctxAttrs) :
+        wxGLContext(canvas, sharedContext, (const wxGLContextAttrs*) ctxAttrs), hoverAlpha(1.0) {
+
+
+
 //#ifndef __linux__
 //    SetCurrent(*canvas);
 //    // Pre-load fonts
@@ -62,7 +65,7 @@ PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContex
 //#endif
 }
 
-void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, long long center_freq, long long srate, bool centerline) {
+void PrimaryGLContext::DrawDemodInfo(DemodulatorInstancePtr demod, RGBA4f color, long long center_freq, long long srate, bool centerline) {
     if (!demod) {
         return;
     }
@@ -104,17 +107,26 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, l
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     bool soloMode = wxGetApp().getSoloMode();
+    bool isRecording = demod->isRecording();
     bool isSolo = soloMode && demod == wxGetApp().getDemodMgr().getLastActiveDemodulator();
     
+    RGBA4f labelBg(0, 0, 0, 0.35f);
+
     if (isSolo) {
-        glColor4f(0.8f, 0.8f, 0, 0.35f);
+        labelBg.r = labelBg.g = 0.8f;
     } else if (demod->isMuted()) {
-        glColor4f(0.8f, 0, 0, 0.35f);
+        labelBg.r = 0.8f;
     } else if (soloMode) {
-        glColor4f(0.2f, 0, 0, 0.35f);
-    } else {
-        glColor4f(0, 0, 0, 0.35f);
+        labelBg.r = 0.2f;
     }
+
+    // TODO: Better recording indicator... pulsating red circle?
+    if (isRecording) {
+        auto t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+        labelBg.g = sinf(2.0f * M_PI * (float(t) / 1000.0f)) * 0.25f + 0.75f;
+    }
+
+    glColor4f(labelBg.r, labelBg.g, labelBg.b, labelBg.a);
     
     glBegin(GL_QUADS);
     glVertex3f(uxPos - ofsLeft, hPos + labelHeight, 0.0);
@@ -156,18 +168,29 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstance *demod, RGBA4f color, l
 
     glColor4f(1.0, 1.0, 1.0, 0.8f);
 
-    std::string demodLabel = demod->getLabel();
-    
-    if (demod->isMuted()) {
-        demodLabel = std::string("[M] ") + demodLabel;
-    } else if (isSolo) {
-        demodLabel = std::string("[S] ") + demodLabel;
-    }
-    
+    std::string demodLabel, demodPrefix;
+
     if (demod->isDeltaLock()) {
-        demodLabel.append(" [V]");
+        demodPrefix.append("V");
     }
-    
+
+    if (isRecording) {
+        demodPrefix.append("R");
+    }
+
+    if (demod->isMuted()) {
+        demodPrefix.append("M");
+    } else if (isSolo) {
+        demodPrefix.append("S");
+    }
+
+    // Set the prefix
+    if (!demodPrefix.empty()) {
+        demodLabel = "[" + demodPrefix + "] ";
+    }    
+    // Append the default label
+    demodLabel.append(demod->getLabel());
+
     if (demod->getDemodulatorType() == "USB") {
         GLFont::getFont(16, GLFont::getScaleFactor()).drawString(demodLabel, uxPos, hPos, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
     } else if (demod->getDemodulatorType() == "LSB") {
@@ -287,7 +310,7 @@ void PrimaryGLContext::DrawFreqBwInfo(long long freq, int bw, RGBA4f color, long
     glDisable(GL_BLEND);
 }
 
-void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long long center_freq, long long srate) {
+void PrimaryGLContext::DrawDemod(DemodulatorInstancePtr demod, RGBA4f color, long long center_freq, long long srate) {
     if (!demod) {
         return;
     }
@@ -356,20 +379,14 @@ void PrimaryGLContext::DrawDemod(DemodulatorInstance *demod, RGBA4f color, long 
 
     glEnable(GL_BLEND);
 
-    GLFont::Align demodAlign = GLFont::GLFONT_ALIGN_CENTER;
-
     //Displayed string is wstring, so use wxString to do the heavy lifting of converting  getDemodulatorType()...
     wxString demodStr;
 
     demodStr.assign(demod->getDemodulatorType());
 
-    demodAlign = GLFont::GLFONT_ALIGN_CENTER;
-
     if (demodStr == "LSB") {
-        demodAlign = GLFont::GLFONT_ALIGN_RIGHT;
         uxPos -= xOfs;
     } else if (demodStr == "USB") {
-        demodAlign = GLFont::GLFONT_ALIGN_LEFT;
         uxPos += xOfs;
     }
     // advanced demodulators start here
@@ -415,7 +432,8 @@ void PrimaryGLContext::drawSingleDemodLabel(const std::wstring& demodStr, float 
 }
 
 void PrimaryGLContext::DrawFreqSelector(float uxPos, RGBA4f color, float w, long long /* center_freq */, long long srate) {
-    DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    
+    DemodulatorInstancePtr demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     long long bw = 0;
 

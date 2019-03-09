@@ -16,7 +16,7 @@ ModemBase *ModemFSK::factory() {
     return new ModemFSK;
 }
 
-int ModemFSK::checkSampleRate(long long sampleRate, int audioSampleRate) {
+int ModemFSK::checkSampleRate(long long sampleRate, int /* audioSampleRate */) {
     double minSps = pow(2.0,bps);
     double nextSps = (double(sampleRate) / double(sps));
     if (nextSps < minSps) {
@@ -128,7 +128,7 @@ ModemFSK::~ModemFSK() {
 
 }
 
-void ModemFSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
+void ModemFSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
     ModemKitFSK *dkit = (ModemKitFSK *)kit;
     
     digitalStart(dkit, nullptr, input);

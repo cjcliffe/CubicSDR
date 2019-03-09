@@ -16,23 +16,32 @@ public:
     DemodulatorMgr();
     ~DemodulatorMgr();
 
-    DemodulatorInstance *newThread();
-    std::vector<DemodulatorInstance *> &getDemodulators();
-    std::vector<DemodulatorInstance *> getOrderedDemodulators(bool actives = true);
-    std::vector<DemodulatorInstance *> getDemodulatorsAt(long long freq, int bandwidth);
-    DemodulatorInstance *getPreviousDemodulator(DemodulatorInstance *demod, bool actives = true);
-    DemodulatorInstance *getNextDemodulator(DemodulatorInstance *demod, bool actives = true);
-    DemodulatorInstance *getLastDemodulator();
-    DemodulatorInstance *getFirstDemodulator();
+    DemodulatorInstancePtr newThread();
+   
+    //return snapshot-copy of the list purposefully
+    std::vector<DemodulatorInstancePtr> getDemodulators();
+
+    std::vector<DemodulatorInstancePtr> getOrderedDemodulators(bool actives = true);
+    std::vector<DemodulatorInstancePtr> getDemodulatorsAt(long long freq, int bandwidth);
+    
+    DemodulatorInstancePtr getPreviousDemodulator(DemodulatorInstancePtr demod, bool actives = true);
+    DemodulatorInstancePtr getNextDemodulator(DemodulatorInstancePtr demod, bool actives = true);
+    DemodulatorInstancePtr getLastDemodulator();
+    DemodulatorInstancePtr getFirstDemodulator();
     bool anyDemodulatorsAt(long long freq, int bandwidth);
-    void deleteThread(DemodulatorInstance *);
+    void deleteThread(DemodulatorInstancePtr);
 
     void terminateAll();
 
-    void setActiveDemodulator(DemodulatorInstance *demod, bool temporary = true);
-    DemodulatorInstance *getActiveDemodulator();
-    DemodulatorInstance *getLastActiveDemodulator();
-	DemodulatorInstance *getLastDemodulatorWith(const std::string& type,
+    void setActiveDemodulator(DemodulatorInstancePtr demod, bool temporary = true);
+
+    //Dangerous: this is only intended by some internal classes,
+    // and only set a pre-existing demod
+    void setActiveDemodulatorByRawPointer(DemodulatorInstance* demod, bool temporary = true);
+
+    DemodulatorInstancePtr getActiveDemodulator();
+    DemodulatorInstancePtr getLastActiveDemodulator();
+    DemodulatorInstancePtr getLastDemodulatorWith(const std::string& type,
 												const std::wstring& userLabel,
 												long long frequency,
 												int bandwidth);
@@ -64,20 +73,22 @@ public:
     void updateLastState();
     
     void setOutputDevices(std::map<int,RtAudio::DeviceInfo> devs);
-    void saveInstance(DataNode *node, DemodulatorInstance *inst);
+    void saveInstance(DataNode *node, DemodulatorInstancePtr inst);
 	
-    DemodulatorInstance *loadInstance(DataNode *node);
-    
-private:
-    
-    void garbageCollect();
+    DemodulatorInstancePtr loadInstance(DataNode *node);
 
-    std::vector<DemodulatorInstance *> demods;
-    std::vector<DemodulatorInstance *> demods_deleted;
+
+private:
+
+    //utility method that attemts to decode node value as std::wstring, else as std::string, else 
+    //return an empty string.
+    static std::wstring getSafeWstringValue(DataNode* node);
+
+    std::vector<DemodulatorInstancePtr> demods;
     
-    std::atomic<DemodulatorInstance *> activeDemodulator;
-    std::atomic<DemodulatorInstance *> lastActiveDemodulator;
-    std::atomic<DemodulatorInstance *> activeVisualDemodulator;
+    DemodulatorInstancePtr activeDemodulator;
+    DemodulatorInstancePtr lastActiveDemodulator;
+    DemodulatorInstancePtr activeVisualDemodulator;
 
     int lastBandwidth;
     std::string lastDemodType;
@@ -91,7 +102,7 @@ private:
     //protects access to demods lists and such, need to be recursive
     //because of the usage of public re-entrant methods 
     std::recursive_mutex demods_busy;
-    
+   
     std::map<std::string, ModemSettings> lastModemSettings;
     std::map<int,RtAudio::DeviceInfo> outputDevices;
 };

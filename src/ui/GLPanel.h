@@ -63,6 +63,7 @@ public:
     std::vector<GLPanel *> children;
     
     GLPanel();
+    virtual ~GLPanel() {};
     
     void setPosition(float x, float y);
 

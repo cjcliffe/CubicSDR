@@ -12,8 +12,8 @@
 
 class InteractiveCanvas: public wxGLCanvas {
 public:
-    InteractiveCanvas(wxWindow *parent, std::vector<int> dispAttrs);
-    ~InteractiveCanvas();
+    InteractiveCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
+    virtual ~InteractiveCanvas();
 
     long long getFrequencyAt(float x);
     long long getFrequencyAt(float x, long long iqCenterFreq, long long iqBandwidth);

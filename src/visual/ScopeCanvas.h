@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <queue>
+#include <memory>
 
 #include "ScopeContext.h"
 #include "ScopeVisualProcessor.h"
@@ -17,7 +18,7 @@
 
 class ScopeCanvas: public InteractiveCanvas {
 public:
-    ScopeCanvas(wxWindow *parent, std::vector<int> dispAttrs);
+    ScopeCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
     ~ScopeCanvas();
 
     //This is public because it is indeed forwarded from
@@ -42,7 +43,7 @@ public:
     
     void setHelpTip(std::string tip);
 
-    ScopeRenderDataQueue *getInputQueue();
+    ScopeRenderDataQueuePtr getInputQueue();
     
 private:
     void OnPaint(wxPaintEvent& event);
@@ -54,7 +55,7 @@ private:
     void OnMouseEnterWindow(wxMouseEvent& event);
     void OnMouseLeftWindow(wxMouseEvent& event);
 
-    ScopeRenderDataQueue inputData;
+    ScopeRenderDataQueuePtr inputData = std::make_shared<ScopeRenderDataQueue>();
     ScopePanel scopePanel;
     GLPanel parentPanel;
     SpectrumPanel spectrumPanel;

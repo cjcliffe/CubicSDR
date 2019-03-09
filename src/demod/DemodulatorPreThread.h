@@ -6,6 +6,7 @@
 #include <queue>
 #include <vector>
 #include <atomic>
+#include <memory>
 
 #include "CubicSDRDefs.h"
 #include "DemodDefs.h"
@@ -16,8 +17,8 @@ class DemodulatorInstance;
 class DemodulatorPreThread : public IOThread {
 public:
 
-    DemodulatorPreThread(DemodulatorInstance *parent);
-    ~DemodulatorPreThread();
+    DemodulatorPreThread(DemodulatorInstance* parent);
+    virtual ~DemodulatorPreThread();
 
     virtual void run();
     
@@ -49,7 +50,9 @@ public:
     void writeModemSettings(ModemSettings settings);
 
 protected:
-    DemodulatorInstance *parent;
+  
+    DemodulatorInstance* parent;
+
     msresamp_crcf iqResampler;
     double iqResampleRatio;
     std::vector<liquid_float_complex> resampledData;
@@ -78,9 +81,9 @@ protected:
     DemodulatorWorkerThread *workerThread;
     std::thread *t_Worker;
 
-    DemodulatorThreadWorkerCommandQueue *workerQueue;
-    DemodulatorThreadWorkerResultQueue *workerResults;
+    DemodulatorThreadWorkerCommandQueuePtr workerQueue;
+    DemodulatorThreadWorkerResultQueuePtr  workerResults;
 
-    DemodulatorThreadInputQueue* iqInputQueue;
-    DemodulatorThreadPostInputQueue* iqOutputQueue;
+    DemodulatorThreadInputQueuePtr iqInputQueue;
+    DemodulatorThreadPostInputQueuePtr iqOutputQueue;
 };

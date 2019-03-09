@@ -18,8 +18,8 @@ protected:
     }
 };
 
-TuningContext::TuningContext(TuningCanvas *canvas, wxGLContext *sharedContext) :
-        PrimaryGLContext(canvas, sharedContext) {
+TuningContext::TuningContext(TuningCanvas *canvas, wxGLContext *sharedContext, wxGLContextAttrs *ctxAttrs) :
+        PrimaryGLContext(canvas, sharedContext, ctxAttrs) {
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
 

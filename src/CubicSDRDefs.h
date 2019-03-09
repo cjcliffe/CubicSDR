@@ -59,3 +59,7 @@ const char filePathSeparator =
 
 //Represents the amount of time to process in the FFT distributor. 
 #define FFT_DISTRIBUTOR_BUFFER_IN_SECONDS 0.250
+
+//The maximum number of listed sample rates for a device, to be able to handle 
+//devices returning an insane amount because they have quasi-continuous ranges (UHD...)
+#define DEVICE_SAMPLE_RATES_MAX_NB     25

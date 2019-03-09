@@ -71,6 +71,7 @@ public:
     CubicSDR();
 
     PrimaryGLContext &GetContext(wxGLCanvas *canvas);
+    wxGLContextAttrs* GetContextAttributes();
 
     virtual bool OnInit();
     virtual int OnExit();
@@ -91,13 +92,18 @@ public:
 
     void setOffset(long long ofs);
     long long getOffset();
-    
-    void setDBOffset(int ofs);
-    int getDBOffset();
+
+    void setAntennaName(const std::string& name);
+    const std::string& getAntennaName();
+
+    void setChannelizerType(SDRPostThreadChannelizerType chType);
+    SDRPostThreadChannelizerType getChannelizerType();
+   
 
     void setSampleRate(long long rate_in);
     long long getSampleRate();
 
+   
     std::vector<SDRDeviceInfo *> *getDevices();
     void setDevice(SDRDeviceInfo *dev, int waitMsForTermination);
     void stopDevice(bool store, int waitMsForTermination);
@@ -107,19 +113,19 @@ public:
     SpectrumVisualProcessor *getSpectrumProcessor();
     SpectrumVisualProcessor *getDemodSpectrumProcessor();
     
-    DemodulatorThreadOutputQueue* getAudioVisualQueue();
-    DemodulatorThreadInputQueue* getIQVisualQueue();
-    DemodulatorThreadInputQueue* getWaterfallVisualQueue();
-    DemodulatorThreadInputQueue* getActiveDemodVisualQueue();
+    DemodulatorThreadOutputQueuePtr getAudioVisualQueue();
+    DemodulatorThreadInputQueuePtr getIQVisualQueue();
+    DemodulatorThreadInputQueuePtr getWaterfallVisualQueue();
+    
     DemodulatorMgr &getDemodMgr();
     BookmarkMgr &getBookmarkMgr();
 
     SDRPostThread *getSDRPostThread();
     SDRThread *getSDRThread();
 
-    void bindDemodulator(DemodulatorInstance *demod);
-    void bindDemodulators(std::vector<DemodulatorInstance *> *demods);
-    void removeDemodulator(DemodulatorInstance *demod);
+    void notifyDemodulatorsChanged();
+   
+    void removeDemodulator(DemodulatorInstancePtr demod);
 
     void setFrequencySnap(int snap);
     int getFrequencySnap();
@@ -139,7 +145,7 @@ public:
     bool areModulesMissing();
     std::string getNotification();
 
-    void notifyMainUIOfDeviceChange();
+    void notifyMainUIOfDeviceChange(bool forceRefreshOfGains = false);
     
     void addRemote(std::string remoteAddr);
     void removeRemote(std::string remoteAddr);
@@ -166,6 +172,8 @@ public:
 
     void setSoloMode(bool solo);
     bool getSoloMode();
+
+    bool isShuttingDown();
     
 #ifdef USE_HAMLIB
     RigThread *getRigThread();
@@ -180,6 +188,8 @@ private:
     AppFrame *appframe = nullptr;
     AppConfig config;
     PrimaryGLContext *m_glContext = nullptr;
+    wxGLContextAttrs *m_glContextAttributes = nullptr;
+
     std::vector<SDRDeviceInfo *> *devs = nullptr;
 
     DemodulatorMgr demodMgr;
@@ -189,7 +199,9 @@ private:
     std::atomic_llong offset;
     std::atomic_int ppm, snap;
     std::atomic_llong sampleRate;
+    std::string antennaName;
     std::atomic_bool agcMode;
+    std::atomic_bool shuttingDown;
 
     SDRThread *sdrThread = nullptr;
     SDREnumerator *sdrEnum = nullptr;
@@ -197,12 +209,12 @@ private:
     SpectrumVisualDataThread *spectrumVisualThread = nullptr;
     SpectrumVisualDataThread *demodVisualThread = nullptr;
 
-    SDRThreadIQDataQueue* pipeSDRIQData = nullptr;
-    DemodulatorThreadInputQueue* pipeIQVisualData = nullptr;
-    DemodulatorThreadOutputQueue* pipeAudioVisualData = nullptr;
-    DemodulatorThreadInputQueue* pipeDemodIQVisualData = nullptr;
-    DemodulatorThreadInputQueue* pipeWaterfallIQVisualData = nullptr;
-    DemodulatorThreadInputQueue* pipeActiveDemodIQVisualData = nullptr;
+    SDRThreadIQDataQueuePtr pipeSDRIQData;
+    DemodulatorThreadInputQueuePtr pipeIQVisualData;
+    DemodulatorThreadOutputQueuePtr pipeAudioVisualData;
+    DemodulatorThreadInputQueuePtr pipeDemodIQVisualData;
+    DemodulatorThreadInputQueuePtr pipeWaterfallIQVisualData;
+    DemodulatorThreadInputQueuePtr pipeActiveDemodIQVisualData;
 
     ScopeVisualProcessor scopeProcessor;
     

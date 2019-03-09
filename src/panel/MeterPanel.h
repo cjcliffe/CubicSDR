@@ -20,7 +20,7 @@ public:
     void setHighlightVisible(bool vis);
     float getValue();
     bool isMeterHit(CubicVR::vec2 mousePoint);
-    float getMeterHitValue(CubicVR::vec2 mousePoint, GLPanel &panel);
+    float getMeterHitValue(CubicVR::vec2 mousePoint);
     void setChanged(bool changed);
     bool getChanged();
     
@@ -32,7 +32,7 @@ protected:
 private:
     std::string name;
     float low, high, current;
-    bool changed;
+    bool changed = false;
     GLPanel bgPanel;
     GLPanel levelPanel;
     GLPanel highlightPanel;

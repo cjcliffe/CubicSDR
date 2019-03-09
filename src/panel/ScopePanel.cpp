@@ -35,7 +35,7 @@ void ScopePanel::drawPanelContents() {
         bgPanel.draw();
         glLineWidth(1.0);
         glEnable(GL_LINE_SMOOTH);
-        glLoadMatrixf(transform);
+        glLoadMatrixf(transform.to_ptr());
         glColor3f(ThemeMgr::mgr.currentTheme->scopeLine.r * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.g * 0.35,
                   ThemeMgr::mgr.currentTheme->scopeLine.b * 0.35);
         glBegin (GL_LINES);
@@ -52,7 +52,7 @@ void ScopePanel::drawPanelContents() {
         bgPanelStereo[1].draw();
 
         glLineWidth(1.0);
-        glLoadMatrixf(transform);
+        glLoadMatrixf(transform.to_ptr());
         glColor3f(ThemeMgr::mgr.currentTheme->scopeLine.r, ThemeMgr::mgr.currentTheme->scopeLine.g, ThemeMgr::mgr.currentTheme->scopeLine.b);
         glEnable(GL_LINE_SMOOTH);
         glBegin (GL_LINES);
@@ -76,7 +76,7 @@ void ScopePanel::drawPanelContents() {
         glLineWidth(1.0);
         glEnable(GL_POINT_SMOOTH);
         glPointSize(1.0);
-        glLoadMatrixf(transform);
+        glLoadMatrixf(transform.to_ptr());
         glColor3f(ThemeMgr::mgr.currentTheme->scopeLine.r * 0.15, ThemeMgr::mgr.currentTheme->scopeLine.g * 0.15,
                   ThemeMgr::mgr.currentTheme->scopeLine.b * 0.15);
     }
@@ -95,16 +95,16 @@ void ScopePanel::drawPanelContents() {
         glVertexPointer(2, GL_FLOAT, 0, &points[0]);
         glLineWidth(1.5);
         if (scopeMode == SCOPE_MODE_Y) {
-            glLoadMatrixf(bgPanel.transform);
+            glLoadMatrixf(bgPanel.transform.to_ptr());
             glDrawArrays(GL_LINE_STRIP, 0, points.size() / 2);
         } else if (scopeMode == SCOPE_MODE_2Y)  {
-            glLoadMatrixf(bgPanelStereo[0].transform);
+            glLoadMatrixf(bgPanelStereo[0].transform.to_ptr());
             glDrawArrays(GL_LINE_STRIP, 0, points.size() / 4);
 
-            glLoadMatrixf(bgPanelStereo[1].transform);
+            glLoadMatrixf(bgPanelStereo[1].transform.to_ptr());
             glDrawArrays(GL_LINE_STRIP, points.size() / 4, points.size() / 4);
         } else if (scopeMode == SCOPE_MODE_XY) {
-            glLoadMatrixf(bgPanel.transform);
+            glLoadMatrixf(bgPanel.transform.to_ptr());
             glDrawArrays(GL_POINTS, 0, points.size() / 2);
         }
         glLineWidth(1.0);

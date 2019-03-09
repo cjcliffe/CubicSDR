@@ -30,7 +30,7 @@ void ModemDSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *a
     initOutputBuffers(amkit, input);
     
     if (!bufSize) {
-        input->decRefCount();
+       
         return;
     }
     

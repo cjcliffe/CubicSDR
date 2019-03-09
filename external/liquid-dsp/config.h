@@ -5,6 +5,7 @@
 #ifndef __LIQUID_CONFIG_H__
 #define __LIQUID_CONFIG_H__
 
+
 /* Define to 1 if you have the <complex.h> header file. */
 #define HAVE_COMPLEX_H 1
 
@@ -45,6 +46,9 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
 
+/* Support MMX instructions */
+#define HAVE_MMX 1
+
 /* Define to 1 if you have the <mmintrin.h> header file. */ //MMX
 #define HAVE_MMINTRIN_H 1
 
@@ -58,7 +62,7 @@
 #define HAVE_PMMINTRIN_H 1
 
 /* Define to 1 if you have the <smmintrin.h> header file. */ //SSE4.1
-//#define HAVE_SMMINTRIN_H 1
+#define HAVE_SMMINTRIN_H 1
 
 /* Define to 1 if you have the <immintrin.h> header file. */ //AVX
 //#define HAVE_IMMINTRIN_H 1
@@ -73,26 +77,23 @@
    and to 0 otherwise. */
 #define HAVE_REALLOC 1
 
-/* Support MMX instructions */
-#define HAVE_MMX /**/
-
 /* Support SSE (Streaming SIMD Extensions) instructions */
-#define HAVE_SSE /**/
+#define HAVE_SSE 1
 
 /* Support SSE2 (Streaming SIMD Extensions 2) instructions */
-#define HAVE_SSE2 /**/
+#define HAVE_SSE2 1
 
 /* Support SSE3 (Streaming SIMD Extensions 3) instructions */
-#define HAVE_SSE3 /**/
+#define HAVE_SSE3 1
 
 /* Support SSE4.1 (Streaming SIMD Extensions 4.1) instructions */
-#define HAVE_SSE41 /**/
+#define HAVE_SSE41 1
 
 /* Support SSE4.2 (Streaming SIMD Extensions 4.2) instructions */
 #define HAVE_SSE42 1
 
 /* Support SSSE3 (Supplemental Streaming SIMD Extensions 3) instructions */
-#define HAVE_SSSE3 /**/
+#define HAVE_SSSE3 1
 
 /* Support AVX (Advanced Vector Extensions) instructions */
 #define HAVE_AVX /**/
@@ -128,7 +129,7 @@
 #define HAVE_UNISTD_H 1
 
 /* Force internal FFT even if libfftw is available */
-/* #undef LIQUID_FFTOVERRIDE */
+#define LIQUID_FFTOVERRIDE 1
 
 /* Force overriding of SIMD (use portable C code) */
 /* #undef LIQUID_SIMDOVERRIDE */
@@ -140,7 +141,7 @@
 #define PACKAGE_NAME "liquid-dsp"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "liquid-dsp 1.3.0"
+#define PACKAGE_STRING "liquid-dsp 1.3.1"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "liquid-dsp"
@@ -149,7 +150,7 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "1.3.0"
+#define PACKAGE_VERSION "1.3.1"
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1

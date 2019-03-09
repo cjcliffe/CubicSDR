@@ -11,9 +11,11 @@
 #include <string>
 #include <iostream>
 #include <thread>
-
+#include <memory>
+#include <climits>
 #include "ThreadBlockingQueue.h"
 #include "Timer.h"
+#include "SpinMutex.h"
 
 struct map_string_less : public std::binary_function<std::string,std::string,bool>
 {
@@ -23,163 +25,135 @@ struct map_string_less : public std::binary_function<std::string,std::string,boo
     }
 };
 
-
-class ReferenceCounter {
-
+template <typename PtrType>
+class ReBufferAge {
 public:
 
-    //default constructor, initialized with refcont 1, sounds very natural
-    ReferenceCounter() {
-        refCount = 1;
-    }
-    
-//    void setIndex(int idx) {
-//        std::lock_guard < std::recursive_mutex > lock(m_mutex);
-//        index = idx;
-//    }
-
-//    int getIndex() {
-//        std::lock_guard < std::recursive_mutex > lock(m_mutex);
-//        return index;
-//    }
-
-    void setRefCount(int rc) {
-        std::lock_guard < std::recursive_mutex > lock(m_mutex);
-        refCount = rc;
-    }
-    
-    void decRefCount() {
-        std::lock_guard < std::recursive_mutex > lock(m_mutex);
-        refCount--;
-    }
-    
-    int getRefCount() {
-        std::lock_guard < std::recursive_mutex > lock(m_mutex);
-        return refCount;
+    ReBufferAge(PtrType p, int a) {
+        ptr = p;
+        age = a;
     }
 
-    // Access to the own mutex protecting the ReferenceCounter, i.e the monitor of the class
-     std::recursive_mutex& getMonitor() const {
-        return m_mutex;
-    }
+    PtrType ptr;
+    int age;
 
-protected:
-    //this is a basic mutex for all ReferenceCounter derivatives operations INCLUDING the counter itself for consistency !
-   mutable std::recursive_mutex m_mutex;
-
-private:
-   int refCount;
-//   int index;
+    virtual ~ReBufferAge() {};
 };
-
 
 #define REBUFFER_GC_LIMIT 100
+#define REBUFFER_WARNING_THRESHOLD 2000
 
-class ReBufferGC {
-public:
-    static void garbageCollect() {
-        std::lock_guard < std::mutex > lock(g_mutex);
-        
-        std::deque<ReferenceCounter *> garbageRemoval;
-        for (typename std::set<ReferenceCounter *>::iterator i = garbage.begin(); i != garbage.end(); i++) {
-            if ((*i)->getRefCount() <= 0) {
-                garbageRemoval.push_back(*i);
-            }
-            else {
-//                std::cout << "Garbage in queue buffer idx #" << (*i)->getIndex() << ", " << (*i)->getRefCount() << " usage(s)" << std::endl;
-                std::cout << "Garbage in queue buffer with " << (*i)->getRefCount() << " usage(s)" << std::endl;
-            }
-        }
-        if ( garbageRemoval.size() ) {
-            std::cout << "Garbage collecting " << garbageRemoval.size() << " ReBuffer(s)" << std::endl;
-            while (!garbageRemoval.empty()) {
-                ReferenceCounter *ref = garbageRemoval.back();
-                garbageRemoval.pop_back();
-                garbage.erase(ref);
-                delete ref;
-            }
-        }
-    }
-    
-    static void addGarbage(ReferenceCounter *ref) {
-        std::lock_guard < std::mutex > lock(g_mutex);
-        garbage.insert(ref);
-    }
-    
-private:
-    static std::mutex g_mutex;
-    static std::set<ReferenceCounter *> garbage;
-};
-
-
-template<class BufferType = ReferenceCounter>
+template<typename BufferType>
 class ReBuffer {
     
+    typedef typename std::shared_ptr<BufferType> ReBufferPtr;
+   
 public:
+
+	//Virtual destructor to assure correct freeing of all descendants.
+	virtual ~ReBuffer() {
+		//nothing
+	}
+
+	//constructor
     ReBuffer(std::string bufferId) : bufferId(bufferId) {
-//        indexCounter.store(0);
+		//nothing
     }
     
-    BufferType *getBuffer() {
-        std::lock_guard < std::mutex > lock(m_mutex);
+    /// Return a new ReBuffer_ptr usable by the application.
+    ReBufferPtr getBuffer() {
 
-        BufferType* buf = nullptr;
-        for (outputBuffersI = outputBuffers.begin(); outputBuffersI != outputBuffers.end(); outputBuffersI++) {
-            if (buf == nullptr && (*outputBuffersI)->getRefCount() <= 0) {
-                buf = (*outputBuffersI);
-                buf->setRefCount(1);
-            } else if ((*outputBuffersI)->getRefCount() <= 0) {
-                (*outputBuffersI)->decRefCount();
+        std::lock_guard < SpinMutex > lock(m_mutex);
+
+        // iterate the ReBufferAge list: if the std::shared_ptr count == 1, it means 
+        //it is only referenced in outputBuffers itself, so available for re-use.
+        //else if the std::shared_ptr count <= 1, make it age.
+        //else the ReBufferPtr is in use, don't use it.
+
+        ReBufferPtr buf = nullptr;
+
+        outputBuffersI it = outputBuffers.begin();
+
+       while (it != outputBuffers.end()) {
+
+           //careful here: take care of reading the use_count directly
+           //through the iterator, else it's value is wrong if a temp variable 
+           //is used.
+           long use = it->ptr.use_count();
+
+            //1. If we encounter a ReBufferPtr with a use count of 0, this
+            //is a bug since it is supposed to be at least 1, because it is referenced here.
+            //in this case, purge it from here and trace.
+            if (use == 0) {
+                std::cout << "Warning: in ReBuffer '" << bufferId << "' count '" << outputBuffers.size() << "', found 1 dangling buffer !" << std::endl << std::flush;
+                it = outputBuffers.erase(it);    
+            } 
+            else if (use == 1) {
+                if (buf == nullptr) {
+                    it->age = 1;  //select this one.
+                    buf = it->ptr;
+                    // std::cout << "**" << std::flush;
+                    it++;
+                }
+                else {
+                    //make the other unused buffers age
+                    it->age--;
+                    it++;
+                }
             }
-        }
-        
-        if (buf != nullptr) {
-            if (outputBuffers.back()->getRefCount() < -REBUFFER_GC_LIMIT) {
-                BufferType *ref = outputBuffers.back();
+            else {
+                it++;
+            }
+        } //end while
+
+       //2.1 Garbage collect the oldest (last element) if it aged too much, and return the buffer
+       if (buf != nullptr) {
+            
+           if (outputBuffers.back().age < -REBUFFER_GC_LIMIT) {
+                //by the nature of the shared_ptr, memory will ne deallocated automatically.           
                 outputBuffers.pop_back();
-                delete ref;
+                //std::cout << "--" << std::flush;
             }
-//            buf->setIndex(indexCounter++);
             return buf;
         }
-        
-#define REBUFFER_WARNING_THRESHOLD 100
-        if (outputBuffers.size() > REBUFFER_WARNING_THRESHOLD) {
-            std::cout << "Warning: ReBuffer '" << bufferId << "' count '" << outputBuffers.size() << "' exceeds threshold of '" << REBUFFER_WARNING_THRESHOLD << "'" << std::endl;
-        }
 
-        //by default created with refcount = 1
-        buf = new BufferType();
-//        buf->setIndex(indexCounter++);
-        outputBuffers.push_back(buf);
+        if (outputBuffers.size() > REBUFFER_WARNING_THRESHOLD) {
+            std::cout << "Warning: ReBuffer '" << bufferId << "' count '" << outputBuffers.size() << "' exceeds threshold of '" << REBUFFER_WARNING_THRESHOLD << "'" << std::endl << std::flush;
+        }
         
-        return buf;
+        //3.We need to allocate a new buffer. 
+        ReBufferAge < ReBufferPtr > newBuffer(std::make_shared<BufferType>(), 1);
+
+        outputBuffers.push_back(newBuffer);
+
+        // std::cout << "++" << std::flush;
+        return newBuffer.ptr;
     }
     
+    /// Purge the cache.
     void purge() {
-        std::lock_guard < std::mutex > lock(m_mutex);
-//        if (bufferId == "DemodulatorThreadBuffers") {
-//            std::cout << "'" << bufferId << "' purging.. total indexes: " << indexCounter.load() << std::endl;
-//        }
-        while (!outputBuffers.empty()) {
-            BufferType *ref = outputBuffers.front();
-            outputBuffers.pop_front();
-            if (ref->getRefCount() <= 0) {
-                delete ref;
-            } else {
-                // Something isn't done with it yet; throw it on the pile.. keep this as a bug indicator for now..
-                std::cout << "'" << bufferId << "' pushed garbage.." << std::endl;
-                ReBufferGC::addGarbage(ref);
-            }
-        }
+        std::lock_guard < SpinMutex > lock(m_mutex);
+
+        // since outputBuffers are full std::shared_ptr,
+        //purging if will effectively loose the local reference,
+        // so the std::shared_ptr will naturally be deallocated
+        //when their time comes.  
+        outputBuffers.clear();
     }
 
-   private:
+private:
+
+    //name of the buffer cache kind
     std::string bufferId;
-    std::deque<BufferType*> outputBuffers;
-    typename std::deque<BufferType*>::iterator outputBuffersI;
-    mutable std::mutex m_mutex;
-//    std::atomic_int indexCounter;
+    
+    //the ReBuffer cache: use a std:deque to also release
+    //memory when ReBufferPtr are GCed.
+    std::deque< ReBufferAge < ReBufferPtr > > outputBuffers;
+
+    typedef typename std::deque< ReBufferAge < ReBufferPtr > >::iterator outputBuffersI;
+
+    //mutex protecting access to outputBuffers.
+    SpinMutex m_mutex;
 };
 
 
@@ -210,20 +184,20 @@ public:
     //If wait < 0, the wait in infinite until the thread dies.
     bool isTerminated(int waitMs = 0);
     
-    virtual void onBindOutput(std::string name, ThreadQueueBase* threadQueue);
-    virtual void onBindInput(std::string name, ThreadQueueBase* threadQueue);
+    virtual void onBindOutput(std::string name, ThreadQueueBasePtr threadQueue);
+    virtual void onBindInput(std::string name, ThreadQueueBasePtr threadQueue);
 
-    void setInputQueue(std::string qname, ThreadQueueBase *threadQueue);
-    ThreadQueueBase *getInputQueue(std::string qname);
-    void setOutputQueue(std::string qname, ThreadQueueBase *threadQueue);
-    ThreadQueueBase *getOutputQueue(std::string qname);
+    void setInputQueue(std::string qname, ThreadQueueBasePtr threadQueue);
+    ThreadQueueBasePtr getInputQueue(std::string qname);
+    void setOutputQueue(std::string qname, ThreadQueueBasePtr threadQueue);
+    ThreadQueueBasePtr getOutputQueue(std::string qname);
     
 protected:
-    std::map<std::string, ThreadQueueBase *, map_string_less> input_queues;
-    std::map<std::string, ThreadQueueBase *, map_string_less> output_queues;
+    std::map<std::string, ThreadQueueBasePtr, map_string_less> input_queues;
+    std::map<std::string, ThreadQueueBasePtr, map_string_less> output_queues;
 
     //this protects against concurrent changes in input/output bindings: get/set/Input/OutPutQueue
-    mutable std::mutex m_queue_bindings_mutex;
+    std::mutex m_queue_bindings_mutex;
 
     //true when a termination is ordered
     std::atomic_bool stopping;

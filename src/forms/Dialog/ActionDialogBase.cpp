@@ -1,8 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Aug 23 2015)
+// C++ code generated with wxFormBuilder (version Aug  8 2018)
 // http://www.wxformbuilder.org/
 //
-// PLEASE DO "NOT" EDIT THIS FILE!
+// PLEASE DO *NOT* EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
 
 #include "ActionDialogBase.h"
@@ -16,7 +16,7 @@ ActionDialogBase::ActionDialogBase( wxWindow* parent, wxWindowID id, const wxStr
 	wxBoxSizer* mainSizer;
 	mainSizer = new wxBoxSizer( wxVERTICAL );
 	
-	m_questionText = new wxStaticText( this, wxID_ANY, wxT("Question"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
+	m_questionText = new wxStaticText( this, wxID_ANY, wxT("Question"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL );
 	m_questionText->Wrap( -1 );
 	mainSizer->Add( m_questionText, 1, wxALL|wxEXPAND, 5 );
 	

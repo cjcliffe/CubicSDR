@@ -1,8 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Aug 23 2015)
+// C++ code generated with wxFormBuilder (version Aug  8 2018)
 // http://www.wxformbuilder.org/
 //
-// PLEASE DO "NOT" EDIT THIS FILE!
+// PLEASE DO *NOT* EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
 
 #ifndef __ABOUTDIALOGBASE_H__
@@ -108,6 +108,26 @@ class AboutDialogBase : public wxDialog
 		wxStaticText* m_dTimothyGatton;
 		wxStaticText* m_dStephenCuccio;
 		wxStaticText* m_dKeshavlalPatel;
+		wxStaticText* m_dBobSchatzman;
+		wxStaticText* m_dRobertRoss;
+		wxStaticText* m_dRobertoBellotti;
+		wxStaticText* m_dSergeVanderTorre;
+		wxStaticText* m_dDieterSchneider;
+		wxStaticText* m_dPetrikaJaneku;
+		wxStaticText* m_dChadMyslinsky;
+		wxStaticText* m_dCharlieBruckner;
+		wxStaticText* m_dJordanParker;
+		wxStaticText* m_dRobertChave;
+		wxStaticText* m_dMarvinCalvert;
+		wxStaticText* m_dErfurterFeurblume;
+		wxStaticText* m_dMakarenkoAleksey;
+		wxStaticText* m_dAnthonyLambiris;
+		wxStaticText* m_dJoeBurtinsky;
+		wxStaticText* m_dDalePuckett
+		
+		;
+		wxStaticText* m_dPatrickPreitner;
+		wxStaticText* m_dWilliamSoley;
 		wxScrolledWindow* m_stScroll;
 		wxStaticText* m_stHeader;
 		wxStaticLine* m_stDivider1;

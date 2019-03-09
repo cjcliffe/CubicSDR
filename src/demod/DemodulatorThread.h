@@ -5,12 +5,12 @@
 
 #include <queue>
 #include <vector>
+#include <memory>
 
 #include "DemodDefs.h"
 #include "AudioThread.h"
 #include "Modem.h"
-
-typedef ThreadBlockingQueue<AudioThreadInput *> DemodulatorThreadOutputQueue;
+#include "SpinMutex.h"
 
 #define DEMOD_VIS_SIZE 2048
 #define DEMOD_SIGNAL_MIN -30
@@ -21,13 +21,13 @@ class DemodulatorInstance;
 class DemodulatorThread : public IOThread {
 public:
 
-    DemodulatorThread(DemodulatorInstance *parent);
-    ~DemodulatorThread();
+    DemodulatorThread(DemodulatorInstance* parent);
+    virtual ~DemodulatorThread();
 
-    void onBindOutput(std::string name, ThreadQueueBase *threadQueue);
+    void onBindOutput(std::string name, ThreadQueueBasePtr threadQueue);
     
-    void run();
-    void terminate();
+    virtual void run();
+    virtual void terminate();
     
     void setMuted(bool state);
     bool isMuted();
@@ -40,13 +40,14 @@ public:
    
     bool getSquelchBreak();
 
-    static void releaseSquelchLock(DemodulatorInstance *inst);
+
+    static void releaseSquelchLock(DemodulatorInstance* inst);
 protected:
     
     double abMagnitude(float inphase, float quadrature);
     double linearToDb(double linear);
 
-    DemodulatorInstance *demodInstance = nullptr;
+    DemodulatorInstance* demodInstance;
     ReBuffer<AudioThreadInput> outputBuffers;
 
     std::atomic_bool muted;
@@ -55,18 +56,20 @@ protected:
     std::atomic<float> signalLevel, signalFloor, signalCeil;
     bool squelchEnabled, squelchBreak;
     
-    static std::atomic<DemodulatorInstance *> squelchLock;
+    static DemodulatorInstance* squelchLock;
     static std::mutex squelchLockMutex;
     
     
     Modem *cModem = nullptr;
     ModemKit *cModemKit = nullptr;
     
-    DemodulatorThreadPostInputQueue* iqInputQueue = nullptr;
-    AudioThreadInputQueue *audioOutputQueue = nullptr;
-    DemodulatorThreadOutputQueue* audioVisOutputQueue = nullptr;
-    DemodulatorThreadControlCommandQueue *threadQueueControl = nullptr;
+    DemodulatorThreadPostInputQueuePtr iqInputQueue;
+    AudioThreadInputQueuePtr audioOutputQueue;
+    DemodulatorThreadOutputQueuePtr audioVisOutputQueue;
+    DemodulatorThreadControlCommandQueuePtr threadQueueControl;
+
+    DemodulatorThreadOutputQueuePtr audioSinkOutputQueue = nullptr;
 
     //protects the audioVisOutputQueue dynamic binding change at runtime (in DemodulatorMgr)
-    mutable std::mutex m_mutexAudioVisOutputQueue;
+    SpinMutex m_mutexAudioVisOutputQueue;
 };

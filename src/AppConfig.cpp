@@ -4,6 +4,8 @@
 #include "AppConfig.h"
 #include "CubicSDR.h"
 
+#include <wx/msgdlg.h>
+
 DeviceConfig::DeviceConfig() : deviceId("") {
 	ppm.store(0);
 	offset.store(0);
@@ -37,6 +39,14 @@ void DeviceConfig::setSampleRate(long srate) {
 
 long DeviceConfig::getSampleRate() {
     return sampleRate.load();
+}
+
+void DeviceConfig::setAntennaName(const std::string& name) {
+    antennaName = name;
+}
+
+const std::string& DeviceConfig::getAntennaName() {
+    return antennaName;
 }
 
 void DeviceConfig::setAGCMode(bool agcMode) {
@@ -81,13 +91,19 @@ std::string DeviceConfig::getDeviceName() {
 }
 
 void DeviceConfig::save(DataNode *node) {
+
     std::lock_guard < std::mutex > lock(busy_lock);
+    
     *node->newChild("id") = deviceId;
     *node->newChild("name") = deviceName;
     *node->newChild("ppm") = ppm.load();
     *node->newChild("offset") = offset.load();
     *node->newChild("sample_rate") = sampleRate.load();
     *node->newChild("agc_mode") = agcMode.load()?1:0;
+
+    if (!antennaName.empty()) {
+        *node->newChild("antenna") = antennaName;
+    }
 
     if (streamOpts.size()) {
         DataNode *streamOptsNode = node->newChild("streamOpts");
@@ -148,6 +164,12 @@ void DeviceConfig::load(DataNode *node) {
         long sampleRateValue = 0;
         sample_rate_node->element()->get(sampleRateValue);
         setSampleRate(sampleRateValue);
+    }
+    if (node->hasAnother("antenna")) {
+        DataNode *antenna_node = node->getNext("antenna");
+        std::string antennaNameValue;
+        antenna_node->element()->get(antennaNameValue);
+        setAntennaName(antennaNameValue);
     }
     if (node->hasAnother("streamOpts")) {
         DataNode *streamOptsNode = node->getNext("streamOpts");
@@ -284,7 +306,7 @@ AppConfig::AppConfig() : configName("") {
     winH.store(0);
     winMax.store(false);
     showTips.store(true);
-    lowPerfMode.store(false);
+    perfMode.store(PERF_NORMAL);
     themeId.store(0);
     fontScale.store(0);
     snap.store(1);
@@ -371,12 +393,12 @@ bool AppConfig::getShowTips() {
     return showTips.load();
 }
 
-void AppConfig::setLowPerfMode(bool show) {
-    lowPerfMode.store(show);
+void AppConfig::setPerfMode(PerfModeEnum show) {
+    perfMode.store(show);
 }
 
-bool AppConfig::getLowPerfMode() {
-    return lowPerfMode.load();
+AppConfig::PerfModeEnum AppConfig::getPerfMode() {
+    return perfMode.load();
 }
 
 wxRect *AppConfig::getWindow() {
@@ -485,6 +507,51 @@ bool AppConfig::getBookmarksVisible() {
     return bookmarksVisible.load();
 }
 
+void AppConfig::setRecordingPath(std::string recPath) {
+    recordingPath = recPath;
+}
+
+std::string AppConfig::getRecordingPath() {
+    return recordingPath;
+}
+
+bool AppConfig::verifyRecordingPath() {
+    string recPathStr = wxGetApp().getConfig()->getRecordingPath();
+    
+    if (recPathStr.empty()) {
+        wxMessageBox( wxT("Recording path is not set.  Please use 'Set Recording Path' from the 'File' Menu."), wxT("Recording Path Error"), wxICON_INFORMATION);
+        
+        return false;
+    }
+    
+    wxFileName recPath(recPathStr);
+    
+    if (!recPath.Exists() || !recPath.IsDirWritable()) {
+        wxMessageBox( wxT("Recording path does not exist or is not writable.  Please use 'Set Recording Path' from the 'File' Menu."), wxT("Recording Path Error"), wxICON_INFORMATION);
+        
+        return false;
+    }
+    
+    return true;
+}
+
+
+void  AppConfig::setRecordingSquelchOption(int enumChoice) {
+	recordingSquelchOption = enumChoice;
+}
+
+int  AppConfig::getRecordingSquelchOption() {
+	return recordingSquelchOption;
+}
+
+void  AppConfig::setRecordingFileTimeLimit(int nbSeconds) {
+	recordingFileTimeLimitSeconds = nbSeconds;
+}
+
+int  AppConfig::getRecordingFileTimeLimit() {
+	return recordingFileTimeLimitSeconds;
+}
+
 
 void AppConfig::setConfigName(std::string configName) {
     this->configName = configName;
@@ -523,7 +590,7 @@ bool AppConfig::save() {
 
         *window_node->newChild("max") = winMax.load();
         *window_node->newChild("tips") = showTips.load();
-        *window_node->newChild("low_perf_mode") = lowPerfMode.load();
+        *window_node->newChild("perf_mode") = (int)perfMode.load();
         *window_node->newChild("theme") = themeId.load();
         *window_node->newChild("font_scale") = fontScale.load();
         *window_node->newChild("snap") = snap.load();
@@ -538,6 +605,12 @@ bool AppConfig::save() {
         *window_node->newChild("bookmark_split") = bookmarkSplit.load();
         *window_node->newChild("bookmark_visible") = bookmarksVisible.load();
     }
+    
+	//Recording settings:
+    DataNode *rec_node = cfg.rootNode()->newChild("recording");
+    *rec_node->newChild("path") = recordingPath;
+	*rec_node->newChild("squelch") = recordingSquelchOption;
+	*rec_node->newChild("file_time_limit") = recordingFileTimeLimitSeconds;
     
     DataNode *devices_node = cfg.rootNode()->newChild("devices");
 
@@ -616,7 +689,7 @@ bool AppConfig::load() {
 
     if (cfg.rootNode()->hasAnother("window")) {
         int x = 0 ,y = 0 ,w = 0 ,h = 0;
-        int max = 0 ,tips = 0 ,lpm = 0 ,mpc = 0;
+        int max = 0 ,tips = 0 ,perf_mode = 0 ,mpc = 0;
         
         DataNode *win_node = cfg.rootNode()->getNext("window");
         
@@ -643,11 +716,19 @@ bool AppConfig::load() {
             showTips.store(tips?true:false);
         }
 
-        if (win_node->hasAnother("low_perf_mode")) {
-            win_node->getNext("low_perf_mode")->element()->get(lpm);
-            lowPerfMode.store(lpm?true:false);
-        }
+        // default:
+        perfMode.store(PERF_NORMAL);
 
+        if (win_node->hasAnother("perf_mode")) {
+            win_node->getNext("perf_mode")->element()->get(perf_mode);
+
+            if (perf_mode == (int)PERF_LOW) {
+                perfMode.store(PERF_LOW);
+            } else if (perf_mode == (int)PERF_HIGH) {
+                perfMode.store(PERF_HIGH);
+            }
+        }
+       
         if (win_node->hasAnother("theme")) {
             int theme;
             win_node->getNext("theme")->element()->get(theme);
@@ -719,6 +800,26 @@ bool AppConfig::load() {
             win_node->getNext("bookmark_visible")->element()->get(bVal);
             bookmarksVisible.store(bVal);
         }
+    }
+    
+	//Recording settings:
+    if (cfg.rootNode()->hasAnother("recording")) {
+        DataNode *rec_node = cfg.rootNode()->getNext("recording");
+
+        if (rec_node->hasAnother("path")) {
+            DataNode *rec_path = rec_node->getNext("path");
+            recordingPath = rec_path->element()->toString();
+        }
+
+		if (rec_node->hasAnother("squelch")) {
+			DataNode *rec_squelch = rec_node->getNext("squelch");
+			rec_squelch->element()->get(recordingSquelchOption);
+		}
+
+		if (rec_node->hasAnother("file_time_limit")) {
+			DataNode *rec_file_time_limit = rec_node->getNext("file_time_limit");
+			rec_file_time_limit->element()->get(recordingFileTimeLimitSeconds);
+		}
     }
     
     if (cfg.rootNode()->hasAnother("devices")) {

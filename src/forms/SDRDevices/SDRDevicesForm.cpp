@@ -1,8 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Aug 23 2015)
+// C++ code generated with wxFormBuilder (version Aug  8 2018)
 // http://www.wxformbuilder.org/
 //
-// PLEASE DO "NOT" EDIT THIS FILE!
+// PLEASE DO *NOT* EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
 
 #include "SDRDevicesForm.h"
@@ -13,7 +13,7 @@ devFrame::devFrame( wxWindow* parent, wxWindowID id, const wxString& title, cons
 {
 	this->SetSizeHints( wxDefaultSize, wxDefaultSize );
 	
-	devStatusBar = this->CreateStatusBar( 1, wxST_SIZEGRIP, wxID_ANY );
+	devStatusBar = this->CreateStatusBar( 1, wxSTB_SIZEGRIP, wxID_ANY );
 	wxBoxSizer* devFrameSizer;
 	devFrameSizer = new wxBoxSizer( wxVERTICAL );
 	

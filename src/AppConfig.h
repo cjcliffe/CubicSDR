@@ -31,6 +31,9 @@ public:
     void setSampleRate(long srate);
     long getSampleRate();
 
+    void setAntennaName(const std::string& name);
+    const std::string& getAntennaName();
+
     void setAGCMode(bool agcMode);
     bool getAGCMode();
     
@@ -64,12 +67,14 @@ public:
 private:
     std::string deviceId;
     std::string deviceName;
+
     std::mutex busy_lock;
 
     std::atomic_int ppm;
     std::atomic_llong offset;
     std::atomic_bool agcMode;
     std::atomic_long sampleRate;
+    std::string antennaName;
     ConfigSettings streamOpts;
     ConfigGains gains;
     std::map<std::string, std::string> settings;
@@ -78,6 +83,14 @@ private:
 
 class AppConfig {
 public:
+
+    enum PerfModeEnum {
+        PERF_LOW = 0,
+        PERF_NORMAL = 1,
+        PERF_HIGH = 2
+    };
+
+
     AppConfig();
     std::string getConfigDir();
     DeviceConfig *getDevice(std::string deviceId);
@@ -94,8 +107,8 @@ public:
     void setShowTips(bool show);
     bool getShowTips();
 
-    void setLowPerfMode(bool lpm);
-    bool getLowPerfMode();
+    void setPerfMode(PerfModeEnum mode);
+    PerfModeEnum getPerfMode();
     
     void setTheme(int themeId);
     int getTheme();
@@ -133,6 +146,16 @@ public:
     void setBookmarksVisible(bool state);
     bool getBookmarksVisible();
     
+	//Recording settings:
+    void setRecordingPath(std::string recPath);
+    std::string getRecordingPath();
+	bool verifyRecordingPath();
+
+	void setRecordingSquelchOption(int enumChoice);
+	int getRecordingSquelchOption();
+    
+	void setRecordingFileTimeLimit(int nbSeconds);
+	int getRecordingFileTimeLimit();
     
 #if USE_HAMLIB
     int getRigModel();
@@ -170,7 +193,7 @@ private:
     std::string configName;
     std::map<std::string, DeviceConfig *> deviceConfig;
     std::atomic_int winX,winY,winW,winH;
-    std::atomic_bool winMax, showTips, lowPerfMode, modemPropsCollapsed;
+    std::atomic_bool winMax, showTips, modemPropsCollapsed;
     std::atomic_int themeId;
     std::atomic_int fontScale;
     std::atomic_llong snap;
@@ -180,6 +203,12 @@ private:
     std::atomic_int dbOffset;
     std::vector<SDRManualDef> manualDevices;
     std::atomic_bool bookmarksVisible;
+
+    std::atomic<PerfModeEnum> perfMode;
+
+    std::string recordingPath = "";
+	int recordingSquelchOption = 0;
+	int recordingFileTimeLimitSeconds = 0;
 #if USE_HAMLIB
     std::atomic_int rigModel, rigRate;
     std::string rigPort;

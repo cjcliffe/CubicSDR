@@ -6,14 +6,17 @@
 #include <vector>
 #include "CubicSDR.h"
 #include <string>
+#include <algorithm>
 #include <SoapySDR/Logger.h>
+#include <chrono>
 
+#define TARGET_DISPLAY_FPS 60
 
 SDRThread::SDRThread() : IOThread(), buffers("SDRThreadBuffers") {
-    device = NULL;
+    device = nullptr;
 
-    deviceConfig.store(NULL);
-    deviceInfo.store(NULL);
+    deviceConfig.store(nullptr);
+    deviceInfo.store(nullptr);
 
     sampleRate.store(DEFAULT_SAMPLE_RATE);
     frequency.store(0);
@@ -25,6 +28,7 @@ SDRThread::SDRThread() : IOThread(), buffers("SDRThreadBuffers") {
     rate_changed.store(false);
     freq_changed.store(false);
     offset_changed.store(false);
+    antenna_changed.store(false);
     ppm_changed .store(false);
     device_changed.store(false);
 
@@ -97,9 +101,7 @@ bool SDRThread::init() {
     
     int streamMTU = device->getStreamMTU(stream);
     mtuElems.store(streamMTU);
-    
-    std::cout << "Stream MTU: " << mtuElems.load() << std::endl << std::flush;
-    
+  
     deviceInfo.load()->setStreamArgs(currentStreamArgs);
     deviceConfig.load()->setStreamOpts(currentStreamArgs);
     
@@ -130,11 +132,16 @@ bool SDRThread::init() {
     device->setGainMode(SOAPY_SDR_RX,0,agc_mode.load());
     
     numChannels.store(getOptimalChannelCount(sampleRate.load()));
-    numElems.store(getOptimalElementCount(sampleRate.load(), 30));
+    numElems.store(getOptimalElementCount(sampleRate.load(), TARGET_DISPLAY_FPS));
+
+    //fallback if  mtuElems was wrong
     if (!mtuElems.load()) {
         mtuElems.store(numElems.load());
+        std::cout << "SDRThread::init(): Device Stream MTU is broken, use " << mtuElems.load() << "instead..." << std::endl << std::flush;
+    } else {
+        std::cout << "SDRThread::init(): Device Stream set to MTU: " << mtuElems.load() << std::endl << std::flush;
     }
-    inpBuffer.data.resize(numElems.load());
+
     overflowBuffer.data.resize(mtuElems.load());
     
     buffs[0] = malloc(mtuElems.load() * 4 * sizeof(float));
@@ -148,13 +155,14 @@ bool SDRThread::init() {
         settingChanged.erase(settingChanged.begin(), settingChanged.end());
     }
     
+	//apply settings.
     { //enter scoped-lock
         std::lock_guard < std::mutex > lock(setting_busy);
 
         for (settings_i = settingsInfo.begin(); settings_i != settingsInfo.end(); settings_i++) {
             SoapySDR::ArgInfo setting = (*settings_i);
-            if ((settingChanged.find(setting.key) != settingChanged.end()) && (settings.find(setting.key) != settings.end())) {
-                device->writeSetting(setting.key, settings[setting.key]);
+            if ((settingChanged.find(setting.key) != settingChanged.end()) && (settings.find(setting.key) != settings.end())) {              
+				device->writeSetting(setting.key, settings[setting.key]);
                 settingChanged[setting.key] = false;
             } else {
                 settings[setting.key] = device->readSetting(setting.key);
@@ -168,7 +176,10 @@ bool SDRThread::init() {
     updateSettings();
     
     wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_INITIALIZED, std::string("Device Initialized."));
-    
+	
+	//rebuild menu now that settings are really been applied.
+	wxGetApp().notifyMainUIOfDeviceChange(true);
+
     return true;
 }
 
@@ -178,49 +189,94 @@ void SDRThread::deinit() {
     free(buffs[0]);
 }
 
-void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
-    int flags;
-    long long timeNs;
+void SDRThread::assureBufferMinSize(SDRThreadIQData * dataOut, size_t minSize) {
+    
+    if (dataOut->data.size() < minSize) {
+        dataOut->data.resize(minSize);
+    }
+}
+
+//Called in an infinite loop, read SaopySDR device to build 
+// a 'this.numElems' sized batch of samples (SDRThreadIQData) and push it into  iqDataOutQueue.
+//this batch of samples is built to represent 1 frame / TARGET_DISPLAY_FPS.
+int SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
+    
+    int flags(0);
+    
+    long long timeNs(0);
+
+    // Supply a huge timeout value to neutralize the readStream 'timeout' effect
+    // we are not interested in, but some modules may effectively use. 
+    //TODO: use something roughly (1 / TARGET_DISPLAY_FPS) seconds * (factor) instead.?
+    long timeoutUs = (1 << 30);
 
     int n_read = 0;
     int nElems = numElems.load();
     int mtElems = mtuElems.load();
 
-    //If overflow occured on the previous readStream(), transfer it in inpBuffer now
+    // Warning: if MTU > numElems, i.e if device MTU is too big w.r.t the sample rate, the TARGET_DISPLAY_FPS cannot
+    //be reached and the CubicSDR displays "slows down". 
+    //To get back a TARGET_DISPLAY_FPS, the user need to adapt 
+    //the SoapySDR Device to use smaller buffer sizes, because  
+    // readStream() is suited to device MTU and cannot be really adapted dynamically.
+    //TODO: Add in doc the need to reduce SoapySDR device buffer length (if available) to restore higher fps.
+
+    //0. Retreive a new batch 
+    SDRThreadIQDataPtr dataOut = buffers.getBuffer();
+
+    //resize to the target size immedialetly, to minimize later reallocs:
+    assureBufferMinSize(dataOut.get(), nElems);
+
+    //1.If overflow occured on the previous readStream(), transfer it in dataOut directly. 
     if (numOverflow > 0) {
-        int n_overflow = numOverflow;
-        if (n_overflow > nElems) {
-            n_overflow = nElems;
-        }
-        memcpy(&inpBuffer.data[0], &overflowBuffer.data[0], n_overflow * sizeof(liquid_float_complex));
+        int n_overflow = std::min(numOverflow, nElems);
+        
+        //safety
+        assureBufferMinSize(dataOut.get(), n_overflow);
+
+        ::memcpy(&dataOut->data[0], &overflowBuffer.data[0], n_overflow * sizeof(liquid_float_complex));
         n_read = n_overflow;
+
+        //is still > 0 if MTU > nElements (low sample rate w.r.t the MTU !)
         numOverflow -= n_overflow;
+
+        // std::cout << "SDRThread::readStream() 1.1 overflowBuffer not empty, collect the remaining " << n_overflow << " samples in it..." << std::endl;
         
-        if (numOverflow) { // still some left..
-            memmove(&overflowBuffer.data[0], &overflowBuffer.data[n_overflow], numOverflow * sizeof(liquid_float_complex));
+        if (numOverflow > 0) { // still some left, shift the remaining samples to the begining..
+            ::memmove(&overflowBuffer.data[0], &overflowBuffer.data[n_overflow], numOverflow * sizeof(liquid_float_complex));
+
+        //    std::cout << "SDRThread::readStream() 1.2 overflowBuffer still not empty, compact the remaining " << numOverflow << " samples in it..." << std::endl;
         }
-    }
+    } //end if numOverflow > 0
     
-    //attempt readStream() at most nElems, by mtElems-sized chunks, append inpBuffer.
+    int readStreamCode = 0;
+
+    //2. attempt readStream() at most nElems, by mtElems-sized chunks, append in dataOut->data directly.
     while (n_read < nElems && !stopping) {
-        int n_requested = nElems-n_read;
         
-        int n_stream_read = device->readStream(stream, buffs, mtElems, flags, timeNs);
+        //Whatever the number of remaining samples needed to reach nElems,  we always try to read a mtElems-size chunk,
+        //from which SoapySDR effectively returns n_stream_read.
+        int n_stream_read = device->readStream(stream, buffs, mtElems, flags, timeNs, timeoutUs);
+        
+        readStreamCode = n_stream_read;
 
         //if the n_stream_read <= 0, bail out from reading. 
         if (n_stream_read == 0) {
-             std::cout << "SDRThread::readStream(): read blocking..." << std::endl;
+             std::cout << "SDRThread::readStream(): 2. SoapySDR read blocking..." << std::endl;
              break;
         }
         else if (n_stream_read < 0) {
-            std::cout << "SDRThread::readStream(): read failed with code: " << n_stream_read << std::endl;
+            std::cout << "SDRThread::readStream(): 2. SoapySDR read failed with code: " << n_stream_read << std::endl;
             break;
         }
-
-        //sucess read beyond nElems, with overflow
+        
+        //sucess read beyond nElems, so with overflow:
         if ((n_read + n_stream_read) > nElems) {
 
-            //Copy at most n_requested CF32 into inpBuffer.data liquid_float_complex,
+            //n_requested is the exact number to reach nElems.
+            int n_requested = nElems-n_read;
+    
+            //Copy at most n_requested CF32 into .data liquid_float_complex,
             //starting at n_read position.
             //inspired from SoapyRTLSDR code, this mysterious void** is indeed an array of CF32(real/imag) samples, indeed an array of 
             //float with the following layout [sample 1 real part , sample 1 imag part,  sample 2 real part , sample 2 imag part,sample 3 real part , sample 3 imag part,...etc]
@@ -228,29 +284,70 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
             //nor that the Re/Im layout of fields matches the float array order, assign liquid_float_complex field by field.
             float *pp = (float *)buffs[0];
 
-            for (int i = 0; i < n_requested; i++) {
-                inpBuffer.data[n_read + i].real = pp[2 * i];
-                inpBuffer.data[n_read + i].imag = pp[2 * i + 1];
+            //safety
+            assureBufferMinSize(dataOut.get(), n_read + n_requested);
+
+            if (iq_swap.load()) {
+                for (int i = 0; i < n_requested; i++) {
+                    dataOut->data[n_read + i].imag = pp[2 * i];
+                    dataOut->data[n_read + i].real = pp[2 * i + 1];
+                }
+            } else {
+                for (int i = 0; i < n_requested; i++) {
+                    dataOut->data[n_read + i].real = pp[2 * i];
+                    dataOut->data[n_read + i].imag = pp[2 * i + 1];
+                }
+            }
+           
+           //shift of n_requested samples, each one made of 2 floats...
+            pp += n_requested * 2;
+
+            //numNewOverflow are in exess, they have to be added in the existing overflowBuffer.
+            int numNewOverflow = n_stream_read - n_requested;
+
+            //so push the remainder samples to overflowBuffer:
+            if (numNewOverflow > 0) {
+            //	std::cout << "SDRThread::readStream(): 2. SoapySDR read make nElems overflow by " << numNewOverflow << " samples..." << std::endl;
             }
 
-            numOverflow = n_stream_read-n_requested;
-           
-            //shift of n_requested samples, each one made of 2 floats...
-            pp += n_requested * 2;
-            //so push the remainder samples to overflowBuffer:
-            for (int i = 0; i < numOverflow; i++) {
-                overflowBuffer.data[i].real = pp[2 * i];
-                overflowBuffer.data[i].imag = pp[2 * i + 1];
+            //safety
+            assureBufferMinSize(&overflowBuffer, numOverflow + numNewOverflow);
+
+            if (iq_swap.load()) {
+
+                for (int i = 0; i < numNewOverflow; i++) {
+                    overflowBuffer.data[numOverflow + i].imag = pp[2 * i];
+                    overflowBuffer.data[numOverflow + i].real = pp[2 * i + 1];
+                }
             }
+            else {
+                for (int i = 0; i < numNewOverflow; i++) {
+                    overflowBuffer.data[numOverflow + i].real = pp[2 * i];
+                    overflowBuffer.data[numOverflow + i].imag = pp[2 * i + 1];
+                }
+            }
+            numOverflow += numNewOverflow;
+           
             n_read += n_requested;
-        } else if (n_stream_read > 0) {
-            
+        } else if (n_stream_read > 0) { // no overflow, read the whole n_stream_read.
+
             float *pp = (float *)buffs[0];
 
-            for (int i = 0; i < n_stream_read; i++) {
-                inpBuffer.data[n_read + i].real = pp[2 * i];
-                inpBuffer.data[n_read + i].imag = pp[2 * i + 1];
+            //safety
+            assureBufferMinSize(dataOut.get(), n_read + n_stream_read);
+
+            if (iq_swap.load()) {
+                for (int i = 0; i < n_stream_read; i++) {
+                    dataOut->data[n_read + i].imag = pp[2 * i];
+                    dataOut->data[n_read + i].real = pp[2 * i + 1];
+                }
             }
+            else {
+                for (int i = 0; i < n_stream_read; i++) {
+                    dataOut->data[n_read + i].real = pp[2 * i];
+                    dataOut->data[n_read + i].imag = pp[2 * i + 1];
+                }
+            } 
 
             n_read += n_stream_read;
         } else {
@@ -258,19 +355,12 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
         }
     } //end while
     
+    //3. At that point, dataOut contains nElems (or less if a read has return an error), try to post in queue, else discard.
     if (n_read > 0 && !stopping && !iqDataOutQueue->full()) {
-        SDRThreadIQData *dataOut = buffers.getBuffer();
-
-        if (iq_swap.load()) {
-            dataOut->data.resize(n_read);
-            for (int i = 0; i < n_read; i++) {
-                dataOut->data[i].imag = inpBuffer.data[i].real;
-                dataOut->data[i].real = inpBuffer.data[i].imag;
-            }
-        } else {
-            dataOut->data.assign(inpBuffer.data.begin(), inpBuffer.data.begin()+n_read);
-        }
         
+        //clamp result to the actual read size:
+        dataOut->data.resize(n_read);
+
         dataOut->frequency = frequency.load();
         dataOut->sampleRate = sampleRate.load();
         dataOut->dcCorrected = hasHardwareDC.load();
@@ -278,32 +368,44 @@ void SDRThread::readStream(SDRThreadIQDataQueue* iqDataOutQueue) {
         
         if (!iqDataOutQueue->try_push(dataOut)) {
             //The rest of the system saturates,
-            //finally the push didn't suceeded, recycle dataOut immediatly.
-            dataOut->setRefCount(0);
-            
-            std::cout << "SDRThread::readStream(): iqDataOutQueue output queue is full, discard processing ! " << std::endl;
+            //finally the push didn't suceeded.
+            readStreamCode = -32;
+            std::cout << "SDRThread::readStream(): 3.2 iqDataOutQueue output queue is full, discard processing of the batch..." << std::endl;
 
             //saturation, let a chance to the other threads to consume the existing samples
             std::this_thread::yield();
         }
     }
+    else {
+        readStreamCode = -31;
+        std::cout << "SDRThread::readStream(): 3.1 iqDataOutQueue output queue is full, discard processing of the batch..." << std::endl;
+        //saturation, let a chance to the other threads to consume the existing samples
+        std::this_thread::yield();
+    }
+
+    return readStreamCode;
 }
 
+
 void SDRThread::readLoop() {
-    SDRThreadIQDataQueue* iqDataOutQueue = static_cast<SDRThreadIQDataQueue*>( getOutputQueue("IQDataOutput"));
+  
+    SDRThreadIQDataQueuePtr iqDataOutQueue = std::static_pointer_cast<SDRThreadIQDataQueue>( getOutputQueue("IQDataOutput"));
     
-    if (iqDataOutQueue == NULL) {
+    if (iqDataOutQueue == nullptr) {
         return;
     }
     
     updateGains();
-
+ 
     while (!stopping.load()) {
-        updateSettings();
-        readStream(iqDataOutQueue);
-    }
 
-    buffers.purge();
+        updateSettings();
+
+        readStream(iqDataOutQueue);
+
+    } //End while
+
+    iqDataOutQueue->flush();
 }
 
 void SDRThread::updateGains() {
@@ -327,6 +429,13 @@ void SDRThread::updateSettings() {
     if (!stream) {
         return;
     }
+
+    if (antenna_changed.load()) {
+        
+       device->setAntenna(SOAPY_SDR_RX, 0, antennaName);
+           
+       antenna_changed.store(false);
+    }
     
     if (offset_changed.load()) {
         if (!freq_changed.load()) {
@@ -337,6 +446,7 @@ void SDRThread::updateSettings() {
     }
     
     if (rate_changed.load()) {
+
         device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
         // TODO: explore bandwidth setting option to see if this is necessary for others
         if (device->getDriverKey() == "bladeRF") {
@@ -344,17 +454,25 @@ void SDRThread::updateSettings() {
         }
         sampleRate.store(device->getSampleRate(SOAPY_SDR_RX,0));
         numChannels.store(getOptimalChannelCount(sampleRate.load()));
-        numElems.store(getOptimalElementCount(sampleRate.load(), 60));
+        numElems.store(getOptimalElementCount(sampleRate.load(), TARGET_DISPLAY_FPS));
         int streamMTU = device->getStreamMTU(stream);
+
         mtuElems.store(streamMTU);
+        
+        //fallback if  mtuElems was wrong
         if (!mtuElems.load()) {
             mtuElems.store(numElems.load());
+            std::cout << "SDRThread::updateSettings(): Device Stream MTU is broken, use " << mtuElems.load() << "instead..." << std::endl << std::flush;
+        } else {
+            std::cout << "SDRThread::updateSettings(): Device Stream changing to MTU: " << mtuElems.load() << std::endl << std::flush;
         }
-        inpBuffer.data.resize(numElems.load());
+
         overflowBuffer.data.resize(mtuElems.load());
         free(buffs[0]);
         buffs[0] = malloc(mtuElems.load() * 4 * sizeof(float));
+        //clear overflow buffer
         numOverflow = 0;
+
         rate_changed.store(false);
         doUpdate = true;
     }
@@ -385,13 +503,12 @@ void SDRThread::updateSettings() {
         if (!agc_mode.load()) {
             updateGains();
             
+			//re-apply the saved configuration gains:
             DeviceConfig *devConfig = deviceConfig.load();
             ConfigGains gains = devConfig->getGains();
             
-            if (gains.size()) {
-                for (ConfigGains::iterator gain_i = gains.begin(); gain_i != gains.end(); gain_i++) {
-                    setGain(gain_i->first, gain_i->second);
-                }
+            for (ConfigGains::iterator gain_i = gains.begin(); gain_i != gains.end(); gain_i++) {
+                setGain(gain_i->first, gain_i->second);
             }
         }
         doUpdate = true;
@@ -409,7 +526,6 @@ void SDRThread::updateSettings() {
         
         gain_value_changed.store(false);
     }
-    
     
     if (setting_value_changed.load()) {
 
@@ -444,7 +560,7 @@ void SDRThread::run() {
     
     SDRDeviceInfo *activeDev = deviceInfo.load();
     
-    if (activeDev != NULL) {
+    if (activeDev != nullptr) {
         std::cout << "device init()" << std::endl;
         if (!init()) {
             std::cout << "SDR Thread stream init error." << std::endl;
@@ -464,6 +580,15 @@ void SDRThread::run() {
     std::cout << "SDR thread done." << std::endl;
 }
 
+void SDRThread::terminate() {
+    IOThread::terminate();
+
+    SDRThreadIQDataQueuePtr iqDataOutQueue = std::static_pointer_cast<SDRThreadIQDataQueue>(getOutputQueue("IQDataOutput"));
+
+    if (iqDataOutQueue != nullptr) {
+        iqDataOutQueue->flush();
+    }
+}
 
 SDRDeviceInfo *SDRThread::getDevice() {
     return deviceInfo.load();
@@ -538,11 +663,31 @@ void SDRThread::unlockFrequency() {
 void SDRThread::setOffset(long long ofs) {
     offset.store(ofs);
     offset_changed.store(true);
+
+    DeviceConfig *devConfig = deviceConfig.load();
+    if (devConfig) {
+        devConfig->setOffset(ofs);
+    }
+
 //    std::cout << "Set offset: " << offset.load() << std::endl;
 }
 
 long long SDRThread::getOffset() {
     return offset.load();
+}
+
+void SDRThread::setAntenna(const std::string& name) {
+    antennaName = name;
+    antenna_changed.store(true);
+
+    DeviceConfig *devConfig = deviceConfig.load();
+    if (devConfig) {
+        devConfig->setAntennaName(antennaName);
+    }
+}
+
+std::string SDRThread::getAntenna() {
+    return antennaName;
 }
 
 void SDRThread::setSampleRate(long rate) {
@@ -561,6 +706,12 @@ long SDRThread::getSampleRate() {
 void SDRThread::setPPM(int ppm) {
     this->ppm.store(ppm);
     ppm_changed.store(true);
+
+    DeviceConfig *devConfig = deviceConfig.load();
+    if (devConfig) {
+        devConfig->setPPM(ppm);
+    }
+
 //    std::cout << "Set PPM: " << this->ppm.load() << std::endl;
 }
 
@@ -603,9 +754,9 @@ void SDRThread::setGain(std::string name, float value) {
 
 float SDRThread::getGain(std::string name) {
     std::lock_guard < std::mutex > lock(gain_busy);
-	float val = gainValues[name];
-	
-	return val;
+    float val = gainValues[name];
+    
+    return val;
 }
 
 void SDRThread::writeSetting(std::string name, std::string value) {

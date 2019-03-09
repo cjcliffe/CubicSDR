@@ -46,7 +46,7 @@ void ModemUSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *a
     initOutputBuffers(akit,input);
     
     if (!bufSize) {
-        input->decRefCount();
+       
         return;
     }
     

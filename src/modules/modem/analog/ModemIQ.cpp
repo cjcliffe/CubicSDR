@@ -42,7 +42,7 @@ void ModemIQ::demodulate(ModemKit * /* kit */, ModemIQData *input, AudioThreadIn
     size_t bufSize = input->data.size();
     
     if (!bufSize) {
-        input->decRefCount();
+       
         return;
     }
     

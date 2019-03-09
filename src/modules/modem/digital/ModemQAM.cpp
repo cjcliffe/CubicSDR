@@ -97,7 +97,7 @@ void ModemQAM::updateDemodulatorCons(int cons) {
     }
 }
 
-void ModemQAM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
+void ModemQAM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
     ModemKitDigital *dkit = (ModemKitDigital *)kit;
     digitalStart(dkit, demodQAM, input);
    

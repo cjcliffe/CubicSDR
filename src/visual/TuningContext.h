@@ -12,7 +12,7 @@ class TuningCanvas;
 
 class TuningContext: public PrimaryGLContext {
 public:
-    TuningContext(TuningCanvas *canvas, wxGLContext *sharedContext);
+    TuningContext(TuningCanvas *canvas, wxGLContext *sharedContext, wxGLContextAttrs *ctxAttrs);
 
     void DrawBegin();
     void Draw(float r, float g, float b, float a, float p1, float p2);

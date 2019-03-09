@@ -24,7 +24,7 @@ public:
     ~ModemProperties();
     
     void initDefaultProperties();
-    void initProperties(ModemArgInfoList newArgs, DemodulatorInstance *demodInstance);
+    void initProperties(ModemArgInfoList newArgs, DemodulatorInstancePtr demodInstance);
     bool isMouseInView();
     void setCollapsed(bool state);
     bool isCollapsed();
@@ -46,7 +46,8 @@ private:
     wxBoxSizer* bSizer;
     wxPropertyGrid* m_propertyGrid;
     ModemArgInfoList args;
-    DemodulatorInstance *demodContext;
+    DemodulatorInstancePtr demodContext;
+
     std::map<std::string, wxPGProperty *> props;
     bool mouseInView, collapsed;
     

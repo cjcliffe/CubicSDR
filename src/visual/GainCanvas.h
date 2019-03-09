@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <queue>
+#include <atomic>
 
 #include "InteractiveCanvas.h"
 #include "MouseTracker.h"
@@ -20,14 +21,18 @@
 
 class GainCanvas: public InteractiveCanvas {
 public:
-    GainCanvas(wxWindow *parent, std::vector<int> dispAttrs);
+    GainCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
     ~GainCanvas();
 
     void setHelpTip(std::string tip);
     void updateGainUI();
-    void setThemeColors();
+	void setThemeColors();
     
 private:
+
+	// call this to refresh the gain values only, return true if refresh is needed
+	bool updateGainValues();
+
     void OnPaint(wxPaintEvent& event);
     void OnIdle(wxIdleEvent &event);
 
@@ -50,6 +55,9 @@ private:
     float spacing, barWidth, startPos, barHeight, numGains;
     int refreshCounter;
     wxSize clientSize;
+
+	std::atomic_bool userGainAsChanged;
+	Timer userGainAsChangedDelayTimer;
     //
 wxDECLARE_EVENT_TABLE();
 };

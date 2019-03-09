@@ -126,7 +126,7 @@ bool MeterPanel::isMeterHit(CubicVR::vec2 mousePoint) {
     return false;
 }
 
-float MeterPanel::getMeterHitValue(CubicVR::vec2 mousePoint, GLPanel &panel) {
+float MeterPanel::getMeterHitValue(CubicVR::vec2 mousePoint) {
     CubicVR::vec2 hitResult;
     
     if (bgPanel.hitTest(mousePoint, hitResult)) {

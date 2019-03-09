@@ -6,20 +6,25 @@
 #include "VisualProcessor.h"
 #include "DemodDefs.h"
 #include <cmath>
+#include <memory>
 
 #define SPECTRUM_VZM 2
 #define PEAK_RESET_COUNT 30
 
-class SpectrumVisualData : public ReferenceCounter {
+class SpectrumVisualData {
 public:
     std::vector<float> spectrum_points;
     std::vector<float> spectrum_hold_points;
     double fft_ceiling, fft_floor;
     long long centerFreq;
     int bandwidth;
+
+    virtual ~SpectrumVisualData() {};
 };
 
-typedef ThreadBlockingQueue<SpectrumVisualData *> SpectrumVisualDataQueue;
+typedef std::shared_ptr<SpectrumVisualData> SpectrumVisualDataPtr;
+typedef ThreadBlockingQueue<SpectrumVisualDataPtr> SpectrumVisualDataQueue;
+typedef std::shared_ptr<SpectrumVisualDataQueue> SpectrumVisualDataQueuePtr;
 
 class SpectrumVisualProcessor : public VisualProcessor<DemodulatorThreadIQData, SpectrumVisualData> {
 public:
@@ -56,13 +61,19 @@ protected:
     virtual void process();
     
     ReBuffer<SpectrumVisualData> outputBuffers;
-    std::atomic_bool is_view;
-    std::atomic_uint fftSize, newFFTSize;
-    std::atomic_uint fftSizeInternal;
-    std::atomic_llong centerFreq;
-    std::atomic_long bandwidth;
+  
     
 private:
+	//protects all access to fields below
+	std::mutex busy_run;
+
+	bool is_view;
+	size_t fftSize, newFFTSize;
+	size_t fftSizeInternal;
+	long long centerFreq;
+	size_t bandwidth;
+
+
     long lastInputBandwidth;
     long lastBandwidth;
     bool lastView;
@@ -75,7 +86,7 @@ private:
     double fft_ceil_ma, fft_ceil_maa;
     double fft_floor_ma, fft_floor_maa;
     double fft_ceil_peak, fft_floor_peak;
-    std::atomic<float> fft_average_rate;
+    float fft_average_rate;
     
     std::vector<double> fft_result;
     std::vector<double> fft_result_ma;
@@ -90,11 +101,11 @@ private:
     
     std::vector<liquid_float_complex> shiftBuffer;
     std::vector<liquid_float_complex> resampleBuffer;
-    std::atomic_int desiredInputSize;
+    size_t desiredInputSize;
    
-    std::mutex busy_run;
-    std::atomic_bool hideDC, peakHold;
-    std::atomic_int peakReset;
-    std::atomic<float> scaleFactor;
-    std::atomic_bool fftSizeChanged;
+    
+    bool hideDC, peakHold;
+    int peakReset;
+    float scaleFactor;
+    bool fftSizeChanged;
 };

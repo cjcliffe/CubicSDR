@@ -4,7 +4,7 @@
 #pragma once
 
 #include <atomic>
-
+#include <memory>
 #include "ThreadBlockingQueue.h"
 #include "DemodulatorMgr.h"
 #include "SDRDeviceInfo.h"
@@ -15,8 +15,9 @@
 #include <SoapySDR/Registry.hpp>
 #include <SoapySDR/Device.hpp>
 
+#include <stddef.h>
 
-class SDRThreadIQData: public ReferenceCounter {
+class SDRThreadIQData {
 public:
     long long frequency;
     long long sampleRate;
@@ -34,26 +35,33 @@ public:
 
     }
 
-    ~SDRThreadIQData() {
+    virtual ~SDRThreadIQData() {
 
     }
 };
-
-typedef ThreadBlockingQueue<SDRThreadIQData *> SDRThreadIQDataQueue;
+typedef std::shared_ptr<SDRThreadIQData> SDRThreadIQDataPtr;
+typedef ThreadBlockingQueue<SDRThreadIQDataPtr> SDRThreadIQDataQueue;
+typedef std::shared_ptr<SDRThreadIQDataQueue> SDRThreadIQDataQueuePtr;
 
 class SDRThread : public IOThread {
 private:
     bool init();
     void deinit();
-    void readStream(SDRThreadIQDataQueue* iqDataOutQueue);
+    
+    //returns the SoapyDevice readStream return value,
+    //i.e if >= 0 the numbre of samples read, else if < 0 an error code.
+    int readStream(SDRThreadIQDataQueuePtr iqDataOutQueue);
+
     void readLoop();
 
 public:
     SDRThread();
     ~SDRThread();
-    enum SDRThreadState { SDR_THREAD_MESSAGE, SDR_THREAD_INITIALIZED, SDR_THREAD_FAILED };
+
+    enum SDRThreadState { SDR_THREAD_MESSAGE, SDR_THREAD_INITIALIZED, SDR_THREAD_FAILED};
     
     virtual void run();
+    virtual void terminate();
 
     SDRDeviceInfo *getDevice();
     void setDevice(SDRDeviceInfo *dev);
@@ -69,6 +77,9 @@ public:
     
     void setOffset(long long ofs);
     long long getOffset();
+
+    void setAntenna(const std::string& name);
+    std::string getAntenna();
     
     void setSampleRate(long rate);
     long getSampleRate();
@@ -99,7 +110,6 @@ protected:
     SoapySDR::Device *device;
     void *buffs[1];
     ReBuffer<SDRThreadIQData> buffers;
-    SDRThreadIQData inpBuffer;
     SDRThreadIQData overflowBuffer;
     int numOverflow;
     std::atomic<DeviceConfig *> deviceConfig;
@@ -113,7 +123,8 @@ protected:
     std::atomic_llong frequency, offset, lock_freq;
     std::atomic_int ppm, numElems, mtuElems, numChannels;
     std::atomic_bool hasPPM, hasHardwareDC;
-    std::atomic_bool agc_mode, rate_changed, freq_changed, offset_changed,
+    std::string antennaName;
+    std::atomic_bool agc_mode, rate_changed, freq_changed, offset_changed, antenna_changed,
         ppm_changed, device_changed, agc_mode_changed, gain_value_changed, setting_value_changed, frequency_locked, frequency_lock_init, iq_swap;
 
     std::mutex gain_busy;
@@ -121,4 +132,7 @@ protected:
     std::map<std::string, bool> gainChanged;
     
     SoapySDR::Kwargs streamArgs;
+
+private:
+	void assureBufferMinSize(SDRThreadIQData * dataOut, size_t minSize);
 };

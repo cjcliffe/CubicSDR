@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <queue>
+#include <memory>
 
 #include "InteractiveCanvas.h"
 #include "PrimaryGLContext.h"
@@ -16,7 +17,7 @@ class WaterfallCanvas;
 
 class SpectrumCanvas: public InteractiveCanvas {
 public:
-    SpectrumCanvas(wxWindow *parent, std::vector<int> dispAttrs);
+    SpectrumCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
     ~SpectrumCanvas();
 
     //This is public because it is indeed forwarded from
@@ -44,7 +45,10 @@ public:
     void setScaleFactorEnabled(bool en);
     void setFFTSize(int fftSize);
     
-    SpectrumVisualDataQueue *getVisualDataQueue();
+    SpectrumVisualDataQueuePtr getVisualDataQueue();
+    
+    // called by Waterfall to forward the update of the vertical scale.
+    void updateScaleFactorFromYMove(float yDeltaMouseMove);
     
 private:
     void OnPaint(wxPaintEvent& event);
@@ -59,7 +63,6 @@ private:
     void OnMouseLeftWindow(wxMouseEvent& event);
     void OnMouseRightDown(wxMouseEvent& event);
     void OnMouseRightReleased(wxMouseEvent& event);
-
    
     void updateScaleFactor(float factor);
     
@@ -70,7 +73,7 @@ private:
     int bwChange;
     bool resetScaleFactor, scaleFactorEnabled;
     
-    SpectrumVisualDataQueue visualDataQueue;
+    SpectrumVisualDataQueuePtr  visualDataQueue = std::make_shared<SpectrumVisualDataQueue>();
 
 // event table
 wxDECLARE_EVENT_TABLE();

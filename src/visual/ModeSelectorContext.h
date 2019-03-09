@@ -12,7 +12,7 @@ class ModeSelectorCanvas;
 
 class ModeSelectorContext: public PrimaryGLContext {
 public:
-    ModeSelectorContext(ModeSelectorCanvas *canvas, wxGLContext *sharedContext);
+    ModeSelectorContext(ModeSelectorCanvas *canvas, wxGLContext *sharedContext, wxGLContextAttrs *ctxAttrs);
 
     void DrawBegin();
     void DrawSelector(std::string label, int c, int cMax, bool on, float r, float g, float b, float a, float padx, float pady);

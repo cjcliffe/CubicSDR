@@ -18,17 +18,21 @@
 
 #include <vector>
 #include <algorithm>
-#include "AudioThread.h"
+#include "AudioSinkFileThread.h"
 #include "CubicSDR.h"
 #include "DataTree.h"
 #include "ColorTheme.h"
 #include "DemodulatorMgr.h"
 #include "ImagePanel.h"
+#include "ActionDialog.h"
 
 #include <thread>
+#include <iostream>
+#include <iomanip>
 
 #include <wx/panel.h>
 #include <wx/numformatter.h>
+#include <stddef.h>
 
 #ifdef __linux__
 #include "CubicSDR.xpm"
@@ -50,6 +54,22 @@ wxEND_EVENT_TABLE()
 #endif
 
 
+
+class ActionDialogBookmarkReset : public ActionDialog {
+public:
+    ActionDialogBookmarkReset() : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Reset Bookmarks?")) {
+        m_questionText->SetLabelText(wxT("Resetting bookmarks will erase all current bookmarks; are you sure?"));
+    }
+    
+    void doClickOK() {
+        wxGetApp().getBookmarkMgr().resetBookmarks();
+        wxGetApp().getBookmarkMgr().updateBookmarks();
+        wxGetApp().getBookmarkMgr().updateActiveList();
+    }
+};
+
+
+
 /* split a string by 'seperator' into a vector of string */
 std::vector<std::string> str_explode(const std::string &seperator, const std::string &in_str);
 
@@ -57,7 +77,7 @@ std::vector<std::string> str_explode(const std::string &seperator, const std::st
 #define APPFRAME_MODEMPROPS_MAXSIZE 240
 
 AppFrame::AppFrame() :
-        wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(NULL) {
+        wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(nullptr) {
 
 #ifdef __linux__
     SetIcon(wxICON(cubicsdr));
@@ -68,10 +88,10 @@ AppFrame::AppFrame() :
     wxBoxSizer *demodScopeTray = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodTunerTray = new wxBoxSizer(wxHORIZONTAL);
 
-    std::vector<int> attribList = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
-    //wxGLAttributes attribList;
-    //attribList.PlatformDefaults().RGBA().DoubleBuffer().EndList();
-    //attribList.PlatformDefaults().MinRGBA(8, 8, 8, 8).DoubleBuffer().Depth(16).EndList();
+    // OpenGL settings:
+    //deprecated format: std::vector<int> attribList = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
+    wxGLAttributes attribList;
+    attribList.PlatformDefaults().RGBA().MinRGBA(8, 8, 8, 8).DoubleBuffer().EndList();
 
     mainSplitter = new wxSplitterWindow( this, wxID_MAIN_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
     mainSplitter->SetSashGravity(10.0f / 37.0f);
@@ -100,7 +120,7 @@ AppFrame::AppFrame() :
 #endif
             
     gainCanvas = new GainCanvas(demodPanel, attribList);
-    gainCanvas->setHelpTip("Tuner gains in dB. Click / use Mousewheel to change.");
+    gainCanvas->setHelpTip("Tuner gains, usually in dB. Click / use Mousewheel to change.");
     gainSizerItem = demodTray->Add(gainCanvas, 0, wxEXPAND | wxALL, 0);
     gainSizerItem->Show(false);
     gainSpacerItem = demodTray->AddSpacer(1);
@@ -399,43 +419,13 @@ AppFrame::AppFrame() :
 
     // Make a menubar
     menuBar = new wxMenuBar;
-    wxMenu *menu = new wxMenu;
-#ifndef __APPLE__ 
-#ifdef CUBICSDR_ENABLE_ABOUT_DIALOG
-    menu->Append(wxID_ABOUT_CUBICSDR, "About " CUBICSDR_INSTALL_NAME);
-#endif
-#endif
-    menu->Append(wxID_SDR_DEVICES, "SDR Devices");
-    menu->AppendSeparator();
-    menu->Append(wxID_SDR_START_STOP, "Stop / Start Device");
-    menu->AppendSeparator();
-    menu->Append(wxID_OPEN, "&Open Session");
-    menu->Append(wxID_SAVE, "&Save Session");
-    menu->Append(wxID_SAVEAS, "Save Session &As..");
-    menu->AppendSeparator();
-    menu->Append(wxID_RESET, "&Reset Session");
-            
-#ifndef __APPLE__
-    menu->AppendSeparator();
-    menu->Append(wxID_CLOSE);
-#else
-#ifdef CUBICSDR_ENABLE_ABOUT_DIALOG
-    if ( wxApp::s_macAboutMenuItemId != wxID_NONE ) {
-        wxString aboutLabel;
-        aboutLabel.Printf(_("About %s"), CUBICSDR_INSTALL_NAME);
-        menu->Append( wxApp::s_macAboutMenuItemId, aboutLabel);
-    }
-#endif
-#endif
-
-    menuBar->Append(menu, wxT("&File"));
+   
+    menuBar->Append(makeFileMenu(), wxT("&File"));
             
     settingsMenu = new wxMenu;
           
     menuBar->Append(settingsMenu, wxT("&Settings"));
             
-    menu = new wxMenu;
-
     std::vector<RtAudio::DeviceInfo>::iterator devices_i;
     std::map<int, RtAudio::DeviceInfo>::iterator mdevices_i;
     AudioThread::enumerateDevices(devices);
@@ -469,7 +459,7 @@ AppFrame::AppFrame() :
     menuBar->Append(sampleRateMenu, wxT("Sample &Rate"));
 
     // Audio Sample Rates
-    menu = new wxMenu;
+    wxMenu *audioSampleRateMenu = new wxMenu;
 
 #define NUM_RATES_DEFAULT 4
     unsigned int desired_rates[NUM_RATES_DEFAULT] = { 48000, 44100, 96000, 192000 };
@@ -499,7 +489,7 @@ AppFrame::AppFrame() :
     for (mdevices_i = outputDevices.begin(); mdevices_i != outputDevices.end(); mdevices_i++) {
         int menu_id = wxID_AUDIO_BANDWIDTH_BASE + wxID_AUDIO_DEVICE_MULTIPLIER * mdevices_i->first;
         wxMenu *subMenu = new wxMenu;
-        menu->AppendSubMenu(subMenu, mdevices_i->second.name, wxT("Description?"));
+        audioSampleRateMenu->AppendSubMenu(subMenu, mdevices_i->second.name, wxT("Description?"));
 
         int j = 0;
         for (std::vector<unsigned int>::iterator srate = mdevices_i->second.sampleRates.begin(); srate != mdevices_i->second.sampleRates.end();
@@ -517,7 +507,12 @@ AppFrame::AppFrame() :
         }
     }
 
-    menuBar->Append(menu, wxT("Audio &Sample Rate"));
+    menuBar->Append(audioSampleRateMenu, wxT("Audio &Sample Rate"));
+
+	//Add a Recording menu
+	menuBar->Append(makeRecordingMenu(), wxT("Recordin&g"));
+	//
+	updateRecordingMenu();
 
     //Add Display menu
     displayMenu = new wxMenu;
@@ -526,7 +521,7 @@ AppFrame::AppFrame() :
 
     int fontScale = wxGetApp().getConfig()->getFontScale();
 
-    fontMenu->AppendRadioItem(wxID_DISPLAY_BASE, "Normal")->Check(GLFont::GLFONT_SCALE_NORMAL == fontScale);
+    fontMenu->AppendRadioItem(wxID_DISPLAY_BASE, "Default")->Check(GLFont::GLFONT_SCALE_NORMAL == fontScale);
     fontMenu->AppendRadioItem(wxID_DISPLAY_BASE + 1, "1.5x")->Check(GLFont::GLFONT_SCALE_MEDIUM == fontScale);
     fontMenu->AppendRadioItem(wxID_DISPLAY_BASE + 2, "2.0x")->Check(GLFont::GLFONT_SCALE_LARGE == fontScale);
 
@@ -720,6 +715,137 @@ AppFrame::~AppFrame() {
     t_FFTData->join();
 }
 
+wxMenu *AppFrame::makeFileMenu() {
+    
+    wxMenu *menu = new wxMenu;
+#ifndef __APPLE__ 
+#ifdef CUBICSDR_ENABLE_ABOUT_DIALOG
+    menu->Append(wxID_ABOUT_CUBICSDR, "About " CUBICSDR_INSTALL_NAME);
+#endif
+#endif
+    menu->Append(wxID_SDR_DEVICES, "SDR Devices");
+    menu->AppendSeparator();
+    menu->Append(wxID_SDR_START_STOP, "Stop / Start Device");
+    menu->AppendSeparator();
+
+    wxMenu *sessionMenu = new wxMenu;
+    
+    sessionMenu->Append(wxID_OPEN, "&Open Session");
+    sessionMenu->Append(wxID_SAVE, "&Save Session");
+    sessionMenu->Append(wxID_SAVEAS, "Save Session &As..");
+    sessionMenu->AppendSeparator();
+    sessionMenu->Append(wxID_RESET, "&Reset Session");
+
+    menu->AppendSubMenu(sessionMenu, "Session");
+
+    menu->AppendSeparator();
+
+    wxMenu *bookmarkMenu = new wxMenu;
+    
+    bookmarkMenu->Append(wxID_OPEN_BOOKMARKS, "Open Bookmarks");
+	bookmarkMenu->Append(wxID_SAVE_BOOKMARKS, "Save Bookmarks");
+	bookmarkMenu->Append(wxID_SAVEAS_BOOKMARKS, "Save Bookmarks As..");
+	bookmarkMenu->AppendSeparator();
+	bookmarkMenu->Append(wxID_RESET_BOOKMARKS, "Reset Bookmarks");
+
+    menu->AppendSubMenu(bookmarkMenu, "Bookmarks");
+    
+#ifndef __APPLE__
+    menu->AppendSeparator();
+    menu->Append(wxID_CLOSE);
+#else
+#ifdef CUBICSDR_ENABLE_ABOUT_DIALOG
+    if (wxApp::s_macAboutMenuItemId != wxID_NONE) {
+        wxString aboutLabel;
+        aboutLabel.Printf(_("About %s"), CUBICSDR_INSTALL_NAME);
+        menu->Append(wxApp::s_macAboutMenuItemId, aboutLabel);
+    }
+#endif
+#endif
+
+	fileMenu = menu;
+
+    return menu;
+}
+
+wxMenu *AppFrame::makeRecordingMenu() {
+	
+	recordingMenuItems.clear();
+
+	wxMenu *menu = new wxMenu;
+
+	recordingMenuItems[wxID_RECORDING_PATH] = menu->Append(wxID_RECORDING_PATH, getSettingsLabel("Set Recording Path", "<Not Set>"));
+
+	menu->AppendSeparator();
+
+	//Squelch options as sub-menu:
+	wxMenu *subMenu = new wxMenu;
+	recordingMenuItems[wxID_RECORDING_SQUELCH_BASE] = menu->AppendSubMenu(subMenu, "Squelch");
+
+	recordingMenuItems[wxID_RECORDING_SQUELCH_SILENCE] = subMenu->AppendRadioItem(wxID_RECORDING_SQUELCH_SILENCE, "Record Silence", 
+		"Record below squelch-break audio as silence, i.e records as the user may hear.");
+	recordingMenuItems[wxID_RECORDING_SQUELCH_SKIP] = subMenu->AppendRadioItem(wxID_RECORDING_SQUELCH_SKIP, "Skip Silence", 
+		"Do not record below squelch-break audio, i.e squelch-break audio parts are packed together.");
+	recordingMenuItems[wxID_RECORDING_SQUELCH_ALWAYS] = subMenu->AppendRadioItem(wxID_RECORDING_SQUELCH_ALWAYS, "Record Always", 
+		"Record everything irrespective of the squelch level.");
+	
+	recordingMenuItems[wxID_RECORDING_FILE_TIME_LIMIT] = menu->Append(wxID_RECORDING_FILE_TIME_LIMIT, getSettingsLabel("File time limit", "<Not Set>"), 
+		"Creates a new file automatically, each time the recording lasts longer than the limit, named according to the current time.");
+
+	recordingMenuItems[wxID_RECORDING_SQUELCH_SILENCE]->Check(true);
+
+	recordingMenu = menu;
+
+	return menu;
+}
+
+void AppFrame::updateRecordingMenu() {
+
+	// Recording path:
+	std::string recPath = wxGetApp().getConfig()->getRecordingPath();
+	if (recPath.length() > 32) {
+		recPath = "..." + recPath.substr(recPath.length() - 32, 32);
+	}
+
+	recordingMenuItems[wxID_RECORDING_PATH]->SetItemLabel(getSettingsLabel("Set Recording Path", recPath.empty() ? "<Not Set>" : recPath));
+
+	//Squelch options:
+	int squelchEnumValue = wxGetApp().getConfig()->getRecordingSquelchOption();
+
+	if (squelchEnumValue == AudioSinkFileThread::SQUELCH_RECORD_SILENCE) {
+
+		recordingMenuItems[wxID_RECORDING_SQUELCH_SILENCE]->Check(true);
+		recordingMenuItems[wxID_RECORDING_SQUELCH_BASE]->SetItemLabel(getSettingsLabel("Squelch", "Record Silence"));
+
+	} else if (squelchEnumValue == AudioSinkFileThread::SQUELCH_SKIP_SILENCE) {
+
+		recordingMenuItems[wxID_RECORDING_SQUELCH_SKIP]->Check(true);
+		recordingMenuItems[wxID_RECORDING_SQUELCH_BASE]->SetItemLabel(getSettingsLabel("Squelch", "Skip Silence"));
+
+	} else if (squelchEnumValue == AudioSinkFileThread::SQUELCH_RECORD_ALWAYS) {
+
+		recordingMenuItems[wxID_RECORDING_SQUELCH_ALWAYS]->Check(true);
+		recordingMenuItems[wxID_RECORDING_SQUELCH_BASE]->SetItemLabel(getSettingsLabel("Squelch", "Record Always"));
+	}
+	else {
+		recordingMenuItems[wxID_RECORDING_SQUELCH_SILENCE]->Check(true);
+		recordingMenuItems[wxID_RECORDING_SQUELCH_BASE]->SetItemLabel(getSettingsLabel("Squelch", "Record Silence"));
+
+	}
+
+	//File time limit:
+	int fileTimeLimitSeconds = wxGetApp().getConfig()->getRecordingFileTimeLimit();
+
+	if (fileTimeLimitSeconds <= 0) {
+		
+		recordingMenuItems[wxID_RECORDING_FILE_TIME_LIMIT]->SetItemLabel(getSettingsLabel("File time limit","<Not Set>"));
+	}
+	else {
+		recordingMenuItems[wxID_RECORDING_FILE_TIME_LIMIT]->SetItemLabel(getSettingsLabel("File time limit",
+			std::to_string(fileTimeLimitSeconds), "s"));
+	}
+}
+
 void AppFrame::initDeviceParams(SDRDeviceInfo *devInfo) {
     this->devInfo = devInfo;
     deviceChanged.store(true);
@@ -743,19 +869,39 @@ void AppFrame::updateDeviceParams() {
     showTipMenuItem = newSettingsMenu->AppendCheckItem(wxID_SET_TIPS, "Show Hover Tips");
     showTipMenuItem->Check(wxGetApp().getConfig()->getShowTips());
 
-    lowPerfMode = wxGetApp().getConfig()->getLowPerfMode();
-    lowPerfMenuItem = newSettingsMenu->AppendCheckItem(wxID_LOW_PERF, "Reduce CPU Usage");
-    if (lowPerfMode) {
-        lowPerfMenuItem->Check(true);
+    // CPU usage menu:
+    performanceMenuItems.clear();
+
+    wxMenu *subMenu = new wxMenu;
+
+    performanceMenuItems[wxID_PERF_BASE + (int)AppConfig::PERF_HIGH] = subMenu->AppendRadioItem(wxID_PERF_BASE + (int)AppConfig::PERF_HIGH, "High (+enhanced DSP)");
+    performanceMenuItems[wxID_PERF_BASE + (int)AppConfig::PERF_NORMAL] = subMenu->AppendRadioItem(wxID_PERF_BASE + (int)AppConfig::PERF_NORMAL, "Normal");
+    performanceMenuItems[wxID_PERF_BASE + (int)AppConfig::PERF_LOW] = subMenu->AppendRadioItem(wxID_PERF_BASE + (int)AppConfig::PERF_LOW, "Low (-slow UI)");
+
+    AppConfig::PerfModeEnum perfMode = wxGetApp().getConfig()->getPerfMode();
+
+    if (perfMode == AppConfig::PERF_HIGH) {
+        wxGetApp().setChannelizerType(SDRPostThreadChannelizerType::SDRPostPFBCH2);
+    } else {
+        wxGetApp().setChannelizerType(SDRPostThreadChannelizerType::SDRPostPFBCH);
     }
 
+    performanceMenuItems[wxID_PERF_BASE + (int)perfMode]->Check(true);
+
+    wxMenuItem* selectedPerfModeItem = performanceMenuItems[wxID_PERF_BASE + (int)perfMode];
+
+    performanceMenuItems[wxID_PERF_CURRENT] = newSettingsMenu->AppendSubMenu(subMenu, "CPU usage");
+    performanceMenuItems[wxID_PERF_CURRENT]->SetItemLabel(getSettingsLabel("CPU usage", selectedPerfModeItem->GetItemLabel().ToStdString()));
+   
     newSettingsMenu->AppendSeparator();
 
-    newSettingsMenu->Append(wxID_SET_DB_OFFSET, "Power Level Offset");
-    newSettingsMenu->Append(wxID_SET_FREQ_OFFSET, "Frequency Offset");
+    settingsMenuItems.clear();
+
+    settingsMenuItems[wxID_SET_DB_OFFSET] = newSettingsMenu->Append(wxID_SET_DB_OFFSET, getSettingsLabel("Power Level Offset",  std::to_string(wxGetApp().getConfig()->getDBOffset()), "dB"));
+    settingsMenuItems[wxID_SET_FREQ_OFFSET] =  newSettingsMenu->Append(wxID_SET_FREQ_OFFSET, getSettingsLabel("Frequency Offset", std::to_string(wxGetApp().getOffset() / 1000 ) , "KHz"));
 
     if (devInfo->hasCORR(SOAPY_SDR_RX, 0)) {
-        newSettingsMenu->Append(wxID_SET_PPM, "Device PPM");
+        settingsMenuItems[wxID_SET_PPM] = newSettingsMenu->Append(wxID_SET_PPM, getSettingsLabel("Device PPM", std::to_string(wxGetApp().getPPM()) , "ppm"));
     }
 
     if (devInfo->getDriver() != "rtlsdr") {
@@ -770,47 +916,107 @@ void AppFrame::updateDeviceParams() {
     } else if (!wxGetApp().getAGCMode()) {
         wxGetApp().setAGCMode(true);
     }
-    
+
+    //Add an Antenna menu if more than one (RX) antenna, to keep the UI free of useless entries
+    antennaNames.clear();
+    antennaMenuItems.clear();
+    std::vector<std::string> availableAntennas = devInfo->getAntennaNames(SOAPY_SDR_RX, 0);
+ 
+    if (availableAntennas.size() > 1) {
+              
+        newSettingsMenu->AppendSeparator();
+
+        antennaNames = availableAntennas;
+
+        wxMenu *subMenu = new wxMenu;
+        
+        int i = 0;
+        std::string antennaChecked;
+        for (std::string currentAntenna : availableAntennas) {
+           
+            antennaMenuItems[wxID_ANTENNAS_BASE + i] = subMenu->AppendRadioItem(wxID_ANTENNAS_BASE + i, currentAntenna);
+
+            if (wxGetApp().getAntennaName() == currentAntenna) {
+                antennaMenuItems[wxID_ANTENNAS_BASE + i]->Check(true);
+                antennaChecked = currentAntenna;
+            }
+
+            i++;
+        }
+        antennaMenuItems[wxID_ANTENNA_CURRENT] = newSettingsMenu->AppendSubMenu(subMenu, "Antenna");
+        
+        //Change the Antenna label to indicate the current antenna.
+        if (!antennaChecked.empty()) {
+        
+            antennaMenuItems[wxID_ANTENNA_CURRENT]->SetItemLabel(getSettingsLabel("Antenna", antennaChecked));
+        }
+    }
+
+    //Add an informative, read-only menu entry to display the current TX selected antenna, if any.
+    if (devInfo->getAntennaNames(SOAPY_SDR_TX, 0).size() > 1) {
+
+        currentTXantennaName = devInfo->getAntennaName(SOAPY_SDR_TX, 0);
+        
+        newSettingsMenu->AppendSeparator();
+        
+        antennaMenuItems[wxID_ANTENNA_CURRENT_TX] = newSettingsMenu->Append(wxID_ANTENNA_CURRENT_TX, getSettingsLabel("TX Antenna", currentTXantennaName));
+        antennaMenuItems[wxID_ANTENNA_CURRENT_TX]->Enable(false);
+    }
+
+    //Runtime settings part
     SoapySDR::ArgInfoList::const_iterator args_i;
     settingArgs = soapyDev->getSettingInfo();
 
     if (settingArgs.size()) {
         newSettingsMenu->AppendSeparator();
     }
-    
+    //for each Runtime option of index i:
     for (args_i = settingArgs.begin(); args_i != settingArgs.end(); args_i++) {
+
         SoapySDR::ArgInfo arg = (*args_i);
+
         std::string currentVal = soapyDev->readSetting(arg.key);
-        if (arg.type == SoapySDR::ArgInfo::BOOL) {
+        
+		if (arg.type == SoapySDR::ArgInfo::BOOL) {
             wxMenuItem *item = newSettingsMenu->AppendCheckItem(wxID_SETTINGS_BASE+i, arg.name, arg.description);
             item->Check(currentVal=="true");
             i++;
         } else if (arg.type == SoapySDR::ArgInfo::INT) {
-            newSettingsMenu->Append(wxID_SETTINGS_BASE+i, arg.name, arg.description);
+            
+            settingsMenuItems[wxID_SETTINGS_BASE + i] = newSettingsMenu->Append(wxID_SETTINGS_BASE + i, getSettingsLabel(arg.name, currentVal, arg.units), arg.description);
             i++;
         } else if (arg.type == SoapySDR::ArgInfo::FLOAT) {
-            newSettingsMenu->Append(wxID_SETTINGS_BASE+i, arg.name, arg.description);
+            settingsMenuItems[wxID_SETTINGS_BASE + i] = newSettingsMenu->Append(wxID_SETTINGS_BASE + i, getSettingsLabel(arg.name, currentVal, arg.units), arg.description);
             i++;
         } else if (arg.type == SoapySDR::ArgInfo::STRING) {
             if (arg.options.size()) {
                 wxMenu *subMenu = new wxMenu;
                 int j = 0;
-                for (std::vector<std::string>::iterator str_i = arg.options.begin(); str_i != arg.options.end(); str_i++) {
-                    std::string optName = (*str_i);
+                std::vector<int> subItemsIds;
+				//for each of this options
+                for (std::string optName : arg.options) {
+					//by default the option name is the same as the displayed name.
                     std::string displayName = optName;
-                    if (arg.optionNames.size()) {
+                    
+					if (arg.optionNames.size()) {
                         displayName = arg.optionNames[j];
                     }
                     wxMenuItem *item = subMenu->AppendRadioItem(wxID_SETTINGS_BASE+i, displayName);
-                    if (currentVal == (*str_i)) {
+                    subItemsIds.push_back(wxID_SETTINGS_BASE + i);
+                    
+                    if (currentVal == optName) {
                         item->Check(true);
                     }
                     j++;
                     i++;
                 }
-                newSettingsMenu->AppendSubMenu(subMenu, arg.name, arg.description);
+                settingsMenuItems[wxID_SETTINGS_BASE + i] = newSettingsMenu->AppendSubMenu(subMenu, getSettingsLabel(arg.name, currentVal, arg.units), arg.description);
+                //map subitems ids to their parent item !
+                for (int currentSubId : subItemsIds) {
+                    settingsMenuItems[currentSubId] = settingsMenuItems[wxID_SETTINGS_BASE + i];
+                }
             } else {
-                newSettingsMenu->Append(wxID_SETTINGS_BASE+i, arg.name, arg.description);
+                settingsMenuItems[wxID_SETTINGS_BASE + i] = newSettingsMenu->Append(wxID_SETTINGS_BASE + i, getSettingsLabel(arg.name, currentVal, arg.units), arg.description);
                 i++;
             }
         }
@@ -876,7 +1082,6 @@ void AppFrame::updateDeviceParams() {
     newSampleRateMenu->AppendSeparator();
     sampleRateMenuItems[wxID_BANDWIDTH_MANUAL_DIALOG] = newSampleRateMenu->Append(wxID_BANDWIDTH_MANUAL_DIALOG, wxT("Manual Entry..."));
 
-   
     menuBar->Replace(2, newSampleRateMenu, wxT("Sample &Rate"));
     sampleRateMenu = newSampleRateMenu;
 
@@ -885,9 +1090,6 @@ void AppFrame::updateDeviceParams() {
         gainSizerItem->Show(true);
         gainSizerItem->SetMinSize(devInfo->getSoapyDevice()->listGains(SOAPY_SDR_RX,0).size()*50,0);
         demodTray->Layout();
-        gainCanvas->updateGainUI();
-        gainCanvas->Refresh();
-        gainCanvas->Refresh();
     } else {
         gainSpacerItem->Show(false);
         gainSizerItem->Show(false);
@@ -1060,6 +1262,7 @@ bool AppFrame::actionOnMenuReset(wxCommandEvent& event) {
 
         SetTitle(CUBICSDR_TITLE);
         currentSessionFile = "";
+		currentBookmarkFile = "";
         bookmarkSplitter->Unsplit(bookmarkView);
         bookmarkSplitter->SplitVertically(bookmarkView, mainVisSplitter, wxGetApp().getConfig()->getBookmarkSplit());
         hideBookmarksItem->Check(false);
@@ -1098,7 +1301,16 @@ bool AppFrame::actionOnMenuAbout(wxCommandEvent& event) {
 
 bool AppFrame::actionOnMenuSettings(wxCommandEvent& event) {
 
-    if (event.GetId() >= wxID_SETTINGS_BASE && event.GetId() < settingsIdMax) {
+    int antennaIdMax = wxID_ANTENNAS_BASE + antennaNames.size();
+    
+    if (event.GetId() >= wxID_ANTENNAS_BASE && event.GetId() < antennaIdMax) {
+
+        wxGetApp().setAntennaName(antennaNames[event.GetId() - wxID_ANTENNAS_BASE]);
+      
+        antennaMenuItems[wxID_ANTENNA_CURRENT]->SetItemLabel(getSettingsLabel("Antenna", wxGetApp().getAntennaName()));
+        return true;
+    } 
+    else if (event.GetId() >= wxID_SETTINGS_BASE && event.GetId() < settingsIdMax) {
 
         int setIdx = event.GetId() - wxID_SETTINGS_BASE;
         int menuIdx = 0;
@@ -1109,6 +1321,9 @@ bool AppFrame::actionOnMenuSettings(wxCommandEvent& event) {
             if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size() && setIdx >= menuIdx && setIdx < menuIdx + (int)arg.options.size()) {
                 int optIdx = setIdx - menuIdx;
                 wxGetApp().getSDRThread()->writeSetting(arg.key, arg.options[optIdx]);
+                
+                //update parent menu item label to display the current value
+                settingsMenuItems[menuIdx + wxID_SETTINGS_BASE]->SetItemLabel(getSettingsLabel(arg.name, arg.options[optIdx], arg.units));             
                 break;
             }
             else if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size()) {
@@ -1121,6 +1336,9 @@ bool AppFrame::actionOnMenuSettings(wxCommandEvent& event) {
                 }
                 else if (arg.type == SoapySDR::ArgInfo::STRING) {
                     wxString stringVal = wxGetTextFromUser(arg.description, arg.name, wxGetApp().getSDRThread()->readSetting(arg.key));
+
+                    settingsMenuItems[menuIdx + wxID_SETTINGS_BASE]->SetItemLabel(getSettingsLabel(arg.name, stringVal.ToStdString(), arg.units));
+
                     if (stringVal.ToStdString() != "") {
                         wxGetApp().getSDRThread()->writeSetting(arg.key, stringVal.ToStdString());
                     }
@@ -1135,6 +1353,9 @@ bool AppFrame::actionOnMenuSettings(wxCommandEvent& event) {
                         currentVal = 0;
                     }
                     int intVal = wxGetNumberFromUser(arg.description, arg.units, arg.name, currentVal, arg.range.minimum(), arg.range.maximum(), this);
+
+                    settingsMenuItems[menuIdx + wxID_SETTINGS_BASE]->SetItemLabel(getSettingsLabel(arg.name, std::to_string(intVal), arg.units));
+
                     if (intVal != -1) {
                         wxGetApp().getSDRThread()->writeSetting(arg.key, std::to_string(intVal));
                     }
@@ -1148,6 +1369,7 @@ bool AppFrame::actionOnMenuSettings(wxCommandEvent& event) {
                     catch (std::invalid_argument e) {
                         // ...
                     }
+                    settingsMenuItems[menuIdx + wxID_SETTINGS_BASE]->SetItemLabel(getSettingsLabel(arg.name, floatVal.ToStdString(), arg.units));
                     break;
                 }
                 else {
@@ -1158,7 +1380,7 @@ bool AppFrame::actionOnMenuSettings(wxCommandEvent& event) {
                 menuIdx++;
             }
         } //end for
-
+		
         return true;
     }
 
@@ -1282,7 +1504,6 @@ bool AppFrame::actionOnMenuAudioSampleRate(wxCommandEvent& event) {
             }
             i++;
         }
-
     }
 
     return false;
@@ -1324,7 +1545,151 @@ bool AppFrame::actionOnMenuLoadSave(wxCommandEvent& event) {
         return true;
     }
 
+	//save mecanic for bookmark files
+	else if (event.GetId() == wxID_SAVE_BOOKMARKS) {
+
+		if (!currentBookmarkFile.empty()) {
+			wxGetApp().getBookmarkMgr().saveToFile(currentBookmarkFile, false, true);
+		}
+		else {
+			wxFileDialog saveFileDialog(this, _("Save XML Bookmark file"), "", "", "XML files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+			if (saveFileDialog.ShowModal() == wxID_CANCEL) {
+				return true;
+			}
+
+			// Make sure the file name actually ends in .xml
+			std::string fileName = saveFileDialog.GetPath().ToStdString();
+			std::string lcFileName = fileName;
+
+			std::transform(lcFileName.begin(), lcFileName.end(), lcFileName.begin(), ::tolower);
+
+			if (lcFileName.find_last_of(".xml") != lcFileName.length() - 1) {
+				fileName.append(".xml");
+			}
+
+			wxGetApp().getBookmarkMgr().saveToFile(fileName, false, true);
+			currentBookmarkFile = fileName;
+		}
+
+		return true;
+	}
+	else if (event.GetId() == wxID_OPEN_BOOKMARKS) {
+
+		wxFileDialog openFileDialog(this, _("Open XML Bookmark file"), "", "", "XML files (*.xml)|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+		if (openFileDialog.ShowModal() == wxID_CANCEL) {
+			return true;
+		}
+		if (wxGetApp().getBookmarkMgr().loadFromFile(openFileDialog.GetPath().ToStdString(), false, true)) {
+			
+			wxGetApp().getBookmarkMgr().updateBookmarks();
+			wxGetApp().getBookmarkMgr().updateActiveList();
+
+			currentBookmarkFile = openFileDialog.GetPath().ToStdString();
+		}
+		else {
+			//failure at loading.
+			currentBookmarkFile = "";
+		}
+
+		return true;
+	}
+	else if (event.GetId() == wxID_SAVEAS_BOOKMARKS) {
+
+		wxFileDialog saveFileDialog(this, _("Save XML Bookmark file"), "", "", "XML files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+		if (saveFileDialog.ShowModal() == wxID_CANCEL) {
+			return true;
+		}
+
+		// Make sure the file name actually ends in .xml
+		std::string fileName = saveFileDialog.GetPath().ToStdString();
+		std::string lcFileName = fileName;
+
+		std::transform(lcFileName.begin(), lcFileName.end(), lcFileName.begin(), ::tolower);
+
+		if (lcFileName.find_last_of(".xml") != lcFileName.length() - 1) {
+			fileName.append(".xml");
+		}
+
+		wxGetApp().getBookmarkMgr().saveToFile(fileName, false, true);
+		currentBookmarkFile = fileName;
+
+		return true;
+	}
+	else if (event.GetId() == wxID_RESET_BOOKMARKS) {
+
+        ActionDialog::showDialog(new ActionDialogBookmarkReset());
+
+		return true;
+	}
+
     return false;
+}
+
+bool AppFrame::actionOnMenuRecording(wxCommandEvent& event) {
+
+	if (event.GetId() == wxID_RECORDING_PATH) {
+
+		std::string recPath = wxGetApp().getConfig()->getRecordingPath();
+
+		wxDirDialog recPathDialog(this, _("File Path for Recordings"), recPath, wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST);
+		if (recPathDialog.ShowModal() == wxID_CANCEL) {
+			return true;
+		}
+
+		wxGetApp().getConfig()->setRecordingPath(recPathDialog.GetPath().ToStdString());
+
+		updateRecordingMenu();
+		return true;
+
+	}
+	else if (event.GetId() == wxID_RECORDING_SQUELCH_SILENCE) {
+
+		wxGetApp().getConfig()->setRecordingSquelchOption(AudioSinkFileThread::SQUELCH_RECORD_SILENCE);
+
+		updateRecordingMenu();
+		return true;
+	}
+	else if (event.GetId() == wxID_RECORDING_SQUELCH_SKIP) {
+
+		wxGetApp().getConfig()->setRecordingSquelchOption(AudioSinkFileThread::SQUELCH_SKIP_SILENCE);
+
+		updateRecordingMenu();
+		return true;
+	}
+	else if (event.GetId() == wxID_RECORDING_SQUELCH_ALWAYS) {
+		
+		wxGetApp().getConfig()->setRecordingSquelchOption(AudioSinkFileThread::SQUELCH_RECORD_ALWAYS);
+
+		updateRecordingMenu();
+		return true;
+	}
+	else if (event.GetId() == wxID_RECORDING_FILE_TIME_LIMIT) {
+
+		int currentFileLimitSeconds = wxGetApp().getConfig()->getRecordingFileTimeLimit();
+
+		long newFileLimit = wxGetNumberFromUser(wxString("\nFile time limit:\n") + 
+			"\nCreates a new file automatically, each time the recording lasts longer than the limit, named according to the current time.\n\n  " + 
+			+ "min: 0 s (no limit)"
+			+ ", max: 36000 s (10 hours)\n",
+			"Time in seconds",
+			"File Time Limit",
+			//If a manual sample rate has already been input, recall this one.
+			currentFileLimitSeconds > 0 ? currentFileLimitSeconds : 0,
+			0,
+			36000,
+			this);
+
+		if (newFileLimit != -1) {
+
+			wxGetApp().getConfig()->setRecordingFileTimeLimit((int)newFileLimit);
+
+			updateRecordingMenu();
+		}
+
+		return true;
+	}
+
+	return false;
 }
 
 bool AppFrame::actionOnMenuRig(wxCommandEvent& event) {
@@ -1357,7 +1722,9 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent& event) {
         bManaged = true;
     }
 
-    if (event.GetId() >= wxID_RIG_SERIAL_BASE && event.GetId() < wxID_RIG_SERIAL_BASE + rigSerialRates.size()) {
+    int rigSerialIdMax = wxID_RIG_SERIAL_BASE + rigSerialRates.size();
+    
+    if (event.GetId() >= wxID_RIG_SERIAL_BASE && event.GetId() < rigSerialIdMax) {
         int serialIdx = event.GetId() - wxID_RIG_SERIAL_BASE;
         rigSerialRate = rigSerialRates[serialIdx];
         resetRig = true;
@@ -1482,10 +1849,30 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
             }
         }
     } 
-    else if (event.GetId() == wxID_LOW_PERF) {
-        lowPerfMode = lowPerfMenuItem->IsChecked();
-        wxGetApp().getConfig()->setLowPerfMode(lowPerfMode);
+    else if (event.GetId() >= wxID_PERF_BASE && event.GetId() <= wxID_PERF_BASE + (int)AppConfig::PERF_HIGH) {
 
+        int perfEnumAsInt = event.GetId() - wxID_PERF_BASE;
+        AppConfig::PerfModeEnum perfEnumSet = AppConfig::PERF_NORMAL;
+
+        if (perfEnumAsInt == (int)AppConfig::PERF_HIGH) {
+            perfEnumSet = AppConfig::PERF_HIGH;
+
+        } else if (perfEnumAsInt == (int)AppConfig::PERF_LOW) {
+            perfEnumSet = AppConfig::PERF_LOW;
+        }
+
+        wxGetApp().getConfig()->setPerfMode(perfEnumSet);
+
+        //update Channelizer mode:
+        if (perfEnumSet == AppConfig::PERF_HIGH) {
+            wxGetApp().setChannelizerType(SDRPostThreadChannelizerType::SDRPostPFBCH2);
+        } else {
+            wxGetApp().setChannelizerType(SDRPostThreadChannelizerType::SDRPostPFBCH);
+        }
+
+        //update UI
+        wxMenuItem* selectedPerfModeItem = performanceMenuItems[event.GetId()];
+        performanceMenuItems[wxID_PERF_CURRENT]->SetItemLabel(getSettingsLabel("CPU usage", selectedPerfModeItem->GetItemLabel().ToStdString()));
     } 
     else if (event.GetId() == wxID_SET_TIPS ) {
         if (wxGetApp().getConfig()->getShowTips()) {
@@ -1498,10 +1885,13 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         wxGetApp().getSDRThread()->setIQSwap(!wxGetApp().getSDRThread()->getIQSwap());
     } 
     else if (event.GetId() == wxID_SET_FREQ_OFFSET) {
-        long ofs = wxGetNumberFromUser("Shift the displayed frequency by this amount.\ni.e. -125000000 for -125 MHz", "Frequency (Hz)",
-                "Frequency Offset", wxGetApp().getOffset(), -2000000000, 2000000000, this);
+        //enter in KHz to accomodate > 2GHz shifts for down/upconverters on 32 bit platforms.
+        long ofs = wxGetNumberFromUser("Shift the displayed frequency by this amount of KHz.\ni.e. -125000 for -125 MHz", "Frequency (KHz)",
+                "Frequency Offset", (long long)(wxGetApp().getOffset() / 1000.0) , -2000000000, 2000000000, this);
         if (ofs != -1) {
-            wxGetApp().setOffset(ofs);
+            wxGetApp().setOffset((long long) ofs * 1000);
+          
+            settingsMenuItems[wxID_SET_FREQ_OFFSET]->SetItemLabel(getSettingsLabel("Frequency Offset", std::to_string(wxGetApp().getOffset() / 1000), "KHz"));
         }
     } 
     else if (event.GetId() == wxID_SET_DB_OFFSET) {
@@ -1509,6 +1899,7 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
                                        "Power Level Offset", wxGetApp().getConfig()->getDBOffset(), -1000, 1000, this);
         if (ofs != -1) {
             wxGetApp().getConfig()->setDBOffset(ofs);
+            settingsMenuItems[wxID_SET_DB_OFFSET]->SetItemLabel(getSettingsLabel("Power Level Offset", std::to_string(wxGetApp().getConfig()->getDBOffset()), "dB"));
         }
     } 
     else if (actionOnMenuAGC(event)) {
@@ -1521,6 +1912,8 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
         long ofs = wxGetNumberFromUser("Frequency correction for device in PPM.\ni.e. -51 for -51 PPM\n\nNote: you can adjust PPM interactively\nby holding ALT over the frequency tuning bar.\n", "Parts per million (PPM)",
                 "Frequency Correction", wxGetApp().getPPM(), -1000, 1000, this);
             wxGetApp().setPPM(ofs);
+
+            settingsMenuItems[wxID_SET_PPM]->SetItemLabel(getSettingsLabel("Device PPM", std::to_string(wxGetApp().getPPM()), "ppm"));
     } 
     else if (actionOnMenuLoadSave(event)) {
         return;
@@ -1540,9 +1933,12 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
     else if (actionOnMenuAudioSampleRate(event)) {
         return;
     }
-    else if (actionOnMenuDisplay(event)) {
+    else if (actionOnMenuRecording(event)) {
         return;
     }
+	else if (actionOnMenuDisplay(event)) {
+		return;
+	}
     //Optional : Rig 
     else if (actionOnMenuRig(event)) {
         return;
@@ -1611,8 +2007,18 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     if (deviceChanged.load()) {
         updateDeviceParams();
     }
+
+    //Refresh the current TX antenna on, if any:
+    if ((antennaMenuItems.find(wxID_ANTENNA_CURRENT_TX) != antennaMenuItems.end()) && devInfo) {
+        std::string actualTxAntenna = devInfo->getAntennaName(SOAPY_SDR_TX, 0);
+        
+        if (currentTXantennaName != actualTxAntenna) {
+            currentTXantennaName = actualTxAntenna;
+            antennaMenuItems[wxID_ANTENNA_CURRENT_TX]->SetItemLabel(getSettingsLabel("TX Antenna", currentTXantennaName));
+        }
+    }
     
-    DemodulatorInstance *demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    DemodulatorInstancePtr demod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
     if (demod && demod->isModemInitialized()) {
         if (demod->isTracking()) {
@@ -1637,7 +2043,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             wxGetApp().getDemodMgr().setLastBandwidth(demod->getBandwidth());
         }
 
-        if (demod != activeDemodulator) {
+        if (demod.get() != activeDemodulator) {
             demodSignalMeter->setInputValue(demod->getSquelchLevel());
             demodGainMeter->setInputValue(demod->getGain());
             wxGetApp().getDemodMgr().setLastGain(demod->getGain());
@@ -1781,7 +2187,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             demod->setGain(demodGainMeter->getInputValue());
             demodGainMeter->setLevel(demodGainMeter->getInputValue());
         }
-        activeDemodulator = demod;
+        activeDemodulator = demod.get();
     } else if (demod) {
         // Wait state for current demodulator modem to activate..
     } else {
@@ -1888,7 +2294,6 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     }
 
     wproc->setView(waterfallCanvas->getViewState(), waterfallCanvas->getCenterFrequency(), waterfallCanvas->getBandwidth());
-    wxGetApp().getSDRPostThread()->setIQVisualRange(waterfallCanvas->getCenterFrequency(), waterfallCanvas->getBandwidth());
     
     proc->setView(wproc->isView(), wproc->getCenterFrequency(), wproc->getBandwidth());
     
@@ -1961,7 +2366,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
     if (!this->IsActive()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(30));
     } else {
-        if (lowPerfMode) {
+        if (wxGetApp().getConfig()->getPerfMode() == AppConfig::PERF_LOW) {
             std::this_thread::sleep_for(std::chrono::milliseconds(30));
         } else {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -2004,19 +2409,21 @@ void AppFrame::OnUnSplit(wxSplitterEvent& event)
     event.Veto();
 }
 
-void AppFrame::OnAboutDialogClose(wxCommandEvent& event) {
+void AppFrame::OnAboutDialogClose(wxCommandEvent& /* event */) {
     aboutDlg->Destroy();
     aboutDlg = nullptr;
 }
 
 void AppFrame::saveSession(std::string fileName) {
+
     DataTree s("cubicsdr_session");
     DataNode *header = s.rootNode()->newChild("header");
     //save as wstring to prevent problems 
     header->newChild("version")->element()->set(wxString(CUBICSDR_VERSION).ToStdWstring());
     
     *header->newChild("center_freq") = wxGetApp().getFrequency();
-    *header->newChild("sample_rate") = wxGetApp().getSampleRate();
+    *header->newChild("sample_rate") = wxGetApp().getSampleRate();       
+    *header->newChild("solo_mode") = wxGetApp().getSoloMode()?1:0;
     
     if (waterfallCanvas->getViewState()) {
         DataNode *viewState = header->newChild("view_state");
@@ -2027,11 +2434,12 @@ void AppFrame::saveSession(std::string fileName) {
     
     DataNode *demods = s.rootNode()->newChild("demodulators");
 
-    std::vector<DemodulatorInstance *> &instances = wxGetApp().getDemodMgr().getDemodulators();
+    //make a local copy snapshot of the list
+    std::vector<DemodulatorInstancePtr> instances = wxGetApp().getDemodMgr().getDemodulators();
     
-    for (auto instance_i : instances) {
+    for (auto instance : instances) {
         DataNode *demod = demods->newChild("demodulator");
-        wxGetApp().getDemodMgr().saveInstance(demod, instance_i);
+        wxGetApp().getDemodMgr().saveInstance(demod, instance);
     } //end for demodulators
 
     // Make sure the file name actually ends in .xml
@@ -2051,10 +2459,16 @@ void AppFrame::saveSession(std::string fileName) {
 }
 
 bool AppFrame::loadSession(std::string fileName) {
+
     DataTree l;
     if (!l.LoadFromFileXML(fileName)) {
         return false;
     }
+
+	//Check if it is a session file, read the root node.
+	if (l.rootNode()->getName() != "cubicsdr_session") {
+		return false;
+	}
 
 	wxGetApp().getDemodMgr().setActiveDemodulator(nullptr, false);
 
@@ -2075,10 +2489,10 @@ bool AppFrame::loadSession(std::string fileName) {
 
                   std::cout << "Loading session file version: '" << version << "'..." << std::endl;
               }
-              catch (DataTypeMismatchException* e) {
+              catch (DataTypeMismatchException e) {
                   //this is for managing the old session format NOT encoded as std:wstring,
                   //force current version
-                  std::cout << "Warning while Loading session file version, probably old format :'" << e->what() << "' please consider re-saving the current session..." << std::endl;
+                  std::cout << "Warning while Loading session file version, probably old format :'" << e.what() << "' please consider re-saving the current session..." << std::endl << std::flush;
                   version = wxString(CUBICSDR_VERSION).ToStdWstring();
               }    
         }
@@ -2134,14 +2548,24 @@ bool AppFrame::loadSession(std::string fileName) {
             }
         }
 
-        DemodulatorInstance *loadedActiveDemod = nullptr;
-        DemodulatorInstance *newDemod = nullptr;
+        if (header->hasAnother("solo_mode")) {
+            
+            int solo_mode_activated = *header->getNext("solo_mode");
+
+            wxGetApp().setSoloMode((solo_mode_activated > 0) ? true : false);
+        }
+        else {
+            wxGetApp().setSoloMode(false);
+        }
+
+        DemodulatorInstancePtr loadedActiveDemod = nullptr;
+        DemodulatorInstancePtr newDemod = nullptr;
         
         if (l.rootNode()->hasAnother("demodulators")) {
             
         DataNode *demodulators = l.rootNode()->getNext("demodulators");
 
-        std::vector<DemodulatorInstance *> demodsLoaded;
+        std::vector<DemodulatorInstancePtr> demodsLoaded;
         
         while (demodulators->hasAnother("demodulator")) {
             DataNode *demod = demodulators->getNext("demodulator");
@@ -2162,7 +2586,7 @@ bool AppFrame::loadSession(std::string fileName) {
         }
         
         if (demodsLoaded.size()) {
-            wxGetApp().bindDemodulators(&demodsLoaded);
+            wxGetApp().notifyDemodulatorsChanged();
         }
             
         } // if l.rootNode()->hasAnother("demodulators")
@@ -2192,7 +2616,7 @@ bool AppFrame::loadSession(std::string fileName) {
         if (loadedActiveDemod || newDemod) {
             wxGetApp().getDemodMgr().setActiveDemodulator(loadedActiveDemod?loadedActiveDemod:newDemod, false);
         }
-    } catch (DataTypeMismatchException &e) {
+    } catch (DataTypeMismatchException e) {
         std::cout << e.what() << std::endl;
         return false;
     }
@@ -2291,14 +2715,14 @@ FrequencyDialog::FrequencyDialogTarget AppFrame::getFrequencyDialogTarget() {
     return target;
 }
 
-void AppFrame::gkNudgeLeft(DemodulatorInstance *demod, int snap) {
+void AppFrame::gkNudgeLeft(DemodulatorInstancePtr demod, int snap) {
     if (demod) {
         demod->setFrequency(demod->getFrequency()-snap);
         demod->updateLabel(demod->getFrequency());
     }
 }
 
-void AppFrame::gkNudgeRight(DemodulatorInstance *demod, int snap) {
+void AppFrame::gkNudgeRight(DemodulatorInstancePtr demod, int snap) {
     if (demod) {
         demod->setFrequency(demod->getFrequency()+snap);
         demod->updateLabel(demod->getFrequency());
@@ -2324,7 +2748,10 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         return -1;
     }
     
-    DemodulatorInstance *demod = nullptr, *lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    DemodulatorInstancePtr demod = nullptr;
+     
+    DemodulatorInstancePtr lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    
     int snap = wxGetApp().getFrequencySnap();
     
     if (event.ControlDown()) {
@@ -2375,6 +2802,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case 'S':
         case 'P':
         case 'M':
+        case 'R':
             return 1;
         case '0':
         case '1':
@@ -2449,8 +2877,8 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
         return 1;
     }
 
-    DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
-    DemodulatorInstance *lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
+    DemodulatorInstancePtr lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
     
 #ifdef wxHAS_RAW_KEY_CODES
     switch (event.GetRawKeyCode()) {
@@ -2515,6 +2943,13 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
             wxGetApp().setSoloMode(!wxGetApp().getSoloMode());
             return 1;
             break;
+        case 'R':
+            if (event.ShiftDown()) {
+                toggleAllActiveDemodRecording();
+            } else {
+                toggleActiveDemodRecording();
+            }
+            break;
         case 'P':
             wxGetApp().getSpectrumProcessor()->setPeakHold(!wxGetApp().getSpectrumProcessor()->getPeakHold());
             if (wxGetApp().getDemodSpectrumProcessor()) {
@@ -2559,6 +2994,45 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     return 1;
 }
 
+void AppFrame::toggleActiveDemodRecording() {
+    if (!wxGetApp().getConfig()->verifyRecordingPath()) {
+        return;
+    }
+    
+    DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
+    
+    if (activeDemod) {
+        activeDemod->setRecording(!activeDemod->isRecording());
+        wxGetApp().getBookmarkMgr().updateActiveList();
+    }
+}
+
+void AppFrame::toggleAllActiveDemodRecording() {
+    if (!wxGetApp().getConfig()->verifyRecordingPath()) {
+        return;
+    }
+
+    // All demods, irrespective of their active state:
+    // recording will start eventually when a demod come in range.
+    auto allDemods = wxGetApp().getDemodMgr().getDemodulators();
+
+    //by default, do a false => true for all:
+    bool stateToSet = true;
+
+    for (auto i : allDemods) {
+        if (i->isRecording()) {
+            stateToSet = false;
+            break;
+        }
+    }
+
+    for (auto i : allDemods) {
+      
+        i->setRecording(stateToSet);               
+    }
+    //this effectively refresh the BookmarkView buttons, including Recording buttons.
+    wxGetApp().getBookmarkMgr().updateActiveList();
+}
 
 void AppFrame::setWaterfallLinesPerSecond(int lps) {
     waterfallSpeedMeter->setUserInputValue(sqrt(lps));
@@ -2573,7 +3047,7 @@ void AppFrame::setViewState(long long center_freq, int bandwidth) {
     waterfallCanvas->setView(center_freq, bandwidth);
 }
 
-void AppFrame::setViewState(long long center_freq) {
+void AppFrame::setViewState() {
     spectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
     waterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
     spectrumCanvas->disableView();
@@ -2597,17 +3071,21 @@ std::vector<std::string> str_explode(const std::string &seperator, const std::st
 {
     std::vector<std::string> vect_out;
     
-    int i = 0, j = 0;
-    int seperator_len = seperator.length();
-    int str_len = in_str.length();
+    size_t i = 0, j = 0;
+    size_t seperator_len = seperator.length();
+    size_t str_len = in_str.length();
     
     while(i < str_len)
     {
         j = in_str.find_first_of(seperator,i);
         
-        if (j == std::string::npos && i < str_len)  j = str_len;
+        if (j == std::string::npos && i < str_len) {
+            j = str_len;
+        }
         
-        if (j == std::string::npos) break;
+        if (j == std::string::npos) {
+            break;
+        }
         
         vect_out.push_back(in_str.substr(i,j-i));
         
@@ -2639,4 +3117,25 @@ void AppFrame::setStatusText(wxWindow* window, std::string statusText) {
 void AppFrame::setStatusText(std::string statusText, int value) {
     GetStatusBar()->SetStatusText(
         wxString::Format(statusText.c_str(), wxNumberFormatter::ToString((long)value, wxNumberFormatter::Style_WithThousandsSep)));
+}
+
+wxString AppFrame::getSettingsLabel(const std::string& settingsName,
+                                    const std::string& settingsValue,
+                                    const std::string& settingsSuffix) {
+
+    size_t itemStringSize = 40;
+    int justifValueSize = itemStringSize - settingsName.length() - 1;
+
+    std::stringstream full_label;
+    
+    full_label << settingsName + " : ";
+    full_label << std::right << std::setw(justifValueSize);
+
+    if (settingsSuffix.empty()) {
+        full_label << settingsValue;
+    } else {
+        full_label << settingsValue + " " + settingsSuffix;
+    }
+
+    return wxString(full_label.str());
 }

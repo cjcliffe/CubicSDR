@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #pragma once
-
+#include <memory>
 #include "IOThread.h"
 #include "SpectrumVisualProcessor.h"
 #include "FFTDataDistributor.h"
@@ -17,10 +17,12 @@ public:
     SpectrumVisualProcessor *getProcessor();
     
     virtual void run();
+
+    virtual void terminate();
     
 protected:
     FFTDataDistributor fftDistrib;
-    DemodulatorThreadInputQueue fftQueue;
+    DemodulatorThreadInputQueuePtr fftQueue = std::make_shared<DemodulatorThreadInputQueue>();
     SpectrumVisualProcessor wproc;
     
     std::atomic_int linesPerSecond;

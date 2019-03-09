@@ -1,8 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Aug 23 2015)
+// C++ code generated with wxFormBuilder (version Aug  8 2018)
 // http://www.wxformbuilder.org/
 //
-// PLEASE DO "NOT" EDIT THIS FILE!
+// PLEASE DO *NOT* EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
 
 #include "DigitalConsoleFrame.h"
@@ -20,9 +20,9 @@ DigitalConsoleFrame::DigitalConsoleFrame( wxWindow* parent, wxWindowID id, const
 	wxBoxSizer* dataViewSizer;
 	dataViewSizer = new wxBoxSizer( wxVERTICAL );
 	
-	m_dataView = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_CHARWRAP|wxTE_MULTILINE|wxTE_NOHIDESEL|wxTE_READONLY|wxTE_WORDWRAP|wxALWAYS_SHOW_SB|wxFULL_REPAINT_ON_RESIZE|wxNO_BORDER|wxSIMPLE_BORDER|wxVSCROLL );
+	m_dataView = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_CHARWRAP|wxTE_MULTILINE|wxTE_NOHIDESEL|wxTE_READONLY|wxTE_WORDWRAP|wxALWAYS_SHOW_SB|wxFULL_REPAINT_ON_RESIZE|wxVSCROLL|wxBORDER_SIMPLE|wxBORDER_NONE );
 	m_dataView->SetExtraStyle( wxWS_EX_PROCESS_UI_UPDATES );
-	m_dataView->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), 76, 90, 90, false, wxEmptyString ) );
+	m_dataView->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString ) );
 	
 	dataViewSizer->Add( m_dataView, 1, wxEXPAND, 5 );
 	

@@ -12,7 +12,10 @@
 #include "CubicSDR.h"
 #include "DemodulatorInstance.h"
 
-DemodulatorPreThread::DemodulatorPreThread(DemodulatorInstance *parent) : IOThread(), iqResampler(NULL), iqResampleRatio(1), cModem(nullptr), cModemKit(nullptr), iqInputQueue(NULL), iqOutputQueue(NULL)
+//50 ms
+#define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
+
+DemodulatorPreThread::DemodulatorPreThread(DemodulatorInstance* parent) : IOThread(), iqResampler(NULL), iqResampleRatio(1), cModem(nullptr), cModemKit(nullptr)
  {
 	initialized.store(false);
     this->parent = parent;
@@ -20,10 +23,10 @@ DemodulatorPreThread::DemodulatorPreThread(DemodulatorInstance *parent) : IOThre
     freqShifter = nco_crcf_create(LIQUID_VCO);
     shiftFrequency = 0;
 
-    workerQueue = new DemodulatorThreadWorkerCommandQueue;
+    workerQueue = std::make_shared<DemodulatorThreadWorkerCommandQueue>();
     workerQueue->set_max_num_items(2);
 
-    workerResults = new DemodulatorThreadWorkerResultQueue;
+    workerResults = std::make_shared<DemodulatorThreadWorkerResultQueue>();
     workerResults->set_max_num_items(100);
      
     workerThread = new DemodulatorWorkerThread();
@@ -62,8 +65,8 @@ void DemodulatorPreThread::run() {
 
     ReBuffer<DemodulatorThreadPostIQData> buffers("DemodulatorPreThreadBuffers");
 
-    iqInputQueue = static_cast<DemodulatorThreadInputQueue*>(getInputQueue("IQDataInput"));
-    iqOutputQueue = static_cast<DemodulatorThreadPostInputQueue*>(getOutputQueue("IQDataOutput"));
+    iqInputQueue = std::static_pointer_cast<DemodulatorThreadInputQueue>(getInputQueue("IQDataInput"));
+    iqOutputQueue = std::static_pointer_cast<DemodulatorThreadPostInputQueue>(getOutputQueue("IQDataOutput"));
     
     std::vector<liquid_float_complex> in_buf_data;
     std::vector<liquid_float_complex> out_buf_data;
@@ -71,9 +74,11 @@ void DemodulatorPreThread::run() {
     t_Worker = new std::thread(&DemodulatorWorkerThread::threadMain, workerThread);
     
     while (!stopping) {
-        DemodulatorThreadIQData *inp;
+        DemodulatorThreadIQDataPtr inp;
 
-        iqInputQueue->pop(inp);
+        if (!iqInputQueue->pop(inp, HEARTBEAT_CHECK_PERIOD_MICROS)) {
+            continue;
+        }
         
         if (frequencyChanged.load()) {
             currentFrequency.store(newFrequency);
@@ -157,7 +162,7 @@ void DemodulatorPreThread::run() {
         }
 
         if (cModem && cModemKit && abs(shiftFrequency) > (int) ((double) (inp->sampleRate / 2) * 1.5)) {
-            inp->decRefCount();
+          
             continue;
         }
 
@@ -192,7 +197,7 @@ void DemodulatorPreThread::run() {
                 out_buf = temp_buf;
             }
 
-            DemodulatorThreadPostIQData *resamp = buffers.getBuffer();
+            DemodulatorThreadPostIQDataPtr resamp = buffers.getBuffer();
 
             size_t out_size = ceil((double) (bufSize) * iqResampleRatio) + 512;
 
@@ -217,8 +222,6 @@ void DemodulatorPreThread::run() {
             //VSO: blocking push
             iqOutputQueue->push(resamp);   
         }
-
-        inp->decRefCount();
 
         DemodulatorWorkerThreadResult result;
         //process all worker results until 
@@ -277,12 +280,9 @@ void DemodulatorPreThread::run() {
         }
     } //end while stopping
 
-    DemodulatorThreadPostIQData *tmp;
-    while (iqOutputQueue->try_pop(tmp)) {
-        
-        tmp->decRefCount();
-    }
-    buffers.purge();
+   
+    iqOutputQueue->flush();
+    iqInputQueue->flush();
 }
 
 void DemodulatorPreThread::setDemodType(std::string demodType) {
@@ -347,18 +347,18 @@ int DemodulatorPreThread::getAudioSampleRate() {
 }
 
 void DemodulatorPreThread::terminate() {
+
+    //make non-blocking calls to be sure threads are flagged for termination.
     IOThread::terminate();
-    DemodulatorThreadIQData *inp = new DemodulatorThreadIQData;    // push dummy to nudge queue
-    
-    //VSO: blocking push :
-    iqInputQueue->push(inp);
- 
-    DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_NULL);
-    
-    workerQueue->push(command);
-    
     workerThread->terminate();
-    workerThread->isTerminated(1000);
+
+    //unblock the push()
+    iqOutputQueue->flush();
+    iqInputQueue->flush();
+
+    //wait blocking for termination here, it could be long with lots of modems and we MUST terminate properly,
+    //else better kill the whole application...
+    workerThread->isTerminated(5000);
 
     t_Worker->join();
     delete t_Worker;
@@ -366,12 +366,6 @@ void DemodulatorPreThread::terminate() {
 
     delete workerThread;
     workerThread = nullptr;
-
-    delete workerResults;
-    workerResults = nullptr;
-
-    delete workerQueue;
-    workerQueue = nullptr;
 }
 
 Modem *DemodulatorPreThread::getModem() {

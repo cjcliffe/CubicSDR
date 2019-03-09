@@ -29,16 +29,17 @@
 /*! \file riglist.h
  *  \brief Hamlib rig(radio) model definitions.
  *
- *  This file contains rig model definitions for the Hamlib rig API.
- *  Each distinct rig type has a unique model number (ID) and is used
- *  by hamlib to identify and distinguish between the different hardware drivers.
- *  The exact model numbers can be acquired using the macros in this
- *  file. To obtain a list of supported rig branches, one can use the statically
- *  defined RIG_BACKEND_LIST macro. To obtain a full list of supported rig (including
- *  each model in every branch), the foreach_opened_rig() API function can be used.
+ *  This file contains rig model definitions for the Hamlib rig API.  Each
+ *  distinct rig type has a unique model number (ID) and is used by hamlib to
+ *  identify and distinguish between the different hardware drivers.  The
+ *  exact model numbers can be acquired using the macros in this file. To
+ *  obtain a list of supported rig branches, one can use the statically
+ *  defined RIG_BACKEND_LIST macro. To obtain a full list of supported rig
+ *  (including each model in every branch), the foreach_opened_rig() API
+ *  function can be used.
  *
- *  The model number, or ID, is used to tell hamlib, which rig the client whishes to
- *  use. It is done with the rig_init() API call.
+ *  The model number, or ID, is used to tell hamlib, which rig the client
+ *  whishes to use. It is done with the rig_init() API call.
  */
 
 #define RIG_MODEL_NONE 0
@@ -46,20 +47,25 @@
 /*! \def RIG_MODEL_DUMMY
  *  \brief A macro that returns the model number for the dummy backend.
  *
- *  The dummy backend, as the name suggests, is a backend which performs
- *  no hardware operations and always behaves as one would expect. It can
- *  be thought of as a hardware simulator and is very usefull for testing
- *  client applications.
+ *  The dummy backend, as the name suggests, is a backend which performs no
+ *  hardware operations and always behaves as one would expect. It can be
+ *  thought of as a hardware simulator and is very usefull for testing client
+ *  applications.
+ *
+ *  It has also been expanded to provide support to "virtual" type of rigs
+ *  such as the network rig control backend and W1HKJ's Flrig application.
  */
 #define RIG_DUMMY 0
 #define RIG_BACKEND_DUMMY "dummy"
 #define RIG_MODEL_DUMMY RIG_MAKE_MODEL(RIG_DUMMY, 1)
 #define RIG_MODEL_NETRIGCTL RIG_MAKE_MODEL(RIG_DUMMY, 2)
 #define RIG_MODEL_ARMSTRONG RIG_MAKE_MODEL(RIG_DUMMY, 3)
+#define RIG_MODEL_FLRIG RIG_MAKE_MODEL(RIG_DUMMY, 4)
 
-	/*
-	 * Yaesu
-	 */
+
+/*
+ * Yaesu
+ */
 #define RIG_YAESU 1
 #define RIG_BACKEND_YAESU "yaesu"
 #define RIG_MODEL_FT847 RIG_MAKE_MODEL(RIG_YAESU, 1)
@@ -97,10 +103,12 @@
 #define RIG_MODEL_VX1700 RIG_MAKE_MODEL(RIG_YAESU, 33)
 #define RIG_MODEL_FT1200 RIG_MAKE_MODEL(RIG_YAESU, 34)
 #define RIG_MODEL_FT991 RIG_MAKE_MODEL(RIG_YAESU, 35)
+#define RIG_MODEL_FT891 RIG_MAKE_MODEL(RIG_YAESU, 36)
 
-	/*
-	 * Kenwood
-	 */
+
+/*
+ * Kenwood
+ */
 #define RIG_KENWOOD 2
 #define RIG_BACKEND_KENWOOD "kenwood"
 #define RIG_MODEL_TS50 RIG_MAKE_MODEL(RIG_KENWOOD, 1)
@@ -138,14 +146,16 @@
 #define RIG_MODEL_THD72A RIG_MAKE_MODEL(RIG_KENWOOD, 33)
 #define RIG_MODEL_TMD710 RIG_MAKE_MODEL(RIG_KENWOOD, 34)
 #define RIG_MODEL_TMV71 RIG_MAKE_MODEL(RIG_KENWOOD, 35)
-#define RIG_MODEL_F6K RIG_MAKE_MODEL(RIG_KENWOOD, 36) /* Flex 6000 Series */
+#define RIG_MODEL_F6K RIG_MAKE_MODEL(RIG_KENWOOD, 36)   /* Flex 6000 Series */
 #define RIG_MODEL_TS590SG RIG_MAKE_MODEL(RIG_KENWOOD, 37)
-#define RIG_MODEL_XG3 RIG_MAKE_MODEL(RIG_KENWOOD, 38)
+#define RIG_MODEL_XG3 RIG_MAKE_MODEL(RIG_KENWOOD, 38)   /* Elecraft XG-3 signal generator */
 #define RIG_MODEL_TS990S RIG_MAKE_MODEL(RIG_KENWOOD, 39)
+#define RIG_MODEL_HPSDR RIG_MAKE_MODEL(RIG_KENWOOD, 40) /* OpenHPSDR, PiHPSDR */
 
-	/*
-	 * Icom
-	 */
+
+/*
+ * Icom
+ */
 #define RIG_ICOM 3
 #define RIG_BACKEND_ICOM "icom"
 #define RIG_MODEL_IC1271 RIG_MAKE_MODEL(RIG_ICOM, 1)
@@ -194,16 +204,16 @@
 #define RIG_MODEL_IC910 RIG_MAKE_MODEL(RIG_ICOM, 44)
 #define RIG_MODEL_IC78 RIG_MAKE_MODEL(RIG_ICOM, 45)
 #define RIG_MODEL_IC746PRO RIG_MAKE_MODEL(RIG_ICOM, 46)
-#define RIG_MODEL_IC756PROII RIG_MAKE_MODEL(RIG_ICOM, 47)
+#define RIG_MODEL_IC756PROII RIG_MAKE_MODEL(RIG_ICOM, 47)   /* 48-53 defined below */
 #define RIG_MODEL_ICID1 RIG_MAKE_MODEL(RIG_ICOM, 54)
 #define RIG_MODEL_IC703 RIG_MAKE_MODEL(RIG_ICOM, 55)
 #define RIG_MODEL_IC7800 RIG_MAKE_MODEL(RIG_ICOM, 56)
 #define RIG_MODEL_IC756PROIII RIG_MAKE_MODEL(RIG_ICOM, 57)
-#define RIG_MODEL_ICR20 RIG_MAKE_MODEL(RIG_ICOM, 58)
+#define RIG_MODEL_ICR20 RIG_MAKE_MODEL(RIG_ICOM, 58)    /* 59 defined below */
 #define RIG_MODEL_IC7000 RIG_MAKE_MODEL(RIG_ICOM, 60)
 #define RIG_MODEL_IC7200 RIG_MAKE_MODEL(RIG_ICOM, 61)
 #define RIG_MODEL_IC7700 RIG_MAKE_MODEL(RIG_ICOM, 62)
-#define RIG_MODEL_IC7600 RIG_MAKE_MODEL(RIG_ICOM, 63)
+#define RIG_MODEL_IC7600 RIG_MAKE_MODEL(RIG_ICOM, 63)   /* 64 defined below */
 #define RIG_MODEL_IC92D RIG_MAKE_MODEL(RIG_ICOM, 65)
 #define RIG_MODEL_ICR9500 RIG_MAKE_MODEL(RIG_ICOM, 66)
 #define RIG_MODEL_IC7410 RIG_MAKE_MODEL(RIG_ICOM, 67)
@@ -214,27 +224,34 @@
 #define RIG_MODEL_IC2730 RIG_MAKE_MODEL(RIG_ICOM, 72)
 #define RIG_MODEL_IC7300 RIG_MAKE_MODEL(RIG_ICOM, 73)
 #define RIG_MODEL_PERSEUS RIG_MAKE_MODEL(RIG_ICOM, 74)
-/* next one is 75 */
+#define RIG_MODEL_IC785x RIG_MAKE_MODEL(RIG_ICOM, 75)
+#define RIG_MODEL_X108G RIG_MAKE_MODEL(RIG_ICOM, 76)    /* Xiegu X108 */
+#define RIG_MODEL_ICR6 RIG_MAKE_MODEL(RIG_ICOM, 77)
+#define RIG_MODEL_IC7610 RIG_MAKE_MODEL(RIG_ICOM, 78)
+/* next one is 79 */
 
-	/*
-	 * Optoelectronics (CI-V)
-	 */
+
+/*
+ * Optoelectronics (CI-V)
+ */
 #define RIG_MODEL_MINISCOUT RIG_MAKE_MODEL(RIG_ICOM, 48)
 #define RIG_MODEL_XPLORER RIG_MAKE_MODEL(RIG_ICOM, 49)
 #define RIG_MODEL_OS535 RIG_MAKE_MODEL(RIG_ICOM, 52)
 #define RIG_MODEL_OS456 RIG_MAKE_MODEL(RIG_ICOM, 53)
 
-	/*
-	 * TenTec (CI-V)
-	 */
+
+/*
+ * TenTec (CI-V)
+ */
 #define RIG_MODEL_OMNIVI RIG_MAKE_MODEL(RIG_ICOM, 50)
 #define RIG_MODEL_OMNIVIP RIG_MAKE_MODEL(RIG_ICOM, 51) /* OMNI-VI+ */
 #define RIG_MODEL_PARAGON2 RIG_MAKE_MODEL(RIG_ICOM, 59)
 #define RIG_MODEL_DELTAII RIG_MAKE_MODEL(RIG_ICOM, 64)
 
-	/*
-	 * Icom PCR
-	 */
+
+/*
+ * Icom PCR
+ */
 #define RIG_PCR 4
 #define RIG_BACKEND_PCR "pcr"
 #define RIG_MODEL_PCR1000 RIG_MAKE_MODEL(RIG_PCR, 1)
@@ -242,9 +259,10 @@
 #define RIG_MODEL_PCR1500 RIG_MAKE_MODEL(RIG_PCR, 3)
 #define RIG_MODEL_PCR2500 RIG_MAKE_MODEL(RIG_PCR, 4)
 
-	/*
-	 * AOR
-	 */
+
+/*
+ * AOR
+ */
 #define RIG_AOR 5
 #define RIG_BACKEND_AOR "aor"
 #define RIG_MODEL_AR8200 RIG_MAKE_MODEL(RIG_AOR, 1)
@@ -264,9 +282,10 @@
 #define RIG_MODEL_AR7030P RIG_MAKE_MODEL(RIG_AOR, 15)
 #define RIG_MODEL_SR2200 RIG_MAKE_MODEL(RIG_AOR, 16)
 
-	/*
-	 * JRC
-	 */
+
+/*
+ * JRC
+ */
 #define RIG_JRC 6
 #define RIG_BACKEND_JRC "jrc"
 #define RIG_MODEL_JST145 RIG_MAKE_MODEL(RIG_JRC, 1)
@@ -277,28 +296,30 @@
 #define RIG_MODEL_NRD535 RIG_MAKE_MODEL(RIG_JRC, 6)
 #define RIG_MODEL_NRD545 RIG_MAKE_MODEL(RIG_JRC, 7)
 
-	/*
-	 * Radio Shack
-	 * Actualy, they might be either Icom or Uniden. TBC --SF
-	 */
+
+/*
+ * Radio Shack
+ * Actualy, they might be either Icom or Uniden. TBC --SF
+ */
 #define RIG_RADIOSHACK 7
 #define RIG_BACKEND_RADIOSHACK "radioshack"
-#define RIG_MODEL_RS64 RIG_MAKE_MODEL(RIG_RADIOSHACK, 1)		/* PRO-64 */
-#define RIG_MODEL_RS2005 RIG_MAKE_MODEL(RIG_RADIOSHACK, 2)	/* w/ OptoElectronics OS456 Board */
-#define RIG_MODEL_RS2006 RIG_MAKE_MODEL(RIG_RADIOSHACK, 3)	/* w/ OptoElectronics OS456 Board */
-#define RIG_MODEL_RS2035 RIG_MAKE_MODEL(RIG_RADIOSHACK, 4)	/* w/ OptoElectronics OS435 Board */
-#define RIG_MODEL_RS2042 RIG_MAKE_MODEL(RIG_RADIOSHACK, 5)	/* w/ OptoElectronics OS435 Board */
-#define RIG_MODEL_RS2041 RIG_MAKE_MODEL(RIG_RADIOSHACK, 6)	/* PRO-2041 */
+#define RIG_MODEL_RS64 RIG_MAKE_MODEL(RIG_RADIOSHACK, 1)    /* PRO-64 */
+#define RIG_MODEL_RS2005 RIG_MAKE_MODEL(RIG_RADIOSHACK, 2)  /* w/ OptoElectronics OS456 Board */
+#define RIG_MODEL_RS2006 RIG_MAKE_MODEL(RIG_RADIOSHACK, 3)  /* w/ OptoElectronics OS456 Board */
+#define RIG_MODEL_RS2035 RIG_MAKE_MODEL(RIG_RADIOSHACK, 4)  /* w/ OptoElectronics OS435 Board */
+#define RIG_MODEL_RS2042 RIG_MAKE_MODEL(RIG_RADIOSHACK, 5)  /* w/ OptoElectronics OS435 Board */
+#define RIG_MODEL_RS2041 RIG_MAKE_MODEL(RIG_RADIOSHACK, 6)  /* PRO-2041 */
 
-	/*
-	 * Uniden
-	 */
+
+/*
+ * Uniden
+ */
 #define RIG_UNIDEN 8
 #define RIG_BACKEND_UNIDEN "uniden"
-#define RIG_MODEL_BC780 RIG_MAKE_MODEL(RIG_UNIDEN, 1)	/* Uniden BC780 - Trunk Tracker "Desktop Radio" */
+#define RIG_MODEL_BC780 RIG_MAKE_MODEL(RIG_UNIDEN, 1)   /* Uniden BC780 - Trunk Tracker "Desktop Radio" */
 #define RIG_MODEL_BC245 RIG_MAKE_MODEL(RIG_UNIDEN, 2)
 #define RIG_MODEL_BC895 RIG_MAKE_MODEL(RIG_UNIDEN, 3)
-#define RIG_MODEL_PRO2052 RIG_MAKE_MODEL(RIG_UNIDEN, 4)	/* Radio Shack PRO-2052 */
+#define RIG_MODEL_PRO2052 RIG_MAKE_MODEL(RIG_UNIDEN, 4) /* Radio Shack PRO-2052 */
 #define RIG_MODEL_BC235 RIG_MAKE_MODEL(RIG_UNIDEN, 5)
 #define RIG_MODEL_BC250 RIG_MAKE_MODEL(RIG_UNIDEN, 6)
 #define RIG_MODEL_BC785 RIG_MAKE_MODEL(RIG_UNIDEN, 7)
@@ -308,18 +329,20 @@
 #define RIG_MODEL_BCD996T RIG_MAKE_MODEL(RIG_UNIDEN, 11)
 #define RIG_MODEL_BC898 RIG_MAKE_MODEL(RIG_UNIDEN, 12)
 
-	/*
-	 * Drake
-	 */
+
+/*
+ * Drake
+ */
 #define RIG_DRAKE 9
 #define RIG_BACKEND_DRAKE "drake"
 #define RIG_MODEL_DKR8 RIG_MAKE_MODEL(RIG_DRAKE, 1)
 #define RIG_MODEL_DKR8A RIG_MAKE_MODEL(RIG_DRAKE, 2)
 #define RIG_MODEL_DKR8B RIG_MAKE_MODEL(RIG_DRAKE, 3)
 
-	/*
-	 * Lowe
-	 */
+
+/*
+ * Lowe
+ */
 #define RIG_LOWE 10
 #define RIG_BACKEND_LOWE "lowe"
 #define RIG_MODEL_HF150 RIG_MAKE_MODEL(RIG_LOWE, 1)
@@ -327,9 +350,10 @@
 #define RIG_MODEL_HF250 RIG_MAKE_MODEL(RIG_LOWE, 3)
 #define RIG_MODEL_HF235 RIG_MAKE_MODEL(RIG_LOWE, 4)
 
-	/*
-	 * Racal
-	 */
+
+/*
+ * Racal
+ */
 #define RIG_RACAL 11
 #define RIG_BACKEND_RACAL "racal"
 #define RIG_MODEL_RA3790 RIG_MAKE_MODEL(RIG_RACAL, 1)
@@ -338,9 +362,10 @@
 #define RIG_MODEL_RA3710 RIG_MAKE_MODEL(RIG_RACAL, 4)
 #define RIG_MODEL_RA3702 RIG_MAKE_MODEL(RIG_RACAL, 5)
 
-	/*
-	 * Watkins-Johnson
-	 */
+
+/*
+ * Watkins-Johnson
+ */
 #define RIG_WJ 12
 #define RIG_BACKEND_WJ "wj"
 #define RIG_MODEL_HF1000 RIG_MAKE_MODEL(RIG_WJ, 1)
@@ -348,9 +373,10 @@
 #define RIG_MODEL_WJ8711 RIG_MAKE_MODEL(RIG_WJ, 3)
 #define RIG_MODEL_WJ8888 RIG_MAKE_MODEL(RIG_WJ, 4)
 
-	/*
-	 * Rohde & Schwarz
-	 */
+
+/*
+ * Rohde & Schwarz--ek
+ */
 #define RIG_EK 13
 #define RIG_BACKEND_EK "ek"
 #define RIG_MODEL_ESM500 RIG_MAKE_MODEL(RIG_EK, 1)
@@ -359,9 +385,10 @@
 #define RIG_MODEL_EK895 RIG_MAKE_MODEL(RIG_EK, 4)
 #define RIG_MODEL_EK070 RIG_MAKE_MODEL(RIG_EK, 5)
 
-	/*
-	 * Skanti
-	 */
+
+/*
+ * Skanti
+ */
 #define RIG_SKANTI 14
 #define RIG_BACKEND_SKANTI "skanti"
 #define RIG_MODEL_TRP7000 RIG_MAKE_MODEL(RIG_SKANTI, 1)
@@ -369,9 +396,10 @@
 #define RIG_MODEL_TRP9000 RIG_MAKE_MODEL(RIG_SKANTI, 3)
 #define RIG_MODEL_TRP8255 RIG_MAKE_MODEL(RIG_SKANTI, 4)
 
-	/*
-	 * WiNRADiO/LinRADiO
-	 */
+
+/*
+ * WiNRADiO/LinRADiO
+ */
 #define RIG_WINRADIO 15
 #define RIG_BACKEND_WINRADIO "winradio"
 #define RIG_MODEL_WR1000 RIG_MAKE_MODEL(RIG_WINRADIO, 1)
@@ -386,69 +414,75 @@
 #define RIG_MODEL_G305 RIG_MAKE_MODEL(RIG_WINRADIO, 10)
 #define RIG_MODEL_G315 RIG_MAKE_MODEL(RIG_WINRADIO, 11)
 
-	/*
-	 * Ten Tec
-	 */
+
+/*
+ * Ten Tec
+ */
 #define RIG_TENTEC 16
 #define RIG_BACKEND_TENTEC "tentec"
-#define RIG_MODEL_TT550 RIG_MAKE_MODEL(RIG_TENTEC, 1)	/* Pegasus */
-#define RIG_MODEL_TT538 RIG_MAKE_MODEL(RIG_TENTEC, 2)	/* Jupiter */
+#define RIG_MODEL_TT550 RIG_MAKE_MODEL(RIG_TENTEC, 1)   /* Pegasus */
+#define RIG_MODEL_TT538 RIG_MAKE_MODEL(RIG_TENTEC, 2)   /* Jupiter */
 #define RIG_MODEL_RX320 RIG_MAKE_MODEL(RIG_TENTEC, 3)
 #define RIG_MODEL_RX340 RIG_MAKE_MODEL(RIG_TENTEC, 4)
 #define RIG_MODEL_RX350 RIG_MAKE_MODEL(RIG_TENTEC, 5)
-#define RIG_MODEL_TT526 RIG_MAKE_MODEL(RIG_TENTEC, 6)	/* 6N2 */
-#define RIG_MODEL_TT516 RIG_MAKE_MODEL(RIG_TENTEC, 7)	/* Argonaut V */
-#define RIG_MODEL_TT565 RIG_MAKE_MODEL(RIG_TENTEC, 8)	/* Orion */
-#define RIG_MODEL_TT585 RIG_MAKE_MODEL(RIG_TENTEC, 9)	/* Paragon */
-#define RIG_MODEL_TT588 RIG_MAKE_MODEL(RIG_TENTEC, 11)	/* Omni-VII */
+#define RIG_MODEL_TT526 RIG_MAKE_MODEL(RIG_TENTEC, 6)   /* 6N2 */
+#define RIG_MODEL_TT516 RIG_MAKE_MODEL(RIG_TENTEC, 7)   /* Argonaut V */
+#define RIG_MODEL_TT565 RIG_MAKE_MODEL(RIG_TENTEC, 8)   /* Orion */
+#define RIG_MODEL_TT585 RIG_MAKE_MODEL(RIG_TENTEC, 9)   /* Paragon */
+#define RIG_MODEL_TT588 RIG_MAKE_MODEL(RIG_TENTEC, 11)  /* Omni-VII */
 #define RIG_MODEL_RX331 RIG_MAKE_MODEL(RIG_TENTEC, 12)
 #define RIG_MODEL_TT599 RIG_MAKE_MODEL(RIG_TENTEC, 13)  /* Eagle */
 
-	/*
-	 * Alinco
-	 */
+
+/*
+ * Alinco
+ */
 #define RIG_ALINCO 17
 #define RIG_BACKEND_ALINCO "alinco"
 #define RIG_MODEL_DX77 RIG_MAKE_MODEL(RIG_ALINCO, 1)
 
-	/*
-	 * Kachina
-	 */
+
+/*
+ * Kachina
+ */
 #define RIG_KACHINA 18
 #define RIG_BACKEND_KACHINA "kachina"
 #define RIG_MODEL_505DSP RIG_MAKE_MODEL(RIG_KACHINA, 1)
 
 
-	/*
-	 * Gnuradio backend
-	 */
+/*
+ * Gnuradio backend
+ */
 #define RIG_GNURADIO 20
 #define RIG_BACKEND_GNURADIO "gnuradio"
-#define RIG_MODEL_GNURADIO RIG_MAKE_MODEL(RIG_GNURADIO, 1) /* dev model, Chirp source */
-#define RIG_MODEL_MC4020 RIG_MAKE_MODEL(RIG_GNURADIO, 2)	/* MC4020 */
-#define RIG_MODEL_GRAUDIO RIG_MAKE_MODEL(RIG_GNURADIO, 3)	/* Sound card source */
-#define RIG_MODEL_GRAUDIOIQ RIG_MAKE_MODEL(RIG_GNURADIO, 4)	/* I&Q stereo sound card source */
-#define RIG_MODEL_USRP_G RIG_MAKE_MODEL(RIG_GNURADIO, 5)	/* Universal Software Radio Peripheral */
+#define RIG_MODEL_GNURADIO RIG_MAKE_MODEL(RIG_GNURADIO, 1)  /* dev model, Chirp source */
+#define RIG_MODEL_MC4020 RIG_MAKE_MODEL(RIG_GNURADIO, 2)    /* MC4020 */
+#define RIG_MODEL_GRAUDIO RIG_MAKE_MODEL(RIG_GNURADIO, 3)   /* Sound card source */
+#define RIG_MODEL_GRAUDIOIQ RIG_MAKE_MODEL(RIG_GNURADIO, 4) /* I&Q stereo sound card source */
+#define RIG_MODEL_USRP_G RIG_MAKE_MODEL(RIG_GNURADIO, 5)    /* Universal Software Radio Peripheral */
 
-	/*
-	 * Microtune tuners
-	 */
+
+/*
+ * Microtune tuners
+ */
 #define RIG_MICROTUNE 21
 #define RIG_BACKEND_MICROTUNE "microtune"
-#define RIG_MODEL_MICROTUNE_4937 RIG_MAKE_MODEL(RIG_MICROTUNE, 1)	/* eval board */
-#define RIG_MODEL_MICROTUNE_4702 RIG_MAKE_MODEL(RIG_MICROTUNE, 2)	/* Alan's */
+#define RIG_MODEL_MICROTUNE_4937 RIG_MAKE_MODEL(RIG_MICROTUNE, 1)   /* eval board */
+#define RIG_MODEL_MICROTUNE_4702 RIG_MAKE_MODEL(RIG_MICROTUNE, 2)   /* Alan's */
 #define RIG_MODEL_MICROTUNE_4707 RIG_MAKE_MODEL(RIG_MICROTUNE, 3)
 
-	/*
-	 * TAPR
-	 */
+
+/*
+ * TAPR
+ */
 #define RIG_TAPR 22
 #define RIG_BACKEND_TAPR "tapr"
 #define RIG_MODEL_DSP10 RIG_MAKE_MODEL(RIG_TAPR, 1)
 
-	/*
-	 * Flex-radio
-	 */
+
+/*
+ * Flex-radio
+ */
 #define RIG_FLEXRADIO 23
 #define RIG_BACKEND_FLEXRADIO "flexradio"
 #define RIG_MODEL_SDR1000 RIG_MAKE_MODEL(RIG_FLEXRADIO, 1)
@@ -457,100 +491,127 @@
 #define RIG_MODEL_DTTSP_UDP RIG_MAKE_MODEL(RIG_FLEXRADIO, 4)
 
 
-	/*
-	 * VEB Funkwerk Köpenick RFT
-	 */
+/*
+ * VEB Funkwerk Köpenick RFT
+ */
 #define RIG_RFT 24
 #define RIG_BACKEND_RFT "rft"
 #define RIG_MODEL_EKD500 RIG_MAKE_MODEL(RIG_RFT, 1)
 
-	/*
-	 * Various kits
-	 */
+
+/*
+ * Various kits
+ */
 #define RIG_KIT 25
 #define RIG_BACKEND_KIT "kit"
 #define RIG_MODEL_ELEKTOR304 RIG_MAKE_MODEL(RIG_KIT, 1)
 #define RIG_MODEL_DRT1 RIG_MAKE_MODEL(RIG_KIT, 2)
 #define RIG_MODEL_DWT RIG_MAKE_MODEL(RIG_KIT, 3)
-#define RIG_MODEL_USRP0 RIG_MAKE_MODEL(RIG_KIT, 4)	/* prototype */
+#define RIG_MODEL_USRP0 RIG_MAKE_MODEL(RIG_KIT, 4)              /* prototype */
 #define RIG_MODEL_USRP RIG_MAKE_MODEL(RIG_KIT, 5)
 #define RIG_MODEL_DDS60 RIG_MAKE_MODEL(RIG_KIT, 6)
-#define RIG_MODEL_ELEKTOR507 RIG_MAKE_MODEL(RIG_KIT, 7)	/* Elektor SDR USB */
+#define RIG_MODEL_ELEKTOR507 RIG_MAKE_MODEL(RIG_KIT, 7)         /* Elektor SDR USB */
 #define RIG_MODEL_MINIVNA RIG_MAKE_MODEL(RIG_KIT, 8)
-#define RIG_MODEL_SI570AVRUSB RIG_MAKE_MODEL(RIG_KIT, 9) /* SoftRock Si570 AVR */
+#define RIG_MODEL_SI570AVRUSB RIG_MAKE_MODEL(RIG_KIT, 9)        /* SoftRock Si570 AVR */
 #define RIG_MODEL_PMSDR RIG_MAKE_MODEL(RIG_KIT, 10)
-#define RIG_MODEL_SI570PICUSB RIG_MAKE_MODEL(RIG_KIT, 11) /* SoftRock Si570 PIC */
-#define RIG_MODEL_FIFISDR RIG_MAKE_MODEL(RIG_KIT, 12) /* FiFi-SDR USB */
-#define RIG_MODEL_FUNCUBEDONGLE RIG_MAKE_MODEL(RIG_KIT, 13)	/* FunCUBE Dongle */
-#define RIG_MODEL_HIQSDR RIG_MAKE_MODEL(RIG_KIT, 14)	/* HiQSDR */
-#define RIG_MODEL_FASDR RIG_MAKE_MODEL(RIG_KIT,15) /* Funkamateur Sdr */
-#define RIG_MODEL_SI570PEABERRY1 RIG_MAKE_MODEL(RIG_KIT, 16) /* Peaberry V1 */
-#define RIG_MODEL_SI570PEABERRY2 RIG_MAKE_MODEL(RIG_KIT, 17) /* Peaberry V2 */
-#define RIG_MODEL_FUNCUBEDONGLEPLUS RIG_MAKE_MODEL(RIG_KIT, 18)	/* FunCUBE Dongle Pro+ */
+#define RIG_MODEL_SI570PICUSB RIG_MAKE_MODEL(RIG_KIT, 11)       /* SoftRock Si570 PIC */
+#define RIG_MODEL_FIFISDR RIG_MAKE_MODEL(RIG_KIT, 12)           /* FiFi-SDR USB */
+#define RIG_MODEL_FUNCUBEDONGLE RIG_MAKE_MODEL(RIG_KIT, 13)     /* FunCUBE Dongle */
+#define RIG_MODEL_HIQSDR RIG_MAKE_MODEL(RIG_KIT, 14)            /* HiQSDR */
+#define RIG_MODEL_FASDR RIG_MAKE_MODEL(RIG_KIT,15)              /* Funkamateur Sdr */
+#define RIG_MODEL_SI570PEABERRY1 RIG_MAKE_MODEL(RIG_KIT, 16)    /* Peaberry V1 */
+#define RIG_MODEL_SI570PEABERRY2 RIG_MAKE_MODEL(RIG_KIT, 17)    /* Peaberry V2 */
+#define RIG_MODEL_FUNCUBEDONGLEPLUS RIG_MAKE_MODEL(RIG_KIT, 18) /* FunCUBE Dongle Pro+ */
+#define RIG_MODEL_RSHFIQ RIG_MAKE_MODEL(RIG_KIT, 19)            /* RS-HFIQ */
 
-	/*
-	 * SW/FM/TV tuner cards supported by Video4Linux,*BSD, ..
-	 */
+
+/*
+ * SW/FM/TV tuner cards supported by Video4Linux,*BSD, ..
+ */
 #define RIG_TUNER 26
 #define RIG_BACKEND_TUNER "tuner"
 #define RIG_MODEL_V4L RIG_MAKE_MODEL(RIG_TUNER, 1)
 #define RIG_MODEL_V4L2 RIG_MAKE_MODEL(RIG_TUNER, 2)
 
-	/*
-	 * Rohde&Schwarz
-	 */
+
+/*
+ * Rohde & Schwarz--rs
+ */
 #define RIG_RS 27
 #define RIG_BACKEND_RS "rs"
 #define RIG_MODEL_ESMC RIG_MAKE_MODEL(RIG_RS, 1)
 #define RIG_MODEL_EB200 RIG_MAKE_MODEL(RIG_RS, 2)
+#define RIG_MODEL_XK2100 RIG_MAKE_MODEL(RIG_RS, 3)
 
-	/*
-	 * Phillips/Simoco PRM80
-	 */
+
+/*
+ * Phillips/Simoco PRM80
+ */
 #define RIG_PRM80 28
 #define RIG_BACKEND_PRM80 "prm80"
 #define RIG_MODEL_PRM8060 RIG_MAKE_MODEL(RIG_PRM80, 1)
 #define RIG_MODEL_PRM8070 RIG_MAKE_MODEL(RIG_PRM80, 2)
 
-        /*
-         * ADAT by HB9CBU
-         *
-         * ADDED: frgo (DG1SBG), 2012-01-01
-         */
+
+/*
+ * ADAT by HB9CBU
+ *
+ * ADDED: frgo (DG1SBG), 2012-01-01
+ */
 #define RIG_ADAT 29
 #define RIG_BACKEND_ADAT "adat"
 #define RIG_MODEL_ADT_200A RIG_MAKE_MODEL(RIG_ADAT, 1)
 
-        /*
-         * ICOM Marine
-         */
+
+/*
+ * ICOM Marine
+ */
 #define RIG_ICMARINE 30
 #define RIG_BACKEND_ICMARINE "icmarine"
 #define RIG_MODEL_IC_M700PRO RIG_MAKE_MODEL(RIG_ICMARINE, 1)
 #define RIG_MODEL_IC_M802 RIG_MAKE_MODEL(RIG_ICMARINE, 2)
 #define RIG_MODEL_IC_M710 RIG_MAKE_MODEL(RIG_ICMARINE, 3)
 
-	/*
-	 * TODO:
-		RIG_MODEL_KWZ30,	KNEISNER +DOERING
-		RIG_MODEL_E1800,	DASA-Telefunken
-		etc.
-	*/
+
+/*
+ * Dorji transceiver modules
+ */
+#define RIG_DORJI 31
+#define RIG_BACKEND_DORJI "dorji"
+#define RIG_MODEL_DORJI_DRA818V RIG_MAKE_MODEL(RIG_DORJI, 1)
+#define RIG_MODEL_DORJI_DRA818U RIG_MAKE_MODEL(RIG_DORJI, 2)
+
+/*
+ * Barrett
+ */
+#define RIG_BARRETT 32
+#define RIG_BACKEND_BARRETT "barrett"
+#define RIG_MODEL_BARRETT_2050 RIG_MAKE_MODEL(RIG_BARRETT, 1)
+
+
+/*
+ * TODO:
+    RIG_MODEL_KWZ30,    KNEISNER +DOERING
+    RIG_MODEL_E1800,    DASA-Telefunken
+    etc.
+*/
+
 
 /*! \typedef typedef int rig_model_t
     \brief Convenience type definition for rig model.
 */
 typedef int rig_model_t;
 
+
 /*
  * struct rig_backend_list {
- *		rig_model_t model;
- *		const char *backend;
+ *      rig_model_t model;
+ *      const char *backend;
  * } rig_backend_list[] = RIG_LIST;
  *
  * TODO:
  *
-	{ RIG_RADIOSHACK, RIG_BACKEND_RADIOSHACK }, \
+    { RIG_RADIOSHACK, RIG_BACKEND_RADIOSHACK }, \
  */
 
 #endif /* _RIGLIST_H */

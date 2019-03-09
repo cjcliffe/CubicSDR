@@ -5,6 +5,9 @@
 #include <algorithm>
 #include <ThreadBlockingQueue.h>
 
+//50 ms
+#define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
+
 FFTDataDistributor::FFTDataDistributor() : outputBuffers("FFTDataDistributorBuffers"), fftSize(DEFAULT_FFT_SIZE), linesPerSecond(DEFAULT_WATERFALL_LPS), lineRateAccum(0.0) {
 
 }
@@ -28,8 +31,11 @@ void FFTDataDistributor::process() {
 		if (!isAnyOutputEmpty()) {
 			return;
 		}
-		DemodulatorThreadIQData *inp;
-		input->pop(inp);
+		DemodulatorThreadIQDataPtr inp;
+
+        if (!input->pop(inp, HEARTBEAT_CHECK_PERIOD_MICROS)) {
+            continue;
+        }
 
 		if (inp) {
             //Settings have changed, set new values and dump all previous samples stored in inputBuffer: 
@@ -73,7 +79,7 @@ void FFTDataDistributor::process() {
             memcpy(&inputBuffer.data[bufferOffset+bufferedItems],&inp->data[0], nbSamplesToAdd *sizeof(liquid_float_complex));
             bufferedItems += nbSamplesToAdd;
             //
-			inp->decRefCount();
+		
 		} else {
             //empty inp, wait for another.
 			continue;
@@ -105,7 +111,8 @@ void FFTDataDistributor::process() {
 
 					if (lineRateAccum >= 1.0) {
                         //each i represents a FFT computation
-						DemodulatorThreadIQData *outp = outputBuffers.getBuffer();
+                        DemodulatorThreadIQDataPtr outp = outputBuffers.getBuffer();
+
 						outp->frequency = inputBuffer.frequency;
 						outp->sampleRate = inputBuffer.sampleRate;
 						outp->data.assign(inputBuffer.data.begin()+bufferOffset+i,

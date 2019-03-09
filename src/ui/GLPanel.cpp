@@ -308,7 +308,7 @@ void GLPanel::calcTransform(mat4 transform_in) {
 void GLPanel::draw() {
     float min = -1.0, max = 1.0;
 
-    glLoadMatrixf(transform);
+    glLoadMatrixf(transform.to_ptr());
     
     if (fillType != GLPANEL_FILL_NONE && visible) {
         glEnable(GL_BLEND);
@@ -378,7 +378,7 @@ void GLPanel::draw() {
         }
         //        if (coord == GLPANEL_Y_UP) {
         //        }
-        glLoadMatrixf(transform * mCoord);
+        glLoadMatrixf((transform * mCoord).to_ptr());
         drawPanelContents();
     }
 }

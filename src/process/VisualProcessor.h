@@ -8,29 +8,40 @@
 #include "IOThread.h"
 #include <algorithm>
 #include <vector>
+#include <typeinfo>
 
-template<typename InputDataType = ReferenceCounter, typename OutputDataType = ReferenceCounter>
+template<typename InputDataType, typename OutputDataType>
 class VisualProcessor {
-    //
-    typedef  ThreadBlockingQueue<InputDataType*> VisualInputQueueType;
-    typedef  ThreadBlockingQueue<OutputDataType*> VisualOutputQueueType;
-    typedef typename std::vector< VisualOutputQueueType *>::iterator outputs_i;
-public:
-	virtual ~VisualProcessor() {
 
+public:
+    //
+    typedef typename std::shared_ptr<InputDataType> InputDataTypePtr;
+    typedef typename std::shared_ptr<OutputDataType> OutputDataTypePtr;
+
+    typedef  ThreadBlockingQueue<InputDataTypePtr> VisualInputQueueType;
+    typedef  ThreadBlockingQueue<OutputDataTypePtr> VisualOutputQueueType;
+
+    typedef  std::shared_ptr<VisualInputQueueType> VisualInputQueueTypePtr;
+    typedef  std::shared_ptr<VisualOutputQueueType> VisualOutputQueueTypePtr;
+
+	virtual ~VisualProcessor() {
 	}
     
     bool isInputEmpty() {
-        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+        std::lock_guard < std::mutex > busy_lock(busy_update);
+		
+		if (input) {
+			return input->empty();
+		}
 
-        return input->empty();
+		return true;
     }
     
     bool isOutputEmpty() {
-        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+        std::lock_guard < std::mutex > busy_lock(busy_update);
 
-        for (outputs_i it = outputs.begin(); it != outputs.end(); it++) {
-            if ((*it)->full()) {
+        for (VisualOutputQueueTypePtr single_output :  outputs) {
+            if (single_output->full()) {
                 return false;
             }
         }
@@ -38,10 +49,10 @@ public:
     }
     
     bool isAnyOutputEmpty() {
-        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+        std::lock_guard < std::mutex > busy_lock(busy_update);
 
-        for (outputs_i it = outputs.begin();  it != outputs.end(); it++) {
-            if (!(*it)->full()) {
+        for (VisualOutputQueueTypePtr single_output : outputs) {
+            if (!(single_output)->full()) {
                 return true;
             }
         }
@@ -49,45 +60,68 @@ public:
     }
 
     //Set a (new) 'input' queue for incoming data.
-    void setInput(VisualInputQueueType *vis_in) {
-        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+    void setInput(VisualInputQueueTypePtr vis_in) {
+        std::lock_guard < std::mutex > busy_lock(busy_update);
         input = vis_in;
         
     }
     
     //Add a vis_out queue where to consumed 'input' data will be
     //dispatched by distribute(). 
-    void attachOutput(VisualOutputQueueType *vis_out) {
+    void attachOutput(VisualOutputQueueTypePtr vis_out) {
         // attach an output queue
-        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+        std::lock_guard < std::mutex > busy_lock(busy_update);
         outputs.push_back(vis_out);
     }
     
     //reverse of attachOutput(), removed an existing attached vis_out.
-    void removeOutput(VisualOutputQueueType *vis_out) {
+    void removeOutput(VisualOutputQueueTypePtr vis_out) {
         // remove an output queue
-        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+        std::lock_guard < std::mutex > busy_lock(busy_update);
 
-        outputs_i i = std::find(outputs.begin(), outputs.end(), vis_out);
-        if (i != outputs.end()) {
-            outputs.erase(i);
+        auto it = std::find(outputs.begin(), outputs.end(), vis_out);
+        if (it != outputs.end()) {
+            outputs.erase(it);
+        }
+    }
+    //Flush all queues, either input or outputs clearing their accumulated messages.
+    //this is purposefully (almost) non-blocking call.
+    void flushQueues() {
+       
+		//capture a local copy atomically, so we don't need to protect input.
+		VisualInputQueueTypePtr localInput = input;
+
+		if (localInput) {
+			localInput->flush();
+		}
+
+		//scoped-lock: create a local copy of outputs, and work with it.
+		std::vector<VisualOutputQueueTypePtr> local_outputs;
+		{
+			std::lock_guard < std::mutex > busy_lock(busy_update);
+			local_outputs = outputs;
+		}
+
+        for (auto single_output : local_outputs) {
+
+            single_output->flush();
         }
     }
     
     //Call process() repeateadly until all available 'input' data is consumed.
     void run() {
-        
-        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+		
+		//capture a local copy atomically, so we don't need to protect input.
+		VisualInputQueueTypePtr localInput = input;
 
-        if (input && !input->empty()) {
+        if (localInput && !localInput->empty()) {
             process();
-        }
-       
+		}
     }
     
 protected:
     // derived class must implement a  process() interface
-    //where typically 'input' data is consummed, procerssed, and then dispatched
+    //where typically 'input' data is consummed, processed, and then dispatched
     //with distribute() to all 'outputs'.
     virtual void process() = 0;
 
@@ -96,58 +130,53 @@ protected:
     //available outputs, previously set by attachOutput().
     //* \param[in] timeout The number of microseconds to wait to push an item in each one of the outputs, 0(default) means indefinite wait.
     //* \param[in] errorMessage an error message written on std::cout in case pf push timeout.
-    void distribute(OutputDataType *item, std::uint64_t timeout = BLOCKING_INFINITE_TIMEOUT, const char* errorMessage = "") {
+    void distribute(OutputDataTypePtr item, std::uint64_t timeout = BLOCKING_INFINITE_TIMEOUT, const char* errorMessage = nullptr) {
       
-        std::lock_guard < std::recursive_mutex > busy_lock(busy_update);
+        std::lock_guard < std::mutex > busy_lock(busy_update);
         //We will try to distribute 'output' among all 'outputs',
-        //so 'output' will a-priori be shared among all 'outputs' so set its ref count to this 
-        //amount.
-        item->setRefCount((int)outputs.size());
-        for (outputs_i it = outputs.begin(); it != outputs.end(); it++) {
-            //if 'output' failed to be given to an outputs_i, dec its ref count accordingly.
-            //blocking push, with a timeout
-        	if (!(*it)->push(item, timeout, errorMessage)) {
-                item->decRefCount();
+        //so 'output' will a-priori be shared among all 'outputs'.
+
+        for (VisualOutputQueueTypePtr single_output : outputs) {
+            //'output' can fail to be given to an single_output,
+            //using a blocking push, with a timeout
+        	if (!(single_output)->push(item, timeout, errorMessage)) {
+                //trace  will be std::output if timeout != 0 is set and errorMessage != null.
         	} 
         }
-        // Now 'item' refcount matches the times 'item' has been successfully distributed,
-        //i.e shared among the outputs.
     }
 
     //the incoming data queue 
-    VisualInputQueueType *input = nullptr;
+    VisualInputQueueTypePtr input;
     
     //the n-outputs where to process()-ed data is distribute()-ed.
-    std::vector<VisualOutputQueueType *> outputs;
+    std::vector<VisualOutputQueueTypePtr> outputs;
 
-    //protects input and outputs, must be recursive because of re-entrance
-    std::recursive_mutex busy_update;
+    //protects input and outputs
+    std::mutex busy_update;
 };
 
 //Specialization much like VisualDataReDistributor, except 
 //the input (pointer) is directly re-dispatched
 //to outputs, so that all output indeed SHARE the same instance. 
-template<typename OutputDataType = ReferenceCounter>
+template<typename OutputDataType>
 class VisualDataDistributor : public VisualProcessor<OutputDataType, OutputDataType> {
 protected:
+
     virtual void process() {
-        OutputDataType *inp;
+
+        typename VisualProcessor<OutputDataType, OutputDataType>::OutputDataTypePtr inp;
+
         while (VisualProcessor<OutputDataType, OutputDataType>::input->try_pop(inp)) {
             
+			//do not try to distribute if all outputs are already full.
             if (!VisualProcessor<OutputDataType, OutputDataType>::isAnyOutputEmpty()) {
-                if (inp) {
-            	    inp->decRefCount();
-                }
+               
                 return;
             }
       
             if (inp) {
-                int previousRefCount = inp->getRefCount();
             	VisualProcessor<OutputDataType, OutputDataType>::distribute(inp);
-                //inp is now shared through the distribute(), which overwrite the previous ref count,
-                //so increment it properly.
-                int distributeRefCount = inp->getRefCount();
-                inp->setRefCount(previousRefCount + distributeRefCount);
+                //inp is now shared through the distribute() call.
             }
         }
     }
@@ -155,27 +184,39 @@ protected:
 
 //specialization class which process() take an input item and re-dispatch
 //A COPY to every outputs, without further processing. This is a 1-to-n dispatcher. 
-template<typename OutputDataType = ReferenceCounter>
+template<typename OutputDataType>
 class VisualDataReDistributor : public VisualProcessor<OutputDataType, OutputDataType> {
+
 protected:
+
+    VisualDataReDistributor() : buffers (std::string(typeid(*this).name())) {
+
+    }
+
+    ReBuffer<OutputDataType> buffers;
+
     virtual void process() {
-        OutputDataType *inp;
+
+        typename VisualProcessor<OutputDataType, OutputDataType>::OutputDataTypePtr inp;
+
         while (VisualProcessor<OutputDataType, OutputDataType>::input->try_pop(inp)) {
             
+			//do not try to distribute if all outputs are already full.
             if (!VisualProcessor<OutputDataType, OutputDataType>::isAnyOutputEmpty()) {
-                if (inp) {
-            	    inp->decRefCount();
-                }
+               
                 return;
             }
             
             if (inp) {
-                OutputDataType *outp = buffers.getBuffer();
+
+                typename VisualProcessor<OutputDataType, OutputDataType>::OutputDataTypePtr outp = buffers.getBuffer();
+
+                //'deep copy' of the contents 
                 (*outp) = (*inp);
-                inp->decRefCount();
+  
                 VisualProcessor<OutputDataType, OutputDataType>::distribute(outp);
             }
         }
     }
-    ReBuffer<OutputDataType> buffers;
+    
 };

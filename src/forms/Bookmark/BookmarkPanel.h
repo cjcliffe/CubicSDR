@@ -1,8 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Jun 17 2015)
+// C++ code generated with wxFormBuilder (version Aug  8 2018)
 // http://www.wxformbuilder.org/
 //
-// PLEASE DO "NOT" EDIT THIS FILE!
+// PLEASE DO *NOT* EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
 
 #ifndef __BOOKMARKPANEL_H__
@@ -16,6 +16,9 @@
 #include <wx/font.h>
 #include <wx/colour.h>
 #include <wx/settings.h>
+#include <wx/bitmap.h>
+#include <wx/image.h>
+#include <wx/icon.h>
 #include <wx/button.h>
 #include <wx/treectrl.h>
 #include <wx/stattext.h>
@@ -73,7 +76,7 @@ class BookmarkPanel : public wxPanel
 	
 	public:
 		
-		BookmarkPanel( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 169,471 ), long style = wxTAB_TRAVERSAL ); 
+		BookmarkPanel( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 169,471 ), long style = wxTAB_TRAVERSAL, const wxString& name = wxEmptyString ); 
 		~BookmarkPanel();
 	
 };

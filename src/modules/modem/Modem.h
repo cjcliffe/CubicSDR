@@ -8,6 +8,7 @@
 #include "AudioThread.h"
 #include <cmath>
 #include <atomic>
+#include <memory>
 
 #define MIN_BANDWIDTH 500
 
@@ -25,7 +26,7 @@ public:
     int audioSampleRate;
 };
 
-class ModemIQData: public ReferenceCounter {
+class ModemIQData {
 public:
     std::vector<liquid_float_complex> data;
     long long sampleRate;
@@ -34,10 +35,12 @@ public:
         
     }
     
-    ~ModemIQData() {
-        std::lock_guard < std::recursive_mutex > lock(m_mutex);
+    virtual ~ModemIQData() {
+        
     }
 };
+
+typedef std::shared_ptr<ModemIQData> ModemIQDataPtr;
 
 // Copy of SoapySDR::Range, original comments
 class ModemRange

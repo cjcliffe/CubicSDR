@@ -83,10 +83,18 @@ public:
     bool hasCORR(int direction, size_t channel);
     
     std::vector<long> getSampleRates(int direction, size_t channel);
+
+    std::vector<std::string> getAntennaNames(int direction, size_t channel);
+
+    std::string getAntennaName(int direction, size_t channel);
     
     long getSampleRateNear(int direction, size_t channel, long sampleRate_in);
 
     SDRRangeMap getGains(int direction, size_t channel);
+
+	//read the current gain of name gainName (must exist in getGains(), else return 0)
+	//in the device.
+	double getCurrentGain(int direction, size_t channel, const std::string& gainName);
 
 private:
     int index = 0;

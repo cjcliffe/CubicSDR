@@ -31,10 +31,10 @@ EVT_LEAVE_WINDOW(ScopeCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(ScopeCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
-ScopeCanvas::ScopeCanvas(wxWindow *parent, std::vector<int> dispAttrs) : InteractiveCanvas(parent, dispAttrs), ppmMode(false), ctr(0), ctrTarget(0), dragAccel(0), helpTip("") {
+ScopeCanvas::ScopeCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) : InteractiveCanvas(parent, dispAttrs), ppmMode(false), ctr(0), ctrTarget(0), dragAccel(0), helpTip("") {
 
-    glContext = new ScopeContext(this, &wxGetApp().GetContext(this));
-    inputData.set_max_num_items(2);
+    glContext = new ScopeContext(this, &wxGetApp().GetContext(this), wxGetApp().GetContextAttributes());
+    inputData->set_max_num_items(2);
     bgPanel.setFill(GLPanel::GLPANEL_FILL_GRAD_Y);
     bgPanel.setSize(1.0, 0.5f);
     bgPanel.setPosition(0.0, -0.5f);
@@ -104,8 +104,8 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     wxPaintDC dc(this);
     const wxSize ClientSize = GetClientSize();
     
-    ScopeRenderData *avData;
-    while (inputData.try_pop(avData)) {
+    ScopeRenderDataPtr avData;
+    while (inputData->try_pop(avData)) {
        
         
         if (!avData->spectrum) {
@@ -113,7 +113,7 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
             if (avData->waveform_points.size()) {
                 scopePanel.setPoints(avData->waveform_points);
             }
-            avData->decRefCount();
+
         } else {
             if (avData->waveform_points.size()) {
                 spectrumPanel.setPoints(avData->waveform_points);
@@ -124,8 +124,7 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
                 spectrumPanel.setFFTSize(avData->fft_size);
                 spectrumPanel.setShowDb(showDb);
             }
-            
-            avData->decRefCount();
+         
         }
     }
 
@@ -149,7 +148,7 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glLoadMatrixf(CubicVR::mat4::perspective(45.0, 1.0, 1.0, 1000.0));
+    glLoadMatrixf(CubicVR::mat4::perspective(45.0, 1.0, 1.0, 1000.0).to_ptr());
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     
@@ -211,7 +210,7 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         spectrumPanel.drawChildren();
     }
     
-    glLoadMatrixf(scopePanel.transform);
+    glLoadMatrixf(scopePanel.transform.to_ptr());
     if (!deviceName.empty()) {
         glContext->DrawDeviceName(deviceName);
     }
@@ -234,8 +233,8 @@ void ScopeCanvas::OnIdle(wxIdleEvent &event) {
     event.RequestMore();
 }
 
-ScopeRenderDataQueue *ScopeCanvas::getInputQueue() {
-    return &inputData;
+ScopeRenderDataQueuePtr ScopeCanvas::getInputQueue() {
+    return inputData;
 }
 
 void ScopeCanvas::OnMouseMoved(wxMouseEvent& event) {

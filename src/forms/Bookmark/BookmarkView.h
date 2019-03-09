@@ -43,7 +43,7 @@ public:
     BookmarkEntryPtr bookmarkEnt; 
     BookmarkRangeEntryPtr rangeEnt;
     
-    DemodulatorInstance* demod;
+    DemodulatorInstancePtr demod;
     std::string groupName;
 };
 
@@ -80,11 +80,10 @@ public:
     bool getExpandState(std::string branchName);
     void setExpandState(std::string branchName, bool state);
     
-    void loadDefaultRanges();
     static BookmarkRangeEntryPtr makeActiveRangeEntry();
 
 protected:
-    void activeSelection(DemodulatorInstance *dsel);
+    void activeSelection(DemodulatorInstancePtr dsel);
     void bookmarkSelection(BookmarkEntryPtr bmSel);
     void rangeSelection(BookmarkRangeEntryPtr re);
     
@@ -133,10 +132,10 @@ protected:
     wxButton *makeButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler);
     wxButton *addButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler);
 
-    void doBookmarkActive(std::string group, DemodulatorInstance *demod);
+    void doBookmarkActive(std::string group, DemodulatorInstancePtr demod);
     void doBookmarkRecent(std::string group, BookmarkEntryPtr be);
     void doMoveBookmark(BookmarkEntryPtr be, std::string group);
-    void doRemoveActive(DemodulatorInstance *demod);
+    void doRemoveActive(DemodulatorInstancePtr demod);
     void doRemoveRecent(BookmarkEntryPtr be);
     void doClearRecents();
     
@@ -145,6 +144,8 @@ protected:
     void onBookmarkChoice( wxCommandEvent &event );
     
     void onRemoveActive( wxCommandEvent& event );
+    void onStartRecording( wxCommandEvent& event );
+    void onStopRecording( wxCommandEvent& event );
     void onRemoveBookmark( wxCommandEvent& event );
     
     void onActivateBookmark( wxCommandEvent& event );
@@ -160,7 +161,9 @@ protected:
     void onRenameRange( wxCommandEvent& event );
     void onActivateRange( wxCommandEvent& event );
     void onUpdateRange( wxCommandEvent& event );
-    
+
+    bool skipEvents();
+     
     TreeViewItem *itemToTVI(wxTreeItemId item);
     
     void SetTreeItemData(const wxTreeItemId& item, wxTreeItemData *data);
@@ -191,11 +194,12 @@ protected:
     // Focus
     BookmarkEntryPtr nextEnt;
     BookmarkRangeEntryPtr nextRange;
-    DemodulatorInstance *nextDemod;
+    DemodulatorInstancePtr nextDemod;
     std::string nextGroup;
     
     // Search
     std::vector<std::wstring> searchKeywords;
 
     void setStatusText(std::string statusText);
+
 };

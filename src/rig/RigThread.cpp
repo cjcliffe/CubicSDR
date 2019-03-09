@@ -32,7 +32,7 @@ RigList &RigThread::enumerate() {
     return RigThread::rigCaps;
 }
 
-int RigThread::add_hamlib_rig(const struct rig_caps *rc, void* f)
+int RigThread::add_hamlib_rig(const struct rig_caps *rc, void* /* f */)
 {
     rigCaps.push_back(rc);
     return 1;
@@ -73,8 +73,8 @@ void RigThread::run() {
     while (!stopping) {
         std::this_thread::sleep_for(std::chrono::milliseconds(150));
         
-        DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
-        DemodulatorInstance *lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+        auto activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
+        auto lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
 
         if (freqChanged.load() && (controlMode.load() || setOneShot.load())) {
             status = rig_get_freq(rig, RIG_VFO_CURR, &freq);

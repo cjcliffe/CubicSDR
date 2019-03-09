@@ -26,7 +26,8 @@
 #include "FrequencyDialog.h"
 #include "BookmarkView.h"
 #include "AboutDialog.h"
-
+#include "DemodulatorInstance.h"
+#include "DemodulatorThread.h"
 #include <map>
 
 #define wxID_RT_AUDIO_DEVICE 1000
@@ -38,9 +39,13 @@
 #define wxID_SDR_DEVICES 2008
 #define wxID_AGC_CONTROL 2009
 #define wxID_SDR_START_STOP 2010
-#define wxID_LOW_PERF 2011
 #define wxID_SET_DB_OFFSET 2012
 #define wxID_ABOUT_CUBICSDR 2013
+
+#define wxID_OPEN_BOOKMARKS 2020
+#define wxID_SAVE_BOOKMARKS 2021
+#define wxID_SAVEAS_BOOKMARKS 2022
+#define wxID_RESET_BOOKMARKS 2023
 
 #define wxID_MAIN_SPLITTER 2050
 #define wxID_VIS_SPLITTER 2051
@@ -64,7 +69,21 @@
 
 #define wxID_SETTINGS_BASE 2300
 
+#define wxID_ANTENNA_CURRENT 2350
+#define wxID_ANTENNA_CURRENT_TX 2501
+#define wxID_ANTENNAS_BASE 2352
+
+#define wxID_PERF_CURRENT 2400
+#define wxID_PERF_BASE 2401
+
 #define wxID_DEVICE_ID 3500
+
+#define  wxID_RECORDING_PATH 8500
+#define  wxID_RECORDING_SQUELCH_BASE 8501
+#define  wxID_RECORDING_SQUELCH_SILENCE 8502
+#define  wxID_RECORDING_SQUELCH_SKIP 8503
+#define  wxID_RECORDING_SQUELCH_ALWAYS 8504
+#define  wxID_RECORDING_FILE_TIME_LIMIT 8505
 
 #define wxID_AUDIO_BANDWIDTH_BASE 9000
 #define wxID_AUDIO_DEVICE_MULTIPLIER 50
@@ -91,6 +110,11 @@ public:
     AppFrame();
     ~AppFrame();
 
+    wxMenu *makeFileMenu();
+   
+	wxMenu *makeRecordingMenu();
+	void updateRecordingMenu();
+
     void initDeviceParams(SDRDeviceInfo *devInfo);
     void updateDeviceParams();
 
@@ -103,11 +127,14 @@ public:
     void setMainWaterfallFFTSize(int fftSize);
     void setScopeDeviceName(std::string deviceName);
 
-    void gkNudgeLeft(DemodulatorInstance *demod, int snap);
-    void gkNudgeRight(DemodulatorInstance *demod, int snap);
+    void gkNudgeLeft(DemodulatorInstancePtr demod, int snap);
+    void gkNudgeRight(DemodulatorInstancePtr demod, int snap);
 
     int OnGlobalKeyDown(wxKeyEvent &event);
     int OnGlobalKeyUp(wxKeyEvent &event);
+    
+    void toggleActiveDemodRecording();
+    void toggleAllActiveDemodRecording();
     
     void setWaterfallLinesPerSecond(int lps);
     void setSpectrumAvgSpeed(double avg);
@@ -115,7 +142,7 @@ public:
     FrequencyDialog::FrequencyDialogTarget getFrequencyDialogTarget();
     void refreshGainUI();
     void setViewState(long long center_freq, int bandwidth);
-    void setViewState(long long center_freq);
+    void setViewState();
 
     long long getViewCenterFreq();
     int getViewBandwidth();
@@ -161,7 +188,12 @@ private:
     bool actionOnMenuAudioSampleRate(wxCommandEvent& event);
     bool actionOnMenuDisplay(wxCommandEvent& event);
     bool actionOnMenuLoadSave(wxCommandEvent& event);
+	bool actionOnMenuRecording(wxCommandEvent& event);
     bool actionOnMenuRig(wxCommandEvent& event);
+
+    wxString getSettingsLabel(const std::string& settingsName, 
+                              const std::string& settingsValue, 
+                              const std::string& settingsSuffix = "");
 
     ScopeCanvas *scopeCanvas;
     SpectrumCanvas *spectrumCanvas;
@@ -185,14 +217,28 @@ private:
     wxBoxSizer *demodTray;
     BookmarkView *bookmarkView;
     
-    DemodulatorInstance *activeDemodulator;
+    //Use a raw pointer here to prevent a dangling reference
+    DemodulatorInstance* activeDemodulator;
 
     std::vector<RtAudio::DeviceInfo> devices;
     std::map<int,RtAudio::DeviceInfo> inputDevices;
     std::map<int,RtAudio::DeviceInfo> outputDevices;
+
     std::map<int, wxMenuItem *> outputDeviceMenuItems;
     std::map<int, wxMenuItem *> sampleRateMenuItems;
+    std::map<int, wxMenuItem *> antennaMenuItems;
+    
+    //depending on context, maps the item id to wxMenuItem*,
+    //OR the submenu item id to its parent  wxMenuItem*.
+    std::map<int, wxMenuItem *> settingsMenuItems;
+
+    std::map<int, wxMenuItem *> performanceMenuItems;
+    
     std::map<int, wxMenuItem *> audioSampleRateMenuItems;
+
+	//
+	std::map<int, wxMenuItem *> recordingMenuItems;
+
     std::map<int, wxMenuItem *> directSamplingMenuItems;
     wxMenuBar *menuBar;
     
@@ -200,15 +246,22 @@ private:
     wxMenu *displayMenu = nullptr;
     wxMenuItem *agcMenuItem = nullptr;
     wxMenuItem *iqSwapMenuItem = nullptr;
-    wxMenuItem *lowPerfMenuItem = nullptr;
+
+    wxMenu *fileMenu = nullptr;
     wxMenu *settingsMenu = nullptr;
+	wxMenu *recordingMenu = nullptr;
     
     SoapySDR::ArgInfoList settingArgs;
     int settingsIdMax;
     std::vector<long> sampleRates;
     long manualSampleRate = -1;
+
+    std::vector<std::string> antennaNames;
+
+   std::string currentTXantennaName;
     
     std::string currentSessionFile;
+	std::string currentBookmarkFile;
     
     FFTVisualDataThread *waterfallDataThread;
     
@@ -219,8 +272,6 @@ private:
     ModemProperties *modemProps;
     std::atomic_bool modemPropertiesUpdated;
 	wxMenuItem *showTipMenuItem;
-
-    bool lowPerfMode;
 
     wxMenuItem *hideBookmarksItem;
     bool saveDisabled;

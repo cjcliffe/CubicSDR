@@ -3,6 +3,8 @@
 
 #include "GLFont.h"
 
+#include <wx/string.h>
+
 #include <iostream>
 #include <fstream>
 #include <algorithm>
@@ -12,16 +14,8 @@
 #include "CoreFoundation/CoreFoundation.h"
 #endif
 
-static std::wstring getExePath(void)
-{
-    //get the dir path of the executable
-    wxFileName exePath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
-   
-    return  std::wstring(exePath.GetPath().ToStdWstring());
-}
-
 #ifndef RES_FOLDER
-#define RES_FOLDER ""
+#define RES_FOLDER L""
 #endif
 
 #define GC_DRAW_COUNT_PERIOD 50
@@ -222,21 +216,30 @@ void GLFont::loadFontOnce() {
 #else
     wxString resourceFolder = RES_FOLDER;
 #endif
-    
-    //full font file path
+  
+    wxFileName exePath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
+
+    //1) First try : RES_FOLDER/fonts/*
     wxFileName fontDefFileName = wxFileName(resourceFolder + L"/" + fontDefFileSource);
+
+    bool fontFilePathFound = fontDefFileName.Exists();
+
+    // 2) Second try: [Cubic exe path]/RES_FOLDER/fonts/*
+    if (!fontFilePathFound) {
+        
+        fontDefFileName = wxFileName(exePath.GetPath() + L"/" + RES_FOLDER + L"/" + fontDefFileSource);
+        fontFilePathFound = fontDefFileName.Exists();
+    }
+
+    // 3) Third try: [Cubic exe path]/fonts/*
+    if (!fontFilePathFound) {
+
+        fontDefFileName = wxFileName(exePath.GetPath() + L"/" + fontDefFileSource);
+        fontFilePathFound = fontDefFileName.Exists();
+    }
     
-    if (!fontDefFileName.Exists()) {
-        wxFileName exePath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
+    if (fontFilePathFound) {
        
-        //Full Path where the fonts are, including file name
-        fontDefFileName = wxFileName(exePath.GetPath() + L"/"+ fontDefFileSource);
-
-        if (!fontDefFileName.FileExists()) {
-            std::cout << "Font file " << fontDefFileName.GetFullPath() << " does not exist?" << std::endl;
-            return;
-        }
-
         if (!fontDefFileName.IsFileReadable()) {
             std::cout << "Font file " << fontDefFileName.GetFullPath() << " is not readable?" << std::endl;
             return;
@@ -244,8 +247,8 @@ void GLFont::loadFontOnce() {
     }
     else {
 
-        if (!fontDefFileName.IsFileReadable()) {
-            std::cout << "Font file " << fontDefFileName.GetFullPath() << " is not readable?" << std::endl;
+        if (!fontDefFileName.FileExists()) {
+            std::cout << "Font file " << fontDefFileName.GetFullPath() << " does not exist?" << std::endl;
             return;
         }
     }
@@ -253,11 +256,11 @@ void GLFont::loadFontOnce() {
     //Re-compute the resource dir.
     resourceFolder = fontDefFileName.GetPath();
 
-    std::wstring fontDefFileNamePath = fontDefFileName.GetFullPath(wxPATH_NATIVE).ToStdWstring();
+    std::string fontDefFileNamePath = fontDefFileName.GetFullPath(wxPATH_NATIVE).ToStdString();
     
     std::wifstream input;
-    std::string inpFileStr(fontDefFileNamePath.begin(), fontDefFileNamePath.end());
-    input.open(inpFileStr, std::ios::in);
+   
+    input.open(fontDefFileNamePath, std::ios::in);
 
     std::wstring op;
 
@@ -518,7 +521,7 @@ void GLFont::drawString(const std::wstring& str, int pxHeight, float xpos, float
     if (cacheable) {
         gcCounter++;
 
-        std::lock_guard<std::mutex> lock(cache_busy);
+        std::lock_guard<SpinMutex> lock(cache_busy);
         
         if (gcCounter > GC_DRAW_COUNT_PERIOD) {
             
@@ -790,7 +793,7 @@ void GLFont::doCacheGC() {
 
 void GLFont::clearCache() {
 
-    std::lock_guard<std::mutex> lock(cache_busy);
+    std::lock_guard<SpinMutex> lock(cache_busy);
 
     std::map<std::wstring, GLFontStringCache * >::iterator cache_iter;
 

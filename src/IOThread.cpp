@@ -3,9 +3,7 @@
 
 #include "IOThread.h"
 #include <typeinfo>
-
-std::mutex ReBufferGC::g_mutex;
-std::set<ReferenceCounter *> ReBufferGC::garbage;
+#include <memory>
 
 #define SPIN_WAIT_SLEEP_MS 5
 
@@ -71,32 +69,32 @@ void IOThread::terminate() {
     stopping.store(true);
 };
 
-void IOThread::onBindOutput(std::string /* name */, ThreadQueueBase* /* threadQueue */) {
+void IOThread::onBindOutput(std::string /* name */, ThreadQueueBasePtr /* threadQueue */) {
    
 };
 
-void IOThread::onBindInput(std::string /* name */, ThreadQueueBase* /* threadQueue */) {
+void IOThread::onBindInput(std::string /* name */, ThreadQueueBasePtr /* threadQueue */) {
     
 };
 
-void IOThread::setInputQueue(std::string qname, ThreadQueueBase *threadQueue) {
+void IOThread::setInputQueue(std::string qname, ThreadQueueBasePtr threadQueue) {
     std::lock_guard < std::mutex > lock(m_queue_bindings_mutex);
     input_queues[qname] = threadQueue;
     this->onBindInput(qname, threadQueue);
 };
 
-ThreadQueueBase *IOThread::getInputQueue(std::string qname) {
+ThreadQueueBasePtr IOThread::getInputQueue(std::string qname) {
     std::lock_guard < std::mutex > lock(m_queue_bindings_mutex);
     return input_queues[qname];
 };
 
-void IOThread::setOutputQueue(std::string qname, ThreadQueueBase *threadQueue) {
+void IOThread::setOutputQueue(std::string qname, ThreadQueueBasePtr threadQueue) {
     std::lock_guard < std::mutex > lock(m_queue_bindings_mutex);
     output_queues[qname] = threadQueue;
     this->onBindOutput(qname, threadQueue);
 };
 
-ThreadQueueBase *IOThread::getOutputQueue(std::string qname) {
+ThreadQueueBasePtr IOThread::getOutputQueue(std::string qname) {
     std::lock_guard < std::mutex > lock(m_queue_bindings_mutex);
     return output_queues[qname];
 };
@@ -130,7 +128,7 @@ bool IOThread::isTerminated(int waitMs) {
         }
     }
 
-    std::cout << "ERROR: thread '" << typeid(*this).name() << "' has not terminated in time ! (> " << waitMs << " ms)" << std::endl;
+    std::cout << "ERROR: thread '" << typeid(*this).name() << "' has not terminated in time ! (> " << waitMs << " ms)" << std::endl << std::flush;
 
     return terminated.load();
 }

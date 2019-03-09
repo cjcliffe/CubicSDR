@@ -19,14 +19,14 @@ ModemBase *ModemOOK::factory() {
     return new ModemOOK;
 }
 
-int ModemOOK::checkSampleRate(long long sampleRate, int audioSampleRate) {
+int ModemOOK::checkSampleRate(long long sampleRate, int /* audioSampleRate */) {
     if (sampleRate < 100) {
         return 100;
     }
     return (int)sampleRate;
 }
 
-void ModemOOK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
+void ModemOOK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
     ModemKitDigital *dkit = (ModemKitDigital *)kit;
     digitalStart(dkit, demodOOK, input);
    

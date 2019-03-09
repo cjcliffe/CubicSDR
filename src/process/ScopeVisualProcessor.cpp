@@ -47,7 +47,7 @@ void ScopeVisualProcessor::process() {
     if (!isOutputEmpty()) {
         return;
     }
-    AudioThreadInput *audioInputData;
+    AudioThreadInputPtr audioInputData;
 
     if (input->try_pop(audioInputData)) {
           
@@ -56,11 +56,12 @@ void ScopeVisualProcessor::process() {
         }
         size_t i, iMax = audioInputData->data.size();
         if (!iMax) {
-            delete audioInputData; //->decRefCount();
+            //discard audioInputData.
+            audioInputData = nullptr;
             return;
         }
                 
-        ScopeRenderData *renderData = NULL;
+        ScopeRenderDataPtr renderData = nullptr;
         
         if (scopeEnabled) {
             iMax = audioInputData->data.size();
@@ -150,7 +151,7 @@ void ScopeVisualProcessor::process() {
             renderData->inputRate = audioInputData->inputRate;
             renderData->sampleRate = audioInputData->sampleRate;
             
-            delete audioInputData; //->decRefCount();
+            audioInputData = nullptr; //->decRefCount();
 
             double fft_ceil = 0, fft_floor = 1;
             
@@ -212,8 +213,6 @@ void ScopeVisualProcessor::process() {
             renderData->spectrum = true;
 
             distribute(renderData);
-        } else {
-            delete audioInputData; //->decRefCount();
-        }
+        } 
     } //end if try_pop()
 }

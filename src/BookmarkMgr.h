@@ -16,8 +16,7 @@ class DataNode;
 
 class BookmarkEntry {
 public:
-    std::mutex busy_lock;
-
+ 
     std::string type;
 	//maps on the Demod user label.
     std::wstring label; 
@@ -38,9 +37,7 @@ public:
     }
     BookmarkRangeEntry(std::wstring label, long long freq, long long startFreq, long long endFreq) : label(label), freq(freq), startFreq(startFreq), endFreq(endFreq) {
     }
-    
-    std::mutex busy_lock;
-    
+     
     std::wstring label;
     
     long long freq;
@@ -78,14 +75,17 @@ typedef std::map<std::string, bool> BookmarkExpandState;
 class BookmarkMgr {
 public:
     BookmarkMgr();
-    
-    void saveToFile(std::string bookmarkFn, bool backup = true);
-    bool loadFromFile(std::string bookmarkFn, bool backup = true);
+    //if useFullpath = false, use the application config dir.
+	//else assume bookmarkFn is a full path and use it for location.
+    void saveToFile(std::string bookmarkFn, bool backup = true, bool useFullpath = false);
+    bool loadFromFile(std::string bookmarkFn, bool backup = true, bool useFullpath = false);
+
+	void resetBookmarks();
 
     bool hasLastLoad(std::string bookmarkFn);
     bool hasBackup(std::string bookmarkFn);
 
-    void addBookmark(std::string group, DemodulatorInstance *demod);
+    void addBookmark(std::string group, DemodulatorInstancePtr demod);
     void addBookmark(std::string group, BookmarkEntryPtr be);
     void removeBookmark(std::string group, BookmarkEntryPtr be);
     void removeBookmark(BookmarkEntryPtr be);
@@ -94,7 +94,9 @@ public:
     void addGroup(std::string group);
     void removeGroup(std::string group);
     void renameGroup(std::string group, std::string ngroup);
-    const BookmarkList& getBookmarks(std::string group);
+	//return an independent copy on purpose 
+    BookmarkList getBookmarks(std::string group);
+
     void getGroups(BookmarkNames &arr);
     void getGroups(wxArrayString &arr);
 
@@ -105,38 +107,48 @@ public:
     void updateBookmarks();
     void updateBookmarks(std::string group);
 
-    void addRecent(DemodulatorInstance *demod);
+    void addRecent(DemodulatorInstancePtr demod);
     void addRecent(BookmarkEntryPtr be);
     void removeRecent(BookmarkEntryPtr be);
-    const BookmarkList& getRecents();
+    
+	//return an independent copy on purpose 
+	BookmarkList getRecents();
+
     void clearRecents();
 
-	void removeActive(DemodulatorInstance *demod);
+	void removeActive(DemodulatorInstancePtr demod);
 
     void addRange(BookmarkRangeEntryPtr re);
     void removeRange(BookmarkRangeEntryPtr re);
-    const BookmarkRangeList& getRanges();
-    void clearRanges();
-	
-    static std::wstring getBookmarkEntryDisplayName(BookmarkEntryPtr bmEnt);
-    static std::wstring getActiveDisplayName(DemodulatorInstance *demod);
 
+	//return an independent copy on purpose 
+	BookmarkRangeList getRanges();
+    
+	void clearRanges();
+
+    static std::wstring getBookmarkEntryDisplayName(BookmarkEntryPtr bmEnt);
+    static std::wstring getActiveDisplayName(DemodulatorInstancePtr demod);
+
+    
 protected:
 
     void trimRecents();
+	void loadDefaultRanges();
+
+    //utility method that attemts to decode the childNodeName as std::wstring, else as std::string, else 
+    //return an empty string.
+    static std::wstring getSafeWstringValue(DataNode* node, const std::string& childNodeName);
     
-    BookmarkEntryPtr demodToBookmarkEntry(DemodulatorInstance *demod);
-    BookmarkEntryPtr nodeToBookmark(const char *name_in, DataNode *node);
+    BookmarkEntryPtr demodToBookmarkEntry(DemodulatorInstancePtr demod);
+    BookmarkEntryPtr nodeToBookmark(DataNode *node);
     
     BookmarkMap bmData;
     BookmarkMapSorted bmDataSorted;
     BookmarkList recents;
     BookmarkRangeList ranges;
     bool rangesSorted;
+
     std::recursive_mutex busy_lock;
     
     BookmarkExpandState expandState;
-
-	//represents an empty BookMarkList that is returned by reference by some functions.
-	static const BookmarkList emptyResults;
 };

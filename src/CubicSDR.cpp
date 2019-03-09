@@ -32,6 +32,8 @@ IMPLEMENT_APP(CubicSDR)
 
 #include "ActionDialog.h"
 
+#include <memory>
+
 
 //#ifdef ENABLE_DIGITAL_LAB
 //// console output buffer for windows
@@ -201,8 +203,17 @@ CubicSDR::CubicSDR() : frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFA
         sampleRateInitialized.store(false);
         agcMode.store(true);
         soloMode.store(false);
+        shuttingDown.store(false);
         fdlgTarget = FrequencyDialog::FDIALOG_TARGET_DEFAULT;
         stoppedDev = nullptr;
+
+        //set OpenGL configuration:
+        m_glContextAttributes = new wxGLContextAttrs();
+        
+        wxGLContextAttrs glSettings;
+        glSettings.PlatformDefaults().EndList();
+
+        *m_glContextAttributes = glSettings;
 }
 
 bool CubicSDR::OnInit() {
@@ -290,17 +301,17 @@ bool CubicSDR::OnInit() {
     // Visual Data
     spectrumVisualThread = new SpectrumVisualDataThread();
     
-    pipeIQVisualData = new DemodulatorThreadInputQueue();
+    pipeIQVisualData = std::make_shared<DemodulatorThreadInputQueue>();
     pipeIQVisualData->set_max_num_items(1);
     
-    pipeWaterfallIQVisualData = new DemodulatorThreadInputQueue();
+    pipeWaterfallIQVisualData = std::make_shared<DemodulatorThreadInputQueue>();
     pipeWaterfallIQVisualData->set_max_num_items(128);
     
     getSpectrumProcessor()->setInput(pipeIQVisualData);
     getSpectrumProcessor()->setHideDC(true);
     
     // I/Q Data
-    pipeSDRIQData = new SDRThreadIQDataQueue();
+    pipeSDRIQData = std::make_shared<SDRThreadIQDataQueue>();
     pipeSDRIQData->set_max_num_items(100);
     
     sdrThread = new SDRThread();
@@ -313,7 +324,7 @@ bool CubicSDR::OnInit() {
     sdrPostThread->setOutputQueue("IQDataOutput", pipeWaterfallIQVisualData);
      
 #if CUBICSDR_ENABLE_VIEW_SCOPE
-    pipeAudioVisualData = new DemodulatorThreadOutputQueue();
+    pipeAudioVisualData = std::make_shared<DemodulatorThreadOutputQueue>();
     pipeAudioVisualData->set_max_num_items(1);
     
     scopeProcessor.setInput(pipeAudioVisualData);
@@ -323,7 +334,7 @@ bool CubicSDR::OnInit() {
     
 #if CUBICSDR_ENABLE_VIEW_DEMOD
     demodVisualThread = new SpectrumVisualDataThread();
-    pipeDemodIQVisualData = new DemodulatorThreadInputQueue();
+    pipeDemodIQVisualData = std::make_shared<DemodulatorThreadInputQueue>();
     pipeDemodIQVisualData->set_max_num_items(1);
     
     if (getDemodSpectrumProcessor()) {
@@ -382,49 +393,81 @@ bool CubicSDR::OnInit() {
 }
 
 int CubicSDR::OnExit() {
+    shuttingDown.store(true);
+
 #if USE_HAMLIB
     if (rigIsActive()) {
-        std::cout << "Terminating Rig thread.." << std::endl;
+        std::cout << "Terminating Rig thread.."  << std::endl << std::flush;
         stopRig();
     }
 #endif
 
+    bool terminationSequenceOK = true;
+
     //The thread feeding them all should be terminated first, so: 
-    std::cout << "Terminating SDR thread.." << std::endl;
+    std::cout << "Terminating SDR thread.." << std::endl << std::flush ;
     sdrThread->terminate();
-    sdrThread->isTerminated(3000);
-   
-    if (t_SDR) {
-       t_SDR->join();
-       delete t_SDR;
-       t_SDR = nullptr;
+    terminationSequenceOK = terminationSequenceOK && sdrThread->isTerminated(3000);
+
+    //in case termination sequence goes wrong, kill App brutally now because it can get stuck. 
+    if (!terminationSequenceOK) {
+        //no trace here because it could occur if the device is not started.  
+        ::exit(11);
     }
 
-    std::cout << "Terminating SDR post-processing thread.." << std::endl;
+    std::cout << "Terminating SDR post-processing thread.." << std::endl << std::flush;
     sdrPostThread->terminate();
 
-    std::cout << "Terminating All Demodulators.." << std::endl;
+    //Wait for termination for sdrPostThread second:: since it is doing
+    //mostly blocking push() to the other threads, they must stay alive
+    //so that sdrPostThread can complete a processing loop and die.
+    terminationSequenceOK = terminationSequenceOK && sdrPostThread->isTerminated(3000);
+
+    //in case termination sequence goes wrong, kill App brutally now because it can get stuck. 
+    if (!terminationSequenceOK) {
+        std::cout << "Cannot terminate application properly, calling exit() now." << std::endl << std::flush;
+        ::exit(12);
+    }
+
+    std::cout << "Terminating All Demodulators.." << std::endl << std::flush;
     demodMgr.terminateAll();
-   
-    std::cout << "Terminating Visual Processor threads.." << std::endl;
+
+    std::cout << "Terminating Visual Processor threads.." << std::endl << std::flush;
     spectrumVisualThread->terminate();
     if (demodVisualThread) {
         demodVisualThread->terminate();
     }
     
     //Wait nicely
-    sdrPostThread->isTerminated(1000);
-    spectrumVisualThread->isTerminated(1000);
+    terminationSequenceOK = terminationSequenceOK &&  spectrumVisualThread->isTerminated(1000);
+
     if (demodVisualThread) {
-        demodVisualThread->isTerminated(1000);
+        terminationSequenceOK = terminationSequenceOK && demodVisualThread->isTerminated(1000);
     }
 
-    //Then join the thread themselves
+    //in case termination sequence goes wrong, kill App brutally because it can get stuck. 
+    if (!terminationSequenceOK) {
+        std::cout << "Cannot terminate application properly, calling exit() now." << std::endl << std::flush;
+        ::exit(13);
+    }
+
+    //Then join the thread themselves:
+    if (t_SDR) {
+        t_SDR->join();
+    }
+
     t_PostSDR->join();
-    if (t_DemodVisual) t_DemodVisual->join();
+    
+    if (t_DemodVisual) {
+        t_DemodVisual->join();
+    }
+    
     t_SpectrumVisual->join();
 
-    //Now only we can delete
+    //Now only we can delete:
+    delete t_SDR;
+    t_SDR = nullptr;
+
     delete sdrThread;
     sdrThread = nullptr;
 
@@ -445,22 +488,14 @@ int CubicSDR::OnExit() {
 
     delete demodVisualThread;
     demodVisualThread = nullptr;
-    
-    delete pipeIQVisualData;
-    pipeIQVisualData = nullptr;
-
-    delete pipeAudioVisualData;
-    pipeAudioVisualData = nullptr;
-
-    delete pipeSDRIQData;
-    pipeSDRIQData = nullptr;
 
     delete m_glContext;
     m_glContext = nullptr;
 
-#ifdef __APPLE__
+    //
     AudioThread::deviceCleanup();
-#endif
+
+    std::cout << "Application termination complete." << std::endl << std::flush;
 
     return wxApp::OnExit();
 }
@@ -468,11 +503,16 @@ int CubicSDR::OnExit() {
 PrimaryGLContext& CubicSDR::GetContext(wxGLCanvas *canvas) {
     PrimaryGLContext *glContext;
     if (!m_glContext) {
-        m_glContext = new PrimaryGLContext(canvas, NULL);
+        m_glContext = new PrimaryGLContext(canvas, NULL, GetContextAttributes());
     }
     glContext = m_glContext;
 
     return *glContext;
+}
+
+wxGLContextAttrs* CubicSDR::GetContextAttributes() {
+   
+    return m_glContextAttributes;
 }
 
 void CubicSDR::OnInitCmdLine(wxCmdLineParser& parser) {
@@ -601,9 +641,37 @@ long long CubicSDR::getOffset() {
 
 void CubicSDR::setOffset(long long ofs) {
     offset = ofs;
-    sdrThread->setOffset(offset);
-    SDRDeviceInfo *dev = getDevice();
-    config.getDevice(dev->getDeviceId())->setOffset(ofs);
+    
+    if (sdrThread && !sdrThread->isTerminated()) {
+        sdrThread->setOffset(offset);
+    }
+}
+
+void CubicSDR::setAntennaName(const std::string& name) {
+    antennaName = name;
+     
+    if (sdrThread && !sdrThread->isTerminated()) {
+        sdrThread->setAntenna(antennaName);
+    }
+}
+
+const std::string& CubicSDR::getAntennaName() {
+    return antennaName;
+}
+
+void CubicSDR::setChannelizerType(SDRPostThreadChannelizerType chType) {
+    if (sdrPostThread && !sdrPostThread->isTerminated()) {
+        sdrPostThread->setChannelizerType(chType);
+    }
+}
+
+SDRPostThreadChannelizerType CubicSDR::getChannelizerType() {
+
+    if (sdrPostThread && !sdrPostThread->isTerminated()) {
+        return sdrPostThread->getChannelizerType();
+    }
+
+    return SDRPostThreadChannelizerType::SDRPostPFBCH;
 }
 
 long long CubicSDR::getFrequency() {
@@ -626,12 +694,18 @@ bool CubicSDR::isFrequencyLocked() {
 
 void CubicSDR::unlockFrequency() {
     frequency_locked.store(false);
-    sdrThread->unlockFrequency();
+    if (sdrThread && !sdrThread->isTerminated()) {
+        sdrThread->unlockFrequency();
+    }
 }
 
 void CubicSDR::setSampleRate(long long rate_in) {
     sampleRate = rate_in;
-    sdrThread->setSampleRate(sampleRate);
+    
+    if (sdrThread && !sdrThread->isTerminated()) {
+        sdrThread->setSampleRate(sampleRate);
+    }
+
     setFrequency(frequency);
 
     if (rate_in <= CHANNELIZER_RATE_MAX / 8) {
@@ -722,13 +796,8 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev, int waitMsForTermination) {
 
         setPPM(devConfig->getPPM());
         setOffset(devConfig->getOffset());
-        
-
-        if (devConfig->getAGCMode()) {
-            setAGCMode(true);
-        } else {
-            setAGCMode(false);
-        }
+        setAGCMode(devConfig->getAGCMode());
+        setAntennaName(devConfig->getAntennaName());
 
         t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
 }
@@ -760,15 +829,15 @@ SpectrumVisualProcessor *CubicSDR::getDemodSpectrumProcessor() {
     }
 }
 
-DemodulatorThreadOutputQueue* CubicSDR::getAudioVisualQueue() {
+DemodulatorThreadOutputQueuePtr CubicSDR::getAudioVisualQueue() {
     return pipeAudioVisualData;
 }
 
-DemodulatorThreadInputQueue* CubicSDR::getIQVisualQueue() {
+DemodulatorThreadInputQueuePtr CubicSDR::getIQVisualQueue() {
     return pipeIQVisualData;
 }
 
-DemodulatorThreadInputQueue* CubicSDR::getWaterfallVisualQueue() {
+DemodulatorThreadInputQueuePtr CubicSDR::getWaterfallVisualQueue() {
     return pipeWaterfallIQVisualData;
 }
 
@@ -789,30 +858,21 @@ SDRThread *CubicSDR::getSDRThread() {
 }
 
 
-void CubicSDR::bindDemodulator(DemodulatorInstance *demod) {
-    if (!demod) {
-        return;
-    }
-    sdrPostThread->bindDemodulator(demod);
-}
-
-void CubicSDR::bindDemodulators(std::vector<DemodulatorInstance *> *demods) {
-    if (!demods) {
-        return;
-    }
-    sdrPostThread->bindDemodulators(demods);
+void CubicSDR::notifyDemodulatorsChanged() {
+    
+    sdrPostThread->notifyDemodulatorsChanged();
 }
 
 long long CubicSDR::getSampleRate() {
     return sampleRate;
 }
 
-void CubicSDR::removeDemodulator(DemodulatorInstance *demod) {
+void CubicSDR::removeDemodulator(DemodulatorInstancePtr demod) {
     if (!demod) {
         return;
     }
     demod->setActive(false);
-    sdrPostThread->removeDemodulator(demod);
+    sdrPostThread->notifyDemodulatorsChanged();
     wxGetApp().getAppFrame()->notifyUpdateModemProperties();
 }
 
@@ -831,11 +891,8 @@ void CubicSDR::saveConfig() {
 
 void CubicSDR::setPPM(int ppm_in) {
     ppm = ppm_in;
-    sdrThread->setPPM(ppm);
-
-    SDRDeviceInfo *dev = getDevice();
-    if (dev) {
-        config.getDevice(dev->getDeviceId())->setPPM(ppm_in);
+    if (sdrThread && !sdrThread->isTerminated()) {
+        sdrThread->setPPM(ppm);
     }
 }
 
@@ -887,7 +944,7 @@ void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetM
 
 void CubicSDR::showLabelInput() {
 
-    DemodulatorInstance *activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
+    DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
 
     if (activeDemod != nullptr) {
 
@@ -917,8 +974,12 @@ bool CubicSDR::areDevicesReady() {
     return devicesReady.load();
 }
 
-void CubicSDR::notifyMainUIOfDeviceChange() {
+void CubicSDR::notifyMainUIOfDeviceChange(bool forceRefreshOfGains) {
     appframe->notifyDeviceChanged();
+
+	if (forceRefreshOfGains) {
+		appframe->refreshGainUI();
+	}
 }
 
 bool CubicSDR::areDevicesEnumerating() {
@@ -947,7 +1008,10 @@ bool CubicSDR::isDeviceSelectorOpen() {
 
 void CubicSDR::setAGCMode(bool mode) {
     agcMode.store(mode);
-    sdrThread->setAGCMode(mode);
+
+    if (sdrThread && !sdrThread->isTerminated()) {
+        sdrThread->setAGCMode(mode);
+    }
 }
 
 bool CubicSDR::getAGCMode() {
@@ -993,6 +1057,11 @@ void CubicSDR::setSoloMode(bool solo) {
 
 bool CubicSDR::getSoloMode() {
     return soloMode.load();
+}
+
+bool CubicSDR::isShuttingDown()
+{
+    return shuttingDown.load();
 }
 
 int CubicSDR::FilterEvent(wxEvent& event) {

@@ -12,11 +12,13 @@ EVT_CHAR_HOOK(FrequencyDialog::OnChar)
 EVT_SHOW(FrequencyDialog::OnShow)
 wxEND_EVENT_TABLE()
 
-FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxString & title, DemodulatorInstance *demod, const wxPoint & position,
+FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxString & title, DemodulatorInstancePtr demod, const wxPoint & position,
         const wxSize & size, long style, FrequencyDialogTarget targetMode, wxString initString) :
         wxDialog(parent, id, title, position, size, style) {
     wxString freqStr;
+    
     activeDemod = demod;
+    
     this->targetMode = targetMode;
 	this->initialString = initString;
 
@@ -53,7 +55,7 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
             
     dialogText = new wxTextCtrl(this, wxID_FREQ_INPUT, freqStr, wxPoint(6, 1), wxSize(size.GetWidth() - 20, size.GetHeight() - 70),
     wxTE_PROCESS_ENTER);
-    dialogText->SetFont(wxFont(20, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
+    dialogText->SetFont(wxFont(15, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
 
     Centre();
 
@@ -122,7 +124,7 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
                     }
                     if (freq == freq2) {
                         wxGetApp().setFrequency(freq_ctr);
-                        wxGetApp().getAppFrame()->setViewState(freq_ctr);
+                        wxGetApp().getAppFrame()->setViewState();
                     } else {
                         if (wxGetApp().getSampleRate()/4 > range_bw) {
                             wxGetApp().setFrequency(freq_ctr + wxGetApp().getSampleRate()/4);

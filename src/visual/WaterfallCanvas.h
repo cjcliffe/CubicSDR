@@ -8,7 +8,7 @@
 
 #include <vector>
 #include <queue>
-
+#include <memory>
 #include "InteractiveCanvas.h"
 #include "MouseTracker.h"
 #include "SpectrumCanvas.h"
@@ -21,7 +21,7 @@ public:
         WF_DRAG_NONE, WF_DRAG_BANDWIDTH_LEFT, WF_DRAG_BANDWIDTH_RIGHT, WF_DRAG_FREQUENCY, WF_DRAG_RANGE
     };
 
-    WaterfallCanvas(wxWindow *parent, std::vector<int> dispAttrs);
+    WaterfallCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
     void setup(unsigned int fft_size_in, int waterfall_lines_in);
     void setFFTSize(unsigned int fft_size_in);
     ~WaterfallCanvas();
@@ -31,7 +31,7 @@ public:
     
     void attachSpectrumCanvas(SpectrumCanvas *canvas_in);
     void processInputQueue();
-    SpectrumVisualDataQueue *getVisualDataQueue();
+    SpectrumVisualDataQueuePtr getVisualDataQueue();
 
     void setLinesPerSecond(int lps);
     void setMinBandwidth(int min);
@@ -88,7 +88,8 @@ private:
     float scaleMove;
     int dragBW;
     
-    SpectrumVisualDataQueue visualDataQueue;
+    SpectrumVisualDataQueuePtr visualDataQueue = std::make_shared<SpectrumVisualDataQueue>();
+
     Timer gTimer;
     double lpsIndex;
     bool preBuf;

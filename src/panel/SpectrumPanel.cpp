@@ -113,7 +113,7 @@ void SpectrumPanel::drawPanelContents() {
     glEnable(GL_LINE_SMOOTH);
     glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
 
-    glLoadMatrixf(transform * (CubicVR::mat4::translate(-1.0f, -0.75f, 0.0f) * CubicVR::mat4::scale(2.0f, 1.5f, 1.0f)));
+    glLoadMatrixf((transform * (CubicVR::mat4::translate(-1.0f, -0.75f, 0.0f) * CubicVR::mat4::scale(2.0f, 1.5f, 1.0f))).to_ptr());
 
     if (points.size()) {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
@@ -166,7 +166,7 @@ void SpectrumPanel::drawPanelContents() {
     
     float viewHeight = (float) vp[3];
     float viewWidth = (float) vp[2];
-    glLoadMatrixf(transform);
+    glLoadMatrixf(transform.to_ptr());
 
     
     long long leftFreq = (double) freq - ((double) bandwidth / 2.0);

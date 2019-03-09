@@ -8,6 +8,8 @@
 
 #include "CubicSDR.h"
 
+#include <algorithm>
+
 #ifdef __linux__
 #include "CubicSDR.xpm"
 #endif
@@ -110,6 +112,7 @@ wxPGProperty *SDRDevicesDialog::addArgInfoProperty(wxPropertyGrid *pg, SoapySDR:
 }
 
 void SDRDevicesDialog::refreshDeviceProperties() {
+
     SDRDeviceInfo *selDev = getSelectedDevice(devTree->GetSelection());
     if (selDev && selDev->isAvailable()) {
         dev = selDev;
@@ -119,14 +122,62 @@ void SDRDevicesDialog::refreshDeviceProperties() {
         
         SoapySDR::Device *soapyDev = dev->getSoapyDevice();
         SoapySDR::ArgInfoList args = soapyDev->getSettingInfo();
-        SoapySDR::ArgInfoList::const_iterator args_i;
         
+        //A) General settings: name, offset, sample rate, agc, antennas (if > 1) 
         m_propertyGrid->Append(new wxPropertyCategory("General Settings"));
         
-        devSettings.erase(devSettings.begin(),devSettings.end());
+        devSettings.clear();
+
+        //A-1) Name
         devSettings["name"] = m_propertyGrid->Append( new wxStringProperty("Name", wxPG_LABEL, devConfig->getDeviceName()) );
-        devSettings["offset"] = m_propertyGrid->Append( new wxIntProperty("Offset (Hz)", wxPG_LABEL, devConfig->getOffset()) );
+        //A-2) Offset
+        devSettings["offset"] = m_propertyGrid->Append( new wxIntProperty("Offset (KHz)", wxPG_LABEL, devConfig->getOffset() / 1000) );
         
+        //A-3) Antennas, is there are more than 1 RX antenna, else do not expose the setting.
+        //get the saved setting
+        const std::string& currentSetAntenna = devConfig->getAntennaName();
+
+        //compare to the list of existing antennas
+        SoapySDR::ArgInfo antennasArg;
+        std::vector<std::string> antennaOpts = selDev->getAntennaNames(SOAPY_SDR_RX, 0);
+
+        //only do something if there is more than 1 antenna
+        if (antennaOpts.size() > 1) {
+
+            //by default, choose the first of the list.
+            std::string antennaToSelect = antennaOpts.front();
+
+            auto found_i = std::find(antennaOpts.begin(), antennaOpts.end(), currentSetAntenna);
+
+            if (found_i != antennaOpts.end()) {
+                antennaToSelect = currentSetAntenna;
+            }
+            else {
+                //erroneous antenna name, re-write device config with the first choice of teh list.
+                devConfig->setAntennaName(antennaToSelect);
+            }
+
+            //build device settings
+            for (std::string antenna : antennaOpts) {
+                antennasArg.options.push_back(antenna);
+                antennasArg.optionNames.push_back(antenna);
+            }
+
+            antennasArg.type = SoapySDR::ArgInfo::STRING;
+            antennasArg.units = "";
+            antennasArg.name = "Antenna";
+            antennasArg.key = "antenna";
+            antennasArg.value = antennaToSelect;
+
+            devSettings["antenna"] = addArgInfoProperty(m_propertyGrid, antennasArg);
+            deviceArgs["antenna"] = antennasArg;
+
+        } //end if more than 1 antenna
+        else {
+            devConfig->setAntennaName("");
+        }
+
+        //A-4) Sample_rate:
         long currentSampleRate = wxGetApp().getSampleRate();
         long deviceSampleRate = devConfig->getSampleRate();
         
@@ -137,9 +188,9 @@ void SDRDevicesDialog::refreshDeviceProperties() {
         SoapySDR::ArgInfo sampleRateArg;
         std::vector<long> rateOpts = selDev->getSampleRates(SOAPY_SDR_RX, 0);
 
-        for (std::vector<long>::iterator rate_i = rateOpts.begin(); rate_i != rateOpts.end(); rate_i++) {
-            sampleRateArg.options.push_back(std::to_string(*rate_i));
-            sampleRateArg.optionNames.push_back(frequencyToStr(*rate_i));
+        for (long rate : rateOpts) {
+            sampleRateArg.options.push_back(std::to_string(rate));
+            sampleRateArg.optionNames.push_back(frequencyToStr(rate));
         }
         
         sampleRateArg.type = SoapySDR::ArgInfo::STRING;
@@ -150,17 +201,30 @@ void SDRDevicesDialog::refreshDeviceProperties() {
         
         devSettings["sample_rate"] = addArgInfoProperty(m_propertyGrid, sampleRateArg);
         deviceArgs["sample_rate"] = sampleRateArg;
+
         
-        runtimeArgs.erase(runtimeArgs.begin(), runtimeArgs.end());
-        runtimeProps.erase(runtimeProps.begin(), runtimeProps.end());
-        streamProps.erase(streamProps.begin(), streamProps.end());
-        
+
+        //B) Runtime Settings:
+        runtimeArgs.clear();
+        runtimeProps.clear();
+        streamProps.clear();
+       
         if (args.size()) {
             m_propertyGrid->Append(new wxPropertyCategory("Run-time Settings"));
             
-            for (args_i = args.begin(); args_i != args.end(); args_i++) {
+            for (SoapySDR::ArgInfoList::const_iterator args_i = args.begin(); args_i != args.end(); args_i++) {
                 SoapySDR::ArgInfo arg = (*args_i);
-                arg.value = soapyDev->readSetting(arg.key);
+				//We-reread the Device configuration, else we use the user settings.
+				if (dev) {
+					//Apply saved settings
+					DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
+					arg.value = devConfig->getSetting(arg.key, soapyDev->readSetting(arg.key)); //use SoapyDevice data as fallback.
+				}
+				else {
+					//re-read the SoapyDevice
+					arg.value = soapyDev->readSetting(arg.key);
+				}
+               
                 runtimeProps[arg.key] = addArgInfoProperty(m_propertyGrid, arg);
                 runtimeArgs[arg.key] = arg;
             }
@@ -182,8 +246,8 @@ void SDRDevicesDialog::refreshDeviceProperties() {
             if (args.size()) {
                 m_propertyGrid->Append(new wxPropertyCategory("Stream Settings"));
                 
-                for (args_i = args.begin(); args_i != args.end(); args_i++) {
-                    SoapySDR::ArgInfo arg = (*args_i);
+                for (SoapySDR::ArgInfo arg : args) {
+                  
                     streamProps[arg.key] = addArgInfoProperty(m_propertyGrid, arg);
                 }
             }
@@ -199,10 +263,12 @@ void SDRDevicesDialog::refreshDeviceProperties() {
         
     } else if (selDev && !selDev->isAvailable() && selDev->isManual()) {
         m_propertyGrid->Clear();
-        devSettings.erase(devSettings.begin(),devSettings.end());
-        runtimeArgs.erase(runtimeArgs.begin(), runtimeArgs.end());
-        runtimeProps.erase(runtimeProps.begin(), runtimeProps.end());
-        streamProps.erase(streamProps.begin(), streamProps.end());
+
+        devSettings.clear();
+        runtimeArgs.clear();
+        runtimeProps.clear();
+        streamProps.clear();
+
         removeId = devTree->GetSelection();
         dev = nullptr;
         selId = nullptr;
@@ -227,10 +293,10 @@ void SDRDevicesDialog::OnAddRemote( wxMouseEvent& /* event */) {
         if (selDev) {
             SDREnumerator::removeManual(selDev->getDriver(),selDev->getManualParams());
             m_propertyGrid->Clear();
-            devSettings.erase(devSettings.begin(),devSettings.end());
-            runtimeArgs.erase(runtimeArgs.begin(), runtimeArgs.end());
-            runtimeProps.erase(runtimeProps.begin(), runtimeProps.end());
-            streamProps.erase(streamProps.begin(), streamProps.end());
+			devSettings.clear();
+			runtimeArgs.clear();
+			runtimeProps.clear();
+			streamProps.clear();
             dev = nullptr;
             selId = nullptr;
             editId = nullptr;
@@ -284,18 +350,18 @@ SDRDeviceInfo *SDRDevicesDialog::getSelectedDevice(wxTreeItemId selId) {
 
 void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event) {
     if (dev != NULL) {
-        SoapySDR::ArgInfoList::const_iterator args_i;
+        
         SoapySDR::ArgInfoList args = dev->getSoapyDevice()->getSettingInfo();
         
         SoapySDR::Kwargs settingArgs;
         SoapySDR::Kwargs streamArgs;
         
-        for (args_i = args.begin(); args_i != args.end(); args_i++) {
-            SoapySDR::ArgInfo arg = (*args_i);
+        for (SoapySDR::ArgInfo arg : args) {
+           
             wxPGProperty *prop = runtimeProps[arg.key];
             
             if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size()) {
-                settingArgs[arg.key] = arg.options[prop->GetChoiceSelection()];
+                settingArgs[arg.key] = getSelectedChoiceOption(prop, arg);
             } else if (arg.type == SoapySDR::ArgInfo::BOOL) {
                 settingArgs[arg.key] = (prop->GetValueAsString()=="True")?"true":"false";
             } else {
@@ -307,12 +373,12 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event) {
             args = dev->getSoapyDevice()->getStreamArgsInfo(SOAPY_SDR_RX, 0);
             
             if (args.size()) {
-                for (args_i = args.begin(); args_i != args.end(); args_i++) {
+                for (SoapySDR::ArgInfoList::const_iterator args_i = args.begin(); args_i != args.end(); args_i++) {
                     SoapySDR::ArgInfo arg = (*args_i);
                     wxPGProperty *prop = streamProps[arg.key];
             
                     if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size()) {
-                        streamArgs[arg.key] = arg.options[prop->GetChoiceSelection()];
+                        streamArgs[arg.key] = getSelectedChoiceOption(prop, arg);
                     } else if (arg.type == SoapySDR::ArgInfo::BOOL) {
                         streamArgs[arg.key] = (prop->GetValueAsString()=="True")?"true":"false";
                     } else {
@@ -329,7 +395,6 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event) {
         wxGetApp().setDeviceArgs(settingArgs);
         wxGetApp().setStreamArgs(streamArgs);
         wxGetApp().setDevice(dev,0);
-        wxGetApp().notifyMainUIOfDeviceChange();
         Close();
     }
     event.Skip();
@@ -392,18 +457,18 @@ void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
         }
         
         std::vector<std::string> remotes = SDREnumerator::getRemotes();
-        std::vector<std::string>::iterator remotes_i;
+       
         std::vector<SDRDeviceInfo *>::iterator remoteDevs_i;
         
         if (remotes.size()) {
-            for (remotes_i = remotes.begin(); remotes_i != remotes.end(); remotes_i++) {
-                devs[*remotes_i] = SDREnumerator::enumerate_devices(*remotes_i, true);
-                DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(*remotes_i);
+            for (std::string remote : remotes) {
+                devs[remote] = SDREnumerator::enumerate_devices(remote, true);
+                DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(remote);
 
                 wxTreeItemId remoteNode = devTree->AppendItem(remoteBranch, devConfig->getDeviceName());
                 
-                if (devs[*remotes_i] != NULL) {
-                    for (remoteDevs_i = devs[*remotes_i]->begin(); remoteDevs_i != devs[*remotes_i]->end(); remoteDevs_i++) {
+                if (devs[remote] != NULL) {
+                    for (remoteDevs_i = devs[remote]->begin(); remoteDevs_i != devs[remote]->end(); remoteDevs_i++) {
                         devItems[devTree->AppendItem(remoteNode, (*remoteDevs_i)->getName())] = (*remoteDevs_i);
                     }
                 }
@@ -426,8 +491,31 @@ void SDRDevicesDialog::OnRefreshDevices( wxMouseEvent& /* event */) {
     doRefreshDevices();
 }
 
+std::string SDRDevicesDialog::getSelectedChoiceOption(wxPGProperty* prop, const SoapySDR::ArgInfo& arg) {
+
+    std::string optionName = "";
+
+    int choiceIndex = prop->GetChoiceSelection();
+    
+    if (arg.options.size() > 0) {
+        int choiceMax = arg.options.size();
+        
+        if (choiceIndex >= 0 && choiceIndex < choiceMax) {
+            //normal selection
+            optionName = arg.options[choiceIndex];
+        } else {
+            //choose the first one of the list:
+            optionName = arg.options[0];
+            prop->SetChoiceSelection(0);
+        }
+    } 
+
+    return optionName;
+}
+
 void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
-    if (editId && event.GetProperty() == devSettings["name"]) {
+
+    if (event.GetProperty() == devSettings["name"]) {
         DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
         
         wxString devName = event.GetPropertyValue().GetString();
@@ -442,10 +530,17 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
     } else if (dev && event.GetProperty() == devSettings["offset"]) {
         DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
         
-        long offset = event.GetPropertyValue().GetInteger();
+        long offset_In_KHz = event.GetPropertyValue().GetInteger();
         
-        devConfig->setOffset(offset);
-    } else if (dev && event.GetProperty() == devSettings["sample_rate"]) {
+        devConfig->setOffset((long long) offset_In_KHz * 1000);
+        if (dev->isActive() || !wxGetApp().getDevice()) {
+
+            wxGetApp().setOffset((long long)offset_In_KHz * 1000);
+        }
+
+    } 
+    else if (dev && event.GetProperty() == devSettings["sample_rate"]) {
+
         DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
         
         std::string strRate = deviceArgs["sample_rate"].options[event.GetPropertyValue().GetInteger()];
@@ -453,24 +548,38 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
         try {
             srate = std::stol(strRate);
             devConfig->setSampleRate(srate);
-            
-            if (dev->isActive() || !wxGetApp().getDevice()) {
+             if (dev->isActive() || !wxGetApp().getDevice()) {
                 wxGetApp().setSampleRate(srate);
-                wxGetApp().notifyMainUIOfDeviceChange();
-            }            
+            }
         } catch (std::invalid_argument e) {
             // nop
         }
-    } else if (editId && dev) {
-        wxPGProperty *prop = event.GetProperty();
+    } else if (dev && event.GetProperty() == devSettings["antenna"]) {
+        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
+
+        std::string strAntennaName = deviceArgs["antenna"].options[event.GetPropertyValue().GetInteger()];
         
+        try {
+            devConfig->setAntennaName(strAntennaName);
+
+            if (dev->isActive() || !wxGetApp().getDevice()) { 
+                wxGetApp().setAntennaName(strAntennaName);
+            }
+        }
+        catch (std::invalid_argument e) {
+            // nop
+        }
+    }
+    else if (dev) {
+        wxPGProperty *prop = event.GetProperty();
+        //change value of RuntimeProps
         for (std::map<std::string, wxPGProperty *>::iterator rtp = runtimeProps.begin(); rtp != runtimeProps.end(); rtp++) {
             if (rtp->second == prop) {
                 SoapySDR::Device *soapyDev = dev->getSoapyDevice();
                 std::string settingValue = prop->GetValueAsString().ToStdString();
                 SoapySDR::ArgInfo arg = runtimeArgs[rtp->first];
                 if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size()) {
-                    settingValue = arg.options[prop->GetChoiceSelection()];
+                    settingValue = getSelectedChoiceOption(prop, arg);
                 } else if (arg.type == SoapySDR::ArgInfo::BOOL) {
                     settingValue = (prop->GetValueAsString()=="True")?"true":"false";
                 } else {
@@ -481,7 +590,6 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
                 if (dev->isActive()) {
                     wxGetApp().getSDRThread()->writeSetting(rtp->first, settingValue);
                 }
-                refreshDeviceProperties();
                 return;
             }
         }
@@ -502,10 +610,11 @@ void SDRDevicesDialog::doRefreshDevices() {
     devTree->DeleteAllItems();
     devTree->Disable();
     m_propertyGrid->Clear();
-    runtimeArgs.erase(runtimeArgs.begin(), runtimeArgs.end());
-    runtimeProps.erase(runtimeProps.begin(), runtimeProps.end());
-    streamProps.erase(streamProps.begin(), streamProps.end());
-    devSettings.erase(devSettings.begin(), devSettings.end());
+	devSettings.clear();
+	runtimeArgs.clear();
+	runtimeProps.clear();
+	streamProps.clear();
+
     m_refreshButton->Disable();
     m_addRemoteButton->Disable();
     m_useSelectedButton->Disable();

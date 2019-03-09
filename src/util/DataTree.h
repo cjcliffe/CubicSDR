@@ -24,8 +24,6 @@
  THE SOFTWARE.
  */
 
-#define USE_FASTLZ 0
-
 #include <vector>
 #include <map>
 #include <set>
@@ -35,39 +33,8 @@
 #include <iostream>
 #include "tinyxml.h"
 
-#if USE_FASTLZ
-#include "fastlz.h"
-#endif
-
 using namespace std;
 
-
-/* type defines */
-#define DATA_NULL				0
-#define DATA_CHAR               1
-#define DATA_UCHAR              2
-#define DATA_INT				3
-#define DATA_UINT               4
-#define DATA_LONG				5
-#define DATA_ULONG              6
-#define DATA_LONGLONG           7
-#define DATA_FLOAT				8
-#define DATA_DOUBLE				9
-#define DATA_LONGDOUBLE         10
-#define DATA_STRING				11
-#define DATA_STR_VECTOR		    12
-#define DATA_CHAR_VECTOR        13
-#define DATA_UCHAR_VECTOR       14
-#define DATA_INT_VECTOR		    15
-#define DATA_UINT_VECTOR        16
-#define DATA_LONG_VECTOR		17
-#define DATA_ULONG_VECTOR       18
-#define DATA_LONGLONG_VECTOR    19
-#define DATA_FLOAT_VECTOR		20
-#define DATA_DOUBLE_VECTOR		21
-#define DATA_LONGDOUBLE_VECTOR  22
-#define DATA_VOID               23
-#define DATA_WSTRING            24
 
 /* map comparison function */
 struct string_less : public std::binary_function<std::string,std::string,bool>
@@ -117,109 +84,431 @@ public:
 
 class DataElement
 {
-private:
-    int data_type;
-    size_t data_size;
-    unsigned int unit_size;
+public :
 
-    char *data_val;
-    
-    void data_init(size_t data_size_in);
-    
-public:
+    enum DataElementTypeEnum {
+        DATA_NULL,
+        DATA_CHAR,
+        DATA_UCHAR,
+        DATA_INT,
+        DATA_UINT,
+        DATA_LONG,
+        DATA_ULONG,
+        DATA_LONGLONG,
+        DATA_FLOAT,
+        DATA_DOUBLE,
+        DATA_STRING,
+        DATA_STR_VECTOR,
+        DATA_CHAR_VECTOR,
+        DATA_UCHAR_VECTOR,
+        DATA_INT_VECTOR,
+        DATA_UINT_VECTOR,
+        DATA_LONG_VECTOR,
+        DATA_ULONG_VECTOR,
+        DATA_LONGLONG_VECTOR,
+        DATA_FLOAT_VECTOR,
+        DATA_DOUBLE_VECTOR,
+        DATA_VOID,
+        DATA_WSTRING
+    };
+
+    typedef vector<unsigned char> DataElementBuffer;
+
+    typedef vector< DataElementBuffer > DataElementBufferVector;
+
+private:
+    DataElementTypeEnum data_type;
+
+    // raw buffer holding data_type element in bytes form.
+    DataElementBuffer data_val;
+
+    //keep the vector of types in a spearate vector of DataElementBuffer.
+    DataElementBufferVector data_val_vector;
+
+   //specializations to extract type: (need to be declared/done OUTSIDE of class scope else "Error: explicit specialization is not allowed in the current scope")
+   //this is apparently fixed in C++17...
+   // so we need to workaround it with a partial specialization using a fake Dummy parameter.
+
+    //if the exact right determineScalarDataType specialization was not used, throw exception at runtime.
+    template<typename U, typename Dummy = int >
+    DataElementTypeEnum determineScalarDataType(const U& type_in) { throw DataTypeMismatchException("determineScalarDataType(U) usage with unsupported type !"); }
+
+    template< typename Dummy = int >
+   DataElementTypeEnum determineScalarDataType(const char& type_in) { return DATA_CHAR; }
+
+    template< typename Dummy = int >
+    DataElementTypeEnum determineScalarDataType(const unsigned char& type_in) { return DATA_UCHAR; }
+
+    template< typename Dummy = int >
+    DataElementTypeEnum determineScalarDataType(const int& type_in) { return DATA_INT; }
+
+    template< typename Dummy = int >
+    DataElementTypeEnum determineScalarDataType(const unsigned int& type_in) { return DATA_UINT; }
+
+    template< typename Dummy = int >
+    DataElementTypeEnum determineScalarDataType(const long& type_in) { return DATA_LONG; }
+
+    template< typename Dummy = int >
+    DataElementTypeEnum determineScalarDataType(const unsigned long& type_in) { return DATA_ULONG; }
+
+    template< typename Dummy = int >
+    DataElementTypeEnum determineScalarDataType(const long long& type_in) { return DATA_LONGLONG; }
+
+    template< typename Dummy = int >
+    DataElementTypeEnum determineScalarDataType(const float& type_in) { return DATA_FLOAT; }
+
+    template< typename Dummy = int >
+    DataElementTypeEnum determineScalarDataType(const double& type_in) { return DATA_DOUBLE; }
+  
+    //vector versions:
+    //if the exact right determineVectorDataType specialization was not used, throw exception at runtime.
+    template<typename V, typename Dummy = int >
+    DataElementTypeEnum determineVectorDataType(const vector<V>& type_in) { throw DataTypeMismatchException("determineVectorDataType(V) usage with unsupported type !"); }
+
+    template< typename Dummy = int >
+    DataElementTypeEnum determineVectorDataType(const vector<char>& type_in) { return DATA_CHAR_VECTOR; }
+
+    template< typename Dummy = int >
+   DataElementTypeEnum determineVectorDataType(const vector<unsigned char>& type_in) { return DATA_UCHAR_VECTOR; }
+
+    template< typename Dummy = int >
+    DataElementTypeEnum determineVectorDataType(const vector<int>& type_in) { return DATA_INT_VECTOR; }
+
+    template< typename Dummy = int >
+    DataElementTypeEnum determineVectorDataType(const vector<unsigned int>& type_in) { return DATA_UINT_VECTOR; }
+
+    template< typename Dummy = int >
+    DataElementTypeEnum determineVectorDataType(const vector<long>& type_in) { return DATA_LONG_VECTOR; }
+
+    template< typename Dummy = int >
+    DataElementTypeEnum determineVectorDataType(const vector<unsigned long>& type_in) { return DATA_ULONG_VECTOR; }
+
+    template< typename Dummy = int >
+    DataElementTypeEnum determineVectorDataType(const vector<long long>& type_in) { return DATA_LONGLONG_VECTOR; }
+
+    template< typename Dummy = int >
+    DataElementTypeEnum determineVectorDataType(const vector<float>& type_in) { return DATA_FLOAT_VECTOR; }
+
+    template< typename Dummy = int >
+    DataElementTypeEnum determineVectorDataType(const vector<double>& type_in) { return DATA_DOUBLE_VECTOR; }
+
+public: 
+
     DataElement();
     DataElement(DataElement &cloneFrom);
     ~DataElement();
     
-    int getDataType();
+    DataElementTypeEnum getDataType();
     char *getDataPointer();
     size_t getDataSize();
-    unsigned int getUnitSize();
-    
-    /* set overloads */		
-    void set(const char &char_in);
-    void set(const unsigned char &uchar_in);
-    void set(const int &int_in);
-    void set(const unsigned int &uint_in);
-    void set(const long &long_in);
-    void set(const unsigned long &ulong_in);
-    void set(const long long &llong_in);
-    void set(const float &float_in);
-    void set(const double &double_in);
-    void set(const long double &ldouble_in);
-    
+     
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //set overloads :
+
+    // general templates : for scalars
+    template<typename T, typename Dummy = int >
+    void set(const T& scalar_in) {
+
+        data_type = determineScalarDataType<T>(scalar_in);
+
+        int unit_size = sizeof(T);
+        //copy in a temporary variable (needed ?)
+        T local_copy = scalar_in;
+        unsigned char* local_copy_ptr = reinterpret_cast<unsigned char*>(&local_copy);
+
+        data_val.assign(local_copy_ptr, local_copy_ptr + unit_size);
+    }
+
+    // general templates : for vector of scalars
+    template<typename T, typename Dummy = int >
+    void set(const vector<T>& scalar_vector_in) {
+
+        data_type = determineVectorDataType<T>(scalar_vector_in);
+
+        int unit_size = sizeof(T);
+
+        data_val_vector.clear();
+
+        DataElementBuffer single_buffer;
+
+        for (auto single_element : scalar_vector_in) {
+
+            //copy in a temporary variable (needed ?)
+            T local_copy = single_element;
+            unsigned char* local_copy_ptr = reinterpret_cast<unsigned char*>(&local_copy);
+
+            single_buffer.assign(local_copy_ptr, local_copy_ptr + unit_size);
+
+            data_val_vector.push_back(single_buffer);
+        }
+    }
+
+    //template specialization : for string 
+    template< typename Dummy = int >
+    void set(const string& str_in) {
+
+        data_type = DATA_STRING;
+
+        data_val.assign(str_in.begin(), str_in.end());
+    }
+
+    //template specialization : for wstring 
+    template< typename Dummy = int >
+    void set(const wstring& wstr_in) {
+
+        data_type = DATA_WSTRING;
+
+        //wchar_t is tricky, the terminating zero is actually a (wchar_t)0 !
+        //wchar_t is typically 16 bits on windows, and 32 bits on Unix, so use sizeof(wchar_t) everywhere.
+        size_t maxLenBytes = (wstr_in.length() + 1) * sizeof(wchar_t);
+
+        //be paranoid, zero the buffer
+        char *tmp_str = (char *)::calloc(maxLenBytes, sizeof(char));
+
+        //if something awful happens, the last sizeof(wchar_t) is at least zero...
+        ::wcstombs(tmp_str, wstr_in.c_str(), maxLenBytes - sizeof(wchar_t));
+
+        data_val.assign(tmp_str, tmp_str + maxLenBytes - sizeof(wchar_t));
+
+        ::free(tmp_str);
+    }
+
+    //template specialization : for vector<string> 
+    template< typename Dummy = int >
+    void set(const vector<string>& vector_str_in) {
+
+        data_type = DATA_STR_VECTOR;
+
+        data_val_vector.clear();
+
+        DataElementBuffer single_buffer;
+
+        for (auto single_element : vector_str_in) {
+
+            single_buffer.assign(single_element.begin(), single_element.end());
+
+            data_val_vector.push_back(single_buffer);
+        }
+    }
+
+  
+    ///specific versions
+    void set(const std::set<string> &strset_in);
     void set(const char *data_in, long size_in); /* voids, file chunks anyone? */
     void set(const char *data_in);	/* strings, stops at NULL, returns as string */
     
-    void set(const string &str_in);
-    void set(const wstring &wstr_in);
-    
-    void set(vector<string> &strvect_in);
-    void set(std::set<string> &strset_in);
-    void set(vector<char> &charvect_in);
-    void set(vector<unsigned char> &ucharvect_in);
-    void set(vector<int> &intvect_in);
-    void set(vector<unsigned int> &uintvect_in);
-    void set(vector<long> &longvect_in);
-    void set(vector<unsigned long> &ulongvect_in);
-    void set(vector<long long> &llongvect_in);
-    void set(vector<float> &floatvect_in);
-    void set(vector<double> &doublevect_in);
-    void set(vector<long double> &ldoublevect_in);
-    
-    
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /* get overloads */
-    void get(char &char_in);
-	void get(unsigned char &uchar_in);
-    void get(int &int_in);
-    void get(unsigned int &uint_in);
-    void get(long &long_in);
-    void get(unsigned long &ulong_in);
-    void get(long long &long_in);
-    void get(float &float_in);
-    void get(double &double_in);
-    void get(long double &ldouble_in);
-    
-    void get(char **data_in); /* getting a void or string */
-    void get(string &str_in); 
-    void get(wstring &wstr_in);
-    void get(std::set<string> &strset_in);
-    
-    void get(vector<string> &strvect_in);
-    void get(vector<char> &charvect_in);
-    void get(vector<unsigned char> &ucharvect_in);
-    void get(vector<int> &intvect_in);
-    void get(vector<unsigned int> &uintvect_in);
-    void get(vector<long> &longvect_in);
-    void get(vector<unsigned long> &ulongvect_in);
-    void get(vector<long long> &llongvect_in);
-    void get(vector<float> &floatvect_in);
-    void get(vector<double> &doublevect_in);
-    void get(vector<long double> &ldoublevect_in);
-    
+
+    template<typename T, typename Dummy = int >
+    void get(T& scalar_out) {
+
+        if (getDataSize() == 0) {
+            throw DataException("Cannot get() the scalar, DataElement is empty !");
+        }
+
+        DataElementTypeEnum storageType = getDataType();
+
+        //TODO: smarter way with templates ?
+        if (storageType == DATA_CHAR) {
+            char* storage_ptr = reinterpret_cast<char*>(&data_val[0]);
+            //constructor-like 
+            scalar_out = T(*storage_ptr);
+
+        } else if (storageType == DATA_UCHAR) {
+            unsigned char* storage_ptr = reinterpret_cast<unsigned char*>(&data_val[0]);
+            //constructor-like 
+            scalar_out = T(*storage_ptr);
+        } else if (storageType == DATA_INT) {
+            int* storage_ptr = reinterpret_cast<int*>(&data_val[0]);
+            //constructor-like 
+            scalar_out = T(*storage_ptr);
+        } else if (storageType == DATA_UINT) {
+            unsigned int* storage_ptr = reinterpret_cast<unsigned int*>(&data_val[0]);
+            //constructor-like 
+            scalar_out = T(*storage_ptr);
+        } else if (storageType == DATA_LONG) {
+            long* storage_ptr = reinterpret_cast<long*>(&data_val[0]);
+            //constructor-like 
+            scalar_out = T(*storage_ptr);
+        } else if (storageType == DATA_ULONG) {
+            unsigned long* storage_ptr = reinterpret_cast<unsigned long*>(&data_val[0]);
+            //constructor-like 
+            scalar_out = T(*storage_ptr);
+        } else if (storageType == DATA_LONGLONG) {
+            long long* storage_ptr = reinterpret_cast<long long*>(&data_val[0]);
+            //constructor-like 
+            scalar_out = T(*storage_ptr);
+        } else if (storageType == DATA_FLOAT) {
+            float* storage_ptr = reinterpret_cast<float*>(&data_val[0]);
+            //constructor-like 
+            scalar_out = T(*storage_ptr);
+        } else if (storageType == DATA_DOUBLE) {
+            double* storage_ptr = reinterpret_cast<double*>(&data_val[0]);
+            //constructor-like 
+            scalar_out = T(*storage_ptr);
+        } 
+    }
+
+    // general templates : for vector of scalars
+    template<typename T, typename Dummy = int >
+    void get(vector<T>& scalar_vector_out) {
+
+        scalar_vector_out.clear();
+
+        DataElementBuffer single_buffer;
+
+        DataElementTypeEnum storageType = getDataType();
+
+        for (auto single_storage_element : data_val_vector) {
+
+            if (single_storage_element.empty()) {
+                throw DataException("Cannot get(vector<scalar>) on single element because it is empty!");
+            }
+
+            T scalar_out;
+
+            //TODO: smarter way with templates ?
+            if (storageType == DATA_CHAR_VECTOR) {
+                char* storage_ptr = reinterpret_cast<char*>(&single_storage_element[0]);
+                //constructor-like 
+                scalar_out = T(*storage_ptr);
+
+            } else if (storageType == DATA_UCHAR_VECTOR) {
+                unsigned char* storage_ptr = reinterpret_cast<unsigned char*>(&single_storage_element[0]);
+                //constructor-like 
+                scalar_out = T(*storage_ptr);
+            } else if (storageType == DATA_INT_VECTOR) {
+                int* storage_ptr = reinterpret_cast<int*>(&single_storage_element[0]);
+                //constructor-like 
+                scalar_out = T(*storage_ptr);
+            } else if (storageType == DATA_UINT_VECTOR) {
+                unsigned int* storage_ptr = reinterpret_cast<unsigned int*>(&single_storage_element[0]);
+                //constructor-like 
+                scalar_out = T(*storage_ptr);
+            } else if (storageType == DATA_LONG_VECTOR) {
+                long* storage_ptr = reinterpret_cast<long*>(&single_storage_element[0]);
+                //constructor-like 
+                scalar_out = T(*storage_ptr);
+            } else if (storageType == DATA_ULONG_VECTOR) {
+                unsigned long* storage_ptr = reinterpret_cast<unsigned long*>(&single_storage_element[0]);
+                //constructor-like 
+                scalar_out = T(*storage_ptr);
+            } else if (storageType == DATA_LONGLONG_VECTOR) {
+                long long* storage_ptr = reinterpret_cast<long long*>(&single_storage_element[0]);
+                //constructor-like 
+                scalar_out = T(*storage_ptr);
+            } else if (storageType == DATA_FLOAT_VECTOR) {
+                float* storage_ptr = reinterpret_cast<float*>(&single_storage_element[0]);
+                //constructor-like 
+                scalar_out = T(*storage_ptr);
+            } else if (storageType == DATA_DOUBLE_VECTOR) {
+                double* storage_ptr = reinterpret_cast<double*>(&single_storage_element[0]);
+                //constructor-like 
+                scalar_out = T(*storage_ptr);
+            } 
+
+            scalar_vector_out.push_back(scalar_out);
+        } //end for.
+    }
+
+    //template specialization : for string or void* returned as string
+    template< typename Dummy = int >
+    void get(string& str_out) {
+
+        //reset
+        str_out.clear();
+
+        if (data_type == DATA_NULL) {
+            //it means TinyXML has parsed an empty tag,
+            //so return an empty string.
+            return;
+        }
+
+        if (data_type != DATA_STRING && data_type != DATA_VOID) {
+            throw(DataTypeMismatchException("Type mismatch, neither a STRING nor a VOID*"));
+        }
+
+        for (auto single_char : data_val) {
+            str_out.push_back((char)single_char);
+        }
+    }
+
+    //template specialization : for wstring 
+    template< typename Dummy = int >
+    void get(wstring& wstr_out) {
+
+        //reset
+        wstr_out.clear();
+
+        if (data_type == DATA_NULL) {
+            //it means TinyXML has parsed an empty tag,
+            //so return an empty string.
+            return;
+        }
+
+        if (data_type != DATA_WSTRING) {
+            throw(DataTypeMismatchException("Type mismatch, not a WSTRING"));
+        }
+
+        if (getDataSize() >= sizeof(wchar_t)) {
+
+            //data_val is an array of bytes holding wchar_t characters, plus a terminating (wchar_t)0
+           //wchar_t is typically 16 bits on windows, and 32 bits on Unix, so use sizeof(wchar_t) everywhere.
+            size_t maxNbWchars = getDataSize() / sizeof(wchar_t);
+
+            //be paranoid, zero the buffer
+            wchar_t *tmp_wstr = (wchar_t *)::calloc(maxNbWchars + 1, sizeof(wchar_t));
+
+            //the last wchar_t is actually zero if anything goes wrong...
+            ::mbstowcs(tmp_wstr, (const char*)&data_val[0], maxNbWchars);
+
+            wstr_out.assign(tmp_wstr);
+
+            ::free(tmp_wstr);
+        }
+    }
+
+    //template specialization : for vector<string> 
+    template< typename Dummy = int >
+    void get(vector<string>& vector_str_out) {
+
+        if (data_type != DATA_STR_VECTOR) {
+            throw(DataTypeMismatchException("Type mismatch, not a STRING VECTOR"));
+        }
+
+        vector_str_out.clear();
+
+        string single_buffer;
+
+        for (auto single_element : data_val_vector) {
+
+            single_buffer.assign(single_element.begin(), single_element.end());
+
+            vector_str_out.push_back(single_buffer);
+        }
+    }
+  
+    //special versions:
+    void get(DataElementBuffer& data_out); /* getting a void or string */
+    void get(std::set<string> &strset_out);
+       
     
     /* special get functions, saves creating unnecessary vars */
-    int getChar() { char i_get; get(i_get); return i_get; };
-    unsigned int getUChar() { unsigned char i_get; get(i_get); return i_get; };
-    int getInt() { int i_get; get(i_get); return i_get; };
-    unsigned int getUInt() { unsigned int i_get; get(i_get); return i_get; };
+    int getChar()  { char i_get; get(i_get); return i_get; };
+    unsigned int getUChar()  { unsigned char i_get; get(i_get); return i_get; };
+    int getInt()  { int i_get; get(i_get); return i_get; };
+    unsigned int getUInt()  { unsigned int i_get; get(i_get); return i_get; };
     long getLong()  { long l_get; get(l_get); return l_get; };
-    unsigned long getULong()  { unsigned long l_get; get(l_get); return l_get; };
-    long getLongLong()  { long long l_get; get(l_get); return l_get; };
-    float getFloat()  { float f_get; get(f_get); return f_get; };
-    double getDouble()  { double d_get; get(d_get); return d_get; };
-    long double getLongDouble()  { long double d_get; get(d_get); return d_get; };
+    unsigned long getULong() { unsigned long l_get; get(l_get); return l_get; };
+    long long getLongLong() { long long l_get; get(l_get); return l_get; };
+    float getFloat() { float f_get; get(f_get); return f_get; };
+    double getDouble() { double d_get; get(d_get); return d_get; };
     
     std::string toString();
-    
-    /* serialize functions */
-    long getSerializedSize();
-    long getSerialized(char **ser_str);
-    
-    void setSerialized(char *ser_str);
 };
 
-
+///
 class DataNode
 {
 private:
@@ -247,8 +536,8 @@ public:
     DataNode *getParentNode() { return parentNode; };
     void setParentNode(DataNode &parentNode_in) { parentNode = &parentNode_in; };
 
-    int numChildren();	/* Number of children */
-    int numChildren(const char *name_in); /* Number of children named 'name_in' */
+    size_t numChildren();	/* Number of children */
+    size_t numChildren(const char *name_in); /* Number of children named 'name_in' */
     
     DataElement *element(); /* DataElement at this node */
     
@@ -270,7 +559,7 @@ public:
     void findAll(const char *name_in, vector<DataNode *> &node_list_out);
     
 //    operator string () { string s; element()->get(s); return s; }
-    operator const char * () { if (element()->getDataType() == DATA_STRING) return element()->getDataPointer(); else return NULL; }
+    operator const char * () { if (element()->getDataType() == DataElement::DATA_STRING) { return element()->getDataPointer(); } else { return NULL; } }
     operator char () { char v; element()->get(v); return v; }
     operator unsigned char () { unsigned char v; element()->get(v); return v; }
     operator int () { int v; element()->get(v); return v; }
@@ -280,8 +569,7 @@ public:
     operator long long () { long long v; element()->get(v); return v; }
     operator float () { float v; element()->get(v); return v; }
     operator double () { double v; element()->get(v); return v; }
-    operator long double () { long double v; element()->get(v); return v; }
-
+    
     operator vector<char> () { vector<char> v; element()->get(v);  return v; }
     operator vector<unsigned char> () { vector<unsigned char> v; element()->get(v);  return v; }
     operator vector<int> () { vector<int> v; element()->get(v);  return v; }
@@ -290,7 +578,6 @@ public:
     operator vector<unsigned long> () { vector<unsigned long> v; element()->get(v);  return v; }
     operator vector<float> () { vector<float> v; element()->get(v);  return v; }
     operator vector<double> () { vector<double> v; element()->get(v);  return v; }
-    operator vector<long double> () { vector<long double> v; element()->get(v);  return v; }
     
     const string &operator= (const string &s) { element()->set(s); return s; }
     const wstring &operator= (const wstring &s) { element()->set(s); return s; }
@@ -304,7 +591,6 @@ public:
     long long operator= (long long i) { element()->set(i); return i; }
     float operator= (float i) { element()->set(i); return i; }
     double operator= (double i) { element()->set(i); return i; }
-    long double operator= (long double i) { element()->set(i); return i; }
     
     vector<char> &operator= (vector<char> &v) { element()->set(v); return v; }
     vector<unsigned char> &operator= (vector<unsigned char> &v) { element()->set(v); return v; }
@@ -314,8 +600,7 @@ public:
     vector<unsigned long> &operator= (vector<unsigned long> &v) { element()->set(v); return v; }
     vector<float> &operator= (vector<float> &v) { element()->set(v); return v; }
     vector<double> &operator= (vector<double> &v) { element()->set(v); return v; }
-    vector<long double> &operator= (vector<long double> &v) { element()->set(v); return v; }
-
+    
     DataNode *operator[] (const char *name_in) { return getNext(name_in); }
     DataNode *operator[] (int idx) { return child(idx); }
 
@@ -353,16 +638,8 @@ public:
     void decodeXMLText(DataNode *elem, const char *in_text, DT_FloatingPointPolicy fpp);
     
     void printXML();	/* print datatree as XML */
-    long getSerializedSize(DataElement &de_node_names, bool debug=false);	/* get serialized size + return node names header */
-    long getSerialized(char **ser_str, bool debug=false);	
-    void setSerialized(char *ser_str, bool debug=false);
     
     bool LoadFromFileXML(const std::string& filename, DT_FloatingPointPolicy fpp=USE_FLOAT);
     bool SaveToFileXML(const std::string& filename);
-    
-//    bool SaveToFile(const std::string& filename);
-//    bool LoadFromFile(const std::string& filename);
-
-    bool SaveToFile(const std::string& filename, bool compress = true, int compress_level = 2);
-    bool LoadFromFile(const std::string& filename);
+   
 };

@@ -6,8 +6,11 @@
 #include "CubicSDR.h"
 #include <vector>
 
+//50 ms
+#define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
+
 DemodulatorWorkerThread::DemodulatorWorkerThread() : IOThread(),
-        commandQueue(NULL), resultQueue(NULL), cModem(nullptr), cModemKit(nullptr) {
+         cModem(nullptr), cModemKit(nullptr) {
 }
 
 DemodulatorWorkerThread::~DemodulatorWorkerThread() {
@@ -17,8 +20,8 @@ void DemodulatorWorkerThread::run() {
 
 //    std::cout << "Demodulator worker thread started.." << std::endl;
     
-    commandQueue = static_cast<DemodulatorThreadWorkerCommandQueue *>(getInputQueue("WorkerCommandQueue"));
-    resultQueue = static_cast<DemodulatorThreadWorkerResultQueue *>(getOutputQueue("WorkerResultQueue"));
+    commandQueue = std::static_pointer_cast<DemodulatorThreadWorkerCommandQueue>(getInputQueue("WorkerCommandQueue"));
+    resultQueue = std::static_pointer_cast<DemodulatorThreadWorkerResultQueue>(getOutputQueue("WorkerResultQueue"));
     
     while (!stopping) {
         bool filterChanged = false;
@@ -30,8 +33,11 @@ void DemodulatorWorkerThread::run() {
         //Beware of the subtility here,
         //we are waiting for the first command to show up (blocking!)
         //then consuming the commands until done. 
-        while (!done) {
-            commandQueue->pop(command);
+        while (!done && !stopping) {
+
+            if (!commandQueue->pop(command, HEARTBEAT_CHECK_PERIOD_MICROS)) {
+                continue;
+            }
 
             switch (command.cmd) {
                 case DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS:
@@ -46,7 +52,7 @@ void DemodulatorWorkerThread::run() {
                     break;
             }
             done = commandQueue->empty();
-        }
+        } //end while done.
 
         if ((makeDemod || filterChanged) && !stopping) {
             DemodulatorWorkerThreadResult result(DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS);
@@ -110,6 +116,7 @@ void DemodulatorWorkerThread::run() {
 
 void DemodulatorWorkerThread::terminate() {
     IOThread::terminate();
-    DemodulatorWorkerThreadCommand inp;    // push dummy to nudge queue
-    commandQueue->push(inp);
+    //unblock the push()
+    resultQueue->flush();
+    commandQueue->flush();
 }
