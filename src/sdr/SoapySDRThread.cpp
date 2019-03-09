@@ -208,7 +208,7 @@ int SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
     // Supply a huge timeout value to neutralize the readStream 'timeout' effect
     // we are not interested in, but some modules may effectively use. 
     //TODO: use something roughly (1 / TARGET_DISPLAY_FPS) seconds * (factor) instead.?
-    long long timeoutUs = (1 << 32);
+    long timeoutUs = (1 << 31);
 
     int n_read = 0;
     int nElems = numElems.load();
