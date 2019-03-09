@@ -101,9 +101,7 @@ bool SDRThread::init() {
     
     int streamMTU = device->getStreamMTU(stream);
     mtuElems.store(streamMTU);
-    
-    std::cout << "Device Stream MTU: " << mtuElems.load() << std::endl << std::flush;
-    
+  
     deviceInfo.load()->setStreamArgs(currentStreamArgs);
     deviceConfig.load()->setStreamOpts(currentStreamArgs);
     
@@ -135,9 +133,13 @@ bool SDRThread::init() {
     
     numChannels.store(getOptimalChannelCount(sampleRate.load()));
     numElems.store(getOptimalElementCount(sampleRate.load(), TARGET_DISPLAY_FPS));
-    //fallback if  mtuElems was wrong.
+
+    //fallback if  mtuElems was wrong
     if (!mtuElems.load()) {
         mtuElems.store(numElems.load());
+        std::cout << "SDRThread::init(): Device Stream MTU is broken, use " << mtuElems.load() << "instead..." << std::endl << std::flush;
+    } else {
+        std::cout << "SDRThread::init(): Device Stream set to MTU: " << mtuElems.load() << std::endl << std::flush;
     }
 
     overflowBuffer.data.resize(mtuElems.load());
@@ -198,8 +200,8 @@ void SDRThread::assureBufferMinSize(SDRThreadIQData * dataOut, size_t minSize) {
 // a 'this.numElems' sized batch of samples (SDRThreadIQData) and push it into  iqDataOutQueue.
 //this batch of samples is built to represent 1 frame / TARGET_DISPLAY_FPS.
 int SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
-    int flags;
-    long long timeNs;
+    int flags = 0;
+    long long timeNs = 0;
 
     int n_read = 0;
     int nElems = numElems.load();
@@ -447,10 +449,15 @@ void SDRThread::updateSettings() {
         numChannels.store(getOptimalChannelCount(sampleRate.load()));
         numElems.store(getOptimalElementCount(sampleRate.load(), TARGET_DISPLAY_FPS));
         int streamMTU = device->getStreamMTU(stream);
+
         mtuElems.store(streamMTU);
+        
         //fallback if  mtuElems was wrong
         if (!mtuElems.load()) {
             mtuElems.store(numElems.load());
+            std::cout << "SDRThread::updateSettings(): Device Stream MTU is broken, use " << mtuElems.load() << "instead..." << std::endl << std::flush;
+        } else {
+            std::cout << "SDRThread::updateSettings(): Device Stream changing to MTU: " << mtuElems.load() << std::endl << std::flush;
         }
 
         overflowBuffer.data.resize(mtuElems.load());
