@@ -446,11 +446,17 @@ void SDRThread::updateSettings() {
     }
     
     if (rate_changed.load()) {
-
         device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
         // TODO: explore bandwidth setting option to see if this is necessary for others
         if (device->getDriverKey() == "bladeRF") {
             device->setBandwidth(SOAPY_SDR_RX, 0, sampleRate.load());
+        }
+	// Fix for LimeSDR-USB not properly handling samplerate changes while device is 
+	// active.
+	else if (device->getHardwareKey() == "LimeSDR-USB") {
+	    std::cout << "SDRThread::updateSettings(): Force deactivate / activate limeSDR stream" << std::endl << std::flush;
+            device->deactivateStream(stream);
+	    device->activateStream(stream);
         }
         sampleRate.store(device->getSampleRate(SOAPY_SDR_RX,0));
         numChannels.store(getOptimalChannelCount(sampleRate.load()));
