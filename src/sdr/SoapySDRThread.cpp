@@ -103,33 +103,7 @@ bool SDRThread::init() {
     //2. Set sample rate:
     device->setSampleRate(SOAPY_SDR_RX, 0, sampleRate.load());
 
-    //2.2 Device-specific workarounds:
-    // TODO: explore bandwidth setting option to see if this is necessary for others
-    if (device->getDriverKey() == "bladeRF") {
-        device->setBandwidth(SOAPY_SDR_RX, 0, sampleRate.load());
-    }
-    
-    //3. Re-read MTU and build Cubic buffers:
-    int streamMTU = device->getStreamMTU(stream);
-    mtuElems.store(streamMTU);
-
-    numChannels.store(getOptimalChannelCount(sampleRate.load()));
-    numElems.store(getOptimalElementCount(sampleRate.load(), TARGET_DISPLAY_FPS));
-
-    //fallback if  mtuElems was wrong
-    if (!mtuElems.load()) {
-        mtuElems.store(numElems.load());
-        std::cout << "SDRThread::init(): Device Stream MTU is broken, use " << mtuElems.load() << "instead..." << std::endl << std::flush;
-    } else {
-        std::cout << "SDRThread::init(): Device Stream set to MTU: " << mtuElems.load() << std::endl << std::flush;
-    }
-
-    overflowBuffer.data.resize(mtuElems.load());
-
-    buffs[0] = ::malloc(mtuElems.load() * 4 * sizeof(float));
-    numOverflow = 0;
-
-    //3.2 Store Stream-specific parameters to current Device
+    //3. Store Stream-specific parameters to current Device
     deviceInfo.load()->setStreamArgs(currentStreamArgs);
     deviceConfig.load()->setStreamOpts(currentStreamArgs);
   
@@ -177,14 +151,14 @@ bool SDRThread::init() {
         setting_value_changed.store(false);
 
     } //leave lock guard scope
-    
-    updateSettings();
-    
+      
     wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_INITIALIZED, std::string("Device Initialized."));
 
-    //5. Activate stream:
+    //5. Activate stream: (through update settings)
     wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Activating stream."));
-    device->activateStream(stream);
+
+    rate_changed.store(true);
+    updateSettings();
 
 	//rebuild menu now that settings are really been applied.
 	wxGetApp().notifyMainUIOfDeviceChange(true);
@@ -195,8 +169,13 @@ bool SDRThread::init() {
 void SDRThread::deinit() {
     device->deactivateStream(stream);
     device->closeStream(stream);
+   
+    if (buffs[0] != nullptr) {
+        ::free(buffs[0]);
+        buffs[0] = nullptr;
+    }
+
     stream = nullptr;
-    ::free(buffs[0]);
 }
 
 void SDRThread::assureBufferMinSize(SDRThreadIQData * dataOut, size_t minSize) {
@@ -470,33 +449,34 @@ void SDRThread::updateSettings() {
             device->setBandwidth(SOAPY_SDR_RX, 0, sampleRate.load());
         }
 
-        //3. Re-do Cubic buffers :
-        //re-read current sample rate:
+        //3. Re-activate stream:
+        device->activateStream(stream);
+
+        //4. Re-do Cubic buffers :
+        //re-read current sample rate and MTU:
         sampleRate.store(device->getSampleRate(SOAPY_SDR_RX, 0));
 
         numChannels.store(getOptimalChannelCount(sampleRate.load()));
         numElems.store(getOptimalElementCount(sampleRate.load(), TARGET_DISPLAY_FPS));
         //read (new) MTU size:
         int streamMTU = device->getStreamMTU(stream);
-
         mtuElems.store(streamMTU);
 
         //fallback if  mtuElems was wrong
         if (!mtuElems.load()) {
             mtuElems.store(numElems.load());
-            std::cout << "SDRThread::updateSettings(): Device Stream MTU is broken, use " << mtuElems.load() << "instead..." << std::endl << std::flush;
+            std::cout << "SDRThread: Device Stream MTU is broken, use " << mtuElems.load() << " instead..." << std::endl << std::flush;
         } else {
-            std::cout << "SDRThread::updateSettings(): Device Stream changing to MTU: " << mtuElems.load() << std::endl << std::flush;
+            std::cout << "SDRThread : Device Stream set to MTU: " << mtuElems.load() << std::endl << std::flush;
         }
 
         overflowBuffer.data.resize(mtuElems.load());
-        ::free(buffs[0]);
+        if (buffs[0] != nullptr) {
+            ::free(buffs[0]);
+        }
         buffs[0] = ::malloc(mtuElems.load() * 4 * sizeof(float));
         //clear overflow buffer
         numOverflow = 0;
-
-        //4. Re-activate stream:
-        device->activateStream(stream);
 
         //
         rate_changed.store(false);
