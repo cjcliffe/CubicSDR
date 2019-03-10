@@ -6,8 +6,14 @@
 #define __LIQUID_CONFIG_H__
 
 
+/* Support AVX (Advanced Vector Extensions) instructions */
+#define HAVE_AVX 1
+
 /* Define to 1 if you have the <complex.h> header file. */
 #define HAVE_COMPLEX_H 1
+
+/* Define to 1 if you have the <emmintrin.h> header file. */
+#define HAVE_EMMINTRIN_H 1
 
 /* Define to 1 if you have the <fec.h> header file. */
 /* #undef HAVE_FEC_H */
@@ -20,6 +26,9 @@
 
 /* Define to 1 if you have the <getopt.h> header file. */
 #define HAVE_GETOPT_H 1
+
+/* Define to 1 if you have the <immintrin.h> header file. */
+#define HAVE_IMMINTRIN_H 1
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
@@ -46,36 +55,21 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
 
+/* Define to 1 if you have the <mmintrin.h> header file. */
+#define HAVE_MMINTRIN_H 1
+
 /* Support MMX instructions */
 #define HAVE_MMX 1
 
-/* Define to 1 if you have the <mmintrin.h> header file. */ //MMX
-#define HAVE_MMINTRIN_H 1
-
-/* Define to 1 if you have the <xmmintrin.h> header file. */  //SSE
-#define HAVE_XMMINTRIN_H 1
-
-/* Define to 1 if you have the <emmintrin.h> header file. */ //SSE2
-#define HAVE_EMMINTRIN_H 1
-
-/* Define to 1 if you have the <pmmintrin.h> header file. */ //SSE3
+/* Define to 1 if you have the <pmmintrin.h> header file. */
 #define HAVE_PMMINTRIN_H 1
-
-/* Define to 1 if you have the <smmintrin.h> header file. */ //SSE4.1
-#define HAVE_SMMINTRIN_H 1
-
-/* Define to 1 if you have the <immintrin.h> header file. */ //AVX
-//#define HAVE_IMMINTRIN_H 1
-
-/* The size of `int', as computed by sizeof. */
-#define SIZEOF_INT 4
-
-/* The size of `unsigned int', as computed by sizeof. */
-#define SIZEOF_UNSIGNED_INT 4
 
 /* Define to 1 if your system has a GNU libc compatible `realloc' function,
    and to 0 otherwise. */
 #define HAVE_REALLOC 1
+
+/* Define to 1 if you have the <smmintrin.h> header file. */
+#define HAVE_SMMINTRIN_H 1
 
 /* Support SSE (Streaming SIMD Extensions) instructions */
 #define HAVE_SSE 1
@@ -94,9 +88,6 @@
 
 /* Support SSSE3 (Supplemental Streaming SIMD Extensions 3) instructions */
 #define HAVE_SSSE3 1
-
-/* Support AVX (Advanced Vector Extensions) instructions */
-#define HAVE_AVX /**/
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HAVE_STDINT_H 1
@@ -128,6 +119,9 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
 
+/* Define to 1 if you have the <xmmintrin.h> header file. */
+#define HAVE_XMMINTRIN_H 1
+
 /* Force internal FFT even if libfftw is available */
 #define LIQUID_FFTOVERRIDE 1
 
@@ -151,6 +145,12 @@
 
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "1.3.1"
+
+/* The size of `int', as computed by sizeof. */
+#define SIZEOF_INT 4
+
+/* The size of `unsigned int', as computed by sizeof. */
+#define SIZEOF_UNSIGNED_INT 4
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
