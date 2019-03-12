@@ -3722,19 +3722,40 @@ void RRESAMP(_get_scale)(RRESAMP() _q,                                      \
 /* Get resampler delay (filter semi-length \(m\))                       */  \
 unsigned int RRESAMP(_get_delay)(RRESAMP() _q);                             \
                                                                             \
+/* Get original interpolation factor \(P\) when object was created      */  \
+/* before removing greatest common divisor                              */  \
+unsigned int RRESAMP(_get_P)(RRESAMP() _q);                                 \
+                                                                            \
 /* Get interpolation factor of resampler, \(P\), after removing         */  \
 /* greatest common divisor                                              */  \
 unsigned int RRESAMP(_get_interp)(RRESAMP() _q);                            \
                                                                             \
+/* Get original decimation factor \(Q\) when object was created         */  \
+/* before removing greatest common divisor                              */  \
+unsigned int RRESAMP(_get_Q)(RRESAMP() _q);                                 \
+                                                                            \
 /* Get decimation factor of resampler, \(Q\), after removing            */  \
 /* greatest common divisor                                              */  \
 unsigned int RRESAMP(_get_decim)(RRESAMP() _q);                             \
+                                                                            \
+/* Get greatest common divisor (g.c.d.) between original P and Q values */  \
+unsigned int RRESAMP(_get_gcd)(RRESAMP() _q);                               \
                                                                             \
 /* Get rate of resampler, \(r = P/Q\)                                   */  \
 float RRESAMP(_get_rate)(RRESAMP() _q);                                     \
                                                                             \
 /* Execute rational-rate resampler on a block of input samples and      */  \
 /* store the resulting samples in the output array.                     */  \
+/* Note that the size of the input and output buffers correspond to the */  \
+/* values of P and Q passed when the object was created, even if they   */  \
+/* share a common divisor. Internally the rational resampler reduces P  */  \
+/* and Q by their greatest commmon denominator to reduce processing;    */  \
+/* however sometimes it is convenienct to create the object based on    */  \
+/* expected output/input block sizes. This expectation is preserved. So */  \
+/* if an object is created with P=80 and Q=72, the object will          */  \
+/* internally set P=10 and Q=9 (with a g.c.d of 8); however when        */  \
+/* "execute" is called the resampler will still expect an input buffer  */  \
+/* of 72 and an output buffer of 80.                                    */  \
 /*  _q  : resamp object                                                 */  \
 /*  _x  : input sample array, [size: Q x 1]                             */  \
 /*  _y  : output sample array [size: P x 1]                             */  \
@@ -4456,8 +4477,21 @@ int qpacketmodem_decode_soft_payload(qpacketmodem    _q,
                                      unsigned char * _payload);
 
 //
-// pilot generator for streaming applications
+// pilot generator/synchronizer for packet burst recovery
 //
+
+// get number of pilots in frame
+unsigned int qpilot_num_pilots(unsigned int _payload_len,
+                               unsigned int _pilot_spacing);
+
+// get length of frame with a particular payload length and pilot spacing
+unsigned int qpilot_frame_len(unsigned int _payload_len,
+                              unsigned int _pilot_spacing);
+
+//
+// pilot generator for packet burst recovery
+//
+
 typedef struct qpilotgen_s * qpilotgen;
 
 // create packet encoder
@@ -4480,7 +4514,7 @@ void qpilotgen_execute(qpilotgen              _q,
                        liquid_float_complex * _frame);
 
 //
-// pilot synchronizer for streaming applications
+// pilot synchronizer for packet burst recovery
 //
 typedef struct qpilotsync_s * qpilotsync;
 

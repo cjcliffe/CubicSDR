@@ -65,12 +65,12 @@ RANLIB		:= ranlib
 # flags
 INCLUDE_CFLAGS	= $(addprefix -I ,$(include_dirs))
 #MINGW: optimizations goes here, use SSSE42 for 64bit 
-CONFIG_CFLAGS	= -O3 -msse4.2 -ffast-math -static-libgcc -static-libstdc++
+CONFIG_CFLAGS	= -O3 -msse4.2 -ffast-math
 CPPFLAGS	=  $(INCLUDE_CFLAGS)
 CFLAGS		= $(CONFIG_CFLAGS) -Wall -fPIC
 LDFLAGS		= 
 #MINGW:
-LIBS		+= -static-libgcc -static-libstdc++
+LIBS		+= -static-libgcc
 PATHSEP		= /
 
 # 
