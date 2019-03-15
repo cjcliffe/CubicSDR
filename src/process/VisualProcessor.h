@@ -135,7 +135,7 @@ protected:
         std::lock_guard < std::mutex > busy_lock(busy_update);
         //We will try to distribute 'output' among all 'outputs',
         //so 'output' will a-priori be shared among all 'outputs'.
-        
+
         for (VisualOutputQueueTypePtr single_output : outputs) {
             //'output' can fail to be given to an single_output,
             //using a blocking push, with a timeout

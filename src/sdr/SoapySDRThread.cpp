@@ -101,9 +101,7 @@ bool SDRThread::init() {
     
     int streamMTU = device->getStreamMTU(stream);
     mtuElems.store(streamMTU);
-    
-    std::cout << "Device Stream MTU: " << mtuElems.load() << std::endl << std::flush;
-    
+  
     deviceInfo.load()->setStreamArgs(currentStreamArgs);
     deviceConfig.load()->setStreamOpts(currentStreamArgs);
     
@@ -130,14 +128,20 @@ bool SDRThread::init() {
     } else {
         hasHardwareDC.store(false);
     }
-    
-    device->setGainMode(SOAPY_SDR_RX,0,agc_mode.load());
+
+    if (device->hasGainMode(SOAPY_SDR_RX, 0)) {
+        device->setGainMode(SOAPY_SDR_RX, 0, agc_mode.load());
+    }
     
     numChannels.store(getOptimalChannelCount(sampleRate.load()));
     numElems.store(getOptimalElementCount(sampleRate.load(), TARGET_DISPLAY_FPS));
-    //fallback if  mtuElems was wrong.
+
+    //fallback if  mtuElems was wrong
     if (!mtuElems.load()) {
         mtuElems.store(numElems.load());
+        std::cout << "SDRThread::init(): Device Stream MTU is broken, use " << mtuElems.load() << "instead..." << std::endl << std::flush;
+    } else {
+        std::cout << "SDRThread::init(): Device Stream set to MTU: " << mtuElems.load() << std::endl << std::flush;
     }
 
     overflowBuffer.data.resize(mtuElems.load());
@@ -198,8 +202,15 @@ void SDRThread::assureBufferMinSize(SDRThreadIQData * dataOut, size_t minSize) {
 // a 'this.numElems' sized batch of samples (SDRThreadIQData) and push it into  iqDataOutQueue.
 //this batch of samples is built to represent 1 frame / TARGET_DISPLAY_FPS.
 int SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
-    int flags;
-    long long timeNs;
+    
+    int flags(0);
+    
+    long long timeNs(0);
+
+    // Supply a huge timeout value to neutralize the readStream 'timeout' effect
+    // we are not interested in, but some modules may effectively use. 
+    //TODO: use something roughly (1 / TARGET_DISPLAY_FPS) seconds * (factor) instead.?
+    long timeoutUs = (1 << 30);
 
     int n_read = 0;
     int nElems = numElems.load();
@@ -247,7 +258,7 @@ int SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
         
         //Whatever the number of remaining samples needed to reach nElems,  we always try to read a mtElems-size chunk,
         //from which SoapySDR effectively returns n_stream_read.
-        int n_stream_read = device->readStream(stream, buffs, mtElems, flags, timeNs);
+        int n_stream_read = device->readStream(stream, buffs, mtElems, flags, timeNs, timeoutUs);
         
         readStreamCode = n_stream_read;
 
@@ -437,20 +448,31 @@ void SDRThread::updateSettings() {
     }
     
     if (rate_changed.load()) {
-
         device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
         // TODO: explore bandwidth setting option to see if this is necessary for others
         if (device->getDriverKey() == "bladeRF") {
             device->setBandwidth(SOAPY_SDR_RX, 0, sampleRate.load());
         }
+	// Fix for LimeSDR-USB not properly handling samplerate changes while device is 
+	// active.
+	else if (device->getHardwareKey() == "LimeSDR-USB") {
+	    std::cout << "SDRThread::updateSettings(): Force deactivate / activate limeSDR stream" << std::endl << std::flush;
+            device->deactivateStream(stream);
+	    device->activateStream(stream);
+        }
         sampleRate.store(device->getSampleRate(SOAPY_SDR_RX,0));
         numChannels.store(getOptimalChannelCount(sampleRate.load()));
         numElems.store(getOptimalElementCount(sampleRate.load(), TARGET_DISPLAY_FPS));
         int streamMTU = device->getStreamMTU(stream);
+
         mtuElems.store(streamMTU);
+        
         //fallback if  mtuElems was wrong
         if (!mtuElems.load()) {
             mtuElems.store(numElems.load());
+            std::cout << "SDRThread::updateSettings(): Device Stream MTU is broken, use " << mtuElems.load() << "instead..." << std::endl << std::flush;
+        } else {
+            std::cout << "SDRThread::updateSettings(): Device Stream changing to MTU: " << mtuElems.load() << std::endl << std::flush;
         }
 
         overflowBuffer.data.resize(mtuElems.load());
@@ -484,7 +506,9 @@ void SDRThread::updateSettings() {
 //    }
     
     if (agc_mode_changed.load()) {
-        device->setGainMode(SOAPY_SDR_RX, 0, agc_mode.load());
+        if (device->hasGainMode(SOAPY_SDR_RX, 0)) {
+            device->setGainMode(SOAPY_SDR_RX, 0, agc_mode.load());
+        }
         agc_mode_changed.store(false);
         if (!agc_mode.load()) {
             updateGains();

@@ -39,13 +39,13 @@ void DemodulatorThread::onBindOutput(std::string name, ThreadQueueBasePtr thread
     if (name == "AudioVisualOutput") {
         
         //protects because it may be changed at runtime
-        std::lock_guard < std::mutex > lock(m_mutexAudioVisOutputQueue);
+        std::lock_guard < SpinMutex > lock(m_mutexAudioVisOutputQueue);
 
         audioVisOutputQueue = std::static_pointer_cast<DemodulatorThreadOutputQueue>(threadQueue);
     }
 
     if (name == "AudioSink") {
-        std::lock_guard < std::mutex > lock(m_mutexAudioVisOutputQueue);
+        std::lock_guard < SpinMutex > lock(m_mutexAudioVisOutputQueue);
 
         audioSinkOutputQueue = std::static_pointer_cast<AudioThreadInputQueue>(threadQueue);
     }
@@ -247,7 +247,7 @@ void DemodulatorThread::run() {
         //variable, and works with it with now on until the next while-turn.
         DemodulatorThreadOutputQueuePtr localAudioVisOutputQueue = nullptr;
         {
-            std::lock_guard < std::mutex > lock(m_mutexAudioVisOutputQueue);
+            std::lock_guard < SpinMutex > lock(m_mutexAudioVisOutputQueue);
             localAudioVisOutputQueue = audioVisOutputQueue;
         }
 
@@ -337,7 +337,7 @@ void DemodulatorThread::run() {
         // Capture audioSinkOutputQueue state in a local variable
         DemodulatorThreadOutputQueuePtr localAudioSinkOutputQueue = nullptr;
         {
-            std::lock_guard < std::mutex > lock(m_mutexAudioVisOutputQueue);
+            std::lock_guard < SpinMutex > lock(m_mutexAudioVisOutputQueue);
             localAudioSinkOutputQueue = audioSinkOutputQueue;
         }
 

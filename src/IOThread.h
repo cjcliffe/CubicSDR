@@ -15,6 +15,7 @@
 #include <climits>
 #include "ThreadBlockingQueue.h"
 #include "Timer.h"
+#include "SpinMutex.h"
 
 struct map_string_less : public std::binary_function<std::string,std::string,bool>
 {
@@ -62,7 +63,7 @@ public:
     /// Return a new ReBuffer_ptr usable by the application.
     ReBufferPtr getBuffer() {
 
-        std::lock_guard < std::mutex > lock(m_mutex);
+        std::lock_guard < SpinMutex > lock(m_mutex);
 
         // iterate the ReBufferAge list: if the std::shared_ptr count == 1, it means 
         //it is only referenced in outputBuffers itself, so available for re-use.
@@ -131,7 +132,7 @@ public:
     
     /// Purge the cache.
     void purge() {
-        std::lock_guard < std::mutex > lock(m_mutex);
+        std::lock_guard < SpinMutex > lock(m_mutex);
 
         // since outputBuffers are full std::shared_ptr,
         //purging if will effectively loose the local reference,
@@ -152,7 +153,7 @@ private:
     typedef typename std::deque< ReBufferAge < ReBufferPtr > >::iterator outputBuffersI;
 
     //mutex protecting access to outputBuffers.
-    std::mutex m_mutex;
+    SpinMutex m_mutex;
 };
 
 

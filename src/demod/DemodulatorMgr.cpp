@@ -504,7 +504,7 @@ DemodulatorInstancePtr DemodulatorMgr::loadInstance(DataNode *node) {
     
     DataNode *demodTypeNode = node->hasAnother("type")?node->getNext("type"):nullptr;
     
-    if (demodTypeNode && demodTypeNode->element()->getDataType() == DATA_INT) {
+    if (demodTypeNode && demodTypeNode->element()->getDataType() == DataElement::DATA_INT) {
         int legacyType = *demodTypeNode;
         int legacyStereo = node->hasAnother("stereo") ? (int) *node->getNext("stereo") : 0;
         switch (legacyType) {   // legacy demod ID
@@ -526,7 +526,7 @@ DemodulatorInstancePtr DemodulatorMgr::loadInstance(DataNode *node) {
             case 16: type = "I/Q"; break;
             default: type = "FM"; break;
         }
-    } else if (demodTypeNode && demodTypeNode->element()->getDataType() == DATA_STRING) {
+    } else if (demodTypeNode && demodTypeNode->element()->getDataType() == DataElement::DATA_STRING) {
         demodTypeNode->element()->get(type);
     }
     

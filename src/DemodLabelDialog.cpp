@@ -83,7 +83,7 @@ void DemodLabelDialog::OnChar(wxKeyEvent& event) {
 
     }
     else {
-#ifdef __linux__
+#if defined(__linux__) || defined(__FreeBSD__)
         dialogText->OnChar(event);
         event.Skip();
 #else
