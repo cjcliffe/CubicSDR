@@ -131,66 +131,66 @@ private:
 
     //if the exact right determineScalarDataType specialization was not used, throw exception at runtime.
     template<typename U, typename Dummy = int >
-    DataElementTypeEnum determineScalarDataType(const U& type_in) { throw DataTypeMismatchException("determineScalarDataType(U) usage with unsupported type !"); }
+    DataElementTypeEnum determineScalarDataType(const U& /* type_in */) { throw DataTypeMismatchException("determineScalarDataType(U) usage with unsupported type !"); }
 
     template< typename Dummy = int >
-   DataElementTypeEnum determineScalarDataType(const char& type_in) { return DATA_CHAR; }
+   DataElementTypeEnum determineScalarDataType(const char& /* type_in */) { return DATA_CHAR; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineScalarDataType(const unsigned char& type_in) { return DATA_UCHAR; }
+    DataElementTypeEnum determineScalarDataType(const unsigned char& /* type_in */) { return DATA_UCHAR; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineScalarDataType(const int& type_in) { return DATA_INT; }
+    DataElementTypeEnum determineScalarDataType(const int& /* type_in */) { return DATA_INT; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineScalarDataType(const unsigned int& type_in) { return DATA_UINT; }
+    DataElementTypeEnum determineScalarDataType(const unsigned int& /* type_in */) { return DATA_UINT; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineScalarDataType(const long& type_in) { return DATA_LONG; }
+    DataElementTypeEnum determineScalarDataType(const long& /* type_in */) { return DATA_LONG; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineScalarDataType(const unsigned long& type_in) { return DATA_ULONG; }
+    DataElementTypeEnum determineScalarDataType(const unsigned long& /* type_in */) { return DATA_ULONG; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineScalarDataType(const long long& type_in) { return DATA_LONGLONG; }
+    DataElementTypeEnum determineScalarDataType(const long long& /* type_in */) { return DATA_LONGLONG; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineScalarDataType(const float& type_in) { return DATA_FLOAT; }
+    DataElementTypeEnum determineScalarDataType(const float& /* type_in */) { return DATA_FLOAT; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineScalarDataType(const double& type_in) { return DATA_DOUBLE; }
+    DataElementTypeEnum determineScalarDataType(const double& /* type_in */) { return DATA_DOUBLE; }
   
     //vector versions:
     //if the exact right determineVectorDataType specialization was not used, throw exception at runtime.
     template<typename V, typename Dummy = int >
-    DataElementTypeEnum determineVectorDataType(const vector<V>& type_in) { throw DataTypeMismatchException("determineVectorDataType(V) usage with unsupported type !"); }
+    DataElementTypeEnum determineVectorDataType(const vector<V>& /* type_in */) { throw DataTypeMismatchException("determineVectorDataType(V) usage with unsupported type !"); }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineVectorDataType(const vector<char>& type_in) { return DATA_CHAR_VECTOR; }
+    DataElementTypeEnum determineVectorDataType(const vector<char>& /* type_in */) { return DATA_CHAR_VECTOR; }
 
     template< typename Dummy = int >
-   DataElementTypeEnum determineVectorDataType(const vector<unsigned char>& type_in) { return DATA_UCHAR_VECTOR; }
+   DataElementTypeEnum determineVectorDataType(const vector<unsigned char>& /* type_in */) { return DATA_UCHAR_VECTOR; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineVectorDataType(const vector<int>& type_in) { return DATA_INT_VECTOR; }
+    DataElementTypeEnum determineVectorDataType(const vector<int>& /* type_in */) { return DATA_INT_VECTOR; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineVectorDataType(const vector<unsigned int>& type_in) { return DATA_UINT_VECTOR; }
+    DataElementTypeEnum determineVectorDataType(const vector<unsigned int>& /* type_in */) { return DATA_UINT_VECTOR; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineVectorDataType(const vector<long>& type_in) { return DATA_LONG_VECTOR; }
+    DataElementTypeEnum determineVectorDataType(const vector<long>& /* type_in */) { return DATA_LONG_VECTOR; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineVectorDataType(const vector<unsigned long>& type_in) { return DATA_ULONG_VECTOR; }
+    DataElementTypeEnum determineVectorDataType(const vector<unsigned long>& /* type_in */) { return DATA_ULONG_VECTOR; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineVectorDataType(const vector<long long>& type_in) { return DATA_LONGLONG_VECTOR; }
+    DataElementTypeEnum determineVectorDataType(const vector<long long>& /* type_in */) { return DATA_LONGLONG_VECTOR; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineVectorDataType(const vector<float>& type_in) { return DATA_FLOAT_VECTOR; }
+    DataElementTypeEnum determineVectorDataType(const vector<float>& /* type_in */) { return DATA_FLOAT_VECTOR; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineVectorDataType(const vector<double>& type_in) { return DATA_DOUBLE_VECTOR; }
+    DataElementTypeEnum determineVectorDataType(const vector<double>& /* type_in */) { return DATA_DOUBLE_VECTOR; }
 
 public: 
 
