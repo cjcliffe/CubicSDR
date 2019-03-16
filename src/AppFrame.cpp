@@ -77,14 +77,8 @@ AppFrame::AppFrame() :
 
     initIcon();
 
-    devInfo = NULL;
-
     deviceChanged.store(false);
     modemPropertiesUpdated.store(false);
-
-    saveDisabled = false;
-    aboutDlg = nullptr;
-
 
     demodTray = new wxBoxSizer(wxHORIZONTAL);
     wxBoxSizer *demodScopeTray = new wxBoxSizer(wxVERTICAL);
@@ -958,7 +952,7 @@ void AppFrame::notifyDeviceChanged() {
     deviceChanged.store(true);
 }
 
-void AppFrame::updateDeviceParams() {
+void AppFrame::handleUpdateDeviceParams() {
     
     if (!deviceChanged.load() || devInfo == nullptr) {
         return;
@@ -2107,9 +2101,7 @@ void AppFrame::OnNewWindow(wxCommandEvent& WXUNUSED(event)) {
 
 void AppFrame::OnIdle(wxIdleEvent& event) {
 
-    if (deviceChanged.load()) {
-        updateDeviceParams();
-    }
+    handleUpdateDeviceParams();
 
     handleTXAntennaChange();
 
@@ -3056,37 +3048,6 @@ int AppFrame::getViewBandwidth() {
     return waterfallCanvas->getBandwidth();
 }
 
-
-/* split a string by 'seperator' into a vector of string */
-std::vector<std::string> str_explode(const std::string &seperator, const std::string &in_str)
-{
-    std::vector<std::string> vect_out;
-    
-    size_t i = 0, j = 0;
-    size_t seperator_len = seperator.length();
-    size_t str_len = in_str.length();
-    
-    while(i < str_len)
-    {
-        j = in_str.find_first_of(seperator,i);
-        
-        if (j == std::string::npos && i < str_len) {
-            j = str_len;
-        }
-        
-        if (j == std::string::npos) {
-            break;
-        }
-        
-        vect_out.push_back(in_str.substr(i,j-i));
-        
-        i = j;
-        
-        i+=seperator_len;
-    }
-    
-    return vect_out;
-}
 
 void AppFrame::setStatusText(wxWindow* window, std::string statusText) {
     GetStatusBar()->SetStatusText(statusText);
