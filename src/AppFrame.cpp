@@ -69,21 +69,23 @@ public:
 };
 
 
-
-/* split a string by 'seperator' into a vector of string */
-std::vector<std::string> str_explode(const std::string &seperator, const std::string &in_str);
-
 #define APPFRAME_MODEMPROPS_MINSIZE 20
 #define APPFRAME_MODEMPROPS_MAXSIZE 240
 
 AppFrame::AppFrame() :
         wxFrame(NULL, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(nullptr) {
 
-#if defined(__linux__) || defined(__FreeBSD__)
-    SetIcon(wxICON(cubicsdr));
-#endif
+    initIcon();
 
-    wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
+    devInfo = NULL;
+
+    deviceChanged.store(false);
+    modemPropertiesUpdated.store(false);
+
+    saveDisabled = false;
+    aboutDlg = nullptr;
+
+
     demodTray = new wxBoxSizer(wxHORIZONTAL);
     wxBoxSizer *demodScopeTray = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *demodTunerTray = new wxBoxSizer(wxHORIZONTAL);
@@ -136,8 +138,6 @@ AppFrame::AppFrame() :
     demodTray->Add(demodModeSelectorAdv, 3, wxEXPAND | wxALL, 0);
 #endif
             
-    modemPropertiesUpdated.store(false);
-
     // Modem properties panel
     modemProps = makeModemProperties(demodPanel);
 
@@ -171,7 +171,6 @@ AppFrame::AppFrame() :
     demodVisuals->SetMinSize(wxSize(128,-1));
 
     demodTray->Add(demodVisuals, 30, wxEXPAND | wxALL, 0);
-
     demodTray->AddSpacer(1);
 #else
     demodSpectrumCanvas = nullptr;
@@ -181,13 +180,11 @@ AppFrame::AppFrame() :
     // Demod Signal/Squelch Meter
     demodSignalMeter = makeSignalMeter(demodPanel, attribList);
     demodTray->Add(demodSignalMeter, 1, wxEXPAND | wxALL, 0);
-
     demodTray->AddSpacer(1);
 
 #if CUBICSDR_ENABLE_VIEW_SCOPE
     // Scope
     scopeCanvas = makeScopeCanvas(demodPanel, attribList);
-
     demodScopeTray->Add(scopeCanvas, 8, wxEXPAND | wxALL, 0);
 
     wxGetApp().getScopeProcessor()->setup(DEFAULT_SCOPE_FFT_SIZE);
@@ -206,13 +203,10 @@ AppFrame::AppFrame() :
 
     // Modem Tuner
     demodTuner = makeModemTuner(demodPanel, attribList);
-
     demodTunerTray->Add(demodTuner, 1, wxEXPAND | wxALL, 0);
 
     demodScopeTray->Add(demodTunerTray, 1, wxEXPAND | wxALL, 0);
-
     demodTray->Add(demodScopeTray, 30, wxEXPAND | wxALL, 0);
-
     demodTray->AddSpacer(1);
 
     wxBoxSizer *demodGainTray = new wxBoxSizer(wxVERTICAL);
@@ -220,13 +214,11 @@ AppFrame::AppFrame() :
     // Demod Gain Meter
     demodGainMeter = makeModemGainMeter(demodPanel, attribList);
     demodGainTray->Add(demodGainMeter, 8, wxEXPAND | wxALL, 0);
-
     demodGainTray->AddSpacer(1);
 
     // Solo Button
     soloModeButton = makeSoloModeButton(demodPanel, attribList);
     demodGainTray->Add(soloModeButton, 1, wxEXPAND | wxALL, 0);
-
     demodGainTray->AddSpacer(1);
 
     // Mute Button
@@ -261,38 +253,36 @@ AppFrame::AppFrame() :
 
     // Peak Hold
     peakHoldButton = makePeakHoldButton(spectrumPanel, attribList);
-
     spectrumCtlTray->Add(peakHoldButton, 1, wxEXPAND | wxALL, 0);
     spectrumCtlTray->AddSpacer(1);
 
     // Spectrum Average Meter
     spectrumAvgMeter = makeSpectrumAvgMeter(spectrumPanel, attribList);
-
     spectrumCtlTray->Add(spectrumAvgMeter, 8, wxEXPAND | wxALL, 0);
     spectrumSizer->Add(spectrumCtlTray, 1, wxEXPAND | wxALL, 0);
     spectrumPanel->SetSizer(spectrumSizer);
 
     wxPanel *waterfallPanel = new wxPanel(mainVisSplitter, wxID_ANY);
-    wxBoxSizer *wfSizer = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer *waterfallSizer = new wxBoxSizer(wxHORIZONTAL);
 
     // Waterfall
     waterfallCanvas = makeWaterfall(waterfallPanel, attribList);
-
+    // Create and connect the FFT visual data thread
     waterfallDataThread = new FFTVisualDataThread();
-
     waterfallDataThread->setInputQueue("IQDataInput", wxGetApp().getWaterfallVisualQueue());
     waterfallDataThread->setOutputQueue("FFTDataOutput", waterfallCanvas->getVisualDataQueue());
     waterfallDataThread->getProcessor()->setHideDC(true);
 
     t_FFTData = new std::thread(&FFTVisualDataThread::threadMain, waterfallDataThread);
 
+
     // Waterfall speed meter
     waterfallSpeedMeter = makeWaterfallSpeedMeter(waterfallPanel, attribList);
 
-    wfSizer->Add(waterfallCanvas, 63, wxEXPAND | wxALL, 0);
-    wfSizer->AddSpacer(1);
-    wfSizer->Add(waterfallSpeedMeter, 1, wxEXPAND | wxALL, 0);
-    waterfallPanel->SetSizer(wfSizer);
+    waterfallSizer->Add(waterfallCanvas, 63, wxEXPAND | wxALL, 0);
+    waterfallSizer->AddSpacer(1);
+    waterfallSizer->Add(waterfallSpeedMeter, 1, wxEXPAND | wxALL, 0);
+    waterfallPanel->SetSizer(waterfallSizer);
 
     mainVisSplitter->SplitHorizontally( spectrumPanel, waterfallPanel, 0 );
 
@@ -300,17 +290,15 @@ AppFrame::AppFrame() :
     bookmarkView = new BookmarkView(bookmarkSplitter, wxID_ANY, wxDefaultPosition, wxSize(120,-1));
     bookmarkSplitter->SplitVertically( bookmarkView, mainVisSplitter );
     mainSplitter->SplitHorizontally( demodPanel, bookmarkSplitter );
-    
-    if (!wxGetApp().getConfig()->getBookmarksVisible()) {
-        bookmarkSplitter->Unsplit(bookmarkView);
-        bookmarkSplitter->Layout();
-    }
-            
-    vbox->Add(mainSplitter, 1, wxEXPAND | wxALL, 0);
+
 
     // TODO: refactor these..
     waterfallCanvas->attachSpectrumCanvas(spectrumCanvas);
     spectrumCanvas->attachWaterfallCanvas(waterfallCanvas);
+
+    // Primary sizer for the window
+    wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
+    vbox->Add(mainSplitter, 1, wxEXPAND | wxALL, 0);
 
 /* * /
     vbox->AddSpacer(1);
@@ -320,7 +308,36 @@ AppFrame::AppFrame() :
             
     this->SetSizer(vbox);
 
-    // File Menu
+    // Load and apply configuration
+    initConfigurationSettings();
+
+    // Initialize menu
+    initMenuBar();
+
+    // Create status bar
+    CreateStatusBar();
+
+    // Show the window
+    Show();
+
+    // Force refresh of all
+    Refresh();
+
+    // Pop up the device selector
+    wxGetApp().deviceSelector();
+}
+
+void AppFrame::initIcon() {
+#if defined(__linux__) || defined(__FreeBSD__)
+    SetIcon(wxICON(cubicsdr));
+#endif
+#ifdef _WIN32
+    SetIcon(wxICON(frame_icon));
+#endif
+
+}
+
+void AppFrame::initMenuBar() {// File Menu
     menuBar = new wxMenuBar;
     fileMenu = makeFileMenu();
     menuBar->Append(fileMenu, wxT("&File"));
@@ -336,16 +353,12 @@ AppFrame::AppFrame() :
     // Audio Sample Rate Menu
     menuBar->Append(makeAudioSampleRateMenu(), wxT("Audio &Sample Rate"));
 
-	//Add a Recording menu
+    //Add a Recording menu
     recordingMenu = makeRecordingMenu();
-	menuBar->Append(recordingMenu, wxT("Recordin&g"));
-	updateRecordingMenu();
+    menuBar->Append(recordingMenu, wxT("Recordin&g"));
+    updateRecordingMenu();
 
 #ifdef USE_HAMLIB
-    rigModel = wxGetApp().getConfig()->getRigModel();
-    rigSerialRate = wxGetApp().getConfig()->getRigRate();
-    rigPort = wxGetApp().getConfig()->getRigPort();
-
     rigPortDialog = nullptr;
 
     // Rig Menu
@@ -359,7 +372,20 @@ AppFrame::AppFrame() :
 
     SetMenuBar(menuBar);
 
-    CreateStatusBar();
+    wxAcceleratorEntry entries[3];
+    entries[0].Set(wxACCEL_CTRL, (int) 'O', wxID_OPEN);
+    entries[1].Set(wxACCEL_CTRL, (int) 'S', wxID_SAVE);
+    entries[2].Set(wxACCEL_CTRL, (int) 'A', wxID_SAVEAS);
+
+    wxAcceleratorTable accel(3, entries);
+    SetAcceleratorTable(accel);
+}
+
+void AppFrame::initConfigurationSettings() {
+
+    // Init Theme
+    ThemeMgr::mgr.setTheme(wxGetApp().getConfig()->getTheme());
+    bookmarkView->updateTheme();
 
     // Init Font Scale
     int fontScale = wxGetApp().getConfig()->getFontScale();
@@ -368,73 +394,66 @@ AppFrame::AppFrame() :
     // Init window position from configuration
     wxRect *win = wxGetApp().getConfig()->getWindow();
     if (win) {
-        this->SetPosition(win->GetPosition());
-        this->SetClientSize(win->GetSize());
+        SetPosition(win->GetPosition());
+        SetClientSize(win->GetSize());
     } else {
         SetClientSize(1280, 600);
         Centre();
     }
 
-    // Maximized last time?
+    // Init maximize state
     if (wxGetApp().getConfig()->getWindowMaximized()) {
-        this->Maximize();
+        Maximize();
     }
 
+    // Init frequency snap
     wxGetApp().setFrequencySnap(wxGetApp().getConfig()->getSnap());
 
+    // Init spectrum average speed
     float spectrumAvg = wxGetApp().getConfig()->getSpectrumAvgSpeed();
     spectrumAvgMeter->setLevel(spectrumAvg);
     wxGetApp().getSpectrumProcessor()->setFFTAverageRate(spectrumAvg);
-            
+
+    // Init waterfall speed
     int wflps =wxGetApp().getConfig()->getWaterfallLinesPerSec();
-            
-    waterfallSpeedMeter->setLevel(sqrt(wflps));
+    waterfallSpeedMeter->setLevel(sqrtf(wflps));
     waterfallDataThread->setLinesPerSecond(wflps);
     waterfallCanvas->setLinesPerSecond(wflps);
-            
-    ThemeMgr::mgr.setTheme(wxGetApp().getConfig()->getTheme());
-    bookmarkView->updateTheme();
 
+    // Init modem property collapsed state
     int mpc =wxGetApp().getConfig()->getModemPropsCollapsed();
-
     if (mpc) {
         modemProps->setCollapsed(true);
     }
 
+    // Init main splitter position (separates top/bottom area horizontally)
     int msPos = wxGetApp().getConfig()->getMainSplit();
     if (msPos != -1) {
         mainSplitter->SetSashPosition(msPos);
     }
+
+    // Init bookmark splitter position (separates bookmark/main vis vertically)
     int bsPos = wxGetApp().getConfig()->getBookmarkSplit();
     if (bsPos != -1) {
         bookmarkSplitter->SetSashPosition(bsPos);
     }
+
+    // Init vis splitter position (separates spectrum/waterfall horizontally)
     int vsPos = wxGetApp().getConfig()->getVisSplit();
     if (vsPos != -1) {
         mainVisSplitter->SetSashPosition(vsPos);
     }
-    
-    Show();
 
-#ifdef _WIN32
-    SetIcon(wxICON(frame_icon));
+    if (!wxGetApp().getConfig()->getBookmarksVisible()) {
+        bookmarkSplitter->Unsplit(bookmarkView);
+        bookmarkSplitter->Layout();
+    }
+
+#ifdef USE_HAMLIB
+    rigModel = wxGetApp().getConfig()->getRigModel();
+    rigSerialRate = wxGetApp().getConfig()->getRigRate();
+    rigPort = wxGetApp().getConfig()->getRigPort();
 #endif
-
-    wxAcceleratorEntry entries[3];
-    entries[0].Set(wxACCEL_CTRL, (int) 'O', wxID_OPEN);
-    entries[1].Set(wxACCEL_CTRL, (int) 'S', wxID_SAVE);
-    entries[2].Set(wxACCEL_CTRL, (int) 'A', wxID_SAVEAS);
-
-    wxAcceleratorTable accel(3, entries);
-    SetAcceleratorTable(accel);
-    deviceChanged.store(false);
-    devInfo = NULL;
-    wxGetApp().deviceSelector();
-    saveDisabled = false;
-    aboutDlg = nullptr;
-            
-    //Force refresh of all
-    Refresh();
 }
 
 ModemProperties *AppFrame::makeModemProperties(wxPanel *parent) {

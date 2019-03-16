@@ -228,12 +228,8 @@ private:
     //depending on context, maps the item id to wxMenuItem*,
     //OR the submenu item id to its parent  wxMenuItem*.
     std::map<int, wxMenuItem *> settingsMenuItems;
-
     std::map<int, wxMenuItem *> performanceMenuItems;
-    
     std::map<int, wxMenuItem *> audioSampleRateMenuItems;
-
-	//
 	std::map<int, wxMenuItem *> recordingMenuItems;
 
     wxMenuBar *menuBar;
@@ -273,33 +269,7 @@ private:
     bool saveDisabled;
     
     AboutDialog *aboutDlg;
-
     std::string lastToolTip;
-
-#ifdef USE_HAMLIB
-    void enableRig();
-    void disableRig();
-    
-    wxMenu *rigMenu;
-    wxMenuItem *rigEnableMenuItem;
-    wxMenuItem *rigPortMenuItem;
-    wxMenuItem *rigControlMenuItem;
-    wxMenuItem *rigFollowMenuItem;
-    wxMenuItem *rigCenterLockMenuItem;
-    wxMenuItem *rigFollowModemMenuItem;
-    
-    std::map<int, wxMenuItem *> rigSerialMenuItems;
-    std::map<int, wxMenuItem *> rigModelMenuItems;
-    int rigModel;
-    int rigSerialRate;
-    long long rigSDRIF;
-    std::vector<int> rigSerialRates;
-    std::string rigPort;
-    int numRigs;
-    PortSelectorDialog *rigPortDialog;
-#endif
-
-    wxDECLARE_EVENT_TABLE();
 
 	ModeSelectorCanvas *makeModemSelectorPanel(wxWindow *parent, const wxGLAttributes &attribList);
 	WaterfallCanvas *makeWaterfallCanvas(wxWindow *parent, const wxGLAttributes &attribList);
@@ -319,11 +289,12 @@ private:
     ModeSelectorCanvas *makeModemAdvSelectorPanel(wxPanel *parent, const wxGLAttributes &attribList);
     ModemProperties *makeModemProperties(wxPanel *parent);
 
+    void initConfigurationSettings();
+    void initMenuBar();
+    void initIcon();
+
     wxMenu *makeAudioSampleRateMenu();
     wxMenu *makeDisplayMenu();
-#ifdef USE_HAMLIB
-    wxMenu *makeRigMenu();
-#endif
 
     void handleTXAntennaChange();
     void handleCurrentModem();
@@ -337,7 +308,33 @@ private:
     void handleModemProperties();
     void handlePeakHold();
 
-#if USE_HAMLIB
+
+#ifdef USE_HAMLIB
+    void enableRig();
+    void disableRig();
+
+    wxMenu *rigMenu;
+    wxMenuItem *rigEnableMenuItem;
+    wxMenuItem *rigPortMenuItem;
+    wxMenuItem *rigControlMenuItem;
+    wxMenuItem *rigFollowMenuItem;
+    wxMenuItem *rigCenterLockMenuItem;
+    wxMenuItem *rigFollowModemMenuItem;
+
+    std::map<int, wxMenuItem *> rigSerialMenuItems;
+    std::map<int, wxMenuItem *> rigModelMenuItems;
+    int rigModel;
+    int rigSerialRate;
+    long long rigSDRIF;
+    std::vector<int> rigSerialRates;
+    std::string rigPort;
+    int numRigs;
+    PortSelectorDialog *rigPortDialog;
+
+    wxMenu *makeRigMenu();
     void handleRigMenu();
 #endif
+
+    wxDECLARE_EVENT_TABLE();
+
 };
