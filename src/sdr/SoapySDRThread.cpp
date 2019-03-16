@@ -87,6 +87,7 @@ bool SDRThread::init() {
     
     std::string streamExceptionStr("");
     
+    //1. setup stream for CF32:
     try {
         stream = device->setupStream(SOAPY_SDR_RX,"CF32", std::vector<size_t>(), currentStreamArgs);
     } catch(exception e) {
@@ -98,23 +99,17 @@ bool SDRThread::init() {
         std::cout << "Stream setup failed, stream is null. " << streamExceptionStr << std::endl;
         return false;
     }
-    
-    int streamMTU = device->getStreamMTU(stream);
-    mtuElems.store(streamMTU);
-  
+
+    //2. Set sample rate:
+    device->setSampleRate(SOAPY_SDR_RX, 0, sampleRate.load());
+
+    //3. Store Stream-specific parameters to current Device
     deviceInfo.load()->setStreamArgs(currentStreamArgs);
     deviceConfig.load()->setStreamOpts(currentStreamArgs);
-    
-    wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Activating stream."));
-    device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
-    
-    // TODO: explore bandwidth setting option to see if this is necessary for others
-    if (device->getDriverKey() == "bladeRF") {
-        device->setBandwidth(SOAPY_SDR_RX, 0, sampleRate.load());
-    }
-        
+  
+    //4. Apply other settings: Frequency, PPM correction, Gains,  Device-specific settings:
     device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency - offset.load());
-    device->activateStream(stream);
+
     if (devInfo->hasCORR(SOAPY_SDR_RX, 0)) {
         hasPPM.store(true);
         device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm.load());
@@ -133,28 +128,12 @@ bool SDRThread::init() {
         device->setGainMode(SOAPY_SDR_RX, 0, agc_mode.load());
     }
     
-    numChannels.store(getOptimalChannelCount(sampleRate.load()));
-    numElems.store(getOptimalElementCount(sampleRate.load(), TARGET_DISPLAY_FPS));
-
-    //fallback if  mtuElems was wrong
-    if (!mtuElems.load()) {
-        mtuElems.store(numElems.load());
-        std::cout << "SDRThread::init(): Device Stream MTU is broken, use " << mtuElems.load() << "instead..." << std::endl << std::flush;
-    } else {
-        std::cout << "SDRThread::init(): Device Stream set to MTU: " << mtuElems.load() << std::endl << std::flush;
-    }
-
-    overflowBuffer.data.resize(mtuElems.load());
-    
-    buffs[0] = malloc(mtuElems.load() * 4 * sizeof(float));
-    numOverflow = 0;
-    
     SoapySDR::ArgInfoList settingsInfo = device->getSettingInfo();
     SoapySDR::ArgInfoList::const_iterator settings_i;
     
     if (!setting_value_changed.load()) {
-        settings.erase(settings.begin(), settings.end());
-        settingChanged.erase(settingChanged.begin(), settingChanged.end());
+        settings.clear();
+        settingChanged.clear();
     }
     
 	//apply settings.
@@ -174,11 +153,15 @@ bool SDRThread::init() {
         setting_value_changed.store(false);
 
     } //leave lock guard scope
-    
-    updateSettings();
-    
+      
     wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_INITIALIZED, std::string("Device Initialized."));
-	
+
+    //5. Activate stream: (through update settings)
+    wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Activating stream."));
+
+    rate_changed.store(true);
+    updateSettings();
+
 	//rebuild menu now that settings are really been applied.
 	wxGetApp().notifyMainUIOfDeviceChange(true);
 
@@ -188,7 +171,13 @@ bool SDRThread::init() {
 void SDRThread::deinit() {
     device->deactivateStream(stream);
     device->closeStream(stream);
-    free(buffs[0]);
+   
+    if (buffs[0] != nullptr) {
+        ::free(buffs[0]);
+        buffs[0] = nullptr;
+    }
+
+    stream = nullptr;
 }
 
 void SDRThread::assureBufferMinSize(SDRThreadIQData * dataOut, size_t minSize) {
@@ -413,11 +402,12 @@ void SDRThread::readLoop() {
 void SDRThread::updateGains() {
     SDRDeviceInfo *devInfo = deviceInfo.load();
     
-    gainValues.erase(gainValues.begin(),gainValues.end());
-    gainChanged.erase(gainChanged.begin(),gainChanged.end());
+    gainValues.clear();
+    gainChanged.clear();
     
     SDRRangeMap gains = devInfo->getGains(SOAPY_SDR_RX, 0);
     for (SDRRangeMap::iterator gi = gains.begin(); gi != gains.end(); gi++) {
+
         gainValues[gi->first] = device->getGain(SOAPY_SDR_RX, 0, gi->first);
         gainChanged[gi->first] = false;
     }
@@ -448,39 +438,49 @@ void SDRThread::updateSettings() {
     }
     
     if (rate_changed.load()) {
-        device->setSampleRate(SOAPY_SDR_RX,0,sampleRate.load());
+
+        //1. Silence the device:
+        device->deactivateStream(stream);
+
+        //2. Set the (new) sample rate
+        device->setSampleRate(SOAPY_SDR_RX, 0, sampleRate.load());
+
+        //2.2 Device-specific workarounds:
         // TODO: explore bandwidth setting option to see if this is necessary for others
         if (device->getDriverKey() == "bladeRF") {
             device->setBandwidth(SOAPY_SDR_RX, 0, sampleRate.load());
         }
-	// Fix for LimeSDR-USB not properly handling samplerate changes while device is 
-	// active.
-	else if (device->getHardwareKey() == "LimeSDR-USB") {
-	    std::cout << "SDRThread::updateSettings(): Force deactivate / activate limeSDR stream" << std::endl << std::flush;
-            device->deactivateStream(stream);
-	    device->activateStream(stream);
-        }
-        sampleRate.store(device->getSampleRate(SOAPY_SDR_RX,0));
+
+        //3. Re-activate stream:
+        device->activateStream(stream);
+
+        //4. Re-do Cubic buffers :
+        //re-read current sample rate and MTU:
+        sampleRate.store(device->getSampleRate(SOAPY_SDR_RX, 0));
+
         numChannels.store(getOptimalChannelCount(sampleRate.load()));
         numElems.store(getOptimalElementCount(sampleRate.load(), TARGET_DISPLAY_FPS));
+        //read (new) MTU size:
         int streamMTU = device->getStreamMTU(stream);
-
         mtuElems.store(streamMTU);
-        
+
         //fallback if  mtuElems was wrong
         if (!mtuElems.load()) {
             mtuElems.store(numElems.load());
-            std::cout << "SDRThread::updateSettings(): Device Stream MTU is broken, use " << mtuElems.load() << "instead..." << std::endl << std::flush;
+            std::cout << "SDRThread: Device Stream MTU is broken, use " << mtuElems.load() << " instead..." << std::endl << std::flush;
         } else {
-            std::cout << "SDRThread::updateSettings(): Device Stream changing to MTU: " << mtuElems.load() << std::endl << std::flush;
+            std::cout << "SDRThread : Device Stream set to MTU: " << mtuElems.load() << std::endl << std::flush;
         }
 
         overflowBuffer.data.resize(mtuElems.load());
-        free(buffs[0]);
-        buffs[0] = malloc(mtuElems.load() * 4 * sizeof(float));
+        if (buffs[0] != nullptr) {
+            ::free(buffs[0]);
+        }
+        buffs[0] = ::malloc(mtuElems.load() * 4 * sizeof(float));
         //clear overflow buffer
         numOverflow = 0;
 
+        //
         rate_changed.store(false);
         doUpdate = true;
     }
@@ -499,11 +499,7 @@ void SDRThread::updateSettings() {
         }
         freq_changed.store(false);
     }
-    
-//    double devFreq = device->getFrequency(SOAPY_SDR_RX,0);
-//    if (((long long)devFreq + offset.load()) != frequency.load()) {
-//        wxGetApp().setFrequency((long long)devFreq + offset.load());
-//    }
+   
     
     if (agc_mode_changed.load()) {
         if (device->hasGainMode(SOAPY_SDR_RX, 0)) {

@@ -106,9 +106,9 @@ protected:
     void updateSettings();
     SoapySDR::Kwargs combineArgs(SoapySDR::Kwargs a, SoapySDR::Kwargs b);
 
-    SoapySDR::Stream *stream;
+    SoapySDR::Stream *stream = nullptr;
     SoapySDR::Device *device;
-    void *buffs[1];
+    void *buffs[1] = { nullptr };
     ReBuffer<SDRThreadIQData> buffers;
     SDRThreadIQData overflowBuffer;
     int numOverflow;
