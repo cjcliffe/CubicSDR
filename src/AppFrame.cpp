@@ -1269,6 +1269,31 @@ void AppFrame::dismissRigControlPortDialog() {
 
 #endif
 
+
+void AppFrame::OnMenu(wxCommandEvent &event) {
+    actionOnMenuAbout(event)
+    || actionOnMenuSDRStartStop(event)
+    || actionOnMenuPerformance(event)
+    || actionOnMenuTips(event)
+    || actionOnMenuIQSwap(event)
+    || actionOnMenuFreqOffset(event)
+    || actionOnMenuDBOffset(event)
+    || actionOnMenuAGC(event)
+    || actionOnMenuSDRDevices(event)
+    || actionOnMenuSetPPM(event)
+    || actionOnMenuLoadSave(event)
+    || actionOnMenuReset(event)
+    || actionOnMenuClose(event)
+    || actionOnMenuSettings(event)
+    || actionOnMenuSampleRate(event)
+    || actionOnMenuAudioSampleRate(event)
+    || actionOnMenuRecording(event)
+    || actionOnMenuDisplay(event)
+    //Optional : Rig
+    || actionOnMenuRig(event);
+}
+
+
 bool AppFrame::actionOnMenuDisplay(wxCommandEvent& event) {
 
     //by default, is managed.
@@ -1789,8 +1814,8 @@ bool AppFrame::actionOnMenuRecording(wxCommandEvent& event) {
 	return false;
 }
 
-bool AppFrame::actionOnMenuRig(wxCommandEvent& event) {
-    
+bool AppFrame::actionOnMenuRig(wxCommandEvent &event) {
+
     bool bManaged = false;
 
 #ifdef USE_HAMLIB
@@ -1806,12 +1831,10 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent& event) {
             rigSDRIF = devConfig->getRigIF(rigModel);
             if (rigSDRIF) {
                 wxGetApp().lockFrequency(rigSDRIF);
-            }
-            else {
+            } else {
                 wxGetApp().unlockFrequency();
             }
-        }
-        else {
+        } else {
             wxGetApp().unlockFrequency();
         }
         resetRig = true;
@@ -1820,7 +1843,7 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent& event) {
     }
 
     int rigSerialIdMax = wxID_RIG_SERIAL_BASE + rigSerialRates.size();
-    
+
     if (event.GetId() >= wxID_RIG_SERIAL_BASE && event.GetId() < rigSerialIdMax) {
         int serialIdx = event.GetId() - wxID_RIG_SERIAL_BASE;
         rigSerialRate = rigSerialRates[serialIdx];
@@ -1839,8 +1862,7 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent& event) {
         resetRig = false;
         if (!wxGetApp().rigIsActive()) {
             enableRig();
-        }
-        else {
+        } else {
             disableRig();
         }
 
@@ -1851,15 +1873,15 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent& event) {
         if (devInfo != nullptr) {
             std::string deviceId = devInfo->getDeviceId();
             DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
-            long long freqRigIF = wxGetNumberFromUser("Rig SDR-IF Frequency", "Frequency (Hz)", "Frequency", devConfig->getRigIF(rigModel), 0, 2000000000);
+            long long freqRigIF = wxGetNumberFromUser("Rig SDR-IF Frequency", "Frequency (Hz)", "Frequency",
+                                                      devConfig->getRigIF(rigModel), 0, 2000000000);
             if (freqRigIF != -1) {
                 rigSDRIF = freqRigIF;
                 devConfig->setRigIF(rigModel, rigSDRIF);
             }
             if (rigSDRIF && wxGetApp().rigIsActive()) {
                 wxGetApp().lockFrequency(rigSDRIF);
-            }
-            else {
+            } else {
                 wxGetApp().unlockFrequency();
             }
         }
@@ -1872,8 +1894,7 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent& event) {
             rt->setControlMode(!rt->getControlMode());
             rigControlMenuItem->Check(rt->getControlMode());
             wxGetApp().getConfig()->setRigControlMode(rt->getControlMode());
-        }
-        else {
+        } else {
             wxGetApp().getConfig()->setRigControlMode(rigControlMenuItem->IsChecked());
         }
         bManaged = true;
@@ -1885,8 +1906,7 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent& event) {
             rt->setFollowMode(!rt->getFollowMode());
             rigFollowMenuItem->Check(rt->getFollowMode());
             wxGetApp().getConfig()->setRigFollowMode(rt->getFollowMode());
-        }
-        else {
+        } else {
             wxGetApp().getConfig()->setRigFollowMode(rigFollowMenuItem->IsChecked());
         }
 
@@ -1899,8 +1919,7 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent& event) {
             rt->setCenterLock(!rt->getCenterLock());
             rigCenterLockMenuItem->Check(rt->getCenterLock());
             wxGetApp().getConfig()->setRigCenterLock(rt->getCenterLock());
-        }
-        else {
+        } else {
             wxGetApp().getConfig()->setRigCenterLock(rigCenterLockMenuItem->IsChecked());
         }
 
@@ -1913,8 +1932,7 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent& event) {
             rt->setFollowModem(!rt->getFollowModem());
             rigFollowModemMenuItem->Check(rt->getFollowModem());
             wxGetApp().getConfig()->setRigFollowModem(rt->getFollowModem());
-        }
-        else {
+        } else {
             wxGetApp().getConfig()->setRigFollowModem(rigFollowModemMenuItem->IsChecked());
         }
 
@@ -1930,13 +1948,120 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent& event) {
     return bManaged;
 }
 
-
-void AppFrame::OnMenu(wxCommandEvent& event) {
-
-    if (actionOnMenuAbout(event)) {
-        return;
+bool AppFrame::actionOnMenuClose(wxCommandEvent &event) {
+    if (event.GetId() == wxID_CLOSE || event.GetId() == wxID_EXIT) {
+        Close(false);
+        return true;
     }
-    else if (event.GetId() == wxID_SDR_START_STOP) {
+    return false;
+}
+
+bool AppFrame::actionOnMenuSetPPM(wxCommandEvent &event) {
+    if (event.GetId() == wxID_SET_PPM) {
+        long ofs = wxGetNumberFromUser(
+                "Frequency correction for device in PPM.\ni.e. -51 for -51 PPM\n\nNote: you can adjust PPM interactively\nby holding ALT over the frequency tuning bar.\n",
+                "Parts per million (PPM)",
+                "Frequency Correction", wxGetApp().getPPM(), -1000, 1000, this);
+        wxGetApp().setPPM(ofs);
+
+        settingsMenuItems[wxID_SET_PPM]->SetItemLabel(
+                getSettingsLabel("Device PPM", to_string(wxGetApp().getPPM()), "ppm"));
+
+        return true;
+    }
+    return false;
+}
+
+bool AppFrame::actionOnMenuSDRDevices(wxCommandEvent &event) {
+    if (event.GetId() == wxID_SDR_DEVICES) {
+        wxGetApp().deviceSelector();
+        return true;
+    }
+    return false;
+}
+
+bool AppFrame::actionOnMenuDBOffset(wxCommandEvent &event) {
+    if (event.GetId() == wxID_SET_DB_OFFSET) {
+        long ofs = wxGetNumberFromUser("Shift the displayed RF power level by this amount.\ni.e. -30 for -30 dB",
+                                       "Decibels (dB)",
+                                       "Power Level Offset", wxGetApp().getConfig()->getDBOffset(), -1000, 1000, this);
+        if (ofs != -1) {
+            wxGetApp().getConfig()->setDBOffset(ofs);
+            settingsMenuItems[wxID_SET_DB_OFFSET]->SetItemLabel(
+                    getSettingsLabel("Power Level Offset", to_string(wxGetApp().getConfig()->getDBOffset()), "dB"));
+        }
+        return true;
+    }
+    return false;
+}
+
+bool AppFrame::actionOnMenuFreqOffset(wxCommandEvent &event) {
+    if (event.GetId() == wxID_SET_FREQ_OFFSET) {
+        //enter in KHz to accomodate > 2GHz shifts for down/upconverters on 32 bit platforms.
+        long ofs = wxGetNumberFromUser(
+                "Shift the displayed frequency by this amount of KHz.\ni.e. -125000 for -125 MHz", "Frequency (KHz)",
+                "Frequency Offset", (long long) (wxGetApp().getOffset() / 1000.0), -2000000000, 2000000000, this);
+        if (ofs != -1) {
+            wxGetApp().setOffset((long long) ofs * 1000);
+
+            settingsMenuItems[wxID_SET_FREQ_OFFSET]->SetItemLabel(
+                    getSettingsLabel("Frequency Offset", to_string(wxGetApp().getOffset() / 1000), "KHz"));
+        }
+        return true;
+    }
+    return false;
+}
+
+bool AppFrame::actionOnMenuIQSwap(wxCommandEvent &event) {
+    if (event.GetId() == wxID_SET_IQSWAP) {
+        wxGetApp().getSDRThread()->setIQSwap(!wxGetApp().getSDRThread()->getIQSwap());
+        return true;
+    }
+    return false;
+}
+
+bool AppFrame::actionOnMenuTips(wxCommandEvent &event) {
+    if (event.GetId() == wxID_SET_TIPS) {
+        wxGetApp().getConfig()->setShowTips(!wxGetApp().getConfig()->getShowTips());
+        return true;
+    }
+    return false;
+}
+
+bool AppFrame::actionOnMenuPerformance(wxCommandEvent &event) {
+    if (event.GetId() >= wxID_PERF_BASE && event.GetId() <= wxID_PERF_BASE + (int) AppConfig::PERF_HIGH) {
+
+        int perfEnumAsInt = event.GetId() - wxID_PERF_BASE;
+        AppConfig::PerfModeEnum perfEnumSet = AppConfig::PERF_NORMAL;
+
+        if (perfEnumAsInt == (int) AppConfig::PERF_HIGH) {
+            perfEnumSet = AppConfig::PERF_HIGH;
+
+        } else if (perfEnumAsInt == (int) AppConfig::PERF_LOW) {
+            perfEnumSet = AppConfig::PERF_LOW;
+        }
+
+        wxGetApp().getConfig()->setPerfMode(perfEnumSet);
+
+        //update Channelizer mode:
+        if (perfEnumSet == AppConfig::PERF_HIGH) {
+            wxGetApp().setChannelizerType(SDRPostPFBCH2);
+        } else {
+            wxGetApp().setChannelizerType(SDRPostPFBCH);
+        }
+
+        //update UI
+        wxMenuItem *selectedPerfModeItem = performanceMenuItems[event.GetId()];
+        performanceMenuItems[wxID_PERF_CURRENT]->SetItemLabel(
+                getSettingsLabel("CPU usage", selectedPerfModeItem->GetItemLabel().ToStdString()));
+
+        return true;
+    }
+    return false;
+}
+
+bool AppFrame::actionOnMenuSDRStartStop(wxCommandEvent &event) {
+    if (event.GetId() == wxID_SDR_START_STOP) {
         if (!wxGetApp().getSDRThread()->isTerminated()) {
             wxGetApp().stopDevice(true, 2000);
         } else {
@@ -1945,101 +2070,9 @@ void AppFrame::OnMenu(wxCommandEvent& event) {
                 wxGetApp().setDevice(dev, 0);
             }
         }
-    } 
-    else if (event.GetId() >= wxID_PERF_BASE && event.GetId() <= wxID_PERF_BASE + (int)AppConfig::PERF_HIGH) {
-
-        int perfEnumAsInt = event.GetId() - wxID_PERF_BASE;
-        AppConfig::PerfModeEnum perfEnumSet = AppConfig::PERF_NORMAL;
-
-        if (perfEnumAsInt == (int)AppConfig::PERF_HIGH) {
-            perfEnumSet = AppConfig::PERF_HIGH;
-
-        } else if (perfEnumAsInt == (int)AppConfig::PERF_LOW) {
-            perfEnumSet = AppConfig::PERF_LOW;
-        }
-
-        wxGetApp().getConfig()->setPerfMode(perfEnumSet);
-
-        //update Channelizer mode:
-        if (perfEnumSet == AppConfig::PERF_HIGH) {
-            wxGetApp().setChannelizerType(SDRPostThreadChannelizerType::SDRPostPFBCH2);
-        } else {
-            wxGetApp().setChannelizerType(SDRPostThreadChannelizerType::SDRPostPFBCH);
-        }
-
-        //update UI
-        wxMenuItem* selectedPerfModeItem = performanceMenuItems[event.GetId()];
-        performanceMenuItems[wxID_PERF_CURRENT]->SetItemLabel(getSettingsLabel("CPU usage", selectedPerfModeItem->GetItemLabel().ToStdString()));
-    } 
-    else if (event.GetId() == wxID_SET_TIPS ) {
-        if (wxGetApp().getConfig()->getShowTips()) {
-            wxGetApp().getConfig()->setShowTips(false);
-        } else {
-            wxGetApp().getConfig()->setShowTips(true);
-        }
-    } 
-    else if (event.GetId() == wxID_SET_IQSWAP) {
-        wxGetApp().getSDRThread()->setIQSwap(!wxGetApp().getSDRThread()->getIQSwap());
-    } 
-    else if (event.GetId() == wxID_SET_FREQ_OFFSET) {
-        //enter in KHz to accomodate > 2GHz shifts for down/upconverters on 32 bit platforms.
-        long ofs = wxGetNumberFromUser("Shift the displayed frequency by this amount of KHz.\ni.e. -125000 for -125 MHz", "Frequency (KHz)",
-                "Frequency Offset", (long long)(wxGetApp().getOffset() / 1000.0) , -2000000000, 2000000000, this);
-        if (ofs != -1) {
-            wxGetApp().setOffset((long long) ofs * 1000);
-          
-            settingsMenuItems[wxID_SET_FREQ_OFFSET]->SetItemLabel(getSettingsLabel("Frequency Offset", std::to_string(wxGetApp().getOffset() / 1000), "KHz"));
-        }
-    } 
-    else if (event.GetId() == wxID_SET_DB_OFFSET) {
-        long ofs = wxGetNumberFromUser("Shift the displayed RF power level by this amount.\ni.e. -30 for -30 dB", "Decibels (dB)",
-                                       "Power Level Offset", wxGetApp().getConfig()->getDBOffset(), -1000, 1000, this);
-        if (ofs != -1) {
-            wxGetApp().getConfig()->setDBOffset(ofs);
-            settingsMenuItems[wxID_SET_DB_OFFSET]->SetItemLabel(getSettingsLabel("Power Level Offset", std::to_string(wxGetApp().getConfig()->getDBOffset()), "dB"));
-        }
-    } 
-    else if (actionOnMenuAGC(event)) {
-        return;
+        return true;
     }
-    else if (event.GetId() == wxID_SDR_DEVICES) {
-        wxGetApp().deviceSelector();
-    }
-    else if (event.GetId() == wxID_SET_PPM) {
-        long ofs = wxGetNumberFromUser("Frequency correction for device in PPM.\ni.e. -51 for -51 PPM\n\nNote: you can adjust PPM interactively\nby holding ALT over the frequency tuning bar.\n", "Parts per million (PPM)",
-                "Frequency Correction", wxGetApp().getPPM(), -1000, 1000, this);
-            wxGetApp().setPPM(ofs);
-
-            settingsMenuItems[wxID_SET_PPM]->SetItemLabel(getSettingsLabel("Device PPM", std::to_string(wxGetApp().getPPM()), "ppm"));
-    } 
-    else if (actionOnMenuLoadSave(event)) {
-        return;
-    } 
-    else if (actionOnMenuReset(event)) {
-        return;
-    }
-    else if (event.GetId() == wxID_CLOSE || event.GetId() == wxID_EXIT) {
-        Close(false);
-    }
-    else if (actionOnMenuSettings(event)) {
-        return;
-    }
-    else if (actionOnMenuSampleRate(event)) {
-        return;
-    }
-    else if (actionOnMenuAudioSampleRate(event)) {
-        return;
-    }
-    else if (actionOnMenuRecording(event)) {
-        return;
-    }
-	else if (actionOnMenuDisplay(event)) {
-		return;
-	}
-    //Optional : Rig 
-    else if (actionOnMenuRig(event)) {
-        return;
-    }
+    return false;
 }
 
 void AppFrame::OnClose(wxCloseEvent& event) {
@@ -2099,7 +2132,7 @@ void AppFrame::OnNewWindow(wxCommandEvent& WXUNUSED(event)) {
     new AppFrame();
 }
 
-void AppFrame::OnIdle(wxIdleEvent& event) {
+void AppFrame::OnIdle(wxIdleEvent &event) {
 
     handleUpdateDeviceParams();
 
@@ -2127,13 +2160,13 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
 #if USE_HAMLIB
     handleRigMenu();
 #endif
-    
+
 #ifdef _WIN32
     if (scopeCanvas && scopeCanvas->HasFocus()) {
         waterfallCanvas->SetFocus();
     }
 #endif
-    
+
     if (!this->IsActive()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(30));
     } else {
@@ -2143,7 +2176,7 @@ void AppFrame::OnIdle(wxIdleEvent& event) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
-    
+
     event.RequestMore();
 }
 
@@ -2153,7 +2186,8 @@ void AppFrame::handleTXAntennaChange() {//Refresh the current TX antenna on, if 
 
         if (currentTXantennaName != actualTxAntenna) {
             currentTXantennaName = actualTxAntenna;
-            antennaMenuItems[wxID_ANTENNA_CURRENT_TX]->SetItemLabel(getSettingsLabel("TX Antenna", currentTXantennaName));
+            antennaMenuItems[wxID_ANTENNA_CURRENT_TX]->SetItemLabel(
+                    getSettingsLabel("TX Antenna", currentTXantennaName));
         }
     }
 }
@@ -2196,10 +2230,10 @@ void AppFrame::handleModemProperties() {
         modemProps->fitColumns();
 #if ENABLE_DIGITAL_LAB
         if (demod->getModemType() == "digital") {
-            ModemDigitalOutputConsole *outp = (ModemDigitalOutputConsole *)demod->getOutput();
+            ModemDigitalOutputConsole *outp = (ModemDigitalOutputConsole *) demod->getOutput();
             if (!outp->getDialog()) {
                 outp->setTitle(demod->getDemodulatorType() + ": " + frequencyToStr(demod->getFrequency()));
-                outp->setDialog(new DigitalConsole(this, outp)) ;
+                outp->setDialog(new DigitalConsole(this, outp));
             }
             demod->showOutput();
         }
@@ -2238,7 +2272,8 @@ void AppFrame::handleScopeSpectrumProcessors() {
         spectrumAvgMeter->setLevel(val);
         proc->setFFTAverageRate(val);
 
-        GetStatusBar()->SetStatusText(wxString::Format(wxT("Spectrum averaging speed changed to %0.2f%%."), val * 100.0));
+        GetStatusBar()->SetStatusText(
+                wxString::Format(wxT("Spectrum averaging speed changed to %0.2f%%."), val * 100.0));
     }
 
     SpectrumVisualProcessor *dproc = wxGetApp().getDemodSpectrumProcessor();
@@ -2253,13 +2288,14 @@ void AppFrame::handleScopeSpectrumProcessors() {
     if (waterfallSpeedMeter->inputChanged()) {
         float val = waterfallSpeedMeter->getInputValue();
         waterfallSpeedMeter->setLevel(val);
-        waterfallDataThread->setLinesPerSecond((int)ceil(val * val));
-        waterfallCanvas->setLinesPerSecond((int)ceil(val * val));
+        waterfallDataThread->setLinesPerSecond((int) ceil(val * val));
+        waterfallCanvas->setLinesPerSecond((int) ceil(val * val));
         GetStatusBar()->SetStatusText(
-                wxString::Format(wxT("Waterfall max speed changed to %d lines per second."), (int)ceil(val * val)));
+                wxString::Format(wxT("Waterfall max speed changed to %d lines per second."), (int) ceil(val * val)));
     }
 
-    wproc->setView(waterfallCanvas->getViewState(), waterfallCanvas->getCenterFrequency(), waterfallCanvas->getBandwidth());
+    wproc->setView(waterfallCanvas->getViewState(), waterfallCanvas->getCenterFrequency(),
+                   waterfallCanvas->getBandwidth());
 
     proc->setView(wproc->isView(), wproc->getCenterFrequency(), wproc->getBandwidth());
 }
@@ -2270,7 +2306,8 @@ void AppFrame::handleScopeProcessor() {
 
         wxGetApp().getScopeProcessor()->setScopeEnabled(scopeCanvas->scopeVisible());
         wxGetApp().getScopeProcessor()->setSpectrumEnabled(scopeCanvas->spectrumVisible());
-        wxGetApp().getAudioVisualQueue()->set_max_num_items((scopeCanvas->scopeVisible() ? 1 : 0) + (scopeCanvas->spectrumVisible() ? 1 : 0));
+        wxGetApp().getAudioVisualQueue()->set_max_num_items(
+                (scopeCanvas->scopeVisible() ? 1 : 0) + (scopeCanvas->spectrumVisible() ? 1 : 0));
 
         wxGetApp().getScopeProcessor()->run();
     }
@@ -2278,30 +2315,31 @@ void AppFrame::handleScopeProcessor() {
 
 void AppFrame::handleMuteButton() {
     if (demodMuteButton->modeChanged()) {
-            int muteMode = demodMuteButton->getSelection();
-            if (muteMode == -1) {
-                wxGetApp().getDemodMgr().setLastMuted(false);
-            } else if (muteMode == 1) {
-                wxGetApp().getDemodMgr().setLastMuted(true);
-            }
-            demodMuteButton->clearModeChanged();
+        int muteMode = demodMuteButton->getSelection();
+        if (muteMode == -1) {
+            wxGetApp().getDemodMgr().setLastMuted(false);
+        } else if (muteMode == 1) {
+            wxGetApp().getDemodMgr().setLastMuted(true);
         }
+        demodMuteButton->clearModeChanged();
+    }
 }
 
 void AppFrame::handleSpectrumWaterfall() {
-    if (spectrumCanvas->getViewState() && abs(wxGetApp().getFrequency() - spectrumCanvas->getCenterFrequency()) > (wxGetApp().getSampleRate() / 2)) {
-            spectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
-            waterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
-        }
+    if (spectrumCanvas->getViewState() &&
+        abs(wxGetApp().getFrequency() - spectrumCanvas->getCenterFrequency()) > (wxGetApp().getSampleRate() / 2)) {
+        spectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
+        waterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
+    }
 }
 
 void AppFrame::handleDemodWaterfallSpectrum() {
     if (demodWaterfallCanvas && wxGetApp().getFrequency() != demodWaterfallCanvas->getCenterFrequency()) {
-            demodWaterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
-            if (demodSpectrumCanvas) {
-                demodSpectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
-            }
+        demodWaterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
+        if (demodSpectrumCanvas) {
+            demodSpectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
         }
+    }
 }
 
 void AppFrame::handleGainMeter() {
@@ -2309,12 +2347,12 @@ void AppFrame::handleGainMeter() {
 
     demodGainMeter->setLevel(mgr->getLastGain());
     if (demodSignalMeter->inputChanged()) {
-            mgr->setLastSquelchLevel(demodSignalMeter->getInputValue());
-        }
+        mgr->setLastSquelchLevel(demodSignalMeter->getInputValue());
+    }
     if (demodGainMeter->inputChanged()) {
-            mgr->setLastGain(demodGainMeter->getInputValue());
-            demodGainMeter->setLevel(demodGainMeter->getInputValue());
-        }
+        mgr->setLastGain(demodGainMeter->getInputValue());
+        demodGainMeter->setLevel(demodGainMeter->getInputValue());
+    }
 }
 
 void AppFrame::handleModeSelector() {
@@ -2326,18 +2364,18 @@ void AppFrame::handleModeSelector() {
 
     // basic demodulators
     if (dSelection != "" && dSelection != mgr->getLastDemodulatorType()) {
-            mgr->setLastDemodulatorType(dSelection);
-            mgr->setLastBandwidth(Modem::getModemDefaultSampleRate(dSelection));
-            demodTuner->setHalfBand(dSelection == "USB" || dSelection == "LSB");
-            demodModeSelectorAdv->setSelection(-1);
-        }
+        mgr->setLastDemodulatorType(dSelection);
+        mgr->setLastBandwidth(Modem::getModemDefaultSampleRate(dSelection));
+        demodTuner->setHalfBand(dSelection == "USB" || dSelection == "LSB");
+        demodModeSelectorAdv->setSelection(-1);
+    }
         // advanced demodulators
-        else if(dSelectionadv != "" && dSelectionadv != mgr->getLastDemodulatorType()) {
-            mgr->setLastDemodulatorType(dSelectionadv);
-            mgr->setLastBandwidth(Modem::getModemDefaultSampleRate(dSelectionadv));
-            demodTuner->setHalfBand(false);
-            demodModeSelector->setSelection(-1);
-        }
+    else if (dSelectionadv != "" && dSelectionadv != mgr->getLastDemodulatorType()) {
+        mgr->setLastDemodulatorType(dSelectionadv);
+        mgr->setLastBandwidth(Modem::getModemDefaultSampleRate(dSelectionadv));
+        demodTuner->setHalfBand(false);
+        demodModeSelector->setSelection(-1);
+    }
 #else
     // basic demodulators
     if (dSelection != "" && dSelection != mgr->getLastDemodulatorType()) {
@@ -2353,160 +2391,163 @@ void AppFrame::handleCurrentModem() {
     DemodulatorInstancePtr demod = wxGetApp().getDemodMgr().getCurrentModem();
 
     if (demod->isTracking()) {
-            if (spectrumCanvas->getViewState()) {
-                long long diff = abs(demod->getFrequency() - spectrumCanvas->getCenterFrequency()) + (demod->getBandwidth() / 2) + (demod->getBandwidth() / 4);
+        if (spectrumCanvas->getViewState()) {
+            long long diff =
+                    abs(demod->getFrequency() - spectrumCanvas->getCenterFrequency()) + (demod->getBandwidth() / 2) +
+                    (demod->getBandwidth() / 4);
 
-                if (diff > spectrumCanvas->getBandwidth() / 2) {
-                    if (demod->getBandwidth() > (int) spectrumCanvas->getBandwidth()) {
-                        diff = abs(demod->getFrequency() - spectrumCanvas->getCenterFrequency());
-                    } else {
-                        diff = diff - spectrumCanvas->getBandwidth() / 2;
-                    }
-                    spectrumCanvas->moveCenterFrequency((demod->getFrequency() < spectrumCanvas->getCenterFrequency()) ? diff : -diff);
-                    demod->setTracking(false);
+            if (diff > spectrumCanvas->getBandwidth() / 2) {
+                if (demod->getBandwidth() > (int) spectrumCanvas->getBandwidth()) {
+                    diff = abs(demod->getFrequency() - spectrumCanvas->getCenterFrequency());
+                } else {
+                    diff = diff - spectrumCanvas->getBandwidth() / 2;
                 }
-            } else {
+                spectrumCanvas->moveCenterFrequency(
+                        (demod->getFrequency() < spectrumCanvas->getCenterFrequency()) ? diff : -diff);
                 demod->setTracking(false);
             }
+        } else {
+            demod->setTracking(false);
         }
+    }
 
     if (demod->getBandwidth() != wxGetApp().getDemodMgr().getLastBandwidth()) {
-            wxGetApp().getDemodMgr().setLastBandwidth(demod->getBandwidth());
-        }
+        wxGetApp().getDemodMgr().setLastBandwidth(demod->getBandwidth());
+    }
 
     if (demod.get() != activeDemodulator) {
-            demodSignalMeter->setInputValue(demod->getSquelchLevel());
-            demodGainMeter->setInputValue(demod->getGain());
-            wxGetApp().getDemodMgr().setLastGain(demod->getGain());
-            int outputDevice = demod->getOutputDevice();
-            if (scopeCanvas) {
-                auto outputDevices = wxGetApp().getDemodMgr().getOutputDevices();
-                scopeCanvas->setDeviceName(outputDevices[outputDevice].name);
-            }
+        demodSignalMeter->setInputValue(demod->getSquelchLevel());
+        demodGainMeter->setInputValue(demod->getGain());
+        wxGetApp().getDemodMgr().setLastGain(demod->getGain());
+        int outputDevice = demod->getOutputDevice();
+        if (scopeCanvas) {
+            auto outputDevices = wxGetApp().getDemodMgr().getOutputDevices();
+            scopeCanvas->setDeviceName(outputDevices[outputDevice].name);
+        }
 //            outputDeviceMenuItems[outputDevice]->Check(true);
-            string dType = demod->getDemodulatorType();
-            demodModeSelector->setSelection(dType);
+        string dType = demod->getDemodulatorType();
+        demodModeSelector->setSelection(dType);
 #ifdef ENABLE_DIGITAL_LAB
-            demodModeSelectorAdv->setSelection(dType);
+        demodModeSelectorAdv->setSelection(dType);
 #endif
-            deltaLockButton->setSelection(demod->isDeltaLock() ? 1 : -1);
-            demodMuteButton->setSelection(demod->isMuted() ? 1 : -1);
-            modemPropertiesUpdated.store(true);
-            demodTuner->setHalfBand(dType == "USB" || dType == "LSB");
-        }
+        deltaLockButton->setSelection(demod->isDeltaLock() ? 1 : -1);
+        demodMuteButton->setSelection(demod->isMuted() ? 1 : -1);
+        modemPropertiesUpdated.store(true);
+        demodTuner->setHalfBand(dType == "USB" || dType == "LSB");
+    }
     if (!demodWaterfallCanvas || demodWaterfallCanvas->getDragState() == WaterfallCanvas::WF_DRAG_NONE) {
-            long long centerFreq = demod->getFrequency();
-            unsigned int demodBw = (unsigned int) ceil((float) demod->getBandwidth() * 2.25);
+        long long centerFreq = demod->getFrequency();
+        unsigned int demodBw = (unsigned int) ceil((float) demod->getBandwidth() * 2.25);
 
-            if (demod->getDemodulatorType() == "USB") {
-                demodBw /= 2;
-                centerFreq += demod->getBandwidth() / 4;
-            }
+        if (demod->getDemodulatorType() == "USB") {
+            demodBw /= 2;
+            centerFreq += demod->getBandwidth() / 4;
+        }
 
-            if (demod->getDemodulatorType() == "LSB") {
-                demodBw /= 2;
-                centerFreq -= demod->getBandwidth() / 4;
-            }
+        if (demod->getDemodulatorType() == "LSB") {
+            demodBw /= 2;
+            centerFreq -= demod->getBandwidth() / 4;
+        }
 
-            if (demodBw > wxGetApp().getSampleRate() / 2) {
-                demodBw = wxGetApp().getSampleRate() / 2;
-            }
-            if (demodBw < 20000) {
-                demodBw = 20000;
-            }
+        if (demodBw > wxGetApp().getSampleRate() / 2) {
+            demodBw = wxGetApp().getSampleRate() / 2;
+        }
+        if (demodBw < 20000) {
+            demodBw = 20000;
+        }
 
-            if (demodWaterfallCanvas && centerFreq != demodWaterfallCanvas->getCenterFrequency()) {
-                demodWaterfallCanvas->setCenterFrequency(centerFreq);
-                demodSpectrumCanvas->setCenterFrequency(centerFreq);
-            }
+        if (demodWaterfallCanvas && centerFreq != demodWaterfallCanvas->getCenterFrequency()) {
+            demodWaterfallCanvas->setCenterFrequency(centerFreq);
+            demodSpectrumCanvas->setCenterFrequency(centerFreq);
+        }
 
-            string dSelection = demodModeSelector->getSelectionLabel();
+        string dSelection = demodModeSelector->getSelectionLabel();
 #ifdef ENABLE_DIGITAL_LAB
-            string dSelectionadv = demodModeSelectorAdv->getSelectionLabel();
+        string dSelectionadv = demodModeSelectorAdv->getSelectionLabel();
 
-            // basic demodulators
-            if (dSelection != "" && dSelection != demod->getDemodulatorType()) {
-                demod->setDemodulatorType(dSelection);
-                demodTuner->setHalfBand(dSelection == "USB" || dSelection == "LSB");
-                demodModeSelectorAdv->setSelection(-1);
-            }
+        // basic demodulators
+        if (dSelection != "" && dSelection != demod->getDemodulatorType()) {
+            demod->setDemodulatorType(dSelection);
+            demodTuner->setHalfBand(dSelection == "USB" || dSelection == "LSB");
+            demodModeSelectorAdv->setSelection(-1);
+        }
             // advanced demodulators
-			else if (dSelectionadv != "" && dSelectionadv != demod->getDemodulatorType()) {
-				demod->setDemodulatorType(dSelectionadv);
-                demodTuner->setHalfBand(false);
-				demodModeSelector->setSelection(-1);
-            }
+        else if (dSelectionadv != "" && dSelectionadv != demod->getDemodulatorType()) {
+            demod->setDemodulatorType(dSelectionadv);
+            demodTuner->setHalfBand(false);
+            demodModeSelector->setSelection(-1);
+        }
 #else
-            // basic demodulators
-            if (dSelection != "" && dSelection != demod->getDemodulatorType()) {
-                demod->setDemodulatorType(dSelection);
-                demodTuner->setHalfBand(dSelection=="USB" || dSelection=="LSB");
-            }
+        // basic demodulators
+        if (dSelection != "" && dSelection != demod->getDemodulatorType()) {
+            demod->setDemodulatorType(dSelection);
+            demodTuner->setHalfBand(dSelection=="USB" || dSelection=="LSB");
+        }
 #endif
 
-            int muteMode = demodMuteButton->getSelection();
-            if (demodMuteButton->modeChanged()) {
-                if (demod->isMuted() && muteMode == -1) {
-                    demod->setMuted(false);
-                } else if (!demod->isMuted() && muteMode == 1) {
-                    demod->setMuted(true);
-                }
+        int muteMode = demodMuteButton->getSelection();
+        if (demodMuteButton->modeChanged()) {
+            if (demod->isMuted() && muteMode == -1) {
+                demod->setMuted(false);
+            } else if (!demod->isMuted() && muteMode == 1) {
+                demod->setMuted(true);
+            }
+            wxGetApp().getDemodMgr().setLastMuted(demod->isMuted());
+            demodMuteButton->clearModeChanged();
+        } else {
+            if (demod->isMuted() && muteMode == -1) {
+                demodMuteButton->setSelection(1);
                 wxGetApp().getDemodMgr().setLastMuted(demod->isMuted());
-                demodMuteButton->clearModeChanged();
-            } else {
-                if (demod->isMuted() && muteMode == -1) {
-                    demodMuteButton->setSelection(1);
-                    wxGetApp().getDemodMgr().setLastMuted(demod->isMuted());
-                    demodMuteButton->Refresh();
-                } else if (!demod->isMuted() && muteMode == 1) {
-                    demodMuteButton->setSelection(-1);
-                    wxGetApp().getDemodMgr().setLastMuted(demod->isMuted());
-                    demodMuteButton->Refresh();
-                }
-            }
-
-            int deltaMode = deltaLockButton->getSelection();
-            if (deltaLockButton->modeChanged()) {
-                if (demod->isDeltaLock() && deltaMode == -1) {
-                    demod->setDeltaLock(false);
-                } else if (!demod->isDeltaLock() && deltaMode == 1) {
-                    demod->setDeltaLockOfs(demod->getFrequency()-wxGetApp().getFrequency());
-                    demod->setDeltaLock(true);
-                }
-                wxGetApp().getDemodMgr().setLastDeltaLock(demod->isDeltaLock());
-                deltaLockButton->clearModeChanged();
-            } else {
-                if (demod->isDeltaLock() && deltaMode == -1) {
-                    deltaLockButton->setSelection(1);
-                    wxGetApp().getDemodMgr().setLastDeltaLock(true);
-                    deltaLockButton->Refresh();
-                } else if (!demod->isDeltaLock() && deltaMode == 1) {
-                    deltaLockButton->setSelection(-1);
-                    wxGetApp().getDemodMgr().setLastDeltaLock(false);
-                    deltaLockButton->Refresh();
-                }
-            }
-
-            int soloMode = soloModeButton->getSelection();
-            if (soloModeButton->modeChanged()) {
-                if (soloMode == 1) {
-                    wxGetApp().setSoloMode(true);
-                } else {
-                    wxGetApp().setSoloMode(false);
-                }
-                soloModeButton->clearModeChanged();
-            } else {
-                if (wxGetApp().getSoloMode() != (soloMode==1)) {
-                    soloModeButton->setSelection(wxGetApp().getSoloMode() ? 1 : -1);
-                    soloModeButton->Refresh();
-                }
-            }
-
-            if (demodWaterfallCanvas) {
-                demodWaterfallCanvas->setBandwidth(demodBw);
-                demodSpectrumCanvas->setBandwidth(demodBw);
+                demodMuteButton->Refresh();
+            } else if (!demod->isMuted() && muteMode == 1) {
+                demodMuteButton->setSelection(-1);
+                wxGetApp().getDemodMgr().setLastMuted(demod->isMuted());
+                demodMuteButton->Refresh();
             }
         }
+
+        int deltaMode = deltaLockButton->getSelection();
+        if (deltaLockButton->modeChanged()) {
+            if (demod->isDeltaLock() && deltaMode == -1) {
+                demod->setDeltaLock(false);
+            } else if (!demod->isDeltaLock() && deltaMode == 1) {
+                demod->setDeltaLockOfs(demod->getFrequency() - wxGetApp().getFrequency());
+                demod->setDeltaLock(true);
+            }
+            wxGetApp().getDemodMgr().setLastDeltaLock(demod->isDeltaLock());
+            deltaLockButton->clearModeChanged();
+        } else {
+            if (demod->isDeltaLock() && deltaMode == -1) {
+                deltaLockButton->setSelection(1);
+                wxGetApp().getDemodMgr().setLastDeltaLock(true);
+                deltaLockButton->Refresh();
+            } else if (!demod->isDeltaLock() && deltaMode == 1) {
+                deltaLockButton->setSelection(-1);
+                wxGetApp().getDemodMgr().setLastDeltaLock(false);
+                deltaLockButton->Refresh();
+            }
+        }
+
+        int soloMode = soloModeButton->getSelection();
+        if (soloModeButton->modeChanged()) {
+            if (soloMode == 1) {
+                wxGetApp().setSoloMode(true);
+            } else {
+                wxGetApp().setSoloMode(false);
+            }
+            soloModeButton->clearModeChanged();
+        } else {
+            if (wxGetApp().getSoloMode() != (soloMode == 1)) {
+                soloModeButton->setSelection(wxGetApp().getSoloMode() ? 1 : -1);
+                soloModeButton->Refresh();
+            }
+        }
+
+        if (demodWaterfallCanvas) {
+            demodWaterfallCanvas->setBandwidth(demodBw);
+            demodSpectrumCanvas->setBandwidth(demodBw);
+        }
+    }
 
     demodSignalMeter->setLevel(demod->getSignalLevel());
     demodSignalMeter->setMin(demod->getSignalFloor());
@@ -2514,12 +2555,12 @@ void AppFrame::handleCurrentModem() {
 
     demodGainMeter->setLevel(demod->getGain());
     if (demodSignalMeter->inputChanged()) {
-            demod->setSquelchLevel(demodSignalMeter->getInputValue());
-        }
+        demod->setSquelchLevel(demodSignalMeter->getInputValue());
+    }
     if (demodGainMeter->inputChanged()) {
-            demod->setGain(demodGainMeter->getInputValue());
-            demodGainMeter->setLevel(demodGainMeter->getInputValue());
-        }
+        demod->setGain(demodGainMeter->getInputValue());
+        demodGainMeter->setLevel(demodGainMeter->getInputValue());
+    }
     activeDemodulator = demod.get();
 }
 

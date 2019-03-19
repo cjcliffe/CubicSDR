@@ -254,9 +254,19 @@ private:
 	bool actionOnMenuLoadSave(wxCommandEvent& event);
 	bool actionOnMenuRecording(wxCommandEvent& event);
 	bool actionOnMenuRig(wxCommandEvent& event);
+	bool actionOnMenuSDRStartStop(wxCommandEvent &event);
+	bool actionOnMenuPerformance(wxCommandEvent &event);
+	bool actionOnMenuTips(wxCommandEvent &event);
+	bool actionOnMenuIQSwap(wxCommandEvent &event);
+	bool actionOnMenuFreqOffset(wxCommandEvent &event);
+	bool actionOnMenuDBOffset(wxCommandEvent &event);
+	bool actionOnMenuSDRDevices(wxCommandEvent &event);
+	bool actionOnMenuSetPPM(wxCommandEvent &event);
+	bool actionOnMenuClose(wxCommandEvent &event);
+
 
 	/**
-	 * UI Action Handlers
+	 * UI Activity Handlers
 	 */
 	void handleUpdateDeviceParams();
 	void handleTXAntennaChange();
@@ -302,7 +312,6 @@ private:
 #endif
 
     wxDECLARE_EVENT_TABLE();
-
 };
 
 
