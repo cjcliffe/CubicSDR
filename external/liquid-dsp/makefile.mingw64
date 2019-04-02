@@ -22,22 +22,22 @@
 # Makefile for liquid-dsp libraries
 #
 # Targets:
-#    all                 :   dynamic shared-library object (e.g. libliquid.so)
-#    install             : install the dynamic shared library object and headers
-#    uninstall           :   uninstall the library and header file(s)
-#    clean               :   clean all targets (bench, check, examples, etc)
-#    distclean           :   removes everything except the originally distributed files
-#    check               :   build and run autotest program
-#    bench               :   build and run benchmarking program
-#    examples            :   build all examples
-#    sandbox             :   build all sandbox examples
-#    world               :   build absolutely everything (but don't install)
+#    all            : dynamic shared-library object (e.g. libliquid.so)
+#    install        : install the dynamic shared library object and headers
+#    uninstall      : uninstall the library and header file(s)
+#    clean          : clean all targets (bench, check, examples, etc)
+#    distclean      : removes everything except the originally distributed files
+#    check          : build and run autotest program
+#    bench          : build and run benchmarking program
+#    examples       : build all examples
+#    sandbox        : build all sandbox examples
+#    world          : build absolutely everything (but don't install)
 #
-#    clean-modules       :   clean all modules
-#    clean-examples      :   clean examples programs
-#    clean-sandbox       :   clean sandbox programs
-#    clean-check         :   clean autotest program
-#    clean-bench         :   clean benchmark program
+#    clean-modules  : clean all modules
+#    clean-examples : clean examples programs
+#    clean-sandbox  : clean sandbox programs
+#    clean-check    : clean autotest program
+#    clean-bench    : clean benchmark program
 #
 
 # autoconf initialization macros
@@ -63,14 +63,14 @@ LIBTOOL		:=
 RANLIB		:= ranlib
 
 # flags
-INCLUDE_CFLAGS	= $(addprefix -I ,$(include_dirs))
+INCLUDE_CFLAGS	= $(addprefix -I,$(include_dirs))
 #MINGW: optimizations goes here, use SSSE42 for 64bit 
 CONFIG_CFLAGS	= -O3 -msse4.2 -ffast-math
 CPPFLAGS	=  $(INCLUDE_CFLAGS)
 CFLAGS		= $(CONFIG_CFLAGS) -Wall -fPIC
 LDFLAGS		= 
 #MINGW:
-LIBS		+= -static-libgcc
+LIBS		= -static-libgcc
 PATHSEP		= /
 
 # 
@@ -601,6 +601,8 @@ framing_objects :=						\
 	src/framing/src/framesync64.o				\
 	src/framing/src/flexframegen.o				\
 	src/framing/src/flexframesync.o				\
+	src/framing/src/fskframegen.o				\
+	src/framing/src/fskframesync.o				\
 	src/framing/src/gmskframegen.o				\
 	src/framing/src/gmskframesync.o				\
 	src/framing/src/msourcecf.o				\
@@ -1197,7 +1199,7 @@ libliquid.so: libliquid.a
 	$(CC) $(CFLAGS) $(LDFLAGS) -shared -Xlinker -soname=$@ -o $@ -Wl,-whole-archive $^ -Wl,-no-whole-archive $(LIBS)
 #MINGW:
 libliquid.dll: libliquid.a
-	$(CC) -shared -Xlinker -soname=$@ -o $@ -Wl,-whole-archive $^ -Wl,-no-whole-archive -Wl,--output-def,libliquid.def -Wl,--out-implib,libliquid.lib $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -shared -Xlinker -soname=$@ -o $@ -Wl,-whole-archive $^ -Wl,-no-whole-archive -Wl,--output-def,libliquid.def -Wl,--out-implib,libliquid.lib $(LIBS)
 
 # static archive and library objects
 all: ${ARCHIVE_LIB} ${SHARED_LIB}
@@ -1444,6 +1446,7 @@ example_programs :=						\
 	examples/flexframesync_reconfig_example			\
 	examples/framesync64_example				\
 	examples/freqmodem_example				\
+	examples/fskframesync_example				\
 	examples/fskmodem_example				\
 	examples/fskmodem_waterfall_example			\
 	examples/gasearch_example				\
@@ -1503,6 +1506,7 @@ example_programs :=						\
 	examples/random_histogram_example			\
 	examples/repack_bytes_example				\
 	examples/rresamp_crcf_example				\
+	examples/rresamp_crcf_rnyquist_example			\
 	examples/rresamp_rrrf_example				\
 	examples/resamp_crcf_example				\
 	examples/resamp_crcf_noise_example			\
@@ -1581,6 +1585,7 @@ sandbox_programs =						\
 	sandbox/fecsoft_hamming128_gentab			\
 	sandbox/fecsoft_ldpc_test				\
 	sandbox/fec_sumproduct_test				\
+	sandbox/fskcorr_test					\
 	sandbox/fskmodem_test					\
 	sandbox/fft_dual_radix_test				\
 	sandbox/fft_mixed_radix_test				\
