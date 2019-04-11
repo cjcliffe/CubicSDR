@@ -4826,6 +4826,56 @@ void bpacketsync_execute_bit(bpacketsync _q,
                              unsigned char _bit);
 
 //
+// M-FSK frame generator
+//
+
+typedef struct fskframegen_s * fskframegen;
+
+// create M-FSK frame generator
+fskframegen fskframegen_create();
+void fskframegen_destroy (fskframegen     _fg);
+void fskframegen_print   (fskframegen     _fg);
+void fskframegen_reset   (fskframegen     _fg);
+void fskframegen_assemble(fskframegen     _fg,
+                          unsigned char * _header,
+                          unsigned char * _payload,
+                          unsigned int    _payload_len,
+                          crc_scheme      _check,
+                          fec_scheme      _fec0,
+                          fec_scheme      _fec1);
+unsigned int fskframegen_getframelen(fskframegen _q);
+int fskframegen_write_samples(fskframegen            _fg,
+                              liquid_float_complex * _buf,
+                              unsigned int           _buf_len);
+
+
+//
+// M-FSK frame synchronizer
+//
+
+typedef struct fskframesync_s * fskframesync;
+
+// create M-FSK frame synchronizer
+//  _callback   :   callback function
+//  _userdata   :   user data pointer passed to callback function
+fskframesync fskframesync_create(framesync_callback _callback,
+                                 void *             _userdata);
+void fskframesync_destroy(fskframesync _q);
+void fskframesync_print  (fskframesync _q);
+void fskframesync_reset  (fskframesync _q);
+void fskframesync_execute(fskframesync         _q,
+                          liquid_float_complex _x);
+void fskframesync_execute_block(fskframesync           _q,
+                                liquid_float_complex * _x,
+                                unsigned int           _n);
+
+// debugging
+void fskframesync_debug_enable (fskframesync _q);
+void fskframesync_debug_disable(fskframesync _q);
+void fskframesync_debug_export (fskframesync _q, const char * _filename);
+
+
+//
 // GMSK frame generator
 //
 
@@ -6924,6 +6974,11 @@ unsigned int fskdem_demodulate(fskdem                 _q,
 // get demodulator frequency error
 float fskdem_get_frequency_error(fskdem _q);
 
+// get energy for a particular symbol within a certain range
+float fskdem_get_symbol_energy(fskdem       _q,
+                               unsigned int _s,
+                               unsigned int _range);
+
 
 // 
 // Analog frequency modulator
@@ -7225,6 +7280,75 @@ void FIRPFBCH2(_execute)(FIRPFBCH2() _q,                        \
 
 
 LIQUID_FIRPFBCH2_DEFINE_API(LIQUID_FIRPFBCH2_MANGLE_CRCF,
+                            liquid_float_complex,
+                            float,
+                            liquid_float_complex)
+
+//
+// Finite impulse response polyphase filterbank channelizer
+// with output rate Fs * P / M
+//
+
+#define LIQUID_FIRPFBCHR_MANGLE_CRCF(name) LIQUID_CONCAT(firpfbchr_crcf,name)
+
+#define LIQUID_FIRPFBCHR_DEFINE_API(FIRPFBCHR,TO,TC,TI)                     \
+typedef struct FIRPFBCHR(_s) * FIRPFBCHR();                                 \
+                                                                            \
+/* create rational rate resampling channelizer (firpfbchr) object by    */  \
+/* specifying filter coefficients directly                              */  \
+/*  _M      : number of output channels in chanelizer                   */  \
+/*  _P      : output decimation factor (output rate is 1/P the input)   */  \
+/*  _m      : prototype filter semi-length, length=2*M*m                */  \
+/*  _h      : prototype filter coefficient array, [size: 2*M*m x 1]     */  \
+FIRPFBCHR() FIRPFBCHR(_create)(unsigned int _M,                             \
+                               unsigned int _P,                             \
+                               unsigned int _m,                             \
+                               TC *         _h);                            \
+                                                                            \
+/* create rational rate resampling channelizer (firpfbchr) object by    */  \
+/* specifying filter design parameters for Kaiser prototype             */  \
+/*  _M      : number of output channels in chanelizer                   */  \
+/*  _P      : output decimation factor (output rate is 1/P the input)   */  \
+/*  _m      : prototype filter semi-length, length=2*M*m                */  \
+/*  _As     : filter stop-band attenuation [dB]                         */  \
+FIRPFBCHR() FIRPFBCHR(_create_kaiser)(unsigned int _M,                      \
+                                      unsigned int _P,                      \
+                                      unsigned int _m,                      \
+                                      float        _As);                    \
+                                                                            \
+/* destroy firpfbchr object, freeing internal memory                    */  \
+void FIRPFBCHR(_destroy)(FIRPFBCHR() _q);                                   \
+                                                                            \
+/* reset firpfbchr object internal state and buffers                    */  \
+void FIRPFBCHR(_reset)(FIRPFBCHR() _q);                                     \
+                                                                            \
+/* print firpfbchr object internals to stdout                           */  \
+void FIRPFBCHR(_print)(FIRPFBCHR() _q);                                     \
+                                                                            \
+/* get number of output channels to channelizer                         */  \
+unsigned int FIRPFBCHR(_get_M)(FIRPFBCHR() _q);                             \
+                                                                            \
+/* get decimation factor for channelizer                                */  \
+unsigned int FIRPFBCHR(_get_P)(FIRPFBCHR() _q);                             \
+                                                                            \
+/* get semi-length to channelizer filter prototype                      */  \
+unsigned int FIRPFBCHR(_get_m)(FIRPFBCHR() _q);                             \
+                                                                            \
+/* push buffer of samples into filter bank                              */  \
+/*  _q      : channelizer object                                        */  \
+/*  _x      : channelizer input [size: P x 1]                           */  \
+void FIRPFBCHR(_push)(FIRPFBCHR() _q,                                       \
+                      TI *        _x);                                      \
+                                                                            \
+/* execute filterbank channelizer, writing complex baseband samples for */  \
+/* each channel into output array                                       */  \
+/*  _q      : channelizer object                                        */  \
+/*  _y      : channelizer output [size: _M x 1]                         */  \
+void FIRPFBCHR(_execute)(FIRPFBCHR() _q,                                    \
+                         TO *        _y);                                   \
+
+
+LIQUID_FIRPFBCHR_DEFINE_API(LIQUID_FIRPFBCHR_MANGLE_CRCF,
                             liquid_float_complex,
                             float,
                             liquid_float_complex)
@@ -8301,65 +8425,69 @@ void liquid_get_scale(float   _val,
 //   VECTOR     : name-mangling macro
 //   T          : data type
 //   TP         : data type (primitive)
-#define LIQUID_VECTOR_DEFINE_API(VECTOR,T,TP)                   \
-                                                                \
-/* initialize vector with scalar: x[i] = c (scalar)         */  \
-void VECTOR(_init)(T            _c,                             \
-                   T *          _x,                             \
-                   unsigned int _n);                            \
-                                                                \
-/* add each element: z[i] = x[i] + y[i]                     */  \
-void VECTOR(_add)(T *          _x,                              \
-                  T *          _y,                              \
-                  unsigned int _n,                              \
-                  T *          _z);                             \
-/* add scalar to each element: y[i] = x[i] + c              */  \
-void VECTOR(_addscalar)(T *          _x,                        \
-                        unsigned int _n,                        \
-                        T            _c,                        \
-                        T *          _y);                       \
-                                                                \
-/* multiply each element: z[i] = x[i] * y[i]                */  \
-void VECTOR(_mul)(T *          _x,                              \
-                  T *          _y,                              \
-                  unsigned int _n,                              \
-                  T *          _z);                             \
-/* multiply each element with scalar: y[i] = x[i] * c       */  \
-void VECTOR(_mulscalar)(T *          _x,                        \
-                        unsigned int _n,                        \
-                        T            _c,                        \
-                        T *          _y);                       \
-                                                                \
-/* compute complex phase rotation: x[i] = exp{j theta[i]}   */  \
-void VECTOR(_cexpj)(TP *         _theta,                        \
-                    unsigned int _n,                            \
-                    T *          _x);                           \
-/* compute angle of each element: theta[i] = arg{ x[i] }    */  \
-void VECTOR(_carg)(T *          _x,                             \
-                   unsigned int _n,                             \
-                   TP *         _theta);                        \
-/* compute absolute value of each element: y[i] = |x[i]|    */  \
-void VECTOR(_abs)(T *          _x,                              \
-                  unsigned int _n,                              \
-                  TP *         _y);                             \
-                                                                \
-/* compute sum of squares: sum{ |x|^2 }                     */  \
-TP VECTOR(_sumsq)(T *          _x,                              \
-                  unsigned int _n);                             \
-                                                                \
-/* compute l-2 norm: sqrt{ sum{ |x|^2 } }                   */  \
-TP VECTOR(_norm)(T *          _x,                               \
-                 unsigned int _n);                              \
-                                                                \
-/* compute l-p norm: { sum{ |x|^p } }^(1/p)                 */  \
-TP VECTOR(_pnorm)(T *          _x,                              \
-                  unsigned int _n,                              \
-                  TP           _p);                             \
-                                                                \
-/* scale vector elements by l-2 norm: y[i] = x[i]/norm(x)   */  \
-void VECTOR(_normalize)(T *          _x,                        \
-                        unsigned int _n,                        \
-                        T *          _y);                       \
+#define LIQUID_VECTOR_DEFINE_API(VECTOR,T,TP)                               \
+                                                                            \
+/* Initialize vector with scalar: x[i] = c (scalar)                     */  \
+void VECTOR(_init)(T            _c,                                         \
+                   T *          _x,                                         \
+                   unsigned int _n);                                        \
+                                                                            \
+/* Add each element pointwise: z[i] = x[i] + y[i]                       */  \
+void VECTOR(_add)(T *          _x,                                          \
+                  T *          _y,                                          \
+                  unsigned int _n,                                          \
+                  T *          _z);                                         \
+                                                                            \
+/* Add scalar to each element: y[i] = x[i] + c                          */  \
+void VECTOR(_addscalar)(T *          _x,                                    \
+                        unsigned int _n,                                    \
+                        T            _c,                                    \
+                        T *          _y);                                   \
+                                                                            \
+/* Multiply each element pointwise: z[i] = x[i] * y[i]                  */  \
+void VECTOR(_mul)(T *          _x,                                          \
+                  T *          _y,                                          \
+                  unsigned int _n,                                          \
+                  T *          _z);                                         \
+                                                                            \
+/* Multiply each element with scalar: y[i] = x[i] * c                   */  \
+void VECTOR(_mulscalar)(T *          _x,                                    \
+                        unsigned int _n,                                    \
+                        T            _c,                                    \
+                        T *          _y);                                   \
+                                                                            \
+/* Compute complex phase rotation: x[i] = exp{j theta[i]}               */  \
+void VECTOR(_cexpj)(TP *         _theta,                                    \
+                    unsigned int _n,                                        \
+                    T *          _x);                                       \
+                                                                            \
+/* Compute angle of each element: theta[i] = arg{ x[i] }                */  \
+void VECTOR(_carg)(T *          _x,                                         \
+                   unsigned int _n,                                         \
+                   TP *         _theta);                                    \
+                                                                            \
+/* Compute absolute value of each element: y[i] = |x[i]|                */  \
+void VECTOR(_abs)(T *          _x,                                          \
+                  unsigned int _n,                                          \
+                  TP *         _y);                                         \
+                                                                            \
+/* Compute sum of squares: sum{ |x|^2 }                                 */  \
+TP VECTOR(_sumsq)(T *          _x,                                          \
+                  unsigned int _n);                                         \
+                                                                            \
+/* Compute l-2 norm: sqrt{ sum{ |x|^2 } }                               */  \
+TP VECTOR(_norm)(T *          _x,                                           \
+                 unsigned int _n);                                          \
+                                                                            \
+/* Compute l-p norm: { sum{ |x|^p } }^(1/p)                             */  \
+TP VECTOR(_pnorm)(T *          _x,                                          \
+                  unsigned int _n,                                          \
+                  TP           _p);                                         \
+                                                                            \
+/* Scale vector elements by l-2 norm: y[i] = x[i]/norm(x)               */  \
+void VECTOR(_normalize)(T *          _x,                                    \
+                        unsigned int _n,                                    \
+                        T *          _y);                                   \
 
 LIQUID_VECTOR_DEFINE_API(LIQUID_VECTOR_MANGLE_RF, float,                float)
 LIQUID_VECTOR_DEFINE_API(LIQUID_VECTOR_MANGLE_CF, liquid_float_complex, float)
