@@ -56,7 +56,9 @@ void ModemUSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *a
         nco_crcf_mix_down(ssbShift, input->data[i], &x);
 		iirfilt_crcf_execute(ssbFilt, x, &y);
 		nco_crcf_mix_up(ssbShift, y, &x);
-        firhilbf_c2r_execute(c2rFilt, x, &demodOutputData[i]);
+        // TODO: use fixed firhilbf_c2r usb param to simplify instead of shifting and discarding
+        float usb_discard;
+        firhilbf_c2r_execute(c2rFilt, x, &demodOutputData[i], &usb_discard);
     }
     
     buildAudioOutput(akit, audioOut, true);
