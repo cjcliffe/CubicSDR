@@ -62,7 +62,7 @@ TuningCanvas::~TuningCanvas() {
 
 bool TuningCanvas::changed() {
 
-    auto activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    auto activeDemod = wxGetApp().getDemodMgr().getCurrentModem();
     
     long long current_freq = 0;
     if (activeDemod != nullptr) {
@@ -93,7 +93,7 @@ void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
     glContext->DrawBegin();
 
-    auto activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    auto activeDemod = wxGetApp().getDemodMgr().getCurrentModem();
     
     freq = 0;
     if (activeDemod != nullptr) {
@@ -171,7 +171,7 @@ void TuningCanvas::StepTuner(ActiveState state, int exponent, bool up) {
         amount *= 2;
     }
     
-    auto activeDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+    auto activeDemod = wxGetApp().getDemodMgr().getCurrentModem();
     if (state == TUNING_HOVER_FREQ && activeDemod) {
         long long freq = activeDemod->getFrequency();
         long long diff = abs(wxGetApp().getFrequency() - freq);
@@ -328,7 +328,7 @@ void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
     }
 
     if (hoverState == TUNING_HOVER_BW || hoverState == TUNING_HOVER_FREQ) {
-         wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getLastActiveDemodulator());
+         wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getCurrentModem());
      } else {
          wxGetApp().getDemodMgr().setActiveDemodulator(nullptr);
      }

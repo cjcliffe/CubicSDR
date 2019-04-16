@@ -216,6 +216,27 @@ CubicSDR::CubicSDR() : frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFA
         *m_glContextAttributes = glSettings;
 }
 
+void CubicSDR::initAudioDevices() const {
+    std::vector<RtAudio::DeviceInfo> devices;
+    std::map<int, RtAudio::DeviceInfo> inputDevices, outputDevices;
+
+    AudioThread::enumerateDevices(devices);
+
+    int i = 0;
+
+    for (auto devices_i = devices.begin(); devices_i != devices.end(); devices_i++) {
+        if (devices_i->inputChannels) {
+            inputDevices[i] = *devices_i;
+        }
+        if (devices_i->outputChannels) {
+            outputDevices[i] = *devices_i;
+        }
+        i++;
+    }
+
+    wxGetApp().getDemodMgr().setOutputDevices(outputDevices);
+}
+
 bool CubicSDR::OnInit() {
 
     //use the current locale most appropriate to this system,
@@ -297,6 +318,8 @@ bool CubicSDR::OnInit() {
     devicesReady.store(false);
     devicesFailed.store(false);
     deviceSelectorOpen.store(false);
+
+    initAudioDevices();
 
     // Visual Data
     spectrumVisualThread = new SpectrumVisualDataThread();
@@ -841,12 +864,16 @@ DemodulatorThreadInputQueuePtr CubicSDR::getWaterfallVisualQueue() {
     return pipeWaterfallIQVisualData;
 }
 
+BookmarkMgr &CubicSDR::getBookmarkMgr() {
+    return bookmarkMgr;
+}
+
 DemodulatorMgr &CubicSDR::getDemodMgr() {
     return demodMgr;
 }
 
-BookmarkMgr &CubicSDR::getBookmarkMgr() {
-    return bookmarkMgr;
+SessionMgr &CubicSDR::getSessionMgr() {
+    return sessionMgr;
 }
 
 SDRPostThread *CubicSDR::getSDRPostThread() {
@@ -917,7 +944,7 @@ void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetM
     switch (targetMode) {
         case FrequencyDialog::FDIALOG_TARGET_DEFAULT:
         case FrequencyDialog::FDIALOG_TARGET_FREQ:
-            title = demodMgr.getActiveDemodulator()?demodTitle:freqTitle;
+            title = demodMgr.getActiveContextModem()?demodTitle:freqTitle;
             break;
         case FrequencyDialog::FDIALOG_TARGET_BANDWIDTH:
             title = bwTitle;
@@ -938,13 +965,13 @@ void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetM
             break;
     }
     
-    FrequencyDialog fdialog(appframe, -1, title, demodMgr.getActiveDemodulator(), wxPoint(-100,-100), wxSize(350, 75), wxDEFAULT_DIALOG_STYLE, targetMode, initString);
+    FrequencyDialog fdialog(appframe, -1, title, demodMgr.getActiveContextModem(), wxPoint(-100,-100), wxSize(350, 75), wxDEFAULT_DIALOG_STYLE, targetMode, initString);
     fdialog.ShowModal();
 }
 
 void CubicSDR::showLabelInput() {
 
-    DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
+    DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getActiveContextModem();
 
     if (activeDemod != nullptr) {
 

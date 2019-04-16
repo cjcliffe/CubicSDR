@@ -73,8 +73,8 @@ void RigThread::run() {
     while (!stopping) {
         std::this_thread::sleep_for(std::chrono::milliseconds(150));
         
-        auto activeDemod = wxGetApp().getDemodMgr().getActiveDemodulator();
-        auto lastDemod = wxGetApp().getDemodMgr().getLastActiveDemodulator();
+        auto activeDemod = wxGetApp().getDemodMgr().getActiveContextModem();
+        auto lastDemod = wxGetApp().getDemodMgr().getCurrentModem();
 
         if (freqChanged.load() && (controlMode.load() || setOneShot.load())) {
             status = rig_get_freq(rig, RIG_VFO_CURR, &freq);

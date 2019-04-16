@@ -326,6 +326,7 @@ SET (cubicsdr_sources
     src/IOThread.cpp
     src/ModemProperties.cpp
     src/BookmarkMgr.cpp
+    src/SessionMgr.cpp
     src/sdr/SDRDeviceInfo.cpp
     src/sdr/SDRPostThread.cpp
     src/sdr/SDREnumerator.cpp
@@ -433,6 +434,7 @@ SET (cubicsdr_headers
     src/IOThread.h
     src/ModemProperties.h
     src/BookmarkMgr.h
+    src/SessionMgr.h
     src/sdr/SDRDeviceInfo.h
     src/sdr/SDRPostThread.h
     src/sdr/SDREnumerator.h

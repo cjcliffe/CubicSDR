@@ -469,7 +469,8 @@ void DemodulatorInstance::setFrequency(long long freq) {
     }
 #endif
 #if USE_HAMLIB
-    if (wxGetApp().rigIsActive() && wxGetApp().getRigThread()->getFollowModem() && wxGetApp().getDemodMgr().getLastActiveDemodulator().get() == this) {
+    if (wxGetApp().rigIsActive() && wxGetApp().getRigThread()->getFollowModem() &&
+            wxGetApp().getDemodMgr().getCurrentModem().get() == this) {
         wxGetApp().getRigThread()->setFrequency(freq,true);
     }
 #endif

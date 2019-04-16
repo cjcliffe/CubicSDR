@@ -322,7 +322,8 @@ void DemodulatorThread::run() {
         }
 
         if (!squelched && ati != nullptr) {
-            if (!muted.load() && (!wxGetApp().getSoloMode() || (demodInstance == wxGetApp().getDemodMgr().getLastActiveDemodulator().get()))) {
+            if (!muted.load() && (!wxGetApp().getSoloMode() || (demodInstance ==
+                    wxGetApp().getDemodMgr().getCurrentModem().get()))) {
                 //non-blocking push needed for audio out
                 if (!audioOutputQueue->try_push(ati)) {
                   
