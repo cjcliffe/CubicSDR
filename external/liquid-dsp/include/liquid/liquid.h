@@ -216,6 +216,16 @@ float AGC(_get_gain)(AGC() _q);                                             \
 void  AGC(_set_gain)(AGC() _q,                                              \
                      float _gain);                                          \
                                                                             \
+/* Get the ouput scaling applied to each sample (linear).               */  \
+float AGC(_get_scale)(AGC() _q);                                            \
+                                                                            \
+/* Set the agc object's output scaling (linear). Note that this does    */  \
+/* affect the response of the AGC.                                      */  \
+/*  _q      : automatic gain control object                             */  \
+/*  _gain   : gain to apply to input signal, _gain > 0                  */  \
+void AGC(_set_scale)(AGC() _q,                                              \
+                     float _scale);                                         \
+                                                                            \
 /* Estimate signal level and initialize internal gain on an input       */  \
 /* array.                                                               */  \
 /*  _q      : automatic gain control object                             */  \
@@ -1996,6 +2006,14 @@ void liquid_firdes_kaiser(unsigned int _n,
                           float _mu,
                           float *_h);
 
+// Design finite impulse response DC-blocking filter
+//  _m      : filter semi-length, m in [1,1000]
+//  _As     : stop-band attenuation [dB], _As > 0
+//  _h      : output coefficient buffer, [size: 2*_m+1 x 1]
+void liquid_firdes_dcblocker(unsigned int _m,
+                             float        _As,
+                             float *      _h);
+
 // Design FIR doppler filter
 //  _n      : filter length
 //  _fd     : normalized doppler frequency (0 < _fd < 0.5)
@@ -2482,6 +2500,12 @@ FIRFILT() FIRFILT(_create_rnyquist)(int          _type,                     \
 /*  _n  : length of filter [samples], 0 < _n <= 1024                    */  \
 FIRFILT() FIRFILT(_create_rect)(unsigned int _n);                           \
                                                                             \
+/* Create DC blocking filter from prototype                             */  \
+/*  _m  : prototype filter semi-length such that filter length is 2*m+1 */  \
+/*  _As : prototype filter stop-band attenuation [dB], _As > 0          */  \
+FIRFILT() FIRFILT(_create_dc_blocker)(unsigned int _m,                      \
+                                      float        _As);                    \
+                                                                            \
 /* Re-create filter object of potentially a different length with       */  \
 /* different coefficients. If the length of the filter does not change, */  \
 /* not memory reallocation is invoked.                                  */  \
@@ -2625,10 +2649,12 @@ void FIRHILB(_r2c_execute)(FIRHILB() _q,                                    \
 /* Execute Hilbert transform (complex to real)                          */  \
 /*  _q      :   Hilbert transform object                                */  \
 /*  _x      :   complex-valued input sample                             */  \
-/*  _y      :   real-valued output sample                               */  \
+/*  _y0     :   real-valued output sample, lower side-band retained     */  \
+/*  _y1     :   real-valued output sample, upper side-band retained     */  \
 void FIRHILB(_c2r_execute)(FIRHILB() _q,                                    \
                            TC        _x,                                    \
-                           T *       _y);                                   \
+                           T *       _y0,                                   \
+                           T *       _y1);                                  \
                                                                             \
 /* Execute Hilbert transform decimator (real to complex)                */  \
 /*  _q      :   Hilbert transform object                                */  \
@@ -3671,6 +3697,17 @@ LIQUID_RESAMP2_DEFINE_API(LIQUID_RESAMP2_MANGLE_CCCF,
 /* Rational rate resampler, implemented as a polyphase filterbank       */  \
 typedef struct RRESAMP(_s) * RRESAMP();                                     \
                                                                             \
+/* Create rational-rate resampler object from external coeffcients to   */  \
+/* resample at an exact rate P/Q                                        */  \
+/*  _P      : interpolation factor,                     P > 0           */  \
+/*  _Q      : decimation factor,                        Q > 0           */  \
+/*  _m      : filter semi-length (delay),               0 < _m          */  \
+/*  _h      : filter coefficients, [size: 2*_P*_m x 1]                  */  \
+RRESAMP() RRESAMP(_create)(unsigned int _P,                                 \
+                           unsigned int _Q,                                 \
+                           unsigned int _m,                                 \
+                           TC *         _h);                                \
+                                                                            \
 /* Create rational-rate resampler object from filter prototype to       */  \
 /* resample at an exact rate P/Q                                        */  \
 /*  _P      : interpolation factor,                     P > 0           */  \
@@ -3678,11 +3715,18 @@ typedef struct RRESAMP(_s) * RRESAMP();                                     \
 /*  _m      : filter semi-length (delay),               0 < _m          */  \
 /*  _bw     : filter bandwidth relative to sample rate, 0 < _bw <= 0.5  */  \
 /*  _As     : filter stop-band attenuation [dB],        0 < _As         */  \
-RRESAMP() RRESAMP(_create)(unsigned int _P,                                 \
-                           unsigned int _Q,                                 \
-                           unsigned int _m,                                 \
-                           float        _bw,                                \
-                           float        _As);                               \
+RRESAMP() RRESAMP(_create_kaiser)(unsigned int _P,                          \
+                                  unsigned int _Q,                          \
+                                  unsigned int _m,                          \
+                                  float        _bw,                         \
+                                  float        _As);                        \
+                                                                            \
+/* Create rational-rate resampler object from filter prototype to...    */  \
+RRESAMP() RRESAMP(_create_prototype)(int          _type,                    \
+                                     unsigned int _P,                       \
+                                     unsigned int _Q,                       \
+                                     unsigned int _m,                       \
+                                     float        _beta);                   \
                                                                             \
 /* Create rational resampler object with a specified resampling rate of */  \
 /* exactly P/Q with default parameters. This is a simplified method to  */  \
@@ -5116,6 +5160,9 @@ float ofdmflexframesync_get_rssi(ofdmflexframesync _q);
 
 // query the received carrier offset estimate
 float ofdmflexframesync_get_cfo(ofdmflexframesync _q);
+
+// set the received carrier offset estimate
+void ofdmflexframesync_set_cfo(ofdmflexframesync _q, float _cfo);
 
 // enable/disable debugging
 void ofdmflexframesync_debug_enable(ofdmflexframesync _q);
@@ -7089,42 +7136,44 @@ typedef struct ampmodem_s * ampmodem;
 
 // create ampmodem object
 //  _m                  :   modulation index
-//  _fc                 :   carrier frequency, range: [-0.5,0.5]
 //  _type               :   AM type (e.g. LIQUID_AMPMODEM_DSB)
 //  _suppressed_carrier :   carrier suppression flag
-ampmodem ampmodem_create(float _m,
-                         float _fc,
+ampmodem ampmodem_create(float                _mod_index,
                          liquid_ampmodem_type _type,
-                         int _suppressed_carrier);
+                         int                  _suppressed_carrier);
 
 // destroy ampmodem object
-void ampmodem_destroy(ampmodem _fm);
+void ampmodem_destroy(ampmodem _q);
 
 // print ampmodem object internals
-void ampmodem_print(ampmodem _fm);
+void ampmodem_print(ampmodem _q);
 
 // reset ampmodem object state
-void ampmodem_reset(ampmodem _fm);
+void ampmodem_reset(ampmodem _q);
+
+// accessor methods
+unsigned int ampmodem_get_delay_mod  (ampmodem _q);
+unsigned int ampmodem_get_delay_demod(ampmodem _q);
 
 // modulate sample
-void ampmodem_modulate(ampmodem _fm,
-                       float _x,
-                       liquid_float_complex *_y);
+void ampmodem_modulate(ampmodem               _q,
+                       float                  _x,
+                       liquid_float_complex * _y);
 
-void ampmodem_modulate_block(ampmodem _q,
-                             float * _m,
-                             unsigned int _n,
-                             liquid_float_complex *_s);
+void ampmodem_modulate_block(ampmodem               _q,
+                             float *                _m,
+                             unsigned int           _n,
+                             liquid_float_complex * _s);
 
 // demodulate sample
-void ampmodem_demodulate(ampmodem _fm,
+void ampmodem_demodulate(ampmodem             _q,
                          liquid_float_complex _y,
-                         float *_x);
+                         float *              _x);
 
-void ampmodem_demodulate_block(ampmodem _q,
+void ampmodem_demodulate_block(ampmodem               _q,
                                liquid_float_complex * _r,
-                               unsigned int _n,
-                               float * _m);
+                               unsigned int           _n,
+                               float *                _m);
 
 //
 // MODULE : multichannel
@@ -7470,6 +7519,9 @@ void ofdmframesync_execute(ofdmframesync _q,
 // query methods
 float ofdmframesync_get_rssi(ofdmframesync _q); // received signal strength indication
 float ofdmframesync_get_cfo(ofdmframesync _q);  // carrier offset estimate
+
+// set methods
+void ofdmframesync_set_cfo(ofdmframesync _q, float _cfo);  // set carrier offset estimate
 
 // debugging
 void ofdmframesync_debug_enable(ofdmframesync _q);

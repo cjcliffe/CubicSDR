@@ -840,6 +840,7 @@ src/modem/src/modem_arb_const.o  : %.o : %.c $(include_headers)
 
 
 modem_autotests :=						\
+	src/modem/tests/ampmodem_autotest.c			\
 	src/modem/tests/cpfskmodem_autotest.c			\
 	src/modem/tests/freqmodem_autotest.c			\
 	src/modem/tests/fskmodem_autotest.c			\
@@ -1426,6 +1427,7 @@ example_programs :=						\
 	examples/firfarrow_rrrf_example				\
 	examples/firfilt_cccf_example				\
 	examples/firfilt_crcf_example				\
+	examples/firfilt_crcf_dcblocker_example			\
 	examples/firfilt_rrrf_example				\
 	examples/firdes_kaiser_example				\
 	examples/firdespm_callback_example			\
@@ -1555,6 +1557,10 @@ clean-examples:
 # NOTE: sandbox _requires_ fftw3 to build
 .PHONY: sandbox
 sandbox_programs =						\
+	sandbox/am_demod_dsb_peak_detect_test			\
+	sandbox/am_demod_dsb_pll_carrier_test			\
+	sandbox/am_demod_dsb_pll_costas_test			\
+	sandbox/am_demod_ssb_pll_carrier_test			\
 	sandbox/bpresync_test					\
 	sandbox/cpmodem_test					\
 	sandbox/count_ones_gentab				\
@@ -1599,6 +1605,7 @@ sandbox_programs =						\
 	sandbox/firdes_gmskrx_test				\
 	sandbox/firdes_length_test				\
 	sandbox/firfarrow_rrrf_test				\
+	sandbox/firfilt_dcblocker_test				\
 	sandbox/firpfbch_analysis_alignment_test		\
 	sandbox/firpfbch2_analysis_equivalence_test		\
 	sandbox/firpfbch2_test					\
