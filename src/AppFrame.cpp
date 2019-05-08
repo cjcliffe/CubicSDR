@@ -483,7 +483,7 @@ ModeSelectorCanvas *AppFrame::makeModemAdvSelectorPanel(wxPanel *parent, const w
 
 #ifdef USE_HAMLIB
 wxMenu *AppFrame::makeRigMenu() {
-    wxMenu *pMenu = new wxMenu;
+    auto *pMenu = new wxMenu;
 
     rigEnableMenuItem = pMenu->AppendCheckItem(wxID_RIG_TOGGLE, wxT("Enable Rig"));
 
@@ -501,20 +501,37 @@ wxMenu *AppFrame::makeRigMenu() {
     rigFollowModemMenuItem = pMenu->AppendCheckItem(wxID_RIG_FOLLOW_MODEM, wxT("Track Modem"));
     rigFollowModemMenuItem->Check(wxGetApp().getConfig()->getRigFollowModem());
 
-    wxMenu *rigModelMenu = new wxMenu;
+    auto *rigModelMenu = new wxMenu;
     RigList &rl = RigThread::enumerate();
-    numRigs = rl.size();
+
+    std::map<string, int> mfgCount;
+    std::map<string, wxMenu *> mfgMenu;
+    for (auto ri : rl) {
+        mfgCount[ri->mfg_name]++;
+    }
 
     int modelMenuId = wxID_RIG_MODEL_BASE;
-    for (auto ri = rl.begin(); ri != rl.end(); ri++) {
-        string modelString((*ri)->mfg_name);
+
+    for (auto ri : rl) {
+        string modelString(ri->mfg_name);
         modelString.append(" ");
-        modelString.append((*ri)->model_name);
+        modelString.append(ri->model_name);
 
-        rigModelMenuItems[(*ri)->rig_model] = rigModelMenu->AppendRadioItem(modelMenuId, modelString, wxT("Description?"));
+        wxMenu *parentMenu = nullptr;
 
-        if (rigModel == (*ri)->rig_model) {
-            rigModelMenuItems[(*ri)->rig_model]->Check(true);
+        if (mfgCount[ri->mfg_name] > 1) {
+            if (mfgMenu.find(ri->mfg_name) == mfgMenu.end()) {
+                rigModelMenu->AppendSubMenu(mfgMenu[ri->mfg_name] = new wxMenu(), ri->mfg_name);
+            }
+            parentMenu = mfgMenu[ri->mfg_name];
+        } else {
+            parentMenu = rigModelMenu;
+        }
+
+        rigModelMenuItems[ri->rig_model] = parentMenu->AppendCheckItem(modelMenuId, modelString, ri->copyright);
+
+        if (rigModel == ri->rig_model) {
+            rigModelMenuItems[ri->rig_model]->Check(true);
         }
 
         modelMenuId++;
@@ -522,7 +539,7 @@ wxMenu *AppFrame::makeRigMenu() {
 
     pMenu->AppendSubMenu(rigModelMenu, wxT("Model"));
 
-    wxMenu *rigSerialMenu = new wxMenu;
+    auto *rigSerialMenu = new wxMenu;
 
     rigSerialRates.push_back(1200);
     rigSerialRates.push_back(2400);
@@ -536,15 +553,15 @@ wxMenu *AppFrame::makeRigMenu() {
     rigSerialRates.push_back(256000);
 
     int rateMenuId = wxID_RIG_SERIAL_BASE;
-    for (auto rate_i = rigSerialRates.begin(); rate_i != rigSerialRates.end(); rate_i++) {
+    for (auto rate_i : rigSerialRates) {
         string rateString;
-        rateString.append(std::to_string((*rate_i)));
+        rateString.append(std::to_string(rate_i));
         rateString.append(" baud");
 
-        rigSerialMenuItems[(*rate_i)] = rigSerialMenu->AppendRadioItem(rateMenuId, rateString, wxT("Description?"));
+        rigSerialMenuItems[rate_i] = rigSerialMenu->AppendRadioItem(rateMenuId, rateString, wxT("Description?"));
 
-        if (rigSerialRate == (*rate_i)) {
-            rigSerialMenuItems[(*rate_i)]->Check(true);
+        if (rigSerialRate == rate_i) {
+            rigSerialMenuItems[rate_i]->Check(true);
         }
 
         rateMenuId++;
@@ -1822,12 +1839,16 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent &event) {
 
     bool resetRig = false;
     if (event.GetId() >= wxID_RIG_MODEL_BASE && event.GetId() < wxID_RIG_MODEL_BASE + numRigs) {
+
         int rigIdx = event.GetId() - wxID_RIG_MODEL_BASE;
+
         RigList &rl = RigThread::enumerate();
         rigModel = rl[rigIdx]->rig_model;
+
         if (devInfo != nullptr) {
             std::string deviceId = devInfo->getDeviceId();
             DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
+
             rigSDRIF = devConfig->getRigIF(rigModel);
             if (rigSDRIF) {
                 wxGetApp().lockFrequency(rigSDRIF);
@@ -1837,9 +1858,15 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent &event) {
         } else {
             wxGetApp().unlockFrequency();
         }
-        resetRig = true;
 
+        resetRig = true;
         bManaged = true;
+
+        for (auto ri : rigModelMenuItems) {
+            ri.second->Check(false);
+        }
+
+        rigModelMenuItems[rigModel]->Check(true);
     }
 
     int rigSerialIdMax = wxID_RIG_SERIAL_BASE + rigSerialRates.size();
