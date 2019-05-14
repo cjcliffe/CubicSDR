@@ -200,6 +200,8 @@ public:
 
 CubicSDR::CubicSDR() : frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE), agcMode(false)
 {
+        config.load();
+
         sampleRateInitialized.store(false);
         agcMode.store(true);
         soloMode.store(false);
@@ -550,8 +552,6 @@ bool CubicSDR::OnCmdLineParsed(wxCmdLineParser& parser) {
             config.setConfigName(confName->ToStdString());
         }
     }
-    
-    config.load();
 
 #ifdef BUNDLE_SOAPY_MODS
     if (parser.Found("b")) {
