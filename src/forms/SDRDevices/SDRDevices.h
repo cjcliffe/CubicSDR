@@ -13,7 +13,7 @@
 
 class SDRDevicesDialog: public devFrame {
 public:
-    SDRDevicesDialog( wxWindow* parent );
+    SDRDevicesDialog( wxWindow* parent, const wxPoint &wxPos = wxDefaultPosition);
     
     void OnClose( wxCloseEvent& event );
     void OnDeleteItem( wxTreeEvent& event );

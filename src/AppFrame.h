@@ -296,6 +296,7 @@ private:
 
     std::map<int, wxMenuItem *> rigSerialMenuItems;
     std::map<int, wxMenuItem *> rigModelMenuItems;
+    wxMenu *rigModelMenu;
     int rigModel;
     int rigSerialRate;
     long long rigSDRIF;

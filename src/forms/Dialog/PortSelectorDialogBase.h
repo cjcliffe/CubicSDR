@@ -43,6 +43,7 @@ class PortSelectorDialogBase : public wxDialog
 		wxButton* m_okButton;
 
 		// Virtual event handlers, overide them in your derived class
+		virtual void onClose( wxCloseEvent& event ) { event.Skip(); }
 		virtual void onListSelect( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onCancelButton( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onOKButton( wxCommandEvent& event ) { event.Skip(); }

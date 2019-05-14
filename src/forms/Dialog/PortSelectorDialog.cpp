@@ -7,13 +7,20 @@ PortSelectorDialog::PortSelectorDialog( wxWindow* parent, wxWindowID id, std::st
     comEnumerate();
     
     int nPorts = comGetNoPorts();
-    
+
+    if (!defaultPort.empty()) {
+        m_portList->Append(defaultPort);
+    }
+
     for (int i = 0; i < nPorts; i++) {
 #ifdef WIN32
-        m_portList->Append(comGetPortName(i));
+        string portName(comGetPortName(i));
 #else
-        m_portList->Append(comGetInternalName(i));
+        string portName(comGetInternalName(i));
 #endif
+        if (portName != defaultPort) {
+            m_portList->Append(portName);
+        }
     }
     
     comTerminate();
@@ -36,4 +43,9 @@ void PortSelectorDialog::onCancelButton( wxCommandEvent& /* event */ ) {
 
 void PortSelectorDialog::onOKButton( wxCommandEvent& /* event */ ) {
     wxGetApp().getAppFrame()->setRigControlPort(m_portSelection->GetValue().ToStdString());
+}
+
+
+void PortSelectorDialog::onClose(wxCloseEvent & /* event */) {
+    wxGetApp().getAppFrame()->dismissRigControlPortDialog();
 }

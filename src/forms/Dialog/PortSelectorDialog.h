@@ -8,4 +8,5 @@ protected:
     void onListSelect( wxCommandEvent& event );
     void onCancelButton( wxCommandEvent& event );
     void onOKButton( wxCommandEvent& event );
+    void onClose( wxCloseEvent& event );
 };

@@ -25,7 +25,7 @@
 #define BOOKMARK_VIEW_STR_RENAME_GROUP "Rename Group"
 
 
-BookmarkViewVisualDragItem::BookmarkViewVisualDragItem(wxString labelValue) : wxDialog(NULL, wxID_ANY, L"", wxPoint(20,20), wxSize(-1,-1), wxSTAY_ON_TOP | wxALL ) {
+BookmarkViewVisualDragItem::BookmarkViewVisualDragItem(wxString labelValue) : wxDialog(NULL, wxID_ANY, L"", wxPoint(20,20), wxSize(-1,-1), wxFRAME_TOOL_WINDOW | wxNO_BORDER | wxSTAY_ON_TOP | wxALL ) {
     
     wxBoxSizer *sizer = new wxBoxSizer(wxVERTICAL);
     wxStaticText *label = new wxStaticText( this, wxID_ANY, labelValue, wxDefaultPosition, wxDefaultSize, wxEXPAND );
@@ -403,7 +403,6 @@ void BookmarkView::doUpdateActiveList() {
         
         if (nextDemod != nullptr && nextDemod == demod_i) {
             selItem = itm;
-            wxGetApp().getDemodMgr().setActiveDemodulator(nextDemod, false);
             nextDemod = nullptr;
         } else if (!selItem && activeExpandState && lastActiveDemodulator && lastActiveDemodulator == demod_i) {
             selItem = itm;
@@ -528,6 +527,7 @@ void BookmarkView::onTreeActivate( wxTreeEvent& event ) {
             if (!tvi->demod->isActive()) {                
                 wxGetApp().setFrequency(tvi->demod->getFrequency());
                 nextDemod = tvi->demod;
+                wxGetApp().getDemodMgr().setActiveDemodulator(nextDemod, false);
             }
         } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
              
@@ -659,13 +659,15 @@ void BookmarkView::hideProps() {
     
     m_labelText->Hide();
     m_labelLabel->Hide();
-    
+
+    m_propPanelDivider->Hide();
     m_propPanel->Hide();
     m_buttonPanel->Hide();
 }
 
 
 void BookmarkView::showProps() {
+    m_propPanelDivider->Show();
     m_propPanel->Show();
     m_propPanel->GetSizer()->Layout();
 }
@@ -886,8 +888,9 @@ void BookmarkView::activateBookmark(BookmarkEntryPtr bmEnt) {
 	}
 
 	nextDemod = matchingDemod;
-  
-	wxGetApp().getBookmarkMgr().updateActiveList();
+    wxGetApp().getDemodMgr().setActiveDemodulator(nextDemod, false);
+
+    //wxGetApp().getBookmarkMgr().updateActiveList();
 }
 
 
@@ -1504,7 +1507,7 @@ void BookmarkView::onMotion( wxMouseEvent& event ) {
 
     wxPoint pos = ClientToScreen(event.GetPosition());
     
-    pos += wxPoint(30,-10);
+    pos += wxPoint(15,-5);
     
     if (visualDragItem != nullptr) {
         visualDragItem->SetPosition(pos);
