@@ -501,8 +501,9 @@ wxMenu *AppFrame::makeRigMenu() {
     rigFollowModemMenuItem = pMenu->AppendCheckItem(wxID_RIG_FOLLOW_MODEM, wxT("Track Modem"));
     rigFollowModemMenuItem->Check(wxGetApp().getConfig()->getRigFollowModem());
 
-    auto *rigModelMenu = new wxMenu;
+    rigModelMenu = new wxMenu;
     RigList &rl = RigThread::enumerate();
+    numRigs = rl.size();
 
     std::map<string, int> mfgCount;
     std::map<string, wxMenu *> mfgMenu;
@@ -1863,7 +1864,9 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent &event) {
         bManaged = true;
 
         for (auto ri : rigModelMenuItems) {
-            ri.second->Check(false);
+            if (ri.second->IsChecked()) {
+                ri.second->Check(false);
+            }
         }
 
         rigModelMenuItems[rigModel]->Check(true);

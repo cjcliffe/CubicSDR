@@ -59,6 +59,7 @@ PortSelectorDialogBase::PortSelectorDialogBase( wxWindow* parent, wxWindowID id,
 	this->Centre( wxBOTH );
 
 	// Connect Events
+	this->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( PortSelectorDialogBase::onClose ) );
 	m_portList->Connect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( PortSelectorDialogBase::onListSelect ), NULL, this );
 	m_cancelButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( PortSelectorDialogBase::onCancelButton ), NULL, this );
 	m_okButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( PortSelectorDialogBase::onOKButton ), NULL, this );
@@ -67,6 +68,7 @@ PortSelectorDialogBase::PortSelectorDialogBase( wxWindow* parent, wxWindowID id,
 PortSelectorDialogBase::~PortSelectorDialogBase()
 {
 	// Disconnect Events
+	this->Disconnect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( PortSelectorDialogBase::onClose ) );
 	m_portList->Disconnect( wxEVT_COMMAND_LISTBOX_SELECTED, wxCommandEventHandler( PortSelectorDialogBase::onListSelect ), NULL, this );
 	m_cancelButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( PortSelectorDialogBase::onCancelButton ), NULL, this );
 	m_okButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( PortSelectorDialogBase::onOKButton ), NULL, this );

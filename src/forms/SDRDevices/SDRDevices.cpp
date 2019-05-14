@@ -14,7 +14,7 @@
 #include "CubicSDR.xpm"
 #endif
 
-SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent ): devFrame( parent, wxID_ANY, wxT(CUBICSDR_INSTALL_NAME " :: SDR Devices")) {
+SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent, const wxPoint &pos): devFrame( parent, wxID_ANY, wxT(CUBICSDR_INSTALL_NAME " :: SDR Devices"), pos) {
     refresh = true;
     failed = false;
     m_refreshButton->Disable();

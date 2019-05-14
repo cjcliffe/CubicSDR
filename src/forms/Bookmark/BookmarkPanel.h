@@ -1,12 +1,11 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Aug  8 2018)
+// C++ code generated with wxFormBuilder (version Oct 26 2018)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
 
-#ifndef __BOOKMARKPANEL_H__
-#define __BOOKMARKPANEL_H__
+#pragma once
 
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
@@ -21,6 +20,7 @@
 #include <wx/icon.h>
 #include <wx/button.h>
 #include <wx/treectrl.h>
+#include <wx/statline.h>
 #include <wx/stattext.h>
 #include <wx/sizer.h>
 #include <wx/panel.h>
@@ -32,14 +32,15 @@
 ///////////////////////////////////////////////////////////////////////////////
 /// Class BookmarkPanel
 ///////////////////////////////////////////////////////////////////////////////
-class BookmarkPanel : public wxPanel 
+class BookmarkPanel : public wxPanel
 {
 	private:
-	
+
 	protected:
 		wxTextCtrl* m_searchText;
 		wxButton* m_clearSearchButton;
 		wxTreeCtrl* m_treeView;
+		wxStaticLine* m_propPanelDivider;
 		wxPanel* m_propPanel;
 		wxStaticText* m_labelLabel;
 		wxTextCtrl* m_labelText;
@@ -51,7 +52,7 @@ class BookmarkPanel : public wxPanel
 		wxStaticText* m_modulationVal;
 		wxPanel* m_buttonPanel;
 		wxTimer m_updateTimer;
-		
+
 		// Virtual event handlers, overide them in your derived class
 		virtual void onEnterWindow( wxMouseEvent& event ) { event.Skip(); }
 		virtual void onLeaveWindow( wxMouseEvent& event ) { event.Skip(); }
@@ -72,13 +73,12 @@ class BookmarkPanel : public wxPanel
 		virtual void onDoubleClickFreq( wxMouseEvent& event ) { event.Skip(); }
 		virtual void onDoubleClickBandwidth( wxMouseEvent& event ) { event.Skip(); }
 		virtual void onUpdateTimer( wxTimerEvent& event ) { event.Skip(); }
-		
-	
+
+
 	public:
-		
-		BookmarkPanel( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 169,471 ), long style = wxTAB_TRAVERSAL, const wxString& name = wxEmptyString ); 
+
+		BookmarkPanel( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 169,471 ), long style = wxTAB_TRAVERSAL, const wxString& name = wxEmptyString );
 		~BookmarkPanel();
-	
+
 };
 
-#endif //__BOOKMARKPANEL_H__
