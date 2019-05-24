@@ -128,7 +128,7 @@ void WaterfallCanvas::processInputQueue() {
 
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     std::lock_guard < std::mutex > lock(tex_update);
-    wxPaintDC dc(this);
+//    wxPaintDC dc(this);
     
     const wxSize ClientSize = GetClientSize();
     long double currentZoom = zoom;

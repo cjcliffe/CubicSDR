@@ -197,8 +197,7 @@ private:
 	/**
 	 * Keyboard handlers
 	 */
-	void gkNudgeLeft(DemodulatorInstancePtr demod, int snap);
-	void gkNudgeRight(DemodulatorInstancePtr demod, int snap);
+	void gkNudge(DemodulatorInstancePtr demod, int snap);
 
 	void toggleActiveDemodRecording();
 	void toggleAllActiveDemodRecording();
