@@ -517,29 +517,73 @@ void BookmarkView::doUpdateActiveList() {
 }
 
 
+void BookmarkView::onKeyUp( wxKeyEvent& event ) {
+    // Check for active selection
+    wxTreeItemId itm = m_treeView->GetSelection();
+
+    if (itm == nullptr) {
+        event.Skip();
+        return;
+    }
+
+    // Create event to pass to appropriate function
+    wxTreeEvent treeEvent;
+    treeEvent.SetItem(itm);
+
+    // Pull TreeViewItem data
+    auto tvi = dynamic_cast<TreeViewItem*>(m_treeView->GetItemData(itm));
+
+    // Not selected?
+    if (tvi == nullptr) {
+        event.Skip();
+        return;
+    }
+
+    // Handlers
+    if (event.m_keyCode == WXK_DELETE || event.m_keyCode == WXK_NUMPAD_DELETE) {
+        if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
+            onRemoveActive(treeEvent);
+        } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
+            onRemoveRecent(treeEvent);
+        } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK) {
+            onRemoveBookmark(treeEvent);
+        } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RANGE) {
+            onRemoveRange(treeEvent);
+        } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_GROUP) {
+            onRemoveGroup(treeEvent);
+        }
+
+        // TODO: keys for other actions?
+    }
+}
+
+
 void BookmarkView::onTreeActivate( wxTreeEvent& event ) {
 
     wxTreeItemId itm = event.GetItem();
     TreeViewItem* tvi = dynamic_cast<TreeViewItem*>(m_treeView->GetItemData(itm));
 
-    if (tvi) {
-        if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
-            if (!tvi->demod->isActive()) {                
-                wxGetApp().setFrequency(tvi->demod->getFrequency());
-                nextDemod = tvi->demod;
-                wxGetApp().getDemodMgr().setActiveDemodulator(nextDemod, false);
-            }
-        } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
-             
-            nextEnt = tvi->bookmarkEnt;
-            wxGetApp().getBookmarkMgr().removeRecent(tvi->bookmarkEnt);
+    if (tvi == nullptr) {
+        event.Skip();
+        return;
+    }
 
-            activateBookmark(tvi->bookmarkEnt);
-        } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK) {
-            activateBookmark(tvi->bookmarkEnt);
-        } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RANGE) {
-            activateRange(tvi->rangeEnt);
+    if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
+        if (!tvi->demod->isActive()) {
+            wxGetApp().setFrequency(tvi->demod->getFrequency());
+            nextDemod = tvi->demod;
+            wxGetApp().getDemodMgr().setActiveDemodulator(nextDemod, false);
         }
+    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
+
+        nextEnt = tvi->bookmarkEnt;
+        wxGetApp().getBookmarkMgr().removeRecent(tvi->bookmarkEnt);
+
+        activateBookmark(tvi->bookmarkEnt);
+    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK) {
+        activateBookmark(tvi->bookmarkEnt);
+    } else if (tvi->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RANGE) {
+        activateRange(tvi->rangeEnt);
     }
 }
 
@@ -647,7 +691,19 @@ void BookmarkView::setExpandState(std::string branchName, bool state) {
 }
 
 
-void BookmarkView::hideProps() {
+void BookmarkView::ensureSelectionInView() {
+    // Ensure current selection is visible; useful when a layout action
+    // may have covered the active selection
+
+    auto sel = m_treeView->GetSelection();
+    if (sel != nullptr) {
+        if (!m_treeView->IsVisible(sel)) {
+            m_treeView->EnsureVisible(sel);
+        }
+    }
+}
+
+void BookmarkView::hideProps(bool hidePanel) {
     m_frequencyLabel->Hide();
     m_frequencyVal->Hide();
     
@@ -660,9 +716,13 @@ void BookmarkView::hideProps() {
     m_labelText->Hide();
     m_labelLabel->Hide();
 
-    m_propPanelDivider->Hide();
-    m_propPanel->Hide();
-    m_buttonPanel->Hide();
+    if (hidePanel) {
+        m_propPanelDivider->Hide();
+        m_propPanel->Hide();
+        m_buttonPanel->Hide();
+    }
+
+    refreshLayout();
 }
 
 
@@ -670,6 +730,9 @@ void BookmarkView::showProps() {
     m_propPanelDivider->Show();
     m_propPanel->Show();
     m_propPanel->GetSizer()->Layout();
+
+    refreshLayout();
+    ensureSelectionInView();
 }
 
 
@@ -677,11 +740,16 @@ void BookmarkView::clearButtons() {
     m_buttonPanel->Hide();
     m_buttonPanel->DestroyChildren();
     bookmarkChoice = nullptr;
+
+    refreshLayout();
 }
 
 void BookmarkView::showButtons() {
     m_buttonPanel->Show();
     m_buttonPanel->GetSizer()->Layout();
+
+    refreshLayout();
+    ensureSelectionInView();
 }
 
 void BookmarkView::refreshLayout() {
@@ -821,8 +889,8 @@ void BookmarkView::activeSelection(DemodulatorInstancePtr dsel) {
     m_modulationVal->SetLabelText(dsel->getDemodulatorType());
     m_labelText->SetValue(dsel->getDemodulatorUserLabel());
     
-    hideProps();
-    
+    hideProps(false);
+
     m_frequencyVal->Show();
     m_frequencyLabel->Show();
     
@@ -911,7 +979,7 @@ void BookmarkView::bookmarkSelection(BookmarkEntryPtr bmSel) {
     m_modulationVal->SetLabelText(bmSel->type);
     m_labelText->SetValue(bmSel->label);
     
-    hideProps();
+    hideProps(false);
     
     m_frequencyVal->Show();
     m_frequencyLabel->Show();
@@ -944,8 +1012,8 @@ void BookmarkView::recentSelection(BookmarkEntryPtr bmSel) {
     m_modulationVal->SetLabelText(bmSel->type);
     m_labelText->SetValue(bmSel->label);
     
-    hideProps();
-    
+    hideProps(false);
+
     m_frequencyVal->Show();
     m_frequencyLabel->Show();
     
@@ -973,8 +1041,8 @@ void BookmarkView::groupSelection(std::string groupName) {
     
     clearButtons();
     
-    hideProps();
-    
+    hideProps(false);
+
     m_labelText->SetValue(groupName);
     
     m_labelText->Show();
@@ -993,8 +1061,8 @@ void BookmarkView::rangeSelection(BookmarkRangeEntryPtr re) {
     
     clearButtons();
     
-    hideProps();
-    
+    hideProps(false);
+
     m_labelText->SetValue(re->label);
     
     m_labelText->Show();
@@ -1022,7 +1090,7 @@ void BookmarkView::bookmarkBranchSelection() {
     
     clearButtons();
     hideProps();
-    
+
     addButton(m_buttonPanel, BOOKMARK_VIEW_STR_ADD_GROUP, wxCommandEventHandler( BookmarkView::onAddGroup ));
     
     showButtons();
@@ -1032,8 +1100,8 @@ void BookmarkView::bookmarkBranchSelection() {
 
 void BookmarkView::recentBranchSelection() {
     clearButtons();
-    hideProps();
-    
+    hideProps(false);
+
     addButton(m_buttonPanel, BOOKMARK_VIEW_STR_CLEAR_RECENT, wxCommandEventHandler( BookmarkView::onClearRecents ));
     
     showButtons();
@@ -1045,8 +1113,8 @@ void BookmarkView::recentBranchSelection() {
 
 void BookmarkView::rangeBranchSelection() {
     clearButtons();
-    hideProps();
-    
+    hideProps(false);
+
     m_labelText->SetValue(wxT(""));
     m_labelText->Show();
     m_labelLabel->Show();

@@ -27,7 +27,7 @@
         <property name="ui_table">UI</property>
         <property name="use_enum">0</property>
         <property name="use_microsoft_bom">0</property>
-        <object class="Panel" expanded="1">
+        <object class="Panel" expanded="0">
             <property name="aui_managed">0</property>
             <property name="aui_manager_style">wxAUI_MGR_DEFAULT</property>
             <property name="bg"></property>
@@ -52,16 +52,16 @@
             <event name="OnEnterWindow">onEnterWindow</event>
             <event name="OnLeaveWindow">onLeaveWindow</event>
             <event name="OnMotion">onMotion</event>
-            <object class="wxBoxSizer" expanded="1">
+            <object class="wxBoxSizer" expanded="0">
                 <property name="minimum_size"></property>
                 <property name="name">bSizer1</property>
                 <property name="orient">wxVERTICAL</property>
                 <property name="permission">none</property>
-                <object class="sizeritem" expanded="1">
+                <object class="sizeritem" expanded="0">
                     <property name="border">5</property>
                     <property name="flag">wxALL|wxEXPAND</property>
                     <property name="proportion">0</property>
-                    <object class="wxTextCtrl" expanded="1">
+                    <object class="wxTextCtrl" expanded="0">
                         <property name="BottomDockable">1</property>
                         <property name="LeftDockable">1</property>
                         <property name="RightDockable">1</property>
@@ -123,11 +123,11 @@
                         <event name="OnText">onSearchText</event>
                     </object>
                 </object>
-                <object class="sizeritem" expanded="1">
+                <object class="sizeritem" expanded="0">
                     <property name="border">5</property>
                     <property name="flag">wxALL|wxEXPAND</property>
                     <property name="proportion">0</property>
-                    <object class="wxButton" expanded="1">
+                    <object class="wxButton" expanded="0">
                         <property name="BottomDockable">1</property>
                         <property name="LeftDockable">1</property>
                         <property name="RightDockable">1</property>
@@ -196,11 +196,11 @@
                         <event name="OnButtonClick">onClearSearch</event>
                     </object>
                 </object>
-                <object class="sizeritem" expanded="1">
+                <object class="sizeritem" expanded="0">
                     <property name="border">5</property>
                     <property name="flag">wxEXPAND</property>
                     <property name="proportion">1</property>
-                    <object class="wxTreeCtrl" expanded="1">
+                    <object class="wxTreeCtrl" expanded="0">
                         <property name="BottomDockable">1</property>
                         <property name="LeftDockable">1</property>
                         <property name="RightDockable">1</property>
@@ -253,6 +253,7 @@
                         <property name="window_name"></property>
                         <property name="window_style"></property>
                         <event name="OnEnterWindow">onEnterWindow</event>
+                        <event name="OnKeyUp">onKeyUp</event>
                         <event name="OnLeaveWindow">onLeaveWindow</event>
                         <event name="OnMotion">onMotion</event>
                         <event name="OnTreeBeginDrag">onTreeBeginDrag</event>
@@ -266,11 +267,11 @@
                         <event name="OnTreeSelChanging">onTreeSelectChanging</event>
                     </object>
                 </object>
-                <object class="sizeritem" expanded="1">
+                <object class="sizeritem" expanded="0">
                     <property name="border">5</property>
                     <property name="flag">wxEXPAND</property>
                     <property name="proportion">0</property>
-                    <object class="wxStaticLine" expanded="1">
+                    <object class="wxStaticLine" expanded="0">
                         <property name="BottomDockable">1</property>
                         <property name="LeftDockable">1</property>
                         <property name="RightDockable">1</property>
@@ -324,11 +325,11 @@
                         <property name="window_style"></property>
                     </object>
                 </object>
-                <object class="sizeritem" expanded="1">
+                <object class="sizeritem" expanded="0">
                     <property name="border">5</property>
                     <property name="flag">wxALL|wxEXPAND</property>
                     <property name="proportion">0</property>
-                    <object class="wxPanel" expanded="1">
+                    <object class="wxPanel" expanded="0">
                         <property name="BottomDockable">1</property>
                         <property name="LeftDockable">1</property>
                         <property name="RightDockable">1</property>
@@ -888,11 +889,11 @@
                         </object>
                     </object>
                 </object>
-                <object class="sizeritem" expanded="1">
+                <object class="sizeritem" expanded="0">
                     <property name="border">5</property>
                     <property name="flag">wxALL|wxEXPAND</property>
                     <property name="proportion">0</property>
-                    <object class="wxPanel" expanded="1">
+                    <object class="wxPanel" expanded="0">
                         <property name="BottomDockable">1</property>
                         <property name="LeftDockable">1</property>
                         <property name="RightDockable">1</property>
@@ -952,7 +953,7 @@
                     </object>
                 </object>
             </object>
-            <object class="wxTimer" expanded="1">
+            <object class="wxTimer" expanded="0">
                 <property name="enabled">0</property>
                 <property name="id">wxID_ANY</property>
                 <property name="name">m_updateTimer</property>

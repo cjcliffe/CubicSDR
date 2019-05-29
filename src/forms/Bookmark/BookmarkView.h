@@ -96,8 +96,9 @@ protected:
     void recentBranchSelection();
     void rangeBranchSelection();
     void activeBranchSelection();
-    
-    void hideProps();
+
+    void ensureSelectionInView();
+    void hideProps(bool hidePanel = true);
     void showProps();
     
     void onUpdateTimer( wxTimerEvent& event );
@@ -105,6 +106,7 @@ protected:
     //refresh / rebuild the whole tree item immediatly
     void doUpdateActiveList();
 
+    void onKeyUp( wxKeyEvent& event );
     void onTreeActivate( wxTreeEvent& event );
     void onTreeCollapse( wxTreeEvent& event );
     void onTreeExpanded( wxTreeEvent& event );
