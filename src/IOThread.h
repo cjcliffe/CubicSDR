@@ -17,7 +17,7 @@
 #include "Timer.h"
 #include "SpinMutex.h"
 
-struct map_string_less : public std::binary_function<std::string,std::string,bool>
+struct map_string_less
 {
     bool operator()(const std::string& a,const std::string& b) const
     {

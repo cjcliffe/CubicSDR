@@ -389,7 +389,7 @@ BookmarkList BookmarkMgr::getBookmarks(std::string group) {
     }
     
     if (!bmDataSorted[group]) {
-        std::sort(bmData[group].begin(), bmData[group].end(), BookmarkEntryCompare());
+		std::sort(bmData[group].begin(), bmData[group].end(), [](const BookmarkEntryPtr a, const BookmarkEntryPtr b) -> bool { return a->frequency < b->frequency;});
         bmDataSorted[group] = true;
     }
     
@@ -538,7 +538,7 @@ BookmarkRangeList BookmarkMgr::getRanges() {
     std::lock_guard < std::recursive_mutex > lock(busy_lock);
 
     if (!rangesSorted) {
-        std::sort(ranges.begin(), ranges.end(), BookmarkRangeEntryCompare());
+        std::sort(ranges.begin(), ranges.end(), [](const BookmarkRangeEntryPtr a, const BookmarkRangeEntryPtr b) -> bool { return a->freq < b->freq;});
         rangesSorted = true;
     }
     

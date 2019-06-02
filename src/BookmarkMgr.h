@@ -48,23 +48,6 @@ public:
 typedef std::shared_ptr<BookmarkEntry> BookmarkEntryPtr;
 typedef std::shared_ptr<BookmarkRangeEntry> BookmarkRangeEntryPtr;
 
-struct BookmarkEntryCompare : public std::binary_function<BookmarkEntryPtr,BookmarkEntryPtr,bool>
-{
-    bool operator()(const BookmarkEntryPtr a, BookmarkEntryPtr b) const
-    {
-        return a->frequency < b->frequency;
-    }
-};
-
-
-struct BookmarkRangeEntryCompare : public std::binary_function<BookmarkRangeEntryPtr ,BookmarkRangeEntryPtr ,bool>
-{
-    bool operator()(const BookmarkRangeEntryPtr a, BookmarkRangeEntryPtr b) const
-    {
-        return a->freq < b->freq;
-    }
-};
-
 typedef std::vector<BookmarkEntryPtr> BookmarkList;
 typedef std::vector<BookmarkRangeEntryPtr> BookmarkRangeList;
 typedef std::map<std::string, BookmarkList > BookmarkMap;

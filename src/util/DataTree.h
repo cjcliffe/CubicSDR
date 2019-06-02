@@ -37,7 +37,7 @@ using namespace std;
 
 
 /* map comparison function */
-struct string_less : public std::binary_function<std::string,std::string,bool>
+struct string_less
 {
  bool operator()(const std::string& a,const std::string& b) const
  {
@@ -45,14 +45,6 @@ struct string_less : public std::binary_function<std::string,std::string,bool>
  }
 };
 
-/* int comparison function */
-struct int_less : public std::binary_function<int,int,bool>
-{
- bool operator()(int a,int b) const
- {
-        return a < b;
- }
-};
 
 
 /* Data Exceptions */
