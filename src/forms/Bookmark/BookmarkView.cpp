@@ -721,18 +721,12 @@ void BookmarkView::hideProps(bool hidePanel) {
         m_propPanel->Hide();
         m_buttonPanel->Hide();
     }
-
-    refreshLayout();
 }
 
 
 void BookmarkView::showProps() {
     m_propPanelDivider->Show();
     m_propPanel->Show();
-    m_propPanel->GetSizer()->Layout();
-
-    refreshLayout();
-    ensureSelectionInView();
 }
 
 
@@ -740,22 +734,15 @@ void BookmarkView::clearButtons() {
     m_buttonPanel->Hide();
     m_buttonPanel->DestroyChildren();
     bookmarkChoice = nullptr;
-
-    refreshLayout();
 }
 
 void BookmarkView::showButtons() {
     m_buttonPanel->Show();
-    m_buttonPanel->GetSizer()->Layout();
-
-    refreshLayout();
-    ensureSelectionInView();
 }
 
 void BookmarkView::refreshLayout() {
     GetSizer()->Layout();
-    Update();
-    Refresh();
+    ensureSelectionInView();
 }
 
 
@@ -878,8 +865,6 @@ void BookmarkView::activeSelection(DemodulatorInstancePtr dsel) {
     if (dsel == nullptr) {
         hideProps();
         clearButtons();
-        showProps();
-        showButtons();
         refreshLayout();
         return;
     }
@@ -1060,7 +1045,6 @@ void BookmarkView::groupSelection(std::string groupName) {
 void BookmarkView::rangeSelection(BookmarkRangeEntryPtr re) {
     
     clearButtons();
-    
     hideProps(false);
 
     m_labelText->SetValue(re->label);
@@ -1100,14 +1084,12 @@ void BookmarkView::bookmarkBranchSelection() {
 
 void BookmarkView::recentBranchSelection() {
     clearButtons();
-    hideProps(false);
+    hideProps();
 
     addButton(m_buttonPanel, BOOKMARK_VIEW_STR_CLEAR_RECENT, wxCommandEventHandler( BookmarkView::onClearRecents ));
     
     showButtons();
     refreshLayout();
-
-    this->Layout();
 }
 
 
@@ -1125,14 +1107,12 @@ void BookmarkView::rangeBranchSelection() {
     
     showButtons();
     refreshLayout();
-    
-    this->Layout();
 }
 
 
 void BookmarkView::activeBranchSelection() {
     hideProps();
-    this->Layout();
+    refreshLayout();
 }
 
 
@@ -1157,7 +1137,7 @@ void BookmarkView::onTreeSelect( wxTreeEvent& event ) {
             rangeBranchSelection();
         } else {
             hideProps();
-            this->Layout();
+            refreshLayout();
         }
         
         return;
@@ -1180,7 +1160,7 @@ void BookmarkView::onTreeSelect( wxTreeEvent& event ) {
         rangeSelection(tvi->rangeEnt);
     } else {
         hideProps();
-        this->Layout();
+        refreshLayout();
     }
 }
 
