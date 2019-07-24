@@ -84,7 +84,7 @@ void TuningCanvas::setHalfBand(bool hb) {
 }
 
 void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
-    wxPaintDC dc(this);
+ //   wxPaintDC dc(this);
     const wxSize ClientSize = GetClientSize();
     
     glContext->SetCurrent(*this);

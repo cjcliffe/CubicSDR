@@ -97,7 +97,7 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
             }
         }
 
-        if (targetMode == FDIALOG_TARGET_DEFAULT) {
+        if (targetMode == FDIALOG_TARGET_DEFAULT || targetMode == FDIALOG_TARGET_FREQ) {
             if (ranged) {
                 freq = strToFrequency(strValue);
                 freq2 = strToFrequency(strValue2);
@@ -105,10 +105,16 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
                 freq = strToFrequency(strValue);
             }
             if (activeDemod) {
-                activeDemod->setTracking(true);
-                activeDemod->setFollow(true);
                 activeDemod->setFrequency(freq);
                 activeDemod->updateLabel(freq);
+
+                freq_ctr = wxGetApp().getFrequency();
+                range_bw = wxGetApp().getSampleRate();
+
+                if (freq_ctr - (range_bw / 2) > freq || freq_ctr + (range_bw / 2) < freq) {
+                    wxGetApp().setFrequency(freq);
+                }
+
             } else {
                 if (ranged && (freq || freq2)) {
                     if (freq > freq2) {

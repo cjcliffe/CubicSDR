@@ -2769,15 +2769,19 @@ FrequencyDialog::FrequencyDialogTarget AppFrame::getFrequencyDialogTarget() {
     return target;
 }
 
-void AppFrame::gkNudgeLeft(DemodulatorInstancePtr demod, int snap) {
+void AppFrame::gkNudge(DemodulatorInstancePtr demod, int snap) {
     if (demod) {
-        demod->setFrequency(demod->getFrequency()-snap);
-        demod->updateLabel(demod->getFrequency());
-    }
-}
+        auto demodFreq = demod->getFrequency()+snap;
+        auto demodBw = demod->getBandwidth();
 
-void AppFrame::gkNudgeRight(DemodulatorInstancePtr demod, int snap) {
-    if (demod) {
+        auto ctr = wxGetApp().getFrequency();
+        auto bw = wxGetApp().getSampleRate();
+
+        // Don't let it get nudged out of view.
+        if (ctr - (bw / 2) > (demodFreq - demodBw / 2) || ctr + (bw / 2) < (demodFreq + demodBw / 2)) {
+            wxGetApp().setFrequency(ctr+(snap*2));
+        }
+
         demod->setFrequency(demod->getFrequency()+snap);
         demod->updateLabel(demod->getFrequency());
     }
@@ -2821,10 +2825,10 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     #ifdef wxHAS_RAW_KEY_CODES
     switch (event.GetRawKeyCode()) {
         case 30:
-            gkNudgeRight(lastDemod, snap);
+            gkNudge(lastDemod, snap);
             return 1;
         case 33:
-            gkNudgeLeft(lastDemod, snap);
+            gkNudge(lastDemod, -snap);
             return 1;
     }
     #endif
@@ -2844,10 +2848,10 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case 'V':
             return 1;
         case ']':
-            gkNudgeRight(lastDemod, snap);
+            gkNudge(lastDemod, snap);
             return 1;
         case '[':
-            gkNudgeLeft(lastDemod, snap);
+            gkNudge(lastDemod, -snap);
             return 1;
         case 'A':
         case 'F':
@@ -2857,6 +2861,18 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case 'P':
         case 'M':
         case 'R':
+            return 1;
+        case WXK_NUMPAD0:
+        case WXK_NUMPAD1:
+        case WXK_NUMPAD2:
+        case WXK_NUMPAD3:
+        case WXK_NUMPAD4:
+        case WXK_NUMPAD5:
+        case WXK_NUMPAD6:
+        case WXK_NUMPAD7:
+        case WXK_NUMPAD8:
+        case WXK_NUMPAD9:
+            wxGetApp().showFrequencyInput(getFrequencyDialogTarget(), std::to_string(event.GetKeyCode() - WXK_NUMPAD0));
             return 1;
         case '0':
         case '1':

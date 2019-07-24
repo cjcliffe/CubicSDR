@@ -60,6 +60,7 @@ class BookmarkPanel : public wxPanel
 		virtual void onSearchTextFocus( wxMouseEvent& event ) { event.Skip(); }
 		virtual void onSearchText( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onClearSearch( wxCommandEvent& event ) { event.Skip(); }
+		virtual void onKeyUp( wxKeyEvent& event ) { event.Skip(); }
 		virtual void onTreeBeginDrag( wxTreeEvent& event ) { event.Skip(); }
 		virtual void onTreeEndDrag( wxTreeEvent& event ) { event.Skip(); }
 		virtual void onTreeActivate( wxTreeEvent& event ) { event.Skip(); }

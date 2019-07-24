@@ -93,6 +93,7 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	m_searchText->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( BookmarkPanel::onSearchText ), NULL, this );
 	m_clearSearchButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onClearSearch ), NULL, this );
 	m_treeView->Connect( wxEVT_ENTER_WINDOW, wxMouseEventHandler( BookmarkPanel::onEnterWindow ), NULL, this );
+	m_treeView->Connect( wxEVT_KEY_UP, wxKeyEventHandler( BookmarkPanel::onKeyUp ), NULL, this );
 	m_treeView->Connect( wxEVT_LEAVE_WINDOW, wxMouseEventHandler( BookmarkPanel::onLeaveWindow ), NULL, this );
 	m_treeView->Connect( wxEVT_MOTION, wxMouseEventHandler( BookmarkPanel::onMotion ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_BEGIN_DRAG, wxTreeEventHandler( BookmarkPanel::onTreeBeginDrag ), NULL, this );
@@ -120,6 +121,7 @@ BookmarkPanel::~BookmarkPanel()
 	m_searchText->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( BookmarkPanel::onSearchText ), NULL, this );
 	m_clearSearchButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BookmarkPanel::onClearSearch ), NULL, this );
 	m_treeView->Disconnect( wxEVT_ENTER_WINDOW, wxMouseEventHandler( BookmarkPanel::onEnterWindow ), NULL, this );
+	m_treeView->Disconnect( wxEVT_KEY_UP, wxKeyEventHandler( BookmarkPanel::onKeyUp ), NULL, this );
 	m_treeView->Disconnect( wxEVT_LEAVE_WINDOW, wxMouseEventHandler( BookmarkPanel::onLeaveWindow ), NULL, this );
 	m_treeView->Disconnect( wxEVT_MOTION, wxMouseEventHandler( BookmarkPanel::onMotion ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_BEGIN_DRAG, wxTreeEventHandler( BookmarkPanel::onTreeBeginDrag ), NULL, this );

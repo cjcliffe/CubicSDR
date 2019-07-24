@@ -51,7 +51,7 @@ int ModeSelectorCanvas::getHoveredSelection() {
 }
 
 void ModeSelectorCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
-    wxPaintDC dc(this);
+   // wxPaintDC dc(this);
     const wxSize ClientSize = GetClientSize();
 
     glContext->SetCurrent(*this);
