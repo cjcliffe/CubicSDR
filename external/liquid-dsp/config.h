@@ -9,11 +9,29 @@
 /* Support AVX (Advanced Vector Extensions) instructions */
 #define HAVE_AVX 1
 
+/* Define to 1 if you have the `cargf' function. */
+#define HAVE_CARGF 1
+
+/* Define to 1 if you have the `cexpf' function. */
+#define HAVE_CEXPF 1
+
+/* Define to 1 if you have the `cimagf' function. */
+#define HAVE_CIMAGF 1
+
 /* Define to 1 if you have the <complex.h> header file. */
 #define HAVE_COMPLEX_H 1
 
+/* Define to 1 if you have the `cosf' function. */
+#define HAVE_COSF 1
+
+/* Define to 1 if you have the `crealf' function. */
+#define HAVE_CREALF 1
+
 /* Define to 1 if you have the <emmintrin.h> header file. */
 #define HAVE_EMMINTRIN_H 1
+
+/* Define to 1 if you have the `expf' function. */
+#define HAVE_EXPF 1
 
 /* Define to 1 if you have the <fec.h> header file. */
 /* #undef HAVE_FEC_H */
@@ -23,6 +41,9 @@
 
 /* Define to 1 if you have the <float.h> header file. */
 #define HAVE_FLOAT_H 1
+
+/* Define to 1 if you have the `free' function. */
+#define HAVE_FREE 1
 
 /* Define to 1 if you have the <getopt.h> header file. */
 #define HAVE_GETOPT_H 1
@@ -48,12 +69,17 @@
 /* Define to 1 if you have the <limits.h> header file. */
 #define HAVE_LIMITS_H 1
 
-/* Define to 1 if your system has a GNU libc compatible `malloc' function, and
-   to 0 otherwise. */
+/* Define to 1 if you have the `malloc' function. */
 #define HAVE_MALLOC 1
+
+/* Define to 1 if you have the `memmove' function. */
+#define HAVE_MEMMOVE 1
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
+
+/* Define to 1 if you have the `memset' function. */
+#define HAVE_MEMSET 1
 
 /* Define to 1 if you have the <mmintrin.h> header file. */
 #define HAVE_MMINTRIN_H 1
@@ -64,12 +90,17 @@
 /* Define to 1 if you have the <pmmintrin.h> header file. */
 #define HAVE_PMMINTRIN_H 1
 
-/* Define to 1 if your system has a GNU libc compatible `realloc' function,
-   and to 0 otherwise. */
+/* Define to 1 if you have the `realloc' function. */
 #define HAVE_REALLOC 1
+
+/* Define to 1 if you have the `sinf' function. */
+#define HAVE_SINF 1
 
 /* Define to 1 if you have the <smmintrin.h> header file. */
 #define HAVE_SMMINTRIN_H 1
+
+/* Define to 1 if you have the `sqrtf' function. */
+#define HAVE_SQRTF 1
 
 /* Support SSE (Streaming SIMD Extensions) instructions */
 #define HAVE_SSE 1
@@ -129,13 +160,13 @@
 /* #undef LIQUID_SIMDOVERRIDE */
 
 /* Define to the address where bug reports for this package should be sent. */
-#define PACKAGE_BUGREPORT "support@liquidsdr.org"
+#define PACKAGE_BUGREPORT "joseph@liquidsdr.org"
 
 /* Define to the full name of this package. */
 #define PACKAGE_NAME "liquid-dsp"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "liquid-dsp 1.3.1"
+#define PACKAGE_STRING "liquid-dsp 1.3.2"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "liquid-dsp"
@@ -144,13 +175,19 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "1.3.1"
+#define PACKAGE_VERSION "1.3.2"
 
 /* The size of `int', as computed by sizeof. */
 #define SIZEOF_INT 4
 
-/* The size of `unsigned int', as computed by sizeof. */
-#define SIZEOF_UNSIGNED_INT 4
+/* The size of `long int', as computed by sizeof. */
+#define SIZEOF_LONG_INT 8
+
+/* The size of `long long int', as computed by sizeof. */
+#define SIZEOF_LONG_LONG_INT 8
+
+/* The size of `short int', as computed by sizeof. */
+#define SIZEOF_SHORT_INT 2
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1

@@ -54,8 +54,8 @@ extern "C" {
 // LIQUID_VERSION = "X.Y.Z"
 // LIQUID_VERSION_NUMBER = (X*1000000 + Y*1000 + Z)
 //
-#define LIQUID_VERSION          "1.3.1"
-#define LIQUID_VERSION_NUMBER   1003001
+#define LIQUID_VERSION          "1.3.2"
+#define LIQUID_VERSION_NUMBER   1003002
 
 //
 // Run-time library version numbers
@@ -1558,16 +1558,16 @@ unsigned int SPGRAM(_get_window_len)(SPGRAM() _q);                          \
 unsigned int SPGRAM(_get_delay)(SPGRAM() _q);                               \
                                                                             \
 /* Get number of samples processed since reset                          */  \
-uint64_t SPGRAM(_get_num_samples)(SPGRAM() _q);                             \
+unsigned long long int SPGRAM(_get_num_samples)(SPGRAM() _q);               \
                                                                             \
 /* Get number of samples processed since object was created             */  \
-uint64_t SPGRAM(_get_num_samples_total)(SPGRAM() _q);                       \
+unsigned long long int SPGRAM(_get_num_samples_total)(SPGRAM() _q);         \
                                                                             \
 /* Get number of transforms processed since reset                       */  \
-uint64_t SPGRAM(_get_num_transforms)(SPGRAM() _q);                          \
+unsigned long long int SPGRAM(_get_num_transforms)(SPGRAM() _q);            \
                                                                             \
 /* Get number of transforms processed since object was created          */  \
-uint64_t SPGRAM(_get_num_transforms_total)(SPGRAM() _q);                    \
+unsigned long long int SPGRAM(_get_num_transforms_total)(SPGRAM() _q);      \
                                                                             \
 /* Get forgetting factor (filter bandwidth)                             */  \
 float SPGRAM(_get_alpha)(SPGRAM() _q);                                      \
@@ -1757,6 +1757,18 @@ void SPWATERFALL(_reset)(SPWATERFALL() _q);                                 \
                                                                             \
 /* Print internal state of the object to stdout                         */  \
 void SPWATERFALL(_print)(SPWATERFALL() _q);                                 \
+                                                                            \
+/* Get number of samples processed since object was created             */  \
+uint64_t SPWATERFALL(_get_num_samples_total)(SPWATERFALL() _q);             \
+                                                                            \
+/* Get FFT size (columns in PSD output)                                 */  \
+unsigned int SPWATERFALL(_get_num_freq)(SPWATERFALL() _q);                  \
+                                                                            \
+/* Get number of accumulated FFTs (rows in PSD output)                  */  \
+unsigned int SPWATERFALL(_get_num_time)(SPWATERFALL() _q);                  \
+                                                                            \
+/* Get power spectral density (PSD), size: nfft x time                  */  \
+const T * SPWATERFALL(_get_psd)(SPWATERFALL() _q);                          \
                                                                             \
 /* Set the center frequency of the received signal.                     */  \
 /* This is for display purposes only when generating the output image.  */  \
@@ -2006,13 +2018,15 @@ void liquid_firdes_kaiser(unsigned int _n,
                           float _mu,
                           float *_h);
 
-// Design finite impulse response DC-blocking filter
+// Design finite impulse response notch filter
 //  _m      : filter semi-length, m in [1,1000]
+//  _f0     : filter notch frequency (normalized), -0.5 <= _fc <= 0.5
 //  _As     : stop-band attenuation [dB], _As > 0
 //  _h      : output coefficient buffer, [size: 2*_m+1 x 1]
-void liquid_firdes_dcblocker(unsigned int _m,
-                             float        _As,
-                             float *      _h);
+void liquid_firdes_notch(unsigned int _m,
+                         float        _f0,
+                         float        _As,
+                         float *      _h);
 
 // Design FIR doppler filter
 //  _n      : filter length
@@ -2505,6 +2519,14 @@ FIRFILT() FIRFILT(_create_rect)(unsigned int _n);                           \
 /*  _As : prototype filter stop-band attenuation [dB], _As > 0          */  \
 FIRFILT() FIRFILT(_create_dc_blocker)(unsigned int _m,                      \
                                       float        _As);                    \
+                                                                            \
+/* Create notch filter from prototype                                   */  \
+/*  _m  : prototype filter semi-length such that filter length is 2*m+1 */  \
+/*  _As : prototype filter stop-band attenuation [dB], _As > 0          */  \
+/*  _f0 : center frequency for notch, _fc in [-0.5, 0.5]                */  \
+FIRFILT() FIRFILT(_create_notch)(unsigned int _m,                           \
+                                 float        _As,                          \
+                                 float        _f0);                         \
                                                                             \
 /* Re-create filter object of potentially a different length with       */  \
 /* different coefficients. If the length of the filter does not change, */  \
@@ -3698,7 +3720,10 @@ LIQUID_RESAMP2_DEFINE_API(LIQUID_RESAMP2_MANGLE_CCCF,
 typedef struct RRESAMP(_s) * RRESAMP();                                     \
                                                                             \
 /* Create rational-rate resampler object from external coeffcients to   */  \
-/* resample at an exact rate P/Q                                        */  \
+/* resample at an exact rate P/Q.                                       */  \
+/* Note that to preserve the input filter coefficients, the greatest    */  \
+/* common divisor (gcd) is not removed internally from _P and _Q when   */  \
+/* this method is called.                                               */  \
 /*  _P      : interpolation factor,                     P > 0           */  \
 /*  _Q      : decimation factor,                        Q > 0           */  \
 /*  _m      : filter semi-length (delay),               0 < _m          */  \
@@ -3709,7 +3734,10 @@ RRESAMP() RRESAMP(_create)(unsigned int _P,                                 \
                            TC *         _h);                                \
                                                                             \
 /* Create rational-rate resampler object from filter prototype to       */  \
-/* resample at an exact rate P/Q                                        */  \
+/* resample at an exact rate P/Q.                                       */  \
+/* Note that because the filter coefficients are computed internally    */  \
+/* here, the greatest common divisor (gcd) from _P and _Q is internally */  \
+/* removed to improve speed.                                            */  \
 /*  _P      : interpolation factor,                     P > 0           */  \
 /*  _Q      : decimation factor,                        Q > 0           */  \
 /*  _m      : filter semi-length (delay),               0 < _m          */  \
@@ -3721,7 +3749,11 @@ RRESAMP() RRESAMP(_create_kaiser)(unsigned int _P,                          \
                                   float        _bw,                         \
                                   float        _As);                        \
                                                                             \
-/* Create rational-rate resampler object from filter prototype to...    */  \
+/* Create rational-rate resampler object from filter prototype to       */  \
+/* resample at an exact rate P/Q.                                       */  \
+/* Note that because the filter coefficients are computed internally    */  \
+/* here, the greatest common divisor (gcd) from _P and _Q is internally */  \
+/* removed to improve speed.                                            */  \
 RRESAMP() RRESAMP(_create_prototype)(int          _type,                    \
                                      unsigned int _P,                       \
                                      unsigned int _Q,                       \
@@ -3770,20 +3802,21 @@ unsigned int RRESAMP(_get_delay)(RRESAMP() _q);                             \
 /* before removing greatest common divisor                              */  \
 unsigned int RRESAMP(_get_P)(RRESAMP() _q);                                 \
                                                                             \
-/* Get interpolation factor of resampler, \(P\), after removing         */  \
-/* greatest common divisor                                              */  \
+/* Get internal interpolation factor of resampler, \(P\), after         */  \
+/* removing greatest common divisor                                     */  \
 unsigned int RRESAMP(_get_interp)(RRESAMP() _q);                            \
                                                                             \
 /* Get original decimation factor \(Q\) when object was created         */  \
 /* before removing greatest common divisor                              */  \
 unsigned int RRESAMP(_get_Q)(RRESAMP() _q);                                 \
                                                                             \
-/* Get decimation factor of resampler, \(Q\), after removing            */  \
+/* Get internal decimation factor of resampler, \(Q\), after removing   */  \
 /* greatest common divisor                                              */  \
 unsigned int RRESAMP(_get_decim)(RRESAMP() _q);                             \
                                                                             \
-/* Get greatest common divisor (g.c.d.) between original P and Q values */  \
-unsigned int RRESAMP(_get_gcd)(RRESAMP() _q);                               \
+/* Get block length (e.g. greatest common divisor) between original P   */  \
+/* and Q values                                                         */  \
+unsigned int RRESAMP(_get_block_len)(RRESAMP() _q);                         \
                                                                             \
 /* Get rate of resampler, \(r = P/Q\)                                   */  \
 float RRESAMP(_get_rate)(RRESAMP() _q);                                     \
@@ -5482,6 +5515,7 @@ LIQUID_SYMSTREAM_DEFINE_API(LIQUID_SYMSTREAM_MANGLE_CFLOAT, liquid_float_complex
 //
 // multi-signal source for testing (no meaningful data, just signals)
 //
+
 #define LIQUID_MSOURCE_MANGLE_CFLOAT(name) LIQUID_CONCAT(msourcecf,name)
 
 #define LIQUID_MSOURCE_DEFINE_API(MSOURCE,TO)                               \
@@ -5489,8 +5523,17 @@ LIQUID_SYMSTREAM_DEFINE_API(LIQUID_SYMSTREAM_MANGLE_CFLOAT, liquid_float_complex
 /* Multi-signal source generator object                                 */  \
 typedef struct MSOURCE(_s) * MSOURCE();                                     \
                                                                             \
-/* Create default msource object                                        */  \
-MSOURCE() MSOURCE(_create)(void);                                           \
+/* Create msource object by specifying channelizer parameters           */  \
+/*  _M  :   number of channels in analysis channelizer object           */  \
+/*  _m  :   prototype channelizer filter semi-length                    */  \
+/*  _As :   prototype channelizer filter stop-band suppression (dB)     */  \
+MSOURCE() MSOURCE(_create)(unsigned int _M,                                 \
+                           unsigned int _m,                                 \
+                           float        _As);                               \
+                                                                            \
+/* Create default msource object with default parameters:               */  \
+/* M = 1200, m = 4, As = 60                                             */  \
+MSOURCE() MSOURCE(_create_default)(void);                                   \
                                                                             \
 /* Destroy msource object                                               */  \
 void MSOURCE(_destroy)(MSOURCE() _q);                                       \
@@ -5501,26 +5544,83 @@ void MSOURCE(_print)(MSOURCE() _q);                                         \
 /* Reset msource object                                                 */  \
 void MSOURCE(_reset)(MSOURCE() _q);                                         \
                                                                             \
+/* user-defined callback for generating samples                         */  \
+typedef int (*MSOURCE(_callback))(void *       _userdata,                   \
+                                  TO *         _v,                          \
+                                  unsigned int _n);                         \
+                                                                            \
+/* Add user-defined signal generator                                    */  \
+int MSOURCE(_add_user)(MSOURCE()          _q,                               \
+                       float              _fc,                              \
+                       float              _bw,                              \
+                       float              _gain,                            \
+                       void *             _userdata,                        \
+                       MSOURCE(_callback) _callback);                       \
+                                                                            \
 /* Add tone to signal generator, returning id of signal                 */  \
-int MSOURCE(_add_tone) (MSOURCE() _q);                                      \
+int MSOURCE(_add_tone)(MSOURCE() _q,                                        \
+                       float     _fc,                                       \
+                       float     _bw,                                       \
+                       float     _gain);                                    \
+                                                                            \
+/* Add chirp to signal generator, returning id of signal                */  \
+/*  _q          : multi-signal source object                            */  \
+/*  _duration   : duration of chirp [samples]                           */  \
+/*  _negate     : negate frequency direction                            */  \
+/*  _single     : run single chirp? or repeatedly                       */  \
+int MSOURCE(_add_chirp)(MSOURCE() _q,                                       \
+                        float     _fc,                                      \
+                        float     _bw,                                      \
+                        float     _gain,                                    \
+                        float     _duration,                                \
+                        int       _negate,                                  \
+                        int       _repeat);                                 \
                                                                             \
 /* Add noise source to signal generator, returning id of signal         */  \
 /*  _q          : multi-signal source object                            */  \
-/*  _bandwidth  : normalized noise bandiwidth, 0 < _bandwidth <= 1.0    */  \
+/*  _fc         : ...                                                   */  \
+/*  _bw         : ...                                                   */  \
+/*  _nstd       : ...                                                   */  \
 int MSOURCE(_add_noise)(MSOURCE() _q,                                       \
-                        float     _bandwidth);                              \
+                        float     _fc,                                      \
+                        float     _bw,                                      \
+                        float     _gain);                                   \
                                                                             \
 /* Add modem signal source, returning id of signal                      */  \
 /*  _q      : multi-signal source object                                */  \
 /*  _ms     : modulation scheme, e.g. LIQUID_MODEM_QPSK                 */  \
-/*  _k      : samples per symbol, _k >= 2                               */  \
 /*  _m      : filter delay (symbols), _m > 0                            */  \
 /*  _beta   : filter excess bandwidth, 0 < _beta <= 1                   */  \
 int MSOURCE(_add_modem)(MSOURCE()    _q,                                    \
+                        float        _fc,                                   \
+                        float        _bw,                                   \
+                        float        _gain,                                 \
                         int          _ms,                                   \
-                        unsigned int _k,                                    \
                         unsigned int _m,                                    \
                         float        _beta);                                \
+                                                                            \
+/* Add frequency-shift keying modem signal source, returning id of      */  \
+/* signal                                                               */  \
+/*  _q      : multi-signal source object                                */  \
+/*  _m      : bits per symbol, _bps > 0                                 */  \
+/*  _k      : samples/symbol, _k >= 2^_m                                */  \
+int MSOURCE(_add_fsk)(MSOURCE()    _q,                                      \
+                      float        _fc,                                     \
+                      float        _bw,                                     \
+                      float        _gain,                                   \
+                      unsigned int _m,                                      \
+                      unsigned int _k);                                     \
+                                                                            \
+/* Add GMSK modem signal source, returning id of signal                 */  \
+/*  _q      : multi-signal source object                                */  \
+/*  _m      : filter delay (symbols), _m > 0                            */  \
+/*  _bt     : filter bandwidth-time factor, 0 < _bt <= 1                */  \
+int MSOURCE(_add_gmsk)(MSOURCE()    _q,                                     \
+                       float        _fc,                                    \
+                       float        _bw,                                    \
+                       float        _gain,                                  \
+                       unsigned int _m,                                     \
+                       float        _bt);                                   \
                                                                             \
 /* Remove signal with a particular id, returning 0 upon success         */  \
 /*  _q  : multi-signal source object                                    */  \
@@ -5551,6 +5651,11 @@ int MSOURCE(_set_gain)(MSOURCE() _q,                                        \
 int MSOURCE(_get_gain)(MSOURCE() _q,                                        \
                        int       _id,                                       \
                        float *   _gain);                                    \
+                                                                            \
+/* Get number of samples generated by the object so far                 */  \
+/*  _q      : msource object                                            */  \
+/*  _return : number of time-domain samples generated                   */  \
+unsigned long long int MSOURCE(_get_num_samples)(MSOURCE() _q);             \
                                                                             \
 /* Set carrier offset to signal                                         */  \
 /*  _q      : msource object                                            */  \

@@ -31,6 +31,7 @@
 #    bench          : build and run benchmarking program
 #    examples       : build all examples
 #    sandbox        : build all sandbox examples
+#    programs       : build all programs, but don't run anything
 #    world          : build absolutely everything (but don't install)
 #
 #    clean-modules  : clean all modules
@@ -42,8 +43,8 @@
 
 # autoconf initialization macros
 NAME		:= liquid-dsp
-VERSION		:= 1.3.1
-BUGREPORT	:= support@liquidsdr.org
+VERSION		:= 1.3.2
+BUGREPORT	:= joseph@liquidsdr.org
 
 # paths
 srcdir		:= .
@@ -64,8 +65,8 @@ RANLIB		:= ranlib
 
 # flags
 INCLUDE_CFLAGS	= $(addprefix -I,$(include_dirs))
-#MINGW: optimizations goes here 
-CONFIG_CFLAGS	= -m32 -O3 -msse3 -ffast-math
+#MINGW: optimizations goes here, use SSSE42 for 32bit  
+CONFIG_CFLAGS	= -m32 -O3 -msse4.2 -ffast-math
 CPPFLAGS	=  $(INCLUDE_CFLAGS)
 CFLAGS		= $(CONFIG_CFLAGS) -Wall -fPIC
 LDFLAGS		= 
@@ -482,6 +483,7 @@ filter_autotests :=						\
 	src/filter/tests/firdecim_xxxf_autotest.c		\
 	src/filter/tests/firdes_autotest.c			\
 	src/filter/tests/firdespm_autotest.c			\
+	src/filter/tests/firfilt_cccf_notch_autotest.c		\
 	src/filter/tests/firfilt_xxxf_autotest.c		\
 	src/filter/tests/firhilb_autotest.c			\
 	src/filter/tests/firinterp_autotest.c			\
@@ -490,6 +492,7 @@ filter_autotests :=						\
 	src/filter/tests/iirdes_autotest.c			\
 	src/filter/tests/iirfilt_xxxf_autotest.c		\
 	src/filter/tests/iirfiltsos_rrrf_autotest.c		\
+	src/filter/tests/lpc_autotest.c				\
 	src/filter/tests/msresamp_crcf_autotest.c		\
 	src/filter/tests/rresamp_crcf_autotest.c		\
 	src/filter/tests/resamp_crcf_autotest.c			\
@@ -634,7 +637,7 @@ src/framing/src/framegen64.o        : %.o : %.c $(include_headers)
 src/framing/src/framesync64.o       : %.o : %.c $(include_headers)
 src/framing/src/flexframegen.o      : %.o : %.c $(include_headers)
 src/framing/src/flexframesync.o     : %.o : %.c $(include_headers)
-src/framing/src/msourcecf.o         : %.o : %.c $(include_headers) src/framing/src/msource.c
+src/framing/src/msourcecf.o         : %.o : %.c $(include_headers) src/framing/src/msource.c src/framing/src/qsource.c
 src/framing/src/ofdmflexframegen.o  : %.o : %.c $(include_headers)
 src/framing/src/ofdmflexframesync.o : %.o : %.c $(include_headers)
 src/framing/src/presync_cccf.o      : %.o : %.c $(include_headers) src/framing/src/presync.c
@@ -1426,6 +1429,7 @@ example_programs :=						\
 	examples/firdecim_crcf_example				\
 	examples/firfarrow_rrrf_example				\
 	examples/firfilt_cccf_example				\
+	examples/firfilt_cccf_notch_example			\
 	examples/firfilt_crcf_example				\
 	examples/firfilt_crcf_dcblocker_example			\
 	examples/firfilt_rrrf_example				\
@@ -1480,6 +1484,7 @@ example_programs :=						\
 	examples/modem_example					\
 	examples/modem_soft_example				\
 	examples/modular_arithmetic_example			\
+	examples/msequence_generator_example			\
 	examples/msequence_example				\
 	examples/msourcecf_example				\
 	examples/msresamp_crcf_example				\
@@ -1640,6 +1645,7 @@ sandbox_programs =						\
 	sandbox/ofdm_ber_test					\
 	sandbox/ofdmframe_papr_test				\
 	sandbox/ofdmframesync_cfo_test				\
+	sandbox/pll_3rd_order_test				\
 	sandbox/pll_design_test					\
 	sandbox/predemod_sync_test				\
 	sandbox/quasinewton_test				\
@@ -1654,7 +1660,6 @@ sandbox_programs =						\
 	sandbox/symsync_eqlms_test				\
 	sandbox/svd_test					\
 	sandbox/thiran_allpass_iir_test				\
-	sandbox/throttle_test					\
 	sandbox/vectorcf_test					\
 
 #	sandbox/packetizer_persistent_ber_test
@@ -1662,6 +1667,7 @@ sandbox_programs =						\
 #	sandbox/ofdmoqam_firpfbch_cfo_test
 #	sandbox/mdct_test
 #	sandbox/fct_test
+#	sandbox/throttle_test # needs -lrt for certain gcc versions, rpi3
 
 
 sandbox_objects	= $(patsubst %,%.o,$(sandbox_programs))
@@ -1679,22 +1685,10 @@ clean-sandbox:
 	$(RM) sandbox/*.o
 	$(RM) $(sandbox_programs)
 
-
-.PHONY: tools
-tools_programs =						\
-	tools/msequence_generator			\
-
-tools_objects	= $(patsubst %,%.o,$(tools_programs))
-tools: $(tools_programs)
-
-$(tools_objects): %.o: %.c
-
-$(tools_programs): % : %.o ${ARCHIVE_LIB}
-	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
-
-clean-tools:
-	$(RM) tools/*.o
-	$(RM) $(tools_programs)
+##
+## TARGET : programs  - build all programs, but don't run anything
+##
+programs: all xautotest benchmark examples sandbox
 
 ##
 ## TARGET : world     - build absolutely everything
@@ -1732,7 +1726,7 @@ clean-modules:
 	$(RM) src/vector/src/*.o       src/vector/bench/*.o       src/vector/tests/*.o
 	$(RM) src/libliquid.o
 
-clean: clean-modules clean-autoscript clean-check clean-bench clean-examples clean-sandbox clean-tools
+clean: clean-modules clean-autoscript clean-check clean-bench clean-examples clean-sandbox
 	$(RM) ${ARCHIVE_LIB} ${SHARED_LIB} $(extra_clean)
 
 ##
