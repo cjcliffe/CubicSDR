@@ -12,6 +12,14 @@ void Gradient::addColor(GradientColor c) {
     colors.push_back(c);
 }
 
+void Gradient::addColors(const std::vector<GradientColor>& color_list) {
+
+	for (auto single_color : color_list) {
+
+		colors.push_back(single_color);
+	}
+}
+
 std::vector<float> &Gradient::getRed() {
     return r_val;
 }

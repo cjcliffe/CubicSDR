@@ -21,6 +21,8 @@ public:
 
     void addColor(GradientColor c);
 
+	void addColors(const std::vector<GradientColor>& color_list);
+
     std::vector<float> &getRed();
     std::vector<float> &getGreen();
     std::vector<float> &getBlue();
