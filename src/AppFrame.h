@@ -338,12 +338,13 @@ private:
 #define wxID_BM_SPLITTER 2052
 
 #define wxID_THEME_DEFAULT 2100
-#define wxID_THEME_SHARP 2101
-#define wxID_THEME_BW 2102
-#define wxID_THEME_RAD 2103
-#define wxID_THEME_TOUCH 2104
-#define wxID_THEME_HD 2105
-#define wxID_THEME_RADAR 2106
+#define wxID_THEME_DEFAULT_JET 2101
+#define wxID_THEME_SHARP 2102
+#define wxID_THEME_BW 2103
+#define wxID_THEME_RAD 2104
+#define wxID_THEME_TOUCH 2105
+#define wxID_THEME_HD 2106
+#define wxID_THEME_RADAR 2107
 
 #define wxID_DISPLAY_BOOKMARKS 2107
 

@@ -5,7 +5,11 @@
 #include <stddef.h>
 
 Gradient::Gradient() {
+	//nothing
+}
 
+void Gradient::clear() {
+	colors.clear();
 }
 
 void Gradient::addColor(GradientColor c) {

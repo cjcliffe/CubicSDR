@@ -11,13 +11,14 @@
 #include <wx/colour.h>
 
 #define COLOR_THEME_DEFAULT 0
-#define COLOR_THEME_BW 1
-#define COLOR_THEME_SHARP 2
-#define COLOR_THEME_RAD 3
-#define COLOR_THEME_TOUCH 4
-#define COLOR_THEME_HD 5
-#define COLOR_THEME_RADAR 6
-#define COLOR_THEME_MAX 7
+#define COLOR_THEME_DEFAULT_JET 1
+#define COLOR_THEME_BW 2
+#define COLOR_THEME_SHARP 3
+#define COLOR_THEME_RAD 4
+#define COLOR_THEME_TOUCH 5
+#define COLOR_THEME_HD 6
+#define COLOR_THEME_RADAR 7
+#define COLOR_THEME_MAX 8
 
 class RGBA4f {
 public:
@@ -99,6 +100,11 @@ public:
 class DefaultColorTheme: public ColorTheme {
 public:
     DefaultColorTheme();
+};
+
+class DefaultColorThemeJet : public DefaultColorTheme {
+public:
+	DefaultColorThemeJet();
 };
 
 class BlackAndWhiteColorTheme: public ColorTheme {

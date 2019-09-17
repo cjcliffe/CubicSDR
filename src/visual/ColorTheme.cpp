@@ -20,6 +20,7 @@ int ThemeMgr::getTheme() {
 
 ThemeMgr::ThemeMgr() {
     themes[COLOR_THEME_DEFAULT] = new DefaultColorTheme;
+	themes[COLOR_THEME_DEFAULT_JET] = new DefaultColorThemeJet;
     themes[COLOR_THEME_BW] = new BlackAndWhiteColorTheme;
     themes[COLOR_THEME_SHARP] = new SharpColorTheme;
     themes[COLOR_THEME_RAD] = new RadColorTheme;
@@ -47,14 +48,6 @@ DefaultColorTheme::DefaultColorTheme() {
 
 	waterfallGradient.addColors(turbo_srgb_floats);
 
-    /* Original DefaultColorTheme:
-	waterfallGradient.addColor(GradientColor(0, 0, 0));
-    waterfallGradient.addColor(GradientColor(0, 0, 1.0));
-    waterfallGradient.addColor(GradientColor(0, 1.0, 0));
-    waterfallGradient.addColor(GradientColor(1.0, 1.0, 0));
-    waterfallGradient.addColor(GradientColor(1.0, 0.2f, 0.0)); 
-	*/
-
     waterfallGradient.generate(256);
     waterfallHighlight = RGBA4f(1, 1, 1);
     waterfallNew = RGBA4f(0, 1, 0);
@@ -77,6 +70,22 @@ DefaultColorTheme::DefaultColorTheme() {
     scopeBackground = RGBA4f(0.1f, 0.1f, 0.1f);
     fftBackground = RGBA4f(0.1f, 0.1f, 0.1f);
     generalBackground = RGBA4f(0.1f, 0.1f, 0.1f);
+}
+
+DefaultColorThemeJet::DefaultColorThemeJet()
+{
+	/* This is the original DefaultColorTheme:
+	waterfallGradient.addColor(GradientColor(0, 0, 0));
+	waterfallGradient.addColor(GradientColor(0, 0, 1.0));
+	waterfallGradient.addColor(GradientColor(0, 1.0, 0));
+	waterfallGradient.addColor(GradientColor(1.0, 1.0, 0));
+	waterfallGradient.addColor(GradientColor(1.0, 0.2f, 0.0));
+	*/
+	name = "DefaultJet";
+	// Original DefaultColorTheme of CubicSDR 0.25:
+	waterfallGradient.clear();
+	waterfallGradient.addColors({ {0, 0, 0}, {0, 0, 1.0}, {0, 1.0, 0}, {1.0, 1.0, 0},{1.0, 0.2f, 0.0}});
+	waterfallGradient.generate(256);
 }
 
 
