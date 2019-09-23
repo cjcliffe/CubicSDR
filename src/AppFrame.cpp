@@ -603,6 +603,7 @@ wxMenu *AppFrame::makeDisplayMenu() {
     int themeId = wxGetApp().getConfig()->getTheme();
 
     themeMenu->AppendRadioItem(wxID_THEME_DEFAULT, "Default")->Check(themeId==COLOR_THEME_DEFAULT);
+	themeMenu->AppendRadioItem(wxID_THEME_DEFAULT_JET, "Default (Jet Waterfall)")->Check(themeId == COLOR_THEME_DEFAULT_JET);
     themeMenu->AppendRadioItem(wxID_THEME_RADAR, "RADAR")->Check(themeId==COLOR_THEME_RADAR);
     themeMenu->AppendRadioItem(wxID_THEME_BW, "Black & White")->Check(themeId==COLOR_THEME_BW);
     themeMenu->AppendRadioItem(wxID_THEME_SHARP, "Sharp")->Check(themeId==COLOR_THEME_SHARP);
@@ -1316,10 +1317,13 @@ bool AppFrame::actionOnMenuDisplay(wxCommandEvent& event) {
 
     //by default, is managed.
     bool bManaged = true;
-
+	
     if (event.GetId() == wxID_THEME_DEFAULT) {
         ThemeMgr::mgr.setTheme(COLOR_THEME_DEFAULT);
     }
+	else if (event.GetId() == wxID_THEME_DEFAULT_JET) {
+		ThemeMgr::mgr.setTheme(COLOR_THEME_DEFAULT_JET);
+	}
     else if (event.GetId() == wxID_THEME_SHARP) {
         ThemeMgr::mgr.setTheme(COLOR_THEME_SHARP);
     }
