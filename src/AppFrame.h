@@ -9,6 +9,7 @@
 #include <wx/sizer.h>
 #include <wx/bitmap.h>
 #include <wx/statbmp.h>
+#include <wx/tooltip.h>
 
 #include "PrimaryGLContext.h"
 
