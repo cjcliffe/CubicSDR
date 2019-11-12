@@ -98,7 +98,7 @@ bool ScopeCanvas::getShowDb() const {
 
 void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
   //  wxPaintDC dc(this);
-    const wxSize ClientSize = GetClientSize();
+    const wxSize ClientSize = GetClientSize() * GetContentScaleFactor();
     
     ScopeRenderDataPtr avData;
     while (inputData->try_pop(avData)) {
