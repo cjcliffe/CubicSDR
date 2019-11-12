@@ -83,7 +83,7 @@ void MeterCanvas::setShowUserInput(bool showUserInput) {
 
 void MeterCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
  //   wxPaintDC dc(this);
-    const wxSize ClientSize = GetClientSize();
+    const wxSize ClientSize = GetClientSize() * GetContentScaleFactor();
 
     glContext->SetCurrent(*this);
     initGLExtensions();
