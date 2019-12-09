@@ -408,10 +408,10 @@ void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
     if (refresh) {
         if (wxGetApp().areModulesMissing()) {
             if (!failed) {
+                failed = true;
                 wxMessageDialog *info;
                 info = new wxMessageDialog(NULL, wxT("\nNo SoapySDR modules were found.\n\nCubicSDR requires at least one SoapySDR device support module to be installed.\n\nPlease visit https://github.com/cjcliffe/CubicSDR/wiki and in the build instructions for your platform read the 'Support Modules' section for more information."), wxT("\x28\u256F\xB0\u25A1\xB0\uFF09\u256F\uFE35\x20\u253B\u2501\u253B"), wxOK | wxICON_ERROR);
                 info->ShowModal();
-                failed = true;
             }
             return;
         }
