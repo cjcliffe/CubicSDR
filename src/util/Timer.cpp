@@ -1,13 +1,8 @@
 // Copyright (c) Charles J. Cliffe
 // SPDX-License-Identifier: GPL-2.0+
 
-#include "Timer.h"
-
-#ifdef _WIN32
-    #include <windows.h>
-#endif
-
 #include <iostream>
+#include "Timer.h"
 
 Timer::Timer(void) : time_elapsed(0), system_milliseconds(0), start_time(0), end_time(0), last_update(0), num_updates(0), paused_time(0), offset(0), paused_state(false), lock_state(false), lock_rate(0)
 {
