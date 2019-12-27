@@ -11,11 +11,11 @@ echo "Fetch wxWidgets.."
 cd $HOME/build
 mkdir -p $HOME/build/wxWidgets/staticlib
 cd wxWidgets
-wget https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.2/wxWidgets-3.1.2.tar.bz2 > /dev/null
+wget https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.3/wxWidgets-3.1.3.tar.bz2 > /dev/null
 
 echo "Unpacking wxWidgets.."
-tar -xvjf wxWidgets-3.1.2.tar.bz2 > /dev/null
-cd wxWidgets-3.1.2/
+tar -xvjf wxWidgets-3.1.3.tar.bz2 > /dev/null
+cd wxWidgets-3.1.3/
 ./autogen.sh
 
 if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
