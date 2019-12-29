@@ -10,6 +10,7 @@
 #endif
 
 #if defined(__linux__) || defined(__FreeBSD__)
+#include <GL/glx.h>
 #include <dlfcn.h>
 #endif
 
