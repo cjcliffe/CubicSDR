@@ -10,8 +10,9 @@ public:
     float r, g, b;
     float w;
 
-    GradientColor(float r_in, float g_in, float b_in) :
-            r(r_in), g(g_in), b(b_in), w(1) {
+    //should work with both float and double inputs
+    GradientColor(double r_in, double g_in, double b_in) :
+            r((float)r_in), g((float)g_in), b((float)b_in), w(1) {
     }
 };
 
