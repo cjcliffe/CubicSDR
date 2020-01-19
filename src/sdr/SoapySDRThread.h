@@ -49,7 +49,7 @@ private:
     void deinit();
     
     //returns the SoapyDevice readStream return value,
-    //i.e if >= 0 the numbre of samples read, else if < 0 an error code.
+    //i.e if >= 0 the number of samples read, else if < 0 an error code.
     int readStream(SDRThreadIQDataQueuePtr iqDataOutQueue);
 
     void readLoop();
