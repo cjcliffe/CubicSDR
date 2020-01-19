@@ -32,7 +32,6 @@ SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent, const wxPoint &pos): devFr
 #elif _WIN32
     SetIcon(wxICON(frame_icon));
 #endif
-
 }
 
 void SDRDevicesDialog::OnClose( wxCloseEvent& /* event */) {
@@ -395,6 +394,12 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event) {
         wxGetApp().setDeviceArgs(settingArgs);
         wxGetApp().setStreamArgs(streamArgs);
         wxGetApp().setDevice(dev,0);
+        
+        //update main application title with Device name:
+        wxString titleBar = CUBICSDR_TITLE;
+        titleBar += " - " + wxGetApp().getDevice()->getName();
+        wxGetApp().getAppFrame()->SetTitle(titleBar);
+
         Close();
     }
     event.Skip();
