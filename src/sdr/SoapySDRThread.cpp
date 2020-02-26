@@ -10,7 +10,8 @@
 #include <SoapySDR/Logger.h>
 #include <chrono>
 
-#define TARGET_DISPLAY_FPS 60
+#define TARGET_DISPLAY_FPS (60)
+#define SDR_DEVICE_LOST (-666)
 
 SDRThread::SDRThread() : IOThread(), buffers("SDRThreadBuffers") {
     device = nullptr;
@@ -240,6 +241,7 @@ int SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
         }
     } //end if numOverflow > 0
     
+    //default means blocking.
     int readStreamCode = 0;
 
     //2. attempt readStream() at most nElems, by mtElems-sized chunks, append in dataOut->data directly.
@@ -257,8 +259,29 @@ int SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
              break;
         }
         else if (n_stream_read < 0) {
-            std::cout << "SDRThread::readStream(): 2. SoapySDR read failed with code: " << n_stream_read << std::endl;
-            break;
+
+            //trace here interesting error codes from the Soapy side.
+            switch (n_stream_read) {
+
+            case SOAPY_SDR_TIMEOUT:
+                std::cout << "SDRThread::readStream(): 2. SoapySDR read failed with code SOAPY_SDR_TIMEOUT";
+                break;
+            case SOAPY_SDR_STREAM_ERROR:
+                std::cout << "SDRThread::readStream(): 2. SoapySDR read failed with code SOAPY_SDR_STREAM_ERROR";
+                break;
+
+            case SOAPY_SDR_CORRUPTION:
+                std::cout << "SDRThread::readStream(): 2. SoapySDR read failed with code SOAPY_SDR_CORRUPTION";
+                break;
+
+            case SOAPY_SDR_NOT_SUPPORTED:
+                //return a special code to mean that the device has to be stopped entirely:
+                std::cout << "SDRThread::readStream(): 2. SoapySDR read failed with code SOAPY_SDR_NOT_SUPPORTED => stopping device.";
+                readStreamCode = SDR_DEVICE_LOST;
+                break;
+            default:
+                std::cout << "SDRThread::readStream(): 2. SoapySDR read failed with unknown code: " << n_stream_read << std::endl;
+            }
         }
         
         //sucess read beyond nElems, so with overflow:
@@ -360,7 +383,7 @@ int SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
         if (!iqDataOutQueue->try_push(dataOut)) {
             //The rest of the system saturates,
             //finally the push didn't suceeded.
-            readStreamCode = -32;
+            readStreamCode = 0;
             std::cout << "SDRThread::readStream(): 3.2 iqDataOutQueue output queue is full, discard processing of the batch..." << std::endl;
 
             //saturation, let a chance to the other threads to consume the existing samples
@@ -368,7 +391,7 @@ int SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
         }
     }
     else {
-        readStreamCode = -31;
+        readStreamCode = 0;
         std::cout << "SDRThread::readStream(): 3.1 iqDataOutQueue output queue is full, discard processing of the batch..." << std::endl;
         //saturation, let a chance to the other threads to consume the existing samples
         std::this_thread::yield();
@@ -388,13 +411,22 @@ void SDRThread::readLoop() {
     
     updateGains();
  
-    while (!stopping.load()) {
+    try {
+        while (!stopping.load()) {
 
-        updateSettings();
+            updateSettings();
 
-        readStream(iqDataOutQueue);
-
-    } //End while
+            if (SDR_DEVICE_LOST == readStream(iqDataOutQueue)) {
+                //stop reading loop:
+                stopping = true;
+            }
+        } //End while
+    }
+    catch (...) {
+        //notify App of device loss:
+        std::cout << "SDRThread::readLoop() exception, stopping device..." << std::endl << std::flush;
+        stopping = true;
+    }
 
     iqDataOutQueue->flush();
 }
