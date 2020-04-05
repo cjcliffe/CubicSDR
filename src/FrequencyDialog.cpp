@@ -14,13 +14,15 @@ wxEND_EVENT_TABLE()
 
 FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxString & title, DemodulatorInstancePtr demod, const wxPoint & position,
         const wxSize & size, long style, FrequencyDialogTarget targetMode, wxString initString) :
-        wxDialog(parent, id, title, position, size, style) {
+        wxDialog(parent, id, title, wxDefaultPosition, wxDefaultSize, style) {
     wxString freqStr;
-    
+    wxSizer *dialogsizer = new wxBoxSizer( wxVERTICAL );
+    int titleX, textCtrlX;
+
     activeDemod = demod;
-    
+
     this->targetMode = targetMode;
-	this->initialString = initString;
+    this->initialString = initString;
 
     if (targetMode == FDIALOG_TARGET_DEFAULT) {
         if (activeDemod) {
@@ -29,7 +31,7 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
             freqStr = frequencyToStr(wxGetApp().getFrequency());
         }
     }
-            
+
     if (targetMode == FDIALOG_TARGET_BANDWIDTH) {
         std::string lastDemodType = activeDemod?activeDemod->getDemodulatorType():wxGetApp().getDemodMgr().getLastDemodulatorType();
         if (lastDemodType == "USB" || lastDemodType == "LSB") {
@@ -38,7 +40,7 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
             freqStr = frequencyToStr(wxGetApp().getDemodMgr().getLastBandwidth());
         }
     }
-            
+
     if (targetMode == FDIALOG_TARGET_WATERFALL_LPS) {
         freqStr = std::to_string(wxGetApp().getAppFrame()->getWaterfallDataThread()->getLinesPerSecond());
     }
@@ -52,12 +54,8 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
             freqStr = std::to_string((int)wxGetApp().getGain(wxGetApp().getActiveGainEntry()));
         }
     }
-            
-    dialogText = new wxTextCtrl(this, wxID_FREQ_INPUT, freqStr, wxPoint(6, 1), wxSize(size.GetWidth() - 20, size.GetHeight() - 70),
-    wxTE_PROCESS_ENTER);
+    dialogText = new wxTextCtrl(this, wxID_FREQ_INPUT, freqStr, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
     dialogText->SetFont(wxFont(15, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
-
-    Centre();
 
     if (initString != "" && initString.length() == 1) {
         dialogText->SetValue(initString);
@@ -69,6 +67,16 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
         }
         dialogText->SetSelection(-1, -1);
     }
+
+    // Set the textControl width to the [title + 35%] or the [content +10%],
+    // whichever's the greater.
+
+    textCtrlX = dialogText->GetTextExtent(initString).GetWidth();
+    titleX = this->GetTextExtent(title).GetWidth();
+    dialogText->SetMinSize(wxSize(max(int(1.35 * titleX), int(1.1 * textCtrlX)), -1));
+    dialogsizer->Add( dialogText, wxSizerFlags(1).Expand().Border(wxALL, 5));
+    SetSizerAndFit(dialogsizer);
+
 }
 
 
@@ -81,8 +89,8 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
     bool ranged = false;
     std::string strValue2;
     size_t range_pos;
-    
-    
+
+
     switch (c) {
     case WXK_RETURN:
     case WXK_NUMPAD_ENTER:
@@ -185,7 +193,7 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
             }
             wxGetApp().getAppFrame()->setSpectrumAvgSpeed(dblval);
         }
-        
+
         if (targetMode == FDIALOG_TARGET_GAIN) {
             try {
                 freq = std::stoi(strValue);
@@ -246,7 +254,7 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
 }
 
 void FrequencyDialog::OnShow(wxShowEvent &event) {
-	if (initialString.length() == 1) {	
+	if (initialString.length() == 1) {
 	    dialogText->SetFocus();
 	    dialogText->SetSelection(2, 2);
 	}
