@@ -32,10 +32,18 @@ void ModeSelectorContext::DrawSelector(std::string label, int c, int cMax, bool 
     float viewHeight = (float) vp[3];
     float viewWidth = (float) vp[2];
 
+#ifdef USE_OSX_RETINA
+    int fontSize = 18 * GLFont::getScaleFactor();
+#else
     int fontSize = 18;
+#endif
 
     if (viewWidth < 30 || viewHeight < 200) {
+#ifdef USE_OSX_RETINA
+        fontSize = 16 * GLFont::getScaleFactor();
+#else
         fontSize = 16;
+#endif
     }
 
     glColor4f(r, g, b, a);

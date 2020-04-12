@@ -708,6 +708,12 @@ IF (APPLE)
         -DHAVE_TYPE_TRAITS=1
         -mmacosx-version-min=10.9
     )
+    SET(USE_OSX_RETINA OFF CACHE BOOL "Enable support for retina display on macOS.")
+    IF (USE_OSX_RETINA)
+        ADD_DEFINITIONS(
+            -DUSE_OSX_RETINA=1
+        )
+    ENDIF()
 ENDIF(APPLE)
 
 IF (APPLE AND BUNDLE_APP)

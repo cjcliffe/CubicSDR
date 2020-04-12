@@ -83,7 +83,11 @@ void MeterCanvas::setShowUserInput(bool showUserInput) {
 
 void MeterCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
  //   wxPaintDC dc(this);
+#ifdef USE_OSX_RETINA
+    const wxSize ClientSize = GetClientSize() * GetContentScaleFactor();
+#else
     const wxSize ClientSize = GetClientSize();
+#endif
 
     glContext->SetCurrent(*this);
     initGLExtensions();

@@ -847,15 +847,25 @@ double GLFont::getScaleFactor() {
     GLFontScale scale = currentScale.load();
 
     if (scale == GLFONT_SCALE_MEDIUM) {
-
+#ifdef USE_OSX_RETINA
+        return 2.5;
+#else
         return 1.5;
+#endif
     }
     else if (scale == GLFONT_SCALE_LARGE) {
-
+#ifdef USE_OSX_RETINA
+        return 3;
+#else
         return 2.0;
+#endif
     }
 
+#ifdef USE_OSX_RETINA
+    return 2;
+#else
     return 1.0;
+#endif
 }
 
 int GLFont::getScaledPx(int basicFontSize, double scaleFactor) {

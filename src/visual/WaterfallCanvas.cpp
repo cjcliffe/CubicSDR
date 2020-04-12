@@ -129,8 +129,12 @@ void WaterfallCanvas::processInputQueue() {
 void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     std::lock_guard < std::mutex > lock(tex_update);
 //    wxPaintDC dc(this);
-    
+#ifdef USE_OSX_RETINA
+    const wxSize ClientSize = GetClientSize() * GetContentScaleFactor();
+#else
     const wxSize ClientSize = GetClientSize();
+#endif
+
     long double currentZoom = zoom;
     
     if (mouseZoom != 1) {
