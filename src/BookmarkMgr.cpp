@@ -241,16 +241,27 @@ bool BookmarkMgr::loadFromFile(std::string bookmarkFn, bool backup, bool useFull
 
 void BookmarkMgr::loadDefaultRanges() {
 
-	addRange(std::make_shared<BookmarkRangeEntry>(L"160 Meters", 1900000, 1800000, 2000000));
-	addRange(std::make_shared<BookmarkRangeEntry>(L"80 Meters", 3750000, 3500000, 4000000));
-	addRange(std::make_shared<BookmarkRangeEntry>(L"60 Meters", 5368500, 5332000, 5405000));
-	addRange(std::make_shared<BookmarkRangeEntry>(L"40 Meters", 7150000, 7000000, 7300000));
-	addRange(std::make_shared<BookmarkRangeEntry>(L"30 Meters", 10125000, 10100000, 10150000));
-	addRange(std::make_shared<BookmarkRangeEntry>(L"20 Meters", 14175000, 14000000, 14350000));
-	addRange(std::make_shared<BookmarkRangeEntry>(L"17 Meters", 18068180, 17044180, 19092180));
-	addRange(std::make_shared<BookmarkRangeEntry>(L"15 Meters", 21225000, 21000000, 21450000));
-	addRange(std::make_shared<BookmarkRangeEntry>(L"12 Meters", 24940000, 24890000, 24990000));
-	addRange(std::make_shared<BookmarkRangeEntry>(L"10 Meters", 28850000, 28000000, 29700000));
+    addRange(std::make_shared<BookmarkRangeEntry>(L"2200 Meters (135.7-137.8 kHz)", 136750, 135700, 137800));
+    addRange(std::make_shared<BookmarkRangeEntry>(L"630 Meters (472-479 kHz)", 475500, 472000, 479000));
+	addRange(std::make_shared<BookmarkRangeEntry>(L"160 Meters (1.8-2 MHz)", 1900000, 1800000, 2000000));
+	addRange(std::make_shared<BookmarkRangeEntry>(L"80 Meters (3.5-4.0 MHz)", 3750000, 3500000, 4000000));
+	addRange(std::make_shared<BookmarkRangeEntry>(L"60 Meters (5.332-5.405Mhz)", 5368500, 5332000, 5405000));
+	addRange(std::make_shared<BookmarkRangeEntry>(L"40 Meters (7.0-7.3 MHz)", 7150000, 7000000, 7300000));
+	addRange(std::make_shared<BookmarkRangeEntry>(L"30 Meters (10.1-10.15 MHz)", 10125000, 10100000, 10150000));
+	addRange(std::make_shared<BookmarkRangeEntry>(L"20 Meters (14.0-14.35 MHz)", 14175000, 14000000, 14350000));
+	addRange(std::make_shared<BookmarkRangeEntry>(L"17 Meters (17.044-19.092 MHz)", 18068180, 17044180, 19092180));
+	addRange(std::make_shared<BookmarkRangeEntry>(L"15 Meters (21-21.45 MHz)", 21225000, 21000000, 21450000));
+	addRange(std::make_shared<BookmarkRangeEntry>(L"12 Meters (24.89-24.99 MHz)", 24940000, 24890000, 24990000));
+	addRange(std::make_shared<BookmarkRangeEntry>(L"10 Meters (28-29.7 MHz)", 28850000, 28000000, 29700000));
+    addRange(std::make_shared<BookmarkRangeEntry>(L"6 Meters (50-54 MHz)", 52000000, 50000000, 54000000));
+    addRange(std::make_shared<BookmarkRangeEntry>(L"4 Meters (70-70.5 MHz)", 70250000, 70000000, 70500000));
+    addRange(std::make_shared<BookmarkRangeEntry>(L"2 Meters (144-148 MHz)", 146000000, 144000000, 148000000));
+    addRange(std::make_shared<BookmarkRangeEntry>(L"1.25 Meters (219-225 MHz)", 222000000, 219000000, 225000000));
+    addRange(std::make_shared<BookmarkRangeEntry>(L"70 cm (420-450 MHz)", 435000000, 420000000, 450000000));
+    addRange(std::make_shared<BookmarkRangeEntry>(L"33 cm (902-928 MHz)", 915000000, 902000000, 928000000));
+    addRange(std::make_shared<BookmarkRangeEntry>(L"23 cm (1240-1300 MHz)", 1270000000, 1240000000, 1300000000));
+    addRange(std::make_shared<BookmarkRangeEntry>(L"13 cm lower (2300-2310 MHz)", 2305000000, 2300000000, 2310000000));
+    addRange(std::make_shared<BookmarkRangeEntry>(L"13 cm upper (2390-2450 MHz)", 2420000000, 2390000000, 2450000000));
 }
 
 void BookmarkMgr::resetBookmarks() {
