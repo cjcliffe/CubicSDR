@@ -30,13 +30,20 @@ DemodLabelDialog::DemodLabelDialog(wxWindow * parent, wxWindowID id, const wxStr
     }
              
                            
-    dialogText = new wxTextCtrl(this, wxID_LABEL_INPUT, labelStr, wxPoint(6, 1), wxSize(size.GetWidth() - 20, size.GetHeight() - 70),
-    wxTE_PROCESS_ENTER);
+    dialogText = new wxTextCtrl(this, wxID_LABEL_INPUT, labelStr, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
     dialogText->SetFont(wxFont(15, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
 
+    // Set the textControl width to the [title + 100%] or the [content +100%],
+// whichever's the greater.
+    int textCtrlX = dialogText->GetTextExtent(labelStr).GetWidth();
+    int titleX = this->GetTextExtent(title).GetWidth();
+    dialogText->SetMinSize(wxSize(max(int(2.0 * titleX), int(2.0 * textCtrlX)), -1));
+    
+    wxBoxSizer* dialogsizer = new wxBoxSizer(wxALL);
+    dialogsizer->Add(dialogText, wxSizerFlags(1).Expand().Border(wxALL, 5));
+    SetSizerAndFit(dialogsizer);
     Centre();
-
-    dialogText->SetValue(labelStr);     
+   
     dialogText->SetSelection(-1, -1);   
 }
 

@@ -5,6 +5,7 @@
 
 #include "wx/clipbrd.h"
 #include <sstream>
+#include <algorithm>
 #include "CubicSDR.h"
 
 wxBEGIN_EVENT_TABLE(FrequencyDialog, wxDialog)
@@ -16,9 +17,7 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
         const wxSize & size, long style, FrequencyDialogTarget targetMode, wxString initString) :
         wxDialog(parent, id, title, wxDefaultPosition, wxDefaultSize, style) {
     wxString freqStr;
-    wxSizer *dialogsizer = new wxBoxSizer( wxVERTICAL );
-    int titleX, textCtrlX;
-
+   
     activeDemod = demod;
 
     this->targetMode = targetMode;
@@ -56,6 +55,18 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
     }
     dialogText = new wxTextCtrl(this, wxID_FREQ_INPUT, freqStr, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
     dialogText->SetFont(wxFont(15, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
+    
+    // Set the textControl width to the [title + 100%] or the [content +100%],
+  // whichever's the greater.
+    int textCtrlX = dialogText->GetTextExtent(freqStr).GetWidth();
+    int initTextCtrlX = dialogText->GetTextExtent(initString).GetWidth();
+    int titleX = this->GetTextExtent(title).GetWidth();
+    dialogText->SetMinSize(wxSize(max(int(2.0 * titleX), int(2.0 * std::max(textCtrlX, initTextCtrlX))), -1));
+
+    wxBoxSizer* dialogsizer = new wxBoxSizer(wxALL);
+    dialogsizer->Add(dialogText, wxSizerFlags(1).Expand().Border(wxALL, 5));
+    SetSizerAndFit(dialogsizer);
+    Centre();
 
     if (initString != "" && initString.length() == 1) {
         dialogText->SetValue(initString);
@@ -67,16 +78,6 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
         }
         dialogText->SetSelection(-1, -1);
     }
-
-    // Set the textControl width to the [title + 35%] or the [content +10%],
-    // whichever's the greater.
-
-    textCtrlX = dialogText->GetTextExtent(initString).GetWidth();
-    titleX = this->GetTextExtent(title).GetWidth();
-    dialogText->SetMinSize(wxSize(max(int(1.35 * titleX), int(1.1 * textCtrlX)), -1));
-    dialogsizer->Add( dialogText, wxSizerFlags(1).Expand().Border(wxALL, 5));
-    SetSizerAndFit(dialogsizer);
-
 }
 
 
