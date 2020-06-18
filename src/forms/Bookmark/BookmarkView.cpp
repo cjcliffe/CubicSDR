@@ -146,8 +146,7 @@ BookmarkView::BookmarkView( wxWindow* parent, wxWindowID id, const wxPoint& pos,
     bookmarkChoice = nullptr;
     dragItem = nullptr;
     dragItemId = nullptr;
-    editingLabel = false;
-    
+
     m_clearSearchButton->Hide();
     hideProps();
     
@@ -165,7 +164,6 @@ BookmarkView::~BookmarkView() {
 
     dragItem = nullptr;
     dragItemId = nullptr;
-    editingLabel = false;
 
     visualDragItem = nullptr;
     nextEnt = nullptr;
@@ -668,9 +666,6 @@ void BookmarkView::onMenuItem(wxCommandEvent& event) {
 
 
 bool BookmarkView::isMouseInView() {
-    if (editingLabel) {
-        return true;
-    }
     if (m_labelText->HasFocus()) {
         return true;
     }
@@ -1171,11 +1166,20 @@ void BookmarkView::onTreeSelectChanging( wxTreeEvent& event ) {
 }
 
 
+void BookmarkView::onLabelKillFocus(wxFocusEvent &event) {
+    event.Skip();
+
+    wxCommandEvent dummyEvt;
+    onLabelText(dummyEvt);
+
+    if (!m_treeView->HasFocus()) { m_treeView->SetFocus(); }
+}
+
 void BookmarkView::onLabelText( wxCommandEvent& /* event */ ) {
 
     std::wstring newLabel = m_labelText->GetValue().ToStdWstring();
     TreeViewItem *curSel = itemToTVI(m_treeView->GetSelection());
-    
+
     if (curSel != nullptr) {
         if (curSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
             curSel->demod->setDemodulatorUserLabel(newLabel);
@@ -1233,9 +1237,6 @@ void BookmarkView::onRemoveActive( wxCommandEvent& /* event */ ) {
     TreeViewItem *curSel = itemToTVI(m_treeView->GetSelection());
 
     if (curSel && curSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_ACTIVE) {
-        if (editingLabel) {
-            return;
-        }
         doRemoveActive(curSel->demod);
     }
 }
@@ -1270,11 +1271,6 @@ void BookmarkView::onStopRecording( wxCommandEvent& /* event */ ) {
 
 
 void BookmarkView::onRemoveBookmark( wxCommandEvent& /* event */ ) {
-
-    if (editingLabel) {
-        return;
-    }
-
     TreeViewItem *curSel = itemToTVI(m_treeView->GetSelection());
 
     if (curSel && curSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_BOOKMARK) {
@@ -1310,11 +1306,6 @@ void BookmarkView::onActivateRecent( wxCommandEvent& /* event */ ) {
 
 
 void BookmarkView::onRemoveRecent ( wxCommandEvent& /* event */ ) {
-
-    if (editingLabel) {
-        return;
-    }
-    
     TreeViewItem *curSel = itemToTVI(m_treeView->GetSelection());
     
     if (curSel && curSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RECENT) {
@@ -1328,10 +1319,6 @@ void BookmarkView::onRemoveRecent ( wxCommandEvent& /* event */ ) {
 }
 
 void BookmarkView::onClearRecents ( wxCommandEvent& /* event */ ) {
-
-    if (editingLabel) {
-        return;
-    }
     doClearRecents();
 }
 
@@ -1347,11 +1334,6 @@ void BookmarkView::onAddGroup( wxCommandEvent& /* event */ ) {
 
 
 void BookmarkView::onRemoveGroup( wxCommandEvent& /* event */ ) {
-
-    if (editingLabel) {
-        return;
-    }
-
     TreeViewItem *curSel = itemToTVI(m_treeView->GetSelection());
 
     if (curSel && curSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_GROUP) {
@@ -1372,11 +1354,6 @@ void BookmarkView::onAddRange( wxCommandEvent& /* event */ ) {
 
 
 void BookmarkView::onRemoveRange( wxCommandEvent& /* event */ ) {
-
-    if (editingLabel) {
-        return;
-    }
-    
     TreeViewItem *curSel = itemToTVI(m_treeView->GetSelection());
     
     if (curSel && curSel->type == TreeViewItem::TREEVIEW_ITEM_TYPE_RANGE) {

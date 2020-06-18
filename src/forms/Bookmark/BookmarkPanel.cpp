@@ -105,6 +105,7 @@ BookmarkPanel::BookmarkPanel( wxWindow* parent, wxWindowID id, const wxPoint& po
 	m_treeView->Connect( wxEVT_COMMAND_TREE_ITEM_MENU, wxTreeEventHandler( BookmarkPanel::onTreeItemMenu ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_SEL_CHANGED, wxTreeEventHandler( BookmarkPanel::onTreeSelect ), NULL, this );
 	m_treeView->Connect( wxEVT_COMMAND_TREE_SEL_CHANGING, wxTreeEventHandler( BookmarkPanel::onTreeSelectChanging ), NULL, this );
+	m_labelText->Connect( wxEVT_KILL_FOCUS, wxFocusEventHandler( BookmarkPanel::onLabelKillFocus ), NULL, this );
 	m_labelText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( BookmarkPanel::onLabelText ), NULL, this );
 	m_frequencyVal->Connect( wxEVT_LEFT_DCLICK, wxMouseEventHandler( BookmarkPanel::onDoubleClickFreq ), NULL, this );
 	m_bandwidthVal->Connect( wxEVT_LEFT_DCLICK, wxMouseEventHandler( BookmarkPanel::onDoubleClickBandwidth ), NULL, this );
@@ -133,6 +134,7 @@ BookmarkPanel::~BookmarkPanel()
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_ITEM_MENU, wxTreeEventHandler( BookmarkPanel::onTreeItemMenu ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_SEL_CHANGED, wxTreeEventHandler( BookmarkPanel::onTreeSelect ), NULL, this );
 	m_treeView->Disconnect( wxEVT_COMMAND_TREE_SEL_CHANGING, wxTreeEventHandler( BookmarkPanel::onTreeSelectChanging ), NULL, this );
+	m_labelText->Disconnect( wxEVT_KILL_FOCUS, wxFocusEventHandler( BookmarkPanel::onLabelKillFocus ), NULL, this );
 	m_labelText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( BookmarkPanel::onLabelText ), NULL, this );
 	m_frequencyVal->Disconnect( wxEVT_LEFT_DCLICK, wxMouseEventHandler( BookmarkPanel::onDoubleClickFreq ), NULL, this );
 	m_bandwidthVal->Disconnect( wxEVT_LEFT_DCLICK, wxMouseEventHandler( BookmarkPanel::onDoubleClickBandwidth ), NULL, this );

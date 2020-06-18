@@ -70,6 +70,7 @@ class BookmarkPanel : public wxPanel
 		virtual void onTreeItemMenu( wxTreeEvent& event ) { event.Skip(); }
 		virtual void onTreeSelect( wxTreeEvent& event ) { event.Skip(); }
 		virtual void onTreeSelectChanging( wxTreeEvent& event ) { event.Skip(); }
+		virtual void onLabelKillFocus( wxFocusEvent& event ) { event.Skip(); }
 		virtual void onLabelText( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onDoubleClickFreq( wxMouseEvent& event ) { event.Skip(); }
 		virtual void onDoubleClickBandwidth( wxMouseEvent& event ) { event.Skip(); }

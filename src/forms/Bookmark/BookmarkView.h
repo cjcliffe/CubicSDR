@@ -113,6 +113,7 @@ protected:
     void onTreeItemMenu( wxTreeEvent& event );
     void onTreeSelect( wxTreeEvent& event );
     void onTreeSelectChanging( wxTreeEvent& event );
+    void onLabelKillFocus(wxFocusEvent& event );
     void onLabelText( wxCommandEvent& event );
     void onDoubleClickFreq( wxMouseEvent& event );
     void onDoubleClickBandwidth( wxMouseEvent& event );
@@ -179,8 +180,6 @@ protected:
     TreeViewItem *dragItem;
     wxTreeItemId dragItemId;
     BookmarkViewVisualDragItem *visualDragItem;
-    
-    bool editingLabel;
     
     // Bookmarks
     std::atomic_bool doUpdateBookmarks;
