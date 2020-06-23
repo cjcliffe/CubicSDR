@@ -1171,8 +1171,6 @@ void BookmarkView::onLabelKillFocus(wxFocusEvent &event) {
 
     wxCommandEvent dummyEvt;
     onLabelText(dummyEvt);
-
-    if (!m_treeView->HasFocus()) { m_treeView->SetFocus(); }
 }
 
 void BookmarkView::onLabelText( wxCommandEvent& /* event */ ) {
@@ -1205,6 +1203,8 @@ void BookmarkView::onLabelText( wxCommandEvent& /* event */ ) {
             }
         }
     }
+    
+    if (!m_treeView->HasFocus()) { m_treeView->SetFocus(); }
 }
 
 
