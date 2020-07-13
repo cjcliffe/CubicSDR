@@ -198,6 +198,18 @@ public:
 };
 
 
+
+class ActionDialogRigError : public ActionDialog {
+public:
+    ActionDialogRigError(std::string message) : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Rig Control Error")) {
+        m_questionText->SetLabelText(message);
+    }
+
+    void doClickOK() {
+    }
+};
+
+
 CubicSDR::CubicSDR() : frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE), agcMode(false)
 {
         config.load();
@@ -1157,9 +1169,12 @@ void CubicSDR::stopRig() {
     }
     
     if (rigThread) {
-        
         rigThread->terminate();
         rigThread->isTerminated(1000);
+
+        if (rigThread->getErrorState()) {
+            ActionDialog::showDialog(new ActionDialogRigError(rigThread->getErrorMessage()));
+        }
     }
 
     if (t_Rig && t_Rig->joinable()) {
