@@ -2237,6 +2237,7 @@ void AppFrame::handleRigMenu() {
     if (rigEnableMenuItem->IsChecked()) {
         if (!wxGetApp().rigIsActive()) {
             rigEnableMenuItem->Check(false);
+            wxGetApp().stopRig();
             wxGetApp().getConfig()->setRigEnabled(false);
         }
     }

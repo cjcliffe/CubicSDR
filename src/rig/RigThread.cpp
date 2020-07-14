@@ -14,6 +14,8 @@ RigThread::RigThread() {
     followMode.store(true);
     centerLock.store(false);
     followModem.store(false);
+    errorState.store(false);
+    errorMessage = "";
 }
 
 RigThread::~RigThread() {
@@ -44,10 +46,70 @@ void RigThread::initRig(rig_model_t rig_model, std::string rig_file, int serial_
     serialRate = serial_rate;
 };
 
+void RigThread::setErrorStateFromHamlibCode(int errcode) {
+    errorState.store(true);
+    switch (abs(errcode)) {
+        case RIG_EINVAL:
+            errorMessage = "Invalid parameter specified.";
+            break; /*!< invalid parameter */
+        case RIG_ECONF:
+            errorMessage = "Invalid configuration i.e. serial, etc.";
+            break; /*!< invalid configuration (serial,..) */
+        case RIG_ENOMEM:
+            errorMessage = "Out of memory.";
+            break; /*!< memory shortage */
+        case RIG_ENIMPL:
+            errorMessage = "Function Not Yet Implemented.";
+            break; /*!< function not implemented, but will be */
+        case RIG_ETIMEOUT:
+            errorMessage = "Communication timed out.";
+            break; /*!< communication timed out */
+        case RIG_EIO:
+            errorMessage = "I/O error (Open failed?)";
+            break; /*!< IO error, including open failed */
+        case RIG_EINTERNAL:
+            errorMessage = "Internal hamlib error :(";
+            break; /*!< Internal Hamlib error, huh! */
+        case RIG_EPROTO:
+            errorMessage = "Protocol Error.";
+            break; /*!< Protocol error */
+        case RIG_ERJCTED:
+            errorMessage = "Command rejected by rig.";
+            break; /*!< Command rejected by the rig */
+        case RIG_ETRUNC:
+            errorMessage = "Argument truncated.";
+            break; /*!< Command performed, but arg truncated */
+        case RIG_ENAVAIL:
+            errorMessage = "Function not available.";
+            break; /*!< function not available */
+        case RIG_ENTARGET:
+            errorMessage = "VFO not targetable.";
+            break; /*!< VFO not targetable */
+        case RIG_BUSERROR:
+            errorMessage = "Error talking on the bus.";
+            break; /*!< Error talking on the bus */
+        case RIG_BUSBUSY:
+            errorMessage = "Collision on the bus.";
+            break; /*!< Collision on the bus */
+        case RIG_EARG:
+            errorMessage = "Invalid rig handle.";
+            break; /*!< NULL RIG handle or any invalid pointer parameter in get arg */
+        case RIG_EVFO:
+            errorMessage = "Invalid VFO.";
+            break; /*!< Invalid VFO */
+        case RIG_EDOM:
+            errorMessage = "Argument out of domain of function.";
+            break; /*!< Argument out of domain of func */
+    }
+
+    std::cout << "Rig error: " << errorMessage << std::endl;
+}
+
 void RigThread::run() {
     int retcode, status;
 
     termStatus = 0;
+    errorState.store(0);
     
     std::cout << "Rig thread starting." << std::endl;
 
@@ -57,7 +119,7 @@ void RigThread::run() {
 	retcode = rig_open(rig);
     
     if (retcode != 0) {
-        std::cout << "Rig failed to init. " << std::endl;
+        setErrorStateFromHamlibCode(retcode);
         IOThread::terminate();
         return;
     }
@@ -89,8 +151,12 @@ void RigThread::run() {
                 freqChanged.store(false);
                 setOneShot.store(false);
             } else {
-                termStatus = 0;
-                break;
+                if (status == -RIG_ENIMPL) {
+                    std::cout << "Rig does not support rig_get_freq?" << std::endl;
+                } else {
+                    termStatus = status;
+                    break;
+                }
             }
         } else {
             freq_t checkFreq;
@@ -111,7 +177,13 @@ void RigThread::run() {
                     }
                 } else if (wxGetApp().getFrequency() != freq && controlMode.load() && !centerLock.load() && !followModem.load()) {
                     freq = wxGetApp().getFrequency();
-                    rig_set_freq(rig, RIG_VFO_CURR, freq);
+                    status = rig_set_freq(rig, RIG_VFO_CURR, freq);
+                    if (status == -RIG_ENIMPL) {
+                        std::cout << "Rig does not support rig_set_freq?" << std::endl;
+                    } else if (status != 0) {
+                        termStatus = status;
+                        break;
+                    }
                 } else if (followModem.load()) {
                     if (lastDemod) {
                         if (lastDemod->getFrequency() != freq) {
@@ -122,8 +194,12 @@ void RigThread::run() {
                     }
                 }
             } else {
-                termStatus = 0;
-                break;
+                if (status == -RIG_ENIMPL) {
+                    std::cout << "Rig does not support rig_get_freq?" << std::endl;
+                } else {
+                    termStatus = status;
+                    break;
+                }
             }
         }
         
@@ -136,7 +212,11 @@ void RigThread::run() {
     
     rig_close(rig);
     rig_cleanup(rig);
-    
+
+    if (termStatus != 0) {
+        setErrorStateFromHamlibCode(termStatus);
+    }
+
     std::cout << "Rig thread exiting status " << termStatus << "." << std::endl;
 };
 
@@ -184,4 +264,13 @@ void RigThread::setFollowModem(bool mFollow) {
 
 bool RigThread::getFollowModem() {
     return followModem.load();
+}
+
+
+bool RigThread::getErrorState() {
+    return errorState.load();
+}
+
+std::string RigThread::getErrorMessage() {
+    return errorMessage;
 }

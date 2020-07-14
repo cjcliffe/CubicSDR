@@ -44,9 +44,15 @@ public:
     void setFollowModem(bool mFollow);
     bool getFollowModem();
 
+    bool getErrorState();
+    std::string getErrorMessage();
+
     static RigList &enumerate();
     static int add_hamlib_rig(const struct rig_caps *rc, void* f);
-    
+
+protected:
+    void setErrorStateFromHamlibCode(int errcode);
+
 private:
 	RIG *rig;
     rig_model_t rigModel;
@@ -57,5 +63,7 @@ private:
     freq_t newFreq;
     std::atomic_bool freqChanged, setOneShot;
     std::atomic_bool controlMode, followMode, centerLock, followModem;
+    std::atomic_bool errorState;
+    std::string errorMessage;
     static RigList rigCaps;
 };
