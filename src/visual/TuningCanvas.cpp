@@ -176,7 +176,11 @@ void TuningCanvas::StepTuner(ActiveState state, int exponent, bool up) {
         long long freq = activeDemod->getFrequency();
         long long diff = abs(wxGetApp().getFrequency() - freq);
 
-        if (shiftDown) {
+        if (ctrlDown) { // Zero digits to right
+            double intpart;
+            modf(freq / (exp * 10), &intpart);
+            freq = intpart * exp * 10;
+        } else if (shiftDown) { // Prevent digit from carrying
             bool carried = (long long)((freq) / (exp * 10)) != (long long)((freq + amount) / (exp * 10)) || (bottom && freq < exp);
             freq += carried?(9*-amount):amount;
         } else {
@@ -199,7 +203,11 @@ void TuningCanvas::StepTuner(ActiveState state, int exponent, bool up) {
     if (state == TUNING_HOVER_BW) {
         long bw = wxGetApp().getDemodMgr().getLastBandwidth();
 
-        if (shiftDown) {
+        if (ctrlDown) { // Zero digits to right
+            double intpart;
+            modf(bw / (exp * 10), &intpart);
+            bw = intpart * exp * 10;
+        } else if (shiftDown) { // Prevent digit from carrying
             bool carried = (long)((bw) / (exp * 10)) != (long)((bw + amount) / (exp * 10)) || (bottom && bw < exp);
             bw += carried?(9*-amount):amount;
         } else {
@@ -219,7 +227,11 @@ void TuningCanvas::StepTuner(ActiveState state, int exponent, bool up) {
 
     if (state == TUNING_HOVER_CENTER) {
         long long ctr = wxGetApp().getFrequency();
-        if (shiftDown) {
+        if (ctrlDown) { // Zero digits to right
+            double intpart;
+            modf(ctr / (exp * 10), &intpart);
+            ctr = intpart * exp * 10;
+        } else if (shiftDown) { // Prevent digit from carrying
             bool carried = (long long)((ctr) / (exp * 10)) != (long long)((ctr + amount) / (exp * 10)) || (bottom && ctr < exp);
             ctr += carried?(9*-amount):amount;
         } else {
@@ -310,16 +322,16 @@ void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
     } else {
         switch (hoverState) {
         case TUNING_HOVER_FREQ:
-                setStatusText("Click, wheel or drag a digit to change frequency; SPACE or numeric key for direct input. Right click to set/clear snap. Hold ALT to change PPM. Hold SHIFT to disable carry.");
+                setStatusText("Click, wheel or drag(left/right) a digit to change frequency; SPACE or numeric key for direct input. Right click to set/clear snap. Hold ALT to change PPM. Hold SHIFT to disable carry. Hold CTRL to Zero Right.");
             break;
         case TUNING_HOVER_BW:
-                setStatusText("Click, wheel or drag a digit to change bandwidth; SPACE or numeric key for direct input.  Hold SHIFT to disable carry.");
+                setStatusText("Click, wheel or drag(left/right) a digit to change bandwidth; SPACE or numeric key for direct input.  Hold SHIFT to disable carry. Hold CTRL to Zero Right.");
             break;
         case TUNING_HOVER_CENTER:
-                setStatusText("Click, wheel or drag a digit to change center frequency; SPACE or numeric key for direct input.  Hold SHIFT to disable carry.");
+                setStatusText("Click, wheel or drag(left/right) a digit to change center frequency; SPACE or numeric key for direct input.  Hold SHIFT to disable carry. Hold CTRL to Zero Right.");
             break;
         case TUNING_HOVER_PPM:
-                 setStatusText("Click, wheel or drag a digit to change device PPM offset.  Hold SHIFT to disable carry.");
+                 setStatusText("Click, wheel or drag(left/right) a digit to change device PPM offset.  Hold SHIFT to disable carry.");
              break;
         case TUNING_HOVER_NONE:
             setStatusText("");

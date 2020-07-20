@@ -168,6 +168,12 @@ SoapySDR::Device *SDRDeviceInfo::getSoapyDevice() {
     return soapyDevice;
 }
 
+/**
+ * @deprecated
+ * @param direction
+ * @param channel
+ * @return
+ */
 bool SDRDeviceInfo::hasCORR(int direction, size_t channel) {
     SoapySDR::Device *dev = getSoapyDevice();
     
