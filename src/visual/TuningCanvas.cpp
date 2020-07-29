@@ -163,9 +163,18 @@ void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     SwapBuffers();
 }
 
-void TuningCanvas::StepTuner(ActiveState state, int exponent, bool up) {
-    double exp = pow(10, exponent);
-    long long amount = up?exp:-exp;
+/***
+ * Perform tuner step
+ *
+ * @param state     Current hover state
+ * @param digit     Digit position
+ * @param tuningDir        Tuning direction, true for up
+ * @param preventCarry Prevent carry operation on digit overflow
+ * @param zeroOut   Zero out 'digit' and lower digits
+ */
+void TuningCanvas::StepTuner(ActiveState state, TuningDirection tuningDir, int digit, bool preventCarry, bool zeroOut) {
+    double exp = pow(10, digit);
+    long long amount = tuningDir ? exp : -exp;
 
     if (halfBand && state == TUNING_HOVER_BW) {
         amount *= 2;
@@ -176,11 +185,11 @@ void TuningCanvas::StepTuner(ActiveState state, int exponent, bool up) {
         long long freq = activeDemod->getFrequency();
         long long diff = abs(wxGetApp().getFrequency() - freq);
 
-        if (ctrlDown) { // Zero digits to right
+        if (zeroOut) { // Zero digits to right
             double intpart;
             modf(freq / (exp * 10), &intpart);
             freq = intpart * exp * 10;
-        } else if (shiftDown) { // Prevent digit from carrying
+        } else if (preventCarry) { // Prevent digit from carrying
             bool carried = (long long)((freq) / (exp * 10)) != (long long)((freq + amount) / (exp * 10)) || (bottom && freq < exp);
             freq += carried?(9*-amount):amount;
         } else {
@@ -203,11 +212,11 @@ void TuningCanvas::StepTuner(ActiveState state, int exponent, bool up) {
     if (state == TUNING_HOVER_BW) {
         long bw = wxGetApp().getDemodMgr().getLastBandwidth();
 
-        if (ctrlDown) { // Zero digits to right
+        if (zeroOut) { // Zero digits to right
             double intpart;
             modf(bw / (exp * 10), &intpart);
             bw = intpart * exp * 10;
-        } else if (shiftDown) { // Prevent digit from carrying
+        } else if (preventCarry) { // Prevent digit from carrying
             bool carried = (long)((bw) / (exp * 10)) != (long)((bw + amount) / (exp * 10)) || (bottom && bw < exp);
             bw += carried?(9*-amount):amount;
         } else {
@@ -227,11 +236,11 @@ void TuningCanvas::StepTuner(ActiveState state, int exponent, bool up) {
 
     if (state == TUNING_HOVER_CENTER) {
         long long ctr = wxGetApp().getFrequency();
-        if (ctrlDown) { // Zero digits to right
+        if (zeroOut) { // Zero digits to right
             double intpart;
             modf(ctr / (exp * 10), &intpart);
             ctr = intpart * exp * 10;
-        } else if (shiftDown) { // Prevent digit from carrying
+        } else if (preventCarry) { // Prevent digit from carrying
             bool carried = (long long)((ctr) / (exp * 10)) != (long long)((ctr + amount) / (exp * 10)) || (bottom && ctr < exp);
             ctr += carried?(9*-amount):amount;
         } else {
@@ -242,7 +251,7 @@ void TuningCanvas::StepTuner(ActiveState state, int exponent, bool up) {
     }
 
     if (state == TUNING_HOVER_PPM) {
-        if (shiftDown) {
+        if (preventCarry) {
             bool carried = (long long)((currentPPM) / (exp * 10)) != (long long)((currentPPM + amount) / (exp * 10)) || (bottom && currentPPM < exp);
             currentPPM += carried?(9*-amount):amount;
         } else {
@@ -267,12 +276,12 @@ void TuningCanvas::OnIdle(wxIdleEvent & /* event */) {
         if (downState != TUNING_HOVER_NONE) {
             dragAccum += 5.0*mouseTracker.getOriginDeltaMouseX();
             while (dragAccum > 1.0) {
-                StepTuner(downState, downIndex-1, true);
+                StepTuner(downState, TUNING_DIRECTION_UP, downIndex - 1, shiftDown, false);
                 dragAccum -= 1.0;
                 dragging = true;
             }
             while (dragAccum < -1.0) {
-                StepTuner(downState, downIndex-1, false);
+                StepTuner(downState, TUNING_DIRECTION_DOWN, downIndex - 1, shiftDown, false);
                 dragAccum += 1.0;
                 dragging = true;
             }
@@ -322,13 +331,13 @@ void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
     } else {
         switch (hoverState) {
         case TUNING_HOVER_FREQ:
-                setStatusText("Click, wheel or drag(left/right) a digit to change frequency; SPACE or numeric key for direct input. Right click to set/clear snap. Hold ALT to change PPM. Hold SHIFT to disable carry. Hold CTRL to Zero Right.");
+                setStatusText("Click, wheel or drag(left/right) a digit to change frequency; SPACE or numeric key for direct input. Right click to set/clear snap. Hold ALT to change PPM. Hold SHIFT to disable carry. SHIFT-right click to Zero Right.");
             break;
         case TUNING_HOVER_BW:
-                setStatusText("Click, wheel or drag(left/right) a digit to change bandwidth; SPACE or numeric key for direct input.  Hold SHIFT to disable carry. Hold CTRL to Zero Right.");
+                setStatusText("Click, wheel or drag(left/right) a digit to change bandwidth; SPACE or numeric key for direct input.  Hold SHIFT to disable carry. SHIFT-right click to Zero Right.");
             break;
         case TUNING_HOVER_CENTER:
-                setStatusText("Click, wheel or drag(left/right) a digit to change center frequency; SPACE or numeric key for direct input.  Hold SHIFT to disable carry. Hold CTRL to Zero Right.");
+                setStatusText("Click, wheel or drag(left/right) a digit to change center frequency; SPACE or numeric key for direct input.  Hold SHIFT to disable carry. SHIFT-right click to Zero Right.");
             break;
         case TUNING_HOVER_PPM:
                  setStatusText("Click, wheel or drag(left/right) a digit to change device PPM offset.  Hold SHIFT to disable carry.");
@@ -364,9 +373,9 @@ void TuningCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
 
     if (hoverState != TUNING_HOVER_NONE && !mouseTracker.mouseDown() && hoverIndex) {
         if (event.m_wheelAxis == wxMOUSE_WHEEL_VERTICAL) {
-            StepTuner(hoverState, hExponent, (event.m_wheelRotation > 0)?true:false);
+            StepTuner(hoverState, (event.m_wheelRotation > 0) ? TUNING_DIRECTION_UP : TUNING_DIRECTION_DOWN, hExponent, shiftDown, false);
         } else {
-            StepTuner(hoverState, hExponent, (event.m_wheelRotation < 0)?true:false);
+            StepTuner(hoverState, (event.m_wheelRotation < 0) ? TUNING_DIRECTION_UP : TUNING_DIRECTION_DOWN, hExponent, shiftDown, false);
         }
     }
 }
@@ -377,7 +386,7 @@ void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
     int hExponent = hoverIndex - 1;
 
     if (hoverState != TUNING_HOVER_NONE && !dragging && (downState == hoverState) && (downIndex == hoverIndex)) {
-        StepTuner(hoverState, hExponent, top);
+        StepTuner(hoverState, top ? TUNING_DIRECTION_UP : TUNING_DIRECTION_DOWN, hExponent, shiftDown, false);
     }
 
     mouseTracker.setVertDragLock(false);
@@ -388,12 +397,23 @@ void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
 
 void TuningCanvas::OnMouseRightDown(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseRightDown(event);
+
+    uxDown = 2.0 * (mouseTracker.getMouseX() - 0.5);
+
+    downIndex = hoverIndex;
+    downState = hoverState;
 }
 
 void TuningCanvas::OnMouseRightReleased(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseRightReleased(event);
 
-    if (hoverState == TUNING_HOVER_FREQ) {
+    if (shiftDown) {
+        int hExponent = hoverIndex - 1;
+
+        if (hoverState != TUNING_HOVER_NONE && !dragging && (downState == hoverState) && (downIndex == hoverIndex)) {
+            StepTuner(hoverState, top ? TUNING_DIRECTION_UP : TUNING_DIRECTION_DOWN, hExponent, false, true);
+        }
+    } else if (hoverState == TUNING_HOVER_FREQ) {
         if (hoverIndex == 1) {
             wxGetApp().setFrequencySnap(1);
         } else if (hoverIndex > 1 && hoverIndex < 8) {
