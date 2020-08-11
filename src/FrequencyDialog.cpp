@@ -158,6 +158,9 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
             if (lastDemodType == "USB" || lastDemodType == "LSB") {
                 freq *= 2;
             }
+            if (freq > CHANNELIZER_RATE_MAX) {
+                freq = CHANNELIZER_RATE_MAX;
+            }
             if (activeDemod) {
                 activeDemod->setBandwidth(freq);
             } else {
