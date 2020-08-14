@@ -1476,6 +1476,8 @@ LIQUID_FFT_DEFINE_API(LIQUID_FFT_MANGLE_FLOAT,float,liquid_float_complex)
 #define LIQUID_SPGRAM_MANGLE_CFLOAT(name) LIQUID_CONCAT(spgramcf,name)
 #define LIQUID_SPGRAM_MANGLE_FLOAT(name)  LIQUID_CONCAT(spgramf, name)
 
+#define LIQUID_SPGRAM_PSD_MIN (1e-12)
+
 // Macro    :   SPGRAM
 //  SPGRAM  :   name-mangling macro
 //  T       :   primitive data type
@@ -1843,6 +1845,7 @@ LIQUID_SPWATERFALL_DEFINE_API(LIQUID_SPWATERFALL_MANGLE_FLOAT,
 //
 
 // prototypes
+#define LIQUID_FIRFILT_NUM_TYPES (16)
 typedef enum {
     LIQUID_FIRFILT_UNKNOWN=0,   // unknown filter type
 
@@ -1879,6 +1882,9 @@ void liquid_firdes_prototype(liquid_firfilt_type _type,
                              float               _beta,
                              float               _dt,
                              float *             _h);
+
+// pretty names for filter design types
+extern const char * liquid_firfilt_type_str[LIQUID_FIRFILT_NUM_TYPES][2];
 
 // returns filter type based on input string
 int liquid_getopt_str2firfilt(const char * _str);
@@ -3080,6 +3086,16 @@ FIRPFB() FIRPFB(_create)(unsigned int _M,                                   \
                          unsigned int _h_len);                              \
                                                                             \
 /* Create firpfb object using Kaiser-Bessel windowed sinc filter design */  \
+/* method, using default values for cut-off frequency and stop-band     */  \
+/* attenuation. This is equivalent to:                                  */  \
+/*   FIRPFB(_create_kaiser)(_M, _m, 0.5, 60.0)                          */  \
+/* which creates a Nyquist filter at the appropriate cut-off frequency. */  \
+/*  _M      : number of filters in the bank, _M > 0                     */  \
+/*  _m      : filter semi-length [samples], _m > 0                      */  \
+FIRPFB() FIRPFB(_create_default)(unsigned int _M,                           \
+                                 unsigned int _m);                          \
+                                                                            \
+/* Create firpfb object using Kaiser-Bessel windowed sinc filter design */  \
 /* method                                                               */  \
 /*  _M      : number of filters in the bank, _M > 0                     */  \
 /*  _m      : filter semi-length [samples], _m > 0                      */  \
@@ -3258,6 +3274,9 @@ void FIRINTERP(_print)(FIRINTERP() _q);                                     \
                                                                             \
 /* Reset internal state                                                 */  \
 void FIRINTERP(_reset)(FIRINTERP() _q);                                     \
+                                                                            \
+/* Get interpolation rate                                               */  \
+unsigned int FIRINTERP(_get_interp_rate)(FIRINTERP() _q);                   \
                                                                             \
 /* Set output scaling for interpolator                                  */  \
 /*  _q      : interpolator object                                       */  \
@@ -3462,6 +3481,9 @@ void FIRDECIM(_print)(FIRDECIM() _q);                                       \
                                                                             \
 /* Reset decimator object internal state                                */  \
 void FIRDECIM(_reset)(FIRDECIM() _q);                                       \
+                                                                            \
+/* Get decimation rate                                                  */  \
+unsigned int FIRDECIM(_get_decim_rate)(FIRDECIM() _q);                      \
                                                                             \
 /* Set output scaling for decimator                                     */  \
 /*  _q      : decimator object                                          */  \
@@ -4139,6 +4161,42 @@ LIQUID_MSRESAMP_DEFINE_API(LIQUID_MSRESAMP_MANGLE_CCCF,
                            liquid_float_complex,
                            liquid_float_complex,
                            liquid_float_complex)
+
+//
+// Direct digital [up/down] synthesizer
+//
+
+#define DDS_MANGLE_CCCF(name)  LIQUID_CONCAT(dds_cccf,name)
+
+#define LIQUID_DDS_DEFINE_API(DDS,TO,TC,TI)                     \
+typedef struct DDS(_s) * DDS();                                 \
+                                                                \
+/* create digital synthesizer object                        */  \
+DDS() DDS(_create)(unsigned int _num_stages,                    \
+                   float _fc,                                   \
+                   float _bw,                                   \
+                   float _As);                                  \
+                                                                \
+/* destroy digital synthesizer object                       */  \
+void DDS(_destroy)(DDS() _q);                                   \
+                                                                \
+/* print synthesizer object internals to stdout             */  \
+void DDS(_print)(DDS() _q);                                     \
+                                                                \
+/* reset synthesizer object internals                       */  \
+void DDS(_reset)(DDS() _q);                                     \
+                                                                \
+void DDS(_decim_execute)(DDS() _q,                              \
+                         TI * _x,                               \
+                         TO * _y);                              \
+void DDS(_interp_execute)(DDS() _q,                             \
+                          TI _x,                                \
+                          TO * _y);                             \
+
+LIQUID_DDS_DEFINE_API(DDS_MANGLE_CCCF,
+                      liquid_float_complex,
+                      liquid_float_complex,
+                      liquid_float_complex)
 
 
 //
@@ -6871,11 +6929,12 @@ typedef struct MODEM(_s) * MODEM();                                         \
 MODEM() MODEM(_create)(modulation_scheme _scheme);                          \
                                                                             \
 /* Create linear digital modem object with arbitrary constellation      */  \
-/* points defined by an external table of symbols.                      */  \
+/* points defined by an external table of symbols. Sample points are    */  \
+/* provided as complex float pairs and converted internally if needed.  */  \
 /*  _table  : array of complex constellation points, [size: _M x 1]     */  \
 /*  _M      : modulation order and table size, _M must be power of 2    */  \
-MODEM() MODEM(_create_arbitrary)(TC *         _table,                       \
-                                 unsigned int _M);                          \
+MODEM() MODEM(_create_arbitrary)(liquid_float_complex * _table,             \
+                                 unsigned int           _M);                \
                                                                             \
 /* Recreate modulation scheme, re-allocating memory as necessary        */  \
 /*  _q      : modem object                                              */  \
