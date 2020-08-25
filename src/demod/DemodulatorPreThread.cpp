@@ -327,9 +327,9 @@ void DemodulatorPreThread::setBandwidth(int bandwidth) {
 }
 
 int DemodulatorPreThread::getBandwidth() {
-    if (bandwidthChanged.load()) {
-        return newBandwidth;
-    }
+//    if (bandwidthChanged.load()) {
+//        return newBandwidth;
+//    }
 
     return currentBandwidth;
 }

@@ -111,12 +111,16 @@ bool SDRThread::init() {
     //4. Apply other settings: Frequency, PPM correction, Gains,  Device-specific settings:
     device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency - offset.load());
 
-    if (devInfo->hasCORR(SOAPY_SDR_RX, 0)) {
+    if (device->hasFrequencyCorrection(SOAPY_SDR_RX, 0)) {
+        hasPPM.store(true);
+        device->setFrequencyCorrection(SOAPY_SDR_RX, 0, ppm.load());
+    } else if (devInfo->hasCORR(SOAPY_SDR_RX, 0)) {
         hasPPM.store(true);
         device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm.load());
     } else {
         hasPPM.store(false);
     }
+
     if (device->hasDCOffsetMode(SOAPY_SDR_RX, 0)) {
         hasHardwareDC.store(true);
 //        wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Found hardware DC offset correction support, internal disabled."));
@@ -518,7 +522,11 @@ void SDRThread::updateSettings() {
     }
     
     if (ppm_changed.load() && hasPPM.load()) {
-        device->setFrequency(SOAPY_SDR_RX,0,"CORR",ppm.load());
+        if (device->hasFrequencyCorrection(SOAPY_SDR_RX, 0)) {
+            device->setFrequencyCorrection(SOAPY_SDR_RX, 0, ppm.load());
+        } else {
+            device->setFrequency(SOAPY_SDR_RX, 0, "CORR", ppm.load());
+        }
         ppm_changed.store(false);
     }
     

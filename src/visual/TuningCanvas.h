@@ -20,6 +20,9 @@ public:
     enum ActiveState {
         TUNING_HOVER_NONE, TUNING_HOVER_FREQ, TUNING_HOVER_BW, TUNING_HOVER_PPM, TUNING_HOVER_CENTER
     };
+    enum TuningDirection {
+        TUNING_DIRECTION_DOWN, TUNING_DIRECTION_UP
+    };
     TuningCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
     ~TuningCanvas();
 
@@ -45,7 +48,7 @@ private:
     void OnMouseRightDown(wxMouseEvent& event);
     void OnMouseRightReleased(wxMouseEvent& event);
 
-    void StepTuner(ActiveState state, int factor, bool up = true);
+    void StepTuner(ActiveState state, TuningDirection tuningDir, int digit, bool preventCarry = false, bool zeroOut = false);
 
     TuningContext *glContext;
 
