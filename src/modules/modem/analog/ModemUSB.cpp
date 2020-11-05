@@ -57,7 +57,7 @@ void ModemUSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *a
 		iirfilt_crcf_execute(ssbFilt, x, &y);
 		nco_crcf_mix_up(ssbShift, y, &x);
         float lsb_discard;
-        firhilbf_c2r_execute(c2rFilt, x, &lsb_discard, &demodOutputData[i]);
+        firhilbf_c2r_execute(c2rFilt, x, &demodOutputData[i], &lsb_discard);
     }
     
     buildAudioOutput(akit, audioOut, true);
