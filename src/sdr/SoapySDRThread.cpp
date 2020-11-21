@@ -479,9 +479,14 @@ void SDRThread::updateSettings() {
         device->deactivateStream(stream);
 
         //2. Set the (new) sample rate
-        device->setSampleRate(SOAPY_SDR_RX, 0, sampleRate.load());
+        try {
+            device->setSampleRate(SOAPY_SDR_RX, 0, sampleRate.load());
+        }
+        catch (...) {
+            std::cout << "SDRThread: Exception while setting the sample rate = " << sampleRate.load() << std::endl << std::flush;
+        }
 
-        //2.2 Device-specific workarounds:
+        //2.3 Device-specific workarounds:
         // TODO: explore bandwidth setting option to see if this is necessary for others
         if (device->getDriverKey() == "bladeRF") {
             device->setBandwidth(SOAPY_SDR_RX, 0, sampleRate.load());
@@ -491,8 +496,23 @@ void SDRThread::updateSettings() {
         device->activateStream(stream);
 
         //4. Re-do Cubic buffers :
-        //re-read current sample rate and MTU:
-        sampleRate.store(device->getSampleRate(SOAPY_SDR_RX, 0));
+        //4.1. re-read current sample rate and MTU:
+        //4.2. The device MAY force another sample rate than the one requested, or refusing the change altogether,
+        // because of limitations of hardware and the SoapySDR river
+        double requested_sample_rate = (double)sampleRate.load();
+        double applied_sample_rate = device->getSampleRate(SOAPY_SDR_RX, 0);
+
+        if (abs((requested_sample_rate - applied_sample_rate) / requested_sample_rate) > 0.05) {
+            //force the applied_sample_rate as the new effective user setting
+            DeviceConfig* devConfig = deviceConfig.load();
+            if (devConfig) {
+                devConfig->setSampleRate(applied_sample_rate);
+            }
+
+            std::cout << "SDRThread: WARNING Requested sample rate is " << requested_sample_rate << " but " << applied_sample_rate << " was applied." <<std::endl << std::flush;
+        } 
+
+        sampleRate.store(applied_sample_rate);
 
         numChannels.store(getOptimalChannelCount(sampleRate.load()));
         numElems.store(getOptimalElementCount(sampleRate.load(), TARGET_DISPLAY_FPS));
