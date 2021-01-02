@@ -159,6 +159,9 @@
 /* Force overriding of SIMD (use portable C code) */
 /* #undef LIQUID_SIMDOVERRIDE */
 
+/* Enable strict program exit on error */
+/* #undef LIQUID_STRICT_EXIT */
+
 /* Define to the address where bug reports for this package should be sent. */
 #define PACKAGE_BUGREPORT "joseph@liquidsdr.org"
 
