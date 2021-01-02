@@ -4,12 +4,14 @@
 #include "ModemAM.h"
 
 ModemAM::ModemAM() : ModemAnalog() {
-    demodAM = ampmodem_create(0.5, LIQUID_AMPMODEM_DSB, 0);
+    // Create a DC blocker using 25 samples wide window
+    // and 30dB reduction of the DC level.
+    mDCBlock = firfilt_rrrf_create_dc_blocker (25,30.0f);
     useSignalOutput(true);
 }
 
 ModemAM::~ModemAM() {
-    ampmodem_destroy(demodAM);
+    firfilt_rrrf_destroy(mDCBlock);
 }
 
 ModemBase *ModemAM::factory() {
@@ -26,17 +28,23 @@ int ModemAM::getDefaultSampleRate() {
 
 void ModemAM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput* audioOut) {
     ModemKitAnalog *amkit = (ModemKitAnalog *)kit;
-    
+
     initOutputBuffers(amkit,input);
-    
+
     if (!bufSize) {
-       
+
         return;
     }
-    
+
+  // Implement an AM demodulator. Compute signal
+  // amplitude followed by a DC blocker to remove
+  // the DC offset. 
 	for (size_t i = 0; i < bufSize; i++) {
-		ampmodem_demodulate(demodAM, input->data[i], &demodOutputData[i]);
+    float I = input->data[i].real;
+    float Q = input->data[i].imag;
+    firfilt_rrrf_push (mDCBlock,sqrt(I*I+Q*Q));
+    firfilt_rrrf_execute (mDCBlock,&demodOutputData[i]);
 	}
-    
+
     buildAudioOutput(amkit,audioOut,true);
 }
