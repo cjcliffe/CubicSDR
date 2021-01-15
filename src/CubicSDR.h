@@ -34,6 +34,7 @@
 #include "ModemFM.h"
 #include "ModemNBFM.h"
 #include "ModemFMStereo.h"
+#include "ModemCW.h"
 #include "ModemAM.h"
 #include "ModemUSB.h"
 #include "ModemLSB.h"

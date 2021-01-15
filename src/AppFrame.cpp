@@ -798,7 +798,7 @@ WaterfallCanvas *AppFrame::makeWaterfallCanvas(wxWindow *parent, const wxGLAttri
 }
 
 ModeSelectorCanvas *AppFrame::makeModemSelectorPanel(wxWindow *parent, const wxGLAttributes &attribList) {
-    vector<string> modemList = {"FM", "FMS", "NBFM", "AM", "LSB", "USB", "DSB", "I/Q" };
+    vector<string> modemList = {"FM", "FMS", "NBFM", "AM", "CW", "LSB", "USB", "DSB", "I/Q" };
 
 #ifdef CUBICSDR_MODEM_EXCLUDE
     std::string excludeListStr = "" CUBICSDR_MODEM_EXCLUDE;

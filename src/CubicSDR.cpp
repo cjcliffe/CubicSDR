@@ -306,6 +306,7 @@ bool CubicSDR::OnInit() {
     Modem::addModemFactory(ModemNBFM::factory, "NBFM", 12500);
     Modem::addModemFactory(ModemFMStereo::factory, "FMS", 200000);
     Modem::addModemFactory(ModemAM::factory, "AM", 6000);
+    Modem::addModemFactory(ModemCW::factory, "CW", 500);
     Modem::addModemFactory(ModemLSB::factory, "LSB", 5400);
     Modem::addModemFactory(ModemUSB::factory, "USB", 5400);
     Modem::addModemFactory(ModemDSB::factory, "DSB", 5400);
