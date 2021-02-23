@@ -1,6 +1,7 @@
 os: 
     - linux
     - osx
+osx_image: xcode11.3
 dist: trusty
 language: cpp
 addons:
