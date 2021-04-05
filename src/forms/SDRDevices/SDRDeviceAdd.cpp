@@ -48,7 +48,7 @@ void SDRDeviceAddDialog::OnOkButton( wxCommandEvent& /* event */) {
     Close(true);
 }
 
-bool SDRDeviceAddDialog::wasOkPressed() {
+bool SDRDeviceAddDialog::wasOkPressed() const {
     return okPressed;
 }
 
