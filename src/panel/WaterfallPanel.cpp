@@ -3,10 +3,10 @@
 
 #include "WaterfallPanel.h"
 
-WaterfallPanel::WaterfallPanel() : GLPanel(), fft_size(0), waterfall_lines(0), waterfall_slice(NULL), activeTheme(NULL) {
+WaterfallPanel::WaterfallPanel() : GLPanel(), fft_size(0), waterfall_lines(0), waterfall_slice(nullptr), activeTheme(nullptr) {
 	setFillColor(RGBA4f(0,0,0));
-    for (int i = 0; i < 2; i++) {
-        waterfall[i] = 0;
+    for (unsigned int & i : waterfall) {
+        i = 0;
     }
 }
 
@@ -26,8 +26,8 @@ void WaterfallPanel::setup(unsigned int fft_size_in, int num_waterfall_lines_in)
 void WaterfallPanel::refreshTheme() {
     glEnable (GL_TEXTURE_2D);
     
-    for (int i = 0; i < 2; i++) {
-        glBindTexture(GL_TEXTURE_2D, waterfall[i]);
+    for (unsigned int i : waterfall) {
+        glBindTexture(GL_TEXTURE_2D, i);
         
         glPixelTransferi(GL_MAP_COLOR, GL_TRUE);
         glPixelMapfv(GL_PIXEL_MAP_I_TO_R, 256, &(ThemeMgr::mgr.currentTheme->waterfallGradient.getRed())[0]);
@@ -36,15 +36,15 @@ void WaterfallPanel::refreshTheme() {
     }
 }
 
-void WaterfallPanel::setPoints(std::vector<float> &points) {
-    size_t halfPts = points.size()/2;
+void WaterfallPanel::setPoints(std::vector<float> &points_in) {
+    size_t halfPts = points_in.size() / 2;
     if (halfPts == fft_size) {
        
         for (unsigned int i = 0; i < fft_size; i++) {
-            this->points[i] = points[i*2+1];
+            points[i] = points_in[i * 2 + 1];
         }
     } else {
-        this->points.assign(points.begin(), points.end());
+        points.assign(points_in.begin(), points_in.end());
     }
 }
 
@@ -61,9 +61,9 @@ void WaterfallPanel::step() {
         return;
     }
     
-    if (points.size() && points.size() == fft_size) {
+    if (!points.empty() && points.size() == fft_size) {
         for (int j = 0; j < 2; j++) {
-            for (int i = 0, iMax = half_fft_size; i < iMax; i++) {
+            for (unsigned int i = 0, iMax = half_fft_size; i < iMax; i++) {
                 float v = points[j * half_fft_size + i];
                 
                 float wv = v < 0 ? 0 : (v > 0.99 ? 0.99 : v);
@@ -83,7 +83,7 @@ void WaterfallPanel::step() {
 }
 
 void WaterfallPanel::update() {
-    int half_fft_size = fft_size / 2;
+    unsigned int half_fft_size = fft_size / 2;
     
     if (!bufferInitialized.load()) {
         return;
@@ -110,8 +110,8 @@ void WaterfallPanel::update() {
         waterfall_tex = new unsigned char[half_fft_size * waterfall_lines];
         memset(waterfall_tex, 0, half_fft_size * waterfall_lines);
         
-        for (int i = 0; i < 2; i++) {
-            glBindTexture(GL_TEXTURE_2D, waterfall[i]);
+        for (unsigned int i : waterfall) {
+            glBindTexture(GL_TEXTURE_2D, i);
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
             
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -136,7 +136,7 @@ void WaterfallPanel::update() {
         }
     }
     
-    int run_ofs = 0;
+    unsigned int run_ofs = 0;
     while (lines_buffered.load()) {
         int run_lines = lines_buffered.load();
         if (run_lines > waterfall_ofs[0]) {
@@ -163,7 +163,7 @@ void WaterfallPanel::drawPanelContents() {
         return;
     }
 
-    int half_fft_size = fft_size / 2;
+    unsigned int half_fft_size = fft_size / 2;
     
     glLoadMatrixf(transform.to_ptr());
     

@@ -15,16 +15,16 @@ ScopePanel::ScopePanel() : GLPanel(), scopeMode(SCOPE_MODE_Y) {
     bgPanelStereo[1].setSize(1, 0.5);
 }
 
-void ScopePanel::setMode(ScopeMode scopeMode) {
-    this->scopeMode = scopeMode;
+void ScopePanel::setMode(ScopeMode scopeMode_in) {
+    scopeMode = scopeMode_in;
 }
 
 ScopePanel::ScopeMode ScopePanel::getMode() {
     return this->scopeMode;
 }
 
-void ScopePanel::setPoints(std::vector<float> &points) {
-    this->points.assign(points.begin(),points.end());
+void ScopePanel::setPoints(std::vector<float> &points_in) {
+    points.assign(points_in.begin(), points_in.end());
 }
 
 void ScopePanel::drawPanelContents() {
@@ -81,7 +81,7 @@ void ScopePanel::drawPanelContents() {
                   ThemeMgr::mgr.currentTheme->scopeLine.b * 0.15);
     }
     
-    if (points.size()) {
+    if (!points.empty()) {
         glEnable (GL_BLEND);
         glEnable (GL_LINE_SMOOTH);
         glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);

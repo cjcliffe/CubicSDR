@@ -5,7 +5,7 @@
 #include "ColorTheme.h"
 
 
-MeterPanel::MeterPanel(std::string name, float low, float high, float current) {
+MeterPanel::MeterPanel(const std::string& name, float low, float high, float current) {
     this->name = name;
     this->low = low;
     this->high = high;
@@ -35,7 +35,7 @@ MeterPanel::MeterPanel(std::string name, float low, float high, float current) {
     highlightPanel.setBlend(GL_ONE, GL_ONE);
     highlightPanel.visible = false;
     c1 = RGBA4f(0.3f,0.3f,0.3f,1.0f);
-    c2 = RGBA4f(0.65f,0.65f,0.65f,1.0f);;
+    c2 = RGBA4f(0.65f,0.65f,0.65f,1.0f);
     highlightPanel.setFillColor(c1, c2);
     
     bgPanel.addChild(&highlightPanel);
@@ -58,9 +58,7 @@ MeterPanel::MeterPanel(std::string name, float low, float high, float current) {
     addChild(&valuePanel);
 }
 
-MeterPanel::~MeterPanel() {
-    
-}
+MeterPanel::~MeterPanel() = default;
 
 
 void MeterPanel::setName(std::string name_in) {
@@ -71,17 +69,17 @@ std::string MeterPanel::getName() {
     return name;
 }
 
-void MeterPanel::setRange(float low, float high) {
-    this->low = low;
-    this->high = high;
+void MeterPanel::setRange(float low_in, float high_in) {
+    low = low_in;
+    high = high_in;
 }
 
-float MeterPanel::getLow() {
-    return this->low;
+float MeterPanel::getLow() const {
+    return low;
 }
 
-float MeterPanel::getHigh() {
-    return this->high;
+float MeterPanel::getHigh() const {
+    return high;
 }
 
 void MeterPanel::setValue(float value) {
@@ -112,7 +110,7 @@ void MeterPanel::setHighlightVisible(bool vis) {
     highlightPanel.visible = vis;
 }
 
-float MeterPanel::getValue() {
+float MeterPanel::getValue() const {
     return current;
 }
 
@@ -196,16 +194,16 @@ void MeterPanel::setValueLabel(std::string label) {
     
 }
 
-void MeterPanel::setPanelLevel(float setValue, GLPanel &panel) {
+void MeterPanel::setPanelLevel(float setValue, GLPanel &panel) const {
     float valueNorm = (setValue - low) / (high - low);
     panel.setSize(1.0, valueNorm);
     panel.setPosition(0.0, (-1.0+(valueNorm)));
 }
 
-bool MeterPanel::getChanged() {
+bool MeterPanel::getChanged() const {
     return changed;
 }
 
-void MeterPanel::setChanged(bool changed) {
-    this->changed = changed;
+void MeterPanel::setChanged(bool changed_in) {
+    changed = changed_in;
 }

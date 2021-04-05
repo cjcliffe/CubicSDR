@@ -8,26 +8,26 @@
 class MeterPanel : public GLPanel {
     
 public:
-    MeterPanel(std::string name, float low, float high, float current);
-    ~MeterPanel();
+    MeterPanel(const std::string& name, float low, float high, float current);
+    ~MeterPanel() override;
     void setName(std::string name_in);
     std::string getName();
-    void setRange(float low, float high);
-    float getLow();
-    float getHigh();
+    void setRange(float low_in, float high_in);
+    float getLow() const;
+    float getHigh() const;
     void setValue(float value);
     void setHighlight(float value);
     void setHighlightVisible(bool vis);
-    float getValue();
+    float getValue() const;
     bool isMeterHit(CubicVR::vec2 mousePoint);
     float getMeterHitValue(CubicVR::vec2 mousePoint);
-    void setChanged(bool changed);
-    bool getChanged();
+    void setChanged(bool changed_in);
+    bool getChanged() const;
     
 protected:
-    void drawPanelContents();
+    void drawPanelContents() override;
     void setValueLabel(std::string label);
-    void setPanelLevel(float setValue, GLPanel &panel);
+    void setPanelLevel(float setValue, GLPanel &panel) const;
     
 private:
     std::string name;
