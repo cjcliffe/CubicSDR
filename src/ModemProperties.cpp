@@ -15,13 +15,13 @@ ModemProperties::ModemProperties(wxWindow *parent, wxWindowID winid,
     
     this->SetSizer(bSizer);
     
-    m_propertyGrid->Connect( wxEVT_PG_ITEM_COLLAPSED, wxPropertyGridEventHandler( ModemProperties::OnCollapse ), NULL, this );
-    m_propertyGrid->Connect( wxEVT_PG_ITEM_EXPANDED, wxPropertyGridEventHandler( ModemProperties::OnExpand ), NULL, this );
-    m_propertyGrid->Connect( wxEVT_PG_CHANGED, wxPropertyGridEventHandler( ModemProperties::OnChange ), NULL, this );
-    this->Connect( wxEVT_SHOW, wxShowEventHandler( ModemProperties::OnShow ), NULL, this );
+    m_propertyGrid->Connect( wxEVT_PG_ITEM_COLLAPSED, wxPropertyGridEventHandler( ModemProperties::OnCollapse ), nullptr, this );
+    m_propertyGrid->Connect( wxEVT_PG_ITEM_EXPANDED, wxPropertyGridEventHandler( ModemProperties::OnExpand ), nullptr, this );
+    m_propertyGrid->Connect( wxEVT_PG_CHANGED, wxPropertyGridEventHandler( ModemProperties::OnChange ), nullptr, this );
+    this->Connect( wxEVT_SHOW, wxShowEventHandler( ModemProperties::OnShow ), nullptr, this );
     
-    this->Connect( wxEVT_ENTER_WINDOW, wxMouseEventHandler( ModemProperties::OnMouseEnter ), NULL, this);
-    this->Connect( wxEVT_LEAVE_WINDOW, wxMouseEventHandler( ModemProperties::OnMouseLeave ), NULL, this);
+    this->Connect( wxEVT_ENTER_WINDOW, wxMouseEventHandler( ModemProperties::OnMouseEnter ), nullptr, this);
+    this->Connect( wxEVT_LEAVE_WINDOW, wxMouseEventHandler( ModemProperties::OnMouseLeave ), nullptr, this);
 
     updateTheme();
 
@@ -48,14 +48,12 @@ void ModemProperties::updateTheme() {
     m_propertyGrid->SetLineColour(btn);
 }
 
-ModemProperties::~ModemProperties() {
-    
-}
+ModemProperties::~ModemProperties() = default;
 
 
 void ModemProperties::initDefaultProperties() {
     
-    if (!audioOutputDevices.size()) {
+    if (audioOutputDevices.empty()) {
         std::vector<string> outputOpts;
         std::vector<string> outputOptNames;
 
@@ -63,7 +61,7 @@ void ModemProperties::initDefaultProperties() {
         
         int i = 0;
         
-        for (auto aDev : audioDevices) {
+        for (const auto& aDev : audioDevices) {
             if (aDev.inputChannels) {
                 audioInputDevices[i] = aDev;
             }
@@ -76,7 +74,7 @@ void ModemProperties::initDefaultProperties() {
         // int defaultDevice = 0;
         // int dc = 0;
         
-        for (auto mdevices_i : audioOutputDevices) {
+        for (const auto& mdevices_i : audioOutputDevices) {
             outputOpts.push_back(std::to_string(mdevices_i.first));
             outputOptNames.push_back(mdevices_i.second.name);
             
@@ -101,7 +99,7 @@ void ModemProperties::initDefaultProperties() {
     defaultProps["._audio_output"] = addArgInfoProperty(m_propertyGrid, outputArg);
 }
 
-void ModemProperties::initProperties(ModemArgInfoList newArgs, DemodulatorInstancePtr demodInstance) {
+void ModemProperties::initProperties(ModemArgInfoList newArgs, const DemodulatorInstancePtr& demodInstance) {
     args = newArgs;
     demodContext = demodInstance;
     
@@ -142,7 +140,7 @@ wxPGProperty *ModemProperties::addArgInfoProperty(wxPropertyGrid *pg, ModemArgIn
         case ModemArgInfo::INT:
             try {
                 intVal = std::stoi(arg.value);
-            } catch (std::invalid_argument e) {
+            } catch (const std::invalid_argument &e) {
                 intVal = 0;
             }
             prop = pg->Append( new wxIntProperty(arg.name, wxPG_LABEL, intVal) );
@@ -154,7 +152,7 @@ wxPGProperty *ModemProperties::addArgInfoProperty(wxPropertyGrid *pg, ModemArgIn
         case ModemArgInfo::FLOAT:
             try {
                 floatVal = std::stod(arg.value);
-            } catch (std::invalid_argument e) {
+            } catch (const std::invalid_argument &e) {
                 floatVal = 0;
             }
             prop = pg->Append( new wxFloatProperty(arg.name, wxPG_LABEL, floatVal) );
@@ -167,13 +165,13 @@ wxPGProperty *ModemProperties::addArgInfoProperty(wxPropertyGrid *pg, ModemArgIn
             prop = pg->Append( new wxBoolProperty(arg.name, wxPG_LABEL, (arg.value=="true")) );
             break;
         case ModemArgInfo::STRING:
-            if (arg.options.size()) {
+            if (!arg.options.empty()) {
                 intVal = 0;
                 prop = pg->Append( new wxEnumProperty(arg.name, wxPG_LABEL) );
                 for (stringIter = arg.options.begin(); stringIter != arg.options.end(); stringIter++) {
                     std::string optName = (*stringIter);
                     std::string displayName = optName;
-                    if (arg.optionNames.size()) {
+                    if (!arg.optionNames.empty()) {
                         displayName = arg.optionNames[intVal];
                     }
                     
@@ -196,14 +194,14 @@ wxPGProperty *ModemProperties::addArgInfoProperty(wxPropertyGrid *pg, ModemArgIn
             break;
     }
     
-    if (prop != NULL) {
+    if (prop != nullptr) {
         prop->SetHelpString(arg.name + ": " + arg.description);
     }
     
     return prop;
 }
 
-std::string ModemProperties::readProperty(std::string key) {
+std::string ModemProperties::readProperty(const std::string& key) {
     int i = 0;
     ModemArgInfoList::const_iterator args_i;
 
@@ -212,8 +210,8 @@ std::string ModemProperties::readProperty(std::string key) {
         if (arg.key == key) {
             wxPGProperty *prop = props[key];
             
-            std::string result = "";
-            if (arg.type == ModemArgInfo::STRING && arg.options.size()) {
+            std::string result;
+            if (arg.type == ModemArgInfo::STRING && !arg.options.empty()) {
                 return arg.options[prop->GetChoiceSelection()];
             } else if (arg.type == ModemArgInfo::BOOL) {
                 return (prop->GetValueAsString()=="True")?"true":"false";
@@ -241,7 +239,7 @@ void ModemProperties::OnChange(wxPropertyGridEvent &event) {
         if (demodContext) {
             try {
                 demodContext->setOutputDevice(std::stoi(outputArg.value));
-            } catch (exception e) {
+            } catch (const exception &e) {
                 // .. this should never happen ;)
             }
 
@@ -292,7 +290,7 @@ void ModemProperties::setCollapsed(bool state) {
     }
 }
 
-bool ModemProperties::isCollapsed() {
+bool ModemProperties::isCollapsed() const {
     return collapsed;
 }
 

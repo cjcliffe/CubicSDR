@@ -45,7 +45,7 @@ void SessionMgr::saveSession(std::string fileName) {
     s.SaveToFileXML(fileName);
 }
 
-bool SessionMgr::loadSession(std::string fileName) {
+bool SessionMgr::loadSession(const std::string& fileName) {
 
     DataTree l;
     if (!l.LoadFromFileXML(fileName)) {
@@ -88,7 +88,7 @@ bool SessionMgr::loadSession(std::string fileName) {
 
         if (header->hasAnother("sample_rate")) {
 
-            long sample_rate = *header->getNext("sample_rate");
+            long sample_rate = (long)*header->getNext("sample_rate");
 
             SDRDeviceInfo *dev = wxGetApp().getSDRThread()->getDevice();
             if (dev) {
@@ -120,7 +120,7 @@ bool SessionMgr::loadSession(std::string fileName) {
 
         if (header->hasAnother("solo_mode")) {
 
-            int solo_mode_activated = *header->getNext("solo_mode");
+            int solo_mode_activated = (int)*header->getNext("solo_mode");
 
             wxGetApp().setSoloMode(solo_mode_activated > 0);
         }
@@ -162,7 +162,7 @@ bool SessionMgr::loadSession(std::string fileName) {
         } // if l.rootNode()->hasAnother("demodulators")
 
         if (header->hasAnother("center_freq")) {
-            long long center_freq = *header->getNext("center_freq");
+            long long center_freq = (long long)*header->getNext("center_freq");
             wxGetApp().setFrequency(center_freq);
             //            std::cout << "\tCenter Frequency: " << center_freq << std::endl;
         }
@@ -171,8 +171,8 @@ bool SessionMgr::loadSession(std::string fileName) {
             DataNode *viewState = header->getNext("view_state");
 
             if (viewState->hasAnother("center_freq") && viewState->hasAnother("bandwidth")) {
-                long long center_freq = *viewState->getNext("center_freq");
-                int bandwidth = *viewState->getNext("bandwidth");
+                auto center_freq = (long long)*viewState->getNext("center_freq");
+                auto bandwidth = (int)*viewState->getNext("bandwidth");
                 spectrumCanvas->setView(center_freq, bandwidth);
                 waterfallCanvas->setView(center_freq, bandwidth);
             }

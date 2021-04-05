@@ -13,7 +13,7 @@
 
 class ModemProperties : public wxPanel {
 public:
-    ModemProperties(
+    explicit ModemProperties(
         wxWindow *parent,
         wxWindowID winid = wxID_ANY,
         const wxPoint& pos = wxDefaultPosition,
@@ -21,20 +21,20 @@ public:
         long style = wxTAB_TRAVERSAL | wxNO_BORDER,
         const wxString& name = wxPanelNameStr
     );
-    ~ModemProperties();
+    ~ModemProperties() override;
     
     void initDefaultProperties();
-    void initProperties(ModemArgInfoList newArgs, DemodulatorInstancePtr demodInstance);
+    void initProperties(ModemArgInfoList newArgs, const DemodulatorInstancePtr& demodInstance);
     bool isMouseInView();
     void setCollapsed(bool state);
-    bool isCollapsed();
+    bool isCollapsed() const;
     void fitColumns();
     
     void updateTheme();
     
 private:
     wxPGProperty *addArgInfoProperty(wxPropertyGrid *pg, ModemArgInfo arg);
-    std::string readProperty(std::string);
+    std::string readProperty(const std::string&);
     void OnChange(wxPropertyGridEvent &event);
     void OnShow(wxShowEvent &event);
     void OnCollapse(wxPropertyGridEvent &event);
