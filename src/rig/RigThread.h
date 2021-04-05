@@ -22,13 +22,11 @@ typedef std::vector<const struct rig_caps *> RigList;
 class RigThread : public IOThread {
 public:
     RigThread();
-    ~RigThread();
+    ~RigThread() override;
 
     void initRig(rig_model_t rig_model, std::string rig_file, int serial_rate);
-    virtual void run();
-    
-    int terminationStatus();
-    
+    void run() override;
+
     freq_t getFrequency();
     void setFrequency(freq_t new_freq, bool oneShot);
     
