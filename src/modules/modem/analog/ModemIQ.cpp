@@ -3,9 +3,7 @@
 
 #include "ModemIQ.h"
 
-ModemIQ::ModemIQ() {
-    
-}
+ModemIQ::ModemIQ() = default;
 
 std::string ModemIQ::getType() {
     return "analog";
@@ -20,7 +18,7 @@ ModemBase *ModemIQ::factory() {
 }
 
 ModemKit *ModemIQ::buildKit(long long sampleRate, int audioSampleRate) {
-    ModemKit *kit = new ModemKit;
+    auto *kit = new ModemKit;
     kit->sampleRate = sampleRate;
     kit->audioSampleRate = audioSampleRate;
     return kit;

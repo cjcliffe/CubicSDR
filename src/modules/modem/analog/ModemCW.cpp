@@ -116,7 +116,7 @@ int ModemCW::getDefaultSampleRate() {
 // the input IQ to audioOut, frequency shift, then pass the real part.
 // Simple solution is just interpolate the IQ data to the audio sample rate.
 ModemKit *ModemCW::buildKit(long long sampleRate, int audioSampleRate) {
-    ModemKitCW *kit = new ModemKitCW();
+    auto *kit = new ModemKitCW();
     float As = 60.0f;
     double ratio = double(audioSampleRate) / double(sampleRate);
     kit->sampleRate = sampleRate;
@@ -127,7 +127,7 @@ ModemKit *ModemCW::buildKit(long long sampleRate, int audioSampleRate) {
 }
 
 void ModemCW::disposeKit(ModemKit *kit) {
-    ModemKitCW *cwkit = (ModemKitCW *) kit;
+    auto *cwkit = (ModemKitCW *) kit;
     msresamp_cccf_destroy(cwkit->mInputResampler);
     delete kit;
 }
@@ -156,7 +156,7 @@ void ModemCW::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *au
     unsigned int outSize;
     float lsb;
     liquid_float_complex sig;
-    ModemKitCW *cwkit = (ModemKitCW *) kit;
+    auto *cwkit = (ModemKitCW *) kit;
 
     initOutputBuffers(cwkit, input);
 

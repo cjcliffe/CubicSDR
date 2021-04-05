@@ -8,15 +8,15 @@
 class ModemNBFM : public ModemAnalog {
 public:
     ModemNBFM();
-    ~ModemNBFM();
+    ~ModemNBFM() override;
     
-    std::string getName();
+    std::string getName() override;
     
     static ModemBase *factory();
 
-    int getDefaultSampleRate();
+    int getDefaultSampleRate() override;
 
-    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
+    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) override;
 
 private:
     freqdem demodFM;

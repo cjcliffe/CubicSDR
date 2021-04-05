@@ -31,24 +31,24 @@ public:
 class ModemFMStereo : public Modem {
 public:
     ModemFMStereo();
-    ~ModemFMStereo();
+    ~ModemFMStereo() override;
     
-    std::string getType();
-    std::string getName();
+    std::string getType() override;
+    std::string getName() override;
     
     static ModemBase *factory();
     
-    int checkSampleRate(long long sampleRate, int audioSampleRate);
-    int getDefaultSampleRate();
+    int checkSampleRate(long long sampleRate, int audioSampleRate) override;
+    int getDefaultSampleRate() override;
     
-    ModemArgInfoList getSettings();
-    void writeSetting(std::string setting, std::string value);
-    std::string readSetting(std::string setting);
+    ModemArgInfoList getSettings() override;
+    void writeSetting(std::string setting, std::string value) override;
+    std::string readSetting(std::string setting) override;
 
-    ModemKit *buildKit(long long sampleRate, int audioSampleRate);
-    void disposeKit(ModemKit *kit);
+    ModemKit *buildKit(long long sampleRate, int audioSampleRate) override;
+    void disposeKit(ModemKit *kit) override;
     
-    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
+    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) override;
     
 private:
     std::vector<float> demodOutputData;

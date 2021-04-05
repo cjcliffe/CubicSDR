@@ -25,7 +25,7 @@ int ModemDSB::getDefaultSampleRate() {
 }
 
 void ModemDSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
-    ModemKitAnalog *amkit = (ModemKitAnalog *)kit;
+    auto *amkit = (ModemKitAnalog *)kit;
 
     initOutputBuffers(amkit, input);
     

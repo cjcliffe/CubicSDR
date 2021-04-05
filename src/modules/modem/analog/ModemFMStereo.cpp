@@ -87,7 +87,7 @@ std::string ModemFMStereo::readSetting(std::string setting) {
 }
 
 ModemKit *ModemFMStereo::buildKit(long long sampleRate, int audioSampleRate) {
-    ModemKitFMStereo *kit = new ModemKitFMStereo;
+    auto *kit = new ModemKitFMStereo;
     
     kit->audioResampleRatio = double(audioSampleRate) / double(sampleRate);
     kit->sampleRate = sampleRate;
@@ -161,7 +161,7 @@ ModemKit *ModemFMStereo::buildKit(long long sampleRate, int audioSampleRate) {
 }
 
 void ModemFMStereo::disposeKit(ModemKit *kit) {
-    ModemKitFMStereo *fmkit = (ModemKitFMStereo *)kit;
+    auto *fmkit = (ModemKitFMStereo *)kit;
     
     msresamp_rrrf_destroy(fmkit->audioResampler);
     msresamp_rrrf_destroy(fmkit->stereoResampler);
@@ -176,7 +176,7 @@ void ModemFMStereo::disposeKit(ModemKit *kit) {
 
 
 void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
-    ModemKitFMStereo *fmkit = (ModemKitFMStereo *)kit;
+    auto *fmkit = (ModemKitFMStereo *)kit;
     size_t bufSize = input->data.size();
     liquid_float_complex u, v, w, x, y;
     
