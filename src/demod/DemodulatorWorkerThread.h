@@ -19,11 +19,11 @@ public:
     };
 
     DemodulatorWorkerThreadResult() :
-            cmd(DEMOD_WORKER_THREAD_RESULT_NULL), iqResampler(nullptr), iqResampleRatio(0), sampleRate(0), bandwidth(0), modemKit(nullptr), modemType("") {
+            cmd(DEMOD_WORKER_THREAD_RESULT_NULL), iqResampler(nullptr), iqResampleRatio(0), sampleRate(0), bandwidth(0), modemKit(nullptr) {
 
     }
 
-    DemodulatorWorkerThreadResult(DemodulatorThreadResultEnum cmd) :
+    explicit DemodulatorWorkerThreadResult(DemodulatorThreadResultEnum cmd) :
             DemodulatorWorkerThreadResult() {
         this->cmd = cmd;
     }
@@ -35,7 +35,7 @@ public:
 
     long long sampleRate;
     unsigned int bandwidth;
-    Modem *modem;
+    Modem *modem{};
     ModemKit *modemKit;
     std::string modemType;
     std::string modemName;
@@ -48,12 +48,12 @@ public:
     };
 
     DemodulatorWorkerThreadCommand() :
-            cmd(DEMOD_WORKER_THREAD_CMD_NULL), frequency(0), sampleRate(0), bandwidth(0), audioSampleRate(0), demodType("") {
+            cmd(DEMOD_WORKER_THREAD_CMD_NULL), frequency(0), sampleRate(0), bandwidth(0), audioSampleRate(0) {
 
     }
 
-    DemodulatorWorkerThreadCommand(DemodulatorThreadCommandEnum cmd) :
-            cmd(cmd), frequency(0), sampleRate(0), bandwidth(0), audioSampleRate(0), demodType("") {
+    explicit DemodulatorWorkerThreadCommand(DemodulatorThreadCommandEnum cmd) :
+            cmd(cmd), frequency(0), sampleRate(0), bandwidth(0), audioSampleRate(0) {
 
     }
 
@@ -77,9 +77,9 @@ class DemodulatorWorkerThread : public IOThread {
 public:
 
     DemodulatorWorkerThread();
-    virtual ~DemodulatorWorkerThread();
+    ~DemodulatorWorkerThread() override;
 
-    virtual void run();
+    void run() override;
 
     void setCommandQueue(DemodulatorThreadWorkerCommandQueuePtr tQueue) {
         commandQueue = tQueue;
@@ -89,7 +89,7 @@ public:
         resultQueue = tQueue;
     }
 
-    virtual void terminate();
+    void terminate() override;
 
 protected:
 

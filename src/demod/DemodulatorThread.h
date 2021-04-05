@@ -21,15 +21,15 @@ class DemodulatorInstance;
 class DemodulatorThread : public IOThread {
 public:
 
-    DemodulatorThread(DemodulatorInstance* parent);
-    virtual ~DemodulatorThread();
+    explicit DemodulatorThread(DemodulatorInstance* parent);
+    ~DemodulatorThread() override;
 
-    void onBindOutput(std::string name, ThreadQueueBasePtr threadQueue);
+    void onBindOutput(std::string name, ThreadQueueBasePtr threadQueue) override;
     
-    virtual void run();
-    virtual void terminate();
+    void run() override;
+    void terminate() override;
     
-    void setMuted(bool state);
+    void setMuted(bool muted_in);
     bool isMuted();
     
     float getSignalLevel();

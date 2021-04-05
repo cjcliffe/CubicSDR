@@ -50,7 +50,7 @@ public:
     DemodulatorInstance();
     ~DemodulatorInstance();
 
-    void setVisualOutputQueue(DemodulatorThreadOutputQueuePtr tQueue);
+    void setVisualOutputQueue(const DemodulatorThreadOutputQueuePtr& tQueue);
 
     void run();
     void terminate();
@@ -76,7 +76,7 @@ public:
     void setOutputDevice(int device_id);
     int getOutputDevice();
 
-    void setDemodulatorType(std::string demod_type_in);
+    void setDemodulatorType(const std::string& demod_type_in);
     std::string getDemodulatorType();
 
     std::wstring getDemodulatorUserLabel();
@@ -95,13 +95,13 @@ public:
     long long getFrequency();
 
     void setAudioSampleRate(int sampleRate);
-    int getAudioSampleRate();
+    int getAudioSampleRate() const;
     
     bool isFollow();
-    void setFollow(bool follow);
+    void setFollow(bool follow_in);
 
     bool isTracking();
-    void setTracking(bool tracking);
+    void setTracking(bool tracking_in);
 
     bool isDeltaLock();
     void setDeltaLock(bool lock);
@@ -109,7 +109,7 @@ public:
     int getDeltaLockOfs();
 
     bool isMuted();
-    void setMuted(bool muted);
+    void setMuted(bool muted_in);
 
     bool isRecording();
     void setRecording(bool recording);
@@ -119,14 +119,14 @@ public:
     DemodulatorThreadInputQueuePtr getIQInputDataPipe();
 
     ModemArgInfoList getModemArgs();
-    std::string readModemSetting(std::string setting);
+    std::string readModemSetting(const std::string& setting);
     ModemSettings readModemSettings();
-    void writeModemSetting(std::string setting, std::string value);
+    void writeModemSetting(const std::string& setting, std::string value);
     void writeModemSettings(ModemSettings settings);
     
     bool isModemInitialized();
     std::string getModemType();
-    ModemSettings getLastModemSettings(std::string demodType);
+    ModemSettings getLastModemSettings(const std::string& demodType);
 
 #if ENABLE_DIGITAL_LAB
     ModemDigitalOutput *getOutput();

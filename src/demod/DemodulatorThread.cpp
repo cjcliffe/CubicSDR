@@ -1,7 +1,6 @@
 // Copyright (c) Charles J. Cliffe
 // SPDX-License-Identifier: GPL-2.0+
 
-#include "CubicSDRDefs.h"
 #include "DemodulatorThread.h"
 #include "DemodulatorInstance.h"
 #include "CubicSDR.h"
@@ -148,7 +147,7 @@ void DemodulatorThread::run() {
         double currentSignalLevel = 0;
         double sampleTime = double(inp->data.size()) / double(inp->sampleRate);
 
-        if (audioOutputQueue != nullptr && ati && ati->data.size()) {
+        if (audioOutputQueue != nullptr && ati && !ati->data.empty()) {
             double accum = 0;
 
              if (cModem->useSignalOutput()) {
@@ -389,8 +388,8 @@ bool DemodulatorThread::isMuted() {
     return muted.load();
 }
 
-void DemodulatorThread::setMuted(bool muted) {
-    this->muted.store(muted);
+void DemodulatorThread::setMuted(bool muted_in) {
+    muted.store(muted_in);
 }
 
 float DemodulatorThread::getSignalLevel() {

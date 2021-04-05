@@ -2,9 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "DemodulatorWorkerThread.h"
-#include "CubicSDRDefs.h"
 #include "CubicSDR.h"
-#include <vector>
 
 //50 ms
 #define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
@@ -13,8 +11,7 @@ DemodulatorWorkerThread::DemodulatorWorkerThread() : IOThread(),
          cModem(nullptr), cModemKit(nullptr) {
 }
 
-DemodulatorWorkerThread::~DemodulatorWorkerThread() {
-}
+DemodulatorWorkerThread::~DemodulatorWorkerThread() = default;
 
 void DemodulatorWorkerThread::run() {
 
@@ -66,7 +63,7 @@ void DemodulatorWorkerThread::run() {
                 cModem = Modem::makeModem(demodCommand.demodType);
                 cModemName = cModem->getName();
                 cModemType = cModem->getType();
-                if (demodCommand.settings.size()) {
+                if (!demodCommand.settings.empty()) {
                     cModem->writeSettings(demodCommand.settings);
                 }
                 result.sampleRate = demodCommand.sampleRate;

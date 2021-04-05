@@ -20,9 +20,7 @@ DemodVisualCue::DemodVisualCue() {
     squelchBreak.store(false);
 }
 
-DemodVisualCue::~DemodVisualCue() {
-    
-}
+DemodVisualCue::~DemodVisualCue() = default;
 
 void DemodVisualCue::triggerSquelchBreak(int counter) {
     squelchBreak.store(counter);
@@ -121,7 +119,7 @@ DemodulatorInstance::~DemodulatorInstance() {
     } //end while
 }
 
-void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueuePtr tQueue) {
+void DemodulatorInstance::setVisualOutputQueue(const DemodulatorThreadOutputQueuePtr& tQueue) {
     demodulatorThread->setOutputQueue("AudioVisualOutput", tQueue);
 }
 
@@ -379,11 +377,11 @@ int DemodulatorInstance::getOutputDevice() {
     return currentOutputDevice;
 }
 
-void DemodulatorInstance::setDemodulatorType(std::string demod_type_in) {
+void DemodulatorInstance::setDemodulatorType(const std::string& demod_type_in) {
     setGain(getGain());
     if (demodulatorPreThread) {
         std::string currentDemodType = demodulatorPreThread->getDemodType();
-        if ((currentDemodType != "") && (currentDemodType != demod_type_in)) {
+        if ((!currentDemodType.empty()) && (currentDemodType != demod_type_in)) {
             lastModemSettings[currentDemodType] = demodulatorPreThread->readModemSettings();
             lastModemBandwidth[currentDemodType] = demodulatorPreThread->getBandwidth();
         }
@@ -395,7 +393,7 @@ void DemodulatorInstance::setDemodulatorType(std::string demod_type_in) {
 
         demodulatorPreThread->setDemodType(demod_type_in);
         int lastbw = 0;
-        if (currentDemodType != "" && lastModemBandwidth.find(demod_type_in) != lastModemBandwidth.end()) {
+        if (!currentDemodType.empty() && lastModemBandwidth.find(demod_type_in) != lastModemBandwidth.end()) {
             lastbw = lastModemBandwidth[demod_type_in];
         }
         if (!lastbw) {
@@ -407,7 +405,7 @@ void DemodulatorInstance::setDemodulatorType(std::string demod_type_in) {
 
 #if ENABLE_DIGITAL_LAB
         if (isModemInitialized() && getModemType() == "digital") {
-            ModemDigitalOutputConsole *outp = (ModemDigitalOutputConsole *)getOutput();
+            auto *outp = (ModemDigitalOutputConsole *)getOutput();
             outp->setTitle(getDemodulatorType() + ": " + frequencyToStr(getFrequency()));
         }
 #endif
@@ -463,7 +461,7 @@ void DemodulatorInstance::setFrequency(long long freq) {
 #if ENABLE_DIGITAL_LAB
     if (activeOutput) {
         if (isModemInitialized() && getModemType() == "digital") {
-            ModemDigitalOutputConsole *outp = (ModemDigitalOutputConsole *)getOutput();
+            auto *outp = (ModemDigitalOutputConsole *)getOutput();
             outp->setTitle(getDemodulatorType() + ": " + frequencyToStr(getFrequency()));
         }
     }
@@ -488,7 +486,7 @@ void DemodulatorInstance::setAudioSampleRate(int sampleRate) {
     demodulatorPreThread->setAudioSampleRate(sampleRate);
 }
 
-int DemodulatorInstance::getAudioSampleRate() {
+int DemodulatorInstance::getAudioSampleRate() const {
     if (!audioThread) {
         return 0;
     }
@@ -509,16 +507,16 @@ bool DemodulatorInstance::isFollow()  {
     return follow.load();
 }
 
-void DemodulatorInstance::setFollow(bool follow) {
-    this->follow.store(follow);
+void DemodulatorInstance::setFollow(bool follow_in) {
+    follow.store(follow_in);
 }
 
 bool DemodulatorInstance::isTracking()  {
     return tracking.load();
 }
 
-void DemodulatorInstance::setTracking(bool tracking) {
-    this->tracking.store(tracking);
+void DemodulatorInstance::setTracking(bool tracking_in) {
+    tracking.store(tracking_in);
 }
 
 bool DemodulatorInstance::isDeltaLock() {
@@ -541,10 +539,10 @@ bool DemodulatorInstance::isMuted() {
     return demodulatorThread->isMuted();
 }
 
-void DemodulatorInstance::setMuted(bool muted) {
-    this->muted = muted;
-    demodulatorThread->setMuted(muted);
-    wxGetApp().getDemodMgr().setLastMuted(muted);
+void DemodulatorInstance::setMuted(bool muted_in) {
+    muted = muted_in;
+    demodulatorThread->setMuted(muted_in);
+    wxGetApp().getDemodMgr().setLastMuted(muted_in);
 }
 
 bool DemodulatorInstance::isRecording()
@@ -580,11 +578,11 @@ ModemArgInfoList DemodulatorInstance::getModemArgs() {
     return args;
 }
 
-std::string DemodulatorInstance::readModemSetting(std::string setting) {
+std::string DemodulatorInstance::readModemSetting(const std::string& setting) {
     return demodulatorPreThread->readModemSetting(setting);
 }
 
-void DemodulatorInstance::writeModemSetting(std::string setting, std::string value) {
+void DemodulatorInstance::writeModemSetting(const std::string& setting, std::string value) {
     demodulatorPreThread->writeModemSetting(setting, value);
 }
 
@@ -610,7 +608,7 @@ std::string DemodulatorInstance::getModemType() {
     return "";
 }
 
-ModemSettings DemodulatorInstance::getLastModemSettings(std::string demodType) {
+ModemSettings DemodulatorInstance::getLastModemSettings(const std::string& demodType) {
     if (lastModemSettings.find(demodType) != lastModemSettings.end()) {
         return lastModemSettings[demodType];
     } else {
@@ -625,8 +623,8 @@ void DemodulatorInstance::startRecording() {
         return;
     }
 
-    AudioSinkFileThread *newSinkThread = new AudioSinkFileThread();
-    AudioFileWAV *afHandler = new AudioFileWAV();
+    auto *newSinkThread = new AudioSinkFileThread();
+    auto *afHandler = new AudioFileWAV();
 
     std::stringstream fileName;
     
@@ -701,7 +699,7 @@ void DemodulatorInstance::hideOutput() {
 void DemodulatorInstance::closeOutput() {
     if (isModemInitialized()) {
         if (getModemType() == "digital") {
-            ModemDigital *dModem = (ModemDigital *)demodulatorPreThread->getModem();
+            auto *dModem = (ModemDigital *)demodulatorPreThread->getModem();
             dModem->setOutput(nullptr);
         }
     }
