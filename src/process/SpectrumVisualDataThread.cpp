@@ -2,14 +2,10 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "SpectrumVisualDataThread.h"
-#include "CubicSDR.h"
 
-SpectrumVisualDataThread::SpectrumVisualDataThread() {
-}
+SpectrumVisualDataThread::SpectrumVisualDataThread() = default;
 
-SpectrumVisualDataThread::~SpectrumVisualDataThread() {
-    
-}
+SpectrumVisualDataThread::~SpectrumVisualDataThread() = default;
 
 SpectrumVisualProcessor *SpectrumVisualDataThread::getProcessor() {
     return &sproc;

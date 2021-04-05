@@ -24,8 +24,7 @@ public:
     typedef  std::shared_ptr<VisualInputQueueType> VisualInputQueueTypePtr;
     typedef  std::shared_ptr<VisualOutputQueueType> VisualOutputQueueTypePtr;
 
-	virtual ~VisualProcessor() {
-	}
+	virtual ~VisualProcessor();
     
     bool isInputEmpty() {
         std::lock_guard < std::mutex > busy_lock(busy_update);
@@ -154,6 +153,9 @@ protected:
     //protects input and outputs
     std::mutex busy_update;
 };
+
+template<typename InputDataType, typename OutputDataType>
+VisualProcessor<InputDataType, OutputDataType>::~VisualProcessor() = default;
 
 //Specialization much like VisualDataReDistributor, except 
 //the input (pointer) is directly re-dispatched

@@ -10,15 +10,15 @@
 class FFTVisualDataThread : public IOThread {
 public:
     FFTVisualDataThread();
-    ~FFTVisualDataThread();
+    ~FFTVisualDataThread() override;
     
     void setLinesPerSecond(int lps);
     int getLinesPerSecond();
     SpectrumVisualProcessor *getProcessor();
     
-    virtual void run();
+    void run() override;
 
-    virtual void terminate();
+    void terminate() override;
     
 protected:
     FFTDataDistributor fftDistrib;
