@@ -14,12 +14,12 @@ enum SDRPostThreadChannelizerType {
 class SDRPostThread : public IOThread {
 public:
     SDRPostThread();
-    ~SDRPostThread();
+    ~SDRPostThread() override;
 
     void notifyDemodulatorsChanged();
    
-    virtual void run();
-    virtual void terminate();
+    void run() override;
+    void terminate() override;
 
     void resetAllDemodulators();
 
@@ -36,7 +36,7 @@ protected:
 private:
     // Copy the full samplerate into a new DemodulatorThreadIQDataPtr.
     DemodulatorThreadIQDataPtr getFullSampleRateIqData(SDRThreadIQData *data_in);
-    void pushVisualData(DemodulatorThreadIQDataPtr iqDataOut);
+    void pushVisualData(const DemodulatorThreadIQDataPtr& iqDataOut);
 
     void runSingleCH(SDRThreadIQData *data_in);
 
@@ -50,7 +50,7 @@ private:
 
     void updateActiveDemodulators();
     void updateChannels();    
-    int getChannelAt(long long frequency);
+    int getChannelAt(long long frequency_in);
 
     ReBuffer<DemodulatorThreadIQData> buffers;
     std::vector<liquid_float_complex> dataOut;

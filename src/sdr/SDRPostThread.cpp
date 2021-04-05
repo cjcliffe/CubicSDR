@@ -2,10 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "SDRPostThread.h"
-#include "CubicSDRDefs.h"
 #include "CubicSDR.h"
 
-#include <vector>
 #include <deque>
 #include <memory>
 
@@ -54,7 +52,7 @@ void SDRPostThread::updateActiveDemodulators() {
     //retreive the current list of demodulators:
     auto demodulators = wxGetApp().getDemodMgr().getDemodulators();
    
-    for (auto demod : demodulators) {
+    for (const auto& demod : demodulators) {
             
         // not in range?
         if (demod->isDeltaLock()) {
@@ -70,7 +68,6 @@ void SDRPostThread::updateActiveDemodulators() {
             // deactivate if active
            
             if (wxGetApp().getDemodMgr().getCurrentModem() == demod) {
-
                 demod->setActive(false);
             }
             else if (demod->isActive() && !demod->isFollow() && !demod->isTracking()) {
@@ -105,7 +102,7 @@ void SDRPostThread::resetAllDemodulators() {
     //retreive the current list of demodulators:
     auto demodulators = wxGetApp().getDemodMgr().getDemodulators();
 
-    for (auto demod : demodulators) {
+    for (const auto& demod : demodulators) {
 
         demod->setActive(false);
         demod->getIQInputDataPipe()->flush();
@@ -128,11 +125,11 @@ void SDRPostThread::updateChannels() {
 
 
 // Find the channelizer channel that corresponds to the given frequency
-int SDRPostThread::getChannelAt(long long frequency) {
+int SDRPostThread::getChannelAt(long long frequency_in) {
     int chan = -1;
     long long minDelta = sampleRate;
     for (int i = 0; i < numChannels+1; i++) {
-        long long fdelta = abs(frequency - chanCenters[i]);
+        long long fdelta = abs(frequency_in - chanCenters[i]);
         if (fdelta < minDelta) {
             minDelta = fdelta;
             chan = i;
@@ -176,7 +173,7 @@ void SDRPostThread::run() {
          
         bool doUpdate = false;
 
-        if (data_in && data_in->data.size()) {
+        if (data_in && !data_in->data.empty()) {
            
             if(data_in->numChannels > 1) {
                 if (chanMode == 1) {
@@ -189,8 +186,7 @@ void SDRPostThread::run() {
             }
         }
         
-        for (size_t j = 0; j < runDemods.size(); j++) {
-            DemodulatorInstancePtr demod = runDemods[j];
+        for (const auto& demod : runDemods) {
             if (abs(frequency - demod->getFrequency()) > (sampleRate / 2)) {
                 doUpdate = true;
             }
@@ -234,7 +230,7 @@ DemodulatorThreadIQDataPtr SDRPostThread::getFullSampleRateIqData(SDRThreadIQDat
 }
 
 // Push visual data; i.e. Main Waterfall (all frames) and Spectrum (active frame)
-void SDRPostThread::pushVisualData(DemodulatorThreadIQDataPtr iqDataOut) {
+void SDRPostThread::pushVisualData(const DemodulatorThreadIQDataPtr& iqDataOut) {
 
     if (iqDataOutQueue != nullptr) {
         
@@ -290,15 +286,15 @@ void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
     //push the DC-corrected data as Main Spactrum + Waterfall data.
     pushVisualData(demodDataOut);
 
-    if (runDemods.size() > 0 && iqActiveDemodVisualQueue != nullptr) {
+    if (!runDemods.empty() && iqActiveDemodVisualQueue != nullptr) {
         //non-blocking push here, we can afford to loose some samples for a ever-changing visual display.
         iqActiveDemodVisualQueue->try_push(demodDataOut);
     }
     
-    for (size_t i = 0; i < runDemods.size(); i++) {
+    for (auto & runDemod : runDemods) {
         // try-push() : we do our best to only stimulate active demods, but some could happen to be dead, full, or indeed non-active.
         //so in short never block here no matter what.
-        runDemods[i]->getIQInputDataPipe()->try_push(demodDataOut);
+        runDemod->getIQInputDataPipe()->try_push(demodDataOut);
     }
 }
 
@@ -447,7 +443,7 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
     }
     
     // Find active demodulators
-    if (runDemods.size() > 0) {
+    if (!runDemods.empty()) {
         // Channelize data
         // firpfbch produces [numChannels] interleaved output samples for every [numChannels] samples
         for (int i = 0, iMax = data_in->data.size(); i < iMax; i+=numChannels) {
@@ -503,7 +499,7 @@ void SDRPostThread::runPFBCH2(SDRThreadIQData *data_in) {
     }
     
     // Find active demodulators
-    if (runDemods.size() > 0) {
+    if (!runDemods.empty()) {
         // Channelize data
         // firpfbch2 produces [numChannels] interleaved output samples for every [numChannels/2] input samples
         for (int i = 0, iMax = data_in->data.size(); i < iMax; i += numChannels/2) {

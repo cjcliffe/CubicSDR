@@ -10,7 +10,7 @@
 #include <SoapySDR/Types.hpp>
 #include <SoapySDR/Device.hpp>
 
-typedef struct _SDRManualDef {
+typedef struct SDRManualDef {
     std::string factory;
     std::string params;
 } SDRManualDef;
@@ -22,54 +22,54 @@ public:
     SDRDeviceInfo();
     ~SDRDeviceInfo();
     
-    std::string getDeviceId();
+    std::string getDeviceId() const;
     
     int getIndex() const;
-    void setIndex(const int index);
+    void setIndex(int index_in);
     
     bool isAvailable() const;
-    void setAvailable(bool available);
+    void setAvailable(bool available_in);
 
     bool isActive() const;
-    void setActive(bool active);
+    void setActive(bool active_in);
 
     const std::string& getName() const;
-    void setName(const std::string& name);
+    void setName(const std::string& name_in);
     
     const std::string& getSerial() const;
-    void setSerial(const std::string& serial);
+    void setSerial(const std::string& serial_in);
     
     const std::string& getTuner() const;
-    void setTuner(const std::string& tuner);
+    void setTuner(const std::string& tuner_in);
     
     const std::string& getManufacturer() const;
-    void setManufacturer(const std::string& manufacturer);
+    void setManufacturer(const std::string& manufacturer_in);
     
     const std::string& getProduct() const;
-    void setProduct(const std::string& product);
+    void setProduct(const std::string& product_in);
 
     const std::string& getDriver() const;
-    void setDriver(const std::string& driver);
+    void setDriver(const std::string& driver_in);
     
     const std::string& getHardware() const;
-    void setHardware(const std::string& hardware);
+    void setHardware(const std::string& hardware_in);
     
     bool hasTimestamps() const;
-    void setTimestamps(bool timestamps);
+    void setTimestamps(bool timestamps_in);
 
     bool isRemote() const;
-    void setRemote(bool remote);
+    void setRemote(bool remote_in);
 
     bool isManual() const;
-    void setManual(bool manual);
+    void setManual(bool manual_in);
     
-    void setManualParams(std::string manualParams);
+    void setManualParams(std::string manualParams_in);
     std::string getManualParams();
     
-    void setDeviceArgs(SoapySDR::Kwargs deviceArgs);
+    void setDeviceArgs(SoapySDR::Kwargs deviceArgs_in);
     SoapySDR::Kwargs getDeviceArgs();
 
-    void setStreamArgs(SoapySDR::Kwargs deviceArgs);
+    void setStreamArgs(SoapySDR::Kwargs streamArgs_in);
     SoapySDR::Kwargs getStreamArgs();
 
 //    void setSettingsInfo(SoapySDR::ArgInfoList settingsArgs);
@@ -100,8 +100,8 @@ private:
     int index = 0;
     std::string name, serial, product, manufacturer, tuner;
     std::string driver, hardware, manual_params;
-    bool timestamps, available, remote, manual;
-    std::atomic_bool active;
+    bool timestamps{}, available, remote, manual;
+    std::atomic_bool active{};
     
     SoapySDR::Kwargs deviceArgs, streamArgs;
     SoapySDR::Device *soapyDevice;

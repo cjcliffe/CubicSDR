@@ -21,22 +21,22 @@ private:
 
 public:
     SDREnumerator();
-    ~SDREnumerator();
+    ~SDREnumerator() override;
     enum SDREnumState { SDR_ENUM_DEVICES_READY, SDR_ENUM_MESSAGE, SDR_ENUM_TERMINATED, SDR_ENUM_FAILED };
     
-    static std::vector<SDRDeviceInfo *> *enumerate_devices(std::string remoteAddr = "", bool noInit=false);
+    static std::vector<SDRDeviceInfo *> *enumerate_devices(const std::string& remoteAddr = "", bool noInit=false);
 
-    virtual void run();
+    void run() override;
 
     static SoapySDR::Kwargs argsStrToKwargs(const std::string &args);
-    static void addRemote(std::string remoteAddr);
-    static void removeRemote(std::string remoteAddr);
+    static void addRemote(const std::string& remoteAddr);
+    static void removeRemote(const std::string& remoteAddr);
     static std::vector<std::string> &getRemotes();
     static bool hasRemoteModule();
     static void addManual(std::string factory, std::string params);
-    static void removeManual(std::string factory, std::string params);
+    static void removeManual(const std::string& factory, const std::string& params);
     static std::vector<SDRManualDef> &getManuals();
-    static void setManuals(std::vector<SDRManualDef> manuals);
+    static void setManuals(std::vector<SDRManualDef> manuals_in);
     static void reset();
     static std::vector<std::string> &getFactories();
     
@@ -47,5 +47,4 @@ protected:
     static std::vector<std::string> remotes;
     static std::map< std::string, std::vector<SDRDeviceInfo *> > devs;
     static std::vector<SDRManualDef> manuals;
-    static std::mutex devs_busy;
 };
