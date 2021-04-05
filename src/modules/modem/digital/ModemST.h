@@ -7,13 +7,13 @@
 class ModemST : public ModemDigital {
 public:
     ModemST();
-    ~ModemST();
+    ~ModemST() override;
     
-    std::string getName();
+    std::string getName() override;
     
     static ModemBase *factory();
     
-    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
+    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) override;
     
 private:
     modem demodST;

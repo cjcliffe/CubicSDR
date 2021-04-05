@@ -99,7 +99,7 @@ std::string ModemFSK::readSetting(std::string setting) {
 }
 
 ModemKit *ModemFSK::buildKit(long long sampleRate, int audioSampleRate) {
-    ModemKitFSK *dkit = new ModemKitFSK;
+    auto *dkit = new ModemKitFSK;
     dkit->m           = bps;
     dkit->k           = (unsigned int)(sampleRate / sps);
     dkit->bw          = bw;
@@ -113,7 +113,7 @@ ModemKit *ModemFSK::buildKit(long long sampleRate, int audioSampleRate) {
 }
 
 void ModemFSK::disposeKit(ModemKit *kit) {
-    ModemKitFSK *dkit = (ModemKitFSK *)kit;
+    auto *dkit = (ModemKitFSK *)kit;
     
     fskdem_destroy(dkit->demodFSK);
     
@@ -124,12 +124,10 @@ std::string ModemFSK::getName() {
     return "FSK";
 }
 
-ModemFSK::~ModemFSK() {
-
-}
+ModemFSK::~ModemFSK() = default;
 
 void ModemFSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
-    ModemKitFSK *dkit = (ModemKitFSK *)kit;
+    auto *dkit = (ModemKitFSK *)kit;
     
     digitalStart(dkit, nullptr, input);
 

@@ -70,9 +70,9 @@ std::string ModemQAM::readSetting(std::string setting) {
     return "";
 }
 
-void ModemQAM::updateDemodulatorCons(int cons) {
-    this->cons = cons;
-    switch (cons) {
+void ModemQAM::updateDemodulatorCons(int cons_in) {
+    cons = cons_in;
+    switch (cons_in) {
         case 4:
             demodQAM = demodQAM4;
             break;
@@ -98,7 +98,7 @@ void ModemQAM::updateDemodulatorCons(int cons) {
 }
 
 void ModemQAM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
-    ModemKitDigital *dkit = (ModemKitDigital *)kit;
+    auto *dkit = (ModemKitDigital *)kit;
     digitalStart(dkit, demodQAM, input);
    
     for (size_t i = 0, bufSize = input->data.size(); i < bufSize; i++) {

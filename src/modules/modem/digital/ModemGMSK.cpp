@@ -11,9 +11,7 @@ ModemGMSK::ModemGMSK() : ModemDigital()  {
     outStream << std::hex;
 }
 
-ModemGMSK::~ModemGMSK() {
-    
-}
+ModemGMSK::~ModemGMSK() = default;
 
 std::string ModemGMSK::getName() {
     return "GMSK";
@@ -94,7 +92,7 @@ std::string ModemGMSK::readSetting(std::string setting) {
 }
 
 ModemKit *ModemGMSK::buildKit(long long sampleRate, int audioSampleRate) {
-    ModemKitGMSK *dkit = new ModemKitGMSK;
+    auto *dkit = new ModemKitGMSK;
     dkit->sps    = _sps;
     dkit->fdelay = _fdelay;
     dkit->ebf    = _ebf;
@@ -108,7 +106,7 @@ ModemKit *ModemGMSK::buildKit(long long sampleRate, int audioSampleRate) {
 }
 
 void ModemGMSK::disposeKit(ModemKit *kit) {
-    ModemKitGMSK *dkit = (ModemKitGMSK *)kit;
+    auto *dkit = (ModemKitGMSK *)kit;
     
     gmskdem_destroy(dkit->demodGMSK);
     
@@ -116,7 +114,7 @@ void ModemGMSK::disposeKit(ModemKit *kit) {
 }
 
 void ModemGMSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
-    ModemKitGMSK *dkit = (ModemKitGMSK *)kit;
+    auto *dkit = (ModemKitGMSK *)kit;
     unsigned int sym_out;
     
     digitalStart(dkit, nullptr, input);

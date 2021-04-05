@@ -70,9 +70,9 @@ std::string ModemAPSK::readSetting(std::string setting) {
     return "";
 }
 
-void ModemAPSK::updateDemodulatorCons(int cons) {
-    this->cons = cons;
-    switch (cons) {
+void ModemAPSK::updateDemodulatorCons(int cons_in) {
+    cons = cons_in;
+    switch (cons_in) {
         case 4:
             demodAPSK = demodAPSK4;
             break;
@@ -98,7 +98,7 @@ void ModemAPSK::updateDemodulatorCons(int cons) {
 }
 
 void ModemAPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
-    ModemKitDigital *dkit = (ModemKitDigital *)kit;
+    auto *dkit = (ModemKitDigital *)kit;
     
     digitalStart(dkit, demodAPSK, input);
     
