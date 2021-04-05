@@ -11,9 +11,7 @@ AudioSinkThread::AudioSinkThread() {
     setInputQueue("input", inputQueuePtr);
 }
 
-AudioSinkThread::~AudioSinkThread() {
-
-}
+AudioSinkThread::~AudioSinkThread() = default;
 
 void AudioSinkThread::run() {
 #ifdef __APPLE__

@@ -11,19 +11,19 @@ class AudioFileWAV : public AudioFile {
 
 public:
     AudioFileWAV();
-    ~AudioFileWAV();
+    ~AudioFileWAV() override;
 
 	//override to manage name change with multi-part WAV. 
-	virtual void setOutputFileName(std::string filename);
+	void setOutputFileName(std::string filename) override;
 
 	//override of the base method to generate multi-part 
 	//WAV to overcome the WAV format size limit.
-	virtual std::string getOutputFileName();
+	std::string getOutputFileName() override;
 
-    virtual std::string getExtension();
+    std::string getExtension() override;
 
-    virtual bool writeToFile(AudioThreadInputPtr input);
-    virtual bool closeFile();
+    bool writeToFile(AudioThreadInputPtr input) override;
+    bool closeFile() override;
 
 protected:
     std::ofstream outputFileStream;
@@ -33,10 +33,10 @@ protected:
 
 private:
 
-	size_t getMaxWritableNumberOfSamples(AudioThreadInputPtr input);
+	size_t getMaxWritableNumberOfSamples(const AudioThreadInputPtr& input) const;
 
-	void writeHeaderToFileStream(AudioThreadInputPtr input);
+	void writeHeaderToFileStream(const AudioThreadInputPtr& input);
 
 	//write [startInputPosition; endInputPosition[ samples from input into the file.
-	void writePayloadToFileStream(AudioThreadInputPtr input, size_t startInputPosition, size_t endInputPosition);
+	void writePayloadToFileStream(const AudioThreadInputPtr& input, size_t startInputPosition, size_t endInputPosition);
 };

@@ -22,7 +22,8 @@ namespace little_endian_io
 
     template <typename Word>
     std::istream& read_word(std::istream& ins, Word& value, unsigned size = sizeof(Word)) {
-        for (unsigned n = 0, value = 0; n < size; ++n) {
+        value = 0;
+        for (unsigned n = 0; n < size; ++n) {
             value |= ins.get() << (8 * n);
         }
         return ins;
@@ -50,11 +51,10 @@ namespace big_endian_io
 
 using namespace little_endian_io;
 
-AudioFileWAV::AudioFileWAV() : AudioFile() {
+AudioFileWAV::AudioFileWAV() : AudioFile(), dataChunkPos(0) {
 }
 
-AudioFileWAV::~AudioFileWAV() {
-}
+AudioFileWAV::~AudioFileWAV() = default;
 
 
 std::string AudioFileWAV::getExtension()
@@ -119,7 +119,7 @@ bool AudioFileWAV::closeFile()
     return true;
 }
 
-void AudioFileWAV::writeHeaderToFileStream(AudioThreadInputPtr input) {
+void AudioFileWAV::writeHeaderToFileStream(const AudioThreadInputPtr& input) {
 
 	// Based on simple wav file output code from
 	// http://www.cplusplus.com/forum/beginner/166954/
@@ -140,7 +140,7 @@ void AudioFileWAV::writeHeaderToFileStream(AudioThreadInputPtr input) {
 	outputFileStream << "data----";  // (chunk size to be filled in later)
 }
 
-void AudioFileWAV::writePayloadToFileStream(AudioThreadInputPtr input, size_t startInputPosition, size_t endInputPosition) {
+void AudioFileWAV::writePayloadToFileStream(const AudioThreadInputPtr& input, size_t startInputPosition, size_t endInputPosition) {
 
 	// Prevent clipping
 	float intScale = (input->peak < 1.0) ? 32767.0f : (32767.0f / input->peak);
@@ -164,7 +164,7 @@ void AudioFileWAV::writePayloadToFileStream(AudioThreadInputPtr input, size_t st
 	}
 }
 
-size_t AudioFileWAV::getMaxWritableNumberOfSamples(AudioThreadInputPtr input) {
+size_t AudioFileWAV::getMaxWritableNumberOfSamples(const AudioThreadInputPtr& input) const {
 
 	long long remainingBytesInFile = (long long)(MAX_WAV_FILE_SIZE) - currentFileSize;
 
