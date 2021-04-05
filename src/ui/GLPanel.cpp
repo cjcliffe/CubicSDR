@@ -27,7 +27,7 @@ GLPanel::GLPanel() : fillType(GLPANEL_FILL_SOLID), contentsVisible(true), visibl
 }
 
 void GLPanel::genArrays() {
-    float min = -1.0, mid = 0, max = 1.0;
+    float gmin = -1.0, gmid = 0, gmax = 1.0;
     
     if (fillType == GLPANEL_FILL_SOLID || fillType == GLPANEL_FILL_GRAD_X || fillType == GLPANEL_FILL_GRAD_Y) {
         glPoints.reserve(2 * 4);
@@ -36,10 +36,10 @@ void GLPanel::genArrays() {
         glColors.resize(4 * 4);
         
         float pts[2 * 4] = {
-            min, min,
-            min, max,
-            max, max,
-            max, min
+                gmin, gmin,
+                gmin, gmax,
+                gmax, gmax,
+                gmax, gmin
         };
         
         RGBA4f c[4];
@@ -73,15 +73,15 @@ void GLPanel::genArrays() {
         
         if (fillType == GLPANEL_FILL_GRAD_BAR_X) {
             float pts[2 * 8] = {
-                min, min,
-                min, max,
-                mid, max,
-                mid, min,
-                
-                mid, min,
-                mid, max,
-                max, max,
-                max, min
+                    gmin, gmin,
+                    gmin, gmax,
+                    gmid, gmax,
+                    gmid, gmin,
+
+                    gmid, gmin,
+                    gmid, gmax,
+                    gmax, gmax,
+                    gmax, gmin
             };
             glPoints.assign(pts, pts + (2 * 8));
 
@@ -93,15 +93,15 @@ void GLPanel::genArrays() {
 
         } else if (fillType == GLPANEL_FILL_GRAD_BAR_Y) {
             float pts[2 * 8] = {
-                min, min,
-                min, mid,
-                max, mid,
-                max, min,
-                
-                min, mid,
-                min, max,
-                max, max,
-                max, mid
+                    gmin, gmin,
+                    gmin, gmid,
+                    gmax, gmid,
+                    gmax, gmin,
+
+                    gmin, gmid,
+                    gmin, gmax,
+                    gmax, gmax,
+                    gmax, gmid
             };
             glPoints.assign(pts, pts + (2 * 8));
 
@@ -154,11 +154,11 @@ float GLPanel::getHeight() {
     return size[1];
 }
 
-float GLPanel::getWidthPx() {
+float GLPanel::getWidthPx() const {
     return pdim.x;
 }
 
-float GLPanel::getHeightPx() {
+float GLPanel::getHeightPx() const {
     return pdim.y;
 }
 
@@ -179,8 +179,8 @@ void GLPanel::setCoordinateSystem(GLPanelCoordinateSystem coord_in) {
     genArrays();
 }
 
-bool GLPanel::hitTest(CubicVR::vec2 pos, CubicVR::vec2 &result) {
-    CubicVR::vec4 hitPos = CubicVR::mat4::vec4_multiply(CubicVR::vec4(pos.x, pos.y, 0.0, 1.0), transformInverse);
+bool GLPanel::hitTest(CubicVR::vec2 pos_in, CubicVR::vec2 &result) const {
+    CubicVR::vec4 hitPos = CubicVR::mat4::vec4_multiply(CubicVR::vec4(pos_in.x, pos_in.y, 0.0, 1.0), transformInverse);
     
     if (hitPos.x >= -1.0 && hitPos.x <= 1.0 && hitPos.y >= -1.0 && hitPos.y <= 1.0) {
         result.x = hitPos.x;
@@ -197,12 +197,12 @@ void GLPanel::setFill(GLPanelFillType fill_mode) {
     genArrays();
 }
 
-void GLPanel::setFillColor(RGBA4f color1) {
+void GLPanel::setFillColor(const RGBA4f& color1) {
     fill[0] = color1;
     genArrays();
 }
 
-void GLPanel::setFillColor(RGBA4f color1, RGBA4f color2) {
+void GLPanel::setFillColor(const RGBA4f& color1, const RGBA4f& color2) {
     fill[0] = color1;
     fill[1] = color2;
     genArrays();
@@ -213,7 +213,7 @@ void GLPanel::setMarginPx(float marg) {
 }
 
 
-void GLPanel::setBorderColor(RGBA4f clr) {
+void GLPanel::setBorderColor(const RGBA4f& clr) {
     borderColor = clr;
 }
 
@@ -234,7 +234,7 @@ void GLPanel::setBlend(GLuint src, GLuint dst) {
 }
 
 void GLPanel::addChild(GLPanel *childPanel) {
-    std::vector<GLPanel *>::iterator i = std::find(children.begin(), children.end(), childPanel);
+    auto i = std::find(children.begin(), children.end(), childPanel);
 
     if (i == children.end()) {
         children.push_back(childPanel);
@@ -242,7 +242,7 @@ void GLPanel::addChild(GLPanel *childPanel) {
 }
 
 void GLPanel::removeChild(GLPanel *childPanel) {
-    std::vector<GLPanel *>::iterator i = std::find(children.begin(), children.end(), childPanel);
+    auto i = std::find(children.begin(), children.end(), childPanel);
 
     if (i != children.end()) {
         children.erase(i);
@@ -250,7 +250,7 @@ void GLPanel::removeChild(GLPanel *childPanel) {
 }
 
 void GLPanel::drawChildren() {
-    if (children.size()) {
+    if (!children.empty()) {
         std::vector<GLPanel *>::iterator panel_i;
         
         for (panel_i = children.begin(); panel_i != children.end(); panel_i++) {
@@ -306,7 +306,7 @@ void GLPanel::calcTransform(mat4 transform_in) {
 }
 
 void GLPanel::draw() {
-    float min = -1.0, max = 1.0;
+    float gmin = -1.0, gmax = 1.0;
 
     glLoadMatrixf(transform.to_ptr());
     
@@ -330,32 +330,32 @@ void GLPanel::draw() {
             if (borderPx.left) {
                 glLineWidth(borderPx.left);
                 glBegin(GL_LINES);
-                glVertex2f(min, min);
-                glVertex2f(min, max);
+                glVertex2f(gmin, gmin);
+                glVertex2f(gmin, gmax);
                 glEnd();
             }
         
             if (borderPx.right) {
                 glLineWidth(borderPx.right);
                 glBegin(GL_LINES);
-                glVertex2f(max, min);
-                glVertex2f(max, max);
+                glVertex2f(gmax, gmin);
+                glVertex2f(gmax, gmax);
                 glEnd();
             }
 
             if (borderPx.top) {
                 glLineWidth(borderPx.top);
                 glBegin(GL_LINES);
-                glVertex2f(min, min);
-                glVertex2f(max, min);
+                glVertex2f(gmin, gmin);
+                glVertex2f(gmax, gmin);
                 glEnd();
             }
 
             if (borderPx.bottom) {
                 glLineWidth(borderPx.bottom);
                 glBegin(GL_LINES);
-                glVertex2f(min, max);
-                glVertex2f(max, max);
+                glVertex2f(gmin, gmax);
+                glVertex2f(gmax, gmax);
                 glEnd();
             }
 

@@ -17,7 +17,6 @@
 #include "CubicSDRDefs.h"
 #include "AppFrame.h"
 #include <algorithm>
-#include <wx/numformatter.h>
 #include "WaterfallCanvas.h"
 
 wxBEGIN_EVENT_TABLE(SpectrumCanvas, wxGLCanvas) EVT_PAINT(SpectrumCanvas::OnPaint)
@@ -33,7 +32,7 @@ EVT_RIGHT_UP(SpectrumCanvas::OnMouseRightReleased)
 wxEND_EVENT_TABLE()
 
 SpectrumCanvas::SpectrumCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
-        InteractiveCanvas(parent, dispAttrs), waterfallCanvas(NULL) {
+        InteractiveCanvas(parent, dispAttrs), waterfallCanvas(nullptr) {
 
     glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this), wxGetApp().GetContextAttributes());
 
@@ -46,9 +45,7 @@ SpectrumCanvas::SpectrumCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs
     bwChange = 0.0;
 }
 
-SpectrumCanvas::~SpectrumCanvas() {
-
-}
+SpectrumCanvas::~SpectrumCanvas() = default;
 
 void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
   //  wxPaintDC dc(this);
@@ -93,11 +90,11 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     auto demods = wxGetApp().getDemodMgr().getDemodulators();
     auto activeDemodulator = wxGetApp().getDemodMgr().getActiveContextModem();
 
-    for (int i = 0, iMax = demods.size(); i < iMax; i++) {
-        if (!demods[i]->isActive()) {
+    for (auto & demod : demods) {
+        if (!demod->isActive()) {
             continue;
         }
-        glContext->DrawDemodInfo(demods[i], ThemeMgr::mgr.currentTheme->fftHighlight, getCenterFrequency(), getBandwidth(), activeDemodulator==demods[i]);
+        glContext->DrawDemodInfo(demod, ThemeMgr::mgr.currentTheme->fftHighlight, getCenterFrequency(), getBandwidth(), activeDemodulator==demod);
     }
 
     if (waterfallCanvas && !activeDemodulator) {

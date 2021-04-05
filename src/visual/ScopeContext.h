@@ -6,8 +6,6 @@
 #include "PrimaryGLContext.h"
 #include "Gradient.h"
 
-#define NUM_WATERFALL_LINES 512
-
 class ScopeCanvas;
 
 class ScopeContext: public PrimaryGLContext {
@@ -16,7 +14,7 @@ public:
 
     void DrawBegin(bool clear=true);
     void DrawTunerTitles(bool ppmMode=false);
-    void DrawDeviceName(std::string deviceName);
+    void DrawDeviceName(const std::string& deviceName);
     void DrawDivider();
     void DrawEnd();
 

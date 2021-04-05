@@ -53,8 +53,7 @@ WaterfallCanvas::WaterfallCanvas(wxWindow *parent, const wxGLAttributes& dispAtt
     fft_size_changed.store(false);
 }
 
-WaterfallCanvas::~WaterfallCanvas() {
-}
+WaterfallCanvas::~WaterfallCanvas() = default;
 
 void WaterfallCanvas::setup(unsigned int fft_size_in, int waterfall_lines_in) {
     if (fft_size == fft_size_in && waterfall_lines_in == waterfall_lines) {
@@ -333,23 +332,23 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
     glContext->setHoverAlpha(0);
 
-    for (int i = 0, iMax = demods.size(); i < iMax; i++) {
-        if (!demods[i]->isActive()) {
+    for (auto & demod : demods) {
+        if (!demod->isActive()) {
             continue;
         }
-        if (activeDemodulator == demods[i] || lastActiveDemodulator == demods[i]) {
+        if (activeDemodulator == demod || lastActiveDemodulator == demod) {
             continue;
         }
-        glContext->DrawDemod(demods[i], currentTheme->waterfallHighlight, currentCenterFreq, currentBandwidth);
+        glContext->DrawDemod(demod, currentTheme->waterfallHighlight, currentCenterFreq, currentBandwidth);
     }
 
-    for (int i = 0, iMax = demods.size(); i < iMax; i++) {
-        demods[i]->getVisualCue()->step();
+    for (auto & demod : demods) {
+        demod->getVisualCue()->step();
 
-        int squelchBreak = demods[i]->getVisualCue()->getSquelchBreak();
+        int squelchBreak = demod->getVisualCue()->getSquelchBreak();
         if (squelchBreak) {
             glContext->setHoverAlpha((float(squelchBreak) / 60.0));
-            glContext->DrawDemod(demods[i], currentTheme->waterfallHover, currentCenterFreq, currentBandwidth);
+            glContext->DrawDemod(demod, currentTheme->waterfallHover, currentCenterFreq, currentBandwidth);
         }
     }
     
@@ -452,15 +451,15 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         if (wxGetApp().getDemodMgr().getActiveContextModem()) {
             wxGetApp().setFrequency(wxGetApp().getDemodMgr().getActiveContextModem()->getFrequency());
         } else if (mouseTracker.mouseInView()) {
-            long long freq = getFrequencyAt(mouseTracker.getMouseX());
+            long long nfreq = getFrequencyAt(mouseTracker.getMouseX());
             
             int snap = wxGetApp().getFrequencySnap();
             
             if (snap > 1) {
-                freq = roundf((float)freq/(float)snap)*snap;
+                nfreq = roundf((float)nfreq / (float)snap) * snap;
             }
             
-            wxGetApp().setFrequency(freq);
+            wxGetApp().setFrequency(nfreq);
         }
 #ifdef USE_HAMLIB
         if (wxGetApp().rigIsActive() && (!wxGetApp().getRigThread()->getControlMode() || wxGetApp().getRigThread()->getCenterLock())) {
@@ -504,13 +503,12 @@ void WaterfallCanvas::updateHoverState() {
         } else {
             setStatusText("Click and drag to set the current demodulator range.");
         }
-    } else if (demodsHover.size() && !shiftDown) {
+    } else if (!demodsHover.empty() && !shiftDown) {
         long near_dist = getBandwidth();
         
         DemodulatorInstancePtr activeDemodulator = nullptr;
         
-        for (int i = 0, iMax = demodsHover.size(); i < iMax; i++) {
-            auto demod = demodsHover[i];
+        for (auto demod : demodsHover) {
             long long freqDiff = demod->getFrequency() - freqPos;
             long halfBw = (demod->getBandwidth() / 2);
             long long currentBw = getBandwidth();
@@ -708,7 +706,7 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
 
 
         if (dragState == WF_DRAG_NONE) {
-            if (!isNew && wxGetApp().getDemodMgr().getDemodulators().size()) {
+            if (!isNew && !wxGetApp().getDemodMgr().getDemodulators().empty()) {
                 mgr->updateLastState();
                 demod = wxGetApp().getDemodMgr().getCurrentModem();
             } else {
@@ -809,7 +807,7 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
         }
 
 
-        if (!isNew && wxGetApp().getDemodMgr().getDemodulators().size()) {
+        if (!isNew && !wxGetApp().getDemodMgr().getDemodulators().empty()) {
             mgr->updateLastState();
             demod = wxGetApp().getDemodMgr().getCurrentModem();
         } else {

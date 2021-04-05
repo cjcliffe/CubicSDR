@@ -32,11 +32,11 @@ public:
     void OnKeyUp(wxKeyEvent& event);
 
     void setDeviceName(std::string device_name);
-    void setPPMMode(bool ppmMode);
-    bool getPPMMode();
+    void setPPMMode(bool ppmMode_in);
+    bool getPPMMode() const;
 
     void setShowDb(bool showDb);
-    bool getShowDb();
+    bool getShowDb() const;
 
     bool scopeVisible();
     bool spectrumVisible();

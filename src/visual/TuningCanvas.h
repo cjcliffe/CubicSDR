@@ -24,7 +24,7 @@ public:
         TUNING_DIRECTION_DOWN, TUNING_DIRECTION_UP
     };
     TuningCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
-    ~TuningCanvas();
+    ~TuningCanvas() override;
 
     void setHelpTip(std::string tip);
     bool changed();

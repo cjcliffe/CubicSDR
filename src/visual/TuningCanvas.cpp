@@ -56,9 +56,7 @@ TuningCanvas::TuningCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
     currentPPM = lastPPM = 0;
 }
 
-TuningCanvas::~TuningCanvas() {
-
-}
+TuningCanvas::~TuningCanvas() = default;
 
 bool TuningCanvas::changed() {
 
@@ -182,52 +180,52 @@ void TuningCanvas::StepTuner(ActiveState state, TuningDirection tuningDir, int d
     
     auto activeDemod = wxGetApp().getDemodMgr().getCurrentModem();
     if (state == TUNING_HOVER_FREQ && activeDemod) {
-        long long freq = activeDemod->getFrequency();
-        long long diff = abs(wxGetApp().getFrequency() - freq);
+        long long demod_freq = activeDemod->getFrequency();
+        long long diff = abs(wxGetApp().getFrequency() - demod_freq);
 
         if (zeroOut) { // Zero digits to right
             double intpart;
-            modf(freq / (exp * 10), &intpart);
-            freq = intpart * exp * 10;
+            modf(demod_freq / (exp * 10), &intpart);
+            demod_freq = intpart * exp * 10;
         } else if (preventCarry) { // Prevent digit from carrying
-            bool carried = (long long)((freq) / (exp * 10)) != (long long)((freq + amount) / (exp * 10)) || (bottom && freq < exp);
-            freq += carried?(9*-amount):amount;
+            bool carried = (long long)((demod_freq) / (exp * 10)) != (long long)((demod_freq + amount) / (exp * 10)) || (bottom && demod_freq < exp);
+            demod_freq += carried ? (9 * -amount) : amount;
         } else {
-            freq += amount;
+            demod_freq += amount;
         }
 
         if (wxGetApp().getSampleRate() / 2 < diff) {
-            wxGetApp().setFrequency(freq);
+            wxGetApp().setFrequency(demod_freq);
         }
 
         activeDemod->setTracking(true);
         activeDemod->setFollow(true);
-        activeDemod->setFrequency(freq);
+        activeDemod->setFrequency(demod_freq);
         if (activeDemod->isDeltaLock()) {
             activeDemod->setDeltaLockOfs(activeDemod->getFrequency() - wxGetApp().getFrequency());
         }
-        activeDemod->updateLabel(freq);
+        activeDemod->updateLabel(demod_freq);
     }
 
     if (state == TUNING_HOVER_BW) {
-        long bw = wxGetApp().getDemodMgr().getLastBandwidth();
+        long nbw = wxGetApp().getDemodMgr().getLastBandwidth();
 
         if (zeroOut) { // Zero digits to right
             double intpart;
-            modf(bw / (exp * 10), &intpart);
-            bw = intpart * exp * 10;
+            modf(nbw / (exp * 10), &intpart);
+            nbw = intpart * exp * 10;
         } else if (preventCarry) { // Prevent digit from carrying
-            bool carried = (long)((bw) / (exp * 10)) != (long)((bw + amount) / (exp * 10)) || (bottom && bw < exp);
-            bw += carried?(9*-amount):amount;
+            bool carried = (long)((nbw) / (exp * 10)) != (long)((nbw + amount) / (exp * 10)) || (bottom && nbw < exp);
+            nbw += carried ? (9 * -amount) : amount;
         } else {
-            bw += amount;
+            nbw += amount;
         }
 
-        if (bw > CHANNELIZER_RATE_MAX) {
-            bw = CHANNELIZER_RATE_MAX;
+        if (nbw > CHANNELIZER_RATE_MAX) {
+            nbw = CHANNELIZER_RATE_MAX;
         }
 
-        wxGetApp().getDemodMgr().setLastBandwidth(bw);
+        wxGetApp().getDemodMgr().setLastBandwidth(nbw);
 
         if (activeDemod) {
             activeDemod->setBandwidth(wxGetApp().getDemodMgr().getLastBandwidth());
@@ -298,12 +296,10 @@ void TuningCanvas::OnIdle(wxIdleEvent & /* event */) {
 void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseMoved(event);
 
-    int index = 0;
-
     top = mouseTracker.getMouseY() >= 0.5;
     bottom = mouseTracker.getMouseY() <= 0.5;
 
-    index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(), 11, freqDP, freqW); // freq
+    int index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(), 11, freqDP, freqW); // freq
     if (index > 0) {
         hoverIndex = index;
         hoverState = altDown?TUNING_HOVER_PPM:TUNING_HOVER_FREQ;
