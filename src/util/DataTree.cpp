@@ -25,10 +25,8 @@
 
 #include "DataTree.h"
 #include <fstream>
-#include <math.h>
 #include <iomanip>
-#include <locale>
-#include <stdlib.h>
+#include <cstdlib>
 #include <algorithm>
 
 
@@ -48,10 +46,7 @@ DataElement::DataElement(DataElement &cloneFrom) : data_type(cloneFrom.getDataTy
     //
 }
 
-DataElement::~DataElement() {
-    //nothing
-}
-
+DataElement::~DataElement() = default;
 
 
 char * DataElement::getDataPointer() {
@@ -91,7 +86,7 @@ void DataElement::set(const std::set<string> &strset_in) {
    
     vector<string> tmp_vect;
 
-    for (auto single_string : strset_in) {
+    for (const auto& single_string : strset_in) {
         tmp_vect.push_back(single_string);
     }
 
@@ -120,14 +115,14 @@ void DataElement::get(std::set<string> &strset_out) {
 
     strset_out.clear();
 
-    for (auto single_string : tmp_vect) {
+    for (const auto& single_string : tmp_vect) {
         strset_out.insert(single_string);
     }
 }
 
 std::string DataElement::toString() {
     int dataType = getDataType();
-    std::string strValue = "";
+    std::string strValue;
     
     try {
         if (dataType == DATA_STRING) {
@@ -151,7 +146,7 @@ std::string DataElement::toString() {
         else {
             std::cout << "Unhandled DataElement toString for type: " << dataType  << std::endl;
         }
-    } catch (DataTypeMismatchException e) {
+    } catch (const DataTypeMismatchException &e) {
         std::cout << "toString() DataTypeMismatch: " << dataType  << std::endl;
     }
     
@@ -160,16 +155,16 @@ std::string DataElement::toString() {
 
 /* DataNode class */
 
-DataNode::DataNode(): parentNode(NULL), ptr(0) {
+DataNode::DataNode(): parentNode(nullptr), ptr(0) {
     data_elem = new DataElement();
 }
 
-DataNode::DataNode(const char *name_in): parentNode(NULL), ptr(0) {
+DataNode::DataNode(const char *name_in): parentNode(nullptr), ptr(0) {
     node_name = name_in;
     data_elem = new DataElement();
 }
 
-DataNode::DataNode(const char *name_in, DataNode &cloneFrom): parentNode(NULL), ptr(0) {
+DataNode::DataNode(const char *name_in, DataNode &cloneFrom): parentNode(nullptr), ptr(0) {
     node_name = name_in;
     data_elem = new DataElement(*cloneFrom.element());
     
@@ -180,20 +175,18 @@ DataNode::DataNode(const char *name_in, DataNode &cloneFrom): parentNode(NULL), 
     }
 }
 
-DataNode::DataNode(const char *name_in, DataElement &cloneFrom): parentNode(NULL), ptr(0) {
+DataNode::DataNode(const char *name_in, DataElement &cloneFrom): parentNode(nullptr), ptr(0) {
     node_name = name_in;
     data_elem = new DataElement(cloneFrom);
 }
 
 DataNode::~DataNode() {
-    while (children.size()) {
+    while (!children.empty()) {
         DataNode *del = children.back();
         children.pop_back();
         delete del;
     }
-    if (data_elem) {
-        delete data_elem;
-    }
+    delete data_elem;
 }
 
 void DataNode::setName(const char *name_in) {
@@ -223,7 +216,7 @@ DataNode *DataNode::newChild(const char *name_in, DataNode *otherNode) {
 }
 
 DataNode *DataNode::newChildCloneFrom(const char *name_in, DataNode *cloneFrom) {
-    DataNode *cloneNode = new DataNode(name_in, *cloneFrom->element());
+    auto *cloneNode = new DataNode(name_in, *cloneFrom->element());
     
     children.push_back(cloneNode);
     childmap[name_in].push_back(children.back());
@@ -309,13 +302,9 @@ DataTree::DataTree(const char *name_in) {
     dn_root.setName(name_in);
 }
 
-DataTree::DataTree() {
+DataTree::DataTree() = default;
 
-}
-
-DataTree::~DataTree() {
-}
-;
+DataTree::~DataTree() = default;
 
 DataNode *DataTree::rootNode() {
     return &dn_root;
@@ -342,8 +331,8 @@ string DataTree::wsEncode(const wstring& wstr) {
     
     encStream << std::hex;
 
-    for(auto i = byte_str.begin(); i != byte_str.end(); i++) {
-        encStream << '%' << setfill('0') << (unsigned int)((unsigned char)(*i));
+    for(char & i : byte_str) {
+        encStream << '%' << setfill('0') << (unsigned int)((unsigned char)i);
     }
     
     return encStream.str();
@@ -366,7 +355,7 @@ wstring DataTree::wsDecode(const string& str) {
     size_t maxLen = decStr.length();
 
     //wchar_t is typically 16 bits on windows, and 32 bits on Unix, so use sizeof(wchar_t) everywhere.
-    wchar_t *wc_str = (wchar_t *) ::calloc(maxLen  + 1, sizeof(wchar_t));
+    auto *wc_str = (wchar_t *) ::calloc(maxLen  + 1, sizeof(wchar_t));
 
     while (!decStream.eof()) {
         decStream >> std::hex >> x;
@@ -589,7 +578,7 @@ void DataTree::setFromXML(DataNode *elem, TiXmlNode *elxml, bool root_node, DT_F
             if (elxml->FirstChild()->Value() == TIXML_STRING("str")) {
                 std::vector<std::string> tmp_strvect;
 
-                for (pChild = elxml->FirstChild(); pChild != 0; pChild = pChild->NextSibling()) {
+                for (pChild = elxml->FirstChild(); pChild != nullptr; pChild = pChild->NextSibling()) {
                     if (pChild->Value() == TIXML_STRING("str")) {
                         if (!pChild->FirstChild()) {
                             tmp_strvect.push_back("");
@@ -612,7 +601,7 @@ void DataTree::setFromXML(DataNode *elem, TiXmlNode *elxml, bool root_node, DT_F
         }
     }
 
-    for (pChild = elxml->FirstChild(); pChild != 0; pChild = pChild->NextSibling()) {
+    for (pChild = elxml->FirstChild(); pChild != nullptr; pChild = pChild->NextSibling()) {
         setFromXML(elem, pChild, false, fpp);
     }
 
@@ -678,7 +667,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             if (nodeName.substr(0, 1) == string("@")) {
                 elxml->SetAttribute(nodeName.substr(1).c_str(), tmp_pstr_as_string.c_str()); //the c_str take care of adding a null erminated character...
                 delete element;
-                element = NULL;
+                element = nullptr;
             } else {
                 text = new TiXmlText(tmp_pstr_as_string.c_str());
                 element->LinkEndChild(text);
@@ -779,7 +768,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             if (nodeName.substr(0, 1) == string("@")) {
                 elxml->SetAttribute(nodeName.substr(1).c_str(), tmp.c_str());
                 delete element;
-                element = NULL;
+                element = nullptr;
             } else {
                 text = new TiXmlText(tmp.c_str());
                 element->LinkEndChild(text);
@@ -791,7 +780,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             if (nodeName.substr(0, 1) == string("@")) {
                 elxml->SetAttribute(nodeName.substr(1).c_str(), tmp.c_str());
                 delete element;
-                element = NULL;
+                element = nullptr;
             } else {
                 text = new TiXmlText(tmp.c_str());
                 element->LinkEndChild(text);
@@ -802,7 +791,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
 
             tmp_stream.str("");
 
-            for (auto single_string : tmp_stringvect) {
+            for (const auto& single_string : tmp_stringvect) {
                 tmp_node = new TiXmlElement("str");
                 text = new TiXmlText(single_string.c_str());
                 tmp_node->LinkEndChild(text);
@@ -964,14 +953,14 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
 void DataTree::printXML() /* get serialized size + return node names header */
 {
     TiXmlDocument doc;
-    TiXmlDeclaration * decl = new TiXmlDeclaration("1.0", "", "");
+    auto * decl = new TiXmlDeclaration("1.0", "", "");
     doc.LinkEndChild(decl);
 
     DataNode *root = rootNode();
 
     string rootName = root->getName();
 
-    TiXmlElement *element = new TiXmlElement(rootName.empty() ? "root" : rootName.c_str());
+    auto *element = new TiXmlElement(rootName.empty() ? "root" : rootName.c_str());
     doc.LinkEndChild(element);
 
     if (!root->numChildren())
@@ -1079,12 +1068,12 @@ bool DataTree::LoadFromFileXML(const std::string& filename, DT_FloatingPointPoli
 
 bool DataTree::SaveToFileXML(const std::string& filename) {
     TiXmlDocument doc;
-    TiXmlDeclaration * decl = new TiXmlDeclaration("1.0", "", "");
+    auto * decl = new TiXmlDeclaration("1.0", "", "");
     doc.LinkEndChild(decl);
 
     string rootName = rootNode()->getName();
 
-    TiXmlElement *element = new TiXmlElement(rootName.empty() ? "root" : rootName.c_str());
+    auto *element = new TiXmlElement(rootName.empty() ? "root" : rootName.c_str());
 
     doc.LinkEndChild(element);
 

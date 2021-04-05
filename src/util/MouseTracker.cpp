@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "MouseTracker.h"
-#include <iostream>
 
 MouseTracker::MouseTracker(wxWindow *target) :
         mouseX(0), mouseY(0), lastMouseX(0), lastMouseY(0), originMouseX(0), originMouseY(0), deltaMouseX(0), deltaMouseY(0), vertDragLock(false), horizDragLock(
@@ -11,12 +10,12 @@ MouseTracker::MouseTracker(wxWindow *target) :
 }
 
 MouseTracker::MouseTracker() :
-        MouseTracker(NULL) {
+        MouseTracker(nullptr) {
 
 }
 
 void MouseTracker::OnMouseMoved(wxMouseEvent& event) {
-    if (target == NULL) {
+    if (target == nullptr) {
         return;
     }
 
@@ -55,7 +54,7 @@ void MouseTracker::OnMouseWheelMoved(wxMouseEvent& /* event */) {
 }
 
 void MouseTracker::OnMouseDown(wxMouseEvent& event) {
-    if (isMouseRightDown || target == NULL) {
+    if (isMouseRightDown || target == nullptr) {
         return;
     }
 
@@ -75,7 +74,7 @@ void MouseTracker::OnMouseReleased(wxMouseEvent& /* event */) {
 }
 
 void MouseTracker::OnMouseRightDown(wxMouseEvent& event) {
-    if (isMouseDown || target == NULL) {
+    if (isMouseDown || target == nullptr) {
         return;
     }
 
@@ -106,47 +105,47 @@ void MouseTracker::OnMouseLeftWindow(wxMouseEvent& /* event */) {
     isMouseInView = false;
 }
 
-float MouseTracker::getOriginMouseX() {
+float MouseTracker::getOriginMouseX() const {
     return originMouseX;
 }
 
-float MouseTracker::getOriginMouseY() {
+float MouseTracker::getOriginMouseY() const {
     return originMouseY;
 }
 
-float MouseTracker::getOriginDeltaMouseX() {
+float MouseTracker::getOriginDeltaMouseX() const {
     return mouseX - originMouseX;
 }
 
-float MouseTracker::getOriginDeltaMouseY() {
+float MouseTracker::getOriginDeltaMouseY() const {
     return mouseY - originMouseY;
 }
 
-float MouseTracker::getDeltaMouseX() {
+float MouseTracker::getDeltaMouseX() const {
     return deltaMouseX;
 }
 
-float MouseTracker::getDeltaMouseY() {
+float MouseTracker::getDeltaMouseY() const {
     return deltaMouseY;
 }
 
-float MouseTracker::getLastMouseX() {
+float MouseTracker::getLastMouseX() const {
     return lastMouseX;
 }
 
-float MouseTracker::getLastMouseY() {
+float MouseTracker::getLastMouseY() const {
     return lastMouseY;
 }
 
-CubicVR::vec2 MouseTracker::getGLXY() {
+CubicVR::vec2 MouseTracker::getGLXY() const {
     return CubicVR::vec2((getMouseX()-0.5)*2.0, (getMouseY()-0.5)*2.0);
 }
 
-float MouseTracker::getMouseX() {
+float MouseTracker::getMouseX() const {
     return mouseX;
 }
 
-float MouseTracker::getMouseY() {
+float MouseTracker::getMouseY() const {
     return mouseY;
 }
 
@@ -158,19 +157,19 @@ void MouseTracker::setHorizDragLock(bool dragLock) {
     horizDragLock = dragLock;
 }
 
-bool MouseTracker::getVertDragLock() {
+bool MouseTracker::getVertDragLock() const {
     return vertDragLock;
 }
 
-bool MouseTracker::getHorizDragLock() {
+bool MouseTracker::getHorizDragLock() const {
     return horizDragLock;
 }
 
-bool MouseTracker::mouseDown() {
+bool MouseTracker::mouseDown() const {
     return isMouseDown;
 }
 
-bool MouseTracker::mouseInView() {
+bool MouseTracker::mouseInView() const {
     return isMouseInView;
 }
 
@@ -179,6 +178,6 @@ void MouseTracker::setTarget(wxWindow *target_in) {
 }
 
 
-bool MouseTracker::mouseRightDown() {
+bool MouseTracker::mouseRightDown() const {
     return isMouseRightDown;
 }

@@ -48,29 +48,29 @@ struct string_less
 
 
 /* Data Exceptions */
-class DataException
+class DataException : public exception
 {
 private:
     string reason;
     
 public:
-    DataException(const char *why) : reason(why) {}
-    string what() { return reason; } 
-    operator string() { return reason; }
+    explicit DataException(const char *why) : reason(why) {}
+    const char* what() const noexcept override { return reason.c_str(); }
+    explicit operator string() { return reason; }
 };
 
 
 class DataTypeMismatchException : public DataException
 {
 public:
-    DataTypeMismatchException(const char *why) : DataException(why) { }
+    explicit DataTypeMismatchException(const char *why) : DataException(why) { }
 };
 
 
 class DataInvalidChildException : public DataException
 {
 public:
-    DataInvalidChildException(const char *why) : DataException(why) { }
+    explicit DataInvalidChildException(const char *why) : DataException(why) { }
 };
 
 
@@ -206,7 +206,7 @@ public:
         int unit_size = sizeof(T);
         //copy in a temporary variable (needed ?)
         T local_copy = scalar_in;
-        unsigned char* local_copy_ptr = reinterpret_cast<unsigned char*>(&local_copy);
+        auto* local_copy_ptr = reinterpret_cast<unsigned char*>(&local_copy);
 
         data_val.assign(local_copy_ptr, local_copy_ptr + unit_size);
     }
@@ -227,7 +227,7 @@ public:
 
             //copy in a temporary variable (needed ?)
             T local_copy = single_element;
-            unsigned char* local_copy_ptr = reinterpret_cast<unsigned char*>(&local_copy);
+            auto* local_copy_ptr = reinterpret_cast<unsigned char*>(&local_copy);
 
             single_buffer.assign(local_copy_ptr, local_copy_ptr + unit_size);
 
@@ -308,7 +308,7 @@ public:
             scalar_out = T(*storage_ptr);
 
         } else if (storageType == DATA_UCHAR) {
-            unsigned char* storage_ptr = reinterpret_cast<unsigned char*>(&data_val[0]);
+            auto* storage_ptr = reinterpret_cast<unsigned char*>(&data_val[0]);
             //constructor-like 
             scalar_out = T(*storage_ptr);
         } else if (storageType == DATA_INT) {
@@ -316,7 +316,7 @@ public:
             //constructor-like 
             scalar_out = T(*storage_ptr);
         } else if (storageType == DATA_UINT) {
-            unsigned int* storage_ptr = reinterpret_cast<unsigned int*>(&data_val[0]);
+            auto* storage_ptr = reinterpret_cast<unsigned int*>(&data_val[0]);
             //constructor-like 
             scalar_out = T(*storage_ptr);
         } else if (storageType == DATA_LONG) {
@@ -324,19 +324,19 @@ public:
             //constructor-like 
             scalar_out = T(*storage_ptr);
         } else if (storageType == DATA_ULONG) {
-            unsigned long* storage_ptr = reinterpret_cast<unsigned long*>(&data_val[0]);
+            auto* storage_ptr = reinterpret_cast<unsigned long*>(&data_val[0]);
             //constructor-like 
             scalar_out = T(*storage_ptr);
         } else if (storageType == DATA_LONGLONG) {
-            long long* storage_ptr = reinterpret_cast<long long*>(&data_val[0]);
+            auto* storage_ptr = reinterpret_cast<long long*>(&data_val[0]);
             //constructor-like 
             scalar_out = T(*storage_ptr);
         } else if (storageType == DATA_FLOAT) {
-            float* storage_ptr = reinterpret_cast<float*>(&data_val[0]);
+            auto* storage_ptr = reinterpret_cast<float*>(&data_val[0]);
             //constructor-like 
             scalar_out = T(*storage_ptr);
         } else if (storageType == DATA_DOUBLE) {
-            double* storage_ptr = reinterpret_cast<double*>(&data_val[0]);
+            auto* storage_ptr = reinterpret_cast<double*>(&data_val[0]);
             //constructor-like 
             scalar_out = T(*storage_ptr);
         } 
@@ -367,7 +367,7 @@ public:
                 scalar_out = T(*storage_ptr);
 
             } else if (storageType == DATA_UCHAR_VECTOR) {
-                unsigned char* storage_ptr = reinterpret_cast<unsigned char*>(&single_storage_element[0]);
+                auto* storage_ptr = reinterpret_cast<unsigned char*>(&single_storage_element[0]);
                 //constructor-like 
                 scalar_out = T(*storage_ptr);
             } else if (storageType == DATA_INT_VECTOR) {
@@ -375,7 +375,7 @@ public:
                 //constructor-like 
                 scalar_out = T(*storage_ptr);
             } else if (storageType == DATA_UINT_VECTOR) {
-                unsigned int* storage_ptr = reinterpret_cast<unsigned int*>(&single_storage_element[0]);
+                auto* storage_ptr = reinterpret_cast<unsigned int*>(&single_storage_element[0]);
                 //constructor-like 
                 scalar_out = T(*storage_ptr);
             } else if (storageType == DATA_LONG_VECTOR) {
@@ -383,19 +383,19 @@ public:
                 //constructor-like 
                 scalar_out = T(*storage_ptr);
             } else if (storageType == DATA_ULONG_VECTOR) {
-                unsigned long* storage_ptr = reinterpret_cast<unsigned long*>(&single_storage_element[0]);
+                auto* storage_ptr = reinterpret_cast<unsigned long*>(&single_storage_element[0]);
                 //constructor-like 
                 scalar_out = T(*storage_ptr);
             } else if (storageType == DATA_LONGLONG_VECTOR) {
-                long long* storage_ptr = reinterpret_cast<long long*>(&single_storage_element[0]);
+                auto* storage_ptr = reinterpret_cast<long long*>(&single_storage_element[0]);
                 //constructor-like 
                 scalar_out = T(*storage_ptr);
             } else if (storageType == DATA_FLOAT_VECTOR) {
-                float* storage_ptr = reinterpret_cast<float*>(&single_storage_element[0]);
+                auto* storage_ptr = reinterpret_cast<float*>(&single_storage_element[0]);
                 //constructor-like 
                 scalar_out = T(*storage_ptr);
             } else if (storageType == DATA_DOUBLE_VECTOR) {
-                double* storage_ptr = reinterpret_cast<double*>(&single_storage_element[0]);
+                auto* storage_ptr = reinterpret_cast<double*>(&single_storage_element[0]);
                 //constructor-like 
                 scalar_out = T(*storage_ptr);
             } 
@@ -450,7 +450,7 @@ public:
             size_t maxNbWchars = getDataSize() / sizeof(wchar_t);
 
             //be paranoid, zero the buffer
-            wchar_t *tmp_wstr = (wchar_t *)::calloc(maxNbWchars + 1, sizeof(wchar_t));
+            auto *tmp_wstr = (wchar_t *)::calloc(maxNbWchars + 1, sizeof(wchar_t));
 
             //the last wchar_t is actually zero if anything goes wrong...
             ::mbstowcs(tmp_wstr, (const char*)&data_val[0], maxNbWchars);
@@ -516,7 +516,7 @@ private:
     
 public:
     DataNode();
-    DataNode(const char *name_in);
+    explicit DataNode(const char *name_in);
     DataNode(const char *name_in, DataElement &cloneFrom);
     DataNode(const char *name_in, DataNode &cloneFrom);
 
@@ -550,26 +550,26 @@ public:
     
     void findAll(const char *name_in, vector<DataNode *> &node_list_out);
     
-//    operator string () { string s; element()->get(s); return s; }
-    operator const char * () { if (element()->getDataType() == DataElement::DATA_STRING) { return element()->getDataPointer(); } else { return NULL; } }
-    operator char () { char v; element()->get(v); return v; }
-    operator unsigned char () { unsigned char v; element()->get(v); return v; }
-    operator int () { int v; element()->get(v); return v; }
-    operator unsigned int () { unsigned int v; element()->get(v); return v; }
-    operator long () { long v; element()->get(v); return v; }
-    operator unsigned long () { unsigned long v; element()->get(v); return v; }
-    operator long long () { long long v; element()->get(v); return v; }
-    operator float () { float v; element()->get(v); return v; }
-    operator double () { double v; element()->get(v); return v; }
+    explicit operator string () { string s; element()->get(s); return s; }
+    explicit operator const char * () { if (element()->getDataType() == DataElement::DATA_STRING) { return element()->getDataPointer(); } else { return nullptr; } }
+    explicit operator char () { char v=0; element()->get(v); return v; }
+    explicit operator unsigned char () { unsigned char v=0; element()->get(v); return v; }
+    explicit operator int () { int v=0; element()->get(v); return v; }
+    explicit operator unsigned int () { unsigned int v=0; element()->get(v); return v; }
+    explicit operator long () { long v=0; element()->get(v); return v; }
+    explicit operator unsigned long () { unsigned long v=0; element()->get(v); return v; }
+    explicit operator long long () { long long v=0; element()->get(v); return v; }
+    explicit operator float () { float v=0; element()->get(v); return v; }
+    explicit operator double () { double v=0; element()->get(v); return v; }
     
-    operator vector<char> () { vector<char> v; element()->get(v);  return v; }
-    operator vector<unsigned char> () { vector<unsigned char> v; element()->get(v);  return v; }
-    operator vector<int> () { vector<int> v; element()->get(v);  return v; }
-    operator vector<unsigned int> () { vector<unsigned int> v; element()->get(v);  return v; }
-    operator vector<long> () { vector<long> v; element()->get(v);  return v; }
-    operator vector<unsigned long> () { vector<unsigned long> v; element()->get(v);  return v; }
-    operator vector<float> () { vector<float> v; element()->get(v);  return v; }
-    operator vector<double> () { vector<double> v; element()->get(v);  return v; }
+    explicit operator vector<char> () { vector<char> v; element()->get(v);  return v; }
+    explicit operator vector<unsigned char> () { vector<unsigned char> v; element()->get(v);  return v; }
+    explicit operator vector<int> () { vector<int> v; element()->get(v);  return v; }
+    explicit operator vector<unsigned int> () { vector<unsigned int> v; element()->get(v);  return v; }
+    explicit operator vector<long> () { vector<long> v; element()->get(v);  return v; }
+    explicit operator vector<unsigned long> () { vector<unsigned long> v; element()->get(v);  return v; }
+    explicit operator vector<float> () { vector<float> v; element()->get(v);  return v; }
+    explicit operator vector<double> () { vector<double> v; element()->get(v);  return v; }
     
     const string &operator= (const string &s) { element()->set(s); return s; }
     const wstring &operator= (const wstring &s) { element()->set(s); return s; }
@@ -619,7 +619,7 @@ private:
     wstring wsDecode(const string& str);
 
 public:
-    DataTree(const char *name_in);
+    explicit DataTree(const char *name_in);
     DataTree();
     ~DataTree();
     

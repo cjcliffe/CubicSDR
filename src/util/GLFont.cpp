@@ -54,15 +54,13 @@ GLFontChar::GLFontChar() :
 
 }
 
-GLFontChar::~GLFontChar() {
-
-}
+GLFontChar::~GLFontChar() = default;
 
 void GLFontChar::setId(int idval) {
     id = idval;
 }
 
-int GLFontChar::getId() {
+int GLFontChar::getId() const {
     return id;
 }
 
@@ -116,7 +114,7 @@ void GLFontChar::setHeight(int h) {
     }
 }
 
-int GLFontChar::getHeight() {
+int GLFontChar::getHeight() const {
     return height;
 }
 
@@ -128,7 +126,7 @@ int GLFontChar::getXAdvance() {
     return xadvance;
 }
 
-float GLFontChar::getAspect() {
+float GLFontChar::getAspect() const {
     return aspect;
 }
 
@@ -136,7 +134,7 @@ void GLFontChar::setIndex(unsigned int idx) {
     index = idx;
 }
 
-int GLFontChar::getIndex() {
+int GLFontChar::getIndex() const {
     return index;
 }
 
@@ -148,9 +146,7 @@ GLFont::GLFont(GLFontSize size, std::wstring defFileName):
     fontDefFileSource = defFileName;
 }
 
-GLFont::~GLFont() {
-
-}
+GLFont::~GLFont() = default;
 
 std::wstring GLFont::nextParam(std::wistringstream &str) {
     std::wstring param_str;
@@ -171,7 +167,7 @@ std::wstring GLFont::nextParam(std::wistringstream &str) {
 std::wstring GLFont::getParamKey(const std::wstring& param_str) {
     std::wstring keyName;
 
-    size_t eqpos = param_str.find(L"=");
+    size_t eqpos = param_str.find(L'=');
 
     if (eqpos != std::wstring::npos) {
         keyName = param_str.substr(0, eqpos);
@@ -183,7 +179,7 @@ std::wstring GLFont::getParamKey(const std::wstring& param_str) {
 std::wstring GLFont::getParamValue(const std::wstring& param_str) {
     std::wstring value;
 
-    size_t eqpos = param_str.find(L"=");
+    size_t eqpos = param_str.find(L'=');
 
     if (eqpos != std::wstring::npos) {
         value = param_str.substr(eqpos + 1);
@@ -334,7 +330,7 @@ void GLFont::loadFontOnce() {
             getline(input, char_param_str);
             std::wistringstream char_param(char_param_str);
 
-            GLFontChar *newChar = new GLFontChar;
+            auto *newChar = new GLFontChar;
 
             while (!char_param.eof()) {
                 std::wstring param = nextParam(char_param);
@@ -381,7 +377,7 @@ void GLFont::loadFontOnce() {
         }
     }
 
-    if (imageFile != "" && imageWidth && imageHeight && characters.size()) {
+    if (!imageFile.empty() && imageWidth && imageHeight && !characters.empty()) {
 
         // Load file and decode image.
         std::vector<unsigned char> image;
@@ -393,7 +389,7 @@ void GLFont::loadFontOnce() {
 
         int png_size = png_file.Length();
         
-        unsigned char* raw_image = new unsigned char[png_size];
+        auto* raw_image = new unsigned char[png_size];
 
         if (png_size > 0) {
 
@@ -482,9 +478,7 @@ float GLFont::getStringWidth(const std::wstring& str, float size, float viewAspe
 
     float width = 0;
 
-    for (int i = 0, iMax = str.length(); i < iMax; i++) {
-        int charId = str.at(i);
-
+    for (int charId : str) {
         if (characters.find(charId) == characters.end()) {
             continue;
         }
@@ -599,9 +593,7 @@ void GLFont::drawString(const std::wstring& str, int pxHeight, float xpos, float
     glVertexPointer(2, GL_FLOAT, 0, &gl_vertices[0]);
     glTexCoordPointer(2, GL_FLOAT, 0, &gl_uv[0]);
 
-    for (int i = 0, iMax = str.length(); i < iMax; i++) {
-        int charId = str.at(i);
-
+    for (int charId : str) {
         if (characters.find(charId) == characters.end()) {
             continue;
         }
@@ -644,7 +636,7 @@ void GLFont::drawString(const std::string& str, int pxHeight, float xpos, float 
 }
 
 // Draw cached GLFontCacheString
-void GLFont::drawCacheString(GLFontStringCache *fc, float xpos, float ypos, Align hAlign, Align vAlign) {
+void GLFont::drawCacheString(GLFontStringCache *fc, float xpos, float ypos, Align hAlign, Align vAlign) const {
     
     float size = (float) fc->pxHeight / (float) fc->vpy;
     
@@ -701,7 +693,7 @@ void GLFont::drawCacheString(GLFontStringCache *fc, float xpos, float ypos, Alig
 // Compile optimized GLFontCacheString
 GLFontStringCache *GLFont::cacheString(const std::wstring& str, int pxHeight, int vpx, int vpy) {
 
-    GLFontStringCache *fc = new GLFontStringCache;
+    auto *fc = new GLFontStringCache;
     
     fc->pxHeight = pxHeight;
     fc->vpx = vpx;
@@ -713,9 +705,7 @@ GLFontStringCache *GLFont::cacheString(const std::wstring& str, int pxHeight, in
     fc->msgWidth = getStringWidth(str, size, viewAspect);
 
     int nChar = 0;
-    for (int i = 0, iMax = str.length(); i < iMax; i++) {
-        int charId = str.at(i);
-
+    for (int charId : str) {
         if (characters.find(charId) == characters.end()) {
             continue;
         }
@@ -730,9 +720,7 @@ GLFontStringCache *GLFont::cacheString(const std::wstring& str, int pxHeight, in
     CubicVR::mat4 trans = CubicVR::mat4::scale(size / viewAspect, size, 1.0f);
     
     int c = 0;
-    for (int i = 0, iMax = str.length(); i < iMax; i++) {
-        int charId = str.at(i);
-        
+    for (int charId : str) {
         if (characters.find(charId) == characters.end()) {
             continue;
         }
@@ -915,7 +903,7 @@ GLFont::Drawer::Drawer(int basicFontSize, double scaleFactor) {
     renderingFontScaleFactor = (double) targetSize / rawSize;
 }
 
-void GLFont::Drawer::drawString(const std::wstring& str, float xpos, float ypos, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
+void GLFont::Drawer::drawString(const std::wstring& str, float xpos, float ypos, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) const {
 
     GLFont& appliedFont = fonts[renderingFontIndex];
 
@@ -923,7 +911,7 @@ void GLFont::Drawer::drawString(const std::wstring& str, float xpos, float ypos,
 }
 
 //Public drawing font, 8 bit char version.
-void GLFont::Drawer::drawString(const std::string& str, float xpos, float ypos, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) {
+void GLFont::Drawer::drawString(const std::string& str, float xpos, float ypos, Align hAlign, Align vAlign, int vpx, int vpy, bool cacheable) const {
 
     GLFont& appliedFont = fonts[renderingFontIndex];
 
