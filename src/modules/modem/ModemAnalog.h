@@ -18,10 +18,10 @@ public:
 class ModemAnalog : public Modem {
 public:
     ModemAnalog();
-    std::string getType();
-    virtual int checkSampleRate(long long sampleRate, int audioSampleRate);
-    virtual ModemKit *buildKit(long long sampleRate, int audioSampleRate);
-    virtual void disposeKit(ModemKit *kit);
+    std::string getType() override;
+    int checkSampleRate(long long sampleRate, int audioSampleRate) override;
+    ModemKit *buildKit(long long sampleRate, int audioSampleRate) override;
+    void disposeKit(ModemKit *kit) override;
     virtual void initOutputBuffers(ModemKitAnalog *akit, ModemIQData *input);
     virtual void buildAudioOutput(ModemKitAnalog *akit, AudioThreadInput *audioOut, bool autoGain);
     virtual std::vector<float> *getDemodOutputData();

@@ -35,9 +35,7 @@ public:
         
     }
     
-    virtual ~ModemIQData() {
-        
-    }
+    virtual ~ModemIQData() = default;
 };
 
 typedef std::shared_ptr<ModemIQData> ModemIQDataPtr;
@@ -48,16 +46,16 @@ class ModemRange
 public:
     
     //! Create an empty range (0.0, 0.0)
-    ModemRange(void);
+    ModemRange();
     
     //! Create a min/max range
-    ModemRange(const double minimum, const double maximum);
+    ModemRange(double minimum, double maximum);
     
     //! Get the range minimum
-    double minimum(void) const;
+    double minimum() const;
     
     //! Get the range maximum
-    double maximum(void) const;
+    double maximum() const;
     
 private:
     double _min, _max;
@@ -68,7 +66,7 @@ class ModemArgInfo
 {
 public:
     //! Default constructor
-    ModemArgInfo(void);
+    ModemArgInfo();
     
     //! The key used to identify the argument (required)
     std::string key;
