@@ -34,9 +34,7 @@ public:
         groupName = src.groupName;
     };
 
-    virtual ~TreeViewItem() {
-      //
-    };
+    ~TreeViewItem() override = default;;
     
     TreeViewItemType type;
     
@@ -50,16 +48,16 @@ public:
 
 class BookmarkViewVisualDragItem : public wxDialog {
 public:
-    BookmarkViewVisualDragItem(wxString labelValue = L"Popup");
+    explicit BookmarkViewVisualDragItem(const wxString& labelValue = L"Popup");
 };
 
 
 
 class BookmarkView : public BookmarkPanel {
 public:
-    BookmarkView( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1, -1 ), long style = wxTAB_TRAVERSAL );
+    explicit BookmarkView( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1, -1 ), long style = wxTAB_TRAVERSAL );
 
-    virtual ~BookmarkView();
+    ~BookmarkView() override;
     
     //order an asynchronous refresh/rebuild of the whole tree,
     //will take effect at the next onUpdateTimer() occurence.
@@ -68,7 +66,7 @@ public:
     //order asynchronous updates of the bookmarks,
     //will take effect at the next onUpdateTimer() occurence.
     void updateBookmarks();
-    void updateBookmarks(std::string group);
+    void updateBookmarks(const std::string& group);
 
     bool isKeywordMatch(std::wstring str, std::vector<std::wstring> &keywords);
    
@@ -77,21 +75,21 @@ public:
     void onMenuItem(wxCommandEvent& event);
     bool isMouseInView();
     
-    bool getExpandState(std::string branchName);
-    void setExpandState(std::string branchName, bool state);
+    bool getExpandState(const std::string& branchName);
+    void setExpandState(const std::string& branchName, bool state);
     
     static BookmarkRangeEntryPtr makeActiveRangeEntry();
 
 protected:
-    void activeSelection(DemodulatorInstancePtr dsel);
-    void bookmarkSelection(BookmarkEntryPtr bmSel);
-    void rangeSelection(BookmarkRangeEntryPtr re);
+    void activeSelection(const DemodulatorInstancePtr& dsel);
+    void bookmarkSelection(const BookmarkEntryPtr& bmSel);
+    void rangeSelection(const BookmarkRangeEntryPtr& re);
     
-    void activateBookmark(BookmarkEntryPtr bmEnt);
+    void activateBookmark(const BookmarkEntryPtr& bmEnt);
 
-    void activateRange(BookmarkRangeEntryPtr rangeEnt);
-    void recentSelection(BookmarkEntryPtr bmSel);
-    void groupSelection(std::string groupName);
+    void activateRange(const BookmarkRangeEntryPtr& rangeEnt);
+    void recentSelection(const BookmarkEntryPtr& bmSel);
+    void groupSelection(const std::string& groupName);
     void bookmarkBranchSelection();
     void recentBranchSelection();
     void rangeBranchSelection();
@@ -101,45 +99,45 @@ protected:
     void hideProps(bool hidePanel = true);
     void showProps();
     
-    void onUpdateTimer( wxTimerEvent& event );
+    void onUpdateTimer( wxTimerEvent& event ) override;
 
     //refresh / rebuild the whole tree item immediatly
     void doUpdateActiveList();
 
-    void onKeyUp( wxKeyEvent& event );
-    void onTreeActivate( wxTreeEvent& event );
-    void onTreeCollapse( wxTreeEvent& event );
-    void onTreeExpanded( wxTreeEvent& event );
-    void onTreeItemMenu( wxTreeEvent& event );
-    void onTreeSelect( wxTreeEvent& event );
-    void onTreeSelectChanging( wxTreeEvent& event );
-    void onLabelKillFocus(wxFocusEvent& event );
-    void onLabelText( wxCommandEvent& event );
-    void onDoubleClickFreq( wxMouseEvent& event );
-    void onDoubleClickBandwidth( wxMouseEvent& event );
-    void onTreeBeginDrag( wxTreeEvent& event );
-    void onTreeEndDrag( wxTreeEvent& event );
-    void onTreeItemGetTooltip( wxTreeEvent& event );
-    void onEnterWindow( wxMouseEvent& event );
-    void onLeaveWindow( wxMouseEvent& event );
-    void onMotion( wxMouseEvent& event );
+    void onKeyUp( wxKeyEvent& event ) override;
+    void onTreeActivate( wxTreeEvent& event ) override;
+    void onTreeCollapse( wxTreeEvent& event ) override;
+    void onTreeExpanded( wxTreeEvent& event ) override;
+    void onTreeItemMenu( wxTreeEvent& event ) override;
+    void onTreeSelect( wxTreeEvent& event ) override;
+    void onTreeSelectChanging( wxTreeEvent& event ) override;
+    void onLabelKillFocus(wxFocusEvent& event ) override;
+    void onLabelText( wxCommandEvent& event ) override;
+    void onDoubleClickFreq( wxMouseEvent& event ) override;
+    void onDoubleClickBandwidth( wxMouseEvent& event ) override;
+    void onTreeBeginDrag( wxTreeEvent& event ) override;
+    void onTreeEndDrag( wxTreeEvent& event ) override;
+    void onTreeItemGetTooltip( wxTreeEvent& event ) override;
+    void onEnterWindow( wxMouseEvent& event ) override;
+    void onLeaveWindow( wxMouseEvent& event ) override;
+    void onMotion( wxMouseEvent& event ) override;
 
-    void onSearchTextFocus( wxMouseEvent& event );
-    void onSearchText( wxCommandEvent& event );
-    void onClearSearch( wxCommandEvent& event );
+    void onSearchTextFocus( wxMouseEvent& event ) override;
+    void onSearchText( wxCommandEvent& event ) override;
+    void onClearSearch( wxCommandEvent& event ) override;
     
     void clearButtons();
     void showButtons();
     void refreshLayout();
 
-    wxButton *makeButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler);
-    wxButton *addButton(wxWindow *parent, std::string labelVal, wxObjectEventFunction handler);
+    wxButton *makeButton(wxWindow *parent, const std::string& labelVal, wxObjectEventFunction handler);
+    wxButton *addButton(wxWindow *parent, const std::string& labelVal, wxObjectEventFunction handler);
 
-    void doBookmarkActive(std::string group, DemodulatorInstancePtr demod);
-    void doBookmarkRecent(std::string group, BookmarkEntryPtr be);
-    void doMoveBookmark(BookmarkEntryPtr be, std::string group);
-    void doRemoveActive(DemodulatorInstancePtr demod);
-    void doRemoveRecent(BookmarkEntryPtr be);
+    void doBookmarkActive(const std::string& group, const DemodulatorInstancePtr& demod);
+    void doBookmarkRecent(const std::string& group, const BookmarkEntryPtr& be);
+    void doMoveBookmark(const BookmarkEntryPtr& be, const std::string& group);
+    void doRemoveActive(const DemodulatorInstancePtr& demod);
+    void doRemoveRecent(const BookmarkEntryPtr& be);
     void doClearRecents();
     
     void updateBookmarkChoices();
@@ -184,7 +182,6 @@ protected:
     // Bookmarks
     std::atomic_bool doUpdateBookmarks;
     std::set< std::string > doUpdateBookmarkGroup;
-    BookmarkNames groupNames;
     std::map<std::string, wxTreeItemId> groups;
     wxArrayString bookmarkChoices;
     wxChoice *bookmarkChoice;
@@ -201,6 +198,6 @@ protected:
     // Search
     std::vector<std::wstring> searchKeywords;
 
-    void setStatusText(std::string statusText);
+    void setStatusText(const std::string& statusText);
 
 };
