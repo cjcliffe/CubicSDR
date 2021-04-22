@@ -38,7 +38,7 @@ using namespace std;
 
 #define MAX_STR_SIZE  (1024)
 
-DataElement::DataElement() : data_type(DATA_NULL) {
+DataElement::DataElement() : data_type(DataElement::Type::DATA_NULL) {
     //
 }
 
@@ -58,7 +58,7 @@ char * DataElement::getDataPointer() {
     return nullptr;
 }
 
-DataElement::DataElementTypeEnum DataElement::getDataType() {
+DataElement::Type DataElement::getDataType() {
     return data_type;
 }
 
@@ -68,13 +68,13 @@ size_t DataElement::getDataSize() {
 
 
 void DataElement::set(const char *data_in, long size_in) {
-    data_type = DATA_VOID;
+    data_type = DataElement::Type::DATA_VOID;
 
     data_val.assign(data_in, data_in + size_in);
 }
 
 void DataElement::set(const char *data_in) {
-    data_type = DATA_STRING;
+    data_type = DataElement::Type::DATA_STRING;
 
     size_t clamped_size = ::strnlen(data_in, MAX_STR_SIZE);
 
@@ -96,7 +96,7 @@ void DataElement::set(const std::set<string> &strset_in) {
 
 void DataElement::get(DataElement::DataElementBuffer& data_in) {
 
-    if (data_type != DATA_VOID) {
+    if (data_type != DataElement::Type::DATA_VOID) {
         throw(DataTypeMismatchException("Type mismatch, not a VOID*"));
     }
 
@@ -106,7 +106,7 @@ void DataElement::get(DataElement::DataElementBuffer& data_in) {
 
 void DataElement::get(std::set<string> &strset_out) {
   
-    if (data_type != DATA_STR_VECTOR)
+    if (data_type != DataElement::Type::DATA_STR_VECTOR)
         throw(DataTypeMismatchException("Type mismatch, not a STRING VECTOR/SET"));
 
     std::vector<string> tmp_vect;
@@ -121,33 +121,33 @@ void DataElement::get(std::set<string> &strset_out) {
 }
 
 std::string DataElement::toString() {
-    int dataType = getDataType();
+    DataElement::Type dataType = getDataType();
     std::string strValue;
     
     try {
-        if (dataType == DATA_STRING) {
+        if (dataType == DataElement::Type::DATA_STRING) {
             get(strValue);
-        } else if (dataType == DATA_INT || dataType == DATA_LONG || dataType == DATA_LONGLONG) {
+        } else if (dataType == DataElement::Type::DATA_INT || dataType == DataElement::Type::DATA_LONG || dataType == DataElement::Type::DATA_LONGLONG) {
             long long intSettingValue;
             get(intSettingValue);
             strValue = std::to_string(intSettingValue);
-        } else if (dataType == DATA_FLOAT || dataType == DATA_DOUBLE) {
+        } else if (dataType == DataElement::Type::DATA_FLOAT || dataType == DataElement::Type::DATA_DOUBLE) {
             double floatSettingValue;
             get(floatSettingValue);
             strValue = std::to_string(floatSettingValue);
-        } else if (dataType == DATA_NULL) {
+        } else if (dataType == DataElement::Type::DATA_NULL) {
             strValue = "";
-        } else if (dataType == DATA_WSTRING) {
+        } else if (dataType == DataElement::Type::DATA_WSTRING) {
             std::wstring wstr;
             get(wstr);
             //TODO: code below returns a forced cast in (char*) beware...
             strValue = *wstr.c_str();
         }
         else {
-            std::cout << "Unhandled DataElement toString for type: " << dataType  << std::endl;
+            std::cout << "Unhandled DataElement toString for type: " << (int)dataType  << std::endl;
         }
-    } catch (const DataTypeMismatchException &e) {
-        std::cout << "toString() DataTypeMismatch: " << dataType  << std::endl;
+    } catch (const DataTypeMismatchException &) {
+        std::cout << "toString() DataTypeMismatch: " << (int)dataType  << std::endl;
     }
     
     return strValue;
@@ -659,9 +659,9 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
         long long tmp_llong;
 
         switch (child->element()->getDataType()) {
-        case DataElement::DATA_NULL:
+        case DataElement::Type::DATA_NULL:
             break;
-        case DataElement::DATA_VOID:
+        case DataElement::Type::DATA_VOID:
             child->element()->get(tmp_pstr_as_string); // returned VOID as string
 // following badgerfish xml->json and xml->ruby convention for attributes..
             if (nodeName.substr(0, 1) == string("@")) {
@@ -673,7 +673,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
                 element->LinkEndChild(text);
             }
             break;
-        case DataElement::DATA_CHAR:
+        case DataElement::Type::DATA_CHAR:
             child->element()->get(tmp_char);
 
             tmp_stream.str("");
@@ -683,7 +683,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             text = new TiXmlText(tmp_stream.str().c_str());
             element->LinkEndChild(text);
             break;
-        case DataElement::DATA_UCHAR:
+        case DataElement::Type::DATA_UCHAR:
             child->element()->get(tmp_uchar);
 
             tmp_stream.str("");
@@ -693,7 +693,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             text = new TiXmlText(tmp_stream.str().c_str());
             element->LinkEndChild(text);
             break;
-        case DataElement::DATA_INT:
+        case DataElement::Type::DATA_INT:
             child->element()->get(tmp_int);
 
             tmp_stream.str("");
@@ -703,7 +703,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             text = new TiXmlText(tmp_stream.str().c_str());
             element->LinkEndChild(text);
             break;
-        case DataElement::DATA_UINT:
+        case DataElement::Type::DATA_UINT:
             child->element()->get(tmp_uint);
 
             tmp_stream.str("");
@@ -713,7 +713,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             text = new TiXmlText(tmp_stream.str().c_str());
             element->LinkEndChild(text);
             break;
-        case DataElement::DATA_LONG:
+        case DataElement::Type::DATA_LONG:
             child->element()->get(tmp_long);
 
             tmp_stream.str("");
@@ -723,7 +723,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             text = new TiXmlText(tmp_stream.str().c_str());
             element->LinkEndChild(text);
             break;
-        case DataElement::DATA_ULONG:
+        case DataElement::Type::DATA_ULONG:
             child->element()->get(tmp_ulong);
 
             tmp_stream.str("");
@@ -733,7 +733,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             text = new TiXmlText(tmp_stream.str().c_str());
             element->LinkEndChild(text);
             break;
-        case DataElement::DATA_LONGLONG:
+        case DataElement::Type::DATA_LONGLONG:
             child->element()->get(tmp_llong);
 
             tmp_stream.str("");
@@ -743,7 +743,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             text = new TiXmlText(tmp_stream.str().c_str());
             element->LinkEndChild(text);
             break;
-        case DataElement::DATA_FLOAT:
+        case DataElement::Type::DATA_FLOAT:
             child->element()->get(tmp_float);
 
             tmp_stream.str("");
@@ -753,7 +753,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             text = new TiXmlText(tmp_stream.str().c_str());
             element->LinkEndChild(text);
             break;
-        case DataElement::DATA_DOUBLE:
+        case DataElement::Type::DATA_DOUBLE:
             child->element()->get(tmp_double);
 
             tmp_stream.str("");
@@ -763,7 +763,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             text = new TiXmlText(tmp_stream.str().c_str());
             element->LinkEndChild(text);
             break;
-        case DataElement::DATA_STRING:
+        case DataElement::Type::DATA_STRING:
             child->element()->get(tmp);
             if (nodeName.substr(0, 1) == string("@")) {
                 elxml->SetAttribute(nodeName.substr(1).c_str(), tmp.c_str());
@@ -774,7 +774,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
                 element->LinkEndChild(text);
             }
             break;
-        case DataElement::DATA_WSTRING:
+        case DataElement::Type::DATA_WSTRING:
             child->element()->get(wtmp);
             tmp = wsEncode(wtmp);
             if (nodeName.substr(0, 1) == string("@")) {
@@ -786,7 +786,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
                 element->LinkEndChild(text);
             }
             break;
-        case DataElement::DATA_STR_VECTOR:
+        case DataElement::Type::DATA_STR_VECTOR:
             child->element()->get(tmp_stringvect);
 
             tmp_stream.str("");
@@ -800,7 +800,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
 
             tmp_stringvect.clear();
             break;
-        case DataElement::DATA_CHAR_VECTOR:
+        case DataElement::Type::DATA_CHAR_VECTOR:
             child->element()->get(tmp_charvect);
 
             tmp_stream.str("");
@@ -815,7 +815,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             element->LinkEndChild(text);
             tmp_charvect.clear();
             break;
-        case DataElement::DATA_UCHAR_VECTOR:
+        case DataElement::Type::DATA_UCHAR_VECTOR:
             child->element()->get(tmp_ucharvect);
 
             tmp_stream.str("");
@@ -830,7 +830,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             element->LinkEndChild(text);
             tmp_ucharvect.clear();
             break;
-        case DataElement::DATA_INT_VECTOR:
+        case DataElement::Type::DATA_INT_VECTOR:
             child->element()->get(tmp_intvect);
 
             tmp_stream.str("");
@@ -845,7 +845,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             element->LinkEndChild(text);
             tmp_intvect.clear();
             break;
-        case DataElement::DATA_UINT_VECTOR:
+        case DataElement::Type::DATA_UINT_VECTOR:
             child->element()->get(tmp_uintvect);
 
             tmp_stream.str("");
@@ -860,7 +860,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             element->LinkEndChild(text);
             tmp_uintvect.clear();
             break;
-        case DataElement::DATA_LONG_VECTOR:
+        case DataElement::Type::DATA_LONG_VECTOR:
             child->element()->get(tmp_longvect);
 
             tmp_stream.str("");
@@ -875,7 +875,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             element->LinkEndChild(text);
             tmp_longvect.clear();
             break;
-        case DataElement::DATA_ULONG_VECTOR:
+        case DataElement::Type::DATA_ULONG_VECTOR:
             child->element()->get(tmp_ulongvect);
 
             tmp_stream.str("");
@@ -890,7 +890,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             element->LinkEndChild(text);
             tmp_ulongvect.clear();
             break;
-        case DataElement::DATA_LONGLONG_VECTOR:
+        case DataElement::Type::DATA_LONGLONG_VECTOR:
             child->element()->get(tmp_llongvect);
 
             tmp_stream.str("");
@@ -905,7 +905,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             element->LinkEndChild(text);
             tmp_llongvect.clear();
             break;
-        case DataElement::DATA_FLOAT_VECTOR:
+        case DataElement::Type::DATA_FLOAT_VECTOR:
             child->element()->get(tmp_floatvect);
 
             tmp_stream.str("");
@@ -920,7 +920,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             element->LinkEndChild(text);
             tmp_floatvect.clear();
             break;
-        case DataElement::DATA_DOUBLE_VECTOR:
+        case DataElement::Type::DATA_DOUBLE_VECTOR:
             child->element()->get(tmp_doublevect);
 
             tmp_stream.str("");

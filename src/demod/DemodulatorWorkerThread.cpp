@@ -37,11 +37,11 @@ void DemodulatorWorkerThread::run() {
             }
 
             switch (command.cmd) {
-                case DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS:
+                case DemodulatorWorkerThreadCommand::Type::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS:
                     filterChanged = true;
                     filterCommand = command;
                     break;
-                case DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_MAKE_DEMOD:
+                case DemodulatorWorkerThreadCommand::Type::DEMOD_WORKER_THREAD_CMD_MAKE_DEMOD:
                     makeDemod = true;
                     demodCommand = command;
                     break;
@@ -52,7 +52,7 @@ void DemodulatorWorkerThread::run() {
         } //end while done.
 
         if ((makeDemod || filterChanged) && !stopping) {
-            DemodulatorWorkerThreadResult result(DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS);
+            DemodulatorWorkerThreadResult result(DemodulatorWorkerThreadResult::Type::DEMOD_WORKER_THREAD_RESULT_FILTERS);
             
             
             if (filterCommand.sampleRate) {

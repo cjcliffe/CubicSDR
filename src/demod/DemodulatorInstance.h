@@ -145,7 +145,6 @@ private:
     AudioThreadInputQueuePtr pipeAudioData;
     DemodulatorPreThread *demodulatorPreThread;
     DemodulatorThread *demodulatorThread;
-    DemodulatorThreadControlCommandQueuePtr threadQueueControl;
 
     AudioSinkThread *audioSinkThread = nullptr;
     std::thread *t_AudioSink = nullptr;
@@ -159,7 +158,6 @@ private:
     std::atomic<std::wstring *> user_label; 
 
     std::atomic_bool active;
-    std::atomic_bool squelch;
     std::atomic_bool muted;
     std::atomic_bool deltaLock;
     std::atomic_bool recording;

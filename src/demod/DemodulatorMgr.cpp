@@ -454,7 +454,7 @@ std::wstring DemodulatorMgr::getSafeWstringValue(DataNode* node) {
         try {
             node->element()->get(decodedWString);
 
-        } catch (const DataTypeMismatchException &e) {
+        } catch (const DataTypeMismatchException &) {
             //2) wstring decode fail, try simple std::string
             std::string decodedStdString;
             try {
@@ -464,7 +464,7 @@ std::wstring DemodulatorMgr::getSafeWstringValue(DataNode* node) {
                 //use wxString for a clean conversion to a wstring:
                 decodedWString = wxString(decodedStdString).ToStdWstring();
 
-            } catch (const DataTypeMismatchException &e) {
+            } catch (const DataTypeMismatchException &) {
                 //nothing works, return an empty string.
                 decodedWString = L"";
             }
@@ -496,7 +496,7 @@ DemodulatorInstancePtr DemodulatorMgr::loadInstance(DataNode *node) {
     
     DataNode *demodTypeNode = node->hasAnother("type")?node->getNext("type"):nullptr;
     
-    if (demodTypeNode && demodTypeNode->element()->getDataType() == DataElement::DATA_INT) {
+    if (demodTypeNode && demodTypeNode->element()->getDataType() == DataElement::Type::DATA_INT) {
         int legacyType = (int)*demodTypeNode;
         int legacyStereo = node->hasAnother("stereo") ? (int) *node->getNext("stereo") : 0;
         switch (legacyType) {   // legacy demod ID
@@ -518,7 +518,7 @@ DemodulatorInstancePtr DemodulatorMgr::loadInstance(DataNode *node) {
             case 16: type = "I/Q"; break;
             default: type = "FM"; break;
         }
-    } else if (demodTypeNode && demodTypeNode->element()->getDataType() == DataElement::DATA_STRING) {
+    } else if (demodTypeNode && demodTypeNode->element()->getDataType() == DataElement::Type::DATA_STRING) {
         demodTypeNode->element()->get(type);
     }
     

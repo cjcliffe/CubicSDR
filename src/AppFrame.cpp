@@ -1496,7 +1496,7 @@ bool AppFrame::actionOnMenuSettings(wxCommandEvent& event) {
                     try {
                         currentVal = std::stoi(wxGetApp().getSDRThread()->readSetting(arg.key));
                     }
-                    catch (const std::invalid_argument &e) {
+                    catch (const std::invalid_argument &) {
                         currentVal = 0;
                     }
                     int intVal = wxGetNumberFromUser(arg.description, arg.units, arg.name, currentVal, arg.range.minimum(), arg.range.maximum(), this);
@@ -1513,7 +1513,7 @@ bool AppFrame::actionOnMenuSettings(wxCommandEvent& event) {
                     try {
                         wxGetApp().getSDRThread()->writeSetting(arg.key, floatVal.ToStdString());
                     }
-                    catch (const std::invalid_argument &e) {
+                    catch (const std::invalid_argument &) {
                         // ...
                     }
                     settingsMenuItems[menuIdx + wxID_SETTINGS_BASE]->SetItemLabel(getSettingsLabel(arg.name, floatVal.ToStdString(), arg.units));

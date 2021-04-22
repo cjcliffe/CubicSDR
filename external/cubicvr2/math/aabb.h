@@ -14,7 +14,7 @@
 
 namespace CubicVR {
 
-    enum aabb_enum { AABB_DISJOINT, AABB_A_INSIDE_B, AABB_B_INSIDE_A, AABB_INTERSECT };
+    enum class aabb_intersect { AABB_DISJOINT, AABB_A_INSIDE_B, AABB_B_INSIDE_A, AABB_INTERSECT };
 
     struct aabb {
         vec3 min, max;
@@ -76,33 +76,33 @@ namespace CubicVR {
          CubicVR.enums.aabb.B_INSIDE_A if boxB is inside boxA
          CubicVR.enums.aabb.DISJOINT if AABBs are disjoint (do not intersect)
          */
-        aabb_enum intersects(aabb boxA, aabb boxB) {
+        aabb_intersect intersects(aabb boxA, aabb boxB) {
             // Disjoint
             if( boxA.min[0] > boxB.max[0] || boxA.max[0] < boxB.min[0] ){
-                return AABB_DISJOINT;
+                return aabb_intersect::AABB_DISJOINT;
             }
             if( boxA.min[1] > boxB.max[1] || boxA.max[1] < boxB.min[1] ){
-                return AABB_DISJOINT;
+                return aabb_intersect::AABB_DISJOINT;
             }
             if( boxA.min[2] > boxB.max[2] || boxA.max[2] < boxB.min[2] ){
-                return AABB_DISJOINT;
+                return aabb_intersect::AABB_DISJOINT;
             }
             
             // boxA is inside boxB.
             if( boxA.min[0] >= boxB.min[0] && boxA.max[0] <= boxB.max[0] &&
                boxA.min[1] >= boxB.min[1] && boxA.max[1] <= boxB.max[1] &&
                boxA.min[2] >= boxB.min[2] && boxA.max[2] <= boxB.max[2]) {
-                return AABB_A_INSIDE_B;
+                return aabb_intersect::AABB_A_INSIDE_B;
             }
             // boxB is inside boxA.
             if( boxB.min[0] >= boxA.min[0] && boxB.max[0] <= boxA.max[0] &&
                boxB.min[1] >= boxA.min[1] && boxB.max[1] <= boxA.max[1] &&
                boxB.min[2] >= boxA.min[2] && boxB.max[2] <= boxA.max[2]) {
-                return AABB_B_INSIDE_A;
+                return aabb_intersect::AABB_B_INSIDE_A;
             }
             
             // Otherwise AABB's intersect.
-            return AABB_INTERSECT;
+            return aabb_intersect::AABB_INTERSECT;
         }
     };
 };

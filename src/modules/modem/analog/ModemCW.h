@@ -10,7 +10,7 @@ class ModemKitCW : public ModemKitAnalog {
 public:
     ModemKitCW() : ModemKitAnalog() {
     };
-    msresamp_cccf mInputResampler;
+    msresamp_cccf mInputResampler{};
 };
 
 class ModemCW : public ModemAnalog {

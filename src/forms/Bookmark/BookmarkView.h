@@ -12,7 +12,7 @@
 
 class TreeViewItem : public wxTreeItemData {
 public:
-    enum TreeViewItemType {
+    enum class Type {
         TREEVIEW_ITEM_TYPE_GROUP,
         TREEVIEW_ITEM_TYPE_ACTIVE,
         TREEVIEW_ITEM_TYPE_RECENT,
@@ -34,9 +34,9 @@ public:
         groupName = src.groupName;
     };
 
-    ~TreeViewItem() override = default;;
+    ~TreeViewItem() override = default;
     
-    TreeViewItemType type;
+    TreeViewItem::Type type;
     
     BookmarkEntryPtr bookmarkEnt; 
     BookmarkRangeEntryPtr rangeEnt;

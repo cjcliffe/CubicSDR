@@ -88,7 +88,7 @@ public:
     std::string units;
     
     //! The data type of the argument (required)
-    enum Type { BOOL, INT, FLOAT, STRING, PATH_DIR, PATH_FILE, COLOR } type;
+    enum class Type { BOOL, INT, FLOAT, STRING, PATH_DIR, PATH_FILE, COLOR } type;
     
     /*!
      * The range of possible numeric values (optional)

@@ -6,7 +6,8 @@
 
 class ModemKitFMStereo: public ModemKit {
 public:
-    ModemKitFMStereo() : audioResampler(nullptr), stereoResampler(nullptr), audioResampleRatio(0), firStereoLeft(nullptr), firStereoRight(nullptr), iirStereoPilot(nullptr) {
+    ModemKitFMStereo() : audioResampler(nullptr), stereoResampler(nullptr), audioResampleRatio(0), firStereoLeft(nullptr), firStereoRight(nullptr), iirStereoPilot(nullptr), 
+        demph(0), iirDemphR(nullptr), iirDemphL(nullptr), firStereoR2C(nullptr), firStereoC2R(nullptr), stereoPilot(nullptr) {
     }
     
     msresamp_rrrf audioResampler;

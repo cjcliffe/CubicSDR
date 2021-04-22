@@ -47,7 +47,7 @@ ModemArgInfoList ModemFMStereo::getSettings() {
     demphArg.value = std::to_string(_demph);
     demphArg.description = "FM Stereo De-Emphasis, typically 75us in US/Canada, 50us elsewhere.";
     
-    demphArg.type = ModemArgInfo::STRING;
+    demphArg.type = ModemArgInfo::Type::STRING;
     
     std::vector<std::string> demphOptNames;
     demphOptNames.push_back("None");

@@ -312,7 +312,7 @@ void AudioThread::setDeviceSampleRate(int deviceId, int sampleRate) {
     if (matchingControllerThread != nullptr) {
 
         AudioThreadCommand refreshDevice;
-        refreshDevice.cmd = AudioThreadCommand::AUDIO_THREAD_CMD_SET_SAMPLE_RATE;
+        refreshDevice.cmdType = AudioThreadCommand::Type::AUDIO_THREAD_CMD_SET_SAMPLE_RATE;
         refreshDevice.int_value = sampleRate;
         //VSO : blocking push !
         matchingControllerThread->getCommandQueue()->push(refreshDevice);
@@ -497,10 +497,10 @@ void AudioThread::run() {
             continue;
         }
 
-        if (command.cmd == AudioThreadCommand::AUDIO_THREAD_CMD_SET_DEVICE) {
+        if (command.cmdType == AudioThreadCommand::Type::AUDIO_THREAD_CMD_SET_DEVICE) {
             setupDevice(command.int_value);
         }
-        if (command.cmd == AudioThreadCommand::AUDIO_THREAD_CMD_SET_SAMPLE_RATE) {
+        if (command.cmdType == AudioThreadCommand::Type::AUDIO_THREAD_CMD_SET_SAMPLE_RATE) {
             setSampleRate(command.int_value);
         }
     } //end while

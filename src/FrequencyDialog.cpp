@@ -170,7 +170,7 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
         if (targetMode == FDIALOG_TARGET_WATERFALL_LPS) {
             try {
                 freq = std::stoi(strValue);
-            } catch (const exception &e) {
+            } catch (const exception &) {
                 Close();
                 break;
             }
@@ -185,7 +185,7 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
         if (targetMode == FDIALOG_TARGET_SPECTRUM_AVG) {
             try {
                 dblval = std::stod(strValue);
-            } catch (const exception &e) {
+            } catch (const exception &) {
                 Close();
                 break;
             }
@@ -201,7 +201,7 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
         if (targetMode == FDIALOG_TARGET_GAIN) {
             try {
                 freq = std::stoi(strValue);
-            } catch (const exception &e) {
+            } catch (const exception &) {
                 break;
             }
             SDRDeviceInfo *devInfo = wxGetApp().getDevice();

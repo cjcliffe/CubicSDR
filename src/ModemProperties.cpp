@@ -87,7 +87,7 @@ void ModemProperties::initDefaultProperties() {
         outputArg.key ="._audio_output";
         outputArg.name = "Audio Out";
         outputArg.description = "Set the current modem's audio output device.";
-        outputArg.type = ModemArgInfo::STRING;
+        outputArg.type = ModemArgInfo::Type::STRING;
         outputArg.options = outputOpts;
         outputArg.optionNames = outputOptNames;
     }
@@ -137,10 +137,10 @@ wxPGProperty *ModemProperties::addArgInfoProperty(wxPropertyGrid *pg, ModemArgIn
     std::vector<std::string>::iterator stringIter;
     
     switch (arg.type) {
-        case ModemArgInfo::INT:
+        case ModemArgInfo::Type::INT:
             try {
                 intVal = std::stoi(arg.value);
-            } catch (const std::invalid_argument &e) {
+            } catch (const std::invalid_argument &) {
                 intVal = 0;
             }
             prop = pg->Append( new wxIntProperty(arg.name, wxPG_LABEL, intVal) );
@@ -149,10 +149,10 @@ wxPGProperty *ModemProperties::addArgInfoProperty(wxPropertyGrid *pg, ModemArgIn
                 pg->SetPropertyAttribute( prop, wxPG_ATTR_MAX, arg.range.maximum());
             }
             break;
-        case ModemArgInfo::FLOAT:
+        case ModemArgInfo::Type::FLOAT:
             try {
                 floatVal = std::stod(arg.value);
-            } catch (const std::invalid_argument &e) {
+            } catch (const std::invalid_argument &) {
                 floatVal = 0;
             }
             prop = pg->Append( new wxFloatProperty(arg.name, wxPG_LABEL, floatVal) );
@@ -161,10 +161,10 @@ wxPGProperty *ModemProperties::addArgInfoProperty(wxPropertyGrid *pg, ModemArgIn
                 pg->SetPropertyAttribute( prop, wxPG_ATTR_MAX, arg.range.maximum());
             }
             break;
-        case ModemArgInfo::BOOL:
+        case ModemArgInfo::Type::BOOL:
             prop = pg->Append( new wxBoolProperty(arg.name, wxPG_LABEL, (arg.value=="true")) );
             break;
-        case ModemArgInfo::STRING:
+        case ModemArgInfo::Type::STRING:
             if (!arg.options.empty()) {
                 intVal = 0;
                 prop = pg->Append( new wxEnumProperty(arg.name, wxPG_LABEL) );
@@ -186,11 +186,11 @@ wxPGProperty *ModemProperties::addArgInfoProperty(wxPropertyGrid *pg, ModemArgIn
                 prop = pg->Append( new wxStringProperty(arg.name, wxPG_LABEL, arg.value) );
             }
             break;
-        case ModemArgInfo::PATH_DIR:
+        case ModemArgInfo::Type::PATH_DIR:
             break;
-        case ModemArgInfo::PATH_FILE:
+        case ModemArgInfo::Type::PATH_FILE:
             break;
-        case ModemArgInfo::COLOR:
+        case ModemArgInfo::Type::COLOR:
             break;
     }
     
@@ -211,9 +211,9 @@ std::string ModemProperties::readProperty(const std::string& key) {
             wxPGProperty *prop = props[key];
             
             std::string result;
-            if (arg.type == ModemArgInfo::STRING && !arg.options.empty()) {
+            if (arg.type == ModemArgInfo::Type::STRING && !arg.options.empty()) {
                 return arg.options[prop->GetChoiceSelection()];
-            } else if (arg.type == ModemArgInfo::BOOL) {
+            } else if (arg.type == ModemArgInfo::Type::BOOL) {
                 return (prop->GetValueAsString()=="True")?"true":"false";
             } else {
                 return prop->GetValueAsString().ToStdString();
@@ -239,7 +239,7 @@ void ModemProperties::OnChange(wxPropertyGridEvent &event) {
         if (demodContext) {
             try {
                 demodContext->setOutputDevice(std::stoi(outputArg.value));
-            } catch (const exception &e) {
+            } catch (const exception &) {
                 // .. this should never happen ;)
             }
 

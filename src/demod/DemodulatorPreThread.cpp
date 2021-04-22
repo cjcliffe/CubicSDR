@@ -103,7 +103,7 @@ void DemodulatorPreThread::run() {
         }
         
         if (demodTypeChanged.load() && (newSampleRate && newAudioSampleRate && newBandwidth)) {
-            DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_MAKE_DEMOD);
+            DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::Type::DEMOD_WORKER_THREAD_CMD_MAKE_DEMOD);
             command.frequency = newFrequency;
             command.sampleRate = newSampleRate;
             command.demodType = newDemodType;
@@ -137,7 +137,7 @@ void DemodulatorPreThread::run() {
             (bandwidthChanged.load() || sampleRateChanged.load() || audioSampleRateChanged.load() || cModem->shouldRebuildKit()) &&
             (newSampleRate && newAudioSampleRate && newBandwidth)
         ) {
-            DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS);
+            DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::Type::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS);
             command.frequency = newFrequency;
             command.sampleRate = newSampleRate;
             command.bandwidth = newBandwidth;
@@ -225,7 +225,7 @@ void DemodulatorPreThread::run() {
         while (!stopping && workerResults->try_pop(result)) {
               
             switch (result.cmd) {
-                case DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS:
+                case DemodulatorWorkerThreadResult::Type::DEMOD_WORKER_THREAD_RESULT_FILTERS:
                     if (result.iqResampler) {
                         if (iqResampler) {
                             msresamp_crcf_destroy(iqResampler);

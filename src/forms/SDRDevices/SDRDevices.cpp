@@ -54,7 +54,7 @@ wxPGProperty *SDRDevicesDialog::addArgInfoProperty(wxPropertyGrid *pg, SoapySDR:
         case SoapySDR::ArgInfo::INT:
             try {
                 intVal = std::stoi(arg.value);
-            } catch (const std::invalid_argument &e) {
+            } catch (const std::invalid_argument &) {
                 intVal = 0;
             }
             prop = pg->Append( new wxIntProperty(arg.name, wxPG_LABEL, intVal) );
@@ -66,7 +66,7 @@ wxPGProperty *SDRDevicesDialog::addArgInfoProperty(wxPropertyGrid *pg, SoapySDR:
         case SoapySDR::ArgInfo::FLOAT:
             try {
                 floatVal = std::stod(arg.value);
-            } catch (const std::invalid_argument &e) {
+            } catch (const std::invalid_argument &) {
                 floatVal = 0;
             }
             prop = pg->Append( new wxFloatProperty(arg.name, wxPG_LABEL, floatVal) );
@@ -555,7 +555,7 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
              if (dev->isActive() || !wxGetApp().getDevice()) {
                 wxGetApp().setSampleRate(srate);
             }
-        } catch (const std::invalid_argument &e) {
+        } catch (const std::invalid_argument &) {
             // nop
         }
     } else if (dev && event.GetProperty() == devSettings["antenna"]) {
@@ -570,7 +570,7 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
                 wxGetApp().setAntennaName(strAntennaName);
             }
         }
-        catch (const std::invalid_argument &e) {
+        catch (const std::invalid_argument &) {
             // nop
         }
     }

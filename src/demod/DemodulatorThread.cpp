@@ -22,12 +22,8 @@ DemodulatorInstance* DemodulatorThread::squelchLock(nullptr);
 std::mutex DemodulatorThread::squelchLockMutex;
 
 DemodulatorThread::DemodulatorThread(DemodulatorInstance* parent)
-    : IOThread(), outputBuffers("DemodulatorThreadBuffers"), squelchLevel(-100), 
-      signalLevel(-100), signalFloor(-30), signalCeil(30), squelchEnabled(false) {
-    
-    demodInstance = parent;
-    muted.store(false);
-    squelchBreak = false;
+    : IOThread(), demodInstance(parent), outputBuffers("DemodulatorThreadBuffers"), squelchLevel(-100), 
+      signalLevel(-100), signalFloor(-30), signalCeil(30), muted(false), squelchEnabled(false), squelchBreak(false) {
 }
 
 DemodulatorThread::~DemodulatorThread() {
@@ -82,7 +78,6 @@ void DemodulatorThread::run() {
     
     iqInputQueue = std::static_pointer_cast<DemodulatorThreadPostInputQueue>(getInputQueue("IQDataInput"));
     audioOutputQueue = std::static_pointer_cast<AudioThreadInputQueue>(getOutputQueue("AudioDataOutput"));
-    threadQueueControl = std::static_pointer_cast<DemodulatorThreadControlCommandQueue>(getInputQueue("ControlQueue"));
      
     ModemIQData modemData;
     
@@ -167,7 +162,7 @@ void DemodulatorThread::run() {
                 currentSignalLevel = linearToDb(accum / double(inp->data.size()));
             }
             
-            float sf = signalFloor.load(), sc = signalCeil.load(), sl = squelchLevel.load();
+            float sf = signalFloor, sc = signalCeil, sl = squelchLevel;
             
          
             if (currentSignalLevel > sc) {
@@ -190,8 +185,8 @@ void DemodulatorThread::run() {
             sc -= (sc - (currentSignalLevel + 2.0f)) * sampleTime * 0.05f;
             sf += ((currentSignalLevel - 5.0f) - sf) * sampleTime * 0.15f;
             
-            signalFloor.store(sf);
-            signalCeil.store(sc);
+            signalFloor = sf;
+            signalCeil = sc;
         }
         
         if (currentSignalLevel > signalLevel) {
@@ -321,7 +316,7 @@ void DemodulatorThread::run() {
         }
 
         if (!squelched && ati != nullptr) {
-            if (!muted.load() && (!wxGetApp().getSoloMode() || (demodInstance ==
+            if (!muted && (!wxGetApp().getSoloMode() || (demodInstance ==
                     wxGetApp().getDemodMgr().getCurrentModem().get()))) {
                 //non-blocking push needed for audio out
                 if (!audioOutputQueue->try_push(ati)) {
@@ -348,23 +343,6 @@ void DemodulatorThread::run() {
                 std::this_thread::yield();
             }
         }
-
-        DemodulatorThreadControlCommand command;
-        
-        //empty command queue, execute commands
-        while (threadQueueControl->try_pop(command)) {
-                       
-            switch (command.cmd) {
-                case DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_ON:
-                    squelchEnabled = true;
-                    break;
-                case DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_OFF:
-                    squelchEnabled = false;
-                    break;
-                default:
-                    break;
-            }
-        }
     }
     // end while !stopping
     
@@ -381,27 +359,34 @@ void DemodulatorThread::terminate() {
     //unblock the curretly blocked push()
     iqInputQueue->flush();
     audioOutputQueue->flush();
-    threadQueueControl->flush();
 }
 
 bool DemodulatorThread::isMuted() {
-    return muted.load();
+    return muted;
 }
 
 void DemodulatorThread::setMuted(bool muted_in) {
-    muted.store(muted_in);
+    muted = muted_in;
 }
 
 float DemodulatorThread::getSignalLevel() {
-    return signalLevel.load();
+    return signalLevel;
 }
 
 float DemodulatorThread::getSignalFloor() {
-    return signalFloor.load();
+    return signalFloor;
 }
 
 float DemodulatorThread::getSignalCeil() {
-    return signalCeil.load();
+    return signalCeil;
+}
+
+void DemodulatorThread::setSquelchEnabled(bool squelchEnabled_in) {
+    squelchEnabled = squelchEnabled_in;
+}
+
+bool DemodulatorThread::isSquelchEnabled() {
+    return squelchEnabled;
 }
 
 void DemodulatorThread::setSquelchLevel(float signal_level_in) {

@@ -78,7 +78,7 @@ class DataElement
 {
 public :
 
-    enum DataElementTypeEnum {
+    enum class Type {
         DATA_NULL,
         DATA_CHAR,
         DATA_UCHAR,
@@ -109,7 +109,7 @@ public :
     typedef vector< DataElementBuffer > DataElementBufferVector;
 
 private:
-    DataElementTypeEnum data_type;
+    Type data_type;
 
     // raw buffer holding data_type element in bytes form.
     DataElementBuffer data_val;
@@ -123,66 +123,66 @@ private:
 
     //if the exact right determineScalarDataType specialization was not used, throw exception at runtime.
     template<typename U, typename Dummy = int >
-    DataElementTypeEnum determineScalarDataType(const U& /* type_in */) { throw DataTypeMismatchException("determineScalarDataType(U) usage with unsupported type !"); }
+    Type determineScalarDataType(const U& /* type_in */) { throw DataTypeMismatchException("determineScalarDataType(U) usage with unsupported type !"); }
 
     template< typename Dummy = int >
-   DataElementTypeEnum determineScalarDataType(const char& /* type_in */) { return DATA_CHAR; }
+   Type determineScalarDataType(const char& /* type_in */) { return DataElement::Type::DATA_CHAR; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineScalarDataType(const unsigned char& /* type_in */) { return DATA_UCHAR; }
+    Type determineScalarDataType(const unsigned char& /* type_in */) { return DataElement::Type::DATA_UCHAR; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineScalarDataType(const int& /* type_in */) { return DATA_INT; }
+    Type determineScalarDataType(const int& /* type_in */) { return DataElement::Type::DATA_INT; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineScalarDataType(const unsigned int& /* type_in */) { return DATA_UINT; }
+    Type determineScalarDataType(const unsigned int& /* type_in */) { return DataElement::Type::DATA_UINT; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineScalarDataType(const long& /* type_in */) { return DATA_LONG; }
+    Type determineScalarDataType(const long& /* type_in */) { return DataElement::Type::DATA_LONG; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineScalarDataType(const unsigned long& /* type_in */) { return DATA_ULONG; }
+    Type determineScalarDataType(const unsigned long& /* type_in */) { return DataElement::Type::DATA_ULONG; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineScalarDataType(const long long& /* type_in */) { return DATA_LONGLONG; }
+    Type determineScalarDataType(const long long& /* type_in */) { return DataElement::Type::DATA_LONGLONG; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineScalarDataType(const float& /* type_in */) { return DATA_FLOAT; }
+    Type determineScalarDataType(const float& /* type_in */) { return DataElement::Type::DATA_FLOAT; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineScalarDataType(const double& /* type_in */) { return DATA_DOUBLE; }
+    Type determineScalarDataType(const double& /* type_in */) { return DataElement::Type::DATA_DOUBLE; }
   
     //vector versions:
     //if the exact right determineVectorDataType specialization was not used, throw exception at runtime.
     template<typename V, typename Dummy = int >
-    DataElementTypeEnum determineVectorDataType(const vector<V>& /* type_in */) { throw DataTypeMismatchException("determineVectorDataType(V) usage with unsupported type !"); }
+    Type determineVectorDataType(const vector<V>& /* type_in */) { throw DataTypeMismatchException("determineVectorDataType(V) usage with unsupported type !"); }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineVectorDataType(const vector<char>& /* type_in */) { return DATA_CHAR_VECTOR; }
+    Type determineVectorDataType(const vector<char>& /* type_in */) { return DataElement::Type::DATA_CHAR_VECTOR; }
 
     template< typename Dummy = int >
-   DataElementTypeEnum determineVectorDataType(const vector<unsigned char>& /* type_in */) { return DATA_UCHAR_VECTOR; }
+   Type determineVectorDataType(const vector<unsigned char>& /* type_in */) { return DataElement::Type::DATA_UCHAR_VECTOR; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineVectorDataType(const vector<int>& /* type_in */) { return DATA_INT_VECTOR; }
+    Type determineVectorDataType(const vector<int>& /* type_in */) { return DataElement::Type::DATA_INT_VECTOR; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineVectorDataType(const vector<unsigned int>& /* type_in */) { return DATA_UINT_VECTOR; }
+    Type determineVectorDataType(const vector<unsigned int>& /* type_in */) { return DataElement::Type::DATA_UINT_VECTOR; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineVectorDataType(const vector<long>& /* type_in */) { return DATA_LONG_VECTOR; }
+    Type determineVectorDataType(const vector<long>& /* type_in */) { return DataElement::Type::DATA_LONG_VECTOR; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineVectorDataType(const vector<unsigned long>& /* type_in */) { return DATA_ULONG_VECTOR; }
+    Type determineVectorDataType(const vector<unsigned long>& /* type_in */) { return DataElement::Type::DATA_ULONG_VECTOR; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineVectorDataType(const vector<long long>& /* type_in */) { return DATA_LONGLONG_VECTOR; }
+    Type determineVectorDataType(const vector<long long>& /* type_in */) { return DataElement::Type::DATA_LONGLONG_VECTOR; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineVectorDataType(const vector<float>& /* type_in */) { return DATA_FLOAT_VECTOR; }
+    Type determineVectorDataType(const vector<float>& /* type_in */) { return DataElement::Type::DATA_FLOAT_VECTOR; }
 
     template< typename Dummy = int >
-    DataElementTypeEnum determineVectorDataType(const vector<double>& /* type_in */) { return DATA_DOUBLE_VECTOR; }
+    Type determineVectorDataType(const vector<double>& /* type_in */) { return DataElement::Type::DATA_DOUBLE_VECTOR; }
 
 public: 
 
@@ -190,7 +190,7 @@ public:
     DataElement(DataElement &cloneFrom);
     ~DataElement();
     
-    DataElementTypeEnum getDataType();
+    Type getDataType();
     char *getDataPointer();
     size_t getDataSize();
      
@@ -239,7 +239,7 @@ public:
     template< typename Dummy = int >
     void set(const string& str_in) {
 
-        data_type = DATA_STRING;
+        data_type = DataElement::Type::DATA_STRING;
 
         data_val.assign(str_in.begin(), str_in.end());
     }
@@ -248,7 +248,7 @@ public:
     template< typename Dummy = int >
     void set(const wstring& wstr_in) {
 
-        data_type = DATA_WSTRING;
+        data_type = DataElement::Type::DATA_WSTRING;
 
         //wchar_t is tricky, the terminating zero is actually a (wchar_t)0 !
         //wchar_t is typically 16 bits on windows, and 32 bits on Unix, so use sizeof(wchar_t) everywhere.
@@ -269,7 +269,7 @@ public:
     template< typename Dummy = int >
     void set(const vector<string>& vector_str_in) {
 
-        data_type = DATA_STR_VECTOR;
+        data_type = DataElement::Type::DATA_STR_VECTOR;
 
         data_val_vector.clear();
 
@@ -299,43 +299,43 @@ public:
             throw DataException("Cannot get() the scalar, DataElement is empty !");
         }
 
-        DataElementTypeEnum storageType = getDataType();
+        DataElement::Type storageType = getDataType();
 
         //TODO: smarter way with templates ?
-        if (storageType == DATA_CHAR) {
+        if (storageType == DataElement::Type::DATA_CHAR) {
             char* storage_ptr = reinterpret_cast<char*>(&data_val[0]);
             //constructor-like 
             scalar_out = T(*storage_ptr);
 
-        } else if (storageType == DATA_UCHAR) {
+        } else if (storageType == DataElement::Type::DATA_UCHAR) {
             auto* storage_ptr = reinterpret_cast<unsigned char*>(&data_val[0]);
             //constructor-like 
             scalar_out = T(*storage_ptr);
-        } else if (storageType == DATA_INT) {
+        } else if (storageType == DataElement::Type::DATA_INT) {
             int* storage_ptr = reinterpret_cast<int*>(&data_val[0]);
             //constructor-like 
             scalar_out = T(*storage_ptr);
-        } else if (storageType == DATA_UINT) {
+        } else if (storageType == DataElement::Type::DATA_UINT) {
             auto* storage_ptr = reinterpret_cast<unsigned int*>(&data_val[0]);
             //constructor-like 
             scalar_out = T(*storage_ptr);
-        } else if (storageType == DATA_LONG) {
+        } else if (storageType == DataElement::Type::DATA_LONG) {
             long* storage_ptr = reinterpret_cast<long*>(&data_val[0]);
             //constructor-like 
             scalar_out = T(*storage_ptr);
-        } else if (storageType == DATA_ULONG) {
+        } else if (storageType == DataElement::Type::DATA_ULONG) {
             auto* storage_ptr = reinterpret_cast<unsigned long*>(&data_val[0]);
             //constructor-like 
             scalar_out = T(*storage_ptr);
-        } else if (storageType == DATA_LONGLONG) {
+        } else if (storageType == DataElement::Type::DATA_LONGLONG) {
             auto* storage_ptr = reinterpret_cast<long long*>(&data_val[0]);
             //constructor-like 
             scalar_out = T(*storage_ptr);
-        } else if (storageType == DATA_FLOAT) {
+        } else if (storageType == DataElement::Type::DATA_FLOAT) {
             auto* storage_ptr = reinterpret_cast<float*>(&data_val[0]);
             //constructor-like 
             scalar_out = T(*storage_ptr);
-        } else if (storageType == DATA_DOUBLE) {
+        } else if (storageType == DataElement::Type::DATA_DOUBLE) {
             auto* storage_ptr = reinterpret_cast<double*>(&data_val[0]);
             //constructor-like 
             scalar_out = T(*storage_ptr);
@@ -350,7 +350,7 @@ public:
 
         DataElementBuffer single_buffer;
 
-        DataElementTypeEnum storageType = getDataType();
+        Type storageType = getDataType();
 
         for (auto single_storage_element : data_val_vector) {
 
@@ -361,40 +361,40 @@ public:
             T scalar_out;
 
             //TODO: smarter way with templates ?
-            if (storageType == DATA_CHAR_VECTOR) {
+            if (storageType == DataElement::Type::DATA_CHAR_VECTOR) {
                 char* storage_ptr = reinterpret_cast<char*>(&single_storage_element[0]);
                 //constructor-like 
                 scalar_out = T(*storage_ptr);
 
-            } else if (storageType == DATA_UCHAR_VECTOR) {
+            } else if (storageType == DataElement::Type::DATA_UCHAR_VECTOR) {
                 auto* storage_ptr = reinterpret_cast<unsigned char*>(&single_storage_element[0]);
                 //constructor-like 
                 scalar_out = T(*storage_ptr);
-            } else if (storageType == DATA_INT_VECTOR) {
+            } else if (storageType == DataElement::Type::DATA_INT_VECTOR) {
                 int* storage_ptr = reinterpret_cast<int*>(&single_storage_element[0]);
                 //constructor-like 
                 scalar_out = T(*storage_ptr);
-            } else if (storageType == DATA_UINT_VECTOR) {
+            } else if (storageType == DataElement::Type::DATA_UINT_VECTOR) {
                 auto* storage_ptr = reinterpret_cast<unsigned int*>(&single_storage_element[0]);
                 //constructor-like 
                 scalar_out = T(*storage_ptr);
-            } else if (storageType == DATA_LONG_VECTOR) {
+            } else if (storageType == DataElement::Type::DATA_LONG_VECTOR) {
                 long* storage_ptr = reinterpret_cast<long*>(&single_storage_element[0]);
                 //constructor-like 
                 scalar_out = T(*storage_ptr);
-            } else if (storageType == DATA_ULONG_VECTOR) {
+            } else if (storageType == DataElement::Type::DATA_ULONG_VECTOR) {
                 auto* storage_ptr = reinterpret_cast<unsigned long*>(&single_storage_element[0]);
                 //constructor-like 
                 scalar_out = T(*storage_ptr);
-            } else if (storageType == DATA_LONGLONG_VECTOR) {
+            } else if (storageType == DataElement::Type::DATA_LONGLONG_VECTOR) {
                 auto* storage_ptr = reinterpret_cast<long long*>(&single_storage_element[0]);
                 //constructor-like 
                 scalar_out = T(*storage_ptr);
-            } else if (storageType == DATA_FLOAT_VECTOR) {
+            } else if (storageType == DataElement::Type::DATA_FLOAT_VECTOR) {
                 auto* storage_ptr = reinterpret_cast<float*>(&single_storage_element[0]);
                 //constructor-like 
                 scalar_out = T(*storage_ptr);
-            } else if (storageType == DATA_DOUBLE_VECTOR) {
+            } else if (storageType == DataElement::Type::DATA_DOUBLE_VECTOR) {
                 auto* storage_ptr = reinterpret_cast<double*>(&single_storage_element[0]);
                 //constructor-like 
                 scalar_out = T(*storage_ptr);
@@ -411,13 +411,13 @@ public:
         //reset
         str_out.clear();
 
-        if (data_type == DATA_NULL) {
+        if (data_type == DataElement::Type::DATA_NULL) {
             //it means TinyXML has parsed an empty tag,
             //so return an empty string.
             return;
         }
 
-        if (data_type != DATA_STRING && data_type != DATA_VOID) {
+        if (data_type != DataElement::Type::DATA_STRING && data_type != DataElement::Type::DATA_VOID) {
             throw(DataTypeMismatchException("Type mismatch, neither a STRING nor a VOID*"));
         }
 
@@ -433,13 +433,13 @@ public:
         //reset
         wstr_out.clear();
 
-        if (data_type == DATA_NULL) {
+        if (data_type == DataElement::Type::DATA_NULL) {
             //it means TinyXML has parsed an empty tag,
             //so return an empty string.
             return;
         }
 
-        if (data_type != DATA_WSTRING) {
+        if (data_type != DataElement::Type::DATA_WSTRING) {
             throw(DataTypeMismatchException("Type mismatch, not a WSTRING"));
         }
 
@@ -465,7 +465,7 @@ public:
     template< typename Dummy = int >
     void get(vector<string>& vector_str_out) {
 
-        if (data_type != DATA_STR_VECTOR) {
+        if (data_type != DataElement::Type::DATA_STR_VECTOR) {
             throw(DataTypeMismatchException("Type mismatch, not a STRING VECTOR"));
         }
 
@@ -551,7 +551,7 @@ public:
     void findAll(const char *name_in, vector<DataNode *> &node_list_out);
     
     explicit operator string () { string s; element()->get(s); return s; }
-    explicit operator const char * () { if (element()->getDataType() == DataElement::DATA_STRING) { return element()->getDataPointer(); } else { return nullptr; } }
+    explicit operator const char * () { if (element()->getDataType() == DataElement::Type::DATA_STRING) { return element()->getDataPointer(); } else { return nullptr; } }
     explicit operator char () { char v=0; element()->get(v); return v; }
     explicit operator unsigned char () { unsigned char v=0; element()->get(v); return v; }
     explicit operator int () { int v=0; element()->get(v); return v; }

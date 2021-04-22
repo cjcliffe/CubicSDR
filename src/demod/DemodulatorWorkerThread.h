@@ -14,21 +14,21 @@
 
 class DemodulatorWorkerThreadResult {
 public:
-    enum DemodulatorThreadResultEnum {
+    enum class Type {
         DEMOD_WORKER_THREAD_RESULT_NULL, DEMOD_WORKER_THREAD_RESULT_FILTERS
     };
 
     DemodulatorWorkerThreadResult() :
-            cmd(DEMOD_WORKER_THREAD_RESULT_NULL), iqResampler(nullptr), iqResampleRatio(0), sampleRate(0), bandwidth(0), modemKit(nullptr) {
+            cmd(DemodulatorWorkerThreadResult::Type::DEMOD_WORKER_THREAD_RESULT_NULL), iqResampler(nullptr), iqResampleRatio(0), sampleRate(0), bandwidth(0), modemKit(nullptr) {
 
     }
 
-    explicit DemodulatorWorkerThreadResult(DemodulatorThreadResultEnum cmd) :
+    explicit DemodulatorWorkerThreadResult(DemodulatorWorkerThreadResult::Type cmd) :
             DemodulatorWorkerThreadResult() {
         this->cmd = cmd;
     }
 
-    DemodulatorThreadResultEnum cmd;
+    DemodulatorWorkerThreadResult::Type cmd;
 
     msresamp_crcf iqResampler;
     double iqResampleRatio;
@@ -43,21 +43,21 @@ public:
 
 class DemodulatorWorkerThreadCommand {
 public:
-    enum DemodulatorThreadCommandEnum {
+    enum class Type {
         DEMOD_WORKER_THREAD_CMD_NULL, DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS, DEMOD_WORKER_THREAD_CMD_MAKE_DEMOD
     };
 
     DemodulatorWorkerThreadCommand() :
-            cmd(DEMOD_WORKER_THREAD_CMD_NULL), frequency(0), sampleRate(0), bandwidth(0), audioSampleRate(0) {
+            cmd(DemodulatorWorkerThreadCommand::Type::DEMOD_WORKER_THREAD_CMD_NULL), frequency(0), sampleRate(0), bandwidth(0), audioSampleRate(0) {
 
     }
 
-    explicit DemodulatorWorkerThreadCommand(DemodulatorThreadCommandEnum cmd) :
+    explicit DemodulatorWorkerThreadCommand(DemodulatorWorkerThreadCommand::Type cmd) :
             cmd(cmd), frequency(0), sampleRate(0), bandwidth(0), audioSampleRate(0) {
 
     }
 
-    DemodulatorThreadCommandEnum cmd;
+    DemodulatorWorkerThreadCommand::Type cmd;
 
     long long frequency;
     long long sampleRate;

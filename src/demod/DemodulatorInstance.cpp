@@ -46,7 +46,6 @@ DemodulatorInstance::DemodulatorInstance() {
 #endif
 	
 	active.store(false);
-	squelch.store(false);
     muted.store(false);
     recording.store(false);
     deltaLock.store(false);
@@ -73,12 +72,8 @@ DemodulatorInstance::DemodulatorInstance() {
     pipeAudioData = std::make_shared<AudioThreadInputQueue>();
     pipeAudioData->set_max_num_items(100);
 
-    threadQueueControl = std::make_shared<DemodulatorThreadControlCommandQueue>();
-    threadQueueControl->set_max_num_items(2);
-
     demodulatorThread = new DemodulatorThread(this);
     demodulatorThread->setInputQueue("IQDataInput",pipeIQDemodData);
-    demodulatorThread->setInputQueue("ControlQueue",threadQueueControl);
     demodulatorThread->setOutputQueue("AudioDataOutput", pipeAudioData);
 
     audioThread->setInputQueue("AudioDataInput", pipeAudioData);
@@ -192,7 +187,6 @@ void DemodulatorInstance::terminate() {
     pipeIQInputData->flush();
     pipeAudioData->flush();
     pipeIQDemodData->flush();
-    threadQueueControl->flush();
 }
 
 std::string DemodulatorInstance::getLabel() {
@@ -305,30 +299,15 @@ void DemodulatorInstance::setActive(bool state) {
 }
 
 void DemodulatorInstance::squelchAuto() {
-    DemodulatorThreadControlCommand command;
-    command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_ON;
-    //VSO: blocking push
-    threadQueueControl->push(command);
-    squelch = true;
+    demodulatorThread->setSquelchEnabled(true);
 }
 
 bool DemodulatorInstance::isSquelchEnabled() {
-    return (demodulatorThread->getSquelchLevel() != 0.0);
+    return demodulatorThread->isSquelchEnabled();
 }
 
 void DemodulatorInstance::setSquelchEnabled(bool state) {
-    if (!state && squelch) {
-        DemodulatorThreadControlCommand command;
-        command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_OFF;
-        threadQueueControl->push(command);
-    } else if (state && !squelch) {
-        DemodulatorThreadControlCommand command;
-        command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_ON;
-        //VSO: blocking push!
-        threadQueueControl->push(command);
-    }
-
-    squelch = state;
+    demodulatorThread->setSquelchEnabled(state);
 }
 
 float DemodulatorInstance::getSignalLevel() {
@@ -358,7 +337,7 @@ void DemodulatorInstance::setOutputDevice(int device_id) {
         audioThread->setInitOutputDevice(device_id);
     } else if (audioThread) {
         AudioThreadCommand command;
-        command.cmd = AudioThreadCommand::AUDIO_THREAD_CMD_SET_DEVICE;
+        command.cmdType = AudioThreadCommand::Type::AUDIO_THREAD_CMD_SET_DEVICE;
         command.int_value = device_id;
         //VSO: blocking push
         audioThread->getCommandQueue()->push(command);

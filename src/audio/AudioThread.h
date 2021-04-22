@@ -58,15 +58,15 @@ typedef std::shared_ptr<DemodulatorThreadOutputQueue> DemodulatorThreadOutputQue
 
 class AudioThreadCommand {
 public:
-    enum AudioThreadCommandEnum {
+    enum class Type {
         AUDIO_THREAD_CMD_NULL, AUDIO_THREAD_CMD_SET_DEVICE, AUDIO_THREAD_CMD_SET_SAMPLE_RATE
     };
 
     AudioThreadCommand() :
-        cmd(AUDIO_THREAD_CMD_NULL), int_value(0) {
+        cmdType(AudioThreadCommand::Type::AUDIO_THREAD_CMD_NULL), int_value(0) {
     }
 
-    AudioThreadCommandEnum cmd;
+    AudioThreadCommand::Type cmdType;
     int int_value;
 };
 

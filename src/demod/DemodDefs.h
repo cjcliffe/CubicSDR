@@ -15,19 +15,6 @@
 
 class DemodulatorThread;
 
-class DemodulatorThreadControlCommand {
-public:
-    enum DemodulatorThreadControlCommandEnum {
-        DEMOD_THREAD_CMD_CTL_NULL, DEMOD_THREAD_CMD_CTL_SQUELCH_ON, DEMOD_THREAD_CMD_CTL_SQUELCH_OFF
-    };
-
-    DemodulatorThreadControlCommand() :
-            cmd(DEMOD_THREAD_CMD_CTL_NULL) {
-    }
-
-    DemodulatorThreadControlCommandEnum cmd;
-};
-
 class DemodulatorThreadIQData {
 public:
     long long frequency;
@@ -76,8 +63,6 @@ typedef std::shared_ptr<DemodulatorThreadPostIQData> DemodulatorThreadPostIQData
 
 typedef ThreadBlockingQueue<DemodulatorThreadIQDataPtr> DemodulatorThreadInputQueue;
 typedef ThreadBlockingQueue<DemodulatorThreadPostIQDataPtr> DemodulatorThreadPostInputQueue;
-typedef ThreadBlockingQueue<DemodulatorThreadControlCommand> DemodulatorThreadControlCommandQueue;
 
 typedef std::shared_ptr<DemodulatorThreadInputQueue> DemodulatorThreadInputQueuePtr;
 typedef std::shared_ptr<DemodulatorThreadPostInputQueue> DemodulatorThreadPostInputQueuePtr;
-typedef std::shared_ptr<DemodulatorThreadControlCommandQueue> DemodulatorThreadControlCommandQueuePtr;
