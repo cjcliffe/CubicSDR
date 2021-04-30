@@ -40,7 +40,7 @@ ModemArgInfoList ModemGMSK::getSettings() {
     fdelayArg.name = "Filter delay";
     fdelayArg.value = std::to_string(_fdelay);
     fdelayArg.description = "Filter delay in samples";
-    fdelayArg.type = ModemArgInfo::INT;
+    fdelayArg.type = ModemArgInfo::Type::INT;
     fdelayArg.units = "samples";
     fdelayArg.range = ModemRange(1,128);
     args.push_back(fdelayArg);
@@ -50,7 +50,7 @@ ModemArgInfoList ModemGMSK::getSettings() {
     spsArg.name = "Samples / symbol";
     spsArg.value = std::to_string(_sps);
     spsArg.description = "Modem samples-per-symbol";
-    spsArg.type = ModemArgInfo::INT;
+    spsArg.type = ModemArgInfo::Type::INT;
     spsArg.units = "samples/symbol";
     spsArg.range = ModemRange(2,512);
     args.push_back(spsArg);
@@ -60,7 +60,7 @@ ModemArgInfoList ModemGMSK::getSettings() {
     ebfArg.name = "Excess bandwidth";
     ebfArg.value = std::to_string(_ebf);
     ebfArg.description = "Modem excess bandwidth factor";
-    ebfArg.type = ModemArgInfo::FLOAT;
+    ebfArg.type = ModemArgInfo::Type::FLOAT;
     ebfArg.range = ModemRange(0.1,0.49);
     args.push_back(ebfArg);
 

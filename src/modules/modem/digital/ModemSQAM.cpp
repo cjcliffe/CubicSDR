@@ -31,7 +31,7 @@ ModemArgInfoList ModemSQAM::getSettings() {
     consArg.name = "Constellation";
     consArg.description = "Modem Constellation Pattern";
     consArg.value = std::to_string(cons);
-    consArg.type = ModemArgInfo::STRING;
+    consArg.type = ModemArgInfo::Type::STRING;
     std::vector<std::string> consOpts;
     consOpts.push_back("32");
     consOpts.push_back("128");
