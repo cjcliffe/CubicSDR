@@ -689,7 +689,7 @@ IF (NOT BUNDLE_APP)
         configure_files(${CUBICSDR_HEADER_IMAGE_DIR} ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} ${CUBICSDR_HEADER_IMAGE_FILE})
     ENDIF()
     add_executable(CubicSDR ${cubicsdr_sources} ${cubicsdr_headers} ${RES_FILES})
-    target_link_libraries(CubicSDR ${LIQUID_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
+    target_link_libraries(CubicSDR ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
 ENDIF (NOT BUNDLE_APP)
 
 IF (MSVC)
