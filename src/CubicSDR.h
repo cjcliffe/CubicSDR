@@ -34,11 +34,11 @@
 #include "ModemFM.h"
 #include "ModemNBFM.h"
 #include "ModemFMStereo.h"
-#include "ModemCW.h"
 #include "ModemAM.h"
 #include "ModemUSB.h"
 #include "ModemLSB.h"
 #include "ModemDSB.h"
+#include "ModemCW.h"
 #include "ModemIQ.h"
 
 #ifdef ENABLE_DIGITAL_LAB
@@ -84,10 +84,10 @@ public:
     void deviceSelector();
     void sdrThreadNotify(SDRThread::SDRThreadState state, std::string message);
     void sdrEnumThreadNotify(SDREnumerator::SDREnumState state, std::string message);
-    
+
     void setFrequency(long long freq);
     long long getFrequency();
-    
+
     void lockFrequency(long long freq);
     bool isFrequencyLocked();
     void unlockFrequency();
@@ -100,12 +100,12 @@ public:
 
     void setChannelizerType(SDRPostThreadChannelizerType chType);
     SDRPostThreadChannelizerType getChannelizerType();
-   
+
 
     void setSampleRate(long long rate_in);
     long long getSampleRate();
 
-   
+
     std::vector<SDRDeviceInfo *> *getDevices();
     void setDevice(SDRDeviceInfo *dev, int waitMsForTermination);
     void stopDevice(bool store, int waitMsForTermination);
@@ -114,11 +114,11 @@ public:
     ScopeVisualProcessor *getScopeProcessor();
     SpectrumVisualProcessor *getSpectrumProcessor();
     SpectrumVisualProcessor *getDemodSpectrumProcessor();
-    
+
     DemodulatorThreadOutputQueuePtr getAudioVisualQueue();
     DemodulatorThreadInputQueuePtr getIQVisualQueue();
     DemodulatorThreadInputQueuePtr getWaterfallVisualQueue();
-    
+
     DemodulatorMgr &getDemodMgr();
     BookmarkMgr &getBookmarkMgr();
     SessionMgr &getSessionMgr();
@@ -127,7 +127,7 @@ public:
     SDRThread *getSDRThread();
 
     void notifyDemodulatorsChanged();
-   
+
     void removeDemodulator(DemodulatorInstancePtr demod);
 
     void setFrequencySnap(int snap);
@@ -142,14 +142,14 @@ public:
     void showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode = FrequencyDialog::FDIALOG_TARGET_DEFAULT, wxString initString = "");
     void showLabelInput();
     AppFrame *getAppFrame();
-    
+
     bool areDevicesReady();
     bool areDevicesEnumerating();
     bool areModulesMissing();
     std::string getNotification();
 
     void notifyMainUIOfDeviceChange(bool forceRefreshOfGains = false);
-    
+
     void addRemote(std::string remoteAddr);
     void removeRemote(std::string remoteAddr);
 
@@ -157,7 +157,7 @@ public:
     void reEnumerateDevices();
     bool isDeviceSelectorOpen();
     void closeDeviceSelector();
-    
+
     void setAGCMode(bool mode);
     bool getAGCMode();
 
@@ -169,7 +169,7 @@ public:
 
     bool getUseLocalMod();
     std::string getModulePath();
-    
+
     void setActiveGainEntry(std::string gainName);
     std::string getActiveGainEntry();
 
@@ -177,17 +177,17 @@ public:
     bool getSoloMode();
 
     bool isShuttingDown();
-    
+
 #ifdef USE_HAMLIB
     RigThread *getRigThread();
     void initRig(int rigModel, std::string rigPort, int rigSerialRate);
     void stopRig();
     bool rigIsActive();
 #endif
-    
+
 private:
     int FilterEvent(wxEvent& event);
-    
+
     AppFrame *appframe = nullptr;
     AppConfig config;
     PrimaryGLContext *m_glContext = nullptr;
@@ -221,12 +221,12 @@ private:
     DemodulatorThreadInputQueuePtr pipeActiveDemodIQVisualData;
 
     ScopeVisualProcessor scopeProcessor;
-    
+
     SDRDevicesDialog *deviceSelectorDialog = nullptr;
 
     SoapySDR::Kwargs streamArgs;
     SoapySDR::Kwargs settingArgs;
-    
+
     std::thread *t_SDR = nullptr;
     std::thread *t_SDREnum = nullptr;
     std::thread *t_PostSDR = nullptr;
@@ -239,9 +239,9 @@ private:
     std::atomic_bool useLocalMod;
     std::string notifyMessage;
     std::string modulePath;
-    
+
     std::mutex notify_busy;
-    
+
     std::atomic_bool frequency_locked;
     std::atomic_llong lock_freq;
     FrequencyDialog::FrequencyDialogTarget fdlgTarget;

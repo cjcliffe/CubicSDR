@@ -3,7 +3,8 @@
 
 #include "ModemAM.h"
 
-ModemAM::ModemAM() : ModemAnalog() {
+ModemAM::ModemAM() : ModemAnalogVC()
+{
     // Create a DC blocker using 25 samples wide window
     // and 30dB reduction of the DC level.
     mDCBlock = firfilt_rrrf_create_dc_blocker (25,30.0f);
@@ -38,7 +39,7 @@ void ModemAM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput* au
 
   // Implement an AM demodulator. Compute signal
   // amplitude followed by a DC blocker to remove
-  // the DC offset. 
+  // the DC offset.
 	for (size_t i = 0; i < bufSize; i++) {
     float I = input->data[i].real;
     float Q = input->data[i].imag;
@@ -46,5 +47,7 @@ void ModemAM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput* au
     firfilt_rrrf_execute (mDCBlock,&demodOutputData[i]);
 	}
 
-    buildAudioOutput(amkit,audioOut,true);
+  applyGain (demodOutputData);
+
+  buildAudioOutput(amkit,audioOut,false);
 }

@@ -3,7 +3,7 @@
 
 #include "ModemLSB.h"
 
-ModemLSB::ModemLSB() : ModemAnalog() {
+ModemLSB::ModemLSB() : ModemAnalogVC() {
     // half band filter used for side-band elimination
     ssbFilt = iirfilt_crcf_create_lowpass(6, 0.25);
 	ssbShift = nco_crcf_create(LIQUID_NCO);
@@ -42,14 +42,14 @@ int ModemLSB::getDefaultSampleRate() {
 
 void ModemLSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
     ModemKitAnalog *akit = (ModemKitAnalog *)kit;
-    
+
     initOutputBuffers(akit,input);
-    
+
     if (!bufSize) {
-       
+
         return;
     }
-    
+
     liquid_float_complex x, y;
     for (size_t i = 0; i < bufSize; i++) { // Reject upper band
         nco_crcf_step(ssbShift);
@@ -59,6 +59,6 @@ void ModemLSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *a
         float usb_discard;
         firhilbf_c2r_execute(c2rFilt, x, &demodOutputData[i], &usb_discard);
     }
-    
-    buildAudioOutput(akit, audioOut, true);
+    applyGain(demodOutputData);
+    buildAudioOutput(akit, audioOut, false);
 }
