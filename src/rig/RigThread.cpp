@@ -114,7 +114,7 @@ void RigThread::run() {
     std::cout << "Rig thread starting." << std::endl;
 
     rig = rig_init(rigModel);
-	strncpy(rig->state.rigport.pathname, rigFile.c_str(), FILPATHLEN - 1);
+	strncpy(rig->state.rigport.pathname, rigFile.c_str(), HAMLIB_FILPATHLEN - 1);
 	rig->state.rigport.parm.serial.rate = serialRate;
 	retcode = rig_open(rig);
     

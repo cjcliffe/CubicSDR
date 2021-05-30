@@ -147,7 +147,7 @@ typedef struct rig RIG;
 
 #define RIGNAMSIZ 30
 #define RIGVERSIZ 8
-#define FILPATHLEN 100
+#define HAMLIB_FILPATHLEN 100
 #define FRQRANGESIZ 30
 #define MAXCHANDESC 30      /* describe channel eg: "WWV 5Mhz" */
 #define TSLSTSIZ 20         /* max tuning step list size, zero ended */
@@ -1479,7 +1479,7 @@ typedef struct hamlib_port {
     int timeout;            /*!< Timeout, in mS */
     int retry;              /*!< Maximum number of retries, 0 to disable */
 
-    char pathname[FILPATHLEN];      /*!< Port pathname */
+    char pathname[HAMLIB_FILPATHLEN];      /*!< Port pathname */
 
     union {
         struct {
