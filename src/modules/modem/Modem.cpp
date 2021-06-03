@@ -31,7 +31,7 @@ double ModemRange::maximum(void) const {
 }
 
 ModemArgInfo::ModemArgInfo(void) {
-    
+
 }
 
 Modem::Modem() {
@@ -39,7 +39,7 @@ Modem::Modem() {
 }
 
 Modem::~Modem() {
-    
+
 }
 
 void Modem::addModemFactory(ModemFactoryFn factoryFunc, std::string modemName, int defaultRate) {
@@ -55,7 +55,7 @@ Modem *Modem::makeModem(std::string modemName) {
     if (modemFactories.find(modemName) != modemFactories.end()) {
         return (Modem *)modemFactories[modemName]();
     }
-    
+
     return nullptr;
 }
 
@@ -63,14 +63,14 @@ int Modem::getModemDefaultSampleRate(std::string modemName) {
     if (modemDefaultRates.find(modemName) != modemDefaultRates.end()) {
         return modemDefaultRates[modemName];
     }
-    
+
     return 0;
 }
 
 ModemArgInfoList Modem::getSettings() {
     ModemArgInfoList args;
-    
-    return args;
+
+    return mArgInfoList;
 }
 
 int Modem::getDefaultSampleRate() {

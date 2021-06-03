@@ -3,7 +3,7 @@
 
 #include "ModemDSB.h"
 
-ModemDSB::ModemDSB() : ModemAnalog() {
+ModemDSB::ModemDSB() : ModemAnalogVC() {
     demodAM_DSB = ampmodem_create(0.5, LIQUID_AMPMODEM_DSB, 1);
     useSignalOutput(true);
 }
@@ -28,15 +28,15 @@ void ModemDSB::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *a
     ModemKitAnalog *amkit = (ModemKitAnalog *)kit;
 
     initOutputBuffers(amkit, input);
-    
+
     if (!bufSize) {
-       
+
         return;
     }
-    
+
 	for (size_t i = 0; i < bufSize; i++) {
 		ampmodem_demodulate(demodAM_DSB, input->data[i], &demodOutputData[i]);
 	}
-    
-    buildAudioOutput(amkit, audioOut, true);
+    applyGain(demodOutputData);
+    buildAudioOutput(amkit, audioOut, false);
 }

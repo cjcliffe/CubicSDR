@@ -79,11 +79,11 @@ std::string& filterChars(std::string& s, const std::string& allowed) {
 
 std::string frequencyToStr(long long freq) {
     long double freqTemp;
-    
+
     freqTemp = freq;
     std::string suffix("");
     std::stringstream freqStr;
-    
+
     if (freqTemp >= 1.0e9) {
         freqTemp /= 1.0e9;
         freqStr << std::setprecision(10);
@@ -97,32 +97,32 @@ std::string frequencyToStr(long long freq) {
         freqStr << std::setprecision(4);
         suffix = std::string("KHz");
     }
-    
+
     freqStr << freqTemp;
     freqStr << suffix;
-    
+
     return freqStr.str();
 }
 
 long long strToFrequency(std::string freqStr) {
     std::string filterStr = filterChars(freqStr, std::string("0123456789.MKGHmkgh"));
-    
+
     size_t numLen = filterStr.find_first_not_of("0123456789.");
-    
+
     if (numLen == std::string::npos) {
         numLen = freqStr.length();
     }
-    
+
     std::string numPartStr = freqStr.substr(0, numLen);
     std::string suffixStr = freqStr.substr(numLen);
-    
+
     std::stringstream numPartStream;
     numPartStream.str(numPartStr);
-    
+
     long double freqTemp = 0;
-    
+
     numPartStream >> freqTemp;
-    
+
     if (suffixStr.length()) {
         if (suffixStr.find_first_of("Gg") != std::string::npos) {
             freqTemp *= 1.0e9;
@@ -136,7 +136,7 @@ long long strToFrequency(std::string freqStr) {
     } else if (numPartStr.find_first_of(".") != std::string::npos || freqTemp <= 3000) {
         freqTemp *= 1.0e6;
     }
-    
+
     return (long long) freqTemp;
 }
 
@@ -147,7 +147,7 @@ public:
     ActionDialogBookmarkCatastophe() : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Bookmark Last-Loaded Backup Failure :( :( :(")) {
         m_questionText->SetLabelText(wxT("All attempts to recover bookmarks have failed. \nWould you like to exit without touching any more save files?\nClick OK to exit without saving; or Cancel to continue anyways."));
     }
-    
+
     void doClickOK() {
         wxGetApp().getAppFrame()->disableSave(true);
         wxGetApp().getAppFrame()->Close(false);
@@ -161,7 +161,7 @@ public:
     ActionDialogBookmarkBackupLoadFailed() : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Bookmark Backup Load Failure :( :(")) {
         m_questionText->SetLabelText(wxT("Sorry; unable to load your bookmarks backup file. \nWould you like to attempt to load the last succssfully loaded bookmarks file?"));
     }
-    
+
     void doClickOK() {
         if (wxGetApp().getBookmarkMgr().hasLastLoad("bookmarks.xml")) {
             if (wxGetApp().getBookmarkMgr().loadFromFile("bookmarks.xml.lastloaded",false)) {
@@ -180,7 +180,7 @@ public:
     ActionDialogBookmarkLoadFailed() : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Bookmark Load Failure :(")) {
         m_questionText->SetLabelText(wxT("Sorry; unable to load your bookmarks file. \nWould you like to attempt to load the backup file?"));
     }
-    
+
     void doClickOK() {
         bool loadOk = false;
         if (wxGetApp().getBookmarkMgr().hasBackup("bookmarks.xml")) {
@@ -223,7 +223,7 @@ CubicSDR::CubicSDR() : frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFA
 
         //set OpenGL configuration:
         m_glContextAttributes = new wxGLContextAttrs();
-        
+
         wxGLContextAttrs glSettings;
         glSettings.PlatformDefaults().EndList();
 
@@ -283,7 +283,7 @@ bool CubicSDR::OnInit() {
     		freopen("CONOUT$", "w", stdout);
     		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
             SetConsoleTitle(L"CubicSDR: stdout");
-          
+
     	}
 
         //refresh
@@ -291,14 +291,14 @@ bool CubicSDR::OnInit() {
         std::streambuf *sb = std::cout.rdbuf();
         std::cout.rdbuf(sb);
 #endif
-        
-    
+
+
     wxApp::SetAppName(CUBICSDR_INSTALL_NAME);
 
 #ifdef USE_HAMLIB
     t_Rig = nullptr;
     rigThread = nullptr;
-    
+
     RigThread::enumerate();
 #endif
 
@@ -306,7 +306,7 @@ bool CubicSDR::OnInit() {
     Modem::addModemFactory(ModemNBFM::factory, "NBFM", 12500);
     Modem::addModemFactory(ModemFMStereo::factory, "FMS", 200000);
     Modem::addModemFactory(ModemAM::factory, "AM", 6000);
-    Modem::addModemFactory(ModemCW::factory, "CW", 500);
+    Modem::addModemFactory(ModemCW::factory,  "CW", 200);
     Modem::addModemFactory(ModemLSB::factory, "LSB", 5400);
     Modem::addModemFactory(ModemUSB::factory, "USB", 5400);
     Modem::addModemFactory(ModemDSB::factory, "DSB", 5400);
@@ -326,7 +326,7 @@ bool CubicSDR::OnInit() {
     Modem::addModemFactory(ModemSQAM::factory, "SQAM", 200000);
     Modem::addModemFactory(ModemST::factory, "ST", 200000);
 #endif
-    
+
     frequency = wxGetApp().getConfig()->getCenterFreq();
     offset = 0;
     ppm = 0;
@@ -338,20 +338,20 @@ bool CubicSDR::OnInit() {
 
     // Visual Data
     spectrumVisualThread = new SpectrumVisualDataThread();
-    
+
     pipeIQVisualData = std::make_shared<DemodulatorThreadInputQueue>();
     pipeIQVisualData->set_max_num_items(1);
-    
+
     pipeWaterfallIQVisualData = std::make_shared<DemodulatorThreadInputQueue>();
     pipeWaterfallIQVisualData->set_max_num_items(128);
-    
+
     getSpectrumProcessor()->setInput(pipeIQVisualData);
     getSpectrumProcessor()->setHideDC(true);
-    
+
     // I/Q Data
     pipeSDRIQData = std::make_shared<SDRThreadIQDataQueue>();
     pipeSDRIQData->set_max_num_items(100);
-    
+
     sdrThread = new SDRThread();
     sdrThread->setOutputQueue("IQDataOutput",pipeSDRIQData);
 
@@ -360,21 +360,21 @@ bool CubicSDR::OnInit() {
 
     sdrPostThread->setOutputQueue("IQVisualDataOutput", pipeIQVisualData);
     sdrPostThread->setOutputQueue("IQDataOutput", pipeWaterfallIQVisualData);
-     
+
 #if CUBICSDR_ENABLE_VIEW_SCOPE
     pipeAudioVisualData = std::make_shared<DemodulatorThreadOutputQueue>();
     pipeAudioVisualData->set_max_num_items(1);
-    
+
     scopeProcessor.setInput(pipeAudioVisualData);
 #else
     pipeAudioVisualData = nullptr;
 #endif
-    
+
 #if CUBICSDR_ENABLE_VIEW_DEMOD
     demodVisualThread = new SpectrumVisualDataThread();
     pipeDemodIQVisualData = std::make_shared<DemodulatorThreadInputQueue>();
     pipeDemodIQVisualData->set_max_num_items(1);
-    
+
     if (getDemodSpectrumProcessor()) {
         getDemodSpectrumProcessor()->setInput(pipeDemodIQVisualData);
     }
@@ -395,10 +395,10 @@ bool CubicSDR::OnInit() {
 
     //Start SDRPostThread last.
     t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
-    
+
 
     sdrEnum = new SDREnumerator();
-    
+
     SDREnumerator::setManuals(config.getManualDevices());
 
     appframe = new AppFrame();
@@ -426,7 +426,7 @@ bool CubicSDR::OnInit() {
         getBookmarkMgr().updateActiveList();
         getBookmarkMgr().updateBookmarks();
     }
-    
+
     return true;
 }
 
@@ -442,14 +442,14 @@ int CubicSDR::OnExit() {
 
     bool terminationSequenceOK = true;
 
-    //The thread feeding them all should be terminated first, so: 
+    //The thread feeding them all should be terminated first, so:
     std::cout << "Terminating SDR thread.." << std::endl << std::flush ;
     sdrThread->terminate();
     terminationSequenceOK = terminationSequenceOK && sdrThread->isTerminated(3000);
 
-    //in case termination sequence goes wrong, kill App brutally now because it can get stuck. 
+    //in case termination sequence goes wrong, kill App brutally now because it can get stuck.
     if (!terminationSequenceOK) {
-        //no trace here because it could occur if the device is not started.  
+        //no trace here because it could occur if the device is not started.
         ::exit(11);
     }
 
@@ -461,7 +461,7 @@ int CubicSDR::OnExit() {
     //so that sdrPostThread can complete a processing loop and die.
     terminationSequenceOK = terminationSequenceOK && sdrPostThread->isTerminated(3000);
 
-    //in case termination sequence goes wrong, kill App brutally now because it can get stuck. 
+    //in case termination sequence goes wrong, kill App brutally now because it can get stuck.
     if (!terminationSequenceOK) {
         std::cout << "Cannot terminate application properly, calling exit() now." << std::endl << std::flush;
         ::exit(12);
@@ -475,7 +475,7 @@ int CubicSDR::OnExit() {
     if (demodVisualThread) {
         demodVisualThread->terminate();
     }
-    
+
     //Wait nicely
     terminationSequenceOK = terminationSequenceOK &&  spectrumVisualThread->isTerminated(1000);
 
@@ -483,7 +483,7 @@ int CubicSDR::OnExit() {
         terminationSequenceOK = terminationSequenceOK && demodVisualThread->isTerminated(1000);
     }
 
-    //in case termination sequence goes wrong, kill App brutally because it can get stuck. 
+    //in case termination sequence goes wrong, kill App brutally because it can get stuck.
     if (!terminationSequenceOK) {
         std::cout << "Cannot terminate application properly, calling exit() now." << std::endl << std::flush;
         ::exit(13);
@@ -495,11 +495,11 @@ int CubicSDR::OnExit() {
     }
 
     t_PostSDR->join();
-    
+
     if (t_DemodVisual) {
         t_DemodVisual->join();
     }
-    
+
     t_SpectrumVisual->join();
 
     //Now only we can delete:
@@ -549,7 +549,7 @@ PrimaryGLContext& CubicSDR::GetContext(wxGLCanvas *canvas) {
 }
 
 wxGLContextAttrs* CubicSDR::GetContextAttributes() {
-   
+
     return m_glContextAttributes;
 }
 
@@ -585,7 +585,7 @@ bool CubicSDR::OnCmdLineParsed(wxCmdLineParser& parser) {
             modulePath = "";
         }
     }
-    
+
     return true;
 }
 
@@ -625,7 +625,7 @@ void CubicSDR::sdrThreadNotify(SDRThread::SDRThreadState state, std::string mess
 
     std::lock_guard < std::mutex > lock(notify_busy);
 
-   
+
     if (state == SDRThread::SDR_THREAD_INITIALIZED) {
         appframe->initDeviceParams(getDevice());
     }
@@ -639,7 +639,7 @@ void CubicSDR::sdrThreadNotify(SDRThread::SDRThreadState state, std::string mess
 //        info->ShowModal();
     }
     //if (appframe) { appframe->SetStatusText(message); }
-  
+
 }
 
 
@@ -657,7 +657,7 @@ void CubicSDR::sdrEnumThreadNotify(SDREnumerator::SDREnumState state, std::strin
         devicesFailed.store(true);
     }
     //if (appframe) { appframe->SetStatusText(message); }
-   
+
 
 }
 
@@ -682,7 +682,7 @@ long long CubicSDR::getOffset() {
 
 void CubicSDR::setOffset(long long ofs) {
     offset = ofs;
-    
+
     if (sdrThread && !sdrThread->isTerminated()) {
         sdrThread->setOffset(offset);
     }
@@ -690,7 +690,7 @@ void CubicSDR::setOffset(long long ofs) {
 
 void CubicSDR::setAntennaName(const std::string& name) {
     antennaName = name;
-     
+
     if (sdrThread && !sdrThread->isTerminated()) {
         sdrThread->setAntenna(antennaName);
     }
@@ -723,7 +723,7 @@ long long CubicSDR::getFrequency() {
 void CubicSDR::lockFrequency(long long freq) {
     frequency_locked.store(true);
     lock_freq.store(freq);
-    
+
     if (sdrThread && !sdrThread->isTerminated()) {
         sdrThread->lockFrequency(freq);
     }
@@ -742,7 +742,7 @@ void CubicSDR::unlockFrequency() {
 
 void CubicSDR::setSampleRate(long long rate_in) {
     sampleRate = rate_in;
-    
+
     if (sdrThread && !sdrThread->isTerminated()) {
         sdrThread->setSampleRate(sampleRate);
     }
@@ -765,7 +765,7 @@ void CubicSDR::setSampleRate(long long rate_in) {
 }
 
 void CubicSDR::stopDevice(bool store, int waitMsForTermination) {
-    
+
     //Firt we must stop the threads
     sdrThread->terminate();
     sdrThread->isTerminated(waitMsForTermination);
@@ -775,7 +775,7 @@ void CubicSDR::stopDevice(bool store, int waitMsForTermination) {
         delete t_SDR;
         t_SDR = nullptr;
     }
-    
+
     //Only now we can nullify devices
     if (store) {
         stoppedDev = sdrThread->getDevice();
@@ -798,29 +798,29 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev, int waitMsForTermination) {
 
     sdrThread->terminate();
     sdrThread->isTerminated(waitMsForTermination);
-    
+
     if (t_SDR) {
        t_SDR->join();
        delete t_SDR;
        t_SDR = nullptr;
     }
-    
+
     for (SoapySDR::Kwargs::const_iterator i = settingArgs.begin(); i != settingArgs.end(); i++) {
         sdrThread->writeSetting(i->first, i->second);
     }
     sdrThread->setStreamArgs(streamArgs);
     sdrThread->setDevice(dev);
-    
+
     DeviceConfig *devConfig = config.getDevice(dev->getDeviceId());
-    
+
     SoapySDR::Device *soapyDev = dev->getSoapyDevice();
-    
+
     if (soapyDev) {
         if (long devSampleRate = devConfig->getSampleRate()) {
             sampleRate = dev->getSampleRateNear(SOAPY_SDR_RX, 0, devSampleRate);
             sampleRateInitialized.store(true);
         }
-        
+
         if (!sampleRateInitialized.load()) {
             sampleRate = dev->getSampleRateNear(SOAPY_SDR_RX, 0, DEFAULT_SAMPLE_RATE);
             sampleRateInitialized.store(true);
@@ -842,7 +842,7 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev, int waitMsForTermination) {
 
         t_SDR = new std::thread(&SDRThread::threadMain, sdrThread);
 }
-    
+
     stoppedDev = nullptr;
 }
 
@@ -904,7 +904,7 @@ SDRThread *CubicSDR::getSDRThread() {
 
 
 void CubicSDR::notifyDemodulatorsChanged() {
-    
+
     sdrPostThread->notifyDemodulatorsChanged();
 }
 
@@ -1040,7 +1040,7 @@ std::string CubicSDR::getNotification() {
     std::string msg;
     std::lock_guard < std::mutex > lock(notify_busy);
     msg = notifyMessage;
-   
+
     return msg;
 }
 
@@ -1118,11 +1118,11 @@ int CubicSDR::FilterEvent(wxEvent& event) {
     if (event.GetEventType() == wxEVT_KEY_DOWN || event.GetEventType() == wxEVT_CHAR_HOOK) {
 		return appframe->OnGlobalKeyDown((wxKeyEvent&)event);
     }
-    
+
     if (event.GetEventType() == wxEVT_KEY_UP || event.GetEventType() == wxEVT_CHAR_HOOK) {
         return appframe->OnGlobalKeyUp((wxKeyEvent&)event);
     }
-    
+
     return -1;  // process normally
 }
 
@@ -1149,7 +1149,7 @@ void CubicSDR::initRig(int rigModel, std::string rigPort, int rigSerialRate) {
         rigThread = nullptr;
     }
     if (t_Rig) {
-      
+
         delete t_Rig;
         t_Rig = nullptr;
     }
@@ -1168,7 +1168,7 @@ void CubicSDR::stopRig() {
     if (!rigThread) {
         return;
     }
-    
+
     if (rigThread) {
         rigThread->terminate();
         rigThread->isTerminated(1000);
@@ -1179,7 +1179,7 @@ void CubicSDR::stopRig() {
     }
 
     if (t_Rig && t_Rig->joinable()) {
-        t_Rig->join();   
+        t_Rig->join();
     }
 
     //now we can delete
@@ -1190,7 +1190,7 @@ void CubicSDR::stopRig() {
     }
 
     if (t_Rig) {
-       
+
         delete t_Rig;
         t_Rig = nullptr;
     }

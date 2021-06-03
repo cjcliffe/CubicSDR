@@ -5,7 +5,7 @@
 #include "Modem.h"
 #include "ModemAnalog.h"
 
-class ModemAM : public ModemAnalog {
+class ModemAM : public ModemAnalogVC {
 public:
     ModemAM();
     ~ModemAM();
