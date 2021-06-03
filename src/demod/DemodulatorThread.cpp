@@ -22,8 +22,8 @@ DemodulatorInstance* DemodulatorThread::squelchLock(nullptr);
 std::mutex DemodulatorThread::squelchLockMutex;
 
 DemodulatorThread::DemodulatorThread(DemodulatorInstance* parent)
-    : IOThread(), demodInstance(parent), outputBuffers("DemodulatorThreadBuffers"), squelchLevel(-100), 
-      signalLevel(-100), signalFloor(-30), signalCeil(30), muted(false), squelchEnabled(false), squelchBreak(false) {
+    : IOThread(), demodInstance(parent), outputBuffers("DemodulatorThreadBuffers"), muted(false), squelchLevel(-100),
+      signalLevel(-100), signalFloor(-30), signalCeil(30), squelchEnabled(false), squelchBreak(false) {
 }
 
 DemodulatorThread::~DemodulatorThread() {
