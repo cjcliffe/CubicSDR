@@ -8,6 +8,10 @@
 #include <hamlib/rig.h>
 #include <hamlib/riglist.h>
 
+#ifndef FILPATHLEN
+	#define FILPATHLEN HAMLIB_FILPATHLEN
+#endif
+
 struct rigGreater
 {
     bool operator()( const struct rig_caps *lx, const struct rig_caps *rx ) const {
