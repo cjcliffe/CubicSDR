@@ -14,9 +14,6 @@
 #endif
 
 #include "CubicSDR.h"
-#include "CubicSDRDefs.h"
-#include "AppFrame.h"
-#include <algorithm>
 
 #include <wx/numformatter.h>
 
@@ -27,8 +24,7 @@ InteractiveCanvas::InteractiveCanvas(wxWindow *parent, const wxGLAttributes& dis
     mouseTracker.setTarget(this);
 }
 
-InteractiveCanvas::~InteractiveCanvas() {
-}
+InteractiveCanvas::~InteractiveCanvas() = default;
 
 void InteractiveCanvas::setView(long long center_freq_in, long long bandwidth_in) {
     isView = true;
@@ -44,7 +40,7 @@ void InteractiveCanvas::disableView() {
     lastBandwidth = 0;
 }
 
-bool InteractiveCanvas::getViewState() {
+bool InteractiveCanvas::getViewState() const {
     return isView;
 }
 
@@ -66,7 +62,7 @@ void InteractiveCanvas::setCenterFrequency(long long center_freq_in) {
     centerFreq = center_freq_in;
 }
 
-long long InteractiveCanvas::getCenterFrequency() {
+long long InteractiveCanvas::getCenterFrequency() const {
     if (isView) {
         return centerFreq;
     } else {
@@ -78,7 +74,7 @@ void InteractiveCanvas::setBandwidth(long long bandwidth_in) {
     bandwidth = bandwidth_in;
 }
 
-long long InteractiveCanvas::getBandwidth() {
+long long InteractiveCanvas::getBandwidth() const {
     if (isView) {
         return bandwidth;
     } else {
@@ -90,15 +86,15 @@ MouseTracker *InteractiveCanvas::getMouseTracker() {
     return &mouseTracker;
 }
 
-bool InteractiveCanvas::isAltDown() {
+bool InteractiveCanvas::isAltDown() const {
     return altDown;
 }
 
-bool InteractiveCanvas::isCtrlDown() {
+bool InteractiveCanvas::isCtrlDown() const {
     return ctrlDown;
 }
 
-bool InteractiveCanvas::isShiftDown() {
+bool InteractiveCanvas::isShiftDown() const {
     return shiftDown;
 }
 

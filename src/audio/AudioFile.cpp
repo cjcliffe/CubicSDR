@@ -5,13 +5,9 @@
 #include "CubicSDR.h"
 #include <sstream>
 
-AudioFile::AudioFile() {
+AudioFile::AudioFile() = default;
 
-}
-
-AudioFile::~AudioFile() {
-
-}
+AudioFile::~AudioFile() = default;
 
 void AudioFile::setOutputFileName(std::string filename) {
     filenameBase = filename;

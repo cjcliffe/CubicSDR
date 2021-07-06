@@ -37,7 +37,7 @@ public:
     PtrType ptr;
     int age;
 
-    virtual ~ReBufferAge() {};
+    virtual ~ReBufferAge() = default;;
 };
 
 #define REBUFFER_GC_LIMIT 100
@@ -51,12 +51,10 @@ class ReBuffer {
 public:
 
 	//Virtual destructor to assure correct freeing of all descendants.
-	virtual ~ReBuffer() {
-		//nothing
-	}
+	virtual ~ReBuffer() = default;
 
 	//constructor
-    ReBuffer(std::string bufferId) : bufferId(bufferId) {
+    explicit ReBuffer(std::string bufferId) : bufferId(bufferId) {
 		//nothing
     }
     
@@ -187,10 +185,10 @@ public:
     virtual void onBindOutput(std::string name, ThreadQueueBasePtr threadQueue);
     virtual void onBindInput(std::string name, ThreadQueueBasePtr threadQueue);
 
-    void setInputQueue(std::string qname, ThreadQueueBasePtr threadQueue);
-    ThreadQueueBasePtr getInputQueue(std::string qname);
-    void setOutputQueue(std::string qname, ThreadQueueBasePtr threadQueue);
-    ThreadQueueBasePtr getOutputQueue(std::string qname);
+    void setInputQueue(const std::string& qname, const ThreadQueueBasePtr& threadQueue);
+    ThreadQueueBasePtr getInputQueue(const std::string& qname);
+    void setOutputQueue(const std::string& qname, const ThreadQueueBasePtr& threadQueue);
+    ThreadQueueBasePtr getOutputQueue(const std::string& qname);
     
 protected:
     std::map<std::string, ThreadQueueBasePtr, map_string_less> input_queues;

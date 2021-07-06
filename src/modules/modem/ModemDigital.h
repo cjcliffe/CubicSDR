@@ -35,12 +35,12 @@ class ModemDigital : public Modem {
 public:
     ModemDigital();
     
-    std::string getType();
+    std::string getType() override;
     
-    virtual int checkSampleRate(long long sampleRate, int audioSampleRate);
+    int checkSampleRate(long long sampleRate, int audioSampleRate) override;
     
-    virtual ModemKit *buildKit(long long sampleRate, int audioSampleRate);
-    virtual void disposeKit(ModemKit *kit);
+    ModemKit *buildKit(long long sampleRate, int audioSampleRate) override;
+    void disposeKit(ModemKit *kit) override;
     
     virtual void digitalStart(ModemKitDigital *kit, modem mod, ModemIQData *input);
     virtual void digitalFinish(ModemKitDigital *kit, modem mod);

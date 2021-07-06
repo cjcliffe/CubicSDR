@@ -7,16 +7,16 @@
 class ModemUSB : public ModemAnalog {
 public:
     ModemUSB();
-    ~ModemUSB();
+    ~ModemUSB() override;
     
-    std::string getName();
+    std::string getName() override;
     
     static ModemBase *factory();
     
-    int checkSampleRate(long long sampleRate, int audioSampleRate);
-    int getDefaultSampleRate();
+    int checkSampleRate(long long sampleRate, int audioSampleRate) override;
+    int getDefaultSampleRate() override;
 
-    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
+    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) override;
     
 private:
 	iirfilt_crcf ssbFilt;

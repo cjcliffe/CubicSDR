@@ -15,7 +15,6 @@
 
 #include "CubicSDR.h"
 #include "CubicSDRDefs.h"
-#include "AppFrame.h"
 #include <algorithm>
 
 wxBEGIN_EVENT_TABLE(UITestCanvas, wxGLCanvas) EVT_PAINT(UITestCanvas::OnPaint)
@@ -33,9 +32,7 @@ InteractiveCanvas(parent, dispAttrs) {
     glContext = new UITestContext(this, &wxGetApp().GetContext(this), wxGetApp().GetContextAttributes());
 }
 
-UITestCanvas::~UITestCanvas() {
-    
-}
+UITestCanvas::~UITestCanvas() = default;
 
 void UITestCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
   //  wxPaintDC dc(this);
@@ -61,7 +58,7 @@ void UITestCanvas::OnIdle(wxIdleEvent& /* event */) {
 
 void UITestCanvas::OnMouseMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseMoved(event);
-    
+
 }
 
 void UITestCanvas::OnMouseDown(wxMouseEvent& event) {

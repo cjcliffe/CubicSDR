@@ -27,24 +27,24 @@ public:
             r(r), g(g), b(b), a(a) {
     }
 
-    RGBA4f() :
-            RGBA4f(0, 0, 0) {
-    }
-
-    ~RGBA4f() {
-    }
-
-    RGBA4f & operator=(const RGBA4f &other) {
+    RGBA4f(const RGBA4f &other) {
         r = other.r;
         g = other.g;
         b = other.b;
         a = other.a;
-        return *this;
     }
+
+    RGBA4f() :
+            RGBA4f(0, 0, 0) {
+    }
+
+    ~RGBA4f() = default;
+
+    RGBA4f & operator=(const RGBA4f &other) = default;
     
-    RGBA4f operator*(float v) { return RGBA4f(r*v, g*v, b*v); }
+    RGBA4f operator*(float v) const { return RGBA4f(r*v, g*v, b*v); }
     
-    operator wxColour() {
+    explicit operator wxColour() const {
         return wxColour(
                         (unsigned char) std::min((r * 255.0), 255.0),
                        (unsigned char) std::min((g * 255.0), 255.0),
@@ -90,8 +90,8 @@ public:
     ~ThemeMgr();
     ColorTheme *currentTheme;
     std::map<int, ColorTheme *> themes;
-    void setTheme(int themeId);
-    int getTheme();
+    void setTheme(int themeId_in);
+    int getTheme() const;
     int themeId;
 
     static ThemeMgr mgr;

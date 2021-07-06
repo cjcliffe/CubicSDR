@@ -17,12 +17,12 @@ class DemodulatorInstance;
 class DemodulatorPreThread : public IOThread {
 public:
 
-    DemodulatorPreThread(DemodulatorInstance* parent);
-    virtual ~DemodulatorPreThread();
+    explicit DemodulatorPreThread(DemodulatorInstance* parent);
+    ~DemodulatorPreThread() override;
 
-    virtual void run();
+    void run() override;
     
-    void setDemodType(std::string demodType);
+    void setDemodType(std::string demodType_in);
     std::string getDemodType();
 
     void setFrequency(long long sampleRate);
@@ -39,13 +39,13 @@ public:
     
     bool isInitialized();
     
-    virtual void terminate();
+    void terminate() override;
 
     Modem *getModem();
     ModemKit *getModemKit();
     
-    std::string readModemSetting(std::string setting);
-    void writeModemSetting(std::string setting, std::string value);
+    std::string readModemSetting(const std::string& setting);
+    void writeModemSetting(const std::string& setting, std::string value);
     ModemSettings readModemSettings();
     void writeModemSettings(ModemSettings settings);
 

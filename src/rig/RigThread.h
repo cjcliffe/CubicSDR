@@ -8,6 +8,10 @@
 #include <hamlib/rig.h>
 #include <hamlib/riglist.h>
 
+#ifndef FILPATHLEN
+	#define FILPATHLEN HAMLIB_FILPATHLEN
+#endif
+
 struct rigGreater
 {
     bool operator()( const struct rig_caps *lx, const struct rig_caps *rx ) const {
@@ -22,13 +26,11 @@ typedef std::vector<const struct rig_caps *> RigList;
 class RigThread : public IOThread {
 public:
     RigThread();
-    ~RigThread();
+    ~RigThread() override;
 
     void initRig(rig_model_t rig_model, std::string rig_file, int serial_rate);
-    virtual void run();
-    
-    int terminationStatus();
-    
+    void run() override;
+
     freq_t getFrequency();
     void setFrequency(freq_t new_freq, bool oneShot);
     

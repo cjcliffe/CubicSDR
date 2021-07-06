@@ -4,9 +4,7 @@
 #include "ModemDigital.h"
 
 
-ModemDigitalOutput::ModemDigitalOutput() {
-    
-}
+ModemDigitalOutput::ModemDigitalOutput() = default;
 
 ModemDigital::ModemDigital() : Modem() {
 #if ENABLE_DIGITAL_LAB
@@ -14,9 +12,7 @@ ModemDigital::ModemDigital() : Modem() {
 #endif
 }
 
-ModemDigitalOutput::~ModemDigitalOutput() {
-    
-}
+ModemDigitalOutput::~ModemDigitalOutput() = default;
 
 std::string ModemDigital::getType() {
     return "digital";
@@ -30,7 +26,7 @@ int ModemDigital::checkSampleRate(long long sampleRate, int /* audioSampleRate *
 }
 
 ModemKit *ModemDigital::buildKit(long long sampleRate, int audioSampleRate) {
-    ModemKitDigital *dkit = new ModemKitDigital;
+    auto *dkit = new ModemKitDigital;
     
     dkit->sampleRate = sampleRate;
     dkit->audioSampleRate = audioSampleRate;
@@ -39,7 +35,7 @@ ModemKit *ModemDigital::buildKit(long long sampleRate, int audioSampleRate) {
 }
 
 void ModemDigital::disposeKit(ModemKit *kit) {
-    ModemKitDigital *dkit = (ModemKitDigital *)kit;
+    auto *dkit = (ModemKitDigital *)kit;
     
     delete dkit;
 }

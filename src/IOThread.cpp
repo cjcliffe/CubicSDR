@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "IOThread.h"
-#include <typeinfo>
 #include <memory>
 
 #define SPIN_WAIT_SLEEP_MS 5
@@ -53,51 +52,51 @@ void IOThread::threadMain() {
   
     terminated.store(true);
     stopping.store(true);
-};
+}
 #endif
 
 void IOThread::setup() {
     //redefined in subclasses
-};
+}
 
 void IOThread::run() {
     //redefined in subclasses
-};
+}
 
 
 void IOThread::terminate() {
     stopping.store(true);
-};
+}
 
 void IOThread::onBindOutput(std::string /* name */, ThreadQueueBasePtr /* threadQueue */) {
    
-};
+}
 
 void IOThread::onBindInput(std::string /* name */, ThreadQueueBasePtr /* threadQueue */) {
     
-};
+}
 
-void IOThread::setInputQueue(std::string qname, ThreadQueueBasePtr threadQueue) {
+void IOThread::setInputQueue(const std::string& qname, const ThreadQueueBasePtr& threadQueue) {
     std::lock_guard < std::mutex > lock(m_queue_bindings_mutex);
     input_queues[qname] = threadQueue;
     this->onBindInput(qname, threadQueue);
-};
+}
 
-ThreadQueueBasePtr IOThread::getInputQueue(std::string qname) {
+ThreadQueueBasePtr IOThread::getInputQueue(const std::string& qname) {
     std::lock_guard < std::mutex > lock(m_queue_bindings_mutex);
     return input_queues[qname];
-};
+}
 
-void IOThread::setOutputQueue(std::string qname, ThreadQueueBasePtr threadQueue) {
+void IOThread::setOutputQueue(const std::string& qname, const ThreadQueueBasePtr& threadQueue) {
     std::lock_guard < std::mutex > lock(m_queue_bindings_mutex);
     output_queues[qname] = threadQueue;
     this->onBindOutput(qname, threadQueue);
-};
+}
 
-ThreadQueueBasePtr IOThread::getOutputQueue(std::string qname) {
+ThreadQueueBasePtr IOThread::getOutputQueue(const std::string& qname) {
     std::lock_guard < std::mutex > lock(m_queue_bindings_mutex);
     return output_queues[qname];
-};
+}
 
 bool IOThread::isTerminated(int waitMs) {
 
@@ -109,13 +108,12 @@ bool IOThread::isTerminated(int waitMs) {
     }
 
     //this is a stupid busy plus sleep loop
-    int nbCyclesToWait = 0;
+    int nbCyclesToWait;
 
     if (waitMs < 0) {
         nbCyclesToWait = std::numeric_limits<int>::max();
     }
     else {
-
         nbCyclesToWait = (waitMs / SPIN_WAIT_SLEEP_MS) + 1;
     }
 

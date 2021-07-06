@@ -7,15 +7,15 @@
 class ModemOOK : public ModemDigital {
 public:
     ModemOOK();
-    ~ModemOOK();
+    ~ModemOOK() override;
     
-    std::string getName();
+    std::string getName() override;
     
     static ModemBase *factory();
     
-    int checkSampleRate(long long sampleRate, int audioSampleRate);
+    int checkSampleRate(long long sampleRate, int audioSampleRate) override;
 
-    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
+    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) override;
     
 private:
     modem demodOOK;

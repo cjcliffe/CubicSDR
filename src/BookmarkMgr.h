@@ -32,7 +32,7 @@ public:
 
 class BookmarkRangeEntry {
 public:
-    BookmarkRangeEntry() : label(L""), freq(0), startFreq(0), endFreq(0) {
+    BookmarkRangeEntry() : freq(0), startFreq(0), endFreq(0) {
         
     }
     BookmarkRangeEntry(std::wstring label, long long freq, long long startFreq, long long endFreq) : label(label), freq(freq), startFreq(startFreq), endFreq(endFreq) {
@@ -60,57 +60,57 @@ public:
     BookmarkMgr();
     //if useFullpath = false, use the application config dir.
 	//else assume bookmarkFn is a full path and use it for location.
-    void saveToFile(std::string bookmarkFn, bool backup = true, bool useFullpath = false);
-    bool loadFromFile(std::string bookmarkFn, bool backup = true, bool useFullpath = false);
+    void saveToFile(const std::string& bookmarkFn, bool backup = true, bool useFullpath = false);
+    bool loadFromFile(const std::string& bookmarkFn, bool backup = true, bool useFullpath = false);
 
 	void resetBookmarks();
 
-    bool hasLastLoad(std::string bookmarkFn);
-    bool hasBackup(std::string bookmarkFn);
+    bool hasLastLoad(const std::string& bookmarkFn);
+    bool hasBackup(const std::string& bookmarkFn);
 
-    void addBookmark(std::string group, DemodulatorInstancePtr demod);
-    void addBookmark(std::string group, BookmarkEntryPtr be);
-    void removeBookmark(std::string group, BookmarkEntryPtr be);
-    void removeBookmark(BookmarkEntryPtr be);
-    void moveBookmark(BookmarkEntryPtr be, std::string group);
+    void addBookmark(const std::string& group, const DemodulatorInstancePtr& demod);
+    void addBookmark(const std::string& group, const BookmarkEntryPtr& be);
+    void removeBookmark(const std::string& group, const BookmarkEntryPtr& be);
+    void removeBookmark(const BookmarkEntryPtr& be);
+    void moveBookmark(const BookmarkEntryPtr& be, const std::string& group);
     
-    void addGroup(std::string group);
-    void removeGroup(std::string group);
-    void renameGroup(std::string group, std::string ngroup);
+    void addGroup(const std::string& group);
+    void removeGroup(const std::string& group);
+    void renameGroup(const std::string& group, const std::string& ngroup);
 	//return an independent copy on purpose 
-    BookmarkList getBookmarks(std::string group);
+    BookmarkList getBookmarks(const std::string& group);
 
     void getGroups(BookmarkNames &arr);
     void getGroups(wxArrayString &arr);
 
-    void setExpandState(std::string groupName, bool state);
-    bool getExpandState(std::string groupName);
+    void setExpandState(const std::string& groupName, bool state);
+    bool getExpandState(const std::string& groupName);
 
     void updateActiveList();
     void updateBookmarks();
-    void updateBookmarks(std::string group);
+    void updateBookmarks(const std::string& group);
 
-    void addRecent(DemodulatorInstancePtr demod);
-    void addRecent(BookmarkEntryPtr be);
-    void removeRecent(BookmarkEntryPtr be);
+    void addRecent(const DemodulatorInstancePtr& demod);
+    void addRecent(const BookmarkEntryPtr& be);
+    void removeRecent(const BookmarkEntryPtr& be);
     
 	//return an independent copy on purpose 
 	BookmarkList getRecents();
 
     void clearRecents();
 
-	void removeActive(DemodulatorInstancePtr demod);
+	void removeActive(const DemodulatorInstancePtr& demod);
 
-    void addRange(BookmarkRangeEntryPtr re);
-    void removeRange(BookmarkRangeEntryPtr re);
+    void addRange(const BookmarkRangeEntryPtr& re);
+    void removeRange(const BookmarkRangeEntryPtr& re);
 
 	//return an independent copy on purpose 
 	BookmarkRangeList getRanges();
     
 	void clearRanges();
 
-    static std::wstring getBookmarkEntryDisplayName(BookmarkEntryPtr bmEnt);
-    static std::wstring getActiveDisplayName(DemodulatorInstancePtr demod);
+    static std::wstring getBookmarkEntryDisplayName(const BookmarkEntryPtr& bmEnt);
+    static std::wstring getActiveDisplayName(const DemodulatorInstancePtr& demod);
 
     
 protected:
@@ -122,7 +122,7 @@ protected:
     //return an empty string.
     static std::wstring getSafeWstringValue(DataNode* node, const std::string& childNodeName);
     
-    BookmarkEntryPtr demodToBookmarkEntry(DemodulatorInstancePtr demod);
+    BookmarkEntryPtr demodToBookmarkEntry(const DemodulatorInstancePtr& demod);
     BookmarkEntryPtr nodeToBookmark(DataNode *node);
     
     BookmarkMap bmData;

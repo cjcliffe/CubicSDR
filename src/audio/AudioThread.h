@@ -15,13 +15,13 @@
 
 class AudioThreadInput {
 public:
-    long long frequency;
-    int inputRate;
-    int sampleRate;
-    int channels;
-    float peak;
-    int type;
-    bool is_squelch_active;
+    long long frequency{};
+    int inputRate{};
+    int sampleRate{};
+    int channels{};
+    float peak{};
+    int type{};
+    bool is_squelch_active{};
 
     std::vector<float> data;
 
@@ -31,7 +31,7 @@ public:
     }
 
 
-    AudioThreadInput(AudioThreadInput *copyFrom) {
+    explicit AudioThreadInput(AudioThreadInput *copyFrom) {
         copy(copyFrom);
     }
 
@@ -47,9 +47,7 @@ public:
     }
 
 
-    virtual ~AudioThreadInput() {
-
-    }
+    virtual ~AudioThreadInput() = default;
 };
 
 typedef std::shared_ptr<AudioThreadInput> AudioThreadInputPtr;
@@ -60,15 +58,15 @@ typedef std::shared_ptr<DemodulatorThreadOutputQueue> DemodulatorThreadOutputQue
 
 class AudioThreadCommand {
 public:
-    enum AudioThreadCommandEnum {
+    enum class Type {
         AUDIO_THREAD_CMD_NULL, AUDIO_THREAD_CMD_SET_DEVICE, AUDIO_THREAD_CMD_SET_SAMPLE_RATE
     };
 
     AudioThreadCommand() :
-        cmd(AUDIO_THREAD_CMD_NULL), int_value(0) {
+        cmdType(AudioThreadCommand::Type::AUDIO_THREAD_CMD_NULL), int_value(0) {
     }
 
-    AudioThreadCommandEnum cmd;
+    AudioThreadCommand::Type cmdType;
     int int_value;
 };
 
@@ -83,17 +81,17 @@ class AudioThread : public IOThread {
 public:
 
     AudioThread();
-    virtual ~AudioThread();
+    ~AudioThread() override;
 
     static void enumerateDevices(std::vector<RtAudio::DeviceInfo> &devs);
 
-    void setInitOutputDevice(int deviceId, int sampleRate = -1);
+    void setInitOutputDevice(int deviceId, int sampleRate_in = -1);
     int getOutputDevice();
 
     int getSampleRate();
 
-    virtual void run();
-    virtual void terminate();
+    void run() override;
+    void terminate() override;
 
     bool isActive();
     void setActive(bool state);
@@ -141,7 +139,7 @@ private:
     std::recursive_mutex m_mutex;
 
     void setupDevice(int deviceId);
-    void setSampleRate(int sampleRate);
+    void setSampleRate(int sampleRate_in);
 
     void bindThread(AudioThread *other);
     void removeThread(AudioThread *other);

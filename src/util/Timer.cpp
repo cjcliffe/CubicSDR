@@ -4,7 +4,7 @@
 #include <iostream>
 #include "Timer.h"
 
-Timer::Timer(void) : time_elapsed(0), system_milliseconds(0), start_time(0), end_time(0), last_update(0), num_updates(0), paused_time(0), offset(0), paused_state(false), lock_state(false), lock_rate(0)
+Timer::Timer() : time_elapsed(0), system_milliseconds(0), start_time(0), end_time(0), last_update(0), num_updates(0), paused_time(0), offset(0), paused_state(false), lock_state(false), lock_rate(0)
 {
 #ifdef _WIN32
     // According to Microsoft, QueryPerformanceXXX API is perfectly
@@ -15,7 +15,7 @@ Timer::Timer(void) : time_elapsed(0), system_milliseconds(0), start_time(0), end
 }
 
 
-void Timer::start(void) 
+void Timer::start()
 {
     update();
     num_updates = 0;
@@ -29,13 +29,13 @@ void Timer::start(void)
 }
 
 
-void Timer::stop(void) 
+void Timer::stop()
 {
     end_time = system_milliseconds;
 }
 
 
-void Timer::reset(void)
+void Timer::reset()
 {
     start();
 }
@@ -63,12 +63,12 @@ void Timer::unlock()
     lock_rate = 0;
 }
 
-bool Timer::locked()
+bool Timer::locked() const
 {
     return lock_state;
 }
 
-void Timer::update(void) 
+void Timer::update()
 {
     num_updates++;
     last_update = system_milliseconds;
@@ -105,14 +105,14 @@ void Timer::update(void)
 }
 
 
-unsigned long Timer::getMilliseconds(void) 
+unsigned long Timer::getMilliseconds() const
 {
     return time_elapsed;
 }
 
 
 
-double Timer::getSeconds(void) 
+double Timer::getSeconds() const
 {
     return ((double)getMilliseconds())/1000.0;
 }
@@ -131,30 +131,30 @@ void Timer::setSeconds(double seconds_in)
 }
 
 
-double Timer::lastUpdateSeconds(void)
+double Timer::lastUpdateSeconds() const
 {
     return ((double)lastUpdateMilliseconds())/1000.0;
 }
 
 
-unsigned long Timer::lastUpdateMilliseconds(void)
+unsigned long Timer::lastUpdateMilliseconds() const
 {
     return system_milliseconds-last_update;
 }
 
-unsigned long Timer::totalMilliseconds()
+unsigned long Timer::totalMilliseconds() const
 {
     return system_milliseconds-start_time;
 }
 
 
-double Timer::totalSeconds(void)
+double Timer::totalSeconds() const
 {
     return totalMilliseconds()/1000.0;
 }
 
 
-unsigned long Timer::getNumUpdates(void)
+unsigned long Timer::getNumUpdates() const
 {
     return num_updates;
 }
@@ -165,7 +165,7 @@ void Timer::paused(bool pause_in)
     paused_state = pause_in;
 }
 
-bool Timer::paused()
+bool Timer::paused() const
 {
     return paused_state;
 }

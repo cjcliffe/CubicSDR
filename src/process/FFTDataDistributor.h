@@ -14,12 +14,12 @@ public:
     FFTDataDistributor();
     void setFFTSize(unsigned int size);
     void setLinesPerSecond(unsigned int lines);
-    unsigned int getLinesPerSecond();
+    unsigned int getLinesPerSecond() const;
 
 protected:
-    virtual void process();
+    void process() override;
     
-    DemodulatorThreadIQData inputBuffer, tempBuffer;
+    DemodulatorThreadIQData inputBuffer;
     ReBuffer<DemodulatorThreadIQData> outputBuffers;
     std::atomic<unsigned int> fftSize;
    

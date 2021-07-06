@@ -20,43 +20,43 @@ typedef std::map<std::string, float> ConfigGains;
 class DeviceConfig {
 public:
     DeviceConfig();
-    DeviceConfig(std::string deviceId);
+    explicit DeviceConfig(std::string deviceId_in);
 
-    void setPPM(int ppm);
+    void setPPM(int ppm_in);
     int getPPM();
     
-    void setOffset(long long offset);
+    void setOffset(long long offset_in);
     long long getOffset();
 
-    void setSampleRate(long srate);
+    void setSampleRate(long sampleRate_in);
     long getSampleRate();
 
     void setAntennaName(const std::string& name);
     const std::string& getAntennaName();
 
-    void setAGCMode(bool agcMode);
+    void setAGCMode(bool agcMode_in);
     bool getAGCMode();
     
-    void setDeviceId(std::string deviceId);
+    void setDeviceId(std::string deviceId_in);
     std::string getDeviceId();
 
-    void setDeviceName(std::string deviceName);
+    void setDeviceName(std::string deviceName_in);
     std::string getDeviceName();
 
     void setStreamOpts(ConfigSettings opts);
     ConfigSettings getStreamOpts();
-    void setStreamOpt(std::string key, std::string value);
-    std::string getStreamOpt(std::string key, std::string defaultValue);
+    void setStreamOpt(const std::string& key, std::string value);
+    std::string getStreamOpt(const std::string& key, std::string defaultValue);
     
-    void setSettings(ConfigSettings settings);
+    void setSettings(ConfigSettings settings_in);
     ConfigSettings getSettings();
-    void setSetting(std::string key, std::string value);
-    std::string getSetting(std::string key, std::string defaultValue);
+    void setSetting(const std::string& key, std::string value);
+    std::string getSetting(const std::string& key, std::string defaultValue);
 
-    void setGains(ConfigGains gains);
+    void setGains(ConfigGains gains_in);
     ConfigGains getGains();
-    void setGain(std::string key, float value);
-    float getGain(std::string key, float defaultValue);
+    void setGain(const std::string& key, float value);
+    float getGain(const std::string& key, float defaultValue);
 
     void setRigIF(int rigType, long long freq);
     long long getRigIF(int rigType);
@@ -70,10 +70,10 @@ private:
 
     std::mutex busy_lock;
 
-    std::atomic_int ppm;
-    std::atomic_llong offset;
-    std::atomic_bool agcMode;
-    std::atomic_long sampleRate;
+    std::atomic_int ppm{};
+    std::atomic_llong offset{};
+    std::atomic_bool agcMode{};
+    std::atomic_long sampleRate{};
     std::string antennaName;
     ConfigSettings streamOpts;
     ConfigGains gains;
@@ -93,7 +93,7 @@ public:
 
     AppConfig();
     std::string getConfigDir();
-    DeviceConfig *getDevice(std::string deviceId);
+    DeviceConfig *getDevice(const std::string& deviceId);
 
     void setWindow(wxPoint winXY, wxSize winWH);
     wxRect *getWindow();
@@ -110,10 +110,10 @@ public:
     void setPerfMode(PerfModeEnum mode);
     PerfModeEnum getPerfMode();
     
-    void setTheme(int themeId);
+    void setTheme(int themeId_in);
     int getTheme();
 
-    void setFontScale(int scaleValue);
+    void setFontScale(int fontScale_in);
     int getFontScale();
 
     void setSnap(long long snapVal);
@@ -152,20 +152,20 @@ public:
 	bool verifyRecordingPath();
 
 	void setRecordingSquelchOption(int enumChoice);
-	int getRecordingSquelchOption();
+	int getRecordingSquelchOption() const;
     
 	void setRecordingFileTimeLimit(int nbSeconds);
-	int getRecordingFileTimeLimit();
+	int getRecordingFileTimeLimit() const;
     
 #if USE_HAMLIB
     int getRigModel();
-    void setRigModel(int rigModel);
+    void setRigModel(int rigModel_in);
 
     int getRigRate();
-    void setRigRate(int rigRate);
+    void setRigRate(int rigRate_in);
     
     std::string getRigPort();
-    void setRigPort(std::string rigPort);
+    void setRigPort(std::string rigPort_in);
     
     void setRigControlMode(bool cMode);
     bool getRigControlMode();
@@ -183,7 +183,7 @@ public:
     bool getRigEnabled();
 #endif
     
-    void setConfigName(std::string configName);
+    void setConfigName(std::string configName_in);
     std::string getConfigFileName(bool ignoreName=false);
     bool save();
     bool load();
@@ -192,26 +192,26 @@ public:
 private:
     std::string configName;
     std::map<std::string, DeviceConfig *> deviceConfig;
-    std::atomic_int winX,winY,winW,winH;
-    std::atomic_bool winMax, showTips, modemPropsCollapsed;
-    std::atomic_int themeId;
-    std::atomic_int fontScale;
-    std::atomic_llong snap;
-    std::atomic_llong centerFreq;
-    std::atomic_int waterfallLinesPerSec;
-    std::atomic<float> spectrumAvgSpeed, mainSplit, visSplit, bookmarkSplit;
-    std::atomic_int dbOffset;
+    std::atomic_int winX{},winY{},winW{},winH{};
+    std::atomic_bool winMax{}, showTips{}, modemPropsCollapsed{};
+    std::atomic_int themeId{};
+    std::atomic_int fontScale{};
+    std::atomic_llong snap{};
+    std::atomic_llong centerFreq{};
+    std::atomic_int waterfallLinesPerSec{};
+    std::atomic<float> spectrumAvgSpeed{}, mainSplit{}, visSplit{}, bookmarkSplit{};
+    std::atomic_int dbOffset{};
     std::vector<SDRManualDef> manualDevices;
-    std::atomic_bool bookmarksVisible;
+    std::atomic_bool bookmarksVisible{};
 
-    std::atomic<PerfModeEnum> perfMode;
+    std::atomic<PerfModeEnum> perfMode{};
 
-    std::string recordingPath = "";
+    std::string recordingPath;
 	int recordingSquelchOption = 0;
 	int recordingFileTimeLimitSeconds = 0;
 #if USE_HAMLIB
-    std::atomic_int rigModel, rigRate;
+    std::atomic_int rigModel{}, rigRate{};
     std::string rigPort;
-    std::atomic_bool rigEnabled, rigFollowMode, rigControlMode, rigCenterLock, rigFollowModem;
+    std::atomic_bool rigEnabled{}, rigFollowMode{}, rigControlMode{}, rigCenterLock{}, rigFollowModem{};
 #endif
 };

@@ -11,9 +11,7 @@ ActionDialog::ActionDialog( wxWindow* parent, wxWindowID id, const wxString& tit
 }
 
 
-ActionDialog::~ActionDialog() {
-
-}
+ActionDialog::~ActionDialog() = default;
 
 void ActionDialog::showDialog(ActionDialog *dlg) {
     if (activeDialog) { // rejected

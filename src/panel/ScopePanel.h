@@ -12,12 +12,12 @@ public:
     
     ScopePanel();
     
-    void setMode(ScopeMode scopeMode);
+    void setMode(ScopeMode scopeMode_in);
     ScopeMode getMode();
-    void setPoints(std::vector<float> &points);
+    void setPoints(std::vector<float> &points_in);
     
 protected:
-    void drawPanelContents();
+    void drawPanelContents() override;
 
 private:
     std::vector<float> points;

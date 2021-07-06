@@ -19,9 +19,7 @@ public:
     int fft_size;
     double fft_floor, fft_ceil;
 
-    virtual ~ScopeRenderData() {
-
-    }
+    virtual ~ScopeRenderData() = default;
 };
 
 typedef std::shared_ptr<ScopeRenderData> ScopeRenderDataPtr;
@@ -33,12 +31,12 @@ typedef std::shared_ptr<ScopeRenderDataQueue> ScopeRenderDataQueuePtr;
 class ScopeVisualProcessor : public VisualProcessor<AudioThreadInput, ScopeRenderData> {
 public:
     ScopeVisualProcessor();
-    ~ScopeVisualProcessor();
+    ~ScopeVisualProcessor() override;
     void setup(int fftSize_in);
     void setScopeEnabled(bool scopeEnable);
     void setSpectrumEnabled(bool spectrumEnable);
 protected:
-    virtual void process();
+    void process() override;
     ReBuffer<ScopeRenderData> outputBuffers;
 
     std::atomic_bool scopeEnabled;

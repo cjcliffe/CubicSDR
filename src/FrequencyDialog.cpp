@@ -13,8 +13,8 @@ EVT_CHAR_HOOK(FrequencyDialog::OnChar)
 EVT_SHOW(FrequencyDialog::OnShow)
 wxEND_EVENT_TABLE()
 
-FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxString & title, DemodulatorInstancePtr demod, const wxPoint & position,
-        const wxSize & size, long style, FrequencyDialogTarget targetMode, wxString initString) :
+FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxString & title, DemodulatorInstancePtr demod, const wxPoint & /*position*/,
+        const wxSize & /*size*/, long style, FrequencyDialogTarget targetMode, wxString initString) :
         wxDialog(parent, id, title, wxDefaultPosition, wxDefaultSize, style) {
     wxString freqStr;
    
@@ -49,7 +49,7 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
     }
 
     if (targetMode == FDIALOG_TARGET_GAIN) {
-        if (wxGetApp().getActiveGainEntry() != "") {
+        if (!wxGetApp().getActiveGainEntry().empty()) {
             freqStr = std::to_string((int)wxGetApp().getGain(wxGetApp().getActiveGainEntry()));
         }
     }
@@ -63,17 +63,17 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
     int titleX = this->GetTextExtent(title).GetWidth();
     dialogText->SetMinSize(wxSize(max(int(2.0 * titleX), int(2.0 * std::max(textCtrlX, initTextCtrlX))), -1));
 
-    wxBoxSizer* dialogsizer = new wxBoxSizer(wxALL);
+    auto* dialogsizer = new wxBoxSizer(wxALL);
     dialogsizer->Add(dialogText, wxSizerFlags(1).Expand().Border(wxALL, 5));
     SetSizerAndFit(dialogsizer);
     Centre();
 
-    if (initString != "" && initString.length() == 1) {
+    if (!initString.empty() && initString.length() == 1) {
         dialogText->SetValue(initString);
         dialogText->SetSelection(2, 2);
         dialogText->SetFocus();
     } else {
-        if (initString != "") {
+        if (!initString.empty()) {
             dialogText->SetValue(initString);
         }
         dialogText->SetSelection(-1, -1);
@@ -87,7 +87,7 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
     double dblval;
     std::string lastDemodType = activeDemod?activeDemod->getDemodulatorType():wxGetApp().getDemodMgr().getLastDemodulatorType();
     std::string strValue = dialogText->GetValue().ToStdString();
-    bool ranged = false;
+    bool ranged;
     std::string strValue2;
     size_t range_pos;
 
@@ -170,7 +170,7 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
         if (targetMode == FDIALOG_TARGET_WATERFALL_LPS) {
             try {
                 freq = std::stoi(strValue);
-            } catch (exception e) {
+            } catch (const exception &) {
                 Close();
                 break;
             }
@@ -185,7 +185,7 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
         if (targetMode == FDIALOG_TARGET_SPECTRUM_AVG) {
             try {
                 dblval = std::stod(strValue);
-            } catch (exception e) {
+            } catch (const exception &) {
                 Close();
                 break;
             }
@@ -201,12 +201,12 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
         if (targetMode == FDIALOG_TARGET_GAIN) {
             try {
                 freq = std::stoi(strValue);
-            } catch (exception e) {
+            } catch (const exception &) {
                 break;
             }
             SDRDeviceInfo *devInfo = wxGetApp().getDevice();
             std::string gainName = wxGetApp().getActiveGainEntry();
-            if (gainName == "") {
+            if (gainName.empty()) {
                 break;
             }
             SDRRangeMap gains = devInfo->getGains(SOAPY_SDR_RX, 0);

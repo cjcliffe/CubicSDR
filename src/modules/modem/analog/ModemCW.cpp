@@ -40,7 +40,7 @@ ModemArgInfoList ModemCW::getSettings() {
     offsetArg.value = std::to_string(mBeepFrequency);
     offsetArg.units = "Hz";
     offsetArg.description = "Frequency Offset / Beep frequency (200-1000Hz)";
-    offsetArg.type = ModemArgInfo::FLOAT;
+    offsetArg.type = ModemArgInfo::Type::FLOAT;
     offsetArg.range = ModemRange(200.0, 1000.0);
     args.push_back(offsetArg);
 
@@ -48,7 +48,7 @@ ModemArgInfoList ModemCW::getSettings() {
     autoGain.key = "auto";
     autoGain.name = "Auto Gain";
     autoGain.value = "on";
-    autoGain.type = ModemArgInfo::STRING;
+    autoGain.type = ModemArgInfo::Type::STRING;
     std::vector<std::string> autoOpts;
     autoOpts.push_back("on");
     autoOpts.push_back("off");
@@ -63,7 +63,7 @@ ModemArgInfoList ModemCW::getSettings() {
     gain.units = "dB";
     gain.description = "Gain Setting (0-40dB)";
     gain.range = ModemRange(0.0, 40.0);
-    gain.type = ModemArgInfo::FLOAT;
+    gain.type = ModemArgInfo::Type::FLOAT;
     args.push_back(gain);
     return args;
 }
@@ -101,7 +101,7 @@ std::string ModemCW::getName() {
 int ModemCW::checkSampleRate(long long srate, int /* arate */) {
     if (srate < MIN_BANDWIDTH)
         return MIN_BANDWIDTH;
-    return srate;
+    return (int)srate;
 }
 
 int ModemCW::getDefaultSampleRate() {
@@ -116,18 +116,18 @@ int ModemCW::getDefaultSampleRate() {
 // the input IQ to audioOut, frequency shift, then pass the real part.
 // Simple solution is just interpolate the IQ data to the audio sample rate.
 ModemKit *ModemCW::buildKit(long long sampleRate, int audioSampleRate) {
-    ModemKitCW *kit = new ModemKitCW();
+    auto *kit = new ModemKitCW();
     float As = 60.0f;
     double ratio = double(audioSampleRate) / double(sampleRate);
     kit->sampleRate = sampleRate;
     kit->audioSampleRate = audioSampleRate;
     kit->audioResampleRatio = ratio;
-    kit->mInputResampler = msresamp_cccf_create(ratio, As);
+    kit->mInputResampler = msresamp_cccf_create((float)ratio, As);
     return kit;
 }
 
 void ModemCW::disposeKit(ModemKit *kit) {
-    ModemKitCW *cwkit = (ModemKitCW *) kit;
+    auto *cwkit = (ModemKitCW *) kit;
     msresamp_cccf_destroy(cwkit->mInputResampler);
     delete kit;
 }
@@ -156,7 +156,7 @@ void ModemCW::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *au
     unsigned int outSize;
     float lsb;
     liquid_float_complex sig;
-    ModemKitCW *cwkit = (ModemKitCW *) kit;
+    auto *cwkit = (ModemKitCW *) kit;
 
     initOutputBuffers(cwkit, input);
 
@@ -166,7 +166,7 @@ void ModemCW::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *au
 
     // Interpolate IQ samples to full audio band. We need to be able to
     // sample at 2 times the desired beep frequency.
-    msresamp_cccf_execute(cwkit->mInputResampler, &input->data[0], bufSize, &mInput[0], &outSize);
+    msresamp_cccf_execute(cwkit->mInputResampler, &input->data[0], (unsigned int)bufSize, &mInput[0], &outSize);
 
     // Make the shoe fit.
     if (demodOutputData.size() != outSize) {
@@ -174,7 +174,7 @@ void ModemCW::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *au
     }
 
     // Set the LO to the desired beep frequency.
-    nco_crcf_set_frequency(mLO, 2.0 * M_PI * mBeepFrequency / kit->audioSampleRate);
+    nco_crcf_set_frequency(mLO, 2.0f * (float)M_PI * mBeepFrequency / kit->audioSampleRate);
 
     // Mix up from base band by beep frequency. Extract real part
     for (unsigned int i = 0; i < outSize; i++) {
@@ -195,12 +195,12 @@ void ModemCW::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *au
             }
         }
 
-        mGain = 10.0 * std::log10(0.5f / aOutputCeilMAA);
+        mGain = 10.0f * std::log10(0.5f / aOutputCeilMAA);
     }
 
     // Apply gain to demodulated output data
     for (size_t i = 0; i < outSize; i++) {
-        demodOutputData[i] *= std::pow(10.0, mGain / 10.0);
+        demodOutputData[i] *= std::pow(10.0f, mGain / 10.0f);
     }
 
     audioOut->channels = 1;

@@ -18,16 +18,14 @@ RigThread::RigThread() {
     errorMessage = "";
 }
 
-RigThread::~RigThread() {
-
-}
+RigThread::~RigThread() = default;
 
 RigList &RigThread::enumerate() {
     if (RigThread::rigCaps.empty()) {
         rig_set_debug(RIG_DEBUG_ERR);
         rig_load_all_backends();
         
-        rig_list_foreach(RigThread::add_hamlib_rig, 0);
+        rig_list_foreach(RigThread::add_hamlib_rig, nullptr);
         std::sort(RigThread::rigCaps.begin(), RigThread::rigCaps.end(), rigGreater());
         std::cout << "Loaded " << RigThread::rigCaps.size() << " rig models via hamlib." << std::endl;
     }
@@ -44,7 +42,7 @@ void RigThread::initRig(rig_model_t rig_model, std::string rig_file, int serial_
     rigModel = rig_model;
     rigFile = rig_file;
     serialRate = serial_rate;
-};
+}
 
 void RigThread::setErrorStateFromHamlibCode(int errcode) {
     errorState.store(true);
@@ -109,7 +107,7 @@ void RigThread::run() {
     int retcode, status;
 
     termStatus = 0;
-    errorState.store(0);
+    errorState.store(false);
     
     std::cout << "Rig thread starting." << std::endl;
 
@@ -218,7 +216,7 @@ void RigThread::run() {
     }
 
     std::cout << "Rig thread exiting status " << termStatus << "." << std::endl;
-};
+}
 
 freq_t RigThread::getFrequency() {
     if (freqChanged.load() && (setOneShot.load() || controlMode.load())) {

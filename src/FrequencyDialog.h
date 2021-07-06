@@ -35,7 +35,6 @@ public:
 
 private:
     DemodulatorInstancePtr activeDemod;
-    void OnEnter ( wxCommandEvent &event );
     void OnChar ( wxKeyEvent &event );
 	void OnShow(wxShowEvent &event);
     FrequencyDialogTarget targetMode;

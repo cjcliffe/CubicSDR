@@ -21,7 +21,7 @@ void FFTDataDistributor::setLinesPerSecond(unsigned int lines) {
 	this->linesPerSecond = lines;
 }
 
-unsigned int FFTDataDistributor::getLinesPerSecond() {
+unsigned int FFTDataDistributor::getLinesPerSecond() const {
 	return this->linesPerSecond;
 }
 

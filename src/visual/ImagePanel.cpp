@@ -32,7 +32,7 @@ void ImagePanel::render(wxDC&  dc) {
 	double destw = destSize.GetWidth();
 	double desth = destSize.GetHeight();
 
-	double sf = 1.0, wf, hf;
+	double sf, wf, hf;
 
 	wf = destw / imagew;
 	hf = desth / imageh;

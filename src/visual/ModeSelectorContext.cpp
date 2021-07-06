@@ -25,7 +25,7 @@ void ModeSelectorContext::DrawBegin() {
     glDisable(GL_TEXTURE_2D);
 }
 
-void ModeSelectorContext::DrawSelector(std::string label, int c, int cMax, bool on, float r, float g, float b, float a, float px, float py) {
+void ModeSelectorContext::DrawSelector(const std::string& label, int c, int cMax, bool on, float r, float g, float b, float a, float px, float py) {
     GLint vp[4];
     glGetIntegerv( GL_VIEWPORT, vp);
 

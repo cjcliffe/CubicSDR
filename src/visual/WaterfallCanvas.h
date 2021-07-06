@@ -24,7 +24,7 @@ public:
     WaterfallCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
     void setup(unsigned int fft_size_in, int waterfall_lines_in);
     void setFFTSize(unsigned int fft_size_in);
-    ~WaterfallCanvas();
+    ~WaterfallCanvas() override;
 
     DragState getDragState();
     DragState getNextDragState();

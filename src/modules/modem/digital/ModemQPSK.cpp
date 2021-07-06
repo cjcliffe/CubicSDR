@@ -20,7 +20,7 @@ std::string ModemQPSK::getName() {
 }
 
 void ModemQPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
-    ModemKitDigital *dkit = (ModemKitDigital *)kit;
+    auto *dkit = (ModemKitDigital *)kit;
     digitalStart(dkit, demodQPSK, input);
 
     for (size_t i = 0, bufSize = input->data.size(); i < bufSize; i++) {

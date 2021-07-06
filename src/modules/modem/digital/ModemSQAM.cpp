@@ -31,7 +31,7 @@ ModemArgInfoList ModemSQAM::getSettings() {
     consArg.name = "Constellation";
     consArg.description = "Modem Constellation Pattern";
     consArg.value = std::to_string(cons);
-    consArg.type = ModemArgInfo::STRING;
+    consArg.type = ModemArgInfo::Type::STRING;
     std::vector<std::string> consOpts;
     consOpts.push_back("32");
     consOpts.push_back("128");
@@ -55,9 +55,9 @@ std::string ModemSQAM::readSetting(std::string setting) {
     return "";
 }
 
-void ModemSQAM::updateDemodulatorCons(int cons) {
-    this->cons = cons;
-    switch (cons) {
+void ModemSQAM::updateDemodulatorCons(int cons_in) {
+    cons = cons_in;
+    switch (cons_in) {
         case 32:
             demodSQAM = demodSQAM32;
             break;
@@ -68,7 +68,7 @@ void ModemSQAM::updateDemodulatorCons(int cons) {
 }
 
 void ModemSQAM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
-    ModemKitDigital *dkit = (ModemKitDigital *)kit;
+    auto *dkit = (ModemKitDigital *)kit;
 
     digitalStart(dkit, demodSQAM, input);
     

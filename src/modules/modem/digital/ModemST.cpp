@@ -20,7 +20,7 @@ ModemST::~ModemST() {
 }
 
 void ModemST::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
-    ModemKitDigital *dkit = (ModemKitDigital *)kit;
+    auto *dkit = (ModemKitDigital *)kit;
     digitalStart(dkit, demodST, input);
 
     for (size_t i = 0, bufSize = input->data.size(); i < bufSize; i++) {

@@ -9,32 +9,32 @@ class SpectrumPanel : public GLPanel {
 public:
     SpectrumPanel();
     
-    void setPoints(std::vector<float> &points);
-    void setPeakPoints(std::vector<float> &points);
+    void setPoints(std::vector<float> &points_in);
+    void setPeakPoints(std::vector<float> &points_in);
     
-    float getFloorValue();
-    void setFloorValue(float floorValue);
+    float getFloorValue() const;
+    void setFloorValue(float floorValue_in);
 
-    float getCeilValue();
-    void setCeilValue(float ceilValue);
+    float getCeilValue() const;
+    void setCeilValue(float ceilValue_in);
     
-    void setFreq(long long freq);
-    long long getFreq();
+    void setFreq(long long freq_in);
+    long long getFreq() const;
     
-    void setBandwidth(long long bandwidth);
-    long long getBandwidth();
+    void setBandwidth(long long bandwidth_in);
+    long long getBandwidth() const;
 
     void setFFTSize(int fftSize_in);
-    int getFFTSize();
+    int getFFTSize() const;
 
-    void setShowDb(bool showDb);
-    bool getShowDb();
+    void setShowDb(bool showDb_in);
+    bool getShowDb() const;
 
     void setUseDBOffset(bool useOfs);
-    bool getUseDBOffset();
+    bool getUseDBOffset() const;
 
 protected:
-    void drawPanelContents();
+    void drawPanelContents() override;
 
 private:
     float floorValue, ceilValue;

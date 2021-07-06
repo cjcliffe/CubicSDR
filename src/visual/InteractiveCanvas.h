@@ -13,28 +13,28 @@
 class InteractiveCanvas: public wxGLCanvas {
 public:
     InteractiveCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
-    virtual ~InteractiveCanvas();
+    ~InteractiveCanvas() override;
 
     long long getFrequencyAt(float x);
     long long getFrequencyAt(float x, long long iqCenterFreq, long long iqBandwidth);
     
     virtual void setView(long long center_freq_in, long long bandwidth_in);
     virtual void disableView();
-    bool getViewState();
+    bool getViewState() const;
 
     void setCenterFrequency(long long center_freq_in);
-    long long getCenterFrequency();
+    long long getCenterFrequency() const;
 
     void setBandwidth(long long bandwidth_in);
-    long long getBandwidth();
+    long long getBandwidth() const;
 
     MouseTracker *getMouseTracker();
     bool isMouseInView();
     bool isMouseDown();
     
-    bool isAltDown();
-    bool isCtrlDown();
-    bool isShiftDown();
+    bool isAltDown() const;
+    bool isCtrlDown() const;
+    bool isShiftDown() const;
 
 protected:
     void OnKeyDown(wxKeyEvent& event);

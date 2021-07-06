@@ -6,8 +6,6 @@
 #include "PrimaryGLContext.h"
 #include "Gradient.h"
 
-#define NUM_WATERFALL_LINES 512
-
 class MeterCanvas;
 
 class MeterContext: public PrimaryGLContext {

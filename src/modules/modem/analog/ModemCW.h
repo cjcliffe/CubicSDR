@@ -10,39 +10,39 @@ class ModemKitCW : public ModemKitAnalog {
 public:
     ModemKitCW() : ModemKitAnalog() {
     };
-    msresamp_cccf mInputResampler;
+    msresamp_cccf mInputResampler{};
 };
 
 class ModemCW : public ModemAnalog {
 public:
     ModemCW();
 
-    ~ModemCW();
+    ~ModemCW() override;
 
-    std::string getName();
+    std::string getName() override;
 
     static ModemBase *factory();
 
-    int checkSampleRate(long long srate, int arate);
+    int checkSampleRate(long long srate, int arate) override;
 
-    ModemKit *buildKit(long long srate, int arate);
+    ModemKit *buildKit(long long srate, int arate) override;
 
-    void disposeKit(ModemKit *kit);
+    void disposeKit(ModemKit *kit) override;
 
-    void initOutputBuffers(ModemKitAnalog *akit, ModemIQData *input);
+    void initOutputBuffers(ModemKitAnalog *akit, ModemIQData *input) override;
 
-    int getDefaultSampleRate();
+    int getDefaultSampleRate() override;
 
-    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
+    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) override;
 
-    ModemArgInfoList getSettings();
+    ModemArgInfoList getSettings() override;
 
-    void writeSetting(std::string setting, std::string value);
+    void writeSetting(std::string setting, std::string value) override;
 
-    std::string readSetting(std::string setting);
+    std::string readSetting(std::string setting) override;
 
     // No resampling required.
-    std::vector<float> *getResampledOutputData() { return &demodOutputData; }
+    std::vector<float> *getResampledOutputData() override { return &demodOutputData; }
 
 private:
     float mBeepFrequency;

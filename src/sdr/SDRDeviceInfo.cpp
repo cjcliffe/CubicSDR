@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <algorithm>
 
-SDRDeviceInfo::SDRDeviceInfo() : name(""), serial(""), available(false), remote(false), manual(false), soapyDevice(nullptr) {
+SDRDeviceInfo::SDRDeviceInfo() : available(false), remote(false), manual(false), soapyDevice(nullptr) {
     active.store(false);
 }
 
@@ -16,7 +16,7 @@ SDRDeviceInfo::~SDRDeviceInfo() {
     }
 }
 
-std::string SDRDeviceInfo::getDeviceId() {
+std::string SDRDeviceInfo::getDeviceId() const {
     std::string deviceId;
     
     deviceId.append(getName());
@@ -30,124 +30,124 @@ int SDRDeviceInfo::getIndex() const {
     return index;
 }
 
-void SDRDeviceInfo::setIndex(const int index) {
-    this->index = index;
+void SDRDeviceInfo::setIndex(const int index_in) {
+    index = index_in;
 }
 
 bool SDRDeviceInfo::isAvailable() const {
     return available;
 }
 
-void SDRDeviceInfo::setAvailable(bool available) {
-    this->available = available;
+void SDRDeviceInfo::setAvailable(bool available_in) {
+    available = available_in;
 }
 
 bool SDRDeviceInfo::isActive() const {
     return active.load();
 }
 
-void SDRDeviceInfo::setActive(bool active) {
-    this->active.store(active);
+void SDRDeviceInfo::setActive(bool active_in) {
+    active.store(active_in);
 }
 
 const std::string& SDRDeviceInfo::getName() const {
     return name;
 }
 
-void SDRDeviceInfo::setName(const std::string& name) {
-    this->name = name;
+void SDRDeviceInfo::setName(const std::string& name_in) {
+    name = name_in;
 }
 
 const std::string& SDRDeviceInfo::getSerial() const {
     return serial;
 }
 
-void SDRDeviceInfo::setSerial(const std::string& serial) {
-    this->serial = serial;
+void SDRDeviceInfo::setSerial(const std::string& serial_in) {
+    serial = serial_in;
 }
 
 const std::string& SDRDeviceInfo::getTuner() const {
     return tuner;
 }
 
-void SDRDeviceInfo::setTuner(const std::string& tuner) {
-    this->tuner = tuner;
+void SDRDeviceInfo::setTuner(const std::string& tuner_in) {
+    tuner = tuner_in;
 }
 
 const std::string& SDRDeviceInfo::getManufacturer() const {
     return manufacturer;
 }
 
-void SDRDeviceInfo::setManufacturer(const std::string& manufacturer) {
-    this->manufacturer = manufacturer;
+void SDRDeviceInfo::setManufacturer(const std::string& manufacturer_in) {
+    manufacturer = manufacturer_in;
 }
 
 const std::string& SDRDeviceInfo::getProduct() const {
     return product;
 }
 
-void SDRDeviceInfo::setProduct(const std::string& product) {
-    this->product = product;
+void SDRDeviceInfo::setProduct(const std::string& product_in) {
+    product = product_in;
 }
 
 const std::string& SDRDeviceInfo::getDriver() const {
     return driver;
 }
 
-void SDRDeviceInfo::setDriver(const std::string& driver) {
-    this->driver = driver;
+void SDRDeviceInfo::setDriver(const std::string& driver_in) {
+    driver = driver_in;
 }
 
 const std::string& SDRDeviceInfo::getHardware() const {
     return hardware;
 }
 
-void SDRDeviceInfo::setHardware(const std::string& hardware) {
-    this->hardware = hardware;
+void SDRDeviceInfo::setHardware(const std::string& hardware_in) {
+    hardware = hardware_in;
 }
 
 bool SDRDeviceInfo::hasTimestamps() const {
     return timestamps;
 }
 
-void SDRDeviceInfo::setTimestamps(bool timestamps) {
-    this->timestamps = timestamps;
+void SDRDeviceInfo::setTimestamps(bool timestamps_in) {
+    timestamps = timestamps_in;
 }
 
 bool SDRDeviceInfo::isRemote() const {
     return remote;
 }
 
-void SDRDeviceInfo::setRemote(bool remote) {
-    this->remote = remote;
+void SDRDeviceInfo::setRemote(bool remote_in) {
+    remote = remote_in;
 }
 
 bool SDRDeviceInfo::isManual() const {
     return manual;
 }
 
-void SDRDeviceInfo::setManual(bool manual) {
-    this->manual = manual;
+void SDRDeviceInfo::setManual(bool manual_in) {
+    manual = manual_in;
 }
 
-void SDRDeviceInfo::setManualParams(std::string manualParams) {
-    this->manual_params = manualParams;
+void SDRDeviceInfo::setManualParams(std::string manualParams_in) {
+    manual_params = manualParams_in;
 }
 
 std::string SDRDeviceInfo::getManualParams() {
     return manual_params;
 }
 
-void SDRDeviceInfo::setDeviceArgs(SoapySDR::Kwargs deviceArgs) {
-    this->deviceArgs = deviceArgs;
+void SDRDeviceInfo::setDeviceArgs(SoapySDR::Kwargs deviceArgs_in) {
+    deviceArgs = deviceArgs_in;
 }
 
 SoapySDR::Kwargs SDRDeviceInfo::getDeviceArgs() {
     return deviceArgs;
 }
 
-void SDRDeviceInfo::setStreamArgs(SoapySDR::Kwargs streamArgs) {
-    this->streamArgs = streamArgs;
+void SDRDeviceInfo::setStreamArgs(SoapySDR::Kwargs streamArgs_in) {
+    streamArgs = streamArgs_in;
 }
 
 SoapySDR::Kwargs SDRDeviceInfo::getStreamArgs() {
@@ -268,7 +268,7 @@ SDRRangeMap SDRDeviceInfo::getGains(int direction, size_t channel) {
     
 	std::map<std::string, SoapySDR::Range> gainMap;
     
-    for (std::string gname : gainNames) {
+    for (const std::string& gname : gainNames) {
 
         gainMap[gname] = dev->getGainRange(direction, channel, gname);
     }

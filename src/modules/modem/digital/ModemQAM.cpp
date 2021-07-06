@@ -41,7 +41,7 @@ ModemArgInfoList ModemQAM::getSettings() {
     consArg.name = "Constellation";
     consArg.description = "Modem Constellation Pattern";
     consArg.value = std::to_string(cons);
-    consArg.type = ModemArgInfo::STRING;
+    consArg.type = ModemArgInfo::Type::STRING;
     std::vector<std::string> consOpts;
     consOpts.push_back("4");
     consOpts.push_back("8");
@@ -70,9 +70,9 @@ std::string ModemQAM::readSetting(std::string setting) {
     return "";
 }
 
-void ModemQAM::updateDemodulatorCons(int cons) {
-    this->cons = cons;
-    switch (cons) {
+void ModemQAM::updateDemodulatorCons(int cons_in) {
+    cons = cons_in;
+    switch (cons_in) {
         case 4:
             demodQAM = demodQAM4;
             break;
@@ -98,7 +98,7 @@ void ModemQAM::updateDemodulatorCons(int cons) {
 }
 
 void ModemQAM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
-    ModemKitDigital *dkit = (ModemKitDigital *)kit;
+    auto *dkit = (ModemKitDigital *)kit;
     digitalStart(dkit, demodQAM, input);
    
     for (size_t i = 0, bufSize = input->data.size(); i < bufSize; i++) {

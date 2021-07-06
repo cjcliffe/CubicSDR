@@ -63,7 +63,7 @@ public:
     std::vector<GLPanel *> children;
     
     GLPanel();
-    virtual ~GLPanel() {};
+    virtual ~GLPanel() = default;;
     
     void setPosition(float x, float y);
 
@@ -71,18 +71,18 @@ public:
     void setSize(float w, float h);
     float getWidth();
     float getHeight();
-    float getWidthPx();
-    float getHeightPx();
+    float getWidthPx() const;
+    float getHeightPx() const;
     void setCoordinateSystem(GLPanelCoordinateSystem coord);
     
-    bool hitTest(CubicVR::vec2 pos, CubicVR::vec2 &result);
+    bool hitTest(CubicVR::vec2 pos_in, CubicVR::vec2 &result) const;
     
     void setFill(GLPanelFillType fill_mode);
-    void setFillColor(RGBA4f color1);
-    void setFillColor(RGBA4f color1, RGBA4f color2);
+    void setFillColor(const RGBA4f& color1);
+    void setFillColor(const RGBA4f& color1, const RGBA4f& color2);
     void setMarginPx(float marg);
 
-    void setBorderColor(RGBA4f clr);
+    void setBorderColor(const RGBA4f& clr);
     void setBorderPx(float bord);
     void setBorderPx(float bordl, float bordr, float bordt, float bordb);
     
@@ -107,7 +107,7 @@ private:
 public:
     GLTextPanel();
     
-    void drawPanelContents();
+    void drawPanelContents() override;
     
     void setText(std::string text, GLFont::Align hAlign = GLFont::GLFONT_ALIGN_CENTER, GLFont::Align vAlign = GLFont::GLFONT_ALIGN_CENTER , bool useNativeFont = false);
     std::string getText();
@@ -119,5 +119,5 @@ public:
         
     }
     
-    void drawPanelContents();
+    void drawPanelContents() override;
 };

@@ -41,7 +41,7 @@ ModemArgInfoList ModemAPSK::getSettings() {
     consArg.name = "Constellation";
     consArg.description = "Modem Constellation Pattern";
     consArg.value = std::to_string(cons);
-    consArg.type = ModemArgInfo::STRING;
+    consArg.type = ModemArgInfo::Type::STRING;
     std::vector<std::string> consOpts;
     consOpts.push_back("4");
     consOpts.push_back("8");
@@ -70,9 +70,9 @@ std::string ModemAPSK::readSetting(std::string setting) {
     return "";
 }
 
-void ModemAPSK::updateDemodulatorCons(int cons) {
-    this->cons = cons;
-    switch (cons) {
+void ModemAPSK::updateDemodulatorCons(int cons_in) {
+    cons = cons_in;
+    switch (cons_in) {
         case 4:
             demodAPSK = demodAPSK4;
             break;
@@ -98,7 +98,7 @@ void ModemAPSK::updateDemodulatorCons(int cons) {
 }
 
 void ModemAPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
-    ModemKitDigital *dkit = (ModemKitDigital *)kit;
+    auto *dkit = (ModemKitDigital *)kit;
     
     digitalStart(dkit, demodAPSK, input);
     

@@ -201,11 +201,11 @@ unsigned int SpectrumVisualProcessor::getFFTSize() {
 }
 
 
-void SpectrumVisualProcessor::setHideDC(bool hideDC) {
+void SpectrumVisualProcessor::setHideDC(bool hideDC_in) {
 
 	std::lock_guard < std::mutex > busy_lock(busy_run);
 
-    this->hideDC = hideDC;
+    hideDC = hideDC_in;
 }
 
 
@@ -274,7 +274,7 @@ void SpectrumVisualProcessor::process() {
     
     std::vector<liquid_float_complex> *data = &iqData->data;
     
-    if (data && data->size()) {
+    if (data && !data->empty()) {
         unsigned int num_written;
         long resampleBw = iqData->sampleRate;
         bool newResampler = false;

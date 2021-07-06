@@ -14,8 +14,6 @@
 #endif
 
 #include "CubicSDR.h"
-#include "CubicSDRDefs.h"
-#include "AppFrame.h"
 #include <algorithm>
 #include <cmath>
 
@@ -31,7 +29,7 @@ EVT_LEAVE_WINDOW(ScopeCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(ScopeCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
-ScopeCanvas::ScopeCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) : InteractiveCanvas(parent, dispAttrs), ppmMode(false), ctr(0), ctrTarget(0), dragAccel(0), helpTip("") {
+ScopeCanvas::ScopeCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) : InteractiveCanvas(parent, dispAttrs), ppmMode(false), ctr(0), ctrTarget(0), dragAccel(0) {
 
     glContext = new ScopeContext(this, &wxGetApp().GetContext(this), wxGetApp().GetContextAttributes());
     inputData->set_max_num_items(2);
@@ -51,9 +49,7 @@ ScopeCanvas::ScopeCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) : In
     spectrumPanel.setUseDBOffset(false);
 }
 
-ScopeCanvas::~ScopeCanvas() {
-
-}
+ScopeCanvas::~ScopeCanvas() = default;
 
 bool ScopeCanvas::scopeVisible() {
     float panelInterval = (2.0 + panelSpacing);
@@ -84,11 +80,11 @@ void ScopeCanvas::setDeviceName(std::string device_name) {
     deviceName.append(" ");
 }
 
-void ScopeCanvas::setPPMMode(bool ppmMode) {
-    this->ppmMode = ppmMode;
+void ScopeCanvas::setPPMMode(bool ppmMode_in) {
+    ppmMode = ppmMode_in;
 }
 
-bool ScopeCanvas::getPPMMode() {
+bool ScopeCanvas::getPPMMode() const {
     return ppmMode;
 }
 
@@ -96,7 +92,7 @@ void ScopeCanvas::setShowDb(bool show) {
     this->showDb = show;
 }
 
-bool ScopeCanvas::getShowDb() {
+bool ScopeCanvas::getShowDb() const {
     return showDb;
 }
 
@@ -110,12 +106,12 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         
         if (!avData->spectrum) {
             scopePanel.setMode(avData->mode);
-            if (avData->waveform_points.size()) {
+            if (!avData->waveform_points.empty()) {
                 scopePanel.setPoints(avData->waveform_points);
             }
 
         } else {
-            if (avData->waveform_points.size()) {
+            if (!avData->waveform_points.empty()) {
                 spectrumPanel.setPoints(avData->waveform_points);
                 spectrumPanel.setFloorValue(avData->fft_floor);
                 spectrumPanel.setCeilValue(avData->fft_ceil);

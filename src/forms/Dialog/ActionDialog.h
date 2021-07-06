@@ -6,11 +6,11 @@
 
 class ActionDialog : public ActionDialogBase {
 public:
-    ActionDialog( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("QuestionTitle"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE );
-    ~ActionDialog();
+    explicit ActionDialog( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("QuestionTitle"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE );
+    ~ActionDialog() override;
 
-    void onClickCancel( wxCommandEvent& event );
-    void onClickOK( wxCommandEvent& event );
+    void onClickCancel( wxCommandEvent& event ) override;
+    void onClickOK( wxCommandEvent& event ) override;
 
     virtual void doClickCancel();
     virtual void doClickOK();
