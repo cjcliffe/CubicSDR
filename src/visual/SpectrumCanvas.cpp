@@ -49,7 +49,7 @@ SpectrumCanvas::~SpectrumCanvas() = default;
 
 void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
   //  wxPaintDC dc(this);
-    const wxSize ClientSize = GetClientSize();
+    const wxSize ClientSize = GetClientSize() * GetContentScaleFactor();
     
     SpectrumVisualDataPtr vData;
     if (visualDataQueue->try_pop(vData)) {
