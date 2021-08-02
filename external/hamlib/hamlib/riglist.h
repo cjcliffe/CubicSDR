@@ -23,8 +23,15 @@
 #ifndef _RIGLIST_H
 #define _RIGLIST_H 1
 
-#define RIG_MAKE_MODEL(a,b) ((a)*100+(b))
-#define RIG_BACKEND_NUM(a) ((a)/100)
+//! @cond Doxygen_Suppress
+
+// The rig model number is designed to fit in a 32-bit int
+// As of 2020-02-18 we have 33 backends defined
+// With a max of 1000 models per backend we get total a model number range of 1001-33001
+// This MAX was 100 prior to 2020-02-18 and Icom was close to running out of the 100 range
+#define  MAX_MODELS_PER_BACKEND 1000
+#define RIG_MAKE_MODEL(a,b) ((a)*MAX_MODELS_PER_BACKEND+(b))
+#define RIG_BACKEND_NUM(a) ((a)/MAX_MODELS_PER_BACKEND)
 
 /*! \file riglist.h
  *  \brief Hamlib rig(radio) model definitions.
@@ -49,7 +56,7 @@
  *
  *  The dummy backend, as the name suggests, is a backend which performs no
  *  hardware operations and always behaves as one would expect. It can be
- *  thought of as a hardware simulator and is very usefull for testing client
+ *  thought of as a hardware simulator and is very useful for testing client
  *  applications.
  *
  *  It has also been expanded to provide support to "virtual" type of rigs
@@ -61,6 +68,8 @@
 #define RIG_MODEL_NETRIGCTL RIG_MAKE_MODEL(RIG_DUMMY, 2)
 #define RIG_MODEL_ARMSTRONG RIG_MAKE_MODEL(RIG_DUMMY, 3)
 #define RIG_MODEL_FLRIG RIG_MAKE_MODEL(RIG_DUMMY, 4)
+#define RIG_MODEL_TRXMANAGER_RIG RIG_MAKE_MODEL(RIG_DUMMY, 5)
+#define RIG_MODEL_DUMMY_NOVFO RIG_MAKE_MODEL(RIG_DUMMY, 6)
 
 
 /*
@@ -101,9 +110,17 @@
 #define RIG_MODEL_FT980 RIG_MAKE_MODEL(RIG_YAESU, 31)
 #define RIG_MODEL_FTDX5000 RIG_MAKE_MODEL(RIG_YAESU, 32)
 #define RIG_MODEL_VX1700 RIG_MAKE_MODEL(RIG_YAESU, 33)
-#define RIG_MODEL_FT1200 RIG_MAKE_MODEL(RIG_YAESU, 34)
+#define RIG_MODEL_FTDX1200 RIG_MAKE_MODEL(RIG_YAESU, 34)
 #define RIG_MODEL_FT991 RIG_MAKE_MODEL(RIG_YAESU, 35)
 #define RIG_MODEL_FT891 RIG_MAKE_MODEL(RIG_YAESU, 36)
+#define RIG_MODEL_FTDX3000 RIG_MAKE_MODEL(RIG_YAESU, 37)
+#define RIG_MODEL_FT847UNI RIG_MAKE_MODEL(RIG_YAESU, 38)
+#define RIG_MODEL_FT600 RIG_MAKE_MODEL(RIG_YAESU, 39)
+#define RIG_MODEL_FTDX101D RIG_MAKE_MODEL(RIG_YAESU, 40)
+#define RIG_MODEL_FT818 RIG_MAKE_MODEL(RIG_YAESU, 41)
+#define RIG_MODEL_FTDX10 RIG_MAKE_MODEL(RIG_YAESU, 42)
+#define RIG_MODEL_FT897D RIG_MAKE_MODEL(RIG_YAESU, 43)
+#define RIG_MODEL_FTDX101MP RIG_MAKE_MODEL(RIG_YAESU, 44)
 
 
 /*
@@ -122,7 +139,7 @@
 #define RIG_MODEL_TS850 RIG_MAKE_MODEL(RIG_KENWOOD, 9)
 #define RIG_MODEL_TS870S RIG_MAKE_MODEL(RIG_KENWOOD, 10)
 #define RIG_MODEL_TS940 RIG_MAKE_MODEL(RIG_KENWOOD, 11)
-#define RIG_MODEL_TS950 RIG_MAKE_MODEL(RIG_KENWOOD, 12)
+#define RIG_MODEL_TS950S RIG_MAKE_MODEL(RIG_KENWOOD, 12)
 #define RIG_MODEL_TS950SDX RIG_MAKE_MODEL(RIG_KENWOOD, 13)
 #define RIG_MODEL_TS2000 RIG_MAKE_MODEL(RIG_KENWOOD, 14)
 #define RIG_MODEL_R5000 RIG_MAKE_MODEL(RIG_KENWOOD, 15)
@@ -151,7 +168,15 @@
 #define RIG_MODEL_XG3 RIG_MAKE_MODEL(RIG_KENWOOD, 38)   /* Elecraft XG-3 signal generator */
 #define RIG_MODEL_TS990S RIG_MAKE_MODEL(RIG_KENWOOD, 39)
 #define RIG_MODEL_HPSDR RIG_MAKE_MODEL(RIG_KENWOOD, 40) /* OpenHPSDR, PiHPSDR */
-
+#define RIG_MODEL_TS890S RIG_MAKE_MODEL(RIG_KENWOOD, 41)
+#define RIG_MODEL_THD74 RIG_MAKE_MODEL(RIG_KENWOOD, 42)
+#define RIG_MODEL_K3S RIG_MAKE_MODEL(RIG_KENWOOD, 43)
+#define RIG_MODEL_KX2 RIG_MAKE_MODEL(RIG_KENWOOD, 44)
+#define RIG_MODEL_KX3 RIG_MAKE_MODEL(RIG_KENWOOD, 45)
+#define RIG_MODEL_PT8000A RIG_MAKE_MODEL(RIG_KENWOOD, 46)
+#define RIG_MODEL_K4 RIG_MAKE_MODEL(RIG_KENWOOD, 47)
+#define RIG_MODEL_POWERSDR RIG_MAKE_MODEL(RIG_KENWOOD, 48)
+#define RIG_MODEL_MALACHITE RIG_MAKE_MODEL(RIG_KENWOOD, 49)
 
 /*
  * Icom
@@ -190,7 +215,7 @@
 #define RIG_MODEL_IC775 RIG_MAKE_MODEL(RIG_ICOM, 30)
 #define RIG_MODEL_IC781 RIG_MAKE_MODEL(RIG_ICOM, 31)
 #define RIG_MODEL_IC820 RIG_MAKE_MODEL(RIG_ICOM, 32)
-#define RIG_MODEL_IC821 RIG_MAKE_MODEL(RIG_ICOM, 33)
+//#define RIG_MODEL_IC821 RIG_MAKE_MODEL(RIG_ICOM, 33) // not implemented and can be reused
 #define RIG_MODEL_IC821H RIG_MAKE_MODEL(RIG_ICOM, 34)
 #define RIG_MODEL_IC970 RIG_MAKE_MODEL(RIG_ICOM, 35)
 #define RIG_MODEL_ICR10 RIG_MAKE_MODEL(RIG_ICOM, 36)
@@ -228,7 +253,14 @@
 #define RIG_MODEL_X108G RIG_MAKE_MODEL(RIG_ICOM, 76)    /* Xiegu X108 */
 #define RIG_MODEL_ICR6 RIG_MAKE_MODEL(RIG_ICOM, 77)
 #define RIG_MODEL_IC7610 RIG_MAKE_MODEL(RIG_ICOM, 78)
-/* next one is 79 */
+#define RIG_MODEL_ICR8600 RIG_MAKE_MODEL(RIG_ICOM, 79)
+#define RIG_MODEL_ICR30 RIG_MAKE_MODEL(RIG_ICOM, 80)
+#define RIG_MODEL_IC9700 RIG_MAKE_MODEL(RIG_ICOM, 81)
+#define RIG_MODEL_ID4100 RIG_MAKE_MODEL(RIG_ICOM, 82)
+#define RIG_MODEL_ID31 RIG_MAKE_MODEL(RIG_ICOM, 83)
+#define RIG_MODEL_ID51 RIG_MAKE_MODEL(RIG_ICOM, 84)
+#define RIG_MODEL_IC705 RIG_MAKE_MODEL(RIG_ICOM, 85)
+/* next one is 86 */
 
 
 /*
@@ -299,7 +331,7 @@
 
 /*
  * Radio Shack
- * Actualy, they might be either Icom or Uniden. TBC --SF
+ * Actually, they might be either Icom or Uniden. TBC --SF
  */
 #define RIG_RADIOSHACK 7
 #define RIG_BACKEND_RADIOSHACK "radioshack"
@@ -440,6 +472,7 @@
 #define RIG_ALINCO 17
 #define RIG_BACKEND_ALINCO "alinco"
 #define RIG_MODEL_DX77 RIG_MAKE_MODEL(RIG_ALINCO, 1)
+#define RIG_MODEL_DXSR8 RIG_MAKE_MODEL(RIG_ALINCO, 2)
 
 
 /*
@@ -492,7 +525,7 @@
 
 
 /*
- * VEB Funkwerk Köpenick RFT
+ * VEB Funkwerk KÃ¶penick RFT
  */
 #define RIG_RFT 24
 #define RIG_BACKEND_RFT "rft"
@@ -571,6 +604,7 @@
 #define RIG_MODEL_IC_M700PRO RIG_MAKE_MODEL(RIG_ICMARINE, 1)
 #define RIG_MODEL_IC_M802 RIG_MAKE_MODEL(RIG_ICMARINE, 2)
 #define RIG_MODEL_IC_M710 RIG_MAKE_MODEL(RIG_ICMARINE, 3)
+#define RIG_MODEL_IC_M803 RIG_MAKE_MODEL(RIG_ICMARINE, 4)
 
 
 /*
@@ -587,6 +621,15 @@
 #define RIG_BARRETT 32
 #define RIG_BACKEND_BARRETT "barrett"
 #define RIG_MODEL_BARRETT_2050 RIG_MAKE_MODEL(RIG_BARRETT, 1)
+#define RIG_MODEL_BARRETT_950 RIG_MAKE_MODEL(RIG_BARRETT, 2)
+
+/*
+ * Elad
+ */
+#define RIG_ELAD 33
+#define RIG_BACKEND_ELAD "elad"
+#define RIG_MODEL_ELAD_FDM_DUO RIG_MAKE_MODEL(RIG_ELAD, 1)
+//! @endcond
 
 
 /*
@@ -600,7 +643,7 @@
 /*! \typedef typedef int rig_model_t
     \brief Convenience type definition for rig model.
 */
-typedef int rig_model_t;
+typedef uint32_t rig_model_t;
 
 
 /*
