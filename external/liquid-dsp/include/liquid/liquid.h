@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007 - 2020 Joseph Gaeddert
+ * Copyright (c) 2007 - 2021 Joseph Gaeddert
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -1621,6 +1621,9 @@ unsigned int SPGRAM(_get_window_len)(SPGRAM() _q);                          \
 /* Get delay between transforms                                         */  \
 unsigned int SPGRAM(_get_delay)(SPGRAM() _q);                               \
                                                                             \
+/* Get window type used for spectral estimation                         */  \
+int SPGRAM(_get_wtype)(SPGRAM() _q);                                        \
+                                                                            \
 /* Get number of samples processed since reset                          */  \
 unsigned long long int SPGRAM(_get_num_samples)(SPGRAM() _q);               \
                                                                             \
@@ -1834,6 +1837,15 @@ unsigned int SPWATERFALL(_get_num_freq)(SPWATERFALL() _q);                  \
                                                                             \
 /* Get number of accumulated FFTs (rows in PSD output)                  */  \
 unsigned int SPWATERFALL(_get_num_time)(SPWATERFALL() _q);                  \
+                                                                            \
+/* Get window length used in spectral estimation                        */  \
+unsigned int SPWATERFALL(_get_window_len)(SPWATERFALL() _q);                \
+                                                                            \
+/* Get delay between transforms used in spectral estimation             */  \
+unsigned int SPWATERFALL(_get_delay)(SPWATERFALL() _q);                     \
+                                                                            \
+/* Get window type used in spectral estimation                          */  \
+int SPWATERFALL(_get_wtype)(SPWATERFALL() _q);                              \
                                                                             \
 /* Get power spectral density (PSD), size: nfft x time                  */  \
 const T * SPWATERFALL(_get_psd)(SPWATERFALL() _q);                          \
@@ -2674,6 +2686,12 @@ void FIRFILT(_execute_block)(FIRFILT()    _q,                               \
 /* Get length of filter object (number of internal coefficients)        */  \
 unsigned int FIRFILT(_get_length)(FIRFILT() _q);                            \
                                                                             \
+/* Get pointer to coefficients array                                    */  \
+/*  _q      : filter object                                             */  \
+/*  _h      : pointer to output coefficients array [size: _n x 1]       */  \
+int FIRFILT(_get_coefficients)(FIRFILT() _q,                                \
+                               TC *      _h);                               \
+                                                                            \
 /* Compute complex frequency response of filter object                  */  \
 /*  _q      : filter object                                             */  \
 /*  _fc     : normalized frequency for evaluation                       */  \
@@ -3123,6 +3141,83 @@ LIQUID_IIRFILT_DEFINE_API(LIQUID_IIRFILT_MANGLE_CCCF,
                           liquid_float_complex,
                           liquid_float_complex)
 
+//
+// iirfiltsos : infinite impulse respone filter (second-order sections)
+//
+#define LIQUID_IIRFILTSOS_MANGLE_RRRF(name)  LIQUID_CONCAT(iirfiltsos_rrrf,name)
+#define LIQUID_IIRFILTSOS_MANGLE_CRCF(name)  LIQUID_CONCAT(iirfiltsos_crcf,name)
+#define LIQUID_IIRFILTSOS_MANGLE_CCCF(name)  LIQUID_CONCAT(iirfiltsos_cccf,name)
+
+#define LIQUID_IIRFILTSOS_DEFINE_API(IIRFILTSOS,TO,TC,TI)  \
+typedef struct IIRFILTSOS(_s) * IIRFILTSOS();                   \
+                                                                \
+/* create 2nd-order infinite impulse reponse filter         */  \
+/*  _b      : feed-forward coefficients [size: _3 x 1]      */  \
+/*  _a      : feed-back coefficients    [size: _3 x 1]      */  \
+IIRFILTSOS() IIRFILTSOS(_create)(TC * _b,                       \
+                                 TC * _a);                      \
+                                                                \
+/* explicitly set 2nd-order IIR filter coefficients         */  \
+/*  _q      : iirfiltsos object                             */  \
+/*  _b      : feed-forward coefficients [size: _3 x 1]      */  \
+/*  _a      : feed-back coefficients    [size: _3 x 1]      */  \
+void IIRFILTSOS(_set_coefficients)(IIRFILTSOS() _q,             \
+                                   TC *         _b,             \
+                                   TC *         _a);            \
+                                                                \
+/* destroy iirfiltsos object, freeing all internal memory   */  \
+void IIRFILTSOS(_destroy)(IIRFILTSOS() _q);                     \
+                                                                \
+/* print iirfiltsos object properties to stdout             */  \
+void IIRFILTSOS(_print)(IIRFILTSOS() _q);                       \
+                                                                \
+/* clear/reset iirfiltsos object internals                  */  \
+void IIRFILTSOS(_reset)(IIRFILTSOS() _q);                       \
+                                                                \
+/* compute filter output                                    */  \
+/*  _q      : iirfiltsos object                             */  \
+/*  _x      : input sample                                  */  \
+/*  _y      : output sample pointer                         */  \
+void IIRFILTSOS(_execute)(IIRFILTSOS() _q,                      \
+                          TI           _x,                      \
+                          TO *         _y);                     \
+                                                                \
+/* compute filter output, direct-form I method              */  \
+/*  _q      : iirfiltsos object                             */  \
+/*  _x      : input sample                                  */  \
+/*  _y      : output sample pointer                         */  \
+void IIRFILTSOS(_execute_df1)(IIRFILTSOS() _q,                  \
+                              TI           _x,                  \
+                              TO *         _y);                 \
+                                                                \
+/* compute filter output, direct-form II method             */  \
+/*  _q      : iirfiltsos object                             */  \
+/*  _x      : input sample                                  */  \
+/*  _y      : output sample pointer                         */  \
+void IIRFILTSOS(_execute_df2)(IIRFILTSOS() _q,                  \
+                              TI           _x,                  \
+                              TO *         _y);                 \
+                                                                \
+/* compute and return group delay of filter object          */  \
+/*  _q      : filter object                                 */  \
+/*  _fc     : frequency to evaluate                         */  \
+float IIRFILTSOS(_groupdelay)(IIRFILTSOS() _q,                  \
+                              float        _fc);                \
+
+LIQUID_IIRFILTSOS_DEFINE_API(LIQUID_IIRFILTSOS_MANGLE_RRRF,
+                                      float,
+                                      float,
+                                      float)
+
+LIQUID_IIRFILTSOS_DEFINE_API(LIQUID_IIRFILTSOS_MANGLE_CRCF,
+                                      liquid_float_complex,
+                                      float,
+                                      liquid_float_complex)
+
+LIQUID_IIRFILTSOS_DEFINE_API(LIQUID_IIRFILTSOS_MANGLE_CCCF,
+                                      liquid_float_complex,
+                                      liquid_float_complex,
+                                      liquid_float_complex)
 
 //
 // FIR Polyphase filter bank
@@ -3233,7 +3328,14 @@ void FIRPFB(_reset)(FIRPFB() _q);                                           \
 /*  _q      : filter object                                             */  \
 /*  _x      : single input sample                                       */  \
 void FIRPFB(_push)(FIRPFB() _q,                                             \
-                    TI      _x);                                            \
+                   TI       _x);                                            \
+                                                                            \
+/* Write a block of samples into object's internal buffer               */  \
+/*  _q      : filter object                                             */  \
+/*  _x      : single input sample                                       */  \
+void FIRPFB(_write)(FIRPFB()     _q,                                        \
+                    TI *         _x,                                        \
+                    unsigned int _n);                                       \
                                                                             \
 /* Execute vector dot product on the filter's internal buffer and       */  \
 /* coefficients using the coefficients from sub-filter at index _i      */  \
@@ -3342,6 +3444,9 @@ void FIRINTERP(_reset)(FIRINTERP() _q);                                     \
                                                                             \
 /* Get interpolation rate                                               */  \
 unsigned int FIRINTERP(_get_interp_rate)(FIRINTERP() _q);                   \
+                                                                            \
+/* Get sub-filter length (length of each poly-phase filter)             */  \
+unsigned int FIRINTERP(_get_sub_len)(FIRINTERP() _q);                       \
                                                                             \
 /* Set output scaling for interpolator                                  */  \
 /*  _q      : interpolator object                                       */  \
@@ -3927,6 +4032,14 @@ unsigned int RRESAMP(_get_block_len)(RRESAMP() _q);                         \
 /* Get rate of resampler, \(r = P/Q\)                                   */  \
 float RRESAMP(_get_rate)(RRESAMP() _q);                                     \
                                                                             \
+/* Write \(Q\) input samples (after removing greatest common divisor)   */  \
+/* into buffer, but do not compute output. This effectively updates the */  \
+/* internal state of the resampler.                                     */  \
+/*  _q      : resamp object                                             */  \
+/*  _buf    : input sample array, [size: Q x 1]                         */  \
+void RRESAMP(_write)(RRESAMP() _q,                                          \
+                     TI *      _buf);                                       \
+                                                                            \
 /* Execute rational-rate resampler on a block of input samples and      */  \
 /* store the resulting samples in the output array.                     */  \
 /* Note that the size of the input and output buffers correspond to the */  \
@@ -3945,6 +4058,16 @@ float RRESAMP(_get_rate)(RRESAMP() _q);                                     \
 void RRESAMP(_execute)(RRESAMP()       _q,                                  \
                         TI *           _x,                                  \
                         TO *           _y);                                 \
+                                                                            \
+/* Execute on a block of samples                                        */  \
+/*  _q  : resamp object                                                 */  \
+/*  _x  : input sample array, [size: Q*n x 1]                           */  \
+/*  _n  : block size                                                    */  \
+/*  _y  : output sample array [size: P*n x 1]                           */  \
+void RRESAMP(_execute_block)(RRESAMP()      _q,                             \
+                             TI *           _x,                             \
+                             unsigned int   _n,                             \
+                             TO *           _y);                            \
 
 LIQUID_RRESAMP_DEFINE_API(LIQUID_RRESAMP_MANGLE_RRRF,
                           float,
@@ -5151,6 +5274,10 @@ int gmskframesync_is_frame_open(gmskframesync _q);
 int gmskframesync_execute(gmskframesync _q,
                           liquid_float_complex * _x,
                           unsigned int _n);
+// frame data statistics
+int              gmskframesync_reset_framedatastats(gmskframesync _q);
+framedatastats_s gmskframesync_get_framedatastats  (gmskframesync _q);
+
 
 // debugging
 int gmskframesync_debug_enable(gmskframesync _q);
@@ -5661,6 +5788,68 @@ int SYMSTREAM(_write_samples)(SYMSTREAM()  _q,                              \
                               unsigned int _buf_len);                       \
 
 LIQUID_SYMSTREAM_DEFINE_API(LIQUID_SYMSTREAM_MANGLE_CFLOAT, liquid_float_complex)
+
+//
+// symbol streaming, as with symstream but arbitrary output rate
+//
+#define LIQUID_SYMSTREAMR_MANGLE_CFLOAT(name) LIQUID_CONCAT(symstreamrcf,name)
+
+#define LIQUID_SYMSTREAMR_DEFINE_API(SYMSTREAMR,TO)                         \
+                                                                            \
+/* Symbol streaming generator object                                    */  \
+typedef struct SYMSTREAMR(_s) * SYMSTREAMR();                               \
+                                                                            \
+/* Create symstream object with default parameters.                     */  \
+/* This is equivalent to invoking the create_linear() method            */  \
+/* with _ftype=LIQUID_FIRFILT_ARKAISER, _k=2, _m=7, _beta=0.3, and      */  \
+/* with _ms=LIQUID_MODEM_QPSK                                           */  \
+SYMSTREAMR() SYMSTREAMR(_create)(void);                                     \
+                                                                            \
+/* Create symstream object with linear modulation                       */  \
+/*  _ftype  : filter type (e.g. LIQUID_FIRFILT_RRC)                     */  \
+/*  _bw     : relative signal bandwidth, 0.001 <= _bw <= 1.0            */  \
+/*  _m      : filter delay (symbols), _m > 0                            */  \
+/*  _beta   : filter excess bandwidth, 0 < _beta <= 1                   */  \
+/*  _ms     : modulation scheme, e.g. LIQUID_MODEM_QPSK                 */  \
+SYMSTREAMR() SYMSTREAMR(_create_linear)(int          _ftype,                \
+                                        float        _bw,                   \
+                                        unsigned int _m,                    \
+                                        float        _beta,                 \
+                                        int          _ms);                  \
+                                                                            \
+/* Destroy symstream object, freeing all internal memory                */  \
+int SYMSTREAMR(_destroy)(SYMSTREAMR() _q);                                  \
+                                                                            \
+/* Print symstream object's parameters                                  */  \
+int SYMSTREAMR(_print)(SYMSTREAMR() _q);                                    \
+                                                                            \
+/* Reset symstream internal state                                       */  \
+int SYMSTREAMR(_reset)(SYMSTREAMR() _q);                                    \
+                                                                            \
+/* Set internal linear modulation scheme, leaving the filter parameters */  \
+/* (interpolator) unmodified                                            */  \
+int SYMSTREAMR(_set_scheme)(SYMSTREAMR() _q,                                \
+                           int         _ms);                                \
+                                                                            \
+/* Get internal linear modulation scheme                                */  \
+int SYMSTREAMR(_get_scheme)(SYMSTREAMR() _q);                               \
+                                                                            \
+/* Set internal linear gain (before interpolation)                      */  \
+int SYMSTREAMR(_set_gain)(SYMSTREAMR() _q,                                  \
+                         float       _gain);                                \
+                                                                            \
+/* Get internal linear gain (before interpolation)                      */  \
+float SYMSTREAMR(_get_gain)(SYMSTREAMR() _q);                               \
+                                                                            \
+/* Write block of samples to output buffer                              */  \
+/*  _q      : synchronizer object                                       */  \
+/*  _buf    : output buffer [size: _buf_len x 1]                        */  \
+/*  _buf_len: output buffer size                                        */  \
+int SYMSTREAMR(_write_samples)(SYMSTREAMR()  _q,                            \
+                              TO *         _buf,                            \
+                              unsigned int _buf_len);                       \
+
+LIQUID_SYMSTREAMR_DEFINE_API(LIQUID_SYMSTREAMR_MANGLE_CFLOAT, liquid_float_complex)
 
 
 
