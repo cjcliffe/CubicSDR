@@ -22,12 +22,12 @@ public:
     
 private:
     int cons;
-    modem demodAPSK;
-    modem demodAPSK4;
-    modem demodAPSK8;
-    modem demodAPSK16;
-    modem demodAPSK32;
-    modem demodAPSK64;
-    modem demodAPSK128;
-    modem demodAPSK256;
+    modemcf demodAPSK;
+    modemcf demodAPSK4;
+    modemcf demodAPSK8;
+    modemcf demodAPSK16;
+    modemcf demodAPSK32;
+    modemcf demodAPSK64;
+    modemcf demodAPSK128;
+    modemcf demodAPSK256;
 };

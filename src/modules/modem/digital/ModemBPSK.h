@@ -16,5 +16,5 @@ public:
     void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) override;
     
 private:
-    modem demodBPSK;
+    modemcf demodBPSK;
 };

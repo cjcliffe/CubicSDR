@@ -48,11 +48,11 @@ int ModemDigital::getDemodulatorLock() {
     return currentDemodLock.load();
 }
 
-void ModemDigital::updateDemodulatorLock(modem mod, float sensitivity) {
-    setDemodulatorLock(modem_get_demodulator_evm(mod) <= sensitivity);
+void ModemDigital::updateDemodulatorLock(modemcf mod, float sensitivity) {
+    setDemodulatorLock(modemcf_get_demodulator_evm(mod) <= sensitivity);
 }
 
-void ModemDigital::digitalStart(ModemKitDigital * /* kit */, modem /* mod */, ModemIQData *input) {
+void ModemDigital::digitalStart(ModemKitDigital * /* kit */, modemcf /* mod */, ModemIQData *input) {
     size_t bufSize = input->data.size();
     
     if (demodOutputDataDigital.size() != bufSize) {
@@ -63,7 +63,7 @@ void ModemDigital::digitalStart(ModemKitDigital * /* kit */, modem /* mod */, Mo
     }
 }
 
-void ModemDigital::digitalFinish(ModemKitDigital * /* kit */, modem /* mod */) {
+void ModemDigital::digitalFinish(ModemKitDigital * /* kit */, modemcf /* mod */) {
 #if ENABLE_DIGITAL_LAB
     if (digitalOut && outStream.str().length()) {
         digitalOut->write(outStream.str());

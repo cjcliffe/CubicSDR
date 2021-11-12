@@ -22,14 +22,14 @@ public:
     
 private:
     int cons;
-    modem demodQAM;
-    modem demodQAM4;
-    modem demodQAM8;
-    modem demodQAM16;
-    modem demodQAM32;
-    modem demodQAM64;
-    modem demodQAM128;
-    modem demodQAM256;
+    modemcf demodQAM;
+    modemcf demodQAM4;
+    modemcf demodQAM8;
+    modemcf demodQAM16;
+    modemcf demodQAM32;
+    modemcf demodQAM64;
+    modemcf demodQAM128;
+    modemcf demodQAM256;
 };
 
 

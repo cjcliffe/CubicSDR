@@ -4,8 +4,8 @@
 #include "ModemSQAM.h"
 
 ModemSQAM::ModemSQAM() : ModemDigital()  {
-    demodSQAM32 = modem_create(LIQUID_MODEM_SQAM32);
-    demodSQAM128 = modem_create(LIQUID_MODEM_SQAM128);
+    demodSQAM32 = modemcf_create(LIQUID_MODEM_SQAM32);
+    demodSQAM128 = modemcf_create(LIQUID_MODEM_SQAM128);
     demodSQAM = demodSQAM32;
     cons = 32;
 }
@@ -15,8 +15,8 @@ ModemBase *ModemSQAM::factory() {
 }
 
 ModemSQAM::~ModemSQAM() {
-    modem_destroy(demodSQAM32);
-    modem_destroy(demodSQAM128);
+    modemcf_destroy(demodSQAM32);
+    modemcf_destroy(demodSQAM128);
 }
 
 std::string ModemSQAM::getName() {
@@ -73,7 +73,7 @@ void ModemSQAM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *
     digitalStart(dkit, demodSQAM, input);
     
     for (size_t i = 0, bufSize = input->data.size(); i < bufSize; i++) {
-        modem_demodulate(demodSQAM, input->data[i], &demodOutputDataDigital[i]);
+        modemcf_demodulate(demodSQAM, input->data[i], &demodOutputDataDigital[i]);
     }
     updateDemodulatorLock(demodSQAM, 0.005f);
     

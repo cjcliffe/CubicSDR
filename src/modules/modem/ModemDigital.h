@@ -42,13 +42,13 @@ public:
     ModemKit *buildKit(long long sampleRate, int audioSampleRate) override;
     void disposeKit(ModemKit *kit) override;
     
-    virtual void digitalStart(ModemKitDigital *kit, modem mod, ModemIQData *input);
-    virtual void digitalFinish(ModemKitDigital *kit, modem mod);
+    virtual void digitalStart(ModemKitDigital *kit, modemcf mod, ModemIQData *input);
+    virtual void digitalFinish(ModemKitDigital *kit, modemcf mod);
 
     virtual void setDemodulatorLock(bool demod_lock_in);
     virtual int getDemodulatorLock();
     
-    virtual void updateDemodulatorLock(modem mod, float sensitivity);
+    virtual void updateDemodulatorLock(modemcf mod, float sensitivity);
 
 #if ENABLE_DIGITAL_LAB
     void setOutput(ModemDigitalOutput *digitalOutput);

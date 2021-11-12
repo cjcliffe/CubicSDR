@@ -4,13 +4,13 @@
 #include "ModemAPSK.h"
 
 ModemAPSK::ModemAPSK() : ModemDigital() {
-    demodAPSK4 = modem_create(LIQUID_MODEM_APSK4);
-    demodAPSK8 = modem_create(LIQUID_MODEM_APSK8);
-    demodAPSK16 = modem_create(LIQUID_MODEM_APSK16);
-    demodAPSK32 = modem_create(LIQUID_MODEM_APSK32);
-    demodAPSK64 = modem_create(LIQUID_MODEM_APSK64);
-    demodAPSK128 = modem_create(LIQUID_MODEM_APSK128);
-    demodAPSK256 = modem_create(LIQUID_MODEM_APSK256);
+    demodAPSK4 = modemcf_create(LIQUID_MODEM_APSK4);
+    demodAPSK8 = modemcf_create(LIQUID_MODEM_APSK8);
+    demodAPSK16 = modemcf_create(LIQUID_MODEM_APSK16);
+    demodAPSK32 = modemcf_create(LIQUID_MODEM_APSK32);
+    demodAPSK64 = modemcf_create(LIQUID_MODEM_APSK64);
+    demodAPSK128 = modemcf_create(LIQUID_MODEM_APSK128);
+    demodAPSK256 = modemcf_create(LIQUID_MODEM_APSK256);
     demodAPSK = demodAPSK4;
     cons = 4;
 }
@@ -20,13 +20,13 @@ ModemBase *ModemAPSK::factory() {
 }
 
 ModemAPSK::~ModemAPSK() {
-    modem_destroy(demodAPSK4);
-    modem_destroy(demodAPSK8);
-    modem_destroy(demodAPSK16);
-    modem_destroy(demodAPSK32);
-    modem_destroy(demodAPSK64);
-    modem_destroy(demodAPSK128);
-    modem_destroy(demodAPSK256);
+    modemcf_destroy(demodAPSK4);
+    modemcf_destroy(demodAPSK8);
+    modemcf_destroy(demodAPSK16);
+    modemcf_destroy(demodAPSK32);
+    modemcf_destroy(demodAPSK64);
+    modemcf_destroy(demodAPSK128);
+    modemcf_destroy(demodAPSK256);
 }
 
 std::string ModemAPSK::getName() {
@@ -103,7 +103,7 @@ void ModemAPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *
     digitalStart(dkit, demodAPSK, input);
     
     for (size_t i = 0, bufSize = input->data.size(); i < bufSize; i++) {
-        modem_demodulate(demodAPSK, input->data[i], &demodOutputDataDigital[i]);
+        modemcf_demodulate(demodAPSK, input->data[i], &demodOutputDataDigital[i]);
     }
     
     updateDemodulatorLock(demodAPSK, 0.005f);

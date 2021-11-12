@@ -4,13 +4,13 @@
 #include "ModemQAM.h"
 
 ModemQAM::ModemQAM() : ModemDigital()  {
-    demodQAM4 = modem_create(LIQUID_MODEM_QAM4);
-    demodQAM8 = modem_create(LIQUID_MODEM_QAM8);
-    demodQAM16 = modem_create(LIQUID_MODEM_QAM16);
-    demodQAM32 = modem_create(LIQUID_MODEM_QAM32);
-    demodQAM64 = modem_create(LIQUID_MODEM_QAM64);
-    demodQAM128 = modem_create(LIQUID_MODEM_QAM128);
-    demodQAM256 = modem_create(LIQUID_MODEM_QAM256);
+    demodQAM4 = modemcf_create(LIQUID_MODEM_QAM4);
+    demodQAM8 = modemcf_create(LIQUID_MODEM_QAM8);
+    demodQAM16 = modemcf_create(LIQUID_MODEM_QAM16);
+    demodQAM32 = modemcf_create(LIQUID_MODEM_QAM32);
+    demodQAM64 = modemcf_create(LIQUID_MODEM_QAM64);
+    demodQAM128 = modemcf_create(LIQUID_MODEM_QAM128);
+    demodQAM256 = modemcf_create(LIQUID_MODEM_QAM256);
     demodQAM = demodQAM4;
     cons = 4;
 }
@@ -24,13 +24,13 @@ std::string ModemQAM::getName() {
 }
 
 ModemQAM::~ModemQAM() {
-    modem_destroy(demodQAM4);
-    modem_destroy(demodQAM8);
-    modem_destroy(demodQAM16);
-    modem_destroy(demodQAM32);
-    modem_destroy(demodQAM64);
-    modem_destroy(demodQAM128);
-    modem_destroy(demodQAM256);
+    modemcf_destroy(demodQAM4);
+    modemcf_destroy(demodQAM8);
+    modemcf_destroy(demodQAM16);
+    modemcf_destroy(demodQAM32);
+    modemcf_destroy(demodQAM64);
+    modemcf_destroy(demodQAM128);
+    modemcf_destroy(demodQAM256);
 }
 
 ModemArgInfoList ModemQAM::getSettings() {
@@ -102,7 +102,7 @@ void ModemQAM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * 
     digitalStart(dkit, demodQAM, input);
    
     for (size_t i = 0, bufSize = input->data.size(); i < bufSize; i++) {
-        modem_demodulate(demodQAM, input->data[i], &demodOutputDataDigital[i]);
+        modemcf_demodulate(demodQAM, input->data[i], &demodOutputDataDigital[i]);
     }
     updateDemodulatorLock(demodQAM, 0.5f);
     

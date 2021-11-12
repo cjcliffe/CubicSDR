@@ -22,7 +22,7 @@ public:
     
 private:
     int cons;
-    modem demodSQAM;
-    modem demodSQAM32;
-    modem demodSQAM128;
+    modemcf demodSQAM;
+    modemcf demodSQAM32;
+    modemcf demodSQAM128;
 };

@@ -22,13 +22,13 @@ public:
     
 private:
     int cons;
-    modem demodASK;
-    modem demodASK2;
-    modem demodASK4;
-    modem demodASK8;
-    modem demodASK16;
-    modem demodASK32;
-    modem demodASK64;
-    modem demodASK128;
-    modem demodASK256;
+    modemcf demodASK;
+    modemcf demodASK2;
+    modemcf demodASK4;
+    modemcf demodASK8;
+    modemcf demodASK16;
+    modemcf demodASK32;
+    modemcf demodASK64;
+    modemcf demodASK128;
+    modemcf demodASK256;
 };
