@@ -7,7 +7,6 @@
 #include "CubicSDR.h"
 #include <string>
 #include <algorithm>
-#include <SoapySDR/Logger.h>
 #include <chrono>
 
 #define TARGET_DISPLAY_FPS (60)
@@ -47,9 +46,7 @@ SDRThread::SDRThread() : IOThread(), buffers("SDRThreadBuffers") {
     iq_swap.store(false);
 }
 
-SDRThread::~SDRThread() {
-
-}
+SDRThread::~SDRThread() = default;
 
 SoapySDR::Kwargs SDRThread::combineArgs(SoapySDR::Kwargs a, SoapySDR::Kwargs b) {
     SoapySDR::Kwargs c;
@@ -86,12 +83,12 @@ bool SDRThread::init() {
     
     SoapySDR::Kwargs currentStreamArgs = combineArgs(devInfo->getStreamArgs(),streamArgs);
     
-    std::string streamExceptionStr("");
+    std::string streamExceptionStr;
     
     //1. setup stream for CF32:
     try {
         stream = device->setupStream(SOAPY_SDR_RX,"CF32", std::vector<size_t>(), currentStreamArgs);
-    } catch(exception e) {
+    } catch(const exception &e) {
         streamExceptionStr = e.what();
     }
 
@@ -195,7 +192,7 @@ void SDRThread::assureBufferMinSize(SDRThreadIQData * dataOut, size_t minSize) {
 //Called in an infinite loop, read SaopySDR device to build 
 // a 'this.numElems' sized batch of samples (SDRThreadIQData) and push it into  iqDataOutQueue.
 //this batch of samples is built to represent 1 frame / TARGET_DISPLAY_FPS.
-int SDRThread::readStream(SDRThreadIQDataQueuePtr iqDataOutQueue) {
+int SDRThread::readStream(const SDRThreadIQDataQueuePtr& iqDataOutQueue) {
     
     int flags(0);
     
@@ -442,10 +439,9 @@ void SDRThread::updateGains() {
     gainChanged.clear();
     
     SDRRangeMap gains = devInfo->getGains(SOAPY_SDR_RX, 0);
-    for (SDRRangeMap::iterator gi = gains.begin(); gi != gains.end(); gi++) {
-
-        gainValues[gi->first] = device->getGain(SOAPY_SDR_RX, 0, gi->first);
-        gainChanged[gi->first] = false;
+    for (auto & gain : gains) {
+        gainValues[gain.first] = device->getGain(SOAPY_SDR_RX, 0, gain.first);
+        gainChanged[gain.first] = false;
     }
     
     gain_value_changed.store(false);
@@ -573,8 +569,8 @@ void SDRThread::updateSettings() {
             DeviceConfig *devConfig = deviceConfig.load();
             ConfigGains gains = devConfig->getGains();
             
-            for (ConfigGains::iterator gain_i = gains.begin(); gain_i != gains.end(); gain_i++) {
-                setGain(gain_i->first, gain_i->second);
+            for (auto & gain : gains) {
+                setGain(gain.first, gain.second);
             }
         }
         doUpdate = true;
@@ -583,10 +579,10 @@ void SDRThread::updateSettings() {
     if (gain_value_changed.load() && !agc_mode.load()) {
         std::lock_guard < std::mutex > lock(gain_busy); 
 
-        for (std::map<std::string,bool>::iterator gci = gainChanged.begin(); gci != gainChanged.end(); gci++) {
-            if (gci->second) {
-                device->setGain(SOAPY_SDR_RX, 0, gci->first, gainValues[gci->first]);
-                gainChanged[gci->first] = false;
+        for (auto & gci : gainChanged) {
+            if (gci.second) {
+                device->setGain(SOAPY_SDR_RX, 0, gci.first, gainValues[gci.first]);
+                gainChanged[gci.first] = false;
             }
         }
         
@@ -597,10 +593,10 @@ void SDRThread::updateSettings() {
 
         std::lock_guard < std::mutex > lock(setting_busy);
         
-        for (std::map<std::string, bool>::iterator sci = settingChanged.begin(); sci != settingChanged.end(); sci++) {
-            if (sci->second) {
-                device->writeSetting(sci->first, settings[sci->first]);
-                settingChanged[sci->first] = false;
+        for (auto & sci : settingChanged) {
+            if (sci.second) {
+                device->writeSetting(sci.first, settings[sci.first]);
+                settingChanged[sci.first] = false;
             }
         }
         
@@ -669,21 +665,21 @@ void SDRThread::setDevice(SDRDeviceInfo *dev) {
     }
 }
 
-int SDRThread::getOptimalElementCount(long long sampleRate, int fps) {
-    int elemCount = (int)floor((double)sampleRate/(double)fps);
+int SDRThread::getOptimalElementCount(long long sampleRate_in, int fps) {
+    int elemCount = (int)floor((double)sampleRate_in / (double)fps);
     int nch = numChannels.load();
     elemCount = int(ceil((double)elemCount/(double)nch))*nch;
 //    std::cout << "Calculated optimal " << numChannels.load() << " channel element count of " << elemCount << std::endl;
     return elemCount;
 }
 
-int SDRThread::getOptimalChannelCount(long long sampleRate) {
-    if (sampleRate <= CHANNELIZER_RATE_MAX) {
+int SDRThread::getOptimalChannelCount(long long sampleRate_in) {
+    if (sampleRate_in <= CHANNELIZER_RATE_MAX) {
         return 1;
     }
     
     int optimal_rate = CHANNELIZER_RATE_MAX;
-    int optimal_count = int(ceil(double(sampleRate)/double(optimal_rate)));
+    int optimal_count = int(ceil(double(sampleRate_in) / double(optimal_rate)));
     
     if (optimal_count % 2 == 1) {
         optimal_count--;
@@ -769,16 +765,16 @@ long SDRThread::getSampleRate() {
     return sampleRate.load();
 }
 
-void SDRThread::setPPM(int ppm) {
-    this->ppm.store(ppm);
+void SDRThread::setPPM(int ppm_in) {
+    ppm.store(ppm_in);
     ppm_changed.store(true);
 
     DeviceConfig *devConfig = deviceConfig.load();
     if (devConfig) {
-        devConfig->setPPM(ppm);
+        devConfig->setPPM(ppm_in);
     }
 
-//    std::cout << "Set PPM: " << this->ppm.load() << std::endl;
+//    std::cout << "Set PPM: " << this->ppm_in.load() << std::endl;
 }
 
 int SDRThread::getPPM() {
@@ -806,7 +802,7 @@ bool SDRThread::getIQSwap() {
     return iq_swap.load();
 }
 
-void SDRThread::setGain(std::string name, float value) {
+void SDRThread::setGain(const std::string& name, float value) {
     std::lock_guard < std::mutex > lock(gain_busy);
     gainValues[name] = value;
     gainChanged[name] = true;
@@ -818,14 +814,14 @@ void SDRThread::setGain(std::string name, float value) {
     }
 }
 
-float SDRThread::getGain(std::string name) {
+float SDRThread::getGain(const std::string& name) {
     std::lock_guard < std::mutex > lock(gain_busy);
     float val = gainValues[name];
     
     return val;
 }
 
-void SDRThread::writeSetting(std::string name, std::string value) {
+void SDRThread::writeSetting(const std::string& name, std::string value) {
 
     std::lock_guard < std::mutex > lock(setting_busy);
 
@@ -837,7 +833,7 @@ void SDRThread::writeSetting(std::string name, std::string value) {
     }
 }
 
-std::string SDRThread::readSetting(std::string name) {
+std::string SDRThread::readSetting(const std::string& name) {
     std::string val;
     std::lock_guard < std::mutex > lock(setting_busy);
 

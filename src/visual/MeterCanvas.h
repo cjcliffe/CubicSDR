@@ -18,19 +18,19 @@
 class MeterCanvas: public InteractiveCanvas {
 public:
     MeterCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
-    ~MeterCanvas();
+    ~MeterCanvas() override;
 
     void setLevel(float level_in);
-    float getLevel();
+    float getLevel() const;
 
     void setMax(float max_in);
     void setMin(float max_in);
 
     void setUserInputValue(float slider_in);
     void setInputValue(float slider_in);
-    bool inputChanged();
+    bool inputChanged() const;
     float getInputValue();
-    void setShowUserInput(bool showUserInput);
+    void setShowUserInput(bool showUserInput_in);
 
     void setHelpTip(std::string tip);
 

@@ -10,5 +10,5 @@
 class SessionMgr {
 public:
     void saveSession(std::string fileName);
-    bool loadSession(std::string fileName);
+    bool loadSession(const std::string& fileName);
 };

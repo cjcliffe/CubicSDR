@@ -4,7 +4,7 @@
 #include "ModemBPSK.h"
 
 ModemBPSK::ModemBPSK() : ModemDigital()  {
-    demodBPSK = modem_create(LIQUID_MODEM_BPSK);
+    demodBPSK = modemcf_create(LIQUID_MODEM_BPSK);
 }
 
 ModemBase *ModemBPSK::factory() {
@@ -12,7 +12,7 @@ ModemBase *ModemBPSK::factory() {
 }
 
 ModemBPSK::~ModemBPSK() {
-    modem_destroy(demodBPSK);
+    modemcf_destroy(demodBPSK);
 }
 
 std::string ModemBPSK::getName() {
@@ -20,11 +20,11 @@ std::string ModemBPSK::getName() {
 }
 
 void ModemBPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
-    ModemKitDigital *dkit = (ModemKitDigital *)kit;
+    auto *dkit = (ModemKitDigital *)kit;
     digitalStart(dkit, demodBPSK, input);
 
     for (size_t i = 0, bufSize=input->data.size(); i < bufSize; i++) {
-        modem_demodulate(demodBPSK, input->data[i], &demodOutputDataDigital[i]);
+        modemcf_demodulate(demodBPSK, input->data[i], &demodOutputDataDigital[i]);
     }
     updateDemodulatorLock(demodBPSK, 0.005f);
     

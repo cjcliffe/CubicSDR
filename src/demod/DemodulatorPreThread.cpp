@@ -1,7 +1,6 @@
 // Copyright (c) Charles J. Cliffe
 // SPDX-License-Identifier: GPL-2.0+
 
-#include "CubicSDRDefs.h"
 #include <vector>
 
 #ifdef __APPLE__
@@ -15,7 +14,7 @@
 //50 ms
 #define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
 
-DemodulatorPreThread::DemodulatorPreThread(DemodulatorInstance* parent) : IOThread(), iqResampler(NULL), iqResampleRatio(1), cModem(nullptr), cModemKit(nullptr)
+DemodulatorPreThread::DemodulatorPreThread(DemodulatorInstance* parent) : IOThread(), iqResampler(nullptr), iqResampleRatio(1), cModem(nullptr), cModemKit(nullptr)
  {
 	initialized.store(false);
     this->parent = parent;
@@ -50,8 +49,7 @@ bool DemodulatorPreThread::isInitialized() {
     return initialized.load();
 }
 
-DemodulatorPreThread::~DemodulatorPreThread() {
-}
+DemodulatorPreThread::~DemodulatorPreThread() = default;
 
 void DemodulatorPreThread::run() {
 #ifdef __APPLE__
@@ -98,15 +96,14 @@ void DemodulatorPreThread::run() {
                 audioSampleRateChanged.store(true);
             }
         } else if (parent->getAudioSampleRate() != newAudioSampleRate) {
-            int newRate;
-            if ((newRate = parent->getAudioSampleRate())) {
+            if (parent->getAudioSampleRate()) {
                 newAudioSampleRate = parent->getAudioSampleRate();
                 audioSampleRateChanged.store(true);
             }
         }
         
         if (demodTypeChanged.load() && (newSampleRate && newAudioSampleRate && newBandwidth)) {
-            DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_MAKE_DEMOD);
+            DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::Type::DEMOD_WORKER_THREAD_CMD_MAKE_DEMOD);
             command.frequency = newFrequency;
             command.sampleRate = newSampleRate;
             command.demodType = newDemodType;
@@ -116,9 +113,9 @@ void DemodulatorPreThread::run() {
             sampleRateChanged.store(false);
             audioSampleRateChanged.store(false);
             ModemSettings lastSettings = parent->getLastModemSettings(newDemodType);
-            if (lastSettings.size() != 0) {
+            if (!lastSettings.empty()) {
                 command.settings = lastSettings;
-                if (modemSettingsBuffered.size()) {
+                if (!modemSettingsBuffered.empty()) {
                     for (ModemSettings::const_iterator msi = modemSettingsBuffered.begin(); msi != modemSettingsBuffered.end(); msi++) {
                         command.settings[msi->first] = msi->second;
                     }
@@ -140,7 +137,7 @@ void DemodulatorPreThread::run() {
             (bandwidthChanged.load() || sampleRateChanged.load() || audioSampleRateChanged.load() || cModem->shouldRebuildKit()) &&
             (newSampleRate && newAudioSampleRate && newBandwidth)
         ) {
-            DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS);
+            DemodulatorWorkerThreadCommand command(DemodulatorWorkerThreadCommand::Type::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS);
             command.frequency = newFrequency;
             command.sampleRate = newSampleRate;
             command.bandwidth = newBandwidth;
@@ -168,7 +165,7 @@ void DemodulatorPreThread::run() {
 
 //        std::lock_guard < std::mutex > lock(inp->m_mutex);
         std::vector<liquid_float_complex> *data = &inp->data;
-        if (data->size() && (inp->sampleRate == currentSampleRate) && cModem && cModemKit) {
+        if (!data->empty() && (inp->sampleRate == currentSampleRate) && cModem && cModemKit) {
             size_t bufSize = data->size();
 
             if (in_buf_data.size() != bufSize) {
@@ -184,7 +181,7 @@ void DemodulatorPreThread::run() {
 
             liquid_float_complex *in_buf = &in_buf_data[0];
             liquid_float_complex *out_buf = &out_buf_data[0];
-            liquid_float_complex *temp_buf = NULL;
+            liquid_float_complex *temp_buf;
 
             if (shiftFrequency != 0) {
                 if (shiftFrequency < 0) {
@@ -228,7 +225,7 @@ void DemodulatorPreThread::run() {
         while (!stopping && workerResults->try_pop(result)) {
               
             switch (result.cmd) {
-                case DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS:
+                case DemodulatorWorkerThreadResult::Type::DEMOD_WORKER_THREAD_RESULT_FILTERS:
                     if (result.iqResampler) {
                         if (iqResampler) {
                             msresamp_crcf_destroy(iqResampler);
@@ -241,7 +238,7 @@ void DemodulatorPreThread::run() {
                         cModem = result.modem;
 #if ENABLE_DIGITAL_LAB
                         if (cModem->getType() == "digital") {
-                            ModemDigital *mDigi = (ModemDigital *)cModem;
+                            auto *mDigi = (ModemDigital *)cModem;
                             mDigi->setOutput(parent->getOutput());
                         }
 #endif
@@ -260,7 +257,7 @@ void DemodulatorPreThread::run() {
                         currentSampleRate = result.sampleRate;
                     }
                         
-                    if (result.modemName != "") {
+                    if (!result.modemName.empty()) {
                         demodType = result.modemName;
                         demodTypeChanged.store(false);
                     }
@@ -285,8 +282,8 @@ void DemodulatorPreThread::run() {
     iqInputQueue->flush();
 }
 
-void DemodulatorPreThread::setDemodType(std::string demodType) {
-    newDemodType = demodType;
+void DemodulatorPreThread::setDemodType(std::string demodType_in) {
+    newDemodType = demodType_in;
     demodTypeChanged.store(true);
 }
 
@@ -377,7 +374,7 @@ ModemKit *DemodulatorPreThread::getModemKit() {
 }
 
 
-std::string DemodulatorPreThread::readModemSetting(std::string setting) {
+std::string DemodulatorPreThread::readModemSetting(const std::string& setting) {
     if (cModem) {
         return cModem->readSetting(setting);
     } else if (modemSettingsBuffered.find(setting) != modemSettingsBuffered.end()) {
@@ -386,7 +383,7 @@ std::string DemodulatorPreThread::readModemSetting(std::string setting) {
     return "";
 }
 
-void DemodulatorPreThread::writeModemSetting(std::string setting, std::string value) {
+void DemodulatorPreThread::writeModemSetting(const std::string& setting, std::string value) {
     modemSettingsBuffered[setting] = value;
     modemSettingsChanged.store(true);
 }

@@ -21,19 +21,21 @@ class DemodulatorInstance;
 class DemodulatorThread : public IOThread {
 public:
 
-    DemodulatorThread(DemodulatorInstance* parent);
-    virtual ~DemodulatorThread();
+    explicit DemodulatorThread(DemodulatorInstance* parent);
+    ~DemodulatorThread() override;
 
-    void onBindOutput(std::string name, ThreadQueueBasePtr threadQueue);
+    void onBindOutput(std::string name, ThreadQueueBasePtr threadQueue) override;
     
-    virtual void run();
-    virtual void terminate();
+    void run() override;
+    void terminate() override;
     
-    void setMuted(bool state);
+    void setMuted(bool muted_in);
     bool isMuted();
     
     float getSignalLevel();
     float getSignalCeil();
+    void setSquelchEnabled(bool squelchEnabled_in);
+    bool isSquelchEnabled();
     float getSignalFloor();
     void setSquelchLevel(float signal_level_in);
     float getSquelchLevel();
@@ -54,7 +56,7 @@ protected:
 
     std::atomic<float> squelchLevel;
     std::atomic<float> signalLevel, signalFloor, signalCeil;
-    bool squelchEnabled, squelchBreak;
+    std::atomic<bool> squelchEnabled, squelchBreak;
     
     static DemodulatorInstance* squelchLock;
     static std::mutex squelchLockMutex;
@@ -66,8 +68,6 @@ protected:
     DemodulatorThreadPostInputQueuePtr iqInputQueue;
     AudioThreadInputQueuePtr audioOutputQueue;
     DemodulatorThreadOutputQueuePtr audioVisOutputQueue;
-    DemodulatorThreadControlCommandQueuePtr threadQueueControl;
-
     DemodulatorThreadOutputQueuePtr audioSinkOutputQueue = nullptr;
 
     //protects the audioVisOutputQueue dynamic binding change at runtime (in DemodulatorMgr)

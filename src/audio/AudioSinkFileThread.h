@@ -11,7 +11,7 @@ class AudioSinkFileThread : public AudioSinkThread {
 
 public:
     AudioSinkFileThread();
-    ~AudioSinkFileThread();
+    ~AudioSinkFileThread() override;
 
 	enum SquelchOption {
 		SQUELCH_RECORD_SILENCE = 0, // default value, record as a user would hear it.
@@ -20,8 +20,8 @@ public:
 		SQUELCH_RECORD_MAX
 	};
 
-    virtual void sink(AudioThreadInputPtr input);
-    virtual void inputChanged(AudioThreadInput oldProps, AudioThreadInputPtr newProps);
+    void sink(AudioThreadInputPtr input) override;
+    void inputChanged(AudioThreadInput oldProps, AudioThreadInputPtr newProps) override;
 
     void setAudioFileHandler(AudioFile *output);
 

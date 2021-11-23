@@ -4,7 +4,7 @@
 #include "ModemQPSK.h"
 
 ModemQPSK::ModemQPSK() : ModemDigital()  {
-    demodQPSK = modem_create(LIQUID_MODEM_QPSK);
+    demodQPSK = modemcf_create(LIQUID_MODEM_QPSK);
 }
 
 ModemBase *ModemQPSK::factory() {
@@ -12,7 +12,7 @@ ModemBase *ModemQPSK::factory() {
 }
 
 ModemQPSK::~ModemQPSK() {
-    modem_destroy(demodQPSK);
+    modemcf_destroy(demodQPSK);
 }
 
 std::string ModemQPSK::getName() {
@@ -20,11 +20,11 @@ std::string ModemQPSK::getName() {
 }
 
 void ModemQPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
-    ModemKitDigital *dkit = (ModemKitDigital *)kit;
+    auto *dkit = (ModemKitDigital *)kit;
     digitalStart(dkit, demodQPSK, input);
 
     for (size_t i = 0, bufSize = input->data.size(); i < bufSize; i++) {
-        modem_demodulate(demodQPSK, input->data[i], &demodOutputDataDigital[i]);
+        modemcf_demodulate(demodQPSK, input->data[i], &demodOutputDataDigital[i]);
     }
     updateDemodulatorLock(demodQPSK, 0.8f);
     

@@ -15,7 +15,7 @@
 #include <SoapySDR/Registry.hpp>
 #include <SoapySDR/Device.hpp>
 
-#include <stddef.h>
+#include <cstddef>
 
 class SDRThreadIQData {
 public:
@@ -31,13 +31,11 @@ public:
     }
 
     SDRThreadIQData(long long bandwidth, long long frequency, std::vector<signed char> * /* data */) :
-            frequency(frequency), sampleRate(bandwidth) {
+            frequency(frequency), sampleRate(bandwidth), dcCorrected(false), numChannels(0) {
 
     }
 
-    virtual ~SDRThreadIQData() {
-
-    }
+    virtual ~SDRThreadIQData() = default;
 };
 typedef std::shared_ptr<SDRThreadIQData> SDRThreadIQDataPtr;
 typedef ThreadBlockingQueue<SDRThreadIQDataPtr> SDRThreadIQDataQueue;
@@ -50,23 +48,23 @@ private:
     
     //returns the SoapyDevice readStream return value,
     //i.e if >= 0 the number of samples read, else if < 0 an error code.
-    int readStream(SDRThreadIQDataQueuePtr iqDataOutQueue);
+    int readStream(const SDRThreadIQDataQueuePtr& iqDataOutQueue);
 
     void readLoop();
 
 public:
     SDRThread();
-    ~SDRThread();
+    ~SDRThread() override;
 
     enum SDRThreadState { SDR_THREAD_MESSAGE, SDR_THREAD_INITIALIZED, SDR_THREAD_FAILED};
     
-    virtual void run();
-    virtual void terminate();
+    void run() override;
+    void terminate() override;
 
     SDRDeviceInfo *getDevice();
     void setDevice(SDRDeviceInfo *dev);
-    int getOptimalElementCount(long long sampleRate, int fps);
-    int getOptimalChannelCount(long long sampleRate);
+    int getOptimalElementCount(long long sampleRate_in, int fps);
+    int getOptimalChannelCount(long long sampleRate_in);
     
     void setFrequency(long long freq);
     long long getFrequency();
@@ -84,7 +82,7 @@ public:
     void setSampleRate(long rate);
     long getSampleRate();
 
-    void setPPM(int ppm);
+    void setPPM(int ppm_in);
     int getPPM();
     
     void setAGCMode(bool mode);
@@ -93,11 +91,11 @@ public:
     void setIQSwap(bool swap);
     bool getIQSwap();
 
-    void setGain(std::string name, float value);
-    float getGain(std::string name);
+    void setGain(const std::string& name, float value);
+    float getGain(const std::string& name);
     
-    void writeSetting(std::string name, std::string value);
-    std::string readSetting(std::string name);
+    void writeSetting(const std::string& name, std::string value);
+    std::string readSetting(const std::string& name);
     
     void setStreamArgs(SoapySDR::Kwargs streamArgs);
     

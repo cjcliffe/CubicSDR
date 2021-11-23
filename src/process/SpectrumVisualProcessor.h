@@ -19,7 +19,7 @@ public:
     long long centerFreq;
     int bandwidth;
 
-    virtual ~SpectrumVisualData() {};
+    virtual ~SpectrumVisualData() = default;;
 };
 
 typedef std::shared_ptr<SpectrumVisualData> SpectrumVisualDataPtr;
@@ -29,7 +29,7 @@ typedef std::shared_ptr<SpectrumVisualDataQueue> SpectrumVisualDataQueuePtr;
 class SpectrumVisualProcessor : public VisualProcessor<DemodulatorThreadIQData, SpectrumVisualData> {
 public:
     SpectrumVisualProcessor();
-    ~SpectrumVisualProcessor();
+    ~SpectrumVisualProcessor() override;
     
     bool isView();
     void setView(bool bView);
@@ -52,13 +52,13 @@ public:
     void setup(unsigned int fftSize);
     void setFFTSize(unsigned int fftSize);
     unsigned int getFFTSize();
-    void setHideDC(bool hideDC);
+    void setHideDC(bool hideDC_in);
     
     void setScaleFactor(float sf);
     float getScaleFactor();
     
 protected:
-    virtual void process();
+    void process() override;
     
     ReBuffer<SpectrumVisualData> outputBuffers;
   

@@ -2,13 +2,10 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "AudioThread.h"
-#include "CubicSDRDefs.h"
 #include <vector>
 #include <algorithm>
 #include "CubicSDR.h"
-#include "DemodulatorThread.h"
 #include "DemodulatorInstance.h"
-#include <memory.h>
 #include <mutex>
 
 //50 ms
@@ -80,9 +77,9 @@ void AudioThread::deviceCleanup() {
     //NOT PROTECTED by m_device_mutex on purpose, to prevent deadlocks with i->second->controllerThread
     // it doesn't matter, it is only called when all "normal" audio threads are detached from the controller.
     // 
-    for (auto i = deviceController.begin(); i != deviceController.end(); i++) {
+    for (auto & i : deviceController) {
         
-        delete i->second;
+        delete i.second;
     }
 
     deviceController.clear();
@@ -98,7 +95,7 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
     ::memset(out, 0, nBufferFrames * 2 * sizeof(float));
 
     //src in the controller thread:
-    AudioThread *src = (AudioThread *)userData;
+    auto *src = (AudioThread *)userData;
 
     //by construction, src is a controller thread, from deviceController:
     std::lock_guard<std::recursive_mutex> lock(src->getMutex());
@@ -157,7 +154,7 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
         }
 
 
-        if (srcmix->currentInput->channels == 0 || !srcmix->currentInput->data.size()) {
+        if (srcmix->currentInput->channels == 0 || srcmix->currentInput->data.empty()) {
             if (!srcmix->inputQueue->empty()) {
                 srcmix->audioQueuePtr = 0;
                 if (srcmix->currentInput) {
@@ -195,7 +192,7 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
                         mixPeak = srcPeak;
                     }
                 }
-                if (srcmix->currentInput && srcmix->currentInput->data.size()) {
+                if (srcmix->currentInput && !srcmix->currentInput->data.empty()) {
                     float v = srcmix->currentInput->data[srcmix->audioQueuePtr] * srcmix->gain;
                     out[i * 2] += v;
                     out[i * 2 + 1] += v;
@@ -204,7 +201,7 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
             }
         }
         else {
-            for (int i = 0, iMax = srcmix->currentInput->channels * nBufferFrames; i < iMax; i++) {
+            for (unsigned int i = 0, iMax = srcmix->currentInput->channels * nBufferFrames; i < iMax; i++) {
 
                 if (srcmix->audioQueuePtr >= srcmix->currentInput->data.size()) {
                     srcmix->audioQueuePtr = 0;
@@ -222,7 +219,7 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
                         mixPeak = srcPeak;
                     }
                 }
-                if (srcmix->currentInput && srcmix->currentInput->data.size()) {
+                if (srcmix->currentInput && !srcmix->currentInput->data.empty()) {
 
                     out[i] = out[i] + srcmix->currentInput->data[srcmix->audioQueuePtr] * srcmix->gain;
                 }
@@ -248,9 +245,9 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
 void AudioThread::enumerateDevices(std::vector<RtAudio::DeviceInfo> &devs) {
     RtAudio endac;
 
-    int numDevices = endac.getDeviceCount();
+    unsigned int numDevices = endac.getDeviceCount();
 
-    for (int i = 0; i < numDevices; i++) {
+    for (unsigned int i = 0; i < numDevices; i++) {
         RtAudio::DeviceInfo info = endac.getDeviceInfo(i);
 
         devs.push_back(info);
@@ -315,14 +312,14 @@ void AudioThread::setDeviceSampleRate(int deviceId, int sampleRate) {
     if (matchingControllerThread != nullptr) {
 
         AudioThreadCommand refreshDevice;
-        refreshDevice.cmd = AudioThreadCommand::AUDIO_THREAD_CMD_SET_SAMPLE_RATE;
+        refreshDevice.cmdType = AudioThreadCommand::Type::AUDIO_THREAD_CMD_SET_SAMPLE_RATE;
         refreshDevice.int_value = sampleRate;
         //VSO : blocking push !
         matchingControllerThread->getCommandQueue()->push(refreshDevice);
     }
 }
 
-void AudioThread::setSampleRate(int sampleRate) {
+void AudioThread::setSampleRate(int sampleRate_in) {
 
     bool thisIsAController = false;
 
@@ -332,7 +329,7 @@ void AudioThread::setSampleRate(int sampleRate) {
 
         if (deviceController[outputDevice.load()] == this) {
             thisIsAController = true;
-            deviceSampleRate[outputDevice.load()] = sampleRate;
+            deviceSampleRate[outputDevice.load()] = sampleRate_in;
         }
     }
 
@@ -344,31 +341,30 @@ void AudioThread::setSampleRate(int sampleRate) {
         dac.closeStream();
 
         //Set bounded sample rate:
-        for (size_t j = 0; j < boundThreads.size(); j++) {
-            AudioThread *srcmix = boundThreads[j];
-            srcmix->setSampleRate(sampleRate);  
+        for (auto srcmix : boundThreads) {
+            srcmix->setSampleRate(sampleRate_in);
         }
 
         //make a local copy, snapshot of the list of demodulators
         std::vector<DemodulatorInstancePtr> demodulators = wxGetApp().getDemodMgr().getDemodulators();
 
-        for (auto demod : demodulators) {
+        for (const auto& demod : demodulators) {
             if (demod->getOutputDevice() == outputDevice.load()) {
-                demod->setAudioSampleRate(sampleRate);
+                demod->setAudioSampleRate(sampleRate_in);
             }
         }
 
-        dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &nBufferFrames, &audioCallback, (void *)this, &opts);
+        dac.openStream(&parameters, nullptr, RTAUDIO_FLOAT32, sampleRate_in, &nBufferFrames, &audioCallback, (void *)this, &opts);
         dac.startStream();
     }
 
-    this->sampleRate = sampleRate;
+    sampleRate = sampleRate_in;
 }
 
 int AudioThread::getSampleRate() {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
-    return this->sampleRate;
+    return sampleRate;
 }
 
 void AudioThread::setupDevice(int deviceId) {
@@ -411,7 +407,7 @@ void AudioThread::setupDevice(int deviceId) {
         if (deviceController.find(parameters.deviceId) == deviceController.end()) {
 
             //Create a new controller thread for parameters.deviceId:
-            AudioThread* newController = new AudioThread();
+            auto* newController = new AudioThread();
 
             newController->setInitOutputDevice(parameters.deviceId, sampleRate);
             newController->bindThread(this);
@@ -422,7 +418,7 @@ void AudioThread::setupDevice(int deviceId) {
         else if (deviceController[parameters.deviceId] == this) {
 
             //Attach callback
-            dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &nBufferFrames, &audioCallback, (void *)this, &opts);
+            dac.openStream(&parameters, nullptr, RTAUDIO_FLOAT32, sampleRate, &nBufferFrames, &audioCallback, (void *)this, &opts);
             dac.startStream();
         }
         else {
@@ -455,21 +451,21 @@ int AudioThread::getOutputDevice() {
     return outputDevice;
 }
 
-void AudioThread::setInitOutputDevice(int deviceId, int sampleRate) {
+void AudioThread::setInitOutputDevice(int deviceId, int sampleRate_in) {
 
     //global lock 
     std::lock_guard<std::recursive_mutex> lock(m_device_mutex);
 
     outputDevice = deviceId;
-    if (sampleRate == -1) {
+    if (sampleRate_in == -1) {
         if (deviceSampleRate.find(parameters.deviceId) != deviceSampleRate.end()) {
-            sampleRate = deviceSampleRate[deviceId];
+            sampleRate_in = deviceSampleRate[deviceId];
         }
     }
     else {
-        deviceSampleRate[deviceId] = sampleRate;
+        deviceSampleRate[deviceId] = sampleRate_in;
     }
-    this->sampleRate = sampleRate;
+    sampleRate = sampleRate_in;
 }
 
 void AudioThread::run() {
@@ -501,10 +497,10 @@ void AudioThread::run() {
             continue;
         }
 
-        if (command.cmd == AudioThreadCommand::AUDIO_THREAD_CMD_SET_DEVICE) {
+        if (command.cmdType == AudioThreadCommand::Type::AUDIO_THREAD_CMD_SET_DEVICE) {
             setupDevice(command.int_value);
         }
-        if (command.cmd == AudioThreadCommand::AUDIO_THREAD_CMD_SET_SAMPLE_RATE) {
+        if (command.cmdType == AudioThreadCommand::Type::AUDIO_THREAD_CMD_SET_SAMPLE_RATE) {
             setSampleRate(command.int_value);
         }
     } //end while
@@ -517,20 +513,20 @@ void AudioThread::run() {
     //Nullify currentInput...
     currentInput = nullptr;
 
-    //Stop : Retreive the matching controling thread in a scope lock:
-    AudioThread* controllerThread = nullptr;
+    //Stop : Retrieve the matching controlling thread in a scope lock:
+    AudioThread* controllerMatchingThread;
     {
         std::lock_guard<std::recursive_mutex> global_lock(m_device_mutex);
-        controllerThread = deviceController[parameters.deviceId];
+        controllerMatchingThread = deviceController[parameters.deviceId];
     }
 
-    if (controllerThread != this) {
+    if (controllerMatchingThread != this) {
         //'this' is not the controller, so remove it from the bounded list:
         //beware, we must take the controller mutex, because the audio callback may use the list of bounded
         //threads at that moment:
-        std::lock_guard<std::recursive_mutex> lock(controllerThread->getMutex());
+        std::lock_guard<std::recursive_mutex> lock(controllerMatchingThread->getMutex());
 
-        controllerThread->removeThread(this);
+        controllerMatchingThread->removeThread(this);
     }
     else {
         // 'this' is a controller thread:

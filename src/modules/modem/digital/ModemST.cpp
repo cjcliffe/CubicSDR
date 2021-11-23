@@ -4,7 +4,7 @@
 #include "ModemST.h"
 
 ModemST::ModemST() : ModemDigital()  {
-    demodST = modem_create(LIQUID_MODEM_V29);
+    demodST = modemcf_create(LIQUID_MODEM_V29);
 }
 
 ModemBase *ModemST::factory() {
@@ -16,15 +16,15 @@ std::string ModemST::getName() {
 }
 
 ModemST::~ModemST() {
-    modem_destroy(demodST);
+    modemcf_destroy(demodST);
 }
 
 void ModemST::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
-    ModemKitDigital *dkit = (ModemKitDigital *)kit;
+    auto *dkit = (ModemKitDigital *)kit;
     digitalStart(dkit, demodST, input);
 
     for (size_t i = 0, bufSize = input->data.size(); i < bufSize; i++) {
-        modem_demodulate(demodST, input->data[i], &demodOutputDataDigital[i]);
+        modemcf_demodulate(demodST, input->data[i], &demodOutputDataDigital[i]);
     }
     updateDemodulatorLock(demodST, 0.005f);
     

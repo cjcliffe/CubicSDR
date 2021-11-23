@@ -24,16 +24,16 @@ public:
     std::vector<DemodulatorInstancePtr> getOrderedDemodulators(bool actives = true);
     std::vector<DemodulatorInstancePtr> getDemodulatorsAt(long long freq, int bandwidth);
     
-    DemodulatorInstancePtr getPreviousDemodulator(DemodulatorInstancePtr demod, bool actives = true);
-    DemodulatorInstancePtr getNextDemodulator(DemodulatorInstancePtr demod, bool actives = true);
+    DemodulatorInstancePtr getPreviousDemodulator(const DemodulatorInstancePtr& demod, bool actives = true);
+    DemodulatorInstancePtr getNextDemodulator(const DemodulatorInstancePtr& demod, bool actives = true);
     DemodulatorInstancePtr getLastDemodulator();
     DemodulatorInstancePtr getFirstDemodulator();
     bool anyDemodulatorsAt(long long freq, int bandwidth);
-    void deleteThread(DemodulatorInstancePtr);
+    void deleteThread(const DemodulatorInstancePtr&);
 
     void terminateAll();
 
-    void setActiveDemodulator(DemodulatorInstancePtr demod, bool temporary = true);
+    void setActiveDemodulator(const DemodulatorInstancePtr& demod, bool temporary = true);
 
     //Dangerous: this is only intended by some internal classes,
     // and only set a pre-existing demod
@@ -47,34 +47,34 @@ public:
 												int bandwidth);
 
     int getLastBandwidth() const;
-    void setLastBandwidth(int lastBandwidth);
+    void setLastBandwidth(int lastBandwidth_in);
 
     std::string getLastDemodulatorType() const;
-    void setLastDemodulatorType(std::string lastDemodType);
+    void setLastDemodulatorType(std::string lastDemodType_in);
 
     float getLastGain() const;
-    void setLastGain(float lastGain);
+    void setLastGain(float lastGain_in);
 
     bool getLastDeltaLock() const;
     void setLastDeltaLock(bool lock);
 
     float getLastSquelchLevel() const;
-    void setLastSquelchLevel(float lastSquelch);
+    void setLastSquelchLevel(float lastSquelch_in);
 
     bool isLastSquelchEnabled() const;
-    void setLastSquelchEnabled(bool lastSquelchEnabled);
+    void setLastSquelchEnabled(bool lastSquelchEnabled_in);
     
     bool isLastMuted() const;
-    void setLastMuted(bool lastMuted);
+    void setLastMuted(bool lastMuted_in);
 
-    ModemSettings getLastModemSettings(std::string);
-    void setLastModemSettings(std::string, ModemSettings);
+    ModemSettings getLastModemSettings(const std::string&);
+    void setLastModemSettings(const std::string&, ModemSettings);
 
     void updateLastState();
     
     void setOutputDevices(std::map<int,RtAudio::DeviceInfo> devs);
     std::map<int, RtAudio::DeviceInfo> getOutputDevices();
-    void saveInstance(DataNode *node, DemodulatorInstancePtr inst);
+    void saveInstance(DataNode *node, const DemodulatorInstancePtr& inst);
 	
     DemodulatorInstancePtr loadInstance(DataNode *node);
 

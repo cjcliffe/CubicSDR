@@ -75,14 +75,14 @@ public:
     PrimaryGLContext &GetContext(wxGLCanvas *canvas);
     wxGLContextAttrs* GetContextAttributes();
 
-    virtual bool OnInit();
-    virtual int OnExit();
+    bool OnInit() override;
+    int OnExit() override;
 
-    virtual void OnInitCmdLine(wxCmdLineParser& parser);
-    virtual bool OnCmdLineParsed(wxCmdLineParser& parser);
+    void OnInitCmdLine(wxCmdLineParser& parser) override;
+    bool OnCmdLineParsed(wxCmdLineParser& parser) override;
 
     void deviceSelector();
-    void sdrThreadNotify(SDRThread::SDRThreadState state, std::string message);
+    void sdrThreadNotify(SDRThread::SDRThreadState state, const std::string& message);
     void sdrEnumThreadNotify(SDREnumerator::SDREnumState state, std::string message);
 
     void setFrequency(long long freq);
@@ -127,10 +127,10 @@ public:
     SDRThread *getSDRThread();
 
     void notifyDemodulatorsChanged();
+   
+    void removeDemodulator(const DemodulatorInstancePtr& demod);
 
-    void removeDemodulator(DemodulatorInstancePtr demod);
-
-    void setFrequencySnap(int snap);
+    void setFrequencySnap(int snap_in);
     int getFrequencySnap();
 
     AppConfig *getConfig();
@@ -139,7 +139,7 @@ public:
     void setPPM(int ppm_in);
     int getPPM();
 
-    void showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode = FrequencyDialog::FDIALOG_TARGET_DEFAULT, wxString initString = "");
+    void showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode = FrequencyDialog::FDIALOG_TARGET_DEFAULT, const wxString& initString = "");
     void showLabelInput();
     AppFrame *getAppFrame();
 
@@ -149,9 +149,9 @@ public:
     std::string getNotification();
 
     void notifyMainUIOfDeviceChange(bool forceRefreshOfGains = false);
-
-    void addRemote(std::string remoteAddr);
-    void removeRemote(std::string remoteAddr);
+    
+    void addRemote(const std::string& remoteAddr);
+    void removeRemote(const std::string& remoteAddr);
 
     void setDeviceSelectorClosed();
     void reEnumerateDevices();
@@ -161,8 +161,8 @@ public:
     void setAGCMode(bool mode);
     bool getAGCMode();
 
-    void setGain(std::string name, float gain_in);
-    float getGain(std::string name);
+    void setGain(const std::string& name, float gain_in);
+    float getGain(const std::string& name);
 
     void setStreamArgs(SoapySDR::Kwargs streamArgs_in);
     void setDeviceArgs(SoapySDR::Kwargs settingArgs_in);
@@ -186,8 +186,8 @@ public:
 #endif
 
 private:
-    int FilterEvent(wxEvent& event);
-
+    int FilterEvent(wxEvent& event) override;
+    
     AppFrame *appframe = nullptr;
     AppConfig config;
     PrimaryGLContext *m_glContext = nullptr;

@@ -4,14 +4,14 @@
 #include "ModemDPSK.h"
 
 ModemDPSK::ModemDPSK() : ModemDigital() {
-    demodDPSK2 = modem_create(LIQUID_MODEM_DPSK2);
-    demodDPSK4 = modem_create(LIQUID_MODEM_DPSK4);
-    demodDPSK8 = modem_create(LIQUID_MODEM_DPSK8);
-    demodDPSK16 = modem_create(LIQUID_MODEM_DPSK16);
-    demodDPSK32 = modem_create(LIQUID_MODEM_DPSK32);
-    demodDPSK64 = modem_create(LIQUID_MODEM_DPSK64);
-    demodDPSK128 = modem_create(LIQUID_MODEM_DPSK128);
-    demodDPSK256 = modem_create(LIQUID_MODEM_DPSK256);
+    demodDPSK2 = modemcf_create(LIQUID_MODEM_DPSK2);
+    demodDPSK4 = modemcf_create(LIQUID_MODEM_DPSK4);
+    demodDPSK8 = modemcf_create(LIQUID_MODEM_DPSK8);
+    demodDPSK16 = modemcf_create(LIQUID_MODEM_DPSK16);
+    demodDPSK32 = modemcf_create(LIQUID_MODEM_DPSK32);
+    demodDPSK64 = modemcf_create(LIQUID_MODEM_DPSK64);
+    demodDPSK128 = modemcf_create(LIQUID_MODEM_DPSK128);
+    demodDPSK256 = modemcf_create(LIQUID_MODEM_DPSK256);
     demodDPSK = demodDPSK2;
     cons = 2;
 }
@@ -25,14 +25,14 @@ std::string ModemDPSK::getName() {
 }
 
 ModemDPSK::~ModemDPSK() {
-    modem_destroy(demodDPSK2);
-    modem_destroy(demodDPSK4);
-    modem_destroy(demodDPSK8);
-    modem_destroy(demodDPSK16);
-    modem_destroy(demodDPSK32);
-    modem_destroy(demodDPSK64);
-    modem_destroy(demodDPSK128);
-    modem_destroy(demodDPSK256);
+    modemcf_destroy(demodDPSK2);
+    modemcf_destroy(demodDPSK4);
+    modemcf_destroy(demodDPSK8);
+    modemcf_destroy(demodDPSK16);
+    modemcf_destroy(demodDPSK32);
+    modemcf_destroy(demodDPSK64);
+    modemcf_destroy(demodDPSK128);
+    modemcf_destroy(demodDPSK256);
 }
 
 ModemArgInfoList ModemDPSK::getSettings() {
@@ -43,7 +43,7 @@ ModemArgInfoList ModemDPSK::getSettings() {
     consArg.name = "Constellation";
     consArg.description = "Modem Constellation Pattern";
     consArg.value = std::to_string(cons);
-    consArg.type = ModemArgInfo::STRING;
+    consArg.type = ModemArgInfo::Type::STRING;
     std::vector<std::string> consOpts;
     consOpts.push_back("2");
     consOpts.push_back("4");
@@ -73,9 +73,9 @@ std::string ModemDPSK::readSetting(std::string setting) {
     return "";
 }
 
-void ModemDPSK::updateDemodulatorCons(int cons) {
-    this->cons = cons;
-    switch (cons) {
+void ModemDPSK::updateDemodulatorCons(int cons_in) {
+    cons = cons_in;
+    switch (cons_in) {
         case 2:
             demodDPSK = demodDPSK2;
             break;
@@ -104,12 +104,12 @@ void ModemDPSK::updateDemodulatorCons(int cons) {
 }
 
 void ModemDPSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
-    ModemKitDigital *dkit = (ModemKitDigital *)kit;
+    auto *dkit = (ModemKitDigital *)kit;
    
     digitalStart(dkit, demodDPSK, input);
  
     for (size_t i = 0, bufSize = input->data.size(); i < bufSize; i++) {
-        modem_demodulate(demodDPSK, input->data[i], &demodOutputDataDigital[i]);
+        modemcf_demodulate(demodDPSK, input->data[i], &demodOutputDataDigital[i]);
     }
     updateDemodulatorLock(demodDPSK, 0.005f);
     

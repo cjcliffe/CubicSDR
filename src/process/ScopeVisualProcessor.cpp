@@ -3,7 +3,6 @@
 
 #include "ScopeVisualProcessor.h"
 #include <cstring>
-#include <string>
 
 ScopeVisualProcessor::ScopeVisualProcessor(): outputBuffers("ScopeVisualProcessorBuffers") {
     scopeEnabled.store(true);

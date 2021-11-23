@@ -1,4 +1,4 @@
-CubicSDR ![Image Travis-CI Status](https://travis-ci.org/cjcliffe/CubicSDR.svg?branch=master)
+CubicSDR
 ========
 
 Cross-Platform Software-Defined Radio Application

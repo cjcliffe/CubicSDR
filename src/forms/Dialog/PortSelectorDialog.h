@@ -2,11 +2,11 @@
 
 class PortSelectorDialog : public PortSelectorDialogBase {
 public:
-    PortSelectorDialog( wxWindow* parent, wxWindowID id = wxID_ANY, std::string defaultPort = "" );
+    explicit PortSelectorDialog( wxWindow* parent, wxWindowID id = wxID_ANY, const std::string& defaultPort = "" );
 
 protected:
-    void onListSelect( wxCommandEvent& event );
-    void onCancelButton( wxCommandEvent& event );
-    void onOKButton( wxCommandEvent& event );
-    void onClose( wxCloseEvent& event );
+    void onListSelect( wxCommandEvent& event ) override;
+    void onCancelButton( wxCommandEvent& event ) override;
+    void onOKButton( wxCommandEvent& event ) override;
+    void onClose( wxCloseEvent& event ) override;
 };

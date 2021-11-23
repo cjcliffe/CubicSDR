@@ -3,7 +3,6 @@
 
 #include "SpectrumPanel.h"
 
-#include <sstream>
 #include <iostream>
 #include <iomanip>
 #include "CubicSDR.h"
@@ -32,35 +31,35 @@ SpectrumPanel::SpectrumPanel() {
 }
 
 
-float SpectrumPanel::getFloorValue() {
+float SpectrumPanel::getFloorValue() const {
     return floorValue;
 }
 
-void SpectrumPanel::setFloorValue(float floorValue) {
-    this->floorValue = floorValue;
+void SpectrumPanel::setFloorValue(float floorValue_in) {
+    floorValue = floorValue_in;
 }
 
-float SpectrumPanel::getCeilValue() {
+float SpectrumPanel::getCeilValue() const {
     return ceilValue;
 }
 
-void SpectrumPanel::setCeilValue(float ceilValue) {
-    this->ceilValue = ceilValue;
+void SpectrumPanel::setCeilValue(float ceilValue_in) {
+    ceilValue = ceilValue_in;
 }
 
-void SpectrumPanel::setFreq(long long freq) {
-    this->freq = freq;
+void SpectrumPanel::setFreq(long long freq_in) {
+    freq = freq_in;
 }
 
-long long SpectrumPanel::getFreq() {
+long long SpectrumPanel::getFreq() const {
     return freq;
 }
 
-void SpectrumPanel::setBandwidth(long long bandwidth) {
-    this->bandwidth = bandwidth;
+void SpectrumPanel::setBandwidth(long long bandwidth_in) {
+    bandwidth = bandwidth_in;
 }
 
-long long SpectrumPanel::getBandwidth() {
+long long SpectrumPanel::getBandwidth() const {
     return bandwidth;
 }
 
@@ -68,13 +67,13 @@ void SpectrumPanel::setFFTSize(int fftSize_in) {
     this->fftSize = fftSize_in;
 }
 
-int SpectrumPanel::getFFTSize() {
+int SpectrumPanel::getFFTSize() const {
     return fftSize;
 }
 
-void SpectrumPanel::setShowDb(bool showDb) {
-    this->showDb = showDb;
-    if (showDb) {
+void SpectrumPanel::setShowDb(bool showDb_in) {
+    showDb = showDb_in;
+    if (showDb_in) {
         addChild(&dbPanelCeil);
         addChild(&dbPanelFloor);
     } else {
@@ -84,7 +83,7 @@ void SpectrumPanel::setShowDb(bool showDb) {
     
 }
 
-bool SpectrumPanel::getShowDb() {
+bool SpectrumPanel::getShowDb() const {
     return showDb;
 }
 
@@ -92,17 +91,17 @@ void SpectrumPanel::setUseDBOffset(bool useOfs) {
     this->useDbOfs = useOfs;
 }
 
-bool SpectrumPanel::getUseDBOffset() {
+bool SpectrumPanel::getUseDBOffset() const {
     return useDbOfs;
 }
 
 
-void SpectrumPanel::setPoints(std::vector<float> &points) {
-    this->points.assign(points.begin(), points.end());
+void SpectrumPanel::setPoints(std::vector<float> &points_in) {
+    points.assign(points_in.begin(), points_in.end());
 }
 
-void SpectrumPanel::setPeakPoints(std::vector<float> &points) {
-    this->peak_points.assign(points.begin(), points.end());
+void SpectrumPanel::setPeakPoints(std::vector<float> &points_in) {
+    peak_points.assign(points_in.begin(), points_in.end());
 }
 
 
@@ -115,17 +114,17 @@ void SpectrumPanel::drawPanelContents() {
 
     glLoadMatrixf((transform * (CubicVR::mat4::translate(-1.0f, -0.75f, 0.0f) * CubicVR::mat4::scale(2.0f, 1.5f, 1.0f))).to_ptr());
 
-    if (points.size()) {
+    if (!points.empty()) {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
         double range = ceilValue-floorValue;
         double ranges[3][4] = { { 90.0, 5000.0, 10.0, 100.0 }, { 20.0, 150.0, 10.0, 10.0 }, { -20.0, 30.0, 10.0, 1.0 } };
         
-        for (int i = 0; i < 3; i++) {
+        for (auto & i : ranges) {
             double p = 0;
-            double rangeMin = ranges[i][0];
-            double rangeMax = ranges[i][1];
-            double rangeTrans = ranges[i][2];
-            double rangeStep = ranges[i][3];
+            double rangeMin = i[0];
+            double rangeMax = i[1];
+            double rangeTrans = i[2];
+            double rangeStep = i[3];
             
             if (range >= rangeMin && range <= rangeMax) {
                 double a = 1.0;
@@ -152,7 +151,7 @@ void SpectrumPanel::drawPanelContents() {
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(2, GL_FLOAT, 0, &points[0]);
         glDrawArrays(GL_LINE_STRIP, 0, points.size() / 2);
-        if (peak_points.size()) {
+        if (!peak_points.empty()) {
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glColor4f(0, 1.0, 0, 0.5);
             glVertexPointer(2, GL_FLOAT, 0, &peak_points[0]);

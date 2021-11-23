@@ -7,7 +7,7 @@
 #include <mutex>
 #include <thread>
 #include <cstdint>
-#include <stddef.h>
+#include <cstddef>
 #include <condition_variable>
 #include <typeinfo>
 #include <iostream>

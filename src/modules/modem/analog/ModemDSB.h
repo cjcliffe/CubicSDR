@@ -8,16 +8,16 @@
 class ModemDSB : public ModemAnalogVC {
 public:
     ModemDSB();
-    ~ModemDSB();
-
-    std::string getName();
-
+    ~ModemDSB() override;
+    
+    std::string getName() override;
+    
     static ModemBase *factory();
+    
+    int getDefaultSampleRate() override;
 
-    int getDefaultSampleRate();
-
-    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
-
+    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) override;
+    
 private:
     ampmodem demodAM_DSB;
 };

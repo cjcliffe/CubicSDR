@@ -7,13 +7,13 @@
 
 class SDRDeviceAddDialog : public SDRDeviceAddForm {
 public:
-    SDRDeviceAddDialog( wxWindow* parent );
+    explicit SDRDeviceAddDialog( wxWindow* parent );
 
-    void OnSoapyModuleChanged( wxCommandEvent& event );
-    void OnCancelButton( wxCommandEvent& event );
-    void OnOkButton( wxCommandEvent& event );
+    void OnSoapyModuleChanged( wxCommandEvent& event ) override;
+    void OnCancelButton( wxCommandEvent& event ) override;
+    void OnOkButton( wxCommandEvent& event ) override;
     
-    bool wasOkPressed();
+    bool wasOkPressed() const;
     std::string getSelectedModule();
     std::string getModuleParam();
     

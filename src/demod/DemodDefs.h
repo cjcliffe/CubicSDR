@@ -15,20 +15,6 @@
 
 class DemodulatorThread;
 
-class DemodulatorThreadControlCommand {
-public:
-    enum DemodulatorThreadControlCommandEnum {
-        DEMOD_THREAD_CMD_CTL_NULL, DEMOD_THREAD_CMD_CTL_SQUELCH_ON, DEMOD_THREAD_CMD_CTL_SQUELCH_OFF, DEMOD_THREAD_CMD_CTL_TYPE
-    };
-
-    DemodulatorThreadControlCommand() :
-            cmd(DEMOD_THREAD_CMD_CTL_NULL), demodType("") {
-    }
-
-    DemodulatorThreadControlCommandEnum cmd;
-    std::string demodType;
-};
-
 class DemodulatorThreadIQData {
 public:
     long long frequency;
@@ -48,9 +34,7 @@ public:
         return *this;
     }
 
-    virtual ~DemodulatorThreadIQData() {
-
-    }
+    virtual ~DemodulatorThreadIQData() = default;
 };
 
 class Modem;
@@ -71,41 +55,14 @@ public:
 
     }
 
-    virtual ~DemodulatorThreadPostIQData() {
-       
-    }
+    virtual ~DemodulatorThreadPostIQData() = default;
 };
 
-
-class DemodulatorThreadAudioData {
-public:
-    long long frequency;
-    unsigned int sampleRate;
-    unsigned char channels;
-
-    std::vector<float> *data;
-
-    DemodulatorThreadAudioData() :
-            frequency(0), sampleRate(0), channels(0), data(NULL) {
-
-    }
-
-    DemodulatorThreadAudioData(long long frequency, unsigned int sampleRate, std::vector<float> *data) :
-            frequency(frequency), sampleRate(sampleRate), channels(1), data(data) {
-
-    }
-
-    virtual ~DemodulatorThreadAudioData() {
-
-    }
-};
 typedef std::shared_ptr<DemodulatorThreadIQData> DemodulatorThreadIQDataPtr;
 typedef std::shared_ptr<DemodulatorThreadPostIQData> DemodulatorThreadPostIQDataPtr;
 
 typedef ThreadBlockingQueue<DemodulatorThreadIQDataPtr> DemodulatorThreadInputQueue;
 typedef ThreadBlockingQueue<DemodulatorThreadPostIQDataPtr> DemodulatorThreadPostInputQueue;
-typedef ThreadBlockingQueue<DemodulatorThreadControlCommand> DemodulatorThreadControlCommandQueue;
 
 typedef std::shared_ptr<DemodulatorThreadInputQueue> DemodulatorThreadInputQueuePtr;
 typedef std::shared_ptr<DemodulatorThreadPostInputQueue> DemodulatorThreadPostInputQueuePtr;
-typedef std::shared_ptr<DemodulatorThreadControlCommandQueue> DemodulatorThreadControlCommandQueuePtr;

@@ -25,7 +25,6 @@ public:
 
 private:
     DemodulatorInstancePtr activeDemod = nullptr;
-    void OnEnter ( wxCommandEvent &event );
     void OnChar ( wxKeyEvent &event );
 	void OnShow(wxShowEvent &event);
     DECLARE_EVENT_TABLE()

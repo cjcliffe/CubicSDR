@@ -36,15 +36,13 @@ MeterCanvas::MeterCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
     glContext = new MeterContext(this, &wxGetApp().GetContext(this), wxGetApp().GetContextAttributes());
 }
 
-MeterCanvas::~MeterCanvas() {
-
-}
+MeterCanvas::~MeterCanvas() = default;
 
 void MeterCanvas::setLevel(float level_in) {
     level = level_in;
     Refresh();
 }
-float MeterCanvas::getLevel() {
+float MeterCanvas::getLevel() const {
     return level;
 }
 
@@ -68,7 +66,7 @@ void MeterCanvas::setInputValue(float slider_in) {
     Refresh();
 }
 
-bool MeterCanvas::inputChanged() {
+bool MeterCanvas::inputChanged() const {
     return (inputValue != userInputValue);
 }
 
@@ -77,13 +75,13 @@ float MeterCanvas::getInputValue() {
     return userInputValue;
 }
 
-void MeterCanvas::setShowUserInput(bool showUserInput) {
-    this->showUserInput = showUserInput;
+void MeterCanvas::setShowUserInput(bool showUserInput_in) {
+    showUserInput = showUserInput_in;
 }
 
 void MeterCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
  //   wxPaintDC dc(this);
-    const wxSize ClientSize = GetClientSize();
+    const wxSize ClientSize = GetClientSize() * GetContentScaleFactor();
 
     glContext->SetCurrent(*this);
     initGLExtensions();
@@ -151,7 +149,7 @@ void MeterCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseWheelMoved(event);
     float movement = 3.0 * (float)event.GetWheelRotation();
 
-	float currentValue = 0;
+	float currentValue;
 	if (showUserInput) {
 		currentValue = userInputValue;
 	} else {

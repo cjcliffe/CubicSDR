@@ -8,19 +8,19 @@ class ModemIQ : public Modem {
 public:
     ModemIQ();
 
-    std::string getType();
-    std::string getName();
+    std::string getType() override;
+    std::string getName() override;
     
     static ModemBase *factory();
 
-    int checkSampleRate(long long sampleRate, int audioSampleRate);
-    int getDefaultSampleRate();
+    int checkSampleRate(long long sampleRate, int audioSampleRate) override;
+    int getDefaultSampleRate() override;
 
-    ModemKit *buildKit(long long sampleRate, int audioSampleRate);
+    ModemKit *buildKit(long long sampleRate, int audioSampleRate) override;
 
-    void disposeKit(ModemKit *kit);
+    void disposeKit(ModemKit *kit) override;
     
-    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
+    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) override;
     
 private:
     

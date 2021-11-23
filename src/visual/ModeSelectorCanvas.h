@@ -28,25 +28,25 @@ public:
 class ModeSelectorCanvas: public InteractiveCanvas {
 public:
     ModeSelectorCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
-    ~ModeSelectorCanvas();
+    ~ModeSelectorCanvas() override;
 
     int getHoveredSelection();
     void setHelpTip(std::string tip);
 
     void addChoice(int value, std::string label);
     void addChoice(std::string label);
-    void setSelection(std::string label);
+    void setSelection(const std::string& label);
     std::string getSelectionLabel();
     void setSelection(int value);
     int getSelection();
 
-    void setToggleMode(bool toggleMode);
+    void setToggleMode(bool toggleMode_in);
 
-    bool modeChanged();
+    bool modeChanged() const;
     void clearModeChanged();
     
-    void setPadding(float padX, float padY);
-    void setHighlightColor(RGBA4f hc);
+    void setPadding(float padX_in, float padY_in);
+    void setHighlightColor(const RGBA4f& hc);
     
 private:
     void setNumChoices(int numChoices_in);

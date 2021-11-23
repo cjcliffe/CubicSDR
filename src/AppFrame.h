@@ -40,9 +40,9 @@ class PortSelectorDialog;
 class AppFrame: public wxFrame {
 public:
     AppFrame();
-    ~AppFrame();
+    ~AppFrame() override;
 
-    void initDeviceParams(SDRDeviceInfo *devInfo);
+    void initDeviceParams(SDRDeviceInfo *devInfo_in);
 
     FFTVisualDataThread *getWaterfallDataThread();
 	WaterfallCanvas *getWaterfallCanvas();
@@ -80,12 +80,12 @@ public:
 	bool canFocus();
 #endif
     //set tooltip to window
-    void setStatusText(wxWindow* window, std::string statusText);
-    void setStatusText(std::string statusText, int value);
+    void setStatusText(wxWindow* window, const std::string& statusText);
+    void setStatusText(const std::string& statusText, int value);
 
 
 #ifdef USE_HAMLIB
-	void setRigControlPort(std::string portName);
+	void setRigControlPort(const std::string& portName);
 	void dismissRigControlPortDialog();
 #endif
 
@@ -192,13 +192,13 @@ private:
     /**
      * Session Management
      */
-    void saveSession(std::string fileName);
-    bool loadSession(std::string fileName);
+    void saveSession(const std::string& fileName);
+    bool loadSession(const std::string& fileName);
 
 	/**
 	 * Keyboard handlers
 	 */
-	void gkNudge(DemodulatorInstancePtr demod, int snap);
+	void gkNudge(const DemodulatorInstancePtr& demod, int snap);
 
 	void toggleActiveDemodRecording();
 	void toggleAllActiveDemodRecording();

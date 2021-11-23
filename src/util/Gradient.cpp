@@ -2,11 +2,9 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "Gradient.h"
-#include <stddef.h>
+#include <cstddef>
 
-Gradient::Gradient() {
-	//nothing
-}
+Gradient::Gradient() = default;
 
 void Gradient::clear() {
 	colors.clear();
@@ -86,6 +84,4 @@ void Gradient::generate(unsigned int len) {
     }
 }
 
-Gradient::~Gradient() {
-
-}
+Gradient::~Gradient() = default;

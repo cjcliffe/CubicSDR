@@ -78,8 +78,8 @@ int ModemAnalog::checkSampleRate(long long sampleRate, int /* audioSampleRate */
 }
 
 ModemKit *ModemAnalog::buildKit(long long sampleRate, int audioSampleRate) {
-    ModemKitAnalog *akit = new ModemKitAnalog;
-
+    auto *akit = new ModemKitAnalog;
+    
     // stop-band attenuation [dB]
     float As = 60.0f;
 
@@ -92,8 +92,8 @@ ModemKit *ModemAnalog::buildKit(long long sampleRate, int audioSampleRate) {
 }
 
 void ModemAnalog::disposeKit(ModemKit *kit) {
-    ModemKitAnalog *akit = (ModemKitAnalog *)kit;
-
+    auto *akit = (ModemKitAnalog *)kit;
+    
     msresamp_rrrf_destroy(akit->audioResampler);
     delete akit;
 }

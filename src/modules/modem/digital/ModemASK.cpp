@@ -4,14 +4,14 @@
 #include "ModemASK.h"
 
 ModemASK::ModemASK() : ModemDigital()  {
-    demodASK2 = modem_create(LIQUID_MODEM_ASK2);
-    demodASK4 = modem_create(LIQUID_MODEM_ASK4);
-    demodASK8 = modem_create(LIQUID_MODEM_ASK8);
-    demodASK16 = modem_create(LIQUID_MODEM_ASK16);
-    demodASK32 = modem_create(LIQUID_MODEM_ASK32);
-    demodASK64 = modem_create(LIQUID_MODEM_ASK64);
-    demodASK128 = modem_create(LIQUID_MODEM_ASK128);
-    demodASK256 = modem_create(LIQUID_MODEM_ASK256);
+    demodASK2 = modemcf_create(LIQUID_MODEM_ASK2);
+    demodASK4 = modemcf_create(LIQUID_MODEM_ASK4);
+    demodASK8 = modemcf_create(LIQUID_MODEM_ASK8);
+    demodASK16 = modemcf_create(LIQUID_MODEM_ASK16);
+    demodASK32 = modemcf_create(LIQUID_MODEM_ASK32);
+    demodASK64 = modemcf_create(LIQUID_MODEM_ASK64);
+    demodASK128 = modemcf_create(LIQUID_MODEM_ASK128);
+    demodASK256 = modemcf_create(LIQUID_MODEM_ASK256);
     demodASK = demodASK2;
     cons = 2;
 }
@@ -21,13 +21,13 @@ ModemBase *ModemASK::factory() {
 }
 
 ModemASK::~ModemASK() {
-    modem_destroy(demodASK4);
-    modem_destroy(demodASK8);
-    modem_destroy(demodASK16);
-    modem_destroy(demodASK32);
-    modem_destroy(demodASK64);
-    modem_destroy(demodASK128);
-    modem_destroy(demodASK256);
+    modemcf_destroy(demodASK4);
+    modemcf_destroy(demodASK8);
+    modemcf_destroy(demodASK16);
+    modemcf_destroy(demodASK32);
+    modemcf_destroy(demodASK64);
+    modemcf_destroy(demodASK128);
+    modemcf_destroy(demodASK256);
 }
 
 std::string ModemASK::getName() {
@@ -42,7 +42,7 @@ ModemArgInfoList ModemASK::getSettings() {
     consArg.name = "Constellation";
     consArg.description = "Modem Constellation Pattern";
     consArg.value = std::to_string(cons);
-    consArg.type = ModemArgInfo::STRING;
+    consArg.type = ModemArgInfo::Type::STRING;
     std::vector<std::string> consOpts;
     consOpts.push_back("2");
     consOpts.push_back("4");
@@ -72,9 +72,9 @@ std::string ModemASK::readSetting(std::string setting) {
     return "";
 }
 
-void ModemASK::updateDemodulatorCons(int cons) {
-    this->cons = cons;
-    switch (cons) {
+void ModemASK::updateDemodulatorCons(int cons_in) {
+    cons = cons_in;
+    switch (cons_in) {
         case 2:
             demodASK = demodASK2;
             break;
@@ -103,12 +103,12 @@ void ModemASK::updateDemodulatorCons(int cons) {
 }
 
 void ModemASK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
-    ModemKitDigital *dkit = (ModemKitDigital *)kit;
+    auto *dkit = (ModemKitDigital *)kit;
     
     digitalStart(dkit, demodASK, input);
 
     for (size_t i = 0, bufSize = input->data.size(); i < bufSize; i++) {
-        modem_demodulate(demodASK, input->data[i], &demodOutputDataDigital[i]);
+        modemcf_demodulate(demodASK, input->data[i], &demodOutputDataDigital[i]);
     }
     updateDemodulatorLock(demodASK, 0.005f);
     

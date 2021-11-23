@@ -14,13 +14,10 @@
 #endif
 
 #include "CubicSDR.h"
-#include "CubicSDRDefs.h"
-#include "AppFrame.h"
-#include <algorithm>
 
 wxString PrimaryGLContext::glGetwxString(GLenum name) {
     const GLubyte *v = glGetString(name);
-    if (v == 0) {
+    if (v == nullptr) {
         // The error is not important. It is GL_INVALID_ENUM.
         // We just want to clear the error stack.
         glGetError();
@@ -65,7 +62,7 @@ PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContex
 //#endif
 }
 
-void PrimaryGLContext::DrawDemodInfo(DemodulatorInstancePtr demod, RGBA4f color, long long center_freq, long long srate, bool centerline) {
+void PrimaryGLContext::DrawDemodInfo(const DemodulatorInstancePtr& demod, const RGBA4f& color, long long center_freq, long long srate, bool centerline) {
     if (!demod) {
         return;
     }
@@ -203,7 +200,7 @@ void PrimaryGLContext::DrawDemodInfo(DemodulatorInstancePtr demod, RGBA4f color,
 
 }
 
-void PrimaryGLContext::DrawFreqBwInfo(long long freq, int bw, RGBA4f color, long long center_freq, long long srate, bool stack, bool centerline) {
+void PrimaryGLContext::DrawFreqBwInfo(long long freq, int bw, const RGBA4f& color, long long center_freq, long long srate, bool stack, bool centerline) {
     if (!srate) {
         srate = wxGetApp().getSampleRate();
     }
@@ -310,7 +307,7 @@ void PrimaryGLContext::DrawFreqBwInfo(long long freq, int bw, RGBA4f color, long
     glDisable(GL_BLEND);
 }
 
-void PrimaryGLContext::DrawDemod(DemodulatorInstancePtr demod, RGBA4f color, long long center_freq, long long srate) {
+void PrimaryGLContext::DrawDemod(const DemodulatorInstancePtr& demod, const RGBA4f& color, long long center_freq, long long srate) {
     if (!demod) {
         return;
     }
@@ -431,7 +428,7 @@ void PrimaryGLContext::drawSingleDemodLabel(const std::wstring& demodStr, float 
     refDrawingFont.drawString(demodStr, 2.0 * (uxPos - 0.5), -1.0 + hPos, demodAlign, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
 }
 
-void PrimaryGLContext::DrawFreqSelector(float uxPos, RGBA4f color, float w, long long /* center_freq */, long long srate) {
+void PrimaryGLContext::DrawFreqSelector(float uxPos, const RGBA4f& color, float w, long long /* center_freq */, long long srate) {
     
     DemodulatorInstancePtr demod = wxGetApp().getDemodMgr().getCurrentModem();
 
@@ -483,7 +480,7 @@ void PrimaryGLContext::DrawFreqSelector(float uxPos, RGBA4f color, float w, long
 
 }
 
-void PrimaryGLContext::DrawRangeSelector(float uxPos1, float uxPos2, RGBA4f color) {
+void PrimaryGLContext::DrawRangeSelector(float uxPos1, float uxPos2, const RGBA4f& color) {
     if (uxPos2 < uxPos1) {
         float temp = uxPos2;
         uxPos2=uxPos1;
@@ -531,6 +528,6 @@ void PrimaryGLContext::EndDraw() {
 //    CheckGLError();
 }
 
-void PrimaryGLContext::setHoverAlpha(float hoverAlpha) {
-    this->hoverAlpha = hoverAlpha;
+void PrimaryGLContext::setHoverAlpha(float hoverAlpha_in) {
+    hoverAlpha = hoverAlpha_in;
 }

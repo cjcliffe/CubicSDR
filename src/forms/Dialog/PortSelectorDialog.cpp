@@ -3,7 +3,7 @@
 #include "rs232.h"
 #include "CubicSDR.h"
 
-PortSelectorDialog::PortSelectorDialog( wxWindow* parent, wxWindowID id, std::string defaultPort ) : PortSelectorDialogBase(parent, id) {
+PortSelectorDialog::PortSelectorDialog( wxWindow* parent, wxWindowID id, const std::string& defaultPort ) : PortSelectorDialogBase(parent, id) {
     comEnumerate();
     
     int nPorts = comGetNoPorts();

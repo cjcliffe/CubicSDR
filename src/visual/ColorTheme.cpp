@@ -4,17 +4,15 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "ColorTheme.h"
-#include "CubicSDR.h"
-#include "CubicSDRDefs.h"
 
 ThemeMgr ThemeMgr::mgr;
 
-void ThemeMgr::setTheme(int themeId) {
-    currentTheme = themes[themeId];
-    this->themeId = themeId;
+void ThemeMgr::setTheme(int themeId_in) {
+    currentTheme = themes[themeId_in];
+    themeId = themeId_in;
 }
 
-int ThemeMgr::getTheme() {
+int ThemeMgr::getTheme() const {
     return themeId;
 }
 

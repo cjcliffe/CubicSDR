@@ -2,13 +2,9 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include <DemodulatorMgr.h>
-#include <sstream>
 #include <algorithm>
 #include <string>
-#include <sstream>
-#include <algorithm>
 
-#include "DemodulatorMgr.h"
 #include "CubicSDR.h"
 
 #if USE_HAMLIB
@@ -18,8 +14,8 @@
 #include "DataTree.h"
 #include <wx/string.h>
 
-bool demodFreqCompare (DemodulatorInstancePtr i, DemodulatorInstancePtr j) { return (i->getFrequency() < j->getFrequency()); }
-bool inactiveCompare (DemodulatorInstancePtr i, DemodulatorInstancePtr j) { return (i->isActive() < j->isActive()); }
+bool demodFreqCompare (const DemodulatorInstancePtr& i, const DemodulatorInstancePtr& j) { return (i->getFrequency() < j->getFrequency()); }
+bool inactiveCompare (const DemodulatorInstancePtr& i, const DemodulatorInstancePtr& j) { return (i->isActive() < j->isActive()); }
 
 DemodulatorMgr::DemodulatorMgr() {
 
@@ -55,7 +51,7 @@ void DemodulatorMgr::terminateAll() {
 
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
     
-    while (demods.size()) {
+    while (!demods.empty()) {
 
         DemodulatorInstancePtr d = demods.back();
         demods.pop_back();
@@ -95,7 +91,7 @@ std::vector<DemodulatorInstancePtr> DemodulatorMgr::getOrderedDemodulators(bool 
     return demods_ordered;
 }
 
-DemodulatorInstancePtr DemodulatorMgr::getPreviousDemodulator(DemodulatorInstancePtr demod, bool actives) {
+DemodulatorInstancePtr DemodulatorMgr::getPreviousDemodulator(const DemodulatorInstancePtr& demod, bool actives) {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
     if (!getCurrentModem()) {
         return nullptr;
@@ -112,7 +108,7 @@ DemodulatorInstancePtr DemodulatorMgr::getPreviousDemodulator(DemodulatorInstanc
     return *(--p);
 }
 
-DemodulatorInstancePtr DemodulatorMgr::getNextDemodulator(DemodulatorInstancePtr demod, bool actives) {
+DemodulatorInstancePtr DemodulatorMgr::getNextDemodulator(const DemodulatorInstancePtr& demod, bool actives) {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
     if (!getCurrentModem()) {
         return nullptr;
@@ -144,7 +140,7 @@ DemodulatorInstancePtr DemodulatorMgr::getFirstDemodulator() {
     return getOrderedDemodulators().front();
 }
 
-void DemodulatorMgr::deleteThread(DemodulatorInstancePtr demod) {
+void DemodulatorMgr::deleteThread(const DemodulatorInstancePtr& demod) {
     
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
 
@@ -176,9 +172,7 @@ std::vector<DemodulatorInstancePtr> DemodulatorMgr::getDemodulatorsAt(long long 
     
     std::vector<DemodulatorInstancePtr> foundDemods;
 
-    for (int i = 0, iMax = demods.size(); i < iMax; i++) {
-        DemodulatorInstancePtr testDemod = demods[i];
-
+    for (auto testDemod : demods) {
         long long freqTest = testDemod->getFrequency();
         long long bandwidthTest = testDemod->getBandwidth();
         long long halfBandwidthTest = bandwidthTest / 2;
@@ -195,9 +189,7 @@ std::vector<DemodulatorInstancePtr> DemodulatorMgr::getDemodulatorsAt(long long 
 
 bool DemodulatorMgr::anyDemodulatorsAt(long long freq, int bandwidth) {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
-    for (int i = 0, iMax = demods.size(); i < iMax; i++) {
-        DemodulatorInstancePtr testDemod = demods[i];
-
+    for (auto testDemod : demods) {
         long long freqTest = testDemod->getFrequency();
         long long bandwidthTest = testDemod->getBandwidth();
         long long halfBandwidthTest = bandwidthTest / 2;
@@ -214,7 +206,7 @@ bool DemodulatorMgr::anyDemodulatorsAt(long long freq, int bandwidth) {
 }
 
 
-void DemodulatorMgr::setActiveDemodulator(DemodulatorInstancePtr demod, bool temporary) {
+void DemodulatorMgr::setActiveDemodulator(const DemodulatorInstancePtr& demod, bool temporary) {
 
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
 
@@ -261,7 +253,7 @@ void DemodulatorMgr::setActiveDemodulator(DemodulatorInstancePtr demod, bool tem
 void DemodulatorMgr::setActiveDemodulatorByRawPointer(DemodulatorInstance* demod, bool temporary) {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
 
-    for (auto existing_demod : demods) {
+    for (const auto& existing_demod : demods) {
 
         if (existing_demod.get() == demod) {
 
@@ -335,7 +327,7 @@ void DemodulatorMgr::updateLastState() {
     if (currentModem) {
         lastBandwidth = currentModem->getBandwidth();
         lastDemodType = currentModem->getDemodulatorType();
-        lastDemodLock = currentModem->getDemodulatorLock()?true:false;
+        lastDemodLock = currentModem->getDemodulatorLock() != 0;
         lastSquelchEnabled = currentModem->isSquelchEnabled();
         lastSquelch = currentModem->getSquelchLevel();
         lastGain = currentModem->getGain();
@@ -348,29 +340,29 @@ int DemodulatorMgr::getLastBandwidth() const {
     return lastBandwidth;
 }
 
-void DemodulatorMgr::setLastBandwidth(int lastBandwidth) {
-    if (lastBandwidth < MIN_BANDWIDTH) {
-        lastBandwidth = MIN_BANDWIDTH;
-    } else  if (lastBandwidth > wxGetApp().getSampleRate()) {
-        lastBandwidth = wxGetApp().getSampleRate();
+void DemodulatorMgr::setLastBandwidth(int lastBandwidth_in) {
+    if (lastBandwidth_in < MIN_BANDWIDTH) {
+        lastBandwidth_in = MIN_BANDWIDTH;
+    } else  if (lastBandwidth_in > wxGetApp().getSampleRate()) {
+        lastBandwidth_in = wxGetApp().getSampleRate();
     }
-    this->lastBandwidth = lastBandwidth;
+    lastBandwidth = lastBandwidth_in;
 }
 
 std::string DemodulatorMgr::getLastDemodulatorType() const {
     return lastDemodType;
 }
 
-void DemodulatorMgr::setLastDemodulatorType(std::string lastDemodType) {
-    this->lastDemodType = lastDemodType;
+void DemodulatorMgr::setLastDemodulatorType(std::string lastDemodType_in) {
+    lastDemodType = lastDemodType_in;
 }
 
 float DemodulatorMgr::getLastGain() const {
     return lastGain;
 }
 
-void DemodulatorMgr::setLastGain(float lastGain) {
-    this->lastGain = lastGain;
+void DemodulatorMgr::setLastGain(float lastGain_in) {
+    lastGain = lastGain_in;
 }
 
 
@@ -386,31 +378,31 @@ float DemodulatorMgr::getLastSquelchLevel() const {
     return lastSquelch;
 }
 
-void DemodulatorMgr::setLastSquelchLevel(float lastSquelch) {
-    this->lastSquelch = lastSquelch;
+void DemodulatorMgr::setLastSquelchLevel(float lastSquelch_in) {
+    lastSquelch = lastSquelch_in;
 }
 
 bool DemodulatorMgr::isLastSquelchEnabled() const {
     return lastSquelchEnabled;
 }
 
-void DemodulatorMgr::setLastSquelchEnabled(bool lastSquelchEnabled) {
-    this->lastSquelchEnabled = lastSquelchEnabled;
+void DemodulatorMgr::setLastSquelchEnabled(bool lastSquelchEnabled_in) {
+    lastSquelchEnabled = lastSquelchEnabled_in;
 }
 
 bool DemodulatorMgr::isLastMuted() const {
     return lastMuted;
 }
 
-void DemodulatorMgr::setLastMuted(bool lastMuted) {
-    this->lastMuted = lastMuted;
+void DemodulatorMgr::setLastMuted(bool lastMuted_in) {
+    lastMuted = lastMuted_in;
 }
 
-ModemSettings DemodulatorMgr::getLastModemSettings(std::string modemType) {
+ModemSettings DemodulatorMgr::getLastModemSettings(const std::string& modemType) {
     return lastModemSettings[modemType];
 }
 
-void DemodulatorMgr::setLastModemSettings(std::string modemType, ModemSettings settings) {
+void DemodulatorMgr::setLastModemSettings(const std::string& modemType, ModemSettings settings) {
     lastModemSettings[modemType] = settings;
 }
 
@@ -422,7 +414,7 @@ std::map<int, RtAudio::DeviceInfo> DemodulatorMgr::getOutputDevices() {
     return outputDevices;
 }
 
-void DemodulatorMgr::saveInstance(DataNode *node, DemodulatorInstancePtr inst) {
+void DemodulatorMgr::saveInstance(DataNode *node, const DemodulatorInstancePtr& inst) {
 
     *node->newChild("bandwidth") = inst->getBandwidth();
     *node->newChild("frequency") = inst->getFrequency();  
@@ -444,7 +436,7 @@ void DemodulatorMgr::saveInstance(DataNode *node, DemodulatorInstancePtr inst) {
     }
     
     ModemSettings saveSettings = inst->readModemSettings();
-    if (saveSettings.size()) {
+    if (!saveSettings.empty()) {
         DataNode *settingsNode = node->newChild("settings");
         for (ModemSettings::const_iterator msi = saveSettings.begin(); msi != saveSettings.end(); msi++) {
             *settingsNode->newChild(msi->first.c_str()) = msi->second;
@@ -454,7 +446,7 @@ void DemodulatorMgr::saveInstance(DataNode *node, DemodulatorInstancePtr inst) {
 
 std::wstring DemodulatorMgr::getSafeWstringValue(DataNode* node) {
 
-    std::wstring decodedWString = L"";
+    std::wstring decodedWString;
 
     if (node != nullptr) {
 
@@ -462,7 +454,7 @@ std::wstring DemodulatorMgr::getSafeWstringValue(DataNode* node) {
         try {
             node->element()->get(decodedWString);
 
-        } catch (DataTypeMismatchException e) {
+        } catch (const DataTypeMismatchException &) {
             //2) wstring decode fail, try simple std::string
             std::string decodedStdString;
             try {
@@ -472,7 +464,7 @@ std::wstring DemodulatorMgr::getSafeWstringValue(DataNode* node) {
                 //use wxString for a clean conversion to a wstring:
                 decodedWString = wxString(decodedStdString).ToStdWstring();
 
-            } catch (DataTypeMismatchException e) {
+            } catch (const DataTypeMismatchException &) {
                 //nothing works, return an empty string.
                 decodedWString = L"";
             }
@@ -490,22 +482,22 @@ DemodulatorInstancePtr DemodulatorMgr::loadInstance(DataNode *node) {
 	 
     node->rewindAll();
     
-    long bandwidth = *node->getNext("bandwidth");
-    long long freq = *node->getNext("frequency");
+    long bandwidth = (long)*node->getNext("bandwidth");
+    long long freq = (long long)*node->getNext("frequency");
     float squelch_level = node->hasAnother("squelch_level") ? (float) *node->getNext("squelch_level") : 0;
     int squelch_enabled = node->hasAnother("squelch_enabled") ? (int) *node->getNext("squelch_enabled") : 0;
     int muted = node->hasAnother("muted") ? (int) *node->getNext("muted") : 0;
     int delta_locked = node->hasAnother("delta_lock") ? (int) *node->getNext("delta_lock") : 0;
     int delta_ofs = node->hasAnother("delta_ofs") ? (int) *node->getNext("delta_ofs") : 0;
-    std::string output_device = node->hasAnother("output_device") ? string(*(node->getNext("output_device"))) : "";
-    float gain = node->hasAnother("gain") ? (float) *node->getNext("gain") : 1.0;
+    std::string output_device = node->hasAnother("output_device") ? ((string)*(node->getNext("output_device"))) : "";
+    float gain = node->hasAnother("gain") ? (float) *node->getNext("gain") : 1.0f;
     
     std::string type = "FM";
     
     DataNode *demodTypeNode = node->hasAnother("type")?node->getNext("type"):nullptr;
     
-    if (demodTypeNode && demodTypeNode->element()->getDataType() == DataElement::DATA_INT) {
-        int legacyType = *demodTypeNode;
+    if (demodTypeNode && demodTypeNode->element()->getDataType() == DataElement::Type::DATA_INT) {
+        int legacyType = (int)*demodTypeNode;
         int legacyStereo = node->hasAnother("stereo") ? (int) *node->getNext("stereo") : 0;
         switch (legacyType) {   // legacy demod ID
             case 1: type = legacyStereo?"FMS":"FM"; break;
@@ -526,12 +518,12 @@ DemodulatorInstancePtr DemodulatorMgr::loadInstance(DataNode *node) {
             case 16: type = "I/Q"; break;
             default: type = "FM"; break;
         }
-    } else if (demodTypeNode && demodTypeNode->element()->getDataType() == DataElement::DATA_STRING) {
+    } else if (demodTypeNode && demodTypeNode->element()->getDataType() == DataElement::Type::DATA_STRING) {
         demodTypeNode->element()->get(type);
     }
     
     //read the user label associated with the demodulator
-    std::wstring user_label = L"";
+    std::wstring user_label;
     
     DataNode *demodUserLabel = node->hasAnother("user_label") ? node->getNext("user_label") : nullptr;
     
@@ -549,7 +541,7 @@ DemodulatorInstancePtr DemodulatorMgr::loadInstance(DataNode *node) {
             std::string keyName = settingNode->getName();
             std::string strSettingValue = settingNode->element()->toString();
             
-            if (keyName != "" && strSettingValue != "") {
+            if (!keyName.empty() && !strSettingValue.empty()) {
                 mSettings[keyName] = strSettingValue;
             }
         }
@@ -564,7 +556,7 @@ DemodulatorInstancePtr DemodulatorMgr::loadInstance(DataNode *node) {
     newDemod->setFrequency(freq);
     newDemod->setGain(gain);
     newDemod->updateLabel(freq);
-    newDemod->setMuted(muted?true:false);
+    newDemod->setMuted(muted != 0);
     if (delta_locked) {
         newDemod->setDeltaLock(true);
         newDemod->setDeltaLockOfs(delta_ofs);

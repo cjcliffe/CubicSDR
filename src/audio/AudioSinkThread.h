@@ -10,10 +10,10 @@ class AudioSinkThread : public IOThread {
 public:
 
     AudioSinkThread();
-    virtual ~AudioSinkThread();
+    ~AudioSinkThread() override;
 
-	virtual void run();
-	virtual void terminate();
+	void run() override;
+	void terminate() override;
 
     virtual void sink(AudioThreadInputPtr input) = 0;
     virtual void inputChanged(AudioThreadInput oldProps, AudioThreadInputPtr newProps) = 0;

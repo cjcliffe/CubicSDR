@@ -51,7 +51,7 @@ void DigitalConsole::OnClear( wxCommandEvent& /* event */ ) {
     m_dataView->Clear();
 }
 
-void DigitalConsole::write(std::string outp) {
+void DigitalConsole::write(const std::string& outp) {
     if (streamPaused.load()) {
         return;
     }
@@ -76,13 +76,11 @@ ModemDigitalOutputConsole::ModemDigitalOutputConsole(): ModemDigitalOutput(), di
     streamWritten.store(false);
 }
 
-ModemDigitalOutputConsole::~ModemDigitalOutputConsole() {
-    
-}
+ModemDigitalOutputConsole::~ModemDigitalOutputConsole() = default;
 
 void ModemDigitalOutputConsole::setDialog(DigitalConsole *dialog_in) {
     dialog = dialog_in;
-    if (dialog && dialogTitle != "") {
+    if (dialog && !dialogTitle.empty()) {
         dialog->SetTitle(dialogTitle);
     }
 }
@@ -119,7 +117,7 @@ void ModemDigitalOutputConsole::Close() {
     dialog = nullptr;
 }
 
-void ModemDigitalOutputConsole::setTitle(std::string title) {
+void ModemDigitalOutputConsole::setTitle(const std::string& title) {
     if (dialog) {
         dialog->SetTitle(title);
     }

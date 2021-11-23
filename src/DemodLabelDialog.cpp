@@ -19,7 +19,7 @@ DemodLabelDialog::DemodLabelDialog(wxWindow * parent, wxWindowID id, const wxStr
 
     wxString labelStr;
 
-    //by construction, is allways != nullptr
+    //by construction, is always != nullptr
     activeDemod = demod;
 	
     labelStr = activeDemod->getDemodulatorUserLabel();
@@ -39,7 +39,7 @@ DemodLabelDialog::DemodLabelDialog(wxWindow * parent, wxWindowID id, const wxStr
     int titleX = this->GetTextExtent(title).GetWidth();
     dialogText->SetMinSize(wxSize(max(int(2.0 * titleX), int(2.0 * textCtrlX)), -1));
     
-    wxBoxSizer* dialogsizer = new wxBoxSizer(wxALL);
+    auto* dialogsizer = new wxBoxSizer(wxALL);
     dialogsizer->Add(dialogText, wxSizerFlags(1).Expand().Border(wxALL, 5));
     SetSizerAndFit(dialogsizer);
     Centre();

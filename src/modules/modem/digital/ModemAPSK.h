@@ -7,27 +7,27 @@
 class ModemAPSK : public ModemDigital {
 public:
     ModemAPSK();
-    ~ModemAPSK();
+    ~ModemAPSK() override;
 
-    std::string getName();
+    std::string getName() override;
     
     static ModemBase *factory();
 
-    ModemArgInfoList getSettings();
-    void writeSetting(std::string setting, std::string value);
-    std::string readSetting(std::string setting);
+    ModemArgInfoList getSettings() override;
+    void writeSetting(std::string setting, std::string value) override;
+    std::string readSetting(std::string setting) override;
 
-    void updateDemodulatorCons(int cons);
-    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
+    void updateDemodulatorCons(int cons_in);
+    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) override;
     
 private:
     int cons;
-    modem demodAPSK;
-    modem demodAPSK4;
-    modem demodAPSK8;
-    modem demodAPSK16;
-    modem demodAPSK32;
-    modem demodAPSK64;
-    modem demodAPSK128;
-    modem demodAPSK256;
+    modemcf demodAPSK;
+    modemcf demodAPSK4;
+    modemcf demodAPSK8;
+    modemcf demodAPSK16;
+    modemcf demodAPSK32;
+    modemcf demodAPSK64;
+    modemcf demodAPSK128;
+    modemcf demodAPSK256;
 };

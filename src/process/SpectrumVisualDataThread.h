@@ -9,12 +9,12 @@
 class SpectrumVisualDataThread : public IOThread {
 public:
     SpectrumVisualDataThread();
-    ~SpectrumVisualDataThread();
+    ~SpectrumVisualDataThread() override;
     SpectrumVisualProcessor *getProcessor();
     
-    virtual void run();
+    void run() override;
 
-    virtual void terminate();
+    void terminate() override;
     
 protected:
     SpectrumVisualProcessor sproc;

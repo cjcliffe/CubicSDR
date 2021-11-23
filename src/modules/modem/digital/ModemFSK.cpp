@@ -38,7 +38,7 @@ ModemArgInfoList ModemFSK::getSettings() {
     bpsArg.name = "Bits/symbol";
     bpsArg.value = std::to_string(bps);
     bpsArg.description = "Modem bits-per-symbol";
-    bpsArg.type = ModemArgInfo::STRING;
+    bpsArg.type = ModemArgInfo::Type::STRING;
     bpsArg.units = "bits";
     
     std::vector<std::string> bpsOpts;
@@ -56,7 +56,7 @@ ModemArgInfoList ModemFSK::getSettings() {
     spsArg.name = "Symbols/second";
     spsArg.value = std::to_string(sps);
     spsArg.description = "Modem symbols-per-second";
-    spsArg.type = ModemArgInfo::INT;
+    spsArg.type = ModemArgInfo::Type::INT;
     spsArg.range = ModemRange(10,115200);
     std::vector<std::string> spsOpts;
     
@@ -67,7 +67,7 @@ ModemArgInfoList ModemFSK::getSettings() {
     bwArg.name = "Signal bandwidth";
     bwArg.value = std::to_string(bw);
     bwArg.description = "Total signal bandwidth";
-    bwArg.type = ModemArgInfo::FLOAT;
+    bwArg.type = ModemArgInfo::Type::FLOAT;
     bwArg.range = ModemRange(0.1,0.49);
     args.push_back(bwArg);
 
@@ -99,7 +99,7 @@ std::string ModemFSK::readSetting(std::string setting) {
 }
 
 ModemKit *ModemFSK::buildKit(long long sampleRate, int audioSampleRate) {
-    ModemKitFSK *dkit = new ModemKitFSK;
+    auto *dkit = new ModemKitFSK;
     dkit->m           = bps;
     dkit->k           = (unsigned int)(sampleRate / sps);
     dkit->bw          = bw;
@@ -113,7 +113,7 @@ ModemKit *ModemFSK::buildKit(long long sampleRate, int audioSampleRate) {
 }
 
 void ModemFSK::disposeKit(ModemKit *kit) {
-    ModemKitFSK *dkit = (ModemKitFSK *)kit;
+    auto *dkit = (ModemKitFSK *)kit;
     
     fskdem_destroy(dkit->demodFSK);
     
@@ -124,12 +124,10 @@ std::string ModemFSK::getName() {
     return "FSK";
 }
 
-ModemFSK::~ModemFSK() {
-
-}
+ModemFSK::~ModemFSK() = default;
 
 void ModemFSK::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput * /* audioOut */) {
-    ModemKitFSK *dkit = (ModemKitFSK *)kit;
+    auto *dkit = (ModemKitFSK *)kit;
     
     digitalStart(dkit, nullptr, input);
 

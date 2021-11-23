@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "GLExt.h"
-#include <cstring>
 #include <iostream>
 
 #ifdef __APPLE__
@@ -64,10 +63,10 @@ void initGLExtensions() {
 #if defined(__linux__) || defined(__FreeBSD__)
     dlopen("libglx.so",RTLD_LAZY);
 
-    void (*glxSwapIntervalEXTFunc) (Display *dpy, GLXDrawable drawable, int interval) = 0;
-    int (*glxSwapIntervalMESAFunc)(unsigned int interval) = 0;
-    int (*glxSwapIntervalSGIFunc) (int interval) = 0;
-    void (*DRI2SwapIntervalFunc) (Display *dpy, XID drawable, int interval) = 0;
+    void (*glxSwapIntervalEXTFunc) (Display *dpy, GLXDrawable drawable, int interval) = nullptr;
+    int (*glxSwapIntervalMESAFunc)(unsigned int interval) = nullptr;
+    int (*glxSwapIntervalSGIFunc) (int interval) = nullptr;
+    void (*DRI2SwapIntervalFunc) (Display *dpy, XID drawable, int interval) = nullptr;
 
     glxSwapIntervalEXTFunc = (void (*) (Display *dpy, GLXDrawable drawable, int interval)) dlsym(RTLD_DEFAULT,"glXSwapIntervalEXT");
     glxSwapIntervalMESAFunc = (int (*)(unsigned int interval)) dlsym(RTLD_DEFAULT,"glXSwapIntervalMESA");
@@ -75,10 +74,10 @@ void initGLExtensions() {
     DRI2SwapIntervalFunc = (void (*) (Display *dpy, XID drawable, int interval)) dlsym(RTLD_DEFAULT,"DRI2SwapInterval");
 
     std::cout << "Available vertical sync SwapInterval functions: " << std::endl;
-    std::cout << "\tglxSwapIntervalEXT: " << ((glxSwapIntervalEXTFunc != 0)?"Yes":"No") << std::endl;
-    std::cout << "\tDRI2SwapInterval: " << ((DRI2SwapIntervalFunc != 0)?"Yes":"No") << std::endl;
-    std::cout << "\tglxSwapIntervalMESA: " << ((glxSwapIntervalMESAFunc != 0)?"Yes":"No") << std::endl;
-    std::cout << "\tglxSwapIntervalSGI: " << ((glxSwapIntervalSGIFunc != 0)?"Yes":"No") << std::endl;
+    std::cout << "\tglxSwapIntervalEXT: " << ((glxSwapIntervalEXTFunc != nullptr)?"Yes":"No") << std::endl;
+    std::cout << "\tDRI2SwapInterval: " << ((DRI2SwapIntervalFunc != nullptr)?"Yes":"No") << std::endl;
+    std::cout << "\tglxSwapIntervalMESA: " << ((glxSwapIntervalMESAFunc != nullptr)?"Yes":"No") << std::endl;
+    std::cout << "\tglxSwapIntervalSGI: " << ((glxSwapIntervalSGIFunc != nullptr)?"Yes":"No") << std::endl;
 
     if (glxSwapIntervalEXTFunc) {
         Display *dpy = glXGetCurrentDisplay();

@@ -2,14 +2,13 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "Modem.h"
-#include "CubicSDR.h"
 
 
 ModemFactoryList Modem::modemFactories;
 DefaultRatesList Modem::modemDefaultRates;
 
 //! Create an empty range (0.0, 0.0)
-ModemRange::ModemRange(void) {
+ModemRange::ModemRange() {
     _min = 0;
     _max = 0;
 }
@@ -21,26 +20,22 @@ ModemRange::ModemRange(const double minimum, const double maximum) {
 }
 
 //! Get the range minimum
-double ModemRange::minimum(void) const {
+double ModemRange::minimum() const {
     return _min;
 }
 
 //! Get the range maximum
-double ModemRange::maximum(void) const {
+double ModemRange::maximum() const {
     return _max;
 }
 
-ModemArgInfo::ModemArgInfo(void) {
-
-}
+ModemArgInfo::ModemArgInfo() = default;
 
 Modem::Modem() {
     useSignalOutput(false);
 }
 
-Modem::~Modem() {
-
-}
+Modem::~Modem() = default;
 
 void Modem::addModemFactory(ModemFactoryFn factoryFunc, std::string modemName, int defaultRate) {
     modemFactories[modemName] = factoryFunc;
@@ -94,8 +89,8 @@ void Modem::writeSettings(ModemSettings settings) {
 ModemSettings Modem::readSettings() {
     ModemArgInfoList args = getSettings();
     ModemSettings rs;
-    for (ModemArgInfoList::const_iterator i = args.begin(); i != args.end(); i++) {
-        rs[i->key] = readSetting(i->key);
+    for (const auto & arg : args) {
+        rs[arg.key] = readSetting(arg.key);
     }
     return rs;
 }

@@ -11,12 +11,12 @@ public:
     WaterfallPanel();
     void setup(unsigned int fft_size_in, int num_waterfall_lines_in);
     void refreshTheme();
-    void setPoints(std::vector<float> &points);
+    void setPoints(std::vector<float> &points_in);
     void step();
     void update();
     
 protected:
-    void drawPanelContents();
+    void drawPanelContents() override;
     
 private:
     std::vector<float> points;

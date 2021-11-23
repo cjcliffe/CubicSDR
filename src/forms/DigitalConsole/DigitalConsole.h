@@ -16,19 +16,19 @@ class ModemDigitalOutputConsole;
 class DigitalConsole: public DigitalConsoleFrame {
 public:
     DigitalConsole( wxWindow* parent, ModemDigitalOutputConsole *doParent );
-    ~DigitalConsole();
+    ~DigitalConsole() override;
 
 
-    void write(std::string outp);
+    void write(const std::string& outp);
     void write(char outc);
     
 private:
-    void DoRefresh( wxTimerEvent& event );
-    void OnClose( wxCloseEvent& event );
-    void OnClear( wxCommandEvent& event );
+    void DoRefresh( wxTimerEvent& event ) override;
+    void OnClose( wxCloseEvent& event ) override;
+    void OnClear( wxCommandEvent& event ) override;
     
-    void OnCopy( wxCommandEvent& event );
-    void OnPause( wxCommandEvent& event );
+    void OnCopy( wxCommandEvent& event ) override;
+    void OnPause( wxCommandEvent& event ) override;
 
     std::stringstream streamBuf;
     std::mutex stream_busy;
@@ -40,19 +40,19 @@ private:
 class ModemDigitalOutputConsole: public ModemDigitalOutput {
 public:
     ModemDigitalOutputConsole();
-    ~ModemDigitalOutputConsole();
+    ~ModemDigitalOutputConsole() override;
     
     void setDialog(DigitalConsole *dialog_in);
     DigitalConsole *getDialog();
 
-    void setTitle(std::string title);
+    void setTitle(const std::string& title);
     
-    void write(std::string outp);
-    void write(char outc);
+    void write(std::string outp) override;
+    void write(char outc) override;
     
-    void Show();
-    void Hide();
-    void Close();
+    void Show() override;
+    void Hide() override;
+    void Close() override;
 
 private:
     DigitalConsole *dialog;

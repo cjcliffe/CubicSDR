@@ -81,7 +81,7 @@ std::string frequencyToStr(long long freq) {
     long double freqTemp;
 
     freqTemp = freq;
-    std::string suffix("");
+    std::string suffix;
     std::stringstream freqStr;
 
     if (freqTemp >= 1.0e9) {
@@ -133,7 +133,7 @@ long long strToFrequency(std::string freqStr) {
         } else if (suffixStr.find_first_of("Hh") != std::string::npos) {
             // ...
         }
-    } else if (numPartStr.find_first_of(".") != std::string::npos || freqTemp <= 3000) {
+    } else if (numPartStr.find_first_of('.') != std::string::npos || freqTemp <= 3000) {
         freqTemp *= 1.0e6;
     }
 
@@ -147,8 +147,8 @@ public:
     ActionDialogBookmarkCatastophe() : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Bookmark Last-Loaded Backup Failure :( :( :(")) {
         m_questionText->SetLabelText(wxT("All attempts to recover bookmarks have failed. \nWould you like to exit without touching any more save files?\nClick OK to exit without saving; or Cancel to continue anyways."));
     }
-
-    void doClickOK() {
+    
+    void doClickOK() override {
         wxGetApp().getAppFrame()->disableSave(true);
         wxGetApp().getAppFrame()->Close(false);
     }
@@ -161,8 +161,8 @@ public:
     ActionDialogBookmarkBackupLoadFailed() : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Bookmark Backup Load Failure :( :(")) {
         m_questionText->SetLabelText(wxT("Sorry; unable to load your bookmarks backup file. \nWould you like to attempt to load the last succssfully loaded bookmarks file?"));
     }
-
-    void doClickOK() {
+    
+    void doClickOK() override {
         if (wxGetApp().getBookmarkMgr().hasLastLoad("bookmarks.xml")) {
             if (wxGetApp().getBookmarkMgr().loadFromFile("bookmarks.xml.lastloaded",false)) {
                 wxGetApp().getBookmarkMgr().updateBookmarks();
@@ -180,8 +180,8 @@ public:
     ActionDialogBookmarkLoadFailed() : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Bookmark Load Failure :(")) {
         m_questionText->SetLabelText(wxT("Sorry; unable to load your bookmarks file. \nWould you like to attempt to load the backup file?"));
     }
-
-    void doClickOK() {
+    
+    void doClickOK() override {
         bool loadOk = false;
         if (wxGetApp().getBookmarkMgr().hasBackup("bookmarks.xml")) {
             loadOk = wxGetApp().getBookmarkMgr().loadFromFile("bookmarks.xml.backup",false);
@@ -201,11 +201,11 @@ public:
 
 class ActionDialogRigError : public ActionDialog {
 public:
-    ActionDialogRigError(std::string message) : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Rig Control Error")) {
+    explicit ActionDialogRigError(const std::string& message) : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Rig Control Error")) {
         m_questionText->SetLabelText(message);
     }
 
-    void doClickOK() {
+    void doClickOK() override {
     }
 };
 
@@ -238,12 +238,12 @@ void CubicSDR::initAudioDevices() const {
 
     int i = 0;
 
-    for (auto devices_i = devices.begin(); devices_i != devices.end(); devices_i++) {
-        if (devices_i->inputChannels) {
-            inputDevices[i] = *devices_i;
+    for (auto & device : devices) {
+        if (device.inputChannels) {
+            inputDevices[i] = device;
         }
-        if (devices_i->outputChannels) {
-            outputDevices[i] = *devices_i;
+        if (device.outputChannels) {
+            outputDevices[i] = device;
         }
         i++;
     }
@@ -541,7 +541,7 @@ int CubicSDR::OnExit() {
 PrimaryGLContext& CubicSDR::GetContext(wxGLCanvas *canvas) {
     PrimaryGLContext *glContext;
     if (!m_glContext) {
-        m_glContext = new PrimaryGLContext(canvas, NULL, GetContextAttributes());
+        m_glContext = new PrimaryGLContext(canvas, nullptr, GetContextAttributes());
     }
     glContext = m_glContext;
 
@@ -559,9 +559,9 @@ void CubicSDR::OnInitCmdLine(wxCmdLineParser& parser) {
 }
 
 bool CubicSDR::OnCmdLineParsed(wxCmdLineParser& parser) {
-    wxString *confName = new wxString;
+    auto *confName = new wxString;
     if (parser.Found("c",confName)) {
-        if (confName) {
+        if (!confName->empty()) {
             config.setConfigName(confName->ToStdString());
         }
     }
@@ -576,10 +576,10 @@ bool CubicSDR::OnCmdLineParsed(wxCmdLineParser& parser) {
     useLocalMod.store(true);
 #endif
 
-    wxString *modPath = new wxString;
+    auto *modPath = new wxString;
 
     if (parser.Found("m",modPath)) {
-        if (modPath) {
+        if (!modPath->empty()) {
             modulePath = modPath->ToStdString();
         } else {
             modulePath = "";
@@ -611,17 +611,17 @@ void CubicSDR::deviceSelector() {
     deviceSelectorDialog->Show();
 }
 
-void CubicSDR::addRemote(std::string remoteAddr) {
+void CubicSDR::addRemote(const std::string& remoteAddr) {
     SDREnumerator::addRemote(remoteAddr);
     devicesReady.store(false);
     t_SDREnum = new std::thread(&SDREnumerator::threadMain, sdrEnum);
 }
 
-void CubicSDR::removeRemote(std::string remoteAddr) {
+void CubicSDR::removeRemote(const std::string& remoteAddr) {
     SDREnumerator::removeRemote(remoteAddr);
 }
 
-void CubicSDR::sdrThreadNotify(SDRThread::SDRThreadState state, std::string message) {
+void CubicSDR::sdrThreadNotify(SDRThread::SDRThreadState state, const std::string& message) {
 
     std::lock_guard < std::mutex > lock(notify_busy);
 
@@ -912,7 +912,7 @@ long long CubicSDR::getSampleRate() {
     return sampleRate;
 }
 
-void CubicSDR::removeDemodulator(DemodulatorInstancePtr demod) {
+void CubicSDR::removeDemodulator(const DemodulatorInstancePtr& demod) {
     if (!demod) {
         return;
     }
@@ -949,7 +949,7 @@ int CubicSDR::getPPM() {
     return ppm;
 }
 
-void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode, wxString initString) {
+void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode, const wxString& initString) {
     const wxString demodTitle("Set Demodulator Frequency");
     const wxString freqTitle("Set Center Frequency");
     const wxString bwTitle("Modem Bandwidth (150Hz - 500KHz)");
@@ -976,7 +976,7 @@ void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetM
             break;
         case FrequencyDialog::FDIALOG_TARGET_GAIN:
             title = gainTitle;
-            if (wxGetApp().getActiveGainEntry() == "") {
+            if (wxGetApp().getActiveGainEntry().empty()) {
                 return;
             }
             break;
@@ -1005,11 +1005,11 @@ AppFrame *CubicSDR::getAppFrame() {
     return appframe;
 }
 
-void CubicSDR::setFrequencySnap(int snap) {
-    if (snap > 1000000) {
-        snap = 1000000;
+void CubicSDR::setFrequencySnap(int snap_in) {
+    if (snap_in > 1000000) {
+        snap_in = 1000000;
     }
-    this->snap = snap;
+    this->snap = snap_in;
 }
 
 int CubicSDR::getFrequencySnap() {
@@ -1065,11 +1065,11 @@ bool CubicSDR::getAGCMode() {
 }
 
 
-void CubicSDR::setGain(std::string name, float gain_in) {
+void CubicSDR::setGain(const std::string& name, float gain_in) {
     sdrThread->setGain(name,gain_in);
 }
 
-float CubicSDR::getGain(std::string name) {
+float CubicSDR::getGain(const std::string& name) {
     return sdrThread->getGain(name);
 }
 

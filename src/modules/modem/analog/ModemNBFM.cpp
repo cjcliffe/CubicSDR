@@ -24,7 +24,7 @@ int ModemNBFM::getDefaultSampleRate() {
 }
 
 void ModemNBFM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
-    ModemKitAnalog *fmkit = (ModemKitAnalog *)kit;
+    auto *fmkit = (ModemKitAnalog *)kit;
     
     initOutputBuffers(fmkit, input);
     

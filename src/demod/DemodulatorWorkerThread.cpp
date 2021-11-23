@@ -2,9 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "DemodulatorWorkerThread.h"
-#include "CubicSDRDefs.h"
 #include "CubicSDR.h"
-#include <vector>
 
 //50 ms
 #define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
@@ -13,8 +11,7 @@ DemodulatorWorkerThread::DemodulatorWorkerThread() : IOThread(),
          cModem(nullptr), cModemKit(nullptr) {
 }
 
-DemodulatorWorkerThread::~DemodulatorWorkerThread() {
-}
+DemodulatorWorkerThread::~DemodulatorWorkerThread() = default;
 
 void DemodulatorWorkerThread::run() {
 
@@ -40,11 +37,11 @@ void DemodulatorWorkerThread::run() {
             }
 
             switch (command.cmd) {
-                case DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS:
+                case DemodulatorWorkerThreadCommand::Type::DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS:
                     filterChanged = true;
                     filterCommand = command;
                     break;
-                case DemodulatorWorkerThreadCommand::DEMOD_WORKER_THREAD_CMD_MAKE_DEMOD:
+                case DemodulatorWorkerThreadCommand::Type::DEMOD_WORKER_THREAD_CMD_MAKE_DEMOD:
                     makeDemod = true;
                     demodCommand = command;
                     break;
@@ -55,7 +52,7 @@ void DemodulatorWorkerThread::run() {
         } //end while done.
 
         if ((makeDemod || filterChanged) && !stopping) {
-            DemodulatorWorkerThreadResult result(DemodulatorWorkerThreadResult::DEMOD_WORKER_THREAD_RESULT_FILTERS);
+            DemodulatorWorkerThreadResult result(DemodulatorWorkerThreadResult::Type::DEMOD_WORKER_THREAD_RESULT_FILTERS);
             
             
             if (filterCommand.sampleRate) {
@@ -66,7 +63,7 @@ void DemodulatorWorkerThread::run() {
                 cModem = Modem::makeModem(demodCommand.demodType);
                 cModemName = cModem->getName();
                 cModemType = cModem->getType();
-                if (demodCommand.settings.size()) {
+                if (!demodCommand.settings.empty()) {
                     cModem->writeSettings(demodCommand.settings);
                 }
                 result.sampleRate = demodCommand.sampleRate;

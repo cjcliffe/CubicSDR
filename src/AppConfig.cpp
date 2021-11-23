@@ -6,35 +6,35 @@
 
 #include <wx/msgdlg.h>
 
-DeviceConfig::DeviceConfig() : deviceId("") {
+DeviceConfig::DeviceConfig() {
 	ppm.store(0);
 	offset.store(0);
     agcMode.store(true);
     sampleRate.store(0);
 }
 
-DeviceConfig::DeviceConfig(std::string deviceId) : DeviceConfig() {
-    this->deviceId = deviceId;
+DeviceConfig::DeviceConfig(std::string deviceId_in) : DeviceConfig() {
+    deviceId = deviceId_in;
 }
 
-void DeviceConfig::setPPM(int ppm) {
-    this->ppm.store(ppm);
+void DeviceConfig::setPPM(int ppm_in) {
+    ppm.store(ppm_in);
 }
 
 int DeviceConfig::getPPM() {
     return ppm.load();
 }
 
-void DeviceConfig::setOffset(long long offset) {
-    this->offset.store(offset);
+void DeviceConfig::setOffset(long long offset_in) {
+    offset.store(offset_in);
 }
 
 long long DeviceConfig::getOffset() {
     return offset.load();
 }
 
-void DeviceConfig::setSampleRate(long srate) {
-    sampleRate.store(srate);
+void DeviceConfig::setSampleRate(long sampleRate_in) {
+    sampleRate.store(sampleRate_in);
 }
 
 long DeviceConfig::getSampleRate() {
@@ -49,8 +49,8 @@ const std::string& DeviceConfig::getAntennaName() {
     return antennaName;
 }
 
-void DeviceConfig::setAGCMode(bool agcMode) {
-    this->agcMode.store(agcMode);
+void DeviceConfig::setAGCMode(bool agcMode_in) {
+    agcMode.store(agcMode_in);
 }
 
 bool DeviceConfig::getAGCMode() {
@@ -58,9 +58,9 @@ bool DeviceConfig::getAGCMode() {
 }
 
 
-void DeviceConfig::setDeviceId(std::string deviceId) {
+void DeviceConfig::setDeviceId(std::string deviceId_in) {
     std::lock_guard < std::mutex > lock(busy_lock);
-    this->deviceId = deviceId;
+    deviceId = deviceId_in;
     
 }
 
@@ -74,18 +74,16 @@ std::string DeviceConfig::getDeviceId() {
     return tmp;
 }
 
-void DeviceConfig::setDeviceName(std::string deviceName) {
+void DeviceConfig::setDeviceName(std::string deviceName_in) {
     std::lock_guard < std::mutex > lock(busy_lock);
-    this->deviceName = deviceName;
-   
+    deviceName = deviceName_in;
 }
 
 std::string DeviceConfig::getDeviceName() {
     std::string tmp;
     
     std::lock_guard < std::mutex > lock(busy_lock);
-    tmp = (deviceName=="")?deviceId:deviceName;
-   
+    tmp = deviceName.empty()?deviceId:deviceName;
     
     return tmp;
 }
@@ -105,19 +103,19 @@ void DeviceConfig::save(DataNode *node) {
         *node->newChild("antenna") = antennaName;
     }
 
-    if (streamOpts.size()) {
+    if (!streamOpts.empty()) {
         DataNode *streamOptsNode = node->newChild("streamOpts");
         for (ConfigSettings::const_iterator opt_i = streamOpts.begin(); opt_i != streamOpts.end(); opt_i++) {
             *streamOptsNode->newChild(opt_i->first.c_str()) = opt_i->second;
         }
     }
-    if (settings.size()) {
+    if (!settings.empty()) {
         DataNode *settingsNode = node->newChild("settings");
         for (ConfigSettings::const_iterator set_i = settings.begin(); set_i != settings.end(); set_i++) {
             *settingsNode->newChild(set_i->first.c_str()) = set_i->second;
         }
     }
-    if (rigIF.size()) {
+    if (!rigIF.empty()) {
         DataNode *rigIFs = node->newChild("rig_ifs");
         for (std::map<int, long long>::const_iterator rigIF_i = rigIF.begin(); rigIF_i != rigIF.end(); rigIF_i++) {
             DataNode *ifNode = rigIFs->newChild("rig_if");
@@ -125,7 +123,7 @@ void DeviceConfig::save(DataNode *node) {
             *ifNode->newChild("sdr_if") = rigIF_i->second;
         }
     }
-    if (gains.size()) {
+    if (!gains.empty()) {
         DataNode *gainsNode = node->newChild("gains");
         for (ConfigGains::const_iterator gain_i = gains.begin(); gain_i != gains.end(); gain_i++) {
             DataNode *gainNode = gainsNode->newChild("gain");
@@ -157,7 +155,7 @@ void DeviceConfig::load(DataNode *node) {
         DataNode *agc_node = node->getNext("agc_mode");
         int agcModeValue = 0;
         agc_node->element()->get(agcModeValue);
-        setAGCMode(agcModeValue?true:false);
+        setAGCMode(agcModeValue != 0);
     }
     if (node->hasAnother("sample_rate")) {
         DataNode *sample_rate_node = node->getNext("sample_rate");
@@ -178,7 +176,7 @@ void DeviceConfig::load(DataNode *node) {
             std::string keyName = streamOptNode->getName();
             std::string strSettingValue = streamOptNode->element()->toString();
             
-            if (keyName != "") {
+            if (!keyName.empty()) {
                 setStreamOpt(keyName, strSettingValue);
             }
         }
@@ -190,7 +188,7 @@ void DeviceConfig::load(DataNode *node) {
             std::string keyName = settingNode->getName();
             std::string strSettingValue = settingNode->element()->toString();
             
-            if (keyName != "") {
+            if (!keyName.empty()) {
                 setSetting(keyName, strSettingValue);
             }
         }
@@ -201,7 +199,7 @@ void DeviceConfig::load(DataNode *node) {
             DataNode *rigIFNode = rigIFNodes->getNext("rig_if");
             if (rigIFNode->hasAnother("model") && rigIFNode->hasAnother("sdr_if")) {
                 int load_model;
-                long long load_freq;
+                long long load_freq = 0;
                 
                 rigIFNode->getNext("model")->element()->get(load_model);
                 rigIFNode->getNext("sdr_if")->element()->get(load_freq);
@@ -215,12 +213,12 @@ void DeviceConfig::load(DataNode *node) {
         while (gainsNode->hasAnother("gain")) {
             DataNode *gainNode = gainsNode->getNext("gain");
             std::string keyName;
-            float fltSettingValue;
-            
+            float fltSettingValue = 0;
+
             gainNode->getNext("id")->element()->get(keyName);
             gainNode->getNext("value")->element()->get(fltSettingValue);
 
-            if (keyName != "" && !(fltSettingValue!=fltSettingValue)) {
+            if (!keyName.empty() && !(fltSettingValue!=fltSettingValue)) {
                 setGain(keyName, fltSettingValue);
             }
         }
@@ -236,11 +234,11 @@ ConfigSettings DeviceConfig::getStreamOpts() {
     return streamOpts;
 }
 
-void DeviceConfig::setStreamOpt(std::string key, std::string value) {
+void DeviceConfig::setStreamOpt(const std::string& key, std::string value) {
     streamOpts[key] = value;
 }
 
-std::string DeviceConfig::getStreamOpt(std::string key, std::string defaultValue) {
+std::string DeviceConfig::getStreamOpt(const std::string& key, std::string defaultValue) {
     if (streamOpts.find(key) == streamOpts.end()) {
         return defaultValue;
     }
@@ -248,15 +246,15 @@ std::string DeviceConfig::getStreamOpt(std::string key, std::string defaultValue
     return streamOpts[key];
 }
 
-void DeviceConfig::setSettings(ConfigSettings settings) {
-    this->settings = settings;
+void DeviceConfig::setSettings(ConfigSettings settings_in) {
+    settings = settings_in;
 }
 
-void DeviceConfig::setSetting(std::string key, std::string value) {
-    this->settings[key] = value;
+void DeviceConfig::setSetting(const std::string& key, std::string value) {
+    settings[key] = value;
 }
 
-std::string DeviceConfig::getSetting(std::string key, std::string defaultValue) {
+std::string DeviceConfig::getSetting(const std::string& key, std::string defaultValue) {
     if (settings.find(key) == settings.end()) {
         return defaultValue;
     }
@@ -268,19 +266,19 @@ ConfigSettings DeviceConfig::getSettings() {
 }
 
 
-void DeviceConfig::setGains(ConfigGains gains) {
-    this->gains = gains;
+void DeviceConfig::setGains(ConfigGains gains_in) {
+    gains = gains_in;
 }
 
 ConfigGains DeviceConfig::getGains() {
     return gains;
 }
 
-void DeviceConfig::setGain(std::string key, float value) {
+void DeviceConfig::setGain(const std::string& key, float value) {
     gains[key] = value;
 }
 
-float DeviceConfig::getGain(std::string key, float defaultValue) {
+float DeviceConfig::getGain(const std::string& key, float defaultValue) {
     if (gains.find(key) != gains.end()) {
         return gains[key];
     }
@@ -299,7 +297,7 @@ long long DeviceConfig::getRigIF(int rigType) {
     return 0;
 }
 
-AppConfig::AppConfig() : configName("") {
+AppConfig::AppConfig() {
     winX.store(0);
     winY.store(0);
     winW.store(0);
@@ -334,7 +332,7 @@ AppConfig::AppConfig() : configName("") {
 #endif
 }
 
-DeviceConfig *AppConfig::getDevice(std::string deviceId) {
+DeviceConfig *AppConfig::getDevice(const std::string& deviceId) {
 	if (deviceConfig.find(deviceId) == deviceConfig.end()) {
 		deviceConfig[deviceId] = new DeviceConfig();
 	}
@@ -402,23 +400,23 @@ AppConfig::PerfModeEnum AppConfig::getPerfMode() {
 }
 
 wxRect *AppConfig::getWindow() {
-    wxRect *r = NULL;
+    wxRect *r = nullptr;
     if (winH.load() && winW.load()) {
         r = new wxRect(winX.load(),winY.load(),winW.load(),winH.load());
     }
     return r;
 }
 
-void AppConfig::setTheme(int themeId) {
-    this->themeId.store(themeId);
+void AppConfig::setTheme(int themeId_in) {
+    themeId.store(themeId_in);
 }
 
 int AppConfig::getTheme() {
     return themeId.load();
 }
 
-void AppConfig::setFontScale(int fontScale) {
-    this->fontScale.store(fontScale);
+void AppConfig::setFontScale(int fontScale_in) {
+    fontScale.store(fontScale_in);
 }
 
 int AppConfig::getFontScale() {
@@ -540,7 +538,7 @@ void  AppConfig::setRecordingSquelchOption(int enumChoice) {
 	recordingSquelchOption = enumChoice;
 }
 
-int  AppConfig::getRecordingSquelchOption() {
+int  AppConfig::getRecordingSquelchOption() const {
 	return recordingSquelchOption;
 }
 
@@ -548,13 +546,13 @@ void  AppConfig::setRecordingFileTimeLimit(int nbSeconds) {
 	recordingFileTimeLimitSeconds = nbSeconds;
 }
 
-int  AppConfig::getRecordingFileTimeLimit() {
+int  AppConfig::getRecordingFileTimeLimit() const {
 	return recordingFileTimeLimitSeconds;
 }
 
 
-void AppConfig::setConfigName(std::string configName) {
-    this->configName = configName;
+void AppConfig::setConfigName(std::string configName_in) {
+    configName = configName_in;
 }
 
 std::string AppConfig::getConfigFileName(bool ignoreName) {
@@ -597,7 +595,7 @@ bool AppConfig::save() {
         *window_node->newChild("center_freq") = centerFreq.load();
         *window_node->newChild("waterfall_lps") = waterfallLinesPerSec.load();
         *window_node->newChild("spectrum_avg") = spectrumAvgSpeed.load();
-        *window_node->newChild("modemprops_collapsed") = modemPropsCollapsed.load();;
+        *window_node->newChild("modemprops_collapsed") = modemPropsCollapsed.load();
         *window_node->newChild("db_offset") = dbOffset.load();
 
         *window_node->newChild("main_split") = mainSplit.load();
@@ -620,12 +618,12 @@ bool AppConfig::save() {
         device_config_i->second->save(device_node);
     }
 
-    if (manualDevices.size()) {
+    if (!manualDevices.empty()) {
         DataNode *manual_node = cfg.rootNode()->newChild("manual_devices");
-        for (std::vector<SDRManualDef>::const_iterator i = manualDevices.begin(); i != manualDevices.end(); i++) {
+        for (const auto & manualDevice : manualDevices) {
             DataNode *rig_node = manual_node->newChild("device");
-            *rig_node->newChild("factory") = i->factory;
-            *rig_node->newChild("params") = i->params;
+            *rig_node->newChild("factory") = manualDevice.factory;
+            *rig_node->newChild("params") = manualDevice.params;
         }
     }
     
@@ -708,12 +706,12 @@ bool AppConfig::load() {
         
         if (win_node->hasAnother("max")) {
             win_node->getNext("max")->element()->get(max);
-            winMax.store(max?true:false);
+            winMax.store(max != 0);
         }
 
         if (win_node->hasAnother("tips")) {
             win_node->getNext("tips")->element()->get(tips);
-            showTips.store(tips?true:false);
+            showTips.store(tips != 0);
         }
 
         // default:
@@ -730,31 +728,31 @@ bool AppConfig::load() {
         }
        
         if (win_node->hasAnother("theme")) {
-            int theme;
+            int theme = 0;
             win_node->getNext("theme")->element()->get(theme);
             themeId.store(theme);
         }
 
         if (win_node->hasAnother("font_scale")) {
-            int fscale;
+            int fscale = 0;
             win_node->getNext("font_scale")->element()->get(fscale);
             fontScale.store(fscale);
         }
 
         if (win_node->hasAnother("snap")) {
-			long long snapVal;
+			long long snapVal = 0;
 			win_node->getNext("snap")->element()->get(snapVal);
 			snap.store(snapVal);
 		}
 
         if (win_node->hasAnother("center_freq")) {
-            long long freqVal;
+            long long freqVal = 0;
             win_node->getNext("center_freq")->element()->get(freqVal);
             centerFreq.store(freqVal);
         }
 
         if (win_node->hasAnother("waterfall_lps")) {
-            int lpsVal;
+            int lpsVal = 30;
             win_node->getNext("waterfall_lps")->element()->get(lpsVal);
             waterfallLinesPerSec.store(lpsVal);
         }
@@ -767,7 +765,7 @@ bool AppConfig::load() {
 
         if (win_node->hasAnother("modemprops_collapsed")) {
             win_node->getNext("modemprops_collapsed")->element()->get(mpc);
-            modemPropsCollapsed.store(mpc?true:false);
+            modemPropsCollapsed.store(mpc != 0);
         }
         
         if (win_node->hasAnother("db_offset")) {
@@ -858,7 +856,7 @@ bool AppConfig::load() {
         if (rig_node->hasAnother("enabled")) {
             int loadEnabled;
             rig_node->getNext("enabled")->element()->get(loadEnabled);
-            rigEnabled.store(loadEnabled?true:false);
+            rigEnabled.store(loadEnabled != 0);
         }
         if (rig_node->hasAnother("model")) {
             int loadModel;
@@ -876,22 +874,22 @@ bool AppConfig::load() {
         if (rig_node->hasAnother("control")) {
             int loadControl;
             rig_node->getNext("control")->element()->get(loadControl);
-            rigControlMode.store(loadControl?true:false);
+            rigControlMode.store(loadControl != 0);
         }
         if (rig_node->hasAnother("follow")) {
             int loadFollow;
             rig_node->getNext("follow")->element()->get(loadFollow);
-            rigFollowMode.store(loadFollow?true:false);
+            rigFollowMode.store(loadFollow != 0);
         }
         if (rig_node->hasAnother("center_lock")) {
             int loadCenterLock;
             rig_node->getNext("center_lock")->element()->get(loadCenterLock);
-            rigCenterLock.store(loadCenterLock?true:false);
+            rigCenterLock.store(loadCenterLock != 0);
         }
         if (rig_node->hasAnother("follow_modem")) {
             int loadFollow;
             rig_node->getNext("follow_modem")->element()->get(loadFollow);
-            rigFollowModem.store(loadFollow?true:false);
+            rigFollowModem.store(loadFollow != 0);
         }
     }
 #endif
@@ -912,24 +910,24 @@ int AppConfig::getRigModel() {
     return rigModel.load();
 }
 
-void AppConfig::setRigModel(int rigModel) {
-    this->rigModel.store(rigModel);
+void AppConfig::setRigModel(int rigModel_in) {
+    rigModel.store(rigModel_in);
 }
 
 int AppConfig::getRigRate() {
     return rigRate.load();
 }
 
-void AppConfig::setRigRate(int rigRate) {
-    this->rigRate.store(rigRate);
+void AppConfig::setRigRate(int rigRate_in) {
+    rigRate.store(rigRate_in);
 }
 
 std::string AppConfig::getRigPort() {
     return rigPort;
 }
 
-void AppConfig::setRigPort(std::string rigPort) {
-    this->rigPort = rigPort;
+void AppConfig::setRigPort(std::string rigPort_in) {
+    rigPort = rigPort_in;
 }
 
 void AppConfig::setRigControlMode(bool cMode) {

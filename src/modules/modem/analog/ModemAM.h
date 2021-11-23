@@ -8,15 +8,15 @@
 class ModemAM : public ModemAnalogVC {
 public:
     ModemAM();
-    ~ModemAM();
+    ~ModemAM() override;
 
-    std::string getName();
+    std::string getName() override;
 
     static ModemBase *factory();
 
-    int getDefaultSampleRate();
+    int getDefaultSampleRate() override;
 
-    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
+    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) override;
 
 private:
     firfilt_rrrf mDCBlock;

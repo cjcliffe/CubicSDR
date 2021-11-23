@@ -7,28 +7,28 @@
 class ModemASK : public ModemDigital {
 public:
     ModemASK();
-    ~ModemASK();
+    ~ModemASK() override;
     
-    std::string getName();
+    std::string getName() override;
     
     static ModemBase *factory();
     
-    ModemArgInfoList getSettings();
-    void writeSetting(std::string setting, std::string value);
-    std::string readSetting(std::string setting);
+    ModemArgInfoList getSettings() override;
+    void writeSetting(std::string setting, std::string value) override;
+    std::string readSetting(std::string setting) override;
     
-    void updateDemodulatorCons(int cons);
-    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
+    void updateDemodulatorCons(int cons_in);
+    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) override;
     
 private:
     int cons;
-    modem demodASK;
-    modem demodASK2;
-    modem demodASK4;
-    modem demodASK8;
-    modem demodASK16;
-    modem demodASK32;
-    modem demodASK64;
-    modem demodASK128;
-    modem demodASK256;
+    modemcf demodASK;
+    modemcf demodASK2;
+    modemcf demodASK4;
+    modemcf demodASK8;
+    modemcf demodASK16;
+    modemcf demodASK32;
+    modemcf demodASK64;
+    modemcf demodASK128;
+    modemcf demodASK256;
 };

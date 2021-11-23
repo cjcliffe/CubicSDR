@@ -7,17 +7,18 @@
 class ModemLSB : public ModemAnalogVC {
 public:
     ModemLSB();
-    ~ModemLSB();
-
-    std::string getName();
-
+  
+    ~ModemLSB() override;
+    
+    std::string getName() override;
+    
     static ModemBase *factory();
+    
+    int checkSampleRate(long long sampleRate, int audioSampleRate) override;
+    int getDefaultSampleRate() override;
 
-    int checkSampleRate(long long sampleRate, int audioSampleRate);
-    int getDefaultSampleRate();
-
-    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut);
-
+    void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) override;
+    
 private:
 	iirfilt_crcf ssbFilt;
     firhilbf c2rFilt;

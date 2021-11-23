@@ -14,8 +14,6 @@
 #endif
 
 #include "CubicSDR.h"
-#include "CubicSDRDefs.h"
-#include "AppFrame.h"
 #include <algorithm>
 #include <cmath>
 
@@ -46,13 +44,11 @@ GainCanvas::GainCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
 	userGainAsChanged = false;
 }
 
-GainCanvas::~GainCanvas() {
-
-}
+GainCanvas::~GainCanvas() = default;
 
 void GainCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
   //  wxPaintDC dc(this);
-    const wxSize ClientSize = GetClientSize();
+    const wxSize ClientSize = GetClientSize() * GetContentScaleFactor();
 
     glContext->SetCurrent(*this);
     initGLExtensions();
@@ -157,8 +153,6 @@ void GainCanvas::OnMouseDown(wxMouseEvent& event) {
 void GainCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseWheelMoved(event);
     
-    CubicVR::vec2 hitResult;
-    
     CubicVR::vec2 mpos = mouseTracker.getGLXY();
     
     for (auto gi : gainPanels) {
@@ -217,9 +211,6 @@ void GainCanvas::updateGainUI() {
 	//to take into account a user gain change. Doesn't matter,
 	//UpdateGainValues() takes cares of updating the true value realtime.
     gains = devInfo->getGains(SOAPY_SDR_RX, 0);
-    
-	SDRRangeMap::iterator gi;
-    
     numGains = gains.size();
     float i = 0;
     
@@ -232,15 +223,15 @@ void GainCanvas::updateGainUI() {
     startPos = spacing/2.0;
     barHeight = 1.0f;
     
-    while (gainPanels.size()) {
+    while (!gainPanels.empty()) {
         MeterPanel *mDel = gainPanels.back();
         gainPanels.pop_back();
         bgPanel.removeChild(mDel);
         delete mDel;
     }
 
-    for (auto gi : gains) {
-        MeterPanel *mPanel = new MeterPanel(gi.first, gi.second.minimum(), gi.second.maximum(), devConfig->getGain(gi.first,wxGetApp().getGain(gi.first)));
+    for (const auto& gi : gains) {
+        auto *mPanel = new MeterPanel(gi.first, gi.second.minimum(), gi.second.maximum(), devConfig->getGain(gi.first,wxGetApp().getGain(gi.first)));
 
         float midPos = -1.0+startPos+spacing*i;
         mPanel->setPosition(midPos, 0);
@@ -271,14 +262,13 @@ bool GainCanvas::updateGainValues() {
 	DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(devInfo->getDeviceId());
 
 	gains = devInfo->getGains(SOAPY_SDR_RX, 0);
-	SDRRangeMap::iterator gi;
 
 	size_t numGainsToRefresh = std::min(gains.size(), gainPanels.size());
 	size_t panelIndex = 0;
 
 	//actually the order of gains iteration should be constant because map of string,
 	//and gainPanels were built in that order in updateGainUI()
-	for (auto gi : gains) {
+	for (const auto& gi : gains) {
 
 		if (panelIndex >= numGainsToRefresh) {
 			break;

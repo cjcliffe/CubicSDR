@@ -3,7 +3,6 @@
 
 #include "SDRDevices.h"
 
-#include <wx/textdlg.h>
 #include <wx/msgdlg.h>
 
 #include "CubicSDR.h"
@@ -45,7 +44,7 @@ void SDRDevicesDialog::OnDeleteItem( wxTreeEvent& event ) {
 
 wxPGProperty *SDRDevicesDialog::addArgInfoProperty(wxPropertyGrid *pg, SoapySDR::ArgInfo arg) {
     
-    wxPGProperty *prop = NULL;
+    wxPGProperty *prop = nullptr;
     
     int intVal;
     double floatVal;
@@ -55,7 +54,7 @@ wxPGProperty *SDRDevicesDialog::addArgInfoProperty(wxPropertyGrid *pg, SoapySDR:
         case SoapySDR::ArgInfo::INT:
             try {
                 intVal = std::stoi(arg.value);
-            } catch (std::invalid_argument e) {
+            } catch (const std::invalid_argument &) {
                 intVal = 0;
             }
             prop = pg->Append( new wxIntProperty(arg.name, wxPG_LABEL, intVal) );
@@ -67,7 +66,7 @@ wxPGProperty *SDRDevicesDialog::addArgInfoProperty(wxPropertyGrid *pg, SoapySDR:
         case SoapySDR::ArgInfo::FLOAT:
             try {
                 floatVal = std::stod(arg.value);
-            } catch (std::invalid_argument e) {
+            } catch (const std::invalid_argument &) {
                 floatVal = 0;
             }
             prop = pg->Append( new wxFloatProperty(arg.name, wxPG_LABEL, floatVal) );
@@ -80,13 +79,13 @@ wxPGProperty *SDRDevicesDialog::addArgInfoProperty(wxPropertyGrid *pg, SoapySDR:
             prop = pg->Append( new wxBoolProperty(arg.name, wxPG_LABEL, (arg.value=="true")) );
             break;
         case SoapySDR::ArgInfo::STRING:
-            if (arg.options.size()) {
+            if (!arg.options.empty()) {
                 intVal = 0;
                 prop = pg->Append( new wxEnumProperty(arg.name, wxPG_LABEL) );
                 for (stringIter = arg.options.begin(); stringIter != arg.options.end(); stringIter++) {
                     std::string optName = (*stringIter);
                     std::string displayName = optName;
-                    if (arg.optionNames.size()) {
+                    if (!arg.optionNames.empty()) {
                         displayName = arg.optionNames[intVal];
                     }
 
@@ -103,7 +102,7 @@ wxPGProperty *SDRDevicesDialog::addArgInfoProperty(wxPropertyGrid *pg, SoapySDR:
             break;
     }
     
-    if (prop != NULL) {
+    if (prop != nullptr) {
         prop->SetHelpString(arg.key + ": " + arg.description);
     }
     
@@ -157,7 +156,7 @@ void SDRDevicesDialog::refreshDeviceProperties() {
             }
 
             //build device settings
-            for (std::string antenna : antennaOpts) {
+            for (const std::string& antenna : antennaOpts) {
                 antennasArg.options.push_back(antenna);
                 antennasArg.optionNames.push_back(antenna);
             }
@@ -208,11 +207,11 @@ void SDRDevicesDialog::refreshDeviceProperties() {
         runtimeProps.clear();
         streamProps.clear();
        
-        if (args.size()) {
+        if (!args.empty()) {
             m_propertyGrid->Append(new wxPropertyCategory("Run-time Settings"));
             
-            for (SoapySDR::ArgInfoList::const_iterator args_i = args.begin(); args_i != args.end(); args_i++) {
-                SoapySDR::ArgInfo arg = (*args_i);
+            for (const auto & args_i : args) {
+                SoapySDR::ArgInfo arg = args_i;
 				//We-reread the Device configuration, else we use the user settings.
 				if (dev) {
 					//Apply saved settings
@@ -234,18 +233,18 @@ void SDRDevicesDialog::refreshDeviceProperties() {
             
             DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
             ConfigSettings devStreamOpts = devConfig->getStreamOpts();
-            if (devStreamOpts.size()) {
-                for (int j = 0, jMax = args.size(); j < jMax; j++) {
-                    if (devStreamOpts.find(args[j].key) != devStreamOpts.end()) {
-                        args[j].value = devStreamOpts[args[j].key];
+            if (!devStreamOpts.empty()) {
+                for (auto & arg : args) {
+                    if (devStreamOpts.find(arg.key) != devStreamOpts.end()) {
+                        arg.value = devStreamOpts[arg.key];
                     }
                 }
             }
             
-            if (args.size()) {
+            if (!args.empty()) {
                 m_propertyGrid->Append(new wxPropertyCategory("Stream Settings"));
                 
-                for (SoapySDR::ArgInfo arg : args) {
+                for (const SoapySDR::ArgInfo& arg : args) {
                   
                     streamProps[arg.key] = addArgInfoProperty(m_propertyGrid, arg);
                 }
@@ -316,7 +315,7 @@ void SDRDevicesDialog::OnAddRemote( wxMouseEvent& /* event */) {
         if (module == "SoapyRemote") {
             if (!SDREnumerator::hasRemoteModule()) {
                 wxMessageDialog *info;
-                info = new wxMessageDialog(NULL, wxT("Install SoapyRemote module to add remote servers.\n\nhttps://github.com/pothosware/SoapyRemote"), wxT("SoapyRemote not found."), wxOK | wxICON_ERROR);
+                info = new wxMessageDialog(nullptr, wxT("Install SoapyRemote module to add remote servers.\n\nhttps://github.com/pothosware/SoapyRemote"), wxT("SoapyRemote not found."), wxOK | wxICON_ERROR);
                 info->ShowModal();
                 return;
             }
@@ -339,27 +338,27 @@ void SDRDevicesDialog::OnAddRemote( wxMouseEvent& /* event */) {
     }
 }
 
-SDRDeviceInfo *SDRDevicesDialog::getSelectedDevice(wxTreeItemId selId) {
-    devItems_i = devItems.find(selId);
+SDRDeviceInfo *SDRDevicesDialog::getSelectedDevice(wxTreeItemId selId_in) {
+    devItems_i = devItems.find(selId_in);
     if (devItems_i != devItems.end()) {
-        return devItems[selId];
+        return devItems[selId_in];
     }
-    return NULL;
+    return nullptr;
 }
 
 void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event) {
-    if (dev != NULL) {
+    if (dev != nullptr) {
         
         SoapySDR::ArgInfoList args = dev->getSoapyDevice()->getSettingInfo();
         
         SoapySDR::Kwargs settingArgs;
         SoapySDR::Kwargs streamArgs;
         
-        for (SoapySDR::ArgInfo arg : args) {
+        for (const SoapySDR::ArgInfo& arg : args) {
            
             wxPGProperty *prop = runtimeProps[arg.key];
             
-            if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size()) {
+            if (arg.type == SoapySDR::ArgInfo::STRING && !arg.options.empty()) {
                 settingArgs[arg.key] = getSelectedChoiceOption(prop, arg);
             } else if (arg.type == SoapySDR::ArgInfo::BOOL) {
                 settingArgs[arg.key] = (prop->GetValueAsString()=="True")?"true":"false";
@@ -371,12 +370,12 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event) {
         if (dev) {
             args = dev->getSoapyDevice()->getStreamArgsInfo(SOAPY_SDR_RX, 0);
             
-            if (args.size()) {
-                for (SoapySDR::ArgInfoList::const_iterator args_i = args.begin(); args_i != args.end(); args_i++) {
-                    SoapySDR::ArgInfo arg = (*args_i);
+            if (!args.empty()) {
+                for (const auto & args_i : args) {
+                    SoapySDR::ArgInfo arg = args_i;
                     wxPGProperty *prop = streamProps[arg.key];
             
-                    if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size()) {
+                    if (arg.type == SoapySDR::ArgInfo::STRING && !arg.options.empty()) {
                         streamArgs[arg.key] = getSelectedChoiceOption(prop, arg);
                     } else if (arg.type == SoapySDR::ArgInfo::BOOL) {
                         streamArgs[arg.key] = (prop->GetValueAsString()=="True")?"true":"false";
@@ -415,7 +414,7 @@ void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
             if (!failed) {
                 failed = true;
                 wxMessageDialog *info;
-                info = new wxMessageDialog(NULL, wxT("\nNo SoapySDR modules were found.\n\nCubicSDR requires at least one SoapySDR device support module to be installed.\n\nPlease visit https://github.com/cjcliffe/CubicSDR/wiki and in the build instructions for your platform read the 'Support Modules' section for more information."), wxT("\x28\u256F\xB0\u25A1\xB0\uFF09\u256F\uFE35\x20\u253B\u2501\u253B"), wxOK | wxICON_ERROR);
+                info = new wxMessageDialog(nullptr, wxT("\nNo SoapySDR modules were found.\n\nCubicSDR requires at least one SoapySDR device support module to be installed.\n\nPlease visit https://github.com/cjcliffe/CubicSDR/wiki and in the build instructions for your platform read the 'Support Modules' section for more information."), wxT("\x28\u256F\xB0\u25A1\xB0\uFF09\u256F\uFE35\x20\u253B\u2501\u253B"), wxOK | wxICON_ERROR);
                 info->ShowModal();
             }
             return;
@@ -439,9 +438,9 @@ void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
         wxTreeItemId manualBranch = devTree->AppendItem(devRoot, "Manual");
         
         devs[""] = SDREnumerator::enumerate_devices("",true);
-        if (devs[""] != NULL) {
+        if (devs[""] != nullptr) {
             for (devs_i = devs[""]->begin(); devs_i != devs[""]->end(); devs_i++) {
-                DeviceConfig *devConfig = nullptr;
+                DeviceConfig *devConfig;
                 if ((*devs_i)->isManual()) {
                     std::string devName = "Unknown";
                     if ((*devs_i)->isAvailable()) {
@@ -465,14 +464,14 @@ void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
        
         std::vector<SDRDeviceInfo *>::iterator remoteDevs_i;
         
-        if (remotes.size()) {
-            for (std::string remote : remotes) {
+        if (!remotes.empty()) {
+            for (const std::string& remote : remotes) {
                 devs[remote] = SDREnumerator::enumerate_devices(remote, true);
                 DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(remote);
 
                 wxTreeItemId remoteNode = devTree->AppendItem(remoteBranch, devConfig->getDeviceName());
                 
-                if (devs[remote] != NULL) {
+                if (devs[remote] != nullptr) {
                     for (remoteDevs_i = devs[remote]->begin(); remoteDevs_i != devs[remote]->end(); remoteDevs_i++) {
                         devItems[devTree->AppendItem(remoteNode, (*remoteDevs_i)->getName())] = (*remoteDevs_i);
                     }
@@ -498,11 +497,11 @@ void SDRDevicesDialog::OnRefreshDevices( wxMouseEvent& /* event */) {
 
 std::string SDRDevicesDialog::getSelectedChoiceOption(wxPGProperty* prop, const SoapySDR::ArgInfo& arg) {
 
-    std::string optionName = "";
+    std::string optionName;
 
     int choiceIndex = prop->GetChoiceSelection();
     
-    if (arg.options.size() > 0) {
+    if (!arg.options.empty()) {
         int choiceMax = arg.options.size();
         
         if (choiceIndex >= 0 && choiceIndex < choiceMax) {
@@ -529,7 +528,7 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
         if (editId) {
             devTree->SetItemText(editId, devConfig->getDeviceName());
         }
-        if (devName == "") {
+        if (devName.empty()) {
             event.GetProperty()->SetValueFromString(devConfig->getDeviceName());
         }
     } else if (dev && event.GetProperty() == devSettings["offset"]) {
@@ -556,7 +555,7 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
              if (dev->isActive() || !wxGetApp().getDevice()) {
                 wxGetApp().setSampleRate(srate);
             }
-        } catch (std::invalid_argument e) {
+        } catch (const std::invalid_argument &) {
             // nop
         }
     } else if (dev && event.GetProperty() == devSettings["antenna"]) {
@@ -571,19 +570,19 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
                 wxGetApp().setAntennaName(strAntennaName);
             }
         }
-        catch (std::invalid_argument e) {
+        catch (const std::invalid_argument &) {
             // nop
         }
     }
     else if (dev) {
         wxPGProperty *prop = event.GetProperty();
         //change value of RuntimeProps
-        for (std::map<std::string, wxPGProperty *>::iterator rtp = runtimeProps.begin(); rtp != runtimeProps.end(); rtp++) {
-            if (rtp->second == prop) {
+        for (auto & runtimeProp : runtimeProps) {
+            if (runtimeProp.second == prop) {
                 SoapySDR::Device *soapyDev = dev->getSoapyDevice();
                 std::string settingValue = prop->GetValueAsString().ToStdString();
-                SoapySDR::ArgInfo arg = runtimeArgs[rtp->first];
-                if (arg.type == SoapySDR::ArgInfo::STRING && arg.options.size()) {
+                SoapySDR::ArgInfo arg = runtimeArgs[runtimeProp.first];
+                if (arg.type == SoapySDR::ArgInfo::STRING && !arg.options.empty()) {
                     settingValue = getSelectedChoiceOption(prop, arg);
                 } else if (arg.type == SoapySDR::ArgInfo::BOOL) {
                     settingValue = (prop->GetValueAsString()=="True")?"true":"false";
@@ -591,9 +590,9 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
                     settingValue = prop->GetValueAsString();
                 }
 
-                soapyDev->writeSetting(rtp->first, settingValue);
+                soapyDev->writeSetting(runtimeProp.first, settingValue);
                 if (dev->isActive()) {
-                    wxGetApp().getSDRThread()->writeSetting(rtp->first, settingValue);
+                    wxGetApp().getSDRThread()->writeSetting(runtimeProp.first, settingValue);
                 }
                 return;
             }

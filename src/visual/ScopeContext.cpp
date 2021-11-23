@@ -48,7 +48,7 @@ void ScopeContext::DrawTunerTitles(bool ppmMode) {
     refDrawingFont.drawString("Center Frequency", 0.66f, -1.0  +hPos*shiftFactor, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
 }
 
-void ScopeContext::DrawDeviceName(std::string deviceName) {
+void ScopeContext::DrawDeviceName(const std::string& deviceName) {
     GLint vp[4];
     glGetIntegerv(GL_VIEWPORT, vp);
     float viewHeight = (float) vp[3];
@@ -56,7 +56,7 @@ void ScopeContext::DrawDeviceName(std::string deviceName) {
 
     glColor3f(0.65f, 0.65f, 0.65f);
 
-    GLFont::getFont(12, GLFont::getScaleFactor()).drawString(deviceName.c_str(), 1.0, hPos, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+    GLFont::getFont(12, GLFont::getScaleFactor()).drawString(deviceName, 1.0, hPos, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
 }
 
 void ScopeContext::DrawEnd() {

@@ -35,9 +35,7 @@ InteractiveCanvas(parent, dispAttrs), numChoices(0), currentSelection(-1), toggl
     highlightColor = RGBA4f(1.0,1.0,1.0,1.0);
 }
 
-ModeSelectorCanvas::~ModeSelectorCanvas() {
-
-}
+ModeSelectorCanvas::~ModeSelectorCanvas() = default;
 
 int ModeSelectorCanvas::getHoveredSelection() {
     if (!mouseTracker.mouseInView()) {
@@ -52,7 +50,7 @@ int ModeSelectorCanvas::getHoveredSelection() {
 
 void ModeSelectorCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
    // wxPaintDC dc(this);
-    const wxSize ClientSize = GetClientSize();
+    const wxSize ClientSize = GetClientSize() * GetContentScaleFactor();
 
     glContext->SetCurrent(*this);
     initGLExtensions();
@@ -163,7 +161,7 @@ void ModeSelectorCanvas::addChoice(std::string label) {
     numChoices = selections.size();
 }
 
-void ModeSelectorCanvas::setSelection(std::string label) {
+void ModeSelectorCanvas::setSelection(const std::string& label) {
     for (int i = 0; i < numChoices; i++) {
         if (selections[i].label == label) {
             currentSelection = i;
@@ -201,11 +199,11 @@ int ModeSelectorCanvas::getSelection() {
     return selections[currentSelection].value;
 }
 
-void ModeSelectorCanvas::setToggleMode(bool toggleMode) {
-    this->toggleMode = toggleMode;
+void ModeSelectorCanvas::setToggleMode(bool toggleMode_in) {
+    toggleMode = toggleMode_in;
 }
 
-bool ModeSelectorCanvas::modeChanged() {
+bool ModeSelectorCanvas::modeChanged() const {
     return inputChanged;
 }
 
@@ -213,12 +211,12 @@ void ModeSelectorCanvas::clearModeChanged() {
     inputChanged = false;
 }
 
-void ModeSelectorCanvas::setPadding(float padX, float padY) {
-    this->padX = padX;
-    this->padY = padY;
+void ModeSelectorCanvas::setPadding(float padX_in, float padY_in) {
+    padX = padX_in;
+    padY = padY_in;
 }
 
-void ModeSelectorCanvas::setHighlightColor(RGBA4f hc) {
-    this->highlightColor = hc;
-    this->highlightOverride = true;
+void ModeSelectorCanvas::setHighlightColor(const RGBA4f& hc) {
+    highlightColor = hc;
+    highlightOverride = true;
 }

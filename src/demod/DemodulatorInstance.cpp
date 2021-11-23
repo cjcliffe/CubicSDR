@@ -20,9 +20,7 @@ DemodVisualCue::DemodVisualCue() {
     squelchBreak.store(false);
 }
 
-DemodVisualCue::~DemodVisualCue() {
-    
-}
+DemodVisualCue::~DemodVisualCue() = default;
 
 void DemodVisualCue::triggerSquelchBreak(int counter) {
     squelchBreak.store(counter);
@@ -48,7 +46,6 @@ DemodulatorInstance::DemodulatorInstance() {
 #endif
 	
 	active.store(false);
-	squelch.store(false);
     muted.store(false);
     recording.store(false);
     deltaLock.store(false);
@@ -75,12 +72,8 @@ DemodulatorInstance::DemodulatorInstance() {
     pipeAudioData = std::make_shared<AudioThreadInputQueue>();
     pipeAudioData->set_max_num_items(100);
 
-    threadQueueControl = std::make_shared<DemodulatorThreadControlCommandQueue>();
-    threadQueueControl->set_max_num_items(2);
-
     demodulatorThread = new DemodulatorThread(this);
     demodulatorThread->setInputQueue("IQDataInput",pipeIQDemodData);
-    demodulatorThread->setInputQueue("ControlQueue",threadQueueControl);
     demodulatorThread->setOutputQueue("AudioDataOutput", pipeAudioData);
 
     audioThread->setInputQueue("AudioDataInput", pipeAudioData);
@@ -121,7 +114,7 @@ DemodulatorInstance::~DemodulatorInstance() {
     } //end while
 }
 
-void DemodulatorInstance::setVisualOutputQueue(DemodulatorThreadOutputQueuePtr tQueue) {
+void DemodulatorInstance::setVisualOutputQueue(const DemodulatorThreadOutputQueuePtr& tQueue) {
     demodulatorThread->setOutputQueue("AudioVisualOutput", tQueue);
 }
 
@@ -194,7 +187,6 @@ void DemodulatorInstance::terminate() {
     pipeIQInputData->flush();
     pipeAudioData->flush();
     pipeIQDemodData->flush();
-    threadQueueControl->flush();
 }
 
 std::string DemodulatorInstance::getLabel() {
@@ -307,30 +299,15 @@ void DemodulatorInstance::setActive(bool state) {
 }
 
 void DemodulatorInstance::squelchAuto() {
-    DemodulatorThreadControlCommand command;
-    command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_ON;
-    //VSO: blocking push
-    threadQueueControl->push(command);
-    squelch = true;
+    demodulatorThread->setSquelchEnabled(true);
 }
 
 bool DemodulatorInstance::isSquelchEnabled() {
-    return (demodulatorThread->getSquelchLevel() != 0.0);
+    return demodulatorThread->isSquelchEnabled();
 }
 
 void DemodulatorInstance::setSquelchEnabled(bool state) {
-    if (!state && squelch) {
-        DemodulatorThreadControlCommand command;
-        command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_OFF;
-        threadQueueControl->push(command);
-    } else if (state && !squelch) {
-        DemodulatorThreadControlCommand command;
-        command.cmd = DemodulatorThreadControlCommand::DEMOD_THREAD_CMD_CTL_SQUELCH_ON;
-        //VSO: blocking push!
-        threadQueueControl->push(command);
-    }
-
-    squelch = state;
+    demodulatorThread->setSquelchEnabled(state);
 }
 
 float DemodulatorInstance::getSignalLevel() {
@@ -360,7 +337,7 @@ void DemodulatorInstance::setOutputDevice(int device_id) {
         audioThread->setInitOutputDevice(device_id);
     } else if (audioThread) {
         AudioThreadCommand command;
-        command.cmd = AudioThreadCommand::AUDIO_THREAD_CMD_SET_DEVICE;
+        command.cmdType = AudioThreadCommand::Type::AUDIO_THREAD_CMD_SET_DEVICE;
         command.int_value = device_id;
         //VSO: blocking push
         audioThread->getCommandQueue()->push(command);
@@ -379,11 +356,11 @@ int DemodulatorInstance::getOutputDevice() {
     return currentOutputDevice;
 }
 
-void DemodulatorInstance::setDemodulatorType(std::string demod_type_in) {
+void DemodulatorInstance::setDemodulatorType(const std::string& demod_type_in) {
     setGain(getGain());
     if (demodulatorPreThread) {
         std::string currentDemodType = demodulatorPreThread->getDemodType();
-        if ((currentDemodType != "") && (currentDemodType != demod_type_in)) {
+        if ((!currentDemodType.empty()) && (currentDemodType != demod_type_in)) {
             lastModemSettings[currentDemodType] = demodulatorPreThread->readModemSettings();
             lastModemBandwidth[currentDemodType] = demodulatorPreThread->getBandwidth();
         }
@@ -395,7 +372,7 @@ void DemodulatorInstance::setDemodulatorType(std::string demod_type_in) {
 
         demodulatorPreThread->setDemodType(demod_type_in);
         int lastbw = 0;
-        if (currentDemodType != "" && lastModemBandwidth.find(demod_type_in) != lastModemBandwidth.end()) {
+        if (!currentDemodType.empty() && lastModemBandwidth.find(demod_type_in) != lastModemBandwidth.end()) {
             lastbw = lastModemBandwidth[demod_type_in];
         }
         if (!lastbw) {
@@ -407,7 +384,7 @@ void DemodulatorInstance::setDemodulatorType(std::string demod_type_in) {
 
 #if ENABLE_DIGITAL_LAB
         if (isModemInitialized() && getModemType() == "digital") {
-            ModemDigitalOutputConsole *outp = (ModemDigitalOutputConsole *)getOutput();
+            auto *outp = (ModemDigitalOutputConsole *)getOutput();
             outp->setTitle(getDemodulatorType() + ": " + frequencyToStr(getFrequency()));
         }
 #endif
@@ -463,7 +440,7 @@ void DemodulatorInstance::setFrequency(long long freq) {
 #if ENABLE_DIGITAL_LAB
     if (activeOutput) {
         if (isModemInitialized() && getModemType() == "digital") {
-            ModemDigitalOutputConsole *outp = (ModemDigitalOutputConsole *)getOutput();
+            auto *outp = (ModemDigitalOutputConsole *)getOutput();
             outp->setTitle(getDemodulatorType() + ": " + frequencyToStr(getFrequency()));
         }
     }
@@ -488,7 +465,7 @@ void DemodulatorInstance::setAudioSampleRate(int sampleRate) {
     demodulatorPreThread->setAudioSampleRate(sampleRate);
 }
 
-int DemodulatorInstance::getAudioSampleRate() {
+int DemodulatorInstance::getAudioSampleRate() const {
     if (!audioThread) {
         return 0;
     }
@@ -509,16 +486,16 @@ bool DemodulatorInstance::isFollow()  {
     return follow.load();
 }
 
-void DemodulatorInstance::setFollow(bool follow) {
-    this->follow.store(follow);
+void DemodulatorInstance::setFollow(bool follow_in) {
+    follow.store(follow_in);
 }
 
 bool DemodulatorInstance::isTracking()  {
     return tracking.load();
 }
 
-void DemodulatorInstance::setTracking(bool tracking) {
-    this->tracking.store(tracking);
+void DemodulatorInstance::setTracking(bool tracking_in) {
+    tracking.store(tracking_in);
 }
 
 bool DemodulatorInstance::isDeltaLock() {
@@ -541,10 +518,10 @@ bool DemodulatorInstance::isMuted() {
     return demodulatorThread->isMuted();
 }
 
-void DemodulatorInstance::setMuted(bool muted) {
-    this->muted = muted;
-    demodulatorThread->setMuted(muted);
-    wxGetApp().getDemodMgr().setLastMuted(muted);
+void DemodulatorInstance::setMuted(bool muted_in) {
+    muted = muted_in;
+    demodulatorThread->setMuted(muted_in);
+    wxGetApp().getDemodMgr().setLastMuted(muted_in);
 }
 
 bool DemodulatorInstance::isRecording()
@@ -580,11 +557,11 @@ ModemArgInfoList DemodulatorInstance::getModemArgs() {
     return args;
 }
 
-std::string DemodulatorInstance::readModemSetting(std::string setting) {
+std::string DemodulatorInstance::readModemSetting(const std::string& setting) {
     return demodulatorPreThread->readModemSetting(setting);
 }
 
-void DemodulatorInstance::writeModemSetting(std::string setting, std::string value) {
+void DemodulatorInstance::writeModemSetting(const std::string& setting, std::string value) {
     demodulatorPreThread->writeModemSetting(setting, value);
 }
 
@@ -610,7 +587,7 @@ std::string DemodulatorInstance::getModemType() {
     return "";
 }
 
-ModemSettings DemodulatorInstance::getLastModemSettings(std::string demodType) {
+ModemSettings DemodulatorInstance::getLastModemSettings(const std::string& demodType) {
     if (lastModemSettings.find(demodType) != lastModemSettings.end()) {
         return lastModemSettings[demodType];
     } else {
@@ -625,8 +602,8 @@ void DemodulatorInstance::startRecording() {
         return;
     }
 
-    AudioSinkFileThread *newSinkThread = new AudioSinkFileThread();
-    AudioFileWAV *afHandler = new AudioFileWAV();
+    auto *newSinkThread = new AudioSinkFileThread();
+    auto *afHandler = new AudioFileWAV();
 
     std::stringstream fileName;
     
@@ -701,7 +678,7 @@ void DemodulatorInstance::hideOutput() {
 void DemodulatorInstance::closeOutput() {
     if (isModemInitialized()) {
         if (getModemType() == "digital") {
-            ModemDigital *dModem = (ModemDigital *)demodulatorPreThread->getModem();
+            auto *dModem = (ModemDigital *)demodulatorPreThread->getModem();
             dModem->setOutput(nullptr);
         }
     }

@@ -18,7 +18,7 @@ class WaterfallCanvas;
 class SpectrumCanvas: public InteractiveCanvas {
 public:
     SpectrumCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
-    ~SpectrumCanvas();
+    ~SpectrumCanvas() override;
 
     //This is public because it is indeed forwarded from
     //AppFrame::OnGlobalKeyDown, because global key handler intercepts 
@@ -40,7 +40,7 @@ public:
     bool getUseDBOfs();
     
     void setView(long long center_freq_in, int bandwidth_in);
-    void disableView();
+    void disableView() override;
 
     void setScaleFactorEnabled(bool en);
     void setFFTSize(int fftSize);

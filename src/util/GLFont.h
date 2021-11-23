@@ -35,7 +35,7 @@ public:
     void setId(int idval);
     
     // Returns the code point of the 16bit character, supposely Unicode.    
-    int getId();
+    int getId() const;
 
     void setXOffset(int xofs);
     int getXOffset();
@@ -53,15 +53,15 @@ public:
     int getWidth();
 
     void setHeight(int h);
-    int getHeight();
+    int getHeight() const;
 
     void setXAdvance(int xadv);
     int getXAdvance();
 
-    float getAspect();
+    float getAspect() const;
 
     void setIndex(unsigned int idx);
-    int getIndex();
+    int getIndex() const;
 
 private:
     // this is the code point of the 16bit character, supposly Unicode.
@@ -140,7 +140,7 @@ private:
     void drawString(const std::string& str, int pxHeight, float xpos, float ypos, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx = 0, int vpy = 0, bool cacheable = false);
 
     GLFontStringCache *cacheString(const std::wstring& str, int pxHeight, int vpx, int vpy);
-    void drawCacheString(GLFontStringCache *fc, float xpos, float ypos, Align hAlign, Align vAlign);
+    void drawCacheString(GLFontStringCache *fc, float xpos, float ypos, Align hAlign, Align vAlign) const;
 
     void doCacheGC();
     void clearCache();
@@ -195,10 +195,10 @@ public:
         Drawer(int basicFontSize, double scaleFactor);
 
         //Public drawing font, 16 bit char version.
-        void drawString(const std::wstring& str, float xpos, float ypos, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx = 0, int vpy = 0, bool cacheable = false);
+        void drawString(const std::wstring& str, float xpos, float ypos, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx = 0, int vpy = 0, bool cacheable = false) const;
 
         //Public drawing font, 8 bit char version.
-        void drawString(const std::string& str, float xpos, float ypos, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx = 0, int vpy = 0, bool cacheable = false);
+        void drawString(const std::string& str, float xpos, float ypos, Align hAlign = GLFONT_ALIGN_LEFT, Align vAlign = GLFONT_ALIGN_TOP, int vpx = 0, int vpy = 0, bool cacheable = false) const;
           
     }; //end class Drawer
 

@@ -13,24 +13,24 @@
 
 class SDRDevicesDialog: public devFrame {
 public:
-    SDRDevicesDialog( wxWindow* parent, const wxPoint &wxPos = wxDefaultPosition);
+    explicit SDRDevicesDialog( wxWindow* parent, const wxPoint &wxPos = wxDefaultPosition);
     
-    void OnClose( wxCloseEvent& event );
-    void OnDeleteItem( wxTreeEvent& event );
-    void OnSelectionChanged( wxTreeEvent& event );
-    void OnAddRemote( wxMouseEvent& event );
-    void OnUseSelected( wxMouseEvent& event );
-    void OnTreeDoubleClick( wxMouseEvent& event );
-    void OnDeviceTimer( wxTimerEvent& event );
-    void OnRefreshDevices( wxMouseEvent& event );
-    void OnPropGridChanged( wxPropertyGridEvent& event );
-    void OnPropGridFocus( wxFocusEvent& event );
+    void OnClose( wxCloseEvent& event ) override;
+    void OnDeleteItem( wxTreeEvent& event ) override;
+    void OnSelectionChanged( wxTreeEvent& event ) override;
+    void OnAddRemote( wxMouseEvent& event ) override;
+    void OnUseSelected( wxMouseEvent& event ) override;
+    void OnTreeDoubleClick( wxMouseEvent& event ) override;
+    void OnDeviceTimer( wxTimerEvent& event ) override;
+    void OnRefreshDevices( wxMouseEvent& event ) override;
+    void OnPropGridChanged( wxPropertyGridEvent& event ) override;
+    void OnPropGridFocus( wxFocusEvent& event ) override;
 
 private:
     void refreshDeviceProperties();
     void doRefreshDevices();
     
-    SDRDeviceInfo *getSelectedDevice(wxTreeItemId selId);
+    SDRDeviceInfo *getSelectedDevice(wxTreeItemId selId_in);
     wxPGProperty *addArgInfoProperty(wxPropertyGrid *pg, SoapySDR::ArgInfo arg);
 
     //

@@ -9,11 +9,11 @@
 // http://stackoverflow.com/questions/7276826/c-format-number-with-commas
 class comma_numpunct: public std::numpunct<char> {
 protected:
-    virtual char do_thousands_sep() const {
+    char do_thousands_sep() const override {
         return ',';
     }
 
-    virtual std::string do_grouping() const {
+    std::string do_grouping() const override {
         return "\03";
     }
 };
@@ -120,7 +120,7 @@ void TuningContext::DrawTuner(long long freq, int count, float displayPos, float
 }
 
 
-void TuningContext::DrawTunerDigitBox(int index, int count, float displayPos, float displayWidth, RGBA4f /* c */) {
+void TuningContext::DrawTunerDigitBox(int index, int count, float displayPos, float displayWidth, const RGBA4f& /* c */) {
     GLint vp[4];
     glGetIntegerv( GL_VIEWPORT, vp);
 
@@ -160,7 +160,7 @@ int TuningContext::GetTunerDigitIndex(float mPos, int count, float displayPos, f
     return count - index;
 }
 
-void TuningContext::DrawTunerBarIndexed(int start, int end, int count, float displayPos, float displayWidth, RGBA4f color, float /* alpha */, bool top,
+void TuningContext::DrawTunerBarIndexed(int start, int end, int count, float displayPos, float displayWidth, const RGBA4f& color, float /* alpha */, bool top,
 bool bottom) {
     float ofs = (displayWidth / (float) count);
     float p2 = displayPos + ofs * (float) (count - start + 1);
