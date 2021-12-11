@@ -162,6 +162,9 @@
 /* Enable strict program exit on error */
 /* #undef LIQUID_STRICT_EXIT */
 
+/* Suppress printing errors to stderr */
+/* #undef LIQUID_SUPPRESS_ERROR_OUTPUT */
+
 /* Define to the address where bug reports for this package should be sent. */
 #define PACKAGE_BUGREPORT "joseph@liquidsdr.org"
 

@@ -230,6 +230,9 @@ int AGC(_lock)(AGC() _q);                                                   \
 /* Unlock agc object, and allow amplitude correction to resume.         */  \
 int AGC(_unlock)(AGC() _q);                                                 \
                                                                             \
+/* Get lock state of agc object                                         */  \
+int AGC(_is_locked)(AGC() _q);                                              \
+                                                                            \
 /* Set loop filter bandwidth: attack/release time.                      */  \
 /*  _q      : automatic gain control object                             */  \
 /*  _bt     : bandwidth-time constant, _bt > 0                          */  \
@@ -346,18 +349,18 @@ cvsd cvsd_create(unsigned int _num_bits,
                  float _alpha);
 
 // destroy cvsd object
-void cvsd_destroy(cvsd _q);
+int cvsd_destroy(cvsd _q);
 
 // print cvsd object parameters
-void cvsd_print(cvsd _q);
+int cvsd_print(cvsd _q);
 
 // encode/decode single sample
 unsigned char   cvsd_encode(cvsd _q, float _audio_sample);
 float           cvsd_decode(cvsd _q, unsigned char _bit);
 
 // encode/decode 8 samples at a time
-void cvsd_encode8(cvsd _q, float * _audio, unsigned char * _data);
-void cvsd_decode8(cvsd _q, unsigned char _data, float * _audio);
+int cvsd_encode8(cvsd _q, float * _audio, unsigned char * _data);
+int cvsd_decode8(cvsd _q, unsigned char _data, float * _audio);
 
 
 //
@@ -390,16 +393,16 @@ CBUFFER() CBUFFER(_create_max)(unsigned int _max_size,                      \
                                unsigned int _max_read);                     \
                                                                             \
 /* Destroy cbuffer object, freeing all internal memory                  */  \
-void CBUFFER(_destroy)(CBUFFER() _q);                                       \
+int CBUFFER(_destroy)(CBUFFER() _q);                                        \
                                                                             \
 /* Print cbuffer object properties to stdout                            */  \
-void CBUFFER(_print)(CBUFFER() _q);                                         \
+int CBUFFER(_print)(CBUFFER() _q);                                          \
                                                                             \
 /* Print cbuffer object properties and internal state                   */  \
-void CBUFFER(_debug_print)(CBUFFER() _q);                                   \
+int CBUFFER(_debug_print)(CBUFFER() _q);                                    \
                                                                             \
 /* Clear internal buffer                                                */  \
-void CBUFFER(_reset)(CBUFFER() _q);                                         \
+int CBUFFER(_reset)(CBUFFER() _q);                                          \
                                                                             \
 /* Get the number of elements currently in the buffer                   */  \
 unsigned int CBUFFER(_size)(CBUFFER() _q);                                  \
@@ -413,29 +416,32 @@ unsigned int CBUFFER(_max_read)(CBUFFER() _q);                              \
 /* Get the number of available slots (max_size - size)                  */  \
 unsigned int CBUFFER(_space_available)(CBUFFER() _q);                       \
                                                                             \
+/* Return flag indicating if the buffer is empty or not                 */  \
+int CBUFFER(_is_empty)(CBUFFER() _q);                                       \
+                                                                            \
 /* Return flag indicating if the buffer is full or not                  */  \
 int CBUFFER(_is_full)(CBUFFER() _q);                                        \
                                                                             \
 /* Write a single sample into the buffer                                */  \
 /*  _q  : circular buffer object                                        */  \
 /*  _v  : input sample                                                  */  \
-void CBUFFER(_push)(CBUFFER() _q,                                           \
-                    T         _v);                                          \
+int CBUFFER(_push)(CBUFFER() _q,                                            \
+                   T         _v);                                           \
                                                                             \
 /* Write a block of samples to the buffer                               */  \
 /*  _q  : circular buffer object                                        */  \
 /*  _v  : array of samples to write to buffer                           */  \
 /*  _n  : number of samples to write                                    */  \
-void CBUFFER(_write)(CBUFFER()    _q,                                       \
-                     T *          _v,                                       \
-                     unsigned int _n);                                      \
+int CBUFFER(_write)(CBUFFER()    _q,                                        \
+                    T *          _v,                                        \
+                    unsigned int _n);                                       \
                                                                             \
 /* Remove and return a single element from the buffer by setting the    */  \
 /* value of the output sample pointed to by _v                          */  \
 /*  _q  : circular buffer object                                        */  \
 /*  _v  : pointer to sample output                                      */  \
-void CBUFFER(_pop)(CBUFFER() _q,                                            \
-                   T *       _v);                                           \
+int CBUFFER(_pop)(CBUFFER() _q,                                             \
+                  T *       _v);                                            \
                                                                             \
 /* Read buffer contents by returning a pointer to the linearized array; */  \
 /* note that the returned pointer is only valid until another operation */  \
@@ -444,16 +450,16 @@ void CBUFFER(_pop)(CBUFFER() _q,                                            \
 /*  _num_requested  : number of elements requested                      */  \
 /*  _v              : output pointer                                    */  \
 /*  _num_read       : number of elements referenced by _v               */  \
-void CBUFFER(_read)(CBUFFER()      _q,                                      \
-                    unsigned int   _num_requested,                          \
-                    T **           _v,                                      \
-                    unsigned int * _num_read);                              \
+int CBUFFER(_read)(CBUFFER()      _q,                                       \
+                   unsigned int   _num_requested,                           \
+                   T **           _v,                                       \
+                   unsigned int * _num_read);                               \
                                                                             \
 /* Release _n samples from the buffer                                   */  \
 /*  _q : circular buffer object                                         */  \
 /*  _n : number of elements to release                                  */  \
-void CBUFFER(_release)(CBUFFER()    _q,                                     \
-                       unsigned int _n);                                    \
+int CBUFFER(_release)(CBUFFER()    _q,                                      \
+                      unsigned int _n);                                     \
 
 // Define buffer APIs
 LIQUID_CBUFFER_DEFINE_API(LIQUID_CBUFFER_MANGLE_FLOAT,  float)
@@ -576,26 +582,26 @@ WDELAY() WDELAY(_recreate)(WDELAY()     _q,                                 \
                            unsigned int _delay);                            \
                                                                             \
 /* Destroy delay buffer object, freeing internal memory                 */  \
-void WDELAY(_destroy)(WDELAY() _q);                                         \
+int WDELAY(_destroy)(WDELAY() _q);                                          \
                                                                             \
 /* Print delay buffer object's state to stdout                          */  \
-void WDELAY(_print)(WDELAY() _q);                                           \
+int WDELAY(_print)(WDELAY() _q);                                            \
                                                                             \
 /* Clear/reset state of object                                          */  \
-void WDELAY(_reset)(WDELAY() _q);                                           \
+int WDELAY(_reset)(WDELAY() _q);                                            \
                                                                             \
 /* Read delayed sample at the head of the buffer and store it to the    */  \
 /* output pointer                                                       */  \
 /*  _q  :   delay buffer object                                         */  \
 /*  _v  :   value of delayed element                                    */  \
-void WDELAY(_read)(WDELAY() _q,                                             \
-                   T *      _v);                                            \
+int WDELAY(_read)(WDELAY() _q,                                              \
+                  T *      _v);                                             \
                                                                             \
 /* Push new sample into delay buffer object                             */  \
 /*  _q  :   delay buffer object                                         */  \
 /*  _v  :   new value to be added to buffer                             */  \
-void WDELAY(_push)(WDELAY() _q,                                             \
-                   T        _v);                                            \
+int WDELAY(_push)(WDELAY() _q,                                              \
+                  T        _v);                                             \
 
 // Define wdelay APIs
 LIQUID_WDELAY_DEFINE_API(LIQUID_WDELAY_MANGLE_FLOAT,  float)
@@ -777,10 +783,10 @@ typedef struct DOTPROD(_s) * DOTPROD();                                     \
 /*  _x      : input array [size: _n x 1]                                */  \
 /*  _n      : dotprod length, _n > 0                                    */  \
 /*  _y      : output sample pointer                                     */  \
-void DOTPROD(_run)( TC *         _v,                                        \
-                    TI *         _x,                                        \
-                    unsigned int _n,                                        \
-                    TO *         _y);                                       \
+int DOTPROD(_run)( TC *         _v,                                         \
+                   TI *         _x,                                         \
+                   unsigned int _n,                                         \
+                   TO *         _y);                                        \
                                                                             \
 /* This provides the same unoptimized operation as the 'run()' method   */  \
 /* above, but with the loop unrolled by a factor of 4. It is marginally */  \
@@ -789,10 +795,10 @@ void DOTPROD(_run)( TC *         _v,                                        \
 /*  _x      : input array [size: _n x 1]                                */  \
 /*  _n      : dotprod length, _n > 0                                    */  \
 /*  _y      : output sample pointer                                     */  \
-void DOTPROD(_run4)( TC *         _v,                                       \
-                     TI *         _x,                                       \
-                     unsigned int _n,                                       \
-                     TO *         _y);                                      \
+int DOTPROD(_run4)(TC *         _v,                                         \
+                   TI *         _x,                                         \
+                   unsigned int _n,                                         \
+                   TO *         _y);                                        \
                                                                             \
 /* Create vector dot product object                                     */  \
 /*  _v      : coefficients array [size: _n x 1]                         */  \
@@ -828,18 +834,18 @@ DOTPROD() DOTPROD(_recreate_rev)(DOTPROD()    _q,                           \
                                  unsigned int _n);                          \
                                                                             \
 /* Destroy dotprod object, freeing all internal memory                  */  \
-void DOTPROD(_destroy)(DOTPROD() _q);                                       \
+int DOTPROD(_destroy)(DOTPROD() _q);                                        \
                                                                             \
 /* Print dotprod object internals to standard output                    */  \
-void DOTPROD(_print)(DOTPROD() _q);                                         \
+int DOTPROD(_print)(DOTPROD() _q);                                          \
                                                                             \
 /* Execute dot product on an input array                                */  \
 /*  _q      : dotprod object                                            */  \
 /*  _x      : input array [size: _n x 1]                                */  \
 /*  _y      : output sample pointer                                     */  \
-void DOTPROD(_execute)(DOTPROD() _q,                                        \
-                       TI *      _x,                                        \
-                       TO *      _y);                                       \
+int DOTPROD(_execute)(DOTPROD() _q,                                         \
+                      TI *      _x,                                         \
+                      TO *      _y);                                        \
 
 LIQUID_DOTPROD_DEFINE_API(LIQUID_DOTPROD_MANGLE_RRRF,
                           float,
@@ -912,14 +918,6 @@ EQLMS() EQLMS(_create_rnyquist)(int          _type,                         \
 EQLMS() EQLMS(_create_lowpass)(unsigned int _n,                             \
                                float        _fc);                           \
                                                                             \
-/* Re-create EQ initialized with external coefficients                  */  \
-/*  _q      :   equalizer object                                        */  \
-/*  _h :   filter coefficients (NULL for {1,0,0...}), [size: _n x 1]    */  \
-/*  _h_len  :   filter length                                           */  \
-EQLMS() EQLMS(_recreate)(EQLMS()      _q,                                   \
-                         T *          _h,                                   \
-                         unsigned int _h_len);                              \
-                                                                            \
 /* Destroy equalizer object, freeing all internal memory                */  \
 int EQLMS(_destroy)(EQLMS() _q);                                            \
                                                                             \
@@ -957,6 +955,16 @@ int EQLMS(_push_block)(EQLMS()      _q,                                     \
 /*  _y      :   output sample                                           */  \
 int EQLMS(_execute)(EQLMS() _q,                                             \
                     T *     _y);                                            \
+                                                                            \
+/* Execute equalizer as decimator                                       */  \
+/*  _q      :   equalizer object                                        */  \
+/*  _x      :   input sample array [size: _k x 1]                       */  \
+/*  _y      :   output sample                                           */  \
+/*  _k      :   down-sampling rate                                      */  \
+int EQLMS(_decim_execute)(EQLMS()      _q,                                  \
+                          T *          _x,                                  \
+                          T *          _y,                                  \
+                          unsigned int _k);                                 \
                                                                             \
 /* Execute equalizer with block of samples using constant               */  \
 /* modulus algorithm, operating on a decimation rate of _k              */  \
@@ -6288,11 +6296,17 @@ float SYMTRACK(_get_bandwidth)(SYMTRACK() _q);                              \
 int SYMTRACK(_set_bandwidth)(SYMTRACK() _q,                                 \
                              float _bw);                                    \
                                                                             \
-/* Adjust internal NCO by requested phase                               */  \
+/* Adjust internal NCO by requested frequency                           */  \
 /*  _q      : symtrack object                                           */  \
 /*  _dphi   : NCO phase adjustment [radians]                            */  \
+int SYMTRACK(_adjust_frequency)(SYMTRACK() _q,                              \
+                                T          _dphi);                          \
+                                                                            \
+/* Adjust internal NCO by requested phase                               */  \
+/*  _q      : symtrack object                                           */  \
+/*  _phi    : NCO phase adjustment [radians]                            */  \
 int SYMTRACK(_adjust_phase)(SYMTRACK() _q,                                  \
-                            T          _dphi);                              \
+                            T          _phi);                               \
                                                                             \
 /* Set symtrack equalization strategy to constant modulus (default)     */  \
 int SYMTRACK(_set_eq_cm)(SYMTRACK() _q);                                    \
