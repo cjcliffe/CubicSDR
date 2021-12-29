@@ -242,7 +242,7 @@ void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
 
     } else {
         if (scaleFactorEnabled) {
-            setStatusText("Drag horizontal to adjust center frequency. Arrow keys or wheel to navigate/zoom bandwith. Right-drag or SHIFT+UP/DOWN to adjust visual gain, right-click to reset it. 'B' to toggle decibels display.");
+            setStatusText("Drag horizontal to adjust center frequency. Arrow keys or wheel to navigate/zoom bandwidth. Right-drag or SHIFT+UP/DOWN to adjust visual gain, right-click to reset it. 'B' to toggle decibels display.");
         } else {
             setStatusText("Displaying spectrum of active demodulator.");
         }

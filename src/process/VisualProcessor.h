@@ -120,7 +120,7 @@ public:
     
 protected:
     // derived class must implement a  process() interface
-    //where typically 'input' data is consummed, processed, and then dispatched
+    //where typically 'input' data is consumed, processed, and then dispatched
     //with distribute() to all 'outputs'.
     virtual void process() = 0;
 

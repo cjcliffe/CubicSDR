@@ -49,7 +49,7 @@ void SDRPostThread::updateActiveDemodulators() {
 
     long long centerFreq = wxGetApp().getFrequency();
 
-    //retreive the current list of demodulators:
+    //retrieve the current list of demodulators:
     auto demodulators = wxGetApp().getDemodMgr().getDemodulators();
    
     for (const auto& demod : demodulators) {
@@ -99,7 +99,7 @@ void SDRPostThread::updateActiveDemodulators() {
 
 
 void SDRPostThread::resetAllDemodulators() {
-    //retreive the current list of demodulators:
+    //retrieve the current list of demodulators:
     auto demodulators = wxGetApp().getDemodMgr().getDemodulators();
 
     for (const auto& demod : demodulators) {

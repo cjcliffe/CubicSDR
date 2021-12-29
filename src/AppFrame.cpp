@@ -2034,7 +2034,7 @@ bool AppFrame::actionOnMenuDBOffset(wxCommandEvent &event) {
 
 bool AppFrame::actionOnMenuFreqOffset(wxCommandEvent &event) {
     if (event.GetId() == wxID_SET_FREQ_OFFSET) {
-        //enter in KHz to accomodate > 2GHz shifts for down/upconverters on 32 bit platforms.
+        //enter in KHz to accommodate > 2GHz shifts for down/upconverters on 32 bit platforms.
         long ofs = wxGetNumberFromUser(
                 "Shift the displayed frequency by this amount of KHz.\ni.e. -125000 for -125 MHz", "Frequency (KHz)",
                 "Frequency Offset", (long long) (wxGetApp().getOffset() / 1000.0), -2000000000, 2000000000, this);
@@ -2661,7 +2661,7 @@ bool AppFrame::loadSession(const std::string& fileName) {
 
     int sample_rate = wxGetApp().getSampleRate();
 
-    //scan the available sample rates and see if it matches a predifined one
+    //scan the available sample rates and see if it matches a predefined one
     int menuIndex = -1;
     for (auto discreteRate : sampleRates) {
         if (discreteRate == sample_rate) {
@@ -2930,7 +2930,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     
     //Re-dispatch the key events if the mouse cursor is within a given
     //widget region, effectively activating its specific key shortcuts,
-    //which else are overriden by this global key handler.
+    //which else are overridden by this global key handler.
     if (demodTuner->getMouseTracker()->mouseInView()) {
         demodTuner->OnKeyDown(event);
     } else if (waterfallCanvas->getMouseTracker()->mouseInView()) {
@@ -3067,7 +3067,7 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
 
     //Re-dispatch the key events if the mouse cursor is within a given
     //widget region, effectively activating its specific key shortcuts,
-    //which else are overriden by this global key handler.
+    //which else are overridden by this global key handler.
     if (demodTuner->getMouseTracker()->mouseInView()) {
         demodTuner->OnKeyUp(event);
     }

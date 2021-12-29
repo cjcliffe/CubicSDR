@@ -43,7 +43,7 @@ class SDRDeviceAddForm : public wxDialog
 		wxButton* m_cancelButton;
 		wxButton* m_OkButton;
 		
-		// Virtual event handlers, overide them in your derived class
+		// Virtual event handlers, override them in your derived class
 		virtual void OnSoapyModuleChanged( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnCancelButton( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnOkButton( wxCommandEvent& event ) { event.Skip(); }

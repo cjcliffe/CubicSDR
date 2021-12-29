@@ -118,7 +118,7 @@ protected:
     void trimRecents();
 	void loadDefaultRanges();
 
-    //utility method that attemts to decode the childNodeName as std::wstring, else as std::string, else 
+    //utility method that attempts to decode the childNodeName as std::wstring, else as std::string, else 
     //return an empty string.
     static std::wstring getSafeWstringValue(DataNode* node, const std::string& childNodeName);
     

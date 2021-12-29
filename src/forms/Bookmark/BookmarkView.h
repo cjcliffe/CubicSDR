@@ -60,11 +60,11 @@ public:
     ~BookmarkView() override;
     
     //order an asynchronous refresh/rebuild of the whole tree,
-    //will take effect at the next onUpdateTimer() occurence.
+    //will take effect at the next onUpdateTimer() occurrence.
     void updateActiveList();
     
     //order asynchronous updates of the bookmarks,
-    //will take effect at the next onUpdateTimer() occurence.
+    //will take effect at the next onUpdateTimer() occurrence.
     void updateBookmarks();
     void updateBookmarks(const std::string& group);
 
@@ -101,7 +101,7 @@ protected:
     
     void onUpdateTimer( wxTimerEvent& event ) override;
 
-    //refresh / rebuild the whole tree item immediatly
+    //refresh / rebuild the whole tree item immediately
     void doUpdateActiveList();
 
     void onKeyUp( wxKeyEvent& event ) override;

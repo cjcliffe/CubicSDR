@@ -77,7 +77,7 @@ public:
      * \param[in] timeout a max waiting timeout in microseconds for an item to be pushed. 
      * by default, = 0 means indefinite wait.
      * \param[in] errorMessage if != nullptr (is nullptr by default) an error message written on std::cout in case of the timeout wait
-     * \return true if an item was pushed into the queue, else a timeout has occured.
+     * \return true if an item was pushed into the queue, else a timeout has occurred.
      */
     bool push(const value_type& item, std::uint64_t timeout = BLOCKING_INFINITE_TIMEOUT,const char* errorMessage = nullptr) {
         std::unique_lock < SpinMutex > lock(m_mutex);
@@ -109,7 +109,7 @@ public:
     }
 
     /**
-    * Try to pushes the item into the queue, immediatly, without waiting. If the queue is full, the item
+    * Try to pushes the item into the queue, immediately, without waiting. If the queue is full, the item
     * is not inserted and the function returns false. 
     * \param[in] item An item.
     */

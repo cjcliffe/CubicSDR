@@ -580,7 +580,7 @@ void WaterfallCanvas::updateHoverState() {
         }
         else {
             setStatusText(
-                "Click to set demodulator frequency or hold ALT to drag range; hold SHIFT to create new. Arrow keys or wheel to navigate/zoom bandwith, C to center. Right-drag or SHIFT+UP/DOWN to adjust visual gain. Shift-R record/stop all.");
+                "Click to set demodulator frequency or hold ALT to drag range; hold SHIFT to create new. Arrow keys or wheel to navigate/zoom bandwidth, C to center. Right-drag or SHIFT+UP/DOWN to adjust visual gain. Shift-R record/stop all.");
         }
     }
 }

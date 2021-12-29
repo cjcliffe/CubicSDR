@@ -356,7 +356,7 @@ void DemodulatorThread::run() {
 void DemodulatorThread::terminate() {
     IOThread::terminate();
 
-    //unblock the curretly blocked push()
+    //unblock the currently blocked push()
     iqInputQueue->flush();
     audioOutputQueue->flush();
 }

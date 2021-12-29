@@ -287,7 +287,7 @@ bool GainCanvas::updateGainValues() {
 
 				//update the config with this value : 
 				//a consequence of such updates is that the use setting 
-				// is overriden by the current one in AGC mode.
+				// is overridden by the current one in AGC mode.
 				//TODO: if it not desirable, do not update in AGC mode.
 				devConfig->setGain(gi.first, actualRoundedGain);
 

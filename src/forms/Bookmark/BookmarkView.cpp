@@ -943,7 +943,7 @@ void BookmarkView::activateBookmark(const BookmarkEntryPtr& bmEnt) {
 
 void BookmarkView::activateRange(const BookmarkRangeEntryPtr& rangeEnt) {
     
-	//the following oly works if rangeEnt->freq is the middle of [rangeEnt->startFreq ; rangeEnt->startFreq]
+	//the following only works if rangeEnt->freq is the middle of [rangeEnt->startFreq ; rangeEnt->startFreq]
 	wxGetApp().setFrequency(rangeEnt->freq);
 	
 	// Change View limits to fit the range exactly.
