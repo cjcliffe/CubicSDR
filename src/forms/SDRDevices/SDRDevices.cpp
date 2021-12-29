@@ -151,7 +151,7 @@ void SDRDevicesDialog::refreshDeviceProperties() {
                 antennaToSelect = currentSetAntenna;
             }
             else {
-                //erroneous antenna name, re-write device config with the first choice of teh list.
+                //erroneous antenna name, re-write device config with the first choice of the list.
                 devConfig->setAntennaName(antennaToSelect);
             }
 

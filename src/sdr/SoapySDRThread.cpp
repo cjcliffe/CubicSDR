@@ -214,13 +214,13 @@ int SDRThread::readStream(const SDRThreadIQDataQueuePtr& iqDataOutQueue) {
     // readStream() is suited to device MTU and cannot be really adapted dynamically.
     //TODO: Add in doc the need to reduce SoapySDR device buffer length (if available) to restore higher fps.
 
-    //0. Retreive a new batch 
+    //0. Retrieve a new batch 
     SDRThreadIQDataPtr dataOut = buffers.getBuffer();
 
     //resize to the target size immedialetly, to minimize later reallocs:
     assureBufferMinSize(dataOut.get(), nElems);
 
-    //1.If overflow occured on the previous readStream(), transfer it in dataOut directly. 
+    //1.If overflow occurred on the previous readStream(), transfer it in dataOut directly. 
     if (numOverflow > 0) {
         int n_overflow = std::min(numOverflow, nElems);
         
@@ -235,7 +235,7 @@ int SDRThread::readStream(const SDRThreadIQDataQueuePtr& iqDataOutQueue) {
 
         // std::cout << "SDRThread::readStream() 1.1 overflowBuffer not empty, collect the remaining " << n_overflow << " samples in it..." << std::endl;
         
-        if (numOverflow > 0) { // still some left, shift the remaining samples to the begining..
+        if (numOverflow > 0) { // still some left, shift the remaining samples to the beginning.
             ::memmove(&overflowBuffer.data[0], &overflowBuffer.data[n_overflow], numOverflow * sizeof(liquid_float_complex));
 
         //    std::cout << "SDRThread::readStream() 1.2 overflowBuffer still not empty, compact the remaining " << numOverflow << " samples in it..." << std::endl;
@@ -285,7 +285,7 @@ int SDRThread::readStream(const SDRThreadIQDataQueuePtr& iqDataOutQueue) {
             }
         }
         
-        //sucess read beyond nElems, so with overflow:
+        //success read beyond nElems, so with overflow:
         if ((n_read + n_stream_read) > nElems) {
 
             //n_requested is the exact number to reach nElems.
@@ -295,7 +295,7 @@ int SDRThread::readStream(const SDRThreadIQDataQueuePtr& iqDataOutQueue) {
             //starting at n_read position.
             //inspired from SoapyRTLSDR code, this mysterious void** is indeed an array of CF32(real/imag) samples, indeed an array of 
             //float with the following layout [sample 1 real part , sample 1 imag part,  sample 2 real part , sample 2 imag part,sample 3 real part , sample 3 imag part,...etc]
-            //Since there is indeed no garantee that sizeof(liquid_float_complex) = 2 * sizeof (float)
+            //Since there is indeed no guarantee that sizeof(liquid_float_complex) = 2 * sizeof (float)
             //nor that the Re/Im layout of fields matches the float array order, assign liquid_float_complex field by field.
             float *pp = (float *)buffs[0];
 
@@ -383,7 +383,7 @@ int SDRThread::readStream(const SDRThreadIQDataQueuePtr& iqDataOutQueue) {
         
         if (!iqDataOutQueue->try_push(dataOut)) {
             //The rest of the system saturates,
-            //finally the push didn't suceeded.
+            //finally the push didn't succeeded.
             readStreamCode = 0;
             std::cout << "SDRThread::readStream(): 3.2 iqDataOutQueue output queue is full, discard processing of the batch..." << std::endl;
 

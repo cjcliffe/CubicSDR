@@ -81,7 +81,7 @@ public:
 
 private:
 
-    //utility method that attemts to decode node value as std::wstring, else as std::string, else 
+    //utility method that attempts to decode node value as std::wstring, else as std::string, else 
     //return an empty string.
     static std::wstring getSafeWstringValue(DataNode* node);
 

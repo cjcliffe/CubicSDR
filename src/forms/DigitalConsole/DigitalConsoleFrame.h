@@ -41,7 +41,7 @@ class DigitalConsoleFrame : public wxFrame
 		wxButton* m_pauseButton;
 		wxTimer m_refreshTimer;
 		
-		// Virtual event handlers, overide them in your derived class
+		// Virtual event handlers, override them in your derived class
 		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
 		virtual void OnClear( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnCopy( wxCommandEvent& event ) { event.Skip(); }

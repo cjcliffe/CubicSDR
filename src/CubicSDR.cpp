@@ -275,7 +275,7 @@ bool CubicSDR::OnInit() {
     }
 
     //Deactivated code to allocate an explicit Console on Windows.
-    //This tends to hang the apllication on heavy demod (re)creation.
+    //This tends to hang the application on heavy demod (re)creation.
     //To continue to debug with std::cout traces, simply run CubicSDR in a MINSYS2 compatble shell on Windows:
     //ex: Cygwin shell, Git For Windows Bash shell....
 #if (0)
@@ -766,7 +766,7 @@ void CubicSDR::setSampleRate(long long rate_in) {
 
 void CubicSDR::stopDevice(bool store, int waitMsForTermination) {
     
-    //Firt we must stop the threads
+    //First we must stop the threads
     sdrThread->terminate();
     sdrThread->isTerminated(waitMsForTermination);
 

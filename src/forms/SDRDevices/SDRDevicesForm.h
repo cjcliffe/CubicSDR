@@ -53,7 +53,7 @@ class devFrame : public wxFrame
 		wxPropertyGrid* m_propertyGrid;
 		wxTimer m_deviceTimer;
 		
-		// Virtual event handlers, overide them in your derived class
+		// Virtual event handlers, override them in your derived class
 		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
 		virtual void OnTreeDoubleClick( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnDeleteItem( wxTreeEvent& event ) { event.Skip(); }

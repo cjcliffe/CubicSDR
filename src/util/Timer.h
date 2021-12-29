@@ -82,7 +82,7 @@ public:
     /// Timer update
     /**
      *	Calling the update command will bring the timer value up to date, this is meant
-     *	to be called at the begining of the frame to establish the time index which is being drawn.
+     *	to be called at the beginning of the frame to establish the time index which is being drawn.
      */
     void update();
 

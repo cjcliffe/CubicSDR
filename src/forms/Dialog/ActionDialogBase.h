@@ -38,7 +38,7 @@ class ActionDialogBase : public wxDialog
 		wxButton* m_cancelButton;
 		wxButton* m_okButton;
 		
-		// Virtual event handlers, overide them in your derived class
+		// Virtual event handlers, override them in your derived class
 		virtual void onClickCancel( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onClickOK( wxCommandEvent& event ) { event.Skip(); }
 		

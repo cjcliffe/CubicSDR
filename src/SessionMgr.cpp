@@ -70,7 +70,7 @@ bool SessionMgr::loadSession(const std::string& fileName) {
         DataNode *header = l.rootNode()->getNext("header");
 
         if (header->hasAnother("version")) {
-            //"Force" the retreiving of the value as string, even if its look like a number internally ! (ex: "0.2.0")
+            //"Force" the retrieving of the value as string, even if it looks like a number internally ! (ex: "0.2.0")
             DataNode *versionNode = header->getNext("version");
             std::wstring version;
             try {
@@ -92,7 +92,7 @@ bool SessionMgr::loadSession(const std::string& fileName) {
 
             SDRDeviceInfo *dev = wxGetApp().getSDRThread()->getDevice();
             if (dev) {
-                //retreive the available sample rates. A valid previously chosen manual
+                //retrieve the available sample rates. A valid previously chosen manual
                 //value is constrained within these limits. If it doesn't behave, lets the device choose
                 //for us.
                 long minRate = MANUAL_SAMPLE_RATE_MIN;

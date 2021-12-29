@@ -67,7 +67,7 @@ void FFTDataDistributor::process() {
                 memmove(&inputBuffer.data[0], &inputBuffer.data[bufferOffset], bufferedItems*sizeof(liquid_float_complex));
                 bufferOffset = 0;
                 //if there are too much samples, we may even overflow !
-                //as a fallback strategy, drop the last incomming new samples not fitting in inputBuffer.data.
+                //as a fallback strategy, drop the last incoming new samples not fitting in inputBuffer.data.
                 if (bufferedItems + inp->data.size() > bufferMax) {
                     //clamp nbSamplesToAdd
                     nbSamplesToAdd = bufferMax - bufferedItems;

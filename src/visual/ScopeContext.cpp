@@ -40,7 +40,7 @@ void ScopeContext::DrawTunerTitles(bool ppmMode) {
 
     GLFont::Drawer refDrawingFont = GLFont::getFont(12, GLFont::getScaleFactor());
 
-    //better position frequency/bandwith labels according to font scale
+    //better position frequency/bandwidth labels according to font scale
     double shiftFactor = GLFont::getScaleFactor()+0.5;
    
     refDrawingFont.drawString(ppmMode?"Device PPM":"Frequency", -0.66f, -1.0 +hPos*shiftFactor, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
