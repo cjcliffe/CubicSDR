@@ -497,6 +497,7 @@ struct rot_state {
      * non overridable fields, internal use
      */
     hamlib_port_t rotport;  /*!< Rotator port (internal use). */
+    hamlib_port_t rotport2;  /*!< 2nd Rotator port (internal use). */
 
     int comm_state;         /*!< Comm port state, i.e. opened or closed. */
     rig_ptr_t priv;         /*!< Pointer to private rotator state data. */

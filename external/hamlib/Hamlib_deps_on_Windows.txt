@@ -8,3 +8,8 @@ Those dependencies are installed from external/msvc/[x86|x64] dirs.
 
 In addition, Hamlib also uses libusb but since it is a common
 dependency with SoapySDR, it is not included in the external dirs.
+
+For Hamlib v4.x releases, only the export file 'libhamlib-4.def' is provided, so we need to re-generate .lib to work on Visual Studio projects: 
+- Open the 'Developper Command Prompt for VS 2022'
+- For Win32, go to hamlib/32 directory and run 'LIB /DEF:libhamlib-4.def /MACHINE:X86'
+- For Win64, go to hamlib/64 directory and run 'LIB /DEF:libhamlib-4.def /MACHINE:X64'
