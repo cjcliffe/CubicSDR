@@ -472,7 +472,7 @@ void AudioThread::run() {
 #ifdef __APPLE__
     pthread_t tID = pthread_self();	 // ID of this thread
     int priority = sched_get_priority_max(SCHED_RR) - 1;
-    sched_param prio = { priority }; // scheduling priority of thread
+    sched_param prio = { priority, {0}}; // scheduling priority of thread
     pthread_setschedparam(tID, SCHED_RR, &prio);
 #endif
 

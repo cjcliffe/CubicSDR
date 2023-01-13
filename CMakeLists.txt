@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 3.0)
 
 project (CubicSDR)
 
@@ -142,7 +142,7 @@ endmacro(configure_files_recurse)
 if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
     MESSAGE( "64 bit compiler detected" )
     SET( EX_PLATFORM 64 )
-    SET( EX_PLATFORM_NAME "x64" )
+    SET( EX_PLATFORM_NAME "${CMAKE_SYSTEM_PROCESSOR}" )
 else( CMAKE_SIZEOF_VOID_P EQUAL 8 ) 
     MESSAGE( "32 bit compiler detected" )
     SET( EX_PLATFORM 32 )
