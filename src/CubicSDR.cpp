@@ -225,7 +225,7 @@ CubicSDR::CubicSDR() : frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFA
         m_glContextAttributes = new wxGLContextAttrs();
         
         wxGLContextAttrs glSettings;
-        glSettings.PlatformDefaults().EndList();
+        glSettings.CompatibilityProfile().EndList();
 
         *m_glContextAttributes = glSettings;
 }

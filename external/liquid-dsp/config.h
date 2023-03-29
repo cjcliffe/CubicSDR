@@ -6,8 +6,57 @@
 #define __LIQUID_CONFIG_H__
 
 
-/* Support AVX (Advanced Vector Extensions) instructions */
-#define HAVE_AVX 1
+/* Define to 1 to support Advanced Bit Manipulation */
+#define HAVE_ABM 1
+
+/* Define to 1 to support Multi-Precision Add-Carry Instruction Extensions */
+#define HAVE_ADX 1
+
+/* Define to 1 to support Advanced Encryption Standard New Instruction Set
+   (AES-NI) */
+/* #define HAVE_AES 1 */
+
+/* Support Altivec instructions */
+/* #undef HAVE_ALTIVEC */
+
+/* Define to 1 to support Advanced Vector Extensions */
+/* #define HAVE_AVX 1 */
+
+/* Define to 1 to support Advanced Vector Extensions 2 */
+/* #define HAVE_AVX2 1 */
+
+/* Define to 1 to support AVX-512 Byte and Word Instructions */
+/* #undef HAVE_AVX512_BW */
+
+/* Define to 1 to support AVX-512 Conflict Detection Instructions */
+/* #undef HAVE_AVX512_CD */
+
+/* Define to 1 to support AVX-512 Doubleword and Quadword Instructions */
+/* #undef HAVE_AVX512_DQ */
+
+/* Define to 1 to support AVX-512 Exponential & Reciprocal Instructions */
+/* #undef HAVE_AVX512_ER */
+
+/* Define to 1 to support AVX-512 Foundation Extensions */
+/* #undef HAVE_AVX512_F */
+
+/* Define to 1 to support AVX-512 Integer Fused Multiply Add Instructions */
+/* #undef HAVE_AVX512_IFMA */
+
+/* Define to 1 to support AVX-512 Conflict Prefetch Instructions */
+/* #undef HAVE_AVX512_PF */
+
+/* Define to 1 to support AVX-512 Vector Byte Manipulation Instructions */
+/* #undef HAVE_AVX512_VBMI */
+
+/* Define to 1 to support AVX-512 Vector Length Extensions */
+/* #undef HAVE_AVX512_VL */
+
+/* Define to 1 to support Bit Manipulation Instruction Set 1 */
+#define HAVE_BMI1 1
+
+/* Define to 1 to support Bit Manipulation Instruction Set 2 */
+#define HAVE_BMI2 1
 
 /* Define to 1 if you have the `cargf' function. */
 #define HAVE_CARGF 1
@@ -27,9 +76,6 @@
 /* Define to 1 if you have the `crealf' function. */
 #define HAVE_CREALF 1
 
-/* Define to 1 if you have the <emmintrin.h> header file. */
-#define HAVE_EMMINTRIN_H 1
-
 /* Define to 1 if you have the `expf' function. */
 #define HAVE_EXPF 1
 
@@ -42,14 +88,17 @@
 /* Define to 1 if you have the <float.h> header file. */
 #define HAVE_FLOAT_H 1
 
+/* Define to 1 to support Fused Multiply-Add Extensions 3 */
+#define HAVE_FMA3 1
+
+/* Define to 1 to support Fused Multiply-Add Extensions 4 */
+/* #undef HAVE_FMA4 */
+
 /* Define to 1 if you have the `free' function. */
 #define HAVE_FREE 1
 
 /* Define to 1 if you have the <getopt.h> header file. */
 #define HAVE_GETOPT_H 1
-
-/* Define to 1 if you have the <immintrin.h> header file. */
-#define HAVE_IMMINTRIN_H 1
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
@@ -75,49 +124,52 @@
 /* Define to 1 if you have the `memmove' function. */
 #define HAVE_MEMMOVE 1
 
-/* Define to 1 if you have the <memory.h> header file. */
-#define HAVE_MEMORY_H 1
-
 /* Define to 1 if you have the `memset' function. */
 #define HAVE_MEMSET 1
 
-/* Define to 1 if you have the <mmintrin.h> header file. */
-#define HAVE_MMINTRIN_H 1
-
-/* Support MMX instructions */
+/* Define to 1 to support Multimedia Extensions */
 #define HAVE_MMX 1
 
-/* Define to 1 if you have the <pmmintrin.h> header file. */
-#define HAVE_PMMINTRIN_H 1
+/* Define to 1 to support Memory Protection Extensions */
+/* #undef HAVE_MPX */
+
+/* Define to 1 to support Prefetch Vector Data Into Caches WT1 */
+/* #undef HAVE_PREFETCHWT1 */
+
+/* Define to 1 to support Digital Random Number Generator */
+#define HAVE_RDRND 1
 
 /* Define to 1 if you have the `realloc' function. */
 #define HAVE_REALLOC 1
 
+/* Define to 1 to support Secure Hash Algorithm Extension */
+/* #undef HAVE_SHA */
+
 /* Define to 1 if you have the `sinf' function. */
 #define HAVE_SINF 1
-
-/* Define to 1 if you have the <smmintrin.h> header file. */
-#define HAVE_SMMINTRIN_H 1
 
 /* Define to 1 if you have the `sqrtf' function. */
 #define HAVE_SQRTF 1
 
-/* Support SSE (Streaming SIMD Extensions) instructions */
+/* Define to 1 to support Streaming SIMD Extensions */
 #define HAVE_SSE 1
 
-/* Support SSE2 (Streaming SIMD Extensions 2) instructions */
+/* Define to 1 to support Streaming SIMD Extensions */
 #define HAVE_SSE2 1
 
-/* Support SSE3 (Streaming SIMD Extensions 3) instructions */
+/* Define to 1 to support Streaming SIMD Extensions 3 */
 #define HAVE_SSE3 1
 
-/* Support SSE4.1 (Streaming SIMD Extensions 4.1) instructions */
-#define HAVE_SSE41 1
+/* Define to 1 to support Streaming SIMD Extensions 4.1 */
+#define HAVE_SSE4_1 1
 
-/* Support SSE4.2 (Streaming SIMD Extensions 4.2) instructions */
-#define HAVE_SSE42 1
+/* Define to 1 to support Streaming SIMD Extensions 4.2 */
+#define HAVE_SSE4_2 1
 
-/* Support SSSE3 (Supplemental Streaming SIMD Extensions 3) instructions */
+/* Define to 1 to support AMD Streaming SIMD Extensions 4a */
+/* #undef HAVE_SSE4a */
+
+/* Define to 1 to support Supplemental Streaming SIMD Extensions 3 */
 #define HAVE_SSSE3 1
 
 /* Define to 1 if you have the <stdint.h> header file. */
@@ -144,17 +196,17 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #define HAVE_SYS_TYPES_H 1
 
-/* Define to 1 if you have the <tmmintrin.h> header file. */
-#define HAVE_TMMINTRIN_H 1
-
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
 
-/* Define to 1 if you have the <xmmintrin.h> header file. */
-#define HAVE_XMMINTRIN_H 1
+/* Support VSX instructions */
+/* #undef HAVE_VSX */
+
+/* Define to 1 to support eXtended Operations Extensions */
+/* #undef HAVE_XOP */
 
 /* Force internal FFT even if libfftw is available */
-#define LIQUID_FFTOVERRIDE 1
+#undef LIQUID_FFTOVERRIDE
 
 /* Force overriding of SIMD (use portable C code) */
 /* #undef LIQUID_SIMDOVERRIDE */
@@ -172,7 +224,7 @@
 #define PACKAGE_NAME "liquid-dsp"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "liquid-dsp 1.4.0"
+#define PACKAGE_STRING "liquid-dsp 1.5"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "liquid-dsp"
@@ -181,7 +233,7 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "1.4.0"
+#define PACKAGE_VERSION "1.5"
 
 /* The size of `int', as computed by sizeof. */
 #define SIZEOF_INT 4
@@ -195,7 +247,9 @@
 /* The size of `short int', as computed by sizeof. */
 #define SIZEOF_SHORT_INT 2
 
-/* Define to 1 if you have the ANSI C header files. */
+/* Define to 1 if all of the C90 standard headers exist (not just the ones
+   required in a freestanding environment). This macro is provided for
+   backward compatibility; new code need not use it. */
 #define STDC_HEADERS 1
 
 /* Define for Solaris 2.5.1 so the uint32_t typedef from <sys/synch.h>,

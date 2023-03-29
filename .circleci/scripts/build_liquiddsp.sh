@@ -1,11 +1,9 @@
 # Liquid-DSP
-cd $HOME/build
-
-mkdir jgaeddert/
-cd jgaeddert/
+mkdir -p $HOME/build/jgaeddert
+cd $HOME/build/jgaeddert
 git clone https://github.com/jgaeddert/liquid-dsp.git
 
-cd liquid-dsp/
+cd $HOME/build/jgaeddert/liquid-dsp
 ./bootstrap.sh
 
 echo "Configuring liquid-dsp.."
