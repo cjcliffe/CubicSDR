@@ -180,7 +180,7 @@ bool SpectrumCanvas::getUseDBOfs() {
     return spectrumPanel.getUseDBOffset();
 }
 
-void SpectrumCanvas::setView(long long center_freq_in, int bandwidth_in) {
+void SpectrumCanvas::setView(long long center_freq_in, long long bandwidth_in) {
     bwChange += bandwidth_in-bandwidth;
     #define BW_RESET_TH 400000
     if (bwChange > BW_RESET_TH || bwChange < -BW_RESET_TH) {

@@ -17,6 +17,6 @@ find_library (LIQUID_LIBRARIES NAMES liquid)
 # handle the QUIETLY and REQUIRED arguments and set LIQUID_FOUND to TRUE if
 # all listed variables are TRUE
 include (FindPackageHandleStandardArgs)
-find_package_handle_standard_args (LIQUID DEFAULT_MSG LIQUID_LIBRARIES LIQUID_INCLUDES)
+find_package_handle_standard_args (Liquid DEFAULT_MSG LIQUID_LIBRARIES LIQUID_INCLUDES)
 
 #mark_as_advanced (LIQUID_LIBRARIES LIQUID_INCLUDES)

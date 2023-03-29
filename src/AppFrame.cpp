@@ -1631,7 +1631,6 @@ bool AppFrame::actionOnMenuAudioSampleRate(wxCommandEvent& event) {
 
         auto outputDevices = wxGetApp().getDemodMgr().getOutputDevices();
 
-        int i = 0;
         for (auto & outputDevice : outputDevices) {
             int menu_id = wxID_AUDIO_BANDWIDTH_BASE + wxID_AUDIO_DEVICE_MULTIPLIER * outputDevice.first;
 
@@ -1649,7 +1648,6 @@ bool AppFrame::actionOnMenuAudioSampleRate(wxCommandEvent& event) {
 
                 j++;
             }
-            i++;
         }
     }
 
@@ -1980,6 +1978,8 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent &event) {
         wxGetApp().stopRig();
         wxGetApp().initRig(rigModel, rigPort, rigSerialRate);
     }
+#else
+    (void)event; // Suppres build warning
 #endif
 
     return bManaged;

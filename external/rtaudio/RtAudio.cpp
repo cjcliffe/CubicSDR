@@ -990,9 +990,7 @@ bool RtApiCore :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
   AudioDeviceID id = deviceList[ device ];
 
   // Setup for stream mode.
-  bool isInput = false;
   if ( mode == INPUT ) {
-    isInput = true;
     property.mScope = kAudioDevicePropertyScopeInput;
   }
   else

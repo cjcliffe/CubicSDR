@@ -39,7 +39,7 @@ public:
     void setUseDBOfs(bool showDb);
     bool getUseDBOfs();
     
-    void setView(long long center_freq_in, int bandwidth_in);
+    void setView(long long center_freq_in, long long bandwidth_in) override;
     void disableView() override;
 
     void setScaleFactorEnabled(bool en);
