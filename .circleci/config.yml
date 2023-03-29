@@ -2,7 +2,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: cimg/base:2020.01
+      - image: cimg/base:current-22.04
     environment:
       - CACHE_DIR: ~/build/wxWidgets/staticlib
     steps:
