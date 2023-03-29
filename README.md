@@ -1,4 +1,4 @@
-CubicSDR
+CubicSDR [![CircleCI](https://dl.circleci.com/status-badge/img/gh/cjcliffe/CubicSDR/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/cjcliffe/CubicSDR/tree/master)
 ========
 
 Cross-Platform Software-Defined Radio Application
