@@ -2,7 +2,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/ubuntu-server:22.04
+      - image: ubuntu-2204
     environment:
       - CACHE_DIR: ~/build/wxWidgets/staticlib
     steps:
