@@ -17,11 +17,10 @@ tar -xvjf wxWidgets-3.2.1.tar.bz2 > /dev/null
 cd wxWidgets-3.2.1/
 ./autogen.sh
 
-if [[ "$CIRCLE_JOB" == "build_linux" ]]; then 
-./configure --with-opengl --disable-glcanvasegl --disable-shared --enable-monolithic --with-libjpeg --with-libtiff --with-libpng --with-zlib --disable-sdltest --enable-unicode --enable-display --enable-propgrid --disable-webview --disable-webviewwebkit --prefix=`echo $HOME/build/wxWidgets/staticlib` CXXFLAGS="-std=c++0x"
-fi
 
-if [[ "$CIRCLE_JOB" == "build_mac" ]]; then
+if [ "$(uname)" == "Linux" ]; then
+./configure --with-opengl --disable-glcanvasegl --disable-shared --enable-monolithic --with-libjpeg --with-libtiff --with-libpng --with-zlib --disable-sdltest --enable-unicode --enable-display --enable-propgrid --disable-webview --disable-webviewwebkit --prefix=`echo $HOME/build/wxWidgets/staticlib` CXXFLAGS="-std=c++0x"
+elif [ "$(uname)" == "Darwin" ]; then
 ./configure --with-opengl --disable-glcanvasegl --disable-shared --enable-monolithic --with-libjpeg --with-libtiff --with-libpng --with-zlib --with-mac --disable-sdltest --enable-unicode --enable-display --enable-propgrid --disable-webkit --disable-webview --disable-webviewwebkit --prefix=`echo $HOME/build/wxWidgets/staticlib` CXXFLAGS="-std=c++0x" --with-libiconv=/usr
 fi
 
