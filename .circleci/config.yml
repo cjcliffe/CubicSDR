@@ -2,14 +2,14 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/buildpack-deps:trusty
+      - image: circleci/ubuntu-server:22.04
     environment:
       - CACHE_DIR: ~/build/wxWidgets/staticlib
     steps:
       - checkout
       - restore_cache:
           keys:
-            - cache-{{ checksum "circleci/cache-key" }}
+            - cache-{{ checksum "travis-ci/build_wxwidgets.sh" }}
       - run:
           name: Install Dependencies
           command: |
@@ -28,6 +28,6 @@ jobs:
           name: Build CubicSDR
           command: bash travis-ci/build_cubicsdr.sh
       - save_cache:
-          key: cache-{{ checksum "circleci/cache-key" }}
+          key: cache-{{ checksum "travis-ci/build_wxwidgets.sh" }}
           paths:
             - ~/build/wxWidgets/staticlib
