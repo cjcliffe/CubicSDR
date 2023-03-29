@@ -18,15 +18,15 @@ jobs:
       - run:
           name: Build wxWidgets
           command: bash .circleci/scripts/build_wxwidgets.sh
-      - run:
-          name: Build LiquidDSP
-          command: bash .circleci/scripts/build_liquiddsp.sh
-      - run:
-          name: Build SoapySDR
-          command: bash .circleci/scripts/build_soapysdr.sh
-      - run:
-          name: Build CubicSDR
-          command: bash .circleci/scripts/build_cubicsdr.sh
+    #   - run:
+    #       name: Build LiquidDSP
+    #       command: bash .circleci/scripts/build_liquiddsp.sh
+    #   - run:
+    #       name: Build SoapySDR
+    #       command: bash .circleci/scripts/build_soapysdr.sh
+    #   - run:
+    #       name: Build CubicSDR
+    #       command: bash .circleci/scripts/build_cubicsdr.sh
       - save_cache:
           key: cache-{{ checksum ".circleci/scripts/build_wxwidgets.sh" }}
           paths:

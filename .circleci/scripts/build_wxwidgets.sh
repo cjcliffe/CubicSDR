@@ -25,5 +25,5 @@ elif [ "$(uname)" == "Darwin" ]; then
 fi
 
 echo "Building wxWidgets.."
-make -j$(nproc)
+make V=1 -j$(nproc)
 make install
