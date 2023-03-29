@@ -10,5 +10,5 @@ echo "Configuring liquid-dsp.."
 ./configure > /dev/null
 
 echo "Building liquid-dsp.."
-make -j$(nproc) > /dev/null
+make -j2 > /dev/null
 sudo make install
