@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       - image: cimg/base:current-22.04
-    resource_class: medium+
+    resource_class: large
     environment:
       - CACHE_DIR: ~/build/wxWidgets/staticlib
     steps:
