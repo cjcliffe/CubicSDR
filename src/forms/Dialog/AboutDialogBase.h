@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Oct 26 2018)
+// C++ code generated with wxFormBuilder (version 3.10.1-0-g8feb16b3)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -83,6 +83,20 @@ class AboutDialogBase : public wxDialog
 		wxStaticText* m_cghBA;
 		wxStaticText* m_cDianeBruce;
 		wxStaticText* m_cghDiB;
+		wxStaticText* m_cPaulColby;
+		wxStaticText* m_cghCACRI;
+		wxStaticText* m_cclassabbyamp;
+		wxStaticText* m_cghclassabbyamp;
+		wxStaticText* m_cSDRplay;
+		wxStaticText* m_cghSDRplay;
+		wxStaticText* m_cdforsi;
+		wxStaticText* m_cghdforsi;
+		wxStaticText* m_cMagalex2x14;
+		wxStaticText* m_cghMagalex2x14;
+		wxStaticText* m_cjawatson;
+		wxStaticText* m_cghjawatson;
+		wxStaticText* m_cghf4grx;
+		wxStaticText* m_cf4grx;
 		wxPanel* m_dPanel;
 		wxScrolledWindow* m_dScroll;
 		wxStaticText* m_dHeader;
@@ -92,8 +106,10 @@ class AboutDialogBase : public wxDialog
 		wxStaticText* m_dAutoMotiveTemplates;
 		wxStaticText* m_dJorgeMorales;
 		wxStaticText* m_dMichaelRooke;
-		wxStaticText* m_dTNCOM;
 		wxStaticText* m_dErikWied;
+		wxStaticText* m_dChristopherEsser;
+		wxStaticText* m_dTNCOM;
+		wxStaticText* m_dAlexanderSadleir;
 		wxStaticText* m_dRobertDuering;
 		wxStaticText* m_dJimDeitch;
 		wxStaticText* m_dNooElec;
@@ -163,6 +179,36 @@ class AboutDialogBase : public wxDialog
 		wxStaticText* m_dArturoCaballero;
 		wxStaticText* m_dRonaldTissier;
 		wxStaticText* m_dDavidLawrence;
+		wxStaticText* m_dJohnIsella;
+		wxStaticText* m_dChrisKurowicki;
+		wxStaticText* m_dWilliamCollins;
+		wxStaticText* m_dStefanoPasini;
+		wxStaticText* m_dScottForbes;
+		wxStaticText* m_dRafaelMendezTrigueros;
+		wxStaticText* m_dDuaneDamiano;
+		wxStaticText* m_dWhitakerAudio;
+		wxStaticText* m_dAlanNashRadiusLLC;
+		wxStaticText* m_dMelvinCharters;
+		wxStaticText* m_dSethFulton;
+		wxStaticText* m_dBoydKing;
+		wxStaticText* m_dThomasZicarelli;
+		wxStaticText* m_dDarrinAbend;
+		wxStaticText* m_dDavidSchulz;
+		wxStaticText* m_dKlaudiusGodziek;
+		wxStaticText* m_dDonaldDryden;
+		wxStaticText* m_dSDCSistemasdeControl;
+		wxStaticText* m_dVicBaker;
+		wxStaticText* m_dLuisGimenezCarpena;
+		wxStaticText* m_dJohnHutchins;
+		wxStaticText* m_dChrisAlbone;
+		wxStaticText* m_dHenriDavid;
+		wxStaticText* m_dKoyoMasore;
+		wxStaticText* m_dMarkJacob;
+		wxStaticText* m_dLuisAynat;
+		wxStaticText* m_dMichaelCarter;
+		wxStaticText* m_dManuelSerranoCardenas;
+		wxStaticText* m_dVincentPortier;
+		wxStaticText* m_dJeanFrancoisLaperriere;
 		wxPanel* m_stPanel;
 		wxScrolledWindow* m_stScroll;
 		wxStaticText* m_stHeader;
@@ -188,6 +234,7 @@ class AboutDialogBase : public wxDialog
 	public:
 
 		AboutDialogBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("About"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 600,450 ), long style = wxDEFAULT_DIALOG_STYLE );
+
 		~AboutDialogBase();
 
 };

@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Oct 26 2018)
+// C++ code generated with wxFormBuilder (version 3.10.1-0-g8feb16b3)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -230,6 +230,62 @@ AboutDialogBase::AboutDialogBase( wxWindow* parent, wxWindowID id, const wxStrin
 	m_cghDiB->Wrap( -1 );
 	m_cSizer->Add( m_cghDiB, 0, wxALL, 5 );
 
+	m_cPaulColby = new wxStaticText( m_dbPanel2, wxID_ANY, wxT("Paul Colby"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cPaulColby->Wrap( -1 );
+	m_cSizer->Add( m_cPaulColby, 0, wxALL, 5 );
+
+	m_cghCACRI = new wxStaticText( m_dbPanel2, wxID_ANY, wxT("@colbyAtCRI"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cghCACRI->Wrap( -1 );
+	m_cSizer->Add( m_cghCACRI, 0, wxALL, 5 );
+
+	m_cclassabbyamp = new wxStaticText( m_dbPanel2, wxID_ANY, wxT("classabbyamp"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cclassabbyamp->Wrap( -1 );
+	m_cSizer->Add( m_cclassabbyamp, 0, wxALL, 5 );
+
+	m_cghclassabbyamp = new wxStaticText( m_dbPanel2, wxID_ANY, wxT("@classabbyamp"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cghclassabbyamp->Wrap( -1 );
+	m_cSizer->Add( m_cghclassabbyamp, 0, wxALL, 5 );
+
+	m_cSDRplay = new wxStaticText( m_dbPanel2, wxID_ANY, wxT("SDRplay"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cSDRplay->Wrap( -1 );
+	m_cSizer->Add( m_cSDRplay, 0, wxALL, 5 );
+
+	m_cghSDRplay = new wxStaticText( m_dbPanel2, wxID_ANY, wxT("@SDRplay"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cghSDRplay->Wrap( -1 );
+	m_cSizer->Add( m_cghSDRplay, 0, wxALL, 5 );
+
+	m_cdforsi = new wxStaticText( m_dbPanel2, wxID_ANY, wxT("dforsi"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cdforsi->Wrap( -1 );
+	m_cSizer->Add( m_cdforsi, 0, wxALL, 5 );
+
+	m_cghdforsi = new wxStaticText( m_dbPanel2, wxID_ANY, wxT("@dforsi"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cghdforsi->Wrap( -1 );
+	m_cSizer->Add( m_cghdforsi, 0, wxALL, 5 );
+
+	m_cMagalex2x14 = new wxStaticText( m_dbPanel2, wxID_ANY, wxT("Aleksey Makarenko"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cMagalex2x14->Wrap( -1 );
+	m_cSizer->Add( m_cMagalex2x14, 0, wxALL, 5 );
+
+	m_cghMagalex2x14 = new wxStaticText( m_dbPanel2, wxID_ANY, wxT("@Magalex2x14"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cghMagalex2x14->Wrap( -1 );
+	m_cSizer->Add( m_cghMagalex2x14, 0, wxALL, 5 );
+
+	m_cjawatson = new wxStaticText( m_dbPanel2, wxID_ANY, wxT("James Watson"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cjawatson->Wrap( -1 );
+	m_cSizer->Add( m_cjawatson, 0, wxALL, 5 );
+
+	m_cghjawatson = new wxStaticText( m_dbPanel2, wxID_ANY, wxT("@jawatson"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cghjawatson->Wrap( -1 );
+	m_cSizer->Add( m_cghjawatson, 0, wxALL, 5 );
+
+	m_cghf4grx = new wxStaticText( m_dbPanel2, wxID_ANY, wxT("f4grx"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cghf4grx->Wrap( -1 );
+	m_cSizer->Add( m_cghf4grx, 0, wxALL, 5 );
+
+	m_cf4grx = new wxStaticText( m_dbPanel2, wxID_ANY, wxT("@f4grx"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cf4grx->Wrap( -1 );
+	m_cSizer->Add( m_cf4grx, 0, wxALL, 5 );
+
 
 	m_dbPanel2->SetSizer( m_cSizer );
 	m_dbPanel2->Layout();
@@ -285,13 +341,21 @@ AboutDialogBase::AboutDialogBase( wxWindow* parent, wxWindowID id, const wxStrin
 	m_dMichaelRooke->Wrap( -1 );
 	m_dSizer->Add( m_dMichaelRooke, 0, wxALL, 5 );
 
+	m_dErikWied = new wxStaticText( m_dScroll, wxID_ANY, wxT("Erik Mikkel Wied"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dErikWied->Wrap( -1 );
+	m_dSizer->Add( m_dErikWied, 0, wxALL, 5 );
+
+	m_dChristopherEsser = new wxStaticText( m_dScroll, wxID_ANY, wxT("Christopher Esser"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dChristopherEsser->Wrap( -1 );
+	m_dSizer->Add( m_dChristopherEsser, 0, wxALL, 5 );
+
 	m_dTNCOM = new wxStaticText( m_dScroll, wxID_ANY, wxT("TNCOM"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_dTNCOM->Wrap( -1 );
 	m_dSizer->Add( m_dTNCOM, 0, wxALL, 5 );
 
-	m_dErikWied = new wxStaticText( m_dScroll, wxID_ANY, wxT("Erik Mikkel Wied"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_dErikWied->Wrap( -1 );
-	m_dSizer->Add( m_dErikWied, 0, wxALL, 5 );
+	m_dAlexanderSadleir = new wxStaticText( m_dScroll, wxID_ANY, wxT("Alexander Sadleir"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dAlexanderSadleir->Wrap( -1 );
+	m_dSizer->Add( m_dAlexanderSadleir, 0, wxALL, 5 );
 
 	m_dRobertDuering = new wxStaticText( m_dScroll, wxID_ANY, wxT("Robert Duering"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_dRobertDuering->Wrap( -1 );
@@ -567,6 +631,126 @@ AboutDialogBase::AboutDialogBase( wxWindow* parent, wxWindowID id, const wxStrin
 	m_dDavidLawrence->Wrap( -1 );
 	m_dSizer->Add( m_dDavidLawrence, 0, wxALL, 5 );
 
+	m_dJohnIsella = new wxStaticText( m_dScroll, wxID_ANY, wxT("John Isella"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dJohnIsella->Wrap( -1 );
+	m_dSizer->Add( m_dJohnIsella, 0, wxALL, 5 );
+
+	m_dChrisKurowicki = new wxStaticText( m_dScroll, wxID_ANY, wxT("Chris Kurowicki"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dChrisKurowicki->Wrap( -1 );
+	m_dSizer->Add( m_dChrisKurowicki, 0, wxALL, 5 );
+
+	m_dWilliamCollins = new wxStaticText( m_dScroll, wxID_ANY, wxT("William Collins"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dWilliamCollins->Wrap( -1 );
+	m_dSizer->Add( m_dWilliamCollins, 0, wxALL, 5 );
+
+	m_dStefanoPasini = new wxStaticText( m_dScroll, wxID_ANY, wxT("Stefano Pasini"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dStefanoPasini->Wrap( -1 );
+	m_dSizer->Add( m_dStefanoPasini, 0, wxALL, 5 );
+
+	m_dScottForbes = new wxStaticText( m_dScroll, wxID_ANY, wxT("Scott Forbes"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dScottForbes->Wrap( -1 );
+	m_dSizer->Add( m_dScottForbes, 0, wxALL, 5 );
+
+	m_dRafaelMendezTrigueros = new wxStaticText( m_dScroll, wxID_ANY, wxT("Rafael Mendez Trigueros"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dRafaelMendezTrigueros->Wrap( -1 );
+	m_dSizer->Add( m_dRafaelMendezTrigueros, 0, wxALL, 5 );
+
+	m_dDuaneDamiano = new wxStaticText( m_dScroll, wxID_ANY, wxT("Duane Damiano"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dDuaneDamiano->Wrap( -1 );
+	m_dSizer->Add( m_dDuaneDamiano, 0, wxALL, 5 );
+
+	m_dWhitakerAudio = new wxStaticText( m_dScroll, wxID_ANY, wxT("WhitakerAudio"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dWhitakerAudio->Wrap( -1 );
+	m_dSizer->Add( m_dWhitakerAudio, 0, wxALL, 5 );
+
+	m_dAlanNashRadiusLLC = new wxStaticText( m_dScroll, wxID_ANY, wxT("Alan at Radius LLC"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dAlanNashRadiusLLC->Wrap( -1 );
+	m_dSizer->Add( m_dAlanNashRadiusLLC, 0, wxALL, 5 );
+
+	m_dMelvinCharters = new wxStaticText( m_dScroll, wxID_ANY, wxT("Melvin Charters"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dMelvinCharters->Wrap( -1 );
+	m_dSizer->Add( m_dMelvinCharters, 0, wxALL, 5 );
+
+	m_dSethFulton = new wxStaticText( m_dScroll, wxID_ANY, wxT("Seth Fulton"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dSethFulton->Wrap( -1 );
+	m_dSizer->Add( m_dSethFulton, 0, wxALL, 5 );
+
+	m_dBoydKing = new wxStaticText( m_dScroll, wxID_ANY, wxT("Boyd King"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dBoydKing->Wrap( -1 );
+	m_dSizer->Add( m_dBoydKing, 0, wxALL, 5 );
+
+	m_dThomasZicarelli = new wxStaticText( m_dScroll, wxID_ANY, wxT("Thomas Zicarelli"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dThomasZicarelli->Wrap( -1 );
+	m_dSizer->Add( m_dThomasZicarelli, 0, wxALL, 5 );
+
+	m_dDarrinAbend = new wxStaticText( m_dScroll, wxID_ANY, wxT("Darrin Abend"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dDarrinAbend->Wrap( -1 );
+	m_dSizer->Add( m_dDarrinAbend, 0, wxALL, 5 );
+
+	m_dDavidSchulz = new wxStaticText( m_dScroll, wxID_ANY, wxT("David Schulz"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dDavidSchulz->Wrap( -1 );
+	m_dSizer->Add( m_dDavidSchulz, 0, wxALL, 5 );
+
+	m_dKlaudiusGodziek = new wxStaticText( m_dScroll, wxID_ANY, wxT("Klaudius Godziek"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dKlaudiusGodziek->Wrap( -1 );
+	m_dSizer->Add( m_dKlaudiusGodziek, 0, wxALL, 5 );
+
+	m_dDonaldDryden = new wxStaticText( m_dScroll, wxID_ANY, wxT("Donald Dryden"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dDonaldDryden->Wrap( -1 );
+	m_dSizer->Add( m_dDonaldDryden, 0, wxALL, 5 );
+
+	m_dSDCSistemasdeControl = new wxStaticText( m_dScroll, wxID_ANY, wxT("SDC Sistemas de Control"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dSDCSistemasdeControl->Wrap( -1 );
+	m_dSizer->Add( m_dSDCSistemasdeControl, 0, wxALL, 5 );
+
+	m_dVicBaker = new wxStaticText( m_dScroll, wxID_ANY, wxT("Vic Baker"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dVicBaker->Wrap( -1 );
+	m_dSizer->Add( m_dVicBaker, 0, wxALL, 5 );
+
+	m_dLuisGimenezCarpena = new wxStaticText( m_dScroll, wxID_ANY, wxT("Luis Gimenez Carpena"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dLuisGimenezCarpena->Wrap( -1 );
+	m_dSizer->Add( m_dLuisGimenezCarpena, 0, wxALL, 5 );
+
+	m_dJohnHutchins = new wxStaticText( m_dScroll, wxID_ANY, wxT("John Hutchins"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dJohnHutchins->Wrap( -1 );
+	m_dSizer->Add( m_dJohnHutchins, 0, wxALL, 5 );
+
+	m_dChrisAlbone = new wxStaticText( m_dScroll, wxID_ANY, wxT("Chris Albone"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dChrisAlbone->Wrap( -1 );
+	m_dSizer->Add( m_dChrisAlbone, 0, wxALL, 5 );
+
+	m_dHenriDavid = new wxStaticText( m_dScroll, wxID_ANY, wxT("Henri David"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dHenriDavid->Wrap( -1 );
+	m_dSizer->Add( m_dHenriDavid, 0, wxALL, 5 );
+
+	m_dKoyoMasore = new wxStaticText( m_dScroll, wxID_ANY, wxT("Koyo Masore"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dKoyoMasore->Wrap( -1 );
+	m_dSizer->Add( m_dKoyoMasore, 0, wxALL, 5 );
+
+	m_dMarkJacob = new wxStaticText( m_dScroll, wxID_ANY, wxT("Mark Jacob"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dMarkJacob->Wrap( -1 );
+	m_dSizer->Add( m_dMarkJacob, 0, wxALL, 5 );
+
+	m_dLuisAynat = new wxStaticText( m_dScroll, wxID_ANY, wxT("Luis Aynat"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dLuisAynat->Wrap( -1 );
+	m_dSizer->Add( m_dLuisAynat, 0, wxALL, 5 );
+
+	m_dMichaelCarter = new wxStaticText( m_dScroll, wxID_ANY, wxT("Michael Carter"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dMichaelCarter->Wrap( -1 );
+	m_dSizer->Add( m_dMichaelCarter, 0, wxALL, 5 );
+
+	m_dManuelSerranoCardenas = new wxStaticText( m_dScroll, wxID_ANY, wxT("Manuel Serrano Cárdenas"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dManuelSerranoCardenas->Wrap( -1 );
+	m_dSizer->Add( m_dManuelSerranoCardenas, 0, wxALL, 5 );
+
+	m_dVincentPortier = new wxStaticText( m_dScroll, wxID_ANY, wxT("Vincent Portier"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dVincentPortier->Wrap( -1 );
+	m_dSizer->Add( m_dVincentPortier, 0, wxALL, 5 );
+
+	m_dJeanFrancoisLaperriere = new wxStaticText( m_dScroll, wxID_ANY, wxT("Jean-Francois Laperriere"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_dJeanFrancoisLaperriere->Wrap( -1 );
+	m_dSizer->Add( m_dJeanFrancoisLaperriere, 0, wxALL, 5 );
+
 
 	m_dScroll->SetSizer( m_dSizer );
 	m_dScroll->Layout();
@@ -601,7 +785,7 @@ AboutDialogBase::AboutDialogBase( wxWindow* parent, wxWindowID id, const wxStrin
 
 	m_stSoapyDevAssistHeader = new wxStaticText( m_stScroll, wxID_ANY, wxT("SoapySDR Development and Assistance:"), wxDefaultPosition, wxDefaultSize, wxST_NO_AUTORESIZE );
 	m_stSoapyDevAssistHeader->Wrap( -1 );
-	m_stSoapyDevAssistHeader->SetFont( wxFont( 10, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
+	m_stSoapyDevAssistHeader->SetFont( wxFont( 10, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString ) );
 
 	m_stSizer->Add( m_stSoapyDevAssistHeader, 0, wxALL, 5 );
 
@@ -614,7 +798,7 @@ AboutDialogBase::AboutDialogBase( wxWindow* parent, wxWindowID id, const wxStrin
 
 	m_stLiquidDSPHeader = new wxStaticText( m_stScroll, wxID_ANY, wxT("Liquid-DSP Development and Assistance:"), wxDefaultPosition, wxDefaultSize, wxST_NO_AUTORESIZE );
 	m_stLiquidDSPHeader->Wrap( -1 );
-	m_stLiquidDSPHeader->SetFont( wxFont( 10, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
+	m_stLiquidDSPHeader->SetFont( wxFont( 10, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString ) );
 
 	m_stSizer->Add( m_stLiquidDSPHeader, 0, wxALL, 5 );
 
@@ -627,7 +811,7 @@ AboutDialogBase::AboutDialogBase( wxWindow* parent, wxWindowID id, const wxStrin
 
 	m_stIdeasDirectionsHeader = new wxStaticText( m_stScroll, wxID_ANY, wxT("Ideas, Direction && Encouragement:"), wxDefaultPosition, wxDefaultSize, wxST_NO_AUTORESIZE );
 	m_stIdeasDirectionsHeader->Wrap( -1 );
-	m_stIdeasDirectionsHeader->SetFont( wxFont( 10, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
+	m_stIdeasDirectionsHeader->SetFont( wxFont( 10, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString ) );
 
 	m_stSizer->Add( m_stIdeasDirectionsHeader, 0, wxALL, 5 );
 
