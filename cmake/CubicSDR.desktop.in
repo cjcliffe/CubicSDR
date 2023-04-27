@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Exec=CubicSDR %u
-Icon=@CMAKE_INSTALL_PREFIX@/share/cubicsdr/CubicSDR.png
+Icon=@CMAKE_INSTALL_PREFIX@/share/cubicsdr/CubicSDR
 Terminal=false
 Name=CubicSDR
 GenericName=CubicSDR
