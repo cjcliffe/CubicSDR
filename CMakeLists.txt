@@ -302,6 +302,9 @@ IF (APPLE)
     SET(CMAKE_OSX_DEPLOYMENT_TARGET, "10.9")
   
     SET(LIQUID_LIB liquid)
+    IF(CMAKE_INSTALL_PREFIX)
+        link_directories(${CMAKE_INSTALL_PREFIX}/lib)
+    ENDIF(CMAKE_INSTALL_PREFIX)
     link_directories(/usr/local/lib)
     link_directories(/opt/local/lib)
 
