@@ -1,5 +1,5 @@
 #!/bin/bash
-for f in ${APPS}/Contents/MacOS/*.dylib
+for f in ${APPS}/Contents/**/*.dylib
 do
     /usr/bin/codesign --force --verify --verbose --sign "${CUBICSDR_CERT}" $f
 done
