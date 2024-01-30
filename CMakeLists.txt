@@ -184,6 +184,16 @@ ADD_DEFINITIONS(
     -DUSE_SOAPY_SDR=1
 )       
 
+find_program(CCACHE "ccache")
+if(CCACHE)
+    set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE})
+    set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
+    if(APPLE)
+        set(CMAKE_OBJCXX_COMPILER_LAUNCHER ${CCACHE})
+    endif()
+    set(ENV{CCACHE_SLOPPINESS} pch_defines,time_macros)
+endif(CCACHE)
+
 IF (WIN32)
     set(wxWidgets_USE_STATIC ON)
 
