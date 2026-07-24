@@ -1,6 +1,6 @@
 # Plan: Add CI Test Execution
 
-CubicSDR is a cross-platform Software-Defined Radio application (C++14, wxWidgets, OpenGL). This plan covers adding test execution to the CircleCI pipeline.
+CubicSDR is a cross-platform Software-Defined Radio application (C++14, wxWidgets, OpenGL). This plan covers adding test execution to the CI pipeline.
 
 See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
 
@@ -8,13 +8,13 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
 
 ## Current State
 
-CircleCI config (`.circleci/config.yml`) only compiles the project. No tests are run.
+No CI configuration exists in the repository (no `.circleci/`, `.github/workflows/`, or `.travis.yml`).
 
 ## Implementation Plan
 
 Depends on: [Add Unit Tests](add-unit-tests.md). Once tests exist:
 
-1. Update `.circleci/config.yml` to add a test step after build:
+1. Add CI configuration (e.g., GitHub Actions) with a test step after build:
    ```yaml
    - run:
        name: Run tests
@@ -36,7 +36,7 @@ Depends on: [Add Unit Tests](add-unit-tests.md). Once tests exist:
 
 | File | Action |
 |------|--------|
-| `.circleci/config.yml` | Add test execution step |
+| CI config (`.github/workflows/` or similar) | Create CI pipeline with test execution |
 
 ## Dependencies
 

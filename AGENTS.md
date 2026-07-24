@@ -12,12 +12,12 @@ This is a C++ Software-Defined Radio application (CubicSDR) built with wxWidgets
   - `fix-gitignore.md` — Comprehensive .gitignore patterns
   - `modernize-cmake.md` — CMake 2.8 → 3.14+ modernization
   - `smart-pointers.md` — Replace raw new/delete with std::unique_ptr
-  - `split-appframe.md` — Split 3,200-line AppFrame.cpp into 5 files
+  - `split-appframe.md` — Split monolithic AppFrame.cpp into multiple files
   - `remove-c4996-suppression.md` — Address unsafe CRT function usage
   - `replace-reinterpret-cast.md` — Fix undefined behavior in DataTree
   - `update-vendored-deps.md` — Update or replace third-party libraries
   - `add-ci-test-execution.md` — Run tests in CI pipeline
-  - `resolve-todos.md` — Address 15 open TODO/FIXME markers
+  - `resolve-todos.md` — Address open TODO/FIXME markers
 
 ## Build
 

@@ -19,7 +19,7 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | 
 2. Add a test framework. **Recommendation: Catch2 v3** (header-only, single header, modern C++14, good assertion macros, CMake integration via `FetchContent` or bundled header).
 3. Add a `tests/CMakeLists.txt` with a `cubicsdr_tests` target.
 4. Add `add_subdirectory(tests)` to the root `CMakeLists.txt` (guarded by an option like `BUILD_TESTING`).
-5. Update CircleCI config to run `ctest` after build.
+5. Update CI config to run `ctest` after build.
 
 ### Phase 2: Core utility tests (highest value, lowest effort)
 
@@ -109,7 +109,7 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | 
 
 ### Phase 4: Update CI
 
-- Add `BUILD_TESTING=ON` to CircleCI build steps.
+- Add `BUILD_TESTING=ON` to CI build steps.
 - Add `ctest --test-dir build --output-on-failure` after build.
 - Consider adding a separate "test" job that depends on the "build" job.
 
@@ -119,7 +119,7 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | 
 - `cmake --build build` compiles all test files and the `cubicsdr_tests` target.
 - `ctest --test-dir build --output-on-failure` runs all Phase 2 tests and they pass.
 - Phase 3 tests compile and pass when enabled.
-- CI pipeline (`.circleci/config.yml`) runs tests after build and reports results.
+- CI pipeline runs tests after build and reports results.
 
 ## Rollback Strategy
 

@@ -28,7 +28,7 @@ This is a large, risky change. Recommend doing it incrementally:
 ### Phase 1: Update actively-maintained dependencies
 
 1. **lodepng** (`external/lodepng/`): Update to latest (20240326+). Drop-in update — same API.
-   - Files: `lodepng.h`, `lodepng.cpp`, `lodepng_util.h`, `lodepng_util.cpp`
+   - Files: `lodepng.h`, `lodepng.cpp`
    - No application code changes needed
 
 2. **liquid-dsp** (`external/liquid-dsp/`): Update to 1.7.0+.

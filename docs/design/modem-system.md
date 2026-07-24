@@ -49,12 +49,13 @@ static ModemBase *factory() { return new ModemFM; }
 
 ### Registration Site
 
-**File:** `src/CubicSDR.cpp` (lines 305-328, in `CubicSDR::OnInit()`)
+**File:** `src/CubicSDR.cpp` (in `CubicSDR::OnInit()`)
 
 All modems are registered at startup:
 ```cpp
 Modem::addModemFactory(ModemFM::factory, "FM", 200000);
 Modem::addModemFactory(ModemNBFM::factory, "NBFM", 12500);
+Modem::addModemFactory(ModemFMStereo::factory, "FMS", 200000);
 // ... etc
 ```
 

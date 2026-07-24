@@ -8,11 +8,11 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | 
 
 ## Current State
 
-`src/util/DataTree.h` contains 22 `reinterpret_cast` operations:
-- **20 read-side casts** (lines 306-398) — alias typed scalars through `unsigned char` buffers, violating strict aliasing rules (undefined behavior)
-- **2 write-side casts** (lines 209, 230) — cast to `unsigned char*`, which is well-defined per [basic.lval]/11
+`src/util/DataTree.h` contains 20 `reinterpret_cast` operations:
+- **18 read-side casts** (in `get<T>()` methods) — alias typed scalars through `unsigned char` buffers, violating strict aliasing rules (undefined behavior)
+- **2 write-side casts** (in `set<T>()` methods) — cast to `unsigned char*`, which is well-defined per [basic.lval]/11
 
-The 20 read-side casts are the actual UB. The write-side casts are safe and idiomatic.
+The 18 read-side casts are the actual UB. The write-side casts are safe and idiomatic.
 
 ## Implementation Plan
 
@@ -33,8 +33,8 @@ The 20 read-side casts are the actual UB. The write-side casts are safe and idio
     ```
 
     **Note:** `writeToBuffer` retains a `reinterpret_cast` to `const unsigned char*`. This cast is well-defined per [basic.lval]/11 — casting to `unsigned char*` (or `std::byte*`) is the one exception to strict aliasing. It is safe and idiomatic. Only the read-side casts need replacement.
-2. Replace all 20 `reinterpret_cast` read operations (lines 306-398) with calls to `readFromBuffer<T>()`.
-3. Replace the 2 `reinterpret_cast` write operations (lines 209, 230) with calls to `writeToBuffer<T>()`.
+2. Replace all 18 `reinterpret_cast` read operations in `get<T>()` methods with calls to `readFromBuffer<T>()`.
+3. Replace the 2 `reinterpret_cast` write operations in `set<T>()` methods with calls to `writeToBuffer<T>()`.
 4. Add `#include <cstring>` to `DataTree.h` for `std::memcpy`.
 
 ## Verification Criteria
@@ -54,4 +54,4 @@ This is a low-risk, localized change (single file). If regressions appear:
 
 | File | Action |
 |------|--------|
-| `src/util/DataTree.h` | Add helper functions, replace 20 read-side reinterpret_casts |
+| `src/util/DataTree.h` | Add helper functions, replace 18 read-side reinterpret_casts |

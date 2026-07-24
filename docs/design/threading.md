@@ -14,7 +14,7 @@ All worker threads inherit from `IOThread`, which provides:
 - **Lifecycle management:** `stopping` (atomic bool) for async termination; `terminated` (atomic bool) for completion
 - **Named queue bindings:** `setInputQueue(name, queue)` / `setOutputQueue(name, queue)` with string-keyed maps
 - **Thread entry:** `threadMain()` wraps `run()` in try/catch, sets `terminated=true` on exit
-- **Heartbeat:** 50ms pop timeout (`HEARTBEAT_CHECK_PERIOD_MICROS`) allows periodic `stopping` flag checks
+- **Heartbeat:** 50ms pop timeout (`HEARTBEAT_CHECK_PERIOD_MICROS`, defined per-file) allows periodic `stopping` flag checks
 
 ### Thread Creation Pattern
 
@@ -25,7 +25,7 @@ threadObject = new ThreadClass(...);
 t_stdThread = new std::thread(&ThreadClass::threadMain, threadObject);
 ```
 
-On macOS, `DemodulatorPreThread` and `DemodulatorThread` use `pthread_create` with 2MB stack sizes.
+On macOS, `DemodulatorPreThread` and `DemodulatorThread` use `pthread_create` with ~2MB stack sizes (2,048,000 bytes).
 
 ## Thread Inventory
 
@@ -139,11 +139,12 @@ On macOS, threads are assigned scheduling priorities:
 
 | Thread | Policy | Priority |
 |--------|--------|----------|
-| SDR Thread | `SCHED_FIFO` | `sched_get_priority_max` |
-| SDR Post-Processing | `SCHED_FIFO` | max |
+| SDR Post-Processing | `SCHED_FIFO` | `sched_get_priority_max` |
 | Demodulator Pre-Thread | `SCHED_FIFO` | max - 1 |
 | Demodulator Thread | `SCHED_FIFO` | max - 1 |
 | Audio Thread (controller) | `SCHED_RR` | max - 1 |
+
+Note: SDR Thread has `SCHED_FIFO` priority code but it is currently commented out.
 
 Windows and Linux use default thread priorities.
 

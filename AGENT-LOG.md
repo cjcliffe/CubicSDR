@@ -154,3 +154,32 @@
 | `docs/plans/add-ci-test-execution.md` | Added verification |
 | `docs/plans/update-vendored-deps.md` | Added cross-refs to modem system + signal flow, added verification |
 | `docs/plans/fix-gitignore.md` | Added verification |
+
+## Session: Documentation Accuracy Audit and Corrections
+
+**Date:** 2026-07-23
+**Model:** opencode/big-pickle
+
+### Actions
+
+1. Read all 14 docs files and launched 7 parallel verification agents to check claims against source code
+2. Verified ~50+ factual claims across architecture, threading, modem system, memory safety, build system, CI, git history, and vendored dependency versions
+3. Found 5 critical errors, 6 significant errors, 2 minor inaccuracies
+4. Fixed all critical errors: source file count (95→136), IOThread catch behavior (swallows→re-throws), CI claims (CircleCI exists→no CI exists), TODO counts (14→18)
+5. Fixed all significant errors: reinterpret_cast count (22→20), lodepng files (4→2), SDR Thread priority (active→commented out), SPDX coverage (all files→~177 of 197), tag count (36→37)
+6. Fixed minor inaccuracies: stack size (2MB→~1.95MB), HEARTBEAT macro location (IOThread.h→per-file defines)
+7. Removed brittle line numbers from summary docs (RECOMMENDATIONS.md, resolve-todos.md) — kept them only in implementation plans where they're actionable
+8. Softened exact counts to approximate where appropriate (CMakeLists.txt ~1100 lines, AppFrame.cpp ~3200 lines)
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/RECOMMENDATIONS.md` | Fixed source count, IOThread catch, SPDX claim, TODO count, CI claim, tag count, softened line counts |
+| `docs/plans/resolve-todos.md` | Fixed TODO count (15→18), removed line numbers from table, removed "remaining 10" count |
+| `docs/plans/replace-reinterpret-cast.md` | Fixed reinterpret_cast counts (22→20, 20→18 read-side), removed line ranges |
+| `docs/plans/update-vendored-deps.md` | Fixed lodepng file count (4→2) |
+| `docs/design/threading.md` | Fixed SDR Thread priority (commented out), stack size, HEARTBEAT location |
+| `docs/plans/add-ci-test-execution.md` | Removed CircleCI references, made CI provider-agnostic |
+| `docs/plans/add-unit-tests.md` | Removed CircleCI references |
+| `docs/design/modem-system.md` | Removed registration line range, added FMS registration example |
