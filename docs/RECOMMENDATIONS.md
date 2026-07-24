@@ -7,7 +7,7 @@
 
 ## Architecture
 
-- ~136 source files across well-organized modules: SDR I/O, demodulation, audio, visualization, and modem plugins
+- ~197 source files across well-organized modules: SDR I/O, demodulation, audio, visualization, and modem plugins
 - Threading model: Producer-consumer pattern with blocking queues for SDR -> demod -> audio pipeline
 - Build: Single monolithic CMakeLists.txt (~1100 lines) supporting Windows/macOS/Linux
 - Vendored deps: lodepng, tinyxml, rtaudio, cubicvr2, hamlib, liquid-dsp in `external/`

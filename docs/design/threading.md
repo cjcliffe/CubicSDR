@@ -14,7 +14,7 @@ All worker threads inherit from `IOThread`, which provides:
 - **Lifecycle management:** `stopping` (atomic bool) for async termination; `terminated` (atomic bool) for completion
 - **Named queue bindings:** `setInputQueue(name, queue)` / `setOutputQueue(name, queue)` with string-keyed maps
 - **Thread entry:** `threadMain()` wraps `run()` in try/catch, sets `terminated=true` on exit
-- **Heartbeat:** 50ms pop timeout (`HEARTBEAT_CHECK_PERIOD_MICROS`, defined per-file) allows periodic `stopping` flag checks
+- **Spin-wait sleep:** `isTerminated(timeout)` busy-waits with 5ms sleep (`SPIN_WAIT_SLEEP_MS`) between checks
 
 ### Thread Creation Pattern
 

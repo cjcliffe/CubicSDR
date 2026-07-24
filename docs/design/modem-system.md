@@ -14,13 +14,16 @@ ModemBase (empty base)
   +-- Modem (abstract, factory methods + pure virtual interface)
         |
         +-- ModemAnalog (analog base, float audio output)
-        |     +-- ModemFM, ModemNBFM, ModemFMStereo, ModemAM, ModemCW
-        |     +-- ModemLSB, ModemUSB, ModemDSB, ModemIQ
+        |     +-- ModemFM, ModemNBFM, ModemAM, ModemCW
+        |     +-- ModemLSB, ModemUSB, ModemDSB
         |
         +-- ModemDigital (digital base, symbol output)
-              +-- ModemAPSK, ModemASK, ModemBPSK, ModemDPSK
-              +-- ModemFSK, ModemGMSK, ModemOOK, ModemPSK
-              +-- ModemQAM, ModemQPSK, ModemSQAM, ModemST
+        |     +-- ModemAPSK, ModemASK, ModemBPSK, ModemDPSK
+        |     +-- ModemFSK, ModemGMSK, ModemOOK, ModemPSK
+        |     +-- ModemQAM, ModemQPSK, ModemSQAM, ModemST
+        |
+        +-- ModemFMStereo (direct Modem subclass, analog but not ModemAnalog)
+        +-- ModemIQ (direct Modem subclass, analog but not ModemAnalog)
 ```
 
 ## Registration
@@ -124,7 +127,7 @@ Runtime modem switching: PreThread nulls out modem/kit immediately (packets drop
 
 ## Available Modems
 
-### Analog (9)
+### Analog (9: 7 ModemAnalog subclasses + 2 direct Modem subclasses)
 
 | Name | Class | File | Default Rate |
 |------|-------|------|-------------|
@@ -137,6 +140,8 @@ Runtime modem switching: PreThread nulls out modem/kit immediately (packets drop
 | USB | `ModemUSB` | `src/modules/modem/analog/ModemUSB.cpp` | 5400 |
 | DSB | `ModemDSB` | `src/modules/modem/analog/ModemDSB.cpp` | 5400 |
 | I/Q | `ModemIQ` | `src/modules/modem/analog/ModemIQ.cpp` | 48000 |
+
+Note: `ModemFMStereo` and `ModemIQ` inherit directly from `Modem`, not from `ModemAnalog`. They are listed here because they produce analog audio output, but they do not use `ModemAnalog`'s resampling infrastructure.
 
 ### Digital (12, conditional on `ENABLE_DIGITAL_LAB`)
 

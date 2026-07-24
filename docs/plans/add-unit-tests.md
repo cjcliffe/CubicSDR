@@ -9,7 +9,7 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | 
 ## Current State
 
 - Zero test coverage. No test framework, no test files, no test targets in CMakeLists.txt.
-- CI (CircleCI) only builds — no test execution.
+- No CI configuration exists in the repository.
 
 ## Implementation Plan
 
@@ -73,8 +73,9 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | 
 
 **Test file: `tests/test_FreqConversion.cpp`**
 - Frequency conversion utilities used throughout the SDR pipeline.
+- **Note:** Identify actual frequency utility functions during implementation (e.g., frequency formatting, Hz/MHz conversion helpers used in UI display code). The original draft referenced `freqToHz()`/`hzToFreq()` which do not exist in the codebase.
 - Tests:
-  - `freqToHz()` / `hzToFreq()` round-trip for common frequencies (1 MHz, 144 MHz, 440 MHz)
+  - Round-trip conversion for common frequencies (1 MHz, 144 MHz, 440 MHz)
   - Edge cases: DC (0 Hz), Nyquist boundary, negative frequencies
   - Frequency formatting for display strings
 
@@ -143,7 +144,7 @@ This plan only adds new files and a CMake option. If tests fail or cause build i
 | `tests/test_IOThread.cpp` | Create (Phase 3) |
 | `tests/test_ReBuffer.cpp` | Create (Phase 3) |
 | `CMakeLists.txt` | Add `add_subdirectory(tests)` and `BUILD_TESTING` option |
-| `.circleci/config.yml` | Add test execution step |
+| CI config (`.github/workflows/` or similar) | Add test execution step |
 
 ## Testability Assessment
 
@@ -154,7 +155,7 @@ This plan only adds new files and a CMake option. If tests fail or cause build i
 | `ThreadBlockingQueue.h` | Mostly | `SpinMutex.h` (in-project) | Excellent |
 | `DataTree.h/.cpp` | Mostly | `tinyxml.h` (bundled) | Good |
 | `Timer.h/.cpp` | Mostly | Platform APIs | Moderate |
-| Freq conversion | Yes | None | Excellent |
+| Freq conversion | TBD — identify actual utilities | None | TBD |
 | `DataNode` | Mostly | `DataElement` (in-project) | Good |
 | `IOThread.h/.cpp` | Mostly | `ThreadBlockingQueue` (in-project) | Good |
 | `ReBuffer.h` | Yes (header-only) | `shared_ptr` only | Good |
