@@ -53,7 +53,7 @@
 - Uses deprecated `CMAKE_CREATE_WIN32_EXE` variable
 - Uses global `include_directories()` instead of `target_include_directories()`
 - Hardcoded library paths: `link_directories(/usr/local/lib)`, ALSA paths at `/usr/include` and `/usr/lib`
-- Header/source file lists in CMakeLists.txt have some mismatches (`.cpp` files listed as headers, `.h` files listed as sources)
+- Header/source file lists in CMakeLists.txt have mismatches: `SoapySDRThread.h` and `MeterPanel.h` are listed as sources; `SoapySDRThread.cpp`, `UITestCanvas.cpp`, and `UITestContext.cpp` are listed as headers
 
 ### Documentation
 
@@ -66,7 +66,6 @@
 
 - CI exists (`.circleci/`) but only builds — no test execution, no `.github/workflows/` or `.travis.yml`
 - Recent commits are macOS-focused (bundling, code signing)
-- Single branch (`master`), tags from 0.1.0 to 0.2.7
 
 ### .gitignore
 
