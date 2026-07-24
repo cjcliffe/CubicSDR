@@ -4,6 +4,17 @@ Detailed implementation plans for each recommendation. See [RECOMMENDATIONS.md](
 
 **Last Updated:** 2026-07-23
 
+## Architecture Documentation
+
+Design documents covering the system architecture are in [docs/design/](design/):
+
+| Document | Description |
+|----------|-------------|
+| [Architecture Overview](design/README.md) | Directory layout, key classes, quick reference |
+| [Signal Flow](design/signal-flow.md) | Data path from SDR hardware to audio output |
+| [Threading Model](design/threading.md) | Thread inventory, synchronization, lifecycle |
+| [Modem System](design/modem-system.md) | Plugin architecture, factory pattern, available modems |
+
 ## Plans
 
 | Plan | Risk | Effort | Dependencies |

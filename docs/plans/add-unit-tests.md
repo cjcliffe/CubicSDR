@@ -69,7 +69,45 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
   - `getNumUpdates()` counts `update()` calls correctly.
   - `setMilliseconds()`/`setSeconds()` force specific values.
 
-### Phase 3: Update CI
+### Phase 3: Additional module tests (after Phase 2 is stable)
+
+**Test file: `tests/test_FreqConversion.cpp`**
+- Frequency conversion utilities used throughout the SDR pipeline.
+- Tests:
+  - `freqToHz()` / `hzToFreq()` round-trip for common frequencies (1 MHz, 144 MHz, 440 MHz)
+  - Edge cases: DC (0 Hz), Nyquist boundary, negative frequencies
+  - Frequency formatting for display strings
+
+**Test file: `tests/test_DataNode.cpp`**
+- `DataNode` tree structure operations (beyond basic DataTree round-trip in Phase 2).
+- Tests:
+  - `newChild()` with various types (string, int, float, vector)
+  - `child()` by name and by index
+  - `numChildren()` accuracy after insertions
+  - Iterator pattern: `hasAnother()` / `getNext()` / `rewind()`
+  - Deep tree traversal (3+ levels nesting)
+  - `DataNode` copy semantics
+
+**Test file: `tests/test_IOThread.cpp`**
+- `IOThread` base class queue binding and lifecycle.
+- Tests:
+  - `setInputQueue()` / `getInputQueue()` by name
+  - `setOutputQueue()` / `getOutputQueue()` by name
+  - `stopping` flag transitions
+  - `terminated` flag set after `run()` completes
+  - `isTerminated()` timeout behavior
+  - Named queue rebinding (replace a bound queue)
+
+**Test file: `tests/test_ReBuffer.cpp`**
+- `ReBuffer<T>` buffer pool allocation and garbage collection.
+- Tests:
+  - `getBuffer()` returns new buffer when pool is empty
+  - `getBuffer()` reuses buffer when use_count drops to 1
+  - Multiple buffers in flight simultaneously
+  - `GC_LIMIT` age-out behavior (mock or observe pool size)
+  - Thread-safe concurrent `getBuffer()` calls
+
+### Phase 4: Update CI
 
 - Add `BUILD_TESTING=ON` to CircleCI build steps.
 - Add `ctest --test-dir build --output-on-failure` after build.
@@ -85,6 +123,10 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
 | `tests/test_ThreadBlockingQueue.cpp` | Create |
 | `tests/test_DataTree.cpp` | Create |
 | `tests/test_Timer.cpp` | Create |
+| `tests/test_FreqConversion.cpp` | Create (Phase 3) |
+| `tests/test_DataNode.cpp` | Create (Phase 3) |
+| `tests/test_IOThread.cpp` | Create (Phase 3) |
+| `tests/test_ReBuffer.cpp` | Create (Phase 3) |
 | `CMakeLists.txt` | Add `add_subdirectory(tests)` and `BUILD_TESTING` option |
 | `.circleci/config.yml` | Add test execution step |
 
@@ -97,3 +139,7 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
 | `ThreadBlockingQueue.h` | Mostly | `SpinMutex.h` (in-project) | Excellent |
 | `DataTree.h/.cpp` | Mostly | `tinyxml.h` (bundled) | Good |
 | `Timer.h/.cpp` | Mostly | Platform APIs | Moderate |
+| Freq conversion | Yes | None | Excellent |
+| `DataNode` | Mostly | `DataElement` (in-project) | Good |
+| `IOThread.h/.cpp` | Mostly | `ThreadBlockingQueue` (in-project) | Good |
+| `ReBuffer.h` | Yes (header-only) | `shared_ptr` only | Good |

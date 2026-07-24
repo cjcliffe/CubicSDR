@@ -74,3 +74,41 @@
 | `docs/plans/add-ci-test-execution.md` | Added date header, fixed broken cross-reference |
 | `docs/plans/resolve-todos.md` | Added date header, fixed 3 broken cross-references |
 | `CONTRIBUTING.md` | Created |
+
+## Session: Documentation Evaluation and Architecture Docs
+
+**Date:** 2026-07-23
+**Model:** opencode/big-pickle
+
+### Actions
+
+1. Evaluated previous agent's documentation work — assessed strengths (well-structured hierarchy, actionable plans, dependency-aware ordering) and weaknesses (no architecture docs, missing meta-doc, weak vendored-deps plan, limited test coverage)
+2. Explored codebase architecture in parallel: signal flow, modem/plugin system, threading model, data structures
+3. Created `docs/design/` directory with 4 architecture documents:
+   - `README.md` — Architecture overview, source layout, key class reference
+   - `signal-flow.md` — Complete data path from SDR hardware to audio output with queue wiring tables
+   - `threading.md` — Thread inventory, synchronization mechanisms, lifecycle, wxWidgets integration
+   - `modem-system.md` — Factory registration pattern, modem hierarchy, available modem types
+4. Expanded `docs/plans/update-vendored-deps.md` — Added detailed TinyXML→TinyXML-2 API mapping table, CubicVR2→glm migration details (types, methods, 12+ files to modify), wglext usage analysis, RS-232 usage analysis
+5. Expanded `docs/plans/add-unit-tests.md` — Added Phase 3 with 4 new test modules (FreqConversion, DataNode, IOThread, ReBuffer), expanded testability assessment table
+6. Created `docs/MAINTAINING.md` — Meta-documentation for maintaining/extending docs (conventions, update triggers, cross-link patterns)
+7. Updated `docs/PLAN.md` — Added architecture documentation section linking to design docs, added projected timeline and milestones (later removed per user request)
+8. Removed "Projected Timeline" section from `docs/PLAN.md` per user request
+
+### Files Created
+
+| File | Action |
+|------|--------|
+| `docs/design/README.md` | Created — architecture overview |
+| `docs/design/signal-flow.md` | Created — signal processing pipeline |
+| `docs/design/threading.md` | Created — threading model |
+| `docs/design/modem-system.md` | Created — modem plugin system |
+| `docs/MAINTAINING.md` | Created — documentation maintenance guide |
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/PLAN.md` | Added architecture docs section, added then removed timeline |
+| `docs/plans/update-vendored-deps.md` | Expanded with detailed API migration tables and per-file modification lists |
+| `docs/plans/add-unit-tests.md` | Added Phase 3 test modules and expanded testability assessment |

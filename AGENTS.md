@@ -34,3 +34,12 @@ CMake-based. See `CMakeLists.txt` for build configuration. The project targets C
 - Follow existing code style in each file
 - Do not add comments unless asked
 - SPDX license headers on source files: `// Copyright (c) Charles J. Cliffe // SPDX-License-Identifier: GPL-2.0+`
+
+## Session Logging
+
+Log your work to `AGENT-LOG.md` in the project root. For each session, append a section with:
+- Date and model name
+- Numbered list of actions taken
+- Tables of files created/modified with brief descriptions
+
+This creates a history of agent contributions to the project.
