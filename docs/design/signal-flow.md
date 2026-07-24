@@ -27,7 +27,7 @@ SDR Hardware (SoapySDR)
 [Stage 4] DemodulatorThread
     |---[pipeAudioData]---------> AudioThread (speaker output)
     |---[audioVisOutputQueue]---> ScopeVisualProcessor (scope display)
-    |---[audioSinkOutputQueue]--> AudioSinkThread (WAV recording)
+    |---[audioSinkOutputQueue]--> AudioSinkFileThread (WAV recording)
     v
 [Stage 5] AudioThread -> RtAudio hardware callback -> speakers/headphones
 ```

@@ -4,7 +4,7 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | 
 
 ## Current State
 
-- `AppFrame.cpp`: ~2,700 lines in a single file
+- `AppFrame.cpp`: ~3,200 lines in a single file
 - `AppFrame.h`: multiple hundreds of lines
 - Handles menus, keyboard, device management, UI layout, hamlib, sessions, idle handlers, and accessors
 

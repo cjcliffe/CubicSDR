@@ -24,6 +24,8 @@ src/
   process/       FFT and visual data processing
   util/          Core utilities (queues, timers, data trees)
   rig/           Hamlib CAT control (optional)
+  forms/         UI forms (device selection, bookmarks, dialogs)
+  panel/         Display panels (scope, spectrum, waterfall, meter)
 ```
 
 ### Key Classes
@@ -32,12 +34,17 @@ src/
 |-------|------|------|
 | `CubicSDR` | `src/CubicSDR.h` | Application singleton, owns all global threads |
 | `AppFrame` | `src/AppFrame.h` | Main wxWidgets window, UI event loop |
+| `AppConfig` | `src/AppConfig.h` | Application configuration persistence |
 | `SDRThread` | `src/sdr/SoapySDRThread.h` | Reads IQ samples from hardware |
 | `SDRPostThread` | `src/sdr/SDRPostThread.h` | Channelizes and distributes IQ data |
+| `SDREnumerator` | `src/sdr/SDREnumerator.h` | Background device discovery |
 | `DemodulatorInstance` | `src/demod/DemodulatorInstance.h` | Orchestrates one demodulator's thread chain |
 | `DemodulatorMgr` | `src/demod/DemodulatorMgr.h` | Manages all demodulator instances |
+| `DemodulatorWorkerThread` | `src/demod/DemodulatorWorkerThread.h` | Offloaded modem/filter creation |
 | `Modem` | `src/modules/modem/Modem.h` | Abstract modem base class with factory pattern |
 | `AudioThread` | `src/audio/AudioThread.h` | Manages RtAudio output device |
+| `AudioSinkThread` | `src/audio/AudioSinkThread.h` | Per-demod audio sink (base class) |
+| `AudioSinkFileThread` | `src/audio/AudioSinkFileThread.h` | WAV file recording |
 | `IOThread` | `src/IOThread.h` | Base class for all worker threads |
 | `ThreadBlockingQueue` | `src/util/ThreadBlockingQueue.h` | Primary inter-thread communication mechanism |
 

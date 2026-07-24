@@ -41,7 +41,8 @@ On macOS, `DemodulatorPreThread` and `DemodulatorThread` use `pthread_create` wi
 | Demodulator Thread (N) | `DemodulatorThread` | `src/demod/DemodulatorThread.h` | Core demodulation, squelch, signal levels |
 | Audio Thread (N) | `AudioThread` | `src/audio/AudioThread.h` | Per-demod audio processing and device binding |
 | Audio Controller | `AudioThread` | `src/audio/AudioThread.h` | Per-device RtAudio stream owner and mixer |
-| Audio Sink (N) | `AudioSinkThread` | `src/audio/AudioSinkThread.h` | WAV file recording |
+| Audio Sink (N) | `AudioSinkThread` | `src/audio/AudioSinkThread.h` | Base audio sink for demodulator output |
+| Audio Sink File (N) | `AudioSinkFileThread` | `src/audio/AudioSinkFileThread.h` | WAV file recording |
 | Rig Control (optional) | `RigThread` | `src/rig/RigThread.h` | Hamlib CAT control |
 
 ## Communication Patterns
@@ -141,6 +142,7 @@ On macOS, threads are assigned scheduling priorities:
 | Demodulator Pre-Thread | `SCHED_FIFO` | max - 1 |
 | Demodulator Thread | `SCHED_FIFO` | max - 1 |
 | Audio Thread (controller) | `SCHED_RR` | max - 1 |
+| Audio Sink Thread | `SCHED_RR` | max - 1 |
 
 Note: SDR Thread has `SCHED_FIFO` priority code but it is currently commented out.
 

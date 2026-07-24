@@ -18,8 +18,8 @@ Multiple TODO/FIXME markers in project source code:
 | `DemodulatorThread.cpp` | `TODO: handle digital modems with audio output` | Convert to GitHub issue |
 | `DemodulatorMgr.cpp` | `TODO: This is probably unnecessary and confusing` | Investigate and either fix or remove |
 | `SoapySDRThread.cpp` | Various TODOs about timing and bandwidth (x3) | Convert to GitHub issues |
-| `GainCanvas.cpp` | `TODO: if not desirable, do not update in AGC mode` | Convert to GitHub issue |
-| `ScopeCanvas.cpp` | `TODO: find out why frontbuffer drawing stopped in wx 3.1.0?` | Investigate; may be fixed in newer wxWidgets |
+| `GainCanvas.cpp` | `TODO: if it not desirable, do not update in AGC mode` | Convert to GitHub issue |
+| `ScopeCanvas.cpp` | `TODO: find out why frontbuffer drawing has stopped working in wx 3.1.0?` | Investigate; may be fixed in newer wxWidgets |
 | `PrimaryGLContext.cpp` | `TODO: Better recording indicator...` | Convert to GitHub issue |
 | `BookmarkView.cpp` | `TODO: keys for other actions?` | Convert to GitHub issue |
 
