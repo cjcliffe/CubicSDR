@@ -27,6 +27,7 @@ CMake-based. See `CMakeLists.txt` for build configuration. The project targets C
 
 - `src/` — Application source (sdr/, demod/, audio/, visual/, modules/modem/, util/)
 - `external/` — Vendored third-party libraries (lodepng, tinyxml, rtaudio, liquid-dsp, hamlib, cubicvr2)
+- `.circleci/` — CI configuration (builds only, no test execution)
 - `font/` — Bitmap fonts
 - `cmake/` — CMake helper modules
 
