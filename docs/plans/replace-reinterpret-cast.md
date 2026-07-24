@@ -1,10 +1,6 @@
 # Plan: Fix Undefined Behavior in DataTree Serialization
 
-CubicSDR is a cross-platform Software-Defined Radio application (C++14, wxWidgets, OpenGL). This plan covers eliminating undefined-behavior `reinterpret_cast` type punning in `src/util/DataTree.h` by replacing read-side aliasing violations with `std::memcpy`-based deserialization.
-
 See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | [Architecture Overview](../design/README.md)
-
-**Last Updated:** 2026-07-23
 
 ## Current State
 

@@ -1,10 +1,6 @@
 # Plan: Use Git Submodules for Vendored Dependencies
 
-CubicSDR is a cross-platform Software-Defined Radio application (C++14, wxWidgets, OpenGL). This plan covers updating and potentially converting vendored third-party libraries to git submodules for better version tracking and upstream updates.
-
 See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | [Modem System](../design/modem-system.md) | [Signal Flow](../design/signal-flow.md)
-
-**Last Updated:** 2026-07-23
 
 ## Current State
 

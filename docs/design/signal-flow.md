@@ -2,8 +2,6 @@
 
 This document describes the complete data path from SDR hardware input to audio output.
 
-**Last Updated:** 2026-07-23
-
 ## Overview
 
 CubicSDR processes radio signals through a pipeline of thread-connected stages. Each stage runs in its own thread and communicates with adjacent stages via `ThreadBlockingQueue<T>` instances.

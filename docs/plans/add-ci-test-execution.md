@@ -1,10 +1,6 @@
 # Plan: Add CI Test Execution
 
-CubicSDR is a cross-platform Software-Defined Radio application (C++14, wxWidgets, OpenGL). This plan covers adding test execution to the CI pipeline.
-
 See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
-
-**Last Updated:** 2026-07-23
 
 ## Current State
 

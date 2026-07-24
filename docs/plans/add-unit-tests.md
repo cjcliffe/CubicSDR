@@ -1,10 +1,6 @@
 # Plan: Add Unit Tests
 
-CubicSDR is a cross-platform Software-Defined Radio application (C++14, wxWidgets, OpenGL). This plan covers adding unit test infrastructure and initial test coverage.
-
 See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | [Architecture Overview](../design/README.md)
-
-**Last Updated:** 2026-07-23
 
 ## Current State
 
@@ -145,17 +141,3 @@ This plan only adds new files and a CMake option. If tests fail or cause build i
 | `tests/test_ReBuffer.cpp` | Create (Phase 3) |
 | `CMakeLists.txt` | Add `add_subdirectory(tests)` and `BUILD_TESTING` option |
 | CI config (`.github/workflows/` or similar) | Add test execution step |
-
-## Testability Assessment
-
-| Module | Self-Contained? | External Deps | Testability |
-|--------|----------------|---------------|-------------|
-| `SpinMutex.h` | Yes (header-only) | None (`<atomic>` only) | Excellent |
-| `Gradient.h/.cpp` | Yes | None (`<vector>` only) | Excellent |
-| `ThreadBlockingQueue.h` | Mostly | `SpinMutex.h` (in-project) | Excellent |
-| `DataTree.h/.cpp` | Mostly | `tinyxml.h` (bundled) | Good |
-| `Timer.h/.cpp` | Mostly | Platform APIs | Moderate |
-| Freq conversion | TBD — identify actual utilities | None | TBD |
-| `DataNode` | Mostly | `DataElement` (in-project) | Good |
-| `IOThread.h/.cpp` | Mostly | `ThreadBlockingQueue` (in-project) | Good |
-| `ReBuffer.h` | Yes (header-only) | `shared_ptr` only | Good |

@@ -1,10 +1,6 @@
 # Plan: Modernize CMake
 
-CubicSDR is a cross-platform Software-Defined Radio application (C++14, wxWidgets, OpenGL). This plan covers modernizing the CMake build system from CMake 2.8 patterns to modern CMake 3.14+.
-
 See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
-
-**Last Updated:** 2026-07-23
 
 ## Current State
 
@@ -12,21 +8,21 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
 - Uses `-std=c++0x` (draft C++11) instead of proper standard setting
 - Global `include_directories()`, `ADD_DEFINITIONS()`, `link_libraries()` instead of target-specific
 - Deprecated `CMAKE_CREATE_WIN32_EXE`, `LINK_FLAGS`, `SOURCE_GROUP REGULAR_EXPRESSION`
-- Stray comma in `CMAKE_OSX_DEPLOYMENT_TARGET` assignment (line 303)
+- Stray comma in `CMAKE_OSX_DEPLOYMENT_TARGET` assignment
 
 ## Implementation Plan
 
 ### Phase 1: Minimum viable modernization
 
 1. Bump `cmake_minimum_required(VERSION 3.14...3.28)` — enables modern policies while allowing newer CMake.
-2. Replace `ADD_DEFINITIONS( -std=c++0x -pthread )` (line 166) with:
+2. Replace `ADD_DEFINITIONS( -std=c++0x -pthread )` with:
    ```cmake
    target_compile_features(CubicSDR PRIVATE cxx_std_14)
    find_package(Threads REQUIRED)
    target_link_libraries(CubicSDR PRIVATE Threads::Threads)
    ```
-3. Fix the stray comma on line 303: `SET(CMAKE_OSX_DEPLOYMENT_TARGET, "10.9")` → `set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9")`.
-4. Replace `set(CMAKE_CREATE_WIN32_EXE ...)` (line 708) with:
+3. Fix the stray comma on the `CMAKE_OSX_DEPLOYMENT_TARGET` line: `SET(CMAKE_OSX_DEPLOYMENT_TARGET, "10.9")` → `set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9")`.
+4. Replace `set(CMAKE_CREATE_WIN32_EXE ...)` with:
    ```cmake
    set_target_properties(CubicSDR PROPERTIES WIN32_EXECUTABLE TRUE)
    target_link_options(CubicSDR PRIVATE /SUBSYSTEM:WINDOWS /ENTRY:"mainCRTStartup")

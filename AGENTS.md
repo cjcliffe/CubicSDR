@@ -36,6 +36,18 @@ CMake-based. See `CMakeLists.txt` for build configuration. The project targets C
 - Do not add comments unless asked
 - SPDX license headers on source files: `// Copyright (c) Charles J. Cliffe // SPDX-License-Identifier: GPL-2.0+`
 
+## Documentation Guidelines
+
+When creating or updating documentation in `docs/`, avoid brittle content that will drift from the codebase:
+
+- **No specific line numbers** — Reference functions/classes, not line numbers (e.g., "In `CubicSDR.cpp`" not "on line 390")
+- **No exact counts** — Avoid "197 source files" or "18 TODOs" — use qualitative terms like "multiple" or "several"
+- **No "Last Updated" timestamps** — They create maintenance burden with zero value
+- **No redundant preambles** — Don't repeat "CubicSDR is a cross-platform..." in every doc when PLAN.md already links everything
+- **No theoretical discussions** — Keep design considerations in code comments, not implementation plans
+- **Reference functions, not lines** — "In the `OnInit()` method" is durable; "on line 390" is not
+- **Keep actionable content only** — File lists, verification criteria, and rollback strategies are durable; inventories of current state go stale
+
 ## Session Logging
 
 Log your work to `AGENT-LOG.md` in the project root. For each session, append a section with:

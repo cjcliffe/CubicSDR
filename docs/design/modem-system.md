@@ -2,8 +2,6 @@
 
 This document describes CubicSDR's modem plugin architecture, registration mechanism, and available modem types.
 
-**Last Updated:** 2026-07-23
-
 ## Architecture Overview
 
 CubicSDR uses a **static factory registration** pattern for modems. All modems are compiled in and registered at startup — there is no dynamic plugin discovery.

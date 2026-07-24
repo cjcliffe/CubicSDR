@@ -2,8 +2,6 @@
 
 This document describes CubicSDR's threading architecture, synchronization mechanisms, and thread lifecycle management.
 
-**Last Updated:** 2026-07-23
-
 ## Thread Infrastructure
 
 ### IOThread Base Class

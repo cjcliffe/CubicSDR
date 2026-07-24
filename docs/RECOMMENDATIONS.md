@@ -3,21 +3,13 @@
 **Project:** CubicSDR v0.2.8
 **License:** GPL-2.0+
 **Language:** C++ (C++11/14)
-**Last Updated:** 2026-07-23
 
 ## Architecture
 
-- ~197 source files across well-organized modules: SDR I/O, demodulation, audio, visualization, and modem plugins
+- Well-organized modules: SDR I/O, demodulation, audio, visualization, and modem plugins
 - Threading model: Producer-consumer pattern with blocking queues for SDR -> demod -> audio pipeline
-- Build: Single monolithic CMakeLists.txt (~1100 lines) supporting Windows/macOS/Linux
+- Build: Single monolithic CMakeLists.txt supporting Windows/macOS/Linux
 - Vendored deps: lodepng, tinyxml, rtaudio, cubicvr2, hamlib, liquid-dsp in `external/`
-
-## Key Strengths
-
-- Clean modular source organization (`sdr/`, `demod/`, `audio/`, `visual/`, `modules/modem/`)
-- Proper thread safety with atomics, mutexes, lock_guard, shared_ptr throughout
-- SPDX license headers on most source files (~177 of 197; missing from auto-generated form/dialog files)
-- Cross-platform support (Win/Mac/Linux)
 
 ## Key Weaknesses
 
@@ -25,11 +17,11 @@
 |-------|----------|
 | **Zero test coverage** — no test framework, no test files, CI only builds | Critical |
 | **Monolithic files** — `AppFrame.cpp` is ~3,200 lines | High |
-| **Memory safety** — raw `new`/`delete` for threads, 20 `reinterpret_cast`s in DataTree, suppressed MSVC C4996 warnings | High |
+| **Memory safety** — raw `new`/`delete` for threads, `reinterpret_cast` type punning in DataTree, suppressed MSVC C4996 warnings | High |
 | **Outdated CMake** — targets 2.8.12, uses `-std=c++0x` draft flag, deprecated patterns | Medium |
 | **Incomplete .gitignore** — missing IDE, OS, and build artifact patterns | Medium |
 | **Minimal docs** — no CONTRIBUTING, CHANGELOG, API docs, or Doxygen | Medium |
-| **18 open TODOs** in project code, including acknowledged bugs | Low-Medium |
+| **Open TODOs** in project code, including acknowledged bugs | Low-Medium |
 | **No input validation** on XML config files | Medium |
 
 ## Recommendations (Priority Order)
@@ -43,32 +35,13 @@
 7. **Replace `reinterpret_cast` type punning** in `DataTree.h` with `memcpy`-based serialization (avoids UB)
 8. **Use git submodules or a package manager** for vendored external dependencies
 9. **Add CI test execution** after builds
-10. **Resolve or convert to tracked issues** the 18 open TODOs
+10. **Resolve or convert to tracked issues** the open TODOs
 
 ## Detailed Findings
 
-### TODO/FIXME Comments (18 in project code)
-
-| File | Comment | Severity |
-|------|---------|----------|
-| `CubicSDRDefs.h` | `TODO: Make the waterfall resolutions an option.` | Low |
-| `AppFrame.cpp` | `TODO: refactor these..` | Medium |
-| `AppFrame.cpp` | `TODO: Move the stuff from there to here` | Medium |
-| `AppFrame.cpp` | `TODO: Catch key-ups outside of original target` | Low |
-| `DataTree.h` | `TODO: smarter way with templates?` (x2) | Medium |
-| `DataTree.cpp` | `TODO: code below returns a forced cast in (char*) beware...` | High |
-| `DataTree.cpp` | `TODO: stack recursion optimization` (x2) | Low |
-| `DemodulatorThread.cpp` | `TODO: handle digital modems with audio output` | Medium |
-| `DemodulatorMgr.cpp` | `TODO: This is probably unnecessary and confusing` | Medium |
-| `SoapySDRThread.cpp` | Various TODOs about timing and bandwidth (x3) | Low |
-| `GainCanvas.cpp` | `TODO: if it not desirable, do not update in AGC mode` | Low |
-| `ScopeCanvas.cpp` | `TODO: find out why frontbuffer drawing has stopped working in wx 3.1.0?` | Medium |
-| `PrimaryGLContext.cpp` | `TODO: Better recording indicator...` | Low |
-| `BookmarkView.cpp` | `TODO: keys for other actions?` | Low |
-
 ### Memory Safety Concerns
 
-- **`DataTree.h`** contains 20 `reinterpret_cast` operations for type punning — potential aliasing violations and undefined behavior. Use `memcpy` or `std::bit_cast` instead.
+- **`DataTree.h`** contains multiple `reinterpret_cast` operations for type punning — potential aliasing violations and undefined behavior. Use `memcpy` or `std::bit_cast` instead.
 - **`CubicSDR.cpp`** allocates thread objects (`std::thread*`) with raw `new` and manual `delete`. Any exception between allocation and deletion causes a leak. Should use `std::unique_ptr<std::thread>`.
 - **`IOThread.cpp`** `catch(...)` re-throws after setting termination flags — correct for cleanup, but callers rarely handle the propagated exception
 - MSVC C4996 warning is globally suppressed, hiding potential buffer overflow risks from unsafe CRT functions.
@@ -93,7 +66,7 @@
 
 - No CI configuration exists (no `.circleci/`, `.github/workflows/`, or `.travis.yml`)
 - Recent commits are macOS-focused (bundling, code signing)
-- Single branch (`master`), 37 tags from 0.1.0 to 0.2.7
+- Single branch (`master`), tags from 0.1.0 to 0.2.7
 
 ### .gitignore
 

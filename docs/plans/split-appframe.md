@@ -1,10 +1,6 @@
 # Plan: Split AppFrame.cpp
 
-CubicSDR is a cross-platform Software-Defined Radio application (C++14, wxWidgets, OpenGL). This plan covers splitting the monolithic `AppFrame.cpp` (3,202 lines) into multiple compilation units.
-
 See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | [Architecture Overview](../design/README.md)
-
-**Last Updated:** 2026-07-23
 
 ## Current State
 

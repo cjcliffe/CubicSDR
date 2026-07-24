@@ -183,3 +183,42 @@
 | `docs/plans/add-ci-test-execution.md` | Removed CircleCI references, made CI provider-agnostic |
 | `docs/plans/add-unit-tests.md` | Removed CircleCI references |
 | `docs/design/modem-system.md` | Removed registration line range, added FMS registration example |
+
+## Session: Documentation Debrittling
+
+**Date:** 2026-07-23
+**Model:** opencode/big-pickle
+
+### Actions
+
+1. Evaluated all 16 docs files for brittle/noise content that would drift from the codebase during iterative development
+2. Identified key issues: "Last Updated" timestamps, exact file/TODO counts, specific line numbers, redundant preambles, theoretical discussions, and subjective "Key Strengths" section
+3. Cleaned `docs/RECOMMENDATIONS.md`: removed "Key Strengths" section, TODO/FIXME table, exact counts (~197, 18, ~177), timestamp
+4. Cleaned `docs/PLAN.md`: removed timestamp
+5. Cleaned all 10 plan files: removed redundant "CubicSDR is a cross-platform..." preambles, removed timestamps, removed brittle line numbers from `smart-pointers.md` and `modernize-cmake.md`
+6. Cleaned `docs/plans/add-unit-tests.md`: removed Testability Assessment table
+7. Cleaned `docs/plans/smart-pointers.md`: removed theoretical "Design Considerations: Join vs. Detach" section
+8. Cleaned all 4 `docs/design/` files: removed timestamps
+9. Updated `AGENTS.md`: added Documentation Guidelines section prohibiting brittle content in future docs
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/RECOMMENDATIONS.md` | Removed strengths section, TODO table, exact counts, timestamp |
+| `docs/PLAN.md` | Removed timestamp |
+| `docs/plans/add-unit-tests.md` | Removed preamble, timestamp, Testability Assessment table |
+| `docs/plans/fix-gitignore.md` | Removed preamble, timestamp |
+| `docs/plans/modernize-cmake.md` | Removed preamble, timestamp, brittle line numbers |
+| `docs/plans/smart-pointers.md` | Removed preamble, timestamp, brittle line numbers, theoretical section |
+| `docs/plans/split-appframe.md` | Removed preamble, timestamp |
+| `docs/plans/remove-c4996-suppression.md` | Removed preamble, timestamp |
+| `docs/plans/replace-reinterpret-cast.md` | Removed preamble, timestamp |
+| `docs/plans/update-vendored-deps.md` | Removed preamble, timestamp |
+| `docs/plans/add-ci-test-execution.md` | Removed preamble, timestamp |
+| `docs/plans/resolve-todos.md` | Removed preamble, timestamp |
+| `docs/design/README.md` | Removed timestamp |
+| `docs/design/signal-flow.md` | Removed timestamp |
+| `docs/design/threading.md` | Removed timestamp |
+| `docs/design/modem-system.md` | Removed timestamp |
+| `AGENTS.md` | Added Documentation Guidelines section |

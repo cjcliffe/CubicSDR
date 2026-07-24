@@ -1,10 +1,6 @@
 # Plan: Fix .gitignore
 
-CubicSDR is a cross-platform Software-Defined Radio application (C++14, wxWidgets, OpenGL). This plan covers adding comprehensive patterns to `.gitignore`.
-
 See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
-
-**Last Updated:** 2026-07-23
 
 ## Current State
 

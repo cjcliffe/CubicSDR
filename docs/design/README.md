@@ -2,8 +2,6 @@
 
 This directory contains architectural documentation for CubicSDR. These documents are designed to be expanded as the codebase evolves.
 
-**Last Updated:** 2026-07-23
-
 ## Documents
 
 | Document | Description |

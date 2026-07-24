@@ -1,10 +1,6 @@
 # Plan: Remove MSVC C4996 Suppression
 
-CubicSDR is a cross-platform Software-Defined Radio application (C++14, wxWidgets, OpenGL). This plan covers removing the global MSVC C4996 warning suppression and addressing the underlying unsafe CRT function usage.
-
 See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
-
-**Last Updated:** 2026-07-23
 
 ## Current State
 
