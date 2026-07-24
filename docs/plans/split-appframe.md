@@ -2,7 +2,7 @@
 
 CubicSDR is a cross-platform Software-Defined Radio application (C++14, wxWidgets, OpenGL). This plan covers splitting the monolithic `AppFrame.cpp` (3,202 lines) into multiple compilation units.
 
-See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
+See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | [Architecture Overview](../design/README.md)
 
 **Last Updated:** 2026-07-23
 
@@ -31,6 +31,13 @@ Split into 5 compilation units (same class, multiple `.cpp` files — no header 
 3. Update `CMakeLists.txt` to add the new source files to `cubicsdr_sources`.
 4. Build and verify no regressions.
 5. This is a low-risk change — the header stays the same, only the implementation is split across compilation units.
+
+## Verification Criteria
+
+- `cmake --build build` succeeds with the 4 new `.cpp` files in the source list.
+- Application starts and all menu items, keyboard shortcuts, idle handlers, and hamlib functions work identically.
+- No linker errors (each method appears in exactly one `.cpp` file).
+- `AppFrame.cpp` is reduced to approximately 1,030 lines.
 
 ## Files to Create/Modify
 

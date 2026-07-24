@@ -112,3 +112,45 @@
 | `docs/PLAN.md` | Added architecture docs section, added then removed timeline |
 | `docs/plans/update-vendored-deps.md` | Expanded with detailed API migration tables and per-file modification lists |
 | `docs/plans/add-unit-tests.md` | Added Phase 3 test modules and expanded testability assessment |
+
+## Session: Documentation Quality Review and Corrections
+
+**Date:** 2026-07-23
+**Model:** opencode/big-pickle
+
+### Actions
+
+1. Evaluated previous agent's documentation across all 17 files — verified 15 factual claims against source code (14 accurate, 1 off by one)
+2. Deleted `CONTRIBUTING.md` — user/contribution documentation not a priority
+3. Deleted `docs/MAINTAINING.md` — process documentation with no execution value
+4. Fixed false bug claim in `add-unit-tests.md` — Gradient single-color is not a divide-by-zero; corrected to document actual behavior
+5. Reworded `replace-reinterpret-cast.md` — renamed to "Fix Undefined Behavior in DataTree Serialization", clarified 20 of 22 casts are UB (2 write-side casts to `unsigned char*` are well-defined), added precise count breakdown
+6. Fixed TODO count — "14 TODOs" → "15 TODOs" in `resolve-todos.md` and `AGENTS.md`
+7. Removed Phase 3 (style normalization) from `modernize-cmake.md` — uppercase→lowercase is cosmetic, not modernization
+8. Added "Verification Criteria" section to all 10 plan files — explicit success criteria for each plan
+9. Added "Rollback Strategy" to `smart-pointers.md`, `modernize-cmake.md`, `remove-c4996-suppression.md` (3 plans that lacked it)
+10. Added cross-references from plan files to relevant `design/` docs — `smart-pointers.md` → threading model, `split-appframe.md` → architecture overview, `update-vendored-deps.md` → modem system + signal flow
+11. Updated `AGENTS.md` to add `docs/design/` directory reference
+
+### Files Deleted
+
+| File | Action |
+|------|--------|
+| `CONTRIBUTING.md` | Deleted — user/contribution docs not a priority |
+| `docs/MAINTAINING.md` | Deleted — process docs with no execution value |
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `AGENTS.md` | Fixed TODO count, added design/ directory reference |
+| `docs/plans/add-unit-tests.md` | Fixed Gradient bug claim, added cross-ref + verification + rollback |
+| `docs/plans/replace-reinterpret-cast.md` | Renamed, clarified UB scope, added verification + rollback |
+| `docs/plans/resolve-todos.md` | Fixed TODO count from 14 to 15, added verification |
+| `docs/plans/modernize-cmake.md` | Removed cosmetic Phase 3, added verification + rollback |
+| `docs/plans/smart-pointers.md` | Added cross-ref to threading model, added verification + rollback |
+| `docs/plans/split-appframe.md` | Added cross-ref to architecture overview, added verification |
+| `docs/plans/remove-c4996-suppression.md` | Added verification + rollback |
+| `docs/plans/add-ci-test-execution.md` | Added verification |
+| `docs/plans/update-vendored-deps.md` | Added cross-refs to modem system + signal flow, added verification |
+| `docs/plans/fix-gitignore.md` | Added verification |

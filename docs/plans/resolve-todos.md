@@ -1,6 +1,6 @@
 # Plan: Resolve Open TODOs
 
-CubicSDR is a cross-platform Software-Defined Radio application (C++14, wxWidgets, OpenGL). This plan covers resolving the 14 TODO/FIXME markers in the project source code.
+CubicSDR is a cross-platform Software-Defined Radio application (C++14, wxWidgets, OpenGL). This plan covers resolving the 15 TODO/FIXME markers in the project source code.
 
 See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
 
@@ -8,7 +8,7 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
 
 ## Current State
 
-14 TODO/FIXME markers in project source code:
+15 TODO/FIXME markers in project source code:
 
 | File | Line | Comment | Action |
 |------|------|---------|--------|
@@ -44,6 +44,12 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
    ```
 
 4. For `DemodulatorMgr.cpp:233` ("probably unnecessary and confusing"), investigate the code and either fix the issue or remove the dead code.
+
+## Verification Criteria
+
+- Zero TODO/FIXME comments remain in `src/` (verified by `grep -r "TODO\|FIXME" src/`).
+- Each removed TODO either has a corresponding GitHub issue or was resolved by another plan.
+- Build succeeds and no functional regressions introduced.
 
 ## Files to Modify
 

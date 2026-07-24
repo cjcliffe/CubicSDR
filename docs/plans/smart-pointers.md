@@ -2,7 +2,7 @@
 
 CubicSDR is a cross-platform Software-Defined Radio application (C++14, wxWidgets, OpenGL). This plan covers replacing raw `new`/`delete` allocations with `std::unique_ptr` and fixing memory leaks in `src/CubicSDR.cpp`.
 
-See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
+See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | [Threading Model](../design/threading.md)
 
 **Last Updated:** 2026-07-23
 
@@ -77,6 +77,22 @@ When replacing raw `new`/`delete` with smart pointers, each thread must be evalu
 - **Exception safety** — `std::unique_ptr` destructor calls `delete` (not `join`). For threads that must be joined, always call `join()` explicitly before the `unique_ptr` goes out of scope. Consider a RAII wrapper that joins in the destructor if this pattern is needed in multiple places.
 
 Review each thread allocation in `CubicSDR.cpp` and document the chosen semantics (join or detach) in a code comment at the declaration site.
+
+## Verification Criteria
+
+- Zero raw `new std::thread(...)` or `new WorkerThread(...)` allocations remain in `CubicSDR.cpp`.
+- Zero manual `delete` calls for thread or worker objects remain.
+- No memory leaks detected under repeated startup/shutdown cycles (verify with AddressSanitizer or Valgrind if available).
+- All 4 confirmed memory leaks are fixed.
+- `t_SDREnum` overwrite is guarded by a join check.
+- Build succeeds and application starts/closes cleanly.
+
+## Rollback Strategy
+
+If smart pointer changes cause crashes (e.g., a thread joined twice, or a use-after-free):
+1. `git revert` the commit.
+2. The original raw `new`/`delete` code is functional — the revert is safe.
+3. If only specific phases cause issues, revert to the last working phase (e.g., keep Phase 1 declarations but revert Phase 2 allocations).
 
 ## Files to Modify
 

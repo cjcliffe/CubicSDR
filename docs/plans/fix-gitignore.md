@@ -81,6 +81,12 @@ Desktop.ini
 .cache/
 ```
 
+## Verification Criteria
+
+- After applying, `git status` shows no untracked IDE/OS/build files in the working tree.
+- `git add .` does not stage `.vs/`, `.idea/`, `*.obj`, `CMakeCache.txt`, `.DS_Store`, or other ignored patterns.
+- Existing tracked files are not affected (no deletions or renames).
+
 ## Files to Modify
 
 | File | Action |

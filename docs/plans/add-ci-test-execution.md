@@ -26,6 +26,12 @@ Depends on: [Add Unit Tests](add-unit-tests.md). Once tests exist:
 3. Add test result upload for CI visibility.
 4. Consider adding a separate "test" workflow that depends on "build".
 
+## Verification Criteria
+
+- CI pipeline compiles the project and then runs `ctest`.
+- Test results are visible in the CI job output.
+- A test failure causes the CI job to fail (non-zero exit code).
+
 ## Files to Modify
 
 | File | Action |

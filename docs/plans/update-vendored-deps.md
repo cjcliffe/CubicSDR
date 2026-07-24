@@ -2,7 +2,7 @@
 
 CubicSDR is a cross-platform Software-Defined Radio application (C++14, wxWidgets, OpenGL). This plan covers updating and potentially converting vendored third-party libraries to git submodules for better version tracking and upstream updates.
 
-See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
+See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | [Modem System](../design/modem-system.md) | [Signal Flow](../design/signal-flow.md)
 
 **Last Updated:** 2026-07-23
 
@@ -185,3 +185,13 @@ Each dependency update should be done in a separate commit to enable granular ro
 3. **Build and smoke-test after each update** — Compile on all three platforms (or at least the primary dev platform) and run a quick manual smoke test (open a device, verify demodulation) before moving to the next dependency.
 4. **TinyXML-2 migration is the highest-risk step** — The API change affects `DataTree.cpp` and `AppConfig.cpp`. Consider doing this in a feature branch with CI builds on all platforms before merging. If the migration fails, revert the branch merge.
 5. **Submodule conversion (Phase 3) should be a single atomic commit** — Converting multiple libraries to submodules in separate commits creates confusing history. Do it all at once after all updates are stable.
+
+## Verification Criteria
+
+- Each dependency update compiles cleanly on all three platforms.
+- lodepng: PNG save/load round-trip produces identical output.
+- liquid-dsp: Demodulation of a known signal produces expected output (manual smoke test).
+- RtAudio: Audio output works on at least one device.
+- TinyXML-2: Config and bookmark files load and save correctly; round-trip produces identical XML.
+- CubicVR2→glm: All OpenGL rendering (spectrum, waterfall, scope, meters) displays correctly.
+- No new compiler warnings from updated dependencies.

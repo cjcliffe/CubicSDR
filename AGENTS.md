@@ -6,6 +6,7 @@ This is a C++ Software-Defined Radio application (CubicSDR) built with wxWidgets
 
 - `docs/RECOMMENDATIONS.md` — Project evaluation, strengths, weaknesses, and priority-ranked improvement recommendations
 - `docs/PLAN.md` — Index of implementation plans with risk/effort estimates and execution order
+- `docs/design/` — Architecture documentation (signal flow, threading model, modem system)
 - `docs/plans/` — Individual implementation plans for each recommendation:
   - `add-unit-tests.md` — Test infrastructure and initial test coverage
   - `fix-gitignore.md` — Comprehensive .gitignore patterns
@@ -16,7 +17,7 @@ This is a C++ Software-Defined Radio application (CubicSDR) built with wxWidgets
   - `replace-reinterpret-cast.md` — Fix undefined behavior in DataTree
   - `update-vendored-deps.md` — Update or replace third-party libraries
   - `add-ci-test-execution.md` — Run tests in CI pipeline
-  - `resolve-todos.md` — Address 14 open TODO/FIXME markers
+  - `resolve-todos.md` — Address 15 open TODO/FIXME markers
 
 ## Build
 

@@ -2,7 +2,7 @@
 
 CubicSDR is a cross-platform Software-Defined Radio application (C++14, wxWidgets, OpenGL). This plan covers adding unit test infrastructure and initial test coverage.
 
-See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
+See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | [Architecture Overview](../design/README.md)
 
 **Last Updated:** 2026-07-23
 
@@ -39,7 +39,7 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
   - Values clamped to [0.0, 1.0] for edge cases.
   - `clear()` resets state; `generate()` after `clear()` produces empty arrays.
   - Multi-color gradient (3+ stops) produces correct interpolation.
-  - Document bug: `generate()` with single color causes divide-by-zero (`colors.size() - 1 == 0`).
+  - Single-color gradient returns an array of the single color (no interpolation needed).
 
 **Test file: `tests/test_ThreadBlockingQueue.cpp`**
 - `src/util/ThreadBlockingQueue.h` — depends only on `SpinMutex.h` (also header-only).
@@ -112,6 +112,21 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
 - Add `BUILD_TESTING=ON` to CircleCI build steps.
 - Add `ctest --test-dir build --output-on-failure` after build.
 - Consider adding a separate "test" job that depends on the "build" job.
+
+## Verification Criteria
+
+- `cmake -B build -DBUILD_TESTING=ON` configures without errors.
+- `cmake --build build` compiles all test files and the `cubicsdr_tests` target.
+- `ctest --test-dir build --output-on-failure` runs all Phase 2 tests and they pass.
+- Phase 3 tests compile and pass when enabled.
+- CI pipeline (`.circleci/config.yml`) runs tests after build and reports results.
+
+## Rollback Strategy
+
+This plan only adds new files and a CMake option. If tests fail or cause build issues:
+1. Disable `BUILD_TESTING` (set to `OFF`) to skip test compilation entirely.
+2. Or remove the `add_subdirectory(tests)` line from `CMakeLists.txt`.
+3. No existing source code is modified.
 
 ## Files to Create/Modify
 
