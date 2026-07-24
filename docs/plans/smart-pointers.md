@@ -5,7 +5,7 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | 
 ## Current State
 
 In `src/CubicSDR.cpp`:
-- Multiple raw `new std::thread(...)` and `new WorkerThread()` allocations
+- Multiple raw `new std::thread(...)` and `new DemodulatorWorkerThread()` allocations
 - Multiple raw `delete` operations for thread and worker objects
 - Confirmed memory leaks:
   - `m_glContextAttributes` — never deleted
@@ -46,7 +46,7 @@ t_SDR = std::make_unique<std::thread>(&SDRThread::threadMain, sdrThread);
 
 ### Phase 3: Remove all manual `delete` calls
 
-Smart pointers handle cleanup automatically. Remove all 15 `delete` operations.
+Smart pointers handle cleanup automatically. Remove all manual `delete` operations.
 
 ### Phase 4: Fix memory leaks
 

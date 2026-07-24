@@ -64,7 +64,7 @@
 
 ### CI/CD
 
-- No CI configuration exists (no `.circleci/`, `.github/workflows/`, or `.travis.yml`)
+- CI exists (`.circleci/`) but only builds — no test execution, no `.github/workflows/` or `.travis.yml`
 - Recent commits are macOS-focused (bundling, code signing)
 - Single branch (`master`), tags from 0.1.0 to 0.2.7
 

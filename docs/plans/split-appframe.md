@@ -16,7 +16,7 @@ Split into 5 compilation units (same class, multiple `.cpp` files — no header 
 |----------|---------|--------|
 | `AppFrame.cpp` (kept) | Constructor, destructor, init*, make* factory methods, OnClose, OnNewWindow, splitter events, accessors, utilities | ~1,030 |
 | `AppFrame_Menus.cpp` | `OnMenu`, all 19 `actionOnMenu*` methods, `makeFileMenu`, `makeDisplayMenu`, `makeAudioSampleRateMenu`, `makeRecordingMenu`, `updateRecordingMenu`, `getSettingsLabel` | ~900 |
-| `AppFrame_Handlers.cpp` | `OnIdle`, all 12 `handle*` methods, `handleUpdateDeviceParams` | ~710 |
+| `AppFrame_Handlers.cpp` | `OnIdle`, all `handle*` methods, `handleUpdateDeviceParams` | ~710 |
 | `AppFrame_Keyboard.cpp` | `OnGlobalKeyDown`, `OnGlobalKeyUp`, `gkNudge`, `toggleActiveDemodRecording`, `toggleAllActiveDemodRecording` | ~334 |
 | `AppFrame_Hamlib.cpp` | All `#ifdef USE_HAMLIB` methods: `makeRigMenu`, `enableRig`, `disableRig`, `setRigControlPort`, `dismissRigControlPortDialog`, `actionOnMenuRig`, `handleRigMenu` | ~301 |
 

@@ -4,7 +4,7 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
 
 ## Current State
 
-No CI configuration exists in the repository (no `.circleci/`, `.github/workflows/`, or `.travis.yml`).
+CI exists (`.circleci/`) but only builds — no test execution. No `.github/workflows/` or `.travis.yml`.
 
 ## Implementation Plan
 

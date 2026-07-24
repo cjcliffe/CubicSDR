@@ -5,7 +5,7 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | 
 ## Current State
 
 - Zero test coverage. No test framework, no test files, no test targets in CMakeLists.txt.
-- No CI configuration exists in the repository.
+- CI exists (`.circleci/`) but only builds — no test execution.
 
 ## Implementation Plan
 
