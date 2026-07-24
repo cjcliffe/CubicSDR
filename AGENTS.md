@@ -55,4 +55,9 @@ Log your work to `AGENT-LOG.md` in the project root. For each session, append a 
 - Numbered list of actions taken
 - Tables of files created/modified with brief descriptions
 
-This creates a history of agent contributions to the project.
+### Log Maintenance
+
+- **Capture outcomes, not process.** If something is added then later removed in the same session, just note the removal and why — don't keep both.
+- **Compact iterative fixes.** Multiple passes over the same files (fix errors → fix different errors → fix original errors) should compress into a single summary, not three separate entries.
+- **Drop files that no longer exist.** If a file was created then deleted, remove it from the file table or note it as "(deleted)" — don't leave stale entries.
+- **Keep the log scannable.** A log entry should answer "what changed and why" in a few bullet points. If it takes more than that, it's too detailed.
