@@ -4,7 +4,7 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
 
 ## Current State
 
-18 TODO/FIXME markers in project source code:
+Multiple TODO/FIXME markers in project source code:
 
 | File | Comment | Action |
 |------|---------|--------|

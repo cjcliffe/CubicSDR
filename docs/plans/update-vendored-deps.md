@@ -84,7 +84,7 @@ This is a large, risky change. Recommend doing it incrementally:
 6. **wglext** (`external/wglext/`): Replace with regenerated header or inline definitions.
 
    **Current usage** (narrowly scoped):
-   - `src/util/GLExt.h` includes `wglext.h` (line 11-13)
+   - `src/util/GLExt.h` includes `wglext.h` (near top of file)
    - `src/util/GLExt.cpp` defines three function pointers:
      - `wglGetExtensionsStringEXT` (declared but unused — `GLExtSupported()` uses `glGetString()` instead)
      - `wglSwapIntervalEXT` (loaded via `wglGetProcAddress`, used for VSync)

@@ -51,7 +51,7 @@ Smart pointers handle cleanup automatically. Remove all manual `delete` operatio
 ### Phase 4: Fix memory leaks
 
 - `m_glContextAttributes`: wrap in `std::unique_ptr<wxGLContextAttrs>` or delete in `OnExit()`.
-- `confName`/`modPath` (lines 562, 579): change from raw `new wxString` to stack-allocated `wxString` or `std::unique_ptr`.
+- `confName`/`modPath`: change from raw `new wxString` to stack-allocated `wxString` or `std::unique_ptr`.
 
 ### Phase 5: Fix t_SDREnum overwrite
 

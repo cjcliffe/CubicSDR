@@ -16,7 +16,7 @@
 | Issue | Severity |
 |-------|----------|
 | **Zero test coverage** — no test framework, no test files, CI only builds | Critical |
-| **Monolithic files** — `AppFrame.cpp` is ~3,200 lines | High |
+| **Monolithic files** — `AppFrame.cpp` is ~2,700 lines | High |
 | **Memory safety** — raw `new`/`delete` for threads, `reinterpret_cast` type punning in DataTree, suppressed MSVC C4996 warnings | High |
 | **Outdated CMake** — targets 2.8.12, uses `-std=c++0x` draft flag, deprecated patterns | Medium |
 | **Incomplete .gitignore** — missing IDE, OS, and build artifact patterns | Medium |
