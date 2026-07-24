@@ -146,7 +146,7 @@ This is a large, risky change. Recommend doing it incrementally:
 11. **RS-232** (`external/rs232/`): Evaluate alternatives.
 
     **Current usage:**
-    - `src/forms Dialog/PortSelectorDialog.cpp` — uses `comEnumerate()`, `comGetNoPorts()`, `comGetPortName()`, `comGetInternalName()`, `comTerminate()` for serial port enumeration only
+    - `src/forms/Dialog/PortSelectorDialog.cpp` — uses `comEnumerate()`, `comGetNoPorts()`, `comGetPortName()`, `comGetInternalName()`, `comTerminate()` for serial port enumeration only
     - Actual serial I/O (`comOpen`/`comRead`/`comWrite`/`comClose`) may be unused or used via rig control
 
     **Options:**

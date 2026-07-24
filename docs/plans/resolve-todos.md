@@ -57,7 +57,7 @@ Multiple TODO/FIXME markers in project source code:
 | `src/DataTree.cpp` | Remove TODOs, add issue references |
 | `src/DemodulatorThread.cpp` | Remove TODO, add issue reference |
 | `src/DemodulatorMgr.cpp` | Investigate and resolve |
-| `src/SoapySDRThread.cpp` | Remove TODOs, add issue references |
+| `src/sdr/SoapySDRThread.cpp` | Remove TODOs, add issue references |
 | `src/GainCanvas.cpp` | Remove TODO, add issue reference |
 | `src/ScopeCanvas.cpp` | Remove TODO, add issue reference |
 | `src/PrimaryGLContext.cpp` | Remove TODO, add issue reference |

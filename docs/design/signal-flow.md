@@ -124,12 +124,12 @@ Used by: SDRThread, SDRPostThread, DemodulatorPreThread, DemodulatorThread, Spec
 
 | Type | File | Contents |
 |------|------|----------|
-| `SDRThreadIQData` | `src/sdr/SoapySDRThread.h` | Raw IQ samples, frequency, sample rate, DC correction flag |
+| `SDRThreadIQData` | `src/sdr/SoapySDRThread.h` | Raw IQ samples, frequency, sample rate, DC correction flag, channel count |
 | `DemodulatorThreadIQData` | `src/demod/DemodDefs.h` | Channelized IQ samples, frequency, sample rate |
-| `DemodulatorThreadPostIQData` | `src/demod/DemodDefs.h` | Resampled IQ + Modem* + ModemKit* pointers |
-| `AudioThreadInput` | `src/audio/AudioThread.h` | Float audio data, sample rate, channels, peak level, squelch flag |
-| `SpectrumVisualData` | `src/process/SpectrumVisualProcessor.h` | FFT spectrum points, floor/ceiling, center frequency, bandwidth |
-| `ScopeRenderData` | `src/process/ScopeVisualProcessor.h` | Waveform points, scope mode, FFT parameters |
+| `DemodulatorThreadPostIQData` | `src/demod/DemodDefs.h` | Resampled IQ, sample rate, modem name/type, Modem* + ModemKit* pointers |
+| `AudioThreadInput` | `src/audio/AudioThread.h` | Float audio data, frequency, input rate, sample rate, channels, peak level, type, squelch flag |
+| `SpectrumVisualData` | `src/process/SpectrumVisualProcessor.h` | FFT spectrum points, hold points, floor/ceiling, center frequency, bandwidth |
+| `ScopeRenderData` | `src/process/ScopeVisualProcessor.h` | Waveform points, scope mode, input/sample rate, channels, spectrum flag, FFT size/floor/ceiling |
 
 ## Visual Processing Pipeline
 
@@ -138,7 +138,7 @@ A parallel path handles display data:
 ```
 SDRPostThread
     |
-    +--[pipeIQVisualData]--> SpectrumVisualProcessor --> WaterfallCanvas (UI thread)
+    +--[pipeIQVisualData]--> SpectrumVisualProcessor --> SpectrumCanvas (UI thread)
     +--[pipeWaterfallIQVisualData]--> FFTVisualDataThread --> SpectrumVisualProcessor --> WaterfallCanvas
     +--[pipeDemodIQVisualData]--> SpectrumVisualProcessor --> Demod spectrum display
 

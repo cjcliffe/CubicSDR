@@ -11,7 +11,7 @@ This document describes CubicSDR's threading architecture, synchronization mecha
 All worker threads inherit from `IOThread`, which provides:
 - **Lifecycle management:** `stopping` (atomic bool) for async termination; `terminated` (atomic bool) for completion
 - **Named queue bindings:** `setInputQueue(name, queue)` / `setOutputQueue(name, queue)` with string-keyed maps
-- **Thread entry:** `threadMain()` wraps `run()` in try/catch, sets `terminated=true` on exit
+- **Thread entry:** `threadMain()` wraps `run()` in try/catch, sets both `terminated` and `stopping` to `true` on exit
 - **Spin-wait sleep:** `isTerminated(timeout)` busy-waits with 5ms sleep (`SPIN_WAIT_SLEEP_MS`) between checks
 
 ### Thread Creation Pattern
@@ -118,10 +118,9 @@ In `CubicSDR::OnExit()`:
 
 1. `SDRThread::terminate()` — stops producing IQ data (waited up to 3s)
 2. `SDRPostThread::terminate()` — stops channelizing (waited up to 3s)
-3. `DemodulatorMgr::terminateAll()` — terminates all demodulator instances
+3. `DemodulatorMgr::terminateAll()` — terminates all demodulator instances (queues flushed inside each `DemodulatorInstance::terminate()`)
 4. Visual processor threads terminated
 5. All threads joined
-6. All queues flushed to unblock pending operations
 
 ### Per-Demodulator Shutdown
 
@@ -152,8 +151,8 @@ Windows and Linux use default thread priorities.
 
 The UI thread is **entirely pull-based**:
 
-1. `AppFrame::OnIdle()` is called continuously by the wx event loop
-2. Each canvas calls `processInputQueue()` which uses `try_pop()` (non-blocking)
+1. `AppFrame::OnIdle()` is called continuously by the wx event loop and handles device params, modem properties, and UI state
+2. Each canvas registers its own `EVT_IDLE` handler independently (e.g., `WaterfallCanvas::OnIdle`, `SpectrumCanvas::OnIdle`, `ScopeCanvas::OnIdle`) — these call `processInputQueue()` or `try_pop()` directly (non-blocking)
 3. Worker threads never push data to the UI
 4. Shared state uses `std::atomic` variables (frequency, signal levels, mute state)
 5. UI-initiated changes go through atomic variables and flags, not wx events

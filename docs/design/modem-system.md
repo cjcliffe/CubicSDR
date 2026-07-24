@@ -32,14 +32,15 @@ ModemBase (empty base)
 
 ```cpp
 typedef ModemBase *(*ModemFactoryFn)();
+typedef std::map<std::string, ModemFactoryFn> ModemFactoryList;
 
 class Modem {
-    static std::map<std::string, ModemFactoryFn> modemFactories;
+    static ModemFactoryList modemFactories;
     static std::map<std::string, int> modemDefaultRates;
     
     static void addModemFactory(ModemFactoryFn fn, std::string name, int defaultRate);
     static Modem *makeModem(std::string name);
-    static std::vector<std::string> getFactories();
+    static ModemFactoryList getFactories();
 };
 ```
 

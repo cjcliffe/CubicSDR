@@ -109,3 +109,39 @@ Compressed sessions 2-4 into a single summary paragraph. The final state is what
 ### Lesson Learned
 
 Logs should capture **outcomes**, not process. If something is added then later removed in the same session, just note the removal and why — don't keep the full history of adding it. A log entry that says "added timestamps to all files" followed later by "removed timestamps from all files" leaves the reader unsure which state is current.
+
+## Session 5: Documentation Accuracy Review
+
+**Date:** 2026-07-24
+**Model:** opencode/mimo-v2.5-free
+
+### Actions
+
+1. Systematically verified all factual claims in docs/ against source code using parallel agent tasks
+2. Verified design docs (signal-flow.md, threading.md, modem-system.md, README.md) against actual code
+3. Verified all 10 plan files against actual codebase state
+4. Verified RECOMMENDATIONS.md claims against source code
+5. Fixed 10 factual errors across 5 documentation files
+
+### Errors Fixed
+
+| File | Error | Fix |
+|------|-------|-----|
+| `docs/design/signal-flow.md` | Data types table missing fields (numChannels, sampleRate, modemName, etc.) | Added missing fields to all 5 data type entries |
+| `docs/design/signal-flow.md` | Visual pipeline: `pipeIQVisualData` → WaterfallCanvas | Corrected to → SpectrumCanvas |
+| `docs/design/threading.md` | `threadMain()` sets only `terminated=true` | Corrected to both `terminated` and `stopping` |
+| `docs/design/threading.md` | Shutdown sequence claims queue flush at end of OnExit() | Removed; flushing happens inside DemodulatorInstance::terminate() |
+| `docs/design/threading.md` | wxWidgets section implies AppFrame::OnIdle() dispatches to canvases | Clarified each canvas has independent EVT_IDLE handler |
+| `docs/design/modem-system.md` | `getFactories()` returns `std::vector<std::string>` | Corrected to `ModemFactoryList` (std::map) |
+| `docs/plans/resolve-todos.md` | `src/SoapySDRThread.cpp` path | Corrected to `src/sdr/SoapySDRThread.cpp` |
+| `docs/plans/update-vendored-deps.md` | `src/forms Dialog/PortSelectorDialog.cpp` (space) | Corrected to `src/forms/Dialog/PortSelectorDialog.cpp` |
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/signal-flow.md` | Fixed data types table (5 entries), fixed visual pipeline wiring |
+| `docs/design/threading.md` | Fixed threadMain() behavior, shutdown sequence, wxWidgets integration |
+| `docs/design/modem-system.md` | Fixed getFactories() return type and ModemFactoryList typedef |
+| `docs/plans/resolve-todos.md` | Fixed SoapySDRThread.cpp file path |
+| `docs/plans/update-vendored-deps.md` | Fixed PortSelectorDialog.cpp path typo |
