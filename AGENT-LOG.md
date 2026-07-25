@@ -145,3 +145,32 @@ Logs should capture **outcomes**, not process. If something is added then later 
 | `docs/design/modem-system.md` | Fixed getFactories() return type and ModemFactoryList typedef |
 | `docs/plans/resolve-todos.md` | Fixed SoapySDRThread.cpp file path |
 | `docs/plans/update-vendored-deps.md` | Fixed PortSelectorDialog.cpp path typo |
+
+## Session 6: Subsystem Deep Dive Documentation
+
+**Date:** 2026-07-24
+**Model:** opencode/mimo-v2.5-free
+
+### Actions
+
+1. Identified missing subsystem documentation by comparing existing design docs against full codebase structure
+2. Read source files for audio, visual, configuration, bookmark, and SDR device subsystems
+3. Created 5 new subsystem deep dive documents under `docs/design/`
+4. Updated `docs/design/README.md` and `docs/PLAN.md` to link new documents
+
+### Files Created
+
+| File | Description |
+|------|-------------|
+| `docs/design/audio-subsystem.md` | AudioThread controller/bound pattern, WAV recording pipeline, device management, real-time mixing |
+| `docs/design/visual-architecture.md` | Canvas hierarchy, GLPanel system, GLFont bitmap rendering, ColorTheme, visual data processing |
+| `docs/design/configuration-system.md` | AppConfig/DeviceConfig persistence, DataTree serialization, session management, file locations |
+| `docs/design/bookmark-system.md` | BookmarkMgr data model, groups/ranges/recents, XML persistence, default amateur radio bands |
+| `docs/design/sdr-device-layer.md` | SDREnumerator discovery, SDRDeviceInfo capabilities, manual devices, SoapySDR module loading |
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/README.md` | Added "Subsystem Deep Dives" section linking new documents |
+| `docs/PLAN.md` | Added "Subsystem Deep Dives" section linking new documents |

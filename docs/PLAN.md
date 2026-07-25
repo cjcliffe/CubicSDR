@@ -6,12 +6,24 @@ Detailed implementation plans for each recommendation. See [RECOMMENDATIONS.md](
 
 Design documents covering the system architecture are in [docs/design/](design/):
 
+### Core Architecture
+
 | Document | Description |
 |----------|-------------|
 | [Architecture Overview](design/README.md) | Directory layout, key classes, quick reference |
 | [Signal Flow](design/signal-flow.md) | Data path from SDR hardware to audio output |
 | [Threading Model](design/threading.md) | Thread inventory, synchronization, lifecycle |
 | [Modem System](design/modem-system.md) | Plugin architecture, factory pattern, available modems |
+
+### Subsystem Deep Dives
+
+| Document | Description |
+|----------|-------------|
+| [Audio Subsystem](design/audio-subsystem.md) | Controller/bound mixing, WAV recording, device management |
+| [Visual Architecture](design/visual-architecture.md) | Canvas hierarchy, GLFont, ColorTheme, rendering pipeline |
+| [Configuration System](design/configuration-system.md) | AppConfig/DeviceConfig, DataTree serialization, sessions |
+| [Bookmark System](design/bookmark-system.md) | BookmarkMgr, groups/ranges/recents, persistence |
+| [SDR Device Layer](design/sdr-device-layer.md) | SDREnumerator, SDRDeviceInfo, manual devices |
 
 ## Plans
 
