@@ -23,7 +23,7 @@ threadObject = new ThreadClass(...);
 t_stdThread = new std::thread(&ThreadClass::threadMain, threadObject);
 ```
 
-On macOS, `DemodulatorPreThread` and `DemodulatorThread` use `pthread_create` with ~2MB stack sizes (2,048,000 bytes).
+On macOS, `DemodulatorPreThread` and `DemodulatorThread` use `pthread_create` with ~2MB stack sizes (2048000 bytes).
 
 ## Thread Inventory
 

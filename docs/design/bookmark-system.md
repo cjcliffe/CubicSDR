@@ -125,6 +125,8 @@ On first run (no bookmark file exists), `loadDefaultRanges()` populates standard
 | 13 cm lower | 2300–2310 MHz |
 | 13 cm upper | 2390–2450 MHz |
 
+> **Note:** The 17 meters band range (17.044–19.092 MHz) in the source is incorrect per international allocations. The ITU 17m band is 18.068–18.168 MHz. The source value spans ~2 MHz and bleeds into adjacent bands. This is a bug in `BookmarkMgr.cpp`, not a documentation error.
+
 ## Persistence
 
 ### Bookmark File Format

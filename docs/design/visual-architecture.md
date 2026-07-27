@@ -305,5 +305,5 @@ All use non-blocking `try_pop()` to avoid stalling the UI thread.
 | Constant | Value | Purpose |
 |----------|-------|---------|
 | `DEFAULT_WATERFALL_LPS` | 30 | Default waterfall lines per second |
-| `MIN_BANDWIDTH` | 30000 | Minimum demodulator bandwidth |
+| `MIN_BANDWIDTH` | 500 | Minimum demodulator bandwidth |
 | `CHANNELIZER_RATE_MAX` | varies | Maximum channelizer sample rate |

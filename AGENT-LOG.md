@@ -174,3 +174,37 @@ Logs should capture **outcomes**, not process. If something is added then later 
 |------|--------|
 | `docs/design/README.md` | Added "Subsystem Deep Dives" section linking new documents |
 | `docs/PLAN.md` | Added "Subsystem Deep Dives" section linking new documents |
+
+## Session 7: Documentation Verification and Priority Planning
+
+**Date:** 2026-07-27
+**Model:** opencode/mimo-v2.5-free
+
+### Actions
+
+1. Verified 59 factual claims across all 9 design docs against source code (97% accuracy, 2 errors found)
+2. Verified CMakeLists.txt source/header mismatch table (5 entries, all accurate)
+3. Fixed `MIN_BANDWIDTH` value in `visual-architecture.md` (was 30000, actual 500)
+4. Fixed pthread stack size in `threading.md` (was 2,048,000, actual 2048000)
+5. Added note about 17m band source bug in `bookmark-system.md` (range 17.044-19.092 MHz is incorrect per ITU; should be 18.068-18.168 MHz)
+6. Created `docs/PRIORITY.md` with ordered list of recommended next steps
+
+### Errors Found
+
+| File | Claim | Actual |
+|------|-------|--------|
+| `docs/design/visual-architecture.md` | `MIN_BANDWIDTH` = 30000 | 500 (`Modem.h:13`) |
+| `docs/design/threading.md` | pthread stack size 2,048,000 bytes | 2048000 bytes (`DemodulatorInstance.cpp:136`) |
+
+### Source Bug Identified
+
+The 17 meters band default range in `BookmarkMgr.cpp` (17.044-19.092 MHz) is incorrect per international allocations. The ITU 17m band is 18.068-18.168 MHz. Documented in `bookmark-system.md` with a note.
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/visual-architecture.md` | Fixed MIN_BANDWIDTH constant value |
+| `docs/design/threading.md` | Fixed pthread stack size |
+| `docs/design/bookmark-system.md` | Added note about 17m band source bug |
+| `docs/PRIORITY.md` | Created with ordered next steps |
