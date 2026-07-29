@@ -56,13 +56,13 @@ Receives raw IQ from SDRThread. Behavior depends on channel count:
 **Multi-channel mode** (`numChannels > 1`):
 1. **Polyphase filterbank channelization** (`firpfbch_crcf` or `firpfbch2_crcf`) — splits wideband IQ into N sub-channels
 2. **DC blocking** on channel 0 only via IIR filter (`iirfilt_crcf`) — other channels pass through unfiltered
-3. **Distribution** — pushes each channel's data to its assigned demodulator's input queue
+3. **Distribution** — non-blocking `try_push()` each channel's data to its assigned demodulator's input queue
 
 **Single-channel mode** (`numChannels <= 1`):
 1. **DC blocking** on the entire bandwidth via IIR filter (`iirfilt_crcf`)
-2. **Distribution** — pushes the full bandwidth to every active demodulator (no channelization)
+2. **Distribution** — non-blocking `try_push()` the full bandwidth to every active demodulator (no channelization)
 
-In both modes, also pushes full-rate IQ (DC-corrected) to visual processing queues for the main spectrum and waterfall displays. All visual queue pushes use **non-blocking** `try_push()` — visual data can be silently dropped when queues are full.
+In both modes, also pushes full-rate IQ (DC-corrected in single-channel, raw in multi-channel) to visual processing queues for the main spectrum and waterfall displays. **All output pushes use non-blocking `try_push()`** — both visual data and per-demodulator data can be silently dropped when queues are full. SDRPostThread never blocks on any consumer.
 
 ### Stage 3: Demodulator Pre-Processing
 
@@ -122,6 +122,8 @@ Manages RtAudio hardware output using a **controller/bound** pattern:
 
 Note: `audioVisOutputQueue` is a per-DemodulatorThread member that is bound at runtime to the global `pipeAudioVisualData` queue via `setOutputQueue("AudioVisualOutput", ...)`. `audioSinkOutputQueue` is bound dynamically only when WAV recording starts.
 
+Note: `DemodulatorThreadOutputQueue` and `AudioThreadInputQueue` are both aliases for `ThreadBlockingQueue<AudioThreadInputPtr>` (defined in `src/audio/AudioThread.h`). They carry the same data type; the distinct names reflect the queue's role in the pipeline.
+
 ## Buffer Management
 
 ### ReBuffer Pool
@@ -130,7 +132,7 @@ To avoid heap allocation on every frame, CubicSDR uses `ReBuffer<T>` (`src/IOThr
 
 - `getBuffer()` scans for a buffer with `use_count == 1` (not in transit), resets its age, and returns it; if none available, allocates a new one
 - When the last consumer releases a buffer, its `use_count` drops to 1 and it becomes available for reuse
-- Idle buffers age out: each time a buffer is selected, other unused buffers have their age decremented. When the oldest buffer's age drops below `-REBUFFER_GC_LIMIT` (-100), it is garbage collected
+- Idle buffers age out: each time a buffer is selected, other unused buffers have their age decremented. When the oldest buffer's age drops below `-REBUFFER_GC_LIMIT` (i.e. age < -100), it is garbage collected
 - A warning is emitted if the pool exceeds `REBUFFER_WARNING_THRESHOLD` (2000) buffers
 
 Used by: SDRThread, SDRPostThread, DemodulatorPreThread, DemodulatorThread, SpectrumVisualProcessor, ScopeVisualProcessor.
@@ -162,4 +164,6 @@ DemodulatorThread
     +--[audioVisOutputQueue]--> ScopeVisualProcessor --> ScopeCanvas (UI thread)
 ```
 
-The UI thread is **pull-based on the consumer side** — canvases poll their input queues via `try_pop()` in their `OnIdle()` handlers. However, producer threads **push** data into these queues via non-blocking `try_push()`, which can silently drop data when queues are full. This is intentional for visual data where occasional dropped frames are acceptable.
+`FFTVisualDataThread` contains an internal sub-pipeline: an `FFTDataDistributor` accumulates raw IQ samples into FFT-sized chunks, which are then processed by a `SpectrumVisualProcessor` to produce FFT output. The `FFTDataDistributor` rate-limits by `linesPerSecond`, so not every incoming IQ frame produces an output line.
+
+The UI thread is **pull-based on the consumer side** — canvases poll their input queues via `try_pop()`, though the exact trigger varies: WaterfallCanvas does this in its `OnIdle()` handler, while SpectrumCanvas and ScopeCanvas do it in `OnPaint()`. Meanwhile, producer threads **push** data into these queues via non-blocking `try_push()`, which can silently drop data when queues are full. This is intentional for visual data where occasional dropped frames are acceptable.
