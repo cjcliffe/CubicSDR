@@ -80,15 +80,35 @@ All data-carrying threads communicate via `ThreadBlockingQueue<T>`:
 |-----------|----------|---------|
 | `ThreadBlockingQueue<T>` | Throughout | Primary inter-thread data transfer |
 | `SpinMutex` | `ThreadBlockingQueue`, `ReBuffer` | Lightweight lock for high-frequency queue operations |
-| `std::atomic_bool` | SDRThread, DemodulatorPreThread, DemodulatorThread | Lock-free parameter change signaling |
-| `std::recursive_mutex` | AudioThread, DemodulatorInstance, DemodulatorMgr | Protecting shared mutable state |
-| `std::mutex` | IOThread queue bindings, SDRThread settings | Protecting infrequent mutations |
+| `std::atomic_bool` | SDRThread, DemodulatorPreThread, DemodulatorThread, DemodulatorInstance, CubicSDR | Lock-free parameter change signaling |
+| `std::recursive_mutex` | AudioThread, AudioSinkThread, DemodulatorInstance, DemodulatorMgr, BookmarkMgr | Protecting shared mutable state with re-entrant access |
+| `std::mutex` | IOThread queue bindings, SDRThread settings/gains, VisualProcessor, SpectrumVisualProcessor, AppConfig, WaterfallCanvas, DigitalConsole, DemodulatorThread (squelch lock) | Protecting infrequent mutations and visualization state |
 
 ### SpinMutex
 
 **File:** `src/util/SpinMutex.h`
 
 Non-recursive spinlock using `std::atomic_flag` with acquire/release memory ordering. Used as the internal lock for `ThreadBlockingQueue` and `ReBuffer` due to its low overhead for short critical sections.
+
+### ReBuffer Pooling
+
+**File:** `src/IOThread.h`
+
+`ReBuffer<BufferType>` is a buffer pool with reference-counted recycling, used to minimize allocation overhead in hot data paths (audio output, visualization). `getBuffer()` checks each pooled `shared_ptr` — if `use_count() == 1`, the buffer is available for reuse. The first available buffer is selected (age reset to 1); other available buffers have their age decremented. Buffers that go unused age and are garbage-collected when `age < -REBUFFER_GC_LIMIT` (i.e. below -100). Used by `DemodulatorThread` (audio output buffers) and `VisualDataReDistributor` (visualization buffers).
+
+### VisualProcessor Pipeline
+
+**File:** `src/process/VisualProcessor.h`
+
+`VisualProcessor<Input, Output>` is a template base class for the visualization pipeline. Each processor has one input queue and N output queues. `process()` is called by the owning thread's main loop; `distribute()` pushes results to all attached outputs. Two concrete subclasses handle different distribution strategies:
+- `VisualDataDistributor` — zero-copy shared pointer forwarding
+- `VisualDataReDistributor` — deep-copy distribution via `ReBuffer` pooling
+
+Protected by `std::mutex busy_update` for queue list mutations.
+
+### SDREnumerator One-Shot Spawning
+
+`SDREnumerator` threads are spawned as needed (device refresh, remote add, re-enumeration) without joining the previous instance. Each call to `threadMain` performs a single enumeration pass and exits. The old thread pointer is overwritten without cleanup — a deliberate fire-and-forget pattern.
 
 ## Thread Lifecycle
 
@@ -100,9 +120,10 @@ In `CubicSDR::OnInit()` (`src/CubicSDR.cpp`):
 2. `SpectrumVisualDataThread` started
 3. `DemodVisualDataThread` started (if enabled)
 4. `SDRPostThread` started
-5. `AppFrame` created (wxWidgets main window)
-6. `SDREnumerator` started
-7. Device selection triggers `SDRThread` start (in `CubicSDR::setDevice()`)
+5. `SDREnumerator` created
+6. `AppFrame` created (wxWidgets main window)
+7. `SDREnumerator` thread started
+8. Device selection triggers `SDRThread` start (in `CubicSDR::setDevice()`)
 
 ### Per-Demodulator Startup
 
@@ -116,11 +137,14 @@ When `DemodulatorInstance::run()` is called:
 
 In `CubicSDR::OnExit()`:
 
-1. `SDRThread::terminate()` — stops producing IQ data (waited up to 3s)
-2. `SDRPostThread::terminate()` — stops channelizing (waited up to 3s)
-3. `DemodulatorMgr::terminateAll()` — terminates all demodulator instances (queues flushed inside each `DemodulatorInstance::terminate()`)
-4. Visual processor threads terminated
-5. All threads joined
+1. `RigThread::terminate()` — stops hamlib rig control (if active)
+2. `SDRThread::terminate()` — stops producing IQ data (waited up to 3s)
+3. `SDRPostThread::terminate()` — stops channelizing (waited up to 3s)
+4. `DemodulatorMgr::terminateAll()` — terminates all demodulator instances (queues flushed inside each `DemodulatorInstance::terminate()`)
+5. Visual processor threads terminated (waited up to 1s each)
+6. All threads joined
+
+If any termination step times out, the application calls `::exit()` with a platform-specific error code rather than risk hanging indefinitely.
 
 ### Per-Demodulator Shutdown
 
@@ -130,6 +154,10 @@ In `CubicSDR::OnExit()`:
 2. `DemodulatorThread::terminate()` — stops demodulating
 3. `DemodulatorPreThread::terminate()` — stops resampling (also terminates worker thread)
 4. All queues flushed to unblock pending pushes
+
+### Known Issues
+
+In `DemodulatorInstance::isTerminated()`, the macOS cleanup path for the audio thread calls `pthread_join(t_PreDemod, NULL)` instead of `pthread_join(t_Audio, NULL)`. At that point `t_PreDemod` has already been joined and set to `nullptr`, so this is a call to `pthread_join(NULL, ...)` which is undefined behavior per POSIX. The non-macOS path (`t_Audio->join()`) is correct. This is a copy-paste bug in `src/demod/DemodulatorInstance.cpp`.
 
 ## Thread Priorities (macOS)
 

@@ -8,16 +8,16 @@ The audio subsystem handles real-time audio output from demodulators to hardware
 
 ```
 DemodulatorThread (N)
-    |
-    +-- AudioThreadInputQueue --> AudioThread (per-demod, "bound")
-    |                                 |
-    |                          bindThread()
-    |                                 |
-    +-- AudioThread (controller) <----+
-         |
-         audioCallback (real-time)
-         |
-         RtAudio hardware output
+    | pushes to "AudioDataOutput" queue
+    v
+AudioThreadInputQueue (per-demod, max 100 items)
+    | retrieved as "AudioDataInput" on AudioThread
+    v
+AudioThread (per-demod, "bound") ---bindThread()---> AudioThread (controller)
+                                                             |
+                                                     audioCallback (real-time)
+                                                             |
+                                                     RtAudio hardware output
 ```
 
 ## Class Hierarchy
@@ -52,23 +52,24 @@ DemodulatorThread (N)
 - Runs an infinite loop processing `AudioThreadCommand` messages via a timed pop (`HEARTBEAT_CHECK_PERIOD_MICROS` = 50 ms), which also serves as the termination check interval
 
 **Bound thread:**
-- Created per-demodulator via `DemodulatorInstance::run()`
+- Object allocated in `DemodulatorInstance` constructor; thread started in `DemodulatorInstance::run()`
 - Pushes `AudioThreadInput` packets to its `inputQueue`
 - Its `inputQueue` is consumed by the controller's `audioCallback`, which mixes data from all bound threads
 
 ### Device Setup Flow
 
 1. `AudioThread::run()` calls `setupDevice(deviceId)` (under `m_device_mutex`)
-2. If no controller exists for `deviceId`:
+2. If a controller already existed for the previous device, `this` removes itself from that controller's `boundThreads` (under the old controller's mutex)
+3. If no controller exists for `deviceId`:
    - A new `AudioThread` is created as controller
    - The controller is registered in `deviceController[deviceId]`
-   - `attachControllerThread()` stores the controller's `std::thread*` for lifecycle management
    - The controller binds the current (calling) thread to its `boundThreads`
-3. If a controller already exists and `this` is the controller:
+   - `attachControllerThread()` stores the controller's `std::thread*` for lifecycle management
+4. If a controller already exists and `this` is the controller:
    - The RtAudio stream is opened directly with `audioCallback`
-4. If a controller already exists and `this` is a bound thread:
+5. If a controller already exists and `this` is a bound thread:
    - The current thread binds itself to the existing controller (under the controller's mutex)
-5. The `active` flag is set to `true`
+6. The `active` flag is set to `true`
 
 ### Audio Mixing (Real-Time)
 
@@ -78,16 +79,19 @@ The `audioCallback` function runs in the RtAudio real-time thread:
 2. Lock the controller mutex
 3. For each bound thread:
    - Lock the bound thread's mutex
-   - Skip if terminated, inactive, or queue empty
-   - Pop `AudioThreadInput` packets from the bound thread's queue
-   - Mix samples into the output buffer (mono: duplicate to L+R; stereo: direct mix)
+   - Skip if terminated, inactive, queue missing, or queue empty
+   - If `currentInput` is null, pop a packet from the queue; on success, skip to the next thread (the newly popped packet is not mixed until the next callback invocation)
+   - If `currentInput` sample rate doesn't match the controller's, pop and discard packets until a match is found or the queue is exhausted; skip the thread if no match
+   - If `currentInput` has zero channels or empty data and the queue has more items, pop the next packet; otherwise skip the thread
+   - Mix samples from `currentInput` into the output buffer (mono: duplicate to L+R; stereo: direct mix), advancing `audioQueuePtr` and popping the next packet from the queue as needed when the current packet is exhausted mid-mixing
    - Apply per-thread gain
 4. If total peak > 1.0, normalize the output buffer
-5. Return
+5. Return 0 on success; return 1 if the controller is terminated, which instructs RtAudio to stop the stream
 
 Key properties:
 - **Buffer size:** The RtAudio buffer is 1024 frames by default (`nBufferFrames`), which at 48 kHz yields ~21 ms latency per buffer
-- **Sample rate matching:** If a bound thread's current input has a different sample rate than the controller, the callback pops and discards packets until it finds one with a matching rate (or the queue is exhausted). This happens on the first access to a new `currentInput`, not on every packet
+- **Sample rate matching:** Whenever a new `currentInput` is popped (either on first access or when the current packet is exhausted mid-mixing), the callback checks if its sample rate matches the controller's. If not, it pops and discards packets until it finds a matching one or the queue is exhausted. If no matching packet is found, `currentInput` is left as `nullptr` and the thread is skipped
+- **First-packet latency:** When a new packet is popped from a queue, the callback immediately continues to the next thread without mixing it. This introduces a one-callback-cycle delay before a newly queued packet produces output, avoiding partial consumption of a fresh packet
 - **Underflow handling:** If a bound thread runs out of data, the callback continues with the next thread. RtAudio buffer underflows (reported via `status` flag) are counted in the controller's `underflowCount` field
 - **Gain staging:** Per-thread `gain` (0.0–2.0, default 1.0) is applied before mixing; global normalization prevents clipping
 
@@ -103,18 +107,20 @@ The `audioCallback` runs in a RtAudio real-time thread (potentially with `SCHED_
 
 ### Thread Lifecycle
 
-**Startup** (in `DemodulatorInstance::run()`):
-1. `AudioThread` created, then `setInitOutputDevice()` called to store the device ID and sample rate
-2. `AudioThread::run()` starts in a new thread (via `IOThread::threadMain`)
-3. `setupDevice()` called — either creates a new controller thread (with its own `std::thread` via `attachControllerThread()`) or binds to an existing controller
-4. The `inputQueue` is retrieved from the IOThread input queue map under the name `"AudioDataInput"`
+**Startup** (across `DemodulatorInstance` constructor and `run()`):
+1. `AudioThread` created in the `DemodulatorInstance` constructor
+2. The audio pipe queue is registered on the `AudioThread` as `"AudioDataInput"` and on the `DemodulatorThread` as `"AudioDataOutput"`
+3. `setInitOutputDevice()` called in `DemodulatorInstance::setOutputDevice()` (when the demodulator is not yet active) to store the device ID and sample rate
+4. `AudioThread::run()` starts in a new thread (via `IOThread::threadMain`) when `DemodulatorInstance::run()` is called
+5. `setupDevice()` called inside `AudioThread::run()` — either creates a new controller thread (with its own `std::thread` via `attachControllerThread()`) or binds to an existing controller
 
 **Shutdown** (in `DemodulatorInstance::terminate()`):
 1. `AudioThread::terminate()` sets `stopping = true`
 2. The `run()` loop exits (after the next `HEARTBEAT_CHECK_PERIOD_MICROS` timeout), flushes the input queue, and nullifies `currentInput`
-3. Cleanup continues in the `AudioThread` destructor:
+3. Cleanup in `run()` after the loop:
    - For bound threads: removes itself from the controller's `boundThreads` (under the controller's mutex)
-   - For controller threads: stops and closes the RtAudio stream, joins the controller's `std::thread`, and deletes it
+   - For controller threads: stops and closes the RtAudio stream
+4. The `AudioThread` destructor handles the controller's `std::thread` lifecycle: terminates, joins, and deletes it
 
 **Device cleanup** (`AudioThread::deviceCleanup()`):
 - Called during application shutdown
@@ -124,7 +130,7 @@ The `audioCallback` runs in a RtAudio real-time thread (potentially with `SCHED_
 - Allows dynamically enabling or disabling audio output without destroying the AudioThread
 - Transitioning inactive → active: binds the thread to the controller's `boundThreads`
 - Transitioning active → inactive: removes the thread from the controller's `boundThreads`
-- On any state change: flushes the input queue to discard stale data
+- Flushes the input queue (when non-null) to discard stale data
 - The `active` flag is also checked by the `audioCallback` — inactive threads are skipped during mixing
 
 ## AudioThreadInput
@@ -157,9 +163,9 @@ Data packet passed from demodulator to audio output:
 
 Abstract base class for audio consumers that run in their own thread:
 
-- Owns an `AudioThreadInputQueue` with max 1000 items
+- Owns an `AudioThreadInputQueue` with max 1000 items, registered as `"input"` in the IOThread queue map
 - Pops input packets in a loop, calling `sink()` for each
-- Detects input property changes (channels, frequency, inputRate, sample rate) and calls `inputChanged()`
+- Detects input property changes (channels, frequency, inputRate, sample rate; notably not `peak` or `type`) and calls `inputChanged()`
 - On termination, flushes the input queue to discard in-flight data
 - Subclasses implement `sink()` and `inputChanged()`
 
@@ -237,9 +243,14 @@ Design constraints:
 **macOS:**
 - Audio thread priority set to `sched_get_priority_max(SCHED_RR) - 1` via `pthread_setschedparam`
 - `AudioSinkThread` (recording) uses the same `SCHED_RR` priority on macOS
-- RtAudio stream options include `SCHED_FIFO` priority
 
-**Windows/Linux:**
+**Linux:**
+- Default thread priorities used
+
+**Non-Windows (macOS + Linux):**
+- RtAudio stream options include `SCHED_FIFO` priority (guarded by `#ifndef _MSC_VER`)
+
+**Windows:**
 - Default thread priorities used
 - RtAudio configured with `RTAUDIO_SCHEDULE_REALTIME`
 
@@ -247,31 +258,40 @@ Design constraints:
 
 `DemodulatorThread` uses `ReBuffer<AudioThreadInput>` (defined in `IOThread.h`) to pool audio buffers.
 
-The pool works by tracking `shared_ptr` use counts: when a buffer's use count drops to 1 (only referenced by the pool itself), it becomes available for reuse. Unused buffers age and are garbage-collected after a threshold (`REBUFFER_GC_LIMIT` = 100). New buffers are allocated only when no reusable buffer is available.
+The pool works by tracking `shared_ptr` use counts: when a buffer's use count drops to 1 (only referenced by the pool itself), it becomes available for reuse. When `getBuffer()` finds the first reusable buffer, it selects it and resets its age to 1; subsequent reusable buffers found in the same call have their age decremented. The oldest buffer at the back of the pool is garbage-collected when its age drops below `-REBUFFER_GC_LIMIT` (-100). New buffers are allocated only when no reusable buffer is available.
 
 ## Muting
 
-`DemodulatorThread` checks the `muted` flag (and solo mode) before pushing `AudioThreadInput` to `audioOutputQueue`. Muted demodulators do not push data, so their bound thread's queue remains empty.
+`DemodulatorThread` checks the `muted` flag, solo mode, and squelch state before pushing `AudioThreadInput` to the playback queue (`audioOutputQueue`). A demodulator only pushes to playback when it is not muted, not squelched, and either solo mode is off or this demodulator is the current modem. Demodulators excluded by any of these conditions do not push data, so their bound thread's queue remains empty.
+
+The recording sink queue (`audioSinkOutputQueue`) is pushed independently: it receives audio whenever `ati` is non-null, regardless of squelch, mute, or solo state. The squelch flag is attached to `ati` before the push, and the recording sink handles squelch through the `is_squelch_active` field. This ensures recording captures the raw demodulated signal even when playback is silenced by mute or solo mode.
 
 ## Digital Modem Audio
 
-`ModemDigital` subclasses produce `AudioThreadInput` with an empty `data` vector and `type=2` (IQ/XY visualization). The visualization path (ScopeVisualProcessor) consumes these for constellation/scope display.
+`ModemDigital` subclasses produce two separate `AudioThreadInput` objects. The playback buffer `ati` is allocated with an empty `data` vector (populated by `demodulate()` for analog modems but left empty for digital). When the visualization block runs, `ati` is set to `nullptr` for digital modems (with a TODO comment about future audio output support), so it is never pushed to either the playback or recording queues. A separate `ati_vis` is populated with interleaved I/Q sample data (`channels=2`, `type=2`) and pushed to the visualization queue `audioVisOutputQueue`. The visualization path (ScopeVisualProcessor) consumes `ati_vis` for constellation/scope display. No audio data reaches the mixing or recording paths for digital modems.
 
 ## Audio Data Flow Summary
 
 ```
 DemodulatorThread
     | calls Modem::demodulate() -> fills AudioThreadInput
+    | pushes to "AudioDataOutput" queue via try_push()
     v
 AudioThreadInputQueue (per-demod, max 100 items)
-    |
+    | retrieved as "AudioDataInput" on AudioThread
     v
-AudioThread (bound) --populates--> currentInput
-    |
+AudioThread (bound)
+    | holds: inputQueue, currentInput, audioQueuePtr
+    | (consumed by controller's audioCallback)
     v
 audioCallback (controller, real-time)
-    | pops from all boundThreads
-    | mixes with gain + normalization
+    | for each bound thread:
+    |   pops from bound.inputQueue via try_pop()
+    |   maintains currentInput across invocations
+    |   mixes with per-thread gain
+    v
+Normalization (if peak > 1.0)
+    |
     v
 RtAudio output buffer -> speakers/headphones
 
@@ -283,3 +303,5 @@ AudioSinkFileThread
     v
 WAV file on disk
 ```
+
+Note: The recording pipeline's `AudioSinkThread` input queue has a capacity of 1000 items, 10x larger than the audio playback path's 100-item queue, giving the recording path more headroom to absorb scheduling jitter.

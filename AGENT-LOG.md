@@ -725,3 +725,224 @@ The 17 meters band default range in `BookmarkMgr.cpp` (17.044-19.092 MHz) is inc
 | `docs/design/audio-subsystem.md` | Fixed 3 inaccuracies, added Real-Time Design Constraints/Buffer Management/Muting/Digital Modem Audio sections, cleaned all editorial commentary |
 | `docs/design/README.md` | Removed editorial "should be corrected" from CMakeLists.txt section |
 | `AGENTS.md` | Added "No editorial commentary" documentation guideline |
+
+## Session 26: Audio Subsystem Design Document Verification
+
+**Date:** 2026-07-30
+**Model:** opencode/mimo-v2.5-free
+
+### Actions
+
+1. Reviewed `docs/design/audio-subsystem.md` by verifying all claims against source code (all audio files, DemodulatorInstance, DemodulatorThread, IOThread)
+2. Cross-referenced against signal-flow.md and threading.md for consistency
+3. Found 4 issues: 1 misleading diagram, 1 incomplete description, 1 oversimplified mechanism, 1 incorrect diagram
+4. Applied all 4 fixes
+
+### Issues Fixed
+
+| # | Location | Issue | Fix |
+|---|----------|-------|-----|
+| 1 | Overview diagram (line 12) | Queue labeled with type alias `AudioThreadInputQueue` instead of binding name | Changed to show binding names `"AudioDataOutput"` / `"AudioDataInput"`; restructured to show `bindThread()` relationship to controller |
+| 2 | Sample rate matching (line 90) | Description says check happens only "on first access to a new currentInput" | Corrected: happens on every new packet pop (first access or mid-mixing exhaustion); added failure mode (nullptr → thread skipped) |
+| 3 | ReBuffer GC (line 256) | "Unused buffers age and are garbage-collected after a threshold" oversimplified | Clarified: GC only checks back element, triggered during `getBuffer()`, age threshold is below -100 |
+| 4 | Audio Data Flow Summary (lines 268-291) | Diagram shows `AudioThread (bound) --populates--> currentInput` (misleading) | Replaced: shows queue binding names, bound thread state (inputQueue, currentInput, audioQueuePtr), controller's audioCallback consuming via try_pop(), normalization as separate step |
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/audio-subsystem.md` | Fixed overview diagram queue naming, sample rate matching description, ReBuffer GC description, and Audio Data Flow Summary diagram |
+
+## Session 27: Audio Subsystem Design Document Accuracy Review
+
+**Date:** 2026-07-30
+**Model:** opencode/mimo-v2.5-free
+
+### Actions
+
+1. Reviewed `docs/design/audio-subsystem.md` by verifying all claims against source code (all 10 audio files plus DemodulatorInstance, DemodulatorThread, ModemDigital, IOThread, ThreadBlockingQueue)
+2. Verified every section: Overview, Class Hierarchy, Controller/Bound Pattern, Static State, Thread Roles, Device Setup Flow, Audio Mixing, Real-Time Design Constraints, Thread Lifecycle, AudioThreadInput, Audio Commands, Recording Pipeline, WAV file writing, Device Enumeration, Thread Safety, Platform-Specific Notes, Buffer Management, Muting, Digital Modem Audio, Audio Data Flow Summary
+3. Found 2 issues: 1 factual error (ReBuffer age management), 1 omission (solo mode in muting condition)
+4. Applied both fixes
+
+### Issues Fixed
+
+| # | Section | Issue | Fix |
+|---|---------|-------|-----|
+| 1 | Buffer Management (line 256) | "other idle buffers have their age decremented" — incorrect; idle buffers (use_count == 1) are the reusable ones; the first is selected with age reset to 1, others have age decremented only if use_count > 1 (in use) | Corrected: first reusable buffer selected with age reset to 1; subsequent reusable buffers have age decremented |
+| 2 | Muting (line 260) | "Muted or squelched demodulators do not push data" omits solo mode's role — a demodulator must also be the current modem when solo mode is active | Corrected: demodulator pushes only when not muted, not squelched, and either solo mode is off or this is the current modem |
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/audio-subsystem.md` | Fixed ReBuffer age management description and muting solo mode condition |
+
+## Session 28: Audio Subsystem Design Document Review
+
+**Date:** 2026-07-30
+**Model:** opencode/mimo-v2.5-free
+
+### Actions
+
+1. Reviewed `docs/design/audio-subsystem.md` by reading all 10 audio source files (headers and implementations) plus DemodulatorInstance, DemodulatorThread, IOThread
+2. Verified every section against source code: Overview, Class Hierarchy, Controller/Bound Pattern, Static State, Thread Roles, Device Setup Flow, Audio Mixing, Real-Time Design Constraints, Thread Lifecycle, AudioThreadInput, Audio Commands, Recording Pipeline, WAV file writing, Device Enumeration, Thread Safety, Platform-Specific Notes, Buffer Management, Muting, Digital Modem Audio, Audio Data Flow Summary
+3. Found 5 minor issues (~97% accuracy): 1 inaccurate flush condition, 1 omitted first-packet behavior, 1 oversimplified empty-data handling, 1 missing queue name, 1 undocumented capacity difference
+4. Applied all 5 fixes
+
+### Issues Fixed
+
+| # | Section | Issue | Fix |
+|---|---------|-------|-----|
+| 1 | Active state management | "On any state change: flushes the input queue" — code flushes unconditionally on every `setActive()` call | Corrected to "Flushes the input queue on every call (regardless of whether the state actually changed)" |
+| 2 | Audio Mixing step 3 | First-packet behavior (skip after pop) not documented | Added: when `currentInput` is null, pop a packet; on success, skip to next thread (not mixed until next invocation) |
+| 3 | Audio Mixing step 3 | Empty-data retry logic omitted | Added: if `currentInput` has zero channels or empty data and queue has more items, pop next packet |
+| 4 | AudioSinkThread | Input queue name `"input"` not mentioned | Added queue name to the bullet list |
+| 5 | Audio Data Flow Summary | Recording pipeline queue capacity (1000) vs playback queue (100) not noted | Added note about 10x capacity difference and its purpose |
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/audio-subsystem.md` | Fixed 5 issues: corrected setActive() flush behavior, expanded audioCallback step 3 with first-packet and retry logic, added AudioSinkThread queue name, added queue capacity difference note |
+
+## Session 29: Audio Subsystem Design Document Accuracy Review
+
+**Date:** 2026-07-30
+**Model:** opencode/mimo-v2.5-free
+
+### Actions
+
+1. Reviewed `docs/design/audio-subsystem.md` by verifying all claims against source code (all 10 audio files plus DemodulatorInstance, DemodulatorThread, IOThread)
+2. Used parallel agent tasks to verify demodulator integration (AudioThread creation, setInitOutputDevice call site, queue binding, playback/recording push conditions, digital modem behavior)
+3. Verified ReBuffer implementation against IOThread.h
+4. Found 5 issues: 3 inaccuracies, 1 misleading diagram label, 1 incomplete description
+5. Applied all 5 fixes
+
+### Issues Fixed
+
+| # | Section | Issue | Fix |
+|---|---------|-------|-----|
+| 1 | Device Setup Flow | Missing step: thread does not remove itself from old controller's boundThreads before creating/joining new one; binding direction stated backwards ("controller binds calling thread" vs code: "calling thread binds itself to controller") | Added step 2 for self-removal from old controller; corrected step 3 binding direction |
+| 2 | Digital Modem Audio | `ati` described as "discarded before the audio output push"; `ati_vis` described as having "empty data" | Corrected: `ati` is set to `nullptr` (never pushed to any queue); `ati_vis` contains actual I/Q sample data (`channels=2`, `type=2`) |
+| 3 | Thread Lifecycle | `setInitOutputDevice()` incorrectly placed in `DemodulatorInstance::run()`; queue registration incorrectly placed in `AudioThread::run()` | Corrected: `AudioThread` created in constructor, queue registered in constructor, `setInitOutputDevice()` called in `setOutputDevice()`, thread started in `DemodulatorInstance::run()` |
+| 4 | Overview diagram, Data Flow Summary | Queue labeled "bound as" with misleading `AudioDataOutput` name from AudioThread perspective | Changed to "retrieved as" with correct `AudioDataInput` label |
+| 5 | Muting | Recording push incorrectly described as having a squelch guard ("whenever ati is non-null and not squelched") | Corrected: recording push has no squelch guard; squelch is handled downstream via `is_squelch_active` flag |
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/audio-subsystem.md` | Fixed 5 issues: corrected device setup flow (missing step + binding direction), digital modem audio (nullification vs discard, ati_vis data), thread lifecycle (setInitOutputDevice call site), diagram queue labels, muting squelch guard claim |
+
+## Session 30: Modem System Design Document Review
+
+**Date:** 2026-07-30
+**Model:** opencode/mimo-v2.5-free
+
+### Actions
+
+1. Reviewed `docs/design/modem-system.md` by verifying all claims against source code (Modem.h, ModemAnalog.h, ModemDigital.h, Modem.cpp, ModemAnalog.cpp, ModemDigital.cpp, all 9 analog modem headers, ModemFMStereo.h, ModemIQ.h, DemodulatorThread.cpp, DemodulatorPreThread.cpp, DemodulatorWorkerThread.cpp, CubicSDR.cpp registration site, CMakeLists.txt)
+2. Verified class hierarchy, factory pattern, registration, interface methods, ModemKit hierarchy, data processing pipeline, modem selection flow, available modems (names, files, default rates), and "Adding a New Modem" steps
+3. Found 2 inaccuracies, 3 completeness gaps, and 1 minor omission (~96% accuracy)
+4. Applied all 6 fixes
+
+### Issues Fixed
+
+| # | Issue | Fix |
+|---|-------|-----|
+| 1 | Pipeline diagram references `DemodulatorThreadOutput` (class does not exist in codebase) | Replaced with accurate description: `AudioThreadInput (filled for analog; empty data buffer for digital)` |
+| 2 | Factory code snippet shows `std::map<std::string, int> modemDefaultRates` without the typedef name | Added `DefaultRatesList` typedef to match actual source |
+| 3 | Modem interface table missing `getDefaultSampleRate()`, `writeSettings()`/`readSettings()` batch methods, non-virtual methods (`shouldRebuildKit`, `useSignalOutput`), and static methods | Expanded interface table with Core Virtual Methods, Non-Virtual Public Methods, and Static Methods sections |
+| 4 | ModemKit hierarchy table missing `ModemKitCW` and `ModemKitFMStereo` | Added both subclasses with their contents; clarified `ModemKitDigital` is empty by design with per-modem subclasses |
+| 5 | No `ModemIQData`, `ModemRange`, `ModemArgInfo`, `ModemSettings`, or `ModemDigitalOutput` documentation | Added Supporting Types section |
+| 6 | `ENABLE_DIGITAL_LAB` described only as "conditionally compiled"; `ModemFMStereo`/`ModemIQ` `getType()` dispatch not explained | Clarified `#ifdef` guard and default OFF; extended note to explain how `getType()` returning `"analog"` drives `DemodulatorThread` dispatch |
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/modem-system.md` | Fixed 6 issues: corrected pipeline diagram output type, added DefaultRatesList typedef, expanded interface table (virtual/non-virtual/static), expanded ModemKit hierarchy, added Supporting Types section, clarified ENABLE_DIGITAL_LAB and ModemFMStereo/ModemIQ dispatch |
+
+## Session 31: Modem System Design Document Completeness Review
+
+**Date:** 2026-07-30
+**Model:** opencode/mimo-v2.5-free
+
+### Actions
+
+1. Reviewed `docs/design/modem-system.md` for accuracy and completeness against source code
+2. Verified class hierarchy, factory pattern, all 21 modem registrations, interface methods, ModemKit hierarchy, pipeline, and modem selection flow (~98% accuracy after Session 30 fixes)
+3. Identified 7 significant completeness gaps not covered by the existing document
+4. Verified all 7 claims against source code before applying changes
+5. Applied all 7 fixes to the document
+
+### Issues Fixed
+
+| # | Issue | Fix |
+|---|-------|-----|
+| 1 | `checkSampleRate()` described only as "validates/adjusts" — no mention of IQ resampling role | Explained it returns the modem's desired bandwidth, used by `DemodulatorWorkerThread` to compute IQ resample ratio |
+| 2 | `rebuildKit()` described only as lifecycle — no mention of when it's triggered or by which modems | Listed 4 modems that call it from `writeSetting()` (ModemCW, ModemFMStereo, ModemFSK, ModemGMSK) and noted `DemodulatorPreThread` sends `DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS` |
+| 3 | `useSignalOutput()` described only as "used for squelch calculations" — no mechanism or modem list | Explained audio-vs-IQ signal level computation and listed 5 modems that enable it (AM, CW, DSB, LSB, USB) |
+| 4 | Squelch location unclear — could be assumed to be in modem code | Added note that squelch is computed entirely in `DemodulatorThread` with no modem participation |
+| 5 | Analog Modems section omits stereo output and DSP approach variation | Added stereo note (only ModemFMStereo and ModemIQ) and DSP summary (freqdem, envelope detection, ampmodem, NCO+IIR+Hilbert, complex resampler, PLL/MPX) |
+| 6 | No modem settings documentation — which modems expose `getSettings()` and how settings take effect | Added Modem Settings section listing settings-capable modems and explaining two categories: constellation swap (in-place) vs. signal processing parameter change (kit rebuild) |
+| 7 | `getDemodulatorLock()` return type listed as implicit bool | Corrected to `int` (returns `int` from `atomic_bool` via implicit conversion) |
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/modem-system.md` | Fixed 7 completeness gaps: expanded checkSampleRate/rebuildKit/useSignalOutput descriptions, added squelch note, added stereo/DSP details to Analog Modems section, added Modem Settings section, fixed getDemodulatorLock return type |
+
+## Session 32: Threading Design Document Review
+
+**Date:** 2026-07-31
+**Model:** opencode/mimo-v2.5-free
+
+### Actions
+
+1. Reviewed `docs/design/threading.md` by verifying all claims against source code using parallel agent tasks
+2. Verified IOThread lifecycle, macOS pthread_create, DemodulatorInstance startup/shutdown order, CubicSDR::OnInit() sequence, CubicSDR::OnExit() sequence, audio controller/bound pattern, worker queue bounds, SpinMutex, ThreadBlockingQueue, and atomic usage
+3. Found 4 issues: 1 incorrect startup order, 1 omitted shutdown step, 1 incomplete synchronization table, 3 missing patterns (~90% accuracy)
+4. Applied all 4 fixes
+
+### Issues Fixed
+
+| # | Severity | Issue | Fix |
+|---|----------|-------|-----|
+| 1 | High | Startup order wrong: SDRPostThread listed after AppFrame (actually starts before) | Corrected: SDRPostThread step 4, SDREnumerator created step 5, AppFrame step 6, SDREnumerator thread started step 7 |
+| 2 | Medium | Hamlib rig thread termination omitted from shutdown sequence | Added `RigThread::terminate()` as step 1 in OnExit() |
+| 3 | Medium | Synchronization table missing several mutexes | Added AudioSinkThread, BookmarkMgr, VisualProcessor, SpectrumVisualProcessor, AppConfig, WaterfallCanvas, DigitalConsole, DemodulatorThread (squelch lock) |
+| 4 | Medium | Missing patterns: ReBuffer pooling, VisualProcessor pipeline, SDREnumerator one-shot spawning | Added three new subsections under Synchronization Mechanisms |
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/threading.md` | Fixed startup order, added hamlib to shutdown, expanded synchronization table, added 3 missing patterns (22 lines added)
+
+## Session 5: Threading Document Verification
+
+**Date:** 2026-07-31
+**Model:** opencode/mimo-v2.5-free
+
+### Actions
+
+1. Reviewed `docs/design/threading.md` against source code (IOThread, DemodulatorInstance, CubicSDR, AudioThread, SDREnumerator, VisualProcessor, ThreadBlockingQueue, SpinMutex)
+2. Verified all claims: thread inventory, creation patterns, communication patterns, synchronization mechanisms, lifecycle sequences, macOS priorities, wxWidgets integration
+3. Identified 4 issues, double-checked each, narrowed to 2 documentation fixes and 1 source code bug
+
+### Issues Fixed
+
+| # | Severity | Issue | Fix |
+|---|----------|-------|-----|
+| 1 | Medium | ReBuffer GC condition inverted in doc (`age > REBUFFER_GC_LIMIT` should be `age < -REBUFFER_GC_LIMIT`) | Corrected to `age < -REBUFFER_GC_LIMIT` and clarified age lifecycle |
+| 2 | Low | Shutdown sequence omitted forced-exit failure paths | Added note about `::exit()` calls on termination timeout |
+| 3 | Medium | macOS `pthread_join(t_PreDemod)` bug in `DemodulatorInstance::isTerminated()` | Documented as known issue in threading.md |
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/threading.md` | Fixed ReBuffer GC condition, added forced-exit note to shutdown, added Known Issues section with pthread_join bug |
