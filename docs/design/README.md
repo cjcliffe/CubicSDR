@@ -72,4 +72,4 @@ The `CMakeLists.txt` source file lists have several entries in the wrong categor
 | `src/ui/UITestCanvas.cpp` | Header | Source |
 | `src/ui/UITestContext.cpp` | Header | Source |
 
-These mismatches don't affect the build (CMake treats both lists as source files for compilation), but they misrepresent the project structure and should be corrected.
+CMake treats both lists as source files for compilation, so these mismatches do not affect the build.

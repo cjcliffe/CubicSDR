@@ -46,6 +46,7 @@ When creating or updating documentation in `docs/`, avoid brittle content that w
 - **No "Last Updated" timestamps** — They create maintenance burden with zero value
 - **No redundant preambles** — Don't repeat "CubicSDR is a cross-platform..." in every doc when PLAN.md already links everything
 - **No theoretical discussions** — Keep design considerations in code comments, not implementation plans
+- **No editorial commentary** — Describe what the code does, not what it doesn't do. Avoid negative framing ("X is not handled by Y") and notes about what was corrected during editing. The spec should reflect the current state of the code, not the reverse-engineering process
 - **Reference functions, not lines** — "In the `OnInit()` method" is durable; "on line 390" is not
 - **Keep actionable content only** — File lists, verification criteria, and rollback strategies are durable; inventories of current state go stale
 

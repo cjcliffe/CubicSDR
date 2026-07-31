@@ -36,7 +36,7 @@ DemodulatorThread (N)
 
 ### Static State
 
-`AudioThread` maintains three static maps protected by `m_device_mutex`:
+`AudioThread` maintains two static maps protected by `m_device_mutex`:
 
 | Map | Type | Purpose |
 |-----|------|---------|
@@ -49,23 +49,26 @@ DemodulatorThread (N)
 - Created on first `setupDevice()` call for a given device ID
 - Owns the RtAudio stream and `audioCallback`
 - Manages the `boundThreads` list
-- Runs an infinite loop processing `AudioThreadCommand` messages
+- Runs an infinite loop processing `AudioThreadCommand` messages via a timed pop (`HEARTBEAT_CHECK_PERIOD_MICROS` = 50 ms), which also serves as the termination check interval
 
 **Bound thread:**
 - Created per-demodulator via `DemodulatorInstance::run()`
 - Pushes `AudioThreadInput` packets to its `inputQueue`
-- The controller's `audioCallback` pops from all bound threads and mixes
+- Its `inputQueue` is consumed by the controller's `audioCallback`, which mixes data from all bound threads
 
 ### Device Setup Flow
 
-1. `AudioThread::run()` calls `setupDevice(deviceId)`
+1. `AudioThread::run()` calls `setupDevice(deviceId)` (under `m_device_mutex`)
 2. If no controller exists for `deviceId`:
    - A new `AudioThread` is created as controller
-   - Its own `run()` is started in a new `std::thread`
-   - The current thread binds itself to the controller
-3. If a controller already exists:
-   - The current thread binds itself to the existing controller
-4. The controller opens the RtAudio stream with `audioCallback`
+   - The controller is registered in `deviceController[deviceId]`
+   - `attachControllerThread()` stores the controller's `std::thread*` for lifecycle management
+   - The controller binds the current (calling) thread to its `boundThreads`
+3. If a controller already exists and `this` is the controller:
+   - The RtAudio stream is opened directly with `audioCallback`
+4. If a controller already exists and `this` is a bound thread:
+   - The current thread binds itself to the existing controller (under the controller's mutex)
+5. The `active` flag is set to `true`
 
 ### Audio Mixing (Real-Time)
 
@@ -83,26 +86,46 @@ The `audioCallback` function runs in the RtAudio real-time thread:
 5. Return
 
 Key properties:
-- **Sample rate matching:** If a bound thread's current input has a different sample rate than the controller, the callback drains old packets until it finds a matching one
-- **Underflow handling:** If a bound thread runs out of data, the callback continues with the next thread (no silence insertion — the output buffer was pre-zeroed)
-- **Gain staging:** Per-thread `gain` (0.0–2.0) is applied before mixing; global normalization prevents clipping
+- **Buffer size:** The RtAudio buffer is 1024 frames by default (`nBufferFrames`), which at 48 kHz yields ~21 ms latency per buffer
+- **Sample rate matching:** If a bound thread's current input has a different sample rate than the controller, the callback pops and discards packets until it finds one with a matching rate (or the queue is exhausted). This happens on the first access to a new `currentInput`, not on every packet
+- **Underflow handling:** If a bound thread runs out of data, the callback continues with the next thread. RtAudio buffer underflows (reported via `status` flag) are counted in the controller's `underflowCount` field
+- **Gain staging:** Per-thread `gain` (0.0–2.0, default 1.0) is applied before mixing; global normalization prevents clipping
+
+### Real-Time Design Constraints
+
+The `audioCallback` runs in a RtAudio real-time thread (potentially with `SCHED_FIFO` priority). To meet real-time guarantees:
+
+- **Non-blocking queue access:** All queue operations use `try_pop()` and `try_push()`
+- **Two-stage packet consumption:** The callback maintains `currentInput` and `audioQueuePtr` per bound thread across invocations. A packet is only popped from the queue when `currentInput` is null. Samples are consumed from the current packet across multiple callback invocations until exhausted, then the next packet is popped
+- **Pre-zeroed output buffer:** The output buffer is zeroed at the start of every callback
+- **Lock ordering:** The callback acquires locks in a strict order: controller mutex first, then each bound thread's mutex in sequence
+- **No allocation:** The callback never allocates or deallocates memory. All buffers are pre-allocated; `std::vector` operations are confined to the producer side (DemodulatorThread)
 
 ### Thread Lifecycle
 
 **Startup** (in `DemodulatorInstance::run()`):
-1. `AudioThread` created and started
-2. `setupDevice()` called → binds to controller or creates one
+1. `AudioThread` created, then `setInitOutputDevice()` called to store the device ID and sample rate
+2. `AudioThread::run()` starts in a new thread (via `IOThread::threadMain`)
+3. `setupDevice()` called — either creates a new controller thread (with its own `std::thread` via `attachControllerThread()`) or binds to an existing controller
+4. The `inputQueue` is retrieved from the IOThread input queue map under the name `"AudioDataInput"`
 
 **Shutdown** (in `DemodulatorInstance::terminate()`):
 1. `AudioThread::terminate()` sets `stopping = true`
-2. The `run()` loop exits, drains the input queue
-3. Bound thread removes itself from controller's `boundThreads`
-4. For controller threads: RtAudio stream is stopped and closed
-5. Controller thread joins its `std::thread` and deletes it
+2. The `run()` loop exits (after the next `HEARTBEAT_CHECK_PERIOD_MICROS` timeout), flushes the input queue, and nullifies `currentInput`
+3. Cleanup continues in the `AudioThread` destructor:
+   - For bound threads: removes itself from the controller's `boundThreads` (under the controller's mutex)
+   - For controller threads: stops and closes the RtAudio stream, joins the controller's `std::thread`, and deletes it
 
 **Device cleanup** (`AudioThread::deviceCleanup()`):
 - Called during application shutdown
 - Deletes all controller threads from `deviceController`
+
+**Active state management** (`AudioThread::setActive()` / `isActive()`):
+- Allows dynamically enabling or disabling audio output without destroying the AudioThread
+- Transitioning inactive → active: binds the thread to the controller's `boundThreads`
+- Transitioning active → inactive: removes the thread from the controller's `boundThreads`
+- On any state change: flushes the input queue to discard stale data
+- The `active` flag is also checked by the `audioCallback` — inactive threads are skipped during mixing
 
 ## AudioThreadInput
 
@@ -115,7 +138,7 @@ Data packet passed from demodulator to audio output:
 | `sampleRate` | `int` | Audio output sample rate |
 | `channels` | `int` | 1 (mono) or 2 (stereo) |
 | `peak` | `float` | Peak signal level (for normalization) |
-| `type` | `int` | Audio type identifier |
+| `type` | `int` | Audio type: 0 = mono waveform, 1 = stereo, 2 = IQ/XY (visualization only) |
 | `is_squelch_active` | `bool` | Whether squelch is currently active |
 | `data` | `vector<float>` | Interleaved float samples |
 
@@ -136,12 +159,15 @@ Abstract base class for audio consumers that run in their own thread:
 
 - Owns an `AudioThreadInputQueue` with max 1000 items
 - Pops input packets in a loop, calling `sink()` for each
-- Detects input property changes (channels, frequency, sample rate) and calls `inputChanged()`
+- Detects input property changes (channels, frequency, inputRate, sample rate) and calls `inputChanged()`
+- On termination, flushes the input queue to discard in-flight data
 - Subclasses implement `sink()` and `inputChanged()`
 
 ### AudioSinkFileThread
 
 Concrete recording implementation:
+
+- `inputChanged()` closes the current WAV file and resets the duration timer, causing a new file to be started on the next write
 
 **Squelch options:**
 | Option | Behavior |
@@ -158,7 +184,9 @@ Concrete recording implementation:
 **File naming:**
 - Base name is set by the user (demodulator label or default)
 - Invalid filename characters (`<>:"/\|?*`) are replaced with `_`
-- Sequence numbers are appended for multi-part WAV files
+- Sequence numbers (`_NNN`, zero-padded to 3 digits) are appended to the base name when a file exceeds the 2GB limit and a new part is started. The first part has no sequence suffix
+- Time-limited recording changes the base name to include a timestamp (`{baseName}_{YYYY-MM-DD_HH-MM-SS}`), resetting the sequence number to 0
+- If the final filename already exists, a `-N` suffix is added to avoid overwrites (e.g., `base_001-1.wav`)
 - Files are placed in the configured recording path
 
 ### AudioFile / AudioFileWAV
@@ -167,13 +195,13 @@ Concrete recording implementation:
 
 **WAV file writing:**
 - Standard PCM format: 16-bit signed integer samples
-- Float samples are scaled to int16 range using peak-based normalization
+- Float samples are scaled to int16 range: when peak >= 1.0, samples are divided by peak (normalizing down); when peak < 1.0, samples are multiplied by 32767 without amplification, preserving headroom
 - File size is limited to ~2GB (`MAX_WAV_FILE_SIZE = 0x7FFFFFFF - 1024`) for compatibility
 - When the limit is reached, the file is closed and a new part is opened with an incremented sequence number
 
 **Multi-part WAV handling:**
-- `getOutputFileName()` appends `_NNN` for sequence numbers > 0
-- If the filename already exists, a `-N` suffix is added to avoid overwrites
+- When a file exceeds the 2GB limit, it is closed and a new file is opened with `currentSequenceNumber` incremented. The sequence number `_NNN` (zero-padded to 3 digits) is inserted into the base name before the extension, but only when > 0 (so the first file has no sequence suffix)
+- If the resulting filename already exists on disk (e.g., from a previous session), a `-N` suffix is appended to the candidate name until a unique name is found. This collision check runs after the sequence number is applied
 - Header is written on file open; data chunk size is patched on close
 
 **File path resolution:**
@@ -194,23 +222,40 @@ Concrete recording implementation:
 | Mechanism | Scope | Purpose |
 |-----------|-------|---------|
 | `m_device_mutex` (static) | Global | Protects `deviceController`, `deviceSampleRate` |
-| `m_mutex` (per-thread) | Per AudioThread | Protects `boundThreads`, `sampleRate`, `active` |
+| `m_mutex` (per-thread) | Per AudioThread | Protects `boundThreads`, `sampleRate` |
 | `audioCallback` locking | Real-time | Locks controller mutex, then each bound thread mutex in sequence |
 
 Design constraints:
 - `audioCallback` must not allocate memory
 - `audioCallback` uses `try_pop()` (non-blocking) for all queue access
 - Mutex lock order: controller → bound thread (never reversed)
+- Queue overflow: `DemodulatorThread` uses `try_push()` to push audio data. If the playback queue (max 100 items) is full, the frame is dropped with a warning message
+- `deviceCleanup()` skips `m_device_mutex` locking and is only called during application shutdown
 
 ## Platform-Specific Notes
 
 **macOS:**
 - Audio thread priority set to `sched_get_priority_max(SCHED_RR) - 1` via `pthread_setschedparam`
+- `AudioSinkThread` (recording) uses the same `SCHED_RR` priority on macOS
 - RtAudio stream options include `SCHED_FIFO` priority
 
 **Windows/Linux:**
 - Default thread priorities used
 - RtAudio configured with `RTAUDIO_SCHEDULE_REALTIME`
+
+## Buffer Management
+
+`DemodulatorThread` uses `ReBuffer<AudioThreadInput>` (defined in `IOThread.h`) to pool audio buffers.
+
+The pool works by tracking `shared_ptr` use counts: when a buffer's use count drops to 1 (only referenced by the pool itself), it becomes available for reuse. Unused buffers age and are garbage-collected after a threshold (`REBUFFER_GC_LIMIT` = 100). New buffers are allocated only when no reusable buffer is available.
+
+## Muting
+
+`DemodulatorThread` checks the `muted` flag (and solo mode) before pushing `AudioThreadInput` to `audioOutputQueue`. Muted demodulators do not push data, so their bound thread's queue remains empty.
+
+## Digital Modem Audio
+
+`ModemDigital` subclasses produce `AudioThreadInput` with an empty `data` vector and `type=2` (IQ/XY visualization). The visualization path (ScopeVisualProcessor) consumes these for constellation/scope display.
 
 ## Audio Data Flow Summary
 

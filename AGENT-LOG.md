@@ -645,3 +645,83 @@ The 17 meters band default range in `BookmarkMgr.cpp` (17.044-19.092 MHz) is inc
 | File | Action |
 |------|--------|
 | `docs/design/signal-flow.md` | Fixed ReBuffer GC wording, documented non-blocking demod distribution, added type aliasing note, added FFTVisualDataThread internals |
+
+## Session 23: Audio Subsystem Design Document Review
+
+**Date:** 2026-07-28
+**Model:** opencode/mimo-v2.5-free
+
+### Actions
+
+1. Reviewed `docs/design/audio-subsystem.md` by verifying all claims against source code
+2. Read all audio subsystem source files (AudioThread, AudioSinkThread, AudioSinkFileThread, AudioFile, AudioFileWAV headers and implementations)
+3. Cross-referenced against DemodulatorInstance (recording lifecycle), DemodulatorThread (audio sink wiring), IOThread (base class lifecycle), and signal-flow.md (pipeline integration)
+4. Verified class hierarchy, controller/bound pattern, static state, thread roles, device setup flow, audio mixing algorithm, thread lifecycle, AudioThreadInput fields, audio commands, recording pipeline, WAV file writing, device enumeration, thread safety, platform-specific notes
+5. Found 3 inaccuracies (~97% accuracy)
+6. Applied all 3 fixes
+
+### Issues Fixed
+
+| # | Location | Issue | Fix |
+|---|----------|-------|-----|
+| 1 | Line 39 | "three static maps" but only two exist (`deviceController`, `deviceSampleRate`) | Changed to "two" |
+| 2 | Line 139 | `AudioSinkThread` input change detection also checks `inputRate`, omitted from document | Added `inputRate` to the property change list |
+| 3 | Line 197 | `m_mutex` listed as protecting `active`, but `active` is `std::atomic_bool` (no mutex needed) | Removed `active` from the protection list |
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/audio-subsystem.md` | Fixed static map count, added inputRate to AudioSinkThread property detection, removed active from m_mutex scope |
+
+## Session 24: Audio Subsystem Design Document Review and Fix
+
+**Date:** 2026-07-30
+**Model:** opencode/mimo-v2.5-free
+
+### Actions
+
+1. Reviewed `docs/design/audio-subsystem.md` by verifying all claims against source code (all 10 audio files plus DemodulatorInstance, DemodulatorThread, IOThread, ThreadBlockingQueue)
+2. Found 3 accuracy issues and 3 completeness gaps
+3. Applied all 6 fixes
+
+### Issues Fixed
+
+| # | Issue | Fix |
+|---|-------|-----|
+| 1 | Device Setup Flow says `run()` is started but code calls `threadMain()` | Corrected to `threadMain()` with parenthetical explaining it calls `setup()` then `run()` |
+| 2 | WAV normalization described as "peak-based normalization" — misleading when peak < 1.0 (no amplification occurs) | Clarified: divides by peak when >= 1.0, multiplies by 32767 otherwise |
+| 3 | Thread Safety section omits `deviceCleanup()` intentional lock-skip | Added note explaining the deliberate design decision |
+| 4 | `setActive()`/`isActive()` lifecycle mechanism not documented | Added section describing bind/unbind/flush behavior and callback interaction |
+| 5 | `nBufferFrames` default (1024) undocumented | Added buffer size note with latency calculation to Audio Mixing section |
+| 6 | AudioSinkThread macOS priority not mentioned | Added note that AudioSinkThread uses same `SCHED_RR` priority on macOS |
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/audio-subsystem.md` | Fixed 3 inaccuracies, added 3 missing sections (6 total changes) |
+
+## Session 25: Audio Subsystem Review, Editorial Cleanup, and Documentation Guidelines
+
+**Date:** 2026-07-30
+**Model:** opencode/mimo-v2.5-free
+
+### Actions
+
+1. Reviewed `docs/design/audio-subsystem.md` by verifying all claims against source code (all 10 audio files plus DemodulatorInstance, DemodulatorThread, IOThread, ThreadBlockingQueue)
+2. Found 3 inaccuracies: WAV file naming (sequence numbers vs collision avoidance), controller creation flow (missing `attachControllerThread` step), shutdown lifecycle (two-phase cleanup not documented)
+3. Applied corrections and added missing content: Real-Time Design Constraints section (two-stage currentInput, try_pop, pre-zeroed buffer), Buffer Management section (ReBuffer pooling), Muting section, Digital Modem Audio section, queue overflow behavior, default gain value
+4. Reviewed all 9 design documents for reverse-engineering commentary and editorial discussion that doesn't reflect current code state
+5. Found editorial commentary in audio-subsystem.md: negative framing ("is not handled in X"), parenthetical reasoning, and notes about edits made during reverse-engineering
+6. Cleaned audio-subsystem.md: removed all negative framing, editorial reasoning, and reverse-engineering discussion; each section now describes what the code does
+7. Added "No editorial commentary" guideline to `AGENTS.md` Documentation Guidelines section
+8. Fixed `docs/design/README.md` CMakeLists.txt section: removed "should be corrected" editorial commentary
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/audio-subsystem.md` | Fixed 3 inaccuracies, added Real-Time Design Constraints/Buffer Management/Muting/Digital Modem Audio sections, cleaned all editorial commentary |
+| `docs/design/README.md` | Removed editorial "should be corrected" from CMakeLists.txt section |
+| `AGENTS.md` | Added "No editorial commentary" documentation guideline |
