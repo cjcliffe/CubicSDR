@@ -9,21 +9,21 @@ This document describes CubicSDR's threading architecture, synchronization mecha
 **File:** `src/IOThread.h`
 
 All worker threads inherit from `IOThread`, which provides:
-- **Lifecycle management:** `stopping` (atomic bool) for async termination; `terminated` (atomic bool) for completion
+- **Lifecycle management:** `stopping` (atomic bool, `protected`) for async termination; `terminated` (atomic bool, `private`) for completion
 - **Named queue bindings:** `setInputQueue(name, queue)` / `setOutputQueue(name, queue)` with string-keyed maps
-- **Thread entry:** `threadMain()` wraps `run()` in try/catch, sets both `terminated` and `stopping` to `true` on exit
+- **Thread entry:** `threadMain()` resets both flags to `false` at entry, wraps `run()` in try/catch, sets both `terminated` and `stopping` to `true` on exit (and re-throws exceptions after setting flags)
 - **Spin-wait sleep:** `isTerminated(timeout)` busy-waits with 5ms sleep (`SPIN_WAIT_SLEEP_MS`) between checks
 
 ### Thread Creation Pattern
 
-CubicSDR uses `std::thread` exclusively (no wxThread):
+CubicSDR does not use wxThread. The standard pattern is `std::thread`:
 
 ```cpp
 threadObject = new ThreadClass(...);
 t_stdThread = new std::thread(&ThreadClass::threadMain, threadObject);
 ```
 
-On macOS, `DemodulatorPreThread` and `DemodulatorThread` use `pthread_create` with ~2MB stack sizes (2048000 bytes).
+Exception: on macOS, `DemodulatorPreThread` and `DemodulatorThread` use `pthread_create` with ~2MB stack sizes (2048000 bytes) to control the stack size directly.
 
 ## Thread Inventory
 
@@ -42,7 +42,7 @@ On macOS, `DemodulatorPreThread` and `DemodulatorThread` use `pthread_create` wi
 | Audio Thread (N) | `AudioThread` | `src/audio/AudioThread.h` | Per-demod audio processing and device binding |
 | Audio Controller | `AudioThread` | `src/audio/AudioThread.h` | Per-device RtAudio stream owner and mixer |
 | Audio Sink (N) | `AudioSinkThread` | `src/audio/AudioSinkThread.h` | Base audio sink for demodulator output |
-| Audio Sink File (N) | `AudioSinkFileThread` | `src/audio/AudioSinkFileThread.h` | WAV file recording |
+| Audio Sink File (N) | `AudioSinkFileThread` | `src/audio/AudioSinkFileThread.h` | Audio file recording |
 | Rig Control (optional) | `RigThread` | `src/rig/RigThread.h` | Hamlib CAT control |
 
 ## Communication Patterns
@@ -52,13 +52,15 @@ On macOS, `DemodulatorPreThread` and `DemodulatorThread` use `pthread_create` wi
 All data-carrying threads communicate via `ThreadBlockingQueue<T>`:
 - **Blocking push/pop** for critical data (demod pipeline, worker commands)
 - **Non-blocking try_push/try_pop** for visualization (data loss acceptable)
-- All data passed as `std::shared_ptr<T>`
+- Most queue items are `std::shared_ptr<T>` (IQ data, audio data); worker command/result queues use value types
 
 ### Pattern 2: Atomic Flags for Control
 
 `std::atomic_bool` flags signal parameter changes between UI and worker threads:
-- `freq_changed`, `rate_changed`, `bandwidthChanged`
-- `demodTypeChanged`, `modemSettingsChanged`
+- **SDRThread:** `freq_changed`, `rate_changed`, `offset_changed`, `antenna_changed`, `ppm_changed`, `device_changed`, `agc_mode_changed`, `gain_value_changed`, `setting_value_changed`, `frequency_locked`, `frequency_lock_init`, `iq_swap`
+- **DemodulatorPreThread:** `frequencyChanged`, `bandwidthChanged`, `sampleRateChanged`, `audioSampleRateChanged`, `demodTypeChanged`, `modemSettingsChanged`
+- **DemodulatorInstance:** `active`, `muted`, `deltaLock`, `recording`, `follow`, `tracking`
+- **CubicSDR:** `devicesReady`, `devicesFailed`, `soloMode`, `shuttingDown`
 - The polling thread checks flags each iteration and applies changes
 
 ### Pattern 3: Controller/Bound Audio Mixing
@@ -66,6 +68,7 @@ All data-carrying threads communicate via `ThreadBlockingQueue<T>`:
 - One AudioThread per physical output device owns the RtAudio stream (**controller**)
 - Other AudioThreads bind to the controller via `bindThread()`
 - The `audioCallback` (real-time context) iterates bound threads, pops audio via `try_pop()`, and mixes into the output buffer
+- The controller `AudioThread` destructor calls `controllerThread->join()` **without** acquiring `m_mutex` — intentional to avoid deadlocks; safe because it only runs after all bound threads have detached
 
 ### Pattern 4: Worker Thread for Expensive Operations
 
@@ -74,15 +77,34 @@ All data-carrying threads communicate via `ThreadBlockingQueue<T>`:
 - Worker responds with results via separate queue (max 100 items)
 - Prevents expensive liquid-dsp initialization from blocking the data path
 
+### Pattern 5: Callback Notification (Worker → UI)
+
+- SDRThread and SDREnumerator call `sdrThreadNotify()`/`sdrEnumThreadNotify()` on `CubicSDR` from worker threads (SDRThread calls both methods; SDREnumerator calls `sdrEnumThreadNotify`)
+- These methods store messages in `std::string notifyMessage` protected by `std::mutex notify_busy`
+- `sdrEnumThreadNotify` sets `std::atomic_bool` flags (`devicesReady` on `SDR_ENUM_DEVICES_READY`, `devicesFailed` on `SDR_ENUM_FAILED`); `sdrThreadNotify` stores messages but does not set these flags
+- The UI polls these in `SDRDevices` dialog via `getNotification()`
+- Note: `sdrThreadNotify` with `SDR_THREAD_INITIALIZED` also calls `appframe->initDeviceParams()` directly — a cross-thread write to internal AppFrame state (pointer + atomic flag only, no UI widget manipulation)
+- Worker threads also set atomic flags for UI updates: `DemodulatorWorkerThread` calls `notifyUpdateModemProperties()` which sets `AppFrame::modemPropertiesUpdated`; UI polls this in `OnIdle()`
+
+### Pattern 6: VisualProcessor Pipeline (Threaded Distribution)
+
+- `VisualProcessor<Input, Output>` bridges FFT threads to UI canvases
+- Each processor has one input queue and N output queues
+- Two distribution strategies:
+  - `VisualDataDistributor` — zero-copy shared pointer forwarding
+  - `VisualDataReDistributor` — deep-copy via `ReBuffer` pooling
+- Protected by `std::mutex busy_update` for queue list mutations
+
 ## Synchronization Mechanisms
 
 | Mechanism | Location | Purpose |
 |-----------|----------|---------|
 | `ThreadBlockingQueue<T>` | Throughout | Primary inter-thread data transfer |
-| `SpinMutex` | `ThreadBlockingQueue`, `ReBuffer` | Lightweight lock for high-frequency queue operations |
-| `std::atomic_bool` | SDRThread, DemodulatorPreThread, DemodulatorThread, DemodulatorInstance, CubicSDR | Lock-free parameter change signaling |
+| `std::condition_variable_any` | `ThreadBlockingQueue` | Enables blocking push/pop with `SpinMutex` |
+| `SpinMutex` | `ThreadBlockingQueue`, `ReBuffer`, `DemodulatorThread`, `GLFont` | Lightweight lock for high-frequency queue operations and dynamic rebinding |
+| `std::atomic<T>` | SDRThread, DemodulatorPreThread, DemodulatorThread, DemodulatorInstance, CubicSDR, IOThread, AudioThread, AppFrame, FFTVisualDataThread, WaterfallCanvas | Lock-free parameter change signaling and state management |
 | `std::recursive_mutex` | AudioThread, AudioSinkThread, DemodulatorInstance, DemodulatorMgr, BookmarkMgr | Protecting shared mutable state with re-entrant access |
-| `std::mutex` | IOThread queue bindings, SDRThread settings/gains, VisualProcessor, SpectrumVisualProcessor, AppConfig, WaterfallCanvas, DigitalConsole, DemodulatorThread (squelch lock) | Protecting infrequent mutations and visualization state |
+| `std::mutex` | IOThread (`m_queue_bindings_mutex`), SDRThread (`setting_busy`, `gain_busy`), VisualProcessor (`busy_update`), SpectrumVisualProcessor (`busy_run`), DeviceConfig (`busy_lock`), WaterfallCanvas (`tex_update`), DigitalConsole (`stream_busy`), DemodulatorThread (`squelchLockMutex`), CubicSDR (`notify_busy`) | Protecting infrequent mutations and visualization state |
 
 ### SpinMutex
 
@@ -94,7 +116,7 @@ Non-recursive spinlock using `std::atomic_flag` with acquire/release memory orde
 
 **File:** `src/IOThread.h`
 
-`ReBuffer<BufferType>` is a buffer pool with reference-counted recycling, used to minimize allocation overhead in hot data paths (audio output, visualization). `getBuffer()` checks each pooled `shared_ptr` — if `use_count() == 1`, the buffer is available for reuse. The first available buffer is selected (age reset to 1); other available buffers have their age decremented. Buffers that go unused age and are garbage-collected when `age < -REBUFFER_GC_LIMIT` (i.e. below -100). Used by `DemodulatorThread` (audio output buffers) and `VisualDataReDistributor` (visualization buffers).
+`ReBuffer<BufferType>` is a buffer pool with reference-counted recycling, used to minimize allocation overhead in hot data paths (audio output, visualization). `getBuffer()` iterates all pooled `shared_ptr` entries — if `use_count() == 1`, the buffer is available for reuse. The first available buffer is selected (age reset to 1); other available buffers have their age decremented. GC only checks the last element in the deque: if its age drops below `-REBUFFER_GC_LIMIT` (i.e. below -100), it is popped. A `use_count() == 0` (dangling pointer) is treated as a bug and erased with a warning. Used by `DemodulatorThread` (audio output buffers) and `VisualDataReDistributor` (visualization buffers).
 
 ### VisualProcessor Pipeline
 
@@ -106,9 +128,15 @@ Non-recursive spinlock using `std::atomic_flag` with acquire/release memory orde
 
 Protected by `std::mutex busy_update` for queue list mutations.
 
+### SpectrumVisualProcessor busy_run
+
+**File:** `src/process/SpectrumVisualProcessor.h`
+
+`spectrumVisualProcessor` uses `std::mutex busy_run` to serialize the entire FFT computation pipeline against parameter changes. The mutex protects all internal state: FFT plan, buffers, averaging accumulators, resampler, frequency shifter, and configuration fields. All setter/getter methods (called from the UI thread) acquire this mutex. `process()` uses a two-phase locking pattern: a short-lived scoped lock checks and clears `fftSizeChanged` (then releases before calling `setup()` outside the lock), followed by an `input->pop()` also outside the lock, then re-acquires `busy_run` for the remainder of the FFT computation (lines 245 onward). This means UI parameter changes block until the current FFT completes, and vice versa, but input polling is not held up by the computation mutex.
+
 ### SDREnumerator One-Shot Spawning
 
-`SDREnumerator` threads are spawned as needed (device refresh, remote add, re-enumeration) without joining the previous instance. Each call to `threadMain` performs a single enumeration pass and exits. The old thread pointer is overwritten without cleanup — a deliberate fire-and-forget pattern.
+`SDREnumerator` threads are spawned as needed (device refresh, remote add, re-enumeration) without joining the previous instance. Each call to `threadMain` performs a single enumeration pass and exits. The old thread pointer is overwritten without cleanup — a deliberate fire-and-forget pattern. This leaks the `std::thread` object; if the old thread is still running when overwritten, the `std::thread` destructor calls `std::terminate()` per the C++ standard. In practice the old thread has usually completed before a new one is spawned, but the race is not guaranteed.
 
 ## Thread Lifecycle
 
@@ -127,11 +155,13 @@ In `CubicSDR::OnInit()` (`src/CubicSDR.cpp`):
 
 ### Per-Demodulator Startup
 
-When `DemodulatorInstance::run()` is called:
+When `DemodulatorInstance::run()` is called (protected by `m_thread_control_mutex`):
 
 1. `AudioThread` started
 2. `DemodulatorPreThread` started
 3. `DemodulatorThread` started
+
+An `AudioSinkFileThread` may also be started on-demand when recording is activated (`startRecording()`). It is not part of the standard startup — it is created, joined, and deleted entirely within the `startRecording()`/`stopRecording()` pair.
 
 ### Shutdown Sequence
 
@@ -144,20 +174,21 @@ In `CubicSDR::OnExit()`:
 5. Visual processor threads terminated (waited up to 1s each)
 6. All threads joined
 
-If any termination step times out, the application calls `::exit()` with a platform-specific error code rather than risk hanging indefinitely.
+If any termination step times out, the application calls `::exit()` with a step-specific error code rather than risk hanging indefinitely (11 = SDR thread, 12 = SDR post-thread, 13 = visual processor threads).
 
 ### Per-Demodulator Shutdown
 
-`DemodulatorInstance::terminate()`:
+`DemodulatorInstance::terminate()` (notably **not** protected by `m_thread_control_mutex`, unlike `run()` and `isTerminated()`):
 
 1. `AudioThread::terminate()` — stops consuming audio
 2. `DemodulatorThread::terminate()` — stops demodulating
 3. `DemodulatorPreThread::terminate()` — stops resampling (also terminates worker thread)
-4. All queues flushed to unblock pending pushes
+4. If recording is active, `stopRecording()` — detaches the `AudioSinkFileThread` output queue, joins and deletes the sink thread
+5. All queues flushed to unblock pending pushes
 
 ### Known Issues
 
-In `DemodulatorInstance::isTerminated()`, the macOS cleanup path for the audio thread calls `pthread_join(t_PreDemod, NULL)` instead of `pthread_join(t_Audio, NULL)`. At that point `t_PreDemod` has already been joined and set to `nullptr`, so this is a call to `pthread_join(NULL, ...)` which is undefined behavior per POSIX. The non-macOS path (`t_Audio->join()`) is correct. This is a copy-paste bug in `src/demod/DemodulatorInstance.cpp`.
+In `DemodulatorInstance::isTerminated()`, the macOS cleanup path for the audio thread (`DemodulatorInstance.cpp` line 246) calls `pthread_join(t_PreDemod, NULL)` — a copy-paste error where `t_PreDemod` was pasted instead of `t_Audio`. At that point `t_PreDemod` has already been joined and set to `nullptr`, so this is a call to `pthread_join(NULL, ...)` which is undefined behavior per POSIX. Furthermore, `t_Audio` is a `std::thread*` on all platforms (not `pthread_t`), so even with the correct variable name, `pthread_join` would be the wrong API. The result is that the audio thread is never joined and its `std::thread` object is leaked when set to `nullptr`. The non-macOS path (`t_Audio->join()` / `delete t_Audio`) is correct.
 
 ## Thread Priorities (macOS)
 
@@ -177,10 +208,11 @@ Windows and Linux use default thread priorities.
 
 ## wxWidgets Integration
 
-The UI thread is **entirely pull-based**:
+The UI thread is **primarily pull-based**:
 
 1. `AppFrame::OnIdle()` is called continuously by the wx event loop and handles device params, modem properties, and UI state
-2. Each canvas registers its own `EVT_IDLE` handler independently (e.g., `WaterfallCanvas::OnIdle`, `SpectrumCanvas::OnIdle`, `ScopeCanvas::OnIdle`) — these call `processInputQueue()` or `try_pop()` directly (non-blocking)
-3. Worker threads never push data to the UI
+2. Each canvas registers its own `EVT_IDLE` handler independently (`AppFrame::OnIdle`, `WaterfallCanvas::OnIdle`, `SpectrumCanvas::OnIdle`, `ScopeCanvas::OnIdle`, `TuningCanvas::OnIdle`, `ModeSelectorCanvas::OnIdle`, `MeterCanvas::OnIdle`, `GainCanvas::OnIdle`, `UITestCanvas::OnIdle`) — `WaterfallCanvas::OnIdle` calls `processInputQueue()` (which internally `try_pop()`s); other canvases typically just call `Refresh()` and defer queue pops to `OnPaint()`
+3. Visual data flows are pull-based: worker threads push to queues, UI canvases pull via `try_pop()` in `OnIdle()` (WaterfallCanvas) or `OnPaint()` (SpectrumCanvas, ScopeCanvas)
 4. Shared state uses `std::atomic` variables (frequency, signal levels, mute state)
 5. UI-initiated changes go through atomic variables and flags, not wx events
+6. **Exception:** `SDRThread` triggers `refreshGainUI()` from the worker thread via `notifyMainUIOfDeviceChange()`, which rebuilds `GainCanvas` panels and triggers `Refresh()` — a cross-thread UI mutation outside the pull-based pattern
