@@ -243,3 +243,279 @@ Extensive iterative review and fixes to `docs/design/threading.md`:
 - Compacted AGENT-LOG.md from 1267 lines to ~234 lines by grouping 44 sessions into 8 task-based entries
 - Added standard logging format note at the top
 - Verified compacted content against original; corrected issue count estimates for Sessions 8-18 (~50+ → ~70+), Sessions 23-29 (~25 → ~26), and Sessions 32-43 (~50+ → ~60+)
+
+---
+
+## Session 45: Threading Documentation Final Review
+
+**Date:** 2026-08-02
+**Model:** opencode/mimo-v2.5-free
+
+- Full verification of threading.md against source code using 7 parallel agent tasks
+- Verified all claims: IOThread, SDRThread, demodulator threads, audio threads, CubicSDR startup/shutdown, visual processors, wxWidgets integration
+- Found 2 discrepancies: UITestCanvas (class doesn't exist) and SCHED_FIFO wording (block is fully commented out, not just on macOS)
+- Applied 2 fixes
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/threading.md` | Removed non-existent UITestCanvas from canvas list; clarified SCHED_FIFO is commented out on all platforms |
+
+---
+
+## Session 46: Threading Documentation Completeness Review
+
+**Date:** 2026-08-02
+**Model:** opencode/mimo-v2.5-free
+
+- Full verification of threading.md against source code (re-verified all claims from Session 45)
+- Confirmed document is accurate — no factual errors found
+- Added 4 minor omissions for completeness:
+  1. Pattern 7: UI-Thread Processing — documented ScopeVisualProcessor runs on wxWidgets main thread (no dedicated thread), with non-blocking try_pop data path
+  2. Heartbeat Period subsection — documented the consistent 50ms HEARTBEAT_CHECK_PERIOD_MICROS used across all IOThread subclasses (~20Hz shutdown check)
+  3. AudioSinkThread description — clarified as abstract base with its own IOThread run loop (not just "base audio sink")
+  4. VisualProcessor Pipeline threading models — distinguished dedicated-thread (SpectrumVisualProcessor, FFTVisualDataThread) from UI-thread (ScopeVisualProcessor) usage
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/threading.md` | Added Pattern 7, Heartbeat Period section, AudioSinkThread description, VisualProcessor threading models |
+
+---
+
+## Session 47: Threading Documentation Final Accuracy Review
+
+**Date:** 2026-08-02
+**Model:** opencode/mimo-v2.5-free
+
+- Full verification of threading.md against source code using 9 parallel agent tasks covering IOThread, SDRThread, demodulator threads, audio threads, visual processors, SpinMutex/ReBuffer, CubicSDR notifications, ThreadBlockingQueue, SDREnumerator/shutdown, and wxWidgets integration
+- All claims verified accurate — document is in excellent shape
+- Found 1 genuine error: AppFrame entry in thread inventory table had wrong class name (`wxApp/wxFrame` → `AppFrame`) and wrong file path (`AppFrame.cpp` → `src/AppFrame.h`)
+- Two other items investigated (shutdown sequence wording, pthread_create attribution) were confirmed accurate on closer inspection — no changes needed
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/threading.md` | Fixed AppFrame class name and file path in thread inventory table |
+
+---
+
+## Session 48: Threading Documentation Accuracy and Completeness Review
+
+**Date:** 2026-08-02
+**Model:** opencode/mimo-v2.5-free
+
+- Full verification of threading.md against source code using 18 parallel agent tasks (IOThread, SpinMutex, SDRThread, SDRPostThread, SDREnumerator, DemodulatorThread, DemodulatorPreThread, DemodulatorWorkerThread, DemodulatorInstance, AudioThread, AudioSinkThread, VisualProcessor, SpectrumVisualProcessor, SpectrumVisualDataThread, FFTVisualDataThread, CubicSDR/AppFrame, RigThread)
+- Found 1 inaccuracy: SDREnumerator `std::terminate()` claim — the overwrite of `t_SDREnum` pointer does not invoke the destructor (no `delete` is called), so `std::terminate()` is never triggered; actual consequences are a memory leak and orphaned thread
+- Found 15 omissions of additional atomics, mutexes, and behavioral details
+- Applied 1 fix and 7 additions:
+  1. Fixed SDREnumerator `std::terminate()` inaccuracy
+  2. Added ~20 missing atomic flags to Pattern 2 (SDRThread state atomics, DemodulatorInstance numeric/pointer atomics, DemodulatorThread signal atomics, SDRPostThread chanMode, CubicSDR additional flags, AudioThread active/outputDevice, FFTVisualDataThread linesPerSecond, RigThread control flags, AppFrame deviceChanged/modemPropertiesUpdated)
+  3. Added DemodulatorThread SpinMutex, RigThread atomics, named mutexes, and static AudioThread m_device_mutex to synchronization table
+  4. Added SpectrumVisualProcessor back-pressure detail (isOutputEmpty frame drop)
+  5. Added DemodulatorPreThread worker thread termination timeout (5000ms)
+  6. Added AudioThread static m_device_mutex and sample rate change reconfiguration to Pattern 3
+  7. Added AudioSinkThread inputChanged() virtual, input queue max, m_mutex; IOThread destructor behavior, isTerminated edge cases, gTimer
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/threading.md` | Fixed 1 inaccuracy, added 7 completeness improvements across Pattern 2, sync table, Pattern 3, SpectrumVisualProcessor, Per-Demodulator Shutdown, AudioSinkThread, IOThread |
+
+---
+
+## Session 49: SDR Device Layer Documentation Review
+
+**Date:** 2026-08-02
+**Model:** opencode/mimo-v2.5-free
+
+- Reviewed `docs/design/sdr-device-layer.md` against source code (SDRDeviceInfo.h/cpp, SDREnumerator.h/cpp, SoapySDRThread.h/cpp)
+- Found 3 inaccuracies, 4 omissions, 1 minor issue
+- Applied 9 fixes:
+  1. Fixed `getDeviceId()` description (returns `getName()`, not driver+serial/remote/factory)
+  2. Fixed `getSoapyDevice()` description (lazily creates device on demand, not set via `setSoapyDevice()`)
+  3. Corrected module loading order (`BUNDLED_MODS_ONLY` vs `getUseLocalMod()` distinction)
+  4. Noted `SDR_ENUM_TERMINATED` as defined but unused
+  5. Added `getIndex()` to Hardware Queries table
+  6. Added Device and Stream Arguments section (`get/setDeviceArgs`, `get/setStreamArgs`)
+  7. Marked `hasCORR()` as deprecated
+  8. Added `soapy_initialized` and `has_remote` to Static State table
+  9. Clarified `SDR_ENUM_FAILED` condition (only `null` factory found)
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/sdr-device-layer.md` | Fixed 3 inaccuracies, added 6 completeness improvements |
+
+## Session 50: SDR Device Layer Documentation Verification
+
+**Date:** 2026-08-02
+**Model:** opencode/mimo-v2.5-free
+
+- Re-reviewed `docs/design/sdr-device-layer.md` against SDREnumerator.cpp, SDRDeviceInfo.h/cpp, SoapySDRThread.h, SDRDevices.h
+- Found 3 issues in enumeration flow description and notification table
+- Applied 2 edits:
+  1. Rewrote Enumeration Flow to reflect that manual devices are enumerated within `enumerate_devices()` (not as a separate step), and stored in both `devs[""]` and `devs[remoteAddr]`
+  2. Corrected `SDR_ENUM_FAILED` condition: factory list must have exactly one entry AND it must be `null`
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/sdr-device-layer.md` | Fixed enumeration flow accuracy, corrected SDR_ENUM_FAILED description |
+
+---
+
+## Session 51: SDR Device Layer Documentation Accuracy and Completeness Review
+
+**Date:** 2026-08-03
+**Model:** opencode/mimo-v2.5-free
+
+- Full verification of `docs/design/sdr-device-layer.md` against source code (SDRDeviceInfo.h/cpp, SDREnumerator.h/cpp, SoapySDRThread.h, SDRDevices.h, threading.md, signal-flow.md)
+- Cross-referenced all claims in enumeration flow, static state, notifications, identity/state tables, device arguments, and module loading
+- Found 6 issues: 2 completeness gaps, 3 inaccuracies, 1 omission
+- Applied 6 fixes:
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/sdr-device-layer.md` | Added 6 fixes for accuracy and completeness |
+
+| Fix | Section | Description |
+|-----|---------|-------------|
+| 1 | Enumeration Flow | Documented `noInit` parameter — returns cached results without re-initializing SoapySDR |
+| 2 | Notification table | Clarified `SDR_ENUM_FAILED` fires during `enumerate_devices()` initialization, not after; `SDR_ENUM_DEVICES_READY` is still sent |
+| 3 | Static State | Noted `reset()` clears `devs`/`factories`/`modules` but not `remotes` or `manuals` |
+| 4 | Identity/State tables | Annotated `serial`, `tuner`, `manufacturer`, `product`, `timestamps` as never populated (setters exist but are never called) |
+| 5 | Stream arguments | Replaced incorrect `buflen`/`bufflen`/`remote` table with note that CubicSDR does not populate specific stream arg keys |
+| 6 | State table | Added `manual_params` property used during manual device removal |
+
+---
+
+## Session 52: SDR Device Layer Documentation Re-verification
+
+**Date:** 2026-08-03
+**Model:** opencode/mimo-v2.5-free
+
+- Full re-verification of `docs/design/sdr-device-layer.md` against source code (SDRDeviceInfo.h/cpp, SDREnumerator.h/cpp, SoapySDRThread.h, SDRDevices.h)
+- Cross-referenced all claims in enumeration flow, static state, notifications, identity/state tables, device arguments, and module loading
+- Evaluated 4 potential corrections (noInit description, manual device location, sample rate decimation, stream args)
+- After careful review, determined all 4 items are accurate as written — no changes needed
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| (none) | No changes required |
+
+---
+
+## Session 53: Bookmark System Documentation Review
+
+**Date:** 2026-08-03
+**Model:** opencode/mimo-v2.5-free
+
+- Reviewed `docs/design/bookmark-system.md` against source code (BookmarkMgr.h/cpp, BookmarkView.h/cpp, DemodulatorMgr.cpp)
+- Found 12 issues: 4 high, 5 medium, 3 low priority
+- Applied 13 fixes:
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/bookmark-system.md` | Fixed XML field name, expand state architecture, added missing type aliases/API methods, clarified sorting/trim/backup behavior, documented UI features and thread safety |
+
+| # | Priority | Fix | Section |
+|---|----------|-----|---------|
+| 1 | High | XML field name `<label>` → `<user_label>` | Bookmark File Format |
+| 2 | High | Rewrote expand state to document two-system architecture (BookmarkView for branches, BookmarkMgr for groups) | Expand State |
+| 3 | High | Added `BookmarkMapSorted`, `BookmarkNames`, `BookmarkExpandState` type aliases | Type Aliases |
+| 4 | High | Added 9 missing API methods (`resetBookmarks`, `hasLastLoad`, `hasBackup`, `saveToFile`, `loadFromFile`, `removeActive`, `updateActiveList`, `updateBookmarks` ×2) | Bookmark Operations |
+| 5 | Medium | `getGroups()` shows both `BookmarkNames&` and `wxArrayString&` overloads | Group Operations |
+| 6 | Medium | Load flow clarifies `backup` flag + `.lastloaded`/`.backup` conditions | Load Flow |
+| 7 | Medium | `getBookmarks()`/`getRanges()` note frequency sorting | Bookmark/Range Operations |
+| 8 | Medium | `trimRecents` soft limit clarified (one entry removed per call) | Recent Entries |
+| 9 | Medium | Added `bmDataSorted` and `rangesSorted` to architecture diagram | Overview |
+| 10 | Low | Thread safety notes exceptions where lock is not held | BookmarkMgr |
+| 11 | Low | Added search, range mgmt, recording, tooltips, inline editing | Additional UI Features |
+| 12 | Low | Default expand states documented (active/bookmark/recent=true, range=false) | Expand State |
+| 13 | High | Fixed DataTree `@` notation: `<group><@name>..</@name>` → `<group name=".." expanded="true">` (Badgerfish attribute convention) | Bookmark File Format |
+
+---
+
+## Session 54: Bookmark System Documentation Review
+
+**Date:** 2026-08-03
+**Model:** opencode/mimo-v2.5-free
+
+- Reviewed `docs/design/bookmark-system.md` against source code (BookmarkMgr.h/cpp, BookmarkView.h/cpp, CubicSDR.cpp)
+- Verified data model, API tables, persistence flows, expand state, default ranges, UI integration
+- Found 1 inaccuracy (`removeActive()` listed as missing but was already in table), 4 omissions, 1 minor issue
+- Applied 5 fixes:
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/bookmark-system.md` | Fixed 2 method descriptions, improved save flow accuracy, added error recovery section, noted layering concern |
+
+| # | Fix | Section |
+|---|-----|---------|
+| 1 | `addGroup()` — added "(no-op if group already exists)" | Group Operations |
+| 2 | `renameGroup()` — added merge behavior note (appends entries when target exists) | Group Operations |
+| 3 | Save flow step 3 — noted model-to-view dependency (`BookmarkView::getExpandState()` called from `saveToFile()`) | Save Flow |
+| 4 | Save flow step 5 — replaced "stale bookmark data" with neutral "bookmark's stored state"; added match criteria (type, label, frequency, bandwidth) | Save Flow |
+| 5 | Added Error Recovery subsection documenting cascading recovery dialog chain (`ActionDialogBookmarkLoadFailed` → `ActionDialogBookmarkBackupLoadFailed` → `ActionDialogBookmarkCatastophe`) | Backup Strategy |
+
+## Session 55: Bookmark System Documentation Review
+
+**Date:** 2026-08-03
+**Model:** opencode/mimo-v2.5-free
+
+- Reviewed `docs/design/bookmark-system.md` against source code (BookmarkMgr.h/cpp, BookmarkView.h/cpp)
+- Cross-referenced all data model fields, method signatures, persistence flows, expand state, default ranges, and UI interactions
+- Found 6 issues: 2 misleading descriptions, 3 missing details, 1 inaccurate description
+- Applied 6 fixes:
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/bookmark-system.md` | Fixed addRecent descriptions, added trimRecents locking note, corrected Demodulator Interaction section, added getExpandState/setExpandState API docs, clarified save flow matching behavior |
+
+| # | Fix | Section |
+|---|-----|---------|
+| 1 | `addRecent(demod)` — clarified it serializes demod state; `addRecent(entry)` — clarified it takes a `BookmarkEntryPtr` | Recent Entries |
+| 2 | Added note that `trimRecents()` is lock-free and always called from locked context (`addRecent`) | Recent Entries |
+| 3 | Rewrote "Add bookmark" to describe properties panel dropdown (not right-click); rewrote "Delete" to cover DELETE key + Remove button for all item types | Demodulator Interaction |
+| 4 | Added paragraph documenting `getExpandState()`/`setExpandState()` public accessors on both BookmarkView and BookmarkMgr | Expand State |
+| 5 | Save flow step 5 now names `getLastDemodulatorWith()` and notes last-match behavior for duplicate demodulators | Save Flow |
+
+---
+
+## Session 56: Bookmark System Design Doc Review
+
+**Date:** 2026-08-03
+**Model:** opencode/mimo-v2.5-free
+
+- Reviewed `docs/design/bookmark-system.md` against all source files (`BookmarkMgr.h`, `BookmarkMgr.cpp`, `BookmarkView.h`, `BookmarkView.cpp`, `CubicSDR.cpp`)
+- Verified data model, type aliases, method signatures, persistence format, save/load flows, backup strategy, UI integration, expand state, and default ranges
+- Found 3 accuracy/completeness issues; applied fixes
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/bookmark-system.md` | Fixed thread-safety list, getBookmarks side effect note, error recovery branching |
+
+| # | Fix | Section |
+|---|-----|---------|
+| 1 | Added `getBookmarkEntryDisplayName()` and `getActiveDisplayName()` to non-locked methods list | BookmarkMgr overview |
+| 2 | Added "(sorts internal list as a side effect)" to `getBookmarks()` description | Bookmark Operations |
+| 3 | Rewrote Error Recovery to reflect actual branching logic (initial check selects dialog by file existence; backup failure triggers secondary chain) | Error Recovery |

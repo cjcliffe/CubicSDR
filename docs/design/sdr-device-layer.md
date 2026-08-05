@@ -32,29 +32,34 @@ Background `IOThread` that discovers available SDR devices. Results are cached i
 
 ### Enumeration Flow
 
-1. **SoapySDR initialization** (once):
+The static `enumerate_devices(remoteAddr, noInit)` method performs the actual work. When `noInit` is `true`, it returns cached results from `devs[remoteAddr]` (or `nullptr` if empty) without re-initializing SoapySDR — used by the UI to retrieve already-enumerated devices. When `noInit` is `false` (default), it performs full initialization and enumeration if the cache is empty.
+
+The `run()` method drives enumeration in two phases: local then remote. Manual devices are enumerated within each phase, not separately.
+
+1. **SoapySDR initialization** (once, in `enumerate_devices()`):
    - Load SoapySDR modules (system, bundled, or user-specified path)
    - Discover available factory functions (driver names)
    - Detect if `remote` factory is available
 
-2. **Local enumeration:**
+2. **Local enumeration** (`enumerate_devices("")`):
    - Call `SoapySDR::Device::enumerate()` with no arguments
+   - Append manual device results to the same results vector (see step 4)
    - For each result, create `SDRDeviceInfo` and populate driver/name
    - Attempt `SoapySDR::Device::make()` to query hardware info
    - Apply saved device settings from `DeviceConfig`
-   - Store in `devs[""]` (empty string = local)
+   - Store all devices (local + manual) in `devs[""]` (empty string = local)
 
-3. **Remote enumeration:**
-   - For each address in `remotes` list
+3. **Remote enumeration** (`enumerate_devices(remoteAddr)` for each remote):
    - Call `SoapySDR::Device::enumerate()` with `driver=remote,remote={addr}`
+   - Append manual device results to the same results vector (see step 4)
    - Same device creation and info querying as local
-   - Store in `devs[remoteAddr]`
+   - Store all devices (remote + manual) in `devs[remoteAddr]`
 
-4. **Manual device enumeration:**
+4. **Manual device enumeration** (inside each `enumerate_devices()` call):
    - For each entry in `manuals` list
    - Call `SoapySDR::Device::enumerate()` with `driver={factory},{params}`
    - If enumeration fails, create device entry marked as unavailable with label "Not Found ({factory})"
-   - Store in `devs[""]` (same as local)
+   - Results are appended to the current enumeration's results vector, so manual devices appear in both `devs[""]` and `devs[remoteAddr]`
 
 ### Static State
 
@@ -65,6 +70,10 @@ Background `IOThread` that discovers available SDR devices. Results are cached i
 | `modules` | `vector<string>` | Loaded SoapySDR module paths |
 | `remotes` | `vector<string>` | Configured remote server addresses |
 | `manuals` | `vector<SDRManualDef>` | Manual device definitions |
+| `soapy_initialized` | `bool` | Whether SoapySDR modules have been loaded |
+| `has_remote` | `bool` | Whether the `remote` driver factory is available |
+
+The `reset()` method clears `soapy_initialized`, `factories`, `modules`, and `devs` (unmaking each device's SoapySDR pointer first), but does **not** clear `remotes` or `manuals` — these persist across re-enumerations.
 
 ### Notification
 
@@ -74,8 +83,8 @@ Background `IOThread` that discovers available SDR devices. Results are cached i
 |-------|---------|
 | `SDR_ENUM_MESSAGE` | Status message (displayed in UI) |
 | `SDR_ENUM_DEVICES_READY` | Enumeration complete, devices available |
-| `SDR_ENUM_FAILED` | No modules available |
-| `SDR_ENUM_TERMINATED` | Thread terminated |
+| `SDR_ENUM_FAILED` | No modules available (factory list contains exactly one entry and it is `null`). Sent during `enumerate_devices()` initialization, not after — enumeration continues and `SDR_ENUM_DEVICES_READY` is still sent at the end of `run()` |
+| `SDR_ENUM_TERMINATED` | Thread terminated (defined but not currently sent) |
 
 ## SDRDeviceInfo (`src/sdr/SDRDeviceInfo.h`)
 
@@ -86,16 +95,16 @@ Represents a discovered or manually defined SDR device.
 | Property | Type | Description |
 |----------|------|-------------|
 | `name` | `string` | Display name (from SoapySDR `label` or `device` field) |
-| `serial` | `string` | Device serial number |
+| `serial` | `string` | Device serial number (setter exists but is never called) |
 | `driver` | `string` | SoapySDR driver name |
-| `hardware` | `string` | Hardware revision |
-| `tuner` | `string` | Tuner chip type |
-| `manufacturer` | `string` | Device manufacturer |
-| `product` | `string` | Product name |
+| `hardware` | `string` | Hardware revision (populated from `getHardwareInfo()`) |
+| `tuner` | `string` | Tuner chip type (setter exists but is never called) |
+| `manufacturer` | `string` | Device manufacturer (setter exists but is never called) |
+| `product` | `string` | Product name (setter exists but is never called) |
 
 ### Device ID
 
-`getDeviceId()` returns a unique identifier string. For local devices, this is typically the driver name and serial number. For remote devices, it includes the remote address. For manual devices, it includes the factory and parameters.
+`getDeviceId()` returns the device's display name (`getName()`). Note: earlier designs intended to include serial, remote address, or factory/params in the ID, but the current implementation simply returns the name field.
 
 ### State
 
@@ -105,26 +114,38 @@ Represents a discovered or manually defined SDR device.
 | `active` | `atomic_bool` | Device is currently in use |
 | `remote` | `bool` | Device is on a remote server |
 | `manual` | `bool` | Device was manually defined |
-| `timestamps` | `bool` | Device supports timestamped streaming |
+| `manual_params` | `string` | Raw parameter string from `SDRManualDef` (used to match devices during manual removal) |
+| `timestamps` | `bool` | Device supports timestamped streaming (setter exists but is never called) |
 
 ### Hardware Queries
 
 | Method | Returns | Description |
 |--------|---------|-------------|
+| `getIndex()` | `int` | Device enumeration index |
 | `getSampleRates(direction, channel)` | `vector<long>` | Available sample rates |
 | `getSampleRateNear(direction, channel, rate)` | `long` | Nearest supported sample rate |
 | `getAntennaNames(direction, channel)` | `vector<string>` | Available antenna ports |
 | `getAntennaName(direction, channel)` | `string` | Currently selected antenna |
 | `getGains(direction, channel)` | `SDRRangeMap` | Per-stage gain ranges |
 | `getCurrentGain(direction, channel, name)` | `double` | Current gain value |
-| `hasCORR(direction, channel)` | `bool` | Supports DC offset correction |
+| `hasCORR(direction, channel)` | `bool` | Supports DC offset correction (deprecated) |
+
+### Device and Stream Arguments
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getDeviceArgs()` | `SoapySDR::Kwargs` | Device identification arguments |
+| `setDeviceArgs(kwargs)` | `void` | Set device identification arguments |
+| `getStreamArgs()` | `SoapySDR::Kwargs` | Stream configuration arguments |
+| `setStreamArgs(kwargs)` | `void` | Set stream configuration arguments |
 
 ### SoapySDR Integration
 
 `SDRDeviceInfo` holds a `SoapySDR::Device*` pointer for direct hardware access:
-- Set via `setSoapyDevice()` after `SoapySDR::Device::make()`
+- `getSoapyDevice()` lazily creates the device via `SoapySDR::Device::make()` on first call, caching the pointer
+- `setSoapyDevice()` replaces or clears the pointer (unmaking any existing device first)
 - Used to query capabilities (sample rates, gains, antennas)
-- Released via `SoapySDR::Device::unmake()` after enumeration
+- Released via `SoapySDR::Device::unmake()` in the destructor
 
 ## Device Arguments
 
@@ -139,11 +160,7 @@ SoapySDR devices are configured via key-value argument strings:
 | `label` | Human-readable device label |
 
 **Stream arguments** (stored in `streamArgs`):
-| Argument | Purpose |
-|----------|---------|
-| `buflen` | Buffer length |
-| `bufflen` | Alternative buffer length |
-| `remote` | Remote streaming address |
+`SDRThread` carries a `SoapySDR::Kwargs streamArgs` member, but CubicSDR does not populate specific stream argument keys — the map is available for driver-specific stream configuration.
 
 **Device settings** (stored in `DeviceConfig::settings`):
 - Driver-specific settings (e.g., `bias_tee` for RTL-SDR)
@@ -197,8 +214,8 @@ SoapySDR modules are loaded in this order:
 
 1. **User-specified path** (`-m` command line option)
 2. **Bundled modules** (if `BUNDLE_SOAPY_MODS` is defined):
-   - Check `modules/` subdirectory next to the executable
-   - Optionally load system modules first (if `BUNDLED_MODS_ONLY` is not defined)
+   - If `BUNDLED_MODS_ONLY` is defined, load only bundled modules from `modules/` subdirectory next to the executable
+   - Otherwise, load bundled modules and optionally system modules based on the `getUseLocalMod()` runtime preference
 3. **System modules** (default `SoapySDR::loadModules()`)
 
 Module discovery is controlled by `SoapySDR::listModules()` and `SoapySDR::loadModule()`.

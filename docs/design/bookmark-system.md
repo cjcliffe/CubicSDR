@@ -10,9 +10,11 @@ The bookmark system provides persistent storage for frequently visited frequenci
 BookmarkMgr
     |
     +-- bmData (map<group_name, BookmarkList>)  -- user-defined bookmark groups
+    +-- bmDataSorted (map<group_name, bool>)    -- per-group sort cache
     +-- recents (BookmarkList)                   -- recently used demodulators
     +-- ranges (BookmarkRangeList)               -- frequency band ranges
-    +-- expandState (map<name, bool>)            -- UI tree expand/collapse state
+    +-- rangesSorted (bool)                     -- ranges sort cache
+    +-- expandState (map<name, bool>)            -- bookmark group expand/collapse state
 ```
 
 ## Data Model
@@ -29,7 +31,7 @@ Represents a saved demodulator configuration:
 | `bandwidth` | `int` | Demodulator bandwidth in Hz |
 | `node` | `DataNode*` | Full demodulator state (serialized via `DemodulatorMgr::saveInstance()`) |
 
-The `node` field stores the complete demodulator configuration including modem settings, gain, squelch, output device, and other parameters. This allows exact restoration when a bookmark is loaded.
+The `node` field stores the complete demodulator configuration including modem settings, gain, squelch, output device, and other parameters. This allows exact restoration when a bookmark is loaded. The class has no constructor, so `node` is uninitialized when a `BookmarkEntry` is default-constructed. The destructor calls `delete node` on this raw pointer, which is undefined behavior if `node` was never assigned.
 
 ### BookmarkRangeEntry (`src/BookmarkMgr.h`)
 
@@ -51,10 +53,13 @@ Represents a named frequency band:
 | `BookmarkList` | `vector<BookmarkEntryPtr>` |
 | `BookmarkRangeList` | `vector<BookmarkRangeEntryPtr>` |
 | `BookmarkMap` | `map<string, BookmarkList>` |
+| `BookmarkMapSorted` | `map<string, bool>` — per-group sort cache |
+| `BookmarkNames` | `vector<string>` — used by `getGroups()` |
+| `BookmarkExpandState` | `map<string, bool>` — bookmark group expand states |
 
 ## BookmarkMgr (`src/BookmarkMgr.h`)
 
-Singleton managed by `CubicSDR`. Thread-safe via `recursive_mutex`.
+Singleton managed by `CubicSDR`. Most public methods are thread-safe via `recursive_mutex` (`busy_lock`). Exceptions include `updateActiveList()`, `updateBookmarks()`, `hasLastLoad()`, `hasBackup()`, `removeActive()`, and the static methods `getBookmarkEntryDisplayName()` and `getActiveDisplayName()` which do not acquire the lock.
 
 ### Bookmark Operations
 
@@ -65,28 +70,39 @@ Singleton managed by `CubicSDR`. Thread-safe via `recursive_mutex`.
 | `removeBookmark(group, entry)` | Remove from specific group |
 | `removeBookmark(entry)` | Remove from all groups |
 | `moveBookmark(entry, group)` | Move entry between groups |
-| `getBookmarks(group)` | Get independent copy of group's bookmarks |
+| `getBookmarks(group)` | Get independent copy of group's bookmarks (sorted by frequency; sorts internal list as a side effect) |
+| `removeActive(demod)` | Remove and destroy a live demodulator instance |
+| `resetBookmarks()` | Clear all data and reload default ranges |
+| `hasLastLoad(bookmarkFn)` | Check if `.lastloaded` backup exists (always checks in config dir) |
+| `hasBackup(bookmarkFn)` | Check if `.backup` file exists (always checks in config dir) |
+| `saveToFile(bookmarkFn, backup, useFullpath)` | Save bookmarks to XML file |
+| `loadFromFile(bookmarkFn, backup, useFullpath)` | Load bookmarks from XML file |
+| `updateActiveList()` | Trigger async UI refresh of active demodulators |
+| `updateBookmarks()` | Trigger async UI refresh of all bookmark groups |
+| `updateBookmarks(group)` | Trigger async UI refresh of a specific bookmark group |
 
 ### Group Operations
 
 | Method | Description |
 |--------|-------------|
-| `addGroup(name)` | Create empty group |
+| `addGroup(name)` | Create empty group (no-op if group already exists) |
 | `removeGroup(name)` | Delete group and all its bookmarks |
-| `renameGroup(old, new)` | Rename group |
-| `getGroups(arr)` | Get list of group names |
+| `renameGroup(old, new)` | Rename group (if target already exists, merges entries from old group into target) |
+| `getGroups(arr)` | Append group names to array (accepts `BookmarkNames&` or `wxArrayString&`; does not clear the array first). Names are returned in map-sorted (alphabetical) order, which determines the display order in the tree |
+
+> **Note:** `removeGroup()` does not clean up the corresponding entry in `expandState`, and `renameGroup()` does not migrate the old group's expand state to the new name. Both leave stale entries in `BookmarkMgr::expandState`. This has no visible effect because `getExpandState()` returns `true` for unknown keys, but the stale entries accumulate over time.
 
 ### Recent Entries
 
 | Method | Description |
 |--------|-------------|
-| `addRecent(demod)` | Add demodulator to recents |
-| `addRecent(entry)` | Add bookmark to recents |
+| `addRecent(demod)` | Create recent entry from live demodulator (serializes state) |
+| `addRecent(entry)` | Add pre-built bookmark entry to recents |
 | `removeRecent(entry)` | Remove from recents |
 | `getRecents()` | Get independent copy of recents list |
 | `clearRecents()` | Empty recents list |
 
-Recents are capped at `BOOKMARK_RECENTS_MAX` (25 entries). Older entries are trimmed automatically.
+Recents are capped at `BOOKMARK_RECENTS_MAX` (25 entries). The oldest entry is removed each time a new entry is added when at capacity (soft limit enforced one-at-a-time). The internal `trimRecents()` method does not acquire the lock; it is always called from within a locked context (`addRecent`).
 
 ### Range Operations
 
@@ -94,7 +110,7 @@ Recents are capped at `BOOKMARK_RECENTS_MAX` (25 entries). Older entries are tri
 |--------|-------------|
 | `addRange(entry)` | Add frequency band range |
 | `removeRange(entry)` | Remove range |
-| `getRanges()` | Get independent copy of ranges list |
+| `getRanges()` | Get independent copy of ranges list (sorted by center frequency) |
 | `clearRanges()` | Empty ranges list |
 
 ### Default Ranges
@@ -107,7 +123,7 @@ On first run (no bookmark file exists), `loadDefaultRanges()` populates standard
 | 630 Meters | 472–479 kHz |
 | 160 Meters | 1.8–2 MHz |
 | 80 Meters | 3.5–4.0 MHz |
-| 60 Meters | 5.332–5.405 MHz |
+| 60 Meters | 5.332–5.405 MHz (source label: "5.332-5.405Mhz") |
 | 40 Meters | 7.0–7.3 MHz |
 | 30 Meters | 10.1–10.15 MHz |
 | 20 Meters | 14.0–14.35 MHz |
@@ -154,12 +170,10 @@ File: `bookmarks.xml` in the config directory.
     <!-- more ranges -->
   </ranges>
   <modems>
-    <group>
-      <@name>My Bookmarks</@name>
-      <@expanded>true</@expanded>
+    <group name="My Bookmarks" expanded="true">
       <modem>
         <type>NBFM</type>
-        <label>Local Repeater</label>
+        <user_label>Local Repeater</user_label>
         <frequency>146940000</frequency>
         <bandwidth>12500</bandwidth>
         <!-- full demodulator state -->
@@ -178,22 +192,22 @@ File: `bookmarks.xml` in the config directory.
 
 1. Create `DataTree` with root `cubicsdr_bookmarks`
 2. Write header with version
-3. Write branch expand states (active, range, bookmark, recent)
+3. Write branch expand states (active, range, bookmark, recent) — read from `BookmarkView::getExpandState()`, creating a model-to-view dependency in `saveToFile()`
 4. Write ranges
-5. Write bookmark groups: for each entry, check if a matching live demodulator exists and save its current state instead of the stale bookmark data
+5. Write bookmark groups: for each entry, check if a matching live demodulator exists (same type, label, frequency, and bandwidth) via `getLastDemodulatorWith()` and save its current state instead of the bookmark's stored state. If multiple live demodulators share the same parameters, the last match is used.
 6. Write current demodulators + recent entries to `recent_modems`
-7. Create backup of existing file before overwriting
+7. Create backup of existing file before overwriting (only if `backup` is true, the save file exists, and the backup file does not exist or is writable)
 
 ### Load Flow (`BookmarkMgr::loadFromFile()`)
 
-1. If no bookmark file exists, load default ranges and return
+1. If `backup` is true and no bookmark file, `.lastloaded`, or `.backup` files exist, load default ranges and return
 2. Load `DataTree` from file, validate root node name
 3. Parse branch expand states
 4. Parse ranges into `ranges` list
 5. Parse modem groups into `bmData` map
 6. Parse recent modems into `recents` list
-7. On success: copy file to `.lastloaded`
-8. On failure: copy file to `.failedload`
+7. On success: copy file to `.lastloaded` (if `backup` is true)
+8. On failure: copy file to `.failedload` (if `backup` is true)
 
 ### Backup Strategy
 
@@ -204,6 +218,23 @@ File: `bookmarks.xml` in the config directory.
 | `bookmarks.xml.lastloaded` | Last successfully loaded version |
 | `bookmarks.xml.failedload` | Last failed load attempt (for debugging) |
 
+### Error Recovery
+
+On startup, `CubicSDR.cpp` implements a cascading recovery chain when bookmark loading fails. The initial check selects which dialog to show based on which backup files exist:
+
+1. **Initial load fails, backup exists** → `ActionDialogBookmarkLoadFailed` offers to load the `.backup` file
+2. **Initial load fails, no backup** → checks for last-loaded file: `ActionDialogBookmarkBackupLoadFailed` offers to load the `.lastloaded` file, or `ActionDialogBookmarkCatastophe` if neither exists
+3. **`ActionDialogBookmarkLoadFailed` OK click, backup load succeeds** → recovery complete
+4. **`ActionDialogBookmarkLoadFailed` OK click, backup load fails** → cascades to `ActionDialogBookmarkBackupLoadFailed` (if `.lastloaded` exists) or `ActionDialogBookmarkCatastophe`
+5. **`ActionDialogBookmarkBackupLoadFailed` OK click, last-loaded load succeeds** → recovery complete
+6. **`ActionDialogBookmarkBackupLoadFailed` OK click, last-loaded load fails** → `ActionDialogBookmarkCatastophe`
+
+Recovery dialogs call `loadFromFile` with `backup=false`, so no `.lastloaded` or `.failedload` files are created during recovery attempts.
+
+All three dialogs have empty `doClickCancel()` implementations. Clicking Cancel in `ActionDialogBookmarkLoadFailed` or `ActionDialogBookmarkBackupLoadFailed` causes the app to continue with empty bookmarks. Clicking Cancel in `ActionDialogBookmarkCatastophe` causes the app to continue without exiting. `ActionDialogBookmarkCatastophe`'s OK action calls `disableSave(true)`, which prevents **all** saves on close — not just bookmarks, but also `AppConfig`.
+
+> **Note:** The class names are misleading — `ActionDialogBookmarkBackupLoadFailed` actually loads the `.lastloaded` file, not the `.backup` file. `ActionDialogBookmarkCatastophe` offers to exit without saving to preserve files for manual recovery.
+
 ## UI Integration
 
 ### BookmarkView
@@ -211,17 +242,37 @@ File: `bookmarks.xml` in the config directory.
 The bookmark panel (`src/forms/Bookmark/BookmarkView.h`) displays bookmarks in a tree structure:
 
 - **Active** — currently running demodulators
-- **Ranges** — frequency band definitions
+- **View Ranges** — frequency band definitions
 - **Bookmarks** — user-defined groups with saved entries
-- **Recent** — recently used demodulators
+- **Recents** — recently used demodulators
 
 ### Expand State
 
-`BookmarkMgr::setExpandState(name, bool)` and `getExpandState(name)` track which tree branches are expanded. Persisted in the `branches` node of the bookmark file.
+Expand state is tracked by two separate systems:
+
+1. **Top-level branch states** (active, range, bookmark, recent): Stored in `BookmarkView::expandState`. Defaults: active=true, range=false, bookmark=true, recent=true. Persisted in the `<branches>` node of the bookmark file as integers.
+
+2. **Bookmark group states**: Stored in `BookmarkMgr::expandState` (type `BookmarkExpandState`). Controls expand/collapse of individual bookmark groups within the "Bookmarks" branch. Defaults to `true` when a group name is not found. Persisted as `expanded` attributes on `<group>` nodes (e.g., `<group name="My Bookmarks" expanded="true">`).
+
+When a tree item is collapsed/expanded, the appropriate handler writes to the matching system: top-level branch events write to `BookmarkView::expandState`, while group events call `BookmarkMgr::setExpandState()`.
+
+Both systems expose public accessors: `BookmarkView::getExpandState()`/`setExpandState()` for branch states, and `BookmarkMgr::getExpandState()`/`setExpandState()` for group states. Note that `BookmarkView::getExpandState()` uses `std::map::operator[]` which default-inserts `false` for missing keys, while `BookmarkMgr::getExpandState()` returns `true` for missing keys. In practice this difference is harmless because `setExpandState()` is always called for known branch names during construction and load. The `saveToFile()` method reads branch states via `BookmarkView::getExpandState()`, creating a model-to-view dependency.
+
+During search, expand states are overridden: ranges are forced collapsed, while recents and bookmark groups are forced expanded. Expand/collapse events are suppressed during search to prevent user actions from conflicting with the forced states.
+
+`loadFromFile()` does not clear `BookmarkMgr::expandState` before repopulating it. Old group expand states persist across reloads for groups that no longer exist in the loaded file.
 
 ### Demodulator Interaction
 
-- **Add bookmark:** Right-click demodulator → "Bookmark" → select group
+- **Add bookmark:** Select an active demodulator → use the bookmark choice dropdown in the properties panel → select group (or "New Group..")
 - **Load bookmark:** Double-click bookmark entry → creates and runs new demodulator
-- **Delete bookmark:** Right-click → "Remove"
-- **Move between groups:** Drag and drop in the bookmark view
+- **Delete item:** Select item → press DELETE key, or click the Remove button in the properties panel. Works for active, recent, bookmark, range, and group items.
+- **Move between groups:** Drag and drop in the bookmark view. Only ACTIVE, RECENT, and BOOKMARK items can be dragged; RANGE and GROUP items are not draggable. Dropping an ACTIVE item on a group creates a new bookmark. Dropping a RECENT item on a group bookmarks it and removes it from recents. Dropping a BOOKMARK item on a group moves it between groups.
+
+### Additional UI Features
+
+- **Search/Filter:** Keyword search filters bookmark tree in real-time
+- **Range management:** Add, remove, rename, and update frequency band ranges
+- **Recording controls:** Start/stop audio recording from active demodulators
+- **Status bar hint:** A static hint ("Drag & Drop to create / move bookmarks, Group and arrange bookmarks, quick Search by keywords.") is shown in the status bar when the mouse enters the bookmark panel
+- **Frequency/bandwidth editing:** Double-click the frequency or bandwidth fields in the properties panel to open a FrequencyDialog (active demodulators only)
