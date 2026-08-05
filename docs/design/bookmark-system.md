@@ -31,11 +31,11 @@ Represents a saved demodulator configuration:
 | `bandwidth` | `int` | Demodulator bandwidth in Hz |
 | `node` | `DataNode*` | Full demodulator state (serialized via `DemodulatorMgr::saveInstance()`) |
 
-The `node` field stores the complete demodulator configuration including modem settings, gain, squelch, output device, and other parameters. This allows exact restoration when a bookmark is loaded. The class has no constructor, so `node` is uninitialized when a `BookmarkEntry` is default-constructed. The destructor calls `delete node` on this raw pointer, which is undefined behavior if `node` was never assigned.
+The `node` field stores the complete demodulator configuration including modem settings, gain, squelch, output device, and other parameters. This allows exact restoration when a bookmark is loaded. The class has no constructor, so `frequency`, `bandwidth`, and `node` are all uninitialized when a `BookmarkEntry` is default-constructed. The destructor calls `delete node` on this raw pointer, which is undefined behavior if `node` was never assigned. In practice, all construction paths (`demodToBookmarkEntry()` and `nodeToBookmark()`) assign `node`, so this is a latent defect rather than an active bug.
 
 ### BookmarkRangeEntry (`src/BookmarkMgr.h`)
 
-Represents a named frequency band:
+Represents a named frequency band. Unlike `BookmarkEntry`, this class has constructors that initialize all numeric fields to zero:
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -71,7 +71,7 @@ Singleton managed by `CubicSDR`. Most public methods are thread-safe via `recurs
 | `removeBookmark(entry)` | Remove from all groups |
 | `moveBookmark(entry, group)` | Move entry between groups |
 | `getBookmarks(group)` | Get independent copy of group's bookmarks (sorted by frequency; sorts internal list as a side effect) |
-| `removeActive(demod)` | Remove and destroy a live demodulator instance |
+| `removeActive(demod)` | Deactivate and destroy a live demodulator instance (clears active context, removes from demod list, deletes thread) |
 | `resetBookmarks()` | Clear all data and reload default ranges |
 | `hasLastLoad(bookmarkFn)` | Check if `.lastloaded` backup exists (always checks in config dir) |
 | `hasBackup(bookmarkFn)` | Check if `.backup` file exists (always checks in config dir) |
@@ -85,7 +85,7 @@ Singleton managed by `CubicSDR`. Most public methods are thread-safe via `recurs
 
 | Method | Description |
 |--------|-------------|
-| `addGroup(name)` | Create empty group (no-op if group already exists) |
+| `addGroup(name)` | Create empty group (no-op if group already exists). Does not set an expand state entry; `getExpandState()` returns `true` for unknown keys, so new groups default to expanded |
 | `removeGroup(name)` | Delete group and all its bookmarks |
 | `renameGroup(old, new)` | Rename group (if target already exists, merges entries from old group into target) |
 | `getGroups(arr)` | Append group names to array (accepts `BookmarkNames&` or `wxArrayString&`; does not clear the array first). Names are returned in map-sorted (alphabetical) order, which determines the display order in the tree |
@@ -198,6 +198,8 @@ File: `bookmarks.xml` in the config directory.
 6. Write current demodulators + recent entries to `recent_modems`
 7. Create backup of existing file before overwriting (only if `backup` is true, the save file exists, and the backup file does not exist or is writable)
 
+> **Note:** The entire save operation is guarded by `saveFile.IsDirWritable()`. If the config directory is not writable, the save is silently skipped — no error is raised and no backup is created.
+
 ### Load Flow (`BookmarkMgr::loadFromFile()`)
 
 1. If `backup` is true and no bookmark file, `.lastloaded`, or `.backup` files exist, load default ranges and return
@@ -231,7 +233,7 @@ On startup, `CubicSDR.cpp` implements a cascading recovery chain when bookmark l
 
 Recovery dialogs call `loadFromFile` with `backup=false`, so no `.lastloaded` or `.failedload` files are created during recovery attempts.
 
-All three dialogs have empty `doClickCancel()` implementations. Clicking Cancel in `ActionDialogBookmarkLoadFailed` or `ActionDialogBookmarkBackupLoadFailed` causes the app to continue with empty bookmarks. Clicking Cancel in `ActionDialogBookmarkCatastophe` causes the app to continue without exiting. `ActionDialogBookmarkCatastophe`'s OK action calls `disableSave(true)`, which prevents **all** saves on close — not just bookmarks, but also `AppConfig`.
+None of the three bookmark dialog subclasses override `doClickCancel()`. The base `ActionDialog` class defines `doClickCancel()` as a no-op, so clicking Cancel simply closes the dialog. Clicking Cancel in `ActionDialogBookmarkLoadFailed` or `ActionDialogBookmarkBackupLoadFailed` causes the app to continue with empty bookmarks. Clicking Cancel in `ActionDialogBookmarkCatastophe` causes the app to continue without exiting. `ActionDialogBookmarkCatastophe`'s OK action calls `disableSave(true)`, which prevents **all** saves on close — not just bookmarks, but also `AppConfig`.
 
 > **Note:** The class names are misleading — `ActionDialogBookmarkBackupLoadFailed` actually loads the `.lastloaded` file, not the `.backup` file. `ActionDialogBookmarkCatastophe` offers to exit without saving to preserve files for manual recovery.
 
@@ -260,14 +262,14 @@ Both systems expose public accessors: `BookmarkView::getExpandState()`/`setExpan
 
 During search, expand states are overridden: ranges are forced collapsed, while recents and bookmark groups are forced expanded. Expand/collapse events are suppressed during search to prevent user actions from conflicting with the forced states.
 
-`loadFromFile()` does not clear `BookmarkMgr::expandState` before repopulating it. Old group expand states persist across reloads for groups that no longer exist in the loaded file.
+`loadFromFile()` does not clear `BookmarkMgr::expandState` before repopulating it. Old group expand states persist across reloads for groups that no longer exist in the loaded file. Note the asymmetry: `bmData`, `recents`, `ranges`, and `bmDataSorted` are all cleared at the start of `loadFromFile()`, but `expandState` is not. This is likely unintentional but harmless due to the default-`true` behavior of `getExpandState()`.
 
 ### Demodulator Interaction
 
 - **Add bookmark:** Select an active demodulator → use the bookmark choice dropdown in the properties panel → select group (or "New Group..")
 - **Load bookmark:** Double-click bookmark entry → creates and runs new demodulator
 - **Delete item:** Select item → press DELETE key, or click the Remove button in the properties panel. Works for active, recent, bookmark, range, and group items.
-- **Move between groups:** Drag and drop in the bookmark view. Only ACTIVE, RECENT, and BOOKMARK items can be dragged; RANGE and GROUP items are not draggable. Dropping an ACTIVE item on a group creates a new bookmark. Dropping a RECENT item on a group bookmarks it and removes it from recents. Dropping a BOOKMARK item on a group moves it between groups.
+- **Move between groups:** Drag and drop in the bookmark view. Only ACTIVE, RECENT, and BOOKMARK items can be dragged; RANGE and GROUP items are not draggable. Dropping an ACTIVE item on a group creates a new bookmark. Dropping a RECENT item on a group bookmarks it and removes it from recents. Dropping a BOOKMARK item on a group moves it between groups. Dropping any draggable item on the "Bookmarks" branch root creates an implicit "Unnamed" group.
 
 ### Additional UI Features
 
