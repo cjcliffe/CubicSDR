@@ -137,27 +137,23 @@ Non-recursive spinlock using `std::atomic_flag` with acquire/release memory orde
 
 **File:** `src/IOThread.h`
 
-`ReBuffer<BufferType>` is a buffer pool with reference-counted recycling, used to minimize allocation overhead in hot data paths (audio output, visualization). `getBuffer()` iterates all pooled `shared_ptr` entries — if `use_count() == 1`, the buffer is available for reuse. The first available buffer is selected (age reset to 1); other available buffers have their age decremented. GC only checks the last element in the deque: if its age drops below `-REBUFFER_GC_LIMIT` (i.e. below -100), it is popped. A `use_count() == 0` (dangling pointer) is treated as a bug and erased with a warning. Used by `DemodulatorThread` (audio output buffers) and `VisualDataReDistributor` (visualization buffers).
+`ReBuffer<T>` is a `shared_ptr`-based buffer pool for minimizing allocation overhead in hot data paths. The pool's `getBuffer()` method is protected by `SpinMutex`. For the full pool mechanics (GC thresholds, reuse logic, warning thresholds), see [signal-flow.md](signal-flow.md) "Buffer Management".
 
 ### VisualProcessor Pipeline
 
 **File:** `src/process/VisualProcessor.h`
 
-`VisualProcessor<Input, Output>` is a template base class for the visualization pipeline. Each processor has one input queue and N output queues. `process()` is called by the owning thread's main loop; `distribute()` pushes results to all attached outputs. Two concrete subclasses handle different distribution strategies:
-- `VisualDataDistributor` — zero-copy shared pointer forwarding
-- `VisualDataReDistributor` — deep-copy distribution via `ReBuffer` pooling
-
-Protected by `std::mutex busy_update` for queue list mutations.
-
-Two threading models exist for VisualProcessor subclasses:
+`VisualProcessor<Input, Output>` is a template base class for the visualization pipeline. Two threading models exist for VisualProcessor subclasses:
 - **Dedicated thread:** `SpectrumVisualProcessor` runs on `SpectrumVisualDataThread` (sleep-loop calling `sproc.run()` periodically). `FFTVisualDataThread` runs both `FFTDataDistributor` and `SpectrumVisualProcessor` on a single `IOThread`.
 - **UI thread:** `ScopeVisualProcessor` runs on the wxWidgets main thread via `AppFrame::handleScopeProcessor()` → `process()` (non-blocking `try_pop`). See Pattern 7.
+
+For the full pipeline internals (VisualProcessor API, distribution modes, FFT processing, ScopeVisualProcessor processing), see [visual-data-pipeline.md](visual-data-pipeline.md).
 
 ### SpectrumVisualProcessor busy_run
 
 **File:** `src/process/SpectrumVisualProcessor.h`
 
-`spectrumVisualProcessor` uses `std::mutex busy_run` to serialize FFT computation against parameter changes. The mutex protects all internal state: FFT plan, buffers, averaging accumulators, resampler, frequency shifter, and configuration fields. All setter/getter methods (called from the UI thread) acquire this mutex. `process()` uses a two-phase locking pattern: a short-lived scoped lock checks and clears `fftSizeChanged` (then releases before calling `setup()` outside the lock), followed by an `input->pop()` also outside the lock, then re-acquires `busy_run` for the remainder of the FFT computation (lines 245 onward). This means UI parameter changes block until the current FFT completes, and vice versa, but input polling and setup are not held up by the computation mutex. Before any processing, `process()` checks `isOutputEmpty()` — if any output queue is full, the frame is dropped to apply back-pressure and prevent unbounded memory growth.
+`spectrumVisualProcessor` uses `std::mutex busy_run` to serialize FFT computation against parameter changes. All setter/getter methods (called from the UI thread) acquire this mutex. For the two-phase locking algorithm narrative (`process()` internals), see [visual-data-pipeline.md](visual-data-pipeline.md) "SpectrumVisualProcessor — Full Per-Frame Pipeline".
 
 ### SDREnumerator One-Shot Spawning
 
@@ -249,8 +245,8 @@ Windows and Linux use default thread priorities.
 The UI thread is **primarily pull-based**:
 
 1. `AppFrame::OnIdle()` is called continuously by the wx event loop and handles device params, modem properties, and UI state
-2. Each canvas registers its own `EVT_IDLE` handler independently (`AppFrame::OnIdle`, `WaterfallCanvas::OnIdle`, `SpectrumCanvas::OnIdle`, `ScopeCanvas::OnIdle`, `TuningCanvas::OnIdle`, `ModeSelectorCanvas::OnIdle`, `MeterCanvas::OnIdle`, `GainCanvas::OnIdle`) — `WaterfallCanvas::OnIdle` calls `processInputQueue()` (which internally `try_pop()`s); other canvases typically just call `Refresh()` and defer queue pops to `OnPaint()`
-3. Visual data flows are pull-based: worker threads push to queues, UI canvases pull via `try_pop()` in `OnIdle()` (WaterfallCanvas) or `OnPaint()` (SpectrumCanvas, ScopeCanvas)
+2. Each canvas registers its own `EVT_IDLE` handler independently — canvases poll their input queues via `try_pop()` in `OnIdle()` (WaterfallCanvas) or `OnPaint()` (SpectrumCanvas, ScopeCanvas). See [visual-rendering.md](visual-rendering.md) "OnIdle Processing" for per-canvas details.
+3. Visual data flows are pull-based: worker threads push to queues, UI canvases pull via `try_pop()`
 4. Shared state uses `std::atomic` variables (frequency, signal levels, mute state)
 5. UI-initiated changes go through atomic variables and flags, not wx events
 6. **Exception:** `SDRThread` triggers `refreshGainUI()` from the worker thread via `notifyMainUIOfDeviceChange()`, which rebuilds `GainCanvas` panels and triggers `Refresh()` — a cross-thread UI mutation outside the pull-based pattern

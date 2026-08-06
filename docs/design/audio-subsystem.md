@@ -256,9 +256,7 @@ Design constraints:
 
 ## Buffer Management
 
-`DemodulatorThread` uses `ReBuffer<AudioThreadInput>` (defined in `IOThread.h`) to pool audio buffers.
-
-The pool works by tracking `shared_ptr` use counts: when a buffer's use count drops to 1 (only referenced by the pool itself), it becomes available for reuse. When `getBuffer()` finds the first reusable buffer, it selects it and resets its age to 1; subsequent reusable buffers found in the same call have their age decremented. The oldest buffer at the back of the pool is garbage-collected when its age drops below `-REBUFFER_GC_LIMIT` (-100). New buffers are allocated only when no reusable buffer is available.
+`DemodulatorThread` uses `ReBuffer<AudioThreadInput>` (defined in `IOThread.h`) to pool audio output buffers. For the full pool mechanics (reuse logic, GC thresholds, warning thresholds), see [signal-flow.md](signal-flow.md) "Buffer Management".
 
 ## Muting
 

@@ -164,6 +164,4 @@ DemodulatorThread
     +--[audioVisOutputQueue]--> ScopeVisualProcessor --> ScopeCanvas (UI thread)
 ```
 
-`FFTVisualDataThread` contains an internal sub-pipeline: an `FFTDataDistributor` accumulates raw IQ samples into FFT-sized chunks, which are then processed by a `SpectrumVisualProcessor` to produce FFT output. The `FFTDataDistributor` rate-limits by `linesPerSecond`, so not every incoming IQ frame produces an output line.
-
-The UI thread is **pull-based on the consumer side** — canvases poll their input queues via `try_pop()`, though the exact trigger varies: WaterfallCanvas does this in its `OnIdle()` handler, while SpectrumCanvas and ScopeCanvas do it in `OnPaint()`. Meanwhile, producer threads **push** data into these queues via non-blocking `try_push()`, which can silently drop data when queues are full. This is intentional for visual data where occasional dropped frames are acceptable.
+For the visual data processing pipeline internals (VisualProcessor, distributors, FFT processing, ScopeVisualProcessor), see [visual-data-pipeline.md](visual-data-pipeline.md). For the canvas pull model and rendering flow (OnIdle vs OnPaint), see [visual-rendering.md](visual-rendering.md).

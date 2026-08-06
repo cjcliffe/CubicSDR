@@ -20,7 +20,8 @@ Design documents covering the system architecture are in [docs/design/](design/)
 | Document | Description |
 |----------|-------------|
 | [Audio Subsystem](design/audio-subsystem.md) | Controller/bound mixing, WAV recording, device management |
-| [Visual Architecture](design/visual-architecture.md) | Canvas hierarchy, GLFont, ColorTheme, rendering pipeline |
+| [Visual Rendering](design/visual-rendering.md) | Canvas hierarchy, GLFont, ColorTheme, rendering flow |
+| [Visual Data Pipeline](design/visual-data-pipeline.md) | VisualProcessor, distribution modes, FFT/scope processing |
 | [Configuration System](design/configuration-system.md) | AppConfig/DeviceConfig, DataTree serialization, sessions |
 | [Bookmark System](design/bookmark-system.md) | BookmarkMgr, groups/ranges/recents, persistence |
 | [SDR Device Layer](design/sdr-device-layer.md) | SDREnumerator, SDRDeviceInfo, manual devices |

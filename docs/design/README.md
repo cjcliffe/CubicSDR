@@ -17,7 +17,8 @@ This directory contains architectural documentation for CubicSDR. These document
 | Document | Description |
 |----------|-------------|
 | [Audio Subsystem](audio-subsystem.md) | Controller/bound mixing pattern, WAV recording pipeline, device management, and real-time audio callback |
-| [Visual Architecture](visual-architecture.md) | Canvas hierarchy, GLPanel system, GLFont rendering, ColorTheme system, and visual data processing pipeline |
+| [Visual Rendering](visual-rendering.md) | Canvas hierarchy, GLPanel system, GLFont rendering, ColorTheme system, and rendering flow |
+| [Visual Data Pipeline](visual-data-pipeline.md) | VisualProcessor template, distribution modes, FFT processing, and ScopeVisualProcessor |
 | [Configuration System](configuration-system.md) | AppConfig/DeviceConfig persistence, DataTree serialization, session management, and file locations |
 | [Bookmark System](bookmark-system.md) | BookmarkMgr data model, groups/ranges/recents, XML persistence, and default frequency bands |
 | [SDR Device Layer](sdr-device-layer.md) | SDREnumerator discovery, SDRDeviceInfo capabilities, manual devices, and SoapySDR module loading |

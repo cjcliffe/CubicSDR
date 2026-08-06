@@ -783,3 +783,41 @@ content). No changes were made to any design document.
 | File | Action |
 |------|--------|
 | `docs/plans/reorganize-design-docs.md` | Added "Source-to-Destination Mapping" table and inline split reconciliation notes; clarified SpinMutex end-state phrasing |
+
+## Session 61: Reorg Plan Implementation — Visual Architecture Split
+
+**Date:** 2026-08-06
+**Model:** opencode/mimo-v2.5-free
+
+- Implemented `docs/plans/reorganize-design-docs.md` — split `visual-architecture.md` into owner-per-module docs
+- Created `visual-rendering.md` (rendering/UI half: canvas hierarchy, GLPanel, PrimaryGLContext, GLFont, ColorTheme, rendering flow, mouse interaction)
+- Created `visual-data-pipeline.md` (processing half: pipeline topology, VisualProcessor, distribution modes, FFTDataDistributor, SpectrumVisualProcessor, FFTVisualDataThread, ScopeVisualProcessor)
+- Deleted `visual-architecture.md`
+- Trimmed `signal-flow.md` "Visual Processing Pipeline" to cross-links (topology diagram kept, internals → visual-data-pipeline.md, canvas pull → visual-rendering.md)
+- Trimmed `threading.md` — reduced ReBuffer Pooling to pointer, VisualProcessor Pipeline to threading-model statement, SpectrumVisualProcessor busy_run to lock-inventory pointer, dropped per-canvas OnIdle/OnPaint enumeration from wxWidgets Integration
+- Trimmed `audio-subsystem.md` Buffer Management to pointer to signal-flow.md
+- Updated `docs/design/README.md` and `docs/PLAN.md` indexes with the two new files
+- Ran grep verification: ReBuffer described fully only in signal-flow.md; VisualProcessor internals only in visual-data-pipeline.md; no dead links to visual-architecture.md in design docs
+
+### Files Created
+
+| File | Description |
+|------|-------------|
+| `docs/design/visual-rendering.md` | Rendering/UI half: canvas hierarchy, GLPanel system, PrimaryGLContext, GLFont, ColorTheme, rendering flow, mouse interaction |
+| `docs/design/visual-data-pipeline.md` | Processing half: pipeline topology, VisualProcessor template, distribution modes, FFT/scope processors |
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/signal-flow.md` | Trimmed "Visual Processing Pipeline" to cross-links |
+| `docs/design/threading.md` | Reduced ReBuffer Pooling, VisualProcessor Pipeline, SpectrumVisualProcessor busy_run, wxWidgets Integration sections |
+| `docs/design/audio-subsystem.md` | Trimmed Buffer Management to pointer |
+| `docs/design/README.md` | Replaced "Visual Architecture" with two new entries |
+| `docs/PLAN.md` | Replaced "Visual Architecture" with two new entries |
+
+### Files Deleted
+
+| File | Reason |
+|------|--------|
+| `docs/design/visual-architecture.md` | Split into visual-rendering.md and visual-data-pipeline.md |
