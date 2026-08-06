@@ -519,3 +519,126 @@ Extensive iterative review and fixes to `docs/design/threading.md`:
 | 1 | Added `getBookmarkEntryDisplayName()` and `getActiveDisplayName()` to non-locked methods list | BookmarkMgr overview |
 | 2 | Added "(sorts internal list as a side effect)" to `getBookmarks()` description | Bookmark Operations |
 | 3 | Rewrote Error Recovery to reflect actual branching logic (initial check selects dialog by file existence; backup failure triggers secondary chain) | Error Recovery |
+
+---
+
+## Session 57: Configuration System Documentation Review
+
+**Date:** 2026-08-05
+**Model:** opencode/mimo-v2.5-free
+
+- Reviewed `docs/design/configuration-system.md` against source code (AppConfig.h/cpp, SessionMgr.h/cpp, DataTree.h/cpp, AppFrame.h/cpp, BookmarkMgr.cpp)
+- Found 3 inaccuracies and 9 omissions
+- Applied 6 fixes:
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/configuration-system.md` | Added missing bookmark file, conditional window write, expanded thread safety, save triggers, DataNode operators, DataTree constructor, floating-point policy |
+
+| # | Fix | Section |
+|---|-----|---------|
+| 1 | Added `bookmarks.xml.failedload` to config files table | Config Files |
+| 2 | Documented window node conditional write (only when winW and winH are non-zero) | Save/Load Lifecycle |
+| 3 | Expanded thread safety to cover AppConfig atomics and note missing mutex on string fields | Thread Safety |
+| 4 | Added `saveDisabled` early return and bookmark save on close to save triggers | Config Save Triggers |
+| 5 | Added DataNode operator overloads and `findAll()` to operations section | DataNode Operations |
+| 6 | Added DataTree named constructor and `DT_FloatingPointPolicy` to DataTree section | Architecture, XML Serialization |
+
+---
+
+## Session 58: Configuration System Documentation Re-review
+
+**Date:** 2026-08-05
+**Model:** opencode/mimo-v2.5-free
+
+- Full re-review of `docs/design/configuration-system.md` against source code (AppConfig.h/cpp, SessionMgr.h/cpp, DataTree.h/cpp, BookmarkMgr.cpp)
+- Found 4 inaccuracies, 9 completeness gaps; applied 8 fixes
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/configuration-system.md` | Fixed thread safety coverage, config save triggers, DataNode operations table, DataElement types, DeviceConfig id parsing, bookmark recovery logic, printXML note |
+
+| # | Fix | Section |
+|---|-----|---------|
+| 1 | Corrected thread safety: mutex only protects deviceId/deviceName/save()/load(); antennaName and map fields are unprotected | Thread Safety |
+| 2 | Clarified config save triggers: in-memory updates happen immediately, file write only on window close or explicit saveConfig() | Config Save Triggers |
+| 3 | Fixed manualDevices listed as "string field" — it's a vector | Thread Safety |
+| 4 | Expanded DataNode operations table with missing methods (hasAnother(), getNext(), rewind*, parent nav, numChildren(name), newChild overloads) | DataNode Operations |
+| 5 | Added std::set<string> and DATA_VOID raw buffer to DataElement types | DataElement Types |
+| 6 | Added note that DeviceConfig::load() doesn't read the id node | DeviceConfig |
+| 7 | Added bookmark file recovery sequence description | Config Files |
+| 8 | Added printXML() debugging utility note | XML Serialization |
+
+---
+
+## Session 59: Configuration System Documentation Verification
+
+**Date:** 2026-08-05
+**Model:** opencode/deepseek-v4-flash-free
+
+- Verified `docs/design/configuration-system.md` against source (AppConfig, SessionMgr, DataTree, AppFrame::OnClose, TuningCanvas, CubicSDR CLI parsing)
+- Confirmed the document was largely accurate; applied 4 documentation corrections
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/configuration-system.md` | Session version encoding example, perf_mode load note, recording defaults, reset() no-op note |
+
+| # | Fix | Section |
+|---|-----|---------|
+| 1 | Showed `<version>` in its percent-encoded form (`%30%2e%32%2e%38`) matching the DATA_WSTRING wsEncode output; updated the explanatory note | Session File Format |
+| 2 | Clarified that any unrecognized `perf_mode` value (not just a missing node) results in `PERF_NORMAL` | Save/Load Lifecycle |
+| 3 | Added Default column for recording settings (`recordingSquelchOption`=0, `recordingFileTimeLimitSeconds`=0) | Recording Settings |
+| 4 | Noted `AppConfig::reset()` is a no-op stub that is not currently invoked | Save/Load Lifecycle |
+
+## Session 60: Configuration System Documentation Corrections
+
+**Date:** 2026-08-05
+**Model:** opencode/deepseek-v4-flash-free
+
+- Re-verified `docs/design/configuration-system.md` against source (AppConfig, BookmarkMgr, CubicSDR.cpp, TuningCanvas, SoapySDRThread)
+- Confirmed no substantive errors; applied 3 documentation corrections
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/configuration-system.md` | Bookmark failedload nuance, full PPM chain, named-config silent early return |
+
+| # | Fix | Section |
+|---|-----|---------|
+| 1 | Clarified `.failedload`/`.lastloaded` copies only occur on the initial `backup=true` load, and `.failedload` only for entry-parse (not XML-load) failures | Config Files |
+| 2 | Completed PPM chain: `TuningCanvas` → `CubicSDR::setPPM()` → `SDRThread::setPPM()` → `DeviceConfig::setPPM()` | Config Save Triggers |
+| 3 | Documented that `load()` returns `true` (leaving defaults) when neither named nor base config exists, or the copy fails | Save/Load Lifecycle |
+
+## Session: Configuration System Doc Review
+
+Model: deepseek-v4-flash-free, 2026-08-05
+
+Verified `docs/design/configuration-system.md` line-by-line against `AppConfig.h`/`.cpp`, `SessionMgr.cpp`, and `DataTree.h`/`.cpp`. Confirmed the document was accurate (all defaults, config keys, atomic types, XML structures, and DataTree type list matched). Applied four documentation corrections:
+
+| # | Fix | Section |
+|---|-----|---------|
+| 1 | Trimmed bookmark-recovery paragraph to a cross-reference, removing duplication already covered in `bookmark-system.md` | Config Files |
+| 2 | Noted `save()` returns `false` and logs an error when the file cannot be written | Save Lifecycle |
+| 3 | Noted `load()` returns `false` when the config file exists but is not readable | Load Lifecycle |
+| 4 | Documented conditional device-node writes (non-empty containers only), the NaN gain skip on load, and the zero-to-default fallback for `rigModel`/`rigRate` | DeviceConfig / Hamlib |
+
+## Session: Configuration System Doc Corrections Round 2
+
+**Date:** 2026-08-05
+**Model:** opencode/deepseek-v4-flash-free
+
+- Re-verified the whole document against source; confirmed accuracy of all prior claims
+- No factual errors; applied additional completeness notes to the XML Serialization section
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/configuration-system.md` | Documented the `@`-attribute (BadgerFish) convention, string-vector `<str>` serialization, and empty-name→`node` element fallback in `DataTree` |
