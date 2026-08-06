@@ -59,17 +59,3 @@ src/
 | `AudioSinkFileThread` | `src/audio/AudioSinkFileThread.h` | WAV file recording |
 | `IOThread` | `src/IOThread.h` | Base class for all worker threads |
 | `ThreadBlockingQueue` | `src/util/ThreadBlockingQueue.h` | Primary inter-thread communication mechanism |
-
-### CMakeLists.txt Source/Header Mismatches
-
-The `CMakeLists.txt` source file lists have several entries in the wrong category:
-
-| File | Listed As | Should Be |
-|------|----------|-----------|
-| `src/sdr/SoapySDRThread.h` | Source | Header |
-| `src/panel/MeterPanel.h` | Source | Header |
-| `src/sdr/SoapySDRThread.cpp` | Header | Source |
-| `src/ui/UITestCanvas.cpp` | Header | Source |
-| `src/ui/UITestContext.cpp` | Header | Source |
-
-CMake treats both lists as source files for compilation, so these mismatches do not affect the build.

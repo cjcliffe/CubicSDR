@@ -642,3 +642,144 @@ Verified `docs/design/configuration-system.md` line-by-line against `AppConfig.h
 | File | Action |
 |------|--------|
 | `docs/design/configuration-system.md` | Documented the `@`-attribute (BadgerFish) convention, string-vector `<str>` serialization, and empty-name→`node` element fallback in `DataTree` |
+
+---
+
+## Session: Design Doc Reorganization — PRIORITY Merge and Reorg Plan
+
+**Date:** 2026-08-05
+**Model:** opencode/deepseek-v4-flash-free
+
+Reviewed all 9 design docs plus PLAN/PRIORITY/RECOMMENDATIONS. Found `PRIORITY.md` duplicating `PLAN.md` (code-quality table + execution order), the CMake-mismatch table duplicated between `design/README.md` and `PRIORITY.md`, and cross-doc duplication (ReBuffer in signal-flow+threading, VisualProcessor pipeline in threading+visual-architecture, canvas OnIdle in both). Per user approval, executed items #1 and #2 and wrote a reorg plan for #3A + the visual split.
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/PLAN.md` | Added "Source Fixes & Documentation" section (items 1-6 from PRIORITY), registered reorganize-design-docs plan in the plans table |
+| `docs/PRIORITY.md` | Deleted (items folded into PLAN; no remaining references) |
+| `docs/design/README.md` | Removed CMakeLists source/header mismatch table (now single-sourced in PLAN) |
+| `docs/plans/reorganize-design-docs.md` | Created: owner-per-module consolidation (#3A) and visual-architecture render/data split |
+
+## Session: Design Doc Reorganization — Plan Self-Containment Check
+
+**Date:** 2026-08-05
+**Model:** opencode/deepseek-v4-flash-free
+
+Re-audited the reorg plan against the source docs via grep. Found it was incomplete for a future
+agent: ReBuffer actually appears in three docs (signal-flow, threading, audio-subsystem), not two;
+VisualProcessor internals are restated across threading Pattern 6/7 and visual-architecture; and the
+`busy_run`/`busy_update` thread-safety and OnIdle pull model were duplicated with no owner decision.
+Rewrote `docs/plans/reorganize-design-docs.md` to be fully self-contained with a verified duplication
+audit table, explicit owner boundaries, a section-by-section split map for both new visual files,
+index-update steps, out-of-scope items, and grep-based verification criteria.
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/plans/reorganize-design-docs.md` | Rewrote with duplication audit, owner boundaries, section-level split map, verification criteria |
+
+## Session: Reorg Plan — Accuracy Review and Softening
+
+**Date:** 2026-08-05
+**Model:** opencode/deepseek-v4-flash-free
+
+Re-verified the reorganize-design-docs plan against every design doc. Confirmed accuracy (ReBuffer in
+signal-flow+threading+audio; VisualProcessor in threading+visual-architecture; canvas pull in
+threading+visual-architecture; only README.md and PLAN.md link the to-be-deleted file). Applied
+corrections to the plan: resolved the Overview/data-path diagram to single ownership
+(visual-data-pipeline.md owns the topology diagram; visual-rendering.md keeps overview prose and links);
+assigned the `ReBuffer`/`SpinMutex` thread-safety row to `signal-flow.md` rather than the pipeline doc;
+clarified the "SpinMutex / atomically-just" wording; fixed a duplicate "GL state" typo; and added the
+plan to PLAN.md's Recommended Execution Order (it was listed among plans but missing from the order).
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/plans/reorganize-design-docs.md` | Clarified diagram and SpinMutex row ownership, fixed wording/typo, noted PLAN.md execution-order gap |
+| `docs/PLAN.md` | Added "Reorganize Design Docs" as step 7 in Recommended Execution Order (renumbered 7-10 to 8-11) |
+
+## Session: Reorg Plan — Verification and Corrections
+
+**Date:** 2026-08-05
+**Model:** opencode/deepseek-v4-flash-free
+
+Re-verified the reorganize-design-docs plan against the actual docs. Confirmed the audit table rows,
+section split coverage, and size claim; found two issues and applied corrections: (1) the "Update
+Indexes" step claimed the plan was missing from PLAN.md's execution order, but PLAN.md already lists it
+in the plans table and as step 7 — removed that stale instruction; (2) the audit under-counted
+`signal-flow.md`, whose "Visual Processing Pipeline" restates the visual topology diagram,
+`FFTDataDistributor` rate-limiting, and the canvas pull model — added it as a duplicate source (rows 2
+and 3) and upgraded its handling from "add a cross-link" to "trim to cross-links" in the Update Indexes
+and Files sections.
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/plans/reorganize-design-docs.md` | Corrected stale PLAN.md execution-order claim; added signal-flow.md as duplicate source and changed its handling to a trim-to-cross-links step |
+
+---
+
+## Session: Reorg Plan — Correction of Remaining Owner-Boundary Inconsistencies
+
+**Date:** 2026-08-06
+**Model:** opencode/deepseek-v4-flash-free
+
+Re-verified the reorganize-design-docs plan against every design doc (audit rows, section split map,
+index claims, dead-link check). Confirmed the plan was accurate and complete, then applied three
+owner-boundary clarifications: (1) removed the "lists which canvases poll in OnIdle vs OnPaint" step
+from threading.md's "wxWidgets Integration", which contradicted visual-rendering.md's single ownership
+of that per-canvas table; (2) noted that the two generic Thread Safety Summary rows
+(`ThreadBlockingQueue`, `std::shared_ptr`) are already owned by threading Pattern 1 and are not
+restated after the split; (3) clarified that threading's Synchronization table remains the canonical
+lock inventory for `SpinMutex` → ReBuffer, with signal-flow mentioning SpinMutex only as a one-line
+pool-mechanics note.
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/plans/reorganize-design-docs.md` | Step 1: threading drops the per-canvas OnIdle/OnPaint enumeration; added note on generic Thread Safety rows; clarified `SpinMutex`/ReBuffer canonical ownership. Files table: threading row updated to match |
+
+---
+
+## Session: Reorg Plan — Disambiguation Edits
+
+**Date:** 2026-08-06
+**Model:** opencode/deepseek-v4-flash-free
+
+Re-verified the reorganize-design-docs plan against all design docs and source (ReBuffer constants,
+SpinMutex lock, audit rows, section split, index claims, dead-link check) and applied four small edits
+to the plan doc: (1) size claim "roughly 2-5x" instead of "2-4x"; (2) noted `cache_busy` SpinMutex stays
+in visual-rendering.md as component-internal detail (threading lock inventory unchanged); (3) recorded
+that `SpectrumVisualData`/`ScopeRenderData` in signal-flow.md's Data Types table stay there as
+data-path artifacts (visual-data-pipeline.md references by name); (4) verification note that
+`AGENT-LOG.md` references the old filename as history and should be left untouched.
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/plans/reorganize-design-docs.md` | Wording/disambiguation: size claim, GL concurrency lock note, Data Types ownership note, AGENT-LOG.md exclusion note |
+
+## Session: Reorg Plan — Implementation Readiness Prep
+
+Independent verification of the `reorganize-design-docs.md` plan against all current design docs
+(signal-flow, threading, visual-architecture, audio-subsystem, design/README, PLAN). Confirmed every
+audit row, the section-split boundaries, the index/dead-link claims (only `design/README.md` and
+`docs/PLAN.md` link the to-be-deleted `visual-architecture.md`; AGENT-LOG.md references are historical),
+and the audio/ReBuffer ownership notes. Because a separate agent session will perform the final
+implementation, added a verbatim **Source-to-Destination Map** section to the plan mapping every
+`visual-architecture.md` heading to its destination file (rendering vs data-pipeline, plus the
+Thread-Safety-rows reassignment), so the split is mechanical and nothing is dropped or misassigned.
+Also disambiguated the `signal-flow.md` SpinMutex phrasing (it is an end-state instruction, not current
+content). No changes were made to any design document.
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/plans/reorganize-design-docs.md` | Added "Source-to-Destination Mapping" table and inline split reconciliation notes; clarified SpinMutex end-state phrasing |
