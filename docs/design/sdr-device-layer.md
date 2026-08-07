@@ -94,17 +94,17 @@ Represents a discovered or manually defined SDR device.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `name` | `string` | Display name (from SoapySDR `label` or `device` field) |
+| `name` | `string` | Display name (from SoapySDR `label` or `device` field); set during enumeration |
 | `serial` | `string` | Device serial number (setter exists but is never called) |
-| `driver` | `string` | SoapySDR driver name |
-| `hardware` | `string` | Hardware revision (populated from `getHardwareInfo()`) |
+| `driver` | `string` | SoapySDR driver name; set during enumeration |
+| `hardware` | `string` | Hardware revision (set during enumeration, populated from `getHardwareInfo()`) |
 | `tuner` | `string` | Tuner chip type (setter exists but is never called) |
 | `manufacturer` | `string` | Device manufacturer (setter exists but is never called) |
 | `product` | `string` | Product name (setter exists but is never called) |
 
 ### Device ID
 
-`getDeviceId()` returns the device's display name (`getName()`). Note: earlier designs intended to include serial, remote address, or factory/params in the ID, but the current implementation simply returns the name field.
+`getDeviceId()` returns the device's display name (`getName()`).
 
 ### State
 
@@ -160,7 +160,7 @@ SoapySDR devices are configured via key-value argument strings:
 | `label` | Human-readable device label |
 
 **Stream arguments** (stored in `streamArgs`):
-`SDRThread` carries a `SoapySDR::Kwargs streamArgs` member, but CubicSDR does not populate specific stream argument keys — the map is available for driver-specific stream configuration.
+`SDRThread` carries a `SoapySDR::Kwargs streamArgs` member that stores and applies driver-specific stream configuration (the set of possible arguments is declared by the device's `getStreamArgsInfo()`, not by `SDRThread`). When a device is selected in the UI, `SDRDevicesDialog::OnUseSelected()` queries `getStreamArgsInfo(SOAPY_SDR_RX, 0)`, populates the `streamArgs` map from the edited property values, persists them via `DeviceConfig::setStreamOpts()`, and pushes them through `CubicSDR::setStreamArgs()` into `SDRThread::setStreamArgs()`. `SDRThread` itself does not add keys; it applies the selections received from the dialog.
 
 **Device settings** (stored in `DeviceConfig::settings`):
 - Driver-specific settings (e.g., `bias_tee` for RTL-SDR)
@@ -194,7 +194,7 @@ Manual devices are:
 - List of all discovered devices (local, remote, manual)
 - Device properties display (sample rates, gains, antennas)
 - Manual device add/remove
-- Remote device add/remove
+- Remote device add (via `CubicSDR::addRemote`); no UI exists to remove a remote device — `removeRemote` is declared but never invoked
 - Device activation (triggers `SDRThread` creation)
 
 ## Device Configuration

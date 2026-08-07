@@ -821,3 +821,106 @@ content). No changes were made to any design document.
 | File | Reason |
 |------|--------|
 | `docs/design/visual-architecture.md` | Split into visual-rendering.md and visual-data-pipeline.md |
+
+## Session 62: Design Doc Verification Review
+
+**Date:** 2026-08-06
+**Model:** opencode/deepseek-v4-flash-free
+
+- Cross-verified all 10 `docs/design/` files against source (queues, IOThread, threading lifecycle, modems, visual pipeline/rendering, config, bookmarks, SDR device layer)
+- Confirmed the docs are largely accurate; queue capacities, thread bugs, DataTree serialization, and modem registration all checked out
+- Corrected three accuracy issues: setter-call claims, TuningContext font thresholds, and SpectrumCanvas right-click peak behavior
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/sdr-device-layer.md` | Clarified `name`/`driver`/`hardware` are set during enumeration (only `serial`/`tuner`/`manufacturer`/`product` setters are unused) |
+| `docs/design/visual-rendering.md` | Fixed `DrawTuner` font-size thresholds (height ≥28px leaves width-based size unchanged); corrected right-click to "reset peak-hold accumulator" instead of "toggle" |
+| `docs/design/modem-system.md` | Noted `ModemFMStereo` factory key is `"FMS"` while UI name is "FM Stereo" |
+
+## Session 63: Design Doc Commentary Cleanup
+
+**Date:** 2026-08-06
+**Model:** opencode/deepseek-v4-flash-free
+
+- Re-reviewed all `docs/design/` files for leftover reverse-engineering commentary (statements speculating on earlier designs, historical code, or irrelevant alternatives rather than describing current behavior)
+- Removed six such statements: "earlier designs intended..." (sdr-device-layer), "was `glFlush()`" (visual-rendering), "not a documentation error" meta-note (bookmark), "rather than a fourth `ScopeMode` enum value" (visual-data-pipeline), editorial class-name note (bookmark), and "likely unintentional" speculation (bookmark)
+- Verified remaining "not" statements are legitimate behavior descriptions (real bugs, unused parameters)
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/sdr-device-layer.md` | Dropped "earlier designs intended..." speculation about device ID contents |
+| `docs/design/visual-rendering.md` | Simplified `EndDraw()` note (removed history of `glFlush()`) |
+| `docs/design/visual-data-pipeline.md` | Removed "rather than a fourth ScopeMode enum value" aside |
+| `docs/design/bookmark-system.md` | Removed meta-note "not a documentation error", editorial class-name note, and "likely unintentional" speculation |
+
+## Session 64: Design Doc Full Accuracy Verification
+
+**Date:** 2026-08-06
+**Model:** opencode/deepseek-v4-flash-free
+
+Cross-verified all 10 `docs/design/` files against source in full detail (queue wiring/capacities, ReBuffer pool, modem rates/inheritance, Datathreads/kits, DataTree serialization, DeviceConfig keys, bookmark recovery, SDREnumerator state, VisualProcessor `isOutputEmpty`/double-EMA ordering, GLPanel/GLFont/themes, canvas OnIdle-vs-OnPaint). Confirmed the docs are accurate overall; the two subtlest claims (`isOutputEmpty` all-outputs semantics and the reversed double-EMA update order) were verified correct. Applied six fixes — three real inaccuracies plus three minor precision notes.
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/threading.md` | Moved macOS `pthread_create`/2MB-stack attribution to `DemodulatorInstance::run()` (was falsely in the demod `.cpp` files); qualified the 50ms-heartbeat claim (SDRThread/SDR enumerator/RigThread don't use a timed pop); added the commented-out main wx `SCHED_RR` block |
+| `docs/design/visual-data-pipeline.md` | Fixed scope spectrum "1024 points" → FFT size 1024 producing 512 output points (`fftSize/2`); clarified `FFT_DISTRIBUTOR_BUFFER_IN_SECONDS` sizes the buffer (rate limiting is `linesPerSecond`) |
+| `docs/design/audio-subsystem.md` | Noted the sample-rate mismatch check runs only on the initial pop, not on the mid-mixing exhaustion pop |
+
+## Session 65: Design Doc Full Accuracy Verification (Round 2)
+
+**Date:** 2026-08-06
+**Model:** opencode/deepseek-v4-flash-free
+
+- Re-verified all 10 `docs/design/` files against source via parallel exploration + spot-checks; confirmed all queue capacities, ReBuffer mechanics, thread lifecycle/priorities/exit codes, macOS `pthread_join` bug, modem hierarchies/rates, audio mixing/WAV details, GLPanel/GLFont/theme claims, FFT/scope constants, config keys/defaults, bookmark bands/recovery, and SDR device layer
+- Found one factual error (stream args) and three minor precision issues; all corrected
+- Double-checked each finding directly against source before editing (confirmed `SDRDevicesDialog::OnUseSelected` populates stream args; confirmed `ImagePanel` is a plain `wxPanel`, not an `InteractiveCanvas` subclass)
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/sdr-device-layer.md` | Corrected "CubicSDR does not populate specific stream argument keys" — stream args ARE populated from `getStreamArgsInfo(SOAPY_SDR_RX, 0)` in `SDRDevicesDialog::OnUseSelected`, persisted via `setStreamOpts`, and flowed through `CubicSDR::setStreamArgs()` into `SDRThread::setStreamArgs()` |
+| `docs/design/threading.md` | Clarified `stopRig()` also joins and deletes the rig thread + `RigThread` objects (not just `isTerminated`) |
+| `docs/design/signal-flow.md` | Noted `pipeAudioVisualData`/`pipeDemodIQVisualData` are created/wired only under `CUBICSDR_ENABLE_VIEW_SCOPE`/`CUBICSDR_ENABLE_VIEW_DEMOD` |
+| `docs/design/visual-rendering.md` | Corrected keyboard-reset claim: `freqMove` stops by velocity decay (not hard-reset on key-up), and UP/DOWN key-up re-arms `mouseZoom` |
+
+## Session 66: Design Doc Accuracy Verification (Round 3) + Fixes
+
+**Date:** 2026-08-06
+**Model:** opencode/deepseek-v4-flash-free
+
+- Re-verified all 10 `docs/design/` files against source via parallel exploration agents plus direct spot-checks; confirmed the docs are accurate overall
+- Found and applied 5 substantive corrections plus several minor precision fixes; every impactful claim was re-checked directly in source before editing
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `docs/design/visual-rendering.md` | Removed false `glEnable(GL_LINE_SMOOTH)`/`glLineWidth` "demod edge" attribution (not in PrimaryGLContext; `glLineWidth` only in `DrawRangeSelector`); corrected arrow-key summary (no "full bandwidth" case; Shift = 10x); added note that `DrawFreqBwInfo` is drawn by SpectrumCanvas, not WaterfallCanvas |
+| `docs/design/visual-data-pipeline.md` | Noted `VisualDataDistributor`/`VisualDataReDistributor` are declared-but-unused scaffolding; live distribution is via `FFTDataDistributor`/processors' base `distribute()` |
+| `docs/design/configuration-system.md` | Corrected `save()` failure claim: `DataTree::SaveToFileXML` always returns true, so the error branch is unreachable; clarified session sample rate is nearest-supported selection, not clamping |
+| `docs/design/sdr-device-layer.md` | Corrected remote add/remove: `removeRemote` is dead code (no UI call site); clarified `SDRThread::streamArgs` stores/applies (device declares the arg set) |
+| `docs/design/signal-flow.md` | Filled concrete max sizes for `audioVisOutputQueue` (1) and `audioSinkOutputQueue` (1000) in the per-demod queue table |
+| `docs/design/audio-subsystem.md` | Corrected sample-rate-check timing (runs on the second callback, not the initial pop); latency figure is illustrative (device rate configurable); gain applied during summation |
+| `docs/design/threading.md` | Corrected "blocking push/pop" to "blocking push / timed pop" |
+| `docs/design/bookmark-system.md` | Noted ranges are renamed by editing the label field, not a button |
+
+## Session 67: Redundant "not-a-thing" note cleanup
+
+**Date:** 2026-08-06
+**Model:** opencode/deepseek-v4-flash-free
+
+- Removed a redundant note added in Session 66 (the `DrawFreqBwInfo`-in-waterfall clarification duplicate at `visual-rendering.md:446`) per user feedback
+- Scanned `docs/design/` for similar absence/negative-framing notes; judged most justified (setters-never-called, unjoined threads, expandState staleness) but trimmed three redundant/editorial ones
+
+| File | Action |
+|------|--------|
+| `docs/design/visual-rendering.md` | Shortened the Mouse-wheel row (was doubly redundant: "not wired" + "absent from event table") |
+| `docs/design/configuration-system.md` | Dropped redundant "it is absent when no view state is saved" restatement |
+| `docs/design/bookmark-system.md` | Removed editorial "latent defect rather than an active bug" verdict, kept the facts |

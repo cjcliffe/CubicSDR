@@ -117,10 +117,12 @@ Manages RtAudio hardware output using a **controller/bound** pattern:
 | `pipeIQInputData` | `DemodulatorThreadInputQueue` | SDRPostThread | DemodulatorPreThread | 100 |
 | `pipeIQDemodData` | `DemodulatorThreadPostInputQueue` | DemodulatorPreThread | DemodulatorThread | 100 |
 | `pipeAudioData` | `AudioThreadInputQueue` | DemodulatorThread | AudioThread | 100 |
-| `audioVisOutputQueue` | `DemodulatorThreadOutputQueue` | DemodulatorThread | ScopeVisualProcessor | default |
-| `audioSinkOutputQueue` | `DemodulatorThreadOutputQueue` | DemodulatorThread | AudioSinkFileThread | default |
+| `audioVisOutputQueue` | `DemodulatorThreadOutputQueue` | DemodulatorThread | ScopeVisualProcessor | 1 |
+| `audioSinkOutputQueue` | `DemodulatorThreadOutputQueue` | DemodulatorThread | AudioSinkFileThread | 1000 |
 
-Note: `audioVisOutputQueue` is a per-DemodulatorThread member that is bound at runtime to the global `pipeAudioVisualData` queue via `setOutputQueue("AudioVisualOutput", ...)`. `audioSinkOutputQueue` is bound dynamically only when WAV recording starts.
+Note: `pipeAudioVisualData` is a per-DemodulatorThread member that is bound at runtime to the global `pipeAudioVisualData` queue via `setOutputQueue("AudioVisualOutput", ...)` (max 1). `audioSinkOutputQueue` is bound dynamically only when WAV recording starts, to the sink thread's input queue (max 1000).
+
+Note: `pipeAudioVisualData` and `pipeDemodIQVisualData` are created and wired only when the respective compile-time view features are enabled (`CUBICSDR_ENABLE_VIEW_SCOPE` for the scope, `CUBICSDR_ENABLE_VIEW_DEMOD` for the demod spectrum). Otherwise these pointers are `nullptr`.
 
 Note: `DemodulatorThreadOutputQueue` and `AudioThreadInputQueue` are both aliases for `ThreadBlockingQueue<AudioThreadInputPtr>` (defined in `src/audio/AudioThread.h`). They carry the same data type; the distinct names reflect the queue's role in the pipeline.
 

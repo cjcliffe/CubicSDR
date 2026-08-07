@@ -48,7 +48,7 @@ The primary display canvas. Handles:
   - `WF_DRAG_BANDWIDTH_LEFT` / `WF_DRAG_BANDWIDTH_RIGHT` — resize demodulator bandwidth
   - `WF_DRAG_RANGE` — create new demodulator by range selection
 - **Zoom:** Mouse wheel adjusts `mouseZoom`, which smoothly animates to the target zoom level
-- **Frequency nudge:** Arrow keys shift center frequency by half/full bandwidth
+- **Frequency nudge:** Arrow keys shift center frequency by half a bandwidth; Shift adds 10× the shift
 - **Visual gain:** Shift+Up/Down adjusts `scaleMove` (drives visual gain animation toward target scale factor)
 
 **Drag state machine:**
@@ -187,7 +187,7 @@ Shared OpenGL context providing drawing primitives. All canvases share this cont
 | Method | Purpose |
 |--------|---------|
 | `BeginDraw(r, g, b)` | Clear color+depth buffers, load identity modelview |
-| `EndDraw()` | Finalize frame (currently empty — was `glFlush()`) |
+| `EndDraw()` | Finalize frame — currently empty (no-op) |
 | `DrawDemod(demod, color, center_freq=-1, srate=0)` | Draw demodulator bandwidth indicator with label |
 | `DrawDemodInfo(demod, color, center_freq=-1, srate=0, centerline=false)` | Draw demodulator info label (frequency, type, bandwidth) |
 | `DrawFreqSelector(uxPos, color, w=0, center_freq=-1, srate=0)` | Draw frequency selection marker (center line + BW edges) |
@@ -210,8 +210,7 @@ glLoadIdentity()
 - `glBegin(GL_LINES)` / `glVertex3f()` — immediate mode for demod lines
 - `glBegin(GL_QUADS)` / `glVertex3f()` — immediate mode for filled regions
 - `glColor4f()` / `glColor3f()` — immediate mode color setting
-- `glEnable(GL_LINE_SMOOTH)` — antialiased lines for borders and demod edges
-- `glLineWidth()` — variable width for demod edge emphasis
+- `glLineWidth()` — variable width for range-selector emphasis (`DrawRangeSelector`)
 
 **Blend modes used:**
 
@@ -250,7 +249,7 @@ Context for the fine-tuning bar canvas. Renders per-digit frequency display with
 
 - `DrawBegin()` — clears with theme background, disables texturing
 - `Draw(r, g, b, a, p1, p2)` — draws a horizontal tuning bar between positions `p1`–`p2` (normalized 0–1), split at y=0 with additive blending gradient (dim at edges, full at center)
-- `DrawTuner(freq, count, displayPos, displayWidth)` — renders a frequency value as individual digits, each in its own column with vertical grid lines at 25% alpha. Font size adapts to viewport via two independent paths: width-based (≥500px → 32px, ≥300px → 24px, else → 18px) and height-based (≥28px → 18px, ≥24px → 16px, else → 12px); whichever threshold is met first determines the size
+- `DrawTuner(freq, count, displayPos, displayWidth)` — renders a frequency value as individual digits, each in its own column with vertical grid lines at 25% alpha. Font size adapts to viewport via two sequential paths: width-based first (`<300px → 18px`, `<500px → 24px`, else → 32px), then height-based overrides (`<18px → 12px`, `<24px → 16px`, `<28px → 18px`; height ≥ 28px leaves the width-selected size unchanged)
 - `static DrawTunerDigitBox(index, count, displayPos, displayWidth, color)` — draws a red highlight box around a single digit position via `GL_LINE_STRIP` (note: `color` parameter is currently ignored; highlight is always red)
 - `GetTunerDigitIndex(mPos, count, displayPos, displayWidth)` — hit-test utility converting mouse position to digit index
 - `DrawTunerBarIndexed(start, end, count, displayPos, displayWidth, color, alpha, top, bottom)` — draws a colored bar for a range of digit indices on the top/bottom half with additive blending (note: `alpha` parameter is currently ignored; hardcoded to 0.6)
@@ -477,8 +476,6 @@ OnPaint():
     │
     ├── Draw frequency selector         // hover/active frequency marker
     │
-    ├── Draw frequency/bandwidth info   // text readout at cursor position
-    │
     └── SwapBuffers()
 ```
 
@@ -645,7 +642,7 @@ Arrow keys control frequency and display in the WaterfallCanvas:
 | UP | Shift held | Increase visual gain: `scaleMove = 1.0` |
 | DOWN | Shift held | Decrease visual gain: `scaleMove = -1.0` |
 
-All keyboard controls are **momentary** — on key-up, `freqMove`, `scaleMove`, and `zoom` reset to their default (0, 0, 1.0). Frequency movement has velocity decay: `freqMove -= freqMove * 0.2` per frame, stopping at 0.01.
+Keyboard controls are **momentary**: on key-up, `scaleMove` resets to 0 and `zoom` resets to 1.0 (with UP/DOWN key-up re-arming `mouseZoom` to 0.95/1.05). `freqMove` is not hard-reset on key-up; it stops by velocity decay — `freqMove -= freqMove * 0.2` per frame, snapping to 0 at 0.01.
 
 ### SpectrumCanvas Interactions
 
@@ -653,7 +650,7 @@ All keyboard controls are **momentary** — on key-up, `freqMove`, `scaleMove`, 
 |-------|--------|
 | Left-drag | Horizontal pan: `moveCenterFrequency(deltaX * bandwidth)` |
 | Right-drag | Visual gain: `updateScaleFactorFromYMove(deltaMouseY)`, clamped to [0.25, 10.0] (requires `scaleFactorEnabled`) |
-| Right-click (no vertical drag) | Animate scale factor back to 1.0, toggle peak hold on spectrum/demod processors (only triggers when `originDeltaMouseY == 0`) |
+| Right-click (no vertical drag) | Animate scale factor back to 1.0 and reset the peak-hold accumulator on spectrum/demod processors (only triggers when `originDeltaMouseY == 0`; the on/off peak-hold toggle is done elsewhere) |
 | Mouse wheel | Forwarded to `WaterfallCanvas::OnMouseWheelMoved()` for coordinated zoom |
 | 'B' key | Toggle dB display mode |
 
@@ -664,7 +661,7 @@ The spectrum canvas tracks cumulative bandwidth change (`bwChange`) and resets t
 | Input | Action |
 |-------|--------|
 | Left-drag | Panel slide with inertia: `dragAccel = 4.0 * deltaMouseX`, momentum-based snap |
-| Mouse wheel | Not wired in event table (handler exists but `EVT_MOUSEWHEEL` is absent from the event table) |
+| Mouse wheel | No action (handler exists but is not registered in the event table) |
 
 Panel position animates with spring-like behavior: `ctr += (ctrTarget - ctr) * 0.2`. Panels use 3D perspective projection with `lookat(0, 0, -1.205, ...)` and rotation via `atan2(pos, 1.2)` for a card-flip effect. The two panels (scope + spectrum) are separated by `panelSpacing = 0.4f` (total interval = `panelWidth * 2.0 + panelSpacing`).
 

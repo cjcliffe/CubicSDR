@@ -24,7 +24,7 @@ threadObject = new ThreadClass(...);
 t_stdThread = new std::thread(&ThreadClass::threadMain, threadObject);
 ```
 
-Exception: on macOS, `DemodulatorPreThread` and `DemodulatorThread` use `pthread_create` with ~2MB stack sizes (2048000 bytes) to control the stack size directly.
+Exception: on macOS, `DemodulatorInstance::run()` creates `DemodulatorPreThread` and `DemodulatorThread` via `pthread_create` with ~2MB stack sizes (2048000 bytes) to control the stack size directly. The demodulator thread `.cpp` files install only the `pthread_setschedparam` priority logic, not the stack size.
 
 ## Thread Inventory
 
@@ -51,7 +51,7 @@ Exception: on macOS, `DemodulatorPreThread` and `DemodulatorThread` use `pthread
 ### Pattern 1: Queue-Based Data Flow (Primary)
 
 All data-carrying threads communicate via `ThreadBlockingQueue<T>`:
-- **Blocking push/pop** for critical data (demod pipeline, worker commands)
+- **Blocking push / timed pop** for critical data (demod pipeline, worker commands) — pushes block indefinitely; pops use a short heartbeat timeout
 - **Non-blocking try_push/try_pop** for visualization (data loss acceptable)
 - Most queue items are `std::shared_ptr<T>` (IQ data, audio data); worker command/result queues use value types
 
@@ -125,7 +125,7 @@ Atomic variables signal parameter changes between UI and worker threads. Boolean
 
 ### Heartbeat Period
 
-All IOThread subclasses use a consistent 50ms heartbeat timeout (`HEARTBEAT_CHECK_PERIOD_MICROS = 50 * 1000`) in their main loop `pop()` calls. This ensures the `stopping` atomic flag is checked at ~20Hz, enabling responsive shutdown without dedicated interrupt mechanisms. The constant is defined locally in each translation unit (not shared), which is a minor duplication but has no behavioral impact.
+All IOThread subclasses that use a timed `pop()` in their main loop share a consistent 50ms heartbeat timeout (`HEARTBEAT_CHECK_PERIOD_MICROS = 50 * 1000`). This ensures the `stopping` atomic flag is checked at ~20Hz, enabling responsive shutdown without dedicated interrupt mechanisms. Threads that do not use a timed pop — `SDRThread` (blocking `readStream`), `SDREnumerator` (single-pass `run()`), and `RigThread` (uses `sleep_for(150ms)`) — rely on their own blocking/sleep behavior for shutdown. The constant is defined locally in each translation unit (not shared), which is a minor duplication but has no behavioral impact.
 
 ### SpinMutex
 
@@ -188,7 +188,7 @@ An `AudioSinkFileThread` may also be started on-demand when recording is activat
 
 In `CubicSDR::OnExit()`:
 
-1. `stopRig()` — calls `RigThread::terminate()` (sets atomic flag) then `isTerminated(1000)` to join (if rig is active)
+1. `stopRig()` — calls `RigThread::terminate()` (sets atomic flag), then `isTerminated(1000)` and `join()`s and deletes the rig thread and `RigThread` objects (if rig is active)
 2. `SDRThread::terminate()` — stops producing IQ data (waited up to 3s)
 3. `SDRPostThread::terminate()` — stops channelizing (waited up to 3s)
 4. `DemodulatorMgr::terminateAll()` — terminates all demodulator instances (queues flushed inside each `DemodulatorInstance::terminate()`)
@@ -236,7 +236,7 @@ On macOS, threads are assigned scheduling priorities:
 | Audio Thread (controller) | `SCHED_RR` | max - 1 |
 | Audio Sink Thread | `SCHED_RR` | max - 1 |
 
-Note: SDR Thread has `SCHED_FIFO` priority code but the entire `#ifdef __APPLE__` block is commented out on all platforms.
+Note: SDR Thread has `SCHED_FIFO` priority code but the entire `#ifdef __APPLE__` block is commented out (as is the main wxWidgets thread's `SCHED_RR` block in `CubicSDR.cpp`).
 
 Windows and Linux use default thread priorities.
 

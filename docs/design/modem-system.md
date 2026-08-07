@@ -186,7 +186,7 @@ Settings that change the liquid-dsp constellation size take effect in place via 
 | DSB | `ModemDSB` | `src/modules/modem/analog/ModemDSB.cpp` | 5400 |
 | I/Q | `ModemIQ` | `src/modules/modem/analog/ModemIQ.cpp` | 48000 |
 
-Note: `ModemFMStereo` and `ModemIQ` inherit directly from `Modem`, not from `ModemAnalog`. They are listed here because they produce analog audio output, but they do not use `ModemAnalog`'s resampling infrastructure. Both return `"analog"` from `getType()`, which is how `DemodulatorThread` dispatches them as analog modems despite the non-standard inheritance.
+Note: `ModemFMStereo` and `ModemIQ` inherit directly from `Modem`, not from `ModemAnalog`. They are listed here because they produce analog audio output, but they do not use `ModemAnalog`'s resampling infrastructure. Both return `"analog"` from `getType()`, which is how `DemodulatorThread` dispatches them as analog modems despite the non-standard inheritance. `ModemFMStereo` registers under the factory key `"FMS"` (and `getName()` returns `"FMS"`), so its UI/menu name is `"FM Stereo"` while the key is `"FMS"`.
 
 ### Digital (12, conditional on `ENABLE_DIGITAL_LAB`)
 

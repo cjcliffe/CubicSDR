@@ -47,7 +47,7 @@ Two distribution strategies handle different multicast patterns:
 
 **`VisualDataReDistributor<T>`** — Deep-copy dispatch via `ReBuffer` pool. Each output gets its own copy of the data, allocated from a pre-pooled buffer to avoid per-frame allocation. Used when consumers modify or consume the data independently.
 
-Both `VisualDataDistributor` and `VisualDataReDistributor` are defined inline in `VisualProcessor.h`.
+Both `VisualDataDistributor` and `VisualDataReDistributor` are defined inline in `VisualProcessor.h`. They are currently **declared-but-unused scaffolding**: neither is instantiated in the live pipeline. Actual distribution is done by `FFTDataDistributor`, `SpectrumVisualProcessor`, and `ScopeVisualProcessor`, which dispatch to outputs via the base `VisualProcessor::distribute()`.
 
 ## FFTDataDistributor (`src/process/FFTDataDistributor.h`)
 
@@ -107,10 +107,10 @@ pipeIQDataIn → fftDistrib → fftQueue → wproc → pipeFFTDataOut
 
 The thread loop:
 1. Sleep ~10ms between iterations
-2. `fftDistrib.run()` — packages IQ data into FFT-ready batches (rate-limited by `FFT_DISTRIBUTOR_BUFFER_IN_SECONDS = 0.250s`)
+2. `fftDistrib.run()` — packages IQ data into FFT-ready batches (input buffer sized by `FFT_DISTRIBUTOR_BUFFER_IN_SECONDS = 0.250s`)
 3. `wproc.run()` — executes FFT processing in a tight loop until input is drained (one FFT per iteration)
 
-This thread bridges IQ data to the waterfall display by running the FFT distributor and processor in a tight loop. The FFT distributor batches incoming IQ packets into FFT-sized chunks, and the processor executes one FFT per batch. Note: while `FFTDataDistributor` supports multiple outputs, `FFTVisualDataThread` attaches only one (`fftQueue`). The multi-consumer distribution (to both waterfall and spectrum) happens at the `SDRPostThread` level, which attaches separate queues to each consumer.
+This thread bridges IQ data to the waterfall display by running the FFT distributor and processor in a tight loop. The FFT distributor batches incoming IQ packets into FFT-sized chunks (its execution pace is rate-limited separately by `linesPerSecond`/`lineRateAccum`), and the processor executes one FFT per batch. Note: while `FFTDataDistributor` supports multiple outputs, `FFTVisualDataThread` attaches only one (`fftQueue`). The multi-consumer distribution (to both waterfall and spectrum) happens at the `SDRPostThread` level, which attaches separate queues to each consumer.
 
 ## ScopeVisualProcessor
 
@@ -123,7 +123,7 @@ Processes demodulated audio for scope/spectrum display.
 - `SCOPE_MODE_Y` — Single-channel time waveform
 - `SCOPE_MODE_2Y` — Dual-channel overlaid waveforms
 - `SCOPE_MODE_XY` — Lissajous figure (phase display)
-- Spectrum mode — FFT of demodulated audio (default 1024 points); controlled by a separate boolean flag (`renderData->spectrum`) rather than a fourth `ScopeMode` enum value
+- Spectrum mode — FFT of demodulated audio; FFT size defaults to 1024 (`DEFAULT_SCOPE_FFT_SIZE`), producing 512 output spectrum points (`fftSize/2`); controlled by a separate boolean flag (`renderData->spectrum`)
 
 Uses `try_pop` (non-blocking) instead of blocking pop, since audio data arrives at a fixed rate and stale data should be dropped.
 

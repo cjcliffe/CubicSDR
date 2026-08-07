@@ -31,7 +31,7 @@ Represents a saved demodulator configuration:
 | `bandwidth` | `int` | Demodulator bandwidth in Hz |
 | `node` | `DataNode*` | Full demodulator state (serialized via `DemodulatorMgr::saveInstance()`) |
 
-The `node` field stores the complete demodulator configuration including modem settings, gain, squelch, output device, and other parameters. This allows exact restoration when a bookmark is loaded. The class has no constructor, so `frequency`, `bandwidth`, and `node` are all uninitialized when a `BookmarkEntry` is default-constructed. The destructor calls `delete node` on this raw pointer, which is undefined behavior if `node` was never assigned. In practice, all construction paths (`demodToBookmarkEntry()` and `nodeToBookmark()`) assign `node`, so this is a latent defect rather than an active bug.
+The `node` field stores the complete demodulator configuration including modem settings, gain, squelch, output device, and other parameters. This allows exact restoration when a bookmark is loaded. The class has no constructor, so `frequency`, `bandwidth`, and `node` are all uninitialized when a `BookmarkEntry` is default-constructed. The destructor calls `delete node` on this raw pointer, which is undefined behavior if `node` was never assigned. In practice, all construction paths (`demodToBookmarkEntry()` and `nodeToBookmark()`) assign `node`.
 
 ### BookmarkRangeEntry (`src/BookmarkMgr.h`)
 
@@ -141,7 +141,7 @@ On first run (no bookmark file exists), `loadDefaultRanges()` populates standard
 | 13 cm lower | 2300–2310 MHz |
 | 13 cm upper | 2390–2450 MHz |
 
-> **Note:** The 17 meters band range (17.044–19.092 MHz) in the source is incorrect per international allocations. The ITU 17m band is 18.068–18.168 MHz. The source value spans ~2 MHz and bleeds into adjacent bands. This is a bug in `BookmarkMgr.cpp`, not a documentation error.
+> **Note:** The 17 meters band range (17.044–19.092 MHz) in the source is incorrect per international allocations. The ITU 17m band is 18.068–18.168 MHz. The source value spans ~2 MHz and bleeds into adjacent bands.
 
 ## Persistence
 
@@ -235,7 +235,7 @@ Recovery dialogs call `loadFromFile` with `backup=false`, so no `.lastloaded` or
 
 None of the three bookmark dialog subclasses override `doClickCancel()`. The base `ActionDialog` class defines `doClickCancel()` as a no-op, so clicking Cancel simply closes the dialog. Clicking Cancel in `ActionDialogBookmarkLoadFailed` or `ActionDialogBookmarkBackupLoadFailed` causes the app to continue with empty bookmarks. Clicking Cancel in `ActionDialogBookmarkCatastophe` causes the app to continue without exiting. `ActionDialogBookmarkCatastophe`'s OK action calls `disableSave(true)`, which prevents **all** saves on close — not just bookmarks, but also `AppConfig`.
 
-> **Note:** The class names are misleading — `ActionDialogBookmarkBackupLoadFailed` actually loads the `.lastloaded` file, not the `.backup` file. `ActionDialogBookmarkCatastophe` offers to exit without saving to preserve files for manual recovery.
+> **Note:** `ActionDialogBookmarkBackupLoadFailed` loads the `.lastloaded` file. `ActionDialogBookmarkCatastophe` offers to exit without saving to preserve files for manual recovery.
 
 ## UI Integration
 
@@ -262,7 +262,7 @@ Both systems expose public accessors: `BookmarkView::getExpandState()`/`setExpan
 
 During search, expand states are overridden: ranges are forced collapsed, while recents and bookmark groups are forced expanded. Expand/collapse events are suppressed during search to prevent user actions from conflicting with the forced states.
 
-`loadFromFile()` does not clear `BookmarkMgr::expandState` before repopulating it. Old group expand states persist across reloads for groups that no longer exist in the loaded file. Note the asymmetry: `bmData`, `recents`, `ranges`, and `bmDataSorted` are all cleared at the start of `loadFromFile()`, but `expandState` is not. This is likely unintentional but harmless due to the default-`true` behavior of `getExpandState()`.
+`loadFromFile()` does not clear `BookmarkMgr::expandState` before repopulating it. Old group expand states persist across reloads for groups that no longer exist in the loaded file. `bmData`, `recents`, `ranges`, and `bmDataSorted` are all cleared at the start of `loadFromFile()`, but `expandState` is not. This has no visible effect because `getExpandState()` returns `true` for unknown keys.
 
 ### Demodulator Interaction
 
@@ -274,7 +274,7 @@ During search, expand states are overridden: ranges are forced collapsed, while 
 ### Additional UI Features
 
 - **Search/Filter:** Keyword search filters bookmark tree in real-time
-- **Range management:** Add, remove, rename, and update frequency band ranges
+- **Range management:** Add, remove, and update frequency band ranges; ranges are renamed by editing the label field in the properties panel
 - **Recording controls:** Start/stop audio recording from active demodulators
 - **Status bar hint:** A static hint ("Drag & Drop to create / move bookmarks, Group and arrange bookmarks, quick Search by keywords.") is shown in the status bar when the mouse enters the bookmark panel
 - **Frequency/bandwidth editing:** Double-click the frequency or bandwidth fields in the properties panel to open a FrequencyDialog (active demodulators only)

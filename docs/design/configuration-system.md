@@ -198,7 +198,7 @@ Note: `DeviceConfig::save()` writes the `antenna`, `streamOpts`, `settings`, `ri
 1. Create a `DataTree` with root node named `cubicsdr_config`
 2. Populate window, recording, device, manual device, and rig nodes. The `window` node and all its children are only written when both `winW` and `winH` are non-zero (a zero-sized window produces no window config).
 3. Get config file path from `getConfigFileName()`
-4. Call `DataTree::SaveToFileXML()`; `save()` returns `false` and logs an error if the file cannot be written.
+4. Call `DataTree::SaveToFileXML()`. Note that `SaveToFileXML` unconditionally writes the file and always returns `true`, so `save()` cannot detect or report a disk-write failure; its error branch is effectively unreachable.
 
 **Load** (`AppConfig::load()`):
 1. Determine config file path
@@ -245,7 +245,7 @@ Sessions capture the complete demodulator state for save/restore.
 </cubicsdr_session>
 ```
 
-Note: The `<version>` element is stored internally as a percent-encoded `wstring` (not plain text), so the earlier example shows its encoded form. The `<view_state>` section is only written when the waterfall canvas view state is active; it is absent when no view state is saved.
+Note: The `<version>` element is stored internally as a percent-encoded `wstring` (not plain text), so the earlier example shows its encoded form. The `<view_state>` section is only written when the waterfall canvas view state is active.
 
 ### Save Flow (`SessionMgr::saveSession()`)
 
@@ -260,7 +260,7 @@ Note: The `<version>` element is stored internally as a percent-encoded `wstring
 1. Load `DataTree` from file
 2. Validate root node name is `cubicsdr_session`
 3. Terminate all existing demodulators
-4. Parse header: version, sample rate (clamped to device limits), solo mode
+4. Parse header: version, sample rate (selected to the nearest supported value when outside the device's range, or the manual fallback when no rate list is available), solo mode
 5. Parse demodulators: create each via `DemodulatorMgr::loadInstance()`, call `run()`, set active
 6. Restore center frequency and view state
 7. Set active demodulator

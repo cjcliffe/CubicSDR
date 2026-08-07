@@ -89,11 +89,11 @@ The `audioCallback` function runs in the RtAudio real-time thread:
 5. Return 0 on success; return 1 if the controller is terminated, which instructs RtAudio to stop the stream
 
 Key properties:
-- **Buffer size:** The RtAudio buffer is 1024 frames by default (`nBufferFrames`), which at 48 kHz yields ~21 ms latency per buffer
-- **Sample rate matching:** Whenever a new `currentInput` is popped (either on first access or when the current packet is exhausted mid-mixing), the callback checks if its sample rate matches the controller's. If not, it pops and discards packets until it finds a matching one or the queue is exhausted. If no matching packet is found, `currentInput` is left as `nullptr` and the thread is skipped
+- **Buffer size:** The RtAudio buffer is 1024 frames by default (`nBufferFrames`), which at a 48 kHz device rate yields ~21 ms of audio per buffer (latency varies with the configured device sample rate)
+- **Sample rate matching:** When the callback finds `currentInput` is `nullptr` at the start of a poll, it pops a packet and `continue`s to the next thread without mixing it. On the following callback, `currentInput` is non-null and the sample rate is checked against the controller's. If it does not match, the callback pops and discards packets until it finds a matching one or the queue is exhausted. If no matching packet is found, `currentInput` is left as `nullptr` and the thread is skipped. When a packet is exhausted mid-mixing and the next is popped inline, no rate check is performed.
 - **First-packet latency:** When a new packet is popped from a queue, the callback immediately continues to the next thread without mixing it. This introduces a one-callback-cycle delay before a newly queued packet produces output, avoiding partial consumption of a fresh packet
 - **Underflow handling:** If a bound thread runs out of data, the callback continues with the next thread. RtAudio buffer underflows (reported via `status` flag) are counted in the controller's `underflowCount` field
-- **Gain staging:** Per-thread `gain` (0.0–2.0, default 1.0) is applied before mixing; global normalization prevents clipping
+- **Gain staging:** Per-thread `gain` (0.0–2.0, default 1.0) is applied as samples are summed into the mix (`data[i]*gain`); global normalization prevents clipping
 
 ### Real-Time Design Constraints
 
