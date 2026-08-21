@@ -39,7 +39,7 @@ class ActionDialogRemoveBookmark : public ActionDialog {
 public:
     explicit ActionDialogRemoveBookmark( BookmarkEntryPtr be ) : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Remove Bookmark?")) {
         subject = be;
-        m_questionText->SetLabelText(wxT("Are you sure you want to remove the bookmark\n '" + BookmarkMgr::getBookmarkEntryDisplayName(subject) + "'?"));
+        m_questionText->SetLabelText(wxString(L"Are you sure you want to remove the bookmark\n '") + wxString(BookmarkMgr::getBookmarkEntryDisplayName(subject)) + wxString("'?"));
     }
     
     void doClickOK() override {
@@ -55,7 +55,7 @@ class ActionDialogRemoveGroup : public ActionDialog {
 public:
     explicit ActionDialogRemoveGroup( std::string groupName ) : ActionDialog(wxGetApp().getAppFrame(), wxID_ANY, wxT("Remove Group?")) {
         subject = groupName;
-        m_questionText->SetLabelText(wxT("Warning: Are you sure you want to remove the group\n '" + subject + "' AND ALL BOOKMARKS WITHIN IT?"));
+        m_questionText->SetLabelText(wxString(L"Warning: Are you sure you want to remove the group\n '") + wxString(subject) + wxString("' AND ALL BOOKMARKS WITHIN IT?"));
     }
     
     void doClickOK() override {
