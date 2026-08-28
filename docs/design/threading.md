@@ -51,8 +51,8 @@ Exception: on macOS, `DemodulatorInstance::run()` creates `DemodulatorPreThread`
 ### Pattern 1: Queue-Based Data Flow (Primary)
 
 All data-carrying threads communicate via `ThreadBlockingQueue<T>`:
-- **Blocking push / timed pop** for critical data (demod pipeline, worker commands) — pushes block indefinitely; pops use a short heartbeat timeout
-- **Non-blocking try_push/try_pop** for visualization (data loss acceptable)
+- **Blocking push / timed pop** for critical data (demod pre-thread output, worker commands) — pushes block indefinitely; pops use a short heartbeat timeout
+- **Non-blocking try_push/try_pop** for visualization and the demod→audio output legs (data loss acceptable)
 - Most queue items are `std::shared_ptr<T>` (IQ data, audio data); worker command/result queues use value types
 
 ### Pattern 2: Atomic Flags for Control
@@ -125,7 +125,7 @@ Atomic variables signal parameter changes between UI and worker threads. Boolean
 
 ### Heartbeat Period
 
-All IOThread subclasses that use a timed `pop()` in their main loop share a consistent 50ms heartbeat timeout (`HEARTBEAT_CHECK_PERIOD_MICROS = 50 * 1000`). This ensures the `stopping` atomic flag is checked at ~20Hz, enabling responsive shutdown without dedicated interrupt mechanisms. Threads that do not use a timed pop — `SDRThread` (blocking `readStream`), `SDREnumerator` (single-pass `run()`), and `RigThread` (uses `sleep_for(150ms)`) — rely on their own blocking/sleep behavior for shutdown. The constant is defined locally in each translation unit (not shared), which is a minor duplication but has no behavioral impact.
+All IOThread subclasses that use a timed `pop()` in their main loop share a consistent 50ms heartbeat timeout (`HEARTBEAT_CHECK_PERIOD_MICROS = 50 * 1000`). This ensures the `stopping` atomic flag is checked at ~20Hz, enabling responsive shutdown without dedicated interrupt mechanisms. Threads that do not use a timed pop — `SDRThread` (blocking `readStream`), `SDREnumerator` (single-pass `run()`), `RigThread` (uses `sleep_for(150ms)`), and the visual data threads `SpectrumVisualDataThread`/`FFTVisualDataThread` (sleep-looped) — rely on their own blocking/sleep behavior for shutdown. The constant is defined locally in each translation unit (not shared), which is a minor duplication but has no behavioral impact.
 
 ### SpinMutex
 
@@ -157,7 +157,7 @@ For the full pipeline internals (VisualProcessor API, distribution modes, FFT pr
 
 ### SDREnumerator One-Shot Spawning
 
-`SDREnumerator` threads are spawned as needed (device refresh, remote add, re-enumeration) without joining the previous instance. Each call to `threadMain` performs a single enumeration pass and exits. The old thread pointer is overwritten without cleanup — a deliberate fire-and-forget pattern. Since `delete` is never called on the old pointer, the `std::thread` destructor is never invoked (so `std::terminate()` is not triggered by the overwrite itself). The actual consequences are a memory leak of the orphaned `std::thread` object and a potentially still-running thread cleaned up only at process exit. The real thread-safety issue is a data race on the `t_SDREnum` pointer if `addRemote()` or `reEnumerateDevices()` are called concurrently. Additionally, `OnExit()` does not join or delete `t_SDREnum`/`sdrEnum`, unlike every other thread pair in the shutdown sequence.
+`SDREnumerator` threads are spawned as needed (device refresh, remote add, re-enumeration) without joining the previous instance. Each call to `threadMain` performs a single enumeration pass and exits. The old thread pointer is overwritten without cleanup — a fire-and-forget pattern (no join or delete of the previous instance). Since `delete` is never called on the old pointer, the `std::thread` destructor is never invoked (so `std::terminate()` is not triggered by the overwrite itself). The actual consequences are a memory leak of the orphaned `std::thread` object and a potentially still-running thread cleaned up only at process exit. The real thread-safety issue is a data race on the `t_SDREnum` pointer if `addRemote()` or `reEnumerateDevices()` are called concurrently. Additionally, `OnExit()` does not join or delete `t_SDREnum`/`sdrEnum`, unlike every other thread pair in the shutdown sequence.
 
 ## Thread Lifecycle
 
@@ -216,7 +216,7 @@ The actual thread join/cleanup happens in `isTerminated()`, which is called from
 
 ### Known Issues
 
-**macOS audio thread join bug:** In `DemodulatorInstance::isTerminated()`, the macOS cleanup path for the audio thread (`DemodulatorInstance.cpp`) calls `pthread_join(t_PreDemod, NULL)` — a copy-paste error where `t_PreDemod` was used instead of `t_Audio`. At that point `t_PreDemod` has already been joined and set to `nullptr`, so this calls `pthread_join(NULL, ...)` which returns `ESRCH` (no thread found). The result is that the audio thread's `std::thread` object is leaked. On macOS, `t_PreDemod` and `t_Demod` are `pthread_t` (not pointers), while `t_Audio` is `std::thread*` on all platforms — so even with the correct variable name, `pthread_join` would be the wrong API. The non-macOS path (`t_Audio->join()` / `delete t_Audio`) is correct.
+**macOS audio thread join bug:** In `DemodulatorInstance::isTerminated()`, the macOS cleanup path for the audio thread (`DemodulatorInstance.cpp`) calls `pthread_join(t_PreDemod, NULL)` — a copy-paste error where `t_PreDemod` was used instead of `t_Audio`. In the typical shutdown order `t_PreDemod` has already been joined and set to `nullptr`, so this calls `pthread_join(NULL, ...)` which returns `ESRCH` (no thread found). If pre-demod has not yet terminated, the call blocks until the pre-demod thread finishes, then the pre-demod block attempts a redundant join on the next call. Either way, the audio thread's `std::thread` object is never joined or deleted. On macOS, `t_PreDemod` and `t_Demod` are `pthread_t` (not pointers), while `t_Audio` is `std::thread*` on all platforms — so even with the correct variable name, `pthread_join` would be the wrong API. The non-macOS path (`t_Audio->join()` / `delete t_Audio`) is correct.
 
 **SDREnumerator not cleaned up on exit:** `t_SDREnum` and `sdrEnum` are never joined or deleted in `OnExit()` or anywhere else in the codebase. They rely on process exit for cleanup.
 
@@ -233,7 +233,7 @@ On macOS, threads are assigned scheduling priorities:
 | SDR Post-Processing | `SCHED_FIFO` | `sched_get_priority_max` |
 | Demodulator Pre-Thread | `SCHED_FIFO` | max - 1 |
 | Demodulator Thread | `SCHED_FIFO` | max - 1 |
-| Audio Thread (controller) | `SCHED_RR` | max - 1 |
+| Audio Thread (controller & bound) | `SCHED_RR` | max - 1 |
 | Audio Sink Thread | `SCHED_RR` | max - 1 |
 
 Note: SDR Thread has `SCHED_FIFO` priority code but the entire `#ifdef __APPLE__` block is commented out (as is the main wxWidgets thread's `SCHED_RR` block in `CubicSDR.cpp`).

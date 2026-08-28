@@ -146,7 +146,7 @@ Squelch is computed entirely within `DemodulatorThread` — no modem code partic
 
 ### Digital Modems
 
-- Fill `demodOutputDataDigital` with symbol indices
+- Fill `demodOutputDataDigital` with symbol indices (except FSK and GMSK, which stream decoded symbols directly to the Digital Lab `outStream` instead; the buffer contents are not consumed downstream)
 - Produce no audio directly
 - `DemodulatorThread` forwards IQ data to visualization instead
 
@@ -186,7 +186,7 @@ Settings that change the liquid-dsp constellation size take effect in place via 
 | DSB | `ModemDSB` | `src/modules/modem/analog/ModemDSB.cpp` | 5400 |
 | I/Q | `ModemIQ` | `src/modules/modem/analog/ModemIQ.cpp` | 48000 |
 
-Note: `ModemFMStereo` and `ModemIQ` inherit directly from `Modem`, not from `ModemAnalog`. They are listed here because they produce analog audio output, but they do not use `ModemAnalog`'s resampling infrastructure. Both return `"analog"` from `getType()`, which is how `DemodulatorThread` dispatches them as analog modems despite the non-standard inheritance. `ModemFMStereo` registers under the factory key `"FMS"` (and `getName()` returns `"FMS"`), so its UI/menu name is `"FM Stereo"` while the key is `"FMS"`.
+Note: `ModemFMStereo` and `ModemIQ` inherit directly from `Modem`, not from `ModemAnalog`. They are listed here because they produce analog audio output, but they do not use `ModemAnalog`'s resampling infrastructure. Both return `"analog"` from `getType()`, which is how `DemodulatorThread` dispatches them as analog modems despite the non-standard inheritance. `ModemFMStereo` registers under the factory key `"FMS"` (and `getName()` returns `"FMS"`); the mode selector button displays this key directly (the label `"FM Stereo"` appears only in the modem's setting descriptions, e.g. the de-emphasis option).
 
 ### Digital (12, conditional on `ENABLE_DIGITAL_LAB`)
 

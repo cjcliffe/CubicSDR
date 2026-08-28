@@ -83,7 +83,7 @@ The `reset()` method clears `soapy_initialized`, `factories`, `modules`, and `de
 |-------|---------|
 | `SDR_ENUM_MESSAGE` | Status message (displayed in UI) |
 | `SDR_ENUM_DEVICES_READY` | Enumeration complete, devices available |
-| `SDR_ENUM_FAILED` | No modules available (factory list contains exactly one entry and it is `null`). Sent during `enumerate_devices()` initialization, not after — enumeration continues and `SDR_ENUM_DEVICES_READY` is still sent at the end of `run()` |
+| `SDR_ENUM_FAILED` | No modules available (factory list contains exactly one factory named `null` — SoapySDR's null device factory). Sent during `enumerate_devices()` initialization, not after — enumeration continues and `SDR_ENUM_DEVICES_READY` is still sent at the end of `run()` |
 | `SDR_ENUM_TERMINATED` | Thread terminated (defined but not currently sent) |
 
 ## SDRDeviceInfo (`src/sdr/SDRDeviceInfo.h`)
@@ -155,7 +155,7 @@ SoapySDR devices are configured via key-value argument strings:
 |----------|---------|
 | `driver` | SoapySDR driver module name |
 | `device` | Device identifier |
-| `serial` | Device serial number |
+| `serial` | Device serial number (not referenced as an argument key in this codebase) |
 | `remote` | Remote server address |
 | `label` | Human-readable device label |
 
@@ -192,7 +192,7 @@ Manual devices are:
 `SDRDevicesDialog` (`src/forms/SDRDevices/`) provides:
 
 - List of all discovered devices (local, remote, manual)
-- Device properties display (sample rates, gains, antennas)
+- Device properties display (general settings, stream settings, antenna, sample rate)
 - Manual device add/remove
 - Remote device add (via `CubicSDR::addRemote`); no UI exists to remove a remote device — `removeRemote` is declared but never invoked
 - Device activation (triggers `SDRThread` creation)
@@ -210,12 +210,12 @@ Per-device settings are persisted in `DeviceConfig` (see [Configuration System](
 
 ## Module Loading
 
-SoapySDR modules are loaded in this order:
+SoapySDR module loading is a mutually exclusive branch, not a sequential chain:
 
-1. **User-specified path** (`-m` command line option)
-2. **Bundled modules** (if `BUNDLE_SOAPY_MODS` is defined):
-   - If `BUNDLED_MODS_ONLY` is defined, load only bundled modules from `modules/` subdirectory next to the executable
-   - Otherwise, load bundled modules and optionally system modules based on the `getUseLocalMod()` runtime preference
-3. **System modules** (default `SoapySDR::loadModules()`)
+1. **User-specified path** (`-m` command line option): if a module path is set, load modules only from that path via `SoapySDR::listModules()`/`loadModule()`. Bundled and system modules are skipped entirely.
+2. **Bundled + system** (no `-m` path, `BUNDLE_SOAPY_MODS` defined):
+   - If `BUNDLED_MODS_ONLY` is defined, load only bundled modules from the `modules/` subdirectory next to the executable
+   - Otherwise both bundled and system modules are **always** loaded; the `getUseLocalMod()` runtime preference only controls the order. With the default (`getUseLocalMod() == true`) system modules load first, then bundled. With `-b` (`getUseLocalMod() == false`) bundled modules load first, then system.
+3. **System modules only** (no `-m` path, `BUNDLE_SOAPY_MODS` not defined): default `SoapySDR::loadModules()`.
 
 Module discovery is controlled by `SoapySDR::listModules()` and `SoapySDR::loadModule()`.

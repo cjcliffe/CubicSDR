@@ -30,7 +30,7 @@ SessionMgr (session state)
 |----------|------|
 | Windows | `%APPDATA%/CubicSDR` |
 | macOS | `~/Library/Application Support/CubicSDR` |
-| Linux | `~/.cubicsdr` (or `~/.config/CubicSDR` on XDG-compliant builds) |
+| Linux | `~/.cubicsdr` (wxStandardPaths user-data default) |
 
 The directory is created automatically if it doesn't exist.
 
@@ -43,7 +43,7 @@ The directory is created automatically if it doesn't exist.
 | `bookmarks.xml` | Bookmark data |
 | `bookmarks.xml.backup` | Bookmark backup |
 | `bookmarks.xml.lastloaded` | Last successfully loaded bookmarks |
-| `bookmarks.xml.failedload` | Created when a bookmark file fails to load |
+| `bookmarks.xml.failedload` | Copied on per-entry bookmark parse failure (backup mode only; hard failures do not create it) |
 
 Bookmark file loading uses a dialog-interactive recovery sequence across `.backup` and `.lastloaded` fallbacks. The exact behavior depends on the `backup` flag passed to `BookmarkMgr::loadFromFile()` and is detailed in the [Bookmark System](bookmark-system.md) document.
 
@@ -206,7 +206,7 @@ Note: `DeviceConfig::save()` writes the `antenna`, `streamOpts`, `settings`, `ri
 3. Call `DataTree::LoadFromFileXML()`; if the config file exists but is not readable, `load()` returns `false`.
 4. Parse each section: window, recording, devices, manual_devices, rig
 5. Missing sections use defaults
-6. `perfMode` is unconditionally reset to `PERF_NORMAL` before checking the XML value, so a missing `perf_mode` node always results in `PERF_NORMAL` regardless of any prior value. A present `perf_mode` value is only applied if it equals `PERF_LOW` or `PERF_HIGH`; any other (unrecognized) value leaves it as `PERF_NORMAL`.
+6. `perfMode` is reset to `PERF_NORMAL` within the window section before reading `perf_mode`, so a missing `perf_mode` node results in `PERF_NORMAL` (when a `<window>` node is present). A present `perf_mode` value is only applied if it equals `PERF_LOW` or `PERF_HIGH`; any other (unrecognized) value leaves it as `PERF_NORMAL`.
 
 `AppConfig::reset()` is declared but is a no-op: it returns `true` without applying or reloading any state, and is not currently invoked.
 
@@ -303,7 +303,7 @@ DataTree
 | `rewind(name)` / `rewind()` | Reset iterator to beginning (by name or generic) |
 | `rewindAll()` | Reset all iterators |
 | `element()` | Get the `DataElement` value |
-| `findAll(name, list)` | Recursively find all descendants matching name |
+| `findAll(name, list)` | Find all nodes matching name, including the node itself |
 
 DataNode also provides operator overloads that are the idiomatic access pattern throughout the codebase:
 - Cast operators (`operator string`, `operator const char*`, `operator int`, `operator float`, etc.) for reading values. `operator const char*` returns `nullptr` if the type is not `DATA_STRING`.
@@ -337,7 +337,7 @@ Additionally, `DataElement` supports raw byte buffers via `set(const char*, long
 - Element text content → `DataElement` value
 - Child elements → child `DataNode`s
 - Element attributes → `DataNode`s whose name is prefixed with `@` (BadgerFish convention). A `DataNode` named e.g. `@name` is written as (and read back from) the XML attribute `name`.
-- `std::vector<std::string>` values serialize as a sequence of child `<str>` elements, and are deserialized back into a string vector when an element's children are all named `str`.
+- `std::vector<std::string>` values serialize as a sequence of child `<str>` elements, and are deserialized back into a string vector when the first child element is named `str` (non-`str` siblings are silently dropped).
 - A `DataNode` with an empty name is written using the element name `node`.
 
 `LoadFromFileXML` accepts a `DT_FloatingPointPolicy` parameter (`USE_FLOAT` or `USE_DOUBLE`) that controls whether floating-point XML text values are parsed as `float` or `double`. The default is `USE_FLOAT`.
@@ -346,7 +346,7 @@ Additionally, `DataElement` supports raw byte buffers via `set(const char*, long
 
 ### Thread Safety
 
-`DataTree` and `DataNode` are **not thread-safe**. Config save/load happens on the main thread during UI events.
+`DataTree` and `DataNode` are **not thread-safe**. Config save runs on the main thread during UI events; load runs at startup in the `CubicSDR` constructor.
 
 Both `AppConfig` and `DeviceConfig` use `std::atomic` for scalar fields to allow safe reads/writes from different threads without locking. `DeviceConfig` additionally uses `busy_lock` (a `std::mutex`) to protect the `deviceId` and `deviceName` strings, and the `save()`/`load()` methods. However, individual accessors for `antennaName`, `streamOpts`, `gains`, `settings`, and `rigIF` do **not** acquire the mutex — they are only safe when accessed from the same thread that calls `save()`/`load()`. `AppConfig` does not use a mutex for any of its non-atomic fields (`recordingPath`, `rigPort`, `configName`, `manualDevices`).
 

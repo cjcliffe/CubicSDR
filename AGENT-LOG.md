@@ -924,3 +924,57 @@ Cross-verified all 10 `docs/design/` files against source in full detail (queue 
 | `docs/design/visual-rendering.md` | Shortened the Mouse-wheel row (was doubly redundant: "not wired" + "absent from event table") |
 | `docs/design/configuration-system.md` | Dropped redundant "it is absent when no view state is saved" restatement |
 | `docs/design/bookmark-system.md` | Removed editorial "latent defect rather than an active bug" verdict, kept the facts |
+
+## Session 68: Design Doc Verification (Round 4) + Corrections
+
+**Date:** 2026-08-18
+**Model:** opencode/deepseek-v4-flash-free
+
+- Re-verified all 9 `docs/design/` docs (plus README/PLAN/RECOMMENDATIONS) against source via parallel exploration agents + direct spot-checks; confirmed high overall accuracy (threading, visual-rendering, configuration-system, sdr-device-layer, signal-flow 100%)
+- Found and applied 6 corrections; each was double-checked in source before editing
+
+| File | Action |
+|------|--------|
+| `docs/design/modem-system.md` | Corrected FM Stereo UI-name claim: mode selector displays the raw key "FMS"; "FM Stereo" appears only in setting descriptions |
+| `docs/design/audio-subsystem.md` | Fixed new-controller setup order in `setupDevice()` (setInitOutputDevice → bind → attachControllerThread → register in deviceController) |
+| `docs/design/visual-data-pipeline.md` | Corrected view-mode resampling: ratio derived from bandwidth/sample-rate halving (specified loop), not center-frequency offset (NCO shift is offset-driven) |
+| `docs/design/signal-flow.md` | Disambiguated member/global queue names: per-thread member is `audioVisOutputQueue` bound via `onBindOutput("AudioVisualOutput")` |
+| `docs/design/bookmark-system.md` | Clarified `.failedload` created only on per-entry parse failures, not hard failures (unreadable/XML/root-name) |
+| `docs/design/threading.md` | Added `SpectrumVisualDataThread`/`FFTVisualDataThread` to the no-timed-pop heartbeat exception list |
+
+## Session 69: Design Doc Verification (Round 5) + Corrections
+
+**Date:** 2026-08-18
+**Model:** opencode/deepseek-v4-flash-free
+
+- Re-verified all 9 `docs/design/` docs against source via parallel exploration agents, then double-checked every contested claim directly in the code before editing; confirmed the docs match the code ~90-98%
+- Applied corrections grouped by document; each fix was confirmed against the actual source (queue capacities, atomic members, mutex scope, priority macro guards, filename/scale formulas, control-flag semantics, module-loading branch logic)
+
+| File | Action |
+|------|--------|
+| `docs/design/sdr-device-layer.md` | Rewrote Module Loading: user `-m` path is an exclusive branch (bundled/system skipped); `getUseLocalMod()` only swaps load order (system modules always loaded); annotated `serial` row as unused; gains are not displayed in `SDRDevicesDialog` |
+| `docs/design/audio-subsystem.md` | `DemodulatorThread::run()` (not `ModemDigital`) creates the `ati`/`ati_vis` objects; digital `ati` nullification is conditional on the visualization-block guard; int16 scaling is a fixed 32767 scale for peak < 1.0; `SET_SAMPLE_RATE` updates all demodulators on the device regardless of active; `RTAUDIO_SCHEDULE_REALTIME` set on all platforms; timestamp filename applied at recording start |
+| `docs/design/visual-rendering.md` | `wfHighlight` marked unused; arrow-key summary qualified by view mode; visual gain is an incremental step not animation; keyboard zoom assigns (not multiplies); margin formula includes panel-size divisor; OnPaint ordering corrected (zoom → gain → nudge) |
+| `docs/design/visual-data-pipeline.md` | `VisualDataReDistributor` deep-copies once and shares the same pointer across outputs; scope spectrum control flag is `spectrumEnabled`, not `renderData->spectrum`; resampling loop halts at/above bandwidth |
+| `docs/design/configuration-system.md` | perfMode reset conditional on `window` node; trimmed unverifiable Linux XDG path; save on UI thread / load in `CubicSDR` constructor; `findAll` includes the node itself |
+| `docs/design/bookmark-system.md` | Double-click activates a matching live demodulator first; expand-state seeding is by direct assignment + `<branches>` load; deleteThread adds to recents; unreadable-file early return; Cancel may leave partially-parsed bookmarks |
+| `docs/design/modem-system.md` | FSK/GMSK stream symbols to Digital Lab `outStream` and never fill `demodOutputDataDigital` (buffer unconsumed downstream) |
+| `docs/design/signal-flow.md` | ReBuffer "Used by" list includes `FFTDataDistributor` and `VisualDataReDistributor` |
+| `docs/design/threading.md` | Demod→audio legs use non-blocking `try_push`; bound audio threads also apply SCHED_RR priority; softened SDREnumerator fire-and-forget wording |
+
+## Session 70: Full Design Doc Accuracy Verification + Targeted Corrections
+
+**Date:** 2026-08-21
+**Model:** opencode/mimo-v2.5-free
+
+- Full cross-verification of all 9 `docs/design/` docs against source via 5 parallel exploration agents + direct spot-checks of flagged items
+- Agents verified ~95 factual claims; overall accuracy ~96% (4 errors, remainder correct)
+- Spot-checked all 4 flagged items directly in source before editing (blend modes in PrimaryGLContext.cpp:203-308, DataTree `<str>` deserialization in DataTree.cpp:578, SDR_ENUM_FAILED in SDREnumerator.cpp:165, macOS audio-join in DemodulatorInstance.cpp:201-268)
+- Applied 5 corrections
+
+| File | Action |
+|------|--------|
+| `docs/design/visual-rendering.md` | Corrected blend-mode table: opaque `GL_ONE/GL_ZERO` used only in USB/LSB shadow branches; default-branch shadow uses additive |
+| `docs/design/configuration-system.md` | Aligned `.failedload` description with bookmark doc (per-entry parse failure only, backup mode; hard failures don't create it); fixed vector `<str>` deserialization to note only the first child is checked |
+| `docs/design/sdr-device-layer.md` | Clarified `SDR_ENUM_FAILED` condition: factory list has exactly one factory *named* "null" (SoapySDR's null device), not a null pointer entry |
+| `docs/design/threading.md` | Softened macOS audio-join bug description: noted the join-the-already-nulled-PreDemod claim depends on shutdown order; if pre-demod hasn't terminated the call blocks instead |

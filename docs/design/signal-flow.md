@@ -120,7 +120,7 @@ Manages RtAudio hardware output using a **controller/bound** pattern:
 | `audioVisOutputQueue` | `DemodulatorThreadOutputQueue` | DemodulatorThread | ScopeVisualProcessor | 1 |
 | `audioSinkOutputQueue` | `DemodulatorThreadOutputQueue` | DemodulatorThread | AudioSinkFileThread | 1000 |
 
-Note: `pipeAudioVisualData` is a per-DemodulatorThread member that is bound at runtime to the global `pipeAudioVisualData` queue via `setOutputQueue("AudioVisualOutput", ...)` (max 1). `audioSinkOutputQueue` is bound dynamically only when WAV recording starts, to the sink thread's input queue (max 1000).
+Note: `pipeAudioVisualData` is the global queue name; the corresponding per-DemodulatorThread member is `audioVisOutputQueue`, bound at runtime to the global queue via `onBindOutput("AudioVisualOutput", ...)` (max 1). `audioSinkOutputQueue` is bound dynamically only when WAV recording starts, to the sink thread's input queue (max 1000).
 
 Note: `pipeAudioVisualData` and `pipeDemodIQVisualData` are created and wired only when the respective compile-time view features are enabled (`CUBICSDR_ENABLE_VIEW_SCOPE` for the scope, `CUBICSDR_ENABLE_VIEW_DEMOD` for the demod spectrum). Otherwise these pointers are `nullptr`.
 
@@ -134,10 +134,10 @@ To avoid heap allocation on every frame, CubicSDR uses `ReBuffer<T>` (`src/IOThr
 
 - `getBuffer()` scans for a buffer with `use_count == 1` (not in transit), resets its age, and returns it; if none available, allocates a new one
 - When the last consumer releases a buffer, its `use_count` drops to 1 and it becomes available for reuse
-- Idle buffers age out: each time a buffer is selected, other unused buffers have their age decremented. When the oldest buffer's age drops below `-REBUFFER_GC_LIMIT` (i.e. age < -100), it is garbage collected
+- Idle buffers age out: each time a buffer is selected, other unused buffers have their age decremented. When the oldest buffer's age drops below the negated GC limit (`-REBUFFER_GC_LIMIT`, i.e. age < -100), it is garbage collected
 - A warning is emitted if the pool exceeds `REBUFFER_WARNING_THRESHOLD` (2000) buffers
 
-Used by: SDRThread, SDRPostThread, DemodulatorPreThread, DemodulatorThread, SpectrumVisualProcessor, ScopeVisualProcessor.
+Used by: SDRThread, SDRPostThread, DemodulatorPreThread, DemodulatorThread, FFTDataDistributor, VisualDataReDistributor (via the VisualProcessor base), SpectrumVisualProcessor, ScopeVisualProcessor.
 
 ### Data Types
 

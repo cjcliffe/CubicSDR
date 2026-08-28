@@ -62,9 +62,10 @@ AudioThread (per-demod, "bound") ---bindThread()---> AudioThread (controller)
 2. If a controller already existed for the previous device, `this` removes itself from that controller's `boundThreads` (under the old controller's mutex)
 3. If no controller exists for `deviceId`:
    - A new `AudioThread` is created as controller
-   - The controller is registered in `deviceController[deviceId]`
+   - `setInitOutputDevice()` configures the controller's device ID and sample rate
    - The controller binds the current (calling) thread to its `boundThreads`
-   - `attachControllerThread()` stores the controller's `std::thread*` for lifecycle management
+   - `attachControllerThread()` starts the controller's `std::thread` and stores the pointer for lifecycle management
+   - The controller is registered in `deviceController[deviceId]` (after binding and thread start)
 4. If a controller already exists and `this` is the controller:
    - The RtAudio stream is opened directly with `audioCallback`
 5. If a controller already exists and `this` is a bound thread:
@@ -155,7 +156,7 @@ Data packet passed from demodulator to audio output:
 | Command | Effect |
 |---------|--------|
 | `AUDIO_THREAD_CMD_SET_DEVICE` | Calls `setupDevice()` to switch output device |
-| `AUDIO_THREAD_CMD_SET_SAMPLE_RATE` | Calls `setSampleRate()` — stops/restarts RtAudio stream, updates all bound threads and active demodulators |
+| `AUDIO_THREAD_CMD_SET_SAMPLE_RATE` | Calls `setSampleRate()` — stops/restarts the controller's RtAudio stream, updates all bound threads and every demodulator whose output device matches (regardless of active state) |
 
 ## Recording Pipeline
 
@@ -191,7 +192,7 @@ Concrete recording implementation:
 - Base name is set by the user (demodulator label or default)
 - Invalid filename characters (`<>:"/\|?*`) are replaced with `_`
 - Sequence numbers (`_NNN`, zero-padded to 3 digits) are appended to the base name when a file exceeds the 2GB limit and a new part is started. The first part has no sequence suffix
-- Time-limited recording changes the base name to include a timestamp (`{baseName}_{YYYY-MM-DD_HH-MM-SS}`), resetting the sequence number to 0
+- Time-limited recording refreshes the timestamp suffix (`{baseName}_{YYYY-MM-DD_HH-MM-SS}`) on each new file, which resets the sequence number to 0. The timestamp suffix is applied from the start of recording (in `setAudioFileHandler()`), so files carry a timestamp even without a time limit.
 - If the final filename already exists, a `-N` suffix is added to avoid overwrites (e.g., `base_001-1.wav`)
 - Files are placed in the configured recording path
 
@@ -201,7 +202,7 @@ Concrete recording implementation:
 
 **WAV file writing:**
 - Standard PCM format: 16-bit signed integer samples
-- Float samples are scaled to int16 range: when peak >= 1.0, samples are divided by peak (normalizing down); when peak < 1.0, samples are multiplied by 32767 without amplification, preserving headroom
+- Float samples are scaled to int16 as `intScale = (peak < 1.0) ? 32767.0f : (32767.0f / peak)`. When `peak >= 1.0` the samples are normalized down by the peak factor; when `peak < 1.0` a fixed full-scale factor of 32767 is used (no peak-based normalization), so a signal with peak just under 1.0 maps to near full scale with little headroom
 - File size is limited to ~2GB (`MAX_WAV_FILE_SIZE = 0x7FFFFFFF - 1024`) for compatibility
 - When the limit is reached, the file is closed and a new part is opened with an incremented sequence number
 
@@ -252,7 +253,7 @@ Design constraints:
 
 **Windows:**
 - Default thread priorities used
-- RtAudio configured with `RTAUDIO_SCHEDULE_REALTIME`
+- RtAudio configured with `RTAUDIO_SCHEDULE_REALTIME` (the flag is set on all platforms; only the `SCHED_FIFO` priority is `#ifndef _MSC_VER`-guarded)
 
 ## Buffer Management
 
@@ -266,7 +267,7 @@ The recording sink queue (`audioSinkOutputQueue`) is pushed independently: it re
 
 ## Digital Modem Audio
 
-`ModemDigital` subclasses produce two separate `AudioThreadInput` objects. The playback buffer `ati` is allocated with an empty `data` vector (populated by `demodulate()` for analog modems but left empty for digital). When the visualization block runs, `ati` is set to `nullptr` for digital modems (with a TODO comment about future audio output support), so it is never pushed to either the playback or recording queues. A separate `ati_vis` is populated with interleaved I/Q sample data (`channels=2`, `type=2`) and pushed to the visualization queue `audioVisOutputQueue`. The visualization path (ScopeVisualProcessor) consumes `ati_vis` for constellation/scope display. No audio data reaches the mixing or recording paths for digital modems.
+`DemodulatorThread::run()` creates the two `AudioThreadInput` objects for digital modems. The playback buffer `ati` is obtained from the `ReBuffer` pool with an empty `data` vector (populated by `demodulate()` for analog modems but left empty for digital). When the visualization block runs, `ati` is set to `nullptr` for digital modems (with a TODO comment about future audio output support), so it is not pushed further. That nullification is conditional on the visualization block guard, which additionally requires `!squelched` and a non-null, empty scope output queue; if the scope output queue is `nullptr` (scope view feature disabled) or not empty, the block is skipped and `ati` remains non-null and may be pushed to the playback/recording queues with empty audio data (discarded downstream). A separate `ati_vis` is populated with interleaved I/Q sample data (`channels=2`, `type=2`) and pushed to the visualization queue `audioVisOutputQueue`. The visualization path (ScopeVisualProcessor) consumes `ati_vis` for constellation/scope display. No audio data reaches the mixing or recording paths for digital modems.
 
 ## Audio Data Flow Summary
 

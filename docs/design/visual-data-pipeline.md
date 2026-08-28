@@ -45,7 +45,7 @@ Two distribution strategies handle different multicast patterns:
 
 **`VisualDataDistributor<T>`** — Zero-copy shared dispatch. Pops each input item and pushes the same `shared_ptr` to all output queues. Stops pushing when all outputs are full (backpressure). Used when consumers only read the data.
 
-**`VisualDataReDistributor<T>`** — Deep-copy dispatch via `ReBuffer` pool. Each output gets its own copy of the data, allocated from a pre-pooled buffer to avoid per-frame allocation. Used when consumers modify or consume the data independently.
+**`VisualDataReDistributor<T>`** — Deep-copy dispatch via `ReBuffer` pool. Each input item is deep-copied once into a pooled buffer and the resulting `shared_ptr` is pushed to every output (all outputs share the same copy). Used when consumers modify or consume the data and the source buffer must be decoupled.
 
 Both `VisualDataDistributor` and `VisualDataReDistributor` are defined inline in `VisualProcessor.h`. They are currently **declared-but-unused scaffolding**: neither is instantiated in the live pipeline. Actual distribution is done by `FFTDataDistributor`, `SpectrumVisualProcessor`, and `ScopeVisualProcessor`, which dispatch to outputs via the base `VisualProcessor::distribute()`.
 
@@ -69,8 +69,8 @@ The most complex processor. Converts raw IQ samples into display-ready spectrum 
 1. **Guard check** — Skip if any output queue is full (backpressure from consumers) or input is empty
 2. **Pop IQ data** — Blocking pop with 50ms timeout (`HEARTBEAT_CHECK_PERIOD_MICROS`)
 3. **View mode resampling** — If viewing a sub-band:
-   - Compute resample ratio from center frequency offset
-   - Frequency-shift using NCO (`nco_crcf_mix_block_up/down`)
+   - Compute the resample ratio from the bandwidth: the sample rate is halved (`/= SPECTRUM_VZM`) while the next halving stays at or above the bandwidth, then `resamplerRatio = resampleBw / sampleRate`
+   - Frequency-shift the center-frequency offset to baseband using NCO (`nco_crcf_mix_block_up/down`), driven by `shiftFrequency = centerFreq - iqData->frequency`
    - Resample to FFT input size (`msresamp_crcf_execute`)
 4. **FFT execution** — `fft_execute(fftPlan)` (liquid-dsp FFT, internal size = `DEFAULT_FFT_SIZE * SPECTRUM_VZM` = 4096 points; user-facing display resolution = 2048 points)
 5. **Magnitude computation** — `sqrt(real² + imag²)` with FFT shift (swap halves to center DC)
@@ -119,11 +119,11 @@ Processes demodulated audio for scope/spectrum display.
 **Input:** `AudioThreadInput` (audio samples with sample rate)
 **Output:** `ScopeRenderData` (waveform points or FFT spectrum)
 
-**Display modes:**
+**Display modes** (defined in `ScopePanel.h`):
 - `SCOPE_MODE_Y` — Single-channel time waveform
 - `SCOPE_MODE_2Y` — Dual-channel overlaid waveforms
 - `SCOPE_MODE_XY` — Lissajous figure (phase display)
-- Spectrum mode — FFT of demodulated audio; FFT size defaults to 1024 (`DEFAULT_SCOPE_FFT_SIZE`), producing 512 output spectrum points (`fftSize/2`); controlled by a separate boolean flag (`renderData->spectrum`)
+- Spectrum mode — FFT of demodulated audio; FFT size defaults to 1024 (`DEFAULT_SCOPE_FFT_SIZE`), producing 512 output spectrum points (`fftSize/2`); enabled via the atomic member `spectrumEnabled` (toggled by `setSpectrumEnabled()`), while `renderData->spectrum` is a descriptor set to `true` on the produced output
 
 Uses `try_pop` (non-blocking) instead of blocking pop, since audio data arrives at a fixed rate and stale data should be dropped.
 

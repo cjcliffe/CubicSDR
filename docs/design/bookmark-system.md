@@ -102,7 +102,7 @@ Singleton managed by `CubicSDR`. Most public methods are thread-safe via `recurs
 | `getRecents()` | Get independent copy of recents list |
 | `clearRecents()` | Empty recents list |
 
-Recents are capped at `BOOKMARK_RECENTS_MAX` (25 entries). The oldest entry is removed each time a new entry is added when at capacity (soft limit enforced one-at-a-time). The internal `trimRecents()` method does not acquire the lock; it is always called from within a locked context (`addRecent`).
+Recents are capped at `BOOKMARK_RECENTS_MAX` (25 entries). The oldest entry is removed each time a new entry is added when at capacity (soft limit enforced one-at-a-time). The internal `trimRecents()` method does not acquire the lock; it is always called from within a locked context (`addRecent`). Deleting an active demodulator (via `DemodulatorMgr::deleteThread()`, reached from `removeActive()` or the delete key) also adds it to recents before the instance is terminated.
 
 ### Range Operations
 
@@ -202,6 +202,7 @@ File: `bookmarks.xml` in the config directory.
 
 ### Load Flow (`BookmarkMgr::loadFromFile()`)
 
+0. Returns `false` early if the bookmark file exists but is not readable
 1. If `backup` is true and no bookmark file, `.lastloaded`, or `.backup` files exist, load default ranges and return
 2. Load `DataTree` from file, validate root node name
 3. Parse branch expand states
@@ -209,7 +210,7 @@ File: `bookmarks.xml` in the config directory.
 5. Parse modem groups into `bmData` map
 6. Parse recent modems into `recents` list
 7. On success: copy file to `.lastloaded` (if `backup` is true)
-8. On failure: copy file to `.failedload` (if `backup` is true)
+8. On per-entry parse failure: copy file to `.failedload` (if `backup` is true). Hard failures (unreadable file, XML parse failure, or wrong root node name) return early and do not create `.failedload`.
 
 ### Backup Strategy
 
@@ -233,7 +234,7 @@ On startup, `CubicSDR.cpp` implements a cascading recovery chain when bookmark l
 
 Recovery dialogs call `loadFromFile` with `backup=false`, so no `.lastloaded` or `.failedload` files are created during recovery attempts.
 
-None of the three bookmark dialog subclasses override `doClickCancel()`. The base `ActionDialog` class defines `doClickCancel()` as a no-op, so clicking Cancel simply closes the dialog. Clicking Cancel in `ActionDialogBookmarkLoadFailed` or `ActionDialogBookmarkBackupLoadFailed` causes the app to continue with empty bookmarks. Clicking Cancel in `ActionDialogBookmarkCatastophe` causes the app to continue without exiting. `ActionDialogBookmarkCatastophe`'s OK action calls `disableSave(true)`, which prevents **all** saves on close — not just bookmarks, but also `AppConfig`.
+None of the three bookmark dialog subclasses override `doClickCancel()`. The base `ActionDialog` class defines `doClickCancel()` as a no-op, so clicking Cancel simply closes the dialog. Clicking Cancel in `ActionDialogBookmarkLoadFailed` or `ActionDialogBookmarkBackupLoadFailed` causes the app to continue without loading the offered backup; bookmarks may already be partially populated if the failed load aborted mid-parse. Clicking Cancel in `ActionDialogBookmarkCatastophe` causes the app to continue without exiting. `ActionDialogBookmarkCatastophe`'s OK action calls `disableSave(true)`, which prevents **all** saves on close — not just bookmarks, but also `AppConfig`.
 
 > **Note:** `ActionDialogBookmarkBackupLoadFailed` loads the `.lastloaded` file. `ActionDialogBookmarkCatastophe` offers to exit without saving to preserve files for manual recovery.
 
@@ -258,7 +259,7 @@ Expand state is tracked by two separate systems:
 
 When a tree item is collapsed/expanded, the appropriate handler writes to the matching system: top-level branch events write to `BookmarkView::expandState`, while group events call `BookmarkMgr::setExpandState()`.
 
-Both systems expose public accessors: `BookmarkView::getExpandState()`/`setExpandState()` for branch states, and `BookmarkMgr::getExpandState()`/`setExpandState()` for group states. Note that `BookmarkView::getExpandState()` uses `std::map::operator[]` which default-inserts `false` for missing keys, while `BookmarkMgr::getExpandState()` returns `true` for missing keys. In practice this difference is harmless because `setExpandState()` is always called for known branch names during construction and load. The `saveToFile()` method reads branch states via `BookmarkView::getExpandState()`, creating a model-to-view dependency.
+Both systems expose public accessors: `BookmarkView::getExpandState()`/`setExpandState()` for branch states, and `BookmarkMgr::getExpandState()`/`setExpandState()` for group states. Note that `BookmarkView::getExpandState()` uses `std::map::operator[]` which default-inserts `false` for missing keys, while `BookmarkMgr::getExpandState()` returns `true` for missing keys. In practice this difference is harmless because the branch states are seeded directly in the constructor and refreshed from the `<branches>` node during load. The `saveToFile()` method reads branch states via `BookmarkView::getExpandState()`, creating a model-to-view dependency.
 
 During search, expand states are overridden: ranges are forced collapsed, while recents and bookmark groups are forced expanded. Expand/collapse events are suppressed during search to prevent user actions from conflicting with the forced states.
 
@@ -267,7 +268,7 @@ During search, expand states are overridden: ranges are forced collapsed, while 
 ### Demodulator Interaction
 
 - **Add bookmark:** Select an active demodulator → use the bookmark choice dropdown in the properties panel → select group (or "New Group..")
-- **Load bookmark:** Double-click bookmark entry → creates and runs new demodulator
+- **Load bookmark:** Double-click bookmark entry → activates a matching live demodulator if one exists (same type, label, frequency, and bandwidth), otherwise creates and runs a new one
 - **Delete item:** Select item → press DELETE key, or click the Remove button in the properties panel. Works for active, recent, bookmark, range, and group items.
 - **Move between groups:** Drag and drop in the bookmark view. Only ACTIVE, RECENT, and BOOKMARK items can be dragged; RANGE and GROUP items are not draggable. Dropping an ACTIVE item on a group creates a new bookmark. Dropping a RECENT item on a group bookmarks it and removes it from recents. Dropping a BOOKMARK item on a group moves it between groups. Dropping any draggable item on the "Bookmarks" branch root creates an implicit "Unnamed" group.
 

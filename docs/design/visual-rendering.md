@@ -48,8 +48,8 @@ The primary display canvas. Handles:
   - `WF_DRAG_BANDWIDTH_LEFT` / `WF_DRAG_BANDWIDTH_RIGHT` — resize demodulator bandwidth
   - `WF_DRAG_RANGE` — create new demodulator by range selection
 - **Zoom:** Mouse wheel adjusts `mouseZoom`, which smoothly animates to the target zoom level
-- **Frequency nudge:** Arrow keys shift center frequency by half a bandwidth; Shift adds 10× the shift
-- **Visual gain:** Shift+Up/Down adjusts `scaleMove` (drives visual gain animation toward target scale factor)
+- **Frequency nudge:** Outside view mode, arrow keys shift the center frequency by half a bandwidth (±10× with Shift); in view mode they latch a pan velocity (`freqMove` = ±1% or ±5% of bandwidth per frame)
+- **Visual gain:** Shift+Up/Down sets `scaleMove` (±1), which increments the spectrum scale factor by ±0.02 per frame (clamped to [0.25, 10]) while held
 
 **Drag state machine:**
 ```
@@ -154,7 +154,7 @@ The render pipeline executes in two phases per panel:
 3. Read viewport: `glGetIntegerv(GL_VIEWPORT, vp)`
 4. Transform coordinate-system corners through `transform` to get screen-space `vmin`/`vmax` (corners are `(min,min)` and `(max,max)` where min/max depend on the coordinate system: -1/+1 or 0/+1)
 5. Compute pixel extents: `pdim = vec2((vmax.x - vmin.x) * 0.5 * vp_width, ...)`
-6. Apply margin: shrink transform proportionally by `marginPx * 2 * pvec` in each axis (pixel-vector-scaled margin)
+6. Apply margin: shrink transform by `scale(1 - marginPx*2*pvec.x/size[0], 1 - marginPx*2*pvec.y/size[1], 1)` (pixel-vector-scaled margin divided by the panel size)
 7. Compute `transformInverse = mat4::inverse(transform)` for hit-testing
 
 **Phase 2 — `draw()`** (called recursively):
@@ -218,7 +218,7 @@ glLoadIdentity()
 |------|------------|-----|
 | Additive | `GL_SRC_ALPHA, GL_ONE` | Demod bands, frequency selectors |
 | Alpha | `GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA` | Labels, backgrounds |
-| Opaque | `GL_ONE, GL_ZERO` | Shadow text (then switched to alpha for main text) |
+| Opaque | `GL_ONE, GL_ZERO` | Shadow text in USB/LSB branches only (default branch shadow uses additive) |
 
 ### Buffer Strategy
 
@@ -383,7 +383,7 @@ The `Drawer` object is stack-local (not shared between threads), so creating a D
 | `waterfallNew` | New demodulator being created |
 | `waterfallHover` | Hovered demodulator / frequency selector |
 | `waterfallDestroy` | Demodulator being deleted |
-| `wfHighlight` | Waterfall highlight overlay |
+| `wfHighlight` | Waterfall highlight overlay (declared but currently unused) |
 | `fftLine` | Spectrum line color |
 | `fftHighlight` | Highlighted spectrum point |
 | `scopeLine` | Oscilloscope trace color |
@@ -462,8 +462,8 @@ Each canvas registers its own `EVT_IDLE` handler. wxWidgets fires `OnIdle` when 
 ```
 OnPaint():
     ├── Apply zoom interpolation: mouseZoom += (1.0 - mouseZoom) * 0.2
+    ├── Apply visual gain step: factor += scaleMove * 0.02 (clamped to [0.25, 10])
     ├── Apply frequency nudge velocity: centerFreq += bandwidth * freqMove * 0.01
-    ├── Apply visual gain animation: scaleFactor interpolation
     │
     ├── GL setup (viewport, clear)
     │
@@ -637,8 +637,8 @@ Arrow keys control frequency and display in the WaterfallCanvas:
 | LEFT | Not in view | Jump by half bandwidth left (10x bandwidth with Shift) |
 | RIGHT | View mode | Pan center frequency right |
 | RIGHT | Not in view | Jump by half bandwidth right (10x bandwidth with Shift) |
-| UP | No modifier | Zoom in (reduce bandwidth): `zoom *= 0.95` |
-| DOWN | No modifier | Zoom out (increase bandwidth): `zoom *= 1.05` |
+| UP | No modifier | Zoom in (reduce bandwidth): sets `zoom = 0.95` while held (reset to 1.0 on key-up) |
+| DOWN | No modifier | Zoom out (increase bandwidth): sets `zoom = 1.05` while held (reset to 1.0 on key-up) |
 | UP | Shift held | Increase visual gain: `scaleMove = 1.0` |
 | DOWN | Shift held | Decrease visual gain: `scaleMove = -1.0` |
 
