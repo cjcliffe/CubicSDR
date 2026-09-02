@@ -32,7 +32,11 @@ RigList &RigThread::enumerate() {
     return RigThread::rigCaps;
 }
 
+#ifdef RIGCAPS_NOT_CONST
+int RigThread::add_hamlib_rig(struct rig_caps *rc, void* /* f */)
+#else
 int RigThread::add_hamlib_rig(const struct rig_caps *rc, void* /* f */)
+#endif
 {
     rigCaps.push_back(rc);
     return 1;
