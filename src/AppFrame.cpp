@@ -1184,7 +1184,7 @@ void AppFrame::handleUpdateDeviceParams() {
         sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Enable(false);
     }
     else {
-        sampleRateMenuItems[wxID_BANDWIDTH_MANUAL] = newSampleRateMenu->AppendRadioItem(wxID_BANDWIDTH_MANUAL, wxT("Manual :  ") + frequencyToStr(manualSampleRate));
+        sampleRateMenuItems[wxID_BANDWIDTH_MANUAL] = newSampleRateMenu->AppendRadioItem(wxID_BANDWIDTH_MANUAL, wxString("Manual :  ") + wxString(frequencyToStr(manualSampleRate)));
         sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Enable(true);
     }
 
@@ -1606,7 +1606,7 @@ bool AppFrame::actionOnMenuSampleRate(wxCommandEvent& event) {
                 manualSampleRate = bw;
                 sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Enable(true);
 
-                sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->SetItemLabel(wxT("Manual :  ") + frequencyToStr(manualSampleRate));
+                sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->SetItemLabel(wxString("Manual :  ") + wxString(frequencyToStr(manualSampleRate)));
                 sampleRateMenuItems[wxID_BANDWIDTH_MANUAL]->Check(true);
                 wxGetApp().setSampleRate(manualSampleRate);
             }

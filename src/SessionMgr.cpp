@@ -76,7 +76,7 @@ bool SessionMgr::loadSession(const std::string& fileName) {
             try {
                 versionNode->element()->get(version);
 
-                std::cout << "Loading session file version: '" << version << "'..." << std::endl;
+                std::cout << "Loading session file version: '" << std::string(version.begin(), version.end()) << "'..." << std::endl;
             }
             catch (DataTypeMismatchException &e) {
                 //this is for managing the old session format NOT encoded as std:wstring,

@@ -397,7 +397,7 @@ void GLFont::loadFontOnce() {
 
             if (png_size != nbRead) {
 
-                std::cout << "Error loading the full PNG image file in memory: '" << imageFile << "'" << std::endl;
+                std::cout << "Error loading the full PNG image file in memory: '" << std::string(imageFile.begin(), imageFile.end()) << "'" << std::endl;
             }
         }
 
@@ -408,7 +408,7 @@ void GLFont::loadFontOnce() {
         png_file.Close();
 
         if (error) {
-            std::cout << "Error decoding PNG image file: '" << imageFile << "'" << std::endl;
+            std::cout << "Error decoding PNG image file: '" << std::string(imageFile.begin(), imageFile.end()) << "'" << std::endl;
         }
  
         glGenTextures(1, &texId);
@@ -461,11 +461,11 @@ void GLFont::loadFontOnce() {
             ofs += 8;
         }
 
-        std::cout << "Loaded font '" << fontName << "' from '" << imageFile << "', parsed " << characters.size() << " characters." << std::endl;
+        std::cout << "Loaded font '" << std::string(fontName.begin(), fontName.end()) << "' from '" << std::string(imageFile.begin(), imageFile.end()) << "', parsed " << characters.size() << " characters." << std::endl;
 
         loaded = true;
     } else {
-        std::cout << "Error loading font file " << imageFile << std::endl;
+        std::cout << "Error loading font file " << std::string(imageFile.begin(), imageFile.end()) << std::endl;
     }
 
     input.close();

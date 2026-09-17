@@ -3,7 +3,7 @@ CubicSDR [![CircleCI](https://dl.circleci.com/status-badge/img/gh/cjcliffe/Cubic
 
 Cross-Platform Software-Defined Radio Application
 
-- The latest downloads are available on the [CubicSDR Releases](https://github.com/cjcliffe/CubicSDR/releases) page.
+- The latest releases are available on the [CubicSDR Releases](https://github.com/cjcliffe/CubicSDR/releases) page.
 - Build instructions can be found at the [CubicSDR Wiki](https://github.com/cjcliffe/CubicSDR/wiki) page.
 - Manual is available at [cubicsdr.readthedocs.io](http://cubicsdr.readthedocs.io).
 - Manual contributions can be submitted to the [CubicSDR-Manual](https://github.com/cjcliffe/CubicSDR-Manual) repository.
@@ -33,11 +33,11 @@ Recommended minimum requirements:
   - Windows 7+ for 64 or 32-bit Windows binary releases.
   - Linux and other embedded distribution support yet to be indexed, known to at least work on Debian 8+ and Ubuntu 14+.
 
-Target Platforms:
-----------------
-  - [x] OSX
-  - [x] Windows
-  - [x] Linux
+Platform build scripts and test builds:
+--------------------------------------
+  - MacOS (https://github.com/cjcliffe/CubicSDR-macOSBuild)
+  - Windows (https://github.com/cjcliffe/CubicSDR-WinBuild)
+  - Linux (AppImage) (https://github.com/cjcliffe/CubicSDR-AppImageKit)
 
 
 License:
