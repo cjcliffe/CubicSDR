@@ -284,6 +284,8 @@ def parse_args(argv):
                         help="'default', 'all', 'none', or comma-separated module list")
     parser.add_argument("--skip-app", action="store_true",
                         help="build and stage modules only; skip the CubicSDR app")
+    parser.add_argument("--build-deps", action="store_true",
+                        help="build all dependencies from source instead of using system packages (Linux)")
     parser.add_argument("--package", default="none",
                         choices=["none", "deb", "nsis", "dmg", "appimage"])
     parser.add_argument("--clean", action="store_true")
@@ -847,27 +849,31 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
                      dry_run, extra=libs.get(key))
 
 
-def sudo_apt(packages, dry_run=False):
-    euid = getattr(os, "geteuid", lambda: 0)()
-    prefix = ["sudo", "apt-get"] if euid != 0 else ["apt-get"]
-    run(prefix + ["update"], dry_run=dry_run)
-    run(prefix + ["install", "-y"] + packages, dry_run=dry_run)
-
-
 def build_linux(args, dry_run=False):
     for prog in ["cmake", "git", "make"]:
         require(prog, dry_run)
     prefix = os.path.abspath(args.deps_prefix or default_prefix())
     if not args.skip_deps:
-        sudo_apt(["build-essential", "cmake", "git", "autoconf", "automake",
-                  "libtool", "pkg-config", "libpulse-dev", "libgtk-3-dev",
-                  "freeglut3-dev", "libhamlib-dev"], dry_run)
-        wx_config = build_wx_linux(prefix, args.jobs, dry_run)
-        build_liquid(prefix, args.jobs, dry_run)
-        build_soapy(prefix, args.config, args.jobs, dry_run=dry_run)
+        if args.build_deps:
+            wx_config = build_wx_linux(prefix, args.jobs, dry_run)
+            build_liquid(prefix, args.jobs, dry_run)
+            build_soapy(prefix, args.config, args.jobs, dry_run=dry_run)
+        else:
+            wx_config = shutil.which("wx-config")
+            if not dry_run and (wx_config is None
+                                or shutil.which("SoapySDRUtil") is None):
+                sys.exit("error: system wxWidgets/SoapySDR not found; "
+                         "install the dev packages listed in docs/BUILD.md "
+                         "or pass --build-deps")
+            log("using system wxWidgets and SoapySDR" if wx_config
+                else "would use system wxWidgets and SoapySDR")
+            wx_config = wx_config or "wx-config"
+            build_liquid(prefix, args.jobs, dry_run)
     else:
-        wx_config = os.path.join(prefix, "wx", "bin", "wx-config")
-    if not dry_run and not os.path.exists(wx_config):
+        wx_config = shutil.which("wx-config") or \
+            os.path.join(prefix, "wx", "bin", "wx-config")
+    if not dry_run and shutil.which(wx_config) is None \
+            and not os.path.exists(wx_config):
         sys.exit("error: %s missing; run without --skip-deps first" % wx_config)
     preset = "linux-deb" if args.package == "deb" else "linux"
     run(["cmake", "--preset", preset, "-DCMAKE_BUILD_TYPE=%s" % args.config],

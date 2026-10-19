@@ -22,8 +22,13 @@ Install these before the first run; everything else is built from source.
 - All platforms: Python 3, CMake, git.
 - Windows: Visual Studio 2022 with the C++ workload. NSIS is needed only
   for `--package nsis` and is picked up from its default install location.
-- Linux: `cmake`, `git`, `make`; the script installs the remaining
-  development packages itself via apt.
+- Linux: `cmake`, `git`, `make`, plus the development packages (the
+  CI config lists the exact set: build tools, pulseaudio/GTK/OpenGL
+  headers, hamlib, wxWidgets, and SoapySDR). Install them yourself
+  with apt; the script never installs system packages. Pass
+  `--build-deps` to build wxWidgets, liquid-dsp, and SoapySDR from
+  source instead (liquid-dsp is always built from source, since it is
+  not packaged).
 - macOS: the script installs its dependencies itself via Homebrew.
 
 ## Useful options
@@ -41,6 +46,8 @@ Install these before the first run; everything else is built from source.
 - `--package`: `deb` (Linux), `nsis` (Windows), `dmg` (macOS),
   `appimage` (Linux).
 - `--skip-deps`: reuse a previous `build/deps` without rebuilding it.
+- `--build-deps` (Linux): build all dependencies from source instead of
+  using system packages; the slow, fully controlled variant.
 - `--skip-app` (Windows): rebuild modules and restage them without
   reconfiguring the application; the fast loop for module work.
 - `--clean`: remove the `build/` tree. `--deps-prefix`: relocate
