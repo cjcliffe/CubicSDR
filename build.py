@@ -136,7 +136,8 @@ def cmake_build(src, build, config, jobs, prefix, arch=None, extra=None,
 
 
 SUPPORTED_MODULES = ["audio", "remote", "redpitaya", "netsdr",
-                     "rtlsdr", "airspy", "airspyhf", "hackrf"]
+                     "rtlsdr", "airspy", "airspyhf", "hackrf",
+                     "limesuite", "bladerf"]
 DEFAULT_MODULES = [name for name in SUPPORTED_MODULES if name != "netsdr"]
 
 
@@ -157,7 +158,8 @@ def selected_modules(spec):
 
 def find_prefix_file(prefix, pattern):
     matches = sorted(glob.glob(os.path.join(prefix, "**", pattern),
-                                recursive=True))
+                                recursive=True),
+                     key=lambda path: ("build" in path.split(os.sep), path))
     if not matches:
         sys.exit("error: %s not found under %s" % (pattern, prefix))
     return matches[0]
@@ -462,6 +464,28 @@ def build_pthreads_windows(prefix, config, arch, dry_run=False):
     return dest, lib
 
 
+def stage_libusb_windows(prefix, arch, dry_run=False):
+    usb_src = os.path.join(prefix, "src", "libusb")
+    dest = os.path.join(prefix, "libusb")
+    if os.path.exists(stamp_path(prefix, "libusb-stage")):
+        log("libusb already staged; skipping")
+    else:
+        if not dry_run:
+            inc = os.path.join(dest, "include", "libusb-1.0")
+            os.makedirs(inc, exist_ok=True)
+            shutil.copy(os.path.join(usb_src, "libusb", "libusb.h"), inc)
+            sub = "MS64" if arch == "x64" else "MS32"
+            libdir = os.path.join(dest, sub, "dll")
+            os.makedirs(libdir, exist_ok=True)
+            for pattern in ("libusb-1.0.lib", "libusb-1.0.dll"):
+                for found in glob.glob(os.path.join(usb_src, "build", "**", pattern),
+                                       recursive=True):
+                    shutil.copy(found, libdir)
+                    break
+        mark_done(prefix, "libusb-stage", dry_run)
+    return dest
+
+
 def fetch_fftw_windows(prefix, arch, dry_run=False):
     tag = "dll64" if arch == "x64" else "dll32"
     dest = os.path.join(prefix, "src", "fftw-%s-%s" % (FFTW_VERSION, tag))
@@ -496,7 +520,8 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
     selected = [key for key in SUPPORTED_MODULES if key in set(selected)]
     if not selected:
         return
-    need_usb = set(selected) & {"rtlsdr", "airspy", "airspyhf", "hackrf"}
+    need_usb = set(selected) & {"rtlsdr", "airspy", "airspyhf", "hackrf",
+                               "limesuite", "bladerf"}
     usb_inc = usb_lib = pt_inc = pt_lib = ""
     if need_usb:
         usb_inc, usb_lib = build_libusb_windows(prefix, config, arch, dry_run)
@@ -536,6 +561,29 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
             "airspyhf", "https://github.com/airspy/airspyhf",
             prefix, config, arch, jobs, pthread_win32_defs + usb_single_defs,
             dry_run=dry_run)
+    if "limesuite" in selected:
+        build_clib_windows(
+            "LimeSuite", "https://github.com/myriadrf/LimeSuite",
+            prefix, config, arch, jobs,
+            ["-DCMAKE_PREFIX_PATH=%s" % prefix,
+             "-DLIBUSB_INCLUDE_DIRS:PATH=%s" % usb_inc,
+             "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib,
+             "-DLIBUSB_INCLUDE_DIR:PATH=%s" % usb_inc,
+             "-DLIBUSB_LIBRARY:PATH=%s" % usb_lib],
+            dry_run=dry_run)
+    if "bladerf" in selected:
+        usb_path = stage_libusb_windows(prefix, arch, dry_run)
+        build_clib_windows(
+            "bladeRF", "https://github.com/Nuand/bladeRF",
+            prefix, config, arch, jobs,
+            pthread_win32_defs + usb_single_defs +
+            ["-DLIBUSB_PATH:PATH=%s" % usb_path,
+             "-DTREAT_WARNINGS_AS_ERRORS=OFF"],
+            subdir="host", dry_run=dry_run)
+        for dll in glob.glob(os.path.join(prefix, "lib", "bladeRF*.dll")):
+            log("+ stage %s to prefix bin" % os.path.basename(dll))
+            if not dry_run:
+                shutil.copy(dll, os.path.join(prefix, "bin"))
     libs = {
         "rtlsdr": (["-DRTLSDR_LIBRARY:PATH=%s" % find_prefix_file(prefix, "rtlsdr.lib"),
                     "-DRTLSDR_INCLUDE_DIR:PATH=%s" % header_dir(prefix, "rtl-sdr.h", dry_run)]
@@ -567,14 +615,18 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
         "airspy": "https://github.com/pothosware/SoapyAirspy.git",
         "airspyhf": "https://github.com/pothosware/SoapyAirspyHF.git",
         "hackrf": "https://github.com/pothosware/SoapyHackRF.git",
+        "bladerf": "https://github.com/pothosware/SoapyBladeRF.git",
     }
     names = {
         "audio": "SoapyAudio", "remote": "SoapyRemote",
         "redpitaya": "SoapyRedPitaya", "netsdr": "SoapyNetSDR",
         "rtlsdr": "SoapyRTLSDR", "airspy": "SoapyAirspy",
         "airspyhf": "SoapyAirspyHF", "hackrf": "SoapyHackRF",
+        "bladerf": "SoapyBladeRF",
     }
     for key in selected:
+        if key not in repos:
+            continue
         soapy_module(names[key], repos[key], prefix, config, jobs, arch,
                      dry_run, extra=libs.get(key))
 
