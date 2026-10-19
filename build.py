@@ -137,7 +137,8 @@ def cmake_build(src, build, config, jobs, prefix, arch=None, extra=None,
 
 SUPPORTED_MODULES = ["audio", "remote", "redpitaya", "netsdr",
                      "rtlsdr", "airspy", "airspyhf", "hackrf",
-                     "limesuite", "bladerf"]
+                     "limesuite", "bladerf", "pluto"]
+XML2_VERSION = "2.13.5"
 DEFAULT_MODULES = [name for name in SUPPORTED_MODULES if name != "netsdr"]
 
 
@@ -504,12 +505,12 @@ def fetch_fftw_windows(prefix, arch, dry_run=False):
 
 
 def build_clib_windows(name, url, prefix, config, arch, jobs, extra,
-                       subdir="", dry_run=False):
+                       subdir="", branch=None, dry_run=False):
     if os.path.exists(stamp_path(prefix, "lib-" + name)):
         log("%s already built; skipping" % name)
         return
     src = os.path.join(prefix, "src", name)
-    git_clone(url, src, dry_run)
+    git_clone(url, src, dry_run, branch=branch)
     cmake_build(os.path.join(src, subdir) if subdir else src,
                 os.path.join(prefix, "build", name), config, jobs, prefix,
                 arch, extra, dry_run)
@@ -521,7 +522,7 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
     if not selected:
         return
     need_usb = set(selected) & {"rtlsdr", "airspy", "airspyhf", "hackrf",
-                               "limesuite", "bladerf"}
+                               "limesuite", "bladerf", "pluto"}
     usb_inc = usb_lib = pt_inc = pt_lib = ""
     if need_usb:
         usb_inc, usb_lib = build_libusb_windows(prefix, config, arch, dry_run)
@@ -571,6 +572,35 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
              "-DLIBUSB_INCLUDE_DIR:PATH=%s" % usb_inc,
              "-DLIBUSB_LIBRARY:PATH=%s" % usb_lib],
             dry_run=dry_run)
+    if "pluto" in selected:
+        build_clib_windows(
+            "zstd", "https://github.com/facebook/zstd",
+            prefix, config, arch, jobs,
+            ["-DZSTD_BUILD_PROGRAMS=OFF", "-DZSTD_BUILD_TESTS=OFF"],
+            subdir="build/cmake", dry_run=dry_run)
+        build_clib_windows(
+            "libxml2", "https://github.com/GNOME/libxml2",
+            prefix, config, arch, jobs,
+            ["-DLIBXML2_WITH_ICONV=OFF", "-DLIBXML2_WITH_ZLIB=OFF",
+             "-DLIBXML2_WITH_LZMA=OFF", "-DLIBXML2_WITH_PYTHON=OFF",
+             "-DLIBXML2_WITH_PROGRAMS=OFF"],
+            dry_run=dry_run)
+        build_clib_windows(
+            "libiio", "https://github.com/analogdevicesinc/libiio",
+            prefix, config, arch, jobs,
+            ["-DCMAKE_PREFIX_PATH=%s" % prefix,
+             "-DLIBUSB_INCLUDE_DIR:PATH=%s" % usb_inc,
+             "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib,
+             "-DWITH_IIOD=OFF"],
+            branch="v0.26", dry_run=dry_run)
+        build_clib_windows(
+            "libad9361", "https://github.com/analogdevicesinc/libad9361-iio",
+            prefix, config, arch, jobs,
+            ["-DCMAKE_PREFIX_PATH=%s" % prefix,
+             "-DLIBIIO_INCLUDEDIR:PATH=%s" % os.path.join(prefix, "include"),
+             "-DLIBIIO_LIBRARIES:PATH=%s" % os.path.join(prefix, "lib", "libiio.lib"),
+             "-DBUILD_TESTS=OFF"],
+            dry_run=dry_run)
     if "bladerf" in selected:
         usb_path = stage_libusb_windows(prefix, arch, dry_run)
         build_clib_windows(
@@ -616,13 +646,14 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
         "airspyhf": "https://github.com/pothosware/SoapyAirspyHF.git",
         "hackrf": "https://github.com/pothosware/SoapyHackRF.git",
         "bladerf": "https://github.com/pothosware/SoapyBladeRF.git",
+        "pluto": "https://github.com/pothosware/SoapyPlutoSDR.git",
     }
     names = {
         "audio": "SoapyAudio", "remote": "SoapyRemote",
         "redpitaya": "SoapyRedPitaya", "netsdr": "SoapyNetSDR",
         "rtlsdr": "SoapyRTLSDR", "airspy": "SoapyAirspy",
         "airspyhf": "SoapyAirspyHF", "hackrf": "SoapyHackRF",
-        "bladerf": "SoapyBladeRF",
+        "bladerf": "SoapyBladeRF", "pluto": "SoapyPlutoSDR",
     }
     for key in selected:
         if key not in repos:
