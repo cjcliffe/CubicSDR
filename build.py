@@ -47,7 +47,7 @@ def require(prog, dry_run=False):
             sys.exit("error: required tool '%s' not found on PATH" % prog)
 
 
-def download(url, dest, dry_run=False):
+def download(url, dest, dry_run=False, retries=3):
     if os.path.exists(dest):
         log("have %s; skipping download" % dest)
         return
@@ -55,7 +55,14 @@ def download(url, dest, dry_run=False):
     if dry_run:
         return
     os.makedirs(os.path.dirname(dest), exist_ok=True)
-    urllib.request.urlretrieve(url, dest)
+    for attempt in range(retries):
+        try:
+            urllib.request.urlretrieve(url, dest + ".part")
+            os.replace(dest + ".part", dest)
+            return
+        except Exception as error:
+            log("download attempt %d failed: %s" % (attempt + 1, error))
+    sys.exit("error: download failed after %d attempts: %s" % (retries, url))
 
 
 def vs_file(parts, what):
@@ -137,7 +144,10 @@ def cmake_build(src, build, config, jobs, prefix, arch=None, extra=None,
 
 SUPPORTED_MODULES = ["audio", "remote", "redpitaya", "netsdr",
                      "rtlsdr", "airspy", "airspyhf", "hackrf",
-                     "limesuite", "bladerf", "pluto"]
+                     "limesuite", "bladerf", "pluto", "uhd"]
+BOOST_VERSION = "1.84.0"
+BOOST_MSVC = "14.3"
+UHD_TAG = "v4.6.0.0"
 XML2_VERSION = "2.13.5"
 DEFAULT_MODULES = [name for name in SUPPORTED_MODULES if name != "netsdr"]
 
@@ -487,6 +497,54 @@ def stage_libusb_windows(prefix, arch, dry_run=False):
     return dest
 
 
+def install_boost_windows(prefix, arch, dry_run=False):
+    dest = os.path.join(prefix, "boost")
+    if os.path.exists(stamp_path(prefix, "boost")):
+        log("boost already installed; skipping")
+    else:
+        bit = "64" if arch == "x64" else "32"
+        installer = os.path.join(
+            prefix, "src",
+            "boost_%s-msvc-%s-%s.exe"
+            % (BOOST_VERSION.replace(".", "_"), BOOST_MSVC, bit))
+        download("https://downloads.sourceforge.net/project/boost/boost-binaries/"
+                 "%s/boost_%s-msvc-%s-%s.exe"
+                 % (BOOST_VERSION, BOOST_VERSION.replace(".", "_"),
+                    BOOST_MSVC, bit),
+                 installer, dry_run)
+        run([installer, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART",
+             "/DIR=%s" % dest], dry_run=dry_run)
+        mark_done(prefix, "boost", dry_run)
+    return dest
+
+
+def patch_uhd_windows(src, dry_run=False):
+    target = os.path.join(src, "host", "lib", "transport", "libusb1_base.cpp")
+    marker = "#include <winsock2.h>  // CubicSDR build: struct timeval on MSVC"
+    if dry_run:
+        log("+ patch %s for MSVC timeval" % target)
+        return
+    with open(target, "r", newline="") as handle:
+        text = handle.read()
+    if marker not in text:
+        log("patching %s for MSVC timeval" % target)
+        text = text.replace('#include "libusb1_base.hpp"',
+                            marker + '\n#include "libusb1_base.hpp"', 1)
+        with open(target, "w", newline="") as handle:
+            handle.write(text)
+
+
+def ensure_mako(dry_run=False):
+    if dry_run:
+        log("+ ensure python mako module")
+        return
+    check = subprocess.run([sys.executable, "-c", "import mako"],
+                           capture_output=True)
+    if check.returncode != 0:
+        run([sys.executable, "-m", "pip", "install", "--user", "mako"],
+            dry_run=dry_run)
+
+
 def fetch_fftw_windows(prefix, arch, dry_run=False):
     tag = "dll64" if arch == "x64" else "dll32"
     dest = os.path.join(prefix, "src", "fftw-%s-%s" % (FFTW_VERSION, tag))
@@ -522,7 +580,7 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
     if not selected:
         return
     need_usb = set(selected) & {"rtlsdr", "airspy", "airspyhf", "hackrf",
-                               "limesuite", "bladerf", "pluto"}
+                               "limesuite", "bladerf", "pluto", "uhd"}
     usb_inc = usb_lib = pt_inc = pt_lib = ""
     if need_usb:
         usb_inc, usb_lib = build_libusb_windows(prefix, config, arch, dry_run)
@@ -601,6 +659,28 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
              "-DLIBIIO_LIBRARIES:PATH=%s" % os.path.join(prefix, "lib", "libiio.lib"),
              "-DBUILD_TESTS=OFF"],
             dry_run=dry_run)
+    if "uhd" in selected:
+        boost_root = install_boost_windows(prefix, arch, dry_run)
+        boost_libdir = os.path.join(
+            boost_root, "lib64-msvc-%s" % BOOST_MSVC).replace("\\", "/")
+        boost_libpath = "/LIBPATH:%s" % boost_libdir
+        ensure_mako(dry_run)
+        git_clone("https://github.com/EttusResearch/uhd",
+                  os.path.join(prefix, "src", "uhd"), dry_run, branch=UHD_TAG)
+        patch_uhd_windows(os.path.join(prefix, "src", "uhd"), dry_run)
+        build_clib_windows(
+            "uhd", "https://github.com/EttusResearch/uhd",
+            prefix, config, arch, jobs,
+            ["-DBOOST_ROOT:PATH=%s" % boost_root,
+             "-DBOOST_LIBRARYDIR:PATH=%s" % os.path.join(boost_root, "lib64-msvc-%s" % BOOST_MSVC),
+             "-DLIBUSB_INCLUDE_DIRS:PATH=%s" % usb_inc,
+             "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib,
+             "-DCMAKE_SHARED_LINKER_FLAGS=%s" % boost_libpath,
+             "-DCMAKE_EXE_LINKER_FLAGS=%s" % boost_libpath,
+             "-DUHD_IMAGES_DOWNLOAD=ON",
+             "-DENABLE_PYTHON_API=OFF", "-DENABLE_EXAMPLES=OFF",
+             "-DENABLE_TESTS=OFF"],
+            subdir="host", branch=UHD_TAG, dry_run=dry_run)
     if "bladerf" in selected:
         usb_path = stage_libusb_windows(prefix, arch, dry_run)
         build_clib_windows(
@@ -636,6 +716,12 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
                    ["-DLIBHACKRF_LIBRARY:PATH=hackrf.lib",
                     "-DLIBHACKRF_INCLUDE_DIR:PATH=%s" % header_dir(prefix, "hackrf.h", dry_run)]),
     }
+    if "uhd" in selected:
+        libs["uhd"] = ["-DBOOST_ROOT:PATH=%s" % boost_root,
+                       "-DBOOST_LIBRARYDIR:PATH=%s" % boost_libdir.replace("/", "\\"),
+                       "-DCMAKE_SHARED_LINKER_FLAGS=%s" % boost_libpath,
+                       "-DCMAKE_MODULE_LINKER_FLAGS=%s" % boost_libpath,
+                       "-DCMAKE_EXE_LINKER_FLAGS=%s" % boost_libpath]
     repos = {
         "audio": "https://github.com/pothosware/SoapyAudio.git",
         "remote": "https://github.com/pothosware/SoapyRemote.git",
@@ -647,6 +733,7 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
         "hackrf": "https://github.com/pothosware/SoapyHackRF.git",
         "bladerf": "https://github.com/pothosware/SoapyBladeRF.git",
         "pluto": "https://github.com/pothosware/SoapyPlutoSDR.git",
+        "uhd": "https://github.com/pothosware/SoapyUHD.git",
     }
     names = {
         "audio": "SoapyAudio", "remote": "SoapyRemote",
@@ -654,6 +741,7 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
         "rtlsdr": "SoapyRTLSDR", "airspy": "SoapyAirspy",
         "airspyhf": "SoapyAirspyHF", "hackrf": "SoapyHackRF",
         "bladerf": "SoapyBladeRF", "pluto": "SoapyPlutoSDR",
+        "uhd": "SoapyUHD",
     }
     for key in selected:
         if key not in repos:
