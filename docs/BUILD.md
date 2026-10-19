@@ -53,13 +53,22 @@ instead of silently reusing stale output.
 
 ## Verifying a module build
 
-Point `SoapySDRUtil` at the staged tree and check the factory appears,
-then confirm enumeration returns promptly:
+`SoapySDRUtil` bakes the dependency prefix in as its module search root
+at build time (`SOAPY_SDR_ROOT` overrides it), so the prefix install can
+be probed directly. On Windows the module DLLs also need their
+dependency DLLs visible, so put the staged exe dir and the prefix `bin`
+on `PATH` first:
 
-```sh
+```powershell
+$env:PATH = '<checkout>\build\windows\x64;<checkout>\build\deps\bin;' + $env:PATH
 SoapySDRUtil --info
 SoapySDRUtil --find='driver=<name>'
 ```
+
+Check the factory appears in `--info`, then confirm enumeration returns
+promptly with `--find`. To probe the exe-relative `modules/` folder (the
+layout CubicSDR itself uses) instead of the prefix, set `SOAPY_SDR_ROOT`
+to the staged dir.
 
 `--find` reporting no devices (exit 1) is normal with no hardware
 attached; hanging or crashing is not.
@@ -69,8 +78,8 @@ attached; hanging or crashing is not.
 - On Windows, close CubicSDR and any `SoapySDRUtil` processes before
   rebuilding or restaging; open DLLs cause file-lock failures.
 - If device enumeration stalls at startup, suspect a freshly added
-  module first: move its DLL out of `modules/` and retry, as was done
-  for `netsdr`.
+  module first: move its DLL out of `modules/` and retry. (`netsdr` is
+  off by default because it hangs enumeration this way.)
 - CMake presets (`windows`, `linux`, `macos`, plus arch and packaging
   variants; see `cmake --list-presets`) hold the configure flags, so a
   manual configure outside the script should use the preset for the
