@@ -25,8 +25,8 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
 4. Replace `set(CMAKE_CREATE_WIN32_EXE ...)` with:
    ```cmake
    set_target_properties(CubicSDR PROPERTIES WIN32_EXECUTABLE TRUE)
-   target_link_options(CubicSDR PRIVATE /SUBSYSTEM:WINDOWS /ENTRY:"mainCRTStartup")
    ```
+   (`CMAKE_CREATE_WIN32_EXE` is not a real CMake variable, so the old `/ENTRY:"mainCRTStartup"` never took effect. Do not re-add it as a link option: wxWidgets provides `WinMain`, and forcing the `mainCRTStartup` entry breaks the link with an unresolved `main`.)
 
 ### Phase 2: Target-specific commands
 

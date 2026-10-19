@@ -706,7 +706,6 @@ ENDIF (NOT BUNDLE_APP)
 
 IF (MSVC)
   set_target_properties(CubicSDR PROPERTIES WIN32_EXECUTABLE TRUE)
-  target_link_options(CubicSDR PRIVATE "/ENTRY:mainCRTStartup")
   target_compile_definitions(CubicSDR PRIVATE
     $<$<CONFIG:Debug>:_WINDOWS;WIN32_LEAN_AND_MEAN>
     $<$<CONFIG:RelWithDebInfo>:_WINDOWS;WIN32_LEAN_AND_MEAN>
@@ -717,6 +716,13 @@ IF (MSVC)
 
   target_compile_options(CubicSDR PRIVATE /wd4996)
 ENDIF(MSVC)
+
+IF (WIN32 AND BUNDLE_SOAPY_MODS)
+    target_compile_definitions(CubicSDR PRIVATE BUNDLE_SOAPY_MODS=1)
+    IF (BUNDLED_MODS_ONLY)
+        target_compile_definitions(CubicSDR PRIVATE BUNDLED_MODS_ONLY=1)
+    ENDIF()
+ENDIF()
 
 IF (APPLE)
     list(APPEND CUBICSDR_COMPILE_DEFINITIONS HAVE_TYPE_TRAITS=1)

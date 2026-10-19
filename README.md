@@ -4,7 +4,7 @@ CubicSDR [![CircleCI](https://dl.circleci.com/status-badge/img/gh/cjcliffe/Cubic
 Cross-Platform Software-Defined Radio Application
 
 - The latest releases are available on the [CubicSDR Releases](https://github.com/cjcliffe/CubicSDR/releases) page.
-- Build instructions can be found at the [CubicSDR Wiki](https://github.com/cjcliffe/CubicSDR/wiki) page.
+- Build from a checkout with `python build.py` (`--dry-run` previews the steps, `--package deb|nsis|dmg|appimage` produces an installer). Manual build instructions can be found at the [CubicSDR Wiki](https://github.com/cjcliffe/CubicSDR/wiki) page.
 - Manual is available at [cubicsdr.readthedocs.io](http://cubicsdr.readthedocs.io).
 - Manual contributions can be submitted to the [CubicSDR-Manual](https://github.com/cjcliffe/CubicSDR-Manual) repository.
 
