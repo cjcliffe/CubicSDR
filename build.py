@@ -849,6 +849,31 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
                      dry_run, extra=libs.get(key))
 
 
+def first_glob(patterns):
+    for pattern in patterns:
+        matches = sorted(glob.glob(pattern))
+        if matches:
+            return matches[0]
+    return None
+
+
+def system_wx_config():
+    found = shutil.which("wx-config")
+    if found:
+        return found
+    return first_glob(["/usr/lib/*/wx/config/*",
+                       "/usr/local/lib/*/wx/config/*"])
+
+
+def system_soapy_found():
+    if shutil.which("SoapySDRUtil") is not None:
+        return True
+    return first_glob(["/usr/lib/*/cmake/SoapySDR/SoapySDRConfig*.cmake",
+                       "/usr/share/cmake/SoapySDR/SoapySDRConfig*.cmake",
+                       "/usr/local/lib/*/cmake/SoapySDR/SoapySDRConfig*.cmake",
+                       "/usr/local/share/cmake/SoapySDR/SoapySDRConfig*.cmake"]) is not None
+
+
 def build_linux(args, dry_run=False):
     for prog in ["cmake", "git", "make"]:
         require(prog, dry_run)
@@ -859,18 +884,24 @@ def build_linux(args, dry_run=False):
             build_liquid(prefix, args.jobs, dry_run)
             build_soapy(prefix, args.config, args.jobs, dry_run=dry_run)
         else:
-            wx_config = shutil.which("wx-config")
-            if not dry_run and (wx_config is None
-                                or shutil.which("SoapySDRUtil") is None):
-                sys.exit("error: system wxWidgets/SoapySDR not found; "
-                         "install the dev packages listed in docs/BUILD.md "
-                         "or pass --build-deps")
-            log("using system wxWidgets and SoapySDR" if wx_config
-                else "would use system wxWidgets and SoapySDR")
-            wx_config = wx_config or "wx-config"
+            if dry_run:
+                wx_config = "wx-config"
+                log("would use system wxWidgets and SoapySDR")
+            else:
+                wx_config = system_wx_config()
+                missing = []
+                if wx_config is None:
+                    missing.append("wxWidgets (libwxgtk3.0-gtk3-dev)")
+                if not system_soapy_found():
+                    missing.append("SoapySDR (libsoapysdr-dev)")
+                if missing:
+                    sys.exit("error: system %s not found; install the dev "
+                             "packages listed in docs/BUILD.md or pass "
+                             "--build-deps" % " and ".join(missing))
+                log("using system wxWidgets and SoapySDR")
             build_liquid(prefix, args.jobs, dry_run)
     else:
-        wx_config = shutil.which("wx-config") or \
+        wx_config = (system_wx_config() if not dry_run else "wx-config") or \
             os.path.join(prefix, "wx", "bin", "wx-config")
     if not dry_run and shutil.which(wx_config) is None \
             and not os.path.exists(wx_config):
