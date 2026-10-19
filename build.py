@@ -144,7 +144,7 @@ def cmake_build(src, build, config, jobs, prefix, arch=None, extra=None,
 
 SUPPORTED_MODULES = ["audio", "remote", "redpitaya", "netsdr",
                      "rtlsdr", "airspy", "airspyhf", "hackrf",
-                     "limesuite", "bladerf", "pluto", "uhd"]
+                     "limesuite", "bladerf", "pluto", "uhd", "sdrplay"]
 BOOST_VERSION = "1.84.0"
 BOOST_MSVC = "14.3"
 UHD_TAG = "v4.6.0.0"
@@ -518,6 +518,25 @@ def install_boost_windows(prefix, arch, dry_run=False):
     return dest
 
 
+def find_sdrplay_api(arch, dry_run=False):
+    default = os.path.join("C:\\", "Program Files", "SDRplay", "API")
+    if dry_run:
+        return default
+    api_dir = default
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
+                            "SOFTWARE\\SDRplay\\Service\\API") as key:
+            api_dir, _ = winreg.QueryValueEx(key, "Install_Dir")
+    except OSError:
+        pass
+    subdir = "x64" if arch == "x64" else "x86"
+    if (os.path.isfile(os.path.join(api_dir, "inc", "sdrplay_api.h"))
+            and os.path.isfile(os.path.join(api_dir, subdir, "sdrplay_api.dll"))):
+        return api_dir
+    return None
+
+
 def patch_uhd_windows(src, dry_run=False):
     target = os.path.join(src, "host", "lib", "transport", "libusb1_base.cpp")
     marker = "#include <winsock2.h>  // CubicSDR build: struct timeval on MSVC"
@@ -577,6 +596,11 @@ def build_clib_windows(name, url, prefix, config, arch, jobs, extra,
 
 def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
     selected = [key for key in SUPPORTED_MODULES if key in set(selected)]
+    sdrplay_api = find_sdrplay_api(arch, dry_run) if "sdrplay" in selected else None
+    if "sdrplay" in selected and sdrplay_api is None:
+        log("SDRplay API not found; skipping sdrplay module "
+            "(install SDRplay API 3.x to enable it)")
+        selected = [key for key in selected if key != "sdrplay"]
     if not selected:
         return
     need_usb = set(selected) & {"rtlsdr", "airspy", "airspyhf", "hackrf",
@@ -694,6 +718,14 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
             log("+ stage %s to prefix bin" % os.path.basename(dll))
             if not dry_run:
                 shutil.copy(dll, os.path.join(prefix, "bin"))
+    if "sdrplay" in selected:
+        api_dll = os.path.join(sdrplay_api,
+                               "x64" if arch == "x64" else "x86",
+                               "sdrplay_api.dll")
+        log("+ stage %s to prefix bin" % os.path.basename(api_dll))
+        if not dry_run:
+            os.makedirs(os.path.join(prefix, "bin"), exist_ok=True)
+            shutil.copy(api_dll, os.path.join(prefix, "bin"))
     libs = {
         "rtlsdr": (["-DRTLSDR_LIBRARY:PATH=%s" % find_prefix_file(prefix, "rtlsdr.lib"),
                     "-DRTLSDR_INCLUDE_DIR:PATH=%s" % header_dir(prefix, "rtl-sdr.h", dry_run)]
@@ -734,6 +766,7 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
         "bladerf": "https://github.com/pothosware/SoapyBladeRF.git",
         "pluto": "https://github.com/pothosware/SoapyPlutoSDR.git",
         "uhd": "https://github.com/pothosware/SoapyUHD.git",
+        "sdrplay": "https://github.com/pothosware/SoapySDRPlay3.git",
     }
     names = {
         "audio": "SoapyAudio", "remote": "SoapyRemote",
@@ -741,7 +774,7 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
         "rtlsdr": "SoapyRTLSDR", "airspy": "SoapyAirspy",
         "airspyhf": "SoapyAirspyHF", "hackrf": "SoapyHackRF",
         "bladerf": "SoapyBladeRF", "pluto": "SoapyPlutoSDR",
-        "uhd": "SoapyUHD",
+        "uhd": "SoapyUHD", "sdrplay": "SoapySDRPlay3",
     }
     for key in selected:
         if key not in repos:
