@@ -33,11 +33,12 @@ Recommended minimum requirements:
   - Windows 7+ for 64 or 32-bit Windows binary releases.
   - Linux and other embedded distribution support yet to be indexed, known to at least work on Debian 8+ and Ubuntu 14+.
 
-Platform build scripts and test builds:
---------------------------------------
-  - MacOS (https://github.com/cjcliffe/CubicSDR-macOSBuild)
-  - Windows (https://github.com/cjcliffe/CubicSDR-WinBuild)
-  - Linux (AppImage) (https://github.com/cjcliffe/CubicSDR-AppImageKit)
+Building:
+--------
+  - Check out the project and run `python build.py` (add `--dry-run` to preview the steps).
+  - `python build.py --modules rtlsdr,airspy` builds a subset; `--package deb|nsis|dmg|appimage` produces an installer.
+  - The SDRplay module needs the vendor API installed manually (see the guide).
+  - Full instructions, options, and troubleshooting: [docs/BUILD.md](docs/BUILD.md).
 
 
 License:
