@@ -449,6 +449,23 @@ def fetch_hamlib_windows(prefix, arch, dry_run=False):
     return os.path.join(base, "lib", "msvc", "libhamlib-4.lib"), os.path.join(base, "include")
 
 
+def ensure_nsis(dry_run=False):
+    if shutil.which("makensis") is not None:
+        return
+    for base in (os.environ.get("ProgramFiles(x86)", ""),
+                 os.environ.get("ProgramFiles", "")):
+        candidate = os.path.join(base, "NSIS")
+        if os.path.isfile(os.path.join(candidate, "makensis.exe")):
+            log("+ using NSIS at %s" % candidate)
+            if not dry_run:
+                os.environ["PATH"] = candidate + os.pathsep + os.environ.get("PATH", "")
+            return
+    if dry_run:
+        log("would require tool 'makensis'")
+    else:
+        sys.exit("error: required tool 'makensis' not found on PATH")
+
+
 def fetch_vc_redist(prefix, arch, dry_run=False):
     name = "vc_redist.%s.exe" % arch
     dest = os.path.join(prefix, name)
@@ -876,7 +893,7 @@ def build_windows(args, dry_run=False):
         hamlib_lib = ""
         hamlib_include = ""
     if args.package == "nsis":
-        require("makensis", dry_run)
+        ensure_nsis(dry_run)
         redist = fetch_vc_redist(prefix, args.arch, dry_run)
         extra += ["-DBUILD_INSTALLER=ON", "-DBUNDLE_SOAPY_MODS=ON",
                   "-DSOAPY_SDR_ROOT=%s" % prefix,
