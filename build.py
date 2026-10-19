@@ -891,7 +891,7 @@ def build_linux(args, dry_run=False):
                 wx_config = system_wx_config()
                 missing = []
                 if wx_config is None:
-                    missing.append("wxWidgets (libwxgtk3.0-gtk3-dev)")
+                    missing.append("wxWidgets (libwxgtk3.x-gtk3-dev)")
                 if not system_soapy_found():
                     missing.append("SoapySDR (libsoapysdr-dev)")
                 if missing:
