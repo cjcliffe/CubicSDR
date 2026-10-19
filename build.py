@@ -4,6 +4,7 @@
 """Build CubicSDR from this checkout: dependencies, configure, build, package."""
 import argparse
 import glob
+import hashlib
 import os
 import platform
 import shutil
@@ -149,7 +150,10 @@ BOOST_VERSION = "1.84.0"
 BOOST_MSVC = "14.3"
 UHD_TAG = "v4.6.0.0"
 XML2_VERSION = "2.13.5"
-DEFAULT_MODULES = [name for name in SUPPORTED_MODULES if name != "netsdr"]
+DEFAULT_OPT_OUT = {"netsdr",  # hangs device enumeration
+                   "uhd"}  # rare hardware, very long build; opt in explicitly
+DEFAULT_MODULES = [name for name in SUPPORTED_MODULES
+                   if name not in DEFAULT_OPT_OUT]
 
 
 def selected_modules(spec):
@@ -219,27 +223,52 @@ def stage_dlls(libs, prefix, dry_run=False):
 
 def soapy_module(name, url, prefix, config, jobs, arch, dry_run=False,
                  extra=None):
-    if os.path.exists(stamp_path(prefix, "mod-" + name.lower())):
+    stamp = "mod-" + name.lower()
+    key = stamp_key(extra or [])
+    if stamp_valid(prefix, stamp, key, adopt=not dry_run):
         log("%s already built; skipping" % name)
         return
+    if os.path.exists(stamp_path(prefix, stamp)):
+        log("%s flags changed; rebuilding" % name)
     src = os.path.join(prefix, "src", name)
     git_clone(url, src, dry_run)
     cmake_build(src, os.path.join(prefix, "build", name), config, jobs,
                 prefix, arch,
                 ["-DCMAKE_PREFIX_PATH=%s" % prefix] + (extra or []), dry_run)
-    mark_done(prefix, "mod-" + name.lower(), dry_run)
+    mark_done(prefix, stamp, dry_run, key)
 
 
 def stamp_path(prefix, name):
     return os.path.join(prefix, "stamps", name + ".done")
 
 
-def mark_done(prefix, name, dry_run=False):
+def stamp_key(parts):
+    return hashlib.md5(repr(parts).encode()).hexdigest()[:12]
+
+
+def stamp_valid(prefix, name, key=None, adopt=True):
+    path = stamp_path(prefix, name)
+    if not os.path.exists(path):
+        return False
+    if key is None:
+        return True
+    with open(path) as handle:
+        seen = handle.read().strip()
+    if seen == key:
+        return True
+    if seen == "ok" and adopt:
+        with open(path, "w") as handle:
+            handle.write("%s\n" % key)
+        return True
+    return False
+
+
+def mark_done(prefix, name, dry_run=False, key=None):
     if dry_run:
         return
     os.makedirs(os.path.dirname(stamp_path(prefix, name)), exist_ok=True)
     with open(stamp_path(prefix, name), "w") as handle:
-        handle.write("ok\n")
+        handle.write("%s\n" % (key or "ok"))
 
 
 def parse_args(argv):
@@ -253,6 +282,8 @@ def parse_args(argv):
     parser.add_argument("--skip-deps", action="store_true")
     parser.add_argument("--modules", default="default",
                         help="'default', 'all', 'none', or comma-separated module list")
+    parser.add_argument("--skip-app", action="store_true",
+                        help="build and stage modules only; skip the CubicSDR app")
     parser.add_argument("--package", default="none",
                         choices=["none", "deb", "nsis", "dmg", "appimage"])
     parser.add_argument("--clean", action="store_true")
@@ -553,6 +584,19 @@ def patch_uhd_windows(src, dry_run=False):
             handle.write(text)
 
 
+def boost_lib_dir(boost_root, arch, dry_run=False):
+    tag = "64" if arch == "x64" else "32"
+    if not dry_run:
+        matches = sorted(glob.glob(
+            os.path.join(boost_root, "lib%s-msvc-*" % tag)))
+        for path in matches:
+            if os.path.basename(path) == "lib%s-msvc-%s" % (tag, BOOST_MSVC):
+                return path
+        if matches:
+            return matches[-1]
+    return os.path.join(boost_root, "lib%s-msvc-%s" % (tag, BOOST_MSVC))
+
+
 def ensure_mako(dry_run=False):
     if dry_run:
         log("+ ensure python mako module")
@@ -583,15 +627,19 @@ def fetch_fftw_windows(prefix, arch, dry_run=False):
 
 def build_clib_windows(name, url, prefix, config, arch, jobs, extra,
                        subdir="", branch=None, dry_run=False):
-    if os.path.exists(stamp_path(prefix, "lib-" + name)):
+    stamp = "lib-" + name
+    key = stamp_key([extra or [], subdir, branch])
+    if stamp_valid(prefix, stamp, key, adopt=not dry_run):
         log("%s already built; skipping" % name)
         return
+    if os.path.exists(stamp_path(prefix, stamp)):
+        log("%s flags changed; rebuilding" % name)
     src = os.path.join(prefix, "src", name)
     git_clone(url, src, dry_run, branch=branch)
     cmake_build(os.path.join(src, subdir) if subdir else src,
                 os.path.join(prefix, "build", name), config, jobs, prefix,
                 arch, extra, dry_run)
-    mark_done(prefix, "lib-" + name, dry_run)
+    mark_done(prefix, stamp, dry_run, key)
 
 
 def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
@@ -685,8 +733,7 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
             dry_run=dry_run)
     if "uhd" in selected:
         boost_root = install_boost_windows(prefix, arch, dry_run)
-        boost_libdir = os.path.join(
-            boost_root, "lib64-msvc-%s" % BOOST_MSVC).replace("\\", "/")
+        boost_libdir = boost_lib_dir(boost_root, arch, dry_run).replace("\\", "/")
         boost_libpath = "/LIBPATH:%s" % boost_libdir
         ensure_mako(dry_run)
         git_clone("https://github.com/EttusResearch/uhd",
@@ -696,7 +743,7 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
             "uhd", "https://github.com/EttusResearch/uhd",
             prefix, config, arch, jobs,
             ["-DBOOST_ROOT:PATH=%s" % boost_root,
-             "-DBOOST_LIBRARYDIR:PATH=%s" % os.path.join(boost_root, "lib64-msvc-%s" % BOOST_MSVC),
+             "-DBOOST_LIBRARYDIR:PATH=%s" % boost_lib_dir(boost_root, arch, dry_run),
              "-DLIBUSB_INCLUDE_DIRS:PATH=%s" % usb_inc,
              "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib,
              "-DCMAKE_SHARED_LINKER_FLAGS=%s" % boost_libpath,
@@ -840,14 +887,15 @@ def build_windows(args, dry_run=False):
     build_modules_windows(prefix, args.config, args.arch, args.jobs,
                           selected_modules(args.modules), args.dry_run)
     preset = "windows-x86" if args.arch == "Win32" else "windows"
-    run(["cmake", "--preset", preset] + extra, dry_run=dry_run,
-        env={"CUBICSDR_WXWIN": wx_root, "CUBICSDR_SOAPY": prefix})
-    run(["cmake", "--build", "--preset", preset, "--config", args.config,
-         "-j", str(args.jobs)], dry_run=dry_run)
+    if not args.skip_app:
+        run(["cmake", "--preset", preset] + extra, dry_run=dry_run,
+            env={"CUBICSDR_WXWIN": wx_root, "CUBICSDR_SOAPY": prefix})
+        run(["cmake", "--build", "--preset", preset, "--config", args.config,
+             "-j", str(args.jobs)], dry_run=dry_run)
     out = os.path.join(ROOT, "build", preset,
                        "x64" if args.arch == "x64" else "x86")
     stage_runtime_windows(prefix, out, args.dry_run)
-    if args.package == "nsis":
+    if args.package == "nsis" and not args.skip_app:
         run(["cpack", "-G", "NSIS", "-C", args.config],
             cwd=os.path.join(ROOT, "build", preset), dry_run=dry_run)
 
