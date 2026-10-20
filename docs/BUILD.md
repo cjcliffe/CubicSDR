@@ -46,7 +46,9 @@ Install these before the first run; everything else is built from source.
   accept their license terms. Without it the module is skipped with a
   message and the rest of the build continues.
 - `--package`: `deb` (Linux), `nsis` (Windows), `dmg` (macOS),
-  `appimage` (Linux).
+  `appimage` (Linux). The deb is the application only and pairs with
+  distro SoapySDR module packages; the AppImage bundles the default
+  modules instead.
 - `--skip-deps`: reuse a previous `build/deps` without rebuilding it.
 - `--build-deps` (Linux): build all dependencies from source instead of
   using system packages; the slow, fully controlled variant.

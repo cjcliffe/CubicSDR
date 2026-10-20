@@ -461,17 +461,32 @@ def build_wx_windows(prefix, config, arch, jobs, dry_run=False):
 
 
 def build_liquid(prefix, jobs, dry_run=False):
-    """Autotools-build liquid-dsp into the prefix (no distro package exists)."""
-    src = os.path.join(prefix, "src", "liquid-dsp")
-    if os.path.exists(stamp_path(prefix, "liquid")):
+    """Autotools-build liquid-dsp into the prefix (no distro package exists).
+
+    Static only: nothing dlopens liquid-dsp, so a shared library would
+    just be another runtime dependency for packaged builds to carry.
+    """
+    flags = ["--disable-shared", "--enable-static"]
+    stamp = "lib-liquid"
+    key = stamp_key(flags)
+    if stamp_valid(prefix, stamp, key, adopt=not dry_run):
         log("liquid-dsp already built; skipping")
         return
+    if os.path.exists(stamp_path(prefix, stamp)):
+        log("liquid-dsp flags changed; rebuilding")
+    if os.path.exists(stamp_path(prefix, "liquid")):
+        log("liquid-dsp was shared; rebuilding static")
+        if not dry_run:
+            for stale in glob.glob(os.path.join(prefix, "lib", "libliquid.so*")):
+                os.remove(stale)
+            os.remove(stamp_path(prefix, "liquid"))
+    src = os.path.join(prefix, "src", "liquid-dsp")
     git_clone(LIQUID_URL, src, dry_run)
     run(["sh", "bootstrap.sh"], cwd=src, dry_run=dry_run)
-    run(["./configure", "--prefix=%s" % prefix], cwd=src, dry_run=dry_run)
+    run(["./configure", "--prefix=%s" % prefix] + flags, cwd=src, dry_run=dry_run)
     run(["make", "-j%s" % jobs], cwd=src, dry_run=dry_run)
     run(["make", "install"], cwd=src, dry_run=dry_run)
-    mark_done(prefix, "liquid", dry_run)
+    mark_done(prefix, stamp, dry_run, key)
 
 
 def soapy_build_dir(prefix):
