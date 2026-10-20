@@ -1174,6 +1174,8 @@ def build_modules_linux(prefix, config, jobs, selected, from_source,
              "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib,
              # udev rule targets /lib and needs root; keep install in-prefix.
              "-DINSTALL_UDEV_RULE=OFF",
+             # DNS-SD discovery needs Avahi; USB Pluto use does not.
+             "-DHAVE_DNS_SD=OFF",
              "-DWITH_IIOD=OFF"],
             branch="v0.26", dry_run=dry_run)
         build_clib_windows(
