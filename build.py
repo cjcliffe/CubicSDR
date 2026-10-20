@@ -746,6 +746,33 @@ def boost_lib_dir(boost_root, arch, dry_run=False):
     return os.path.join(boost_root, "lib%s-msvc-%s" % (tag, BOOST_MSVC))
 
 
+def patch_limesuite_rpath(src, dry_run=False):
+    """Let our -D install rpath survive the LimeSuite build.
+
+    LimeSuite unconditionally SETs CMAKE_INSTALL_RPATH to the install
+    prefix lib dir, discarding the -D value soapy_module passes. Wrap it
+    so an explicitly provided rpath (the $ORIGIN one) is honored, leaving
+    default behavior untouched. Idempotent via the marker comment.
+    """
+    target = os.path.join(src, "CMakeLists.txt")
+    marker = "# CubicSDR build: honor a pre-set install rpath"
+    needle = 'SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}")'
+    if dry_run:
+        log("+ patch %s to honor pre-set install rpath" % target)
+        return
+    with open(target, "r", newline="") as handle:
+        text = handle.read()
+    if marker in text or needle not in text:
+        return
+    log("patching %s to honor pre-set install rpath" % target)
+    text = text.replace(
+        needle,
+        marker + '\nif(NOT CMAKE_INSTALL_RPATH)\n' + needle +
+        '\nendif()', 1)
+    with open(target, "w", newline="") as handle:
+        handle.write(text)
+
+
 def ensure_mako(dry_run=False):
     """UHD code generation needs Python mako; install it when missing."""
     if dry_run:
@@ -1144,10 +1171,17 @@ def build_modules_linux(prefix, config, jobs, selected, from_source,
             ["-DCMAKE_PREFIX_PATH=%s" % prefix] + usb_single_defs,
             dry_run=dry_run)
     if "limesuite" in selected:
+        git_clone("https://github.com/myriadrf/LimeSuite",
+                  os.path.join(prefix, "src", "LimeSuite"), dry_run)
+        patch_limesuite_rpath(os.path.join(prefix, "src", "LimeSuite"), dry_run)
         build_clib_windows(
             "LimeSuite", "https://github.com/myriadrf/LimeSuite",
             prefix, config, None, jobs,
             ["-DCMAKE_PREFIX_PATH=%s" % prefix,
+             # This build produces both prefix/lib/*.so ($ORIGIN) and the
+             # Soapy module two dirs deeper ($ORIGIN/../../lib).
+             "-DCMAKE_INSTALL_RPATH=$ORIGIN;$ORIGIN/../../lib",
+             "-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON",
              "-DLIBUSB_INCLUDE_DIRS:PATH=%s" % usb_inc,
              "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib,
              "-DLIBUSB_INCLUDE_DIR:PATH=%s" % usb_inc,
