@@ -1041,6 +1041,32 @@ def build_fftw_linux(prefix, jobs, from_source, dry_run=False):
     return os.path.join(prefix, "include"), os.path.join(prefix, "lib", "libfftw3f.so")
 
 
+def normalize_libusb_headers(usb_inc, prefix, dry_run=False):
+    """Mirror libusb headers under prefix/include in both layouts.
+
+    Projects disagree on <libusb.h> vs <libusb-1.0/libusb.h>; the prefix
+    copy provides both so every finder is satisfied. Returns the prefix
+    include dir for all LIBUSB_*_INCLUDE_* flags.
+    """
+    dest_top = os.path.join(prefix, "include")
+    subdir = os.path.join(usb_inc, "libusb-1.0", "libusb.h")
+    bare_src = os.path.join(usb_inc, "libusb.h")
+    if not os.path.isfile(bare_src):
+        # Synthesize the bare header from the subdir one; libusb.h is
+        # self-contained and does not depend on its location.
+        bare_src = subdir
+    pairs = [(subdir, os.path.join(dest_top, "libusb-1.0", "libusb.h")),
+             (bare_src, os.path.join(dest_top, "libusb.h"))]
+    if dry_run:
+        log("+ mirror libusb headers into %s" % dest_top)
+        return dest_top
+    for src, dest in pairs:
+        if os.path.isfile(src) and not os.path.isfile(dest):
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
+            shutil.copy(src, dest)
+    return dest_top
+
+
 def find_sdrplay_api_linux(dry_run=False):
     """Locate a Linux SDRplay API install by its header, or None."""
     if dry_run:
@@ -1070,6 +1096,7 @@ def build_modules_linux(prefix, config, jobs, selected, from_source,
                                "limesuite", "bladerf", "pluto", "uhd"}
     if need_usb:
         usb_inc, usb_lib = build_libusb_linux(prefix, jobs, from_source, dry_run)
+        usb_inc = normalize_libusb_headers(usb_inc, prefix, dry_run)
     else:
         usb_inc = usb_lib = ""
     usb_defs = ["-DLIBUSB_INCLUDE_DIRS:PATH=%s" % usb_inc,
