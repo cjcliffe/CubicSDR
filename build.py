@@ -1204,8 +1204,10 @@ def build_modules_linux(prefix, config, jobs, selected, from_source,
             "bladeRF", "https://github.com/Nuand/bladeRF",
             prefix, config, None, jobs,
             ["-DCMAKE_PREFIX_PATH=%s" % prefix] + usb_single_defs +
-            [# udev rules target /etc and need root; keep install in-prefix.
+            [# udev rules and shell completions target /etc and /usr/share
+             # and need root; keep the install inside the prefix.
              "-DINSTALL_UDEV_RULES=OFF",
+             "-DINSTALL_SHELL_COMPLETIONS=OFF",
              "-DTREAT_WARNINGS_AS_ERRORS=OFF"],
             subdir="host", dry_run=dry_run)
     libs = {
