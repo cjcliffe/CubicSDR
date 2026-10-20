@@ -31,10 +31,16 @@ jobs:
           name: Install Dependencies
           command: |
             sudo apt-get update
-            sudo apt-get install -y build-essential cmake git autoconf automake libtool pkg-config libpulse-dev libgtk-3-dev freeglut3-dev libhamlib-dev
+            sudo apt-get install -y build-essential cmake git autoconf automake libtool pkg-config libpulse-dev libgtk-3-dev freeglut3-dev libhamlib-dev zlib1g-dev libudev-dev libsqlite3-dev
       - run:
           name: Build AppImage
-          command: python3 build.py --modules none --build-deps --package appimage
+          command: python3 build.py --build-deps --package appimage
+      - run:
+          name: Verify bundled modules link
+          command: |
+            ./build/CubicSDR-x86_64.AppImage --appimage-extract
+            for mod in squashfs-root/usr/bin/modules/*.so; do echo "== $mod"; ldd "$mod"; done | tee /tmp/ldd.log
+            if grep -q "not found" /tmp/ldd.log; then echo "missing module dependencies"; exit 1; fi
       - store_artifacts:
           path: build/CubicSDR-x86_64.AppImage
 workflows:

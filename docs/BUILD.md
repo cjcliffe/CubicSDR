@@ -35,6 +35,8 @@ Install these before the first run; everything else is built from source.
 
 - `--modules`: `default`, `all`, `none`, or a comma-separated list such as
   `--modules rtlsdr,airspy`. `python build.py --help` lists every flag.
+  On Linux the selected modules build from the same sources; the
+  AppImage bundles them into exe-relative `modules/`.
 - Default modules cover the common devices. Two are left out:
   `netsdr` (hangs device enumeration) and `uhd` (rare hardware and a very
   long build). Enable either explicitly, e.g. `--modules uhd` or

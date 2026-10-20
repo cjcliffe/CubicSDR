@@ -68,6 +68,14 @@
             }
         },
         {
+            "name": "linux-appimage",
+            "displayName": "Linux AppImage (Unix Makefiles)",
+            "inherits": "linux",
+            "cacheVariables": {
+                "BUNDLE_SOAPY_MODS": "ON"
+            }
+        },
+        {
             "name": "macos",
             "displayName": "macOS app bundle",
             "inherits": "base",
@@ -105,6 +113,10 @@
         {
             "name": "linux-deb",
             "configurePreset": "linux-deb"
+        },
+        {
+            "name": "linux-appimage",
+            "configurePreset": "linux-appimage"
         },
         {
             "name": "macos",

@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 # Copyright (c) Charles J. Cliffe
 # SPDX-License-Identifier: GPL-2.0+
-"""Build CubicSDR from this checkout: dependencies, configure, build, package."""
+"""Build CubicSDR from this checkout: dependencies, configure, build, package.
+
+Layout: third-party sources live under build/deps/src, everything installs
+into the build/deps prefix, and stamp files under build/deps/stamps record
+completed steps so reruns skip finished work. Pass --dry-run to preview the
+full command sequence without running anything.
+"""
 import argparse
 import glob
 import hashlib
@@ -28,10 +34,12 @@ LINUXDEPLOY_URL = "https://github.com/linuxdeploy/linuxdeploy/releases/download/
 
 
 def log(text):
+    """Print a build step immediately; unbuffered so CI logs stay ordered."""
     print(text, flush=True)
 
 
 def run(cmd, cwd=None, env=None, dry_run=False):
+    """Echo then execute a command; extra env entries merge over os.environ."""
     log("+ %s" % " ".join(cmd))
     if dry_run:
         return
@@ -42,6 +50,7 @@ def run(cmd, cwd=None, env=None, dry_run=False):
 
 
 def require(prog, dry_run=False):
+    """Abort unless prog is on PATH; in dry-run just note that it is needed."""
     if shutil.which(prog) is None:
         if dry_run:
             log("would require tool '%s'" % prog)
@@ -50,6 +59,7 @@ def require(prog, dry_run=False):
 
 
 def download(url, dest, dry_run=False, retries=3):
+    """Fetch url to dest, resuming-safe via a .part file; skip if dest exists."""
     if os.path.exists(dest):
         log("have %s; skipping download" % dest)
         return
@@ -68,6 +78,7 @@ def download(url, dest, dry_run=False, retries=3):
 
 
 def vs_file(parts, what):
+    """Locate a Visual Studio tool via vswhere; newest match wins."""
     vswhere = os.path.join(os.environ.get("ProgramFiles(x86)", ""),
                            "Microsoft Visual Studio", "Installer", "vswhere.exe")
     if os.path.exists(vswhere):
@@ -83,11 +94,13 @@ def vs_file(parts, what):
 
 
 def msvc_lib_exe():
+    """Path to lib.exe for building import libraries from .def files."""
     return vs_file(("VC", "Tools", "MSVC", "*", "bin", "Hostx64", "x64",
                     "lib.exe"), "lib.exe")
 
 
 def msbuild_exe(dry_run=False):
+    """Path to msbuild.exe, or its bare name when only previewing."""
     if dry_run:
         return "msbuild"
     return vs_file(("MSBuild", "Current", "Bin", "amd64", "msbuild.exe"),
@@ -95,12 +108,14 @@ def msbuild_exe(dry_run=False):
 
 
 def devenv_exe(dry_run=False):
+    """Path to devenv.com, used only for one-off .sln upgrades."""
     if dry_run:
         return "devenv"
     return vs_file(("Common7", "IDE", "devenv.com"), "devenv")
 
 
 def msbuild_sln(sln, config, arch, dry_run=False, upgrade=False):
+    """Build a vendored Visual Studio solution in place."""
     if upgrade:
         run([devenv_exe(dry_run), "/Upgrade", sln], dry_run=dry_run)
     run([msbuild_exe(dry_run), sln, "/p:Configuration=%s" % config,
@@ -108,6 +123,7 @@ def msbuild_sln(sln, config, arch, dry_run=False, upgrade=False):
 
 
 def unzip_staged(tarball, dest, dry_run=False):
+    """Extract a zip, collapsing a single top-level directory when present."""
     if os.path.isdir(dest):
         return
     if dry_run:
@@ -127,6 +143,7 @@ def unzip_staged(tarball, dest, dry_run=False):
 
 def cmake_build(src, build, config, jobs, prefix, arch=None, extra=None,
                 dry_run=False):
+    """Configure, build, and install one CMake project into the prefix."""
     cmd = ["cmake", "-S", src, "-B", build,
            "-DCMAKE_BUILD_TYPE=%s" % config,
            "-DCMAKE_INSTALL_PREFIX=%s" % prefix] + (extra or [])
@@ -144,6 +161,9 @@ def cmake_build(src, build, config, jobs, prefix, arch=None, extra=None,
     run(cmd, dry_run=dry_run)
 
 
+# Every SoapySDR module this script knows how to build. netsdr is excluded
+# from the default set because it hangs device enumeration; uhd is excluded
+# because few users have the hardware and its build is very long.
 SUPPORTED_MODULES = ["audio", "remote", "redpitaya", "netsdr",
                      "rtlsdr", "airspy", "airspyhf", "hackrf",
                      "limesuite", "bladerf", "pluto", "uhd", "sdrplay"]
@@ -155,9 +175,35 @@ DEFAULT_OPT_OUT = {"netsdr",  # hangs device enumeration
                    "uhd"}  # rare hardware, very long build; opt in explicitly
 DEFAULT_MODULES = [name for name in SUPPORTED_MODULES
                    if name not in DEFAULT_OPT_OUT]
+# Module key to Soapy source repo and CMake project name. Shared by the
+# Windows and Linux module builders; per-module configure flags live in
+# each builder's local libs table.
+SOAPY_REPOS = {
+    "audio": "https://github.com/pothosware/SoapyAudio.git",
+    "remote": "https://github.com/pothosware/SoapyRemote.git",
+    "redpitaya": "https://github.com/pothosware/SoapyRedPitaya.git",
+    "netsdr": "https://github.com/pothosware/SoapyNetSDR.git",
+    "rtlsdr": "https://github.com/pothosware/SoapyRTLSDR.git",
+    "airspy": "https://github.com/pothosware/SoapyAirspy.git",
+    "airspyhf": "https://github.com/pothosware/SoapyAirspyHF.git",
+    "hackrf": "https://github.com/pothosware/SoapyHackRF.git",
+    "bladerf": "https://github.com/pothosware/SoapyBladeRF.git",
+    "pluto": "https://github.com/pothosware/SoapyPlutoSDR.git",
+    "uhd": "https://github.com/pothosware/SoapyUHD.git",
+    "sdrplay": "https://github.com/pothosware/SoapySDRPlay3.git",
+}
+SOAPY_NAMES = {
+    "audio": "SoapyAudio", "remote": "SoapyRemote",
+    "redpitaya": "SoapyRedPitaya", "netsdr": "SoapyNetSDR",
+    "rtlsdr": "SoapyRTLSDR", "airspy": "SoapyAirspy",
+    "airspyhf": "SoapyAirspyHF", "hackrf": "SoapyHackRF",
+    "bladerf": "SoapyBladeRF", "pluto": "SoapyPlutoSDR",
+    "uhd": "SoapyUHD", "sdrplay": "SoapySDRPlay3",
+}
 
 
 def selected_modules(spec):
+    """Resolve a --modules value to an ordered module key list."""
     if spec == "default":
         return list(DEFAULT_MODULES)
     if spec == "all":
@@ -173,6 +219,11 @@ def selected_modules(spec):
 
 
 def find_prefix_file(prefix, pattern):
+    """Find a built file under the prefix, preferring installed copies.
+
+    Glob results sort build-tree paths last so an installed library wins
+    over an intermediate object of the same name.
+    """
     matches = sorted(glob.glob(os.path.join(prefix, "**", pattern),
                                 recursive=True),
                      key=lambda path: ("build" in path.split(os.sep), path))
@@ -182,12 +233,18 @@ def find_prefix_file(prefix, pattern):
 
 
 def header_dir(prefix, header, dry_run=False):
+    """Directory containing a built header under the prefix."""
     if dry_run:
         return os.path.join(prefix, "include")
     return os.path.dirname(find_prefix_file(prefix, header))
 
 
 def stage_runtime_windows(prefix, out, dry_run=False):
+    """Copy prefix DLLs beside the exe and SoapySDR modules into modules/.
+
+    Modules that are no longer selected are pruned so a deselected module
+    cannot linger and load on the next launch.
+    """
     if dry_run:
         log("+ stage runtime DLLs and modules to %s" % out)
         return
@@ -210,6 +267,7 @@ def stage_runtime_windows(prefix, out, dry_run=False):
 
 
 def stage_dlls(libs, prefix, dry_run=False):
+    """Copy each library's sibling DLLs into the prefix bin directory."""
     dest = os.path.join(prefix, "bin")
     if dry_run:
         log("+ stage dependency DLLs to %s" % dest)
@@ -224,6 +282,7 @@ def stage_dlls(libs, prefix, dry_run=False):
 
 def soapy_module(name, url, prefix, config, jobs, arch, dry_run=False,
                  extra=None):
+    """Clone, build, and install one SoapySDR module into the prefix."""
     stamp = "mod-" + name.lower()
     key = stamp_key(extra or [])
     if stamp_valid(prefix, stamp, key, adopt=not dry_run):
@@ -240,14 +299,21 @@ def soapy_module(name, url, prefix, config, jobs, arch, dry_run=False,
 
 
 def stamp_path(prefix, name):
+    """Stamp file recording that a named build step completed."""
     return os.path.join(prefix, "stamps", name + ".done")
 
 
 def stamp_key(parts):
+    """Short hash of configure inputs; a flag edit must invalidate the stamp."""
     return hashlib.md5(repr(parts).encode()).hexdigest()[:12]
 
 
 def stamp_valid(prefix, name, key=None, adopt=True):
+    """True when a step can be skipped: stamp exists and, if keyed, matches.
+
+    Pre-keying "ok" stamps are adopted once by writing the current key, so
+    existing checkouts keep skipping until flags actually change.
+    """
     path = stamp_path(prefix, name)
     if not os.path.exists(path):
         return False
@@ -265,6 +331,7 @@ def stamp_valid(prefix, name, key=None, adopt=True):
 
 
 def mark_done(prefix, name, dry_run=False, key=None):
+    """Record a completed step; never writes anything during a dry run."""
     if dry_run:
         return
     os.makedirs(os.path.dirname(stamp_path(prefix, name)), exist_ok=True)
@@ -296,10 +363,12 @@ def parse_args(argv):
 
 
 def default_prefix():
+    """Dependency prefix; overridable with --deps-prefix."""
     return os.path.join(ROOT, "build", "deps")
 
 
 def git_clone(url, dest, dry_run=False, branch=None):
+    """Shallow-clone url once; reuse the existing checkout on later runs."""
     if os.path.isdir(dest):
         log("%s exists; reusing" % dest)
         return
@@ -310,6 +379,7 @@ def git_clone(url, dest, dry_run=False, branch=None):
 
 
 def wx_source(prefix, dry_run=False):
+    """Download and unpack the pinned wxWidgets release under src/."""
     dest = os.path.join(prefix, "src", "wxWidgets-%s" % WX_VERSION)
     if not os.path.isdir(dest):
         tarball = os.path.join(prefix, "src", "wxWidgets-%s.tar.bz2" % WX_VERSION)
@@ -321,6 +391,7 @@ def wx_source(prefix, dry_run=False):
 
 
 def build_wx_linux(prefix, jobs, dry_run=False):
+    """Build static monolithic wxWidgets for Linux into the prefix."""
     src = wx_source(prefix, dry_run)
     if os.path.exists(stamp_path(prefix, "wx")):
         log("wxWidgets already built; skipping")
@@ -339,6 +410,7 @@ def build_wx_linux(prefix, jobs, dry_run=False):
 
 
 def build_wx_macos(prefix, jobs, dry_run=False):
+    """Build static monolithic wxWidgets for macOS into the prefix."""
     src = wx_source(prefix, dry_run)
     if os.path.exists(stamp_path(prefix, "wx")):
         log("wxWidgets already built; skipping")
@@ -357,6 +429,7 @@ def build_wx_macos(prefix, jobs, dry_run=False):
 
 
 def build_wx_windows(prefix, config, arch, jobs, dry_run=False):
+    """Build static wxWidgets for Windows via its CMake build into the prefix."""
     if os.path.exists(stamp_path(prefix, "wx")):
         log("wxWidgets already built; skipping")
         return os.path.join(prefix, "wx")
@@ -378,6 +451,7 @@ def build_wx_windows(prefix, config, arch, jobs, dry_run=False):
 
 
 def build_liquid(prefix, jobs, dry_run=False):
+    """Autotools-build liquid-dsp into the prefix (no distro package exists)."""
     src = os.path.join(prefix, "src", "liquid-dsp")
     if os.path.exists(stamp_path(prefix, "liquid")):
         log("liquid-dsp already built; skipping")
@@ -391,10 +465,12 @@ def build_liquid(prefix, jobs, dry_run=False):
 
 
 def soapy_build_dir(prefix):
+    """Out-of-source build directory for SoapySDR itself."""
     return os.path.join(prefix, "src", "SoapySDR", "build")
 
 
 def build_soapy(prefix, config, jobs, arch=None, dry_run=False):
+    """Build pinned SoapySDR into the prefix; MSVC when arch is given."""
     src = os.path.join(prefix, "src", "SoapySDR")
     if os.path.exists(stamp_path(prefix, "soapy")):
         log("SoapySDR already built; skipping")
@@ -419,6 +495,7 @@ def build_soapy(prefix, config, jobs, arch=None, dry_run=False):
 
 
 def find_soapysdr_cmake(prefix, dry_run=False):
+    """Locate the installed SoapySDRConfig.cmake for the macOS preset."""
     matches = glob.glob(os.path.join(prefix, "**", "SoapySDRConfig.cmake"), recursive=True)
     if matches:
         return os.path.dirname(matches[0])
@@ -428,6 +505,11 @@ def find_soapysdr_cmake(prefix, dry_run=False):
 
 
 def fetch_hamlib_windows(prefix, arch, dry_run=False):
+    """Unpack the Hamlib Windows archive and build its MSVC import library.
+
+    Also comments out the POSIX-only sys/time.h include in rig.h, which
+    MSVC cannot provide.
+    """
     if os.path.exists(stamp_path(prefix, "hamlib")):
         log("hamlib already fetched; skipping")
     else:
@@ -454,6 +536,11 @@ def fetch_hamlib_windows(prefix, arch, dry_run=False):
 
 
 def ensure_nsis(dry_run=False):
+    """Make makensis available, falling back to the default install location.
+
+    The NSIS installer does not add itself to PATH, so check the standard
+    Program Files locations before reporting the tool missing.
+    """
     if shutil.which("makensis") is not None:
         return
     for base in (os.environ.get("ProgramFiles(x86)", ""),
@@ -471,6 +558,7 @@ def ensure_nsis(dry_run=False):
 
 
 def fetch_vc_redist(prefix, arch, dry_run=False):
+    """Download the matching VC++ redistributable for the NSIS installer."""
     name = "vc_redist.%s.exe" % arch
     dest = os.path.join(prefix, name)
     if not os.path.exists(dest):
@@ -484,6 +572,7 @@ FFTW_VERSION = "3.3.5"
 
 
 def build_libusb_windows(prefix, config, arch, dry_run=False):
+    """Build libusb from its vendored MSVC solution; return headers and lib."""
     if os.path.exists(stamp_path(prefix, "libusb")):
         log("libusb already built; skipping")
     else:
@@ -501,6 +590,11 @@ def build_libusb_windows(prefix, config, arch, dry_run=False):
 
 
 def build_pthreads_windows(prefix, config, arch, dry_run=False):
+    """Build pthread-win32 and generate a PThreads4W config shim for CMake.
+
+    Upstream find modules expect PThreads4W target names that the old
+    pthread-win32 package does not ship, hence the generated shim.
+    """
     dest = os.path.join(prefix, "src", "pthread-win32-%s" % PTHREADS_VERSION)
     if os.path.exists(stamp_path(prefix, "pthreads")):
         log("pthreads already built; skipping")
@@ -528,6 +622,7 @@ def build_pthreads_windows(prefix, config, arch, dry_run=False):
 
 
 def stage_libusb_windows(prefix, arch, dry_run=False):
+    """Lay out libusb headers and binaries in the shape finders expect."""
     usb_src = os.path.join(prefix, "src", "libusb")
     dest = os.path.join(prefix, "libusb")
     if os.path.exists(stamp_path(prefix, "libusb-stage")):
@@ -550,6 +645,11 @@ def stage_libusb_windows(prefix, arch, dry_run=False):
 
 
 def install_boost_windows(prefix, arch, dry_run=False):
+    """Run the prebuilt Boost installer into the prefix (UHD needs it).
+
+    Boost binary installers are per-MSVC-version, so BOOST_MSVC must match
+    the compiler; see boost_lib_dir for locating the matching lib dir.
+    """
     dest = os.path.join(prefix, "boost")
     if os.path.exists(stamp_path(prefix, "boost")):
         log("boost already installed; skipping")
@@ -571,6 +671,13 @@ def install_boost_windows(prefix, arch, dry_run=False):
 
 
 def find_sdrplay_api(arch, dry_run=False):
+    """Locate the vendor SDRplay API 3.x install, or None when absent.
+
+    The API cannot be redistributed, so it is never downloaded: the
+    registry key its installer writes is honored, with the default
+    install path as fallback. Both the header and the arch-matching DLL
+    must exist for the install to count.
+    """
     default = os.path.join("C:\\", "Program Files", "SDRplay", "API")
     if dry_run:
         return default
@@ -590,6 +697,11 @@ def find_sdrplay_api(arch, dry_run=False):
 
 
 def patch_uhd_windows(src, dry_run=False):
+    """Provide struct timeval for UHD's USB transport on MSVC.
+
+    Current libusb headers no longer define struct timeval on Windows, so
+    winsock2.h (which does) is included first. Idempotent via the marker.
+    """
     target = os.path.join(src, "host", "lib", "transport", "libusb1_base.cpp")
     marker = "#include <winsock2.h>  // CubicSDR build: struct timeval on MSVC"
     if dry_run:
@@ -606,6 +718,12 @@ def patch_uhd_windows(src, dry_run=False):
 
 
 def boost_lib_dir(boost_root, arch, dry_run=False):
+    """Resolve the Boost library dir, preferring the pinned MSVC version.
+
+    The prebuilt layout is lib{32,64}-msvc-<ver>; fall back to the newest
+    match so a newer installer keeps working, and to the constructed
+    default when previewing or when nothing is installed yet.
+    """
     tag = "64" if arch == "x64" else "32"
     if not dry_run:
         matches = sorted(glob.glob(
@@ -619,6 +737,7 @@ def boost_lib_dir(boost_root, arch, dry_run=False):
 
 
 def ensure_mako(dry_run=False):
+    """UHD code generation needs Python mako; install it when missing."""
     if dry_run:
         log("+ ensure python mako module")
         return
@@ -630,6 +749,7 @@ def ensure_mako(dry_run=False):
 
 
 def fetch_fftw_windows(prefix, arch, dry_run=False):
+    """Fetch prebuilt FFTW and create its MSVC import library from the .def."""
     tag = "dll64" if arch == "x64" else "dll32"
     dest = os.path.join(prefix, "src", "fftw-%s-%s" % (FFTW_VERSION, tag))
     if os.path.exists(stamp_path(prefix, "fftw")):
@@ -648,6 +768,11 @@ def fetch_fftw_windows(prefix, arch, dry_run=False):
 
 def build_clib_windows(name, url, prefix, config, arch, jobs, extra,
                        subdir="", branch=None, dry_run=False):
+    """Build one C library dependency; the stamp key covers flags and source.
+
+    Reconfigures on every run (cheap) but recompiles only when the stamp
+    is missing or the flags changed since the last build.
+    """
     stamp = "lib-" + name
     key = stamp_key([extra or [], subdir, branch])
     if stamp_valid(prefix, stamp, key, adopt=not dry_run):
@@ -664,6 +789,12 @@ def build_clib_windows(name, url, prefix, config, arch, jobs, extra,
 
 
 def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
+    """Build the selected C libraries and SoapySDR modules for Windows.
+
+    Shared C libraries (libusb, pthreads, FFTW, device libraries) are
+    built first so each Soapy module can point at them; pure modules are
+    handled by the repos/names tables at the end.
+    """
     selected = [key for key in SUPPORTED_MODULES if key in set(selected)]
     sdrplay_api = find_sdrplay_api(arch, dry_run) if "sdrplay" in selected else None
     if "sdrplay" in selected and sdrplay_api is None:
@@ -672,6 +803,7 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
         selected = [key for key in selected if key != "sdrplay"]
     if not selected:
         return
+    # Only pay for libusb/pthreads when a selected module links against them.
     need_usb = set(selected) & {"rtlsdr", "airspy", "airspyhf", "hackrf",
                                "limesuite", "bladerf", "pluto", "uhd"}
     usb_inc = usb_lib = pt_inc = pt_lib = ""
@@ -765,6 +897,9 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
             prefix, config, arch, jobs,
             ["-DBOOST_ROOT:PATH=%s" % boost_root,
              "-DBOOST_LIBRARYDIR:PATH=%s" % boost_lib_dir(boost_root, arch, dry_run),
+             # USB transport (B100/B200/USRP1) needs libusb; the /LIBPATH
+             # entries let MSVC auto-linking find the Boost binary libs,
+             # which UHD's own Boost detection leaves off the link line.
              "-DLIBUSB_INCLUDE_DIRS:PATH=%s" % usb_inc,
              "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib,
              "-DCMAKE_SHARED_LINKER_FLAGS=%s" % boost_libpath,
@@ -782,11 +917,15 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
             ["-DLIBUSB_PATH:PATH=%s" % usb_path,
              "-DTREAT_WARNINGS_AS_ERRORS=OFF"],
             subdir="host", dry_run=dry_run)
+        # bladeRF installs its DLL beside its lib; mirror it to prefix bin
+        # so the generic runtime staging picks it up.
         for dll in glob.glob(os.path.join(prefix, "lib", "bladeRF*.dll")):
             log("+ stage %s to prefix bin" % os.path.basename(dll))
             if not dry_run:
                 shutil.copy(dll, os.path.join(prefix, "bin"))
     if "sdrplay" in selected:
+        # The vendor runtime DLL lives outside the prefix; stage it to
+        # prefix bin so it lands beside the exe with everything else.
         api_dll = os.path.join(sdrplay_api,
                                "x64" if arch == "x64" else "x86",
                                "sdrplay_api.dll")
@@ -817,41 +956,32 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
                     "-DLIBHACKRF_INCLUDE_DIR:PATH=%s" % header_dir(prefix, "hackrf.h", dry_run)]),
     }
     if "uhd" in selected:
+        # SoapyUHD relies on the same Boost auto-linking as UHD itself, so
+        # it needs the same BOOST_ROOT/LIBPATH hints to configure and link.
         libs["uhd"] = ["-DBOOST_ROOT:PATH=%s" % boost_root,
                        "-DBOOST_LIBRARYDIR:PATH=%s" % boost_libdir.replace("/", "\\"),
                        "-DCMAKE_SHARED_LINKER_FLAGS=%s" % boost_libpath,
                        "-DCMAKE_MODULE_LINKER_FLAGS=%s" % boost_libpath,
                        "-DCMAKE_EXE_LINKER_FLAGS=%s" % boost_libpath]
-    repos = {
-        "audio": "https://github.com/pothosware/SoapyAudio.git",
-        "remote": "https://github.com/pothosware/SoapyRemote.git",
-        "redpitaya": "https://github.com/pothosware/SoapyRedPitaya.git",
-        "netsdr": "https://github.com/pothosware/SoapyNetSDR.git",
-        "rtlsdr": "https://github.com/pothosware/SoapyRTLSDR.git",
-        "airspy": "https://github.com/pothosware/SoapyAirspy.git",
-        "airspyhf": "https://github.com/pothosware/SoapyAirspyHF.git",
-        "hackrf": "https://github.com/pothosware/SoapyHackRF.git",
-        "bladerf": "https://github.com/pothosware/SoapyBladeRF.git",
-        "pluto": "https://github.com/pothosware/SoapyPlutoSDR.git",
-        "uhd": "https://github.com/pothosware/SoapyUHD.git",
-        "sdrplay": "https://github.com/pothosware/SoapySDRPlay3.git",
-    }
-    names = {
-        "audio": "SoapyAudio", "remote": "SoapyRemote",
-        "redpitaya": "SoapyRedPitaya", "netsdr": "SoapyNetSDR",
-        "rtlsdr": "SoapyRTLSDR", "airspy": "SoapyAirspy",
-        "airspyhf": "SoapyAirspyHF", "hackrf": "SoapyHackRF",
-        "bladerf": "SoapyBladeRF", "pluto": "SoapyPlutoSDR",
-        "uhd": "SoapyUHD", "sdrplay": "SoapySDRPlay3",
-    }
+    # Pure Soapy modules: CMake project name and repo per module key (see
+    # SOAPY_REPOS/SOAPY_NAMES), with optional per-module flags from libs.
     for key in selected:
-        if key not in repos:
+        if key not in SOAPY_REPOS:
             continue
-        soapy_module(names[key], repos[key], prefix, config, jobs, arch,
+        soapy_module(SOAPY_NAMES[key], SOAPY_REPOS[key], prefix, config, jobs, arch,
                      dry_run, extra=libs.get(key))
 
 
+def sys_header(candidates):
+    """First existing header path from a list of absolute candidates."""
+    for candidate in candidates:
+        if os.path.isfile(candidate):
+            return candidate
+    return None
+
+
 def first_glob(patterns):
+    """First match across glob patterns, or None when nothing matches."""
     for pattern in patterns:
         matches = sorted(glob.glob(pattern))
         if matches:
@@ -859,7 +989,220 @@ def first_glob(patterns):
     return None
 
 
+def build_libusb_linux(prefix, jobs, from_source, dry_run=False):
+    """Provide libusb on Linux: system package or autotools source build."""
+    header = sys_header(["/usr/include/libusb-1.0/libusb.h",
+                         "/usr/local/include/libusb-1.0/libusb.h"])
+    if header and not from_source:
+        log("using system libusb")
+        lib = sys_lib(["/usr/lib/x86_64-linux-gnu/libusb-1.0.so",
+                       "/usr/lib/aarch64-linux-gnu/libusb-1.0.so",
+                       "/usr/local/lib/libusb-1.0.so",
+                       "/usr/lib/libusb-1.0.so"])
+        return os.path.dirname(os.path.dirname(header)), lib
+    if os.path.exists(stamp_path(prefix, "lib-libusb")):
+        log("libusb already built; skipping")
+    else:
+        src = os.path.join(prefix, "src", "libusb")
+        git_clone("https://github.com/libusb/libusb", src, dry_run)
+        run(["sh", "autogen.sh"], cwd=src, dry_run=dry_run)
+        run(["./configure", "--prefix=%s" % prefix], cwd=src, dry_run=dry_run)
+        run(["make", "-j%s" % jobs], cwd=src, dry_run=dry_run)
+        run(["make", "install"], cwd=src, dry_run=dry_run)
+        mark_done(prefix, "lib-libusb", dry_run)
+    return (os.path.join(prefix, "include"),
+            os.path.join(prefix, "lib", "libusb-1.0.so"))
+
+
+def build_fftw_linux(prefix, jobs, from_source, dry_run=False):
+    """Provide single-precision FFTW: system package or source build."""
+    header = sys_header(["/usr/include/fftw3.h",
+                         "/usr/local/include/fftw3.h"])
+    if header and not from_source:
+        log("using system FFTW")
+        return os.path.dirname(header), sys_lib([
+            "/usr/lib/x86_64-linux-gnu/libfftw3f.so",
+            "/usr/lib/aarch64-linux-gnu/libfftw3f.so",
+            "/usr/local/lib/libfftw3f.so", "/usr/lib/libfftw3f.so"])
+    dest = os.path.join(prefix, "src", "fftw-%s" % FFTW_VERSION)
+    if os.path.exists(stamp_path(prefix, "lib-fftw")):
+        log("fftw already built; skipping")
+    else:
+        download("https://fftw.org/pub/fftw/fftw-%s.tar.gz" % FFTW_VERSION,
+                 dest + ".tar.gz", dry_run)
+        if not dry_run:
+            with tarfile.open(dest + ".tar.gz") as archive:
+                archive.extractall(os.path.join(prefix, "src"))
+        run(["./configure", "--enable-float", "--enable-shared",
+             "--prefix=%s" % prefix], cwd=dest, dry_run=dry_run)
+        run(["make", "-j%s" % jobs], cwd=dest, dry_run=dry_run)
+        run(["make", "install"], cwd=dest, dry_run=dry_run)
+        mark_done(prefix, "lib-fftw", dry_run)
+    return os.path.join(prefix, "include"), os.path.join(prefix, "lib", "libfftw3f.so")
+
+
+def find_sdrplay_api_linux(dry_run=False):
+    """Locate a Linux SDRplay API install by its header, or None."""
+    if dry_run:
+        return "/usr/include"
+    if sys_header(["/usr/include/sdrplay_api.h",
+                   "/usr/local/include/sdrplay_api.h"]):
+        return True
+    return None
+
+
+def build_modules_linux(prefix, config, jobs, selected, from_source,
+                        dry_run=False):
+    """Build the selected C libraries and SoapySDR modules for Linux.
+
+    Generic dependencies (libusb, FFTW, libxml2, zstd) prefer system
+    packages unless from_source forces source builds; device libraries
+    always build from source. Mirrors build_modules_windows.
+    """
+    selected = [key for key in SUPPORTED_MODULES if key in set(selected)]
+    if "sdrplay" in selected and find_sdrplay_api_linux(dry_run) is None:
+        log("SDRplay API not found; skipping sdrplay module "
+            "(install the SDRplay API to enable it)")
+        selected = [key for key in selected if key != "sdrplay"]
+    if not selected:
+        return
+    need_usb = set(selected) & {"rtlsdr", "airspy", "airspyhf", "hackrf",
+                               "limesuite", "bladerf", "pluto", "uhd"}
+    if need_usb:
+        usb_inc, usb_lib = build_libusb_linux(prefix, jobs, from_source, dry_run)
+    else:
+        usb_inc = usb_lib = ""
+    usb_defs = ["-DLIBUSB_INCLUDE_DIRS:PATH=%s" % usb_inc,
+                "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib]
+    usb_single_defs = ["-DLIBUSB_INCLUDE_DIR:PATH=%s" % usb_inc,
+                       "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib]
+    if "hackrf" in selected:
+        fftw_inc, fftw_lib = build_fftw_linux(prefix, jobs, from_source, dry_run)
+        build_clib_windows(
+            "hackrf", "https://github.com/greatscottgadgets/hackrf",
+            prefix, config, None, jobs,
+            ["-DFFTW_LIBRARIES=%s" % fftw_lib,
+             "-DFFTW_INCLUDES=%s" % fftw_inc,
+             "-DCMAKE_PREFIX_PATH=%s" % prefix] + usb_single_defs,
+            subdir="host", dry_run=dry_run)
+    if "rtlsdr" in selected:
+        build_clib_windows(
+            "librtlsdr", "https://github.com/rtlsdrblog/rtl-sdr-blog",
+            prefix, config, None, jobs,
+            ["-DCMAKE_PREFIX_PATH=%s" % prefix] + usb_defs,
+            dry_run=dry_run)
+    if "airspy" in selected:
+        build_clib_windows(
+            "airspyone_host", "https://github.com/airspy/airspyone_host",
+            prefix, config, None, jobs,
+            ["-DCMAKE_PREFIX_PATH=%s" % prefix] + usb_single_defs,
+            dry_run=dry_run)
+    if "airspyhf" in selected:
+        build_clib_windows(
+            "airspyhf", "https://github.com/airspy/airspyhf",
+            prefix, config, None, jobs,
+            ["-DCMAKE_PREFIX_PATH=%s" % prefix] + usb_single_defs,
+            dry_run=dry_run)
+    if "limesuite" in selected:
+        build_clib_windows(
+            "LimeSuite", "https://github.com/myriadrf/LimeSuite",
+            prefix, config, None, jobs,
+            ["-DCMAKE_PREFIX_PATH=%s" % prefix,
+             "-DLIBUSB_INCLUDE_DIRS:PATH=%s" % usb_inc,
+             "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib,
+             "-DLIBUSB_INCLUDE_DIR:PATH=%s" % usb_inc,
+             "-DLIBUSB_LIBRARY:PATH=%s" % usb_lib],
+            dry_run=dry_run)
+    if "pluto" in selected:
+        zstd_inc = sys_header(["/usr/include/zstd.h",
+                               "/usr/local/include/zstd.h"])
+        if zstd_inc and not from_source:
+            log("using system zstd")
+        else:
+            build_clib_windows(
+                "zstd", "https://github.com/facebook/zstd",
+                prefix, config, None, jobs,
+                ["-DZSTD_BUILD_PROGRAMS=OFF", "-DZSTD_BUILD_TESTS=OFF"],
+                subdir="build/cmake", dry_run=dry_run)
+        xml_inc = sys_header(["/usr/include/libxml2/libxml/parser.h",
+                              "/usr/local/include/libxml2/libxml/parser.h"])
+        if xml_inc and not from_source:
+            log("using system libxml2")
+        else:
+            build_clib_windows(
+                "libxml2", "https://github.com/GNOME/libxml2",
+                prefix, config, None, jobs,
+                ["-DLIBXML2_WITH_ICONV=OFF", "-DLIBXML2_WITH_ZLIB=OFF",
+                 "-DLIBXML2_WITH_LZMA=OFF", "-DLIBXML2_WITH_PYTHON=OFF",
+                 "-DLIBXML2_WITH_PROGRAMS=OFF"],
+                dry_run=dry_run)
+        build_clib_windows(
+            "libiio", "https://github.com/analogdevicesinc/libiio",
+            prefix, config, None, jobs,
+            ["-DCMAKE_PREFIX_PATH=%s" % prefix,
+             "-DLIBUSB_INCLUDE_DIR:PATH=%s" % usb_inc,
+             "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib,
+             "-DWITH_IIOD=OFF"],
+            branch="v0.26", dry_run=dry_run)
+        build_clib_windows(
+            "libad9361", "https://github.com/analogdevicesinc/libad9361-iio",
+            prefix, config, None, jobs,
+            ["-DCMAKE_PREFIX_PATH=%s" % prefix,
+             "-DLIBIIO_INCLUDEDIR:PATH=%s" % os.path.join(prefix, "include"),
+             "-DLIBIIO_LIBRARIES:PATH=%s" % os.path.join(prefix, "lib", "libiio.so"),
+             "-DBUILD_TESTS=OFF"],
+            dry_run=dry_run)
+    if "uhd" in selected:
+        ensure_mako(dry_run)
+        git_clone("https://github.com/EttusResearch/uhd",
+                  os.path.join(prefix, "src", "uhd"), dry_run, branch=UHD_TAG)
+        build_clib_windows(
+            "uhd", "https://github.com/EttusResearch/uhd",
+            prefix, config, None, jobs,
+            ["-DLIBUSB_INCLUDE_DIRS:PATH=%s" % usb_inc,
+             "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib,
+             "-DUHD_IMAGES_DOWNLOAD=ON",
+             "-DENABLE_PYTHON_API=OFF", "-DENABLE_EXAMPLES=OFF",
+             "-DENABLE_TESTS=OFF"],
+            subdir="host", branch=UHD_TAG, dry_run=dry_run)
+    if "bladerf" in selected:
+        build_clib_windows(
+            "bladeRF", "https://github.com/Nuand/bladeRF",
+            prefix, config, None, jobs,
+            ["-DCMAKE_PREFIX_PATH=%s" % prefix] + usb_single_defs +
+            ["-DTREAT_WARNINGS_AS_ERRORS=OFF"],
+            subdir="host", dry_run=dry_run)
+    libs = {
+        "rtlsdr": (["-DRTLSDR_LIBRARY:PATH=%s" % find_prefix_file(prefix, "librtlsdr.so"),
+                    "-DRTLSDR_INCLUDE_DIR:PATH=%s" % header_dir(prefix, "rtl-sdr.h", dry_run)]
+                   if not dry_run else
+                   ["-DRTLSDR_LIBRARY:PATH=librtlsdr.so",
+                    "-DRTLSDR_INCLUDE_DIR:PATH=%s" % header_dir(prefix, "rtl-sdr.h", dry_run)]),
+        "airspy": (["-DLIBAIRSPY_LIBRARIES:PATH=%s" % find_prefix_file(prefix, "libairspy.so"),
+                    "-DLIBAIRSPY_INCLUDE_DIRS:PATH=%s" % header_dir(prefix, "airspy.h", dry_run)]
+                   if not dry_run else
+                   ["-DLIBAIRSPY_LIBRARIES:PATH=libairspy.so",
+                    "-DLIBAIRSPY_INCLUDE_DIRS:PATH=%s" % header_dir(prefix, "airspy.h", dry_run)]),
+        "airspyhf": (["-DLIBAIRSPYHF_LIBRARIES:PATH=%s" % find_prefix_file(prefix, "libairspyhf.so"),
+                      "-DLIBAIRSPYHF_INCLUDE_DIRS:PATH=%s" % header_dir(prefix, "airspyhf.h", dry_run)]
+                     if not dry_run else
+                     ["-DLIBAIRSPYHF_LIBRARIES:PATH=libairspyhf.so",
+                      "-DLIBAIRSPYHF_INCLUDE_DIRS:PATH=%s" % header_dir(prefix, "airspyhf.h", dry_run)]),
+        "hackrf": (["-DLIBHACKRF_LIBRARY:PATH=%s" % find_prefix_file(prefix, "libhackrf.so"),
+                    "-DLIBHACKRF_INCLUDE_DIR:PATH=%s" % header_dir(prefix, "hackrf.h", dry_run)]
+                   if not dry_run else
+                   ["-DLIBHACKRF_LIBRARY:PATH=libhackrf.so",
+                    "-DLIBHACKRF_INCLUDE_DIR:PATH=%s" % header_dir(prefix, "hackrf.h", dry_run)]),
+    }
+    for key in selected:
+        if key not in SOAPY_REPOS:
+            continue
+        soapy_module(SOAPY_NAMES[key], SOAPY_REPOS[key], prefix, config, jobs, None,
+                     dry_run, extra=libs.get(key))
+
+
 def system_wx_config():
+    """wx-config on PATH, else the versioned config script distros ship."""
     found = shutil.which("wx-config")
     if found:
         return found
@@ -868,6 +1211,11 @@ def system_wx_config():
 
 
 def system_soapy_found():
+    """True when a distro SoapySDR is usable: tool or CMake config present.
+
+    The utility binary lives in a separate package from the dev files, so
+    either one counts as evidence of an installed SoapySDR.
+    """
     if shutil.which("SoapySDRUtil") is not None:
         return True
     return first_glob(["/usr/lib/*/cmake/SoapySDR/SoapySDRConfig*.cmake",
@@ -876,7 +1224,14 @@ def system_soapy_found():
                        "/usr/local/share/cmake/SoapySDR/SoapySDRConfig*.cmake"]) is not None
 
 
-def build_linux(args, dry_run=False):
+def build_linux(args, dry_run=False, preset=None):
+    """Full Linux build: deps, Soapy modules, then the app preset.
+
+    System wxWidgets/SoapySDR are preferred because building wx from
+    source dominates the build time; liquid-dsp is always built since no
+    distro packages it. Modules install into the prefix; the AppImage
+    flow stages them into the AppDir instead (see build_appimage).
+    """
     for prog in ["cmake", "git", "make"]:
         require(prog, dry_run)
     prefix = os.path.abspath(args.deps_prefix or default_prefix())
@@ -898,17 +1253,22 @@ def build_linux(args, dry_run=False):
                     missing.append("SoapySDR (libsoapysdr-dev)")
                 if missing:
                     sys.exit("error: system %s not found; install the dev "
-                             "packages listed in docs/BUILD.md or pass "
-                             "--build-deps" % " and ".join(missing))
+                             "packages (see the apt list in "
+                             ".circleci/config.yml) or pass --build-deps"
+                             % " and ".join(missing))
                 log("using system wxWidgets and SoapySDR")
             build_liquid(prefix, args.jobs, dry_run)
+        build_modules_linux(prefix, args.config, args.jobs,
+                            selected_modules(args.modules), args.build_deps,
+                            dry_run)
     else:
         wx_config = (system_wx_config() if not dry_run else "wx-config") or \
             os.path.join(prefix, "wx", "bin", "wx-config")
     if not dry_run and shutil.which(wx_config) is None \
             and not os.path.exists(wx_config):
         sys.exit("error: %s missing; run without --skip-deps first" % wx_config)
-    preset = "linux-deb" if args.package == "deb" else "linux"
+    if preset is None:
+        preset = "linux-deb" if args.package == "deb" else "linux"
     run(["cmake", "--preset", preset, "-DCMAKE_BUILD_TYPE=%s" % args.config],
         dry_run=dry_run,
         env={"CUBICSDR_WXCONFIG": wx_config, "CMAKE_PREFIX_PATH": prefix})
@@ -919,6 +1279,11 @@ def build_linux(args, dry_run=False):
 
 
 def build_windows(args, dry_run=False):
+    """Full Windows build: deps, modules, app preset, runtime staging.
+
+    --package nsis additionally configures the installer flags and runs
+    CPack; --skip-app stops after module staging for fast module iteration.
+    """
     for prog in ["cmake", "git"]:
         require(prog, dry_run)
     prefix = os.path.abspath(args.deps_prefix or default_prefix())
@@ -957,6 +1322,7 @@ def build_windows(args, dry_run=False):
 
 
 def build_macos(args, dry_run=False):
+    """Full macOS build: Homebrew deps, source wx/liquid/Soapy, app preset."""
     for prog in ["brew", "cmake", "git", "make"]:
         require(prog, dry_run)
     prefix = os.path.abspath(args.deps_prefix or default_prefix())
@@ -986,10 +1352,17 @@ def build_macos(args, dry_run=False):
 
 
 def build_appimage(args, dry_run=False):
+    """Build the Linux app, then bundle an AppDir and run linuxdeploy.
+
+    Built with the linux-appimage preset so the app scans exe-relative
+    modules/. Prefix libraries are staged into the AppDir and exported
+    on LD_LIBRARY_PATH so from-source deps (SoapySDR, liquid-dsp)
+    resolve during linuxdeploy's dependency pass.
+    """
     require("cmake", dry_run)
     prefix = os.path.abspath(args.deps_prefix or default_prefix())
     if not args.skip_deps:
-        build_linux(args, dry_run)
+        build_linux(args, dry_run, preset="linux-appimage")
     appdir = os.path.join(ROOT, "build", "AppDir")
     if not dry_run and os.path.isdir(appdir):
         shutil.rmtree(appdir)
@@ -998,6 +1371,8 @@ def build_appimage(args, dry_run=False):
         os.makedirs(os.path.join(appdir, "usr"), exist_ok=True)
     run(["cmake", "--install", os.path.join(ROOT, "build", "linux"),
          "--prefix", os.path.join(appdir, "usr")], dry_run=dry_run)
+    # The desktop template carries an absolute Icon path for normal
+    # installs; linuxdeploy needs the bare icon name matching --icon-file.
     staged_desktop = os.path.join(appdir, "usr", "share", "applications",
                                   "CubicSDR.desktop")
     if dry_run:
@@ -1011,12 +1386,20 @@ def build_appimage(args, dry_run=False):
     if dry_run:
         log("+ stage prefix libraries into %s"
             % os.path.join(appdir, "usr", "lib"))
+        log("+ stage SoapySDR modules into %s"
+            % os.path.join(appdir, "usr", "bin", "modules"))
     else:
         libdir = os.path.join(appdir, "usr", "lib")
         os.makedirs(libdir, exist_ok=True)
         for lib in glob.glob(os.path.join(prefix, "lib", "*.so*")):
             if os.path.isfile(lib):
                 shutil.copy(lib, libdir)
+        # Exe-relative modules/ is what the bundled-mods build scans.
+        moddir = os.path.join(appdir, "usr", "bin", "modules")
+        os.makedirs(moddir, exist_ok=True)
+        for mods in glob.glob(os.path.join(prefix, "lib", "SoapySDR", "modules*")):
+            for mod in glob.glob(os.path.join(mods, "*.so")):
+                shutil.copy(mod, moddir)
     tool = os.path.join(prefix, "linuxdeploy-x86_64.AppImage")
     if not os.path.exists(tool):
         download(LINUXDEPLOY_URL, tool, dry_run)
@@ -1031,6 +1414,7 @@ def build_appimage(args, dry_run=False):
 
 
 def clean(target, dry_run=False):
+    """Remove the whole build tree, including the dependency prefix."""
     path = os.path.join(ROOT, "build")
     log("would remove %s" % path if dry_run else "removing %s" % path)
     if not dry_run:
@@ -1038,6 +1422,7 @@ def clean(target, dry_run=False):
 
 
 def main(argv=None):
+    """Parse args, validate the platform/package pairing, and dispatch."""
     args = parse_args(argv or sys.argv[1:])
     target = args.platform
     if target == "auto":

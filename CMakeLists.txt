@@ -717,7 +717,7 @@ IF (MSVC)
   target_compile_options(CubicSDR PRIVATE /wd4996)
 ENDIF(MSVC)
 
-IF (WIN32 AND BUNDLE_SOAPY_MODS)
+IF ((WIN32 OR (UNIX AND NOT APPLE)) AND BUNDLE_SOAPY_MODS)
     target_compile_definitions(CubicSDR PRIVATE BUNDLE_SOAPY_MODS=1)
     IF (BUNDLED_MODS_ONLY)
         target_compile_definitions(CubicSDR PRIVATE BUNDLED_MODS_ONLY=1)
