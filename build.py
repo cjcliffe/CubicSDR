@@ -277,7 +277,8 @@ def parse_args(argv):
                         choices=["auto", "windows", "linux", "macos"])
     parser.add_argument("--config", default="Release", choices=["Release", "Debug"])
     parser.add_argument("--arch", default="x64", choices=["x64", "Win32"])
-    parser.add_argument("--jobs", default=str(os.cpu_count() or 2))
+    parser.add_argument("--jobs", default=str(min(os.cpu_count() or 2, 8)),
+                        help="parallel build jobs (default: CPU count, max 8)")
     parser.add_argument("--deps-prefix", default=None)
     parser.add_argument("--skip-deps", action="store_true")
     parser.add_argument("--modules", default="default",
@@ -996,6 +997,15 @@ def build_appimage(args, dry_run=False):
         os.makedirs(os.path.join(appdir, "usr"), exist_ok=True)
     run(["cmake", "--install", os.path.join(ROOT, "build", "linux"),
          "--prefix", os.path.join(appdir, "usr")], dry_run=dry_run)
+    if dry_run:
+        log("+ stage prefix libraries into %s"
+            % os.path.join(appdir, "usr", "lib"))
+    else:
+        libdir = os.path.join(appdir, "usr", "lib")
+        os.makedirs(libdir, exist_ok=True)
+        for lib in glob.glob(os.path.join(prefix, "lib", "*.so*")):
+            if os.path.isfile(lib):
+                shutil.copy(lib, libdir)
     tool = os.path.join(prefix, "linuxdeploy-x86_64.AppImage")
     if not os.path.exists(tool):
         download(LINUXDEPLOY_URL, tool, dry_run)
@@ -1005,7 +1015,8 @@ def build_appimage(args, dry_run=False):
          "--desktop-file", os.path.join(ROOT, "build", "linux", "CubicSDR.desktop"),
          "--icon-file", os.path.join(ROOT, "src", "CubicSDR.png"),
          "--output", "appimage"], cwd=os.path.join(ROOT, "build"), dry_run=dry_run,
-        env={"APPIMAGE_EXTRACT_AND_RUN": "1"})
+        env={"APPIMAGE_EXTRACT_AND_RUN": "1",
+             "LD_LIBRARY_PATH": os.path.join(prefix, "lib")})
 
 
 def clean(target, dry_run=False):
