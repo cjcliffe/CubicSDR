@@ -1399,15 +1399,19 @@ def build_appimage(args, dry_run=False):
     """
     require("cmake", dry_run)
     prefix = os.path.abspath(args.deps_prefix or default_prefix())
+    preset = "linux-appimage"
     if not args.skip_deps:
-        build_linux(args, dry_run, preset="linux-appimage")
+        build_linux(args, dry_run, preset=preset)
+    # Preset binary dirs are build/<preset name>; the appimage build never
+    # shares the plain linux build tree.
+    build_dir = os.path.join(ROOT, "build", preset)
     appdir = os.path.join(ROOT, "build", "AppDir")
     if not dry_run and os.path.isdir(appdir):
         shutil.rmtree(appdir)
     log("installing to %s" % appdir if not dry_run else "would install to %s" % appdir)
     if not dry_run:
         os.makedirs(os.path.join(appdir, "usr"), exist_ok=True)
-    run(["cmake", "--install", os.path.join(ROOT, "build", "linux"),
+    run(["cmake", "--install", build_dir,
          "--prefix", os.path.join(appdir, "usr")], dry_run=dry_run)
     # The desktop template carries an absolute Icon path for normal
     # installs; linuxdeploy needs the bare icon name matching --icon-file.
@@ -1444,7 +1448,7 @@ def build_appimage(args, dry_run=False):
     if not dry_run:
         os.chmod(tool, 0o755)
     run([tool, "--appimage-extract-and-run", "--appdir", appdir,
-         "--desktop-file", os.path.join(ROOT, "build", "linux", "CubicSDR.desktop"),
+         "--desktop-file", os.path.join(build_dir, "CubicSDR.desktop"),
          "--icon-file", os.path.join(ROOT, "src", "CubicSDR.png"),
          "--output", "appimage"], cwd=os.path.join(ROOT, "build"), dry_run=dry_run,
         env={"APPIMAGE_EXTRACT_AND_RUN": "1",
