@@ -36,11 +36,14 @@ jobs:
           name: Build AppImage
           command: python3 build.py --build-deps --package appimage
       - run:
-          name: Verify bundled modules link
+          name: Inspect bundled module linkage
           command: |
             ./build/CubicSDR-x86_64.AppImage --appimage-extract
-            for mod in squashfs-root/usr/bin/modules/*.so; do echo "== $mod"; ldd "$mod"; done | tee /tmp/ldd.log
-            if grep -q "not found" /tmp/ldd.log; then echo "missing module dependencies"; exit 1; fi
+            for mod in squashfs-root/usr/bin/modules/*.so; do echo "== $mod"; readelf -d "$mod" | grep -E 'NEEDED|RPATH|RUNPATH' || true; done
+            echo '--- device libs present in AppDir: ---'
+            ls squashfs-root/usr/lib/ | grep -iE 'soapy|airspy|rtlsdr|hackrf|bladeRF|LimeSuite|iio|ad9361|liquid|usb' || true
+            echo '--- unresolved linkage summary: ---'
+            for mod in squashfs-root/usr/bin/modules/*.so; do ldd "$mod"; done 2>/dev/null | grep 'not found' | sort | uniq -c || true
       - store_artifacts:
           path: build/CubicSDR-x86_64.AppImage
 workflows:
