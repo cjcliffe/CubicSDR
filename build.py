@@ -7,6 +7,7 @@ import glob
 import hashlib
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -997,6 +998,16 @@ def build_appimage(args, dry_run=False):
         os.makedirs(os.path.join(appdir, "usr"), exist_ok=True)
     run(["cmake", "--install", os.path.join(ROOT, "build", "linux"),
          "--prefix", os.path.join(appdir, "usr")], dry_run=dry_run)
+    staged_desktop = os.path.join(appdir, "usr", "share", "applications",
+                                  "CubicSDR.desktop")
+    if dry_run:
+        log("+ point staged desktop file Icon at the bundled icon")
+    else:
+        with open(staged_desktop) as handle:
+            desktop = handle.read()
+        desktop = re.sub(r"(?m)^Icon=.*$", "Icon=CubicSDR", desktop)
+        with open(staged_desktop, "w", newline="") as handle:
+            handle.write(desktop)
     if dry_run:
         log("+ stage prefix libraries into %s"
             % os.path.join(appdir, "usr", "lib"))
