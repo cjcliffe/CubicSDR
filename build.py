@@ -1110,6 +1110,9 @@ def build_modules_linux(prefix, config, jobs, selected, from_source,
             prefix, config, None, jobs,
             ["-DFFTW_LIBRARIES=%s" % fftw_lib,
              "-DFFTW_INCLUDES=%s" % fftw_inc,
+             # udev rules target /etc and need root; the AppImage/CI
+             # install must stay inside the prefix.
+             "-DINSTALL_UDEV_RULES=OFF",
              "-DCMAKE_PREFIX_PATH=%s" % prefix] + usb_single_defs,
             subdir="host", dry_run=dry_run)
     if "rtlsdr" in selected:
@@ -1169,6 +1172,8 @@ def build_modules_linux(prefix, config, jobs, selected, from_source,
             ["-DCMAKE_PREFIX_PATH=%s" % prefix,
              "-DLIBUSB_INCLUDE_DIR:PATH=%s" % usb_inc,
              "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib,
+             # udev rule targets /lib and needs root; keep install in-prefix.
+             "-DINSTALL_UDEV_RULE=OFF",
              "-DWITH_IIOD=OFF"],
             branch="v0.26", dry_run=dry_run)
         build_clib_windows(
