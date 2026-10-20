@@ -282,7 +282,13 @@ def stage_dlls(libs, prefix, dry_run=False):
 
 def soapy_module(name, url, prefix, config, jobs, arch, dry_run=False,
                  extra=None):
-    """Clone, build, and install one SoapySDR module into the prefix."""
+    """Clone, build, and install one SoapySDR module into the prefix.
+
+    On Linux the installed module gets an $ORIGIN-relative rpath so it
+    finds libSoapySDR and the device libraries two dirs up (usr/lib),
+    which holds both for the prefix layout (lib/SoapySDR/modules*/) and
+    the AppDir layout (bin/modules/).
+    """
     stamp = "mod-" + name.lower()
     key = stamp_key(extra or [])
     if stamp_valid(prefix, stamp, key, adopt=not dry_run):
@@ -292,9 +298,13 @@ def soapy_module(name, url, prefix, config, jobs, arch, dry_run=False,
         log("%s flags changed; rebuilding" % name)
     src = os.path.join(prefix, "src", name)
     git_clone(url, src, dry_run)
+    flags = ["-DCMAKE_PREFIX_PATH=%s" % prefix] + (extra or [])
+    if platform.system() == "Linux" and arch is None:
+        # Plain -D passes $ORIGIN through verbatim (no shell involved).
+        flags += ["-DCMAKE_INSTALL_RPATH=$ORIGIN/../../lib",
+                  "-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON"]
     cmake_build(src, os.path.join(prefix, "build", name), config, jobs,
-                prefix, arch,
-                ["-DCMAKE_PREFIX_PATH=%s" % prefix] + (extra or []), dry_run)
+                prefix, arch, flags, dry_run)
     mark_done(prefix, stamp, dry_run, key)
 
 
@@ -1430,6 +1440,8 @@ def build_appimage(args, dry_run=False):
             % os.path.join(appdir, "usr", "lib"))
         log("+ stage SoapySDR modules into %s"
             % os.path.join(appdir, "usr", "bin", "modules"))
+        log("+ mirror GL fonts into %s"
+            % os.path.join(appdir, "usr", "bin", "fonts"))
     else:
         libdir = os.path.join(appdir, "usr", "lib")
         os.makedirs(libdir, exist_ok=True)
@@ -1442,6 +1454,14 @@ def build_appimage(args, dry_run=False):
         for mods in glob.glob(os.path.join(prefix, "lib", "SoapySDR", "modules*")):
             for mod in glob.glob(os.path.join(mods, "*.so")):
                 shutil.copy(mod, moddir)
+        # The GL font loader falls back to exe-relative fonts/; mirror the
+        # installed fonts there as on Windows.
+        fontdir = os.path.join(appdir, "usr", "bin", "fonts")
+        os.makedirs(fontdir, exist_ok=True)
+        for font in glob.glob(os.path.join(appdir, "usr", "share",
+                                            "cubicsdr", "fonts", "*")):
+            if os.path.isfile(font):
+                shutil.copy(font, fontdir)
     tool = os.path.join(prefix, "linuxdeploy-x86_64.AppImage")
     if not os.path.exists(tool):
         download(LINUXDEPLOY_URL, tool, dry_run)
