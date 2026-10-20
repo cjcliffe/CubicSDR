@@ -36,14 +36,17 @@ jobs:
           name: Build AppImage
           command: python3 build.py --build-deps --package appimage
       - run:
-          name: Inspect bundled module linkage
+          name: Verify bundled modules and fonts
           command: |
             ./build/CubicSDR-x86_64.AppImage --appimage-extract
-            for mod in squashfs-root/usr/bin/modules/*.so; do echo "== $mod"; readelf -d "$mod" | grep -E 'NEEDED|RPATH|RUNPATH' || true; done
-            echo '--- device libs present in AppDir: ---'
-            ls squashfs-root/usr/lib/ | grep -iE 'soapy|airspy|rtlsdr|hackrf|bladeRF|LimeSuite|iio|ad9361|liquid|usb' || true
+            echo '--- bundled modules: ---'
+            ls squashfs-root/usr/bin/modules/
+            echo '--- bundled GL fonts: ---'
+            ls squashfs-root/usr/bin/fonts/ | head -5
+            test -n "$(ls squashfs-root/usr/bin/fonts/*.fnt 2>/dev/null)" || { echo 'GL fonts missing from AppDir'; exit 1; }
             echo '--- unresolved linkage summary: ---'
-            for mod in squashfs-root/usr/bin/modules/*.so; do ldd "$mod"; done 2>/dev/null | grep 'not found' | sort | uniq -c || true
+            for mod in squashfs-root/usr/bin/modules/*.so; do ldd "$mod"; done 2>/dev/null | tee /tmp/ldd.log | grep 'not found' | sort | uniq -c || true
+            if grep -q 'not found' /tmp/ldd.log; then echo 'missing module dependencies'; exit 1; fi
       - store_artifacts:
           path: build/CubicSDR-x86_64.AppImage
 workflows:
