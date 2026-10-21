@@ -41,6 +41,12 @@ jobs:
             ./build/CubicSDR-x86_64.AppImage --appimage-extract
             echo '--- bundled modules: ---'
             ls squashfs-root/usr/bin/modules/
+            test "$(ls build/deps/lib/SoapySDR/modules*/*.so 2>/dev/null | wc -l)" -gt 0 || { echo 'no SoapySDR modules built'; exit 1; }
+            for mod in build/deps/lib/SoapySDR/modules*/*.so; do
+              [ -f "$mod" ] || continue
+              base="$(basename "$mod")"
+              test -f "squashfs-root/usr/bin/modules/$base" || { echo "SoapySDR module $base missing from AppDir"; exit 1; }
+            done
             echo '--- bundled GL fonts: ---'
             ls squashfs-root/usr/bin/fonts/ | head -5
             test -n "$(ls squashfs-root/usr/bin/fonts/*.fnt 2>/dev/null)" || { echo 'GL fonts missing from AppDir'; exit 1; }

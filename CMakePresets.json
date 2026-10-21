@@ -72,7 +72,8 @@
             "displayName": "Linux AppImage (Unix Makefiles)",
             "inherits": "linux",
             "cacheVariables": {
-                "BUNDLE_SOAPY_MODS": "ON"
+                "BUNDLE_SOAPY_MODS": "ON",
+                "BUNDLED_MODS_ONLY": "ON"
             }
         },
         {
