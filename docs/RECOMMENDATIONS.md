@@ -44,11 +44,6 @@
 - **`IOThread.cpp`** `catch(...)` re-throws after setting termination flags — correct for cleanup, but callers rarely handle the propagated exception
 - MSVC C4996 warning is globally suppressed, hiding potential buffer overflow risks from unsafe CRT functions.
 
-### Build System Issues
-
-- Hardcoded library paths: `link_directories(/usr/local/lib)`, ALSA paths at `/usr/include` and `/usr/lib`
-- Header/source file lists in CMakeLists.txt have mismatches: `SoapySDRThread.h` and `MeterPanel.h` are listed as sources; `SoapySDRThread.cpp`, `UITestCanvas.cpp`, and `UITestContext.cpp` are listed as headers
-
 ### Documentation
 
 - README.md carries basic build instructions and links to the extended BUILD.md guide

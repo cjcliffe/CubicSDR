@@ -279,11 +279,9 @@ IF (UNIX AND NOT APPLE)
         ENDIF(USE_AUDIO_JACK)
 
         IF(USE_AUDIO_ALSA)
-           SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} asound)
-           set(ALSA_INCLUDE_DIR "/usr/include" CACHE FILEPATH "ALSA include path")
-           list(APPEND CUBICSDR_INCLUDE_DIRS ${ALSA_INCLUDE_DIR})
-           set(ALSA_LIB_DIR "/usr/lib" CACHE FILEPATH "ALSA lib path")
-           link_directories(${ALSA_LIB_DIR})
+           find_package(ALSA REQUIRED)
+           list(APPEND CUBICSDR_INCLUDE_DIRS ${ALSA_INCLUDE_DIRS})
+           SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} ${ALSA_LIBRARIES})
            list(APPEND CUBICSDR_COMPILE_DEFINITIONS __LINUX_ALSA__)
         ENDIF(USE_AUDIO_ALSA)
 
@@ -299,12 +297,10 @@ ENDIF(UNIX AND NOT APPLE)
 IF (APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9")
   
-    SET(LIQUID_LIB liquid)
+    find_library(LIQUID_LIB liquid REQUIRED)
     IF(CMAKE_INSTALL_PREFIX)
         link_directories(${CMAKE_INSTALL_PREFIX}/lib)
     ENDIF(CMAKE_INSTALL_PREFIX)
-    link_directories(/usr/local/lib)
-    link_directories(/opt/local/lib)
 
     list(APPEND CUBICSDR_COMPILE_DEFINITIONS __MACOSX_CORE__)
 
@@ -329,7 +325,7 @@ SET (cubicsdr_sources
     src/sdr/SDRDeviceInfo.cpp
     src/sdr/SDRPostThread.cpp
     src/sdr/SDREnumerator.cpp
-    src/sdr/SoapySDRThread.h
+    src/sdr/SoapySDRThread.cpp
     src/demod/DemodulatorPreThread.cpp
     src/demod/DemodulatorThread.cpp
     src/demod/DemodulatorWorkerThread.cpp
@@ -362,7 +358,6 @@ SET (cubicsdr_sources
     src/panel/SpectrumPanel.cpp
     src/panel/WaterfallPanel.cpp
     src/panel/MeterPanel.cpp
-    src/panel/MeterPanel.h
     src/visual/ColorTheme.cpp
     src/visual/PrimaryGLContext.cpp
     src/visual/InteractiveCanvas.cpp
@@ -385,6 +380,8 @@ SET (cubicsdr_sources
     src/process/FFTDataDistributor.cpp
     src/process/SpectrumVisualDataThread.cpp
     src/ui/GLPanel.cpp
+    src/ui/UITestCanvas.cpp
+    src/ui/UITestContext.cpp
     src/forms/SDRDevices/SDRDevices.cpp
     src/forms/SDRDevices/SDRDevicesForm.cpp
     src/forms/SDRDevices/SDRDeviceAdd.cpp
@@ -438,7 +435,7 @@ SET (cubicsdr_headers
     src/sdr/SDRDeviceInfo.h
     src/sdr/SDRPostThread.h
     src/sdr/SDREnumerator.h
-    src/sdr/SoapySDRThread.cpp
+    src/sdr/SoapySDRThread.h
     src/demod/DemodulatorPreThread.h
     src/demod/DemodulatorThread.h
     src/demod/DemodulatorWorkerThread.h
@@ -473,6 +470,7 @@ SET (cubicsdr_headers
     src/panel/ScopePanel.h
     src/panel/SpectrumPanel.h
     src/panel/WaterfallPanel.h
+    src/panel/MeterPanel.h
     src/visual/ColorTheme.h
     src/visual/PrimaryGLContext.h
     src/visual/InteractiveCanvas.h
@@ -495,9 +493,7 @@ SET (cubicsdr_headers
     src/process/FFTDataDistributor.h
     src/process/SpectrumVisualDataThread.h
     src/ui/GLPanel.h
-    src/ui/UITestCanvas.cpp
     src/ui/UITestCanvas.h
-    src/ui/UITestContext.cpp
     src/ui/UITestContext.h    
     src/forms/SDRDevices/SDRDevices.h
     src/forms/SDRDevices/SDRDevicesForm.h
