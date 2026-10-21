@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <vector>
 #include "cubic_math.h"
 
 #ifdef _OSX_APP_
@@ -214,23 +215,31 @@ void GLFont::loadFontOnce() {
 #endif
   
     wxFileName exePath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
+    wxString exeDir = exePath.GetPath();
+    wxFileName resFolderName = wxFileName::DirName(resourceFolder);
 
-    //1) First try : RES_FOLDER/fonts/*
-    wxFileName fontDefFileName = wxFileName(resourceFolder + L"/" + fontDefFileSource);
-
-    bool fontFilePathFound = fontDefFileName.Exists();
-
-    // 2) Second try: [Cubic exe path]/RES_FOLDER/fonts/*
-    if (!fontFilePathFound) {
-        
-        fontDefFileName = wxFileName(exePath.GetPath() + L"/" + RES_FOLDER + L"/" + fontDefFileSource);
-        fontFilePathFound = fontDefFileName.Exists();
+    // Ordered search for the RES_FOLDER-relative font files. Absolute entries
+    // are used as-is (the packaged install location); relative ones resolve
+    // against the executable directory for build-tree and portable layouts.
+    // The exe-relative ../share/cubicsdr entry keeps working even when the
+    // compile-time prefix disagrees with the real install prefix.
+    std::vector<wxString> searchDirs;
+    searchDirs.push_back(resourceFolder);
+    if (!resFolderName.IsAbsolute()) {
+        searchDirs.push_back(exeDir + L"/" + resourceFolder);
     }
+    searchDirs.push_back(exeDir);
+    searchDirs.push_back(exeDir + L"/../share/cubicsdr");
+    searchDirs.push_back(L"/usr/share/cubicsdr");
+    searchDirs.push_back(L"/usr/local/share/cubicsdr");
+    searchDirs.push_back(wxStandardPaths::Get().GetDataDir());
+    searchDirs.push_back(wxStandardPaths::Get().GetResourcesDir());
 
-    // 3) Third try: [Cubic exe path]/fonts/*
-    if (!fontFilePathFound) {
+    wxFileName fontDefFileName;
+    bool fontFilePathFound = false;
 
-        fontDefFileName = wxFileName(exePath.GetPath() + L"/" + fontDefFileSource);
+    for (size_t i = 0; i < searchDirs.size() && !fontFilePathFound; i++) {
+        fontDefFileName = wxFileName(searchDirs[i] + L"/" + fontDefFileSource);
         fontFilePathFound = fontDefFileName.Exists();
     }
     
