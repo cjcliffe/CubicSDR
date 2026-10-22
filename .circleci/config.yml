@@ -96,6 +96,24 @@ jobs:
           name: Build DMG (Intel cross-compile)
           command: python3 build.py --modules none --package dmg --macos-arch x86_64
       - run:
+          name: Probe wx-config (diagnostic)
+          when: always
+          command: |
+            echo '--- wx tree ---'
+            ls build/deps/wx/bin/ || true
+            ls build/deps/wx/lib/wx/config/ || true
+            ls build/deps/wx/lib/*.a || true
+            ls build/deps/wx/lib/wx/include/*/wx/setup.h || true
+            echo '--- baked vars ---'
+            grep -E '^(EGREP|prefix=|this_config=|wxconfdir=)' build/deps/wx/bin/wx-config || true
+            echo '--- queries ---'
+            build/deps/wx/bin/wx-config --version || echo "version RET=$?"
+            build/deps/wx/bin/wx-config --selected-config || echo "selected-config RET=$?"
+            build/deps/wx/bin/wx-config --cxxflags || echo "cxxflags RET=$?"
+            build/deps/wx/bin/wx-config --libs gl,core,propgrid,adv,base || echo "libs RET=$?"
+            echo '--- arch ---'
+            lipo -info build/deps/lib/libSoapySDR.dylib || true
+      - run:
           name: Rename DMG by architecture
           command: |
             ls build/macos/
@@ -118,6 +136,24 @@ jobs:
       - run:
           name: Build DMG (Apple Silicon)
           command: python3 build.py --modules none --package dmg
+      - run:
+          name: Probe wx-config (diagnostic)
+          when: always
+          command: |
+            echo '--- wx tree ---'
+            ls build/deps/wx/bin/ || true
+            ls build/deps/wx/lib/wx/config/ || true
+            ls build/deps/wx/lib/*.a || true
+            ls build/deps/wx/lib/wx/include/*/wx/setup.h || true
+            echo '--- baked vars ---'
+            grep -E '^(EGREP|prefix=|this_config=|wxconfdir=)' build/deps/wx/bin/wx-config || true
+            echo '--- queries ---'
+            build/deps/wx/bin/wx-config --version || echo "version RET=$?"
+            build/deps/wx/bin/wx-config --selected-config || echo "selected-config RET=$?"
+            build/deps/wx/bin/wx-config --cxxflags || echo "cxxflags RET=$?"
+            build/deps/wx/bin/wx-config --libs gl,core,propgrid,adv,base || echo "libs RET=$?"
+            echo '--- arch ---'
+            lipo -info build/deps/lib/libSoapySDR.dylib || true
       - run:
           name: Rename DMG by architecture
           command: |
