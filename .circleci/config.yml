@@ -86,15 +86,15 @@ jobs:
   dmg-x64:
     macos:
       xcode: 15.4.0
-    resource_class: macos.x86.medium.gen2
+    resource_class: macos.m1.medium.gen1
     steps:
       - checkout
       - restore_cache:
           keys:
             - dmg-x64-deps-{{ checksum "build.py" }}
       - run:
-          name: Build DMG (Intel)
-          command: python3 build.py --modules none --package dmg
+          name: Build DMG (Intel cross-compile)
+          command: python3 build.py --modules none --package dmg --macos-arch x86_64
       - run:
           name: Rename DMG by architecture
           command: |
@@ -137,18 +137,18 @@ workflows:
           filters:
             tags:
               ignore: /.*/
-      - appimage:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
-      - deb:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
+      # - appimage:  # temporarily disabled to save CI minutes while DMG builds stabilize
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
+      # - deb:  # temporarily disabled to save CI minutes while DMG builds stabilize
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
       - dmg-x64:
           filters:
             branches:

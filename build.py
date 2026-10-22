@@ -355,6 +355,10 @@ def parse_args(argv):
                         choices=["auto", "windows", "linux", "macos"])
     parser.add_argument("--config", default="Release", choices=["Release", "Debug"])
     parser.add_argument("--arch", default="x64", choices=["x64", "Win32"])
+    parser.add_argument("--macos-arch", default="native",
+                        choices=["native", "x86_64", "arm64"],
+                        help="macOS binary architecture; anything but native "
+                        "cross-compiles via -arch flags")
     parser.add_argument("--jobs", default=str(min(os.cpu_count() or 2, 8)),
                         help="parallel build jobs (default: CPU count, max 8)")
     parser.add_argument("--deps-prefix", default=None)
@@ -419,21 +423,22 @@ def build_wx_linux(prefix, jobs, dry_run=False):
     return os.path.join(prefix, "wx", "bin", "wx-config")
 
 
-def build_wx_macos(prefix, jobs, dry_run=False):
+def build_wx_macos(prefix, jobs, dry_run=False, env=None):
     """Build static monolithic wxWidgets for macOS into the prefix."""
     src = wx_source(prefix, dry_run)
     if os.path.exists(stamp_path(prefix, "wx")):
         log("wxWidgets already built; skipping")
         return os.path.join(prefix, "wx", "bin", "wx-config")
-    run(["sh", "autogen.sh"], cwd=src, dry_run=dry_run)
+    run(["sh", "autogen.sh"], cwd=src, dry_run=dry_run, env=env)
     run(["./configure", "--with-opengl", "--with-libjpeg", "--disable-shared",
          "--enable-monolithic", "--with-libtiff", "--with-libpng",
          "--with-zlib", "--disable-sdltest", "--enable-unicode",
          "--enable-display", "--enable-propgrid", "--disable-webview",
          "--disable-webviewwebkit",
-         "--prefix=%s" % os.path.join(prefix, "wx")], cwd=src, dry_run=dry_run)
-    run(["make", "-j%s" % jobs], cwd=src, dry_run=dry_run)
-    run(["make", "install"], cwd=src, dry_run=dry_run)
+         "--prefix=%s" % os.path.join(prefix, "wx")], cwd=src,
+        dry_run=dry_run, env=env)
+    run(["make", "-j%s" % jobs], cwd=src, dry_run=dry_run, env=env)
+    run(["make", "install"], cwd=src, dry_run=dry_run, env=env)
     mark_done(prefix, "wx", dry_run)
     return os.path.join(prefix, "wx", "bin", "wx-config")
 
@@ -460,7 +465,7 @@ def build_wx_windows(prefix, config, arch, jobs, dry_run=False):
     return os.path.join(prefix, "wx")
 
 
-def build_liquid(prefix, jobs, dry_run=False):
+def build_liquid(prefix, jobs, dry_run=False, env=None):
     """Autotools-build liquid-dsp into the prefix (no distro package exists).
 
     Static only: nothing dlopens liquid-dsp, so a shared library would
@@ -482,10 +487,11 @@ def build_liquid(prefix, jobs, dry_run=False):
             os.remove(stamp_path(prefix, "liquid"))
     src = os.path.join(prefix, "src", "liquid-dsp")
     git_clone(LIQUID_URL, src, dry_run)
-    run(["sh", "bootstrap.sh"], cwd=src, dry_run=dry_run)
-    run(["./configure", "--prefix=%s" % prefix] + flags, cwd=src, dry_run=dry_run)
-    run(["make", "-j%s" % jobs], cwd=src, dry_run=dry_run)
-    run(["make", "install"], cwd=src, dry_run=dry_run)
+    run(["sh", "bootstrap.sh"], cwd=src, dry_run=dry_run, env=env)
+    run(["./configure", "--prefix=%s" % prefix] + flags, cwd=src,
+        dry_run=dry_run, env=env)
+    run(["make", "-j%s" % jobs], cwd=src, dry_run=dry_run, env=env)
+    run(["make", "install"], cwd=src, dry_run=dry_run, env=env)
     mark_done(prefix, stamp, dry_run, key)
 
 
@@ -494,7 +500,7 @@ def soapy_build_dir(prefix):
     return os.path.join(prefix, "src", "SoapySDR", "build")
 
 
-def build_soapy(prefix, config, jobs, arch=None, dry_run=False):
+def build_soapy(prefix, config, jobs, arch=None, dry_run=False, env=None):
     """Build pinned SoapySDR into the prefix; MSVC when arch is given."""
     src = os.path.join(prefix, "src", "SoapySDR")
     if os.path.exists(stamp_path(prefix, "soapy")):
@@ -506,16 +512,17 @@ def build_soapy(prefix, config, jobs, arch=None, dry_run=False):
            "-DCMAKE_INSTALL_PREFIX=%s" % prefix]
     if arch:
         cmd += ["-G", "Visual Studio 17 2022", "-A", arch]
-    run(cmd, dry_run=dry_run)
+    run(cmd, dry_run=dry_run, env=env)
     if arch:
         run(["cmake", "--build", soapy_build_dir(prefix), "--config", config,
-             "--parallel", str(jobs)], dry_run=dry_run)
+             "--parallel", str(jobs)], dry_run=dry_run, env=env)
         run(["cmake", "--install", soapy_build_dir(prefix), "--config", config],
-            dry_run=dry_run)
+            dry_run=dry_run, env=env)
     else:
         run(["cmake", "--build", soapy_build_dir(prefix), "-j", str(jobs)],
-            dry_run=dry_run)
-        run(["cmake", "--install", soapy_build_dir(prefix)], dry_run=dry_run)
+            dry_run=dry_run, env=env)
+        run(["cmake", "--install", soapy_build_dir(prefix)], dry_run=dry_run,
+            env=env)
     mark_done(prefix, "soapy", dry_run)
 
 
@@ -1449,31 +1456,54 @@ def build_windows(args, dry_run=False):
             cwd=os.path.join(ROOT, "build", preset), dry_run=dry_run)
 
 
+def macos_arch_env(target):
+    """Extra environment for building macOS binaries for target.
+
+    "native" (the default) returns no extra environment so local builds
+    behave exactly as before. Otherwise -arch is injected into the flag
+    variables honored by both autoconf and CMake Makefile generators.
+    """
+    if target in (None, "native"):
+        return {}
+    arch = "-arch %s" % target
+    env = {}
+    for var in ("CFLAGS", "CXXFLAGS", "OBJCFLAGS", "OBJCXXFLAGS", "LDFLAGS"):
+        existing = os.environ.get(var, "")
+        env[var] = ("%s %s" % (existing, arch)).strip()
+    return env
+
+
 def build_macos(args, dry_run=False):
     """Full macOS build: Homebrew deps, source wx/liquid/Soapy, app preset."""
-    for prog in ["brew", "cmake", "git", "make"]:
+    # brew comes first; cmake arrives via brew, so it is required later.
+    for prog in ["brew", "git", "make"]:
         require(prog, dry_run)
     prefix = os.path.abspath(args.deps_prefix or default_prefix())
+    arch_env = macos_arch_env(args.macos_arch)
     if not args.skip_deps:
         run(["brew", "install", "automake", "cmake", "git", "autoconf",
              "libtool", "pkg-config", "wget", "libusb", "fftw", "hamlib"],
             dry_run=dry_run)
-        wx_config = build_wx_macos(prefix, args.jobs, dry_run)
-        build_liquid(prefix, args.jobs, dry_run)
-        build_soapy(prefix, args.config, args.jobs, dry_run=dry_run)
+        require("cmake", dry_run)
+        wx_config = build_wx_macos(prefix, args.jobs, dry_run, arch_env)
+        build_liquid(prefix, args.jobs, dry_run, arch_env)
+        build_soapy(prefix, args.config, args.jobs, dry_run=dry_run,
+                    env=arch_env)
     else:
+        require("cmake", dry_run)
         wx_config = os.path.join(prefix, "wx", "bin", "wx-config")
     if not dry_run and not os.path.exists(wx_config):
         sys.exit("error: %s missing; run without --skip-deps first" % wx_config)
     soapy_cmake = find_soapysdr_cmake(prefix, dry_run)
+    app_env = {"CUBICSDR_MACOS_PREFIX": prefix,
+               "CUBICSDR_WXCONFIG": wx_config,
+               "CUBICSDR_SOAPY_CMAKE": soapy_cmake,
+               "CMAKE_PREFIX_PATH": prefix}
+    app_env.update(arch_env)
     run(["cmake", "--preset", "macos", "-DCMAKE_BUILD_TYPE=%s" % args.config],
-        dry_run=dry_run,
-        env={"CUBICSDR_MACOS_PREFIX": prefix,
-             "CUBICSDR_WXCONFIG": wx_config,
-             "CUBICSDR_SOAPY_CMAKE": soapy_cmake,
-             "CMAKE_PREFIX_PATH": prefix})
+        dry_run=dry_run, env=app_env)
     run(["cmake", "--build", "--preset", "macos", "-j", str(args.jobs)],
-        dry_run=dry_run)
+        dry_run=dry_run, env=arch_env)
     if args.package == "dmg":
         run(["cpack", "-G", "DragNDrop"], cwd=os.path.join(ROOT, "build", "macos"),
             dry_run=dry_run)
@@ -1580,6 +1610,8 @@ def main(argv=None):
                   "Darwin": "macos"}.get(platform.system())
         if target is None:
             sys.exit("error: unsupported host; pass --platform explicitly")
+    if args.macos_arch != "native" and target != "macos":
+        sys.exit("error: --macos-arch is macOS-only")
     pairs = {"deb": "linux", "nsis": "windows", "dmg": "macos", "appimage": "linux"}
     if args.package != "none" and pairs[args.package] != target:
         sys.exit("error: --package %s needs --platform %s"
