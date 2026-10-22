@@ -21,7 +21,11 @@ This is a C++ Software-Defined Radio application (CubicSDR) built with wxWidgets
 
 ## Build
 
-CMake-based. See `CMakeLists.txt` for build configuration. The project targets C++14 on Windows (MSVC), macOS, and Linux.
+Built via `python build.py`, which drives the CMake presets, vendored dependencies, and packaging. See `CMakeLists.txt` for build configuration details. The project targets C++14 on Windows (MSVC), macOS, and Linux.
+
+- Always build through `python build.py`; never invoke `cmake`, `make`, or `msbuild` directly.
+- `python build.py --help` lists the platform, dependency (`--skip-deps`, `--build-deps`), module (`--modules`), and packaging (`--package`) options.
+- Test builds for CI go on the working branch, never master: short imperative commit message, then the next sequenced annotated tag for the task at hand (e.g. `vX.Y.Z-appimage-test<N>`, `vX.Y.Z-deb-test<N>`, `vX.Y.Z-dmg-test<N>`, after the latest matching tag); pushing the tag triggers the tag-gated packaging builds.
 
 ## Key Directories
 
