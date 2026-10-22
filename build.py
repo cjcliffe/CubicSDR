@@ -423,20 +423,34 @@ def build_wx_linux(prefix, jobs, dry_run=False):
     return os.path.join(prefix, "wx", "bin", "wx-config")
 
 
-def build_wx_macos(prefix, jobs, dry_run=False, env=None):
-    """Build static monolithic wxWidgets for macOS into the prefix."""
+def build_wx_macos(prefix, jobs, dry_run=False, env=None, host=None):
+    """Build static monolithic wxWidgets for macOS into the prefix.
+
+    Always exports a working CPP: wx appends its deployment-target flag
+    to whatever CPP it finds, so an unset CPP becomes bare flags and
+    kills the bundled-library sub-configures. host is the autoconf
+    --host triplet for cross-compiles.
+    """
     src = wx_source(prefix, dry_run)
     if os.path.exists(stamp_path(prefix, "wx")):
         log("wxWidgets already built; skipping")
         return os.path.join(prefix, "wx", "bin", "wx-config")
+    env = dict(env or {})
+    cpp = "gcc -E"
+    if host is not None:
+        # $CPP never sees $CFLAGS, so the -arch flag rides along here.
+        cpp += " -arch %s" % host.split("-")[0]
+    env.setdefault("CPP", cpp)
+    cmd = ["./configure", "--with-opengl", "--with-libjpeg", "--disable-shared",
+           "--enable-monolithic", "--with-libtiff", "--with-libpng",
+           "--with-zlib", "--disable-sdltest", "--enable-unicode",
+           "--enable-display", "--enable-propgrid", "--disable-webview",
+           "--disable-webviewwebkit",
+           "--prefix=%s" % os.path.join(prefix, "wx")]
+    if host is not None:
+        cmd += ["--host=%s" % host]
     run(["sh", "autogen.sh"], cwd=src, dry_run=dry_run, env=env)
-    run(["./configure", "--with-opengl", "--with-libjpeg", "--disable-shared",
-         "--enable-monolithic", "--with-libtiff", "--with-libpng",
-         "--with-zlib", "--disable-sdltest", "--enable-unicode",
-         "--enable-display", "--enable-propgrid", "--disable-webview",
-         "--disable-webviewwebkit",
-         "--prefix=%s" % os.path.join(prefix, "wx")], cwd=src,
-        dry_run=dry_run, env=env)
+    run(cmd, cwd=src, dry_run=dry_run, env=env)
     run(["make", "-j%s" % jobs], cwd=src, dry_run=dry_run, env=env)
     run(["make", "install"], cwd=src, dry_run=dry_run, env=env)
     mark_done(prefix, "wx", dry_run)
@@ -465,7 +479,7 @@ def build_wx_windows(prefix, config, arch, jobs, dry_run=False):
     return os.path.join(prefix, "wx")
 
 
-def build_liquid(prefix, jobs, dry_run=False, env=None):
+def build_liquid(prefix, jobs, dry_run=False, env=None, host=None):
     """Autotools-build liquid-dsp into the prefix (no distro package exists).
 
     Static only: nothing dlopens liquid-dsp, so a shared library would
@@ -487,9 +501,11 @@ def build_liquid(prefix, jobs, dry_run=False, env=None):
             os.remove(stamp_path(prefix, "liquid"))
     src = os.path.join(prefix, "src", "liquid-dsp")
     git_clone(LIQUID_URL, src, dry_run)
+    cmd = ["./configure", "--prefix=%s" % prefix] + flags
+    if host is not None:
+        cmd += ["--host=%s" % host]
     run(["sh", "bootstrap.sh"], cwd=src, dry_run=dry_run, env=env)
-    run(["./configure", "--prefix=%s" % prefix] + flags, cwd=src,
-        dry_run=dry_run, env=env)
+    run(cmd, cwd=src, dry_run=dry_run, env=env)
     run(["make", "-j%s" % jobs], cwd=src, dry_run=dry_run, env=env)
     run(["make", "install"], cwd=src, dry_run=dry_run, env=env)
     mark_done(prefix, stamp, dry_run, key)
@@ -1456,21 +1472,24 @@ def build_windows(args, dry_run=False):
             cwd=os.path.join(ROOT, "build", preset), dry_run=dry_run)
 
 
-def macos_arch_env(target):
-    """Extra environment for building macOS binaries for target.
+def macos_build_flags(target):
+    """Cross-compile support for macOS builds.
 
-    "native" (the default) returns no extra environment so local builds
-    behave exactly as before. Otherwise -arch is injected into the flag
-    variables honored by both autoconf and CMake Makefile generators.
+    Returns (env, host): extra -arch environment (empty for native builds,
+    so local builds behave exactly as before) and the autoconf --host
+    triplet (None for native builds).
     """
-    if target in (None, "native"):
-        return {}
-    arch = "-arch %s" % target
+    native = platform.machine().replace("aarch64", "arm64")
+    want = "native" if target in (None, "native") else \
+        target.replace("aarch64", "arm64")
+    if want == "native" or want == native:
+        return {}, None
+    arch = "-arch %s" % want
     env = {}
     for var in ("CFLAGS", "CXXFLAGS", "OBJCFLAGS", "OBJCXXFLAGS", "LDFLAGS"):
         existing = os.environ.get(var, "")
         env[var] = ("%s %s" % (existing, arch)).strip()
-    return env
+    return env, "%s-apple-darwin" % want
 
 
 def build_macos(args, dry_run=False):
@@ -1479,14 +1498,15 @@ def build_macos(args, dry_run=False):
     for prog in ["brew", "git", "make"]:
         require(prog, dry_run)
     prefix = os.path.abspath(args.deps_prefix or default_prefix())
-    arch_env = macos_arch_env(args.macos_arch)
+    arch_env, host = macos_build_flags(args.macos_arch)
     if not args.skip_deps:
         run(["brew", "install", "automake", "cmake", "git", "autoconf",
              "libtool", "pkg-config", "wget", "libusb", "fftw", "hamlib"],
             dry_run=dry_run)
         require("cmake", dry_run)
-        wx_config = build_wx_macos(prefix, args.jobs, dry_run, arch_env)
-        build_liquid(prefix, args.jobs, dry_run, arch_env)
+        wx_config = build_wx_macos(prefix, args.jobs, dry_run, arch_env,
+                                   host=host)
+        build_liquid(prefix, args.jobs, dry_run, arch_env, host=host)
         build_soapy(prefix, args.config, args.jobs, dry_run=dry_run,
                     env=arch_env)
     else:
