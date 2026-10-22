@@ -453,6 +453,20 @@ def scrub_wx_config(src, dry_run=False):
                 % (os.path.basename(path), ", ".join(leftovers)))
 
 
+def remove_shared_liquid(prefix, dry_run=False):
+    """Drop shared liquid-dsp libraries from a macOS prefix.
+
+    liquid-dsp installs its shared library even with --disable-shared;
+    the app links whatever FindLiquid finds, and a bare-install-name
+    dylib breaks fixup_bundle at packaging time. Static only.
+    """
+    for stale in glob.glob(os.path.join(prefix, "lib", "libliquid*.dylib")):
+        log("removing shared %s; macOS links liquid-dsp statically"
+            % os.path.basename(stale))
+        if not dry_run:
+            os.remove(stale)
+
+
 def build_wx_macos(prefix, jobs, dry_run=False, env=None, host=None):
     """Build static monolithic wxWidgets for macOS into the prefix.
 
@@ -1543,6 +1557,7 @@ def build_macos(args, dry_run=False):
     else:
         require("cmake", dry_run)
         wx_config = os.path.join(prefix, "wx", "bin", "wx-config")
+    remove_shared_liquid(prefix, dry_run)
     if not dry_run and not os.path.exists(wx_config):
         sys.exit("error: %s missing; run without --skip-deps first" % wx_config)
     soapy_cmake = find_soapysdr_cmake(prefix, dry_run)
