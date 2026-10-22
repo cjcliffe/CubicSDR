@@ -423,6 +423,36 @@ def build_wx_linux(prefix, jobs, dry_run=False):
     return os.path.join(prefix, "wx", "bin", "wx-config")
 
 
+def scrub_wx_config(src, dry_run=False):
+    """Replace surviving @EGREP@ placeholders in generated wx-config.
+
+    wx 3.2.1's configure can leave @EGREP@ unsubstituted (seen on the
+    macOS CI runners for both native and cross builds); every wx-config
+    query then fails, including the ones CMake's FindwxWidgets relies on.
+    Repairing the generated scripts covers every cause uniformly.
+    """
+    configs = sorted(glob.glob(os.path.join(src, "lib", "wx", "config", "*")))
+    if dry_run:
+        log("+ scrub unsubstituted placeholders from generated wx-config")
+        return
+    for path in configs:
+        if not os.path.isfile(path):
+            continue
+        with open(path) as handle:
+            text = handle.read()
+        fixed = text.replace("@EGREP@", "grep -E")
+        if fixed == text:
+            continue
+        log("wx-config: substituting unexpanded @EGREP@ in %s"
+            % os.path.basename(path))
+        with open(path, "w") as handle:
+            handle.write(fixed)
+        leftovers = sorted(set(re.findall(r"@[A-Z_]+@", fixed)))
+        if leftovers:
+            log("warning: %s still has placeholders: %s"
+                % (os.path.basename(path), ", ".join(leftovers)))
+
+
 def build_wx_macos(prefix, jobs, dry_run=False, env=None, host=None):
     """Build static monolithic wxWidgets for macOS into the prefix.
 
@@ -451,6 +481,7 @@ def build_wx_macos(prefix, jobs, dry_run=False, env=None, host=None):
         cmd += ["--host=%s" % host]
     run(["sh", "autogen.sh"], cwd=src, dry_run=dry_run, env=env)
     run(cmd, cwd=src, dry_run=dry_run, env=env)
+    scrub_wx_config(src, dry_run)
     run(["make", "-j%s" % jobs], cwd=src, dry_run=dry_run, env=env)
     run(["make", "install"], cwd=src, dry_run=dry_run, env=env)
     mark_done(prefix, "wx", dry_run)

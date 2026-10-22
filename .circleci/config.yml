@@ -106,6 +106,8 @@ jobs:
             ls build/deps/wx/lib/wx/include/*/wx/setup.h || true
             echo '--- baked vars ---'
             grep -E '^(EGREP|prefix=|this_config=|wxconfdir=)' build/deps/wx/bin/wx-config || true
+            echo '--- configure env suspects ---'
+            env | grep -i -E 'ac_cv|config_site|^EGREP=|^GREP=' || echo 'no ac_cv/CONFIG_SITE/EGREP/GREP in env'
             echo '--- queries ---'
             build/deps/wx/bin/wx-config --version || echo "version RET=$?"
             build/deps/wx/bin/wx-config --selected-config || echo "selected-config RET=$?"
@@ -147,6 +149,8 @@ jobs:
             ls build/deps/wx/lib/wx/include/*/wx/setup.h || true
             echo '--- baked vars ---'
             grep -E '^(EGREP|prefix=|this_config=|wxconfdir=)' build/deps/wx/bin/wx-config || true
+            echo '--- configure env suspects ---'
+            env | grep -i -E 'ac_cv|config_site|^EGREP=|^GREP=' || echo 'no ac_cv/CONFIG_SITE/EGREP/GREP in env'
             echo '--- queries ---'
             build/deps/wx/bin/wx-config --version || echo "version RET=$?"
             build/deps/wx/bin/wx-config --selected-config || echo "selected-config RET=$?"
