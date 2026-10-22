@@ -31,7 +31,7 @@ jobs:
           name: Install Dependencies
           command: |
             sudo apt-get update
-            sudo apt-get install -y build-essential cmake git autoconf automake libtool pkg-config libpulse-dev libgtk-3-dev freeglut3-dev libhamlib-dev zlib1g-dev libudev-dev libsqlite3-dev libncurses-dev
+            sudo apt-get install -y build-essential cmake git autoconf automake libtool pkg-config libpulse-dev libgtk-3-dev freeglut3-dev libhamlib-dev zlib1g-dev libudev-dev libsqlite3-dev libncurses-dev libasound2-dev libjack-jackd2-dev
       - run:
           name: Build AppImage
           command: python3 build.py --build-deps --package appimage
@@ -47,6 +47,11 @@ jobs:
               base="$(basename "$mod")"
               test -f "squashfs-root/usr/bin/modules/$base" || { echo "SoapySDR module $base missing from AppDir"; exit 1; }
             done
+            if ls squashfs-root/usr/bin/modules/*audioSupport.so >/dev/null 2>&1; then
+              for need in libasound.so libjack.so; do
+                ldd squashfs-root/usr/bin/modules/*audioSupport.so | grep -q "$need" || { echo "SoapyAudio module missing $need backend"; exit 1; }
+              done
+            fi
             echo '--- bundled GL fonts: ---'
             ls squashfs-root/usr/bin/fonts/ | head -5
             test -n "$(ls squashfs-root/usr/bin/fonts/*.fnt 2>/dev/null)" || { echo 'GL fonts missing from AppDir'; exit 1; }

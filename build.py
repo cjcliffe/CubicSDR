@@ -1171,7 +1171,10 @@ def build_modules_linux(prefix, config, jobs, selected, from_source,
         build_clib_windows(
             "librtlsdr", "https://github.com/rtlsdrblog/rtl-sdr-blog",
             prefix, config, None, jobs,
-            ["-DCMAKE_PREFIX_PATH=%s" % prefix] + usb_defs,
+            # Detach the DVB kernel driver so the dongle opens even when
+            # dvb_usb_rtl28xxu has claimed it (Debian builds enable this).
+            ["-DCMAKE_PREFIX_PATH=%s" % prefix,
+             "-DDETACH_KERNEL_DRIVER=ON"] + usb_defs,
             dry_run=dry_run)
     if "airspy" in selected:
         build_clib_windows(
@@ -1291,6 +1294,34 @@ def build_modules_linux(prefix, config, jobs, selected, from_source,
                    ["-DLIBHACKRF_LIBRARY:PATH=libhackrf.so",
                     "-DLIBHACKRF_INCLUDE_DIR:PATH=%s" % header_dir(prefix, "hackrf.h", dry_run)]),
     }
+    if "audio" in selected:
+        # SoapyAudio backends: PulseAudio is the desktop default; ALSA and
+        # JACK cover non-Pulse and pro-audio setups. OSS has no link
+        # library on Linux, so it stays off.
+        if not dry_run:
+            alsa_inc = sys_header(["/usr/include/alsa/asoundlib.h",
+                                   "/usr/local/include/alsa/asoundlib.h"])
+            if alsa_inc is None:
+                sys.exit("error: alsa/asoundlib.h not found; install ALSA development files (e.g. libasound2-dev)")
+            jack_inc = sys_header(["/usr/include/jack/jack.h",
+                                   "/usr/local/include/jack/jack.h"])
+            if jack_inc is None:
+                sys.exit("error: jack/jack.h not found; install JACK development files (e.g. libjack-jackd2-dev)")
+            jack_lib = first_glob(["/usr/lib/x86_64-linux-gnu/libjack.so",
+                                   "/usr/lib/aarch64-linux-gnu/libjack.so",
+                                   "/usr/local/lib/libjack.so",
+                                   "/usr/lib/libjack.so"])
+            if jack_lib is None:
+                sys.exit("error: libjack.so not found; install JACK development files (e.g. libjack-jackd2-dev)")
+            jack_inc = os.path.dirname(jack_inc)
+        else:
+            jack_inc = "/usr/include"
+            jack_lib = "libjack.so"
+        libs["audio"] = ["-DUSE_AUDIO_PULSE=ON",
+                         "-DUSE_AUDIO_ALSA=ON",
+                         "-DUSE_AUDIO_JACK=ON",
+                         "-DJACK_INCLUDE_DIRS:PATH=%s" % jack_inc,
+                         "-DJACK_LIBRARIES:PATH=%s" % jack_lib]
     for key in selected:
         if key not in SOAPY_REPOS:
             continue
@@ -1497,6 +1528,14 @@ def build_appimage(args, dry_run=False):
         for lib in glob.glob(os.path.join(prefix, "lib", "*.so*")):
             if os.path.isfile(lib):
                 shutil.copy(lib, libdir)
+        # SoapyAudio links system audio libraries that linuxdeploy cannot
+        # see (dlopened module); stage them so the module always loads.
+        for pattern in ("libasound.so*", "libjack.so*"):
+            for sysdir in ("/usr/lib/x86_64-linux-gnu",
+                           "/usr/lib/aarch64-linux-gnu", "/usr/lib"):
+                for syslib in glob.glob(os.path.join(sysdir, pattern)):
+                    if os.path.isfile(syslib):
+                        shutil.copy(syslib, libdir)
         # Exe-relative modules/ is what the bundled-mods build scans.
         moddir = os.path.join(appdir, "usr", "bin", "modules")
         os.makedirs(moddir, exist_ok=True)
