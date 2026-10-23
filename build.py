@@ -580,12 +580,31 @@ def soapy_build_dir(prefix):
     return os.path.join(prefix, "src", "SoapySDR", "build")
 
 
+def soapy_install_complete(prefix):
+    """True when the SoapySDR install has a usable dev link and versioned library.
+
+    The stamp only records that an install once ran; a cached prefix can
+    lose the versioned dylib while keeping the dev link, which still links
+    but breaks fixup_bundle's @rpath resolution at packaging time.
+    """
+    libdir = os.path.join(prefix, "lib")
+    if not os.path.exists(os.path.join(libdir, "libSoapySDR.dylib")):
+        return False
+    versioned = [path for path in
+                 glob.glob(os.path.join(libdir, "libSoapySDR.*.dylib"))
+                 if os.path.exists(path)]
+    return len(versioned) > 0
+
+
 def build_soapy(prefix, config, jobs, arch=None, dry_run=False, env=None):
     """Build pinned SoapySDR into the prefix; MSVC when arch is given."""
     src = os.path.join(prefix, "src", "SoapySDR")
     if os.path.exists(stamp_path(prefix, "soapy")):
-        log("SoapySDR already built; skipping")
-        return
+        if dry_run or soapy_install_complete(prefix):
+            log("SoapySDR already built; skipping")
+            return
+        log("SoapySDR install incomplete; rebuilding")
+        os.remove(stamp_path(prefix, "soapy"))
     git_clone(SOAPY_URL, src, dry_run, branch=SOAPY_TAG)
     cmd = ["cmake", "-S", src, "-B", soapy_build_dir(prefix),
            "-DCMAKE_BUILD_TYPE=%s" % config,
@@ -1771,6 +1790,56 @@ def build_modules_macos(prefix, config, jobs, selected, dry_run=False,
                      jobs, None, dry_run, extra=libs.get(key))
 
 
+def macos_app_rpaths(app):
+    """LC_RPATH entries baked into a Mach-O binary, via otool -l."""
+    proc = subprocess.run(["otool", "-l", app], capture_output=True,
+                          text=True, check=True)
+    return re.findall(r"path ([^\s]+) \(offset", proc.stdout)
+
+
+def verify_macos_bundle_inputs(prefix, dry_run=False):
+    """Fail fast before cpack when a bundled binary references a missing lib.
+
+    Replicates fixup_bundle's @rpath search (prefix lib, /usr/local/lib,
+    and the app's own rpaths) over the built app and every prefix Soapy
+    module, so a hole in the cached prefix surfaces here with the exact
+    file list instead of inside CPack's otool pass.
+    """
+    if dry_run:
+        log("+ verify macOS bundle inputs resolve under %s"
+            % os.path.join(prefix, "lib"))
+        return
+    if platform.system() != "Darwin":
+        return
+    apps = sorted(glob.glob(os.path.join(ROOT, "build", "macos", "**",
+                                        "CubicSDR.app", "Contents", "MacOS",
+                                        "CubicSDR"), recursive=True))
+    if not apps:
+        sys.exit("error: no built CubicSDR.app found; "
+                 "cannot verify bundle inputs")
+    search = [os.path.join(prefix, "lib"), "/usr/local/lib"]
+    for app in apps:
+        search += macos_app_rpaths(app)
+    modules = sorted(glob.glob(os.path.join(prefix, "lib", "SoapySDR",
+                                            "modules*", "*.so")))
+    missing = {}
+    for binary in apps + modules:
+        proc = subprocess.run(["otool", "-L", binary], capture_output=True,
+                              text=True, check=True)
+        for name in re.findall(r"@rpath/(\S+)", proc.stdout):
+            if not any(os.path.exists(os.path.join(directory, name))
+                       for directory in search):
+                missing.setdefault(binary, []).append(name)
+    if missing:
+        for binary, names in missing.items():
+            log("missing @rpath libs for %s: %s"
+                % (binary, ", ".join(sorted(set(names)))))
+        sys.exit("error: %d bundled binaries reference @rpath libraries "
+                 "missing from %s" % (len(missing),
+                                       os.path.join(prefix, "lib")))
+    log("macOS bundle inputs resolve under %s" % os.path.join(prefix, "lib"))
+
+
 def build_macos(args, dry_run=False):
     """Full macOS build: Homebrew deps, source wx/liquid/Soapy, modules, app."""
     # brew comes first; cmake arrives via brew, so it is required later.
@@ -1809,6 +1878,7 @@ def build_macos(args, dry_run=False):
     run(["cmake", "--build", "--preset", "macos", "-j", str(args.jobs)],
         dry_run=dry_run, env=arch_env)
     if args.package == "dmg":
+        verify_macos_bundle_inputs(prefix, dry_run)
         run(["cpack", "-G", "DragNDrop"], cwd=os.path.join(ROOT, "build", "macos"),
             dry_run=dry_run)
 

@@ -165,5 +165,165 @@ class BrewLinkPathTests(unittest.TestCase):
         self.assertEqual(env["LDFLAGS"], "-arch x86_64 -L/x/lib")
 
 
+class SoapyInstallCompleteTests(unittest.TestCase):
+    def test_complete_install(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            lib = os.path.join(prefix, "lib")
+            os.makedirs(lib)
+            for name in ("libSoapySDR.dylib", "libSoapySDR.0.8.dylib"):
+                with open(os.path.join(lib, name), "w") as handle:
+                    handle.write("x")
+            self.assertTrue(build.soapy_install_complete(prefix))
+
+    def test_missing_versioned_library(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            lib = os.path.join(prefix, "lib")
+            os.makedirs(lib)
+            with open(os.path.join(lib, "libSoapySDR.dylib"), "w") as handle:
+                handle.write("x")
+            self.assertFalse(build.soapy_install_complete(prefix))
+
+    def test_missing_dev_link(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            lib = os.path.join(prefix, "lib")
+            os.makedirs(lib)
+            with open(os.path.join(lib, "libSoapySDR.0.8.dylib"),
+                      "w") as handle:
+                handle.write("x")
+            self.assertFalse(build.soapy_install_complete(prefix))
+
+    def test_dangling_symlink_counts_as_missing(self):
+        try:
+            with tempfile.TemporaryDirectory() as prefix:
+                lib = os.path.join(prefix, "lib")
+                os.makedirs(lib)
+                with open(os.path.join(lib, "libSoapySDR.dylib"),
+                          "w") as handle:
+                    handle.write("x")
+                os.symlink(os.path.join(lib, "nowhere.dylib"),
+                           os.path.join(lib, "libSoapySDR.0.8.dylib"))
+                self.assertFalse(build.soapy_install_complete(prefix))
+        except (OSError, NotImplementedError):
+            self.skipTest("symlinks unavailable")
+
+
+class BuildSoapyTests(unittest.TestCase):
+    def test_skip_when_install_complete(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as prefix:
+            lib = os.path.join(prefix, "lib")
+            os.makedirs(lib)
+            for name in ("libSoapySDR.dylib", "libSoapySDR.0.8.dylib"):
+                with open(os.path.join(lib, name), "w") as handle:
+                    handle.write("x")
+            os.makedirs(os.path.join(prefix, "stamps"))
+            with open(build.stamp_path(prefix, "soapy"), "w") as handle:
+                handle.write("ok\n")
+            with mock.patch.object(build, "run") as run, \
+                    mock.patch.object(build, "git_clone") as clone:
+                build.build_soapy(prefix, "Release", 2)
+            run.assert_not_called()
+            clone.assert_not_called()
+
+    def test_rebuild_when_install_incomplete(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as prefix:
+            lib = os.path.join(prefix, "lib")
+            os.makedirs(lib)
+            with open(os.path.join(lib, "libSoapySDR.dylib"), "w") as handle:
+                handle.write("x")
+            os.makedirs(os.path.join(prefix, "stamps"))
+            with open(build.stamp_path(prefix, "soapy"), "w") as handle:
+                handle.write("ok\n")
+            with mock.patch.object(build, "run") as run, \
+                    mock.patch.object(build, "git_clone"):
+                build.build_soapy(prefix, "Release", 2)
+            self.assertTrue(run.called)
+            with open(build.stamp_path(prefix, "soapy")) as handle:
+                self.assertEqual(handle.read(), "ok\n")
+
+    def test_dry_run_keeps_stamp(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            os.makedirs(os.path.join(prefix, "stamps"))
+            with open(build.stamp_path(prefix, "soapy"), "w") as handle:
+                handle.write("ok\n")
+            build.build_soapy(prefix, "Release", 2, dry_run=True)
+            self.assertTrue(
+                os.path.exists(build.stamp_path(prefix, "soapy")))
+
+
+class VerifyBundleInputsTests(unittest.TestCase):
+    def test_noop_off_darwin(self):
+        from unittest import mock
+        with mock.patch.object(build.platform, "system",
+                               return_value="Linux"):
+            with mock.patch.object(build.subprocess, "run") as run:
+                build.verify_macos_bundle_inputs("/nonexistent")
+        run.assert_not_called()
+
+    def test_dry_run_logs_only(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            build.verify_macos_bundle_inputs(prefix, dry_run=True)
+
+    def test_no_app_is_an_error(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as prefix:
+            with mock.patch.object(build.platform, "system",
+                                   return_value="Darwin"):
+                with self.assertRaises(SystemExit):
+                    build.verify_macos_bundle_inputs(prefix)
+
+    def _run_gate(self, prefix, app, lib_present):
+        from types import SimpleNamespace
+        from unittest import mock
+        lib = os.path.join(prefix, "lib")
+        os.makedirs(lib, exist_ok=True)
+        if lib_present:
+            with open(os.path.join(lib, "libSoapySDR.0.8.dylib"),
+                      "w") as handle:
+                handle.write("x")
+        real_glob = build.glob.glob
+
+        def fake_glob(pattern, recursive=False):
+            if "CubicSDR.app" in pattern:
+                return [app]
+            return real_glob(pattern, recursive=recursive)
+
+        def fake_run(cmd, **kwargs):
+            if cmd[:2] == ["otool", "-l"]:
+                return SimpleNamespace(
+                    stdout="path %s (offset 12)\n" % lib, returncode=0)
+            if cmd[:2] == ["otool", "-L"]:
+                return SimpleNamespace(
+                    stdout=("\t%s:\n"
+                            "\t@rpath/libSoapySDR.0.8.dylib "
+                            "(compatibility version 0.0.0)\n") % cmd[2],
+                    returncode=0)
+            raise AssertionError(cmd)
+
+        with mock.patch.object(build.platform, "system",
+                               return_value="Darwin"):
+            with mock.patch.object(build.glob, "glob",
+                                   side_effect=fake_glob):
+                with mock.patch.object(build.subprocess, "run",
+                                       side_effect=fake_run):
+                    build.verify_macos_bundle_inputs(prefix)
+
+    def test_pass_when_all_resolve(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            app = os.path.join(prefix, "CubicSDR")
+            with open(app, "w") as handle:
+                handle.write("x")
+            self._run_gate(prefix, app, True)
+
+    def test_missing_library_is_an_error(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            app = os.path.join(prefix, "CubicSDR")
+            with open(app, "w") as handle:
+                handle.write("x")
+            with self.assertRaises(SystemExit):
+                self._run_gate(prefix, app, False)
+
+
 if __name__ == "__main__":
     unittest.main()
