@@ -159,12 +159,12 @@ workflows:
       #         ignore: /.*/
       #       tags:
       #         only: /.*/
-      # - dmg-x64:  # parked while arm64 modules stabilize
-      #     filters:
-      #       branches:
-      #         ignore: /.*/
-      #       tags:
-      #         only: /.*/
+      - dmg-x64:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
       - dmg-arm64:
           filters:
             branches:
