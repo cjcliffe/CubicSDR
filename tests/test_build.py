@@ -345,6 +345,46 @@ class VerifyBundleInputsTests(unittest.TestCase):
                 self._run_gate(prefix, app, False)
 
 
+class SoapyModuleEnvTests(unittest.TestCase):
+    def test_env_forwarded_to_cmake(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as prefix:
+            env = {"CMAKE_OSX_ARCHITECTURES": "x86_64"}
+            with mock.patch.object(build.platform, "system",
+                                   return_value="Darwin"):
+                with mock.patch.object(build, "git_clone"), \
+                        mock.patch.object(build, "cmake_build") as cmake:
+                    build.soapy_module("TestMod",
+                                       "https://example.com/mod", prefix,
+                                       "Release", 2, None, dry_run=False,
+                                       extra=[], env=env)
+            self.assertEqual(cmake.call_args[0][8], env)
+
+    def test_arch_change_invalidates_stamp(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as prefix:
+            cross = {"CMAKE_OSX_ARCHITECTURES": "x86_64"}
+            with mock.patch.object(build.platform, "system",
+                                   return_value="Darwin"):
+                with mock.patch.object(build, "git_clone"), \
+                        mock.patch.object(build, "cmake_build") as cmake:
+                    build.soapy_module("TestMod",
+                                       "https://example.com/mod", prefix,
+                                       "Release", 2, None, dry_run=False,
+                                       extra=[], env=cross)
+                    self.assertEqual(cmake.call_count, 1)
+                    build.soapy_module("TestMod",
+                                       "https://example.com/mod", prefix,
+                                       "Release", 2, None, dry_run=False,
+                                       extra=[], env=cross)
+                    self.assertEqual(cmake.call_count, 1)
+                    build.soapy_module("TestMod",
+                                       "https://example.com/mod", prefix,
+                                       "Release", 2, None, dry_run=False,
+                                       extra=[])
+                    self.assertEqual(cmake.call_count, 2)
+
+
 class NormalizeMacosLoadPathsTests(unittest.TestCase):
     def _gate(self, prefix, otool_stdout, lib_present=True):
         from types import SimpleNamespace

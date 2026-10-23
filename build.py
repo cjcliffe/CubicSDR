@@ -281,7 +281,7 @@ def stage_dlls(libs, prefix, dry_run=False):
 
 
 def soapy_module(name, url, prefix, config, jobs, arch, dry_run=False,
-                 extra=None):
+                 extra=None, env=None):
     """Clone, build, and install one SoapySDR module into the prefix.
 
     On Linux the installed module gets an $ORIGIN-relative rpath so it
@@ -289,7 +289,8 @@ def soapy_module(name, url, prefix, config, jobs, arch, dry_run=False,
     which holds both for the prefix layout (lib/SoapySDR/modules*/) and
     the AppDir layout (bin/modules/). On macOS the module gets an
     absolute-prefix rpath so @rpath ids resolve both unbundled and at
-    fixup_bundle time.
+    fixup_bundle time. The macOS stamp key covers the target arch so a
+    cross build rebuilds modules first configured natively.
     """
     stamp = "mod-" + name.lower()
     flags = ["-DCMAKE_PREFIX_PATH=%s" % prefix] + (extra or [])
@@ -300,7 +301,8 @@ def soapy_module(name, url, prefix, config, jobs, arch, dry_run=False,
     if platform.system() == "Darwin":
         flags += ["-DCMAKE_INSTALL_RPATH=%s" % os.path.join(prefix, "lib"),
                   "-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON"]
-        key = stamp_key(flags)
+        target = (env or {}).get("CMAKE_OSX_ARCHITECTURES", "")
+        key = stamp_key(flags + ([target] if target else []))
     else:
         key = stamp_key(extra or [])
     if stamp_valid(prefix, stamp, key, adopt=not dry_run):
@@ -311,7 +313,7 @@ def soapy_module(name, url, prefix, config, jobs, arch, dry_run=False,
     src = os.path.join(prefix, "src", name)
     git_clone(url, src, dry_run)
     cmake_build(src, os.path.join(prefix, "build", name), config, jobs,
-                prefix, arch, flags, dry_run)
+                prefix, arch, flags, dry_run, env)
     mark_done(prefix, stamp, dry_run, key)
 
 
@@ -1866,7 +1868,7 @@ def build_modules_macos(prefix, config, jobs, selected, dry_run=False,
         if key not in SOAPY_REPOS:
             continue
         soapy_module(SOAPY_NAMES[key], SOAPY_REPOS[key], prefix, config,
-                     jobs, None, dry_run, extra=libs.get(key))
+                     jobs, None, dry_run, extra=libs.get(key), env=env)
     normalize_macos_load_paths(prefix, dry_run)
 
 
