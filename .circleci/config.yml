@@ -117,7 +117,7 @@ jobs:
             - dmg-arm64-deps-{{ checksum "build.py" }}
       - run:
           name: Build DMG (Apple Silicon)
-          command: python3 build.py --modules none --package dmg
+          command: python3 build.py --modules default --package dmg
       - run:
           name: Rename DMG by architecture
           command: |

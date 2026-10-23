@@ -142,23 +142,23 @@ def unzip_staged(tarball, dest, dry_run=False):
 
 
 def cmake_build(src, build, config, jobs, prefix, arch=None, extra=None,
-                dry_run=False):
+                dry_run=False, env=None):
     """Configure, build, and install one CMake project into the prefix."""
     cmd = ["cmake", "-S", src, "-B", build,
            "-DCMAKE_BUILD_TYPE=%s" % config,
            "-DCMAKE_INSTALL_PREFIX=%s" % prefix] + (extra or [])
     if arch:
         cmd += ["-G", "Visual Studio 17 2022", "-A", arch]
-    run(cmd, dry_run=dry_run)
+    run(cmd, dry_run=dry_run, env=env)
     cmd = ["cmake", "--build", build]
     if arch:
         cmd += ["--config", config]
     cmd += ["--parallel", str(jobs)] if arch else ["-j", str(jobs)]
-    run(cmd, dry_run=dry_run)
+    run(cmd, dry_run=dry_run, env=env)
     cmd = ["cmake", "--install", build]
     if arch:
         cmd += ["--config", config]
-    run(cmd, dry_run=dry_run)
+    run(cmd, dry_run=dry_run, env=env)
 
 
 # Every SoapySDR module this script knows how to build. netsdr is excluded
@@ -899,7 +899,7 @@ def fetch_fftw_windows(prefix, arch, dry_run=False):
 
 
 def build_clib_windows(name, url, prefix, config, arch, jobs, extra,
-                       subdir="", branch=None, dry_run=False):
+                       subdir="", branch=None, dry_run=False, env=None):
     """Build one C library dependency; the stamp key covers flags and source.
 
     Reconfigures on every run (cheap) but recompiles only when the stamp
@@ -916,7 +916,7 @@ def build_clib_windows(name, url, prefix, config, arch, jobs, extra,
     git_clone(url, src, dry_run, branch=branch)
     cmake_build(os.path.join(src, subdir) if subdir else src,
                 os.path.join(prefix, "build", name), config, jobs, prefix,
-                arch, extra, dry_run)
+                arch, extra, dry_run, env)
     mark_done(prefix, stamp, dry_run, key)
 
 
@@ -1554,8 +1554,190 @@ def macos_build_flags(target):
     return env, "%s-apple-darwin" % want
 
 
+def brew_lib_dirs(header_suffix, lib_suffix, formula, prefix,
+                  dry_run=False):
+    """Locate a Homebrew dependency's include and lib directories.
+
+    build_macos installs these via brew; both the Apple Silicon
+    (/opt/homebrew) and Intel (/usr/local) prefixes are honored. In a
+    dry run the filesystem is never touched, so placeholder paths in
+    the same shape are returned for command previewing.
+    """
+    if dry_run:
+        return (os.path.join(prefix, "include"),
+                os.path.join(prefix, "lib", lib_suffix))
+    header = sys_header([
+        "/opt/homebrew/opt/%s/include/%s" % (formula, header_suffix),
+        "/usr/local/opt/%s/include/%s" % (formula, header_suffix)])
+    if header is None:
+        sys.exit("error: %s not found; run without --skip-deps first "
+                 "(brew install %s)" % (header_suffix, formula))
+    lib = first_glob([
+        "/opt/homebrew/opt/%s/lib/%s" % (formula, lib_suffix),
+        "/usr/local/opt/%s/lib/%s" % (formula, lib_suffix)])
+    if lib is None:
+        sys.exit("error: %s not found; run without --skip-deps first "
+                 "(brew install %s)" % (lib_suffix, formula))
+    return os.path.dirname(os.path.dirname(header)), lib
+
+
+def build_modules_macos(prefix, config, jobs, selected, dry_run=False,
+                        host=None, env=None):
+    """Build the selected C libraries and SoapySDR modules for macOS.
+
+    Generic dependencies (libusb, FFTW) come from Homebrew, which
+    build_macos installs; device libraries build from source following
+    build_modules_linux, with @loader_path install rpaths where Linux
+    uses $ORIGIN. Modules link device libraries by absolute prefix
+    paths, which fixup_bundle resolves when the app bundle is packaged.
+    SoapyAudio needs no backend flags: it uses CoreAudio on Apple
+    platforms unconditionally. The SDRplay API check is deferred, so
+    sdrplay is skipped with a note like other missing dependencies.
+    """
+    selected = [key for key in SUPPORTED_MODULES if key in set(selected)]
+    if "sdrplay" in selected:
+        log("SDRplay API check is not implemented for macOS; skipping "
+            "sdrplay module")
+        selected = [key for key in selected if key != "sdrplay"]
+    if not selected:
+        return
+    usb_inc, usb_lib = brew_lib_dirs("libusb-1.0/libusb.h",
+                                     "libusb-1.0.dylib", "libusb", prefix,
+                                     dry_run)
+    usb_inc = normalize_libusb_headers(usb_inc, prefix, dry_run)
+    usb_defs = ["-DLIBUSB_INCLUDE_DIRS:PATH=%s" % usb_inc,
+                "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib]
+    usb_single_defs = ["-DLIBUSB_INCLUDE_DIR:PATH=%s" % usb_inc,
+                       "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib]
+    if "hackrf" in selected:
+        fftw_inc, fftw_lib = brew_lib_dirs("fftw3.h", "libfftw3f.dylib",
+                                           "fftw", prefix, dry_run)
+        build_clib_windows(
+            "hackrf", "https://github.com/greatscottgadgets/hackrf",
+            prefix, config, None, jobs,
+            ["-DFFTW_LIBRARIES=%s" % fftw_lib,
+             "-DFFTW_INCLUDES=%s" % fftw_inc,
+             "-DCMAKE_PREFIX_PATH=%s" % prefix] + usb_single_defs,
+            subdir="host", dry_run=dry_run, env=env)
+    if "rtlsdr" in selected:
+        build_clib_windows(
+            "librtlsdr", "https://github.com/rtlsdrblog/rtl-sdr-blog",
+            prefix, config, None, jobs,
+            ["-DCMAKE_PREFIX_PATH=%s" % prefix] + usb_defs,
+            dry_run=dry_run, env=env)
+    if "airspy" in selected:
+        build_clib_windows(
+            "airspyone_host", "https://github.com/airspy/airspyone_host",
+            prefix, config, None, jobs,
+            ["-DCMAKE_PREFIX_PATH=%s" % prefix] + usb_single_defs,
+            dry_run=dry_run, env=env)
+    if "airspyhf" in selected:
+        build_clib_windows(
+            "airspyhf", "https://github.com/airspy/airspyhf",
+            prefix, config, None, jobs,
+            ["-DCMAKE_PREFIX_PATH=%s" % prefix] + usb_single_defs,
+            dry_run=dry_run, env=env)
+    if "limesuite" in selected:
+        git_clone("https://github.com/myriadrf/LimeSuite",
+                  os.path.join(prefix, "src", "LimeSuite"), dry_run)
+        patch_limesuite_rpath(os.path.join(prefix, "src", "LimeSuite"),
+                              dry_run)
+        build_clib_windows(
+            "LimeSuite", "https://github.com/myriadrf/LimeSuite",
+            prefix, config, None, jobs,
+            ["-DCMAKE_PREFIX_PATH=%s" % prefix,
+             "-DCMAKE_INSTALL_RPATH=@loader_path;@loader_path/../../lib",
+             "-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON",
+             "-DLIBUSB_INCLUDE_DIRS:PATH=%s" % usb_inc,
+             "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib,
+             "-DLIBUSB_INCLUDE_DIR:PATH=%s" % usb_inc,
+             "-DLIBUSB_LIBRARY:PATH=%s" % usb_lib],
+            dry_run=dry_run, env=env)
+    if "pluto" in selected:
+        build_clib_windows(
+            "zstd", "https://github.com/facebook/zstd",
+            prefix, config, None, jobs,
+            ["-DZSTD_BUILD_PROGRAMS=OFF", "-DZSTD_BUILD_TESTS=OFF"],
+            subdir="build/cmake", dry_run=dry_run, env=env)
+        build_clib_windows(
+            "libxml2", "https://github.com/GNOME/libxml2",
+            prefix, config, None, jobs,
+            ["-DLIBXML2_WITH_ICONV=OFF", "-DLIBXML2_WITH_ZLIB=OFF",
+             "-DLIBXML2_WITH_LZMA=OFF", "-DLIBXML2_WITH_PYTHON=OFF",
+             "-DLIBXML2_WITH_PROGRAMS=OFF"],
+            dry_run=dry_run, env=env)
+        build_clib_windows(
+            "libiio", "https://github.com/analogdevicesinc/libiio",
+            prefix, config, None, jobs,
+            ["-DCMAKE_PREFIX_PATH=%s" % prefix,
+             "-DLIBUSB_INCLUDE_DIR:PATH=%s" % usb_inc,
+             "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib,
+             "-DINSTALL_UDEV_RULE=OFF",
+             "-DHAVE_DNS_SD=OFF",
+             "-DWITH_IIOD=OFF"],
+            branch="v0.26", dry_run=dry_run, env=env)
+        build_clib_windows(
+            "libad9361", "https://github.com/analogdevicesinc/libad9361-iio",
+            prefix, config, None, jobs,
+            ["-DCMAKE_PREFIX_PATH=%s" % prefix,
+             "-DLIBIIO_INCLUDEDIR:PATH=%s" % os.path.join(prefix, "include"),
+             "-DLIBIIO_LIBRARIES:PATH=%s" % os.path.join(prefix, "lib",
+                                                       "libiio.dylib"),
+             "-DBUILD_TESTS=OFF"],
+            dry_run=dry_run, env=env)
+    if "uhd" in selected:
+        ensure_mako(dry_run)
+        git_clone("https://github.com/EttusResearch/uhd",
+                  os.path.join(prefix, "src", "uhd"), dry_run, branch=UHD_TAG)
+        build_clib_windows(
+            "uhd", "https://github.com/EttusResearch/uhd",
+            prefix, config, None, jobs,
+            ["-DLIBUSB_INCLUDE_DIRS:PATH=%s" % usb_inc,
+             "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib,
+             "-DUHD_IMAGES_DOWNLOAD=ON",
+             "-DENABLE_PYTHON_API=OFF", "-DENABLE_EXAMPLES=OFF",
+             "-DENABLE_TESTS=OFF"],
+            subdir="host", branch=UHD_TAG, dry_run=dry_run, env=env)
+    if "bladerf" in selected:
+        build_clib_windows(
+            "bladeRF", "https://github.com/Nuand/bladeRF",
+            prefix, config, None, jobs,
+            ["-DCMAKE_PREFIX_PATH=%s" % prefix] + usb_single_defs +
+            ["-DINSTALL_UDEV_RULES=OFF",
+             "-DINSTALL_SHELL_COMPLETIONS=OFF",
+             "-DTREAT_WARNINGS_AS_ERRORS=OFF"],
+            subdir="host", dry_run=dry_run, env=env)
+    libs = {
+        "rtlsdr": (["-DRTLSDR_LIBRARY:PATH=%s" % find_prefix_file(prefix, "librtlsdr.dylib"),
+                    "-DRTLSDR_INCLUDE_DIR:PATH=%s" % header_dir(prefix, "rtl-sdr.h", dry_run)]
+                   if not dry_run else
+                   ["-DRTLSDR_LIBRARY:PATH=librtlsdr.dylib",
+                    "-DRTLSDR_INCLUDE_DIR:PATH=%s" % header_dir(prefix, "rtl-sdr.h", dry_run)]),
+        "airspy": (["-DLIBAIRSPY_LIBRARIES:PATH=%s" % find_prefix_file(prefix, "libairspy.dylib"),
+                    "-DLIBAIRSPY_INCLUDE_DIRS:PATH=%s" % header_dir(prefix, "airspy.h", dry_run)]
+                   if not dry_run else
+                   ["-DLIBAIRSPY_LIBRARIES:PATH=libairspy.dylib",
+                    "-DLIBAIRSPY_INCLUDE_DIRS:PATH=%s" % header_dir(prefix, "airspy.h", dry_run)]),
+        "airspyhf": (["-DLIBAIRSPYHF_LIBRARIES:PATH=%s" % find_prefix_file(prefix, "libairspyhf.dylib"),
+                      "-DLIBAIRSPYHF_INCLUDE_DIRS:PATH=%s" % header_dir(prefix, "airspyhf.h", dry_run)]
+                     if not dry_run else
+                     ["-DLIBAIRSPYHF_LIBRARIES:PATH=libairspyhf.dylib",
+                      "-DLIBAIRSPYHF_INCLUDE_DIRS:PATH=%s" % header_dir(prefix, "airspyhf.h", dry_run)]),
+        "hackrf": (["-DLIBHACKRF_LIBRARY:PATH=%s" % find_prefix_file(prefix, "libhackrf.dylib"),
+                    "-DLIBHACKRF_INCLUDE_DIR:PATH=%s" % header_dir(prefix, "hackrf.h", dry_run)]
+                   if not dry_run else
+                   ["-DLIBHACKRF_LIBRARY:PATH=libhackrf.dylib",
+                    "-DLIBHACKRF_INCLUDE_DIR:PATH=%s" % header_dir(prefix, "hackrf.h", dry_run)]),
+    }
+    for key in selected:
+        if key not in SOAPY_REPOS:
+            continue
+        soapy_module(SOAPY_NAMES[key], SOAPY_REPOS[key], prefix, config,
+                     jobs, None, dry_run, extra=libs.get(key))
+
+
 def build_macos(args, dry_run=False):
-    """Full macOS build: Homebrew deps, source wx/liquid/Soapy, app preset."""
+    """Full macOS build: Homebrew deps, source wx/liquid/Soapy, modules, app."""
     # brew comes first; cmake arrives via brew, so it is required later.
     for prog in ["brew", "git", "make"]:
         require(prog, dry_run)
@@ -1571,6 +1753,9 @@ def build_macos(args, dry_run=False):
         build_liquid(prefix, args.jobs, dry_run, arch_env, host=host)
         build_soapy(prefix, args.config, args.jobs, dry_run=dry_run,
                     env=arch_env)
+        build_modules_macos(prefix, args.config, args.jobs,
+                            selected_modules(args.modules), dry_run,
+                            host=host, env=arch_env)
     else:
         require("cmake", dry_run)
         wx_config = os.path.join(prefix, "wx", "bin", "wx-config")
