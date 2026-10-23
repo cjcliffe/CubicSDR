@@ -1722,6 +1722,11 @@ def build_modules_macos(prefix, config, jobs, selected, dry_run=False,
              "-DENABLE_TESTS=OFF"],
             subdir="host", branch=UHD_TAG, dry_run=dry_run, env=env)
     if "bladerf" in selected:
+        # bladeRF-power expects Homebrew ncurses at its standard prefix
+        # and links a bare -lncurses alongside the FindCurses results.
+        _, ncurses_lib = brew_lib_dirs("ncurses.h", "libncurses.dylib",
+                                       "ncurses", prefix, dry_run)
+        bladerf_env = with_brew_link_path(env, os.path.dirname(ncurses_lib))
         build_clib_windows(
             "bladeRF", "https://github.com/Nuand/bladeRF",
             prefix, config, None, jobs,
@@ -1729,7 +1734,7 @@ def build_modules_macos(prefix, config, jobs, selected, dry_run=False,
             ["-DINSTALL_UDEV_RULES=OFF",
              "-DINSTALL_SHELL_COMPLETIONS=OFF",
              "-DTREAT_WARNINGS_AS_ERRORS=OFF"],
-            subdir="host", dry_run=dry_run, env=env)
+            subdir="host", dry_run=dry_run, env=bladerf_env)
     libs = {
         "rtlsdr": (["-DRTLSDR_LIBRARY:PATH=%s" % find_prefix_file(prefix, "librtlsdr.dylib"),
                     "-DRTLSDR_INCLUDE_DIR:PATH=%s" % header_dir(prefix, "rtl-sdr.h", dry_run)]
@@ -1768,7 +1773,8 @@ def build_macos(args, dry_run=False):
     arch_env, host = macos_build_flags(args.macos_arch)
     if not args.skip_deps:
         run(["brew", "install", "automake", "cmake", "git", "autoconf",
-             "libtool", "pkg-config", "wget", "libusb", "fftw", "hamlib"],
+             "libtool", "pkg-config", "wget", "libusb", "fftw", "hamlib",
+             "ncurses"],
             dry_run=dry_run)
         require("cmake", dry_run)
         wx_config = build_wx_macos(prefix, args.jobs, dry_run, arch_env,
