@@ -92,6 +92,7 @@ jobs:
       - restore_cache:
           keys:
             - dmg-x64-deps-{{ checksum "build.py" }}
+            - dmg-x64-deps-
       - run:
           name: Build DMG (Intel cross-compile)
           command: python3 build.py --modules none --package dmg --macos-arch x86_64
@@ -115,18 +116,27 @@ jobs:
       - restore_cache:
           keys:
             - dmg-arm64-deps-{{ checksum "build.py" }}
+            - dmg-arm64-deps-
       - run:
           name: Build DMG (Apple Silicon)
-          command: python3 build.py --modules default --package dmg
+          command: |
+            python3 build.py --modules default --package dmg || echo "export BUILD_RET=$?" >> $BASH_ENV
+      - save_cache:
+          key: dmg-arm64-deps-{{ checksum "build.py" }}
+          paths:
+            - build/deps
+      - run:
+          name: Verify build result
+          command: |
+            if [ "${BUILD_RET:-0}" != "0" ]; then
+              echo "build failed with exit code $BUILD_RET"
+              exit $BUILD_RET
+            fi
       - run:
           name: Rename DMG by architecture
           command: |
             ls build/macos/
             mv build/macos/CubicSDR-0.2.8-Darwin.dmg build/macos/CubicSDR-0.2.8-macOS-arm64.dmg
-      - save_cache:
-          key: dmg-arm64-deps-{{ checksum "build.py" }}
-          paths:
-            - build/deps
       - store_artifacts:
           path: build/macos/CubicSDR-0.2.8-macOS-arm64.dmg
 workflows:
@@ -149,12 +159,12 @@ workflows:
       #         ignore: /.*/
       #       tags:
       #         only: /.*/
-      - dmg-x64:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
+      # - dmg-x64:  # parked while arm64 modules stabilize
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
       - dmg-arm64:
           filters:
             branches:

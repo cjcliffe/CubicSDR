@@ -1612,13 +1612,16 @@ def build_modules_macos(prefix, config, jobs, selected, dry_run=False,
     if "hackrf" in selected:
         fftw_inc, fftw_lib = brew_lib_dirs("fftw3.h", "libfftw3f.dylib",
                                            "fftw", prefix, dry_run)
+        # Build only the library: the hackrf-tools sources fail under
+        # AppleClang (declaration after a case label in hackrf_debug.c,
+        # a warning under gcc), and nothing but libhackrf is needed.
         build_clib_windows(
             "hackrf", "https://github.com/greatscottgadgets/hackrf",
             prefix, config, None, jobs,
             ["-DFFTW_LIBRARIES=%s" % fftw_lib,
              "-DFFTW_INCLUDES=%s" % fftw_inc,
              "-DCMAKE_PREFIX_PATH=%s" % prefix] + usb_single_defs,
-            subdir="host", dry_run=dry_run, env=env)
+            subdir="host/libhackrf", dry_run=dry_run, env=env)
     if "rtlsdr" in selected:
         build_clib_windows(
             "librtlsdr", "https://github.com/rtlsdrblog/rtl-sdr-blog",
