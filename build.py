@@ -700,6 +700,7 @@ def fetch_vc_redist(prefix, arch, dry_run=False):
 PTHREADS_VERSION = "3.0.3.1"
 PTHREADS_URL = "https://github.com/GerHobbelt/pthread-win32/archive/refs/tags/v%s.zip"
 FFTW_VERSION = "3.3.5"
+LIBUSB_VERSION = "1.0.27"
 
 
 def build_libusb_windows(prefix, config, arch, dry_run=False):
@@ -1632,9 +1633,10 @@ def build_libusb_macos(prefix, jobs, dry_run=False, env=None, host=None):
     if os.path.exists(stamp_path(prefix, "lib-libusb")):
         log("libusb already built; skipping")
     else:
-        dest = os.path.join(prefix, "src", "libusb-1.0.27")
+        dest = os.path.join(prefix, "src", "libusb-%s" % LIBUSB_VERSION)
         download("https://github.com/libusb/libusb/releases/download/"
-                 "v1.0.27/libusb-1.0.27.tar.bz2", dest + ".tar.bz2", dry_run)
+                 "v%s/libusb-%s.tar.bz2" % (LIBUSB_VERSION, LIBUSB_VERSION),
+                 dest + ".tar.bz2", dry_run)
         if not dry_run:
             with tarfile.open(dest + ".tar.bz2") as archive:
                 archive.extractall(os.path.join(prefix, "src"))
@@ -1826,13 +1828,17 @@ def build_modules_macos(prefix, config, jobs, selected, dry_run=False,
                                          os.path.dirname(ncurses_lib))
         else:
             bladerf_env = env
+        bladerf_extra = []
+        if host is not None:
+            bladerf_extra = ["-DLIBUSB_SKIP_VERSION_CHECK=Yes",
+                             "-DLIBUSB_VERSION=%s" % LIBUSB_VERSION]
         build_clib_windows(
             "bladeRF", "https://github.com/Nuand/bladeRF",
             prefix, config, None, jobs,
             ["-DCMAKE_PREFIX_PATH=%s" % prefix] + usb_single_defs +
             ["-DINSTALL_UDEV_RULES=OFF",
              "-DINSTALL_SHELL_COMPLETIONS=OFF",
-             "-DTREAT_WARNINGS_AS_ERRORS=OFF"],
+             "-DTREAT_WARNINGS_AS_ERRORS=OFF"] + bladerf_extra,
             subdir="host", dry_run=dry_run, env=bladerf_env)
     libs = {
         "rtlsdr": (["-DRTLSDR_LIBRARY:PATH=%s" % find_prefix_file(prefix, "librtlsdr.dylib"),

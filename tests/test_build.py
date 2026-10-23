@@ -152,6 +152,8 @@ class MacosModulesDryRunTests(unittest.TestCase):
             self.assertIn("--host=x86_64-apple-darwin", out)
             self.assertIn("libusb-1.0.27.tar.bz2", out)
             self.assertIn("fftw-", out)
+            self.assertIn("-DLIBUSB_SKIP_VERSION_CHECK=Yes", out)
+            self.assertIn("-DLIBUSB_VERSION=1.0.27", out)
             self.assertNotIn("Cellar", out)
             self.assertIn("+ rewrite @rpath load commands in macOS "
                           "prefix libraries", out)
