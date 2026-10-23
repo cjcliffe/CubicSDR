@@ -147,27 +147,27 @@ workflows:
           filters:
             tags:
               ignore: /.*/
-      # - appimage:  # temporarily disabled to save CI minutes while DMG builds stabilize
-      #     filters:
-      #       branches:
-      #         ignore: /.*/
-      #       tags:
-      #         only: /.*/
-      # - deb:  # temporarily disabled to save CI minutes while DMG builds stabilize
-      #     filters:
-      #       branches:
-      #         ignore: /.*/
-      #       tags:
-      #         only: /.*/
+      - appimage:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
+      - deb:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
       - dmg-x64:
           filters:
             branches:
               ignore: /.*/
             tags:
               only: /.*/
-      # - dmg-arm64:  # parked while x64 modules stabilize
-      #     filters:
-      #       branches:
-      #         ignore: /.*/
-      #       tags:
-      #         only: /.*/
+      - dmg-arm64:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
