@@ -1554,6 +1554,21 @@ def macos_build_flags(target):
     return env, "%s-apple-darwin" % want
 
 
+def with_brew_link_path(env, lib_dir):
+    """Append a Homebrew library dir to LDFLAGS in an env mapping.
+
+    Several device libraries resolve libusb via pkg-config but drop its
+    -L flag on the link line (their -D hints are shadowed by pkg-config
+    variables); the extra -L keeps the brew library resolvable without
+    touching their build files. The linked dylib still records its
+    absolute install name, so fixup_bundle keeps working.
+    """
+    env = dict(env or {})
+    existing = env.get("LDFLAGS", "")
+    env["LDFLAGS"] = ("%s -L%s" % (existing, lib_dir)).strip()
+    return env
+
+
 def brew_lib_dirs(header_suffix, lib_suffix, formula, prefix,
                   dry_run=False):
     """Locate a Homebrew dependency's include and lib directories.
@@ -1605,6 +1620,7 @@ def build_modules_macos(prefix, config, jobs, selected, dry_run=False,
                                      "libusb-1.0.dylib", "libusb", prefix,
                                      dry_run)
     usb_inc = normalize_libusb_headers(usb_inc, prefix, dry_run)
+    env = with_brew_link_path(env, os.path.dirname(usb_lib))
     usb_defs = ["-DLIBUSB_INCLUDE_DIRS:PATH=%s" % usb_inc,
                 "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib]
     usb_single_defs = ["-DLIBUSB_INCLUDE_DIR:PATH=%s" % usb_inc,
