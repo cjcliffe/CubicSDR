@@ -805,7 +805,7 @@ IF (APPLE AND BUNDLE_APP)
     INSTALL(CODE "
        SET(BU_COPY_FULL_FRAMEWORK_CONTENTS ON)
        include(BundleUtilities)
-       fixup_bundle(\"${APPS}\"   \"\"   \"/usr/local/lib\")
+       fixup_bundle(\"${APPS}\"   \"\"   \"/usr/local/lib\;${CMAKE_INSTALL_PREFIX}/lib\")
        " COMPONENT Runtime)
 
     IF (BUNDLE_SOAPY_MODS)
@@ -820,7 +820,7 @@ IF (APPLE AND BUNDLE_APP)
            ENDIF()
            ENDIF()
            INSTALL(CODE "
-               fixup_bundle(\"${APPS}\"   \"${APPS}/Contents/MacOS/modules/${SOAPY_MOD_NAME}\"   \"/usr/local/lib\")
+               fixup_bundle(\"${APPS}\"   \"${APPS}/Contents/MacOS/modules/${SOAPY_MOD_NAME}\"   \"/usr/local/lib\;${CMAKE_INSTALL_PREFIX}/lib\")
               " COMPONENT Runtime)
        ENDFOREACH()
    ENDIF(BUNDLE_SOAPY_MODS)
