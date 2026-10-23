@@ -96,32 +96,6 @@ jobs:
           name: Build DMG (Intel cross-compile)
           command: python3 build.py --modules none --package dmg --macos-arch x86_64
       - run:
-          name: Probe shippable arch (diagnostic)
-          when: always
-          command: |
-            lipo -info build/macos/x64/CubicSDR.app/Contents/MacOS/CubicSDR || true
-            for lib in build/deps/wx/lib/libwx_osx_cocoau*.a build/deps/lib/libSoapySDR.dylib; do lipo -info "$lib" || true; done
-      - run:
-          name: Probe wx-config (diagnostic)
-          when: always
-          command: |
-            echo '--- wx tree ---'
-            ls build/deps/wx/bin/ || true
-            ls build/deps/wx/lib/wx/config/ || true
-            ls build/deps/wx/lib/*.a || true
-            ls build/deps/wx/lib/wx/include/*/wx/setup.h || true
-            echo '--- baked vars ---'
-            grep -E '^(EGREP|prefix=|this_config=|wxconfdir=)' build/deps/wx/bin/wx-config || true
-            echo '--- configure env suspects ---'
-            env | grep -i -E 'ac_cv|config_site|^EGREP=|^GREP=' || echo 'no ac_cv/CONFIG_SITE/EGREP/GREP in env'
-            echo '--- queries ---'
-            build/deps/wx/bin/wx-config --version || echo "version RET=$?"
-            build/deps/wx/bin/wx-config --selected-config || echo "selected-config RET=$?"
-            build/deps/wx/bin/wx-config --cxxflags || echo "cxxflags RET=$?"
-            build/deps/wx/bin/wx-config --libs gl,core,propgrid,adv,base || echo "libs RET=$?"
-            echo '--- arch ---'
-            lipo -info build/deps/lib/libSoapySDR.dylib || true
-      - run:
           name: Rename DMG by architecture
           command: |
             ls build/macos/
@@ -144,32 +118,6 @@ jobs:
       - run:
           name: Build DMG (Apple Silicon)
           command: python3 build.py --modules none --package dmg
-      - run:
-          name: Probe shippable arch (diagnostic)
-          when: always
-          command: |
-            lipo -info build/macos/x64/CubicSDR.app/Contents/MacOS/CubicSDR || true
-            for lib in build/deps/wx/lib/libwx_osx_cocoau*.a build/deps/lib/libSoapySDR.dylib; do lipo -info "$lib" || true; done
-      - run:
-          name: Probe wx-config (diagnostic)
-          when: always
-          command: |
-            echo '--- wx tree ---'
-            ls build/deps/wx/bin/ || true
-            ls build/deps/wx/lib/wx/config/ || true
-            ls build/deps/wx/lib/*.a || true
-            ls build/deps/wx/lib/wx/include/*/wx/setup.h || true
-            echo '--- baked vars ---'
-            grep -E '^(EGREP|prefix=|this_config=|wxconfdir=)' build/deps/wx/bin/wx-config || true
-            echo '--- configure env suspects ---'
-            env | grep -i -E 'ac_cv|config_site|^EGREP=|^GREP=' || echo 'no ac_cv/CONFIG_SITE/EGREP/GREP in env'
-            echo '--- queries ---'
-            build/deps/wx/bin/wx-config --version || echo "version RET=$?"
-            build/deps/wx/bin/wx-config --selected-config || echo "selected-config RET=$?"
-            build/deps/wx/bin/wx-config --cxxflags || echo "cxxflags RET=$?"
-            build/deps/wx/bin/wx-config --libs gl,core,propgrid,adv,base || echo "libs RET=$?"
-            echo '--- arch ---'
-            lipo -info build/deps/lib/libSoapySDR.dylib || true
       - run:
           name: Rename DMG by architecture
           command: |
