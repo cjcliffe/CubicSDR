@@ -95,7 +95,7 @@ jobs:
             - dmg-x64-deps-
       - run:
           name: Build DMG (Intel cross-compile)
-          command: python3 build.py --modules none --package dmg --macos-arch x86_64
+          command: python3 build.py --modules default --package dmg --macos-arch x86_64
       - run:
           name: Rename DMG by architecture
           command: |
@@ -165,9 +165,9 @@ workflows:
               ignore: /.*/
             tags:
               only: /.*/
-      - dmg-arm64:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
+      # - dmg-arm64:  # parked while x64 modules stabilize
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/

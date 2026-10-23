@@ -1622,6 +1622,56 @@ def brew_lib_dirs(header_suffix, lib_suffix, formula, prefix,
     return os.path.dirname(os.path.dirname(header)), lib
 
 
+def build_libusb_macos(prefix, jobs, dry_run=False, env=None, host=None):
+    """Autotools-build libusb into the prefix for macOS cross-compiles.
+
+    Homebrew bottles are host-arch only, so cross builds compile the
+    pinned release tarball with the target --host triplet. Returns the
+    prefix include dir and library for LIBUSB_* flags.
+    """
+    if os.path.exists(stamp_path(prefix, "lib-libusb")):
+        log("libusb already built; skipping")
+    else:
+        dest = os.path.join(prefix, "src", "libusb-1.0.27")
+        download("https://github.com/libusb/libusb/releases/download/"
+                 "v1.0.27/libusb-1.0.27.tar.bz2", dest + ".tar.bz2", dry_run)
+        if not dry_run:
+            with tarfile.open(dest + ".tar.bz2") as archive:
+                archive.extractall(os.path.join(prefix, "src"))
+        cmd = ["./configure", "--prefix=%s" % prefix]
+        if host is not None:
+            cmd += ["--host=%s" % host]
+        run(cmd, cwd=dest, dry_run=dry_run, env=env)
+        run(["make", "-j%s" % jobs], cwd=dest, dry_run=dry_run, env=env)
+        run(["make", "install"], cwd=dest, dry_run=dry_run, env=env)
+        mark_done(prefix, "lib-libusb", dry_run)
+    return (os.path.join(prefix, "include"),
+            os.path.join(prefix, "lib", "libusb-1.0.dylib"))
+
+
+def build_fftw_macos(prefix, jobs, dry_run=False, env=None, host=None):
+    """Source-build single-precision FFTW for macOS cross-compiles."""
+    dest = os.path.join(prefix, "src", "fftw-%s" % FFTW_VERSION)
+    if os.path.exists(stamp_path(prefix, "lib-fftw")):
+        log("fftw already built; skipping")
+    else:
+        download("https://fftw.org/pub/fftw/fftw-%s.tar.gz" % FFTW_VERSION,
+                 dest + ".tar.gz", dry_run)
+        if not dry_run:
+            with tarfile.open(dest + ".tar.gz") as archive:
+                archive.extractall(os.path.join(prefix, "src"))
+        cmd = ["./configure", "--enable-float", "--enable-shared",
+               "--prefix=%s" % prefix]
+        if host is not None:
+            cmd += ["--host=%s" % host]
+        run(cmd, cwd=dest, dry_run=dry_run, env=env)
+        run(["make", "-j%s" % jobs], cwd=dest, dry_run=dry_run, env=env)
+        run(["make", "install"], cwd=dest, dry_run=dry_run, env=env)
+        mark_done(prefix, "lib-fftw", dry_run)
+    return (os.path.join(prefix, "include"),
+            os.path.join(prefix, "lib", "libfftw3f.dylib"))
+
+
 def build_modules_macos(prefix, config, jobs, selected, dry_run=False,
                         host=None, env=None):
     """Build the selected C libraries and SoapySDR modules for macOS.
@@ -1631,9 +1681,12 @@ def build_modules_macos(prefix, config, jobs, selected, dry_run=False,
     build_modules_linux, with @loader_path install rpaths where Linux
     uses $ORIGIN. Modules link device libraries by absolute prefix
     paths, which fixup_bundle resolves when the app bundle is packaged.
-    SoapyAudio needs no backend flags: it uses CoreAudio on Apple
-    platforms unconditionally. The SDRplay API check is deferred, so
-    sdrplay is skipped with a note like other missing dependencies.
+    Cross-compiles cannot use Homebrew bottles (host-arch only), so they
+    build libusb and FFTW from source and link the SDK system curses
+    instead of the brew one. SoapyAudio needs no backend flags: it uses
+    CoreAudio on Apple platforms unconditionally. The SDRplay API check
+    is deferred, so sdrplay is skipped with a note like other missing
+    dependencies.
     """
     selected = [key for key in SUPPORTED_MODULES if key in set(selected)]
     if "sdrplay" in selected:
@@ -1642,18 +1695,31 @@ def build_modules_macos(prefix, config, jobs, selected, dry_run=False,
         selected = [key for key in selected if key != "sdrplay"]
     if not selected:
         return
-    usb_inc, usb_lib = brew_lib_dirs("libusb-1.0/libusb.h",
-                                     "libusb-1.0.dylib", "libusb", prefix,
-                                     dry_run)
-    usb_inc = normalize_libusb_headers(usb_inc, prefix, dry_run)
-    env = with_brew_link_path(env, os.path.dirname(usb_lib))
+    if host is None:
+        usb_inc, usb_lib = brew_lib_dirs("libusb-1.0/libusb.h",
+                                         "libusb-1.0.dylib", "libusb", prefix,
+                                         dry_run)
+        usb_inc = normalize_libusb_headers(usb_inc, prefix, dry_run)
+        env = with_brew_link_path(env, os.path.dirname(usb_lib))
+    else:
+        usb_inc, usb_lib = build_libusb_macos(prefix, jobs, dry_run, env,
+                                              host)
+        usb_inc = normalize_libusb_headers(usb_inc, prefix, dry_run)
+        pkgdir = os.path.join(prefix, "lib", "pkgconfig")
+        existing = (env or {}).get("PKG_CONFIG_PATH", "")
+        parts = [pkgdir] + ([existing] if existing else [])
+        env = dict(env or {}, PKG_CONFIG_PATH=os.pathsep.join(parts))
     usb_defs = ["-DLIBUSB_INCLUDE_DIRS:PATH=%s" % usb_inc,
                 "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib]
     usb_single_defs = ["-DLIBUSB_INCLUDE_DIR:PATH=%s" % usb_inc,
                        "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib]
     if "hackrf" in selected:
-        fftw_inc, fftw_lib = brew_lib_dirs("fftw3.h", "libfftw3f.dylib",
-                                           "fftw", prefix, dry_run)
+        if host is None:
+            fftw_inc, fftw_lib = brew_lib_dirs("fftw3.h", "libfftw3f.dylib",
+                                               "fftw", prefix, dry_run)
+        else:
+            fftw_inc, fftw_lib = build_fftw_macos(prefix, jobs, dry_run,
+                                                  env, host)
         # Build only the library: the hackrf-tools sources fail under
         # AppleClang (declaration after a case label in hackrf_debug.c,
         # a warning under gcc), and nothing but libhackrf is needed.
@@ -1750,9 +1816,15 @@ def build_modules_macos(prefix, config, jobs, selected, dry_run=False,
     if "bladerf" in selected:
         # bladeRF-power expects Homebrew ncurses at its standard prefix
         # and links a bare -lncurses alongside the FindCurses results.
-        _, ncurses_lib = brew_lib_dirs("ncurses.h", "libncurses.dylib",
-                                       "ncurses", prefix, dry_run)
-        bladerf_env = with_brew_link_path(env, os.path.dirname(ncurses_lib))
+        # Cross builds cannot use the host-arch bottle, so they rely on
+        # FindCurses locating the SDK system curses instead.
+        if host is None:
+            _, ncurses_lib = brew_lib_dirs("ncurses.h", "libncurses.dylib",
+                                           "ncurses", prefix, dry_run)
+            bladerf_env = with_brew_link_path(env,
+                                              os.path.dirname(ncurses_lib))
+        else:
+            bladerf_env = env
         build_clib_windows(
             "bladeRF", "https://github.com/Nuand/bladeRF",
             prefix, config, None, jobs,

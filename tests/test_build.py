@@ -138,6 +138,24 @@ class MacosModulesDryRunTests(unittest.TestCase):
             self.assertIn("-DOSX_FRAMEWORK=OFF", buf.getvalue())
             self.assertIn("-DOSX_PACKAGE=OFF", buf.getvalue())
 
+    def test_cross_build_uses_source_deps(self):
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as prefix:
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                build.build_modules_macos(
+                    prefix, "Release", 2, ["rtlsdr", "hackrf", "bladerf"],
+                    dry_run=True, host="x86_64-apple-darwin",
+                    env={"CMAKE_OSX_ARCHITECTURES": "x86_64"})
+            out = buf.getvalue()
+            self.assertIn("--host=x86_64-apple-darwin", out)
+            self.assertIn("libusb-1.0.27.tar.bz2", out)
+            self.assertIn("fftw-", out)
+            self.assertNotIn("Cellar", out)
+            self.assertIn("+ rewrite @rpath load commands in macOS "
+                          "prefix libraries", out)
+
     def test_full_macos_plan_both_arches(self):
         for extra in ([], ["--macos-arch", "x86_64"]):
             with tempfile.TemporaryDirectory() as prefix:
