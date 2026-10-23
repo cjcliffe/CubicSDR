@@ -453,18 +453,30 @@ def scrub_wx_config(src, dry_run=False):
                 % (os.path.basename(path), ", ".join(leftovers)))
 
 
-def remove_shared_liquid(prefix, dry_run=False):
-    """Drop shared liquid-dsp libraries from a macOS prefix.
+def normalize_liquid_macos(prefix, dry_run=False):
+    """Make the macOS liquid-dsp install link statically.
 
-    liquid-dsp installs its shared library even with --disable-shared;
-    the app links whatever FindLiquid finds, and a bare-install-name
-    dylib breaks fixup_bundle at packaging time. Static only.
+    liquid-dsp ignores --disable-shared: it always installs its shared
+    library, and on Darwin the static archive is named libliquid.ar,
+    which FindLiquid never looks for. Rename the archive to libliquid.a
+    and drop the shared library so the app links (and bundles nothing
+    of) the static archive; a bare-install-name dylib breaks
+    fixup_bundle at packaging time.
     """
+    pairs = [(os.path.join(prefix, "lib", "libliquid.ar"),
+              os.path.join(prefix, "lib", "libliquid.a"))]
+    if dry_run:
+        log("+ normalize macOS liquid-dsp install to static-only")
+        return
+    for src, dest in pairs:
+        if os.path.isfile(src):
+            log("renaming %s to %s; macOS links liquid-dsp statically"
+                % (os.path.basename(src), os.path.basename(dest)))
+            os.replace(src, dest)
     for stale in glob.glob(os.path.join(prefix, "lib", "libliquid*.dylib")):
         log("removing shared %s; macOS links liquid-dsp statically"
             % os.path.basename(stale))
-        if not dry_run:
-            os.remove(stale)
+        os.remove(stale)
 
 
 def build_wx_macos(prefix, jobs, dry_run=False, env=None, host=None):
@@ -1557,7 +1569,7 @@ def build_macos(args, dry_run=False):
     else:
         require("cmake", dry_run)
         wx_config = os.path.join(prefix, "wx", "bin", "wx-config")
-    remove_shared_liquid(prefix, dry_run)
+    normalize_liquid_macos(prefix, dry_run)
     if not dry_run and not os.path.exists(wx_config):
         sys.exit("error: %s missing; run without --skip-deps first" % wx_config)
     soapy_cmake = find_soapysdr_cmake(prefix, dry_run)
