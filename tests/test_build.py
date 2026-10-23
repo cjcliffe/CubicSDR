@@ -325,5 +325,87 @@ class VerifyBundleInputsTests(unittest.TestCase):
                 self._run_gate(prefix, app, False)
 
 
+class NormalizeMacosModuleIdsTests(unittest.TestCase):
+    def _gate(self, prefix, otool_stdout, lib_present=True):
+        from types import SimpleNamespace
+        from unittest import mock
+        moddir = os.path.join(prefix, "lib", "SoapySDR", "modules0.8")
+        os.makedirs(moddir, exist_ok=True)
+        module = os.path.join(moddir, "librtlsdrSupport.so")
+        with open(module, "w") as handle:
+            handle.write("x")
+        if lib_present:
+            with open(os.path.join(prefix, "lib",
+                                   "libSoapySDR.0.8.dylib"), "w") as handle:
+                handle.write("x")
+        calls = []
+
+        def fake_subprocess(cmd, **kwargs):
+            self.assertEqual(cmd[:2], ["otool", "-L"])
+            return SimpleNamespace(stdout=otool_stdout, returncode=0)
+
+        def fake_run(cmd, **kwargs):
+            calls.append(cmd)
+
+        with mock.patch.object(build.platform, "system",
+                               return_value="Darwin"):
+            with mock.patch.object(build.subprocess, "run",
+                                   side_effect=fake_subprocess):
+                with mock.patch.object(build, "run",
+                                       side_effect=fake_run):
+                    with mock.patch.object(build, "require"):
+                        build.normalize_macos_module_ids(prefix)
+        return calls
+
+    def test_rewrites_rpath_ref(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            os.makedirs(os.path.join(prefix, "lib"))
+            out = "\t%s:\n\t@rpath/libSoapySDR.0.8.dylib (compat)\n"
+            calls = self._gate(prefix, out % "librtlsdrSupport.so")
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0][:3],
+                         ["install_name_tool", "-change",
+                          "@rpath/libSoapySDR.0.8.dylib"])
+        self.assertTrue(calls[0][3].endswith("libSoapySDR.0.8.dylib"))
+        self.assertTrue(calls[0][4].endswith("librtlsdrSupport.so"))
+
+    def test_absolute_ref_is_untouched(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as prefix:
+            moddir = os.path.join(prefix, "lib", "SoapySDR", "modules0.8")
+            os.makedirs(moddir)
+            with mock.patch.object(build.platform, "system",
+                                   return_value="Darwin"):
+                with mock.patch.object(build.subprocess, "run") as otool, \
+                        mock.patch.object(build, "run") as run, \
+                        mock.patch.object(build, "require"):
+                    from types import SimpleNamespace
+                    otool.return_value = SimpleNamespace(
+                        stdout="\tmod:\n\t/usr/lib/libz.dylib\n",
+                        returncode=0)
+                    build.normalize_macos_module_ids(prefix)
+            run.assert_not_called()
+
+    def test_missing_target_is_an_error(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            os.makedirs(os.path.join(prefix, "lib"))
+            out = "\tmod:\n\t@rpath/libSoapySDR.0.8.dylib (compat)\n"
+            with self.assertRaises(SystemExit):
+                self._gate(prefix, out, lib_present=False)
+
+    def test_noop_off_darwin(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as prefix:
+            with mock.patch.object(build.platform, "system",
+                                   return_value="Linux"):
+                with mock.patch.object(build.subprocess, "run") as otool:
+                    build.normalize_macos_module_ids(prefix)
+            otool.assert_not_called()
+
+    def test_dry_run_logs_only(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            build.normalize_macos_module_ids(prefix, dry_run=True)
+
+
 if __name__ == "__main__":
     unittest.main()

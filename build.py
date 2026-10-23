@@ -1788,6 +1788,7 @@ def build_modules_macos(prefix, config, jobs, selected, dry_run=False,
             continue
         soapy_module(SOAPY_NAMES[key], SOAPY_REPOS[key], prefix, config,
                      jobs, None, dry_run, extra=libs.get(key))
+    normalize_macos_module_ids(prefix, dry_run)
 
 
 def macos_app_rpaths(app):
@@ -1838,6 +1839,33 @@ def verify_macos_bundle_inputs(prefix, dry_run=False):
                  "missing from %s" % (len(missing),
                                        os.path.join(prefix, "lib")))
     log("macOS bundle inputs resolve under %s" % os.path.join(prefix, "lib"))
+
+
+def normalize_macos_module_ids(prefix, dry_run=False):
+    """Rewrite @rpath load commands in prefix Soapy modules to absolute paths.
+
+    fixup_bundle resolves absolute install names directly, while its
+    cached @rpath lookups can miss files that plain find_file locates in
+    the same install script. Pointing each module at the prefix library
+    it already links keeps packaging deterministic.
+    """
+    if dry_run:
+        log("+ rewrite @rpath load commands in macOS Soapy modules")
+        return
+    if platform.system() != "Darwin":
+        return
+    require("install_name_tool", dry_run)
+    libdir = os.path.join(prefix, "lib")
+    pattern = os.path.join(prefix, "lib", "SoapySDR", "modules*", "*.so")
+    for module in sorted(glob.glob(pattern)):
+        proc = subprocess.run(["otool", "-L", module], capture_output=True,
+                              text=True, check=True)
+        for ref in sorted(set(re.findall(r"@rpath/\S+", proc.stdout))):
+            target = os.path.join(libdir, os.path.basename(ref))
+            if not os.path.exists(target):
+                sys.exit("error: %s references %s, missing from %s"
+                         % (module, ref, libdir))
+            run(["install_name_tool", "-change", ref, target, module])
 
 
 def build_macos(args, dry_run=False):
