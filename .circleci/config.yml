@@ -96,6 +96,12 @@ jobs:
           name: Build DMG (Intel cross-compile)
           command: python3 build.py --modules none --package dmg --macos-arch x86_64
       - run:
+          name: Probe shippable arch (diagnostic)
+          when: always
+          command: |
+            lipo -info build/macos/x64/CubicSDR.app/Contents/MacOS/CubicSDR || true
+            for lib in build/deps/wx/lib/libwx_osx_cocoau*.a build/deps/lib/libSoapySDR.dylib; do lipo -info "$lib" || true; done
+      - run:
           name: Probe wx-config (diagnostic)
           when: always
           command: |
@@ -138,6 +144,12 @@ jobs:
       - run:
           name: Build DMG (Apple Silicon)
           command: python3 build.py --modules none --package dmg
+      - run:
+          name: Probe shippable arch (diagnostic)
+          when: always
+          command: |
+            lipo -info build/macos/x64/CubicSDR.app/Contents/MacOS/CubicSDR || true
+            for lib in build/deps/wx/lib/libwx_osx_cocoau*.a build/deps/lib/libSoapySDR.dylib; do lipo -info "$lib" || true; done
       - run:
           name: Probe wx-config (diagnostic)
           when: always
