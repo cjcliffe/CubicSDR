@@ -325,7 +325,7 @@ class VerifyBundleInputsTests(unittest.TestCase):
                 self._run_gate(prefix, app, False)
 
 
-class NormalizeMacosModuleIdsTests(unittest.TestCase):
+class NormalizeMacosLoadPathsTests(unittest.TestCase):
     def _gate(self, prefix, otool_stdout, lib_present=True):
         from types import SimpleNamespace
         from unittest import mock
@@ -354,7 +354,7 @@ class NormalizeMacosModuleIdsTests(unittest.TestCase):
                 with mock.patch.object(build, "run",
                                        side_effect=fake_run):
                     with mock.patch.object(build, "require"):
-                        build.normalize_macos_module_ids(prefix)
+                        build.normalize_macos_load_paths(prefix)
         return calls
 
     def test_rewrites_rpath_ref(self):
@@ -362,12 +362,38 @@ class NormalizeMacosModuleIdsTests(unittest.TestCase):
             os.makedirs(os.path.join(prefix, "lib"))
             out = "\t%s:\n\t@rpath/libSoapySDR.0.8.dylib (compat)\n"
             calls = self._gate(prefix, out % "librtlsdrSupport.so")
-        self.assertEqual(len(calls), 1)
-        self.assertEqual(calls[0][:3],
+        changed = sorted(os.path.basename(call[4]) for call in calls)
+        self.assertEqual(changed,
+                         ["libSoapySDR.0.8.dylib", "librtlsdrSupport.so"])
+        module_call = [call for call in calls
+                       if call[4].endswith("librtlsdrSupport.so")]
+        self.assertEqual(module_call[0][:3],
                          ["install_name_tool", "-change",
                           "@rpath/libSoapySDR.0.8.dylib"])
-        self.assertTrue(calls[0][3].endswith("libSoapySDR.0.8.dylib"))
-        self.assertTrue(calls[0][4].endswith("librtlsdrSupport.so"))
+        self.assertTrue(module_call[0][3].endswith("libSoapySDR.0.8.dylib"))
+
+    def test_transitive_build_tree_lib_is_rewritten(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            os.makedirs(os.path.join(prefix, "lib"))
+            builddir = os.path.join(prefix, "build", "libad9361", "src")
+            os.makedirs(builddir)
+            with open(os.path.join(builddir, "libad9361.dylib"),
+                      "w") as handle:
+                handle.write("x")
+            with open(os.path.join(prefix, "lib", "libxml2.16.dylib"),
+                      "w") as handle:
+                handle.write("x")
+            out = "\tlibad9361.dylib:\n\t@rpath/libxml2.16.dylib (compat)\n"
+            calls = self._gate(prefix, out)
+        changed = sorted(os.path.basename(call[4]) for call in calls)
+        self.assertEqual(changed,
+                         ["libSoapySDR.0.8.dylib", "libad9361.dylib",
+                          "librtlsdrSupport.so", "libxml2.16.dylib"])
+        ad9361_call = [call for call in calls
+                       if call[4].endswith("libad9361.dylib")]
+        self.assertEqual(ad9361_call[0][1:4],
+                         ["-change", "@rpath/libxml2.16.dylib",
+                          os.path.join(prefix, "lib", "libxml2.16.dylib")])
 
     def test_absolute_ref_is_untouched(self):
         from unittest import mock
@@ -383,7 +409,7 @@ class NormalizeMacosModuleIdsTests(unittest.TestCase):
                     otool.return_value = SimpleNamespace(
                         stdout="\tmod:\n\t/usr/lib/libz.dylib\n",
                         returncode=0)
-                    build.normalize_macos_module_ids(prefix)
+                    build.normalize_macos_load_paths(prefix)
             run.assert_not_called()
 
     def test_missing_target_is_an_error(self):
@@ -399,12 +425,12 @@ class NormalizeMacosModuleIdsTests(unittest.TestCase):
             with mock.patch.object(build.platform, "system",
                                    return_value="Linux"):
                 with mock.patch.object(build.subprocess, "run") as otool:
-                    build.normalize_macos_module_ids(prefix)
+                    build.normalize_macos_load_paths(prefix)
             otool.assert_not_called()
 
     def test_dry_run_logs_only(self):
         with tempfile.TemporaryDirectory() as prefix:
-            build.normalize_macos_module_ids(prefix, dry_run=True)
+            build.normalize_macos_load_paths(prefix, dry_run=True)
 
 
 if __name__ == "__main__":

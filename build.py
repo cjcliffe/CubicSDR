@@ -1788,7 +1788,7 @@ def build_modules_macos(prefix, config, jobs, selected, dry_run=False,
             continue
         soapy_module(SOAPY_NAMES[key], SOAPY_REPOS[key], prefix, config,
                      jobs, None, dry_run, extra=libs.get(key))
-    normalize_macos_module_ids(prefix, dry_run)
+    normalize_macos_load_paths(prefix, dry_run)
 
 
 def macos_app_rpaths(app):
@@ -1802,9 +1802,9 @@ def verify_macos_bundle_inputs(prefix, dry_run=False):
     """Fail fast before cpack when a bundled binary references a missing lib.
 
     Replicates fixup_bundle's @rpath search (prefix lib, /usr/local/lib,
-    and the app's own rpaths) over the built app and every prefix Soapy
-    module, so a hole in the cached prefix surfaces here with the exact
-    file list instead of inside CPack's otool pass.
+    and the app's own rpaths) over the built app and every prefix
+    library or module, so a hole in the cached prefix surfaces here with
+    the exact file list instead of inside CPack's otool pass.
     """
     if dry_run:
         log("+ verify macOS bundle inputs resolve under %s"
@@ -1821,10 +1821,8 @@ def verify_macos_bundle_inputs(prefix, dry_run=False):
     search = [os.path.join(prefix, "lib"), "/usr/local/lib"]
     for app in apps:
         search += macos_app_rpaths(app)
-    modules = sorted(glob.glob(os.path.join(prefix, "lib", "SoapySDR",
-                                            "modules*", "*.so")))
     missing = {}
-    for binary in apps + modules:
+    for binary in apps + macos_prefix_binaries(prefix):
         proc = subprocess.run(["otool", "-L", binary], capture_output=True,
                               text=True, check=True)
         for name in re.findall(r"@rpath/(\S+)", proc.stdout):
@@ -1841,31 +1839,54 @@ def verify_macos_bundle_inputs(prefix, dry_run=False):
     log("macOS bundle inputs resolve under %s" % os.path.join(prefix, "lib"))
 
 
-def normalize_macos_module_ids(prefix, dry_run=False):
-    """Rewrite @rpath load commands in prefix Soapy modules to absolute paths.
+def macos_prefix_binaries(prefix):
+    """Every prefix Mach-O binary that can enter the macOS bundle.
+
+    Modules reference device libraries by absolute build-tree paths, and
+    fixup_bundle analyzes the whole closure, so transitive @rpath
+    references in installed and build-tree libraries matter as much as
+    the modules' own.
+    """
+    patterns = [os.path.join(prefix, "lib", "*.dylib"),
+                os.path.join(prefix, "build", "**", "*.dylib"),
+                os.path.join(prefix, "lib", "SoapySDR", "modules*", "*.so")]
+    seen = set()
+    binaries = []
+    for pattern in patterns:
+        for path in sorted(glob.glob(pattern, recursive=True)):
+            real = os.path.realpath(path)
+            if real not in seen and os.path.isfile(real):
+                seen.add(real)
+                binaries.append(path)
+    return binaries
+
+
+def normalize_macos_load_paths(prefix, dry_run=False):
+    """Rewrite @rpath load commands in prefix binaries to absolute paths.
 
     fixup_bundle resolves absolute install names directly, while its
     cached @rpath lookups can miss files that plain find_file locates in
-    the same install script. Pointing each module at the prefix library
-    it already links keeps packaging deterministic.
+    the same install script. Covers modules and the device libraries they
+    pull in transitively.
     """
     if dry_run:
-        log("+ rewrite @rpath load commands in macOS Soapy modules")
+        log("+ rewrite @rpath load commands in macOS prefix libraries")
         return
     if platform.system() != "Darwin":
         return
     require("install_name_tool", dry_run)
     libdir = os.path.join(prefix, "lib")
-    pattern = os.path.join(prefix, "lib", "SoapySDR", "modules*", "*.so")
-    for module in sorted(glob.glob(pattern)):
-        proc = subprocess.run(["otool", "-L", module], capture_output=True,
+    for binary in macos_prefix_binaries(prefix):
+        proc = subprocess.run(["otool", "-L", binary], capture_output=True,
                               text=True, check=True)
-        for ref in sorted(set(re.findall(r"@rpath/\S+", proc.stdout))):
+        refs = re.findall(r"@rpath/\S+", "\n".join(
+            proc.stdout.splitlines()[1:]))
+        for ref in sorted(set(refs)):
             target = os.path.join(libdir, os.path.basename(ref))
             if not os.path.exists(target):
                 sys.exit("error: %s references %s, missing from %s"
-                         % (module, ref, libdir))
-            run(["install_name_tool", "-change", ref, target, module])
+                         % (binary, ref, libdir))
+            run(["install_name_tool", "-change", ref, target, binary])
 
 
 def build_macos(args, dry_run=False):
