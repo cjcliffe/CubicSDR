@@ -1530,19 +1530,24 @@ def build_windows(args, dry_run=False):
 
 
 def macos_build_flags(target):
-    """Cross-compile support for macOS builds.
+    """Architecture selection for macOS builds.
 
-    Returns (env, host): extra -arch environment (empty for native builds,
-    so local builds behave exactly as before) and the autoconf --host
-    triplet (None for native builds).
+    Returns (env, host): extra environment pinning the architecture and
+    the autoconf --host triplet (None for native builds).
+    CMAKE_OSX_ARCHITECTURES is always pinned: the runners provide their
+    own default, which would otherwise leak a second -arch into CMake
+    builds and produce fat binaries that fail to link against the
+    thin cross-built dependencies.
     """
     native = platform.machine().replace("aarch64", "arm64")
     want = "native" if target in (None, "native") else \
         target.replace("aarch64", "arm64")
-    if want == "native" or want == native:
-        return {}, None
+    if want == "native":
+        want = native
+    env = {"CMAKE_OSX_ARCHITECTURES": want}
+    if want == native:
+        return env, None
     arch = "-arch %s" % want
-    env = {}
     for var in ("CFLAGS", "CXXFLAGS", "OBJCFLAGS", "OBJCXXFLAGS", "LDFLAGS"):
         existing = os.environ.get(var, "")
         env[var] = ("%s %s" % (existing, arch)).strip()
