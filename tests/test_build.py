@@ -170,15 +170,15 @@ class MacosModulesDryRunTests(unittest.TestCase):
                         "--dry-run"])
 
 
-class BrewLinkPathTests(unittest.TestCase):
+class LinkPathTests(unittest.TestCase):
     def test_adds_ldflags(self):
-        env = build.with_brew_link_path(
+        env = build.with_link_path(
             {}, "/opt/homebrew/opt/libusb/lib")
         self.assertEqual(
             env["LDFLAGS"], "-L/opt/homebrew/opt/libusb/lib")
 
     def test_appends_to_existing(self):
-        env = build.with_brew_link_path(
+        env = build.with_link_path(
             {"LDFLAGS": "-arch x86_64"}, "/x/lib")
         self.assertEqual(env["LDFLAGS"], "-arch x86_64 -L/x/lib")
 

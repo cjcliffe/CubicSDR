@@ -1580,12 +1580,12 @@ def macos_build_flags(target):
     return env, "%s-apple-darwin" % want
 
 
-def with_brew_link_path(env, lib_dir):
-    """Append a Homebrew library dir to LDFLAGS in an env mapping.
+def with_link_path(env, lib_dir):
+    """Append a library dir to LDFLAGS in an env mapping.
 
     Several device libraries resolve libusb via pkg-config but drop its
     -L flag on the link line (their -D hints are shadowed by pkg-config
-    variables); the extra -L keeps the brew library resolvable without
+    variables); the extra -L keeps the library resolvable without
     touching their build files. The linked dylib still records its
     absolute install name, so fixup_bundle keeps working.
     """
@@ -1700,11 +1700,12 @@ def build_modules_macos(prefix, config, jobs, selected, dry_run=False,
                                          "libusb-1.0.dylib", "libusb", prefix,
                                          dry_run)
         usb_inc = normalize_libusb_headers(usb_inc, prefix, dry_run)
-        env = with_brew_link_path(env, os.path.dirname(usb_lib))
+        env = with_link_path(env, os.path.dirname(usb_lib))
     else:
         usb_inc, usb_lib = build_libusb_macos(prefix, jobs, dry_run, env,
                                               host)
         usb_inc = normalize_libusb_headers(usb_inc, prefix, dry_run)
+        env = with_link_path(env, os.path.join(prefix, "lib"))
         pkgdir = os.path.join(prefix, "lib", "pkgconfig")
         existing = (env or {}).get("PKG_CONFIG_PATH", "")
         parts = [pkgdir] + ([existing] if existing else [])
@@ -1821,8 +1822,8 @@ def build_modules_macos(prefix, config, jobs, selected, dry_run=False,
         if host is None:
             _, ncurses_lib = brew_lib_dirs("ncurses.h", "libncurses.dylib",
                                            "ncurses", prefix, dry_run)
-            bladerf_env = with_brew_link_path(env,
-                                              os.path.dirname(ncurses_lib))
+            bladerf_env = with_link_path(env,
+                                         os.path.dirname(ncurses_lib))
         else:
             bladerf_env = env
         build_clib_windows(
