@@ -1693,7 +1693,11 @@ def build_modules_macos(prefix, config, jobs, selected, dry_run=False,
              "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib,
              "-DINSTALL_UDEV_RULE=OFF",
              "-DHAVE_DNS_SD=OFF",
-             "-DWITH_IIOD=OFF"],
+             "-DWITH_IIOD=OFF",
+             # libiio defaults to a macOS framework + installer package
+             # on Darwin, which installs nothing into the prefix.
+             "-DOSX_FRAMEWORK=OFF",
+             "-DOSX_PACKAGE=OFF"],
             branch="v0.26", dry_run=dry_run, env=env)
         build_clib_windows(
             "libad9361", "https://github.com/analogdevicesinc/libad9361-iio",

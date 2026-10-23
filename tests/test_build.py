@@ -111,6 +111,17 @@ class MacosModulesDryRunTests(unittest.TestCase):
             build.build_modules_macos(
                 prefix, "Release", 2, ["sdrplay", "audio"], dry_run=True)
 
+    def test_libiio_disables_osx_framework(self):
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as prefix:
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                build.build_modules_macos(
+                    prefix, "Release", 2, ["pluto"], dry_run=True)
+            self.assertIn("-DOSX_FRAMEWORK=OFF", buf.getvalue())
+            self.assertIn("-DOSX_PACKAGE=OFF", buf.getvalue())
+
     def test_full_macos_plan_both_arches(self):
         for extra in ([], ["--macos-arch", "x86_64"]):
             with tempfile.TemporaryDirectory() as prefix:
