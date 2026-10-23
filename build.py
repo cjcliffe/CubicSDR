@@ -287,10 +287,22 @@ def soapy_module(name, url, prefix, config, jobs, arch, dry_run=False,
     On Linux the installed module gets an $ORIGIN-relative rpath so it
     finds libSoapySDR and the device libraries two dirs up (usr/lib),
     which holds both for the prefix layout (lib/SoapySDR/modules*/) and
-    the AppDir layout (bin/modules/).
+    the AppDir layout (bin/modules/). On macOS the module gets an
+    absolute-prefix rpath so @rpath ids resolve both unbundled and at
+    fixup_bundle time.
     """
     stamp = "mod-" + name.lower()
-    key = stamp_key(extra or [])
+    flags = ["-DCMAKE_PREFIX_PATH=%s" % prefix] + (extra or [])
+    if platform.system() == "Linux" and arch is None:
+        # Plain -D passes $ORIGIN through verbatim (no shell involved).
+        flags += ["-DCMAKE_INSTALL_RPATH=$ORIGIN/../../lib",
+                  "-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON"]
+    if platform.system() == "Darwin":
+        flags += ["-DCMAKE_INSTALL_RPATH=%s" % os.path.join(prefix, "lib"),
+                  "-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON"]
+        key = stamp_key(flags)
+    else:
+        key = stamp_key(extra or [])
     if stamp_valid(prefix, stamp, key, adopt=not dry_run):
         log("%s already built; skipping" % name)
         return
@@ -298,11 +310,6 @@ def soapy_module(name, url, prefix, config, jobs, arch, dry_run=False,
         log("%s flags changed; rebuilding" % name)
     src = os.path.join(prefix, "src", name)
     git_clone(url, src, dry_run)
-    flags = ["-DCMAKE_PREFIX_PATH=%s" % prefix] + (extra or [])
-    if platform.system() == "Linux" and arch is None:
-        # Plain -D passes $ORIGIN through verbatim (no shell involved).
-        flags += ["-DCMAKE_INSTALL_RPATH=$ORIGIN/../../lib",
-                  "-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON"]
     cmake_build(src, os.path.join(prefix, "build", name), config, jobs,
                 prefix, arch, flags, dry_run)
     mark_done(prefix, stamp, dry_run, key)

@@ -111,6 +111,22 @@ class MacosModulesDryRunTests(unittest.TestCase):
             build.build_modules_macos(
                 prefix, "Release", 2, ["sdrplay", "audio"], dry_run=True)
 
+    def test_darwin_modules_carry_prefix_rpath(self):
+        from unittest import mock
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as prefix:
+            with mock.patch.object(build.platform, "system",
+                                   return_value="Darwin"):
+                buf = io.StringIO()
+                with redirect_stdout(buf):
+                    build.soapy_module(
+                        "SoapyAudio",
+                        "https://github.com/pothosware/SoapyAudio",
+                        prefix, "Release", 2, None, True)
+                self.assertIn("-DCMAKE_INSTALL_RPATH=", buf.getvalue())
+                self.assertIn(os.path.join(prefix, "lib"), buf.getvalue())
+
     def test_libiio_disables_osx_framework(self):
         import io
         from contextlib import redirect_stdout
