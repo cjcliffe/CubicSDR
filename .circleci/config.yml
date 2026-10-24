@@ -181,34 +181,34 @@ workflows:
   version: 2
   build:
     jobs:
-      # - build:  # parked while the NSIS installer stabilizes
-      #     filters:
-      #       tags:
-      #         ignore: /.*/
-      # - appimage:  # parked while the NSIS installer stabilizes
-      #     filters:
-      #       branches:
-      #         ignore: /.*/
-      #       tags:
-      #         only: /.*/
-      # - deb:  # parked while the NSIS installer stabilizes
-      #     filters:
-      #       branches:
-      #         ignore: /.*/
-      #       tags:
-      #         only: /.*/
-      # - dmg-x64:  # parked while the NSIS installer stabilizes
-      #     filters:
-      #       branches:
-      #         ignore: /.*/
-      #       tags:
-      #         only: /.*/
-      # - dmg-arm64:  # parked while the NSIS installer stabilizes
-      #     filters:
-      #       branches:
-      #         ignore: /.*/
-      #       tags:
-      #         only: /.*/
+      - build:
+          filters:
+            tags:
+              ignore: /.*/
+      - appimage:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
+      - deb:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
+      - dmg-x64:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
+      - dmg-arm64:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
       - nsis:
           filters:
             branches:
