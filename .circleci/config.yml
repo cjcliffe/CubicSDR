@@ -139,33 +139,70 @@ jobs:
             mv build/macos/CubicSDR-0.2.8-Darwin.dmg build/macos/CubicSDR-0.2.8-macOS-arm64.dmg
       - store_artifacts:
           path: build/macos/CubicSDR-0.2.8-macOS-arm64.dmg
+  nsis:
+    machine:
+      image: windows-server-2022-gui:current
+    resource_class: windows.medium
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - nsis-deps-{{ checksum "build.py" }}
+            - nsis-deps-
+      - run:
+          name: Build NSIS installer
+          command: |
+            choco install nsis -y
+            python build.py --modules default --package nsis
+            "BUILD_RET=$LASTEXITCODE" | Out-File -FilePath build_ret.txt
+      - save_cache:
+          key: nsis-deps-{{ checksum "build.py" }}
+          paths:
+            - build/deps
+      - run:
+          name: Verify build result
+          command: |
+            $ret = Get-Content build_ret.txt
+            if ($ret -ne "0") { exit $ret }
+      - run:
+          name: Rename installer
+          command: |
+            Get-ChildItem build\windows\*.exe | Select-Object -First 1 | Move-Item -Destination build\windows\CubicSDR-0.2.8-win64.exe -Force
+      - store_artifacts:
+          path: build/windows/CubicSDR-0.2.8-win64.exe
 workflows:
   version: 2
   build:
     jobs:
-      - build:
-          filters:
-            tags:
-              ignore: /.*/
-      - appimage:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
-      - deb:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
-      - dmg-x64:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
-      - dmg-arm64:
+      # - build:  # parked while the NSIS installer stabilizes
+      #     filters:
+      #       tags:
+      #         ignore: /.*/
+      # - appimage:  # parked while the NSIS installer stabilizes
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
+      # - deb:  # parked while the NSIS installer stabilizes
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
+      # - dmg-x64:  # parked while the NSIS installer stabilizes
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
+      # - dmg-arm64:  # parked while the NSIS installer stabilizes
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
+      - nsis:
           filters:
             branches:
               ignore: /.*/
