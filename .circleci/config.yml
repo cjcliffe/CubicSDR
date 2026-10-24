@@ -153,12 +153,12 @@ jobs:
           name: Build NSIS installer
           shell: powershell.exe
           command: |
-            choco install nsis cmake -y
+            choco install nsis cmake --version 3.31.6 -y
             if ((Get-Command cmake -ErrorAction SilentlyContinue) -eq $null) {
               $env:PATH = "C:\Program Files\CMake\bin;$env:PATH"
             }
             python build.py --modules default --package nsis
-            "BUILD_RET=$LASTEXITCODE" | Out-File -FilePath build_ret.txt
+            "$LASTEXITCODE" | Out-File -FilePath build_ret.txt -NoNewline
       - save_cache:
           key: nsis-deps-{{ checksum "build.py" }}
           paths:
@@ -167,8 +167,8 @@ jobs:
           name: Verify build result
           shell: powershell.exe
           command: |
-            $ret = Get-Content build_ret.txt
-            if ($ret -ne "0") { exit $ret }
+            $ret = [int](Get-Content build_ret.txt -Raw).Trim()
+            if ($ret -ne 0) { exit $ret }
       - run:
           name: Rename installer
           shell: powershell.exe
