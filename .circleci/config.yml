@@ -151,6 +151,7 @@ jobs:
             - nsis-deps-
       - run:
           name: Build NSIS installer
+          shell: powershell.exe
           command: |
             choco install nsis cmake -y
             if ((Get-Command cmake -ErrorAction SilentlyContinue) -eq $null) {
@@ -164,11 +165,13 @@ jobs:
             - build/deps
       - run:
           name: Verify build result
+          shell: powershell.exe
           command: |
             $ret = Get-Content build_ret.txt
             if ($ret -ne "0") { exit $ret }
       - run:
           name: Rename installer
+          shell: powershell.exe
           command: |
             Get-ChildItem build\windows\*.exe | Select-Object -First 1 | Move-Item -Destination build\windows\CubicSDR-0.2.8-win64.exe -Force
       - store_artifacts:
