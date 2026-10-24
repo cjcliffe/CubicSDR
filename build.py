@@ -1045,7 +1045,7 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
              "-DLIBIIO_INCLUDEDIR:PATH=%s" % os.path.join(prefix, "include"),
              "-DLIBIIO_LIBRARIES:PATH=%s" % os.path.join(prefix, "lib", "libiio.lib"),
              "-DBUILD_TESTS=OFF"],
-            dry_run=dry_run)
+            branch="v0.3", dry_run=dry_run)
     if "uhd" in selected:
         boost_root = install_boost_windows(prefix, arch, dry_run)
         boost_libdir = boost_lib_dir(boost_root, arch, dry_run).replace("\\", "/")
@@ -1240,11 +1240,13 @@ def normalize_iio_headers(prefix, dry_run=False):
     if dry_run:
         log("+ normalize libiio headers under %s" % dest_top)
         return
-    src = os.path.join(dest_top, "iio.h")
-    dest = os.path.join(dest_top, "iio", "iio.h")
-    if os.path.isfile(src) and not os.path.isfile(dest):
-        os.makedirs(os.path.dirname(dest), exist_ok=True)
-        shutil.copy(src, dest)
+    flat = os.path.join(dest_top, "iio.h")
+    nested = os.path.join(dest_top, "iio", "iio.h")
+    pairs = [(flat, nested), (nested, flat)]
+    for src, dest in pairs:
+        if os.path.isfile(src) and not os.path.isfile(dest):
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
+            shutil.copy(src, dest)
 
 
 def find_sdrplay_api_linux(dry_run=False):
@@ -1375,7 +1377,7 @@ def build_modules_linux(prefix, config, jobs, selected, from_source,
              "-DLIBIIO_INCLUDEDIR:PATH=%s" % os.path.join(prefix, "include"),
              "-DLIBIIO_LIBRARIES:PATH=%s" % os.path.join(prefix, "lib", "libiio.so"),
              "-DBUILD_TESTS=OFF"],
-            dry_run=dry_run)
+            branch="v0.3", dry_run=dry_run)
     if "uhd" in selected:
         ensure_mako(dry_run)
         git_clone("https://github.com/EttusResearch/uhd",
@@ -1823,7 +1825,7 @@ def build_modules_macos(prefix, config, jobs, selected, dry_run=False,
              "-DLIBIIO_LIBRARIES:PATH=%s" % os.path.join(prefix, "lib",
                                                        "libiio.dylib"),
              "-DBUILD_TESTS=OFF"],
-            dry_run=dry_run, env=env)
+            branch="v0.3", dry_run=dry_run, env=env)
     if "uhd" in selected:
         ensure_mako(dry_run)
         git_clone("https://github.com/EttusResearch/uhd",

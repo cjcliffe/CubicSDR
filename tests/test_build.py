@@ -145,7 +145,8 @@ class MacosModulesDryRunTests(unittest.TestCase):
             buf = io.StringIO()
             with redirect_stdout(buf):
                 build.build_modules_macos(
-                    prefix, "Release", 2, ["rtlsdr", "hackrf", "bladerf"],
+                    prefix, "Release", 2,
+                    ["rtlsdr", "hackrf", "bladerf", "pluto"],
                     dry_run=True, host="x86_64-apple-darwin",
                     env={"CMAKE_OSX_ARCHITECTURES": "x86_64"})
             out = buf.getvalue()
@@ -154,6 +155,7 @@ class MacosModulesDryRunTests(unittest.TestCase):
             self.assertIn("fftw-", out)
             self.assertIn("-DLIBUSB_SKIP_VERSION_CHECK=Yes", out)
             self.assertIn("-DLIBUSB_VERSION=1.0.27", out)
+            self.assertIn("-b v0.3", out)
             self.assertNotIn("Cellar", out)
             self.assertIn("+ rewrite @rpath load commands in macOS "
                           "prefix libraries", out)
@@ -196,6 +198,18 @@ class NormalizeIioHeadersTests(unittest.TestCase):
             build.normalize_iio_headers(prefix)
             with open(os.path.join(inc, "iio", "iio.h")) as handle:
                 self.assertEqual(handle.read(), "real")
+
+    def test_mirrors_subdir_to_flat(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            inc = os.path.join(prefix, "include")
+            os.makedirs(os.path.join(inc, "iio"))
+            with open(os.path.join(inc, "iio", "iio.h"), "w") as handle:
+                handle.write("x")
+            build.normalize_iio_headers(prefix)
+            dest = os.path.join(inc, "iio.h")
+            self.assertTrue(os.path.isfile(dest))
+            with open(dest) as handle:
+                self.assertEqual(handle.read(), "x")
 
     def test_missing_header_is_noop(self):
         with tempfile.TemporaryDirectory() as prefix:
