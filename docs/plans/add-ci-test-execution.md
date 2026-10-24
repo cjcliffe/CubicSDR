@@ -4,7 +4,7 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md)
 
 ## Current State
 
-CI exists (`.circleci/`) but only builds — no test execution. No `.github/workflows/` or `.travis.yml`.
+CI exists (`.circleci/`) but only builds — no test execution. No `.github/workflows/` or `.travis.yml`. A dependency-free Python suite (`tests/test_build.py`) already covers the build helpers and can run in any CI job with a Python interpreter, without waiting on the C++ test infrastructure.
 
 ## Implementation Plan
 

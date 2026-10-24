@@ -4,7 +4,7 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | 
 
 ## Current State
 
-- Zero test coverage. No test framework, no test files, no test targets in CMakeLists.txt.
+- No C++ test coverage: no C++ test framework, files, or CMakeLists.txt targets yet. Build-system coverage exists in `tests/test_build.py` (stdlib `unittest`, no third-party dependencies).
 - CI exists (`.circleci/`) but only builds — no test execution.
 
 ## Implementation Plan
