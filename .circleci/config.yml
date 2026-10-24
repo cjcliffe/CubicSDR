@@ -119,19 +119,11 @@ jobs:
             - dmg-arm64-deps-
       - run:
           name: Build DMG (Apple Silicon)
-          command: |
-            python3 build.py --modules default --package dmg || echo "export BUILD_RET=$?" >> $BASH_ENV
+          command: python3 build.py --modules default --package dmg
       - save_cache:
           key: dmg-arm64-deps-{{ checksum "build.py" }}
           paths:
             - build/deps
-      - run:
-          name: Verify build result
-          command: |
-            if [ "${BUILD_RET:-0}" != "0" ]; then
-              echo "build failed with exit code $BUILD_RET"
-              exit $BUILD_RET
-            fi
       - run:
           name: Rename DMG by architecture
           command: |
@@ -159,17 +151,12 @@ jobs:
               $env:PATH = "C:\Program Files\CMake\bin;$env:PATH"
             }
             python build.py --modules default --package nsis
-            "$LASTEXITCODE" | Out-File -FilePath build_ret.txt -NoNewline
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - save_cache:
+          when: always
           key: nsis-deps-{{ checksum "build.py" }}
           paths:
             - build/deps
-      - run:
-          name: Verify build result
-          shell: powershell.exe
-          command: |
-            $ret = [int](Get-Content build_ret.txt -Raw).Trim()
-            if ($ret -ne 0) { exit $ret }
       - run:
           name: Rename installer
           shell: powershell.exe
