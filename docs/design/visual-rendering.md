@@ -279,10 +279,13 @@ A `hoverAlpha` float controls the transparency of hover indicators, animated smo
 
 ## GLFont System (`src/util/GLFont.h`)
 
-Bitmap font rendering using BMFont format. Fonts are stored in `font/` as PNG + definition files. 11 bitmap font sizes (12-96px) are loaded on demand via `loadFontOnce()` (lazy initialization). Font file search order:
-1. `RES_FOLDER/fonts/*`
-2. `[exe_path]/RES_FOLDER/fonts/*`
-3. `[exe_path]/fonts/*`
+Bitmap font rendering using BMFont format. Fonts are stored in `font/` as PNG + definition files. 11 bitmap font sizes (12-96px) are loaded on demand via `loadFontOnce()` (lazy initialization). Font directories are searched in order; the first directory containing the requested `fonts/<name>.fnt` wins:
+1. `RES_FOLDER` as-is (the packaged install location, when absolute)
+2. exe-relative `RES_FOLDER`, when relative (build-tree and portable layouts)
+3. the executable directory itself
+4. exe-relative `../share/cubicsdr` (binary in `bin/`, data in `share/`)
+5. `/usr/share/cubicsdr` and `/usr/local/share/cubicsdr`
+6. the `wxStandardPaths` data and resource directories
 
 ### Font Sizes
 

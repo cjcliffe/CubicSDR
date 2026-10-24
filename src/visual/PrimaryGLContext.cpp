@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "PrimaryGLContext.h"
+#include <chrono>
 
 #include "wx/wxprec.h"
 
