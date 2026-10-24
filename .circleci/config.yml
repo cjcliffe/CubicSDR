@@ -150,9 +150,11 @@ jobs:
             - nsis-deps-{{ checksum "build.py" }}
             - nsis-deps-
       - run:
+          name: Install build tools
+          command: choco install nsis cmake -y
+      - run:
           name: Build NSIS installer
           command: |
-            choco install nsis -y
             python build.py --modules default --package nsis
             "BUILD_RET=$LASTEXITCODE" | Out-File -FilePath build_ret.txt
       - save_cache:
