@@ -1402,6 +1402,8 @@ def build_modules_linux(prefix, config, jobs, selected, from_source,
              "-DHAVE_DNS_SD=OFF",
              "-DWITH_IIOD=OFF"],
             branch="v0.26", dry_run=dry_run)
+        # v0.3 always builds its test/ programs, which include <iio/iio.h>.
+        normalize_iio_headers(prefix, dry_run)
         build_clib_windows(
             "libad9361", "https://github.com/analogdevicesinc/libad9361-iio",
             prefix, config, None, jobs,
@@ -1849,6 +1851,8 @@ def build_modules_macos(prefix, config, jobs, selected, dry_run=False,
              "-DOSX_FRAMEWORK=OFF",
              "-DOSX_PACKAGE=OFF"],
             branch="v0.26", dry_run=dry_run, env=env)
+        # v0.3 always builds its test/ programs, which include <iio/iio.h>.
+        normalize_iio_headers(prefix, dry_run)
         build_clib_windows(
             "libad9361", "https://github.com/analogdevicesinc/libad9361-iio",
             prefix, config, None, jobs,

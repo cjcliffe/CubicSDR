@@ -156,6 +156,8 @@ class MacosModulesDryRunTests(unittest.TestCase):
             self.assertIn("-DLIBUSB_SKIP_VERSION_CHECK=Yes", out)
             self.assertIn("-DLIBUSB_VERSION=1.0.27", out)
             self.assertIn("-b v0.3", out)
+            self.assertLess(out.index("normalize libiio"),
+                            out.index("libad9361"))
             self.assertNotIn("Cellar", out)
             self.assertIn("+ rewrite @rpath load commands in macOS "
                           "prefix libraries", out)
