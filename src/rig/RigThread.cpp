@@ -3,6 +3,9 @@
 
 #include "RigThread.h"
 
+#include <chrono>
+#include <thread>
+
 std::vector<const struct rig_caps *> RigThread::rigCaps;
 
 RigThread::RigThread() {

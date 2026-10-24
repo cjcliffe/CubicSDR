@@ -8,6 +8,8 @@
 #include <string>
 #include <algorithm>
 #include <chrono>
+#include <mutex>
+#include <thread>
 
 #define TARGET_DISPLAY_FPS (60)
 #define SDR_DEVICE_LOST (-666)
