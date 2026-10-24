@@ -1037,6 +1037,7 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
              "-DLIBUSB_LIBRARIES:PATH=%s" % usb_lib,
              "-DWITH_IIOD=OFF"],
             branch="v0.26", dry_run=dry_run)
+        normalize_iio_headers(prefix, dry_run)
         build_clib_windows(
             "libad9361", "https://github.com/analogdevicesinc/libad9361-iio",
             prefix, config, arch, jobs,
@@ -1226,6 +1227,24 @@ def normalize_libusb_headers(usb_inc, prefix, dry_run=False):
             os.makedirs(os.path.dirname(dest), exist_ok=True)
             shutil.copy(src, dest)
     return dest_top
+
+
+def normalize_iio_headers(prefix, dry_run=False):
+    """Mirror the flat MSVC libiio header into the iio/ subdir layout.
+
+    libiio installs include/iio.h on Windows but the iio/ subdirectory
+    layout elsewhere; libad9361 includes <iio/iio.h>, so provide it when
+    absent. The header is self-contained, like the libusb mirror above.
+    """
+    dest_top = os.path.join(prefix, "include")
+    if dry_run:
+        log("+ normalize libiio headers under %s" % dest_top)
+        return
+    src = os.path.join(dest_top, "iio.h")
+    dest = os.path.join(dest_top, "iio", "iio.h")
+    if os.path.isfile(src) and not os.path.isfile(dest):
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        shutil.copy(src, dest)
 
 
 def find_sdrplay_api_linux(dry_run=False):

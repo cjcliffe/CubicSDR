@@ -172,6 +172,43 @@ class MacosModulesDryRunTests(unittest.TestCase):
                         "--dry-run"])
 
 
+class NormalizeIioHeadersTests(unittest.TestCase):
+    def test_mirrors_flat_header(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            inc = os.path.join(prefix, "include")
+            os.makedirs(inc)
+            with open(os.path.join(inc, "iio.h"), "w") as handle:
+                handle.write("x")
+            build.normalize_iio_headers(prefix)
+            dest = os.path.join(inc, "iio", "iio.h")
+            self.assertTrue(os.path.isfile(dest))
+            with open(dest) as handle:
+                self.assertEqual(handle.read(), "x")
+
+    def test_leaves_existing_subdir_alone(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            inc = os.path.join(prefix, "include")
+            os.makedirs(os.path.join(inc, "iio"))
+            with open(os.path.join(inc, "iio.h"), "w") as handle:
+                handle.write("flat")
+            with open(os.path.join(inc, "iio", "iio.h"), "w") as handle:
+                handle.write("real")
+            build.normalize_iio_headers(prefix)
+            with open(os.path.join(inc, "iio", "iio.h")) as handle:
+                self.assertEqual(handle.read(), "real")
+
+    def test_missing_header_is_noop(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            build.normalize_iio_headers(prefix)
+            self.assertFalse(
+                os.path.exists(os.path.join(prefix, "include", "iio")))
+
+    def test_dry_run_logs_only(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            build.normalize_iio_headers(prefix, dry_run=True)
+            self.assertFalse(os.path.exists(os.path.join(prefix, "include")))
+
+
 class LinkPathTests(unittest.TestCase):
     def test_adds_ldflags(self):
         env = build.with_link_path(
