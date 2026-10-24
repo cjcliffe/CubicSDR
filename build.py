@@ -390,11 +390,43 @@ def default_prefix():
     return os.path.join(ROOT, "build", "deps")
 
 
+def _rmtree(path):
+    """Remove a directory tree, retrying read-only files (git objects)."""
+    def _onerror(func, target, _exc):
+        os.chmod(target, 0o700)
+        func(target)
+    shutil.rmtree(path, onerror=_onerror)
+
+
+def _checkout_matches(dest, branch):
+    """True when dest's checkout is already at the requested branch or tag."""
+    try:
+        wanted = subprocess.run(
+            ["git", "-C", dest, "rev-parse", "--verify", "--quiet",
+             "%s^{commit}" % branch],
+            capture_output=True, text=True, check=False)
+        head = subprocess.run(["git", "-C", dest, "rev-parse", "HEAD"],
+                              capture_output=True, text=True, check=False)
+    except OSError:
+        return False
+    return (wanted.returncode == 0 and head.returncode == 0
+            and wanted.stdout.strip() == head.stdout.strip())
+
+
 def git_clone(url, dest, dry_run=False, branch=None):
-    """Shallow-clone url once; reuse the existing checkout on later runs."""
+    """Shallow-clone url once; reuse the existing checkout on later runs.
+
+    When a branch (or tag) is pinned but the existing checkout predates the
+    pin, it is removed and re-cloned so stale sources can never silently
+    satisfy a new pin.
+    """
     if os.path.isdir(dest):
-        log("%s exists; reusing" % dest)
-        return
+        if branch and not dry_run and not _checkout_matches(dest, branch):
+            log("%s predates branch %s; re-cloning" % (dest, branch))
+            _rmtree(dest)
+        else:
+            log("%s exists; reusing" % dest)
+            return
     cmd = ["git", "clone", "--depth", "1"]
     if branch:
         cmd += ["-b", branch]

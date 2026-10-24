@@ -544,5 +544,62 @@ class NormalizeMacosLoadPathsTests(unittest.TestCase):
             build.normalize_macos_load_paths(prefix, dry_run=True)
 
 
+class GitCloneTests(unittest.TestCase):
+    def _make_origin(self, tmp, tag=None):
+        import subprocess
+        origin = os.path.join(tmp, "origin")
+        subprocess.run(["git", "init", "-q", origin], check=True)
+        subprocess.run(["git", "-C", origin, "config", "user.email", "t@t"],
+                       check=True)
+        subprocess.run(["git", "-C", origin, "config", "user.name", "t"],
+                       check=True)
+        subprocess.run(["git", "-C", origin, "config", "commit.gpgsign",
+                        "false"], check=True)
+        with open(os.path.join(origin, "f.txt"), "w") as handle:
+            handle.write("x")
+        subprocess.run(["git", "-C", origin, "add", "."], check=True)
+        subprocess.run(["git", "-C", origin, "commit", "-qm", "init"],
+                       check=True)
+        if tag:
+            subprocess.run(["git", "-C", origin, "tag", tag], check=True)
+        return origin
+
+    def _git(self, *args):
+        import subprocess
+        return subprocess.run(["git"] + list(args), capture_output=True,
+                              text=True, check=True)
+
+    def test_reuses_checkout_at_pinned_tag(self):
+        import shutil
+        from unittest import mock
+        if shutil.which("git") is None:
+            self.skipTest("git not available")
+        with tempfile.TemporaryDirectory() as tmp:
+            origin = self._make_origin(tmp, tag="v0.3")
+            dest = os.path.join(tmp, "libad9361")
+            build.git_clone(origin, dest, branch="v0.3")
+            with mock.patch.object(build, "run") as run:
+                build.git_clone(origin, dest, branch="v0.3")
+            run.assert_not_called()
+
+    def test_reclones_checkout_predating_pin(self):
+        import shutil
+        if shutil.which("git") is None:
+            self.skipTest("git not available")
+        with tempfile.TemporaryDirectory() as tmp:
+            origin = self._make_origin(tmp)
+            dest = os.path.join(tmp, "libad9361")
+            build.git_clone(origin, dest)
+            marker = os.path.join(dest, "stale.txt")
+            with open(marker, "w") as handle:
+                handle.write("stale")
+            self._git("-C", origin, "tag", "v0.3")
+            build.git_clone(origin, dest, branch="v0.3")
+            self.assertFalse(os.path.exists(marker))
+            head = self._git("-C", dest, "rev-parse", "HEAD")
+            want = self._git("-C", origin, "rev-parse", "v0.3^{commit}")
+            self.assertEqual(head.stdout.strip(), want.stdout.strip())
+
+
 if __name__ == "__main__":
     unittest.main()
