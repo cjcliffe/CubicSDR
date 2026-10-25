@@ -11,6 +11,7 @@
 #include <condition_variable>
 #include <typeinfo>
 #include <iostream>
+#include <memory>
 #include "SpinMutex.h"
 
 #define MIN_ITEM_NB (1)

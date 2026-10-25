@@ -17,6 +17,12 @@ jobs:
       - run:
           name: Build CubicSDR
           command: python3 build.py --modules none
+      - run:
+          name: Build and run unit tests
+          command: |
+            cmake -S . -B build/linux -DBUILD_TESTING=ON
+            cmake --build build/linux --parallel
+            ctest --test-dir build/linux --output-on-failure
       - save_cache:
           key: deps-{{ checksum "build.py" }}
           paths:

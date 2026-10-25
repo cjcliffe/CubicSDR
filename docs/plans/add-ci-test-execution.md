@@ -20,7 +20,7 @@ Depends on: [Add Unit Tests](add-unit-tests.md). Once tests exist:
    ```
 2. Consider adding a matrix of test configurations (Release/Debug).
 3. Add test result upload for CI visibility.
-4. Consider adding a separate "test" workflow that depends on "build".
+4. Keep tests in the existing "build" job rather than a separate workflow to hold down CI credit use.
 
 ## Verification Criteria
 

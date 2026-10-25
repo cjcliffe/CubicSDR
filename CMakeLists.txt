@@ -181,6 +181,11 @@ list(APPEND CUBICSDR_COMPILE_DEFINITIONS USE_SOAPY_SDR=1)
 
 find_package(Threads REQUIRED)
 
+option(BUILD_TESTING "Build CubicSDR C++ unit tests" OFF)
+IF(BUILD_TESTING)
+    add_subdirectory(tests)
+ENDIF()
+
 find_program(CCACHE "ccache")
 if(CCACHE)
     set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE})
