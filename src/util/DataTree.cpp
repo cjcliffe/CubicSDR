@@ -372,6 +372,10 @@ wstring DataTree::wsDecode(const string& str) {
     return result;
 }
 
+// Note: the XML format stores values without type tags, so loading infers
+// types from text shape. A single-element int vector loads as a scalar and
+// small int vectors load as char vectors. Nested <str> elements and
+// percent-encoded text do round-trip back to string vectors and wstrings.
 void DataTree::decodeXMLText(DataNode *elem, const char *src_text, DT_FloatingPointPolicy fpp) {
 
     int tmp_char;

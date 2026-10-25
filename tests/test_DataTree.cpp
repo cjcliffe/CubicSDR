@@ -40,6 +40,40 @@ TEST_SUITE("DataElement") {
         CHECK(str_val == "hello");
     }
 
+    TEST_CASE("additional scalar types round-trip") {
+        DataElement e;
+
+        unsigned int u = 0;
+        e.set(42u);
+        CHECK(e.getDataType() == DataElement::Type::DATA_UINT);
+        e.get(u);
+        CHECK(u == 42u);
+
+        long lv = 0;
+        e.set(42L);
+        CHECK(e.getDataType() == DataElement::Type::DATA_LONG);
+        e.get(lv);
+        CHECK(lv == 42L);
+
+        unsigned long ulv = 0;
+        e.set(42UL);
+        CHECK(e.getDataType() == DataElement::Type::DATA_ULONG);
+        e.get(ulv);
+        CHECK(ulv == 42UL);
+
+        long long llv = 0;
+        e.set(42LL);
+        CHECK(e.getDataType() == DataElement::Type::DATA_LONGLONG);
+        e.get(llv);
+        CHECK(llv == 42LL);
+
+        unsigned char ucv = 0;
+        e.set(static_cast<unsigned char>('b'));
+        CHECK(e.getDataType() == DataElement::Type::DATA_UCHAR);
+        e.get(ucv);
+        CHECK(ucv == static_cast<unsigned char>('b'));
+    }
+
     TEST_CASE("vector set and get round-trip") {
         DataElement e;
         const std::vector<int> in{1, 2, 3, 4};
@@ -48,6 +82,62 @@ TEST_SUITE("DataElement") {
         std::vector<int> out;
         e.get(out);
         CHECK(out == in);
+    }
+
+    TEST_CASE("string and float vectors round-trip") {
+        DataElement e;
+
+        const std::vector<std::string> strings{"alpha", "beta"};
+        e.set(strings);
+        CHECK(e.getDataType() == DataElement::Type::DATA_STR_VECTOR);
+        std::vector<std::string> strings_out;
+        e.get(strings_out);
+        CHECK(strings_out == strings);
+
+        const std::vector<float> floats{1.5f, 2.5f};
+        e.set(floats);
+        CHECK(e.getDataType() == DataElement::Type::DATA_FLOAT_VECTOR);
+        std::vector<float> floats_out;
+        e.get(floats_out);
+        REQUIRE(floats_out.size() == floats.size());
+        CHECK(floats_out[0] == doctest::Approx(1.5f).epsilon(1e-5));
+        CHECK(floats_out[1] == doctest::Approx(2.5f).epsilon(1e-5));
+    }
+
+    TEST_CASE("wstring round-trips in memory") {
+        DataElement e;
+        const std::wstring in = L"hello";
+        e.set(in);
+        CHECK(e.getDataType() == DataElement::Type::DATA_WSTRING);
+        std::wstring out;
+        e.get(out);
+        CHECK(out == in);
+    }
+
+    TEST_CASE("accessor helpers convert values") {
+        DataElement e;
+        e.set(42);
+        CHECK(e.getInt() == 42);
+        CHECK(e.getUInt() == 42u);
+        CHECK(e.getLong() == 42L);
+        CHECK(e.getULong() == 42UL);
+        CHECK(e.getLongLong() == 42LL);
+        CHECK(e.getFloat() == doctest::Approx(42.0f).epsilon(1e-5));
+        CHECK(e.getDouble() == doctest::Approx(42.0));
+
+        e.set('a');
+        CHECK(e.getChar() == 'a');
+        CHECK(e.getUChar() == static_cast<unsigned int>('a'));
+    }
+
+    TEST_CASE("toString formats scalars") {
+        DataElement e;
+        e.set(42);
+        CHECK(e.toString() == "42");
+        e.set(std::string("hi"));
+        CHECK(e.toString() == "hi");
+        e.set(2.5);
+        CHECK(e.toString() == "2.500000");
     }
 
     TEST_CASE("type mismatch raises") {
@@ -71,6 +161,29 @@ TEST_SUITE("DataNode") {
         CHECK(root->child("a")->element()->getInt() == 1);
         CHECK(root->child("a", 1)->element()->getInt() == 3);
         CHECK(root->child(1)->getName() == "b");
+    }
+
+    TEST_CASE("names and parent links") {
+        DataTree tree("test");
+        DataNode *root = tree.rootNode();
+        DataNode *kid = root->newChild("kid");
+
+        CHECK(kid->getName() == "kid");
+        CHECK(kid->getParentNode() == root);
+
+        kid->setName("renamed");
+        CHECK(kid->getName() == "renamed");
+    }
+
+    TEST_CASE("newChild can adopt an existing node") {
+        DataTree tree("test");
+        DataNode *root = tree.rootNode();
+        DataNode *lone = new DataNode("lone");
+        lone->element()->set(5);
+
+        root->newChild("adopted", lone);
+        CHECK(root->child("adopted")->element()->getInt() == 5);
+        CHECK(root->child("adopted")->getParentNode() == root);
     }
 
     TEST_CASE("iteration visits every child in order") {
@@ -110,6 +223,39 @@ TEST_SUITE("DataNode") {
         CHECK(root->hasAnother("a"));
     }
 
+    TEST_CASE("rewindAll restarts iteration everywhere") {
+        DataTree tree("test");
+        DataNode *root = tree.rootNode();
+        DataNode *a = root->newChild("a");
+        a->newChild("kid")->element()->set(1);
+        root->newChild("b")->element()->set(2);
+
+        root->rewind();
+        while (root->hasAnother()) {
+            DataNode *child = root->getNext();
+            child->rewind();
+            while (child->hasAnother()) {
+                child->getNext();
+            }
+        }
+        CHECK_FALSE(root->hasAnother());
+
+        root->rewindAll();
+
+        std::vector<std::string> names;
+        root->rewind();
+        while (root->hasAnother()) {
+            names.push_back(root->getNext()->getName());
+        }
+        REQUIRE(names.size() == 2);
+        CHECK(names[0] == "a");
+        CHECK(names[1] == "b");
+
+        a->rewind();
+        REQUIRE(a->hasAnother());
+        CHECK(a->getNext()->getName() == "kid");
+    }
+
     TEST_CASE("deep traversal reaches nested children") {
         DataTree tree("test");
         DataNode *level1 = tree.rootNode()->newChild("l1");
@@ -131,6 +277,17 @@ TEST_SUITE("DataNode") {
         CHECK(copy->child("kid")->element()->getInt() == 8);
     }
 
+    TEST_CASE("node clone constructor deep-copies") {
+        DataNode orig("orig");
+        orig.element()->set(7);
+        orig.newChild("kid")->element()->set(8);
+
+        DataNode copy("copy", orig);
+        CHECK(copy.element()->getInt() == 7);
+        CHECK(copy.numChildren() == 1);
+        CHECK(copy.child("kid")->element()->getInt() == 8);
+    }
+
     TEST_CASE("findAll collects every matching descendant") {
         DataTree tree("test");
         DataNode *root = tree.rootNode();
@@ -143,6 +300,16 @@ TEST_SUITE("DataNode") {
         REQUIRE(found.size() == 2);
         CHECK(found[0]->element()->getInt() == 1);
         CHECK(found[1]->element()->getInt() == 2);
+    }
+
+    TEST_CASE("findAll with no match returns empty") {
+        DataTree tree("test");
+        DataNode *root = tree.rootNode();
+        root->newChild("a")->element()->set(1);
+
+        std::vector<DataNode *> found;
+        root->findAll("missing", found);
+        CHECK(found.empty());
     }
 }
 
@@ -161,6 +328,7 @@ TEST_SUITE("DataTree") {
         {
             DataTree loaded;
             REQUIRE(loaded.LoadFromFileXML(path));
+            CHECK(loaded.rootNode()->getName() == "config");
 
             std::vector<DataNode *> found;
             loaded.rootNode()->findAll("answer", found);
@@ -182,6 +350,121 @@ TEST_SUITE("DataTree") {
             float ratio = 0.0f;
             found[0]->element()->get(ratio);
             CHECK(ratio == doctest::Approx(1.5f).epsilon(1e-5));
+        }
+
+        std::remove(path.c_str());
+    }
+
+    TEST_CASE("load from a missing file returns false") {
+        DataTree loaded;
+        // The error line on the console is expected; it is the
+        // file-not-found diagnostic, not a test failure.
+        CHECK_FALSE(loaded.LoadFromFileXML("definitely_not_here_12345.xml"));
+    }
+
+    TEST_CASE("floating-point policy controls decoded types") {
+        const std::string path = "datatree_test_tmp.xml";
+        std::remove(path.c_str());
+
+        {
+            DataTree tree("config");
+            tree.rootNode()->newChild("ratio")->element()->set(2.5);
+            CHECK(tree.SaveToFileXML(path));
+        }
+        {
+            DataTree as_float;
+            REQUIRE(as_float.LoadFromFileXML(path));
+            std::vector<DataNode *> found;
+            as_float.rootNode()->findAll("ratio", found);
+            REQUIRE(found.size() == 1);
+            CHECK(found[0]->element()->getDataType() == DataElement::Type::DATA_FLOAT);
+        }
+        {
+            DataTree as_double;
+            REQUIRE(as_double.LoadFromFileXML(path, USE_DOUBLE));
+            std::vector<DataNode *> found;
+            as_double.rootNode()->findAll("ratio", found);
+            REQUIRE(found.size() == 1);
+            CHECK(found[0]->element()->getDataType() == DataElement::Type::DATA_DOUBLE);
+            double ratio = 0.0;
+            found[0]->element()->get(ratio);
+            CHECK(ratio == doctest::Approx(2.5));
+        }
+
+        std::remove(path.c_str());
+    }
+
+    TEST_CASE("string vectors round-trip through XML") {
+        const std::string path = "datatree_test_tmp.xml";
+        std::remove(path.c_str());
+
+        const std::vector<std::string> in{"alpha", "beta"};
+        {
+            DataTree tree("config");
+            tree.rootNode()->newChild("words")->element()->set(in);
+            CHECK(tree.SaveToFileXML(path));
+        }
+        {
+            DataTree loaded;
+            REQUIRE(loaded.LoadFromFileXML(path));
+            std::vector<DataNode *> found;
+            loaded.rootNode()->findAll("words", found);
+            REQUIRE(found.size() == 1);
+            CHECK(found[0]->element()->getDataType() == DataElement::Type::DATA_STR_VECTOR);
+            std::vector<std::string> out;
+            found[0]->element()->get(out);
+            CHECK(out == in);
+        }
+
+        std::remove(path.c_str());
+    }
+
+    TEST_CASE("wide strings round-trip through XML") {
+        const std::string path = "datatree_test_tmp.xml";
+        std::remove(path.c_str());
+
+        const std::wstring in = L"hello";
+        {
+            DataTree tree("config");
+            tree.rootNode()->newChild("wide")->element()->set(in);
+            CHECK(tree.SaveToFileXML(path));
+        }
+        {
+            DataTree loaded;
+            REQUIRE(loaded.LoadFromFileXML(path));
+            std::vector<DataNode *> found;
+            loaded.rootNode()->findAll("wide", found);
+            REQUIRE(found.size() == 1);
+            CHECK(found[0]->element()->getDataType() == DataElement::Type::DATA_WSTRING);
+            std::wstring out;
+            found[0]->element()->get(out);
+            CHECK(out == in);
+        }
+
+        std::remove(path.c_str());
+    }
+
+    TEST_CASE("integer vectors round-trip through XML") {
+        const std::string path = "datatree_test_tmp.xml";
+        std::remove(path.c_str());
+
+        // Values exceed char range so the decoder keeps the int vector type.
+        const std::vector<int> in{1000, 2000, 3000};
+        {
+            DataTree tree("config");
+            tree.rootNode()->newChild("big")->element()->set(in);
+            CHECK(tree.SaveToFileXML(path));
+        }
+        {
+            DataTree loaded;
+            REQUIRE(loaded.LoadFromFileXML(path));
+            std::vector<DataNode *> found;
+            loaded.rootNode()->findAll("big", found);
+            REQUIRE(found.size() == 1);
+            CHECK(found[0]->element()->getDataType() == DataElement::Type::DATA_INT_VECTOR);
+            std::vector<int> out;
+            found[0]->element()->get(out);
+            CHECK(out == in);
         }
 
         std::remove(path.c_str());
