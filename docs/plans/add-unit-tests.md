@@ -12,132 +12,115 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | 
 ### Phase 1: Set up test infrastructure
 
 1. Add a `tests/` directory at the project root.
-2. Add a test framework. **Recommendation: Catch2 v3** (header-only, single header, modern C++14, good assertion macros, CMake integration via `FetchContent` or bundled header).
-3. Add a `tests/CMakeLists.txt` with a `cubicsdr_tests` target.
-4. Add `add_subdirectory(tests)` to the root `CMakeLists.txt` (guarded by an option like `BUILD_TESTING`).
-5. Update CI config to run `ctest` after build.
+2. Vendor the doctest single header under `external/doctest/`. It needs no compiled library and no network at configure time.
+3. Add a `tests/CMakeLists.txt` with a single `cubicsdr_tests` target. Use one `tests/main.cpp` holding `DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN`; all other test files only include the header. Group cases with a `TEST_SUITE` per file and register the binary once with CTest.
+4. Compile only the sources under test into `cubicsdr_tests` (plus bundled `external/tinyxml/` where needed). Never link wxWidgets, OpenGL, SoapySDR, or liquid-dsp into the test target.
+5. Add `option(BUILD_TESTING ...)` defaulting to `OFF` to the root `CMakeLists.txt` and guard `add_subdirectory(tests)` behind it, so existing and packaging builds are unaffected.
+6. Wire `BUILD_TESTING=ON` through the preset flow. The app builds through `CMakePresets.json` presets (driven by `build.py`), so the plan must cover where the flag is set: either a preset `cacheVariables` entry or an extra `-D` on the preset configure invocation, plus a matching `build.py` passthrough if CI keeps driving through `build.py`.
+7. Keep test targets free of wxWidgets, OpenGL, SoapySDR, and liquid-dsp. Phase 2 and Phase 3 sources below were selected because they avoid those dependencies. Local run: `cmake --preset <name> -DBUILD_TESTING=ON`, `cmake --build --preset <name>`, `ctest --test-dir build/<name> --output-on-failure`.
 
 ### Phase 2: Core utility tests (highest value, lowest effort)
 
 **Test file: `tests/test_SpinMutex.cpp`**
-- `src/util/SpinMutex.h` — header-only, zero external dependencies (`<atomic>` only).
+- `src/util/SpinMutex.h` — header-only, depends only on `<atomic>`.
 - Tests:
-  - Single-thread: `lock()` → `try_lock()` returns false → `unlock()` → `try_lock()` returns true.
-  - Multi-thread: two threads incrementing a shared counter under the lock; verify final count equals sum of increments.
-  - Verify `lock_guard<SpinMutex>` works (satisfies C++ Lockable concept).
-  - Verify copy construction and assignment are deleted (compile-time).
+  - Single-thread: `lock()` makes `try_lock()` fail; after `unlock()`, `try_lock()` succeeds.
+  - `std::lock_guard<SpinMutex>` and `std::unique_lock<SpinMutex>` usage, since `ThreadBlockingQueue` relies on both plus `condition_variable_any`.
+  - Multi-threaded counter increment; verify the final count.
+  - Copy construction and assignment are deleted.
 
 **Test file: `tests/test_Gradient.cpp`**
-- `src/util/Gradient.h` + `src/util/Gradient.cpp` — self-contained, no project dependencies.
+- `src/util/Gradient.h` + `src/util/Gradient.cpp` — self-contained.
 - Tests:
-  - Two-color gradient (black to white) produces linear interpolation [0.0 → 1.0].
-  - Output array length matches requested `len`.
-  - Values clamped to [0.0, 1.0] for edge cases.
-  - `clear()` resets state; `generate()` after `clear()` produces empty arrays.
-  - Multi-color gradient (3+ stops) produces correct interpolation.
-  - Single-color gradient returns an array of the single color (no interpolation needed).
+  - Two-color gradient produces linear interpolation across the requested length.
+  - Output vector length matches the requested length.
+  - Out-of-range color components clamp to the valid range.
+  - `clear()` resets state; `generate()` after `clear()` documents empty-array behavior.
+  - Multi-stop gradient interpolates across each segment.
+- Note: `generate()` divides by `colors.size() - 1`, so zero- and one-color inputs are currently unsafe. Decide the intended behavior first (early return or defined single-color fill), implement it, then lock it in with tests. Do not assert single-color output against the current implementation.
 
 **Test file: `tests/test_ThreadBlockingQueue.cpp`**
-- `src/util/ThreadBlockingQueue.h` — depends only on `SpinMutex.h` (also header-only).
-- Tests:
-  - Single-threaded: `push`/`pop` ordering, `size()` tracking, `empty()`/`full()` states, `flush()`.
-  - Capacity: `set_max_num_items()`, `try_push()` returns false when full.
-  - Multi-threaded producer-consumer: one thread pushes N items, another pops N items; verify all items received.
-  - Timeout: `push` with short timeout returns false when queue is full.
-  - `NON_BLOCKING_TIMEOUT` path: verify immediate fail when queue is full/empty.
+- `src/util/ThreadBlockingQueue.h` — depends on `SpinMutex.h` plus standard headers.
+- Tests against the actual API:
+  - `push`/`pop` ordering, `size()`, `empty()`/`full()`, `flush()`.
+  - `try_push()`/`try_pop()` fast paths when full or empty.
+  - Timeout overloads, including the `NON_BLOCKING_TIMEOUT` threshold behavior.
+  - `set_max_num_items()` only raises the limit; tests must not assume it can lower the limit.
+  - Multi-threaded producer-consumer transfer, with generous timeouts so slow CI runners stay stable.
+- Note: the header uses `std::shared_ptr` without including `<memory>`. Fix the include as part of this work if the isolated test target exposes the gap.
 
 **Test file: `tests/test_DataTree.cpp`**
 - `src/util/DataTree.h` + `src/util/DataTree.cpp` — depends on bundled `external/tinyxml/`.
+- Covers `DataElement`, `DataNode`, and `DataTree` in one file.
 - Tests:
-  - `DataElement::set()`/`get()` for all scalar types (char, int, float, double, etc.).
-  - `DataElement::getDataType()` returns correct enum for each type.
-  - `DataNode` tree building: `newChild()`, `child()` by name/index, `numChildren()`.
-  - `DataNode` iteration: `hasAnother()`/`getNext()`/`rewind()`.
-  - `DataTree::SaveToFileXML()` / `LoadFromFileXML()` round-trip.
-  - `DataElement` vector types: `set()`/`get()` for `vector<int>`, `vector<float>`, etc.
+  - `DataElement::set()`/`get()` for scalar types and `getDataType()` for each type.
+  - `DataElement` vector and string overloads.
+  - `DataNode` tree building: `newChild()`, `child()` by name and index, `numChildren()`.
+  - `DataNode` iteration: `hasAnother()`/`getNext()`/`rewind()`, including `findAll()` and multi-level nesting.
+  - `DataTree` XML round-trip through `SaveToFileXML()` / `LoadFromFileXML()` using a portable temp-file helper (C++14 has no `std::filesystem`); clean up the temp file after each run.
 
 **Test file: `tests/test_Timer.cpp`**
-- `src/util/Timer.h` + `src/util/Timer.cpp` — platform-specific (`<windows.h>` on Windows).
-- Tests (using `lockFramerate()` for determinism):
-  - `start()` resets timer; `getMilliseconds()` returns 0 after start.
-  - `lockFramerate(30.0)` → `update()` advances by ~33.33ms each call.
-  - `paused(true)` freezes `getMilliseconds()` while `totalMilliseconds()` continues.
-  - `getNumUpdates()` counts `update()` calls correctly.
+- `src/util/Timer.h` + `src/util/Timer.cpp` — platform-specific timing backend.
+- Use `lockFramerate()` for deterministic assertions.
+- Tests:
+  - `start()`/`reset()` behavior and `getNumUpdates()` counting.
+  - Locked framerate advances a fixed step per `update()`.
+  - `paused()` freezes `getMilliseconds()` while `totalMilliseconds()` keeps advancing.
   - `setMilliseconds()`/`setSeconds()` force specific values.
+  - Avoid exact wall-clock assertions on the unlocked path; prefer locked-mode checks or tolerances.
 
-### Phase 3: Additional module tests (after Phase 2 is stable)
-
-**Test file: `tests/test_FreqConversion.cpp`**
-- Frequency conversion utilities used throughout the SDR pipeline.
-- **Note:** Identify actual frequency utility functions during implementation (e.g., frequency formatting, Hz/MHz conversion helpers used in UI display code). The original draft referenced `freqToHz()`/`hzToFreq()` which do not exist in the codebase.
-- Tests:
-  - Round-trip conversion for common frequencies (1 MHz, 144 MHz, 440 MHz)
-  - Edge cases: DC (0 Hz), Nyquist boundary, negative frequencies
-  - Frequency formatting for display strings
-
-**Test file: `tests/test_DataNode.cpp`**
-- `DataNode` tree structure operations (beyond basic DataTree round-trip in Phase 2).
-- Tests:
-  - `newChild()` with various types (string, int, float, vector)
-  - `child()` by name and by index
-  - `numChildren()` accuracy after insertions
-  - Iterator pattern: `hasAnother()` / `getNext()` / `rewind()`
-  - Deep tree traversal (3+ levels nesting)
-  - `DataNode` copy semantics
+### Phase 3: Threading helper tests (after Phase 2 is stable)
 
 **Test file: `tests/test_IOThread.cpp`**
-- `IOThread` base class queue binding and lifecycle.
-- Tests:
-  - `setInputQueue()` / `getInputQueue()` by name
-  - `setOutputQueue()` / `getOutputQueue()` by name
-  - `stopping` flag transitions
-  - `terminated` flag set after `run()` completes
-  - `isTerminated()` timeout behavior
-  - Named queue rebinding (replace a bound queue)
-
-**Test file: `tests/test_ReBuffer.cpp`**
-- `ReBuffer<T>` buffer pool allocation and garbage collection.
-- Tests:
-  - `getBuffer()` returns new buffer when pool is empty
-  - `getBuffer()` reuses buffer when use_count drops to 1
-  - Multiple buffers in flight simultaneously
-  - `GC_LIMIT` age-out behavior (mock or observe pool size)
-  - Thread-safe concurrent `getBuffer()` calls
+- `src/IOThread.h` + `src/IOThread.cpp` — covers both `IOThread` and `ReBuffer<T>`, which share that header.
+- `IOThread` tests:
+  - `setInputQueue()` / `getInputQueue()` and `setOutputQueue()` / `getOutputQueue()` by name, including rebinding an existing name.
+  - `terminate()` sets the stopping flag.
+  - A minimal subclass `run()` returning normally leads `threadMain()` to set the terminated flag; verify `isTerminated()` with and without a wait, using generous waits so slow CI runners stay stable.
+- `ReBuffer<T>` tests:
+  - `getBuffer()` allocates when the pool is empty and reuses entries whose `use_count` dropped back to the pool-only reference.
+  - Multiple buffers in flight simultaneously.
+  - `purge()` clears the pool.
+  - Age-out behavior around `REBUFFER_GC_LIMIT`, observed through pool size.
+  - Concurrent `getBuffer()` calls from multiple threads.
+- Note: compiling this test pulls in `Timer.cpp` as well, but still avoids wxWidgets and GL.
 
 ### Phase 4: Update CI
 
-- Add `BUILD_TESTING=ON` to CI build steps.
-- Add `ctest --test-dir build --output-on-failure` after build.
-- Consider adding a separate "test" job that depends on the "build" job.
+- Update `.circleci/config.yml` (the active CI config) to configure with `BUILD_TESTING=ON`, build, then run `ctest --test-dir build/<preset> --output-on-failure`.
+- If CI keeps driving through `build.py`, add the flag passthrough there.
+- Keep the default local build without tests unchanged so packaging builds pay no test cost.
 
 ## Verification Criteria
 
-- `cmake -B build -DBUILD_TESTING=ON` configures without errors.
-- `cmake --build build` compiles all test files and the `cubicsdr_tests` target.
-- `ctest --test-dir build --output-on-failure` runs all Phase 2 tests and they pass.
-- Phase 3 tests compile and pass when enabled.
-- CI pipeline runs tests after build and reports results.
+- CMake configure with `BUILD_TESTING=ON` succeeds through the preset flow.
+- `cmake --build` compiles the `cubicsdr_tests` target without new warnings.
+- `ctest --test-dir build/<preset> --output-on-failure` runs the Phase 2 tests and they pass.
+- Phase 3 tests compile and pass.
+- CI runs the test step after build and reports results.
 
 ## Rollback Strategy
 
 This plan only adds new files and a CMake option. If tests fail or cause build issues:
 1. Disable `BUILD_TESTING` (set to `OFF`) to skip test compilation entirely.
 2. Or remove the `add_subdirectory(tests)` line from `CMakeLists.txt`.
-3. No existing source code is modified.
+3. No existing source code is modified, except for the small fixes noted above (`<memory>` include, `Gradient` degenerate-input guard) which can each revert independently.
 
 ## Files to Create/Modify
 
 | File | Action |
 |------|--------|
 | `tests/CMakeLists.txt` | Create |
+| `tests/main.cpp` (doctest entry point) | Create |
+| `external/doctest/doctest.h` (vendored single header) | Vendor |
 | `tests/test_SpinMutex.cpp` | Create |
 | `tests/test_Gradient.cpp` | Create |
 | `tests/test_ThreadBlockingQueue.cpp` | Create |
 | `tests/test_DataTree.cpp` | Create |
 | `tests/test_Timer.cpp` | Create |
-| `tests/test_FreqConversion.cpp` | Create (Phase 3) |
-| `tests/test_DataNode.cpp` | Create (Phase 3) |
-| `tests/test_IOThread.cpp` | Create (Phase 3) |
-| `tests/test_ReBuffer.cpp` | Create (Phase 3) |
-| `CMakeLists.txt` | Add `add_subdirectory(tests)` and `BUILD_TESTING` option |
-| CI config (`.github/workflows/` or similar) | Add test execution step |
+| `tests/test_IOThread.cpp` (covers `IOThread` and `ReBuffer`) | Create (Phase 3) |
+| `CMakeLists.txt` | Add `BUILD_TESTING` option and guarded `add_subdirectory(tests)` |
+| `CMakePresets.json` and/or `build.py` | Wire `BUILD_TESTING` through the preset flow |
+| `.circleci/config.yml` | Add test execution step |
+| `src/util/ThreadBlockingQueue.h` | Add missing include if isolated build requires it |
+| `src/util/Gradient.cpp` | Guard degenerate `generate()` inputs |
