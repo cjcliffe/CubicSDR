@@ -368,6 +368,11 @@ def parse_args(argv):
                         choices=["native", "x86_64", "arm64"],
                         help="macOS binary architecture; anything but native "
                         "cross-compiles via -arch flags")
+    parser.add_argument("--macos-min-version", default=None,
+                        help="macOS deployment target (e.g. 11.0); pins "
+                        "MACOSX_DEPLOYMENT_TARGET and -mmacosx-version-min "
+                        "for the app and every dependency so the bundle "
+                        "still loads on older macOS releases")
     parser.add_argument("--jobs", default=str(min(os.cpu_count() or 2, 8)),
                         help="parallel build jobs (default: CPU count, max 8)")
     parser.add_argument("--deps-prefix", default=None)
@@ -1613,7 +1618,7 @@ def build_windows(args, dry_run=False):
             cwd=os.path.join(ROOT, "build", preset), dry_run=dry_run)
 
 
-def macos_build_flags(target):
+def macos_build_flags(target, min_version=None):
     """Architecture selection for macOS builds.
 
     Returns (env, host): extra environment pinning the architecture and
@@ -1621,7 +1626,12 @@ def macos_build_flags(target):
     CMAKE_OSX_ARCHITECTURES is always pinned: the runners provide their
     own default, which would otherwise leak a second -arch into CMake
     builds and produce fat binaries that fail to link against the
-    thin cross-built dependencies.
+    thin cross-built dependencies. min_version pins the deployment
+    target as well: MACOSX_DEPLOYMENT_TARGET plus an explicit
+    -mmacosx-version-min in every flag var, so the autotools and CMake
+    dependency builds (which otherwise default to the runner SDK's
+    release and ship binaries that refuse to load on older systems)
+    stay compatible with older macOS releases.
     """
     native = platform.machine().replace("aarch64", "arm64")
     want = "native" if target in (None, "native") else \
@@ -1629,12 +1639,18 @@ def macos_build_flags(target):
     if want == "native":
         want = native
     env = {"CMAKE_OSX_ARCHITECTURES": want}
-    if want == native:
+    if min_version is not None:
+        env["MACOSX_DEPLOYMENT_TARGET"] = min_version
+    if want == native and min_version is None:
         return env, None
-    arch = "-arch %s" % want
+    arch = "-arch %s" % want if want != native else ""
+    if min_version is not None:
+        arch = ("%s -mmacosx-version-min=%s" % (arch, min_version)).strip()
     for var in ("CFLAGS", "CXXFLAGS", "OBJCFLAGS", "OBJCXXFLAGS", "LDFLAGS"):
         existing = os.environ.get(var, "")
         env[var] = ("%s %s" % (existing, arch)).strip()
+    if want == native:
+        return env, None
     return env, "%s-apple-darwin" % want
 
 
@@ -1977,6 +1993,62 @@ def verify_macos_bundle_inputs(prefix, dry_run=False):
     log("macOS bundle inputs resolve under %s" % os.path.join(prefix, "lib"))
 
 
+def verify_macos_deployment_floor(min_version, dry_run=False):
+    """Fail fast before cpack when a bundled binary targets newer macOS.
+
+    Reads the minos (or version) load command of the built app and every
+    bundled framework and module; anything above min_version would load
+    on the build runner but refuse to launch on the older release the
+    legacy bundle targets.
+    """
+    if dry_run:
+        log("+ verify macOS bundle binaries target macOS %s" % min_version)
+        return
+    if platform.system() != "Darwin":
+        return
+    apps = sorted(glob.glob(os.path.join(ROOT, "build", "macos", "**",
+                                         "CubicSDR.app"), recursive=True))
+    if not apps:
+        sys.exit("error: no built CubicSDR.app found; "
+                 "cannot verify deployment target")
+    offenders = {}
+    for app in apps:
+        members = [os.path.join(app, "Contents", "MacOS", "CubicSDR")]
+        members += sorted(glob.glob(os.path.join(app, "Contents", "Frameworks",
+                                                 "*.dylib")))
+        members += sorted(glob.glob(os.path.join(app, "Contents", "MacOS",
+                                                 "modules", "*.so")))
+        for member in members:
+            if not os.path.isfile(member):
+                continue
+            proc = subprocess.run(["otool", "-l", member], capture_output=True,
+                                  text=True, check=True)
+            floors = set()
+            cmd = None
+            for line in proc.stdout.splitlines():
+                fields = line.strip().split()
+                if not fields:
+                    continue
+                if fields[0] == "cmd":
+                    cmd = fields[1] if len(fields) > 1 else None
+                elif fields[0] == "minos" and cmd == "LC_BUILD_VERSION":
+                    floors.add(fields[1])
+                elif fields[0] == "version" and cmd in (
+                        "LC_VERSION_MIN_MACOSX", "LC_VERSION_MIN_IPHONEOS",
+                        "LC_VERSION_MIN_TVOS", "LC_VERSION_MIN_WATCHOS"):
+                    floors.add(fields[1])
+            for floor in sorted(floors):
+                if floor != min_version:
+                    offenders.setdefault(member, []).append(floor)
+    if offenders:
+        for member, floors in sorted(offenders.items()):
+            log("%s targets macOS %s (want %s)"
+                % (member, ", ".join(floors), min_version))
+        sys.exit("error: %d bundled binaries sit above the macOS %s floor"
+                 % (len(offenders), min_version))
+    log("macOS bundle binaries target macOS %s" % min_version)
+
+
 def macos_prefix_binaries(prefix):
     """Every prefix Mach-O binary that can enter the macOS bundle.
 
@@ -2033,7 +2105,7 @@ def build_macos(args, dry_run=False):
     for prog in ["brew", "git", "make"]:
         require(prog, dry_run)
     prefix = os.path.abspath(args.deps_prefix or default_prefix())
-    arch_env, host = macos_build_flags(args.macos_arch)
+    arch_env, host = macos_build_flags(args.macos_arch, args.macos_min_version)
     if not args.skip_deps:
         run(["brew", "install", "automake", "cmake", "git", "autoconf",
              "libtool", "pkg-config", "wget", "libusb", "fftw", "hamlib",
@@ -2066,6 +2138,8 @@ def build_macos(args, dry_run=False):
         dry_run=dry_run, env=arch_env)
     if args.package == "dmg":
         verify_macos_bundle_inputs(prefix, dry_run)
+        if args.macos_min_version is not None:
+            verify_macos_deployment_floor(args.macos_min_version, dry_run)
         run(["cpack", "-G", "DragNDrop"], cwd=os.path.join(ROOT, "build", "macos"),
             dry_run=dry_run)
 
@@ -2173,6 +2247,8 @@ def main(argv=None):
             sys.exit("error: unsupported host; pass --platform explicitly")
     if args.macos_arch != "native" and target != "macos":
         sys.exit("error: --macos-arch is macOS-only")
+    if args.macos_min_version is not None and target != "macos":
+        sys.exit("error: --macos-min-version is macOS-only")
     pairs = {"deb": "linux", "nsis": "windows", "dmg": "macos", "appimage": "linux"}
     if args.package != "none" and pairs[args.package] != target:
         sys.exit("error: --package %s needs --platform %s"

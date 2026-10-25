@@ -107,6 +107,30 @@ jobs:
             - build/deps
       - store_artifacts:
           path: build/macos/CubicSDR-0.2.8-macOS-x64.dmg
+  dmg-x64-legacy:
+    macos:
+      xcode: 15.4.0
+    resource_class: macos.m1.medium.gen1
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - dmg-x64-legacy-deps-{{ checksum "build.py" }}
+            - dmg-x64-legacy-deps-
+      - run:
+          name: Build DMG (Intel legacy for macOS 11)
+          command: python3 build.py --modules default --package dmg --macos-arch x86_64 --macos-min-version 11.0
+      - run:
+          name: Rename DMG by architecture
+          command: |
+            ls build/macos/
+            mv build/macos/CubicSDR-0.2.8-Darwin.dmg build/macos/CubicSDR-0.2.8-macOS-x64-legacy.dmg
+      - save_cache:
+          key: dmg-x64-legacy-deps-{{ checksum "build.py" }}
+          paths:
+            - build/deps
+      - store_artifacts:
+          path: build/macos/CubicSDR-0.2.8-macOS-x64-legacy.dmg
   dmg-arm64:
     macos:
       xcode: 15.4.0
@@ -185,6 +209,12 @@ workflows:
             tags:
               only: /.*/
       - dmg-x64:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
+      - dmg-x64-legacy:
           filters:
             branches:
               ignore: /.*/

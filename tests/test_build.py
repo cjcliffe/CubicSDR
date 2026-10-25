@@ -58,6 +58,30 @@ class MacosBuildFlagsTests(unittest.TestCase):
                     "LDFLAGS"):
             self.assertIn("-arch %s" % target, env[var])
 
+    def test_default_leaves_deployment_target_alone(self):
+        for spec in ("native", "x86_64", "arm64"):
+            env, _ = build.macos_build_flags(spec)
+            self.assertNotIn("MACOSX_DEPLOYMENT_TARGET", env)
+            for var in ("CFLAGS", "CXXFLAGS", "OBJCFLAGS", "OBJCXXFLAGS",
+                        "LDFLAGS"):
+                self.assertNotIn("mmacosx-version-min",
+                                 env.get(var, ""))
+
+    def test_min_version_pins_deployment_target(self):
+        native = platform.machine().replace("aarch64", "arm64")
+        target = "x86_64" if native != "x86_64" else "arm64"
+        for spec in ("native", target):
+            env, host = build.macos_build_flags(spec, "11.0")
+            self.assertEqual(env["MACOSX_DEPLOYMENT_TARGET"], "11.0")
+            for var in ("CFLAGS", "CXXFLAGS", "OBJCFLAGS", "OBJCXXFLAGS",
+                        "LDFLAGS"):
+                self.assertIn("-mmacosx-version-min=11.0", env[var])
+        env, host = build.macos_build_flags(target, "11.0")
+        self.assertEqual(host, "%s-apple-darwin" % target)
+        self.assertIn("-arch %s" % target, env["CFLAGS"])
+        _, native_host = build.macos_build_flags("native", "11.0")
+        self.assertIsNone(native_host)
+
 
 class NormalizeLiquidMacosTests(unittest.TestCase):
     def test_renames_archive_and_drops_shared(self):
@@ -174,6 +198,19 @@ class MacosModulesDryRunTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             build.main(["--platform", "linux", "--macos-arch", "x86_64",
                         "--dry-run"])
+
+    def test_macos_min_version_rejected_off_macos(self):
+        with self.assertRaises(SystemExit):
+            build.main(["--platform", "linux", "--macos-min-version", "11.0",
+                        "--dry-run"])
+
+    def test_legacy_plan_dry_runs(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            args = ["--platform", "macos", "--modules", "default",
+                    "--package", "dmg", "--deps-prefix", prefix,
+                    "--macos-arch", "x86_64", "--macos-min-version", "11.0",
+                    "--dry-run"]
+            self.assertEqual(build.main(args), 0)
 
 
 class NormalizeIioHeadersTests(unittest.TestCase):
