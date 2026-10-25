@@ -302,10 +302,14 @@ def soapy_module(name, url, prefix, config, jobs, arch, dry_run=False,
         flags += ["-DCMAKE_INSTALL_RPATH=%s" % os.path.join(prefix, "lib"),
                   "-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON"]
         target = (env or {}).get("CMAKE_OSX_ARCHITECTURES", "")
-        key = stamp_key(flags + ([target] if target else []))
+        floor = (env or {}).get("MACOSX_DEPLOYMENT_TARGET", "")
+        key = stamp_key(flags + ([target] if target else [])
+                        + ([floor] if floor else []))
     else:
         key = stamp_key(extra or [])
-    if stamp_valid(prefix, stamp, key, adopt=not dry_run):
+    floor = (env or {}).get("MACOSX_DEPLOYMENT_TARGET")
+    if stamp_valid(prefix, stamp, key,
+                   adopt=not dry_run and floor is None):
         log("%s already built; skipping" % name)
         return
     if os.path.exists(stamp_path(prefix, stamp)):
@@ -358,6 +362,71 @@ def mark_done(prefix, name, dry_run=False, key=None):
         handle.write("%s\n" % (key or "ok"))
 
 
+def macos_stamp_parts(env, host=None):
+    """Stamp inputs distinguishing macOS build flavors; None off-mac.
+
+    Covers the target architecture, the autoconf host triplet, and the
+    deployment-target floor, so a restored cache from another flavor
+    (or predating the floor pin) rebuilds instead of silently reusing
+    binaries that will not load where the bundle targets.
+    """
+    env = env or {}
+    if "CMAKE_OSX_ARCHITECTURES" not in env:
+        return None
+    return [env.get("CMAKE_OSX_ARCHITECTURES"), host,
+            env.get("MACOSX_DEPLOYMENT_TARGET")]
+
+
+def ensure_macos_prefix_flavor(prefix, arch, host, min_version, skip_deps,
+                               dry_run=False):
+    """Wipe a macOS prefix built for another flavor, or fail when reusing it.
+
+    A restored cache (or local prefix) from another architecture or
+    deployment floor rebuilds nothing on its own: stamps match, build
+    trees look fresh, and the bundle ships stale binaries. A recorded
+    flavor mismatch therefore rebuilds from scratch; unknown provenance
+    wipes only when a floor is demanded, otherwise it is adopted.
+    --skip-deps never wipes: reusing a mismatched prefix fails loudly
+    instead. Use --deps-prefix for side-by-side flavors.
+    """
+    flavor = "%s|%s|%s" % (arch, host, min_version)
+    path = os.path.join(prefix, "macos-flavor")
+    if dry_run:
+        log("+ ensure macOS prefix flavor %s" % flavor)
+        return
+    try:
+        with open(path) as handle:
+            recorded = handle.read().strip()
+    except OSError:
+        recorded = None
+    if recorded == flavor:
+        return
+    if skip_deps:
+        if recorded is None:
+            return
+        sys.exit("error: dependency prefix %s holds macOS flavor %s; "
+                 "rebuild without --skip-deps or pass --clean"
+                 % (prefix, recorded))
+    if recorded is None and min_version is None:
+        os.makedirs(prefix, exist_ok=True)
+        with open(path, "w") as handle:
+            handle.write("%s\n" % flavor)
+        return
+    if recorded is None:
+        log("dependency prefix flavor unknown; rebuilding from scratch "
+            "for macOS %s (use --deps-prefix for side-by-side flavors)"
+            % flavor)
+    else:
+        log("dependency prefix flavor changed (%s -> %s); rebuilding from "
+            "scratch (use --deps-prefix for side-by-side flavors)"
+            % (recorded, flavor))
+    if os.path.isdir(prefix):
+        _rmtree(prefix)
+    os.makedirs(prefix, exist_ok=True)
+    with open(path, "w") as handle:
+        handle.write("%s\n" % flavor)
+
+
 def parse_args(argv):
     parser = argparse.ArgumentParser(description="Build CubicSDR from this checkout.")
     parser.add_argument("--platform", default="auto",
@@ -368,6 +437,11 @@ def parse_args(argv):
                         choices=["native", "x86_64", "arm64"],
                         help="macOS binary architecture; anything but native "
                         "cross-compiles via -arch flags")
+    parser.add_argument("--macos-min-version", default=None,
+                        help="macOS deployment target (e.g. 11.0); pins "
+                        "MACOSX_DEPLOYMENT_TARGET and -mmacosx-version-min "
+                        "for the app and every dependency so the bundle "
+                        "still loads on older macOS releases")
     parser.add_argument("--jobs", default=str(min(os.cpu_count() or 2, 8)),
                         help="parallel build jobs (default: CPU count, max 8)")
     parser.add_argument("--deps-prefix", default=None)
@@ -529,9 +603,15 @@ def build_wx_macos(prefix, jobs, dry_run=False, env=None, host=None):
     --host triplet for cross-compiles.
     """
     src = wx_source(prefix, dry_run)
-    if os.path.exists(stamp_path(prefix, "wx")):
+    parts = macos_stamp_parts(env, host)
+    key = stamp_key(parts) if parts is not None else None
+    floor = (env or {}).get("MACOSX_DEPLOYMENT_TARGET")
+    if stamp_valid(prefix, "wx", key,
+                   adopt=not dry_run and floor is None):
         log("wxWidgets already built; skipping")
         return os.path.join(prefix, "wx", "bin", "wx-config")
+    if os.path.exists(stamp_path(prefix, "wx")):
+        log("wxWidgets flags changed; rebuilding")
     env = dict(env or {})
     cpp = "gcc -E"
     if host is not None:
@@ -551,7 +631,7 @@ def build_wx_macos(prefix, jobs, dry_run=False, env=None, host=None):
     scrub_wx_config(src, dry_run)
     run(["make", "-j%s" % jobs], cwd=src, dry_run=dry_run, env=env)
     run(["make", "install"], cwd=src, dry_run=dry_run, env=env)
-    mark_done(prefix, "wx", dry_run)
+    mark_done(prefix, "wx", dry_run, key)
     return os.path.join(prefix, "wx", "bin", "wx-config")
 
 
@@ -585,8 +665,11 @@ def build_liquid(prefix, jobs, dry_run=False, env=None, host=None):
     """
     flags = ["--disable-shared", "--enable-static"]
     stamp = "lib-liquid"
-    key = stamp_key(flags)
-    if stamp_valid(prefix, stamp, key, adopt=not dry_run):
+    parts = macos_stamp_parts(env, host)
+    key = stamp_key(flags + (parts or []))
+    floor = (env or {}).get("MACOSX_DEPLOYMENT_TARGET")
+    if stamp_valid(prefix, stamp, key,
+                   adopt=not dry_run and floor is None):
         log("liquid-dsp already built; skipping")
         return
     if os.path.exists(stamp_path(prefix, stamp)):
@@ -630,15 +713,22 @@ def soapy_install_complete(prefix):
     return len(versioned) > 0
 
 
-def build_soapy(prefix, config, jobs, arch=None, dry_run=False, env=None):
+def build_soapy(prefix, config, jobs, arch=None, dry_run=False, env=None,
+                host=None):
     """Build pinned SoapySDR into the prefix; MSVC when arch is given."""
     src = os.path.join(prefix, "src", "SoapySDR")
-    if os.path.exists(stamp_path(prefix, "soapy")):
+    parts = macos_stamp_parts(env, host)
+    key = stamp_key(parts) if parts is not None else None
+    floor = (env or {}).get("MACOSX_DEPLOYMENT_TARGET")
+    if stamp_valid(prefix, "soapy", key,
+                   adopt=not dry_run and floor is None):
         if dry_run or soapy_install_complete(prefix):
             log("SoapySDR already built; skipping")
             return
         log("SoapySDR install incomplete; rebuilding")
         os.remove(stamp_path(prefix, "soapy"))
+    elif key is not None and os.path.exists(stamp_path(prefix, "soapy")):
+        log("SoapySDR flags changed; rebuilding")
     git_clone(SOAPY_URL, src, dry_run, branch=SOAPY_TAG)
     cmd = ["cmake", "-S", src, "-B", soapy_build_dir(prefix),
            "-DCMAKE_BUILD_TYPE=%s" % config,
@@ -656,7 +746,7 @@ def build_soapy(prefix, config, jobs, arch=None, dry_run=False, env=None):
             dry_run=dry_run, env=env)
         run(["cmake", "--install", soapy_build_dir(prefix)], dry_run=dry_run,
             env=env)
-    mark_done(prefix, "soapy", dry_run)
+    mark_done(prefix, "soapy", dry_run, key)
 
 
 def find_soapysdr_cmake(prefix, dry_run=False):
@@ -1613,7 +1703,7 @@ def build_windows(args, dry_run=False):
             cwd=os.path.join(ROOT, "build", preset), dry_run=dry_run)
 
 
-def macos_build_flags(target):
+def macos_build_flags(target, min_version=None):
     """Architecture selection for macOS builds.
 
     Returns (env, host): extra environment pinning the architecture and
@@ -1621,7 +1711,12 @@ def macos_build_flags(target):
     CMAKE_OSX_ARCHITECTURES is always pinned: the runners provide their
     own default, which would otherwise leak a second -arch into CMake
     builds and produce fat binaries that fail to link against the
-    thin cross-built dependencies.
+    thin cross-built dependencies. min_version pins the deployment
+    target as well: MACOSX_DEPLOYMENT_TARGET plus an explicit
+    -mmacosx-version-min in every flag var, so the autotools and CMake
+    dependency builds (which otherwise default to the runner SDK's
+    release and ship binaries that refuse to load on older systems)
+    stay compatible with older macOS releases.
     """
     native = platform.machine().replace("aarch64", "arm64")
     want = "native" if target in (None, "native") else \
@@ -1629,12 +1724,18 @@ def macos_build_flags(target):
     if want == "native":
         want = native
     env = {"CMAKE_OSX_ARCHITECTURES": want}
-    if want == native:
+    if min_version is not None:
+        env["MACOSX_DEPLOYMENT_TARGET"] = min_version
+    if want == native and min_version is None:
         return env, None
-    arch = "-arch %s" % want
+    arch = "-arch %s" % want if want != native else ""
+    if min_version is not None:
+        arch = ("%s -mmacosx-version-min=%s" % (arch, min_version)).strip()
     for var in ("CFLAGS", "CXXFLAGS", "OBJCFLAGS", "OBJCXXFLAGS", "LDFLAGS"):
         existing = os.environ.get(var, "")
         env[var] = ("%s %s" % (existing, arch)).strip()
+    if want == native:
+        return env, None
     return env, "%s-apple-darwin" % want
 
 
@@ -1687,9 +1788,14 @@ def build_libusb_macos(prefix, jobs, dry_run=False, env=None, host=None):
     pinned release tarball with the target --host triplet. Returns the
     prefix include dir and library for LIBUSB_* flags.
     """
-    if os.path.exists(stamp_path(prefix, "lib-libusb")):
+    key = stamp_key(macos_stamp_parts(env, host) or [])
+    floor = (env or {}).get("MACOSX_DEPLOYMENT_TARGET")
+    if stamp_valid(prefix, "lib-libusb", key,
+                   adopt=not dry_run and floor is None):
         log("libusb already built; skipping")
     else:
+        if os.path.exists(stamp_path(prefix, "lib-libusb")):
+            log("libusb flags changed; rebuilding")
         dest = os.path.join(prefix, "src", "libusb-%s" % LIBUSB_VERSION)
         download("https://github.com/libusb/libusb/releases/download/"
                  "v%s/libusb-%s.tar.bz2" % (LIBUSB_VERSION, LIBUSB_VERSION),
@@ -1703,7 +1809,7 @@ def build_libusb_macos(prefix, jobs, dry_run=False, env=None, host=None):
         run(cmd, cwd=dest, dry_run=dry_run, env=env)
         run(["make", "-j%s" % jobs], cwd=dest, dry_run=dry_run, env=env)
         run(["make", "install"], cwd=dest, dry_run=dry_run, env=env)
-        mark_done(prefix, "lib-libusb", dry_run)
+        mark_done(prefix, "lib-libusb", dry_run, key)
     return (os.path.join(prefix, "include"),
             os.path.join(prefix, "lib", "libusb-1.0.dylib"))
 
@@ -1711,9 +1817,14 @@ def build_libusb_macos(prefix, jobs, dry_run=False, env=None, host=None):
 def build_fftw_macos(prefix, jobs, dry_run=False, env=None, host=None):
     """Source-build single-precision FFTW for macOS cross-compiles."""
     dest = os.path.join(prefix, "src", "fftw-%s" % FFTW_VERSION)
-    if os.path.exists(stamp_path(prefix, "lib-fftw")):
+    key = stamp_key(macos_stamp_parts(env, host) or [])
+    floor = (env or {}).get("MACOSX_DEPLOYMENT_TARGET")
+    if stamp_valid(prefix, "lib-fftw", key,
+                   adopt=not dry_run and floor is None):
         log("fftw already built; skipping")
     else:
+        if os.path.exists(stamp_path(prefix, "lib-fftw")):
+            log("fftw flags changed; rebuilding")
         download("https://fftw.org/pub/fftw/fftw-%s.tar.gz" % FFTW_VERSION,
                  dest + ".tar.gz", dry_run)
         if not dry_run:
@@ -1726,7 +1837,7 @@ def build_fftw_macos(prefix, jobs, dry_run=False, env=None, host=None):
         run(cmd, cwd=dest, dry_run=dry_run, env=env)
         run(["make", "-j%s" % jobs], cwd=dest, dry_run=dry_run, env=env)
         run(["make", "install"], cwd=dest, dry_run=dry_run, env=env)
-        mark_done(prefix, "lib-fftw", dry_run)
+        mark_done(prefix, "lib-fftw", dry_run, key)
     return (os.path.join(prefix, "include"),
             os.path.join(prefix, "lib", "libfftw3f.dylib"))
 
@@ -1977,6 +2088,76 @@ def verify_macos_bundle_inputs(prefix, dry_run=False):
     log("macOS bundle inputs resolve under %s" % os.path.join(prefix, "lib"))
 
 
+def otool_deployment_floors(text):
+    """Minimum-OS floors from otool -l output.
+
+    Reads minos out of LC_BUILD_VERSION blocks and version out of
+    LC_VERSION_MIN_* blocks; anything else shaped like a version
+    (notably LC_SOURCE_VERSION) is not a floor and is ignored.
+    """
+    floors = set()
+    cmd = None
+    for line in text.splitlines():
+        fields = line.strip().split()
+        if not fields:
+            continue
+        if fields[0] == "cmd":
+            cmd = fields[1] if len(fields) > 1 else None
+        elif fields[0] == "minos" and cmd == "LC_BUILD_VERSION":
+            floors.add(fields[1])
+        elif fields[0] == "version" and cmd in (
+                "LC_VERSION_MIN_MACOSX", "LC_VERSION_MIN_IPHONEOS",
+                "LC_VERSION_MIN_TVOS", "LC_VERSION_MIN_WATCHOS"):
+            floors.add(fields[1])
+    return floors
+
+
+def verify_macos_deployment_floor(min_version, dry_run=False):
+    """Fail when a staged bundle binary targets newer macOS.
+
+    Runs after cpack over the staged DragNDrop tree (the pre-package app
+    has no bundled frameworks or modules yet; fixup_bundle stages them
+    at packaging time). Reads the minos (or version) load command of the
+    staged app and every bundled framework and module; anything above
+    min_version would load on the build runner but refuse to launch on
+    the older release the bundle targets.
+    """
+    if dry_run:
+        log("+ verify staged macOS bundle targets macOS %s" % min_version)
+        return
+    if platform.system() != "Darwin":
+        return
+    apps = sorted(glob.glob(os.path.join(ROOT, "build", "macos",
+                                         "_CPack_Packages", "Darwin",
+                                         "DragNDrop", "*", "CubicSDR.app")))
+    if not apps:
+        sys.exit("error: no staged CubicSDR.app found; "
+                 "cannot verify deployment target")
+    offenders = {}
+    for app in apps:
+        members = [os.path.join(app, "Contents", "MacOS", "CubicSDR")]
+        members += sorted(glob.glob(os.path.join(app, "Contents", "Frameworks",
+                                                 "*.dylib")))
+        members += sorted(glob.glob(os.path.join(app, "Contents", "MacOS",
+                                                 "modules", "*.so")))
+        for member in members:
+            if not os.path.isfile(member):
+                continue
+            proc = subprocess.run(["otool", "-l", member], capture_output=True,
+                                  text=True, check=True)
+            floors = otool_deployment_floors(proc.stdout)
+            for floor in sorted(floors):
+                if floor != min_version:
+                    offenders.setdefault(member, []).append(floor)
+    if offenders:
+        for member, floors in sorted(offenders.items()):
+            log("%s targets macOS %s (want %s)"
+                % (member, ", ".join(floors), min_version))
+        sys.exit("error: %d staged binaries sit above the macOS %s floor"
+                 % (len(offenders), min_version))
+    log("staged macOS bundle targets macOS %s" % min_version)
+
+
 def macos_prefix_binaries(prefix):
     """Every prefix Mach-O binary that can enter the macOS bundle.
 
@@ -2033,7 +2214,10 @@ def build_macos(args, dry_run=False):
     for prog in ["brew", "git", "make"]:
         require(prog, dry_run)
     prefix = os.path.abspath(args.deps_prefix or default_prefix())
-    arch_env, host = macos_build_flags(args.macos_arch)
+    arch_env, host = macos_build_flags(args.macos_arch, args.macos_min_version)
+    ensure_macos_prefix_flavor(prefix, arch_env.get("CMAKE_OSX_ARCHITECTURES"),
+                               host, args.macos_min_version, args.skip_deps,
+                               dry_run)
     if not args.skip_deps:
         run(["brew", "install", "automake", "cmake", "git", "autoconf",
              "libtool", "pkg-config", "wget", "libusb", "fftw", "hamlib",
@@ -2044,7 +2228,7 @@ def build_macos(args, dry_run=False):
                                    host=host)
         build_liquid(prefix, args.jobs, dry_run, arch_env, host=host)
         build_soapy(prefix, args.config, args.jobs, dry_run=dry_run,
-                    env=arch_env)
+                    env=arch_env, host=host)
         build_modules_macos(prefix, args.config, args.jobs,
                             selected_modules(args.modules), dry_run,
                             host=host, env=arch_env)
@@ -2068,6 +2252,8 @@ def build_macos(args, dry_run=False):
         verify_macos_bundle_inputs(prefix, dry_run)
         run(["cpack", "-G", "DragNDrop"], cwd=os.path.join(ROOT, "build", "macos"),
             dry_run=dry_run)
+        if args.macos_min_version is not None:
+            verify_macos_deployment_floor(args.macos_min_version, dry_run)
 
 
 def build_appimage(args, dry_run=False):
@@ -2173,6 +2359,8 @@ def main(argv=None):
             sys.exit("error: unsupported host; pass --platform explicitly")
     if args.macos_arch != "native" and target != "macos":
         sys.exit("error: --macos-arch is macOS-only")
+    if args.macos_min_version is not None and target != "macos":
+        sys.exit("error: --macos-min-version is macOS-only")
     pairs = {"deb": "linux", "nsis": "windows", "dmg": "macos", "appimage": "linux"}
     if args.package != "none" and pairs[args.package] != target:
         sys.exit("error: --package %s needs --platform %s"

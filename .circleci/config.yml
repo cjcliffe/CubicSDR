@@ -94,8 +94,8 @@ jobs:
             - dmg-x64-deps-{{ checksum "build.py" }}
             - dmg-x64-deps-
       - run:
-          name: Build DMG (Intel cross-compile)
-          command: python3 build.py --modules default --package dmg --macos-arch x86_64
+          name: Build DMG (Intel cross-compile, macOS 11 floor)
+          command: python3 build.py --modules default --package dmg --macos-arch x86_64 --macos-min-version 11.0
       - run:
           name: Rename DMG by architecture
           command: |

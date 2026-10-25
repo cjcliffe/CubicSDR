@@ -58,6 +58,30 @@ class MacosBuildFlagsTests(unittest.TestCase):
                     "LDFLAGS"):
             self.assertIn("-arch %s" % target, env[var])
 
+    def test_default_leaves_deployment_target_alone(self):
+        for spec in ("native", "x86_64", "arm64"):
+            env, _ = build.macos_build_flags(spec)
+            self.assertNotIn("MACOSX_DEPLOYMENT_TARGET", env)
+            for var in ("CFLAGS", "CXXFLAGS", "OBJCFLAGS", "OBJCXXFLAGS",
+                        "LDFLAGS"):
+                self.assertNotIn("mmacosx-version-min",
+                                 env.get(var, ""))
+
+    def test_min_version_pins_deployment_target(self):
+        native = platform.machine().replace("aarch64", "arm64")
+        target = "x86_64" if native != "x86_64" else "arm64"
+        for spec in ("native", target):
+            env, host = build.macos_build_flags(spec, "11.0")
+            self.assertEqual(env["MACOSX_DEPLOYMENT_TARGET"], "11.0")
+            for var in ("CFLAGS", "CXXFLAGS", "OBJCFLAGS", "OBJCXXFLAGS",
+                        "LDFLAGS"):
+                self.assertIn("-mmacosx-version-min=11.0", env[var])
+        env, host = build.macos_build_flags(target, "11.0")
+        self.assertEqual(host, "%s-apple-darwin" % target)
+        self.assertIn("-arch %s" % target, env["CFLAGS"])
+        _, native_host = build.macos_build_flags("native", "11.0")
+        self.assertIsNone(native_host)
+
 
 class NormalizeLiquidMacosTests(unittest.TestCase):
     def test_renames_archive_and_drops_shared(self):
@@ -174,6 +198,218 @@ class MacosModulesDryRunTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             build.main(["--platform", "linux", "--macos-arch", "x86_64",
                         "--dry-run"])
+
+    def test_macos_min_version_rejected_off_macos(self):
+        with self.assertRaises(SystemExit):
+            build.main(["--platform", "linux", "--macos-min-version", "11.0",
+                        "--dry-run"])
+
+    def test_min_version_plan_dry_runs(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            args = ["--platform", "macos", "--modules", "default",
+                    "--package", "dmg", "--deps-prefix", prefix,
+                    "--macos-arch", "x86_64", "--macos-min-version", "11.0",
+                    "--dry-run"]
+            self.assertEqual(build.main(args), 0)
+
+
+class MacosStampPartsTests(unittest.TestCase):
+    def test_none_off_mac(self):
+        self.assertIsNone(build.macos_stamp_parts(None))
+        self.assertIsNone(build.macos_stamp_parts({}))
+        self.assertIsNone(build.macos_stamp_parts({"CFLAGS": "-O2"}))
+
+    def test_covers_arch_host_and_floor(self):
+        env, host = build.macos_build_flags("x86_64", "11.0")
+        parts = build.macos_stamp_parts(env, host)
+        self.assertEqual(parts[0], "x86_64")
+        self.assertEqual(parts[1], "x86_64-apple-darwin")
+        self.assertEqual(parts[2], "11.0")
+
+    def test_floor_change_rekeys(self):
+        env, host = build.macos_build_flags("x86_64")
+        modern = build.stamp_key(build.macos_stamp_parts(env, host) or [])
+        floor_env, _ = build.macos_build_flags("x86_64", "11.0")
+        floored = build.stamp_key(
+            build.macos_stamp_parts(floor_env, host) or [])
+        self.assertNotEqual(modern, floored)
+
+
+class MacosRestampTests(unittest.TestCase):
+    def test_liquid_rebuilds_when_floor_changes(self):
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as prefix:
+            build.mark_done(prefix, "lib-liquid")
+            env, host = build.macos_build_flags("x86_64", "11.0")
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                build.build_liquid(prefix, 2, dry_run=True,
+                                   env=env, host=host)
+            out = buf.getvalue()
+            self.assertIn("liquid-dsp flags changed; rebuilding", out)
+            self.assertNotIn("already built; skipping", out)
+
+    def test_soapy_rebuilds_when_floor_changes(self):
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as prefix:
+            build.mark_done(prefix, "soapy")
+            env, host = build.macos_build_flags("x86_64", "11.0")
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                build.build_soapy(prefix, "Release", 2, dry_run=True,
+                                  env=env, host=host)
+            out = buf.getvalue()
+            self.assertIn("SoapySDR flags changed; rebuilding", out)
+            self.assertNotIn("already built; skipping", out)
+
+    def test_wx_rebuilds_when_floor_changes(self):
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as prefix:
+            build.mark_done(prefix, "wx")
+            env, host = build.macos_build_flags("x86_64", "11.0")
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                build.build_wx_macos(prefix, 2, dry_run=True,
+                                     env=env, host=host)
+            out = buf.getvalue()
+            self.assertIn("wxWidgets flags changed; rebuilding", out)
+            self.assertNotIn("already built; skipping", out)
+
+    def test_module_key_covers_floor(self):
+        from unittest import mock
+        seen = {}
+
+        def spy(prefix, name, key=None, adopt=True):
+            seen[name] = key
+            return True
+
+        with tempfile.TemporaryDirectory() as prefix:
+            with mock.patch.object(build.platform, "system",
+                                   return_value="Darwin"):
+                with mock.patch.object(build, "stamp_valid",
+                                        side_effect=spy):
+                    env, _ = build.macos_build_flags("x86_64")
+                    build.soapy_module(
+                        "SoapyAudio", "https://example.invalid/SoapyAudio",
+                        prefix, "Release", 2, None, True, env=env)
+                    modern = seen["mod-soapyaudio"]
+                    floor_env, _ = build.macos_build_flags(
+                        "x86_64", "11.0")
+                    build.soapy_module(
+                        "SoapyAudio", "https://example.invalid/SoapyAudio",
+                        prefix, "Release", 2, None, True, env=floor_env)
+                    floored = seen["mod-soapyaudio"]
+        self.assertIsNotNone(modern)
+        self.assertNotEqual(modern, floored)
+
+    def test_modern_build_adopts_legacy_stamp(self):
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as prefix:
+            build.mark_done(prefix, "lib-liquid")
+            env, host = build.macos_build_flags("x86_64")
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                build.build_liquid(prefix, 2, dry_run=False,
+                                   env=env, host=host)
+            self.assertIn("liquid-dsp already built; skipping",
+                          buf.getvalue())
+
+
+class MacosPrefixFlavorTests(unittest.TestCase):
+    def test_matching_flavor_keeps_prefix(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            with open(os.path.join(prefix, "macos-flavor"), "w") as handle:
+                handle.write("x86_64|x86_64-apple-darwin|11.0\n")
+            sentinel = os.path.join(prefix, "keep")
+            with open(sentinel, "w") as handle:
+                handle.write("x")
+            for _ in range(2):
+                build.ensure_macos_prefix_flavor(
+                    prefix, "x86_64", "x86_64-apple-darwin", "11.0", False)
+            self.assertTrue(os.path.isfile(sentinel))
+
+    def test_mismatch_wipes_prefix(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            sentinel = os.path.join(prefix, "stale")
+            with open(sentinel, "w") as handle:
+                handle.write("x")
+            with open(os.path.join(prefix, "macos-flavor"), "w") as handle:
+                handle.write("x86_64|None|None\n")
+            build.ensure_macos_prefix_flavor(prefix, "x86_64",
+                                             "x86_64-apple-darwin", "11.0",
+                                             False)
+            self.assertFalse(os.path.exists(sentinel))
+            with open(os.path.join(prefix, "macos-flavor")) as handle:
+                self.assertEqual(handle.read().strip(),
+                                 "x86_64|x86_64-apple-darwin|11.0")
+
+    def test_unknown_provenance_wipes_only_for_floor(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            sentinel = os.path.join(prefix, "stale")
+            with open(sentinel, "w") as handle:
+                handle.write("x")
+            build.ensure_macos_prefix_flavor(prefix, "arm64", None, "11.0",
+                                             False)
+            self.assertFalse(os.path.exists(sentinel))
+        with tempfile.TemporaryDirectory() as prefix:
+            sentinel = os.path.join(prefix, "keep")
+            with open(sentinel, "w") as handle:
+                handle.write("x")
+            build.ensure_macos_prefix_flavor(prefix, "arm64", None, None,
+                                             False)
+            self.assertTrue(os.path.isfile(sentinel))
+            with open(os.path.join(prefix, "macos-flavor")) as handle:
+                self.assertEqual(handle.read().strip(), "arm64|None|None")
+
+    def test_skip_deps_never_wipes(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            sentinel = os.path.join(prefix, "keep")
+            with open(sentinel, "w") as handle:
+                handle.write("x")
+            with open(os.path.join(prefix, "macos-flavor"), "w") as handle:
+                handle.write("x86_64|None|None\n")
+            with self.assertRaises(SystemExit):
+                build.ensure_macos_prefix_flavor(prefix, "x86_64",
+                                                 "x86_64-apple-darwin",
+                                                 "11.0", True)
+            self.assertTrue(os.path.isfile(sentinel))
+
+    def test_dry_run_changes_nothing(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            build.ensure_macos_prefix_flavor(prefix, "x86_64", None, "11.0",
+                                             False, dry_run=True)
+            self.assertFalse(os.path.exists(
+                os.path.join(prefix, "macos-flavor")))
+
+
+class OtoolDeploymentFloorsTests(unittest.TestCase):
+    def test_reads_minos_from_build_version(self):
+        text = ("Load command 12\n"
+                "      cmd LC_BUILD_VERSION\n"
+                "  cmdsize 32\n"
+                " platform 1\n"
+                "    minos 11.0\n"
+                "      sdk 14.5\n")
+        self.assertEqual(build.otool_deployment_floors(text), {"11.0"})
+
+    def test_reads_version_from_version_min(self):
+        text = ("Load command 8\n"
+                "      cmd LC_VERSION_MIN_MACOSX\n"
+                "  cmdsize 16\n"
+                "  version 10.15\n"
+                "      sdk 10.15\n")
+        self.assertEqual(build.otool_deployment_floors(text), {"10.15"})
+
+    def test_ignores_source_version(self):
+        text = ("Load command 7\n"
+                "      cmd LC_SOURCE_VERSION\n"
+                "  cmdsize 16\n"
+                "  version 615.0\n")
+        self.assertEqual(build.otool_deployment_floors(text), set())
 
 
 class NormalizeIioHeadersTests(unittest.TestCase):
