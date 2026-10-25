@@ -5,6 +5,7 @@
 #include "Timer.h"
 
 TEST_SUITE("Timer") {
+    // All cases run locked at 30fps, so each update() advances the clock by exactly 33ms.
     TEST_CASE("locked framerate advances a fixed step per update") {
         Timer t;
         t.start();
@@ -43,7 +44,8 @@ TEST_SUITE("Timer") {
 
         t.setMilliseconds(1000);
         t.update();
-        // The new base appears plus one locked step of 33ms.
+        // The base takes effect when update() refreshes the cached time,
+        // plus one locked step of 33ms.
         CHECK(t.getMilliseconds() == 1033);
 
         t.setSeconds(2.5);

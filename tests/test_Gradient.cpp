@@ -17,6 +17,7 @@ TEST_SUITE("Gradient") {
         REQUIRE(red.size() == 10);
         CHECK(red[0] == doctest::Approx(0.0).epsilon(1e-5));
         CHECK(red[5] == doctest::Approx(0.5).epsilon(1e-5));
+        // Samples sit at i/chunk_size, so the last sample stops one step short of white.
         CHECK(red[9] == doctest::Approx(0.9).epsilon(1e-5));
         for (size_t i = 1; i < red.size(); i++) {
             CHECK(red[i] > red[i - 1]);
@@ -29,6 +30,7 @@ TEST_SUITE("Gradient") {
         Gradient g;
         g.addColor(GradientColor(1.0, 0.0, 0.0));
         g.addColor(GradientColor(0.0, 0.0, 1.0));
+        // Same length as the waterfall palettes built in production.
         g.generate(256);
         CHECK(g.getRed().size() == 256);
         CHECK(g.getGreen().size() == 256);
@@ -40,6 +42,7 @@ TEST_SUITE("Gradient") {
         g.addColor(GradientColor(1.0, 0.0, 0.0));
         g.addColor(GradientColor(0.0, 1.0, 0.0));
         g.addColor(GradientColor(0.0, 0.0, 1.0));
+        // Three stops split 100 samples into two chunks of 50.
         g.generate(100);
 
         CHECK(g.getRed()[0] == doctest::Approx(1.0).epsilon(1e-5));
@@ -60,6 +63,7 @@ TEST_SUITE("Gradient") {
     }
 
     TEST_CASE("generate with fewer than two colors produces empty arrays") {
+        // Fewer than two stops cannot interpolate, so every channel stays empty.
         Gradient empty;
         empty.generate(10);
         CHECK(empty.getRed().empty());

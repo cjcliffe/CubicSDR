@@ -1,6 +1,7 @@
 // Copyright (c) Charles J. Cliffe
 // SPDX-License-Identifier: GPL-2.0+
 
+#include <chrono>
 #include <cstdint>
 #include <thread>
 #include <vector>
@@ -74,8 +75,49 @@ TEST_SUITE("ThreadBlockingQueue") {
         CHECK(q.full());
     }
 
+    TEST_CASE("a blocked pop wakes when the producer pushes") {
+        ThreadBlockingQueue<int> q; // default capacity is a single item
+        int received = -1;
+        // The sleep lets the worker park in its wait; join plus the
+        // final asserts prove the wakeup, not timing.
+        bool got = false;
+
+        std::thread consumer([&]() {
+            got = q.pop(received);
+        });
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        CHECK(q.push(42));
+        consumer.join();
+
+        CHECK(got);
+        CHECK(received == 42);
+    }
+
+    TEST_CASE("a blocked push wakes when the consumer pops") {
+        ThreadBlockingQueue<int> q; // default capacity is a single item
+        CHECK(q.push(1));
+
+        // The sleep lets the worker park in its wait; join plus the
+        // final asserts prove the wakeup, not timing.
+        bool pushed = false;
+        std::thread producer([&]() {
+            pushed = q.push(2);
+        });
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+        int value = -1;
+        CHECK(q.pop(value));
+        CHECK(value == 1);
+        producer.join();
+        CHECK(pushed);
+
+        CHECK(q.pop(value));
+        CHECK(value == 2);
+    }
+
     TEST_CASE("producer and consumer transfer every item in order") {
         ThreadBlockingQueue<int> q;
+        // Default timeouts block indefinitely, so this also covers the blocking waits.
         q.set_max_num_items(16);
         constexpr int count = 200;
         std::vector<int> received;

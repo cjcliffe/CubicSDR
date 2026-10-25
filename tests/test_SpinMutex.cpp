@@ -20,6 +20,7 @@ TEST_SUITE("SpinMutex") {
     }
 
     TEST_CASE("works with lock_guard and unique_lock") {
+        // ThreadBlockingQueue and ReBuffer guard their state exactly this way.
         SpinMutex m;
         {
             std::lock_guard<SpinMutex> guard(m);

@@ -11,6 +11,39 @@
 
 namespace {
 
+// Counts live buffers so the collector's work is directly observable.
+struct Counted {
+    static int live;
+    int value = 0;
+
+    Counted() {
+        ++live;
+    }
+
+    ~Counted() {
+        --live;
+    }
+};
+
+int Counted::live = 0;
+
+struct HookThread : public IOThread {
+    std::string last_input_name;
+    std::string last_output_name;
+    ThreadQueueBasePtr last_input_queue;
+    ThreadQueueBasePtr last_output_queue;
+
+    void onBindInput(std::string name, ThreadQueueBasePtr queue) override {
+        last_input_name = name;
+        last_input_queue = queue;
+    }
+
+    void onBindOutput(std::string name, ThreadQueueBasePtr queue) override {
+        last_output_name = name;
+        last_output_queue = queue;
+    }
+};
+
 class TestThread : public IOThread {
 public:
     bool ran = false;
@@ -50,7 +83,34 @@ TEST_SUITE("IOThread") {
         CHECK(t.stoppingObserved());
     }
 
-    TEST_CASE("threadMain runs run and then reports terminated") {
+    TEST_CASE("binding notifies the bind hooks") {
+        HookThread t;
+        ThreadQueueBasePtr inQueue = std::make_shared<ThreadBlockingQueue<int>>();
+        ThreadQueueBasePtr outQueue = std::make_shared<ThreadBlockingQueue<int>>();
+
+        t.setInputQueue("in", inQueue);
+        CHECK(t.last_input_name == "in");
+        CHECK(t.last_input_queue == inQueue);
+
+        t.setOutputQueue("out", outQueue);
+        CHECK(t.last_output_name == "out");
+        CHECK(t.last_output_queue == outQueue);
+    }
+
+    TEST_CASE("threadMain completes on a worker thread") {
+        TestThread t;
+
+        // Production runs threadMain on pthread-created threads; std::thread covers the same path.
+        std::thread worker([&]() {
+            t.threadMain();
+        });
+        worker.join();
+
+        CHECK(t.ran);
+        CHECK(t.isTerminated(0));
+    }
+
+    TEST_CASE("threadMain runs to completion then reports terminated") {
         TestThread t;
         CHECK_FALSE(t.isTerminated(0));
 
@@ -114,6 +174,24 @@ TEST_SUITE("ReBuffer") {
             *tmp = i;
             CHECK(*tmp == i);
         }
+    }
+
+    TEST_CASE("aged-out buffers are destroyed") {
+        {
+            ReBuffer<Counted> rb("counted");
+            auto first = rb.getBuffer();
+            auto second = rb.getBuffer();
+            REQUIRE(Counted::live == 2);
+            first.reset();
+            second.reset();
+
+            for (int i = 0; i < 150; i++) {
+                auto tmp = rb.getBuffer();
+                REQUIRE(tmp != nullptr);
+            }
+            CHECK(Counted::live == 1);
+        }
+        CHECK(Counted::live == 0);
     }
 
     TEST_CASE("purge drops pooled buffers") {

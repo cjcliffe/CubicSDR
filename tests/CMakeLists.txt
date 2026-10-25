@@ -35,6 +35,7 @@ target_compile_features(cubicsdr_tests PRIVATE cxx_std_14)
 target_link_libraries(cubicsdr_tests PRIVATE Threads::Threads)
 
 IF(WIN32)
+    # windows.h min/max macros break std::max; the app inherits this define from wxWidgets.
     target_compile_definitions(cubicsdr_tests PRIVATE NOMINMAX)
 ENDIF()
 
