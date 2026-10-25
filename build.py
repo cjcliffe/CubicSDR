@@ -307,7 +307,9 @@ def soapy_module(name, url, prefix, config, jobs, arch, dry_run=False,
                         + ([floor] if floor else []))
     else:
         key = stamp_key(extra or [])
-    if stamp_valid(prefix, stamp, key, adopt=not dry_run):
+    floor = (env or {}).get("MACOSX_DEPLOYMENT_TARGET")
+    if stamp_valid(prefix, stamp, key,
+                   adopt=not dry_run and floor is None):
         log("%s already built; skipping" % name)
         return
     if os.path.exists(stamp_path(prefix, stamp)):
@@ -373,6 +375,56 @@ def macos_stamp_parts(env, host=None):
         return None
     return [env.get("CMAKE_OSX_ARCHITECTURES"), host,
             env.get("MACOSX_DEPLOYMENT_TARGET")]
+
+
+def ensure_macos_prefix_flavor(prefix, arch, host, min_version, skip_deps,
+                               dry_run=False):
+    """Wipe a macOS prefix built for another flavor, or fail when reusing it.
+
+    A restored cache (or local prefix) from another architecture or
+    deployment floor rebuilds nothing on its own: stamps match, build
+    trees look fresh, and the bundle ships stale binaries. A recorded
+    flavor mismatch therefore rebuilds from scratch; unknown provenance
+    wipes only when a floor is demanded, otherwise it is adopted.
+    --skip-deps never wipes: reusing a mismatched prefix fails loudly
+    instead. Use --deps-prefix for side-by-side flavors.
+    """
+    flavor = "%s|%s|%s" % (arch, host, min_version)
+    path = os.path.join(prefix, "macos-flavor")
+    if dry_run:
+        log("+ ensure macOS prefix flavor %s" % flavor)
+        return
+    try:
+        with open(path) as handle:
+            recorded = handle.read().strip()
+    except OSError:
+        recorded = None
+    if recorded == flavor:
+        return
+    if skip_deps:
+        if recorded is None:
+            return
+        sys.exit("error: dependency prefix %s holds macOS flavor %s; "
+                 "rebuild without --skip-deps or pass --clean"
+                 % (prefix, recorded))
+    if recorded is None and min_version is None:
+        os.makedirs(prefix, exist_ok=True)
+        with open(path, "w") as handle:
+            handle.write("%s\n" % flavor)
+        return
+    if recorded is None:
+        log("dependency prefix flavor unknown; rebuilding from scratch "
+            "for macOS %s (use --deps-prefix for side-by-side flavors)"
+            % flavor)
+    else:
+        log("dependency prefix flavor changed (%s -> %s); rebuilding from "
+            "scratch (use --deps-prefix for side-by-side flavors)"
+            % (recorded, flavor))
+    if os.path.isdir(prefix):
+        _rmtree(prefix)
+    os.makedirs(prefix, exist_ok=True)
+    with open(path, "w") as handle:
+        handle.write("%s\n" % flavor)
 
 
 def parse_args(argv):
@@ -553,7 +605,9 @@ def build_wx_macos(prefix, jobs, dry_run=False, env=None, host=None):
     src = wx_source(prefix, dry_run)
     parts = macos_stamp_parts(env, host)
     key = stamp_key(parts) if parts is not None else None
-    if stamp_valid(prefix, "wx", key, adopt=False):
+    floor = (env or {}).get("MACOSX_DEPLOYMENT_TARGET")
+    if stamp_valid(prefix, "wx", key,
+                   adopt=not dry_run and floor is None):
         log("wxWidgets already built; skipping")
         return os.path.join(prefix, "wx", "bin", "wx-config")
     if os.path.exists(stamp_path(prefix, "wx")):
@@ -613,8 +667,9 @@ def build_liquid(prefix, jobs, dry_run=False, env=None, host=None):
     stamp = "lib-liquid"
     parts = macos_stamp_parts(env, host)
     key = stamp_key(flags + (parts or []))
+    floor = (env or {}).get("MACOSX_DEPLOYMENT_TARGET")
     if stamp_valid(prefix, stamp, key,
-                   adopt=not dry_run and parts is None):
+                   adopt=not dry_run and floor is None):
         log("liquid-dsp already built; skipping")
         return
     if os.path.exists(stamp_path(prefix, stamp)):
@@ -664,7 +719,9 @@ def build_soapy(prefix, config, jobs, arch=None, dry_run=False, env=None,
     src = os.path.join(prefix, "src", "SoapySDR")
     parts = macos_stamp_parts(env, host)
     key = stamp_key(parts) if parts is not None else None
-    if stamp_valid(prefix, "soapy", key, adopt=False):
+    floor = (env or {}).get("MACOSX_DEPLOYMENT_TARGET")
+    if stamp_valid(prefix, "soapy", key,
+                   adopt=not dry_run and floor is None):
         if dry_run or soapy_install_complete(prefix):
             log("SoapySDR already built; skipping")
             return
@@ -1732,7 +1789,9 @@ def build_libusb_macos(prefix, jobs, dry_run=False, env=None, host=None):
     prefix include dir and library for LIBUSB_* flags.
     """
     key = stamp_key(macos_stamp_parts(env, host) or [])
-    if stamp_valid(prefix, "lib-libusb", key, adopt=False):
+    floor = (env or {}).get("MACOSX_DEPLOYMENT_TARGET")
+    if stamp_valid(prefix, "lib-libusb", key,
+                   adopt=not dry_run and floor is None):
         log("libusb already built; skipping")
     else:
         if os.path.exists(stamp_path(prefix, "lib-libusb")):
@@ -1759,7 +1818,9 @@ def build_fftw_macos(prefix, jobs, dry_run=False, env=None, host=None):
     """Source-build single-precision FFTW for macOS cross-compiles."""
     dest = os.path.join(prefix, "src", "fftw-%s" % FFTW_VERSION)
     key = stamp_key(macos_stamp_parts(env, host) or [])
-    if stamp_valid(prefix, "lib-fftw", key, adopt=False):
+    floor = (env or {}).get("MACOSX_DEPLOYMENT_TARGET")
+    if stamp_valid(prefix, "lib-fftw", key,
+                   adopt=not dry_run and floor is None):
         log("fftw already built; skipping")
     else:
         if os.path.exists(stamp_path(prefix, "lib-fftw")):
@@ -2154,6 +2215,9 @@ def build_macos(args, dry_run=False):
         require(prog, dry_run)
     prefix = os.path.abspath(args.deps_prefix or default_prefix())
     arch_env, host = macos_build_flags(args.macos_arch, args.macos_min_version)
+    ensure_macos_prefix_flavor(prefix, arch_env.get("CMAKE_OSX_ARCHITECTURES"),
+                               host, args.macos_min_version, args.skip_deps,
+                               dry_run)
     if not args.skip_deps:
         run(["brew", "install", "automake", "cmake", "git", "autoconf",
              "libtool", "pkg-config", "wget", "libusb", "fftw", "hamlib",

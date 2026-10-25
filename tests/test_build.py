@@ -305,6 +305,86 @@ class MacosRestampTests(unittest.TestCase):
         self.assertIsNotNone(modern)
         self.assertNotEqual(modern, floored)
 
+    def test_modern_build_adopts_legacy_stamp(self):
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as prefix:
+            build.mark_done(prefix, "lib-liquid")
+            env, host = build.macos_build_flags("x86_64")
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                build.build_liquid(prefix, 2, dry_run=False,
+                                   env=env, host=host)
+            self.assertIn("liquid-dsp already built; skipping",
+                          buf.getvalue())
+
+
+class MacosPrefixFlavorTests(unittest.TestCase):
+    def test_matching_flavor_keeps_prefix(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            with open(os.path.join(prefix, "macos-flavor"), "w") as handle:
+                handle.write("x86_64|x86_64-apple-darwin|11.0\n")
+            sentinel = os.path.join(prefix, "keep")
+            with open(sentinel, "w") as handle:
+                handle.write("x")
+            for _ in range(2):
+                build.ensure_macos_prefix_flavor(
+                    prefix, "x86_64", "x86_64-apple-darwin", "11.0", False)
+            self.assertTrue(os.path.isfile(sentinel))
+
+    def test_mismatch_wipes_prefix(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            sentinel = os.path.join(prefix, "stale")
+            with open(sentinel, "w") as handle:
+                handle.write("x")
+            with open(os.path.join(prefix, "macos-flavor"), "w") as handle:
+                handle.write("x86_64|None|None\n")
+            build.ensure_macos_prefix_flavor(prefix, "x86_64",
+                                             "x86_64-apple-darwin", "11.0",
+                                             False)
+            self.assertFalse(os.path.exists(sentinel))
+            with open(os.path.join(prefix, "macos-flavor")) as handle:
+                self.assertEqual(handle.read().strip(),
+                                 "x86_64|x86_64-apple-darwin|11.0")
+
+    def test_unknown_provenance_wipes_only_for_floor(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            sentinel = os.path.join(prefix, "stale")
+            with open(sentinel, "w") as handle:
+                handle.write("x")
+            build.ensure_macos_prefix_flavor(prefix, "arm64", None, "11.0",
+                                             False)
+            self.assertFalse(os.path.exists(sentinel))
+        with tempfile.TemporaryDirectory() as prefix:
+            sentinel = os.path.join(prefix, "keep")
+            with open(sentinel, "w") as handle:
+                handle.write("x")
+            build.ensure_macos_prefix_flavor(prefix, "arm64", None, None,
+                                             False)
+            self.assertTrue(os.path.isfile(sentinel))
+            with open(os.path.join(prefix, "macos-flavor")) as handle:
+                self.assertEqual(handle.read().strip(), "arm64|None|None")
+
+    def test_skip_deps_never_wipes(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            sentinel = os.path.join(prefix, "keep")
+            with open(sentinel, "w") as handle:
+                handle.write("x")
+            with open(os.path.join(prefix, "macos-flavor"), "w") as handle:
+                handle.write("x86_64|None|None\n")
+            with self.assertRaises(SystemExit):
+                build.ensure_macos_prefix_flavor(prefix, "x86_64",
+                                                 "x86_64-apple-darwin",
+                                                 "11.0", True)
+            self.assertTrue(os.path.isfile(sentinel))
+
+    def test_dry_run_changes_nothing(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            build.ensure_macos_prefix_flavor(prefix, "x86_64", None, "11.0",
+                                             False, dry_run=True)
+            self.assertFalse(os.path.exists(
+                os.path.join(prefix, "macos-flavor")))
+
 
 class OtoolDeploymentFloorsTests(unittest.TestCase):
     def test_reads_minos_from_build_version(self):
