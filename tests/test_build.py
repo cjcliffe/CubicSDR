@@ -204,7 +204,7 @@ class MacosModulesDryRunTests(unittest.TestCase):
             build.main(["--platform", "linux", "--macos-min-version", "11.0",
                         "--dry-run"])
 
-    def test_legacy_plan_dry_runs(self):
+    def test_min_version_plan_dry_runs(self):
         with tempfile.TemporaryDirectory() as prefix:
             args = ["--platform", "macos", "--modules", "default",
                     "--package", "dmg", "--deps-prefix", prefix,
