@@ -213,6 +213,32 @@ class MacosModulesDryRunTests(unittest.TestCase):
             self.assertEqual(build.main(args), 0)
 
 
+class OtoolDeploymentFloorsTests(unittest.TestCase):
+    def test_reads_minos_from_build_version(self):
+        text = ("Load command 12\n"
+                "      cmd LC_BUILD_VERSION\n"
+                "  cmdsize 32\n"
+                " platform 1\n"
+                "    minos 11.0\n"
+                "      sdk 14.5\n")
+        self.assertEqual(build.otool_deployment_floors(text), {"11.0"})
+
+    def test_reads_version_from_version_min(self):
+        text = ("Load command 8\n"
+                "      cmd LC_VERSION_MIN_MACOSX\n"
+                "  cmdsize 16\n"
+                "  version 10.15\n"
+                "      sdk 10.15\n")
+        self.assertEqual(build.otool_deployment_floors(text), {"10.15"})
+
+    def test_ignores_source_version(self):
+        text = ("Load command 7\n"
+                "      cmd LC_SOURCE_VERSION\n"
+                "  cmdsize 16\n"
+                "  version 615.0\n")
+        self.assertEqual(build.otool_deployment_floors(text), set())
+
+
 class NormalizeIioHeadersTests(unittest.TestCase):
     def test_mirrors_flat_header(self):
         with tempfile.TemporaryDirectory() as prefix:

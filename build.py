@@ -1993,6 +1993,30 @@ def verify_macos_bundle_inputs(prefix, dry_run=False):
     log("macOS bundle inputs resolve under %s" % os.path.join(prefix, "lib"))
 
 
+def otool_deployment_floors(text):
+    """Minimum-OS floors from otool -l output.
+
+    Reads minos out of LC_BUILD_VERSION blocks and version out of
+    LC_VERSION_MIN_* blocks; anything else shaped like a version
+    (notably LC_SOURCE_VERSION) is not a floor and is ignored.
+    """
+    floors = set()
+    cmd = None
+    for line in text.splitlines():
+        fields = line.strip().split()
+        if not fields:
+            continue
+        if fields[0] == "cmd":
+            cmd = fields[1] if len(fields) > 1 else None
+        elif fields[0] == "minos" and cmd == "LC_BUILD_VERSION":
+            floors.add(fields[1])
+        elif fields[0] == "version" and cmd in (
+                "LC_VERSION_MIN_MACOSX", "LC_VERSION_MIN_IPHONEOS",
+                "LC_VERSION_MIN_TVOS", "LC_VERSION_MIN_WATCHOS"):
+            floors.add(fields[1])
+    return floors
+
+
 def verify_macos_deployment_floor(min_version, dry_run=False):
     """Fail fast before cpack when a bundled binary targets newer macOS.
 
@@ -2023,20 +2047,7 @@ def verify_macos_deployment_floor(min_version, dry_run=False):
                 continue
             proc = subprocess.run(["otool", "-l", member], capture_output=True,
                                   text=True, check=True)
-            floors = set()
-            cmd = None
-            for line in proc.stdout.splitlines():
-                fields = line.strip().split()
-                if not fields:
-                    continue
-                if fields[0] == "cmd":
-                    cmd = fields[1] if len(fields) > 1 else None
-                elif fields[0] == "minos" and cmd == "LC_BUILD_VERSION":
-                    floors.add(fields[1])
-                elif fields[0] == "version" and cmd in (
-                        "LC_VERSION_MIN_MACOSX", "LC_VERSION_MIN_IPHONEOS",
-                        "LC_VERSION_MIN_TVOS", "LC_VERSION_MIN_WATCHOS"):
-                    floors.add(fields[1])
+            floors = otool_deployment_floors(proc.stdout)
             for floor in sorted(floors):
                 if floor != min_version:
                     offenders.setdefault(member, []).append(floor)
