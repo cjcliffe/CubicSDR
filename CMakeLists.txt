@@ -183,6 +183,7 @@ find_package(Threads REQUIRED)
 
 option(BUILD_TESTING "Build CubicSDR C++ unit tests" OFF)
 IF(BUILD_TESTING)
+    enable_testing()
     add_subdirectory(tests)
 ENDIF()
 
