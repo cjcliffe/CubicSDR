@@ -213,6 +213,99 @@ class MacosModulesDryRunTests(unittest.TestCase):
             self.assertEqual(build.main(args), 0)
 
 
+class MacosStampPartsTests(unittest.TestCase):
+    def test_none_off_mac(self):
+        self.assertIsNone(build.macos_stamp_parts(None))
+        self.assertIsNone(build.macos_stamp_parts({}))
+        self.assertIsNone(build.macos_stamp_parts({"CFLAGS": "-O2"}))
+
+    def test_covers_arch_host_and_floor(self):
+        env, host = build.macos_build_flags("x86_64", "11.0")
+        parts = build.macos_stamp_parts(env, host)
+        self.assertEqual(parts[0], "x86_64")
+        self.assertEqual(parts[1], "x86_64-apple-darwin")
+        self.assertEqual(parts[2], "11.0")
+
+    def test_floor_change_rekeys(self):
+        env, host = build.macos_build_flags("x86_64")
+        modern = build.stamp_key(build.macos_stamp_parts(env, host) or [])
+        floor_env, _ = build.macos_build_flags("x86_64", "11.0")
+        floored = build.stamp_key(
+            build.macos_stamp_parts(floor_env, host) or [])
+        self.assertNotEqual(modern, floored)
+
+
+class MacosRestampTests(unittest.TestCase):
+    def test_liquid_rebuilds_when_floor_changes(self):
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as prefix:
+            build.mark_done(prefix, "lib-liquid")
+            env, host = build.macos_build_flags("x86_64", "11.0")
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                build.build_liquid(prefix, 2, dry_run=True,
+                                   env=env, host=host)
+            out = buf.getvalue()
+            self.assertIn("liquid-dsp flags changed; rebuilding", out)
+            self.assertNotIn("already built; skipping", out)
+
+    def test_soapy_rebuilds_when_floor_changes(self):
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as prefix:
+            build.mark_done(prefix, "soapy")
+            env, host = build.macos_build_flags("x86_64", "11.0")
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                build.build_soapy(prefix, "Release", 2, dry_run=True,
+                                  env=env, host=host)
+            out = buf.getvalue()
+            self.assertIn("SoapySDR flags changed; rebuilding", out)
+            self.assertNotIn("already built; skipping", out)
+
+    def test_wx_rebuilds_when_floor_changes(self):
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as prefix:
+            build.mark_done(prefix, "wx")
+            env, host = build.macos_build_flags("x86_64", "11.0")
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                build.build_wx_macos(prefix, 2, dry_run=True,
+                                     env=env, host=host)
+            out = buf.getvalue()
+            self.assertIn("wxWidgets flags changed; rebuilding", out)
+            self.assertNotIn("already built; skipping", out)
+
+    def test_module_key_covers_floor(self):
+        from unittest import mock
+        seen = {}
+
+        def spy(prefix, name, key=None, adopt=True):
+            seen[name] = key
+            return True
+
+        with tempfile.TemporaryDirectory() as prefix:
+            with mock.patch.object(build.platform, "system",
+                                   return_value="Darwin"):
+                with mock.patch.object(build, "stamp_valid",
+                                        side_effect=spy):
+                    env, _ = build.macos_build_flags("x86_64")
+                    build.soapy_module(
+                        "SoapyAudio", "https://example.invalid/SoapyAudio",
+                        prefix, "Release", 2, None, True, env=env)
+                    modern = seen["mod-soapyaudio"]
+                    floor_env, _ = build.macos_build_flags(
+                        "x86_64", "11.0")
+                    build.soapy_module(
+                        "SoapyAudio", "https://example.invalid/SoapyAudio",
+                        prefix, "Release", 2, None, True, env=floor_env)
+                    floored = seen["mod-soapyaudio"]
+        self.assertIsNotNone(modern)
+        self.assertNotEqual(modern, floored)
+
+
 class OtoolDeploymentFloorsTests(unittest.TestCase):
     def test_reads_minos_from_build_version(self):
         text = ("Load command 12\n"
