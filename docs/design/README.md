@@ -23,6 +23,12 @@ This directory contains architectural documentation for CubicSDR. These document
 | [Bookmark System](bookmark-system.md) | BookmarkMgr data model, groups/ranges/recents, XML persistence, and default frequency bands |
 | [SDR Device Layer](sdr-device-layer.md) | SDREnumerator discovery, SDRDeviceInfo capabilities, manual devices, and SoapySDR module loading |
 
+### Development
+
+| Document | Description |
+|----------|-------------|
+| [Testing](testing.md) | Unit test layout, how to run the suite, and scope conventions |
+
 ## Quick Reference
 
 ### Source Directory Layout
