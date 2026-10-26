@@ -1,6 +1,6 @@
 # Plan: Centralize Frequency Helpers
 
-See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | [Architecture Overview](../design/README.md) | [Add Unit Tests](add-unit-tests.md)
+See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | [Architecture Overview](../design/README.md) | [Testing](../design/testing.md)
 
 ## Current State
 
@@ -29,7 +29,7 @@ Replace each inventoried inline conversion with the utility, including the bandw
 
 ### Phase 4: Add tests
 
-Add `tests/test_Frequency.cpp` on the doctest infrastructure from the unit-tests plan:
+Add `tests/test_Frequency.cpp` on the doctest infrastructure described in [Testing](../design/testing.md):
 
 - Round-trip formatting and parsing for representative frequencies across the amateur bands.
 - Threshold boundaries between plain Hz, KHz, MHz, and GHz output.
