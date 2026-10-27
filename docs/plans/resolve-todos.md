@@ -63,4 +63,3 @@ Multiple TODO/FIXME markers in project source code:
 ## Related Plans
 
 - [Split AppFrame.cpp](split-appframe.md) — resolves 2 AppFrame TODOs
-- Reinterpret_cast replacement (plan retired on completion) — resolved 2 DataTree.h template TODOs
