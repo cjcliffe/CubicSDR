@@ -675,4 +675,34 @@ TEST_SUITE("DataTree") {
 
         std::remove(path.c_str());
     }
+
+    TEST_CASE("uint vector values survive XML") {
+        const std::string path = "datatree_test_tmp.xml";
+        std::remove(path.c_str());
+
+        // Regression: nodeToXML streamed the wrong iterator here, emitting
+        // garbage from an empty vector. The typeless XML form cannot decode
+        // back to DATA_UINT_VECTOR; values are spot-checked instead.
+        const std::vector<unsigned int> in{1000u, 2000u, 3000u};
+        {
+            DataTree tree("config");
+            tree.rootNode()->newChild("counts")->element()->set(in);
+            CHECK(tree.SaveToFileXML(path));
+        }
+        {
+            DataTree loaded;
+            REQUIRE(loaded.LoadFromFileXML(path));
+            std::vector<DataNode *> found;
+            loaded.rootNode()->findAll("counts", found);
+            REQUIRE(found.size() == 1);
+            std::vector<int> out;
+            found[0]->element()->get(out);
+            REQUIRE(out.size() == in.size());
+            for (size_t i = 0; i < in.size(); i++) {
+                CHECK(out[i] == static_cast<int>(in[i]));
+            }
+        }
+
+        std::remove(path.c_str());
+    }
 }

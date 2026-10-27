@@ -855,7 +855,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             tmp_stream.str("");
 
             for (tmp_uintvect_i = tmp_uintvect.begin(); tmp_uintvect_i != tmp_uintvect.end(); tmp_uintvect_i++) {
-                tmp_stream << (*tmp_intvect_i);
+                tmp_stream << (*tmp_uintvect_i);
                 if (tmp_uintvect_i != tmp_uintvect.end() - 1)
                     tmp_stream << " ";
             }
