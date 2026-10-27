@@ -41,7 +41,7 @@ src/
   visual/        OpenGL canvas rendering
   modules/modem/ Modem plugins (analog and digital)
   process/       FFT and visual data processing
-  util/          Core utilities (queues, timers, data trees)
+  util/          Core utilities (queues, timers, data trees, frequency formatting)
   rig/           Hamlib CAT control (optional)
   forms/         UI forms (device selection, bookmarks, dialogs)
   panel/         Display panels (scope, spectrum, waterfall, meter)
