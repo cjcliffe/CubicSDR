@@ -64,5 +64,5 @@ Execute in this order to minimize risk and satisfy dependencies:
 1. **Split AppFrame.cpp** — Low risk, standalone, reduces cognitive load for later work
 2. **Resolve TODOs** — Depends on AppFrame split
 3. **Replace Raw new/delete** — Medium risk; do after tests exist to catch regressions
-4. **Remove C4996 Suppression** — Medium risk; requires touching many files
+4. **Remove C4996 Suppression** — Medium risk; small first-party surface plus CMake scoping for vendored code
 5. **Update Vendored Dependencies** — Highest risk; do last, requires extensive testing
