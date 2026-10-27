@@ -12,8 +12,9 @@ Multiple TODO/FIXME markers in project source code:
 | `AppFrame.cpp` | `TODO: refactor these..` | Address during AppFrame split |
 | `AppFrame.cpp` | `TODO: Move the stuff from there to here` | Address during AppFrame split |
 | `AppFrame.cpp` | `TODO: Catch key-ups outside of original target` | Convert to GitHub issue |
-| `DataTree.h` | `TODO: smarter way with templates?` (x2) | Convert to GitHub issue |
-| `DataTree.cpp` | `TODO: forced cast in (char*) beware...` | Address during reinterpret_cast fix |
+| `DataTree.h` | `TODO: smarter way with templates?` (scalar `get()`) | Resolved by [Replace reinterpret_cast](replace-reinterpret-cast.md) |
+| `DataTree.h` | `TODO: smarter way with templates?` (vector `get()`) | Resolved by [Replace reinterpret_cast](replace-reinterpret-cast.md) |
+| `DataTree.cpp` | `TODO: forced cast in (char*) beware...` | Convert to GitHub issue |
 | `DataTree.cpp` | `TODO: stack recursion optimization` (x2) | Convert to GitHub issue |
 | `DemodulatorThread.cpp` | `TODO: handle digital modems with audio output` | Convert to GitHub issue |
 | `DemodulatorMgr.cpp` | `TODO: This is probably unnecessary and confusing` | Investigate and either fix or remove |
@@ -27,7 +28,7 @@ Multiple TODO/FIXME markers in project source code:
 
 1. For TODOs that will be addressed by other plans, resolve them during those tasks:
    - `AppFrame.cpp` refactor TODOs → resolve during [Split AppFrame.cpp](split-appframe.md)
-   - `DataTree.cpp` forced cast TODO → resolve during [Replace reinterpret_cast](replace-reinterpret-cast.md)
+   - `DataTree.h` template TODOs → resolve during [Replace reinterpret_cast](replace-reinterpret-cast.md)
 
 2. For the remaining TODOs, create GitHub issues for each with:
    - The original TODO text
@@ -66,4 +67,4 @@ Multiple TODO/FIXME markers in project source code:
 ## Related Plans
 
 - [Split AppFrame.cpp](split-appframe.md) — resolves 2 AppFrame TODOs
-- [Replace reinterpret_cast](replace-reinterpret-cast.md) — resolves 1 DataTree TODO
+- [Replace reinterpret_cast](replace-reinterpret-cast.md) — resolves 2 DataTree.h template TODOs

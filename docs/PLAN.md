@@ -36,6 +36,7 @@ Design documents covering the system architecture are in [docs/design/](design/)
 | [Replace Raw new/delete with Smart Pointers](plans/smart-pointers.md) | Medium | 1 day | None |
 | [Remove MSVC C4996 Suppression](plans/remove-c4996-suppression.md) | Medium | 1-2 days | None |
 | [Update Vendored Dependencies](plans/update-vendored-deps.md) | High | 3-5 days | None |
+| [Add --run-tests to build.py](plans/add-run-tests.md) | Low | Half day | None |
 
 ## Source Fixes & Documentation
 
