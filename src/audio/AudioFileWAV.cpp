@@ -210,8 +210,13 @@ std::string AudioFileWAV::getOutputFileName() {
 	// If the file exists; then find the next non-existing file in sequence.
 	std::string fileNameCandidate = outputFileName.str();
 
-	while (FILE *file = fopen((fileNameCandidate + "." + getExtension()).c_str(), "r")) {
-		fclose(file);
+	FILE *probe = nullptr;
+#ifdef _MSC_VER
+	while (fopen_s(&probe, (fileNameCandidate + "." + getExtension()).c_str(), "r") == 0 && probe != nullptr) {
+#else
+	while ((probe = fopen((fileNameCandidate + "." + getExtension()).c_str(), "r")) != nullptr) {
+#endif
+		fclose(probe);
 		fileNameCandidate = outputFileName.str() + "-" + std::to_string(++idx);
 	}
 
