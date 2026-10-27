@@ -718,6 +718,23 @@ IF (MSVC)
   )
   set_target_properties (CubicSDR PROPERTIES OUTPUT_NAME "${CUBICSDR_INSTALL_NAME}")
 
+  # C4996 suppression scoped to vendored sources only; first-party code
+  # under src/ must stay C4996-clean (see docs/plans/remove-c4996-suppression.md).
+  # (lodepng already carries its own pragma; scoping it here is harmless.)
+  set_source_files_properties(
+    external/lodepng/lodepng.cpp
+    external/tinyxml/tinyxml.cpp
+    external/tinyxml/tinystr.cpp
+    external/tinyxml/tinyxmlparser.cpp
+    external/tinyxml/tinyxmlerror.cpp
+    external/cubicvr2/math/cubic_math.cpp
+    external/rtaudio/RtAudio.cpp
+    PROPERTIES COMPILE_OPTIONS /wd4996)
+  IF(USE_HAMLIB)
+    set_source_files_properties(
+      external/rs232/rs232-win.cpp
+      PROPERTIES COMPILE_OPTIONS /wd4996)
+  ENDIF()
   target_compile_options(CubicSDR PRIVATE /wd4996)
 ENDIF(MSVC)
 
