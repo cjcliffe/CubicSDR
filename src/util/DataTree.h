@@ -76,6 +76,9 @@ public:
 };
 
 
+// Byte transfers between scalar values and storage buffers. Dereferencing
+// into a byte buffer as a larger scalar type is undefined behavior
+// (alignment, effective type); memcpy is not.
 namespace DataTreeDetail {
 template <typename S>
 S readScalar(const std::vector<unsigned char>& buf) {
@@ -345,6 +348,7 @@ public:
 
         for (const auto& single_storage_element : data_val_vector) {
 
+            // Unmatched storage pushes one default per element; counts stay stable.
             T scalar_out{};
 
             if (storageType == DataElement::Type::DATA_CHAR_VECTOR) {
