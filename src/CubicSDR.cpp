@@ -15,7 +15,6 @@
 #endif
 
 #include "CubicSDR.h"
-#include <iomanip>
 
 #ifdef _OSX_APP_
 #include "CoreFoundation/CoreFoundation.h"
@@ -68,78 +67,6 @@ IMPLEMENT_APP(CubicSDR)
 		return _finitef(x)?0:1;
 	}
 #endif
-
-
-std::string& filterChars(std::string& s, const std::string& allowed) {
-    s.erase(remove_if(s.begin(), s.end(), [&allowed](const char& c) {
-        return allowed.find(c) == std::string::npos;
-    }), s.end());
-    return s;
-}
-
-std::string frequencyToStr(long long freq) {
-    long double freqTemp;
-    
-    freqTemp = freq;
-    std::string suffix;
-    std::stringstream freqStr;
-    
-    if (freqTemp >= 1.0e9) {
-        freqTemp /= 1.0e9;
-        freqStr << std::setprecision(10);
-        suffix = std::string("GHz");
-    } else if (freqTemp >= 1.0e6) {
-        freqTemp /= 1.0e6;
-        freqStr << std::setprecision(7);
-        suffix = std::string("MHz");
-    } else if (freqTemp >= 1.0e3) {
-        freqTemp /= 1.0e3;
-        freqStr << std::setprecision(4);
-        suffix = std::string("KHz");
-    }
-    
-    freqStr << freqTemp;
-    freqStr << suffix;
-    
-    return freqStr.str();
-}
-
-long long strToFrequency(std::string freqStr) {
-    std::string filterStr = filterChars(freqStr, std::string("0123456789.MKGHmkgh"));
-    
-    size_t numLen = filterStr.find_first_not_of("0123456789.");
-    
-    if (numLen == std::string::npos) {
-        numLen = freqStr.length();
-    }
-    
-    std::string numPartStr = freqStr.substr(0, numLen);
-    std::string suffixStr = freqStr.substr(numLen);
-    
-    std::stringstream numPartStream;
-    numPartStream.str(numPartStr);
-    
-    long double freqTemp = 0;
-    
-    numPartStream >> freqTemp;
-    
-    if (suffixStr.length()) {
-        if (suffixStr.find_first_of("Gg") != std::string::npos) {
-            freqTemp *= 1.0e9;
-        } else if (suffixStr.find_first_of("Mm") != std::string::npos) {
-            freqTemp *= 1.0e6;
-        } else if (suffixStr.find_first_of("Kk") != std::string::npos) {
-            freqTemp *= 1.0e3;
-        } else if (suffixStr.find_first_of("Hh") != std::string::npos) {
-            // ...
-        }
-    } else if (numPartStr.find_first_of('.') != std::string::npos || freqTemp <= 3000) {
-        freqTemp *= 1.0e6;
-    }
-    
-    return (long long) freqTemp;
-}
-
 
 
 class ActionDialogBookmarkCatastophe : public ActionDialog {
@@ -950,9 +877,9 @@ int CubicSDR::getPPM() {
 }
 
 void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode, const wxString& initString) {
-    const wxString demodTitle("Set Demodulator Frequency");
-    const wxString freqTitle("Set Center Frequency");
-    const wxString bwTitle("Modem Bandwidth (150Hz - 500KHz)");
+    const wxString demodTitle("Set Demodulator Frequency (MHz default)");
+    const wxString freqTitle("Set Center Frequency (MHz default)");
+    const wxString bwTitle("Modem Bandwidth (150Hz - 500kHz, kHz default)");
     const wxString lpsTitle("Lines-Per-Second (1-1024)");
     const wxString avgTitle("Average Rate (0.1 - 0.99)");
     const wxString gainTitle("Gain Entry: "+wxGetApp().getActiveGainEntry());

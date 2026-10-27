@@ -21,6 +21,7 @@
 #include <chrono>
 #include "AudioSinkFileThread.h"
 #include "CubicSDR.h"
+#include "Frequency.h"
 #include "DataTree.h"
 #include "ColorTheme.h"
 #include "DemodulatorMgr.h"
@@ -1014,7 +1015,7 @@ void AppFrame::handleUpdateDeviceParams() {
     settingsMenuItems.clear();
 
     settingsMenuItems[wxID_SET_DB_OFFSET] = newSettingsMenu->Append(wxID_SET_DB_OFFSET, getSettingsLabel("Power Level Offset",  std::to_string(wxGetApp().getConfig()->getDBOffset()), "dB"));
-    settingsMenuItems[wxID_SET_FREQ_OFFSET] =  newSettingsMenu->Append(wxID_SET_FREQ_OFFSET, getSettingsLabel("Frequency Offset", std::to_string(wxGetApp().getOffset() / 1000 ) , "KHz"));
+    settingsMenuItems[wxID_SET_FREQ_OFFSET] =  newSettingsMenu->Append(wxID_SET_FREQ_OFFSET, getSettingsLabel("Frequency Offset", std::to_string(wxGetApp().getOffset() / 1000 ) , "kHz"));
 
     if (devInfo->hasCORR(SOAPY_SDR_RX, 0)) {
         settingsMenuItems[wxID_SET_PPM] = newSettingsMenu->Append(wxID_SET_PPM, getSettingsLabel("Device PPM", std::to_string(wxGetApp().getPPM()) , "ppm"));
@@ -2035,15 +2036,15 @@ bool AppFrame::actionOnMenuDBOffset(wxCommandEvent &event) {
 
 bool AppFrame::actionOnMenuFreqOffset(wxCommandEvent &event) {
     if (event.GetId() == wxID_SET_FREQ_OFFSET) {
-        //enter in KHz to accommodate > 2GHz shifts for down/upconverters on 32 bit platforms.
+        //enter in kHz to accommodate > 2GHz shifts for down/upconverters on 32 bit platforms.
         long ofs = wxGetNumberFromUser(
-                "Shift the displayed frequency by this amount of KHz.\ni.e. -125000 for -125 MHz", "Frequency (KHz)",
+                "Shift the displayed frequency by this amount of kHz.\ni.e. -125000 for -125 MHz", "Frequency (kHz)",
                 "Frequency Offset", (long long) (wxGetApp().getOffset() / 1000.0), -2000000000, 2000000000, this);
         if (ofs != -1) {
             wxGetApp().setOffset((long long) ofs * 1000);
 
             settingsMenuItems[wxID_SET_FREQ_OFFSET]->SetItemLabel(
-                    getSettingsLabel("Frequency Offset", to_string(wxGetApp().getOffset() / 1000), "KHz"));
+                    getSettingsLabel("Frequency Offset", to_string(wxGetApp().getOffset() / 1000), "kHz"));
         }
         return true;
     }
