@@ -12,8 +12,8 @@ Multiple TODO/FIXME markers in project source code:
 | `AppFrame.cpp` | `TODO: refactor these..` | Address during AppFrame split |
 | `AppFrame.cpp` | `TODO: Move the stuff from there to here` | Address during AppFrame split |
 | `AppFrame.cpp` | `TODO: Catch key-ups outside of original target` | Convert to GitHub issue |
-| `DataTree.h` | `TODO: smarter way with templates?` (scalar `get()`) | Resolved by [Replace reinterpret_cast](replace-reinterpret-cast.md) |
-| `DataTree.h` | `TODO: smarter way with templates?` (vector `get()`) | Resolved by [Replace reinterpret_cast](replace-reinterpret-cast.md) |
+| `DataTree.h` | `TODO: smarter way with templates?` (scalar `get()`) | Resolved by the completed reinterpret_cast plan |
+| `DataTree.h` | `TODO: smarter way with templates?` (vector `get()`) | Resolved by the completed reinterpret_cast plan |
 | `DataTree.cpp` | `TODO: forced cast in (char*) beware...` | Convert to GitHub issue |
 | `DataTree.cpp` | `TODO: stack recursion optimization` (x2) | Convert to GitHub issue |
 | `DemodulatorThread.cpp` | `TODO: handle digital modems with audio output` | Convert to GitHub issue |
@@ -28,7 +28,7 @@ Multiple TODO/FIXME markers in project source code:
 
 1. For TODOs that will be addressed by other plans, resolve them during those tasks:
    - `AppFrame.cpp` refactor TODOs → resolve during [Split AppFrame.cpp](split-appframe.md)
-   - `DataTree.h` template TODOs → resolve during [Replace reinterpret_cast](replace-reinterpret-cast.md)
+   - `DataTree.h` template TODOs → resolved by the completed reinterpret_cast plan
 
 2. For the remaining TODOs, create GitHub issues for each with:
    - The original TODO text
@@ -67,4 +67,4 @@ Multiple TODO/FIXME markers in project source code:
 ## Related Plans
 
 - [Split AppFrame.cpp](split-appframe.md) — resolves 2 AppFrame TODOs
-- [Replace reinterpret_cast](replace-reinterpret-cast.md) — resolves 2 DataTree.h template TODOs
+- Reinterpret_cast replacement (plan retired on completion) — resolved 2 DataTree.h template TODOs

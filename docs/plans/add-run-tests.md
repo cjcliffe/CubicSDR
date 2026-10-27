@@ -1,6 +1,6 @@
 # Plan: Add --run-tests Entry to build.py
 
-See also: [PLAN.md](../PLAN.md) | [Replace reinterpret_cast Type Punning](replace-reinterpret-cast.md)
+See also: [PLAN.md](../PLAN.md)
 
 ## Current State
 
