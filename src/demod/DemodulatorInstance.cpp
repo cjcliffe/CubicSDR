@@ -8,6 +8,7 @@
 
 #include "DemodulatorInstance.h"
 #include "CubicSDR.h"
+#include "Frequency.h"
 
 #include "DemodulatorThread.h"
 #include "DemodulatorPreThread.h"

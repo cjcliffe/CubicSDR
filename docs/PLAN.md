@@ -35,7 +35,6 @@ Design documents covering the system architecture are in [docs/design/](design/)
 | [Resolve Open TODOs](plans/resolve-todos.md) | Low | 1 day | split-appframe, replace-reinterpret-cast |
 | [Replace Raw new/delete with Smart Pointers](plans/smart-pointers.md) | Medium | 1 day | None |
 | [Remove MSVC C4996 Suppression](plans/remove-c4996-suppression.md) | Medium | 1-2 days | None |
-| [Centralize Frequency Helpers](plans/centralize-frequency-helpers.md) | Low | 1 day | None |
 | [Update Vendored Dependencies](plans/update-vendored-deps.md) | High | 3-5 days | None |
 
 ## Source Fixes & Documentation
@@ -62,10 +61,9 @@ Discrete tasks not covered by the implementation plans above, tracked here as th
 
 Execute in this order to minimize risk and satisfy dependencies:
 
-1. **Centralize Frequency Helpers** — Needs the test infra; low risk, do with the other low-risk cleanups
-2. **Replace reinterpret_cast** — Low risk, standalone, improves correctness
-3. **Split AppFrame.cpp** — Low risk, standalone, reduces cognitive load for later work
-4. **Resolve TODOs** — Depends on AppFrame split and reinterpret_cast replacement
-5. **Replace Raw new/delete** — Medium risk; do after tests exist to catch regressions
-6. **Remove C4996 Suppression** — Medium risk; requires touching many files
-7. **Update Vendored Dependencies** — Highest risk; do last, requires extensive testing
+1. **Replace reinterpret_cast** — Low risk, standalone, improves correctness
+2. **Split AppFrame.cpp** — Low risk, standalone, reduces cognitive load for later work
+3. **Resolve TODOs** — Depends on AppFrame split and reinterpret_cast replacement
+4. **Replace Raw new/delete** — Medium risk; do after tests exist to catch regressions
+5. **Remove C4996 Suppression** — Medium risk; requires touching many files
+6. **Update Vendored Dependencies** — Highest risk; do last, requires extensive testing

@@ -7,6 +7,7 @@
 #include <sstream>
 #include <algorithm>
 #include "CubicSDR.h"
+#include "Frequency.h"
 
 wxBEGIN_EVENT_TABLE(FrequencyDialog, wxDialog)
 EVT_CHAR_HOOK(FrequencyDialog::OnChar)
@@ -108,10 +109,10 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
 
         if (targetMode == FDIALOG_TARGET_DEFAULT || targetMode == FDIALOG_TARGET_FREQ) {
             if (ranged) {
-                freq = strToFrequency(strValue);
-                freq2 = strToFrequency(strValue2);
+                freq = strToFrequency(strValue, FrequencyUnit::Auto);
+                freq2 = strToFrequency(strValue2, FrequencyUnit::Auto);
             } else {
-                freq = strToFrequency(strValue);
+                freq = strToFrequency(strValue, FrequencyUnit::Auto);
             }
             if (activeDemod) {
                 activeDemod->setFrequency(freq);
@@ -154,7 +155,7 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
             }
         }
         if (targetMode == FDIALOG_TARGET_BANDWIDTH) {
-            freq = strToFrequency(strValue);
+            freq = strToFrequency(strValue, FrequencyUnit::kHz);
             if (lastDemodType == "USB" || lastDemodType == "LSB") {
                 freq *= 2;
             }

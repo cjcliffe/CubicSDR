@@ -360,6 +360,7 @@ SET (cubicsdr_sources
     src/util/GLExt.cpp
     src/util/GLFont.cpp
     src/util/DataTree.cpp
+    src/util/Frequency.cpp
     src/panel/ScopePanel.cpp
     src/panel/SpectrumPanel.cpp
     src/panel/WaterfallPanel.cpp
@@ -472,6 +473,7 @@ SET (cubicsdr_headers
     src/util/GLExt.h
     src/util/GLFont.h
     src/util/DataTree.h
+    src/util/Frequency.h
 	src/util/SpinMutex.h
     src/panel/ScopePanel.h
     src/panel/SpectrumPanel.h

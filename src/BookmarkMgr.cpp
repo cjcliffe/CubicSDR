@@ -3,6 +3,7 @@
 
 #include "BookmarkMgr.h"
 #include "CubicSDR.h"
+#include "Frequency.h"
 #include "DataTree.h"
 
 #define BOOKMARK_RECENTS_MAX 25

@@ -64,10 +64,6 @@ class RigThread;
 
 #define NUM_DEMODULATORS 1
 
-std::string& filterChars(std::string& s, const std::string& allowed);
-std::string frequencyToStr(long long freq);
-long long strToFrequency(std::string freqStr);
-
 class CubicSDR: public wxApp {
 public:
     CubicSDR();

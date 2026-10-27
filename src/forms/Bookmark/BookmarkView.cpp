@@ -8,6 +8,7 @@
 
 #include "BookmarkView.h"
 #include "CubicSDR.h"
+#include "Frequency.h"
 #include "ActionDialog.h"
 
 

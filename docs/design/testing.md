@@ -15,7 +15,7 @@ Configure with `BUILD_TESTING=ON` (default `OFF`), build, then run `ctest --test
 ## Scope and conventions
 
 - The test target compiles only the sources under test plus the doctest entry point; it never links wxWidgets, OpenGL, SoapySDR, or liquid-dsp.
-- Covered areas include the spin mutex, gradient generator, thread-safe queue (ordering, timeouts, and blocking waits), data elements and nodes with XML round-trips, timers, IO threads, and the buffer pool.
+- Covered areas include the spin mutex, gradient generator, thread-safe queue (ordering, timeouts, and blocking waits), data elements and nodes with XML round-trips, timers, IO threads, the buffer pool, and frequency formatting/parsing helpers.
 - Timer tests run locked at a fixed framerate so results stay deterministic; the unlocked production path is intentionally untested.
 - Threaded tests favor join-based assertions over timing asserts, with generous waits where a thread must park first.
 - DataTree round-trip tests use a temporary file and remove it afterwards.
