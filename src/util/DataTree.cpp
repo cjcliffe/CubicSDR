@@ -144,8 +144,8 @@ std::string DataElement::toString() {
             //Narrow the whole string; keeping only the first character loses data.
             size_t maxLenBytes = (wstr.length() + 1) * sizeof(wchar_t);
             std::vector<char> narrowBuf(maxLenBytes, '\0');
-            size_t converted = 0;
 #ifdef _MSC_VER
+            size_t converted = 0;
             wcstombs_s(&converted, narrowBuf.data(), narrowBuf.size(), wstr.c_str(), _TRUNCATE);
 #else
             ::wcstombs(narrowBuf.data(), wstr.c_str(), maxLenBytes - sizeof(wchar_t));
@@ -332,8 +332,8 @@ string DataTree::wsEncode(const wstring& wstr) {
 
     char *data_str = (char *)calloc(bufSizeBytes, sizeof(char));
     
-    size_t converted = 0;
 #ifdef _MSC_VER
+    size_t converted = 0;
     wcstombs_s(&converted, data_str, bufSizeBytes, wstr.c_str(), _TRUNCATE);
 #else
     wcstombs(data_str, wstr.c_str(), bufSizeBytes - sizeof(wchar_t));
@@ -377,8 +377,8 @@ wstring DataTree::wsDecode(const string& str) {
         mbstr << (unsigned char) x;
     }
 
-    size_t converted = 0;
 #ifdef _MSC_VER
+    size_t converted = 0;
     mbstowcs_s(&converted, wc_str, maxLen + 1, mbstr.str().c_str(), _TRUNCATE);
 #else
     ::mbstowcs(wc_str, mbstr.str().c_str(), maxLen);
