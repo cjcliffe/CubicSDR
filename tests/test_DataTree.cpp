@@ -164,6 +164,28 @@ TEST_SUITE("DataElement") {
         CHECK(out == in);
     }
 
+    TEST_CASE("long long vectors convert through DataNode operators") {
+        DataTree tree("test");
+        DataNode *node = tree.rootNode()->newChild("ll");
+        std::vector<long long> in{10000000000LL, -20000000000LL};
+        *node = in;
+        CHECK(node->element()->getDataType() == DataElement::Type::DATA_LONGLONG_VECTOR);
+        std::vector<long long> out = static_cast<std::vector<long long>>(*node);
+        CHECK(out == in);
+    }
+
+    TEST_CASE("string data pointer exposes stored bytes") {
+        DataElement e;
+        e.set(std::string("hi"));
+        REQUIRE(e.getDataPointer() != nullptr);
+        CHECK(std::string(e.getDataPointer(), e.getDataSize()) == "hi");
+
+        DataTree tree("test");
+        DataNode *node = tree.rootNode()->newChild("n");
+        node->element()->set(42);
+        CHECK(static_cast<const char*>(*node) == nullptr);
+    }
+
     TEST_CASE("void buffers round-trip through getVoid") {
         DataElement e;
         const char raw[] = {0x01, 0x02, 0x00, 0x03};
@@ -236,6 +258,23 @@ TEST_SUITE("DataElement") {
         std::wstring out;
         e.get(out);
         CHECK(out == in);
+    }
+
+    TEST_CASE("empty wide strings round-trip as empty") {
+        DataElement e;
+        e.set(std::wstring());
+        CHECK(e.getDataType() == DataElement::Type::DATA_WSTRING);
+        std::wstring out = L"x";
+        e.get(out);
+        CHECK(out.empty());
+    }
+
+    TEST_CASE("toString narrows wide strings") {
+        DataElement e;
+        e.set(std::wstring(L"hello"));
+        CHECK(e.toString() == "hello");
+        e.set(std::wstring());
+        CHECK(e.toString().empty());
     }
 
     TEST_CASE("accessor helpers convert values") {

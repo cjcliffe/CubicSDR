@@ -270,15 +270,14 @@ public:
         //wchar_t is typically 16 bits on windows, and 32 bits on Unix, so use sizeof(wchar_t) everywhere.
         size_t maxLenBytes = (wstr_in.length() + 1) * sizeof(wchar_t);
 
-        //be paranoid, zero the buffer
-        char *tmp_str = (char *)::calloc(maxLenBytes, sizeof(char));
+        //Zeroed buffer: on conversion failure the stored bytes stay truncated
+        //at the first unconvertible character, as before.
+        std::vector<char> tmp_str(maxLenBytes, '\0');
 
         //if something awful happens, the last sizeof(wchar_t) is at least zero...
-        ::wcstombs(tmp_str, wstr_in.c_str(), maxLenBytes - sizeof(wchar_t));
+        ::wcstombs(tmp_str.data(), wstr_in.c_str(), maxLenBytes - sizeof(wchar_t));
 
-        data_val.assign(tmp_str, tmp_str + maxLenBytes - sizeof(wchar_t));
-
-        ::free(tmp_str);
+        data_val.assign(tmp_str.data(), tmp_str.data() + maxLenBytes - sizeof(wchar_t));
     }
 
     //template specialization : for vector<string> 
@@ -420,15 +419,15 @@ public:
            //wchar_t is typically 16 bits on windows, and 32 bits on Unix, so use sizeof(wchar_t) everywhere.
             size_t maxNbWchars = getDataSize() / sizeof(wchar_t);
 
-            //be paranoid, zero the buffer
-            auto *tmp_wstr = (wchar_t *)::calloc(maxNbWchars + 1, sizeof(wchar_t));
+            //Zeroed buffer: on conversion failure the result stays truncated
+            //at the first invalid sequence, as before.
+            std::vector<wchar_t> tmp_wstr(maxNbWchars + 1, L'\0');
 
             //the last wchar_t is actually zero if anything goes wrong...
-            ::mbstowcs(tmp_wstr, (const char*)&data_val[0], maxNbWchars);
+            //Reading the byte buffer as char is the aliasing-safe direction.
+            ::mbstowcs(tmp_wstr.data(), reinterpret_cast<const char*>(data_val.data()), maxNbWchars);
 
-            wstr_out.assign(tmp_wstr);
-
-            ::free(tmp_wstr);
+            wstr_out.assign(tmp_wstr.data());
         }
     }
 
@@ -541,6 +540,7 @@ public:
     explicit operator vector<unsigned long> () { vector<unsigned long> v; element()->get(v);  return v; }
     explicit operator vector<float> () { vector<float> v; element()->get(v);  return v; }
     explicit operator vector<double> () { vector<double> v; element()->get(v);  return v; }
+    explicit operator vector<long long> () { vector<long long> v; element()->get(v);  return v; }
     
     const string &operator= (const string &s) { element()->set(s); return s; }
     const wstring &operator= (const wstring &s) { element()->set(s); return s; }
@@ -563,6 +563,7 @@ public:
     vector<unsigned long> &operator= (vector<unsigned long> &v) { element()->set(v); return v; }
     vector<float> &operator= (vector<float> &v) { element()->set(v); return v; }
     vector<double> &operator= (vector<double> &v) { element()->set(v); return v; }
+    vector<long long> &operator= (vector<long long> &v) { element()->set(v); return v; }
     
     DataNode *operator[] (const char *name_in) { return getNext(name_in); }
     DataNode *operator[] (int idx) { return child(idx); }

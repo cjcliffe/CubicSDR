@@ -14,7 +14,7 @@ Multiple TODO/FIXME markers in project source code:
 | `AppFrame.cpp` | `TODO: Catch key-ups outside of original target` | Convert to GitHub issue |
 | `DataTree.h` | `TODO: smarter way with templates?` (scalar `get()`) | Resolved by the completed reinterpret_cast plan |
 | `DataTree.h` | `TODO: smarter way with templates?` (vector `get()`) | Resolved by the completed reinterpret_cast plan |
-| `DataTree.cpp` | `TODO: forced cast in (char*) beware...` | Convert to GitHub issue |
+| `DataTree.cpp` | `TODO: forced cast in (char*) beware...` | Resolved by DataTree wrap-up; `toString` narrows the whole wide string |
 | `DataTree.cpp` | `TODO: stack recursion optimization` (x2) | Convert to GitHub issue |
 | `DemodulatorThread.cpp` | `TODO: handle digital modems with audio output` | Convert to GitHub issue |
 | `DemodulatorMgr.cpp` | `TODO: This is probably unnecessary and confusing` | Investigate and either fix or remove |

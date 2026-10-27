@@ -52,7 +52,8 @@ DataElement::~DataElement() = default;
 char * DataElement::getDataPointer() {
 
     if (!data_val.empty()) {
-        return (char*)&data_val[0];
+        //Casting to char is the aliasing-safe direction; char may alias any type.
+        return reinterpret_cast<char*>(data_val.data());
     }
 
     return nullptr;
@@ -140,8 +141,11 @@ std::string DataElement::toString() {
         } else if (dataType == DataElement::Type::DATA_WSTRING) {
             std::wstring wstr;
             get(wstr);
-            //TODO: code below returns a forced cast in (char*) beware...
-            strValue = *wstr.c_str();
+            //Narrow the whole string; keeping only the first character loses data.
+            size_t maxLenBytes = (wstr.length() + 1) * sizeof(wchar_t);
+            std::vector<char> narrowBuf(maxLenBytes, '\0');
+            ::wcstombs(narrowBuf.data(), wstr.c_str(), maxLenBytes - sizeof(wchar_t));
+            strValue.assign(narrowBuf.data());
         }
         else {
             std::cout << "Unhandled DataElement toString for type: " << (int)dataType  << std::endl;
