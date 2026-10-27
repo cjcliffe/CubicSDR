@@ -17,7 +17,7 @@
 |-------|----------|
 | **Zero test coverage** — no test framework, no test files, CI only builds | Critical |
 | **Monolithic files** — `AppFrame.cpp` is ~3,200 lines | High |
-| **Memory safety** — raw `new`/`delete` for threads, `reinterpret_cast` type punning in DataTree, suppressed MSVC C4996 warnings | High |
+| **Memory safety** — raw `new`/`delete` for threads, `reinterpret_cast` type punning in DataTree | High |
 | **Incomplete .gitignore** — missing IDE, OS, and build artifact patterns | Medium |
 | **Minimal docs** — no CONTRIBUTING, CHANGELOG, API docs, or Doxygen | Medium |
 | **Open TODOs** in project code, including acknowledged bugs | Low-Medium |
@@ -29,11 +29,10 @@
 2. **Fix `.gitignore`** — Add `.vs/`, `*.obj`, `CMakeCache.txt`, `.DS_Store`, IDE files
 3. **Replace raw `new`/`delete`** with `std::unique_ptr`/`std::shared_ptr` for thread objects in `CubicSDR.cpp`
 4. **Split `AppFrame.cpp`** — Extract menu handling, keyboard shortcuts, device management into separate files
-5. **Remove MSVC C4996 suppression** — Replace the flagged CRT calls (`fopen`, `localtime`, `strncpy`, wide-string conversions) with portable equivalents, keeping suppression scoped to vendored code
-6. **Replace `reinterpret_cast` type punning** in `DataTree.h` with `memcpy`-based serialization (avoids UB)
-7. **Use git submodules or a package manager** for vendored external dependencies
-8. **Add CI test execution** after builds
-9. **Resolve or convert to tracked issues** the open TODOs
+5. **Replace `reinterpret_cast` type punning** in `DataTree.h` with `memcpy`-based serialization (avoids UB)
+6. **Use git submodules or a package manager** for vendored external dependencies
+7. **Add CI test execution** after builds
+8. **Resolve or convert to tracked issues** the open TODOs
 
 ## Detailed Findings
 
@@ -42,7 +41,6 @@
 - **`DataTree.h`** contains multiple `reinterpret_cast` operations for type punning — potential aliasing violations and undefined behavior. Use `memcpy` or `std::bit_cast` instead.
 - **`CubicSDR.cpp`** allocates thread objects (`std::thread*`) with raw `new` and manual `delete`. Any exception between allocation and deletion causes a leak. Should use `std::unique_ptr<std::thread>`.
 - **`IOThread.cpp`** `catch(...)` re-throws after setting termination flags — correct for cleanup, but callers rarely handle the propagated exception
-- MSVC C4996 warning is disabled for the application target, hiding risky CRT calls whose vendored sources share that target.
 
 ### Documentation
 
