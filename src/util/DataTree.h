@@ -32,6 +32,7 @@
 #include <stack>
 #include <iostream>
 #include <cstring>
+#include <cstdlib>
 #include <type_traits>
 #include "tinyxml.h"
 
@@ -275,7 +276,12 @@ public:
         std::vector<char> tmp_str(maxLenBytes, '\0');
 
         //if something awful happens, the last sizeof(wchar_t) is at least zero...
+#ifdef _MSC_VER
+        size_t converted = 0;
+        wcstombs_s(&converted, tmp_str.data(), tmp_str.size(), wstr_in.c_str(), _TRUNCATE);
+#else
         ::wcstombs(tmp_str.data(), wstr_in.c_str(), maxLenBytes - sizeof(wchar_t));
+#endif
 
         data_val.assign(tmp_str.data(), tmp_str.data() + maxLenBytes - sizeof(wchar_t));
     }
@@ -425,7 +431,12 @@ public:
 
             //the last wchar_t is actually zero if anything goes wrong...
             //Reading the byte buffer as char is the aliasing-safe direction.
+#ifdef _MSC_VER
+            size_t converted = 0;
+            mbstowcs_s(&converted, tmp_wstr.data(), tmp_wstr.size(), reinterpret_cast<const char*>(data_val.data()), _TRUNCATE);
+#else
             ::mbstowcs(tmp_wstr.data(), reinterpret_cast<const char*>(data_val.data()), maxNbWchars);
+#endif
 
             wstr_out.assign(tmp_wstr.data());
         }

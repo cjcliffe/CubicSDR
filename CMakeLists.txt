@@ -718,7 +718,20 @@ IF (MSVC)
   )
   set_target_properties (CubicSDR PROPERTIES OUTPUT_NAME "${CUBICSDR_INSTALL_NAME}")
 
-  target_compile_options(CubicSDR PRIVATE /wd4996)
+  set_source_files_properties(
+    external/lodepng/lodepng.cpp
+    external/tinyxml/tinyxml.cpp
+    external/tinyxml/tinystr.cpp
+    external/tinyxml/tinyxmlparser.cpp
+    external/tinyxml/tinyxmlerror.cpp
+    external/cubicvr2/math/cubic_math.cpp
+    external/rtaudio/RtAudio.cpp
+    PROPERTIES COMPILE_OPTIONS /wd4996)
+  IF(USE_HAMLIB)
+    set_source_files_properties(
+      external/rs232/rs232-win.cpp
+      PROPERTIES COMPILE_OPTIONS /wd4996)
+  ENDIF()
 ENDIF(MSVC)
 
 IF ((WIN32 OR (UNIX AND NOT APPLE)) AND BUNDLE_SOAPY_MODS)

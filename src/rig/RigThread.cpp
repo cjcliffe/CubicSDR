@@ -4,6 +4,7 @@
 #include "RigThread.h"
 
 #include <chrono>
+#include <cstdio>
 #include <thread>
 
 std::vector<const struct rig_caps *> RigThread::rigCaps;
@@ -115,7 +116,7 @@ void RigThread::run() {
     std::cout << "Rig thread starting." << std::endl;
 
     rig = rig_init(rigModel);
-	strncpy(rig->state.rigport.pathname, rigFile.c_str(), FILPATHLEN - 1);
+	snprintf(rig->state.rigport.pathname, sizeof(rig->state.rigport.pathname), "%s", rigFile.c_str());
 	rig->state.rigport.parm.serial.rate = serialRate;
 	retcode = rig_open(rig);
     
