@@ -621,4 +621,58 @@ TEST_SUITE("DataTree") {
 
         std::remove(path.c_str());
     }
+
+    TEST_CASE("char vectors round-trip through XML") {
+        const std::string path = "datatree_test_tmp.xml";
+        std::remove(path.c_str());
+
+        const std::vector<char> in{'a', 'b', 'c'};
+        {
+            DataTree tree("config");
+            tree.rootNode()->newChild("letters")->element()->set(in);
+            CHECK(tree.SaveToFileXML(path));
+        }
+        {
+            DataTree loaded;
+            REQUIRE(loaded.LoadFromFileXML(path));
+            std::vector<DataNode *> found;
+            loaded.rootNode()->findAll("letters", found);
+            REQUIRE(found.size() == 1);
+            CHECK(found[0]->element()->getDataType() == DataElement::Type::DATA_CHAR_VECTOR);
+            std::vector<char> out;
+            found[0]->element()->get(out);
+            CHECK(out == in);
+        }
+
+        std::remove(path.c_str());
+    }
+
+    TEST_CASE("uchar vector values survive XML") {
+        const std::string path = "datatree_test_tmp.xml";
+        std::remove(path.c_str());
+
+        // The typeless XML form cannot decode back to DATA_UCHAR_VECTOR;
+        // values are spot-checked instead of the storage type.
+        const std::vector<unsigned char> in{1, 2, 250};
+        {
+            DataTree tree("config");
+            tree.rootNode()->newChild("bytes")->element()->set(in);
+            CHECK(tree.SaveToFileXML(path));
+        }
+        {
+            DataTree loaded;
+            REQUIRE(loaded.LoadFromFileXML(path));
+            std::vector<DataNode *> found;
+            loaded.rootNode()->findAll("bytes", found);
+            REQUIRE(found.size() == 1);
+            std::vector<int> out;
+            found[0]->element()->get(out);
+            REQUIRE(out.size() == in.size());
+            for (size_t i = 0; i < in.size(); i++) {
+                CHECK(out[i] == in[i]);
+            }
+        }
+
+        std::remove(path.c_str());
+    }
 }

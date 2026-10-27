@@ -810,7 +810,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             tmp_stream.str("");
 
             for (tmp_charvect_i = tmp_charvect.begin(); tmp_charvect_i != tmp_charvect.end(); tmp_charvect_i++) {
-                tmp_stream << (*tmp_charvect_i);
+                tmp_stream << static_cast<int>(*tmp_charvect_i);
                 if (tmp_charvect_i != tmp_charvect.end() - 1)
                     tmp_stream << " ";
             }
@@ -825,7 +825,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             tmp_stream.str("");
 
             for (tmp_ucharvect_i = tmp_ucharvect.begin(); tmp_ucharvect_i != tmp_ucharvect.end(); tmp_ucharvect_i++) {
-                tmp_stream << (*tmp_ucharvect_i);
+                tmp_stream << static_cast<unsigned int>(*tmp_ucharvect_i);
                 if (tmp_ucharvect_i != tmp_ucharvect.end() - 1)
                     tmp_stream << " ";
             }
