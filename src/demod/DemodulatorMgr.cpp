@@ -148,14 +148,8 @@ void DemodulatorMgr::deleteThread(const DemodulatorInstancePtr& demod) {
   
     auto i = std::find(demods.begin(), demods.end(), demod);
 
-    if (activeContextModem == demod) {
-        activeContextModem = nullptr;
-    }
     if (currentModem == demod) {
         currentModem = nullptr;
-    }
-    if (activeVisualDemodulator == demod) {
-        activeVisualDemodulator = nullptr;
     }
 
     if (i != demods.end()) {
@@ -206,80 +200,36 @@ bool DemodulatorMgr::anyDemodulatorsAt(long long freq, int bandwidth) {
 }
 
 
-void DemodulatorMgr::setActiveDemodulator(const DemodulatorInstancePtr& demod, bool temporary) {
+void DemodulatorMgr::setActiveDemodulator(const DemodulatorInstancePtr& demod) {
 
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
 
-    // Should this be made the current modem (i.e. clicked, toggled)
-    if (!temporary) {
-        if (activeContextModem != nullptr) {
-            currentModem = activeContextModem;
-            updateLastState();
-        } else {
-            currentModem = demod;
-        }
+    if (currentModem && currentModem != demod) {
+        currentModem->setVisualOutputQueue(nullptr);
+    }
 
-        updateLastState();
+    currentModem = demod;
 
-        wxGetApp().getBookmarkMgr().updateActiveList();
+    if (currentModem) {
+        currentModem->setVisualOutputQueue(wxGetApp().getAudioVisualQueue());
+    }
+
+    updateLastState();
+
+    wxGetApp().getBookmarkMgr().updateActiveList();
 
 #if USE_HAMLIB
-        if (wxGetApp().rigIsActive() && wxGetApp().getRigThread()->getFollowModem() && currentModem) {
-            wxGetApp().getRigThread()->setFrequency(currentModem->getFrequency(),true);
-        }
+    if (wxGetApp().rigIsActive() && wxGetApp().getRigThread()->getFollowModem() && currentModem) {
+        wxGetApp().getRigThread()->setFrequency(currentModem->getFrequency(),true);
+    }
 #endif
-    }
-
-    // TODO: This is probably unnecessary and confusing
-    if (activeVisualDemodulator) {
-        activeVisualDemodulator->setVisualOutputQueue(nullptr);
-    }
-    if (demod) {
-        demod->setVisualOutputQueue(wxGetApp().getAudioVisualQueue());
-        activeVisualDemodulator = demod;
-    } else {
-        DemodulatorInstancePtr last = getCurrentModem();
-        if (last) {
-            last->setVisualOutputQueue(wxGetApp().getAudioVisualQueue());
-        }
-        activeVisualDemodulator = last;
-    }
-    // :ODOT
-
-    activeContextModem = demod;
 }
 
-//Dangerous: this is only intended by some internal classes
-void DemodulatorMgr::setActiveDemodulatorByRawPointer(DemodulatorInstance* demod, bool temporary) {
-    std::lock_guard < std::recursive_mutex > lock(demods_busy);
 
-    for (const auto& existing_demod : demods) {
-
-        if (existing_demod.get() == demod) {
-
-            setActiveDemodulator(existing_demod, temporary);
-            break;
-        }
-    }
-}
 
 /**
- * Get the currently focused modem, i.e. the one hovered by interaction
- * If no active context modem is available the current modem is returned
- * @return Active Context Modem
- */
-DemodulatorInstancePtr DemodulatorMgr::getActiveContextModem() {
-    std::lock_guard < std::recursive_mutex > lock(demods_busy);
-
-    if (activeContextModem && !activeContextModem->isActive()) {
-        activeContextModem = getCurrentModem();
-    }
-    return activeContextModem;
-}
-
-/**
- * Get the last selected / focused modem
- * This is the currently active modem
+ * Get the selected modem
+ * This is the currently active modem; hover state never changes it
  * @return Current Modem
  */
 DemodulatorInstancePtr DemodulatorMgr::getCurrentModem() {
@@ -311,16 +261,7 @@ DemodulatorInstancePtr DemodulatorMgr::getLastDemodulatorWith(const std::string&
 void DemodulatorMgr::updateLastState() {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
 
-    if (std::find(demods.begin(), demods.end(), currentModem) == demods.end()) {
-        if (activeContextModem && activeContextModem->isActive()) {
-            currentModem = activeContextModem;
-        } else if (activeContextModem && !activeContextModem->isActive()){
-            activeContextModem = nullptr;
-            currentModem = nullptr;
-        }
-    }
-
-    if (currentModem && !currentModem->isActive()) {
+    if (currentModem && (std::find(demods.begin(), demods.end(), currentModem) == demods.end() || !currentModem->isActive())) {
         currentModem = nullptr;
     }
 

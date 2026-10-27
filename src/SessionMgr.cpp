@@ -57,7 +57,7 @@ bool SessionMgr::loadSession(const std::string& fileName) {
         return false;
     }
 
-    wxGetApp().getDemodMgr().setActiveDemodulator(nullptr, false);
+    wxGetApp().getDemodMgr().setActiveDemodulator(nullptr);
     wxGetApp().getDemodMgr().terminateAll();
 
     WaterfallCanvas *waterfallCanvas = wxGetApp().getAppFrame()->getWaterfallCanvas();
@@ -184,7 +184,7 @@ bool SessionMgr::loadSession(const std::string& fileName) {
         }
 
         if (loadedActiveDemod || newDemod) {
-            wxGetApp().getDemodMgr().setActiveDemodulator(loadedActiveDemod?loadedActiveDemod:newDemod, false);
+            wxGetApp().getDemodMgr().setActiveDemodulator(loadedActiveDemod?loadedActiveDemod:newDemod);
         }
     } catch (DataTypeMismatchException &e) {
         std::cout << e.what() << std::endl;

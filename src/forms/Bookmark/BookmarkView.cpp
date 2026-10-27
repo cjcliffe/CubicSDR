@@ -570,7 +570,7 @@ void BookmarkView::onTreeActivate( wxTreeEvent& event ) {
         if (!tvi->demod->isActive()) {
             wxGetApp().setFrequency(tvi->demod->getFrequency());
             nextDemod = tvi->demod;
-            wxGetApp().getDemodMgr().setActiveDemodulator(nextDemod, false);
+            wxGetApp().getDemodMgr().setActiveDemodulator(nextDemod);
         }
     } else if (tvi->type == TreeViewItem::Type::TREEVIEW_ITEM_TYPE_RECENT) {
 
@@ -936,7 +936,7 @@ void BookmarkView::activateBookmark(const BookmarkEntryPtr& bmEnt) {
 	}
 
 	nextDemod = matchingDemod;
-    wxGetApp().getDemodMgr().setActiveDemodulator(nextDemod, false);
+    wxGetApp().getDemodMgr().setActiveDemodulator(nextDemod);
 
     //wxGetApp().getBookmarkMgr().updateActiveList();
 }
@@ -1141,8 +1141,7 @@ void BookmarkView::onTreeSelect( wxTreeEvent& event ) {
     if (tvi->type == TreeViewItem::Type::TREEVIEW_ITEM_TYPE_ACTIVE) {
         activeSelection(tvi->demod);
         if (tvi->demod->isActive()) {
-            wxGetApp().getDemodMgr().setActiveDemodulator(nullptr, true);
-            wxGetApp().getDemodMgr().setActiveDemodulator(tvi->demod, false);
+            wxGetApp().getDemodMgr().setActiveDemodulator(tvi->demod);
             tvi->demod->setTracking(true);
         }
     } else if (tvi->type == TreeViewItem::Type::TREEVIEW_ITEM_TYPE_RECENT) {
@@ -1213,8 +1212,7 @@ void BookmarkView::onDoubleClickFreq( wxMouseEvent& /* event */ ) {
     TreeViewItem *curSel = itemToTVI(m_treeView->GetSelection());
     
     if (curSel && curSel->type == TreeViewItem::Type::TREEVIEW_ITEM_TYPE_ACTIVE) {
-        wxGetApp().getDemodMgr().setActiveDemodulator(nullptr, true);
-        wxGetApp().getDemodMgr().setActiveDemodulator(curSel->demod, false);
+        wxGetApp().getDemodMgr().setActiveDemodulator(curSel->demod);
         wxGetApp().showFrequencyInput(FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_DEFAULT);
     }
 }
@@ -1225,8 +1223,7 @@ void BookmarkView::onDoubleClickBandwidth( wxMouseEvent& /* event */ ) {
     TreeViewItem *curSel = itemToTVI(m_treeView->GetSelection());
 
     if (curSel && curSel->type == TreeViewItem::Type::TREEVIEW_ITEM_TYPE_ACTIVE) {
-        wxGetApp().getDemodMgr().setActiveDemodulator(nullptr, true);
-        wxGetApp().getDemodMgr().setActiveDemodulator(curSel->demod, false);
+        wxGetApp().getDemodMgr().setActiveDemodulator(curSel->demod);
         wxGetApp().showFrequencyInput(FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_BANDWIDTH);
     }
 }

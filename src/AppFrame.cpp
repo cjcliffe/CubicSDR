@@ -75,7 +75,7 @@ public:
 #define APPFRAME_MODEMPROPS_MAXSIZE 240
 
 AppFrame::AppFrame() :
-        wxFrame(nullptr, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(nullptr) {
+        wxFrame(nullptr, wxID_ANY, CUBICSDR_TITLE), lastHandledDemod(nullptr) {
 
     initIcon();
 
@@ -2455,7 +2455,7 @@ void AppFrame::handleCurrentModem() {
         wxGetApp().getDemodMgr().setLastBandwidth(demod->getBandwidth());
     }
 
-    if (demod.get() != activeDemodulator) {
+    if (demod.get() != lastHandledDemod) {
         demodSignalMeter->setInputValue(demod->getSquelchLevel());
         demodGainMeter->setInputValue(demod->getGain());
         wxGetApp().getDemodMgr().setLastGain(demod->getGain());
@@ -2601,7 +2601,7 @@ void AppFrame::handleCurrentModem() {
         demod->setGain(demodGainMeter->getInputValue());
         demodGainMeter->setLevel(demodGainMeter->getInputValue());
     }
-    activeDemodulator = demod.get();
+    lastHandledDemod = demod.get();
 }
 
 
@@ -2742,10 +2742,7 @@ void AppFrame::refreshGainUI() {
 bool AppFrame::isUserDemodBusy() {
     return (modemProps && modemProps->isMouseInView())
         || (waterfallCanvas->isMouseInView() && waterfallCanvas->isMouseDown())
-        || (demodWaterfallCanvas && demodWaterfallCanvas->isMouseInView() && demodWaterfallCanvas->isMouseDown())
-        || (wxGetApp().getDemodMgr().getCurrentModem() &&
-            wxGetApp().getDemodMgr().getActiveContextModem() &&
-            wxGetApp().getDemodMgr().getCurrentModem() != wxGetApp().getDemodMgr().getActiveContextModem());
+        || (demodWaterfallCanvas && demodWaterfallCanvas->isMouseInView() && demodWaterfallCanvas->isMouseDown());
 }
 
 BookmarkView *AppFrame::getBookmarkView() {
@@ -2922,8 +2919,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
                 demod = wxGetApp().getDemodMgr().getNextDemodulator(lastDemod);
             }
             if (demod) {
-                wxGetApp().getDemodMgr().setActiveDemodulator(nullptr);
-                wxGetApp().getDemodMgr().setActiveDemodulator(demod, false);
+                wxGetApp().getDemodMgr().setActiveDemodulator(demod);
             }
             return 1;
         default:
@@ -2971,7 +2967,6 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
         return 1;
     }
 
-    DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getActiveContextModem();
     DemodulatorInstancePtr lastDemod = wxGetApp().getDemodMgr().getCurrentModem();
     
 #ifdef wxHAS_RAW_KEY_CODES
@@ -3001,9 +2996,6 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
             waterfallCanvas->OnKeyUp(event);
             return 1;
         case 'V':
-            if (activeDemod) {
-                lastDemod = activeDemod;
-            }
             if (lastDemod && lastDemod->isDeltaLock()) {
                 lastDemod->setDeltaLock(false);
             } else if (lastDemod) {
@@ -3056,9 +3048,6 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
         case '[':
             return 1;
         case 'M':
-            if (activeDemod) {
-                lastDemod = activeDemod;
-            }
             if (lastDemod) {
                 lastDemod->setMuted(!lastDemod->isMuted());
             }
@@ -3093,10 +3082,10 @@ void AppFrame::toggleActiveDemodRecording() {
         return;
     }
     
-    DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getActiveContextModem();
-    
-    if (activeDemod) {
-        activeDemod->setRecording(!activeDemod->isRecording());
+    DemodulatorInstancePtr demod = wxGetApp().getDemodMgr().getCurrentModem();
+
+    if (demod) {
+        demod->setRecording(!demod->isRecording());
         wxGetApp().getBookmarkMgr().updateActiveList();
     }
 }

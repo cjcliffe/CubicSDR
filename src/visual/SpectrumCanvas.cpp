@@ -88,16 +88,17 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glLoadIdentity();
     
     auto demods = wxGetApp().getDemodMgr().getDemodulators();
-    auto activeDemodulator = wxGetApp().getDemodMgr().getActiveContextModem();
+    auto selectedDemodulator = wxGetApp().getDemodMgr().getCurrentModem();
 
     for (auto & demod : demods) {
         if (!demod->isActive()) {
             continue;
         }
-        glContext->DrawDemodInfo(demod, ThemeMgr::mgr.currentTheme->fftHighlight, getCenterFrequency(), getBandwidth(), activeDemodulator==demod);
+        bool isSelected = (selectedDemodulator == demod);
+        glContext->DrawDemodInfo(demod, isSelected ? ThemeMgr::mgr.currentTheme->waterfallHover : ThemeMgr::mgr.currentTheme->fftHighlight, getCenterFrequency(), getBandwidth(), isSelected);
     }
 
-    if (waterfallCanvas && !activeDemodulator) {
+    if (waterfallCanvas && !waterfallCanvas->getHoverDemod()) {
         MouseTracker *wfmt = waterfallCanvas->getMouseTracker();
         if (wfmt->mouseInView()) {
             int snap = wxGetApp().getFrequencySnap();
@@ -108,9 +109,7 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
                 freq = roundf((float)freq/(float)snap)*snap;
             }
 
-            auto lastActiveDemodulator = wxGetApp().getDemodMgr().getCurrentModem();
-
-            bool isNew = (((waterfallCanvas->isShiftDown() || (lastActiveDemodulator && !lastActiveDemodulator->isActive())) && lastActiveDemodulator) || (!lastActiveDemodulator));
+            bool isNew = (((waterfallCanvas->isShiftDown() || (selectedDemodulator && !selectedDemodulator->isActive())) && selectedDemodulator) || (!selectedDemodulator));
             
             glContext->DrawFreqBwInfo(freq, wxGetApp().getDemodMgr().getLastBandwidth(), isNew?ThemeMgr::mgr.currentTheme->waterfallNew:ThemeMgr::mgr.currentTheme->waterfallHover, getCenterFrequency(), getBandwidth(), true, true);
         }

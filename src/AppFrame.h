@@ -109,7 +109,7 @@ private:
     wxBoxSizer *demodTray;
 
     //Use a raw pointer here to prevent a dangling reference
-    DemodulatorInstance* activeDemodulator;
+    DemodulatorInstance* lastHandledDemod;
 
     /***
      * Menus

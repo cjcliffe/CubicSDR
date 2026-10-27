@@ -14,6 +14,7 @@
 #include "SpectrumCanvas.h"
 #include "WaterfallPanel.h"
 #include "Timer.h"
+#include "DemodulatorMgr.h"
 
 class WaterfallCanvas: public InteractiveCanvas {
 public:
@@ -32,6 +33,9 @@ public:
     void attachSpectrumCanvas(SpectrumCanvas *canvas_in);
     void processInputQueue();
     SpectrumVisualDataQueuePtr getVisualDataQueue();
+
+    // Demodulator currently under the cursor; never affects selection.
+    DemodulatorInstancePtr getHoverDemod();
 
     void setLinesPerSecond(int lps);
     void setMinBandwidth(int min);
@@ -75,6 +79,8 @@ private:
 
     DragState dragState;
     DragState nextDragState;
+
+    DemodulatorInstancePtr hoverDemod = nullptr;
 
     unsigned int fft_size, new_fft_size;
     int waterfall_lines;

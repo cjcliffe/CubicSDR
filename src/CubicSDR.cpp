@@ -885,7 +885,7 @@ void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetM
     const wxString gainTitle("Gain Entry: "+wxGetApp().getActiveGainEntry());
 
     wxString title;
-    auto activeModem = demodMgr.getActiveContextModem();
+    auto activeModem = demodMgr.getCurrentModem();
 
     switch (targetMode) {
         case FrequencyDialog::FDIALOG_TARGET_DEFAULT:
@@ -917,13 +917,13 @@ void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetM
 
 void CubicSDR::showLabelInput() {
 
-    DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getActiveContextModem();
+    DemodulatorInstancePtr selectedDemod = wxGetApp().getDemodMgr().getCurrentModem();
 
-    if (activeDemod != nullptr) {
+    if (selectedDemod != nullptr) {
 
         const wxString demodTitle("Edit Demodulator label");
 
-        DemodLabelDialog labelDialog(appframe, -1, demodTitle, activeDemod, wxPoint(-100, -100), wxSize(500, 75), wxDEFAULT_DIALOG_STYLE);
+        DemodLabelDialog labelDialog(appframe, -1, demodTitle, selectedDemod, wxPoint(-100, -100), wxSize(500, 75), wxDEFAULT_DIALOG_STYLE);
         labelDialog.ShowModal();
     }
 }

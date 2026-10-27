@@ -137,7 +137,6 @@ void RigThread::run() {
     while (!stopping) {
         std::this_thread::sleep_for(std::chrono::milliseconds(150));
         
-        auto activeDemod = wxGetApp().getDemodMgr().getActiveContextModem();
         auto lastDemod = wxGetApp().getDemodMgr().getCurrentModem();
 
         if (freqChanged.load() && (controlMode.load() || setOneShot.load())) {
@@ -205,7 +204,7 @@ void RigThread::run() {
             }
         }
         
-        if (!centerLock.load() && followModem.load() && wxGetApp().getFrequency() != freq && (lastDemod && lastDemod != activeDemod)) {
+        if (!centerLock.load() && followModem.load() && wxGetApp().getFrequency() != freq && lastDemod) {
             wxGetApp().setFrequency((long long)freq);
         }
         
