@@ -52,7 +52,8 @@ DataElement::~DataElement() = default;
 char * DataElement::getDataPointer() {
 
     if (!data_val.empty()) {
-        return (char*)&data_val[0];
+        //Casting to char is the aliasing-safe direction; char may alias any type.
+        return reinterpret_cast<char*>(data_val.data());
     }
 
     return nullptr;
@@ -94,7 +95,7 @@ void DataElement::set(const std::set<string> &strset_in) {
 }
 
 
-void DataElement::get(DataElement::DataElementBuffer& data_in) {
+void DataElement::getVoid(DataElement::DataElementBuffer& data_in) {
 
     if (data_type != DataElement::Type::DATA_VOID) {
         throw(DataTypeMismatchException("Type mismatch, not a VOID*"));
@@ -140,8 +141,11 @@ std::string DataElement::toString() {
         } else if (dataType == DataElement::Type::DATA_WSTRING) {
             std::wstring wstr;
             get(wstr);
-            //TODO: code below returns a forced cast in (char*) beware...
-            strValue = *wstr.c_str();
+            //Narrow the whole string; keeping only the first character loses data.
+            size_t maxLenBytes = (wstr.length() + 1) * sizeof(wchar_t);
+            std::vector<char> narrowBuf(maxLenBytes, '\0');
+            ::wcstombs(narrowBuf.data(), wstr.c_str(), maxLenBytes - sizeof(wchar_t));
+            strValue.assign(narrowBuf.data());
         }
         else {
             std::cout << "Unhandled DataElement toString for type: " << (int)dataType  << std::endl;
@@ -810,7 +814,8 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             tmp_stream.str("");
 
             for (tmp_charvect_i = tmp_charvect.begin(); tmp_charvect_i != tmp_charvect.end(); tmp_charvect_i++) {
-                tmp_stream << (*tmp_charvect_i);
+                // Stream as a number; streaming a char would emit the character itself.
+                tmp_stream << static_cast<int>(*tmp_charvect_i);
                 if (tmp_charvect_i != tmp_charvect.end() - 1)
                     tmp_stream << " ";
             }
@@ -825,7 +830,8 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             tmp_stream.str("");
 
             for (tmp_ucharvect_i = tmp_ucharvect.begin(); tmp_ucharvect_i != tmp_ucharvect.end(); tmp_ucharvect_i++) {
-                tmp_stream << (*tmp_ucharvect_i);
+                // Stream as a number; streaming an unsigned char would emit the character itself.
+                tmp_stream << static_cast<unsigned int>(*tmp_ucharvect_i);
                 if (tmp_ucharvect_i != tmp_ucharvect.end() - 1)
                     tmp_stream << " ";
             }
@@ -855,7 +861,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             tmp_stream.str("");
 
             for (tmp_uintvect_i = tmp_uintvect.begin(); tmp_uintvect_i != tmp_uintvect.end(); tmp_uintvect_i++) {
-                tmp_stream << (*tmp_intvect_i);
+                tmp_stream << (*tmp_uintvect_i);
                 if (tmp_uintvect_i != tmp_uintvect.end() - 1)
                     tmp_stream << " ";
             }

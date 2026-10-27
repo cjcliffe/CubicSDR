@@ -31,6 +31,8 @@
 #include <sstream>
 #include <stack>
 #include <iostream>
+#include <cstring>
+#include <type_traits>
 #include "tinyxml.h"
 
 using namespace std;
@@ -72,6 +74,31 @@ class DataInvalidChildException : public DataException
 public:
     explicit DataInvalidChildException(const char *why) : DataException(why) { }
 };
+
+
+// Byte transfers between scalar values and storage buffers. Dereferencing
+// into a byte buffer as a larger scalar type is undefined behavior
+// (alignment, effective type); memcpy is not.
+namespace DataTreeDetail {
+template <typename S>
+S readScalar(const std::vector<unsigned char>& buf) {
+    static_assert(std::is_trivially_copyable<S>::value, "scalar storage must be trivially copyable");
+    if (buf.size() < sizeof(S)) {
+        throw DataException("Cannot get() the scalar, stored buffer is smaller than the stored type!");
+    }
+    S tmp{};
+    std::memcpy(&tmp, buf.data(), sizeof(S));
+    return tmp;
+}
+
+template <typename T>
+void writeScalar(std::vector<unsigned char>& buf, const T& value) {
+    // No static_assert here: unsupported input types must keep throwing
+    // DataTypeMismatchException at runtime from the determine* calls.
+    buf.resize(sizeof(T));
+    std::memcpy(buf.data(), &value, sizeof(T));
+}
+}
 
 
 class DataElement
@@ -203,12 +230,7 @@ public:
 
         data_type = determineScalarDataType<T>(scalar_in);
 
-        int unit_size = sizeof(T);
-        //copy in a temporary variable (needed ?)
-        T local_copy = scalar_in;
-        auto* local_copy_ptr = reinterpret_cast<unsigned char*>(&local_copy);
-
-        data_val.assign(local_copy_ptr, local_copy_ptr + unit_size);
+        DataTreeDetail::writeScalar(data_val, scalar_in);
     }
 
     // general templates : for vector of scalars
@@ -217,19 +239,13 @@ public:
 
         data_type = determineVectorDataType<T>(scalar_vector_in);
 
-        int unit_size = sizeof(T);
-
         data_val_vector.clear();
 
         DataElementBuffer single_buffer;
 
-        for (auto single_element : scalar_vector_in) {
+        for (const auto& single_element : scalar_vector_in) {
 
-            //copy in a temporary variable (needed ?)
-            T local_copy = single_element;
-            auto* local_copy_ptr = reinterpret_cast<unsigned char*>(&local_copy);
-
-            single_buffer.assign(local_copy_ptr, local_copy_ptr + unit_size);
+            DataTreeDetail::writeScalar(single_buffer, single_element);
 
             data_val_vector.push_back(single_buffer);
         }
@@ -254,15 +270,14 @@ public:
         //wchar_t is typically 16 bits on windows, and 32 bits on Unix, so use sizeof(wchar_t) everywhere.
         size_t maxLenBytes = (wstr_in.length() + 1) * sizeof(wchar_t);
 
-        //be paranoid, zero the buffer
-        char *tmp_str = (char *)::calloc(maxLenBytes, sizeof(char));
+        //Zeroed buffer: on conversion failure the stored bytes stay truncated
+        //at the first unconvertible character, as before.
+        std::vector<char> tmp_str(maxLenBytes, '\0');
 
         //if something awful happens, the last sizeof(wchar_t) is at least zero...
-        ::wcstombs(tmp_str, wstr_in.c_str(), maxLenBytes - sizeof(wchar_t));
+        ::wcstombs(tmp_str.data(), wstr_in.c_str(), maxLenBytes - sizeof(wchar_t));
 
-        data_val.assign(tmp_str, tmp_str + maxLenBytes - sizeof(wchar_t));
-
-        ::free(tmp_str);
+        data_val.assign(tmp_str.data(), tmp_str.data() + maxLenBytes - sizeof(wchar_t));
     }
 
     //template specialization : for vector<string> 
@@ -301,45 +316,25 @@ public:
 
         DataElement::Type storageType = getDataType();
 
-        //TODO: smarter way with templates ?
         if (storageType == DataElement::Type::DATA_CHAR) {
-            char* storage_ptr = reinterpret_cast<char*>(&data_val[0]);
-            //constructor-like 
-            scalar_out = T(*storage_ptr);
-
+            scalar_out = T(DataTreeDetail::readScalar<char>(data_val));
         } else if (storageType == DataElement::Type::DATA_UCHAR) {
-            auto* storage_ptr = reinterpret_cast<unsigned char*>(&data_val[0]);
-            //constructor-like 
-            scalar_out = T(*storage_ptr);
+            scalar_out = T(DataTreeDetail::readScalar<unsigned char>(data_val));
         } else if (storageType == DataElement::Type::DATA_INT) {
-            int* storage_ptr = reinterpret_cast<int*>(&data_val[0]);
-            //constructor-like 
-            scalar_out = T(*storage_ptr);
+            scalar_out = T(DataTreeDetail::readScalar<int>(data_val));
         } else if (storageType == DataElement::Type::DATA_UINT) {
-            auto* storage_ptr = reinterpret_cast<unsigned int*>(&data_val[0]);
-            //constructor-like 
-            scalar_out = T(*storage_ptr);
+            scalar_out = T(DataTreeDetail::readScalar<unsigned int>(data_val));
         } else if (storageType == DataElement::Type::DATA_LONG) {
-            long* storage_ptr = reinterpret_cast<long*>(&data_val[0]);
-            //constructor-like 
-            scalar_out = T(*storage_ptr);
+            scalar_out = T(DataTreeDetail::readScalar<long>(data_val));
         } else if (storageType == DataElement::Type::DATA_ULONG) {
-            auto* storage_ptr = reinterpret_cast<unsigned long*>(&data_val[0]);
-            //constructor-like 
-            scalar_out = T(*storage_ptr);
+            scalar_out = T(DataTreeDetail::readScalar<unsigned long>(data_val));
         } else if (storageType == DataElement::Type::DATA_LONGLONG) {
-            auto* storage_ptr = reinterpret_cast<long long*>(&data_val[0]);
-            //constructor-like 
-            scalar_out = T(*storage_ptr);
+            scalar_out = T(DataTreeDetail::readScalar<long long>(data_val));
         } else if (storageType == DataElement::Type::DATA_FLOAT) {
-            auto* storage_ptr = reinterpret_cast<float*>(&data_val[0]);
-            //constructor-like 
-            scalar_out = T(*storage_ptr);
+            scalar_out = T(DataTreeDetail::readScalar<float>(data_val));
         } else if (storageType == DataElement::Type::DATA_DOUBLE) {
-            auto* storage_ptr = reinterpret_cast<double*>(&data_val[0]);
-            //constructor-like 
-            scalar_out = T(*storage_ptr);
-        } 
+            scalar_out = T(DataTreeDetail::readScalar<double>(data_val));
+        }
     }
 
     // general templates : for vector of scalars
@@ -348,57 +343,32 @@ public:
 
         scalar_vector_out.clear();
 
-        DataElementBuffer single_buffer;
-
         Type storageType = getDataType();
 
-        for (auto single_storage_element : data_val_vector) {
+        for (const auto& single_storage_element : data_val_vector) {
 
-            if (single_storage_element.empty()) {
-                throw DataException("Cannot get(vector<scalar>) on single element because it is empty!");
-            }
+            // Unmatched storage pushes one default per element; counts stay stable.
+            T scalar_out{};
 
-            T scalar_out;
-
-            //TODO: smarter way with templates ?
             if (storageType == DataElement::Type::DATA_CHAR_VECTOR) {
-                char* storage_ptr = reinterpret_cast<char*>(&single_storage_element[0]);
-                //constructor-like 
-                scalar_out = T(*storage_ptr);
-
+                scalar_out = T(DataTreeDetail::readScalar<char>(single_storage_element));
             } else if (storageType == DataElement::Type::DATA_UCHAR_VECTOR) {
-                auto* storage_ptr = reinterpret_cast<unsigned char*>(&single_storage_element[0]);
-                //constructor-like 
-                scalar_out = T(*storage_ptr);
+                scalar_out = T(DataTreeDetail::readScalar<unsigned char>(single_storage_element));
             } else if (storageType == DataElement::Type::DATA_INT_VECTOR) {
-                int* storage_ptr = reinterpret_cast<int*>(&single_storage_element[0]);
-                //constructor-like 
-                scalar_out = T(*storage_ptr);
+                scalar_out = T(DataTreeDetail::readScalar<int>(single_storage_element));
             } else if (storageType == DataElement::Type::DATA_UINT_VECTOR) {
-                auto* storage_ptr = reinterpret_cast<unsigned int*>(&single_storage_element[0]);
-                //constructor-like 
-                scalar_out = T(*storage_ptr);
+                scalar_out = T(DataTreeDetail::readScalar<unsigned int>(single_storage_element));
             } else if (storageType == DataElement::Type::DATA_LONG_VECTOR) {
-                long* storage_ptr = reinterpret_cast<long*>(&single_storage_element[0]);
-                //constructor-like 
-                scalar_out = T(*storage_ptr);
+                scalar_out = T(DataTreeDetail::readScalar<long>(single_storage_element));
             } else if (storageType == DataElement::Type::DATA_ULONG_VECTOR) {
-                auto* storage_ptr = reinterpret_cast<unsigned long*>(&single_storage_element[0]);
-                //constructor-like 
-                scalar_out = T(*storage_ptr);
+                scalar_out = T(DataTreeDetail::readScalar<unsigned long>(single_storage_element));
             } else if (storageType == DataElement::Type::DATA_LONGLONG_VECTOR) {
-                auto* storage_ptr = reinterpret_cast<long long*>(&single_storage_element[0]);
-                //constructor-like 
-                scalar_out = T(*storage_ptr);
+                scalar_out = T(DataTreeDetail::readScalar<long long>(single_storage_element));
             } else if (storageType == DataElement::Type::DATA_FLOAT_VECTOR) {
-                auto* storage_ptr = reinterpret_cast<float*>(&single_storage_element[0]);
-                //constructor-like 
-                scalar_out = T(*storage_ptr);
+                scalar_out = T(DataTreeDetail::readScalar<float>(single_storage_element));
             } else if (storageType == DataElement::Type::DATA_DOUBLE_VECTOR) {
-                auto* storage_ptr = reinterpret_cast<double*>(&single_storage_element[0]);
-                //constructor-like 
-                scalar_out = T(*storage_ptr);
-            } 
+                scalar_out = T(DataTreeDetail::readScalar<double>(single_storage_element));
+            }
 
             scalar_vector_out.push_back(scalar_out);
         } //end for.
@@ -449,15 +419,15 @@ public:
            //wchar_t is typically 16 bits on windows, and 32 bits on Unix, so use sizeof(wchar_t) everywhere.
             size_t maxNbWchars = getDataSize() / sizeof(wchar_t);
 
-            //be paranoid, zero the buffer
-            auto *tmp_wstr = (wchar_t *)::calloc(maxNbWchars + 1, sizeof(wchar_t));
+            //Zeroed buffer: on conversion failure the result stays truncated
+            //at the first invalid sequence, as before.
+            std::vector<wchar_t> tmp_wstr(maxNbWchars + 1, L'\0');
 
             //the last wchar_t is actually zero if anything goes wrong...
-            ::mbstowcs(tmp_wstr, (const char*)&data_val[0], maxNbWchars);
+            //Reading the byte buffer as char is the aliasing-safe direction.
+            ::mbstowcs(tmp_wstr.data(), reinterpret_cast<const char*>(data_val.data()), maxNbWchars);
 
-            wstr_out.assign(tmp_wstr);
-
-            ::free(tmp_wstr);
+            wstr_out.assign(tmp_wstr.data());
         }
     }
 
@@ -482,20 +452,20 @@ public:
     }
   
     //special versions:
-    void get(DataElementBuffer& data_out); /* getting a void or string */
+    void getVoid(DataElementBuffer& data_out); /* getting raw VOID bytes */
     void get(std::set<string> &strset_out);
        
     
     /* special get functions, saves creating unnecessary vars */
-    int getChar()  { char i_get; get(i_get); return i_get; };
-    unsigned int getUChar()  { unsigned char i_get; get(i_get); return i_get; };
-    int getInt()  { int i_get; get(i_get); return i_get; };
-    unsigned int getUInt()  { unsigned int i_get; get(i_get); return i_get; };
-    long getLong()  { long l_get; get(l_get); return l_get; };
-    unsigned long getULong() { unsigned long l_get; get(l_get); return l_get; };
-    long long getLongLong() { long long l_get; get(l_get); return l_get; };
-    float getFloat() { float f_get; get(f_get); return f_get; };
-    double getDouble() { double d_get; get(d_get); return d_get; };
+    int getChar()  { char i_get{}; get(i_get); return i_get; };
+    unsigned int getUChar()  { unsigned char i_get{}; get(i_get); return i_get; };
+    int getInt()  { int i_get{}; get(i_get); return i_get; };
+    unsigned int getUInt()  { unsigned int i_get{}; get(i_get); return i_get; };
+    long getLong()  { long l_get{}; get(l_get); return l_get; };
+    unsigned long getULong() { unsigned long l_get{}; get(l_get); return l_get; };
+    long long getLongLong() { long long l_get{}; get(l_get); return l_get; };
+    float getFloat() { float f_get{}; get(f_get); return f_get; };
+    double getDouble() { double d_get{}; get(d_get); return d_get; };
     
     std::string toString();
 };
@@ -570,6 +540,7 @@ public:
     explicit operator vector<unsigned long> () { vector<unsigned long> v; element()->get(v);  return v; }
     explicit operator vector<float> () { vector<float> v; element()->get(v);  return v; }
     explicit operator vector<double> () { vector<double> v; element()->get(v);  return v; }
+    explicit operator vector<long long> () { vector<long long> v; element()->get(v);  return v; }
     
     const string &operator= (const string &s) { element()->set(s); return s; }
     const wstring &operator= (const wstring &s) { element()->set(s); return s; }
@@ -592,6 +563,7 @@ public:
     vector<unsigned long> &operator= (vector<unsigned long> &v) { element()->set(v); return v; }
     vector<float> &operator= (vector<float> &v) { element()->set(v); return v; }
     vector<double> &operator= (vector<double> &v) { element()->set(v); return v; }
+    vector<long long> &operator= (vector<long long> &v) { element()->set(v); return v; }
     
     DataNode *operator[] (const char *name_in) { return getNext(name_in); }
     DataNode *operator[] (int idx) { return child(idx); }
