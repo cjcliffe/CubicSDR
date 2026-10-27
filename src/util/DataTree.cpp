@@ -94,7 +94,7 @@ void DataElement::set(const std::set<string> &strset_in) {
 }
 
 
-void DataElement::get(DataElement::DataElementBuffer& data_in) {
+void DataElement::getVoid(DataElement::DataElementBuffer& data_in) {
 
     if (data_type != DataElement::Type::DATA_VOID) {
         throw(DataTypeMismatchException("Type mismatch, not a VOID*"));

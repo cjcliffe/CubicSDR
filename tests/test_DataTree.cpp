@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include <cstdio>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -72,6 +73,128 @@ TEST_SUITE("DataElement") {
         CHECK(e.getDataType() == DataElement::Type::DATA_UCHAR);
         e.get(ucv);
         CHECK(ucv == static_cast<unsigned char>('b'));
+    }
+
+    TEST_CASE("cross-type reads convert stored values") {
+        DataElement e;
+
+        e.set(42);
+        long long widened = 0;
+        e.get(widened);
+        CHECK(widened == 42LL);
+
+        e.set(1.5f);
+        double as_double = 0.0;
+        e.get(as_double);
+        CHECK(as_double == doctest::Approx(1.5));
+
+        e.set(42LL);
+        int narrowed = 0;
+        e.get(narrowed);
+        CHECK(narrowed == 42);
+    }
+
+    TEST_CASE("remaining scalar vector kinds round-trip") {
+        DataElement e;
+
+        const std::vector<char> chars{'a', 'b', 'c'};
+        e.set(chars);
+        CHECK(e.getDataType() == DataElement::Type::DATA_CHAR_VECTOR);
+        std::vector<char> chars_out;
+        e.get(chars_out);
+        CHECK(chars_out == chars);
+
+        // Regression: get() into vector<unsigned char> must hit the generic
+        // overload, not the VOID-buffer one.
+        const std::vector<unsigned char> uchars{1, 2, 250};
+        e.set(uchars);
+        CHECK(e.getDataType() == DataElement::Type::DATA_UCHAR_VECTOR);
+        std::vector<unsigned char> uchars_out;
+        e.get(uchars_out);
+        CHECK(uchars_out == uchars);
+
+        const std::vector<unsigned int> uints{1u, 2u, 4000000000u};
+        e.set(uints);
+        CHECK(e.getDataType() == DataElement::Type::DATA_UINT_VECTOR);
+        std::vector<unsigned int> uints_out;
+        e.get(uints_out);
+        CHECK(uints_out == uints);
+
+        const std::vector<long> longs{1L, -2L, 3L};
+        e.set(longs);
+        CHECK(e.getDataType() == DataElement::Type::DATA_LONG_VECTOR);
+        std::vector<long> longs_out;
+        e.get(longs_out);
+        CHECK(longs_out == longs);
+
+        const std::vector<unsigned long> ulongs{1UL, 2UL, 3UL};
+        e.set(ulongs);
+        CHECK(e.getDataType() == DataElement::Type::DATA_ULONG_VECTOR);
+        std::vector<unsigned long> ulongs_out;
+        e.get(ulongs_out);
+        CHECK(ulongs_out == ulongs);
+
+        const std::vector<long long> llongs{10000000000LL, -20000000000LL};
+        e.set(llongs);
+        CHECK(e.getDataType() == DataElement::Type::DATA_LONGLONG_VECTOR);
+        std::vector<long long> llongs_out;
+        e.get(llongs_out);
+        CHECK(llongs_out == llongs);
+
+        const std::vector<double> doubles{1.5, -2.5, 3.25};
+        e.set(doubles);
+        CHECK(e.getDataType() == DataElement::Type::DATA_DOUBLE_VECTOR);
+        std::vector<double> doubles_out;
+        e.get(doubles_out);
+        REQUIRE(doubles_out.size() == doubles.size());
+        for (size_t i = 0; i < doubles.size(); i++) {
+            CHECK(doubles_out[i] == doctest::Approx(doubles[i]));
+        }
+    }
+
+    TEST_CASE("long long vectors through DataNode element") {
+        DataTree tree("test");
+        DataNode *node = tree.rootNode()->newChild("ll");
+        const std::vector<long long> in{10000000000LL, -20000000000LL};
+        node->element()->set(in);
+        CHECK(node->element()->getDataType() == DataElement::Type::DATA_LONGLONG_VECTOR);
+        std::vector<long long> out;
+        node->element()->get(out);
+        CHECK(out == in);
+    }
+
+    TEST_CASE("void buffers round-trip through getVoid") {
+        DataElement e;
+        const char raw[] = {0x01, 0x02, 0x00, 0x03};
+        e.set(raw, sizeof(raw));
+        CHECK(e.getDataType() == DataElement::Type::DATA_VOID);
+        DataElement::DataElementBuffer out;
+        e.getVoid(out);
+        REQUIRE(out.size() == sizeof(raw));
+        CHECK(std::memcmp(out.data(), raw, sizeof(raw)) == 0);
+    }
+
+    TEST_CASE("uchar vectors round-trip through DataNode") {
+        DataTree tree("test");
+        DataNode *node = tree.rootNode()->newChild("uc");
+        const std::vector<unsigned char> in{1, 2, 250};
+        node->element()->set(in);
+        CHECK(node->element()->getDataType() == DataElement::Type::DATA_UCHAR_VECTOR);
+        std::vector<unsigned char> out = static_cast<std::vector<unsigned char>>(*node);
+        CHECK(out == in);
+    }
+
+    TEST_CASE("truncated buffer guard throws DataException") {
+        const DataElement::DataElementBuffer short_buf{0x01, 0x02};
+        CHECK_THROWS_AS(DataTreeDetail::readScalar<int>(short_buf), DataException);
+
+        const DataElement::DataElementBuffer empty_buf;
+        CHECK_THROWS_AS(DataTreeDetail::readScalar<double>(empty_buf), DataException);
+
+        int expected = 123456;
+        DataElement::DataElementBuffer full_buf(sizeof(int));
+        std::memcpy(full_buf.data(), &expected, sizeof(int));
+        CHECK(DataTreeDetail::readScalar<int>(full_buf) == expected);
     }
 
     TEST_CASE("vector set and get round-trip") {
@@ -465,6 +588,35 @@ TEST_SUITE("DataTree") {
             std::vector<int> out;
             found[0]->element()->get(out);
             CHECK(out == in);
+        }
+
+        std::remove(path.c_str());
+    }
+
+    TEST_CASE("double vectors round-trip through XML") {
+        const std::string path = "datatree_test_tmp.xml";
+        std::remove(path.c_str());
+
+        // Exactly representable values so the text form decodes back exactly.
+        const std::vector<double> in{1.5, 2.5, 3.5};
+        {
+            DataTree tree("config");
+            tree.rootNode()->newChild("doubles")->element()->set(in);
+            CHECK(tree.SaveToFileXML(path));
+        }
+        {
+            DataTree loaded;
+            REQUIRE(loaded.LoadFromFileXML(path, USE_DOUBLE));
+            std::vector<DataNode *> found;
+            loaded.rootNode()->findAll("doubles", found);
+            REQUIRE(found.size() == 1);
+            CHECK(found[0]->element()->getDataType() == DataElement::Type::DATA_DOUBLE_VECTOR);
+            std::vector<double> out;
+            found[0]->element()->get(out);
+            REQUIRE(out.size() == in.size());
+            for (size_t i = 0; i < in.size(); i++) {
+                CHECK(out[i] == doctest::Approx(in[i]));
+            }
         }
 
         std::remove(path.c_str());
