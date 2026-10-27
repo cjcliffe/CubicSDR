@@ -14,6 +14,7 @@ std::string& filterChars(std::string& s, const std::string& allowed) {
     return s;
 }
 
+// Negative values fall through to plain Hz with no suffix.
 std::string frequencyToStr(long long freq) {
     long double freqTemp;
     
@@ -47,6 +48,7 @@ long long strToFrequency(std::string freqStr, FrequencyUnit defaultUnit) {
     size_t numLen = filterStr.find_first_not_of("0123456789.");
     
     if (numLen == std::string::npos) {
+        // freqStr was already filtered in place above, so this is the filtered length.
         numLen = freqStr.length();
     }
     

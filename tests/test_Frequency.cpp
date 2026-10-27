@@ -34,6 +34,7 @@ TEST_SUITE("Frequency") {
             50125000, 123456789, 144390000, 432100000, 999999999, 1296000000 };
         for (long long freq : freqs) {
             long long parsed = strToFrequency(frequencyToStr(freq));
+            // Significant-digits formatting means exact round-trip does not hold at all magnitudes.
             long double tolerance = (freq > 0 ? (long double)freq : 1.0L) * 1e-3L + 1.0L;
             CHECK(std::fabs((long double)parsed - (long double)freq) <= tolerance);
         }
