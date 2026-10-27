@@ -3,6 +3,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -253,6 +254,30 @@ TEST_SUITE("DataElement") {
         CHECK(e.getUChar() == static_cast<unsigned int>('a'));
     }
 
+    TEST_CASE("accessors return zero on unmatched storage") {
+        DataElement e;
+        e.set(std::string("hi"));
+        CHECK(e.getInt() == 0);
+        CHECK(e.getUInt() == 0u);
+        CHECK(e.getLong() == 0L);
+        CHECK(e.getULong() == 0UL);
+        CHECK(e.getLongLong() == 0LL);
+        CHECK(e.getFloat() == doctest::Approx(0.0f));
+        CHECK(e.getDouble() == doctest::Approx(0.0));
+        CHECK(e.getChar() == 0);
+        CHECK(e.getUChar() == 0u);
+    }
+
+    TEST_CASE("empty vectors round-trip as empty") {
+        DataElement e;
+        const std::vector<int> in;
+        e.set(in);
+        CHECK(e.getDataType() == DataElement::Type::DATA_INT_VECTOR);
+        std::vector<int> out{1, 2, 3};
+        e.get(out);
+        CHECK(out.empty());
+    }
+
     TEST_CASE("toString formats scalars") {
         DataElement e;
         e.set(42);
@@ -261,6 +286,8 @@ TEST_SUITE("DataElement") {
         CHECK(e.toString() == "hi");
         e.set(2.5);
         CHECK(e.toString() == "2.500000");
+        e.set(1.5f);
+        CHECK(e.toString() == "1.500000");
     }
 
     TEST_CASE("type mismatch raises") {
@@ -268,6 +295,15 @@ TEST_SUITE("DataElement") {
         e.set(42);
         std::string str_val;
         CHECK_THROWS_AS(e.get(str_val), DataTypeMismatchException);
+
+        std::wstring wstr_val;
+        CHECK_THROWS_AS(e.get(wstr_val), DataTypeMismatchException);
+
+        std::vector<std::string> strvec_val;
+        CHECK_THROWS_AS(e.get(strvec_val), DataTypeMismatchException);
+
+        std::set<std::string> strset_val;
+        CHECK_THROWS_AS(e.get(strset_val), DataTypeMismatchException);
     }
 }
 
@@ -700,6 +736,49 @@ TEST_SUITE("DataTree") {
             REQUIRE(out.size() == in.size());
             for (size_t i = 0; i < in.size(); i++) {
                 CHECK(out[i] == static_cast<int>(in[i]));
+            }
+        }
+
+        std::remove(path.c_str());
+    }
+
+    TEST_CASE("float vectors round-trip through XML") {
+        const std::string path = "datatree_test_tmp.xml";
+        std::remove(path.c_str());
+
+        // Exactly representable values so the text form decodes back exactly.
+        const std::vector<float> in{1.5f, 2.5f, 3.5f};
+        {
+            DataTree tree("config");
+            tree.rootNode()->newChild("gains")->element()->set(in);
+            CHECK(tree.SaveToFileXML(path));
+        }
+        {
+            DataTree loaded;
+            REQUIRE(loaded.LoadFromFileXML(path));
+            std::vector<DataNode *> found;
+            loaded.rootNode()->findAll("gains", found);
+            REQUIRE(found.size() == 1);
+            CHECK(found[0]->element()->getDataType() == DataElement::Type::DATA_FLOAT_VECTOR);
+            std::vector<float> out;
+            found[0]->element()->get(out);
+            REQUIRE(out.size() == in.size());
+            for (size_t i = 0; i < in.size(); i++) {
+                CHECK(out[i] == doctest::Approx(in[i]).epsilon(1e-5));
+            }
+        }
+        {
+            DataTree loaded;
+            REQUIRE(loaded.LoadFromFileXML(path, USE_DOUBLE));
+            std::vector<DataNode *> found;
+            loaded.rootNode()->findAll("gains", found);
+            REQUIRE(found.size() == 1);
+            CHECK(found[0]->element()->getDataType() == DataElement::Type::DATA_DOUBLE_VECTOR);
+            std::vector<double> out;
+            found[0]->element()->get(out);
+            REQUIRE(out.size() == in.size());
+            for (size_t i = 0; i < in.size(); i++) {
+                CHECK(out[i] == doctest::Approx(in[i]));
             }
         }
 
