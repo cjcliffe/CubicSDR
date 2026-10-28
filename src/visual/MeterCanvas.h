@@ -28,6 +28,7 @@ public:
 
     void setUserInputValue(float slider_in);
     void setInputValue(float slider_in);
+    void setDefaultValue(float default_in);
     bool inputChanged() const;
     float getInputValue();
     void setShowUserInput(bool showUserInput_in);
@@ -41,6 +42,7 @@ private:
     void OnMouseMoved(wxMouseEvent& event);
     void OnMouseDown(wxMouseEvent& event);
     void OnMouseReleased(wxMouseEvent& event);
+    void OnMouseDoubleClicked(wxMouseEvent& event);
 	void OnMouseWheelMoved(wxMouseEvent& event);
 	void OnMouseRightDown(wxMouseEvent& event);
 	void OnMouseRightReleased(wxMouseEvent& event);
@@ -54,6 +56,9 @@ private:
 
     float inputValue;
     float userInputValue;
+    float defaultValue;
+    bool hasDefault;
+    bool suppressNextRelease;
 
     bool showUserInput;
     

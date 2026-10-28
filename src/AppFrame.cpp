@@ -705,9 +705,10 @@ wxMenu *AppFrame::makeAudioSampleRateMenu() {
 
 MeterCanvas *AppFrame::makeWaterfallSpeedMeter(wxWindow *parent, const wxGLAttributes &attribList) {
     auto *pCanvas = new MeterCanvas(parent, attribList);
-    pCanvas->setHelpTip("Waterfall speed, click or drag to adjust (max 1024 lines per second)");
+    pCanvas->setHelpTip("Waterfall speed, click or drag to adjust (max 1024 lines per second). Double-click to reset to default.");
     pCanvas->setMax(sqrt(1024));
     pCanvas->setLevel(sqrt(DEFAULT_WATERFALL_LPS));
+    pCanvas->setDefaultValue(sqrt(DEFAULT_WATERFALL_LPS));
     pCanvas->setShowUserInput(false);
     pCanvas->SetMinSize(wxSize(12, 24));
     return pCanvas;
@@ -721,9 +722,10 @@ WaterfallCanvas *AppFrame::makeWaterfall(wxWindow *parent, const wxGLAttributes 
 
 MeterCanvas * AppFrame::makeSpectrumAvgMeter(wxWindow *parent, const wxGLAttributes &attribList) {
     auto *pCanvas = new MeterCanvas(parent, attribList);
-    pCanvas->setHelpTip("Spectrum averaging speed, click or drag to adjust.");
+    pCanvas->setHelpTip("Spectrum averaging speed, click or drag to adjust. Double-click to reset to default.");
     pCanvas->setMax(1.0);
     pCanvas->setLevel(0.65f);
+    pCanvas->setDefaultValue(0.65f);
     pCanvas->setShowUserInput(false);
     pCanvas->SetMinSize(wxSize(12, 24));
     return pCanvas;
@@ -776,7 +778,8 @@ ModeSelectorCanvas *AppFrame::makeSoloModeButton(wxWindow *parent, const wxGLAtt
 MeterCanvas *AppFrame::makeModemGainMeter(wxWindow *parent, const wxGLAttributes &attribList) {
     auto *pCanvas = new MeterCanvas(parent, attribList);
     pCanvas->setMax(2.0);
-    pCanvas->setHelpTip("Current Demodulator Gain Level.  Click / Drag to set Gain level.");
+    pCanvas->setHelpTip("Current Demodulator Gain Level.  Click / Drag to set Gain level.  Double-click to reset to default.");
+    pCanvas->setDefaultValue(1.0f);
     pCanvas->setShowUserInput(false);
     pCanvas->SetMinSize(wxSize(13, 24));
     return pCanvas;
@@ -818,7 +821,8 @@ MeterCanvas *AppFrame::makeSignalMeter(wxWindow *parent, const wxGLAttributes &a
     pCanvas->setMin(DEMOD_SIGNAL_MIN);
     pCanvas->setLevel(DEMOD_SIGNAL_MIN);
     pCanvas->setInputValue(DEMOD_SIGNAL_MIN);
-    pCanvas->setHelpTip("Current Signal Level.  Click / Drag to set Squelch level.  Right-Click to Auto-Zero Squelch");
+    pCanvas->setHelpTip("Current Signal Level.  Click / Drag to set Squelch level.  Right-Click to Auto-Zero Squelch.  Double-click to reset to default.");
+    pCanvas->setDefaultValue(DEMOD_SIGNAL_MIN);
     pCanvas->SetMinSize(wxSize(12, 24));
     return pCanvas;
 }
