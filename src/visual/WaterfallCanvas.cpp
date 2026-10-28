@@ -395,8 +395,6 @@ void WaterfallCanvas::OnKeyUp(wxKeyEvent& event) {
 void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     InteractiveCanvas::OnKeyDown(event);
 
-    auto activeDemod = wxGetApp().getDemodMgr().getCurrentModem();
-
     long long originalFreq = getCenterFrequency();
     long long freq = originalFreq;
 
@@ -439,11 +437,12 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         break;
     case 'D':
     case WXK_DELETE:
-        if (!activeDemod) {
+        if (!hoverDemod) {
             break;
         }
-        wxGetApp().removeDemodulator(activeDemod);
-        wxGetApp().getDemodMgr().deleteThread(activeDemod);
+        wxGetApp().removeDemodulator(hoverDemod);
+        wxGetApp().getDemodMgr().deleteThread(hoverDemod);
+        hoverDemod = nullptr;
         break;
     case WXK_SPACE:
         wxGetApp().showFrequencyInput();
@@ -452,8 +451,8 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         wxGetApp().showLabelInput();
         break;
     case 'C':
-        if (wxGetApp().getDemodMgr().getCurrentModem()) {
-            wxGetApp().setFrequency(wxGetApp().getDemodMgr().getCurrentModem()->getFrequency());
+        if (hoverDemod) {
+            wxGetApp().setFrequency(hoverDemod->getFrequency());
         } else if (mouseTracker.mouseInView()) {
             long long nfreq = getFrequencyAt(mouseTracker.getMouseX());
             

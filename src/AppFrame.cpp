@@ -217,6 +217,11 @@ AppFrame::AppFrame() :
     demodGainTray->Add(soloModeButton, 1, wxEXPAND | wxALL, 0);
     demodGainTray->AddSpacer(1);
 
+    // Record Button
+    demodRecordButton = makeDemodRecordButton(demodPanel, attribList);
+    demodGainTray->Add(demodRecordButton, 1, wxEXPAND | wxALL, 0);
+    demodGainTray->AddSpacer(1);
+
     // Mute Button
     demodMuteButton = makeModemMuteButton(demodPanel, attribList);
     demodGainTray->Add(demodMuteButton, 1, wxEXPAND | wxALL, 0);
@@ -713,7 +718,7 @@ ModeSelectorCanvas *AppFrame::makePeakHoldButton(wxWindow *parent, const wxGLAtt
     pCanvas->addChoice(1, "P");
     pCanvas->setPadding(-1, -1);
     pCanvas->setHighlightColor(RGBA4f(0.2f, 0.8f, 0.2f));
-    pCanvas->setHelpTip("Peak Hold Toggle");
+    pCanvas->setHelpTip("Peak Hold Toggle (P) - Enable to hold the spectrum peak values.");
     pCanvas->setToggleMode(true);
     pCanvas->setSelection(-1);
     pCanvas->SetMinSize(wxSize(12, 24));
@@ -725,7 +730,7 @@ ModeSelectorCanvas *AppFrame::makeModemMuteButton(wxWindow *parent, const wxGLAt
     pCanvas->addChoice(1, "M");
     pCanvas->setPadding(-1, -1);
     pCanvas->setHighlightColor(RGBA4f(0.8f, 0.2f, 0.2f));
-    pCanvas->setHelpTip("Demodulator Mute Toggle");
+    pCanvas->setHelpTip("Demodulator Mute Toggle (M) - Enable to mute demodulator audio.");
     pCanvas->setToggleMode(true);
     pCanvas->setSelection(-1);
     pCanvas->SetMinSize(wxSize(12, 28));
@@ -737,7 +742,7 @@ ModeSelectorCanvas *AppFrame::makeSoloModeButton(wxWindow *parent, const wxGLAtt
     pCanvas->addChoice(1, "S");
     pCanvas->setPadding(-1, -1);
     pCanvas->setHighlightColor(RGBA4f(0.8f, 0.8f, 0.2f));
-    pCanvas->setHelpTip("Solo Mode Toggle");
+    pCanvas->setHelpTip("Solo Mode Toggle (S) - Enable to listen to the selected demodulator only.");
     pCanvas->setToggleMode(true);
     pCanvas->setSelection(-1);
     pCanvas->SetMinSize(wxSize(12, 28));
@@ -768,6 +773,18 @@ ModeSelectorCanvas * AppFrame::makeDeltaLockButton(wxWindow *parent, const wxGLA
     pCanvas->setToggleMode(true);
     pCanvas->setSelection(-1);
     pCanvas->SetMinSize(wxSize(20, 28));
+    return pCanvas;
+}
+
+ModeSelectorCanvas *AppFrame::makeDemodRecordButton(wxWindow *parent, const wxGLAttributes &attribList) {
+    auto *pCanvas = new ModeSelectorCanvas(parent, attribList);
+    pCanvas->addChoice(1, "R");
+    pCanvas->setPadding(-1, -1);
+    pCanvas->setHighlightColor(RGBA4f(0.2f, 0.8f, 0.2f));
+    pCanvas->setHelpTip("Demodulator Record Toggle (R) - Enable to record demodulator audio.");
+    pCanvas->setToggleMode(true);
+    pCanvas->setSelection(-1);
+    pCanvas->SetMinSize(wxSize(12, 28));
     return pCanvas;
 }
 
@@ -2471,6 +2488,7 @@ void AppFrame::handleCurrentModem() {
         demodModeSelectorAdv->setSelection(dType);
 #endif
         deltaLockButton->setSelection(demod->isDeltaLock() ? 1 : -1);
+        demodRecordButton->setSelection(demod->isRecording() ? 1 : -1);
         demodMuteButton->setSelection(demod->isMuted() ? 1 : -1);
         modemPropertiesUpdated.store(true);
         demodTuner->setHalfBand(dType == "USB" || dType == "LSB");
@@ -2565,6 +2583,27 @@ void AppFrame::handleCurrentModem() {
                 deltaLockButton->setSelection(-1);
                 wxGetApp().getDemodMgr().setLastDeltaLock(false);
                 deltaLockButton->Refresh();
+            }
+        }
+
+        int recordMode = demodRecordButton->getSelection();
+        if (demodRecordButton->modeChanged()) {
+            if (wxGetApp().getConfig()->verifyRecordingPath()) {
+                if (demod->isRecording() && recordMode == -1) {
+                    demod->setRecording(false);
+                } else if (!demod->isRecording() && recordMode == 1) {
+                    demod->setRecording(true);
+                }
+                wxGetApp().getBookmarkMgr().updateActiveList();
+            }
+            demodRecordButton->clearModeChanged();
+        } else {
+            if (demod->isRecording() && recordMode == -1) {
+                demodRecordButton->setSelection(1);
+                demodRecordButton->Refresh();
+            } else if (!demod->isRecording() && recordMode == 1) {
+                demodRecordButton->setSelection(-1);
+                demodRecordButton->Refresh();
             }
         }
 
@@ -2830,6 +2869,14 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     DemodulatorInstancePtr demod = nullptr;
      
     DemodulatorInstancePtr lastDemod = wxGetApp().getDemodMgr().getCurrentModem();
+    // Nudge acts on the hovered demodulator while the cursor is in the
+    // waterfall, and falls back to the selection when it is not: once a
+    // nudge moves the hovered demod out from under the cursor it must stop
+    // rather than start moving the selection.
+    DemodulatorInstancePtr actionDemod = waterfallCanvas ? waterfallCanvas->getHoverDemod() : nullptr;
+    if (!actionDemod && waterfallCanvas && !waterfallCanvas->getMouseTracker()->mouseInView()) {
+        actionDemod = lastDemod;
+    }
     
     int snap = wxGetApp().getFrequencySnap();
     
@@ -2846,10 +2893,10 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     #ifdef wxHAS_RAW_KEY_CODES
     switch (event.GetRawKeyCode()) {
         case 30:
-            gkNudge(lastDemod, snap);
+            gkNudge(actionDemod, snap);
             return 1;
         case 33:
-            gkNudge(lastDemod, -snap);
+            gkNudge(actionDemod, -snap);
             return 1;
     }
     #endif
@@ -2869,10 +2916,10 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case 'V':
             return 1;
         case ']':
-            gkNudge(lastDemod, snap);
+            gkNudge(actionDemod, snap);
             return 1;
         case '[':
-            gkNudge(lastDemod, -snap);
+            gkNudge(actionDemod, -snap);
             return 1;
         case 'A':
         case 'F':
@@ -2968,6 +3015,14 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     }
 
     DemodulatorInstancePtr lastDemod = wxGetApp().getDemodMgr().getCurrentModem();
+    // D acts on the hovered demodulator only. V/M/R act on the hovered
+    // demodulator while the cursor is in the waterfall, and fall back to
+    // the selection when it is not.
+    DemodulatorInstancePtr hoverDemod = waterfallCanvas ? waterfallCanvas->getHoverDemod() : nullptr;
+    DemodulatorInstancePtr actionDemod = hoverDemod;
+    if (!actionDemod && waterfallCanvas && !waterfallCanvas->getMouseTracker()->mouseInView()) {
+        actionDemod = lastDemod;
+    }
     
 #ifdef wxHAS_RAW_KEY_CODES
     switch (event.GetRawKeyCode()) {
@@ -2996,11 +3051,11 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
             waterfallCanvas->OnKeyUp(event);
             return 1;
         case 'V':
-            if (lastDemod && lastDemod->isDeltaLock()) {
-                lastDemod->setDeltaLock(false);
-            } else if (lastDemod) {
-                lastDemod->setDeltaLockOfs(lastDemod->getFrequency() - wxGetApp().getFrequency());
-                lastDemod->setDeltaLock(true);
+            if (actionDemod && actionDemod->isDeltaLock()) {
+                actionDemod->setDeltaLock(false);
+            } else if (actionDemod) {
+                actionDemod->setDeltaLockOfs(actionDemod->getFrequency() - wxGetApp().getFrequency());
+                actionDemod->setDeltaLock(true);
             }
             break;
         case 'A':
@@ -3033,7 +3088,7 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
             if (event.ShiftDown()) {
                 toggleAllActiveDemodRecording();
             } else {
-                toggleActiveDemodRecording();
+                toggleDemodRecording(actionDemod);
             }
             break;
         case 'P':
@@ -3048,8 +3103,8 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
         case '[':
             return 1;
         case 'M':
-            if (lastDemod) {
-                lastDemod->setMuted(!lastDemod->isMuted());
+            if (actionDemod) {
+                actionDemod->setMuted(!actionDemod->isMuted());
             }
             break;
         default:
@@ -3077,12 +3132,10 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     return 1;
 }
 
-void AppFrame::toggleActiveDemodRecording() {
+void AppFrame::toggleDemodRecording(const DemodulatorInstancePtr& demod) {
     if (!wxGetApp().getConfig()->verifyRecordingPath()) {
         return;
     }
-    
-    DemodulatorInstancePtr demod = wxGetApp().getDemodMgr().getCurrentModem();
 
     if (demod) {
         demod->setRecording(!demod->isRecording());

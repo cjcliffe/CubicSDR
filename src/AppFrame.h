@@ -99,7 +99,7 @@ private:
     WaterfallCanvas *waterfallCanvas, *demodWaterfallCanvas;
     TuningCanvas *demodTuner;
     MeterCanvas *demodSignalMeter, *demodGainMeter, *spectrumAvgMeter, *waterfallSpeedMeter;
-    ModeSelectorCanvas *demodModeSelector, *demodMuteButton, *peakHoldButton, *soloModeButton, *deltaLockButton;
+    ModeSelectorCanvas *demodModeSelector, *demodMuteButton, *peakHoldButton, *soloModeButton, *deltaLockButton, *demodRecordButton;
     GainCanvas *gainCanvas;
     BookmarkView *bookmarkView;
 
@@ -200,7 +200,7 @@ private:
 	 */
 	void gkNudge(const DemodulatorInstancePtr& demod, int snap);
 
-	void toggleActiveDemodRecording();
+	void toggleDemodRecording(const DemodulatorInstancePtr& demod);
 	void toggleAllActiveDemodRecording();
 
 	/**
@@ -211,6 +211,7 @@ private:
 	SpectrumCanvas *makeDemodSpectrumCanvas(wxWindow *parent, const wxGLAttributes &attribList);
 	MeterCanvas *makeSignalMeter(wxWindow *parent, const wxGLAttributes &attribList);
 	ModeSelectorCanvas *makeDeltaLockButton(wxWindow *parent, const wxGLAttributes &attribList);
+	ModeSelectorCanvas *makeDemodRecordButton(wxWindow *parent, const wxGLAttributes &attribList);
 	TuningCanvas *makeModemTuner(wxWindow *parent, const wxGLAttributes &attribList);
 	MeterCanvas *makeModemGainMeter(wxWindow *parent, const wxGLAttributes &attribList);
 	ModeSelectorCanvas *makeSoloModeButton(wxWindow *parent, const wxGLAttributes &attribList);

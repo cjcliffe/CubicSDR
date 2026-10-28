@@ -74,10 +74,10 @@ In `src/demod/DemodulatorMgr.h` and `src/demod/DemodulatorMgr.cpp`:
 
 Replace `getActiveContextModem()` with `getCurrentModem()` in:
 
-- `WaterfallCanvas` key handling (delete, center) and mouse-drag frequency and bandwidth edits, which then operate on the selection committed at mouse-down.
+- `WaterfallCanvas` key handling: delete and center act on the hover target (center keeps its cursor-position fallback when nothing is hovered); mouse-drag frequency and bandwidth edits operate on the selection committed at mouse-down.
 - `SpectrumCanvas` render gating for the new-demod frequency indicator.
 - `CubicSDR::showFrequencyInput()` dialog-title choice and `showLabelInput()` target. Note the intended UX change: with a selection present, the dialog always targets that demodulator even when the cursor sits over empty spectrum; the center-frequency title appears only when selection is null.
-- `AppFrame::OnGlobalKeyUp()` delta-lock, mute, and record toggles; `toggleActiveDemodRecording()`; `isUserDemodBusy()`, where the context-vs-selection disagreement clause is deleted and only the mouse-down clauses remain.
+- `AppFrame` quick keys: V/M/R (`OnGlobalKeyUp()`) and `[`/`]` nudge (`OnGlobalKeyDown()` via `gkNudge()`) act on the hover target while the cursor is in the waterfall and fall back to the selection outside it — the nudge gate also prevents a nudged demod that moves out from under the cursor from handing off to the selection (`toggleDemodRecording()` for record; SHIFT-R still toggles all); `isUserDemodBusy()`, where the context-vs-selection disagreement clause is deleted and only the mouse-down clauses remain. Waterfall `OnKeyDown()` delete and center act on the hover target (center keeps its cursor-position fallback; delete clears the hover reference).
 - `RigThread` follow logic, which reads both the context modem and the selection today. Rewrite the center-lock comparison so it no longer compares selection against itself: when modem following is on, the rig loop acts purely on the selection, and the app-frequency sync condition drops the context side.
 - `DemodulatorThread` solo-mode squelch-break stealing, routed through the single-arg setter after an inline `getDemodulators()` lookup matching the raw instance pointer. The static squelch-lock pointer itself is unchanged.
 
@@ -94,6 +94,7 @@ No change needed in `TuningCanvas` readouts, `DemodulatorInstance::setFrequency(
 ### Phase 5: Clean up naming and dead state
 
 - In `AppFrame`, rename the `activeDemodulator` raw-pointer cache used by `handleCurrentModem()` change detection to `lastHandledDemod` (or equivalent) so it is not confused with the removed context modem; it remains a change-detection cache only.
+- Add a record toggle button (`R`, via `makeDemodRecordButton()`) left of the mute button in the demod gain tray, mirroring the delta-lock button's selection sync and toggle handling against the selected demodulator.
 - Search for and delete any remaining references to `activeContextModem`, `activeVisualDemodulator`, `getActiveContextModem`, `ByRawPointer`, and the two-arg setter form.
 
 ## Validation Plan
