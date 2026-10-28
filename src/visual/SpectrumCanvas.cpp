@@ -20,7 +20,6 @@
 #include "WaterfallCanvas.h"
 
 wxBEGIN_EVENT_TABLE(SpectrumCanvas, wxGLCanvas) EVT_PAINT(SpectrumCanvas::OnPaint)
-EVT_IDLE(SpectrumCanvas::OnIdle)
 EVT_MOTION(SpectrumCanvas::OnMouseMoved)
 EVT_LEFT_DOWN(SpectrumCanvas::OnMouseDown)
 EVT_LEFT_UP(SpectrumCanvas::OnMouseReleased)
@@ -123,9 +122,8 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 }
 
 
-void SpectrumCanvas::OnIdle(wxIdleEvent &event) {
+void SpectrumCanvas::frameUpdate() {
     Refresh();
-    event.RequestMore();
 }
 
 

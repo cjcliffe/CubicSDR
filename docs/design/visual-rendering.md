@@ -4,7 +4,7 @@ This document describes CubicSDR's OpenGL rendering system, canvas hierarchy, GL
 
 ## Overview
 
-The visual system is built on wxWidgets' OpenGL integration (`wxGLCanvas`/`wxGLContext`) and uses a **pull-based** architecture: worker threads produce FFT/scope data into queues, and UI canvases poll those queues in their `OnIdle()` or `OnPaint()` handlers. Worker threads never push data to the UI.
+The visual system is built on wxWidgets' OpenGL integration (`wxGLCanvas`/`wxGLContext`) and uses a **pull-based** architecture: worker threads produce FFT/scope data into queues, and UI canvases poll those queues in their `frameUpdate()` or `OnPaint()` handlers. Worker threads never push data to the UI.
 
 The visual data processing pipeline — how raw IQ samples become display-ready spectrum/scope data, the VisualProcessor template, and the FFT/scope processing internals — is documented in [visual-data-pipeline.md](visual-data-pipeline.md).
 
@@ -448,17 +448,18 @@ All canvases follow the same rendering pattern in `OnPaint()`:
 
 **Key detail:** The panel tree is drawn first (step 5-6), then overlays are drawn on top (steps 7-9) using `PrimaryGLContext` immediate-mode drawing. This two-pass approach ensures overlays always render above the waterfall/spectrum content. Note: `DrawFreqBwInfo` is called by `SpectrumCanvas` (not `WaterfallCanvas`) to show frequency/bandwidth readouts at the cursor position.
 
-### OnIdle Processing
+### Frame-Timer Processing
 
-Each canvas registers its own `EVT_IDLE` handler. wxWidgets fires `OnIdle` when the event loop is empty, giving canvases a chance to poll for new data:
+`AppFrame` runs a frame timer (paced by the performance mode) that calls `processFrame()` for panel and device state, then `frameUpdate()` on every registered canvas in order. Timer-driven repaints keep animating while native menu tracking starves idle events, which per-canvas `EVT_IDLE` handlers could not survive:
 
-| Canvas | OnIdle Behavior |
+| Canvas | frameUpdate Behavior |
 |--------|----------------|
 | `WaterfallCanvas` | `processInputQueue()` + `Refresh()` |
-| `SpectrumCanvas` | `Refresh()` + `event.RequestMore()` |
-| `ScopeCanvas` | `Refresh()` + `event.RequestMore()` |
+| `SpectrumCanvas`, `ScopeCanvas` | `Refresh()` |
+| `Meters`, tuner, gain | `Refresh()` (plus drag/gain polling where applicable) |
+| Mode buttons | `Refresh()` only while hovered; state changes refresh explicitly |
 
-`WaterfallCanvas` is the only canvas that polls its input queue in `OnIdle` via `processInputQueue()`. `SpectrumCanvas` and `ScopeCanvas` process their input queues inside `OnPaint()` instead (via `try_pop()` at the start of the paint handler). All canvases use non-blocking `try_pop()` to avoid stalling the UI thread. `Refresh()` is always called to drive animations (zoom interpolation, hover alpha decay, frequency nudge velocity) even when no new data is available.
+`WaterfallCanvas` is the only canvas that polls its input queue in `frameUpdate()` via `processInputQueue()`. `SpectrumCanvas` and `ScopeCanvas` process their input queues inside `OnPaint()` instead (via `try_pop()` at the start of the paint handler). All canvases use non-blocking `try_pop()` to avoid stalling the UI thread. `Refresh()` is always called to drive animations (zoom interpolation, hover alpha decay, frequency nudge velocity) even when no new data is available.
 
 ### WaterfallCanvas Paint Flow (Detailed)
 
@@ -528,7 +529,7 @@ SpectrumVisualProcessor (worker thread)
     ▼
 WaterfallCanvas (consumer, UI thread)
     │
-    ├── OnIdle() polls queue with try_pop()
+    ├── frameUpdate() polls queue with try_pop()
     ├── Rate-limits waterfall line insertion (linesPerSecond, default 30)
     ├── Triggers Refresh() → OnPaint() → SwapBuffers()
     │

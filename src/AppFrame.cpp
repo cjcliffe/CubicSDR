@@ -44,7 +44,7 @@ wxBEGIN_EVENT_TABLE(AppFrame, wxFrame)
 //EVT_MENU(wxID_NEW, AppFrame::OnNewWindow)
 EVT_CLOSE(AppFrame::OnClose)
 EVT_MENU(wxID_ANY, AppFrame::OnMenu)
-EVT_IDLE(AppFrame::OnIdle)
+EVT_TIMER(wxID_FRAME_TIMER, AppFrame::OnFrameTimer)
 EVT_SPLITTER_DCLICK(wxID_ANY, AppFrame::OnDoubleClickSash)
 EVT_SPLITTER_UNSPLIT(wxID_ANY, AppFrame::OnUnSplit)
 wxEND_EVENT_TABLE()
@@ -76,6 +76,8 @@ public:
 
 AppFrame::AppFrame() :
         wxFrame(nullptr, wxID_ANY, CUBICSDR_TITLE), lastHandledDemod(nullptr) {
+
+    frameTimer.SetOwner(this, wxID_FRAME_TIMER);
 
     initIcon();
 
@@ -297,6 +299,18 @@ AppFrame::AppFrame() :
     waterfallCanvas->attachSpectrumCanvas(spectrumCanvas);
     spectrumCanvas->attachWaterfallCanvas(waterfallCanvas);
 
+    // Canvases repainted once per frame-timer tick, in registration order.
+    frameCanvases = {
+        demodModeSelector, demodWaterfallCanvas,
+        demodSpectrumCanvas, demodSignalMeter, deltaLockButton, demodRecordButton,
+        demodTuner, demodGainMeter, soloModeButton, demodMuteButton, spectrumCanvas,
+        peakHoldButton, spectrumAvgMeter, waterfallCanvas, waterfallSpeedMeter,
+        scopeCanvas, gainCanvas
+    };
+#ifdef ENABLE_DIGITAL_LAB
+    frameCanvases.push_back(demodModeSelectorAdv);
+#endif
+
     // Primary sizer for the window
     auto *vbox = new wxBoxSizer(wxVERTICAL);
     vbox->Add(mainSplitter, 1, wxEXPAND | wxALL, 0);
@@ -320,6 +334,8 @@ AppFrame::AppFrame() :
 
     // Show the window
     Show();
+
+    frameTimer.Start(getFrameIntervalMs());
 
     // Force refresh of all
     Refresh();
@@ -2098,6 +2114,7 @@ bool AppFrame::actionOnMenuPerformance(wxCommandEvent &event) {
         }
 
         wxGetApp().getConfig()->setPerfMode(perfEnumSet);
+        frameTimer.Start(getFrameIntervalMs());
 
         //update Channelizer mode:
         if (perfEnumSet == AppConfig::PERF_HIGH) {
@@ -2132,6 +2149,7 @@ bool AppFrame::actionOnMenuSDRStartStop(wxCommandEvent &event) {
 }
 
 void AppFrame::OnClose(wxCloseEvent& event) {
+    frameTimer.Stop();
     wxGetApp().closeDeviceSelector();
     if (aboutDlg) {
         aboutDlg->Destroy();
@@ -2188,8 +2206,35 @@ void AppFrame::OnNewWindow(wxCommandEvent& WXUNUSED(event)) {
     new AppFrame();
 }
 
-void AppFrame::OnIdle(wxIdleEvent &event) {
+void AppFrame::OnFrameTimer(wxTimerEvent& /*event*/) {
+#ifdef _WIN32
+    if (scopeCanvas && scopeCanvas->HasFocus()) {
+        waterfallCanvas->SetFocus();
+    }
+#endif
 
+    processFrame();
+
+    for (auto canvas : frameCanvases) {
+        if (canvas) {
+            canvas->frameUpdate();
+        }
+    }
+}
+
+int AppFrame::getFrameIntervalMs() {
+    switch (wxGetApp().getConfig()->getPerfMode()) {
+    case AppConfig::PERF_HIGH:
+        return 16;
+    case AppConfig::PERF_LOW:
+        return 66;
+    case AppConfig::PERF_NORMAL:
+    default:
+        return 33;
+    }
+}
+
+void AppFrame::processFrame() {
     handleUpdateDeviceParams();
 
     handleTXAntennaChange();
@@ -2216,24 +2261,6 @@ void AppFrame::OnIdle(wxIdleEvent &event) {
 #if USE_HAMLIB
     handleRigMenu();
 #endif
-
-#ifdef _WIN32
-    if (scopeCanvas && scopeCanvas->HasFocus()) {
-        waterfallCanvas->SetFocus();
-    }
-#endif
-
-    if (!this->IsActive()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(30));
-    } else {
-        if (wxGetApp().getConfig()->getPerfMode() == AppConfig::PERF_LOW) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(30));
-        } else {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
-    }
-
-    event.RequestMore();
 }
 
 void AppFrame::handleTXAntennaChange() {//Refresh the current TX antenna on, if any:

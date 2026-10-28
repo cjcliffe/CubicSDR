@@ -28,7 +28,6 @@
 
 wxBEGIN_EVENT_TABLE(WaterfallCanvas, wxGLCanvas)
 EVT_PAINT(WaterfallCanvas::OnPaint)
-EVT_IDLE(WaterfallCanvas::OnIdle)
 EVT_MOTION(WaterfallCanvas::OnMouseMoved)
 EVT_LEFT_DOWN(WaterfallCanvas::OnMouseDown)
 EVT_LEFT_UP(WaterfallCanvas::OnMouseReleased)
@@ -485,7 +484,7 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     }
 
 }
-void WaterfallCanvas::OnIdle(wxIdleEvent & event) {
+void WaterfallCanvas::frameUpdate() {
     processInputQueue();
     Refresh();
 }

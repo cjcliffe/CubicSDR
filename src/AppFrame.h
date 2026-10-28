@@ -10,6 +10,7 @@
 #include <wx/bitmap.h>
 #include <wx/statbmp.h>
 #include <wx/tooltip.h>
+#include <wx/timer.h>
 
 #include "PrimaryGLContext.h"
 
@@ -30,6 +31,7 @@
 #include "DemodulatorInstance.h"
 #include "DemodulatorThread.h"
 #include <map>
+#include <vector>
 
 
 #ifdef USE_HAMLIB
@@ -111,6 +113,11 @@ private:
     //Use a raw pointer here to prevent a dangling reference
     DemodulatorInstance* lastHandledDemod;
 
+    // Frame-rate pump driving processFrame() plus every canvas' frameUpdate().
+    wxTimer frameTimer;
+    // Canvases repainted once per frame-timer tick, in a single cycle.
+    std::vector<InteractiveCanvas*> frameCanvases;
+
     /***
      * Menus
      */
@@ -183,7 +190,9 @@ private:
      */
     void OnMenu(wxCommandEvent& event);
     void OnClose(wxCloseEvent& event);
-    void OnIdle(wxIdleEvent& event);
+    void OnFrameTimer(wxTimerEvent& event);
+    void processFrame();
+    int getFrameIntervalMs();
     void OnDoubleClickSash(wxSplitterEvent& event);
     void OnUnSplit(wxSplitterEvent& event);
     void OnAboutDialogClose(wxCommandEvent& event);
@@ -373,6 +382,8 @@ private:
 #define  wxID_RECORDING_SQUELCH_SKIP 8503
 #define  wxID_RECORDING_SQUELCH_ALWAYS 8504
 #define  wxID_RECORDING_FILE_TIME_LIMIT 8505
+
+#define wxID_FRAME_TIMER 8601
 
 #define wxID_AUDIO_BANDWIDTH_BASE 9000
 #define wxID_AUDIO_DEVICE_MULTIPLIER 50

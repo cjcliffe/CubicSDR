@@ -19,7 +19,6 @@
 #include <algorithm>
 
 wxBEGIN_EVENT_TABLE(MeterCanvas, wxGLCanvas) EVT_PAINT(MeterCanvas::OnPaint)
-EVT_IDLE(MeterCanvas::OnIdle)
 EVT_MOTION(MeterCanvas::OnMouseMoved)
 EVT_LEFT_DOWN(MeterCanvas::OnMouseDown)
 EVT_LEFT_UP(MeterCanvas::OnMouseReleased)
@@ -103,12 +102,8 @@ void MeterCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     SwapBuffers();
 }
 
-void MeterCanvas::OnIdle(wxIdleEvent &event) {
-	if (mouseTracker.mouseInView()) {
-	    Refresh();
-	} else {
-		event.Skip();
-	}
+void MeterCanvas::frameUpdate() {
+    Refresh();
 }
 
 void MeterCanvas::OnMouseMoved(wxMouseEvent& event) {

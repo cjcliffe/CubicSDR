@@ -19,7 +19,6 @@
 #include <algorithm>
 
 wxBEGIN_EVENT_TABLE(ModeSelectorCanvas, wxGLCanvas) EVT_PAINT(ModeSelectorCanvas::OnPaint)
-EVT_IDLE(ModeSelectorCanvas::OnIdle)
 EVT_MOTION(ModeSelectorCanvas::OnMouseMoved)
 EVT_LEFT_DOWN(ModeSelectorCanvas::OnMouseDown)
 EVT_LEFT_UP(ModeSelectorCanvas::OnMouseReleased)
@@ -79,11 +78,9 @@ void ModeSelectorCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     SwapBuffers();
 }
 
-void ModeSelectorCanvas::OnIdle(wxIdleEvent &event) {
+void ModeSelectorCanvas::frameUpdate() {
 	if (mouseTracker.mouseInView()) {
 		Refresh();
-	} else {
-		event.Skip();
 	}
 }
 

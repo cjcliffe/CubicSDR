@@ -19,7 +19,6 @@
 #include <algorithm>
 
 wxBEGIN_EVENT_TABLE(TuningCanvas, wxGLCanvas) EVT_PAINT(TuningCanvas::OnPaint)
-EVT_IDLE(TuningCanvas::OnIdle)
 EVT_MOTION(TuningCanvas::OnMouseMoved)
 EVT_LEFT_DOWN(TuningCanvas::OnMouseDown)
 EVT_LEFT_UP(TuningCanvas::OnMouseReleased)
@@ -269,7 +268,7 @@ void TuningCanvas::StepTuner(ActiveState state, TuningDirection tuningDir, int d
     }
 }
 
-void TuningCanvas::OnIdle(wxIdleEvent & event) {
+void TuningCanvas::frameUpdate() {
     if (mouseTracker.mouseDown()) {
         if (downState != TUNING_HOVER_NONE) {
             dragAccum += 5.0*mouseTracker.getOriginDeltaMouseX();
@@ -288,9 +287,7 @@ void TuningCanvas::OnIdle(wxIdleEvent & event) {
             dragging = false;
         }
     }
-    if (mouseTracker.mouseInView() || changed()) {
-        Refresh();
-    }
+    Refresh();
 }
 
 void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {

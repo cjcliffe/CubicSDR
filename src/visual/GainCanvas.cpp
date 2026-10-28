@@ -18,7 +18,6 @@
 #include <cmath>
 
 wxBEGIN_EVENT_TABLE(GainCanvas, wxGLCanvas) EVT_PAINT(GainCanvas::OnPaint)
-EVT_IDLE(GainCanvas::OnIdle)
 EVT_MOTION(GainCanvas::OnMouseMoved)
 EVT_LEFT_DOWN(GainCanvas::OnMouseDown)
 EVT_LEFT_UP(GainCanvas::OnMouseReleased)
@@ -62,12 +61,8 @@ void GainCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     SwapBuffers();
 }
 
-void GainCanvas::OnIdle(wxIdleEvent &event) {
-	if (mouseTracker.mouseInView()) {
-	    Refresh();
-	} else {
-		event.Skip();
-	}
+void GainCanvas::frameUpdate() {
+    Refresh();
 
 	bool areGainsChangedHere = false;
     

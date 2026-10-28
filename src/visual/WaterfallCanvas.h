@@ -57,7 +57,7 @@ public:
     
 private:
     void OnPaint(wxPaintEvent& event);
-    void OnIdle(wxIdleEvent &event);
+    void frameUpdate() override;
 
     void updateHoverState();
     
