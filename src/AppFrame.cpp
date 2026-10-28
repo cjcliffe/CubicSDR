@@ -19,6 +19,10 @@
 #include <vector>
 #include <algorithm>
 #include <chrono>
+#ifdef _WIN32
+#include <mmsystem.h>
+#include <atomic>
+#endif
 #include "AudioSinkFileThread.h"
 #include "CubicSDR.h"
 #include "Frequency.h"
@@ -335,7 +339,11 @@ AppFrame::AppFrame() :
     // Show the window
     Show();
 
+#ifdef _WIN32
+    startFrameTimer();
+#else
     frameTimer.Start(getFrameIntervalMs());
+#endif
 
     // Force refresh of all
     Refresh();
@@ -2114,7 +2122,11 @@ bool AppFrame::actionOnMenuPerformance(wxCommandEvent &event) {
         }
 
         wxGetApp().getConfig()->setPerfMode(perfEnumSet);
+#ifdef _WIN32
+        startFrameTimer();
+#else
         frameTimer.Start(getFrameIntervalMs());
+#endif
 
         //update Channelizer mode:
         if (perfEnumSet == AppConfig::PERF_HIGH) {
@@ -2149,7 +2161,11 @@ bool AppFrame::actionOnMenuSDRStartStop(wxCommandEvent &event) {
 }
 
 void AppFrame::OnClose(wxCloseEvent& event) {
+#ifdef _WIN32
+    stopFrameTimer();
+#else
     frameTimer.Stop();
+#endif
     wxGetApp().closeDeviceSelector();
     if (aboutDlg) {
         aboutDlg->Destroy();
@@ -2206,8 +2222,36 @@ void AppFrame::OnNewWindow(wxCommandEvent& WXUNUSED(event)) {
     new AppFrame();
 }
 
+#ifdef _WIN32
+void CALLBACK AppFrame::frameMMTimerProc(UINT /*uTimerID*/, UINT /*uMsg*/, DWORD_PTR dwUser, DWORD_PTR /*dw1*/, DWORD_PTR /*dw2*/) {
+    AppFrame *frame = reinterpret_cast<AppFrame *>(dwUser);
+    if (frame && !frame->frameTickPending.exchange(true)) {
+        frame->GetEventHandler()->QueueEvent(new wxTimerEvent(frame->frameTimer));
+    }
+}
+
+void AppFrame::startFrameTimer() {
+    stopFrameTimer();
+    frameTickPending.store(false);
+    frameMMTimerId = timeSetEvent(getFrameIntervalMs(), 1, &AppFrame::frameMMTimerProc, (DWORD_PTR)this,
+                                 TIME_PERIODIC | TIME_CALLBACK_FUNCTION);
+    if (!frameMMTimerId) {
+        frameTimer.Start(getFrameIntervalMs());
+    }
+}
+
+void AppFrame::stopFrameTimer() {
+    if (frameMMTimerId) {
+        timeKillEvent(frameMMTimerId);
+        frameMMTimerId = 0;
+    }
+    frameTimer.Stop();
+}
+#endif
+
 void AppFrame::OnFrameTimer(wxTimerEvent& /*event*/) {
 #ifdef _WIN32
+    frameTickPending.store(false);
     if (scopeCanvas && scopeCanvas->HasFocus()) {
         waterfallCanvas->SetFocus();
     }

@@ -136,26 +136,47 @@ void WaterfallPanel::update() {
         }
     }
     
-    unsigned int run_ofs = 0;
-    while (lines_buffered.load()) {
-        int run_lines = lines_buffered.load();
-        if (run_lines > waterfall_ofs[0]) {
-            run_lines = waterfall_ofs[0];
-        }
-        for (int j = 0; j < 2; j++) {
-            glBindTexture(GL_TEXTURE_2D, waterfall[j]);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, waterfall_ofs[j]-run_lines, half_fft_size, run_lines,
-                            GL_COLOR_INDEX, GL_UNSIGNED_BYTE, (GLvoid *) &(rLineBuffer[j][run_ofs]));
-            
-            waterfall_ofs[j]-=run_lines;
-            
-            if (waterfall_ofs[j] == 0) {
-                waterfall_ofs[j] = waterfall_lines;
+    // Upload at most one full texture cycle, newest lines first from the new
+    // top of the ring; older lines could never be visible, so drop them.
+    int total_lines = lines_buffered.load();
+    int run_lines = (total_lines < waterfall_lines) ? total_lines : waterfall_lines;
+
+    if (run_lines > 0) {
+        // Ring row where the newest line lands; rows fill newest-first downward.
+        int top = waterfall_ofs[0] - run_lines;
+        size_t src_ofs = 0;
+
+        if (top < 0) {
+            top += waterfall_lines;
+            // Wrap: the newest chunk fills the high block, the older
+            // remainder continues at the low end of the texture.
+            int high_lines = waterfall_lines - top;
+            for (int j = 0; j < 2; j++) {
+                glBindTexture(GL_TEXTURE_2D, waterfall[j]);
+                glTexSubImage2D(GL_TEXTURE_2D, 0, 0, top, half_fft_size, high_lines,
+                                GL_COLOR_INDEX, GL_UNSIGNED_BYTE, (GLvoid *) &(rLineBuffer[j][0]));
+            }
+            src_ofs = (size_t)high_lines * half_fft_size;
+            int low_lines = run_lines - high_lines;
+            if (low_lines > 0) {
+                for (int j = 0; j < 2; j++) {
+                    glBindTexture(GL_TEXTURE_2D, waterfall[j]);
+                    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, half_fft_size, low_lines,
+                                    GL_COLOR_INDEX, GL_UNSIGNED_BYTE, (GLvoid *) &(rLineBuffer[j][src_ofs]));
+                }
+            }
+        } else {
+            for (int j = 0; j < 2; j++) {
+                glBindTexture(GL_TEXTURE_2D, waterfall[j]);
+                glTexSubImage2D(GL_TEXTURE_2D, 0, 0, top, half_fft_size, run_lines,
+                                GL_COLOR_INDEX, GL_UNSIGNED_BYTE, (GLvoid *) &(rLineBuffer[j][src_ofs]));
             }
         }
-        run_ofs += run_lines*half_fft_size;
-        lines_buffered.store(lines_buffered.load()-run_lines);
+
+        waterfall_ofs[0] = top;
+        waterfall_ofs[1] = top;
     }
+    lines_buffered.store(lines_buffered.load() - total_lines);
 }
 
 void WaterfallPanel::drawPanelContents() {

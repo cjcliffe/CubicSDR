@@ -95,24 +95,54 @@ void WaterfallCanvas::processInputQueue() {
 
     bool updated = false;
     if (linesPerSecond) {
-        if (lpsIndex >= targetVis) {
-            while (lpsIndex >= targetVis) {
-                SpectrumVisualDataPtr vData;
+        // Cap insertions per frame at roughly one frame's share plus one
+        // banked line, so the ceiling scales with the requested line rate
+        // instead of throttling it. Anything above the cap stays queued as
+        // a small cushion against producer jitter instead of jumping at once.
+        int maxSteps = (linesPerSecond + 19) / 20 + 1;
+        if (maxSteps < 3) {
+            maxSteps = 3;
+        }
+        size_t maxBacklog = (size_t)maxSteps * 3;
 
-                if (visualDataQueue->try_pop(vData)) {
-                    
-                    if (vData) {
-                        if (vData->spectrum_points.size() == fft_size * 2) {
-                            waterfallPanel.setPoints(vData->spectrum_points);
-                        }
-                        waterfallPanel.step();
-                      
-                        updated = true;
-                    }
-                    lpsIndex-=targetVis;
-                } else {
-                	break;
+        // Bound latency: drop stale backlog beyond a short window so a
+        // transient stall delays the crawl instead of fast-forwarding it.
+        SpectrumVisualDataPtr dropData;
+        while (visualDataQueue && visualDataQueue->size() > maxBacklog && visualDataQueue->try_pop(dropData)) {
+        }
+
+        size_t depth = visualDataQueue ? visualDataQueue->size() : 0;
+        int due = (int)(lpsIndex / targetVis);
+        int take = due;
+        if (take > maxSteps) {
+            take = maxSteps;
+        }
+        if (take > (int)depth) {
+            take = (int)depth;
+        }
+
+        for (int s = 0; s < take; s++) {
+            SpectrumVisualDataPtr vData;
+            if (!visualDataQueue->try_pop(vData)) {
+                break;
+            }
+
+            if (vData) {
+                if (vData->spectrum_points.size() == fft_size * 2) {
+                    waterfallPanel.setPoints(vData->spectrum_points);
                 }
+                waterfallPanel.step();
+
+                updated = true;
+            }
+            lpsIndex -= targetVis;
+        }
+
+        // Forgive banked catch-up credit instead of bursting: after a stall
+        // the crawl resumes at pace on the newest lines rather than jumping.
+        if (lpsIndex >= targetVis && visualDataQueue && !visualDataQueue->empty()) {
+            lpsIndex -= targetVis * (int)(lpsIndex / targetVis);
+            while (visualDataQueue->size() > maxBacklog / 2 && visualDataQueue->try_pop(dropData)) {
             }
         }
     }

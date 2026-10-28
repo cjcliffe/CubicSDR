@@ -16,6 +16,10 @@
 
 #include "CubicSDR.h"
 
+#ifdef _WIN32
+#include <mmsystem.h>
+#endif
+
 #ifdef _OSX_APP_
 #include "CoreFoundation/CoreFoundation.h"
 #endif
@@ -184,6 +188,12 @@ bool CubicSDR::OnInit() {
     //so that character-related functions are likely to handle Unicode
     //better (by default, was "C" locale).
     std::setlocale(LC_ALL, "");
+
+#ifdef _WIN32
+    // The default Windows timer quantum (~15.6ms) beats against the frame
+    // timer and waterfall line pacing; request 1ms granularity instead.
+    timeBeginPeriod(1);
+#endif
 
 //#ifdef _OSX_APP_
 //    CFBundleRef mainBundle = CFBundleGetMainBundle();
@@ -461,6 +471,10 @@ int CubicSDR::OnExit() {
     AudioThread::deviceCleanup();
 
     std::cout << "Application termination complete." << std::endl << std::flush;
+
+#ifdef _WIN32
+    timeEndPeriod(1);
+#endif
 
     return wxApp::OnExit();
 }

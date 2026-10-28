@@ -48,6 +48,18 @@ void PrimaryGLContext::CheckGLError() {
     }
 }
 
+bool PrimaryGLContext::SetCurrent(const wxGLCanvas& win) const {
+    bool result = wxGLContext::SetCurrent(win);
+#ifdef _WIN32
+    // Swap interval is per-window state, so apply it on every activation:
+    // a single init-time call leaves all other canvases vsync'd.
+    if (result && wglSwapIntervalEXT) {
+        wglSwapIntervalEXT(0);
+    }
+#endif
+    return result;
+}
+
 PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContext, wxGLContextAttrs* ctxAttrs) :
         wxGLContext(canvas, sharedContext, (const wxGLContextAttrs*) ctxAttrs), hoverAlpha(1.0) {
 

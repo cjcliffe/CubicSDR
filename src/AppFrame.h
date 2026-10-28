@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #pragma once
+#ifdef _WIN32
+#include <atomic>
+#endif
 
 #include <wx/frame.h>
 #include <wx/panel.h>
@@ -115,6 +118,14 @@ private:
 
     // Frame-rate pump driving processFrame() plus every canvas' frameUpdate().
     wxTimer frameTimer;
+#ifdef _WIN32
+    // Multimedia-timer frame drive; WM_TIMER delivery proved too ragged for steady pacing.
+    unsigned int frameMMTimerId = 0;
+    std::atomic<bool> frameTickPending{ false };
+    static void CALLBACK frameMMTimerProc(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2);
+    void startFrameTimer();
+    void stopFrameTimer();
+#endif
     // Canvases repainted once per frame-timer tick, in a single cycle.
     std::vector<InteractiveCanvas*> frameCanvases;
 

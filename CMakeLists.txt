@@ -225,7 +225,14 @@ IF (WIN32)
         ELSE (MSVC)
             SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} -ldsound)
         ENDIF (MSVC)
-    ENDIF(USE_AUDIO_DS)    
+    ENDIF(USE_AUDIO_DS)
+
+    # Multimedia timer for 1ms scheduling granularity (frame pacing).
+    IF (MSVC)
+        SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} winmm.lib)
+    ELSE (MSVC)
+        SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} -lwinmm)
+    ENDIF (MSVC)
   
     SET(USE_MINGW_PATCH OFF CACHE BOOL "Add some missing functions when compiling against mingw liquid-dsp.")
     IF (USE_MINGW_PATCH) 
