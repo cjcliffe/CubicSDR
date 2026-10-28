@@ -119,12 +119,18 @@ private:
     // Frame-rate pump driving processFrame() plus every canvas' frameUpdate().
     wxTimer frameTimer;
 #ifdef _WIN32
-    // Multimedia-timer frame drive; WM_TIMER delivery proved too ragged for steady pacing.
+    // Frame-rate pump driven from a multimedia timer; ticks arrive as window
+    // messages so pacing stays steady including inside modal loops (menus).
     unsigned int frameMMTimerId = 0;
+    // Set while a tick is posted but not yet processed; drops redundant ticks.
     std::atomic<bool> frameTickPending{ false };
     static void CALLBACK frameMMTimerProc(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2);
     void startFrameTimer();
     void stopFrameTimer();
+    // Single per-frame update shared by the timer and window-message tick paths.
+    void tickFrame();
+    // Window-message tick path; runs synchronously so ticks continue in modal loops.
+    virtual WXLRESULT MSWWindowProc(WXUINT nMsgCode, WXWPARAM wParam, WXLPARAM lParam) override;
 #endif
     // Canvases repainted once per frame-timer tick, in a single cycle.
     std::vector<InteractiveCanvas*> frameCanvases;

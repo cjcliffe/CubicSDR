@@ -2223,10 +2223,20 @@ void AppFrame::OnNewWindow(wxCommandEvent& WXUNUSED(event)) {
 }
 
 #ifdef _WIN32
+namespace {
+const UINT WM_FRAME_TICK = WM_APP + 7;
+}
+
+// Periodic multimedia-timer callback; posts one tick message per period.
 void CALLBACK AppFrame::frameMMTimerProc(UINT /*uTimerID*/, UINT /*uMsg*/, DWORD_PTR dwUser, DWORD_PTR /*dw1*/, DWORD_PTR /*dw2*/) {
     AppFrame *frame = reinterpret_cast<AppFrame *>(dwUser);
     if (frame && !frame->frameTickPending.exchange(true)) {
-        frame->GetEventHandler()->QueueEvent(new wxTimerEvent(frame->frameTimer));
+        // Post a real window message rather than queueing a wx event: modal
+        // loops (e.g. menu tracking) dispatch window messages directly but do
+        // not flush wx's pending event list, so QueueEvent would stall there.
+        if (!PostMessage((HWND)frame->GetHWND(), WM_FRAME_TICK, 0, 0)) {
+            frame->frameTickPending.store(false);
+        }
     }
 }
 
@@ -2249,7 +2259,7 @@ void AppFrame::stopFrameTimer() {
 }
 #endif
 
-void AppFrame::OnFrameTimer(wxTimerEvent& /*event*/) {
+void AppFrame::tickFrame() {
 #ifdef _WIN32
     frameTickPending.store(false);
     if (scopeCanvas && scopeCanvas->HasFocus()) {
@@ -2265,6 +2275,20 @@ void AppFrame::OnFrameTimer(wxTimerEvent& /*event*/) {
         }
     }
 }
+
+void AppFrame::OnFrameTimer(wxTimerEvent& /*event*/) {
+    tickFrame();
+}
+
+#ifdef _WIN32
+WXLRESULT AppFrame::MSWWindowProc(WXUINT nMsgCode, WXWPARAM wParam, WXLPARAM lParam) {
+    if (nMsgCode == WM_FRAME_TICK) {
+        tickFrame();
+        return 0;
+    }
+    return wxFrame::MSWWindowProc(nMsgCode, wParam, lParam);
+}
+#endif
 
 int AppFrame::getFrameIntervalMs() {
     switch (wxGetApp().getConfig()->getPerfMode()) {
