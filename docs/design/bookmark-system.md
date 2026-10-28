@@ -71,7 +71,7 @@ Singleton managed by `CubicSDR`. Most public methods are thread-safe via `recurs
 | `removeBookmark(entry)` | Remove from all groups |
 | `moveBookmark(entry, group)` | Move entry between groups |
 | `getBookmarks(group)` | Get independent copy of group's bookmarks (sorted by frequency; sorts internal list as a side effect) |
-| `removeActive(demod)` | Deactivate and destroy a live demodulator instance (clears active context, removes from demod list, deletes thread) |
+| `removeActive(demod)` | Deactivate and destroy a live demodulator instance (deselects, removes from demod list, deletes thread) |
 | `resetBookmarks()` | Clear all data and reload default ranges |
 | `hasLastLoad(bookmarkFn)` | Check if `.lastloaded` backup exists (always checks in config dir) |
 | `hasBackup(bookmarkFn)` | Check if `.backup` file exists (always checks in config dir) |

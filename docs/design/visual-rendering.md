@@ -384,8 +384,8 @@ The `Drawer` object is stack-local (not shared between threads), so creating a D
 | `waterfallGradient` | Waterfall color mapping (256-entry LUT) |
 | `waterfallHighlight` | Active demodulator marker |
 | `waterfallNew` | New demodulator being created |
-| `waterfallHover` | Hovered demodulator / frequency selector |
-| `waterfallDestroy` | Demodulator being deleted |
+| `waterfallHover` | Hovered demodulator / frequency selector; spectrum selection marker |
+| `waterfallDestroy` | Demodulator being deleted; selection while a move is pending |
 | `wfHighlight` | Waterfall highlight overlay (declared but currently unused) |
 | `fftLine` | Spectrum line color |
 | `fftHighlight` | Highlighted spectrum point |
