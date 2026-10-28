@@ -351,7 +351,163 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
 }
 
 
+bool BookmarkView::refreshActiveLabelsInPlace() {
+    // A pending programmatic selection always needs the full rebuild path.
+    if (nextDemod || nextEnt || nextRange || !nextGroup.empty()) {
+        return false;
+    }
+
+    // The props buttons are rebuilt from the selection's recording state by
+    // the full path; a change there (or a new selection) needs it as well.
+    DemodulatorInstancePtr currentDemod = wxGetApp().getDemodMgr().getCurrentModem();
+    if (currentDemod != lastBuiltActiveDemod || (currentDemod && currentDemod->isRecording() != lastBuiltRecordingState)) {
+        return false;
+    }
+
+    auto collectChildren = [this](const wxTreeItemId& branch) {
+        std::vector<std::pair<TreeViewItem*, wxTreeItemId>> items;
+        wxTreeItemIdValue cookie;
+        wxTreeItemId child = m_treeView->GetFirstChild(branch, cookie);
+        while (child.IsOk()) {
+            items.push_back({ itemToTVI(child), child });
+            child = m_treeView->GetNextChild(branch, cookie);
+        }
+        return items;
+    };
+
+    BookmarkMgr &mgr = wxGetApp().getBookmarkMgr();
+    bool useSearch = !searchKeywords.empty();
+
+    // Active demodulators, with the same keyword filtering as the rebuild.
+    std::vector<DemodulatorInstancePtr> demods = wxGetApp().getDemodMgr().getDemodulators();
+    std::vector<std::pair<DemodulatorInstancePtr, wxString>> expectedActive;
+    for (auto demod_i : demods) {
+        wxString activeLabel = BookmarkMgr::getActiveDisplayName(demod_i);
+
+        if (useSearch) {
+            std::string freqStr = frequencyToStr(demod_i->getFrequency());
+            std::string bwStr = frequencyToStr(demod_i->getBandwidth());
+            std::string mtype = demod_i->getDemodulatorType();
+
+            std::wstring fullText = activeLabel.ToStdWstring() +
+            L" " + demod_i->getDemodulatorUserLabel() +
+            L" " + std::to_wstring(demod_i->getFrequency()) +
+            L" " + wxString(freqStr).ToStdWstring() +
+            L" " + wxString(bwStr).ToStdWstring() +
+            L" " + wxString(mtype).ToStdWstring();
+
+            if (!isKeywordMatch(fullText, searchKeywords)) {
+                continue;
+            }
+        }
+        expectedActive.push_back(std::make_pair(demod_i, activeLabel));
+    }
+
+    std::vector<std::pair<TreeViewItem*, wxTreeItemId>> activeItems = collectChildren(activeBranch);
+    if (activeItems.size() != expectedActive.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < activeItems.size(); i++) {
+        TreeViewItem *tvi = activeItems[i].first;
+        if (!tvi || tvi->type != TreeViewItem::Type::TREEVIEW_ITEM_TYPE_ACTIVE || tvi->demod != expectedActive[i].first) {
+            return false;
+        }
+        if (m_treeView->GetItemText(activeItems[i].second) != expectedActive[i].second) {
+            m_treeView->SetItemText(activeItems[i].second, expectedActive[i].second);
+        }
+    }
+
+    // View ranges are never keyword-filtered by the rebuild either.
+    BookmarkRangeList ranges = mgr.getRanges();
+    std::vector<std::pair<TreeViewItem*, wxTreeItemId>> rangeItems = collectChildren(rangeBranch);
+    if (rangeItems.size() != ranges.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < rangeItems.size(); i++) {
+        TreeViewItem *tvi = rangeItems[i].first;
+        if (!tvi || tvi->type != TreeViewItem::Type::TREEVIEW_ITEM_TYPE_RANGE || tvi->rangeEnt != ranges[i]) {
+            return false;
+        }
+        std::wstring labelVal = ranges[i]->label;
+        if (labelVal.empty()) {
+            std::string wstr = frequencyToStr(ranges[i]->startFreq) + " - " + frequencyToStr(ranges[i]->endFreq);
+
+            labelVal = wxString(wstr).ToStdWstring();
+        }
+        wxString newText(labelVal);
+        if (m_treeView->GetItemText(rangeItems[i].second) != newText) {
+            m_treeView->SetItemText(rangeItems[i].second, newText);
+        }
+    }
+
+    // Recents, with the same keyword filtering as the rebuild.
+    BookmarkList recents = mgr.getRecents();
+    std::vector<std::pair<BookmarkEntryPtr, std::wstring>> expectedRecent;
+    for (auto recent_i : recents) {
+        std::wstring labelVal;
+        recent_i->node->child("user_label")->element()->get(labelVal);
+
+        if (labelVal.empty()) {
+            std::string str = frequencyToStr(recent_i->frequency) + " " + recent_i->type;
+
+            labelVal = wxString(str).ToStdWstring();
+        }
+
+        if (useSearch) {
+            std::string freqStr = frequencyToStr(recent_i->frequency);
+            std::string bwStr = frequencyToStr(recent_i->bandwidth);
+
+            std::wstring fullText = labelVal +
+                L" " + std::to_wstring(recent_i->frequency) +
+
+                L" " + wxString(freqStr).ToStdWstring() +
+                L" " + wxString(bwStr).ToStdWstring() +
+                L" " + wxString(recent_i->type).ToStdWstring();
+
+            if (!isKeywordMatch(fullText, searchKeywords)) {
+                continue;
+            }
+        }
+        expectedRecent.push_back(std::make_pair(recent_i, labelVal));
+    }
+
+    std::vector<std::pair<TreeViewItem*, wxTreeItemId>> recentItems = collectChildren(recentBranch);
+    if (recentItems.size() != expectedRecent.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < recentItems.size(); i++) {
+        TreeViewItem *tvi = recentItems[i].first;
+        if (!tvi || tvi->type != TreeViewItem::Type::TREEVIEW_ITEM_TYPE_RECENT || tvi->bookmarkEnt != expectedRecent[i].first) {
+            return false;
+        }
+        wxString newText(expectedRecent[i].second);
+        if (m_treeView->GetItemText(recentItems[i].second) != newText) {
+            m_treeView->SetItemText(recentItems[i].second, newText);
+        }
+    }
+
+    // Refresh the props fields for the selected active demodulator without
+    // touching items, selection, expansion state, or buttons. The user-label
+    // field is only written when it differs so typing there is not clobbered.
+    wxTreeItemId selItem = m_treeView->GetSelection();
+    TreeViewItem *selTVI = selItem.IsOk() ? itemToTVI(selItem) : nullptr;
+    if (selTVI && selTVI->type == TreeViewItem::Type::TREEVIEW_ITEM_TYPE_ACTIVE && selTVI->demod) {
+        m_frequencyVal->SetLabelText(frequencyToStr(selTVI->demod->getFrequency()));
+        m_bandwidthVal->SetLabelText(frequencyToStr(selTVI->demod->getBandwidth()));
+        m_modulationVal->SetLabelText(selTVI->demod->getDemodulatorType());
+        std::wstring userLabel = selTVI->demod->getDemodulatorUserLabel();
+        if (m_labelText->GetValue().ToStdWstring() != userLabel) {
+            m_labelText->SetValue(wxString(userLabel));
+        }
+    }
+
+    return true;
+}
+
 void BookmarkView::doUpdateActiveList() {
+    if (refreshActiveLabelsInPlace()) {
+        return;
+    }
 
     auto demods = wxGetApp().getDemodMgr().getDemodulators();
     auto lastActiveDemodulator = wxGetApp().getDemodMgr().getCurrentModem();
@@ -510,6 +666,11 @@ void BookmarkView::doUpdateActiveList() {
 
     // Add an extra refresh, that rebuilds the buttons from sratch.
     activeSelection(lastActiveDemodulator);
+
+    // Remember which active demodulator the props buttons were built for so
+    // the in-place refresh can detect recording-state changes.
+    lastBuiltActiveDemod = lastActiveDemodulator;
+    lastBuiltRecordingState = lastActiveDemodulator ? lastActiveDemodulator->isRecording() : false;
 
     delete prevSelCopy;
 }
