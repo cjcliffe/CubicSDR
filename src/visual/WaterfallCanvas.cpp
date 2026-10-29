@@ -48,6 +48,7 @@ WaterfallCanvas::WaterfallCanvas(wxWindow *parent, const wxGLAttributes& dispAtt
     preBuf = false;
     SetCursor(wxCURSOR_CROSS);
     scaleMove = 0;
+    rightDragDist = 0;
     minBandwidth = 30000;
     fft_size_changed.store(false);
 }
@@ -612,7 +613,7 @@ void WaterfallCanvas::updateHoverState() {
         }
         else {
             setStatusText(
-                "Click to set demodulator frequency or hold ALT to drag range; hold SHIFT to create new. Arrow keys or wheel to navigate/zoom bandwidth, C to center. Right-drag or SHIFT+UP/DOWN to adjust visual gain. Shift-R record/stop all.");
+                "Click to set demodulator frequency or hold ALT to drag range; hold SHIFT to create new. Arrow keys or wheel to navigate/zoom bandwidth, C to center. Right-drag or SHIFT+UP/DOWN to adjust visual gain, right-click to reset it. Shift-R record/stop all.");
         }
     }
 }
@@ -670,6 +671,7 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
        
         //Right-drag has the same effect on both Waterfall and Spectrum.
         spectrumCanvas->updateScaleFactorFromYMove(mouseTracker.getDeltaMouseY());
+        rightDragDist += (float)fabs(mouseTracker.getDeltaMouseY());
 
     } else {
         updateHoverState();
@@ -905,12 +907,20 @@ void WaterfallCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
 void WaterfallCanvas::OnMouseRightDown(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseRightDown(event);
 
+    rightDragDist = 0;
     SetCursor(wxCURSOR_SIZENS);
     mouseTracker.setVertDragLock(true);
     mouseTracker.setHorizDragLock(true);
 }
 
 void WaterfallCanvas::OnMouseRightReleased(wxMouseEvent& event) {
+    // A right-click without a drag resets the shared scaling range,
+    // mirroring the spectrum view. Drag distance is tracked by hand because
+    // the pointer warp used during right-drag pins the tracker's origin
+    // delta near zero even for long drags.
+    if (rightDragDist < 0.01 && spectrumCanvas) {
+        spectrumCanvas->resetScaleFactorFromClick();
+    }
     InteractiveCanvas::OnMouseRightReleased(event);
     SetCursor(wxCURSOR_CROSS);
     mouseTracker.setVertDragLock(false);
