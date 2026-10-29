@@ -1104,12 +1104,19 @@ void BookmarkView::activateBookmark(const BookmarkEntryPtr& bmEnt) {
 
 
 void BookmarkView::activateRange(const BookmarkRangeEntryPtr& rangeEnt) {
-    
+
 	//the following only works if rangeEnt->freq is the middle of [rangeEnt->startFreq ; rangeEnt->startFreq]
 	wxGetApp().setFrequency(rangeEnt->freq);
-	
-	// Change View limits to fit the range exactly.
-    wxGetApp().getAppFrame()->setViewState(rangeEnt->startFreq + (rangeEnt->endFreq - rangeEnt->startFreq) / 2, rangeEnt->endFreq - rangeEnt->startFreq);
+
+	// Change View limits to fit the range, centered on its middle but never
+    // wider than the current device can show.
+    long long rangeCenter = rangeEnt->startFreq + (rangeEnt->endFreq - rangeEnt->startFreq) / 2;
+    long long rangeWidth = rangeEnt->endFreq - rangeEnt->startFreq;
+    long long maxViewWidth = wxGetApp().getSampleRate();
+    if (maxViewWidth > 0 && rangeWidth > maxViewWidth) {
+        rangeWidth = maxViewWidth;
+    }
+    wxGetApp().getAppFrame()->setViewState(rangeCenter, (int)rangeWidth);
 }
 
 
