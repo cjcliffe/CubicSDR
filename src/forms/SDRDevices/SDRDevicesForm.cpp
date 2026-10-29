@@ -11,7 +11,7 @@
 
 devFrame::devFrame( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
 {
-	this->SetSizeHints( wxDefaultSize, wxDefaultSize );
+	this->SetSizeHints( wxSize( 600,-1 ), wxDefaultSize );
 	
 	devStatusBar = this->CreateStatusBar( 1, wxSTB_SIZEGRIP, wxID_ANY );
 	wxBoxSizer* devFrameSizer;
@@ -53,7 +53,7 @@ devFrame::devFrame( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	m_panel6->SetSizer( bSizer6 );
 	m_panel6->Layout();
 	bSizer6->Fit( m_panel6 );
-	bSizer4->Add( m_panel6, 1, wxEXPAND | wxALL, 5 );
+	bSizer4->Add( m_panel6, 0, wxEXPAND | wxALL, 5 );
 	
 	m_panel61 = new wxPanel( m_panel3, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer7;
@@ -64,6 +64,7 @@ devFrame::devFrame( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	bSizer7->Add( m_staticText1, 0, wxALL, 5 );
 	
 	m_propertyGrid = new wxPropertyGrid(m_panel61, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPG_DEFAULT_STYLE);
+	m_propertyGrid->SetMinSize( wxSize( 300,-1 ) );
 	bSizer7->Add( m_propertyGrid, 1, wxALL|wxEXPAND, 5 );
 	
 	
