@@ -66,6 +66,8 @@ private:
     void OnMouseReleased(wxMouseEvent& event);
     void OnMouseRightDown(wxMouseEvent& event);
     void OnMouseRightReleased(wxMouseEvent& event);
+    void OnMouseMiddleDown(wxMouseEvent& event);
+    void OnMouseMiddleReleased(wxMouseEvent& event);
     void OnMouseEnterWindow(wxMouseEvent& event);
     void OnMouseLeftWindow(wxMouseEvent& event);
 
@@ -93,6 +95,8 @@ private:
     int linesPerSecond;
     float scaleMove;
     float rightDragDist;
+    bool midZooming;
+    int midZoomStartY;
     int dragBW;
     
     SpectrumVisualDataQueuePtr visualDataQueue = std::make_shared<SpectrumVisualDataQueue>();
