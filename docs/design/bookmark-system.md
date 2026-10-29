@@ -127,21 +127,28 @@ On first run (no bookmark file exists), `loadDefaultRanges()` populates standard
 | 40 Meters | 7.0–7.3 MHz |
 | 30 Meters | 10.1–10.15 MHz |
 | 20 Meters | 14.0–14.35 MHz |
-| 17 Meters | 17.044–19.092 MHz |
+| 17 Meters | 18.068–18.168 MHz |
 | 15 Meters | 21–21.45 MHz |
 | 12 Meters | 24.89–24.99 MHz |
+| CB | 26.965–27.405 MHz |
 | 10 Meters | 28–29.7 MHz |
 | 6 Meters | 50–54 MHz |
 | 4 Meters | 70–70.5 MHz |
+| FM Broadcast | 88–108 MHz |
+| Airband | 118–137 MHz |
 | 2 Meters | 144–148 MHz |
+| Marine VHF | 156.025–162.025 MHz |
+| NOAA Weather | 162.4–162.55 MHz |
 | 1.25 Meters | 219–225 MHz |
 | 70 cm | 420–450 MHz |
 | 33 cm | 902–928 MHz |
 | 23 cm | 1240–1300 MHz |
 | 13 cm lower | 2300–2310 MHz |
 | 13 cm upper | 2390–2450 MHz |
-
-> **Note:** The 17 meters band range (17.044–19.092 MHz) in the source is incorrect per international allocations. The ITU 17m band is 18.068–18.168 MHz. The source value spans ~2 MHz and bleeds into adjacent bands.
+| 9 cm | 3300–3500 MHz |
+| 6 cm | 5650–5850 MHz |
+| 3 cm | 10000–10500 MHz |
+| 1.2 cm | 24000–24250 MHz |
 
 ## Persistence
 
@@ -271,6 +278,7 @@ During search, expand states are overridden: ranges are forced collapsed, while 
 
 - **Add bookmark:** Select an active demodulator → use the bookmark choice dropdown in the properties panel → select group (or "New Group..")
 - **Load bookmark:** Double-click bookmark entry → activates a matching live demodulator if one exists (same type, label, frequency, and bandwidth), otherwise creates and runs a new one
+- **Load range:** Select a range entry → centers the view on the range middle, narrowing the view bandwidth to the current sample rate when the range is wider than the device can show
 - **Delete item:** Select item → press DELETE key, or click the Remove button in the properties panel. Works for active, recent, bookmark, range, and group items.
 - **Move between groups:** Drag and drop in the bookmark view. Only ACTIVE, RECENT, and BOOKMARK items can be dragged; RANGE and GROUP items are not draggable. Dropping an ACTIVE item on a group creates a new bookmark. Dropping a RECENT item on a group bookmarks it and removes it from recents. Dropping a BOOKMARK item on a group moves it between groups. Dropping any draggable item on the "Bookmarks" branch root creates an implicit "Unnamed" group.
 
