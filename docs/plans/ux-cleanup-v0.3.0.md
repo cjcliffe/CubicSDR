@@ -20,6 +20,21 @@ established:
 - Sliders had no reset shortcut, and the bookmark panel toggle was
   menu-only — double-click restores documented defaults and Ctrl+B shares
   the menu toggle path.
+- Module loading rebuilt the device tree on every timer tick, and probing
+  blocked the UI with the pre-click selection still painted — the tree now
+  holds a static placeholder, selection paints before probing with busy
+  feedback, and the layout lives in the form project.
+- New demodulators played seconds of stale audio behind the visuals — the
+  audio callback now drops backlog to the newest buffer on every fresh
+  start.
+- Right-dragging gain on the waterfall snapped back on release while the
+  spectrum held — drag distance is now tracked by hand and right-click
+  resets both views together.
+- Zooming the waterfall needed the wheel — middle-drag now glide-zooms with
+  a distance-proportionate rate.
+- Default band data was wrong and wide ranges overshot small devices — 17m
+  corrected to the ITU allocation, microwave and utility bands added, and
+  range selection clamps to the sample rate.
 
 ## Work Plan
 
@@ -73,12 +88,32 @@ Landed units:
   bookmark panel toggle and in-place refresh (bookmark system), slider reset
   defaults (visual rendering); retired hover-reroute plan removed, its
   decisions recorded in the checklist above.
-
-Remaining units:
-
-- [ ] Validate frame pacing and vsync behavior on Linux and macOS.
-- [ ] Before the final PR, delete implementation plan docs from `docs/plans/`
-  per repo convention, including this file once its record has served.
+- [x] `tickFrame()` declared on all platforms (`93e88e6`) — the declaration
+  sat in a Windows-only guard while the caller was shared, breaking the
+  Linux build.
+- [x] Steady devices dialog (`eb3fcec`, `8929484`, `2ade52f`)
+  - tree holds static "Initializing" while modules load; status line keeps
+    the live progress
+  - selection paints before probing with busy-cursor feedback during the
+    blocking hardware probe
+  - list fixed at minimum width, property grid takes extra space, dialog
+    floor and grid minimum declared in the form project
+- [x] Audio backlog drop on stream start (`f17a40b`) — callback drains to
+  the newest queued buffer, so playback starts live; no-op in steady
+  streaming.
+- [x] Waterfall gain reset parity (`2286ec9`)
+  - right-click without drag resets the shared scale factor via the
+    spectrum canvas, easing both views back together
+  - drag distance tracked by hand since the pointer warp pins the origin
+    delta; status tip matches the spectrum wording
+- [x] Middle-drag glide zoom (`e7adb01`)
+  - holding glides the zoom at a rate accelerating with vertical distance from
+    the press point, up zooms in and down zooms out
+  - releasing or leaving the window stops at the current bandwidth
+- [x] Band defaults and range clamp (`b4820b7`) — 17m corrected to
+  18.068–18.168 MHz; 9/6/3/1.2 cm plus CB, FM, airband, marine, and weather
+  bands added; range selection centers on the middle and caps width at the
+  sample rate.
 
 ## Alternatives rejected (waterfall stutter)
 
@@ -163,7 +198,17 @@ above always reflects the current state.
 - Detach-on-deselect confirmed fine as-is; menu-open cadence confirmed
   steady (will re-raise if it recurs on another platform); scope question
   dropped — additions by request.
-- Current state: `AppFrame` toggle/reset committed; design doc updates, old-
-  plan removal, and plan updates committed; `tickFrame()` declaration moved
-  out of the Windows-only guard (uncommitted) after the Linux CI build
-  failed without it; rebuilt green with the unit suite passing.
+- `tickFrame()` declared on all platforms (`93e88e6`) after the Linux CI
+  build failed without it.
+- Devices dialog steadied (`eb3fcec`): static placeholder tree, paint-first
+  selection, busy feedback during probes. Live-verified.
+- Dialog layout declared in the form project (`8929484`, `2ade52f`):
+  minimum-width list, expanding parameters, dialog floor. Live-verified.
+- Audio backlog drop on stream start (`f17a40b`): newest buffer wins.
+  Live-verified.
+- Waterfall gain reset parity (`2286ec9`): right-click resets both views;
+  drag distance tracked by hand past the pointer warp. Live-verified.
+- Middle-drag glide zoom (`e7adb01`): accelerating rate, stops on release.
+  Live-verified.
+- Band defaults and range clamp (`b4820b7`): 17m corrected, microwave and
+  utility bands added, view capped at the sample rate. Live-verified.
