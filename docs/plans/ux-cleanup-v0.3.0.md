@@ -17,9 +17,9 @@ established:
   stalls and no starvation pauses.
 - Animation froze while menus were open — the frame timer keeps ticking
   inside modal menu loops.
-- Sliders had no reset shortcut and the bookmark panel had no toggle —
-  double-click restores documented defaults and Ctrl+B shares the menu
-  toggle path.
+- Sliders had no reset shortcut, and the bookmark panel toggle was
+  menu-only — double-click restores documented defaults and Ctrl+B shares
+  the menu toggle path.
 
 ## Work Plan
 
@@ -39,7 +39,8 @@ Landed units:
   - `M`/`V`/`R` act on the hovered demod in the waterfall, with
     active-demod fallback elsewhere
   - `D`/`C` and nudge `[`/`]` hover-only in the waterfall
-  - `V` works everywhere; green `R` record button left of `M`
+  - `V` works everywhere; green `R` record button above the `M` mute
+    button
   - descriptive tips with key names for Peak/Mute/Solo/Record/Pin
 - [x] Single-selection design docs (`cb803d2`).
 - [x] Bookmark in-place refresh (`b9ad1e1`) — refresh rows in place
