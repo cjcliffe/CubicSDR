@@ -644,7 +644,7 @@ wxMenu *AppFrame::makeDisplayMenu() {
 
     dispMenu->AppendSubMenu(themeMenu, wxT("&Color Scheme"));
 
-    hideBookmarksItem = dispMenu->AppendCheckItem(wxID_DISPLAY_BOOKMARKS, wxT("Hide Bookmarks"));
+    hideBookmarksItem = dispMenu->AppendCheckItem(wxID_DISPLAY_BOOKMARKS, wxT("Hide Bookmarks\tCtrl+B"));
     hideBookmarksItem->Check(!wxGetApp().getConfig()->getBookmarksVisible());
 
     return dispMenu;
@@ -821,8 +821,9 @@ MeterCanvas *AppFrame::makeSignalMeter(wxWindow *parent, const wxGLAttributes &a
     pCanvas->setMin(DEMOD_SIGNAL_MIN);
     pCanvas->setLevel(DEMOD_SIGNAL_MIN);
     pCanvas->setInputValue(DEMOD_SIGNAL_MIN);
-    pCanvas->setHelpTip("Current Signal Level.  Click / Drag to set Squelch level.  Right-Click to Auto-Zero Squelch.  Double-click to reset to default.");
-    pCanvas->setDefaultValue(DEMOD_SIGNAL_MIN);
+    pCanvas->setHelpTip("Current Signal Level.  Click / Drag to set Squelch level.  Right-Click to Auto-Zero Squelch.  Double-click to reset (squelch off).");
+    // Meter range tracks the live signal floor/ceiling, so "off" is a fixed level below any floor rather than the meter minimum.
+    pCanvas->setDefaultValue(-100.0f);
     pCanvas->SetMinSize(wxSize(12, 24));
     return pCanvas;
 }
@@ -1359,6 +1360,17 @@ void AppFrame::OnMenu(wxCommandEvent &event) {
 }
 
 
+void AppFrame::toggleBookmarks() {
+    hideBookmarksItem->Check(!hideBookmarksItem->IsChecked());
+    if (hideBookmarksItem->IsChecked()) {
+        bookmarkSplitter->Unsplit(bookmarkView);
+        bookmarkSplitter->Layout();
+    } else {
+        bookmarkSplitter->SplitVertically(bookmarkView, mainVisSplitter, wxGetApp().getConfig()->getBookmarkSplit());
+        bookmarkSplitter->Layout();
+    }
+}
+
 bool AppFrame::actionOnMenuDisplay(wxCommandEvent& event) {
 
     //by default, is managed.
@@ -1399,14 +1411,7 @@ bool AppFrame::actionOnMenuDisplay(wxCommandEvent& event) {
         GLFont::setScale(GLFont::GLFONT_SCALE_LARGE);
     }
     else if (event.GetId() == wxID_DISPLAY_BOOKMARKS) {
-        if (hideBookmarksItem->IsChecked()) {
-            bookmarkSplitter->Unsplit(bookmarkView);
-            bookmarkSplitter->Layout();
-        }
-        else {
-            bookmarkSplitter->SplitVertically(bookmarkView, mainVisSplitter, wxGetApp().getConfig()->getBookmarkSplit());
-            bookmarkSplitter->Layout();
-        }
+        toggleBookmarks();
     }
     else {
         bManaged = false;
@@ -2950,7 +2955,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     if (!this->IsActive()) {
         return -1;
     }
-    
+
 #ifdef USE_HAMLIB
     if (rigPortDialog != nullptr) {
         return -1;
@@ -2963,6 +2968,16 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     
     if (bookmarkView && bookmarkView->isMouseInView()) {
         return -1;
+    }
+    
+    // Ctrl+B shares the bookmark menu toggle path. Only B is claimed here;
+    // every other Ctrl combination keeps its previous behavior below.
+    if (event.ControlDown() && !event.AltDown()) {
+        int keyCode = event.GetKeyCode();
+        if (keyCode == 'B' || keyCode == 'b' || keyCode == 2) {
+            toggleBookmarks();
+            return 1;
+        }
     }
     
     DemodulatorInstancePtr demod = nullptr;

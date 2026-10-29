@@ -227,6 +227,7 @@ private:
 	void gkNudge(const DemodulatorInstancePtr& demod, int snap);
 
 	void toggleDemodRecording(const DemodulatorInstancePtr& demod);
+	void toggleBookmarks();
 	void toggleAllActiveDemodRecording();
 
 	/**
