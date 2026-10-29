@@ -197,6 +197,14 @@ Manual devices are:
 - Remote device add (via `CubicSDR::addRemote`); no UI exists to remove a remote device — `removeRemote` is declared but never invoked
 - Device activation (triggers `SDRThread` creation)
 
+While modules load, the device tree holds a static "Initializing" placeholder
+and only the status line narrates per-module progress, so the tree doesn't
+rebuild (and flicker) on every update. Selecting a device repaints the
+selection before probing it — `SoapySDR::Device::make` plus the setting queries
+block the UI thread — with busy feedback until the properties fill in. The
+form gives the device list its minimum width and all extra width to the
+property grid, with a minimum dialog width so parameter labels keep room.
+
 ## Device Configuration
 
 Per-device settings are persisted in `DeviceConfig` (see [Configuration System](configuration-system.md)):

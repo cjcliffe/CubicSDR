@@ -4,6 +4,7 @@
 #include "SDRDevices.h"
 
 #include <wx/msgdlg.h>
+#include <wx/utils.h>
 
 #include "CubicSDR.h"
 #include "Frequency.h"
@@ -114,6 +115,9 @@ void SDRDevicesDialog::refreshDeviceProperties() {
 
     SDRDeviceInfo *selDev = getSelectedDevice(devTree->GetSelection());
     if (selDev && selDev->isAvailable()) {
+        // Device queries below open and probe the hardware, blocking the UI
+        // thread; show busy feedback until the properties are filled in.
+        wxBusyCursor busyCursor;
         dev = selDev;
         selId = devTree->GetSelection();
         DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getName());
@@ -281,6 +285,11 @@ void SDRDevicesDialog::refreshDeviceProperties() {
 }
 
 void SDRDevicesDialog::OnSelectionChanged( wxTreeEvent& event ) {
+    // Paint the new selection first: probing below blocks the UI thread, and
+    // without this the tree keeps showing its pre-click state (e.g. the root
+    // focus outline) until the properties appear.
+    devTree->Refresh();
+    devTree->Update();
     refreshDeviceProperties();
     event.Skip();
 }
@@ -424,8 +433,14 @@ void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
         if (wxGetApp().areDevicesEnumerating() || !wxGetApp().areDevicesReady()) {
             std::string msg = wxGetApp().getNotification();
             devStatusBar->SetStatusText(msg);
-            devTree->DeleteAllItems();
-            devTree->AddRoot(msg);
+            // Keep the per-module loading progress on the status line only; the
+            // tree holds a static placeholder so those updates don't rebuild
+            // (and flicker) it on every timer tick.
+            wxTreeItemId enumeratingRoot = devTree->GetRootItem();
+            if (!enumeratingRoot.IsOk() || devTree->GetItemText(enumeratingRoot) != "Initializing") {
+                devTree->DeleteAllItems();
+                devTree->AddRoot("Initializing");
+            }
             event.Skip();
             return;
         }
