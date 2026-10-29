@@ -118,6 +118,9 @@ private:
 
     // Frame-rate pump driving processFrame() plus every canvas' frameUpdate().
     wxTimer frameTimer;
+    // Single per-frame update shared by the timer and window-message tick paths.
+    // Declared on all platforms; the Windows-only parts of the body stay guarded.
+    void tickFrame();
 #ifdef _WIN32
     // Frame-rate pump driven from a multimedia timer; ticks arrive as window
     // messages so pacing stays steady including inside modal loops (menus).
@@ -127,8 +130,6 @@ private:
     static void CALLBACK frameMMTimerProc(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2);
     void startFrameTimer();
     void stopFrameTimer();
-    // Single per-frame update shared by the timer and window-message tick paths.
-    void tickFrame();
     // Window-message tick path; runs synchronously so ticks continue in modal loops.
     virtual WXLRESULT MSWWindowProc(WXUINT nMsgCode, WXWPARAM wParam, WXLPARAM lParam) override;
 #endif

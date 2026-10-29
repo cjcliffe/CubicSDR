@@ -163,5 +163,6 @@ above always reflects the current state.
   steady (will re-raise if it recurs on another platform); scope question
   dropped — additions by request.
 - Current state: `AppFrame` toggle/reset committed; design doc updates, old-
-  plan removal, and plan updates uncommitted in the working tree; rebuilt
-  green with the unit suite passing.
+  plan removal, and plan updates committed; `tickFrame()` declaration moved
+  out of the Windows-only guard (uncommitted) after the Linux CI build
+  failed without it; rebuilt green with the unit suite passing.
