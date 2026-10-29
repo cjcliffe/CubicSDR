@@ -130,6 +130,15 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
                 continue;
             }
 
+            // Drop any backlog queued while the stream was starting (or
+            // stalled): only the newest buffer is still live. In steady
+            // streaming the queue holds at most one buffer, so this is a
+            // no-op there.
+            AudioThreadInputPtr fresh;
+            while (srcmix->inputQueue->try_pop(fresh)) {
+                srcmix->currentInput = fresh;
+            }
+
             continue;
         }
 
