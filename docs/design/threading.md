@@ -244,9 +244,8 @@ Windows and Linux use default thread priorities.
 
 The UI thread is **primarily pull-based**:
 
-1. `AppFrame::OnIdle()` is called continuously by the wx event loop and handles device params, modem properties, and UI state
-2. Each canvas registers its own `EVT_IDLE` handler independently — canvases poll their input queues via `try_pop()` in `OnIdle()` (WaterfallCanvas) or `OnPaint()` (SpectrumCanvas, ScopeCanvas). See [visual-rendering.md](visual-rendering.md) "OnIdle Processing" for per-canvas details.
-3. Visual data flows are pull-based: worker threads push to queues, UI canvases pull via `try_pop()`
-4. Shared state uses `std::atomic` variables (frequency, signal levels, mute state)
-5. UI-initiated changes go through atomic variables and flags, not wx events
-6. **Exception:** `SDRThread` triggers `refreshGainUI()` from the worker thread via `notifyMainUIOfDeviceChange()`, which rebuilds `GainCanvas` panels and triggers `Refresh()` — a cross-thread UI mutation outside the pull-based pattern
+1. `AppFrame` runs a frame timer (paced by the performance mode) that calls `processFrame()` for panel and device state, then `frameUpdate()` on every registered canvas in order. The former per-canvas `EVT_IDLE` repaint drivers are removed. Timer ticks keep arriving while native menu tracking runs its modal loop, which would starve idle events. See [visual-rendering.md](visual-rendering.md) "Frame-Timer Processing" for per-canvas details.
+2. Visual data flows are pull-based: worker threads push to queues, UI canvases pull via `try_pop()` — `WaterfallCanvas` in `frameUpdate()`, `SpectrumCanvas` and `ScopeCanvas` at the top of `OnPaint()`
+3. Shared state uses `std::atomic` variables (frequency, signal levels, mute state)
+4. UI-initiated changes go through atomic variables and flags, not wx events
+5. **Exception:** `SDRThread` triggers `refreshGainUI()` from the worker thread via `notifyMainUIOfDeviceChange()`, which rebuilds `GainCanvas` panels and triggers `Refresh()` — a cross-thread UI mutation outside the pull-based pattern

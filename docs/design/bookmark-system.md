@@ -249,6 +249,8 @@ The bookmark panel (`src/forms/Bookmark/BookmarkView.h`) displays bookmarks in a
 - **Bookmarks** — user-defined groups with saved entries
 - **Recents** — recently used demodulators
 
+Label updates (for example while nudging a demodulator) refresh rows in place instead of rebuilding the tree, so rapid updates don't flash the panel.
+
 ### Expand State
 
 Expand state is tracked by two separate systems:
@@ -279,3 +281,4 @@ During search, expand states are overridden: ranges are forced collapsed, while 
 - **Recording controls:** Start/stop audio recording from active demodulators
 - **Status bar hint:** A static hint ("Drag & Drop to create / move bookmarks, Group and arrange bookmarks, quick Search by keywords.") is shown in the status bar when the mouse enters the bookmark panel
 - **Frequency/bandwidth editing:** Double-click the frequency or bandwidth fields in the properties panel to open a FrequencyDialog (active demodulators only)
+- **Show/hide panel:** the Display menu Hide Bookmarks item and Ctrl+B share one toggle path, keeping the check state, saved visibility, and splitter layout in agreement

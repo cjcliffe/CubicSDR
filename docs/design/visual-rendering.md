@@ -676,3 +676,5 @@ Panel position animates with spring-like behavior: `ctr += (ctrTarget - ctr) * 0
 | `DEFAULT_WATERFALL_LPS` | 30 | Default waterfall lines per second |
 | `MIN_BANDWIDTH` | 500 | Minimum demodulator bandwidth |
 | `CHANNELIZER_RATE_MAX` | 500000 | Maximum channelizer sample rate |
+
+Double-clicking a slider restores its reset default: waterfall speed returns to `DEFAULT_WATERFALL_LPS`, spectrum averaging to 0.65, demod gain to 1.0, and squelch to off (a fixed level below any live meter floor).
