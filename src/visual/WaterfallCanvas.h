@@ -92,6 +92,7 @@ private:
     float hoverAlpha;
     int linesPerSecond;
     float scaleMove;
+    float rightDragDist;
     int dragBW;
     
     SpectrumVisualDataQueuePtr visualDataQueue = std::make_shared<SpectrumVisualDataQueue>();

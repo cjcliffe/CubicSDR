@@ -49,6 +49,8 @@ public:
     
     // called by Waterfall to forward the update of the vertical scale.
     void updateScaleFactorFromYMove(float yDeltaMouseMove);
+    // called by Waterfall to reset the shared scale factor on right-click.
+    void resetScaleFactorFromClick();
     
 private:
     void OnPaint(wxPaintEvent& event);

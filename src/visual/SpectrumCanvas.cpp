@@ -224,6 +224,10 @@ void SpectrumCanvas::updateScaleFactorFromYMove(float yDeltaMouseMove) {
     updateScaleFactor(scaleFactor);
 }
 
+void SpectrumCanvas::resetScaleFactorFromClick() {
+    resetScaleFactor = true;
+}
+
 void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseMoved(event);
     if (mouseTracker.mouseDown()) {

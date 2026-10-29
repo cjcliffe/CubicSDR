@@ -607,6 +607,7 @@ WF_DRAG_FREQUENCY
 |-------|--------|
 | Zero-drag (click) | Create new demodulator or move existing one to cursor frequency |
 | `WF_DRAG_RANGE` | Create demodulator spanning the selected frequency range |
+| Right-click (no vertical drag) | Reset shared visual gain via `spectrumCanvas->resetScaleFactorFromClick()`, animating back to 1.0 (the click test uses accumulated drag distance, since the pointer warp used during right-drag pins the origin delta near zero) |
 | All states | Reset `dragState = WF_DRAG_NONE` |
 
 **Frequency snap:** When moving a demodulator, the frequency snaps to the nearest configurable snap value (powers of 10: 1, 10, 100, 1000, etc.). Default is 1 Hz (no snapping); the user sets this via the tuning canvas, and it is persisted in `AppConfig`.
