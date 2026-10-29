@@ -33,6 +33,8 @@ EVT_LEFT_DOWN(WaterfallCanvas::OnMouseDown)
 EVT_LEFT_UP(WaterfallCanvas::OnMouseReleased)
 EVT_RIGHT_DOWN(WaterfallCanvas::OnMouseRightDown)
 EVT_RIGHT_UP(WaterfallCanvas::OnMouseRightReleased)
+EVT_MIDDLE_DOWN(WaterfallCanvas::OnMouseMiddleDown)
+EVT_MIDDLE_UP(WaterfallCanvas::OnMouseMiddleReleased)
 EVT_LEAVE_WINDOW(WaterfallCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(WaterfallCanvas::OnMouseEnterWindow)
 EVT_MOUSEWHEEL(WaterfallCanvas::OnMouseWheelMoved)
@@ -40,7 +42,7 @@ wxEND_EVENT_TABLE()
 
 WaterfallCanvas::WaterfallCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
         InteractiveCanvas(parent, dispAttrs), dragState(WF_DRAG_NONE), nextDragState(WF_DRAG_NONE), fft_size(0), new_fft_size(0), waterfall_lines(0),
-        dragOfs(0), mouseZoom(1), zoom(1), freqMoving(false), freqMove(0.0), hoverAlpha(1.0) {
+        dragOfs(0), mouseZoom(1), zoom(1), freqMoving(false), freqMove(0.0), hoverAlpha(1.0), midZooming(false), midZoomStartY(0) {
 
     glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this), wxGetApp().GetContextAttributes());
     linesPerSecond = DEFAULT_WATERFALL_LPS;
@@ -613,7 +615,7 @@ void WaterfallCanvas::updateHoverState() {
         }
         else {
             setStatusText(
-                "Click to set demodulator frequency or hold ALT to drag range; hold SHIFT to create new. Arrow keys or wheel to navigate/zoom bandwidth, C to center. Right-drag or SHIFT+UP/DOWN to adjust visual gain, right-click to reset it. Shift-R record/stop all.");
+                "Click to set demodulator frequency or hold ALT to drag range; hold SHIFT to create new. Arrow keys or wheel to navigate/zoom bandwidth, C to center. Right-drag or SHIFT+UP/DOWN to adjust visual gain, right-click to reset it. Middle-drag up/down to glide-zoom. Shift-R record/stop all.");
         }
     }
 }
@@ -673,6 +675,16 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
         spectrumCanvas->updateScaleFactorFromYMove(mouseTracker.getDeltaMouseY());
         rightDragDist += (float)fabs(mouseTracker.getDeltaMouseY());
 
+    } else if (midZooming) {
+        // Middle-drag glides the zoom while held, like middle-drag
+        // autoscroll: the rate accelerates with the vertical distance from
+        // the drag start, up zooms in and down zooms out. Releasing stops
+        // at the current bandwidth.
+        int height = GetClientSize().y;
+        if (height > 0) {
+            float offset = (float)(midZoomStartY - event.m_y) / (float)height;
+            zoom = 1.0f - offset * (float)fabs(offset) * 0.2f;
+        }
     } else {
         updateHoverState();
     }
@@ -892,6 +904,10 @@ void WaterfallCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
     // fade it, causing a visible flash on leave.
     hoverAlpha = 0.0f;
     mouseZoom = 1.0;
+    if (midZooming) {
+        midZooming = false;
+        zoom = 1.0;
+    }
 }
 
 void WaterfallCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
@@ -911,6 +927,20 @@ void WaterfallCanvas::OnMouseRightDown(wxMouseEvent& event) {
     SetCursor(wxCURSOR_SIZENS);
     mouseTracker.setVertDragLock(true);
     mouseTracker.setHorizDragLock(true);
+}
+
+void WaterfallCanvas::OnMouseMiddleDown(wxMouseEvent& event) {
+    midZooming = true;
+    midZoomStartY = event.m_y;
+    SetCursor(wxCURSOR_SIZENS);
+}
+
+void WaterfallCanvas::OnMouseMiddleReleased(wxMouseEvent& /*event*/) {
+    if (midZooming) {
+        midZooming = false;
+        zoom = 1.0;
+    }
+    SetCursor(wxCURSOR_CROSS);
 }
 
 void WaterfallCanvas::OnMouseRightReleased(wxMouseEvent& event) {
