@@ -3108,6 +3108,12 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     else if (scopeCanvas->getMouseTracker()->mouseInView()) {
         scopeCanvas->OnKeyDown(event);
     }
+    else if (demodWaterfallCanvas && demodWaterfallCanvas->getMouseTracker()->mouseInView()) {
+        demodWaterfallCanvas->OnKeyDown(event);
+    }
+    else if (demodSpectrumCanvas && demodSpectrumCanvas->getMouseTracker()->mouseInView()) {
+        demodSpectrumCanvas->OnKeyDown(event);
+    }
 
     return 1;
 }
@@ -3246,6 +3252,12 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     }
     else if (scopeCanvas->getMouseTracker()->mouseInView()) {
         scopeCanvas->OnKeyUp(event);
+    }
+    else if (demodWaterfallCanvas && demodWaterfallCanvas->getMouseTracker()->mouseInView()) {
+        demodWaterfallCanvas->OnKeyUp(event);
+    }
+    else if (demodSpectrumCanvas && demodSpectrumCanvas->getMouseTracker()->mouseInView()) {
+        demodSpectrumCanvas->OnKeyUp(event);
     }
     
     // TODO: Catch key-ups outside of original target

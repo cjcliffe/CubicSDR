@@ -660,6 +660,17 @@ Arrow keys control frequency and display in the WaterfallCanvas:
 
 Keyboard controls are **momentary**: on key-up, `scaleMove` resets to 0 and `zoom` resets to 1.0 (with UP/DOWN key-up re-arming `mouseZoom` to 0.95/1.05). `freqMove` is not hard-reset on key-up; it stops by velocity decay — `freqMove -= freqMove * 0.2` per frame, snapping to 0 at 0.01.
 
+### Canvas Key Shortcuts
+
+Key presses go to the canvas under the cursor: demod tuner, main waterfall, spectrum, scope, then the demod waterfall and spectrum views.
+
+| Key | Action |
+|-----|--------|
+| `D` / `Delete` | Remove the hovered demodulator |
+| `C` | Center on the hovered demodulator, or on the cursor frequency over empty space |
+| `E` | Rename the active demodulator |
+| `B` | Toggle dB display on the hovered spectrum canvas |
+
 ### Middle-Drag Glide Zoom
 
 Holding the middle button and dragging vertically glides the bandwidth zoom like middle-drag autoscroll: the zoom rate accelerates with the vertical distance from the press point (up zooms in, down zooms out), driven through the same per-frame `zoom` multiplier the arrow keys use, with the same min-bandwidth and sample-rate clamps. Releasing the button or leaving the window stops at the current bandwidth.
