@@ -207,6 +207,11 @@ void SpectrumCanvas::updateScaleFactor(float factor) {
     scaleFactor = factor;
     sp->setScaleFactor(factor);
     wp->setScaleFactor(factor);
+    // The demod view is a zoomed-in version of the same signal, so it
+    // follows the shared visual gain.
+    if (wxGetApp().getDemodSpectrumProcessor()) {
+        wxGetApp().getDemodSpectrumProcessor()->setScaleFactor(factor);
+    }
 }
 
 void SpectrumCanvas::updateScaleFactorFromYMove(float yDeltaMouseMove) {
