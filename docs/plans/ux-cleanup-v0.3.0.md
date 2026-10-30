@@ -123,6 +123,9 @@ Landed units:
 - [x] FM broadcast startup defaults (`2d04a8a`) — center 98 MHz,
   the middle of the FM broadcast band; default demod type stereo (`FMS`),
   including the Reset action; `FMS` de-emphasis default 50us
+- [x] Demod-view canvas keys (`47fcc9a`) — `D`/`C`/`E` (and `B` on its
+  spectrum) work with the cursor in the demod waterfall/spectrum views
+  via the extended key re-dispatch chain, matching the status tips
 
 ## Alternatives rejected (waterfall stutter)
 
@@ -229,3 +232,6 @@ above always reflects the current state.
   Live-verified.
 - FM broadcast startup defaults (`2d04a8a`): 98 MHz center, stereo default
   demod, Reset action parity, 50us de-emphasis default. Live-verified.
+- Demod-view canvas keys: `D`/`C`/`E` re-dispatched to the demod
+  waterfall canvas under the cursor, `B` to its spectrum; matches the
+  hover status tips. Live-verified.
