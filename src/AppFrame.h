@@ -33,6 +33,7 @@
 
 
 #ifdef USE_HAMLIB
+#include <hamlib/rig.h>
 class PortSelectorDialog;
 #endif
 
@@ -297,7 +298,7 @@ private:
     std::map<int, wxMenuItem *> rigSerialMenuItems;
     std::map<int, wxMenuItem *> rigModelMenuItems;
     wxMenu *rigModelMenu;
-    int rigModel;
+    rig_model_t rigModel;
     int rigSerialRate;
     long long rigSDRIF;
     std::vector<int> rigSerialRates;
