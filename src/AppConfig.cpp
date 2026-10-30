@@ -308,7 +308,7 @@ AppConfig::AppConfig() {
     themeId.store(0);
     fontScale.store(0);
     snap.store(1);
-    centerFreq.store(100000000);
+    centerFreq.store(98000000); // Middle of the FM broadcast band (88-108 MHz).
     waterfallLinesPerSec.store(DEFAULT_WATERFALL_LPS);
     spectrumAvgSpeed.store(0.65f);
     dbOffset.store(0);

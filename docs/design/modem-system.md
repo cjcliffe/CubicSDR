@@ -164,7 +164,7 @@ Runtime modem switching: PreThread nulls out modem/kit immediately (packets drop
 
 Most modems expose no configurable parameters. The following override `getSettings()`:
 
-**Analog:** ModemCW (offset, auto gain, gain), ModemFMStereo (de-emphasis time constant).
+**Analog:** ModemCW (offset, auto gain, gain), ModemFMStereo (de-emphasis time constant, 50us default).
 
 **Digital:** ModemAPSK, ModemASK, ModemDPSK, ModemPSK, ModemQAM, ModemSQAM (constellation size); ModemFSK (bits/symbol, symbols/second, bandwidth); ModemGMSK (filter delay, samples/symbol, excess bandwidth).
 

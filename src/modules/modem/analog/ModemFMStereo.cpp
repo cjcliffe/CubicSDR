@@ -5,7 +5,7 @@
 
 ModemFMStereo::ModemFMStereo() {
     demodFM = freqdem_create(0.5);
-    _demph = 75;
+    _demph = 50;
 }
 
 ModemFMStereo::~ModemFMStereo() {

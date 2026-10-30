@@ -69,7 +69,7 @@ Global application configuration. Singleton accessed via `wxGetApp().getConfig()
 | `themeId` | `int` | `window/theme` | 0 | Color theme index |
 | `fontScale` | `int` | `window/font_scale` | 0 | Font scale (0=normal, 1=medium, 2=large) |
 | `snap` | `long long` | `window/snap` | 1 | Frequency snap value in Hz |
-| `centerFreq` | `long long` | `window/center_freq` | 100000000 | Center frequency |
+| `centerFreq` | `long long` | `window/center_freq` | 98000000 | Center frequency (FM broadcast band center) |
 | `waterfallLinesPerSec` | `int` | `window/waterfall_lps` | 30 | Waterfall refresh rate |
 | `spectrumAvgSpeed` | `float` | `window/spectrum_avg` | 0.65 | Spectrum averaging speed |
 | `dbOffset` | `int` | `window/db_offset` | 0 | dB display offset |

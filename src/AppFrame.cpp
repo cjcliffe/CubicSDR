@@ -1439,8 +1439,8 @@ bool AppFrame::actionOnMenuReset(wxCommandEvent& event) {
     if (event.GetId() == wxID_RESET) {
 
         wxGetApp().getDemodMgr().terminateAll();
-        wxGetApp().setFrequency(100000000);
-        wxGetApp().getDemodMgr().setLastDemodulatorType("FM");
+        wxGetApp().setFrequency(98000000);
+        wxGetApp().getDemodMgr().setLastDemodulatorType("FMS");
         demodModeSelector->setSelection(1);
         wxGetApp().getDemodMgr().setLastMuted(false);
         wxGetApp().getDemodMgr().setLastBandwidth(DEFAULT_DEMOD_BW);
