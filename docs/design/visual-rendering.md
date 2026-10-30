@@ -78,6 +78,17 @@ Displays demodulated audio as oscilloscope or spectrum:
 - Uses both `ScopePanel` and `SpectrumPanel` in a composite layout
 - `GLPanel` hierarchy: `parentPanel` → `scopePanel` + `spectrumPanel` (children); `bgPanel` is drawn independently with its own identity transform before `parentPanel`
 
+### ModeSelectorCanvas (`src/visual/ModeSelectorCanvas.h`)
+
+Toggle-button canvas (modem type, mute, solo, record, and similar):
+
+- `setToggleMode()` makes a click flip between the choice and no selection
+- `setPulseMode()` breathes the selected button between its off-state look
+  (outline plus button-color text) and its on-state look (filled button plus
+  readable inverted text) on a shared two-second wall-clock cycle
+- `setDisabled()` dims the button and swallows clicks while the hover tip
+  keeps working, used for actions that need prior setup
+
 ## GLPanel System (`src/ui/GLPanel.h`)
 
 A lightweight retained-mode UI system for OpenGL rendering. Panels form a tree: each panel has position, size, fill, and optional children. The tree is traversed recursively each frame, with each panel computing its transform relative to its parent.
@@ -189,7 +200,7 @@ Shared OpenGL context providing drawing primitives. All canvases share this cont
 | `BeginDraw(r, g, b)` | Clear color+depth buffers, load identity modelview |
 | `EndDraw()` | Finalize frame — currently empty (no-op) |
 | `DrawDemod(demod, color, center_freq=-1, srate=0)` | Draw demodulator bandwidth indicator with label |
-| `DrawDemodInfo(demod, color, center_freq=-1, srate=0, centerline=false)` | Draw demodulator info label (frequency, type, bandwidth) |
+| `DrawDemodInfo(demod, color, center_freq=-1, srate=0, centerline=false)` | Draw demodulator info label (frequency, type, bandwidth); the label glows green on a shared two-second cycle while recording |
 | `DrawFreqSelector(uxPos, color, w=0, center_freq=-1, srate=0)` | Draw frequency selection marker (center line + BW edges) |
 | `DrawRangeSelector(uxPos1, uxPos2, color)` | Draw range selection overlay (two vertical boundary lines) |
 | `DrawFreqBwInfo(freq, bw, color, center_freq=-1, srate=0, stack=false, centerline=false)` | Draw frequency and bandwidth text with shadow |

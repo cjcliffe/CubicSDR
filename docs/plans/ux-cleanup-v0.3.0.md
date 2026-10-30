@@ -114,6 +114,12 @@ Landed units:
   18.068–18.168 MHz; 9/6/3/1.2 cm plus CB, FM, airband, marine, and weather
   bands added; range selection centers on the middle and caps width at the
   sample rate.
+- [x] Record-button pulse and no-path gating — green `R` breathes
+  between its off and on looks on a shared two-second cycle with the
+  spectrum recording glow; the button dims and swallows clicks until a
+  recording path is set, with the tip explaining what is missing and no
+  dialog opened from the frame tick; spectrum glow phase fixed to the
+  same cycle with integer-millisecond precision.
 
 ## Alternatives rejected (waterfall stutter)
 
@@ -212,3 +218,9 @@ above always reflects the current state.
   Live-verified.
 - Band defaults and range clamp (`b4820b7`): 17m corrected, microwave and
   utility bands added, view capped at the sample rate. Live-verified.
+- Record-button pulse and no-path gating: green `R` breathes between its
+  off and on looks on a shared two-second cycle with the spectrum
+  recording glow; the button dims and swallows clicks until a recording
+  path is set, with the tip explaining what is missing and no dialog opened
+  from the frame tick; spectrum glow phase fixed to the same cycle.
+  Live-verified.

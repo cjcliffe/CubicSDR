@@ -808,7 +808,8 @@ ModeSelectorCanvas *AppFrame::makeDemodRecordButton(wxWindow *parent, const wxGL
     pCanvas->addChoice(1, "R");
     pCanvas->setPadding(-1, -1);
     pCanvas->setHighlightColor(RGBA4f(0.2f, 0.8f, 0.2f));
-    pCanvas->setHelpTip("Demodulator Record Toggle (R) - Enable to record demodulator audio.");
+    pCanvas->setPulseMode(true);
+    updateRecordButtonState(pCanvas);
     pCanvas->setToggleMode(true);
     pCanvas->setSelection(-1);
     pCanvas->SetMinSize(wxSize(12, 28));
@@ -1837,6 +1838,7 @@ bool AppFrame::actionOnMenuRecording(wxCommandEvent& event) {
 
 		wxGetApp().getConfig()->setRecordingPath(recPathDialog.GetPath().ToStdString());
 
+		updateRecordButtonState(demodRecordButton);
 		updateRecordingMenu();
 		return true;
 
@@ -2692,7 +2694,13 @@ void AppFrame::handleCurrentModem() {
 
         int recordMode = demodRecordButton->getSelection();
         if (demodRecordButton->modeChanged()) {
-            if (wxGetApp().getConfig()->verifyRecordingPath()) {
+            demodRecordButton->clearModeChanged();
+            // Disabled means no recording path is set: force the visual back
+            // off and never open a dialog from the tick.
+            if (demodRecordButton->isDisabled()) {
+                demodRecordButton->setSelection(-1);
+                demodRecordButton->Refresh();
+            } else {
                 if (demod->isRecording() && recordMode == -1) {
                     demod->setRecording(false);
                 } else if (!demod->isRecording() && recordMode == 1) {
@@ -2700,7 +2708,6 @@ void AppFrame::handleCurrentModem() {
                 }
                 wxGetApp().getBookmarkMgr().updateActiveList();
             }
-            demodRecordButton->clearModeChanged();
         } else {
             if (demod->isRecording() && recordMode == -1) {
                 demodRecordButton->setSelection(1);
@@ -3244,6 +3251,18 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     // TODO: Catch key-ups outside of original target
 
     return 1;
+}
+
+void AppFrame::updateRecordButtonState(ModeSelectorCanvas *recordButton) {
+    // No recording path means no recording: dim the button and swallow its
+    // clicks. The tip still shows on hover and explains what is missing.
+    bool noPath = wxGetApp().getConfig()->getRecordingPath().empty();
+    recordButton->setDisabled(noPath);
+    if (noPath) {
+        recordButton->setHelpTip("Demodulator Record Toggle (R) - Set a recording path first ('Recording' menu -> 'Set Recording Path').");
+    } else {
+        recordButton->setHelpTip("Demodulator Record Toggle (R) - Enable to record demodulator audio.");
+    }
 }
 
 void AppFrame::toggleDemodRecording(const DemodulatorInstancePtr& demod) {
