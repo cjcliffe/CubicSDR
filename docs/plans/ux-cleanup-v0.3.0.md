@@ -120,6 +120,9 @@ Landed units:
   recording path is set, with the tip explaining what is missing and no
   dialog opened from the frame tick; spectrum glow phase fixed to the
   same cycle with integer-millisecond precision.
+- [x] FM broadcast startup defaults (`2d04a8a`) — center 98 MHz,
+  the middle of the FM broadcast band; default demod type stereo (`FMS`),
+  including the Reset action; `FMS` de-emphasis default 50us
 
 ## Alternatives rejected (waterfall stutter)
 
@@ -224,3 +227,5 @@ above always reflects the current state.
   path is set, with the tip explaining what is missing and no dialog opened
   from the frame tick; spectrum glow phase fixed to the same cycle.
   Live-verified.
+- FM broadcast startup defaults (`2d04a8a`): 98 MHz center, stereo default
+  demod, Reset action parity, 50us de-emphasis default. Live-verified.
