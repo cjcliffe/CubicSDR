@@ -45,8 +45,7 @@ WaterfallCanvas::WaterfallCanvas(wxWindow *parent, const wxGLAttributes& dispAtt
         dragOfs(0), mouseZoom(1), zoom(1), freqMoving(false), freqMove(0.0), hoverAlpha(1.0), midZooming(false), midZoomStartY(0) {
 
     glContext = new PrimaryGLContext(this, &wxGetApp().GetContext(this), wxGetApp().GetContextAttributes());
-    linesPerSecond = DEFAULT_WATERFALL_LPS;
-    lpsIndex = 0;
+    pacer.setLinesPerSecond(DEFAULT_WATERFALL_LPS);
     preBuf = false;
     SetCursor(wxCURSOR_CROSS);
     scaleMove = 0;
@@ -93,62 +92,44 @@ void WaterfallCanvas::processInputQueue() {
     
     gTimer.update();
     
-    double targetVis =  1.0 / (double)linesPerSecond;
-    lpsIndex += gTimer.lastUpdateSeconds();
+    size_t depth = visualDataQueue ? visualDataQueue->size() : 0;
+    WaterfallPacer::Plan plan = pacer.plan(gTimer.lastUpdateSeconds(), depth);
 
     bool updated = false;
-    if (linesPerSecond) {
-        // Cap insertions per frame at roughly one frame's share plus one
-        // banked line, so the ceiling scales with the requested line rate
-        // instead of throttling it. Anything above the cap stays queued as
-        // a small cushion against producer jitter instead of jumping at once.
-        int maxSteps = (linesPerSecond + 19) / 20 + 1;
-        if (maxSteps < 3) {
-            maxSteps = 3;
-        }
-        size_t maxBacklog = (size_t)maxSteps * 3;
 
-        // Bound latency: drop stale backlog beyond a short window so a
-        // transient stall delays the crawl instead of fast-forwarding it.
-        SpectrumVisualDataPtr dropData;
-        while (visualDataQueue && visualDataQueue->size() > maxBacklog && visualDataQueue->try_pop(dropData)) {
-        }
-
-        size_t depth = visualDataQueue ? visualDataQueue->size() : 0;
-        int due = (int)(lpsIndex / targetVis);
-        int take = due;
-        if (take > maxSteps) {
-            take = maxSteps;
-        }
-        if (take > (int)depth) {
-            take = (int)depth;
-        }
-
-        for (int s = 0; s < take; s++) {
-            SpectrumVisualDataPtr vData;
-            if (!visualDataQueue->try_pop(vData)) {
-                break;
-            }
-
-            if (vData) {
-                if (vData->spectrum_points.size() == fft_size * 2) {
-                    waterfallPanel.setPoints(vData->spectrum_points);
-                }
-                waterfallPanel.step();
-
-                updated = true;
-            }
-            lpsIndex -= targetVis;
-        }
-
-        // Forgive banked catch-up credit instead of bursting: after a stall
-        // the crawl resumes at pace on the newest lines rather than jumping.
-        if (lpsIndex >= targetVis && visualDataQueue && !visualDataQueue->empty()) {
-            lpsIndex -= targetVis * (int)(lpsIndex / targetVis);
-            while (visualDataQueue->size() > maxBacklog / 2 && visualDataQueue->try_pop(dropData)) {
-            }
+    // All scheduling lives in the pacer; this loop only carries out the
+    // planned pops against the live queue.
+    SpectrumVisualDataPtr dropData;
+    for (int d = 0; d < plan.dropBefore && visualDataQueue; d++) {
+        // Discard the stale backlog; stop early if the queue drains first.
+        if (!visualDataQueue->try_pop(dropData)) {
+            break;
         }
     }
+
+    for (int s = 0; s < plan.insert; s++) {
+        SpectrumVisualDataPtr vData;
+        if (!visualDataQueue || !visualDataQueue->try_pop(vData)) {
+            break;
+        }
+
+        if (vData) {
+            if (vData->spectrum_points.size() == fft_size * 2) {
+                waterfallPanel.setPoints(vData->spectrum_points);
+            }
+            waterfallPanel.step();
+
+            updated = true;
+        }
+    }
+
+    // Trim the half-window backlog left over after credit forgiveness.
+    for (int d = 0; d < plan.dropAfter && visualDataQueue; d++) {
+        if (!visualDataQueue->try_pop(dropData)) {
+            break;
+        }
+    }
+
     if (updated) {
         wxClientDC(this);
         glContext->SetCurrent(*this);
@@ -993,7 +974,7 @@ void WaterfallCanvas::updateCenterFrequency(long long freq) {
 void WaterfallCanvas::setLinesPerSecond(int lps) {
     std::lock_guard < std::mutex > lock(tex_update);
     
-    linesPerSecond = lps;
+    pacer.setLinesPerSecond(lps);
 
     //empty all
     visualDataQueue->flush();

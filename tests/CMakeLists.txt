@@ -15,10 +15,12 @@ add_executable(cubicsdr_tests
     test_Timer.cpp
     test_IOThread.cpp
     test_Frequency.cpp
+    test_WaterfallPacer.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Gradient.cpp
     ${PROJECT_SOURCE_DIR}/src/util/DataTree.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Timer.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Frequency.cpp
+    ${PROJECT_SOURCE_DIR}/src/visual/WaterfallPacer.cpp
     ${PROJECT_SOURCE_DIR}/src/IOThread.cpp
     ${PROJECT_SOURCE_DIR}/external/tinyxml/tinyxml.cpp
     ${PROJECT_SOURCE_DIR}/external/tinyxml/tinystr.cpp

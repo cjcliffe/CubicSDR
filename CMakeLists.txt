@@ -385,6 +385,7 @@ SET (cubicsdr_sources
     src/visual/ScopeContext.cpp
     src/visual/SpectrumCanvas.cpp
     src/visual/WaterfallCanvas.cpp
+    src/visual/WaterfallPacer.cpp
     src/visual/GainCanvas.cpp
     src/visual/ImagePanel.cpp
     src/process/VisualProcessor.cpp
@@ -499,6 +500,7 @@ SET (cubicsdr_headers
     src/visual/ScopeContext.h
     src/visual/SpectrumCanvas.h
     src/visual/WaterfallCanvas.h
+    src/visual/WaterfallPacer.h
     src/visual/GainCanvas.h
     src/visual/ImagePanel.h
     src/process/VisualProcessor.h

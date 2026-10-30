@@ -39,7 +39,7 @@ Base class for all interactive GL canvases. Provides:
 
 The primary display canvas. Handles:
 
-- **FFT data consumption:** Pops `SpectrumVisualData` from `visualDataQueue` at a rate-limited pace (`linesPerSecond`)
+- **FFT data consumption:** Pops `SpectrumVisualData` from `visualDataQueue` at the pace `WaterfallPacer` plans (insert/drop schedule, default 30 lps)
 - **Waterfall rendering:** Delegates to `WaterfallPanel` for texture-based scrolling waterfall
 - **Demodulator markers:** Draws all active demodulators via `PrimaryGLContext::DrawDemod()`
 - **Frequency selector:** Draws hover/active frequency markers via `DrawFreqSelector()`

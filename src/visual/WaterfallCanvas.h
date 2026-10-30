@@ -13,6 +13,7 @@
 #include "MouseTracker.h"
 #include "SpectrumCanvas.h"
 #include "WaterfallPanel.h"
+#include "WaterfallPacer.h"
 #include "Timer.h"
 #include "DemodulatorMgr.h"
 
@@ -92,7 +93,6 @@ private:
     bool freqMoving;
     long double freqMove;
     float hoverAlpha;
-    int linesPerSecond;
     float scaleMove;
     float rightDragDist;
     bool midZooming;
@@ -102,7 +102,7 @@ private:
     SpectrumVisualDataQueuePtr visualDataQueue = std::make_shared<SpectrumVisualDataQueue>();
 
     Timer gTimer;
-    double lpsIndex;
+    WaterfallPacer pacer;
     bool preBuf;
     std::mutex tex_update;
     int minBandwidth;
