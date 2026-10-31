@@ -118,6 +118,8 @@ private:
 
     // Frame-rate pump driving processFrame() plus every canvas' frameUpdate().
     wxTimer frameTimer;
+    // Last idle/active state seen by tickFrame(); the timer restarts on change.
+    bool lastIdleTickState = false;
     // Single per-frame update shared by the timer and window-message tick paths.
     // Declared on all platforms; the Windows-only parts of the body stay guarded.
     void tickFrame();

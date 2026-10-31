@@ -2278,6 +2278,18 @@ void AppFrame::tickFrame() {
     }
 #endif
 
+    // Retune the pump when streaming starts or stops; the interval comes
+    // from getFrameIntervalMs(), which runs slow while no device is active.
+    bool idleTick = (wxGetApp().getSDRThread()->getDevice() == nullptr);
+    if (idleTick != lastIdleTickState) {
+        lastIdleTickState = idleTick;
+#ifdef _WIN32
+        startFrameTimer();
+#else
+        frameTimer.Start(getFrameIntervalMs());
+#endif
+    }
+
     processFrame();
 
     for (auto canvas : frameCanvases) {
@@ -2302,6 +2314,11 @@ WXLRESULT AppFrame::MSWWindowProc(WXUINT nMsgCode, WXWPARAM wParam, WXLPARAM lPa
 #endif
 
 int AppFrame::getFrameIntervalMs() {
+    // No device streaming: repaint work dominates idle CPU, so run the pump
+    // at the low-performance rate regardless of the selected performance mode.
+    if (wxGetApp().getSDRThread()->getDevice() == nullptr) {
+        return 66;
+    }
     switch (wxGetApp().getConfig()->getPerfMode()) {
     case AppConfig::PERF_HIGH:
         return 16;
