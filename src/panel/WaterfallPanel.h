@@ -4,6 +4,7 @@
 #pragma once
 
 #include "GLPanel.h"
+#include "WaterfallRing.h"
 #include <atomic>
 
 class WaterfallPanel : public GLPanel {
@@ -19,17 +20,12 @@ protected:
     void drawPanelContents() override;
     
 private:
-    std::vector<float> points;
-
     GLuint waterfall[2];
-    int waterfall_ofs[2];
     unsigned int fft_size;
     int waterfall_lines;
-    unsigned char *waterfall_slice;
-    std::vector<unsigned char> lineBuffer[2];
-    std::vector<unsigned char> rLineBuffer[2];
-    std::atomic_int lines_buffered;
-    std::atomic_bool texInitialized, bufferInitialized;
-    
+    std::atomic_bool texInitialized;
+
+    WaterfallRing ring;
+
     ColorTheme *activeTheme;
 };
