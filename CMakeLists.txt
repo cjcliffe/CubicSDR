@@ -371,6 +371,7 @@ SET (cubicsdr_sources
     src/panel/ScopePanel.cpp
     src/panel/SpectrumPanel.cpp
     src/panel/WaterfallPanel.cpp
+    src/panel/WaterfallRing.cpp
     src/panel/MeterPanel.cpp
     src/visual/ColorTheme.cpp
     src/visual/PrimaryGLContext.cpp
@@ -486,6 +487,7 @@ SET (cubicsdr_headers
     src/panel/ScopePanel.h
     src/panel/SpectrumPanel.h
     src/panel/WaterfallPanel.h
+    src/panel/WaterfallRing.h
     src/panel/MeterPanel.h
     src/visual/ColorTheme.h
     src/visual/PrimaryGLContext.h

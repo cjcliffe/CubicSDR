@@ -3,7 +3,7 @@
 
 #include "WaterfallPanel.h"
 
-WaterfallPanel::WaterfallPanel() : GLPanel(), fft_size(0), waterfall_lines(0), waterfall_slice(nullptr), activeTheme(nullptr) {
+WaterfallPanel::WaterfallPanel() : GLPanel(), fft_size(0), waterfall_lines(0), activeTheme(nullptr) {
 	setFillColor(RGBA4f(0,0,0));
     for (unsigned int & i : waterfall) {
         i = 0;
@@ -13,14 +13,8 @@ WaterfallPanel::WaterfallPanel() : GLPanel(), fft_size(0), waterfall_lines(0), w
 void WaterfallPanel::setup(unsigned int fft_size_in, int num_waterfall_lines_in) {
     waterfall_lines = num_waterfall_lines_in;
     fft_size = fft_size_in;
-    lines_buffered.store(0);
-    
-    if (points.size() != fft_size) {
-        points.resize(fft_size);
-    }
-    
+    ring.setup(fft_size_in, num_waterfall_lines_in);
     texInitialized.store(false);
-    bufferInitialized.store(false);
 }
 
 void WaterfallPanel::refreshTheme() {
@@ -37,57 +31,15 @@ void WaterfallPanel::refreshTheme() {
 }
 
 void WaterfallPanel::setPoints(std::vector<float> &points_in) {
-    size_t halfPts = points_in.size() / 2;
-    if (halfPts == fft_size) {
-       
-        for (unsigned int i = 0; i < fft_size; i++) {
-            points[i] = points_in[i * 2 + 1];
-        }
-    } else {
-        points.assign(points_in.begin(), points_in.end());
-    }
+    ring.setPoints(points_in);
 }
 
 void WaterfallPanel::step() {
-    unsigned int half_fft_size = fft_size / 2;
-
-    if (!bufferInitialized.load()) {
-        delete waterfall_slice;
-        waterfall_slice = new unsigned char[half_fft_size];
-        bufferInitialized.store(true);
-    }
-    
-    if (!texInitialized.load()) {
-        return;
-    }
-    
-    if (!points.empty() && points.size() == fft_size) {
-        for (int j = 0; j < 2; j++) {
-            for (unsigned int i = 0, iMax = half_fft_size; i < iMax; i++) {
-                float v = points[j * half_fft_size + i];
-                
-                float wv = v < 0 ? 0 : (v > 0.99 ? 0.99 : v);
-                
-                waterfall_slice[i] = (unsigned char) floor(wv * 255.0);
-            }
-            
-            unsigned int newBufSize = (half_fft_size*lines_buffered.load()+half_fft_size);
-            if (lineBuffer[j].size() < newBufSize) {
-                lineBuffer[j].resize(newBufSize);
-                rLineBuffer[j].resize(newBufSize);
-            }
-            memcpy(&(lineBuffer[j][half_fft_size*lines_buffered.load()]), waterfall_slice, sizeof(unsigned char) * half_fft_size);
-        }
-        lines_buffered++;
-    }
+    ring.step();
 }
 
 void WaterfallPanel::update() {
     unsigned int half_fft_size = fft_size / 2;
-    
-    if (!bufferInitialized.load()) {
-        return;
-    }
     
     if (!texInitialized.load()) {
         for (int i = 0; i < 2; i++) {
@@ -95,8 +47,6 @@ void WaterfallPanel::update() {
                 glDeleteTextures(1, &waterfall[i]);
                 waterfall[i] = 0;
             }
-            
-            waterfall_ofs[i] = waterfall_lines - 1;
         }
 
         glGenTextures(2, waterfall);
@@ -127,56 +77,17 @@ void WaterfallPanel::update() {
         refreshTheme();
 
         texInitialized.store(true);
+        ring.setReady(true);
     }
     
-    for (int i = 0, iMax = lines_buffered.load(); i < iMax; i++) {
-        for (int j = 0; j < 2; j++) {
-            memcpy(&(rLineBuffer[j][i*half_fft_size]),
-                   &(lineBuffer[j][((iMax-1)*half_fft_size)-(i*half_fft_size)]), sizeof(unsigned char) * half_fft_size);
-        }
+    WaterfallRing::UploadPlan plan = ring.planUpload();
+    for (const auto &op : plan.ops) {
+        glBindTexture(GL_TEXTURE_2D, waterfall[op.texture]);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, op.y, half_fft_size, op.height,
+                        GL_COLOR_INDEX, GL_UNSIGNED_BYTE, (GLvoid *)(ring.reversedLine(op.texture) + op.srcOffset));
     }
-    
-    // Upload at most one full texture cycle, newest lines first from the new
-    // top of the ring; older lines could never be visible, so drop them.
-    int total_lines = lines_buffered.load();
-    int run_lines = (total_lines < waterfall_lines) ? total_lines : waterfall_lines;
+    ring.commitUpload(plan);
 
-    if (run_lines > 0) {
-        // Ring row where the newest line lands; rows fill newest-first downward.
-        int top = waterfall_ofs[0] - run_lines;
-        size_t src_ofs = 0;
-
-        if (top < 0) {
-            top += waterfall_lines;
-            // Wrap: the newest chunk fills the high block, the older
-            // remainder continues at the low end of the texture.
-            int high_lines = waterfall_lines - top;
-            for (int j = 0; j < 2; j++) {
-                glBindTexture(GL_TEXTURE_2D, waterfall[j]);
-                glTexSubImage2D(GL_TEXTURE_2D, 0, 0, top, half_fft_size, high_lines,
-                                GL_COLOR_INDEX, GL_UNSIGNED_BYTE, (GLvoid *) &(rLineBuffer[j][0]));
-            }
-            src_ofs = (size_t)high_lines * half_fft_size;
-            int low_lines = run_lines - high_lines;
-            if (low_lines > 0) {
-                for (int j = 0; j < 2; j++) {
-                    glBindTexture(GL_TEXTURE_2D, waterfall[j]);
-                    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, half_fft_size, low_lines,
-                                    GL_COLOR_INDEX, GL_UNSIGNED_BYTE, (GLvoid *) &(rLineBuffer[j][src_ofs]));
-                }
-            }
-        } else {
-            for (int j = 0; j < 2; j++) {
-                glBindTexture(GL_TEXTURE_2D, waterfall[j]);
-                glTexSubImage2D(GL_TEXTURE_2D, 0, 0, top, half_fft_size, run_lines,
-                                GL_COLOR_INDEX, GL_UNSIGNED_BYTE, (GLvoid *) &(rLineBuffer[j][src_ofs]));
-            }
-        }
-
-        waterfall_ofs[0] = top;
-        waterfall_ofs[1] = top;
-    }
-    lines_buffered.store(lines_buffered.load() - total_lines);
 }
 
 void WaterfallPanel::drawPanelContents() {
@@ -206,7 +117,7 @@ void WaterfallPanel::drawPanelContents() {
     float half_pixel = 1.0 / viewWidth;
     float half_texel = 1.0 / (float) half_fft_size;
     float vtexel = 1.0 / (float) waterfall_lines;
-    float vofs = (float) (waterfall_ofs[0]) * vtexel;
+    float vofs = (float) (ring.rowOffset()) * vtexel;
     
     glBindTexture(GL_TEXTURE_2D, waterfall[0]);
     glBegin (GL_QUADS);
@@ -220,7 +131,7 @@ void WaterfallPanel::drawPanelContents() {
     glVertex3f(-1.0, 1.0, 0.0);
     glEnd();
     
-    vofs = (float) (waterfall_ofs[1]) * vtexel;
+    vofs = (float) (ring.rowOffset()) * vtexel;
     glBindTexture(GL_TEXTURE_2D, waterfall[1]);
     glBegin(GL_QUADS);
     glTexCoord2f(0.0 + half_texel, 1.0 + vofs);
