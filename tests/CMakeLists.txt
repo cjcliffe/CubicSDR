@@ -21,7 +21,7 @@ add_executable(cubicsdr_tests
     ${PROJECT_SOURCE_DIR}/src/util/DataTree.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Timer.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Frequency.cpp
-    ${PROJECT_SOURCE_DIR}/src/panel/WaterfallRing.cpp
+    ${PROJECT_SOURCE_DIR}/src/visual/WaterfallRing.cpp
     ${PROJECT_SOURCE_DIR}/src/visual/WaterfallPacer.cpp
     ${PROJECT_SOURCE_DIR}/src/IOThread.cpp
     ${PROJECT_SOURCE_DIR}/external/tinyxml/tinyxml.cpp

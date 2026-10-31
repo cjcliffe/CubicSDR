@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "doctest.h"
-#include "panel/WaterfallRing.h"
+#include "visual/WaterfallRing.h"
 
 namespace {
 std::vector<float> constLine(float v, size_t n) {
