@@ -88,6 +88,20 @@ std::string DeviceConfig::getDeviceName() {
     return tmp;
 }
 
+void DeviceConfig::resetToDefaults() {
+    std::lock_guard < std::mutex > lock(busy_lock);
+    ppm.store(0);
+    offset.store(0);
+    agcMode.store(true);
+    sampleRate.store(0);
+    antennaName.clear();
+    deviceName.clear();
+    streamOpts.clear();
+    settings.clear();
+    gains.clear();
+    rigIF.clear();
+}
+
 void DeviceConfig::save(DataNode *node) {
 
     std::lock_guard < std::mutex > lock(busy_lock);
@@ -513,6 +527,14 @@ std::string AppConfig::getRecordingPath() {
     return recordingPath;
 }
 
+void AppConfig::setLastDeviceId(std::string deviceId_in) {
+    lastDeviceId = deviceId_in;
+}
+
+std::string AppConfig::getLastDeviceId() {
+    return lastDeviceId;
+}
+
 bool AppConfig::verifyRecordingPath() {
     string recPathStr = wxGetApp().getConfig()->getRecordingPath();
     
@@ -593,6 +615,7 @@ bool AppConfig::save() {
         *window_node->newChild("font_scale") = fontScale.load();
         *window_node->newChild("snap") = snap.load();
         *window_node->newChild("center_freq") = centerFreq.load();
+        *window_node->newChild("last_device") = lastDeviceId;
         *window_node->newChild("waterfall_lps") = waterfallLinesPerSec.load();
         *window_node->newChild("spectrum_avg") = spectrumAvgSpeed.load();
         *window_node->newChild("modemprops_collapsed") = modemPropsCollapsed.load();
@@ -749,6 +772,10 @@ bool AppConfig::load() {
             long long freqVal = 0;
             win_node->getNext("center_freq")->element()->get(freqVal);
             centerFreq.store(freqVal);
+        }
+
+        if (win_node->hasAnother("last_device")) {
+            lastDeviceId = win_node->getNext("last_device")->element()->toString();
         }
 
         if (win_node->hasAnother("waterfall_lps")) {

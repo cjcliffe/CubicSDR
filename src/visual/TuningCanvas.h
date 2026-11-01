@@ -74,7 +74,6 @@ private:
     bool bottom;
 
     int currentPPM;
-    int lastPPM;
 
     long long freq, bw, center;
     bool halfBand;

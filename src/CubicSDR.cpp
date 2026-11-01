@@ -751,6 +751,7 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev, int waitMsForTermination) {
     }
     sdrThread->setStreamArgs(streamArgs);
     sdrThread->setDevice(dev);
+    config.setLastDeviceId(dev->getDeviceId());
     
     DeviceConfig *devConfig = config.getDevice(dev->getDeviceId());
     
@@ -793,6 +794,14 @@ SDRDeviceInfo *CubicSDR::getDevice() {
     }
 
     return sdrThread->getDevice();
+}
+
+std::string CubicSDR::getDeviceName() {
+    SDRDeviceInfo *dev = getDevice();
+    if (dev == nullptr) {
+        return "";
+    }
+    return config.getDevice(dev->getDeviceId())->getDeviceName();
 }
 
 ScopeVisualProcessor *CubicSDR::getScopeProcessor() {
@@ -869,10 +878,6 @@ std::vector<SDRDeviceInfo*>* CubicSDR::getDevices() {
 
 AppConfig *CubicSDR::getConfig() {
     return &config;
-}
-
-void CubicSDR::saveConfig() {
-    config.save();
 }
 
 void CubicSDR::setPPM(int ppm_in) {

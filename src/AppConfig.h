@@ -61,6 +61,9 @@ public:
     void setRigIF(int rigType, long long freq);
     long long getRigIF(int rigType);
 
+    // Restore factory state; keeps the device id since it keys this entry.
+    void resetToDefaults();
+
     void save(DataNode *node);
     void load(DataNode *node);
 
@@ -149,6 +152,8 @@ public:
 	//Recording settings:
     void setRecordingPath(std::string recPath);
     std::string getRecordingPath();
+    void setLastDeviceId(std::string deviceId_in);
+    std::string getLastDeviceId();
 	bool verifyRecordingPath();
 
 	void setRecordingSquelchOption(int enumChoice);
@@ -207,6 +212,7 @@ private:
     std::atomic<PerfModeEnum> perfMode{};
 
     std::string recordingPath;
+    std::string lastDeviceId;
 	int recordingSquelchOption = 0;
 	int recordingFileTimeLimitSeconds = 0;
 #if USE_HAMLIB

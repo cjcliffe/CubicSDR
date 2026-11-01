@@ -52,7 +52,7 @@ TuningCanvas::TuningCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
     centerDP = -1.0f + (2.0f / 3.0f) * 2.0f;
     centerW = (1.0f / 3.0f) * 2.0f;
 
-    currentPPM = lastPPM = 0;
+    currentPPM = 0;
 }
 
 TuningCanvas::~TuningCanvas() = default;
@@ -420,10 +420,6 @@ void TuningCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
     SetCursor(wxCURSOR_CROSS);
     hoverIndex = 0;
     hoverState = TUNING_HOVER_NONE;
-
-    if (currentPPM != lastPPM) {
-        wxGetApp().saveConfig();
-    }
     Refresh();
 }
 
@@ -432,7 +428,7 @@ void TuningCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
     SetCursor(wxCURSOR_ARROW);
     hoverIndex = 0;
     hoverState = TUNING_HOVER_NONE;
-    lastPPM = currentPPM = wxGetApp().getPPM();
+    currentPPM = wxGetApp().getPPM();
 #ifdef _WIN32
 	if (wxGetApp().getAppFrame()->canFocus()) {
 		this->SetFocus();

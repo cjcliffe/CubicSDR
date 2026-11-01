@@ -106,6 +106,8 @@ public:
     void setDevice(SDRDeviceInfo *dev, int waitMsForTermination);
     void stopDevice(bool store, int waitMsForTermination);
     SDRDeviceInfo * getDevice();
+    // Display name for the active device: custom settings name, hardware id fallback.
+    std::string getDeviceName();
 
     ScopeVisualProcessor *getScopeProcessor();
     SpectrumVisualProcessor *getSpectrumProcessor();
@@ -130,7 +132,6 @@ public:
     int getFrequencySnap();
 
     AppConfig *getConfig();
-    void saveConfig();
 
     void setPPM(int ppm_in);
     int getPPM();

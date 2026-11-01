@@ -1456,14 +1456,8 @@ bool AppFrame::actionOnMenuReset(wxCommandEvent& event) {
         wxGetApp().getSpectrumProcessor()->setFFTAverageRate(0.65f);
         spectrumAvgMeter->setLevel(0.65f);
 
-        wxString titleBar = CUBICSDR_TITLE;
-        //append the name of the current Device, if any.
-        if (wxGetApp().getDevice()) {
-            titleBar += " - " + wxGetApp().getDevice()->getName();
-        }
-
-        SetTitle(titleBar);
         currentSessionFile = "";
+        updateTitle();
 		currentBookmarkFile = "";
         bookmarkSplitter->Unsplit(bookmarkView);
         bookmarkSplitter->SplitVertically(bookmarkView, mainVisSplitter, wxGetApp().getConfig()->getBookmarkSplit());
@@ -2809,20 +2803,26 @@ void AppFrame::OnAboutDialogClose(wxCommandEvent& /* event */) {
     aboutDlg = nullptr;
 }
 
+void AppFrame::updateTitle() {
+    wxString titleBar = CUBICSDR_TITLE;
+    //append the name of the current Device, if any.
+    std::string deviceName = wxGetApp().getDeviceName();
+    if (!deviceName.empty()) {
+        titleBar += " - " + deviceName;
+    }
+    if (!currentSessionFile.empty()) {
+        std::string filePart = currentSessionFile.substr(currentSessionFile.find_last_of(filePathSeparator) + 1);
+        titleBar += ": " + filePart;
+    }
+    SetTitle(titleBar);
+}
+
 void AppFrame::saveSession(const std::string& fileName) {
     wxGetApp().getSessionMgr().saveSession(fileName);
 
     currentSessionFile = fileName;
-    std::string filePart = fileName.substr(fileName.find_last_of(filePathSeparator) + 1);
     GetStatusBar()->SetStatusText(wxString::Format(wxT("Saved session: %s"), currentSessionFile.c_str()));
-
-    wxString titleBar = CUBICSDR_TITLE;
-    //append the name of the current Device, if any.
-    if (wxGetApp().getDevice()) {
-        titleBar += " - " + wxGetApp().getDevice()->getName();
-    }
-    titleBar += ": " + filePart;
-    SetTitle(titleBar);
+    updateTitle();
 }
 
 bool AppFrame::loadSession(const std::string& fileName) {
@@ -2854,17 +2854,8 @@ bool AppFrame::loadSession(const std::string& fileName) {
 
     currentSessionFile = fileName;
 
-    std::string filePart = fileName.substr(fileName.find_last_of(filePathSeparator) + 1);
-
     GetStatusBar()->SetStatusText(wxString::Format(wxT("Loaded session file: %s"), currentSessionFile.c_str()));
-
-    wxString titleBar = CUBICSDR_TITLE;
-    //append the name of the current Device, if any.
-    if (wxGetApp().getDevice()) {
-        titleBar += " - " + wxGetApp().getDevice()->getName();
-    }
-    titleBar += ": " + filePart;
-    SetTitle(titleBar);
+    updateTitle();
 
     wxGetApp().getBookmarkMgr().updateActiveList();
 

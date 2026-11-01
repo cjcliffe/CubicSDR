@@ -47,6 +47,9 @@ public:
     AppFrame();
     ~AppFrame() override;
 
+    // Rebuild the title bar from the active device and session file.
+    void updateTitle();
+
     void initDeviceParams(SDRDeviceInfo *devInfo_in);
 
     FFTVisualDataThread *getWaterfallDataThread();

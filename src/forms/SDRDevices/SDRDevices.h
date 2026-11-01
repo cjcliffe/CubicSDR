@@ -20,15 +20,16 @@ public:
     void OnSelectionChanged( wxTreeEvent& event ) override;
     void OnAddRemote( wxMouseEvent& event ) override;
     void OnUseSelected( wxMouseEvent& event ) override;
+    void OnResetDefaults( wxMouseEvent& event ) override;
     void OnTreeDoubleClick( wxMouseEvent& event ) override;
     void OnDeviceTimer( wxTimerEvent& event ) override;
     void OnRefreshDevices( wxMouseEvent& event ) override;
     void OnPropGridChanged( wxPropertyGridEvent& event ) override;
-    void OnPropGridFocus( wxFocusEvent& event ) override;
 
 private:
     void refreshDeviceProperties();
     void doRefreshDevices();
+    void applyResetDefaults();
     
     SDRDeviceInfo *getSelectedDevice(wxTreeItemId selId_in);
     wxPGProperty *addArgInfoProperty(wxPropertyGrid *pg, SoapySDR::ArgInfo arg);
@@ -38,6 +39,8 @@ private:
 
 
     bool refresh, failed;
+    // Set by the Reset click; the timer applies it past click completion.
+    bool pendingResetApply; // Deferred Reset click, serviced by the device timer.
     std::map<std::string, std::vector<SDRDeviceInfo *>* > devs;
     std::vector<SDRDeviceInfo *>::iterator devs_i;
     std::map<wxTreeItemId, SDRDeviceInfo *> devItems;
@@ -49,7 +52,6 @@ private:
     std::map<std::string, wxPGProperty *> streamProps;
     std::map<std::string, wxPGProperty *> devSettings;
     wxTreeItemId selId;
-    wxTreeItemId editId;
     wxTreeItemId removeId;
     SDRDeviceAddDialog *devAddDialog;
 };
