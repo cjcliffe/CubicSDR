@@ -262,3 +262,8 @@ above always reflects the current state.
   apply, PPM/AGC settings, Start/Stop toggle, rename sync, active/last
   pre-select with persistence, close-only config writes. Build green, unit
   suite green; live verification pending.
+- `MeterCanvas` init-list order fixed (`487d999`): declaration order
+  restored, silencing the `-Wreorder-ctor` from the slider-reset members.
+- Packaging artifacts collected by glob (`b7d1dfb`): each job moves its
+  versioned output into `dist/` via basename substitution, so CI carries
+  no hardcoded package version after the 0.3.0 rename break.
