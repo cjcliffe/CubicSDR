@@ -35,6 +35,14 @@ established:
 - Default band data was wrong and wide ranges overshot small devices — 17m
   corrected to the ITU allocation, microwave and utility bands added, and
   range selection clamps to the sample rate.
+- The frame pump ran full rate with nothing to show — the timer now parks
+  at an idle rate with no device streaming, and high-performance mode
+  restores the full rate.
+- The devices dialog had no way back to factory settings, forgot the last
+  device, and titled the window with the driver label — Reset Properties
+  restores defaults including the live sample rate, Start doubles as Stop,
+  rename syncs the tree and title, and the active or last-used device is
+  pre-selected with persistence across restarts.
 
 ## Work Plan
 
@@ -129,6 +137,26 @@ Landed units:
 - [x] Waterfall pacing model (`73e218a`) — `processInputQueue`
   scheduling extracted to headless `WaterfallPacer` with doctest coverage
   of the cap, backlog bound, and credit-forgiveness rules
+- [x] Waterfall ring assembly (`a3ce133`, `684dc20`) — wrap geometry
+  extracted to headless `WaterfallRing` in `visual/` with doctest coverage
+  of the assembly rules; canvas keeps sizing checks and GL upload.
+- [x] Idle-aware frame pump (`59ae542`) — timer parks at a low rate with no
+  device streaming; high-performance mode restores the full rate.
+- [x] Devices dialog reset (`cf73a10`)
+  - `DeviceConfig::resetToDefaults()` restores factory state, keeping the
+    device id; reset stores the concrete nearest-to-default sample rate so
+    it applies instead of falling back to the live rate
+  - Reset Properties sits under the property grid and defers past click
+    completion via the device timer; reset mirrors the per-field edit path
+    so active devices update live
+  - PPM and AGC added to General Settings; Start doubles as Stop on the
+    active device with label sync
+  - rename syncs the tree row and (when active) the window title, which
+    uses the custom name via a shared title helper
+  - dialog pre-selects the active device, else the last started one
+    (`window/last_device`, persisted across restarts)
+  - config file written only on close; eager saves removed, so a crash
+    reverts to the last saved state
 
 ## Validation Plan
 
@@ -142,6 +170,9 @@ Landed units:
   - menu-open animation; waterfall evenness under drag and load
   - slider resets; Ctrl+B
   - high/normal/low performance modes
+  - frame pump at rest with no device; streaming and minimized behavior
+  - devices dialog reset idle and streaming; Start/Stop cycling; rename in
+    tree and title; auto-select on open and across restart
 
 ## Risks / Open Questions
 
@@ -221,3 +252,13 @@ above always reflects the current state.
   hover status tips. Live-verified.
 - Waterfall pacing model: insert/drop schedule unit-tested (6 cases);
   canvas keeps the queue drain, sizing checks, and GL upload.
+- Waterfall ring assembly (`a3ce133`, `684dc20`): wrap geometry extracted
+  to headless `WaterfallRing`; canvas keeps sizing and GL upload.
+  Live-verified.
+- Idle-aware frame pump (`59ae542`): timer parks at a low rate with no
+  device; full rate restored when streaming or in high-performance mode.
+  Live-verified.
+- Devices dialog reset (`cf73a10`): factory-default reset with deferred
+  apply, PPM/AGC settings, Start/Stop toggle, rename sync, active/last
+  pre-select with persistence, close-only config writes. Build green, unit
+  suite green; live verification pending.

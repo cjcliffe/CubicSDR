@@ -196,6 +196,9 @@ Manual devices are:
 - Manual device add/remove
 - Remote device add (via `CubicSDR::addRemote`); no UI exists to remove a remote device — `removeRemote` is declared but never invoked
 - Device activation (triggers `SDRThread` creation)
+- Reset Properties restores the selected device's factory defaults
+- Start doubles as Stop while the selected device is active
+- The active device, else the last started one, is pre-selected on open
 
 While modules load, the device tree holds a static "Initializing" placeholder
 and only the status line narrates per-module progress, so the tree doesn't
@@ -204,6 +207,14 @@ selection before probing it — `SoapySDR::Device::make` plus the setting querie
 block the UI thread — with busy feedback until the properties fill in. The
 form gives the device list its minimum width and all extra width to the
 property grid, with a minimum dialog width so parameter labels keep room.
+
+Reset defers past click completion via the device timer, then mirrors the
+per-field edit path so active devices apply the defaults live; the reset
+sample rate is the concrete nearest-to-default rate, since an unset rate
+would fall back to the live one. Renaming a device updates its tree row and,
+when active, the window title, which uses the custom name. The last started
+device id persists in config (`window/last_device`) so the dialog
+pre-selects it across restarts.
 
 ## Device Configuration
 

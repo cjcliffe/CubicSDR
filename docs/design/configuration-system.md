@@ -70,6 +70,7 @@ Global application configuration. Singleton accessed via `wxGetApp().getConfig()
 | `fontScale` | `int` | `window/font_scale` | 0 | Font scale (0=normal, 1=medium, 2=large) |
 | `snap` | `long long` | `window/snap` | 1 | Frequency snap value in Hz |
 | `centerFreq` | `long long` | `window/center_freq` | 98000000 | Center frequency (FM broadcast band center) |
+| `lastDeviceId` | `string` | `window/last_device` | *(empty)* | Id of the last started device, pre-selected by the devices dialog |
 | `waterfallLinesPerSec` | `int` | `window/waterfall_lps` | 30 | Waterfall refresh rate |
 | `spectrumAvgSpeed` | `float` | `window/spectrum_avg` | 0.65 | Spectrum averaging speed |
 | `dbOffset` | `int` | `window/db_offset` | 0 | dB display offset |
@@ -145,6 +146,8 @@ Per-device configuration, keyed by device ID string. Stored under `devices/devic
 Note: `DeviceConfig::load()` does **not** read the `id` node — that is done by `AppConfig::load()`, which extracts the device ID, creates/retrieves the `DeviceConfig` via `getDevice(deviceId)`, then calls `DeviceConfig::load()` on the resulting object.
 
 Note: `DeviceConfig::save()` writes the `antenna`, `streamOpts`, `settings`, `rig_ifs`, and `gains` sections only when the corresponding container is non-empty. On load, `gains` entries whose value is `NaN` are skipped.
+
+`DeviceConfig::resetToDefaults()` restores factory state (zero PPM/offset, AGC on, cleared name/antenna/options/gains) while keeping `deviceId`, which keys the entry. An unset sample rate falls back to the live rate, so callers store a concrete default explicitly (see the devices dialog in the [SDR Device Layer](sdr-device-layer.md)).
 
 ### Device Config XML Structure
 
@@ -355,5 +358,5 @@ Both `AppConfig` and `DeviceConfig` use `std::atomic` for scalar fields to allow
 ## Config Save Triggers
 
 - **On window close:** `AppFrame::OnClose()` snapshots selected UI state (window geometry, theme, font scale, snap, center frequency, spectrum/waterfall speeds, manual devices, modem properties collapsed, splitter positions, bookmarks visibility, and hamlib settings) into `AppConfig`, calls `config->save()`, then saves bookmarks via `BookmarkMgr::saveToFile()`. If the `saveDisabled` flag is set, the handler returns early without saving. Recording settings are not re-snapshotted here; they are already current in `AppConfig` from earlier menu handler calls.
-- **On setting change:** various UI actions update the in-memory config immediately (e.g., PPM changes in `TuningCanvas` → `CubicSDR::setPPM()` → `SDRThread::setPPM()` → `DeviceConfig::setPPM()`). The config file is only written to disk on window close, or explicitly via `CubicSDR::saveConfig()` (e.g., `TuningCanvas::OnMouseLeftWindow` saves if PPM changed).
+- **On setting change:** various UI actions update the in-memory config immediately (e.g., PPM changes in `TuningCanvas` → `CubicSDR::setPPM()` → `SDRThread::setPPM()` → `DeviceConfig::setPPM()`). The config file is written only on window close — there are no eager saves, so a crash reverts to the last saved state.
 - **Session save:** explicit user action via File menu
