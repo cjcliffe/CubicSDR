@@ -87,8 +87,13 @@ jobs:
           key: deps-{{ checksum "build.py" }}
           paths:
             - build/deps
+      - run:
+          name: Collect DEB artifact
+          command: |
+            mkdir -p dist
+            mv build/linux-deb/CubicSDR-*.deb dist/
       - store_artifacts:
-          path: build/linux-deb/CubicSDR-0.2.8-x64.deb
+          path: dist
   dmg-x64:
     macos:
       xcode: 15.4.0
@@ -103,16 +108,19 @@ jobs:
           name: Build DMG (Intel cross-compile, macOS 11 floor)
           command: python3 build.py --modules default --package dmg --macos-arch x86_64 --macos-min-version 11.0
       - run:
-          name: Rename DMG by architecture
+          name: Collect DMG artifact
           command: |
             ls build/macos/
-            mv build/macos/CubicSDR-0.2.8-Darwin.dmg build/macos/CubicSDR-0.2.8-macOS-x64.dmg
+            mkdir -p dist
+            f=$(echo build/macos/CubicSDR-*-Darwin.dmg)
+            base=$(basename "$f")
+            mv "$f" "dist/${base/-Darwin/-macOS-x64}"
       - save_cache:
           key: dmg-x64-deps-{{ checksum "build.py" }}
           paths:
             - build/deps
       - store_artifacts:
-          path: build/macos/CubicSDR-0.2.8-macOS-x64.dmg
+          path: dist
   dmg-arm64:
     macos:
       xcode: 15.4.0
@@ -131,12 +139,15 @@ jobs:
           paths:
             - build/deps
       - run:
-          name: Rename DMG by architecture
+          name: Collect DMG artifact
           command: |
             ls build/macos/
-            mv build/macos/CubicSDR-0.2.8-Darwin.dmg build/macos/CubicSDR-0.2.8-macOS-arm64.dmg
+            mkdir -p dist
+            f=$(echo build/macos/CubicSDR-*-Darwin.dmg)
+            base=$(basename "$f")
+            mv "$f" "dist/${base/-Darwin/-macOS-arm64}"
       - store_artifacts:
-          path: build/macos/CubicSDR-0.2.8-macOS-arm64.dmg
+          path: dist
   nsis:
     machine:
       image: windows-server-2022-gui:current
@@ -164,12 +175,13 @@ jobs:
           paths:
             - build/deps
       - run:
-          name: Rename installer
+          name: Collect installer artifact
           shell: powershell.exe
           command: |
-            Get-ChildItem build\windows\*.exe | Select-Object -First 1 | Move-Item -Destination build\windows\CubicSDR-0.2.8-win64.exe -Force
+            New-Item -ItemType Directory -Force dist | Out-Null
+            Move-Item build\windows\CubicSDR-*.exe dist\
       - store_artifacts:
-          path: build/windows/CubicSDR-0.2.8-win64.exe
+          path: dist
 workflows:
   version: 2
   build:
