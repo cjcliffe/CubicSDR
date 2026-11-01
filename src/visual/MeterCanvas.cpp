@@ -131,12 +131,15 @@ void MeterCanvas::OnMouseDown(wxMouseEvent& event) {
 }
 
 void MeterCanvas::OnMouseReleased(wxMouseEvent& event) {
+    // The base handler clears the tracker's press state, so capture it
+    // first: a release only sets the value if the press began in this view.
+    bool pressedHere = mouseTracker.mouseDown();
     InteractiveCanvas::OnMouseReleased(event);
     // A double-click reset is followed by a release at the click position;
     // that release must not overwrite the restored default value.
     if (suppressNextRelease) {
         suppressNextRelease = false;
-    } else {
+    } else if (pressedHere) {
         userInputValue = mouseTracker.getMouseY() * (level_max-level_min) + level_min;
     }
 }
@@ -154,8 +157,10 @@ void MeterCanvas::OnMouseRightDown(wxMouseEvent& event) {
 }
 
 void MeterCanvas::OnMouseRightReleased(wxMouseEvent& event) {
+    // As above: ignore a right-button release unless the press began here.
+    bool pressedHere = mouseTracker.mouseRightDown();
     InteractiveCanvas::OnMouseRightReleased(event);
-	if (showUserInput) {
+	if (pressedHere && showUserInput) {
 		userInputValue = level - level * 0.02;
 	}
 }
