@@ -10,6 +10,6 @@ index c4a3098..4f41c7d 100644
 +#ifndef _WIN32
 +#  include <unistd.h>
 +#endif
-
+ 
  #include "liquid.h"
  #include "liquid.config.h"

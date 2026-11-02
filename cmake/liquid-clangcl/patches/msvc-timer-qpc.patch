@@ -3,7 +3,7 @@ index c9557a1..1006374 100644
 --- a/src/core/src/timer.c
 +++ b/src/core/src/timer.c
 @@ -22,9 +22,13 @@
-
+ 
  #include <stdlib.h>
  #include <stdio.h>
 +#ifdef _WIN32
@@ -13,13 +13,13 @@ index c9557a1..1006374 100644
  #include <sys/time.h>
  #include <sys/resource.h>
 +#endif
-
+ 
  #include "liquid.h"
-
+ 
 @@ -34,11 +38,19 @@ struct liquid_timer_s
      // timer type
      int type;
-
+ 
 +#ifdef _WIN32
 +    // QPC tick at creation (LIQUID_TIMER_CLOCK)
 +    LARGE_INTEGER tic_qpc;
@@ -29,12 +29,12 @@ index c9557a1..1006374 100644
 +#else
      // time object was created (LIQUID_TIMER_CLOCK)
      struct timeval tic_timeval;
-
+ 
      // time object was created (LIQUID_TIMER_RUSAGE)
      struct rusage tic_rusage;
 +#endif
  };
-
+ 
  // create liquid_timer object
 @@ -75,10 +87,25 @@ int liquid_timer_destroy(liquid_timer _q)
  int liquid_timer_tic(liquid_timer _q)
@@ -62,7 +62,7 @@ index c9557a1..1006374 100644
      } else {
          return liquid_error(LIQUID_EINT,"liquid_timer_tic(), invalid timer type");
      }
-@@ -89,6 +116,15 @@ int liquid_timer_toc(liquid_timer _q)
+@@ -89,6 +116,15 @@ int liquid_timer_tic(liquid_timer _q)
  float liquid_timer_toc(liquid_timer _q)
  {
      if (_q->type == LIQUID_TIMER_CLOCK) {
@@ -83,7 +83,7 @@ index c9557a1..1006374 100644
          float us = (float)(toc.tv_usec - _q->tic_timeval.tv_usec);
          return s + us*1e-6f;
 +#endif
-
+ 
      } else if (_q->type == LIQUID_TIMER_RUSAGE) {
 +#ifdef _WIN32
 +        FILETIME _ct, _et, _kt, _ut;

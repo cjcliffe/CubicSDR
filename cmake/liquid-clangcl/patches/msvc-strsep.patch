@@ -11,7 +11,7 @@ index 5d51d7e..40886b1 100644
 +#  include <unistd.h>
 +#endif
  #include "liquid.internal.h"
-
+ 
 +#ifdef _WIN32
 +// strsep() is BSD/POSIX-only; minimal reimplementation for MSVC builds.
 +static char *strsep(char **_stringp, const char *_delim)
