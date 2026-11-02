@@ -745,6 +745,20 @@ IF (MSVC)
   ENDIF()
 ENDIF(MSVC)
 
+# Per-file warning relief for vendored sources on GCC/Clang, mirroring
+# the MSVC /wd4996 treatment above. Only flags for warnings these files
+# actually emit, so new warnings elsewhere still surface.
+IF (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  set_source_files_properties(
+    external/tinyxml/tinyxmlparser.cpp
+    PROPERTIES COMPILE_OPTIONS -Wno-implicit-fallthrough)
+  IF(USE_HAMLIB)
+    set_source_files_properties(
+      external/rs232/rs232-linux.cpp
+      PROPERTIES COMPILE_OPTIONS "-Wno-builtin-macro-redefined;-Wno-sign-compare")
+  ENDIF()
+ENDIF()
+
 IF ((WIN32 OR (UNIX AND NOT APPLE)) AND BUNDLE_SOAPY_MODS)
     target_compile_definitions(CubicSDR PRIVATE BUNDLE_SOAPY_MODS=1)
     IF (BUNDLED_MODS_ONLY)

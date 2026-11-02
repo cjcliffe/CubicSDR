@@ -562,7 +562,7 @@ wxMenu *AppFrame::makeRigMenu() {
 
         rigModelMenuItems[ri->rig_model] = parentMenu->AppendCheckItem(modelMenuId, modelString, ri->copyright);
 
-        if (rigModel == ri->rig_model) {
+        if (rigModel == static_cast<int>(ri->rig_model)) {
             rigModelMenuItems[ri->rig_model]->Check(true);
         }
 
