@@ -164,7 +164,9 @@ jobs:
           command: |
             choco install nsis -y
             choco install cmake --version 3.31.6 -y
-            choco install llvm ninja -y
+            choco install ninja -y
+            $vs = & 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe' -latest -property installationPath
+            & 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe' modify --installPath "$vs" --add Microsoft.VisualStudio.Component.VC.Llvm.Clang --add Microsoft.VisualStudio.Component.VC.Llvm.ClangToolset --quiet --wait --norestart --nocache
             if ((Get-Command cmake -ErrorAction SilentlyContinue) -eq $null) {
               $env:PATH = "C:\Program Files\CMake\bin;$env:PATH"
             }
@@ -191,30 +193,31 @@ workflows:
           filters:
             tags:
               ignore: /.*/
-      - appimage:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
-      - deb:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
-      - dmg-x64:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
-      - dmg-arm64:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
+      # tag builds parked except nsis to save CI credits
+      # - appimage:
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
+      # - deb:
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
+      # - dmg-x64:
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
+      # - dmg-arm64:
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
       - nsis:
           filters:
             branches:

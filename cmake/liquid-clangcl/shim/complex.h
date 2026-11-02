@@ -37,14 +37,21 @@
 // resolve back to themselves.
 typedef struct { float _Val[2]; } _Fcomplex;
 typedef struct { double _Val[2]; } _Dcomplex;
-_Fcomplex _liquid_ucrt_cexpf(_Fcomplex) __asm__("cexpf");
-_Dcomplex _liquid_ucrt_cexp(_Dcomplex) __asm__("cexp");
-_Fcomplex _liquid_ucrt_csqrtf(_Fcomplex) __asm__("csqrtf");
-_Dcomplex _liquid_ucrt_csqrt(_Dcomplex) __asm__("csqrt");
-_Fcomplex _liquid_ucrt_csinf(_Fcomplex) __asm__("csinf");
-_Dcomplex _liquid_ucrt_csin(_Dcomplex) __asm__("csin");
-_Fcomplex _liquid_ucrt_ccosf(_Fcomplex) __asm__("ccosf");
-_Dcomplex _liquid_ucrt_ccos(_Dcomplex) __asm__("ccos");
+// x86 decorates C symbols with a leading underscore; asm labels bypass
+// decoration, so spell it explicitly there.
+#ifdef _M_IX86
+#define _LIQUID_UCRT_SYM(name) "_" name
+#else
+#define _LIQUID_UCRT_SYM(name) name
+#endif
+_Fcomplex _liquid_ucrt_cexpf(_Fcomplex) __asm__(_LIQUID_UCRT_SYM("cexpf"));
+_Dcomplex _liquid_ucrt_cexp(_Dcomplex) __asm__(_LIQUID_UCRT_SYM("cexp"));
+_Fcomplex _liquid_ucrt_csqrtf(_Fcomplex) __asm__(_LIQUID_UCRT_SYM("csqrtf"));
+_Dcomplex _liquid_ucrt_csqrt(_Dcomplex) __asm__(_LIQUID_UCRT_SYM("csqrt"));
+_Fcomplex _liquid_ucrt_csinf(_Fcomplex) __asm__(_LIQUID_UCRT_SYM("csinf"));
+_Dcomplex _liquid_ucrt_csin(_Dcomplex) __asm__(_LIQUID_UCRT_SYM("csin"));
+_Fcomplex _liquid_ucrt_ccosf(_Fcomplex) __asm__(_LIQUID_UCRT_SYM("ccosf"));
+_Dcomplex _liquid_ucrt_ccos(_Dcomplex) __asm__(_LIQUID_UCRT_SYM("ccos"));
 
 // Real/imaginary parts and conjugate decompose to inline code.
 static inline float crealf(float _Complex _z) { return __real__ _z; }

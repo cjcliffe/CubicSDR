@@ -141,6 +141,17 @@ def vsdevcmd_env(arch, dry_run=False):
     return env
 
 
+def vs_llvm_dir():
+    """VS-bundled LLVM directory; the only supported clang toolchain."""
+    root = os.path.join(vs_install_root("Visual Studio"),
+                        "VC", "Tools", "Llvm")
+    exe = os.path.join(root, "x64", "bin", "clang-cl.exe")
+    if os.path.isfile(exe):
+        return root
+    sys.exit("error: VS clang-cl not found; add 'C++ Clang Compiler for "
+             "Windows' in the VS Installer")
+
+
 def msbuild_exe(dry_run=False):
     """Path to msbuild.exe, or its bare name when only previewing."""
     if dry_run:
@@ -734,37 +745,41 @@ def build_liquid(prefix, jobs, dry_run=False, env=None, host=None):
     mark_done(prefix, stamp, dry_run, key)
 
 
-def clang_builtins_lib(clang_exe):
+def clang_builtins_lib(llvm_dir, arch):
     """Clang runtime builtins archive that liquid-dsp objects link against.
 
     Clang lowers _Complex multiply to __mulsc3 calls that only its own
     runtime provides; MSVC link has no equivalent, so the app link needs
-    this archive explicitly. Newest LLVM layout wins.
+    this archive explicitly. The VS layout nests x64 under x64/ but keeps
+    x86 directly under lib/; newest LLVM release wins.
     """
-    base = os.path.dirname(os.path.abspath(clang_exe))
-    matches = sorted(glob.glob(os.path.join(
-        base, "..", "lib", "clang", "*", "lib", "windows",
-        "clang_rt.builtins-x86_64.lib")))
+    if arch == "x64":
+        parts = ["x64", "lib", "clang", "*", "lib", "windows",
+                 "clang_rt.builtins-x86_64.lib"]
+    else:
+        parts = ["lib", "clang", "*", "lib", "windows",
+                 "clang_rt.builtins-i386.lib"]
+    matches = sorted(glob.glob(os.path.join(llvm_dir, *parts)))
     if matches:
         return os.path.normpath(matches[-1])
-    sys.exit("error: clang_rt.builtins-x86_64.lib not found under %s; "
-             "reinstall LLVM" % base)
+    sys.exit("error: %s not found under %s; repair the VS Clang install"
+             % (parts[-1], llvm_dir))
 
 
 def build_liquid_windows(prefix, config, arch, jobs, dry_run=False):
-    """Build liquid-dsp from source with clang-cl into the prefix.
+    """Build liquid-dsp from source with the VS-bundled clang-cl.
 
     MSVC cl cannot compile liquid-dsp (no C99 _Complex), so the Windows
-    build uses clang-cl at the pinned tag with a repo-owned complex.h
-    shim plus a small patch set (timers, cpuid, bit ops) under
-    cmake/liquid-clangcl. Static only, matching the other platforms.
+    build uses the VS-bundled clang-cl at the pinned tag with a
+    repo-owned complex.h shim plus a small patch set (timers, cpuid,
+    bit ops) under cmake/liquid-clangcl. Static only, matching the
+    other platforms.
 
-    x64 only: stock LLVM installs ship the link-required runtime
-    builtins for x64 alone. The tools are ensured before the developer
-    shell is captured so the capture inherits their PATH entries.
+    Both x64 and Win32 build; x86 cross-compiles from the x64 clang
+    with --target and links the i386 runtime builtins. Ninja is ensured
+    before the developer shell is captured so the capture inherits its
+    PATH entry.
     """
-    if arch != "x64":
-        sys.exit("error: liquid-dsp builds from source for x64 only")
     support = os.path.join(ROOT, "cmake", "liquid-clangcl")
     shim = os.path.join(support, "shim")
     patches = sorted(glob.glob(os.path.join(support, "patches", "*.patch")))
@@ -772,6 +787,15 @@ def build_liquid_windows(prefix, config, arch, jobs, dry_run=False):
         sys.exit("error: no liquid-dsp patches under %s" % support)
     cflags = ["/I\"%s\"" % shim.replace(os.sep, "/"),
               "-D_USE_MATH_DEFINES", "-D_CRT_SECURE_NO_WARNINGS"]
+    cxxflags = []
+    ldflags = []
+    if arch != "x64":
+        cflags = ["--target=i686-pc-windows-msvc"] + cflags
+        cxxflags = ["--target=i686-pc-windows-msvc"]
+        ldflags = ["-DCMAKE_EXE_LINKER_FLAGS=/machine:X86"]
+    llvm = vs_llvm_dir() if not dry_run else "Llvm"
+    clang = (os.path.join(llvm, "x64", "bin", "clang-cl.exe")
+             if not dry_run else "clang-cl")
     opts = ["-DBUILD_SHARED_LIBS=OFF", "-DBUILD_STATIC_LIBS=ON",
             "-DBUILD_AUTOTESTS=OFF", "-DBUILD_BENCHMARKS=OFF",
             "-DBUILD_EXAMPLES=OFF", "-DBUILD_SANDBOX=OFF",
@@ -780,7 +804,7 @@ def build_liquid_windows(prefix, config, arch, jobs, dry_run=False):
             "-DC_SSSE3_FOUND=1", "-DC_SSE41_FOUND=1", "-DC_SSE42_FOUND=1",
             "-DENABLE_TIMESTAMPS=OFF"]
     stamp = "lib-liquid"
-    parts = [LIQUID_TAG, arch, config] + cflags + opts
+    parts = [LIQUID_TAG, arch, config, clang] + cflags + cxxflags + ldflags + opts
     for path in patches + [os.path.join(shim, "complex.h")]:
         with open(path, "rb") as handle:
             parts.append(handle.read())
@@ -790,9 +814,7 @@ def build_liquid_windows(prefix, config, arch, jobs, dry_run=False):
         return
     if os.path.exists(stamp_path(prefix, stamp)):
         log("liquid-dsp flags changed; rebuilding")
-    ensure_clang_cl(dry_run)
     ensure_ninja(dry_run)
-    clang = shutil.which("clang-cl") or "clang-cl"
     ninja = shutil.which("ninja") or "ninja"
     src = os.path.join(prefix, "src", "liquid-dsp")
     git_clone(LIQUID_URL, src, dry_run, branch=LIQUID_TAG)
@@ -802,20 +824,22 @@ def build_liquid_windows(prefix, config, arch, jobs, dry_run=False):
     if os.path.exists(build) and not dry_run:
         _rmtree(build)
     env = vsdevcmd_env(arch, dry_run)
-    run(["cmake", "-S", src, "-B", build, "-G", "Ninja",
-         "-DCMAKE_MAKE_PROGRAM=%s" % ninja.replace(os.sep, "/"),
-         "-DCMAKE_C_COMPILER=%s" % clang.replace(os.sep, "/"),
-         "-DCMAKE_CXX_COMPILER=%s" % clang.replace(os.sep, "/"),
-         "-DCMAKE_BUILD_TYPE=%s" % config,
-         "-DCMAKE_C_FLAGS=%s" % " ".join(cflags)] + opts,
-        dry_run=dry_run, env=env)
+    cmd = ["cmake", "-S", src, "-B", build, "-G", "Ninja",
+           "-DCMAKE_MAKE_PROGRAM=%s" % ninja.replace(os.sep, "/"),
+           "-DCMAKE_C_COMPILER=%s" % clang.replace(os.sep, "/"),
+           "-DCMAKE_CXX_COMPILER=%s" % clang.replace(os.sep, "/"),
+           "-DCMAKE_BUILD_TYPE=%s" % config,
+           "-DCMAKE_C_FLAGS=%s" % " ".join(cflags)]
+    if cxxflags:
+        cmd += ["-DCMAKE_CXX_FLAGS=%s" % " ".join(cxxflags)]
+    run(cmd + ldflags + opts, dry_run=dry_run, env=env)
     run(["cmake", "--build", build, "--parallel", str(jobs)],
         dry_run=dry_run, env=env)
     run(["cmake", "--install", build, "--prefix", prefix], dry_run=dry_run)
     if not dry_run:
         dest = os.path.join(prefix, "lib")
         os.makedirs(dest, exist_ok=True)
-        shutil.copy(clang_builtins_lib(clang),
+        shutil.copy(clang_builtins_lib(llvm, arch),
                     os.path.join(dest, "clang_rt.builtins.lib"))
     mark_done(prefix, stamp, dry_run, key)
 
@@ -938,29 +962,6 @@ def ensure_nsis(dry_run=False):
         log("would require tool 'makensis'")
     else:
         sys.exit("error: required tool 'makensis' not found on PATH")
-
-
-def ensure_clang_cl(dry_run=False):
-    """Make clang-cl available, falling back to the default LLVM location.
-
-    The LLVM installer does not always add itself to PATH, so check the
-    standard Program Files location before reporting the tool missing.
-    """
-    if shutil.which("clang-cl") is not None:
-        return
-    for base in (os.environ.get("ProgramFiles", ""),
-                 os.environ.get("ProgramFiles(x86)", "")):
-        candidate = os.path.join(base, "LLVM", "bin")
-        if os.path.isfile(os.path.join(candidate, "clang-cl.exe")):
-            log("+ using clang-cl at %s" % candidate)
-            if not dry_run:
-                os.environ["PATH"] = candidate + os.pathsep + os.environ.get("PATH", "")
-            return
-    if dry_run:
-        log("would require tool 'clang-cl'")
-    else:
-        sys.exit("error: required tool 'clang-cl' not found; install LLVM "
-                 "with winget install -e --id LLVM.LLVM")
 
 
 def ensure_ninja(dry_run=False):
