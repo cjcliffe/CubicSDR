@@ -271,11 +271,17 @@ public:
         //wchar_t is typically 16 bits on windows, and 32 bits on Unix, so use sizeof(wchar_t) everywhere.
         size_t contentBytes = wstr_in.length() * sizeof(wchar_t);
 
+#ifdef _MSC_VER
+        const size_t bufPad = sizeof(wchar_t);
+#else
+        const size_t bufPad = 1;
+#endif
+
         //Zeroed buffer: on conversion failure the stored bytes stay truncated
         //at the first unconvertible character, as before.
-        std::vector<char> tmp_str(contentBytes + sizeof(wchar_t), '\0');
+        std::vector<char> tmp_str(contentBytes + bufPad, '\0');
 
-        //if something awful happens, the last sizeof(wchar_t) is at least zero...
+        //if something awful happens, the trailing pad bytes are at least zero...
 #ifdef _MSC_VER
         size_t converted = 0;
         wcstombs_s(&converted, tmp_str.data(), tmp_str.size(), wstr_in.c_str(), _TRUNCATE);
