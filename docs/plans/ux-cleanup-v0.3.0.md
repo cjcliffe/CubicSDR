@@ -260,8 +260,7 @@ above always reflects the current state.
   Live-verified.
 - Devices dialog reset (`cf73a10`): factory-default reset with deferred
   apply, PPM/AGC settings, Start/Stop toggle, rename sync, active/last
-  pre-select with persistence, close-only config writes. Build green, unit
-  suite green; live verification pending.
+  pre-select with persistence, close-only config writes. Live-verified.
 - `MeterCanvas` init-list order fixed (`487d999`): declaration order
   restored, silencing the `-Wreorder-ctor` from the slider-reset members.
 - Packaging artifacts collected by glob (`b7d1dfb`): each job moves its
