@@ -39,7 +39,9 @@
 #include "rs232.h"
 
 #include <unistd.h>
+#ifndef __USE_MISC
 #define __USE_MISC // For CRTSCTS
+#endif
 #include <termios.h>
 #include <fcntl.h>
 #include <dirent.h>
