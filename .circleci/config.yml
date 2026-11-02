@@ -164,6 +164,7 @@ jobs:
           command: |
             choco install nsis -y
             choco install cmake --version 3.31.6 -y
+            choco install llvm ninja -y
             if ((Get-Command cmake -ErrorAction SilentlyContinue) -eq $null) {
               $env:PATH = "C:\Program Files\CMake\bin;$env:PATH"
             }

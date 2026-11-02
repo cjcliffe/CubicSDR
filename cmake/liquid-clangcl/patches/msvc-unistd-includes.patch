@@ -1,0 +1,15 @@
+diff --git a/src/libliquid.c b/src/libliquid.c
+index c4a3098..4f41c7d 100644
+--- a/src/libliquid.c
++++ b/src/libliquid.c
+@@ -27,7 +27,9 @@
+ #include <stdio.h>
+ #include <string.h>
+ #include <time.h>
+-#include <unistd.h>
++#ifndef _WIN32
++#  include <unistd.h>
++#endif
+
+ #include "liquid.h"
+ #include "liquid.config.h"
