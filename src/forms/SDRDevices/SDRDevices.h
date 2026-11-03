@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <chrono>
 #include <map>
 #include <vector>
 
@@ -23,6 +24,7 @@ public:
     void OnResetDefaults( wxMouseEvent& event ) override;
     void OnTreeDoubleClick( wxMouseEvent& event ) override;
     void OnDeviceTimer( wxTimerEvent& event ) override;
+    void OnCharHook(wxKeyEvent &event);
     void OnRefreshDevices( wxMouseEvent& event ) override;
     void OnPropGridChanged( wxPropertyGridEvent& event ) override;
 
@@ -30,6 +32,7 @@ private:
     void refreshDeviceProperties();
     void doRefreshDevices();
     void applyResetDefaults();
+    void updateDeviceStateUI();
     
     SDRDeviceInfo *getSelectedDevice(wxTreeItemId selId_in);
     wxPGProperty *addArgInfoProperty(wxPropertyGrid *pg, SoapySDR::ArgInfo arg);
@@ -41,6 +44,8 @@ private:
     bool refresh, failed;
     // Set by the Reset click; the timer applies it past click completion.
     bool pendingResetApply; // Deferred Reset click, serviced by the device timer.
+    bool devActiveShown;
+    std::chrono::steady_clock::time_point lastUseClick{};
     std::map<std::string, std::vector<SDRDeviceInfo *>* > devs;
     std::vector<SDRDeviceInfo *>::iterator devs_i;
     std::map<wxTreeItemId, SDRDeviceInfo *> devItems;

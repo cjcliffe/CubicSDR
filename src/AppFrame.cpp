@@ -891,7 +891,7 @@ wxMenu *AppFrame::makeFileMenu() {
     menu->Append(wxID_ABOUT_CUBICSDR, "About " CUBICSDR_INSTALL_NAME);
 #endif
 #endif
-    menu->Append(wxID_SDR_DEVICES, "SDR Devices");
+    menu->Append(wxID_SDR_DEVICES, "SDR Devices\tCtrl+D");
     menu->AppendSeparator();
     menu->Append(wxID_SDR_START_STOP, "Stop / Start Device");
     menu->AppendSeparator();
@@ -3024,12 +3024,17 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         return -1;
     }
     
-    // Ctrl+B shares the bookmark menu toggle path. Only B is claimed here;
-    // every other Ctrl combination keeps its previous behavior below.
+    // Ctrl+B shares the bookmark menu toggle path, Ctrl+D the device
+    // selector path. Only B and D are claimed here; every other Ctrl
+    // combination keeps its previous behavior below.
     if (event.ControlDown() && !event.AltDown()) {
         int keyCode = event.GetKeyCode();
         if (keyCode == 'B' || keyCode == 'b' || keyCode == 2) {
             toggleBookmarks();
+            return 1;
+        }
+        if (keyCode == 'D' || keyCode == 'd' || keyCode == 4) {
+            wxGetApp().deviceSelector();
             return 1;
         }
     }

@@ -19,11 +19,13 @@ SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent, const wxPoint &pos): devFr
     refresh = true;
     failed = false;
     pendingResetApply = false;
+    devActiveShown = false;
     m_refreshButton->Disable();
     m_addRemoteButton->Disable();
     m_useSelectedButton->Disable();
     m_resetButton->SetToolTip(wxT("Reset the selected device's stored settings to defaults"));
     m_resetButton->Disable();
+    Bind(wxEVT_CHAR_HOOK, &SDRDevicesDialog::OnCharHook, this);
     m_deviceTimer.Start(250);
     selId = nullptr;
     removeId = nullptr;
@@ -40,6 +42,20 @@ SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent, const wxPoint &pos): devFr
 void SDRDevicesDialog::OnClose( wxCloseEvent& /* event */) {
     wxGetApp().setDeviceSelectorClosed();
     Destroy();
+}
+
+void SDRDevicesDialog::OnCharHook(wxKeyEvent &event) {
+    if (event.GetKeyCode() == WXK_ESCAPE) {
+        wxWindow *focus = wxWindow::FindFocus();
+        while (focus != nullptr && focus != m_propertyGrid) {
+            focus = focus->GetParent();
+        }
+        if (focus == nullptr) {
+            Close();
+            return;
+        }
+    }
+    event.Skip();
 }
 
 void SDRDevicesDialog::OnDeleteItem( wxTreeEvent& event ) {
@@ -271,8 +287,8 @@ void SDRDevicesDialog::refreshDeviceProperties() {
             removeId = nullptr;
         }
         // The Start button doubles as Stop for the streaming device.
-        m_useSelectedButton->SetLabel(selDev->isActive() ? "Stop" : "Start");
-        
+        updateDeviceStateUI();
+
     } else if (selDev && !selDev->isAvailable() && selDev->isManual()) {
         m_propertyGrid->Clear();
 
@@ -363,14 +379,35 @@ SDRDeviceInfo *SDRDevicesDialog::getSelectedDevice(wxTreeItemId selId_in) {
     return nullptr;
 }
 
+void SDRDevicesDialog::updateDeviceStateUI() {
+    if (dev == nullptr) {
+        return;
+    }
+    devActiveShown = dev->isActive();
+    m_useSelectedButton->SetLabel(devActiveShown ? "Stop" : "Start");
+    devStatusBar->SetStatusText(devActiveShown ? "Streaming " + dev->getName() + "." : "Ready.");
+}
+
 void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event) {
     if (dev != nullptr) {
-        
+
+        // A double-click also fires two left-ups; swallow repeats inside the
+        // system double-click window so each gesture acts exactly once.
+        auto clickNow = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(clickNow - lastUseClick).count()
+            < wxSystemSettings::GetMetric(wxSYS_DCLICK_MSEC, nullptr)) {
+            event.Skip();
+            return;
+        }
+        lastUseClick = clickNow;
+
         // Active device: the button reads Stop and stops the stream,
         // leaving the dialog open for further tweaks.
         if (dev->isActive()) {
+            devStatusBar->SetStatusText("Stopping " + dev->getName() + "...");
+            devStatusBar->Update();
             wxGetApp().stopDevice(true, 2000);
-            m_useSelectedButton->SetLabel("Start");
+            updateDeviceStateUI();
             event.Skip();
             return;
         }
@@ -418,14 +455,16 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event) {
         devConfig->setStreamOpts(streamArgs);
         wxGetApp().setDeviceArgs(settingArgs);
         wxGetApp().setStreamArgs(streamArgs);
+        devStatusBar->SetStatusText("Starting " + dev->getName() + "...");
+        devStatusBar->Update();
         wxGetApp().setDevice(dev,0);
-        
+
         //update main application title with Device name:
         wxString titleBar = CUBICSDR_TITLE;
         titleBar += " - " + wxGetApp().getDeviceName();
         wxGetApp().getAppFrame()->SetTitle(titleBar);
 
-        Close();
+        updateDeviceStateUI();
     }
     event.Skip();
 }
@@ -474,7 +513,15 @@ void SDRDevicesDialog::applyResetDefaults() {
 }
 
 void SDRDevicesDialog::OnTreeDoubleClick( wxMouseEvent& event ) {
+    if (dev == nullptr) {
+        return;
+    }
+    if (dev->isActive()) {
+        Close();
+        return;
+    }
     OnUseSelected(event);
+    Close();
 }
 
 void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
@@ -582,6 +629,10 @@ void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
         devStatusBar->SetStatusText("Ready.");
 
         refresh = false;
+    }
+
+    if (dev != nullptr && devActiveShown != dev->isActive()) {
+        updateDeviceStateUI();
     }
 }
 
