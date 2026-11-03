@@ -1392,28 +1392,27 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
         if not dry_run:
             os.makedirs(os.path.join(prefix, "bin"), exist_ok=True)
             shutil.copy(api_dll, os.path.join(prefix, "bin"))
-    libs = {
-        "rtlsdr": (["-DRTLSDR_LIBRARY:PATH=%s" % find_prefix_file(prefix, "rtlsdr.lib"),
-                    "-DRTLSDR_INCLUDE_DIR:PATH=%s" % header_dir(prefix, "rtl-sdr.h", dry_run)]
-                   if not dry_run else
-                   ["-DRTLSDR_LIBRARY:PATH=rtlsdr.lib",
-                    "-DRTLSDR_INCLUDE_DIR:PATH=%s" % header_dir(prefix, "rtl-sdr.h", dry_run)]),
-        "airspy": (["-DLIBAIRSPY_LIBRARIES:PATH=%s" % find_prefix_file(prefix, "airspy.lib"),
-                    "-DLIBAIRSPY_INCLUDE_DIRS:PATH=%s" % header_dir(prefix, "airspy.h", dry_run)]
-                   if not dry_run else
-                   ["-DLIBAIRSPY_LIBRARIES:PATH=airspy.lib",
-                    "-DLIBAIRSPY_INCLUDE_DIRS:PATH=%s" % header_dir(prefix, "airspy.h", dry_run)]),
-        "airspyhf": (["-DLIBAIRSPYHF_LIBRARIES:PATH=%s" % find_prefix_file(prefix, "airspyhf.lib"),
-                      "-DLIBAIRSPYHF_INCLUDE_DIRS:PATH=%s" % header_dir(prefix, "airspyhf.h", dry_run)]
-                     if not dry_run else
-                     ["-DLIBAIRSPYHF_LIBRARIES:PATH=airspyhf.lib",
-                      "-DLIBAIRSPYHF_INCLUDE_DIRS:PATH=%s" % header_dir(prefix, "airspyhf.h", dry_run)]),
-        "hackrf": (["-DLIBHACKRF_LIBRARY:PATH=%s" % find_prefix_file(prefix, "hackrf.lib"),
-                    "-DLIBHACKRF_INCLUDE_DIR:PATH=%s" % header_dir(prefix, "hackrf.h", dry_run)]
-                   if not dry_run else
-                   ["-DLIBHACKRF_LIBRARY:PATH=hackrf.lib",
-                    "-DLIBHACKRF_INCLUDE_DIR:PATH=%s" % header_dir(prefix, "hackrf.h", dry_run)]),
+    lib_flags = {
+        "rtlsdr": ("rtlsdr.lib", "rtl-sdr.h", "-DRTLSDR_LIBRARY:PATH=%s",
+                   "-DRTLSDR_INCLUDE_DIR:PATH=%s"),
+        "airspy": ("airspy.lib", "airspy.h", "-DLIBAIRSPY_LIBRARIES:PATH=%s",
+                   "-DLIBAIRSPY_INCLUDE_DIRS:PATH=%s"),
+        "airspyhf": ("airspyhf.lib", "airspyhf.h",
+                     "-DLIBAIRSPYHF_LIBRARIES:PATH=%s",
+                     "-DLIBAIRSPYHF_INCLUDE_DIRS:PATH=%s"),
+        "hackrf": ("hackrf.lib", "hackrf.h", "-DLIBHACKRF_LIBRARY:PATH=%s",
+                   "-DLIBHACKRF_INCLUDE_DIR:PATH=%s"),
     }
+    libs = {}
+    for key in selected:
+        if key in lib_flags:
+            lib, header, lib_flag, inc_flag = lib_flags[key]
+            if dry_run:
+                libs[key] = [lib_flag % lib,
+                             inc_flag % header_dir(prefix, header, dry_run)]
+            else:
+                libs[key] = [lib_flag % find_prefix_file(prefix, lib),
+                             inc_flag % header_dir(prefix, header, dry_run)]
     if "uhd" in selected:
         # SoapyUHD relies on the same Boost auto-linking as UHD itself, so
         # it needs the same BOOST_ROOT/LIBPATH hints to configure and link.
