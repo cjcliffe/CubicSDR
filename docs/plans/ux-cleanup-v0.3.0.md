@@ -43,6 +43,15 @@ established:
   restores defaults including the live sample rate, Start doubles as Stop,
   rename syncs the tree and title, and the active or last-used device is
   pre-selected with persistence across restarts.
+- One CPU-usage option drove both pacing and DSP quality — frame rate
+  (Low/Normal/High) and DSP mode (Normal/Enhanced) are now separate
+  settings, with the old key migrating to both.
+- The devices dialog dismissed on Start and had no keyboard path back —
+  Start and Stop stay open with status-line progress, ESC and double-click
+  dismiss, and Ctrl+D opens or focuses the dialog.
+- Switching devices left the spectrum and waterfall at the old sample
+  rate — device start now primes the SDR thread with the new rate and
+  antenna before launch.
 
 ## Work Plan
 
@@ -157,6 +166,20 @@ Landed units:
     (`window/last_device`, persisted across restarts)
   - config file written only on close; eager saves removed, so a crash
     reverts to the last saved state
+- [x] Frame rate / DSP split (`b9da6dd`) — separate Frame Rate (Low 15fps,
+  Normal 30fps, High 60fps) and DSP (Normal/Enhanced channelizer) settings
+  menus; legacy `perf_mode` migrates (Low to frame Low, High to frame High
+  plus DSP Enhanced).
+- [x] Devices dialog stay-open (`3fc26f3`)
+  - Start/Stop keep the dialog open with Starting/Stopping status, settling
+    to Stop/Streaming once the stream thread reports active
+  - ESC dismisses via a character hook, except while editing a property
+  - tree double-click starts and dismisses, or just dismisses when active
+  - Ctrl+D opens/focuses the dialog with a menu shortcut label; repeat
+    clicks inside the double-click window act once
+- [x] Device-start thread priming (`655dc4e`) — sample rate and antenna
+  forwarded to the SDR thread object before launch, so a switched device
+  no longer inherits the old rate; empty antenna keeps the driver default.
 
 ## Validation Plan
 
@@ -173,6 +196,7 @@ Landed units:
   - frame pump at rest with no device; streaming and minimized behavior
   - devices dialog reset idle and streaming; Start/Stop cycling; rename in
     tree and title; auto-select on open and across restart
+  - switching devices across sample rates; views track the new rate
 
 ## Risks / Open Questions
 
@@ -269,3 +293,10 @@ above always reflects the current state.
 - Windows liquid-dsp from source (`e2b2188`, `b063b51`, `81344a6`):
   VS-bundled clang-cl builds v1.8.3 static for x64 and Win32; vendored
   binaries removed, no DLL in the link or installer. Live-verified.
+- Frame rate / DSP split (`b9da6dd`): separate pacing and channelizer
+  settings with legacy key migration.
+- Devices dialog stay-open (`3fc26f3`): status-line Start/Stop progress,
+  ESC and double-click dismiss, Ctrl+D shortcut, click debounce.
+  Live-verified.
+- Device-start thread priming (`655dc4e`): new rate and antenna reach the
+  thread object before launch; empty antenna keeps the driver default.

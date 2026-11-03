@@ -197,7 +197,9 @@ Manual devices are:
 - Remote device add (via `CubicSDR::addRemote`); no UI exists to remove a remote device — `removeRemote` is declared but never invoked
 - Device activation (triggers `SDRThread` creation)
 - Reset Properties restores the selected device's factory defaults
-- Start doubles as Stop while the selected device is active
+- Start doubles as Stop while the selected device is active, and leaves the dialog open with Starting/Stopping progress on the status line
+- ESC closes the dialog; double-clicking a device starts it and closes, or just closes when it is already active
+- Ctrl+D opens or focuses the dialog from the main window
 - The active device, else the last started one, is pre-selected on open
 
 While modules load, the device tree holds a static "Initializing" placeholder
@@ -215,6 +217,18 @@ would fall back to the live one. Renaming a device updates its tree row and,
 when active, the window title, which uses the custom name. The last started
 device id persists in config (`window/last_device`) so the dialog
 pre-selects it across restarts.
+
+Starting a device keeps the dialog open: the status line shows Starting or
+Stopping while the blocking call runs, then the button label and status
+settle once the stream thread reports active, reconciled on the device
+timer. Repeat clicks inside the system double-click window act once, so a
+double-click on the button can't start-then-stop. ESC is caught on a
+character hook, except while editing a property-grid field, where it still
+cancels the edit.
+
+Device start forwards the new sample rate and antenna selection to the SDR
+thread object before the thread launches, so hardware setup uses the new
+device's values; an empty antenna name keeps the driver default.
 
 ## Device Configuration
 

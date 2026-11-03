@@ -60,7 +60,8 @@ Global application configuration. Singleton accessed via `wxGetApp().getConfig()
 | `winMax` | `bool` | `window/max` | false | Maximized state |
 | `showTips` | `bool` | `window/tips` | true | Show tooltips |
 | `modemPropsCollapsed` | `bool` | `window/modemprops_collapsed` | false | Modem properties panel collapsed |
-| `perfMode` | `PerfModeEnum` | `window/perf_mode` | 1 (normal) | Performance mode (0=low, 1=normal, 2=high) |
+| `frameRate` | `FrameRateEnum` | `window/frame_rate` | 1 (normal) | Frame rate (0=low 15fps, 1=normal 30fps, 2=high 60fps) |
+| `dspMode` | `DspModeEnum` | `window/dsp_mode` | 0 (normal) | DSP mode (0=normal, 1=enhanced channelizer) |
 
 ### Display Settings
 
@@ -209,7 +210,7 @@ Note: `DeviceConfig::save()` writes the `antenna`, `streamOpts`, `settings`, `ri
 3. Call `DataTree::LoadFromFileXML()`; if the config file exists but is not readable, `load()` returns `false`.
 4. Parse each section: window, recording, devices, manual_devices, rig
 5. Missing sections use defaults
-6. `perfMode` is reset to `PERF_NORMAL` within the window section before reading `perf_mode`, so a missing `perf_mode` node results in `PERF_NORMAL` (when a `<window>` node is present). A present `perf_mode` value is only applied if it equals `PERF_LOW` or `PERF_HIGH`; any other (unrecognized) value leaves it as `PERF_NORMAL`.
+6. `frameRate`/`dspMode` default to `FRAME_NORMAL`/`DSP_NORMAL` within the window section (when a `<window>` node is present). A present `frame_rate` value is only applied if it equals `FRAME_LOW` or `FRAME_HIGH`, and `dsp_mode` only if it equals `DSP_ENHANCED`; anything else (or a missing node) leaves the default. When neither new key is present, a legacy `perf_mode` value migrates instead: low selects frame low, high selects frame high plus DSP enhanced.
 
 `AppConfig::reset()` is declared but is a no-op: it returns `true` without applying or reloading any state, and is not currently invoked.
 
