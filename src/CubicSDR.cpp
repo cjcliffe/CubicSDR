@@ -631,8 +631,9 @@ void CubicSDR::setOffset(long long ofs) {
 
 void CubicSDR::setAntennaName(const std::string& name) {
     antennaName = name;
-     
-    if (sdrThread && !sdrThread->isTerminated()) {
+
+    // An empty name means the driver default, so only forward real selections.
+    if (sdrThread && !name.empty()) {
         sdrThread->setAntenna(antennaName);
     }
 }
@@ -683,8 +684,8 @@ void CubicSDR::unlockFrequency() {
 
 void CubicSDR::setSampleRate(long long rate_in) {
     sampleRate = rate_in;
-    
-    if (sdrThread && !sdrThread->isTerminated()) {
+
+    if (sdrThread) {
         sdrThread->setSampleRate(sampleRate);
     }
 
