@@ -1033,29 +1033,46 @@ void AppFrame::handleUpdateDeviceParams() {
     showTipMenuItem = newSettingsMenu->AppendCheckItem(wxID_SET_TIPS, "Show Hover Tips");
     showTipMenuItem->Check(wxGetApp().getConfig()->getShowTips());
 
-    // CPU usage menu:
-    performanceMenuItems.clear();
+    // Frame rate menu:
+    frameMenuItems.clear();
 
-    auto *subMenu = new wxMenu;
+    auto *frameSubMenu = new wxMenu;
 
-    performanceMenuItems[wxID_PERF_BASE + (int)AppConfig::PERF_HIGH] = subMenu->AppendRadioItem(wxID_PERF_BASE + (int)AppConfig::PERF_HIGH, "High (+enhanced DSP)");
-    performanceMenuItems[wxID_PERF_BASE + (int)AppConfig::PERF_NORMAL] = subMenu->AppendRadioItem(wxID_PERF_BASE + (int)AppConfig::PERF_NORMAL, "Normal");
-    performanceMenuItems[wxID_PERF_BASE + (int)AppConfig::PERF_LOW] = subMenu->AppendRadioItem(wxID_PERF_BASE + (int)AppConfig::PERF_LOW, "Low (-slow UI)");
+    frameMenuItems[wxID_FRAME_BASE + (int)AppConfig::FRAME_HIGH] = frameSubMenu->AppendRadioItem(wxID_FRAME_BASE + (int)AppConfig::FRAME_HIGH, "High (60 fps)");
+    frameMenuItems[wxID_FRAME_BASE + (int)AppConfig::FRAME_NORMAL] = frameSubMenu->AppendRadioItem(wxID_FRAME_BASE + (int)AppConfig::FRAME_NORMAL, "Normal (30 fps)");
+    frameMenuItems[wxID_FRAME_BASE + (int)AppConfig::FRAME_LOW] = frameSubMenu->AppendRadioItem(wxID_FRAME_BASE + (int)AppConfig::FRAME_LOW, "Low (15 fps)");
 
-    AppConfig::PerfModeEnum perfMode = wxGetApp().getConfig()->getPerfMode();
+    AppConfig::FrameRateEnum frameRate = wxGetApp().getConfig()->getFrameRate();
 
-    if (perfMode == AppConfig::PERF_HIGH) {
+    frameMenuItems[wxID_FRAME_BASE + (int)frameRate]->Check(true);
+
+    wxMenuItem* selectedFrameRateItem = frameMenuItems[wxID_FRAME_BASE + (int)frameRate];
+
+    frameMenuItems[wxID_FRAME_CURRENT] = newSettingsMenu->AppendSubMenu(frameSubMenu, "Frame Rate");
+    frameMenuItems[wxID_FRAME_CURRENT]->SetItemLabel(getSettingsLabel("Frame Rate", selectedFrameRateItem->GetItemLabel().ToStdString()));
+
+    // DSP menu:
+    dspMenuItems.clear();
+
+    auto *dspSubMenu = new wxMenu;
+
+    dspMenuItems[wxID_DSP_BASE + (int)AppConfig::DSP_ENHANCED] = dspSubMenu->AppendRadioItem(wxID_DSP_BASE + (int)AppConfig::DSP_ENHANCED, "Enhanced");
+    dspMenuItems[wxID_DSP_BASE + (int)AppConfig::DSP_NORMAL] = dspSubMenu->AppendRadioItem(wxID_DSP_BASE + (int)AppConfig::DSP_NORMAL, "Normal");
+
+    AppConfig::DspModeEnum dspMode = wxGetApp().getConfig()->getDspMode();
+
+    if (dspMode == AppConfig::DSP_ENHANCED) {
         wxGetApp().setChannelizerType(SDRPostThreadChannelizerType::SDRPostPFBCH2);
     } else {
         wxGetApp().setChannelizerType(SDRPostThreadChannelizerType::SDRPostPFBCH);
     }
 
-    performanceMenuItems[wxID_PERF_BASE + (int)perfMode]->Check(true);
+    dspMenuItems[wxID_DSP_BASE + (int)dspMode]->Check(true);
 
-    wxMenuItem* selectedPerfModeItem = performanceMenuItems[wxID_PERF_BASE + (int)perfMode];
+    wxMenuItem* selectedDspItem = dspMenuItems[wxID_DSP_BASE + (int)dspMode];
 
-    performanceMenuItems[wxID_PERF_CURRENT] = newSettingsMenu->AppendSubMenu(subMenu, "CPU usage");
-    performanceMenuItems[wxID_PERF_CURRENT]->SetItemLabel(getSettingsLabel("CPU usage", selectedPerfModeItem->GetItemLabel().ToStdString()));
+    dspMenuItems[wxID_DSP_CURRENT] = newSettingsMenu->AppendSubMenu(dspSubMenu, "DSP");
+    dspMenuItems[wxID_DSP_CURRENT]->SetItemLabel(getSettingsLabel("DSP", selectedDspItem->GetItemLabel().ToStdString()));
    
     newSettingsMenu->AppendSeparator();
 
@@ -1340,7 +1357,8 @@ void AppFrame::dismissRigControlPortDialog() {
 void AppFrame::OnMenu(wxCommandEvent &event) {
     actionOnMenuAbout(event)
     || actionOnMenuSDRStartStop(event)
-    || actionOnMenuPerformance(event)
+    || actionOnMenuFrameRate(event)
+    || actionOnMenuDsp(event)
     || actionOnMenuTips(event)
     || actionOnMenuIQSwap(event)
     || actionOnMenuFreqOffset(event)
@@ -2113,37 +2131,58 @@ bool AppFrame::actionOnMenuTips(wxCommandEvent &event) {
     return false;
 }
 
-bool AppFrame::actionOnMenuPerformance(wxCommandEvent &event) {
-    if (event.GetId() >= wxID_PERF_BASE && event.GetId() <= wxID_PERF_BASE + (int) AppConfig::PERF_HIGH) {
+bool AppFrame::actionOnMenuFrameRate(wxCommandEvent &event) {
+    if (event.GetId() >= wxID_FRAME_BASE && event.GetId() <= wxID_FRAME_BASE + (int) AppConfig::FRAME_HIGH) {
 
-        int perfEnumAsInt = event.GetId() - wxID_PERF_BASE;
-        AppConfig::PerfModeEnum perfEnumSet = AppConfig::PERF_NORMAL;
+        int frameEnumAsInt = event.GetId() - wxID_FRAME_BASE;
+        AppConfig::FrameRateEnum frameEnumSet = AppConfig::FRAME_NORMAL;
 
-        if (perfEnumAsInt == (int) AppConfig::PERF_HIGH) {
-            perfEnumSet = AppConfig::PERF_HIGH;
+        if (frameEnumAsInt == (int) AppConfig::FRAME_HIGH) {
+            frameEnumSet = AppConfig::FRAME_HIGH;
 
-        } else if (perfEnumAsInt == (int) AppConfig::PERF_LOW) {
-            perfEnumSet = AppConfig::PERF_LOW;
+        } else if (frameEnumAsInt == (int) AppConfig::FRAME_LOW) {
+            frameEnumSet = AppConfig::FRAME_LOW;
         }
 
-        wxGetApp().getConfig()->setPerfMode(perfEnumSet);
+        wxGetApp().getConfig()->setFrameRate(frameEnumSet);
 #ifdef _WIN32
         startFrameTimer();
 #else
         frameTimer.Start(getFrameIntervalMs());
 #endif
 
+        //update UI
+        wxMenuItem *selectedFrameRateItem = frameMenuItems[event.GetId()];
+        frameMenuItems[wxID_FRAME_CURRENT]->SetItemLabel(
+                getSettingsLabel("Frame Rate", selectedFrameRateItem->GetItemLabel().ToStdString()));
+
+        return true;
+    }
+    return false;
+}
+
+bool AppFrame::actionOnMenuDsp(wxCommandEvent &event) {
+    if (event.GetId() >= wxID_DSP_BASE && event.GetId() <= wxID_DSP_BASE + (int) AppConfig::DSP_ENHANCED) {
+
+        AppConfig::DspModeEnum dspEnumSet = AppConfig::DSP_NORMAL;
+
+        if (event.GetId() - wxID_DSP_BASE == (int) AppConfig::DSP_ENHANCED) {
+            dspEnumSet = AppConfig::DSP_ENHANCED;
+        }
+
+        wxGetApp().getConfig()->setDspMode(dspEnumSet);
+
         //update Channelizer mode:
-        if (perfEnumSet == AppConfig::PERF_HIGH) {
+        if (dspEnumSet == AppConfig::DSP_ENHANCED) {
             wxGetApp().setChannelizerType(SDRPostPFBCH2);
         } else {
             wxGetApp().setChannelizerType(SDRPostPFBCH);
         }
 
         //update UI
-        wxMenuItem *selectedPerfModeItem = performanceMenuItems[event.GetId()];
-        performanceMenuItems[wxID_PERF_CURRENT]->SetItemLabel(
-                getSettingsLabel("CPU usage", selectedPerfModeItem->GetItemLabel().ToStdString()));
+        wxMenuItem *selectedDspItem = dspMenuItems[event.GetId()];
+        dspMenuItems[wxID_DSP_CURRENT]->SetItemLabel(
+                getSettingsLabel("DSP", selectedDspItem->GetItemLabel().ToStdString()));
 
         return true;
     }
@@ -2313,12 +2352,12 @@ int AppFrame::getFrameIntervalMs() {
     if (wxGetApp().getSDRThread()->getDevice() == nullptr) {
         return 66;
     }
-    switch (wxGetApp().getConfig()->getPerfMode()) {
-    case AppConfig::PERF_HIGH:
+    switch (wxGetApp().getConfig()->getFrameRate()) {
+    case AppConfig::FRAME_HIGH:
         return 16;
-    case AppConfig::PERF_LOW:
+    case AppConfig::FRAME_LOW:
         return 66;
-    case AppConfig::PERF_NORMAL:
+    case AppConfig::FRAME_NORMAL:
     default:
         return 33;
     }

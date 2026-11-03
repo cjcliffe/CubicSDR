@@ -87,10 +87,15 @@ private:
 class AppConfig {
 public:
 
-    enum PerfModeEnum {
-        PERF_LOW = 0,
-        PERF_NORMAL = 1,
-        PERF_HIGH = 2
+    enum FrameRateEnum {
+        FRAME_LOW = 0,
+        FRAME_NORMAL = 1,
+        FRAME_HIGH = 2
+    };
+
+    enum DspModeEnum {
+        DSP_NORMAL = 0,
+        DSP_ENHANCED = 1
     };
 
 
@@ -110,8 +115,11 @@ public:
     void setShowTips(bool show);
     bool getShowTips();
 
-    void setPerfMode(PerfModeEnum mode);
-    PerfModeEnum getPerfMode();
+    void setFrameRate(FrameRateEnum mode);
+    FrameRateEnum getFrameRate();
+
+    void setDspMode(DspModeEnum mode);
+    DspModeEnum getDspMode();
     
     void setTheme(int themeId_in);
     int getTheme();
@@ -209,7 +217,8 @@ private:
     std::vector<SDRManualDef> manualDevices;
     std::atomic_bool bookmarksVisible{};
 
-    std::atomic<PerfModeEnum> perfMode{};
+    std::atomic<FrameRateEnum> frameRate{};
+    std::atomic<DspModeEnum> dspMode{};
 
     std::string recordingPath;
     std::string lastDeviceId;

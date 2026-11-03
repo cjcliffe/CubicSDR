@@ -165,7 +165,8 @@ private:
 	std::map<int, wxMenuItem *> sampleRateMenuItems;
 	std::map<int, wxMenuItem *> antennaMenuItems;
 	std::map<int, wxMenuItem *> settingsMenuItems;
-	std::map<int, wxMenuItem *> performanceMenuItems;
+	std::map<int, wxMenuItem *> frameMenuItems;
+	std::map<int, wxMenuItem *> dspMenuItems;
 	std::map<int, wxMenuItem *> audioSampleRateMenuItems;
 	std::map<int, wxMenuItem *> recordingMenuItems;
 
@@ -290,7 +291,8 @@ private:
 	bool actionOnMenuRecording(wxCommandEvent& event);
 	bool actionOnMenuRig(wxCommandEvent& event);
 	bool actionOnMenuSDRStartStop(wxCommandEvent &event);
-	bool actionOnMenuPerformance(wxCommandEvent &event);
+	bool actionOnMenuFrameRate(wxCommandEvent &event);
+	bool actionOnMenuDsp(wxCommandEvent &event);
 	bool actionOnMenuTips(wxCommandEvent &event);
 	bool actionOnMenuIQSwap(wxCommandEvent &event);
 	bool actionOnMenuFreqOffset(wxCommandEvent &event);
@@ -396,8 +398,11 @@ private:
 #define wxID_ANTENNA_CURRENT_TX 2501
 #define wxID_ANTENNAS_BASE 2352
 
-#define wxID_PERF_CURRENT 2400
-#define wxID_PERF_BASE 2401
+#define wxID_FRAME_CURRENT 2400
+#define wxID_FRAME_BASE 2401
+
+#define wxID_DSP_CURRENT 2410
+#define wxID_DSP_BASE 2411
 
 #define wxID_DEVICE_ID 3500
 
