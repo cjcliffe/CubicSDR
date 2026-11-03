@@ -159,14 +159,16 @@ SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_BINARY_DIR}/${EX_PLATFORM_
 
 IF (MSVC)
     list(APPEND CUBICSDR_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/external/wglext")
-    SET(LIQUID_INCLUDES "${PROJECT_SOURCE_DIR}/external/liquid-dsp/include/" CACHE STRING "Liquid-DSP include directory")
-    SET(LIQUID_LIBRARIES "${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/libliquid.lib" CACHE STRING "Liquid-DSP Library")
-    SET(LIQUID_DLL "${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/libliquid.dll" CACHE STRING "Liquid-DSP DLL")
     SET(HAMLIB_DLLS "${PROJECT_SOURCE_DIR}/external/hamlib/${EX_PLATFORM}/libhamlib-4.dll" CACHE STRING "HAMLIB DLLS")
 ENDIF(MSVC)
 
 find_package(OpenGL REQUIRED)
 find_package(Liquid REQUIRED)
+IF (MSVC AND LIQUID_BUILTINS_LIB)
+    # Static liquid-dsp needs clang's runtime builtins for _Complex codegen
+    # (__mulsc3 etc.); build.py provides the path, manual configures pass it.
+    list(APPEND LIQUID_LIBRARIES "${LIQUID_BUILTINS_LIB}")
+ENDIF()
 list(APPEND CUBICSDR_INCLUDE_DIRS ${LIQUID_INCLUDES})
 SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} ${LIQUID_LIBRARIES})
 
@@ -705,7 +707,6 @@ IF (NOT BUNDLE_APP)
     configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME}/fonts "*.png")
     configure_files(${PROJECT_SOURCE_DIR}/icon ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} CubicSDR.ico)
     IF(MSVC)
-        configure_files(${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/ ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
 		configure_files(${PROJECT_SOURCE_DIR}/external/msvc/${EX_PLATFORM_NAME}/ ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
 		IF(USE_HAMLIB)
 		    configure_files(${PROJECT_SOURCE_DIR}/external/hamlib/${EX_PLATFORM}/ ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")	
@@ -971,9 +972,6 @@ IF (WIN32 AND NOT BUILD_INSTALLER)
     target_compile_definitions(CubicSDR PRIVATE RES_FOLDER="../share/cubicsdr/")
     
     INSTALL(TARGETS CubicSDR DESTINATION bin)
-    INSTALL(FILES         
-        ${LIQUID_DLL}
-    DESTINATION bin)
 
     IF(USE_HAMLIB)
         FOREACH(HAMLIB_DLL ${HAMLIB_DLLS})
@@ -1029,7 +1027,6 @@ IF (WIN32 AND BUILD_INSTALLER)
 
     install(FILES 
         ${PROJECT_SOURCE_DIR}/icon/CubicSDR.ico
-        ${LIQUID_DLL}
         DESTINATION .)
 
     install(FILES 

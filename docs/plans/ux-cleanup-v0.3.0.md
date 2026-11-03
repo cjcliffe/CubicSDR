@@ -266,3 +266,6 @@ above always reflects the current state.
 - Packaging artifacts collected by glob (`b7d1dfb`): each job moves its
   versioned output into `dist/` via basename substitution, so CI carries
   no hardcoded package version after the 0.3.0 rename break.
+- Windows liquid-dsp from source (`e2b2188`, `b063b51`, `81344a6`):
+  VS-bundled clang-cl builds v1.8.3 static for x64 and Win32; vendored
+  binaries removed, no DLL in the link or installer. Live-verified.
