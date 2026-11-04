@@ -52,6 +52,9 @@ established:
 - Switching devices left the spectrum and waterfall at the old sample
   rate — device start now primes the SDR thread with the new rate and
   antenna before launch.
+- Large device MTUs stalled the stream into burst-and-gap delivery —
+  Soapy reads are now sliced to the frame size so blocks go out evenly
+  at the display rate regardless of MTU.
 
 ## Work Plan
 
@@ -180,6 +183,10 @@ Landed units:
 - [x] Device-start thread priming (`655dc4e`) — sample rate and antenna
   forwarded to the SDR thread object before launch, so a switched device
   no longer inherits the old rate; empty antenna keeps the driver default.
+- [x] Frame-sized Soapy reads (`399785f`) — each read requests only what
+  the frame still needs instead of a full MTU, so the read itself paces
+  at the display rate; the shrink-your-driver-buffers workaround and its
+  TODOs are gone.
 
 ## Validation Plan
 
@@ -197,6 +204,8 @@ Landed units:
   - devices dialog reset idle and streaming; Start/Stop cycling; rename in
     tree and title; auto-select on open and across restart
   - switching devices across sample rates; views track the new rate
+  - high sample rates at default driver MTU; smooth visuals without
+    shrinking driver buffers
 
 ## Risks / Open Questions
 
@@ -300,3 +309,5 @@ above always reflects the current state.
   Live-verified.
 - Device-start thread priming (`655dc4e`): new rate and antenna reach the
   thread object before launch; empty antenna keeps the driver default.
+- Frame-sized Soapy reads (`399785f`): reads sliced to the frame so a
+  large MTU bounds instead of setting the cadence. Live-verified.

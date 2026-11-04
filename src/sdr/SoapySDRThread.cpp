@@ -200,21 +200,17 @@ int SDRThread::readStream(const SDRThreadIQDataQueuePtr& iqDataOutQueue) {
     
     long long timeNs(0);
 
-    // Supply a huge timeout value to neutralize the readStream 'timeout' effect
-    // we are not interested in, but some modules may effectively use. 
-    //TODO: use something roughly (1 / TARGET_DISPLAY_FPS) seconds * (factor) instead.?
+    // Supply a huge timeout value so reads block until the requested slice
+    // fills; with frame-sized slices that wait is the frame clock.
     long timeoutUs = (1 << 30);
 
     int n_read = 0;
     int nElems = numElems.load();
     int mtElems = mtuElems.load();
 
-    // Warning: if MTU > numElems, i.e if device MTU is too big w.r.t the sample rate, the TARGET_DISPLAY_FPS cannot
-    //be reached and the CubicSDR displays "slows down". 
-    //To get back a TARGET_DISPLAY_FPS, the user need to adapt 
-    //the SoapySDR Device to use smaller buffer sizes, because  
-    // readStream() is suited to device MTU and cannot be really adapted dynamically.
-    //TODO: Add in doc the need to reduce SoapySDR device buffer length (if available) to restore higher fps.
+    // Reads below are sliced to the frame size, so a large device MTU only
+    // bounds the request instead of setting the cadence: each read fills in
+    // about one frame time and blocks go out evenly at the display rate.
 
     //0. Retrieve a new batch 
     SDRThreadIQDataPtr dataOut = buffers.getBuffer();
@@ -247,12 +243,13 @@ int SDRThread::readStream(const SDRThreadIQDataQueuePtr& iqDataOutQueue) {
     //default means blocking.
     int readStreamCode = 0;
 
-    //2. attempt readStream() at most nElems, by mtElems-sized chunks, append in dataOut->data directly.
+    //2. attempt readStream() at most nElems, appending in dataOut->data directly.
     while (n_read < nElems && !stopping) {
-        
-        //Whatever the number of remaining samples needed to reach nElems,  we always try to read a mtElems-size chunk,
-        //from which SoapySDR effectively returns n_stream_read.
-        int n_stream_read = device->readStream(stream, buffs, mtElems, flags, timeNs, timeoutUs);
+
+        //Read only what the frame still needs: a full-MTU request would
+        //block for the whole MTU before any block goes out, bursting once
+        //per MTU instead of pacing at the frame rate.
+        int n_stream_read = device->readStream(stream, buffs, std::min(mtElems, nElems - n_read), flags, timeNs, timeoutUs);
         
         readStreamCode = n_stream_read;
 
