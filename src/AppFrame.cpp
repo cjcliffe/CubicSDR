@@ -1073,7 +1073,25 @@ void AppFrame::handleUpdateDeviceParams() {
 
     dspMenuItems[wxID_DSP_CURRENT] = newSettingsMenu->AppendSubMenu(dspSubMenu, "DSP");
     dspMenuItems[wxID_DSP_CURRENT]->SetItemLabel(getSettingsLabel("DSP", selectedDspItem->GetItemLabel().ToStdString()));
-   
+
+    // Pacing menu:
+    pacingMenuItems.clear();
+
+    auto *pacingSubMenu = new wxMenu;
+
+    pacingMenuItems[wxID_PACING_BASE + 1] = pacingSubMenu->AppendRadioItem(wxID_PACING_BASE + 1, "On");
+    pacingMenuItems[wxID_PACING_BASE + 0] = pacingSubMenu->AppendRadioItem(wxID_PACING_BASE + 0, "Off");
+
+    bool pacing = wxGetApp().getConfig()->getStreamPacing();
+    wxGetApp().setStreamPacing(pacing);
+
+    pacingMenuItems[wxID_PACING_BASE + (pacing ? 1 : 0)]->Check(true);
+
+    wxMenuItem* selectedPacingItem = pacingMenuItems[wxID_PACING_BASE + (pacing ? 1 : 0)];
+
+    pacingMenuItems[wxID_PACING_CURRENT] = newSettingsMenu->AppendSubMenu(pacingSubMenu, "Pacing");
+    pacingMenuItems[wxID_PACING_CURRENT]->SetItemLabel(getSettingsLabel("Pacing", selectedPacingItem->GetItemLabel().ToStdString()));
+
     newSettingsMenu->AppendSeparator();
 
     settingsMenuItems.clear();
@@ -1359,6 +1377,7 @@ void AppFrame::OnMenu(wxCommandEvent &event) {
     || actionOnMenuSDRStartStop(event)
     || actionOnMenuFrameRate(event)
     || actionOnMenuDsp(event)
+    || actionOnMenuPacing(event)
     || actionOnMenuTips(event)
     || actionOnMenuIQSwap(event)
     || actionOnMenuFreqOffset(event)
@@ -2183,6 +2202,24 @@ bool AppFrame::actionOnMenuDsp(wxCommandEvent &event) {
         wxMenuItem *selectedDspItem = dspMenuItems[event.GetId()];
         dspMenuItems[wxID_DSP_CURRENT]->SetItemLabel(
                 getSettingsLabel("DSP", selectedDspItem->GetItemLabel().ToStdString()));
+
+        return true;
+    }
+    return false;
+}
+
+bool AppFrame::actionOnMenuPacing(wxCommandEvent &event) {
+    if (event.GetId() >= wxID_PACING_BASE && event.GetId() <= wxID_PACING_BASE + 1) {
+
+        bool pacingSet = (event.GetId() - wxID_PACING_BASE) == 1;
+
+        wxGetApp().getConfig()->setStreamPacing(pacingSet);
+        wxGetApp().setStreamPacing(pacingSet);
+
+        //update UI
+        wxMenuItem *selectedPacingItem = pacingMenuItems[event.GetId()];
+        pacingMenuItems[wxID_PACING_CURRENT]->SetItemLabel(
+                getSettingsLabel("Pacing", selectedPacingItem->GetItemLabel().ToStdString()));
 
         return true;
     }

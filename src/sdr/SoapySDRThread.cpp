@@ -21,6 +21,7 @@ SDRThread::SDRThread() : IOThread(), buffers("SDRThreadBuffers") {
     deviceInfo.store(nullptr);
 
     sampleRate.store(DEFAULT_SAMPLE_RATE);
+    pendingSampleRate.store(DEFAULT_SAMPLE_RATE);
     frequency.store(0);
     offset.store(0);
     ppm.store(0);
@@ -470,6 +471,22 @@ void SDRThread::updateSettings() {
     
     if (rate_changed.load()) {
 
+        //Apply the pending rate here, at a block boundary, so in-flight
+        //reads keep the old rate instead of producing new-rate labels
+        //with old-rate channel counts.
+        sampleRate.store(pendingSampleRate.load());
+
+        //Pre-switch drain: the driver holds a partially-consumed buffer
+        //across deactivate/activate, which permanently skews its ring;
+        //discard it (non-blocking) so the switch starts from a clean state.
+        for (int i = 0; i < 4096; i++) {
+            int drainFlags = 0;
+            long long drainTimeNs = 0;
+            if (device->readStream(stream, buffs, mtuElems.load(), drainFlags, drainTimeNs, 0) <= 0) {
+                break;
+            }
+        }
+
         //1. Silence the device:
         device->deactivateStream(stream);
 
@@ -752,7 +769,7 @@ std::string SDRThread::getAntenna() {
 }
 
 void SDRThread::setSampleRate(long rate) {
-    sampleRate.store(rate);
+    pendingSampleRate.store(rate);
     rate_changed = true;
     DeviceConfig *devConfig = deviceConfig.load();
     if (devConfig) {

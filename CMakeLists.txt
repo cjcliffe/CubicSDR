@@ -341,6 +341,8 @@ SET (cubicsdr_sources
     src/sdr/SDRPostThread.cpp
     src/sdr/SDREnumerator.cpp
     src/sdr/SoapySDRThread.cpp
+    src/sdr/SDRPacer.cpp
+    src/sdr/SDRPacerThread.cpp
     src/demod/DemodulatorPreThread.cpp
     src/demod/DemodulatorThread.cpp
     src/demod/DemodulatorWorkerThread.cpp

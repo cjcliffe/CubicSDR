@@ -16,6 +16,7 @@
 #include "SoapySDRThread.h"
 #include "SDREnumerator.h"
 #include "SDRPostThread.h"
+#include "SDRPacerThread.h"
 #include "AudioThread.h"
 #include "DemodulatorMgr.h"
 #include "AppConfig.h"
@@ -96,6 +97,8 @@ public:
 
     void setChannelizerType(SDRPostThreadChannelizerType chType);
     SDRPostThreadChannelizerType getChannelizerType();
+
+    void setStreamPacing(bool enabled);
    
 
     void setSampleRate(long long rate_in);
@@ -207,10 +210,12 @@ private:
     SDRThread *sdrThread = nullptr;
     SDREnumerator *sdrEnum = nullptr;
     SDRPostThread *sdrPostThread = nullptr;
+    SDRPacerThread *sdrPacerThread = nullptr;
     SpectrumVisualDataThread *spectrumVisualThread = nullptr;
     SpectrumVisualDataThread *demodVisualThread = nullptr;
 
     SDRThreadIQDataQueuePtr pipeSDRIQData;
+    SDRThreadIQDataQueuePtr pipePacedIQData;
     DemodulatorThreadInputQueuePtr pipeIQVisualData;
     DemodulatorThreadOutputQueuePtr pipeAudioVisualData;
     DemodulatorThreadInputQueuePtr pipeDemodIQVisualData;
@@ -227,6 +232,7 @@ private:
     std::thread *t_SDR = nullptr;
     std::thread *t_SDREnum = nullptr;
     std::thread *t_PostSDR = nullptr;
+    std::thread *t_PacerSDR = nullptr;
     std::thread *t_SpectrumVisual = nullptr;
     std::thread *t_DemodVisual = nullptr;
     std::atomic_bool devicesReady;

@@ -288,12 +288,19 @@ bool CubicSDR::OnInit() {
     // I/Q Data
     pipeSDRIQData = std::make_shared<SDRThreadIQDataQueue>();
     pipeSDRIQData->set_max_num_items(100);
-    
+
+    pipePacedIQData = std::make_shared<SDRThreadIQDataQueue>();
+    pipePacedIQData->set_max_num_items(4);
+
     sdrThread = new SDRThread();
     sdrThread->setOutputQueue("IQDataOutput",pipeSDRIQData);
 
+    sdrPacerThread = new SDRPacerThread();
+    sdrPacerThread->setInputQueue("IQDataInput", pipeSDRIQData);
+    sdrPacerThread->setOutputQueue("IQDataOutput", pipePacedIQData);
+
     sdrPostThread = new SDRPostThread();
-    sdrPostThread->setInputQueue("IQDataInput", pipeSDRIQData);
+    sdrPostThread->setInputQueue("IQDataInput", pipePacedIQData);
 
     sdrPostThread->setOutputQueue("IQVisualDataOutput", pipeIQVisualData);
     sdrPostThread->setOutputQueue("IQDataOutput", pipeWaterfallIQVisualData);
@@ -329,6 +336,8 @@ bool CubicSDR::OnInit() {
     if (demodVisualThread != nullptr) {
         t_DemodVisual = new std::thread(&SpectrumVisualDataThread::threadMain, demodVisualThread);
     }
+
+    t_PacerSDR = new std::thread(&SDRPacerThread::threadMain, sdrPacerThread);
 
     //Start SDRPostThread last.
     t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
@@ -390,6 +399,10 @@ int CubicSDR::OnExit() {
         ::exit(11);
     }
 
+    std::cout << "Terminating SDR pacer thread.." << std::endl << std::flush;
+    sdrPacerThread->terminate();
+    terminationSequenceOK = terminationSequenceOK && sdrPacerThread->isTerminated(3000);
+
     std::cout << "Terminating SDR post-processing thread.." << std::endl << std::flush;
     sdrPostThread->terminate();
 
@@ -432,7 +445,9 @@ int CubicSDR::OnExit() {
     }
 
     t_PostSDR->join();
-    
+
+    t_PacerSDR->join();
+
     if (t_DemodVisual) {
         t_DemodVisual->join();
     }
@@ -451,6 +466,12 @@ int CubicSDR::OnExit() {
 
     delete t_PostSDR;
     t_PostSDR = nullptr;
+
+    delete sdrPacerThread;
+    sdrPacerThread = nullptr;
+
+    delete t_PacerSDR;
+    t_PacerSDR = nullptr;
 
     delete t_SpectrumVisual;
     t_SpectrumVisual = nullptr;
@@ -648,6 +669,12 @@ void CubicSDR::setChannelizerType(SDRPostThreadChannelizerType chType) {
     }
 }
 
+void CubicSDR::setStreamPacing(bool enabled) {
+    if (sdrPacerThread && !sdrPacerThread->isTerminated()) {
+        sdrPacerThread->setPacingEnabled(enabled);
+    }
+}
+
 SDRPostThreadChannelizerType CubicSDR::getChannelizerType() {
 
     if (sdrPostThread && !sdrPostThread->isTerminated()) {
@@ -747,6 +774,10 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev, int waitMsForTermination) {
        t_SDR = nullptr;
     }
     
+    if (sdrPacerThread && !sdrPacerThread->isTerminated()) {
+        sdrPacerThread->requestFlush();
+    }
+
     for (SoapySDR::Kwargs::const_iterator i = settingArgs.begin(); i != settingArgs.end(); i++) {
         sdrThread->writeSetting(i->first, i->second);
     }

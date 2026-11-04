@@ -120,6 +120,9 @@ public:
 
     void setDspMode(DspModeEnum mode);
     DspModeEnum getDspMode();
+
+    void setStreamPacing(bool enabled);
+    bool getStreamPacing();
     
     void setTheme(int themeId_in);
     int getTheme();
@@ -219,6 +222,7 @@ private:
 
     std::atomic<FrameRateEnum> frameRate{};
     std::atomic<DspModeEnum> dspMode{};
+    std::atomic_bool streamPacing{true};
 
     std::string recordingPath;
     std::string lastDeviceId;

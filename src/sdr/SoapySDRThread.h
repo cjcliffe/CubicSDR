@@ -118,6 +118,7 @@ protected:
     std::map<std::string, bool> settingChanged;
 
     std::atomic_llong sampleRate;
+    std::atomic_llong pendingSampleRate;
     std::atomic_llong frequency, offset, lock_freq;
     std::atomic_int ppm, numElems, mtuElems, numChannels;
     std::atomic_bool hasPPM, hasHardwareDC;

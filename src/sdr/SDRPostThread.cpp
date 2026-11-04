@@ -235,12 +235,32 @@ void SDRPostThread::pushVisualData(const DemodulatorThreadIQDataPtr& iqDataOut) 
     if (iqDataOutQueue != nullptr) {
         
         //non-blocking push here, we can afford to loose some samples for a ever-changing visual display.
-        iqDataOutQueue->try_push(iqDataOut);
+        //Drop the oldest backlog first so the display tracks live instead of lagging behind it.
+        DemodulatorThreadIQDataPtr oldData;
+        while (!iqDataOutQueue->try_push(iqDataOut)) {
+            if (!iqDataOutQueue->try_pop(oldData)) {
+                break;
+            }
+        }
 
         if (iqVisualQueue != nullptr) {
             //non-blocking push here, we can afford to loose some samples for a ever-changing visual display.
-            iqVisualQueue->try_push(iqDataOut);
+            while (!iqVisualQueue->try_push(iqDataOut)) {
+                if (!iqVisualQueue->try_pop(oldData)) {
+                    break;
+                }
+            }
         }
+    }
+}
+
+// Drop stale visual backlog on stream changes so the display tracks live.
+void SDRPostThread::flushVisualData() {
+    if (iqDataOutQueue != nullptr) {
+        iqDataOutQueue->flush();
+    }
+    if (iqVisualQueue != nullptr) {
+        iqVisualQueue->flush();
     }
 }
 
@@ -250,6 +270,7 @@ void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
     
     if (sampleRate != data_in->sampleRate || doRefresh.load()) {
         sampleRate = data_in->sampleRate;
+        flushVisualData();
         numChannels = 1;
         refreshed = true;
     }
@@ -418,6 +439,7 @@ void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
     if (numChannels != data_in->numChannels || sampleRate != data_in->sampleRate || chanMode != lastChanMode || doRefresh.load()) {
         numChannels = data_in->numChannels;
         sampleRate = data_in->sampleRate;
+        flushVisualData();
         initPFBCH();
         lastChanMode = 1;
         refreshed = true;
@@ -474,6 +496,7 @@ void SDRPostThread::runPFBCH2(SDRThreadIQData *data_in) {
     if (numChannels != data_in->numChannels || sampleRate != data_in->sampleRate || chanMode != lastChanMode || doRefresh.load()) {
         numChannels = data_in->numChannels;
         sampleRate = data_in->sampleRate;
+        flushVisualData();
         initPFBCH2();
         lastChanMode = 2;
         refreshed = true;

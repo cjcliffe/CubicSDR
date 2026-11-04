@@ -320,6 +320,7 @@ AppConfig::AppConfig() {
     showTips.store(true);
     frameRate.store(FRAME_NORMAL);
     dspMode.store(DSP_NORMAL);
+    streamPacing.store(true);
     themeId.store(0);
     fontScale.store(0);
     snap.store(1);
@@ -420,6 +421,14 @@ void AppConfig::setDspMode(DspModeEnum mode) {
 
 AppConfig::DspModeEnum AppConfig::getDspMode() {
     return dspMode.load();
+}
+
+void AppConfig::setStreamPacing(bool enabled) {
+    streamPacing.store(enabled);
+}
+
+bool AppConfig::getStreamPacing() {
+    return streamPacing.load();
 }
 
 wxRect *AppConfig::getWindow() {
@@ -621,6 +630,7 @@ bool AppConfig::save() {
         *window_node->newChild("tips") = showTips.load();
         *window_node->newChild("frame_rate") = (int)frameRate.load();
         *window_node->newChild("dsp_mode") = (int)dspMode.load();
+        *window_node->newChild("stream_pacing") = streamPacing.load();
         *window_node->newChild("theme") = themeId.load();
         *window_node->newChild("font_scale") = fontScale.load();
         *window_node->newChild("snap") = snap.load();
@@ -773,6 +783,12 @@ bool AppConfig::load() {
             if (dsp_mode == (int)DSP_ENHANCED) {
                 dspMode.store(DSP_ENHANCED);
             }
+        }
+
+        if (win_node->hasAnother("stream_pacing")) {
+            int pacing = 0;
+            win_node->getNext("stream_pacing")->element()->get(pacing);
+            streamPacing.store(pacing != 0);
         }
 
         if (!hasFrameRate && !hasDspMode && win_node->hasAnother("perf_mode")) {
