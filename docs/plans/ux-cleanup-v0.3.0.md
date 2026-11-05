@@ -70,6 +70,9 @@ established:
 - The macOS audio-thread cleanup joined the wrong thread with the wrong
   API — the audio thread is a `std::thread` on every platform, so the
   platform split is gone and the join/delete path is now shared.
+- Reset Session produced FM demods instead of FMS — the mode selector
+  matches by 1-based value, so the reset selected FM and the frame sync
+  copied it back over the FMS default; the reset now selects by name.
 
 ## Work Plan
 
@@ -226,6 +229,9 @@ Landed units:
 - [x] macOS audio-thread join fix — the copy-pasted
   `pthread_join(t_PreDemod)` in the audio cleanup is replaced by the
   shared `t_Audio` join/delete; the stale Known Issues entry is gone.
+- [x] Reset Session FMS parity — the reset selects the mode by name
+  instead of a magic 1-based value, so new demods after a reset are
+  FMS like everywhere else.
 
 ## Validation Plan
 
@@ -364,3 +370,4 @@ above always reflects the current state.
   no lag accumulates behind the knob.
 - macOS audio-thread join fix: shared join/delete path, stale Known
   Issues entry removed.
+- Reset Session FMS parity: select-by-name instead of magic value.
