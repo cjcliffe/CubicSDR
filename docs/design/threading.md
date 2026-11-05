@@ -32,6 +32,7 @@ Exception: on macOS, `DemodulatorInstance::run()` creates `DemodulatorPreThread`
 |--------|-------|------|---------|
 | Main (wxWidgets UI) | `AppFrame` | `src/AppFrame.h` | Event loop, OpenGL rendering, UI interaction |
 | SDR Thread | `SDRThread` | `src/sdr/SoapySDRThread.h` | Reads IQ samples from SoapySDR hardware |
+| SDR Pacer | `SDRPacerThread` | `src/sdr/SDRPacerThread.h` | Meters full IQ frames at a fixed gate between SDRThread and SDRPostThread |
 | SDR Post-Processing | `SDRPostThread` | `src/sdr/SDRPostThread.h` | DC blocking, channelization, IQ distribution |
 | SDR Enumerator | `SDREnumerator` | `src/sdr/SDREnumerator.h` | Background device discovery |
 | Spectrum Visual | `SpectrumVisualDataThread` | `src/process/SpectrumVisualDataThread.h` | FFT processing for main spectrum display |

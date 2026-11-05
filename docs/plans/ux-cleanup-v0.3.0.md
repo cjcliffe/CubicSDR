@@ -55,6 +55,13 @@ established:
 - Large device MTUs stalled the stream into burst-and-gap delivery —
   Soapy reads are now sliced to the frame size so blocks go out evenly
   at the display rate regardless of MTU.
+- Sliced reads still delivered blocks in lumps with dry gaps between —
+  SDRPacerThread meters full frames at a fixed gate so DSP, visuals, and
+  scope advance together, with a Stream Pacing toggle to bypass it.
+- Rate switches played wrong-speed audio and left the waterfall
+  permanently lagged — the driver ring drains before the switch, the new
+  rate applies at a block boundary, visual pushes drop oldest, and stale
+  visual backlog flushes on stream changes.
 
 ## Work Plan
 
@@ -187,6 +194,19 @@ Landed units:
   the frame still needs instead of a full MTU, so the read itself paces
   at the display rate; the shrink-your-driver-buffers workaround and its
   TODOs are gone.
+- [x] Stream pacing and rate-switch hygiene (`9f5626c`)
+  - `SDRPacerThread` meters full frames at a fixed 60Hz gate between
+    `SDRThread` and `SDRPostThread`; gap when dry, drop-oldest past
+    cap, bypass mode for the toggle, selective flush on discontinuity
+  - headless `SDRPacer` model with doctest coverage of gating, backlog
+    bound, and credit-forgiveness rules
+  - pre-switch non-blocking driver drain plus block-boundary rate apply,
+    ending wrong-speed audio bursts across switches
+  - drop-oldest visual pushes plus visual flush on stream reinit, ending
+    permanent waterfall lag
+- [x] Stream-pacing design docs — signal flow (new stage, queue wiring,
+  drop-oldest visuals), thread inventory, and the `stream_pacing`
+  config key.
 
 ## Validation Plan
 
@@ -206,6 +226,8 @@ Landed units:
   - switching devices across sample rates; views track the new rate
   - high sample rates at default driver MTU; smooth visuals without
     shrinking driver buffers
+  - Stream Pacing on vs off; rate switches up and down; waterfall live
+    after the switch with no stale backlog
 
 ## Risks / Open Questions
 
@@ -311,3 +333,7 @@ above always reflects the current state.
   thread object before launch; empty antenna keeps the driver default.
 - Frame-sized Soapy reads (`399785f`): reads sliced to the frame so a
   large MTU bounds instead of setting the cadence. Live-verified.
+- Stream pacing and rate-switch hygiene (`9f5626c`): fixed-gate frame
+  metering with a unit-tested model, driver drain plus boundary rate
+  apply, drop-oldest visuals with stream-change flush; signal-flow,
+  threading, and configuration docs updated. Live-verified.

@@ -62,6 +62,7 @@ Global application configuration. Singleton accessed via `wxGetApp().getConfig()
 | `modemPropsCollapsed` | `bool` | `window/modemprops_collapsed` | false | Modem properties panel collapsed |
 | `frameRate` | `FrameRateEnum` | `window/frame_rate` | 1 (normal) | Frame rate (0=low 15fps, 1=normal 30fps, 2=high 60fps) |
 | `dspMode` | `DspModeEnum` | `window/dsp_mode` | 0 (normal) | DSP mode (0=normal, 1=enhanced channelizer) |
+| `streamPacing` | `bool` | `window/stream_pacing` | true | Stream Pacing toggle (steady IQ cadence into post-processing) |
 
 ### Display Settings
 
