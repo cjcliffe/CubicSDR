@@ -348,8 +348,9 @@ AppFrame::AppFrame() :
     // Force refresh of all
     Refresh();
 
-    // Pop up the device selector
-    wxGetApp().deviceSelector();
+    // Pop up the device selector; the startup-shown dialog dismisses on
+    // Start while manual re-opens stay up for further tweaks.
+    wxGetApp().deviceSelector(true);
 }
 
 void AppFrame::initIcon() {

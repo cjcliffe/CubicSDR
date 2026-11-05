@@ -15,11 +15,12 @@
 #include "CubicSDR.xpm"
 #endif
 
-SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent, const wxPoint &pos): devFrame( parent, wxID_ANY, wxT(CUBICSDR_INSTALL_NAME " :: SDR Devices"), pos) {
+SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent, const wxPoint &pos, bool dismissOnStart): devFrame( parent, wxID_ANY, wxT(CUBICSDR_INSTALL_NAME " :: SDR Devices"), pos) {
     refresh = true;
     failed = false;
     pendingResetApply = false;
     devActiveShown = false;
+    this->dismissOnStart = dismissOnStart;
     m_refreshButton->Disable();
     m_addRemoteButton->Disable();
     m_useSelectedButton->Disable();
@@ -465,6 +466,10 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event) {
         wxGetApp().getAppFrame()->SetTitle(titleBar);
 
         updateDeviceStateUI();
+
+        if (dismissOnStart) {
+            Close();
+        }
     }
     event.Skip();
 }

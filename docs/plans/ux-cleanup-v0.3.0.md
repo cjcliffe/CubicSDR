@@ -48,7 +48,8 @@ established:
   settings, with the old key migrating to both.
 - The devices dialog dismissed on Start and had no keyboard path back —
   Start and Stop stay open with status-line progress, ESC and double-click
-  dismiss, and Ctrl+D opens or focuses the dialog.
+  dismiss, and Ctrl+D opens or focuses the dialog; the startup-shown
+  dialog still dismisses on Start while manual re-opens stay up.
 - Switching devices left the spectrum and waterfall at the old sample
   rate — device start now primes the SDR thread with the new rate and
   antenna before launch.
@@ -187,6 +188,8 @@ Landed units:
   - tree double-click starts and dismisses, or just dismisses when active
   - Ctrl+D opens/focuses the dialog with a menu shortcut label; repeat
     clicks inside the double-click window act once
+  - startup-shown dialog dismisses on Start; manual re-opens stay open
+    for further tweaks
 - [x] Device-start thread priming (`655dc4e`) — sample rate and antenna
   forwarded to the SDR thread object before launch, so a switched device
   no longer inherits the old rate; empty antenna keeps the driver default.
@@ -337,3 +340,5 @@ above always reflects the current state.
   metering with a unit-tested model, driver drain plus boundary rate
   apply, drop-oldest visuals with stream-change flush; signal-flow,
   threading, and configuration docs updated. Live-verified.
+- Startup dialog dismisses on Start while manual re-opens stay open;
+  `deviceSelector()` carries the mode per showing.

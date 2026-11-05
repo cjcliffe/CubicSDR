@@ -557,7 +557,7 @@ void CubicSDR::closeDeviceSelector() {
     }
 }
 
-void CubicSDR::deviceSelector() {
+void CubicSDR::deviceSelector(bool dismissOnStart) {
     if (deviceSelectorOpen) {
         deviceSelectorDialog->Raise();
         deviceSelectorDialog->SetFocus();
@@ -569,7 +569,7 @@ void CubicSDR::deviceSelector() {
     if (winRect != nullptr) {
         pos = wxPoint(winRect->x, winRect->y);
     }
-    deviceSelectorDialog = new SDRDevicesDialog(appframe, pos);
+    deviceSelectorDialog = new SDRDevicesDialog(appframe, pos, dismissOnStart);
     deviceSelectorDialog->Show();
 }
 

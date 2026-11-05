@@ -78,7 +78,7 @@ public:
     void OnInitCmdLine(wxCmdLineParser& parser) override;
     bool OnCmdLineParsed(wxCmdLineParser& parser) override;
 
-    void deviceSelector();
+    void deviceSelector(bool dismissOnStart = false);
     void sdrThreadNotify(SDRThread::SDRThreadState state, const std::string& message);
     void sdrEnumThreadNotify(SDREnumerator::SDREnumState state, std::string message);
     

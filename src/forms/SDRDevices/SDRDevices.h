@@ -14,7 +14,7 @@
 
 class SDRDevicesDialog: public devFrame {
 public:
-    explicit SDRDevicesDialog( wxWindow* parent, const wxPoint &wxPos = wxDefaultPosition);
+    explicit SDRDevicesDialog( wxWindow* parent, const wxPoint &wxPos = wxDefaultPosition, bool dismissOnStart = false);
     
     void OnClose( wxCloseEvent& event ) override;
     void OnDeleteItem( wxTreeEvent& event ) override;
@@ -45,6 +45,9 @@ private:
     // Set by the Reset click; the timer applies it past click completion.
     bool pendingResetApply; // Deferred Reset click, serviced by the device timer.
     bool devActiveShown;
+    // Dismiss when Start begins streaming; set for the startup-shown
+    // dialog only so manual re-opens stay up for further tweaks.
+    bool dismissOnStart;
     std::chrono::steady_clock::time_point lastUseClick{};
     std::map<std::string, std::vector<SDRDeviceInfo *>* > devs;
     std::vector<SDRDeviceInfo *>::iterator devs_i;
