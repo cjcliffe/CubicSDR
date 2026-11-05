@@ -245,12 +245,10 @@ bool DemodulatorInstance::isTerminated() {
     if (audioTerminated) {
 
         if (t_Audio) {
-#ifdef __APPLE__
-            pthread_join(t_PreDemod, NULL);
-#else
+            // t_Audio is a std::thread on every platform, unlike the
+            // pre-demod and demod threads above.
             t_Audio->join();
             delete t_Audio;
-#endif
             t_Audio = nullptr;
         }
     }

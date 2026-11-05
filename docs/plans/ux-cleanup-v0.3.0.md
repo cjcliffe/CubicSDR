@@ -67,6 +67,9 @@ established:
   acknowledged tunes requested during the slow driver call, so the tune
   flag now clears before the call and mid-call tunes stay pending for
   the next turn, with one tune per turn keeping drags live.
+- The macOS audio-thread cleanup joined the wrong thread with the wrong
+  API — the audio thread is a `std::thread` on every platform, so the
+  platform split is gone and the join/delete path is now shared.
 
 ## Work Plan
 
@@ -220,6 +223,9 @@ Landed units:
   one tune per turn keeps the stream live mid-drag, and a post-tune
   drain discards old-frequency backlog so the display never lags the
   knob.
+- [x] macOS audio-thread join fix — the copy-pasted
+  `pthread_join(t_PreDemod)` in the audio cleanup is replaced by the
+  shared `t_Audio` join/delete; the stale Known Issues entry is gone.
 
 ## Validation Plan
 
@@ -356,3 +362,5 @@ above always reflects the current state.
   drags land the hardware on the displayed frequency without stalling
   the stream mid-drag; post-tune drain drops old-frequency backlog so
   no lag accumulates behind the knob.
+- macOS audio-thread join fix: shared join/delete path, stale Known
+  Issues entry removed.
