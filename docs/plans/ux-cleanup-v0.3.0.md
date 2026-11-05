@@ -63,6 +63,10 @@ established:
   permanently lagged — the driver ring drains before the switch, the new
   rate applies at a block boundary, visual pushes drop oldest, and stale
   visual backlog flushes on stream changes.
+- Fast tuning left the display ahead of the hardware — the flag clear
+  acknowledged tunes requested during the slow driver call, so the tune
+  flag now clears before the call and mid-call tunes stay pending for
+  the next turn, with one tune per turn keeping drags live.
 
 ## Work Plan
 
@@ -210,6 +214,12 @@ Landed units:
 - [x] Stream-pacing design docs — signal flow (new stage, queue wiring,
   drop-oldest visuals), thread inventory, and the `stream_pacing`
   config key.
+- [x] Tune-flag clear-before-apply — the worker clears `freq_changed`
+  before the slow driver call, so tunes requested mid-call stay pending
+  for the next turn and rapid drags converge on the latest frequency;
+  one tune per turn keeps the stream live mid-drag, and a post-tune
+  drain discards old-frequency backlog so the display never lags the
+  knob.
 
 ## Validation Plan
 
@@ -342,3 +352,7 @@ above always reflects the current state.
   threading, and configuration docs updated. Live-verified.
 - Startup dialog dismisses on Start while manual re-opens stay open;
   `deviceSelector()` carries the mode per showing.
+- Tune-flag clear-before-apply: mid-call tunes stay pending so fast
+  drags land the hardware on the displayed frequency without stalling
+  the stream mid-drag; post-tune drain drops old-frequency backlog so
+  no lag accumulates behind the knob.

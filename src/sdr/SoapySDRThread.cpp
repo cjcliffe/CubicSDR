@@ -447,6 +447,18 @@ void SDRThread::updateGains() {
     gain_value_changed.store(false);
 }
 
+// Discard whatever the driver has buffered (non-blocking reads until
+// empty, bounded), so the stream resumes from live samples.
+void SDRThread::drainStream() {
+    for (int i = 0; i < 4096; i++) {
+        int drainFlags = 0;
+        long long drainTimeNs = 0;
+        if (device->readStream(stream, buffs, mtuElems.load(), drainFlags, drainTimeNs, 0) <= 0) {
+            break;
+        }
+    }
+}
+
 void SDRThread::updateSettings() {
     bool doUpdate = false;
     
@@ -479,13 +491,7 @@ void SDRThread::updateSettings() {
         //Pre-switch drain: the driver holds a partially-consumed buffer
         //across deactivate/activate, which permanently skews its ring;
         //discard it (non-blocking) so the switch starts from a clean state.
-        for (int i = 0; i < 4096; i++) {
-            int drainFlags = 0;
-            long long drainTimeNs = 0;
-            if (device->readStream(stream, buffs, mtuElems.load(), drainFlags, drainTimeNs, 0) <= 0) {
-                break;
-            }
-        }
+        drainStream();
 
         //1. Silence the device:
         device->deactivateStream(stream);
@@ -563,13 +569,26 @@ void SDRThread::updateSettings() {
     }
     
     if (freq_changed.load()) {
+        // Clear before the slow driver call: tunes requested while it
+        // runs stay pending for the next turn instead of being
+        // acknowledged here. One tune per turn keeps the stream live
+        // during drags while still converging on the latest request.
+        freq_changed.store(false);
+        bool tuned = false;
         if (frequency_locked.load() && !frequency_lock_init.load()) {
             device->setFrequency(SOAPY_SDR_RX,0,"RF",lock_freq.load());
             frequency_lock_init.store(true);
+            tuned = true;
         } else if (!frequency_locked.load()) {
             device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency.load() - offset.load());
+            tuned = true;
         }
-        freq_changed.store(false);
+        // Post-tune drain: samples buffered while the call ran were
+        // captured at the old frequency; discard them (non-blocking)
+        // so the stream resumes live instead of lagging behind them.
+        if (tuned) {
+            drainStream();
+        }
     }
    
     

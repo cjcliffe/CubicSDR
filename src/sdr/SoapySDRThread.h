@@ -102,6 +102,7 @@ public:
 protected:
     void updateGains();
     void updateSettings();
+    void drainStream();
     SoapySDR::Kwargs combineArgs(SoapySDR::Kwargs a, SoapySDR::Kwargs b);
 
     SoapySDR::Stream *stream = nullptr;
