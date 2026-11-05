@@ -5,7 +5,10 @@
 
 namespace {
 constexpr double FRAMES_PER_SECOND = 60.0;
+// About a second of backlog; deeper queues drop oldest first.
 constexpr int DEFAULT_CAPACITY = 64;
+// Catch-up bound: a late tick may emit several frames, but a long stall
+// never repays as an unbounded burst.
 constexpr double MAX_BURST_FRAMES = 4.0;
 }
 
@@ -20,6 +23,7 @@ void SDRPacer::reset() {
 }
 
 bool SDRPacer::noteBlock(long long sampleRate, int numChannels) {
+    // First block adopts the stream; later ones only report.
     if (lastSampleRate < 0) {
         lastSampleRate = sampleRate;
         lastNumChannels = numChannels;
@@ -46,6 +50,7 @@ bool SDRPacer::isBypassed() const {
 
 SDRPacer::Plan SDRPacer::plan(double dtSeconds, size_t queueDepth) {
     int depth = static_cast<int>(queueDepth);
+    // Shed oldest first so a slow consumer sees live frames, not lag.
     int drop = 0;
     if (depth > capacity) {
         drop = depth - capacity;
@@ -54,6 +59,9 @@ SDRPacer::Plan SDRPacer::plan(double dtSeconds, size_t queueDepth) {
     if (bypass) {
         return Plan{depth, drop, 0.0};
     }
+    // Bank elapsed time as emit allowance. The cap forgives timer
+    // overshoot (a late tick still earns its frames) while bounding
+    // catch-up after a stall.
     if (dtSeconds > 0.0) {
         credit += dtSeconds * FRAMES_PER_SECOND;
         if (credit > MAX_BURST_FRAMES) {
@@ -61,10 +69,13 @@ SDRPacer::Plan SDRPacer::plan(double dtSeconds, size_t queueDepth) {
         }
     }
     if (depth > 0 && credit >= 1.0) {
+        // Emit up to the banked allowance: on-time ticks emit one frame
+        // each while a late tick catches up several at once.
         int emit = static_cast<int>(credit);
         if (emit > depth) {
             emit = depth;
         }
+        // Spend only what was emitted; the remainder carries forward.
         credit -= emit;
         return Plan{emit, drop, 0.0};
     }
@@ -72,5 +83,7 @@ SDRPacer::Plan SDRPacer::plan(double dtSeconds, size_t queueDepth) {
     if (depth > 0) {
         waitSeconds = (1.0 - credit) / FRAMES_PER_SECOND;
     }
+    // Dry queues report zero wait so the caller blocks on input instead
+    // of sleeping through the arrival of the next block.
     return Plan{0, drop, waitSeconds};
 }

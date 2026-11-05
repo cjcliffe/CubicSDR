@@ -16,9 +16,11 @@ class SDRPacer {
 public:
     SDRPacer();
 
+    // Backlog bound in frames (floors at 1); deeper queues drop oldest.
     void setCapacity(int frames);
     int getCapacity() const;
 
+    // Bypass forwards everything immediately, ignoring the gate.
     void setBypass(bool bypass);
     bool isBypassed() const;
 
@@ -48,7 +50,9 @@ public:
 private:
     int capacity;
     bool bypass;
+    // Emit allowance in frames, banked from elapsed time and spent on emit.
     double credit;
+    // Running stream identity; a change means the caller must flush.
     long long lastSampleRate;
     int lastNumChannels;
 };
