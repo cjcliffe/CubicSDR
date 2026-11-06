@@ -636,6 +636,12 @@ void CubicSDR::setFrequency(long long freq) {
     if (getDemodSpectrumProcessor()) {
         getDemodSpectrumProcessor()->setPeakHold(getSpectrumProcessor()->getPeakHold());
     }
+
+    // Stale waterfall lines are the wrong frequency: drop the visual
+    // backlog so the display tracks the knob instead of spooling history.
+    if (appframe && appframe->getWaterfallDataThread()) {
+        appframe->getWaterfallDataThread()->flushPipeline();
+    }
 }
 
 long long CubicSDR::getOffset() {
@@ -743,6 +749,17 @@ void CubicSDR::stopDevice(bool store, int waitMsForTermination) {
         t_SDR->join();
         delete t_SDR;
         t_SDR = nullptr;
+    }
+
+    // Discard unprocessed backlog so downstream stops with the device
+    // instead of spooling stale frames.
+    if (sdrPacerThread && !sdrPacerThread->isTerminated()) {
+        sdrPacerThread->requestFlush();
+    }
+    // Same for rendered lines: at high line rates the FFT queue holds
+    // up to a second of waterfall that would otherwise spool out.
+    if (appframe && appframe->getWaterfallDataThread()) {
+        appframe->getWaterfallDataThread()->flushPipeline();
     }
     
     //Only now we can nullify devices

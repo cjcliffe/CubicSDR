@@ -33,21 +33,21 @@ TEST_SUITE("WaterfallPacer") {
         pacer.setLinesPerSecond(30);
 
         // One full second banked with a deep queue: 30 lines due, capped.
-        // maxSteps = (30 + 19) / 20 + 1 = 3; window = 3 * 3 = 9 lines.
+        // Ceiling is twice the steady cap of 3, so 6; window is 18 lines.
         WaterfallPacer::Plan plan = pacer.plan(1.0, 100);
-        CHECK(plan.insert == 3);
+        CHECK(plan.insert == 6);
         // Backlog beyond the short window is discarded, not fast-forwarded.
-        CHECK(plan.dropBefore == 91);
+        CHECK(plan.dropBefore == 82);
     }
 
     TEST_CASE("banked credit is forgiven instead of bursting") {
         WaterfallPacer pacer;
         pacer.setLinesPerSecond(30);
 
-        // Six lines remain past the cap and pre-drop; the half window
-        // (9 / 2 = 4) keeps four, so two are trimmed.
+        // Twelve lines remain past the cap and pre-drop; the half window
+        // (18 / 2 = 9) keeps nine, so three are trimmed.
         WaterfallPacer::Plan plan = pacer.plan(1.0, 100);
-        CHECK(plan.dropAfter == 2);
+        CHECK(plan.dropAfter == 3);
 
         // Next frame resumes at pace on the newest lines.
         WaterfallPacer::Plan next = pacer.plan(1.0 / 30.0, 4);
@@ -74,10 +74,36 @@ TEST_SUITE("WaterfallPacer") {
         WaterfallPacer pacer;
         pacer.setLinesPerSecond(120);
 
-        // maxSteps = (120 + 19) / 20 + 1 = 7; window = 7 * 3 = 21.
+        // Ceiling is twice the steady cap of 7, so 14; window is 42 lines.
         WaterfallPacer::Plan plan = pacer.plan(1.0, 200);
-        CHECK(plan.insert == 7);
-        CHECK(plan.dropBefore == 179);
-        CHECK(plan.dropAfter == 4);
+        CHECK(plan.insert == 14);
+        CHECK(plan.dropBefore == 158);
+        CHECK(plan.dropAfter == 7);
+    }
+
+    TEST_CASE("requested rate is honored at low frame rates") {
+        WaterfallPacer pacer;
+        pacer.setLinesPerSecond(1024);
+
+        // Fifteen 15fps frames with a deep queue: about 1024 lines owed,
+        // and the time-scaled cap keeps up with them.
+        int total = 0;
+        for (int i = 0; i < 15; i++) {
+            WaterfallPacer::Plan plan = pacer.plan(1.0 / 15.0, 500);
+            total += plan.insert;
+        }
+        CHECK(total > 1000);
+        CHECK(total <= 1030);
+    }
+
+    TEST_CASE("hitch does not repay as a burst") {
+        WaterfallPacer pacer;
+        pacer.setLinesPerSecond(1024);
+
+        // Five stalled seconds would owe thousands of lines; the ceiling
+        // (twice the steady cap of 53) holds the frame to 106 instead.
+        WaterfallPacer::Plan plan = pacer.plan(5.0, 500);
+        CHECK(plan.insert == 106);
+        CHECK(plan.dropBefore == 182);
     }
 }
