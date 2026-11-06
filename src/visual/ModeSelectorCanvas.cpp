@@ -141,7 +141,8 @@ void ModeSelectorCanvas::OnMouseReleased(wxMouseEvent& event) {
         selectedButton = -1;
     }
     
-    if (currentSelection != selectedButton) {
+    // Non-toggle selectors also report re-clicking the current choice.
+    if (currentSelection != selectedButton || (!toggleMode && selectedButton != -1)) {
         inputChanged = true;
     }
     

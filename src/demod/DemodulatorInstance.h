@@ -77,6 +77,7 @@ public:
     int getOutputDevice();
 
     void setDemodulatorType(const std::string& demod_type_in);
+    void resetDemodulatorSettings();
     std::string getDemodulatorType();
 
     std::wstring getDemodulatorUserLabel();

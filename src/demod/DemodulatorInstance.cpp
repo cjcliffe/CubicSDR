@@ -394,6 +394,18 @@ void DemodulatorInstance::setDemodulatorType(const std::string& demod_type_in) {
     wxGetApp().getBookmarkMgr().updateActiveList();
 }
 
+void DemodulatorInstance::resetDemodulatorSettings() {
+    if (!demodulatorPreThread) {
+        return;
+    }
+    std::string currentType = demodulatorPreThread->getDemodType();
+    // Forget the saved per-type state so the rebuild below uses defaults.
+    lastModemSettings.erase(currentType);
+    lastModemBandwidth.erase(currentType);
+    demodulatorPreThread->writeModemSettings(ModemSettings());
+    setDemodulatorType(currentType);
+}
+
 std::string DemodulatorInstance::getDemodulatorType() {
     return demodulatorPreThread->getDemodType();
 }
