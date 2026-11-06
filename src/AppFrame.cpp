@@ -867,9 +867,9 @@ ModeSelectorCanvas *AppFrame::makeModemSelectorPanel(wxWindow *parent, const wxG
     }
 
 #ifdef CUBICSDR_MODEM_EXCLUDE
-    demodModeSelector->setHelpTip("Use buttons to choose modulation type.");
+    demodModeSelector->setHelpTip("Use buttons to choose modulation type. Click the active type to reset its parameters.");
 #else
-    pCanvas->setHelpTip("Choose modulation type: Frequency Modulation (Hotkey F), Amplitude Modulation (A) and Lower (L), Upper (U), Double Side-Band and more.");
+    pCanvas->setHelpTip("Choose modulation type: Frequency Modulation (Hotkey F), Amplitude Modulation (A) and Lower (L), Upper (U), Double Side-Band and more. Click the active type to reset its parameters.");
 #endif
 
     pCanvas->SetMinSize(wxSize(50, -1));
@@ -2635,6 +2635,11 @@ void AppFrame::handleModeSelector() {
         demodTuner->setHalfBand(dSelection=="USB" || dSelection=="LSB");
     }
 #endif
+    // Discard clicks; there is no demod to apply them to.
+    demodModeSelector->clearModeChanged();
+#ifdef ENABLE_DIGITAL_LAB
+    demodModeSelectorAdv->clearModeChanged();
+#endif
 }
 
 void AppFrame::handleCurrentModem() {
@@ -2729,12 +2734,26 @@ void AppFrame::handleCurrentModem() {
             demodTuner->setHalfBand(false);
             demodModeSelector->setSelection(-1);
         }
+        // Re-clicking the active type resets its parameters to defaults.
+        else if (!dSelection.empty() && demodModeSelector->modeChanged()) {
+            demod->resetDemodulatorSettings();
+        }
+        else if (!dSelectionadv.empty() && demodModeSelectorAdv->modeChanged()) {
+            demod->resetDemodulatorSettings();
+        }
+        demodModeSelector->clearModeChanged();
+        demodModeSelectorAdv->clearModeChanged();
 #else
         // basic demodulators
         if (dSelection != "" && dSelection != demod->getDemodulatorType()) {
             demod->setDemodulatorType(dSelection);
             demodTuner->setHalfBand(dSelection=="USB" || dSelection=="LSB");
         }
+        // Re-clicking the active type resets its parameters to defaults.
+        else if (dSelection != "" && demodModeSelector->modeChanged()) {
+            demod->resetDemodulatorSettings();
+        }
+        demodModeSelector->clearModeChanged();
 #endif
 
         int muteMode = demodMuteButton->getSelection();
