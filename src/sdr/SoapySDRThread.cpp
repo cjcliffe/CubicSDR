@@ -102,6 +102,11 @@ bool SDRThread::init() {
     }
 
     //2. Set sample rate:
+    // Adopt the pending rate first: on a device switch the running rate is
+    // stale from the previous device and may be invalid for this one.
+    sampleRate.store(pendingSampleRate.load());
+    // A throwing driver must fail device start, not kill the app.
+    try {
     device->setSampleRate(SOAPY_SDR_RX, 0, sampleRate.load());
 
     //3. Store Stream-specific parameters to current Device
@@ -158,6 +163,15 @@ bool SDRThread::init() {
         setting_value_changed.store(false);
 
     } //leave lock guard scope
+    } catch (const std::exception &e) {
+        std::cout << "SDRThread: device configuration failed: " << e.what() << std::endl << std::flush;
+        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Device configuration failed: ") + e.what());
+        return false;
+    } catch (...) {
+        std::cout << "SDRThread: device configuration failed with unknown error." << std::endl << std::flush;
+        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Device configuration failed."));
+        return false;
+    }
       
     wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_INITIALIZED, std::string("Device Initialized."));
 
@@ -174,8 +188,22 @@ bool SDRThread::init() {
 }
 
 void SDRThread::deinit() {
-    device->deactivateStream(stream);
-    device->closeStream(stream);
+    // Teardown must complete even if the driver throws: a wedged device
+    // must not take the process down with it.
+    try {
+        device->deactivateStream(stream);
+    } catch (const std::exception &e) {
+        std::cout << "SDRThread: deactivateStream failed during teardown: " << e.what() << std::endl << std::flush;
+    } catch (...) {
+        std::cout << "SDRThread: deactivateStream failed during teardown." << std::endl << std::flush;
+    }
+    try {
+        device->closeStream(stream);
+    } catch (const std::exception &e) {
+        std::cout << "SDRThread: closeStream failed during teardown: " << e.what() << std::endl << std::flush;
+    } catch (...) {
+        std::cout << "SDRThread: closeStream failed during teardown." << std::endl << std::flush;
+    }
    
     if (buffs[0] != nullptr) {
         ::free(buffs[0]);
@@ -410,9 +438,8 @@ void SDRThread::readLoop() {
         return;
     }
     
-    updateGains();
- 
     try {
+        updateGains();
         while (!stopping.load()) {
 
             updateSettings();
@@ -450,6 +477,10 @@ void SDRThread::updateGains() {
 // Discard whatever the driver has buffered (non-blocking reads until
 // empty, bounded), so the stream resumes from live samples.
 void SDRThread::drainStream() {
+    if (buffs[0] == nullptr) {
+        // Fresh stream, nothing allocated to drain into yet.
+        return;
+    }
     for (int i = 0; i < 4096; i++) {
         int drainFlags = 0;
         long long drainTimeNs = 0;
@@ -467,21 +498,22 @@ void SDRThread::updateSettings() {
     }
 
     if (antenna_changed.load()) {
+        antenna_changed.store(false);
         
        device->setAntenna(SOAPY_SDR_RX, 0, antennaName);
            
-       antenna_changed.store(false);
     }
     
     if (offset_changed.load()) {
+        offset_changed.store(false);
         if (!freq_changed.load()) {
             frequency.store(frequency.load());
             freq_changed.store(true);
         }
-        offset_changed.store(false);
     }
     
     if (rate_changed.load()) {
+        rate_changed.store(false);
 
         //Apply the pending rate here, at a block boundary, so in-flight
         //reads keep the old rate instead of producing new-rate labels
@@ -494,7 +526,13 @@ void SDRThread::updateSettings() {
         drainStream();
 
         //1. Silence the device:
-        device->deactivateStream(stream);
+        try {
+            device->deactivateStream(stream);
+        } catch (const std::exception &e) {
+            std::cout << "SDRThread: deactivateStream failed: " << e.what() << std::endl << std::flush;
+        } catch (...) {
+            std::cout << "SDRThread: deactivateStream failed." << std::endl << std::flush;
+        }
 
         //2. Set the (new) sample rate
         try {
@@ -511,7 +549,13 @@ void SDRThread::updateSettings() {
         }
 
         //3. Re-activate stream:
-        device->activateStream(stream);
+        try {
+            device->activateStream(stream);
+        } catch (const std::exception &e) {
+            std::cout << "SDRThread: activateStream failed: " << e.what() << std::endl << std::flush;
+        } catch (...) {
+            std::cout << "SDRThread: activateStream failed." << std::endl << std::flush;
+        }
 
         //4. Re-do Cubic buffers :
         //4.1. re-read current sample rate and MTU:
@@ -554,18 +598,16 @@ void SDRThread::updateSettings() {
         //clear overflow buffer
         numOverflow = 0;
 
-        //
-        rate_changed.store(false);
         doUpdate = true;
     }
     
     if (ppm_changed.load() && hasPPM.load()) {
+        ppm_changed.store(false);
         if (device->hasFrequencyCorrection(SOAPY_SDR_RX, 0)) {
             device->setFrequencyCorrection(SOAPY_SDR_RX, 0, ppm.load());
         } else {
             device->setFrequency(SOAPY_SDR_RX, 0, "CORR", ppm.load());
         }
-        ppm_changed.store(false);
     }
     
     if (freq_changed.load()) {
@@ -593,10 +635,10 @@ void SDRThread::updateSettings() {
    
     
     if (agc_mode_changed.load()) {
+        agc_mode_changed.store(false);
         if (device->hasGainMode(SOAPY_SDR_RX, 0)) {
             device->setGainMode(SOAPY_SDR_RX, 0, agc_mode.load());
         }
-        agc_mode_changed.store(false);
         if (!agc_mode.load()) {
             updateGains();
             
@@ -614,6 +656,7 @@ void SDRThread::updateSettings() {
     if (gain_value_changed.load() && !agc_mode.load()) {
         std::lock_guard < std::mutex > lock(gain_busy); 
 
+        gain_value_changed.store(false);
         for (auto & gci : gainChanged) {
             if (gci.second) {
                 device->setGain(SOAPY_SDR_RX, 0, gci.first, gainValues[gci.first]);
@@ -621,13 +664,13 @@ void SDRThread::updateSettings() {
             }
         }
         
-        gain_value_changed.store(false);
     }
     
     if (setting_value_changed.load()) {
 
         std::lock_guard < std::mutex > lock(setting_busy);
         
+        setting_value_changed.store(false);
         for (auto & sci : settingChanged) {
             if (sci.second) {
                 device->writeSetting(sci.first, settings[sci.first]);
@@ -635,7 +678,6 @@ void SDRThread::updateSettings() {
             }
         }
         
-        setting_value_changed.store(false);
         
         doUpdate = true;
     }

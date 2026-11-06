@@ -73,6 +73,10 @@ established:
 - Reset Session produced FM demods instead of FMS — the mode selector
   matches by 1-based value, so the reset selected FM and the frame sync
   copied it back over the FMS default; the reset now selects by name.
+- Switching to a narrower device crashed on a stale rate, and any
+  driver throw during start/stop killed the process — the pending rate
+  is adopted before configuring, lifecycle driver calls are contained,
+  and every mid-stream flag clears before applying.
 
 ## Work Plan
 
@@ -232,6 +236,16 @@ Landed units:
 - [x] Reset Session FMS parity — the reset selects the mode by name
   instead of a magic 1-based value, so new demods after a reset are
   FMS like everywhere else.
+- [x] Device lifecycle robustness
+  - `init()` adopts the pending rate before configuring, so a switch
+    never blasts the previous device's rate at the new driver
+  - init sequence, `deinit()`, and the rate block's
+    deactivate/activate contain driver throws (log + graceful failure
+    instead of `std::terminate`)
+  - `drainStream()` skips fresh unallocated streams; `updateGains()`
+    moved inside the read-loop guard
+  - all mid-stream flags clear before applying, closing the lost-update
+    race for antenna, offset, rate, PPM, AGC, gains, and settings
 
 ## Validation Plan
 
@@ -371,3 +385,6 @@ above always reflects the current state.
 - macOS audio-thread join fix: shared join/delete path, stale Known
   Issues entry removed.
 - Reset Session FMS parity: select-by-name instead of magic value.
+- Device lifecycle robustness: pending-rate adoption on switch,
+  lifecycle containment, drain guard, uniform clear-before-apply.
+  Live-verified (aggressive stop/start/switch cycling, no crashes).
