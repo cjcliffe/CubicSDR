@@ -488,7 +488,7 @@ bool BookmarkView::refreshActiveLabelsInPlace() {
 
     // Refresh the props fields for the selected active demodulator without
     // touching items, selection, expansion state, or buttons. The user-label
-    // field is only written when it differs so typing there is not clobbered.
+    // field is skipped while it has focus so typing there is not clobbered.
     wxTreeItemId selItem = m_treeView->GetSelection();
     TreeViewItem *selTVI = selItem.IsOk() ? itemToTVI(selItem) : nullptr;
     if (selTVI && selTVI->type == TreeViewItem::Type::TREEVIEW_ITEM_TYPE_ACTIVE && selTVI->demod) {
@@ -496,7 +496,7 @@ bool BookmarkView::refreshActiveLabelsInPlace() {
         m_bandwidthVal->SetLabelText(frequencyToStr(selTVI->demod->getBandwidth()));
         m_modulationVal->SetLabelText(selTVI->demod->getDemodulatorType());
         std::wstring userLabel = selTVI->demod->getDemodulatorUserLabel();
-        if (m_labelText->GetValue().ToStdWstring() != userLabel) {
+        if (!m_labelText->HasFocus() && m_labelText->GetValue().ToStdWstring() != userLabel) {
             m_labelText->SetValue(wxString(userLabel));
         }
     }

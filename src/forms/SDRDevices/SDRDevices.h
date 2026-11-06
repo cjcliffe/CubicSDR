@@ -48,7 +48,7 @@ private:
     // Dismiss when Start begins streaming; set for the startup-shown
     // dialog only so manual re-opens stay up for further tweaks.
     bool dismissOnStart;
-    std::chrono::steady_clock::time_point lastUseClick{};
+    long lastUseClick{ 0 };
     std::map<std::string, std::vector<SDRDeviceInfo *>* > devs;
     std::vector<SDRDeviceInfo *>::iterator devs_i;
     std::map<wxTreeItemId, SDRDeviceInfo *> devItems;

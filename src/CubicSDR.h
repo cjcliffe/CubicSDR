@@ -140,7 +140,7 @@ public:
     int getPPM();
 
     void showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode = FrequencyDialog::FDIALOG_TARGET_DEFAULT, const wxString& initString = "");
-    void showLabelInput();
+    void showLabelInput(DemodulatorInstancePtr demod);
     AppFrame *getAppFrame();
     
     bool areDevicesReady();

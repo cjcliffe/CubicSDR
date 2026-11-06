@@ -553,6 +553,18 @@ std::string AppConfig::getLastDeviceId() {
     return lastDeviceId;
 }
 
+bool AppConfig::isRecordingPathValid() {
+    string recPathStr = getRecordingPath();
+    
+    if (recPathStr.empty()) {
+        return false;
+    }
+    
+    wxFileName recPath(recPathStr);
+    
+    return recPath.Exists() && recPath.IsDirWritable();
+}
+
 bool AppConfig::verifyRecordingPath() {
     string recPathStr = wxGetApp().getConfig()->getRecordingPath();
     
@@ -562,9 +574,7 @@ bool AppConfig::verifyRecordingPath() {
         return false;
     }
     
-    wxFileName recPath(recPathStr);
-    
-    if (!recPath.Exists() || !recPath.IsDirWritable()) {
+    if (!isRecordingPathValid()) {
         wxMessageBox( wxT("Recording path does not exist or is not writable.  Please use 'Set Recording Path' from the 'Recording' Menu."), wxT("Recording Path Error"), wxICON_INFORMATION);
         
         return false;
