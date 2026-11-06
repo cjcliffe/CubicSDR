@@ -460,8 +460,11 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
     case WXK_SPACE:
         wxGetApp().showFrequencyInput();
         break;
-    case 'E': //E is for 'Edit the label' of the active demodulator. 
-        wxGetApp().showLabelInput();
+    case 'E': //E is for 'Edit the label' of the hovered demodulator, or the selected one. 
+        {
+            DemodulatorInstancePtr labelDemod = hoverDemod ? hoverDemod : wxGetApp().getDemodMgr().getCurrentModem();
+            wxGetApp().showLabelInput(labelDemod);
+        }
         break;
     case 'C':
         if (hoverDemod) {

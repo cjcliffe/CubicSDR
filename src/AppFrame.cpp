@@ -2406,6 +2406,10 @@ void AppFrame::processFrame() {
 
     handleTXAntennaChange();
 
+    // The recording path can vanish outside the app; re-gate the button
+    // every tick so it never records into the void with the glow on.
+    updateRecordButtonState(demodRecordButton);
+
     DemodulatorInstancePtr demod = wxGetApp().getDemodMgr().getCurrentModem();
 
     if (demod && demod->isModemInitialized()) {
@@ -2418,6 +2422,13 @@ void AppFrame::processFrame() {
         handleDemodWaterfallSpectrum();
         handleSpectrumWaterfall();
         handleMuteButton();
+        // No demodulator to record: park the button instead of showing a
+        // stale recording state from a deleted demodulator.
+        if (demodRecordButton->getSelection() != -1) {
+            demodRecordButton->setSelection(-1);
+            demodRecordButton->Refresh();
+        }
+        demodRecordButton->clearModeChanged();
     }
 
     handleScopeProcessor();
@@ -3377,8 +3388,10 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
 void AppFrame::updateRecordButtonState(ModeSelectorCanvas *recordButton) {
     // No recording path means no recording: dim the button and swallow its
     // clicks. The tip still shows on hover and explains what is missing.
-    bool noPath = wxGetApp().getConfig()->getRecordingPath().empty();
-    recordButton->setDisabled(noPath);
+    bool noPath = !wxGetApp().getConfig()->isRecordingPathValid();
+    if (recordButton->isDisabled() != noPath) {
+        recordButton->setDisabled(noPath);
+    }
     if (noPath) {
         recordButton->setHelpTip("Demodulator Record Toggle (R) - Set a recording path first ('Recording' menu -> 'Set Recording Path').");
     } else {

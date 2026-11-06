@@ -983,9 +983,9 @@ void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetM
     fdialog.ShowModal();
 }
 
-void CubicSDR::showLabelInput() {
+void CubicSDR::showLabelInput(DemodulatorInstancePtr demod) {
 
-    DemodulatorInstancePtr selectedDemod = wxGetApp().getDemodMgr().getCurrentModem();
+    DemodulatorInstancePtr selectedDemod = demod;
 
     if (selectedDemod != nullptr) {
 

@@ -394,13 +394,15 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event) {
 
         // A double-click also fires two left-ups; swallow repeats inside the
         // system double-click window so each gesture acts exactly once.
-        auto clickNow = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::milliseconds>(clickNow - lastUseClick).count()
-            < wxSystemSettings::GetMetric(wxSYS_DCLICK_MSEC, nullptr)) {
+        // Stamp from the event, not the handler clock: the handler blocks on
+        // device start/stop, so handler time would push the second click of a
+        // slow gesture outside the window and act twice.
+        long clickMs = event.GetTimestamp();
+        if (clickMs - lastUseClick < wxSystemSettings::GetMetric(wxSYS_DCLICK_MSEC, nullptr)) {
             event.Skip();
             return;
         }
-        lastUseClick = clickNow;
+        lastUseClick = clickMs;
 
         // Active device: the button reads Stop and stops the stream,
         // leaving the dialog open for further tweaks.

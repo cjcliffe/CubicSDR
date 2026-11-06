@@ -165,6 +165,7 @@ public:
     std::string getRecordingPath();
     void setLastDeviceId(std::string deviceId_in);
     std::string getLastDeviceId();
+	bool isRecordingPathValid();
 	bool verifyRecordingPath();
 
 	void setRecordingSquelchOption(int enumChoice);
