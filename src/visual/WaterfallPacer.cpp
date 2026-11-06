@@ -3,6 +3,8 @@
 
 #include "WaterfallPacer.h"
 
+#include <cmath>
+
 WaterfallPacer::WaterfallPacer() : lps(0), credit(0.0) {
 }
 
@@ -27,15 +29,20 @@ WaterfallPacer::Plan WaterfallPacer::plan(double dtSeconds, size_t queueDepth) {
 
     double targetVis = 1.0 / (double)lps;
 
-    // Cap insertions per frame at roughly one frame's share plus one banked
-    // line, so the ceiling scales with the requested line rate instead of
-    // throttling it. Anything above the cap stays queued as a small cushion
-    // against producer jitter instead of jumping at once.
-    // Roughly one frame's share of lines plus one banked line, floored
-    // at three so very low rates still make progress.
-    int maxSteps = (lps + 19) / 20 + 1;
+    // Honor the requested rate at any frame rate: the cap covers this
+    // frame's time share plus one banked line, so low frame rates still
+    // keep up. The ceiling keeps a hitch from repaying as a burst.
+    // Floored at three so very low rates still make progress.
+    int steadyCap = (lps + 19) / 20 + 1;
+    if (steadyCap < 3) {
+        steadyCap = 3;
+    }
+    int maxSteps = (int)std::ceil(dtSeconds * lps) + 1;
     if (maxSteps < 3) {
         maxSteps = 3;
+    }
+    if (maxSteps > 2 * steadyCap) {
+        maxSteps = 2 * steadyCap;
     }
     size_t maxBacklog = (size_t)maxSteps * 3;
 

@@ -77,6 +77,16 @@ established:
   driver throw during start/stop killed the process — the pending rate
   is adopted before configuring, lifecycle driver calls are contained,
   and every mid-stream flag clears before applying.
+- Stopping the device spooled stale waterfall frames for a second or
+  two — `stopDevice` never flushed the SDR-to-post backlog that
+  `setDevice` already flushed; it now discards it so downstream stops
+  with the device.
+- Tuning left the waterfall behind the knob — queued lines carry the
+  old frequency, so every retune now drops the waterfall backlog and
+  the display tracks live input instead of spooling history.
+- Low frame rates could not honor high line rates — the insertion cap
+  assumed ~20fps pacing, so it now scales with measured frame time
+  (with an anti-burst ceiling) and the slider stays truthful.
 
 ## Work Plan
 
@@ -246,6 +256,18 @@ Landed units:
     moved inside the read-loop guard
   - all mid-stream flags clear before applying, closing the lost-update
     race for antenna, offset, rate, PPM, AGC, gains, and settings
+- [x] Flush backlog on device stop — `stopDevice` requests the same
+  pacer/input/output flush `setDevice` already did, plus the waterfall
+  FFT pipeline flush, so the waterfall freezes instead of spooling
+  stale frames after stop.
+- [x] Flush waterfall backlog on retune — `setFrequency` drops the
+  distributor, FFT, and canvas queues via a new pipeline flush, so the
+  display tracks the knob instead of spooling old-frequency lines.
+- [x] Time-scaled waterfall insertion cap — the per-frame cap covers
+  the frame's time share plus one banked line (floored, with a
+  twice-steady ceiling against hitches), so maximum lines-per-second
+  renders fully even at the lowest frame rate; pacer tests updated
+  and extended.
 
 ## Validation Plan
 
@@ -388,3 +410,8 @@ above always reflects the current state.
 - Device lifecycle robustness: pending-rate adoption on switch,
   lifecycle containment, drain guard, uniform clear-before-apply.
   Live-verified (aggressive stop/start/switch cycling, no crashes).
+- Flush backlog on device stop: pacer/input/output plus the waterfall
+  FFT pipeline discarded so the waterfall freezes with the device.
+- Flush waterfall backlog on retune: display tracks the knob.
+- Time-scaled waterfall insertion cap: requested LPS honored at any
+  frame rate, hitch ceiling preserved, tests extended.
