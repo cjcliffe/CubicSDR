@@ -554,6 +554,7 @@ void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
             wxTreeItemId enumeratingRoot = devTree->GetRootItem();
             if (!enumeratingRoot.IsOk() || devTree->GetItemText(enumeratingRoot) != "Initializing") {
                 devTree->DeleteAllItems();
+                devItems.clear();
                 devTree->AddRoot("Initializing");
             }
             event.Skip();
@@ -561,6 +562,7 @@ void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
         }
                 
         devTree->DeleteAllItems();
+        devItems.clear();
         
         wxTreeItemId devRoot = devTree->AddRoot("Devices");
         wxTreeItemId localBranch = devTree->AppendItem(devRoot, "Local");

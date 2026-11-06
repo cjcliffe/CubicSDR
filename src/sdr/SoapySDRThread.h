@@ -45,6 +45,7 @@ class SDRThread : public IOThread {
 private:
     bool init();
     void deinit();
+    void releaseStream();
     
     //returns the SoapyDevice readStream return value,
     //i.e if >= 0 the number of samples read, else if < 0 an error code.
@@ -128,6 +129,7 @@ protected:
         ppm_changed, device_changed, agc_mode_changed, gain_value_changed, setting_value_changed, frequency_locked, frequency_lock_init, iq_swap;
 
     std::mutex gain_busy;
+    std::mutex antenna_busy;
     std::map<std::string, float> gainValues;
     std::map<std::string, bool> gainChanged;
     

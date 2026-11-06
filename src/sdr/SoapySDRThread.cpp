@@ -82,7 +82,19 @@ bool SDRThread::init() {
     
     wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Initializing device."));
     
-    device = devInfo->getSoapyDevice();
+    try {
+        device = devInfo->getSoapyDevice();
+    } catch (const std::exception &e) {
+        std::cout << "SDRThread: device creation failed: " << e.what() << std::endl << std::flush;
+        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Device creation failed: ") + e.what());
+        releaseStream();
+        return false;
+    } catch (...) {
+        std::cout << "SDRThread: device creation failed with unknown error." << std::endl << std::flush;
+        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Device creation failed."));
+        releaseStream();
+        return false;
+    }
     
     SoapySDR::Kwargs currentStreamArgs = combineArgs(devInfo->getStreamArgs(),streamArgs);
     
@@ -98,6 +110,7 @@ bool SDRThread::init() {
     if (!stream) {
         wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Stream setup failed, stream is null. ") + streamExceptionStr);
         std::cout << "Stream setup failed, stream is null. " << streamExceptionStr << std::endl;
+        releaseStream();
         return false;
     }
 
@@ -166,10 +179,12 @@ bool SDRThread::init() {
     } catch (const std::exception &e) {
         std::cout << "SDRThread: device configuration failed: " << e.what() << std::endl << std::flush;
         wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Device configuration failed: ") + e.what());
+        releaseStream();
         return false;
     } catch (...) {
         std::cout << "SDRThread: device configuration failed with unknown error." << std::endl << std::flush;
         wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Device configuration failed."));
+        releaseStream();
         return false;
     }
       
@@ -179,7 +194,19 @@ bool SDRThread::init() {
     wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Activating stream."));
 
     rate_changed.store(true);
-    updateSettings();
+    try {
+        updateSettings();
+    } catch (const std::exception &e) {
+        std::cout << "SDRThread: stream activation failed: " << e.what() << std::endl << std::flush;
+        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Stream activation failed: ") + e.what());
+        releaseStream();
+        return false;
+    } catch (...) {
+        std::cout << "SDRThread: stream activation failed with unknown error." << std::endl << std::flush;
+        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Stream activation failed."));
+        releaseStream();
+        return false;
+    }
 
 	//rebuild menu now that settings are really been applied.
 	wxGetApp().notifyMainUIOfDeviceChange(true);
@@ -187,7 +214,10 @@ bool SDRThread::init() {
     return true;
 }
 
-void SDRThread::deinit() {
+void SDRThread::releaseStream() {
+    if (!stream) {
+        return;
+    }
     // Teardown must complete even if the driver throws: a wedged device
     // must not take the process down with it.
     try {
@@ -204,13 +234,17 @@ void SDRThread::deinit() {
     } catch (...) {
         std::cout << "SDRThread: closeStream failed during teardown." << std::endl << std::flush;
     }
-   
+
+    stream = nullptr;
+}
+
+void SDRThread::deinit() {
+    releaseStream();
+
     if (buffs[0] != nullptr) {
         ::free(buffs[0]);
         buffs[0] = nullptr;
     }
-
-    stream = nullptr;
 }
 
 void SDRThread::assureBufferMinSize(SDRThreadIQData * dataOut, size_t minSize) {
@@ -453,6 +487,7 @@ void SDRThread::readLoop() {
     catch (...) {
         //notify App of device loss:
         std::cout << "SDRThread::readLoop() exception, stopping device..." << std::endl << std::flush;
+        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("SDRThread::readLoop() exception, stopping device."));
         stopping = true;
     }
 
@@ -500,7 +535,12 @@ void SDRThread::updateSettings() {
     if (antenna_changed.load()) {
         antenna_changed.store(false);
         
-       device->setAntenna(SOAPY_SDR_RX, 0, antennaName);
+       std::string antennaCopy;
+       {
+           std::lock_guard < std::mutex > lock(antenna_busy);
+           antennaCopy = antennaName;
+       }
+       device->setAntenna(SOAPY_SDR_RX, 0, antennaCopy);
            
     }
     
@@ -816,6 +856,7 @@ long long SDRThread::getOffset() {
 }
 
 void SDRThread::setAntenna(const std::string& name) {
+    std::lock_guard < std::mutex > lock(antenna_busy);
     antennaName = name;
     antenna_changed.store(true);
 
@@ -826,6 +867,7 @@ void SDRThread::setAntenna(const std::string& name) {
 }
 
 std::string SDRThread::getAntenna() {
+    std::lock_guard < std::mutex > lock(antenna_busy);
     return antennaName;
 }
 
