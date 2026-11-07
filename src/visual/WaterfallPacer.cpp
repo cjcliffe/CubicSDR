@@ -17,6 +17,11 @@ int WaterfallPacer::getLinesPerSecond() const {
 }
 
 WaterfallPacer::Plan WaterfallPacer::plan(double dtSeconds, size_t queueDepth) {
+    // Time never runs backward; a negative share would wrap the
+    // backlog math below, so clamp it instead of trusting callers.
+    if (dtSeconds < 0.0) {
+        dtSeconds = 0.0;
+    }
     // Bank elapsed time even while paused. Resuming then takes one
     // capped burst on the first frame while the forgiveness step below
     // wipes the leftover credit instead of fast-forwarding through it.

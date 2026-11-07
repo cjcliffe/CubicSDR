@@ -170,6 +170,10 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         
         sp->setScaleFactor(factor);
         wp->setScaleFactor(factor);
+        // The demod view follows the shared visual gain.
+        if (wxGetApp().getDemodSpectrumProcessor()) {
+            wxGetApp().getDemodSpectrumProcessor()->setScaleFactor(factor);
+        }
     }
     
     if (freqMove != 0.0) {
@@ -350,7 +354,9 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glContext->setHoverAlpha(0);
 
     for (auto & demod : demods) {
-        if (!demod->isActive()) {
+        // Inactive demods are hidden, except the selection: it keeps a
+        // regular outline so it never vanishes outright.
+        if (!demod->isActive() && demod != selectedDemodulator) {
             continue;
         }
         if (hoverDemod == demod || (selectedDemodulator == demod && !dimSelection)) {

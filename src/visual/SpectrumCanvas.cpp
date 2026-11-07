@@ -230,7 +230,17 @@ void SpectrumCanvas::updateScaleFactorFromYMove(float yDeltaMouseMove) {
 }
 
 void SpectrumCanvas::resetScaleFactorFromClick() {
+    // Start the ease-back from the live value: another view may have
+    // moved the shared gain since this canvas last touched it.
+    scaleFactor = wxGetApp().getSpectrumProcessor()->getScaleFactor();
     resetScaleFactor = true;
+
+    wxGetApp().getSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
+
+    //make the peak hold act on the current demod also, like a zoomed-in version.
+    if (wxGetApp().getDemodSpectrumProcessor()) {
+        wxGetApp().getDemodSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
+    }
 }
 
 void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
@@ -309,14 +319,7 @@ void SpectrumCanvas::OnMouseRightReleased(wxMouseEvent& event) {
 	mouseTracker.setHorizDragLock(false);
     
     if (!mouseTracker.getOriginDeltaMouseY()) {
-        resetScaleFactor = true;
-
-        wxGetApp().getSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
-
-        //make the peak hold act on the current dmod also, like a zoomed-in version.
-        if (wxGetApp().getDemodSpectrumProcessor()) {
-            wxGetApp().getDemodSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
-        }
+        resetScaleFactorFromClick();
     }
 
     mouseTracker.OnMouseRightReleased(event);

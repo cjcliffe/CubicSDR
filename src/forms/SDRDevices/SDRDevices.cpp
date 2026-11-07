@@ -41,6 +41,12 @@ SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent, const wxPoint &pos, bool d
 }
 
 void SDRDevicesDialog::OnClose( wxCloseEvent& /* event */) {
+    // A reset click defers to the device timer; apply it now rather than
+    // dropping it if the dialog closes first.
+    if (pendingResetApply) {
+        pendingResetApply = false;
+        applyResetDefaults();
+    }
     wxGetApp().setDeviceSelectorClosed();
     Destroy();
 }
@@ -497,7 +503,9 @@ void SDRDevicesDialog::applyResetDefaults() {
     long defaultRate = dev->getSampleRateNear(SOAPY_SDR_RX, 0, DEFAULT_SAMPLE_RATE);
     devConfig->setSampleRate(defaultRate);
     if (dev->isActive() || !wxGetApp().getDevice()) {
-        // Mirror the per-field edit path so a reset applies live like edits do.
+        // Mirror the per-field edit path for the live-settable scalars. Gains,
+        // runtime settings, and stream options cannot take effect until the
+        // next start, which re-adopts them from the driver.
         wxGetApp().setOffset(0);
         wxGetApp().setPPM(0);
         wxGetApp().setAGCMode(true);
@@ -508,13 +516,13 @@ void SDRDevicesDialog::applyResetDefaults() {
             wxGetApp().setAntennaName(antennaOpts.front());
         }
 
-        wxTreeItemId curSel = devTree->GetSelection();
-        if (curSel) {
-            devTree->SetItemText(curSel, devConfig->getDeviceName());
-        }
         if (dev->isActive()) {
             wxGetApp().getAppFrame()->updateTitle();
         }
+    }
+    wxTreeItemId curSel = devTree->GetSelection();
+    if (curSel) {
+        devTree->SetItemText(curSel, devConfig->getDeviceName());
     }
     refreshDeviceProperties();
 }
