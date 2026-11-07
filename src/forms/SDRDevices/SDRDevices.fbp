@@ -919,7 +919,7 @@
                                                 <event name="OnRightDClick" />
                                                 <event name="OnRightDown" />
                                                 <event name="OnRightUp" />
-                                                <event name="OnSetFocus">OnPropGridFocus</event>
+                                                <event name="OnSetFocus" />
                                                 <event name="OnSize" />
                                                 <event name="OnUpdateUI" />
                                             </object>

@@ -4,6 +4,8 @@
 #include "doctest.h"
 #include "sdr/SDRPacer.h"
 
+#include <climits>
+
 TEST_SUITE("SDRPacer") {
     TEST_CASE("fresh pacer emits nothing on an empty queue") {
         SDRPacer pacer;
@@ -152,5 +154,24 @@ TEST_SUITE("SDRPacer") {
         SDRPacer::Plan capped = pacer.plan(0.0, 10);
         CHECK(capped.emit == 4);
         CHECK(capped.drop == 6);
+    }
+
+    TEST_CASE("dry ticks bank bounded catch-up credit") {
+        SDRPacer pacer;
+
+        // Banking while dry is intentional: a stall earns catch-up frames,
+        // capped so the resume never bursts without bound.
+        pacer.plan(10.0, 0);
+        SDRPacer::Plan plan = pacer.plan(0.0, 70);
+        CHECK(plan.emit == 4);
+        CHECK(plan.drop == 6);
+    }
+
+    TEST_CASE("absurd depths clamp instead of wrapping") {
+        SDRPacer pacer;
+
+        SDRPacer::Plan plan = pacer.plan(0.0, static_cast<size_t>(-1));
+        CHECK(plan.drop == INT_MAX - pacer.getCapacity());
+        CHECK(plan.emit == 0);
     }
 }

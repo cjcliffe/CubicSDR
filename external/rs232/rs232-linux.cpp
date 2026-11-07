@@ -46,7 +46,9 @@
 #include <fcntl.h>
 #include <dirent.h>
 
+#ifndef __USE_SVID
 #define __USE_SVID // For strdup
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

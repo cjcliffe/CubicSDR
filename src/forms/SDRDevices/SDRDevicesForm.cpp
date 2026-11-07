@@ -108,7 +108,6 @@ devFrame::devFrame( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	m_useSelectedButton->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnUseSelected ), NULL, this );
 	m_resetButton->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnResetDefaults ), NULL, this );
 	m_propertyGrid->Connect( wxEVT_PG_CHANGED, wxPropertyGridEventHandler( devFrame::OnPropGridChanged ), NULL, this );
-	m_propertyGrid->Connect( wxEVT_SET_FOCUS, wxFocusEventHandler( devFrame::OnPropGridFocus ), NULL, this );
 	this->Connect( wxID_ANY, wxEVT_TIMER, wxTimerEventHandler( devFrame::OnDeviceTimer ) );
 }
 
@@ -124,7 +123,6 @@ devFrame::~devFrame()
 	m_useSelectedButton->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnUseSelected ), NULL, this );
 	m_resetButton->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnResetDefaults ), NULL, this );
 	m_propertyGrid->Disconnect( wxEVT_PG_CHANGED, wxPropertyGridEventHandler( devFrame::OnPropGridChanged ), NULL, this );
-	m_propertyGrid->Disconnect( wxEVT_SET_FOCUS, wxFocusEventHandler( devFrame::OnPropGridFocus ), NULL, this );
 	this->Disconnect( wxID_ANY, wxEVT_TIMER, wxTimerEventHandler( devFrame::OnDeviceTimer ) );
 	
 }

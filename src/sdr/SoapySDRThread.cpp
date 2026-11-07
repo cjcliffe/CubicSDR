@@ -547,7 +547,6 @@ void SDRThread::updateSettings() {
     if (offset_changed.load()) {
         offset_changed.store(false);
         if (!freq_changed.load()) {
-            frequency.store(frequency.load());
             freq_changed.store(true);
         }
     }

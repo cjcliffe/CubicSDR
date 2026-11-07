@@ -64,7 +64,6 @@ class devFrame : public wxFrame
 		virtual void OnUseSelected( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnResetDefaults( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnPropGridChanged( wxPropertyGridEvent& event ) { event.Skip(); }
-		virtual void OnPropGridFocus( wxFocusEvent& event ) { event.Skip(); }
 		virtual void OnDeviceTimer( wxTimerEvent& event ) { event.Skip(); }
 		
 	

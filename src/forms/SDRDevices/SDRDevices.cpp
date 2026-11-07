@@ -145,7 +145,7 @@ void SDRDevicesDialog::refreshDeviceProperties() {
         wxBusyCursor busyCursor;
         dev = selDev;
         selId = devTree->GetSelection();
-        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getName());
+        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
         m_propertyGrid->Clear();
         
         SoapySDR::Device *soapyDev = dev->getSoapyDevice();
@@ -469,9 +469,7 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event) {
         wxGetApp().setDevice(dev,0);
 
         //update main application title with Device name:
-        wxString titleBar = CUBICSDR_TITLE;
-        titleBar += " - " + wxGetApp().getDeviceName();
-        wxGetApp().getAppFrame()->SetTitle(titleBar);
+        wxGetApp().getAppFrame()->updateTitle();
 
         updateDeviceStateUI();
 
@@ -495,7 +493,7 @@ void SDRDevicesDialog::applyResetDefaults() {
     if (dev == nullptr) {
         return;
     }
-    DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getName());
+    DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
     devConfig->resetToDefaults();
     // The factory sample rate is concrete: nearest supported to the app
     // default. An unset rate would fall back to the current live rate, so

@@ -27,7 +27,6 @@ public:
     ~TuningCanvas() override;
 
     void setHelpTip(std::string tip);
-    bool changed();
     
     void setHalfBand(bool hb);
     void OnKeyDown(wxKeyEvent& event);

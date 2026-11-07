@@ -719,7 +719,7 @@ def build_liquid(prefix, jobs, dry_run=False, env=None, host=None):
     flags = ["--disable-shared", "--enable-static"]
     stamp = "lib-liquid"
     parts = macos_stamp_parts(env, host)
-    key = stamp_key(flags + (parts or []))
+    key = stamp_key([LIQUID_TAG] + flags + (parts or []))
     floor = (env or {}).get("MACOSX_DEPLOYMENT_TARGET")
     if stamp_valid(prefix, stamp, key,
                    adopt=not dry_run and floor is None):
@@ -734,7 +734,7 @@ def build_liquid(prefix, jobs, dry_run=False, env=None, host=None):
                 os.remove(stale)
             os.remove(stamp_path(prefix, "liquid"))
     src = os.path.join(prefix, "src", "liquid-dsp")
-    git_clone(LIQUID_URL, src, dry_run)
+    git_clone(LIQUID_URL, src, dry_run, branch=LIQUID_TAG)
     cmd = ["./configure", "--prefix=%s" % prefix] + flags
     if host is not None:
         cmd += ["--host=%s" % host]
