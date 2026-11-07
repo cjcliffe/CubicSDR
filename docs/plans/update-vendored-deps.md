@@ -88,7 +88,7 @@ This is a large, risky change. Recommend doing it incrementally:
    - Only used on Windows; MinGW uses system `<gl/wglext.h>`
 
    **Options:**
-   - Replace with a minimal header defining only the 3 needed typedefs (~10 lines)
+   - Replace with a minimal header defining only the needed typedefs
    - Or regenerate from Khronos XML registry if more WGL extensions are needed later
 
 ### Phase 3: Convert to git submodules (optional)

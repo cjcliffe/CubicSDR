@@ -10,7 +10,7 @@
 // and describes texture uploads newest-first with wrap handling. Pure memory
 // math, no GL, no I/O: the panel executes the returned upload plan with real
 // texture calls, so the whole schedule is unit-testable. Not thread-safe;
-// the caller drains under its queue lock, as the canvas already does.
+// the panel drives it from the UI thread only.
 // Caller protocol: setup() once per geometry, setPoints()/step() per line,
 // then planUpload(), one real texture upload per op, commitUpload().
 class WaterfallRing {

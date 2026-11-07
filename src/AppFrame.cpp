@@ -2386,7 +2386,7 @@ WXLRESULT AppFrame::MSWWindowProc(WXUINT nMsgCode, WXWPARAM wParam, WXLPARAM lPa
 
 int AppFrame::getFrameIntervalMs() {
     // No device streaming: repaint work dominates idle CPU, so run the pump
-    // at the low-performance rate regardless of the selected performance mode.
+    // at the low frame rate regardless of the selected Frame Rate setting.
     if (wxGetApp().getSDRThread()->getDevice() == nullptr) {
         return 66;
     }
@@ -3262,9 +3262,8 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     }
 
     DemodulatorInstancePtr lastDemod = wxGetApp().getDemodMgr().getCurrentModem();
-    // D acts on the hovered demodulator only. V/M/R act on the hovered
-    // demodulator while the cursor is in the waterfall, and fall back to
-    // the selection when it is not.
+    // V/M/R act on the hovered demodulator while the cursor is in the
+    // waterfall, and fall back to the selection when it is not.
     DemodulatorInstancePtr hoverDemod = waterfallCanvas ? waterfallCanvas->getHoverDemod() : nullptr;
     DemodulatorInstancePtr actionDemod = hoverDemod;
     if (!actionDemod && waterfallCanvas && !waterfallCanvas->getMouseTracker()->mouseInView()) {
