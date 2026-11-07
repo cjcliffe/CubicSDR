@@ -758,7 +758,7 @@ IF (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   IF(USE_HAMLIB)
     set_source_files_properties(
       external/rs232/rs232-linux.cpp
-      PROPERTIES COMPILE_OPTIONS "-Wno-builtin-macro-redefined;-Wno-sign-compare")
+      PROPERTIES COMPILE_OPTIONS "-Wno-sign-compare")
   ENDIF()
 ENDIF()
 

@@ -163,7 +163,7 @@ void WaterfallRing::setReady(bool ready_in) {
 }
 
 const unsigned char *WaterfallRing::reversedLine(int texture) const {
-    return &rLineBuffer[texture][0];
+    return rLineBuffer[texture].data();
 }
 
 int WaterfallRing::bufferedLines() const {

@@ -715,7 +715,6 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
     mouseTracker.setHorizDragLock(false);
 
     DemodulatorInstancePtr demod = isNew?nullptr: wxGetApp().getDemodMgr().getCurrentModem();
-    DemodulatorInstancePtr activeDemod = isNew?nullptr: wxGetApp().getDemodMgr().getCurrentModem();
 
     DemodulatorMgr *mgr = &wxGetApp().getDemodMgr();
 
@@ -792,10 +791,10 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
             mouseTracker.setVertDragLock(true);
             mouseTracker.setHorizDragLock(false);
         } else {
-            if (activeDemod) {
-                wxGetApp().getDemodMgr().setActiveDemodulator(activeDemod);
+            if (demod) {
+                wxGetApp().getDemodMgr().setActiveDemodulator(demod);
                 mgr->updateLastState();
-                activeDemod->setTracking(true);
+                demod->setTracking(true);
                 nextDragState = WF_DRAG_FREQUENCY;
             } else {
                 nextDragState = WF_DRAG_NONE;

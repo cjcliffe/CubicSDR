@@ -149,6 +149,7 @@ void DemodulatorMgr::deleteThread(const DemodulatorInstancePtr& demod) {
     auto i = std::find(demods.begin(), demods.end(), demod);
 
     if (currentModem == demod) {
+        currentModem->setVisualOutputQueue(nullptr);
         currentModem = nullptr;
     }
 

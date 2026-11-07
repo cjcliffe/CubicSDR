@@ -57,24 +57,6 @@ TuningCanvas::TuningCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
 
 TuningCanvas::~TuningCanvas() = default;
 
-bool TuningCanvas::changed() {
-
-    auto activeDemod = wxGetApp().getDemodMgr().getCurrentModem();
-    
-    long long current_freq = 0;
-    if (activeDemod != nullptr) {
-        freq = activeDemod->getFrequency();
-    }
-    long long current_bw = wxGetApp().getDemodMgr().getLastBandwidth();
-    long long current_center = wxGetApp().getFrequency();
-    
-    if (current_freq != freq || current_bw != bw || current_center != center) {
-        return true;
-    }
-    
-    return false;
-}
-
 void TuningCanvas::setHalfBand(bool hb) {
     halfBand = hb;
 	Refresh();

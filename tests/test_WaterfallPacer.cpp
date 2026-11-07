@@ -123,4 +123,44 @@ TEST_SUITE("WaterfallPacer") {
         CHECK(again.dropBefore == 1);
         CHECK(again.dropAfter == 0);
     }
+
+    TEST_CASE("emission follows a mid-stream rate change") {
+        WaterfallPacer pacer;
+        pacer.setLinesPerSecond(30);
+        WaterfallPacer::Plan before = pacer.plan(0.04, 100);
+        CHECK(before.insert == 1);
+        CHECK(before.dropBefore == 91);
+
+        pacer.setLinesPerSecond(120);
+        // Credit is banked as time, so the new rate prices it immediately:
+        // the same 40ms now owes five lines instead of one.
+        WaterfallPacer::Plan after = pacer.plan(0.04, 100);
+        CHECK(after.insert == 5);
+        CHECK(after.dropBefore == 82);
+        CHECK(after.dropAfter == 0);
+    }
+
+    TEST_CASE("resume after idle is bounded by the credit ceiling") {
+        WaterfallPacer slow, slower;
+        slow.setLinesPerSecond(30);
+        slower.setLinesPerSecond(30);
+
+        // A long gap banks no more than the ceiling: resume emits the same
+        // bounded burst whether the gap was a minute or an hour.
+        WaterfallPacer::Plan a = slow.plan(60.0, 100);
+        WaterfallPacer::Plan b = slower.plan(3600.0, 100);
+        CHECK(a.insert == b.insert);
+        CHECK(a.insert <= 6);
+        CHECK(a.insert > 0);
+    }
+
+    TEST_CASE("zero time inserts nothing new") {
+        WaterfallPacer pacer;
+        pacer.setLinesPerSecond(30);
+
+        WaterfallPacer::Plan plan = pacer.plan(0.0, 10);
+        CHECK(plan.insert == 0);
+        CHECK(plan.dropBefore == 1);
+        CHECK(plan.dropAfter == 0);
+    }
 }

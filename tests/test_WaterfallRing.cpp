@@ -161,4 +161,41 @@ TEST_SUITE("WaterfallRing") {
         CHECK(ring.bufferedLines() == 0);
         CHECK(ring.rowOffset() == 7);
     }
+
+    TEST_CASE("re-setup drops buffered lines but preserves readiness") {
+        WaterfallRing ring;
+        ring.setup(8, 8);
+        ring.setReady(true);
+        ring.setPoints(constLine(0.5f, 8));
+        CHECK(ring.step() == true);
+        CHECK(ring.bufferedLines() == 1);
+
+        ring.setup(8, 8);
+        CHECK(ring.bufferedLines() == 0);
+        CHECK(ring.rowOffset() == 7);
+
+        // Still ready: the next line buffers without another setReady.
+        ring.setPoints(constLine(0.5f, 8));
+        CHECK(ring.step() == true);
+        CHECK(ring.bufferedLines() == 1);
+    }
+
+    TEST_CASE("commits walk the ring offset with wrap") {
+        WaterfallRing ring;
+        ring.setup(8, 4);
+        ring.setReady(true);
+
+        // One line per commit walks the newest row down 2, 1, 0, then wraps
+        // back to the top of the texture.
+        int expectRows[5] = { 2, 1, 0, 3, 2 };
+        for (int k = 0; k < 5; k++) {
+            ring.setPoints(constLine(0.5f, 8));
+            CHECK(ring.step() == true);
+            WaterfallRing::UploadPlan plan = ring.planUpload();
+            CHECK(plan.consumed == 1);
+            CHECK(plan.rowOffset == expectRows[k]);
+            ring.commitUpload(plan);
+            CHECK(ring.rowOffset() == expectRows[k]);
+        }
+    }
 }

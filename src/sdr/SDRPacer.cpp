@@ -3,6 +3,8 @@
 
 #include "sdr/SDRPacer.h"
 
+#include <climits>
+
 namespace {
 constexpr double FRAMES_PER_SECOND = 60.0;
 // About a second of backlog; deeper queues drop oldest first.
@@ -51,6 +53,11 @@ bool SDRPacer::isBypassed() const {
 }
 
 SDRPacer::Plan SDRPacer::plan(double dtSeconds, size_t queueDepth) {
+    // Clamp absurd depths instead of wrapping the cast below; the drop
+    // loop is still bounded by real pops.
+    if (queueDepth > static_cast<size_t>(INT_MAX)) {
+        queueDepth = static_cast<size_t>(INT_MAX);
+    }
     int depth = static_cast<int>(queueDepth);
     // Shed oldest first so a slow consumer sees live frames, not lag.
     int drop = 0;
