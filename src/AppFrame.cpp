@@ -19,6 +19,10 @@
 #include <vector>
 #include <algorithm>
 #include <chrono>
+#ifdef _WIN32
+#include <mmsystem.h>
+#include <atomic>
+#endif
 #include "AudioSinkFileThread.h"
 #include "CubicSDR.h"
 #include "Frequency.h"
@@ -44,7 +48,7 @@ wxBEGIN_EVENT_TABLE(AppFrame, wxFrame)
 //EVT_MENU(wxID_NEW, AppFrame::OnNewWindow)
 EVT_CLOSE(AppFrame::OnClose)
 EVT_MENU(wxID_ANY, AppFrame::OnMenu)
-EVT_IDLE(AppFrame::OnIdle)
+EVT_TIMER(wxID_FRAME_TIMER, AppFrame::OnFrameTimer)
 EVT_SPLITTER_DCLICK(wxID_ANY, AppFrame::OnDoubleClickSash)
 EVT_SPLITTER_UNSPLIT(wxID_ANY, AppFrame::OnUnSplit)
 wxEND_EVENT_TABLE()
@@ -75,7 +79,9 @@ public:
 #define APPFRAME_MODEMPROPS_MAXSIZE 240
 
 AppFrame::AppFrame() :
-        wxFrame(nullptr, wxID_ANY, CUBICSDR_TITLE), activeDemodulator(nullptr) {
+        wxFrame(nullptr, wxID_ANY, CUBICSDR_TITLE), lastHandledDemod(nullptr) {
+
+    frameTimer.SetOwner(this, wxID_FRAME_TIMER);
 
     initIcon();
 
@@ -217,6 +223,11 @@ AppFrame::AppFrame() :
     demodGainTray->Add(soloModeButton, 1, wxEXPAND | wxALL, 0);
     demodGainTray->AddSpacer(1);
 
+    // Record Button
+    demodRecordButton = makeDemodRecordButton(demodPanel, attribList);
+    demodGainTray->Add(demodRecordButton, 1, wxEXPAND | wxALL, 0);
+    demodGainTray->AddSpacer(1);
+
     // Mute Button
     demodMuteButton = makeModemMuteButton(demodPanel, attribList);
     demodGainTray->Add(demodMuteButton, 1, wxEXPAND | wxALL, 0);
@@ -292,6 +303,18 @@ AppFrame::AppFrame() :
     waterfallCanvas->attachSpectrumCanvas(spectrumCanvas);
     spectrumCanvas->attachWaterfallCanvas(waterfallCanvas);
 
+    // Canvases repainted once per frame-timer tick, in registration order.
+    frameCanvases = {
+        demodModeSelector, demodWaterfallCanvas,
+        demodSpectrumCanvas, demodSignalMeter, deltaLockButton, demodRecordButton,
+        demodTuner, demodGainMeter, soloModeButton, demodMuteButton, spectrumCanvas,
+        peakHoldButton, spectrumAvgMeter, waterfallCanvas, waterfallSpeedMeter,
+        scopeCanvas, gainCanvas
+    };
+#ifdef ENABLE_DIGITAL_LAB
+    frameCanvases.push_back(demodModeSelectorAdv);
+#endif
+
     // Primary sizer for the window
     auto *vbox = new wxBoxSizer(wxVERTICAL);
     vbox->Add(mainSplitter, 1, wxEXPAND | wxALL, 0);
@@ -316,11 +339,18 @@ AppFrame::AppFrame() :
     // Show the window
     Show();
 
+#ifdef _WIN32
+    startFrameTimer();
+#else
+    frameTimer.Start(getFrameIntervalMs());
+#endif
+
     // Force refresh of all
     Refresh();
 
-    // Pop up the device selector
-    wxGetApp().deviceSelector();
+    // Pop up the device selector; the startup-shown dialog dismisses on
+    // Start while manual re-opens stay up for further tweaks.
+    wxGetApp().deviceSelector(true);
 }
 
 void AppFrame::initIcon() {
@@ -533,7 +563,7 @@ wxMenu *AppFrame::makeRigMenu() {
 
         rigModelMenuItems[ri->rig_model] = parentMenu->AppendCheckItem(modelMenuId, modelString, ri->copyright);
 
-        if (rigModel == ri->rig_model) {
+        if (rigModel == static_cast<int>(ri->rig_model)) {
             rigModelMenuItems[ri->rig_model]->Check(true);
         }
 
@@ -615,7 +645,7 @@ wxMenu *AppFrame::makeDisplayMenu() {
 
     dispMenu->AppendSubMenu(themeMenu, wxT("&Color Scheme"));
 
-    hideBookmarksItem = dispMenu->AppendCheckItem(wxID_DISPLAY_BOOKMARKS, wxT("Hide Bookmarks"));
+    hideBookmarksItem = dispMenu->AppendCheckItem(wxID_DISPLAY_BOOKMARKS, wxT("Hide Bookmarks\tCtrl+B"));
     hideBookmarksItem->Check(!wxGetApp().getConfig()->getBookmarksVisible());
 
     return dispMenu;
@@ -676,9 +706,10 @@ wxMenu *AppFrame::makeAudioSampleRateMenu() {
 
 MeterCanvas *AppFrame::makeWaterfallSpeedMeter(wxWindow *parent, const wxGLAttributes &attribList) {
     auto *pCanvas = new MeterCanvas(parent, attribList);
-    pCanvas->setHelpTip("Waterfall speed, click or drag to adjust (max 1024 lines per second)");
+    pCanvas->setHelpTip("Waterfall speed, click or drag to adjust (max 1024 lines per second). Double-click to reset to default.");
     pCanvas->setMax(sqrt(1024));
     pCanvas->setLevel(sqrt(DEFAULT_WATERFALL_LPS));
+    pCanvas->setDefaultValue(sqrt(DEFAULT_WATERFALL_LPS));
     pCanvas->setShowUserInput(false);
     pCanvas->SetMinSize(wxSize(12, 24));
     return pCanvas;
@@ -692,9 +723,10 @@ WaterfallCanvas *AppFrame::makeWaterfall(wxWindow *parent, const wxGLAttributes 
 
 MeterCanvas * AppFrame::makeSpectrumAvgMeter(wxWindow *parent, const wxGLAttributes &attribList) {
     auto *pCanvas = new MeterCanvas(parent, attribList);
-    pCanvas->setHelpTip("Spectrum averaging speed, click or drag to adjust.");
+    pCanvas->setHelpTip("Spectrum averaging speed, click or drag to adjust. Double-click to reset to default.");
     pCanvas->setMax(1.0);
     pCanvas->setLevel(0.65f);
+    pCanvas->setDefaultValue(0.65f);
     pCanvas->setShowUserInput(false);
     pCanvas->SetMinSize(wxSize(12, 24));
     return pCanvas;
@@ -713,7 +745,7 @@ ModeSelectorCanvas *AppFrame::makePeakHoldButton(wxWindow *parent, const wxGLAtt
     pCanvas->addChoice(1, "P");
     pCanvas->setPadding(-1, -1);
     pCanvas->setHighlightColor(RGBA4f(0.2f, 0.8f, 0.2f));
-    pCanvas->setHelpTip("Peak Hold Toggle");
+    pCanvas->setHelpTip("Peak Hold Toggle (P) - Enable to hold the spectrum peak values.");
     pCanvas->setToggleMode(true);
     pCanvas->setSelection(-1);
     pCanvas->SetMinSize(wxSize(12, 24));
@@ -725,7 +757,7 @@ ModeSelectorCanvas *AppFrame::makeModemMuteButton(wxWindow *parent, const wxGLAt
     pCanvas->addChoice(1, "M");
     pCanvas->setPadding(-1, -1);
     pCanvas->setHighlightColor(RGBA4f(0.8f, 0.2f, 0.2f));
-    pCanvas->setHelpTip("Demodulator Mute Toggle");
+    pCanvas->setHelpTip("Demodulator Mute Toggle (M) - Enable to mute demodulator audio.");
     pCanvas->setToggleMode(true);
     pCanvas->setSelection(-1);
     pCanvas->SetMinSize(wxSize(12, 28));
@@ -737,7 +769,7 @@ ModeSelectorCanvas *AppFrame::makeSoloModeButton(wxWindow *parent, const wxGLAtt
     pCanvas->addChoice(1, "S");
     pCanvas->setPadding(-1, -1);
     pCanvas->setHighlightColor(RGBA4f(0.8f, 0.8f, 0.2f));
-    pCanvas->setHelpTip("Solo Mode Toggle");
+    pCanvas->setHelpTip("Solo Mode Toggle (S) - Enable to listen to the selected demodulator only.");
     pCanvas->setToggleMode(true);
     pCanvas->setSelection(-1);
     pCanvas->SetMinSize(wxSize(12, 28));
@@ -747,7 +779,8 @@ ModeSelectorCanvas *AppFrame::makeSoloModeButton(wxWindow *parent, const wxGLAtt
 MeterCanvas *AppFrame::makeModemGainMeter(wxWindow *parent, const wxGLAttributes &attribList) {
     auto *pCanvas = new MeterCanvas(parent, attribList);
     pCanvas->setMax(2.0);
-    pCanvas->setHelpTip("Current Demodulator Gain Level.  Click / Drag to set Gain level.");
+    pCanvas->setHelpTip("Current Demodulator Gain Level.  Click / Drag to set Gain level.  Double-click to reset to default.");
+    pCanvas->setDefaultValue(1.0f);
     pCanvas->setShowUserInput(false);
     pCanvas->SetMinSize(wxSize(13, 24));
     return pCanvas;
@@ -771,13 +804,28 @@ ModeSelectorCanvas * AppFrame::makeDeltaLockButton(wxWindow *parent, const wxGLA
     return pCanvas;
 }
 
+ModeSelectorCanvas *AppFrame::makeDemodRecordButton(wxWindow *parent, const wxGLAttributes &attribList) {
+    auto *pCanvas = new ModeSelectorCanvas(parent, attribList);
+    pCanvas->addChoice(1, "R");
+    pCanvas->setPadding(-1, -1);
+    pCanvas->setHighlightColor(RGBA4f(0.2f, 0.8f, 0.2f));
+    pCanvas->setPulseMode(true);
+    updateRecordButtonState(pCanvas);
+    pCanvas->setToggleMode(true);
+    pCanvas->setSelection(-1);
+    pCanvas->SetMinSize(wxSize(12, 28));
+    return pCanvas;
+}
+
 MeterCanvas *AppFrame::makeSignalMeter(wxWindow *parent, const wxGLAttributes &attribList) {
     auto *pCanvas = new MeterCanvas(parent, attribList);
     pCanvas->setMax(DEMOD_SIGNAL_MAX);
     pCanvas->setMin(DEMOD_SIGNAL_MIN);
     pCanvas->setLevel(DEMOD_SIGNAL_MIN);
     pCanvas->setInputValue(DEMOD_SIGNAL_MIN);
-    pCanvas->setHelpTip("Current Signal Level.  Click / Drag to set Squelch level.  Right-Click to Auto-Zero Squelch");
+    pCanvas->setHelpTip("Current Signal Level.  Click / Drag to set Squelch level.  Right-Click to Auto-Zero Squelch.  Double-click to reset (squelch off).");
+    // Meter range tracks the live signal floor/ceiling, so "off" is a fixed level below any floor rather than the meter minimum.
+    pCanvas->setDefaultValue(-100.0f);
     pCanvas->SetMinSize(wxSize(12, 24));
     return pCanvas;
 }
@@ -819,9 +867,9 @@ ModeSelectorCanvas *AppFrame::makeModemSelectorPanel(wxWindow *parent, const wxG
     }
 
 #ifdef CUBICSDR_MODEM_EXCLUDE
-    demodModeSelector->setHelpTip("Use buttons to choose modulation type.");
+    demodModeSelector->setHelpTip("Use buttons to choose modulation type. Click the active type to reset its parameters.");
 #else
-    pCanvas->setHelpTip("Choose modulation type: Frequency Modulation (Hotkey F), Amplitude Modulation (A) and Lower (L), Upper (U), Double Side-Band and more.");
+    pCanvas->setHelpTip("Choose modulation type: Frequency Modulation (Hotkey F), Amplitude Modulation (A) and Lower (L), Upper (U), Double Side-Band and more. Click the active type to reset its parameters.");
 #endif
 
     pCanvas->SetMinSize(wxSize(50, -1));
@@ -844,7 +892,7 @@ wxMenu *AppFrame::makeFileMenu() {
     menu->Append(wxID_ABOUT_CUBICSDR, "About " CUBICSDR_INSTALL_NAME);
 #endif
 #endif
-    menu->Append(wxID_SDR_DEVICES, "SDR Devices");
+    menu->Append(wxID_SDR_DEVICES, "SDR Devices\tCtrl+D");
     menu->AppendSeparator();
     menu->Append(wxID_SDR_START_STOP, "Stop / Start Device");
     menu->AppendSeparator();
@@ -986,30 +1034,65 @@ void AppFrame::handleUpdateDeviceParams() {
     showTipMenuItem = newSettingsMenu->AppendCheckItem(wxID_SET_TIPS, "Show Hover Tips");
     showTipMenuItem->Check(wxGetApp().getConfig()->getShowTips());
 
-    // CPU usage menu:
-    performanceMenuItems.clear();
+    // Frame rate menu:
+    frameMenuItems.clear();
 
-    auto *subMenu = new wxMenu;
+    auto *frameSubMenu = new wxMenu;
 
-    performanceMenuItems[wxID_PERF_BASE + (int)AppConfig::PERF_HIGH] = subMenu->AppendRadioItem(wxID_PERF_BASE + (int)AppConfig::PERF_HIGH, "High (+enhanced DSP)");
-    performanceMenuItems[wxID_PERF_BASE + (int)AppConfig::PERF_NORMAL] = subMenu->AppendRadioItem(wxID_PERF_BASE + (int)AppConfig::PERF_NORMAL, "Normal");
-    performanceMenuItems[wxID_PERF_BASE + (int)AppConfig::PERF_LOW] = subMenu->AppendRadioItem(wxID_PERF_BASE + (int)AppConfig::PERF_LOW, "Low (-slow UI)");
+    frameMenuItems[wxID_FRAME_BASE + (int)AppConfig::FRAME_HIGH] = frameSubMenu->AppendRadioItem(wxID_FRAME_BASE + (int)AppConfig::FRAME_HIGH, "High (60 fps)");
+    frameMenuItems[wxID_FRAME_BASE + (int)AppConfig::FRAME_NORMAL] = frameSubMenu->AppendRadioItem(wxID_FRAME_BASE + (int)AppConfig::FRAME_NORMAL, "Normal (30 fps)");
+    frameMenuItems[wxID_FRAME_BASE + (int)AppConfig::FRAME_LOW] = frameSubMenu->AppendRadioItem(wxID_FRAME_BASE + (int)AppConfig::FRAME_LOW, "Low (15 fps)");
 
-    AppConfig::PerfModeEnum perfMode = wxGetApp().getConfig()->getPerfMode();
+    AppConfig::FrameRateEnum frameRate = wxGetApp().getConfig()->getFrameRate();
 
-    if (perfMode == AppConfig::PERF_HIGH) {
+    frameMenuItems[wxID_FRAME_BASE + (int)frameRate]->Check(true);
+
+    wxMenuItem* selectedFrameRateItem = frameMenuItems[wxID_FRAME_BASE + (int)frameRate];
+
+    frameMenuItems[wxID_FRAME_CURRENT] = newSettingsMenu->AppendSubMenu(frameSubMenu, "Frame Rate");
+    frameMenuItems[wxID_FRAME_CURRENT]->SetItemLabel(getSettingsLabel("Frame Rate", selectedFrameRateItem->GetItemLabel().ToStdString()));
+
+    // DSP menu:
+    dspMenuItems.clear();
+
+    auto *dspSubMenu = new wxMenu;
+
+    dspMenuItems[wxID_DSP_BASE + (int)AppConfig::DSP_ENHANCED] = dspSubMenu->AppendRadioItem(wxID_DSP_BASE + (int)AppConfig::DSP_ENHANCED, "Enhanced");
+    dspMenuItems[wxID_DSP_BASE + (int)AppConfig::DSP_NORMAL] = dspSubMenu->AppendRadioItem(wxID_DSP_BASE + (int)AppConfig::DSP_NORMAL, "Normal");
+
+    AppConfig::DspModeEnum dspMode = wxGetApp().getConfig()->getDspMode();
+
+    if (dspMode == AppConfig::DSP_ENHANCED) {
         wxGetApp().setChannelizerType(SDRPostThreadChannelizerType::SDRPostPFBCH2);
     } else {
         wxGetApp().setChannelizerType(SDRPostThreadChannelizerType::SDRPostPFBCH);
     }
 
-    performanceMenuItems[wxID_PERF_BASE + (int)perfMode]->Check(true);
+    dspMenuItems[wxID_DSP_BASE + (int)dspMode]->Check(true);
 
-    wxMenuItem* selectedPerfModeItem = performanceMenuItems[wxID_PERF_BASE + (int)perfMode];
+    wxMenuItem* selectedDspItem = dspMenuItems[wxID_DSP_BASE + (int)dspMode];
 
-    performanceMenuItems[wxID_PERF_CURRENT] = newSettingsMenu->AppendSubMenu(subMenu, "CPU usage");
-    performanceMenuItems[wxID_PERF_CURRENT]->SetItemLabel(getSettingsLabel("CPU usage", selectedPerfModeItem->GetItemLabel().ToStdString()));
-   
+    dspMenuItems[wxID_DSP_CURRENT] = newSettingsMenu->AppendSubMenu(dspSubMenu, "DSP");
+    dspMenuItems[wxID_DSP_CURRENT]->SetItemLabel(getSettingsLabel("DSP", selectedDspItem->GetItemLabel().ToStdString()));
+
+    // Pacing menu:
+    pacingMenuItems.clear();
+
+    auto *pacingSubMenu = new wxMenu;
+
+    pacingMenuItems[wxID_PACING_BASE + 1] = pacingSubMenu->AppendRadioItem(wxID_PACING_BASE + 1, "On");
+    pacingMenuItems[wxID_PACING_BASE + 0] = pacingSubMenu->AppendRadioItem(wxID_PACING_BASE + 0, "Off");
+
+    bool pacing = wxGetApp().getConfig()->getStreamPacing();
+    wxGetApp().setStreamPacing(pacing);
+
+    pacingMenuItems[wxID_PACING_BASE + (pacing ? 1 : 0)]->Check(true);
+
+    wxMenuItem* selectedPacingItem = pacingMenuItems[wxID_PACING_BASE + (pacing ? 1 : 0)];
+
+    pacingMenuItems[wxID_PACING_CURRENT] = newSettingsMenu->AppendSubMenu(pacingSubMenu, "Pacing");
+    pacingMenuItems[wxID_PACING_CURRENT]->SetItemLabel(getSettingsLabel("Pacing", selectedPacingItem->GetItemLabel().ToStdString()));
+
     newSettingsMenu->AppendSeparator();
 
     settingsMenuItems.clear();
@@ -1293,7 +1376,9 @@ void AppFrame::dismissRigControlPortDialog() {
 void AppFrame::OnMenu(wxCommandEvent &event) {
     actionOnMenuAbout(event)
     || actionOnMenuSDRStartStop(event)
-    || actionOnMenuPerformance(event)
+    || actionOnMenuFrameRate(event)
+    || actionOnMenuDsp(event)
+    || actionOnMenuPacing(event)
     || actionOnMenuTips(event)
     || actionOnMenuIQSwap(event)
     || actionOnMenuFreqOffset(event)
@@ -1313,6 +1398,17 @@ void AppFrame::OnMenu(wxCommandEvent &event) {
     || actionOnMenuRig(event);
 }
 
+
+void AppFrame::toggleBookmarks() {
+    hideBookmarksItem->Check(!hideBookmarksItem->IsChecked());
+    if (hideBookmarksItem->IsChecked()) {
+        bookmarkSplitter->Unsplit(bookmarkView);
+        bookmarkSplitter->Layout();
+    } else {
+        bookmarkSplitter->SplitVertically(bookmarkView, mainVisSplitter, wxGetApp().getConfig()->getBookmarkSplit());
+        bookmarkSplitter->Layout();
+    }
+}
 
 bool AppFrame::actionOnMenuDisplay(wxCommandEvent& event) {
 
@@ -1354,14 +1450,7 @@ bool AppFrame::actionOnMenuDisplay(wxCommandEvent& event) {
         GLFont::setScale(GLFont::GLFONT_SCALE_LARGE);
     }
     else if (event.GetId() == wxID_DISPLAY_BOOKMARKS) {
-        if (hideBookmarksItem->IsChecked()) {
-            bookmarkSplitter->Unsplit(bookmarkView);
-            bookmarkSplitter->Layout();
-        }
-        else {
-            bookmarkSplitter->SplitVertically(bookmarkView, mainVisSplitter, wxGetApp().getConfig()->getBookmarkSplit());
-            bookmarkSplitter->Layout();
-        }
+        toggleBookmarks();
     }
     else {
         bManaged = false;
@@ -1388,9 +1477,9 @@ bool AppFrame::actionOnMenuReset(wxCommandEvent& event) {
     if (event.GetId() == wxID_RESET) {
 
         wxGetApp().getDemodMgr().terminateAll();
-        wxGetApp().setFrequency(100000000);
-        wxGetApp().getDemodMgr().setLastDemodulatorType("FM");
-        demodModeSelector->setSelection(1);
+        wxGetApp().setFrequency(98000000);
+        wxGetApp().getDemodMgr().setLastDemodulatorType("FMS");
+        demodModeSelector->setSelection("FMS");
         wxGetApp().getDemodMgr().setLastMuted(false);
         wxGetApp().getDemodMgr().setLastBandwidth(DEFAULT_DEMOD_BW);
         wxGetApp().getDemodMgr().setLastGain(1.0);
@@ -1405,14 +1494,8 @@ bool AppFrame::actionOnMenuReset(wxCommandEvent& event) {
         wxGetApp().getSpectrumProcessor()->setFFTAverageRate(0.65f);
         spectrumAvgMeter->setLevel(0.65f);
 
-        wxString titleBar = CUBICSDR_TITLE;
-        //append the name of the current Device, if any.
-        if (wxGetApp().getDevice()) {
-            titleBar += " - " + wxGetApp().getDevice()->getName();
-        }
-
-        SetTitle(titleBar);
         currentSessionFile = "";
+        updateTitle();
 		currentBookmarkFile = "";
         bookmarkSplitter->Unsplit(bookmarkView);
         bookmarkSplitter->SplitVertically(bookmarkView, mainVisSplitter, wxGetApp().getConfig()->getBookmarkSplit());
@@ -1787,6 +1870,7 @@ bool AppFrame::actionOnMenuRecording(wxCommandEvent& event) {
 
 		wxGetApp().getConfig()->setRecordingPath(recPathDialog.GetPath().ToStdString());
 
+		updateRecordButtonState(demodRecordButton);
 		updateRecordingMenu();
 		return true;
 
@@ -2067,32 +2151,76 @@ bool AppFrame::actionOnMenuTips(wxCommandEvent &event) {
     return false;
 }
 
-bool AppFrame::actionOnMenuPerformance(wxCommandEvent &event) {
-    if (event.GetId() >= wxID_PERF_BASE && event.GetId() <= wxID_PERF_BASE + (int) AppConfig::PERF_HIGH) {
+bool AppFrame::actionOnMenuFrameRate(wxCommandEvent &event) {
+    if (event.GetId() >= wxID_FRAME_BASE && event.GetId() <= wxID_FRAME_BASE + (int) AppConfig::FRAME_HIGH) {
 
-        int perfEnumAsInt = event.GetId() - wxID_PERF_BASE;
-        AppConfig::PerfModeEnum perfEnumSet = AppConfig::PERF_NORMAL;
+        int frameEnumAsInt = event.GetId() - wxID_FRAME_BASE;
+        AppConfig::FrameRateEnum frameEnumSet = AppConfig::FRAME_NORMAL;
 
-        if (perfEnumAsInt == (int) AppConfig::PERF_HIGH) {
-            perfEnumSet = AppConfig::PERF_HIGH;
+        if (frameEnumAsInt == (int) AppConfig::FRAME_HIGH) {
+            frameEnumSet = AppConfig::FRAME_HIGH;
 
-        } else if (perfEnumAsInt == (int) AppConfig::PERF_LOW) {
-            perfEnumSet = AppConfig::PERF_LOW;
+        } else if (frameEnumAsInt == (int) AppConfig::FRAME_LOW) {
+            frameEnumSet = AppConfig::FRAME_LOW;
         }
 
-        wxGetApp().getConfig()->setPerfMode(perfEnumSet);
+        wxGetApp().getConfig()->setFrameRate(frameEnumSet);
+#ifdef _WIN32
+        startFrameTimer();
+#else
+        frameTimer.Start(getFrameIntervalMs());
+#endif
+
+        //update UI
+        wxMenuItem *selectedFrameRateItem = frameMenuItems[event.GetId()];
+        frameMenuItems[wxID_FRAME_CURRENT]->SetItemLabel(
+                getSettingsLabel("Frame Rate", selectedFrameRateItem->GetItemLabel().ToStdString()));
+
+        return true;
+    }
+    return false;
+}
+
+bool AppFrame::actionOnMenuDsp(wxCommandEvent &event) {
+    if (event.GetId() >= wxID_DSP_BASE && event.GetId() <= wxID_DSP_BASE + (int) AppConfig::DSP_ENHANCED) {
+
+        AppConfig::DspModeEnum dspEnumSet = AppConfig::DSP_NORMAL;
+
+        if (event.GetId() - wxID_DSP_BASE == (int) AppConfig::DSP_ENHANCED) {
+            dspEnumSet = AppConfig::DSP_ENHANCED;
+        }
+
+        wxGetApp().getConfig()->setDspMode(dspEnumSet);
 
         //update Channelizer mode:
-        if (perfEnumSet == AppConfig::PERF_HIGH) {
+        if (dspEnumSet == AppConfig::DSP_ENHANCED) {
             wxGetApp().setChannelizerType(SDRPostPFBCH2);
         } else {
             wxGetApp().setChannelizerType(SDRPostPFBCH);
         }
 
         //update UI
-        wxMenuItem *selectedPerfModeItem = performanceMenuItems[event.GetId()];
-        performanceMenuItems[wxID_PERF_CURRENT]->SetItemLabel(
-                getSettingsLabel("CPU usage", selectedPerfModeItem->GetItemLabel().ToStdString()));
+        wxMenuItem *selectedDspItem = dspMenuItems[event.GetId()];
+        dspMenuItems[wxID_DSP_CURRENT]->SetItemLabel(
+                getSettingsLabel("DSP", selectedDspItem->GetItemLabel().ToStdString()));
+
+        return true;
+    }
+    return false;
+}
+
+bool AppFrame::actionOnMenuPacing(wxCommandEvent &event) {
+    if (event.GetId() >= wxID_PACING_BASE && event.GetId() <= wxID_PACING_BASE + 1) {
+
+        bool pacingSet = (event.GetId() - wxID_PACING_BASE) == 1;
+
+        wxGetApp().getConfig()->setStreamPacing(pacingSet);
+        wxGetApp().setStreamPacing(pacingSet);
+
+        //update UI
+        wxMenuItem *selectedPacingItem = pacingMenuItems[event.GetId()];
+        pacingMenuItems[wxID_PACING_CURRENT]->SetItemLabel(
+                getSettingsLabel("Pacing", selectedPacingItem->GetItemLabel().ToStdString()));
 
         return true;
     }
@@ -2115,6 +2243,11 @@ bool AppFrame::actionOnMenuSDRStartStop(wxCommandEvent &event) {
 }
 
 void AppFrame::OnClose(wxCloseEvent& event) {
+#ifdef _WIN32
+    stopFrameTimer();
+#else
+    frameTimer.Stop();
+#endif
     wxGetApp().closeDeviceSelector();
     if (aboutDlg) {
         aboutDlg->Destroy();
@@ -2171,11 +2304,111 @@ void AppFrame::OnNewWindow(wxCommandEvent& WXUNUSED(event)) {
     new AppFrame();
 }
 
-void AppFrame::OnIdle(wxIdleEvent &event) {
+#ifdef _WIN32
+namespace {
+const UINT WM_FRAME_TICK = WM_APP + 7;
+}
 
+// Periodic multimedia-timer callback; posts one tick message per period.
+void CALLBACK AppFrame::frameMMTimerProc(UINT /*uTimerID*/, UINT /*uMsg*/, DWORD_PTR dwUser, DWORD_PTR /*dw1*/, DWORD_PTR /*dw2*/) {
+    AppFrame *frame = reinterpret_cast<AppFrame *>(dwUser);
+    if (frame && !frame->frameTickPending.exchange(true)) {
+        // Post a real window message rather than queueing a wx event: modal
+        // loops (e.g. menu tracking) dispatch window messages directly but do
+        // not flush wx's pending event list, so QueueEvent would stall there.
+        if (!PostMessage((HWND)frame->GetHWND(), WM_FRAME_TICK, 0, 0)) {
+            frame->frameTickPending.store(false);
+        }
+    }
+}
+
+void AppFrame::startFrameTimer() {
+    stopFrameTimer();
+    frameTickPending.store(false);
+    frameMMTimerId = timeSetEvent(getFrameIntervalMs(), 1, &AppFrame::frameMMTimerProc, (DWORD_PTR)this,
+                                 TIME_PERIODIC | TIME_CALLBACK_FUNCTION);
+    if (!frameMMTimerId) {
+        frameTimer.Start(getFrameIntervalMs());
+    }
+}
+
+void AppFrame::stopFrameTimer() {
+    if (frameMMTimerId) {
+        timeKillEvent(frameMMTimerId);
+        frameMMTimerId = 0;
+    }
+    frameTimer.Stop();
+}
+#endif
+
+void AppFrame::tickFrame() {
+#ifdef _WIN32
+    frameTickPending.store(false);
+    if (scopeCanvas && scopeCanvas->HasFocus()) {
+        waterfallCanvas->SetFocus();
+    }
+#endif
+
+    // Retune the pump when streaming starts or stops; the interval comes
+    // from getFrameIntervalMs(), which runs slow while no device is active.
+    bool idleTick = (wxGetApp().getSDRThread()->getDevice() == nullptr);
+    if (idleTick != lastIdleTickState) {
+        lastIdleTickState = idleTick;
+#ifdef _WIN32
+        startFrameTimer();
+#else
+        frameTimer.Start(getFrameIntervalMs());
+#endif
+    }
+
+    processFrame();
+
+    for (auto canvas : frameCanvases) {
+        if (canvas) {
+            canvas->frameUpdate();
+        }
+    }
+}
+
+void AppFrame::OnFrameTimer(wxTimerEvent& /*event*/) {
+    tickFrame();
+}
+
+#ifdef _WIN32
+WXLRESULT AppFrame::MSWWindowProc(WXUINT nMsgCode, WXWPARAM wParam, WXLPARAM lParam) {
+    if (nMsgCode == WM_FRAME_TICK) {
+        tickFrame();
+        return 0;
+    }
+    return wxFrame::MSWWindowProc(nMsgCode, wParam, lParam);
+}
+#endif
+
+int AppFrame::getFrameIntervalMs() {
+    // No device streaming: repaint work dominates idle CPU, so run the pump
+    // at the low frame rate regardless of the selected Frame Rate setting.
+    if (wxGetApp().getSDRThread()->getDevice() == nullptr) {
+        return 66;
+    }
+    switch (wxGetApp().getConfig()->getFrameRate()) {
+    case AppConfig::FRAME_HIGH:
+        return 16;
+    case AppConfig::FRAME_LOW:
+        return 66;
+    case AppConfig::FRAME_NORMAL:
+    default:
+        return 33;
+    }
+}
+
+void AppFrame::processFrame() {
     handleUpdateDeviceParams();
 
     handleTXAntennaChange();
+
+    // The recording path can vanish outside the app; re-gate the button
+    // every tick so it never records into the void with the glow on.
+    updateRecordButtonState(demodRecordButton);
 
     DemodulatorInstancePtr demod = wxGetApp().getDemodMgr().getCurrentModem();
 
@@ -2189,6 +2422,13 @@ void AppFrame::OnIdle(wxIdleEvent &event) {
         handleDemodWaterfallSpectrum();
         handleSpectrumWaterfall();
         handleMuteButton();
+        // No demodulator to record: park the button instead of showing a
+        // stale recording state from a deleted demodulator.
+        if (demodRecordButton->getSelection() != -1) {
+            demodRecordButton->setSelection(-1);
+            demodRecordButton->Refresh();
+        }
+        demodRecordButton->clearModeChanged();
     }
 
     handleScopeProcessor();
@@ -2199,24 +2439,6 @@ void AppFrame::OnIdle(wxIdleEvent &event) {
 #if USE_HAMLIB
     handleRigMenu();
 #endif
-
-#ifdef _WIN32
-    if (scopeCanvas && scopeCanvas->HasFocus()) {
-        waterfallCanvas->SetFocus();
-    }
-#endif
-
-    if (!this->IsActive()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(30));
-    } else {
-        if (wxGetApp().getConfig()->getPerfMode() == AppConfig::PERF_LOW) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(30));
-        } else {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
-    }
-
-    event.RequestMore();
 }
 
 void AppFrame::handleTXAntennaChange() {//Refresh the current TX antenna on, if any:
@@ -2424,6 +2646,11 @@ void AppFrame::handleModeSelector() {
         demodTuner->setHalfBand(dSelection=="USB" || dSelection=="LSB");
     }
 #endif
+    // Discard clicks; there is no demod to apply them to.
+    demodModeSelector->clearModeChanged();
+#ifdef ENABLE_DIGITAL_LAB
+    demodModeSelectorAdv->clearModeChanged();
+#endif
 }
 
 void AppFrame::handleCurrentModem() {
@@ -2455,7 +2682,7 @@ void AppFrame::handleCurrentModem() {
         wxGetApp().getDemodMgr().setLastBandwidth(demod->getBandwidth());
     }
 
-    if (demod.get() != activeDemodulator) {
+    if (demod.get() != lastHandledDemod) {
         demodSignalMeter->setInputValue(demod->getSquelchLevel());
         demodGainMeter->setInputValue(demod->getGain());
         wxGetApp().getDemodMgr().setLastGain(demod->getGain());
@@ -2471,6 +2698,7 @@ void AppFrame::handleCurrentModem() {
         demodModeSelectorAdv->setSelection(dType);
 #endif
         deltaLockButton->setSelection(demod->isDeltaLock() ? 1 : -1);
+        demodRecordButton->setSelection(demod->isRecording() ? 1 : -1);
         demodMuteButton->setSelection(demod->isMuted() ? 1 : -1);
         modemPropertiesUpdated.store(true);
         demodTuner->setHalfBand(dType == "USB" || dType == "LSB");
@@ -2517,12 +2745,26 @@ void AppFrame::handleCurrentModem() {
             demodTuner->setHalfBand(false);
             demodModeSelector->setSelection(-1);
         }
+        // Re-clicking the active type resets its parameters to defaults.
+        else if (!dSelection.empty() && demodModeSelector->modeChanged()) {
+            demod->resetDemodulatorSettings();
+        }
+        else if (!dSelectionadv.empty() && demodModeSelectorAdv->modeChanged()) {
+            demod->resetDemodulatorSettings();
+        }
+        demodModeSelector->clearModeChanged();
+        demodModeSelectorAdv->clearModeChanged();
 #else
         // basic demodulators
         if (dSelection != "" && dSelection != demod->getDemodulatorType()) {
             demod->setDemodulatorType(dSelection);
             demodTuner->setHalfBand(dSelection=="USB" || dSelection=="LSB");
         }
+        // Re-clicking the active type resets its parameters to defaults.
+        else if (dSelection != "" && demodModeSelector->modeChanged()) {
+            demod->resetDemodulatorSettings();
+        }
+        demodModeSelector->clearModeChanged();
 #endif
 
         int muteMode = demodMuteButton->getSelection();
@@ -2568,6 +2810,32 @@ void AppFrame::handleCurrentModem() {
             }
         }
 
+        int recordMode = demodRecordButton->getSelection();
+        if (demodRecordButton->modeChanged()) {
+            demodRecordButton->clearModeChanged();
+            // Disabled means no recording path is set: force the visual back
+            // off and never open a dialog from the tick.
+            if (demodRecordButton->isDisabled()) {
+                demodRecordButton->setSelection(-1);
+                demodRecordButton->Refresh();
+            } else {
+                if (demod->isRecording() && recordMode == -1) {
+                    demod->setRecording(false);
+                } else if (!demod->isRecording() && recordMode == 1) {
+                    demod->setRecording(true);
+                }
+                wxGetApp().getBookmarkMgr().updateActiveList();
+            }
+        } else {
+            if (demod->isRecording() && recordMode == -1) {
+                demodRecordButton->setSelection(1);
+                demodRecordButton->Refresh();
+            } else if (!demod->isRecording() && recordMode == 1) {
+                demodRecordButton->setSelection(-1);
+                demodRecordButton->Refresh();
+            }
+        }
+
         int soloMode = soloModeButton->getSelection();
         if (soloModeButton->modeChanged()) {
             if (soloMode == 1) {
@@ -2601,7 +2869,7 @@ void AppFrame::handleCurrentModem() {
         demod->setGain(demodGainMeter->getInputValue());
         demodGainMeter->setLevel(demodGainMeter->getInputValue());
     }
-    activeDemodulator = demod.get();
+    lastHandledDemod = demod.get();
 }
 
 
@@ -2642,20 +2910,26 @@ void AppFrame::OnAboutDialogClose(wxCommandEvent& /* event */) {
     aboutDlg = nullptr;
 }
 
+void AppFrame::updateTitle() {
+    wxString titleBar = CUBICSDR_TITLE;
+    //append the name of the current Device, if any.
+    std::string deviceName = wxGetApp().getDeviceName();
+    if (!deviceName.empty()) {
+        titleBar += " - " + deviceName;
+    }
+    if (!currentSessionFile.empty()) {
+        std::string filePart = currentSessionFile.substr(currentSessionFile.find_last_of(filePathSeparator) + 1);
+        titleBar += ": " + filePart;
+    }
+    SetTitle(titleBar);
+}
+
 void AppFrame::saveSession(const std::string& fileName) {
     wxGetApp().getSessionMgr().saveSession(fileName);
 
     currentSessionFile = fileName;
-    std::string filePart = fileName.substr(fileName.find_last_of(filePathSeparator) + 1);
     GetStatusBar()->SetStatusText(wxString::Format(wxT("Saved session: %s"), currentSessionFile.c_str()));
-
-    wxString titleBar = CUBICSDR_TITLE;
-    //append the name of the current Device, if any.
-    if (wxGetApp().getDevice()) {
-        titleBar += " - " + wxGetApp().getDevice()->getName();
-    }
-    titleBar += ": " + filePart;
-    SetTitle(titleBar);
+    updateTitle();
 }
 
 bool AppFrame::loadSession(const std::string& fileName) {
@@ -2687,17 +2961,8 @@ bool AppFrame::loadSession(const std::string& fileName) {
 
     currentSessionFile = fileName;
 
-    std::string filePart = fileName.substr(fileName.find_last_of(filePathSeparator) + 1);
-
     GetStatusBar()->SetStatusText(wxString::Format(wxT("Loaded session file: %s"), currentSessionFile.c_str()));
-
-    wxString titleBar = CUBICSDR_TITLE;
-    //append the name of the current Device, if any.
-    if (wxGetApp().getDevice()) {
-        titleBar += " - " + wxGetApp().getDevice()->getName();
-    }
-    titleBar += ": " + filePart;
-    SetTitle(titleBar);
+    updateTitle();
 
     wxGetApp().getBookmarkMgr().updateActiveList();
 
@@ -2742,10 +3007,7 @@ void AppFrame::refreshGainUI() {
 bool AppFrame::isUserDemodBusy() {
     return (modemProps && modemProps->isMouseInView())
         || (waterfallCanvas->isMouseInView() && waterfallCanvas->isMouseDown())
-        || (demodWaterfallCanvas && demodWaterfallCanvas->isMouseInView() && demodWaterfallCanvas->isMouseDown())
-        || (wxGetApp().getDemodMgr().getCurrentModem() &&
-            wxGetApp().getDemodMgr().getActiveContextModem() &&
-            wxGetApp().getDemodMgr().getCurrentModem() != wxGetApp().getDemodMgr().getActiveContextModem());
+        || (demodWaterfallCanvas && demodWaterfallCanvas->isMouseInView() && demodWaterfallCanvas->isMouseDown());
 }
 
 BookmarkView *AppFrame::getBookmarkView() {
@@ -2815,7 +3077,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     if (!this->IsActive()) {
         return -1;
     }
-    
+
 #ifdef USE_HAMLIB
     if (rigPortDialog != nullptr) {
         return -1;
@@ -2830,9 +3092,32 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         return -1;
     }
     
+    // Ctrl+B shares the bookmark menu toggle path, Ctrl+D the device
+    // selector path. Only B and D are claimed here; every other Ctrl
+    // combination keeps its previous behavior below.
+    if (event.ControlDown() && !event.AltDown()) {
+        int keyCode = event.GetKeyCode();
+        if (keyCode == 'B' || keyCode == 'b' || keyCode == 2) {
+            toggleBookmarks();
+            return 1;
+        }
+        if (keyCode == 'D' || keyCode == 'd' || keyCode == 4) {
+            wxGetApp().deviceSelector();
+            return 1;
+        }
+    }
+    
     DemodulatorInstancePtr demod = nullptr;
      
     DemodulatorInstancePtr lastDemod = wxGetApp().getDemodMgr().getCurrentModem();
+    // Nudge acts on the hovered demodulator while the cursor is in the
+    // waterfall, and falls back to the selection when it is not: once a
+    // nudge moves the hovered demod out from under the cursor it must stop
+    // rather than start moving the selection.
+    DemodulatorInstancePtr actionDemod = waterfallCanvas ? waterfallCanvas->getHoverDemod() : nullptr;
+    if (!actionDemod && waterfallCanvas && !waterfallCanvas->getMouseTracker()->mouseInView()) {
+        actionDemod = lastDemod;
+    }
     
     int snap = wxGetApp().getFrequencySnap();
     
@@ -2849,10 +3134,10 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     #ifdef wxHAS_RAW_KEY_CODES
     switch (event.GetRawKeyCode()) {
         case 30:
-            gkNudge(lastDemod, snap);
+            gkNudge(actionDemod, snap);
             return 1;
         case 33:
-            gkNudge(lastDemod, -snap);
+            gkNudge(actionDemod, -snap);
             return 1;
     }
     #endif
@@ -2872,10 +3157,10 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case 'V':
             return 1;
         case ']':
-            gkNudge(lastDemod, snap);
+            gkNudge(actionDemod, snap);
             return 1;
         case '[':
-            gkNudge(lastDemod, -snap);
+            gkNudge(actionDemod, -snap);
             return 1;
         case 'A':
         case 'F':
@@ -2922,8 +3207,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
                 demod = wxGetApp().getDemodMgr().getNextDemodulator(lastDemod);
             }
             if (demod) {
-                wxGetApp().getDemodMgr().setActiveDemodulator(nullptr);
-                wxGetApp().getDemodMgr().setActiveDemodulator(demod, false);
+                wxGetApp().getDemodMgr().setActiveDemodulator(demod);
             }
             return 1;
         default:
@@ -2943,6 +3227,12 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     }
     else if (scopeCanvas->getMouseTracker()->mouseInView()) {
         scopeCanvas->OnKeyDown(event);
+    }
+    else if (demodWaterfallCanvas && demodWaterfallCanvas->getMouseTracker()->mouseInView()) {
+        demodWaterfallCanvas->OnKeyDown(event);
+    }
+    else if (demodSpectrumCanvas && demodSpectrumCanvas->getMouseTracker()->mouseInView()) {
+        demodSpectrumCanvas->OnKeyDown(event);
     }
 
     return 1;
@@ -2971,8 +3261,14 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
         return 1;
     }
 
-    DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getActiveContextModem();
     DemodulatorInstancePtr lastDemod = wxGetApp().getDemodMgr().getCurrentModem();
+    // V/M/R act on the hovered demodulator while the cursor is in the
+    // waterfall, and fall back to the selection when it is not.
+    DemodulatorInstancePtr hoverDemod = waterfallCanvas ? waterfallCanvas->getHoverDemod() : nullptr;
+    DemodulatorInstancePtr actionDemod = hoverDemod;
+    if (!actionDemod && waterfallCanvas && !waterfallCanvas->getMouseTracker()->mouseInView()) {
+        actionDemod = lastDemod;
+    }
     
 #ifdef wxHAS_RAW_KEY_CODES
     switch (event.GetRawKeyCode()) {
@@ -3001,14 +3297,11 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
             waterfallCanvas->OnKeyUp(event);
             return 1;
         case 'V':
-            if (activeDemod) {
-                lastDemod = activeDemod;
-            }
-            if (lastDemod && lastDemod->isDeltaLock()) {
-                lastDemod->setDeltaLock(false);
-            } else if (lastDemod) {
-                lastDemod->setDeltaLockOfs(lastDemod->getFrequency() - wxGetApp().getFrequency());
-                lastDemod->setDeltaLock(true);
+            if (actionDemod && actionDemod->isDeltaLock()) {
+                actionDemod->setDeltaLock(false);
+            } else if (actionDemod) {
+                actionDemod->setDeltaLockOfs(actionDemod->getFrequency() - wxGetApp().getFrequency());
+                actionDemod->setDeltaLock(true);
             }
             break;
         case 'A':
@@ -3041,7 +3334,7 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
             if (event.ShiftDown()) {
                 toggleAllActiveDemodRecording();
             } else {
-                toggleActiveDemodRecording();
+                toggleDemodRecording(actionDemod);
             }
             break;
         case 'P':
@@ -3056,11 +3349,8 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
         case '[':
             return 1;
         case 'M':
-            if (activeDemod) {
-                lastDemod = activeDemod;
-            }
-            if (lastDemod) {
-                lastDemod->setMuted(!lastDemod->isMuted());
+            if (actionDemod) {
+                actionDemod->setMuted(!actionDemod->isMuted());
             }
             break;
         default:
@@ -3082,21 +3372,39 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     else if (scopeCanvas->getMouseTracker()->mouseInView()) {
         scopeCanvas->OnKeyUp(event);
     }
+    else if (demodWaterfallCanvas && demodWaterfallCanvas->getMouseTracker()->mouseInView()) {
+        demodWaterfallCanvas->OnKeyUp(event);
+    }
+    else if (demodSpectrumCanvas && demodSpectrumCanvas->getMouseTracker()->mouseInView()) {
+        demodSpectrumCanvas->OnKeyUp(event);
+    }
     
     // TODO: Catch key-ups outside of original target
 
     return 1;
 }
 
-void AppFrame::toggleActiveDemodRecording() {
+void AppFrame::updateRecordButtonState(ModeSelectorCanvas *recordButton) {
+    // No recording path means no recording: dim the button and swallow its
+    // clicks. The tip still shows on hover and explains what is missing.
+    bool noPath = !wxGetApp().getConfig()->isRecordingPathValid();
+    if (recordButton->isDisabled() != noPath) {
+        recordButton->setDisabled(noPath);
+    }
+    if (noPath) {
+        recordButton->setHelpTip("Demodulator Record Toggle (R) - Set a recording path first ('Recording' menu -> 'Set Recording Path').");
+    } else {
+        recordButton->setHelpTip("Demodulator Record Toggle (R) - Enable to record demodulator audio.");
+    }
+}
+
+void AppFrame::toggleDemodRecording(const DemodulatorInstancePtr& demod) {
     if (!wxGetApp().getConfig()->verifyRecordingPath()) {
         return;
     }
-    
-    DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getActiveContextModem();
-    
-    if (activeDemod) {
-        activeDemod->setRecording(!activeDemod->isRecording());
+
+    if (demod) {
+        demod->setRecording(!demod->isRecording());
         wxGetApp().getBookmarkMgr().updateActiveList();
     }
 }

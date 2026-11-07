@@ -20,8 +20,10 @@ staged alongside it on Windows.
 Install these before the first run; everything else is built from source.
 
 - All platforms: Python 3, CMake, git.
-- Windows: Visual Studio 2022 with the C++ workload. NSIS is needed only
-  for `--package nsis` and is picked up from its default install location.
+- Windows: Visual Studio 2022 with the C++ workload plus the "C++ Clang
+  Compiler for Windows" component (liquid-dsp builds from source with
+  clang-cl). NSIS is needed only for `--package nsis` and is picked up
+  from its default install location.
 - Linux: `cmake`, `git`, `make`, plus the development packages (the
   CI config lists the exact set: build tools, pulseaudio/GTK/OpenGL
   headers, hamlib, wxWidgets, and SoapySDR). Install them yourself

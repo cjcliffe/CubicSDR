@@ -130,6 +130,14 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
                 continue;
             }
 
+            // Drop any backlog queued while the stream was starting: only the
+            // newest buffer is still live. The queue normally holds a few
+            // buffers of jitter, which play through in order below.
+            AudioThreadInputPtr fresh;
+            while (srcmix->inputQueue->try_pop(fresh)) {
+                srcmix->currentInput = fresh;
+            }
+
             continue;
         }
 

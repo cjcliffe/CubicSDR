@@ -19,7 +19,6 @@
 #include <algorithm>
 
 wxBEGIN_EVENT_TABLE(TuningCanvas, wxGLCanvas) EVT_PAINT(TuningCanvas::OnPaint)
-EVT_IDLE(TuningCanvas::OnIdle)
 EVT_MOTION(TuningCanvas::OnMouseMoved)
 EVT_LEFT_DOWN(TuningCanvas::OnMouseDown)
 EVT_LEFT_UP(TuningCanvas::OnMouseReleased)
@@ -53,28 +52,10 @@ TuningCanvas::TuningCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
     centerDP = -1.0f + (2.0f / 3.0f) * 2.0f;
     centerW = (1.0f / 3.0f) * 2.0f;
 
-    currentPPM = lastPPM = 0;
+    currentPPM = 0;
 }
 
 TuningCanvas::~TuningCanvas() = default;
-
-bool TuningCanvas::changed() {
-
-    auto activeDemod = wxGetApp().getDemodMgr().getCurrentModem();
-    
-    long long current_freq = 0;
-    if (activeDemod != nullptr) {
-        freq = activeDemod->getFrequency();
-    }
-    long long current_bw = wxGetApp().getDemodMgr().getLastBandwidth();
-    long long current_center = wxGetApp().getFrequency();
-    
-    if (current_freq != freq || current_bw != bw || current_center != center) {
-        return true;
-    }
-    
-    return false;
-}
 
 void TuningCanvas::setHalfBand(bool hb) {
     halfBand = hb;
@@ -269,7 +250,7 @@ void TuningCanvas::StepTuner(ActiveState state, TuningDirection tuningDir, int d
     }
 }
 
-void TuningCanvas::OnIdle(wxIdleEvent & event) {
+void TuningCanvas::frameUpdate() {
     if (mouseTracker.mouseDown()) {
         if (downState != TUNING_HOVER_NONE) {
             dragAccum += 5.0*mouseTracker.getOriginDeltaMouseX();
@@ -288,9 +269,7 @@ void TuningCanvas::OnIdle(wxIdleEvent & event) {
             dragging = false;
         }
     }
-    if (mouseTracker.mouseInView() || changed()) {
-        Refresh();
-    }
+    Refresh();
 }
 
 void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
@@ -344,11 +323,6 @@ void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
       }
     }
 
-    if (hoverState == TUNING_HOVER_BW || hoverState == TUNING_HOVER_FREQ) {
-         wxGetApp().getDemodMgr().setActiveDemodulator(wxGetApp().getDemodMgr().getCurrentModem());
-     } else {
-         wxGetApp().getDemodMgr().setActiveDemodulator(nullptr);
-     }
 }
 
 void TuningCanvas::OnMouseDown(wxMouseEvent& event) {
@@ -428,11 +402,6 @@ void TuningCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
     SetCursor(wxCURSOR_CROSS);
     hoverIndex = 0;
     hoverState = TUNING_HOVER_NONE;
-    wxGetApp().getDemodMgr().setActiveDemodulator(nullptr);
-
-    if (currentPPM != lastPPM) {
-        wxGetApp().saveConfig();
-    }
     Refresh();
 }
 
@@ -441,7 +410,7 @@ void TuningCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
     SetCursor(wxCURSOR_ARROW);
     hoverIndex = 0;
     hoverState = TUNING_HOVER_NONE;
-    lastPPM = currentPPM = wxGetApp().getPPM();
+    currentPPM = wxGetApp().getPPM();
 #ifdef _WIN32
 	if (wxGetApp().getAppFrame()->canFocus()) {
 		this->SetFocus();

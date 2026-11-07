@@ -60,7 +60,9 @@ Global application configuration. Singleton accessed via `wxGetApp().getConfig()
 | `winMax` | `bool` | `window/max` | false | Maximized state |
 | `showTips` | `bool` | `window/tips` | true | Show tooltips |
 | `modemPropsCollapsed` | `bool` | `window/modemprops_collapsed` | false | Modem properties panel collapsed |
-| `perfMode` | `PerfModeEnum` | `window/perf_mode` | 1 (normal) | Performance mode (0=low, 1=normal, 2=high) |
+| `frameRate` | `FrameRateEnum` | `window/frame_rate` | 1 (normal) | Frame rate (0=low 15fps, 1=normal 30fps, 2=high 60fps) |
+| `dspMode` | `DspModeEnum` | `window/dsp_mode` | 0 (normal) | DSP mode (0=normal, 1=enhanced channelizer) |
+| `streamPacing` | `bool` | `window/stream_pacing` | true | Stream Pacing toggle (steady IQ cadence into post-processing) |
 
 ### Display Settings
 
@@ -69,7 +71,8 @@ Global application configuration. Singleton accessed via `wxGetApp().getConfig()
 | `themeId` | `int` | `window/theme` | 0 | Color theme index |
 | `fontScale` | `int` | `window/font_scale` | 0 | Font scale (0=normal, 1=medium, 2=large) |
 | `snap` | `long long` | `window/snap` | 1 | Frequency snap value in Hz |
-| `centerFreq` | `long long` | `window/center_freq` | 100000000 | Center frequency |
+| `centerFreq` | `long long` | `window/center_freq` | 98000000 | Center frequency (FM broadcast band center) |
+| `lastDeviceId` | `string` | `window/last_device` | *(empty)* | Id of the last started device, pre-selected by the devices dialog |
 | `waterfallLinesPerSec` | `int` | `window/waterfall_lps` | 30 | Waterfall refresh rate |
 | `spectrumAvgSpeed` | `float` | `window/spectrum_avg` | 0.65 | Spectrum averaging speed |
 | `dbOffset` | `int` | `window/db_offset` | 0 | dB display offset |
@@ -146,6 +149,8 @@ Note: `DeviceConfig::load()` does **not** read the `id` node — that is done by
 
 Note: `DeviceConfig::save()` writes the `antenna`, `streamOpts`, `settings`, `rig_ifs`, and `gains` sections only when the corresponding container is non-empty. On load, `gains` entries whose value is `NaN` are skipped.
 
+`DeviceConfig::resetToDefaults()` restores factory state (zero PPM/offset, AGC on, cleared name/antenna/options/gains) while keeping `deviceId`, which keys the entry. An unset sample rate falls back to the live rate, so callers store a concrete default explicitly (see the devices dialog in the [SDR Device Layer](sdr-device-layer.md)).
+
 ### Device Config XML Structure
 
 ```xml
@@ -206,7 +211,7 @@ Note: `DeviceConfig::save()` writes the `antenna`, `streamOpts`, `settings`, `ri
 3. Call `DataTree::LoadFromFileXML()`; if the config file exists but is not readable, `load()` returns `false`.
 4. Parse each section: window, recording, devices, manual_devices, rig
 5. Missing sections use defaults
-6. `perfMode` is reset to `PERF_NORMAL` within the window section before reading `perf_mode`, so a missing `perf_mode` node results in `PERF_NORMAL` (when a `<window>` node is present). A present `perf_mode` value is only applied if it equals `PERF_LOW` or `PERF_HIGH`; any other (unrecognized) value leaves it as `PERF_NORMAL`.
+6. `frameRate`/`dspMode` default to `FRAME_NORMAL`/`DSP_NORMAL` within the window section (when a `<window>` node is present). A present `frame_rate` value is only applied if it equals `FRAME_LOW` or `FRAME_HIGH`, and `dsp_mode` only if it equals `DSP_ENHANCED`; anything else (or a missing node) leaves the default. When neither new key is present, a legacy `perf_mode` value migrates instead: low selects frame low, high selects frame high plus DSP enhanced.
 
 `AppConfig::reset()` is declared but is a no-op: it returns `true` without applying or reloading any state, and is not currently invoked.
 
@@ -355,5 +360,5 @@ Both `AppConfig` and `DeviceConfig` use `std::atomic` for scalar fields to allow
 ## Config Save Triggers
 
 - **On window close:** `AppFrame::OnClose()` snapshots selected UI state (window geometry, theme, font scale, snap, center frequency, spectrum/waterfall speeds, manual devices, modem properties collapsed, splitter positions, bookmarks visibility, and hamlib settings) into `AppConfig`, calls `config->save()`, then saves bookmarks via `BookmarkMgr::saveToFile()`. If the `saveDisabled` flag is set, the handler returns early without saving. Recording settings are not re-snapshotted here; they are already current in `AppConfig` from earlier menu handler calls.
-- **On setting change:** various UI actions update the in-memory config immediately (e.g., PPM changes in `TuningCanvas` → `CubicSDR::setPPM()` → `SDRThread::setPPM()` → `DeviceConfig::setPPM()`). The config file is only written to disk on window close, or explicitly via `CubicSDR::saveConfig()` (e.g., `TuningCanvas::OnMouseLeftWindow` saves if PPM changed).
+- **On setting change:** various UI actions update the in-memory config immediately (e.g., PPM changes in `TuningCanvas` → `CubicSDR::setPPM()` → `SDRThread::setPPM()` → `DeviceConfig::setPPM()`). The config file is written only on window close — there are no eager saves, so a crash reverts to the last saved state.
 - **Session save:** explicit user action via File menu

@@ -269,21 +269,27 @@ public:
 
         //wchar_t is tricky, the terminating zero is actually a (wchar_t)0 !
         //wchar_t is typically 16 bits on windows, and 32 bits on Unix, so use sizeof(wchar_t) everywhere.
-        size_t maxLenBytes = (wstr_in.length() + 1) * sizeof(wchar_t);
+        size_t contentBytes = wstr_in.length() * sizeof(wchar_t);
+
+#ifdef _MSC_VER
+        const size_t bufPad = sizeof(wchar_t);
+#else
+        const size_t bufPad = 1;
+#endif
 
         //Zeroed buffer: on conversion failure the stored bytes stay truncated
         //at the first unconvertible character, as before.
-        std::vector<char> tmp_str(maxLenBytes, '\0');
+        std::vector<char> tmp_str(contentBytes + bufPad, '\0');
 
-        //if something awful happens, the last sizeof(wchar_t) is at least zero...
+        //if something awful happens, the trailing pad bytes are at least zero...
 #ifdef _MSC_VER
         size_t converted = 0;
         wcstombs_s(&converted, tmp_str.data(), tmp_str.size(), wstr_in.c_str(), _TRUNCATE);
 #else
-        ::wcstombs(tmp_str.data(), wstr_in.c_str(), maxLenBytes - sizeof(wchar_t));
+        ::wcstombs(tmp_str.data(), wstr_in.c_str(), contentBytes);
 #endif
 
-        data_val.assign(tmp_str.data(), tmp_str.data() + maxLenBytes - sizeof(wchar_t));
+        data_val.assign(tmp_str.data(), tmp_str.data() + contentBytes);
     }
 
     //template specialization : for vector<string> 

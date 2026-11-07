@@ -32,6 +32,7 @@ Exception: on macOS, `DemodulatorInstance::run()` creates `DemodulatorPreThread`
 |--------|-------|------|---------|
 | Main (wxWidgets UI) | `AppFrame` | `src/AppFrame.h` | Event loop, OpenGL rendering, UI interaction |
 | SDR Thread | `SDRThread` | `src/sdr/SoapySDRThread.h` | Reads IQ samples from SoapySDR hardware |
+| SDR Pacer | `SDRPacerThread` | `src/sdr/SDRPacerThread.h` | Meters full IQ frames at a fixed gate between SDRThread and SDRPostThread |
 | SDR Post-Processing | `SDRPostThread` | `src/sdr/SDRPostThread.h` | DC blocking, channelization, IQ distribution |
 | SDR Enumerator | `SDREnumerator` | `src/sdr/SDREnumerator.h` | Background device discovery |
 | Spectrum Visual | `SpectrumVisualDataThread` | `src/process/SpectrumVisualDataThread.h` | FFT processing for main spectrum display |
@@ -93,7 +94,7 @@ Atomic variables signal parameter changes between UI and worker threads. Boolean
 - `sdrEnumThreadNotify` sets `std::atomic_bool` flags (`devicesReady` on `SDR_ENUM_DEVICES_READY`, `devicesFailed` on `SDR_ENUM_FAILED`); `sdrThreadNotify` stores messages but does not set these flags
 - The UI polls these in `SDRDevices` dialog via `getNotification()`
 - Note: `sdrThreadNotify` with `SDR_THREAD_INITIALIZED` also calls `appframe->initDeviceParams()` directly — a cross-thread write to internal AppFrame state (pointer + `deviceChanged` atomic flag, no UI widget manipulation)
-- Worker threads also set atomic flags for UI updates: `DemodulatorWorkerThread` calls `notifyUpdateModemProperties()` which sets `AppFrame::modemPropertiesUpdated`; UI polls this in `OnIdle()`
+- Worker threads also set atomic flags for UI updates: `DemodulatorWorkerThread` calls `notifyUpdateModemProperties()` which sets `AppFrame::modemPropertiesUpdated`; the frame tick polls this in `processFrame()` (via `handleModemProperties()`)
 
 ### Pattern 6: VisualProcessor Pipeline (Threaded Distribution)
 
@@ -106,7 +107,7 @@ Atomic variables signal parameter changes between UI and worker threads. Boolean
 
 ### Pattern 7: UI-Thread Processing (ScopeVisualProcessor)
 
-- `ScopeVisualProcessor` has **no dedicated thread** — it runs on the wxWidgets main thread via `AppFrame::handleScopeProcessor()`, called from `AppFrame::OnIdle()`
+- `ScopeVisualProcessor` has **no dedicated thread** — it runs on the wxWidgets main thread via `AppFrame::handleScopeProcessor()`, called from `processFrame()` on the frame tick
 - Data path: `DemodulatorThread` → `pipeAudioVisualData` queue → `ScopeVisualProcessor::process()` (UI thread) → `ScopeCanvas::inputData` queue → `ScopeCanvas::OnPaint()`
 - `process()` uses non-blocking `try_pop()`, so the UI thread never blocks waiting for audio data
 - This differs from `SpectrumVisualProcessor` and `FFTVisualDataThread`, which each run on dedicated `IOThread` instances
@@ -216,8 +217,6 @@ The actual thread join/cleanup happens in `isTerminated()`, which is called from
 
 ### Known Issues
 
-**macOS audio thread join bug:** In `DemodulatorInstance::isTerminated()`, the macOS cleanup path for the audio thread (`DemodulatorInstance.cpp`) calls `pthread_join(t_PreDemod, NULL)` — a copy-paste error where `t_PreDemod` was used instead of `t_Audio`. In the typical shutdown order `t_PreDemod` has already been joined and set to `nullptr`, so this calls `pthread_join(NULL, ...)` which returns `ESRCH` (no thread found). If pre-demod has not yet terminated, the call blocks until the pre-demod thread finishes, then the pre-demod block attempts a redundant join on the next call. Either way, the audio thread's `std::thread` object is never joined or deleted. On macOS, `t_PreDemod` and `t_Demod` are `pthread_t` (not pointers), while `t_Audio` is `std::thread*` on all platforms — so even with the correct variable name, `pthread_join` would be the wrong API. The non-macOS path (`t_Audio->join()` / `delete t_Audio`) is correct.
-
 **SDREnumerator not cleaned up on exit:** `t_SDREnum` and `sdrEnum` are never joined or deleted in `OnExit()` or anywhere else in the codebase. They rely on process exit for cleanup.
 
 **Waterfall thread not deleted in AppFrame destructor:** `AppFrame::~AppFrame()` calls `waterfallDataThread->terminate()` and `t_FFTData->join()`, but neither the `std::thread*` object nor the `FFTVisualDataThread*` are deleted — a memory leak on shutdown.
@@ -244,9 +243,8 @@ Windows and Linux use default thread priorities.
 
 The UI thread is **primarily pull-based**:
 
-1. `AppFrame::OnIdle()` is called continuously by the wx event loop and handles device params, modem properties, and UI state
-2. Each canvas registers its own `EVT_IDLE` handler independently — canvases poll their input queues via `try_pop()` in `OnIdle()` (WaterfallCanvas) or `OnPaint()` (SpectrumCanvas, ScopeCanvas). See [visual-rendering.md](visual-rendering.md) "OnIdle Processing" for per-canvas details.
-3. Visual data flows are pull-based: worker threads push to queues, UI canvases pull via `try_pop()`
-4. Shared state uses `std::atomic` variables (frequency, signal levels, mute state)
-5. UI-initiated changes go through atomic variables and flags, not wx events
-6. **Exception:** `SDRThread` triggers `refreshGainUI()` from the worker thread via `notifyMainUIOfDeviceChange()`, which rebuilds `GainCanvas` panels and triggers `Refresh()` — a cross-thread UI mutation outside the pull-based pattern
+1. `AppFrame` runs a frame timer (paced by the Frame Rate setting) that calls `processFrame()` for panel and device state, then `frameUpdate()` on every registered canvas in order. With no device streaming the timer parks at an idle rate instead of the configured frame rate. On Windows the tick comes from a multimedia timer that keeps firing while native menu tracking runs its modal loop, so animation continues while menus are open; other platforms use a plain timer there. See [visual-rendering.md](visual-rendering.md) "Frame-Timer Processing" for per-canvas details.
+2. Visual data flows are pull-based: worker threads push to queues, UI canvases pull via `try_pop()` — `WaterfallCanvas` in `frameUpdate()`, `SpectrumCanvas` and `ScopeCanvas` at the top of `OnPaint()`
+3. Shared state uses `std::atomic` variables (frequency, signal levels, mute state)
+4. UI-initiated changes go through atomic variables and flags, not wx events
+5. **Exception:** `SDRThread` triggers `refreshGainUI()` from the worker thread via `notifyMainUIOfDeviceChange()`, which rebuilds `GainCanvas` panels and triggers `Refresh()` — a cross-thread UI mutation outside the pull-based pattern

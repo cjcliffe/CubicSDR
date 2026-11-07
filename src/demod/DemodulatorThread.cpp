@@ -203,8 +203,12 @@ void DemodulatorThread::run() {
                         std::lock_guard < std::mutex > lock(squelchLockMutex);
                         if (squelchLock == nullptr) {
                             squelchLock = demodInstance;
-                            wxGetApp().getDemodMgr().setActiveDemodulator(nullptr);
-                            wxGetApp().getDemodMgr().setActiveDemodulatorByRawPointer(demodInstance, false);
+                            for (auto &existing_demod : wxGetApp().getDemodMgr().getDemodulators()) {
+                                if (existing_demod.get() == demodInstance) {
+                                    wxGetApp().getDemodMgr().setActiveDemodulator(existing_demod);
+                                    break;
+                                }
+                            }
                             squelchBreak = true;
                             demodInstance->getVisualCue()->triggerSquelchBreak(120);
                         }

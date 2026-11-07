@@ -16,6 +16,10 @@
 
 #include "CubicSDR.h"
 
+#ifdef _WIN32
+#include <mmsystem.h>
+#endif
+
 #ifdef _OSX_APP_
 #include "CoreFoundation/CoreFoundation.h"
 #endif
@@ -185,6 +189,12 @@ bool CubicSDR::OnInit() {
     //better (by default, was "C" locale).
     std::setlocale(LC_ALL, "");
 
+#ifdef _WIN32
+    // The default Windows timer quantum (~15.6ms) beats against the frame
+    // timer and waterfall line pacing; request 1ms granularity instead.
+    timeBeginPeriod(1);
+#endif
+
 //#ifdef _OSX_APP_
 //    CFBundleRef mainBundle = CFBundleGetMainBundle();
 //    CFURLRef resourcesURL = CFBundleCopyResourcesDirectoryURL(mainBundle);
@@ -278,12 +288,19 @@ bool CubicSDR::OnInit() {
     // I/Q Data
     pipeSDRIQData = std::make_shared<SDRThreadIQDataQueue>();
     pipeSDRIQData->set_max_num_items(100);
-    
+
+    pipePacedIQData = std::make_shared<SDRThreadIQDataQueue>();
+    pipePacedIQData->set_max_num_items(4);
+
     sdrThread = new SDRThread();
     sdrThread->setOutputQueue("IQDataOutput",pipeSDRIQData);
 
+    sdrPacerThread = new SDRPacerThread();
+    sdrPacerThread->setInputQueue("IQDataInput", pipeSDRIQData);
+    sdrPacerThread->setOutputQueue("IQDataOutput", pipePacedIQData);
+
     sdrPostThread = new SDRPostThread();
-    sdrPostThread->setInputQueue("IQDataInput", pipeSDRIQData);
+    sdrPostThread->setInputQueue("IQDataInput", pipePacedIQData);
 
     sdrPostThread->setOutputQueue("IQVisualDataOutput", pipeIQVisualData);
     sdrPostThread->setOutputQueue("IQDataOutput", pipeWaterfallIQVisualData);
@@ -319,6 +336,8 @@ bool CubicSDR::OnInit() {
     if (demodVisualThread != nullptr) {
         t_DemodVisual = new std::thread(&SpectrumVisualDataThread::threadMain, demodVisualThread);
     }
+
+    t_PacerSDR = new std::thread(&SDRPacerThread::threadMain, sdrPacerThread);
 
     //Start SDRPostThread last.
     t_PostSDR = new std::thread(&SDRPostThread::threadMain, sdrPostThread);
@@ -380,6 +399,10 @@ int CubicSDR::OnExit() {
         ::exit(11);
     }
 
+    std::cout << "Terminating SDR pacer thread.." << std::endl << std::flush;
+    sdrPacerThread->terminate();
+    terminationSequenceOK = terminationSequenceOK && sdrPacerThread->isTerminated(3000);
+
     std::cout << "Terminating SDR post-processing thread.." << std::endl << std::flush;
     sdrPostThread->terminate();
 
@@ -422,7 +445,9 @@ int CubicSDR::OnExit() {
     }
 
     t_PostSDR->join();
-    
+
+    t_PacerSDR->join();
+
     if (t_DemodVisual) {
         t_DemodVisual->join();
     }
@@ -441,6 +466,12 @@ int CubicSDR::OnExit() {
 
     delete t_PostSDR;
     t_PostSDR = nullptr;
+
+    delete sdrPacerThread;
+    sdrPacerThread = nullptr;
+
+    delete t_PacerSDR;
+    t_PacerSDR = nullptr;
 
     delete t_SpectrumVisual;
     t_SpectrumVisual = nullptr;
@@ -461,6 +492,10 @@ int CubicSDR::OnExit() {
     AudioThread::deviceCleanup();
 
     std::cout << "Application termination complete." << std::endl << std::flush;
+
+#ifdef _WIN32
+    timeEndPeriod(1);
+#endif
 
     return wxApp::OnExit();
 }
@@ -522,7 +557,7 @@ void CubicSDR::closeDeviceSelector() {
     }
 }
 
-void CubicSDR::deviceSelector() {
+void CubicSDR::deviceSelector(bool dismissOnStart) {
     if (deviceSelectorOpen) {
         deviceSelectorDialog->Raise();
         deviceSelectorDialog->SetFocus();
@@ -534,7 +569,7 @@ void CubicSDR::deviceSelector() {
     if (winRect != nullptr) {
         pos = wxPoint(winRect->x, winRect->y);
     }
-    deviceSelectorDialog = new SDRDevicesDialog(appframe, pos);
+    deviceSelectorDialog = new SDRDevicesDialog(appframe, pos, dismissOnStart);
     deviceSelectorDialog->Show();
 }
 
@@ -601,6 +636,12 @@ void CubicSDR::setFrequency(long long freq) {
     if (getDemodSpectrumProcessor()) {
         getDemodSpectrumProcessor()->setPeakHold(getSpectrumProcessor()->getPeakHold());
     }
+
+    // Stale waterfall lines are the wrong frequency: drop the visual
+    // backlog so the display tracks the knob instead of spooling history.
+    if (appframe && appframe->getWaterfallDataThread()) {
+        appframe->getWaterfallDataThread()->flushPipeline();
+    }
 }
 
 long long CubicSDR::getOffset() {
@@ -617,8 +658,9 @@ void CubicSDR::setOffset(long long ofs) {
 
 void CubicSDR::setAntennaName(const std::string& name) {
     antennaName = name;
-     
-    if (sdrThread && !sdrThread->isTerminated()) {
+
+    // An empty name means the driver default, so only forward real selections.
+    if (sdrThread && !name.empty()) {
         sdrThread->setAntenna(antennaName);
     }
 }
@@ -630,6 +672,12 @@ const std::string& CubicSDR::getAntennaName() {
 void CubicSDR::setChannelizerType(SDRPostThreadChannelizerType chType) {
     if (sdrPostThread && !sdrPostThread->isTerminated()) {
         sdrPostThread->setChannelizerType(chType);
+    }
+}
+
+void CubicSDR::setStreamPacing(bool enabled) {
+    if (sdrPacerThread && !sdrPacerThread->isTerminated()) {
+        sdrPacerThread->setPacingEnabled(enabled);
     }
 }
 
@@ -669,8 +717,8 @@ void CubicSDR::unlockFrequency() {
 
 void CubicSDR::setSampleRate(long long rate_in) {
     sampleRate = rate_in;
-    
-    if (sdrThread && !sdrThread->isTerminated()) {
+
+    if (sdrThread) {
         sdrThread->setSampleRate(sampleRate);
     }
 
@@ -702,6 +750,17 @@ void CubicSDR::stopDevice(bool store, int waitMsForTermination) {
         delete t_SDR;
         t_SDR = nullptr;
     }
+
+    // Discard unprocessed backlog so downstream stops with the device
+    // instead of spooling stale frames.
+    if (sdrPacerThread && !sdrPacerThread->isTerminated()) {
+        sdrPacerThread->requestFlush();
+    }
+    // Same for rendered lines: at high line rates the FFT queue holds
+    // up to a second of waterfall that would otherwise spool out.
+    if (appframe && appframe->getWaterfallDataThread()) {
+        appframe->getWaterfallDataThread()->flushPipeline();
+    }
     
     //Only now we can nullify devices
     if (store) {
@@ -732,11 +791,21 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev, int waitMsForTermination) {
        t_SDR = nullptr;
     }
     
+    if (sdrPacerThread && !sdrPacerThread->isTerminated()) {
+        sdrPacerThread->requestFlush();
+    }
+    // Same for rendered lines: the FFT queue holds old-device waterfall
+    // that would otherwise spool out after the switch.
+    if (appframe && appframe->getWaterfallDataThread()) {
+        appframe->getWaterfallDataThread()->flushPipeline();
+    }
+
     for (SoapySDR::Kwargs::const_iterator i = settingArgs.begin(); i != settingArgs.end(); i++) {
         sdrThread->writeSetting(i->first, i->second);
     }
     sdrThread->setStreamArgs(streamArgs);
     sdrThread->setDevice(dev);
+    config.setLastDeviceId(dev->getDeviceId());
     
     DeviceConfig *devConfig = config.getDevice(dev->getDeviceId());
     
@@ -779,6 +848,14 @@ SDRDeviceInfo *CubicSDR::getDevice() {
     }
 
     return sdrThread->getDevice();
+}
+
+std::string CubicSDR::getDeviceName() {
+    SDRDeviceInfo *dev = getDevice();
+    if (dev == nullptr) {
+        return "";
+    }
+    return config.getDevice(dev->getDeviceId())->getDeviceName();
 }
 
 ScopeVisualProcessor *CubicSDR::getScopeProcessor() {
@@ -857,10 +934,6 @@ AppConfig *CubicSDR::getConfig() {
     return &config;
 }
 
-void CubicSDR::saveConfig() {
-    config.save();
-}
-
 void CubicSDR::setPPM(int ppm_in) {
     ppm = ppm_in;
     if (sdrThread && !sdrThread->isTerminated()) {
@@ -885,7 +958,7 @@ void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetM
     const wxString gainTitle("Gain Entry: "+wxGetApp().getActiveGainEntry());
 
     wxString title;
-    auto activeModem = demodMgr.getActiveContextModem();
+    auto activeModem = demodMgr.getCurrentModem();
 
     switch (targetMode) {
         case FrequencyDialog::FDIALOG_TARGET_DEFAULT:
@@ -915,15 +988,15 @@ void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetM
     fdialog.ShowModal();
 }
 
-void CubicSDR::showLabelInput() {
+void CubicSDR::showLabelInput(DemodulatorInstancePtr demod) {
 
-    DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getActiveContextModem();
+    DemodulatorInstancePtr selectedDemod = demod;
 
-    if (activeDemod != nullptr) {
+    if (selectedDemod != nullptr) {
 
         const wxString demodTitle("Edit Demodulator label");
 
-        DemodLabelDialog labelDialog(appframe, -1, demodTitle, activeDemod, wxPoint(-100, -100), wxSize(500, 75), wxDEFAULT_DIALOG_STYLE);
+        DemodLabelDialog labelDialog(appframe, -1, demodTitle, selectedDemod, wxPoint(-100, -100), wxSize(500, 75), wxDEFAULT_DIALOG_STYLE);
         labelDialog.ShowModal();
     }
 }

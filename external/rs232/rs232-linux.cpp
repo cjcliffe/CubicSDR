@@ -39,12 +39,16 @@
 #include "rs232.h"
 
 #include <unistd.h>
+#ifndef __USE_MISC
 #define __USE_MISC // For CRTSCTS
+#endif
 #include <termios.h>
 #include <fcntl.h>
 #include <dirent.h>
 
+#ifndef __USE_SVID
 #define __USE_SVID // For strdup
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

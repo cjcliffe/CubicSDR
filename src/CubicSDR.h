@@ -16,6 +16,7 @@
 #include "SoapySDRThread.h"
 #include "SDREnumerator.h"
 #include "SDRPostThread.h"
+#include "SDRPacerThread.h"
 #include "AudioThread.h"
 #include "DemodulatorMgr.h"
 #include "AppConfig.h"
@@ -77,7 +78,7 @@ public:
     void OnInitCmdLine(wxCmdLineParser& parser) override;
     bool OnCmdLineParsed(wxCmdLineParser& parser) override;
 
-    void deviceSelector();
+    void deviceSelector(bool dismissOnStart = false);
     void sdrThreadNotify(SDRThread::SDRThreadState state, const std::string& message);
     void sdrEnumThreadNotify(SDREnumerator::SDREnumState state, std::string message);
     
@@ -96,6 +97,8 @@ public:
 
     void setChannelizerType(SDRPostThreadChannelizerType chType);
     SDRPostThreadChannelizerType getChannelizerType();
+
+    void setStreamPacing(bool enabled);
    
 
     void setSampleRate(long long rate_in);
@@ -106,6 +109,8 @@ public:
     void setDevice(SDRDeviceInfo *dev, int waitMsForTermination);
     void stopDevice(bool store, int waitMsForTermination);
     SDRDeviceInfo * getDevice();
+    // Display name for the active device: custom settings name, hardware id fallback.
+    std::string getDeviceName();
 
     ScopeVisualProcessor *getScopeProcessor();
     SpectrumVisualProcessor *getSpectrumProcessor();
@@ -130,13 +135,12 @@ public:
     int getFrequencySnap();
 
     AppConfig *getConfig();
-    void saveConfig();
 
     void setPPM(int ppm_in);
     int getPPM();
 
     void showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode = FrequencyDialog::FDIALOG_TARGET_DEFAULT, const wxString& initString = "");
-    void showLabelInput();
+    void showLabelInput(DemodulatorInstancePtr demod);
     AppFrame *getAppFrame();
     
     bool areDevicesReady();
@@ -206,10 +210,12 @@ private:
     SDRThread *sdrThread = nullptr;
     SDREnumerator *sdrEnum = nullptr;
     SDRPostThread *sdrPostThread = nullptr;
+    SDRPacerThread *sdrPacerThread = nullptr;
     SpectrumVisualDataThread *spectrumVisualThread = nullptr;
     SpectrumVisualDataThread *demodVisualThread = nullptr;
 
     SDRThreadIQDataQueuePtr pipeSDRIQData;
+    SDRThreadIQDataQueuePtr pipePacedIQData;
     DemodulatorThreadInputQueuePtr pipeIQVisualData;
     DemodulatorThreadOutputQueuePtr pipeAudioVisualData;
     DemodulatorThreadInputQueuePtr pipeDemodIQVisualData;
@@ -226,6 +232,7 @@ private:
     std::thread *t_SDR = nullptr;
     std::thread *t_SDREnum = nullptr;
     std::thread *t_PostSDR = nullptr;
+    std::thread *t_PacerSDR = nullptr;
     std::thread *t_SpectrumVisual = nullptr;
     std::thread *t_DemodVisual = nullptr;
     std::atomic_bool devicesReady;

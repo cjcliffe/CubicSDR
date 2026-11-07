@@ -27,7 +27,6 @@ public:
     ~TuningCanvas() override;
 
     void setHelpTip(std::string tip);
-    bool changed();
     
     void setHalfBand(bool hb);
     void OnKeyDown(wxKeyEvent& event);
@@ -37,7 +36,7 @@ public:
     
 private:
     void OnPaint(wxPaintEvent& event);
-    void OnIdle(wxIdleEvent &event);
+    void frameUpdate() override;
 
     void OnMouseMoved(wxMouseEvent& event);
     void OnMouseDown(wxMouseEvent& event);
@@ -74,7 +73,6 @@ private:
     bool bottom;
 
     int currentPPM;
-    int lastPPM;
 
     long long freq, bw, center;
     bool halfBand;

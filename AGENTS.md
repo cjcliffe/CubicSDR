@@ -27,7 +27,7 @@ Built via `python build.py`, which drives the CMake presets, vendored dependenci
 ## Key Directories
 
 - `src/` — Application source (sdr/, demod/, audio/, visual/, modules/modem/, util/)
-- `external/` — Vendored third-party libraries (lodepng, tinyxml, rtaudio, liquid-dsp, hamlib, cubicvr2)
+- `external/` — Vendored third-party libraries (lodepng, tinyxml, rtaudio, hamlib, cubicvr2)
 - `.circleci/` — CI configuration (builds only, no test execution)
 - `font/` — Bitmap fonts
 - `cmake/` — CMake helper modules

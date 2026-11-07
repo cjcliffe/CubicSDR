@@ -15,6 +15,9 @@ SDR Hardware (SoapySDR)
 [Stage 1] SDRThread
     | SDRThreadIQDataQueue (max 100 items)
     v
+[Stream Pacing] SDRPacerThread
+    | SDRThreadIQDataQueue (max 4 items)
+    v
 [Stage 2] SDRPostThread
     |---[pipeIQVisualData]-----> SpectrumVisualDataThread (main spectrum)
     |---[pipeWaterfallIQVisualData]--> FFTVisualDataThread (waterfall)
@@ -47,6 +50,14 @@ Reads IQ samples from SoapySDR hardware in a tight loop. Samples are `liquid_flo
 
 Output: `SDRThreadIQData` containing raw IQ samples, frequency, sample rate, and DC correction status.
 
+Reads are sized to what the current frame still needs rather than a full driver MTU, so delivery stays even at large MTUs. A sample-rate switch first drains the driver ring without blocking, and the new rate applies at the next block boundary so no block mixes rates. A retune likewise drains the driver ring plus the reader's overflow stash and applies at the next block boundary; each pass applies at most one tune, so tunes requested mid-call stay pending for the next pass and drags converge on the latest frequency, and the visual backlog is dropped so the display tracks the knob.
+
+### Stream Pacing
+
+**Class:** `SDRPacerThread` (`src/sdr/SDRPacerThread.h`)
+
+Meters full frames from `SDRThread` to `SDRPostThread` at a fixed 60Hz gate driven by the headless `SDRPacer` model (`src/sdr/SDRPacer.h`), so DSP, visuals, and scope advance together even when driver delivery arrives in lumps. Full frames only: when dry it waits on input instead of inventing samples, so downstream always sees whole frames. Backlog drops oldest past a small cap; a bypass mode passes blocks straight through while pacing is off, and a flush on stream changes (rate, channel, or frequency) drops stale frames while keeping new-stream siblings. Toggled by the Stream Pacing setting, persisted as `window/stream_pacing`.
+
 ### Stage 2: Post-Processing / Channelization
 
 **Class:** `SDRPostThread` (`src/sdr/SDRPostThread.h`)
@@ -62,7 +73,7 @@ Receives raw IQ from SDRThread. Behavior depends on channel count:
 1. **DC blocking** on the entire bandwidth via IIR filter (`iirfilt_crcf`)
 2. **Distribution** — non-blocking `try_push()` the full bandwidth to every active demodulator (no channelization)
 
-In both modes, also pushes full-rate IQ (DC-corrected in single-channel, raw in multi-channel) to visual processing queues for the main spectrum and waterfall displays. **All output pushes use non-blocking `try_push()`** — both visual data and per-demodulator data can be silently dropped when queues are full. SDRPostThread never blocks on any consumer.
+In both modes, also pushes full-rate IQ (DC-corrected in single-channel, raw in multi-channel) to visual processing queues for the main spectrum and waterfall displays. Visual pushes drop oldest backlog first (pop then push) so the display tracks live instead of lagging, and stale visual backlog is flushed when the stream geometry (rate, channels, channelizer mode) changes; the whole visual pipeline (distributor accumulation plus FFT and canvas queues) is discarded on stop, retune, and device switch. Per-demodulator pushes use non-blocking `try_push()` and can silently drop newest when a queue is full. SDRPostThread never blocks on any consumer.
 
 ### Stage 3: Demodulator Pre-Processing
 
@@ -104,7 +115,8 @@ Manages RtAudio hardware output using a **controller/bound** pattern:
 
 | Queue Name | Type | Producer | Consumer | Max |
 |------------|------|----------|----------|-----|
-| `pipeSDRIQData` | `SDRThreadIQDataQueue` | SDRThread | SDRPostThread | 100 |
+| `pipeSDRIQData` | `SDRThreadIQDataQueue` | SDRThread | SDRPacerThread | 100 |
+| `pipePacedIQData` | `SDRThreadIQDataQueue` | SDRPacerThread | SDRPostThread | 4 |
 | `pipeIQVisualData` | `DemodulatorThreadInputQueue` | SDRPostThread | SpectrumVisualDataThread (main spectrum) | 1 |
 | `pipeWaterfallIQVisualData` | `DemodulatorThreadInputQueue` | SDRPostThread | FFTVisualDataThread (waterfall) | 128 |
 | `pipeDemodIQVisualData` | `DemodulatorThreadInputQueue` | SDRPostThread | SpectrumVisualDataThread (demod spectrum) | 1 |
@@ -166,4 +178,4 @@ DemodulatorThread
     +--[audioVisOutputQueue]--> ScopeVisualProcessor --> ScopeCanvas (UI thread)
 ```
 
-For the visual data processing pipeline internals (VisualProcessor, distributors, FFT processing, ScopeVisualProcessor), see [visual-data-pipeline.md](visual-data-pipeline.md). For the canvas pull model and rendering flow (OnIdle vs OnPaint), see [visual-rendering.md](visual-rendering.md).
+For the visual data processing pipeline internals (VisualProcessor, distributors, FFT processing, ScopeVisualProcessor), see [visual-data-pipeline.md](visual-data-pipeline.md). For the canvas pull model and rendering flow (frameUpdate vs OnPaint), see [visual-rendering.md](visual-rendering.md).

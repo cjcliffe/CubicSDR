@@ -88,6 +88,20 @@ std::string DeviceConfig::getDeviceName() {
     return tmp;
 }
 
+void DeviceConfig::resetToDefaults() {
+    std::lock_guard < std::mutex > lock(busy_lock);
+    ppm.store(0);
+    offset.store(0);
+    agcMode.store(true);
+    sampleRate.store(0);
+    antennaName.clear();
+    deviceName.clear();
+    streamOpts.clear();
+    settings.clear();
+    gains.clear();
+    rigIF.clear();
+}
+
 void DeviceConfig::save(DataNode *node) {
 
     std::lock_guard < std::mutex > lock(busy_lock);
@@ -304,11 +318,13 @@ AppConfig::AppConfig() {
     winH.store(0);
     winMax.store(false);
     showTips.store(true);
-    perfMode.store(PERF_NORMAL);
+    frameRate.store(FRAME_NORMAL);
+    dspMode.store(DSP_NORMAL);
+    streamPacing.store(true);
     themeId.store(0);
     fontScale.store(0);
     snap.store(1);
-    centerFreq.store(100000000);
+    centerFreq.store(98000000); // Middle of the FM broadcast band (88-108 MHz).
     waterfallLinesPerSec.store(DEFAULT_WATERFALL_LPS);
     spectrumAvgSpeed.store(0.65f);
     dbOffset.store(0);
@@ -391,12 +407,28 @@ bool AppConfig::getShowTips() {
     return showTips.load();
 }
 
-void AppConfig::setPerfMode(PerfModeEnum show) {
-    perfMode.store(show);
+void AppConfig::setFrameRate(FrameRateEnum mode) {
+    frameRate.store(mode);
 }
 
-AppConfig::PerfModeEnum AppConfig::getPerfMode() {
-    return perfMode.load();
+AppConfig::FrameRateEnum AppConfig::getFrameRate() {
+    return frameRate.load();
+}
+
+void AppConfig::setDspMode(DspModeEnum mode) {
+    dspMode.store(mode);
+}
+
+AppConfig::DspModeEnum AppConfig::getDspMode() {
+    return dspMode.load();
+}
+
+void AppConfig::setStreamPacing(bool enabled) {
+    streamPacing.store(enabled);
+}
+
+bool AppConfig::getStreamPacing() {
+    return streamPacing.load();
 }
 
 wxRect *AppConfig::getWindow() {
@@ -513,6 +545,26 @@ std::string AppConfig::getRecordingPath() {
     return recordingPath;
 }
 
+void AppConfig::setLastDeviceId(std::string deviceId_in) {
+    lastDeviceId = deviceId_in;
+}
+
+std::string AppConfig::getLastDeviceId() {
+    return lastDeviceId;
+}
+
+bool AppConfig::isRecordingPathValid() {
+    string recPathStr = getRecordingPath();
+    
+    if (recPathStr.empty()) {
+        return false;
+    }
+    
+    wxFileName recPath(recPathStr);
+    
+    return recPath.Exists() && recPath.IsDirWritable();
+}
+
 bool AppConfig::verifyRecordingPath() {
     string recPathStr = wxGetApp().getConfig()->getRecordingPath();
     
@@ -522,9 +574,7 @@ bool AppConfig::verifyRecordingPath() {
         return false;
     }
     
-    wxFileName recPath(recPathStr);
-    
-    if (!recPath.Exists() || !recPath.IsDirWritable()) {
+    if (!isRecordingPathValid()) {
         wxMessageBox( wxT("Recording path does not exist or is not writable.  Please use 'Set Recording Path' from the 'Recording' Menu."), wxT("Recording Path Error"), wxICON_INFORMATION);
         
         return false;
@@ -588,11 +638,14 @@ bool AppConfig::save() {
 
         *window_node->newChild("max") = winMax.load();
         *window_node->newChild("tips") = showTips.load();
-        *window_node->newChild("perf_mode") = (int)perfMode.load();
+        *window_node->newChild("frame_rate") = (int)frameRate.load();
+        *window_node->newChild("dsp_mode") = (int)dspMode.load();
+        *window_node->newChild("stream_pacing") = streamPacing.load();
         *window_node->newChild("theme") = themeId.load();
         *window_node->newChild("font_scale") = fontScale.load();
         *window_node->newChild("snap") = snap.load();
         *window_node->newChild("center_freq") = centerFreq.load();
+        *window_node->newChild("last_device") = lastDeviceId;
         *window_node->newChild("waterfall_lps") = waterfallLinesPerSec.load();
         *window_node->newChild("spectrum_avg") = spectrumAvgSpeed.load();
         *window_node->newChild("modemprops_collapsed") = modemPropsCollapsed.load();
@@ -687,7 +740,7 @@ bool AppConfig::load() {
 
     if (cfg.rootNode()->hasAnother("window")) {
         int x = 0 ,y = 0 ,w = 0 ,h = 0;
-        int max = 0 ,tips = 0 ,perf_mode = 0 ,mpc = 0;
+        int max = 0 ,tips = 0 ,mpc = 0;
         
         DataNode *win_node = cfg.rootNode()->getNext("window");
         
@@ -715,15 +768,48 @@ bool AppConfig::load() {
         }
 
         // default:
-        perfMode.store(PERF_NORMAL);
+        frameRate.store(FRAME_NORMAL);
+        dspMode.store(DSP_NORMAL);
 
-        if (win_node->hasAnother("perf_mode")) {
+        bool hasFrameRate = false;
+        if (win_node->hasAnother("frame_rate")) {
+            int frame_rate = 0;
+            win_node->getNext("frame_rate")->element()->get(frame_rate);
+            hasFrameRate = true;
+
+            if (frame_rate == (int)FRAME_LOW) {
+                frameRate.store(FRAME_LOW);
+            } else if (frame_rate == (int)FRAME_HIGH) {
+                frameRate.store(FRAME_HIGH);
+            }
+        }
+
+        bool hasDspMode = false;
+        if (win_node->hasAnother("dsp_mode")) {
+            int dsp_mode = 0;
+            win_node->getNext("dsp_mode")->element()->get(dsp_mode);
+            hasDspMode = true;
+
+            if (dsp_mode == (int)DSP_ENHANCED) {
+                dspMode.store(DSP_ENHANCED);
+            }
+        }
+
+        if (win_node->hasAnother("stream_pacing")) {
+            int pacing = 0;
+            win_node->getNext("stream_pacing")->element()->get(pacing);
+            streamPacing.store(pacing != 0);
+        }
+
+        if (!hasFrameRate && !hasDspMode && win_node->hasAnother("perf_mode")) {
+            int perf_mode = 0;
             win_node->getNext("perf_mode")->element()->get(perf_mode);
 
-            if (perf_mode == (int)PERF_LOW) {
-                perfMode.store(PERF_LOW);
-            } else if (perf_mode == (int)PERF_HIGH) {
-                perfMode.store(PERF_HIGH);
+            if (perf_mode == (int)FRAME_LOW) {
+                frameRate.store(FRAME_LOW);
+            } else if (perf_mode == (int)FRAME_HIGH) {
+                frameRate.store(FRAME_HIGH);
+                dspMode.store(DSP_ENHANCED);
             }
         }
        
@@ -749,6 +835,10 @@ bool AppConfig::load() {
             long long freqVal = 0;
             win_node->getNext("center_freq")->element()->get(freqVal);
             centerFreq.store(freqVal);
+        }
+
+        if (win_node->hasAnother("last_device")) {
+            lastDeviceId = win_node->getNext("last_device")->element()->toString();
         }
 
         if (win_node->hasAnother("waterfall_lps")) {

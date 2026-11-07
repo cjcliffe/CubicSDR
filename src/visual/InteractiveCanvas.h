@@ -15,6 +15,10 @@ public:
     InteractiveCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
     ~InteractiveCanvas() override;
 
+    // Called once per frame-timer tick by the owning frame; replaces the
+    // former per-canvas EVT_IDLE repaint driver.
+    virtual void frameUpdate() {}
+
     long long getFrequencyAt(float x);
     long long getFrequencyAt(float x, long long iqCenterFreq, long long iqBandwidth);
     

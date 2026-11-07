@@ -9,7 +9,7 @@
 - Well-organized modules: SDR I/O, demodulation, audio, visualization, and modem plugins
 - Threading model: Producer-consumer pattern with blocking queues for SDR -> demod -> audio pipeline
 - Build: single CMakeLists.txt plus CMakePresets.json, driven by the unified stdlib-only build.py for Windows/macOS/Linux
-- Vendored deps: lodepng, tinyxml, rtaudio, cubicvr2, hamlib, liquid-dsp in `external/`
+- Vendored deps: lodepng, tinyxml, rtaudio, cubicvr2, hamlib in `external/`
 
 ## Key Weaknesses
 

@@ -61,6 +61,9 @@ public:
     void setRigIF(int rigType, long long freq);
     long long getRigIF(int rigType);
 
+    // Restore factory state; keeps the device id since it keys this entry.
+    void resetToDefaults();
+
     void save(DataNode *node);
     void load(DataNode *node);
 
@@ -84,10 +87,15 @@ private:
 class AppConfig {
 public:
 
-    enum PerfModeEnum {
-        PERF_LOW = 0,
-        PERF_NORMAL = 1,
-        PERF_HIGH = 2
+    enum FrameRateEnum {
+        FRAME_LOW = 0,
+        FRAME_NORMAL = 1,
+        FRAME_HIGH = 2
+    };
+
+    enum DspModeEnum {
+        DSP_NORMAL = 0,
+        DSP_ENHANCED = 1
     };
 
 
@@ -107,8 +115,14 @@ public:
     void setShowTips(bool show);
     bool getShowTips();
 
-    void setPerfMode(PerfModeEnum mode);
-    PerfModeEnum getPerfMode();
+    void setFrameRate(FrameRateEnum mode);
+    FrameRateEnum getFrameRate();
+
+    void setDspMode(DspModeEnum mode);
+    DspModeEnum getDspMode();
+
+    void setStreamPacing(bool enabled);
+    bool getStreamPacing();
     
     void setTheme(int themeId_in);
     int getTheme();
@@ -149,6 +163,9 @@ public:
 	//Recording settings:
     void setRecordingPath(std::string recPath);
     std::string getRecordingPath();
+    void setLastDeviceId(std::string deviceId_in);
+    std::string getLastDeviceId();
+	bool isRecordingPathValid();
 	bool verifyRecordingPath();
 
 	void setRecordingSquelchOption(int enumChoice);
@@ -204,9 +221,12 @@ private:
     std::vector<SDRManualDef> manualDevices;
     std::atomic_bool bookmarksVisible{};
 
-    std::atomic<PerfModeEnum> perfMode{};
+    std::atomic<FrameRateEnum> frameRate{};
+    std::atomic<DspModeEnum> dspMode{};
+    std::atomic_bool streamPacing{true};
 
     std::string recordingPath;
+    std::string lastDeviceId;
 	int recordingSquelchOption = 0;
 	int recordingFileTimeLimitSeconds = 0;
 #if USE_HAMLIB

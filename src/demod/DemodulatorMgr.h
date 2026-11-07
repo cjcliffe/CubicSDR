@@ -17,13 +17,13 @@ public:
     ~DemodulatorMgr();
 
     DemodulatorInstancePtr newThread();
-   
+
     //return snapshot-copy of the list purposefully
     std::vector<DemodulatorInstancePtr> getDemodulators();
 
     std::vector<DemodulatorInstancePtr> getOrderedDemodulators(bool actives = true);
     std::vector<DemodulatorInstancePtr> getDemodulatorsAt(long long freq, int bandwidth);
-    
+
     DemodulatorInstancePtr getPreviousDemodulator(const DemodulatorInstancePtr& demod, bool actives = true);
     DemodulatorInstancePtr getNextDemodulator(const DemodulatorInstancePtr& demod, bool actives = true);
     DemodulatorInstancePtr getLastDemodulator();
@@ -33,13 +33,10 @@ public:
 
     void terminateAll();
 
-    void setActiveDemodulator(const DemodulatorInstancePtr& demod, bool temporary = true);
+    // Select a demodulator; passing nullptr deselects. The visual
+    // output queue always follows the selection.
+    void setActiveDemodulator(const DemodulatorInstancePtr& demod);
 
-    //Dangerous: this is only intended by some internal classes,
-    // and only set a pre-existing demod
-    void setActiveDemodulatorByRawPointer(DemodulatorInstance* demod, bool temporary = true);
-
-    DemodulatorInstancePtr getActiveContextModem();
     DemodulatorInstancePtr getCurrentModem();
     DemodulatorInstancePtr getLastDemodulatorWith(const std::string& type,
 												const std::wstring& userLabel,
@@ -63,7 +60,7 @@ public:
 
     bool isLastSquelchEnabled() const;
     void setLastSquelchEnabled(bool lastSquelchEnabled_in);
-    
+
     bool isLastMuted() const;
     void setLastMuted(bool lastMuted_in);
 
@@ -71,25 +68,23 @@ public:
     void setLastModemSettings(const std::string&, ModemSettings);
 
     void updateLastState();
-    
+
     void setOutputDevices(std::map<int,RtAudio::DeviceInfo> devs);
     std::map<int, RtAudio::DeviceInfo> getOutputDevices();
     void saveInstance(DataNode *node, const DemodulatorInstancePtr& inst);
-	
+
     DemodulatorInstancePtr loadInstance(DataNode *node);
 
 
 private:
 
-    //utility method that attempts to decode node value as std::wstring, else as std::string, else 
+    //utility method that attempts to decode node value as std::wstring, else as std::string, else
     //return an empty string.
     static std::wstring getSafeWstringValue(DataNode* node);
 
     std::vector<DemodulatorInstancePtr> demods;
-    
-    DemodulatorInstancePtr activeContextModem;
+
     DemodulatorInstancePtr currentModem;
-    DemodulatorInstancePtr activeVisualDemodulator;
 
     int lastBandwidth;
     std::string lastDemodType;
@@ -99,11 +94,11 @@ private:
     float lastGain;
     bool lastMuted;
     bool lastDeltaLock;
-    
+
     //protects access to demods lists and such, need to be recursive
-    //because of the usage of public re-entrant methods 
+    //because of the usage of public re-entrant methods
     std::recursive_mutex demods_busy;
-   
+
     std::map<std::string, ModemSettings> lastModemSettings;
     std::map<int,RtAudio::DeviceInfo> outputDevices;
 };

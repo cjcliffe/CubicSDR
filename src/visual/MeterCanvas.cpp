@@ -19,10 +19,10 @@
 #include <algorithm>
 
 wxBEGIN_EVENT_TABLE(MeterCanvas, wxGLCanvas) EVT_PAINT(MeterCanvas::OnPaint)
-EVT_IDLE(MeterCanvas::OnIdle)
 EVT_MOTION(MeterCanvas::OnMouseMoved)
 EVT_LEFT_DOWN(MeterCanvas::OnMouseDown)
 EVT_LEFT_UP(MeterCanvas::OnMouseReleased)
+EVT_LEFT_DCLICK(MeterCanvas::OnMouseDoubleClicked)
 EVT_MOUSEWHEEL(MeterCanvas::OnMouseWheelMoved)
 EVT_RIGHT_DOWN(MeterCanvas::OnMouseRightDown)
 EVT_RIGHT_UP(MeterCanvas::OnMouseRightReleased)
@@ -31,7 +31,7 @@ EVT_ENTER_WINDOW(MeterCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
 MeterCanvas::MeterCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
-        InteractiveCanvas(parent, dispAttrs), level(0), level_min(0), level_max(1), inputValue(0), userInputValue(0), showUserInput(true) {
+        InteractiveCanvas(parent, dispAttrs), level(0), level_min(0), level_max(1), inputValue(0), userInputValue(0), defaultValue(0), hasDefault(false), suppressNextRelease(false), showUserInput(true) {
 
     glContext = new MeterContext(this, &wxGetApp().GetContext(this), wxGetApp().GetContextAttributes());
 }
@@ -64,6 +64,11 @@ void MeterCanvas::setUserInputValue(float slider_in) {
 void MeterCanvas::setInputValue(float slider_in) {
     userInputValue = inputValue = slider_in;
     Refresh();
+}
+
+void MeterCanvas::setDefaultValue(float default_in) {
+    defaultValue = default_in;
+    hasDefault = true;
 }
 
 bool MeterCanvas::inputChanged() const {
@@ -103,12 +108,8 @@ void MeterCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     SwapBuffers();
 }
 
-void MeterCanvas::OnIdle(wxIdleEvent &event) {
-	if (mouseTracker.mouseInView()) {
-	    Refresh();
-	} else {
-		event.Skip();
-	}
+void MeterCanvas::frameUpdate() {
+    Refresh();
 }
 
 void MeterCanvas::OnMouseMoved(wxMouseEvent& event) {
@@ -130,8 +131,25 @@ void MeterCanvas::OnMouseDown(wxMouseEvent& event) {
 }
 
 void MeterCanvas::OnMouseReleased(wxMouseEvent& event) {
+    // The base handler clears the tracker's press state, so capture it
+    // first: a release only sets the value if the press began in this view.
+    bool pressedHere = mouseTracker.mouseDown();
     InteractiveCanvas::OnMouseReleased(event);
-    userInputValue = mouseTracker.getMouseY() * (level_max-level_min) + level_min;
+    // A double-click reset is followed by a release at the click position;
+    // that release must not overwrite the restored default value.
+    if (suppressNextRelease) {
+        suppressNextRelease = false;
+    } else if (pressedHere) {
+        userInputValue = mouseTracker.getMouseY() * (level_max-level_min) + level_min;
+    }
+}
+
+void MeterCanvas::OnMouseDoubleClicked(wxMouseEvent& WXUNUSED(event)) {
+    if (hasDefault) {
+        userInputValue = defaultValue;
+        suppressNextRelease = true;
+        Refresh();
+    }
 }
 
 void MeterCanvas::OnMouseRightDown(wxMouseEvent& event) {
@@ -139,8 +157,10 @@ void MeterCanvas::OnMouseRightDown(wxMouseEvent& event) {
 }
 
 void MeterCanvas::OnMouseRightReleased(wxMouseEvent& event) {
+    // As above: ignore a right-button release unless the press began here.
+    bool pressedHere = mouseTracker.mouseRightDown();
     InteractiveCanvas::OnMouseRightReleased(event);
-	if (showUserInput) {
+	if (pressedHere && showUserInput) {
 		userInputValue = level - level * 0.02;
 	}
 }
