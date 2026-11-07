@@ -27,6 +27,7 @@ SpectrumVisualProcessor *FFTVisualDataThread::getProcessor() {
 }
 
 void FFTVisualDataThread::flushPipeline() {
+    fftDistrib.requestReset();
     fftDistrib.flushQueues();
     wproc.flushQueues();
 }
