@@ -114,14 +114,16 @@ TEST_SUITE("SDRPacer") {
     TEST_CASE("stream tracking adopts then reports discontinuities") {
         SDRPacer pacer;
 
-        CHECK(!pacer.noteBlock(2048000, 4));
-        CHECK(!pacer.noteBlock(2048000, 4));
-        CHECK(pacer.noteBlock(1024000, 4));
-        CHECK(pacer.noteBlock(2048000, 2));
+        CHECK(!pacer.noteBlock(2048000, 4, 100000000));
+        CHECK(!pacer.noteBlock(2048000, 4, 100000000));
+        CHECK(pacer.noteBlock(1024000, 4, 100000000));
+        CHECK(pacer.noteBlock(2048000, 2, 100000000));
+        CHECK(pacer.noteBlock(2048000, 4, 100000001));
 
         pacer.reset();
-        CHECK(!pacer.noteBlock(1024000, 4));
-        CHECK(pacer.noteBlock(1024000, 1));
+        CHECK(!pacer.noteBlock(1024000, 4, 100000000));
+        CHECK(pacer.noteBlock(1024000, 1, 100000000));
+        CHECK(pacer.noteBlock(1024000, 4, 99999999));
     }
 
     TEST_CASE("reset clears banked credit") {

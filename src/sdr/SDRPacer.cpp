@@ -13,23 +13,25 @@ constexpr double MAX_BURST_FRAMES = 4.0;
 }
 
 SDRPacer::SDRPacer()
-    : capacity(DEFAULT_CAPACITY), bypass(false), credit(0.0), lastSampleRate(-1), lastNumChannels(-1) {
+    : capacity(DEFAULT_CAPACITY), bypass(false), credit(0.0), lastSampleRate(-1), lastNumChannels(-1), lastFrequency(-1) {
 }
 
 void SDRPacer::reset() {
     credit = 0.0;
     lastSampleRate = -1;
     lastNumChannels = -1;
+    lastFrequency = -1;
 }
 
-bool SDRPacer::noteBlock(long long sampleRate, int numChannels) {
+bool SDRPacer::noteBlock(long long sampleRate, int numChannels, long long frequency) {
     // First block adopts the stream; later ones only report.
     if (lastSampleRate < 0) {
         lastSampleRate = sampleRate;
         lastNumChannels = numChannels;
+        lastFrequency = frequency;
         return false;
     }
-    return sampleRate != lastSampleRate || numChannels != lastNumChannels;
+    return sampleRate != lastSampleRate || numChannels != lastNumChannels || frequency != lastFrequency;
 }
 
 void SDRPacer::setCapacity(int frames) {

@@ -794,6 +794,11 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev, int waitMsForTermination) {
     if (sdrPacerThread && !sdrPacerThread->isTerminated()) {
         sdrPacerThread->requestFlush();
     }
+    // Same for rendered lines: the FFT queue holds old-device waterfall
+    // that would otherwise spool out after the switch.
+    if (appframe && appframe->getWaterfallDataThread()) {
+        appframe->getWaterfallDataThread()->flushPipeline();
+    }
 
     for (SoapySDR::Kwargs::const_iterator i = settingArgs.begin(); i != settingArgs.end(); i++) {
         sdrThread->writeSetting(i->first, i->second);

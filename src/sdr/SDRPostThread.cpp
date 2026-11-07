@@ -262,13 +262,16 @@ void SDRPostThread::flushVisualData() {
     if (iqVisualQueue != nullptr) {
         iqVisualQueue->flush();
     }
+    if (iqActiveDemodVisualQueue != nullptr) {
+        iqActiveDemodVisualQueue->flush();
+    }
 }
 
 // Run without any processing; each demod gets the full SDR bandwidth to handle on it's own
 void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
     bool refreshed = false;
     
-    if (sampleRate != data_in->sampleRate || doRefresh.load()) {
+    if (sampleRate != data_in->sampleRate) {
         sampleRate = data_in->sampleRate;
         flushVisualData();
         numChannels = 1;
@@ -436,7 +439,7 @@ void SDRPostThread::initPFBCH() {
 
 void SDRPostThread::runPFBCH(SDRThreadIQData *data_in) {
     bool refreshed = false;
-    if (numChannels != data_in->numChannels || sampleRate != data_in->sampleRate || chanMode != lastChanMode || doRefresh.load()) {
+    if (numChannels != data_in->numChannels || sampleRate != data_in->sampleRate || chanMode != lastChanMode) {
         numChannels = data_in->numChannels;
         sampleRate = data_in->sampleRate;
         flushVisualData();
@@ -493,7 +496,7 @@ void SDRPostThread::initPFBCH2() {
 
 void SDRPostThread::runPFBCH2(SDRThreadIQData *data_in) {
     bool refreshed = false;
-    if (numChannels != data_in->numChannels || sampleRate != data_in->sampleRate || chanMode != lastChanMode || doRefresh.load()) {
+    if (numChannels != data_in->numChannels || sampleRate != data_in->sampleRate || chanMode != lastChanMode) {
         numChannels = data_in->numChannels;
         sampleRate = data_in->sampleRate;
         flushVisualData();

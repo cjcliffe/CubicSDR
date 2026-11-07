@@ -30,7 +30,7 @@ public:
     // Notes an incoming block's stream. Returns true when it differs from
     // the running one; the caller must then discard everything buffered,
     // reset, and note the block again to adopt the new stream.
-    bool noteBlock(long long sampleRate, int numChannels);
+    bool noteBlock(long long sampleRate, int numChannels, long long frequency);
 
     // One tick of schedule. emit counts queued blocks to forward (up to
     // the burst bound, so late ticks catch up instead of losing time;
@@ -55,4 +55,5 @@ private:
     // Running stream identity; a change means the caller must flush.
     long long lastSampleRate;
     int lastNumChannels;
+    long long lastFrequency;
 };

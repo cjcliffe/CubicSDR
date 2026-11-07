@@ -670,6 +670,9 @@ void SDRThread::updateSettings() {
         // so the stream resumes live instead of lagging behind them.
         if (tuned) {
             drainStream();
+            // Our own overflow stash holds pre-tune samples too; drop them
+            // so they are not packed into the first post-tune block.
+            numOverflow = 0;
         }
     }
    
