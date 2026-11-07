@@ -273,6 +273,9 @@ Landed units:
   drops its saved settings and bandwidth and rebuilds the modem with
   defaults; the selector reports the re-click and the tips mention it.
   Live-verified.
+- [x] Branch review fixes — full-branch review swept crash risks, UX
+  bugs, flush-chain gaps, robustness, cleanup, and docs; the fixes
+  landed across phased merges and the working review plan is retired.
 
 ## Validation Plan
 
@@ -424,3 +427,6 @@ above always reflects the current state.
 
 - Demod-type re-click reset (`e0266f5`): saved settings dropped,
   modem rebuilt with defaults. Live-verified.
+
+- Branch review fixes: crash risks, UX bugs, flush gaps, robustness,
+  cleanup, and doc sweep. Live-verified.
