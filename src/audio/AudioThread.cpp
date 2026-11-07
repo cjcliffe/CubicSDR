@@ -8,6 +8,11 @@
 #include "DemodulatorInstance.h"
 #include <mutex>
 
+// Buffers kept when resuming onto an empty current input: a deeper backlog
+// is stale startup buildup and is dropped, while a shallow one is live audio
+// after a brief stall and plays through in order below.
+#define AUDIOTHREAD_RESUME_KEEP_BUFFERS (8)
+
 //50 ms
 #define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
 
@@ -130,15 +135,18 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
                 continue;
             }
 
-            // Drop any backlog queued while the stream was starting: only the
-            // newest buffer is still live. The queue normally holds a few
-            // buffers of jitter, which play through in order below.
+            // A deep backlog is stale startup buildup, so keep only the newest
+            // handful; a shallow one is live audio after a brief stall and plays
+            // through in order. Either way playback starts immediately below:
+            // skipping this callback would add a full buffer of silence to
+            // every resume.
             AudioThreadInputPtr fresh;
-            while (srcmix->inputQueue->try_pop(fresh)) {
+            while (srcmix->inputQueue->size() > AUDIOTHREAD_RESUME_KEEP_BUFFERS) {
+                if (!srcmix->inputQueue->try_pop(fresh)) {
+                    break;
+                }
                 srcmix->currentInput = fresh;
             }
-
-            continue;
         }
 
         if (srcmix->currentInput->sampleRate != src->getSampleRate()) {
