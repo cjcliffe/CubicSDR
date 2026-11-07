@@ -26,8 +26,8 @@ public:
     };
 
     // Advance the schedule by dtSeconds with queueDepth lines waiting.
-    // Assumes each planned pop succeeds, which holds while the caller
-    // drains under its queue lock.
+    // The caller guards every pop, so a queue that comes up short only
+    // shortens the frame.
     Plan plan(double dtSeconds, size_t queueDepth);
 
 private:

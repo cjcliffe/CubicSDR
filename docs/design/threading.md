@@ -94,7 +94,7 @@ Atomic variables signal parameter changes between UI and worker threads. Boolean
 - `sdrEnumThreadNotify` sets `std::atomic_bool` flags (`devicesReady` on `SDR_ENUM_DEVICES_READY`, `devicesFailed` on `SDR_ENUM_FAILED`); `sdrThreadNotify` stores messages but does not set these flags
 - The UI polls these in `SDRDevices` dialog via `getNotification()`
 - Note: `sdrThreadNotify` with `SDR_THREAD_INITIALIZED` also calls `appframe->initDeviceParams()` directly — a cross-thread write to internal AppFrame state (pointer + `deviceChanged` atomic flag, no UI widget manipulation)
-- Worker threads also set atomic flags for UI updates: `DemodulatorWorkerThread` calls `notifyUpdateModemProperties()` which sets `AppFrame::modemPropertiesUpdated`; UI polls this in `OnIdle()`
+- Worker threads also set atomic flags for UI updates: `DemodulatorWorkerThread` calls `notifyUpdateModemProperties()` which sets `AppFrame::modemPropertiesUpdated`; the frame tick polls this in `processFrame()` (via `handleModemProperties()`)
 
 ### Pattern 6: VisualProcessor Pipeline (Threaded Distribution)
 
@@ -107,7 +107,7 @@ Atomic variables signal parameter changes between UI and worker threads. Boolean
 
 ### Pattern 7: UI-Thread Processing (ScopeVisualProcessor)
 
-- `ScopeVisualProcessor` has **no dedicated thread** — it runs on the wxWidgets main thread via `AppFrame::handleScopeProcessor()`, called from `AppFrame::OnIdle()`
+- `ScopeVisualProcessor` has **no dedicated thread** — it runs on the wxWidgets main thread via `AppFrame::handleScopeProcessor()`, called from `processFrame()` on the frame tick
 - Data path: `DemodulatorThread` → `pipeAudioVisualData` queue → `ScopeVisualProcessor::process()` (UI thread) → `ScopeCanvas::inputData` queue → `ScopeCanvas::OnPaint()`
 - `process()` uses non-blocking `try_pop()`, so the UI thread never blocks waiting for audio data
 - This differs from `SpectrumVisualProcessor` and `FFTVisualDataThread`, which each run on dedicated `IOThread` instances
@@ -243,7 +243,7 @@ Windows and Linux use default thread priorities.
 
 The UI thread is **primarily pull-based**:
 
-1. `AppFrame` runs a frame timer (paced by the performance mode) that calls `processFrame()` for panel and device state, then `frameUpdate()` on every registered canvas in order. The former per-canvas `EVT_IDLE` repaint drivers are removed. Timer ticks keep arriving while native menu tracking runs its modal loop, which would starve idle events. See [visual-rendering.md](visual-rendering.md) "Frame-Timer Processing" for per-canvas details.
+1. `AppFrame` runs a frame timer (paced by the Frame Rate setting) that calls `processFrame()` for panel and device state, then `frameUpdate()` on every registered canvas in order. With no device streaming the timer parks at an idle rate instead of the configured frame rate. On Windows the tick comes from a multimedia timer that keeps firing while native menu tracking runs its modal loop, so animation continues while menus are open; other platforms use a plain timer there. See [visual-rendering.md](visual-rendering.md) "Frame-Timer Processing" for per-canvas details.
 2. Visual data flows are pull-based: worker threads push to queues, UI canvases pull via `try_pop()` — `WaterfallCanvas` in `frameUpdate()`, `SpectrumCanvas` and `ScopeCanvas` at the top of `OnPaint()`
 3. Shared state uses `std::atomic` variables (frequency, signal levels, mute state)
 4. UI-initiated changes go through atomic variables and flags, not wx events

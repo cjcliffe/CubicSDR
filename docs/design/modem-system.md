@@ -160,6 +160,8 @@ Squelch is computed entirely within `DemodulatorThread` — no modem code partic
 
 Runtime modem switching: PreThread nulls out modem/kit immediately (packets dropped until worker finishes), then adopts new modem/kit when worker responds.
 
+Re-clicking the active type in the demod selector resets it: the saved per-type settings and bandwidth are dropped and the modem rebuilds with defaults.
+
 ## Modem Settings
 
 Most modems expose no configurable parameters. The following override `getSettings()`:

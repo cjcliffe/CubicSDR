@@ -66,6 +66,7 @@ Displays the FFT spectrum line plot. Linked to `WaterfallCanvas`:
 - Receives FFT data from its own `visualDataQueue`
 - Supports dB scale display and dB offset
 - Right-drag adjusts visual gain (vertical scale factor)
+- Visual gain lives in the spectrum processors, not the canvases: setting it fans out to the main, waterfall, and demod-view processors, so every view moves together. Right-drag, SHIFT+arrow keys, and right-click reset all converge on that shared factor.
 - Uses `SpectrumPanel` for rendering
 
 ### ScopeCanvas (`src/visual/ScopeCanvas.h`)
@@ -461,7 +462,7 @@ All canvases follow the same rendering pattern in `OnPaint()`:
 
 ### Frame-Timer Processing
 
-`AppFrame` runs a frame timer (paced by the performance mode) that calls `processFrame()` for panel and device state, then `frameUpdate()` on every registered canvas in order. Timer-driven repaints keep animating while native menu tracking starves idle events, which per-canvas `EVT_IDLE` handlers could not survive:
+`AppFrame` runs a frame timer (paced by the Frame Rate setting) that calls `processFrame()` for panel and device state, then `frameUpdate()` on every registered canvas in order. With no device streaming the timer parks at an idle rate instead of the configured frame rate. On Windows the tick comes from a multimedia timer that keeps firing while native menu tracking runs its modal loop, so animation continues while menus are open (other platforms use a plain timer there):
 
 | Canvas | frameUpdate Behavior |
 |--------|----------------|
@@ -493,6 +494,10 @@ OnPaint():
     │
     └── SwapBuffers()
 ```
+
+### Waterfall Ring Assembly
+
+Line upload is split from GL: the headless `WaterfallRing` (`src/visual/WaterfallRing.h`) quantizes spectrum lines, buffers them, and describes each upload newest-first with wrap handling (`planUpload()` / `commitUpload()`), while `WaterfallPanel` executes the returned ops with texture calls. Pure memory math with no GL or I/O, so the assembly rules are unit-testable; the panel owns the textures and marks the ring ready.
 
 ### ScopeCanvas Paint Flow (Detailed)
 

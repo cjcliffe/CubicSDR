@@ -36,8 +36,8 @@ established:
   corrected to the ITU allocation, microwave and utility bands added, and
   range selection clamps to the sample rate.
 - The frame pump ran full rate with nothing to show — the timer now parks
-  at an idle rate with no device streaming, and high-performance mode
-  restores the full rate.
+  at an idle rate with no device streaming, and follows the Frame Rate
+  setting otherwise.
 - The devices dialog had no way back to factory settings, forgot the last
   device, and titled the window with the driver label — Reset Properties
   restores defaults including the live sample rate, Start doubles as Stop,
@@ -105,7 +105,8 @@ Landed units:
 - [x] Hover-targeted quick keys, record button, tooltips (`a019d13`)
   - `M`/`V`/`R` act on the hovered demod in the waterfall, with
     active-demod fallback elsewhere
-  - `D`/`C` and nudge `[`/`]` hover-only in the waterfall
+  - `D` hover-only; `C` hover-or-cursor; nudge `[`/`]` hover in the
+    waterfall with active fallback outside
   - `V` works everywhere; green `R` record button above the `M` mute
     button
   - descriptive tips with key names for Peak/Mute/Solo/Record/Pin
@@ -185,7 +186,7 @@ Landed units:
   extracted to headless `WaterfallRing` in `visual/` with doctest coverage
   of the assembly rules; canvas keeps sizing checks and GL upload.
 - [x] Idle-aware frame pump (`59ae542`) — timer parks at a low rate with no
-  device streaming; high-performance mode restores the full rate.
+  device streaming, following the Frame Rate setting otherwise.
 - [x] Devices dialog reset (`cf73a10`)
   - `DeviceConfig::resetToDefaults()` restores factory state, keeping the
     device id; reset stores the concrete nearest-to-default sample rate so
@@ -223,7 +224,7 @@ Landed units:
   TODOs are gone.
 - [x] Stream pacing and rate-switch hygiene (`9f5626c`)
   - `SDRPacerThread` meters full frames at a fixed 60Hz gate between
-    `SDRThread` and `SDRPostThread`; gap when dry, drop-oldest past
+    `SDRThread` and `SDRPostThread`; waits on input when dry, drop-oldest past
     cap, bypass mode for the toggle, selective flush on discontinuity
   - headless `SDRPacer` model with doctest coverage of gating, backlog
     bound, and credit-forgiveness rules
@@ -268,6 +269,10 @@ Landed units:
   twice-steady ceiling against hitches), so maximum lines-per-second
   renders fully even at the lowest frame rate; pacer tests updated
   and extended.
+- [x] Demod-type re-click reset (`e0266f5`) — clicking the active type
+  drops its saved settings and bandwidth and rebuilds the modem with
+  defaults; the selector reports the re-click and the tips mention it.
+  Live-verified.
 
 ## Validation Plan
 
@@ -280,7 +285,7 @@ Landed units:
   - bookmark nudge without tree flashing
   - menu-open animation; waterfall evenness under drag and load
   - slider resets; Ctrl+B
-  - high/normal/low performance modes
+  - low/normal/high frame rates
   - frame pump at rest with no device; streaming and minimized behavior
   - devices dialog reset idle and streaming; Start/Stop cycling; rename in
     tree and title; auto-select on open and across restart
@@ -312,8 +317,9 @@ above always reflects the current state.
   select or SHIFT-create; red means an imminent move; spectrum selection
   uses the yellow ghost tint; wash alpha zeroed on leave. Live-verified.
 - Quick keys, record button, tooltips (`a019d13`): hover-targeted `M`/`V`/`R`
-  with active fallback outside the waterfall, hover-only `D`/`C`/nudge,
-  global `V`, green `R` button, descriptive tips. Live-verified.
+  with active fallback outside the waterfall, hover-only `D`,
+  hover-or-cursor `C`, nudge with active fallback outside, global `V`,
+  green `R` button, descriptive tips. Live-verified.
 - Single-selection design docs (`cb803d2`).
 - Bookmark in-place refresh (`b9ad1e1`): nudge no longer rebuilds the tree.
   Live-verified.
@@ -366,13 +372,13 @@ above always reflects the current state.
 - Demod-view canvas keys: `D`/`C`/`E` re-dispatched to the demod
   waterfall canvas under the cursor, `B` to its spectrum; matches the
   hover status tips. Live-verified.
-- Waterfall pacing model: insert/drop schedule unit-tested (6 cases);
+- Waterfall pacing model: insert/drop schedule unit-tested;
   canvas keeps the queue drain, sizing checks, and GL upload.
 - Waterfall ring assembly (`a3ce133`, `684dc20`): wrap geometry extracted
   to headless `WaterfallRing`; canvas keeps sizing and GL upload.
   Live-verified.
 - Idle-aware frame pump (`59ae542`): timer parks at a low rate with no
-  device; full rate restored when streaming or in high-performance mode.
+  device, following the Frame Rate setting when streaming.
   Live-verified.
 - Devices dialog reset (`cf73a10`): factory-default reset with deferred
   apply, PPM/AGC settings, Start/Stop toggle, rename sync, active/last
@@ -415,3 +421,6 @@ above always reflects the current state.
 - Flush waterfall backlog on retune: display tracks the knob.
 - Time-scaled waterfall insertion cap: requested LPS honored at any
   frame rate, hitch ceiling preserved, tests extended.
+
+- Demod-type re-click reset (`e0266f5`): saved settings dropped,
+  modem rebuilt with defaults. Live-verified.
