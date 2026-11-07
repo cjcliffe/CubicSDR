@@ -106,4 +106,21 @@ TEST_SUITE("WaterfallPacer") {
         CHECK(plan.insert == 106);
         CHECK(plan.dropBefore == 182);
     }
+
+    TEST_CASE("negative time is clamped, not wrapped") {
+        WaterfallPacer pacer;
+        pacer.setLinesPerSecond(30);
+
+        // Time never runs backward: a negative share behaves like zero,
+        // inserting nothing and leaving no corrupt credit behind.
+        WaterfallPacer::Plan plan = pacer.plan(-5.0, 10);
+        CHECK(plan.insert == 0);
+        CHECK(plan.dropBefore == 1);
+        CHECK(plan.dropAfter == 0);
+
+        WaterfallPacer::Plan again = pacer.plan(-5.0, 10);
+        CHECK(again.insert == 0);
+        CHECK(again.dropBefore == 1);
+        CHECK(again.dropAfter == 0);
+    }
 }

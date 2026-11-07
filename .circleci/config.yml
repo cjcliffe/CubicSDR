@@ -184,6 +184,7 @@ jobs:
           command: |
             New-Item -ItemType Directory -Force dist | Out-Null
             Move-Item build\windows\CubicSDR-*.exe dist\
+            if (-not (Test-Path dist\CubicSDR-*.exe)) { throw 'nsis artifact missing from dist/' }
       - store_artifacts:
           path: dist
 workflows:
