@@ -74,13 +74,13 @@ AudioThread (per-demod, "bound") ---bindThread()---> AudioThread (controller)
 
 ### Audio Mixing (Real-Time)
 
-The `audioCallback` function runs in the RtAudio real-time thread:
+The `audioCallback` function runs in the RtAudio real-time thread. It only handles locking, thread state, and device rate; all per-voice mixing lives in the headless `AudioMixer` model, covered by `tests/test_AudioMixer.cpp`:
 
 1. Zero the output buffer
 2. Lock the controller mutex
 3. For each bound thread:
    - Lock the bound thread's mutex
-   - Skip if terminated, inactive, queue missing, or queue empty
+   - Skip if terminated, inactive, or queue missing; an empty queue alone never skips while `currentInput` still holds samples
    - If `currentInput` is null, pop a packet from the queue; on success, drop a deep backlog down to the newest handful and mix the popped packet immediately
    - If `currentInput` sample rate doesn't match the controller's, pop and discard packets until a match is found or the queue is exhausted; skip the thread if no match
    - If `currentInput` has zero channels or empty data and the queue has more items, pop the next packet; otherwise skip the thread
@@ -91,8 +91,8 @@ The `audioCallback` function runs in the RtAudio real-time thread:
 
 Key properties:
 - **Buffer size:** The RtAudio buffer is 1024 frames by default (`nBufferFrames`), which at a 48 kHz device rate yields ~21 ms of audio per buffer (latency varies with the configured device sample rate)
-- **Sample rate matching:** When `currentInput` is null the callback pops a packet and checks its rate against the controller's in the same pass. On mismatch it pops and discards packets until the incoming rate settles, skipping mixing until a later pass picks up a matching packet. When a packet is exhausted mid-mixing and the next is popped inline, no rate check is performed.
-- **Backlog drop:** When popping onto an empty `currentInput`, the callback drops a deep backlog down to the newest handful (`AUDIOTHREAD_RESUME_KEEP_BUFFERS`); buffers accumulate while a stream is starting, so without this the first seconds of playback would lag the live input. A shallow queue after a brief stall is live audio and plays through in order with no added silence
+- **Sample rate matching:** When `currentInput` is null the callback pops a packet and checks its rate against the controller's in the same pass. On mismatch it pops and discards packets until a matching one arrives, then mixes it in the same pass; if the queue exhausts first the stale buffer unloads and the voice stays silent. When a packet is exhausted mid-mixing and the next is popped inline, no rate check is performed.
+- **Backlog drop:** When popping onto an empty `currentInput`, the callback drops anything older than `AUDIOTHREAD_RESUME_KEEP_MS` behind the newest buffer; buffers accumulate while a stream is starting, so without this the first seconds of playback would lag the live input. A queue within the window after a brief stall is live audio and plays through in order with no added silence
 - **Underflow handling:** If a bound thread runs out of data, the callback continues with the next thread. RtAudio buffer underflows (reported via `status` flag) are counted in the controller's `underflowCount` field
 - **Gain staging:** Per-thread `gain` (0.0–2.0, default 1.0) is applied as samples are summed into the mix (`data[i]*gain`); global normalization prevents clipping
 
@@ -252,12 +252,14 @@ Design constraints:
 - RtAudio stream options include `SCHED_FIFO` priority (guarded by `#ifndef _MSC_VER`)
 
 **Windows:**
-- Default thread priorities used
+- Process runs at above-normal priority; per-thread priorities stay default
 - RtAudio configured with `RTAUDIO_SCHEDULE_REALTIME` (the flag is set on all platforms; only the `SCHED_FIFO` priority is `#ifndef _MSC_VER`-guarded)
 
 ## Buffer Management
 
 `DemodulatorThread` uses `ReBuffer<AudioThreadInput>` (defined in `IOThread.h`) to pool audio output buffers. For the full pool mechanics (reuse logic, GC thresholds, warning thresholds), see [signal-flow.md](signal-flow.md) "Buffer Management".
+
+Each mixer holds its first mix until its queue has accumulated 150 ms of production (`AUDIOTHREAD_PREBUFFER_MS`), building a lead that scheduling stalls burn instead of live audio. The hold resets per mixer on bind and for all mixers on stream (re)start, at the cost of that much live-monitoring latency; recording and I/Q feeds use separate queues and are unaffected.
 
 ## Muting
 

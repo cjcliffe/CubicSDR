@@ -179,6 +179,27 @@ public:
         m_cond_not_full.notify_all();
         return true;
     }
+    bool try_front(value_type& item) {
+        std::lock_guard < SpinMutex > lock(m_mutex);
+
+        if (m_queue.empty()) {
+            return false;
+        }
+
+        item = m_queue.front();
+        return true;
+    }
+
+    bool try_back(value_type& item) {
+        std::lock_guard < SpinMutex > lock(m_mutex);
+
+        if (m_queue.empty()) {
+            return false;
+        }
+
+        item = m_queue.back();
+        return true;
+    }
 
 
     /**

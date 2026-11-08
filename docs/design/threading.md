@@ -223,7 +223,7 @@ The actual thread join/cleanup happens in `isTerminated()`, which is called from
 
 **DemodulatorInstance destructor timeout:** If `~DemodulatorInstance()` exceeds 3000ms waiting for termination, the spin-wait loop exits and thread objects (`demodulatorPreThread`, `demodulatorThread`, `audioThread`, `audioSinkThread`) are never deleted — a resource leak.
 
-## Thread Priorities (macOS)
+## Thread Priorities
 
 On macOS, threads are assigned scheduling priorities:
 
@@ -237,7 +237,7 @@ On macOS, threads are assigned scheduling priorities:
 
 Note: SDR Thread has `SCHED_FIFO` priority code but the entire `#ifdef __APPLE__` block is commented out (as is the main wxWidgets thread's `SCHED_RR` block in `CubicSDR.cpp`).
 
-Windows and Linux use default thread priorities.
+Linux uses default thread priorities. The Windows process itself runs at above-normal priority so sample work keeps its share against other apps; per-thread priorities stay default, since elevating producers above the visual threads they shed load to starves the consumers and burns CPU in the drain loops instead.
 
 ## wxWidgets Integration
 
