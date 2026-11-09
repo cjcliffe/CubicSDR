@@ -86,6 +86,12 @@ private:
 
     DemodulatorInstancePtr currentModem;
 
+    // Outgoing selection, for delete fallback; cleared when it is deleted.
+    DemodulatorInstancePtr previousModem;
+
+    // Mass termination skips delete fallback; the selection dies with the last demod.
+    bool terminatingAll = false;
+
     int lastBandwidth;
     std::string lastDemodType;
     bool lastDemodLock;
