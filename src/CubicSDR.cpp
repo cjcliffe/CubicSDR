@@ -17,6 +17,7 @@
 #include "CubicSDR.h"
 
 #ifdef _WIN32
+#include <windows.h>
 #include <mmsystem.h>
 #endif
 
@@ -193,6 +194,11 @@ bool CubicSDR::OnInit() {
     // The default Windows timer quantum (~15.6ms) beats against the frame
     // timer and waterfall line pacing; request 1ms granularity instead.
     timeBeginPeriod(1);
+    // Sample-critical workloads (multi-channel SDR feeding decoders while the
+    // user works in other apps) keep their CPU share against normal-priority
+    // processes; light use barely registers, so this costs other apps nothing
+    // when idle.
+    SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS);
 #endif
 
 //#ifdef _OSX_APP_

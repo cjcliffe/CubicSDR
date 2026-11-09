@@ -361,6 +361,7 @@ SET (cubicsdr_sources
     src/modules/modem/analog/ModemLSB.cpp
     src/modules/modem/analog/ModemUSB.cpp
     src/audio/AudioThread.cpp
+    src/audio/AudioMixer.cpp
     src/audio/AudioSinkThread.cpp
     src/audio/AudioSinkFileThread.cpp
     src/audio/AudioFile.cpp
