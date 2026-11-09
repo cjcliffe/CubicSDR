@@ -179,6 +179,14 @@ public:
         m_cond_not_full.notify_all();
         return true;
     }
+    
+    /**
+     *  Peeks at the oldest item without removing it, so a consumer can
+     *  inspect both ends (e.g. drop stale backlog by age) without
+     *  disturbing the queue. Never blocks nor signals; the queue is unchanged.
+     * \param[out] item The item.
+     * \return False is returned if no item is available.
+     */
     bool try_front(value_type& item) {
         std::lock_guard < SpinMutex > lock(m_mutex);
 
@@ -190,6 +198,12 @@ public:
         return true;
     }
 
+    /**
+     *  Peeks at the newest item without removing it. Never blocks nor
+     *  signals; the queue is unchanged.
+     * \param[out] item The item.
+     * \return False is returned if no item is available.
+     */
     bool try_back(value_type& item) {
         std::lock_guard < SpinMutex > lock(m_mutex);
 

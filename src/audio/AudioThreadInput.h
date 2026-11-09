@@ -19,6 +19,8 @@ public:
     float peak{};
     int type{};
     bool is_squelch_active{};
+    // Steady-clock milliseconds when demodulation produced this buffer; the
+    // mixer drains buildup older than its keep window by this stamp.
     long long producedMs{};
 
     std::vector<float> data;

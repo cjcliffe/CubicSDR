@@ -81,7 +81,7 @@ The `audioCallback` function runs in the RtAudio real-time thread. It only handl
 3. For each bound thread:
    - Lock the bound thread's mutex
    - Skip if terminated, inactive, or queue missing; an empty queue alone never skips while `currentInput` still holds samples
-   - If `currentInput` is null, pop a packet from the queue; on success, drop a deep backlog down to the newest handful and mix the popped packet immediately
+   - If `currentInput` is null, drop backlog older than `AUDIOTHREAD_RESUME_KEEP_MS` and pop a packet from the queue, mixing it immediately
    - If `currentInput` sample rate doesn't match the controller's, pop and discard packets until a match is found or the queue is exhausted; skip the thread if no match
    - If `currentInput` has zero channels or empty data and the queue has more items, pop the next packet; otherwise skip the thread
    - Mix samples from `currentInput` into the output buffer (mono: duplicate to L+R; stereo: direct mix), advancing `audioQueuePtr` and popping the next packet from the queue as needed when the current packet is exhausted mid-mixing

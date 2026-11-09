@@ -139,6 +139,7 @@ void DemodulatorThread::run() {
         }
 
         cModem->demodulate(cModemKit, &modemData, ati.get());
+        // Stamp production time for the mixer's age-based stale drain.
         if (ati) {
             ati->producedMs = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now().time_since_epoch()).count();

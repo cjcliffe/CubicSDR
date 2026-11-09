@@ -276,6 +276,12 @@ Landed units:
 - [x] Branch review fixes — full-branch review swept crash risks, UX
   bugs, flush-chain gaps, robustness, cleanup, and docs; the fixes
   landed across phased merges and the working review plan is retired.
+- [x] Audio jitter fixes (`e80be44`, `74c9cec`) — resume play-through,
+  150 ms prebuffer, empty-queue strand fix, 200 ms time-based drain,
+  headless `AudioMixer` model with unit tests, above-normal process
+  class (MMCSS guard evaluated and removed). Live-verified: 2 MHz
+  silent under switching; 10 MHz residual under heavy load declared
+  machine wall. Full record in `docs/plans/audio-jitter.md`.
 
 ## Validation Plan
 
@@ -430,3 +436,7 @@ above always reflects the current state.
 
 - Branch review fixes: crash risks, UX bugs, flush gaps, robustness,
   cleanup, and doc sweep. Live-verified.
+- Audio jitter fixes (`e80be44`, `74c9cec`): resume play-through,
+  prebuffer, strand fix, time drain, mixer model with tests,
+  above-normal class (MMCSS evaluated and removed). Live-verified;
+  full record in `docs/plans/audio-jitter.md`.
