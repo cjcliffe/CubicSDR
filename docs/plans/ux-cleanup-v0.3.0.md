@@ -281,7 +281,7 @@ Landed units:
   headless `AudioMixer` model with unit tests, above-normal process
   class (MMCSS guard evaluated and removed). Live-verified: 2 MHz
   silent under switching; 10 MHz residual under heavy load declared
-  machine wall. Full record in `docs/plans/audio-jitter.md`.
+  machine wall.
 
 ## Validation Plan
 
@@ -314,6 +314,13 @@ Landed units:
 - High line-rate settings depend on sample rate for actual throughput; the
   consumer cap keeps motion smooth but cannot invent lines the samples do not
   support.
+
+- Deleting the selected demodulator strands a null selection: nothing
+  re-selects a survivor, so the demod view freezes and
+  selection-targeted controls detach until the user re-clicks.
+- An NVIDIA driver present worker can spin about 8% CPU from a startup
+  race until any focus switch parks it (environmental; needs no code
+  change, do not re-investigate as application load).
 
 ## Amendments
 
@@ -438,5 +445,7 @@ above always reflects the current state.
   cleanup, and doc sweep. Live-verified.
 - Audio jitter fixes (`e80be44`, `74c9cec`): resume play-through,
   prebuffer, strand fix, time drain, mixer model with tests,
-  above-normal class (MMCSS evaluated and removed). Live-verified;
-  full record in `docs/plans/audio-jitter.md`.
+  above-normal class (MMCSS evaluated and removed). Live-verified.
+- Retired the audio-jitter plan; the fix stack and wall declaration are
+  recorded in the checklist above, the deferred re-select and driver
+  CPU note under Risks.
