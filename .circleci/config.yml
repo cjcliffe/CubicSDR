@@ -195,30 +195,31 @@ workflows:
           filters:
             tags:
               ignore: /.*/
-      - appimage:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
-      - deb:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
-      - dmg-x64:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
-      - dmg-arm64:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
+      # PARKED for the NSIS test run; restore after (appimage, deb, dmg-x64, dmg-arm64).
+      # - appimage:
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
+      # - deb:
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
+      # - dmg-x64:
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
+      # - dmg-arm64:
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
       - nsis:
           filters:
             branches:
