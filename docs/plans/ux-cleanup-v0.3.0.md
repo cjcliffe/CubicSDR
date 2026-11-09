@@ -282,6 +282,14 @@ Landed units:
   class (MMCSS guard evaluated and removed). Live-verified: 2 MHz
   silent under switching; 10 MHz residual under heavy load declared
   machine wall.
+- [x] Focus fixes (`bcbe516`)
+  - deleting the selected demodulator re-selects the previous
+    demodulator when still in view, else the first in view, else
+    nothing; fallback rule in `DemodReselect` with unit tests
+  - closing the SDR Devices dialog returns focus to the main window
+  - pruning an out-of-range selection releases its scope binding so a
+    later reactivation cannot feed the scope as a ghost
+  Live-verified.
 
 ## Validation Plan
 
@@ -315,9 +323,6 @@ Landed units:
   consumer cap keeps motion smooth but cannot invent lines the samples do not
   support.
 
-- Deleting the selected demodulator strands a null selection: nothing
-  re-selects a survivor, so the demod view freezes and
-  selection-targeted controls detach until the user re-clicks.
 - An NVIDIA driver present worker can spin about 8% CPU from a startup
   race until any focus switch parks it (environmental; needs no code
   change, do not re-investigate as application load).
@@ -449,3 +454,6 @@ above always reflects the current state.
 - Retired the audio-jitter plan; the fix stack and wall declaration are
   recorded in the checklist above, the deferred re-select and driver
   CPU note under Risks.
+- Focus fixes (`bcbe516`): delete re-selects in-view previous-or-first
+  with a tested fallback rule, dialog close refocuses the main window,
+  pruned selection releases its scope binding. Live-verified.
