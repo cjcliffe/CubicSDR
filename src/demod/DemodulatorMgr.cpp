@@ -6,6 +6,7 @@
 #include <string>
 
 #include "CubicSDR.h"
+#include "DemodReselect.h"
 
 #if USE_HAMLIB
 #include "RigThread.h"
@@ -51,12 +52,14 @@ void DemodulatorMgr::terminateAll() {
 
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
     
+    terminatingAll = true;
     while (!demods.empty()) {
 
         DemodulatorInstancePtr d = demods.back();
         demods.pop_back();
         deleteThread(d);
     }
+    terminatingAll = false;
 }
 
 std::vector<DemodulatorInstancePtr> DemodulatorMgr::getDemodulators() {
@@ -157,6 +160,28 @@ void DemodulatorMgr::deleteThread(const DemodulatorInstancePtr& demod) {
         demods.erase(i);
     }
 
+    if (previousModem == demod) {
+        previousModem = nullptr;
+    }
+
+    // A delete re-selects while demods remain in view: the previously
+    // selected demod when it is still in view, else the first demod in
+    // view; nothing in view leaves a null selection rather than
+    // grabbing an off-screen demod. Mass termination skips this.
+    if (!terminatingAll && currentModem == nullptr && !demods.empty()) {
+        std::vector<long long> freqs;
+        freqs.reserve(demods.size());
+        int prevIndex = -1;
+        for (size_t idx = 0; idx < demods.size(); idx++) {
+            if (demods[idx] == previousModem) {
+                prevIndex = (int)idx;
+            }
+            freqs.push_back(demods[idx]->getFrequency());
+        }
+        int picked = DemodReselect::pick(freqs, prevIndex, wxGetApp().getFrequency(), wxGetApp().getSampleRate());
+        setActiveDemodulator(picked >= 0 ? demods[(size_t)picked] : nullptr);
+    }
+
     //Ask for termination
     demod->setActive(false);
     demod->terminate();
@@ -204,6 +229,13 @@ bool DemodulatorMgr::anyDemodulatorsAt(long long freq, int bandwidth) {
 void DemodulatorMgr::setActiveDemodulator(const DemodulatorInstancePtr& demod) {
 
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
+
+    // Remember the outgoing selection for delete fallback; a deselect
+    // leaves the previous pick intact so deleting the current demod
+    // still finds it.
+    if (demod && demod != currentModem) {
+        previousModem = currentModem;
+    }
 
     if (currentModem && currentModem != demod) {
         currentModem->setVisualOutputQueue(nullptr);
@@ -263,6 +295,9 @@ void DemodulatorMgr::updateLastState() {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
 
     if (currentModem && (std::find(demods.begin(), demods.end(), currentModem) == demods.end() || !currentModem->isActive())) {
+        // Pruned selection releases its visual binding like any deselect;
+        // otherwise a later reactivation feeds the scope as a ghost.
+        currentModem->setVisualOutputQueue(nullptr);
         currentModem = nullptr;
     }
 

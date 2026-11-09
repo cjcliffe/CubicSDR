@@ -48,6 +48,12 @@ void SDRDevicesDialog::OnClose( wxCloseEvent& /* event */) {
         applyResetDefaults();
     }
     wxGetApp().setDeviceSelectorClosed();
+    // A closing dialog returns focus to the main window; the OS fails to
+    // restore it when the frame was never activated, as on first load.
+    if (!wxGetApp().isShuttingDown() && wxGetApp().getAppFrame()) {
+        wxGetApp().getAppFrame()->Raise();
+        wxGetApp().getAppFrame()->SetFocus();
+    }
     Destroy();
 }
 
