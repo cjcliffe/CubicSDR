@@ -665,8 +665,10 @@ void CubicSDR::setOffset(long long ofs) {
 void CubicSDR::setAntennaName(const std::string& name) {
     antennaName = name;
 
-    // An empty name means the driver default, so only forward real selections.
-    if (sdrThread && !name.empty()) {
+    // Always forward, even empty (driver default): the thread persists
+    // every name but only pokes the driver for real selections, so
+    // picking default clears the previously saved antenna.
+    if (sdrThread) {
         sdrThread->setAntenna(antennaName);
     }
 }

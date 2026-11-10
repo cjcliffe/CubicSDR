@@ -439,6 +439,7 @@ int SDRThread::readStream(const SDRThreadIQDataQueuePtr& iqDataOutQueue) {
         dataOut->data.resize(n_read);
 
         dataOut->frequency = frequency.load();
+        dataOut->rfFrequency = frequency.load() - offset.load();
         dataOut->sampleRate = sampleRate.load();
         dataOut->dcCorrected = hasHardwareDC.load();
         dataOut->numChannels = numChannels.load();
@@ -584,7 +585,12 @@ void SDRThread::updateSettings() {
         //2.3 Device-specific workarounds:
         // TODO: explore bandwidth setting option to see if this is necessary for others
         if (device->getDriverKey() == "bladeRF") {
-            device->setBandwidth(SOAPY_SDR_RX, 0, sampleRate.load());
+            try {
+                device->setBandwidth(SOAPY_SDR_RX, 0, sampleRate.load());
+            }
+            catch (...) {
+                std::cout << "SDRThread: Exception while setting bladeRF bandwidth." << std::endl << std::flush;
+            }
         }
 
         //3. Re-activate stream:
@@ -860,7 +866,9 @@ long long SDRThread::getOffset() {
 void SDRThread::setAntenna(const std::string& name) {
     std::lock_guard < std::mutex > lock(antenna_busy);
     antennaName = name;
-    antenna_changed.store(true);
+    // Empty selects the driver default: persist it like any name, but
+    // leave the driver alone (an empty select call errors on some drivers).
+    antenna_changed.store(!name.empty());
 
     DeviceConfig *devConfig = deviceConfig.load();
     if (devConfig) {

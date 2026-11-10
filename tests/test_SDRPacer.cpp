@@ -174,4 +174,36 @@ TEST_SUITE("SDRPacer") {
         CHECK(plan.drop == INT_MAX - pacer.getCapacity());
         CHECK(plan.emit == 0);
     }
+
+    TEST_CASE("re-enabling pacing drops stale credit") {
+        SDRPacer pacer;
+
+        // Bank a full burst while dry, then bypass and re-enable: the
+        // frozen credit must not pay out as frames after the return.
+        pacer.plan(1.0, 0);
+        pacer.setBypass(true);
+        CHECK(pacer.isBypassed());
+        SDRPacer::Plan bypassed = pacer.plan(0.0, 3);
+        CHECK(bypassed.emit == 3);
+        pacer.setBypass(false);
+        CHECK(!pacer.isBypassed());
+
+        SDRPacer::Plan plan = pacer.plan(0.0, 5);
+        CHECK(plan.emit == 0);
+        CHECK(plan.waitSeconds == doctest::Approx(1.0 / 60.0));
+    }
+
+    TEST_CASE("repeat bypass calls preserve banked credit") {
+        SDRPacer pacer;
+        pacer.plan(1.0, 0);
+
+        // The pacer thread re-applies the state every tick; same-value
+        // calls must not zero the allowance mid-stream.
+        pacer.setBypass(false);
+        pacer.setBypass(false);
+
+        SDRPacer::Plan plan = pacer.plan(0.0, 5);
+        CHECK(plan.emit == 4);
+        CHECK(plan.drop == 0);
+    }
 }

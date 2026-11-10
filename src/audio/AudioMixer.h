@@ -26,7 +26,15 @@ struct MixerVoice {
     size_t audioQueuePtr{};
     float gain{1.0f};
     bool prebufferDone{};
-    long long prebufferStartMs{};
+
+    // Restart state: the stall margin rebuilds from the next production
+    // and anything held from before the restart is dropped, so the first
+    // post-restart mix cannot play stale samples or skip the age drain.
+    void reset() {
+        currentInput = nullptr;
+        audioQueuePtr = 0;
+        prebufferDone = false;
+    }
 };
 
 // Headless audio mixer: sums bound demodulator voices into one output buffer.
@@ -38,10 +46,9 @@ struct MixerVoice {
 class AudioMixer {
 public:
     // Mix one voice into out (stereo float, nFrames per channel), advancing the
-    // voice. deviceRate selects playable buffers; nowMs is steady-clock
-    // milliseconds driving prebuffer timing. Returns the voice peak
+    // voice. deviceRate selects playable buffers. Returns the voice peak
     // contribution for the normalization pass (0 when the voice stays silent).
-    static double mixVoice(MixerVoice &voice, float *out, unsigned int nFrames, int deviceRate, long long nowMs);
+    static double mixVoice(MixerVoice &voice, float *out, unsigned int nFrames, int deviceRate);
 
     // Scale the mixed buffer when the summed peak exceeds full scale.
     static void normalize(float *out, unsigned int nFrames, double peak);

@@ -58,8 +58,7 @@ void AudioThread::resetAllPrebuffers() {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
     for (auto srcmix : boundThreads) {
-        srcmix->mixer.prebufferDone = false;
-        srcmix->mixer.prebufferStartMs = 0;
+        srcmix->mixer.reset();
     }
 }
 
@@ -69,9 +68,9 @@ void AudioThread::bindThread(AudioThread *other) {
 
     if (std::find(boundThreads.begin(), boundThreads.end(), other) == boundThreads.end()) {
         boundThreads.push_back(other);
-        // New mixers rebuild their stall margin from the next production.
-        other->mixer.prebufferDone = false;
-        other->mixer.prebufferStartMs = 0;
+        // A newly bound mixer rebuilds its stall margin from the next
+        // production and drops anything held from a past activation.
+        other->mixer.reset();
     }
 }
 
@@ -124,8 +123,6 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
 
     double peak = 0.0;
 
-    long long nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::steady_clock::now().time_since_epoch()).count();
     int deviceRate = src->getSampleRate();
 
     //Process the bound threads audio:
@@ -141,7 +138,7 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
             continue;
         }
 
-        peak += AudioMixer::mixVoice(srcmix->mixer, out, nBufferFrames, deviceRate, nowMs);
+        peak += AudioMixer::mixVoice(srcmix->mixer, out, nBufferFrames, deviceRate);
     }
 
     AudioMixer::normalize(out, nBufferFrames, peak);
@@ -483,16 +480,17 @@ void AudioThread::setActive(bool state) {
         return;
     }
 
+    // Flush before (un)binding: the bind opens the mixing window, so
+    // activating onto a stale backlog would play pre-activation audio.
+    if (mixer.inputQueue) {
+        mixer.inputQueue->flush();
+    }
+
     if (state && !active && mixer.inputQueue) {
         matchingControllerThread->bindThread(this);
     }
     else if (!state && active) {
         matchingControllerThread->removeThread(this);
-    }
-
-    // Activity state changing, clear any inputs
-    if (mixer.inputQueue) {
-        mixer.inputQueue->flush();
     }
     active = state;
 }

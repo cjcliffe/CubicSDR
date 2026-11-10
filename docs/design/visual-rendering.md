@@ -469,7 +469,7 @@ All canvases follow the same rendering pattern in `OnPaint()`:
 | `WaterfallCanvas` | `processInputQueue()` + `Refresh()` |
 | `SpectrumCanvas`, `ScopeCanvas` | `Refresh()` |
 | `Meters`, tuner, gain | `Refresh()` (plus drag/gain polling where applicable) |
-| Mode buttons | `Refresh()` only while hovered; state changes refresh explicitly |
+| Mode buttons | `Refresh()` every frame while pulsing (record button), else only while hovered; state changes refresh explicitly |
 
 `WaterfallCanvas` is the only canvas that polls its input queue in `frameUpdate()` via `processInputQueue()`. `SpectrumCanvas` and `ScopeCanvas` process their input queues inside `OnPaint()` instead (via `try_pop()` at the start of the paint handler). All canvases use non-blocking `try_pop()` to avoid stalling the UI thread. `Refresh()` is always called to drive animations (zoom interpolation, hover alpha decay, frequency nudge velocity) even when no new data is available.
 
@@ -673,7 +673,7 @@ Key presses go to the canvas under the cursor: demod tuner, main waterfall, spec
 |-----|--------|
 | `D` / `Delete` | Remove the hovered demodulator |
 | `C` | Center on the hovered demodulator, or on the cursor frequency over empty space |
-| `E` | Rename the active demodulator |
+| `E` | Rename the hovered demodulator, or the active one when none is hovered |
 | `B` | Toggle dB display on the hovered spectrum canvas |
 
 ### Middle-Drag Glide Zoom

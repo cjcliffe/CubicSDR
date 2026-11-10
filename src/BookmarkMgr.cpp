@@ -678,9 +678,7 @@ void BookmarkMgr::removeActive(const DemodulatorInstancePtr& demod) {
 		return;
 	}
 
-	//Delete demodulator
-	wxGetApp().getDemodMgr().setActiveDemodulator(nullptr);
-	wxGetApp().removeDemodulator(demod);
+	//Delete demodulator (deleteThread clears + reselects when current)
 	wxGetApp().getDemodMgr().deleteThread(demod);
 }
 

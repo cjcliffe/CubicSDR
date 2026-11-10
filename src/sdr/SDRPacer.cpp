@@ -45,7 +45,13 @@ int SDRPacer::getCapacity() const {
 }
 
 void SDRPacer::setBypass(bool bypass_in) {
-    bypass = bypass_in;
+    // A transition drops banked credit: bypass freezes it, so re-enable
+    // would otherwise emit stale-credit frames. Same-value calls (the
+    // pacer thread re-applies this every tick) must preserve it.
+    if (bypass_in != bypass) {
+        bypass = bypass_in;
+        credit = 0.0;
+    }
 }
 
 bool SDRPacer::isBypassed() const {

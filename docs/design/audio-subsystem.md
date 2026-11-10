@@ -83,7 +83,7 @@ The `audioCallback` function runs in the RtAudio real-time thread. It only handl
    - Skip if terminated, inactive, or queue missing; an empty queue alone never skips while `currentInput` still holds samples
    - If `currentInput` is null, drop backlog older than `AUDIOTHREAD_RESUME_KEEP_MS` and pop a packet from the queue, mixing it immediately
    - If `currentInput` sample rate doesn't match the controller's, pop and discard packets until a match is found or the queue is exhausted; skip the thread if no match
-   - If `currentInput` has zero channels or empty data and the queue has more items, pop the next packet; otherwise skip the thread
+   - If `currentInput` has zero channels, more than two channels, or empty data and the queue has more items, pop the next packet for the following pass and stay silent this pass; otherwise skip the thread
    - Mix samples from `currentInput` into the output buffer (mono: duplicate to L+R; stereo: direct mix), advancing `audioQueuePtr` and popping the next packet from the queue as needed when the current packet is exhausted mid-mixing
    - Apply per-thread gain
 4. If total peak > 1.0, normalize the output buffer
@@ -91,7 +91,7 @@ The `audioCallback` function runs in the RtAudio real-time thread. It only handl
 
 Key properties:
 - **Buffer size:** The RtAudio buffer is 1024 frames by default (`nBufferFrames`), which at a 48 kHz device rate yields ~21 ms of audio per buffer (latency varies with the configured device sample rate)
-- **Sample rate matching:** When `currentInput` is null the callback pops a packet and checks its rate against the controller's in the same pass. On mismatch it pops and discards packets until a matching one arrives, then mixes it in the same pass; if the queue exhausts first the stale buffer unloads and the voice stays silent. When a packet is exhausted mid-mixing and the next is popped inline, no rate check is performed.
+- **Sample rate matching:** When `currentInput` is null the callback pops a packet and checks its rate against the controller's in the same pass. On mismatch it pops and discards packets until a matching one arrives, then mixes it in the same pass; if the queue exhausts first the stale buffer unloads and the voice stays silent. A packet exhausted mid-mixing pops the next inline with the same rate filter, and a mid-mix channel change ends the pass so the next pass restarts with the new shape.
 - **Backlog drop:** When popping onto an empty `currentInput`, the callback drops anything older than `AUDIOTHREAD_RESUME_KEEP_MS` behind the newest buffer; buffers accumulate while a stream is starting, so without this the first seconds of playback would lag the live input. A queue within the window after a brief stall is live audio and plays through in order with no added silence
 - **Underflow handling:** If a bound thread runs out of data, the callback continues with the next thread. RtAudio buffer underflows (reported via `status` flag) are counted in the controller's `underflowCount` field
 - **Gain staging:** Per-thread `gain` (0.0–2.0, default 1.0) is applied as samples are summed into the mix (`data[i]*gain`); global normalization prevents clipping

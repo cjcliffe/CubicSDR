@@ -6,6 +6,7 @@
 #include <string>
 
 #include "CubicSDR.h"
+#include "AppFrame.h"
 #include "DemodReselect.h"
 
 #if USE_HAMLIB
@@ -170,15 +171,27 @@ void DemodulatorMgr::deleteThread(const DemodulatorInstancePtr& demod) {
     // grabbing an off-screen demod. Mass termination skips this.
     if (!terminatingAll && currentModem == nullptr && !demods.empty()) {
         std::vector<long long> freqs;
+        std::vector<char> activeFlags;
         freqs.reserve(demods.size());
+        activeFlags.reserve(demods.size());
         int prevIndex = -1;
         for (size_t idx = 0; idx < demods.size(); idx++) {
             if (demods[idx] == previousModem) {
                 prevIndex = (int)idx;
             }
             freqs.push_back(demods[idx]->getFrequency());
+            activeFlags.push_back(demods[idx]->isActive() ? 1 : 0);
         }
-        int picked = DemodReselect::pick(freqs, prevIndex, wxGetApp().getFrequency(), wxGetApp().getSampleRate());
+        // The window comes from the main view, not the device: a zoomed
+        // range narrows what counts as in view.
+        long long centerHz = wxGetApp().getFrequency();
+        long long spanHz = wxGetApp().getSampleRate();
+        AppFrame *frame = wxGetApp().getAppFrame();
+        if (frame && frame->getWaterfallCanvas()) {
+            centerHz = frame->getWaterfallCanvas()->getCenterFrequency();
+            spanHz = frame->getWaterfallCanvas()->getBandwidth();
+        }
+        int picked = DemodReselect::pick(freqs, activeFlags, prevIndex, centerHz, spanHz);
         setActiveDemodulator(picked >= 0 ? demods[(size_t)picked] : nullptr);
     }
 
@@ -230,6 +243,14 @@ void DemodulatorMgr::setActiveDemodulator(const DemodulatorInstancePtr& demod) {
 
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
 
+    // Reject targets that left the list between snapshot and set (e.g. a
+    // squelch steal racing a delete): binding first would wipe a live
+    // selection and end null. Inactive members still pass; tuning one
+    // into range reactivates it and the post thread reselects it.
+    if (demod && std::find(demods.begin(), demods.end(), demod) == demods.end()) {
+        return;
+    }
+
     // Remember the outgoing selection for delete fallback; a deselect
     // leaves the previous pick intact so deleting the current demod
     // still finds it.
@@ -266,6 +287,9 @@ void DemodulatorMgr::setActiveDemodulator(const DemodulatorInstancePtr& demod) {
  * @return Current Modem
  */
 DemodulatorInstancePtr DemodulatorMgr::getCurrentModem() {
+    // Locked: the post threads read the selection while UI and post
+    // threads write it; an unlocked shared_ptr copy can tear.
+    std::lock_guard < std::recursive_mutex > lock(demods_busy);
     return currentModem;
 }
 

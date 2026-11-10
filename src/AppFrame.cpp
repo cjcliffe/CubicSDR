@@ -49,6 +49,8 @@ wxBEGIN_EVENT_TABLE(AppFrame, wxFrame)
 EVT_CLOSE(AppFrame::OnClose)
 EVT_MENU(wxID_ANY, AppFrame::OnMenu)
 EVT_TIMER(wxID_FRAME_TIMER, AppFrame::OnFrameTimer)
+EVT_MENU_OPEN(AppFrame::OnMenuOpen)
+EVT_MENU_CLOSE(AppFrame::OnMenuClose)
 EVT_SPLITTER_DCLICK(wxID_ANY, AppFrame::OnDoubleClickSash)
 EVT_SPLITTER_UNSPLIT(wxID_ANY, AppFrame::OnUnSplit)
 wxEND_EVENT_TABLE()
@@ -879,6 +881,14 @@ ModeSelectorCanvas *AppFrame::makeModemSelectorPanel(wxWindow *parent, const wxG
 }
 
 AppFrame::~AppFrame() {
+    // Defensive: OnClose normally stops the pump, but a
+    // Destroy-without-Close path must not leave the timer
+    // firing into a destroyed frame.
+#ifdef _WIN32
+    stopFrameTimer();
+#else
+    frameTimer.Stop();
+#endif
 
     waterfallDataThread->terminate();
     t_FFTData->join();
@@ -2347,9 +2357,12 @@ void AppFrame::stopFrameTimer() {
 #endif
 
 void AppFrame::tickFrame() {
+    userDemodBusy.store(computeUserDemodBusy());
 #ifdef _WIN32
     frameTickPending.store(false);
-    if (scopeCanvas && scopeCanvas->HasFocus()) {
+    // A menu owns keyboard input while open; yanking focus mid-menu would
+    // fight the menu tracking loop.
+    if (!menuOpen && scopeCanvas && scopeCanvas->HasFocus()) {
         waterfallCanvas->SetFocus();
     }
 #endif
@@ -2377,6 +2390,14 @@ void AppFrame::tickFrame() {
 
 void AppFrame::OnFrameTimer(wxTimerEvent& /*event*/) {
     tickFrame();
+}
+
+void AppFrame::OnMenuOpen(wxMenuEvent& /*event*/) {
+    menuOpen = true;
+}
+
+void AppFrame::OnMenuClose(wxMenuEvent& /*event*/) {
+    menuOpen = false;
 }
 
 #ifdef _WIN32
@@ -3010,9 +3031,25 @@ void AppFrame::refreshGainUI() {
 }
 
 bool AppFrame::isUserDemodBusy() {
-    return (modemProps && modemProps->isMouseInView())
-        || (waterfallCanvas->isMouseInView() && waterfallCanvas->isMouseDown())
-        || (demodWaterfallCanvas && demodWaterfallCanvas->isMouseInView() && demodWaterfallCanvas->isMouseDown());
+    return userDemodBusy.load();
+}
+
+bool AppFrame::computeUserDemodBusy() {
+    // Live mouse state, not latched tracker flags: a lost up/leave event
+    // sticks a latch for the rest of the session, which would silently
+    // disable every squelch steal. Runs on the UI thread; the post thread
+    // reads the cached atomic.
+    if (menuOpen) {
+        return true;
+    }
+    wxMouseState mouse = wxGetMouseState();
+    auto over = [&](wxWindow *win) {
+        return win && win->IsShownOnScreen() && win->GetScreenRect().Contains(mouse.GetPosition());
+    };
+    if (over(modemProps)) {
+        return true;
+    }
+    return mouse.LeftIsDown() && (over(waterfallCanvas) || over(demodWaterfallCanvas));
 }
 
 BookmarkView *AppFrame::getBookmarkView() {
@@ -3390,12 +3427,21 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
 }
 
 void AppFrame::updateRecordButtonState(ModeSelectorCanvas *recordButton) {
+    // The path can vanish outside the app, but not sixty times a second:
+    // re-stat at most every few dozen ticks, then only touch the button
+    // when the verdict changed.
+    if (lastRecordPathState >= 0 && ++recordPathCheckTick % 30 != 0) {
+        return;
+    }
     // No recording path means no recording: dim the button and swallow its
     // clicks. The tip still shows on hover and explains what is missing.
     bool noPath = !wxGetApp().getConfig()->isRecordingPathValid();
-    if (recordButton->isDisabled() != noPath) {
-        recordButton->setDisabled(noPath);
+    int state = noPath ? 1 : 0;
+    if (state == lastRecordPathState) {
+        return;
     }
+    lastRecordPathState = state;
+    recordButton->setDisabled(noPath);
     if (noPath) {
         recordButton->setHelpTip("Demodulator Record Toggle (R) - Set a recording path first ('Recording' menu -> 'Set Recording Path').");
     } else {

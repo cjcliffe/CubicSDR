@@ -74,6 +74,7 @@ public:
     long long getViewCenterFreq();
     int getViewBandwidth();
     bool isUserDemodBusy();
+    bool computeUserDemodBusy();
     
     BookmarkView *getBookmarkView();
     void disableSave(bool state);
@@ -123,6 +124,12 @@ private:
     wxTimer frameTimer;
     // Last idle/active state seen by tickFrame(); the timer restarts on change.
     bool lastIdleTickState = false;
+    // Recording-path check state: the filesystem check runs at most every
+    // few dozen ticks, and the button only updates when the verdict flips.
+    int lastRecordPathState = -1;
+    unsigned recordPathCheckTick = 0;
+    // Set while a menu is open so the frame tick leaves focus alone.
+    bool menuOpen = false;
     // Single per-frame update shared by the timer and window-message tick paths.
     // Declared on all platforms; the Windows-only parts of the body stay guarded.
     void tickFrame();
@@ -132,6 +139,9 @@ private:
     unsigned int frameMMTimerId = 0;
     // Set while a tick is posted but not yet processed; drops redundant ticks.
     std::atomic<bool> frameTickPending{ false };
+    // Cached busy gate for the squelch steal: computed live on the UI tick
+    // so a stuck tracker flag can never silence steals, read from any thread.
+    std::atomic<bool> userDemodBusy{ false };
     static void CALLBACK frameMMTimerProc(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2);
     void startFrameTimer();
     void stopFrameTimer();
@@ -216,6 +226,8 @@ private:
     void OnMenu(wxCommandEvent& event);
     void OnClose(wxCloseEvent& event);
     void OnFrameTimer(wxTimerEvent& event);
+    void OnMenuOpen(wxMenuEvent& event);
+    void OnMenuClose(wxMenuEvent& event);
     void processFrame();
     int getFrameIntervalMs();
     void OnDoubleClickSash(wxSplitterEvent& event);

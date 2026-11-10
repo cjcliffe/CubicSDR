@@ -540,7 +540,11 @@ void SDRDevicesDialog::OnTreeDoubleClick( wxMouseEvent& event ) {
         return;
     }
     OnUseSelected(event);
-    Close();
+    // Only a streaming device dismisses the dialog: a debounced repeat
+    // or a failed start leaves it open instead of vanishing.
+    if (dev && dev->isActive()) {
+        Close();
+    }
 }
 
 void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
@@ -685,7 +689,7 @@ std::string SDRDevicesDialog::getSelectedChoiceOption(wxPGProperty* prop, const 
 
 void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
 
-    if (event.GetProperty() == devSettings["name"]) {
+    if (dev && event.GetProperty() == devSettings["name"]) {
         DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
         
         wxString devName = event.GetPropertyValue().GetString();

@@ -39,12 +39,21 @@ InteractiveCanvas(parent, dispAttrs), numChoices(0), currentSelection(-1), toggl
 ModeSelectorCanvas::~ModeSelectorCanvas() = default;
 
 int ModeSelectorCanvas::getHoveredSelection() {
-    if (!mouseTracker.mouseInView()) {
+    if (!mouseTracker.mouseInView() || numChoices <= 0) {
         return -1;
     }
 
     float ypos = 1.0 - (mouseTracker.getMouseY() * 2.0);
-    float yval = (int) (((ypos + 1.0) / 2.0) * (float) numChoices);
+    int yval = (int) (((ypos + 1.0) / 2.0) * (float) numChoices);
+
+    // The top pixel row computes to exactly numChoices; clamp it onto the
+    // last choice instead of indexing past the end.
+    if (yval >= numChoices) {
+        yval = numChoices - 1;
+    }
+    if (yval < 0) {
+        yval = 0;
+    }
 
     return yval;
 }
@@ -132,8 +141,12 @@ void ModeSelectorCanvas::OnMouseReleased(wxMouseEvent& event) {
 
     const wxSize ClientSize = GetClientSize();
 
+    // A release only counts inside the press threshold; macOS does not
+    // lock drags, so without this a drag-release would report a
+    // re-click on the unchanged selection.
+    bool isClick = mouseTracker.getOriginDeltaMouseX() < 2.0 / ClientSize.y;
     int selectedButton = currentSelection;
-    if (mouseTracker.getOriginDeltaMouseX() < 2.0 / ClientSize.y) {
+    if (isClick) {
         selectedButton = getHoveredSelection();
     }
 
@@ -142,7 +155,7 @@ void ModeSelectorCanvas::OnMouseReleased(wxMouseEvent& event) {
     }
     
     // Non-toggle selectors also report re-clicking the current choice.
-    if (currentSelection != selectedButton || (!toggleMode && selectedButton != -1)) {
+    if (currentSelection != selectedButton || (!toggleMode && selectedButton != -1 && isClick)) {
         inputChanged = true;
     }
     

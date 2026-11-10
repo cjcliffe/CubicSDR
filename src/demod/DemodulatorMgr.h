@@ -34,7 +34,8 @@ public:
     void terminateAll();
 
     // Select a demodulator; passing nullptr deselects. The visual
-    // output queue always follows the selection.
+    // output queue always follows the selection. Targets that left the
+    // list are rejected without touching the current selection.
     void setActiveDemodulator(const DemodulatorInstancePtr& demod);
 
     DemodulatorInstancePtr getCurrentModem();

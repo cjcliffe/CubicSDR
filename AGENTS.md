@@ -28,7 +28,7 @@ Built via `python build.py`, which drives the CMake presets, vendored dependenci
 
 - `src/` — Application source (sdr/, demod/, audio/, visual/, modules/modem/, util/)
 - `external/` — Vendored third-party libraries (lodepng, tinyxml, rtaudio, hamlib, cubicvr2)
-- `.circleci/` — CI configuration (builds only, no test execution)
+- `.circleci/` — CI configuration (the Linux build job runs the C++ unit tests; packaging jobs are tag-gated)
 - `font/` — Bitmap fonts
 - `cmake/` — CMake helper modules
 
