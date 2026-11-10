@@ -1400,8 +1400,13 @@ void AppFrame::OnMenu(wxCommandEvent &event) {
 
 
 void AppFrame::toggleBookmarks() {
-    hideBookmarksItem->Check(!hideBookmarksItem->IsChecked());
-    if (hideBookmarksItem->IsChecked()) {
+    // Act on the splitter, not the menu check: activating a check item
+    // flips its native state before the event arrives on macOS (clicks
+    // and shortcut alike), which would undo a manual flip here. The
+    // item stays a pure indicator synced from the panel below.
+    bool willHide = bookmarkSplitter->IsSplit();
+    hideBookmarksItem->Check(willHide);
+    if (willHide) {
         bookmarkSplitter->Unsplit(bookmarkView);
         bookmarkSplitter->Layout();
     } else {
