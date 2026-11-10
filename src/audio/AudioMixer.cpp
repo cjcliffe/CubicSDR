@@ -66,7 +66,9 @@ double AudioMixer::mixVoice(MixerVoice &voice, float *out, unsigned int nFrames,
     }
 
 
-    if (voice.currentInput->channels == 0 || voice.currentInput->data.empty()) {
+    // More than two channels cannot mix into the stereo output; like empty
+    // data, the packet is dropped and the next one plays on a later pass.
+    if (voice.currentInput->channels == 0 || voice.currentInput->channels > 2 || voice.currentInput->data.empty()) {
         if (!voice.inputQueue->empty()) {
             voice.audioQueuePtr = 0;
             if (voice.currentInput) {
@@ -85,6 +87,7 @@ double AudioMixer::mixVoice(MixerVoice &voice, float *out, unsigned int nFrames,
     bool mixed = false;
 
     if (voice.currentInput->channels == 1) {
+        const int firstChannels = voice.currentInput->channels;
 
         for (unsigned int i = 0; i < nFrames; i++) {
 
@@ -95,7 +98,20 @@ double AudioMixer::mixVoice(MixerVoice &voice, float *out, unsigned int nFrames,
                     voice.currentInput = nullptr;
                 }
 
-                if (!voice.inputQueue->try_pop(voice.currentInput)) {
+                // Mid-mix pops take the same rate filter as the top of the
+                // pass: a device rate switch mid-buffer must not mix
+                // wrong-rate audio.
+                while (voice.inputQueue->try_pop(voice.currentInput)) {
+                    if (voice.currentInput && voice.currentInput->sampleRate == deviceRate) {
+                        break;
+                    }
+                    voice.currentInput = nullptr;
+                }
+                // A mid-mix channel change ends the pass: the loop is shaped
+                // for the opening buffer, so the next pass restarts with the
+                // new shape instead of mis-mixing it.
+                if (!voice.currentInput || voice.currentInput->channels != firstChannels) {
+                    voice.currentInput = nullptr;
                     break;
                 }
 
@@ -115,6 +131,7 @@ double AudioMixer::mixVoice(MixerVoice &voice, float *out, unsigned int nFrames,
         }
     }
     else {
+        const int firstChannels = voice.currentInput->channels;
         for (unsigned int i = 0, iMax = voice.currentInput->channels * nFrames; i < iMax; i++) {
 
             if (voice.audioQueuePtr >= voice.currentInput->data.size()) {
@@ -124,7 +141,20 @@ double AudioMixer::mixVoice(MixerVoice &voice, float *out, unsigned int nFrames,
                     voice.currentInput = nullptr;
                 }
 
-                if (!voice.inputQueue->try_pop(voice.currentInput)) {
+                // Mid-mix pops take the same rate filter as the top of the
+                // pass: a device rate switch mid-buffer must not mix
+                // wrong-rate audio.
+                while (voice.inputQueue->try_pop(voice.currentInput)) {
+                    if (voice.currentInput && voice.currentInput->sampleRate == deviceRate) {
+                        break;
+                    }
+                    voice.currentInput = nullptr;
+                }
+                // A mid-mix channel change ends the pass: the loop is shaped
+                // for the opening buffer, so the next pass restarts with the
+                // new shape instead of mis-mixing it.
+                if (!voice.currentInput || voice.currentInput->channels != firstChannels) {
+                    voice.currentInput = nullptr;
                     break;
                 }
 

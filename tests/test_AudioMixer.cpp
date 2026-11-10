@@ -298,6 +298,59 @@ TEST_SUITE("AudioMixer") {
         CHECK(h.mono(0) == 0.0f);
         CHECK(h.voice.currentInput != nullptr);
     }
+
+    TEST_CASE("mid-mix rate change filters inline") {
+        Harness h;
+        h.push(makeBuffer(1, DEVICE_RATE, h.baseMs, ramp(4, 0.1f), 0.1f));
+        h.push(makeBuffer(1, 44100, h.baseMs, std::vector<float>(NFRAMES, 0.9f), 0.9f));
+        h.push(makeBuffer(1, DEVICE_RATE, h.baseMs, ramp(NFRAMES, 0.2f), 0.2f));
+
+        CHECK(h.pass() == doctest::Approx(0.2));
+        CHECK(h.mono(0) == doctest::Approx(0.1f));
+        CHECK(h.mono(3) == doctest::Approx(0.13f));
+        CHECK(h.mono(4) == doctest::Approx(0.2f));
+        CHECK(h.mono(7) == doctest::Approx(0.23f));
+        CHECK(h.voice.inputQueue->size() == 0);
+        CHECK(h.voice.currentInput != nullptr);
+        CHECK(h.voice.audioQueuePtr == 4);
+    }
+
+    TEST_CASE("mid-mix channel change ends the pass") {
+        Harness h;
+        h.push(makeBuffer(1, DEVICE_RATE, h.baseMs, ramp(4, 0.1f), 0.1f));
+        h.push(makeBuffer(2, DEVICE_RATE, h.baseMs, std::vector<float>(16, 0.5f), 0.5f));
+
+        CHECK(h.pass() == doctest::Approx(0.1));
+        CHECK(h.mono(3) == doctest::Approx(0.13f));
+        CHECK(h.mono(4) == 0.0f);
+        CHECK(h.voice.inputQueue->size() == 0);
+        CHECK(h.voice.currentInput == nullptr);
+    }
+
+    TEST_CASE("over-stereo channel count is skipped") {
+        Harness h;
+        h.push(makeBuffer(3, DEVICE_RATE, h.baseMs, std::vector<float>(24, 0.5f), 0.5f));
+        h.push(makeBuffer(1, DEVICE_RATE, h.baseMs, ramp(NFRAMES, 0.3f), 0.3f));
+
+        CHECK(h.pass() == 0.0);
+        CHECK(h.voice.currentInput != nullptr);
+        CHECK(h.voice.inputQueue->size() == 0);
+
+        CHECK(h.pass() == doctest::Approx(0.3));
+        CHECK(h.mono(0) == doctest::Approx(0.3f));
+    }
+
+    TEST_CASE("stereo continues across same-shape buffers") {
+        Harness h;
+        h.push(makeBuffer(2, DEVICE_RATE, h.baseMs, ramp(8, 0.1f), 0.1f));
+        h.push(makeBuffer(2, DEVICE_RATE, h.baseMs, ramp(16, 0.5f), 0.5f));
+
+        CHECK(h.pass() == doctest::Approx(0.5));
+        CHECK(h.out[0] == doctest::Approx(0.1f));
+        CHECK(h.out[7] == doctest::Approx(0.17f));
+        CHECK(h.out[8] == doctest::Approx(0.5f));
+        CHECK(h.out[15] == doctest::Approx(0.57f));
+    }
 }
 
 }  // namespace

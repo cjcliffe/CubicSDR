@@ -287,6 +287,9 @@ void DemodulatorMgr::setActiveDemodulator(const DemodulatorInstancePtr& demod) {
  * @return Current Modem
  */
 DemodulatorInstancePtr DemodulatorMgr::getCurrentModem() {
+    // Locked: the post threads read the selection while UI and post
+    // threads write it; an unlocked shared_ptr copy can tear.
+    std::lock_guard < std::recursive_mutex > lock(demods_busy);
     return currentModem;
 }
 
