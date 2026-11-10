@@ -113,10 +113,12 @@ jobs:
       - run:
           name: Build and run unit tests
           command: |
-            export CMAKE_PREFIX_PATH="$PWD/build/deps"
-            export CUBICSDR_WXCONFIG="$PWD/build/deps/wx/bin/wx-config"
-            export CUBICSDR_SOAPY_CMAKE="$(dirname "$(find build/deps -name SoapySDRConfig.cmake | head -1)")"
-            cmake -S . -B build/macos-tests -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
+            # Raw configure (no preset), so the preset env-to-cache mappings
+            # are passed explicitly.
+            cmake -S . -B build/macos-tests -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_PREFIX_PATH="$PWD/build/deps" \
+              -DwxWidgets_CONFIG_EXECUTABLE="$PWD/build/deps/wx/bin/wx-config" \
+              -DSoapySDR_DIR="$(dirname "$(find build/deps -name SoapySDRConfig.cmake | head -1)")"
             cmake --build build/macos-tests --target cubicsdr_tests --parallel
             ctest --test-dir build/macos-tests --output-on-failure
             python3 tests/test_build.py
@@ -150,10 +152,12 @@ jobs:
       - run:
           name: Build and run unit tests
           command: |
-            export CMAKE_PREFIX_PATH="$PWD/build/deps"
-            export CUBICSDR_WXCONFIG="$PWD/build/deps/wx/bin/wx-config"
-            export CUBICSDR_SOAPY_CMAKE="$(dirname "$(find build/deps -name SoapySDRConfig.cmake | head -1)")"
-            cmake -S . -B build/macos-tests -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
+            # Raw configure (no preset), so the preset env-to-cache mappings
+            # are passed explicitly.
+            cmake -S . -B build/macos-tests -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_PREFIX_PATH="$PWD/build/deps" \
+              -DwxWidgets_CONFIG_EXECUTABLE="$PWD/build/deps/wx/bin/wx-config" \
+              -DSoapySDR_DIR="$(dirname "$(find build/deps -name SoapySDRConfig.cmake | head -1)")"
             cmake --build build/macos-tests --target cubicsdr_tests --parallel
             ctest --test-dir build/macos-tests --output-on-failure
             python3 tests/test_build.py
