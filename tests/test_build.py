@@ -576,11 +576,15 @@ class VerifyBundleInputsTests(unittest.TestCase):
 
     def test_no_app_is_an_error(self):
         from unittest import mock
+        # The app glob scans the real build tree, so a machine with a
+        # built app would find one: force the empty case explicitly.
         with tempfile.TemporaryDirectory() as prefix:
             with mock.patch.object(build.platform, "system",
                                    return_value="Darwin"):
-                with self.assertRaises(SystemExit):
-                    build.verify_macos_bundle_inputs(prefix)
+                with mock.patch.object(build.glob, "glob",
+                                       return_value=[]):
+                    with self.assertRaises(SystemExit):
+                        build.verify_macos_bundle_inputs(prefix)
 
     def _run_gate(self, prefix, app, lib_present):
         from types import SimpleNamespace
