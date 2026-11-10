@@ -111,6 +111,16 @@ jobs:
           name: Build DMG (Intel cross-compile, macOS 11 floor)
           command: python3 build.py --modules default --package dmg --macos-arch x86_64 --macos-min-version 11.0
       - run:
+          name: Build and run unit tests
+          command: |
+            export CMAKE_PREFIX_PATH="$PWD/build/deps"
+            export CUBICSDR_WXCONFIG="$PWD/build/deps/wx/bin/wx-config"
+            export CUBICSDR_SOAPY_CMAKE="$(dirname "$(find build/deps -name SoapySDRConfig.cmake | head -1)")"
+            cmake -S . -B build/macos-tests -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
+            cmake --build build/macos-tests --target cubicsdr_tests --parallel
+            ctest --test-dir build/macos-tests --output-on-failure
+            python3 tests/test_build.py
+      - run:
           name: Collect DMG artifact
           command: |
             ls build/macos/
@@ -137,6 +147,16 @@ jobs:
       - run:
           name: Build DMG (Apple Silicon)
           command: python3 build.py --modules default --package dmg
+      - run:
+          name: Build and run unit tests
+          command: |
+            export CMAKE_PREFIX_PATH="$PWD/build/deps"
+            export CUBICSDR_WXCONFIG="$PWD/build/deps/wx/bin/wx-config"
+            export CUBICSDR_SOAPY_CMAKE="$(dirname "$(find build/deps -name SoapySDRConfig.cmake | head -1)")"
+            cmake -S . -B build/macos-tests -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
+            cmake --build build/macos-tests --target cubicsdr_tests --parallel
+            ctest --test-dir build/macos-tests --output-on-failure
+            python3 tests/test_build.py
       - save_cache:
           key: dmg-arm64-deps-{{ checksum "build.py" }}
           paths:

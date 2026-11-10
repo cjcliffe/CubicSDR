@@ -10,12 +10,12 @@ See also: [Architecture Overview](README.md) | [Threading Model](threading.md) |
 
 ## Running the suite
 
-Configure with `BUILD_TESTING=ON` (default `OFF`), build, then run `ctest --test-dir build/<preset> --output-on-failure`. The `build` CI job enables the flag and runs the suite after the application build; a failing test fails the step and the job.
+Configure with `BUILD_TESTING=ON` (default `OFF`), build, then run `ctest --test-dir build/<preset> --output-on-failure`. The `build` CI job enables the flag and runs the suite after the application build, the macOS packaging jobs run the test target the same way, and CI also runs `tests/test_build.py`; a failing test fails the step and the job.
 
 ## Scope and conventions
 
 - The test target compiles only the sources under test plus the doctest entry point; it never links wxWidgets, OpenGL, SoapySDR, or liquid-dsp.
-- Covered areas include the spin mutex, gradient generator, thread-safe queue (ordering, timeouts, and blocking waits), data elements and nodes with XML round-trips, timers, IO threads, the buffer pool, and frequency formatting/parsing helpers.
+- Covered areas include the spin mutex, gradient generator, thread-safe queue (ordering, timeouts, and blocking waits), data elements and nodes with XML round-trips, timers, IO threads, the buffer pool, frequency formatting/parsing helpers, waterfall ring assembly and pacing, the SDR and audio pacing/mixing models, and the demodulator reselect rule.
 - Timer tests run locked at a fixed framerate so results stay deterministic; the unlocked production path is intentionally untested.
 - Threaded tests favor join-based assertions over timing asserts, with generous waits where a thread must park first.
 - DataTree round-trip tests use a temporary file and remove it afterwards.
