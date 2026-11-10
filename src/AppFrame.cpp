@@ -2357,6 +2357,7 @@ void AppFrame::stopFrameTimer() {
 #endif
 
 void AppFrame::tickFrame() {
+    userDemodBusy.store(computeUserDemodBusy());
 #ifdef _WIN32
     frameTickPending.store(false);
     // A menu owns keyboard input while open; yanking focus mid-menu would
@@ -3030,9 +3031,25 @@ void AppFrame::refreshGainUI() {
 }
 
 bool AppFrame::isUserDemodBusy() {
-    return (modemProps && modemProps->isMouseInView())
-        || (waterfallCanvas->isMouseInView() && waterfallCanvas->isMouseDown())
-        || (demodWaterfallCanvas && demodWaterfallCanvas->isMouseInView() && demodWaterfallCanvas->isMouseDown());
+    return userDemodBusy.load();
+}
+
+bool AppFrame::computeUserDemodBusy() {
+    // Live mouse state, not latched tracker flags: a lost up/leave event
+    // sticks a latch for the rest of the session, which would silently
+    // disable every squelch steal. Runs on the UI thread; the post thread
+    // reads the cached atomic.
+    if (menuOpen) {
+        return true;
+    }
+    wxMouseState mouse = wxGetMouseState();
+    auto over = [&](wxWindow *win) {
+        return win && win->IsShownOnScreen() && win->GetScreenRect().Contains(mouse.GetPosition());
+    };
+    if (over(modemProps)) {
+        return true;
+    }
+    return mouse.LeftIsDown() && (over(waterfallCanvas) || over(demodWaterfallCanvas));
 }
 
 BookmarkView *AppFrame::getBookmarkView() {

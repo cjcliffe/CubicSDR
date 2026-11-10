@@ -74,6 +74,7 @@ public:
     long long getViewCenterFreq();
     int getViewBandwidth();
     bool isUserDemodBusy();
+    bool computeUserDemodBusy();
     
     BookmarkView *getBookmarkView();
     void disableSave(bool state);
@@ -138,6 +139,9 @@ private:
     unsigned int frameMMTimerId = 0;
     // Set while a tick is posted but not yet processed; drops redundant ticks.
     std::atomic<bool> frameTickPending{ false };
+    // Cached busy gate for the squelch steal: computed live on the UI tick
+    // so a stuck tracker flag can never silence steals, read from any thread.
+    std::atomic<bool> userDemodBusy{ false };
     static void CALLBACK frameMMTimerProc(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2);
     void startFrameTimer();
     void stopFrameTimer();
