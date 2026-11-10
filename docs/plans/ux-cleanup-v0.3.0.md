@@ -291,6 +291,10 @@ Landed units:
     later reactivation cannot feed the scope as a ghost
   Live-verified.
 
+- [x] macOS bookmark toggle (`f1788b4`) — toggle reads the splitter
+  instead of flipping the menu check, which macOS pre-flips natively
+  on activation. Live-verified on mac and Windows.
+
 ## Validation Plan
 
 - `python build.py --skip-deps` links clean; `cubicsdr_tests.exe` passes the
@@ -457,3 +461,5 @@ above always reflects the current state.
 - Focus fixes (`bcbe516`): delete re-selects in-view previous-or-first
   with a tested fallback rule, dialog close refocuses the main window,
   pruned selection releases its scope binding. Live-verified.
+- macOS bookmark toggle (`f1788b4`): splitter-truth toggle fixes the
+  native double-flip no-op on menu click and Cmd+B. Live-verified.
