@@ -133,15 +133,15 @@ private:
     // Single per-frame update shared by the timer and window-message tick paths.
     // Declared on all platforms; the Windows-only parts of the body stay guarded.
     void tickFrame();
+    // Cached busy gate for the squelch steal: computed live on the UI tick
+    // so a stuck tracker flag can never silence steals, read from any thread.
+    std::atomic<bool> userDemodBusy{ false };
 #ifdef _WIN32
     // Frame-rate pump driven from a multimedia timer; ticks arrive as window
     // messages so pacing stays steady including inside modal loops (menus).
     unsigned int frameMMTimerId = 0;
     // Set while a tick is posted but not yet processed; drops redundant ticks.
     std::atomic<bool> frameTickPending{ false };
-    // Cached busy gate for the squelch steal: computed live on the UI tick
-    // so a stuck tracker flag can never silence steals, read from any thread.
-    std::atomic<bool> userDemodBusy{ false };
     static void CALLBACK frameMMTimerProc(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2);
     void startFrameTimer();
     void stopFrameTimer();
