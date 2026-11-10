@@ -463,3 +463,13 @@ above always reflects the current state.
   pruned selection releases its scope binding. Live-verified.
 - macOS bookmark toggle (`f1788b4`): splitter-truth toggle fixes the
   native double-flip no-op on menu click and Cmd+B. Live-verified.
+- Review selection/audio fixes (`fa2c28a`, `a8e5fba`, `9e3bc06`,
+  `601cb6d`): non-member select reject, in-view active-only reselect,
+  antenna clear-on-default, mode re-click gate, group-choice fast-path
+  sync, production-anchored prebuffer, mixer lock/rate/channel
+  hardening. BUG4 and prebuffer live-verified.
+- Review robustness/CI fixes (`fcb5955`, `e3ea840`): unstickable
+  steal gate (live-verified), pacer RF sentry and bypass credit,
+  dialog close/device guards, bladeRF tolerance, frame-timer
+  shutdown/stat/menu guards, hover clamp; doc sweep and macOS CI
+  tests plus build-script coverage.
