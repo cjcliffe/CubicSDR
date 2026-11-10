@@ -62,6 +62,7 @@ public:
     void doClickOK() override {
         wxGetApp().getBookmarkMgr().removeGroup(subject);
         wxGetApp().getBookmarkMgr().updateBookmarks();
+        wxGetApp().getBookmarkMgr().updateActiveList();
     }
     
 private:
@@ -501,6 +502,25 @@ bool BookmarkView::refreshActiveLabelsInPlace() {
         }
     }
 
+    // The group choice is built only by the full path; sync its items
+    // here so add/remove/rename heals on the next tick instead of
+    // waiting for a props rebuild. A change resets the selection like
+    // the full-path build does.
+    if (bookmarkChoice) {
+        updateBookmarkChoices();
+        bool same = (size_t)bookmarkChoice->GetCount() == bookmarkChoices.size();
+        for (size_t i = 0; same && i < bookmarkChoices.size(); i++) {
+            same = bookmarkChoice->GetString((unsigned)i) == bookmarkChoices[i];
+        }
+        if (!same) {
+            bookmarkChoice->Freeze();
+            bookmarkChoice->Clear();
+            bookmarkChoice->Append(bookmarkChoices);
+            bookmarkChoice->Select(0);
+            bookmarkChoice->Thaw();
+        }
+    }
+
     return true;
 }
 
@@ -921,6 +941,7 @@ void BookmarkView::doBookmarkActive(const std::string& group, const DemodulatorI
 
     wxGetApp().getBookmarkMgr().addBookmark(group, demod);
     wxGetApp().getBookmarkMgr().updateBookmarks();
+    wxGetApp().getBookmarkMgr().updateActiveList();
 }
 
 
@@ -1493,6 +1514,7 @@ void BookmarkView::onAddGroup( wxCommandEvent& /* event */ ) {
     if (!stringVal.ToStdString().empty()) {
         wxGetApp().getBookmarkMgr().addGroup(stringVal.ToStdString());
         wxGetApp().getBookmarkMgr().updateBookmarks();
+        wxGetApp().getBookmarkMgr().updateActiveList();
     }
 }
 
@@ -1542,6 +1564,7 @@ void BookmarkView::onRenameRange( wxCommandEvent& /* event */ ) {
     if (!newGroupName.empty()) {
         wxGetApp().getBookmarkMgr().renameGroup(curSel->groupName, newGroupName);
         wxGetApp().getBookmarkMgr().updateBookmarks();
+        wxGetApp().getBookmarkMgr().updateActiveList();
     }
 }
 
