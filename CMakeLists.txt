@@ -1058,6 +1058,9 @@ IF (WIN32 AND BUILD_INSTALLER)
         target_compile_definitions(CubicSDR PRIVATE BUNDLED_MODS_ONLY=1)
         ENDIF()
         
+        # Normalize to forward slashes: a native backslashed root would embed
+        # invalid escapes in the generated install script.
+        file(TO_CMAKE_PATH "${SOAPY_SDR_ROOT}" SOAPY_SDR_ROOT)
         file(GLOB SOAPY_BINS ${SOAPY_SDR_ROOT}/bin/*.dll)
         file(GLOB SOAPY_MODS ${SOAPY_SDR_ROOT}/lib/SoapySDR/modules${SOAPY_SDR_ABI_VERSION}/*.dll)
         message(STATUS "SOAPY_BINS: ${SOAPY_BINS}")
@@ -1078,6 +1081,9 @@ IF (WIN32 AND BUILD_INSTALLER)
             message(STATUS "BUNDLE_MSVC_REDIST: ${BUNDLE_MSVC_REDIST}")
             cmake_path(GET BUNDLE_MSVC_REDIST FILENAME BUNDLE_MSVC_REDIST_FN)
             message(STATUS "BUNDLE_MSVC_REDIST_FN: ${BUNDLE_MSVC_REDIST_FN}")
+            # Normalize to forward slashes (same invalid-escape reason as above);
+            # the NSIS command below uses only the filename.
+            file(TO_CMAKE_PATH "${BUNDLE_MSVC_REDIST}" BUNDLE_MSVC_REDIST)
             install(PROGRAMS ${BUNDLE_MSVC_REDIST} DESTINATION vc_redist)
             set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "ExecWait '\\\"$INSTDIR\\\\vc_redist\\\\${BUNDLE_MSVC_REDIST_FN}\\\" /passive /norestart'")
         ENDIF()        
