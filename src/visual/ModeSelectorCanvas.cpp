@@ -132,8 +132,12 @@ void ModeSelectorCanvas::OnMouseReleased(wxMouseEvent& event) {
 
     const wxSize ClientSize = GetClientSize();
 
+    // A release only counts inside the press threshold; macOS does not
+    // lock drags, so without this a drag-release would report a
+    // re-click on the unchanged selection.
+    bool isClick = mouseTracker.getOriginDeltaMouseX() < 2.0 / ClientSize.y;
     int selectedButton = currentSelection;
-    if (mouseTracker.getOriginDeltaMouseX() < 2.0 / ClientSize.y) {
+    if (isClick) {
         selectedButton = getHoveredSelection();
     }
 
@@ -142,7 +146,7 @@ void ModeSelectorCanvas::OnMouseReleased(wxMouseEvent& event) {
     }
     
     // Non-toggle selectors also report re-clicking the current choice.
-    if (currentSelection != selectedButton || (!toggleMode && selectedButton != -1)) {
+    if (currentSelection != selectedButton || (!toggleMode && selectedButton != -1 && isClick)) {
         inputChanged = true;
     }
     

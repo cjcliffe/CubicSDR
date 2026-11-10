@@ -27,6 +27,16 @@ struct MixerVoice {
     float gain{1.0f};
     bool prebufferDone{};
     long long prebufferStartMs{};
+
+    // Restart state: the stall margin rebuilds from the next production
+    // and anything held from before the restart is dropped, so the first
+    // post-restart mix cannot play stale samples or skip the age drain.
+    void reset() {
+        currentInput = nullptr;
+        audioQueuePtr = 0;
+        prebufferDone = false;
+        prebufferStartMs = 0;
+    }
 };
 
 // Headless audio mixer: sums bound demodulator voices into one output buffer.

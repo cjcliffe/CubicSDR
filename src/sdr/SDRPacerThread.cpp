@@ -36,19 +36,19 @@ void SDRPacerThread::run() {
     // Stream sentry: a block from a new stream discards the old one
     // everywhere (backlog plus output queue), adopts the new identity,
     // then re-drains the input keeping only new-stream siblings, so no
-    // stale frame survives a rate, channel, or frequency change.
+    // stale frame survives a rate, channel, or RF change (frequency or offset).
     auto noteBlock = [&](SDRThreadIQDataPtr block) {
-        if (pacer.noteBlock(block->sampleRate, block->numChannels, block->frequency)) {
+        if (pacer.noteBlock(block->sampleRate, block->numChannels, block->rfFrequency)) {
             droppedWindow += backlog.size();
             backlog.clear();
             droppedWindow += iqDataOutQueue->size();
             iqDataOutQueue->flush();
             pacer.reset();
-            pacer.noteBlock(block->sampleRate, block->numChannels, block->frequency);
+            pacer.noteBlock(block->sampleRate, block->numChannels, block->rfFrequency);
             backlog.push_back(block);
             SDRThreadIQDataPtr queued;
             while (iqDataInQueue->try_pop(queued)) {
-                if (!pacer.noteBlock(queued->sampleRate, queued->numChannels, queued->frequency)) {
+                if (!pacer.noteBlock(queued->sampleRate, queued->numChannels, queued->rfFrequency)) {
                     backlog.push_back(queued);
                 } else {
                     droppedWindow++;

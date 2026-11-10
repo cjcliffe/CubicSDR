@@ -123,6 +123,12 @@ private:
     wxTimer frameTimer;
     // Last idle/active state seen by tickFrame(); the timer restarts on change.
     bool lastIdleTickState = false;
+    // Recording-path check state: the filesystem check runs at most every
+    // few dozen ticks, and the button only updates when the verdict flips.
+    int lastRecordPathState = -1;
+    unsigned recordPathCheckTick = 0;
+    // Set while a menu is open so the frame tick leaves focus alone.
+    bool menuOpen = false;
     // Single per-frame update shared by the timer and window-message tick paths.
     // Declared on all platforms; the Windows-only parts of the body stay guarded.
     void tickFrame();
@@ -216,6 +222,8 @@ private:
     void OnMenu(wxCommandEvent& event);
     void OnClose(wxCloseEvent& event);
     void OnFrameTimer(wxTimerEvent& event);
+    void OnMenuOpen(wxMenuEvent& event);
+    void OnMenuClose(wxMenuEvent& event);
     void processFrame();
     int getFrameIntervalMs();
     void OnDoubleClickSash(wxSplitterEvent& event);

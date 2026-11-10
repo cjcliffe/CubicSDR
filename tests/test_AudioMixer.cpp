@@ -257,6 +257,33 @@ TEST_SUITE("AudioMixer") {
             CHECK(h.mono(i) == doctest::Approx(0.5f));
         }
     }
+
+    TEST_CASE("reset drops held input and restarts the hold") {
+        Harness h;
+        h.voice.currentInput = makeBuffer(1, DEVICE_RATE, h.nowMs, ramp(NFRAMES, 0.9f), 0.9f);
+        h.voice.audioQueuePtr = 3;
+        h.voice.prebufferDone = true;
+        h.voice.prebufferStartMs = h.nowMs;
+
+        h.voice.reset();
+
+        CHECK(h.voice.currentInput == nullptr);
+        CHECK(h.voice.audioQueuePtr == 0);
+        CHECK(!h.voice.prebufferDone);
+        CHECK(h.voice.prebufferStartMs == 0);
+    }
+
+    TEST_CASE("hold stays silent with a loaded current input") {
+        Harness h;
+        h.voice.prebufferDone = false;
+        h.voice.prebufferStartMs = 0;
+        h.voice.currentInput = makeBuffer(1, DEVICE_RATE, h.nowMs, ramp(NFRAMES, 0.9f), 0.9f);
+        h.push(makeBuffer(1, DEVICE_RATE, h.nowMs, ramp(NFRAMES, 0.1f), 0.1f));
+
+        CHECK(h.pass() == 0.0);
+        CHECK(h.mono(0) == 0.0f);
+        CHECK(h.voice.currentInput != nullptr);
+    }
 }
 
 }  // namespace

@@ -20,18 +20,22 @@
 class SDRThreadIQData {
 public:
     long long frequency;
+    // Device RF at capture (frequency minus offset): the pacing sentry
+    // keys on this so offset-only retunes flush stale frames. App-domain
+    // consumers keep using frequency.
+    long long rfFrequency;
     long long sampleRate;
     bool dcCorrected;
     int numChannels;
     std::vector<liquid_float_complex> data;
 
     SDRThreadIQData() :
-            frequency(0), sampleRate(DEFAULT_SAMPLE_RATE), dcCorrected(true), numChannels(0) {
+            frequency(0), rfFrequency(0), sampleRate(DEFAULT_SAMPLE_RATE), dcCorrected(true), numChannels(0) {
 
     }
 
     SDRThreadIQData(long long bandwidth, long long frequency, std::vector<signed char> * /* data */) :
-            frequency(frequency), sampleRate(bandwidth), dcCorrected(false), numChannels(0) {
+            frequency(frequency), rfFrequency(frequency), sampleRate(bandwidth), dcCorrected(false), numChannels(0) {
 
     }
 

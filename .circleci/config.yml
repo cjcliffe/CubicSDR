@@ -23,6 +23,9 @@ jobs:
             cmake -S . -B build/linux -DBUILD_TESTING=ON
             cmake --build build/linux --parallel
             ctest --test-dir build/linux --output-on-failure
+      - run:
+          name: Run build script tests
+          command: python3 tests/test_build.py
       - save_cache:
           key: deps-{{ checksum "build.py" }}
           paths:
