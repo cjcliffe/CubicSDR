@@ -123,8 +123,6 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
 
     double peak = 0.0;
 
-    long long nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::steady_clock::now().time_since_epoch()).count();
     int deviceRate = src->getSampleRate();
 
     //Process the bound threads audio:
@@ -140,7 +138,7 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
             continue;
         }
 
-        peak += AudioMixer::mixVoice(srcmix->mixer, out, nBufferFrames, deviceRate, nowMs);
+        peak += AudioMixer::mixVoice(srcmix->mixer, out, nBufferFrames, deviceRate);
     }
 
     AudioMixer::normalize(out, nBufferFrames, peak);

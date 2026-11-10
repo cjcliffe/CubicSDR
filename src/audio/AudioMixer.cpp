@@ -3,18 +3,19 @@
 
 #include "AudioMixer.h"
 
-double AudioMixer::mixVoice(MixerVoice &voice, float *out, unsigned int nFrames, int deviceRate, long long nowMs) {
+double AudioMixer::mixVoice(MixerVoice &voice, float *out, unsigned int nFrames, int deviceRate) {
     // An empty queue alone never skips: currentInput may still hold playable
     // samples, and every pop site below already handles an empty queue.
     if (!voice.prebufferDone) {
-        // Hold silent until the queue holds a full prebuffer of production;
+        // Hold silent until the queue spans a full prebuffer of production;
         // without this lead every scheduling stall would gap live audio.
         // The backlog accumulates instead of draining, and the first mix
-        // below still drops buildup older than the keep window.
-        if (voice.prebufferStartMs == 0) {
-            voice.prebufferStartMs = nowMs;
-        }
-        if (nowMs - voice.prebufferStartMs < AUDIOTHREAD_PREBUFFER_MS) {
+        // below still drops buildup older than the keep window. A stalled
+        // or squelched producer simply holds longer instead of releasing
+        // with no lead.
+        AudioThreadInputPtr oldest, newest;
+        if (!voice.inputQueue->try_front(oldest) || !voice.inputQueue->try_back(newest) || !oldest || !newest
+            || newest->producedMs - oldest->producedMs < AUDIOTHREAD_PREBUFFER_MS) {
             return 0.0;
         }
         voice.prebufferDone = true;
