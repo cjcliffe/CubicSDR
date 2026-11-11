@@ -397,7 +397,8 @@ bool BookmarkView::refreshActiveLabelsInPlace() {
     bool useSearch = !searchKeywords.empty();
 
     // Active demodulators, with the same keyword filtering as the rebuild.
-    std::vector<DemodulatorInstancePtr> demods = wxGetApp().getDemodMgr().getDemodulators();
+    // Frequency-ordered to match TAB cycling; false keeps inactive rows listed.
+    std::vector<DemodulatorInstancePtr> demods = wxGetApp().getDemodMgr().getOrderedDemodulators(false);
     std::vector<std::pair<DemodulatorInstancePtr, wxString>> expectedActive;
     for (auto demod_i : demods) {
         wxString activeLabel = BookmarkMgr::getActiveDisplayName(demod_i);
@@ -553,7 +554,8 @@ void BookmarkView::doUpdateActiveList() {
     // row would otherwise flash on each structural change.
     m_treeView->Freeze();
 
-    auto demods = wxGetApp().getDemodMgr().getDemodulators();
+    // Frequency-ordered to match TAB cycling; false keeps inactive rows listed.
+    auto demods = wxGetApp().getDemodMgr().getOrderedDemodulators(false);
     auto lastActiveDemodulator = wxGetApp().getDemodMgr().getCurrentModem();
 
     //capture the previously selected item info BY COPY (because the original will be destroyed together with the destroyed tree items) to restore it again after 
