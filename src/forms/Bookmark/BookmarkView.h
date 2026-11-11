@@ -60,11 +60,12 @@ public:
     ~BookmarkView() override;
     
     //order an asynchronous refresh/rebuild of the whole tree,
-    //will take effect at the next onUpdateTimer() occurrence.
+    //will take effect at the next update poll (frame tick or update timer).
     void updateActiveList();
+    void pollUpdates();
     
     //order asynchronous updates of the bookmarks,
-    //will take effect at the next onUpdateTimer() occurrence.
+    //will take effect at the next update poll (frame tick or update timer).
     void updateBookmarks();
     void updateBookmarks(const std::string& group);
 
@@ -146,6 +147,7 @@ protected:
     void doClearRecents();
     
     void updateBookmarkChoices();
+    void syncBookmarkChoice();
     void addBookmarkChoice(wxWindow *parent);    
     void onBookmarkChoice( wxCommandEvent &event );
     

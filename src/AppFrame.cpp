@@ -2380,6 +2380,9 @@ void AppFrame::tickFrame() {
     }
 
     processFrame();
+    // Bookmark updates ride the frame tick: the idle-priority update timer
+    // can stall for seconds under burst load while frames keep flowing.
+    if (bookmarkView) { bookmarkView->pollUpdates(); }
 
     for (auto canvas : frameCanvases) {
         if (canvas) {

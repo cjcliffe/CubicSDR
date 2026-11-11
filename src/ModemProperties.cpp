@@ -27,6 +27,7 @@ ModemProperties::ModemProperties(wxWindow *parent, wxWindowID winid,
 
     mouseInView = false;
     collapsed = false;
+    syncingValues = false;
 }
 
 void ModemProperties::OnShow(wxShowEvent & /* event */) {
@@ -99,7 +100,31 @@ void ModemProperties::initDefaultProperties() {
     defaultProps["._audio_output"] = addArgInfoProperty(m_propertyGrid, outputArg);
 }
 
+static bool sameArgStructure(const ModemArgInfoList& a, const ModemArgInfoList& b) {
+    if (a.size() != b.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < a.size(); i++) {
+        const ModemArgInfo& x = a[i];
+        const ModemArgInfo& y = b[i];
+        if (x.key != y.key || x.name != y.name || x.description != y.description
+            || x.type != y.type || x.options != y.options || x.optionNames != y.optionNames
+            || x.range.minimum() != y.range.minimum() || x.range.maximum() != y.range.maximum()) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void ModemProperties::initProperties(ModemArgInfoList newArgs, const DemodulatorInstancePtr& demodInstance) {
+    // Same type and argument structure: sync values in place instead of a
+    // full grid rebuild (~1.4s), which every demodulator switch schedules.
+    if (demodInstance && demodContext
+        && demodContext->getDemodulatorType() == demodInstance->getDemodulatorType()
+        && sameArgStructure(args, newArgs)) {
+        syncPropertyValues(newArgs, demodInstance);
+        return;
+    }
     args = newArgs;
     demodContext = demodInstance;
     
@@ -110,6 +135,7 @@ void ModemProperties::initProperties(ModemArgInfoList newArgs, const Demodulator
         m_propertyGrid->Append(new wxPropertyCategory("Modem Settings"));
         return;
     }
+    m_propertyGrid->Freeze();
     
     m_propertyGrid->Append(new wxPropertyCategory(demodInstance->getDemodulatorType() + " Settings"));
     
@@ -127,6 +153,78 @@ void ModemProperties::initProperties(ModemArgInfoList newArgs, const Demodulator
     if (collapsed) {
         m_propertyGrid->CollapseAll();
     }
+    m_propertyGrid->Thaw();
+}
+
+void ModemProperties::syncPropertyValues(ModemArgInfoList newArgs, const DemodulatorInstancePtr& demodInstance) {
+    demodContext = demodInstance;
+    args = newArgs;
+
+    // Programmatic sets must not echo back through OnChange into the modem.
+    syncingValues = true;
+    m_propertyGrid->Freeze();
+
+    int currentOutput = demodContext->getOutputDevice();
+    outputArg.value = std::to_string(currentOutput);
+    auto outProp = defaultProps.find("._audio_output");
+    if (outProp != defaultProps.end() && outProp->second) {
+        for (size_t i = 0; i < outputArg.options.size(); i++) {
+            if (outputArg.options[i] == outputArg.value) {
+                outProp->second->SetChoiceSelection((int)i);
+                break;
+            }
+        }
+    }
+
+    for (auto &arg : newArgs) {
+        auto found = props.find(arg.key);
+        if (found == props.end() || !found->second) {
+            continue;
+        }
+        wxPGProperty *prop = found->second;
+        switch (arg.type) {
+            case ModemArgInfo::Type::INT: {
+                int intVal = 0;
+                try {
+                    intVal = std::stoi(arg.value);
+                } catch (const std::invalid_argument &) {
+                }
+                prop->SetValue(wxVariant((long)intVal));
+                break;
+            }
+            case ModemArgInfo::Type::FLOAT: {
+                double floatVal = 0;
+                try {
+                    floatVal = std::stod(arg.value);
+                } catch (const std::invalid_argument &) {
+                }
+                prop->SetValue(wxVariant(floatVal));
+                break;
+            }
+            case ModemArgInfo::Type::BOOL:
+                prop->SetValue(wxVariant(arg.value == "true"));
+                break;
+            case ModemArgInfo::Type::STRING:
+                if (!arg.options.empty()) {
+                    for (size_t i = 0; i < arg.options.size(); i++) {
+                        if (arg.options[i] == arg.value) {
+                            prop->SetChoiceSelection((int)i);
+                            break;
+                        }
+                    }
+                } else {
+                    prop->SetValue(wxVariant(wxString(arg.value)));
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    m_propertyGrid->Thaw();
+    m_propertyGrid->Refresh();
+    m_propertyGrid->FitColumns();
+    syncingValues = false;
 }
 
 wxPGProperty *ModemProperties::addArgInfoProperty(wxPropertyGrid *pg, ModemArgInfo arg) {
@@ -225,6 +323,9 @@ std::string ModemProperties::readProperty(const std::string& key) {
 }
 
 void ModemProperties::OnChange(wxPropertyGridEvent &event) {
+    if (syncingValues) {
+        return;
+    }
     if (!demodContext || !demodContext->isActive()) {
         return;
     }
