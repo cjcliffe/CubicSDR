@@ -90,7 +90,7 @@ The `audioCallback` function runs in the RtAudio real-time thread. It only handl
 5. Return 0 on success; return 1 if the controller is terminated, which instructs RtAudio to stop the stream
 
 Key properties:
-- **Buffer size:** The RtAudio buffer is 1024 frames by default (`nBufferFrames`), which at a 48 kHz device rate yields ~21 ms of audio per buffer (latency varies with the configured device sample rate)
+- **Buffer size:** The RtAudio buffer defaults to 1024 frames (`nBufferFrames`), which at a 48 kHz device rate yields ~21 ms of audio per buffer (latency varies with the configured device sample rate). The Settings latency submenu offers 512/1024/2048/4096 frames; the choice persists in config and every live controller stream reopens at the new size
 - **Sample rate matching:** When `currentInput` is null the callback pops a packet and checks its rate against the controller's in the same pass. On mismatch it pops and discards packets until a matching one arrives, then mixes it in the same pass; if the queue exhausts first the stale buffer unloads and the voice stays silent. A packet exhausted mid-mixing pops the next inline with the same rate filter, and a mid-mix channel change ends the pass so the next pass restarts with the new shape.
 - **Backlog drop:** When popping onto an empty `currentInput`, the callback drops anything older than `AUDIOTHREAD_RESUME_KEEP_MS` behind the newest buffer; buffers accumulate while a stream is starting, so without this the first seconds of playback would lag the live input. A queue within the window after a brief stall is live audio and plays through in order with no added silence
 - **Underflow handling:** If a bound thread runs out of data, the callback continues with the next thread. RtAudio buffer underflows (reported via `status` flag) are counted in the controller's `underflowCount` field
@@ -156,6 +156,7 @@ Data packet passed from demodulator to audio output:
 | Command | Effect |
 |---------|--------|
 | `AUDIO_THREAD_CMD_SET_DEVICE` | Calls `setupDevice()` to switch output device |
+| `AUDIO_THREAD_CMD_SET_BUFFER_FRAMES` | Calls `reopenWithBufferFrames()` — stops/restarts the controller's RtAudio stream at the new buffer size and rebuilds every mixer's stall margin |
 | `AUDIO_THREAD_CMD_SET_SAMPLE_RATE` | Calls `setSampleRate()` — stops/restarts the controller's RtAudio stream, updates all bound threads and every demodulator whose output device matches (regardless of active state) |
 
 ## Recording Pipeline

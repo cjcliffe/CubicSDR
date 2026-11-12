@@ -39,7 +39,7 @@ Base class for all interactive GL canvases. Provides:
 
 The primary display canvas. Handles:
 
-- **FFT data consumption:** Pops `SpectrumVisualData` from `visualDataQueue` at the pace `WaterfallPacer` plans (insert/drop schedule, default 30 lps)
+- **FFT data consumption:** Pops `SpectrumVisualData` from `visualDataQueue` at the pace `WaterfallPacer` plans (insert/drop schedule from sub-millisecond frame deltas, default 30 lps)
 - **Waterfall rendering:** Delegates to `WaterfallPanel` for texture-based scrolling waterfall
 - **Demodulator markers:** Draws all active demodulators via `PrimaryGLContext::DrawDemod()`
 - **Frequency selector:** Draws hover/active frequency markers via `DrawFreqSelector()`
@@ -231,6 +231,8 @@ glLoadIdentity()
 | Additive | `GL_SRC_ALPHA, GL_ONE` | Demod bands, frequency selectors |
 | Alpha | `GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA` | Labels, backgrounds |
 | Opaque | `GL_ONE, GL_ZERO` | Shadow text in USB/LSB branches only (default branch shadow uses additive) |
+
+**Swap interval:** on Windows the swap interval is applied once per context on first successful activation. Every canvas activates only its own window, and contexts live and die with their canvases, so no per-paint driver call is needed.
 
 ### Buffer Strategy
 
@@ -468,10 +470,10 @@ All canvases follow the same rendering pattern in `OnPaint()`:
 |--------|----------------|
 | `WaterfallCanvas` | `processInputQueue()` + `Refresh()` |
 | `SpectrumCanvas`, `ScopeCanvas` | `Refresh()` |
-| `Meters`, tuner, gain | `Refresh()` (plus drag/gain polling where applicable) |
-| Mode buttons | `Refresh()` every frame while pulsing (record button), else only while hovered; state changes refresh explicitly |
+| `Meters`, tuner, gain | `Refresh()` on change only (event handlers plus polled change-detect; drag stepping and gain polling still run per tick) |
+| Mode buttons | `Refresh()` while pulsing (record button); clicks and hover repaint from their own handlers |
 
-`WaterfallCanvas` is the only canvas that polls its input queue in `frameUpdate()` via `processInputQueue()`. `SpectrumCanvas` and `ScopeCanvas` process their input queues inside `OnPaint()` instead (via `try_pop()` at the start of the paint handler). All canvases use non-blocking `try_pop()` to avoid stalling the UI thread. `Refresh()` is always called to drive animations (zoom interpolation, hover alpha decay, frequency nudge velocity) even when no new data is available.
+`WaterfallCanvas` is the only canvas that polls its input queue in `frameUpdate()` via `processInputQueue()`. `SpectrumCanvas` and `ScopeCanvas` process their input queues inside `OnPaint()` instead (via `try_pop()` at the start of the paint handler). All canvases use non-blocking `try_pop()` to avoid stalling the UI thread. Animated canvases (waterfall, spectrum, scope, demod views) still `Refresh()` every tick to drive animations (zoom interpolation, hover alpha decay, frequency nudge velocity) even when no new data is available; static controls repaint only on interaction or state change, and theme or font changes refresh every canvas explicitly.
 
 ### WaterfallCanvas Paint Flow (Detailed)
 

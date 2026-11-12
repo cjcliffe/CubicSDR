@@ -98,6 +98,12 @@ Global application configuration. Singleton accessed via `wxGetApp().getConfig()
 
 `verifyRecordingPath()` returns `false` (and shows a dialog) if the path is empty, does not exist, or is not writable.
 
+### Audio Settings
+
+| Property | Type | Config Key | Default | Description |
+|----------|------|------------|---------|-------------|
+| `audioBufferFrames` | `int` | `audio/buffer_frames` | 1024 | RtAudio buffer size in frames (Settings latency submenu; clamped to a supported level) |
+
 ### Hamlib Settings (conditional on `USE_HAMLIB`)
 
 | Property | Type | Config Key | Description |
@@ -191,6 +197,7 @@ Note: `DeviceConfig::save()` writes the `antenna`, `streamOpts`, `settings`, `ri
 <cubicsdr_config>
   <window>...</window>
   <recording>...</recording>
+  <audio>...</audio>
   <devices>...</devices>
   <manual_devices>...</manual_devices>
   <rig>...</rig>
@@ -201,7 +208,7 @@ Note: `DeviceConfig::save()` writes the `antenna`, `streamOpts`, `settings`, `ri
 
 **Save** (`AppConfig::save()`):
 1. Create a `DataTree` with root node named `cubicsdr_config`
-2. Populate window, recording, device, manual device, and rig nodes. The `window` node and all its children are only written when both `winW` and `winH` are non-zero (a zero-sized window produces no window config).
+2. Populate window, recording, audio, device, manual device, and rig nodes. The `window` node and all its children are only written when both `winW` and `winH` are non-zero (a zero-sized window produces no window config).
 3. Get config file path from `getConfigFileName()`
 4. Call `DataTree::SaveToFileXML()`. Note that `SaveToFileXML` unconditionally writes the file and always returns `true`, so `save()` cannot detect or report a disk-write failure; its error branch is effectively unreachable.
 
@@ -209,7 +216,7 @@ Note: `DeviceConfig::save()` writes the `antenna`, `streamOpts`, `settings`, `ri
 1. Determine config file path
 2. If the named config doesn't exist and a default `config.xml` exists, copy from it. If neither file exists (or the copy fails), `load()` returns `true` early, silently leaving defaults instead of loading.
 3. Call `DataTree::LoadFromFileXML()`; if the config file exists but is not readable, `load()` returns `false`.
-4. Parse each section: window, recording, devices, manual_devices, rig
+4. Parse each section: window, recording, audio, devices, manual_devices, rig
 5. Missing sections use defaults
 6. `frameRate`/`dspMode` default to `FRAME_NORMAL`/`DSP_NORMAL` within the window section (when a `<window>` node is present). A present `frame_rate` value is only applied if it equals `FRAME_LOW` or `FRAME_HIGH`, and `dsp_mode` only if it equals `DSP_ENHANCED`; anything else (or a missing node) leaves the default. When neither new key is present, a legacy `perf_mode` value migrates instead: low selects frame low, high selects frame high plus DSP enhanced.
 

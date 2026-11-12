@@ -56,7 +56,7 @@ Reads are sized to what the current frame still needs rather than a full driver 
 
 **Class:** `SDRPacerThread` (`src/sdr/SDRPacerThread.h`)
 
-Meters full frames from `SDRThread` to `SDRPostThread` at a fixed 60Hz gate driven by the headless `SDRPacer` model (`src/sdr/SDRPacer.h`), so DSP, visuals, and scope advance together even when driver delivery arrives in lumps. Full frames only: when dry it waits on input instead of inventing samples, so downstream always sees whole frames. Backlog drops oldest past a small cap; a bypass mode passes blocks straight through while pacing is off, and a flush on stream changes (rate, channel, or frequency) drops stale frames while keeping new-stream siblings. Toggled by the Stream Pacing setting, persisted as `window/stream_pacing`.
+Meters full frames from `SDRThread` to `SDRPostThread` at a fixed 60Hz gate driven by the headless `SDRPacer` model (`src/sdr/SDRPacer.h`), so DSP, visuals, and scope advance together even when driver delivery arrives in lumps. Full frames only: when dry it waits on input instead of inventing samples, so downstream always sees whole frames. Backlog drops oldest past a small cap; a bypass mode passes blocks straight through while pacing is off, and a flush on stream changes (rate, channel, or frequency) drops stale frames while keeping new-stream siblings. Toggled by the Stream Pacing setting, persisted as `window/stream_pacing`. When an emit is refused on a full output queue, the thread sleeps briefly instead of re-planning immediately, so a stalled downstream yields instead of spinning.
 
 ### Stage 2: Post-Processing / Channelization
 
