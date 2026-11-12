@@ -16,6 +16,7 @@
 #include "CubicSDR.h"
 #include "CubicSDRDefs.h"
 #include "AppFrame.h"
+#include "Frequency.h"
 #include <algorithm>
 #include "WaterfallCanvas.h"
 
@@ -260,7 +261,12 @@ void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
         if (scaleFactorEnabled) {
             setStatusText("Drag horizontal to adjust center frequency. Arrow keys or wheel to navigate/zoom bandwidth. Right-drag or SHIFT+UP/DOWN to adjust visual gain, right-click to reset it. 'B' to toggle decibels display.");
         } else {
-            setStatusText("Displaying spectrum of active demodulator.");
+            auto demodTip = wxGetApp().getDemodMgr().getCurrentModem();
+            if (demodTip) {
+                setStatusText("Spectrum of " + demodTip->getDemodulatorType() + ": " + frequencyToStr(demodTip->getFrequency()));
+            } else {
+                setStatusText("Displaying spectrum of active demodulator.");
+            }
         }
     }
 }
