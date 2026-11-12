@@ -220,10 +220,21 @@ class MacosStampPartsTests(unittest.TestCase):
         self.assertIsNone(build.macos_stamp_parts({"CFLAGS": "-O2"}))
 
     def test_covers_arch_host_and_floor(self):
-        env, host = build.macos_build_flags("x86_64", "11.0")
+        # Exercise whichever arch is not native here so the cross path
+        # (and its host triplet) is asserted on any machine.
+        native = platform.machine().replace("aarch64", "arm64")
+        target = "x86_64" if native != "x86_64" else "arm64"
+        env, host = build.macos_build_flags(target, "11.0")
         parts = build.macos_stamp_parts(env, host)
-        self.assertEqual(parts[0], "x86_64")
-        self.assertEqual(parts[1], "x86_64-apple-darwin")
+        self.assertEqual(parts[0], target)
+        self.assertEqual(parts[1], "%s-apple-darwin" % target)
+        self.assertEqual(parts[2], "11.0")
+
+    def test_native_stamp_has_no_host(self):
+        env, host = build.macos_build_flags("native", "11.0")
+        parts = build.macos_stamp_parts(env, host)
+        self.assertEqual(parts[0], platform.machine().replace("aarch64", "arm64"))
+        self.assertIsNone(parts[1])
         self.assertEqual(parts[2], "11.0")
 
     def test_floor_change_rekeys(self):
