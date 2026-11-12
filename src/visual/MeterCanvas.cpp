@@ -23,6 +23,7 @@ EVT_MOTION(MeterCanvas::OnMouseMoved)
 EVT_LEFT_DOWN(MeterCanvas::OnMouseDown)
 EVT_LEFT_UP(MeterCanvas::OnMouseReleased)
 EVT_LEFT_DCLICK(MeterCanvas::OnMouseDoubleClicked)
+EVT_MIDDLE_DOWN(MeterCanvas::OnMouseMiddleDown)
 EVT_MOUSEWHEEL(MeterCanvas::OnMouseWheelMoved)
 EVT_RIGHT_DOWN(MeterCanvas::OnMouseRightDown)
 EVT_RIGHT_UP(MeterCanvas::OnMouseRightReleased)
@@ -148,12 +149,22 @@ void MeterCanvas::OnMouseReleased(wxMouseEvent& event) {
     Refresh();
 }
 
-void MeterCanvas::OnMouseDoubleClicked(wxMouseEvent& WXUNUSED(event)) {
+void MeterCanvas::resetToDefault() {
     if (hasDefault) {
         userInputValue = defaultValue;
-        suppressNextRelease = true;
         Refresh();
     }
+}
+
+void MeterCanvas::OnMouseDoubleClicked(wxMouseEvent& WXUNUSED(event)) {
+    if (hasDefault) {
+        resetToDefault();
+        suppressNextRelease = true;
+    }
+}
+
+void MeterCanvas::OnMouseMiddleDown(wxMouseEvent& WXUNUSED(event)) {
+    resetToDefault();
 }
 
 void MeterCanvas::OnMouseRightDown(wxMouseEvent& event) {

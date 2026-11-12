@@ -43,6 +43,8 @@ private:
     void OnMouseDown(wxMouseEvent& event);
     void OnMouseReleased(wxMouseEvent& event);
     void OnMouseDoubleClicked(wxMouseEvent& event);
+    void OnMouseMiddleDown(wxMouseEvent&);
+    void resetToDefault();
 	void OnMouseWheelMoved(wxMouseEvent& event);
 	void OnMouseRightDown(wxMouseEvent& event);
 	void OnMouseRightReleased(wxMouseEvent& event);
