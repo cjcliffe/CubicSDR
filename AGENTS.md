@@ -51,4 +51,12 @@ When creating or updating documentation in `docs/`, avoid brittle content that w
 - **Reference functions, not lines** — "In the `OnInit()` method" is durable; "on line 390" is not
 - **Keep actionable content only** — File lists, verification criteria, and rollback strategies are durable; inventories of current state go stale
 
+## Fix Synopsis
+
+Branches that diverge from the current goal to fix something found along the way carry a short synopsis so the reasoning survives in git history:
+
+- Write `docs/plans/<slug>.md` covering symptom, root cause, investigation path, fix, and verification. Do not index it in `docs/PLAN.md`.
+- Follow the Documentation Guidelines above, except that measured evidence (probe readings, levels, timings) is the point of the file — keep it.
+- Commit the synopsis with the fix, merge the branch back, then delete the file in a follow-up commit. History keeps the record; the tree stays clean.
+
 
