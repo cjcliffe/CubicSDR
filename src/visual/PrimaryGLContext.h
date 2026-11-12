@@ -36,5 +36,6 @@ public:
 
 private:
     float hoverAlpha;
+    mutable bool swapIntervalApplied = false;
     void drawSingleDemodLabel(const std::wstring& demodStr, float uxPos, float hPos, float xOfs, float yOfs, GLFont::Align demodAlign);
 };

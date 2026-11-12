@@ -51,10 +51,11 @@ void PrimaryGLContext::CheckGLError() {
 bool PrimaryGLContext::SetCurrent(const wxGLCanvas& win) const {
     bool result = wxGLContext::SetCurrent(win);
 #ifdef _WIN32
-    // Swap interval is per-window state, so apply it on every activation:
-    // a single init-time call leaves all other canvases vsync'd.
-    if (result && wglSwapIntervalEXT) {
+    // Swap interval is per-window state, and each context activates only its
+    // own canvas, so one successful application lasts the context's life.
+    if (result && wglSwapIntervalEXT && !swapIntervalApplied) {
         wglSwapIntervalEXT(0);
+        swapIntervalApplied = true;
     }
 #endif
     return result;
