@@ -94,7 +94,8 @@ void SDRPacerThread::run() {
             backlog.pop_front();
             droppedWindow++;
         }
-        for (int i = 0; i < plan.emit && !backlog.empty() && !iqDataOutQueue->full(); i++) {
+        int emitted = 0;
+        for (; emitted < plan.emit && !backlog.empty() && !iqDataOutQueue->full(); emitted++) {
             SDRThreadIQDataPtr out = backlog.front();
             backlog.pop_front();
             // A refused emit goes back to the front: the pacer already
@@ -115,6 +116,12 @@ void SDRPacerThread::run() {
             droppedWindow = 0;
             maxLevelWindow = 0;
             lastLog = now;
+        }
+
+        // A refused emit means downstream is stalled; yield instead of
+        // re-planning immediately so this thread does not spin on a full queue.
+        if (emitted < plan.emit && iqDataOutQueue->full()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
 
         if (plan.waitSeconds > 0.0) {
