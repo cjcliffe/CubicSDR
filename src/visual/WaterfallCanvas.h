@@ -14,7 +14,7 @@
 #include "SpectrumCanvas.h"
 #include "WaterfallPanel.h"
 #include "WaterfallPacer.h"
-#include "Timer.h"
+#include <chrono>
 #include "DemodulatorMgr.h"
 
 class WaterfallCanvas: public InteractiveCanvas {
@@ -101,7 +101,9 @@ private:
     
     SpectrumVisualDataQueuePtr visualDataQueue = std::make_shared<SpectrumVisualDataQueue>();
 
-    Timer gTimer;
+    // Sub-millisecond frame clock for the pacer; the ms-quantized Timer
+    // jittered line placement at high frame rates.
+    std::chrono::steady_clock::time_point lastFrameTime;
     WaterfallPacer pacer;
     bool preBuf;
     std::mutex tex_update;

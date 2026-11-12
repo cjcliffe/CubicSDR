@@ -64,7 +64,7 @@ void WaterfallCanvas::setup(unsigned int fft_size_in, int waterfall_lines_in) {
     waterfall_lines = waterfall_lines_in;
 
     waterfallPanel.setup(fft_size, waterfall_lines);
-    gTimer.start();
+    lastFrameTime = std::chrono::steady_clock::now();
 }
 
 void WaterfallCanvas::setFFTSize(unsigned int fft_size_in) {
@@ -90,10 +90,12 @@ void WaterfallCanvas::attachSpectrumCanvas(SpectrumCanvas *canvas_in) {
 void WaterfallCanvas::processInputQueue() {
     std::lock_guard < std::mutex > lock(tex_update);
     
-    gTimer.update();
+    auto now = std::chrono::steady_clock::now();
+    std::chrono::duration<double> dt = now - lastFrameTime;
+    lastFrameTime = now;
     
     size_t depth = visualDataQueue ? visualDataQueue->size() : 0;
-    WaterfallPacer::Plan plan = pacer.plan(gTimer.lastUpdateSeconds(), depth);
+    WaterfallPacer::Plan plan = pacer.plan(dt.count(), depth);
 
     bool updated = false;
 
