@@ -173,6 +173,9 @@ public:
     
 	void setRecordingFileTimeLimit(int nbSeconds);
 	int getRecordingFileTimeLimit() const;
+
+	void setAudioBufferFrames(int frames);
+	int getAudioBufferFrames() const;
     
 #if USE_HAMLIB
     int getRigModel();
@@ -229,6 +232,7 @@ private:
     std::string lastDeviceId;
 	int recordingSquelchOption = 0;
 	int recordingFileTimeLimitSeconds = 0;
+	int audioBufferFrames = 1024;
 #if USE_HAMLIB
     std::atomic_int rigModel{}, rigRate{};
     std::string rigPort;

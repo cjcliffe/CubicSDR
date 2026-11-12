@@ -223,6 +223,31 @@ void AudioThread::setDeviceSampleRate(int deviceId, int sampleRate) {
     }
 }
 
+void AudioThread::setBufferFrames(int frames) {
+    if (frames != 512 && frames != 1024 && frames != 2048 && frames != 4096) {
+        frames = 1024;
+    }
+
+    std::vector<AudioThread *> controllers;
+
+    //scope lock here to minimize the common unique static lock contention
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_device_mutex);
+
+        for (auto &entry : deviceController) {
+            controllers.push_back(entry.second);
+        }
+    }
+
+    //out-of-lock dispatch
+    for (auto controller : controllers) {
+        AudioThreadCommand command;
+        command.cmdType = AudioThreadCommand::Type::AUDIO_THREAD_CMD_SET_BUFFER_FRAMES;
+        command.int_value = frames;
+        controller->getCommandQueue()->push(command);
+    }
+}
+
 void AudioThread::setSampleRate(int sampleRate_in) {
 
     bool thisIsAController = false;
@@ -264,6 +289,29 @@ void AudioThread::setSampleRate(int sampleRate_in) {
     }
 
     sampleRate = sampleRate_in;
+}
+
+void AudioThread::reopenWithBufferFrames(int frames) {
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+
+    //Only controllers own a stream; bound threads share it.
+    if (controllerThread == nullptr) {
+        return;
+    }
+
+    nBufferFrames = (unsigned int)frames;
+
+    try {
+        dac.stopStream();
+        dac.closeStream();
+        dac.openStream(&parameters, nullptr, RTAUDIO_FLOAT32, sampleRate, &nBufferFrames, &audioCallback, (void *)this, &opts);
+        dac.startStream();
+        resetAllPrebuffers();
+    }
+    catch (RtAudioError& e) {
+        e.printMessage();
+        return;
+    }
 }
 
 int AudioThread::getSampleRate() {
@@ -323,6 +371,7 @@ void AudioThread::setupDevice(int deviceId) {
         else if (deviceController[parameters.deviceId] == this) {
 
             //Attach callback
+            nBufferFrames = (unsigned int)wxGetApp().getConfig()->getAudioBufferFrames();
             dac.openStream(&parameters, nullptr, RTAUDIO_FLOAT32, sampleRate, &nBufferFrames, &audioCallback, (void *)this, &opts);
             dac.startStream();
             resetAllPrebuffers();
@@ -408,6 +457,9 @@ void AudioThread::run() {
         }
         if (command.cmdType == AudioThreadCommand::Type::AUDIO_THREAD_CMD_SET_SAMPLE_RATE) {
             setSampleRate(command.int_value);
+        }
+        if (command.cmdType == AudioThreadCommand::Type::AUDIO_THREAD_CMD_SET_BUFFER_FRAMES) {
+            reopenWithBufferFrames(command.int_value);
         }
     } //end while
 

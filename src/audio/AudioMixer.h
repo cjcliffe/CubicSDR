@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstddef>
+#include <string>
 #include "AudioThreadInput.h"
 
 // Milliseconds of production each voice accumulates before its first mix:
@@ -52,4 +53,9 @@ public:
 
     // Scale the mixed buffer when the summed peak exceeds full scale.
     static void normalize(float *out, unsigned int nFrames, double peak);
+
+    // Menu label for a buffer-size level: frame count plus the real latency
+    // at the given device rate, e.g. "1024 (~21ms at 48kHz)". A non-positive
+    // rate falls back to the 48kHz reference.
+    static std::string formatLatencyLabel(unsigned int frames, int deviceRate);
 };

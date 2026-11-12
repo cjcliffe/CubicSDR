@@ -596,6 +596,17 @@ void  AppConfig::setRecordingFileTimeLimit(int nbSeconds) {
 	recordingFileTimeLimitSeconds = nbSeconds;
 }
 
+void AppConfig::setAudioBufferFrames(int frames) {
+    if (frames != 512 && frames != 1024 && frames != 2048 && frames != 4096) {
+        frames = 1024;
+    }
+    audioBufferFrames = frames;
+}
+
+int AppConfig::getAudioBufferFrames() const {
+    return audioBufferFrames;
+}
+
 int  AppConfig::getRecordingFileTimeLimit() const {
 	return recordingFileTimeLimitSeconds;
 }
@@ -663,6 +674,10 @@ bool AppConfig::save() {
 	*rec_node->newChild("squelch") = recordingSquelchOption;
 	*rec_node->newChild("file_time_limit") = recordingFileTimeLimitSeconds;
     
+	//Audio settings:
+    DataNode *audio_node = cfg.rootNode()->newChild("audio");
+	*audio_node->newChild("buffer_frames") = audioBufferFrames;
+
     DataNode *devices_node = cfg.rootNode()->newChild("devices");
 
     std::map<std::string, DeviceConfig *>::iterator device_config_i;
@@ -910,6 +925,17 @@ bool AppConfig::load() {
 		}
     }
     
+	//Audio settings:
+    if (cfg.rootNode()->hasAnother("audio")) {
+        DataNode *audio_node = cfg.rootNode()->getNext("audio");
+
+		if (audio_node->hasAnother("buffer_frames")) {
+			int frames = 1024;
+			audio_node->getNext("buffer_frames")->element()->get(frames);
+			setAudioBufferFrames(frames);
+		}
+    }
+
     if (cfg.rootNode()->hasAnother("devices")) {
         DataNode *devices_node = cfg.rootNode()->getNext("devices");
 

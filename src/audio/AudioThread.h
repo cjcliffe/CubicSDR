@@ -19,7 +19,7 @@
 class AudioThreadCommand {
 public:
     enum class Type {
-        AUDIO_THREAD_CMD_NULL, AUDIO_THREAD_CMD_SET_DEVICE, AUDIO_THREAD_CMD_SET_SAMPLE_RATE
+        AUDIO_THREAD_CMD_NULL, AUDIO_THREAD_CMD_SET_DEVICE, AUDIO_THREAD_CMD_SET_SAMPLE_RATE, AUDIO_THREAD_CMD_SET_BUFFER_FRAMES
     };
 
     AudioThreadCommand() :
@@ -65,6 +65,7 @@ public:
 
     static void deviceCleanup();
     static void setDeviceSampleRate(int deviceId, int sampleRate);
+    static void setBufferFrames(int frames);
 
     //
     void attachControllerThread(std::thread* controllerThread);
@@ -95,6 +96,7 @@ private:
 
     void setupDevice(int deviceId);
     void setSampleRate(int sampleRate_in);
+    void reopenWithBufferFrames(int frames);
 
     void bindThread(AudioThread *other);
     void removeThread(AudioThread *other);

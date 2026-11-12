@@ -178,6 +178,7 @@ private:
 	std::map<int, wxMenuItem *> frameMenuItems;
 	std::map<int, wxMenuItem *> dspMenuItems;
 	std::map<int, wxMenuItem *> pacingMenuItems;
+	std::map<int, wxMenuItem *> latencyMenuItems;
 	std::map<int, wxMenuItem *> audioSampleRateMenuItems;
 	std::map<int, wxMenuItem *> recordingMenuItems;
 
@@ -307,6 +308,8 @@ private:
 	bool actionOnMenuFrameRate(wxCommandEvent &event);
 	bool actionOnMenuDsp(wxCommandEvent &event);
 	bool actionOnMenuPacing(wxCommandEvent &event);
+	bool actionOnMenuLatency(wxCommandEvent &event);
+	void refreshLatencyLabels();
 	bool actionOnMenuTips(wxCommandEvent &event);
 	bool actionOnMenuIQSwap(wxCommandEvent &event);
 	bool actionOnMenuFreqOffset(wxCommandEvent &event);
@@ -420,6 +423,9 @@ private:
 
 #define wxID_PACING_CURRENT 2420
 #define wxID_PACING_BASE 2421
+
+#define wxID_LATENCY_CURRENT 2430
+#define wxID_LATENCY_BASE 2431
 
 #define wxID_DEVICE_ID 3500
 

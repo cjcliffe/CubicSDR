@@ -77,6 +77,32 @@ public:
 };
 
 
+// Latency submenu levels, in frames; the index doubles as the wxID_LATENCY_BASE offset.
+static const unsigned int LATENCY_FRAME_LEVELS[] = { 512, 1024, 2048, 4096 };
+static const int LATENCY_FRAME_COUNT = 4;
+
+static int latencyIndexForFrames(int frames) {
+    for (int i = 0; i < LATENCY_FRAME_COUNT; i++) {
+        if ((int)LATENCY_FRAME_LEVELS[i] == frames) {
+            return i;
+        }
+    }
+    return 1;
+}
+
+// Device rate behind the latency labels: the active demod's output, falling
+// back to the 48kHz reference when nothing audible is selected.
+static int latencyLabelRate() {
+    auto active = wxGetApp().getDemodMgr().getCurrentModem();
+    if (active) {
+        auto found = AudioThread::deviceSampleRate.find(active->getOutputDevice());
+        if (found != AudioThread::deviceSampleRate.end() && found->second > 0) {
+            return found->second;
+        }
+    }
+    return 48000;
+}
+
 #define APPFRAME_MODEMPROPS_MINSIZE 20
 #define APPFRAME_MODEMPROPS_MAXSIZE 240
 
@@ -1103,6 +1129,26 @@ void AppFrame::handleUpdateDeviceParams() {
     pacingMenuItems[wxID_PACING_CURRENT] = newSettingsMenu->AppendSubMenu(pacingSubMenu, "Pacing");
     pacingMenuItems[wxID_PACING_CURRENT]->SetItemLabel(getSettingsLabel("Pacing", selectedPacingItem->GetItemLabel().ToStdString()));
 
+    // Latency menu:
+    latencyMenuItems.clear();
+
+    auto *latencySubMenu = new wxMenu;
+
+    int latencyRate = latencyLabelRate();
+    for (int i = 0; i < LATENCY_FRAME_COUNT; i++) {
+        latencyMenuItems[wxID_LATENCY_BASE + i] = latencySubMenu->AppendRadioItem(wxID_LATENCY_BASE + i,
+            AudioMixer::formatLatencyLabel(LATENCY_FRAME_LEVELS[i], latencyRate));
+    }
+
+    int latencyIndex = latencyIndexForFrames(wxGetApp().getConfig()->getAudioBufferFrames());
+
+    latencyMenuItems[wxID_LATENCY_BASE + latencyIndex]->Check(true);
+
+    wxMenuItem* selectedLatencyItem = latencyMenuItems[wxID_LATENCY_BASE + latencyIndex];
+
+    latencyMenuItems[wxID_LATENCY_CURRENT] = newSettingsMenu->AppendSubMenu(latencySubMenu, "Latency");
+    latencyMenuItems[wxID_LATENCY_CURRENT]->SetItemLabel(getSettingsLabel("Latency", selectedLatencyItem->GetItemLabel().ToStdString()));
+
     newSettingsMenu->AppendSeparator();
 
     settingsMenuItems.clear();
@@ -1389,6 +1435,7 @@ void AppFrame::OnMenu(wxCommandEvent &event) {
     || actionOnMenuFrameRate(event)
     || actionOnMenuDsp(event)
     || actionOnMenuPacing(event)
+    || actionOnMenuLatency(event)
     || actionOnMenuTips(event)
     || actionOnMenuIQSwap(event)
     || actionOnMenuFreqOffset(event)
@@ -2242,6 +2289,40 @@ bool AppFrame::actionOnMenuPacing(wxCommandEvent &event) {
     return false;
 }
 
+bool AppFrame::actionOnMenuLatency(wxCommandEvent &event) {
+    if (event.GetId() >= wxID_LATENCY_BASE && event.GetId() < wxID_LATENCY_BASE + LATENCY_FRAME_COUNT) {
+        int frames = (int)LATENCY_FRAME_LEVELS[event.GetId() - wxID_LATENCY_BASE];
+
+        wxGetApp().getConfig()->setAudioBufferFrames(frames);
+        AudioThread::setBufferFrames(frames);
+
+        //update UI
+        wxMenuItem *selectedLatencyItem = latencyMenuItems[event.GetId()];
+        latencyMenuItems[wxID_LATENCY_CURRENT]->SetItemLabel(
+                getSettingsLabel("Latency", selectedLatencyItem->GetItemLabel().ToStdString()));
+
+        return true;
+    }
+    return false;
+}
+
+void AppFrame::refreshLatencyLabels() {
+    if (latencyMenuItems.empty()) {
+        return;
+    }
+
+    int rate = latencyLabelRate();
+    for (int i = 0; i < LATENCY_FRAME_COUNT; i++) {
+        latencyMenuItems[wxID_LATENCY_BASE + i]->SetItemLabel(
+            AudioMixer::formatLatencyLabel(LATENCY_FRAME_LEVELS[i], rate));
+    }
+
+    wxMenuItem *selectedLatencyItem =
+        latencyMenuItems[wxID_LATENCY_BASE + latencyIndexForFrames(wxGetApp().getConfig()->getAudioBufferFrames())];
+    latencyMenuItems[wxID_LATENCY_CURRENT]->SetItemLabel(
+        getSettingsLabel("Latency", selectedLatencyItem->GetItemLabel().ToStdString()));
+}
+
 bool AppFrame::actionOnMenuSDRStartStop(wxCommandEvent &event) {
     if (event.GetId() == wxID_SDR_START_STOP) {
         if (!wxGetApp().getSDRThread()->isTerminated()) {
@@ -2397,6 +2478,7 @@ void AppFrame::OnFrameTimer(wxTimerEvent& /*event*/) {
 
 void AppFrame::OnMenuOpen(wxMenuEvent& /*event*/) {
     menuOpen = true;
+    refreshLatencyLabels();
 }
 
 void AppFrame::OnMenuClose(wxMenuEvent& /*event*/) {

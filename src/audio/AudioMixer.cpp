@@ -3,6 +3,10 @@
 
 #include "AudioMixer.h"
 
+#include <cmath>
+#include <cstdio>
+#include <string>
+
 double AudioMixer::mixVoice(MixerVoice &voice, float *out, unsigned int nFrames, int deviceRate) {
     // An empty queue alone never skips: currentInput may still hold playable
     // samples, and every pop site below already handles an empty queue.
@@ -175,6 +179,23 @@ double AudioMixer::mixVoice(MixerVoice &voice, float *out, unsigned int nFrames,
     // A pass that mixed nothing contributes no peak; returning the latched
     // peak would spuriously scale the other voices down in normalize.
     return mixed ? mixPeak : 0.0;
+}
+
+std::string AudioMixer::formatLatencyLabel(unsigned int frames, int deviceRate) {
+    if (deviceRate <= 0) {
+        deviceRate = 48000;
+    }
+
+    long ms = std::lround(frames * 1000.0 / deviceRate);
+
+    char rate[16];
+    if (deviceRate % 1000 == 0) {
+        std::snprintf(rate, sizeof(rate), "%d", deviceRate / 1000);
+    } else {
+        std::snprintf(rate, sizeof(rate), "%.1f", deviceRate / 1000.0);
+    }
+
+    return std::to_string(frames) + " (~" + std::to_string(ms) + "ms at " + rate + "kHz)";
 }
 
 void AudioMixer::normalize(float *out, unsigned int nFrames, double peak) {

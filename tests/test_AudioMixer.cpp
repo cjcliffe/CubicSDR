@@ -351,6 +351,38 @@ TEST_SUITE("AudioMixer") {
         CHECK(h.out[8] == doctest::Approx(0.5f));
         CHECK(h.out[15] == doctest::Approx(0.57f));
     }
+    TEST_CASE("menu frame sizes mix FIFO-exact") {
+        for (unsigned int frames : {512u, 1024u, 2048u, 4096u}) {
+            MixerVoice voice;
+            voice.inputQueue = std::make_shared<AudioThreadInputQueue>();
+            voice.inputQueue->set_max_num_items(100);
+            voice.prebufferDone = true;
+            CHECK(voice.inputQueue->try_push(makeBuffer(1, DEVICE_RATE, 1000000, ramp(frames, 0.25f), 0.3f)));
+
+            std::vector<float> out(frames * 2, 0.0f);
+            double peak = AudioMixer::mixVoice(voice, out.data(), frames, DEVICE_RATE);
+
+            CHECK(peak == doctest::Approx(0.3));
+            for (unsigned int i = 0; i < frames; i++) {
+                float want = 0.25f + 0.01f * (float)i;
+                CHECK(out[i * 2] == doctest::Approx(want));
+                CHECK(out[i * 2 + 1] == doctest::Approx(want));
+            }
+            CHECK(voice.inputQueue->empty());
+
+            AudioMixer::normalize(out.data(), frames, peak);
+        }
+    }
+
+    TEST_CASE("latency labels show frames and milliseconds") {
+        CHECK(AudioMixer::formatLatencyLabel(512, 48000) == "512 (~11ms at 48kHz)");
+        CHECK(AudioMixer::formatLatencyLabel(1024, 48000) == "1024 (~21ms at 48kHz)");
+        CHECK(AudioMixer::formatLatencyLabel(2048, 48000) == "2048 (~43ms at 48kHz)");
+        CHECK(AudioMixer::formatLatencyLabel(4096, 48000) == "4096 (~85ms at 48kHz)");
+        CHECK(AudioMixer::formatLatencyLabel(1024, 44100) == "1024 (~23ms at 44.1kHz)");
+        CHECK(AudioMixer::formatLatencyLabel(1024, 0) == "1024 (~21ms at 48kHz)");
+    }
+
 }
 
 }  // namespace
