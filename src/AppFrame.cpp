@@ -1529,6 +1529,9 @@ bool AppFrame::actionOnMenuDisplay(wxCommandEvent& event) {
     //force all windows refresh
     if (bManaged) {
         Refresh();
+        for (auto canvas : frameCanvases) {
+            canvas->Refresh();
+        }
     }
 
     return bManaged;

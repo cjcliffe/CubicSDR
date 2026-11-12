@@ -62,8 +62,6 @@ void GainCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 }
 
 void GainCanvas::frameUpdate() {
-    Refresh();
-
 	bool areGainsChangedHere = false;
     
     for (auto gi : gainPanels) {
@@ -138,11 +136,13 @@ void GainCanvas::OnMouseMoved(wxMouseEvent& event) {
             setStatusText(helpTip);
         }
     }
+    Refresh();
 }
 
 void GainCanvas::OnMouseDown(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseDown(event);
     SetLevel();
+    Refresh();
 }
 
 void GainCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
@@ -158,6 +158,7 @@ void GainCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
             break;
         }
     }
+    Refresh();
 }
 
 void GainCanvas::OnMouseReleased(wxMouseEvent& event) {

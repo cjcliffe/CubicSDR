@@ -111,13 +111,12 @@ void ModeSelectorCanvas::frameUpdate() {
         auto t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
         pulsePhase = 6.2831853f * (float)(t % 2000) / 2000.0f;
         Refresh();
-    } else if (mouseTracker.mouseInView()) {
-        Refresh();
     }
 }
 
 void ModeSelectorCanvas::OnMouseMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseMoved(event);
+    Refresh();
 }
 
 void ModeSelectorCanvas::OnMouseDown(wxMouseEvent& event) {

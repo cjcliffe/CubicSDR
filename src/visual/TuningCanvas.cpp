@@ -269,7 +269,25 @@ void TuningCanvas::frameUpdate() {
             dragging = false;
         }
     }
-    Refresh();
+    // Painted values have no event path for external tunes: repaint on change.
+    long long liveFreq = 0;
+    auto liveDemod = wxGetApp().getDemodMgr().getCurrentModem();
+    if (liveDemod != nullptr) {
+        liveFreq = liveDemod->getFrequency();
+    }
+    long long liveBw = wxGetApp().getDemodMgr().getLastBandwidth();
+    long long liveCenter = wxGetApp().getFrequency();
+    if (firstPaintCheck || liveFreq != paintedFreq || liveBw != paintedBw || liveCenter != paintedCenter
+        || currentPPM != paintedPPM || altDown != paintedAlt || shiftDown != paintedShift) {
+        paintedFreq = liveFreq;
+        paintedBw = liveBw;
+        paintedCenter = liveCenter;
+        paintedPPM = currentPPM;
+        paintedAlt = altDown;
+        paintedShift = shiftDown;
+        firstPaintCheck = false;
+        Refresh();
+    }
 }
 
 void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
@@ -323,6 +341,7 @@ void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
       }
     }
 
+    Refresh();
 }
 
 void TuningCanvas::OnMouseDown(wxMouseEvent& event) {
@@ -334,6 +353,7 @@ void TuningCanvas::OnMouseDown(wxMouseEvent& event) {
     mouseTracker.setVertDragLock(true);
     downIndex = hoverIndex;
     downState = hoverState;
+    Refresh();
 }
 
 void TuningCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
@@ -348,6 +368,7 @@ void TuningCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
             StepTuner(hoverState, (event.m_wheelRotation < 0) ? TUNING_DIRECTION_UP : TUNING_DIRECTION_DOWN, hExponent, shiftDown, false);
         }
     }
+    Refresh();
 }
 
 void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
@@ -363,6 +384,7 @@ void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
 
     dragging = false;
     SetCursor(wxCURSOR_ARROW);
+    Refresh();
 }
 
 void TuningCanvas::OnMouseRightDown(wxMouseEvent& event) {
@@ -395,6 +417,7 @@ void TuningCanvas::OnMouseRightReleased(wxMouseEvent& event) {
             }
         }
     }
+    Refresh();
 }
 
 void TuningCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
@@ -416,6 +439,7 @@ void TuningCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
 		this->SetFocus();
 	}
 #endif
+    Refresh();
 }
 
 void TuningCanvas::setHelpTip(std::string tip) {

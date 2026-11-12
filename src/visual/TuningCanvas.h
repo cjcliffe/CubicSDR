@@ -75,6 +75,11 @@ private:
     int currentPPM;
 
     long long freq, bw, center;
+    // Painted-value cache for change-driven repaints (see frameUpdate).
+    long long paintedFreq = -1, paintedBw = -1, paintedCenter = -1;
+    int paintedPPM = 0;
+    bool paintedAlt = false, paintedShift = false;
+    bool firstPaintCheck = true;
     bool halfBand;
     //
 wxDECLARE_EVENT_TABLE();

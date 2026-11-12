@@ -109,7 +109,8 @@ void MeterCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 }
 
 void MeterCanvas::frameUpdate() {
-    Refresh();
+    // Repaints are event-driven: value setters and mouse handlers Refresh
+    // directly, so the frame pump has nothing to do here.
 }
 
 void MeterCanvas::OnMouseMoved(wxMouseEvent& event) {
@@ -122,12 +123,14 @@ void MeterCanvas::OnMouseMoved(wxMouseEvent& event) {
             setStatusText(helpTip);
         }
     }
+    Refresh();
 }
 
 void MeterCanvas::OnMouseDown(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseDown(event);
     userInputValue = mouseTracker.getMouseY() * (level_max-level_min) + level_min;
     mouseTracker.setHorizDragLock(true);
+    Refresh();
 }
 
 void MeterCanvas::OnMouseReleased(wxMouseEvent& event) {
@@ -142,6 +145,7 @@ void MeterCanvas::OnMouseReleased(wxMouseEvent& event) {
     } else if (pressedHere) {
         userInputValue = mouseTracker.getMouseY() * (level_max-level_min) + level_min;
     }
+    Refresh();
 }
 
 void MeterCanvas::OnMouseDoubleClicked(wxMouseEvent& WXUNUSED(event)) {
@@ -162,6 +166,7 @@ void MeterCanvas::OnMouseRightReleased(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseRightReleased(event);
 	if (pressedHere && showUserInput) {
 		userInputValue = level - level * 0.02;
+		Refresh();
 	}
 }
 
@@ -186,6 +191,7 @@ void MeterCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
 	}
 
 	userInputValue = currentValue;
+	Refresh();
 }
 
 void MeterCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
@@ -202,6 +208,7 @@ void MeterCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
 		this->SetFocus();
 	}
 #endif
+    Refresh();
 }
 
 void MeterCanvas::setHelpTip(std::string tip) {
