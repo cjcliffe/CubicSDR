@@ -3328,9 +3328,6 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
             break;
         case WXK_TAB:
             lastDemod = wxGetApp().getDemodMgr().getCurrentModem();
-            if (!lastDemod) {
-                break;
-            }
             if (event.ShiftDown()) {
                 demod = wxGetApp().getDemodMgr().getPreviousDemodulator(lastDemod);
             } else {

@@ -8,6 +8,7 @@
 #include "CubicSDR.h"
 #include "AppFrame.h"
 #include "DemodReselect.h"
+#include "DemodCycle.h"
 
 #if USE_HAMLIB
 #include "RigThread.h"
@@ -95,41 +96,29 @@ std::vector<DemodulatorInstancePtr> DemodulatorMgr::getOrderedDemodulators(bool 
     return demods_ordered;
 }
 
+static int indexOfDemod(const std::vector<DemodulatorInstancePtr>& demods_ordered, const DemodulatorInstancePtr& demod) {
+    if (!demod) {
+        return -1;
+    }
+    auto p = std::find(demods_ordered.begin(), demods_ordered.end(), demod);
+    if (p == demods_ordered.end()) {
+        return -1;
+    }
+    return (int)std::distance(demods_ordered.begin(), p);
+}
+
 DemodulatorInstancePtr DemodulatorMgr::getPreviousDemodulator(const DemodulatorInstancePtr& demod, bool actives) {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
-    if (!getCurrentModem()) {
-        return nullptr;
-    }
     auto demods_ordered = getOrderedDemodulators(actives);
-    auto p = std::find(demods_ordered.begin(), demods_ordered.end(), demod);
-
-    if (p == demods_ordered.end()) {
-        return nullptr;
-    }
-    if (*p == demods_ordered.front()) {
-        return demods_ordered.back();
-    }
-    return *(--p);
+    int stepped = DemodCycle::step((int)demods_ordered.size(), indexOfDemod(demods_ordered, demod), false);
+    return stepped < 0 ? nullptr : demods_ordered[(size_t)stepped];
 }
 
 DemodulatorInstancePtr DemodulatorMgr::getNextDemodulator(const DemodulatorInstancePtr& demod, bool actives) {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
-    if (!getCurrentModem()) {
-        return nullptr;
-    }
     auto demods_ordered = getOrderedDemodulators(actives);
-    auto p = std::find(demods_ordered.begin(), demods_ordered.end(), demod);
-
-    if (actives) {
-        
-    }
-    if (p == demods_ordered.end()) {
-        return nullptr;
-    }
-    if (*p == demods_ordered.back()) {
-        return demods_ordered.front();
-    }
-    return *(++p);
+    int stepped = DemodCycle::step((int)demods_ordered.size(), indexOfDemod(demods_ordered, demod), true);
+    return stepped < 0 ? nullptr : demods_ordered[(size_t)stepped];
 }
 
 DemodulatorInstancePtr DemodulatorMgr::getLastDemodulator() {
