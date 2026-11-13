@@ -60,7 +60,11 @@ def require(prog, dry_run=False):
 
 
 def download(url, dest, dry_run=False, retries=3):
-    """Fetch url to dest, resuming-safe via a .part file; skip if dest exists."""
+    """Fetch url to dest, resuming-safe via a .part file; skip if dest exists.
+
+    Sends a browser User-Agent: some hosts (SDRplay's file manager
+    included) reject urllib's default with 403.
+    """
     if os.path.exists(dest):
         log("have %s; skipping download" % dest)
         return
@@ -70,7 +74,11 @@ def download(url, dest, dry_run=False, retries=3):
     os.makedirs(os.path.dirname(dest), exist_ok=True)
     for attempt in range(retries):
         try:
-            urllib.request.urlretrieve(url, dest + ".part")
+            request = urllib.request.Request(
+                url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(request) as response, \
+                    open(dest + ".part", "wb") as handle:
+                shutil.copyfileobj(response, handle)
             os.replace(dest + ".part", dest)
             return
         except Exception as error:
@@ -253,6 +261,19 @@ SOAPY_NAMES = {
     "bladerf": "SoapyBladeRF", "pluto": "SoapyPlutoSDR",
     "uhd": "SoapyUHD", "sdrplay": "SoapySDRPlay3",
 }
+SDRPLAY_API_VERSION = "3.15"
+# Vendor API installers. The wpdmdl IDs are permanent download slots,
+# but SDRplay reissues them when a package is re-uploaded: a 404 here
+# means re-scrape https://sdrplay.com/hardware-api/ for fresh IDs.
+SDRPLAY_API_URLS = {
+    "windows": "https://sdrplay.com/download/hardware-api-windows/?wpdmdl=1905",
+    "linux": "https://sdrplay.com/download/hardware-api-linux/?wpdmdl=1906",
+    "macos": "https://sdrplay.com/download/hardware-api-macos/?wpdmdl=1907",
+}
+# Unpacks Inno Setup installers without admin rights or a service
+# install; only the headers and library are needed to build and ship.
+INNOEXTRACT_URL = ("https://constexpr.org/innoextract/files/"
+                   "innoextract-1.9-windows.zip")
 
 
 def selected_modules(spec):
@@ -1102,12 +1123,12 @@ def install_boost_windows(prefix, arch, dry_run=False):
 
 
 def find_sdrplay_api(arch, dry_run=False):
-    """Locate the vendor SDRplay API 3.x install, or None when absent.
+    """Locate a local vendor SDRplay API 3.x install, or None when absent.
 
-    The API cannot be redistributed, so it is never downloaded: the
-    registry key its installer writes is honored, with the default
+    The registry key its installer writes is honored, with the default
     install path as fallback. Both the header and the arch-matching DLL
-    must exist for the install to count.
+    must exist for the install to count. Local installs win over the
+    prefix fetch so developer machines skip the 50MB download.
     """
     default = os.path.join("C:\\", "Program Files", "SDRplay", "API")
     if dry_run:
@@ -1125,6 +1146,52 @@ def find_sdrplay_api(arch, dry_run=False):
             and os.path.isfile(os.path.join(api_dir, subdir, "sdrplay_api.dll"))):
         return api_dir
     return None
+
+
+def fetch_sdrplay_api_windows(prefix, arch, dry_run=False):
+    """Unpack the vendor SDRplay API installer into the prefix.
+
+    Downloads the API installer plus innoextract (one-time; the stamp
+    and download()'s skip-if-exists make reruns free) and extracts
+    without admin rights, so CI machines need no SDRplay install.
+    Returns (include dir, import lib, runtime DLL) for the target arch.
+    """
+    tag = "sdrplay-api-%s" % arch
+    dest = os.path.join(prefix, "src",
+                        "sdrplay-api-%s" % SDRPLAY_API_VERSION)
+    installer = os.path.join(
+        prefix, "src",
+        "SDRplayAPI-Windows-%s.exe" % SDRPLAY_API_VERSION)
+    if stamp_valid(prefix, tag, SDRPLAY_API_VERSION, adopt=False):
+        log("sdrplay api already fetched; skipping")
+    else:
+        download(SDRPLAY_API_URLS["windows"], installer, dry_run)
+        inno_dir = os.path.join(prefix, "src", "innoextract")
+        inno_exe = os.path.join(inno_dir, "innoextract.exe")
+        if not dry_run and not os.path.isfile(inno_exe):
+            download(INNOEXTRACT_URL, inno_dir + ".zip", dry_run)
+            with zipfile.ZipFile(inno_dir + ".zip") as archive:
+                archive.extractall(inno_dir)
+        log("+ extract SDRplay API with innoextract")
+        run([inno_exe, "-e", "-d", dest, installer], dry_run=dry_run)
+        mark_done(prefix, tag, dry_run, SDRPLAY_API_VERSION)
+    api = os.path.join(dest, "app", "API")
+    subdir = "x64" if arch == "x64" else "x86"
+    return (os.path.join(api, "inc"),
+            os.path.join(api, subdir, "sdrplay_api.lib"),
+            os.path.join(api, subdir, "sdrplay_api.dll"))
+
+
+def sdrplay_api_windows(prefix, arch, dry_run=False):
+    """Headers/lib/DLL for the SDRplay API: local install when usable,
+    else a prefix-local fetch. Returns (include dir, import lib, DLL)."""
+    found = find_sdrplay_api(arch, dry_run)
+    if found is not None:
+        subdir = "x64" if arch == "x64" else "x86"
+        return (os.path.join(found, "inc"),
+                os.path.join(found, subdir, "sdrplay_api.lib"),
+                os.path.join(found, subdir, "sdrplay_api.dll"))
+    return fetch_sdrplay_api_windows(prefix, arch, dry_run)
 
 
 def patch_uhd_windows(src, dry_run=False):
@@ -1254,11 +1321,10 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
     handled by the repos/names tables at the end.
     """
     selected = [key for key in SUPPORTED_MODULES if key in set(selected)]
-    sdrplay_api = find_sdrplay_api(arch, dry_run) if "sdrplay" in selected else None
-    if "sdrplay" in selected and sdrplay_api is None:
-        log("SDRplay API not found; skipping sdrplay module "
-            "(install SDRplay API 3.x to enable it)")
-        selected = [key for key in selected if key != "sdrplay"]
+    sdrplay_inc = sdrplay_lib = sdrplay_dll = ""
+    if "sdrplay" in selected:
+        sdrplay_inc, sdrplay_lib, sdrplay_dll = sdrplay_api_windows(
+            prefix, arch, dry_run)
     if not selected:
         return
     # Only pay for libusb/pthreads when a selected module links against them.
@@ -1383,15 +1449,12 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
             if not dry_run:
                 shutil.copy(dll, os.path.join(prefix, "bin"))
     if "sdrplay" in selected:
-        # The vendor runtime DLL lives outside the prefix; stage it to
-        # prefix bin so it lands beside the exe with everything else.
-        api_dll = os.path.join(sdrplay_api,
-                               "x64" if arch == "x64" else "x86",
-                               "sdrplay_api.dll")
-        log("+ stage %s to prefix bin" % os.path.basename(api_dll))
+        # The API runtime DLL (local install or prefix fetch) lands in
+        # prefix bin so it sits beside the exe with everything else.
+        log("+ stage %s to prefix bin" % os.path.basename(sdrplay_dll))
         if not dry_run:
             os.makedirs(os.path.join(prefix, "bin"), exist_ok=True)
-            shutil.copy(api_dll, os.path.join(prefix, "bin"))
+            shutil.copy(sdrplay_dll, os.path.join(prefix, "bin"))
     lib_flags = {
         "rtlsdr": ("rtlsdr.lib", "rtl-sdr.h", "-DRTLSDR_LIBRARY:PATH=%s",
                    "-DRTLSDR_INCLUDE_DIR:PATH=%s"),
@@ -1413,6 +1476,9 @@ def build_modules_windows(prefix, config, arch, jobs, selected, dry_run=False):
             else:
                 libs[key] = [lib_flag % find_prefix_file(prefix, lib),
                              inc_flag % header_dir(prefix, header, dry_run)]
+    if "sdrplay" in selected:
+        libs["sdrplay"] = ["-DLIBSDRPLAY_INCLUDE_DIRS:PATH=%s" % sdrplay_inc,
+                           "-DLIBSDRPLAY_LIBRARIES:PATH=%s" % sdrplay_lib]
     if "uhd" in selected:
         # SoapyUHD relies on the same Boost auto-linking as UHD itself, so
         # it needs the same BOOST_ROOT/LIBPATH hints to configure and link.
@@ -1545,14 +1611,159 @@ def normalize_iio_headers(prefix, dry_run=False):
             shutil.copy(src, dest)
 
 
-def find_sdrplay_api_linux(dry_run=False):
-    """Locate a Linux SDRplay API install by its header, or None."""
+def find_sdrplay_api_linux():
+    """Usable system SDRplay API install as (include dir, lib), else None.
+
+    Both a header and a linkable library must exist; a header-only
+    install falls through to the prefix fetch.
+    """
+    header = sys_header(["/usr/include/sdrplay_api.h",
+                         "/usr/local/include/sdrplay_api.h"])
+    lib = first_glob(["/usr/lib/x86_64-linux-gnu/libsdrplay_api.so",
+                      "/usr/lib/aarch64-linux-gnu/libsdrplay_api.so",
+                      "/usr/local/lib/libsdrplay_api.so",
+                      "/usr/lib/libsdrplay_api.so"])
+    if header is None or lib is None:
+        return None
+    return os.path.dirname(header), lib
+
+
+def fetch_sdrplay_api_linux(prefix, dry_run=False):
+    """Unpack the vendor SDRplay API .run into the prefix (no root).
+
+    Makeself extract-only mode drops the payload without running the
+    installer; headers go to prefix/include and the versioned .so plus
+    runtime/linker symlinks to prefix/lib. Returns (include dir, lib).
+    """
+    tag = "sdrplay-api"
+    runfile = os.path.join(
+        prefix, "src", "SDRplayAPI-Linux-%s.run" % SDRPLAY_API_VERSION)
+    unpack = os.path.join(prefix, "src",
+                          "sdrplay-api-%s" % SDRPLAY_API_VERSION)
+    if stamp_valid(prefix, tag, SDRPLAY_API_VERSION, adopt=False):
+        log("sdrplay api already fetched; skipping")
+    else:
+        download(SDRPLAY_API_URLS["linux"], runfile, dry_run)
+        log("+ extract SDRplay API payload")
+        run(["sh", runfile, "--target", unpack, "--noexec"],
+            dry_run=dry_run)
+        if not dry_run:
+            subdir = {"x86_64": "amd64", "AMD64": "amd64",
+                      "aarch64": "arm64", "arm64": "arm64",
+                      "ARM64": "arm64", "armv7l": "armhf",
+                      "armv6l": "armhf"}.get(platform.machine())
+            if subdir is None:
+                sys.exit("error: unsupported architecture for SDRplay API: %s"
+                         % platform.machine())
+            os.makedirs(os.path.join(prefix, "include"), exist_ok=True)
+            os.makedirs(os.path.join(prefix, "lib"), exist_ok=True)
+            for header in glob.glob(os.path.join(unpack, "inc", "*.h")):
+                shutil.copy(header, os.path.join(prefix, "include"))
+            full = "libsdrplay_api.so.%s" % SDRPLAY_API_VERSION
+            shutil.copy(os.path.join(unpack, subdir, full),
+                        os.path.join(prefix, "lib", full))
+            for link in ("libsdrplay_api.so.3", "libsdrplay_api.so"):
+                target = os.path.join(prefix, "lib", link)
+                if os.path.islink(target) or os.path.exists(target):
+                    os.remove(target)
+                os.symlink(full, target)
+        mark_done(prefix, tag, dry_run, SDRPLAY_API_VERSION)
+    return (os.path.join(prefix, "include"),
+            os.path.join(prefix, "lib", "libsdrplay_api.so"))
+
+
+def sdrplay_api_linux(prefix, dry_run=False):
+    """Headers/lib for the SDRplay API: system install when usable,
+    else a prefix-local fetch. Returns (include dir, lib)."""
+    found = find_sdrplay_api_linux()
+    if found is not None:
+        return found
+    return fetch_sdrplay_api_linux(prefix, dry_run)
+
+
+def find_sdrplay_api_macos():
+    """Usable local SDRplay API install as (include dir, lib), else None.
+
+    The vendor .pkg installs a versioned tree under /Library; both a
+    header and the library must exist or the prefix fetch runs instead.
+    """
+    header = first_glob(
+        ["/Library/SDRplayAPI/*/include/sdrplay_api.h"])
+    lib = first_glob(["/Library/SDRplayAPI/*/lib/libsdrplay_api.*"])
+    if header is None or lib is None:
+        return None
+    return os.path.dirname(header), lib
+
+
+def fetch_sdrplay_api_macos(prefix, dry_run=False):
+    """Unpack the vendor SDRplay API .pkg into the prefix (no sudo).
+
+    pkgutil expands the package and tar reads the cpio Payload; the
+    library and headers are globbed out (robust to the versioned
+    payload layout) into prefix/lib and prefix/include.
+    Returns (include dir, lib).
+    """
+    tag = "sdrplay-api"
+    pkg = os.path.join(prefix, "src",
+                       "SDRplayAPI-macOS-%s.pkg" % SDRPLAY_API_VERSION)
+    unpack = os.path.join(prefix, "src",
+                          "sdrplay-api-%s" % SDRPLAY_API_VERSION)
+    if stamp_valid(prefix, tag, SDRPLAY_API_VERSION, adopt=False):
+        log("sdrplay api already fetched; skipping")
+    else:
+        download(SDRPLAY_API_URLS["macos"], pkg, dry_run)
+        require("pkgutil", dry_run)
+        require("tar", dry_run)
+        log("+ expand SDRplay API package")
+        run(["pkgutil", "--expand", pkg, unpack], dry_run=dry_run)
+        if not dry_run:
+            payload = first_glob([os.path.join(unpack, "Payload"),
+                                  os.path.join(unpack, "*", "Payload")])
+            if payload is None:
+                sys.exit("error: no Payload in expanded SDRplay API package")
+            payload_dir = unpack + "-payload"
+            os.makedirs(payload_dir, exist_ok=True)
+            run(["tar", "-xzf", payload, "-C", payload_dir])
+            lib = None
+            for pattern in (os.path.join(payload_dir, "**",
+                                         "libsdrplay_api.*"),):
+                matches = sorted(glob.glob(pattern, recursive=True))
+                matches = [path for path in matches
+                           if os.path.isfile(path)]
+                if matches:
+                    lib = matches[0]
+                    break
+            header = None
+            for pattern in (os.path.join(payload_dir, "**",
+                                         "sdrplay_api.h"),):
+                matches = sorted(glob.glob(pattern, recursive=True))
+                if matches:
+                    header = os.path.dirname(matches[0])
+                    break
+            if lib is None or header is None:
+                sys.exit("error: SDRplay API payload lacks lib or headers")
+            os.makedirs(os.path.join(prefix, "lib"), exist_ok=True)
+            os.makedirs(os.path.join(prefix, "include"), exist_ok=True)
+            shutil.copy(lib, os.path.join(prefix, "lib"))
+            for name in glob.glob(os.path.join(header, "*.h")):
+                shutil.copy(name, os.path.join(prefix, "include"))
+        mark_done(prefix, tag, dry_run, SDRPLAY_API_VERSION)
     if dry_run:
-        return "/usr/include"
-    if sys_header(["/usr/include/sdrplay_api.h",
-                   "/usr/local/include/sdrplay_api.h"]):
-        return True
-    return None
+        return (os.path.join(prefix, "include"),
+                os.path.join(prefix, "lib", "libsdrplay_api.so"))
+    lib = first_glob([os.path.join(prefix, "lib", "libsdrplay_api.*")])
+    if lib is None:
+        sys.exit("error: SDRplay API library missing from prefix lib")
+    return os.path.join(prefix, "include"), lib
+
+
+def sdrplay_api_macos(prefix, dry_run=False):
+    """Headers/lib for the SDRplay API: local install when usable,
+    else a prefix-local fetch. Returns (include dir, lib)."""
+    found = find_sdrplay_api_macos()
+    if found is not None:
+        return found
+    return fetch_sdrplay_api_macos(prefix, dry_run)
 
 
 def build_modules_linux(prefix, config, jobs, selected, from_source,
@@ -1564,10 +1775,9 @@ def build_modules_linux(prefix, config, jobs, selected, from_source,
     always build from source. Mirrors build_modules_windows.
     """
     selected = [key for key in SUPPORTED_MODULES if key in set(selected)]
-    if "sdrplay" in selected and find_sdrplay_api_linux(dry_run) is None:
-        log("SDRplay API not found; skipping sdrplay module "
-            "(install the SDRplay API to enable it)")
-        selected = [key for key in selected if key != "sdrplay"]
+    sdrplay_inc = sdrplay_lib = ""
+    if "sdrplay" in selected:
+        sdrplay_inc, sdrplay_lib = sdrplay_api_linux(prefix, dry_run)
     if not selected:
         return
     need_usb = set(selected) & {"rtlsdr", "airspy", "airspyhf", "hackrf",
@@ -1722,6 +1932,9 @@ def build_modules_linux(prefix, config, jobs, selected, from_source,
                    ["-DLIBHACKRF_LIBRARY:PATH=libhackrf.so",
                     "-DLIBHACKRF_INCLUDE_DIR:PATH=%s" % header_dir(prefix, "hackrf.h", dry_run)]),
     }
+    if "sdrplay" in selected:
+        libs["sdrplay"] = ["-DLIBSDRPLAY_INCLUDE_DIRS:PATH=%s" % sdrplay_inc,
+                           "-DLIBSDRPLAY_LIBRARIES:PATH=%s" % sdrplay_lib]
     if "audio" in selected:
         # SoapyAudio backends: PulseAudio is the desktop default; ALSA and
         # JACK cover non-Pulse and pro-audio setups. OSS has no link
@@ -2035,15 +2248,13 @@ def build_modules_macos(prefix, config, jobs, selected, dry_run=False,
     Cross-compiles cannot use Homebrew bottles (host-arch only), so they
     build libusb and FFTW from source and link the SDK system curses
     instead of the brew one. SoapyAudio needs no backend flags: it uses
-    CoreAudio on Apple platforms unconditionally. The SDRplay API check
-    is deferred, so sdrplay is skipped with a note like other missing
-    dependencies.
+    CoreAudio on Apple platforms unconditionally. The SDRplay API comes
+    from a local install when usable, else a prefix-local .pkg fetch.
     """
     selected = [key for key in SUPPORTED_MODULES if key in set(selected)]
+    sdrplay_inc = sdrplay_lib = ""
     if "sdrplay" in selected:
-        log("SDRplay API check is not implemented for macOS; skipping "
-            "sdrplay module")
-        selected = [key for key in selected if key != "sdrplay"]
+        sdrplay_inc, sdrplay_lib = sdrplay_api_macos(prefix, dry_run)
     if not selected:
         return
     if host is None:
@@ -2213,6 +2424,9 @@ def build_modules_macos(prefix, config, jobs, selected, dry_run=False,
                    ["-DLIBHACKRF_LIBRARY:PATH=libhackrf.dylib",
                     "-DLIBHACKRF_INCLUDE_DIR:PATH=%s" % header_dir(prefix, "hackrf.h", dry_run)]),
     }
+    if "sdrplay" in selected:
+        libs["sdrplay"] = ["-DLIBSDRPLAY_INCLUDE_DIRS:PATH=%s" % sdrplay_inc,
+                           "-DLIBSDRPLAY_LIBRARIES:PATH=%s" % sdrplay_lib]
     for key in selected:
         if key not in SOAPY_REPOS:
             continue
@@ -2480,6 +2694,8 @@ def build_appimage(args, dry_run=False):
             % os.path.join(appdir, "usr", "bin", "modules"))
         log("+ mirror GL fonts into %s"
             % os.path.join(appdir, "usr", "bin", "fonts"))
+        log("+ stage SDRplay API notice into %s"
+            % os.path.join(appdir, "usr", "share", "doc", "cubicsdr"))
     else:
         libdir = os.path.join(appdir, "usr", "lib")
         os.makedirs(libdir, exist_ok=True)
@@ -2508,6 +2724,14 @@ def build_appimage(args, dry_run=False):
                                             "cubicsdr", "fonts", "*")):
             if os.path.isfile(font):
                 shutil.copy(font, fontdir)
+        # License compliance: the SDRplay notice ships wherever its
+        # library does.
+        if first_glob([os.path.join(prefix, "lib", "SoapySDR", "modules*",
+                                    "libsdrPlay*")]):
+            docdir = os.path.join(appdir, "usr", "share", "doc", "cubicsdr")
+            os.makedirs(docdir, exist_ok=True)
+            shutil.copy(os.path.join(ROOT, "docs", "SDRplay-API-NOTICE.txt"),
+                        docdir)
     tool = os.path.join(prefix, "linuxdeploy-x86_64.AppImage")
     if not os.path.exists(tool):
         download(LINUXDEPLOY_URL, tool, dry_run)

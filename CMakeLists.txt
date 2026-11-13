@@ -784,8 +784,7 @@ IF (APPLE AND BUNDLE_APP)
     set(CUBICSDR_CODE_SIGN OFF CACHE BOOL "Code Signing")
     
     set(BUNDLE_SOAPY_MODS OFF CACHE BOOL "Bundle local SoapySDR modules")
-    set(BUNDLE_MIR_SDR OFF CACHE BOOL "Bundle mir_sdr for personal use only -- do not distribute.")
-    
+
     IF (BUNDLE_SOAPY_MODS)
         list(APPEND CUBICSDR_COMPILE_DEFINITIONS BUNDLE_SOAPY_MODS=1)
         set(BUNDLED_MODS_ONLY OFF CACHE BOOL "Use bundled mods only")
@@ -847,7 +846,14 @@ IF (APPLE AND BUNDLE_APP)
                 COMPONENT Runtime
             )
     ENDFOREACH()
-        
+
+    file(GLOB SDRPLAY_MOD ${SOAPY_SDR_MOD_PATH}/libsdrPlaySupport.*)
+    IF(SDRPLAY_MOD)
+        INSTALL(FILES "${PROJECT_SOURCE_DIR}/docs/SDRplay-API-NOTICE.txt"
+            DESTINATION "${APPS}/Contents/Resources"
+            COMPONENT Runtime)
+    ENDIF()
+
     ENDIF(BUNDLE_SOAPY_MODS)
 
     SET_TARGET_PROPERTIES(CubicSDR PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${PROJECT_SOURCE_DIR}/cmake/CubicSDRInfo.plist.in")
@@ -872,14 +878,7 @@ IF (APPLE AND BUNDLE_APP)
     IF (BUNDLE_SOAPY_MODS)
        FOREACH(SOAPY_MOD_FILE ${SOAPY_MODS})
            GET_FILENAME_COMPONENT(SOAPY_MOD_NAME ${SOAPY_MOD_FILE} NAME)
-           IF(NOT BUNDLE_MIR_SDR) # prevent inclusion of libmirsdrapi-rsp.so
-           IF(${SOAPY_MOD_NAME} STREQUAL "libsdrPlaySupport.so")
-               message(STATUS "Excluding libsdrPlaySupport.so")
-               CONTINUE()
-           ELSE()
-               message(STATUS "Bundling ${SOAPY_MOD_NAME} from ${SOAPY_MOD_FILE}")
-           ENDIF()
-           ENDIF()
+           message(STATUS "Bundling ${SOAPY_MOD_NAME} from ${SOAPY_MOD_FILE}")
            INSTALL(CODE "
                if(NOT COMMAND gp_resolve_item_override)
                  function(gp_resolve_item_override context item exepath dirs resolved_item_var resolved_var)
@@ -1067,6 +1066,9 @@ IF (WIN32 AND BUILD_INSTALLER)
         message(STATUS "SOAPY_MODS: ${SOAPY_MODS}")
         install(FILES ${SOAPY_BINS} DESTINATION .)
         install(FILES ${SOAPY_MODS} DESTINATION modules)
+        IF(EXISTS "${SOAPY_SDR_ROOT}/bin/sdrplay_api.dll")
+            install(FILES "${PROJECT_SOURCE_DIR}/docs/SDRplay-API-NOTICE.txt" DESTINATION .)
+        ENDIF()
     ENDIF(BUNDLE_SOAPY_MODS)
     
     IF(MSVC)
