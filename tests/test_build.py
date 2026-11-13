@@ -130,10 +130,18 @@ class MacosModulesDryRunTests(unittest.TestCase):
                 prefix, "Release", 2,
                 build.selected_modules("default"), dry_run=True)
 
-    def test_sdrplay_is_skipped(self):
+    def test_sdrplay_fetch_is_planned(self):
+        import io
+        from contextlib import redirect_stdout
         with tempfile.TemporaryDirectory() as prefix:
-            build.build_modules_macos(
-                prefix, "Release", 2, ["sdrplay", "audio"], dry_run=True)
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                build.build_modules_macos(
+                    prefix, "Release", 2, ["sdrplay", "audio"], dry_run=True)
+            out = buf.getvalue()
+            self.assertIn("hardware-api-macos", out)
+            self.assertIn("-DLIBSDRPLAY_INCLUDE_DIRS", out)
+            self.assertIn("-DLIBSDRPLAY_LIBRARIES", out)
 
     def test_darwin_modules_carry_prefix_rpath(self):
         from unittest import mock
@@ -211,6 +219,123 @@ class MacosModulesDryRunTests(unittest.TestCase):
                     "--macos-arch", "x86_64", "--macos-min-version", "11.0",
                     "--dry-run"]
             self.assertEqual(build.main(args), 0)
+
+
+class SdrplayFetchTests(unittest.TestCase):
+    def test_windows_fetch_dry_run_plans_download(self):
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as prefix:
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                inc, lib, dll = build.fetch_sdrplay_api_windows(
+                    prefix, "x64", dry_run=True)
+            out = buf.getvalue()
+            self.assertIn("hardware-api-windows", out)
+            self.assertIn("innoextract", out)
+            self.assertTrue(inc.endswith(os.path.join("app", "API", "inc")))
+            self.assertTrue(lib.endswith("sdrplay_api.lib"))
+            self.assertTrue(dll.endswith("sdrplay_api.dll"))
+            self.assertEqual(os.listdir(prefix), [])
+
+    def test_windows_prefers_local_install(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as prefix:
+            fake = os.path.join(prefix, "API")
+            with mock.patch.object(build, "find_sdrplay_api",
+                                   return_value=fake) as finder, \
+                    mock.patch.object(build, "download") as dl:
+                inc, lib, dll = build.sdrplay_api_windows(
+                    prefix, "x64", dry_run=True)
+            finder.assert_called_once()
+            dl.assert_not_called()
+            self.assertEqual(inc, os.path.join(fake, "inc"))
+            self.assertEqual(lib, os.path.join(fake, "x64", "sdrplay_api.lib"))
+            self.assertEqual(dll, os.path.join(fake, "x64", "sdrplay_api.dll"))
+
+    def test_linux_fetch_lays_out_prefix(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as prefix:
+            unpack = os.path.join(prefix, "src",
+                                  "sdrplay-api-%s" % build.SDRPLAY_API_VERSION)
+            os.makedirs(os.path.join(unpack, "inc"))
+            for subdir in ("amd64", "arm64", "armhf"):
+                os.makedirs(os.path.join(unpack, subdir))
+                with open(os.path.join(
+                        unpack, subdir,
+                        "libsdrplay_api.so.%s" % build.SDRPLAY_API_VERSION),
+                        "w") as handle:
+                    handle.write("x")
+            with open(os.path.join(unpack, "inc", "sdrplay_api.h"),
+                      "w") as handle:
+                handle.write("x")
+            with mock.patch.object(build, "download") as dl, \
+                    mock.patch.object(build, "run") as rn, \
+                    mock.patch.object(build.os, "symlink") as ln:
+                inc, lib = build.fetch_sdrplay_api_linux(
+                    prefix, dry_run=False)
+            dl.assert_called_once()
+            self.assertIn("hardware-api-linux", dl.call_args[0][0])
+            rn.assert_called_once()
+            self.assertIn("--noexec", rn.call_args[0][0])
+            self.assertTrue(os.path.isfile(
+                os.path.join(prefix, "include", "sdrplay_api.h")))
+            self.assertTrue(os.path.isfile(os.path.join(
+                prefix, "lib",
+                "libsdrplay_api.so.%s" % build.SDRPLAY_API_VERSION)))
+            self.assertEqual(ln.call_count, 2)
+            self.assertEqual(lib, os.path.join(prefix, "lib",
+                                               "libsdrplay_api.so"))
+
+    def test_linux_fetch_skips_when_stamped(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as prefix:
+            build.mark_done(prefix, "sdrplay-api", dry_run=False,
+                            key=build.SDRPLAY_API_VERSION)
+            with mock.patch.object(build, "download") as dl, \
+                    mock.patch.object(build, "run") as rn:
+                build.fetch_sdrplay_api_linux(prefix, dry_run=False)
+            dl.assert_not_called()
+            rn.assert_not_called()
+
+    def test_macos_fetch_links_soname(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as prefix:
+            unpack = os.path.join(prefix, "src",
+                                  "sdrplay-api-%s" % build.SDRPLAY_API_VERSION)
+            os.makedirs(unpack)
+            with open(os.path.join(unpack, "Payload"), "w") as handle:
+                handle.write("x")
+            payload_lib = os.path.join(unpack + "-payload", "Library",
+                                       "SDRplayAPI", "3.15.1", "lib")
+            payload_inc = os.path.join(unpack + "-payload", "Library",
+                                       "SDRplayAPI", "3.15.1", "include")
+            os.makedirs(payload_lib)
+            os.makedirs(payload_inc)
+            with open(os.path.join(payload_lib, "libsdrplay_api.so.3.15"),
+                      "w") as handle:
+                handle.write("x")
+            with open(os.path.join(payload_inc, "sdrplay_api.h"),
+                      "w") as handle:
+                handle.write("x")
+            with mock.patch.object(build, "download") as dl, \
+                    mock.patch.object(build, "run") as rn, \
+                    mock.patch.object(build, "require"), \
+                    mock.patch.object(build.os, "symlink") as ln:
+                inc, lib = build.fetch_sdrplay_api_macos(
+                    prefix, dry_run=False)
+            dl.assert_called_once()
+            self.assertIn("hardware-api-macos", dl.call_args[0][0])
+            self.assertEqual(rn.call_count, 2)
+            self.assertIn("pkgutil", rn.call_args_list[0][0][0])
+            self.assertIn("tar", rn.call_args_list[1][0][0])
+            self.assertTrue(os.path.isfile(os.path.join(
+                prefix, "lib", "libsdrplay_api.so.3.15")))
+            self.assertTrue(os.path.isfile(
+                os.path.join(prefix, "include", "sdrplay_api.h")))
+            ln.assert_called_once_with(
+                "libsdrplay_api.so.3.15",
+                os.path.join(prefix, "lib", "libsdrplay_api.so.3"))
 
 
 class MacosStampPartsTests(unittest.TestCase):

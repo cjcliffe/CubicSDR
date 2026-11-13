@@ -43,10 +43,13 @@ Install these before the first run; everything else is built from source.
   `netsdr` (hangs device enumeration) and `uhd` (rare hardware and a very
   long build). Enable either explicitly, e.g. `--modules uhd` or
   `--modules all`.
-- `sdrplay` is in the default set but needs the vendor SDRplay API,
-  which cannot be redistributed: download it manually from SDRplay and
-  accept their license terms. Without it the module is skipped with a
-  message and the rest of the build continues.
+- `sdrplay` is in the default set. A local SDRplay API install is
+  used when present, otherwise the build downloads API 3.15 from
+  SDRplay and unpacks it into the prefix (no admin rights, no service
+  install). The API library ships in the packages with its
+  redistribution notice (`docs/SDRplay-API-NOTICE.txt`); the API
+  service itself still comes from SDRplay's installer and must be
+  running to use the hardware.
 - `--package`: `deb` (Linux), `nsis` (Windows), `dmg` (macOS),
   `appimage` (Linux). The deb is the application only and pairs with
   distro SoapySDR module packages; the AppImage bundles the default
