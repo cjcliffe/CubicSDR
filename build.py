@@ -1744,7 +1744,15 @@ def fetch_sdrplay_api_macos(prefix, dry_run=False):
                 sys.exit("error: SDRplay API payload lacks lib or headers")
             os.makedirs(os.path.join(prefix, "lib"), exist_ok=True)
             os.makedirs(os.path.join(prefix, "include"), exist_ok=True)
-            shutil.copy(lib, os.path.join(prefix, "lib"))
+            installed = os.path.join(prefix, "lib", os.path.basename(lib))
+            shutil.copy(lib, installed)
+            # The library's install name is @rpath/libsdrplay_api.so.3;
+            # link it so load-path normalization and fixup_bundle resolve.
+            compat = os.path.join(prefix, "lib", "libsdrplay_api.so.3")
+            if (os.path.basename(installed) != "libsdrplay_api.so.3"
+                    and not os.path.islink(compat)
+                    and not os.path.exists(compat)):
+                os.symlink(os.path.basename(installed), compat)
             for name in glob.glob(os.path.join(header, "*.h")):
                 shutil.copy(name, os.path.join(prefix, "include"))
         mark_done(prefix, tag, dry_run, SDRPLAY_API_VERSION)

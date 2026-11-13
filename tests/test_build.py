@@ -298,6 +298,45 @@ class SdrplayFetchTests(unittest.TestCase):
             dl.assert_not_called()
             rn.assert_not_called()
 
+    def test_macos_fetch_links_soname(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as prefix:
+            unpack = os.path.join(prefix, "src",
+                                  "sdrplay-api-%s" % build.SDRPLAY_API_VERSION)
+            os.makedirs(unpack)
+            with open(os.path.join(unpack, "Payload"), "w") as handle:
+                handle.write("x")
+            payload_lib = os.path.join(unpack + "-payload", "Library",
+                                       "SDRplayAPI", "3.15.1", "lib")
+            payload_inc = os.path.join(unpack + "-payload", "Library",
+                                       "SDRplayAPI", "3.15.1", "include")
+            os.makedirs(payload_lib)
+            os.makedirs(payload_inc)
+            with open(os.path.join(payload_lib, "libsdrplay_api.so.3.15"),
+                      "w") as handle:
+                handle.write("x")
+            with open(os.path.join(payload_inc, "sdrplay_api.h"),
+                      "w") as handle:
+                handle.write("x")
+            with mock.patch.object(build, "download") as dl, \
+                    mock.patch.object(build, "run") as rn, \
+                    mock.patch.object(build, "require"), \
+                    mock.patch.object(build.os, "symlink") as ln:
+                inc, lib = build.fetch_sdrplay_api_macos(
+                    prefix, dry_run=False)
+            dl.assert_called_once()
+            self.assertIn("hardware-api-macos", dl.call_args[0][0])
+            self.assertEqual(rn.call_count, 2)
+            self.assertIn("pkgutil", rn.call_args_list[0][0][0])
+            self.assertIn("tar", rn.call_args_list[1][0][0])
+            self.assertTrue(os.path.isfile(os.path.join(
+                prefix, "lib", "libsdrplay_api.so.3.15")))
+            self.assertTrue(os.path.isfile(
+                os.path.join(prefix, "include", "sdrplay_api.h")))
+            ln.assert_called_once_with(
+                "libsdrplay_api.so.3.15",
+                os.path.join(prefix, "lib", "libsdrplay_api.so.3"))
+
 
 class MacosStampPartsTests(unittest.TestCase):
     def test_none_off_mac(self):

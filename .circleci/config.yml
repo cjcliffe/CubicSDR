@@ -222,33 +222,34 @@ workflows:
           filters:
             tags:
               ignore: /.*/
-      - appimage:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
-      - deb:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
+      # Parked while iterating on the macOS sdrplay fix; restore before merge.
+      # - appimage:
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
+      # - deb:
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
       - dmg-x64:
           filters:
             branches:
               ignore: /.*/
             tags:
               only: /.*/
-      - dmg-arm64:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
-      - nsis:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
+      # - dmg-arm64:
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
+      # - nsis:
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
