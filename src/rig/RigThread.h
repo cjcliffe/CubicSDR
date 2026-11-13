@@ -50,7 +50,11 @@ public:
     std::string getErrorMessage();
 
     static RigList &enumerate();
+#ifdef RIGCAPS_NOT_CONST
+    static int add_hamlib_rig(struct rig_caps *rc, void* f);
+#else
     static int add_hamlib_rig(const struct rig_caps *rc, void* f);
+#endif
 
 protected:
     void setErrorStateFromHamlibCode(int errcode);
