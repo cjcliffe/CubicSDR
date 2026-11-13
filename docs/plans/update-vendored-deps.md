@@ -10,7 +10,7 @@ The `external/` directory contains full copies of 7 third-party libraries with n
 |-----------|-----------------|-----------------|--------|
 | lodepng | 20180819 | 20240326+ | Outdated ~6 years |
 | TinyXML | 2.6.2 | N/A (abandoned) | Replace with TinyXML-2 |
-| RtAudio | 5.2.0 | 6.0.1+ | 2 major versions behind |
+| RtAudio | 6.0.1 | 6.0.1 | Current |
 | CubicVR2 Math | ~2013 | N/A | Unmaintained |
 | RS-232 | 0.21 | 0.21 | Unmaintained since 2015 |
 | wglext | ~2013 | Registry-generated | Self-declared obsolete |
@@ -28,11 +28,11 @@ This is a large, risky change. Recommend doing it incrementally:
 
 2. **liquid-dsp**: done — un-vendored; builds from source at tag v1.8.3 on all platforms, via the VS-bundled clang-cl on Windows.
 
-3. **RtAudio** (`external/rtaudio/`): Evaluate upgrading to 6.0.1+ (major API changes) or staying on 5.x latest.
+3. **RtAudio** (`external/rtaudio/`): done — updated 5.2.0 to 6.0.1 (no newer 5.x exists, so 6.x was the only target).
    - Used by `AudioThread` (`src/audio/AudioThread.cpp`) — `RtAudio` class, `openStream()`, `startStream()`, `stopStream()`, `closeStream()`, callback-based API
-   - RtAudio 6.x has breaking API changes (callback signature, device enumeration)
-   - If upgrading: update `AudioThread::audioCallback()` and device enumeration in `AudioThread::enumerateDevices()`
-   - If staying on 5.x: update to latest 5.x patch release (minimal risk)
+   - Breaking changes handled: stream calls return `RtAudioErrorType` instead of throwing `RtAudioError` (call sites check codes; warnings still print to stderr), and device IDs are opaque (start at 129, must come from `getDeviceIds()` — the old index-as-ID scheme would address no device)
+   - Callback signature, `DeviceInfo` fields used, `StreamOptions`/`StreamParameters`, and backend compile guards are unchanged; no CMake changes needed
+   - `enumerateDevices()` iterates `getDeviceIds()`; the modem-props dropdown and startup device maps key by `DeviceInfo::ID`; session files match devices by name so old sessions load correctly
 
 4. **hamlib** (`external/hamlib/`): Update pre-built DLLs to latest 4.6+ release.
    - Used by `RigThread` (`src/rig/RigThread.h`) for CAT control

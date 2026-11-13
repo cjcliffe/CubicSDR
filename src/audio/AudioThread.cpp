@@ -146,19 +146,25 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
     return 0;
 }
 
+// RtAudio 6.x reports stream failures as return codes; warnings already go
+// to stderr, so callers only act on real errors.
+static bool audioFailed(RtAudioErrorType rc) {
+    return rc != RTAUDIO_NO_ERROR && rc != RTAUDIO_WARNING;
+}
+
 void AudioThread::enumerateDevices(std::vector<RtAudio::DeviceInfo> &devs) {
     RtAudio endac;
 
-    unsigned int numDevices = endac.getDeviceCount();
+    std::vector<unsigned int> deviceIds = endac.getDeviceIds();
 
-    for (unsigned int i = 0; i < numDevices; i++) {
-        RtAudio::DeviceInfo info = endac.getDeviceInfo(i);
+    for (unsigned int id : deviceIds) {
+        RtAudio::DeviceInfo info = endac.getDeviceInfo(id);
 
         devs.push_back(info);
 
         std::cout << std::endl;
 
-        std::cout << "Audio Device #" << i << " " << info.name << std::endl;
+        std::cout << "Audio Device #" << info.ID << " " << info.name << std::endl;
         std::cout << "\tDefault Output? " << (info.isDefaultOutput ? "Yes" : "No") << std::endl;
         std::cout << "\tDefault Input? " << (info.isDefaultInput ? "Yes" : "No") << std::endl;
         std::cout << "\tInput channels: " << info.inputChannels << std::endl;
@@ -266,7 +272,10 @@ void AudioThread::setSampleRate(int sampleRate_in) {
 
     if (thisIsAController) {
 
-        dac.stopStream();
+        if (audioFailed(dac.stopStream())) {
+            std::cout << "AudioThread: failed to stop stream for sample-rate switch." << std::endl;
+            return;
+        }
         dac.closeStream();
 
         //Set bounded sample rate:
@@ -283,8 +292,14 @@ void AudioThread::setSampleRate(int sampleRate_in) {
             }
         }
 
-        dac.openStream(&parameters, nullptr, RTAUDIO_FLOAT32, sampleRate_in, &nBufferFrames, &audioCallback, (void *)this, &opts);
-        dac.startStream();
+        if (audioFailed(dac.openStream(&parameters, nullptr, RTAUDIO_FLOAT32, sampleRate_in, &nBufferFrames, &audioCallback, (void *)this, &opts))) {
+            std::cout << "AudioThread: failed to open stream for sample-rate switch." << std::endl;
+            return;
+        }
+        if (audioFailed(dac.startStream())) {
+            std::cout << "AudioThread: failed to start stream for sample-rate switch." << std::endl;
+            return;
+        }
         resetAllPrebuffers();
     }
 
@@ -301,17 +316,20 @@ void AudioThread::reopenWithBufferFrames(int frames) {
 
     nBufferFrames = (unsigned int)frames;
 
-    try {
-        dac.stopStream();
-        dac.closeStream();
-        dac.openStream(&parameters, nullptr, RTAUDIO_FLOAT32, sampleRate, &nBufferFrames, &audioCallback, (void *)this, &opts);
-        dac.startStream();
-        resetAllPrebuffers();
-    }
-    catch (RtAudioError& e) {
-        e.printMessage();
+    if (audioFailed(dac.stopStream())) {
+        std::cout << "AudioThread: failed to stop stream for buffer-size switch." << std::endl;
         return;
     }
+    dac.closeStream();
+    if (audioFailed(dac.openStream(&parameters, nullptr, RTAUDIO_FLOAT32, sampleRate, &nBufferFrames, &audioCallback, (void *)this, &opts))) {
+        std::cout << "AudioThread: failed to open stream for buffer-size switch." << std::endl;
+        return;
+    }
+    if (audioFailed(dac.startStream())) {
+        std::cout << "AudioThread: failed to start stream for buffer-size switch." << std::endl;
+        return;
+    }
+    resetAllPrebuffers();
 }
 
 int AudioThread::getSampleRate() {
@@ -331,66 +349,65 @@ void AudioThread::setupDevice(int deviceId) {
 
     opts.streamName = "CubicSDR Audio Output";
 
-    try {
-        if (deviceController.find(outputDevice.load()) != deviceController.end()) {
-            //'this' is not the controller, so remove it from the bounded list:
-            //beware, we must take the controller mutex, because the audio callback may use the list of bounded
-            //threads at that moment:
-            std::lock_guard<std::recursive_mutex> lock(deviceController[outputDevice.load()]->getMutex());
+    if (deviceController.find(outputDevice.load()) != deviceController.end()) {
+        //'this' is not the controller, so remove it from the bounded list:
+        //beware, we must take the controller mutex, because the audio callback may use the list of bounded
+        //threads at that moment:
+        std::lock_guard<std::recursive_mutex> lock(deviceController[outputDevice.load()]->getMutex());
 
-            deviceController[outputDevice.load()]->removeThread(this);
-        }
+        deviceController[outputDevice.load()]->removeThread(this);
+    }
 #ifndef _MSC_VER
-        opts.priority = sched_get_priority_max(SCHED_FIFO);
+    opts.priority = sched_get_priority_max(SCHED_FIFO);
 #endif
-        //    opts.flags = RTAUDIO_MINIMIZE_LATENCY;
-        opts.flags = RTAUDIO_SCHEDULE_REALTIME;
+    //    opts.flags = RTAUDIO_MINIMIZE_LATENCY;
+    opts.flags = RTAUDIO_SCHEDULE_REALTIME;
 
-        if (deviceSampleRate.find(parameters.deviceId) != deviceSampleRate.end()) {
-            sampleRate = deviceSampleRate[parameters.deviceId];
-        }
-        else {
-            std::cout << "Error, device sample rate wasn't initialized?" << std::endl;
-            return;
-            //            sampleRate = AudioThread::getDefaultAudioSampleRate();
-            //            deviceSampleRate[parameters.deviceId] = sampleRate;
-        }
-
-        //Create a new controller:
-        if (deviceController.find(parameters.deviceId) == deviceController.end()) {
-
-            //Create a new controller thread for parameters.deviceId:
-            auto* newController = new AudioThread();
-
-            newController->setInitOutputDevice(parameters.deviceId, sampleRate);
-            newController->bindThread(this);
-            newController->attachControllerThread(new std::thread(&AudioThread::threadMain, newController));
-
-            deviceController[parameters.deviceId] = newController;
-        }
-        else if (deviceController[parameters.deviceId] == this) {
-
-            //Attach callback
-            nBufferFrames = (unsigned int)wxGetApp().getConfig()->getAudioBufferFrames();
-            dac.openStream(&parameters, nullptr, RTAUDIO_FLOAT32, sampleRate, &nBufferFrames, &audioCallback, (void *)this, &opts);
-            dac.startStream();
-            resetAllPrebuffers();
-        }
-        else {
-            //we are a bound thread, add ourselves to the controller deviceController[parameters.deviceId].
-            //beware, we must take the controller mutex, because the audio callback may use the list of bounded
-            //threads at that moment:
-            std::lock_guard<std::recursive_mutex> lock(deviceController[parameters.deviceId]->getMutex());
-
-            deviceController[parameters.deviceId]->bindThread(this);
-        }
-        active = true;
-
+    if (deviceSampleRate.find(parameters.deviceId) != deviceSampleRate.end()) {
+        sampleRate = deviceSampleRate[parameters.deviceId];
     }
-    catch (RtAudioError& e) {
-        e.printMessage();
+    else {
+        std::cout << "Error, device sample rate wasn't initialized?" << std::endl;
         return;
+        //            sampleRate = AudioThread::getDefaultAudioSampleRate();
+        //            deviceSampleRate[parameters.deviceId] = sampleRate;
     }
+
+    //Create a new controller:
+    if (deviceController.find(parameters.deviceId) == deviceController.end()) {
+
+        //Create a new controller thread for parameters.deviceId:
+        auto* newController = new AudioThread();
+
+        newController->setInitOutputDevice(parameters.deviceId, sampleRate);
+        newController->bindThread(this);
+        newController->attachControllerThread(new std::thread(&AudioThread::threadMain, newController));
+
+        deviceController[parameters.deviceId] = newController;
+    }
+    else if (deviceController[parameters.deviceId] == this) {
+
+        //Attach callback
+        nBufferFrames = (unsigned int)wxGetApp().getConfig()->getAudioBufferFrames();
+        if (audioFailed(dac.openStream(&parameters, nullptr, RTAUDIO_FLOAT32, sampleRate, &nBufferFrames, &audioCallback, (void *)this, &opts))) {
+            std::cout << "AudioThread: failed to open stream for device." << std::endl;
+            return;
+        }
+        if (audioFailed(dac.startStream())) {
+            std::cout << "AudioThread: failed to start stream for device." << std::endl;
+            return;
+        }
+        resetAllPrebuffers();
+    }
+    else {
+        //we are a bound thread, add ourselves to the controller deviceController[parameters.deviceId].
+        //beware, we must take the controller mutex, because the audio callback may use the list of bounded
+        //threads at that moment:
+        std::lock_guard<std::recursive_mutex> lock(deviceController[parameters.deviceId]->getMutex());
+
+        deviceController[parameters.deviceId]->bindThread(this);
+    }
+    active = true;
     if (deviceId != -1) {
         outputDevice = deviceId;
     }
@@ -488,15 +505,12 @@ void AudioThread::run() {
     }
     else {
         // 'this' is a controller thread:
-        try {
-            if (dac.isStreamOpen()) {
-                dac.stopStream(); 
+        if (dac.isStreamOpen()) {
+            if (audioFailed(dac.stopStream())) {
+                std::cout << "AudioThread: failed to stop stream during teardown." << std::endl;
             }
-            dac.closeStream();
         }
-        catch (RtAudioError& e) {
-            e.printMessage();
-        }
+        dac.closeStream();
     }
 
     //    std::cout << "Audio thread done." << std::endl;

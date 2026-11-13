@@ -59,17 +59,14 @@ void ModemProperties::initDefaultProperties() {
         std::vector<string> outputOptNames;
 
         AudioThread::enumerateDevices(audioDevices);
-        
-        int i = 0;
-        
+
         for (const auto& aDev : audioDevices) {
             if (aDev.inputChannels) {
-                audioInputDevices[i] = aDev;
+                audioInputDevices[(int)aDev.ID] = aDev;
             }
             if (aDev.outputChannels) {
-                audioOutputDevices[i] = aDev;
+                audioOutputDevices[(int)aDev.ID] = aDev;
             }
-            i++;
         }
         
         // int defaultDevice = 0;
