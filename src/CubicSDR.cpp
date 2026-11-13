@@ -168,16 +168,13 @@ void CubicSDR::initAudioDevices() const {
 
     AudioThread::enumerateDevices(devices);
 
-    int i = 0;
-
     for (auto & device : devices) {
         if (device.inputChannels) {
-            inputDevices[i] = device;
+            inputDevices[(int)device.ID] = device;
         }
         if (device.outputChannels) {
-            outputDevices[i] = device;
+            outputDevices[(int)device.ID] = device;
         }
-        i++;
     }
 
     wxGetApp().getDemodMgr().setOutputDevices(outputDevices);

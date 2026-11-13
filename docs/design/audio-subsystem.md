@@ -222,7 +222,7 @@ Concrete recording implementation:
 `AudioThread::enumerateDevices()` queries RtAudio for all available output devices:
 
 - Creates a temporary `RtAudio` instance
-- Iterates all devices, printing: name, default status, channel counts, native formats, supported sample rates
+- Iterates the IDs from `getDeviceIds()`, printing: ID, name, default status, channel counts, native formats, supported sample rates
 - Results are stored in the provided `vector<RtAudio::DeviceInfo>`
 
 ## Thread Safety
