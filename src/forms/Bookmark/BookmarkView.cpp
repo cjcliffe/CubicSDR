@@ -62,6 +62,7 @@ public:
     void doClickOK() override {
         wxGetApp().getBookmarkMgr().removeGroup(subject);
         wxGetApp().getBookmarkMgr().updateBookmarks();
+        wxGetApp().getBookmarkMgr().updateActiveList();
     }
     
 private:
@@ -171,12 +172,18 @@ BookmarkView::~BookmarkView() {
 }
 
 void BookmarkView::onUpdateTimer( wxTimerEvent& /* event */ ) {
+    pollUpdates();
+}
+
+void BookmarkView::pollUpdates() {
     if (!this->IsShown()) {
         return;
     }
+    bool updated = false;
     if (doUpdateActive.load()) {
         doUpdateActiveList();
         doUpdateActive.store(false);
+        updated = true;
     }
     if (doUpdateBookmarks.load()) {
 
@@ -185,6 +192,18 @@ void BookmarkView::onUpdateTimer( wxTimerEvent& /* event */ ) {
             m_treeView->SelectItem(bmSel);
         }  
         doUpdateBookmarks.store(false);  
+        updated = true;
+    }
+    if (updated) {
+        // Synchronous end-state paints: hiding children repaints the blank
+        // parent background immediately, and the reshown controls depend on
+        // an async repaint that can starve for seconds under burst load.
+        m_treeView->Refresh();
+        m_treeView->Update();
+        m_propPanel->Refresh();
+        m_propPanel->Update();
+        m_buttonPanel->Refresh();
+        m_buttonPanel->Update();
     }
 }
 
@@ -351,9 +370,192 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
 }
 
 
-void BookmarkView::doUpdateActiveList() {
+bool BookmarkView::refreshActiveLabelsInPlace() {
+    // A pending programmatic selection always needs the full rebuild path.
+    if (nextDemod || nextEnt || nextRange || !nextGroup.empty()) {
+        return false;
+    }
 
-    auto demods = wxGetApp().getDemodMgr().getDemodulators();
+    // A moved selection (or recording flip) with an otherwise unchanged list
+    // only needs the props rebuilt, handled at the end; the tree survives.
+    DemodulatorInstancePtr currentDemod = wxGetApp().getDemodMgr().getCurrentModem();
+    bool selectionMoved = (currentDemod != lastBuiltActiveDemod
+        || (currentDemod && currentDemod->isRecording() != lastBuiltRecordingState));
+
+    auto collectChildren = [this](const wxTreeItemId& branch) {
+        std::vector<std::pair<TreeViewItem*, wxTreeItemId>> items;
+        wxTreeItemIdValue cookie;
+        wxTreeItemId child = m_treeView->GetFirstChild(branch, cookie);
+        while (child.IsOk()) {
+            items.push_back({ itemToTVI(child), child });
+            child = m_treeView->GetNextChild(branch, cookie);
+        }
+        return items;
+    };
+
+    BookmarkMgr &mgr = wxGetApp().getBookmarkMgr();
+    bool useSearch = !searchKeywords.empty();
+
+    // Active demodulators, with the same keyword filtering as the rebuild.
+    // Frequency-ordered to match TAB cycling; false keeps inactive rows listed.
+    std::vector<DemodulatorInstancePtr> demods = wxGetApp().getDemodMgr().getOrderedDemodulators(false);
+    std::vector<std::pair<DemodulatorInstancePtr, wxString>> expectedActive;
+    for (auto demod_i : demods) {
+        wxString activeLabel = BookmarkMgr::getActiveDisplayName(demod_i);
+
+        if (useSearch) {
+            std::string freqStr = frequencyToStr(demod_i->getFrequency());
+            std::string bwStr = frequencyToStr(demod_i->getBandwidth());
+            std::string mtype = demod_i->getDemodulatorType();
+
+            std::wstring fullText = activeLabel.ToStdWstring() +
+            L" " + demod_i->getDemodulatorUserLabel() +
+            L" " + std::to_wstring(demod_i->getFrequency()) +
+            L" " + wxString(freqStr).ToStdWstring() +
+            L" " + wxString(bwStr).ToStdWstring() +
+            L" " + wxString(mtype).ToStdWstring();
+
+            if (!isKeywordMatch(fullText, searchKeywords)) {
+                continue;
+            }
+        }
+        expectedActive.push_back(std::make_pair(demod_i, activeLabel));
+    }
+
+    std::vector<std::pair<TreeViewItem*, wxTreeItemId>> activeItems = collectChildren(activeBranch);
+    if (activeItems.size() != expectedActive.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < activeItems.size(); i++) {
+        TreeViewItem *tvi = activeItems[i].first;
+        if (!tvi || tvi->type != TreeViewItem::Type::TREEVIEW_ITEM_TYPE_ACTIVE || tvi->demod != expectedActive[i].first) {
+            return false;
+        }
+        if (m_treeView->GetItemText(activeItems[i].second) != expectedActive[i].second) {
+            m_treeView->SetItemText(activeItems[i].second, expectedActive[i].second);
+        }
+    }
+
+    // View ranges are never keyword-filtered by the rebuild either.
+    BookmarkRangeList ranges = mgr.getRanges();
+    std::vector<std::pair<TreeViewItem*, wxTreeItemId>> rangeItems = collectChildren(rangeBranch);
+    if (rangeItems.size() != ranges.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < rangeItems.size(); i++) {
+        TreeViewItem *tvi = rangeItems[i].first;
+        if (!tvi || tvi->type != TreeViewItem::Type::TREEVIEW_ITEM_TYPE_RANGE || tvi->rangeEnt != ranges[i]) {
+            return false;
+        }
+        std::wstring labelVal = ranges[i]->label;
+        if (labelVal.empty()) {
+            std::string wstr = frequencyToStr(ranges[i]->startFreq) + " - " + frequencyToStr(ranges[i]->endFreq);
+
+            labelVal = wxString(wstr).ToStdWstring();
+        }
+        wxString newText(labelVal);
+        if (m_treeView->GetItemText(rangeItems[i].second) != newText) {
+            m_treeView->SetItemText(rangeItems[i].second, newText);
+        }
+    }
+
+    // Recents, with the same keyword filtering as the rebuild.
+    BookmarkList recents = mgr.getRecents();
+    std::vector<std::pair<BookmarkEntryPtr, std::wstring>> expectedRecent;
+    for (auto recent_i : recents) {
+        std::wstring labelVal;
+        recent_i->node->child("user_label")->element()->get(labelVal);
+
+        if (labelVal.empty()) {
+            std::string str = frequencyToStr(recent_i->frequency) + " " + recent_i->type;
+
+            labelVal = wxString(str).ToStdWstring();
+        }
+
+        if (useSearch) {
+            std::string freqStr = frequencyToStr(recent_i->frequency);
+            std::string bwStr = frequencyToStr(recent_i->bandwidth);
+
+            std::wstring fullText = labelVal +
+                L" " + std::to_wstring(recent_i->frequency) +
+
+                L" " + wxString(freqStr).ToStdWstring() +
+                L" " + wxString(bwStr).ToStdWstring() +
+                L" " + wxString(recent_i->type).ToStdWstring();
+
+            if (!isKeywordMatch(fullText, searchKeywords)) {
+                continue;
+            }
+        }
+        expectedRecent.push_back(std::make_pair(recent_i, labelVal));
+    }
+
+    std::vector<std::pair<TreeViewItem*, wxTreeItemId>> recentItems = collectChildren(recentBranch);
+    if (recentItems.size() != expectedRecent.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < recentItems.size(); i++) {
+        TreeViewItem *tvi = recentItems[i].first;
+        if (!tvi || tvi->type != TreeViewItem::Type::TREEVIEW_ITEM_TYPE_RECENT || tvi->bookmarkEnt != expectedRecent[i].first) {
+            return false;
+        }
+        wxString newText(expectedRecent[i].second);
+        if (m_treeView->GetItemText(recentItems[i].second) != newText) {
+            m_treeView->SetItemText(recentItems[i].second, newText);
+        }
+    }
+
+    // Refresh the props fields for the selected active demodulator without
+    // touching items, selection, expansion state, or buttons. The user-label
+    // field is skipped while it has focus so typing there is not clobbered.
+    wxTreeItemId selItem = m_treeView->GetSelection();
+    TreeViewItem *selTVI = selItem.IsOk() ? itemToTVI(selItem) : nullptr;
+    if (selTVI && selTVI->type == TreeViewItem::Type::TREEVIEW_ITEM_TYPE_ACTIVE && selTVI->demod) {
+        m_frequencyVal->SetLabelText(frequencyToStr(selTVI->demod->getFrequency()));
+        m_bandwidthVal->SetLabelText(frequencyToStr(selTVI->demod->getBandwidth()));
+        m_modulationVal->SetLabelText(selTVI->demod->getDemodulatorType());
+        std::wstring userLabel = selTVI->demod->getDemodulatorUserLabel();
+        if (!m_labelText->HasFocus() && m_labelText->GetValue().ToStdWstring() != userLabel) {
+            m_labelText->SetValue(wxString(userLabel));
+        }
+    }
+
+    syncBookmarkChoice();
+
+    if (selectionMoved) {
+        // The list matches but the selection moved: rebuild the props for
+        // the new selection without destroying the tree.
+        activeSelection(currentDemod);
+        lastBuiltActiveDemod = currentDemod;
+        lastBuiltRecordingState = currentDemod ? currentDemod->isRecording() : false;
+        // Mirror the full path: move the tree highlight to the new
+        // selection when the branch is expanded.
+        if (currentDemod && expandState["active"]) {
+            for (auto row : collectChildren(activeBranch)) {
+                if (row.first && row.first->type == TreeViewItem::Type::TREEVIEW_ITEM_TYPE_ACTIVE
+                    && row.first->demod == currentDemod) {
+                    m_treeView->SelectItem(row.second);
+                    break;
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+
+void BookmarkView::doUpdateActiveList() {
+    if (refreshActiveLabelsInPlace()) {
+        return;
+    }
+
+    // One paint for the whole rebuild: deleting and re-appending every
+    // row would otherwise flash on each structural change.
+    m_treeView->Freeze();
+
+    // Frequency-ordered to match TAB cycling; false keeps inactive rows listed.
+    auto demods = wxGetApp().getDemodMgr().getOrderedDemodulators(false);
     auto lastActiveDemodulator = wxGetApp().getDemodMgr().getCurrentModem();
 
     //capture the previously selected item info BY COPY (because the original will be destroyed together with the destroyed tree items) to restore it again after 
@@ -511,7 +713,13 @@ void BookmarkView::doUpdateActiveList() {
     // Add an extra refresh, that rebuilds the buttons from sratch.
     activeSelection(lastActiveDemodulator);
 
+    // Remember which active demodulator the props buttons were built for so
+    // the in-place refresh can detect recording-state changes.
+    lastBuiltActiveDemod = lastActiveDemodulator;
+    lastBuiltRecordingState = lastActiveDemodulator ? lastActiveDemodulator->isRecording() : false;
+
     delete prevSelCopy;
+    m_treeView->Thaw();
 }
 
 
@@ -570,7 +778,7 @@ void BookmarkView::onTreeActivate( wxTreeEvent& event ) {
         if (!tvi->demod->isActive()) {
             wxGetApp().setFrequency(tvi->demod->getFrequency());
             nextDemod = tvi->demod;
-            wxGetApp().getDemodMgr().setActiveDemodulator(nextDemod, false);
+            wxGetApp().getDemodMgr().setActiveDemodulator(nextDemod);
         }
     } else if (tvi->type == TreeViewItem::Type::TREEVIEW_ITEM_TYPE_RECENT) {
 
@@ -727,8 +935,19 @@ void BookmarkView::showProps() {
 
 void BookmarkView::clearButtons() {
     m_buttonPanel->Hide();
-    m_buttonPanel->DestroyChildren();
-    bookmarkChoice = nullptr;
+    // The group choice survives button rebuilds: recreating a wxChoice costs
+    // on the order of 100ms, so it is synced in place instead. Builders
+    // that need it re-show it via addBookmarkChoice().
+    wxWindowList children = m_buttonPanel->GetChildren();
+    for (wxWindowList::Node *node = children.GetFirst(); node; node = node->GetNext()) {
+        wxWindow *child = node->GetData();
+        if (child != bookmarkChoice) {
+            child->Destroy();
+        }
+    }
+    if (bookmarkChoice) {
+        bookmarkChoice->Hide();
+    }
 }
 
 void BookmarkView::showButtons() {
@@ -760,6 +979,7 @@ void BookmarkView::doBookmarkActive(const std::string& group, const DemodulatorI
 
     wxGetApp().getBookmarkMgr().addBookmark(group, demod);
     wxGetApp().getBookmarkMgr().updateBookmarks();
+    wxGetApp().getBookmarkMgr().updateActiveList();
 }
 
 
@@ -810,7 +1030,32 @@ void BookmarkView::updateBookmarkChoices() {
     bookmarkChoices.push_back(BOOKMARK_VIEW_CHOICE_NEW);
 }
 
+void BookmarkView::syncBookmarkChoice() {
+    // Refresh the group choice items without recreating the control.
+    // A change resets the selection like a fresh build does.
+    if (!bookmarkChoice) {
+        return;
+    }
+    updateBookmarkChoices();
+    bool same = (size_t)bookmarkChoice->GetCount() == bookmarkChoices.size();
+    for (size_t i = 0; same && i < bookmarkChoices.size(); i++) {
+        same = bookmarkChoice->GetString((unsigned)i) == bookmarkChoices[i];
+    }
+    if (!same) {
+        bookmarkChoice->Freeze();
+        bookmarkChoice->Clear();
+        bookmarkChoice->Append(bookmarkChoices);
+        bookmarkChoice->Select(0);
+        bookmarkChoice->Thaw();
+    }
+}
+
 void BookmarkView::addBookmarkChoice(wxWindow *parent) {
+    if (bookmarkChoice) {
+        bookmarkChoice->Show();
+        syncBookmarkChoice();
+        return;
+    }
     updateBookmarkChoices();
     bookmarkChoice = new wxChoice(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, bookmarkChoices, wxEXPAND, wxDefaultValidator, "Bookmark");
     bookmarkChoice->Select(0);
@@ -864,6 +1109,9 @@ void BookmarkView::activeSelection(const DemodulatorInstancePtr& dsel) {
         return;
     }
 
+    // One paint for the whole rebuild: labels, shows, and button churn
+    // would otherwise flash on every selection change.
+    Freeze();
     m_frequencyVal->SetLabelText(frequencyToStr(dsel->getFrequency()));
     m_bandwidthVal->SetLabelText(frequencyToStr(dsel->getBandwidth()));
     m_modulationVal->SetLabelText(dsel->getDemodulatorType());
@@ -898,6 +1146,7 @@ void BookmarkView::activeSelection(const DemodulatorInstancePtr& dsel) {
     showProps();
     showButtons();
     refreshLayout();
+    Thaw();
 }
 
 
@@ -936,23 +1185,31 @@ void BookmarkView::activateBookmark(const BookmarkEntryPtr& bmEnt) {
 	}
 
 	nextDemod = matchingDemod;
-    wxGetApp().getDemodMgr().setActiveDemodulator(nextDemod, false);
+    wxGetApp().getDemodMgr().setActiveDemodulator(nextDemod);
 
     //wxGetApp().getBookmarkMgr().updateActiveList();
 }
 
 
 void BookmarkView::activateRange(const BookmarkRangeEntryPtr& rangeEnt) {
-    
+
 	//the following only works if rangeEnt->freq is the middle of [rangeEnt->startFreq ; rangeEnt->startFreq]
 	wxGetApp().setFrequency(rangeEnt->freq);
-	
-	// Change View limits to fit the range exactly.
-    wxGetApp().getAppFrame()->setViewState(rangeEnt->startFreq + (rangeEnt->endFreq - rangeEnt->startFreq) / 2, rangeEnt->endFreq - rangeEnt->startFreq);
+
+	// Change View limits to fit the range, centered on its middle but never
+    // wider than the current device can show.
+    long long rangeCenter = rangeEnt->startFreq + (rangeEnt->endFreq - rangeEnt->startFreq) / 2;
+    long long rangeWidth = rangeEnt->endFreq - rangeEnt->startFreq;
+    long long maxViewWidth = wxGetApp().getSampleRate();
+    if (maxViewWidth > 0 && rangeWidth > maxViewWidth) {
+        rangeWidth = maxViewWidth;
+    }
+    wxGetApp().getAppFrame()->setViewState(rangeCenter, (int)rangeWidth);
 }
 
 
 void BookmarkView::bookmarkSelection(const BookmarkEntryPtr& bmSel) {
+    Freeze();
     
     m_frequencyVal->SetLabelText(frequencyToStr(bmSel->frequency));
     m_bandwidthVal->SetLabelText(frequencyToStr(bmSel->bandwidth));
@@ -982,10 +1239,12 @@ void BookmarkView::bookmarkSelection(const BookmarkEntryPtr& bmSel) {
     showProps();
     showButtons();
     refreshLayout();
+    Thaw();
 }
 
 
 void BookmarkView::recentSelection(const BookmarkEntryPtr& bmSel) {
+    Freeze();
     
     m_frequencyVal->SetLabelText(frequencyToStr(bmSel->frequency));
     m_bandwidthVal->SetLabelText(frequencyToStr(bmSel->bandwidth));
@@ -1015,9 +1274,11 @@ void BookmarkView::recentSelection(const BookmarkEntryPtr& bmSel) {
     showProps();
     showButtons();
     refreshLayout();
+    Thaw();
 }
 
 void BookmarkView::groupSelection(const std::string& groupName) {
+    Freeze();
     
     clearButtons();
     
@@ -1034,10 +1295,12 @@ void BookmarkView::groupSelection(const std::string& groupName) {
     
     showButtons();
     refreshLayout();
+    Thaw();
 }
 
 
 void BookmarkView::rangeSelection(const BookmarkRangeEntryPtr& re) {
+    Freeze();
     
     clearButtons();
     hideProps(false);
@@ -1062,10 +1325,12 @@ void BookmarkView::rangeSelection(const BookmarkRangeEntryPtr& re) {
     
     showButtons();
     refreshLayout();
+    Thaw();
 }
 
 
 void BookmarkView::bookmarkBranchSelection() {
+    Freeze();
     
     clearButtons();
     hideProps();
@@ -1074,10 +1339,12 @@ void BookmarkView::bookmarkBranchSelection() {
     
     showButtons();
     refreshLayout();
+    Thaw();
 }
 
 
 void BookmarkView::recentBranchSelection() {
+    Freeze();
     clearButtons();
     hideProps();
 
@@ -1085,10 +1352,12 @@ void BookmarkView::recentBranchSelection() {
     
     showButtons();
     refreshLayout();
+    Thaw();
 }
 
 
 void BookmarkView::rangeBranchSelection() {
+    Freeze();
     clearButtons();
     hideProps(false);
 
@@ -1102,6 +1371,7 @@ void BookmarkView::rangeBranchSelection() {
     
     showButtons();
     refreshLayout();
+    Thaw();
 }
 
 
@@ -1141,8 +1411,7 @@ void BookmarkView::onTreeSelect( wxTreeEvent& event ) {
     if (tvi->type == TreeViewItem::Type::TREEVIEW_ITEM_TYPE_ACTIVE) {
         activeSelection(tvi->demod);
         if (tvi->demod->isActive()) {
-            wxGetApp().getDemodMgr().setActiveDemodulator(nullptr, true);
-            wxGetApp().getDemodMgr().setActiveDemodulator(tvi->demod, false);
+            wxGetApp().getDemodMgr().setActiveDemodulator(tvi->demod);
             tvi->demod->setTracking(true);
         }
     } else if (tvi->type == TreeViewItem::Type::TREEVIEW_ITEM_TYPE_RECENT) {
@@ -1213,8 +1482,7 @@ void BookmarkView::onDoubleClickFreq( wxMouseEvent& /* event */ ) {
     TreeViewItem *curSel = itemToTVI(m_treeView->GetSelection());
     
     if (curSel && curSel->type == TreeViewItem::Type::TREEVIEW_ITEM_TYPE_ACTIVE) {
-        wxGetApp().getDemodMgr().setActiveDemodulator(nullptr, true);
-        wxGetApp().getDemodMgr().setActiveDemodulator(curSel->demod, false);
+        wxGetApp().getDemodMgr().setActiveDemodulator(curSel->demod);
         wxGetApp().showFrequencyInput(FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_DEFAULT);
     }
 }
@@ -1225,8 +1493,7 @@ void BookmarkView::onDoubleClickBandwidth( wxMouseEvent& /* event */ ) {
     TreeViewItem *curSel = itemToTVI(m_treeView->GetSelection());
 
     if (curSel && curSel->type == TreeViewItem::Type::TREEVIEW_ITEM_TYPE_ACTIVE) {
-        wxGetApp().getDemodMgr().setActiveDemodulator(nullptr, true);
-        wxGetApp().getDemodMgr().setActiveDemodulator(curSel->demod, false);
+        wxGetApp().getDemodMgr().setActiveDemodulator(curSel->demod);
         wxGetApp().showFrequencyInput(FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_BANDWIDTH);
     }
 }
@@ -1328,6 +1595,7 @@ void BookmarkView::onAddGroup( wxCommandEvent& /* event */ ) {
     if (!stringVal.ToStdString().empty()) {
         wxGetApp().getBookmarkMgr().addGroup(stringVal.ToStdString());
         wxGetApp().getBookmarkMgr().updateBookmarks();
+        wxGetApp().getBookmarkMgr().updateActiveList();
     }
 }
 
@@ -1377,6 +1645,7 @@ void BookmarkView::onRenameRange( wxCommandEvent& /* event */ ) {
     if (!newGroupName.empty()) {
         wxGetApp().getBookmarkMgr().renameGroup(curSel->groupName, newGroupName);
         wxGetApp().getBookmarkMgr().updateBookmarks();
+        wxGetApp().getBookmarkMgr().updateActiveList();
     }
 }
 

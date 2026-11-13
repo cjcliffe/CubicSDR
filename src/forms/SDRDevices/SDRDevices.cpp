@@ -4,6 +4,7 @@
 #include "SDRDevices.h"
 
 #include <wx/msgdlg.h>
+#include <wx/utils.h>
 
 #include "CubicSDR.h"
 #include "Frequency.h"
@@ -14,15 +15,20 @@
 #include "CubicSDR.xpm"
 #endif
 
-SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent, const wxPoint &pos): devFrame( parent, wxID_ANY, wxT(CUBICSDR_INSTALL_NAME " :: SDR Devices"), pos) {
+SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent, const wxPoint &pos, bool dismissOnStart): devFrame( parent, wxID_ANY, wxT(CUBICSDR_INSTALL_NAME " :: SDR Devices"), pos) {
     refresh = true;
     failed = false;
+    pendingResetApply = false;
+    devActiveShown = false;
+    this->dismissOnStart = dismissOnStart;
     m_refreshButton->Disable();
     m_addRemoteButton->Disable();
     m_useSelectedButton->Disable();
+    m_resetButton->SetToolTip(wxT("Reset the selected device's stored settings to defaults"));
+    m_resetButton->Disable();
+    Bind(wxEVT_CHAR_HOOK, &SDRDevicesDialog::OnCharHook, this);
     m_deviceTimer.Start(250);
     selId = nullptr;
-    editId = nullptr;
     removeId = nullptr;
     devAddDialog = nullptr;
     dev = nullptr;
@@ -35,8 +41,34 @@ SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent, const wxPoint &pos): devFr
 }
 
 void SDRDevicesDialog::OnClose( wxCloseEvent& /* event */) {
+    // A reset click defers to the device timer; apply it now rather than
+    // dropping it if the dialog closes first.
+    if (pendingResetApply) {
+        pendingResetApply = false;
+        applyResetDefaults();
+    }
     wxGetApp().setDeviceSelectorClosed();
+    // A closing dialog returns focus to the main window; the OS fails to
+    // restore it when the frame was never activated, as on first load.
+    if (!wxGetApp().isShuttingDown() && wxGetApp().getAppFrame()) {
+        wxGetApp().getAppFrame()->Raise();
+        wxGetApp().getAppFrame()->SetFocus();
+    }
     Destroy();
+}
+
+void SDRDevicesDialog::OnCharHook(wxKeyEvent &event) {
+    if (event.GetKeyCode() == WXK_ESCAPE) {
+        wxWindow *focus = wxWindow::FindFocus();
+        while (focus != nullptr && focus != m_propertyGrid) {
+            focus = focus->GetParent();
+        }
+        if (focus == nullptr) {
+            Close();
+            return;
+        }
+    }
+    event.Skip();
 }
 
 void SDRDevicesDialog::OnDeleteItem( wxTreeEvent& event ) {
@@ -114,9 +146,12 @@ void SDRDevicesDialog::refreshDeviceProperties() {
 
     SDRDeviceInfo *selDev = getSelectedDevice(devTree->GetSelection());
     if (selDev && selDev->isAvailable()) {
+        // Device queries below open and probe the hardware, blocking the UI
+        // thread; show busy feedback until the properties are filled in.
+        wxBusyCursor busyCursor;
         dev = selDev;
         selId = devTree->GetSelection();
-        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getName());
+        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
         m_propertyGrid->Clear();
         
         SoapySDR::Device *soapyDev = dev->getSoapyDevice();
@@ -201,7 +236,12 @@ void SDRDevicesDialog::refreshDeviceProperties() {
         devSettings["sample_rate"] = addArgInfoProperty(m_propertyGrid, sampleRateArg);
         deviceArgs["sample_rate"] = sampleRateArg;
 
-        
+        //A-5) PPM frequency correction:
+        devSettings["ppm"] = m_propertyGrid->Append( new wxIntProperty("PPM", wxPG_LABEL, devConfig->getPPM()) );
+
+        //A-6) Automatic gain control:
+        devSettings["agc"] = m_propertyGrid->Append( new wxBoolProperty("Automatic Gain", wxPG_LABEL, devConfig->getAGCMode()) );
+
 
         //B) Runtime Settings:
         runtimeArgs.clear();
@@ -259,7 +299,9 @@ void SDRDevicesDialog::refreshDeviceProperties() {
             m_addRemoteButton->SetLabel("Add");
             removeId = nullptr;
         }
-        
+        // The Start button doubles as Stop for the streaming device.
+        updateDeviceStateUI();
+
     } else if (selDev && !selDev->isAvailable() && selDev->isManual()) {
         m_propertyGrid->Clear();
 
@@ -271,7 +313,6 @@ void SDRDevicesDialog::refreshDeviceProperties() {
         removeId = devTree->GetSelection();
         dev = nullptr;
         selId = nullptr;
-        editId = nullptr;
         
         m_addRemoteButton->SetLabel("Remove");
     } else if (!selDev) {
@@ -281,6 +322,11 @@ void SDRDevicesDialog::refreshDeviceProperties() {
 }
 
 void SDRDevicesDialog::OnSelectionChanged( wxTreeEvent& event ) {
+    // Paint the new selection first: probing below blocks the UI thread, and
+    // without this the tree keeps showing its pre-click state (e.g. the root
+    // focus outline) until the properties appear.
+    devTree->Refresh();
+    devTree->Update();
     refreshDeviceProperties();
     event.Skip();
 }
@@ -298,7 +344,6 @@ void SDRDevicesDialog::OnAddRemote( wxMouseEvent& /* event */) {
 			streamProps.clear();
             dev = nullptr;
             selId = nullptr;
-            editId = nullptr;
             devTree->Delete(removeId);
             removeId = nullptr;
             m_addRemoteButton->SetLabel("Add");
@@ -347,9 +392,41 @@ SDRDeviceInfo *SDRDevicesDialog::getSelectedDevice(wxTreeItemId selId_in) {
     return nullptr;
 }
 
+void SDRDevicesDialog::updateDeviceStateUI() {
+    if (dev == nullptr) {
+        return;
+    }
+    devActiveShown = dev->isActive();
+    m_useSelectedButton->SetLabel(devActiveShown ? "Stop" : "Start");
+    devStatusBar->SetStatusText(devActiveShown ? "Streaming " + dev->getName() + "." : "Ready.");
+}
+
 void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event) {
     if (dev != nullptr) {
-        
+
+        // A double-click also fires two left-ups; swallow repeats inside the
+        // system double-click window so each gesture acts exactly once.
+        // Stamp from the event, not the handler clock: the handler blocks on
+        // device start/stop, so handler time would push the second click of a
+        // slow gesture outside the window and act twice.
+        long clickMs = event.GetTimestamp();
+        if (clickMs - lastUseClick < wxSystemSettings::GetMetric(wxSYS_DCLICK_MSEC, nullptr)) {
+            event.Skip();
+            return;
+        }
+        lastUseClick = clickMs;
+
+        // Active device: the button reads Stop and stops the stream,
+        // leaving the dialog open for further tweaks.
+        if (dev->isActive()) {
+            devStatusBar->SetStatusText("Stopping " + dev->getName() + "...");
+            devStatusBar->Update();
+            wxGetApp().stopDevice(true, 2000);
+            updateDeviceStateUI();
+            event.Skip();
+            return;
+        }
+
         SoapySDR::ArgInfoList args = dev->getSoapyDevice()->getSettingInfo();
         
         SoapySDR::Kwargs settingArgs;
@@ -393,23 +470,88 @@ void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event) {
         devConfig->setStreamOpts(streamArgs);
         wxGetApp().setDeviceArgs(settingArgs);
         wxGetApp().setStreamArgs(streamArgs);
+        devStatusBar->SetStatusText("Starting " + dev->getName() + "...");
+        devStatusBar->Update();
         wxGetApp().setDevice(dev,0);
-        
-        //update main application title with Device name:
-        wxString titleBar = CUBICSDR_TITLE;
-        titleBar += " - " + wxGetApp().getDevice()->getName();
-        wxGetApp().getAppFrame()->SetTitle(titleBar);
 
-        Close();
+        //update main application title with Device name:
+        wxGetApp().getAppFrame()->updateTitle();
+
+        updateDeviceStateUI();
+
+        if (dismissOnStart) {
+            Close();
+        }
     }
     event.Skip();
 }
 
+void SDRDevicesDialog::OnResetDefaults(wxMouseEvent& event) {
+    event.Skip();
+    if (dev == nullptr) {
+        return;
+    }
+    // Defer past click completion so the button cycle finishes first.
+    pendingResetApply = true;
+}
+
+void SDRDevicesDialog::applyResetDefaults() {
+    if (dev == nullptr) {
+        return;
+    }
+    DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
+    devConfig->resetToDefaults();
+    // The factory sample rate is concrete: nearest supported to the app
+    // default. An unset rate would fall back to the current live rate, so
+    // clearing it alone would leave the grid and the device unchanged.
+    long defaultRate = dev->getSampleRateNear(SOAPY_SDR_RX, 0, DEFAULT_SAMPLE_RATE);
+    devConfig->setSampleRate(defaultRate);
+    if (dev->isActive() || !wxGetApp().getDevice()) {
+        // Mirror the per-field edit path for the live-settable scalars. Gains,
+        // runtime settings, and stream options cannot take effect until the
+        // next start, which re-adopts them from the driver.
+        wxGetApp().setOffset(0);
+        wxGetApp().setPPM(0);
+        wxGetApp().setAGCMode(true);
+        wxGetApp().setSampleRate(defaultRate);
+
+        std::vector<std::string> antennaOpts = dev->getAntennaNames(SOAPY_SDR_RX, 0);
+        if (antennaOpts.size() > 1) {
+            wxGetApp().setAntennaName(antennaOpts.front());
+        }
+
+        if (dev->isActive()) {
+            wxGetApp().getAppFrame()->updateTitle();
+        }
+    }
+    wxTreeItemId curSel = devTree->GetSelection();
+    if (curSel) {
+        devTree->SetItemText(curSel, devConfig->getDeviceName());
+    }
+    refreshDeviceProperties();
+}
+
 void SDRDevicesDialog::OnTreeDoubleClick( wxMouseEvent& event ) {
+    if (dev == nullptr) {
+        return;
+    }
+    if (dev->isActive()) {
+        Close();
+        return;
+    }
     OnUseSelected(event);
+    // Only a streaming device dismisses the dialog: a debounced repeat
+    // or a failed start leaves it open instead of vanishing.
+    if (dev && dev->isActive()) {
+        Close();
+    }
 }
 
 void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
+    if (pendingResetApply) {
+        pendingResetApply = false;
+        applyResetDefaults();
+    }
     if (refresh) {
         if (wxGetApp().areModulesMissing()) {
             if (!failed) {
@@ -424,13 +566,21 @@ void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
         if (wxGetApp().areDevicesEnumerating() || !wxGetApp().areDevicesReady()) {
             std::string msg = wxGetApp().getNotification();
             devStatusBar->SetStatusText(msg);
-            devTree->DeleteAllItems();
-            devTree->AddRoot(msg);
+            // Keep the per-module loading progress on the status line only; the
+            // tree holds a static placeholder so those updates don't rebuild
+            // (and flicker) it on every timer tick.
+            wxTreeItemId enumeratingRoot = devTree->GetRootItem();
+            if (!enumeratingRoot.IsOk() || devTree->GetItemText(enumeratingRoot) != "Initializing") {
+                devTree->DeleteAllItems();
+                devItems.clear();
+                devTree->AddRoot("Initializing");
+            }
             event.Skip();
             return;
         }
                 
         devTree->DeleteAllItems();
+        devItems.clear();
         
         wxTreeItemId devRoot = devTree->AddRoot("Devices");
         wxTreeItemId localBranch = devTree->AppendItem(devRoot, "Local");
@@ -483,12 +633,31 @@ void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
         m_refreshButton->Enable();
         m_addRemoteButton->Enable();
         m_useSelectedButton->Enable();
+        m_resetButton->Enable();
         devTree->Enable();
         devTree->ExpandAll();
+
+        // Pre-select the active device, falling back to the last used
+        // one still present (persisted across restarts).
+        SDRDeviceInfo *activeDev = wxGetApp().getDevice();
+        std::string targetId = activeDev ? activeDev->getDeviceId() : wxGetApp().getConfig()->getLastDeviceId();
+        if (!targetId.empty() && !devTree->GetSelection().IsOk()) {
+            for (auto &item : devItems) {
+                if (item.second && item.second->getDeviceId() == targetId) {
+                    devTree->EnsureVisible(item.first);
+                    devTree->SelectItem(item.first);
+                    break;
+                }
+            }
+        }
         
         devStatusBar->SetStatusText("Ready.");
 
         refresh = false;
+    }
+
+    if (dev != nullptr && devActiveShown != dev->isActive()) {
+        updateDeviceStateUI();
     }
 }
 
@@ -520,14 +689,19 @@ std::string SDRDevicesDialog::getSelectedChoiceOption(wxPGProperty* prop, const 
 
 void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
 
-    if (event.GetProperty() == devSettings["name"]) {
+    if (dev && event.GetProperty() == devSettings["name"]) {
         DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
         
         wxString devName = event.GetPropertyValue().GetString();
         
         devConfig->setDeviceName(devName.ToStdString());
-        if (editId) {
-            devTree->SetItemText(editId, devConfig->getDeviceName());
+        // Update the edited row, resolved from the live selection.
+        wxTreeItemId curSel = devTree->GetSelection();
+        if (curSel) {
+            devTree->SetItemText(curSel, devConfig->getDeviceName());
+        }
+        if (dev && dev->isActive()) {
+            wxGetApp().getAppFrame()->updateTitle();
         }
         if (devName.empty()) {
             event.GetProperty()->SetValueFromString(devConfig->getDeviceName());
@@ -574,6 +748,24 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
         catch (const std::invalid_argument &) {
             // nop
         }
+    } else if (dev && event.GetProperty() == devSettings["ppm"]) {
+        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
+
+        int ppm = event.GetPropertyValue().GetInteger();
+
+        devConfig->setPPM(ppm);
+        if (dev->isActive() || !wxGetApp().getDevice()) {
+            wxGetApp().setPPM(ppm);
+        }
+    } else if (dev && event.GetProperty() == devSettings["agc"]) {
+        DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
+
+        bool agc = event.GetPropertyValue().GetBool();
+
+        devConfig->setAGCMode(agc);
+        if (dev->isActive() || !wxGetApp().getDevice()) {
+            wxGetApp().setAGCMode(agc);
+        }
     }
     else if (dev) {
         wxPGProperty *prop = event.GetProperty();
@@ -601,14 +793,8 @@ void SDRDevicesDialog::OnPropGridChanged( wxPropertyGridEvent& event ) {
     }
 }
 
-void SDRDevicesDialog::OnPropGridFocus( wxFocusEvent& /* event */) {
-    editId = selId;
-}
-
-
 void SDRDevicesDialog::doRefreshDevices() {
     selId = nullptr;
-    editId = nullptr;
     removeId = nullptr;
     dev = nullptr;
     wxGetApp().stopDevice(false, 2000);
@@ -623,7 +809,9 @@ void SDRDevicesDialog::doRefreshDevices() {
     m_refreshButton->Disable();
     m_addRemoteButton->Disable();
     m_useSelectedButton->Disable();
+    m_resetButton->Disable();
     wxGetApp().reEnumerateDevices();
     refresh = true;
     m_addRemoteButton->SetLabel("Add");
+    m_useSelectedButton->SetLabel("Start");
 }

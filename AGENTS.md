@@ -27,8 +27,8 @@ Built via `python build.py`, which drives the CMake presets, vendored dependenci
 ## Key Directories
 
 - `src/` — Application source (sdr/, demod/, audio/, visual/, modules/modem/, util/)
-- `external/` — Vendored third-party libraries (lodepng, tinyxml, rtaudio, liquid-dsp, hamlib, cubicvr2)
-- `.circleci/` — CI configuration (builds only, no test execution)
+- `external/` — Vendored third-party libraries (lodepng, tinyxml, rtaudio, hamlib, cubicvr2)
+- `.circleci/` — CI configuration (the Linux build job runs the C++ unit tests; packaging jobs are tag-gated)
 - `font/` — Bitmap fonts
 - `cmake/` — CMake helper modules
 
@@ -50,5 +50,13 @@ When creating or updating documentation in `docs/`, avoid brittle content that w
 - **No editorial commentary** — Describe what the code does, not what it doesn't do. Avoid negative framing ("X is not handled by Y") and notes about what was corrected during editing. The spec should reflect the current state of the code, not the reverse-engineering process
 - **Reference functions, not lines** — "In the `OnInit()` method" is durable; "on line 390" is not
 - **Keep actionable content only** — File lists, verification criteria, and rollback strategies are durable; inventories of current state go stale
+
+## Fix Synopsis
+
+Branches that diverge from the current goal to fix something found along the way carry a short synopsis so the reasoning survives in git history:
+
+- Write `docs/plans/<slug>.md` covering symptom, root cause, investigation path, fix, and verification. Do not index it in `docs/PLAN.md`.
+- Follow the Documentation Guidelines above, except that measured evidence (probe readings, levels, timings) is the point of the file — keep it.
+- Commit the synopsis with the fix, merge the branch back, then delete the file in a follow-up commit. History keeps the record; the tree stays clean.
 
 

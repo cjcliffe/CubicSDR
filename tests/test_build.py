@@ -220,10 +220,21 @@ class MacosStampPartsTests(unittest.TestCase):
         self.assertIsNone(build.macos_stamp_parts({"CFLAGS": "-O2"}))
 
     def test_covers_arch_host_and_floor(self):
-        env, host = build.macos_build_flags("x86_64", "11.0")
+        # Exercise whichever arch is not native here so the cross path
+        # (and its host triplet) is asserted on any machine.
+        native = platform.machine().replace("aarch64", "arm64")
+        target = "x86_64" if native != "x86_64" else "arm64"
+        env, host = build.macos_build_flags(target, "11.0")
         parts = build.macos_stamp_parts(env, host)
-        self.assertEqual(parts[0], "x86_64")
-        self.assertEqual(parts[1], "x86_64-apple-darwin")
+        self.assertEqual(parts[0], target)
+        self.assertEqual(parts[1], "%s-apple-darwin" % target)
+        self.assertEqual(parts[2], "11.0")
+
+    def test_native_stamp_has_no_host(self):
+        env, host = build.macos_build_flags("native", "11.0")
+        parts = build.macos_stamp_parts(env, host)
+        self.assertEqual(parts[0], platform.machine().replace("aarch64", "arm64"))
+        self.assertIsNone(parts[1])
         self.assertEqual(parts[2], "11.0")
 
     def test_floor_change_rekeys(self):
@@ -576,11 +587,15 @@ class VerifyBundleInputsTests(unittest.TestCase):
 
     def test_no_app_is_an_error(self):
         from unittest import mock
+        # The app glob scans the real build tree, so a machine with a
+        # built app would find one: force the empty case explicitly.
         with tempfile.TemporaryDirectory() as prefix:
             with mock.patch.object(build.platform, "system",
                                    return_value="Darwin"):
-                with self.assertRaises(SystemExit):
-                    build.verify_macos_bundle_inputs(prefix)
+                with mock.patch.object(build.glob, "glob",
+                                       return_value=[]):
+                    with self.assertRaises(SystemExit):
+                        build.verify_macos_bundle_inputs(prefix)
 
     def _run_gate(self, prefix, app, lib_present):
         from types import SimpleNamespace
@@ -837,6 +852,193 @@ class GitCloneTests(unittest.TestCase):
             head = self._git("-C", dest, "rev-parse", "HEAD")
             want = self._git("-C", origin, "rev-parse", "v0.3^{commit}")
             self.assertEqual(head.stdout.strip(), want.stdout.strip())
+
+
+class ClangBuiltinsLibTests(unittest.TestCase):
+    def _make_llvm(self, root, arch, versions):
+        for version in versions:
+            if arch == "x64":
+                libdir = os.path.join(root, "x64", "lib", "clang", version,
+                                      "lib", "windows")
+                name = "clang_rt.builtins-x86_64.lib"
+            else:
+                libdir = os.path.join(root, "lib", "clang", version,
+                                      "lib", "windows")
+                name = "clang_rt.builtins-i386.lib"
+            os.makedirs(libdir)
+            with open(os.path.join(libdir, name), "w") as handle:
+                handle.write("stub")
+
+    def test_x64_finds_builtins(self):
+        with tempfile.TemporaryDirectory() as llvm_dir:
+            self._make_llvm(llvm_dir, "x64", ["17"])
+            found = build.clang_builtins_lib(llvm_dir, "x64")
+            self.assertTrue(found.endswith("clang_rt.builtins-x86_64.lib"))
+            self.assertIn(os.path.join("x64", "lib", "clang", "17"), found)
+
+    def test_newest_llvm_wins(self):
+        with tempfile.TemporaryDirectory() as llvm_dir:
+            self._make_llvm(llvm_dir, "x64", ["16", "17"])
+            found = build.clang_builtins_lib(llvm_dir, "x64")
+            self.assertIn(os.path.join("clang", "17"), found)
+
+    def test_x86_layout(self):
+        with tempfile.TemporaryDirectory() as llvm_dir:
+            self._make_llvm(llvm_dir, "x86", ["17"])
+            found = build.clang_builtins_lib(llvm_dir, "x86")
+            self.assertTrue(found.endswith("clang_rt.builtins-i386.lib"))
+
+    def test_missing_install_fails(self):
+        with tempfile.TemporaryDirectory() as llvm_dir:
+            with self.assertRaises(SystemExit):
+                build.clang_builtins_lib(llvm_dir, "x64")
+
+
+class BoostLibDirTests(unittest.TestCase):
+    def test_pinned_version_wins(self):
+        with tempfile.TemporaryDirectory() as boost_root:
+            os.makedirs(os.path.join(boost_root, "lib64-msvc-14.0"))
+            pinned = os.path.join(boost_root,
+                                  "lib64-msvc-%s" % build.BOOST_MSVC)
+            os.makedirs(pinned)
+            self.assertEqual(build.boost_lib_dir(boost_root, "x64"), pinned)
+
+    def test_newest_fallback(self):
+        with tempfile.TemporaryDirectory() as boost_root:
+            os.makedirs(os.path.join(boost_root, "lib64-msvc-14.0"))
+            second = os.path.join(boost_root, "lib64-msvc-14.9")
+            os.makedirs(second)
+            self.assertEqual(build.boost_lib_dir(boost_root, "x64"), second)
+
+    def test_x86_tag(self):
+        with tempfile.TemporaryDirectory() as boost_root:
+            pinned = os.path.join(boost_root,
+                                  "lib32-msvc-%s" % build.BOOST_MSVC)
+            os.makedirs(pinned)
+            self.assertEqual(build.boost_lib_dir(boost_root, "x86"), pinned)
+
+    def test_nothing_installed_builds_default(self):
+        with tempfile.TemporaryDirectory() as boost_root:
+            self.assertEqual(
+                build.boost_lib_dir(boost_root, "x64"),
+                os.path.join(boost_root, "lib64-msvc-%s" % build.BOOST_MSVC))
+
+    def test_dry_run_builds_default(self):
+        with tempfile.TemporaryDirectory() as boost_root:
+            os.makedirs(os.path.join(boost_root, "lib64-msvc-14.0"))
+            self.assertEqual(
+                build.boost_lib_dir(boost_root, "x64", dry_run=True),
+                os.path.join(boost_root, "lib64-msvc-%s" % build.BOOST_MSVC))
+
+
+class StampTests(unittest.TestCase):
+    def test_missing_stamp_is_invalid(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            self.assertFalse(build.stamp_valid(prefix, "step"))
+
+    def test_unkeyed_stamp_is_valid(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            build.mark_done(prefix, "step")
+            self.assertTrue(build.stamp_valid(prefix, "step"))
+
+    def test_matching_key_is_valid(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            build.mark_done(prefix, "step", key="abc")
+            self.assertTrue(build.stamp_valid(prefix, "step", key="abc"))
+
+    def test_mismatched_key_is_invalid(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            build.mark_done(prefix, "step", key="abc")
+            self.assertFalse(build.stamp_valid(prefix, "step", key="xyz"))
+
+    def test_legacy_stamp_is_adopted(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            build.mark_done(prefix, "step")
+            self.assertTrue(build.stamp_valid(prefix, "step", key="abc"))
+            self.assertTrue(build.stamp_valid(prefix, "step", key="abc"))
+
+    def test_adopt_can_be_refused(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            build.mark_done(prefix, "step")
+            self.assertFalse(
+                build.stamp_valid(prefix, "step", key="abc", adopt=False))
+
+    def test_dry_run_writes_nothing(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            build.mark_done(prefix, "step", dry_run=True)
+            self.assertFalse(build.stamp_valid(prefix, "step"))
+
+
+class StageDllsTests(unittest.TestCase):
+    def _write(self, path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as handle:
+            handle.write("stub")
+
+    def test_copies_sibling_dlls(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            lib = os.path.join(prefix, "lib", "foo.lib")
+            self._write(lib)
+            self._write(os.path.join(prefix, "lib", "foo.dll"))
+            build.stage_dlls([lib], prefix)
+            self.assertTrue(
+                os.path.isfile(os.path.join(prefix, "bin", "foo.dll")))
+
+    def test_skips_dlls_already_in_place(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            lib = os.path.join(prefix, "bin", "foo.lib")
+            staged = os.path.join(prefix, "bin", "foo.dll")
+            self._write(lib)
+            self._write(staged)
+            before = os.stat(staged).st_mtime_ns
+            build.stage_dlls([lib], prefix)
+            self.assertEqual(os.stat(staged).st_mtime_ns, before)
+
+    def test_dry_run_stages_nothing(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            lib = os.path.join(prefix, "lib", "foo.lib")
+            self._write(lib)
+            self._write(os.path.join(prefix, "lib", "foo.dll"))
+            build.stage_dlls([lib], prefix, dry_run=True)
+            self.assertFalse(os.path.exists(os.path.join(prefix, "bin")))
+
+
+class StageRuntimeWindowsTests(unittest.TestCase):
+    def _write(self, path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as handle:
+            handle.write("stub")
+
+    def test_stages_bins_and_modules(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            with tempfile.TemporaryDirectory() as out:
+                self._write(os.path.join(prefix, "bin", "foo.dll"))
+                self._write(os.path.join(prefix, "lib", "SoapySDR",
+                                         "modules0.8", "mod.dll"))
+                build.stage_runtime_windows(prefix, out)
+                self.assertTrue(os.path.isfile(os.path.join(out, "foo.dll")))
+                self.assertTrue(os.path.isfile(
+                    os.path.join(out, "modules", "mod.dll")))
+
+    def test_prunes_deselected_modules(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            with tempfile.TemporaryDirectory() as out:
+                self._write(os.path.join(prefix, "lib", "SoapySDR",
+                                         "modules0.8", "mod.dll"))
+                stale = os.path.join(out, "modules", "stale.dll")
+                self._write(stale)
+                build.stage_runtime_windows(prefix, out)
+                self.assertFalse(os.path.exists(stale))
+                self.assertTrue(os.path.isfile(
+                    os.path.join(out, "modules", "mod.dll")))
+
+    def test_dry_run_stages_nothing(self):
+        with tempfile.TemporaryDirectory() as prefix:
+            with tempfile.TemporaryDirectory() as parent:
+                out = os.path.join(parent, "staged")
+                self._write(os.path.join(prefix, "bin", "foo.dll"))
+                build.stage_runtime_windows(prefix, out, dry_run=True)
+                self.assertFalse(os.path.exists(out))
 
 
 if __name__ == "__main__":

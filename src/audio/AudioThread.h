@@ -12,54 +12,14 @@
 #include "ThreadBlockingQueue.h"
 #include "RtAudio.h"
 #include "DemodDefs.h"
+#include "AudioMixer.h"
 
-class AudioThreadInput {
-public:
-    long long frequency{};
-    int inputRate{};
-    int sampleRate{};
-    int channels{};
-    float peak{};
-    int type{};
-    bool is_squelch_active{};
-
-    std::vector<float> data;
-
-    AudioThreadInput() :
-        frequency(0), inputRate(0), sampleRate(0), channels(0), peak(0), type(0), is_squelch_active(false) {
-
-    }
-
-
-    explicit AudioThreadInput(AudioThreadInput *copyFrom) {
-        copy(copyFrom);
-    }
-
-    void copy(AudioThreadInput *copyFrom) {
-        frequency = copyFrom->frequency;
-        inputRate = copyFrom->inputRate;
-        sampleRate = copyFrom->sampleRate;
-        channels = copyFrom->channels;
-        peak = copyFrom->peak;
-        type = copyFrom->type;
-        is_squelch_active = copyFrom->is_squelch_active;
-        data.assign(copyFrom->data.begin(), copyFrom->data.end());
-    }
-
-
-    virtual ~AudioThreadInput() = default;
-};
-
-typedef std::shared_ptr<AudioThreadInput> AudioThreadInputPtr;
-
-typedef ThreadBlockingQueue<AudioThreadInputPtr> DemodulatorThreadOutputQueue;
-
-typedef std::shared_ptr<DemodulatorThreadOutputQueue> DemodulatorThreadOutputQueuePtr;
+#include "AudioThreadInput.h"
 
 class AudioThreadCommand {
 public:
     enum class Type {
-        AUDIO_THREAD_CMD_NULL, AUDIO_THREAD_CMD_SET_DEVICE, AUDIO_THREAD_CMD_SET_SAMPLE_RATE
+        AUDIO_THREAD_CMD_NULL, AUDIO_THREAD_CMD_SET_DEVICE, AUDIO_THREAD_CMD_SET_SAMPLE_RATE, AUDIO_THREAD_CMD_SET_BUFFER_FRAMES
     };
 
     AudioThreadCommand() :
@@ -70,10 +30,8 @@ public:
     int int_value;
 };
 
-typedef ThreadBlockingQueue<AudioThreadInputPtr> AudioThreadInputQueue;
 typedef ThreadBlockingQueue<AudioThreadCommand> AudioThreadCommandQueue;
 
-typedef std::shared_ptr<AudioThreadInputQueue> AudioThreadInputQueuePtr;
 typedef std::shared_ptr<AudioThreadCommandQueue> AudioThreadCommandQueuePtr;
 
 class AudioThread : public IOThread {
@@ -107,6 +65,7 @@ public:
 
     static void deviceCleanup();
     static void setDeviceSampleRate(int deviceId, int sampleRate);
+    static void setBufferFrames(int frames);
 
     //
     void attachControllerThread(std::thread* controllerThread);
@@ -115,10 +74,7 @@ public:
     size_t underflowCount;
     //protected by m_mutex
     std::vector<AudioThread *> boundThreads;
-    AudioThreadInputQueuePtr inputQueue;
-    AudioThreadInputPtr currentInput;
-    size_t audioQueuePtr;
-    float gain;
+    MixerVoice mixer;
 
 private:
 
@@ -140,9 +96,11 @@ private:
 
     void setupDevice(int deviceId);
     void setSampleRate(int sampleRate_in);
+    void reopenWithBufferFrames(int frames);
 
     void bindThread(AudioThread *other);
     void removeThread(AudioThread *other);
+    void resetAllPrebuffers();
 
     static std::map<int, AudioThread* > deviceController;
 

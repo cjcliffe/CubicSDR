@@ -21,6 +21,7 @@ SDRThread::SDRThread() : IOThread(), buffers("SDRThreadBuffers") {
     deviceInfo.store(nullptr);
 
     sampleRate.store(DEFAULT_SAMPLE_RATE);
+    pendingSampleRate.store(DEFAULT_SAMPLE_RATE);
     frequency.store(0);
     offset.store(0);
     ppm.store(0);
@@ -81,7 +82,19 @@ bool SDRThread::init() {
     
     wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Initializing device."));
     
-    device = devInfo->getSoapyDevice();
+    try {
+        device = devInfo->getSoapyDevice();
+    } catch (const std::exception &e) {
+        std::cout << "SDRThread: device creation failed: " << e.what() << std::endl << std::flush;
+        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Device creation failed: ") + e.what());
+        releaseStream();
+        return false;
+    } catch (...) {
+        std::cout << "SDRThread: device creation failed with unknown error." << std::endl << std::flush;
+        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Device creation failed."));
+        releaseStream();
+        return false;
+    }
     
     SoapySDR::Kwargs currentStreamArgs = combineArgs(devInfo->getStreamArgs(),streamArgs);
     
@@ -97,10 +110,16 @@ bool SDRThread::init() {
     if (!stream) {
         wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Stream setup failed, stream is null. ") + streamExceptionStr);
         std::cout << "Stream setup failed, stream is null. " << streamExceptionStr << std::endl;
+        releaseStream();
         return false;
     }
 
     //2. Set sample rate:
+    // Adopt the pending rate first: on a device switch the running rate is
+    // stale from the previous device and may be invalid for this one.
+    sampleRate.store(pendingSampleRate.load());
+    // A throwing driver must fail device start, not kill the app.
+    try {
     device->setSampleRate(SOAPY_SDR_RX, 0, sampleRate.load());
 
     //3. Store Stream-specific parameters to current Device
@@ -157,6 +176,17 @@ bool SDRThread::init() {
         setting_value_changed.store(false);
 
     } //leave lock guard scope
+    } catch (const std::exception &e) {
+        std::cout << "SDRThread: device configuration failed: " << e.what() << std::endl << std::flush;
+        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Device configuration failed: ") + e.what());
+        releaseStream();
+        return false;
+    } catch (...) {
+        std::cout << "SDRThread: device configuration failed with unknown error." << std::endl << std::flush;
+        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Device configuration failed."));
+        releaseStream();
+        return false;
+    }
       
     wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_INITIALIZED, std::string("Device Initialized."));
 
@@ -164,7 +194,19 @@ bool SDRThread::init() {
     wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Activating stream."));
 
     rate_changed.store(true);
-    updateSettings();
+    try {
+        updateSettings();
+    } catch (const std::exception &e) {
+        std::cout << "SDRThread: stream activation failed: " << e.what() << std::endl << std::flush;
+        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Stream activation failed: ") + e.what());
+        releaseStream();
+        return false;
+    } catch (...) {
+        std::cout << "SDRThread: stream activation failed with unknown error." << std::endl << std::flush;
+        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Stream activation failed."));
+        releaseStream();
+        return false;
+    }
 
 	//rebuild menu now that settings are really been applied.
 	wxGetApp().notifyMainUIOfDeviceChange(true);
@@ -172,16 +214,37 @@ bool SDRThread::init() {
     return true;
 }
 
+void SDRThread::releaseStream() {
+    if (!stream) {
+        return;
+    }
+    // Teardown must complete even if the driver throws: a wedged device
+    // must not take the process down with it.
+    try {
+        device->deactivateStream(stream);
+    } catch (const std::exception &e) {
+        std::cout << "SDRThread: deactivateStream failed during teardown: " << e.what() << std::endl << std::flush;
+    } catch (...) {
+        std::cout << "SDRThread: deactivateStream failed during teardown." << std::endl << std::flush;
+    }
+    try {
+        device->closeStream(stream);
+    } catch (const std::exception &e) {
+        std::cout << "SDRThread: closeStream failed during teardown: " << e.what() << std::endl << std::flush;
+    } catch (...) {
+        std::cout << "SDRThread: closeStream failed during teardown." << std::endl << std::flush;
+    }
+
+    stream = nullptr;
+}
+
 void SDRThread::deinit() {
-    device->deactivateStream(stream);
-    device->closeStream(stream);
-   
+    releaseStream();
+
     if (buffs[0] != nullptr) {
         ::free(buffs[0]);
         buffs[0] = nullptr;
     }
-
-    stream = nullptr;
 }
 
 void SDRThread::assureBufferMinSize(SDRThreadIQData * dataOut, size_t minSize) {
@@ -200,21 +263,17 @@ int SDRThread::readStream(const SDRThreadIQDataQueuePtr& iqDataOutQueue) {
     
     long long timeNs(0);
 
-    // Supply a huge timeout value to neutralize the readStream 'timeout' effect
-    // we are not interested in, but some modules may effectively use. 
-    //TODO: use something roughly (1 / TARGET_DISPLAY_FPS) seconds * (factor) instead.?
+    // Supply a huge timeout value so reads block until the requested slice
+    // fills; with frame-sized slices that wait is the frame clock.
     long timeoutUs = (1 << 30);
 
     int n_read = 0;
     int nElems = numElems.load();
     int mtElems = mtuElems.load();
 
-    // Warning: if MTU > numElems, i.e if device MTU is too big w.r.t the sample rate, the TARGET_DISPLAY_FPS cannot
-    //be reached and the CubicSDR displays "slows down". 
-    //To get back a TARGET_DISPLAY_FPS, the user need to adapt 
-    //the SoapySDR Device to use smaller buffer sizes, because  
-    // readStream() is suited to device MTU and cannot be really adapted dynamically.
-    //TODO: Add in doc the need to reduce SoapySDR device buffer length (if available) to restore higher fps.
+    // Reads below are sliced to the frame size, so a large device MTU only
+    // bounds the request instead of setting the cadence: each read fills in
+    // about one frame time and blocks go out evenly at the display rate.
 
     //0. Retrieve a new batch 
     SDRThreadIQDataPtr dataOut = buffers.getBuffer();
@@ -247,12 +306,13 @@ int SDRThread::readStream(const SDRThreadIQDataQueuePtr& iqDataOutQueue) {
     //default means blocking.
     int readStreamCode = 0;
 
-    //2. attempt readStream() at most nElems, by mtElems-sized chunks, append in dataOut->data directly.
+    //2. attempt readStream() at most nElems, appending in dataOut->data directly.
     while (n_read < nElems && !stopping) {
-        
-        //Whatever the number of remaining samples needed to reach nElems,  we always try to read a mtElems-size chunk,
-        //from which SoapySDR effectively returns n_stream_read.
-        int n_stream_read = device->readStream(stream, buffs, mtElems, flags, timeNs, timeoutUs);
+
+        //Read only what the frame still needs: a full-MTU request would
+        //block for the whole MTU before any block goes out, bursting once
+        //per MTU instead of pacing at the frame rate.
+        int n_stream_read = device->readStream(stream, buffs, std::min(mtElems, nElems - n_read), flags, timeNs, timeoutUs);
         
         readStreamCode = n_stream_read;
 
@@ -379,6 +439,7 @@ int SDRThread::readStream(const SDRThreadIQDataQueuePtr& iqDataOutQueue) {
         dataOut->data.resize(n_read);
 
         dataOut->frequency = frequency.load();
+        dataOut->rfFrequency = frequency.load() - offset.load();
         dataOut->sampleRate = sampleRate.load();
         dataOut->dcCorrected = hasHardwareDC.load();
         dataOut->numChannels = numChannels.load();
@@ -412,9 +473,8 @@ void SDRThread::readLoop() {
         return;
     }
     
-    updateGains();
- 
     try {
+        updateGains();
         while (!stopping.load()) {
 
             updateSettings();
@@ -428,6 +488,7 @@ void SDRThread::readLoop() {
     catch (...) {
         //notify App of device loss:
         std::cout << "SDRThread::readLoop() exception, stopping device..." << std::endl << std::flush;
+        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("SDRThread::readLoop() exception, stopping device."));
         stopping = true;
     }
 
@@ -449,6 +510,22 @@ void SDRThread::updateGains() {
     gain_value_changed.store(false);
 }
 
+// Discard whatever the driver has buffered (non-blocking reads until
+// empty, bounded), so the stream resumes from live samples.
+void SDRThread::drainStream() {
+    if (buffs[0] == nullptr) {
+        // Fresh stream, nothing allocated to drain into yet.
+        return;
+    }
+    for (int i = 0; i < 4096; i++) {
+        int drainFlags = 0;
+        long long drainTimeNs = 0;
+        if (device->readStream(stream, buffs, mtuElems.load(), drainFlags, drainTimeNs, 0) <= 0) {
+            break;
+        }
+    }
+}
+
 void SDRThread::updateSettings() {
     bool doUpdate = false;
     
@@ -457,24 +534,45 @@ void SDRThread::updateSettings() {
     }
 
     if (antenna_changed.load()) {
+        antenna_changed.store(false);
         
-       device->setAntenna(SOAPY_SDR_RX, 0, antennaName);
+       std::string antennaCopy;
+       {
+           std::lock_guard < std::mutex > lock(antenna_busy);
+           antennaCopy = antennaName;
+       }
+       device->setAntenna(SOAPY_SDR_RX, 0, antennaCopy);
            
-       antenna_changed.store(false);
     }
     
     if (offset_changed.load()) {
+        offset_changed.store(false);
         if (!freq_changed.load()) {
-            frequency.store(frequency.load());
             freq_changed.store(true);
         }
-        offset_changed.store(false);
     }
     
     if (rate_changed.load()) {
+        rate_changed.store(false);
+
+        //Apply the pending rate here, at a block boundary, so in-flight
+        //reads keep the old rate instead of producing new-rate labels
+        //with old-rate channel counts.
+        sampleRate.store(pendingSampleRate.load());
+
+        //Pre-switch drain: the driver holds a partially-consumed buffer
+        //across deactivate/activate, which permanently skews its ring;
+        //discard it (non-blocking) so the switch starts from a clean state.
+        drainStream();
 
         //1. Silence the device:
-        device->deactivateStream(stream);
+        try {
+            device->deactivateStream(stream);
+        } catch (const std::exception &e) {
+            std::cout << "SDRThread: deactivateStream failed: " << e.what() << std::endl << std::flush;
+        } catch (...) {
+            std::cout << "SDRThread: deactivateStream failed." << std::endl << std::flush;
+        }
 
         //2. Set the (new) sample rate
         try {
@@ -487,11 +585,22 @@ void SDRThread::updateSettings() {
         //2.3 Device-specific workarounds:
         // TODO: explore bandwidth setting option to see if this is necessary for others
         if (device->getDriverKey() == "bladeRF") {
-            device->setBandwidth(SOAPY_SDR_RX, 0, sampleRate.load());
+            try {
+                device->setBandwidth(SOAPY_SDR_RX, 0, sampleRate.load());
+            }
+            catch (...) {
+                std::cout << "SDRThread: Exception while setting bladeRF bandwidth." << std::endl << std::flush;
+            }
         }
 
         //3. Re-activate stream:
-        device->activateStream(stream);
+        try {
+            device->activateStream(stream);
+        } catch (const std::exception &e) {
+            std::cout << "SDRThread: activateStream failed: " << e.what() << std::endl << std::flush;
+        } catch (...) {
+            std::cout << "SDRThread: activateStream failed." << std::endl << std::flush;
+        }
 
         //4. Re-do Cubic buffers :
         //4.1. re-read current sample rate and MTU:
@@ -534,36 +643,50 @@ void SDRThread::updateSettings() {
         //clear overflow buffer
         numOverflow = 0;
 
-        //
-        rate_changed.store(false);
         doUpdate = true;
     }
     
     if (ppm_changed.load() && hasPPM.load()) {
+        ppm_changed.store(false);
         if (device->hasFrequencyCorrection(SOAPY_SDR_RX, 0)) {
             device->setFrequencyCorrection(SOAPY_SDR_RX, 0, ppm.load());
         } else {
             device->setFrequency(SOAPY_SDR_RX, 0, "CORR", ppm.load());
         }
-        ppm_changed.store(false);
     }
     
     if (freq_changed.load()) {
+        // Clear before the slow driver call: tunes requested while it
+        // runs stay pending for the next turn instead of being
+        // acknowledged here. One tune per turn keeps the stream live
+        // during drags while still converging on the latest request.
+        freq_changed.store(false);
+        bool tuned = false;
         if (frequency_locked.load() && !frequency_lock_init.load()) {
             device->setFrequency(SOAPY_SDR_RX,0,"RF",lock_freq.load());
             frequency_lock_init.store(true);
+            tuned = true;
         } else if (!frequency_locked.load()) {
             device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency.load() - offset.load());
+            tuned = true;
         }
-        freq_changed.store(false);
+        // Post-tune drain: samples buffered while the call ran were
+        // captured at the old frequency; discard them (non-blocking)
+        // so the stream resumes live instead of lagging behind them.
+        if (tuned) {
+            drainStream();
+            // Our own overflow stash holds pre-tune samples too; drop them
+            // so they are not packed into the first post-tune block.
+            numOverflow = 0;
+        }
     }
    
     
     if (agc_mode_changed.load()) {
+        agc_mode_changed.store(false);
         if (device->hasGainMode(SOAPY_SDR_RX, 0)) {
             device->setGainMode(SOAPY_SDR_RX, 0, agc_mode.load());
         }
-        agc_mode_changed.store(false);
         if (!agc_mode.load()) {
             updateGains();
             
@@ -581,6 +704,7 @@ void SDRThread::updateSettings() {
     if (gain_value_changed.load() && !agc_mode.load()) {
         std::lock_guard < std::mutex > lock(gain_busy); 
 
+        gain_value_changed.store(false);
         for (auto & gci : gainChanged) {
             if (gci.second) {
                 device->setGain(SOAPY_SDR_RX, 0, gci.first, gainValues[gci.first]);
@@ -588,13 +712,13 @@ void SDRThread::updateSettings() {
             }
         }
         
-        gain_value_changed.store(false);
     }
     
     if (setting_value_changed.load()) {
 
         std::lock_guard < std::mutex > lock(setting_busy);
         
+        setting_value_changed.store(false);
         for (auto & sci : settingChanged) {
             if (sci.second) {
                 device->writeSetting(sci.first, settings[sci.first]);
@@ -602,7 +726,6 @@ void SDRThread::updateSettings() {
             }
         }
         
-        setting_value_changed.store(false);
         
         doUpdate = true;
     }
@@ -741,8 +864,11 @@ long long SDRThread::getOffset() {
 }
 
 void SDRThread::setAntenna(const std::string& name) {
+    std::lock_guard < std::mutex > lock(antenna_busy);
     antennaName = name;
-    antenna_changed.store(true);
+    // Empty selects the driver default: persist it like any name, but
+    // leave the driver alone (an empty select call errors on some drivers).
+    antenna_changed.store(!name.empty());
 
     DeviceConfig *devConfig = deviceConfig.load();
     if (devConfig) {
@@ -751,11 +877,12 @@ void SDRThread::setAntenna(const std::string& name) {
 }
 
 std::string SDRThread::getAntenna() {
+    std::lock_guard < std::mutex > lock(antenna_busy);
     return antennaName;
 }
 
 void SDRThread::setSampleRate(long rate) {
-    sampleRate.store(rate);
+    pendingSampleRate.store(rate);
     rate_changed = true;
     DeviceConfig *devConfig = deviceConfig.load();
     if (devConfig) {

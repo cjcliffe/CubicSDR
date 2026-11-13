@@ -34,7 +34,7 @@ private:
 	bool updateGainValues();
 
     void OnPaint(wxPaintEvent& event);
-    void OnIdle(wxIdleEvent &event);
+    void frameUpdate() override;
 
     void SetLevel();
 

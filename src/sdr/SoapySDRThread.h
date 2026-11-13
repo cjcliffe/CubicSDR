@@ -20,18 +20,22 @@
 class SDRThreadIQData {
 public:
     long long frequency;
+    // Device RF at capture (frequency minus offset): the pacing sentry
+    // keys on this so offset-only retunes flush stale frames. App-domain
+    // consumers keep using frequency.
+    long long rfFrequency;
     long long sampleRate;
     bool dcCorrected;
     int numChannels;
     std::vector<liquid_float_complex> data;
 
     SDRThreadIQData() :
-            frequency(0), sampleRate(DEFAULT_SAMPLE_RATE), dcCorrected(true), numChannels(0) {
+            frequency(0), rfFrequency(0), sampleRate(DEFAULT_SAMPLE_RATE), dcCorrected(true), numChannels(0) {
 
     }
 
     SDRThreadIQData(long long bandwidth, long long frequency, std::vector<signed char> * /* data */) :
-            frequency(frequency), sampleRate(bandwidth), dcCorrected(false), numChannels(0) {
+            frequency(frequency), rfFrequency(frequency), sampleRate(bandwidth), dcCorrected(false), numChannels(0) {
 
     }
 
@@ -45,6 +49,7 @@ class SDRThread : public IOThread {
 private:
     bool init();
     void deinit();
+    void releaseStream();
     
     //returns the SoapyDevice readStream return value,
     //i.e if >= 0 the number of samples read, else if < 0 an error code.
@@ -102,6 +107,7 @@ public:
 protected:
     void updateGains();
     void updateSettings();
+    void drainStream();
     SoapySDR::Kwargs combineArgs(SoapySDR::Kwargs a, SoapySDR::Kwargs b);
 
     SoapySDR::Stream *stream = nullptr;
@@ -118,6 +124,7 @@ protected:
     std::map<std::string, bool> settingChanged;
 
     std::atomic_llong sampleRate;
+    std::atomic_llong pendingSampleRate;
     std::atomic_llong frequency, offset, lock_freq;
     std::atomic_int ppm, numElems, mtuElems, numChannels;
     std::atomic_bool hasPPM, hasHardwareDC;
@@ -126,6 +133,7 @@ protected:
         ppm_changed, device_changed, agc_mode_changed, gain_value_changed, setting_value_changed, frequency_locked, frequency_lock_init, iq_swap;
 
     std::mutex gain_busy;
+    std::mutex antenna_busy;
     std::map<std::string, float> gainValues;
     std::map<std::string, bool> gainChanged;
     

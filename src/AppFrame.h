@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #pragma once
+#ifdef _WIN32
+#include <atomic>
+#endif
 
 #include <wx/frame.h>
 #include <wx/panel.h>
@@ -10,6 +13,7 @@
 #include <wx/bitmap.h>
 #include <wx/statbmp.h>
 #include <wx/tooltip.h>
+#include <wx/timer.h>
 
 #include "PrimaryGLContext.h"
 
@@ -30,6 +34,7 @@
 #include "DemodulatorInstance.h"
 #include "DemodulatorThread.h"
 #include <map>
+#include <vector>
 
 
 #ifdef USE_HAMLIB
@@ -41,6 +46,9 @@ class AppFrame: public wxFrame {
 public:
     AppFrame();
     ~AppFrame() override;
+
+    // Rebuild the title bar from the active device and session file.
+    void updateTitle();
 
     void initDeviceParams(SDRDeviceInfo *devInfo_in);
 
@@ -66,6 +74,7 @@ public:
     long long getViewCenterFreq();
     int getViewBandwidth();
     bool isUserDemodBusy();
+    bool computeUserDemodBusy();
     
     BookmarkView *getBookmarkView();
     void disableSave(bool state);
@@ -99,7 +108,7 @@ private:
     WaterfallCanvas *waterfallCanvas, *demodWaterfallCanvas;
     TuningCanvas *demodTuner;
     MeterCanvas *demodSignalMeter, *demodGainMeter, *spectrumAvgMeter, *waterfallSpeedMeter;
-    ModeSelectorCanvas *demodModeSelector, *demodMuteButton, *peakHoldButton, *soloModeButton, *deltaLockButton;
+    ModeSelectorCanvas *demodModeSelector, *demodMuteButton, *peakHoldButton, *soloModeButton, *deltaLockButton, *demodRecordButton;
     GainCanvas *gainCanvas;
     BookmarkView *bookmarkView;
 
@@ -109,7 +118,38 @@ private:
     wxBoxSizer *demodTray;
 
     //Use a raw pointer here to prevent a dangling reference
-    DemodulatorInstance* activeDemodulator;
+    DemodulatorInstance* lastHandledDemod;
+
+    // Frame-rate pump driving processFrame() plus every canvas' frameUpdate().
+    wxTimer frameTimer;
+    // Last idle/active state seen by tickFrame(); the timer restarts on change.
+    bool lastIdleTickState = false;
+    // Recording-path check state: the filesystem check runs at most every
+    // few dozen ticks, and the button only updates when the verdict flips.
+    int lastRecordPathState = -1;
+    unsigned recordPathCheckTick = 0;
+    // Set while a menu is open so the frame tick leaves focus alone.
+    bool menuOpen = false;
+    // Single per-frame update shared by the timer and window-message tick paths.
+    // Declared on all platforms; the Windows-only parts of the body stay guarded.
+    void tickFrame();
+    // Cached busy gate for the squelch steal: computed live on the UI tick
+    // so a stuck tracker flag can never silence steals, read from any thread.
+    std::atomic<bool> userDemodBusy{ false };
+#ifdef _WIN32
+    // Frame-rate pump driven from a multimedia timer; ticks arrive as window
+    // messages so pacing stays steady including inside modal loops (menus).
+    unsigned int frameMMTimerId = 0;
+    // Set while a tick is posted but not yet processed; drops redundant ticks.
+    std::atomic<bool> frameTickPending{ false };
+    static void CALLBACK frameMMTimerProc(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2);
+    void startFrameTimer();
+    void stopFrameTimer();
+    // Window-message tick path; runs synchronously so ticks continue in modal loops.
+    virtual WXLRESULT MSWWindowProc(WXUINT nMsgCode, WXWPARAM wParam, WXLPARAM lParam) override;
+#endif
+    // Canvases repainted once per frame-timer tick, in a single cycle.
+    std::vector<InteractiveCanvas*> frameCanvases;
 
     /***
      * Menus
@@ -135,7 +175,10 @@ private:
 	std::map<int, wxMenuItem *> sampleRateMenuItems;
 	std::map<int, wxMenuItem *> antennaMenuItems;
 	std::map<int, wxMenuItem *> settingsMenuItems;
-	std::map<int, wxMenuItem *> performanceMenuItems;
+	std::map<int, wxMenuItem *> frameMenuItems;
+	std::map<int, wxMenuItem *> dspMenuItems;
+	std::map<int, wxMenuItem *> pacingMenuItems;
+	std::map<int, wxMenuItem *> latencyMenuItems;
 	std::map<int, wxMenuItem *> audioSampleRateMenuItems;
 	std::map<int, wxMenuItem *> recordingMenuItems;
 
@@ -183,7 +226,11 @@ private:
      */
     void OnMenu(wxCommandEvent& event);
     void OnClose(wxCloseEvent& event);
-    void OnIdle(wxIdleEvent& event);
+    void OnFrameTimer(wxTimerEvent& event);
+    void OnMenuOpen(wxMenuEvent& event);
+    void OnMenuClose(wxMenuEvent& event);
+    void processFrame();
+    int getFrameIntervalMs();
     void OnDoubleClickSash(wxSplitterEvent& event);
     void OnUnSplit(wxSplitterEvent& event);
     void OnAboutDialogClose(wxCommandEvent& event);
@@ -200,7 +247,9 @@ private:
 	 */
 	void gkNudge(const DemodulatorInstancePtr& demod, int snap);
 
-	void toggleActiveDemodRecording();
+	void toggleDemodRecording(const DemodulatorInstancePtr& demod);
+	void updateRecordButtonState(ModeSelectorCanvas *recordButton);
+	void toggleBookmarks();
 	void toggleAllActiveDemodRecording();
 
 	/**
@@ -211,6 +260,7 @@ private:
 	SpectrumCanvas *makeDemodSpectrumCanvas(wxWindow *parent, const wxGLAttributes &attribList);
 	MeterCanvas *makeSignalMeter(wxWindow *parent, const wxGLAttributes &attribList);
 	ModeSelectorCanvas *makeDeltaLockButton(wxWindow *parent, const wxGLAttributes &attribList);
+	ModeSelectorCanvas *makeDemodRecordButton(wxWindow *parent, const wxGLAttributes &attribList);
 	TuningCanvas *makeModemTuner(wxWindow *parent, const wxGLAttributes &attribList);
 	MeterCanvas *makeModemGainMeter(wxWindow *parent, const wxGLAttributes &attribList);
 	ModeSelectorCanvas *makeSoloModeButton(wxWindow *parent, const wxGLAttributes &attribList);
@@ -255,7 +305,11 @@ private:
 	bool actionOnMenuRecording(wxCommandEvent& event);
 	bool actionOnMenuRig(wxCommandEvent& event);
 	bool actionOnMenuSDRStartStop(wxCommandEvent &event);
-	bool actionOnMenuPerformance(wxCommandEvent &event);
+	bool actionOnMenuFrameRate(wxCommandEvent &event);
+	bool actionOnMenuDsp(wxCommandEvent &event);
+	bool actionOnMenuPacing(wxCommandEvent &event);
+	bool actionOnMenuLatency(wxCommandEvent &event);
+	void refreshLatencyLabels();
 	bool actionOnMenuTips(wxCommandEvent &event);
 	bool actionOnMenuIQSwap(wxCommandEvent &event);
 	bool actionOnMenuFreqOffset(wxCommandEvent &event);
@@ -361,8 +415,17 @@ private:
 #define wxID_ANTENNA_CURRENT_TX 2501
 #define wxID_ANTENNAS_BASE 2352
 
-#define wxID_PERF_CURRENT 2400
-#define wxID_PERF_BASE 2401
+#define wxID_FRAME_CURRENT 2400
+#define wxID_FRAME_BASE 2401
+
+#define wxID_DSP_CURRENT 2410
+#define wxID_DSP_BASE 2411
+
+#define wxID_PACING_CURRENT 2420
+#define wxID_PACING_BASE 2421
+
+#define wxID_LATENCY_CURRENT 2430
+#define wxID_LATENCY_BASE 2431
 
 #define wxID_DEVICE_ID 3500
 
@@ -372,6 +435,8 @@ private:
 #define  wxID_RECORDING_SQUELCH_SKIP 8503
 #define  wxID_RECORDING_SQUELCH_ALWAYS 8504
 #define  wxID_RECORDING_FILE_TIME_LIMIT 8505
+
+#define wxID_FRAME_TIMER 8601
 
 #define wxID_AUDIO_BANDWIDTH_BASE 9000
 #define wxID_AUDIO_DEVICE_MULTIPLIER 50

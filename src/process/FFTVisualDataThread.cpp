@@ -26,6 +26,12 @@ SpectrumVisualProcessor *FFTVisualDataThread::getProcessor() {
     return &wproc;
 }
 
+void FFTVisualDataThread::flushPipeline() {
+    fftDistrib.requestReset();
+    fftDistrib.flushQueues();
+    wproc.flushQueues();
+}
+
 void FFTVisualDataThread::run() {
 
     DemodulatorThreadInputQueuePtr pipeIQDataIn = std::static_pointer_cast<DemodulatorThreadInputQueue>(getInputQueue("IQDataInput"));

@@ -48,6 +48,19 @@ void PrimaryGLContext::CheckGLError() {
     }
 }
 
+bool PrimaryGLContext::SetCurrent(const wxGLCanvas& win) const {
+    bool result = wxGLContext::SetCurrent(win);
+#ifdef _WIN32
+    // Swap interval is per-window state, and each context activates only its
+    // own canvas, so one successful application lasts the context's life.
+    if (result && wglSwapIntervalEXT && !swapIntervalApplied) {
+        wglSwapIntervalEXT(0);
+        swapIntervalApplied = true;
+    }
+#endif
+    return result;
+}
+
 PrimaryGLContext::PrimaryGLContext(wxGLCanvas *canvas, wxGLContext *sharedContext, wxGLContextAttrs* ctxAttrs) :
         wxGLContext(canvas, sharedContext, (const wxGLContextAttrs*) ctxAttrs), hoverAlpha(1.0) {
 
@@ -121,7 +134,7 @@ void PrimaryGLContext::DrawDemodInfo(const DemodulatorInstancePtr& demod, const 
     // TODO: Better recording indicator... pulsating red circle?
     if (isRecording) {
         auto t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-        labelBg.g = sinf(2.0f * M_PI * (float(t) / 1000.0f)) * 0.25f + 0.75f;
+        labelBg.g = sinf(2.0f * M_PI * (float)(t % 2000) / 2000.0f) * 0.25f + 0.75f;
     }
 
     glColor4f(labelBg.r, labelBg.g, labelBg.b, labelBg.a);

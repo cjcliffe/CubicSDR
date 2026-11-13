@@ -4,7 +4,7 @@ See also: [RECOMMENDATIONS.md](../RECOMMENDATIONS.md) | [PLAN.md](../PLAN.md) | 
 
 ## Current State
 
-The `external/` directory contains full copies of 8 third-party libraries with no version tracking:
+The `external/` directory contains full copies of 7 third-party libraries with no version tracking:
 
 | Dependency | Vendored Version | Latest Upstream | Status |
 |-----------|-----------------|-----------------|--------|
@@ -14,7 +14,6 @@ The `external/` directory contains full copies of 8 third-party libraries with n
 | CubicVR2 Math | ~2013 | N/A | Unmaintained |
 | RS-232 | 0.21 | 0.21 | Unmaintained since 2015 |
 | wglext | ~2013 | Registry-generated | Self-declared obsolete |
-| liquid-dsp | 1.5.0 | 1.7.0+ | 2 versions behind |
 | hamlib | 4.x (early) | 4.6+ | Outdated |
 
 ## Implementation Plan
@@ -27,10 +26,7 @@ This is a large, risky change. Recommend doing it incrementally:
    - Files: `lodepng.h`, `lodepng.cpp`
    - No application code changes needed
 
-2. **liquid-dsp** (`external/liquid-dsp/`): Update to 1.7.0+.
-   - Used extensively: `SDRPostThread` (channelizer), `DemodulatorPreThread` (resampler), `DemodulatorThread` (squelch), all modems (demodulation)
-   - Requires testing DSP behavior changes — run full demodulation smoke test after update
-   - Check liquid-dsp changelog for API breaks in `firpfbch`, `msresamp`, `nco`, `modemcf`
+2. **liquid-dsp**: done — un-vendored; builds from source at tag v1.8.3 on all platforms, via the VS-bundled clang-cl on Windows.
 
 3. **RtAudio** (`external/rtaudio/`): Evaluate upgrading to 6.0.1+ (major API changes) or staying on 5.x latest.
    - Used by `AudioThread` (`src/audio/AudioThread.cpp`) — `RtAudio` class, `openStream()`, `startStream()`, `stopStream()`, `closeStream()`, callback-based API
@@ -92,7 +88,7 @@ This is a large, risky change. Recommend doing it incrementally:
    - Only used on Windows; MinGW uses system `<gl/wglext.h>`
 
    **Options:**
-   - Replace with a minimal header defining only the 3 needed typedefs (~10 lines)
+   - Replace with a minimal header defining only the needed typedefs
    - Or regenerate from Khronos XML registry if more WGL extensions are needed later
 
 ### Phase 3: Convert to git submodules (optional)
@@ -177,7 +173,7 @@ This is a large, risky change. Recommend doing it incrementally:
 Each dependency update should be done in a separate commit to enable granular rollback:
 
 1. **Commit per dependency** — Update one library at a time (e.g., "Update lodepng to 20240326"). If a build breaks or DSP behavior changes, `git revert` that single commit without affecting other updates.
-2. **Pin before updating** — Record the current vendored version in the commit message before replacing. Example: "Update liquid-dsp from 1.5.0 to 1.7.0" makes the diff in `git log` self-documenting.
+2. **Pin before updating** — Record the current vendored version in the commit message before replacing. Example: "Update RtAudio from 5.2.0 to 6.0.1" makes the diff in `git log` self-documenting.
 3. **Build and smoke-test after each update** — Compile on all three platforms (or at least the primary dev platform) and run a quick manual smoke test (open a device, verify demodulation) before moving to the next dependency.
 4. **TinyXML-2 migration is the highest-risk step** — The API change affects `DataTree.cpp` and `AppConfig.cpp`. Consider doing this in a feature branch with CI builds on all platforms before merging. If the migration fails, revert the branch merge.
 5. **Submodule conversion (Phase 3) should be a single atomic commit** — Converting multiple libraries to submodules in separate commits creates confusing history. Do it all at once after all updates are stable.

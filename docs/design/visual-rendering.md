@@ -4,7 +4,7 @@ This document describes CubicSDR's OpenGL rendering system, canvas hierarchy, GL
 
 ## Overview
 
-The visual system is built on wxWidgets' OpenGL integration (`wxGLCanvas`/`wxGLContext`) and uses a **pull-based** architecture: worker threads produce FFT/scope data into queues, and UI canvases poll those queues in their `OnIdle()` or `OnPaint()` handlers. Worker threads never push data to the UI.
+The visual system is built on wxWidgets' OpenGL integration (`wxGLCanvas`/`wxGLContext`) and uses a **pull-based** architecture: worker threads produce FFT/scope data into queues, and UI canvases poll those queues in their `frameUpdate()` or `OnPaint()` handlers. Worker threads never push data to the UI.
 
 The visual data processing pipeline — how raw IQ samples become display-ready spectrum/scope data, the VisualProcessor template, and the FFT/scope processing internals — is documented in [visual-data-pipeline.md](visual-data-pipeline.md).
 
@@ -39,7 +39,7 @@ Base class for all interactive GL canvases. Provides:
 
 The primary display canvas. Handles:
 
-- **FFT data consumption:** Pops `SpectrumVisualData` from `visualDataQueue` at a rate-limited pace (`linesPerSecond`)
+- **FFT data consumption:** Pops `SpectrumVisualData` from `visualDataQueue` at the pace `WaterfallPacer` plans (insert/drop schedule from sub-millisecond frame deltas, default 30 lps)
 - **Waterfall rendering:** Delegates to `WaterfallPanel` for texture-based scrolling waterfall
 - **Demodulator markers:** Draws all active demodulators via `PrimaryGLContext::DrawDemod()`
 - **Frequency selector:** Draws hover/active frequency markers via `DrawFreqSelector()`
@@ -66,6 +66,7 @@ Displays the FFT spectrum line plot. Linked to `WaterfallCanvas`:
 - Receives FFT data from its own `visualDataQueue`
 - Supports dB scale display and dB offset
 - Right-drag adjusts visual gain (vertical scale factor)
+- Visual gain lives in the spectrum processors, not the canvases: setting it fans out to the main, waterfall, and demod-view processors, so every view moves together. Right-drag, SHIFT+arrow keys, and right-click reset all converge on that shared factor.
 - Uses `SpectrumPanel` for rendering
 
 ### ScopeCanvas (`src/visual/ScopeCanvas.h`)
@@ -77,6 +78,17 @@ Displays demodulated audio as oscilloscope or spectrum:
 - Supports PPM mode for frequency calibration display
 - Uses both `ScopePanel` and `SpectrumPanel` in a composite layout
 - `GLPanel` hierarchy: `parentPanel` → `scopePanel` + `spectrumPanel` (children); `bgPanel` is drawn independently with its own identity transform before `parentPanel`
+
+### ModeSelectorCanvas (`src/visual/ModeSelectorCanvas.h`)
+
+Toggle-button canvas (modem type, mute, solo, record, and similar):
+
+- `setToggleMode()` makes a click flip between the choice and no selection
+- `setPulseMode()` breathes the selected button between its off-state look
+  (outline plus button-color text) and its on-state look (filled button plus
+  readable inverted text) on a shared two-second wall-clock cycle
+- `setDisabled()` dims the button and swallows clicks while the hover tip
+  keeps working, used for actions that need prior setup
 
 ## GLPanel System (`src/ui/GLPanel.h`)
 
@@ -189,7 +201,7 @@ Shared OpenGL context providing drawing primitives. All canvases share this cont
 | `BeginDraw(r, g, b)` | Clear color+depth buffers, load identity modelview |
 | `EndDraw()` | Finalize frame — currently empty (no-op) |
 | `DrawDemod(demod, color, center_freq=-1, srate=0)` | Draw demodulator bandwidth indicator with label |
-| `DrawDemodInfo(demod, color, center_freq=-1, srate=0, centerline=false)` | Draw demodulator info label (frequency, type, bandwidth) |
+| `DrawDemodInfo(demod, color, center_freq=-1, srate=0, centerline=false)` | Draw demodulator info label (frequency, type, bandwidth); the label glows green on a shared two-second cycle while recording |
 | `DrawFreqSelector(uxPos, color, w=0, center_freq=-1, srate=0)` | Draw frequency selection marker (center line + BW edges) |
 | `DrawRangeSelector(uxPos1, uxPos2, color)` | Draw range selection overlay (two vertical boundary lines) |
 | `DrawFreqBwInfo(freq, bw, color, center_freq=-1, srate=0, stack=false, centerline=false)` | Draw frequency and bandwidth text with shadow |
@@ -219,6 +231,8 @@ glLoadIdentity()
 | Additive | `GL_SRC_ALPHA, GL_ONE` | Demod bands, frequency selectors |
 | Alpha | `GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA` | Labels, backgrounds |
 | Opaque | `GL_ONE, GL_ZERO` | Shadow text in USB/LSB branches only (default branch shadow uses additive) |
+
+**Swap interval:** on Windows the swap interval is applied once per context on first successful activation. Every canvas activates only its own window, and contexts live and die with their canvases, so no per-paint driver call is needed.
 
 ### Buffer Strategy
 
@@ -384,8 +398,8 @@ The `Drawer` object is stack-local (not shared between threads), so creating a D
 | `waterfallGradient` | Waterfall color mapping (256-entry LUT) |
 | `waterfallHighlight` | Active demodulator marker |
 | `waterfallNew` | New demodulator being created |
-| `waterfallHover` | Hovered demodulator / frequency selector |
-| `waterfallDestroy` | Demodulator being deleted |
+| `waterfallHover` | Hovered demodulator / frequency selector; spectrum selection marker |
+| `waterfallDestroy` | Demodulator being deleted; selection while a move is pending |
 | `wfHighlight` | Waterfall highlight overlay (declared but currently unused) |
 | `fftLine` | Spectrum line color |
 | `fftHighlight` | Highlighted spectrum point |
@@ -448,17 +462,18 @@ All canvases follow the same rendering pattern in `OnPaint()`:
 
 **Key detail:** The panel tree is drawn first (step 5-6), then overlays are drawn on top (steps 7-9) using `PrimaryGLContext` immediate-mode drawing. This two-pass approach ensures overlays always render above the waterfall/spectrum content. Note: `DrawFreqBwInfo` is called by `SpectrumCanvas` (not `WaterfallCanvas`) to show frequency/bandwidth readouts at the cursor position.
 
-### OnIdle Processing
+### Frame-Timer Processing
 
-Each canvas registers its own `EVT_IDLE` handler. wxWidgets fires `OnIdle` when the event loop is empty, giving canvases a chance to poll for new data:
+`AppFrame` runs a frame timer (paced by the Frame Rate setting) that calls `processFrame()` for panel and device state, then `frameUpdate()` on every registered canvas in order. With no device streaming the timer parks at an idle rate instead of the configured frame rate. On Windows the tick comes from a multimedia timer that keeps firing while native menu tracking runs its modal loop, so animation continues while menus are open (other platforms use a plain timer there):
 
-| Canvas | OnIdle Behavior |
+| Canvas | frameUpdate Behavior |
 |--------|----------------|
 | `WaterfallCanvas` | `processInputQueue()` + `Refresh()` |
-| `SpectrumCanvas` | `Refresh()` + `event.RequestMore()` |
-| `ScopeCanvas` | `Refresh()` + `event.RequestMore()` |
+| `SpectrumCanvas`, `ScopeCanvas` | `Refresh()` |
+| `Meters`, tuner, gain | `Refresh()` on change only (event handlers plus polled change-detect; drag stepping and gain polling still run per tick) |
+| Mode buttons | `Refresh()` while pulsing (record button); clicks and hover repaint from their own handlers |
 
-`WaterfallCanvas` is the only canvas that polls its input queue in `OnIdle` via `processInputQueue()`. `SpectrumCanvas` and `ScopeCanvas` process their input queues inside `OnPaint()` instead (via `try_pop()` at the start of the paint handler). All canvases use non-blocking `try_pop()` to avoid stalling the UI thread. `Refresh()` is always called to drive animations (zoom interpolation, hover alpha decay, frequency nudge velocity) even when no new data is available.
+`WaterfallCanvas` is the only canvas that polls its input queue in `frameUpdate()` via `processInputQueue()`. `SpectrumCanvas` and `ScopeCanvas` process their input queues inside `OnPaint()` instead (via `try_pop()` at the start of the paint handler). All canvases use non-blocking `try_pop()` to avoid stalling the UI thread. Animated canvases (waterfall, spectrum, scope, demod views) still `Refresh()` every tick to drive animations (zoom interpolation, hover alpha decay, frequency nudge velocity) even when no new data is available; static controls repaint only on interaction or state change, and theme or font changes refresh every canvas explicitly.
 
 ### WaterfallCanvas Paint Flow (Detailed)
 
@@ -481,6 +496,10 @@ OnPaint():
     │
     └── SwapBuffers()
 ```
+
+### Waterfall Ring Assembly
+
+Line upload is split from GL: the headless `WaterfallRing` (`src/visual/WaterfallRing.h`) quantizes spectrum lines, buffers them, and describes each upload newest-first with wrap handling (`planUpload()` / `commitUpload()`), while `WaterfallPanel` executes the returned ops with texture calls. Pure memory math with no GL or I/O, so the assembly rules are unit-testable; the panel owns the textures and marks the ring ready.
 
 ### ScopeCanvas Paint Flow (Detailed)
 
@@ -528,7 +547,7 @@ SpectrumVisualProcessor (worker thread)
     ▼
 WaterfallCanvas (consumer, UI thread)
     │
-    ├── OnIdle() polls queue with try_pop()
+    ├── frameUpdate() polls queue with try_pop()
     ├── Rate-limits waterfall line insertion (linesPerSecond, default 30)
     ├── Triggers Refresh() → OnPaint() → SwapBuffers()
     │
@@ -606,6 +625,7 @@ WF_DRAG_FREQUENCY
 |-------|--------|
 | Zero-drag (click) | Create new demodulator or move existing one to cursor frequency |
 | `WF_DRAG_RANGE` | Create demodulator spanning the selected frequency range |
+| Right-click (no vertical drag) | Reset shared visual gain via `spectrumCanvas->resetScaleFactorFromClick()`, animating back to 1.0 (the click test uses accumulated drag distance, since the pointer warp used during right-drag pins the origin delta near zero) |
 | All states | Reset `dragState = WF_DRAG_NONE` |
 
 **Frequency snap:** When moving a demodulator, the frequency snaps to the nearest configurable snap value (powers of 10: 1, 10, 100, 1000, etc.). Default is 1 Hz (no snapping); the user sets this via the tuning canvas, and it is persisted in `AppConfig`.
@@ -647,6 +667,21 @@ Arrow keys control frequency and display in the WaterfallCanvas:
 
 Keyboard controls are **momentary**: on key-up, `scaleMove` resets to 0 and `zoom` resets to 1.0 (with UP/DOWN key-up re-arming `mouseZoom` to 0.95/1.05). `freqMove` is not hard-reset on key-up; it stops by velocity decay — `freqMove -= freqMove * 0.2` per frame, snapping to 0 at 0.01.
 
+### Canvas Key Shortcuts
+
+Key presses go to the canvas under the cursor: demod tuner, main waterfall, spectrum, scope, then the demod waterfall and spectrum views.
+
+| Key | Action |
+|-----|--------|
+| `D` / `Delete` | Remove the hovered demodulator |
+| `C` | Center on the hovered demodulator, or on the cursor frequency over empty space |
+| `E` | Rename the hovered demodulator, or the active one when none is hovered |
+| `B` | Toggle dB display on the hovered spectrum canvas |
+
+### Middle-Drag Glide Zoom
+
+Holding the middle button and dragging vertically glides the bandwidth zoom like middle-drag autoscroll: the zoom rate accelerates with the vertical distance from the press point (up zooms in, down zooms out), driven through the same per-frame `zoom` multiplier the arrow keys use, with the same min-bandwidth and sample-rate clamps. Releasing the button or leaving the window stops at the current bandwidth.
+
 ### SpectrumCanvas Interactions
 
 | Input | Action |
@@ -675,3 +710,5 @@ Panel position animates with spring-like behavior: `ctr += (ctrTarget - ctr) * 0
 | `DEFAULT_WATERFALL_LPS` | 30 | Default waterfall lines per second |
 | `MIN_BANDWIDTH` | 500 | Minimum demodulator bandwidth |
 | `CHANNELIZER_RATE_MAX` | 500000 | Maximum channelizer sample rate |
+
+Double-clicking a slider restores its reset default: waterfall speed returns to `DEFAULT_WATERFALL_LPS`, spectrum averaging to 0.65, demod gain to 1.0, and squelch to off (a fixed level below any live meter floor).

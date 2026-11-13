@@ -48,6 +48,7 @@ class devFrame : public wxFrame
 		wxButton* m_refreshButton;
 		wxButton* m_addRemoteButton;
 		wxButton* m_useSelectedButton;
+		wxButton* m_resetButton;
 		wxPanel* m_panel61;
 		wxStaticText* m_staticText1;
 		wxPropertyGrid* m_propertyGrid;
@@ -61,14 +62,14 @@ class devFrame : public wxFrame
 		virtual void OnRefreshDevices( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnAddRemote( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnUseSelected( wxMouseEvent& event ) { event.Skip(); }
+		virtual void OnResetDefaults( wxMouseEvent& event ) { event.Skip(); }
 		virtual void OnPropGridChanged( wxPropertyGridEvent& event ) { event.Skip(); }
-		virtual void OnPropGridFocus( wxFocusEvent& event ) { event.Skip(); }
 		virtual void OnDeviceTimer( wxTimerEvent& event ) { event.Skip(); }
 		
 	
 	public:
 		
-		devFrame( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("CubicSDR :: SDR Devices"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 700,467 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
+		devFrame( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("CubicSDR :: SDR Devices"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 750,500 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
 		
 		~devFrame();
 	

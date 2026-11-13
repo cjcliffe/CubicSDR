@@ -142,13 +142,18 @@ std::string DataElement::toString() {
             std::wstring wstr;
             get(wstr);
             //Narrow the whole string; keeping only the first character loses data.
-            size_t maxLenBytes = (wstr.length() + 1) * sizeof(wchar_t);
-            std::vector<char> narrowBuf(maxLenBytes, '\0');
+            size_t contentBytes = wstr.length() * sizeof(wchar_t);
+#ifdef _MSC_VER
+            const size_t bufPad = sizeof(wchar_t);
+#else
+            const size_t bufPad = 1;
+#endif
+            std::vector<char> narrowBuf(contentBytes + bufPad, '\0');
 #ifdef _MSC_VER
             size_t converted = 0;
             wcstombs_s(&converted, narrowBuf.data(), narrowBuf.size(), wstr.c_str(), _TRUNCATE);
 #else
-            ::wcstombs(narrowBuf.data(), wstr.c_str(), maxLenBytes - sizeof(wchar_t));
+            ::wcstombs(narrowBuf.data(), wstr.c_str(), contentBytes);
 #endif
             strValue.assign(narrowBuf.data());
         }
@@ -328,7 +333,13 @@ string DataTree::wsEncode(const wstring& wstr) {
     stringstream encStream;
     
     //wchar_t is typically 16 bits on windows, and 32 bits on Unix, so use sizeof(wchar_t) everywhere.
-    size_t bufSizeBytes = (wstr.length()+1) * sizeof(wchar_t);
+    size_t contentBytes = wstr.length() * sizeof(wchar_t);
+#ifdef _MSC_VER
+    const size_t bufPad = sizeof(wchar_t);
+#else
+    const size_t bufPad = 1;
+#endif
+    size_t bufSizeBytes = contentBytes + bufPad;
 
     char *data_str = (char *)calloc(bufSizeBytes, sizeof(char));
     
@@ -336,7 +347,7 @@ string DataTree::wsEncode(const wstring& wstr) {
     size_t converted = 0;
     wcstombs_s(&converted, data_str, bufSizeBytes, wstr.c_str(), _TRUNCATE);
 #else
-    wcstombs(data_str, wstr.c_str(), bufSizeBytes - sizeof(wchar_t));
+    wcstombs(data_str, wstr.c_str(), contentBytes);
 #endif
     
     std::string byte_str(data_str);

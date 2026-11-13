@@ -5,9 +5,9 @@ project (CubicSDR)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 
 SET(CUBICSDR_VERSION_MAJOR "0")
-SET(CUBICSDR_VERSION_MINOR "2")
-SET(CUBICSDR_VERSION_PATCH "8")
-SET(CUBICSDR_VERSION_SUFFIX "")
+SET(CUBICSDR_VERSION_MINOR "3")
+SET(CUBICSDR_VERSION_PATCH "0")
+SET(CUBICSDR_VERSION_SUFFIX "-alpha")
 SET(CUBICSDR_VERSION "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}${CUBICSDR_VERSION_SUFFIX}")
 
 SET(CPACK_PACKAGE_VERSION "${CUBICSDR_VERSION_MAJOR}.${CUBICSDR_VERSION_MINOR}.${CUBICSDR_VERSION_PATCH}")
@@ -52,7 +52,7 @@ IF(CUSTOM_BUILD)
         )
     ENDIF()
 ELSE()
-    SET (CUBICSDR_BUILD_TITLE "CubicSDR v${CUBICSDR_VERSION} :: www.cubicsdr.com")
+    SET (CUBICSDR_BUILD_TITLE "CubicSDR v${CUBICSDR_VERSION}")
     # bundle flags
     SET (CUBICSDR_INSTALL_NAME "CubicSDR")
     SET (CUBICSDR_INSTALL_TITLE "CubicSDR ${CUBICSDR_VERSION} Installer")
@@ -159,14 +159,16 @@ SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_BINARY_DIR}/${EX_PLATFORM_
 
 IF (MSVC)
     list(APPEND CUBICSDR_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/external/wglext")
-    SET(LIQUID_INCLUDES "${PROJECT_SOURCE_DIR}/external/liquid-dsp/include/" CACHE STRING "Liquid-DSP include directory")
-    SET(LIQUID_LIBRARIES "${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/libliquid.lib" CACHE STRING "Liquid-DSP Library")
-    SET(LIQUID_DLL "${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/libliquid.dll" CACHE STRING "Liquid-DSP DLL")
     SET(HAMLIB_DLLS "${PROJECT_SOURCE_DIR}/external/hamlib/${EX_PLATFORM}/libhamlib-4.dll" CACHE STRING "HAMLIB DLLS")
 ENDIF(MSVC)
 
 find_package(OpenGL REQUIRED)
 find_package(Liquid REQUIRED)
+IF (MSVC AND LIQUID_BUILTINS_LIB)
+    # Static liquid-dsp needs clang's runtime builtins for _Complex codegen
+    # (__mulsc3 etc.); build.py provides the path, manual configures pass it.
+    list(APPEND LIQUID_LIBRARIES "${LIQUID_BUILTINS_LIB}")
+ENDIF()
 list(APPEND CUBICSDR_INCLUDE_DIRS ${LIQUID_INCLUDES})
 SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} ${LIQUID_LIBRARIES})
 
@@ -225,7 +227,14 @@ IF (WIN32)
         ELSE (MSVC)
             SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} -ldsound)
         ENDIF (MSVC)
-    ENDIF(USE_AUDIO_DS)    
+    ENDIF(USE_AUDIO_DS)
+
+    # Multimedia timer for 1ms scheduling granularity (frame pacing).
+    IF (MSVC)
+        SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} winmm.lib)
+    ELSE (MSVC)
+        SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} -lwinmm)
+    ENDIF (MSVC)
   
     SET(USE_MINGW_PATCH OFF CACHE BOOL "Add some missing functions when compiling against mingw liquid-dsp.")
     IF (USE_MINGW_PATCH) 
@@ -332,6 +341,8 @@ SET (cubicsdr_sources
     src/sdr/SDRPostThread.cpp
     src/sdr/SDREnumerator.cpp
     src/sdr/SoapySDRThread.cpp
+    src/sdr/SDRPacer.cpp
+    src/sdr/SDRPacerThread.cpp
     src/demod/DemodulatorPreThread.cpp
     src/demod/DemodulatorThread.cpp
     src/demod/DemodulatorWorkerThread.cpp
@@ -350,6 +361,7 @@ SET (cubicsdr_sources
     src/modules/modem/analog/ModemLSB.cpp
     src/modules/modem/analog/ModemUSB.cpp
     src/audio/AudioThread.cpp
+    src/audio/AudioMixer.cpp
     src/audio/AudioSinkThread.cpp
     src/audio/AudioSinkFileThread.cpp
     src/audio/AudioFile.cpp
@@ -364,6 +376,7 @@ SET (cubicsdr_sources
     src/panel/ScopePanel.cpp
     src/panel/SpectrumPanel.cpp
     src/panel/WaterfallPanel.cpp
+    src/visual/WaterfallRing.cpp
     src/panel/MeterPanel.cpp
     src/visual/ColorTheme.cpp
     src/visual/PrimaryGLContext.cpp
@@ -378,6 +391,7 @@ SET (cubicsdr_sources
     src/visual/ScopeContext.cpp
     src/visual/SpectrumCanvas.cpp
     src/visual/WaterfallCanvas.cpp
+    src/visual/WaterfallPacer.cpp
     src/visual/GainCanvas.cpp
     src/visual/ImagePanel.cpp
     src/process/VisualProcessor.cpp
@@ -478,6 +492,7 @@ SET (cubicsdr_headers
     src/panel/ScopePanel.h
     src/panel/SpectrumPanel.h
     src/panel/WaterfallPanel.h
+    src/visual/WaterfallRing.h
     src/panel/MeterPanel.h
     src/visual/ColorTheme.h
     src/visual/PrimaryGLContext.h
@@ -492,6 +507,7 @@ SET (cubicsdr_headers
     src/visual/ScopeContext.h
     src/visual/SpectrumCanvas.h
     src/visual/WaterfallCanvas.h
+    src/visual/WaterfallPacer.h
     src/visual/GainCanvas.h
     src/visual/ImagePanel.h
     src/process/VisualProcessor.h
@@ -694,7 +710,6 @@ IF (NOT BUNDLE_APP)
     configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME}/fonts "*.png")
     configure_files(${PROJECT_SOURCE_DIR}/icon ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} CubicSDR.ico)
     IF(MSVC)
-        configure_files(${PROJECT_SOURCE_DIR}/external/liquid-dsp/msvc/${EX_PLATFORM}/ ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
 		configure_files(${PROJECT_SOURCE_DIR}/external/msvc/${EX_PLATFORM_NAME}/ ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
 		IF(USE_HAMLIB)
 		    configure_files(${PROJECT_SOURCE_DIR}/external/hamlib/${EX_PLATFORM}/ ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")	
@@ -733,6 +748,20 @@ IF (MSVC)
       PROPERTIES COMPILE_OPTIONS /wd4996)
   ENDIF()
 ENDIF(MSVC)
+
+# Per-file warning relief for vendored sources on GCC/Clang, mirroring
+# the MSVC /wd4996 treatment above. Only flags for warnings these files
+# actually emit, so new warnings elsewhere still surface.
+IF (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  set_source_files_properties(
+    external/tinyxml/tinyxmlparser.cpp
+    PROPERTIES COMPILE_OPTIONS -Wno-implicit-fallthrough)
+  IF(USE_HAMLIB)
+    set_source_files_properties(
+      external/rs232/rs232-linux.cpp
+      PROPERTIES COMPILE_OPTIONS "-Wno-sign-compare")
+  ENDIF()
+ENDIF()
 
 IF ((WIN32 OR (UNIX AND NOT APPLE)) AND BUNDLE_SOAPY_MODS)
     target_compile_definitions(CubicSDR PRIVATE BUNDLE_SOAPY_MODS=1)
@@ -946,9 +975,6 @@ IF (WIN32 AND NOT BUILD_INSTALLER)
     target_compile_definitions(CubicSDR PRIVATE RES_FOLDER="../share/cubicsdr/")
     
     INSTALL(TARGETS CubicSDR DESTINATION bin)
-    INSTALL(FILES         
-        ${LIQUID_DLL}
-    DESTINATION bin)
 
     IF(USE_HAMLIB)
         FOREACH(HAMLIB_DLL ${HAMLIB_DLLS})
@@ -981,7 +1007,7 @@ IF (WIN32 AND BUILD_INSTALLER)
     set(CPACK_GENERATOR NSIS)
     set(CPACK_PACKAGE_NAME "${CUBICSDR_INSTALL_NAME}")
     set(CPACK_NSIS_DISPLAY_NAME "${CUBICSDR_INSTALL_TITLE}")
-    set(CPACK_PACKAGE_VENDOR "cubicsdr.com")
+    set(CPACK_PACKAGE_VENDOR "Charles J. Cliffe")
     set(CPACK_PACKAGE_INSTALL_DIRECTORY "${CUBICSDR_INSTALL_NAME}")
     SET(CPACK_NSIS_INSTALLED_ICON_NAME "CubicSDR.ico")
     SET(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE") 
@@ -1004,7 +1030,6 @@ IF (WIN32 AND BUILD_INSTALLER)
 
     install(FILES 
         ${PROJECT_SOURCE_DIR}/icon/CubicSDR.ico
-        ${LIQUID_DLL}
         DESTINATION .)
 
     install(FILES 
@@ -1033,6 +1058,9 @@ IF (WIN32 AND BUILD_INSTALLER)
         target_compile_definitions(CubicSDR PRIVATE BUNDLED_MODS_ONLY=1)
         ENDIF()
         
+        # Normalize to forward slashes: a native backslashed root would embed
+        # invalid escapes in the generated install script.
+        file(TO_CMAKE_PATH "${SOAPY_SDR_ROOT}" SOAPY_SDR_ROOT)
         file(GLOB SOAPY_BINS ${SOAPY_SDR_ROOT}/bin/*.dll)
         file(GLOB SOAPY_MODS ${SOAPY_SDR_ROOT}/lib/SoapySDR/modules${SOAPY_SDR_ABI_VERSION}/*.dll)
         message(STATUS "SOAPY_BINS: ${SOAPY_BINS}")
@@ -1053,6 +1081,9 @@ IF (WIN32 AND BUILD_INSTALLER)
             message(STATUS "BUNDLE_MSVC_REDIST: ${BUNDLE_MSVC_REDIST}")
             cmake_path(GET BUNDLE_MSVC_REDIST FILENAME BUNDLE_MSVC_REDIST_FN)
             message(STATUS "BUNDLE_MSVC_REDIST_FN: ${BUNDLE_MSVC_REDIST_FN}")
+            # Normalize to forward slashes (same invalid-escape reason as above);
+            # the NSIS command below uses only the filename.
+            file(TO_CMAKE_PATH "${BUNDLE_MSVC_REDIST}" BUNDLE_MSVC_REDIST)
             install(PROGRAMS ${BUNDLE_MSVC_REDIST} DESTINATION vc_redist)
             set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "ExecWait '\\\"$INSTDIR\\\\vc_redist\\\\${BUNDLE_MSVC_REDIST_FN}\\\" /passive /norestart'")
         ENDIF()        

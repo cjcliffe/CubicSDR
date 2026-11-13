@@ -245,12 +245,10 @@ bool DemodulatorInstance::isTerminated() {
     if (audioTerminated) {
 
         if (t_Audio) {
-#ifdef __APPLE__
-            pthread_join(t_PreDemod, NULL);
-#else
+            // t_Audio is a std::thread on every platform, unlike the
+            // pre-demod and demod threads above.
             t_Audio->join();
             delete t_Audio;
-#endif
             t_Audio = nullptr;
         }
     }
@@ -394,6 +392,18 @@ void DemodulatorInstance::setDemodulatorType(const std::string& demod_type_in) {
     }
     
     wxGetApp().getBookmarkMgr().updateActiveList();
+}
+
+void DemodulatorInstance::resetDemodulatorSettings() {
+    if (!demodulatorPreThread) {
+        return;
+    }
+    std::string currentType = demodulatorPreThread->getDemodType();
+    // Forget the saved per-type state so the rebuild below uses defaults.
+    lastModemSettings.erase(currentType);
+    lastModemBandwidth.erase(currentType);
+    demodulatorPreThread->writeModemSettings(ModemSettings());
+    setDemodulatorType(currentType);
 }
 
 std::string DemodulatorInstance::getDemodulatorType() {
