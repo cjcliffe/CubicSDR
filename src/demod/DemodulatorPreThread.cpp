@@ -165,7 +165,7 @@ void DemodulatorPreThread::run() {
 
 //        std::lock_guard < std::mutex > lock(inp->m_mutex);
         std::vector<liquid_float_complex> *data = &inp->data;
-        if (!data->empty() && (inp->sampleRate == currentSampleRate) && cModem && cModemKit) {
+        if (!data->empty() && (inp->sampleRate == currentSampleRate) && cModem && cModemKit && iqResampler) {
             size_t bufSize = data->size();
 
             if (in_buf_data.size() != bufSize) {

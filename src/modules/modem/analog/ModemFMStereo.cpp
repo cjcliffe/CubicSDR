@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "ModemFMStereo.h"
+#include "ResampleGuard.h"
+#include <iostream>
 
 ModemFMStereo::ModemFMStereo() {
     demodFM = freqdem_create(0.5);
@@ -89,7 +91,7 @@ std::string ModemFMStereo::readSetting(std::string setting) {
 ModemKit *ModemFMStereo::buildKit(long long sampleRate, int audioSampleRate) {
     auto *kit = new ModemKitFMStereo;
     
-    kit->audioResampleRatio = double(audioSampleRate) / double(sampleRate);
+    kit->audioResampleRatio = clampResampleRatio(double(audioSampleRate) / double(sampleRate));
     kit->sampleRate = sampleRate;
     kit->audioSampleRate = audioSampleRate;
    
@@ -97,6 +99,9 @@ ModemKit *ModemFMStereo::buildKit(long long sampleRate, int audioSampleRate) {
     
     kit->audioResampler = msresamp_rrrf_create((float)kit->audioResampleRatio, As);
     kit->stereoResampler = msresamp_rrrf_create((float)kit->audioResampleRatio, As);
+    if (!kit->audioResampler || !kit->stereoResampler) {
+        std::cout << "ModemFMStereo: msresamp_create failed; audio muted." << std::endl << std::flush;
+    }
     
     // Stereo filters / shifters
     float firStereoCutoff = 16000.0f / float(audioSampleRate);
@@ -178,8 +183,12 @@ ModemKit *ModemFMStereo::buildKit(long long sampleRate, int audioSampleRate) {
 void ModemFMStereo::disposeKit(ModemKit *kit) {
     auto *fmkit = (ModemKitFMStereo *)kit;
     
-    msresamp_rrrf_destroy(fmkit->audioResampler);
-    msresamp_rrrf_destroy(fmkit->stereoResampler);
+    if (fmkit->audioResampler) {
+        msresamp_rrrf_destroy(fmkit->audioResampler);
+    }
+    if (fmkit->stereoResampler) {
+        msresamp_rrrf_destroy(fmkit->stereoResampler);
+    }
     firfilt_rrrf_destroy(fmkit->firStereoLeft);
     firfilt_rrrf_destroy(fmkit->firStereoRight);
     firhilbf_destroy(fmkit->firStereoR2C);
@@ -216,8 +225,11 @@ void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInp
     }
     
     unsigned int numAudioWritten;
-    
-    msresamp_rrrf_execute(fmkit->audioResampler, &demodOutputData[0], (int)bufSize, &resampledOutputData[0], &numAudioWritten);
+    bool haveResamplers = fmkit->audioResampler && fmkit->stereoResampler;
+
+    if (haveResamplers) {
+        msresamp_rrrf_execute(fmkit->audioResampler, &demodOutputData[0], (int)bufSize, &resampledOutputData[0], &numAudioWritten);
+    }
     
     if (demodStereoData.size() != bufSize) {
         if (demodStereoData.capacity() < bufSize) {
@@ -268,7 +280,11 @@ void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInp
         resampledStereoData.resize(audio_out_size);
     }
     
-    msresamp_rrrf_execute(fmkit->stereoResampler, &demodStereoData[0], (int)bufSize, &resampledStereoData[0], &numAudioWritten);
+    if (haveResamplers) {
+        msresamp_rrrf_execute(fmkit->stereoResampler, &demodStereoData[0], (int)bufSize, &resampledStereoData[0], &numAudioWritten);
+    } else {
+        numAudioWritten = 0;
+    }
     
     audioOut->channels = 2;
     if (audioOut->data.capacity() < (numAudioWritten * 2)) {

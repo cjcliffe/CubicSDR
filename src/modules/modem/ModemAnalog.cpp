@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "ModemAnalog.h"
+#include "ResampleGuard.h"
+#include <iostream>
 
 ModemAnalog::ModemAnalog() : Modem(), aOutputCeil(1), aOutputCeilMA(1), aOutputCeilMAA(1) {
     
@@ -26,8 +28,11 @@ ModemKit *ModemAnalog::buildKit(long long sampleRate, int audioSampleRate) {
     
     akit->sampleRate = sampleRate;
     akit->audioSampleRate = audioSampleRate;
-    akit->audioResampleRatio = double(audioSampleRate) / double(sampleRate);
+    akit->audioResampleRatio = clampResampleRatio(double(audioSampleRate) / double(sampleRate));
     akit->audioResampler = msresamp_rrrf_create((float)akit->audioResampleRatio, As);
+    if (!akit->audioResampler) {
+        std::cout << "ModemAnalog: msresamp_create failed; audio muted." << std::endl << std::flush;
+    }
     
     return akit;
 }
@@ -35,7 +40,9 @@ ModemKit *ModemAnalog::buildKit(long long sampleRate, int audioSampleRate) {
 void ModemAnalog::disposeKit(ModemKit *kit) {
     auto *akit = (ModemKitAnalog *)kit;
     
-    msresamp_rrrf_destroy(akit->audioResampler);
+    if (akit->audioResampler) {
+        msresamp_rrrf_destroy(akit->audioResampler);
+    }
     delete akit;
 }
 
@@ -85,7 +92,11 @@ void ModemAnalog::buildAudioOutput(ModemKitAnalog *akit, AudioThreadInput *audio
         }
     }
     
-    msresamp_rrrf_execute(akit->audioResampler, &demodOutputData[0], (int)demodOutputData.size(), &resampledOutputData[0], &numAudioWritten);
+    if (akit->audioResampler) {
+        msresamp_rrrf_execute(akit->audioResampler, &demodOutputData[0], (int)demodOutputData.size(), &resampledOutputData[0], &numAudioWritten);
+    } else {
+        numAudioWritten = 0;
+    }
     
     audioOut->channels = 1;
     audioOut->sampleRate = akit->audioSampleRate;
