@@ -1,0 +1,127 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 21,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "base",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "windows",
+            "displayName": "Windows x64 (Visual Studio 2022)",
+            "inherits": "base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "generator": "Visual Studio 17 2022",
+            "architecture": "x64",
+            "cacheVariables": {
+                "wxWidgets_ROOT_DIR": "$env{CUBICSDR_WXWIN}",
+                "CMAKE_PREFIX_PATH": "$env{CUBICSDR_SOAPY}",
+                "SOAPY_SDR_ROOT": "$env{CUBICSDR_SOAPY}",
+                "USE_HAMLIB": "ON",
+                "BUNDLE_SOAPY_MODS": "ON"
+            }
+        },
+        {
+            "name": "windows-x86",
+            "displayName": "Windows Win32 (Visual Studio 2022)",
+            "inherits": "windows",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "architecture": "Win32"
+        },
+        {
+            "name": "linux",
+            "displayName": "Linux (Unix Makefiles)",
+            "inherits": "base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            },
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "wxWidgets_CONFIG_EXECUTABLE": "$env{CUBICSDR_WXCONFIG}",
+                "USE_HAMLIB": "ON"
+            }
+        },
+        {
+            "name": "linux-deb",
+            "displayName": "Linux DEB package (Unix Makefiles)",
+            "inherits": "linux",
+            "cacheVariables": {
+                "BUILD_DEB": "ON"
+            }
+        },
+        {
+            "name": "linux-appimage",
+            "displayName": "Linux AppImage (Unix Makefiles)",
+            "inherits": "linux",
+            "cacheVariables": {
+                "BUNDLE_SOAPY_MODS": "ON",
+                "BUNDLED_MODS_ONLY": "ON"
+            }
+        },
+        {
+            "name": "macos",
+            "displayName": "macOS app bundle",
+            "inherits": "base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            },
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "$env{CUBICSDR_MACOS_PREFIX}",
+                "wxWidgets_CONFIG_EXECUTABLE": "$env{CUBICSDR_WXCONFIG}",
+                "SoapySDR_DIR": "$env{CUBICSDR_SOAPY_CMAKE}",
+                "BUNDLE_APP": "ON",
+                "BUNDLE_SOAPY_MODS": "ON",
+                "CPACK_BINARY_DRAGNDROP": "ON"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "windows",
+            "configurePreset": "windows",
+            "configuration": "Release"
+        },
+        {
+            "name": "windows-x86",
+            "configurePreset": "windows-x86",
+            "configuration": "Release"
+        },
+        {
+            "name": "linux",
+            "configurePreset": "linux"
+        },
+        {
+            "name": "linux-deb",
+            "configurePreset": "linux-deb"
+        },
+        {
+            "name": "linux-appimage",
+            "configurePreset": "linux-appimage"
+        },
+        {
+            "name": "macos",
+            "configurePreset": "macos"
+        }
+    ]
+}

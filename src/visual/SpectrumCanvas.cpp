@@ -16,11 +16,11 @@
 #include "CubicSDR.h"
 #include "CubicSDRDefs.h"
 #include "AppFrame.h"
+#include "Frequency.h"
 #include <algorithm>
 #include "WaterfallCanvas.h"
 
 wxBEGIN_EVENT_TABLE(SpectrumCanvas, wxGLCanvas) EVT_PAINT(SpectrumCanvas::OnPaint)
-EVT_IDLE(SpectrumCanvas::OnIdle)
 EVT_MOTION(SpectrumCanvas::OnMouseMoved)
 EVT_LEFT_DOWN(SpectrumCanvas::OnMouseDown)
 EVT_LEFT_UP(SpectrumCanvas::OnMouseReleased)
@@ -88,16 +88,17 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     glLoadIdentity();
     
     auto demods = wxGetApp().getDemodMgr().getDemodulators();
-    auto activeDemodulator = wxGetApp().getDemodMgr().getActiveContextModem();
+    auto selectedDemodulator = wxGetApp().getDemodMgr().getCurrentModem();
 
     for (auto & demod : demods) {
         if (!demod->isActive()) {
             continue;
         }
-        glContext->DrawDemodInfo(demod, ThemeMgr::mgr.currentTheme->fftHighlight, getCenterFrequency(), getBandwidth(), activeDemodulator==demod);
+        bool isSelected = (selectedDemodulator == demod);
+        glContext->DrawDemodInfo(demod, isSelected ? ThemeMgr::mgr.currentTheme->waterfallHover : ThemeMgr::mgr.currentTheme->fftHighlight, getCenterFrequency(), getBandwidth(), isSelected);
     }
 
-    if (waterfallCanvas && !activeDemodulator) {
+    if (waterfallCanvas && !waterfallCanvas->getHoverDemod()) {
         MouseTracker *wfmt = waterfallCanvas->getMouseTracker();
         if (wfmt->mouseInView()) {
             int snap = wxGetApp().getFrequencySnap();
@@ -108,9 +109,7 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
                 freq = roundf((float)freq/(float)snap)*snap;
             }
 
-            auto lastActiveDemodulator = wxGetApp().getDemodMgr().getCurrentModem();
-
-            bool isNew = (((waterfallCanvas->isShiftDown() || (lastActiveDemodulator && !lastActiveDemodulator->isActive())) && lastActiveDemodulator) || (!lastActiveDemodulator));
+            bool isNew = (((waterfallCanvas->isShiftDown() || (selectedDemodulator && !selectedDemodulator->isActive())) && selectedDemodulator) || (!selectedDemodulator));
             
             glContext->DrawFreqBwInfo(freq, wxGetApp().getDemodMgr().getLastBandwidth(), isNew?ThemeMgr::mgr.currentTheme->waterfallNew:ThemeMgr::mgr.currentTheme->waterfallHover, getCenterFrequency(), getBandwidth(), true, true);
         }
@@ -124,9 +123,8 @@ void SpectrumCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 }
 
 
-void SpectrumCanvas::OnIdle(wxIdleEvent &event) {
+void SpectrumCanvas::frameUpdate() {
     Refresh();
-    event.RequestMore();
 }
 
 
@@ -180,7 +178,7 @@ bool SpectrumCanvas::getUseDBOfs() {
     return spectrumPanel.getUseDBOffset();
 }
 
-void SpectrumCanvas::setView(long long center_freq_in, int bandwidth_in) {
+void SpectrumCanvas::setView(long long center_freq_in, long long bandwidth_in) {
     bwChange += bandwidth_in-bandwidth;
     #define BW_RESET_TH 400000
     if (bwChange > BW_RESET_TH || bwChange < -BW_RESET_TH) {
@@ -210,6 +208,11 @@ void SpectrumCanvas::updateScaleFactor(float factor) {
     scaleFactor = factor;
     sp->setScaleFactor(factor);
     wp->setScaleFactor(factor);
+    // The demod view is a zoomed-in version of the same signal, so it
+    // follows the shared visual gain.
+    if (wxGetApp().getDemodSpectrumProcessor()) {
+        wxGetApp().getDemodSpectrumProcessor()->setScaleFactor(factor);
+    }
 }
 
 void SpectrumCanvas::updateScaleFactorFromYMove(float yDeltaMouseMove) {
@@ -225,6 +228,20 @@ void SpectrumCanvas::updateScaleFactorFromYMove(float yDeltaMouseMove) {
 
     resetScaleFactor = false;
     updateScaleFactor(scaleFactor);
+}
+
+void SpectrumCanvas::resetScaleFactorFromClick() {
+    // Start the ease-back from the live value: another view may have
+    // moved the shared gain since this canvas last touched it.
+    scaleFactor = wxGetApp().getSpectrumProcessor()->getScaleFactor();
+    resetScaleFactor = true;
+
+    wxGetApp().getSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
+
+    //make the peak hold act on the current demod also, like a zoomed-in version.
+    if (wxGetApp().getDemodSpectrumProcessor()) {
+        wxGetApp().getDemodSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
+    }
 }
 
 void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
@@ -244,7 +261,12 @@ void SpectrumCanvas::OnMouseMoved(wxMouseEvent& event) {
         if (scaleFactorEnabled) {
             setStatusText("Drag horizontal to adjust center frequency. Arrow keys or wheel to navigate/zoom bandwidth. Right-drag or SHIFT+UP/DOWN to adjust visual gain, right-click to reset it. 'B' to toggle decibels display.");
         } else {
-            setStatusText("Displaying spectrum of active demodulator.");
+            auto demodTip = wxGetApp().getDemodMgr().getCurrentModem();
+            if (demodTip) {
+                setStatusText("Spectrum of " + demodTip->getDemodulatorType() + ": " + frequencyToStr(demodTip->getFrequency()));
+            } else {
+                setStatusText("Displaying spectrum of active demodulator.");
+            }
         }
     }
 }
@@ -303,14 +325,7 @@ void SpectrumCanvas::OnMouseRightReleased(wxMouseEvent& event) {
 	mouseTracker.setHorizDragLock(false);
     
     if (!mouseTracker.getOriginDeltaMouseY()) {
-        resetScaleFactor = true;
-
-        wxGetApp().getSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
-
-        //make the peak hold act on the current dmod also, like a zoomed-in version.
-        if (wxGetApp().getDemodSpectrumProcessor()) {
-            wxGetApp().getDemodSpectrumProcessor()->setPeakHold(wxGetApp().getSpectrumProcessor()->getPeakHold());
-        }
+        resetScaleFactorFromClick();
     }
 
     mouseTracker.OnMouseRightReleased(event);

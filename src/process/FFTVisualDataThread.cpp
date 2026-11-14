@@ -3,6 +3,9 @@
 
 #include "FFTVisualDataThread.h"
 
+#include <chrono>
+#include <thread>
+
 FFTVisualDataThread::FFTVisualDataThread() {
 	linesPerSecond.store(DEFAULT_WATERFALL_LPS);
     lpsChanged.store(true);
@@ -21,6 +24,12 @@ int FFTVisualDataThread::getLinesPerSecond() {
 
 SpectrumVisualProcessor *FFTVisualDataThread::getProcessor() {
     return &wproc;
+}
+
+void FFTVisualDataThread::flushPipeline() {
+    fftDistrib.requestReset();
+    fftDistrib.flushQueues();
+    wproc.flushQueues();
 }
 
 void FFTVisualDataThread::run() {

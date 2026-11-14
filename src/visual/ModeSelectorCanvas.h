@@ -47,12 +47,15 @@ public:
     
     void setPadding(float padX_in, float padY_in);
     void setHighlightColor(const RGBA4f& hc);
+    void setPulseMode(bool pulseMode_in);
+    void setDisabled(bool disabled_in);
+    bool isDisabled() const;
     
 private:
     void setNumChoices(int numChoices_in);
 
     void OnPaint(wxPaintEvent& event);
-    void OnIdle(wxIdleEvent &event);
+    void frameUpdate() override;
 
     void OnMouseMoved(wxMouseEvent& event);
     void OnMouseDown(wxMouseEvent& event);
@@ -72,6 +75,9 @@ private:
     float padX, padY;
     RGBA4f highlightColor;
     bool highlightOverride;
+    bool pulseMode;
+    float pulsePhase;
+    bool disabled;
     //
 wxDECLARE_EVENT_TABLE();
 };

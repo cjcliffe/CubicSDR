@@ -108,7 +108,9 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(const std::string
             #ifdef BUNDLE_SOAPY_MODS
 			#ifdef BUNDLED_MODS_ONLY
 			wxFileName exePath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
+			std::cout << "Scanning bundled SoapySDR modules in " << exePath.GetPath().ToStdString() + "/modules/" << ".." << std::endl << std::flush;
 			std::vector<std::string> localMods = SoapySDR::listModules(exePath.GetPath().ToStdString() + "/modules/");
+			std::cout << "Found " << localMods.size() << " bundled module(s)." << std::endl << std::flush;
 			for (std::vector<std::string>::iterator mods_i = localMods.begin(); mods_i != localMods.end(); mods_i++) {
 				wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Initializing bundled SoapySDR module " + (*mods_i) + "..");
 				std::cout << "Loading bundled SoapySDR module " << (*mods_i) << ".." << std::endl << std::flush;
@@ -123,7 +125,9 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(const std::string
             }
 
             wxFileName exePath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
+            std::cout << "Scanning bundled SoapySDR modules in " << exePath.GetPath().ToStdString() + "/modules/" << ".." << std::endl << std::flush;
             std::vector<std::string> localMods = SoapySDR::listModules(exePath.GetPath().ToStdString() + "/modules/");
+            std::cout << "Found " << localMods.size() << " bundled module(s)." << std::endl << std::flush;
             for (std::string mod : localMods) {
                 wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Initializing bundled SoapySDR module " + (mod) + "..");
                 std::cout << "Loading bundled SoapySDR module " << (mod) <<  ".." << std::endl << std::flush;

@@ -35,6 +35,7 @@ public:
 private:
     wxPGProperty *addArgInfoProperty(wxPropertyGrid *pg, ModemArgInfo arg);
     std::string readProperty(const std::string&);
+    void syncPropertyValues(ModemArgInfoList newArgs, const DemodulatorInstancePtr& demodInstance);
     void OnChange(wxPropertyGridEvent &event);
     void OnShow(wxShowEvent &event);
     void OnCollapse(wxPropertyGridEvent &event);
@@ -49,7 +50,7 @@ private:
     DemodulatorInstancePtr demodContext;
 
     std::map<std::string, wxPGProperty *> props;
-    bool mouseInView, collapsed;
+    bool mouseInView, collapsed, syncingValues;
     
     ModemArgInfoList defaultArgs;
     ModemArgInfo outputArg;

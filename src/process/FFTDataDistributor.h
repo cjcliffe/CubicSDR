@@ -15,6 +15,7 @@ public:
     void setFFTSize(unsigned int size);
     void setLinesPerSecond(unsigned int lines);
     unsigned int getLinesPerSecond() const;
+    void requestReset();
 
 protected:
     void process() override;
@@ -28,4 +29,5 @@ protected:
     size_t bufferMax = 0;
     size_t bufferOffset = 0;
     size_t bufferedItems = 0;
+    std::atomic_bool resetRequested{ false };
 };

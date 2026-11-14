@@ -7,6 +7,7 @@
 #include "CubicSDR.h"
 #include "DemodulatorInstance.h"
 #include <mutex>
+#include <chrono>
 
 //50 ms
 #define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
@@ -19,11 +20,9 @@ std::recursive_mutex AudioThread::m_device_mutex;
 
 AudioThread::AudioThread() : IOThread(), nBufferFrames(1024), sampleRate(0), controllerThread(nullptr) {
 
-    audioQueuePtr = 0;
     underflowCount = 0;
     active.store(false);
     outputDevice.store(-1);
-    gain = 1.0;
 }
 
 AudioThread::~AudioThread() {
@@ -52,12 +51,26 @@ void AudioThread::attachControllerThread(std::thread* controllerThread_in) {
     controllerThread = controllerThread_in;
 }
 
+// A (re)started stream rebuilds every mixer's stall margin from the next
+// production; a newly bound mixer is reset alone in bindThread so joining
+// one demod never mutes the others.
+void AudioThread::resetAllPrebuffers() {
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+
+    for (auto srcmix : boundThreads) {
+        srcmix->mixer.reset();
+    }
+}
+
 void AudioThread::bindThread(AudioThread *other) {
 
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
     if (std::find(boundThreads.begin(), boundThreads.end(), other) == boundThreads.end()) {
         boundThreads.push_back(other);
+        // A newly bound mixer rebuilds its stall margin from the next
+        // production and drops anything held from a past activation.
+        other->mixer.reset();
     }
 }
 
@@ -92,7 +105,7 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
 
     //Zero output buffer in all cases: this allow to mute audio if no AudioThread data is 
     //actually active.
-    ::memset(out, 0, nBufferFrames * 2 * sizeof(float));
+    ::memset(out, 0, (size_t)nBufferFrames * 2 * sizeof(float));
 
     //src in the controller thread:
     auto *src = (AudioThread *)userData;
@@ -110,6 +123,8 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
 
     double peak = 0.0;
 
+    int deviceRate = src->getSampleRate();
+
     //Process the bound threads audio:
     for (size_t j = 0; j < src->boundThreads.size(); j++) {
 
@@ -119,142 +134,37 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
         //its audio samples.
         std::lock_guard<std::recursive_mutex> lock(srcmix->getMutex());
 
-        if (srcmix->isTerminated() || !srcmix->inputQueue || srcmix->inputQueue->empty() || !srcmix->isActive()) {
+        if (srcmix->isTerminated() || !srcmix->mixer.inputQueue || !srcmix->isActive()) {
             continue;
         }
 
-        if (!srcmix->currentInput) {
-            srcmix->audioQueuePtr = 0;
-
-            if (!srcmix->inputQueue->try_pop(srcmix->currentInput)) {
-                continue;
-            }
-
-            continue;
-        }
-
-        if (srcmix->currentInput->sampleRate != src->getSampleRate()) {
-
-            while (srcmix->inputQueue->try_pop(srcmix->currentInput)) {
-
-                if (srcmix->currentInput) {
-                    if (srcmix->currentInput->sampleRate == src->getSampleRate()) {
-                        break;
-                    }
-
-                }
-                srcmix->currentInput = nullptr;
-            } //end while
-
-            srcmix->audioQueuePtr = 0;
-
-            if (!srcmix->currentInput) {
-                continue;
-            }
-        }
-
-
-        if (srcmix->currentInput->channels == 0 || srcmix->currentInput->data.empty()) {
-            if (!srcmix->inputQueue->empty()) {
-                srcmix->audioQueuePtr = 0;
-                if (srcmix->currentInput) {
-
-                    srcmix->currentInput = nullptr;
-                }
-
-                if (!srcmix->inputQueue->try_pop(srcmix->currentInput)) {
-                    continue;
-                }
-            }
-            continue;
-        }
-
-        double mixPeak = srcmix->currentInput->peak * srcmix->gain;
-
-        if (srcmix->currentInput->channels == 1) {
-
-            for (unsigned int i = 0; i < nBufferFrames; i++) {
-
-                if (srcmix->audioQueuePtr >= srcmix->currentInput->data.size()) {
-                    srcmix->audioQueuePtr = 0;
-                    if (srcmix->currentInput) {
-
-                        srcmix->currentInput = nullptr;
-                    }
-
-                    if (!srcmix->inputQueue->try_pop(srcmix->currentInput)) {
-                        break;
-                    }
-
-
-                    double srcPeak = srcmix->currentInput->peak * srcmix->gain;
-                    if (mixPeak < srcPeak) {
-                        mixPeak = srcPeak;
-                    }
-                }
-                if (srcmix->currentInput && !srcmix->currentInput->data.empty()) {
-                    float v = srcmix->currentInput->data[srcmix->audioQueuePtr] * srcmix->gain;
-                    out[i * 2] += v;
-                    out[i * 2 + 1] += v;
-                }
-                srcmix->audioQueuePtr++;
-            }
-        }
-        else {
-            for (unsigned int i = 0, iMax = srcmix->currentInput->channels * nBufferFrames; i < iMax; i++) {
-
-                if (srcmix->audioQueuePtr >= srcmix->currentInput->data.size()) {
-                    srcmix->audioQueuePtr = 0;
-                    if (srcmix->currentInput) {
-
-                        srcmix->currentInput = nullptr;
-                    }
-
-                    if (!srcmix->inputQueue->try_pop(srcmix->currentInput)) {
-                        break;
-                    }
-
-                    double srcPeak = srcmix->currentInput->peak * srcmix->gain;
-                    if (mixPeak < srcPeak) {
-                        mixPeak = srcPeak;
-                    }
-                }
-                if (srcmix->currentInput && !srcmix->currentInput->data.empty()) {
-
-                    out[i] = out[i] + srcmix->currentInput->data[srcmix->audioQueuePtr] * srcmix->gain;
-                }
-                srcmix->audioQueuePtr++;
-            }
-        }
-
-        peak += mixPeak;
+        peak += AudioMixer::mixVoice(srcmix->mixer, out, nBufferFrames, deviceRate);
     }
 
-    //normalize volume
-    if (peak > 1.0) {
-        float invPeak = (float)(1.0 / peak);
-
-        for (unsigned int i = 0; i < nBufferFrames * 2; i++) {
-            out[i] *= invPeak;
-        }
-    }
+    AudioMixer::normalize(out, nBufferFrames, peak);
 
     return 0;
+}
+
+// RtAudio 6.x reports stream failures as return codes; warnings already go
+// to stderr, so callers only act on real errors.
+static bool audioFailed(RtAudioErrorType rc) {
+    return rc != RTAUDIO_NO_ERROR && rc != RTAUDIO_WARNING;
 }
 
 void AudioThread::enumerateDevices(std::vector<RtAudio::DeviceInfo> &devs) {
     RtAudio endac;
 
-    unsigned int numDevices = endac.getDeviceCount();
+    std::vector<unsigned int> deviceIds = endac.getDeviceIds();
 
-    for (unsigned int i = 0; i < numDevices; i++) {
-        RtAudio::DeviceInfo info = endac.getDeviceInfo(i);
+    for (unsigned int id : deviceIds) {
+        RtAudio::DeviceInfo info = endac.getDeviceInfo(id);
 
         devs.push_back(info);
 
         std::cout << std::endl;
 
-        std::cout << "Audio Device #" << i << " " << info.name << std::endl;
+        std::cout << "Audio Device #" << info.ID << " " << info.name << std::endl;
         std::cout << "\tDefault Output? " << (info.isDefaultOutput ? "Yes" : "No") << std::endl;
         std::cout << "\tDefault Input? " << (info.isDefaultInput ? "Yes" : "No") << std::endl;
         std::cout << "\tInput channels: " << info.inputChannels << std::endl;
@@ -319,6 +229,31 @@ void AudioThread::setDeviceSampleRate(int deviceId, int sampleRate) {
     }
 }
 
+void AudioThread::setBufferFrames(int frames) {
+    if (frames != 512 && frames != 1024 && frames != 2048 && frames != 4096) {
+        frames = 1024;
+    }
+
+    std::vector<AudioThread *> controllers;
+
+    //scope lock here to minimize the common unique static lock contention
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_device_mutex);
+
+        for (auto &entry : deviceController) {
+            controllers.push_back(entry.second);
+        }
+    }
+
+    //out-of-lock dispatch
+    for (auto controller : controllers) {
+        AudioThreadCommand command;
+        command.cmdType = AudioThreadCommand::Type::AUDIO_THREAD_CMD_SET_BUFFER_FRAMES;
+        command.int_value = frames;
+        controller->getCommandQueue()->push(command);
+    }
+}
+
 void AudioThread::setSampleRate(int sampleRate_in) {
 
     bool thisIsAController = false;
@@ -337,7 +272,10 @@ void AudioThread::setSampleRate(int sampleRate_in) {
 
     if (thisIsAController) {
 
-        dac.stopStream();
+        if (audioFailed(dac.stopStream())) {
+            std::cout << "AudioThread: failed to stop stream for sample-rate switch." << std::endl;
+            return;
+        }
         dac.closeStream();
 
         //Set bounded sample rate:
@@ -354,11 +292,44 @@ void AudioThread::setSampleRate(int sampleRate_in) {
             }
         }
 
-        dac.openStream(&parameters, nullptr, RTAUDIO_FLOAT32, sampleRate_in, &nBufferFrames, &audioCallback, (void *)this, &opts);
-        dac.startStream();
+        if (audioFailed(dac.openStream(&parameters, nullptr, RTAUDIO_FLOAT32, sampleRate_in, &nBufferFrames, &audioCallback, (void *)this, &opts))) {
+            std::cout << "AudioThread: failed to open stream for sample-rate switch." << std::endl;
+            return;
+        }
+        if (audioFailed(dac.startStream())) {
+            std::cout << "AudioThread: failed to start stream for sample-rate switch." << std::endl;
+            return;
+        }
+        resetAllPrebuffers();
     }
 
     sampleRate = sampleRate_in;
+}
+
+void AudioThread::reopenWithBufferFrames(int frames) {
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+
+    //Only controllers own a stream; bound threads share it.
+    if (controllerThread == nullptr) {
+        return;
+    }
+
+    nBufferFrames = (unsigned int)frames;
+
+    if (audioFailed(dac.stopStream())) {
+        std::cout << "AudioThread: failed to stop stream for buffer-size switch." << std::endl;
+        return;
+    }
+    dac.closeStream();
+    if (audioFailed(dac.openStream(&parameters, nullptr, RTAUDIO_FLOAT32, sampleRate, &nBufferFrames, &audioCallback, (void *)this, &opts))) {
+        std::cout << "AudioThread: failed to open stream for buffer-size switch." << std::endl;
+        return;
+    }
+    if (audioFailed(dac.startStream())) {
+        std::cout << "AudioThread: failed to start stream for buffer-size switch." << std::endl;
+        return;
+    }
+    resetAllPrebuffers();
 }
 
 int AudioThread::getSampleRate() {
@@ -378,64 +349,65 @@ void AudioThread::setupDevice(int deviceId) {
 
     opts.streamName = "CubicSDR Audio Output";
 
-    try {
-        if (deviceController.find(outputDevice.load()) != deviceController.end()) {
-            //'this' is not the controller, so remove it from the bounded list:
-            //beware, we must take the controller mutex, because the audio callback may use the list of bounded
-            //threads at that moment:
-            std::lock_guard<std::recursive_mutex> lock(deviceController[outputDevice.load()]->getMutex());
+    if (deviceController.find(outputDevice.load()) != deviceController.end()) {
+        //'this' is not the controller, so remove it from the bounded list:
+        //beware, we must take the controller mutex, because the audio callback may use the list of bounded
+        //threads at that moment:
+        std::lock_guard<std::recursive_mutex> lock(deviceController[outputDevice.load()]->getMutex());
 
-            deviceController[outputDevice.load()]->removeThread(this);
-        }
+        deviceController[outputDevice.load()]->removeThread(this);
+    }
 #ifndef _MSC_VER
-        opts.priority = sched_get_priority_max(SCHED_FIFO);
+    opts.priority = sched_get_priority_max(SCHED_FIFO);
 #endif
-        //    opts.flags = RTAUDIO_MINIMIZE_LATENCY;
-        opts.flags = RTAUDIO_SCHEDULE_REALTIME;
+    //    opts.flags = RTAUDIO_MINIMIZE_LATENCY;
+    opts.flags = RTAUDIO_SCHEDULE_REALTIME;
 
-        if (deviceSampleRate.find(parameters.deviceId) != deviceSampleRate.end()) {
-            sampleRate = deviceSampleRate[parameters.deviceId];
-        }
-        else {
-            std::cout << "Error, device sample rate wasn't initialized?" << std::endl;
-            return;
-            //            sampleRate = AudioThread::getDefaultAudioSampleRate();
-            //            deviceSampleRate[parameters.deviceId] = sampleRate;
-        }
-
-        //Create a new controller:
-        if (deviceController.find(parameters.deviceId) == deviceController.end()) {
-
-            //Create a new controller thread for parameters.deviceId:
-            auto* newController = new AudioThread();
-
-            newController->setInitOutputDevice(parameters.deviceId, sampleRate);
-            newController->bindThread(this);
-            newController->attachControllerThread(new std::thread(&AudioThread::threadMain, newController));
-
-            deviceController[parameters.deviceId] = newController;
-        }
-        else if (deviceController[parameters.deviceId] == this) {
-
-            //Attach callback
-            dac.openStream(&parameters, nullptr, RTAUDIO_FLOAT32, sampleRate, &nBufferFrames, &audioCallback, (void *)this, &opts);
-            dac.startStream();
-        }
-        else {
-            //we are a bound thread, add ourselves to the controller deviceController[parameters.deviceId].
-            //beware, we must take the controller mutex, because the audio callback may use the list of bounded
-            //threads at that moment:
-            std::lock_guard<std::recursive_mutex> lock(deviceController[parameters.deviceId]->getMutex());
-
-            deviceController[parameters.deviceId]->bindThread(this);
-        }
-        active = true;
-
+    if (deviceSampleRate.find(parameters.deviceId) != deviceSampleRate.end()) {
+        sampleRate = deviceSampleRate[parameters.deviceId];
     }
-    catch (RtAudioError& e) {
-        e.printMessage();
+    else {
+        std::cout << "Error, device sample rate wasn't initialized?" << std::endl;
         return;
+        //            sampleRate = AudioThread::getDefaultAudioSampleRate();
+        //            deviceSampleRate[parameters.deviceId] = sampleRate;
     }
+
+    //Create a new controller:
+    if (deviceController.find(parameters.deviceId) == deviceController.end()) {
+
+        //Create a new controller thread for parameters.deviceId:
+        auto* newController = new AudioThread();
+
+        newController->setInitOutputDevice(parameters.deviceId, sampleRate);
+        newController->bindThread(this);
+        newController->attachControllerThread(new std::thread(&AudioThread::threadMain, newController));
+
+        deviceController[parameters.deviceId] = newController;
+    }
+    else if (deviceController[parameters.deviceId] == this) {
+
+        //Attach callback
+        nBufferFrames = (unsigned int)wxGetApp().getConfig()->getAudioBufferFrames();
+        if (audioFailed(dac.openStream(&parameters, nullptr, RTAUDIO_FLOAT32, sampleRate, &nBufferFrames, &audioCallback, (void *)this, &opts))) {
+            std::cout << "AudioThread: failed to open stream for device." << std::endl;
+            return;
+        }
+        if (audioFailed(dac.startStream())) {
+            std::cout << "AudioThread: failed to start stream for device." << std::endl;
+            return;
+        }
+        resetAllPrebuffers();
+    }
+    else {
+        //we are a bound thread, add ourselves to the controller deviceController[parameters.deviceId].
+        //beware, we must take the controller mutex, because the audio callback may use the list of bounded
+        //threads at that moment:
+        std::lock_guard<std::recursive_mutex> lock(deviceController[parameters.deviceId]->getMutex());
+
+        deviceController[parameters.deviceId]->bindThread(this);
+    }
+    active = true;
     if (deviceId != -1) {
         outputDevice = deviceId;
     }
@@ -487,7 +459,7 @@ void AudioThread::run() {
 
     //    std::cout << "Audio thread started." << std::endl;
 
-    inputQueue = std::static_pointer_cast<AudioThreadInputQueue>(getInputQueue("AudioDataInput"));
+    mixer.inputQueue = std::static_pointer_cast<AudioThreadInputQueue>(getInputQueue("AudioDataInput"));
 
     //Infinite loop, witing for commands or for termination
     while (!stopping) {
@@ -503,15 +475,18 @@ void AudioThread::run() {
         if (command.cmdType == AudioThreadCommand::Type::AUDIO_THREAD_CMD_SET_SAMPLE_RATE) {
             setSampleRate(command.int_value);
         }
+        if (command.cmdType == AudioThreadCommand::Type::AUDIO_THREAD_CMD_SET_BUFFER_FRAMES) {
+            reopenWithBufferFrames(command.int_value);
+        }
     } //end while
 
     // Drain any remaining inputs, with a non-blocking pop
-    if (inputQueue != nullptr) {
-        inputQueue->flush();
+    if (mixer.inputQueue != nullptr) {
+        mixer.inputQueue->flush();
     }
 
     //Nullify currentInput...
-    currentInput = nullptr;
+    mixer.currentInput = nullptr;
 
     //Stop : Retrieve the matching controlling thread in a scope lock:
     AudioThread* controllerMatchingThread;
@@ -530,15 +505,12 @@ void AudioThread::run() {
     }
     else {
         // 'this' is a controller thread:
-        try {
-            if (dac.isStreamOpen()) {
-                dac.stopStream(); 
+        if (dac.isStreamOpen()) {
+            if (audioFailed(dac.stopStream())) {
+                std::cout << "AudioThread: failed to stop stream during teardown." << std::endl;
             }
-            dac.closeStream();
         }
-        catch (RtAudioError& e) {
-            e.printMessage();
-        }
+        dac.closeStream();
     }
 
     //    std::cout << "Audio thread done." << std::endl;
@@ -574,16 +546,17 @@ void AudioThread::setActive(bool state) {
         return;
     }
 
-    if (state && !active && inputQueue) {
+    // Flush before (un)binding: the bind opens the mixing window, so
+    // activating onto a stale backlog would play pre-activation audio.
+    if (mixer.inputQueue) {
+        mixer.inputQueue->flush();
+    }
+
+    if (state && !active && mixer.inputQueue) {
         matchingControllerThread->bindThread(this);
     }
     else if (!state && active) {
         matchingControllerThread->removeThread(this);
-    }
-
-    // Activity state changing, clear any inputs
-    if (inputQueue) {
-        inputQueue->flush();
     }
     active = state;
 }
@@ -600,5 +573,5 @@ void AudioThread::setGain(float gain_in) {
     if (gain_in > 2.0) {
         gain_in = 2.0;
     }
-    gain = gain_in;
+    mixer.gain = gain_in;
 }

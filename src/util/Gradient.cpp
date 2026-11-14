@@ -35,6 +35,12 @@ std::vector<float> &Gradient::getBlue() {
 }
 
 void Gradient::generate(unsigned int len) {
+    if (colors.size() < 2) {
+        r_val.clear();
+        g_val.clear();
+        b_val.clear();
+        return;
+    }
     size_t chunk_size = len / (colors.size() - 1);
 
     size_t p = 0;

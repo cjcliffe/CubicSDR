@@ -11,7 +11,7 @@
 
 devFrame::devFrame( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
 {
-	this->SetSizeHints( wxDefaultSize, wxDefaultSize );
+	this->SetSizeHints( wxSize( 600,250 ), wxDefaultSize );
 	
 	devStatusBar = this->CreateStatusBar( 1, wxSTB_SIZEGRIP, wxID_ANY );
 	wxBoxSizer* devFrameSizer;
@@ -22,6 +22,7 @@ devFrame::devFrame( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	bSizer4 = new wxBoxSizer( wxHORIZONTAL );
 	
 	m_panel6 = new wxPanel( m_panel3, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	m_panel6->SetMinSize( wxSize( 280,-1 ) );
 	wxBoxSizer* bSizer6;
 	bSizer6 = new wxBoxSizer( wxVERTICAL );
 	
@@ -40,9 +41,6 @@ devFrame::devFrame( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	m_addRemoteButton = new wxButton( m_panel4, wxID_ANY, wxT("Add"), wxDefaultPosition, wxDefaultSize, 0 );
 	bSizer5->Add( m_addRemoteButton, 1, wxALL, 5 );
 	
-	m_useSelectedButton = new wxButton( m_panel4, wxID_ANY, wxT("Start"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer5->Add( m_useSelectedButton, 1, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
-	
 	
 	m_panel4->SetSizer( bSizer5 );
 	m_panel4->Layout();
@@ -53,7 +51,7 @@ devFrame::devFrame( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	m_panel6->SetSizer( bSizer6 );
 	m_panel6->Layout();
 	bSizer6->Fit( m_panel6 );
-	bSizer4->Add( m_panel6, 1, wxEXPAND | wxALL, 5 );
+	bSizer4->Add( m_panel6, 0, wxEXPAND | wxALL, 5 );
 	
 	m_panel61 = new wxPanel( m_panel3, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer7;
@@ -64,7 +62,22 @@ devFrame::devFrame( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	bSizer7->Add( m_staticText1, 0, wxALL, 5 );
 	
 	m_propertyGrid = new wxPropertyGrid(m_panel61, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPG_DEFAULT_STYLE);
+	m_propertyGrid->SetMinSize( wxSize( 300,-1 ) );
 	bSizer7->Add( m_propertyGrid, 1, wxALL|wxEXPAND, 5 );
+	
+	wxBoxSizer* bSizer8;
+	bSizer8 = new wxBoxSizer( wxHORIZONTAL );
+	
+	m_resetButton = new wxButton( m_panel61, wxID_ANY, wxT("Reset Properties"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer8->Add( m_resetButton, 0, wxALL, 5 );
+	
+	bSizer8->Add( -1, -1, 1, wxEXPAND, 5 );
+	
+	m_useSelectedButton = new wxButton( m_panel61, wxID_ANY, wxT("Start"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer8->Add( m_useSelectedButton, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+	
+	
+	bSizer7->Add( bSizer8, 0, wxEXPAND, 5 );
 	
 	
 	m_panel61->SetSizer( bSizer7 );
@@ -93,8 +106,8 @@ devFrame::devFrame( wxWindow* parent, wxWindowID id, const wxString& title, cons
 	m_refreshButton->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnRefreshDevices ), NULL, this );
 	m_addRemoteButton->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnAddRemote ), NULL, this );
 	m_useSelectedButton->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnUseSelected ), NULL, this );
+	m_resetButton->Connect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnResetDefaults ), NULL, this );
 	m_propertyGrid->Connect( wxEVT_PG_CHANGED, wxPropertyGridEventHandler( devFrame::OnPropGridChanged ), NULL, this );
-	m_propertyGrid->Connect( wxEVT_SET_FOCUS, wxFocusEventHandler( devFrame::OnPropGridFocus ), NULL, this );
 	this->Connect( wxID_ANY, wxEVT_TIMER, wxTimerEventHandler( devFrame::OnDeviceTimer ) );
 }
 
@@ -108,8 +121,8 @@ devFrame::~devFrame()
 	m_refreshButton->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnRefreshDevices ), NULL, this );
 	m_addRemoteButton->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnAddRemote ), NULL, this );
 	m_useSelectedButton->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnUseSelected ), NULL, this );
+	m_resetButton->Disconnect( wxEVT_LEFT_UP, wxMouseEventHandler( devFrame::OnResetDefaults ), NULL, this );
 	m_propertyGrid->Disconnect( wxEVT_PG_CHANGED, wxPropertyGridEventHandler( devFrame::OnPropGridChanged ), NULL, this );
-	m_propertyGrid->Disconnect( wxEVT_SET_FOCUS, wxFocusEventHandler( devFrame::OnPropGridFocus ), NULL, this );
 	this->Disconnect( wxID_ANY, wxEVT_TIMER, wxTimerEventHandler( devFrame::OnDeviceTimer ) );
 	
 }

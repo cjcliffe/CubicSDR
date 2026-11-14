@@ -19,7 +19,6 @@
 
 
 wxBEGIN_EVENT_TABLE(ScopeCanvas, wxGLCanvas) EVT_PAINT(ScopeCanvas::OnPaint)
-EVT_IDLE(ScopeCanvas::OnIdle)
 EVT_MOTION(ScopeCanvas::OnMouseMoved)
 EVT_LEFT_DOWN(ScopeCanvas::OnMouseDown)
 EVT_LEFT_UP(ScopeCanvas::OnMouseReleased)
@@ -224,9 +223,8 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 }
 
 
-void ScopeCanvas::OnIdle(wxIdleEvent &event) {
+void ScopeCanvas::frameUpdate() {
     Refresh();
-    event.RequestMore();
 }
 
 ScopeRenderDataQueuePtr ScopeCanvas::getInputQueue() {

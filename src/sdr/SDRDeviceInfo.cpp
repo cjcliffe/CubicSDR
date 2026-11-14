@@ -196,6 +196,48 @@ std::vector<long> SDRDeviceInfo::getSampleRates(int direction, size_t channel) {
 	//the original list returned from the driver:
     std::vector<double> sampleRates = dev->listSampleRates(direction, channel);
 
+	//drop bogus non-positive rates: range-only drivers (e.g. usdr/xsdr) go through
+	//the SoapySDR deprecated-API shim, which can emit a 0 entry that later gets
+	//selected and makes the driver throw on setSampleRate(0).
+	sampleRates.erase(std::remove_if(sampleRates.begin(), sampleRates.end(),
+		[](double r) { return r <= 0; }), sampleRates.end());
+
+	//some drivers (e.g. usdr/xsdr) only report a continuous range and return an
+	//empty discrete list; synthesize candidate rates from the range instead.
+	if (sampleRates.empty()) {
+
+		SoapySDR::RangeList rateRanges = dev->getSampleRateRange(direction, channel);
+
+		const double candidateRates[] = { 250000, 500000, 1000000, 2000000, 2500000,
+			4000000, 5000000, 8000000, 10000000, 16000000, 20000000, 25000000,
+			32000000, 40000000, 50000000, 64000000, 80000000, 100000000, 125000000 };
+
+		for (double candidate : candidateRates) {
+			for (const auto& range : rateRanges) {
+				if (candidate >= range.minimum() && candidate <= range.maximum()) {
+					sampleRates.push_back(candidate);
+					break;
+				}
+			}
+		}
+
+		//still nothing usable: fall back to the range endpoints themselves
+		if (sampleRates.empty()) {
+			for (const auto& range : rateRanges) {
+				sampleRates.push_back(range.minimum());
+				if (range.maximum() != range.minimum()) {
+					sampleRates.push_back(range.maximum());
+				}
+			}
+		}
+	}
+
+	//no rate info at all: bail out with an empty list rather than reading
+	//past the end of an empty vector below.
+	if (sampleRates.empty()) {
+		return result;
+	}
+
 	//be paranoid, sort by increasing rates...
 	std::sort(sampleRates.begin(), sampleRates.end(), [](double a, double b) -> bool { return a < b; });
 

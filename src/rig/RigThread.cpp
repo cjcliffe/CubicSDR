@@ -3,6 +3,10 @@
 
 #include "RigThread.h"
 
+#include <chrono>
+#include <cstdio>
+#include <thread>
+
 std::vector<const struct rig_caps *> RigThread::rigCaps;
 
 RigThread::RigThread() {
@@ -116,7 +120,7 @@ void RigThread::run() {
     std::cout << "Rig thread starting." << std::endl;
 
     rig = rig_init(rigModel);
-	strncpy(rig->state.rigport.pathname, rigFile.c_str(), FILPATHLEN - 1);
+	snprintf(rig->state.rigport.pathname, sizeof(rig->state.rigport.pathname), "%s", rigFile.c_str());
 	rig->state.rigport.parm.serial.rate = serialRate;
 	retcode = rig_open(rig);
     
@@ -137,7 +141,6 @@ void RigThread::run() {
     while (!stopping) {
         std::this_thread::sleep_for(std::chrono::milliseconds(150));
         
-        auto activeDemod = wxGetApp().getDemodMgr().getActiveContextModem();
         auto lastDemod = wxGetApp().getDemodMgr().getCurrentModem();
 
         if (freqChanged.load() && (controlMode.load() || setOneShot.load())) {
@@ -205,7 +208,7 @@ void RigThread::run() {
             }
         }
         
-        if (!centerLock.load() && followModem.load() && wxGetApp().getFrequency() != freq && (lastDemod && lastDemod != activeDemod)) {
+        if (!centerLock.load() && followModem.load() && wxGetApp().getFrequency() != freq && lastDemod) {
             wxGetApp().setFrequency((long long)freq);
         }
         

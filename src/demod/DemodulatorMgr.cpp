@@ -6,6 +6,9 @@
 #include <string>
 
 #include "CubicSDR.h"
+#include "AppFrame.h"
+#include "DemodReselect.h"
+#include "DemodCycle.h"
 
 #if USE_HAMLIB
 #include "RigThread.h"
@@ -51,12 +54,14 @@ void DemodulatorMgr::terminateAll() {
 
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
     
+    terminatingAll = true;
     while (!demods.empty()) {
 
         DemodulatorInstancePtr d = demods.back();
         demods.pop_back();
         deleteThread(d);
     }
+    terminatingAll = false;
 }
 
 std::vector<DemodulatorInstancePtr> DemodulatorMgr::getDemodulators() {
@@ -91,41 +96,29 @@ std::vector<DemodulatorInstancePtr> DemodulatorMgr::getOrderedDemodulators(bool 
     return demods_ordered;
 }
 
+static int indexOfDemod(const std::vector<DemodulatorInstancePtr>& demods_ordered, const DemodulatorInstancePtr& demod) {
+    if (!demod) {
+        return -1;
+    }
+    auto p = std::find(demods_ordered.begin(), demods_ordered.end(), demod);
+    if (p == demods_ordered.end()) {
+        return -1;
+    }
+    return (int)std::distance(demods_ordered.begin(), p);
+}
+
 DemodulatorInstancePtr DemodulatorMgr::getPreviousDemodulator(const DemodulatorInstancePtr& demod, bool actives) {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
-    if (!getCurrentModem()) {
-        return nullptr;
-    }
     auto demods_ordered = getOrderedDemodulators(actives);
-    auto p = std::find(demods_ordered.begin(), demods_ordered.end(), demod);
-
-    if (p == demods_ordered.end()) {
-        return nullptr;
-    }
-    if (*p == demods_ordered.front()) {
-        return demods_ordered.back();
-    }
-    return *(--p);
+    int stepped = DemodCycle::step((int)demods_ordered.size(), indexOfDemod(demods_ordered, demod), false);
+    return stepped < 0 ? nullptr : demods_ordered[(size_t)stepped];
 }
 
 DemodulatorInstancePtr DemodulatorMgr::getNextDemodulator(const DemodulatorInstancePtr& demod, bool actives) {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
-    if (!getCurrentModem()) {
-        return nullptr;
-    }
     auto demods_ordered = getOrderedDemodulators(actives);
-    auto p = std::find(demods_ordered.begin(), demods_ordered.end(), demod);
-
-    if (actives) {
-        
-    }
-    if (p == demods_ordered.end()) {
-        return nullptr;
-    }
-    if (*p == demods_ordered.back()) {
-        return demods_ordered.front();
-    }
-    return *(++p);
+    int stepped = DemodCycle::step((int)demods_ordered.size(), indexOfDemod(demods_ordered, demod), true);
+    return stepped < 0 ? nullptr : demods_ordered[(size_t)stepped];
 }
 
 DemodulatorInstancePtr DemodulatorMgr::getLastDemodulator() {
@@ -148,18 +141,47 @@ void DemodulatorMgr::deleteThread(const DemodulatorInstancePtr& demod) {
   
     auto i = std::find(demods.begin(), demods.end(), demod);
 
-    if (activeContextModem == demod) {
-        activeContextModem = nullptr;
-    }
     if (currentModem == demod) {
+        currentModem->setVisualOutputQueue(nullptr);
         currentModem = nullptr;
-    }
-    if (activeVisualDemodulator == demod) {
-        activeVisualDemodulator = nullptr;
     }
 
     if (i != demods.end()) {
         demods.erase(i);
+    }
+
+    if (previousModem == demod) {
+        previousModem = nullptr;
+    }
+
+    // A delete re-selects while demods remain in view: the previously
+    // selected demod when it is still in view, else the first demod in
+    // view; nothing in view leaves a null selection rather than
+    // grabbing an off-screen demod. Mass termination skips this.
+    if (!terminatingAll && currentModem == nullptr && !demods.empty()) {
+        std::vector<long long> freqs;
+        std::vector<char> activeFlags;
+        freqs.reserve(demods.size());
+        activeFlags.reserve(demods.size());
+        int prevIndex = -1;
+        for (size_t idx = 0; idx < demods.size(); idx++) {
+            if (demods[idx] == previousModem) {
+                prevIndex = (int)idx;
+            }
+            freqs.push_back(demods[idx]->getFrequency());
+            activeFlags.push_back(demods[idx]->isActive() ? 1 : 0);
+        }
+        // The window comes from the main view, not the device: a zoomed
+        // range narrows what counts as in view.
+        long long centerHz = wxGetApp().getFrequency();
+        long long spanHz = wxGetApp().getSampleRate();
+        AppFrame *frame = wxGetApp().getAppFrame();
+        if (frame && frame->getWaterfallCanvas()) {
+            centerHz = frame->getWaterfallCanvas()->getCenterFrequency();
+            spanHz = frame->getWaterfallCanvas()->getBandwidth();
+        }
+        int picked = DemodReselect::pick(freqs, activeFlags, prevIndex, centerHz, spanHz);
+        setActiveDemodulator(picked >= 0 ? demods[(size_t)picked] : nullptr);
     }
 
     //Ask for termination
@@ -206,83 +228,57 @@ bool DemodulatorMgr::anyDemodulatorsAt(long long freq, int bandwidth) {
 }
 
 
-void DemodulatorMgr::setActiveDemodulator(const DemodulatorInstancePtr& demod, bool temporary) {
+void DemodulatorMgr::setActiveDemodulator(const DemodulatorInstancePtr& demod) {
 
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
 
-    // Should this be made the current modem (i.e. clicked, toggled)
-    if (!temporary) {
-        if (activeContextModem != nullptr) {
-            currentModem = activeContextModem;
-            updateLastState();
-        } else {
-            currentModem = demod;
-        }
+    // Reject targets that left the list between snapshot and set (e.g. a
+    // squelch steal racing a delete): binding first would wipe a live
+    // selection and end null. Inactive members still pass; tuning one
+    // into range reactivates it and the post thread reselects it.
+    if (demod && std::find(demods.begin(), demods.end(), demod) == demods.end()) {
+        return;
+    }
 
-        updateLastState();
+    // Remember the outgoing selection for delete fallback; a deselect
+    // leaves the previous pick intact so deleting the current demod
+    // still finds it.
+    if (demod && demod != currentModem) {
+        previousModem = currentModem;
+    }
 
-        wxGetApp().getBookmarkMgr().updateActiveList();
+    if (currentModem && currentModem != demod) {
+        currentModem->setVisualOutputQueue(nullptr);
+    }
+
+    currentModem = demod;
+
+    if (currentModem) {
+        currentModem->setVisualOutputQueue(wxGetApp().getAudioVisualQueue());
+    }
+
+    updateLastState();
+
+    wxGetApp().getBookmarkMgr().updateActiveList();
 
 #if USE_HAMLIB
-        if (wxGetApp().rigIsActive() && wxGetApp().getRigThread()->getFollowModem() && currentModem) {
-            wxGetApp().getRigThread()->setFrequency(currentModem->getFrequency(),true);
-        }
+    if (wxGetApp().rigIsActive() && wxGetApp().getRigThread()->getFollowModem() && currentModem) {
+        wxGetApp().getRigThread()->setFrequency(currentModem->getFrequency(),true);
+    }
 #endif
-    }
-
-    // TODO: This is probably unnecessary and confusing
-    if (activeVisualDemodulator) {
-        activeVisualDemodulator->setVisualOutputQueue(nullptr);
-    }
-    if (demod) {
-        demod->setVisualOutputQueue(wxGetApp().getAudioVisualQueue());
-        activeVisualDemodulator = demod;
-    } else {
-        DemodulatorInstancePtr last = getCurrentModem();
-        if (last) {
-            last->setVisualOutputQueue(wxGetApp().getAudioVisualQueue());
-        }
-        activeVisualDemodulator = last;
-    }
-    // :ODOT
-
-    activeContextModem = demod;
 }
 
-//Dangerous: this is only intended by some internal classes
-void DemodulatorMgr::setActiveDemodulatorByRawPointer(DemodulatorInstance* demod, bool temporary) {
-    std::lock_guard < std::recursive_mutex > lock(demods_busy);
 
-    for (const auto& existing_demod : demods) {
-
-        if (existing_demod.get() == demod) {
-
-            setActiveDemodulator(existing_demod, temporary);
-            break;
-        }
-    }
-}
 
 /**
- * Get the currently focused modem, i.e. the one hovered by interaction
- * If no active context modem is available the current modem is returned
- * @return Active Context Modem
- */
-DemodulatorInstancePtr DemodulatorMgr::getActiveContextModem() {
-    std::lock_guard < std::recursive_mutex > lock(demods_busy);
-
-    if (activeContextModem && !activeContextModem->isActive()) {
-        activeContextModem = getCurrentModem();
-    }
-    return activeContextModem;
-}
-
-/**
- * Get the last selected / focused modem
- * This is the currently active modem
+ * Get the selected modem
+ * This is the currently active modem; hover state never changes it
  * @return Current Modem
  */
 DemodulatorInstancePtr DemodulatorMgr::getCurrentModem() {
+    // Locked: the post threads read the selection while UI and post
+    // threads write it; an unlocked shared_ptr copy can tear.
+    std::lock_guard < std::recursive_mutex > lock(demods_busy);
     return currentModem;
 }
 
@@ -311,16 +307,10 @@ DemodulatorInstancePtr DemodulatorMgr::getLastDemodulatorWith(const std::string&
 void DemodulatorMgr::updateLastState() {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
 
-    if (std::find(demods.begin(), demods.end(), currentModem) == demods.end()) {
-        if (activeContextModem && activeContextModem->isActive()) {
-            currentModem = activeContextModem;
-        } else if (activeContextModem && !activeContextModem->isActive()){
-            activeContextModem = nullptr;
-            currentModem = nullptr;
-        }
-    }
-
-    if (currentModem && !currentModem->isActive()) {
+    if (currentModem && (std::find(demods.begin(), demods.end(), currentModem) == demods.end() || !currentModem->isActive())) {
+        // Pruned selection releases its visual binding like any deselect;
+        // otherwise a later reactivation feeds the scope as a ghost.
+        currentModem->setVisualOutputQueue(nullptr);
         currentModem = nullptr;
     }
 

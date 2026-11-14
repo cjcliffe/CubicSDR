@@ -57,7 +57,7 @@ bool SessionMgr::loadSession(const std::string& fileName) {
         return false;
     }
 
-    wxGetApp().getDemodMgr().setActiveDemodulator(nullptr, false);
+    wxGetApp().getDemodMgr().setActiveDemodulator(nullptr);
     wxGetApp().getDemodMgr().terminateAll();
 
     WaterfallCanvas *waterfallCanvas = wxGetApp().getAppFrame()->getWaterfallCanvas();
@@ -76,7 +76,7 @@ bool SessionMgr::loadSession(const std::string& fileName) {
             try {
                 versionNode->element()->get(version);
 
-                std::cout << "Loading session file version: '" << version << "'..." << std::endl;
+                std::cout << "Loading session file version: '" << std::string(version.begin(), version.end()) << "'..." << std::endl;
             }
             catch (DataTypeMismatchException &e) {
                 //this is for managing the old session format NOT encoded as std:wstring,
@@ -184,7 +184,7 @@ bool SessionMgr::loadSession(const std::string& fileName) {
         }
 
         if (loadedActiveDemod || newDemod) {
-            wxGetApp().getDemodMgr().setActiveDemodulator(loadedActiveDemod?loadedActiveDemod:newDemod, false);
+            wxGetApp().getDemodMgr().setActiveDemodulator(loadedActiveDemod?loadedActiveDemod:newDemod);
         }
     } catch (DataTypeMismatchException &e) {
         std::cout << e.what() << std::endl;

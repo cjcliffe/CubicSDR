@@ -116,9 +116,24 @@ ModemKit *ModemFMStereo::buildKit(long long sampleRate, int audioSampleRate) {
     unsigned int h_len = estimate_req_filter_len(ft, As);
     float *h = new float[h_len];
     liquid_firdes_kaiser(h_len, firStereoCutoff, As, mu, h);
+
+    // The designed taps are not unity-gain: their sum grows with length, so
+    // without this the filter amplifies more at higher audio rates.
+    double tapSum = 0.0;
+    for (unsigned int i = 0; i < h_len; i++) {
+        tapSum += h[i];
+    }
+    if (tapSum != 0.0) {
+        float invSum = (float)(1.0 / tapSum);
+        for (unsigned int i = 0; i < h_len; i++) {
+            h[i] *= invSum;
+        }
+    }
     
     kit->firStereoLeft = firfilt_rrrf_create(h, h_len);
     kit->firStereoRight = firfilt_rrrf_create(h, h_len);
+
+    delete[] h;
     
     // stereo pilot filter
     float bw = float(sampleRate);

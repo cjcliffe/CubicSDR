@@ -52,7 +52,8 @@ DataElement::~DataElement() = default;
 char * DataElement::getDataPointer() {
 
     if (!data_val.empty()) {
-        return (char*)&data_val[0];
+        //Casting to char is the aliasing-safe direction; char may alias any type.
+        return reinterpret_cast<char*>(data_val.data());
     }
 
     return nullptr;
@@ -94,7 +95,7 @@ void DataElement::set(const std::set<string> &strset_in) {
 }
 
 
-void DataElement::get(DataElement::DataElementBuffer& data_in) {
+void DataElement::getVoid(DataElement::DataElementBuffer& data_in) {
 
     if (data_type != DataElement::Type::DATA_VOID) {
         throw(DataTypeMismatchException("Type mismatch, not a VOID*"));
@@ -140,8 +141,21 @@ std::string DataElement::toString() {
         } else if (dataType == DataElement::Type::DATA_WSTRING) {
             std::wstring wstr;
             get(wstr);
-            //TODO: code below returns a forced cast in (char*) beware...
-            strValue = *wstr.c_str();
+            //Narrow the whole string; keeping only the first character loses data.
+            size_t contentBytes = wstr.length() * sizeof(wchar_t);
+#ifdef _MSC_VER
+            const size_t bufPad = sizeof(wchar_t);
+#else
+            const size_t bufPad = 1;
+#endif
+            std::vector<char> narrowBuf(contentBytes + bufPad, '\0');
+#ifdef _MSC_VER
+            size_t converted = 0;
+            wcstombs_s(&converted, narrowBuf.data(), narrowBuf.size(), wstr.c_str(), _TRUNCATE);
+#else
+            ::wcstombs(narrowBuf.data(), wstr.c_str(), contentBytes);
+#endif
+            strValue.assign(narrowBuf.data());
         }
         else {
             std::cout << "Unhandled DataElement toString for type: " << (int)dataType  << std::endl;
@@ -319,11 +333,26 @@ string DataTree::wsEncode(const wstring& wstr) {
     stringstream encStream;
     
     //wchar_t is typically 16 bits on windows, and 32 bits on Unix, so use sizeof(wchar_t) everywhere.
-    size_t bufSizeBytes = (wstr.length()+1) * sizeof(wchar_t);
+    size_t contentBytes = wstr.length() * sizeof(wchar_t);
+#ifdef _MSC_VER
+    const size_t bufPad = sizeof(wchar_t);
+#else
+    const size_t bufPad = 1;
+#endif
+    size_t bufSizeBytes = contentBytes + bufPad;
 
     char *data_str = (char *)calloc(bufSizeBytes, sizeof(char));
-    
-    wcstombs(data_str, wstr.c_str(), bufSizeBytes - sizeof(wchar_t));
+
+    if (!data_str) {
+        return "";
+    }
+
+#ifdef _MSC_VER
+    size_t converted = 0;
+    wcstombs_s(&converted, data_str, bufSizeBytes, wstr.c_str(), _TRUNCATE);
+#else
+    wcstombs(data_str, wstr.c_str(), contentBytes);
+#endif
     
     std::string byte_str(data_str);
 
@@ -357,13 +386,22 @@ wstring DataTree::wsDecode(const string& str) {
     //wchar_t is typically 16 bits on windows, and 32 bits on Unix, so use sizeof(wchar_t) everywhere.
     auto *wc_str = (wchar_t *) ::calloc(maxLen  + 1, sizeof(wchar_t));
 
+    if (!wc_str) {
+        return L"";
+    }
+
     while (!decStream.eof()) {
         decStream >> std::hex >> x;
         //extract actually 2 hex-chars by 2 hex-chars to form a char value.
         mbstr << (unsigned char) x;
     }
 
+#ifdef _MSC_VER
+    size_t converted = 0;
+    mbstowcs_s(&converted, wc_str, maxLen + 1, mbstr.str().c_str(), _TRUNCATE);
+#else
     ::mbstowcs(wc_str, mbstr.str().c_str(), maxLen);
+#endif
     
     wstring result(wc_str);
 
@@ -372,6 +410,10 @@ wstring DataTree::wsDecode(const string& str) {
     return result;
 }
 
+// Note: the XML format stores values without type tags, so loading infers
+// types from text shape. A single-element int vector loads as a scalar and
+// small int vectors load as char vectors. Nested <str> elements and
+// percent-encoded text do round-trip back to string vectors and wstrings.
 void DataTree::decodeXMLText(DataNode *elem, const char *src_text, DT_FloatingPointPolicy fpp) {
 
     int tmp_char;
@@ -806,7 +848,8 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             tmp_stream.str("");
 
             for (tmp_charvect_i = tmp_charvect.begin(); tmp_charvect_i != tmp_charvect.end(); tmp_charvect_i++) {
-                tmp_stream << (*tmp_charvect_i);
+                // Stream as a number; streaming a char would emit the character itself.
+                tmp_stream << static_cast<int>(*tmp_charvect_i);
                 if (tmp_charvect_i != tmp_charvect.end() - 1)
                     tmp_stream << " ";
             }
@@ -821,7 +864,8 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             tmp_stream.str("");
 
             for (tmp_ucharvect_i = tmp_ucharvect.begin(); tmp_ucharvect_i != tmp_ucharvect.end(); tmp_ucharvect_i++) {
-                tmp_stream << (*tmp_ucharvect_i);
+                // Stream as a number; streaming an unsigned char would emit the character itself.
+                tmp_stream << static_cast<unsigned int>(*tmp_ucharvect_i);
                 if (tmp_ucharvect_i != tmp_ucharvect.end() - 1)
                     tmp_stream << " ";
             }
@@ -851,7 +895,7 @@ void DataTree::nodeToXML(DataNode *elem, TiXmlElement *elxml) {
             tmp_stream.str("");
 
             for (tmp_uintvect_i = tmp_uintvect.begin(); tmp_uintvect_i != tmp_uintvect.end(); tmp_uintvect_i++) {
-                tmp_stream << (*tmp_intvect_i);
+                tmp_stream << (*tmp_uintvect_i);
                 if (tmp_uintvect_i != tmp_uintvect.end() - 1)
                     tmp_stream << " ";
             }

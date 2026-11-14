@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <chrono>
 #include <map>
 #include <vector>
 
@@ -13,22 +14,25 @@
 
 class SDRDevicesDialog: public devFrame {
 public:
-    explicit SDRDevicesDialog( wxWindow* parent, const wxPoint &wxPos = wxDefaultPosition);
+    explicit SDRDevicesDialog( wxWindow* parent, const wxPoint &wxPos = wxDefaultPosition, bool dismissOnStart = false);
     
     void OnClose( wxCloseEvent& event ) override;
     void OnDeleteItem( wxTreeEvent& event ) override;
     void OnSelectionChanged( wxTreeEvent& event ) override;
     void OnAddRemote( wxMouseEvent& event ) override;
     void OnUseSelected( wxMouseEvent& event ) override;
+    void OnResetDefaults( wxMouseEvent& event ) override;
     void OnTreeDoubleClick( wxMouseEvent& event ) override;
     void OnDeviceTimer( wxTimerEvent& event ) override;
+    void OnCharHook(wxKeyEvent &event);
     void OnRefreshDevices( wxMouseEvent& event ) override;
     void OnPropGridChanged( wxPropertyGridEvent& event ) override;
-    void OnPropGridFocus( wxFocusEvent& event ) override;
 
 private:
     void refreshDeviceProperties();
     void doRefreshDevices();
+    void applyResetDefaults();
+    void updateDeviceStateUI();
     
     SDRDeviceInfo *getSelectedDevice(wxTreeItemId selId_in);
     wxPGProperty *addArgInfoProperty(wxPropertyGrid *pg, SoapySDR::ArgInfo arg);
@@ -38,6 +42,13 @@ private:
 
 
     bool refresh, failed;
+    // Set by the Reset click; the timer applies it past click completion.
+    bool pendingResetApply; // Deferred Reset click, serviced by the device timer.
+    bool devActiveShown;
+    // Dismiss when Start begins streaming; set for the startup-shown
+    // dialog only so manual re-opens stay up for further tweaks.
+    bool dismissOnStart;
+    long lastUseClick{ 0 };
     std::map<std::string, std::vector<SDRDeviceInfo *>* > devs;
     std::vector<SDRDeviceInfo *>::iterator devs_i;
     std::map<wxTreeItemId, SDRDeviceInfo *> devItems;
@@ -49,7 +60,6 @@ private:
     std::map<std::string, wxPGProperty *> streamProps;
     std::map<std::string, wxPGProperty *> devSettings;
     wxTreeItemId selId;
-    wxTreeItemId editId;
     wxTreeItemId removeId;
     SDRDeviceAddDialog *devAddDialog;
 };

@@ -40,6 +40,9 @@ void initGLExtensions() {
 
 #ifdef __APPLE__
     const GLint interval = 1;
+#elif defined(_WIN32)
+    // The frame timer paces presentation; leave vsync to the compositor.
+    const GLint interval = 0;
 #else
     const GLint interval = 2;
 #endif

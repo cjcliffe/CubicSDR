@@ -37,6 +37,7 @@ private:
     // Copy the full samplerate into a new DemodulatorThreadIQDataPtr.
     DemodulatorThreadIQDataPtr getFullSampleRateIqData(SDRThreadIQData *data_in);
     void pushVisualData(const DemodulatorThreadIQDataPtr& iqDataOut);
+    void flushVisualData();
 
     void runSingleCH(SDRThreadIQData *data_in);
 

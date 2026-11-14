@@ -25,7 +25,20 @@ unsigned int FFTDataDistributor::getLinesPerSecond() const {
 	return this->linesPerSecond;
 }
 
+void FFTDataDistributor::requestReset() {
+    resetRequested.store(true);
+}
+
 void FFTDataDistributor::process() {
+
+    // A flush requested from another thread drops the accumulated
+    // samples; the queues were already flushed, so what remains here
+    // is pre-flush.
+    if (resetRequested.exchange(false)) {
+        bufferedItems = 0;
+        bufferOffset = 0;
+        lineRateAccum = 0.0;
+    }
 
 	while (!input->empty()) {
 		if (!isAnyOutputEmpty()) {

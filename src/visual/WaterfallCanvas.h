@@ -13,7 +13,9 @@
 #include "MouseTracker.h"
 #include "SpectrumCanvas.h"
 #include "WaterfallPanel.h"
-#include "Timer.h"
+#include "WaterfallPacer.h"
+#include <chrono>
+#include "DemodulatorMgr.h"
 
 class WaterfallCanvas: public InteractiveCanvas {
 public:
@@ -32,6 +34,9 @@ public:
     void attachSpectrumCanvas(SpectrumCanvas *canvas_in);
     void processInputQueue();
     SpectrumVisualDataQueuePtr getVisualDataQueue();
+
+    // Demodulator currently under the cursor; never affects selection.
+    DemodulatorInstancePtr getHoverDemod();
 
     void setLinesPerSecond(int lps);
     void setMinBandwidth(int min);
@@ -53,7 +58,7 @@ public:
     
 private:
     void OnPaint(wxPaintEvent& event);
-    void OnIdle(wxIdleEvent &event);
+    void frameUpdate() override;
 
     void updateHoverState();
     
@@ -62,6 +67,8 @@ private:
     void OnMouseReleased(wxMouseEvent& event);
     void OnMouseRightDown(wxMouseEvent& event);
     void OnMouseRightReleased(wxMouseEvent& event);
+    void OnMouseMiddleDown(wxMouseEvent& event);
+    void OnMouseMiddleReleased(wxMouseEvent& event);
     void OnMouseEnterWindow(wxMouseEvent& event);
     void OnMouseLeftWindow(wxMouseEvent& event);
 
@@ -76,6 +83,8 @@ private:
     DragState dragState;
     DragState nextDragState;
 
+    DemodulatorInstancePtr hoverDemod = nullptr;
+
     unsigned int fft_size, new_fft_size;
     int waterfall_lines;
     int dragOfs;
@@ -84,14 +93,18 @@ private:
     bool freqMoving;
     long double freqMove;
     float hoverAlpha;
-    int linesPerSecond;
     float scaleMove;
+    float rightDragDist;
+    bool midZooming;
+    int midZoomStartY;
     int dragBW;
     
     SpectrumVisualDataQueuePtr visualDataQueue = std::make_shared<SpectrumVisualDataQueue>();
 
-    Timer gTimer;
-    double lpsIndex;
+    // Sub-millisecond frame clock for the pacer; the ms-quantized Timer
+    // jittered line placement at high frame rates.
+    std::chrono::steady_clock::time_point lastFrameTime;
+    WaterfallPacer pacer;
     bool preBuf;
     std::mutex tex_update;
     int minBandwidth;

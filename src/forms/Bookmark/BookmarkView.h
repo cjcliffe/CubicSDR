@@ -60,11 +60,12 @@ public:
     ~BookmarkView() override;
     
     //order an asynchronous refresh/rebuild of the whole tree,
-    //will take effect at the next onUpdateTimer() occurrence.
+    //will take effect at the next update poll (frame tick or update timer).
     void updateActiveList();
+    void pollUpdates();
     
     //order asynchronous updates of the bookmarks,
-    //will take effect at the next onUpdateTimer() occurrence.
+    //will take effect at the next update poll (frame tick or update timer).
     void updateBookmarks();
     void updateBookmarks(const std::string& group);
 
@@ -103,6 +104,11 @@ protected:
 
     //refresh / rebuild the whole tree item immediately
     void doUpdateActiveList();
+    // Refresh tree item labels (and the selected props fields) without
+    // tearing the tree down. Returns false when the displayed membership,
+    // pending selections, or recording state changed and the full rebuild
+    // in doUpdateActiveList() is required instead.
+    bool refreshActiveLabelsInPlace();
 
     void onKeyUp( wxKeyEvent& event ) override;
     void onTreeActivate( wxTreeEvent& event ) override;
@@ -141,6 +147,7 @@ protected:
     void doClearRecents();
     
     void updateBookmarkChoices();
+    void syncBookmarkChoice();
     void addBookmarkChoice(wxWindow *parent);    
     void onBookmarkChoice( wxCommandEvent &event );
     
@@ -188,6 +195,11 @@ protected:
     
     // Active
     std::atomic_bool doUpdateActive;
+    // Which active demodulator the props buttons were last built for, so the
+    // in-place label refresh can detect recording-state changes that need
+    // the full rebuild path.
+    DemodulatorInstancePtr lastBuiltActiveDemod = nullptr;
+    bool lastBuiltRecordingState = false;
     
     // Focus
     BookmarkEntryPtr nextEnt;

@@ -2,33 +2,253 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: cimg/base:current-22.04
+      - image: cimg/base:current-24.04
     resource_class: medium
-    environment:
-      - CACHE_DIR: ~/build/wxWidgets/staticlib
     steps:
       - checkout
       - restore_cache:
           keys:
-            - cache-{{ checksum ".circleci/scripts/build_wxwidgets.sh" }}
+            - deps-{{ checksum "build.py" }}
       - run:
           name: Install Dependencies
           command: |
             sudo apt-get update
-            sudo apt-get install -y build-essential cmake libpulse-dev libgtk-3-dev freeglut3 freeglut3-dev libhamlib-dev
-      - run:
-          name: Build wxWidgets
-          command: bash .circleci/scripts/build_wxwidgets.sh
-      - run:
-          name: Build LiquidDSP
-          command: bash .circleci/scripts/build_liquiddsp.sh
-      - run:
-          name: Build SoapySDR
-          command: bash .circleci/scripts/build_soapysdr.sh
+            sudo apt-get install -y build-essential cmake git autoconf automake libtool pkg-config libpulse-dev libgtk-3-dev freeglut3-dev libhamlib-dev libwxgtk3.2-dev libsoapysdr-dev soapysdr-tools
       - run:
           name: Build CubicSDR
-          command: bash .circleci/scripts/build_cubicsdr.sh
+          command: python3 build.py --modules none
+      - run:
+          name: Build and run unit tests
+          command: |
+            cmake -S . -B build/linux -DBUILD_TESTING=ON
+            cmake --build build/linux --parallel
+            ctest --test-dir build/linux --output-on-failure
+      - run:
+          name: Run build script tests
+          command: python3 tests/test_build.py
       - save_cache:
-          key: cache-{{ checksum ".circleci/scripts/build_wxwidgets.sh" }}
+          key: deps-{{ checksum "build.py" }}
           paths:
-            - ~/build/wxWidgets/staticlib
+            - build/deps
+  appimage:
+    docker:
+      - image: cimg/base:current-22.04
+    resource_class: medium
+    steps:
+      - checkout
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y build-essential cmake git autoconf automake libtool pkg-config libpulse-dev libgtk-3-dev freeglut3-dev libhamlib-dev zlib1g-dev libudev-dev libsqlite3-dev libncurses-dev libasound2-dev libjack-jackd2-dev
+      - run:
+          name: Build AppImage
+          command: python3 build.py --build-deps --package appimage
+      - run:
+          name: Verify bundled modules and fonts
+          command: |
+            ./build/CubicSDR-x86_64.AppImage --appimage-extract
+            echo '--- bundled modules: ---'
+            ls squashfs-root/usr/bin/modules/
+            test "$(ls build/deps/lib/SoapySDR/modules*/*.so 2>/dev/null | wc -l)" -gt 0 || { echo 'no SoapySDR modules built'; exit 1; }
+            for mod in build/deps/lib/SoapySDR/modules*/*.so; do
+              [ -f "$mod" ] || continue
+              base="$(basename "$mod")"
+              test -f "squashfs-root/usr/bin/modules/$base" || { echo "SoapySDR module $base missing from AppDir"; exit 1; }
+            done
+            if ls squashfs-root/usr/bin/modules/*audioSupport.so >/dev/null 2>&1; then
+              for need in libasound.so libjack.so; do
+                ldd squashfs-root/usr/bin/modules/*audioSupport.so | grep -q "$need" || { echo "SoapyAudio module missing $need backend"; exit 1; }
+              done
+            fi
+            echo '--- bundled GL fonts: ---'
+            ls squashfs-root/usr/bin/fonts/ | head -5
+            test -n "$(ls squashfs-root/usr/bin/fonts/*.fnt 2>/dev/null)" || { echo 'GL fonts missing from AppDir'; exit 1; }
+            echo '--- unresolved linkage summary: ---'
+            for mod in squashfs-root/usr/bin/modules/*.so; do ldd "$mod"; done 2>/dev/null | tee /tmp/ldd.log | grep 'not found' | sort | uniq -c || true
+            if grep -q 'not found' /tmp/ldd.log; then echo 'missing module dependencies'; exit 1; fi
+      - store_artifacts:
+          path: build/CubicSDR-x86_64.AppImage
+  deb:
+    docker:
+      - image: cimg/base:current-24.04
+    resource_class: medium
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - deps-{{ checksum "build.py" }}
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y build-essential cmake git autoconf automake libtool pkg-config libpulse-dev libgtk-3-dev freeglut3-dev libhamlib-dev libwxgtk3.2-dev libsoapysdr-dev soapysdr-tools
+      - run:
+          name: Build DEB
+          command: python3 build.py --modules none --package deb
+      - save_cache:
+          key: deps-{{ checksum "build.py" }}
+          paths:
+            - build/deps
+      - run:
+          name: Collect DEB artifact
+          command: |
+            mkdir -p dist
+            mv build/linux-deb/CubicSDR-*.deb dist/
+      - store_artifacts:
+          path: dist
+  dmg-x64:
+    macos:
+      xcode: 15.4.0
+    resource_class: macos.m1.medium.gen1
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - dmg-x64-deps-{{ checksum "build.py" }}
+            - dmg-x64-deps-
+      - run:
+          name: Build DMG (Intel cross-compile, macOS 11 floor)
+          command: python3 build.py --modules default --package dmg --macos-arch x86_64 --macos-min-version 11.0
+      - run:
+          name: Build and run unit tests
+          command: |
+            # Raw configure (no preset), so the preset env-to-cache mappings
+            # are passed explicitly.
+            cmake -S . -B build/macos-tests -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_PREFIX_PATH="$PWD/build/deps" \
+              -DwxWidgets_CONFIG_EXECUTABLE="$PWD/build/deps/wx/bin/wx-config" \
+              -DSoapySDR_DIR="$(dirname "$(find build/deps -name SoapySDRConfig.cmake | head -1)")"
+            cmake --build build/macos-tests --target cubicsdr_tests --parallel
+            ctest --test-dir build/macos-tests --output-on-failure
+            python3 tests/test_build.py
+      - run:
+          name: Collect DMG artifact
+          command: |
+            ls build/macos/
+            mkdir -p dist
+            f=$(echo build/macos/CubicSDR-*-Darwin.dmg)
+            base=$(basename "$f")
+            mv "$f" "dist/${base/-Darwin/-macOS-x64}"
+      - save_cache:
+          key: dmg-x64-deps-{{ checksum "build.py" }}
+          paths:
+            - build/deps
+      - store_artifacts:
+          path: dist
+  dmg-arm64:
+    macos:
+      xcode: 15.4.0
+    resource_class: macos.m1.medium.gen1
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - dmg-arm64-deps-{{ checksum "build.py" }}
+            - dmg-arm64-deps-
+      - run:
+          name: Build DMG (Apple Silicon)
+          command: python3 build.py --modules default --package dmg
+      - run:
+          name: Build and run unit tests
+          command: |
+            # Raw configure (no preset), so the preset env-to-cache mappings
+            # are passed explicitly.
+            cmake -S . -B build/macos-tests -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_PREFIX_PATH="$PWD/build/deps" \
+              -DwxWidgets_CONFIG_EXECUTABLE="$PWD/build/deps/wx/bin/wx-config" \
+              -DSoapySDR_DIR="$(dirname "$(find build/deps -name SoapySDRConfig.cmake | head -1)")"
+            cmake --build build/macos-tests --target cubicsdr_tests --parallel
+            ctest --test-dir build/macos-tests --output-on-failure
+            python3 tests/test_build.py
+      - save_cache:
+          key: dmg-arm64-deps-{{ checksum "build.py" }}
+          paths:
+            - build/deps
+      - run:
+          name: Collect DMG artifact
+          command: |
+            ls build/macos/
+            mkdir -p dist
+            f=$(echo build/macos/CubicSDR-*-Darwin.dmg)
+            base=$(basename "$f")
+            mv "$f" "dist/${base/-Darwin/-macOS-arm64}"
+      - store_artifacts:
+          path: dist
+  nsis:
+    machine:
+      image: windows-server-2022-gui:current
+    resource_class: windows.medium
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - nsis-deps-{{ checksum "build.py" }}
+            - nsis-deps-
+      - run:
+          name: Build NSIS installer
+          shell: powershell.exe
+          command: |
+            choco install nsis -y
+            choco install cmake --version 3.31.6 -y
+            choco install ninja -y
+            $vs = & 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe' -latest -property installationPath
+            & 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe' modify --installPath "$vs" --add Microsoft.VisualStudio.Component.VC.Llvm.Clang --add Microsoft.VisualStudio.Component.VC.Llvm.ClangToolset --quiet --wait --norestart --nocache
+            if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 3010) { exit $LASTEXITCODE }
+            if ((Get-Command cmake -ErrorAction SilentlyContinue) -eq $null) {
+              $env:PATH = "C:\Program Files\CMake\bin;$env:PATH"
+            }
+            python build.py --modules default --package nsis
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - save_cache:
+          when: always
+          key: nsis-deps-{{ checksum "build.py" }}
+          paths:
+            - build/deps
+      - run:
+          name: Collect installer artifact
+          shell: powershell.exe
+          command: |
+            New-Item -ItemType Directory -Force dist | Out-Null
+            Move-Item build\windows\CubicSDR-*.exe dist\
+            if (-not (Test-Path dist\CubicSDR-*.exe)) { throw 'nsis artifact missing from dist/' }
+      - store_artifacts:
+          path: dist
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build:
+          filters:
+            tags:
+              ignore: /.*/
+      - appimage:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
+      - deb:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
+      - dmg-x64:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
+      - dmg-arm64:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
+      - nsis:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/

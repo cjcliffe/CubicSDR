@@ -54,7 +54,12 @@ void AudioSinkFileThread::sink(AudioThreadInputPtr input) {
 
 			//initialize the filename of the AudioFile with the current time
 			time_t t = std::time(nullptr);
-			tm ltm = *std::localtime(&t);
+			tm ltm{};
+#ifdef _MSC_VER
+			localtime_s(&ltm, &t);
+#else
+			localtime_r(&t, &ltm);
+#endif
 
 			//  GCC 5+
 			//    fileName << "_" << std::put_time(&ltm, "%d-%m-%Y_%H-%M-%S");
@@ -97,7 +102,12 @@ void AudioSinkFileThread::setAudioFileHandler(AudioFile * output) {
 	
 	//initialize the filename of the AudioFile with the current time
 	time_t t = std::time(nullptr);
-	tm ltm = *std::localtime(&t);
+	tm ltm{};
+#ifdef _MSC_VER
+	localtime_s(&ltm, &t);
+#else
+	localtime_r(&t, &ltm);
+#endif
 
 	//  GCC 5+
 	//    fileName << "_" << std::put_time(&ltm, "%d-%m-%Y_%H-%M-%S");

@@ -3,6 +3,9 @@
 
 #include "SpectrumVisualDataThread.h"
 
+#include <chrono>
+#include <thread>
+
 SpectrumVisualDataThread::SpectrumVisualDataThread() = default;
 
 SpectrumVisualDataThread::~SpectrumVisualDataThread() = default;

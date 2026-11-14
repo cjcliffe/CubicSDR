@@ -47,7 +47,7 @@ public:
     
 private:
     void OnPaint(wxPaintEvent& event);
-    void OnIdle(wxIdleEvent &event);
+    void frameUpdate() override;
     void OnMouseMoved(wxMouseEvent& event);
     void OnMouseWheelMoved(wxMouseEvent& event);
     void OnMouseDown(wxMouseEvent& event);

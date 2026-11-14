@@ -32,8 +32,10 @@ public:
     void DrawFreqBwInfo(long long freq, int bw, const RGBA4f& color, long long center_freq = - 1, long long srate = 0, bool stack = false, bool centerline = false);
 
     void setHoverAlpha(float hoverAlpha_in);
+    bool SetCurrent(const wxGLCanvas& win) const override;
 
 private:
     float hoverAlpha;
+    mutable bool swapIntervalApplied = false;
     void drawSingleDemodLabel(const std::wstring& demodStr, float uxPos, float hPos, float xOfs, float yOfs, GLFont::Align demodAlign);
 };

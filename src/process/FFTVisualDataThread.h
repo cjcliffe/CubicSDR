@@ -15,6 +15,8 @@ public:
     void setLinesPerSecond(int lps);
     int getLinesPerSecond();
     SpectrumVisualProcessor *getProcessor();
+    // Drop the waterfall backlog of stale lines.
+    void flushPipeline();
     
     void run() override;
 
