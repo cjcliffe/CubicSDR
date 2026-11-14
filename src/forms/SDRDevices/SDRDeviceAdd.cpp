@@ -6,7 +6,6 @@
 
 SDRDeviceAddDialog::SDRDeviceAddDialog( wxWindow* parent ): SDRDeviceAddForm( parent ) {
     okPressed = false;
-    selectedModule = "";
     moduleParam = "";
     selectedModule = "SoapyRemote";
     

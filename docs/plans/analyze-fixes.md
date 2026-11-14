@@ -59,6 +59,10 @@ provably intention-preserving:
   failure still leaves null buffers (nothing to preserve); the
   `overflowBuffer` vector growth throws rather than returning null,
   so a uniform OOM policy for exceptions stays future work.
+- *External reports:* removed a dead `selectedModule` assignment in
+  the device-add dialog and an unused expand-state map in the
+  bookmark view refresh; both verified single-occurrence before
+  deleting.
 
 ## Steps
 
