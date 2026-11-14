@@ -625,21 +625,29 @@ void SDRThread::updateSettings() {
         numElems.store(getOptimalElementCount(sampleRate.load(), TARGET_DISPLAY_FPS));
         //read (new) MTU size:
         int streamMTU = device->getStreamMTU(stream);
-        mtuElems.store(streamMTU);
 
-        //fallback if  mtuElems was wrong
-        if (!mtuElems.load()) {
-            mtuElems.store(numElems.load());
-            std::cout << "SDRThread: Device Stream MTU is broken, use " << mtuElems.load() << " instead..." << std::endl << std::flush;
+        //fallback if streamMTU was wrong
+        if (!streamMTU) {
+            streamMTU = numElems.load();
+            std::cout << "SDRThread: Device Stream MTU is broken, use " << streamMTU << " instead..." << std::endl << std::flush;
         } else {
-            std::cout << "SDRThread : Device Stream set to MTU: " << mtuElems.load() << std::endl << std::flush;
+            std::cout << "SDRThread : Device Stream set to MTU: " << streamMTU << std::endl << std::flush;
         }
 
-        overflowBuffer.data.resize(mtuElems.load());
+        // Allocate before committing so a failure leaves the current
+        // buffers and MTU live; a later rate change retries the switch.
+        void *freshBuff = ::malloc((size_t)streamMTU * 4 * sizeof(float));
+        if (!freshBuff) {
+            std::cout << "SDRThread: stream buffer allocation failed; keeping current buffers." << std::endl << std::flush;
+            return;
+        }
+
+        overflowBuffer.data.resize(streamMTU);
         if (buffs[0] != nullptr) {
             ::free(buffs[0]);
         }
-        buffs[0] = ::malloc(mtuElems.load() * 4 * sizeof(float));
+        buffs[0] = freshBuff;
+        mtuElems.store(streamMTU);
         //clear overflow buffer
         numOverflow = 0;
 

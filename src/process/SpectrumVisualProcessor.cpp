@@ -137,44 +137,62 @@ int SpectrumVisualProcessor::getDesiredInputSize() {
     return desiredInputSize;
 }
 
-void SpectrumVisualProcessor::setup(unsigned int fftSize_in) {
+bool SpectrumVisualProcessor::setup(unsigned int fftSize_in) {
 
     std::lock_guard < std::mutex > busy_lock(busy_run);    
 
-    fftSize = fftSize_in;
-    fftSizeInternal = fftSize_in * SPECTRUM_VZM;
-    lastDataSize = 0;
+    int fftSizeInternal_in = fftSize_in * SPECTRUM_VZM;
+    int memSize = sizeof(liquid_float_complex) * fftSizeInternal_in;
 
-    int memSize = sizeof(liquid_float_complex) * fftSizeInternal;
+    liquid_float_complex *fftInput_in = (liquid_float_complex*)malloc(memSize);
+    liquid_float_complex *fftInData_in = (liquid_float_complex*)malloc(memSize);
+    liquid_float_complex *fftLastData_in = (liquid_float_complex*)malloc(memSize);
+    liquid_float_complex *fftOutput_in = (liquid_float_complex*)malloc(memSize);
+
+    if (!fftInput_in || !fftInData_in || !fftLastData_in || !fftOutput_in) {
+        free(fftInput_in);
+        free(fftInData_in);
+        free(fftLastData_in);
+        free(fftOutput_in);
+        return false;
+    }
+
+    memset(fftInput_in,0,memSize);
+    memset(fftInData_in,0,memSize);
+    memset(fftLastData_in,0,memSize);
+    memset(fftOutput_in,0,memSize);
     
     if (fftInput) {
         free(fftInput);
     }
-    fftInput = (liquid_float_complex*)malloc(memSize);
-    memset(fftInput,0,memSize);
+    fftInput = fftInput_in;
     
     if (fftInData) {
         free(fftInData);
     }
-    fftInData = (liquid_float_complex*)malloc(memSize);
-    memset(fftInput,0,memSize);
+    fftInData = fftInData_in;
     
     if (fftLastData) {
         free(fftLastData);
     }
-    fftLastData = (liquid_float_complex*)malloc(memSize);
-    memset(fftInput,0,memSize);
+    fftLastData = fftLastData_in;
     
     if (fftOutput) {
         free(fftOutput);
     }
-    fftOutput = (liquid_float_complex*)malloc(memSize);
-    memset(fftInput,0,memSize);
+    fftOutput = fftOutput_in;
     
     if (fftPlan) {
         fft_destroy_plan(fftPlan);
     }
+
+    fftSize = fftSize_in;
+    fftSizeInternal = fftSizeInternal_in;
+    lastDataSize = 0;
+
     fftPlan = fft_create_plan(fftSizeInternal, fftInput, fftOutput, LIQUID_FFT_FORWARD, 0);
+
+    return true;
 }
 
 void SpectrumVisualProcessor::setFFTSize(unsigned int fftSize_in) {
@@ -228,7 +246,10 @@ void SpectrumVisualProcessor::process() {
 	}
 
 	if (executeSetup) {
-		setup(newFFTSize);
+		if (!setup(newFFTSize)) {
+			std::lock_guard < std::mutex > busy_lock(busy_run);
+			fftSizeChanged = true;
+		}
 	}
    
     DemodulatorThreadIQDataPtr iqData;

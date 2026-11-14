@@ -57,8 +57,8 @@ void WaterfallPanel::update() {
         //of size half_fft_size * waterfall_lines, which can be BIG.
         //The limit of the size of Waterfall is the size of the maximum supported 2D texture 
         //by the graphic card. (half_fft_size * waterfall_lines, i.e DEFAULT_DEMOD_WATERFALL_LINES_NB * DEFAULT_FFT_SIZE/2)
-        waterfall_tex = new unsigned char[half_fft_size * waterfall_lines];
-        memset(waterfall_tex, 0, half_fft_size * waterfall_lines);
+        waterfall_tex = new unsigned char[(size_t)half_fft_size * waterfall_lines];
+        memset(waterfall_tex, 0, (size_t)half_fft_size * waterfall_lines);
         
         for (unsigned int i : waterfall) {
             glBindTexture(GL_TEXTURE_2D, i);

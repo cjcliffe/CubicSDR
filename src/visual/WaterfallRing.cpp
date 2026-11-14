@@ -33,7 +33,7 @@ void WaterfallRing::setPoints(const std::vector<float> &points_in) {
         // Interleaved (x, y) pairs from the spectrum processor: magnitudes
         // live at the odd indexes, positions at the even ones.
         for (unsigned int i = 0; i < fftSize; i++) {
-            points[i] = points_in[i * 2 + 1];
+            points[i] = points_in[(size_t)i * 2 + 1];
         }
     } else {
         // Plain magnitude array from any other producer.
@@ -93,7 +93,7 @@ WaterfallRing::UploadPlan WaterfallRing::planUpload() {
         // Copy line (buffered-1-i): staging row i holds the i-th newest line.
         for (int j = 0; j < 2; j++) {
             memcpy(&rLineBuffer[j][(size_t)i * half],
-                   &lineBuffer[j][((size_t)(buffered - 1) * half) - ((size_t)i * half)], sizeof(unsigned char) * half);
+                   &lineBuffer[j][((size_t)buffered - 1) * half - ((size_t)i * half)], sizeof(unsigned char) * half);
         }
     }
 

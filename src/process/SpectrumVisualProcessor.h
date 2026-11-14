@@ -49,7 +49,7 @@ public:
     
     int getDesiredInputSize();
     
-    void setup(unsigned int fftSize);
+    bool setup(unsigned int fftSize);
     void setFFTSize(unsigned int fftSize);
     unsigned int getFFTSize();
     void setHideDC(bool hideDC_in);

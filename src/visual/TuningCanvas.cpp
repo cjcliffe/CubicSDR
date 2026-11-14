@@ -166,7 +166,7 @@ void TuningCanvas::StepTuner(ActiveState state, TuningDirection tuningDir, int d
 
         if (zeroOut) { // Zero digits to right
             double intpart;
-            modf(demod_freq / (exp * 10), &intpart);
+            (void)modf(demod_freq / (exp * 10), &intpart);
             demod_freq = intpart * exp * 10;
         } else if (preventCarry) { // Prevent digit from carrying
             bool carried = (long long)((demod_freq) / (exp * 10)) != (long long)((demod_freq + amount) / (exp * 10)) || (bottom && demod_freq < exp);
@@ -193,7 +193,7 @@ void TuningCanvas::StepTuner(ActiveState state, TuningDirection tuningDir, int d
 
         if (zeroOut) { // Zero digits to right
             double intpart;
-            modf(nbw / (exp * 10), &intpart);
+            (void)modf(nbw / (exp * 10), &intpart);
             nbw = intpart * exp * 10;
         } else if (preventCarry) { // Prevent digit from carrying
             bool carried = (long)((nbw) / (exp * 10)) != (long)((nbw + amount) / (exp * 10)) || (bottom && nbw < exp);
@@ -217,7 +217,7 @@ void TuningCanvas::StepTuner(ActiveState state, TuningDirection tuningDir, int d
         long long ctr = wxGetApp().getFrequency();
         if (zeroOut) { // Zero digits to right
             double intpart;
-            modf(ctr / (exp * 10), &intpart);
+            (void)modf(ctr / (exp * 10), &intpart);
             ctr = intpart * exp * 10;
         } else if (preventCarry) { // Prevent digit from carrying
             bool carried = (long long)((ctr) / (exp * 10)) != (long long)((ctr + amount) / (exp * 10)) || (bottom && ctr < exp);

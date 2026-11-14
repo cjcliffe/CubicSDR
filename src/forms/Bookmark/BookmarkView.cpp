@@ -287,7 +287,6 @@ wxTreeItemId BookmarkView::refreshBookmarks() {
    
     wxTreeItemId bmSelFound = nullptr;
     
-    std::map<std::string, bool> groupExpandState;
     bool searchState = !searchKeywords.empty();
     
     groups.clear();

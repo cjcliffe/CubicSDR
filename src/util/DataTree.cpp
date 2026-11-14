@@ -342,7 +342,11 @@ string DataTree::wsEncode(const wstring& wstr) {
     size_t bufSizeBytes = contentBytes + bufPad;
 
     char *data_str = (char *)calloc(bufSizeBytes, sizeof(char));
-    
+
+    if (!data_str) {
+        return "";
+    }
+
 #ifdef _MSC_VER
     size_t converted = 0;
     wcstombs_s(&converted, data_str, bufSizeBytes, wstr.c_str(), _TRUNCATE);
@@ -381,6 +385,10 @@ wstring DataTree::wsDecode(const string& str) {
 
     //wchar_t is typically 16 bits on windows, and 32 bits on Unix, so use sizeof(wchar_t) everywhere.
     auto *wc_str = (wchar_t *) ::calloc(maxLen  + 1, sizeof(wchar_t));
+
+    if (!wc_str) {
+        return L"";
+    }
 
     while (!decStream.eof()) {
         decStream >> std::hex >> x;
