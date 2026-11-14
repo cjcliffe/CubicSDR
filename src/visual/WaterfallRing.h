@@ -37,8 +37,8 @@ public:
 
     struct UploadPlan {
         std::vector<UploadOp> ops;
-        int rowOffset;  // ring row holding the newest line once committed; the panel scrolls the view to it
-        int consumed;   // buffered lines the upload absorbs
+        int rowOffset = 0;  // ring row holding the newest line once committed; the panel scrolls the view to it
+        int consumed = 0;     // buffered lines the upload absorbs
     };
 
     // Reverse buffered lines newest-first and describe the upload, capped at

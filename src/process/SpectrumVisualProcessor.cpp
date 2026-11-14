@@ -157,19 +157,19 @@ void SpectrumVisualProcessor::setup(unsigned int fftSize_in) {
         free(fftInData);
     }
     fftInData = (liquid_float_complex*)malloc(memSize);
-    memset(fftInput,0,memSize);
+    memset(fftInData,0,memSize);
     
     if (fftLastData) {
         free(fftLastData);
     }
     fftLastData = (liquid_float_complex*)malloc(memSize);
-    memset(fftInput,0,memSize);
+    memset(fftLastData,0,memSize);
     
     if (fftOutput) {
         free(fftOutput);
     }
     fftOutput = (liquid_float_complex*)malloc(memSize);
-    memset(fftInput,0,memSize);
+    memset(fftOutput,0,memSize);
     
     if (fftPlan) {
         fft_destroy_plan(fftPlan);
