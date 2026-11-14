@@ -141,6 +141,7 @@ Squelch is computed entirely within `DemodulatorThread` — no modem code partic
 - Fill `audioOut->data` with demodulated float audio (mono or stereo)
 - `ModemAnalog` base provides `initOutputBuffers()` and `buildAudioOutput()`
 - Audio resampling from demod rate to audio rate via `msresamp_rrrf`
+- Resample ratios are clamped to a bounded halfband stage budget (`ResampleGuard.h`); bandwidths that would exceed it are raised, and a failed resampler build mutes output instead of crashing
 - Only ModemFMStereo and ModemIQ produce stereo output (`channels = 2`); all others are mono
 - DSP approaches vary significantly: FM uses `freqdem_demodulate_block`, AM uses manual envelope detection (`sqrt(I*I+Q*Q)` + DC blocker, not `ampmodem`), DSB uses `ampmodem`, SSB uses NCO frequency shift + IIR lowpass + Hilbert transform, CW uses complex input resampling + NCO + Hilbert, FM Stereo has a full PLL-based MPX stereo decoder
 

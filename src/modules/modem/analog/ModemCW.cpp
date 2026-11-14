@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "ModemCW.h"
+#include "ResampleGuard.h"
+#include <iostream>
 
 // We are given a baseband segment BW (default 500Hz) wide which we want to
 // offset by mBeepFrequency (default 650Hz). This yields a spectrum.
@@ -118,17 +120,22 @@ int ModemCW::getDefaultSampleRate() {
 ModemKit *ModemCW::buildKit(long long sampleRate, int audioSampleRate) {
     auto *kit = new ModemKitCW();
     float As = 60.0f;
-    double ratio = double(audioSampleRate) / double(sampleRate);
+    double ratio = clampResampleRatio(double(audioSampleRate) / double(sampleRate));
     kit->sampleRate = sampleRate;
     kit->audioSampleRate = audioSampleRate;
     kit->audioResampleRatio = ratio;
     kit->mInputResampler = msresamp_cccf_create((float)ratio, As);
+    if (!kit->mInputResampler) {
+        std::cout << "ModemCW: msresamp_create failed; audio muted." << std::endl << std::flush;
+    }
     return kit;
 }
 
 void ModemCW::disposeKit(ModemKit *kit) {
     auto *cwkit = (ModemKitCW *) kit;
-    msresamp_cccf_destroy(cwkit->mInputResampler);
+    if (cwkit->mInputResampler) {
+        msresamp_cccf_destroy(cwkit->mInputResampler);
+    }
     delete kit;
 }
 
@@ -166,7 +173,11 @@ void ModemCW::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *au
 
     // Interpolate IQ samples to full audio band. We need to be able to
     // sample at 2 times the desired beep frequency.
-    msresamp_cccf_execute(cwkit->mInputResampler, &input->data[0], (unsigned int)bufSize, &mInput[0], &outSize);
+    if (cwkit->mInputResampler) {
+        msresamp_cccf_execute(cwkit->mInputResampler, &input->data[0], (unsigned int)bufSize, &mInput[0], &outSize);
+    } else {
+        outSize = 0;
+    }
 
     // Make the shoe fit.
     if (demodOutputData.size() != outSize) {

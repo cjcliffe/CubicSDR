@@ -3,6 +3,8 @@
 
 #include "DemodulatorWorkerThread.h"
 #include "CubicSDR.h"
+#include "ResampleGuard.h"
+#include <iostream>
 
 //50 ms
 #define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
@@ -74,6 +76,11 @@ void DemodulatorWorkerThread::run() {
             if (makeDemod && demodCommand.bandwidth && demodCommand.audioSampleRate) {
                 if (cModem != nullptr) {
                     result.bandwidth = cModem->checkSampleRate(demodCommand.bandwidth, demodCommand.audioSampleRate);
+                    long long floorBw = minResampleBandwidth(result.sampleRate);
+                    if ((long long)result.bandwidth < floorBw) {
+                        std::cout << "DemodulatorWorkerThread: bandwidth raised to " << floorBw << " for resampler stage budget." << std::endl << std::flush;
+                        result.bandwidth = (unsigned int)floorBw;
+                    }
                     cModemKit = cModem->buildKit(result.bandwidth, demodCommand.audioSampleRate);
                 } else {
                     cModemKit = nullptr;
@@ -81,6 +88,11 @@ void DemodulatorWorkerThread::run() {
             } else if (filterChanged && filterCommand.bandwidth && filterCommand.audioSampleRate) {
                 if (cModem != nullptr) {
                     result.bandwidth = cModem->checkSampleRate(filterCommand.bandwidth, filterCommand.audioSampleRate);
+                    long long floorBw = minResampleBandwidth(result.sampleRate);
+                    if ((long long)result.bandwidth < floorBw) {
+                        std::cout << "DemodulatorWorkerThread: bandwidth raised to " << floorBw << " for resampler stage budget." << std::endl << std::flush;
+                        result.bandwidth = (unsigned int)floorBw;
+                    }
                     cModemKit = cModem->buildKit(result.bandwidth, filterCommand.audioSampleRate);
                 } else {
                     cModemKit = nullptr;
@@ -96,8 +108,11 @@ void DemodulatorWorkerThread::run() {
             
             if (cModem && result.sampleRate && result.bandwidth) {
                 result.bandwidth = cModem->checkSampleRate(result.bandwidth, makeDemod?demodCommand.audioSampleRate:filterCommand.audioSampleRate);
-                result.iqResampleRatio = (double) (result.bandwidth) / (double) result.sampleRate;
+                result.iqResampleRatio = clampResampleRatio((double) (result.bandwidth) / (double) result.sampleRate);
                 result.iqResampler = msresamp_crcf_create(result.iqResampleRatio, As);
+                if (!result.iqResampler) {
+                    std::cout << "DemodulatorWorkerThread: msresamp_create failed; keeping current filters." << std::endl << std::flush;
+                }
             }
 
             result.modemKit = cModemKit;

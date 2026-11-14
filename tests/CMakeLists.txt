@@ -21,6 +21,7 @@ add_executable(cubicsdr_tests
     test_AudioMixer.cpp
     test_DemodReselect.cpp
     test_DemodCycle.cpp
+    test_ResampleGuard.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Gradient.cpp
     ${PROJECT_SOURCE_DIR}/src/util/DataTree.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Timer.cpp
