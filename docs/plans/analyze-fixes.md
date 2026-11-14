@@ -35,9 +35,17 @@ provably intention-preserving:
   `setBandwidth()`; now zero-initialized alongside `dragOfs`, which
   clamps to minimum bandwidth. The adjacent mid-drag demod-switch
   quirk stays as observed behavior.
+- *Narrowing arithmetic:* triaged all `C26451` sites. Fixed the new
+  code (peak products computed in `double`, ring indexes widened
+  before operating) and every allocation-length shape (stream-MTU
+  `malloc`, waterfall texture `new`/`memset`, callback `memset`).
+  The MTU value is driver-supplied but tiny in practice; the cast is
+  hygiene for the exact shape the check exists for. The remaining
+  sites are bounded index/pixel/frequency math (glyph atlas, spectrum
+  points, stream copies, menu IDs) — reviewed and left as noise.
 
-Left out deliberately: unchecked `malloc`/`calloc` results and the
-`C26451` bulk — each needs author judgment or a wider pass.
+Left out deliberately: unchecked `malloc`/`calloc` results — needs
+author judgment on failure policy.
 
 ## Steps
 

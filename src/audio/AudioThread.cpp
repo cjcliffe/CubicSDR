@@ -105,7 +105,7 @@ static int audioCallback(void *outputBuffer, void * /* inputBuffer */, unsigned 
 
     //Zero output buffer in all cases: this allow to mute audio if no AudioThread data is 
     //actually active.
-    ::memset(out, 0, nBufferFrames * 2 * sizeof(float));
+    ::memset(out, 0, (size_t)nBufferFrames * 2 * sizeof(float));
 
     //src in the controller thread:
     auto *src = (AudioThread *)userData;

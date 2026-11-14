@@ -87,7 +87,7 @@ double AudioMixer::mixVoice(MixerVoice &voice, float *out, unsigned int nFrames,
         return 0.0;
     }
 
-    double mixPeak = voice.currentInput->peak * voice.gain;
+    double mixPeak = (double)voice.currentInput->peak * voice.gain;
     bool mixed = false;
 
     if (voice.currentInput->channels == 1) {
@@ -120,7 +120,7 @@ double AudioMixer::mixVoice(MixerVoice &voice, float *out, unsigned int nFrames,
                 }
 
 
-                double srcPeak = voice.currentInput->peak * voice.gain;
+                double srcPeak = (double)voice.currentInput->peak * voice.gain;
                 if (mixPeak < srcPeak) {
                     mixPeak = srcPeak;
                 }
@@ -162,7 +162,7 @@ double AudioMixer::mixVoice(MixerVoice &voice, float *out, unsigned int nFrames,
                     break;
                 }
 
-                double srcPeak = voice.currentInput->peak * voice.gain;
+                double srcPeak = (double)voice.currentInput->peak * voice.gain;
                 if (mixPeak < srcPeak) {
                     mixPeak = srcPeak;
                 }

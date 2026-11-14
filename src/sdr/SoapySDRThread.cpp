@@ -639,7 +639,7 @@ void SDRThread::updateSettings() {
         if (buffs[0] != nullptr) {
             ::free(buffs[0]);
         }
-        buffs[0] = ::malloc(mtuElems.load() * 4 * sizeof(float));
+        buffs[0] = ::malloc((size_t)mtuElems.load() * 4 * sizeof(float));
         //clear overflow buffer
         numOverflow = 0;
 
