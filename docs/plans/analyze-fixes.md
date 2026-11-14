@@ -2,7 +2,7 @@
 
 Silence the cheap, unambiguous MSVC `/analyze` findings in app code:
 an uninitialized struct member, deliberately-discarded return values,
-and a dead temporary.
+a dead temporary, plus a fail-soft policy for unchecked `malloc`/`calloc`.
 
 ## Success Criteria
 
@@ -44,8 +44,21 @@ provably intention-preserving:
   sites are bounded index/pixel/frequency math (glyph atlas, spectrum
   points, stream copies, menu IDs) — reviewed and left as noise.
 
-Left out deliberately: unchecked `malloc`/`calloc` results — needs
-author judgment on failure policy.
+- *Unchecked allocation:* allocate-then-commit with fail-soft
+  bail. `SpectrumVisualProcessor::setup()` returns `bool`; it builds
+  all FFT buffers before touching live state, frees partial results
+  and returns false on failure, and `process()` re-arms the resize
+  strobe on false so the next frame retries with current buffers
+  intact. `DataTree::wsEncode()`/`wsDecode()` return empty on
+  `calloc` failure. `SDRThread::updateSettings()` allocates the
+  stream buffer to a local and commits (free old, store MTU, resize
+  overflow) only on success; on failure it logs once and returns
+  with current buffers live and no update notify. No re-arm there:
+  retrying would repeat the device deactivate/set/activate dance
+  every turn; the next rate change retries the switch. First-run
+  failure still leaves null buffers (nothing to preserve); the
+  `overflowBuffer` vector growth throws rather than returning null,
+  so a uniform OOM policy for exceptions stays future work.
 
 ## Steps
 
@@ -67,4 +80,7 @@ author judgment on failure policy.
 ## Outcome
 
 Implemented as planned. Build green with no new warnings; suites
-green. The deferred findings above remain future work.
+green. No new maintained test: the `setup()` contract needs
+liquid-dsp linkage the test target excludes by design, the `ws`
+guards are private with happy paths already covered by the XML
+wstring round-trips, and the stream block needs a live device.
