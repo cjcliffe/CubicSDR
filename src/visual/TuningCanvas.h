@@ -59,6 +59,7 @@ private:
     int hoverIndex;
     int downIndex;
     bool dragging;
+    int wheelAccumV = 0, wheelAccumH = 0;
 
     float freqDP;
     float freqW;
