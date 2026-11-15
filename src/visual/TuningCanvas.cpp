@@ -362,10 +362,22 @@ void TuningCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
     int hExponent = hoverIndex - 1;
 
     if (hoverState != TUNING_HOVER_NONE && !mouseTracker.mouseDown() && hoverIndex) {
-        if (event.m_wheelAxis == wxMOUSE_WHEEL_VERTICAL) {
-            StepTuner(hoverState, (event.m_wheelRotation > 0) ? TUNING_DIRECTION_UP : TUNING_DIRECTION_DOWN, hExponent, shiftDown, false);
-        } else {
-            StepTuner(hoverState, (event.m_wheelRotation < 0) ? TUNING_DIRECTION_UP : TUNING_DIRECTION_DOWN, hExponent, shiftDown, false);
+        bool vertical = (event.m_wheelAxis == wxMOUSE_WHEEL_VERTICAL);
+        int *accum = vertical ? &wheelAccumV : &wheelAccumH;
+        int delta = event.m_wheelDelta ? event.m_wheelDelta : 120;
+        *accum += event.m_wheelRotation;
+        int steps = *accum / delta;
+        if (steps != 0) {
+            *accum -= steps * delta;
+            TuningDirection dir;
+            if (vertical) {
+                dir = (steps > 0) ? TUNING_DIRECTION_UP : TUNING_DIRECTION_DOWN;
+            } else {
+                dir = (steps < 0) ? TUNING_DIRECTION_UP : TUNING_DIRECTION_DOWN;
+            }
+            for (int i = 0, n = steps > 0 ? steps : -steps; i < n; i++) {
+                StepTuner(hoverState, dir, hExponent, shiftDown, false);
+            }
         }
     }
     Refresh();

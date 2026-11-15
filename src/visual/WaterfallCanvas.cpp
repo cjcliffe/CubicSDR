@@ -700,7 +700,9 @@ void WaterfallCanvas::OnMouseDown(wxMouseEvent& event) {
 
 void WaterfallCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseWheelMoved(event);
-    float movement = (float)event.GetWheelRotation() / (float)event.GetLinesPerAction();
+    int wheelDelta = event.GetWheelDelta() ? event.GetWheelDelta() : 120;
+    float notches = (float)event.GetWheelRotation() / (float)wheelDelta;
+    float movement = notches * 40.0f;
 
     mouseZoom = 1.0f - movement/1000.0f;
 }
