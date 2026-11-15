@@ -20,6 +20,9 @@ SDRDeviceAddDialog::SDRDeviceAddDialog( wxWindow* parent ): SDRDeviceAddForm( pa
             m_soapyModule->Append(*factory_i);
         }
     }
+
+    Fit();
+    Centre(wxBOTH);
 }
 
 void SDRDeviceAddDialog::OnSoapyModuleChanged( wxCommandEvent& /* event */) {
