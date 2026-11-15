@@ -7,6 +7,7 @@
 
 #include "CubicSDR.h"
 #include "AppFrame.h"
+#include "AudioDeviceMatch.h"
 #include "DemodReselect.h"
 #include "DemodCycle.h"
 
@@ -556,22 +557,25 @@ DemodulatorInstancePtr DemodulatorMgr::loadInstance(DataNode *node) {
         newDemod->setSquelchLevel(squelch_level);
     }
     
-	//Attach to sound output:
+    //Attach to sound output:
     std::map<int, RtAudio::DeviceInfo>::iterator i;
 
-	bool matching_device_found = false;
+    bool matching_device_found = false;
 
+    //The XML layer condenses whitespace runs on load, so the saved name can
+    //only be compared whitespace-insensitively (GH#842).
     for (i = outputDevices.begin(); i != outputDevices.end(); i++) {
-        if (i->second.name == output_device) {
+        if (audioDeviceNameMatches(output_device, i->second.name)) {
             newDemod->setOutputDevice(i->first);
-			matching_device_found = true;
-			break;
+            matching_device_found = true;
+            break;
         }
     }
-	//if no device is found, choose the first of the list anyway.
-	if (!matching_device_found) {
-		newDemod->setOutputDevice(outputDevices.begin()->first);
-	}
+
+    //if no device is found, choose the first of the list anyway.
+    if (!matching_device_found && !outputDevices.empty()) {
+        newDemod->setOutputDevice(outputDevices.begin()->first);
+    }
     
     return newDemod;
 }
