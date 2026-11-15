@@ -73,7 +73,8 @@ public:
     
     void setFrequency(long long freq);
     long long getFrequency();
-    
+    bool getDeviceFrequencyRange(long long &minHz, long long &maxHz);
+
     void lockFrequency(long long freq);
     bool isFrequencyLocked();
     void unlockFrequency();
@@ -126,6 +127,8 @@ protected:
     std::atomic_llong sampleRate;
     std::atomic_llong pendingSampleRate;
     std::atomic_llong frequency, offset, lock_freq;
+    std::atomic_llong deviceFreqMin, deviceFreqMax;
+    std::atomic_bool deviceFreqRangeValid;
     std::atomic_int ppm, numElems, mtuElems, numChannels;
     std::atomic_bool hasPPM, hasHardwareDC;
     std::string antennaName;

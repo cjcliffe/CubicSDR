@@ -445,10 +445,6 @@ int DemodulatorInstance::getBandwidth() {
 }
 
 void DemodulatorInstance::setFrequency(long long freq) {
-    if ((freq - getBandwidth() / 2) <= 0) {
-        freq = getBandwidth() / 2;
-    }
-    
     demodulatorPreThread->setFrequency(freq);
 #if ENABLE_DIGITAL_LAB
     if (activeOutput) {

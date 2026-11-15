@@ -15,6 +15,7 @@
 
 #include "CubicSDR.h"
 #include "CubicSDRDefs.h"
+#include "TuneRange.h"
 #include "AppFrame.h"
 #include "Frequency.h"
 #include <algorithm>
@@ -132,11 +133,7 @@ void SpectrumCanvas::moveCenterFrequency(long long freqChange) {
     long long freq = wxGetApp().getFrequency();
 
     if (isView) {
-        if (centerFreq - freqChange < bandwidth/2) {
-            centerFreq = bandwidth/2;
-        } else {
-            centerFreq -= freqChange;
-        }
+        centerFreq -= freqChange;
 
         if (waterfallCanvas) {
             waterfallCanvas->setCenterFrequency(centerFreq);
@@ -153,12 +150,20 @@ void SpectrumCanvas::moveCenterFrequency(long long freqChange) {
     }
 
     if (freqChange) {
-        if (freq - freqChange < wxGetApp().getSampleRate()/2) {
-            freq = wxGetApp().getSampleRate()/2;
-        } else {
-            freq -= freqChange;
-        }
+        freq -= freqChange;
         wxGetApp().setFrequency(freq);
+    }
+
+    if (isView) {
+        //The device may have clamped the retune; pin the view back into
+        //the data window.
+        long long pinned = pinViewCenter(centerFreq, bandwidth, wxGetApp().getFrequency(), wxGetApp().getSampleRate());
+        if (pinned != centerFreq) {
+            centerFreq = pinned;
+            if (waterfallCanvas) {
+                waterfallCanvas->setCenterFrequency(centerFreq);
+            }
+        }
     }
 }
 

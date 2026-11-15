@@ -246,6 +246,11 @@ void SpectrumPanel::drawPanelContents() {
         if (m > 1.0) {
             break;
         }
+        //Axis labels stop at zero; the 0.0 tick marks the edge of real spectrum.
+        if (currentMhz < -1e-9) {
+            currentMhz += mhzVisualStep;
+            continue;
+        }
         label << std::fixed << currentMhz;
         
         double fractpart, intpart;

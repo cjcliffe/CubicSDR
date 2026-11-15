@@ -15,6 +15,7 @@
 #endif
 
 #include "CubicSDR.h"
+#include "TuneRange.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -628,7 +629,10 @@ void CubicSDR::sdrEnumThreadNotify(SDREnumerator::SDREnumState state, std::strin
 
 
 void CubicSDR::setFrequency(long long freq) {
-    if (freq < sampleRate / 2) {
+    long long rangeMin, rangeMax;
+    if (sdrThread && sdrThread->getDeviceFrequencyRange(rangeMin, rangeMax)) {
+        freq = clampTuneFrequency(freq, offset.load(), rangeMin, rangeMax);
+    } else if (freq < sampleRate / 2) {
         freq = sampleRate / 2;
     }
     frequency = freq;
@@ -827,10 +831,6 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev, int waitMsForTermination) {
             sampleRateInitialized.store(true);
         } else {
             sampleRate = dev->getSampleRateNear(SOAPY_SDR_RX, 0, sampleRate);
-        }
-
-        if (frequency < sampleRate/2) {
-            frequency = sampleRate/2;
         }
 
         setFrequency(frequency);

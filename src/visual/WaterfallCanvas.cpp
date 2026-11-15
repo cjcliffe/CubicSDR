@@ -15,6 +15,7 @@
 
 #include "CubicSDR.h"
 #include "CubicSDRDefs.h"
+#include "TuneRange.h"
 #include "AppFrame.h"
 #include <algorithm>
 
@@ -179,11 +180,6 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     
     if (freqMove != 0.0) {
         long long newFreq = getCenterFrequency() + (long long)((long double)getBandwidth()*freqMove) * 0.01;
-        
-        long long minFreq = bandwidth/2;
-        if (newFreq < minFreq) {
-            newFreq = minFreq;
-        }
 
         updateCenterFrequency(newFreq);
         
@@ -498,11 +494,6 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
         return;
     }
 
-    long long minFreq = bandwidth/2;
-    if (freq < minFreq) {
-        freq = minFreq;
-    }
-
     if (freq != originalFreq) {
         updateCenterFrequency(freq);
     }
@@ -652,7 +643,7 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
             }
 
             if (bwDiff) {
-                demod->setFrequency(currentFreq + bwDiff);
+                demod->setFrequency(pinDemodCenter(currentFreq + bwDiff, getCenterFrequency(), getBandwidth()));
                 if (demod->isDeltaLock()) {
                     demod->setDeltaLockOfs(demod->getFrequency() - wxGetApp().getFrequency());
                 }
@@ -844,6 +835,7 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
             freq = roundl((long double)freq/(double)snap)*snap;
         }
 
+        freq = pinDemodCenter(freq, getCenterFrequency(), getBandwidth());
 
         if (!isNew && !wxGetApp().getDemodMgr().getDemodulators().empty()) {
             mgr->updateLastState();
@@ -972,6 +964,17 @@ void WaterfallCanvas::updateCenterFrequency(long long freq) {
         }
         if (freq + bandwidth / 2 > maxFreq) {
             wxGetApp().setFrequency(wxGetApp().getFrequency() + ((freq + bandwidth/2) - maxFreq));
+        }
+
+        //The device may have clamped the retune; pin the view back into
+        //the data window.
+        long long pinned = pinViewCenter(freq, getBandwidth(), wxGetApp().getFrequency(), wxGetApp().getSampleRate());
+        if (pinned != freq) {
+            freq = pinned;
+            setView(freq, getBandwidth());
+            if (spectrumCanvas) {
+                spectrumCanvas->setView(freq, getBandwidth());
+            }
         }
     } else {
         if (spectrumCanvas) {
