@@ -288,6 +288,46 @@ std::string SDRDeviceInfo::getAntennaName(int direction, size_t channel) {
 
 }
 
+bool SDRDeviceInfo::getFrequencyRange(long long &minHz, long long &maxHz) {
+    SoapySDR::Device *dev = getSoapyDevice();
+
+    if (!dev) {
+        return false;
+    }
+
+    //Drivers override either the bare or the named form; merge both spans.
+    //A throwing driver reports nothing usable: fall back to legacy clamping.
+    SoapySDR::RangeList ranges;
+    try {
+        ranges = dev->getFrequencyRange(SOAPY_SDR_RX, 0);
+        SoapySDR::RangeList rfRanges = dev->getFrequencyRange(SOAPY_SDR_RX, 0, "RF");
+        ranges.insert(ranges.end(), rfRanges.begin(), rfRanges.end());
+    } catch (...) {
+        return false;
+    }
+
+    bool found = false;
+    for (const auto &range : ranges) {
+        long long lo = (long long)range.minimum();
+        long long hi = (long long)range.maximum();
+        if (hi < lo || hi <= 0) {
+            continue;
+        }
+        if (lo < 0) {
+            lo = 0;
+        }
+        if (!found || lo < minHz) {
+            minHz = lo;
+        }
+        if (!found || hi > maxHz) {
+            maxHz = hi;
+        }
+        found = true;
+    }
+
+    return found;
+}
+
 long SDRDeviceInfo::getSampleRateNear(int direction, size_t channel, long sampleRate_in) {
     std::vector<long> sampleRates = getSampleRates(direction, channel);
     long returnRate = sampleRates[0];

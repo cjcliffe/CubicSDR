@@ -90,6 +90,10 @@ public:
     
     long getSampleRateNear(int direction, size_t channel, long sampleRate_in);
 
+    // Overall [minHz,maxHz] span across the driver's RX tuning ranges;
+    // false when the driver reports nothing usable.
+    bool getFrequencyRange(long long &minHz, long long &maxHz);
+
     SDRRangeMap getGains(int direction, size_t channel);
 
 	//read the current gain of name gainName (must exist in getGains(), else return 0)

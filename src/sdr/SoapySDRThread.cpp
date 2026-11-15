@@ -3,6 +3,7 @@
 
 #include "SoapySDRThread.h"
 #include "CubicSDRDefs.h"
+#include "TuneRange.h"
 #include <vector>
 #include "CubicSDR.h"
 #include <string>
@@ -25,6 +26,9 @@ SDRThread::SDRThread() : IOThread(), buffers("SDRThreadBuffers") {
     frequency.store(0);
     offset.store(0);
     ppm.store(0);
+    deviceFreqMin.store(0);
+    deviceFreqMax.store(0);
+    deviceFreqRangeValid.store(false);
 
     numElems.store(0);
     
@@ -670,13 +674,22 @@ void SDRThread::updateSettings() {
         // during drags while still converging on the latest request.
         freq_changed.store(false);
         bool tuned = false;
-        if (frequency_locked.load() && !frequency_lock_init.load()) {
-            device->setFrequency(SOAPY_SDR_RX,0,"RF",lock_freq.load());
-            frequency_lock_init.store(true);
-            tuned = true;
-        } else if (!frequency_locked.load()) {
-            device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency.load() - offset.load());
-            tuned = true;
+        //A throwing driver must drop the tune, not escape the thread: an
+        //uncaught exception here terminates the app. The buffered samples
+        //are still at the old frequency, so skipping the drain is correct.
+        try {
+            if (frequency_locked.load() && !frequency_lock_init.load()) {
+                device->setFrequency(SOAPY_SDR_RX,0,"RF",lock_freq.load());
+                frequency_lock_init.store(true);
+                tuned = true;
+            } else if (!frequency_locked.load()) {
+                device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency.load() - offset.load());
+                tuned = true;
+            }
+        } catch (const std::exception &e) {
+            std::cout << "SDRThread: tune failed (" << e.what() << "), keeping current frequency." << std::endl;
+        } catch (...) {
+            std::cout << "SDRThread: tune failed, keeping current frequency." << std::endl;
         }
         // Post-tune drain: samples buffered while the call ran were
         // captured at the old frequency; discard them (non-blocking)
@@ -793,8 +806,17 @@ void SDRThread::setDevice(SDRDeviceInfo *dev) {
     deviceInfo.store(dev);
     if (dev) {
         deviceConfig.store(wxGetApp().getConfig()->getDevice(dev->getDeviceId()));
+        long long rangeMin, rangeMax;
+        if (dev->getFrequencyRange(rangeMin, rangeMax)) {
+            deviceFreqMin.store(rangeMin);
+            deviceFreqMax.store(rangeMax);
+            deviceFreqRangeValid.store(true);
+        } else {
+            deviceFreqRangeValid.store(false);
+        }
     } else {
         deviceConfig.store(nullptr);
+        deviceFreqRangeValid.store(false);
     }
 }
 
@@ -827,7 +849,10 @@ int SDRThread::getOptimalChannelCount(long long sampleRate_in) {
 
 
 void SDRThread::setFrequency(long long freq) {
-    if (freq < sampleRate.load() / 2) {
+    long long rangeMin, rangeMax;
+    if (getDeviceFrequencyRange(rangeMin, rangeMax)) {
+        freq = clampTuneFrequency(freq, offset.load(), deviceTuneFloor(rangeMin, sampleRate.load()), rangeMax);
+    } else if (freq < sampleRate.load() / 2) {
         freq = sampleRate.load() / 2;
     }
     frequency.store(freq);
@@ -836,6 +861,15 @@ void SDRThread::setFrequency(long long freq) {
 
 long long SDRThread::getFrequency() {
     return frequency.load();
+}
+
+bool SDRThread::getDeviceFrequencyRange(long long &minHz, long long &maxHz) {
+    if (!deviceFreqRangeValid.load()) {
+        return false;
+    }
+    minHz = deviceFreqMin.load();
+    maxHz = deviceFreqMax.load();
+    return true;
 }
 
 void SDRThread::lockFrequency(long long freq) {
