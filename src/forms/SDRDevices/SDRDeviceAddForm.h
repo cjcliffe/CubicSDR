@@ -51,7 +51,7 @@ class SDRDeviceAddForm : public wxDialog
 	
 	public:
 		
-		SDRDeviceAddForm( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Add SoapySDR Device"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 395,293 ), long style = wxDEFAULT_DIALOG_STYLE ); 
+		SDRDeviceAddForm( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Add SoapySDR Device"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 395,293 ), long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER ); 
 		~SDRDeviceAddForm();
 	
 };
