@@ -631,7 +631,7 @@ void CubicSDR::sdrEnumThreadNotify(SDREnumerator::SDREnumState state, std::strin
 void CubicSDR::setFrequency(long long freq) {
     long long rangeMin, rangeMax;
     if (sdrThread && sdrThread->getDeviceFrequencyRange(rangeMin, rangeMax)) {
-        freq = clampTuneFrequency(freq, offset.load(), rangeMin, rangeMax);
+        freq = clampTuneFrequency(freq, offset.load(), deviceTuneFloor(rangeMin, sampleRate), rangeMax);
     } else if (freq < sampleRate / 2) {
         freq = sampleRate / 2;
     }

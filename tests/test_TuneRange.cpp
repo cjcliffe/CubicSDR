@@ -16,6 +16,16 @@ TEST_SUITE("TuneRange") {
         CHECK(clampTuneFrequency(2000000000LL, 0, 24000000LL, 1766000000LL) == 1766000000LL);
     }
 
+    TEST_CASE("tune floor never exceeds the legacy floor") {
+        CHECK(deviceTuneFloor(24000000LL, 2400000L) == 1200000LL);
+        CHECK(deviceTuneFloor(1200000LL, 2400000L) == 1200000LL);
+    }
+
+    TEST_CASE("tune floor drops when the driver opens room") {
+        CHECK(deviceTuneFloor(0LL, 2400000L) == 0LL);
+        CHECK(deviceTuneFloor(500000LL, 2400000L) == 500000LL);
+    }
+
     TEST_CASE("clamp applies to the offset-adjusted driver frequency") {
         CHECK(clampTuneFrequency(150000000LL, 125000000LL, 24000000LL, 1766000000LL) == 150000000LL);
         CHECK(clampTuneFrequency(140000000LL, 125000000LL, 24000000LL, 1766000000LL) == 149000000LL);

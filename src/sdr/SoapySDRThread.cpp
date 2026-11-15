@@ -674,13 +674,22 @@ void SDRThread::updateSettings() {
         // during drags while still converging on the latest request.
         freq_changed.store(false);
         bool tuned = false;
-        if (frequency_locked.load() && !frequency_lock_init.load()) {
-            device->setFrequency(SOAPY_SDR_RX,0,"RF",lock_freq.load());
-            frequency_lock_init.store(true);
-            tuned = true;
-        } else if (!frequency_locked.load()) {
-            device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency.load() - offset.load());
-            tuned = true;
+        //A throwing driver must drop the tune, not escape the thread: an
+        //uncaught exception here terminates the app. The buffered samples
+        //are still at the old frequency, so skipping the drain is correct.
+        try {
+            if (frequency_locked.load() && !frequency_lock_init.load()) {
+                device->setFrequency(SOAPY_SDR_RX,0,"RF",lock_freq.load());
+                frequency_lock_init.store(true);
+                tuned = true;
+            } else if (!frequency_locked.load()) {
+                device->setFrequency(SOAPY_SDR_RX,0,"RF",frequency.load() - offset.load());
+                tuned = true;
+            }
+        } catch (const std::exception &e) {
+            std::cout << "SDRThread: tune failed (" << e.what() << "), keeping current frequency." << std::endl;
+        } catch (...) {
+            std::cout << "SDRThread: tune failed, keeping current frequency." << std::endl;
         }
         // Post-tune drain: samples buffered while the call ran were
         // captured at the old frequency; discard them (non-blocking)
@@ -842,7 +851,7 @@ int SDRThread::getOptimalChannelCount(long long sampleRate_in) {
 void SDRThread::setFrequency(long long freq) {
     long long rangeMin, rangeMax;
     if (getDeviceFrequencyRange(rangeMin, rangeMax)) {
-        freq = clampTuneFrequency(freq, offset.load(), rangeMin, rangeMax);
+        freq = clampTuneFrequency(freq, offset.load(), deviceTuneFloor(rangeMin, sampleRate.load()), rangeMax);
     } else if (freq < sampleRate.load() / 2) {
         freq = sampleRate.load() / 2;
     }

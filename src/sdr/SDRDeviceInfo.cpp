@@ -313,6 +313,9 @@ bool SDRDeviceInfo::getFrequencyRange(long long &minHz, long long &maxHz) {
         if (hi < lo || hi <= 0) {
             continue;
         }
+        if (lo < 0) {
+            lo = 0;
+        }
         if (!found || lo < minHz) {
             minHz = lo;
         }

@@ -3,6 +3,15 @@
 
 #pragma once
 
+// The low end trusts the driver only when it opens more room than the
+// legacy floor: drivers that ignore special modes (unpatched SoapyRTLSDR
+// reports the tuner range in direct-sampling mode) must not take away
+// tuning that works today. The high end always trusts the driver.
+inline long long deviceTuneFloor(long long driverMin, long long sampleRate) {
+    long long legacy = sampleRate / 2;
+    return driverMin < legacy ? driverMin : legacy;
+}
+
 // The driver is tuned to the displayed frequency minus the offset
 // (upconverters), so the device range clamps that RF value, not the
 // display value; the result is shifted back to display domain.
