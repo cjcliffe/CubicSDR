@@ -34,9 +34,9 @@ throws on an out-of-range tune terminates the whole app.
   and rolloff — the FFT bins exist across the whole window) displays
   without ever rendering past the data.
 - *Demods:* the zero floor in `setFrequency` is removed so drops land
-  where clicked, and frequency/range drags pin the center to the view —
-  previously a drag could push a demod past the data window where the
-  post thread deactivates it.
+  where clicked, and frequency/range drags plus tuning-digit steps pin
+  the center to the view — previously either could push a demod past
+  the data window where the post thread deactivates it.
 - *Labels:* spectrum axis ticks stop at zero (no mirrored negative
   labels) with the `0.0` tick marking the boundary, snapped so float
   residue never renders `-0.0`.

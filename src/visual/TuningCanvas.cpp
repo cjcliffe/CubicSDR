@@ -15,6 +15,7 @@
 
 #include "CubicSDR.h"
 #include "CubicSDRDefs.h"
+#include "TuneRange.h"
 #include "AppFrame.h"
 #include <algorithm>
 
@@ -173,6 +174,14 @@ void TuningCanvas::StepTuner(ActiveState state, TuningDirection tuningDir, int d
             demod_freq += carried ? (9 * -amount) : amount;
         } else {
             demod_freq += amount;
+        }
+
+        //Pin the stepped frequency into the view like a drag does; past the
+        //data window the post thread would deactivate the demod.
+        AppFrame *appframe = wxGetApp().getAppFrame();
+        if (appframe && appframe->getWaterfallCanvas()) {
+            demod_freq = pinDemodCenter(demod_freq, appframe->getWaterfallCanvas()->getCenterFrequency(),
+                appframe->getWaterfallCanvas()->getBandwidth());
         }
 
         if (wxGetApp().getSampleRate() / 2 < diff) {
