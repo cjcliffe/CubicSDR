@@ -39,6 +39,13 @@ inline long long pinDemodCenter(long long freq, long long viewCenter, long long 
     return freq;
 }
 
+// Delta-lock offset convention shared with the post thread, which
+// enforces freq == center + ofs: the offset is the demod frequency
+// minus the device center. Every writer uses this sign.
+inline long long deltaLockOffset(long long freq, long long centerFreq) {
+    return freq - centerFreq;
+}
+
 // Keep [viewCenter +/- viewBW/2] inside the data window
 // [deviceFreq +/- sampleRate/2]. Views at least as wide as the data
 // have no room to pan and collapse to device center. Sub-zero views

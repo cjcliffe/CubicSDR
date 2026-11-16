@@ -645,7 +645,7 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
             if (bwDiff) {
                 demod->setFrequency(pinDemodCenter(currentFreq + bwDiff, getCenterFrequency(), getBandwidth()));
                 if (demod->isDeltaLock()) {
-                    demod->setDeltaLockOfs(demod->getFrequency() - wxGetApp().getFrequency());
+                    demod->setDeltaLockOfs(deltaLockOffset(demod->getFrequency(), wxGetApp().getFrequency()));
                 }
                 currentFreq = demod->getFrequency();
                 demod->updateLabel(currentFreq);
@@ -751,7 +751,7 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
                 demod->setMuted(mgr->isLastMuted());
                 if (mgr->getLastDeltaLock()) {
                     demod->setDeltaLock(true);
-                    demod->setDeltaLockOfs(wxGetApp().getFrequency()-freq);
+                    demod->setDeltaLockOfs(deltaLockOffset(freq, wxGetApp().getFrequency()));
                 } else {
                     demod->setDeltaLock(false);
                 }
@@ -770,7 +770,7 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
             demod->updateLabel(freq);
             demod->setFrequency(freq);
             if (demod->isDeltaLock()) {
-                demod->setDeltaLockOfs(demod->getFrequency() - wxGetApp().getFrequency());
+                demod->setDeltaLockOfs(deltaLockOffset(demod->getFrequency(), wxGetApp().getFrequency()));
             }
   
             if (isNew) {
@@ -851,7 +851,7 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
             demod->setMuted(mgr->isLastMuted());
             if (mgr->getLastDeltaLock()) {
                 demod->setDeltaLock(true);
-                demod->setDeltaLockOfs(wxGetApp().getFrequency()-freq);
+                demod->setDeltaLockOfs(deltaLockOffset(freq, wxGetApp().getFrequency()));
             } else {
                 demod->setDeltaLock(false);
             }
@@ -871,6 +871,9 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
 
         demod->updateLabel(freq);
         demod->setFrequency(freq);
+        if (demod->isDeltaLock()) {
+            demod->setDeltaLockOfs(deltaLockOffset(demod->getFrequency(), wxGetApp().getFrequency()));
+        }
         demod->setBandwidth(bw);
         mgr->setActiveDemodulator(demod);
         mgr->updateLastState();

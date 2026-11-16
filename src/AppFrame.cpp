@@ -31,6 +31,7 @@
 #include "DemodulatorMgr.h"
 #include "ImagePanel.h"
 #include "ActionDialog.h"
+#include "TuneRange.h"
 
 #include <thread>
 #include <iostream>
@@ -2536,6 +2537,7 @@ void AppFrame::processFrame() {
         handleDemodWaterfallSpectrum();
         handleSpectrumWaterfall();
         handleMuteButton();
+        handleDeltaLockButton();
         // No demodulator to record: park the button instead of showing a
         // stale recording state from a deleted demodulator.
         if (demodRecordButton->getSelection() != -1) {
@@ -2698,6 +2700,18 @@ void AppFrame::handleMuteButton() {
             wxGetApp().getDemodMgr().setLastMuted(true);
         }
         demodMuteButton->clearModeChanged();
+    }
+}
+
+void AppFrame::handleDeltaLockButton() {
+    if (deltaLockButton->modeChanged()) {
+        int deltaMode = deltaLockButton->getSelection();
+        if (deltaMode == -1) {
+            wxGetApp().getDemodMgr().setLastDeltaLock(false);
+        } else if (deltaMode == 1) {
+            wxGetApp().getDemodMgr().setLastDeltaLock(true);
+        }
+        deltaLockButton->clearModeChanged();
     }
 }
 
@@ -2907,7 +2921,7 @@ void AppFrame::handleCurrentModem() {
             if (demod->isDeltaLock() && deltaMode == -1) {
                 demod->setDeltaLock(false);
             } else if (!demod->isDeltaLock() && deltaMode == 1) {
-                demod->setDeltaLockOfs(demod->getFrequency() - wxGetApp().getFrequency());
+                demod->setDeltaLockOfs(deltaLockOffset(demod->getFrequency(), wxGetApp().getFrequency()));
                 demod->setDeltaLock(true);
             }
             wxGetApp().getDemodMgr().setLastDeltaLock(demod->isDeltaLock());
@@ -3187,6 +3201,14 @@ FrequencyDialog::FrequencyDialogTarget AppFrame::getFrequencyDialogTarget() {
 
 void AppFrame::gkNudge(const DemodulatorInstancePtr& demod, int snap) {
     if (demod) {
+        //A delta-locked demod rides the center: slide the assembly instead of
+        //setting a frequency the post thread snaps straight back (GH#629).
+        //The post thread advances the demod and its label exactly once.
+        if (demod->isDeltaLock()) {
+            wxGetApp().setFrequency(wxGetApp().getFrequency()+snap);
+            return;
+        }
+
         auto demodFreq = demod->getFrequency()+snap;
         auto demodBw = demod->getBandwidth();
 
@@ -3240,14 +3262,8 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     DemodulatorInstancePtr demod = nullptr;
      
     DemodulatorInstancePtr lastDemod = wxGetApp().getDemodMgr().getCurrentModem();
-    // Nudge acts on the hovered demodulator while the cursor is in the
-    // waterfall, and falls back to the selection when it is not: once a
-    // nudge moves the hovered demod out from under the cursor it must stop
-    // rather than start moving the selection.
-    DemodulatorInstancePtr actionDemod = waterfallCanvas ? waterfallCanvas->getHoverDemod() : nullptr;
-    if (!actionDemod && waterfallCanvas && !waterfallCanvas->getMouseTracker()->mouseInView()) {
-        actionDemod = lastDemod;
-    }
+    //Nudge always acts on the selection.
+    DemodulatorInstancePtr actionDemod = lastDemod;
     
     int snap = wxGetApp().getFrequencySnap();
     
@@ -3389,11 +3405,9 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     }
 
     DemodulatorInstancePtr lastDemod = wxGetApp().getDemodMgr().getCurrentModem();
-    // V/M/R act on the hovered demodulator while the cursor is in the
-    // waterfall, and fall back to the selection when it is not.
-    DemodulatorInstancePtr hoverDemod = waterfallCanvas ? waterfallCanvas->getHoverDemod() : nullptr;
-    DemodulatorInstancePtr actionDemod = hoverDemod;
-    if (!actionDemod && waterfallCanvas && !waterfallCanvas->getMouseTracker()->mouseInView()) {
+    //V/M/R prefer the hovered demodulator but always fall back to the selection.
+    DemodulatorInstancePtr actionDemod = waterfallCanvas ? waterfallCanvas->getHoverDemod() : nullptr;
+    if (!actionDemod) {
         actionDemod = lastDemod;
     }
     
@@ -3427,7 +3441,7 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
             if (actionDemod && actionDemod->isDeltaLock()) {
                 actionDemod->setDeltaLock(false);
             } else if (actionDemod) {
-                actionDemod->setDeltaLockOfs(actionDemod->getFrequency() - wxGetApp().getFrequency());
+                actionDemod->setDeltaLockOfs(deltaLockOffset(actionDemod->getFrequency(), wxGetApp().getFrequency()));
                 actionDemod->setDeltaLock(true);
             }
             break;
@@ -3476,7 +3490,9 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
         case '[':
             return 1;
         case 'M':
-            if (actionDemod) {
+            if (event.ShiftDown()) {
+                toggleAllDemodMuted();
+            } else if (actionDemod) {
                 actionDemod->setMuted(!actionDemod->isMuted());
             }
             break;
@@ -3550,25 +3566,46 @@ void AppFrame::toggleAllActiveDemodRecording() {
         return;
     }
 
-    // All demods, irrespective of their active state:
-    // recording will start eventually when a demod come in range.
-    auto allDemods = wxGetApp().getDemodMgr().getDemodulators();
+    //In-range demods only; a partial set completes, all-recording clears.
+    auto activeDemods = wxGetApp().getDemodMgr().getOrderedDemodulators(true);
+    if (activeDemods.empty()) {
+        return;
+    }
 
-    //by default, do a false => true for all:
-    bool stateToSet = true;
-
-    for (const auto& i : allDemods) {
-        if (i->isRecording()) {
-            stateToSet = false;
+    bool allRecording = true;
+    for (const auto& i : activeDemods) {
+        if (!i->isRecording()) {
+            allRecording = false;
             break;
         }
     }
 
-    for (const auto& i : allDemods) {
-      
-        i->setRecording(stateToSet);               
+    for (const auto& i : activeDemods) {
+
+        i->setRecording(!allRecording);
     }
     //this effectively refresh the BookmarkView buttons, including Recording buttons.
+    wxGetApp().getBookmarkMgr().updateActiveList();
+}
+
+void AppFrame::toggleAllDemodMuted() {
+    //In-range demods only; a partial set completes, all-muted clears.
+    auto activeDemods = wxGetApp().getDemodMgr().getOrderedDemodulators(true);
+    if (activeDemods.empty()) {
+        return;
+    }
+
+    bool allMuted = true;
+    for (const auto& i : activeDemods) {
+        if (!i->isMuted()) {
+            allMuted = false;
+            break;
+        }
+    }
+
+    for (const auto& i : activeDemods) {
+        i->setMuted(!allMuted);
+    }
     wxGetApp().getBookmarkMgr().updateActiveList();
 }
 

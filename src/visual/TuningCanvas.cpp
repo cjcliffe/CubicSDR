@@ -192,7 +192,7 @@ void TuningCanvas::StepTuner(ActiveState state, TuningDirection tuningDir, int d
         activeDemod->setFollow(true);
         activeDemod->setFrequency(demod_freq);
         if (activeDemod->isDeltaLock()) {
-            activeDemod->setDeltaLockOfs(activeDemod->getFrequency() - wxGetApp().getFrequency());
+            activeDemod->setDeltaLockOfs(deltaLockOffset(activeDemod->getFrequency(), wxGetApp().getFrequency()));
         }
         activeDemod->updateLabel(demod_freq);
     }
