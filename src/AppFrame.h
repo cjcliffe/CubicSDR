@@ -252,6 +252,7 @@ private:
 	void updateRecordButtonState(ModeSelectorCanvas *recordButton);
 	void toggleBookmarks();
 	void toggleAllActiveDemodRecording();
+	void toggleAllDemodMuted();
 
 	/**
 	 * UI init functions
@@ -331,6 +332,7 @@ private:
     void handleDemodWaterfallSpectrum();
     void handleSpectrumWaterfall();
     void handleMuteButton();
+    void handleDeltaLockButton();
     void handleScopeProcessor();
     void handleScopeSpectrumProcessors();
     void handleModemProperties();

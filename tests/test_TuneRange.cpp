@@ -58,4 +58,15 @@ TEST_SUITE("TuneRange") {
         CHECK(pinViewCenter(100000LL, 1000000LL, 500000LL, 2400000L) == 100000LL);
         CHECK(pinViewCenter(-500000LL, 1000000LL, 500000LL, 2400000L) == -200000LL);
     }
+
+    TEST_CASE("delta-lock offset is frequency minus center") {
+        CHECK(deltaLockOffset(101000000LL, 100000000LL) == 1000000L);
+        CHECK(deltaLockOffset(99000000LL, 100000000LL) == -1000000L);
+        CHECK(deltaLockOffset(100000000LL, 100000000LL) == 0L);
+    }
+
+    TEST_CASE("delta-lock offset round-trips through the post-thread enforcement") {
+        CHECK(100000000LL + deltaLockOffset(101000000LL, 100000000LL) == 101000000LL);
+        CHECK(100000000LL + deltaLockOffset(99000000LL, 100000000LL) == 99000000LL);
+    }
 }
