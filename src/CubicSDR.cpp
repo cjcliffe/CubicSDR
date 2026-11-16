@@ -1127,6 +1127,10 @@ int CubicSDR::FilterEvent(wxEvent& event) {
     if (event.GetEventType() == wxEVT_KEY_UP || event.GetEventType() == wxEVT_CHAR_HOOK) {
         return appframe->OnGlobalKeyUp((wxKeyEvent&)event);
     }
+
+    if (event.GetEventType() == wxEVT_CHAR) {
+        return appframe->OnGlobalChar((wxKeyEvent&)event);
+    }
     
     return -1;  // process normally
 }

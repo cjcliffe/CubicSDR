@@ -3266,6 +3266,12 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     DemodulatorInstancePtr actionDemod = lastDemod;
     
     int snap = wxGetApp().getFrequencySnap();
+
+    // AltGr chords pass through: filtering them would swallow the
+    // translated CHAR they produce.
+    if (event.ControlDown() && event.AltDown()) {
+        return -1;
+    }
     
     if (event.ControlDown()) {
         return 1;
@@ -3276,18 +3282,6 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
             snap /= 2;
         }
     }
-    
-    #ifdef wxHAS_RAW_KEY_CODES
-    switch (event.GetRawKeyCode()) {
-        case 30:
-            gkNudge(actionDemod, snap);
-            return 1;
-        case 33:
-            gkNudge(actionDemod, -snap);
-            return 1;
-    }
-    #endif
-    
     
     switch (event.GetKeyCode()) {
         case WXK_UP:
@@ -3301,12 +3295,6 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
             waterfallCanvas->OnKeyDown(event);  // TODO: Move the stuff from there to here
             return 1;
         case 'V':
-            return 1;
-        case ']':
-            gkNudge(actionDemod, snap);
-            return 1;
-        case '[':
-            gkNudge(actionDemod, -snap);
             return 1;
         case 'A':
         case 'F':
@@ -3329,19 +3317,6 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case WXK_NUMPAD9:
             wxGetApp().showFrequencyInput(getFrequencyDialogTarget(), std::to_string(event.GetKeyCode() - WXK_NUMPAD0));
             return 1;
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-            wxGetApp().showFrequencyInput(getFrequencyDialogTarget(), std::to_string(event.GetKeyCode() - '0'));
-            return 1;
-            break;
         case WXK_TAB:
             lastDemod = wxGetApp().getDemodMgr().getCurrentModem();
             if (event.ShiftDown()) {
@@ -3378,7 +3353,9 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         demodSpectrumCanvas->OnKeyDown(event);
     }
 
-    return 1;
+    // Unmatched keys pass through so their CHAR event still generates;
+    // translated brackets and digits match in OnGlobalChar.
+    return -1;
 }
 
 int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
@@ -3410,15 +3387,6 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     if (!actionDemod) {
         actionDemod = lastDemod;
     }
-    
-#ifdef wxHAS_RAW_KEY_CODES
-    switch (event.GetRawKeyCode()) {
-        case 30:
-            return 1;
-        case 33:
-            return 1;
-    }
-#endif
     
     switch (event.GetKeyCode()) {
         case WXK_SPACE:
@@ -3486,9 +3454,6 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
             peakHoldButton->setSelection(wxGetApp().getSpectrumProcessor()->getPeakHold()?1:0);
             peakHoldButton->clearModeChanged();
             break;
-        case ']':
-        case '[':
-            return 1;
         case 'M':
             if (event.ShiftDown()) {
                 toggleAllDemodMuted();
@@ -3525,6 +3490,64 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     // TODO: Catch key-ups outside of original target
 
     return 1;
+}
+
+int AppFrame::OnGlobalChar(wxKeyEvent &event) {
+    if (!this->IsActive()) {
+        return -1;
+    }
+
+#ifdef USE_HAMLIB
+    if (rigPortDialog != nullptr) {
+        return -1;
+    }
+#endif
+
+    if (modemProps && (modemProps->HasFocus() || modemProps->isMouseInView())) {
+        return -1;
+    }
+
+    if (bookmarkView && bookmarkView->isMouseInView()) {
+        return -1;
+    }
+
+    // Translated characters only exist here: key down/up codes are
+    // untranslated, so layout-dependent brackets and digits match on
+    // CHAR. Anything unhandled passes through to normal processing.
+    int keyCode = event.GetKeyCode();
+    int snap = wxGetApp().getFrequencySnap();
+    DemodulatorInstancePtr actionDemod = wxGetApp().getDemodMgr().getCurrentModem();
+
+    switch (keyCode) {
+        case '[':
+            gkNudge(actionDemod, -snap);
+            return 1;
+        case ']':
+            gkNudge(actionDemod, snap);
+            return 1;
+        case '{':
+            gkNudge(actionDemod, -(snap != 1 ? snap / 2 : snap));
+            return 1;
+        case '}':
+            gkNudge(actionDemod, (snap != 1 ? snap / 2 : snap));
+            return 1;
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+            wxGetApp().showFrequencyInput(getFrequencyDialogTarget(), std::to_string(keyCode - '0'));
+            return 1;
+        default:
+            break;
+    }
+
+    return -1;
 }
 
 void AppFrame::updateRecordButtonState(ModeSelectorCanvas *recordButton) {

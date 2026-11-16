@@ -63,6 +63,7 @@ public:
 
     int OnGlobalKeyDown(wxKeyEvent &event);
     int OnGlobalKeyUp(wxKeyEvent &event);
+    int OnGlobalChar(wxKeyEvent &event);
 
     void setWaterfallLinesPerSecond(int lps);
     void setSpectrumAvgSpeed(double avg);
