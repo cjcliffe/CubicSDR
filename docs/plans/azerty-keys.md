@@ -39,6 +39,16 @@ never arrive while that stands.
   DEL/Backspace preferring the hovered demod with fallback to
   the selection (key-up, hold-safe); the canvas delete case is
   removed.
+- *`CHAR` filtering:* unhandled characters filter instead of
+  passing, since reaching native focus unhandled beeps on
+  macOS. Safe because every text entry is modal or guarded.
+- *No-demod key pre-sets:* `M`/`V` with no selection flip the
+  mute/delta buttons' last-state directly, matching clicks;
+  the solo sync moved into a `handleSoloButton` helper that
+  runs with and without a selection so the button tracks the
+  `S` key.
+- *Waterfall tips:* hover instructions say `DEL` delete instead
+  of `D`, and the idle tip reads `Shift-R/M record/mute all`.
 - *Untouched:* `FrequencyDialog`/`DemodLabelDialog` text entry,
   arrow-key snap (future separate snap work).
 
@@ -57,8 +67,10 @@ never arrive while that stands.
   its mode, `F` cycles FM/FMS and recovers after `A`, delete
   keys remove the hovered demod or the selection when nothing
   is hovered (hold-safe), and Backspace stays safe in dialogs
-  and text fields. `B` toggles dB once per press; `E` and
-  tuning-strip space open a single dialog.
+  and text fields. `B` toggles dB once per press without
+  beeping; `E` and tuning-strip space open a single dialog.
+  With no selection, `M`/`V`/`S` flip their buttons and the
+  next created demod inherits the pre-set.
 
 ## Risks / Open Questions
 

@@ -2538,6 +2538,7 @@ void AppFrame::processFrame() {
         handleSpectrumWaterfall();
         handleMuteButton();
         handleDeltaLockButton();
+        handleSoloButton();
         // No demodulator to record: park the button instead of showing a
         // stale recording state from a deleted demodulator.
         if (demodRecordButton->getSelection() != -1) {
@@ -2712,6 +2713,23 @@ void AppFrame::handleDeltaLockButton() {
             wxGetApp().getDemodMgr().setLastDeltaLock(true);
         }
         deltaLockButton->clearModeChanged();
+    }
+}
+
+void AppFrame::handleSoloButton() {
+    int soloMode = soloModeButton->getSelection();
+    if (soloModeButton->modeChanged()) {
+        if (soloMode == 1) {
+            wxGetApp().setSoloMode(true);
+        } else {
+            wxGetApp().setSoloMode(false);
+        }
+        soloModeButton->clearModeChanged();
+    } else {
+        if (wxGetApp().getSoloMode() != (soloMode == 1)) {
+            soloModeButton->setSelection(wxGetApp().getSoloMode() ? 1 : -1);
+            soloModeButton->Refresh();
+        }
     }
 }
 
@@ -2964,20 +2982,7 @@ void AppFrame::handleCurrentModem() {
             }
         }
 
-        int soloMode = soloModeButton->getSelection();
-        if (soloModeButton->modeChanged()) {
-            if (soloMode == 1) {
-                wxGetApp().setSoloMode(true);
-            } else {
-                wxGetApp().setSoloMode(false);
-            }
-            soloModeButton->clearModeChanged();
-        } else {
-            if (wxGetApp().getSoloMode() != (soloMode == 1)) {
-                soloModeButton->setSelection(wxGetApp().getSoloMode() ? 1 : -1);
-                soloModeButton->Refresh();
-            }
-        }
+        handleSoloButton();
 
         if (demodWaterfallCanvas) {
             demodWaterfallCanvas->setBandwidth(demodBw);
@@ -3425,6 +3430,10 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
             } else if (actionDemod) {
                 actionDemod->setDeltaLockOfs(deltaLockOffset(actionDemod->getFrequency(), wxGetApp().getFrequency()));
                 actionDemod->setDeltaLock(true);
+            } else {
+                bool locked = !wxGetApp().getDemodMgr().getLastDeltaLock();
+                wxGetApp().getDemodMgr().setLastDeltaLock(locked);
+                deltaLockButton->setSelection(locked ? 1 : -1);
             }
             break;
         case 'A':
@@ -3505,6 +3514,10 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
                 toggleAllDemodMuted();
             } else if (actionDemod) {
                 actionDemod->setMuted(!actionDemod->isMuted());
+            } else {
+                bool muted = !wxGetApp().getDemodMgr().isLastMuted();
+                wxGetApp().getDemodMgr().setLastMuted(muted);
+                demodMuteButton->setSelection(muted ? 1 : -1);
             }
             break;
         case WXK_DELETE:
@@ -3570,7 +3583,7 @@ int AppFrame::OnGlobalChar(wxKeyEvent &event) {
 
     // Translated characters only exist here: key down/up codes are
     // untranslated, so layout-dependent brackets and digits match on
-    // CHAR. Anything unhandled passes through to normal processing.
+    // CHAR. Anything unhandled filters below.
     int keyCode = event.GetKeyCode();
     int snap = wxGetApp().getFrequencySnap();
     DemodulatorInstancePtr actionDemod = wxGetApp().getDemodMgr().getCurrentModem();
@@ -3604,7 +3617,10 @@ int AppFrame::OnGlobalChar(wxKeyEvent &event) {
             break;
     }
 
-    return -1;
+    // Unhandled characters filter here: reaching native focus unhandled
+    // beeps on macOS, and every text entry in the app is either modal
+    // or guarded above, so none of them need CHAR events.
+    return 1;
 }
 
 void AppFrame::updateRecordButtonState(ModeSelectorCanvas *recordButton) {

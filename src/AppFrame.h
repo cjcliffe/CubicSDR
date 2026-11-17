@@ -334,6 +334,7 @@ private:
     void handleSpectrumWaterfall();
     void handleMuteButton();
     void handleDeltaLockButton();
+    void handleSoloButton();
     void handleScopeProcessor();
     void handleScopeSpectrumProcessors();
     void handleModemProperties();
