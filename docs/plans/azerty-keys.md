@@ -28,8 +28,17 @@ never arrive while that stands.
   the key-down handler (numpad stays: layout-independent, still
   single-fire), the Ctrl swallow narrows to plain Ctrl, and
   unmatched keys pass instead of filtering so their `CHAR`
-  generates. Letters, arrows, space, tab, and Ctrl+B/D are
-  untouched.
+  generates. Canvas redispatch runs on key-down only, never on
+  the hook pass, so shortcuts like `B` fire exactly once.
+  Letters, arrows, space, tab, and Ctrl+B/D are untouched.
+- *Mode-key scheme:* one key per mode (`F` FM/FMS cycle, `N`
+  NBFM, `A` AM, `W` CW, `L`/`U` LSB/USB, `D` DSB/LSB/USB cycle,
+  `I` I/Q) with outside-family fallback, fixing `F` going dead
+  after `A`. `D` advances its cycle only when pressed in streak,
+  otherwise it homes straight to DSB. Delete moves to
+  DEL/Backspace preferring the hovered demod with fallback to
+  the selection (key-up, hold-safe); the canvas delete case is
+  removed.
 - *Untouched:* `FrequencyDialog`/`DemodLabelDialog` text entry,
   arrow-key snap (future separate snap work).
 
@@ -44,7 +53,12 @@ never arrive while that stands.
   inert on GTK, stray Ctrl+Alt+letter chords do nothing. Also
   confirm hold-to-nudge repeats, menu keyboard nav still works,
   typing in every text field is unaffected, and tuning-strip
-  space fires its dialog exactly once.
+  space fires its dialog exactly once. Mode keys: each selects
+  its mode, `F` cycles FM/FMS and recovers after `A`, delete
+  keys remove the hovered demod or the selection when nothing
+  is hovered (hold-safe), and Backspace stays safe in dialogs
+  and text fields. `B` toggles dB once per press; `E` and
+  tuning-strip space open a single dialog.
 
 ## Risks / Open Questions
 

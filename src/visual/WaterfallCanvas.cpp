@@ -451,15 +451,6 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
             freq -= shiftDown?(getBandwidth() * 10):(getBandwidth() / 2);
         }
         break;
-    case 'D':
-    case WXK_DELETE:
-        if (!hoverDemod) {
-            break;
-        }
-        wxGetApp().removeDemodulator(hoverDemod);
-        wxGetApp().getDemodMgr().deleteThread(hoverDemod);
-        hoverDemod = nullptr;
-        break;
     case WXK_SPACE:
         wxGetApp().showFrequencyInput();
         break;
@@ -950,6 +941,10 @@ SpectrumVisualDataQueuePtr WaterfallCanvas::getVisualDataQueue() {
 
 DemodulatorInstancePtr WaterfallCanvas::getHoverDemod() {
     return hoverDemod;
+}
+
+void WaterfallCanvas::clearHoverDemod() {
+    hoverDemod = nullptr;
 }
 
 void WaterfallCanvas::updateCenterFrequency(long long freq) {

@@ -898,7 +898,7 @@ ModeSelectorCanvas *AppFrame::makeModemSelectorPanel(wxWindow *parent, const wxG
 #ifdef CUBICSDR_MODEM_EXCLUDE
     demodModeSelector->setHelpTip("Use buttons to choose modulation type. Click the active type to reset its parameters.");
 #else
-    pCanvas->setHelpTip("Choose modulation type: Frequency Modulation (Hotkey F), Amplitude Modulation (A) and Lower (L), Upper (U), Double Side-Band and more. Click the active type to reset its parameters.");
+    pCanvas->setHelpTip("Choose modulation type: FM/FMS (F), NBFM (N), AM (A), CW (W), LSB (L), USB (U), DSB/LSB/USB (D), I/Q (I). Click the active type to reset its parameters.");
 #endif
 
     pCanvas->SetMinSize(wxSize(50, -1));
@@ -3304,6 +3304,10 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case 'P':
         case 'M':
         case 'R':
+        case 'D':
+        case 'I':
+        case 'N':
+        case 'W':
             return 1;
         case WXK_NUMPAD0:
         case WXK_NUMPAD1:
@@ -3332,6 +3336,12 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
             break;
     }
     
+    // The hook passes through untouched so CHAR still generates;
+    // redispatching here as well would fire canvas shortcuts twice.
+    if (event.GetEventType() == wxEVT_CHAR_HOOK) {
+        return -1;
+    }
+
     //Re-dispatch the key events if the mouse cursor is within a given
     //widget region, effectively activating its specific key shortcuts,
     //which else are overridden by this global key handler.
@@ -3387,6 +3397,10 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     if (!actionDemod) {
         actionDemod = lastDemod;
     }
+
+    // Last mode key pressed; D advances its sideband cycle only when
+    // pressed in streak, otherwise it homes straight to DSB.
+    static char lastModeKey = 0;
     
     switch (event.GetKeyCode()) {
         case WXK_SPACE:
@@ -3415,24 +3429,56 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
             break;
         case 'A':
             demodModeSelector->setSelection("AM");
+            lastModeKey = 'A';
+            return 1;
+            break;
+        case 'W':
+            demodModeSelector->setSelection("CW");
+            lastModeKey = 'W';
             return 1;
             break;
         case 'F':
             if (demodModeSelector->getSelectionLabel() == "FM") {
                 demodModeSelector->setSelection("FMS");
-            } else if (demodModeSelector->getSelectionLabel() == "FMS") {
-                demodModeSelector->setSelection("NBFM");
-            } else if (demodModeSelector->getSelectionLabel() == "NBFM") {
+            } else {
                 demodModeSelector->setSelection("FM");
             }
+            lastModeKey = 'F';
+            return 1;
+            break;
+        case 'N':
+            demodModeSelector->setSelection("NBFM");
+            lastModeKey = 'N';
             return 1;
             break;
         case 'L':
             demodModeSelector->setSelection("LSB");
+            lastModeKey = 'L';
             return 1;
             break;
         case 'U':
             demodModeSelector->setSelection("USB");
+            lastModeKey = 'U';
+            return 1;
+            break;
+        case 'D':
+            if (lastModeKey == 'D') {
+                if (demodModeSelector->getSelectionLabel() == "DSB") {
+                    demodModeSelector->setSelection("LSB");
+                } else if (demodModeSelector->getSelectionLabel() == "LSB") {
+                    demodModeSelector->setSelection("USB");
+                } else {
+                    demodModeSelector->setSelection("DSB");
+                }
+            } else {
+                demodModeSelector->setSelection("DSB");
+            }
+            lastModeKey = 'D';
+            return 1;
+            break;
+        case 'I':
+            demodModeSelector->setSelection("I/Q");
+            lastModeKey = 'I';
             return 1;
             break;
         case 'S':
@@ -3459,6 +3505,17 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
                 toggleAllDemodMuted();
             } else if (actionDemod) {
                 actionDemod->setMuted(!actionDemod->isMuted());
+            }
+            break;
+        case WXK_DELETE:
+        case WXK_BACK:
+        case WXK_NUMPAD_DELETE:
+            if (actionDemod) {
+                wxGetApp().removeDemodulator(actionDemod);
+                wxGetApp().getDemodMgr().deleteThread(actionDemod);
+                if (waterfallCanvas && waterfallCanvas->getHoverDemod() == actionDemod) {
+                    waterfallCanvas->clearHoverDemod();
+                }
             }
             break;
         default:
