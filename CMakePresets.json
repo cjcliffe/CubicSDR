@@ -92,7 +92,8 @@
                 "SoapySDR_DIR": "$env{CUBICSDR_SOAPY_CMAKE}",
                 "BUNDLE_APP": "ON",
                 "BUNDLE_SOAPY_MODS": "ON",
-                "CPACK_BINARY_DRAGNDROP": "ON"
+                "CPACK_BINARY_DRAGNDROP": "ON",
+                "CPACK_DMG_FILESYSTEM": "APFS"
             }
         }
     ],

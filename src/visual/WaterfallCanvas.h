@@ -37,6 +37,7 @@ public:
 
     // Demodulator currently under the cursor; never affects selection.
     DemodulatorInstancePtr getHoverDemod();
+    void clearHoverDemod();
 
     void setLinesPerSecond(int lps);
     void setMinBandwidth(int min);

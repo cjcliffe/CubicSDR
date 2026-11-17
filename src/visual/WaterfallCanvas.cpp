@@ -451,15 +451,6 @@ void WaterfallCanvas::OnKeyDown(wxKeyEvent& event) {
             freq -= shiftDown?(getBandwidth() * 10):(getBandwidth() / 2);
         }
         break;
-    case 'D':
-    case WXK_DELETE:
-        if (!hoverDemod) {
-            break;
-        }
-        wxGetApp().removeDemodulator(hoverDemod);
-        wxGetApp().getDemodMgr().deleteThread(hoverDemod);
-        hoverDemod = nullptr;
-        break;
     case WXK_SPACE:
         wxGetApp().showFrequencyInput();
         break;
@@ -579,14 +570,14 @@ void WaterfallCanvas::updateHoverState() {
             
             mouseTracker.setVertDragLock(true);
             mouseTracker.setHorizDragLock(false);
-            setStatusText("Drag to change bandwidth. SPACE/0-9 direct input. [, ] nudge, M mute, V pin, D delete, C center, E edit label, R record, TAB cycle selection.");
+            setStatusText("Drag to change bandwidth. SPACE/0-9 direct input. [, ] nudge, M mute, V pin, DEL delete, C center, E edit label, R record, TAB cycle selection.");
         } else {
             SetCursor(wxCURSOR_SIZING);
             nextDragState = WF_DRAG_FREQUENCY;
             
             mouseTracker.setVertDragLock(true);
             mouseTracker.setHorizDragLock(false);
-            setStatusText("Drag to change frequency. SPACE/0-9 direct input. [, ] nudge, M mute, V pin, D delete, C center, E edit label, R record, TAB cycle selection.");
+            setStatusText("Drag to change frequency. SPACE/0-9 direct input. [, ] nudge, M mute, V pin, DEL delete, C center, E edit label, R record, TAB cycle selection.");
         }
     }
     else {
@@ -597,7 +588,7 @@ void WaterfallCanvas::updateHoverState() {
         }
         else {
             setStatusText(
-                "Click sets demodulator frequency, ALT-drag draws a range, SHIFT-click creates new. Arrows/wheel navigate/zoom, C centers, TAB cycles selection. Right-drag or SHIFT+UP/DOWN adjusts visual gain, right-click resets it. Middle-drag up/down to glide-zoom. Shift-R record/stop all.");
+                "Click sets demodulator frequency, ALT-drag draws a range, SHIFT-click creates new. Arrows/wheel navigate/zoom, C centers, TAB cycles selection. Right-drag or SHIFT+UP/DOWN adjusts visual gain, right-click resets it. Middle-drag up/down to glide-zoom. Shift-R/M record/mute all.");
         }
     }
 }
@@ -950,6 +941,10 @@ SpectrumVisualDataQueuePtr WaterfallCanvas::getVisualDataQueue() {
 
 DemodulatorInstancePtr WaterfallCanvas::getHoverDemod() {
     return hoverDemod;
+}
+
+void WaterfallCanvas::clearHoverDemod() {
+    hoverDemod = nullptr;
 }
 
 void WaterfallCanvas::updateCenterFrequency(long long freq) {
