@@ -86,12 +86,15 @@ Implemented as planned. Retire this synopsis on merge.
 
 ## Packaging Note
 
-CI bundles are parked for a macOS-x64-only test round; revert
-`.circleci/config.yml` before merge. The `dmg-test3` tree fails
+CI bundles were parked for a macOS-x64-only test round and
+are unparked again as of this commit. The `dmg-test3` tree fails
 `hdiutil convert` with a corrupt `temp.dmg` deterministically
 while `dmg-test2` passes on the same hosts; every packaging
 sub-step exit code is checked, so `create` is exiting 0 while
 writing a bad image, keyed off the staging geometry. The next
 test tag carries failure forensics plus one `cpack` retry and
 moves the image filesystem from deprecated HFS+ to APFS
-(mountable since 10.13; the deployment floor is 11.0).
+(mountable since 10.13; the deployment floor is 11.0). The
+`dmg-test4` run passed first try with APFS as the only
+behavioral change, confirming the HFS+ writer path; APFS and
+the forensics-plus-retry stay.
