@@ -2611,6 +2611,46 @@ def normalize_macos_load_paths(prefix, dry_run=False):
             run(["install_name_tool", "-change", ref, target, binary])
 
 
+def log_dmg_forensics(pkgdir):
+    """Dump dmg staging state after a DragNDrop failure; best effort only.
+
+    hdiutil convert has reported a corrupt temp.dmg while create exited 0,
+    so record sizes, free space, and image validity for the failure log.
+    Never raises.
+    """
+    temp_image = os.path.join(pkgdir, "temp.dmg")
+    probes = [["ls", "-lh", temp_image],
+              ["du", "-sh", pkgdir],
+              ["df", "-h"],
+              ["hdiutil", "imageinfo", temp_image]]
+    if os.path.exists(temp_image):
+        probes.append(["hdiutil", "verify", temp_image])
+    for cmd in probes:
+        try:
+            proc = subprocess.run(cmd, capture_output=True, text=True)
+        except OSError as exc:
+            log("dmg forensics: cannot run %s: %s" % (" ".join(cmd), exc))
+            continue
+        log("+ %s (exit %d)" % (" ".join(cmd), proc.returncode))
+        for line in ((proc.stdout or "") + (proc.stderr or "")).splitlines():
+            log("  " + line)
+
+
+def run_dmg_package(build_dir, dry_run=False):
+    """Run the DragNDrop cpack pass, retrying once after forensics on failure.
+
+    The retry separates transient hdiutil flakes from geometry-gated
+    corrupt-image failures; it raises if the second attempt also fails.
+    """
+    cmd = ["cpack", "-G", "DragNDrop"]
+    try:
+        run(cmd, cwd=build_dir, dry_run=dry_run)
+    except subprocess.CalledProcessError:
+        log_dmg_forensics(os.path.join(
+            build_dir, "_CPack_Packages", "Darwin", "DragNDrop"))
+        run(cmd, cwd=build_dir, dry_run=dry_run)
+
+
 def build_macos(args, dry_run=False):
     """Full macOS build: Homebrew deps, source wx/liquid/Soapy, modules, app."""
     # brew comes first; cmake arrives via brew, so it is required later.
@@ -2653,8 +2693,7 @@ def build_macos(args, dry_run=False):
         dry_run=dry_run, env=arch_env)
     if args.package == "dmg":
         verify_macos_bundle_inputs(prefix, dry_run)
-        run(["cpack", "-G", "DragNDrop"], cwd=os.path.join(ROOT, "build", "macos"),
-            dry_run=dry_run)
+        run_dmg_package(os.path.join(ROOT, "build", "macos"), dry_run)
         if args.macos_min_version is not None:
             verify_macos_deployment_floor(args.macos_min_version, dry_run)
 

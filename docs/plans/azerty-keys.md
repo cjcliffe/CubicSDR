@@ -83,3 +83,15 @@ never arrive while that stands.
 ## Outcome
 
 Implemented as planned. Retire this synopsis on merge.
+
+## Packaging Note
+
+CI bundles are parked for a macOS-x64-only test round; revert
+`.circleci/config.yml` before merge. The `dmg-test3` tree fails
+`hdiutil convert` with a corrupt `temp.dmg` deterministically
+while `dmg-test2` passes on the same hosts; every packaging
+sub-step exit code is checked, so `create` is exiting 0 while
+writing a bad image, keyed off the staging geometry. The next
+test tag carries failure forensics plus one `cpack` retry and
+moves the image filesystem from deprecated HFS+ to APFS
+(mountable since 10.13; the deployment floor is 11.0).

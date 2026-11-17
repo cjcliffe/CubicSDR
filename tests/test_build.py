@@ -1166,5 +1166,72 @@ class StageRuntimeWindowsTests(unittest.TestCase):
                 self.assertFalse(os.path.exists(out))
 
 
+class DmgPackageRetryTests(unittest.TestCase):
+    def test_success_runs_once(self):
+        from unittest import mock
+        with mock.patch.object(build, "run") as run_mock, \
+                mock.patch.object(build, "log_dmg_forensics") as forensics_mock:
+            build.run_dmg_package("fake-dir")
+        run_mock.assert_called_once_with(
+            ["cpack", "-G", "DragNDrop"], cwd="fake-dir", dry_run=False)
+        forensics_mock.assert_not_called()
+
+    def test_failure_collects_forensics_and_retries(self):
+        import subprocess
+        from unittest import mock
+        err = subprocess.CalledProcessError(1, ["cpack"])
+        with mock.patch.object(build, "run",
+                               side_effect=[err, None]) as run_mock, \
+                mock.patch.object(build, "log_dmg_forensics") as forensics_mock:
+            build.run_dmg_package("fake-dir")
+        self.assertEqual(run_mock.call_count, 2)
+        forensics_mock.assert_called_once_with(
+            os.path.join("fake-dir", "_CPack_Packages", "Darwin",
+                         "DragNDrop"))
+
+    def test_double_failure_raises(self):
+        import subprocess
+        from unittest import mock
+        err = subprocess.CalledProcessError(1, ["cpack"])
+        with mock.patch.object(build, "run", side_effect=err), \
+                mock.patch.object(build, "log_dmg_forensics"):
+            with self.assertRaises(subprocess.CalledProcessError):
+                build.run_dmg_package("fake-dir")
+
+    def test_forensics_never_raises(self):
+        import io
+        from contextlib import redirect_stdout
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as pkgdir:
+            with mock.patch.object(build.subprocess, "run",
+                                   side_effect=OSError("no hdiutil")):
+                buf = io.StringIO()
+                with redirect_stdout(buf):
+                    build.log_dmg_forensics(pkgdir)
+        self.assertIn("dmg forensics", buf.getvalue())
+
+    def test_forensics_verifies_existing_image(self):
+        import io
+        import subprocess
+        from contextlib import redirect_stdout
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as pkgdir:
+            temp_image = os.path.join(pkgdir, "temp.dmg")
+            with open(temp_image, "w") as handle:
+                handle.write("stub")
+            cmds = []
+
+            def fake_run(cmd, **kwargs):
+                cmds.append(cmd)
+                return subprocess.CompletedProcess(cmd, 0, "ok\n", "")
+
+            with mock.patch.object(build.subprocess, "run",
+                                   side_effect=fake_run):
+                with redirect_stdout(io.StringIO()):
+                    build.log_dmg_forensics(pkgdir)
+        self.assertIn(["hdiutil", "verify", temp_image], cmds)
+        self.assertEqual(len(cmds), 5)
+
+
 if __name__ == "__main__":
     unittest.main()
