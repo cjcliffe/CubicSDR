@@ -5,6 +5,9 @@
 #include "ResampleGuard.h"
 #include <iostream>
 
+// Master output trim (-4.9 dB headroom); M/S balance is unity by construction.
+static const float STEREO_OUT_GAIN = 0.568f;
+
 ModemFMStereo::ModemFMStereo() {
     demodFM = freqdem_create(0.5);
     _demph = 75;
@@ -151,13 +154,34 @@ ModemKit *ModemFMStereo::buildKit(long long sampleRate, int audioSampleRate) {
     float        Ap    =   1.0f;
     
     kit->iirStereoPilot = iirfilt_crcf_create_prototype(LIQUID_IIRDES_CHEBY2, LIQUID_IIRDES_BANDPASS, LIQUID_IIRDES_SOS, order, fc, f0, Ap, As);
-    
+
+    // Measure the pilot filter phase at 19 kHz through a scratch twin so
+    // the doubled PLL reference lands in phase; see stereoReferencePhase.
+    iirfilt_crcf pilotProbe = iirfilt_crcf_create_prototype(LIQUID_IIRDES_CHEBY2, LIQUID_IIRDES_BANDPASS, LIQUID_IIRDES_SOS, order, fc, f0, Ap, As);
+    float phaseAccR = 0.0f, phaseAccI = 0.0f;
+    float pilotOm = (float)(2.0 * M_PI * 19000.0 / (double)sampleRate);
+    for (int n = 0; n < 576; n++) {
+        liquid_float_complex toneIn, toneOut;
+        toneIn.real = cosf(pilotOm * (float)n);
+        toneIn.imag = sinf(pilotOm * (float)n);
+        iirfilt_crcf_execute(pilotProbe, toneIn, &toneOut);
+        if (n >= 512) {
+            phaseAccR += toneOut.real * toneIn.real + toneOut.imag * toneIn.imag;
+            phaseAccI += toneOut.imag * toneIn.real - toneOut.real * toneIn.imag;
+        }
+    }
+    iirfilt_crcf_destroy(pilotProbe);
+    float pilotPhase = (phaseAccR != 0.0f || phaseAccI != 0.0f) ? atan2f(phaseAccI, phaseAccR) : 0.0f;
+    kit->stereoRefPhase = stereoReferencePhase(pilotPhase);
+
     kit->firStereoR2C = firhilbf_create(5, 60.0f);
     kit->firStereoC2R = firhilbf_create(5, 60.0f);
     
     kit->stereoPilot = nco_crcf_create(LIQUID_VCO);
     nco_crcf_reset(kit->stereoPilot);
-    nco_crcf_pll_set_bandwidth(kit->stereoPilot, 0.25f);
+    // Loop gains derive straight from bandwidth (alpha=bw, beta=sqrt(bw));
+    // 0.25 snapped the 38 kHz reference to noise, 0.02 still acquires in ms.
+    nco_crcf_pll_set_bandwidth(kit->stereoPilot, 0.02f);
     
     kit->demph = _demph;
     
@@ -177,6 +201,9 @@ ModemKit *ModemFMStereo::buildKit(long long sampleRate, int audioSampleRate) {
         kit->iirDemphR = nullptr;
         kit->demph = 0;
     }
+
+    kit->monoDelay.setDelay(STEREO_PATH_DELAY);
+    kit->blender.setRates((double)sampleRate, 20.0f, 200.0f);
     return kit;
 }
 
@@ -191,6 +218,7 @@ void ModemFMStereo::disposeKit(ModemKit *kit) {
     }
     firfilt_rrrf_destroy(fmkit->firStereoLeft);
     firfilt_rrrf_destroy(fmkit->firStereoRight);
+    iirfilt_crcf_destroy(fmkit->iirStereoPilot);
     firhilbf_destroy(fmkit->firStereoR2C);
     firhilbf_destroy(fmkit->firStereoC2R);
     nco_crcf_destroy(fmkit->stereoPilot);
@@ -216,7 +244,15 @@ void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInp
     size_t audio_out_size = (size_t)ceil((double) (bufSize) * audio_resample_ratio) + 512;
     
     freqdem_demodulate_block(demodFM, &input->data[0], (int)bufSize, &demodOutputData[0]);
-    
+
+    if (monoDelayedData.size() != bufSize) {
+        if (monoDelayedData.capacity() < bufSize) {
+            monoDelayedData.reserve(bufSize);
+        }
+        monoDelayedData.resize(bufSize);
+    }
+    fmkit->monoDelay.apply(&demodOutputData[0], bufSize, &monoDelayedData[0]);
+
     if (resampledOutputData.size() != audio_out_size) {
         if (resampledOutputData.capacity() < audio_out_size) {
             resampledOutputData.reserve(audio_out_size);
@@ -228,7 +264,7 @@ void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInp
     bool haveResamplers = fmkit->audioResampler && fmkit->stereoResampler;
 
     if (haveResamplers) {
-        msresamp_rrrf_execute(fmkit->audioResampler, &demodOutputData[0], (int)bufSize, &resampledOutputData[0], &numAudioWritten);
+        msresamp_rrrf_execute(fmkit->audioResampler, &monoDelayedData[0], (int)bufSize, &resampledOutputData[0], &numAudioWritten);
     }
     
     if (demodStereoData.size() != bufSize) {
@@ -254,8 +290,8 @@ void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInp
         u.real = v.real * w.real - v.imag * w.imag;
         u.imag = v.real * w.imag + v.imag * w.real;
         
-        // cargf(u)
-        phase_error = atan2f(u.imag,u.real);
+        // cargf(u), offset so the doubled reference lands in phase
+        phase_error = atan2f(u.imag,u.real) - fmkit->stereoRefPhase;
         
         // step pll
         nco_crcf_pll_step(fmkit->stereoPilot, phase_error);
@@ -268,6 +304,7 @@ void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInp
         // complex -> real
         float usb_discard;
         firhilbf_c2r_execute(fmkit->firStereoC2R, x, &demodStereoData[i], &usb_discard);
+        demodStereoData[i] *= fmkit->blender.process(v.real, v.imag);
     }
     
     //            std::cout << "[PLL] phase error: " << phase_error;
@@ -291,13 +328,14 @@ void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInp
         audioOut->data.reserve(numAudioWritten * 2);
     }
     audioOut->data.resize(numAudioWritten * 2);
+    // The calibrated reference decodes +S, so L = M + S and R = M - S.
     for (size_t i = 0; i < numAudioWritten; i++) {
         float l, r;
         float ld, rd;
 
         if (fmkit->demph) {
-            iirfilt_rrrf_execute(fmkit->iirDemphL, 0.568f * (resampledOutputData[i] - (resampledStereoData[i])), &ld);
-            iirfilt_rrrf_execute(fmkit->iirDemphR, 0.568f * (resampledOutputData[i] + (resampledStereoData[i])), &rd);
+            iirfilt_rrrf_execute(fmkit->iirDemphL, STEREO_OUT_GAIN * (resampledOutputData[i] + (resampledStereoData[i])), &ld);
+            iirfilt_rrrf_execute(fmkit->iirDemphR, STEREO_OUT_GAIN * (resampledOutputData[i] - (resampledStereoData[i])), &rd);
             
             firfilt_rrrf_push(fmkit->firStereoLeft, ld);
             firfilt_rrrf_execute(fmkit->firStereoLeft, &l);
@@ -305,10 +343,10 @@ void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInp
             firfilt_rrrf_push(fmkit->firStereoRight, rd);
             firfilt_rrrf_execute(fmkit->firStereoRight, &r);
         } else {
-            firfilt_rrrf_push(fmkit->firStereoLeft, 0.568f * (resampledOutputData[i] - (resampledStereoData[i])));
+            firfilt_rrrf_push(fmkit->firStereoLeft, STEREO_OUT_GAIN * (resampledOutputData[i] + (resampledStereoData[i])));
             firfilt_rrrf_execute(fmkit->firStereoLeft, &l);
             
-            firfilt_rrrf_push(fmkit->firStereoRight, 0.568f * (resampledOutputData[i] + (resampledStereoData[i])));
+            firfilt_rrrf_push(fmkit->firStereoRight, STEREO_OUT_GAIN * (resampledOutputData[i] - (resampledStereoData[i])));
             firfilt_rrrf_execute(fmkit->firStereoRight, &r);
         }
         
