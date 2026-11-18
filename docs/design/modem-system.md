@@ -4,7 +4,7 @@ This document describes CubicSDR's modem plugin architecture, registration mecha
 
 ## Architecture Overview
 
-CubicSDR uses a **static factory registration** pattern for modems. All modems are compiled in and registered at startup â€” there is no dynamic plugin discovery.
+CubicSDR uses a **static factory registration** pattern for modems. All modems are compiled in and registered at startup — there is no dynamic plugin discovery.
 
 ```
 ModemBase (empty base)
@@ -134,7 +134,7 @@ DemodulatorThread
 AudioThreadInput (filled for analog; empty data buffer for digital)
 ```
 
-Squelch is computed entirely within `DemodulatorThread` â€” no modem code participates. Signal level is computed per buffer using the source selected by `useSignalOutput()`, with asymmetric attack/decay smoothing. The squelch state is attached to the audio buffer via `ati->is_squelch_active`.
+Squelch is computed entirely within `DemodulatorThread` — no modem code participates. Signal level is computed per buffer using the source selected by `useSignalOutput()`, with asymmetric attack/decay smoothing. The squelch state is attached to the audio buffer via `ati->is_squelch_active`.
 
 ### Analog Modems
 
