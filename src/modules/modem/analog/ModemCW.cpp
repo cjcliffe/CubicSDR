@@ -19,6 +19,7 @@ ModemCW::ModemCW()
           mBeepFrequency(650.0),
           mGain(15.0),
           mAutoGain(true),
+          mLowerSide(false),
           mLO(nullptr),
           mToReal(nullptr) {
     mLO = nco_crcf_create(LIQUID_NCO);
@@ -67,13 +68,26 @@ ModemArgInfoList ModemCW::getSettings() {
     gain.range = ModemRange(0.0, 40.0);
     gain.type = ModemArgInfo::Type::FLOAT;
     args.push_back(gain);
+
+    ModemArgInfo side;
+    side.key = "side";
+    side.name = "Sideband";
+    side.value = "upper";
+    side.type = ModemArgInfo::Type::STRING;
+    std::vector<std::string> sideOpts;
+    sideOpts.push_back("upper");
+    sideOpts.push_back("lower");
+    side.optionNames = sideOpts;
+    side.options = sideOpts;
+    args.push_back(side);
     return args;
 }
 
 void ModemCW::writeSetting(std::string setting, std::string value) {
     if (setting == "offset") {
         mBeepFrequency = std::stof(value);
-        rebuildKit();
+    } else if (setting == "side") {
+        mLowerSide = (value == "lower");
     } else if (setting == "auto") {
         mAutoGain = (value == "on");
     } else if (setting == "gain") {
@@ -84,6 +98,8 @@ void ModemCW::writeSetting(std::string setting, std::string value) {
 std::string ModemCW::readSetting(std::string setting) {
     if (setting == "offset") {
         return std::to_string(mBeepFrequency);
+    } else if (setting == "side") {
+        return mLowerSide ? "lower" : "upper";
     } else if (setting == "auto") {
         return (mAutoGain) ? "on" : "off";
     } else if (setting == "gain") {
@@ -123,6 +139,8 @@ ModemKit *ModemCW::buildKit(long long sampleRate, int audioSampleRate) {
     double ratio = clampResampleRatio(double(audioSampleRate) / double(sampleRate));
     kit->sampleRate = sampleRate;
     kit->audioSampleRate = audioSampleRate;
+    // CW levels post-resample audio, so the follower runs at the audio rate.
+    autoGainCtl.setSampleRate((double)audioSampleRate);
     kit->audioResampleRatio = ratio;
     kit->mInputResampler = msresamp_cccf_create((float)ratio, As);
     if (!kit->mInputResampler) {
@@ -161,7 +179,6 @@ void ModemCW::initOutputBuffers(ModemKitAnalog *akit, ModemIQData *input) {
 
 void ModemCW::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
     unsigned int outSize;
-    float lsb;
     liquid_float_complex sig;
     auto *cwkit = (ModemKitCW *) kit;
 
@@ -184,34 +201,34 @@ void ModemCW::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *au
         demodOutputData.resize(outSize);
     }
 
-    // Set the LO to the desired beep frequency.
-    nco_crcf_set_frequency(mLO, 2.0f * (float)M_PI * mBeepFrequency / kit->audioSampleRate);
+    // Set the LO to the desired beep frequency; lower sideband mirrors it.
+    float beep = mLowerSide ? -mBeepFrequency : mBeepFrequency;
+    nco_crcf_set_frequency(mLO, 2.0f * (float)M_PI * beep / kit->audioSampleRate);
 
     // Mix up from base band by beep frequency. Extract real part
     for (unsigned int i = 0; i < outSize; i++) {
         nco_crcf_mix_up(mLO, mInput[i], &sig);
         nco_crcf_step(mLO);
-        firhilbf_c2r_execute(mToReal, sig, &lsb, &demodOutputData[i]);
+        float y0, y1;
+        firhilbf_c2r_execute(mToReal, sig, &y0, &y1);
+        demodOutputData[i] = mLowerSide ? y0 : y1;
     }
 
-    // Determine gain automagically (if desired)
+    // Determine gain automagically (if desired); the follower tracks the
+    // beep tone level so keying transients do not desense it.
     if (mAutoGain) {
-        aOutputCeilMA = aOutputCeilMA + (aOutputCeil - aOutputCeilMA) * 0.025f;
-        aOutputCeilMAA = aOutputCeilMAA + (aOutputCeilMA - aOutputCeilMAA) * 0.025f;
-        aOutputCeil = 0;
-
-        for (size_t i = 0; i < outSize; i++) {
-            if (demodOutputData[i] > aOutputCeil) {
-                aOutputCeil = demodOutputData[i];
-            }
-        }
-
-        mGain = 10.0f * std::log10(0.5f / aOutputCeilMAA);
+        toneLevel.configure(kit->audioSampleRate, mBeepFrequency);
+        float tonePeak = toneLevel.measureBlock(demodOutputData.data(), outSize);
+        float agcGain = autoGainCtl.processLevel(tonePeak, outSize);
+        mGain = linearGainToDb(agcGain);
+        // Auto may exceed the manual 0-40 range on weak signals.
+        mGain = mGain < 0.0f ? 0.0f : (mGain > 40.0f ? 40.0f : mGain);
     }
 
     // Apply gain to demodulated output data
+    float linGain = dbToLinearGain(mGain);
     for (size_t i = 0; i < outSize; i++) {
-        demodOutputData[i] *= std::pow(10.0f, mGain / 10.0f);
+        demodOutputData[i] *= linGain;
     }
 
     audioOut->channels = 1;

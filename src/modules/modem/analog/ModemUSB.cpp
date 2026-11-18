@@ -7,7 +7,8 @@ ModemUSB::ModemUSB() : ModemAnalog() {
     // half band filter used for side-band elimination
 	ssbFilt = iirfilt_crcf_create_lowpass(6, 0.25);
 	ssbShift = nco_crcf_create(LIQUID_NCO);
-    nco_crcf_set_frequency(ssbShift,  (float)((2.0 * M_PI) * 0.25));
+    // Shift sits just inside the 0.25 filter cutoff, leaving the band edge a small guard band.
+    nco_crcf_set_frequency(ssbShift,  (float)((2.0 * M_PI) * 0.24));
     c2rFilt = firhilbf_create(5, 90.0);
     useSignalOutput(true);
 }

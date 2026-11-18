@@ -3,6 +3,7 @@
 
 #pragma once
 #include "Modem.h"
+#include "AnalogAgc.h"
 
 class ModemKitAnalog : public ModemKit {
 public:
@@ -31,7 +32,5 @@ protected:
     std::vector<float> demodOutputData;
     std::vector<float> resampledOutputData;
 
-    float aOutputCeil;
-    float aOutputCeilMA;
-    float aOutputCeilMAA;
+    AnalogAgc autoGainCtl;
 };

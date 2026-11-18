@@ -4,6 +4,7 @@
 #pragma once
 #include "Modem.h"
 #include "ModemAnalog.h"
+#include "AnalogAgc.h"
 
 class ModemDSB : public ModemAnalog {
 public:
@@ -20,4 +21,5 @@ public:
     
 private:
     ampmodem demodAM_DSB;
+    DcBlocker dcBlock;
 };
