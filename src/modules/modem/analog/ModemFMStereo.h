@@ -3,13 +3,18 @@
 
 #pragma once
 #include "Modem.h"
+#include "StereoDsp.h"
+
+// Combined group delay of the stereo difference path: firhilbf(5) delays
+// 2m+1 = 11 samples per stage (liquid-dsp v1.8.3), R2C plus C2R.
+static const unsigned STEREO_PATH_DELAY = 22;
 
 class ModemKitFMStereo: public ModemKit {
 public:
-    ModemKitFMStereo() : audioResampler(nullptr), stereoResampler(nullptr), audioResampleRatio(0), firStereoLeft(nullptr), firStereoRight(nullptr), iirStereoPilot(nullptr), 
-        demph(0), iirDemphR(nullptr), iirDemphL(nullptr), firStereoR2C(nullptr), firStereoC2R(nullptr), stereoPilot(nullptr) {
+    ModemKitFMStereo() : audioResampler(nullptr), stereoResampler(nullptr), audioResampleRatio(0), firStereoLeft(nullptr), firStereoRight(nullptr), iirStereoPilot(nullptr),
+        demph(0), iirDemphR(nullptr), iirDemphL(nullptr), firStereoR2C(nullptr), firStereoC2R(nullptr), stereoPilot(nullptr), stereoRefPhase(0.0f) {
     }
-    
+
     msresamp_rrrf audioResampler;
     msresamp_rrrf stereoResampler;
     double audioResampleRatio;
@@ -24,8 +29,12 @@ public:
 
     firhilbf firStereoR2C;
     firhilbf firStereoC2R;
-    
+
     nco_crcf stereoPilot;
+    float stereoRefPhase;
+
+    MonoDelayLine monoDelay;
+    StereoBlender blender;
 };
 
 
@@ -53,6 +62,7 @@ public:
     
 private:
     std::vector<float> demodOutputData;
+    std::vector<float> monoDelayedData;
     std::vector<float> demodStereoData;
     std::vector<float> resampledOutputData;
     std::vector<float> resampledStereoData;

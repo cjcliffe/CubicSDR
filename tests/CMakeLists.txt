@@ -22,6 +22,7 @@ add_executable(cubicsdr_tests
     test_DemodReselect.cpp
     test_DemodCycle.cpp
     test_ResampleGuard.cpp
+    test_StereoDsp.cpp
     test_AudioDeviceMatch.cpp
     test_TuneRange.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Gradient.cpp

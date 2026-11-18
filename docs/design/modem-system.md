@@ -106,7 +106,7 @@ Digital modems are conditionally compiled with `ENABLE_DIGITAL_LAB` (the CMake o
 | `ModemKit` | `Modem.h` | Base: `sampleRate`, `audioSampleRate` |
 | `ModemKitAnalog` | `ModemAnalog.h` | `msresamp_rrrf audioResampler`, `audioResampleRatio` |
 | `ModemKitCW` | `ModemCW.h` | Extends `ModemKitAnalog` with `msresamp_cccf mInputResampler` |
-| `ModemKitFMStereo` | `ModemFMStereo.h` | Extends `ModemKit` directly; `audioResampler`, `stereoResampler`, `firStereoLeft/Right`, `iirStereoPilot`, `firStereoR2C`/`firStereoC2R` (hilbert transforms), `iirDemphL`/`iirDemphR` (de-emphasis), `demph` mode, `nco_crcf stereoPilot` |
+| `ModemKitFMStereo` | `ModemFMStereo.h` | Extends `ModemKit` directly; `audioResampler`, `stereoResampler`, `firStereoLeft/Right`, `iirStereoPilot`, `firStereoR2C`/`firStereoC2R` (hilbert transforms), `iirDemphL`/`iirDemphR` (de-emphasis), `demph` mode, `nco_crcf stereoPilot`, `stereoRefPhase` (reference calibration), `monoDelay` (path alignment), `blender` (pilot-gated blend) |
 | `ModemKitDigital` | `ModemDigital.h` | Empty base; each digital modem defines its own subclass (e.g., `ModemKitFSK`, `ModemKitGMSK`) with liquid-dsp objects |
 
 ### ModemDigital Interface
@@ -144,6 +144,18 @@ Squelch is computed entirely within `DemodulatorThread` — no modem code partic
 - Resample ratios are clamped to a bounded halfband stage budget (`ResampleGuard.h`); bandwidths that would exceed it are raised, and a failed resampler build mutes output instead of crashing
 - Only ModemFMStereo and ModemIQ produce stereo output (`channels = 2`); all others are mono
 - DSP approaches vary significantly: FM uses `freqdem_demodulate_block`, AM uses manual envelope detection (`sqrt(I*I+Q*Q)` + DC blocker, not `ampmodem`), DSB uses `ampmodem`, SSB uses NCO frequency shift + IIR lowpass + Hilbert transform, CW uses complex input resampling + NCO + Hilbert, FM Stereo has a full PLL-based MPX stereo decoder
+
+### FM Stereo Decoder
+
+`ModemFMStereo::demodulate()` runs a PLL-based MPX stereo decoder:
+
+- `freqdem_demodulate_block` recovers the composite MPX signal
+- The mono path resamples MPX straight to audio rate through a delay line matching the stereo path latency
+- The stereo path isolates the 19 kHz pilot (complex bandpass), locks an NCO PLL to it, mixes the analytic MPX down by twice the NCO frequency, and takes the real baseband as the L-R difference
+- The PLL locks at a calibrated offset measured from the pilot filter phase at kit build, so the regenerated 38 kHz reference decodes +S; the matrix is L = M + S, R = M - S
+- A pilot-gated blender fades the difference toward mono when the pilot is weak or absent
+- De-emphasis (first-order lowpass, bilinear design, 75us default) applies per channel after matrixing, followed by identical lowpass channel filters
+- Mono/stereo path balance is unity by construction with a shared output trim; the liquid-free helpers (`StereoDsp.h`) carry doctest coverage
 
 ### Digital Modems
 
