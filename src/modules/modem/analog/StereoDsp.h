@@ -15,9 +15,9 @@
 // NCO lock angle that regenerates an in-phase 38 kHz stereo reference.
 // The broadcast subcarrier is sine-phased with the 19 kHz pilot (ITU-R
 // BS.450), and doubling the pilot PLL adds the pilot filter phase twice,
-// so locking the pilot branch here instead of at zero lands the
-// downconverted difference signal on the real axis as +S. The pilot
-// filter phase is measured at kit build; see ModemFMStereo::buildKit.
+// so locking the pilot branch at this angle lands the downconverted
+// difference signal on the real axis as +S. The pilot filter phase is
+// measured at kit build; see ModemFMStereo::buildKit.
 inline float stereoReferencePhase(float pilotFilterPhase) {
     return pilotFilterPhase - (float)(M_PI / 4.0);
 }

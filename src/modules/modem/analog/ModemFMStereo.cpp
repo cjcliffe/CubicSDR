@@ -180,7 +180,7 @@ ModemKit *ModemFMStereo::buildKit(long long sampleRate, int audioSampleRate) {
     kit->stereoPilot = nco_crcf_create(LIQUID_VCO);
     nco_crcf_reset(kit->stereoPilot);
     // Loop gains derive straight from bandwidth (alpha=bw, beta=sqrt(bw));
-    // 0.25 snapped the 38 kHz reference to noise, 0.02 still acquires in ms.
+    // Narrow enough to keep noise out of the 38 kHz reference, wide enough to acquire in ms.
     nco_crcf_pll_set_bandwidth(kit->stereoPilot, 0.02f);
     
     kit->demph = _demph;
