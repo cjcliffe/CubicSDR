@@ -125,6 +125,21 @@ TEST_SUITE("Squelch") {
         }
         CHECK(sq.isSquelched() == true);
     }
+
+    TEST_CASE("steal takes empty or silent focus") {
+        CHECK(squelchShouldSteal(true, false, false, false) == true);
+        CHECK(squelchShouldSteal(true, false, true, false) == true);
+    }
+
+    TEST_CASE("steal never preempts live stream") {
+        CHECK(squelchShouldSteal(true, false, true, true) == false);
+    }
+
+    TEST_CASE("steal respects busy and non-solo") {
+        CHECK(squelchShouldSteal(true, true, false, false) == false);
+        CHECK(squelchShouldSteal(false, false, false, false) == false);
+        CHECK(squelchShouldSteal(false, false, true, false) == false);
+    }
 }
 
 TEST_SUITE("SquelchFade") {

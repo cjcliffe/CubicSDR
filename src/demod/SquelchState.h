@@ -204,3 +204,9 @@ private:
 inline float spreadHysteresis(float spreadDb, float factor = 1.5f, float minDb = 2.0f, float maxDb = 6.0f) {
     return std::min(maxDb, std::max(minDb, spreadDb * factor));
 }
+
+// Solo focus rule: a new break steals focus only into an empty or silent
+// slot, never from a live stream. Gated on solo mode with an idle user.
+inline bool squelchShouldSteal(bool soloMode, bool userBusy, bool hasActive, bool activeBreaking) {
+    return soloMode && !userBusy && (!hasActive || !activeBreaking);
+}

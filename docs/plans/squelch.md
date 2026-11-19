@@ -37,6 +37,10 @@ noise-burst crash-through, click-free transitions.
   replacing the hard drop, reversing cleanly mid-ramp;
   fully-silent blocks are still dropped to save CPU.
   Recordings ride the same faded buffers for free.
+- *Solo focus rule:* a new break steals focus only when the
+  active demodulator is silent or absent, never from a live
+  stream; on close, focus waits for the next break or manual
+  selection. The first-breaker lock is gone.
 - *`MeterBallistics` helper:* the needle uses asymmetric
   ballistics (0.1 s attack, 0.5 s release) instead of
   slamming to each block peak. Display only; the squelch

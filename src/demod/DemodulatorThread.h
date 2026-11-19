@@ -46,9 +46,7 @@ public:
     float getHysteresis();
    
     bool getSquelchBreak();
-
-
-    static void releaseSquelchLock(DemodulatorInstance* inst);
+    void setSquelchBreak(bool squelchBreak_in);
 protected:
     
     double abMagnitude(float inphase, float quadrature);
@@ -69,9 +67,6 @@ protected:
     MeterBallistics meterBallistics;
     MeterRange meterRange;
     LevelSpread levelSpread;
-    
-    static DemodulatorInstance* squelchLock;
-    static std::mutex squelchLockMutex;
     
     
     Modem *cModem = nullptr;

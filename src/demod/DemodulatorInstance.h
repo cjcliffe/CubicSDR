@@ -74,6 +74,7 @@ public:
     void setSquelchLevel(float signal_level_in);
     float getSquelchLevel();
     float getHysteresis();
+    bool isSquelchBreaking();
 
     void setOutputDevice(int device_id);
     int getOutputDevice();

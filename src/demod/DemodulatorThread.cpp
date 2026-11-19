@@ -19,16 +19,13 @@
 #include <pthread.h>
 #endif
 
-DemodulatorInstance* DemodulatorThread::squelchLock(nullptr);
-std::mutex DemodulatorThread::squelchLockMutex;
-
 DemodulatorThread::DemodulatorThread(DemodulatorInstance* parent)
     : IOThread(), demodInstance(parent), outputBuffers("DemodulatorThreadBuffers"), muted(false), squelchLevel(-100),
       signalLevel(-100), signalFloor(DEMOD_SIGNAL_MIN), signalCeil(DEMOD_SIGNAL_MAX), squelchEnabled(false), squelchBreak(false), scaleHold(false), currentHysteresis(6.0f) {
 }
 
 DemodulatorThread::~DemodulatorThread() {
-    releaseSquelchLock(demodInstance);
+    squelchBreak = false;
 }
 
 void DemodulatorThread::onBindOutput(std::string name, ThreadQueueBasePtr threadQueue) {
@@ -176,26 +173,20 @@ void DemodulatorThread::run() {
         
         if (squelchEnabled) {
             if (!squelched && !squelchBreak) {
-                    if (wxGetApp().getSoloMode() && !wxGetApp().getAppFrame()->isUserDemodBusy()) {
-                        std::lock_guard < std::mutex > lock(squelchLockMutex);
-                        if (squelchLock == nullptr) {
-                            squelchLock = demodInstance;
-                            for (auto &existing_demod : wxGetApp().getDemodMgr().getDemodulators()) {
-                                if (existing_demod.get() == demodInstance) {
-                                    wxGetApp().getDemodMgr().setActiveDemodulator(existing_demod);
-                                    break;
-                                }
-                            }
-                            squelchBreak = true;
-                            demodInstance->getVisualCue()->triggerSquelchBreak(120);
+                DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getCurrentModem();
+                bool activeBreaking = activeDemod ? activeDemod->isSquelchBreaking() : false;
+                if (squelchShouldSteal(wxGetApp().getSoloMode(), wxGetApp().getAppFrame()->isUserDemodBusy(),
+                        (bool)activeDemod, activeBreaking)) {
+                    for (auto &existing_demod : wxGetApp().getDemodMgr().getDemodulators()) {
+                        if (existing_demod.get() == demodInstance) {
+                            wxGetApp().getDemodMgr().setActiveDemodulator(existing_demod);
+                            break;
                         }
-                    } else {
-                        squelchBreak = true;
-                        demodInstance->getVisualCue()->triggerSquelchBreak(120);
                     }
-                
+                }
+                squelchBreak = true;
+                demodInstance->getVisualCue()->triggerSquelchBreak(120);
             } else if (squelched && squelchBreak) {
-                releaseSquelchLock(demodInstance);
                 squelchBreak = false;
             }
         }
@@ -404,11 +395,6 @@ bool DemodulatorThread::getSquelchBreak() {
     return squelchBreak;
 }
 
-void DemodulatorThread::releaseSquelchLock(DemodulatorInstance* inst) {
-    
-    std::lock_guard < std::mutex > lock(squelchLockMutex);
-
-    if (inst == nullptr || squelchLock == inst) {
-        squelchLock = nullptr;
-    }
+void DemodulatorThread::setSquelchBreak(bool squelchBreak_in) {
+    squelchBreak = squelchBreak_in;
 }

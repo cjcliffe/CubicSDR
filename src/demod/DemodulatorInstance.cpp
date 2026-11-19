@@ -281,7 +281,7 @@ void DemodulatorInstance::setActive(bool state) {
 #endif
         audioThread->setActive(state);
   
-        DemodulatorThread::releaseSquelchLock(this);
+        demodulatorThread->setSquelchBreak(false);
 
     } else if (!active && state) {
 #if ENABLE_DIGITAL_LAB
@@ -313,6 +313,10 @@ void DemodulatorInstance::setSquelchEnabled(bool state) {
 
 void DemodulatorInstance::setScaleHold(bool state) {
     demodulatorThread->setScaleHold(state);
+}
+
+bool DemodulatorInstance::isSquelchBreaking() {
+    return demodulatorThread->getSquelchBreak();
 }
 
 float DemodulatorInstance::getSignalLevel() {
