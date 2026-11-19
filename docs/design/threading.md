@@ -121,7 +121,7 @@ Atomic variables signal parameter changes between UI and worker threads. Boolean
 | `SpinMutex` | `ThreadBlockingQueue`, `ReBuffer`, `DemodulatorThread` (`m_mutexAudioVisOutputQueue`), `GLFont` | Lightweight lock for high-frequency queue operations and dynamic rebinding |
 | `std::atomic<T>` | SDRThread, DemodulatorPreThread, DemodulatorThread, DemodulatorInstance, CubicSDR, IOThread, AudioThread, AppFrame, FFTVisualDataThread, WaterfallCanvas, RigThread | Lock-free parameter change signaling and state management |
 | `std::recursive_mutex` | AudioThread (`m_mutex`), AudioSinkThread, DemodulatorInstance (`m_thread_control_mutex`), DemodulatorMgr, BookmarkMgr | Protecting shared mutable state with re-entrant access |
-| `std::mutex` | IOThread (`m_queue_bindings_mutex`), SDRThread (`setting_busy`, `gain_busy`), VisualProcessor (`busy_update`), SpectrumVisualProcessor (`busy_run`), DeviceConfig (`busy_lock`), WaterfallCanvas (`tex_update`), DigitalConsole (`stream_busy`), ModemDigitalOutputConsole (`stream_busy`), DemodulatorThread (static `squelchLockMutex`), CubicSDR (`notify_busy`) | Protecting infrequent mutations and visualization state |
+| `std::mutex` | IOThread (`m_queue_bindings_mutex`), SDRThread (`setting_busy`, `gain_busy`), VisualProcessor (`busy_update`), SpectrumVisualProcessor (`busy_run`), DeviceConfig (`busy_lock`), WaterfallCanvas (`tex_update`), DigitalConsole (`stream_busy`), ModemDigitalOutputConsole (`stream_busy`), CubicSDR (`notify_busy`) | Protecting infrequent mutations and visualization state |
 | `std::recursive_mutex` (static) | AudioThread (`m_device_mutex`) | Protects the global `deviceController` map and `deviceSampleRate` map across all AudioThread instances |
 
 ### Heartbeat Period

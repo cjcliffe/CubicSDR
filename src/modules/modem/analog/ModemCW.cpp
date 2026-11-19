@@ -24,7 +24,6 @@ ModemCW::ModemCW()
           mToReal(nullptr) {
     mLO = nco_crcf_create(LIQUID_NCO);
     mToReal = firhilbf_create(5, 60.0f);
-    useSignalOutput(true);
 }
 
 ModemCW::~ModemCW() {

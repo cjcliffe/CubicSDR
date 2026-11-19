@@ -227,6 +227,14 @@ void ModemFMStereo::disposeKit(ModemKit *kit) {
 }
 
 
+SquelchScheme ModemFMStereo::getSquelchScheme() const {
+    return SquelchScheme::Noise;
+}
+
+float ModemFMStereo::getSquelchMetric() const {
+    return squelchMetricDb;
+}
+
 void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
     auto *fmkit = (ModemKitFMStereo *)kit;
     size_t bufSize = input->data.size();
@@ -244,6 +252,7 @@ void ModemFMStereo::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInp
     size_t audio_out_size = (size_t)ceil((double) (bufSize) * audio_resample_ratio) + 512;
     
     freqdem_demodulate_block(demodFM, &input->data[0], (int)bufSize, &demodOutputData[0]);
+    squelchMetricDb = noiseMeter.process(&demodOutputData[0], bufSize, (float)input->sampleRate);
 
     if (monoDelayedData.size() != bufSize) {
         if (monoDelayedData.capacity() < bufSize) {

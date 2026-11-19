@@ -32,6 +32,7 @@ public:
     bool inputChanged() const;
     float getInputValue();
     void setShowUserInput(bool showUserInput_in);
+    void setSnapOffset(float snapOffset_in);
 
     void setHelpTip(std::string tip);
 
@@ -59,6 +60,7 @@ private:
     float inputValue;
     float userInputValue;
     float defaultValue;
+    float snapOffset;
     bool hasDefault;
     bool suppressNextRelease;
 

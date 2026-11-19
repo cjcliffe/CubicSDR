@@ -23,6 +23,14 @@ int ModemNBFM::getDefaultSampleRate() {
     return 12500;
 }
 
+SquelchScheme ModemNBFM::getSquelchScheme() const {
+    return SquelchScheme::Noise;
+}
+
+float ModemNBFM::getSquelchMetric() const {
+    return squelchMetricDb;
+}
+
 void ModemNBFM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) {
     auto *fmkit = (ModemKitAnalog *)kit;
     
@@ -34,6 +42,7 @@ void ModemNBFM::demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *
     }
     
     freqdem_demodulate_block(demodFM, &input->data[0], (unsigned int)bufSize, &demodOutputData[0]);
+    squelchMetricDb = noiseMeter.process(&demodOutputData[0], bufSize, (float)input->sampleRate);
 
     buildAudioOutput(fmkit, audioOut, false);
 }

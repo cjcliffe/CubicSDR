@@ -750,7 +750,6 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
                 demod->run();
 
                 wxGetApp().notifyDemodulatorsChanged();
-                DemodulatorThread::releaseSquelchLock(nullptr);
             }
 
             if (!demod) {

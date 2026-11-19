@@ -24,6 +24,11 @@ add_executable(cubicsdr_tests
     test_ResampleGuard.cpp
     test_StereoDsp.cpp
     test_AnalogAgc.cpp
+    test_SquelchState.cpp
+    test_MeterBallistics.cpp
+    test_MeterRange.cpp
+    test_LevelSpread.cpp
+    test_FmSquelch.cpp
     test_AudioDeviceMatch.cpp
     test_TuneRange.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Gradient.cpp

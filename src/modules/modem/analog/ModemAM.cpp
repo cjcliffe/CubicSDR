@@ -7,7 +7,6 @@ ModemAM::ModemAM() : ModemAnalog() {
     // Create a DC blocker using 25 samples wide window
     // and 30dB reduction of the DC level.
     mDCBlock = firfilt_rrrf_create_dc_blocker (25,30.0f);
-    useSignalOutput(true);
 }
 
 ModemAM::~ModemAM() {

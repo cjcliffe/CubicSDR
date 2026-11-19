@@ -6,15 +6,19 @@
 #include <queue>
 #include <vector>
 #include <memory>
+#include <cstdint>
 
 #include "DemodDefs.h"
 #include "AudioThread.h"
 #include "Modem.h"
 #include "SpinMutex.h"
+#include "SquelchState.h"
+#include "MeterBallistics.h"
+#include "MeterRange.h"
 
 #define DEMOD_VIS_SIZE 2048
-#define DEMOD_SIGNAL_MIN -30
-#define DEMOD_SIGNAL_MAX 30
+#define DEMOD_SIGNAL_MIN -100
+#define DEMOD_SIGNAL_MAX 0
 
 class DemodulatorInstance;
 
@@ -35,15 +39,16 @@ public:
     float getSignalLevel();
     float getSignalCeil();
     void setSquelchEnabled(bool squelchEnabled_in);
+    void setScaleHold(bool scaleHold_in);
     bool isSquelchEnabled();
     float getSignalFloor();
     void setSquelchLevel(float signal_level_in);
     float getSquelchLevel();
+    float getHysteresis();
    
     bool getSquelchBreak();
-
-
-    static void releaseSquelchLock(DemodulatorInstance* inst);
+    void setSquelchBreak(bool squelchBreak_in);
+    uint64_t getLastBreakSerial();
 protected:
     
     double abMagnitude(float inphase, float quadrature);
@@ -56,10 +61,17 @@ protected:
 
     std::atomic<float> squelchLevel;
     std::atomic<float> signalLevel, signalFloor, signalCeil;
-    std::atomic<bool> squelchEnabled, squelchBreak;
-    
-    static DemodulatorInstance* squelchLock;
-    static std::mutex squelchLockMutex;
+    std::atomic<bool> squelchEnabled, squelchBreak, scaleHold;
+    std::atomic<float> currentHysteresis;
+    std::atomic<uint64_t> lastBreakSerial;
+    static std::atomic<uint64_t> breakSerialCounter;
+
+    SquelchState squelch;
+    SquelchFade squelchFade;
+    MeterBallistics meterBallistics;
+    MeterRange meterRange;
+    LevelSpread levelSpread;
+    NoiseReference noiseRef;
     
     
     Modem *cModem = nullptr;

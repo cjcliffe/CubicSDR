@@ -281,7 +281,7 @@ void DemodulatorInstance::setActive(bool state) {
 #endif
         audioThread->setActive(state);
   
-        DemodulatorThread::releaseSquelchLock(this);
+        demodulatorThread->setSquelchBreak(false);
 
     } else if (!active && state) {
 #if ENABLE_DIGITAL_LAB
@@ -311,6 +311,18 @@ void DemodulatorInstance::setSquelchEnabled(bool state) {
     demodulatorThread->setSquelchEnabled(state);
 }
 
+void DemodulatorInstance::setScaleHold(bool state) {
+    demodulatorThread->setScaleHold(state);
+}
+
+uint64_t DemodulatorInstance::getLastBreakSerial() {
+    return demodulatorThread->getLastBreakSerial();
+}
+
+bool DemodulatorInstance::isSquelchBreaking() {
+    return demodulatorThread->getSquelchBreak();
+}
+
 float DemodulatorInstance::getSignalLevel() {
     return demodulatorThread->getSignalLevel();
 }
@@ -327,6 +339,10 @@ void DemodulatorInstance::setSquelchLevel(float signal_level_in) {
     demodulatorThread->setSquelchLevel(signal_level_in);
     wxGetApp().getDemodMgr().setLastSquelchLevel(signal_level_in);
     wxGetApp().getDemodMgr().setLastSquelchEnabled(true);
+}
+
+float DemodulatorInstance::getHysteresis() {
+    return demodulatorThread->getHysteresis();
 }
 
 float DemodulatorInstance::getSquelchLevel() {

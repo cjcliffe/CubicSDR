@@ -19,16 +19,15 @@
 #include <pthread.h>
 #endif
 
-DemodulatorInstance* DemodulatorThread::squelchLock(nullptr);
-std::mutex DemodulatorThread::squelchLockMutex;
+std::atomic<uint64_t> DemodulatorThread::breakSerialCounter(0);
 
 DemodulatorThread::DemodulatorThread(DemodulatorInstance* parent)
     : IOThread(), demodInstance(parent), outputBuffers("DemodulatorThreadBuffers"), muted(false), squelchLevel(-100),
-      signalLevel(-100), signalFloor(-30), signalCeil(30), squelchEnabled(false), squelchBreak(false) {
+      signalLevel(-100), signalFloor(DEMOD_SIGNAL_MIN), signalCeil(DEMOD_SIGNAL_MAX), squelchEnabled(false), squelchBreak(false), scaleHold(false), currentHysteresis(6.0f), lastBreakSerial(0) {
 }
 
 DemodulatorThread::~DemodulatorThread() {
-    releaseSquelchLock(demodInstance);
+    squelchBreak = false;
 }
 
 void DemodulatorThread::onBindOutput(std::string name, ThreadQueueBasePtr threadQueue) {
@@ -147,84 +146,60 @@ void DemodulatorThread::run() {
 
         double currentSignalLevel = 0;
         double sampleTime = double(inp->data.size()) / double(inp->sampleRate);
+        bool haveLevel = false;
 
-        if (audioOutputQueue != nullptr && ati && !ati->data.empty()) {
+        bool noiseScheme = (cModem->getSquelchScheme() == SquelchScheme::Noise);
+
+        if (noiseScheme) {
+            // Latch still holds the previous block here; the edges update it below.
+            bool allowDecay = !squelchEnabled || squelch.isSquelched();
+            currentSignalLevel = noiseRef.process(cModem->getSquelchMetric(), float(sampleTime), allowDecay);
+            haveLevel = true;
+        } else if (audioOutputQueue != nullptr && !inp->data.empty()) {
             double accum = 0;
 
-             if (cModem->useSignalOutput()) {
-
-                for (auto i : ati->data) {
-                    accum += abMagnitude(i, 0.0);
-                }
-
-                currentSignalLevel = linearToDb(accum / double(ati->data.size()));
-
-            } else {
-   
-                for (auto i : inp->data) {
-                    accum += abMagnitude(i.real, i.imag);
-                }
-
-                currentSignalLevel = linearToDb(accum / double(inp->data.size()));
+            // Squelch and meter read RF level; demod audio is gain-normalized.
+            for (auto i : inp->data) {
+                accum += abMagnitude(i.real, i.imag);
             }
-            
-            float sf = signalFloor, sc = signalCeil, sl = squelchLevel;
-            
-         
-            if (currentSignalLevel > sc) {
-                sc = currentSignalLevel;
-            }
-            
-            if (currentSignalLevel < sf) {
-                sf = currentSignalLevel;
-            }
-            
 
-            if (sl+1.0f > sc) {
-                sc = sl+1.0f;
-            }
-            
-            if ((sf+2.0f) > sc) {
-                sc = sf+2.0f;
-            }
-            
-            sc -= (sc - (currentSignalLevel + 2.0f)) * sampleTime * 0.05f;
-            sf += ((currentSignalLevel - 5.0f) - sf) * sampleTime * 0.15f;
-            
-            signalFloor = sf;
-            signalCeil = sc;
+            currentSignalLevel = linearToDb(accum / double(inp->data.size()));
+            haveLevel = true;
         }
-        
-        if (currentSignalLevel > signalLevel) {
-            signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.5;
-        } else {
-            signalLevel = signalLevel + (currentSignalLevel - signalLevel) * 0.05 * sampleTime * 30.0;
+
+        if (haveLevel) {
+            float hystDb = spreadHysteresis(levelSpread.process(float(currentSignalLevel), float(sampleTime)));
+            // Short tail for FM, long hang to bridge AM pauses.
+            squelch.configure(25.0f, noiseScheme ? 150.0f : 1000.0f, hystDb);
+            currentHysteresis = hystDb;
+            auto range = meterRange.process(signalFloor, signalCeil, float(currentSignalLevel),
+                squelchLevel.load(), float(sampleTime), scaleHold.load());
+            signalFloor = range.first;
+            signalCeil = range.second;
         }
+
+        signalLevel = meterBallistics.process(signalLevel, float(currentSignalLevel), float(sampleTime));
         
-        bool squelched = squelchEnabled && (signalLevel < squelchLevel);
+        bool squelched = squelchEnabled
+            && (haveLevel ? squelch.processBlock(currentSignalLevel, squelchLevel, sampleTime) : squelch.isSquelched());
         
         if (squelchEnabled) {
             if (!squelched && !squelchBreak) {
-                    if (wxGetApp().getSoloMode() && !wxGetApp().getAppFrame()->isUserDemodBusy()) {
-                        std::lock_guard < std::mutex > lock(squelchLockMutex);
-                        if (squelchLock == nullptr) {
-                            squelchLock = demodInstance;
-                            for (auto &existing_demod : wxGetApp().getDemodMgr().getDemodulators()) {
-                                if (existing_demod.get() == demodInstance) {
-                                    wxGetApp().getDemodMgr().setActiveDemodulator(existing_demod);
-                                    break;
-                                }
-                            }
-                            squelchBreak = true;
-                            demodInstance->getVisualCue()->triggerSquelchBreak(120);
+                DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getCurrentModem();
+                bool activeBreaking = activeDemod ? activeDemod->isSquelchBreaking() : false;
+                if (squelchShouldSteal(wxGetApp().getSoloMode(), wxGetApp().getAppFrame()->isUserDemodBusy(),
+                        (bool)activeDemod, activeBreaking)) {
+                    for (auto &existing_demod : wxGetApp().getDemodMgr().getDemodulators()) {
+                        if (existing_demod.get() == demodInstance) {
+                            wxGetApp().getDemodMgr().setActiveDemodulator(existing_demod);
+                            break;
                         }
-                    } else {
-                        squelchBreak = true;
-                        demodInstance->getVisualCue()->triggerSquelchBreak(120);
                     }
-                
+                }
+                lastBreakSerial = ++breakSerialCounter;
+                squelchBreak = true;
+                demodInstance->getVisualCue()->triggerSquelchBreak(120);
             } else if (squelched && squelchBreak) {
-                releaseSquelchLock(demodInstance);
                 squelchBreak = false;
             }
         }
@@ -325,7 +300,14 @@ void DemodulatorThread::run() {
             }
         }
 
-        if (!squelched && ati != nullptr) {
+        bool audible = !squelched;
+
+        if (ati != nullptr && !ati->data.empty()) {
+            squelchFade.setSampleRate(ati->sampleRate);
+            audible = !squelchFade.processBlock(&ati->data[0], ati->data.size(), squelched);
+        }
+
+        if (audible && ati != nullptr) {
             if (!muted && (!wxGetApp().getSoloMode() || (demodInstance ==
                     wxGetApp().getDemodMgr().getCurrentModem().get()))) {
                 //non-blocking push needed for audio out
@@ -392,7 +374,14 @@ float DemodulatorThread::getSignalCeil() {
 }
 
 void DemodulatorThread::setSquelchEnabled(bool squelchEnabled_in) {
+    if (squelchEnabled_in) {
+        squelch.reset();
+    }
     squelchEnabled = squelchEnabled_in;
+}
+
+void DemodulatorThread::setScaleHold(bool scaleHold_in) {
+    scaleHold = scaleHold_in;
 }
 
 bool DemodulatorThread::isSquelchEnabled() {
@@ -403,22 +392,26 @@ void DemodulatorThread::setSquelchLevel(float signal_level_in) {
     if (!squelchEnabled) {
         squelchEnabled = true;
     }
+    squelch.reset();
     squelchLevel = signal_level_in;
+}
+
+float DemodulatorThread::getHysteresis() {
+    return currentHysteresis;
 }
 
 float DemodulatorThread::getSquelchLevel() {
     return squelchLevel;
 }
 
+uint64_t DemodulatorThread::getLastBreakSerial() {
+    return lastBreakSerial;
+}
+
 bool DemodulatorThread::getSquelchBreak() {
     return squelchBreak;
 }
 
-void DemodulatorThread::releaseSquelchLock(DemodulatorInstance* inst) {
-    
-    std::lock_guard < std::mutex > lock(squelchLockMutex);
-
-    if (inst == nullptr || squelchLock == inst) {
-        squelchLock = nullptr;
-    }
+void DemodulatorThread::setSquelchBreak(bool squelchBreak_in) {
+    squelchBreak = squelchBreak_in;
 }
