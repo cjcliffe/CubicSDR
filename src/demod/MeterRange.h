@@ -13,7 +13,7 @@
 class MeterRange {
 public:
     MeterRange(float minDb = -100.0f, float maxDb = 0.0f, float minSpanDb = 20.0f, float headDb = 2.0f, float tailDb = 5.0f,
-        float expandDbPerSec = 2.0f, float contractDbPerSec = 0.5f)
+        float expandDbPerSec = 2.0f, float contractDbPerSec = 2.0f)
         : minDb(minDb), maxDb(maxDb), minSpanDb(minSpanDb), headDb(headDb), tailDb(tailDb), expandDbPerSec(expandDbPerSec),
         contractDbPerSec(contractDbPerSec) {}
 

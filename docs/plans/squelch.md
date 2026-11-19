@@ -51,7 +51,7 @@ noise-burst crash-through, click-free transitions.
   slamming to each block peak. Display only; the squelch
   decision reads the raw per-block level.
 - *`MeterRange` helper:* the meter scale auto-ranges by
-  gliding (2 dB/s to expand, 0.5 dB/s to contract) instead
+  gliding (2 dB/s to expand, 2 dB/s to contract) instead
   of jumping to each block extreme, with a 20 dB minimum
   span, the threshold kept visible, and the slew frozen
   while the slider is dragged. Needle and marker glyphs
