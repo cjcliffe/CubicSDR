@@ -48,7 +48,9 @@ private:
     float mBeepFrequency;
     float mGain;
     bool mAutoGain;
+    bool mLowerSide;
     nco_crcf mLO;
     firhilbf mToReal;
+    ToneLevelDetector toneLevel;
     std::vector<liquid_float_complex> mInput;
 };

@@ -142,6 +142,7 @@ Squelch is computed entirely within `DemodulatorThread` — no modem code partic
 - `ModemAnalog` base provides `initOutputBuffers()` and `buildAudioOutput()`
 - Audio resampling from demod rate to audio rate via `msresamp_rrrf`
 - Resample ratios are clamped to a bounded halfband stage budget (`ResampleGuard.h`); bandwidths that would exceed it are raised, and a failed resampler build mutes output instead of crashing
+- Output leveling (`buildAudioOutput` with autoGain) runs a peak-follower AGC with fast attack and slow release and a bounded gain ceiling (AM, DSB, LSB, USB; FM/NBFM bypass it, CW runs the same follower on a tone-detector level)
 - Only ModemFMStereo and ModemIQ produce stereo output (`channels = 2`); all others are mono
 - DSP approaches vary significantly: FM uses `freqdem_demodulate_block`, AM uses manual envelope detection (`sqrt(I*I+Q*Q)` + DC blocker, not `ampmodem`), DSB uses `ampmodem`, SSB uses NCO frequency shift + IIR lowpass + Hilbert transform, CW uses complex input resampling + NCO + Hilbert, FM Stereo has a full PLL-based MPX stereo decoder
 
@@ -179,11 +180,11 @@ Re-clicking the active type in the demod selector resets it: the saved per-type 
 
 Most modems expose no configurable parameters. The following override `getSettings()`:
 
-**Analog:** ModemCW (offset, auto gain, gain), ModemFMStereo (de-emphasis time constant, 75us default).
+**Analog:** ModemCW (offset, sideband, auto gain, gain), ModemFMStereo (de-emphasis time constant, 75us default).
 
 **Digital:** ModemAPSK, ModemASK, ModemDPSK, ModemPSK, ModemQAM, ModemSQAM (constellation size); ModemFSK (bits/symbol, symbols/second, bandwidth); ModemGMSK (filter delay, samples/symbol, excess bandwidth).
 
-Settings that change the liquid-dsp constellation size take effect in place via `updateDemodulatorCons()` without rebuilding the kit. Settings that change signal processing parameters (ModemCW offset, ModemFMStereo de-emphasis, ModemFSK/GMSK symbol parameters) call `rebuildKit()` to recreate the kit with new filter state.
+Settings that change the liquid-dsp constellation size take effect in place via `updateDemodulatorCons()` without rebuilding the kit. Settings that change signal processing parameters (ModemFMStereo de-emphasis, ModemFSK/GMSK symbol parameters) call `rebuildKit()` to recreate the kit with new filter state. ModemCW offset and sideband take effect in place.
 
 ## Available Modems
 

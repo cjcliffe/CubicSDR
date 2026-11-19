@@ -5,7 +5,7 @@
 #include "ResampleGuard.h"
 #include <iostream>
 
-ModemAnalog::ModemAnalog() : Modem(), aOutputCeil(1), aOutputCeilMA(1), aOutputCeilMAA(1) {
+ModemAnalog::ModemAnalog() : Modem() {
     
 }
 
@@ -28,6 +28,7 @@ ModemKit *ModemAnalog::buildKit(long long sampleRate, int audioSampleRate) {
     
     akit->sampleRate = sampleRate;
     akit->audioSampleRate = audioSampleRate;
+    autoGainCtl.setSampleRate((double)sampleRate);
     akit->audioResampleRatio = clampResampleRatio(double(audioSampleRate) / double(sampleRate));
     akit->audioResampler = msresamp_rrrf_create((float)akit->audioResampleRatio, As);
     if (!akit->audioResampler) {
@@ -75,18 +76,8 @@ void ModemAnalog::buildAudioOutput(ModemKitAnalog *akit, AudioThreadInput *audio
     unsigned int numAudioWritten;
 
     if (autoGain) {
-        aOutputCeilMA = aOutputCeilMA + (aOutputCeil - aOutputCeilMA) * 0.025f;
-        aOutputCeilMAA = aOutputCeilMAA + (aOutputCeilMA - aOutputCeilMAA) * 0.025f;
-        aOutputCeil = 0;
-        
-        for (size_t i = 0; i < bufSize; i++) {
-            if (demodOutputData[i] > aOutputCeil) {
-                aOutputCeil = demodOutputData[i];
-            }
-        }
-        
-        float gain = 0.5f / aOutputCeilMAA;
-        
+        float gain = autoGainCtl.processBlock(&demodOutputData[0], bufSize);
+
         for (size_t i = 0; i < bufSize; i++) {
             demodOutputData[i] *= gain;
         }
