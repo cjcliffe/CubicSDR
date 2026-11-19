@@ -4,6 +4,7 @@
 #pragma once
 #include "Modem.h"
 #include "ModemAnalog.h"
+#include "SquelchState.h"
 
 class ModemFM : public ModemAnalog {
 public:
@@ -18,6 +19,11 @@ public:
 
     void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) override;
 
+    SquelchScheme getSquelchScheme() const override;
+    float getSquelchMetric() const override;
+
 private:
     freqdem demodFM;
+    FmNoiseMeter noiseMeter{FmNoiseMeter::BROADCAST_CUTOFF_HZ};
+    float squelchMetricDb = 0.0f;
 };

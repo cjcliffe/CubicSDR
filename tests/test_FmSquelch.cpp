@@ -67,4 +67,22 @@ TEST_SUITE("FmSquelch") {
         r.process(-40.0f, 0.008f, true);
         CHECK(r.process(-39.5f, 10.0f, true) == doctest::Approx(0.0f));
     }
+
+    TEST_CASE("broadcast cutoff rejects program band") {
+        FmNoiseMeter m(FmNoiseMeter::BROADCAST_CUTOFF_HZ);
+        std::vector<float> v(4800);
+        for (size_t i = 0; i < v.size(); i++) {
+            v[i] = sinf(2.0f * (float)M_PI * 1000.0f * (float)i / 200000.0f);
+        }
+        CHECK(m.process(&v[0], v.size(), 200000.0f) < -40.0f);
+    }
+
+    TEST_CASE("broadcast cutoff passes supersonic hiss") {
+        FmNoiseMeter m(FmNoiseMeter::BROADCAST_CUTOFF_HZ);
+        std::vector<float> v(4800);
+        for (size_t i = 0; i < v.size(); i++) {
+            v[i] = (i % 2 == 0) ? 1.0f : -1.0f;
+        }
+        CHECK(m.process(&v[0], v.size(), 200000.0f) > -6.0f);
+    }
 }

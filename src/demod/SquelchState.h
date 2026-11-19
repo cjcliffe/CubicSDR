@@ -213,6 +213,7 @@ inline bool squelchShouldSteal(bool soloMode, bool userBusy, bool hasActive, boo
 // high; a quieting carrier reads low.
 class FmNoiseMeter {
 public:
+    static constexpr float BROADCAST_CUTOFF_HZ = 60000.0f;
     FmNoiseMeter(float cutoffHz = 4000.0f)
         : cutoffHz(cutoffHz), x1(0.0f), x2(0.0f), y1(0.0f), y2(0.0f), lastDb(-120.0f) {}
 

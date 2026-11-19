@@ -61,15 +61,15 @@ noise-burst crash-through, click-free transitions.
   threshold above the visible level by the current
   hysteresis width (clamped to the scale), so the close
   edge reaches back down to the clicked noise floor.
-- *Noise scheme for NBFM:* modems declare a `Carrier` or
+- *Noise scheme for FM:* modems declare a `Carrier` or
   `Noise` squelch scheme with Carrier the default. NBFM
   meters high-band discriminator noise (`FmNoiseMeter`,
-  4 kHz highpass); the thread converts it to quieting
+  4 kHz highpass); FM and FMS use a 60 kHz window above
+  the stereo/RDS band. The thread converts it to quieting
   depth against a slow-max reference (`NoiseReference`,
   decay gated on known noise) and runs the same state
   machine, hysteresis, snap, and fades on it. Hang
   shortens to 150 ms so the FM tail stays rig-like.
-  Broadcast FM keeps carrier squelch.
 
 ## Validation Plan
 

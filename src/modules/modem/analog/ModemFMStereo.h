@@ -4,6 +4,7 @@
 #pragma once
 #include "Modem.h"
 #include "StereoDsp.h"
+#include "SquelchState.h"
 
 // Combined group delay of the stereo difference path: firhilbf(5) delays
 // 2m+1 = 11 samples per stage (liquid-dsp v1.8.3), R2C plus C2R.
@@ -59,6 +60,9 @@ public:
     void disposeKit(ModemKit *kit) override;
     
     void demodulate(ModemKit *kit, ModemIQData *input, AudioThreadInput *audioOut) override;
+
+    SquelchScheme getSquelchScheme() const override;
+    float getSquelchMetric() const override;
     
 private:
     std::vector<float> demodOutputData;
@@ -67,6 +71,8 @@ private:
     std::vector<float> resampledOutputData;
     std::vector<float> resampledStereoData;
     freqdem demodFM;
+    FmNoiseMeter noiseMeter{FmNoiseMeter::BROADCAST_CUTOFF_HZ};
+    float squelchMetricDb = 0.0f;
     
     int _demph;
 };

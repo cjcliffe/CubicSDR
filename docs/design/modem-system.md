@@ -133,7 +133,7 @@ DemodulatorThread
 AudioThreadInput (filled for analog; empty data buffer for digital)
 ```
 
-Squelch is computed within `DemodulatorThread`, with one exception: NBFM supplies a discriminator noise metric for noise-operated squelch; the decision, hysteresis, and fades stay in the thread. Signal level is computed per buffer from input IQ with asymmetric attack/decay smoothing for the meter; the squelch decision runs a hysteresis, open-delay, and hang-time state machine (`SquelchState.h`) on the per-block level, and muting applies a short raised-cosine fade (`SquelchFade`) instead of dropping buffers. The squelch state is attached to the audio buffer via `ati->is_squelch_active`.
+Squelch is computed within `DemodulatorThread`, with one exception: FM, FMS, and NBFM supply a discriminator noise metric for noise-operated squelch; the decision, hysteresis, and fades stay in the thread. Signal level is computed per buffer from input IQ with asymmetric attack/decay smoothing for the meter; the squelch decision runs a hysteresis, open-delay, and hang-time state machine (`SquelchState.h`) on the per-block level, and muting applies a short raised-cosine fade (`SquelchFade`) instead of dropping buffers. The squelch state is attached to the audio buffer via `ati->is_squelch_active`.
 
 ### Analog Modems
 
