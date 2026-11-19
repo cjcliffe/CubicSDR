@@ -71,6 +71,7 @@ protected:
     MeterBallistics meterBallistics;
     MeterRange meterRange;
     LevelSpread levelSpread;
+    NoiseReference noiseRef;
     
     
     Modem *cModem = nullptr;

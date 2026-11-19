@@ -31,10 +31,6 @@ public:
         hangLeak = hangLeakRatio;
     }
 
-    void setHysteresis(float hysteresisDb) {
-        hyst = hysteresisDb;
-    }
-
     void reset() {
         squelched = true;
         openTimer = 0.0;
@@ -116,6 +112,7 @@ public:
         if (!ramping && gain == target) {
             return gain == 0.0f;
         }
+        // Raised-cosine symmetry (g(1-p) == 1-g(p)) makes the flip seamless.
         if (target != rampTarget) {
             rampTarget = target;
             phase = 1.0f - phase;
@@ -210,3 +207,101 @@ inline float spreadHysteresis(float spreadDb, float factor = 1.5f, float minDb =
 inline bool squelchShouldSteal(bool soloMode, bool userBusy, bool hasActive, bool activeBreaking) {
     return soloMode && !userBusy && (!hasActive || !activeBreaking);
 }
+
+// High-band noise meter for FM noise squelch: highpasses the discriminator
+// output above the voice band and reads block RMS in dB. Full noise reads
+// high; a quieting carrier reads low.
+class FmNoiseMeter {
+public:
+    FmNoiseMeter(float cutoffHz = 4000.0f)
+        : cutoffHz(cutoffHz), x1(0.0f), x2(0.0f), y1(0.0f), y2(0.0f), lastDb(-120.0f) {}
+
+    void reset() {
+        x1 = x2 = y1 = y2 = 0.0f;
+        lastDb = -120.0f;
+    }
+
+    float process(const float *data, size_t n, float sampleRateHz) {
+        if (n == 0 || data == nullptr || sampleRateHz <= 0.0f) {
+            return lastDb;
+        }
+        float fc = cutoffHz;
+        // Keep the cutoff clear of Nyquist at narrow channel rates.
+        float maxFc = 0.35f * sampleRateHz;
+        if (fc > maxFc) {
+            fc = maxFc;
+        }
+        // Second-order Butterworth highpass (RBJ cookbook).
+        float w0 = 2.0f * (float)M_PI * fc / sampleRateHz;
+        float cw = cosf(w0);
+        float alpha = sinf(w0) / (2.0f * 0.70710678f);
+        float b0 = (1.0f + cw) * 0.5f;
+        float b1 = -(1.0f + cw);
+        float b2 = (1.0f + cw) * 0.5f;
+        float a0 = 1.0f + alpha;
+        float a1 = -2.0f * cw;
+        float a2 = 1.0f - alpha;
+        double accum = 0.0;
+        for (size_t i = 0; i < n; i++) {
+            float x = data[i];
+            float y = (b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2) / a0;
+            x2 = x1;
+            x1 = x;
+            y2 = y1;
+            y1 = y;
+            accum += (double)y * (double)y;
+        }
+        float rms = sqrtf((float)(accum / (double)n));
+        float db = 20.0f * log10f(rms + 1e-12f);
+        if (db < -120.0f) {
+            db = -120.0f;
+        }
+        lastDb = db;
+        return db;
+    }
+
+    float getCutoffHz() const {
+        return cutoffHz;
+    }
+
+private:
+    float cutoffHz, x1, x2, y1, y2, lastDb;
+};
+
+// Quieting reference for FM noise squelch: max-hold noise floor with slow
+// gated decay. Reads quieting depth in dB: zero on full noise, rising as a
+// carrier quiets the channel. Decay runs only on known noise so a steady
+// carrier never drags the reference down.
+class NoiseReference {
+public:
+    NoiseReference(float decayDbPerSec = 2.0f) : decay(decayDbPerSec), ref(0.0f), seeded(false) {}
+
+    float process(float noiseDb, float dtSeconds, bool allowDecay) {
+        if (!seeded) {
+            ref = noiseDb;
+            seeded = true;
+            return 0.0f;
+        }
+        if (noiseDb > ref) {
+            ref = noiseDb;
+        } else if (allowDecay && dtSeconds > 0.0f) {
+            ref -= decay * dtSeconds;
+            if (ref < noiseDb) {
+                ref = noiseDb;
+            }
+        }
+        return ref - noiseDb;
+    }
+
+    void reset() {
+        seeded = false;
+    }
+
+    float getReference() const {
+        return ref;
+    }
+
+private:
+    float decay, ref;
+    bool seeded;
+};

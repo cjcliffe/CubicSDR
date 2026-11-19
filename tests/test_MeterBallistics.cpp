@@ -22,6 +22,7 @@ TEST_SUITE("MeterBallistics") {
         for (int b = 0; b < 13; b++) {
             level = m.process(level, 0.0f, 0.008f);
         }
+        // Closed form of the one-pole recurrence after 13 blocks at k = 0.08.
         float expected = 0.0f - (0.0f - (-100.0f)) * float(std::pow(1.0 - 0.08, 13));
         CHECK(level == doctest::Approx(expected).epsilon(0.01));
         CHECK(level > -50.0f);

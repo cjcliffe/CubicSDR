@@ -31,9 +31,7 @@ double ModemRange::maximum() const {
 
 ModemArgInfo::ModemArgInfo() = default;
 
-Modem::Modem() {
-    useSignalOutput(false);
-}
+Modem::Modem() = default;
 
 Modem::~Modem() = default;
 
@@ -108,10 +106,10 @@ void Modem::clearRebuildKit() {
 }
 
 
-bool Modem::useSignalOutput() {
-    return _useSignalOutput.load();
+SquelchScheme Modem::getSquelchScheme() const {
+    return SquelchScheme::Carrier;
 }
 
-void Modem::useSignalOutput(bool useOutput) {
-    _useSignalOutput.store(useOutput);
+float Modem::getSquelchMetric() const {
+    return 0.0f;
 }

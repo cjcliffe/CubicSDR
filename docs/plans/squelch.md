@@ -50,16 +50,26 @@ noise-burst crash-through, click-free transitions.
   ballistics (0.1 s attack, 0.5 s release) instead of
   slamming to each block peak. Display only; the squelch
   decision reads the raw per-block level.
-- *`MeterRange` helper:* the meter scale auto-ranges by
-  gliding (2 dB/s to expand, 2 dB/s to contract) instead
-  of jumping to each block extreme, with a 20 dB minimum
-  span, the threshold kept visible, and the slew frozen
-  while the slider is dragged. Needle and marker glyphs
-  peg at the scale ends instead of vanishing.
+- *`MeterRange` helper:* the meter scale auto-ranges with
+  a fractional glide toward the signal (fast across large
+  gaps, gentle near the target) instead of jumping to each
+  block extreme, with a 20 dB minimum span, the threshold
+  kept visible, and the slew frozen while the slider is
+  dragged. Needle and marker glyphs peg at the scale ends
+  instead of vanishing.
 - *Right-click snap:* right-clicking the meter places the
   threshold above the visible level by the current
   hysteresis width (clamped to the scale), so the close
   edge reaches back down to the clicked noise floor.
+- *Noise scheme for NBFM:* modems declare a `Carrier` or
+  `Noise` squelch scheme with Carrier the default. NBFM
+  meters high-band discriminator noise (`FmNoiseMeter`,
+  4 kHz highpass); the thread converts it to quieting
+  depth against a slow-max reference (`NoiseReference`,
+  decay gated on known noise) and runs the same state
+  machine, hysteresis, snap, and fades on it. Hang
+  shortens to 150 ms so the FM tail stays rig-like.
+  Broadcast FM keeps carrier squelch.
 
 ## Validation Plan
 
@@ -71,7 +81,7 @@ noise-burst crash-through, click-free transitions.
 
 ## Risks / Open Questions
 
-- Hang (1 s), open delay (25 ms), adaptive hysteresis
+- Hang (1 s AM / 150 ms FM), open delay (25 ms), adaptive hysteresis
   (2..6 dB from spread), and fade (5 ms) are set from live
   feel; retune if pauses chop or tails drag.
 - FM noise-operated squelch would be the next step for

@@ -148,7 +148,14 @@ void DemodulatorThread::run() {
         double sampleTime = double(inp->data.size()) / double(inp->sampleRate);
         bool haveLevel = false;
 
-        if (audioOutputQueue != nullptr && !inp->data.empty()) {
+        bool noiseScheme = (cModem->getSquelchScheme() == SquelchScheme::Noise);
+
+        if (noiseScheme) {
+            // Latch still holds the previous block here; the edges update it below.
+            bool allowDecay = !squelchEnabled || squelch.isSquelched();
+            currentSignalLevel = noiseRef.process(cModem->getSquelchMetric(), float(sampleTime), allowDecay);
+            haveLevel = true;
+        } else if (audioOutputQueue != nullptr && !inp->data.empty()) {
             double accum = 0;
 
             // Squelch and meter read RF level; demod audio is gain-normalized.
@@ -158,9 +165,12 @@ void DemodulatorThread::run() {
 
             currentSignalLevel = linearToDb(accum / double(inp->data.size()));
             haveLevel = true;
+        }
 
+        if (haveLevel) {
             float hystDb = spreadHysteresis(levelSpread.process(float(currentSignalLevel), float(sampleTime)));
-            squelch.setHysteresis(hystDb);
+            // Short tail for FM, long hang to bridge AM pauses.
+            squelch.configure(25.0f, noiseScheme ? 150.0f : 1000.0f, hystDb);
             currentHysteresis = hystDb;
             auto range = meterRange.process(signalFloor, signalCeil, float(currentSignalLevel),
                 squelchLevel.load(), float(sampleTime), scaleHold.load());

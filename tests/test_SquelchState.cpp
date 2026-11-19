@@ -35,6 +35,7 @@ TEST_SUITE("Squelch") {
         CHECK(sq.isSquelched() == false);
     }
 
+    // 110 blocks (0.88 s) still bridge; 140 blocks (1.12 s) exceed the hang.
     TEST_CASE("hang bridges dips then closes") {
         SquelchState sq;
         for (int b = 0; b < 10; b++) {
@@ -111,6 +112,7 @@ TEST_SUITE("Squelch") {
         CHECK(sq.isSquelched() == false);
     }
 
+    // Each below/in-band pair nets +0.006 s, so 400 blocks (1.2 s) closes.
     TEST_CASE("straddling noise trends closed") {
         SquelchState sq;
         for (int b = 0; b < 10; b++) {

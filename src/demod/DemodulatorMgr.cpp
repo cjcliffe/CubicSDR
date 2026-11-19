@@ -132,6 +132,7 @@ DemodulatorInstancePtr DemodulatorMgr::takeMostRecentBreaker(const DemodulatorIn
             best = demod;
         }
     }
+    // Consume through the winner so the next Tab cycles until a new break lands.
     if (best) {
         consumedBreakSerial = bestSerial;
     }

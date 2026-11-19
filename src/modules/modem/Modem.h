@@ -124,6 +124,8 @@ typedef std::map<std::string, int> DefaultRatesList;
 
 typedef std::map<std::string, std::string> ModemSettings;
 
+enum class SquelchScheme { Carrier, Noise };
+
 class Modem : public ModemBase  {
 public:
     static void addModemFactory(ModemFactoryFn, std::string modemName, int defaultRate);
@@ -156,11 +158,11 @@ public:
     void rebuildKit();
     void clearRebuildKit();
     
-    bool useSignalOutput();
-    void useSignalOutput(bool useOutput);
+    virtual SquelchScheme getSquelchScheme() const;
+    virtual float getSquelchMetric() const;
     
 private:
     static ModemFactoryList modemFactories;
     static DefaultRatesList modemDefaultRates;
-    std::atomic_bool refreshKit, _useSignalOutput;
+    std::atomic_bool refreshKit;
 };

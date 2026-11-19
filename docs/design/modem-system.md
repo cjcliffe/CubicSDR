@@ -88,7 +88,6 @@ Digital modems are conditionally compiled with `ENABLE_DIGITAL_LAB` (the CMake o
 | Method | Purpose |
 |--------|---------|
 | `shouldRebuildKit()` / `rebuildKit()` / `clearRebuildKit()` | Kit refresh lifecycle; `writeSetting()` calls `rebuildKit()` when a changed parameter requires recreating the kit (used by ModemCW, ModemFMStereo, ModemFSK, ModemGMSK). `DemodulatorPreThread` detects the flag and sends `DEMOD_WORKER_THREAD_CMD_BUILD_FILTERS` to the worker thread |
-| `useSignalOutput()` / `useSignalOutput(bool)` | When true, `DemodulatorThread` computes signal level from demodulated audio output (for envelope-based modems). When false, computes from raw IQ input. Enabled by: AM, CW, DSB, LSB, USB |
 
 ### Static Methods
 
@@ -134,7 +133,7 @@ DemodulatorThread
 AudioThreadInput (filled for analog; empty data buffer for digital)
 ```
 
-Squelch is computed entirely within `DemodulatorThread` — no modem code participates. Signal level is computed per buffer from input IQ with asymmetric attack/decay smoothing for the meter; the squelch decision runs a hysteresis, open-delay, and hang-time state machine (`SquelchState.h`) on the per-block level, and muting applies a short raised-cosine fade (`SquelchFade`) instead of dropping buffers. The squelch state is attached to the audio buffer via `ati->is_squelch_active`.
+Squelch is computed within `DemodulatorThread`, with one exception: NBFM supplies a discriminator noise metric for noise-operated squelch; the decision, hysteresis, and fades stay in the thread. Signal level is computed per buffer from input IQ with asymmetric attack/decay smoothing for the meter; the squelch decision runs a hysteresis, open-delay, and hang-time state machine (`SquelchState.h`) on the per-block level, and muting applies a short raised-cosine fade (`SquelchFade`) instead of dropping buffers. The squelch state is attached to the audio buffer via `ati->is_squelch_active`.
 
 ### Analog Modems
 
