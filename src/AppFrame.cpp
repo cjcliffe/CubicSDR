@@ -852,9 +852,9 @@ MeterCanvas *AppFrame::makeSignalMeter(wxWindow *parent, const wxGLAttributes &a
     pCanvas->setMin(DEMOD_SIGNAL_MIN);
     pCanvas->setLevel(DEMOD_SIGNAL_MIN);
     pCanvas->setInputValue(DEMOD_SIGNAL_MIN);
-    pCanvas->setHelpTip("Current Signal Level.  Click / Drag to set Squelch level.  Right-Click to Auto-Zero Squelch.  Double-click or middle-click to reset (squelch off).");
-    // Meter range tracks the live signal floor/ceiling, so "off" is a fixed level below any floor rather than the meter minimum.
-    pCanvas->setDefaultValue(-100.0f);
+    pCanvas->setHelpTip("Current Signal Level.  Click / Drag to set Squelch level.  Right-Click to auto-set above noise.  Double-click or middle-click to reset (squelch off).");
+    // Meter scale is fixed, so "off" is the meter minimum.
+    pCanvas->setDefaultValue(DEMOD_SIGNAL_MIN);
     pCanvas->SetMinSize(wxSize(12, 24));
     return pCanvas;
 }
@@ -2995,9 +2995,12 @@ void AppFrame::handleCurrentModem() {
     demodSignalMeter->setMax(demod->getSignalCeil());
 
     demodGainMeter->setLevel(demod->getGain());
-    if (demodSignalMeter->inputChanged()) {
+    bool meterAdjusting = demodSignalMeter->inputChanged();
+    if (meterAdjusting) {
         demod->setSquelchLevel(demodSignalMeter->getInputValue());
     }
+    demod->setScaleHold(meterAdjusting);
+    demodSignalMeter->setSnapOffset(demod->getHysteresis());
     if (demodGainMeter->inputChanged()) {
         demod->setGain(demodGainMeter->getInputValue());
         demodGainMeter->setLevel(demodGainMeter->getInputValue());

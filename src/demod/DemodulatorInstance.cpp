@@ -311,6 +311,10 @@ void DemodulatorInstance::setSquelchEnabled(bool state) {
     demodulatorThread->setSquelchEnabled(state);
 }
 
+void DemodulatorInstance::setScaleHold(bool state) {
+    demodulatorThread->setScaleHold(state);
+}
+
 float DemodulatorInstance::getSignalLevel() {
     return demodulatorThread->getSignalLevel();
 }
@@ -327,6 +331,10 @@ void DemodulatorInstance::setSquelchLevel(float signal_level_in) {
     demodulatorThread->setSquelchLevel(signal_level_in);
     wxGetApp().getDemodMgr().setLastSquelchLevel(signal_level_in);
     wxGetApp().getDemodMgr().setLastSquelchEnabled(true);
+}
+
+float DemodulatorInstance::getHysteresis() {
+    return demodulatorThread->getHysteresis();
 }
 
 float DemodulatorInstance::getSquelchLevel() {

@@ -16,6 +16,7 @@
 #include "CubicSDR.h"
 #include "CubicSDRDefs.h"
 #include "AppFrame.h"
+#include "SquelchState.h"
 #include <algorithm>
 
 wxBEGIN_EVENT_TABLE(MeterCanvas, wxGLCanvas) EVT_PAINT(MeterCanvas::OnPaint)
@@ -32,7 +33,7 @@ EVT_ENTER_WINDOW(MeterCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
 MeterCanvas::MeterCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
-        InteractiveCanvas(parent, dispAttrs), level(0), level_min(0), level_max(1), inputValue(0), userInputValue(0), defaultValue(0), hasDefault(false), suppressNextRelease(false), showUserInput(true) {
+        InteractiveCanvas(parent, dispAttrs), level(0), level_min(0), level_max(1), inputValue(0), userInputValue(0), defaultValue(0), hasDefault(false), suppressNextRelease(false), showUserInput(true), snapOffset(6.0f) {
 
     glContext = new MeterContext(this, &wxGetApp().GetContext(this), wxGetApp().GetContextAttributes());
 }
@@ -100,9 +101,14 @@ void MeterCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     if (mouseTracker.mouseInView()) {
         glContext->Draw(0.4f, 0.4f, 0.4f, 0.5f, mouseTracker.getMouseY());
     }
-    glContext->Draw(ThemeMgr::mgr.currentTheme->meterLevel.r, ThemeMgr::mgr.currentTheme->meterLevel.g, ThemeMgr::mgr.currentTheme->meterLevel.b, 0.5, (level-level_min) / (level_max-level_min));
+    float span = level_max - level_min;
+    float levelPos = (span > 0.0f) ? ((level - level_min) / span) : 0.0f;
+    levelPos = std::min(1.0f, std::max(0.0f, levelPos));
+    glContext->Draw(ThemeMgr::mgr.currentTheme->meterLevel.r, ThemeMgr::mgr.currentTheme->meterLevel.g, ThemeMgr::mgr.currentTheme->meterLevel.b, 0.5, levelPos);
     if (showUserInput) {
-        glContext->Draw(ThemeMgr::mgr.currentTheme->meterValue.r, ThemeMgr::mgr.currentTheme->meterValue.g, ThemeMgr::mgr.currentTheme->meterValue.b, 0.5, (userInputValue-level_min) / (level_max-level_min));
+        float inputPos = (span > 0.0f) ? ((userInputValue - level_min) / span) : 0.0f;
+        inputPos = std::min(1.0f, std::max(0.0f, inputPos));
+        glContext->Draw(ThemeMgr::mgr.currentTheme->meterValue.r, ThemeMgr::mgr.currentTheme->meterValue.g, ThemeMgr::mgr.currentTheme->meterValue.b, 0.5, inputPos);
     } 
     glContext->DrawEnd();
 
@@ -176,7 +182,7 @@ void MeterCanvas::OnMouseRightReleased(wxMouseEvent& event) {
     bool pressedHere = mouseTracker.mouseRightDown();
     InteractiveCanvas::OnMouseRightReleased(event);
 	if (pressedHere && showUserInput) {
-		userInputValue = level - level * 0.02;
+		userInputValue = snapSquelchAbove(level, level_min, level_max, snapOffset);
 		Refresh();
 	}
 }
@@ -220,6 +226,10 @@ void MeterCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
 	}
 #endif
     Refresh();
+}
+
+void MeterCanvas::setSnapOffset(float snapOffset_in) {
+    snapOffset = snapOffset_in;
 }
 
 void MeterCanvas::setHelpTip(std::string tip) {

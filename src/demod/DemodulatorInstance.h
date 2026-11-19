@@ -66,12 +66,14 @@ public:
     void squelchAuto();
     bool isSquelchEnabled();
     void setSquelchEnabled(bool state);
+    void setScaleHold(bool state);
 
     float getSignalLevel();
     float getSignalFloor();
     float getSignalCeil();
     void setSquelchLevel(float signal_level_in);
     float getSquelchLevel();
+    float getHysteresis();
 
     void setOutputDevice(int device_id);
     int getOutputDevice();
