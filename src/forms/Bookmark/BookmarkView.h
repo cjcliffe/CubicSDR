@@ -9,6 +9,7 @@
 #include "BookmarkPanel.h"
 #include "BookmarkMgr.h"
 #include "MouseTracker.h"
+#include "RateGate.h"
 
 class TreeViewItem : public wxTreeItemData {
 public:
@@ -62,6 +63,7 @@ public:
     //order an asynchronous refresh/rebuild of the whole tree,
     //will take effect at the next update poll (frame tick or update timer).
     void updateActiveList();
+    void updateActiveLabels();
     void pollUpdates();
     
     //order asynchronous updates of the bookmarks,
@@ -195,6 +197,8 @@ protected:
     
     // Active
     std::atomic_bool doUpdateActive;
+    std::atomic_bool doUpdateActiveLabels;
+    RateGate activeLabelGate;
     // Which active demodulator the props buttons were last built for, so the
     // in-place label refresh can detect recording-state changes that need
     // the full rebuild path.

@@ -3,6 +3,7 @@
 
 #include <wx/menu.h>
 #include <wx/textdlg.h>
+#include <wx/time.h>
 
 #include <algorithm>
 
@@ -23,6 +24,10 @@
 #define BOOKMARK_VIEW_STR_UNNAMED "Unnamed"
 #define BOOKMARK_VIEW_STR_CLEAR_RECENT "Clear Recents"
 #define BOOKMARK_VIEW_STR_RENAME_GROUP "Rename Group"
+
+// Label-only refreshes ride the frame tick; cap them so drag-rate
+// frequency changes repaint a few times a second instead of every frame.
+static const unsigned BOOKMARK_ACTIVE_LABEL_INTERVAL_MS = 500;
 
 
 BookmarkViewVisualDragItem::BookmarkViewVisualDragItem(const wxString& labelValue) : wxDialog(nullptr, wxID_ANY, L"", wxPoint(20,20), wxSize(-1,-1), wxFRAME_TOOL_WINDOW | wxNO_BORDER | wxSTAY_ON_TOP | wxALL ) {
@@ -143,6 +148,7 @@ BookmarkView::BookmarkView( wxWindow* parent, wxWindowID id, const wxPoint& pos,
     expandState["recent"] = true;
     
     doUpdateActive.store(true);
+    doUpdateActiveLabels.store(false);
     doUpdateBookmarks.store(true);
     bookmarkChoice = nullptr;
     dragItem = nullptr;
@@ -180,9 +186,15 @@ void BookmarkView::pollUpdates() {
         return;
     }
     bool updated = false;
+    if (doUpdateActiveLabels.load()
+        && activeLabelGate.shouldFire((uint64_t)wxGetUTCTimeMillis().GetValue(), BOOKMARK_ACTIVE_LABEL_INTERVAL_MS)) {
+        doUpdateActiveLabels.store(false);
+        doUpdateActive.store(true);
+    }
     if (doUpdateActive.load()) {
         doUpdateActiveList();
         doUpdateActive.store(false);
+        doUpdateActiveLabels.store(false);
         updated = true;
     }
     if (doUpdateBookmarks.load()) {
@@ -243,6 +255,10 @@ void BookmarkView::updateTheme() {
 
 void BookmarkView::updateActiveList() {
     doUpdateActive.store(true);
+}
+
+void BookmarkView::updateActiveLabels() {
+    doUpdateActiveLabels.store(true);
 }
 
 
