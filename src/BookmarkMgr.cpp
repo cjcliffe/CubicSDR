@@ -465,6 +465,19 @@ void BookmarkMgr::updateActiveList() {
     }
 }
 
+void BookmarkMgr::updateActiveLabels() {
+
+    if (wxGetApp().isShuttingDown()) {
+        return;
+    }
+
+    BookmarkView *bmv = wxGetApp().getAppFrame()->getBookmarkView();
+
+    if (bmv) {
+        bmv->updateActiveLabels();
+    }
+}
+
 void BookmarkMgr::updateBookmarks() {
 
     BookmarkView *bmv = wxGetApp().getAppFrame()->getBookmarkView();

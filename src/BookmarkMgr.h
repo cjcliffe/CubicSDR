@@ -87,6 +87,7 @@ public:
     bool getExpandState(const std::string& groupName);
 
     void updateActiveList();
+    void updateActiveLabels();
     void updateBookmarks();
     void updateBookmarks(const std::string& group);
 

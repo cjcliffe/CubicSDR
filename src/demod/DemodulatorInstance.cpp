@@ -162,7 +162,7 @@ void DemodulatorInstance::updateLabel(long long freq) {
     newLabel.precision(3);
     newLabel << std::fixed << ((long double) freq / 1000000.0);
     setLabel(newLabel.str());
-    wxGetApp().getBookmarkMgr().updateActiveList();
+    wxGetApp().getBookmarkMgr().updateActiveLabels();
 }
 
 void DemodulatorInstance::terminate() {
@@ -478,7 +478,7 @@ void DemodulatorInstance::setFrequency(long long freq) {
 #endif
     
     if (this->isActive()) {
-        wxGetApp().getBookmarkMgr().updateActiveList();
+        wxGetApp().getBookmarkMgr().updateActiveLabels();
     }
 }
 
