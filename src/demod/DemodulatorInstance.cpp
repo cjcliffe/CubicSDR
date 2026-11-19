@@ -315,6 +315,10 @@ void DemodulatorInstance::setScaleHold(bool state) {
     demodulatorThread->setScaleHold(state);
 }
 
+uint64_t DemodulatorInstance::getLastBreakSerial() {
+    return demodulatorThread->getLastBreakSerial();
+}
+
 bool DemodulatorInstance::isSquelchBreaking() {
     return demodulatorThread->getSquelchBreak();
 }

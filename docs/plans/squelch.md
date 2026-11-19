@@ -41,6 +41,11 @@ noise-burst crash-through, click-free transitions.
   active demodulator is silent or absent, never from a live
   stream; on close, focus waits for the next break or manual
   selection. The first-breaker lock is gone.
+- *Solo Tab jump:* Tab jumps to the most recent still-breaking
+  demodulator other than the current one and consumes the
+  break history, so the next Tab cycles normally until a new
+  break lands; with no other breaker, or outside solo mode,
+  Tab cycles as before.
 - *`MeterBallistics` helper:* the needle uses asymmetric
   ballistics (0.1 s attack, 0.5 s release) instead of
   slamming to each block peak. Display only; the squelch

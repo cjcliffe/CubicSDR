@@ -6,6 +6,7 @@
 #include <vector>
 #include <map>
 #include <thread>
+#include <cstdint>
 
 #include "DemodulatorInstance.h"
 
@@ -28,6 +29,7 @@ public:
     DemodulatorInstancePtr getNextDemodulator(const DemodulatorInstancePtr& demod, bool actives = true);
     DemodulatorInstancePtr getLastDemodulator();
     DemodulatorInstancePtr getFirstDemodulator();
+    DemodulatorInstancePtr takeMostRecentBreaker(const DemodulatorInstancePtr& exclude);
     bool anyDemodulatorsAt(long long freq, int bandwidth);
     void deleteThread(const DemodulatorInstancePtr&);
 
@@ -89,6 +91,9 @@ private:
 
     // Outgoing selection, for delete fallback; cleared when it is deleted.
     DemodulatorInstancePtr previousModem;
+
+    // Highest consumed break serial; the Tab jump only considers newer breaks.
+    uint64_t consumedBreakSerial = 0;
 
     // Mass termination skips delete fallback; the selection dies with the last demod.
     bool terminatingAll = false;

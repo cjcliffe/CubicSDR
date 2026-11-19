@@ -19,9 +19,11 @@
 #include <pthread.h>
 #endif
 
+std::atomic<uint64_t> DemodulatorThread::breakSerialCounter(0);
+
 DemodulatorThread::DemodulatorThread(DemodulatorInstance* parent)
     : IOThread(), demodInstance(parent), outputBuffers("DemodulatorThreadBuffers"), muted(false), squelchLevel(-100),
-      signalLevel(-100), signalFloor(DEMOD_SIGNAL_MIN), signalCeil(DEMOD_SIGNAL_MAX), squelchEnabled(false), squelchBreak(false), scaleHold(false), currentHysteresis(6.0f) {
+      signalLevel(-100), signalFloor(DEMOD_SIGNAL_MIN), signalCeil(DEMOD_SIGNAL_MAX), squelchEnabled(false), squelchBreak(false), scaleHold(false), currentHysteresis(6.0f), lastBreakSerial(0) {
 }
 
 DemodulatorThread::~DemodulatorThread() {
@@ -184,6 +186,7 @@ void DemodulatorThread::run() {
                         }
                     }
                 }
+                lastBreakSerial = ++breakSerialCounter;
                 squelchBreak = true;
                 demodInstance->getVisualCue()->triggerSquelchBreak(120);
             } else if (squelched && squelchBreak) {
@@ -389,6 +392,10 @@ float DemodulatorThread::getHysteresis() {
 
 float DemodulatorThread::getSquelchLevel() {
     return squelchLevel;
+}
+
+uint64_t DemodulatorThread::getLastBreakSerial() {
+    return lastBreakSerial;
 }
 
 bool DemodulatorThread::getSquelchBreak() {

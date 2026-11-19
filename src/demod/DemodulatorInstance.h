@@ -7,6 +7,7 @@
 #include <map>
 #include <thread>
 #include <memory>
+#include <cstdint>
 #include "DemodDefs.h"
 #include "ModemDigital.h"
 #include "ModemAnalog.h"
@@ -75,6 +76,7 @@ public:
     float getSquelchLevel();
     float getHysteresis();
     bool isSquelchBreaking();
+    uint64_t getLastBreakSerial();
 
     void setOutputDevice(int device_id);
     int getOutputDevice();

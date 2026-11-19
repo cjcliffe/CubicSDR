@@ -122,6 +122,22 @@ DemodulatorInstancePtr DemodulatorMgr::getNextDemodulator(const DemodulatorInsta
     return stepped < 0 ? nullptr : demods_ordered[(size_t)stepped];
 }
 
+DemodulatorInstancePtr DemodulatorMgr::takeMostRecentBreaker(const DemodulatorInstancePtr& exclude) {
+    std::lock_guard < std::recursive_mutex > lock(demods_busy);
+    DemodulatorInstancePtr best;
+    uint64_t bestSerial = consumedBreakSerial;
+    for (auto &demod : demods) {
+        if (demod && demod != exclude && demod->isSquelchBreaking() && demod->getLastBreakSerial() > bestSerial) {
+            bestSerial = demod->getLastBreakSerial();
+            best = demod;
+        }
+    }
+    if (best) {
+        consumedBreakSerial = bestSerial;
+    }
+    return best;
+}
+
 DemodulatorInstancePtr DemodulatorMgr::getLastDemodulator() {
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
     

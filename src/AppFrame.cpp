@@ -3333,6 +3333,11 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
             lastDemod = wxGetApp().getDemodMgr().getCurrentModem();
             if (event.ShiftDown()) {
                 demod = wxGetApp().getDemodMgr().getPreviousDemodulator(lastDemod);
+            } else if (wxGetApp().getSoloMode()) {
+                demod = wxGetApp().getDemodMgr().takeMostRecentBreaker(lastDemod);
+                if (!demod) {
+                    demod = wxGetApp().getDemodMgr().getNextDemodulator(lastDemod);
+                }
             } else {
                 demod = wxGetApp().getDemodMgr().getNextDemodulator(lastDemod);
             }

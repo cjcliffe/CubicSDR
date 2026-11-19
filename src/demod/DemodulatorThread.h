@@ -6,6 +6,7 @@
 #include <queue>
 #include <vector>
 #include <memory>
+#include <cstdint>
 
 #include "DemodDefs.h"
 #include "AudioThread.h"
@@ -47,6 +48,7 @@ public:
    
     bool getSquelchBreak();
     void setSquelchBreak(bool squelchBreak_in);
+    uint64_t getLastBreakSerial();
 protected:
     
     double abMagnitude(float inphase, float quadrature);
@@ -61,6 +63,8 @@ protected:
     std::atomic<float> signalLevel, signalFloor, signalCeil;
     std::atomic<bool> squelchEnabled, squelchBreak, scaleHold;
     std::atomic<float> currentHysteresis;
+    std::atomic<uint64_t> lastBreakSerial;
+    static std::atomic<uint64_t> breakSerialCounter;
 
     SquelchState squelch;
     SquelchFade squelchFade;
