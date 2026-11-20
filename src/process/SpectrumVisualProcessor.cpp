@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "SpectrumVisualProcessor.h"
+#include "SpectrumRange.h"
 #include "CubicSDR.h"
 
 //50 ms
@@ -455,7 +456,6 @@ void SpectrumVisualProcessor::process() {
                 output->spectrum_hold_points.resize(0);
             }
             
-            float fft_ceil = 0, fft_floor = 1;
 
             fft_execute(fftPlan);
             
@@ -518,12 +518,6 @@ void SpectrumVisualProcessor::process() {
                 if (fft_result_ma[i] != fft_result_ma[i]) fft_result_ma[i] = fft_result[i];
                 fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * fft_average_rate;
                 
-                if (fft_result_maa[i] > fft_ceil || fft_ceil != fft_ceil) {
-                    fft_ceil = fft_result_maa[i];
-                }
-                if (fft_result_maa[i] < fft_floor || fft_floor != fft_floor) {
-                    fft_floor = fft_result_maa[i];
-                }
                 if (doPeak) {
                     if (fft_result_maa[i] > fft_result_peak[i]) {
                         fft_result_peak[i] = fft_result_maa[i];
@@ -531,6 +525,9 @@ void SpectrumVisualProcessor::process() {
                 }
             }
             
+            SpectrumRange range = scanSpectrumRange(fft_result_maa, hideDC, fftSizeInternal / 2);
+            double fft_ceil = range.ceil, fft_floor = range.floor;
+
             if (fft_ceil_ma != fft_ceil_ma) fft_ceil_ma = fft_ceil;
             fft_ceil_ma = fft_ceil_ma + (fft_ceil - fft_ceil_ma) * 0.05;
             if (fft_ceil_maa != fft_ceil_maa) fft_ceil_maa = fft_ceil;
