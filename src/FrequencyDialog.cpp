@@ -11,18 +11,16 @@
 
 wxBEGIN_EVENT_TABLE(FrequencyDialog, wxDialog)
 EVT_CHAR_HOOK(FrequencyDialog::OnChar)
-EVT_SHOW(FrequencyDialog::OnShow)
 wxEND_EVENT_TABLE()
 
 FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxString & title, DemodulatorInstancePtr demod, const wxPoint & /*position*/,
-        const wxSize & /*size*/, long style, FrequencyDialogTarget targetMode, wxString initString) :
+        const wxSize & /*size*/, long style, FrequencyDialogTarget targetMode) :
         wxDialog(parent, id, title, wxDefaultPosition, wxDefaultSize, style) {
     wxString freqStr;
    
     activeDemod = demod;
 
     this->targetMode = targetMode;
-    this->initialString = initString;
 
     if (targetMode == FDIALOG_TARGET_DEFAULT) {
         if (activeDemod) {
@@ -60,25 +58,15 @@ FrequencyDialog::FrequencyDialog(wxWindow * parent, wxWindowID id, const wxStrin
     // Set the textControl width to the [title + 100%] or the [content +100%],
   // whichever's the greater.
     int textCtrlX = dialogText->GetTextExtent(freqStr).GetWidth();
-    int initTextCtrlX = dialogText->GetTextExtent(initString).GetWidth();
     int titleX = this->GetTextExtent(title).GetWidth();
-    dialogText->SetMinSize(wxSize(max(int(2.0 * titleX), int(2.0 * std::max(textCtrlX, initTextCtrlX))), -1));
+    dialogText->SetMinSize(wxSize(max(int(2.0 * titleX), int(2.0 * textCtrlX)), -1));
 
     auto* dialogsizer = new wxBoxSizer(wxALL);
     dialogsizer->Add(dialogText, wxSizerFlags(1).Expand().Border(wxALL, 5));
     SetSizerAndFit(dialogsizer);
     Centre();
 
-    if (!initString.empty() && initString.length() == 1) {
-        dialogText->SetValue(initString);
-        dialogText->SetSelection(2, 2);
-        dialogText->SetFocus();
-    } else {
-        if (!initString.empty()) {
-            dialogText->SetValue(initString);
-        }
-        dialogText->SetSelection(-1, -1);
-    }
+    dialogText->SetSelection(-1, -1);
 }
 
 
@@ -258,10 +246,3 @@ void FrequencyDialog::OnChar(wxKeyEvent& event) {
     }
 }
 
-void FrequencyDialog::OnShow(wxShowEvent &event) {
-	if (initialString.length() == 1) {
-	    dialogText->SetFocus();
-	    dialogText->SetSelection(2, 2);
-	}
-	event.Skip();
-}
