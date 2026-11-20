@@ -5,6 +5,7 @@
 
 #include "VisualProcessor.h"
 #include "DemodDefs.h"
+#include "RateGate.h"
 #include <cmath>
 #include <memory>
 
@@ -95,6 +96,7 @@ private:
     std::vector<double> fft_result_peak;
     std::vector<double> fft_result_temp;
     std::vector<float> fftWindow;
+    RateGate resampleGate;
     
     msresamp_crcf resampler;
     double resamplerRatio;

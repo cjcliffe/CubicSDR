@@ -9,8 +9,18 @@
 #include "SpectrumDCPatch.h"
 #include "CubicSDR.h"
 
+#include <chrono>
+#include <cstdint>
+
 //50 ms
 #define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
+
+#define SPECTRUM_RESAMPLE_MIN_INTERVAL_MS 100
+
+static uint64_t steadyClockMs() {
+    return (uint64_t)std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+}
 
 SpectrumVisualProcessor::SpectrumVisualProcessor() : outputBuffers("SpectrumVisualProcessorBuffers") {
     lastInputBandwidth = 0;
@@ -381,7 +391,10 @@ void SpectrumVisualProcessor::process() {
                 shiftBuffer.assign(iqData->data.begin(), iqData->data.begin()+desired_input_size);
             }
             
-            if (!resampler || resampleBw != lastBandwidth || lastInputBandwidth != iqData->sampleRate) {
+            bool resampleChanged = !resampler || resampleBw != lastBandwidth || lastInputBandwidth != iqData->sampleRate;
+            // Recreation waits out the throttle window mid-gesture; a pending
+            // change retries on a later frame once the window elapses.
+            if (resampleChanged && resampleGate.shouldFire(steadyClockMs(), SPECTRUM_RESAMPLE_MIN_INTERVAL_MS)) {
                 float As = 60.0;
                 
                 if (resampler) {
