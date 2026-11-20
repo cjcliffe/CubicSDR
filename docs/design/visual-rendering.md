@@ -125,7 +125,7 @@ GLPanel
 | Panel | File | Purpose |
 |-------|------|---------|
 | `WaterfallPanel` | `src/panel/WaterfallPanel.h` | Scrolling waterfall texture rendering |
-| `SpectrumPanel` | `src/panel/SpectrumPanel.h` | FFT line plot rendering |
+| `SpectrumPanel` | `src/panel/SpectrumPanel.h` | FFT spectrum trace with filled area under the line |
 | `ScopePanel` | `src/panel/ScopePanel.h` | Oscilloscope waveform rendering |
 | `MeterPanel` | `src/panel/MeterPanel.h` | Signal level meter rendering |
 
@@ -403,6 +403,7 @@ The `Drawer` object is stack-local (not shared between threads), so creating a D
 | `wfHighlight` | Waterfall highlight overlay (declared but currently unused) |
 | `fftLine` | Spectrum line color |
 | `fftHighlight` | Highlighted spectrum point |
+| `fftFill` | Spectrum fill color and opacity |
 | `scopeLine` | Oscilloscope trace color |
 | `tuningBarLight` / `tuningBarDark` | Tuning bar gradient |
 | `tuningBarUp` / `tuningBarDown` | Fine tuning direction indicators |
@@ -542,7 +543,7 @@ SDRThread (producer) → SDRPostThread (channelizer/passthrough)
 SpectrumVisualProcessor (worker thread)
     │
     ├── Processes at pace set by upstream FFTDataDistributor (~30-60/sec)
-    ├── Applies smoothing (double EMA) to reduce flicker
+    ├── Applies smoothing (double IIR average in dB) to reduce flicker
     │
     ▼
 WaterfallCanvas (consumer, UI thread)

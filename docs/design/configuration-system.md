@@ -76,6 +76,7 @@ Global application configuration. Singleton accessed via `wxGetApp().getConfig()
 | `waterfallLinesPerSec` | `int` | `window/waterfall_lps` | 30 | Waterfall refresh rate |
 | `spectrumAvgSpeed` | `float` | `window/spectrum_avg` | 0.65 | Spectrum averaging speed |
 | `dbOffset` | `int` | `window/db_offset` | 0 | dB display offset |
+| `spectrumFFTSize` | `int` | `window/spectrum_fft_size` | 2048 | Spectrum FFT size (1024/2048/4096/8192) |
 
 ### Layout Settings
 
