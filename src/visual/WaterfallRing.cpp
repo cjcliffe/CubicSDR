@@ -57,7 +57,7 @@ bool WaterfallRing::step() {
             float v = points[(size_t)j * half + i];
 
             // Clamp out-of-range magnitudes, then scale to a byte value.
-            float wv = v < 0 ? 0 : (v > 0.99 ? 0.99 : v);
+            float wv = v < 0 ? 0 : (v > 1.0f ? 1.0f : v);
 
             slice[i] = (unsigned char)floor(wv * 255.0);
         }
