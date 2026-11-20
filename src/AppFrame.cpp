@@ -33,6 +33,7 @@
 #include "ActionDialog.h"
 #include "TuneRange.h"
 #include "SpectrumDsp.h"
+#include "WaterfallLps.h"
 
 #include <thread>
 #include <iostream>
@@ -2707,10 +2708,11 @@ void AppFrame::handleScopeSpectrumProcessors() {
     if (waterfallSpeedMeter->inputChanged()) {
         float val = waterfallSpeedMeter->getInputValue();
         waterfallSpeedMeter->setLevel(val);
-        waterfallDataThread->setLinesPerSecond((int) ceil(val * val));
-        waterfallCanvas->setLinesPerSecond((int) ceil(val * val));
+        int lps = waterfallMeterToLps(val);
+        waterfallDataThread->setLinesPerSecond(lps);
+        waterfallCanvas->setLinesPerSecond(lps);
         GetStatusBar()->SetStatusText(
-                wxString::Format(wxT("Waterfall max speed changed to %d lines per second."), (int) ceil(val * val)));
+                wxString::Format(wxT("Waterfall max speed changed to %d lines per second."), lps));
     }
 
     wproc->setView(waterfallCanvas->getViewState(), waterfallCanvas->getCenterFrequency(),
