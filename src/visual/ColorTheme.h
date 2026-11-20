@@ -63,6 +63,7 @@ public:
     RGBA4f waterfallDestroy;
     RGBA4f fftLine;
     RGBA4f fftHighlight;
+    RGBA4f fftFill;
     RGBA4f scopeLine;
     RGBA4f tuningBarLight;
     RGBA4f tuningBarDark;

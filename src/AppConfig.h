@@ -144,6 +144,8 @@ public:
     
     void setDBOffset(int offset);
     int getDBOffset();
+    void setSpectrumFFTSize(int fftSize);
+    int getSpectrumFFTSize();
     
     void setManualDevices(std::vector<SDRManualDef> manuals);
     std::vector<SDRManualDef> getManualDevices();
@@ -221,6 +223,7 @@ private:
     std::atomic_int waterfallLinesPerSec{};
     std::atomic<float> spectrumAvgSpeed{}, mainSplit{}, visSplit{}, bookmarkSplit{};
     std::atomic_int dbOffset{};
+    std::atomic_int spectrumFFTSize{};
     std::vector<SDRManualDef> manualDevices;
     std::atomic_bool bookmarksVisible{};
 

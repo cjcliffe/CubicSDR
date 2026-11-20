@@ -2,10 +2,21 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "SpectrumVisualProcessor.h"
+#include "SpectrumDsp.h"
 #include "CubicSDR.h"
+
+#include <chrono>
+#include <cstdint>
 
 //50 ms
 #define HEARTBEAT_CHECK_PERIOD_MICROS (50 * 1000) 
+
+#define SPECTRUM_RESAMPLE_MIN_INTERVAL_MS 100
+
+static uint64_t steadyClockMs() {
+    return (uint64_t)std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+}
 
 SpectrumVisualProcessor::SpectrumVisualProcessor() : outputBuffers("SpectrumVisualProcessorBuffers") {
     lastInputBandwidth = 0;
@@ -192,6 +203,8 @@ bool SpectrumVisualProcessor::setup(unsigned int fftSize_in) {
 
     fftPlan = fft_create_plan(fftSizeInternal, fftInput, fftOutput, LIQUID_FFT_FORWARD, 0);
 
+    generateHannWindow(fftWindow, fftSizeInternal);
+
     return true;
 }
 
@@ -273,11 +286,13 @@ void SpectrumVisualProcessor::process() {
             fft_result.reserve(fftSizeInternal);
             fft_result_ma.reserve(fftSizeInternal);
             fft_result_maa.reserve(fftSizeInternal);
+            fft_result_avg.reserve(fftSizeInternal);
             fft_result_peak.reserve(fftSizeInternal);
         }
         fft_result.resize(fftSizeInternal);
         fft_result_ma.resize(fftSizeInternal);
         fft_result_maa.resize(fftSizeInternal);
+        fft_result_avg.resize(fftSizeInternal);
         fft_result_temp.resize(fftSizeInternal);
         fft_result_peak.resize(fftSizeInternal);
     }
@@ -372,7 +387,10 @@ void SpectrumVisualProcessor::process() {
                 shiftBuffer.assign(iqData->data.begin(), iqData->data.begin()+desired_input_size);
             }
             
-            if (!resampler || resampleBw != lastBandwidth || lastInputBandwidth != iqData->sampleRate) {
+            bool resampleChanged = !resampler || resampleBw != lastBandwidth || lastInputBandwidth != iqData->sampleRate;
+            // Recreation waits out the throttle window mid-gesture; a pending
+            // change retries on a later frame once the window elapses.
+            if (resampleChanged && resampleGate.shouldFire(steadyClockMs(), SPECTRUM_RESAMPLE_MIN_INTERVAL_MS)) {
                 float As = 60.0;
                 
                 if (resampler) {
@@ -442,6 +460,11 @@ void SpectrumVisualProcessor::process() {
         }
         
         if (execute) {
+            for (unsigned int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
+                fftInput[i].real *= fftWindow[i];
+                fftInput[i].imag *= fftWindow[i];
+            }
+
             SpectrumVisualDataPtr output = outputBuffers.getBuffer();
             
             if (output->spectrum_points.size() != fftSize * 2) {
@@ -455,7 +478,6 @@ void SpectrumVisualProcessor::process() {
                 output->spectrum_hold_points.resize(0);
             }
             
-            float fft_ceil = 0, fft_floor = 1;
 
             fft_execute(fftPlan);
             
@@ -486,11 +508,12 @@ void SpectrumVisualProcessor::process() {
                         fft_result_maa[i] = fft_result_temp[i];
                     }
                 } else {
+                    double dbFloorFill = magToDb(fft_floor_maa);
                     for (size_t i = 0, iMax = fftSizeInternal; i < iMax; i++) {
                         if (i < fftSizeInternal/4) {
-                            fft_result_temp[i] = 0; // fft_result_ma[fftSizeInternal/4];
+                            fft_result_temp[i] = dbFloorFill; // fft_result_ma[fftSizeInternal/4];
                         } else if (i >= fftSizeInternal - fftSizeInternal/4) {
-                            fft_result_temp[i] = 0; // fft_result_ma[fftSizeInternal - fftSizeInternal/4-1];
+                            fft_result_temp[i] = dbFloorFill; // fft_result_ma[fftSizeInternal - fftSizeInternal/4-1];
                         } else {
                             fft_result_temp[i] = fft_result_ma[(i-fftSizeInternal/4)*2];
                         }
@@ -499,9 +522,9 @@ void SpectrumVisualProcessor::process() {
                         fft_result_ma[i] = fft_result_temp[i];
                         
                         if (i < fftSizeInternal/4) {
-                            fft_result_temp[i] = 0; //fft_result_maa[fftSizeInternal/4];
+                            fft_result_temp[i] = dbFloorFill; //fft_result_maa[fftSizeInternal/4];
                         } else if (i >= fftSizeInternal - fftSizeInternal/4) {
-                            fft_result_temp[i] = 0; // fft_result_maa[fftSizeInternal - fftSizeInternal/4-1];
+                            fft_result_temp[i] = dbFloorFill; // fft_result_maa[fftSizeInternal - fftSizeInternal/4-1];
                         } else {
                             fft_result_temp[i] = fft_result_maa[(i-fftSizeInternal/4)*2];
                         }
@@ -513,24 +536,23 @@ void SpectrumVisualProcessor::process() {
             }
             
             for (int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
-                if (fft_result_maa[i] != fft_result_maa[i]) fft_result_maa[i] = fft_result[i];
-                fft_result_maa[i] += (fft_result_ma[i] - fft_result_maa[i]) * fft_average_rate;
-                if (fft_result_ma[i] != fft_result_ma[i]) fft_result_ma[i] = fft_result[i];
-                fft_result_ma[i] += (fft_result[i] - fft_result_ma[i]) * fft_average_rate;
+                double db = magToDb(fft_result[i]);
+                if (fft_result_maa[i] != fft_result_maa[i]) fft_result_maa[i] = db;
+                fft_result_maa[i] = iirStep(fft_result_maa[i], fft_result_ma[i], fft_average_rate);
+                if (fft_result_ma[i] != fft_result_ma[i]) fft_result_ma[i] = db;
+                fft_result_ma[i] = iirStep(fft_result_ma[i], db, fft_average_rate);
+                fft_result_avg[i] = dbToMag(fft_result_maa[i]);
                 
-                if (fft_result_maa[i] > fft_ceil || fft_ceil != fft_ceil) {
-                    fft_ceil = fft_result_maa[i];
-                }
-                if (fft_result_maa[i] < fft_floor || fft_floor != fft_floor) {
-                    fft_floor = fft_result_maa[i];
-                }
                 if (doPeak) {
-                    if (fft_result_maa[i] > fft_result_peak[i]) {
-                        fft_result_peak[i] = fft_result_maa[i];
+                    if (fft_result_avg[i] > fft_result_peak[i]) {
+                        fft_result_peak[i] = fft_result_avg[i];
                     }
                 }
             }
             
+            SpectrumRange range = scanSpectrumRange(fft_result_avg, hideDC, fftSizeInternal / 2);
+            double fft_ceil = range.ceil, fft_floor = range.floor;
+
             if (fft_ceil_ma != fft_ceil_ma) fft_ceil_ma = fft_ceil;
             fft_ceil_ma = fft_ceil_ma + (fft_ceil - fft_ceil_ma) * 0.05;
             if (fft_ceil_maa != fft_ceil_maa) fft_ceil_maa = fft_ceil;
@@ -555,27 +577,18 @@ void SpectrumVisualProcessor::process() {
             double visualRatio = (double(bandwidth) / double(resampleBw));
             double visualStart = (double(fftSizeInternal) / 2.0) - (double(fftSizeInternal) * (visualRatio / 2.0));
             double visualAccum = 0;
-            double peak_acc = 0, acc = 0, accCount = 0, i = 0;
+            double accCount = 0, i = 0;
+            std::vector<unsigned int> pixelIdx;
    
             double point_ceil = doPeak?fft_ceil_peak:fft_ceil_maa;
             double point_floor = doPeak?fft_floor_peak:fft_floor_maa;
             
             for (int x = 0, xMax = output->spectrum_points.size() / 2; x < xMax; x++) {
                 visualAccum += visualRatio * double(SPECTRUM_VZM);
+                pixelIdx.clear();
 
                 while (visualAccum >= 1.0) {
-                    unsigned int idx = round(visualStart+i);
-                    if (idx > 0 && idx < fftSizeInternal) {
-                        acc += fft_result_maa[idx];
-                        if (doPeak) {
-                            peak_acc += fft_result_peak[idx];
-                        }
-                    } else {
-                        acc += fft_floor_maa;
-                        if (doPeak) {
-                            peak_acc += fft_floor_maa;
-                        }
-                    }
+                    pixelIdx.push_back((unsigned int)round(visualStart+i));
                     accCount += 1.0;
                     visualAccum -= 1.0;
                     i++;
@@ -586,11 +599,11 @@ void SpectrumVisualProcessor::process() {
                     output->spectrum_hold_points[x * 2] = ((float) x / (float) xMax);
                 }
                 if (accCount) {
-                    output->spectrum_points[x * 2 + 1] = ((log10((acc/accCount)+0.25 - (point_floor-0.75)) / log10((point_ceil+0.25) - (point_floor-0.75))))*sf;
-                    acc = 0.0;
+                    double pix = reducePixelMax(fft_result_avg, pixelIdx, fft_floor_maa);
+                    output->spectrum_points[x * 2 + 1] = ((log10(pix+0.25 - (point_floor-0.75)) / log10((point_ceil+0.25) - (point_floor-0.75))))*sf;
                     if (doPeak) {
-                        output->spectrum_hold_points[x * 2 + 1] = ((log10((peak_acc/accCount)+0.25 - (point_floor-0.75)) / log10((point_ceil+0.25) - (point_floor-0.75))))*sf;
-                        peak_acc = 0.0;
+                        double ppix = reducePixelMax(fft_result_peak, pixelIdx, fft_floor_maa);
+                        output->spectrum_hold_points[x * 2 + 1] = ((log10(ppix+0.25 - (point_floor-0.75)) / log10((point_ceil+0.25) - (point_floor-0.75))))*sf;
                     }
                     accCount = 0.0;
                 }
@@ -603,16 +616,9 @@ void SpectrumVisualProcessor::process() {
                 
                 if (freqMin < iqData->frequency && freqMax > iqData->frequency) {
                     int freqRange = int(freqMax-freqMin);
-                    int freqStep = freqRange/fftSize;
-                    int fftStart = (zeroPt/freqStep)-(2000/freqStep);
-                    int fftEnd = (zeroPt/freqStep)+(2000/freqStep);
-                    
-//                    std::cout << "range:" << freqRange << ", step: " << freqStep << ", start: " << fftStart << ", end: " << fftEnd << std::endl;
-                    
-                    if (fftEnd-fftStart < 2) {
-                        fftEnd++;
-                        fftStart--;
-                    }
+                    DCRange dcPatch = dcPatchRange(zeroPt, freqRange, fftSize);
+                    int fftStart = dcPatch.start;
+                    int fftEnd = dcPatch.end;
                     
                     int numSteps = (fftEnd-fftStart);
                     int halfWay = fftStart+(numSteps/2);

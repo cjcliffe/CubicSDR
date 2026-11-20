@@ -328,6 +328,7 @@ AppConfig::AppConfig() {
     waterfallLinesPerSec.store(DEFAULT_WATERFALL_LPS);
     spectrumAvgSpeed.store(0.65f);
     dbOffset.store(0);
+    spectrumFFTSize.store(DEFAULT_FFT_SIZE);
     modemPropsCollapsed.store(false);
     mainSplit = -1;
     visSplit = -1;
@@ -413,6 +414,14 @@ void AppConfig::setFrameRate(FrameRateEnum mode) {
 
 AppConfig::FrameRateEnum AppConfig::getFrameRate() {
     return frameRate.load();
+}
+
+void AppConfig::setSpectrumFFTSize(int fftSize) {
+    spectrumFFTSize.store(fftSize);
+}
+
+int AppConfig::getSpectrumFFTSize() {
+    return spectrumFFTSize.load();
 }
 
 void AppConfig::setDspMode(DspModeEnum mode) {
@@ -650,6 +659,7 @@ bool AppConfig::save() {
         *window_node->newChild("max") = winMax.load();
         *window_node->newChild("tips") = showTips.load();
         *window_node->newChild("frame_rate") = (int)frameRate.load();
+        *window_node->newChild("spectrum_fft_size") = spectrumFFTSize.load();
         *window_node->newChild("dsp_mode") = (int)dspMode.load();
         *window_node->newChild("stream_pacing") = streamPacing.load();
         *window_node->newChild("theme") = themeId.load();
@@ -799,6 +809,13 @@ bool AppConfig::load() {
             }
         }
 
+        if (win_node->hasAnother("spectrum_fft_size")) {
+            int fft_size = 0;
+            win_node->getNext("spectrum_fft_size")->element()->get(fft_size);
+            if (fft_size == 1024 || fft_size == DEFAULT_FFT_SIZE || fft_size == 4096 || fft_size == 8192) {
+                spectrumFFTSize.store(fft_size);
+            }
+        }
         bool hasDspMode = false;
         if (win_node->hasAnother("dsp_mode")) {
             int dsp_mode = 0;
