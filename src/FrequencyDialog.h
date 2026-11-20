@@ -28,16 +28,13 @@ public:
                   const wxPoint & pos = wxDefaultPosition,
                   const wxSize & size = wxDefaultSize,
                   long style = wxDEFAULT_DIALOG_STYLE,
-                  FrequencyDialogTarget targetMode = FDIALOG_TARGET_DEFAULT,
-                  wxString initString = "");
+                  FrequencyDialogTarget targetMode = FDIALOG_TARGET_DEFAULT);
 
     wxTextCtrl * dialogText;
 
 private:
     DemodulatorInstancePtr activeDemod;
     void OnChar ( wxKeyEvent &event );
-	void OnShow(wxShowEvent &event);
     FrequencyDialogTarget targetMode;
-	std::string initialString;
     DECLARE_EVENT_TABLE()
 };

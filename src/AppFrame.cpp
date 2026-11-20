@@ -3317,18 +3317,6 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
         case 'N':
         case 'W':
             return 1;
-        case WXK_NUMPAD0:
-        case WXK_NUMPAD1:
-        case WXK_NUMPAD2:
-        case WXK_NUMPAD3:
-        case WXK_NUMPAD4:
-        case WXK_NUMPAD5:
-        case WXK_NUMPAD6:
-        case WXK_NUMPAD7:
-        case WXK_NUMPAD8:
-        case WXK_NUMPAD9:
-            wxGetApp().showFrequencyInput(getFrequencyDialogTarget(), std::to_string(event.GetKeyCode() - WXK_NUMPAD0));
-            return 1;
         case WXK_TAB:
             lastDemod = wxGetApp().getDemodMgr().getCurrentModem();
             if (event.ShiftDown()) {
@@ -3377,7 +3365,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     }
 
     // Unmatched keys pass through so their CHAR event still generates;
-    // translated brackets and digits match in OnGlobalChar.
+    // translated brackets match in OnGlobalChar.
     return -1;
 }
 
@@ -3590,8 +3578,8 @@ int AppFrame::OnGlobalChar(wxKeyEvent &event) {
     }
 
     // Translated characters only exist here: key down/up codes are
-    // untranslated, so layout-dependent brackets and digits match on
-    // CHAR. Anything unhandled filters below.
+    // untranslated, so layout-dependent brackets match on CHAR.
+    // Anything unhandled filters below.
     int keyCode = event.GetKeyCode();
     int snap = wxGetApp().getFrequencySnap();
     DemodulatorInstancePtr actionDemod = wxGetApp().getDemodMgr().getCurrentModem();
@@ -3608,18 +3596,6 @@ int AppFrame::OnGlobalChar(wxKeyEvent &event) {
             return 1;
         case '}':
             gkNudge(actionDemod, (snap != 1 ? snap / 2 : snap));
-            return 1;
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-            wxGetApp().showFrequencyInput(getFrequencyDialogTarget(), std::to_string(keyCode - '0'));
             return 1;
         default:
             break;
