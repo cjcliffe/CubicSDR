@@ -3,6 +3,7 @@
 
 #include "SpectrumVisualProcessor.h"
 #include "SpectrumRange.h"
+#include "SpectrumWindow.h"
 #include "CubicSDR.h"
 
 //50 ms
@@ -192,6 +193,8 @@ bool SpectrumVisualProcessor::setup(unsigned int fftSize_in) {
     lastDataSize = 0;
 
     fftPlan = fft_create_plan(fftSizeInternal, fftInput, fftOutput, LIQUID_FFT_FORWARD, 0);
+
+    generateHannWindow(fftWindow, fftSizeInternal);
 
     return true;
 }
@@ -443,6 +446,11 @@ void SpectrumVisualProcessor::process() {
         }
         
         if (execute) {
+            for (unsigned int i = 0, iMax = fftSizeInternal; i < iMax; i++) {
+                fftInput[i].real *= fftWindow[i];
+                fftInput[i].imag *= fftWindow[i];
+            }
+
             SpectrumVisualDataPtr output = outputBuffers.getBuffer();
             
             if (output->spectrum_points.size() != fftSize * 2) {
