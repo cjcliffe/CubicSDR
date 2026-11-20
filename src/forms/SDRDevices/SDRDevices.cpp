@@ -27,6 +27,7 @@ SDRDevicesDialog::SDRDevicesDialog( wxWindow* parent, const wxPoint &pos, bool d
     m_resetButton->SetToolTip(wxT("Reset the selected device's stored settings to defaults"));
     m_resetButton->Disable();
     Bind(wxEVT_CHAR_HOOK, &SDRDevicesDialog::OnCharHook, this);
+    m_useSelectedButton->Bind(wxEVT_BUTTON, &SDRDevicesDialog::OnUseSelectedButton, this);
     m_deviceTimer.Start(250);
     selId = nullptr;
     removeId = nullptr;
@@ -66,6 +67,19 @@ void SDRDevicesDialog::OnCharHook(wxKeyEvent &event) {
         if (focus == nullptr) {
             Close();
             return;
+        }
+    }
+    int keyCode = event.GetKeyCode();
+    if (keyCode == WXK_RETURN || keyCode == WXK_NUMPAD_ENTER) {
+        for (wxWindow *focus = wxWindow::FindFocus(); focus != nullptr; focus = focus->GetParent()) {
+            if (focus == m_useSelectedButton) {
+                // Start/Stop is a mouse handler, so feed it a synthetic click
+                // carrying the key timestamp to reuse its debounce.
+                wxMouseEvent synth(wxEVT_LEFT_UP);
+                synth.SetTimestamp(event.GetTimestamp());
+                OnUseSelected(synth);
+                return;
+            }
         }
     }
     event.Skip();
@@ -401,6 +415,19 @@ void SDRDevicesDialog::updateDeviceStateUI() {
     devStatusBar->SetStatusText(devActiveShown ? "Streaming " + dev->getName() + "." : "Ready.");
 }
 
+void SDRDevicesDialog::OnUseSelectedButton(wxCommandEvent &event) {
+    // A native button event carries no click timestamp of its own; use
+    // the triggering input message's time so the shared debounce can
+    // tell a fresh Enter press from a mouse click's companion event.
+    long ts = event.GetTimestamp();
+#ifdef __WXMSW__
+    ts = (long)::GetMessageTime();
+#endif
+    wxMouseEvent synth(wxEVT_LEFT_UP);
+    synth.SetTimestamp(ts);
+    OnUseSelected(synth);
+}
+
 void SDRDevicesDialog::OnUseSelected( wxMouseEvent& event) {
     if (dev != nullptr) {
 
@@ -646,6 +673,9 @@ void SDRDevicesDialog::OnDeviceTimer( wxTimerEvent& event ) {
                 if (item.second && item.second->getDeviceId() == targetId) {
                     devTree->EnsureVisible(item.first);
                     devTree->SelectItem(item.first);
+                    if (!item.second->isActive()) {
+                        m_useSelectedButton->SetFocus();
+                    }
                     break;
                 }
             }
