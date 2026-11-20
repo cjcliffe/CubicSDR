@@ -2,11 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "SpectrumVisualProcessor.h"
-#include "SpectrumRange.h"
-#include "SpectrumWindow.h"
-#include "SpectrumDecimate.h"
-#include "SpectrumAverage.h"
-#include "SpectrumDCPatch.h"
+#include "SpectrumDsp.h"
 #include "CubicSDR.h"
 
 #include <chrono>

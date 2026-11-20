@@ -32,7 +32,7 @@
 #include "ImagePanel.h"
 #include "ActionDialog.h"
 #include "TuneRange.h"
-#include "SpectrumFftSize.h"
+#include "SpectrumDsp.h"
 
 #include <thread>
 #include <iostream>

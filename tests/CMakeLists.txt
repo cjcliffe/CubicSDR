@@ -30,12 +30,7 @@ add_executable(cubicsdr_tests
     test_LevelSpread.cpp
     test_FmSquelch.cpp
     test_RateGate.cpp
-    test_SpectrumRange.cpp
-    test_SpectrumWindow.cpp
-    test_SpectrumDecimate.cpp
-    test_SpectrumAverage.cpp
-    test_SpectrumFftSize.cpp
-    test_SpectrumDCPatch.cpp
+    test_SpectrumDsp.cpp
     test_AudioDeviceMatch.cpp
     test_TuneRange.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Gradient.cpp

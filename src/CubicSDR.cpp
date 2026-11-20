@@ -4,7 +4,7 @@
 #define OPENGL
 
 #include "CubicSDRDefs.h"
-#include "SpectrumFftSize.h"
+#include "SpectrumDsp.h"
 #include "wx/wxprec.h"
 
 #ifndef WX_PRECOMP
