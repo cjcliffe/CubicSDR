@@ -954,7 +954,7 @@ int CubicSDR::getPPM() {
     return ppm;
 }
 
-void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode, const wxString& initString) {
+void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode) {
     const wxString demodTitle("Set Demodulator Frequency (MHz default)");
     const wxString freqTitle("Set Center Frequency (MHz default)");
     const wxString bwTitle("Modem Bandwidth (150Hz - 500kHz, kHz default)");
@@ -989,7 +989,7 @@ void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetM
             break;
     }
 
-    FrequencyDialog fdialog(appframe, -1, title, activeModem, wxPoint(-100,-100), wxSize(350, 75), wxDEFAULT_DIALOG_STYLE, targetMode, initString);
+    FrequencyDialog fdialog(appframe, -1, title, activeModem, wxPoint(-100,-100), wxSize(350, 75), wxDEFAULT_DIALOG_STYLE, targetMode);
     fdialog.ShowModal();
 }
 
