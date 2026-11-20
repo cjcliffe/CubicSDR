@@ -25,6 +25,7 @@ public:
     void OnTreeDoubleClick( wxMouseEvent& event ) override;
     void OnDeviceTimer( wxTimerEvent& event ) override;
     void OnCharHook(wxKeyEvent &event);
+    void OnUseSelectedButton(wxCommandEvent &event);
     void OnRefreshDevices( wxMouseEvent& event ) override;
     void OnPropGridChanged( wxPropertyGridEvent& event ) override;
 
