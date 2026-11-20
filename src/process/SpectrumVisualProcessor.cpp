@@ -6,6 +6,7 @@
 #include "SpectrumWindow.h"
 #include "SpectrumDecimate.h"
 #include "SpectrumAverage.h"
+#include "SpectrumDCPatch.h"
 #include "CubicSDR.h"
 
 //50 ms
@@ -606,16 +607,9 @@ void SpectrumVisualProcessor::process() {
                 
                 if (freqMin < iqData->frequency && freqMax > iqData->frequency) {
                     int freqRange = int(freqMax-freqMin);
-                    int freqStep = freqRange/fftSize;
-                    int fftStart = (zeroPt/freqStep)-(2000/freqStep);
-                    int fftEnd = (zeroPt/freqStep)+(2000/freqStep);
-                    
-//                    std::cout << "range:" << freqRange << ", step: " << freqStep << ", start: " << fftStart << ", end: " << fftEnd << std::endl;
-                    
-                    if (fftEnd-fftStart < 2) {
-                        fftEnd++;
-                        fftStart--;
-                    }
+                    DCRange dcPatch = dcPatchRange(zeroPt, freqRange, fftSize);
+                    int fftStart = dcPatch.start;
+                    int fftEnd = dcPatch.end;
                     
                     int numSteps = (fftEnd-fftStart);
                     int halfWay = fftStart+(numSteps/2);

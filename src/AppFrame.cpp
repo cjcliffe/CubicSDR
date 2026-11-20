@@ -32,6 +32,7 @@
 #include "ImagePanel.h"
 #include "ActionDialog.h"
 #include "TuneRange.h"
+#include "SpectrumFftSize.h"
 
 #include <thread>
 #include <iostream>
@@ -1089,6 +1090,26 @@ void AppFrame::handleUpdateDeviceParams() {
     frameMenuItems[wxID_FRAME_CURRENT] = newSettingsMenu->AppendSubMenu(frameSubMenu, "Frame Rate");
     frameMenuItems[wxID_FRAME_CURRENT]->SetItemLabel(getSettingsLabel("Frame Rate", selectedFrameRateItem->GetItemLabel().ToStdString()));
 
+    // Spectrum FFT size menu:
+    fftMenuItems.clear();
+
+    auto *fftSubMenu = new wxMenu;
+
+    fftMenuItems[wxID_FFT_BASE] = fftSubMenu->AppendRadioItem(wxID_FFT_BASE, "1024");
+    fftMenuItems[wxID_FFT_BASE + 1] = fftSubMenu->AppendRadioItem(wxID_FFT_BASE + 1, "2048");
+    fftMenuItems[wxID_FFT_BASE + 2] = fftSubMenu->AppendRadioItem(wxID_FFT_BASE + 2, "4096");
+    fftMenuItems[wxID_FFT_BASE + 3] = fftSubMenu->AppendRadioItem(wxID_FFT_BASE + 3, "8192");
+
+    int fftSize = wxGetApp().getConfig()->getSpectrumFFTSize();
+    int fftChecked = wxID_FFT_BASE + (fftSize == 8192 ? 3 : (fftSize == 4096 ? 2 : (fftSize == 1024 ? 0 : 1)));
+
+    fftMenuItems[fftChecked]->Check(true);
+
+    wxMenuItem* selectedFftItem = fftMenuItems[fftChecked];
+
+    fftMenuItems[wxID_FFT_CURRENT] = newSettingsMenu->AppendSubMenu(fftSubMenu, "Spectrum FFT Size");
+    fftMenuItems[wxID_FFT_CURRENT]->SetItemLabel(getSettingsLabel("Spectrum FFT Size", selectedFftItem->GetItemLabel().ToStdString()));
+
     // DSP menu:
     dspMenuItems.clear();
 
@@ -1434,6 +1455,7 @@ void AppFrame::OnMenu(wxCommandEvent &event) {
     actionOnMenuAbout(event)
     || actionOnMenuSDRStartStop(event)
     || actionOnMenuFrameRate(event)
+    || actionOnMenuFftSize(event)
     || actionOnMenuDsp(event)
     || actionOnMenuPacing(event)
     || actionOnMenuLatency(event)
@@ -2241,6 +2263,24 @@ bool AppFrame::actionOnMenuFrameRate(wxCommandEvent &event) {
         wxMenuItem *selectedFrameRateItem = frameMenuItems[event.GetId()];
         frameMenuItems[wxID_FRAME_CURRENT]->SetItemLabel(
                 getSettingsLabel("Frame Rate", selectedFrameRateItem->GetItemLabel().ToStdString()));
+
+        return true;
+    }
+    return false;
+}
+
+bool AppFrame::actionOnMenuFftSize(wxCommandEvent &event) {
+    if (event.GetId() >= wxID_FFT_BASE && event.GetId() <= wxID_FFT_BASE + 3) {
+        int fftSizes[] = {1024, DEFAULT_FFT_SIZE, 4096, 8192};
+        int fftSize = fftSizes[event.GetId() - wxID_FFT_BASE];
+
+        wxGetApp().getConfig()->setSpectrumFFTSize(fftSize);
+        setMainWaterfallFFTSize(effectiveSpectrumFFT(fftSize, wxGetApp().getSampleRate()));
+
+        //update UI
+        wxMenuItem *selectedFftItem = fftMenuItems[event.GetId()];
+        fftMenuItems[wxID_FFT_CURRENT]->SetItemLabel(
+                getSettingsLabel("Spectrum FFT Size", selectedFftItem->GetItemLabel().ToStdString()));
 
         return true;
     }
