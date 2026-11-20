@@ -4,6 +4,7 @@
 #include "SpectrumVisualProcessor.h"
 #include "SpectrumRange.h"
 #include "SpectrumWindow.h"
+#include "SpectrumDecimate.h"
 #include "CubicSDR.h"
 
 //50 ms
@@ -560,27 +561,18 @@ void SpectrumVisualProcessor::process() {
             double visualRatio = (double(bandwidth) / double(resampleBw));
             double visualStart = (double(fftSizeInternal) / 2.0) - (double(fftSizeInternal) * (visualRatio / 2.0));
             double visualAccum = 0;
-            double peak_acc = 0, acc = 0, accCount = 0, i = 0;
+            double accCount = 0, i = 0;
+            std::vector<unsigned int> pixelIdx;
    
             double point_ceil = doPeak?fft_ceil_peak:fft_ceil_maa;
             double point_floor = doPeak?fft_floor_peak:fft_floor_maa;
             
             for (int x = 0, xMax = output->spectrum_points.size() / 2; x < xMax; x++) {
                 visualAccum += visualRatio * double(SPECTRUM_VZM);
+                pixelIdx.clear();
 
                 while (visualAccum >= 1.0) {
-                    unsigned int idx = round(visualStart+i);
-                    if (idx > 0 && idx < fftSizeInternal) {
-                        acc += fft_result_maa[idx];
-                        if (doPeak) {
-                            peak_acc += fft_result_peak[idx];
-                        }
-                    } else {
-                        acc += fft_floor_maa;
-                        if (doPeak) {
-                            peak_acc += fft_floor_maa;
-                        }
-                    }
+                    pixelIdx.push_back((unsigned int)round(visualStart+i));
                     accCount += 1.0;
                     visualAccum -= 1.0;
                     i++;
@@ -591,11 +583,11 @@ void SpectrumVisualProcessor::process() {
                     output->spectrum_hold_points[x * 2] = ((float) x / (float) xMax);
                 }
                 if (accCount) {
-                    output->spectrum_points[x * 2 + 1] = ((log10((acc/accCount)+0.25 - (point_floor-0.75)) / log10((point_ceil+0.25) - (point_floor-0.75))))*sf;
-                    acc = 0.0;
+                    double pix = reducePixelMax(fft_result_maa, pixelIdx, fft_floor_maa);
+                    output->spectrum_points[x * 2 + 1] = ((log10(pix+0.25 - (point_floor-0.75)) / log10((point_ceil+0.25) - (point_floor-0.75))))*sf;
                     if (doPeak) {
-                        output->spectrum_hold_points[x * 2 + 1] = ((log10((peak_acc/accCount)+0.25 - (point_floor-0.75)) / log10((point_ceil+0.25) - (point_floor-0.75))))*sf;
-                        peak_acc = 0.0;
+                        double ppix = reducePixelMax(fft_result_peak, pixelIdx, fft_floor_maa);
+                        output->spectrum_hold_points[x * 2 + 1] = ((log10(ppix+0.25 - (point_floor-0.75)) / log10((point_ceil+0.25) - (point_floor-0.75))))*sf;
                     }
                     accCount = 0.0;
                 }
