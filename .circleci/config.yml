@@ -222,30 +222,31 @@ workflows:
           filters:
             tags:
               ignore: /.*/
-      - appimage:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
-      - deb:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
-      - dmg-x64:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
-      - dmg-arm64:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
+      # Parked for an nsis-only test round; revert before merge.
+      # - appimage:
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
+      # - deb:
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
+      # - dmg-x64:
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
+      # - dmg-arm64:
+      #     filters:
+      #       branches:
+      #         ignore: /.*/
+      #       tags:
+      #         only: /.*/
       - nsis:
           filters:
             branches:
