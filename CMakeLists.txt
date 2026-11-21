@@ -1025,6 +1025,14 @@ IF (WIN32 AND BUILD_INSTALLER)
     SET(BUNDLE_MSVC_REDIST "" CACHE STRING "Visual C++ Redistributable")
 
     set(CPACK_NSIS_EXECUTABLES_DIRECTORY ".") 
+    # Remove a previous install from this folder first: stale DLLs and modules
+    # left behind by an older version break the new binaries. Only folders that
+    # already contain our executable are wiped.
+    set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "
+  IfFileExists \\\"$INSTDIR\\\\${CUBICSDR_INSTALL_NAME}.exe\\\" 0 +3
+    DetailPrint \\\"Removing previous install from $INSTDIR\\\"
+    RMDir /r \\\"$INSTDIR\\\"
+")
     install(TARGETS CubicSDR RUNTIME DESTINATION .)
 
     install(FILES 
