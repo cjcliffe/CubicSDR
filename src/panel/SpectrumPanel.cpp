@@ -98,6 +98,13 @@ bool SpectrumPanel::getUseDBOffset() const {
 
 void SpectrumPanel::setPoints(std::vector<float> &points_in) {
     points.assign(points_in.begin(), points_in.end());
+    fill_points.resize(points.size() * 2);
+    for (size_t i = 0, n = points.size() / 2; i < n; i++) {
+        fill_points[i * 4] = points[i * 2];
+        fill_points[i * 4 + 1] = points[i * 2 + 1];
+        fill_points[i * 4 + 2] = points[i * 2];
+        fill_points[i * 4 + 3] = 0.0f;
+    }
 }
 
 void SpectrumPanel::setPeakPoints(std::vector<float> &points_in) {
@@ -147,8 +154,21 @@ void SpectrumPanel::drawPanelContents() {
         }
         
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glColor3f(ThemeMgr::mgr.currentTheme->fftLine.r, ThemeMgr::mgr.currentTheme->fftLine.g, ThemeMgr::mgr.currentTheme->fftLine.b);
         glEnableClientState(GL_VERTEX_ARRAY);
+        glColor4f(ThemeMgr::mgr.currentTheme->fftFill.r, ThemeMgr::mgr.currentTheme->fftFill.g, ThemeMgr::mgr.currentTheme->fftFill.b, ThemeMgr::mgr.currentTheme->fftFill.a);
+        glVertexPointer(2, GL_FLOAT, 0, &fill_points[0]);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, fill_points.size() / 2);
+        float fillBase = (-1.0f + 0.75f) / 1.5f;
+        glBegin(GL_QUADS);
+        glColor4f(ThemeMgr::mgr.currentTheme->fftFill.r, ThemeMgr::mgr.currentTheme->fftFill.g, ThemeMgr::mgr.currentTheme->fftFill.b, ThemeMgr::mgr.currentTheme->fftFill.a);
+        glVertex2f(0, 0);
+        glColor4f(ThemeMgr::mgr.currentTheme->fftBackground.r, ThemeMgr::mgr.currentTheme->fftBackground.g, ThemeMgr::mgr.currentTheme->fftBackground.b, ThemeMgr::mgr.currentTheme->fftFill.a);
+        glVertex2f(0, fillBase);
+        glVertex2f(1, fillBase);
+        glColor4f(ThemeMgr::mgr.currentTheme->fftFill.r, ThemeMgr::mgr.currentTheme->fftFill.g, ThemeMgr::mgr.currentTheme->fftFill.b, ThemeMgr::mgr.currentTheme->fftFill.a);
+        glVertex2f(1, 0);
+        glEnd();
+        glColor3f(ThemeMgr::mgr.currentTheme->fftLine.r, ThemeMgr::mgr.currentTheme->fftLine.g, ThemeMgr::mgr.currentTheme->fftLine.b);
         glVertexPointer(2, GL_FLOAT, 0, &points[0]);
         glDrawArrays(GL_LINE_STRIP, 0, points.size() / 2);
         if (!peak_points.empty()) {

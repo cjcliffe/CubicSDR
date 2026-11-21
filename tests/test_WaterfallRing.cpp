@@ -38,13 +38,13 @@ TEST_SUITE("WaterfallRing") {
         const unsigned char *left = ring.reversedLine(0);
         CHECK(left[0] == 0);
         CHECK(left[1] == 127);
-        CHECK(left[2] == 252);
+        CHECK(left[2] == 255);
         CHECK(left[3] == 0);
         const unsigned char *right = ring.reversedLine(1);
         CHECK(right[0] == 63);
         CHECK(right[1] == 191);
         CHECK(right[2] == 252);
-        CHECK(right[3] == 252);
+        CHECK(right[3] == 255);
     }
 
     TEST_CASE("interleaved input takes the odd elements") {

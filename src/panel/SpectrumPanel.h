@@ -43,6 +43,7 @@ private:
     long long bandwidth;
     std::vector<float> points;
     std::vector<float> peak_points;
+    std::vector<float> fill_points;
     
     GLTextPanel dbPanelCeil;
     GLTextPanel dbPanelFloor;

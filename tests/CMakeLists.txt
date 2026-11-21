@@ -17,6 +17,7 @@ add_executable(cubicsdr_tests
     test_Frequency.cpp
     test_WaterfallRing.cpp
     test_WaterfallPacer.cpp
+    test_WaterfallLps.cpp
     test_SDRPacer.cpp
     test_AudioMixer.cpp
     test_DemodReselect.cpp
@@ -30,6 +31,7 @@ add_executable(cubicsdr_tests
     test_LevelSpread.cpp
     test_FmSquelch.cpp
     test_RateGate.cpp
+    test_SpectrumDsp.cpp
     test_AudioDeviceMatch.cpp
     test_TuneRange.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Gradient.cpp

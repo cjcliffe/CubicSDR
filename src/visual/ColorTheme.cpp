@@ -51,8 +51,9 @@ DefaultColorTheme::DefaultColorTheme() {
     waterfallNew = RGBA4f(0, 1, 0);
     waterfallHover = RGBA4f(1, 1, 0);
     waterfallDestroy = RGBA4f(1, 0, 0);
-    fftLine = RGBA4f(0.9f, 0.9f, 0.9f);
+    fftLine = RGBA4f(0.9f, 0.9f, 1.0);
     fftHighlight = RGBA4f(1, 1, 1);
+    fftFill = RGBA4f(0.15f, 0.35f, 0.85f, 0.3f);
     scopeLine = RGBA4f(0.9f, 0.9f, 0.9f);
     tuningBarLight = RGBA4f(0.2f, 0.2f, 0.9f);
     tuningBarDark = RGBA4f(0.0f, 0.0f, 0.35f);
@@ -84,6 +85,7 @@ DefaultColorThemeJet::DefaultColorThemeJet()
 	waterfallGradient.clear();
 	waterfallGradient.addColors({ {0, 0, 0}, {0, 0, 1.0}, {0, 1.0, 0}, {1.0, 1.0, 0},{1.0, 0.2f, 0.0}});
 	waterfallGradient.generate(256);
+	fftFill = RGBA4f(0.05f, 0.1f, 0.6f, 0.3f);
 }
 
 
@@ -100,6 +102,7 @@ RadarColorTheme::RadarColorTheme() {
     waterfallDestroy = RGBA4f(1, 0, 0);
     fftLine = RGBA4f(0.8f, 1.0f, 0.8f);
     fftHighlight = RGBA4f(1, 1, 1);
+    fftFill = RGBA4f(0.1f, 0.8f, 0.25f, 0.25f);
     scopeLine = RGBA4f(0.8f, 1.0f, 0.8f);
     tuningBarLight = RGBA4f(0.0, 0.45f, 0.0);
     tuningBarDark = RGBA4f(0.0, 0.1f, 0.0);
@@ -129,6 +132,7 @@ BlackAndWhiteColorTheme::BlackAndWhiteColorTheme() {
     waterfallDestroy = RGBA4f(1, 0, 0);
     fftLine = RGBA4f(0.9f, 0.9f, 0.9f);
     fftHighlight = RGBA4f(1, 1, 0.9f);
+    fftFill = RGBA4f(0.55f, 0.55f, 0.55f, 0.25f);
     scopeLine = RGBA4f(0.9f, 0.9f, 0.9f);
     tuningBarLight = RGBA4f(0.4f, 0.4f, 0.4f);
     tuningBarDark = RGBA4f(0.1f, 0.1f, 0.1f);
@@ -167,6 +171,7 @@ SharpColorTheme::SharpColorTheme() {
     waterfallDestroy = RGBA4f(1, 0, 0);
     fftLine = RGBA4f(0.9f, 0.9f, 1.0);
     fftHighlight = RGBA4f(0.9f, 0.9f, 1.0);
+    fftFill = RGBA4f(0.25f, 0.5f, 1.0f, 0.25f);
     scopeLine = RGBA4f(0.85f, 0.85f, 1.0);
     tuningBarLight = RGBA4f(28.0f / 255.0f, 106.0f / 255.0f, 179.0f / 255.0f);
     tuningBarDark = RGBA4f(14.0f / 255.0f, 53.0f / 255.0f, 89.5f / 255.0f);
@@ -196,8 +201,9 @@ RadColorTheme::RadColorTheme() {
     waterfallNew = RGBA4f(0, 1, 0);
     waterfallHover = RGBA4f(1, 1, 0);
     waterfallDestroy = RGBA4f(1, 0, 0);
-    fftLine = RGBA4f(1.0, 0.9f, 0.9f);
+    fftLine = RGBA4f(1.0f, 0.6f, 0.3f);
     fftHighlight = RGBA4f(1, 1, 1);
+    fftFill = RGBA4f(0.85f, 0.3f, 0.1f, 0.25f);
     scopeLine = RGBA4f(1.0, 0.9f, 0.9f);
     tuningBarLight = RGBA4f(0.0, 0.45f, 0.0);
     tuningBarDark = RGBA4f(0.0, 0.1f, 0.0);
@@ -232,6 +238,7 @@ TouchColorTheme::TouchColorTheme() {
     waterfallDestroy = RGBA4f(1, 0, 0);
     fftLine = RGBA4f(234.0f / 255.0f, 232.0f / 255.0f, 247.0f / 255.0f);
     fftHighlight = RGBA4f(1.0f, 1.0f, 1.0f);
+    fftFill = RGBA4f(0.5f, 0.35f, 0.9f, 0.25f);
     scopeLine = RGBA4f(234.0f / 255.0f, 232.0f / 255.0f, 247.0f / 255.0f);
     tuningBarLight = RGBA4f(0.2f, 0.2f, 0.7f);
     tuningBarDark = RGBA4f(0.1f, 0.1f, 0.45f);
@@ -265,8 +272,9 @@ HDColorTheme::HDColorTheme() {
     waterfallNew = RGBA4f(0, 1, 0);
     waterfallHover = RGBA4f(1, 1, 0);
     waterfallDestroy = RGBA4f(1, 0, 0);
-    fftLine = RGBA4f(0.9f, 0.9f, 0.9f);
+    fftLine = RGBA4f(0.55f, 0.9f, 1.0f);
     fftHighlight = RGBA4f(1, 1, 1);
+    fftFill = RGBA4f(0.1f, 0.65f, 0.85f, 0.25f);
     scopeLine = RGBA4f(0.9f, 0.9f, 0.9f);
     tuningBarLight = RGBA4f(0.4f, 0.4f, 1.0);
     tuningBarDark = RGBA4f(0.1f, 0.1f, 0.45f);

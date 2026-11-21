@@ -4,6 +4,7 @@
 #define OPENGL
 
 #include "CubicSDRDefs.h"
+#include "SpectrumDsp.h"
 #include "wx/wxprec.h"
 
 #ifndef WX_PRECOMP
@@ -733,19 +734,11 @@ void CubicSDR::setSampleRate(long long rate_in) {
 
     setFrequency(frequency);
 
-    if (rate_in <= CHANNELIZER_RATE_MAX / 8) {
-        appframe->setMainWaterfallFFTSize(DEFAULT_FFT_SIZE / 4);
-        appframe->getWaterfallDataThread()->getProcessor()->setHideDC(false);
-        spectrumVisualThread->getProcessor()->setHideDC(false);
-    } else if (rate_in <= CHANNELIZER_RATE_MAX) {
-        appframe->setMainWaterfallFFTSize(DEFAULT_FFT_SIZE / 2);
-        appframe->getWaterfallDataThread()->getProcessor()->setHideDC(false);
-        spectrumVisualThread->getProcessor()->setHideDC(false);
-    } else if (rate_in > CHANNELIZER_RATE_MAX) {
-        appframe->setMainWaterfallFFTSize(DEFAULT_FFT_SIZE);
-        appframe->getWaterfallDataThread()->getProcessor()->setHideDC(true);
-        spectrumVisualThread->getProcessor()->setHideDC(true);
-    }
+    int fftSize = effectiveSpectrumFFT(getConfig()->getSpectrumFFTSize(), rate_in);
+    appframe->setMainWaterfallFFTSize(fftSize);
+    bool hideDC = rate_in > CHANNELIZER_RATE_MAX;
+    appframe->getWaterfallDataThread()->getProcessor()->setHideDC(hideDC);
+    spectrumVisualThread->getProcessor()->setHideDC(hideDC);
 }
 
 void CubicSDR::stopDevice(bool store, int waitMsForTermination) {
