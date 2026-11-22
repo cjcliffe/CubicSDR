@@ -120,29 +120,30 @@ void WaterfallPanel::drawPanelContents() {
     float vofs = (float) (ring.rowOffset()) * vtexel;
     
     glBindTexture(GL_TEXTURE_2D, waterfall[0]);
-    glBegin (GL_QUADS);
-    glTexCoord2f(0.0 + half_texel, 1.0 + vofs);
-    glVertex3f(-1.0, -1.0, 0.0);
-    glTexCoord2f(1.0 - half_texel, 1.0 + vofs);
-    glVertex3f(0.0 + half_pixel, -1.0, 0.0);
-    glTexCoord2f(1.0 - half_texel, 0.0 + vofs);
-    glVertex3f(0.0 + half_pixel, 1.0, 0.0);
-    glTexCoord2f(0.0 + half_texel, 0.0 + vofs);
-    glVertex3f(-1.0, 1.0, 0.0);
-    glEnd();
+    float quadVerts[8] = {
+        -1.0, -1.0, 0.0 + half_pixel, -1.0,
+        0.0 + half_pixel, 1.0, -1.0, 1.0
+    };
+    float quadTex[8] = {
+        0.0 + half_texel, 1.0 + vofs, 1.0 - half_texel, 1.0 + vofs,
+        1.0 - half_texel, 0.0 + vofs, 0.0 + half_texel, 0.0 + vofs
+    };
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glVertexPointer(2, GL_FLOAT, 0, quadVerts);
+    glTexCoordPointer(2, GL_FLOAT, 0, quadTex);
+    glDrawArrays(GL_QUADS, 0, 4);
     
     vofs = (float) (ring.rowOffset()) * vtexel;
     glBindTexture(GL_TEXTURE_2D, waterfall[1]);
-    glBegin(GL_QUADS);
-    glTexCoord2f(0.0 + half_texel, 1.0 + vofs);
-    glVertex3f(0.0 - half_pixel, -1.0, 0.0);
-    glTexCoord2f(1.0 - half_texel, 1.0 + vofs);
-    glVertex3f(1.0, -1.0, 0.0);
-    glTexCoord2f(1.0 - half_texel, 0.0 + vofs);
-    glVertex3f(1.0, 1.0, 0.0);
-    glTexCoord2f(0.0 + half_texel, 0.0 + vofs);
-    glVertex3f(0.0 - half_pixel, 1.0, 0.0);
-    glEnd();
+    quadVerts[0] = 0.0 - half_pixel; quadVerts[1] = -1.0;
+    quadVerts[2] = 1.0; quadVerts[3] = -1.0;
+    quadVerts[4] = 1.0; quadVerts[5] = 1.0;
+    quadVerts[6] = 0.0 - half_pixel; quadVerts[7] = 1.0;
+    glVertexPointer(2, GL_FLOAT, 0, quadVerts);
+    glDrawArrays(GL_QUADS, 0, 4);
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     
     glBindTexture(GL_TEXTURE_2D, 0);
     

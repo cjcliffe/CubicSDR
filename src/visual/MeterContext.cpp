@@ -25,24 +25,25 @@ void MeterContext::DrawBegin() {
 void MeterContext::Draw(float r, float g, float b, float a, float level) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
-    glBegin(GL_QUADS);
-    glColor4f(r*0.65,g*0.65,b*0.65,a);
-    glVertex2f(-1.0, -1.0 + 2.0 * level);
-    glVertex2f(-1.0, -1.0);
-
-    glColor4f(r,g,b,a);
-    glVertex2f(0.0, -1.0);
-    glVertex2f(0.0, -1.0 + 2.0 * level);
-
-    glColor4f(r,g,b,a);
-    glVertex2f(0.0, -1.0 + 2.0 * level);
-    glVertex2f(0.0, -1.0);
-
-    glColor4f(r*0.65,g*0.65,b*0.65,a*0.65);
-    glVertex2f(1.0, -1.0);
-    glVertex2f(1.0, -1.0 + 2.0 * level);
-
-    glEnd();
+    float meterVerts[16] = {
+        -1.0, -1.0 + 2.0 * level, -1.0, -1.0,
+        0.0, -1.0, 0.0, -1.0 + 2.0 * level,
+        0.0, -1.0 + 2.0 * level, 0.0, -1.0,
+        1.0, -1.0, 1.0, -1.0 + 2.0 * level
+    };
+    float meterColors[32] = {
+        r * 0.65, g * 0.65, b * 0.65, a, r * 0.65, g * 0.65, b * 0.65, a,
+        r, g, b, a, r, g, b, a,
+        r, g, b, a, r, g, b, a,
+        r * 0.65, g * 0.65, b * 0.65, a * 0.65, r * 0.65, g * 0.65, b * 0.65, a * 0.65
+    };
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
+    glVertexPointer(2, GL_FLOAT, 0, meterVerts);
+    glColorPointer(4, GL_FLOAT, 0, meterColors);
+    glDrawArrays(GL_QUADS, 0, 8);
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
     glDisable(GL_BLEND);
 }
 

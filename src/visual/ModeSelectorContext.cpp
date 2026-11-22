@@ -48,12 +48,14 @@ void ModeSelectorContext::DrawSelector(const std::string& label, int c, int cMax
     if (a < 1.0) {
         glEnable(GL_BLEND);
     }
-    glBegin(on?GL_QUADS:GL_LINE_LOOP);
-    glVertex2f(-1.0 + padX, y + padY);
-    glVertex2f(1.0 - padX, y + padY);
-    glVertex2f(1.0 - padX, y + height - padY);
-    glVertex2f(-1.0 + padX, y + height - padY);
-    glEnd();
+    float selVerts[8] = {
+        -1.0 + padX, y + padY, 1.0 - padX, y + padY,
+        1.0 - padX, y + height - padY, -1.0 + padX, y + height - padY
+    };
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(2, GL_FLOAT, 0, selVerts);
+    glDrawArrays(on?GL_QUADS:GL_LINE_LOOP, 0, 4);
+    glDisableClientState(GL_VERTEX_ARRAY);
     if (a < 1.0) {
         glDisable(GL_BLEND);
     }

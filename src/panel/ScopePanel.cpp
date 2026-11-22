@@ -38,10 +38,11 @@ void ScopePanel::drawPanelContents() {
         glLoadMatrixf(transform.to_ptr());
         glColor3f(ThemeMgr::mgr.currentTheme->scopeLine.r * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.g * 0.35,
                   ThemeMgr::mgr.currentTheme->scopeLine.b * 0.35);
-        glBegin (GL_LINES);
-        glVertex2f(-1.0, 0.0);
-        glVertex2f(1.0, 0.0);
-        glEnd();
+        float axisVerts[4] = { -1.0, 0.0, 1.0, 0.0 };
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glVertexPointer(2, GL_FLOAT, 0, axisVerts);
+        glDrawArrays(GL_LINES, 0, 2);
+        glDisableClientState(GL_VERTEX_ARRAY);
     } else if (scopeMode == SCOPE_MODE_2Y)  {
         bgPanelStereo[0].setFillColor(ThemeMgr::mgr.currentTheme->scopeBackground, ThemeMgr::mgr.currentTheme->scopeBackground * 2.0);
         bgPanelStereo[1].setFillColor(ThemeMgr::mgr.currentTheme->scopeBackground, ThemeMgr::mgr.currentTheme->scopeBackground * 2.0);
@@ -55,16 +56,26 @@ void ScopePanel::drawPanelContents() {
         glLoadMatrixf(transform.to_ptr());
         glColor3f(ThemeMgr::mgr.currentTheme->scopeLine.r, ThemeMgr::mgr.currentTheme->scopeLine.g, ThemeMgr::mgr.currentTheme->scopeLine.b);
         glEnable(GL_LINE_SMOOTH);
-        glBegin (GL_LINES);
-        glVertex2f(-1.0, 0.0);
-        glVertex2f(1.0, 0.0);
-        glColor3f(ThemeMgr::mgr.currentTheme->scopeLine.r * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.g * 0.35,
-                  ThemeMgr::mgr.currentTheme->scopeLine.b * 0.35);
-        glVertex2f(-1.0, 0.5);
-        glVertex2f(1.0, 0.5);
-        glVertex2f(-1.0, -0.5);
-        glVertex2f(1.0, -0.5);
-        glEnd();
+        float axisVerts[12] = {
+            -1.0, 0.0, 1.0, 0.0,
+            -1.0, 0.5, 1.0, 0.5,
+            -1.0, -0.5, 1.0, -0.5
+        };
+        float axisColors[24] = {
+            ThemeMgr::mgr.currentTheme->scopeLine.r, ThemeMgr::mgr.currentTheme->scopeLine.g, ThemeMgr::mgr.currentTheme->scopeLine.b, 1.0,
+            ThemeMgr::mgr.currentTheme->scopeLine.r, ThemeMgr::mgr.currentTheme->scopeLine.g, ThemeMgr::mgr.currentTheme->scopeLine.b, 1.0,
+            ThemeMgr::mgr.currentTheme->scopeLine.r * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.g * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.b * 0.35, 1.0,
+            ThemeMgr::mgr.currentTheme->scopeLine.r * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.g * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.b * 0.35, 1.0,
+            ThemeMgr::mgr.currentTheme->scopeLine.r * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.g * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.b * 0.35, 1.0,
+            ThemeMgr::mgr.currentTheme->scopeLine.r * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.g * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.b * 0.35, 1.0
+        };
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glEnableClientState(GL_COLOR_ARRAY);
+        glVertexPointer(2, GL_FLOAT, 0, axisVerts);
+        glColorPointer(4, GL_FLOAT, 0, axisColors);
+        glDrawArrays(GL_LINES, 0, 6);
+        glDisableClientState(GL_VERTEX_ARRAY);
+        glDisableClientState(GL_COLOR_ARRAY);
 
     } else if (scopeMode == SCOPE_MODE_XY) {
         RGBA4f bg1(ThemeMgr::mgr.currentTheme->scopeBackground), bg2(ThemeMgr::mgr.currentTheme->scopeBackground * 2.0);
