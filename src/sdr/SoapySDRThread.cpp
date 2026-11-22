@@ -5,7 +5,7 @@
 #include "CubicSDRDefs.h"
 #include "TuneRange.h"
 #include <vector>
-#include "CubicSDR.h"
+#include "AppServices.h"
 #include <string>
 #include <algorithm>
 #include <chrono>
@@ -72,7 +72,7 @@ bool SDRThread::init() {
 //    SoapySDR_setLogLevel(SOAPY_SDR_DEBUG);
     
     SDRDeviceInfo *devInfo = deviceInfo.load();
-    deviceConfig.store(wxGetApp().getConfig()->getDevice(devInfo->getDeviceId()));
+    deviceConfig.store(GetAppServices().getConfig()->getDevice(devInfo->getDeviceId()));
     DeviceConfig *devConfig = deviceConfig.load();
     
     ppm.store(devConfig->getPPM());
@@ -84,18 +84,18 @@ bool SDRThread::init() {
     
     SoapySDR::Kwargs args = devInfo->getDeviceArgs();
     
-    wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Initializing device."));
+    GetAppServices().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Initializing device."));
     
     try {
         device = devInfo->getSoapyDevice();
     } catch (const std::exception &e) {
         std::cout << "SDRThread: device creation failed: " << e.what() << std::endl << std::flush;
-        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Device creation failed: ") + e.what());
+        GetAppServices().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Device creation failed: ") + e.what());
         releaseStream();
         return false;
     } catch (...) {
         std::cout << "SDRThread: device creation failed with unknown error." << std::endl << std::flush;
-        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Device creation failed."));
+        GetAppServices().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Device creation failed."));
         releaseStream();
         return false;
     }
@@ -112,7 +112,7 @@ bool SDRThread::init() {
     }
 
     if (!stream) {
-        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Stream setup failed, stream is null. ") + streamExceptionStr);
+        GetAppServices().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Stream setup failed, stream is null. ") + streamExceptionStr);
         std::cout << "Stream setup failed, stream is null. " << streamExceptionStr << std::endl;
         releaseStream();
         return false;
@@ -145,7 +145,7 @@ bool SDRThread::init() {
 
     if (device->hasDCOffsetMode(SOAPY_SDR_RX, 0)) {
         hasHardwareDC.store(true);
-//        wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Found hardware DC offset correction support, internal disabled."));
+//        GetAppServices().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Found hardware DC offset correction support, internal disabled."));
         device->setDCOffsetMode(SOAPY_SDR_RX, 0, true);
     } else {
         hasHardwareDC.store(false);
@@ -182,38 +182,38 @@ bool SDRThread::init() {
     } //leave lock guard scope
     } catch (const std::exception &e) {
         std::cout << "SDRThread: device configuration failed: " << e.what() << std::endl << std::flush;
-        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Device configuration failed: ") + e.what());
+        GetAppServices().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Device configuration failed: ") + e.what());
         releaseStream();
         return false;
     } catch (...) {
         std::cout << "SDRThread: device configuration failed with unknown error." << std::endl << std::flush;
-        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Device configuration failed."));
+        GetAppServices().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Device configuration failed."));
         releaseStream();
         return false;
     }
       
-    wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_INITIALIZED, std::string("Device Initialized."));
+    GetAppServices().sdrThreadNotify(SDRThread::SDR_THREAD_INITIALIZED, std::string("Device Initialized."));
 
     //5. Activate stream: (through update settings)
-    wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Activating stream."));
+    GetAppServices().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Activating stream."));
 
     rate_changed.store(true);
     try {
         updateSettings();
     } catch (const std::exception &e) {
         std::cout << "SDRThread: stream activation failed: " << e.what() << std::endl << std::flush;
-        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Stream activation failed: ") + e.what());
+        GetAppServices().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Stream activation failed: ") + e.what());
         releaseStream();
         return false;
     } catch (...) {
         std::cout << "SDRThread: stream activation failed with unknown error." << std::endl << std::flush;
-        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Stream activation failed."));
+        GetAppServices().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("Stream activation failed."));
         releaseStream();
         return false;
     }
 
 	//rebuild menu now that settings are really been applied.
-	wxGetApp().notifyMainUIOfDeviceChange(true);
+	GetAppServices().notifyMainUIOfDeviceChange(true);
 
     return true;
 }
@@ -492,7 +492,7 @@ void SDRThread::readLoop() {
     catch (...) {
         //notify App of device loss:
         std::cout << "SDRThread::readLoop() exception, stopping device..." << std::endl << std::flush;
-        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("SDRThread::readLoop() exception, stopping device."));
+        GetAppServices().sdrThreadNotify(SDRThread::SDR_THREAD_FAILED, std::string("SDRThread::readLoop() exception, stopping device."));
         stopping = true;
     }
 
@@ -752,7 +752,7 @@ void SDRThread::updateSettings() {
     }
     
     if (doUpdate) {
-        wxGetApp().sdrThreadNotify(SDRThread::SDR_THREAD_INITIALIZED, std::string("Settings updated."));
+        GetAppServices().sdrThreadNotify(SDRThread::SDR_THREAD_INITIALIZED, std::string("Settings updated."));
     }
 }
 
@@ -805,7 +805,7 @@ SDRDeviceInfo *SDRThread::getDevice() {
 void SDRThread::setDevice(SDRDeviceInfo *dev) {
     deviceInfo.store(dev);
     if (dev) {
-        deviceConfig.store(wxGetApp().getConfig()->getDevice(dev->getDeviceId()));
+        deviceConfig.store(GetAppServices().getConfig()->getDevice(dev->getDeviceId()));
         long long rangeMin, rangeMax;
         if (dev->getFrequencyRange(rangeMin, rangeMax)) {
             deviceFreqMin.store(rangeMin);

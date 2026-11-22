@@ -3,7 +3,7 @@
 
 #include "SDREnumerator.h"
 #include <vector>
-#include "CubicSDR.h"
+#include "AppServices.h"
 #include <string>
 
 #ifdef WIN32
@@ -94,54 +94,54 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(const std::string
         
         std::cout << "\tLoading modules... " << std::endl << std::flush;
         
-        std::string userModPath = wxGetApp().getModulePath();
+        std::string userModPath = GetAppServices().getModulePath();
         
         if (!userModPath.empty()) {
-            wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Loading SoapySDR modules from " + userModPath + "..");
+            GetAppServices().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Loading SoapySDR modules from " + userModPath + "..");
             std::vector<std::string> localMods = SoapySDR::listModules(userModPath);
             for (const std::string& mod : localMods) {
-                wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Initializing user specified SoapySDR module " + (mod) + "..");
+                GetAppServices().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Initializing user specified SoapySDR module " + (mod) + "..");
                 std::cout << "Initializing user specified SoapySDR module " << (mod) <<  ".." << std::endl << std::flush;
                 SoapySDR::loadModule(mod);
             }
         } else {
             #ifdef BUNDLE_SOAPY_MODS
 			#ifdef BUNDLED_MODS_ONLY
-			wxFileName exePath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
-			std::cout << "Scanning bundled SoapySDR modules in " << exePath.GetPath().ToStdString() + "/modules/" << ".." << std::endl << std::flush;
-			std::vector<std::string> localMods = SoapySDR::listModules(exePath.GetPath().ToStdString() + "/modules/");
+			std::string exeDir = GetAppServices().getExecutableDir();
+			std::cout << "Scanning bundled SoapySDR modules in " << exeDir + "/modules/" << ".." << std::endl << std::flush;
+			std::vector<std::string> localMods = SoapySDR::listModules(exeDir + "/modules/");
 			std::cout << "Found " << localMods.size() << " bundled module(s)." << std::endl << std::flush;
 			for (std::vector<std::string>::iterator mods_i = localMods.begin(); mods_i != localMods.end(); mods_i++) {
-				wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Initializing bundled SoapySDR module " + (*mods_i) + "..");
+				GetAppServices().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Initializing bundled SoapySDR module " + (*mods_i) + "..");
 				std::cout << "Loading bundled SoapySDR module " << (*mods_i) << ".." << std::endl << std::flush;
 				SoapySDR::loadModule(*mods_i);
 			}
 			#else
-            bool localModPref = wxGetApp().getUseLocalMod();
+            bool localModPref = GetAppServices().getUseLocalMod();
             if (localModPref) {
-                wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Loading SoapySDR modules..");
+                GetAppServices().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Loading SoapySDR modules..");
                 std::cout << "Checking local system SoapySDR modules.." << std::endl << std::flush;
                 SoapySDR::loadModules();
             }
 
-            wxFileName exePath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
-            std::cout << "Scanning bundled SoapySDR modules in " << exePath.GetPath().ToStdString() + "/modules/" << ".." << std::endl << std::flush;
-            std::vector<std::string> localMods = SoapySDR::listModules(exePath.GetPath().ToStdString() + "/modules/");
+            std::string exeDir = GetAppServices().getExecutableDir();
+            std::cout << "Scanning bundled SoapySDR modules in " << exeDir + "/modules/" << ".." << std::endl << std::flush;
+            std::vector<std::string> localMods = SoapySDR::listModules(exeDir + "/modules/");
             std::cout << "Found " << localMods.size() << " bundled module(s)." << std::endl << std::flush;
             for (std::string mod : localMods) {
-                wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Initializing bundled SoapySDR module " + (mod) + "..");
+                GetAppServices().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Initializing bundled SoapySDR module " + (mod) + "..");
                 std::cout << "Loading bundled SoapySDR module " << (mod) <<  ".." << std::endl << std::flush;
                 SoapySDR::loadModule(mod);
             }
         
             if (!localModPref) {
-                wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Loading SoapySDR modules..");
+                GetAppServices().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Loading SoapySDR modules..");
                 std::cout << "Checking system SoapySDR modules.."  << std::endl << std::flush;
                 SoapySDR::loadModules();
             }
 			#endif
             #else
-            wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Loading SoapySDR modules..");
+            GetAppServices().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Loading SoapySDR modules..");
             SoapySDR::loadModules();
             #endif
 
@@ -168,7 +168,7 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(const std::string
         }
         if ((factoryList.size() == 1) && factoryList.find("null") != factoryList.end()) {
             std::cout << "Just 'null' factory found." << std::endl;
-            wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_FAILED, std::string("No modules available."));
+            GetAppServices().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_FAILED, std::string("No modules available."));
         }
         std::cout << std::endl;
         soapy_initialized = true;
@@ -203,7 +203,7 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(const std::string
             
             manualParams.push_back(manual.params);
             
-            wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Enumerating manual device '") + strDevArgs + "'..");
+            GetAppServices().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Enumerating manual device '") + strDevArgs + "'..");
 
             manual_result = SoapySDR::Device::enumerate(strDevArgs);
             
@@ -223,7 +223,7 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(const std::string
     }
     
     if (isRemote) {
-        wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Opening remote server ") + remoteAddr + "..");
+        GetAppServices().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Opening remote server ") + remoteAddr + "..");
     }
     for (size_t i = 0; i < results.size(); i++) {
         auto *dev = new SDRDeviceInfo();
@@ -264,14 +264,14 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(const std::string
             }
             
             if (isRemote) {
-                wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Querying remote " + remoteAddr + " device #" + std::to_string(i) + ": " + dev-> getName());
+                GetAppServices().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Querying remote " + remoteAddr + " device #" + std::to_string(i) + ": " + dev-> getName());
             } else {
-                wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Querying device #") + std::to_string(i) + ": " + dev->getName());
+                GetAppServices().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Querying device #") + std::to_string(i) + ": " + dev->getName());
             }
 
             SoapySDR::ArgInfoList settingsInfo = device->getSettingInfo();
 
-            DeviceConfig *cfg = wxGetApp().getConfig()->getDevice(dev->getDeviceId());
+            DeviceConfig *cfg = GetAppServices().getConfig()->getDevice(dev->getDeviceId());
 
             ConfigSettings devSettings = cfg->getSettings();
             if (!devSettings.empty()) {
@@ -292,7 +292,7 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(const std::string
             dev->setAvailable(true);
         } catch (const std::exception &ex) {
             std::cerr << "Error making device: " << ex.what() << std::endl;
-            wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Error querying device #") + std::to_string(i));
+            GetAppServices().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("Error querying device #") + std::to_string(i));
             dev->setAvailable(false);
         } else {
             dev->setAvailable(false);
@@ -302,7 +302,7 @@ std::vector<SDRDeviceInfo *> *SDREnumerator::enumerate_devices(const std::string
         SDREnumerator::devs[remoteAddr].push_back(dev);
     }
     if (SDREnumerator::devs[remoteAddr].empty()) {
-        wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("No devices found!"));
+        GetAppServices().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, std::string("No devices found!"));
     }
     std::cout << std::endl;
 
@@ -315,19 +315,19 @@ void SDREnumerator::run() {
     std::cout << "SDR enumerator starting." << std::endl;
     
 
-    wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Scanning local devices, please wait..");
+    GetAppServices().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Scanning local devices, please wait..");
     SDREnumerator::enumerate_devices("");
 
     if (!remotes.empty()) {
       
         for (const std::string& remote : remotes) {
-            wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Scanning devices at " + (remote) + ", please wait..");
+            GetAppServices().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_MESSAGE, "Scanning devices at " + (remote) + ", please wait..");
             SDREnumerator::enumerate_devices(remote);
         }
     }
     
     std::cout << "Reporting enumeration complete." << std::endl;
-    wxGetApp().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_DEVICES_READY, "Finished scanning devices.");
+    GetAppServices().sdrEnumThreadNotify(SDREnumerator::SDR_ENUM_DEVICES_READY, "Finished scanning devices.");
     std::cout << "SDR enumerator done." << std::endl;
 
 }

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "DemodulatorWorkerThread.h"
-#include "CubicSDR.h"
+#include "AppServices.h"
 #include "ResampleGuard.h"
 #include <iostream>
 
@@ -69,7 +69,7 @@ void DemodulatorWorkerThread::run() {
                     cModem->writeSettings(demodCommand.settings);
                 }
                 result.sampleRate = demodCommand.sampleRate;
-                wxGetApp().getAppFrame()->notifyUpdateModemProperties();
+                GetAppServices().notifyUpdateModemProperties();
             }
             result.modem = cModem;
 

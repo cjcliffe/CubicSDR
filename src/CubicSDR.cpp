@@ -162,6 +162,8 @@ CubicSDR::CubicSDR() : frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFA
         glSettings.CompatibilityProfile().EndList();
 
         *m_glContextAttributes = glSettings;
+
+    SetAppServices(this);
 }
 
 void CubicSDR::initAudioDevices() const {
@@ -1024,6 +1026,28 @@ void CubicSDR::notifyMainUIOfDeviceChange(bool forceRefreshOfGains) {
 	if (forceRefreshOfGains) {
 		appframe->refreshGainUI();
 	}
+}
+
+std::string CubicSDR::getExecutableDir() {
+    wxFileName exePath = wxFileName(wxStandardPaths::Get().GetExecutablePath());
+    return exePath.GetPath().ToStdString();
+}
+
+bool CubicSDR::getMainViewWindow(long long &centerHz, long long &spanHz) {
+    if (appframe && appframe->getWaterfallCanvas()) {
+        centerHz = appframe->getWaterfallCanvas()->getCenterFrequency();
+        spanHz = appframe->getWaterfallCanvas()->getBandwidth();
+        return true;
+    }
+    return false;
+}
+
+bool CubicSDR::isUserDemodBusy() {
+    return getAppFrame()->isUserDemodBusy();
+}
+
+void CubicSDR::notifyUpdateModemProperties() {
+    getAppFrame()->notifyUpdateModemProperties();
 }
 
 bool CubicSDR::areDevicesEnumerating() {

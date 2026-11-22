@@ -5,8 +5,9 @@
 #include <algorithm>
 #include <string>
 
-#include "CubicSDR.h"
-#include "AppFrame.h"
+#include "AppServices.h"
+#include "BookmarkMgr.h"
+#include "StringUtil.h"
 #include "AudioDeviceMatch.h"
 #include "DemodReselect.h"
 #include "DemodCycle.h"
@@ -16,7 +17,6 @@
 #endif
 
 #include "DataTree.h"
-#include <wx/string.h>
 
 bool demodFreqCompare (const DemodulatorInstancePtr& i, const DemodulatorInstancePtr& j) { return (i->getFrequency() < j->getFrequency()); }
 bool inactiveCompare (const DemodulatorInstancePtr& i, const DemodulatorInstancePtr& j) { return (i->isActive() < j->isActive()); }
@@ -155,7 +155,7 @@ void DemodulatorMgr::deleteThread(const DemodulatorInstancePtr& demod) {
     
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
 
-    wxGetApp().getBookmarkMgr().addRecent(demod);
+    GetAppServices().getBookmarkMgr().addRecent(demod);
   
     auto i = std::find(demods.begin(), demods.end(), demod);
 
@@ -191,13 +191,9 @@ void DemodulatorMgr::deleteThread(const DemodulatorInstancePtr& demod) {
         }
         // The window comes from the main view, not the device: a zoomed
         // range narrows what counts as in view.
-        long long centerHz = wxGetApp().getFrequency();
-        long long spanHz = wxGetApp().getSampleRate();
-        AppFrame *frame = wxGetApp().getAppFrame();
-        if (frame && frame->getWaterfallCanvas()) {
-            centerHz = frame->getWaterfallCanvas()->getCenterFrequency();
-            spanHz = frame->getWaterfallCanvas()->getBandwidth();
-        }
+        long long centerHz = GetAppServices().getFrequency();
+        long long spanHz = GetAppServices().getSampleRate();
+        GetAppServices().getMainViewWindow(centerHz, spanHz);
         int picked = DemodReselect::pick(freqs, activeFlags, prevIndex, centerHz, spanHz);
         setActiveDemodulator(picked >= 0 ? demods[(size_t)picked] : nullptr);
     }
@@ -272,16 +268,16 @@ void DemodulatorMgr::setActiveDemodulator(const DemodulatorInstancePtr& demod) {
     currentModem = demod;
 
     if (currentModem) {
-        currentModem->setVisualOutputQueue(wxGetApp().getAudioVisualQueue());
+        currentModem->setVisualOutputQueue(GetAppServices().getAudioVisualQueue());
     }
 
     updateLastState();
 
-    wxGetApp().getBookmarkMgr().updateActiveList();
+    GetAppServices().getBookmarkMgr().updateActiveList();
 
 #if USE_HAMLIB
-    if (wxGetApp().rigIsActive() && wxGetApp().getRigThread()->getFollowModem() && currentModem) {
-        wxGetApp().getRigThread()->setFrequency(currentModem->getFrequency(),true);
+    if (GetAppServices().rigIsActive() && GetAppServices().getRigThread()->getFollowModem() && currentModem) {
+        GetAppServices().getRigThread()->setFrequency(currentModem->getFrequency(),true);
     }
 #endif
 }
@@ -351,8 +347,8 @@ int DemodulatorMgr::getLastBandwidth() const {
 void DemodulatorMgr::setLastBandwidth(int lastBandwidth_in) {
     if (lastBandwidth_in < MIN_BANDWIDTH) {
         lastBandwidth_in = MIN_BANDWIDTH;
-    } else  if (lastBandwidth_in > wxGetApp().getSampleRate()) {
-        lastBandwidth_in = wxGetApp().getSampleRate();
+    } else  if (lastBandwidth_in > GetAppServices().getSampleRate()) {
+        lastBandwidth_in = GetAppServices().getSampleRate();
     }
     lastBandwidth = lastBandwidth_in;
 }
@@ -469,8 +465,8 @@ std::wstring DemodulatorMgr::getSafeWstringValue(DataNode* node) {
 
                 node->element()->get(decodedStdString);
 
-                //use wxString for a clean conversion to a wstring:
-                decodedWString = wxString(decodedStdString).ToStdWstring();
+                //decode narrow content as UTF-8:
+                decodedWString = utf8ToWstring(decodedStdString);
 
             } catch (const DataTypeMismatchException &) {
                 //nothing works, return an empty string.

@@ -25,6 +25,7 @@
 #include "DemodLabelDialog.h"
 #include "BookmarkMgr.h"
 #include "SessionMgr.h"
+#include "AppServices.h"
 
 #include "ScopeVisualProcessor.h"
 #include "SpectrumVisualProcessor.h"
@@ -65,7 +66,7 @@ class RigThread;
 
 #define NUM_DEMODULATORS 1
 
-class CubicSDR: public wxApp {
+class CubicSDR : public wxApp, public AppServices {
 public:
     CubicSDR();
 
@@ -79,11 +80,11 @@ public:
     bool OnCmdLineParsed(wxCmdLineParser& parser) override;
 
     void deviceSelector(bool dismissOnStart = false);
-    void sdrThreadNotify(SDRThread::SDRThreadState state, const std::string& message);
-    void sdrEnumThreadNotify(SDREnumerator::SDREnumState state, std::string message);
+    void sdrThreadNotify(SDRThread::SDRThreadState state, const std::string& message) override;
+    void sdrEnumThreadNotify(SDREnumerator::SDREnumState state, std::string message) override;
     
-    void setFrequency(long long freq);
-    long long getFrequency();
+    void setFrequency(long long freq) override;
+    long long getFrequency() override;
     
     void lockFrequency(long long freq);
     bool isFrequencyLocked();
@@ -102,7 +103,7 @@ public:
    
 
     void setSampleRate(long long rate_in);
-    long long getSampleRate();
+    long long getSampleRate() override;
 
    
     std::vector<SDRDeviceInfo *> *getDevices();
@@ -116,12 +117,12 @@ public:
     SpectrumVisualProcessor *getSpectrumProcessor();
     SpectrumVisualProcessor *getDemodSpectrumProcessor();
     
-    DemodulatorThreadOutputQueuePtr getAudioVisualQueue();
+    DemodulatorThreadOutputQueuePtr getAudioVisualQueue() override;
     DemodulatorThreadInputQueuePtr getIQVisualQueue();
     DemodulatorThreadInputQueuePtr getWaterfallVisualQueue();
     
-    DemodulatorMgr &getDemodMgr();
-    BookmarkMgr &getBookmarkMgr();
+    DemodulatorMgr &getDemodMgr() override;
+    BookmarkMgr &getBookmarkMgr() override;
     SessionMgr &getSessionMgr();
 
     SDRPostThread *getSDRPostThread();
@@ -134,7 +135,7 @@ public:
     void setFrequencySnap(int snap_in);
     int getFrequencySnap();
 
-    AppConfig *getConfig();
+    AppConfig *getConfig() override;
 
     void setPPM(int ppm_in);
     int getPPM();
@@ -148,7 +149,11 @@ public:
     bool areModulesMissing();
     std::string getNotification();
 
-    void notifyMainUIOfDeviceChange(bool forceRefreshOfGains = false);
+    void notifyMainUIOfDeviceChange(bool forceRefreshOfGains = false) override;
+    std::string getExecutableDir() override;
+    bool getMainViewWindow(long long &centerHz, long long &spanHz) override;
+    bool isUserDemodBusy() override;
+    void notifyUpdateModemProperties() override;
     
     void addRemote(const std::string& remoteAddr);
     void removeRemote(const std::string& remoteAddr);
@@ -167,22 +172,22 @@ public:
     void setStreamArgs(SoapySDR::Kwargs streamArgs_in);
     void setDeviceArgs(SoapySDR::Kwargs settingArgs_in);
 
-    bool getUseLocalMod();
-    std::string getModulePath();
+    bool getUseLocalMod() override;
+    std::string getModulePath() override;
     
     void setActiveGainEntry(std::string gainName);
     std::string getActiveGainEntry();
 
     void setSoloMode(bool solo);
-    bool getSoloMode();
+    bool getSoloMode() override;
 
     bool isShuttingDown();
     
 #ifdef USE_HAMLIB
-    RigThread *getRigThread();
+    RigThread *getRigThread() override;
     void initRig(int rigModel, std::string rigPort, int rigSerialRate);
     void stopRig();
-    bool rigIsActive();
+    bool rigIsActive() override;
 #endif
     
 private:

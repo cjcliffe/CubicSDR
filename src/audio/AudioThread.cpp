@@ -4,7 +4,9 @@
 #include "AudioThread.h"
 #include <vector>
 #include <algorithm>
-#include "CubicSDR.h"
+#include "AppServices.h"
+#include "DemodulatorMgr.h"
+#include "AppConfig.h"
 #include "DemodulatorInstance.h"
 #include <mutex>
 #include <chrono>
@@ -284,7 +286,7 @@ void AudioThread::setSampleRate(int sampleRate_in) {
         }
 
         //make a local copy, snapshot of the list of demodulators
-        std::vector<DemodulatorInstancePtr> demodulators = wxGetApp().getDemodMgr().getDemodulators();
+        std::vector<DemodulatorInstancePtr> demodulators = GetAppServices().getDemodMgr().getDemodulators();
 
         for (const auto& demod : demodulators) {
             if (demod->getOutputDevice() == outputDevice.load()) {
@@ -388,7 +390,7 @@ void AudioThread::setupDevice(int deviceId) {
     else if (deviceController[parameters.deviceId] == this) {
 
         //Attach callback
-        nBufferFrames = (unsigned int)wxGetApp().getConfig()->getAudioBufferFrames();
+        nBufferFrames = (unsigned int)GetAppServices().getConfig()->getAudioBufferFrames();
         if (audioFailed(dac.openStream(&parameters, nullptr, RTAUDIO_FLOAT32, sampleRate, &nBufferFrames, &audioCallback, (void *)this, &opts))) {
             std::cout << "AudioThread: failed to open stream for device." << std::endl;
             return;

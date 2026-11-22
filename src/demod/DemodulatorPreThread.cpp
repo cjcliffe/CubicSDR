@@ -8,7 +8,6 @@
 #endif
 
 #include "DemodulatorPreThread.h"
-#include "CubicSDR.h"
 #include "DemodulatorInstance.h"
 
 //50 ms

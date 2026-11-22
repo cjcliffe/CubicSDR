@@ -7,7 +7,11 @@
 #include <thread>
 
 #include "DemodulatorInstance.h"
-#include "CubicSDR.h"
+#include "AppServices.h"
+#include "DemodulatorMgr.h"
+#include "BookmarkMgr.h"
+#include "AppConfig.h"
+#include "StringUtil.h"
 #include "Frequency.h"
 
 #include "DemodulatorThread.h"
@@ -162,7 +166,7 @@ void DemodulatorInstance::updateLabel(long long freq) {
     newLabel.precision(3);
     newLabel << std::fixed << ((long double) freq / 1000000.0);
     setLabel(newLabel.str());
-    wxGetApp().getBookmarkMgr().updateActiveLabels();
+    GetAppServices().getBookmarkMgr().updateActiveLabels();
 }
 
 void DemodulatorInstance::terminate() {
@@ -296,7 +300,7 @@ void DemodulatorInstance::setActive(bool state) {
     }
     active = state;
     
-    wxGetApp().getBookmarkMgr().updateActiveList();
+    GetAppServices().getBookmarkMgr().updateActiveList();
 }
 
 void DemodulatorInstance::squelchAuto() {
@@ -337,8 +341,8 @@ float DemodulatorInstance::getSignalCeil() {
 
 void DemodulatorInstance::setSquelchLevel(float signal_level_in) {
     demodulatorThread->setSquelchLevel(signal_level_in);
-    wxGetApp().getDemodMgr().setLastSquelchLevel(signal_level_in);
-    wxGetApp().getDemodMgr().setLastSquelchEnabled(true);
+    GetAppServices().getDemodMgr().setLastSquelchLevel(signal_level_in);
+    GetAppServices().getDemodMgr().setLastSquelchEnabled(true);
 }
 
 float DemodulatorInstance::getHysteresis() {
@@ -407,7 +411,7 @@ void DemodulatorInstance::setDemodulatorType(const std::string& demod_type_in) {
 #endif
     }
     
-    wxGetApp().getBookmarkMgr().updateActiveList();
+    GetAppServices().getBookmarkMgr().updateActiveList();
 }
 
 void DemodulatorInstance::resetDemodulatorSettings() {
@@ -471,14 +475,14 @@ void DemodulatorInstance::setFrequency(long long freq) {
     }
 #endif
 #if USE_HAMLIB
-    if (wxGetApp().rigIsActive() && wxGetApp().getRigThread()->getFollowModem() &&
-            wxGetApp().getDemodMgr().getCurrentModem().get() == this) {
-        wxGetApp().getRigThread()->setFrequency(freq,true);
+    if (GetAppServices().rigIsActive() && GetAppServices().getRigThread()->getFollowModem() &&
+            GetAppServices().getDemodMgr().getCurrentModem().get() == this) {
+        GetAppServices().getRigThread()->setFrequency(freq,true);
     }
 #endif
     
     if (this->isActive()) {
-        wxGetApp().getBookmarkMgr().updateActiveLabels();
+        GetAppServices().getBookmarkMgr().updateActiveLabels();
     }
 }
 
@@ -546,7 +550,7 @@ bool DemodulatorInstance::isMuted() {
 void DemodulatorInstance::setMuted(bool muted_in) {
     muted = muted_in;
     demodulatorThread->setMuted(muted_in);
-    wxGetApp().getDemodMgr().setLastMuted(muted_in);
+    GetAppServices().getDemodMgr().setLastMuted(muted_in);
 }
 
 bool DemodulatorInstance::isRecording()
@@ -634,8 +638,7 @@ void DemodulatorInstance::startRecording() {
     
     std::wstring userLabel = getDemodulatorUserLabel();
 
-    wxString userLabelForFileName(userLabel);
-    std::string userLabelStr = userLabelForFileName.ToStdString();
+    std::string userLabelStr = wstringToUtf8(userLabel);
 
     if (!userLabelStr.empty()) {
         fileName << userLabelStr;
@@ -646,8 +649,8 @@ void DemodulatorInstance::startRecording() {
 	newSinkThread->setAudioFileNameBase(fileName.str());
 
 	//attach options:
-    newSinkThread->setSquelchOption(wxGetApp().getConfig()->getRecordingSquelchOption());
-	newSinkThread->setFileTimeLimit(wxGetApp().getConfig()->getRecordingFileTimeLimit());
+    newSinkThread->setSquelchOption(GetAppServices().getConfig()->getRecordingSquelchOption());
+	newSinkThread->setFileTimeLimit(GetAppServices().getConfig()->getRecordingFileTimeLimit());
 
     newSinkThread->setAudioFileHandler(afHandler);
 

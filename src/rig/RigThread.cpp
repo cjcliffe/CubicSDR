@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "RigThread.h"
+#include "AppServices.h"
+#include "DemodulatorMgr.h"
 
 #include <chrono>
 #include <cstdio>
@@ -10,7 +12,7 @@
 std::vector<const struct rig_caps *> RigThread::rigCaps;
 
 RigThread::RigThread() {
-    freq = wxGetApp().getFrequency();
+    freq = GetAppServices().getFrequency();
     newFreq = freq;
     freqChanged.store(true);
     termStatus = 0;
@@ -141,7 +143,7 @@ void RigThread::run() {
     while (!stopping) {
         std::this_thread::sleep_for(std::chrono::milliseconds(150));
         
-        auto lastDemod = wxGetApp().getDemodMgr().getCurrentModem();
+        auto lastDemod = GetAppServices().getDemodMgr().getCurrentModem();
 
         if (freqChanged.load() && (controlMode.load() || setOneShot.load())) {
             status = rig_get_freq(rig, RIG_VFO_CURR, &freq);
@@ -178,10 +180,10 @@ void RigThread::run() {
                             lastDemod->setFollow(true);
                         }
                     } else {
-                        wxGetApp().setFrequency((long long)checkFreq);
+                        GetAppServices().setFrequency((long long)checkFreq);
                     }
-                } else if (wxGetApp().getFrequency() != freq && controlMode.load() && !centerLock.load() && !followModem.load()) {
-                    freq = wxGetApp().getFrequency();
+                } else if (GetAppServices().getFrequency() != freq && controlMode.load() && !centerLock.load() && !followModem.load()) {
+                    freq = GetAppServices().getFrequency();
                     status = rig_set_freq(rig, RIG_VFO_CURR, freq);
                     if (status == -RIG_ENIMPL) {
                         std::cout << "Rig does not support rig_set_freq?" << std::endl;
@@ -208,8 +210,8 @@ void RigThread::run() {
             }
         }
         
-        if (!centerLock.load() && followModem.load() && wxGetApp().getFrequency() != freq && lastDemod) {
-            wxGetApp().setFrequency((long long)freq);
+        if (!centerLock.load() && followModem.load() && GetAppServices().getFrequency() != freq && lastDemod) {
+            GetAppServices().setFrequency((long long)freq);
         }
         
 //        std::cout <<  "Rig Freq: " << freq << std::endl;

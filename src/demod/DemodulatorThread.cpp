@@ -3,7 +3,8 @@
 
 #include "DemodulatorThread.h"
 #include "DemodulatorInstance.h"
-#include "CubicSDR.h"
+#include "AppServices.h"
+#include "DemodulatorMgr.h"
 #include <vector>
 #include <chrono>
 
@@ -185,13 +186,13 @@ void DemodulatorThread::run() {
         
         if (squelchEnabled) {
             if (!squelched && !squelchBreak) {
-                DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getCurrentModem();
+                DemodulatorInstancePtr activeDemod = GetAppServices().getDemodMgr().getCurrentModem();
                 bool activeBreaking = activeDemod ? activeDemod->isSquelchBreaking() : false;
-                if (squelchShouldSteal(wxGetApp().getSoloMode(), wxGetApp().getAppFrame()->isUserDemodBusy(),
+                if (squelchShouldSteal(GetAppServices().getSoloMode(), GetAppServices().isUserDemodBusy(),
                         (bool)activeDemod, activeBreaking)) {
-                    for (auto &existing_demod : wxGetApp().getDemodMgr().getDemodulators()) {
+                    for (auto &existing_demod : GetAppServices().getDemodMgr().getDemodulators()) {
                         if (existing_demod.get() == demodInstance) {
-                            wxGetApp().getDemodMgr().setActiveDemodulator(existing_demod);
+                            GetAppServices().getDemodMgr().setActiveDemodulator(existing_demod);
                             break;
                         }
                     }
@@ -308,8 +309,8 @@ void DemodulatorThread::run() {
         }
 
         if (audible && ati != nullptr) {
-            if (!muted && (!wxGetApp().getSoloMode() || (demodInstance ==
-                    wxGetApp().getDemodMgr().getCurrentModem().get()))) {
+            if (!muted && (!GetAppServices().getSoloMode() || (demodInstance ==
+                    GetAppServices().getDemodMgr().getCurrentModem().get()))) {
                 //non-blocking push needed for audio out
                 if (!audioOutputQueue->try_push(ati)) {
                   

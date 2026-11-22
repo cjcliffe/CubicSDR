@@ -35,10 +35,12 @@ add_executable(cubicsdr_tests
     test_SpectrumDsp.cpp
     test_AudioDeviceMatch.cpp
     test_TuneRange.cpp
+    test_StringUtil.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Gradient.cpp
     ${PROJECT_SOURCE_DIR}/src/util/DataTree.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Timer.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Frequency.cpp
+    ${PROJECT_SOURCE_DIR}/src/util/StringUtil.cpp
     ${PROJECT_SOURCE_DIR}/src/visual/WaterfallRing.cpp
     ${PROJECT_SOURCE_DIR}/src/visual/WaterfallPacer.cpp
     ${PROJECT_SOURCE_DIR}/src/sdr/SDRPacer.cpp
