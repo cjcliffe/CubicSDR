@@ -102,7 +102,7 @@ public:
     void setStreamPacing(bool enabled);
    
 
-    void setSampleRate(long long rate_in);
+    void setSampleRate(long long rate_in) override;
     long long getSampleRate() override;
 
    
@@ -126,9 +126,9 @@ public:
     SessionMgr &getSessionMgr();
 
     SDRPostThread *getSDRPostThread();
-    SDRThread *getSDRThread();
+    SDRThread *getSDRThread() override;
 
-    void notifyDemodulatorsChanged();
+    void notifyDemodulatorsChanged() override;
    
     void removeDemodulator(const DemodulatorInstancePtr& demod);
 
@@ -154,6 +154,17 @@ public:
     bool getMainViewWindow(long long &centerHz, long long &spanHz) override;
     bool isUserDemodBusy() override;
     void notifyUpdateModemProperties() override;
+    std::string getUserDataDir() override;
+    void showMessage(const std::string &title, const std::string &message) override;
+    bool getBookmarkBranchExpandState(const std::string &branch) override;
+    void setBookmarkBranchExpandState(const std::string &branch, bool expanded) override;
+    void refreshBookmarkActiveList() override;
+    void refreshBookmarkActiveLabels() override;
+    void refreshBookmarks() override;
+    void refreshBookmarks(const std::string &group) override;
+    bool getMainZoomedView(long long &centerFreq, long long &bandwidth) override;
+    void setMainZoomedView(long long centerFreq, long long bandwidth) override;
+    void resetMainZoomedView() override;
     
     void addRemote(const std::string& remoteAddr);
     void removeRemote(const std::string& remoteAddr);
@@ -178,10 +189,10 @@ public:
     void setActiveGainEntry(std::string gainName);
     std::string getActiveGainEntry();
 
-    void setSoloMode(bool solo);
+    void setSoloMode(bool solo) override;
     bool getSoloMode() override;
 
-    bool isShuttingDown();
+    bool isShuttingDown() override;
     
 #ifdef USE_HAMLIB
     RigThread *getRigThread() override;

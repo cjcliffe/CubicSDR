@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <wx/arrstr.h>
-
 #include <vector>
 #include <set>
 #include <memory>
@@ -81,7 +79,6 @@ public:
     BookmarkList getBookmarks(const std::string& group);
 
     void getGroups(BookmarkNames &arr);
-    void getGroups(wxArrayString &arr);
 
     void setExpandState(const std::string& groupName, bool state);
     bool getExpandState(const std::string& groupName);
