@@ -1041,7 +1041,11 @@ void BookmarkView::updateBookmarkChoices() {
     TreeViewItem *activeSel = itemToTVI(m_treeView->GetSelection());
     
     bookmarkChoices.push_back(((activeSel != nullptr && activeSel->type == TreeViewItem::Type::TREEVIEW_ITEM_TYPE_BOOKMARK))?BOOKMARK_VIEW_CHOICE_MOVE:BOOKMARK_VIEW_CHOICE_DEFAULT);
-    wxGetApp().getBookmarkMgr().getGroups(bookmarkChoices);
+    BookmarkNames groupNames;
+    wxGetApp().getBookmarkMgr().getGroups(groupNames);
+    for (const auto &groupName : groupNames) {
+        bookmarkChoices.push_back(groupName);
+    }
     bookmarkChoices.push_back(BOOKMARK_VIEW_CHOICE_NEW);
 }
 

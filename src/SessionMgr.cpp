@@ -2,36 +2,42 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "SessionMgr.h"
-#include "CubicSDR.h"
+#include "AppServices.h"
+#include "DemodulatorMgr.h"
+#include "CubicSDRDefs.h"
+#include "StringUtil.h"
+#include <algorithm>
+#include <cctype>
 
 void SessionMgr::saveSession(std::string fileName) {
 
     DataTree s("cubicsdr_session");
     DataNode *header = s.rootNode()->newChild("header");
     //save as wstring to prevent problems
-    header->newChild("version")->element()->set(wxString(CUBICSDR_VERSION).ToStdWstring());
+    header->newChild("version")->element()->set(utf8ToWstring(CUBICSDR_VERSION));
 
-    *header->newChild("center_freq") = wxGetApp().getFrequency();
-    *header->newChild("sample_rate") = wxGetApp().getSampleRate();
-    *header->newChild("solo_mode") = wxGetApp().getSoloMode()?1:0;
+    *header->newChild("center_freq") = GetAppServices().getFrequency();
+    *header->newChild("sample_rate") = GetAppServices().getSampleRate();
+    *header->newChild("solo_mode") = GetAppServices().getSoloMode()?1:0;
 
-    WaterfallCanvas *waterfallCanvas = wxGetApp().getAppFrame()->getWaterfallCanvas();
+    long long viewCenterFreq = 0;
+    long long viewBandwidth = 0;
 
-    if (waterfallCanvas->getViewState()) {
+    if (GetAppServices().getMainZoomedView(viewCenterFreq, viewBandwidth)) {
         DataNode *viewState = header->newChild("view_state");
 
-        *viewState->newChild("center_freq") = waterfallCanvas->getCenterFrequency();
-        *viewState->newChild("bandwidth") = waterfallCanvas->getBandwidth();
+        *viewState->newChild("center_freq") = viewCenterFreq;
+        *viewState->newChild("bandwidth") = viewBandwidth;
     }
 
     DataNode *demods = s.rootNode()->newChild("demodulators");
 
     //make a local copy snapshot of the list
-    std::vector<DemodulatorInstancePtr> instances = wxGetApp().getDemodMgr().getDemodulators();
+    std::vector<DemodulatorInstancePtr> instances = GetAppServices().getDemodMgr().getDemodulators();
 
     for (const auto &instance : instances) {
         DataNode *demod = demods->newChild("demodulator");
-        wxGetApp().getDemodMgr().saveInstance(demod, instance);
+        GetAppServices().getDemodMgr().saveInstance(demod, instance);
     } //end for demodulators
 
     // Make sure the file name actually ends in .xml
@@ -57,11 +63,9 @@ bool SessionMgr::loadSession(const std::string& fileName) {
         return false;
     }
 
-    wxGetApp().getDemodMgr().setActiveDemodulator(nullptr);
-    wxGetApp().getDemodMgr().terminateAll();
+    GetAppServices().getDemodMgr().setActiveDemodulator(nullptr);
+    GetAppServices().getDemodMgr().terminateAll();
 
-    WaterfallCanvas *waterfallCanvas = wxGetApp().getAppFrame()->getWaterfallCanvas();
-    SpectrumCanvas *spectrumCanvas = wxGetApp().getAppFrame()->getSpectrumCanvas();
 
     try {
         if (!l.rootNode()->hasAnother("header")) {
@@ -82,7 +86,7 @@ bool SessionMgr::loadSession(const std::string& fileName) {
                 //this is for managing the old session format NOT encoded as std:wstring,
                 //force current version
                 std::cout << "Warning while Loading session file version, probably old format :'" << e.what() << "' please consider re-saving the current session..." << std::endl << std::flush;
-                version = wxString(CUBICSDR_VERSION).ToStdWstring();
+                version = utf8ToWstring(CUBICSDR_VERSION);
             }
         }
 
@@ -90,7 +94,7 @@ bool SessionMgr::loadSession(const std::string& fileName) {
 
             long sample_rate = (long)*header->getNext("sample_rate");
 
-            SDRDeviceInfo *dev = wxGetApp().getSDRThread()->getDevice();
+            SDRDeviceInfo *dev = GetAppServices().getSDRThread()->getDevice();
             if (dev) {
                 //retrieve the available sample rates. A valid previously chosen manual
                 //value is constrained within these limits. If it doesn't behave, lets the device choose
@@ -112,9 +116,9 @@ bool SessionMgr::loadSession(const std::string& fileName) {
 
 
                 //update applied value
-                wxGetApp().setSampleRate(sample_rate);
+                GetAppServices().setSampleRate(sample_rate);
             } else {
-                wxGetApp().setSampleRate(sample_rate);
+                GetAppServices().setSampleRate(sample_rate);
             }
         }
 
@@ -122,10 +126,10 @@ bool SessionMgr::loadSession(const std::string& fileName) {
 
             int solo_mode_activated = (int)*header->getNext("solo_mode");
 
-            wxGetApp().setSoloMode(solo_mode_activated > 0);
+            GetAppServices().setSoloMode(solo_mode_activated > 0);
         }
         else {
-            wxGetApp().setSoloMode(false);
+            GetAppServices().setSoloMode(false);
         }
 
         DemodulatorInstancePtr loadedActiveDemod = nullptr;
@@ -144,7 +148,7 @@ bool SessionMgr::loadSession(const std::string& fileName) {
                     continue;
                 }
 
-                newDemod = wxGetApp().getDemodMgr().loadInstance(demod);
+                newDemod = GetAppServices().getDemodMgr().loadInstance(demod);
 
                 if (demod->hasAnother("active")) {
                     loadedActiveDemod = newDemod;
@@ -156,14 +160,14 @@ bool SessionMgr::loadSession(const std::string& fileName) {
             }
 
             if (!demodsLoaded.empty()) {
-                wxGetApp().notifyDemodulatorsChanged();
+                GetAppServices().notifyDemodulatorsChanged();
             }
 
         } // if l.rootNode()->hasAnother("demodulators")
 
         if (header->hasAnother("center_freq")) {
             long long center_freq = (long long)*header->getNext("center_freq");
-            wxGetApp().setFrequency(center_freq);
+            GetAppServices().setFrequency(center_freq);
             //            std::cout << "\tCenter Frequency: " << center_freq << std::endl;
         }
 
@@ -173,18 +177,14 @@ bool SessionMgr::loadSession(const std::string& fileName) {
             if (viewState->hasAnother("center_freq") && viewState->hasAnother("bandwidth")) {
                 auto center_freq = (long long)*viewState->getNext("center_freq");
                 auto bandwidth = (int)*viewState->getNext("bandwidth");
-                spectrumCanvas->setView(center_freq, bandwidth);
-                waterfallCanvas->setView(center_freq, bandwidth);
+                GetAppServices().setMainZoomedView(center_freq, bandwidth);
             }
         } else {
-            spectrumCanvas->disableView();
-            waterfallCanvas->disableView();
-            spectrumCanvas->setCenterFrequency(wxGetApp().getFrequency());
-            waterfallCanvas->setCenterFrequency(wxGetApp().getFrequency());
+            GetAppServices().resetMainZoomedView();
         }
 
         if (loadedActiveDemod || newDemod) {
-            wxGetApp().getDemodMgr().setActiveDemodulator(loadedActiveDemod?loadedActiveDemod:newDemod);
+            GetAppServices().getDemodMgr().setActiveDemodulator(loadedActiveDemod?loadedActiveDemod:newDemod);
         }
     } catch (DataTypeMismatchException &e) {
         std::cout << e.what() << std::endl;

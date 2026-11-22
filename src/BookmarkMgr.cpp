@@ -2,7 +2,11 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "BookmarkMgr.h"
-#include "CubicSDR.h"
+#include "AppServices.h"
+#include "DemodulatorMgr.h"
+#include "AppConfig.h"
+#include "FileUtil.h"
+#include "StringUtil.h"
 #include "Frequency.h"
 #include "DataTree.h"
 
@@ -22,14 +26,14 @@ void BookmarkMgr::saveToFile(const std::string& bookmarkFn, bool backup, bool us
 
     DataTree s("cubicsdr_bookmarks");
     DataNode *header = s.rootNode()->newChild("header");
-    header->newChild("version")->element()->set(wxString(CUBICSDR_VERSION).ToStdWstring());
+    header->newChild("version")->element()->set(utf8ToWstring(CUBICSDR_VERSION));
 
     DataNode *branches = s.rootNode()->newChild("branches");
     
-    *branches->newChild("active") = wxGetApp().getAppFrame()->getBookmarkView()->getExpandState("active")?1:0;
-    *branches->newChild("range") = wxGetApp().getAppFrame()->getBookmarkView()->getExpandState("range")?1:0;
-    *branches->newChild("bookmark") = wxGetApp().getAppFrame()->getBookmarkView()->getExpandState("bookmark")?1:0;
-    *branches->newChild("recent") = wxGetApp().getAppFrame()->getBookmarkView()->getExpandState("recent")?1:0;
+    *branches->newChild("active") = GetAppServices().getBookmarkBranchExpandState("active")?1:0;
+    *branches->newChild("range") = GetAppServices().getBookmarkBranchExpandState("range")?1:0;
+    *branches->newChild("bookmark") = GetAppServices().getBookmarkBranchExpandState("bookmark")?1:0;
+    *branches->newChild("recent") = GetAppServices().getBookmarkBranchExpandState("recent")?1:0;
 
     DataNode *view_ranges = s.rootNode()->newChild("ranges");
 
@@ -52,14 +56,14 @@ void BookmarkMgr::saveToFile(const std::string& bookmarkFn, bool backup, bool us
 
 			//if a matching demodulator exists, use its data instead to be be saved, because output_device could have been
 			//modified by the user. So, save that "live" version instead.
-			auto matchingDemod = wxGetApp().getDemodMgr().getLastDemodulatorWith(bm_i->type,
+			auto matchingDemod = GetAppServices().getDemodMgr().getLastDemodulatorWith(bm_i->type,
 				bm_i->label,
 				bm_i->frequency,
 				bm_i->bandwidth);
 
 			if (matchingDemod != nullptr) {
 
-				wxGetApp().getDemodMgr().saveInstance(group->newChild("modem"), matchingDemod);
+				GetAppServices().getDemodMgr().saveInstance(group->newChild("modem"), matchingDemod);
 			}
 			else {
 				group->newChildCloneFrom("modem", bm_i->node);
@@ -69,32 +73,32 @@ void BookmarkMgr::saveToFile(const std::string& bookmarkFn, bool backup, bool us
 
     DataNode *recent_modems = s.rootNode()->newChild("recent_modems");
     
-    for (const auto& demod : wxGetApp().getDemodMgr().getDemodulators()) {
-        wxGetApp().getDemodMgr().saveInstance(recent_modems->newChild("modem"),demod);
+    for (const auto& demod : GetAppServices().getDemodMgr().getDemodulators()) {
+        GetAppServices().getDemodMgr().saveInstance(recent_modems->newChild("modem"),demod);
     }
 
     for (auto &r_i : this->recents) {
         recent_modems->newChildCloneFrom("modem", r_i->node);
     }
 
-	wxFileName saveFile;
-	wxFileName saveFileBackup;
+	std::string saveFile;
+	std::string saveFileBackup;
 
 	if (useFullpath) {
-		saveFile.Assign(bookmarkFn);
-		saveFileBackup.Assign(bookmarkFn + ".backup");
+		saveFile = bookmarkFn;
+		saveFileBackup = bookmarkFn + ".backup";
 	}
 	else {
-		saveFile.Assign(wxGetApp().getConfig()->getConfigDir(), bookmarkFn);
-		saveFileBackup.Assign(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".backup");
+		saveFile = FileUtil::joinPath(GetAppServices().getConfig()->getConfigDir(), bookmarkFn);
+		saveFileBackup = FileUtil::joinPath(GetAppServices().getConfig()->getConfigDir(), bookmarkFn + ".backup");
 	}
 
-    if (saveFile.IsDirWritable()) {
+    if (FileUtil::isDirWritable(saveFile)) {
         // Hopefully leave at least a readable backup in case of failure..
-        if (backup && saveFile.FileExists() && (!saveFileBackup.FileExists() || saveFileBackup.IsFileWritable())) {
-            wxCopyFile(saveFile.GetFullPath(wxPATH_NATIVE).ToStdString(), saveFileBackup.GetFullPath(wxPATH_NATIVE).ToStdString());
+        if (backup && FileUtil::fileExists(saveFile) && (!FileUtil::fileExists(saveFileBackup) || FileUtil::isFileWritable(saveFileBackup))) {
+            FileUtil::copyFile(saveFile, saveFileBackup);
         }
-        s.SaveToFileXML(saveFile.GetFullPath(wxPATH_NATIVE).ToStdString());
+        s.SaveToFileXML(saveFile);
     }
 }
 
@@ -102,40 +106,40 @@ bool BookmarkMgr::loadFromFile(const std::string& bookmarkFn, bool backup, bool 
 	
 	std::lock_guard < std::recursive_mutex > lock(busy_lock);
 
-	wxFileName loadFile;
-	wxFileName failFile;
-	wxFileName lastLoaded;
-	wxFileName backupFile;
+	std::string loadFile;
+	std::string failFile;
+	std::string lastLoaded;
+	std::string backupFile;
 
 	if (useFullpath) {
-		loadFile.Assign(bookmarkFn);
-		failFile.Assign(bookmarkFn + ".failedload");
-		lastLoaded.Assign(bookmarkFn + ".lastloaded");
-		backupFile.Assign(bookmarkFn + ".backup");	
+		loadFile = bookmarkFn;
+		failFile = bookmarkFn + ".failedload";
+		lastLoaded = bookmarkFn + ".lastloaded";
+		backupFile = bookmarkFn + ".backup";	
 	}
 	else {
-		loadFile.Assign(wxGetApp().getConfig()->getConfigDir(), bookmarkFn);
-		failFile.Assign(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".failedload");
-		lastLoaded.Assign(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".lastloaded");
-		backupFile.Assign(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".backup");
+		loadFile = FileUtil::joinPath(GetAppServices().getConfig()->getConfigDir(), bookmarkFn);
+		failFile = FileUtil::joinPath(GetAppServices().getConfig()->getConfigDir(), bookmarkFn + ".failedload");
+		lastLoaded = FileUtil::joinPath(GetAppServices().getConfig()->getConfigDir(), bookmarkFn + ".lastloaded");
+		backupFile = FileUtil::joinPath(GetAppServices().getConfig()->getConfigDir(), bookmarkFn + ".backup");
 	}
 
     DataTree s;
     bool loadStatusOk = true;
     
     // File exists but is not readable
-    if (loadFile.FileExists() && !loadFile.IsFileReadable()) {
+    if (FileUtil::fileExists(loadFile) && !FileUtil::isFileReadable(loadFile)) {
         return false;
     }
 
     // New instance of bookmark savefiles
-    if (backup && !loadFile.FileExists() && !lastLoaded.FileExists() && !backupFile.FileExists()) {
+    if (backup && !FileUtil::fileExists(loadFile) && !FileUtil::fileExists(lastLoaded) && !FileUtil::fileExists(backupFile)) {
         loadDefaultRanges();
         return true;
     }
     
     // Attempt to load file
-    if (!s.LoadFromFileXML(loadFile.GetFullPath(wxPATH_NATIVE).ToStdString())) {
+    if (!s.LoadFromFileXML(loadFile)) {
         return false;
     }
 
@@ -157,10 +161,10 @@ bool BookmarkMgr::loadFromFile(const std::string& bookmarkFn, bool backup, bool 
         if (branches->hasAnother("range")) branches->getNext("range")->element()->get(bRange);
         if (branches->hasAnother("bookmark")) branches->getNext("bookmark")->element()->get(bBookmark);
         if (branches->hasAnother("recent")) branches->getNext("recent")->element()->get(bRecent);
-        wxGetApp().getAppFrame()->getBookmarkView()->setExpandState("active", bActive != 0);
-        wxGetApp().getAppFrame()->getBookmarkView()->setExpandState("range", bRange != 0);
-        wxGetApp().getAppFrame()->getBookmarkView()->setExpandState("bookmark", bBookmark != 0);
-        wxGetApp().getAppFrame()->getBookmarkView()->setExpandState("recent", bRecent != 0);
+        GetAppServices().setBookmarkBranchExpandState("active", bActive != 0);
+        GetAppServices().setBookmarkBranchExpandState("range", bRange != 0);
+        GetAppServices().setBookmarkBranchExpandState("bookmark", bBookmark != 0);
+        GetAppServices().setBookmarkBranchExpandState("recent", bRecent != 0);
     }
     
     if (s.rootNode()->hasAnother("ranges")) {
@@ -222,15 +226,15 @@ bool BookmarkMgr::loadFromFile(const std::string& bookmarkFn, bool backup, bool 
 
     if (backup) {
         if (loadStatusOk) {  // Loaded OK; keep a copy
-            if (loadFile.IsDirWritable()) {
-                if (loadFile.FileExists() && (!lastLoaded.FileExists() || lastLoaded.IsFileWritable())) {
-                    wxCopyFile(loadFile.GetFullPath(wxPATH_NATIVE).ToStdString(), lastLoaded.GetFullPath(wxPATH_NATIVE).ToStdString());
+            if (FileUtil::isDirWritable(loadFile)) {
+                if (FileUtil::fileExists(loadFile) && (!FileUtil::fileExists(lastLoaded) || FileUtil::isFileWritable(lastLoaded))) {
+                    FileUtil::copyFile(loadFile, lastLoaded);
                 }
             }
         } else {
-            if (loadFile.IsDirWritable()) { // Load failed; keep a copy of the failed bookmark file for analysis?
-                if (loadFile.FileExists() && (!failFile.FileExists() || failFile.IsFileWritable())) {
-                    wxCopyFile(loadFile.GetFullPath(wxPATH_NATIVE).ToStdString(), failFile.GetFullPath(wxPATH_NATIVE).ToStdString());
+            if (FileUtil::isDirWritable(loadFile)) { // Load failed; keep a copy of the failed bookmark file for analysis?
+                if (FileUtil::fileExists(loadFile) && (!FileUtil::fileExists(failFile) || FileUtil::isFileWritable(failFile))) {
+                    FileUtil::copyFile(loadFile, failFile);
                 }
             }
         }
@@ -288,13 +292,13 @@ void BookmarkMgr::resetBookmarks() {
 }
 
 bool BookmarkMgr::hasLastLoad(const std::string& bookmarkFn) {
-    wxFileName lastLoaded(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".lastloaded");
-    return lastLoaded.FileExists() && lastLoaded.IsFileReadable();
+    std::string lastLoaded = FileUtil::joinPath(GetAppServices().getConfig()->getConfigDir(), bookmarkFn + ".lastloaded");
+    return FileUtil::fileExists(lastLoaded) && FileUtil::isFileReadable(lastLoaded);
 }
 
 bool BookmarkMgr::hasBackup(const std::string& bookmarkFn) {
-    wxFileName backupFile(wxGetApp().getConfig()->getConfigDir(), bookmarkFn + ".backup");
-    return backupFile.FileExists() && backupFile.IsFileReadable();
+    std::string backupFile = FileUtil::joinPath(GetAppServices().getConfig()->getConfigDir(), bookmarkFn + ".backup");
+    return FileUtil::fileExists(backupFile) && FileUtil::isFileReadable(backupFile);
 }
 
 void BookmarkMgr::addBookmark(const std::string& group, const DemodulatorInstancePtr& demod) {
@@ -425,14 +429,6 @@ void BookmarkMgr::getGroups(BookmarkNames &arr) {
     }
 }
 
-void BookmarkMgr::getGroups(wxArrayString &arr) {
-    std::lock_guard < std::recursive_mutex > lock(busy_lock);
-
-    for (auto & i : bmData) {
-        arr.push_back(i.first);
-    }
-}
-
 
 void BookmarkMgr::setExpandState(const std::string& groupName, bool state) {
 	std::lock_guard < std::recursive_mutex > lock(busy_lock);
@@ -453,47 +449,19 @@ bool BookmarkMgr::getExpandState(const std::string& groupName) {
 
 
 void BookmarkMgr::updateActiveList() {
-
-    if (wxGetApp().isShuttingDown()) {
-        return;
-    }
-	
-	BookmarkView *bmv = wxGetApp().getAppFrame()->getBookmarkView();
-    
-    if (bmv) {
-        bmv->updateActiveList();
-    }
+    GetAppServices().refreshBookmarkActiveList();
 }
 
 void BookmarkMgr::updateActiveLabels() {
-
-    if (wxGetApp().isShuttingDown()) {
-        return;
-    }
-
-    BookmarkView *bmv = wxGetApp().getAppFrame()->getBookmarkView();
-
-    if (bmv) {
-        bmv->updateActiveLabels();
-    }
+    GetAppServices().refreshBookmarkActiveLabels();
 }
 
 void BookmarkMgr::updateBookmarks() {
-
-    BookmarkView *bmv = wxGetApp().getAppFrame()->getBookmarkView();
-    
-    if (bmv) {
-        bmv->updateBookmarks();
-    }
+    GetAppServices().refreshBookmarks();
 }
 
 void BookmarkMgr::updateBookmarks(const std::string& group) {
-
-    BookmarkView *bmv = wxGetApp().getAppFrame()->getBookmarkView();
-    
-    if (bmv) {
-        bmv->updateBookmarks(group);
-    }
+    GetAppServices().refreshBookmarks(group);
 }
 
 
@@ -598,7 +566,7 @@ BookmarkEntryPtr BookmarkMgr::demodToBookmarkEntry(const DemodulatorInstancePtr&
     //fine to do so here, so long nobody overrides be->node, DataNode will be 
     //deleted at last BookmarkEntryPtr be ref.
     be->node = new DataNode;
-    wxGetApp().getDemodMgr().saveInstance(be->node, demod);
+    GetAppServices().getDemodMgr().saveInstance(be->node, demod);
     
     return be;
 }
@@ -622,8 +590,8 @@ std::wstring BookmarkMgr::getSafeWstringValue(DataNode* node, const std::string&
                 
                 childNode->element()->get(decodedStdString);
 
-                //use wxString for a clean conversion to a wstring:
-                decodedWString = wxString(decodedStdString).ToStdWstring();
+                //decode narrow content as UTF-8:
+                decodedWString = utf8ToWstring(decodedStdString);
 
             } catch (const DataTypeMismatchException &) {
                 //nothing works, return an empty string.
@@ -667,7 +635,7 @@ std::wstring BookmarkMgr::getBookmarkEntryDisplayName(const BookmarkEntryPtr& bm
     if (dispName.empty()) {
         std::string freqStr = frequencyToStr(bmEnt->frequency) + " " + bmEnt->type;
 
-        dispName = wxString(freqStr).ToStdWstring();
+        dispName = utf8ToWstring(freqStr);
     }
     
     return dispName;
@@ -679,7 +647,7 @@ std::wstring BookmarkMgr::getActiveDisplayName(const DemodulatorInstancePtr& dem
     if (activeName.empty()) {
         std::string wstr = frequencyToStr(demod->getFrequency()) + " " + demod->getDemodulatorType();
 
-        activeName = wxString(wstr).ToStdWstring();
+        activeName = utf8ToWstring(wstr);
     }
     
     return activeName;
@@ -692,6 +660,6 @@ void BookmarkMgr::removeActive(const DemodulatorInstancePtr& demod) {
 	}
 
 	//Delete demodulator (deleteThread clears + reselects when current)
-	wxGetApp().getDemodMgr().deleteThread(demod);
+	GetAppServices().getDemodMgr().deleteThread(demod);
 }
 

@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "AppConfig.h"
-#include "CubicSDR.h"
-
-#include <wx/msgdlg.h>
+#include "AppServices.h"
+#include "FileUtil.h"
+#include <iostream>
 
 DeviceConfig::DeviceConfig() {
 	ppm.store(0);
@@ -359,12 +359,12 @@ DeviceConfig *AppConfig::getDevice(const std::string& deviceId) {
 }
 
 std::string AppConfig::getConfigDir() {
-    std::string dataDir = wxStandardPaths::Get().GetUserDataDir().ToStdString();
+    std::string dataDir = GetAppServices().getUserDataDir();
 
     bool mkStatus = false;
 
-    if (!wxDir::Exists(dataDir)) {
-        mkStatus = wxDir::Make(dataDir);
+    if (!FileUtil::dirExists(dataDir)) {
+        mkStatus = FileUtil::makeDir(dataDir);
     } else {
         mkStatus = true;
     }
@@ -377,11 +377,11 @@ std::string AppConfig::getConfigDir() {
 }
 
 
-void AppConfig::setWindow(wxPoint winXY, wxSize winWH) {
-    winX.store(winXY.x);
-    winY.store(winXY.y);
-    winW.store(winWH.x);
-    winH.store(winWH.y);
+void AppConfig::setWindow(int x, int y, int w, int h) {
+    winX.store(x);
+    winY.store(y);
+    winW.store(w);
+    winH.store(h);
 }
 
 void AppConfig::setWindowMaximized(bool max) {
@@ -440,12 +440,15 @@ bool AppConfig::getStreamPacing() {
     return streamPacing.load();
 }
 
-wxRect *AppConfig::getWindow() {
-    wxRect *r = nullptr;
+bool AppConfig::getWindowRect(int &x, int &y, int &w, int &h) {
     if (winH.load() && winW.load()) {
-        r = new wxRect(winX.load(),winY.load(),winW.load(),winH.load());
+        x = winX.load();
+        y = winY.load();
+        w = winW.load();
+        h = winH.load();
+        return true;
     }
-    return r;
+    return false;
 }
 
 void AppConfig::setTheme(int themeId_in) {
@@ -569,26 +572,25 @@ bool AppConfig::isRecordingPathValid() {
         return false;
     }
     
-    wxFileName recPath(recPathStr);
     
-    return recPath.Exists() && recPath.IsDirWritable();
+    return FileUtil::fileExists(recPathStr) && FileUtil::isDirWritable(recPathStr);
 }
 
 bool AppConfig::verifyRecordingPath() {
-    string recPathStr = wxGetApp().getConfig()->getRecordingPath();
-    
+    string recPathStr = getRecordingPath();
+
     if (recPathStr.empty()) {
-        wxMessageBox( wxT("Recording path is not set.  Please use 'Set Recording Path' from the 'Recording' Menu."), wxT("Recording Path Error"), wxICON_INFORMATION);
-        
+        GetAppServices().showMessage("Recording Path Error", "Recording path is not set.  Please use 'Set Recording Path' from the 'Recording' Menu.");
+
         return false;
     }
-    
+
     if (!isRecordingPathValid()) {
-        wxMessageBox( wxT("Recording path does not exist or is not writable.  Please use 'Set Recording Path' from the 'Recording' Menu."), wxT("Recording Path Error"), wxICON_INFORMATION);
-        
+        GetAppServices().showMessage("Recording Path Error", "Recording path does not exist or is not writable.  Please use 'Set Recording Path' from the 'Recording' Menu.");
+
         return false;
     }
-    
+
     return true;
 }
 
@@ -627,19 +629,17 @@ void AppConfig::setConfigName(std::string configName_in) {
 
 std::string AppConfig::getConfigFileName(bool ignoreName) {
     std::string cfgFileDir = getConfigDir();
-    
-    wxFileName cfgFile;
+
+    std::string cfgFileName;
     if (configName.length() && !ignoreName) {
         std::string tempFn("config-");
         tempFn.append(configName);
         tempFn.append(".xml");
-        cfgFile = wxFileName(cfgFileDir, tempFn);
+        cfgFileName = FileUtil::joinPath(cfgFileDir, tempFn);
     } else {
-        cfgFile = wxFileName(cfgFileDir, "config.xml");
+        cfgFileName = FileUtil::joinPath(cfgFileDir, "config.xml");
     }
-    
-    std::string cfgFileName = cfgFile.GetFullPath(wxPATH_NATIVE).ToStdString();
-    
+
     return cfgFileName;
 }
 
@@ -732,16 +732,14 @@ bool AppConfig::load() {
     std::string cfgFileDir = getConfigDir();
 
     std::string cfgFileName = getConfigFileName();
-    wxFileName cfgFile = wxFileName(cfgFileName);
 
-    if (!cfgFile.Exists()) {
+    if (!FileUtil::fileExists(cfgFileName)) {
         if (configName.length()) {
-            wxFileName baseConfig = wxFileName(getConfigFileName(true));
-            if (baseConfig.Exists()) {
-                std::string baseConfigFileName = baseConfig.GetFullPath(wxPATH_NATIVE).ToStdString();
+            std::string baseConfigFileName = getConfigFileName(true);
+            if (FileUtil::fileExists(baseConfigFileName)) {
                 std::cout << "Creating new configuration file '" << cfgFileName << "' by copying '" << baseConfigFileName << "'..";
-                wxCopyFile(baseConfigFileName, cfgFileName);
-                if (!cfgFile.Exists()) {
+                FileUtil::copyFile(baseConfigFileName, cfgFileName);
+                if (!FileUtil::fileExists(cfgFileName)) {
                     std::cout << "failed." << std::endl;
                     return true;
                 }
@@ -754,7 +752,7 @@ bool AppConfig::load() {
         }
     }
 
-    if (cfgFile.IsFileReadable()) {
+    if (FileUtil::isFileReadable(cfgFileName)) {
         std::cout << "Loading:: configuration file '" << cfgFileName << "'" << std::endl;
 
         cfg.LoadFromFileXML(cfgFileName);

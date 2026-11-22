@@ -16,6 +16,9 @@
 #endif
 
 #include "CubicSDR.h"
+#include <wx/stdpaths.h>
+#include <wx/filename.h>
+#include <wx/msgdlg.h>
 #include "TuneRange.h"
 
 #ifdef _WIN32
@@ -146,6 +149,8 @@ public:
 
 CubicSDR::CubicSDR() : frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE), agcMode(false)
 {
+    SetAppServices(this);
+
         config.load();
 
         sampleRateInitialized.store(false);
@@ -162,8 +167,6 @@ CubicSDR::CubicSDR() : frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFA
         glSettings.CompatibilityProfile().EndList();
 
         *m_glContextAttributes = glSettings;
-
-    SetAppServices(this);
 }
 
 void CubicSDR::initAudioDevices() const {
@@ -571,10 +574,10 @@ void CubicSDR::deviceSelector(bool dismissOnStart) {
         return;
     }
     deviceSelectorOpen.store(true);
-    wxRect *winRect = getConfig()->getWindow();
+    int winX = 0, winY = 0, winW = 0, winH = 0;
     wxPoint pos(wxDefaultPosition);
-    if (winRect != nullptr) {
-        pos = wxPoint(winRect->x, winRect->y);
+    if (getConfig()->getWindowRect(winX, winY, winW, winH)) {
+        pos = wxPoint(winX, winY);
     }
     deviceSelectorDialog = new SDRDevicesDialog(appframe, pos, dismissOnStart);
     deviceSelectorDialog->Show();
@@ -1048,6 +1051,86 @@ bool CubicSDR::isUserDemodBusy() {
 
 void CubicSDR::notifyUpdateModemProperties() {
     getAppFrame()->notifyUpdateModemProperties();
+}
+
+std::string CubicSDR::getUserDataDir() {
+    return wxStandardPaths::Get().GetUserDataDir().ToStdString();
+}
+
+void CubicSDR::showMessage(const std::string &title, const std::string &message) {
+    wxMessageBox(message, title, wxICON_INFORMATION);
+}
+
+bool CubicSDR::getBookmarkBranchExpandState(const std::string &branch) {
+    return getAppFrame()->getBookmarkView()->getExpandState(branch);
+}
+
+void CubicSDR::setBookmarkBranchExpandState(const std::string &branch, bool expanded) {
+    getAppFrame()->getBookmarkView()->setExpandState(branch, expanded);
+}
+
+void CubicSDR::refreshBookmarkActiveList() {
+    if (isShuttingDown()) {
+        return;
+    }
+
+    BookmarkView *bmv = getAppFrame()->getBookmarkView();
+
+    if (bmv) {
+        bmv->updateActiveList();
+    }
+}
+
+void CubicSDR::refreshBookmarkActiveLabels() {
+    if (isShuttingDown()) {
+        return;
+    }
+
+    BookmarkView *bmv = getAppFrame()->getBookmarkView();
+
+    if (bmv) {
+        bmv->updateActiveLabels();
+    }
+}
+
+void CubicSDR::refreshBookmarks() {
+    BookmarkView *bmv = getAppFrame()->getBookmarkView();
+
+    if (bmv) {
+        bmv->updateBookmarks();
+    }
+}
+
+void CubicSDR::refreshBookmarks(const std::string &group) {
+    BookmarkView *bmv = getAppFrame()->getBookmarkView();
+
+    if (bmv) {
+        bmv->updateBookmarks(group);
+    }
+}
+
+bool CubicSDR::getMainZoomedView(long long &centerFreq, long long &bandwidth) {
+    WaterfallCanvas *waterfallCanvas = getAppFrame()->getWaterfallCanvas();
+
+    if (waterfallCanvas->getViewState()) {
+        centerFreq = waterfallCanvas->getCenterFrequency();
+        bandwidth = waterfallCanvas->getBandwidth();
+        return true;
+    }
+
+    return false;
+}
+
+void CubicSDR::setMainZoomedView(long long centerFreq, long long bandwidth) {
+    getAppFrame()->getSpectrumCanvas()->setView(centerFreq, bandwidth);
+    getAppFrame()->getWaterfallCanvas()->setView(centerFreq, bandwidth);
+}
+
+void CubicSDR::resetMainZoomedView() {
+    getAppFrame()->getSpectrumCanvas()->disableView();
+    getAppFrame()->getWaterfallCanvas()->disableView();
+    getAppFrame()->getSpectrumCanvas()->setCenterFrequency(getFrequency());
+    getAppFrame()->getWaterfallCanvas()->setCenterFrequency(getFrequency());
 }
 
 bool CubicSDR::areDevicesEnumerating() {

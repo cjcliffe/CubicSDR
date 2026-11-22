@@ -449,10 +449,10 @@ void AppFrame::initConfigurationSettings() {
     GLFont::setScale((GLFont::GLFontScale)fontScale);
 
     // Init window position from configuration
-    wxRect *win = wxGetApp().getConfig()->getWindow();
-    if (win) {
-        SetPosition(win->GetPosition());
-        SetClientSize(win->GetSize());
+    int winX = 0, winY = 0, winW = 0, winH = 0;
+    if (wxGetApp().getConfig()->getWindowRect(winX, winY, winW, winH)) {
+        SetPosition(wxPoint(winX, winY));
+        SetClientSize(winW, winH);
     } else {
         SetClientSize(1280, 600);
         Centre();
@@ -2407,11 +2407,11 @@ void AppFrame::OnClose(wxCloseEvent& event) {
     
 #ifdef __APPLE__
     if (this->GetPosition().y > 0) {
-        wxGetApp().getConfig()->setWindow(this->GetPosition(), this->GetClientSize());
+        wxGetApp().getConfig()->setWindow(this->GetPosition().x, this->GetPosition().y, this->GetClientSize().x, this->GetClientSize().y);
         wxGetApp().getConfig()->setWindowMaximized(this->IsMaximized());
     }
 #else
-    wxGetApp().getConfig()->setWindow(this->GetPosition(), this->GetClientSize());
+    wxGetApp().getConfig()->setWindow(this->GetPosition().x, this->GetPosition().y, this->GetClientSize().x, this->GetClientSize().y);
     wxGetApp().getConfig()->setWindowMaximized(this->IsMaximized());
 #endif
     wxGetApp().getConfig()->setTheme(ThemeMgr::mgr.getTheme());

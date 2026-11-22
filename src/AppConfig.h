@@ -3,10 +3,6 @@
 
 #pragma once
 
-#include <wx/stdpaths.h>
-#include <wx/dir.h>
-#include <wx/filename.h>
-#include <wx/panel.h>
 #include <atomic>
 #include <mutex>
 
@@ -103,8 +99,8 @@ public:
     std::string getConfigDir();
     DeviceConfig *getDevice(const std::string& deviceId);
 
-    void setWindow(wxPoint winXY, wxSize winWH);
-    wxRect *getWindow();
+    void setWindow(int x, int y, int w, int h);
+    bool getWindowRect(int &x, int &y, int &w, int &h);
     
     void setWindowMaximized(bool max);
     bool getWindowMaximized();

@@ -49,6 +49,26 @@ public:
     virtual bool rigIsActive() = 0;
     virtual RigThread *getRigThread() = 0;
 #endif
+
+    virtual std::string getUserDataDir() = 0;
+    virtual void showMessage(const std::string &title, const std::string &message) = 0;
+    virtual bool isShuttingDown() = 0;
+
+    virtual void setSampleRate(long long rate) = 0;
+    virtual void setSoloMode(bool solo) = 0;
+    virtual void notifyDemodulatorsChanged() = 0;
+    virtual SDRThread *getSDRThread() = 0;
+
+    virtual bool getBookmarkBranchExpandState(const std::string &branch) = 0;
+    virtual void setBookmarkBranchExpandState(const std::string &branch, bool expanded) = 0;
+    virtual void refreshBookmarkActiveList() = 0;
+    virtual void refreshBookmarkActiveLabels() = 0;
+    virtual void refreshBookmarks() = 0;
+    virtual void refreshBookmarks(const std::string &group) = 0;
+
+    virtual bool getMainZoomedView(long long &centerFreq, long long &bandwidth) = 0;
+    virtual void setMainZoomedView(long long centerFreq, long long bandwidth) = 0;
+    virtual void resetMainZoomedView() = 0;
 };
 
 void SetAppServices(AppServices *services);
