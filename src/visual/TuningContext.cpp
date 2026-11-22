@@ -5,6 +5,7 @@
 #include "TuningCanvas.h"
 
 #include "ColorTheme.h"
+#include <vector>
 
 // http://stackoverflow.com/questions/7276826/c-format-number-with-commas
 class comma_numpunct: public std::numpunct<char> {
@@ -44,20 +45,25 @@ void TuningContext::DrawBegin() {
 void TuningContext::Draw(float r, float g, float b, float a, float p1, float p2) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
-    glBegin(GL_QUADS);
-    glColor4f(r * 0.5, g * 0.5, b * 0.5, a);
-    glVertex2f(-1.0 + p2 * 2.0, 1.0);
-    glVertex2f(-1.0 + p1 * 2.0, 1.0);
-    glColor4f(r, g, b, a);
-    glVertex2f(-1.0 + p1 * 2.0, 0.0);
-    glVertex2f(-1.0 + p2 * 2.0, 0.0);
-
-    glVertex2f(-1.0 + p2 * 2.0, 0.0);
-    glVertex2f(-1.0 + p1 * 2.0, 0.0);
-    glColor4f(r * 0.5, g * 0.5, b * 0.5, a);
-    glVertex2f(-1.0 + p1 * 2.0, -1.0);
-    glVertex2f(-1.0 + p2 * 2.0, -1.0);
-    glEnd();
+    float barVerts[16] = {
+        -1.0f + p2 * 2.0f, 1.0, -1.0f + p1 * 2.0f, 1.0,
+        -1.0f + p1 * 2.0f, 0.0, -1.0f + p2 * 2.0f, 0.0,
+        -1.0f + p2 * 2.0f, 0.0, -1.0f + p1 * 2.0f, 0.0,
+        -1.0f + p1 * 2.0f, -1.0, -1.0f + p2 * 2.0f, -1.0
+    };
+    float barColors[32] = {
+        r * 0.5f, g * 0.5f, b * 0.5f, a, r * 0.5f, g * 0.5f, b * 0.5f, a,
+        r, g, b, a, r, g, b, a,
+        r, g, b, a, r, g, b, a,
+        r * 0.5f, g * 0.5f, b * 0.5f, a, r * 0.5f, g * 0.5f, b * 0.5f, a
+    };
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
+    glVertexPointer(2, GL_FLOAT, 0, barVerts);
+    glColorPointer(4, GL_FLOAT, 0, barColors);
+    glDrawArrays(GL_QUADS, 0, 8);
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
     glDisable(GL_BLEND);
 }
 
@@ -109,13 +115,20 @@ void TuningContext::DrawTuner(long long freq, int count, float displayPos, float
     glColor4f(0.65f, 0.65f, 0.65f, 0.25f);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glBegin(GL_LINES);
+    std::vector<float> gridVerts;
     for (int i = count; i >= 0; i--) {
         float xpos = displayPos + (displayWidth / (float) count) * (float) i;
-        glVertex2f(xpos, -1.0);
-        glVertex2f(xpos, 1.0);
+        gridVerts.push_back(xpos);
+        gridVerts.push_back(-1.0);
+        gridVerts.push_back(xpos);
+        gridVerts.push_back(1.0);
     }
-    glEnd();
+    if (!gridVerts.empty()) {
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glVertexPointer(2, GL_FLOAT, 0, &gridVerts[0]);
+        glDrawArrays(GL_LINES, 0, gridVerts.size() / 2);
+        glDisableClientState(GL_VERTEX_ARRAY);
+    }
     glDisable(GL_BLEND);
 }
 
@@ -132,13 +145,15 @@ void TuningContext::DrawTunerDigitBox(int index, int count, float displayPos, fl
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     float xpos = displayPos + (displayWidth / (float) count) * (float) (count-index);
     float xpos2 = displayPos + (displayWidth / (float) count) * (float) ((count-1)-index);
-    glBegin(GL_LINE_STRIP);
-    glVertex2f(xpos, 1.0-pixelHeight);
-    glVertex2f(xpos, -1.0+pixelHeight);
-    glVertex2f(xpos2, -1.0+pixelHeight);
-    glVertex2f(xpos2, 1.0-pixelHeight);
-    glVertex2f(xpos, 1.0-pixelHeight);
-    glEnd();
+    float boxVerts[10] = {
+        xpos, 1.0f - pixelHeight, xpos, -1.0f + pixelHeight,
+        xpos2, -1.0f + pixelHeight, xpos2, 1.0f - pixelHeight,
+        xpos, 1.0f - pixelHeight
+    };
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(2, GL_FLOAT, 0, boxVerts);
+    glDrawArrays(GL_LINE_STRIP, 0, 5);
+    glDisableClientState(GL_VERTEX_ARRAY);
     glDisable(GL_BLEND);
 }
 
@@ -170,24 +185,24 @@ bool bottom) {
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
-    glBegin(GL_QUADS);
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
     if (top) {
-        glColor4f(r * 0.5, g * 0.5, b * 0.5, a);
-        glVertex2f(p2, 1.0);
-        glVertex2f(p1, 1.0);
-        glColor4f(r, g, b, a);
-        glVertex2f(p1, 0.0);
-        glVertex2f(p2, 0.0);
+        float topVerts[8] = { p2, 1.0, p1, 1.0, p1, 0.0, p2, 0.0 };
+        float topColors[16] = { r * 0.5f, g * 0.5f, b * 0.5f, a, r * 0.5f, g * 0.5f, b * 0.5f, a, r, g, b, a, r, g, b, a };
+        glVertexPointer(2, GL_FLOAT, 0, topVerts);
+        glColorPointer(4, GL_FLOAT, 0, topColors);
+        glDrawArrays(GL_QUADS, 0, 4);
     }
     if (bottom) {
-        glColor4f(r, g, b, a);
-        glVertex2f(p2, 0.0);
-        glVertex2f(p1, 0.0);
-        glColor4f(r * 0.5, g * 0.5, b * 0.5, a);
-        glVertex2f(p1, -1.0);
-        glVertex2f(p2, -1.0);
+        float bottomVerts[8] = { p2, 0.0, p1, 0.0, p1, -1.0, p2, -1.0 };
+        float bottomColors[16] = { r, g, b, a, r, g, b, a, r * 0.5f, g * 0.5f, b * 0.5f, a, r * 0.5f, g * 0.5f, b * 0.5f, a };
+        glVertexPointer(2, GL_FLOAT, 0, bottomVerts);
+        glColorPointer(4, GL_FLOAT, 0, bottomColors);
+        glDrawArrays(GL_QUADS, 0, 4);
     }
-    glEnd();
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
     glDisable(GL_BLEND);
 }
 

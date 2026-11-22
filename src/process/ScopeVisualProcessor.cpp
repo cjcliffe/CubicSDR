@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "ScopeVisualProcessor.h"
+#include "ScopeSpectrum.h"
 #include <cstring>
 
 ScopeVisualProcessor::ScopeVisualProcessor(): outputBuffers("ScopeVisualProcessorBuffers") {
@@ -108,7 +109,7 @@ void ScopeVisualProcessor::process() {
                 renderData->mode = ScopePanel::SCOPE_MODE_XY;
             } else {
                 for (i = 0; i < iMax; i++) {
-                    renderData->waveform_points[i * 2] = (((double) i / (double) iMax) - 0.5) * 2.0;
+                    renderData->waveform_points[i * 2] = (scopePointX(i, iMax) - 0.5) * 2.0;
                     renderData->waveform_points[i * 2 + 1] = audioInputData->data[i] / peak;
                 }
                 renderData->mode = ScopePanel::SCOPE_MODE_Y;
@@ -190,11 +191,7 @@ void ScopeVisualProcessor::process() {
             fft_floor_ma = fft_floor_ma + (fft_floor - fft_floor_ma) * 0.05;
             fft_floor_maa = fft_floor_maa + (fft_floor_ma - fft_floor_maa) * 0.05;
 
-            unsigned int outSize = fftSize/2;
-            
-            if (renderData->sampleRate != renderData->inputRate) {
-                outSize = (int)floor((float)outSize * ((float)renderData->sampleRate/(float)renderData->inputRate));
-            }
+            unsigned int outSize = scopeSpectrumOutSize(fftSize / 2, renderData->sampleRate, renderData->inputRate);
             
             if (renderData->waveform_points.size() != outSize*2) {
                 renderData->waveform_points.resize(outSize*2);
@@ -202,7 +199,7 @@ void ScopeVisualProcessor::process() {
             
             for (i = 0; i < outSize; i++) {
                 float v = (log10(fft_result_maa[i]+0.25 - (fft_floor_maa-0.75)) / log10((fft_ceil_maa+0.25) - (fft_floor_maa-0.75)));
-                renderData->waveform_points[i * 2] = ((double) i / (double) (outSize));
+                renderData->waveform_points[i * 2] = scopePointX(i, outSize);
                 renderData->waveform_points[i * 2 + 1] = v;
             }
             

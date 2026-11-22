@@ -138,44 +138,41 @@ void PrimaryGLContext::DrawDemodInfo(const DemodulatorInstancePtr& demod, const 
     }
 
     glColor4f(labelBg.r, labelBg.g, labelBg.b, labelBg.a);
-    
-    glBegin(GL_QUADS);
-    glVertex3f(uxPos - ofsLeft, hPos + labelHeight, 0.0);
-    glVertex3f(uxPos - ofsLeft, -1.0, 0.0);
-
-    glVertex3f(uxPos + ofsRight, -1.0, 0.0);
-    glVertex3f(uxPos + ofsRight, hPos + labelHeight, 0.0);
-    glEnd();
+    float labelVerts[12] = {
+        uxPos - ofsLeft, hPos + labelHeight, 0.0, uxPos - ofsLeft, -1.0, 0.0,
+        uxPos + ofsRight, -1.0, 0.0, uxPos + ofsRight, hPos + labelHeight, 0.0
+    };
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(3, GL_FLOAT, 0, labelVerts);
+    glDrawArrays(GL_QUADS, 0, 4);
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
     glColor4f(color.r, color.g, color.b, 0.2f);
-    glBegin(GL_QUADS);
-    glVertex3f(uxPos - ofsLeft, 1.0, 0.0);
-    glVertex3f(uxPos - ofsLeft, -1.0, 0.0);
-
-    glVertex3f(uxPos + ofsRight, -1.0, 0.0);
-    glVertex3f(uxPos + ofsRight, 1.0, 0.0);
-    glEnd();
+    float bandVerts[12] = {
+        uxPos - ofsLeft, 1.0, 0.0, uxPos - ofsLeft, -1.0, 0.0,
+        uxPos + ofsRight, -1.0, 0.0, uxPos + ofsRight, 1.0, 0.0
+    };
+    glVertexPointer(3, GL_FLOAT, 0, bandVerts);
+    glDrawArrays(GL_QUADS, 0, 4);
 
     if (ofs * 2.0 < 16.0 / viewWidth) {
         glColor4f(color.r, color.g, color.b, 0.2f);
-        glBegin(GL_QUADS);
-        glVertex3f(uxPos - ofsLeft, hPos + labelHeight, 0.0);
-        glVertex3f(uxPos - ofsLeft, -1.0, 0.0);
-
-        glVertex3f(uxPos + ofsRight, -1.0, 0.0);
-        glVertex3f(uxPos + ofsRight, hPos + labelHeight, 0.0);
-        glEnd();
+        float narrowVerts[12] = {
+            uxPos - ofsLeft, hPos + labelHeight, 0.0, uxPos - ofsLeft, -1.0, 0.0,
+            uxPos + ofsRight, -1.0, 0.0, uxPos + ofsRight, hPos + labelHeight, 0.0
+        };
+        glVertexPointer(3, GL_FLOAT, 0, narrowVerts);
+        glDrawArrays(GL_QUADS, 0, 4);
     }
 
     if (centerline) {
         glColor4f(color.r, color.g, color.b, 0.5);
-        glBegin(GL_LINES);
-        glVertex3f(uxPos, 1.0, 0.0);
-        glVertex3f(uxPos, -1.0, 0.0);
-        glEnd();
+        float centerVerts[6] = { uxPos, 1.0, 0.0, uxPos, -1.0, 0.0 };
+        glVertexPointer(3, GL_FLOAT, 0, centerVerts);
+        glDrawArrays(GL_LINES, 0, 2);
     }
+    glDisableClientState(GL_VERTEX_ARRAY);
 
     glColor4f(1.0, 1.0, 1.0, 0.8f);
 
@@ -245,44 +242,41 @@ void PrimaryGLContext::DrawFreqBwInfo(long long freq, int bw, const RGBA4f& colo
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glColor4f(0, 0, 0, 0.35f);
-    
-    glBegin(GL_QUADS);
-    glVertex3f(uxPos - ofsLeft, hPos + labelHeight, 0.0);
-    glVertex3f(uxPos - ofsLeft, -1.0, 0.0);
-    
-    glVertex3f(uxPos + ofsRight, -1.0, 0.0);
-    glVertex3f(uxPos + ofsRight, hPos + labelHeight, 0.0);
-    glEnd();
+    float labelVerts[12] = {
+        uxPos - ofsLeft, hPos + labelHeight, 0.0, uxPos - ofsLeft, -1.0, 0.0,
+        uxPos + ofsRight, -1.0, 0.0, uxPos + ofsRight, hPos + labelHeight, 0.0
+    };
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(3, GL_FLOAT, 0, labelVerts);
+    glDrawArrays(GL_QUADS, 0, 4);
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-    
+
     glColor4f(color.r, color.g, color.b, 0.1f);
-    glBegin(GL_QUADS);
-    glVertex3f(uxPos - ofsLeft, 1.0, 0.0);
-    glVertex3f(uxPos - ofsLeft, -1.0, 0.0);
-    
-    glVertex3f(uxPos + ofsRight, -1.0, 0.0);
-    glVertex3f(uxPos + ofsRight, 1.0, 0.0);
-    glEnd();
+    float bandVerts[12] = {
+        uxPos - ofsLeft, 1.0, 0.0, uxPos - ofsLeft, -1.0, 0.0,
+        uxPos + ofsRight, -1.0, 0.0, uxPos + ofsRight, 1.0, 0.0
+    };
+    glVertexPointer(3, GL_FLOAT, 0, bandVerts);
+    glDrawArrays(GL_QUADS, 0, 4);
     
     if (ofs * 2.0 < 16.0 / viewWidth) {
         glColor4f(color.r, color.g, color.b, 0.1f);
-        glBegin(GL_QUADS);
-        glVertex3f(uxPos - ofsLeft, hPos + labelHeight, 0.0);
-        glVertex3f(uxPos - ofsLeft, -1.0, 0.0);
-        
-        glVertex3f(uxPos + ofsRight, -1.0, 0.0);
-        glVertex3f(uxPos + ofsRight, hPos + labelHeight, 0.0);
-        glEnd();
+        float narrowVerts[12] = {
+            uxPos - ofsLeft, hPos + labelHeight, 0.0, uxPos - ofsLeft, -1.0, 0.0,
+            uxPos + ofsRight, -1.0, 0.0, uxPos + ofsRight, hPos + labelHeight, 0.0
+        };
+        glVertexPointer(3, GL_FLOAT, 0, narrowVerts);
+        glDrawArrays(GL_QUADS, 0, 4);
     }
 
     if (centerline) {
         glColor4f(color.r, color.g, color.b, 0.5);
-        glBegin(GL_LINES);
-        glVertex3f(uxPos, 1.0, 0.0);
-        glVertex3f(uxPos, -1.0, 0.0);
-        glEnd();
+        float centerVerts[6] = { uxPos, 1.0, 0.0, uxPos, -1.0, 0.0 };
+        glVertexPointer(3, GL_FLOAT, 0, centerVerts);
+        glDrawArrays(GL_LINES, 0, 2);
     }
+    glDisableClientState(GL_VERTEX_ARRAY);
     
     glColor4f(1.0, 1.0, 1.0, 0.8f);
     
@@ -350,27 +344,24 @@ void PrimaryGLContext::DrawDemod(const DemodulatorInstancePtr& demod, const RGBA
     float ofs = ((float) demod->getBandwidth()) / (float) srate;
     float ofsLeft = (demod->getDemodulatorType()!="USB")?ofs:0, ofsRight = (demod->getDemodulatorType()!="LSB")?ofs:0;
 
-    glBegin(GL_LINES);
-    glVertex3f((uxPos - 0.5) * 2.0, 1.0, 0.0);
-    glVertex3f((uxPos - 0.5) * 2.0, -1.0, 0.0);
-
-    glVertex3f((uxPos - 0.5) * 2.0 - ofsLeft, 1.0, 0.0);
-    glVertex3f((uxPos - 0.5) * 2.0 - ofsLeft, -1.0, 0.0);
-
-    glVertex3f((uxPos - 0.5) * 2.0 + ofsRight, 1.0, 0.0);
-    glVertex3f((uxPos - 0.5) * 2.0 + ofsRight, -1.0, 0.0);
-
-    glEnd();
+    float edgeVerts[18] = {
+        (uxPos - 0.5f) * 2.0f, 1.0, 0.0, (uxPos - 0.5f) * 2.0f, -1.0, 0.0,
+        (uxPos - 0.5f) * 2.0f - ofsLeft, 1.0, 0.0, (uxPos - 0.5f) * 2.0f - ofsLeft, -1.0, 0.0,
+        (uxPos - 0.5f) * 2.0f + ofsRight, 1.0, 0.0, (uxPos - 0.5f) * 2.0f + ofsRight, -1.0, 0.0
+    };
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(3, GL_FLOAT, 0, edgeVerts);
+    glDrawArrays(GL_LINES, 0, 6);
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     glColor4f(color.r, color.g, color.b, 0.2*hoverAlpha);
-    glBegin(GL_QUADS);
-    glVertex3f((uxPos - 0.5) * 2.0 - ofsLeft, 1.0, 0.0);
-    glVertex3f((uxPos - 0.5) * 2.0 - ofsLeft, -1.0, 0.0);
-
-    glVertex3f((uxPos - 0.5) * 2.0 + ofsRight, -1.0, 0.0);
-    glVertex3f((uxPos - 0.5) * 2.0 + ofsRight, 1.0, 0.0);
-    glEnd();
+    float hoverVerts[12] = {
+        (uxPos - 0.5f) * 2.0f - ofsLeft, 1.0, 0.0, (uxPos - 0.5f) * 2.0f - ofsLeft, -1.0, 0.0,
+        (uxPos - 0.5f) * 2.0f + ofsRight, -1.0, 0.0, (uxPos - 0.5f) * 2.0f + ofsRight, 1.0, 0.0
+    };
+    glVertexPointer(3, GL_FLOAT, 0, hoverVerts);
+    glDrawArrays(GL_QUADS, 0, 4);
+    glDisableClientState(GL_VERTEX_ARRAY);
 
     GLint vp[4];
     glGetIntegerv( GL_VIEWPORT, vp);
@@ -466,11 +457,6 @@ void PrimaryGLContext::DrawFreqSelector(float uxPos, const RGBA4f& color, float 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     glColor4f(color.r, color.g, color.b, 0.6f);
 
-    glBegin(GL_LINES);
-
-    glVertex3f((uxPos - 0.5) * 2.0, 1.0, 0.0);
-    glVertex3f((uxPos - 0.5) * 2.0, -1.0, 0.0);
-
     float ofs;
 
     if (w) {
@@ -479,17 +465,25 @@ void PrimaryGLContext::DrawFreqSelector(float uxPos, const RGBA4f& color, float 
         ofs = ((float) bw) / (float) srate;
     }
 
+    float selVerts[18];
+    int selCount = 0;
+    selVerts[selCount++] = (uxPos - 0.5) * 2.0; selVerts[selCount++] = 1.0; selVerts[selCount++] = 0.0;
+    selVerts[selCount++] = (uxPos - 0.5) * 2.0; selVerts[selCount++] = -1.0; selVerts[selCount++] = 0.0;
+
     if (last_type != "USB") {
-        glVertex3f((uxPos - 0.5) * 2.0 - ofs, 1.0, 0.0);
-        glVertex3f((uxPos - 0.5) * 2.0 - ofs, -1.0, 0.0);
+        selVerts[selCount++] = (uxPos - 0.5) * 2.0 - ofs; selVerts[selCount++] = 1.0; selVerts[selCount++] = 0.0;
+        selVerts[selCount++] = (uxPos - 0.5) * 2.0 - ofs; selVerts[selCount++] = -1.0; selVerts[selCount++] = 0.0;
     }
 
     if (last_type != "LSB") {
-        glVertex3f((uxPos - 0.5) * 2.0 + ofs, 1.0, 0.0);
-        glVertex3f((uxPos - 0.5) * 2.0 + ofs, -1.0, 0.0);
+        selVerts[selCount++] = (uxPos - 0.5) * 2.0 + ofs; selVerts[selCount++] = 1.0; selVerts[selCount++] = 0.0;
+        selVerts[selCount++] = (uxPos - 0.5) * 2.0 + ofs; selVerts[selCount++] = -1.0; selVerts[selCount++] = 0.0;
     }
 
-    glEnd();
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(3, GL_FLOAT, 0, selVerts);
+    glDrawArrays(GL_LINES, 0, selCount / 3);
+    glDisableClientState(GL_VERTEX_ARRAY);
     glDisable(GL_BLEND);
 
 }
@@ -511,17 +505,19 @@ void PrimaryGLContext::DrawRangeSelector(float uxPos1, float uxPos2, const RGBA4
 
     glLineWidth((last_type == "USB")?2.0:1.0);
 
-    glBegin(GL_LINES);
-    glVertex3f((uxPos1 - 0.5) * 2.0, 1.0, 0.0);
-    glVertex3f((uxPos1 - 0.5) * 2.0, -1.0, 0.0);
-    glEnd();
+    float rangeVerts[6];
+    glEnableClientState(GL_VERTEX_ARRAY);
+    rangeVerts[0] = (uxPos1 - 0.5) * 2.0; rangeVerts[1] = 1.0; rangeVerts[2] = 0.0;
+    rangeVerts[3] = (uxPos1 - 0.5) * 2.0; rangeVerts[4] = -1.0; rangeVerts[5] = 0.0;
+    glVertexPointer(3, GL_FLOAT, 0, rangeVerts);
+    glDrawArrays(GL_LINES, 0, 2);
 
     glLineWidth((last_type == "LSB")?2.0:1.0);
 
-    glBegin(GL_LINES);
-    glVertex3f((uxPos2 - 0.5) * 2.0, 1.0, 0.0);
-    glVertex3f((uxPos2 - 0.5) * 2.0, -1.0, 0.0);
-    glEnd();
+    rangeVerts[0] = (uxPos2 - 0.5) * 2.0; rangeVerts[1] = 1.0; rangeVerts[2] = 0.0;
+    rangeVerts[3] = (uxPos2 - 0.5) * 2.0; rangeVerts[4] = -1.0; rangeVerts[5] = 0.0;
+    glDrawArrays(GL_LINES, 0, 2);
+    glDisableClientState(GL_VERTEX_ARRAY);
 
     glLineWidth(1.0);
 

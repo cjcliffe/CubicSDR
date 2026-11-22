@@ -67,8 +67,9 @@ void ScopeContext::DrawEnd() {
 
 void ScopeContext::DrawDivider() {
     glColor3f(1.0, 1.0, 1.0);
-    glBegin (GL_LINES);
-    glVertex2f(0.0, -1.0);
-    glVertex2f(0.0, 1.0);
-    glEnd();
+    float divVerts[4] = { 0.0, -1.0, 0.0, 1.0 };
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(2, GL_FLOAT, 0, divVerts);
+    glDrawArrays(GL_LINES, 0, 2);
+    glDisableClientState(GL_VERTEX_ARRAY);
 }

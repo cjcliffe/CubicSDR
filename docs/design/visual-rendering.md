@@ -175,7 +175,7 @@ The render pipeline executes in two phases per panel:
 2. If `visible` and fill type is not NONE:
    - Enable `GL_BLEND` with the panel's blend mode
    - Draw pre-computed vertex/color arrays via `glDrawArrays(GL_QUADS, ...)` (arrays built earlier when fill properties changed via `genArrays()` in `setFill()`/`setFillColor()`/`setCoordinateSystem()`)
-   - If any border is non-zero: enable `GL_LINE_SMOOTH`, draw border edges with `glBegin(GL_LINES)`
+   - If any border is non-zero: enable `GL_LINE_SMOOTH`, draw border edges with vertex arrays (`glDrawArrays(GL_LINES)`)
 3. If `contentsVisible`:
    - Build coordinate matrix from the panel's coordinate system
    - `glLoadMatrixf((transform * coordMatrix).to_ptr())`
@@ -219,9 +219,9 @@ glLoadIdentity()
 **Drawing primitives use immediate-mode OpenGL:**
 - `glEnable(GL_BLEND)` / `glBlendFunc()` — additive blending for overlays
 - `glDisable(GL_TEXTURE_2D)` before line drawing
-- `glBegin(GL_LINES)` / `glVertex3f()` — immediate mode for demod lines
-- `glBegin(GL_QUADS)` / `glVertex3f()` — immediate mode for filled regions
-- `glColor4f()` / `glColor3f()` — immediate mode color setting
+- `glDrawArrays(GL_LINES)` — vertex arrays for demod lines
+- `glDrawArrays(GL_QUADS)` — vertex arrays for filled regions
+- `glColor4f()` / `glColor3f()` — current color for array draws
 - `glLineWidth()` — variable width for range-selector emphasis (`DrawRangeSelector`)
 
 **Blend modes used:**
@@ -236,7 +236,7 @@ glLoadIdentity()
 
 ### Buffer Strategy
 
-**No persistent GPU buffers** for drawing primitives. All PrimaryGLContext drawing is immediate-mode (`glBegin/glEnd`) for lines and quads. The only persistent GPU resources in the visual system are:
+**No persistent GPU buffers** for drawing primitives. All PrimaryGLContext drawing uses client-side vertex arrays (`glDrawArrays`) for lines and quads. The only persistent GPU resources in the visual system are:
 - **Font atlas textures** — one per font size, uploaded once in `loadFontOnce()`
 - **Waterfall textures** — two double-buffered textures per waterfall panel, updated in `WaterfallPanel::update()`
 
