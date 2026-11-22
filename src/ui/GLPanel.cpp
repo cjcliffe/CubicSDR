@@ -447,10 +447,10 @@ void GLTestPanel::drawPanelContents() {
     float crossVerts[24] = {
         min, mid, max, mid,
         mid, min, mid, max,
-        mid, max, mid - 0.02, max - 0.2,
-        mid, 1, mid + 0.02, max - 0.2,
-        max, mid, max - 0.1, mid + max * 0.25,
-        max, mid, max - 0.1, mid - max * 0.25
+        mid, max, mid - 0.02f, max - 0.2f,
+        mid, 1, mid + 0.02f, max - 0.2f,
+        max, mid, max - 0.1f, mid + max * 0.25f,
+        max, mid, max - 0.1f, mid - max * 0.25f
     };
     glEnableClientState(GL_VERTEX_ARRAY);
     glVertexPointer(2, GL_FLOAT, 0, crossVerts);

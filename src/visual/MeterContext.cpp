@@ -26,16 +26,16 @@ void MeterContext::Draw(float r, float g, float b, float a, float level) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
     float meterVerts[16] = {
-        -1.0, -1.0 + 2.0 * level, -1.0, -1.0,
-        0.0, -1.0, 0.0, -1.0 + 2.0 * level,
-        0.0, -1.0 + 2.0 * level, 0.0, -1.0,
-        1.0, -1.0, 1.0, -1.0 + 2.0 * level
+        -1.0, -1.0f + 2.0f * level, -1.0, -1.0,
+        0.0, -1.0, 0.0, -1.0f + 2.0f * level,
+        0.0, -1.0f + 2.0f * level, 0.0, -1.0,
+        1.0, -1.0, 1.0, -1.0f + 2.0f * level
     };
     float meterColors[32] = {
-        r * 0.65, g * 0.65, b * 0.65, a, r * 0.65, g * 0.65, b * 0.65, a,
+        r * 0.65f, g * 0.65f, b * 0.65f, a, r * 0.65f, g * 0.65f, b * 0.65f, a,
         r, g, b, a, r, g, b, a,
         r, g, b, a, r, g, b, a,
-        r * 0.65, g * 0.65, b * 0.65, a * 0.65, r * 0.65, g * 0.65, b * 0.65, a * 0.65
+        r * 0.65f, g * 0.65f, b * 0.65f, a * 0.65f, r * 0.65f, g * 0.65f, b * 0.65f, a * 0.65f
     };
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);

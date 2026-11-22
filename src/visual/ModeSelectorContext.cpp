@@ -49,8 +49,8 @@ void ModeSelectorContext::DrawSelector(const std::string& label, int c, int cMax
         glEnable(GL_BLEND);
     }
     float selVerts[8] = {
-        -1.0 + padX, y + padY, 1.0 - padX, y + padY,
-        1.0 - padX, y + height - padY, -1.0 + padX, y + height - padY
+        -1.0f + padX, y + padY, 1.0f - padX, y + padY,
+        1.0f - padX, y + height - padY, -1.0f + padX, y + height - padY
     };
     glEnableClientState(GL_VERTEX_ARRAY);
     glVertexPointer(2, GL_FLOAT, 0, selVerts);

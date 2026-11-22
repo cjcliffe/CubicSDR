@@ -46,16 +46,16 @@ void TuningContext::Draw(float r, float g, float b, float a, float p1, float p2)
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
     float barVerts[16] = {
-        -1.0 + p2 * 2.0, 1.0, -1.0 + p1 * 2.0, 1.0,
-        -1.0 + p1 * 2.0, 0.0, -1.0 + p2 * 2.0, 0.0,
-        -1.0 + p2 * 2.0, 0.0, -1.0 + p1 * 2.0, 0.0,
-        -1.0 + p1 * 2.0, -1.0, -1.0 + p2 * 2.0, -1.0
+        -1.0f + p2 * 2.0f, 1.0, -1.0f + p1 * 2.0f, 1.0,
+        -1.0f + p1 * 2.0f, 0.0, -1.0f + p2 * 2.0f, 0.0,
+        -1.0f + p2 * 2.0f, 0.0, -1.0f + p1 * 2.0f, 0.0,
+        -1.0f + p1 * 2.0f, -1.0, -1.0f + p2 * 2.0f, -1.0
     };
     float barColors[32] = {
-        r * 0.5, g * 0.5, b * 0.5, a, r * 0.5, g * 0.5, b * 0.5, a,
+        r * 0.5f, g * 0.5f, b * 0.5f, a, r * 0.5f, g * 0.5f, b * 0.5f, a,
         r, g, b, a, r, g, b, a,
         r, g, b, a, r, g, b, a,
-        r * 0.5, g * 0.5, b * 0.5, a, r * 0.5, g * 0.5, b * 0.5, a
+        r * 0.5f, g * 0.5f, b * 0.5f, a, r * 0.5f, g * 0.5f, b * 0.5f, a
     };
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
@@ -146,9 +146,9 @@ void TuningContext::DrawTunerDigitBox(int index, int count, float displayPos, fl
     float xpos = displayPos + (displayWidth / (float) count) * (float) (count-index);
     float xpos2 = displayPos + (displayWidth / (float) count) * (float) ((count-1)-index);
     float boxVerts[10] = {
-        xpos, 1.0 - pixelHeight, xpos, -1.0 + pixelHeight,
-        xpos2, -1.0 + pixelHeight, xpos2, 1.0 - pixelHeight,
-        xpos, 1.0 - pixelHeight
+        xpos, 1.0f - pixelHeight, xpos, -1.0f + pixelHeight,
+        xpos2, -1.0f + pixelHeight, xpos2, 1.0f - pixelHeight,
+        xpos, 1.0f - pixelHeight
     };
     glEnableClientState(GL_VERTEX_ARRAY);
     glVertexPointer(2, GL_FLOAT, 0, boxVerts);
@@ -189,14 +189,14 @@ bool bottom) {
     glEnableClientState(GL_COLOR_ARRAY);
     if (top) {
         float topVerts[8] = { p2, 1.0, p1, 1.0, p1, 0.0, p2, 0.0 };
-        float topColors[16] = { r * 0.5, g * 0.5, b * 0.5, a, r * 0.5, g * 0.5, b * 0.5, a, r, g, b, a, r, g, b, a };
+        float topColors[16] = { r * 0.5f, g * 0.5f, b * 0.5f, a, r * 0.5f, g * 0.5f, b * 0.5f, a, r, g, b, a, r, g, b, a };
         glVertexPointer(2, GL_FLOAT, 0, topVerts);
         glColorPointer(4, GL_FLOAT, 0, topColors);
         glDrawArrays(GL_QUADS, 0, 4);
     }
     if (bottom) {
         float bottomVerts[8] = { p2, 0.0, p1, 0.0, p1, -1.0, p2, -1.0 };
-        float bottomColors[16] = { r, g, b, a, r, g, b, a, r * 0.5, g * 0.5, b * 0.5, a, r * 0.5, g * 0.5, b * 0.5, a };
+        float bottomColors[16] = { r, g, b, a, r, g, b, a, r * 0.5f, g * 0.5f, b * 0.5f, a, r * 0.5f, g * 0.5f, b * 0.5f, a };
         glVertexPointer(2, GL_FLOAT, 0, bottomVerts);
         glColorPointer(4, GL_FLOAT, 0, bottomColors);
         glDrawArrays(GL_QUADS, 0, 4);

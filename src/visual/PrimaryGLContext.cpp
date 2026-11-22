@@ -345,9 +345,9 @@ void PrimaryGLContext::DrawDemod(const DemodulatorInstancePtr& demod, const RGBA
     float ofsLeft = (demod->getDemodulatorType()!="USB")?ofs:0, ofsRight = (demod->getDemodulatorType()!="LSB")?ofs:0;
 
     float edgeVerts[18] = {
-        (uxPos - 0.5) * 2.0, 1.0, 0.0, (uxPos - 0.5) * 2.0, -1.0, 0.0,
-        (uxPos - 0.5) * 2.0 - ofsLeft, 1.0, 0.0, (uxPos - 0.5) * 2.0 - ofsLeft, -1.0, 0.0,
-        (uxPos - 0.5) * 2.0 + ofsRight, 1.0, 0.0, (uxPos - 0.5) * 2.0 + ofsRight, -1.0, 0.0
+        (uxPos - 0.5f) * 2.0f, 1.0, 0.0, (uxPos - 0.5f) * 2.0f, -1.0, 0.0,
+        (uxPos - 0.5f) * 2.0f - ofsLeft, 1.0, 0.0, (uxPos - 0.5f) * 2.0f - ofsLeft, -1.0, 0.0,
+        (uxPos - 0.5f) * 2.0f + ofsRight, 1.0, 0.0, (uxPos - 0.5f) * 2.0f + ofsRight, -1.0, 0.0
     };
     glEnableClientState(GL_VERTEX_ARRAY);
     glVertexPointer(3, GL_FLOAT, 0, edgeVerts);
@@ -356,8 +356,8 @@ void PrimaryGLContext::DrawDemod(const DemodulatorInstancePtr& demod, const RGBA
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     glColor4f(color.r, color.g, color.b, 0.2*hoverAlpha);
     float hoverVerts[12] = {
-        (uxPos - 0.5) * 2.0 - ofsLeft, 1.0, 0.0, (uxPos - 0.5) * 2.0 - ofsLeft, -1.0, 0.0,
-        (uxPos - 0.5) * 2.0 + ofsRight, -1.0, 0.0, (uxPos - 0.5) * 2.0 + ofsRight, 1.0, 0.0
+        (uxPos - 0.5f) * 2.0f - ofsLeft, 1.0, 0.0, (uxPos - 0.5f) * 2.0f - ofsLeft, -1.0, 0.0,
+        (uxPos - 0.5f) * 2.0f + ofsRight, -1.0, 0.0, (uxPos - 0.5f) * 2.0f + ofsRight, 1.0, 0.0
     };
     glVertexPointer(3, GL_FLOAT, 0, hoverVerts);
     glDrawArrays(GL_QUADS, 0, 4);

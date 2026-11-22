@@ -121,12 +121,12 @@ void WaterfallPanel::drawPanelContents() {
     
     glBindTexture(GL_TEXTURE_2D, waterfall[0]);
     float quadVerts[8] = {
-        -1.0, -1.0, 0.0 + half_pixel, -1.0,
-        0.0 + half_pixel, 1.0, -1.0, 1.0
+        -1.0, -1.0, 0.0f + half_pixel, -1.0,
+        0.0f + half_pixel, 1.0, -1.0, 1.0
     };
     float quadTex[8] = {
-        0.0 + half_texel, 1.0 + vofs, 1.0 - half_texel, 1.0 + vofs,
-        1.0 - half_texel, 0.0 + vofs, 0.0 + half_texel, 0.0 + vofs
+        0.0f + half_texel, 1.0f + vofs, 1.0f - half_texel, 1.0f + vofs,
+        1.0f - half_texel, 0.0f + vofs, 0.0f + half_texel, 0.0f + vofs
     };
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);

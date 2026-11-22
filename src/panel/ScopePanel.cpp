@@ -64,10 +64,10 @@ void ScopePanel::drawPanelContents() {
         float axisColors[24] = {
             ThemeMgr::mgr.currentTheme->scopeLine.r, ThemeMgr::mgr.currentTheme->scopeLine.g, ThemeMgr::mgr.currentTheme->scopeLine.b, 1.0,
             ThemeMgr::mgr.currentTheme->scopeLine.r, ThemeMgr::mgr.currentTheme->scopeLine.g, ThemeMgr::mgr.currentTheme->scopeLine.b, 1.0,
-            ThemeMgr::mgr.currentTheme->scopeLine.r * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.g * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.b * 0.35, 1.0,
-            ThemeMgr::mgr.currentTheme->scopeLine.r * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.g * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.b * 0.35, 1.0,
-            ThemeMgr::mgr.currentTheme->scopeLine.r * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.g * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.b * 0.35, 1.0,
-            ThemeMgr::mgr.currentTheme->scopeLine.r * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.g * 0.35, ThemeMgr::mgr.currentTheme->scopeLine.b * 0.35, 1.0
+            ThemeMgr::mgr.currentTheme->scopeLine.r * 0.35f, ThemeMgr::mgr.currentTheme->scopeLine.g * 0.35f, ThemeMgr::mgr.currentTheme->scopeLine.b * 0.35f, 1.0,
+            ThemeMgr::mgr.currentTheme->scopeLine.r * 0.35f, ThemeMgr::mgr.currentTheme->scopeLine.g * 0.35f, ThemeMgr::mgr.currentTheme->scopeLine.b * 0.35f, 1.0,
+            ThemeMgr::mgr.currentTheme->scopeLine.r * 0.35f, ThemeMgr::mgr.currentTheme->scopeLine.g * 0.35f, ThemeMgr::mgr.currentTheme->scopeLine.b * 0.35f, 1.0,
+            ThemeMgr::mgr.currentTheme->scopeLine.r * 0.35f, ThemeMgr::mgr.currentTheme->scopeLine.g * 0.35f, ThemeMgr::mgr.currentTheme->scopeLine.b * 0.35f, 1.0
         };
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
