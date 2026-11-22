@@ -18,6 +18,7 @@ add_executable(cubicsdr_tests
     test_WaterfallRing.cpp
     test_WaterfallPacer.cpp
     test_WaterfallLps.cpp
+    test_ScopeSpectrum.cpp
     test_SDRPacer.cpp
     test_AudioMixer.cpp
     test_DemodReselect.cpp
