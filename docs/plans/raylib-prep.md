@@ -7,7 +7,7 @@ Decouple the portable core (SDR, demod, DSP, audio, bookmarks, config) from wxWi
 ## Success Criteria
 
 - No direct `wx/` includes remain in the core layers (`src/sdr/`, `src/demod/`, `src/process/`, `src/audio/`, `src/rig/`), verified by include audit. Transitive wx headers via `AppConfig.h` persist until the step 2 header diet.
-- Bookmark and config logic is wx-free, unit-tested, and reads/writes byte-compatible `config.xml` / `bookmarks.xml` files.
+- Bookmark, session, and config logic is wx-free and reads/writes byte-compatible `config.xml` / `bookmarks.xml` files; the new portable helpers are unit-tested and manager round-trips are covered live.
 - Every shortcut/menu action is invocable without a `wxEvent`, and the frame tick runs as plain `update(dt)` / `render()` entry points.
 - File dialogs, clipboard, and message popups each go through one wrapper function.
 - Full build is green, the unit suite passes, and behavior is confirmed live on Windows with a device attached.
@@ -20,7 +20,7 @@ Seams first, behavior frozen. Each step introduces a non-wx interface (or remove
 
 0. **Epic setup.** Save this plan to `docs/plans/raylib-prep.md` (unindexed fix-synopsis; retired at merge) and cut epic branch `raylib-prep` from master.
 1. **`wxGetApp()` seam.** Define a plain `AppServices` interface (config, demod/bookmark managers, frequency/rate accessors, thread-notify calls, view/window queries); the wx app object implements it; core call sites switch to the interface. Thread→UI notifies stay as direct calls (verified: they already update state directly rather than posting wx events) and keep their exact bodies behind the interface. Convert the remaining core `wxString` uses to std UTF-8 helpers. Step-branch, merged to epic.
-2. **Data-layer portability.** `BookmarkMgr`: `wxArrayString` → std, plus unit tests for load/save/filter/recent. `AppConfig`: isolate path resolution and the error popup behind tiny functions; schema frozen (files unchanged). Step-branch, merged to epic.
+2. **Data-layer portability.** `BookmarkMgr` and `SessionMgr`: drop wx types, route view callbacks and manager access through `AppServices`. `AppConfig`: plain-int window geometry, path resolution behind one seam call, message popup behind one seam call; wx-free header and implementation; schema frozen (files unchanged). A new portable `FileUtil` carries the file operations with unit tests; manager-level load/save tests stay out of the headless suite (the demod stack needs DSP/SDR libraries) and are covered live instead. Step-branch, merged to epic.
 3. **Actions and tick.** Centralize the shortcut→action map as data; action bodies take no `wxEvent`; frame tick exposed as `update(dt)` / `render()` with no `wxTimerEvent` types leaking into canvas code. Step-branch, merged to epic.
 4. **Native-service wrappers.** One helper each for file dialog, clipboard, and message popup; migrate all call sites (recording path, console copy, config errors). Step-branch, merged to epic.
 5. **Verification sweep and docs.** Include audit across core, full module build, whole suite, live device check (attach/stream/detach, enumeration messages, recording-path flow); update affected design docs; retire the plan file at merge.
