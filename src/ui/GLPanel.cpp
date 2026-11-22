@@ -326,39 +326,36 @@ void GLPanel::draw() {
         if (borderPx.left || borderPx.right || borderPx.top || borderPx.bottom) {
             glEnable(GL_LINE_SMOOTH);
             glColor4f(borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+            float borderVerts[16] = {
+                gmin, gmin, gmin, gmax,
+                gmax, gmin, gmax, gmax,
+                gmin, gmin, gmax, gmin,
+                gmin, gmax, gmax, gmax
+            };
+            glEnableClientState(GL_VERTEX_ARRAY);
+            glVertexPointer(2, GL_FLOAT, 0, borderVerts);
             
             if (borderPx.left) {
                 glLineWidth(borderPx.left);
-                glBegin(GL_LINES);
-                glVertex2f(gmin, gmin);
-                glVertex2f(gmin, gmax);
-                glEnd();
+                glDrawArrays(GL_LINES, 0, 2);
             }
         
             if (borderPx.right) {
                 glLineWidth(borderPx.right);
-                glBegin(GL_LINES);
-                glVertex2f(gmax, gmin);
-                glVertex2f(gmax, gmax);
-                glEnd();
+                glDrawArrays(GL_LINES, 2, 2);
             }
 
             if (borderPx.top) {
                 glLineWidth(borderPx.top);
-                glBegin(GL_LINES);
-                glVertex2f(gmin, gmin);
-                glVertex2f(gmax, gmin);
-                glEnd();
+                glDrawArrays(GL_LINES, 4, 2);
             }
 
             if (borderPx.bottom) {
                 glLineWidth(borderPx.bottom);
-                glBegin(GL_LINES);
-                glVertex2f(gmin, gmax);
-                glVertex2f(gmax, gmax);
-                glEnd();
+                glDrawArrays(GL_LINES, 6, 2);
             }
 
+            glDisableClientState(GL_VERTEX_ARRAY);
             glDisable(GL_LINE_SMOOTH);
         }
         glDisable(GL_BLEND);
@@ -447,21 +444,16 @@ std::string GLTextPanel::getText() {
 
 void GLTestPanel::drawPanelContents() {
     glColor3f(1.0,1.0,1.0);
-    glBegin(GL_LINES);
-    glVertex2f(min, mid);
-    glVertex2f(max, mid);
-    glVertex2f(mid, min);
-    glVertex2f(mid, max);
-    
-    glVertex2f(mid, max);
-    glVertex2f(mid - 0.02, max - 0.2);
-    glVertex2f(mid, 1);
-    glVertex2f(mid + 0.02, max - 0.2);
-    
-    glVertex2f(max, mid);
-    glVertex2f(max - 0.1, mid + max * 0.25);
-    glVertex2f(max, mid);
-    glVertex2f(max - 0.1, mid - max * 0.25);
-    
-    glEnd();
+    float crossVerts[24] = {
+        min, mid, max, mid,
+        mid, min, mid, max,
+        mid, max, mid - 0.02, max - 0.2,
+        mid, 1, mid + 0.02, max - 0.2,
+        max, mid, max - 0.1, mid + max * 0.25,
+        max, mid, max - 0.1, mid - max * 0.25
+    };
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(2, GL_FLOAT, 0, crossVerts);
+    glDrawArrays(GL_LINES, 0, 12);
+    glDisableClientState(GL_VERTEX_ARRAY);
 }
