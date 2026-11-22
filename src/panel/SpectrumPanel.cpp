@@ -126,6 +126,7 @@ void SpectrumPanel::drawPanelContents() {
         double range = ceilValue-floorValue;
         double ranges[3][4] = { { 90.0, 5000.0, 10.0, 100.0 }, { 20.0, 150.0, 10.0, 10.0 }, { -20.0, 30.0, 10.0, 1.0 } };
         
+        glEnableClientState(GL_VERTEX_ARRAY);
         for (auto & i : ranges) {
             double p = 0;
             double rangeMin = i[0];
@@ -143,31 +144,38 @@ void SpectrumPanel::drawPanelContents() {
                     a *= (rangeTrans-(range-(rangeMax-rangeTrans)))/rangeTrans;
                 }
                 
-                glColor4f(0.12f, 0.12f, 0.12f, a);
-                glBegin(GL_LINES);
+                std::vector<float> gridVerts;
                 for (double l = floorValue; l<=ceilValue+rangeStep; l+=rangeStep) {
                     p += rangeStep/range;
-                    glVertex2f(0,p);  glVertex2f(1,p);
+                    gridVerts.push_back(0.0f);
+                    gridVerts.push_back((float)p);
+                    gridVerts.push_back(1.0f);
+                    gridVerts.push_back((float)p);
                 }
-                glEnd();
+                if (!gridVerts.empty()) {
+                    glColor4f(0.12f, 0.12f, 0.12f, a);
+                    glVertexPointer(2, GL_FLOAT, 0, &gridVerts[0]);
+                    glDrawArrays(GL_LINES, 0, gridVerts.size() / 2);
+                }
             }
         }
         
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glEnableClientState(GL_VERTEX_ARRAY);
         glColor4f(ThemeMgr::mgr.currentTheme->fftFill.r, ThemeMgr::mgr.currentTheme->fftFill.g, ThemeMgr::mgr.currentTheme->fftFill.b, ThemeMgr::mgr.currentTheme->fftFill.a);
         glVertexPointer(2, GL_FLOAT, 0, &fill_points[0]);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, fill_points.size() / 2);
         float fillBase = (-1.0f + 0.75f) / 1.5f;
-        glBegin(GL_QUADS);
-        glColor4f(ThemeMgr::mgr.currentTheme->fftFill.r, ThemeMgr::mgr.currentTheme->fftFill.g, ThemeMgr::mgr.currentTheme->fftFill.b, ThemeMgr::mgr.currentTheme->fftFill.a);
-        glVertex2f(0, 0);
-        glColor4f(ThemeMgr::mgr.currentTheme->fftBackground.r, ThemeMgr::mgr.currentTheme->fftBackground.g, ThemeMgr::mgr.currentTheme->fftBackground.b, ThemeMgr::mgr.currentTheme->fftFill.a);
-        glVertex2f(0, fillBase);
-        glVertex2f(1, fillBase);
-        glColor4f(ThemeMgr::mgr.currentTheme->fftFill.r, ThemeMgr::mgr.currentTheme->fftFill.g, ThemeMgr::mgr.currentTheme->fftFill.b, ThemeMgr::mgr.currentTheme->fftFill.a);
-        glVertex2f(1, 0);
-        glEnd();
+        float skirtVerts[8] = { 0, 0, 0, fillBase, 1, fillBase, 1, 0 };
+        float skirtColors[16] = {
+            ThemeMgr::mgr.currentTheme->fftFill.r, ThemeMgr::mgr.currentTheme->fftFill.g, ThemeMgr::mgr.currentTheme->fftFill.b, ThemeMgr::mgr.currentTheme->fftFill.a,
+            ThemeMgr::mgr.currentTheme->fftBackground.r, ThemeMgr::mgr.currentTheme->fftBackground.g, ThemeMgr::mgr.currentTheme->fftBackground.b, ThemeMgr::mgr.currentTheme->fftFill.a,
+            ThemeMgr::mgr.currentTheme->fftBackground.r, ThemeMgr::mgr.currentTheme->fftBackground.g, ThemeMgr::mgr.currentTheme->fftBackground.b, ThemeMgr::mgr.currentTheme->fftFill.a,
+            ThemeMgr::mgr.currentTheme->fftFill.r, ThemeMgr::mgr.currentTheme->fftFill.g, ThemeMgr::mgr.currentTheme->fftFill.b, ThemeMgr::mgr.currentTheme->fftFill.a };
+        glEnableClientState(GL_COLOR_ARRAY);
+        glVertexPointer(2, GL_FLOAT, 0, skirtVerts);
+        glColorPointer(4, GL_FLOAT, 0, skirtColors);
+        glDrawArrays(GL_QUADS, 0, 4);
+        glDisableClientState(GL_COLOR_ARRAY);
         glColor3f(ThemeMgr::mgr.currentTheme->fftLine.r, ThemeMgr::mgr.currentTheme->fftLine.g, ThemeMgr::mgr.currentTheme->fftLine.b);
         glVertexPointer(2, GL_FLOAT, 0, &points[0]);
         glDrawArrays(GL_LINE_STRIP, 0, points.size() / 2);
@@ -258,6 +266,7 @@ void SpectrumPanel::drawPanelContents() {
     
     GLFont::Drawer refDrawingFont = GLFont::getFont(fontSize, GLFont::getScaleFactor());
 
+    std::vector<float> majorTicks, minorTicks;
     for (double m = -1.0 + mhzStart, mMax = 1.0 + ((mhzStart>0)?mhzStart:-mhzStart); m <= mMax; m += mhzStep) {
         if (m < -1.0) {
             currentMhz += mhzVisualStep;
@@ -281,20 +290,11 @@ void SpectrumPanel::drawPanelContents() {
         
         fractpart = modf(currentMhz, &intpart);
         
-        if (fractpart < 0.001) {
-            glLineWidth(4.0);
-            glColor3f(ThemeMgr::mgr.currentTheme->freqLine.r, ThemeMgr::mgr.currentTheme->freqLine.g, ThemeMgr::mgr.currentTheme->freqLine.b);
-        } else {
-            glLineWidth(1.0);
-            glColor3f(ThemeMgr::mgr.currentTheme->freqLine.r * 0.65, ThemeMgr::mgr.currentTheme->freqLine.g * 0.65,
-                      ThemeMgr::mgr.currentTheme->freqLine.b * 0.65);
-        }
-        
-        glDisable(GL_TEXTURE_2D);
-        glBegin(GL_LINES);
-        glVertex2f(m, lMhzPos);
-        glVertex2f(m, 1);
-        glEnd();
+        std::vector<float> &tickVerts = (fractpart < 0.001) ? majorTicks : minorTicks;
+        tickVerts.push_back((float)m);
+        tickVerts.push_back((float)lMhzPos);
+        tickVerts.push_back((float)m);
+        tickVerts.push_back(1.0f);
         
         glColor4f(ThemeMgr::mgr.currentTheme->text.r, ThemeMgr::mgr.currentTheme->text.g, ThemeMgr::mgr.currentTheme->text.b,1.0);
         
@@ -305,6 +305,21 @@ void SpectrumPanel::drawPanelContents() {
         currentMhz += mhzVisualStep;
     }
     
+    glDisable(GL_TEXTURE_2D);
+    glEnableClientState(GL_VERTEX_ARRAY);
+    if (!majorTicks.empty()) {
+        glLineWidth(4.0);
+        glColor3f(ThemeMgr::mgr.currentTheme->freqLine.r, ThemeMgr::mgr.currentTheme->freqLine.g, ThemeMgr::mgr.currentTheme->freqLine.b);
+        glVertexPointer(2, GL_FLOAT, 0, &majorTicks[0]);
+        glDrawArrays(GL_LINES, 0, majorTicks.size() / 2);
+    }
+    if (!minorTicks.empty()) {
+        glLineWidth(1.0);
+        glColor3f(ThemeMgr::mgr.currentTheme->freqLine.r * 0.65, ThemeMgr::mgr.currentTheme->freqLine.g * 0.65, ThemeMgr::mgr.currentTheme->freqLine.b * 0.65);
+        glVertexPointer(2, GL_FLOAT, 0, &minorTicks[0]);
+        glDrawArrays(GL_LINES, 0, minorTicks.size() / 2);
+    }
+    glDisableClientState(GL_VERTEX_ARRAY);
     glLineWidth(1.0);
 
     if (showDb) {
