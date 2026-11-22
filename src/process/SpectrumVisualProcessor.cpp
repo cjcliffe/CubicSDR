@@ -3,7 +3,7 @@
 
 #include "SpectrumVisualProcessor.h"
 #include "SpectrumDsp.h"
-#include "CubicSDR.h"
+#include "AppServices.h"
 
 #include <chrono>
 #include <cstdint>
@@ -339,7 +339,7 @@ void SpectrumVisualProcessor::process() {
             
             if (centerFreq != iqData->frequency) {
                 if ((centerFreq - iqData->frequency) != shiftFrequency || lastInputBandwidth != iqData->sampleRate) {
-                    if (abs(iqData->frequency - centerFreq) < (wxGetApp().getSampleRate() / 2)) {
+                    if (abs(iqData->frequency - centerFreq) < (GetAppServices().getSampleRate() / 2)) {
                         long lastShiftFrequency = shiftFrequency;
                         shiftFrequency = centerFreq - iqData->frequency;
                         nco_crcf_set_frequency(freqShifter, (2.0 * M_PI) * (((double) abs(shiftFrequency)) / ((double) iqData->sampleRate)));

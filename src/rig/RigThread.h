@@ -4,7 +4,8 @@
 #pragma once
 
 #include "IOThread.h"
-#include "CubicSDR.h"
+#include <vector>
+#include <string>
 #include <hamlib/rig.h>
 #include <hamlib/riglist.h>
 
