@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "PrimaryGLContext.h"
+#include "DemodMarkers.h"
 #include <chrono>
 
 #include "wx/wxprec.h"
@@ -87,21 +88,41 @@ void PrimaryGLContext::DrawDemodInfo(const DemodulatorInstancePtr& demod, const 
     GLint vp[4];
     glGetIntegerv( GL_VIEWPORT, vp);
 
-    float viewHeight = (float) vp[3];
-    float viewWidth = (float) vp[2];
-
     if (center_freq == -1) {
         center_freq = wxGetApp().getFrequency();
     }
-    
+
     long long demodFreq = demod->getFrequency();
 
     if (demod->isDeltaLock()) {
         demodFreq = wxGetApp().getFrequency() + demod->getDeltaLockOfs();
     }
-    
-    float uxPos = (float) (demodFreq - (center_freq - srate / 2)) / (float) srate;
-    uxPos = (uxPos - 0.5) * 2.0;
+
+    bool soloMode = wxGetApp().getSoloMode();
+    bool isRecording = demod->isRecording();
+    bool isSolo = soloMode && demod == wxGetApp().getDemodMgr().getCurrentModem();
+
+    long long timeMs = 0;
+    // TODO: Better recording indicator... pulsating red circle?
+    if (isRecording) {
+        timeMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+    }
+
+    DemodMarkers::MarkerInput in;
+    in.freqHz = demodFreq;
+    in.bandwidthHz = demod->getBandwidth();
+    in.sideband = DemodMarkers::sidebandForType(demod->getDemodulatorType());
+    in.viewCenterHz = center_freq;
+    in.viewSpanHz = srate;
+    in.viewWidthPx = vp[2];
+    in.viewHeightPx = vp[3];
+    in.deltaLocked = demod->isDeltaLock();
+    in.muted = demod->isMuted();
+    in.solo = isSolo;
+    in.soloMode = soloMode;
+    in.recording = isRecording;
+    in.timeMs = timeMs;
+    DemodMarkers::MarkerGeometry geo = DemodMarkers::markerGeometry(in);
 
     glDisable(GL_TEXTURE_2D);
 
@@ -109,38 +130,12 @@ void PrimaryGLContext::DrawDemodInfo(const DemodulatorInstancePtr& demod, const 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glColor4f(color.r, color.g, color.b, 0.6f);
 
-    float ofs = ((float) demod->getBandwidth()) / (float) srate;
-    float ofsLeft = (demod->getDemodulatorType()!="USB")?ofs:0, ofsRight = (demod->getDemodulatorType()!="LSB")?ofs:0;
-
-    float labelHeight = 20.0 / viewHeight;
-    float hPos = -1.0 + labelHeight;
-
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    bool soloMode = wxGetApp().getSoloMode();
-    bool isRecording = demod->isRecording();
-    bool isSolo = soloMode && demod == wxGetApp().getDemodMgr().getCurrentModem();
-    
-    RGBA4f labelBg(0, 0, 0, 0.35f);
-
-    if (isSolo) {
-        labelBg.r = labelBg.g = 0.8f;
-    } else if (demod->isMuted()) {
-        labelBg.r = 0.8f;
-    } else if (soloMode) {
-        labelBg.r = 0.2f;
-    }
-
-    // TODO: Better recording indicator... pulsating red circle?
-    if (isRecording) {
-        auto t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-        labelBg.g = sinf(2.0f * M_PI * (float)(t % 2000) / 2000.0f) * 0.25f + 0.75f;
-    }
-
-    glColor4f(labelBg.r, labelBg.g, labelBg.b, labelBg.a);
+    glColor4f(geo.bg.r, geo.bg.g, geo.bg.b, geo.bg.a);
     float labelVerts[12] = {
-        uxPos - ofsLeft, hPos + labelHeight, 0.0, uxPos - ofsLeft, -1.0, 0.0,
-        uxPos + ofsRight, -1.0, 0.0, uxPos + ofsRight, hPos + labelHeight, 0.0
+        geo.label.x0, geo.label.y1, 0.0, geo.label.x0, geo.label.y0, 0.0,
+        geo.label.x1, geo.label.y0, 0.0, geo.label.x1, geo.label.y1, 0.0
     };
     glEnableClientState(GL_VERTEX_ARRAY);
     glVertexPointer(3, GL_FLOAT, 0, labelVerts);
@@ -150,17 +145,17 @@ void PrimaryGLContext::DrawDemodInfo(const DemodulatorInstancePtr& demod, const 
 
     glColor4f(color.r, color.g, color.b, 0.2f);
     float bandVerts[12] = {
-        uxPos - ofsLeft, 1.0, 0.0, uxPos - ofsLeft, -1.0, 0.0,
-        uxPos + ofsRight, -1.0, 0.0, uxPos + ofsRight, 1.0, 0.0
+        geo.band.x0, geo.band.y1, 0.0, geo.band.x0, geo.band.y0, 0.0,
+        geo.band.x1, geo.band.y0, 0.0, geo.band.x1, geo.band.y1, 0.0
     };
     glVertexPointer(3, GL_FLOAT, 0, bandVerts);
     glDrawArrays(GL_QUADS, 0, 4);
 
-    if (ofs * 2.0 < 16.0 / viewWidth) {
+    if (geo.narrowBand) {
         glColor4f(color.r, color.g, color.b, 0.2f);
         float narrowVerts[12] = {
-            uxPos - ofsLeft, hPos + labelHeight, 0.0, uxPos - ofsLeft, -1.0, 0.0,
-            uxPos + ofsRight, -1.0, 0.0, uxPos + ofsRight, hPos + labelHeight, 0.0
+            geo.label.x0, geo.label.y1, 0.0, geo.label.x0, geo.label.y0, 0.0,
+            geo.label.x1, geo.label.y0, 0.0, geo.label.x1, geo.label.y1, 0.0
         };
         glVertexPointer(3, GL_FLOAT, 0, narrowVerts);
         glDrawArrays(GL_QUADS, 0, 4);
@@ -168,7 +163,7 @@ void PrimaryGLContext::DrawDemodInfo(const DemodulatorInstancePtr& demod, const 
 
     if (centerline) {
         glColor4f(color.r, color.g, color.b, 0.5);
-        float centerVerts[6] = { uxPos, 1.0, 0.0, uxPos, -1.0, 0.0 };
+        float centerVerts[6] = { geo.uxPos, 1.0, 0.0, geo.uxPos, -1.0, 0.0 };
         glVertexPointer(3, GL_FLOAT, 0, centerVerts);
         glDrawArrays(GL_LINES, 0, 2);
     }
@@ -176,66 +171,44 @@ void PrimaryGLContext::DrawDemodInfo(const DemodulatorInstancePtr& demod, const 
 
     glColor4f(1.0, 1.0, 1.0, 0.8f);
 
-    std::string demodLabel, demodPrefix;
-
-    if (demod->isDeltaLock()) {
-        demodPrefix.append("V");
-    }
-
-    if (isRecording) {
-        demodPrefix.append("R");
-    }
-
-    if (demod->isMuted()) {
-        demodPrefix.append("M");
-    } else if (isSolo) {
-        demodPrefix.append("S");
-    }
-
-    // Set the prefix
-    if (!demodPrefix.empty()) {
-        demodLabel = "[" + demodPrefix + "] ";
-    }    
-    // Append the default label
+    std::string demodLabel = geo.prefix;
     demodLabel.append(demod->getLabel());
 
-    if (demod->getDemodulatorType() == "USB") {
-        GLFont::getFont(16, GLFont::getScaleFactor()).drawString(demodLabel, uxPos, hPos, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
-    } else if (demod->getDemodulatorType() == "LSB") {
-        GLFont::getFont(16, GLFont::getScaleFactor()).drawString(demodLabel, uxPos, hPos, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+    if (geo.align == DemodMarkers::LabelAlign::Left) {
+        GLFont::getFont(16, GLFont::getScaleFactor()).drawString(demodLabel, geo.uxPos, geo.hPos, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+    } else if (geo.align == DemodMarkers::LabelAlign::Right) {
+        GLFont::getFont(16, GLFont::getScaleFactor()).drawString(demodLabel, geo.uxPos, geo.hPos, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
     } else {
-        GLFont::getFont(16, GLFont::getScaleFactor()).drawString(demodLabel, uxPos, hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
+        GLFont::getFont(16, GLFont::getScaleFactor()).drawString(demodLabel, geo.uxPos, geo.hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
     }
 
     glDisable(GL_BLEND);
-
 }
 
 void PrimaryGLContext::DrawFreqBwInfo(long long freq, int bw, const RGBA4f& color, long long center_freq, long long srate, bool stack, bool centerline) {
     if (!srate) {
         srate = wxGetApp().getSampleRate();
     }
-    
+
     GLint vp[4];
     glGetIntegerv( GL_VIEWPORT, vp);
-    
-    float viewHeight = (float) vp[3];
-    float viewWidth = (float) vp[2];
-    
+
     if (center_freq == -1) {
         center_freq = wxGetApp().getFrequency();
     }
-    
-    float uxPos = (float) (freq - (center_freq - srate / 2)) / (float) srate;
-    uxPos = (uxPos - 0.5) * 2.0;
 
     std::string lastType = wxGetApp().getDemodMgr().getLastDemodulatorType();
 
-    float ofs = (float) bw / (float) srate;
-    float ofsLeft = (lastType!="USB")?ofs:0, ofsRight = (lastType!="LSB")?ofs:0;
-
-    float labelHeight = 20.0 / viewHeight;
-    float hPos = -1.0 + (stack?(labelHeight*3.0):labelHeight);
+    DemodMarkers::MarkerInput in;
+    in.freqHz = freq;
+    in.bandwidthHz = bw;
+    in.sideband = DemodMarkers::sidebandForType(lastType);
+    in.viewCenterHz = center_freq;
+    in.viewSpanHz = srate;
+    in.viewWidthPx = vp[2];
+    in.viewHeightPx = vp[3];
+    in.stackLabels = stack;
+    DemodMarkers::MarkerGeometry geo = DemodMarkers::markerGeometry(in);
 
     glDisable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
@@ -243,8 +216,8 @@ void PrimaryGLContext::DrawFreqBwInfo(long long freq, int bw, const RGBA4f& colo
 
     glColor4f(0, 0, 0, 0.35f);
     float labelVerts[12] = {
-        uxPos - ofsLeft, hPos + labelHeight, 0.0, uxPos - ofsLeft, -1.0, 0.0,
-        uxPos + ofsRight, -1.0, 0.0, uxPos + ofsRight, hPos + labelHeight, 0.0
+        geo.label.x0, geo.label.y1, 0.0, geo.label.x0, geo.label.y0, 0.0,
+        geo.label.x1, geo.label.y0, 0.0, geo.label.x1, geo.label.y1, 0.0
     };
     glEnableClientState(GL_VERTEX_ARRAY);
     glVertexPointer(3, GL_FLOAT, 0, labelVerts);
@@ -254,17 +227,17 @@ void PrimaryGLContext::DrawFreqBwInfo(long long freq, int bw, const RGBA4f& colo
 
     glColor4f(color.r, color.g, color.b, 0.1f);
     float bandVerts[12] = {
-        uxPos - ofsLeft, 1.0, 0.0, uxPos - ofsLeft, -1.0, 0.0,
-        uxPos + ofsRight, -1.0, 0.0, uxPos + ofsRight, 1.0, 0.0
+        geo.band.x0, geo.band.y1, 0.0, geo.band.x0, geo.band.y0, 0.0,
+        geo.band.x1, geo.band.y0, 0.0, geo.band.x1, geo.band.y1, 0.0
     };
     glVertexPointer(3, GL_FLOAT, 0, bandVerts);
     glDrawArrays(GL_QUADS, 0, 4);
-    
-    if (ofs * 2.0 < 16.0 / viewWidth) {
+
+    if (geo.narrowBand) {
         glColor4f(color.r, color.g, color.b, 0.1f);
         float narrowVerts[12] = {
-            uxPos - ofsLeft, hPos + labelHeight, 0.0, uxPos - ofsLeft, -1.0, 0.0,
-            uxPos + ofsRight, -1.0, 0.0, uxPos + ofsRight, hPos + labelHeight, 0.0
+            geo.label.x0, geo.label.y1, 0.0, geo.label.x0, geo.label.y0, 0.0,
+            geo.label.x1, geo.label.y0, 0.0, geo.label.x1, geo.label.y1, 0.0
         };
         glVertexPointer(3, GL_FLOAT, 0, narrowVerts);
         glDrawArrays(GL_QUADS, 0, 4);
@@ -272,46 +245,44 @@ void PrimaryGLContext::DrawFreqBwInfo(long long freq, int bw, const RGBA4f& colo
 
     if (centerline) {
         glColor4f(color.r, color.g, color.b, 0.5);
-        float centerVerts[6] = { uxPos, 1.0, 0.0, uxPos, -1.0, 0.0 };
+        float centerVerts[6] = { geo.uxPos, 1.0, 0.0, geo.uxPos, -1.0, 0.0 };
         glVertexPointer(3, GL_FLOAT, 0, centerVerts);
         glDrawArrays(GL_LINES, 0, 2);
     }
     glDisableClientState(GL_VERTEX_ARRAY);
-    
+
     glColor4f(1.0, 1.0, 1.0, 0.8f);
-    
-    std::string demodLabel = std::to_string((double)freq/1000000.0);
-    
-    double shadowOfsX = 4.0 / viewWidth, shadowOfsY = 2.0 / viewHeight;
+
+    std::string demodLabel = geo.freqText;
 
     GLFont::Drawer refDrawingFont = GLFont::getFont(16, GLFont::getScaleFactor());
-    
-    if (lastType == "USB") {
+
+    if (geo.align == DemodMarkers::LabelAlign::Left) {
         glColor4f(0,0,0, 1.0);
         glBlendFunc(GL_ONE, GL_ZERO);
-        refDrawingFont.drawString(demodLabel, uxPos+shadowOfsX, hPos+shadowOfsY, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
-        refDrawingFont.drawString(demodLabel, uxPos-shadowOfsX, hPos-shadowOfsY, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
+        refDrawingFont.drawString(demodLabel, geo.uxPos+geo.shadowDx, geo.hPos+geo.shadowDy, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
+        refDrawingFont.drawString(demodLabel, geo.uxPos-geo.shadowDx, geo.hPos-geo.shadowDy, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
         glColor4f(color.r, color.g, color.b, 1.0);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-        refDrawingFont.drawString(demodLabel, uxPos, hPos, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
-    } else if (lastType == "LSB") {
+        refDrawingFont.drawString(demodLabel, geo.uxPos, geo.hPos, GLFont::GLFONT_ALIGN_LEFT, GLFont::GLFONT_ALIGN_CENTER);
+    } else if (geo.align == DemodMarkers::LabelAlign::Right) {
         glBlendFunc(GL_ONE, GL_ZERO);
         glColor4f(0,0,0, 1.0);
-        refDrawingFont.drawString(demodLabel, uxPos+shadowOfsX, hPos+shadowOfsY, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
-        refDrawingFont.drawString(demodLabel, uxPos-shadowOfsX, hPos-shadowOfsY, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
+        refDrawingFont.drawString(demodLabel, geo.uxPos+geo.shadowDx, geo.hPos+geo.shadowDy, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
+        refDrawingFont.drawString(demodLabel, geo.uxPos-geo.shadowDx, geo.hPos-geo.shadowDy, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
         glColor4f(color.r, color.g, color.b, 1.0);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-        refDrawingFont.drawString(demodLabel, uxPos, hPos, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
+        refDrawingFont.drawString(demodLabel, geo.uxPos, geo.hPos, GLFont::GLFONT_ALIGN_RIGHT, GLFont::GLFONT_ALIGN_CENTER);
     } else {
         glBlendFunc(GL_ONE, GL_ZERO);
         glColor4f(0,0,0, 1.0);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-        refDrawingFont.drawString(demodLabel, uxPos+shadowOfsX, hPos+shadowOfsY, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
-        refDrawingFont.drawString(demodLabel, uxPos-shadowOfsX, hPos-shadowOfsY, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+        refDrawingFont.drawString(demodLabel, geo.uxPos+geo.shadowDx, geo.hPos+geo.shadowDy, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+        refDrawingFont.drawString(demodLabel, geo.uxPos-geo.shadowDx, geo.hPos-geo.shadowDy, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
         glColor4f(color.r, color.g, color.b, 1.0);
-        refDrawingFont.drawString(demodLabel, uxPos, hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+        refDrawingFont.drawString(demodLabel, geo.uxPos, geo.hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
     }
-    
+
     glDisable(GL_BLEND);
 }
 
@@ -332,8 +303,21 @@ void PrimaryGLContext::DrawDemod(const DemodulatorInstancePtr& demod, const RGBA
     if (demod->isDeltaLock()) {
         demodFreq = wxGetApp().getFrequency() + demod->getDeltaLockOfs();
     }
-    
-    float uxPos = (float) (demodFreq - (center_freq - srate / 2)) / (float) srate;
+
+    float uxUnit = (float) (demodFreq - (center_freq - srate / 2)) / (float) srate;
+
+    GLint vp[4];
+    glGetIntegerv( GL_VIEWPORT, vp);
+
+    DemodMarkers::MarkerInput in;
+    in.freqHz = demodFreq;
+    in.bandwidthHz = demod->getBandwidth();
+    in.sideband = DemodMarkers::sidebandForType(demod->getDemodulatorType());
+    in.viewCenterHz = center_freq;
+    in.viewSpanHz = srate;
+    in.viewWidthPx = vp[2];
+    in.viewHeightPx = vp[3];
+    DemodMarkers::MarkerGeometry geo = DemodMarkers::markerGeometry(in);
 
     glDisable(GL_TEXTURE_2D);
 
@@ -341,13 +325,10 @@ void PrimaryGLContext::DrawDemod(const DemodulatorInstancePtr& demod, const RGBA
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     glColor4f(color.r, color.g, color.b, 0.6f);
 
-    float ofs = ((float) demod->getBandwidth()) / (float) srate;
-    float ofsLeft = (demod->getDemodulatorType()!="USB")?ofs:0, ofsRight = (demod->getDemodulatorType()!="LSB")?ofs:0;
-
     float edgeVerts[18] = {
-        (uxPos - 0.5f) * 2.0f, 1.0, 0.0, (uxPos - 0.5f) * 2.0f, -1.0, 0.0,
-        (uxPos - 0.5f) * 2.0f - ofsLeft, 1.0, 0.0, (uxPos - 0.5f) * 2.0f - ofsLeft, -1.0, 0.0,
-        (uxPos - 0.5f) * 2.0f + ofsRight, 1.0, 0.0, (uxPos - 0.5f) * 2.0f + ofsRight, -1.0, 0.0
+        geo.uxPos, 1.0, 0.0, geo.uxPos, -1.0, 0.0,
+        geo.uxPos - geo.ofsLeft, 1.0, 0.0, geo.uxPos - geo.ofsLeft, -1.0, 0.0,
+        geo.uxPos + geo.ofsRight, 1.0, 0.0, geo.uxPos + geo.ofsRight, -1.0, 0.0
     };
     glEnableClientState(GL_VERTEX_ARRAY);
     glVertexPointer(3, GL_FLOAT, 0, edgeVerts);
@@ -356,19 +337,15 @@ void PrimaryGLContext::DrawDemod(const DemodulatorInstancePtr& demod, const RGBA
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     glColor4f(color.r, color.g, color.b, 0.2*hoverAlpha);
     float hoverVerts[12] = {
-        (uxPos - 0.5f) * 2.0f - ofsLeft, 1.0, 0.0, (uxPos - 0.5f) * 2.0f - ofsLeft, -1.0, 0.0,
-        (uxPos - 0.5f) * 2.0f + ofsRight, -1.0, 0.0, (uxPos - 0.5f) * 2.0f + ofsRight, 1.0, 0.0
+        geo.uxPos - geo.ofsLeft, 1.0, 0.0, geo.uxPos - geo.ofsLeft, -1.0, 0.0,
+        geo.uxPos + geo.ofsRight, -1.0, 0.0, geo.uxPos + geo.ofsRight, 1.0, 0.0
     };
     glVertexPointer(3, GL_FLOAT, 0, hoverVerts);
     glDrawArrays(GL_QUADS, 0, 4);
     glDisableClientState(GL_VERTEX_ARRAY);
 
-    GLint vp[4];
-    glGetIntegerv( GL_VIEWPORT, vp);
-
     float viewHeight = (float) vp[3];
     float viewWidth = (float) vp[2];
-
     float labelHeight = 20.0 / viewHeight;
     float xOfs = (2.0 / viewWidth);
     float yOfs = (2.0 / viewHeight);
@@ -384,23 +361,18 @@ void PrimaryGLContext::DrawDemod(const DemodulatorInstancePtr& demod, const RGBA
     //Displayed string is wstring, so use wxString to do the heavy lifting of converting  getDemodulatorType()...
     wxString demodStr;
 
-    demodStr.assign(demod->getDemodulatorType());
+    demodStr.assign(DemodMarkers::demodTypeLabel(demod->getDemodulatorType(), demod->getDemodulatorLock() != 0));
 
     if (demodStr == "LSB") {
-        uxPos -= xOfs;
+        uxUnit -= xOfs;
     } else if (demodStr == "USB") {
-        uxPos += xOfs;
+        uxUnit += xOfs;
     }
     // advanced demodulators start here
 
 //	if (demod->getDemodulatorCons() > 0) {
 //		demodStr = demodStr + std::to_string(demod->getDemodulatorCons());
 //	}
-    
-    // add lock to string if we have an lock
-    if(demod->getDemodulatorLock()) {
-        demodStr += " Lock";
-    }
 
     // else {
     //     demodStr = demodStr + " UnLock";
@@ -412,11 +384,11 @@ void PrimaryGLContext::DrawDemod(const DemodulatorInstancePtr& demod, const RGBA
 
     //demodulator user label if present: type is displayed above the label, which is at the bottom of the screen.
     if (!demod->getDemodulatorUserLabel().empty()) {
-        drawSingleDemodLabel(demodStr.ToStdWstring(), uxPos, hPos * 1.2 + hPos * 1.2 * heightShift, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
-        drawSingleDemodLabel(demod->getDemodulatorUserLabel(), uxPos, hPos * 1.2, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
+        drawSingleDemodLabel(demodStr.ToStdWstring(), uxUnit, hPos * 1.2 + hPos * 1.2 * heightShift, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
+        drawSingleDemodLabel(demod->getDemodulatorUserLabel(), uxUnit, hPos * 1.2, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
     }
     else {
-        drawSingleDemodLabel(demodStr.ToStdWstring(), uxPos, hPos * 1.2, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
+        drawSingleDemodLabel(demodStr.ToStdWstring(), uxUnit, hPos * 1.2, xOfs, yOfs, GLFont::GLFONT_ALIGN_CENTER);
     }
 
     glDisable(GL_BLEND);
