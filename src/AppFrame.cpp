@@ -448,17 +448,12 @@ void AppFrame::initMenuBar() {// File Menu
     SetAcceleratorTable(accel);
 }
 
+constexpr float MAIN_SPLIT_DEFAULT = 10.0f / 37.0f;
+constexpr float VIS_SPLIT_DEFAULT = 6.0f / 25.0f;
+
 static int splitSpan(wxSplitterWindow *splitter) {
     wxSize size = splitter->GetSize();
     return splitter->GetSplitMode() == wxSPLIT_VERTICAL ? size.x : size.y;
-}
-
-static float splitFraction(wxSplitterWindow *splitter) {
-    int span = splitSpan(splitter);
-    if (span <= 0) {
-        return -1.0f;
-    }
-    return (float)splitter->GetSashPosition() / (float)span;
 }
 
 static float applySplitFraction(wxSplitterWindow *splitter, float stored) {
@@ -475,11 +470,9 @@ static float applySplitFraction(wxSplitterWindow *splitter, float stored) {
 }
 
 template <typename Saver>
-static void restoreOneSplit(wxSplitterWindow *splitter, float stored, Saver save) {
-    float frac = applySplitFraction(splitter, stored);
-    if (frac < 0.0f) {
-        frac = splitFraction(splitter);
-    }
+static void restoreOneSplit(wxSplitterWindow *splitter, float stored, float defaultFrac, Saver save) {
+    float frac = stored >= 0.0f ? stored : defaultFrac;
+    frac = applySplitFraction(splitter, frac);
     if (frac > 0.0f) {
         save(frac);
     }
@@ -487,9 +480,9 @@ static void restoreOneSplit(wxSplitterWindow *splitter, float stored, Saver save
 
 void AppFrame::restoreSplitterPositions() {
     AppConfig *cfg = wxGetApp().getConfig();
-    restoreOneSplit(mainSplitter, cfg->getMainSplit(), [&](float frac) { cfg->setMainSplit(frac); });
-    restoreOneSplit(bookmarkSplitter, cfg->getBookmarkSplit(), [&](float frac) { cfg->setBookmarkSplit(frac); });
-    restoreOneSplit(mainVisSplitter, cfg->getVisSplit(), [&](float frac) { cfg->setVisSplit(frac); });
+    restoreOneSplit(mainSplitter, cfg->getMainSplit(), MAIN_SPLIT_DEFAULT, [&](float frac) { cfg->setMainSplit(frac); });
+    restoreOneSplit(bookmarkSplitter, cfg->getBookmarkSplit(), -1.0f, [&](float frac) { cfg->setBookmarkSplit(frac); });
+    restoreOneSplit(mainVisSplitter, cfg->getVisSplit(), VIS_SPLIT_DEFAULT, [&](float frac) { cfg->setVisSplit(frac); });
 
     if (!wxGetApp().getConfig()->getBookmarksVisible()) {
         bookmarkSplitter->Unsplit(bookmarkView);
@@ -792,8 +785,8 @@ MeterCanvas * AppFrame::makeSpectrumAvgMeter(wxWindow *parent, const wxGLAttribu
     auto *pCanvas = new MeterCanvas(parent, attribList);
     pCanvas->setHelpTip("Spectrum averaging speed, click or drag to adjust. Double-click or middle-click to reset to default.");
     pCanvas->setMax(1.0);
-    pCanvas->setLevel(0.65f);
-    pCanvas->setDefaultValue(0.65f);
+    pCanvas->setLevel(0.5f);
+    pCanvas->setDefaultValue(0.5f);
     pCanvas->setShowUserInput(false);
     pCanvas->SetMinSize(wxSize(12, 24));
     return pCanvas;
@@ -1620,8 +1613,8 @@ bool AppFrame::actionOnMenuReset(int id) {
         waterfallDataThread->setLinesPerSecond(DEFAULT_WATERFALL_LPS);
         waterfallCanvas->setLinesPerSecond(DEFAULT_WATERFALL_LPS);
         waterfallSpeedMeter->setLevel(sqrt(DEFAULT_WATERFALL_LPS));
-        wxGetApp().getSpectrumProcessor()->setFFTAverageRate(0.65f);
-        spectrumAvgMeter->setLevel(0.65f);
+        wxGetApp().getSpectrumProcessor()->setFFTAverageRate(0.5f);
+        spectrumAvgMeter->setLevel(0.5f);
 
         currentSessionFile = "";
         updateTitle();
@@ -3160,7 +3153,7 @@ void AppFrame::OnSashChanged(wxSplitterEvent& event) {
 void AppFrame::resplitBookmarkView() {
     bookmarkSplitter->SplitVertically(bookmarkView, mainVisSplitter);
     AppConfig *cfg = wxGetApp().getConfig();
-    restoreOneSplit(bookmarkSplitter, cfg->getBookmarkSplit(), [&](float frac) { cfg->setBookmarkSplit(frac); });
+    restoreOneSplit(bookmarkSplitter, cfg->getBookmarkSplit(), -1.0f, [&](float frac) { cfg->setBookmarkSplit(frac); });
 }
 
 void AppFrame::OnDoubleClickSash(wxSplitterEvent& event)
@@ -3171,10 +3164,10 @@ void AppFrame::OnDoubleClickSash(wxSplitterEvent& event)
 
     if (event.GetId() == wxID_MAIN_SPLITTER) {
         w = mainSplitter;
-        g = 10.0f/37.0f;
+        g = MAIN_SPLIT_DEFAULT;
     } else if (event.GetId() == wxID_VIS_SPLITTER) {
         w = mainVisSplitter;
-        g = 6.0f/25.0f;
+        g = VIS_SPLIT_DEFAULT;
     }
 
     if (w != nullptr) {

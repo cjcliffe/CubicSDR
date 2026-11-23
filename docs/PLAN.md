@@ -14,6 +14,7 @@ Design documents covering the system architecture are in [docs/design/](design/)
 | [Signal Flow](design/signal-flow.md) | Data path from SDR hardware to audio output |
 | [Threading Model](design/threading.md) | Thread inventory, synchronization, lifecycle |
 | [Modem System](design/modem-system.md) | Plugin architecture, factory pattern, available modems |
+| [App Services](design/app-services.md) | Core-to-shell seam interface, service groups, porting notes |
 
 ### Subsystem Deep Dives
 

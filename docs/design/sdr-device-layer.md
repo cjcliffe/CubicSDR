@@ -77,7 +77,7 @@ The `reset()` method clears `soapy_initialized`, `factories`, `modules`, and `de
 
 ### Notification
 
-`SDREnumerator` sends notifications to the UI via `wxGetApp().sdrEnumThreadNotify()`:
+`SDREnumerator` sends notifications to the UI via the AppServices `sdrEnumThreadNotify()` seam method:
 
 | State | Meaning |
 |-------|---------|
