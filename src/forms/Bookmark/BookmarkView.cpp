@@ -8,6 +8,7 @@
 #include <algorithm>
 
 #include "BookmarkView.h"
+#include "ColorThemeWxBridge.h"
 #include "CubicSDR.h"
 #include "Frequency.h"
 #include "ActionDialog.h"
@@ -225,10 +226,10 @@ bool BookmarkView::skipEvents() {
 }
 
 void BookmarkView::updateTheme() {
-    wxColour bgColor(ThemeMgr::mgr.currentTheme->generalBackground);
-    wxColour textColor(ThemeMgr::mgr.currentTheme->text);
-    wxColour btn(ThemeMgr::mgr.currentTheme->button);
-    wxColour btnHl(ThemeMgr::mgr.currentTheme->buttonHighlight);
+    wxColour bgColor = rgbaToWxColour(ThemeMgr::mgr.currentTheme->generalBackground);
+    wxColour textColor = rgbaToWxColour(ThemeMgr::mgr.currentTheme->text);
+    wxColour btn = rgbaToWxColour(ThemeMgr::mgr.currentTheme->button);
+    wxColour btnHl = rgbaToWxColour(ThemeMgr::mgr.currentTheme->buttonHighlight);
     
     SetBackgroundColour(bgColor);
 
@@ -1712,8 +1713,8 @@ void BookmarkView::onTreeBeginDrag( wxTreeEvent& event ) {
     }
     
     if (bAllow) {
-        wxColour bgColor(ThemeMgr::mgr.currentTheme->generalBackground);
-        wxColour textColor(ThemeMgr::mgr.currentTheme->text);
+        wxColour bgColor = rgbaToWxColour(ThemeMgr::mgr.currentTheme->generalBackground);
+        wxColour textColor = rgbaToWxColour(ThemeMgr::mgr.currentTheme->text);
         
         m_treeView->SetBackgroundColour(textColor);
         m_treeView->SetForegroundColour(bgColor);
@@ -1733,8 +1734,8 @@ void BookmarkView::onTreeBeginDrag( wxTreeEvent& event ) {
 
 void BookmarkView::onTreeEndDrag( wxTreeEvent& event ) {
 
-    wxColour bgColor(ThemeMgr::mgr.currentTheme->generalBackground);
-    wxColour textColor(ThemeMgr::mgr.currentTheme->text);
+    wxColour bgColor = rgbaToWxColour(ThemeMgr::mgr.currentTheme->generalBackground);
+    wxColour textColor = rgbaToWxColour(ThemeMgr::mgr.currentTheme->text);
     
     m_treeView->SetBackgroundColour(bgColor);
     m_treeView->SetForegroundColour(textColor);

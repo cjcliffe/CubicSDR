@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "ModemProperties.h"
+#include "ColorThemeWxBridge.h"
 #include "CubicSDR.h"
 
 ModemProperties::ModemProperties(wxWindow *parent, wxWindowID winid,
@@ -34,10 +35,10 @@ void ModemProperties::OnShow(wxShowEvent & /* event */) {
 }
 
 void ModemProperties::updateTheme() {
-    wxColour bgColor(ThemeMgr::mgr.currentTheme->generalBackground);
-    wxColour textColor(ThemeMgr::mgr.currentTheme->text);
-    wxColour btn(ThemeMgr::mgr.currentTheme->button);
-    wxColour btnHl(ThemeMgr::mgr.currentTheme->buttonHighlight);
+    wxColour bgColor = rgbaToWxColour(ThemeMgr::mgr.currentTheme->generalBackground);
+    wxColour textColor = rgbaToWxColour(ThemeMgr::mgr.currentTheme->text);
+    wxColour btn = rgbaToWxColour(ThemeMgr::mgr.currentTheme->button);
+    wxColour btnHl = rgbaToWxColour(ThemeMgr::mgr.currentTheme->buttonHighlight);
 
     m_propertyGrid->SetEmptySpaceColour(bgColor);
     m_propertyGrid->SetCellBackgroundColour(bgColor);

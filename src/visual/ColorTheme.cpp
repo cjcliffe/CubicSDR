@@ -8,6 +8,9 @@
 ThemeMgr ThemeMgr::mgr;
 
 void ThemeMgr::setTheme(int themeId_in) {
+    if (themes.find(themeId_in) == themes.end()) {
+        return;
+    }
     currentTheme = themes[themeId_in];
     themeId = themeId_in;
 }

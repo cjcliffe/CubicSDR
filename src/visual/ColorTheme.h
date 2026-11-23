@@ -8,7 +8,6 @@
 #include <map>
 #include <vector>
 #include <string>
-#include <wx/colour.h>
 
 #define COLOR_THEME_DEFAULT 0
 #define COLOR_THEME_DEFAULT_JET 1
@@ -44,14 +43,6 @@ public:
     
     RGBA4f operator*(float v) const { return RGBA4f(r*v, g*v, b*v); }
     
-    explicit operator wxColour() const {
-        return wxColour(
-                        (unsigned char) std::min((r * 255.0), 255.0),
-                       (unsigned char) std::min((g * 255.0), 255.0),
-                       (unsigned char) std::min((b * 255.0), 255.0));
-
-    }
-
 };
 
 class ColorTheme {
