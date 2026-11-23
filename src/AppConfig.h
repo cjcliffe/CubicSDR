@@ -3,10 +3,6 @@
 
 #pragma once
 
-#include <wx/stdpaths.h>
-#include <wx/dir.h>
-#include <wx/filename.h>
-#include <wx/panel.h>
 #include <atomic>
 #include <mutex>
 
@@ -36,6 +32,8 @@ public:
 
     void setAGCMode(bool agcMode_in);
     bool getAGCMode();
+    void setIQSwap(bool iqSwap_in);
+    bool getIQSwap();
     
     void setDeviceId(std::string deviceId_in);
     std::string getDeviceId();
@@ -76,6 +74,7 @@ private:
     std::atomic_int ppm{};
     std::atomic_llong offset{};
     std::atomic_bool agcMode{};
+    std::atomic_bool iqSwap{};
     std::atomic_long sampleRate{};
     std::string antennaName;
     ConfigSettings streamOpts;
@@ -103,8 +102,8 @@ public:
     std::string getConfigDir();
     DeviceConfig *getDevice(const std::string& deviceId);
 
-    void setWindow(wxPoint winXY, wxSize winWH);
-    wxRect *getWindow();
+    void setWindow(int x, int y, int w, int h);
+    bool getWindowRect(int &x, int &y, int &w, int &h);
     
     void setWindowMaximized(bool max);
     bool getWindowMaximized();

@@ -80,7 +80,7 @@ The most complex processor. Converts raw IQ samples into display-ready spectrum 
     - `fft_result_maa = iirStep(fft_result_maa, fft_result_ma, fft_average_rate)` (uses old `ma`)
     - `fft_result_ma = iirStep(fft_result_ma, db, fft_average_rate)`
     - `fft_result_avg = dbToMag(fft_result_maa)` converts the smoothed average back to linear magnitude
-    - Initial `fft_average_rate = 0.65f`
+    - Initial `fft_average_rate = 0.5f`
    
    **Note:** `ScopeVisualProcessor` uses a different update order within each iteration — `ma` is updated first from raw input, then `maa` is updated using the *new* `ma`. In `SpectrumVisualProcessor`, the order is reversed: `maa` is updated first using the *old* `ma`, then `ma` is updated from the dB input.
 7. **Floor/ceiling tracking** — The per-frame min/max come from `scanSpectrumRange()`, which skips bins around DC when hiding is on so the spike stops pinning the scale; slow-moving averages (0.05 rate) with NaN guards track them, plus peak hold if enabled
@@ -96,7 +96,7 @@ The most complex processor. Converts raw IQ samples into display-ready spectrum 
 | `DEFAULT_FFT_SIZE` | 2048 | Default spectrum FFT size (menu-selectable 1024–8192, persisted) |
 | `SPECTRUM_VZM` | 2 | Internal FFT multiplier (actual FFT = configured size × 2) |
 | `PEAK_RESET_COUNT` | 30 | Frames before peak hold resets |
-| `fft_average_rate` | 0.65f | Smoothing factor (higher = more responsive) |
+| `fft_average_rate` | 0.5f | Smoothing factor (higher = more responsive) |
 | `SPECTRUM_RESAMPLE_MIN_INTERVAL_MS` | 100 | Minimum interval between resampler rebuilds |
 | `SPECTRUM_DC_EXCLUDE_HALF_WIDTH` | 8 | Bins each side of DC skipped by the auto-range scan |
 

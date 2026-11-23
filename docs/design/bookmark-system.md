@@ -88,7 +88,7 @@ Singleton managed by `CubicSDR`. Most public methods are thread-safe via `recurs
 | `addGroup(name)` | Create empty group (no-op if group already exists). Does not set an expand state entry; `getExpandState()` returns `true` for unknown keys, so new groups default to expanded |
 | `removeGroup(name)` | Delete group and all its bookmarks |
 | `renameGroup(old, new)` | Rename group (if target already exists, merges entries from old group into target) |
-| `getGroups(arr)` | Append group names to array (accepts `BookmarkNames&` or `wxArrayString&`; does not clear the array first). Names are returned in map-sorted (alphabetical) order, which determines the display order in the tree |
+| `getGroups(arr)` | Append group names to a `BookmarkNames` vector (does not clear the array first). Names are returned in map-sorted (alphabetical) order, which determines the display order in the tree |
 
 > **Note:** `removeGroup()` does not clean up the corresponding entry in `expandState`, and `renameGroup()` does not migrate the old group's expand state to the new name. Both leave stale entries in `BookmarkMgr::expandState`. This has no visible effect because `getExpandState()` returns `true` for unknown keys, but the stale entries accumulate over time.
 
@@ -199,13 +199,13 @@ File: `bookmarks.xml` in the config directory.
 
 1. Create `DataTree` with root `cubicsdr_bookmarks`
 2. Write header with version
-3. Write branch expand states (active, range, bookmark, recent) — read from `BookmarkView::getExpandState()`, creating a model-to-view dependency in `saveToFile()`
+3. Write branch expand states (active, range, bookmark, recent) — read from the bookmark view through the AppServices `getBookmarkBranchExpandState()` seam method, keeping the model-to-view dependency in `saveToFile()`
 4. Write ranges
 5. Write bookmark groups: for each entry, check if a matching live demodulator exists (same type, label, frequency, and bandwidth) via `getLastDemodulatorWith()` and save its current state instead of the bookmark's stored state. If multiple live demodulators share the same parameters, the last match is used.
 6. Write current demodulators + recent entries to `recent_modems`
 7. Create backup of existing file before overwriting (only if `backup` is true, the save file exists, and the backup file does not exist or is writable)
 
-> **Note:** The entire save operation is guarded by `saveFile.IsDirWritable()`. If the config directory is not writable, the save is silently skipped — no error is raised and no backup is created.
+> **Note:** The entire save operation is guarded by `FileUtil::isDirWritable()`. If the config directory is not writable, the save is silently skipped — no error is raised and no backup is created.
 
 ### Load Flow (`BookmarkMgr::loadFromFile()`)
 
@@ -268,7 +268,7 @@ Expand state is tracked by two separate systems:
 
 When a tree item is collapsed/expanded, the appropriate handler writes to the matching system: top-level branch events write to `BookmarkView::expandState`, while group events call `BookmarkMgr::setExpandState()`.
 
-Both systems expose public accessors: `BookmarkView::getExpandState()`/`setExpandState()` for branch states, and `BookmarkMgr::getExpandState()`/`setExpandState()` for group states. Note that `BookmarkView::getExpandState()` uses `std::map::operator[]` which default-inserts `false` for missing keys, while `BookmarkMgr::getExpandState()` returns `true` for missing keys. In practice this difference is harmless because the branch states are seeded directly in the constructor and refreshed from the `<branches>` node during load. The `saveToFile()` method reads branch states via `BookmarkView::getExpandState()`, creating a model-to-view dependency.
+Both systems expose public accessors: `BookmarkView::getExpandState()`/`setExpandState()` for branch states, and `BookmarkMgr::getExpandState()`/`setExpandState()` for group states. Note that `BookmarkView::getExpandState()` uses `std::map::operator[]` which default-inserts `false` for missing keys, while `BookmarkMgr::getExpandState()` returns `true` for missing keys. In practice this difference is harmless because the branch states are seeded directly in the constructor and refreshed from the `<branches>` node during load. The `saveToFile()` method reads branch states through the AppServices seam, keeping the model-to-view dependency.
 
 During search, expand states are overridden: ranges are forced collapsed, while recents and bookmark groups are forced expanded. Expand/collapse events are suppressed during search to prevent user actions from conflicting with the forced states.
 

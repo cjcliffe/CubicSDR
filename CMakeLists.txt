@@ -329,6 +329,7 @@ ENDIF (APPLE)
 SET (cubicsdr_sources
     ${cubicsdr_sources}
     src/CubicSDR.cpp
+    src/AppServices.cpp
     src/AppFrame.cpp
     src/AppConfig.cpp
     src/FrequencyDialog.cpp
@@ -373,6 +374,8 @@ SET (cubicsdr_sources
     src/util/GLFont.cpp
     src/util/DataTree.cpp
     src/util/Frequency.cpp
+    src/util/StringUtil.cpp
+    src/util/FileUtil.cpp
     src/panel/ScopePanel.cpp
     src/panel/SpectrumPanel.cpp
     src/panel/WaterfallPanel.cpp

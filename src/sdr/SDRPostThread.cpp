@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "SDRPostThread.h"
-#include "CubicSDR.h"
+#include "AppServices.h"
 
 #include <deque>
 #include <memory>
@@ -47,10 +47,10 @@ void SDRPostThread::updateActiveDemodulators() {
     runDemods.clear();
     demodChannel.clear();
 
-    long long centerFreq = wxGetApp().getFrequency();
+    long long centerFreq = GetAppServices().getFrequency();
 
     //retrieve the current list of demodulators:
-    auto demodulators = wxGetApp().getDemodMgr().getDemodulators();
+    auto demodulators = GetAppServices().getDemodMgr().getDemodulators();
    
     for (const auto& demod : demodulators) {
             
@@ -67,7 +67,7 @@ void SDRPostThread::updateActiveDemodulators() {
         if (abs(frequency - demod->getFrequency()) > (sampleRate / 2)) {
             // deactivate if active
            
-            if (wxGetApp().getDemodMgr().getCurrentModem() == demod) {
+            if (GetAppServices().getDemodMgr().getCurrentModem() == demod) {
                 demod->setActive(false);
             }
             else if (demod->isActive() && !demod->isFollow() && !demod->isTracking()) {
@@ -76,14 +76,14 @@ void SDRPostThread::updateActiveDemodulators() {
             
             // follow if follow mode
             if (demod->isFollow() && centerFreq != demod->getFrequency()) {
-                wxGetApp().setFrequency(demod->getFrequency());
+                GetAppServices().setFrequency(demod->getFrequency());
                 demod->setFollow(false);
             }
         } else if (!demod->isActive()) { // in range, activate if not activated
             demod->setActive(true);
-            if (wxGetApp().getDemodMgr().getCurrentModem() == nullptr) {
+            if (GetAppServices().getDemodMgr().getCurrentModem() == nullptr) {
 
-                wxGetApp().getDemodMgr().setActiveDemodulator(demod);
+                GetAppServices().getDemodMgr().setActiveDemodulator(demod);
             }
         }
         
@@ -100,7 +100,7 @@ void SDRPostThread::updateActiveDemodulators() {
 
 void SDRPostThread::resetAllDemodulators() {
     //retrieve the current list of demodulators:
-    auto demodulators = wxGetApp().getDemodMgr().getDemodulators();
+    auto demodulators = GetAppServices().getDemodMgr().getDemodulators();
 
     for (const auto& demod : demodulators) {
 
@@ -325,7 +325,7 @@ void SDRPostThread::runSingleCH(SDRThreadIQData *data_in) {
 
 // Handle active channels, channel 0 offset correction, de-interlacing and push data to demodulators
 void SDRPostThread::runDemodChannels(int channelBandwidth) {
-    DemodulatorInstancePtr activeDemod = wxGetApp().getDemodMgr().getCurrentModem();
+    DemodulatorInstancePtr activeDemod = GetAppServices().getDemodMgr().getCurrentModem();
 
     // Calculate channel data size
     size_t chanDataSize = dataOut.size()/numChannels;

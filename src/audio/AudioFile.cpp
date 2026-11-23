@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "AudioFile.h"
-#include "CubicSDR.h"
+#include "AppServices.h"
+#include "AppConfig.h"
 #include <sstream>
 
 AudioFile::AudioFile() = default;
@@ -15,7 +16,7 @@ void AudioFile::setOutputFileName(std::string filename) {
 
 std::string AudioFile::getOutputFileName() {
 
-    std::string recPath = wxGetApp().getConfig()->getRecordingPath();
+    std::string recPath = GetAppServices().getConfig()->getRecordingPath();
 
     // Strip any invalid characters from the name
     std::string stripChars("<>:\"/\\|?*");

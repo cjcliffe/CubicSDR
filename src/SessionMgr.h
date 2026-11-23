@@ -4,7 +4,6 @@
 #pragma once
 
 #include "DataTree.h"
-#include "AppFrame.h"
 
 
 class SessionMgr {
