@@ -81,6 +81,7 @@ bool SDRThread::init() {
     std::string driverName = devInfo->getDriver();
 
     offset = devConfig->getOffset();
+    setIQSwap(devConfig->getIQSwap());
     
     SoapySDR::Kwargs args = devInfo->getDeviceArgs();
     
@@ -967,6 +968,10 @@ bool SDRThread::getAGCMode() {
 
 void SDRThread::setIQSwap(bool swap) {
     iq_swap.store(swap);
+    DeviceConfig *devConfig = deviceConfig.load();
+    if (devConfig) {
+        devConfig->setIQSwap(swap);
+    }
 }
 
 bool SDRThread::getIQSwap() {

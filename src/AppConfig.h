@@ -32,6 +32,8 @@ public:
 
     void setAGCMode(bool agcMode_in);
     bool getAGCMode();
+    void setIQSwap(bool iqSwap_in);
+    bool getIQSwap();
     
     void setDeviceId(std::string deviceId_in);
     std::string getDeviceId();
@@ -72,6 +74,7 @@ private:
     std::atomic_int ppm{};
     std::atomic_llong offset{};
     std::atomic_bool agcMode{};
+    std::atomic_bool iqSwap{};
     std::atomic_long sampleRate{};
     std::string antennaName;
     ConfigSettings streamOpts;

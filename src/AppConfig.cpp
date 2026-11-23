@@ -57,6 +57,14 @@ bool DeviceConfig::getAGCMode() {
     return agcMode.load();
 }
 
+void DeviceConfig::setIQSwap(bool iqSwap_in) {
+    iqSwap.store(iqSwap_in);
+}
+
+bool DeviceConfig::getIQSwap() {
+    return iqSwap.load();
+}
+
 
 void DeviceConfig::setDeviceId(std::string deviceId_in) {
     std::lock_guard < std::mutex > lock(busy_lock);
@@ -93,6 +101,7 @@ void DeviceConfig::resetToDefaults() {
     ppm.store(0);
     offset.store(0);
     agcMode.store(true);
+    iqSwap.store(false);
     sampleRate.store(0);
     antennaName.clear();
     deviceName.clear();
@@ -112,6 +121,7 @@ void DeviceConfig::save(DataNode *node) {
     *node->newChild("offset") = offset.load();
     *node->newChild("sample_rate") = sampleRate.load();
     *node->newChild("agc_mode") = agcMode.load()?1:0;
+    *node->newChild("iq_swap") = iqSwap.load()?1:0;
 
     if (!antennaName.empty()) {
         *node->newChild("antenna") = antennaName;
@@ -170,6 +180,12 @@ void DeviceConfig::load(DataNode *node) {
         int agcModeValue = 0;
         agc_node->element()->get(agcModeValue);
         setAGCMode(agcModeValue != 0);
+    }
+    if (node->hasAnother("iq_swap")) {
+        DataNode *iqswap_node = node->getNext("iq_swap");
+        int iqSwapValue = 0;
+        iqswap_node->element()->get(iqSwapValue);
+        setIQSwap(iqSwapValue != 0);
     }
     if (node->hasAnother("sample_rate")) {
         DataNode *sample_rate_node = node->getNext("sample_rate");
@@ -648,35 +664,33 @@ bool AppConfig::save() {
 
     cfg.rootNode()->setName("cubicsdr_config");
     
-    if (winW.load() && winH.load()) {
-        DataNode *window_node = cfg.rootNode()->newChild("window");
-        
-        *window_node->newChild("x") = winX.load();
-        *window_node->newChild("y") = winY.load();
-        *window_node->newChild("w") = winW.load();
-        *window_node->newChild("h") = winH.load();
+    DataNode *window_node = cfg.rootNode()->newChild("window");
 
-        *window_node->newChild("max") = winMax.load();
-        *window_node->newChild("tips") = showTips.load();
-        *window_node->newChild("frame_rate") = (int)frameRate.load();
-        *window_node->newChild("spectrum_fft_size") = spectrumFFTSize.load();
-        *window_node->newChild("dsp_mode") = (int)dspMode.load();
-        *window_node->newChild("stream_pacing") = streamPacing.load();
-        *window_node->newChild("theme") = themeId.load();
-        *window_node->newChild("font_scale") = fontScale.load();
-        *window_node->newChild("snap") = snap.load();
-        *window_node->newChild("center_freq") = centerFreq.load();
-        *window_node->newChild("last_device") = lastDeviceId;
-        *window_node->newChild("waterfall_lps") = waterfallLinesPerSec.load();
-        *window_node->newChild("spectrum_avg") = spectrumAvgSpeed.load();
-        *window_node->newChild("modemprops_collapsed") = modemPropsCollapsed.load();
-        *window_node->newChild("db_offset") = dbOffset.load();
+    *window_node->newChild("x") = winX.load();
+    *window_node->newChild("y") = winY.load();
+    *window_node->newChild("w") = winW.load();
+    *window_node->newChild("h") = winH.load();
 
-        *window_node->newChild("main_split") = mainSplit.load();
-        *window_node->newChild("vis_split") = visSplit.load();
-        *window_node->newChild("bookmark_split") = bookmarkSplit.load();
-        *window_node->newChild("bookmark_visible") = bookmarksVisible.load();
-    }
+    *window_node->newChild("max") = winMax.load();
+    *window_node->newChild("tips") = showTips.load();
+    *window_node->newChild("frame_rate") = (int)frameRate.load();
+    *window_node->newChild("spectrum_fft_size") = spectrumFFTSize.load();
+    *window_node->newChild("dsp_mode") = (int)dspMode.load();
+    *window_node->newChild("stream_pacing") = streamPacing.load();
+    *window_node->newChild("theme") = themeId.load();
+    *window_node->newChild("font_scale") = fontScale.load();
+    *window_node->newChild("snap") = snap.load();
+    *window_node->newChild("center_freq") = centerFreq.load();
+    *window_node->newChild("last_device") = lastDeviceId;
+    *window_node->newChild("waterfall_lps") = waterfallLinesPerSec.load();
+    *window_node->newChild("spectrum_avg") = spectrumAvgSpeed.load();
+    *window_node->newChild("modemprops_collapsed") = modemPropsCollapsed.load();
+    *window_node->newChild("db_offset") = dbOffset.load();
+
+    *window_node->newChild("main_split") = mainSplit.load();
+    *window_node->newChild("vis_split") = visSplit.load();
+    *window_node->newChild("bookmark_split") = bookmarkSplit.load();
+    *window_node->newChild("bookmark_visible") = bookmarksVisible.load();
     
 	//Recording settings:
     DataNode *rec_node = cfg.rootNode()->newChild("recording");

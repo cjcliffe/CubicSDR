@@ -116,6 +116,7 @@ private:
 
     wxSizerItem *gainSizerItem, *gainSpacerItem;
     wxSplitterWindow *mainVisSplitter, *mainSplitter, *bookmarkSplitter;
+    wxSplitterWindow *sashDragArmed = nullptr;
 
     wxBoxSizer *demodTray;
 
@@ -229,6 +230,9 @@ private:
      */
     void OnMenu(wxCommandEvent& event);
     void OnClose(wxCloseEvent& event);
+    void OnMove(wxMoveEvent& event);
+    void OnSize(wxSizeEvent& event);
+    void trackWindowGeometry();
     void OnFrameTimer(wxTimerEvent& event);
     void OnMenuOpen(wxMenuEvent& event);
     void OnMenuClose(wxMenuEvent& event);
@@ -236,6 +240,9 @@ private:
     int getFrameIntervalMs();
     void OnDoubleClickSash(wxSplitterEvent& event);
     void OnUnSplit(wxSplitterEvent& event);
+    void OnSashChanged(wxSplitterEvent& event);
+    void OnSashChanging(wxSplitterEvent& event);
+    void OnSplitterSize(wxSizeEvent& event);
     void OnAboutDialogClose(wxCommandEvent& event);
 	void OnNewWindow(wxCommandEvent& event);
 
@@ -279,6 +286,8 @@ private:
     ModemProperties *makeModemProperties(wxPanel *parent);
 
     void initConfigurationSettings();
+    void restoreSplitterPositions();
+    void resplitBookmarkView();
     void initMenuBar();
     void initIcon();
 

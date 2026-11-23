@@ -82,9 +82,9 @@ Global application configuration. Singleton accessed via `wxGetApp().getConfig()
 
 | Property | Type | Config Key | Default | Description |
 |----------|------|------------|---------|-------------|
-| `mainSplit` | `float` | `window/main_split` | -1 | Main splitter position |
-| `visSplit` | `float` | `window/vis_split` | -1 | Visualization splitter position |
-| `bookmarkSplit` | `float` | `window/bookmark_split` | 200 | Bookmark panel splitter position |
+| `mainSplit` | `float` | `window/main_split` | -1 | Main splitter position as a fraction of the splitter size (-1 keeps the default; values over 1 migrate from legacy pixels) |
+| `visSplit` | `float` | `window/vis_split` | -1 | Visualization splitter position as a fraction of the splitter size (-1 keeps the default; values over 1 migrate from legacy pixels) |
+| `bookmarkSplit` | `float` | `window/bookmark_split` | 200 | Bookmark panel splitter position as a fraction of the splitter size (values over 1 migrate from legacy pixels) |
 | `bookmarksVisible` | `bool` | `window/bookmark_visible` | true* | Bookmark panel visibility |
 
 \* Default is `false` when built with `CUBICSDR_DEFAULT_HIDE_BOOKMARKS` defined.
@@ -146,6 +146,7 @@ Per-device configuration, keyed by device ID string. Stored under `devices/devic
 | `offset` | `long long` | `offset` | Frequency offset in Hz |
 | `sampleRate` | `long` | `sample_rate` | Configured sample rate |
 | `agcMode` | `bool` | `agc_mode` | AGC enabled (defaults to `true` in the constructor) |
+| `iqSwap` | `bool` | `iq_swap` | I/Q swap enabled |
 | `antennaName` | `string` | `antenna` | Selected antenna port |
 | `streamOpts` | `map<string,string>` | `streamOpts/*` | SoapySDR stream options |
 | `settings` | `map<string,string>` | `settings/*` | Driver-specific settings |
@@ -168,6 +169,7 @@ Note: `DeviceConfig::save()` writes the `antenna`, `streamOpts`, `settings`, `ri
   <offset>0</offset>
   <sample_rate>2400000</sample_rate>
   <agc_mode>1</agc_mode>
+  <iq_swap>0</iq_swap>
   <antenna>antenna0</antenna>
   <streamOpts>
     <buflen>16384</buflen>
@@ -209,7 +211,7 @@ Note: `DeviceConfig::save()` writes the `antenna`, `streamOpts`, `settings`, `ri
 
 **Save** (`AppConfig::save()`):
 1. Create a `DataTree` with root node named `cubicsdr_config`
-2. Populate window, recording, audio, device, manual device, and rig nodes. The `window` node and all its children are only written when both `winW` and `winH` are non-zero (a zero-sized window produces no window config).
+2. Populate window, recording, audio, device, manual device, and rig nodes. The `window` node is always written; a zero-sized window stores zero geometry (read back as unset) while all other settings still persist.
 3. Get config file path from `getConfigFileName()`
 4. Call `DataTree::SaveToFileXML()`. Note that `SaveToFileXML` unconditionally writes the file and always returns `true`, so `save()` cannot detect or report a disk-write failure; its error branch is effectively unreachable.
 
@@ -220,6 +222,7 @@ Note: `DeviceConfig::save()` writes the `antenna`, `streamOpts`, `settings`, `ri
 4. Parse each section: window, recording, audio, devices, manual_devices, rig
 5. Missing sections use defaults
 6. `frameRate`/`dspMode` default to `FRAME_NORMAL`/`DSP_NORMAL` within the window section (when a `<window>` node is present). A present `frame_rate` value is only applied if it equals `FRAME_LOW` or `FRAME_HIGH`, and `dsp_mode` only if it equals `DSP_ENHANCED`; anything else (or a missing node) leaves the default. When neither new key is present, a legacy `perf_mode` value migrates instead: low selects frame low, high selects frame high plus DSP enhanced.
+7. Splitter positions read as fractions of the live splitter size; values over 1 migrate from legacy pixel positions against the current size.
 
 `AppConfig::reset()` is declared but is a no-op: it returns `true` without applying or reloading any state, and is not currently invoked.
 
