@@ -229,6 +229,7 @@ private:
      * wx Events
      */
     void OnMenu(wxCommandEvent& event);
+    bool dispatchMenuAction(int id);
     void OnClose(wxCloseEvent& event);
     void OnMove(wxMoveEvent& event);
     void OnSize(wxSizeEvent& event);
@@ -307,30 +308,30 @@ private:
 	 */
 	//actionXXXX manage menu actions, return true if the event has been
 	//treated.
-	bool actionOnMenuAbout(wxCommandEvent& event);
-	bool actionOnMenuReset(wxCommandEvent& event);
-	bool actionOnMenuSettings(wxCommandEvent& event);
-	bool actionOnMenuAGC(wxCommandEvent& event);
-	bool actionOnMenuSampleRate(wxCommandEvent& event);
-	bool actionOnMenuAudioSampleRate(wxCommandEvent& event);
-	bool actionOnMenuDisplay(wxCommandEvent& event);
-	bool actionOnMenuLoadSave(wxCommandEvent& event);
-	bool actionOnMenuRecording(wxCommandEvent& event);
-	bool actionOnMenuRig(wxCommandEvent& event);
-	bool actionOnMenuSDRStartStop(wxCommandEvent &event);
-	bool actionOnMenuFrameRate(wxCommandEvent &event);
-	bool actionOnMenuFftSize(wxCommandEvent &event);
-	bool actionOnMenuDsp(wxCommandEvent &event);
-	bool actionOnMenuPacing(wxCommandEvent &event);
-	bool actionOnMenuLatency(wxCommandEvent &event);
+	bool actionOnMenuAbout(int id);
+	bool actionOnMenuReset(int id);
+	bool actionOnMenuSettings(int id);
+	bool actionOnMenuAGC(int id);
+	bool actionOnMenuSampleRate(int id);
+	bool actionOnMenuAudioSampleRate(int id);
+	bool actionOnMenuDisplay(int id);
+	bool actionOnMenuLoadSave(int id);
+	bool actionOnMenuRecording(int id);
+	bool actionOnMenuRig(int id);
+	bool actionOnMenuSDRStartStop(int id);
+	bool actionOnMenuFrameRate(int id);
+	bool actionOnMenuFftSize(int id);
+	bool actionOnMenuDsp(int id);
+	bool actionOnMenuPacing(int id);
+	bool actionOnMenuLatency(int id);
 	void refreshLatencyLabels();
-	bool actionOnMenuTips(wxCommandEvent &event);
-	bool actionOnMenuIQSwap(wxCommandEvent &event);
-	bool actionOnMenuFreqOffset(wxCommandEvent &event);
-	bool actionOnMenuDBOffset(wxCommandEvent &event);
-	bool actionOnMenuSDRDevices(wxCommandEvent &event);
-	bool actionOnMenuSetPPM(wxCommandEvent &event);
-	bool actionOnMenuClose(wxCommandEvent &event);
+	bool actionOnMenuTips(int id);
+	bool actionOnMenuIQSwap(int id);
+	bool actionOnMenuFreqOffset(int id);
+	bool actionOnMenuDBOffset(int id);
+	bool actionOnMenuSDRDevices(int id);
+	bool actionOnMenuSetPPM(int id);
+	bool actionOnMenuClose(int id);
 
 
 	/**
