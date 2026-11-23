@@ -1489,30 +1489,34 @@ void AppFrame::dismissRigControlPortDialog() {
 
 
 void AppFrame::OnMenu(wxCommandEvent &event) {
-    actionOnMenuAbout(event)
-    || actionOnMenuSDRStartStop(event)
-    || actionOnMenuFrameRate(event)
-    || actionOnMenuFftSize(event)
-    || actionOnMenuDsp(event)
-    || actionOnMenuPacing(event)
-    || actionOnMenuLatency(event)
-    || actionOnMenuTips(event)
-    || actionOnMenuIQSwap(event)
-    || actionOnMenuFreqOffset(event)
-    || actionOnMenuDBOffset(event)
-    || actionOnMenuAGC(event)
-    || actionOnMenuSDRDevices(event)
-    || actionOnMenuSetPPM(event)
-    || actionOnMenuLoadSave(event)
-    || actionOnMenuReset(event)
-    || actionOnMenuClose(event)
-    || actionOnMenuSettings(event)
-    || actionOnMenuSampleRate(event)
-    || actionOnMenuAudioSampleRate(event)
-    || actionOnMenuRecording(event)
-    || actionOnMenuDisplay(event)
+    dispatchMenuAction(event.GetId());
+}
+
+bool AppFrame::dispatchMenuAction(int id) {
+    return actionOnMenuAbout(id)
+    || actionOnMenuSDRStartStop(id)
+    || actionOnMenuFrameRate(id)
+    || actionOnMenuFftSize(id)
+    || actionOnMenuDsp(id)
+    || actionOnMenuPacing(id)
+    || actionOnMenuLatency(id)
+    || actionOnMenuTips(id)
+    || actionOnMenuIQSwap(id)
+    || actionOnMenuFreqOffset(id)
+    || actionOnMenuDBOffset(id)
+    || actionOnMenuAGC(id)
+    || actionOnMenuSDRDevices(id)
+    || actionOnMenuSetPPM(id)
+    || actionOnMenuLoadSave(id)
+    || actionOnMenuReset(id)
+    || actionOnMenuClose(id)
+    || actionOnMenuSettings(id)
+    || actionOnMenuSampleRate(id)
+    || actionOnMenuAudioSampleRate(id)
+    || actionOnMenuRecording(id)
+    || actionOnMenuDisplay(id)
     //Optional : Rig
-    || actionOnMenuRig(event);
+    || actionOnMenuRig(id);
 }
 
 
@@ -1532,46 +1536,46 @@ void AppFrame::toggleBookmarks() {
     }
 }
 
-bool AppFrame::actionOnMenuDisplay(wxCommandEvent& event) {
+bool AppFrame::actionOnMenuDisplay(int id) {
 
     //by default, is managed.
     bool bManaged = true;
 	
-    if (event.GetId() == wxID_THEME_DEFAULT) {
+    if (id == wxID_THEME_DEFAULT) {
         ThemeMgr::mgr.setTheme(COLOR_THEME_DEFAULT);
     }
-    else if (event.GetId() == wxID_THEME_DEFAULT_JET) {
+    else if (id == wxID_THEME_DEFAULT_JET) {
 		ThemeMgr::mgr.setTheme(COLOR_THEME_DEFAULT_JET);
 	}
-    else if (event.GetId() == wxID_THEME_SHARP) {
+    else if (id == wxID_THEME_SHARP) {
         ThemeMgr::mgr.setTheme(COLOR_THEME_SHARP);
     }
-    else if (event.GetId() == wxID_THEME_BW) {
+    else if (id == wxID_THEME_BW) {
         ThemeMgr::mgr.setTheme(COLOR_THEME_BW);
     }
-    else if (event.GetId() == wxID_THEME_RAD) {
+    else if (id == wxID_THEME_RAD) {
         ThemeMgr::mgr.setTheme(COLOR_THEME_RAD);
     }
-    else if (event.GetId() == wxID_THEME_TOUCH) {
+    else if (id == wxID_THEME_TOUCH) {
         ThemeMgr::mgr.setTheme(COLOR_THEME_TOUCH);
     }
-    else if (event.GetId() == wxID_THEME_HD) {
+    else if (id == wxID_THEME_HD) {
         ThemeMgr::mgr.setTheme(COLOR_THEME_HD);
     }
-    else if (event.GetId() == wxID_THEME_RADAR) {
+    else if (id == wxID_THEME_RADAR) {
         ThemeMgr::mgr.setTheme(COLOR_THEME_RADAR);
     }
     //Display : font sizes
-    else if (event.GetId() == wxID_DISPLAY_BASE) {
+    else if (id == wxID_DISPLAY_BASE) {
         GLFont::setScale(GLFont::GLFONT_SCALE_NORMAL);
     }
-    else if (event.GetId() == wxID_DISPLAY_BASE + 1) {
+    else if (id == wxID_DISPLAY_BASE + 1) {
         GLFont::setScale(GLFont::GLFONT_SCALE_MEDIUM);
     }
-    else if (event.GetId() == wxID_DISPLAY_BASE + 2) {
+    else if (id == wxID_DISPLAY_BASE + 2) {
         GLFont::setScale(GLFont::GLFONT_SCALE_LARGE);
     }
-    else if (event.GetId() == wxID_DISPLAY_BOOKMARKS) {
+    else if (id == wxID_DISPLAY_BOOKMARKS) {
         toggleBookmarks();
     }
     else {
@@ -1579,7 +1583,7 @@ bool AppFrame::actionOnMenuDisplay(wxCommandEvent& event) {
     }
 
     //update theme choice in children elements:  
-    if (event.GetId() >= wxID_THEME_DEFAULT && event.GetId() <= wxID_THEME_RADAR) {
+    if (id >= wxID_THEME_DEFAULT && id <= wxID_THEME_RADAR) {
        
         gainCanvas->setThemeColors();
         modemProps->updateTheme();
@@ -1597,9 +1601,9 @@ bool AppFrame::actionOnMenuDisplay(wxCommandEvent& event) {
     return bManaged;
 }
 
-bool AppFrame::actionOnMenuReset(wxCommandEvent& event) {
+bool AppFrame::actionOnMenuReset(int id) {
 
-    if (event.GetId() == wxID_RESET) {
+    if (id == wxID_RESET) {
 
         wxGetApp().getDemodMgr().terminateAll();
         wxGetApp().setFrequency(98000000);
@@ -1634,12 +1638,12 @@ bool AppFrame::actionOnMenuReset(wxCommandEvent& event) {
     return false;
 }
 
-bool AppFrame::actionOnMenuAbout(wxCommandEvent& event) {
+bool AppFrame::actionOnMenuAbout(int id) {
 
 #ifdef __APPLE__
-    if (event.GetId() == wxApp::s_macAboutMenuItemId) {
+    if (id == wxApp::s_macAboutMenuItemId) {
 #else 
-    if (event.GetId() == wxID_ABOUT_CUBICSDR) {
+    if (id == wxID_ABOUT_CUBICSDR) {
 #endif
         if (aboutDlg != nullptr) {
             aboutDlg->Raise();
@@ -1658,20 +1662,20 @@ bool AppFrame::actionOnMenuAbout(wxCommandEvent& event) {
     return false;
 }
 
-bool AppFrame::actionOnMenuSettings(wxCommandEvent& event) {
+bool AppFrame::actionOnMenuSettings(int id) {
 
     int antennaIdMax = wxID_ANTENNAS_BASE + antennaNames.size();
     
-    if (event.GetId() >= wxID_ANTENNAS_BASE && event.GetId() < antennaIdMax) {
+    if (id >= wxID_ANTENNAS_BASE && id < antennaIdMax) {
 
-        wxGetApp().setAntennaName(antennaNames[event.GetId() - wxID_ANTENNAS_BASE]);
+        wxGetApp().setAntennaName(antennaNames[id - wxID_ANTENNAS_BASE]);
       
         antennaMenuItems[wxID_ANTENNA_CURRENT]->SetItemLabel(getSettingsLabel("Antenna", wxGetApp().getAntennaName()));
         return true;
     } 
-    else if (event.GetId() >= wxID_SETTINGS_BASE && event.GetId() < settingsIdMax) {
+    else if (id >= wxID_SETTINGS_BASE && id < settingsIdMax) {
 
-        int setIdx = event.GetId() - wxID_SETTINGS_BASE;
+        int setIdx = id - wxID_SETTINGS_BASE;
         int menuIdx = 0;
 
         for (auto & arg : settingArgs) {
@@ -1744,9 +1748,9 @@ bool AppFrame::actionOnMenuSettings(wxCommandEvent& event) {
     return false;
 }
 
-bool AppFrame::actionOnMenuAGC(wxCommandEvent& event) {
+bool AppFrame::actionOnMenuAGC(int id) {
 
-    if (event.GetId() == wxID_AGC_CONTROL) {
+    if (id == wxID_AGC_CONTROL) {
 
         if (wxGetApp().getDevice() == nullptr) {
             agcMenuItem->Check(true);
@@ -1776,13 +1780,13 @@ bool AppFrame::actionOnMenuAGC(wxCommandEvent& event) {
     return false;
 }
 
-bool AppFrame::actionOnMenuSampleRate(wxCommandEvent& event) {
+bool AppFrame::actionOnMenuSampleRate(int id) {
 
-    if (event.GetId() == wxID_BANDWIDTH_MANUAL) {
+    if (id == wxID_BANDWIDTH_MANUAL) {
         wxGetApp().setSampleRate(manualSampleRate);
         return true;
     }
-    else if (event.GetId() == wxID_BANDWIDTH_MANUAL_DIALOG) {
+    else if (id == wxID_BANDWIDTH_MANUAL_DIALOG) {
 
         int rateHigh = 0, rateLow = 0;
 
@@ -1824,20 +1828,20 @@ bool AppFrame::actionOnMenuSampleRate(wxCommandEvent& event) {
 
         return true;
     }
-    else if (event.GetId() >= wxID_BANDWIDTH_BASE && event.GetId() < wxID_BANDWIDTH_BASE + (int)sampleRates.size()) {
+    else if (id >= wxID_BANDWIDTH_BASE && id < wxID_BANDWIDTH_BASE + (int)sampleRates.size()) {
 
-        wxGetApp().setSampleRate(sampleRates[event.GetId() - wxID_BANDWIDTH_BASE]);
+        wxGetApp().setSampleRate(sampleRates[id - wxID_BANDWIDTH_BASE]);
         return true;
     }
 
     return false;
 }
 
-bool AppFrame::actionOnMenuAudioSampleRate(wxCommandEvent& event) {
+bool AppFrame::actionOnMenuAudioSampleRate(int id) {
 
-    if (event.GetId() >= wxID_AUDIO_BANDWIDTH_BASE) {
+    if (id >= wxID_AUDIO_BANDWIDTH_BASE) {
 
-        int evId = event.GetId();
+        int evId = id;
 
         auto outputDevices = wxGetApp().getDemodMgr().getOutputDevices();
 
@@ -1866,9 +1870,9 @@ bool AppFrame::actionOnMenuAudioSampleRate(wxCommandEvent& event) {
     return false;
 }
 
-bool AppFrame::actionOnMenuLoadSave(wxCommandEvent& event) {
+bool AppFrame::actionOnMenuLoadSave(int id) {
 
-    if (event.GetId() == wxID_SAVE) {
+    if (id == wxID_SAVE) {
 
         if (!currentSessionFile.empty()) {
             saveSession(currentSessionFile);
@@ -1883,7 +1887,7 @@ bool AppFrame::actionOnMenuLoadSave(wxCommandEvent& event) {
 
         return true;
     }
-    else if (event.GetId() == wxID_OPEN) {
+    else if (id == wxID_OPEN) {
         wxFileDialog openFileDialog(this, _("Open XML Session file"), "", "", "XML files (*.xml)|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
         if (openFileDialog.ShowModal() == wxID_CANCEL) {
             return true;
@@ -1892,7 +1896,7 @@ bool AppFrame::actionOnMenuLoadSave(wxCommandEvent& event) {
 
         return true;
     }
-    else if (event.GetId() == wxID_SAVEAS) {
+    else if (id == wxID_SAVEAS) {
         wxFileDialog saveFileDialog(this, _("Save XML Session file"), "", "", "XML files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
         if (saveFileDialog.ShowModal() == wxID_CANCEL) {
             return true;
@@ -1903,7 +1907,7 @@ bool AppFrame::actionOnMenuLoadSave(wxCommandEvent& event) {
     }
 
 	//save mecanic for bookmark files
-    else if (event.GetId() == wxID_SAVE_BOOKMARKS) {
+    else if (id == wxID_SAVE_BOOKMARKS) {
 
 		if (!currentBookmarkFile.empty()) {
 			wxGetApp().getBookmarkMgr().saveToFile(currentBookmarkFile, false, true);
@@ -1930,7 +1934,7 @@ bool AppFrame::actionOnMenuLoadSave(wxCommandEvent& event) {
 
 		return true;
 	}
-    else if (event.GetId() == wxID_OPEN_BOOKMARKS) {
+    else if (id == wxID_OPEN_BOOKMARKS) {
 
 		wxFileDialog openFileDialog(this, _("Open XML Bookmark file"), "", "", "XML files (*.xml)|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 		if (openFileDialog.ShowModal() == wxID_CANCEL) {
@@ -1950,7 +1954,7 @@ bool AppFrame::actionOnMenuLoadSave(wxCommandEvent& event) {
 
 		return true;
 	}
-    else if (event.GetId() == wxID_SAVEAS_BOOKMARKS) {
+    else if (id == wxID_SAVEAS_BOOKMARKS) {
 
 		wxFileDialog saveFileDialog(this, _("Save XML Bookmark file"), "", "", "XML files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
 		if (saveFileDialog.ShowModal() == wxID_CANCEL) {
@@ -1972,7 +1976,7 @@ bool AppFrame::actionOnMenuLoadSave(wxCommandEvent& event) {
 
 		return true;
 	}
-    else if (event.GetId() == wxID_RESET_BOOKMARKS) {
+    else if (id == wxID_RESET_BOOKMARKS) {
 
         ActionDialog::showDialog(new ActionDialogBookmarkReset());
 
@@ -1982,9 +1986,9 @@ bool AppFrame::actionOnMenuLoadSave(wxCommandEvent& event) {
     return false;
 }
 
-bool AppFrame::actionOnMenuRecording(wxCommandEvent& event) {
+bool AppFrame::actionOnMenuRecording(int id) {
 
-	if (event.GetId() == wxID_RECORDING_PATH) {
+	if (id == wxID_RECORDING_PATH) {
 
 		std::string recPath = wxGetApp().getConfig()->getRecordingPath();
 
@@ -2000,28 +2004,28 @@ bool AppFrame::actionOnMenuRecording(wxCommandEvent& event) {
 		return true;
 
 	}
-	else if (event.GetId() == wxID_RECORDING_SQUELCH_SILENCE) {
+	else if (id == wxID_RECORDING_SQUELCH_SILENCE) {
 
 		wxGetApp().getConfig()->setRecordingSquelchOption(AudioSinkFileThread::SQUELCH_RECORD_SILENCE);
 
 		updateRecordingMenu();
 		return true;
 	}
-	else if (event.GetId() == wxID_RECORDING_SQUELCH_SKIP) {
+	else if (id == wxID_RECORDING_SQUELCH_SKIP) {
 
 		wxGetApp().getConfig()->setRecordingSquelchOption(AudioSinkFileThread::SQUELCH_SKIP_SILENCE);
 
 		updateRecordingMenu();
 		return true;
 	}
-	else if (event.GetId() == wxID_RECORDING_SQUELCH_ALWAYS) {
+	else if (id == wxID_RECORDING_SQUELCH_ALWAYS) {
 		
 		wxGetApp().getConfig()->setRecordingSquelchOption(AudioSinkFileThread::SQUELCH_RECORD_ALWAYS);
 
 		updateRecordingMenu();
 		return true;
 	}
-	else if (event.GetId() == wxID_RECORDING_FILE_TIME_LIMIT) {
+	else if (id == wxID_RECORDING_FILE_TIME_LIMIT) {
 
 		int currentFileLimitSeconds = wxGetApp().getConfig()->getRecordingFileTimeLimit();
 
@@ -2050,16 +2054,16 @@ bool AppFrame::actionOnMenuRecording(wxCommandEvent& event) {
 	return false;
 }
 
-bool AppFrame::actionOnMenuRig(wxCommandEvent &event) {
+bool AppFrame::actionOnMenuRig(int id) {
 
     bool bManaged = false;
 
 #ifdef USE_HAMLIB
 
     bool resetRig = false;
-    if (event.GetId() >= wxID_RIG_MODEL_BASE && event.GetId() < wxID_RIG_MODEL_BASE + numRigs) {
+    if (id >= wxID_RIG_MODEL_BASE && id < wxID_RIG_MODEL_BASE + numRigs) {
 
-        int rigIdx = event.GetId() - wxID_RIG_MODEL_BASE;
+        int rigIdx = id - wxID_RIG_MODEL_BASE;
 
         RigList &rl = RigThread::enumerate();
         rigModel = rl[rigIdx]->rig_model;
@@ -2092,21 +2096,21 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent &event) {
 
     int rigSerialIdMax = wxID_RIG_SERIAL_BASE + rigSerialRates.size();
 
-    if (event.GetId() >= wxID_RIG_SERIAL_BASE && event.GetId() < rigSerialIdMax) {
-        int serialIdx = event.GetId() - wxID_RIG_SERIAL_BASE;
+    if (id >= wxID_RIG_SERIAL_BASE && id < rigSerialIdMax) {
+        int serialIdx = id - wxID_RIG_SERIAL_BASE;
         rigSerialRate = rigSerialRates[serialIdx];
         resetRig = true;
         bManaged = true;
     }
 
-    if (event.GetId() == wxID_RIG_PORT) {
+    if (id == wxID_RIG_PORT) {
         if (rigPortDialog == nullptr) {
             rigPortDialog = new PortSelectorDialog(this, wxID_ANY, rigPort);
             rigPortDialog->ShowModal();
         }
     }
 
-    if (event.GetId() == wxID_RIG_TOGGLE) {
+    if (id == wxID_RIG_TOGGLE) {
         resetRig = false;
         if (!wxGetApp().rigIsActive()) {
             enableRig();
@@ -2117,7 +2121,7 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent &event) {
         bManaged = true;
     }
 
-    if (event.GetId() == wxID_RIG_SDR_IF) {
+    if (id == wxID_RIG_SDR_IF) {
         if (devInfo != nullptr) {
             std::string deviceId = devInfo->getDeviceId();
             DeviceConfig *devConfig = wxGetApp().getConfig()->getDevice(deviceId);
@@ -2136,7 +2140,7 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent &event) {
         bManaged = true;
     }
 
-    if (event.GetId() == wxID_RIG_CONTROL) {
+    if (id == wxID_RIG_CONTROL) {
         if (wxGetApp().rigIsActive()) {
             RigThread *rt = wxGetApp().getRigThread();
             rt->setControlMode(!rt->getControlMode());
@@ -2148,7 +2152,7 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent &event) {
         bManaged = true;
     }
 
-    if (event.GetId() == wxID_RIG_FOLLOW) {
+    if (id == wxID_RIG_FOLLOW) {
         if (wxGetApp().rigIsActive()) {
             RigThread *rt = wxGetApp().getRigThread();
             rt->setFollowMode(!rt->getFollowMode());
@@ -2161,7 +2165,7 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent &event) {
         bManaged = true;
     }
 
-    if (event.GetId() == wxID_RIG_CENTERLOCK) {
+    if (id == wxID_RIG_CENTERLOCK) {
         if (wxGetApp().rigIsActive()) {
             RigThread *rt = wxGetApp().getRigThread();
             rt->setCenterLock(!rt->getCenterLock());
@@ -2174,7 +2178,7 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent &event) {
         bManaged = true;
     }
 
-    if (event.GetId() == wxID_RIG_FOLLOW_MODEM) {
+    if (id == wxID_RIG_FOLLOW_MODEM) {
         if (wxGetApp().rigIsActive()) {
             RigThread *rt = wxGetApp().getRigThread();
             rt->setFollowModem(!rt->getFollowModem());
@@ -2196,16 +2200,16 @@ bool AppFrame::actionOnMenuRig(wxCommandEvent &event) {
     return bManaged;
 }
 
-bool AppFrame::actionOnMenuClose(wxCommandEvent &event) {
-    if (event.GetId() == wxID_CLOSE || event.GetId() == wxID_EXIT) {
+bool AppFrame::actionOnMenuClose(int id) {
+    if (id == wxID_CLOSE || id == wxID_EXIT) {
         Close(false);
         return true;
     }
     return false;
 }
 
-bool AppFrame::actionOnMenuSetPPM(wxCommandEvent &event) {
-    if (event.GetId() == wxID_SET_PPM) {
+bool AppFrame::actionOnMenuSetPPM(int id) {
+    if (id == wxID_SET_PPM) {
         long ofs = wxGetNumberFromUser(
                 "Frequency correction for device in PPM.\ni.e. -51 for -51 PPM\n\nNote: you can adjust PPM interactively\nby holding ALT over the frequency tuning bar.\n",
                 "Parts per million (PPM)",
@@ -2220,16 +2224,16 @@ bool AppFrame::actionOnMenuSetPPM(wxCommandEvent &event) {
     return false;
 }
 
-bool AppFrame::actionOnMenuSDRDevices(wxCommandEvent &event) {
-    if (event.GetId() == wxID_SDR_DEVICES) {
+bool AppFrame::actionOnMenuSDRDevices(int id) {
+    if (id == wxID_SDR_DEVICES) {
         wxGetApp().deviceSelector();
         return true;
     }
     return false;
 }
 
-bool AppFrame::actionOnMenuDBOffset(wxCommandEvent &event) {
-    if (event.GetId() == wxID_SET_DB_OFFSET) {
+bool AppFrame::actionOnMenuDBOffset(int id) {
+    if (id == wxID_SET_DB_OFFSET) {
         long ofs = wxGetNumberFromUser("Shift the displayed RF power level by this amount.\ni.e. -30 for -30 dB",
                                        "Decibels (dB)",
                                        "Power Level Offset", wxGetApp().getConfig()->getDBOffset(), -1000, 1000, this);
@@ -2243,8 +2247,8 @@ bool AppFrame::actionOnMenuDBOffset(wxCommandEvent &event) {
     return false;
 }
 
-bool AppFrame::actionOnMenuFreqOffset(wxCommandEvent &event) {
-    if (event.GetId() == wxID_SET_FREQ_OFFSET) {
+bool AppFrame::actionOnMenuFreqOffset(int id) {
+    if (id == wxID_SET_FREQ_OFFSET) {
         //enter in kHz to accommodate > 2GHz shifts for down/upconverters on 32 bit platforms.
         long ofs = wxGetNumberFromUser(
                 "Shift the displayed frequency by this amount of kHz.\ni.e. -125000 for -125 MHz", "Frequency (kHz)",
@@ -2260,26 +2264,26 @@ bool AppFrame::actionOnMenuFreqOffset(wxCommandEvent &event) {
     return false;
 }
 
-bool AppFrame::actionOnMenuIQSwap(wxCommandEvent &event) {
-    if (event.GetId() == wxID_SET_IQSWAP) {
+bool AppFrame::actionOnMenuIQSwap(int id) {
+    if (id == wxID_SET_IQSWAP) {
         wxGetApp().getSDRThread()->setIQSwap(!wxGetApp().getSDRThread()->getIQSwap());
         return true;
     }
     return false;
 }
 
-bool AppFrame::actionOnMenuTips(wxCommandEvent &event) {
-    if (event.GetId() == wxID_SET_TIPS) {
+bool AppFrame::actionOnMenuTips(int id) {
+    if (id == wxID_SET_TIPS) {
         wxGetApp().getConfig()->setShowTips(!wxGetApp().getConfig()->getShowTips());
         return true;
     }
     return false;
 }
 
-bool AppFrame::actionOnMenuFrameRate(wxCommandEvent &event) {
-    if (event.GetId() >= wxID_FRAME_BASE && event.GetId() <= wxID_FRAME_BASE + (int) AppConfig::FRAME_HIGH) {
+bool AppFrame::actionOnMenuFrameRate(int id) {
+    if (id >= wxID_FRAME_BASE && id <= wxID_FRAME_BASE + (int) AppConfig::FRAME_HIGH) {
 
-        int frameEnumAsInt = event.GetId() - wxID_FRAME_BASE;
+        int frameEnumAsInt = id - wxID_FRAME_BASE;
         AppConfig::FrameRateEnum frameEnumSet = AppConfig::FRAME_NORMAL;
 
         if (frameEnumAsInt == (int) AppConfig::FRAME_HIGH) {
@@ -2297,7 +2301,7 @@ bool AppFrame::actionOnMenuFrameRate(wxCommandEvent &event) {
 #endif
 
         //update UI
-        wxMenuItem *selectedFrameRateItem = frameMenuItems[event.GetId()];
+        wxMenuItem *selectedFrameRateItem = frameMenuItems[id];
         frameMenuItems[wxID_FRAME_CURRENT]->SetItemLabel(
                 getSettingsLabel("Frame Rate", selectedFrameRateItem->GetItemLabel().ToStdString()));
 
@@ -2306,16 +2310,16 @@ bool AppFrame::actionOnMenuFrameRate(wxCommandEvent &event) {
     return false;
 }
 
-bool AppFrame::actionOnMenuFftSize(wxCommandEvent &event) {
-    if (event.GetId() >= wxID_FFT_BASE && event.GetId() <= wxID_FFT_BASE + 3) {
+bool AppFrame::actionOnMenuFftSize(int id) {
+    if (id >= wxID_FFT_BASE && id <= wxID_FFT_BASE + 3) {
         int fftSizes[] = {1024, DEFAULT_FFT_SIZE, 4096, 8192};
-        int fftSize = fftSizes[event.GetId() - wxID_FFT_BASE];
+        int fftSize = fftSizes[id - wxID_FFT_BASE];
 
         wxGetApp().getConfig()->setSpectrumFFTSize(fftSize);
         setMainWaterfallFFTSize(effectiveSpectrumFFT(fftSize, wxGetApp().getSampleRate()));
 
         //update UI
-        wxMenuItem *selectedFftItem = fftMenuItems[event.GetId()];
+        wxMenuItem *selectedFftItem = fftMenuItems[id];
         fftMenuItems[wxID_FFT_CURRENT]->SetItemLabel(
                 getSettingsLabel("Spectrum FFT Size", selectedFftItem->GetItemLabel().ToStdString()));
 
@@ -2324,12 +2328,12 @@ bool AppFrame::actionOnMenuFftSize(wxCommandEvent &event) {
     return false;
 }
 
-bool AppFrame::actionOnMenuDsp(wxCommandEvent &event) {
-    if (event.GetId() >= wxID_DSP_BASE && event.GetId() <= wxID_DSP_BASE + (int) AppConfig::DSP_ENHANCED) {
+bool AppFrame::actionOnMenuDsp(int id) {
+    if (id >= wxID_DSP_BASE && id <= wxID_DSP_BASE + (int) AppConfig::DSP_ENHANCED) {
 
         AppConfig::DspModeEnum dspEnumSet = AppConfig::DSP_NORMAL;
 
-        if (event.GetId() - wxID_DSP_BASE == (int) AppConfig::DSP_ENHANCED) {
+        if (id - wxID_DSP_BASE == (int) AppConfig::DSP_ENHANCED) {
             dspEnumSet = AppConfig::DSP_ENHANCED;
         }
 
@@ -2343,7 +2347,7 @@ bool AppFrame::actionOnMenuDsp(wxCommandEvent &event) {
         }
 
         //update UI
-        wxMenuItem *selectedDspItem = dspMenuItems[event.GetId()];
+        wxMenuItem *selectedDspItem = dspMenuItems[id];
         dspMenuItems[wxID_DSP_CURRENT]->SetItemLabel(
                 getSettingsLabel("DSP", selectedDspItem->GetItemLabel().ToStdString()));
 
@@ -2352,16 +2356,16 @@ bool AppFrame::actionOnMenuDsp(wxCommandEvent &event) {
     return false;
 }
 
-bool AppFrame::actionOnMenuPacing(wxCommandEvent &event) {
-    if (event.GetId() >= wxID_PACING_BASE && event.GetId() <= wxID_PACING_BASE + 1) {
+bool AppFrame::actionOnMenuPacing(int id) {
+    if (id >= wxID_PACING_BASE && id <= wxID_PACING_BASE + 1) {
 
-        bool pacingSet = (event.GetId() - wxID_PACING_BASE) == 1;
+        bool pacingSet = (id - wxID_PACING_BASE) == 1;
 
         wxGetApp().getConfig()->setStreamPacing(pacingSet);
         wxGetApp().setStreamPacing(pacingSet);
 
         //update UI
-        wxMenuItem *selectedPacingItem = pacingMenuItems[event.GetId()];
+        wxMenuItem *selectedPacingItem = pacingMenuItems[id];
         pacingMenuItems[wxID_PACING_CURRENT]->SetItemLabel(
                 getSettingsLabel("Pacing", selectedPacingItem->GetItemLabel().ToStdString()));
 
@@ -2370,15 +2374,15 @@ bool AppFrame::actionOnMenuPacing(wxCommandEvent &event) {
     return false;
 }
 
-bool AppFrame::actionOnMenuLatency(wxCommandEvent &event) {
-    if (event.GetId() >= wxID_LATENCY_BASE && event.GetId() < wxID_LATENCY_BASE + LATENCY_FRAME_COUNT) {
-        int frames = (int)LATENCY_FRAME_LEVELS[event.GetId() - wxID_LATENCY_BASE];
+bool AppFrame::actionOnMenuLatency(int id) {
+    if (id >= wxID_LATENCY_BASE && id < wxID_LATENCY_BASE + LATENCY_FRAME_COUNT) {
+        int frames = (int)LATENCY_FRAME_LEVELS[id - wxID_LATENCY_BASE];
 
         wxGetApp().getConfig()->setAudioBufferFrames(frames);
         AudioThread::setBufferFrames(frames);
 
         //update UI
-        wxMenuItem *selectedLatencyItem = latencyMenuItems[event.GetId()];
+        wxMenuItem *selectedLatencyItem = latencyMenuItems[id];
         latencyMenuItems[wxID_LATENCY_CURRENT]->SetItemLabel(
                 getSettingsLabel("Latency", selectedLatencyItem->GetItemLabel().ToStdString()));
 
@@ -2404,8 +2408,8 @@ void AppFrame::refreshLatencyLabels() {
         getSettingsLabel("Latency", selectedLatencyItem->GetItemLabel().ToStdString()));
 }
 
-bool AppFrame::actionOnMenuSDRStartStop(wxCommandEvent &event) {
-    if (event.GetId() == wxID_SDR_START_STOP) {
+bool AppFrame::actionOnMenuSDRStartStop(int id) {
+    if (id == wxID_SDR_START_STOP) {
         if (!wxGetApp().getSDRThread()->isTerminated()) {
             wxGetApp().stopDevice(true, 2000);
         } else {
