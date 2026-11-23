@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "AppFrame.h"
+#include "SplitUtil.h"
 
 #include "wx/wxprec.h"
 
@@ -50,12 +51,16 @@
 wxBEGIN_EVENT_TABLE(AppFrame, wxFrame)
 //EVT_MENU(wxID_NEW, AppFrame::OnNewWindow)
 EVT_CLOSE(AppFrame::OnClose)
+EVT_MOVE(AppFrame::OnMove)
+EVT_SIZE(AppFrame::OnSize)
 EVT_MENU(wxID_ANY, AppFrame::OnMenu)
 EVT_TIMER(wxID_FRAME_TIMER, AppFrame::OnFrameTimer)
 EVT_MENU_OPEN(AppFrame::OnMenuOpen)
 EVT_MENU_CLOSE(AppFrame::OnMenuClose)
 EVT_SPLITTER_DCLICK(wxID_ANY, AppFrame::OnDoubleClickSash)
 EVT_SPLITTER_UNSPLIT(wxID_ANY, AppFrame::OnUnSplit)
+EVT_SPLITTER_SASH_POS_CHANGED(wxID_ANY, AppFrame::OnSashChanged)
+EVT_SPLITTER_SASH_POS_CHANGING(wxID_ANY, AppFrame::OnSashChanging)
 wxEND_EVENT_TABLE()
 
 #ifdef USE_HAMLIB
@@ -129,7 +134,7 @@ AppFrame::AppFrame() :
     attribList.PlatformDefaults().RGBA().MinRGBA(8, 8, 8, 8).DoubleBuffer().EndList();
 
     mainSplitter = new wxSplitterWindow( this, wxID_MAIN_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
-    mainSplitter->SetSashGravity(10.0f / 37.0f);
+    mainSplitter->SetSashGravity(0.0);
     mainSplitter->SetMinimumPaneSize(1);
 
     auto *demodPanel = new wxPanel(mainSplitter, wxID_ANY);
@@ -269,11 +274,11 @@ AppFrame::AppFrame() :
 
     bookmarkSplitter = new wxSplitterWindow(mainSplitter, wxID_BM_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
     bookmarkSplitter->SetMinimumPaneSize(1);
-    bookmarkSplitter->SetSashGravity(1.0f / 20.0f);
+    bookmarkSplitter->SetSashGravity(0.0);
         
     mainVisSplitter = new wxSplitterWindow( bookmarkSplitter, wxID_VIS_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
     mainVisSplitter->SetMinimumPaneSize(1);
-    mainVisSplitter->SetSashGravity(6.0f / 25.0f);
+    mainVisSplitter->SetSashGravity(0.0);
         
     auto *spectrumPanel = new wxPanel(mainVisSplitter, wxID_ANY);
     auto *spectrumSizer = new wxBoxSizer(wxHORIZONTAL);
@@ -328,6 +333,9 @@ AppFrame::AppFrame() :
     bookmarkView = new BookmarkView(bookmarkSplitter, wxID_ANY, wxDefaultPosition, wxSize(120,-1));
     bookmarkSplitter->SplitVertically( bookmarkView, mainVisSplitter );
     mainSplitter->SplitHorizontally( demodPanel, bookmarkSplitter );
+    mainSplitter->Bind(wxEVT_SIZE, &AppFrame::OnSplitterSize, this);
+    bookmarkSplitter->Bind(wxEVT_SIZE, &AppFrame::OnSplitterSize, this);
+    mainVisSplitter->Bind(wxEVT_SIZE, &AppFrame::OnSplitterSize, this);
 
 
     // TODO: refactor these..
@@ -369,6 +377,8 @@ AppFrame::AppFrame() :
 
     // Show the window
     Show();
+
+    restoreSplitterPositions();
 
 #ifdef _WIN32
     startFrameTimer();
@@ -438,6 +448,55 @@ void AppFrame::initMenuBar() {// File Menu
     SetAcceleratorTable(accel);
 }
 
+static int splitSpan(wxSplitterWindow *splitter) {
+    wxSize size = splitter->GetSize();
+    return splitter->GetSplitMode() == wxSPLIT_VERTICAL ? size.x : size.y;
+}
+
+static float splitFraction(wxSplitterWindow *splitter) {
+    int span = splitSpan(splitter);
+    if (span <= 0) {
+        return -1.0f;
+    }
+    return (float)splitter->GetSashPosition() / (float)span;
+}
+
+static float applySplitFraction(wxSplitterWindow *splitter, float stored) {
+    if (!splitter->IsSplit()) {
+        return -1.0f;
+    }
+    int span = splitSpan(splitter);
+    float frac = splitStoredToFraction(stored, span);
+    if (frac < 0.0f) {
+        return -1.0f;
+    }
+    splitter->SetSashPosition(splitFractionToPixels(frac, span));
+    return frac;
+}
+
+template <typename Saver>
+static void restoreOneSplit(wxSplitterWindow *splitter, float stored, Saver save) {
+    float frac = applySplitFraction(splitter, stored);
+    if (frac < 0.0f) {
+        frac = splitFraction(splitter);
+    }
+    if (frac > 0.0f) {
+        save(frac);
+    }
+}
+
+void AppFrame::restoreSplitterPositions() {
+    AppConfig *cfg = wxGetApp().getConfig();
+    restoreOneSplit(mainSplitter, cfg->getMainSplit(), [&](float frac) { cfg->setMainSplit(frac); });
+    restoreOneSplit(bookmarkSplitter, cfg->getBookmarkSplit(), [&](float frac) { cfg->setBookmarkSplit(frac); });
+    restoreOneSplit(mainVisSplitter, cfg->getVisSplit(), [&](float frac) { cfg->setVisSplit(frac); });
+
+    if (!wxGetApp().getConfig()->getBookmarksVisible()) {
+        bookmarkSplitter->Unsplit(bookmarkView);
+        bookmarkSplitter->Layout();
+    }
+}
+
 void AppFrame::initConfigurationSettings() {
 
     // Init Theme
@@ -481,29 +540,6 @@ void AppFrame::initConfigurationSettings() {
     int mpc =wxGetApp().getConfig()->getModemPropsCollapsed();
     if (mpc) {
         modemProps->setCollapsed(true);
-    }
-
-    // Init main splitter position (separates top/bottom area horizontally)
-    int msPos = wxGetApp().getConfig()->getMainSplit();
-    if (msPos != -1) {
-        mainSplitter->SetSashPosition(msPos);
-    }
-
-    // Init bookmark splitter position (separates bookmark/main vis vertically)
-    int bsPos = wxGetApp().getConfig()->getBookmarkSplit();
-    if (bsPos != -1) {
-        bookmarkSplitter->SetSashPosition(bsPos);
-    }
-
-    // Init vis splitter position (separates spectrum/waterfall horizontally)
-    int vsPos = wxGetApp().getConfig()->getVisSplit();
-    if (vsPos != -1) {
-        mainVisSplitter->SetSashPosition(vsPos);
-    }
-
-    if (!wxGetApp().getConfig()->getBookmarksVisible()) {
-        bookmarkSplitter->Unsplit(bookmarkView);
-        bookmarkSplitter->Layout();
     }
 
 #ifdef USE_HAMLIB
@@ -1491,7 +1527,7 @@ void AppFrame::toggleBookmarks() {
         bookmarkSplitter->Unsplit(bookmarkView);
         bookmarkSplitter->Layout();
     } else {
-        bookmarkSplitter->SplitVertically(bookmarkView, mainVisSplitter, wxGetApp().getConfig()->getBookmarkSplit());
+        resplitBookmarkView();
         bookmarkSplitter->Layout();
     }
 }
@@ -1587,7 +1623,7 @@ bool AppFrame::actionOnMenuReset(wxCommandEvent& event) {
         updateTitle();
 		currentBookmarkFile = "";
         bookmarkSplitter->Unsplit(bookmarkView);
-        bookmarkSplitter->SplitVertically(bookmarkView, mainVisSplitter, wxGetApp().getConfig()->getBookmarkSplit());
+        resplitBookmarkView();
         hideBookmarksItem->Check(false);
         //force all windows refresh
         Refresh();
@@ -2383,6 +2419,31 @@ bool AppFrame::actionOnMenuSDRStartStop(wxCommandEvent &event) {
     return false;
 }
 
+void AppFrame::OnMove(wxMoveEvent& event) {
+    trackWindowGeometry();
+    event.Skip();
+}
+
+void AppFrame::OnSize(wxSizeEvent& event) {
+    trackWindowGeometry();
+    event.Skip();
+}
+
+void AppFrame::trackWindowGeometry() {
+    if (!IsShown() || IsIconized()) {
+        return;
+    }
+#ifdef __APPLE__
+    if (GetPosition().y <= 0) {
+        return;
+    }
+#endif
+    if (!IsMaximized()) {
+        wxGetApp().getConfig()->setWindow(GetPosition().x, GetPosition().y, GetClientSize().x, GetClientSize().y);
+    }
+    wxGetApp().getConfig()->setWindowMaximized(IsMaximized());
+}
+
 void AppFrame::OnClose(wxCloseEvent& event) {
 #ifdef _WIN32
     stopFrameTimer();
@@ -2405,15 +2466,7 @@ void AppFrame::OnClose(wxCloseEvent& event) {
         return;
     }
     
-#ifdef __APPLE__
-    if (this->GetPosition().y > 0) {
-        wxGetApp().getConfig()->setWindow(this->GetPosition().x, this->GetPosition().y, this->GetClientSize().x, this->GetClientSize().y);
-        wxGetApp().getConfig()->setWindowMaximized(this->IsMaximized());
-    }
-#else
-    wxGetApp().getConfig()->setWindow(this->GetPosition().x, this->GetPosition().y, this->GetClientSize().x, this->GetClientSize().y);
-    wxGetApp().getConfig()->setWindowMaximized(this->IsMaximized());
-#endif
+    trackWindowGeometry();
     wxGetApp().getConfig()->setTheme(ThemeMgr::mgr.getTheme());
     wxGetApp().getConfig()->setFontScale(GLFont::getScale());
     wxGetApp().getConfig()->setSnap(wxGetApp().getFrequencySnap());
@@ -2422,9 +2475,6 @@ void AppFrame::OnClose(wxCloseEvent& event) {
     wxGetApp().getConfig()->setWaterfallLinesPerSec(waterfallDataThread->getLinesPerSecond());
     wxGetApp().getConfig()->setManualDevices(SDREnumerator::getManuals());
     wxGetApp().getConfig()->setModemPropsCollapsed(modemProps->isCollapsed());
-    wxGetApp().getConfig()->setMainSplit(mainSplitter->GetSashPosition());
-    wxGetApp().getConfig()->setVisSplit(mainVisSplitter->GetSashPosition());
-    if (!hideBookmarksItem->IsChecked()) wxGetApp().getConfig()->setBookmarkSplit(bookmarkSplitter->GetSashPosition());
     wxGetApp().getConfig()->setBookmarksVisible(!hideBookmarksItem->IsChecked());
 #ifdef USE_HAMLIB
     wxGetApp().getConfig()->setRigEnabled(rigEnableMenuItem->IsChecked());
@@ -3051,6 +3101,64 @@ void AppFrame::handleCurrentModem() {
 }
 
 
+void AppFrame::OnSplitterSize(wxSizeEvent& event) {
+    wxObject *obj = event.GetEventObject();
+    sashDragArmed = nullptr;
+    if (obj == mainSplitter) {
+        applySplitFraction(mainSplitter, wxGetApp().getConfig()->getMainSplit());
+    } else if (obj == bookmarkSplitter) {
+        applySplitFraction(bookmarkSplitter, wxGetApp().getConfig()->getBookmarkSplit());
+    } else if (obj == mainVisSplitter) {
+        applySplitFraction(mainVisSplitter, wxGetApp().getConfig()->getVisSplit());
+    }
+    event.Skip();
+}
+
+void AppFrame::OnSashChanging(wxSplitterEvent& event) {
+    wxObject *obj = event.GetEventObject();
+    if (obj == mainSplitter || obj == bookmarkSplitter || obj == mainVisSplitter) {
+        sashDragArmed = static_cast<wxSplitterWindow *>(obj);
+    } else {
+        sashDragArmed = nullptr;
+    }
+    event.Skip();
+}
+
+void AppFrame::OnSashChanged(wxSplitterEvent& event) {
+    wxObject *obj = event.GetEventObject();
+    wxSplitterWindow *splitter = nullptr;
+    if (obj == mainSplitter || obj == bookmarkSplitter || obj == mainVisSplitter) {
+        splitter = static_cast<wxSplitterWindow *>(obj);
+    }
+    if (splitter && splitter == sashDragArmed && splitter->IsSplit()) {
+        int span = splitSpan(splitter);
+        if (span > 0) {
+            float frac = (float)event.GetSashPosition() / (float)span;
+            if (frac < 0.0f) {
+                frac = 0.0f;
+            }
+            if (frac > 1.0f) {
+                frac = 1.0f;
+            }
+            if (splitter == mainSplitter) {
+                wxGetApp().getConfig()->setMainSplit(frac);
+            } else if (splitter == bookmarkSplitter) {
+                wxGetApp().getConfig()->setBookmarkSplit(frac);
+            } else {
+                wxGetApp().getConfig()->setVisSplit(frac);
+            }
+        }
+    }
+    sashDragArmed = nullptr;
+    event.Skip();
+}
+
+void AppFrame::resplitBookmarkView() {
+    bookmarkSplitter->SplitVertically(bookmarkView, mainVisSplitter);
+    AppConfig *cfg = wxGetApp().getConfig();
+    restoreOneSplit(bookmarkSplitter, cfg->getBookmarkSplit(), [&](float frac) { cfg->setBookmarkSplit(frac); });
+}
+
 void AppFrame::OnDoubleClickSash(wxSplitterEvent& event)
 {
     wxWindow *a, *b;
@@ -3069,10 +3177,14 @@ void AppFrame::OnDoubleClickSash(wxSplitterEvent& event)
         a = w->GetWindow1();
         b = w->GetWindow2();
         w->Unsplit();
-        w->SetSashGravity(g);
         wxSize s = w->GetSize();
         
         w->SplitHorizontally(a, b, int(float(s.GetHeight()) * g));
+        if (event.GetId() == wxID_MAIN_SPLITTER) {
+            wxGetApp().getConfig()->setMainSplit(g);
+        } else {
+            wxGetApp().getConfig()->setVisSplit(g);
+        }
     }
     
     event.Veto();
