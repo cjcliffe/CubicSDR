@@ -24,7 +24,7 @@ SessionMgr (session state)
 
 ### Config Directory
 
-`AppConfig::getConfigDir()` returns the platform-specific user data directory via `wxStandardPaths::Get().GetUserDataDir()`:
+`AppConfig::getConfigDir()` resolves the platform-specific user data directory through the AppServices `getUserDataDir()` seam method (implemented with `wxStandardPaths` on the wx shell) and ensures it exists via `FileUtil::makeDir()`:
 
 | Platform | Path |
 |----------|------|
@@ -49,7 +49,7 @@ Bookmark file loading uses a dialog-interactive recovery sequence across `.backu
 
 ## AppConfig (`src/AppConfig.h`)
 
-Global application configuration. Singleton accessed via `wxGetApp().getConfig()`.
+Global application configuration. Owned by the application object and reached through the AppServices seam (`getConfig()`).
 
 ### Window Settings
 
@@ -74,7 +74,7 @@ Global application configuration. Singleton accessed via `wxGetApp().getConfig()
 | `centerFreq` | `long long` | `window/center_freq` | 98000000 | Center frequency (FM broadcast band center) |
 | `lastDeviceId` | `string` | `window/last_device` | *(empty)* | Id of the last started device, pre-selected by the devices dialog |
 | `waterfallLinesPerSec` | `int` | `window/waterfall_lps` | 30 | Waterfall refresh rate |
-| `spectrumAvgSpeed` | `float` | `window/spectrum_avg` | 0.65 | Spectrum averaging speed |
+| `spectrumAvgSpeed` | `float` | `window/spectrum_avg` | 0.5 | Spectrum averaging speed |
 | `dbOffset` | `int` | `window/db_offset` | 0 | dB display offset |
 | `spectrumFFTSize` | `int` | `window/spectrum_fft_size` | 2048 | Spectrum FFT size (1024/2048/4096/8192) |
 
