@@ -52,7 +52,7 @@ private:
     GLPanel bgPanel;
     SDRRangeMap gains;
     
-    float spacing, barWidth, startPos, barHeight, numGains;
+    float numGains;
     int refreshCounter;
     wxSize clientSize;
 

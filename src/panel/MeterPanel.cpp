@@ -3,6 +3,7 @@
 
 #include "MeterPanel.h"
 #include "ColorTheme.h"
+#include "GainSlider.h"
 
 
 MeterPanel::MeterPanel(const std::string& name, float low, float high, float current) {
@@ -83,25 +84,15 @@ float MeterPanel::getHigh() const {
 }
 
 void MeterPanel::setValue(float value) {
-    if (value > high) {
-        value = high;
-    }
-    if (value < low) {
-        value = low;
-    }
+    value = GainSlider::clampGain(value, low, high);
     
     current = value;
-    setValueLabel(std::to_string(int(current)));
+    setValueLabel(GainSlider::gainLabelText(current));
     setPanelLevel(value, levelPanel);
 }
 
 void MeterPanel::setHighlight(float value) {
-    if (value > high) {
-        value = high;
-    }
-    if (value < low) {
-        value = low;
-    }
+    value = GainSlider::clampGain(value, low, high);
     
     setPanelLevel(value, highlightPanel);
 }
@@ -128,16 +119,7 @@ float MeterPanel::getMeterHitValue(CubicVR::vec2 mousePoint) {
     CubicVR::vec2 hitResult;
     
     if (bgPanel.hitTest(mousePoint, hitResult)) {
-        float hitLevel = ((hitResult.y + 1.0) * 0.5);
-        
-        if (hitLevel < 0.0f) {
-            hitLevel = 0.0f;
-        }
-        if (hitLevel > 1.0f) {
-            hitLevel = 1.0f;
-        }
-        
-        return low + (hitLevel * (high-low));
+        return GainSlider::hitValue(hitResult.y, low, high);
     } else {
         return 0;
     }
@@ -148,28 +130,26 @@ void MeterPanel::drawPanelContents() {
 
     glGetIntegerv( GL_VIEWPORT, vp);
     
-    double viewHeight = vp[3];
+    double viewHeightPx = vp[3];
     
     CubicVR::vec4 t = CubicVR::mat4::vec4_multiply(CubicVR::vec4(0,0.5,0,1), transform);
     CubicVR::vec4 b = CubicVR::mat4::vec4_multiply(CubicVR::vec4(0,-0.5,0,1), transform);
     
     double hScale = t.y-b.y;
     
-    viewHeight = viewHeight * hScale;
-    
     double labelHeight = GLFont::getScaledPx(18, GLFont::getScaleFactor());
-    double labelPad = 8.0;
     
-    double pScale = (1.0/viewHeight);
+    GainSlider::LabelLayout layout = GainSlider::meterLabelLayout(viewHeightPx, hScale, labelHeight);
+    
     RGBA4f c1, c2;
+
+    bgPanel.setSize(1.0f, layout.bgH);
     
-    bgPanel.setSize(1.0f, 1.0 - pScale * (labelHeight + labelPad * 2.0));
+    valuePanel.setPosition(0.0, layout.valY);
+    valuePanel.setSize(1.0, layout.valH);
     
-    valuePanel.setPosition(0.0, (pScale * (labelHeight / 2.0 + labelPad) ) - 1.0);
-    valuePanel.setSize(1.0, pScale*labelHeight);
-    
-    labelPanel.setPosition(0.0, 1.0 - (pScale * (labelHeight / 2.0 + labelPad)));
-    labelPanel.setSize(1.0, pScale*labelHeight);
+    labelPanel.setPosition(0.0, layout.labY);
+    labelPanel.setSize(1.0, layout.labH);
 
     c1 = ThemeMgr::mgr.currentTheme->generalBackground;
     c2 = ThemeMgr::mgr.currentTheme->generalBackground * 0.5;
@@ -195,7 +175,7 @@ void MeterPanel::setValueLabel(std::string label) {
 }
 
 void MeterPanel::setPanelLevel(float setValue, GLPanel &panel) const {
-    float valueNorm = (setValue - low) / (high - low);
+    float valueNorm = GainSlider::levelNorm(setValue, low, high);
     panel.setSize(1.0, valueNorm);
     panel.setPosition(0.0, (-1.0+(valueNorm)));
 }
