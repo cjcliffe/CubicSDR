@@ -40,6 +40,7 @@ add_executable(cubicsdr_tests
     test_SplitUtil.cpp
     test_ColorTheme.cpp
     test_DemodMarkers.cpp
+    test_SpectrumTicks.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Gradient.cpp
     ${PROJECT_SOURCE_DIR}/src/util/DataTree.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Timer.cpp

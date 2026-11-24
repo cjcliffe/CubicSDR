@@ -8,6 +8,7 @@
 #include "CubicSDR.h"
 #include "ColorTheme.h"
 #include "CubicSDRDefs.h"
+#include "SpectrumTicks.h"
 
 SpectrumPanel::SpectrumPanel() {
     floorValue = 0;
@@ -194,115 +195,22 @@ void SpectrumPanel::drawPanelContents() {
     float viewHeight = (float) vp[3];
     float viewWidth = (float) vp[2];
     glLoadMatrixf(transform.to_ptr());
-
     
-    long long leftFreq = (double) freq - ((double) bandwidth / 2.0);
-    long long rightFreq = leftFreq + (double) bandwidth;
-
-    long long hzStep = 1000000;
+    SpectrumTicks::AxisGeometry axis = SpectrumTicks::axisGeometry(freq, bandwidth, viewWidth, viewHeight, GLFont::getScaleFactor());
     
-    long double mhzStep = (100000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
-    double mhzVisualStep = 0.1;
-
-    std::stringstream label;
-    label.precision(1);
-
-    double fontScale = GLFont::getScaleFactor();
-
-    if (mhzStep * 0.5 * viewWidth < 40 * fontScale) {
-        mhzStep = (250000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
-        mhzVisualStep = 0.25;
-
-        if (mhzStep * 0.5 * viewWidth < 40 * fontScale) {
-            mhzStep = (500000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
-            mhzVisualStep = 0.5;
-        }
-
-        if (mhzStep * 0.5 * viewWidth < 40 * fontScale) {
-            mhzStep = (1000000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
-            mhzVisualStep = 1.0;
-        }
-        
-        if (mhzStep * 0.5 * viewWidth < 40 * fontScale) {
-            mhzStep = (2500000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
-            mhzVisualStep = 2.5;
-        }
-        
-        if (mhzStep * 0.5 * viewWidth < 40 * fontScale) {
-            mhzStep = (5000000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
-            mhzVisualStep = 5.0;
-        }
-
-        if (mhzStep * 0.5 * viewWidth < 40 * fontScale) {
-            mhzStep = (10000000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
-            mhzVisualStep = 10.0;
-        }
-
-        if (mhzStep * 0.5 * viewWidth < 40 * fontScale) {
-            mhzStep = (50000000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
-            mhzVisualStep = 50.0;
-        }
-    } else if (mhzStep * 0.5 * viewWidth > 350 * fontScale) {
-        mhzStep = (10000.0 / (long double) (rightFreq - leftFreq)) * 2.0;
-        mhzVisualStep = 0.01;
-        label.precision(2);
-    }
-    
-    long long firstMhz = (leftFreq / hzStep) * hzStep;
-    long double mhzStart = ((long double) (firstMhz - leftFreq) / (long double) (rightFreq - leftFreq)) * 2.0;
-    long double currentMhz = trunc(floor(firstMhz / (long double)1000000.0));
-    
-    
-    double hPos = 1.0 - (16.0 / viewHeight) *  GLFont::getScaleFactor();
-    double lMhzPos = 1.0 - (5.0 / viewHeight);
-    
-    int fontSize = 12;
-    
-    if (viewHeight > 135) {
-
-        fontSize = 16;
-        hPos = 1.0 - (18.0 / viewHeight) *  GLFont::getScaleFactor();
-    }
-    
-    GLFont::Drawer refDrawingFont = GLFont::getFont(fontSize, GLFont::getScaleFactor());
+    GLFont::Drawer refDrawingFont = GLFont::getFont(axis.fontSize, GLFont::getScaleFactor());
 
     std::vector<float> majorTicks, minorTicks;
-    for (double m = -1.0 + mhzStart, mMax = 1.0 + ((mhzStart>0)?mhzStart:-mhzStart); m <= mMax; m += mhzStep) {
-        if (m < -1.0) {
-            currentMhz += mhzVisualStep;
-            continue;
-        }
-        if (m > 1.0) {
-            break;
-        }
-        //Axis labels stop at zero; the 0.0 tick marks the edge of real spectrum.
-        if (currentMhz < -1e-9) {
-            currentMhz += mhzVisualStep;
-            continue;
-        }
-        //Snap float residue and negative zero so the boundary reads 0.0.
-        if (currentMhz < 1e-9) {
-            currentMhz = 0.0;
-        }
-        label << std::fixed << currentMhz;
-        
-        double fractpart, intpart;
-        
-        fractpart = modf(currentMhz, &intpart);
-        
-        std::vector<float> &tickVerts = (fractpart < 0.001) ? majorTicks : minorTicks;
-        tickVerts.push_back((float)m);
-        tickVerts.push_back((float)lMhzPos);
-        tickVerts.push_back((float)m);
+    for (auto &tick : axis.ticks) {
+        std::vector<float> &tickVerts = tick.major ? majorTicks : minorTicks;
+        tickVerts.push_back((float)tick.x);
+        tickVerts.push_back((float)axis.tickBase);
+        tickVerts.push_back((float)tick.x);
         tickVerts.push_back(1.0f);
         
-        glColor4f(ThemeMgr::mgr.currentTheme->text.r, ThemeMgr::mgr.currentTheme->text.g, ThemeMgr::mgr.currentTheme->text.b,1.0);
+        glColor4f(ThemeMgr::mgr.currentTheme->text.r, ThemeMgr::mgr.currentTheme->text.g, ThemeMgr::mgr.currentTheme->text.b, 1.0);
         
-        refDrawingFont.drawString(label.str(), m, hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
-        
-        label.str(std::string());
-        
-        currentMhz += mhzVisualStep;
+        refDrawingFont.drawString(tick.label, tick.x, axis.hPos, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER, 0, 0, true);
     }
     
     glDisable(GL_TEXTURE_2D);
@@ -327,21 +235,12 @@ void SpectrumPanel::drawPanelContents() {
         float dbPanelHeight = (1.0/viewHeight)*14.0 * GLFont::getScaleFactor();
         float dbOfs = useDbOfs?wxGetApp().getConfig()->getDBOffset():0;
         
-        std::stringstream ssLabel("");
-        if (getCeilValue() != getFloorValue() && fftSize) {
-            ssLabel << std::fixed << std::setprecision(1) << (dbOfs + 20.0 * log10(2.0*(getCeilValue())/(double)fftSize)) << "dB";
-        }
-        dbPanelCeil.setText(ssLabel.str(), GLFont::GLFONT_ALIGN_RIGHT);
+        SpectrumTicks::DbLabels db = SpectrumTicks::dbLabels(getCeilValue(), getFloorValue(), fftSize, dbOfs);
+        dbPanelCeil.setText(db.ceil, GLFont::GLFONT_ALIGN_RIGHT);
         dbPanelCeil.setSize(dbPanelWidth, dbPanelHeight);
         dbPanelCeil.setPosition(-1.0 + dbPanelWidth, 1.0 - dbPanelHeight);
-
         
-        ssLabel.str("");
-        if (getCeilValue() != getFloorValue() && fftSize) {
-            ssLabel <<  (dbOfs + 20.0 * log10(2.0*(getFloorValue())/(double)fftSize)) << "dB";
-        }
-
-        dbPanelFloor.setText(ssLabel.str(), GLFont::GLFONT_ALIGN_RIGHT);
+        dbPanelFloor.setText(db.floor, GLFont::GLFONT_ALIGN_RIGHT);
         dbPanelFloor.setSize(dbPanelWidth, dbPanelHeight);
         dbPanelFloor.setPosition(-1.0 + dbPanelWidth, - 1.0 + dbPanelHeight);
     }
