@@ -100,6 +100,7 @@ private:
     
     msresamp_crcf resampler;
     double resamplerRatio;
+    double builtResampleRatio;
     nco_crcf freqShifter;
     long shiftFrequency;
     
