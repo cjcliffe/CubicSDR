@@ -41,6 +41,7 @@ add_executable(cubicsdr_tests
     test_ColorTheme.cpp
     test_DemodMarkers.cpp
     test_SpectrumTicks.cpp
+    test_TunerStep.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Gradient.cpp
     ${PROJECT_SOURCE_DIR}/src/util/DataTree.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Timer.cpp
