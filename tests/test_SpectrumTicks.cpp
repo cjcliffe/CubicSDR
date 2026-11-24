@@ -108,4 +108,48 @@ TEST_SUITE("SpectrumTicks") {
         CHECK(noFft.ceil.empty());
         CHECK(noFft.floor.empty());
     }
+
+    TEST_CASE("small ranges use unit steps at full alpha") {
+        GridGeometry geo = gridGeometry(0.0f, 10.0f);
+        CHECK(geo.bands.size() == 1);
+        CHECK(geo.bands[0].alpha == 1.0);
+        CHECK(geo.bands[0].verts.size() == 48);
+        CHECK(geo.bands[0].verts[0] == 0.0f);
+        CHECK(geo.bands[0].verts[1] == doctest::Approx(0.1f));
+        CHECK(geo.bands[0].verts[2] == 1.0f);
+        CHECK(geo.bands[0].verts[5] == doctest::Approx(0.2f));
+        CHECK(geo.bands[0].verts.back() == doctest::Approx(1.2f));
+        for (size_t k = 0; k < geo.bands[0].verts.size() / 4; k++) {
+            CHECK(geo.bands[0].verts[k * 4] == 0.0f);
+            CHECK(geo.bands[0].verts[k * 4 + 2] == 1.0f);
+            CHECK(geo.bands[0].verts[k * 4 + 1] == geo.bands[0].verts[k * 4 + 3]);
+        }
+    }
+
+    TEST_CASE("large ranges use hundred steps") {
+        GridGeometry geo = gridGeometry(0.0f, 1000.0f);
+        CHECK(geo.bands.size() == 1);
+        CHECK(geo.bands[0].alpha == 1.0);
+        CHECK(geo.bands[0].verts.size() == 48);
+        CHECK(geo.bands[0].verts[1] == doctest::Approx(0.1f));
+    }
+
+    TEST_CASE("alpha fades near band edges") {
+        GridGeometry low = gridGeometry(0.0f, 95.0f);
+        CHECK(low.bands.size() == 2);
+        CHECK(low.bands[0].alpha == doctest::Approx(0.5));
+        CHECK(low.bands[1].alpha == 1.0);
+        CHECK(low.bands[0].verts.size() == 8);
+        GridGeometry high = gridGeometry(0.0f, 145.0f);
+        CHECK(high.bands.size() == 2);
+        CHECK(high.bands[0].alpha == 1.0);
+        CHECK(high.bands[1].alpha == doctest::Approx(0.5));
+        GridGeometry edge = gridGeometry(0.0f, 90.0f);
+        CHECK(edge.bands.size() == 2);
+        CHECK(edge.bands[0].alpha == 0.0);
+    }
+
+    TEST_CASE("out-of-range yields no bands") {
+        CHECK(gridGeometry(0.0f, 6000.0f).empty());
+    }
 }

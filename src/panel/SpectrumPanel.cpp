@@ -124,40 +124,13 @@ void SpectrumPanel::drawPanelContents() {
 
     if (!points.empty()) {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-        double range = ceilValue-floorValue;
-        double ranges[3][4] = { { 90.0, 5000.0, 10.0, 100.0 }, { 20.0, 150.0, 10.0, 10.0 }, { -20.0, 30.0, 10.0, 1.0 } };
-        
+        SpectrumTicks::GridGeometry grid = SpectrumTicks::gridGeometry(floorValue, ceilValue);
         glEnableClientState(GL_VERTEX_ARRAY);
-        for (auto & i : ranges) {
-            double p = 0;
-            double rangeMin = i[0];
-            double rangeMax = i[1];
-            double rangeTrans = i[2];
-            double rangeStep = i[3];
-            
-            if (range >= rangeMin && range <= rangeMax) {
-                double a = 1.0;
-                
-                if (range <= rangeMin+rangeTrans) {
-                    a *= (range-rangeMin)/rangeTrans;
-                }
-                if (range >= rangeMax-rangeTrans) {
-                    a *= (rangeTrans-(range-(rangeMax-rangeTrans)))/rangeTrans;
-                }
-                
-                std::vector<float> gridVerts;
-                for (double l = floorValue; l<=ceilValue+rangeStep; l+=rangeStep) {
-                    p += rangeStep/range;
-                    gridVerts.push_back(0.0f);
-                    gridVerts.push_back((float)p);
-                    gridVerts.push_back(1.0f);
-                    gridVerts.push_back((float)p);
-                }
-                if (!gridVerts.empty()) {
-                    glColor4f(0.12f, 0.12f, 0.12f, a);
-                    glVertexPointer(2, GL_FLOAT, 0, &gridVerts[0]);
-                    glDrawArrays(GL_LINES, 0, gridVerts.size() / 2);
-                }
+        for (auto &band : grid.bands) {
+            if (!band.verts.empty()) {
+                glColor4f(0.12f, 0.12f, 0.12f, band.alpha);
+                glVertexPointer(2, GL_FLOAT, 0, &band.verts[0]);
+                glDrawArrays(GL_LINES, 0, band.verts.size() / 2);
             }
         }
         

@@ -157,4 +157,52 @@ inline DbLabels dbLabels(double ceilValue, double floorValue, int fftSize, doubl
     return labels;
 }
 
+struct GridBand {
+    double alpha = 1.0;
+    std::vector<float> verts;
+};
+
+struct GridGeometry {
+    std::vector<GridBand> bands;
+    bool empty() const {
+        return bands.empty();
+    }
+};
+
+inline GridGeometry gridGeometry(float floorValue, float ceilValue) {
+    GridGeometry geo;
+    double range = ceilValue - floorValue;
+    double ranges[3][4] = { { 90.0, 5000.0, 10.0, 100.0 }, { 20.0, 150.0, 10.0, 10.0 }, { -20.0, 30.0, 10.0, 1.0 } };
+    for (auto & i : ranges) {
+        double rangeMin = i[0];
+        double rangeMax = i[1];
+        double rangeTrans = i[2];
+        double rangeStep = i[3];
+
+        if (range >= rangeMin && range <= rangeMax) {
+            GridBand band;
+            double p = 0;
+            double a = 1.0;
+
+            if (range <= rangeMin + rangeTrans) {
+                a *= (range - rangeMin) / rangeTrans;
+            }
+            if (range >= rangeMax - rangeTrans) {
+                a *= (rangeTrans - (range - (rangeMax - rangeTrans))) / rangeTrans;
+            }
+            band.alpha = a;
+
+            for (double l = floorValue; l <= ceilValue + rangeStep; l += rangeStep) {
+                p += rangeStep / range;
+                band.verts.push_back(0.0f);
+                band.verts.push_back((float)p);
+                band.verts.push_back(1.0f);
+                band.verts.push_back((float)p);
+            }
+            geo.bands.push_back(band);
+        }
+    }
+    return geo;
+}
+
 }
