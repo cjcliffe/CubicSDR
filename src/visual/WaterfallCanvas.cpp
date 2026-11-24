@@ -26,6 +26,7 @@
 #include <wx/numformatter.h>
 
 #include "DemodulatorThread.h"
+#include "WaterfallDrag.h"
 #include "WaterfallHover.h"
 
 wxBEGIN_EVENT_TABLE(WaterfallCanvas, wxGLCanvas)
@@ -575,21 +576,8 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
         }
         if (dragState == WF_DRAG_BANDWIDTH_LEFT || dragState == WF_DRAG_BANDWIDTH_RIGHT) {
 
-            int bwDiff = (int) (mouseTracker.getDeltaMouseX() * (float) getBandwidth()) * 2;
-
-            if (dragState == WF_DRAG_BANDWIDTH_LEFT) {
-                bwDiff = -bwDiff;
-            }
-
-            int currentBW = dragBW;
-
-            currentBW = currentBW + bwDiff;
-            if (currentBW > CHANNELIZER_RATE_MAX) {
-                currentBW = CHANNELIZER_RATE_MAX;
-            }
-            if (currentBW < MIN_BANDWIDTH) {
-                currentBW = MIN_BANDWIDTH;
-            }
+            int currentBW = WaterfallDrag::bandwidthDragStep(mouseTracker.getDeltaMouseX(), getBandwidth(), dragState == WF_DRAG_BANDWIDTH_LEFT,
+                dragBW, MIN_BANDWIDTH, CHANNELIZER_RATE_MAX);
 
             demod->setBandwidth(currentBW);
             dragBW = currentBW;
@@ -598,12 +586,7 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
         if (dragState == WF_DRAG_FREQUENCY) {
             long long bwTarget = getFrequencyAt(mouseTracker.getMouseX()) - dragOfs;
             long long currentFreq = demod->getFrequency();
-            long long bwDiff = bwTarget - currentFreq;
-            int snap = wxGetApp().getFrequencySnap();
-
-            if (snap > 1) {
-                bwDiff = roundf((float)bwDiff/(float)snap)*snap;
-            }
+            long long bwDiff = WaterfallDrag::snapDelta(bwTarget - currentFreq, wxGetApp().getFrequencySnap());
 
             if (bwDiff) {
                 demod->setFrequency(pinDemodCenter(currentFreq + bwDiff, getCenterFrequency(), getBandwidth()));
@@ -627,8 +610,7 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
         // at the current bandwidth.
         int height = GetClientSize().y;
         if (height > 0) {
-            float offset = (float)(midZoomStartY - event.m_y) / (float)height;
-            zoom = 1.0f - offset * (float)fabs(offset) * 0.2f;
+            zoom = WaterfallDrag::glideZoom(midZoomStartY, event.m_y, height);
         }
     } else {
         updateHoverState();
@@ -646,7 +628,7 @@ void WaterfallCanvas::OnMouseDown(wxMouseEvent& event) {
         wxGetApp().getDemodMgr().setActiveDemodulator(hoverDemod ? hoverDemod : wxGetApp().getDemodMgr().getCurrentModem());
         auto demod = wxGetApp().getDemodMgr().getCurrentModem();
         if (demod) {
-            dragOfs = (long long) (mouseTracker.getMouseX() * (float) getBandwidth()) + getCenterFrequency() - (getBandwidth() / 2) - demod->getFrequency();
+            dragOfs = WaterfallDrag::dragOffset(mouseTracker.getMouseX(), getBandwidth(), getCenterFrequency(), demod->getFrequency());
             dragBW = demod->getBandwidth();
         }
     }
@@ -654,11 +636,7 @@ void WaterfallCanvas::OnMouseDown(wxMouseEvent& event) {
 
 void WaterfallCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseWheelMoved(event);
-    int wheelDelta = event.GetWheelDelta() ? event.GetWheelDelta() : 120;
-    float notches = (float)event.GetWheelRotation() / (float)wheelDelta;
-    float movement = notches * 40.0f;
-
-    mouseZoom = 1.0f - movement/1000.0f;
+    mouseZoom = WaterfallDrag::wheelZoom(event.GetWheelRotation(), event.GetWheelDelta());
 }
 
 void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
