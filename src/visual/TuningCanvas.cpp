@@ -17,6 +17,7 @@
 #include "CubicSDRDefs.h"
 #include "TuneRange.h"
 #include "AppFrame.h"
+#include "TunerStep.h"
 #include <algorithm>
 
 wxBEGIN_EVENT_TABLE(TuningCanvas, wxGLCanvas) EVT_PAINT(TuningCanvas::OnPaint)
@@ -153,28 +154,19 @@ void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
  * @param zeroOut   Zero out 'digit' and lower digits
  */
 void TuningCanvas::StepTuner(ActiveState state, TuningDirection tuningDir, int digit, bool preventCarry, bool zeroOut) {
-    double exp = pow(10, digit);
-    long long amount = tuningDir ? exp : -exp;
-
-    if (halfBand && state == TUNING_HOVER_BW) {
-        amount *= 2;
-    }
-    
     auto activeDemod = wxGetApp().getDemodMgr().getCurrentModem();
     if (state == TUNING_HOVER_FREQ && activeDemod) {
         long long demod_freq = activeDemod->getFrequency();
         long long diff = abs(wxGetApp().getFrequency() - demod_freq);
 
-        if (zeroOut) { // Zero digits to right
-            double intpart;
-            (void)modf(demod_freq / (exp * 10), &intpart);
-            demod_freq = intpart * exp * 10;
-        } else if (preventCarry) { // Prevent digit from carrying
-            bool carried = (long long)((demod_freq) / (exp * 10)) != (long long)((demod_freq + amount) / (exp * 10)) || (bottom && demod_freq < exp);
-            demod_freq += carried ? (9 * -amount) : amount;
-        } else {
-            demod_freq += amount;
-        }
+        TunerStep::StepInput step;
+        step.value = demod_freq;
+        step.digit = digit;
+        step.up = (tuningDir == TUNING_DIRECTION_UP);
+        step.preventCarry = preventCarry;
+        step.zeroOut = zeroOut;
+        step.bottom = bottom;
+        demod_freq = TunerStep::stepDigit(step);
 
         //Pin the stepped frequency into the view like a drag does; past the
         //data window the post thread would deactivate the demod.
@@ -200,16 +192,15 @@ void TuningCanvas::StepTuner(ActiveState state, TuningDirection tuningDir, int d
     if (state == TUNING_HOVER_BW) {
         long nbw = wxGetApp().getDemodMgr().getLastBandwidth();
 
-        if (zeroOut) { // Zero digits to right
-            double intpart;
-            (void)modf(nbw / (exp * 10), &intpart);
-            nbw = intpart * exp * 10;
-        } else if (preventCarry) { // Prevent digit from carrying
-            bool carried = (long)((nbw) / (exp * 10)) != (long)((nbw + amount) / (exp * 10)) || (bottom && nbw < exp);
-            nbw += carried ? (9 * -amount) : amount;
-        } else {
-            nbw += amount;
-        }
+        TunerStep::StepInput step;
+        step.value = nbw;
+        step.digit = digit;
+        step.up = (tuningDir == TUNING_DIRECTION_UP);
+        step.preventCarry = preventCarry;
+        step.zeroOut = zeroOut;
+        step.doubleAmount = halfBand;
+        step.bottom = bottom;
+        nbw = (long)TunerStep::stepDigit(step);
 
         if (nbw > CHANNELIZER_RATE_MAX) {
             nbw = CHANNELIZER_RATE_MAX;
@@ -224,27 +215,26 @@ void TuningCanvas::StepTuner(ActiveState state, TuningDirection tuningDir, int d
 
     if (state == TUNING_HOVER_CENTER) {
         long long ctr = wxGetApp().getFrequency();
-        if (zeroOut) { // Zero digits to right
-            double intpart;
-            (void)modf(ctr / (exp * 10), &intpart);
-            ctr = intpart * exp * 10;
-        } else if (preventCarry) { // Prevent digit from carrying
-            bool carried = (long long)((ctr) / (exp * 10)) != (long long)((ctr + amount) / (exp * 10)) || (bottom && ctr < exp);
-            ctr += carried?(9*-amount):amount;
-        } else {
-            ctr += amount;
-        }
+        TunerStep::StepInput step;
+        step.value = ctr;
+        step.digit = digit;
+        step.up = (tuningDir == TUNING_DIRECTION_UP);
+        step.preventCarry = preventCarry;
+        step.zeroOut = zeroOut;
+        step.bottom = bottom;
+        ctr = TunerStep::stepDigit(step);
 
         wxGetApp().setFrequency(ctr);
     }
 
     if (state == TUNING_HOVER_PPM) {
-        if (preventCarry) {
-            bool carried = (long long)((currentPPM) / (exp * 10)) != (long long)((currentPPM + amount) / (exp * 10)) || (bottom && currentPPM < exp);
-            currentPPM += carried?(9*-amount):amount;
-        } else {
-            currentPPM += amount;
-        }
+        TunerStep::StepInput step;
+        step.value = currentPPM;
+        step.digit = digit;
+        step.up = (tuningDir == TUNING_DIRECTION_UP);
+        step.preventCarry = preventCarry;
+        step.bottom = bottom;
+        currentPPM = (int)TunerStep::stepDigit(step);
 
         if (currentPPM > 2000) {
             currentPPM = 2000;
@@ -263,14 +253,14 @@ void TuningCanvas::frameUpdate() {
     if (mouseTracker.mouseDown()) {
         if (downState != TUNING_HOVER_NONE) {
             dragAccum += 5.0*mouseTracker.getOriginDeltaMouseX();
-            while (dragAccum > 1.0) {
+            TunerStep::DragSteps drag = TunerStep::dragSteps(dragAccum);
+            dragAccum = drag.rest;
+            for (int i = 0; i < drag.up; i++) {
                 StepTuner(downState, TUNING_DIRECTION_UP, downIndex - 1, shiftDown, false);
-                dragAccum -= 1.0;
                 dragging = true;
             }
-            while (dragAccum < -1.0) {
+            for (int i = 0; i < drag.down; i++) {
                 StepTuner(downState, TUNING_DIRECTION_DOWN, downIndex - 1, shiftDown, false);
-                dragAccum += 1.0;
                 dragging = true;
             }
         } else {
@@ -374,10 +364,10 @@ void TuningCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
         bool vertical = (event.m_wheelAxis == wxMOUSE_WHEEL_VERTICAL);
         int *accum = vertical ? &wheelAccumV : &wheelAccumH;
         int delta = event.m_wheelDelta ? event.m_wheelDelta : 120;
-        *accum += event.m_wheelRotation;
-        int steps = *accum / delta;
+        TunerStep::WheelSteps wheel = TunerStep::wheelSteps(*accum, event.m_wheelRotation, delta);
+        *accum = wheel.rest;
+        int steps = wheel.steps;
         if (steps != 0) {
-            *accum -= steps * delta;
             TuningDirection dir;
             if (vertical) {
                 dir = (steps > 0) ? TUNING_DIRECTION_UP : TUNING_DIRECTION_DOWN;
