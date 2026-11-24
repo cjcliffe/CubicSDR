@@ -24,6 +24,7 @@ SpectrumVisualProcessor::SpectrumVisualProcessor() : outputBuffers("SpectrumVisu
     lastDataSize = 0;
     resampler = nullptr;
     resamplerRatio = 0;
+    builtResampleRatio = 0;
 
     fftInput = nullptr;
     fftOutput = nullptr;
@@ -311,7 +312,7 @@ void SpectrumVisualProcessor::process() {
     std::vector<liquid_float_complex> *data = &iqData->data;
     
     if (data && !data->empty()) {
-        unsigned int num_written;
+        unsigned int num_written = 0;
         long resampleBw = iqData->sampleRate;
         bool newResampler = false;
         int bwDiff = 0;
@@ -390,7 +391,7 @@ void SpectrumVisualProcessor::process() {
             bool resampleChanged = !resampler || resampleBw != lastBandwidth || lastInputBandwidth != iqData->sampleRate;
             // Recreation waits out the throttle window mid-gesture; a pending
             // change retries on a later frame once the window elapses.
-            if (resampleChanged && resampleGate.shouldFire(steadyClockMs(), SPECTRUM_RESAMPLE_MIN_INTERVAL_MS)) {
+            if (!resampler || (resampleChanged && resampleGate.shouldFire(steadyClockMs(), SPECTRUM_RESAMPLE_MIN_INTERVAL_MS))) {
                 float As = 60.0;
                 
                 if (resampler) {
@@ -398,6 +399,7 @@ void SpectrumVisualProcessor::process() {
                 }
                 
                 resampler = msresamp_crcf_create(resamplerRatio, As);
+                builtResampleRatio = resamplerRatio;
                 
                 bwDiff = resampleBw-lastBandwidth;
                 lastBandwidth = resampleBw;
@@ -406,7 +408,8 @@ void SpectrumVisualProcessor::process() {
                 peakReset = PEAK_RESET_COUNT;
             }
              
-            unsigned int out_size = ceil((double) (desired_input_size) * resamplerRatio) + 512;
+            // Size for the built object: the throttle can hold a stale resampler while the view rate moves on.
+            unsigned int out_size = ceil((double) (desired_input_size) * builtResampleRatio) + 512;
             
             if (resampleBuffer.size() != out_size) {
                 if (resampleBuffer.capacity() < out_size) {
@@ -415,7 +418,11 @@ void SpectrumVisualProcessor::process() {
                 resampleBuffer.resize(out_size);
             }
             
-            msresamp_crcf_execute(resampler, &shiftBuffer[0], desired_input_size, &resampleBuffer[0], &num_written);
+            if (resampler) {
+                msresamp_crcf_execute(resampler, &shiftBuffer[0], desired_input_size, &resampleBuffer[0], &num_written);
+            } else {
+                num_written = 0;
+            }
             
             if (num_written < fftSizeInternal) {
                 memcpy(fftInData, resampleBuffer.data(), num_written * sizeof(liquid_float_complex));
