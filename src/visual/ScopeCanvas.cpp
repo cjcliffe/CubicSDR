@@ -16,6 +16,7 @@
 #include "CubicSDR.h"
 #include <algorithm>
 #include <cmath>
+#include "ScopeCarousel.h"
 
 
 wxBEGIN_EVENT_TABLE(ScopeCanvas, wxGLCanvas) EVT_PAINT(ScopeCanvas::OnPaint)
@@ -28,7 +29,7 @@ EVT_LEAVE_WINDOW(ScopeCanvas::OnMouseLeftWindow)
 EVT_ENTER_WINDOW(ScopeCanvas::OnMouseEnterWindow)
 wxEND_EVENT_TABLE()
 
-ScopeCanvas::ScopeCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) : InteractiveCanvas(parent, dispAttrs), ppmMode(false), ctr(0), ctrTarget(0), dragAccel(0) {
+ScopeCanvas::ScopeCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) : InteractiveCanvas(parent, dispAttrs), ppmMode(false) {
 
     glContext = new ScopeContext(this, &wxGetApp().GetContext(this), wxGetApp().GetContextAttributes());
     inputData->set_max_num_items(2);
@@ -51,27 +52,11 @@ ScopeCanvas::ScopeCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) : In
 ScopeCanvas::~ScopeCanvas() = default;
 
 bool ScopeCanvas::scopeVisible() {
-    float panelInterval = (2.0 + panelSpacing);
-    
-    ctrTarget = abs(round(ctr / panelInterval));
-
-    if (ctrTarget == 0 || dragAccel || (ctr != ctrTarget)) {
-        return true;
-    }
-    
-    return false;
+    return ScopeCarousel::scopeVisibleStep(carousel, panelSpacing);
 }
 
 bool ScopeCanvas::spectrumVisible() {
-    float panelInterval = (2.0 + panelSpacing);
-    
-    ctrTarget = abs(round(ctr / panelInterval));
- 
-    if (ctrTarget == 1 || dragAccel || (ctr != ctrTarget)) {
-        return true;
-    }
-    
-    return false;
+    return ScopeCarousel::spectrumVisibleStep(carousel, panelSpacing);
 }
 
 void ScopeCanvas::setDeviceName(std::string device_name) {
@@ -149,51 +134,24 @@ void ScopeCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     
     CubicVR::mat4 modelView = CubicVR::mat4::lookat(0, 0, -1.205f, 0, 0, 0, 0, -1, 0);
 
-    float panelWidth = 1.0;
-    float panelInterval = (panelWidth * 2.0 + panelSpacing);
+    float panelInterval = ScopeCarousel::carouselInterval(panelSpacing);
 
-    if (!mouseTracker.mouseDown()) {
-        ctrTarget = round(ctr / panelInterval);
-        if (ctrTarget < -1.0) {
-            ctrTarget = -1.0;
-        } else if (ctrTarget > 0.0) {
-            ctrTarget = 0.0;
-        }
-        ctrTarget *= panelInterval;
-        if (!dragAccel) {
-            if (ctr != ctrTarget) {
-                ctr += (ctrTarget-ctr)*0.2;
-            }
-            if (abs(ctr - ctrTarget) < 0.001) {
-                ctr=ctrTarget;
-            }
-        } else {
-            dragAccel -= dragAccel * 0.1;
-            if ((abs(dragAccel) < 0.2) || (ctr < (ctrTarget-panelInterval/2.0)) || (ctr > (ctrTarget+panelInterval/2.0)) ) {
-                dragAccel = 0;
-            } else {
-                ctr += dragAccel;
-            }
-        }
-    }
+    ScopeCarousel::restStep(carousel, panelSpacing, mouseTracker.mouseDown());
 
-    float roty = 0;
     
-    scopePanel.setPosition(ctr, 0);
+    scopePanel.setPosition(carousel.ctr, 0);
     if (scopeVisible()) {
         scopePanel.contentsVisible = true;
-        roty = atan2(scopePanel.pos[0],1.2);
-        scopePanel.rot[1] = -(roty * (180.0 / M_PI));
+        scopePanel.rot[1] = ScopeCarousel::panelTiltDeg(scopePanel.pos[0]);
     } else {
         scopePanel.contentsVisible = false;
     }
     
-    spectrumPanel.setPosition(panelInterval+ctr, 0);
+    spectrumPanel.setPosition(panelInterval+carousel.ctr, 0);
     if (spectrumVisible()) {
         spectrumPanel.setFillColor(ThemeMgr::mgr.currentTheme->scopeBackground * 2.0, RGBA4f(0,0,0,1));
         spectrumPanel.contentsVisible = true;
-        roty = atan2(spectrumPanel.pos[0],1.2);
-        spectrumPanel.rot[1] = -(roty * (180.0 / M_PI));
+        spectrumPanel.rot[1] = ScopeCarousel::panelTiltDeg(spectrumPanel.pos[0]);
     } else {
         spectrumPanel.contentsVisible = false;
     }
@@ -234,8 +192,7 @@ ScopeRenderDataQueuePtr ScopeCanvas::getInputQueue() {
 void ScopeCanvas::OnMouseMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseMoved(event);
     if (mouseTracker.mouseDown()) {
-        dragAccel = 4.0*mouseTracker.getDeltaMouseX();
-        ctr += dragAccel;
+        ScopeCarousel::dragStep(carousel, mouseTracker.getDeltaMouseX());
     }
 }
 
