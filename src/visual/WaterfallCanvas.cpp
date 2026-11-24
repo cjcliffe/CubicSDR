@@ -654,25 +654,8 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
     DemodulatorMgr *mgr = &wxGetApp().getDemodMgr();
 
     if (mouseTracker.getOriginDeltaMouseX() == 0 && mouseTracker.getOriginDeltaMouseY() == 0) {
-        float pos = mouseTracker.getMouseX();
-        long long input_center_freq = getCenterFrequency();
-        long long freqTarget = input_center_freq - (long long) (0.5 * (float) getBandwidth()) + (long long) ((float) pos * (float) getBandwidth());
-        long long demodFreq = demod?demod->getFrequency():freqTarget;
-        long long bwDiff = freqTarget - demodFreq;
-        long long freq = demodFreq;
-
-         int snap = wxGetApp().getFrequencySnap();
-
-         if (snap > 1) {
-             if (demod) {
-                 bwDiff = roundf((double)bwDiff/(double)snap)*snap;
-                 freq += bwDiff;
-             } else {
-                 freq = roundl((long double)freq/(double)snap)*snap;
-             }
-         } else {
-             freq += bwDiff;
-         }
+        long long freq = WaterfallDrag::clickPlaceFreq(mouseTracker.getMouseX(), getCenterFrequency(), getBandwidth(),
+            demod != nullptr, demod ? demod->getFrequency() : 0, wxGetApp().getFrequencySnap());
 
 
         if (dragState == WF_DRAG_NONE) {
@@ -735,47 +718,17 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
             }
         }
     } else if (dragState == WF_DRAG_RANGE) {
-        float width = mouseTracker.getOriginDeltaMouseX();
+        WaterfallDrag::RangeDrag range = WaterfallDrag::rangeDrag(mouseTracker.getOriginMouseX(), mouseTracker.getMouseX(),
+            mouseTracker.getOriginDeltaMouseX(), DemodMarkers::sidebandForType(mgr->getLastDemodulatorType()), getCenterFrequency(),
+            getBandwidth(), wxGetApp().getFrequencySnap(), MIN_BANDWIDTH);
 
-        float pos;
-        std::string last_type = mgr->getLastDemodulatorType();
-
-        if (last_type == "LSB" || last_type == "USB") {
-            float pos1 = mouseTracker.getOriginMouseX();
-            float pos2 = mouseTracker.getMouseX();
-
-            if (pos2 < pos1) {
-                float tmp = pos1;
-                pos1 = pos2;
-                pos2 = tmp;
-            }
-
-            pos = (last_type == "LSB")?pos2:pos1;
-            width *= 2;
-        } else {
-            pos = mouseTracker.getOriginMouseX() + width / 2.0;
-        }
-
-        long long input_center_freq = getCenterFrequency();
-        long long freq = input_center_freq - (long long) (0.5 * (float) getBandwidth()) + (long long) ((float) pos * (float) getBandwidth());
-        unsigned int bw = (unsigned int) (fabs(width) * (float) getBandwidth());
-
-        if (bw < MIN_BANDWIDTH) {
-            bw = MIN_BANDWIDTH;
-        }
-
-        if (!bw) {
+        if (!range.bandwidthHz) {
             dragState = WF_DRAG_NONE;
             return;
         }
 
-        int snap = wxGetApp().getFrequencySnap();
-
-        if (snap > 1) {
-            freq = roundl((long double)freq/(double)snap)*snap;
-        }
-
-        freq = pinDemodCenter(freq, getCenterFrequency(), getBandwidth());
+        long long freq = pinDemodCenter(range.freqHz, getCenterFrequency(), getBandwidth());
+        unsigned int bw = range.bandwidthHz;
 
         if (!isNew && !wxGetApp().getDemodMgr().getDemodulators().empty()) {
             mgr->updateLastState();

@@ -5,6 +5,7 @@
 #include "util/WaterfallDrag.h"
 
 using namespace WaterfallDrag;
+using DemodMarkers::Sideband;
 
 TEST_SUITE("WaterfallDrag") {
     TEST_CASE("bandwidth drag steps by full width") {
@@ -42,5 +43,42 @@ TEST_SUITE("WaterfallDrag") {
         CHECK(glideZoom(500, 600, 1000) == doctest::Approx(1.002).epsilon(1e-5));
         CHECK(glideZoom(500, 500, 1000) == 1.0f);
         CHECK(glideZoom(500, 300, 1000) == doctest::Approx(0.992).epsilon(1e-5));
+    }
+
+    TEST_CASE("click places frequency at pointer") {
+        CHECK(clickPlaceFreq(0.5f, 100000000, 2000000, false, 0, 0) == 100000000);
+        CHECK(clickPlaceFreq(0.75f, 100000000, 2000000, false, 0, 0) == 100500000);
+        CHECK(clickPlaceFreq(0.75f, 100000000, 2000000, true, 100000000, 1) == 100500000);
+    }
+
+    TEST_CASE("click snap rounds delta or absolute") {
+        CHECK(clickPlaceFreq(0.5008f, 100000000, 2000000, true, 100000000, 1000) == 100002000);
+        CHECK(clickPlaceFreq(0.5008f, 100000000, 2000000, false, 0, 1000) == 100002000);
+        CHECK(clickPlaceFreq(0.75f, 100000400, 2000000, false, 0, 1000) == 100500000);
+    }
+
+    TEST_CASE("range drag centers on midpoint") {
+        RangeDrag range = rangeDrag(0.25f, 0.75f, 0.5f, Sideband::Both, 100000000, 2000000, 0, 500);
+        CHECK(range.freqHz == 100000000);
+        CHECK(range.bandwidthHz == 1000000);
+    }
+
+    TEST_CASE("range drag pins sideband edge") {
+        RangeDrag lsb = rangeDrag(0.25f, 0.75f, 0.5f, Sideband::LowerOnly, 100000000, 2000000, 0, 500);
+        CHECK(lsb.freqHz == 100500000);
+        CHECK(lsb.bandwidthHz == 2000000);
+        RangeDrag usb = rangeDrag(0.75f, 0.25f, -0.5f, Sideband::UpperOnly, 100000000, 2000000, 0, 500);
+        CHECK(usb.freqHz == 99500000);
+        CHECK(usb.bandwidthHz == 2000000);
+    }
+
+    TEST_CASE("range drag clamps tiny widths and snaps") {
+        RangeDrag tiny = rangeDrag(0.5f, 0.5001f, 0.0001f, Sideband::Both, 100000000, 2000000, 0, 500);
+        CHECK(tiny.bandwidthHz == 500);
+        CHECK(tiny.freqHz > 100000000);
+        CHECK(tiny.freqHz < 100000200);
+        RangeDrag snapped = rangeDrag(0.25f, 0.75f, 0.5f, Sideband::Both, 100000400, 2000000, 1000, 500);
+        CHECK(snapped.freqHz == 100000000);
+        CHECK(snapped.bandwidthHz == 1000000);
     }
 }
