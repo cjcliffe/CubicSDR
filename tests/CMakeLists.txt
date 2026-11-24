@@ -44,6 +44,7 @@ add_executable(cubicsdr_tests
     test_TunerStep.cpp
     test_TunerLayout.cpp
     test_ModeSelector.cpp
+    test_WaterfallHover.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Gradient.cpp
     ${PROJECT_SOURCE_DIR}/src/util/DataTree.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Timer.cpp

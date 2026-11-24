@@ -26,6 +26,7 @@
 #include <wx/numformatter.h>
 
 #include "DemodulatorThread.h"
+#include "WaterfallHover.h"
 
 wxBEGIN_EVENT_TABLE(WaterfallCanvas, wxGLCanvas)
 EVT_PAINT(WaterfallCanvas::OnPaint)
@@ -512,72 +513,43 @@ void WaterfallCanvas::updateHoverState() {
             setStatusText("Click and drag to set the current demodulator range.");
         }
     } else if (!demodsHover.empty() && !shiftDown) {
-        long near_dist = getBandwidth();
-        
-        DemodulatorInstancePtr hover = nullptr;
-
+        std::vector<WaterfallHover::HoverCandidate> candidates;
         for (auto demod : demodsHover) {
-            long long freqDiff = demod->getFrequency() - freqPos;
-            long halfBw = (demod->getBandwidth() / 2);
-            long long currentBw = getBandwidth();
-            long long globalBw = wxGetApp().getSampleRate();
-            long dist = abs(freqDiff);
-            double bufferBw = 10000.0 * ((double)currentBw / (double)globalBw);
-            double maxDist = ((double)halfBw + bufferBw);
-            
-            if ((double)dist <= maxDist) {
-                if ((freqDiff > 0 && demod->getDemodulatorType() == "USB") ||
-                    (freqDiff < 0 && demod->getDemodulatorType() == "LSB")) {
-                    continue;
-                }
-
-                if (dist < near_dist) {
-                    hover = demod;
-                    near_dist = dist;
-                }
-
-                long edge_dist = abs(halfBw - dist);
-                if (edge_dist < near_dist) {
-                    hover = demod;
-                    near_dist = edge_dist;
-                }
-            }
+            WaterfallHover::HoverCandidate cand;
+            cand.freqHz = demod->getFrequency();
+            cand.bandwidthHz = demod->getBandwidth();
+            cand.sideband = DemodMarkers::sidebandForType(demod->getDemodulatorType());
+            candidates.push_back(cand);
         }
+        WaterfallHover::HoverPick pick = WaterfallHover::pickHover(candidates, freqPos, getBandwidth(), wxGetApp().getSampleRate());
         
-        if (hover == nullptr) {
+        if (pick.zone == WaterfallHover::DragZone::None) {
             nextDragState = WF_DRAG_NONE;
             SetCursor(wxCURSOR_CROSS);
             return;
         }
-
-        hoverDemod = hover;
-
-        long long freqDiff = hover->getFrequency() - freqPos;
-
-        if (abs(freqDiff) > (hover->getBandwidth() / 3)) {
-
-            if (freqDiff > 0) {
-                if (hover->getDemodulatorType() != "USB") {
-                    nextDragState = WF_DRAG_BANDWIDTH_LEFT;
-                    SetCursor(wxCURSOR_SIZEWE);
-                }
-            } else {
-                if (hover->getDemodulatorType() != "LSB") {
-                    nextDragState = WF_DRAG_BANDWIDTH_RIGHT;
-                    SetCursor(wxCURSOR_SIZEWE);
-                }
-            }
-            
-            mouseTracker.setVertDragLock(true);
-            mouseTracker.setHorizDragLock(false);
-            setStatusText("Drag to change bandwidth. SPACE/0-9 direct input. [, ] nudge, M mute, V pin, DEL delete, C center, E edit label, R record, TAB cycle selection.");
-        } else {
+        
+        hoverDemod = demodsHover[(size_t)pick.index];
+        
+        if (pick.zone == WaterfallHover::DragZone::Frequency) {
             SetCursor(wxCURSOR_SIZING);
             nextDragState = WF_DRAG_FREQUENCY;
             
             mouseTracker.setVertDragLock(true);
             mouseTracker.setHorizDragLock(false);
             setStatusText("Drag to change frequency. SPACE/0-9 direct input. [, ] nudge, M mute, V pin, DEL delete, C center, E edit label, R record, TAB cycle selection.");
+        } else {
+            if (pick.zone == WaterfallHover::DragZone::BandwidthLeft) {
+                nextDragState = WF_DRAG_BANDWIDTH_LEFT;
+                SetCursor(wxCURSOR_SIZEWE);
+            } else if (pick.zone == WaterfallHover::DragZone::BandwidthRight) {
+                nextDragState = WF_DRAG_BANDWIDTH_RIGHT;
+                SetCursor(wxCURSOR_SIZEWE);
+            }
+            
+            mouseTracker.setVertDragLock(true);
+            mouseTracker.setHorizDragLock(false);
+            setStatusText("Drag to change bandwidth. SPACE/0-9 direct input. [, ] nudge, M mute, V pin, DEL delete, C center, E edit label, R record, TAB cycle selection.");
         }
     }
     else {
