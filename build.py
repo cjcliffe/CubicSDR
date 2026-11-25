@@ -524,6 +524,9 @@ def parse_args(argv):
                         help="'default', 'all', 'none', or comma-separated module list")
     parser.add_argument("--skip-app", action="store_true",
                         help="build and stage modules only; skip the CubicSDR app")
+    parser.add_argument("--spike", default=None,
+                        help="build only the named experiment under spike/ "
+                        "(e.g. tuner) instead of the app")
     parser.add_argument("--build-deps", action="store_true",
                         help="build all dependencies from source instead of using system packages (Linux)")
     parser.add_argument("--package", default="none",
@@ -2792,6 +2795,32 @@ def build_appimage(args, dry_run=False):
              "LD_LIBRARY_PATH": os.path.join(prefix, "lib")})
 
 
+def build_spike(args, target, dry_run=False):
+    """Configure and build one experiment under spike/ (standalone project)."""
+    src = os.path.join(ROOT, "spike")
+    main_file = os.path.join(src, "%s_spike.cpp" % args.spike)
+    if not os.path.isfile(main_file):
+        sys.exit("error: unknown spike '%s' (no %s)" % (args.spike, main_file))
+    for prog in ["cmake", "git"]:
+        require(prog, dry_run)
+    build = os.path.join(ROOT, "build", "spike")
+    cmd = ["cmake", "-S", src, "-B", build]
+    if target == "windows":
+        cmd += ["-G", "Visual Studio 17 2022", "-A", args.arch]
+    else:
+        cmd += ["-DCMAKE_BUILD_TYPE=%s" % args.config]
+    run(cmd, dry_run=dry_run)
+    cmd = ["cmake", "--build", build, "--target", "%s_spike" % args.spike]
+    if target == "windows":
+        cmd += ["--config", args.config, "--parallel", str(args.jobs)]
+        exe = os.path.join(build, args.config, "%s_spike.exe" % args.spike)
+    else:
+        cmd += ["-j", str(args.jobs)]
+        exe = os.path.join(build, "%s_spike" % args.spike)
+    run(cmd, dry_run=dry_run)
+    log("spike binary: %s" % exe)
+
+
 def clean(target, dry_run=False):
     """Remove the whole build tree, including the dependency prefix."""
     path = os.path.join(ROOT, "build")
@@ -2819,6 +2848,10 @@ def main(argv=None):
                  % (args.package, pairs[args.package]))
     if args.clean:
         clean(target, args.dry_run)
+        return 0
+    if args.spike:
+        build_spike(args, target, args.dry_run)
+        log("done")
         return 0
     log("building CubicSDR for %s (%s)" % (target, args.config))
     if target == "windows":
