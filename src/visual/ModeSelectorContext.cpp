@@ -4,6 +4,7 @@
 #include "ModeSelectorContext.h"
 #include "ModeSelectorCanvas.h"
 #include "ColorTheme.h"
+#include "ModeSelector.h"
 
 
 ModeSelectorContext::ModeSelectorContext(ModeSelectorCanvas *canvas, wxGLContext *sharedContext, wxGLContextAttrs *ctxAttrs) :
@@ -32,28 +33,15 @@ void ModeSelectorContext::DrawSelector(const std::string& label, int c, int cMax
     float viewHeight = (float) vp[3];
     float viewWidth = (float) vp[2];
 
-    int fontSize = 18;
-
-    if (viewWidth < 30 || viewHeight < 200) {
-        fontSize = 16;
-    }
+    ModeSelector::SelectorCell cell = ModeSelector::selectorCell(c, cMax, viewWidth, viewHeight, px, py);
 
     glColor4f(r, g, b, a);
-
-    float y = 1.0 - ((float) (c+1) / (float) cMax * 2.0);
-    float height = (2.0 / (float) cMax);
-    float padX = (px / viewWidth);
-    float padY = (py / viewHeight);
 
     if (a < 1.0) {
         glEnable(GL_BLEND);
     }
-    float selVerts[8] = {
-        -1.0f + padX, y + padY, 1.0f - padX, y + padY,
-        1.0f - padX, y + height - padY, -1.0f + padX, y + height - padY
-    };
     glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(2, GL_FLOAT, 0, selVerts);
+    glVertexPointer(2, GL_FLOAT, 0, &cell.outline[0]);
     glDrawArrays(on?GL_QUADS:GL_LINE_LOOP, 0, 4);
     glDisableClientState(GL_VERTEX_ARRAY);
     if (a < 1.0) {
@@ -65,7 +53,7 @@ void ModeSelectorContext::DrawSelector(const std::string& label, int c, int cMax
     }
 
     //Do not zoom the selectors
-    GLFont::getFont(fontSize).drawString(label, 0.0, y + height / 2.0, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+    GLFont::getFont(cell.fontSize).drawString(label, 0.0, cell.labelY, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
 }
 
 void ModeSelectorContext::DrawEnd() {

@@ -15,6 +15,7 @@
 
 #include "CubicSDR.h"
 #include <algorithm>
+#include "GainSlider.h"
 #include <cmath>
 
 wxBEGIN_EVENT_TABLE(GainCanvas, wxGLCanvas) EVT_PAINT(GainCanvas::OnPaint)
@@ -34,10 +35,6 @@ GainCanvas::GainCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
     bgPanel.setFill(GLPanel::GLPANEL_FILL_GRAD_X);
 
     numGains = 1;
-    spacing = 2.0/numGains;
-    barWidth = (1.0/numGains)*0.8;
-    startPos = spacing/2.0;
-    barHeight = 0.8f;
     refreshCounter = 0;
 
 	userGainAsChanged = false;
@@ -152,8 +149,7 @@ void GainCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
     
     for (auto gi : gainPanels) {
         if (gi->isMeterHit(mpos)) {
-            float movement = 3.0 * (float)event.GetWheelRotation();
-            gi->setValue(gi->getValue() + ((movement / 100.0) * ((gi->getHigh() - gi->getLow()) / 100.0)));
+            gi->setValue(GainSlider::wheelGainStep(gi->getValue(), event.GetWheelRotation(), gi->getLow(), gi->getHigh()));
             gi->setChanged(true);
             break;
         }
@@ -208,16 +204,13 @@ void GainCanvas::updateGainUI() {
 	//UpdateGainValues() takes cares of updating the true value realtime.
     gains = devInfo->getGains(SOAPY_SDR_RX, 0);
     numGains = gains.size();
-    float i = 0;
+    int i = 0;
     
     if (!numGains) {
         return;
     }
     
-    spacing = 2.0/numGains;
-    barWidth = (1.0/numGains)*0.7;
-    startPos = spacing/2.0;
-    barHeight = 1.0f;
+    GainSlider::GainStrip strip = GainSlider::gainStripLayout((int)gains.size());
     
     while (!gainPanels.empty()) {
         MeterPanel *mDel = gainPanels.back();
@@ -229,9 +222,9 @@ void GainCanvas::updateGainUI() {
     for (const auto& gi : gains) {
         auto *mPanel = new MeterPanel(gi.first, gi.second.minimum(), gi.second.maximum(), devConfig->getGain(gi.first,wxGetApp().getGain(gi.first)));
 
-        float midPos = -1.0+startPos+spacing*i;
+        float midPos = GainSlider::gainBarMidX(strip, i);
         mPanel->setPosition(midPos, 0);
-        mPanel->setSize(barWidth, barHeight);
+        mPanel->setSize(strip.barWidth, strip.barHeight);
         bgPanel.addChild(mPanel);
         
         gainPanels.push_back(mPanel);
@@ -274,10 +267,10 @@ bool GainCanvas::updateGainValues() {
 		if (!gainPanels[panelIndex]->getChanged()) {
 
 			//read the actual gain from the device, round it
-			float actualRoundedGain = (float)std::round(devInfo->getCurrentGain(SOAPY_SDR_RX, 0, gi.first));
+			float actualRoundedGain = GainSlider::roundGain(devInfo->getCurrentGain(SOAPY_SDR_RX, 0, gi.first));
 			
 			//do nothing if the difference is less than 1.0, since the panel do not show it anyway.
-			if ((int)actualRoundedGain != (int)(gainPanels[panelIndex]->getValue())) {
+			if (GainSlider::gainDisplayDiffers(actualRoundedGain, gainPanels[panelIndex]->getValue())) {
 
 				gainPanels[panelIndex]->setValue(actualRoundedGain);
 

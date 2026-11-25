@@ -15,6 +15,7 @@
 #include "ScopePanel.h"
 #include "SpectrumPanel.h"
 #include "InteractiveCanvas.h"
+#include "ScopeCarousel.h"
 
 class ScopeCanvas: public InteractiveCanvas {
 public:
@@ -65,9 +66,7 @@ private:
     bool ppmMode;
     bool showDb;
     float panelSpacing;
-    float ctr;
-    float ctrTarget;
-    float dragAccel;
+    ScopeCarousel::CarouselState carousel;
     std::string helpTip;
 // event table
 wxDECLARE_EVENT_TABLE();

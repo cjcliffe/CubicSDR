@@ -5,6 +5,7 @@
 #include "TuningCanvas.h"
 
 #include "ColorTheme.h"
+#include "TunerLayout.h"
 #include <vector>
 
 // http://stackoverflow.com/questions/7276826/c-format-number-with-commas
@@ -45,12 +46,7 @@ void TuningContext::DrawBegin() {
 void TuningContext::Draw(float r, float g, float b, float a, float p1, float p2) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
-    float barVerts[16] = {
-        -1.0f + p2 * 2.0f, 1.0, -1.0f + p1 * 2.0f, 1.0,
-        -1.0f + p1 * 2.0f, 0.0, -1.0f + p2 * 2.0f, 0.0,
-        -1.0f + p2 * 2.0f, 0.0, -1.0f + p1 * 2.0f, 0.0,
-        -1.0f + p1 * 2.0f, -1.0, -1.0f + p2 * 2.0f, -1.0
-    };
+    std::vector<float> barVerts = TunerLayout::dragBarQuads(p1, p2);
     float barColors[32] = {
         r * 0.5f, g * 0.5f, b * 0.5f, a, r * 0.5f, g * 0.5f, b * 0.5f, a,
         r, g, b, a, r, g, b, a,
@@ -59,7 +55,7 @@ void TuningContext::Draw(float r, float g, float b, float a, float p1, float p2)
     };
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
-    glVertexPointer(2, GL_FLOAT, 0, barVerts);
+    glVertexPointer(2, GL_FLOAT, 0, &barVerts[0]);
     glColorPointer(4, GL_FLOAT, 0, barColors);
     glDrawArrays(GL_QUADS, 0, 8);
     glDisableClientState(GL_VERTEX_ARRAY);
@@ -84,45 +80,23 @@ void TuningContext::DrawTuner(long long freq, int count, float displayPos, float
     freqStr << freq;
     std::string freqChars = freqStr.str();
 
-    int fontSize = 32;
-
-    if (viewWidth < 300) {
-        fontSize = 18;
-    } else if (viewWidth < 500) {
-        fontSize = 24;
-    }
-    
-    if (viewHeight < 18) {
-        fontSize = 12;
-    } else if (viewHeight < 24) {
-        fontSize = 16;
-    } else if (viewHeight < 28) {
-        fontSize = 18;
-    }
+    int fontSize = TunerLayout::tunerFontSize(viewWidth, viewHeight);
 
     glColor3f(ThemeMgr::mgr.currentTheme->text.r, ThemeMgr::mgr.currentTheme->text.g, ThemeMgr::mgr.currentTheme->text.b);
     int numChars = freqChars.length();
-    int ofs = count - numChars;
+    std::vector<TunerLayout::TunerChar> chars = TunerLayout::tunerChars(count, numChars, displayPos, displayWidth);
 
     //do not zoom this one:
     GLFont::Drawer refDrawingFont = GLFont::getFont(fontSize);
 
-    for (int i = ofs; i < count; i++) {
-        float xpos = displayPos + (displayWidth / (float) count) * (float) i + ((displayWidth / 2.0) / (float) count);
-        refDrawingFont.drawString(freqStr.str().substr(i - ofs, 1), xpos, 0, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+    for (auto &ch : chars) {
+        refDrawingFont.drawString(freqStr.str().substr(ch.charIndex, 1), ch.x, 0, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
     }
 
     glColor4f(0.65f, 0.65f, 0.65f, 0.25f);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    std::vector<float> gridVerts;
-    for (int i = count; i >= 0; i--) {
-        float xpos = displayPos + (displayWidth / (float) count) * (float) i;
-        gridVerts.push_back(xpos);
-        gridVerts.push_back(-1.0);
-        gridVerts.push_back(xpos);
-        gridVerts.push_back(1.0);
-    }
+    std::vector<float> gridVerts = TunerLayout::tunerGridVerts(count, displayPos, displayWidth);
     if (!gridVerts.empty()) {
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(2, GL_FLOAT, 0, &gridVerts[0]);
@@ -138,66 +112,43 @@ void TuningContext::DrawTunerDigitBox(int index, int count, float displayPos, fl
     glGetIntegerv( GL_VIEWPORT, vp);
 
     float viewHeight = (float) vp[3];
-    float pixelHeight = 2.0/viewHeight;
-
+    std::vector<float> boxVerts = TunerLayout::tunerDigitBox(index, count, displayPos, displayWidth, viewHeight);
+    
     glColor4f(1.0, 0,0,1);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    float xpos = displayPos + (displayWidth / (float) count) * (float) (count-index);
-    float xpos2 = displayPos + (displayWidth / (float) count) * (float) ((count-1)-index);
-    float boxVerts[10] = {
-        xpos, 1.0f - pixelHeight, xpos, -1.0f + pixelHeight,
-        xpos2, -1.0f + pixelHeight, xpos2, 1.0f - pixelHeight,
-        xpos, 1.0f - pixelHeight
-    };
     glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(2, GL_FLOAT, 0, boxVerts);
+    glVertexPointer(2, GL_FLOAT, 0, &boxVerts[0]);
     glDrawArrays(GL_LINE_STRIP, 0, 5);
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisable(GL_BLEND);
 }
 
 
-
-
 int TuningContext::GetTunerDigitIndex(float mPos, int count, float displayPos, float displayWidth) {
-    mPos -= 0.5;
-    mPos *= 2.0;
-
-    float delta = mPos - displayPos;
-
-    if (delta < 0 || delta > displayWidth) {
-        return 0;
-    }
-
-    int index = floor((delta / displayWidth) * (count));
-
-    return count - index;
+    return TunerLayout::digitIndexAt(mPos, count, displayPos, displayWidth);
 }
 
 void TuningContext::DrawTunerBarIndexed(int start, int end, int count, float displayPos, float displayWidth, const RGBA4f& color, float /* alpha */, bool top,
 bool bottom) {
-    float ofs = (displayWidth / (float) count);
-    float p2 = displayPos + ofs * (float) (count - start + 1);
-    float p1 = displayPos + ofs * (float) (count - end);
-
+    TunerLayout::TunerBars bars = TunerLayout::tunerBarQuads(start, end, count, displayPos, displayWidth, top, bottom);
+    
     float r = color.r, g = color.g, b = color.b, a = 0.6f;
-
+    
+    float topColors[16] = { r * 0.5f, g * 0.5f, b * 0.5f, a, r * 0.5f, g * 0.5f, b * 0.5f, a, r, g, b, a, r, g, b, a };
+    float bottomColors[16] = { r, g, b, a, r, g, b, a, r * 0.5f, g * 0.5f, b * 0.5f, a, r * 0.5f, g * 0.5f, b * 0.5f, a };
+    
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
-    if (top) {
-        float topVerts[8] = { p2, 1.0, p1, 1.0, p1, 0.0, p2, 0.0 };
-        float topColors[16] = { r * 0.5f, g * 0.5f, b * 0.5f, a, r * 0.5f, g * 0.5f, b * 0.5f, a, r, g, b, a, r, g, b, a };
-        glVertexPointer(2, GL_FLOAT, 0, topVerts);
+    if (!bars.top.empty()) {
+        glVertexPointer(2, GL_FLOAT, 0, &bars.top[0]);
         glColorPointer(4, GL_FLOAT, 0, topColors);
         glDrawArrays(GL_QUADS, 0, 4);
     }
-    if (bottom) {
-        float bottomVerts[8] = { p2, 0.0, p1, 0.0, p1, -1.0, p2, -1.0 };
-        float bottomColors[16] = { r, g, b, a, r, g, b, a, r * 0.5f, g * 0.5f, b * 0.5f, a, r * 0.5f, g * 0.5f, b * 0.5f, a };
-        glVertexPointer(2, GL_FLOAT, 0, bottomVerts);
+    if (!bars.bottom.empty()) {
+        glVertexPointer(2, GL_FLOAT, 0, &bars.bottom[0]);
         glColorPointer(4, GL_FLOAT, 0, bottomColors);
         glDrawArrays(GL_QUADS, 0, 4);
     }

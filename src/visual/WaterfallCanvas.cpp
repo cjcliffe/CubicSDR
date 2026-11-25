@@ -26,6 +26,8 @@
 #include <wx/numformatter.h>
 
 #include "DemodulatorThread.h"
+#include "WaterfallDrag.h"
+#include "WaterfallHover.h"
 
 wxBEGIN_EVENT_TABLE(WaterfallCanvas, wxGLCanvas)
 EVT_PAINT(WaterfallCanvas::OnPaint)
@@ -512,72 +514,43 @@ void WaterfallCanvas::updateHoverState() {
             setStatusText("Click and drag to set the current demodulator range.");
         }
     } else if (!demodsHover.empty() && !shiftDown) {
-        long near_dist = getBandwidth();
-        
-        DemodulatorInstancePtr hover = nullptr;
-
+        std::vector<WaterfallHover::HoverCandidate> candidates;
         for (auto demod : demodsHover) {
-            long long freqDiff = demod->getFrequency() - freqPos;
-            long halfBw = (demod->getBandwidth() / 2);
-            long long currentBw = getBandwidth();
-            long long globalBw = wxGetApp().getSampleRate();
-            long dist = abs(freqDiff);
-            double bufferBw = 10000.0 * ((double)currentBw / (double)globalBw);
-            double maxDist = ((double)halfBw + bufferBw);
-            
-            if ((double)dist <= maxDist) {
-                if ((freqDiff > 0 && demod->getDemodulatorType() == "USB") ||
-                    (freqDiff < 0 && demod->getDemodulatorType() == "LSB")) {
-                    continue;
-                }
-
-                if (dist < near_dist) {
-                    hover = demod;
-                    near_dist = dist;
-                }
-
-                long edge_dist = abs(halfBw - dist);
-                if (edge_dist < near_dist) {
-                    hover = demod;
-                    near_dist = edge_dist;
-                }
-            }
+            WaterfallHover::HoverCandidate cand;
+            cand.freqHz = demod->getFrequency();
+            cand.bandwidthHz = demod->getBandwidth();
+            cand.sideband = DemodMarkers::sidebandForType(demod->getDemodulatorType());
+            candidates.push_back(cand);
         }
+        WaterfallHover::HoverPick pick = WaterfallHover::pickHover(candidates, freqPos, getBandwidth(), wxGetApp().getSampleRate());
         
-        if (hover == nullptr) {
+        if (pick.zone == WaterfallHover::DragZone::None) {
             nextDragState = WF_DRAG_NONE;
             SetCursor(wxCURSOR_CROSS);
             return;
         }
-
-        hoverDemod = hover;
-
-        long long freqDiff = hover->getFrequency() - freqPos;
-
-        if (abs(freqDiff) > (hover->getBandwidth() / 3)) {
-
-            if (freqDiff > 0) {
-                if (hover->getDemodulatorType() != "USB") {
-                    nextDragState = WF_DRAG_BANDWIDTH_LEFT;
-                    SetCursor(wxCURSOR_SIZEWE);
-                }
-            } else {
-                if (hover->getDemodulatorType() != "LSB") {
-                    nextDragState = WF_DRAG_BANDWIDTH_RIGHT;
-                    SetCursor(wxCURSOR_SIZEWE);
-                }
-            }
-            
-            mouseTracker.setVertDragLock(true);
-            mouseTracker.setHorizDragLock(false);
-            setStatusText("Drag to change bandwidth. SPACE/0-9 direct input. [, ] nudge, M mute, V pin, DEL delete, C center, E edit label, R record, TAB cycle selection.");
-        } else {
+        
+        hoverDemod = demodsHover[(size_t)pick.index];
+        
+        if (pick.zone == WaterfallHover::DragZone::Frequency) {
             SetCursor(wxCURSOR_SIZING);
             nextDragState = WF_DRAG_FREQUENCY;
             
             mouseTracker.setVertDragLock(true);
             mouseTracker.setHorizDragLock(false);
             setStatusText("Drag to change frequency. SPACE/0-9 direct input. [, ] nudge, M mute, V pin, DEL delete, C center, E edit label, R record, TAB cycle selection.");
+        } else {
+            if (pick.zone == WaterfallHover::DragZone::BandwidthLeft) {
+                nextDragState = WF_DRAG_BANDWIDTH_LEFT;
+                SetCursor(wxCURSOR_SIZEWE);
+            } else if (pick.zone == WaterfallHover::DragZone::BandwidthRight) {
+                nextDragState = WF_DRAG_BANDWIDTH_RIGHT;
+                SetCursor(wxCURSOR_SIZEWE);
+            }
+            
+            mouseTracker.setVertDragLock(true);
+            mouseTracker.setHorizDragLock(false);
+            setStatusText("Drag to change bandwidth. SPACE/0-9 direct input. [, ] nudge, M mute, V pin, DEL delete, C center, E edit label, R record, TAB cycle selection.");
         }
     }
     else {
@@ -603,21 +576,8 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
         }
         if (dragState == WF_DRAG_BANDWIDTH_LEFT || dragState == WF_DRAG_BANDWIDTH_RIGHT) {
 
-            int bwDiff = (int) (mouseTracker.getDeltaMouseX() * (float) getBandwidth()) * 2;
-
-            if (dragState == WF_DRAG_BANDWIDTH_LEFT) {
-                bwDiff = -bwDiff;
-            }
-
-            int currentBW = dragBW;
-
-            currentBW = currentBW + bwDiff;
-            if (currentBW > CHANNELIZER_RATE_MAX) {
-                currentBW = CHANNELIZER_RATE_MAX;
-            }
-            if (currentBW < MIN_BANDWIDTH) {
-                currentBW = MIN_BANDWIDTH;
-            }
+            int currentBW = WaterfallDrag::bandwidthDragStep(mouseTracker.getDeltaMouseX(), getBandwidth(), dragState == WF_DRAG_BANDWIDTH_LEFT,
+                dragBW, MIN_BANDWIDTH, CHANNELIZER_RATE_MAX);
 
             demod->setBandwidth(currentBW);
             dragBW = currentBW;
@@ -626,12 +586,7 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
         if (dragState == WF_DRAG_FREQUENCY) {
             long long bwTarget = getFrequencyAt(mouseTracker.getMouseX()) - dragOfs;
             long long currentFreq = demod->getFrequency();
-            long long bwDiff = bwTarget - currentFreq;
-            int snap = wxGetApp().getFrequencySnap();
-
-            if (snap > 1) {
-                bwDiff = roundf((float)bwDiff/(float)snap)*snap;
-            }
+            long long bwDiff = WaterfallDrag::snapDelta(bwTarget - currentFreq, wxGetApp().getFrequencySnap());
 
             if (bwDiff) {
                 demod->setFrequency(pinDemodCenter(currentFreq + bwDiff, getCenterFrequency(), getBandwidth()));
@@ -655,8 +610,7 @@ void WaterfallCanvas::OnMouseMoved(wxMouseEvent& event) {
         // at the current bandwidth.
         int height = GetClientSize().y;
         if (height > 0) {
-            float offset = (float)(midZoomStartY - event.m_y) / (float)height;
-            zoom = 1.0f - offset * (float)fabs(offset) * 0.2f;
+            zoom = WaterfallDrag::glideZoom(midZoomStartY, event.m_y, height);
         }
     } else {
         updateHoverState();
@@ -674,7 +628,7 @@ void WaterfallCanvas::OnMouseDown(wxMouseEvent& event) {
         wxGetApp().getDemodMgr().setActiveDemodulator(hoverDemod ? hoverDemod : wxGetApp().getDemodMgr().getCurrentModem());
         auto demod = wxGetApp().getDemodMgr().getCurrentModem();
         if (demod) {
-            dragOfs = (long long) (mouseTracker.getMouseX() * (float) getBandwidth()) + getCenterFrequency() - (getBandwidth() / 2) - demod->getFrequency();
+            dragOfs = WaterfallDrag::dragOffset(mouseTracker.getMouseX(), getBandwidth(), getCenterFrequency(), demod->getFrequency());
             dragBW = demod->getBandwidth();
         }
     }
@@ -682,11 +636,7 @@ void WaterfallCanvas::OnMouseDown(wxMouseEvent& event) {
 
 void WaterfallCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseWheelMoved(event);
-    int wheelDelta = event.GetWheelDelta() ? event.GetWheelDelta() : 120;
-    float notches = (float)event.GetWheelRotation() / (float)wheelDelta;
-    float movement = notches * 40.0f;
-
-    mouseZoom = 1.0f - movement/1000.0f;
+    mouseZoom = WaterfallDrag::wheelZoom(event.GetWheelRotation(), event.GetWheelDelta());
 }
 
 void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
@@ -704,25 +654,8 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
     DemodulatorMgr *mgr = &wxGetApp().getDemodMgr();
 
     if (mouseTracker.getOriginDeltaMouseX() == 0 && mouseTracker.getOriginDeltaMouseY() == 0) {
-        float pos = mouseTracker.getMouseX();
-        long long input_center_freq = getCenterFrequency();
-        long long freqTarget = input_center_freq - (long long) (0.5 * (float) getBandwidth()) + (long long) ((float) pos * (float) getBandwidth());
-        long long demodFreq = demod?demod->getFrequency():freqTarget;
-        long long bwDiff = freqTarget - demodFreq;
-        long long freq = demodFreq;
-
-         int snap = wxGetApp().getFrequencySnap();
-
-         if (snap > 1) {
-             if (demod) {
-                 bwDiff = roundf((double)bwDiff/(double)snap)*snap;
-                 freq += bwDiff;
-             } else {
-                 freq = roundl((long double)freq/(double)snap)*snap;
-             }
-         } else {
-             freq += bwDiff;
-         }
+        long long freq = WaterfallDrag::clickPlaceFreq(mouseTracker.getMouseX(), getCenterFrequency(), getBandwidth(),
+            demod != nullptr, demod ? demod->getFrequency() : 0, wxGetApp().getFrequencySnap());
 
 
         if (dragState == WF_DRAG_NONE) {
@@ -785,47 +718,17 @@ void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {
             }
         }
     } else if (dragState == WF_DRAG_RANGE) {
-        float width = mouseTracker.getOriginDeltaMouseX();
+        WaterfallDrag::RangeDrag range = WaterfallDrag::rangeDrag(mouseTracker.getOriginMouseX(), mouseTracker.getMouseX(),
+            mouseTracker.getOriginDeltaMouseX(), DemodMarkers::sidebandForType(mgr->getLastDemodulatorType()), getCenterFrequency(),
+            getBandwidth(), wxGetApp().getFrequencySnap(), MIN_BANDWIDTH);
 
-        float pos;
-        std::string last_type = mgr->getLastDemodulatorType();
-
-        if (last_type == "LSB" || last_type == "USB") {
-            float pos1 = mouseTracker.getOriginMouseX();
-            float pos2 = mouseTracker.getMouseX();
-
-            if (pos2 < pos1) {
-                float tmp = pos1;
-                pos1 = pos2;
-                pos2 = tmp;
-            }
-
-            pos = (last_type == "LSB")?pos2:pos1;
-            width *= 2;
-        } else {
-            pos = mouseTracker.getOriginMouseX() + width / 2.0;
-        }
-
-        long long input_center_freq = getCenterFrequency();
-        long long freq = input_center_freq - (long long) (0.5 * (float) getBandwidth()) + (long long) ((float) pos * (float) getBandwidth());
-        unsigned int bw = (unsigned int) (fabs(width) * (float) getBandwidth());
-
-        if (bw < MIN_BANDWIDTH) {
-            bw = MIN_BANDWIDTH;
-        }
-
-        if (!bw) {
+        if (!range.bandwidthHz) {
             dragState = WF_DRAG_NONE;
             return;
         }
 
-        int snap = wxGetApp().getFrequencySnap();
-
-        if (snap > 1) {
-            freq = roundl((long double)freq/(double)snap)*snap;
-        }
-
-        freq = pinDemodCenter(freq, getCenterFrequency(), getBandwidth());
+        long long freq = pinDemodCenter(range.freqHz, getCenterFrequency(), getBandwidth());
+        unsigned int bw = range.bandwidthHz;
 
         if (!isNew && !wxGetApp().getDemodMgr().getDemodulators().empty()) {
             mgr->updateLastState();

@@ -669,6 +669,7 @@ list(APPEND CUBICSDR_INCLUDE_DIRS
     ${PROJECT_SOURCE_DIR}/src/modules/modem/analog
     ${PROJECT_SOURCE_DIR}/src/audio
     ${PROJECT_SOURCE_DIR}/src/util
+    ${PROJECT_SOURCE_DIR}/src/viewmodel
     ${PROJECT_SOURCE_DIR}/src/panel
     ${PROJECT_SOURCE_DIR}/src/visual
     ${PROJECT_SOURCE_DIR}/src/process

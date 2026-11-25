@@ -39,6 +39,15 @@ add_executable(cubicsdr_tests
     test_FileUtil.cpp
     test_SplitUtil.cpp
     test_ColorTheme.cpp
+    test_DemodMarkers.cpp
+    test_SpectrumTicks.cpp
+    test_TunerStep.cpp
+    test_TunerLayout.cpp
+    test_ModeSelector.cpp
+    test_WaterfallHover.cpp
+    test_WaterfallDrag.cpp
+    test_ScopeCarousel.cpp
+    test_GainSlider.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Gradient.cpp
     ${PROJECT_SOURCE_DIR}/src/util/DataTree.cpp
     ${PROJECT_SOURCE_DIR}/src/util/Timer.cpp
@@ -63,6 +72,7 @@ target_include_directories(cubicsdr_tests PRIVATE
     ${PROJECT_SOURCE_DIR}/external/doctest
     ${PROJECT_SOURCE_DIR}/external/tinyxml
     ${PROJECT_SOURCE_DIR}/src/util
+    ${PROJECT_SOURCE_DIR}/src/viewmodel
 )
 
 target_compile_features(cubicsdr_tests PRIVATE cxx_std_14)

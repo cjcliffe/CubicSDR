@@ -15,6 +15,7 @@
 
 #include "CubicSDR.h"
 #include "CubicSDRDefs.h"
+#include "ModeSelector.h"
 #include "AppFrame.h"
 #include <algorithm>
 #include <chrono>
@@ -39,23 +40,7 @@ InteractiveCanvas(parent, dispAttrs), numChoices(0), currentSelection(-1), toggl
 ModeSelectorCanvas::~ModeSelectorCanvas() = default;
 
 int ModeSelectorCanvas::getHoveredSelection() {
-    if (!mouseTracker.mouseInView() || numChoices <= 0) {
-        return -1;
-    }
-
-    float ypos = 1.0 - (mouseTracker.getMouseY() * 2.0);
-    int yval = (int) (((ypos + 1.0) / 2.0) * (float) numChoices);
-
-    // The top pixel row computes to exactly numChoices; clamp it onto the
-    // last choice instead of indexing past the end.
-    if (yval >= numChoices) {
-        yval = numChoices - 1;
-    }
-    if (yval < 0) {
-        yval = 0;
-    }
-
-    return yval;
+    return ModeSelector::hoveredRow(mouseTracker.getMouseY(), numChoices, mouseTracker.mouseInView());
 }
 
 void ModeSelectorCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
@@ -84,7 +69,7 @@ void ModeSelectorCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
                 // Breathe between the off-state look (outline plus
                 // button-color text) and the on-state look (filled
                 // button plus readable inverted text).
-                float blend = 0.5f + 0.5f * sinf(pulsePhase);
+                float blend = ModeSelector::pulseBlend(pulsePhase);
                 glContext->DrawSelector(selections[i].label, i, numChoices, false, hc.r, hc.g, hc.b, 1.0, padX, padY);
                 glContext->DrawSelector(selections[i].label, i, numChoices, true, hc.r, hc.g, hc.b, blend, padX, padY);
             } else {
@@ -109,7 +94,7 @@ void ModeSelectorCanvas::frameUpdate() {
         // as the recording glow in the spectrum view. The modulo stays in
         // integer milliseconds so float precision cannot freeze the cycle.
         auto t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-        pulsePhase = 6.2831853f * (float)(t % 2000) / 2000.0f;
+        pulsePhase = ModeSelector::pulsePhaseAt(t);
         Refresh();
     }
 }
@@ -144,21 +129,13 @@ void ModeSelectorCanvas::OnMouseReleased(wxMouseEvent& event) {
     // lock drags, so without this a drag-release would report a
     // re-click on the unchanged selection.
     bool isClick = mouseTracker.getOriginDeltaMouseX() < 2.0 / ClientSize.y;
-    int selectedButton = currentSelection;
-    if (isClick) {
-        selectedButton = getHoveredSelection();
-    }
-
-    if (toggleMode && (currentSelection == selectedButton)) {
-        selectedButton = -1;
-    }
-    
-    // Non-toggle selectors also report re-clicking the current choice.
-    if (currentSelection != selectedButton || (!toggleMode && selectedButton != -1 && isClick)) {
+    ModeSelector::ReleaseResult result = ModeSelector::resolveRelease(currentSelection, getHoveredSelection(), toggleMode, isClick,
+        disabled);
+    if (result.changed) {
         inputChanged = true;
     }
-    
-    currentSelection = selectedButton;
+
+    currentSelection = result.selection;
     
     SetCursor (wxCURSOR_HAND);
     Refresh();

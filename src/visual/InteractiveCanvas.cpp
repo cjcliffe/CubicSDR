@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "InteractiveCanvas.h"
+#include "WaterfallDrag.h"
 
 #include "wx/wxprec.h"
 
@@ -45,17 +46,11 @@ bool InteractiveCanvas::getViewState() const {
 }
 
 long long InteractiveCanvas::getFrequencyAt(float x) {
-    long long iqCenterFreq = getCenterFrequency();
-    long long iqBandwidth = getBandwidth();
-    long long freq = iqCenterFreq - (long long)(0.5 * (long double) iqBandwidth) + ((long double) x * (long double) iqBandwidth);
-
-    return freq;
+    return WaterfallDrag::freqAtX(x, getCenterFrequency(), getBandwidth());
 }
 
 long long InteractiveCanvas::getFrequencyAt(float x, long long iqCenterFreq, long long iqBandwidth) {
-    long long freq = iqCenterFreq - (long long)(0.5 * (long double) iqBandwidth) + ((long double) x * (long double) iqBandwidth);
-    
-    return freq;
+    return WaterfallDrag::freqAtX(x, iqCenterFreq, iqBandwidth);
 }
 
 void InteractiveCanvas::setCenterFrequency(long long center_freq_in) {
