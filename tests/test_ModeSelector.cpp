@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "doctest.h"
-#include "util/ModeSelector.h"
+#include "viewmodel/ModeSelector.h"
 
 using namespace ModeSelector;
 

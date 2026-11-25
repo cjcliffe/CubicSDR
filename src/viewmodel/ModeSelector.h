@@ -1,6 +1,9 @@
 // Copyright (c) Charles J. Cliffe
 // SPDX-License-Identifier: GPL-2.0+
 
+// Pure interaction state and button layout for mode selector widgets.
+// Release only ever sets the change flag, and a disabled control is a no-op.
+
 #pragma once
 
 #include <cmath>

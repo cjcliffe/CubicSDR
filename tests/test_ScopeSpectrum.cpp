@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "doctest.h"
-#include "util/ScopeSpectrum.h"
+#include "viewmodel/ScopeSpectrum.h"
 
 TEST_SUITE("ScopeSpectrum") {
     TEST_CASE("equal rates keep every bin") {

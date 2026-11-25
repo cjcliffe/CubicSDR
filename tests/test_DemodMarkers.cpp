@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "doctest.h"
-#include "util/DemodMarkers.h"
+#include "viewmodel/DemodMarkers.h"
 
 using namespace DemodMarkers;
 

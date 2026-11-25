@@ -1,6 +1,10 @@
 // Copyright (c) Charles J. Cliffe
 // SPDX-License-Identifier: GPL-2.0+
 
+// Pure geometry for demodulator markers: NDC positions, sideband edges, labels.
+// Float formulas match the former inline code exactly; degenerate inputs yield
+// empty geometry instead.
+
 #pragma once
 
 #include <cmath>

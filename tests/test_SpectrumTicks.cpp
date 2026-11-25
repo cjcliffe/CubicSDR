@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "doctest.h"
-#include "util/SpectrumTicks.h"
+#include "viewmodel/SpectrumTicks.h"
 
 using namespace SpectrumTicks;
 
@@ -151,5 +151,30 @@ TEST_SUITE("SpectrumTicks") {
 
     TEST_CASE("out-of-range yields no bands") {
         CHECK(gridGeometry(0.0f, 6000.0f).empty());
+    }
+
+    TEST_CASE("fill strip drops verticals to zero") {
+        std::vector<float> points = {0.0f, 0.5f, 1.0f, 0.75f};
+        std::vector<float> fill = fillStrip(points);
+        CHECK(fill.size() == 8);
+        CHECK(fill[0] == 0.0f);
+        CHECK(fill[1] == 0.5f);
+        CHECK(fill[2] == 0.0f);
+        CHECK(fill[3] == 0.0f);
+        CHECK(fill[4] == 1.0f);
+        CHECK(fill[5] == 0.75f);
+        CHECK(fill[6] == 1.0f);
+        CHECK(fill[7] == 0.0f);
+    }
+
+    TEST_CASE("fill strip drops odd tail and zeroes it") {
+        std::vector<float> points = {0.0f, 0.5f, 1.0f, 0.75f, 0.25f};
+        std::vector<float> fill = fillStrip(points);
+        CHECK(fill.size() == 10);
+        CHECK(fill[4] == 1.0f);
+        CHECK(fill[8] == 0.0f);
+        CHECK(fill[9] == 0.0f);
+        std::vector<float> empty;
+        CHECK(fillStrip(empty).empty());
     }
 }

@@ -80,45 +80,23 @@ void TuningContext::DrawTuner(long long freq, int count, float displayPos, float
     freqStr << freq;
     std::string freqChars = freqStr.str();
 
-    int fontSize = 32;
-
-    if (viewWidth < 300) {
-        fontSize = 18;
-    } else if (viewWidth < 500) {
-        fontSize = 24;
-    }
-    
-    if (viewHeight < 18) {
-        fontSize = 12;
-    } else if (viewHeight < 24) {
-        fontSize = 16;
-    } else if (viewHeight < 28) {
-        fontSize = 18;
-    }
+    int fontSize = TunerLayout::tunerFontSize(viewWidth, viewHeight);
 
     glColor3f(ThemeMgr::mgr.currentTheme->text.r, ThemeMgr::mgr.currentTheme->text.g, ThemeMgr::mgr.currentTheme->text.b);
     int numChars = freqChars.length();
-    int ofs = count - numChars;
+    std::vector<TunerLayout::TunerChar> chars = TunerLayout::tunerChars(count, numChars, displayPos, displayWidth);
 
     //do not zoom this one:
     GLFont::Drawer refDrawingFont = GLFont::getFont(fontSize);
 
-    for (int i = ofs; i < count; i++) {
-        float xpos = displayPos + (displayWidth / (float) count) * (float) i + ((displayWidth / 2.0) / (float) count);
-        refDrawingFont.drawString(freqStr.str().substr(i - ofs, 1), xpos, 0, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
+    for (auto &ch : chars) {
+        refDrawingFont.drawString(freqStr.str().substr(ch.charIndex, 1), ch.x, 0, GLFont::GLFONT_ALIGN_CENTER, GLFont::GLFONT_ALIGN_CENTER);
     }
 
     glColor4f(0.65f, 0.65f, 0.65f, 0.25f);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    std::vector<float> gridVerts;
-    for (int i = count; i >= 0; i--) {
-        float xpos = displayPos + (displayWidth / (float) count) * (float) i;
-        gridVerts.push_back(xpos);
-        gridVerts.push_back(-1.0);
-        gridVerts.push_back(xpos);
-        gridVerts.push_back(1.0);
-    }
+    std::vector<float> gridVerts = TunerLayout::tunerGridVerts(count, displayPos, displayWidth);
     if (!gridVerts.empty()) {
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(2, GL_FLOAT, 0, &gridVerts[0]);

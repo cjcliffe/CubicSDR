@@ -1,6 +1,10 @@
 // Copyright (c) Charles J. Cliffe
 // SPDX-License-Identifier: GPL-2.0+
 
+// Pure digit-stepping plus wheel and drag accumulation for the tuning bar.
+// The carry check uses floating-point division exactly as the canvas did; bandwidth
+// steps double the amount, and PPM ignores zero-out.
+
 #pragma once
 
 #include <cmath>

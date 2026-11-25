@@ -1,6 +1,10 @@
 // Copyright (c) Charles J. Cliffe
 // SPDX-License-Identifier: GPL-2.0+
 
+// Pure hover-target picking for demodulators under the waterfall cursor.
+// An edge-distance match can override a nearer center; the keep-previous zone
+// only triggers for degenerate bandwidth.
+
 #pragma once
 
 #include <cstdlib>

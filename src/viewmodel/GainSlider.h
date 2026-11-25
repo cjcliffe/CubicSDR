@@ -1,6 +1,9 @@
 // Copyright (c) Charles J. Cliffe
 // SPDX-License-Identifier: GPL-2.0+
 
+// Pure value mapping and layout for gain slider widgets.
+// Device refresh compares truncated integers to match the int-only display.
+
 #pragma once
 
 #include <cmath>

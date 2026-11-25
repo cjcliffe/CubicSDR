@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "doctest.h"
-#include "util/WaterfallLps.h"
+#include "viewmodel/WaterfallLps.h"
 
 #include <cmath>
 

@@ -1,6 +1,9 @@
 // Copyright (c) Charles J. Cliffe
 // SPDX-License-Identifier: GPL-2.0+
 
+// Pure hit-testing, highlight geometry, and digit text layout for the tuning bar.
+// Hit-testing returns no digit outside the bar or for a zero-width bar.
+
 #pragma once
 
 #include <cmath>
@@ -58,4 +61,50 @@ inline std::vector<float> dragBarQuads(float p1, float p2) {
         -1.0f + p2 * 2.0f, 0.0f, -1.0f + p1 * 2.0f, 0.0f, -1.0f + p1 * 2.0f, -1.0f, -1.0f + p2 * 2.0f, -1.0f};
 }
 
+
+struct TunerChar {
+    float x = 0.0f;
+    int charIndex = 0;
+};
+
+inline int tunerFontSize(float viewWidthPx, float viewHeightPx) {
+    int fontSize = 32;
+    if (viewWidthPx < 300) {
+        fontSize = 18;
+    } else if (viewWidthPx < 500) {
+        fontSize = 24;
+    }
+    if (viewHeightPx < 18) {
+        fontSize = 12;
+    } else if (viewHeightPx < 24) {
+        fontSize = 16;
+    } else if (viewHeightPx < 28) {
+        fontSize = 18;
+    }
+    return fontSize;
+}
+
+inline std::vector<TunerChar> tunerChars(int count, int numChars, float displayPos, float displayWidth) {
+    std::vector<TunerChar> chars;
+    int ofs = count - numChars;
+    for (int i = ofs; i < count; i++) {
+        TunerChar ch;
+        ch.x = displayPos + (displayWidth / (float)count) * (float)i + ((displayWidth / 2.0) / (float)count);
+        ch.charIndex = i - ofs;
+        chars.push_back(ch);
+    }
+    return chars;
+}
+
+inline std::vector<float> tunerGridVerts(int count, float displayPos, float displayWidth) {
+    std::vector<float> gridVerts;
+    for (int i = count; i >= 0; i--) {
+        float xpos = displayPos + (displayWidth / (float)count) * (float)i;
+        gridVerts.push_back(xpos);
+        gridVerts.push_back(-1.0);
+        gridVerts.push_back(xpos);
+        gridVerts.push_back(1.0);
+    }
+    return gridVerts;
+}
 }

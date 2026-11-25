@@ -1,6 +1,10 @@
 // Copyright (c) Charles J. Cliffe
 // SPDX-License-Identifier: GPL-2.0+
 
+// Pure pointer-to-parameter mapping for waterfall drag, placement, zoom, and span.
+// Snap uses float division for drags but double division for placement, as written;
+// bandwidth limits are parameters so the model stays dependency-free.
+
 #pragma once
 
 #include <cmath>
@@ -100,5 +104,9 @@ inline RangeDrag rangeDrag(float originX01, float mouseX01, float deltaX01, Demo
     range.freqHz = freq;
     range.bandwidthHz = bw;
     return range;
+}
+
+inline long long freqAtX(float x01, long long centerHz, long long spanHz) {
+    return centerHz - (long long)(0.5 * (long double)spanHz) + (long long)((long double)x01 * (long double)spanHz);
 }
 }

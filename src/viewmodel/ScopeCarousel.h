@@ -1,6 +1,10 @@
 // Copyright (c) Charles J. Cliffe
 // SPDX-License-Identifier: GPL-2.0+
 
+// Pure panel-carousel animation state for the demod scope view.
+// Visibility compares the scaled position against the unscaled target index, so a
+// settled spectrum position keeps the scope panel drawn.
+
 #pragma once
 
 #include <cmath>

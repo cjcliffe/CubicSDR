@@ -72,6 +72,7 @@ target_include_directories(cubicsdr_tests PRIVATE
     ${PROJECT_SOURCE_DIR}/external/doctest
     ${PROJECT_SOURCE_DIR}/external/tinyxml
     ${PROJECT_SOURCE_DIR}/src/util
+    ${PROJECT_SOURCE_DIR}/src/viewmodel
 )
 
 target_compile_features(cubicsdr_tests PRIVATE cxx_std_14)

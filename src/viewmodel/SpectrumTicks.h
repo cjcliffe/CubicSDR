@@ -1,6 +1,10 @@
 // Copyright (c) Charles J. Cliffe
 // SPDX-License-Identifier: GPL-2.0+
 
+// Pure geometry for the spectrum frequency axis, dB readouts, grid bands, and fill.
+// The step ladder, tick loop, and label formatting replicate the panel code verbatim;
+// the dB labels share one stream, so both inherit fixed one-decimal format.
+
 #pragma once
 
 #include <cmath>
@@ -205,4 +209,16 @@ inline GridGeometry gridGeometry(float floorValue, float ceilValue) {
     return geo;
 }
 
+
+inline std::vector<float> fillStrip(const std::vector<float> &points) {
+    std::vector<float> fill;
+    fill.resize(points.size() * 2);
+    for (size_t i = 0, n = points.size() / 2; i < n; i++) {
+        fill[i * 4] = points[i * 2];
+        fill[i * 4 + 1] = points[i * 2 + 1];
+        fill[i * 4 + 2] = points[i * 2];
+        fill[i * 4 + 3] = 0.0f;
+    }
+    return fill;
+}
 }

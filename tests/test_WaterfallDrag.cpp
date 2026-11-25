@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "doctest.h"
-#include "util/WaterfallDrag.h"
+#include "viewmodel/WaterfallDrag.h"
 
 using namespace WaterfallDrag;
 using DemodMarkers::Sideband;
@@ -80,5 +80,12 @@ TEST_SUITE("WaterfallDrag") {
         RangeDrag snapped = rangeDrag(0.25f, 0.75f, 0.5f, Sideband::Both, 100000400, 2000000, 1000, 500);
         CHECK(snapped.freqHz == 100000000);
         CHECK(snapped.bandwidthHz == 1000000);
+    }
+
+    TEST_CASE("frequency maps across span") {
+        CHECK(freqAtX(0.5f, 100000000, 2000000) == 100000000);
+        CHECK(freqAtX(0.0f, 100000000, 2000000) == 99000000);
+        CHECK(freqAtX(1.0f, 100000000, 2000000) == 101000000);
+        CHECK(freqAtX(0.75f, 100000000, 2000000) == 100500000);
     }
 }

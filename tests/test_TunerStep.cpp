@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "doctest.h"
-#include "util/TunerStep.h"
+#include "viewmodel/TunerStep.h"
 
 using namespace TunerStep;
 

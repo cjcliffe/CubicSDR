@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "doctest.h"
-#include "util/TunerLayout.h"
+#include "viewmodel/TunerLayout.h"
 
 using namespace TunerLayout;
 
@@ -66,5 +66,36 @@ TEST_SUITE("TunerLayout") {
         CHECK(quads[1] == 1.0f);
         CHECK(quads[5] == 0.0f);
         CHECK(quads[13] == -1.0f);
+    }
+
+    TEST_CASE("tuner font follows viewport") {
+        CHECK(tunerFontSize(1024.0f, 100.0f) == 32);
+        CHECK(tunerFontSize(200.0f, 100.0f) == 18);
+        CHECK(tunerFontSize(400.0f, 100.0f) == 24);
+        CHECK(tunerFontSize(300.0f, 100.0f) == 24);
+        CHECK(tunerFontSize(1024.0f, 10.0f) == 12);
+        CHECK(tunerFontSize(1024.0f, 20.0f) == 16);
+        CHECK(tunerFontSize(1024.0f, 26.0f) == 18);
+        CHECK(tunerFontSize(1024.0f, 28.0f) == 32);
+        CHECK(tunerFontSize(200.0f, 10.0f) == 12);
+    }
+
+    TEST_CASE("tuner chars center in cells") {
+        std::vector<TunerChar> chars = tunerChars(3, 2, 0.0f, 3.0f);
+        CHECK(chars.size() == 2);
+        CHECK(chars[0].x == 1.5f);
+        CHECK(chars[0].charIndex == 0);
+        CHECK(chars[1].x == 2.5f);
+        CHECK(chars[1].charIndex == 1);
+    }
+
+    TEST_CASE("tuner grid fenceposts cells") {
+        std::vector<float> grid = tunerGridVerts(2, 0.0f, 2.0f);
+        CHECK(grid.size() == 12);
+        CHECK(grid[0] == 2.0f);
+        CHECK(grid[1] == -1.0f);
+        CHECK(grid[3] == 1.0f);
+        CHECK(grid[4] == 1.0f);
+        CHECK(grid[8] == 0.0f);
     }
 }

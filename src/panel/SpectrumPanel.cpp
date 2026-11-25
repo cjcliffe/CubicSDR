@@ -99,13 +99,7 @@ bool SpectrumPanel::getUseDBOffset() const {
 
 void SpectrumPanel::setPoints(std::vector<float> &points_in) {
     points.assign(points_in.begin(), points_in.end());
-    fill_points.resize(points.size() * 2);
-    for (size_t i = 0, n = points.size() / 2; i < n; i++) {
-        fill_points[i * 4] = points[i * 2];
-        fill_points[i * 4 + 1] = points[i * 2 + 1];
-        fill_points[i * 4 + 2] = points[i * 2];
-        fill_points[i * 4 + 3] = 0.0f;
-    }
+    fill_points = SpectrumTicks::fillStrip(points);
 }
 
 void SpectrumPanel::setPeakPoints(std::vector<float> &points_in) {
