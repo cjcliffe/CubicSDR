@@ -26,3 +26,11 @@ target_link_libraries(modesel_spike PRIVATE raylib)
 add_executable(spectrum_spike spectrum_spike.cpp)
 target_include_directories(spectrum_spike PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel ${CMAKE_CURRENT_SOURCE_DIR}/../src/sdr)
 target_link_libraries(spectrum_spike PRIVATE raylib)
+
+add_executable(waterfall_spike waterfall_spike.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/visual/WaterfallRing.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/visual/WaterfallPacer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/util/Gradient.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/visual/ColorTheme.cpp)
+target_include_directories(waterfall_spike PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel ${CMAKE_CURRENT_SOURCE_DIR}/../src/sdr ${CMAKE_CURRENT_SOURCE_DIR}/../src/visual ${CMAKE_CURRENT_SOURCE_DIR}/../src/util)
+target_link_libraries(waterfall_spike PRIVATE raylib)
