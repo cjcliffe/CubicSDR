@@ -76,7 +76,7 @@ inline long long clickPlaceFreq(float pos01, long long viewCenterHz, long long v
 }
 
 inline RangeDrag rangeDrag(float originX01, float mouseX01, float deltaX01, DemodMarkers::Sideband sideband, long long viewCenterHz,
-        long long viewBandwidthHz, int snap, int minBwHz) {
+        long long viewBandwidthHz, int snap, unsigned int minBwHz) {
     RangeDrag range;
     float width = deltaX01;
     float pos;
