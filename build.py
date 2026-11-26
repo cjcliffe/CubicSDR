@@ -527,6 +527,9 @@ def parse_args(argv):
     parser.add_argument("--spike", default=None,
                         help="build only the named experiment under spike/ "
                         "(e.g. tuner) instead of the app")
+    parser.add_argument("--shaders", default="prebuilt", choices=["prebuilt", "build"],
+                        help="use committed shader headers or rebuild them "
+                        "with shaderc (spike builds)")
     parser.add_argument("--build-deps", action="store_true",
                         help="build all dependencies from source instead of using system packages (Linux)")
     parser.add_argument("--package", default="none",
@@ -2805,6 +2808,7 @@ def build_spike(args, target, dry_run=False):
         require(prog, dry_run)
     build = os.path.join(ROOT, "build", "spike")
     cmd = ["cmake", "-S", src, "-B", build]
+    cmd += ["-DBGFXSPIKE_PREBUILT_SHADERS=%s" % ("ON" if args.shaders == "prebuilt" else "OFF")]
     if target == "windows":
         cmd += ["-G", "Visual Studio 17 2022", "-A", args.arch]
     else:

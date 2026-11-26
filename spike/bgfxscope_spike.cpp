@@ -26,6 +26,8 @@
 
 #include <glsl/vs.sc.bin.h>
 #include <glsl/fs.sc.bin.h>
+#include <essl/vs.sc.bin.h>
+#include <essl/fs.sc.bin.h>
 
 namespace {
 
@@ -45,7 +47,9 @@ struct EmbeddedShader {
 
 const EmbeddedShader kShaders[] = {
     {bgfx::RendererType::OpenGL, "vs", vs_glsl, (uint32_t)sizeof(vs_glsl)},
+    {bgfx::RendererType::OpenGLES, "vs", vs_essl, (uint32_t)sizeof(vs_essl)},
     {bgfx::RendererType::OpenGL, "fs", fs_glsl, (uint32_t)sizeof(fs_glsl)},
+    {bgfx::RendererType::OpenGLES, "fs", fs_essl, (uint32_t)sizeof(fs_essl)},
     {bgfx::RendererType::Count, nullptr, nullptr, 0},
 };
 
