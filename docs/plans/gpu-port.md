@@ -1,12 +1,14 @@
-# Raylib Port Plan
+# GPU Port Plan
 
-Target state: the main window runs on Raylib for panels plus ImGui for widgets
-and dialogs, with wxWidgets eliminated, keeping current behavior and opening
-low-overhead targets.
+Target state: the main window runs on bgfx for panels with SDL3 for windowing
+and input plus ImGui for widgets and dialogs, with wxWidgets eliminated,
+keeping current behavior and opening low-overhead targets (including X-less
+Raspberry Pi via SDL's KMS/DRM path).
 
-This plan is driven by throwaway spikes under `spike/`, each built with
-`python build.py --spike <name>`. A spike passes when it looks and feels like
-the app widget it mirrors.
+Early spikes used Raylib to validate the tested models; the renderer and
+windowing choice has since moved to bgfx plus SDL while ImGui stays. Spikes
+live under `spike/`, each built with `python build.py --spike <name>`. A
+spike passes when it looks and feels like the app widget it mirrors.
 
 ## Completed spikes
 
@@ -21,6 +23,9 @@ the app widget it mirrors.
   `WaterfallRing`, `WaterfallPacer`, `Gradient`, and `ColorTheme` sources
   unchanged, with fake demodulators driving the hover/drag/placement models
   and `DemodMarkers` overlays.
+- Scope (`spike/raylib-scope`, partial): waveform and spectrum panels with a
+  synthetic feed verified at rest; the 3D carousel posed through rlgl's
+  implicit state never rendered reliably, which triggered the bgfx pivot.
 
 ## Portability findings
 
@@ -41,14 +46,28 @@ the app widget it mirrors.
   is freezing the hover at the press origin.
 - Dialogs (direct frequency input, labels, device setup) and the top-level
   layout have no spike yet; they are the largest unknown.
+- Raylib/rlgl fights custom render state: its implicit batching and matrix
+  stack never reliably drew 2D shape calls under a custom modelview, while
+  textured quads plus scripted-pose screenshots were the workable loop.
+- Decision: bgfx for rendering (explicit views, programs, and state), SDL3
+  for windowing and input, ImGui for widgets and panel content drawing. The
+  Raylib spikes stay as model-validation records.
+- Decision: CubicVR math stays stranded in the old shell (it was never
+  finished or tested, and its quirks already bit once); all new code uses
+  glm, and `external/cubicvr2` goes away with wx.
+- Decision: commit precompiled shaders; the shaderc chain is opt-in via a
+  build flag so clean builds skip the toolchain.
 
 ## Phases
 
 - [x] Spike the interactive controls (tuner, mode selector).
 - [x] Spike the spectrum view with a synthetic feed.
 - [x] Spike the waterfall with ring, pacer, and demod interaction.
-- [ ] Spike the remaining views (scope, gain/meter) or defer them behind the
-  state extraction if they stop teaching anything new.
+- [ ] Spike a bgfx plus SDL window drawing one textured quad with explicit
+  matrices, re-proving the scope carousel motion on the new stack.
+- [ ] Spike the ImGui backend with the tuner drawn via draw lists.
+- [ ] Spike the remaining views (gain/meter) or defer them behind the state
+  extraction if they stop teaching anything new.
 - [ ] Extract the application state interface the spikes specified: device and
   view frequencies, demodulator list and selection, visual gain, snap, theme,
   and status routing, behind an API both shells can drive.
