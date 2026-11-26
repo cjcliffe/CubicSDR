@@ -26,6 +26,7 @@
 #include "BookmarkMgr.h"
 #include "SessionMgr.h"
 #include "AppServices.h"
+#include "core/CoreState.h"
 
 #include "ScopeVisualProcessor.h"
 #include "SpectrumVisualProcessor.h"
@@ -66,7 +67,7 @@ class RigThread;
 
 #define NUM_DEMODULATORS 1
 
-class CubicSDR : public wxApp, public AppServices {
+class CubicSDR : public wxApp, public AppServices, public CoreState {
 public:
     CubicSDR();
 
@@ -215,10 +216,7 @@ private:
     BookmarkMgr bookmarkMgr;
     SessionMgr sessionMgr;
 
-    std::atomic_llong frequency;
-    std::atomic_llong offset;
-    std::atomic_int ppm, snap;
-    std::atomic_llong sampleRate;
+    CoreStateImpl coreState;
     std::string antennaName;
     std::atomic_bool agcMode;
     std::atomic_bool shuttingDown;

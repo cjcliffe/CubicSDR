@@ -103,6 +103,36 @@ spike passes when it looks and feels like the app widget it mirrors.
 - [ ] Port panels in dependency order, keeping the wx app working until the
   swap.
 
+## State extraction
+
+The spikes drive state that is currently scattered: device settings on
+the app object, zoomed-view copies on each canvas with manual sync
+between them, gains and meter inputs on frame children, theme in a
+singleton, status text routed to the frame. The port needs it behind
+one portable API both shells can drive. `DemodulatorMgr` is already
+portable and stays as the demod list plus selection; scalar storage
+moves into a new portable owner, and view access goes through the same
+API with the app object delegating to the canvases:
+
+- Device: frequency, sample rate, PPM, offset.
+- Main view: center, bandwidth, zoomed-view set/reset. Unzoomed views
+  keep falling back to device frequency and sample rate.
+- Tuning aids: frequency snap.
+- Gains: per-device gain values plus the changed flags.
+- Meter inputs: squelch and volume values plus defaults.
+- Theme: current theme colors.
+- Status: one text sink per shell.
+
+Slices in dependency order; the wx app keeps working throughout:
+
+1. Device plus view plus snap state (done): scalars moved into the
+   portable owner; view API declared with canvas delegation; canvas
+   zoom logic stays put for the new shell to reimplement on models.
+2. Demodulator access plus a selection-change notification the new
+   shell can observe.
+3. Gains and meter inputs.
+4. Theme and status sink.
+
 ## Open questions
 
 - Which views, if any, still need spikes before extraction starts?

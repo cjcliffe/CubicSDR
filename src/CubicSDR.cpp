@@ -147,7 +147,7 @@ public:
 };
 
 
-CubicSDR::CubicSDR() : frequency(0), offset(0), ppm(0), snap(1), sampleRate(DEFAULT_SAMPLE_RATE), agcMode(false)
+CubicSDR::CubicSDR() : coreState(DEFAULT_SAMPLE_RATE), agcMode(false)
 {
     SetAppServices(this);
 
@@ -274,9 +274,9 @@ bool CubicSDR::OnInit() {
     Modem::addModemFactory(ModemST::factory, "ST", 200000);
 #endif
     
-    frequency = wxGetApp().getConfig()->getCenterFreq();
-    offset = 0;
-    ppm = 0;
+    coreState.setFrequency(wxGetApp().getConfig()->getCenterFreq());
+    coreState.setOffset(0);
+    coreState.setPPM(0);
     devicesReady.store(false);
     devicesFailed.store(false);
     deviceSelectorOpen.store(false);
@@ -637,11 +637,11 @@ void CubicSDR::sdrEnumThreadNotify(SDREnumerator::SDREnumState state, std::strin
 void CubicSDR::setFrequency(long long freq) {
     long long rangeMin, rangeMax;
     if (sdrThread && sdrThread->getDeviceFrequencyRange(rangeMin, rangeMax)) {
-        freq = clampTuneFrequency(freq, offset.load(), deviceTuneFloor(rangeMin, sampleRate), rangeMax);
-    } else if (freq < sampleRate / 2) {
-        freq = sampleRate / 2;
+        freq = clampTuneFrequency(freq, coreState.getOffset(), deviceTuneFloor(rangeMin, coreState.getSampleRate()), rangeMax);
+    } else if (freq < coreState.getSampleRate() / 2) {
+        freq = coreState.getSampleRate() / 2;
     }
-    frequency = freq;
+    coreState.setFrequency(freq);
     sdrThread->setFrequency(freq);
     getSpectrumProcessor()->setPeakHold(getSpectrumProcessor()->getPeakHold());
 
@@ -658,14 +658,14 @@ void CubicSDR::setFrequency(long long freq) {
 }
 
 long long CubicSDR::getOffset() {
-    return offset;
+    return coreState.getOffset();
 }
 
 void CubicSDR::setOffset(long long ofs) {
-    offset = ofs;
+    coreState.setOffset(ofs);
     
     if (sdrThread && !sdrThread->isTerminated()) {
-        sdrThread->setOffset(offset);
+        sdrThread->setOffset(coreState.getOffset());
     }
 }
 
@@ -706,7 +706,7 @@ SDRPostThreadChannelizerType CubicSDR::getChannelizerType() {
 }
 
 long long CubicSDR::getFrequency() {
-    return frequency;
+    return coreState.getFrequency();
 }
 
 
@@ -731,13 +731,13 @@ void CubicSDR::unlockFrequency() {
 }
 
 void CubicSDR::setSampleRate(long long rate_in) {
-    sampleRate = rate_in;
+    coreState.setSampleRate(rate_in);
 
     if (sdrThread) {
-        sdrThread->setSampleRate(sampleRate);
+        sdrThread->setSampleRate(coreState.getSampleRate());
     }
 
-    setFrequency(frequency);
+    setFrequency(coreState.getFrequency());
 
     int fftSize = effectiveSpectrumFFT(getConfig()->getSpectrumFFTSize(), rate_in);
     appframe->setMainWaterfallFFTSize(fftSize);
@@ -820,19 +820,19 @@ void CubicSDR::setDevice(SDRDeviceInfo *dev, int waitMsForTermination) {
     
     if (soapyDev) {
         if (long devSampleRate = devConfig->getSampleRate()) {
-            sampleRate = dev->getSampleRateNear(SOAPY_SDR_RX, 0, devSampleRate);
+            coreState.setSampleRate(dev->getSampleRateNear(SOAPY_SDR_RX, 0, devSampleRate));
             sampleRateInitialized.store(true);
         }
         
         if (!sampleRateInitialized.load()) {
-            sampleRate = dev->getSampleRateNear(SOAPY_SDR_RX, 0, DEFAULT_SAMPLE_RATE);
+            coreState.setSampleRate(dev->getSampleRateNear(SOAPY_SDR_RX, 0, DEFAULT_SAMPLE_RATE));
             sampleRateInitialized.store(true);
         } else {
-            sampleRate = dev->getSampleRateNear(SOAPY_SDR_RX, 0, sampleRate);
+            coreState.setSampleRate(dev->getSampleRateNear(SOAPY_SDR_RX, 0, coreState.getSampleRate()));
         }
 
-        setFrequency(frequency);
-        setSampleRate(sampleRate);
+        setFrequency(coreState.getFrequency());
+        setSampleRate(coreState.getSampleRate());
 
         setPPM(devConfig->getPPM());
         setOffset(devConfig->getOffset());
@@ -916,7 +916,7 @@ void CubicSDR::notifyDemodulatorsChanged() {
 }
 
 long long CubicSDR::getSampleRate() {
-    return sampleRate;
+    return coreState.getSampleRate();
 }
 
 void CubicSDR::removeDemodulator(const DemodulatorInstancePtr& demod) {
@@ -938,18 +938,18 @@ AppConfig *CubicSDR::getConfig() {
 }
 
 void CubicSDR::setPPM(int ppm_in) {
-    ppm = ppm_in;
+    coreState.setPPM(ppm_in);
     if (sdrThread && !sdrThread->isTerminated()) {
-        sdrThread->setPPM(ppm);
+        sdrThread->setPPM(coreState.getPPM());
     }
 }
 
 int CubicSDR::getPPM() {
     SDRDeviceInfo *dev = sdrThread->getDevice();
     if (dev) {
-        ppm = config.getDevice(dev->getDeviceId())->getPPM();
+        coreState.setPPM(config.getDevice(dev->getDeviceId())->getPPM());
     }
-    return ppm;
+    return coreState.getPPM();
 }
 
 void CubicSDR::showFrequencyInput(FrequencyDialog::FrequencyDialogTarget targetMode) {
@@ -1009,14 +1009,11 @@ AppFrame *CubicSDR::getAppFrame() {
 }
 
 void CubicSDR::setFrequencySnap(int snap_in) {
-    if (snap_in > 1000000) {
-        snap_in = 1000000;
-    }
-    this->snap = snap_in;
+    coreState.setFrequencySnap(snap_in);
 }
 
 int CubicSDR::getFrequencySnap() {
-    return snap;
+    return coreState.getFrequencySnap();
 }
 
 bool CubicSDR::areDevicesReady() {
