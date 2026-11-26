@@ -119,7 +119,9 @@ API with the app object delegating to the canvases:
   keep falling back to device frequency and sample rate.
 - Tuning aids: frequency snap.
 - Gains: per-device gain values plus the changed flags.
-- Meter inputs: squelch and volume values plus defaults.
+- Meter inputs: the four slider positions (waterfall speed, spectrum
+  average, demod gain, squelch) stay canvas-local; their consumers and
+  mappings are already portable.
 - Theme: current theme colors.
 - Status: one text sink per shell.
 
@@ -132,7 +134,9 @@ Slices in dependency order; the wx app keeps working throughout:
    `DemodulatorMgr` carries an atomic selection serial bumped on real
    selection changes, including delete fallback; the bump rule is a
    tested pure function.
-3. Gains and meter inputs.
+3. Gains and meter inputs (done, no code): gain values and ranges
+   already portable via the SDR thread and device info; slider
+   positions stay canvas-local for the new shell to reimplement.
 4. Theme and status sink.
 
 ## Open questions
