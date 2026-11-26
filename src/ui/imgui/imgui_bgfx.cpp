@@ -47,15 +47,11 @@ bgfx::ShaderHandle loadShader(const char *name) {
     return BGFX_INVALID_HANDLE;
 }
 
-struct BackendState {
-    bgfx::ViewId view = 0;
-    bgfx::ProgramHandle program = BGFX_INVALID_HANDLE;
-    bgfx::UniformHandle s_texFont = BGFX_INVALID_HANDLE;
-    bgfx::VertexLayout layout;
-    ImFont *monoFont = nullptr;
-};
-
-BackendState g_state;
+bgfx::ProgramHandle g_program = BGFX_INVALID_HANDLE;
+bgfx::UniformHandle g_texFont = BGFX_INVALID_HANDLE;
+bgfx::VertexLayout g_layout;
+ImGuiContext *g_ctx = nullptr;
+ImFont *g_monoFont = nullptr;
 
 bgfx::TextureHandle toBgfxTexture(ImTextureID id) {
     bgfx::TextureHandle handle;
@@ -77,8 +73,7 @@ void updateTextures(ImDrawData *drawData) {
             bgfx::TextureHandle handle = bgfx::createTexture2D(
                 (uint16_t)tex->Width, (uint16_t)tex->Height, false, 1, bgfx::TextureFormat::RGBA8, 0, NULL);
             const bgfx::Memory *mem = bgfx::copy(tex->GetPixels(), (uint32_t)tex->GetSizeInBytes());
-            bgfx::updateTexture2D(
-                handle, 0, 0, 0, 0, (uint16_t)tex->Width, (uint16_t)tex->Height, mem);
+            bgfx::updateTexture2D(handle, 0, 0, 0, 0, (uint16_t)tex->Width, (uint16_t)tex->Height, mem);
             tex->SetTexID(toImTextureId(handle));
             tex->SetStatus(ImTextureStatus_OK);
         } else if (tex->Status == ImTextureStatus_WantUpdates) {
@@ -105,76 +100,6 @@ void updateTextures(ImDrawData *drawData) {
     }
 }
 
-} // namespace
-
-bool imguiInit(bgfx::ViewId view) {
-    g_state.view = view;
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures;
-    io.BackendRendererName = "cubic_bgfx";
-    io.IniFilename = nullptr;
-
-    io.Fonts->AddFontDefault();
-    ImFontConfig monoConfig;
-    monoConfig.FontDataOwnedByAtlas = false;
-    g_state.monoFont = io.Fonts->AddFontFromMemoryTTF(
-        (void *)s_robotoMonoRegularTtf, (int)sizeof(s_robotoMonoRegularTtf), 32.0f, &monoConfig);
-
-    g_state.layout.begin()
-        .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
-        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
-        .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
-        .end();
-    g_state.s_texFont = bgfx::createUniform("s_texFont", bgfx::UniformType::Sampler);
-
-    bgfx::ShaderHandle vsh = loadShader("vs_imgui");
-    bgfx::ShaderHandle fsh = loadShader("fs_imgui");
-    if (!bgfx::isValid(vsh) || !bgfx::isValid(fsh)) {
-        return false;
-    }
-    g_state.program = bgfx::createProgram(vsh, fsh, true);
-    return bgfx::isValid(g_state.program);
-}
-
-void imguiShutdown() {
-    ImGuiPlatformIO &pio = ImGui::GetPlatformIO();
-    for (ImTextureData *tex : pio.Textures) {
-        if (tex->Status != ImTextureStatus_Destroyed) {
-            bgfx::TextureHandle handle = toBgfxTexture(tex->GetTexID());
-            if (bgfx::isValid(handle)) {
-                bgfx::destroy(handle);
-            }
-            tex->SetTexID(ImTextureID_Invalid);
-            tex->SetStatus(ImTextureStatus_Destroyed);
-        }
-    }
-    bgfx::destroy(g_state.program);
-    bgfx::destroy(g_state.s_texFont);
-    ImGui::DestroyContext();
-}
-
-void imguiBeginFrame(const ImguiInput &in, int width, int height, float dt) {
-    ImGuiIO &io = ImGui::GetIO();
-    io.DisplaySize = ImVec2((float)width, (float)height);
-    io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
-    io.DeltaTime = dt > 0.0f ? dt : 1.0f / 60.0f;
-    io.AddMousePosEvent(in.mx, in.my);
-    io.AddMouseButtonEvent(ImGuiMouseButton_Left, in.left);
-    io.AddMouseButtonEvent(ImGuiMouseButton_Right, in.right);
-    io.AddMouseButtonEvent(ImGuiMouseButton_Middle, in.middle);
-    io.AddMouseWheelEvent(in.wheelX, in.wheelY);
-    ImGui::NewFrame();
-}
-
-ImFont *imguiMonoFont() {
-    return g_state.monoFont;
-}
-
-namespace {
-
 uint16_t clampU16(float v, uint16_t lo, uint16_t hi) {
     if (v < (float)lo) {
         v = (float)lo;
@@ -187,22 +112,106 @@ uint16_t clampU16(float v, uint16_t lo, uint16_t hi) {
 
 } // namespace
 
-void imguiEndFrame() {
+bool imguiInitBackend() {
+    if (g_ctx != nullptr) {
+        return true;
+    }
+    g_layout.begin()
+        .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
+        .end();
+    g_texFont = bgfx::createUniform("s_texFont", bgfx::UniformType::Sampler);
+    bgfx::ShaderHandle vsh = loadShader("vs_imgui");
+    bgfx::ShaderHandle fsh = loadShader("fs_imgui");
+    if (!bgfx::isValid(vsh) || !bgfx::isValid(fsh)) {
+        return false;
+    }
+    g_program = bgfx::createProgram(vsh, fsh, true);
+    if (!bgfx::isValid(g_program)) {
+        return false;
+    }
+    IMGUI_CHECKVERSION();
+    g_ctx = ImGui::CreateContext();
+    ImGui::SetCurrentContext(g_ctx);
+    ImGuiIO &io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures;
+    io.BackendRendererName = "cubic_bgfx";
+    io.IniFilename = nullptr;
+    io.Fonts->AddFontDefault();
+    ImFontConfig monoConfig;
+    monoConfig.FontDataOwnedByAtlas = false;
+    g_monoFont = io.Fonts->AddFontFromMemoryTTF(
+        (void *)s_robotoMonoRegularTtf, (int)sizeof(s_robotoMonoRegularTtf), 32.0f, &monoConfig);
+    return true;
+}
+
+void imguiShutdownBackend() {
+    if (g_ctx != nullptr) {
+        ImGui::SetCurrentContext(g_ctx);
+        ImGuiPlatformIO &pio = ImGui::GetPlatformIO();
+        for (ImTextureData *tex : pio.Textures) {
+            if (tex->Status != ImTextureStatus_Destroyed) {
+                bgfx::TextureHandle handle = toBgfxTexture(tex->GetTexID());
+                if (bgfx::isValid(handle)) {
+                    bgfx::destroy(handle);
+                }
+                tex->SetTexID(ImTextureID_Invalid);
+                tex->SetStatus(ImTextureStatus_Destroyed);
+            }
+        }
+        ImGui::DestroyContext(g_ctx);
+        g_ctx = nullptr;
+        g_monoFont = nullptr;
+    }
+    if (bgfx::isValid(g_program)) {
+        bgfx::destroy(g_program);
+        g_program = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(g_texFont)) {
+        bgfx::destroy(g_texFont);
+        g_texFont = BGFX_INVALID_HANDLE;
+    }
+}
+
+void imguiBeginFrame(const ImguiInput &in, int width, int height, float dt, float fbScale) {
+    ImGui::SetCurrentContext(g_ctx);
+    ImGuiIO &io = ImGui::GetIO();
+    io.DisplaySize = ImVec2((float)width, (float)height);
+    io.DisplayFramebufferScale = ImVec2(fbScale, fbScale);
+    io.DeltaTime = dt > 0.0f ? dt : 1.0f / 60.0f;
+    io.AddMousePosEvent(in.mx, in.my);
+    io.AddMouseButtonEvent(ImGuiMouseButton_Left, in.left);
+    io.AddMouseButtonEvent(ImGuiMouseButton_Right, in.right);
+    io.AddMouseButtonEvent(ImGuiMouseButton_Middle, in.middle);
+    io.AddMouseWheelEvent(in.wheelX, in.wheelY);
+    ImGui::NewFrame();
+}
+
+void imguiEndFrame(bgfx::ViewId view) {
+    ImGui::SetCurrentContext(g_ctx);
     ImGui::Render();
     ImDrawData *drawData = ImGui::GetDrawData();
     updateTextures(drawData);
     float fbW = drawData->DisplaySize.x * drawData->FramebufferScale.x;
     float fbH = drawData->DisplaySize.y * drawData->FramebufferScale.y;
-    if (fbW <= 0.0f || fbH <= 0.0f || drawData->CmdListsCount == 0) {
+    uint16_t vw = 0;
+    uint16_t vh = 0;
+    if (fbW > 0.0f && fbH > 0.0f) {
+        vw = (uint16_t)fbW;
+        vh = (uint16_t)fbH;
+    }
+    bgfx::setViewRect(view, 0, 0, vw, vh);
+    bgfx::setViewClear(view, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x1a1a1aff, 1.0f, 0);
+    if (vw == 0 || vh == 0 || drawData->CmdListsCount == 0) {
+        bgfx::touch(view);
         return;
     }
-    uint16_t vw = (uint16_t)fbW;
-    uint16_t vh = (uint16_t)fbH;
-    bgfx::setViewRect(g_state.view, 0, 0, vw, vh);
-    glm::mat4 view(1.0f);
+    glm::mat4 viewMat(1.0f);
     glm::mat4 proj = glm::ortho(drawData->DisplayPos.x, drawData->DisplayPos.x + drawData->DisplaySize.x,
         drawData->DisplayPos.y + drawData->DisplaySize.y, drawData->DisplayPos.y, -1.0f, 1.0f);
-    bgfx::setViewTransform(g_state.view, glm::value_ptr(view), glm::value_ptr(proj));
+    bgfx::setViewTransform(view, glm::value_ptr(viewMat), glm::value_ptr(proj));
     glm::mat4 model(1.0f);
     float *modelPtr = glm::value_ptr(model);
 
@@ -215,7 +224,7 @@ void imguiEndFrame() {
         }
         bgfx::TransientVertexBuffer tvb;
         bgfx::TransientIndexBuffer tib;
-        bgfx::allocTransientVertexBuffer(&tvb, vtxCount, g_state.layout);
+        bgfx::allocTransientVertexBuffer(&tvb, vtxCount, g_layout);
         bgfx::allocTransientIndexBuffer(&tib, idxCount, sizeof(ImDrawIdx) == 4);
         for (uint32_t i = 0; i < vtxCount; i++) {
             const ImDrawVert &v = list->VtxBuffer.Data[i];
@@ -254,12 +263,17 @@ void imguiEndFrame() {
             bgfx::setScissor(sx, sy, ex - sx, ey - sy);
             bgfx::setVertexBuffer(0, &tvb, cmd.VtxOffset, vtxCount - cmd.VtxOffset);
             bgfx::setIndexBuffer(&tib, cmd.IdxOffset, cmd.ElemCount);
-            bgfx::setTexture(0, g_state.s_texFont, toBgfxTexture(cmd.GetTexID()),
+            bgfx::setTexture(0, g_texFont, toBgfxTexture(cmd.GetTexID()),
                 BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT
                     | BGFX_SAMPLER_MIP_POINT);
             bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_BLEND_ALPHA);
             bgfx::setTransform(modelPtr);
-            bgfx::submit(g_state.view, g_state.program);
+            bgfx::submit(view, g_program);
         }
     }
+}
+
+ImFont *imguiMonoFont() {
+    ImGui::SetCurrentContext(g_ctx);
+    return g_monoFont;
 }

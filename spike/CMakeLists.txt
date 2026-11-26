@@ -28,7 +28,7 @@ FetchContent_MakeAvailable(bgfx.cmake)
 FetchContent_GetProperties(bgfx.cmake SOURCE_DIR BGFX_CMAKE_DIR)
 FetchContent_GetProperties(bgfx SOURCE_DIR BGFX_SRC_DIR)
 if(BGFXSPIKE_PREBUILT_SHADERS)
-    set(SHADER_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders/generated)
+    set(SHADER_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/generated)
 else()
     set(BGFX_SHADER_INCLUDE_PATH ${BGFX_SRC_DIR}/src)
     if(NOT COMMAND bgfx_compile_shaders)
@@ -78,21 +78,21 @@ if(BGFXSPIKE_PREBUILT_SHADERS)
 else()
     bgfx_compile_shaders(
         TYPE VERTEX
-        SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/vs.sc
-        VARYING_DEF ${CMAKE_CURRENT_SOURCE_DIR}/shaders/varying.def.sc
+        SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/vs.sc
+        VARYING_DEF ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/varying.def.sc
         OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/generated/shaders
         PROFILES 430 300_es
         AS_HEADERS
     )
     bgfx_compile_shaders(
         TYPE FRAGMENT
-        SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs.sc
-        VARYING_DEF ${CMAKE_CURRENT_SOURCE_DIR}/shaders/varying.def.sc
+        SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/fs.sc
+        VARYING_DEF ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/varying.def.sc
         OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/generated/shaders
         PROFILES 430 300_es
         AS_HEADERS
     )
-    add_executable(bgfxscope_spike bgfxscope_spike.cpp shaders/vs.sc shaders/fs.sc)
+    add_executable(bgfxscope_spike bgfxscope_spike.cpp ../src/ui/imgui/shaders/vs.sc ../src/ui/imgui/shaders/fs.sc)
     set(SHADER_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/generated/shaders)
 endif()
 target_include_directories(bgfxscope_spike PRIVATE
@@ -107,7 +107,7 @@ endif()
 
 set(IMGUI_SOURCES
     imgui_spike.cpp
-    imgui_bgfx.cpp
+    ../src/ui/imgui/imgui_bgfx.cpp
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
     ${imgui_SOURCE_DIR}/imgui_tables.cpp
@@ -118,23 +118,24 @@ if(BGFXSPIKE_PREBUILT_SHADERS)
 else()
     bgfx_compile_shaders(
         TYPE VERTEX
-        SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/vs_imgui.sc
-        VARYING_DEF ${CMAKE_CURRENT_SOURCE_DIR}/shaders/varying.def.sc
+        SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/vs_imgui.sc
+        VARYING_DEF ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/varying.def.sc
         OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/generated/shaders
         PROFILES 430 300_es
         AS_HEADERS
     )
     bgfx_compile_shaders(
         TYPE FRAGMENT
-        SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs_imgui.sc
-        VARYING_DEF ${CMAKE_CURRENT_SOURCE_DIR}/shaders/varying.def.sc
+        SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/fs_imgui.sc
+        VARYING_DEF ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/varying.def.sc
         OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/generated/shaders
         PROFILES 430 300_es
         AS_HEADERS
     )
-    add_executable(imgui_spike ${IMGUI_SOURCES} shaders/vs_imgui.sc shaders/fs_imgui.sc)
+    add_executable(imgui_spike ${IMGUI_SOURCES} ../src/ui/imgui/shaders/vs_imgui.sc ../src/ui/imgui/shaders/fs_imgui.sc)
 endif()
 target_include_directories(imgui_spike PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/sdr
     ${imgui_SOURCE_DIR}
@@ -149,7 +150,7 @@ endif()
 
 set(GAINMETER_SOURCES
     gainmeter_spike.cpp
-    imgui_bgfx.cpp
+    ../src/ui/imgui/imgui_bgfx.cpp
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
     ${imgui_SOURCE_DIR}/imgui_tables.cpp
@@ -158,9 +159,10 @@ set(GAINMETER_SOURCES
 if(BGFXSPIKE_PREBUILT_SHADERS)
     add_executable(gainmeter_spike ${GAINMETER_SOURCES})
 else()
-    add_executable(gainmeter_spike ${GAINMETER_SOURCES} shaders/vs_imgui.sc shaders/fs_imgui.sc)
+    add_executable(gainmeter_spike ${GAINMETER_SOURCES} ../src/ui/imgui/shaders/vs_imgui.sc ../src/ui/imgui/shaders/fs_imgui.sc)
 endif()
 target_include_directories(gainmeter_spike PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/demod
     ${imgui_SOURCE_DIR}

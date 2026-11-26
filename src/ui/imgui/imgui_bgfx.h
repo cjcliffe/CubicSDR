@@ -17,8 +17,8 @@ struct ImguiInput {
     float wheelY = 0.0f;
 };
 
-bool imguiInit(bgfx::ViewId view);
-void imguiShutdown();
-void imguiBeginFrame(const ImguiInput &in, int width, int height, float dt);
-void imguiEndFrame();
+bool imguiInitBackend();
+void imguiShutdownBackend();
+void imguiBeginFrame(const ImguiInput &in, int width, int height, float dt, float fbScale = 1.0f);
+void imguiEndFrame(bgfx::ViewId view);
 ImFont *imguiMonoFont();

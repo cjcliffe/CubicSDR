@@ -98,8 +98,8 @@ spike passes when it looks and feels like the app widget it mirrors.
   and status routing, behind an API both shells can drive.
 - [ ] Spike one ImGui dialog against the state interface to prove the widget
   story before committing to it.
-- [ ] Decide the shell strategy: parallel bgfx shell alongside wx, or
-  panel-by-panel replacement inside the existing frame.
+- [x] Decide the shell strategy: panel-by-panel replacement inside the
+  existing frame.
 - [ ] Port panels in dependency order, keeping the wx app working until the
   swap.
 
@@ -141,9 +141,34 @@ Slices in dependency order; the wx app keeps working throughout:
    status text added to `AppServices` with the frame status bar behind
    it, alongside the existing message box sink.
 
+## Panel migration
+
+Decision: incremental replacement inside the wx frame, not a parallel
+shell. Each canvas becomes a bgfx view hosted in its window, reusing
+the spike-proven view code; the wx frame, dialogs, and menus go last.
+Rationale: every step ships a working app, and the hardest part
+(dialogs, layout) gets maximum design time.
+
+Hosting design:
+
+- New wxPanel-based host: bgfx renders to the native handle, so
+  migrating canvases rebase off wxGLCanvas (two GL contexts cannot
+  share one window). bgfx inits headless; each host owns a framebuffer
+  recreated on resize.
+- One imgui context for all hosted views; one fixed borderless imgui
+  window per view. Spike view bodies move over verbatim; wx events
+  translate to the spike edge structs.
+- First hosted view pumps `bgfx::frame()` from its paint handler;
+  centralize the pump when the second view lands.
+- View state flows through `CoreState` and `DemodulatorMgr`; canvas
+  zoom members stay until their canvas migrates.
+
+Order: tuner, gain/meter, spectrum, waterfall, scope, mode selector.
+Spectrum, waterfall, and scope need a small shared bgfx line/texture
+helper layer first; demod views migrate with their main views.
+
 ## Open questions
 
 - Which views, if any, still need spikes before extraction starts?
-- Parallel shell or incremental replacement?
 - What provides dialogs and menus in the interim if panels move first?
 - Which platforms must the new shell cover on day one?

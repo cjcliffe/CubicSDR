@@ -564,9 +564,7 @@ int main(int argc, char **argv) {
     std::printf("bgfx init ok: %s\n", bgfx::getRendererName(bgfx::getRendererType()));
     std::fflush(stdout);
 
-    bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x1a1a1aff, 1.0f, 0);
-
-    if (!imguiInit(1)) {
+    if (!imguiInitBackend()) {
         std::printf("imgui shader load failed\n");
         bgfx::shutdown();
         SDL_DestroyWindow(window);
@@ -673,14 +671,12 @@ int main(int argc, char **argv) {
         in.wheelY = 0.0f;
         drawTuner(s, edges, mouseX, mouseY);
         drawControl(s);
-        imguiEndFrame();
+        imguiEndFrame(1);
 
-        bgfx::setViewRect(0, 0, 0, (uint16_t)ww, (uint16_t)wh);
-        bgfx::touch(0);
         bgfx::frame();
     }
 
-    imguiShutdown();
+    imguiShutdownBackend();
     bgfx::frame();
     bgfx::shutdown();
     SDL_DestroyWindow(window);
