@@ -26,6 +26,13 @@ spike passes when it looks and feels like the app widget it mirrors.
 - Scope (`spike/raylib-scope`, partial): waveform and spectrum panels with a
   synthetic feed verified at rest; the 3D carousel posed through rlgl's
   implicit state never rendered reliably, which triggered the bgfx pivot.
+- Scope on bgfx (`--spike bgfxscope`): SDL3 window with the bgfx OpenGL
+  renderer drawing carousel-posed textured quads from `ScopeCarousel` with
+  explicit glm matrices. Verified live: fit, rotation, color, drag feel.
+- Tuner on ImGui (`--spike imgui`): custom ImGui backend over bgfx (texture
+  protocol, transient buffers, RobotoMono digits) drawing the full tuning
+  strip via draw lists from `TunerStep`/`TunerLayout`/`TuneRange`, plus the
+  ImGui demo window as widget proof. Verified live.
 
 ## Portability findings
 
@@ -57,15 +64,29 @@ spike passes when it looks and feels like the app widget it mirrors.
   glm, and `external/cubicvr2` goes away with wx.
 - Decision: commit precompiled shaders; the shaderc chain is opt-in via a
   build flag so clean builds skip the toolchain.
+- The ImGui backend uses only public API: the `ImTextureData` texture
+  protocol for the font atlas plus transient vertex/index buffers per draw
+  list. Fonts bake lazily, so the backend must honor `WantUpdates` for
+  glyphs first used after startup, not just the initial upload.
+- Draw lists offer no blend control, so the tuner's additive bars transfer
+  as opaque gradient quads with the background lift and under-color stack
+  baked in; digits, grid, and snap box transfer exactly.
+- RobotoMono (bundled with bgfx examples) replaces the GL bitmap font for
+  tuner digits; legibility verified live at strip size.
+- bgfx marks textures created with initial data immutable and silently
+  skips later updates in release builds, so the atlas is created empty and
+  filled with a full-rect update; update memory must exactly cover the
+  rect or the upload is skipped the same way. Missing late-baked glyphs
+  are the symptom when either rule is broken.
 
 ## Phases
 
 - [x] Spike the interactive controls (tuner, mode selector).
 - [x] Spike the spectrum view with a synthetic feed.
 - [x] Spike the waterfall with ring, pacer, and demod interaction.
-- [ ] Spike a bgfx plus SDL window drawing one textured quad with explicit
+- [x] Spike a bgfx plus SDL window drawing one textured quad with explicit
   matrices, re-proving the scope carousel motion on the new stack.
-- [ ] Spike the ImGui backend with the tuner drawn via draw lists.
+- [x] Spike the ImGui backend with the tuner drawn via draw lists.
 - [ ] Spike the remaining views (gain/meter) or defer them behind the state
   extraction if they stop teaching anything new.
 - [ ] Extract the application state interface the spikes specified: device and
@@ -73,7 +94,7 @@ spike passes when it looks and feels like the app widget it mirrors.
   and status routing, behind an API both shells can drive.
 - [ ] Spike one ImGui dialog against the state interface to prove the widget
   story before committing to it.
-- [ ] Decide the shell strategy: parallel Raylib shell alongside wx, or
+- [ ] Decide the shell strategy: parallel bgfx shell alongside wx, or
   panel-by-panel replacement inside the existing frame.
 - [ ] Port panels in dependency order, keeping the wx app working until the
   swap.
