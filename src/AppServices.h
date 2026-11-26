@@ -52,6 +52,7 @@ public:
 
     virtual std::string getUserDataDir() = 0;
     virtual void showMessage(const std::string &title, const std::string &message) = 0;
+    virtual void showStatusText(const std::string &text) = 0;
     virtual bool isShuttingDown() = 0;
 
     virtual void setSampleRate(long long rate) = 0;

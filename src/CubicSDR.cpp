@@ -1058,6 +1058,10 @@ void CubicSDR::showMessage(const std::string &title, const std::string &message)
     wxMessageBox(message, title, wxICON_INFORMATION);
 }
 
+void CubicSDR::showStatusText(const std::string &text) {
+    getAppFrame()->GetStatusBar()->SetStatusText(text);
+}
+
 bool CubicSDR::getBookmarkBranchExpandState(const std::string &branch) {
     return getAppFrame()->getBookmarkView()->getExpandState(branch);
 }

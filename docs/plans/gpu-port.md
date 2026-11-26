@@ -137,7 +137,9 @@ Slices in dependency order; the wx app keeps working throughout:
 3. Gains and meter inputs (done, no code): gain values and ranges
    already portable via the SDR thread and device info; slider
    positions stay canvas-local for the new shell to reimplement.
-4. Theme and status sink.
+4. Theme and status sink (done): themes already portable and tested;
+   status text added to `AppServices` with the frame status bar behind
+   it, alongside the existing message box sink.
 
 ## Open questions
 

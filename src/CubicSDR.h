@@ -157,6 +157,7 @@ public:
     void notifyUpdateModemProperties() override;
     std::string getUserDataDir() override;
     void showMessage(const std::string &title, const std::string &message) override;
+    void showStatusText(const std::string &text) override;
     bool getBookmarkBranchExpandState(const std::string &branch) override;
     void setBookmarkBranchExpandState(const std::string &branch, bool expanded) override;
     void refreshBookmarkActiveList() override;
