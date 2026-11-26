@@ -146,3 +146,29 @@ if(TARGET SDL3::SDL3)
 else()
     target_link_libraries(imgui_spike PRIVATE SDL3::SDL3-static)
 endif()
+
+set(GAINMETER_SOURCES
+    gainmeter_spike.cpp
+    imgui_bgfx.cpp
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/imgui_demo.cpp)
+if(BGFXSPIKE_PREBUILT_SHADERS)
+    add_executable(gainmeter_spike ${GAINMETER_SOURCES})
+else()
+    add_executable(gainmeter_spike ${GAINMETER_SOURCES} shaders/vs_imgui.sc shaders/fs_imgui.sc)
+endif()
+target_include_directories(gainmeter_spike PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/demod
+    ${imgui_SOURCE_DIR}
+    ${BGFX_SRC_DIR}/examples/common/imgui
+    ${SHADER_INCLUDE_DIR})
+target_link_libraries(gainmeter_spike PRIVATE bgfx bx glm::glm)
+if(TARGET SDL3::SDL3)
+    target_link_libraries(gainmeter_spike PRIVATE SDL3::SDL3)
+else()
+    target_link_libraries(gainmeter_spike PRIVATE SDL3::SDL3-static)
+endif()

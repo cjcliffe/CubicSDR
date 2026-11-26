@@ -33,6 +33,10 @@ spike passes when it looks and feels like the app widget it mirrors.
   protocol, transient buffers, RobotoMono digits) drawing the full tuning
   strip via draw lists from `TunerStep`/`TunerLayout`/`TuneRange`, plus the
   ImGui demo window as widget proof. Verified live.
+- Gain/meter on ImGui (`--spike gainmeter`): gain strips from `GainSlider`
+  plus meter sliders with drag, wheel, double-click/middle-click default
+  reset, and right-click squelch snap, reusing the backend and shaders
+  unchanged. Verified live.
 
 ## Portability findings
 
@@ -87,7 +91,7 @@ spike passes when it looks and feels like the app widget it mirrors.
 - [x] Spike a bgfx plus SDL window drawing one textured quad with explicit
   matrices, re-proving the scope carousel motion on the new stack.
 - [x] Spike the ImGui backend with the tuner drawn via draw lists.
-- [ ] Spike the remaining views (gain/meter) or defer them behind the state
+- [x] Spike the remaining views (gain/meter) or defer them behind the state
   extraction if they stop teaching anything new.
 - [ ] Extract the application state interface the spikes specified: device and
   view frequencies, demodulator list and selection, visual gain, snap, theme,
