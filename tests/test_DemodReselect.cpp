@@ -92,6 +92,13 @@ TEST_SUITE("DemodReselect") {
         CHECK(DemodReselect::pick(freqs, { 1 }, -1, 1000, 100) == 0);
         CHECK(DemodReselect::pick(freqs, {}, -1, 1000, 100) == -1);
     }
+
+    TEST_CASE("serial bumps only on valid selection changes") {
+        CHECK(DemodReselect::selectionChanged(true, false) == true);
+        CHECK(DemodReselect::selectionChanged(true, true) == false);
+        CHECK(DemodReselect::selectionChanged(false, false) == false);
+        CHECK(DemodReselect::selectionChanged(false, true) == false);
+    }
 }
 
 }

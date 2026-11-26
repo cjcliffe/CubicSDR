@@ -6,6 +6,7 @@
 #include <vector>
 #include <map>
 #include <thread>
+#include <atomic>
 #include <cstdint>
 
 #include "DemodulatorInstance.h"
@@ -41,6 +42,7 @@ public:
     void setActiveDemodulator(const DemodulatorInstancePtr& demod);
 
     DemodulatorInstancePtr getCurrentModem();
+    uint64_t getSelectionSerial() const;
     DemodulatorInstancePtr getLastDemodulatorWith(const std::string& type,
 												const std::wstring& userLabel,
 												long long frequency,
@@ -94,6 +96,8 @@ private:
 
     // Highest consumed break serial; the Tab jump only considers newer breaks.
     uint64_t consumedBreakSerial = 0;
+
+    std::atomic_uint64_t selectionSerial;
 
     // Mass termination skips delete fallback; the selection dies with the last demod.
     bool terminatingAll = false;

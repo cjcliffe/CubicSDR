@@ -57,4 +57,8 @@ public:
         }
         return best;
     }
+
+    static bool selectionChanged(bool targetValid, bool sameAsCurrent) {
+        return targetValid && !sameAsCurrent;
+    }
 };

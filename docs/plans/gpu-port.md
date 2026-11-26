@@ -128,8 +128,10 @@ Slices in dependency order; the wx app keeps working throughout:
 1. Device plus view plus snap state (done): scalars moved into the
    portable owner; view API declared with canvas delegation; canvas
    zoom logic stays put for the new shell to reimplement on models.
-2. Demodulator access plus a selection-change notification the new
-   shell can observe.
+2. Demodulator access plus a selection-change notification (done):
+   `DemodulatorMgr` carries an atomic selection serial bumped on real
+   selection changes, including delete fallback; the bump rule is a
+   tested pure function.
 3. Gains and meter inputs.
 4. Theme and status sink.
 

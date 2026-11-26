@@ -21,7 +21,7 @@
 bool demodFreqCompare (const DemodulatorInstancePtr& i, const DemodulatorInstancePtr& j) { return (i->getFrequency() < j->getFrequency()); }
 bool inactiveCompare (const DemodulatorInstancePtr& i, const DemodulatorInstancePtr& j) { return (i->isActive() < j->isActive()); }
 
-DemodulatorMgr::DemodulatorMgr() {
+DemodulatorMgr::DemodulatorMgr() : selectionSerial(0) {
 
     lastBandwidth = DEFAULT_DEMOD_BW;
     lastDemodType = DEFAULT_DEMOD_TYPE;
@@ -162,6 +162,7 @@ void DemodulatorMgr::deleteThread(const DemodulatorInstancePtr& demod) {
     if (currentModem == demod) {
         currentModem->setVisualOutputQueue(nullptr);
         currentModem = nullptr;
+        selectionSerial.fetch_add(1);
     }
 
     if (i != demods.end()) {
@@ -250,7 +251,8 @@ void DemodulatorMgr::setActiveDemodulator(const DemodulatorInstancePtr& demod) {
     // squelch steal racing a delete): binding first would wipe a live
     // selection and end null. Inactive members still pass; tuning one
     // into range reactivates it and the post thread reselects it.
-    if (demod && std::find(demods.begin(), demods.end(), demod) == demods.end()) {
+    bool targetValid = !demod || std::find(demods.begin(), demods.end(), demod) != demods.end();
+    if (!targetValid) {
         return;
     }
 
@@ -263,6 +265,10 @@ void DemodulatorMgr::setActiveDemodulator(const DemodulatorInstancePtr& demod) {
 
     if (currentModem && currentModem != demod) {
         currentModem->setVisualOutputQueue(nullptr);
+    }
+
+    if (DemodReselect::selectionChanged(targetValid, demod == currentModem)) {
+        selectionSerial.fetch_add(1);
     }
 
     currentModem = demod;
@@ -294,6 +300,10 @@ DemodulatorInstancePtr DemodulatorMgr::getCurrentModem() {
     // threads write it; an unlocked shared_ptr copy can tear.
     std::lock_guard < std::recursive_mutex > lock(demods_busy);
     return currentModem;
+}
+
+uint64_t DemodulatorMgr::getSelectionSerial() const {
+    return selectionSerial.load();
 }
 
 DemodulatorInstancePtr DemodulatorMgr::getLastDemodulatorWith(const std::string& type,
