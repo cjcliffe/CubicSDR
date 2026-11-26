@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15...3.28)
+cmake_minimum_required(VERSION 3.21...3.28)
 
 project(CubicSpikes)
 
@@ -6,31 +6,77 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(FetchContent)
-set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
+# (Raylib spikes removed with the bgfx pivot; history keeps them.)
+
+# bgfx stack (bgfx + SDL3 + glm) for the GPU-port spikes.
+set(BGFX_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BGFX_AMALGAMATED ON CACHE BOOL "" FORCE)
+set(BGFX_BUILD_TOOLS ON CACHE BOOL "" FORCE)
+set(BGFX_INSTALL OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(
-    raylib
-    GIT_REPOSITORY https://github.com/raysan5/raylib.git
-    GIT_TAG 5.5
+    bgfx.cmake
+    GIT_REPOSITORY https://github.com/bkaradzic/bgfx.cmake.git
+    GIT_TAG v1.168.9637-616
+    GIT_SHALLOW TRUE
 )
-FetchContent_MakeAvailable(raylib)
+FetchContent_MakeAvailable(bgfx.cmake)
+FetchContent_GetProperties(bgfx.cmake SOURCE_DIR BGFX_CMAKE_DIR)
+FetchContent_GetProperties(bgfx SOURCE_DIR BGFX_SRC_DIR)
+set(BGFX_SHADER_INCLUDE_PATH ${BGFX_SRC_DIR}/src)
+if(NOT COMMAND bgfx_compile_shaders)
+    include(${BGFX_CMAKE_DIR}/cmake/bgfxToolUtils.cmake)
+endif()
 
-add_executable(tuner_spike tuner_spike.cpp)
-target_include_directories(tuner_spike PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel ${CMAKE_CURRENT_SOURCE_DIR}/../src/sdr)
-target_link_libraries(tuner_spike PRIVATE raylib)
+set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+set(SDL_STATIC ON CACHE BOOL "" FORCE)
+set(SDL_TESTS OFF CACHE BOOL "" FORCE)
+set(SDL_AUDIO OFF CACHE BOOL "" FORCE)
+set(SDL_RENDER OFF CACHE BOOL "" FORCE)
+set(SDL_CAMERA OFF CACHE BOOL "" FORCE)
+set(SDL_GPU OFF CACHE BOOL "" FORCE)
+set(SDL_JOYSTICK OFF CACHE BOOL "" FORCE)
+set(SDL_HAPTIC OFF CACHE BOOL "" FORCE)
+set(SDL_SENSOR OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+    SDL3
+    GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+    GIT_TAG release-3.4.20
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(SDL3)
 
-add_executable(modesel_spike modesel_spike.cpp)
-target_include_directories(modesel_spike PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel)
-target_link_libraries(modesel_spike PRIVATE raylib)
+FetchContent_Declare(
+    glm
+    GIT_REPOSITORY https://github.com/g-truc/glm.git
+    GIT_TAG 1.0.3
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(glm)
 
-add_executable(spectrum_spike spectrum_spike.cpp)
-target_include_directories(spectrum_spike PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel ${CMAKE_CURRENT_SOURCE_DIR}/../src/sdr)
-target_link_libraries(spectrum_spike PRIVATE raylib)
+bgfx_compile_shaders(
+    TYPE VERTEX
+    SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/vs.sc
+    VARYING_DEF ${CMAKE_CURRENT_SOURCE_DIR}/shaders/varying.def.sc
+    OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/generated/shaders
+    PROFILES 430
+    AS_HEADERS
+)
+bgfx_compile_shaders(
+    TYPE FRAGMENT
+    SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs.sc
+    VARYING_DEF ${CMAKE_CURRENT_SOURCE_DIR}/shaders/varying.def.sc
+    OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/generated/shaders
+    PROFILES 430
+    AS_HEADERS
+)
 
-add_executable(waterfall_spike waterfall_spike.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/visual/WaterfallRing.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/visual/WaterfallPacer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/util/Gradient.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/visual/ColorTheme.cpp)
-target_include_directories(waterfall_spike PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel ${CMAKE_CURRENT_SOURCE_DIR}/../src/sdr ${CMAKE_CURRENT_SOURCE_DIR}/../src/visual ${CMAKE_CURRENT_SOURCE_DIR}/../src/util)
-target_link_libraries(waterfall_spike PRIVATE raylib)
+add_executable(bgfxscope_spike bgfxscope_spike.cpp shaders/vs.sc shaders/fs.sc)
+target_include_directories(bgfxscope_spike PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel
+    ${CMAKE_CURRENT_BINARY_DIR}/include/generated/shaders)
+target_link_libraries(bgfxscope_spike PRIVATE bgfx bx glm::glm)
+if(TARGET SDL3::SDL3)
+    target_link_libraries(bgfxscope_spike PRIVATE SDL3::SDL3)
+else()
+    target_link_libraries(bgfxscope_spike PRIVATE SDL3::SDL3-static)
+endif()
