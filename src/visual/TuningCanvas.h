@@ -3,86 +3,74 @@
 
 #pragma once
 
-#include "wx/glcanvas.h"
-#include "wx/timer.h"
+#include "ui/imgui/BgfxCanvas.h"
 
-#include <vector>
-#include <queue>
+#include <string>
 
-#include "InteractiveCanvas.h"
-#include "TuningContext.h"
-#include "MouseTracker.h"
-
-#include "Timer.h"
-
-class TuningCanvas: public InteractiveCanvas {
+class TuningCanvas : public BgfxCanvas {
 public:
     enum ActiveState {
-        TUNING_HOVER_NONE, TUNING_HOVER_FREQ, TUNING_HOVER_BW, TUNING_HOVER_PPM, TUNING_HOVER_CENTER
+        TUNING_HOVER_NONE,
+        TUNING_HOVER_FREQ,
+        TUNING_HOVER_BW,
+        TUNING_HOVER_PPM,
+        TUNING_HOVER_CENTER
     };
+
     enum TuningDirection {
-        TUNING_DIRECTION_DOWN, TUNING_DIRECTION_UP
+        TUNING_DIRECTION_DOWN,
+        TUNING_DIRECTION_UP
     };
-    TuningCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
+
+    TuningCanvas(wxWindow *parent);
     ~TuningCanvas() override;
 
     void setHelpTip(std::string tip);
-    
     void setHalfBand(bool hb);
-    void OnKeyDown(wxKeyEvent& event);
-    void OnKeyUp(wxKeyEvent& event);
-    
+    void OnKeyDown(wxKeyEvent &event);
+    void OnKeyUp(wxKeyEvent &event);
     ActiveState getHoverState();
-    
-private:
-    void OnPaint(wxPaintEvent& event);
+
     void frameUpdate() override;
 
-    void OnMouseMoved(wxMouseEvent& event);
-    void OnMouseDown(wxMouseEvent& event);
-    void OnMouseWheelMoved(wxMouseEvent& event);
-    void OnMouseReleased(wxMouseEvent& event);
-    void OnMouseEnterWindow(wxMouseEvent& event);
-    void OnMouseLeftWindow(wxMouseEvent& event);
-    void OnMouseRightDown(wxMouseEvent& event);
-    void OnMouseRightReleased(wxMouseEvent& event);
+private:
+    struct ViewState {
+        ActiveState hoverState = TUNING_HOVER_NONE;
+        ActiveState downState = TUNING_HOVER_NONE;
+        int hoverIndex = 0;
+        int downIndex = 0;
+        bool mouseDown = false;
+        bool mouseRightDown = false;
+        bool dragging = false;
+        bool top = false;
+        bool bottom = false;
+        bool altDown = false;
+        bool shiftDown = false;
+        bool halfBand = false;
+        bool firstPaintCheck = true;
+        float dragAccum = 0.0f;
+        float originMouseX = 0.0f;
+        float originMouseY = 0.0f;
+        float mouseMX = 0.0f;
+        float mouseMY = 0.0f;
+        int wheelAccumV = 0;
+        int wheelAccumH = 0;
+        long long paintedFreq = -1;
+        long long paintedBw = -1;
+        long long paintedCenter = -1;
+        int paintedPPM = 0;
+        bool paintedAlt = false;
+        bool paintedShift = false;
+        int currentPPM = 0;
+        std::string helpTip;
+        std::string lastTip;
+    };
 
-    void StepTuner(ActiveState state, TuningDirection tuningDir, int digit, bool preventCarry = false, bool zeroOut = false);
+    void drawView(const BgfxEdges &edges, float mx, float my) override;
+    void onEnterView() override;
+    void onLeaveView() override;
+    void StepTuner(ActiveState state, TuningDirection tuningDir, int digit, bool preventCarry, bool zeroOut);
+    void updateHover(float mx01, float my01);
 
-    TuningContext *glContext;
-
-    std::string helpTip;
-    float dragAccum;
-    float uxDown;
-    ActiveState hoverState;
-    ActiveState downState;
-    int hoverIndex;
-    int downIndex;
-    bool dragging;
-    int wheelAccumV = 0, wheelAccumH = 0;
-
-    float freqDP;
-    float freqW;
-
-    float bwDP;
-    float bwW;
-
-    float centerDP;
-    float centerW;
-
-    bool top;
-    bool bottom;
-
-    int currentPPM;
-
-    long long freq, bw, center;
-    // Painted-value cache for change-driven repaints (see frameUpdate).
-    long long paintedFreq = -1, paintedBw = -1, paintedCenter = -1;
-    int paintedPPM = 0;
-    bool paintedAlt = false, paintedShift = false;
-    bool firstPaintCheck = true;
-    bool halfBand;
-    //
-wxDECLARE_EVENT_TABLE();
+    ViewState view;
 };
-

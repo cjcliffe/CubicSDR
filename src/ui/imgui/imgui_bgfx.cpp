@@ -11,7 +11,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <robotomono_regular.ttf.h>
+#include <vera_mono_regular.ttf.h>
 
 #include <glsl/vs_imgui.sc.bin.h>
 #include <glsl/fs_imgui.sc.bin.h>
@@ -52,6 +52,7 @@ bgfx::UniformHandle g_texFont = BGFX_INVALID_HANDLE;
 bgfx::VertexLayout g_layout;
 ImGuiContext *g_ctx = nullptr;
 ImFont *g_monoFont = nullptr;
+uint32_t g_clearColor = 0x1a1a1aff;
 
 bgfx::TextureHandle toBgfxTexture(ImTextureID id) {
     bgfx::TextureHandle handle;
@@ -112,6 +113,10 @@ uint16_t clampU16(float v, uint16_t lo, uint16_t hi) {
 
 } // namespace
 
+void imguiSetClearColor(uint32_t rgba) {
+    g_clearColor = rgba;
+}
+
 bool imguiInitBackend() {
     if (g_ctx != nullptr) {
         return true;
@@ -143,7 +148,7 @@ bool imguiInitBackend() {
     ImFontConfig monoConfig;
     monoConfig.FontDataOwnedByAtlas = false;
     g_monoFont = io.Fonts->AddFontFromMemoryTTF(
-        (void *)s_robotoMonoRegularTtf, (int)sizeof(s_robotoMonoRegularTtf), 32.0f, &monoConfig);
+        (void *)s_veraMonoRegularTtf, (int)sizeof(s_veraMonoRegularTtf), 32.0f, &monoConfig);
     return true;
 }
 
@@ -203,7 +208,7 @@ void imguiEndFrame(bgfx::ViewId view) {
         vh = (uint16_t)fbH;
     }
     bgfx::setViewRect(view, 0, 0, vw, vh);
-    bgfx::setViewClear(view, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x1a1a1aff, 1.0f, 0);
+    bgfx::setViewClear(view, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, g_clearColor, 1.0f, 0);
     if (vw == 0 || vh == 0 || drawData->CmdListsCount == 0) {
         bgfx::touch(view);
         return;

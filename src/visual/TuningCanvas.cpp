@@ -3,183 +3,269 @@
 
 #include "TuningCanvas.h"
 
-#include "wx/wxprec.h"
+#include <imgui.h>
 
-#ifndef WX_PRECOMP
-#include "wx/wx.h"
-#endif
-
-#if !wxUSE_GLCANVAS
-#error "OpenGL required: set wxUSE_GLCANVAS to 1 and rebuild the library"
-#endif
-
-#include "CubicSDR.h"
-#include "CubicSDRDefs.h"
-#include "TuneRange.h"
-#include "AppFrame.h"
+#include "ui/imgui/imgui_bgfx.h"
 #include "TunerStep.h"
-#include <algorithm>
+#include "TunerLayout.h"
+#include "TuneRange.h"
+#include "ColorTheme.h"
+#include "CubicSDR.h"
+#include "AppFrame.h"
+#include "DemodulatorMgr.h"
+#include "FrequencyDialog.h"
 
-wxBEGIN_EVENT_TABLE(TuningCanvas, wxGLCanvas) EVT_PAINT(TuningCanvas::OnPaint)
-EVT_MOTION(TuningCanvas::OnMouseMoved)
-EVT_LEFT_DOWN(TuningCanvas::OnMouseDown)
-EVT_LEFT_UP(TuningCanvas::OnMouseReleased)
-EVT_RIGHT_DOWN(TuningCanvas::OnMouseRightDown)
-EVT_RIGHT_UP(TuningCanvas::OnMouseRightReleased)
+#include <cmath>
+#include <string>
+#include <vector>
 
-EVT_LEAVE_WINDOW(TuningCanvas::OnMouseLeftWindow)
-EVT_ENTER_WINDOW(TuningCanvas::OnMouseEnterWindow)
-EVT_MOUSEWHEEL(TuningCanvas::OnMouseWheelMoved)
-//EVT_KEY_DOWN(TuningCanvas::OnKeyDown)
-//EVT_KEY_UP(TuningCanvas::OnKeyUp)
-wxEND_EVENT_TABLE()
+namespace {
 
-TuningCanvas::TuningCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs) :
-        InteractiveCanvas(parent, dispAttrs), dragAccum(0), uxDown(0), top(false), bottom(false), freq(-1), bw(-1), center(-1), halfBand(false) {
+const float kFreqDP = -1.0f;
+const float kFreqW = (1.0f / 3.0f) * 2.0f;
+const float kBwDP = -1.0f + (2.25f / 3.0f);
+const float kBwW = (1.0f / 4.0f) * 2.0f;
+const float kCenterDP = -1.0f + (2.0f / 3.0f) * 2.0f;
+const float kCenterW = (1.0f / 3.0f) * 2.0f;
 
-    glContext = new TuningContext(this, &wxGetApp().GetContext(this), wxGetApp().GetContextAttributes());
+const int kFreqCount = 11;
+const int kBwCount = 7;
 
-    hoverIndex = 0;
-    downIndex = 0;
-    hoverState = TUNING_HOVER_NONE;
-    downState = TUNING_HOVER_NONE;
-    dragging = false;
+struct ThemeColor {
+    float r, g, b;
+};
 
-    freqDP = -1.0;
-    freqW = (1.0f / 3.0f) * 2.0f;
+struct BarGroup {
+    int start;
+    int end;
+    int count;
+    float dp;
+    float w;
+    bool light;
+};
 
-    bwDP = -1.0 + (2.25 / 3.0);
-    bwW = (1.0 / 4.0) * 2.0;
+const BarGroup kBarGroups[] = {
+    {1, 3, kFreqCount, kFreqDP, kFreqW, true},
+    {4, 6, kFreqCount, kFreqDP, kFreqW, false},
+    {7, 9, kFreqCount, kFreqDP, kFreqW, true},
+    {10, 11, kFreqCount, kFreqDP, kFreqW, false},
+    {1, 3, kBwCount, kBwDP, kBwW, true},
+    {4, 6, kBwCount, kBwDP, kBwW, false},
+    {7, 7, kBwCount, kBwDP, kBwW, true},
+    {1, 3, kFreqCount, kCenterDP, kCenterW, true},
+    {4, 6, kFreqCount, kCenterDP, kCenterW, false},
+    {7, 9, kFreqCount, kCenterDP, kCenterW, true},
+    {10, 11, kFreqCount, kCenterDP, kCenterW, false},
+};
 
-    centerDP = -1.0f + (2.0f / 3.0f) * 2.0f;
-    centerW = (1.0f / 3.0f) * 2.0f;
+uint8_t clampByte(float v) {
+    if (v < 0.0f) {
+        v = 0.0f;
+    }
+    if (v > 1.0f) {
+        v = 1.0f;
+    }
+    return (uint8_t)(v * 255.0f);
+}
 
-    currentPPM = 0;
+ImU32 packColor(float r, float g, float b, float a = 1.0f) {
+    return IM_COL32(clampByte(r), clampByte(g), clampByte(b), clampByte(a));
+}
+
+uint32_t packClear(const ThemeColor &bg) {
+    return ((uint32_t)clampByte(bg.r) << 24) | ((uint32_t)clampByte(bg.g) << 16)
+        | ((uint32_t)clampByte(bg.b) << 8) | 0xFFu;
+}
+
+struct TunerFrame {
+    ImDrawList *dl;
+    float ox, oy, w, h;
+    float px(float x) const {
+        return ox + (x + 1.0f) * 0.5f * w;
+    }
+    float py(float y) const {
+        return oy + (1.0f - y) * 0.5f * h;
+    }
+};
+
+void emitVGradient(
+    const TunerFrame &f, float ndx0, float ndx1, ImU32 edge, ImU32 full, bool drawTop, bool drawBottom) {
+    float x0 = f.px(ndx0);
+    float x1 = f.px(ndx1);
+    if (drawTop) {
+        f.dl->AddRectFilledMultiColor(ImVec2(x0, f.py(1.0f)), ImVec2(x1, f.py(0.0f)), edge, edge, full, full);
+    }
+    if (drawBottom) {
+        f.dl->AddRectFilledMultiColor(ImVec2(x0, f.py(0.0f)), ImVec2(x1, f.py(-1.0f)), full, full, edge, edge);
+    }
+}
+
+void drawBarQuads(const TunerFrame &f, const TunerLayout::TunerBars &bars, const ThemeColor &color,
+    const ThemeColor &bg) {
+    ImU32 edge = packColor(color.r * 0.5f + bg.r, color.g * 0.5f + bg.g, color.b * 0.5f + bg.b);
+    ImU32 full = packColor(color.r + bg.r, color.g + bg.g, color.b + bg.b);
+    if (bars.top.empty() && bars.bottom.empty()) {
+        return;
+    }
+    float x0 = !bars.top.empty() ? bars.top[2] : bars.bottom[2];
+    float x1 = !bars.top.empty() ? bars.top[0] : bars.bottom[0];
+    emitVGradient(f, x0, x1, edge, full, !bars.top.empty(), !bars.bottom.empty());
+}
+
+void drawBarQuadsStacked(const TunerFrame &f, const TunerLayout::TunerBars &bars, const ThemeColor &over,
+    const ThemeColor &under, const ThemeColor &bg) {
+    ImU32 edge = packColor(over.r * 0.5f + under.r * 0.5f + bg.r, over.g * 0.5f + under.g * 0.5f + bg.g,
+        over.b * 0.5f + under.b * 0.5f + bg.b);
+    ImU32 full = packColor(
+        over.r + under.r + bg.r, over.g + under.g + bg.g, over.b + under.b + bg.b);
+    if (bars.top.empty() && bars.bottom.empty()) {
+        return;
+    }
+    float x0 = !bars.top.empty() ? bars.top[2] : bars.bottom[2];
+    float x1 = !bars.top.empty() ? bars.top[0] : bars.bottom[0];
+    emitVGradient(f, x0, x1, edge, full, !bars.top.empty(), !bars.bottom.empty());
+}
+
+ThemeColor regionColorAt(int index, int count, const ThemeColor &light, const ThemeColor &dark) {
+    if (count == kBwCount) {
+        return (index >= 4 && index <= 6) ? dark : light;
+    }
+    return ((index >= 4 && index <= 6) || index >= 10) ? dark : light;
+}
+
+void drawDragBar(const TunerFrame &f, float p1, float p2, const ThemeColor &drag, const ThemeColor &light,
+    const ThemeColor &dark, const ThemeColor &bg) {
+    std::vector<float> q = TunerLayout::dragBarQuads(p1, p2);
+    float ndx0 = q[0] < q[2] ? q[0] : q[2];
+    float ndx1 = q[0] < q[2] ? q[2] : q[0];
+    ImU32 edge = packColor(drag.r * 0.5f + bg.r, drag.g * 0.5f + bg.g, drag.b * 0.5f + bg.b);
+    ImU32 full = packColor(drag.r + bg.r, drag.g + bg.g, drag.b + bg.b);
+    emitVGradient(f, ndx0, ndx1, edge, full, true, true);
+    for (const BarGroup &g : kBarGroups) {
+        TunerLayout::TunerBars bars = TunerLayout::tunerBarQuads(g.start, g.end, g.count, g.dp, g.w, true, true);
+        float ox0 = ndx0 > bars.top[2] ? ndx0 : bars.top[2];
+        float ox1 = ndx1 < bars.top[0] ? ndx1 : bars.top[0];
+        if (ox1 > ox0) {
+            const ThemeColor &under = g.light ? light : dark;
+            ImU32 sEdge = packColor(drag.r * 0.5f + under.r * 0.5f + bg.r, drag.g * 0.5f + under.g * 0.5f + bg.g,
+                drag.b * 0.5f + under.b * 0.5f + bg.b);
+            ImU32 sFull = packColor(
+                drag.r + under.r + bg.r, drag.g + under.g + bg.g, drag.b + under.b + bg.b);
+            emitVGradient(f, ox0, ox1, sEdge, sFull, true, true);
+        }
+    }
+}
+
+void drawTunerDigits(const TunerFrame &f, long long value, int count, float dp, float w, float fontScale,
+    ImU32 textCol) {
+    std::string text = std::to_string(value);
+    std::vector<TunerLayout::TunerChar> chars = TunerLayout::tunerChars(count, (int)text.size(), dp, w);
+    ImGui::PushFont(imguiMonoFont(), 32.0f * fontScale);
+    float midY = f.py(0.0f);
+    for (const TunerLayout::TunerChar &ch : chars) {
+        char glyph[2] = {text[(size_t)ch.charIndex], '\0'};
+        ImVec2 sz = ImGui::CalcTextSize(glyph);
+        f.dl->AddText(ImVec2(f.px(ch.x) - sz.x * 0.5f, midY - sz.y * 0.5f), textCol, glyph);
+    }
+    ImGui::PopFont();
+}
+
+void drawTunerGrid(const TunerFrame &f, int count, float dp, float w) {
+    std::vector<float> verts = TunerLayout::tunerGridVerts(count, dp, w);
+    ImU32 col = packColor(0.65f, 0.65f, 0.65f, 0.25f);
+    for (size_t i = 0; i + 3 < verts.size(); i += 4) {
+        f.dl->AddLineV(floorf(f.px(verts[i])), f.py(1.0f), f.py(-1.0f), col);
+    }
+}
+
+void drawSnapBox(const TunerFrame &f, int snapExp, float viewHeightPx) {
+    std::vector<float> box = TunerLayout::tunerDigitBox(snapExp, kFreqCount, kFreqDP, kFreqW, viewHeightPx);
+    float xa = f.px(box[0]);
+    float xb = f.px(box[4]);
+    float ya = f.py(box[1]);
+    float yb = f.py(box[5]);
+    float x0 = floorf(xa < xb ? xa : xb);
+    float x1 = floorf(xa < xb ? xb : xa);
+    float y0 = floorf(ya < yb ? ya : yb);
+    float y1 = floorf(ya < yb ? yb : ya);
+    f.dl->AddRect(ImVec2(x0, y0), ImVec2(x1 + 1.0f, y1 + 1.0f), IM_COL32(255, 0, 0, 255), 0.0f, 0, 1.0f);
+}
+
+const char *hoverTip(TuningCanvas::ActiveState state) {
+    switch (state) {
+    case TuningCanvas::TUNING_HOVER_FREQ:
+        return "Click, wheel or drag(left/right) a digit to change frequency; SPACE for direct input. Right click to set/clear snap. Hold ALT to change PPM. Hold SHIFT to disable carry. SHIFT-right click to Zero Right.";
+    case TuningCanvas::TUNING_HOVER_BW:
+        return "Click, wheel or drag(left/right) a digit to change bandwidth; SPACE for direct input.  Hold SHIFT to disable carry. SHIFT-right click to Zero Right.";
+    case TuningCanvas::TUNING_HOVER_CENTER:
+        return "Click, wheel or drag(left/right) a digit to change center frequency; SPACE for direct input.  Hold SHIFT to disable carry. SHIFT-right click to Zero Right.";
+    case TuningCanvas::TUNING_HOVER_PPM:
+        return "Click, wheel or drag(left/right) a digit to change device PPM offset.  Hold SHIFT to disable carry.";
+    case TuningCanvas::TUNING_HOVER_NONE:
+    default:
+        return "";
+    }
+}
+
+} // namespace
+
+TuningCanvas::TuningCanvas(wxWindow *parent) : BgfxCanvas(parent) {
 }
 
 TuningCanvas::~TuningCanvas() = default;
 
-void TuningCanvas::setHalfBand(bool hb) {
-    halfBand = hb;
-	Refresh();
+void TuningCanvas::setHelpTip(std::string tip) {
+    view.helpTip = tip;
 }
 
-void TuningCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
- //   wxPaintDC dc(this);
-    const wxSize ClientSize = GetClientSize() * GetContentScaleFactor();
-    
-    glContext->SetCurrent(*this);
-    initGLExtensions();
-    glViewport(0, 0, ClientSize.x, ClientSize.y);
+void TuningCanvas::setHalfBand(bool hb) {
+    view.halfBand = hb;
+    Refresh();
+}
 
-    glContext->DrawBegin();
-
-    auto activeDemod = wxGetApp().getDemodMgr().getCurrentModem();
-    
-    freq = 0;
-    if (activeDemod != nullptr) {
-        freq = activeDemod->getFrequency();
-    }
-    bw = wxGetApp().getDemodMgr().getLastBandwidth();
-    center = wxGetApp().getFrequency();
-
-    if (mouseTracker.mouseDown()) {
-        glContext->Draw(ThemeMgr::mgr.currentTheme->tuningBarDark.r, ThemeMgr::mgr.currentTheme->tuningBarDark.g, ThemeMgr::mgr.currentTheme->tuningBarDark.b,
-                0.75, mouseTracker.getOriginMouseX(), mouseTracker.getMouseX());
-    }
-
-    RGBA4f clr = top ? ThemeMgr::mgr.currentTheme->tuningBarUp : ThemeMgr::mgr.currentTheme->tuningBarDown;
-
-    RGBA4f clrDark = ThemeMgr::mgr.currentTheme->tuningBarDark;
-    RGBA4f clrMid = ThemeMgr::mgr.currentTheme->tuningBarLight;
-
-    glContext->DrawTunerBarIndexed(1, 3, 11, freqDP, freqW, clrMid, 0.25, true, true); // freq
-    glContext->DrawTunerBarIndexed(4, 6, 11, freqDP, freqW, clrDark, 0.25, true, true);
-    glContext->DrawTunerBarIndexed(7, 9, 11, freqDP, freqW, clrMid, 0.25, true, true);
-    glContext->DrawTunerBarIndexed(10, 11, 11, freqDP, freqW, clrDark, 0.25, true, true);
-
-    glContext->DrawTunerBarIndexed(1, 3, 7, bwDP, bwW, clrMid, 0.25, true, true); // bw
-    glContext->DrawTunerBarIndexed(4, 6, 7, bwDP, bwW, clrDark, 0.25, true, true);
-    glContext->DrawTunerBarIndexed(7, 7, 7, bwDP, bwW, clrMid, 0.25, true, true);
-
-    glContext->DrawTunerBarIndexed(1, 3, 11, centerDP, centerW, clrMid, 0.25, true, true); // freq
-    glContext->DrawTunerBarIndexed(4, 6, 11, centerDP, centerW, clrDark, 0.25, true, true);
-    glContext->DrawTunerBarIndexed(7, 9, 11, centerDP, centerW, clrMid, 0.25, true, true);
-    glContext->DrawTunerBarIndexed(10, 11, 11, centerDP, centerW, clrDark, 0.25, true, true);
-
-    if (hoverIndex > 0 && !mouseTracker.mouseDown()) {
-        switch (hoverState) {
-
-        case TUNING_HOVER_FREQ:
-            glContext->DrawTunerBarIndexed(hoverIndex, hoverIndex, 11, freqDP, freqW, clr, 0.25, top, bottom); // freq
-            break;
-        case TUNING_HOVER_BW:
-            glContext->DrawTunerBarIndexed(hoverIndex, hoverIndex, 7, bwDP, bwW, clr, 0.25, top, bottom); // bw
-            break;
-        case TUNING_HOVER_CENTER:
-            glContext->DrawTunerBarIndexed(hoverIndex, hoverIndex, 11, centerDP, centerW, clr, 0.25, top, bottom); // center
-            break;
-        case TUNING_HOVER_NONE:
-            break;
-        case TUNING_HOVER_PPM:
-            glContext->DrawTunerBarIndexed(hoverIndex, hoverIndex, 11, freqDP, freqW, clr, 0.25, top, bottom); // freq
-            break;
-         }
-    }
-
-    if (altDown) {
-        glContext->DrawTuner(currentPPM, 11, freqDP, freqW);
-    } else {
-        glContext->DrawTuner(freq, 11, freqDP, freqW);
-        int snap = wxGetApp().getFrequencySnap();
-        if (snap != 1) {
-            glContext->DrawTunerDigitBox((int)log10(snap), 11, freqDP, freqW, RGBA4f(1.0,0.0,0.0));
+void TuningCanvas::OnKeyDown(wxKeyEvent &event) {
+    view.shiftDown = event.ShiftDown();
+    view.altDown = event.AltDown();
+    if (event.GetKeyCode() == WXK_SPACE) {
+        if (view.hoverState == TUNING_HOVER_CENTER || view.hoverState == TUNING_HOVER_FREQ) {
+            wxGetApp().showFrequencyInput(FrequencyDialog::FDIALOG_TARGET_DEFAULT);
+        } else if (view.hoverState == TUNING_HOVER_BW) {
+            wxGetApp().showFrequencyInput(FrequencyDialog::FDIALOG_TARGET_BANDWIDTH);
         }
     }
-    glContext->DrawTuner(halfBand?(bw/2):bw, 7, bwDP, bwW);
-    glContext->DrawTuner(center, 11, centerDP, centerW);
-
-    glContext->DrawEnd();
-
-    SwapBuffers();
 }
 
-/***
- * Perform tuner step
- *
- * @param state     Current hover state
- * @param digit     Digit position
- * @param tuningDir        Tuning direction, true for up
- * @param preventCarry Prevent carry operation on digit overflow
- * @param zeroOut   Zero out 'digit' and lower digits
- */
-void TuningCanvas::StepTuner(ActiveState state, TuningDirection tuningDir, int digit, bool preventCarry, bool zeroOut) {
+void TuningCanvas::OnKeyUp(wxKeyEvent &event) {
+    view.shiftDown = event.ShiftDown();
+    view.altDown = event.AltDown();
+}
+
+TuningCanvas::ActiveState TuningCanvas::getHoverState() {
+    return view.hoverState;
+}
+
+void TuningCanvas::StepTuner(
+    ActiveState state, TuningDirection tuningDir, int digit, bool preventCarry, bool zeroOut) {
     auto activeDemod = wxGetApp().getDemodMgr().getCurrentModem();
     if (state == TUNING_HOVER_FREQ && activeDemod) {
         long long demod_freq = activeDemod->getFrequency();
         long long diff = abs(wxGetApp().getFrequency() - demod_freq);
-
         TunerStep::StepInput step;
         step.value = demod_freq;
         step.digit = digit;
         step.up = (tuningDir == TUNING_DIRECTION_UP);
         step.preventCarry = preventCarry;
         step.zeroOut = zeroOut;
-        step.bottom = bottom;
+        step.bottom = view.bottom;
         demod_freq = TunerStep::stepDigit(step);
-
-        //Pin the stepped frequency into the view like a drag does; past the
-        //data window the post thread would deactivate the demod.
-        AppFrame *appframe = wxGetApp().getAppFrame();
-        if (appframe && appframe->getWaterfallCanvas()) {
-            demod_freq = pinDemodCenter(demod_freq, appframe->getWaterfallCanvas()->getCenterFrequency(),
-                appframe->getWaterfallCanvas()->getBandwidth());
+        long long viewCenter = 0;
+        long long viewBandwidth = 0;
+        if (wxGetApp().getMainViewWindow(viewCenter, viewBandwidth)) {
+            demod_freq = pinDemodCenter(demod_freq, viewCenter, viewBandwidth);
         }
-
         if (wxGetApp().getSampleRate() / 2 < diff) {
             wxGetApp().setFrequency(demod_freq);
         }
-
         activeDemod->setTracking(true);
         activeDemod->setFollow(true);
         activeDemod->setFrequency(demod_freq);
@@ -188,31 +274,25 @@ void TuningCanvas::StepTuner(ActiveState state, TuningDirection tuningDir, int d
         }
         activeDemod->updateLabel(demod_freq);
     }
-
     if (state == TUNING_HOVER_BW) {
         long nbw = wxGetApp().getDemodMgr().getLastBandwidth();
-
         TunerStep::StepInput step;
         step.value = nbw;
         step.digit = digit;
         step.up = (tuningDir == TUNING_DIRECTION_UP);
         step.preventCarry = preventCarry;
         step.zeroOut = zeroOut;
-        step.doubleAmount = halfBand;
-        step.bottom = bottom;
+        step.doubleAmount = view.halfBand;
+        step.bottom = view.bottom;
         nbw = (long)TunerStep::stepDigit(step);
-
         if (nbw > CHANNELIZER_RATE_MAX) {
             nbw = CHANNELIZER_RATE_MAX;
         }
-
         wxGetApp().getDemodMgr().setLastBandwidth(nbw);
-
         if (activeDemod) {
             activeDemod->setBandwidth(wxGetApp().getDemodMgr().getLastBandwidth());
         }
     }
-
     if (state == TUNING_HOVER_CENTER) {
         long long ctr = wxGetApp().getFrequency();
         TunerStep::StepInput step;
@@ -221,54 +301,80 @@ void TuningCanvas::StepTuner(ActiveState state, TuningDirection tuningDir, int d
         step.up = (tuningDir == TUNING_DIRECTION_UP);
         step.preventCarry = preventCarry;
         step.zeroOut = zeroOut;
-        step.bottom = bottom;
+        step.bottom = view.bottom;
         ctr = TunerStep::stepDigit(step);
-
         wxGetApp().setFrequency(ctr);
     }
-
     if (state == TUNING_HOVER_PPM) {
         TunerStep::StepInput step;
-        step.value = currentPPM;
+        step.value = view.currentPPM;
         step.digit = digit;
         step.up = (tuningDir == TUNING_DIRECTION_UP);
         step.preventCarry = preventCarry;
-        step.bottom = bottom;
-        currentPPM = (int)TunerStep::stepDigit(step);
-
-        if (currentPPM > 2000) {
-            currentPPM = 2000;
+        step.bottom = view.bottom;
+        view.currentPPM = (int)TunerStep::stepDigit(step);
+        if (view.currentPPM > 2000) {
+            view.currentPPM = 2000;
         }
-
-        if (currentPPM < -2000) {
-            currentPPM = -2000;
+        if (view.currentPPM < -2000) {
+            view.currentPPM = -2000;
         }
-
-        wxGetApp().setPPM(currentPPM);
+        wxGetApp().setPPM(view.currentPPM);
         wxGetApp().notifyMainUIOfDeviceChange();
     }
 }
 
-void TuningCanvas::frameUpdate() {
-    if (mouseTracker.mouseDown()) {
-        if (downState != TUNING_HOVER_NONE) {
-            dragAccum += 5.0*mouseTracker.getOriginDeltaMouseX();
-            TunerStep::DragSteps drag = TunerStep::dragSteps(dragAccum);
-            dragAccum = drag.rest;
-            for (int i = 0; i < drag.up; i++) {
-                StepTuner(downState, TUNING_DIRECTION_UP, downIndex - 1, shiftDown, false);
-                dragging = true;
-            }
-            for (int i = 0; i < drag.down; i++) {
-                StepTuner(downState, TUNING_DIRECTION_DOWN, downIndex - 1, shiftDown, false);
-                dragging = true;
-            }
-        } else {
-            dragAccum = 0;
-            dragging = false;
+void TuningCanvas::updateHover(float mx01, float my01) {
+    if (!view.mouseDown) {
+        view.top = my01 >= 0.5f;
+        view.bottom = my01 <= 0.5f;
+    }
+    int index = TunerLayout::digitIndexAt(mx01, kFreqCount, kFreqDP, kFreqW);
+    if (index > 0) {
+        view.hoverIndex = index;
+        view.hoverState = view.altDown ? TUNING_HOVER_PPM : TUNING_HOVER_FREQ;
+    }
+    if (index == 0) {
+        index = TunerLayout::digitIndexAt(mx01, kBwCount, kBwDP, kBwW);
+        if (index > 0) {
+            view.hoverIndex = index;
+            view.hoverState = TUNING_HOVER_BW;
         }
     }
-    // Painted values have no event path for external tunes: repaint on change.
+    if (index == 0) {
+        index = TunerLayout::digitIndexAt(mx01, kFreqCount, kCenterDP, kCenterW);
+        if (index > 0) {
+            view.hoverIndex = index;
+            view.hoverState = TUNING_HOVER_CENTER;
+        }
+    }
+    if (index == 0) {
+        view.hoverIndex = 0;
+        view.hoverState = TUNING_HOVER_NONE;
+    }
+}
+
+void TuningCanvas::frameUpdate() {
+    if (view.mouseDown && isMouseInView()) {
+        if (view.downState != TUNING_HOVER_NONE) {
+            wxSize size = GetClientSize();
+            float mx01 = size.x > 0 ? mouseX() / (float)size.x : 0.0f;
+            view.dragAccum += 5.0f * (mx01 - view.originMouseX);
+            TunerStep::DragSteps drag = TunerStep::dragSteps(view.dragAccum);
+            view.dragAccum = drag.rest;
+            for (int i = 0; i < drag.up; i++) {
+                StepTuner(view.downState, TUNING_DIRECTION_UP, view.downIndex - 1, view.shiftDown, false);
+                view.dragging = true;
+            }
+            for (int i = 0; i < drag.down; i++) {
+                StepTuner(view.downState, TUNING_DIRECTION_DOWN, view.downIndex - 1, view.shiftDown, false);
+                view.dragging = true;
+            }
+        } else {
+            view.dragAccum = 0.0f;
+            view.dragging = false;
+        }
+    }
     long long liveFreq = 0;
     auto liveDemod = wxGetApp().getDemodMgr().getCurrentModem();
     if (liveDemod != nullptr) {
@@ -276,203 +382,211 @@ void TuningCanvas::frameUpdate() {
     }
     long long liveBw = wxGetApp().getDemodMgr().getLastBandwidth();
     long long liveCenter = wxGetApp().getFrequency();
-    if (firstPaintCheck || liveFreq != paintedFreq || liveBw != paintedBw || liveCenter != paintedCenter
-        || currentPPM != paintedPPM || altDown != paintedAlt || shiftDown != paintedShift) {
-        paintedFreq = liveFreq;
-        paintedBw = liveBw;
-        paintedCenter = liveCenter;
-        paintedPPM = currentPPM;
-        paintedAlt = altDown;
-        paintedShift = shiftDown;
-        firstPaintCheck = false;
+    if (view.firstPaintCheck || liveFreq != view.paintedFreq || liveBw != view.paintedBw
+        || liveCenter != view.paintedCenter || view.currentPPM != view.paintedPPM || view.altDown != view.paintedAlt
+        || view.shiftDown != view.paintedShift) {
+        view.paintedFreq = liveFreq;
+        view.paintedBw = liveBw;
+        view.paintedCenter = liveCenter;
+        view.paintedPPM = view.currentPPM;
+        view.paintedAlt = view.altDown;
+        view.paintedShift = view.shiftDown;
+        view.firstPaintCheck = false;
         Refresh();
     }
 }
 
-void TuningCanvas::OnMouseMoved(wxMouseEvent& event) {
-    InteractiveCanvas::OnMouseMoved(event);
-
-    top = mouseTracker.getMouseY() >= 0.5;
-    bottom = mouseTracker.getMouseY() <= 0.5;
-
-    int index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(), 11, freqDP, freqW); // freq
-    if (index > 0) {
-        hoverIndex = index;
-        hoverState = altDown?TUNING_HOVER_PPM:TUNING_HOVER_FREQ;
-    }
-
-    if (!index) {
-        index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(), 7, bwDP, bwW); // bw
-        if (index > 0) {
-            hoverIndex = index;
-            hoverState = TUNING_HOVER_BW;
-        }
-    }
-
-    if (!index) {
-        index = glContext->GetTunerDigitIndex(mouseTracker.getMouseX(), 11, centerDP, centerW); // center
-        if (index > 0) {
-            hoverIndex = index;
-            hoverState = TUNING_HOVER_CENTER;
-        }
-    }
-
-    if (!index) {
-        hoverIndex = 0;
-        hoverState = TUNING_HOVER_NONE;
+void TuningCanvas::drawView(const BgfxEdges &edges, float mx, float my) {
+    wxSize size = GetClientSize();
+    ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2((float)size.x, (float)size.y), ImGuiCond_Always);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(0.0f, 0.0f));
+    ImGui::Begin("Tuner", nullptr,
+        ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
+            | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus);
+    ImVec2 origin = ImGui::GetWindowPos();
+    ImVec2 wsize = ImGui::GetWindowSize();
+    bool tunerHovered = ImGui::IsWindowHovered();
+    view.mouseMX = (mx - origin.x) / wsize.x;
+    view.mouseMY = 1.0f - (my - origin.y) / wsize.y;
+    view.shiftDown = isShiftDown();
+    view.altDown = isAltDown();
+    if (edges.mouseLeft) {
+        view.hoverIndex = 0;
+        view.hoverState = TUNING_HOVER_NONE;
+        view.mouseDown = false;
+        view.mouseRightDown = false;
+        view.shiftDown = false;
+        view.altDown = false;
     } else {
-        switch (hoverState) {
+        updateHover(view.mouseMX, view.mouseMY);
+    }
+
+    if (edges.leftPressed && tunerHovered && !view.mouseRightDown) {
+        view.originMouseX = view.mouseMX;
+        view.originMouseY = view.mouseMY;
+        view.dragAccum = 0.0f;
+        view.downIndex = view.hoverIndex;
+        view.downState = view.hoverState;
+        view.mouseDown = true;
+    }
+    if (edges.rightPressed && tunerHovered && !view.mouseDown) {
+        view.downIndex = view.hoverIndex;
+        view.downState = view.hoverState;
+        view.mouseRightDown = true;
+    }
+
+    if (tunerHovered && view.hoverState != TUNING_HOVER_NONE && !view.mouseDown && view.hoverIndex != 0) {
+        if (edges.wheelRotV != 0) {
+            TunerStep::WheelSteps wheel = TunerStep::wheelSteps(view.wheelAccumV, edges.wheelRotV, 120);
+            view.wheelAccumV = wheel.rest;
+            for (int i = 0, n = wheel.steps > 0 ? wheel.steps : -wheel.steps; i < n; i++) {
+                StepTuner(view.hoverState, wheel.steps > 0 ? TUNING_DIRECTION_UP : TUNING_DIRECTION_DOWN,
+                    view.hoverIndex - 1, view.shiftDown, false);
+            }
+        }
+        if (edges.wheelRotH != 0) {
+            TunerStep::WheelSteps wheel = TunerStep::wheelSteps(view.wheelAccumH, edges.wheelRotH, 120);
+            view.wheelAccumH = wheel.rest;
+            for (int i = 0, n = wheel.steps > 0 ? wheel.steps : -wheel.steps; i < n; i++) {
+                StepTuner(view.hoverState, wheel.steps < 0 ? TUNING_DIRECTION_UP : TUNING_DIRECTION_DOWN,
+                    view.hoverIndex - 1, view.shiftDown, false);
+            }
+        }
+    }
+
+    if (edges.leftReleased) {
+        if (tunerHovered && view.hoverState != TUNING_HOVER_NONE && !view.dragging && view.downState == view.hoverState
+            && view.downIndex == view.hoverIndex) {
+            StepTuner(view.hoverState, view.top ? TUNING_DIRECTION_UP : TUNING_DIRECTION_DOWN, view.hoverIndex - 1,
+                view.shiftDown, false);
+        }
+        view.mouseDown = false;
+        view.dragging = false;
+    }
+    if (edges.rightReleased) {
+        if (view.shiftDown) {
+            if (tunerHovered && view.hoverState != TUNING_HOVER_NONE && !view.dragging
+                && view.downState == view.hoverState && view.downIndex == view.hoverIndex) {
+                StepTuner(view.hoverState, view.top ? TUNING_DIRECTION_UP : TUNING_DIRECTION_DOWN, view.hoverIndex - 1,
+                    false, true);
+            }
+        } else if (tunerHovered && view.hoverState == TUNING_HOVER_FREQ) {
+            int snap = wxGetApp().getFrequencySnap();
+            if (view.hoverIndex == 1) {
+                wxGetApp().setFrequencySnap(1);
+            } else if (view.hoverIndex > 1 && view.hoverIndex < 8) {
+                int exp = 1;
+                for (int i = 1; i < view.hoverIndex; i++) {
+                    exp *= 10;
+                }
+                wxGetApp().setFrequencySnap((snap == exp) ? 1 : exp);
+            }
+        }
+        view.mouseRightDown = false;
+    }
+
+    ColorTheme *theme = ThemeMgr::mgr.currentTheme;
+    ThemeColor barLight{theme->tuningBarLight.r, theme->tuningBarLight.g, theme->tuningBarLight.b};
+    ThemeColor barDark{theme->tuningBarDark.r, theme->tuningBarDark.g, theme->tuningBarDark.b};
+    ThemeColor barUp{theme->tuningBarUp.r, theme->tuningBarUp.g, theme->tuningBarUp.b};
+    ThemeColor barDown{theme->tuningBarDown.r, theme->tuningBarDown.g, theme->tuningBarDown.b};
+    ThemeColor bg{theme->generalBackground.r, theme->generalBackground.g, theme->generalBackground.b};
+    ImU32 textCol = packColor(theme->text.r, theme->text.g, theme->text.b);
+    imguiSetClearColor(packClear(bg));
+
+    auto activeDemod = wxGetApp().getDemodMgr().getCurrentModem();
+    long long freq = 0;
+    if (activeDemod) {
+        freq = activeDemod->getFrequency();
+    }
+    long long bw = wxGetApp().getDemodMgr().getLastBandwidth();
+    long long center = wxGetApp().getFrequency();
+    int snap = wxGetApp().getFrequencySnap();
+
+    TunerFrame f{ImGui::GetWindowDrawList(), origin.x, origin.y, wsize.x, wsize.y};
+    ThemeColor clr = view.top ? barUp : barDown;
+    for (const BarGroup &g : kBarGroups) {
+        drawBarQuads(f, TunerLayout::tunerBarQuads(g.start, g.end, g.count, g.dp, g.w, true, true),
+            g.light ? barLight : barDark, bg);
+    }
+    if (view.hoverIndex > 0 && !view.mouseDown) {
+        switch (view.hoverState) {
         case TUNING_HOVER_FREQ:
-                setStatusText("Click, wheel or drag(left/right) a digit to change frequency; SPACE for direct input. Right click to set/clear snap. Hold ALT to change PPM. Hold SHIFT to disable carry. SHIFT-right click to Zero Right.");
+            drawBarQuadsStacked(f,
+                TunerLayout::tunerBarQuads(view.hoverIndex, view.hoverIndex, kFreqCount, kFreqDP, kFreqW, view.top,
+                    view.bottom),
+                clr, regionColorAt(view.hoverIndex, kFreqCount, barLight, barDark), bg);
             break;
         case TUNING_HOVER_BW:
-                setStatusText("Click, wheel or drag(left/right) a digit to change bandwidth; SPACE for direct input.  Hold SHIFT to disable carry. SHIFT-right click to Zero Right.");
+            drawBarQuadsStacked(f,
+                TunerLayout::tunerBarQuads(view.hoverIndex, view.hoverIndex, kBwCount, kBwDP, kBwW, view.top,
+                    view.bottom),
+                clr, regionColorAt(view.hoverIndex, kBwCount, barLight, barDark), bg);
             break;
         case TUNING_HOVER_CENTER:
-                setStatusText("Click, wheel or drag(left/right) a digit to change center frequency; SPACE for direct input.  Hold SHIFT to disable carry. SHIFT-right click to Zero Right.");
+            drawBarQuadsStacked(f,
+                TunerLayout::tunerBarQuads(view.hoverIndex, view.hoverIndex, kFreqCount, kCenterDP, kCenterW, view.top,
+                    view.bottom),
+                clr, regionColorAt(view.hoverIndex, kFreqCount, barLight, barDark), bg);
             break;
         case TUNING_HOVER_PPM:
-                 setStatusText("Click, wheel or drag(left/right) a digit to change device PPM offset.  Hold SHIFT to disable carry.");
-             break;
-        case TUNING_HOVER_NONE:
-            setStatusText("");
+            drawBarQuadsStacked(f,
+                TunerLayout::tunerBarQuads(view.hoverIndex, view.hoverIndex, kFreqCount, kFreqDP, kFreqW, view.top,
+                    view.bottom),
+                clr, regionColorAt(view.hoverIndex, kFreqCount, barLight, barDark), bg);
             break;
-      }
-    }
-
-    Refresh();
-}
-
-void TuningCanvas::OnMouseDown(wxMouseEvent& event) {
-    InteractiveCanvas::OnMouseDown(event);
-
-    uxDown = 2.0 * (mouseTracker.getMouseX() - 0.5);
-    dragAccum = 0;
-
-    mouseTracker.setVertDragLock(true);
-    downIndex = hoverIndex;
-    downState = hoverState;
-    Refresh();
-}
-
-void TuningCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
-    InteractiveCanvas::OnMouseWheelMoved(event);
-
-    int hExponent = hoverIndex - 1;
-
-    if (hoverState != TUNING_HOVER_NONE && !mouseTracker.mouseDown() && hoverIndex) {
-        bool vertical = (event.m_wheelAxis == wxMOUSE_WHEEL_VERTICAL);
-        int *accum = vertical ? &wheelAccumV : &wheelAccumH;
-        int delta = event.m_wheelDelta ? event.m_wheelDelta : 120;
-        TunerStep::WheelSteps wheel = TunerStep::wheelSteps(*accum, event.m_wheelRotation, delta);
-        *accum = wheel.rest;
-        int steps = wheel.steps;
-        if (steps != 0) {
-            TuningDirection dir;
-            if (vertical) {
-                dir = (steps > 0) ? TUNING_DIRECTION_UP : TUNING_DIRECTION_DOWN;
-            } else {
-                dir = (steps < 0) ? TUNING_DIRECTION_UP : TUNING_DIRECTION_DOWN;
-            }
-            for (int i = 0, n = steps > 0 ? steps : -steps; i < n; i++) {
-                StepTuner(hoverState, dir, hExponent, shiftDown, false);
-            }
+        case TUNING_HOVER_NONE:
+            break;
         }
     }
-    Refresh();
+
+    int fontSize = TunerLayout::tunerFontSize(wsize.x, wsize.y);
+    float fontScale = (float)fontSize / 32.0f;
+    if (view.altDown) {
+        drawTunerDigits(f, view.currentPPM, kFreqCount, kFreqDP, kFreqW, fontScale, textCol);
+        drawTunerGrid(f, kFreqCount, kFreqDP, kFreqW);
+    } else {
+        drawTunerDigits(f, freq, kFreqCount, kFreqDP, kFreqW, fontScale, textCol);
+        drawTunerGrid(f, kFreqCount, kFreqDP, kFreqW);
+        if (snap != 1) {
+            drawSnapBox(f, (int)log10((double)snap), wsize.y);
+        }
+    }
+    drawTunerDigits(f, view.halfBand ? bw / 2 : bw, kBwCount, kBwDP, kBwW, fontScale, textCol);
+    drawTunerGrid(f, kBwCount, kBwDP, kBwW);
+    drawTunerDigits(f, center, kFreqCount, kCenterDP, kCenterW, fontScale, textCol);
+    drawTunerGrid(f, kFreqCount, kCenterDP, kCenterW);
+    ImGui::End();
+    ImGui::PopStyleVar(2);
+
+    bool haveTip = view.hoverState != TUNING_HOVER_NONE;
+    const char *tip = haveTip ? hoverTip(view.hoverState) : "";
+    if (!haveTip && !view.helpTip.empty()) {
+        tip = view.helpTip.c_str();
+        haveTip = true;
+    }
+    if (haveTip && tip != view.lastTip) {
+        view.lastTip = tip;
+        wxGetApp().getAppFrame()->setStatusText(this, view.lastTip);
+    }
 }
 
-void TuningCanvas::OnMouseReleased(wxMouseEvent& event) {
-    InteractiveCanvas::OnMouseReleased(event);
-
-    int hExponent = hoverIndex - 1;
-
-    if (hoverState != TUNING_HOVER_NONE && !dragging && (downState == hoverState) && (downIndex == hoverIndex)) {
-        StepTuner(hoverState, top ? TUNING_DIRECTION_UP : TUNING_DIRECTION_DOWN, hExponent, shiftDown, false);
-    }
-
-    mouseTracker.setVertDragLock(false);
-
-    dragging = false;
+void TuningCanvas::onEnterView() {
+    view.hoverIndex = 0;
+    view.hoverState = TUNING_HOVER_NONE;
+    view.currentPPM = wxGetApp().getPPM();
     SetCursor(wxCURSOR_ARROW);
-    Refresh();
-}
-
-void TuningCanvas::OnMouseRightDown(wxMouseEvent& event) {
-    InteractiveCanvas::OnMouseRightDown(event);
-
-    uxDown = 2.0 * (mouseTracker.getMouseX() - 0.5);
-
-    downIndex = hoverIndex;
-    downState = hoverState;
-}
-
-void TuningCanvas::OnMouseRightReleased(wxMouseEvent& event) {
-    InteractiveCanvas::OnMouseRightReleased(event);
-
-    if (shiftDown) {
-        int hExponent = hoverIndex - 1;
-
-        if (hoverState != TUNING_HOVER_NONE && !dragging && (downState == hoverState) && (downIndex == hoverIndex)) {
-            StepTuner(hoverState, top ? TUNING_DIRECTION_UP : TUNING_DIRECTION_DOWN, hExponent, false, true);
-        }
-    } else if (hoverState == TUNING_HOVER_FREQ) {
-        if (hoverIndex == 1) {
-            wxGetApp().setFrequencySnap(1);
-        } else if (hoverIndex > 1 && hoverIndex < 8) {
-            int exp = pow(10, hoverIndex-1);
-            if (wxGetApp().getFrequencySnap() == exp) {
-                wxGetApp().setFrequencySnap(1);
-            } else {
-                wxGetApp().setFrequencySnap(exp);
-            }
-        }
-    }
-    Refresh();
-}
-
-void TuningCanvas::OnMouseLeftWindow(wxMouseEvent& event) {
-    InteractiveCanvas::OnMouseLeftWindow(event);
-    SetCursor(wxCURSOR_CROSS);
-    hoverIndex = 0;
-    hoverState = TUNING_HOVER_NONE;
-    Refresh();
-}
-
-void TuningCanvas::OnMouseEnterWindow(wxMouseEvent& event) {
-    InteractiveCanvas::mouseTracker.OnMouseEnterWindow(event);
-    SetCursor(wxCURSOR_ARROW);
-    hoverIndex = 0;
-    hoverState = TUNING_HOVER_NONE;
-    currentPPM = wxGetApp().getPPM();
 #ifdef _WIN32
-	if (wxGetApp().getAppFrame()->canFocus()) {
-		this->SetFocus();
-	}
+    if (wxGetApp().getAppFrame()->canFocus()) {
+        SetFocus();
+    }
 #endif
-    Refresh();
 }
 
-void TuningCanvas::setHelpTip(std::string tip) {
-    helpTip = tip;
-}
-
-void TuningCanvas::OnKeyDown(wxKeyEvent& event) {
-    InteractiveCanvas::OnKeyDown(event);
-
-    if (event.GetKeyCode() == WXK_SPACE) {
-        if (hoverState == TUNING_HOVER_CENTER || hoverState == TUNING_HOVER_FREQ) {
-            wxGetApp().showFrequencyInput(FrequencyDialog::FDIALOG_TARGET_DEFAULT);
-        } else if (hoverState == TUNING_HOVER_BW) {
-            wxGetApp().showFrequencyInput(FrequencyDialog::FDIALOG_TARGET_BANDWIDTH);
-        }
-    } 
-}
-
-void TuningCanvas::OnKeyUp(wxKeyEvent& event) {
-    InteractiveCanvas::OnKeyUp(event);
-}
-
-TuningCanvas::ActiveState TuningCanvas::getHoverState() {
-    return hoverState;
+void TuningCanvas::onLeaveView() {
+    SetCursor(wxCURSOR_CROSS);
+    view.hoverIndex = 0;
+    view.hoverState = TUNING_HOVER_NONE;
 }

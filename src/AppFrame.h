@@ -40,6 +40,7 @@
 #ifdef USE_HAMLIB
 #include <hamlib/rig.h>
 class PortSelectorDialog;
+class BgfxCanvas;
 #endif
 
 // Define a new frame type
@@ -153,6 +154,7 @@ private:
 #endif
     // Canvases repainted once per frame-timer tick, in a single cycle.
     std::vector<InteractiveCanvas*> frameCanvases;
+    std::vector<BgfxCanvas*> frameHosts;
 
     /***
      * Menus
@@ -273,7 +275,7 @@ private:
 	MeterCanvas *makeSignalMeter(wxWindow *parent, const wxGLAttributes &attribList);
 	ModeSelectorCanvas *makeDeltaLockButton(wxWindow *parent, const wxGLAttributes &attribList);
 	ModeSelectorCanvas *makeDemodRecordButton(wxWindow *parent, const wxGLAttributes &attribList);
-	TuningCanvas *makeModemTuner(wxWindow *parent, const wxGLAttributes &attribList);
+	TuningCanvas *makeModemTuner(wxWindow *parent);
 	MeterCanvas *makeModemGainMeter(wxWindow *parent, const wxGLAttributes &attribList);
 	ModeSelectorCanvas *makeSoloModeButton(wxWindow *parent, const wxGLAttributes &attribList);
 	ModeSelectorCanvas *makeModemMuteButton(wxWindow *parent, const wxGLAttributes &attribList);

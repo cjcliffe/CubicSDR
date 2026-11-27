@@ -30,7 +30,7 @@ spike passes when it looks and feels like the app widget it mirrors.
   renderer drawing carousel-posed textured quads from `ScopeCarousel` with
   explicit glm matrices. Verified live: fit, rotation, color, drag feel.
 - Tuner on ImGui (`--spike imgui`): custom ImGui backend over bgfx (texture
-  protocol, transient buffers, RobotoMono digits) drawing the full tuning
+  protocol, transient buffers, Vera Sans Mono digits) drawing the full tuning
   strip via draw lists from `TunerStep`/`TunerLayout`/`TuneRange`, plus the
   ImGui demo window as widget proof. Verified live.
 - Gain/meter on ImGui (`--spike gainmeter`): gain strips from `GainSlider`
@@ -75,8 +75,9 @@ spike passes when it looks and feels like the app widget it mirrors.
 - Draw lists offer no blend control, so the tuner's additive bars transfer
   as opaque gradient quads with the background lift and under-color stack
   baked in; digits, grid, and snap box transfer exactly.
-- RobotoMono (bundled with bgfx examples) replaces the GL bitmap font for
-  tuner digits; legibility verified live at strip size.
+- Vera Sans Mono (the same family as the GL bitmap pages, embedded as
+  a header) replaces the GL bitmap font for tuner digits; legibility
+  verified live at strip size.
 - bgfx marks textures created with initial data immutable and silently
   skips later updates in release builds, so the atlas is created empty and
   filled with a full-rect update; update memory must exactly cover the
@@ -160,10 +161,15 @@ Hosting design:
   translate to the spike edge structs.
 - First hosted view pumps `bgfx::frame()` from its paint handler;
   centralize the pump when the second view lands.
+- Hosted views run without vsync: a vsync wait inside every paint
+  stalls the UI thread and pauses the other canvases.
 - View state flows through `CoreState` and `DemodulatorMgr`; canvas
   zoom members stay until their canvas migrates.
+- Where bgfx cannot start, the host paints a flat theme-background
+  fill. macOS needs Metal shaders, which are blocked on the pinned
+  shaderc until the bgfx update.
 
-Order: tuner, gain/meter, spectrum, waterfall, scope, mode selector.
+Order: tuner (done), gain/meter, spectrum, waterfall, scope, mode selector.
 Spectrum, waterfall, and scope need a small shared bgfx line/texture
 helper layer first; demod views migrate with their main views.
 

@@ -162,6 +162,8 @@ void gainSetLevel(AppState &s, float nx, float ny, float bgH, const GainStrip &s
 void drawGain(AppState &s, const FrameEdges &edges, float mouseX, float mouseY, bool &gainPressedHere) {
     ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(620.0f, 420.0f), ImGuiCond_Always);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(0.0f, 0.0f));
     ImGui::Begin("Gain", nullptr,
         ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
             | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus);
@@ -278,6 +280,7 @@ void drawGain(AppState &s, const FrameEdges &edges, float mouseX, float mouseY, 
         centerText(f, gainLabelText(g.value).c_str(), cx, f.py((float)layout.valY), fontPx);
     }
     ImGui::End();
+    ImGui::PopStyleVar(2);
 }
 
 float clamp01(float v) {
@@ -313,6 +316,8 @@ void drawMeter(AppState &s, int meterIndex, const char *title, float winX, const
     float mouseY) {
     ImGui::SetNextWindowPos(ImVec2(winX, 0.0f), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(170.0f, 420.0f), ImGuiCond_Always);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(0.0f, 0.0f));
     ImGui::Begin(title, nullptr,
         ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
             | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus);
@@ -421,6 +426,7 @@ void drawMeter(AppState &s, int meterIndex, const char *title, float winX, const
         }
     }
     ImGui::End();
+    ImGui::PopStyleVar(2);
 }
 
 void drawControl(AppState &s, float appliedGains[3]) {

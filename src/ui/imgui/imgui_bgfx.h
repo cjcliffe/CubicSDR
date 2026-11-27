@@ -5,6 +5,8 @@
 
 #include <bgfx/bgfx.h>
 
+#include <cstdint>
+
 struct ImFont;
 
 struct ImguiInput {
@@ -19,6 +21,7 @@ struct ImguiInput {
 
 bool imguiInitBackend();
 void imguiShutdownBackend();
+void imguiSetClearColor(uint32_t rgba);
 void imguiBeginFrame(const ImguiInput &in, int width, int height, float dt, float fbScale = 1.0f);
 void imguiEndFrame(bgfx::ViewId view);
 ImFont *imguiMonoFont();

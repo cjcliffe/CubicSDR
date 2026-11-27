@@ -3,6 +3,7 @@
 
 #include "AppFrame.h"
 #include "SplitUtil.h"
+#include "ui/imgui/BgfxCanvas.h"
 
 #include "wx/wxprec.h"
 
@@ -240,7 +241,7 @@ AppFrame::AppFrame() :
     demodTunerTray->AddSpacer(1);
 
     // Modem Tuner
-    demodTuner = makeModemTuner(demodPanel, attribList);
+    demodTuner = makeModemTuner(demodPanel);
     demodTunerTray->Add(demodTuner, 1, wxEXPAND | wxALL, 0);
 
     demodScopeTray->Add(demodTunerTray, 1, wxEXPAND | wxALL, 0);
@@ -346,9 +347,12 @@ AppFrame::AppFrame() :
     frameCanvases = {
         demodModeSelector, demodWaterfallCanvas,
         demodSpectrumCanvas, demodSignalMeter, deltaLockButton, demodRecordButton,
-        demodTuner, demodGainMeter, soloModeButton, demodMuteButton, spectrumCanvas,
+        demodGainMeter, soloModeButton, demodMuteButton, spectrumCanvas,
         peakHoldButton, spectrumAvgMeter, waterfallCanvas, waterfallSpeedMeter,
         scopeCanvas, gainCanvas
+    };
+    frameHosts = {
+        demodTuner
     };
 #ifdef ENABLE_DIGITAL_LAB
     frameCanvases.push_back(demodModeSelectorAdv);
@@ -846,8 +850,8 @@ MeterCanvas *AppFrame::makeModemGainMeter(wxWindow *parent, const wxGLAttributes
     return pCanvas;
 }
 
-TuningCanvas *AppFrame::makeModemTuner(wxWindow *parent, const wxGLAttributes &attribList) {
-    auto *pCanvas = new TuningCanvas(parent, attribList);
+TuningCanvas *AppFrame::makeModemTuner(wxWindow *parent) {
+    auto *pCanvas = new TuningCanvas(parent);
     pCanvas->SetMinClientSize(wxSize(200, 28));
     return pCanvas;
 }
@@ -1588,6 +1592,9 @@ bool AppFrame::actionOnMenuDisplay(int id) {
         Refresh();
         for (auto canvas : frameCanvases) {
             canvas->Refresh();
+        }
+        for (auto host : frameHosts) {
+            host->Refresh();
         }
     }
 
@@ -2562,6 +2569,11 @@ void AppFrame::tickFrame() {
             canvas->frameUpdate();
         }
     }
+    for (auto host : frameHosts) {
+        if (host) {
+            host->frameUpdate();
+        }
+    }
 }
 
 void AppFrame::OnFrameTimer(wxTimerEvent& /*event*/) {
@@ -3337,7 +3349,7 @@ FrequencyDialog::FrequencyDialogTarget AppFrame::getFrequencyDialogTarget() {
     else if (spectrumAvgMeter->getMouseTracker()->mouseInView()) {
         target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_SPECTRUM_AVG;
     }
-    else if (demodTuner->getMouseTracker()->mouseInView()) {
+    else if (demodTuner->isMouseInView()) {
         switch (demodTuner->getHoverState()) {
             case TuningCanvas::ActiveState::TUNING_HOVER_BW:
                 target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_BANDWIDTH;
@@ -3497,7 +3509,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     //Re-dispatch the key events if the mouse cursor is within a given
     //widget region, effectively activating its specific key shortcuts,
     //which else are overridden by this global key handler.
-    if (demodTuner->getMouseTracker()->mouseInView()) {
+    if (demodTuner->isMouseInView()) {
         demodTuner->OnKeyDown(event);
     } else if (waterfallCanvas->getMouseTracker()->mouseInView()) {
         waterfallCanvas->OnKeyDown(event);
@@ -3556,7 +3568,7 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     
     switch (event.GetKeyCode()) {
         case WXK_SPACE:
-            if (!demodTuner->getMouseTracker()->mouseInView()) {
+            if (!demodTuner->isMouseInView()) {
                 wxGetApp().showFrequencyInput(getFrequencyDialogTarget());
                 return 1;
             }
@@ -3685,7 +3697,7 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     //Re-dispatch the key events if the mouse cursor is within a given
     //widget region, effectively activating its specific key shortcuts,
     //which else are overridden by this global key handler.
-    if (demodTuner->getMouseTracker()->mouseInView()) {
+    if (demodTuner->isMouseInView()) {
         demodTuner->OnKeyUp(event);
     }
     else if (waterfallCanvas->getMouseTracker()->mouseInView()) {

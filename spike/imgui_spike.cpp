@@ -272,16 +272,21 @@ void drawTunerGrid(const TunerFrame &f, int count, float dp, float w) {
     std::vector<float> verts = tunerGridVerts(count, dp, w);
     ImU32 col = packColor(0.65f, 0.65f, 0.65f, 0.25f);
     for (size_t i = 0; i + 3 < verts.size(); i += 4) {
-        f.dl->AddLine(ImVec2(f.px(verts[i]), f.py(verts[i + 1])), ImVec2(f.px(verts[i + 2]), f.py(verts[i + 3])), col);
+        f.dl->AddLineV(floorf(f.px(verts[i])), f.py(1.0f), f.py(-1.0f), col);
     }
 }
 
 void drawSnapBox(const TunerFrame &f, int snapExp, float viewHeightPx) {
     std::vector<float> box = tunerDigitBox(snapExp, kFreqCount, kFreqDP, kFreqW, viewHeightPx);
-    for (size_t i = 0; i + 3 < box.size(); i += 2) {
-        f.dl->AddLine(ImVec2(f.px(box[i]), f.py(box[i + 1])), ImVec2(f.px(box[i + 2]), f.py(box[i + 3])),
-            IM_COL32(255, 0, 0, 255));
-    }
+    float xa = f.px(box[0]);
+    float xb = f.px(box[4]);
+    float ya = f.py(box[1]);
+    float yb = f.py(box[5]);
+    float x0 = floorf(xa < xb ? xa : xb);
+    float x1 = floorf(xa < xb ? xb : xa);
+    float y0 = floorf(ya < yb ? ya : yb);
+    float y1 = floorf(ya < yb ? yb : ya);
+    f.dl->AddRect(ImVec2(x0, y0), ImVec2(x1 + 1.0f, y1 + 1.0f), IM_COL32(255, 0, 0, 255), 0.0f, 0, 1.0f);
 }
 
 struct FrameEdges {
@@ -344,6 +349,8 @@ const char *hoverTip(HoverState state) {
 void drawTuner(AppState &s, const FrameEdges &edges, float mouseX, float mouseY) {
     ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(900.0f, 170.0f), ImGuiCond_Always);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(0.0f, 0.0f));
     ImGui::Begin("Tuner", nullptr,
         ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
             | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus);
@@ -495,6 +502,7 @@ void drawTuner(AppState &s, const FrameEdges &edges, float mouseX, float mouseY)
     drawTunerDigits(f, s.center, kFreqCount, kCenterDP, kCenterW, fontScale);
     drawTunerGrid(f, kFreqCount, kCenterDP, kCenterW);
     ImGui::End();
+    ImGui::PopStyleVar(2);
 }
 
 void drawControl(AppState &s) {

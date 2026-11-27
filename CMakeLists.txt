@@ -325,6 +325,42 @@ IF (APPLE)
 
 ENDIF (APPLE)
 
+include(FetchContent)
+set(BGFX_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BGFX_AMALGAMATED ON CACHE BOOL "" FORCE)
+set(BGFX_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+set(BGFX_INSTALL OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+    bgfx.cmake
+    GIT_REPOSITORY https://github.com/bkaradzic/bgfx.cmake.git
+    GIT_TAG v1.168.9637-616
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(bgfx.cmake)
+FetchContent_Declare(
+    glm
+    GIT_REPOSITORY https://github.com/g-truc/glm.git
+    GIT_TAG 1.0.3
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(glm)
+FetchContent_Declare(
+    imgui
+    GIT_REPOSITORY https://github.com/ocornut/imgui.git
+    GIT_TAG v1.93.0
+    GIT_SHALLOW TRUE
+)
+FetchContent_GetProperties(imgui)
+if(NOT imgui_POPULATED)
+    FetchContent_Populate(imgui)
+endif()
+list(APPEND CUBICSDR_INCLUDE_DIRS
+    ${imgui_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/src/ui/imgui
+    ${PROJECT_SOURCE_DIR}/src/ui/imgui/shaders/generated
+)
+SET(OTHER_LIBRARIES ${OTHER_LIBRARIES} bgfx bx glm::glm)
+
 
 SET (cubicsdr_sources
     ${cubicsdr_sources}
@@ -387,7 +423,6 @@ SET (cubicsdr_sources
     src/visual/MeterCanvas.cpp
     src/visual/MeterContext.cpp
     src/visual/TuningCanvas.cpp
-    src/visual/TuningContext.cpp
     src/visual/ModeSelectorCanvas.cpp
     src/visual/ModeSelectorContext.cpp
     src/visual/ScopeCanvas.cpp
@@ -406,6 +441,12 @@ SET (cubicsdr_sources
     src/ui/GLPanel.cpp
     src/ui/UITestCanvas.cpp
     src/ui/UITestContext.cpp
+    src/ui/imgui/imgui_bgfx.cpp
+    src/ui/imgui/BgfxCanvas.cpp
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
     src/forms/SDRDevices/SDRDevices.cpp
     src/forms/SDRDevices/SDRDevicesForm.cpp
     src/forms/SDRDevices/SDRDeviceAdd.cpp
@@ -503,7 +544,6 @@ SET (cubicsdr_headers
     src/visual/MeterCanvas.h
     src/visual/MeterContext.h
     src/visual/TuningCanvas.h
-    src/visual/TuningContext.h
     src/visual/ModeSelectorCanvas.h
     src/visual/ModeSelectorContext.h
     src/visual/ScopeCanvas.h

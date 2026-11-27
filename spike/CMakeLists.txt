@@ -139,7 +139,6 @@ target_include_directories(imgui_spike PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/sdr
     ${imgui_SOURCE_DIR}
-    ${BGFX_SRC_DIR}/examples/common/imgui
     ${SHADER_INCLUDE_DIR})
 target_link_libraries(imgui_spike PRIVATE bgfx bx glm::glm)
 if(TARGET SDL3::SDL3)
@@ -166,7 +165,6 @@ target_include_directories(gainmeter_spike PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/demod
     ${imgui_SOURCE_DIR}
-    ${BGFX_SRC_DIR}/examples/common/imgui
     ${SHADER_INCLUDE_DIR})
 target_link_libraries(gainmeter_spike PRIVATE bgfx bx glm::glm)
 if(TARGET SDL3::SDL3)
