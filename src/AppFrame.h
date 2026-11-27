@@ -270,7 +270,7 @@ private:
 	 * UI init functions
 	 */
     ModeSelectorCanvas *makeModemSelectorPanel(wxWindow *parent, const wxGLAttributes &attribList);
-	WaterfallCanvas *makeWaterfallCanvas(wxWindow *parent, const wxGLAttributes &attribList);
+	WaterfallCanvas *makeWaterfallCanvas(wxWindow *parent);
 	SpectrumCanvas *makeDemodSpectrumCanvas(wxWindow *parent);
 	MeterCanvas *makeSignalMeter(wxWindow *parent);
 	ModeSelectorCanvas *makeDeltaLockButton(wxWindow *parent, const wxGLAttributes &attribList);
@@ -282,7 +282,7 @@ private:
 	ModeSelectorCanvas *makePeakHoldButton(wxWindow *parent, const wxGLAttributes &attribList);
 	SpectrumCanvas *makeSpectrumCanvas(wxWindow *parent);
 	MeterCanvas *makeSpectrumAvgMeter(wxWindow *parent);
-	WaterfallCanvas *makeWaterfall(wxWindow *parent, const wxGLAttributes &attribList);
+	WaterfallCanvas *makeWaterfall(wxWindow *parent);
 	MeterCanvas *makeWaterfallSpeedMeter(wxWindow *parent);
     ScopeCanvas *makeScopeCanvas(wxPanel *parent, const wxGLAttributes &attribList);
     ModeSelectorCanvas *makeModemAdvSelectorPanel(wxPanel *parent, const wxGLAttributes &attribList);

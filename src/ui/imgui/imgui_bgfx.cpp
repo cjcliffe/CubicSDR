@@ -19,6 +19,7 @@
 #include <essl/fs_imgui.sc.bin.h>
 
 #include <cstring>
+#include <vector>
 
 namespace {
 
@@ -49,10 +50,13 @@ bgfx::ShaderHandle loadShader(const char *name) {
 
 bgfx::ProgramHandle g_program = BGFX_INVALID_HANDLE;
 bgfx::UniformHandle g_texFont = BGFX_INVALID_HANDLE;
+bgfx::TextureHandle g_texWhite = BGFX_INVALID_HANDLE;
+ImTextureID g_whiteTexId = ImTextureID_Invalid;
 bgfx::VertexLayout g_layout;
 ImGuiContext *g_ctx = nullptr;
 ImFont *g_monoFont = nullptr;
 uint32_t g_clearColor = 0x1a1a1aff;
+std::vector<ImTextureID> g_atlasIds;
 
 bgfx::TextureHandle toBgfxTexture(ImTextureID id) {
     bgfx::TextureHandle handle;
@@ -136,6 +140,9 @@ bool imguiInitBackend() {
     if (!bgfx::isValid(g_program)) {
         return false;
     }
+    uint32_t whitePixel = 0xFFFFFFFFu;
+    g_texWhite = bgfx::createTexture2D(1, 1, false, 1, bgfx::TextureFormat::RGBA8, 0, bgfx::copy(&whitePixel, 4));
+    g_whiteTexId = toImTextureId(g_texWhite);
     IMGUI_CHECKVERSION();
     g_ctx = ImGui::CreateContext();
     ImGui::SetCurrentContext(g_ctx);
@@ -170,6 +177,11 @@ void imguiShutdownBackend() {
         g_ctx = nullptr;
         g_monoFont = nullptr;
     }
+    if (bgfx::isValid(g_texWhite)) {
+        bgfx::destroy(g_texWhite);
+        g_texWhite = BGFX_INVALID_HANDLE;
+        g_whiteTexId = ImTextureID_Invalid;
+    }
     if (bgfx::isValid(g_program)) {
         bgfx::destroy(g_program);
         g_program = BGFX_INVALID_HANDLE;
@@ -178,6 +190,10 @@ void imguiShutdownBackend() {
         bgfx::destroy(g_texFont);
         g_texFont = BGFX_INVALID_HANDLE;
     }
+}
+
+ImTextureRef imguiAdditiveTexture() {
+    return ImTextureRef(g_whiteTexId);
 }
 
 void imguiBeginFrame(const ImguiInput &in, int width, int height, float dt, float fbScale) {
@@ -199,6 +215,14 @@ void imguiEndFrame(bgfx::ViewId view) {
     ImGui::Render();
     ImDrawData *drawData = ImGui::GetDrawData();
     updateTextures(drawData);
+    g_atlasIds.clear();
+    if (drawData->Textures != nullptr) {
+        for (ImTextureData *tex : *drawData->Textures) {
+            if (tex->Status != ImTextureStatus_Destroyed) {
+                g_atlasIds.push_back(tex->GetTexID());
+            }
+        }
+    }
     float fbW = drawData->DisplaySize.x * drawData->FramebufferScale.x;
     float fbH = drawData->DisplaySize.y * drawData->FramebufferScale.y;
     uint16_t vw = 0;
@@ -268,14 +292,33 @@ void imguiEndFrame(bgfx::ViewId view) {
             bgfx::setScissor(sx, sy, ex - sx, ey - sy);
             bgfx::setVertexBuffer(0, &tvb, cmd.VtxOffset, vtxCount - cmd.VtxOffset);
             bgfx::setIndexBuffer(&tib, cmd.IdxOffset, cmd.ElemCount);
-            bgfx::setTexture(0, g_texFont, toBgfxTexture(cmd.GetTexID()),
-                BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT
-                    | BGFX_SAMPLER_MIP_POINT);
-            bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_BLEND_ALPHA);
+            bool atlas = false;
+            for (ImTextureID id : g_atlasIds) {
+                if (id == cmd.GetTexID()) {
+                    atlas = true;
+                    break;
+                }
+            }
+            uint32_t sampler = atlas
+                ? (BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT
+                      | BGFX_SAMPLER_MIP_POINT)
+                : (BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_ANISOTROPIC
+                      | BGFX_SAMPLER_MAG_ANISOTROPIC | BGFX_SAMPLER_MIP_POINT);
+            bgfx::setTexture(0, g_texFont, toBgfxTexture(cmd.GetTexID()), sampler);
+            bool additive =
+                g_whiteTexId != ImTextureID_Invalid && cmd.GetTexID() == g_whiteTexId;
+            bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A
+                | (additive
+                          ? BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_ONE)
+                          : BGFX_STATE_BLEND_ALPHA));
             bgfx::setTransform(modelPtr);
             bgfx::submit(view, g_program);
         }
     }
+}
+
+ImTextureID imguiTextureId(bgfx::TextureHandle handle) {
+    return (ImTextureID)(uintptr_t)handle.idx;
 }
 
 ImFont *imguiMonoFont() {

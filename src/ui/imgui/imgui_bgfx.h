@@ -4,10 +4,9 @@
 #pragma once
 
 #include <bgfx/bgfx.h>
+#include <imgui.h>
 
 #include <cstdint>
-
-struct ImFont;
 
 struct ImguiInput {
     float mx = 0.0f;
@@ -25,3 +24,5 @@ void imguiSetClearColor(uint32_t rgba);
 void imguiBeginFrame(const ImguiInput &in, int width, int height, float dt, float fbScale = 1.0f);
 void imguiEndFrame(bgfx::ViewId view);
 ImFont *imguiMonoFont();
+ImTextureID imguiTextureId(bgfx::TextureHandle handle);
+ImTextureRef imguiAdditiveTexture();

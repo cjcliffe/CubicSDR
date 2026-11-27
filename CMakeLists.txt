@@ -414,7 +414,6 @@ SET (cubicsdr_sources
     src/util/FileUtil.cpp
     src/panel/ScopePanel.cpp
     src/panel/SpectrumPanel.cpp
-    src/panel/WaterfallPanel.cpp
     src/visual/WaterfallRing.cpp
     src/panel/MeterPanel.cpp
     src/visual/ColorTheme.cpp
@@ -534,7 +533,6 @@ SET (cubicsdr_headers
 	src/util/SpinMutex.h
     src/panel/ScopePanel.h
     src/panel/SpectrumPanel.h
-    src/panel/WaterfallPanel.h
     src/visual/WaterfallRing.h
     src/panel/MeterPanel.h
     src/visual/ColorTheme.h

@@ -81,7 +81,7 @@ BgfxCanvas::BgfxCanvas(wxWindow *parent)
     : wxWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_NONE),
       viewId(s_nextView++), fb(BGFX_INVALID_HANDLE), isMainWindow(false), wheelX(0.0f), wheelY(0.0f),
       lastMouseX(-1.0f), lastMouseY(-1.0f), mouseInView(false), leftDown(false), rightDown(false),
-      middleDown(false), shiftDown(false), altDown(false), lastPaintS(0.0) {
+      middleDown(false), shiftDown(false), altDown(false), lastPaintS(0.0), lastSize(-1, -1) {
     SetBackgroundStyle(wxBG_STYLE_PAINT);
     s_hosts++;
     Bind(wxEVT_PAINT, &BgfxCanvas::OnPaint, this);
@@ -110,6 +110,10 @@ BgfxCanvas::~BgfxCanvas() {
         bgfx::shutdown();
         s_bgfxReady = false;
     }
+}
+
+bool BgfxCanvas::isBackendReady() {
+    return s_bgfxReady;
 }
 
 void BgfxCanvas::frameUpdate() {
@@ -197,11 +201,15 @@ void BgfxCanvas::OnPaint(wxPaintEvent &WXUNUSED(event)) {
 
 void BgfxCanvas::OnSize(wxSizeEvent &event) {
     event.Skip();
-    if (!s_bgfxReady) {
-        return;
-    }
     wxSize size = GetClientSize() * GetContentScaleFactor();
     if (size.x <= 0 || size.y <= 0) {
+        return;
+    }
+    if (size == lastSize) {
+        return;
+    }
+    lastSize = size;
+    if (!s_bgfxReady) {
         return;
     }
     if (isMainWindow) {
@@ -257,6 +265,7 @@ void BgfxCanvas::OnButton(wxMouseEvent &event) {
         pending.middlePressed = true;
     } else if (type == wxEVT_MIDDLE_UP) {
         middleDown = false;
+        pending.middleReleased = true;
     }
     Refresh();
 }

@@ -200,7 +200,7 @@ AppFrame::AppFrame() :
     demodVisuals->AddSpacer(1);
 
     // Demod Waterfall
-    demodWaterfallCanvas = makeWaterfallCanvas(demodPanel, attribList);
+    demodWaterfallCanvas = makeWaterfallCanvas(demodPanel);
     demodWaterfallCanvas->attachSpectrumCanvas(demodSpectrumCanvas);
     demodVisuals->Add(demodWaterfallCanvas, 6, wxEXPAND | wxALL, 0);
 
@@ -310,7 +310,7 @@ AppFrame::AppFrame() :
     auto *waterfallSizer = new wxBoxSizer(wxHORIZONTAL);
 
     // Waterfall
-    waterfallCanvas = makeWaterfall(waterfallPanel, attribList);
+    waterfallCanvas = makeWaterfall(waterfallPanel);
     // Create and connect the FFT visual data thread
     waterfallDataThread = new FFTVisualDataThread();
     waterfallDataThread->setInputQueue("IQDataInput", wxGetApp().getWaterfallVisualQueue());
@@ -345,14 +345,15 @@ AppFrame::AppFrame() :
 
     // Canvases repainted once per frame-timer tick, in registration order.
     frameCanvases = {
-        demodModeSelector, demodWaterfallCanvas,
+        demodModeSelector,
         deltaLockButton, demodRecordButton,
         soloModeButton, demodMuteButton,
-        peakHoldButton, waterfallCanvas, scopeCanvas
+        peakHoldButton, scopeCanvas
     };
     frameHosts = {
         demodTuner, gainCanvas, waterfallSpeedMeter, spectrumAvgMeter,
-        demodGainMeter, demodSignalMeter, demodSpectrumCanvas, spectrumCanvas
+        demodGainMeter, demodSignalMeter, demodSpectrumCanvas, spectrumCanvas,
+        demodWaterfallCanvas, waterfallCanvas
     };
 #ifdef ENABLE_DIGITAL_LAB
     frameCanvases.push_back(demodModeSelectorAdv);
@@ -779,8 +780,8 @@ MeterCanvas *AppFrame::makeWaterfallSpeedMeter(wxWindow *parent) {
     return pCanvas;
 }
 
-WaterfallCanvas *AppFrame::makeWaterfall(wxWindow *parent, const wxGLAttributes &attribList) {
-    auto *pCanvas = new WaterfallCanvas(parent, attribList);
+WaterfallCanvas *AppFrame::makeWaterfall(wxWindow *parent) {
+    auto *pCanvas = new WaterfallCanvas(parent);
     pCanvas->setup(DEFAULT_FFT_SIZE, DEFAULT_MAIN_WATERFALL_LINES_NB);
     return pCanvas;
 }
@@ -900,8 +901,8 @@ SpectrumCanvas *AppFrame::makeDemodSpectrumCanvas(wxWindow *parent) {
     return pCanvas;
 }
 
-WaterfallCanvas *AppFrame::makeWaterfallCanvas(wxWindow *parent, const wxGLAttributes &attribList) {
-    auto *pCanvas = new WaterfallCanvas(parent, attribList);
+WaterfallCanvas *AppFrame::makeWaterfallCanvas(wxWindow *parent) {
+    auto *pCanvas = new WaterfallCanvas(parent, "DemodWaterfall");
     pCanvas->setup(DEFAULT_DMOD_FFT_SIZE, DEFAULT_DEMOD_WATERFALL_LINES_NB);
     pCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
     pCanvas->setMinBandwidth(8000);
@@ -2717,6 +2718,9 @@ void AppFrame::handleModemProperties() {
         }
 #endif
     } else if (!demod && modemPropertiesUpdated.load()) {
+        //Like the branch above, this rebuild is one-shot; without clearing
+        //the flag it reruns every tick and saturates the UI thread.
+        modemPropertiesUpdated.store(false);
         ModemArgInfoList dummyInfo;
         modemProps->initProperties(dummyInfo, nullptr);
         modemProps->updateTheme();
@@ -3510,7 +3514,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     //which else are overridden by this global key handler.
     if (demodTuner->isMouseInView()) {
         demodTuner->OnKeyDown(event);
-    } else if (waterfallCanvas->getMouseTracker()->mouseInView()) {
+    } else if (waterfallCanvas->isMouseInView()) {
         waterfallCanvas->OnKeyDown(event);
     }
     else if (spectrumCanvas->isMouseInView()) {
@@ -3519,7 +3523,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     else if (scopeCanvas->getMouseTracker()->mouseInView()) {
         scopeCanvas->OnKeyDown(event);
     }
-    else if (demodWaterfallCanvas && demodWaterfallCanvas->getMouseTracker()->mouseInView()) {
+    else if (demodWaterfallCanvas && demodWaterfallCanvas->isMouseInView()) {
         demodWaterfallCanvas->OnKeyDown(event);
     }
     else if (demodSpectrumCanvas && demodSpectrumCanvas->isMouseInView()) {
@@ -3699,7 +3703,7 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     if (demodTuner->isMouseInView()) {
         demodTuner->OnKeyUp(event);
     }
-    else if (waterfallCanvas->getMouseTracker()->mouseInView()) {
+    else if (waterfallCanvas->isMouseInView()) {
         waterfallCanvas->OnKeyUp(event);
     }
     else if (spectrumCanvas->isMouseInView()) {
@@ -3708,7 +3712,7 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     else if (scopeCanvas->getMouseTracker()->mouseInView()) {
         scopeCanvas->OnKeyUp(event);
     }
-    else if (demodWaterfallCanvas && demodWaterfallCanvas->getMouseTracker()->mouseInView()) {
+    else if (demodWaterfallCanvas && demodWaterfallCanvas->isMouseInView()) {
         demodWaterfallCanvas->OnKeyUp(event);
     }
     else if (demodSpectrumCanvas && demodSpectrumCanvas->isMouseInView()) {

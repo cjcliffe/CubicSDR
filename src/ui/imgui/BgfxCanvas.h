@@ -14,6 +14,7 @@ struct BgfxEdges {
     bool rightPressed = false;
     bool rightReleased = false;
     bool middlePressed = false;
+    bool middleReleased = false;
     int wheelRotV = 0;
     int wheelRotH = 0;
     bool mouseLeft = false;
@@ -23,6 +24,8 @@ class BgfxCanvas : public wxWindow {
 public:
     BgfxCanvas(wxWindow *parent);
     ~BgfxCanvas() override;
+
+    static bool isBackendReady();
 
     virtual void frameUpdate();
 
@@ -71,4 +74,5 @@ private:
     bool shiftDown;
     bool altDown;
     double lastPaintS;
+    wxSize lastSize;
 };

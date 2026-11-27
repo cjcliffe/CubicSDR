@@ -617,14 +617,13 @@ void SpectrumCanvas::drawView(const BgfxEdges &edges, float mx, float my) {
     }
 
     if (waterfallCanvas && !waterfallCanvas->getHoverDemod()) {
-        MouseTracker *wfmt = waterfallCanvas->getMouseTracker();
-        if (wfmt->mouseInView()) {
+        if (waterfallCanvas->isMouseInView()) {
             int snap = wxGetApp().getFrequencySnap();
-            long long freq = getFrequencyAt(wfmt->getMouseX());
+            long long freq = getFrequencyAt(waterfallCanvas->hoverX01());
             if (snap > 1) {
                 freq = (long long)(roundf((float)freq / (float)snap) * (float)snap);
             }
-            bool ghostNew = (((waterfallCanvas->isShiftDown()
+            bool ghostNew = (((waterfallCanvas->isShiftHeld()
                                    || (selectedDemodulator && !selectedDemodulator->isActive()))
                                    && selectedDemodulator)
                 || (!selectedDemodulator));

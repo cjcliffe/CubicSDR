@@ -3,35 +3,40 @@
 
 #pragma once
 
-#include "wx/glcanvas.h"
-#include "wx/timer.h"
-
-#include <vector>
-#include <queue>
-#include <memory>
-#include "InteractiveCanvas.h"
-#include "MouseTracker.h"
-#include "PrimaryGLContext.h"
-#include "SpectrumCanvas.h"
-#include "WaterfallPanel.h"
-#include "WaterfallPacer.h"
+#include <atomic>
 #include <chrono>
-#include "DemodulatorMgr.h"
+#include <memory>
+#include <mutex>
+#include <string>
+#include <vector>
 
-class WaterfallCanvas: public InteractiveCanvas {
+#include "wx/event.h"
+
+#include "ui/imgui/BgfxCanvas.h"
+#include "ui/imgui/imgui_bgfx.h"
+#include "ColorTheme.h"
+#include "DemodulatorMgr.h"
+#include "SpectrumVisualProcessor.h"
+#include "WaterfallPacer.h"
+#include "WaterfallRing.h"
+
+class SpectrumCanvas;
+
+class WaterfallCanvas : public BgfxCanvas {
 public:
     enum DragState {
         WF_DRAG_NONE, WF_DRAG_BANDWIDTH_LEFT, WF_DRAG_BANDWIDTH_RIGHT, WF_DRAG_FREQUENCY, WF_DRAG_RANGE
     };
 
-    WaterfallCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
+    WaterfallCanvas(wxWindow *parent, const std::string &windowName = "Waterfall");
+    ~WaterfallCanvas() override;
+
     void setup(unsigned int fft_size_in, int waterfall_lines_in);
     void setFFTSize(unsigned int fft_size_in);
-    ~WaterfallCanvas() override;
 
     DragState getDragState();
     DragState getNextDragState();
-    
+
     void attachSpectrumCanvas(SpectrumCanvas *canvas_in);
     void processInputQueue();
     SpectrumVisualDataQueuePtr getVisualDataQueue();
@@ -43,52 +48,65 @@ public:
     void setLinesPerSecond(int lps);
     void setMinBandwidth(int min);
 
-    //This is public because it is indeed forwarded from
-    //AppFrame::OnGlobalKeyDown, because global key handler intercepts 
-    //calls in all windows.
-    void OnKeyDown(wxKeyEvent& event);
+    void setView(long long center_freq_in, long long bandwidth_in);
+    void disableView();
+    bool getViewState() const;
 
-    //This is public because it is indeed forwarded from
-    //AppFrame::OnGlobalKeyUp, because global key handler intercepts 
-    //calls in all windows.
+    void setCenterFrequency(long long center_freq_in);
+    long long getCenterFrequency() const;
+
+    void setBandwidth(long long bandwidth_in);
+    long long getBandwidth() const;
+
+    // Public because AppFrame::OnGlobalKeyDown/OnGlobalKeyUp forward here.
+    void OnKeyDown(wxKeyEvent& event);
     void OnKeyUp(wxKeyEvent& event);
 
-    //public because called by SpectrumCanvas.
-    void OnMouseWheelMoved(wxMouseEvent& event);
-
-    //public because called by SpectrumCanvas.
+    // Public because called by SpectrumCanvas.
     void setMouseZoom(float mouseZoom_in);
-    
-    
-    
-private:
-    void OnPaint(wxPaintEvent& event);
+
+    float hoverX01() const;
+    bool isShiftHeld() const;
+
     void frameUpdate() override;
 
-    void updateHoverState();
-    
-    void OnMouseMoved(wxMouseEvent& event);
-    void OnMouseDown(wxMouseEvent& event);
-    void OnMouseReleased(wxMouseEvent& event);
-    void OnMouseRightDown(wxMouseEvent& event);
-    void OnMouseRightReleased(wxMouseEvent& event);
-    void OnMouseMiddleDown(wxMouseEvent& event);
-    void OnMouseMiddleReleased(wxMouseEvent& event);
-    void OnMouseEnterWindow(wxMouseEvent& event);
-    void OnMouseLeftWindow(wxMouseEvent& event);
+private:
+    void drawView(const BgfxEdges &edges, float mx, float my) override;
+    void onEnterView() override;
+    void onLeaveView() override;
 
+    long long getFrequencyAt(float x) const;
+    long long getFrequencyAt(float x, long long iqCenterFreq, long long iqBandwidth) const;
+
+    void updateHoverState(float mx01);
     void updateCenterFrequency(long long freq);
-    
-    std::vector<float> spectrum_points;
+    void updateTextures();
+    void drawDemodEdges(
+        ImDrawList *dl, float ox, float oy, float w, float h, const DemodulatorInstancePtr &demod,
+        const RGBA4f &color, int viewW, int viewH, float washAlpha);
 
-    SpectrumCanvas *spectrumCanvas = nullptr;
-    PrimaryGLContext *glContext = nullptr;
-    WaterfallPanel waterfallPanel;
+    SpectrumCanvas *spectrumCanvas;
+    std::string viewName;
+    SpectrumVisualDataQueuePtr visualDataQueue = std::make_shared<SpectrumVisualDataQueue>();
+
+    WaterfallRing ring;
+    WaterfallPacer pacer;
+    bgfx::TextureHandle tex[2];
+    std::vector<unsigned char> shadow[2];
+    std::vector<uint8_t> lut;
+    std::vector<uint8_t> staging;
+    ColorTheme *activeTheme;
+    bool texReady;
+
+    bool isView;
+    long long centerFreq;
+    long long bandwidth;
+    long long lastBandwidth;
 
     DragState dragState;
     DragState nextDragState;
 
-    DemodulatorInstancePtr hoverDemod = nullptr;
+    DemodulatorInstancePtr hoverDemod;
 
     unsigned int fft_size, new_fft_size;
     int waterfall_lines;
@@ -103,18 +121,16 @@ private:
     bool midZooming;
     int midZoomStartY;
     int dragBW;
-    
-    SpectrumVisualDataQueuePtr visualDataQueue = std::make_shared<SpectrumVisualDataQueue>();
 
-    // Sub-millisecond frame clock for the pacer; the ms-quantized Timer
-    // jittered line placement at high frame rates.
+    bool shiftDown, altDown, ctrlDown;
+    bool leftDown, rightDown;
+    float originX01, originY01;
+    float lastX01, lastY01;
+    float lastDragX01;
+    float mouseX01;
+
     std::chrono::steady_clock::time_point lastFrameTime;
-    WaterfallPacer pacer;
-    bool preBuf;
     std::mutex tex_update;
     int minBandwidth;
     std::atomic_bool fft_size_changed;
-    // event table
-wxDECLARE_EVENT_TABLE();
 };
-
