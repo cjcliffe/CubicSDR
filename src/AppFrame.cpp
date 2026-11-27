@@ -191,7 +191,7 @@ AppFrame::AppFrame() :
     auto *demodVisuals = new wxBoxSizer(wxVERTICAL);
 
     // Demod Spectrum
-    demodSpectrumCanvas = makeDemodSpectrumCanvas(demodPanel, attribList);
+    demodSpectrumCanvas = makeDemodSpectrumCanvas(demodPanel);
     demodVisuals->Add(demodSpectrumCanvas, 3, wxEXPAND | wxALL, 0);
 
     wxGetApp().getDemodSpectrumProcessor()->setup(DEFAULT_DMOD_FFT_SIZE);
@@ -285,7 +285,7 @@ AppFrame::AppFrame() :
     auto *spectrumSizer = new wxBoxSizer(wxHORIZONTAL);
 
     // Spectrum Canvas
-    spectrumCanvas = makeSpectrumCanvas(spectrumPanel, attribList);
+    spectrumCanvas = makeSpectrumCanvas(spectrumPanel);
 
     wxGetApp().getSpectrumProcessor()->setup(DEFAULT_FFT_SIZE);
     wxGetApp().getSpectrumProcessor()->attachOutput(spectrumCanvas->getVisualDataQueue());
@@ -346,13 +346,13 @@ AppFrame::AppFrame() :
     // Canvases repainted once per frame-timer tick, in registration order.
     frameCanvases = {
         demodModeSelector, demodWaterfallCanvas,
-        demodSpectrumCanvas, deltaLockButton, demodRecordButton,
-        soloModeButton, demodMuteButton, spectrumCanvas,
+        deltaLockButton, demodRecordButton,
+        soloModeButton, demodMuteButton,
         peakHoldButton, waterfallCanvas, scopeCanvas
     };
     frameHosts = {
         demodTuner, gainCanvas, waterfallSpeedMeter, spectrumAvgMeter,
-        demodGainMeter, demodSignalMeter
+        demodGainMeter, demodSignalMeter, demodSpectrumCanvas, spectrumCanvas
     };
 #ifdef ENABLE_DIGITAL_LAB
     frameCanvases.push_back(demodModeSelectorAdv);
@@ -796,8 +796,8 @@ MeterCanvas * AppFrame::makeSpectrumAvgMeter(wxWindow *parent) {
     return pCanvas;
 }
 
-SpectrumCanvas *AppFrame::makeSpectrumCanvas(wxWindow *parent, const wxGLAttributes &attribList) {
-    auto *pCanvas = new SpectrumCanvas(parent, attribList);
+SpectrumCanvas *AppFrame::makeSpectrumCanvas(wxWindow *parent) {
+    auto *pCanvas = new SpectrumCanvas(parent);
     pCanvas->setShowDb(true);
     pCanvas->setUseDBOfs(true);
     pCanvas->setScaleFactorEnabled(true);
@@ -894,8 +894,8 @@ MeterCanvas *AppFrame::makeSignalMeter(wxWindow *parent) {
     return pCanvas;
 }
 
-SpectrumCanvas *AppFrame::makeDemodSpectrumCanvas(wxWindow *parent, const wxGLAttributes &attribList) {
-    auto *pCanvas = new SpectrumCanvas(parent, attribList);
+SpectrumCanvas *AppFrame::makeDemodSpectrumCanvas(wxWindow *parent) {
+    auto *pCanvas = new SpectrumCanvas(parent, "DemodSpectrum");
     pCanvas->setView(wxGetApp().getConfig()->getCenterFreq(), 300000);
     return pCanvas;
 }
@@ -3513,7 +3513,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     } else if (waterfallCanvas->getMouseTracker()->mouseInView()) {
         waterfallCanvas->OnKeyDown(event);
     }
-    else if (spectrumCanvas->getMouseTracker()->mouseInView()) {
+    else if (spectrumCanvas->isMouseInView()) {
         spectrumCanvas->OnKeyDown(event);
     }
     else if (scopeCanvas->getMouseTracker()->mouseInView()) {
@@ -3522,7 +3522,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     else if (demodWaterfallCanvas && demodWaterfallCanvas->getMouseTracker()->mouseInView()) {
         demodWaterfallCanvas->OnKeyDown(event);
     }
-    else if (demodSpectrumCanvas && demodSpectrumCanvas->getMouseTracker()->mouseInView()) {
+    else if (demodSpectrumCanvas && demodSpectrumCanvas->isMouseInView()) {
         demodSpectrumCanvas->OnKeyDown(event);
     }
 
@@ -3702,7 +3702,7 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     else if (waterfallCanvas->getMouseTracker()->mouseInView()) {
         waterfallCanvas->OnKeyUp(event);
     }
-    else if (spectrumCanvas->getMouseTracker()->mouseInView()) {
+    else if (spectrumCanvas->isMouseInView()) {
         spectrumCanvas->OnKeyUp(event);
     }
     else if (scopeCanvas->getMouseTracker()->mouseInView()) {
@@ -3711,7 +3711,7 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     else if (demodWaterfallCanvas && demodWaterfallCanvas->getMouseTracker()->mouseInView()) {
         demodWaterfallCanvas->OnKeyUp(event);
     }
-    else if (demodSpectrumCanvas && demodSpectrumCanvas->getMouseTracker()->mouseInView()) {
+    else if (demodSpectrumCanvas && demodSpectrumCanvas->isMouseInView()) {
         demodSpectrumCanvas->OnKeyUp(event);
     }
     

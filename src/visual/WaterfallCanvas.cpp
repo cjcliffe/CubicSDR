@@ -204,8 +204,8 @@ void WaterfallCanvas::OnPaint(wxPaintEvent& WXUNUSED(event)) {
         if (mouseTracker.mouseInView()) {
             mpos = mouseTracker.getMouseX();
             mouseInView = true;
-        } else if (spectrumCanvas && spectrumCanvas->getMouseTracker()->mouseInView()) {
-            mpos = spectrumCanvas->getMouseTracker()->getMouseX();
+        } else if (spectrumCanvas && spectrumCanvas->isMouseInView()) {
+            mpos = spectrumCanvas->hoverX01();
             mouseInView = true;
         }
 
@@ -637,6 +637,10 @@ void WaterfallCanvas::OnMouseDown(wxMouseEvent& event) {
 void WaterfallCanvas::OnMouseWheelMoved(wxMouseEvent& event) {
     InteractiveCanvas::OnMouseWheelMoved(event);
     mouseZoom = WaterfallDrag::wheelZoom(event.GetWheelRotation(), event.GetWheelDelta());
+}
+
+void WaterfallCanvas::setMouseZoom(float mouseZoom_in) {
+    mouseZoom = mouseZoom_in;
 }
 
 void WaterfallCanvas::OnMouseReleased(wxMouseEvent& event) {

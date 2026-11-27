@@ -3,81 +3,91 @@
 
 #pragma once
 
-#include <vector>
-#include <queue>
 #include <memory>
+#include <string>
+#include <vector>
 
-#include "InteractiveCanvas.h"
-#include "PrimaryGLContext.h"
-#include "MouseTracker.h"
+#include "wx/event.h"
+
+#include "ui/imgui/BgfxCanvas.h"
 #include "SpectrumVisualProcessor.h"
-#include "SpectrumPanel.h"
 
 class WaterfallCanvas;
 
-class SpectrumCanvas: public InteractiveCanvas {
+class SpectrumCanvas : public BgfxCanvas {
 public:
-    SpectrumCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
+    SpectrumCanvas(wxWindow *parent, const std::string &windowName = "Spectrum");
     ~SpectrumCanvas() override;
 
-    //This is public because it is indeed forwarded from
-    //AppFrame::OnGlobalKeyDown, because global key handler intercepts 
-    //calls in all windows.
+    // Public because AppFrame::OnGlobalKeyDown/OnGlobalKeyUp forward here.
     void OnKeyDown(wxKeyEvent& event);
-
-    //This is public because it is indeed forwarded from
-    //AppFrame::OnGlobalKeyUp, because global key handler intercepts 
-    //calls in all windows.
     void OnKeyUp(wxKeyEvent& event);
 
     void attachWaterfallCanvas(WaterfallCanvas *canvas_in);
     void moveCenterFrequency(long long freqChange);
 
     void setShowDb(bool showDb);
-    bool getShowDb();
-    
-    void setUseDBOfs(bool showDb);
-    bool getUseDBOfs();
-    
-    void setView(long long center_freq_in, long long bandwidth_in) override;
-    void disableView() override;
+    bool getShowDb() const;
+
+    void setUseDBOfs(bool useDbOfs);
+    bool getUseDBOfs() const;
+
+    void setView(long long center_freq_in, long long bandwidth_in);
+    void disableView();
+    bool getViewState() const;
+
+    void setCenterFrequency(long long center_freq_in);
+    long long getCenterFrequency() const;
+
+    void setBandwidth(long long bandwidth_in);
+    long long getBandwidth() const;
 
     void setScaleFactorEnabled(bool en);
     void setFFTSize(int fftSize);
-    
+
+    float hoverX01() const;
+
     SpectrumVisualDataQueuePtr getVisualDataQueue();
-    
-    // called by Waterfall to forward the update of the vertical scale.
+
+    // Called by Waterfall to forward the update of the vertical scale.
     void updateScaleFactorFromYMove(float yDeltaMouseMove);
-    // called by Waterfall to reset the shared scale factor on right-click.
+    // Called by Waterfall to reset the shared scale factor on right-click.
     void resetScaleFactorFromClick();
-    
-private:
-    void OnPaint(wxPaintEvent& event);
 
     void frameUpdate() override;
 
-    void OnMouseMoved(wxMouseEvent& event);
-    void OnMouseDown(wxMouseEvent& event);
-    void OnMouseWheelMoved(wxMouseEvent& event);
-    void OnMouseReleased(wxMouseEvent& event);
-    void OnMouseEnterWindow(wxMouseEvent& event);
-    void OnMouseLeftWindow(wxMouseEvent& event);
-    void OnMouseRightDown(wxMouseEvent& event);
-    void OnMouseRightReleased(wxMouseEvent& event);
-   
+private:
+    void drawView(const BgfxEdges &edges, float mx, float my) override;
+    void onEnterView() override;
+    void onLeaveView() override;
+
+    long long getFrequencyAt(float x) const;
     void updateScaleFactor(float factor);
-    
-    PrimaryGLContext *glContext;
+    void updateCursor(bool left, bool right);
+
     WaterfallCanvas *waterfallCanvas;
-    SpectrumPanel spectrumPanel;
+    std::string viewName;
+    SpectrumVisualDataQueuePtr visualDataQueue = std::make_shared<SpectrumVisualDataQueue>();
+
+    std::vector<float> points;
+    std::vector<float> peakPoints;
+    float floorValue, ceilValue;
+    int fftSize;
+    bool showDb, useDbOfs;
+
+    bool isView;
+    long long centerFreq;
+    long long bandwidth;
+    long long lastBandwidth;
+
     float scaleFactor;
     int bwChange;
     bool resetScaleFactor, scaleFactorEnabled;
-    
-    SpectrumVisualDataQueuePtr  visualDataQueue = std::make_shared<SpectrumVisualDataQueue>();
 
-// event table
-wxDECLARE_EVENT_TABLE();
+    bool shiftDown, altDown, ctrlDown;
+    bool leftDown, rightDown;
+    float lastPanX01, lastGainY01, rightOriginY01;
+    float mouseX01;
+    float lastStatusX, lastStatusY;
+    int lastCursor;
 };
-

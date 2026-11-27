@@ -11,6 +11,7 @@
 #include <memory>
 #include "InteractiveCanvas.h"
 #include "MouseTracker.h"
+#include "PrimaryGLContext.h"
 #include "SpectrumCanvas.h"
 #include "WaterfallPanel.h"
 #include "WaterfallPacer.h"
@@ -54,6 +55,9 @@ public:
 
     //public because called by SpectrumCanvas.
     void OnMouseWheelMoved(wxMouseEvent& event);
+
+    //public because called by SpectrumCanvas.
+    void setMouseZoom(float mouseZoom_in);
     
     
     

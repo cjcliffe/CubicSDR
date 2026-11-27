@@ -271,7 +271,7 @@ private:
 	 */
     ModeSelectorCanvas *makeModemSelectorPanel(wxWindow *parent, const wxGLAttributes &attribList);
 	WaterfallCanvas *makeWaterfallCanvas(wxWindow *parent, const wxGLAttributes &attribList);
-	SpectrumCanvas *makeDemodSpectrumCanvas(wxWindow *parent, const wxGLAttributes &attribList);
+	SpectrumCanvas *makeDemodSpectrumCanvas(wxWindow *parent);
 	MeterCanvas *makeSignalMeter(wxWindow *parent);
 	ModeSelectorCanvas *makeDeltaLockButton(wxWindow *parent, const wxGLAttributes &attribList);
 	ModeSelectorCanvas *makeDemodRecordButton(wxWindow *parent, const wxGLAttributes &attribList);
@@ -280,7 +280,7 @@ private:
 	ModeSelectorCanvas *makeSoloModeButton(wxWindow *parent, const wxGLAttributes &attribList);
 	ModeSelectorCanvas *makeModemMuteButton(wxWindow *parent, const wxGLAttributes &attribList);
 	ModeSelectorCanvas *makePeakHoldButton(wxWindow *parent, const wxGLAttributes &attribList);
-	SpectrumCanvas *makeSpectrumCanvas(wxWindow *parent, const wxGLAttributes &attribList);
+	SpectrumCanvas *makeSpectrumCanvas(wxWindow *parent);
 	MeterCanvas *makeSpectrumAvgMeter(wxWindow *parent);
 	WaterfallCanvas *makeWaterfall(wxWindow *parent, const wxGLAttributes &attribList);
 	MeterCanvas *makeWaterfallSpeedMeter(wxWindow *parent);

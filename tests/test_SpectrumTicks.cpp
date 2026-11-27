@@ -9,20 +9,20 @@ using namespace SpectrumTicks;
 TEST_SUITE("SpectrumTicks") {
     TEST_CASE("default step labels whole and fractional megahertz") {
         AxisGeometry geo = axisGeometry(100000000, 2000000, 1000.0, 500.0, 1.0);
-        CHECK(geo.visualStep == 0.1);
+        CHECK(geo.visualStep == 0.25);
         CHECK(geo.precision == 1);
         CHECK(geo.fontSize == 16);
         CHECK(geo.hPos == doctest::Approx(0.964));
         CHECK(geo.tickBase == doctest::Approx(0.99));
-        CHECK(geo.ticks.size() >= 20);
-        CHECK(geo.ticks.size() <= 21);
+        CHECK(geo.ticks.size() == 9);
         CHECK(geo.ticks[0].x == -1.0);
         CHECK(geo.ticks[0].label == "99.0");
         CHECK(geo.ticks[0].major);
-        CHECK(geo.ticks[1].label == "99.1");
         CHECK(!geo.ticks[1].major);
+        CHECK(geo.ticks[4].label == "100.0");
+        CHECK(geo.ticks[4].major);
         for (size_t i = 1; i < geo.ticks.size(); i++) {
-            CHECK(geo.ticks[i].x - geo.ticks[i - 1].x == doctest::Approx(0.1));
+            CHECK(geo.ticks[i].x - geo.ticks[i - 1].x == doctest::Approx(0.25));
         }
         CHECK(geo.ticks.back().x > 0.99);
         CHECK(geo.ticks.back().x <= 1.0);
@@ -30,20 +30,20 @@ TEST_SUITE("SpectrumTicks") {
 
     TEST_CASE("wide spans escalate to coarser steps") {
         AxisGeometry geo = axisGeometry(100000000, 10000000, 1000.0, 500.0, 1.0);
-        CHECK(geo.visualStep == 0.5);
+        CHECK(geo.visualStep == 1.0);
         CHECK(geo.precision == 1);
         CHECK(geo.ticks[0].label == "95.0");
         CHECK(geo.ticks[0].major);
-        CHECK(geo.ticks[1].label == "95.5");
-        CHECK(!geo.ticks[1].major);
-        CHECK(geo.ticks[2].label == "96.0");
+        CHECK(geo.ticks[1].label == "96.0");
+        CHECK(geo.ticks[1].major);
+        CHECK(geo.ticks[2].label == "97.0");
         CHECK(geo.ticks[2].major);
         AxisGeometry widest = axisGeometry(500000000, 1000000000, 1000.0, 500.0, 1.0);
         CHECK(widest.visualStep == 50.0);
     }
 
     TEST_CASE("narrow spans drop to fine steps with two decimals") {
-        AxisGeometry geo = axisGeometry(100000000, 200000, 1000.0, 500.0, 1.0);
+        AxisGeometry geo = axisGeometry(100000000, 160000, 1000.0, 500.0, 1.0);
         CHECK(geo.visualStep == 0.01);
         CHECK(geo.precision == 2);
         CHECK(geo.ticks.size() >= 15);
@@ -56,7 +56,7 @@ TEST_SUITE("SpectrumTicks") {
         CHECK(geo.ticks.front().x >= -1.0);
         CHECK(geo.ticks.back().x <= 1.0);
         for (size_t i = 1; i < geo.ticks.size(); i++) {
-            CHECK(geo.ticks[i].x - geo.ticks[i - 1].x == doctest::Approx(0.1));
+            CHECK(geo.ticks[i].x - geo.ticks[i - 1].x == doctest::Approx(0.125));
         }
     }
 

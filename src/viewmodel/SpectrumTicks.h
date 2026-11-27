@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 // Pure geometry for the spectrum frequency axis, dB readouts, grid bands, and fill.
-// The step ladder, tick loop, and label formatting replicate the panel code verbatim;
+// The step ladder, tick loop, and label formatting replicate the panel code verbatim,
+// except the minimum tick gap, which is tuned wider so labels keep breathing room;
 // the dB labels share one stream, so both inherit fixed one-decimal format.
 
 #pragma once
@@ -52,7 +53,7 @@ inline AxisGeometry axisGeometry(long long freqHz, long long bandwidthHz, double
     double mhzVisualStep = 0.1;
     int precision = 1;
 
-    double minGapPx = 40 * fontScale;
+    double minGapPx = 56 * fontScale;
     if (mhzStep * 0.5 * viewWidthPx < minGapPx) {
         mhzStep = (250000.0 / (long double)spanHz) * 2.0;
         mhzVisualStep = 0.25;
@@ -86,7 +87,7 @@ inline AxisGeometry axisGeometry(long long freqHz, long long bandwidthHz, double
             mhzStep = (50000000.0 / (long double)spanHz) * 2.0;
             mhzVisualStep = 50.0;
         }
-    } else if (mhzStep * 0.5 * viewWidthPx > 350 * fontScale) {
+    } else if (mhzStep * 0.5 * viewWidthPx > 10.0 * minGapPx) {
         mhzStep = (10000.0 / (long double)spanHz) * 2.0;
         mhzVisualStep = 0.01;
         precision = 2;

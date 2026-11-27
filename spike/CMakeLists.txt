@@ -172,3 +172,30 @@ if(TARGET SDL3::SDL3)
 else()
     target_link_libraries(gainmeter_spike PRIVATE SDL3::SDL3-static)
 endif()
+
+set(SPECTRUM_SOURCES
+    spectrum_spike.cpp
+    ../src/ui/imgui/imgui_bgfx.cpp
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/imgui_demo.cpp)
+if(BGFXSPIKE_PREBUILT_SHADERS)
+    add_executable(spectrum_spike ${SPECTRUM_SOURCES})
+else()
+    add_executable(spectrum_spike ${SPECTRUM_SOURCES} ../src/ui/imgui/shaders/vs_imgui.sc ../src/ui/imgui/shaders/fs_imgui.sc)
+endif()
+target_include_directories(spectrum_spike PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/util
+    ${imgui_SOURCE_DIR}
+    ${SHADER_INCLUDE_DIR})
+target_link_libraries(spectrum_spike PRIVATE bgfx bx glm::glm)
+if(TARGET SDL3::SDL3)
+    target_link_libraries(spectrum_spike PRIVATE SDL3::SDL3)
+else()
+    target_link_libraries(spectrum_spike PRIVATE SDL3::SDL3-static)
+endif()
