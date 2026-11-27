@@ -152,8 +152,7 @@ private:
     // Window-message tick path; runs synchronously so ticks continue in modal loops.
     virtual WXLRESULT MSWWindowProc(WXUINT nMsgCode, WXWPARAM wParam, WXLPARAM lParam) override;
 #endif
-    // Canvases repainted once per frame-timer tick, in a single cycle.
-    std::vector<InteractiveCanvas*> frameCanvases;
+    // Hosts repainted once per frame-timer tick, in a single cycle.
     std::vector<BgfxCanvas*> frameHosts;
 
     /***
@@ -269,23 +268,23 @@ private:
 	/**
 	 * UI init functions
 	 */
-    ModeSelectorCanvas *makeModemSelectorPanel(wxWindow *parent, const wxGLAttributes &attribList);
+    ModeSelectorCanvas *makeModemSelectorPanel(wxWindow *parent);
 	WaterfallCanvas *makeWaterfallCanvas(wxWindow *parent);
 	SpectrumCanvas *makeDemodSpectrumCanvas(wxWindow *parent);
 	MeterCanvas *makeSignalMeter(wxWindow *parent);
-	ModeSelectorCanvas *makeDeltaLockButton(wxWindow *parent, const wxGLAttributes &attribList);
-	ModeSelectorCanvas *makeDemodRecordButton(wxWindow *parent, const wxGLAttributes &attribList);
+	ModeSelectorCanvas *makeDeltaLockButton(wxWindow *parent);
+	ModeSelectorCanvas *makeDemodRecordButton(wxWindow *parent);
 	TuningCanvas *makeModemTuner(wxWindow *parent);
 	MeterCanvas *makeModemGainMeter(wxWindow *parent);
-	ModeSelectorCanvas *makeSoloModeButton(wxWindow *parent, const wxGLAttributes &attribList);
-	ModeSelectorCanvas *makeModemMuteButton(wxWindow *parent, const wxGLAttributes &attribList);
-	ModeSelectorCanvas *makePeakHoldButton(wxWindow *parent, const wxGLAttributes &attribList);
+	ModeSelectorCanvas *makeSoloModeButton(wxWindow *parent);
+	ModeSelectorCanvas *makeModemMuteButton(wxWindow *parent);
+	ModeSelectorCanvas *makePeakHoldButton(wxWindow *parent);
 	SpectrumCanvas *makeSpectrumCanvas(wxWindow *parent);
 	MeterCanvas *makeSpectrumAvgMeter(wxWindow *parent);
 	WaterfallCanvas *makeWaterfall(wxWindow *parent);
 	MeterCanvas *makeWaterfallSpeedMeter(wxWindow *parent);
     ScopeCanvas *makeScopeCanvas(wxPanel *parent);
-    ModeSelectorCanvas *makeModemAdvSelectorPanel(wxPanel *parent, const wxGLAttributes &attribList);
+    ModeSelectorCanvas *makeModemAdvSelectorPanel(wxPanel *parent);
     ModemProperties *makeModemProperties(wxPanel *parent);
 
     void initConfigurationSettings();

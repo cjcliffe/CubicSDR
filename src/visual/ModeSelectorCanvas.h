@@ -3,17 +3,11 @@
 
 #pragma once
 
-#include "wx/glcanvas.h"
-#include "wx/timer.h"
-
+#include <string>
 #include <vector>
-#include <queue>
 
-#include "InteractiveCanvas.h"
-#include "ModeSelectorContext.h"
-#include "MouseTracker.h"
-
-#include "Timer.h"
+#include "ui/imgui/BgfxCanvas.h"
+#include "ColorTheme.h"
 
 class ModeSelectorMode {
 public:
@@ -25,9 +19,9 @@ public:
     }
 };
 
-class ModeSelectorCanvas: public InteractiveCanvas {
+class ModeSelectorCanvas : public BgfxCanvas {
 public:
-    ModeSelectorCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
+    ModeSelectorCanvas(wxWindow *parent, const std::string &windowName = "ModeSelector");
     ~ModeSelectorCanvas() override;
 
     int getHoveredSelection();
@@ -44,28 +38,21 @@ public:
 
     bool modeChanged() const;
     void clearModeChanged();
-    
+
     void setPadding(float padX_in, float padY_in);
     void setHighlightColor(const RGBA4f& hc);
     void setPulseMode(bool pulseMode_in);
     void setDisabled(bool disabled_in);
     bool isDisabled() const;
-    
-private:
-    void setNumChoices(int numChoices_in);
 
-    void OnPaint(wxPaintEvent& event);
     void frameUpdate() override;
 
-    void OnMouseMoved(wxMouseEvent& event);
-    void OnMouseDown(wxMouseEvent& event);
-    void OnMouseWheelMoved(wxMouseEvent& event);
-    void OnMouseReleased(wxMouseEvent& event);
-    void OnMouseEnterWindow(wxMouseEvent& event);
-    void OnMouseLeftWindow(wxMouseEvent& event);
+private:
+    void drawView(const BgfxEdges &edges, float mx, float my) override;
+    void onEnterView() override;
+    void onLeaveView() override;
 
-    ModeSelectorContext *glContext;
-
+    std::string viewName;
     std::string helpTip;
     int numChoices;
     int currentSelection;
@@ -78,7 +65,8 @@ private:
     bool pulseMode;
     float pulsePhase;
     bool disabled;
-    //
-wxDECLARE_EVENT_TABLE();
-};
 
+    bool pressed;
+    float originX;
+    float lastMx, lastMy;
+};

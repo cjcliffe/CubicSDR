@@ -420,7 +420,6 @@ SET (cubicsdr_sources
     src/visual/MeterCanvas.cpp
     src/visual/TuningCanvas.cpp
     src/visual/ModeSelectorCanvas.cpp
-    src/visual/ModeSelectorContext.cpp
     src/visual/ScopeCanvas.cpp
     src/visual/SpectrumCanvas.cpp
     src/visual/WaterfallCanvas.cpp
@@ -536,7 +535,6 @@ SET (cubicsdr_headers
     src/visual/MeterCanvas.h
     src/visual/TuningCanvas.h
     src/visual/ModeSelectorCanvas.h
-    src/visual/ModeSelectorContext.h
     src/visual/ScopeCanvas.h
     src/visual/SpectrumCanvas.h
     src/visual/WaterfallCanvas.h

@@ -231,6 +231,31 @@ else()
     target_link_libraries(waterfall_spike PRIVATE SDL3::SDL3-static)
 endif()
 
+set(MODE_SOURCES
+    mode_spike.cpp
+    ../src/ui/imgui/imgui_bgfx.cpp
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/imgui_demo.cpp)
+if(BGFXSPIKE_PREBUILT_SHADERS)
+    add_executable(mode_spike ${MODE_SOURCES})
+else()
+    add_executable(mode_spike ${MODE_SOURCES} ../src/ui/imgui/shaders/vs_imgui.sc ../src/ui/imgui/shaders/fs_imgui.sc)
+endif()
+target_include_directories(mode_spike PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel
+    ${imgui_SOURCE_DIR}
+    ${SHADER_INCLUDE_DIR})
+target_link_libraries(mode_spike PRIVATE bgfx bx glm::glm)
+if(TARGET SDL3::SDL3)
+    target_link_libraries(mode_spike PRIVATE SDL3::SDL3)
+else()
+    target_link_libraries(mode_spike PRIVATE SDL3::SDL3-static)
+endif()
+
 set(SCOPE_SOURCES
     scope_spike.cpp
     ../src/ui/imgui/imgui_bgfx.cpp

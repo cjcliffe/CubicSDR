@@ -167,13 +167,13 @@ AppFrame::AppFrame() :
     gainSpacerItem->Show(false);
 
     // Demod mode selector
-    demodModeSelector = makeModemSelectorPanel(demodPanel, attribList);
+    demodModeSelector = makeModemSelectorPanel(demodPanel);
 
     demodTray->Add(demodModeSelector, 2, wxEXPAND | wxALL, 0);
     
 #ifdef ENABLE_DIGITAL_LAB
     // Digital Lab Mode Selector
-    demodModeSelectorAdv = makeModemAdvSelectorPanel(demodPanel, attribList);
+    demodModeSelectorAdv = makeModemAdvSelectorPanel(demodPanel);
     demodTray->Add(demodModeSelectorAdv, 3, wxEXPAND | wxALL, 0);
 #endif
             
@@ -235,7 +235,7 @@ AppFrame::AppFrame() :
 #endif
 
     // Delta Lock Button
-    deltaLockButton = makeDeltaLockButton(demodPanel, attribList);
+    deltaLockButton = makeDeltaLockButton(demodPanel);
 
     demodTunerTray->Add(deltaLockButton, 0, wxEXPAND | wxALL, 0);
     demodTunerTray->AddSpacer(1);
@@ -256,17 +256,17 @@ AppFrame::AppFrame() :
     demodGainTray->AddSpacer(1);
 
     // Solo Button
-    soloModeButton = makeSoloModeButton(demodPanel, attribList);
+    soloModeButton = makeSoloModeButton(demodPanel);
     demodGainTray->Add(soloModeButton, 1, wxEXPAND | wxALL, 0);
     demodGainTray->AddSpacer(1);
 
     // Record Button
-    demodRecordButton = makeDemodRecordButton(demodPanel, attribList);
+    demodRecordButton = makeDemodRecordButton(demodPanel);
     demodGainTray->Add(demodRecordButton, 1, wxEXPAND | wxALL, 0);
     demodGainTray->AddSpacer(1);
 
     // Mute Button
-    demodMuteButton = makeModemMuteButton(demodPanel, attribList);
+    demodMuteButton = makeModemMuteButton(demodPanel);
     demodGainTray->Add(demodMuteButton, 1, wxEXPAND | wxALL, 0);
 
     demodTray->Add(demodGainTray, 1, wxEXPAND | wxALL, 0);
@@ -296,7 +296,7 @@ AppFrame::AppFrame() :
     auto *spectrumCtlTray = new wxBoxSizer(wxVERTICAL);
 
     // Peak Hold
-    peakHoldButton = makePeakHoldButton(spectrumPanel, attribList);
+    peakHoldButton = makePeakHoldButton(spectrumPanel);
     spectrumCtlTray->Add(peakHoldButton, 1, wxEXPAND | wxALL, 0);
     spectrumCtlTray->AddSpacer(1);
 
@@ -343,17 +343,13 @@ AppFrame::AppFrame() :
     waterfallCanvas->attachSpectrumCanvas(spectrumCanvas);
     spectrumCanvas->attachWaterfallCanvas(waterfallCanvas);
 
-    // Canvases repainted once per frame-timer tick, in registration order.
-    frameCanvases = {
-        demodModeSelector,
-        deltaLockButton, demodRecordButton,
-        soloModeButton, demodMuteButton,
-        peakHoldButton
-    };
+    // Hosts repainted once per frame-timer tick, in registration order.
     frameHosts = {
         demodTuner, gainCanvas, waterfallSpeedMeter, spectrumAvgMeter,
         demodGainMeter, demodSignalMeter, demodSpectrumCanvas, spectrumCanvas,
-        demodWaterfallCanvas, waterfallCanvas, scopeCanvas
+        demodWaterfallCanvas, waterfallCanvas, scopeCanvas, demodModeSelector,
+        deltaLockButton, demodRecordButton, soloModeButton, demodMuteButton,
+        peakHoldButton
     };
 #ifdef ENABLE_DIGITAL_LAB
     frameCanvases.push_back(demodModeSelectorAdv);
@@ -558,8 +554,8 @@ ModemProperties *AppFrame::makeModemProperties(wxPanel *parent) {
     return pProperties;
 }
 
-ModeSelectorCanvas *AppFrame::makeModemAdvSelectorPanel(wxPanel *parent, const wxGLAttributes &attribList) {
-    auto *pCanvas = new ModeSelectorCanvas(parent, attribList);
+ModeSelectorCanvas *AppFrame::makeModemAdvSelectorPanel(wxPanel *parent) {
+    auto *pCanvas = new ModeSelectorCanvas(parent, "ModemAdvSelector");
     pCanvas->addChoice("ASK");
     pCanvas->addChoice("APSK");
     pCanvas->addChoice("BPSK");
@@ -805,8 +801,8 @@ SpectrumCanvas *AppFrame::makeSpectrumCanvas(wxWindow *parent) {
     return pCanvas;
 }
 
-ModeSelectorCanvas *AppFrame::makePeakHoldButton(wxWindow *parent, const wxGLAttributes &attribList) {
-    auto *pCanvas = new ModeSelectorCanvas(parent, attribList);
+ModeSelectorCanvas *AppFrame::makePeakHoldButton(wxWindow *parent) {
+    auto *pCanvas = new ModeSelectorCanvas(parent, "PeakHold");
     pCanvas->addChoice(1, "P");
     pCanvas->setPadding(-1, -1);
     pCanvas->setHighlightColor(RGBA4f(0.2f, 0.8f, 0.2f));
@@ -817,8 +813,8 @@ ModeSelectorCanvas *AppFrame::makePeakHoldButton(wxWindow *parent, const wxGLAtt
     return pCanvas;
 }
 
-ModeSelectorCanvas *AppFrame::makeModemMuteButton(wxWindow *parent, const wxGLAttributes &attribList) {
-    auto *pCanvas = new ModeSelectorCanvas(parent, attribList);
+ModeSelectorCanvas *AppFrame::makeModemMuteButton(wxWindow *parent) {
+    auto *pCanvas = new ModeSelectorCanvas(parent, "ModemMute");
     pCanvas->addChoice(1, "M");
     pCanvas->setPadding(-1, -1);
     pCanvas->setHighlightColor(RGBA4f(0.8f, 0.2f, 0.2f));
@@ -829,8 +825,8 @@ ModeSelectorCanvas *AppFrame::makeModemMuteButton(wxWindow *parent, const wxGLAt
     return pCanvas;
 }
 
-ModeSelectorCanvas *AppFrame::makeSoloModeButton(wxWindow *parent, const wxGLAttributes &attribList) {
-    auto *pCanvas = new ModeSelectorCanvas(parent, attribList);
+ModeSelectorCanvas *AppFrame::makeSoloModeButton(wxWindow *parent) {
+    auto *pCanvas = new ModeSelectorCanvas(parent, "SoloMode");
     pCanvas->addChoice(1, "S");
     pCanvas->setPadding(-1, -1);
     pCanvas->setHighlightColor(RGBA4f(0.8f, 0.8f, 0.2f));
@@ -857,8 +853,8 @@ TuningCanvas *AppFrame::makeModemTuner(wxWindow *parent) {
     return pCanvas;
 }
 
-ModeSelectorCanvas * AppFrame::makeDeltaLockButton(wxWindow *parent, const wxGLAttributes &attribList) {
-    auto *pCanvas = new ModeSelectorCanvas(parent, attribList);
+ModeSelectorCanvas * AppFrame::makeDeltaLockButton(wxWindow *parent) {
+    auto *pCanvas = new ModeSelectorCanvas(parent, "DeltaLock");
     pCanvas->addChoice(1, "V");
     pCanvas->setPadding(-1, -1);
     pCanvas->setHighlightColor(RGBA4f(0.8f, 0.8f, 0.2f));
@@ -869,8 +865,8 @@ ModeSelectorCanvas * AppFrame::makeDeltaLockButton(wxWindow *parent, const wxGLA
     return pCanvas;
 }
 
-ModeSelectorCanvas *AppFrame::makeDemodRecordButton(wxWindow *parent, const wxGLAttributes &attribList) {
-    auto *pCanvas = new ModeSelectorCanvas(parent, attribList);
+ModeSelectorCanvas *AppFrame::makeDemodRecordButton(wxWindow *parent) {
+    auto *pCanvas = new ModeSelectorCanvas(parent, "DemodRecord");
     pCanvas->addChoice(1, "R");
     pCanvas->setPadding(-1, -1);
     pCanvas->setHighlightColor(RGBA4f(0.2f, 0.8f, 0.2f));
@@ -911,7 +907,7 @@ WaterfallCanvas *AppFrame::makeWaterfallCanvas(wxWindow *parent) {
     return pCanvas;
 }
 
-ModeSelectorCanvas *AppFrame::makeModemSelectorPanel(wxWindow *parent, const wxGLAttributes &attribList) {
+ModeSelectorCanvas *AppFrame::makeModemSelectorPanel(wxWindow *parent) {
     vector<string> modemList = {"FM", "FMS", "NBFM", "AM", "CW", "LSB", "USB", "DSB", "I/Q" };
 
 #ifdef CUBICSDR_MODEM_EXCLUDE
@@ -925,7 +921,7 @@ ModeSelectorCanvas *AppFrame::makeModemSelectorPanel(wxWindow *parent, const wxG
     }
 #endif
 
-    auto *pCanvas = new ModeSelectorCanvas(parent, attribList);
+    auto *pCanvas = new ModeSelectorCanvas(parent, "ModemSelector");
 
     for (const auto& mt_i : modemList) {
         pCanvas->addChoice(mt_i);
@@ -1590,9 +1586,6 @@ bool AppFrame::actionOnMenuDisplay(int id) {
     //force all windows refresh
     if (bManaged) {
         Refresh();
-        for (auto canvas : frameCanvases) {
-            canvas->Refresh();
-        }
         for (auto host : frameHosts) {
             host->Refresh();
         }
@@ -2564,11 +2557,6 @@ void AppFrame::tickFrame() {
     // can stall for seconds under burst load while frames keep flowing.
     if (bookmarkView) { bookmarkView->pollUpdates(); }
 
-    for (auto canvas : frameCanvases) {
-        if (canvas) {
-            canvas->frameUpdate();
-        }
-    }
     for (auto host : frameHosts) {
         if (host) {
             host->frameUpdate();
