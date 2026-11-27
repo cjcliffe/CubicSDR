@@ -421,7 +421,6 @@ SET (cubicsdr_sources
     src/visual/PrimaryGLContext.cpp
     src/visual/InteractiveCanvas.cpp
     src/visual/MeterCanvas.cpp
-    src/visual/MeterContext.cpp
     src/visual/TuningCanvas.cpp
     src/visual/ModeSelectorCanvas.cpp
     src/visual/ModeSelectorContext.cpp
@@ -542,7 +541,6 @@ SET (cubicsdr_headers
     src/visual/PrimaryGLContext.h
     src/visual/InteractiveCanvas.h
     src/visual/MeterCanvas.h
-    src/visual/MeterContext.h
     src/visual/TuningCanvas.h
     src/visual/ModeSelectorCanvas.h
     src/visual/ModeSelectorContext.h

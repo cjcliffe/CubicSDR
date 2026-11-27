@@ -3,62 +3,49 @@
 
 #pragma once
 
-#include "wx/glcanvas.h"
-#include "wx/timer.h"
+#include "ui/imgui/BgfxCanvas.h"
 
-#include <vector>
-#include <queue>
 #include <atomic>
+#include <string>
+#include <vector>
 
-#include "InteractiveCanvas.h"
-#include "MouseTracker.h"
-#include "GLPanel.h"
-#include "PrimaryGLContext.h"
 #include "SDRDeviceInfo.h"
 #include "Timer.h"
-#include "MeterPanel.h"
 
-
-class GainCanvas: public InteractiveCanvas {
+class GainCanvas : public BgfxCanvas {
 public:
-    GainCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
+    GainCanvas(wxWindow *parent);
     ~GainCanvas() override;
 
     void setHelpTip(std::string tip);
     void updateGainUI();
-	void setThemeColors();
-    
-private:
 
-	// call this to refresh the gain values only, return true if refresh is needed
-	bool updateGainValues();
-
-    void OnPaint(wxPaintEvent& event);
     void frameUpdate() override;
 
-    void SetLevel();
+private:
+    struct GainStrip {
+        std::string name;
+        float low = 0.0f;
+        float high = 0.0f;
+        float value = 0.0f;
+        float highlight = 0.0f;
+        bool changed = false;
+        bool highlightVisible = false;
+    };
 
-    void OnShow(wxShowEvent& event);
-    void OnMouseMoved(wxMouseEvent& event);
-    void OnMouseDown(wxMouseEvent& event);
-    void OnMouseWheelMoved(wxMouseEvent& event);
-    void OnMouseReleased(wxMouseEvent& event);
-    void OnMouseEnterWindow(wxMouseEvent& event);
-    void OnMouseLeftWindow(wxMouseEvent& event);
+    void drawView(const BgfxEdges &edges, float mx, float my) override;
+    void onEnterView() override;
+    void onLeaveView() override;
+    bool updateGainValues();
+    void setLevel(float mx01, float my01);
 
-    PrimaryGLContext *glContext;
-    std::string helpTip;
-    std::vector<MeterPanel *> gainPanels;
-    GLPanel bgPanel;
+    std::vector<GainStrip> gainStrips;
     SDRRangeMap gains;
-    
+
     float numGains;
-    int refreshCounter;
-    wxSize clientSize;
+    std::string helpTip;
+    bool gainPressedHere;
 
-	std::atomic_bool userGainAsChanged;
-	Timer userGainAsChangedDelayTimer;
-    //
-wxDECLARE_EVENT_TABLE();
+    std::atomic_bool userGainAsChanged;
+    Timer userGainAsChangedDelayTimer;
 };
-

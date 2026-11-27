@@ -407,7 +407,7 @@ void TuningCanvas::drawView(const BgfxEdges &edges, float mx, float my) {
             | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus);
     ImVec2 origin = ImGui::GetWindowPos();
     ImVec2 wsize = ImGui::GetWindowSize();
-    bool tunerHovered = ImGui::IsWindowHovered();
+    bool tunerHovered = isMouseInView() && mx >= 0.0f && my >= 0.0f && mx < wsize.x && my < wsize.y;
     view.mouseMX = (mx - origin.x) / wsize.x;
     view.mouseMY = 1.0f - (my - origin.y) / wsize.y;
     view.shiftDown = isShiftDown();
@@ -510,6 +510,9 @@ void TuningCanvas::drawView(const BgfxEdges &edges, float mx, float my) {
     for (const BarGroup &g : kBarGroups) {
         drawBarQuads(f, TunerLayout::tunerBarQuads(g.start, g.end, g.count, g.dp, g.w, true, true),
             g.light ? barLight : barDark, bg);
+    }
+    if (view.mouseDown) {
+        drawDragBar(f, view.originMouseX, view.mouseMX, barDark, barLight, barDark, bg);
     }
     if (view.hoverIndex > 0 && !view.mouseDown) {
         switch (view.hoverState) {

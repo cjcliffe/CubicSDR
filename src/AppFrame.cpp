@@ -159,7 +159,7 @@ AppFrame::AppFrame() :
     demodTray->AddSpacer(1);
 #endif
             
-    gainCanvas = new GainCanvas(demodPanel, attribList);
+    gainCanvas = new GainCanvas(demodPanel);
     gainCanvas->setHelpTip("Tuner gains, usually in dB. Click / use Mousewheel to change.");
     gainSizerItem = demodTray->Add(gainCanvas, 0, wxEXPAND | wxALL, 0);
     gainSizerItem->Show(false);
@@ -217,7 +217,7 @@ AppFrame::AppFrame() :
 #endif
 
     // Demod Signal/Squelch Meter
-    demodSignalMeter = makeSignalMeter(demodPanel, attribList);
+    demodSignalMeter = makeSignalMeter(demodPanel);
     demodTray->Add(demodSignalMeter, 1, wxEXPAND | wxALL, 0);
     demodTray->AddSpacer(1);
 
@@ -251,7 +251,7 @@ AppFrame::AppFrame() :
     auto *demodGainTray = new wxBoxSizer(wxVERTICAL);
 
     // Demod Gain Meter
-    demodGainMeter = makeModemGainMeter(demodPanel, attribList);
+    demodGainMeter = makeModemGainMeter(demodPanel);
     demodGainTray->Add(demodGainMeter, 8, wxEXPAND | wxALL, 0);
     demodGainTray->AddSpacer(1);
 
@@ -301,7 +301,7 @@ AppFrame::AppFrame() :
     spectrumCtlTray->AddSpacer(1);
 
     // Spectrum Average Meter
-    spectrumAvgMeter = makeSpectrumAvgMeter(spectrumPanel, attribList);
+    spectrumAvgMeter = makeSpectrumAvgMeter(spectrumPanel);
     spectrumCtlTray->Add(spectrumAvgMeter, 8, wxEXPAND | wxALL, 0);
     spectrumSizer->Add(spectrumCtlTray, 1, wxEXPAND | wxALL, 0);
     spectrumPanel->SetSizer(spectrumSizer);
@@ -321,7 +321,7 @@ AppFrame::AppFrame() :
 
 
     // Waterfall speed meter
-    waterfallSpeedMeter = makeWaterfallSpeedMeter(waterfallPanel, attribList);
+    waterfallSpeedMeter = makeWaterfallSpeedMeter(waterfallPanel);
 
     waterfallSizer->Add(waterfallCanvas, 63, wxEXPAND | wxALL, 0);
     waterfallSizer->AddSpacer(1);
@@ -346,13 +346,13 @@ AppFrame::AppFrame() :
     // Canvases repainted once per frame-timer tick, in registration order.
     frameCanvases = {
         demodModeSelector, demodWaterfallCanvas,
-        demodSpectrumCanvas, demodSignalMeter, deltaLockButton, demodRecordButton,
-        demodGainMeter, soloModeButton, demodMuteButton, spectrumCanvas,
-        peakHoldButton, spectrumAvgMeter, waterfallCanvas, waterfallSpeedMeter,
-        scopeCanvas, gainCanvas
+        demodSpectrumCanvas, deltaLockButton, demodRecordButton,
+        soloModeButton, demodMuteButton, spectrumCanvas,
+        peakHoldButton, waterfallCanvas, scopeCanvas
     };
     frameHosts = {
-        demodTuner
+        demodTuner, gainCanvas, waterfallSpeedMeter, spectrumAvgMeter,
+        demodGainMeter, demodSignalMeter
     };
 #ifdef ENABLE_DIGITAL_LAB
     frameCanvases.push_back(demodModeSelectorAdv);
@@ -768,8 +768,8 @@ wxMenu *AppFrame::makeAudioSampleRateMenu() {
     return pMenu;
 }
 
-MeterCanvas *AppFrame::makeWaterfallSpeedMeter(wxWindow *parent, const wxGLAttributes &attribList) {
-    auto *pCanvas = new MeterCanvas(parent, attribList);
+MeterCanvas *AppFrame::makeWaterfallSpeedMeter(wxWindow *parent) {
+    auto *pCanvas = new MeterCanvas(parent, "WaterfallSpeed");
     pCanvas->setHelpTip("Waterfall speed, click or drag to adjust (max 1024 lines per second). Double-click or middle-click to reset to default.");
     pCanvas->setMax(sqrt(1024));
     pCanvas->setLevel(sqrt(DEFAULT_WATERFALL_LPS));
@@ -785,8 +785,8 @@ WaterfallCanvas *AppFrame::makeWaterfall(wxWindow *parent, const wxGLAttributes 
     return pCanvas;
 }
 
-MeterCanvas * AppFrame::makeSpectrumAvgMeter(wxWindow *parent, const wxGLAttributes &attribList) {
-    auto *pCanvas = new MeterCanvas(parent, attribList);
+MeterCanvas * AppFrame::makeSpectrumAvgMeter(wxWindow *parent) {
+    auto *pCanvas = new MeterCanvas(parent, "SpectrumAvg");
     pCanvas->setHelpTip("Spectrum averaging speed, click or drag to adjust. Double-click or middle-click to reset to default.");
     pCanvas->setMax(1.0);
     pCanvas->setLevel(0.5f);
@@ -840,8 +840,8 @@ ModeSelectorCanvas *AppFrame::makeSoloModeButton(wxWindow *parent, const wxGLAtt
     return pCanvas;
 }
 
-MeterCanvas *AppFrame::makeModemGainMeter(wxWindow *parent, const wxGLAttributes &attribList) {
-    auto *pCanvas = new MeterCanvas(parent, attribList);
+MeterCanvas *AppFrame::makeModemGainMeter(wxWindow *parent) {
+    auto *pCanvas = new MeterCanvas(parent, "DemodGain");
     pCanvas->setMax(2.0);
     pCanvas->setHelpTip("Current Demodulator Gain Level.  Click / Drag to set Gain level.  Double-click or middle-click to reset to default.");
     pCanvas->setDefaultValue(1.0f);
@@ -881,8 +881,8 @@ ModeSelectorCanvas *AppFrame::makeDemodRecordButton(wxWindow *parent, const wxGL
     return pCanvas;
 }
 
-MeterCanvas *AppFrame::makeSignalMeter(wxWindow *parent, const wxGLAttributes &attribList) {
-    auto *pCanvas = new MeterCanvas(parent, attribList);
+MeterCanvas *AppFrame::makeSignalMeter(wxWindow *parent) {
+    auto *pCanvas = new MeterCanvas(parent, "Signal");
     pCanvas->setMax(DEMOD_SIGNAL_MAX);
     pCanvas->setMin(DEMOD_SIGNAL_MIN);
     pCanvas->setLevel(DEMOD_SIGNAL_MIN);
@@ -1582,7 +1582,6 @@ bool AppFrame::actionOnMenuDisplay(int id) {
     //update theme choice in children elements:  
     if (id >= wxID_THEME_DEFAULT && id <= wxID_THEME_RADAR) {
        
-        gainCanvas->setThemeColors();
         modemProps->updateTheme();
         bookmarkView->updateTheme();
     }
@@ -3343,10 +3342,10 @@ bool AppFrame::canFocus() {
 FrequencyDialog::FrequencyDialogTarget AppFrame::getFrequencyDialogTarget() {
     FrequencyDialog::FrequencyDialogTarget target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_DEFAULT;
     
-    if (waterfallSpeedMeter->getMouseTracker()->mouseInView()) {
+    if (waterfallSpeedMeter->isMouseInView()) {
         target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_WATERFALL_LPS;
     }
-    else if (spectrumAvgMeter->getMouseTracker()->mouseInView()) {
+    else if (spectrumAvgMeter->isMouseInView()) {
         target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_SPECTRUM_AVG;
     }
     else if (demodTuner->isMouseInView()) {
@@ -3364,7 +3363,7 @@ FrequencyDialog::FrequencyDialogTarget AppFrame::getFrequencyDialogTarget() {
                 
         }
     }
-    else if (gainCanvas->getMouseTracker()->mouseInView()) {
+    else if (gainCanvas->isMouseInView()) {
         target = FrequencyDialog::FrequencyDialogTarget::FDIALOG_TARGET_GAIN;
     }
     return target;

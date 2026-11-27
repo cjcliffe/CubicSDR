@@ -3,28 +3,20 @@
 
 #pragma once
 
-#include "wx/glcanvas.h"
-#include "wx/timer.h"
+#include "ui/imgui/BgfxCanvas.h"
 
-#include <vector>
-#include <queue>
+#include <string>
 
-#include "InteractiveCanvas.h"
-#include "MeterContext.h"
-#include "MouseTracker.h"
-
-#include "Timer.h"
-
-class MeterCanvas: public InteractiveCanvas {
+class MeterCanvas : public BgfxCanvas {
 public:
-    MeterCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
+    MeterCanvas(wxWindow *parent, const char *viewName);
     ~MeterCanvas() override;
 
     void setLevel(float level_in);
     float getLevel() const;
 
     void setMax(float max_in);
-    void setMin(float max_in);
+    void setMin(float min_in);
 
     void setUserInputValue(float slider_in);
     void setInputValue(float slider_in);
@@ -37,37 +29,24 @@ public:
     void setHelpTip(std::string tip);
 
 private:
-    void OnPaint(wxPaintEvent& event);
-    void frameUpdate() override;
-
-    void OnMouseMoved(wxMouseEvent& event);
-    void OnMouseDown(wxMouseEvent& event);
-    void OnMouseReleased(wxMouseEvent& event);
-    void OnMouseDoubleClicked(wxMouseEvent& event);
-    void OnMouseMiddleDown(wxMouseEvent&);
+    void drawView(const BgfxEdges &edges, float mx, float my) override;
+    void onEnterView() override;
+    void onLeaveView() override;
     void resetToDefault();
-	void OnMouseWheelMoved(wxMouseEvent& event);
-	void OnMouseRightDown(wxMouseEvent& event);
-	void OnMouseRightReleased(wxMouseEvent& event);
-    void OnMouseEnterWindow(wxMouseEvent& event);
-    void OnMouseLeftWindow(wxMouseEvent& event);
+    void meterWheelStep(int rotation);
 
-    MeterContext *glContext;
-
-    float level;
-    float level_min, level_max;
-
-    float inputValue;
-    float userInputValue;
-    float defaultValue;
-    float snapOffset;
-    bool hasDefault;
-    bool suppressNextRelease;
-
-    bool showUserInput;
-    
+    std::string windowName;
+    float level = 0.0f;
+    float levelMin = 0.0f;
+    float levelMax = 1.0f;
+    float inputValue = 0.0f;
+    float userInputValue = 0.0f;
+    float defaultValue = 0.0f;
+    float snapOffset = 6.0f;
+    bool hasDefault = false;
+    bool suppressNextRelease = false;
+    bool showUserInput = true;
+    bool pressedHere = false;
+    bool rightPressedHere = false;
     std::string helpTip;
-    //
-wxDECLARE_EVENT_TABLE();
 };
-
