@@ -5,13 +5,14 @@
 
 #include "VisualProcessor.h"
 #include "AudioThread.h"
-#include "ScopePanel.h"
 #include <memory>
+
+typedef enum ScopeMode { SCOPE_MODE_Y, SCOPE_MODE_2Y, SCOPE_MODE_XY } ScopeMode;
 
 class ScopeRenderData {
 public:
 	std::vector<float> waveform_points;
-    ScopePanel::ScopeMode mode = ScopePanel::SCOPE_MODE_Y;
+    ScopeMode mode = SCOPE_MODE_Y;
     int inputRate;
     int sampleRate;
 	int channels;

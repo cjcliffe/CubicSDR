@@ -223,7 +223,7 @@ AppFrame::AppFrame() :
 
 #if CUBICSDR_ENABLE_VIEW_SCOPE
     // Scope
-    scopeCanvas = makeScopeCanvas(demodPanel, attribList);
+    scopeCanvas = makeScopeCanvas(demodPanel);
     demodScopeTray->Add(scopeCanvas, 8, wxEXPAND | wxALL, 0);
 
     wxGetApp().getScopeProcessor()->setup(DEFAULT_SCOPE_FFT_SIZE);
@@ -348,12 +348,12 @@ AppFrame::AppFrame() :
         demodModeSelector,
         deltaLockButton, demodRecordButton,
         soloModeButton, demodMuteButton,
-        peakHoldButton, scopeCanvas
+        peakHoldButton
     };
     frameHosts = {
         demodTuner, gainCanvas, waterfallSpeedMeter, spectrumAvgMeter,
         demodGainMeter, demodSignalMeter, demodSpectrumCanvas, spectrumCanvas,
-        demodWaterfallCanvas, waterfallCanvas
+        demodWaterfallCanvas, waterfallCanvas, scopeCanvas
     };
 #ifdef ENABLE_DIGITAL_LAB
     frameCanvases.push_back(demodModeSelectorAdv);
@@ -674,8 +674,8 @@ wxMenu *AppFrame::makeRigMenu() {
 #endif
 
 
-ScopeCanvas *AppFrame::makeScopeCanvas(wxPanel *parent, const wxGLAttributes &attribList) {
-    auto *pCanvas = new ScopeCanvas(parent, attribList);
+ScopeCanvas *AppFrame::makeScopeCanvas(wxPanel *parent) {
+    auto *pCanvas = new ScopeCanvas(parent);
     pCanvas->setHelpTip("Audio Visuals, drag left/right to toggle Scope or Spectrum, 'B' to toggle decibels display.");
     pCanvas->SetMinSize(wxSize(128, -1));
     return pCanvas;
@@ -3520,7 +3520,7 @@ int AppFrame::OnGlobalKeyDown(wxKeyEvent &event) {
     else if (spectrumCanvas->isMouseInView()) {
         spectrumCanvas->OnKeyDown(event);
     }
-    else if (scopeCanvas->getMouseTracker()->mouseInView()) {
+    else if (scopeCanvas->isMouseInView()) {
         scopeCanvas->OnKeyDown(event);
     }
     else if (demodWaterfallCanvas && demodWaterfallCanvas->isMouseInView()) {
@@ -3709,7 +3709,7 @@ int AppFrame::OnGlobalKeyUp(wxKeyEvent &event) {
     else if (spectrumCanvas->isMouseInView()) {
         spectrumCanvas->OnKeyUp(event);
     }
-    else if (scopeCanvas->getMouseTracker()->mouseInView()) {
+    else if (scopeCanvas->isMouseInView()) {
         scopeCanvas->OnKeyUp(event);
     }
     else if (demodWaterfallCanvas && demodWaterfallCanvas->isMouseInView()) {

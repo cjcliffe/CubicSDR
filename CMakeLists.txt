@@ -412,8 +412,6 @@ SET (cubicsdr_sources
     src/util/Frequency.cpp
     src/util/StringUtil.cpp
     src/util/FileUtil.cpp
-    src/panel/ScopePanel.cpp
-    src/panel/SpectrumPanel.cpp
     src/visual/WaterfallRing.cpp
     src/panel/MeterPanel.cpp
     src/visual/ColorTheme.cpp
@@ -424,7 +422,6 @@ SET (cubicsdr_sources
     src/visual/ModeSelectorCanvas.cpp
     src/visual/ModeSelectorContext.cpp
     src/visual/ScopeCanvas.cpp
-    src/visual/ScopeContext.cpp
     src/visual/SpectrumCanvas.cpp
     src/visual/WaterfallCanvas.cpp
     src/visual/WaterfallPacer.cpp
@@ -531,8 +528,6 @@ SET (cubicsdr_headers
     src/util/DataTree.h
     src/util/Frequency.h
 	src/util/SpinMutex.h
-    src/panel/ScopePanel.h
-    src/panel/SpectrumPanel.h
     src/visual/WaterfallRing.h
     src/panel/MeterPanel.h
     src/visual/ColorTheme.h
@@ -543,7 +538,6 @@ SET (cubicsdr_headers
     src/visual/ModeSelectorCanvas.h
     src/visual/ModeSelectorContext.h
     src/visual/ScopeCanvas.h
-    src/visual/ScopeContext.h
     src/visual/SpectrumCanvas.h
     src/visual/WaterfallCanvas.h
     src/visual/WaterfallPacer.h

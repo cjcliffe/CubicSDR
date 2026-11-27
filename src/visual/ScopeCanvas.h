@@ -3,33 +3,23 @@
 
 #pragma once
 
-#include "wx/glcanvas.h"
-#include "wx/timer.h"
-
-#include <vector>
-#include <queue>
 #include <memory>
+#include <string>
+#include <vector>
 
-#include "ScopeContext.h"
-#include "ScopeVisualProcessor.h"
-#include "ScopePanel.h"
-#include "SpectrumPanel.h"
-#include "InteractiveCanvas.h"
+#include "wx/event.h"
+
+#include "ui/imgui/BgfxCanvas.h"
 #include "ScopeCarousel.h"
+#include "ScopeVisualProcessor.h"
 
-class ScopeCanvas: public InteractiveCanvas {
+class ScopeCanvas : public BgfxCanvas {
 public:
-    ScopeCanvas(wxWindow *parent, const wxGLAttributes& dispAttrs);
-    ~ScopeCanvas();
+    ScopeCanvas(wxWindow *parent);
+    ~ScopeCanvas() override;
 
-    //This is public because it is indeed forwarded from
-    //AppFrame::OnGlobalKeyDown, because global key handler intercepts 
-    //calls in all windows.
+    // Public because AppFrame::OnGlobalKeyDown/OnGlobalKeyUp forward here.
     void OnKeyDown(wxKeyEvent& event);
-
-    //This is public because it is indeed forwarded from
-    //AppFrame::OnGlobalKeyUp, because global key handler intercepts 
-    //calls in all windows.
     void OnKeyUp(wxKeyEvent& event);
 
     void setDeviceName(std::string device_name);
@@ -41,34 +31,33 @@ public:
 
     bool scopeVisible();
     bool spectrumVisible();
-    
+
     void setHelpTip(std::string tip);
 
     ScopeRenderDataQueuePtr getInputQueue();
-    
-private:
-    void OnPaint(wxPaintEvent& event);
+
     void frameUpdate() override;
-    void OnMouseMoved(wxMouseEvent& event);
-    void OnMouseWheelMoved(wxMouseEvent& event);
-    void OnMouseDown(wxMouseEvent& event);
-    void OnMouseReleased(wxMouseEvent& event);
-    void OnMouseEnterWindow(wxMouseEvent& event);
-    void OnMouseLeftWindow(wxMouseEvent& event);
+
+private:
+    void drawView(const BgfxEdges &edges, float mx, float my) override;
+    void onEnterView() override;
+    void onLeaveView() override;
 
     ScopeRenderDataQueuePtr inputData = std::make_shared<ScopeRenderDataQueue>();
-    ScopePanel scopePanel;
-    GLPanel parentPanel;
-    SpectrumPanel spectrumPanel;
-    GLPanel bgPanel;
-    ScopeContext *glContext;
     std::string deviceName;
     bool ppmMode;
     bool showDb;
     float panelSpacing;
     ScopeCarousel::CarouselState carousel;
     std::string helpTip;
-// event table
-wxDECLARE_EVENT_TABLE();
-};
 
+    bool leftDown;
+    float lastX01;
+
+    int scopeMode;
+    std::vector<float> wavePoints;
+    std::vector<float> specPoints;
+    double specFloor, specCeil;
+    int specFftSize;
+    long long specCenter, specSpan;
+};

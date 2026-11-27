@@ -284,7 +284,7 @@ private:
 	MeterCanvas *makeSpectrumAvgMeter(wxWindow *parent);
 	WaterfallCanvas *makeWaterfall(wxWindow *parent);
 	MeterCanvas *makeWaterfallSpeedMeter(wxWindow *parent);
-    ScopeCanvas *makeScopeCanvas(wxPanel *parent, const wxGLAttributes &attribList);
+    ScopeCanvas *makeScopeCanvas(wxPanel *parent);
     ModeSelectorCanvas *makeModemAdvSelectorPanel(wxPanel *parent, const wxGLAttributes &attribList);
     ModemProperties *makeModemProperties(wxPanel *parent);
 

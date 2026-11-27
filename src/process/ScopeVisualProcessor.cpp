@@ -96,7 +96,7 @@ void ScopeVisualProcessor::process() {
                     renderData->waveform_points[i * 2] = (((double) (i % (iMax/2)) / (double) iMax) * 2.0 - 0.5) * 2.0;
                     renderData->waveform_points[i * 2 + 1] = audioInputData->data[i] / peak;
                 }
-                renderData->mode = ScopePanel::SCOPE_MODE_2Y;
+                renderData->mode = SCOPE_MODE_2Y;
             } else if (audioInputData->type == 2) {
                 iMax = audioInputData->data.size();
                 if (renderData->waveform_points.size() != iMax) {
@@ -106,13 +106,13 @@ void ScopeVisualProcessor::process() {
                     renderData->waveform_points[i * 2] = audioInputData->data[i * 2] / peak;
                     renderData->waveform_points[i * 2 + 1] = audioInputData->data[i * 2 + 1] / peak;
                 }
-                renderData->mode = ScopePanel::SCOPE_MODE_XY;
+                renderData->mode = SCOPE_MODE_XY;
             } else {
                 for (i = 0; i < iMax; i++) {
                     renderData->waveform_points[i * 2] = (scopePointX(i, iMax) - 0.5) * 2.0;
                     renderData->waveform_points[i * 2 + 1] = audioInputData->data[i] / peak;
                 }
-                renderData->mode = ScopePanel::SCOPE_MODE_Y;
+                renderData->mode = SCOPE_MODE_Y;
             }
 
             renderData->spectrum = false;
