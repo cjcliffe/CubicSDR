@@ -15,8 +15,6 @@
 #include <wx/tooltip.h>
 #include <wx/timer.h>
 
-#include "PrimaryGLContext.h"
-
 #include "ScopeCanvas.h"
 #include "SpectrumCanvas.h"
 #include "WaterfallCanvas.h"
@@ -27,7 +25,6 @@
 #include "FFTVisualDataThread.h"
 #include "SDRDeviceInfo.h"
 #include "ModemProperties.h"
-//#include "UITestCanvas.h"
 #include "FrequencyDialog.h"
 #include "BookmarkView.h"
 #include "AboutDialog.h"

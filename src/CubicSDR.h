@@ -3,14 +3,10 @@
 
 #pragma once
 
-//WX_GL_CORE_PROFILE 1
-//WX_GL_MAJOR_VERSION 3
-//WX_GL_MINOR_VERSION 2
-
 #include <thread>
 
-#include "GLExt.h"
-#include "PrimaryGLContext.h"
+#include <wx/app.h>
+#include <wx/cmdline.h>
 
 #include "ThreadBlockingQueue.h"
 #include "SoapySDRThread.h"
@@ -70,9 +66,6 @@ class RigThread;
 class CubicSDR : public wxApp, public AppServices, public CoreState {
 public:
     CubicSDR();
-
-    PrimaryGLContext &GetContext(wxGLCanvas *canvas);
-    wxGLContextAttrs* GetContextAttributes();
 
     bool OnInit() override;
     int OnExit() override;
@@ -208,8 +201,6 @@ private:
     
     AppFrame *appframe = nullptr;
     AppConfig config;
-    PrimaryGLContext *m_glContext = nullptr;
-    wxGLContextAttrs *m_glContextAttributes = nullptr;
 
     std::vector<SDRDeviceInfo *> *devs = nullptr;
 

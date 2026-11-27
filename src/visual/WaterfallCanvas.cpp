@@ -11,7 +11,7 @@
 #include "WaterfallDrag.h"
 #include "WaterfallHover.h"
 #include "TuneRange.h"
-#include "GLFont.h"
+#include "FontScale.h"
 #include "CubicSDR.h"
 #include "CubicSDRDefs.h"
 #include "AppFrame.h"
@@ -1193,7 +1193,7 @@ void WaterfallCanvas::drawDemodEdges(ImDrawList *dl, float ox, float oy, float w
     }
     dl->PopTexture();
 
-    double fontScale = GLFont::getScaleFactor();
+    double fontScale = FontScale::getScaleFactor();
     float labelFontPx = 16.0f * (float)fontScale;
     float xOfs = 2.0f / (float)viewW;
     float hPos = 20.0f / (float)viewH;

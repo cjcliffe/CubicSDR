@@ -27,6 +27,7 @@
 #endif
 #include "AudioSinkFileThread.h"
 #include "CubicSDR.h"
+#include "FontScale.h"
 #include "Frequency.h"
 #include "DataTree.h"
 #include "ColorTheme.h"
@@ -128,11 +129,6 @@ AppFrame::AppFrame() :
     demodTray = new wxBoxSizer(wxHORIZONTAL);
     auto *demodScopeTray = new wxBoxSizer(wxVERTICAL);
     auto *demodTunerTray = new wxBoxSizer(wxHORIZONTAL);
-
-    // OpenGL settings:
-    //deprecated format: std::vector<int> attribList = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
-    wxGLAttributes attribList;
-    attribList.PlatformDefaults().RGBA().MinRGBA(8, 8, 8, 8).DoubleBuffer().EndList();
 
     mainSplitter = new wxSplitterWindow( this, wxID_MAIN_SPLITTER, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH | wxSP_LIVE_UPDATE );
     mainSplitter->SetSashGravity(0.0);
@@ -352,19 +348,13 @@ AppFrame::AppFrame() :
         peakHoldButton
     };
 #ifdef ENABLE_DIGITAL_LAB
-    frameCanvases.push_back(demodModeSelectorAdv);
+    frameHosts.push_back(demodModeSelectorAdv);
 #endif
 
     // Primary sizer for the window
     auto *vbox = new wxBoxSizer(wxVERTICAL);
     vbox->Add(mainSplitter, 1, wxEXPAND | wxALL, 0);
 
-/* * /
-    vbox->AddSpacer(1);
-    testCanvas = new UITestCanvas(this, attribList);
-    vbox->Add(testCanvas, 20, wxEXPAND | wxALL, 0);
-// */
-            
     this->SetSizer(vbox);
 
     // Load and apply configuration
@@ -499,7 +489,7 @@ void AppFrame::initConfigurationSettings() {
 
     // Init Font Scale
     int fontScale = wxGetApp().getConfig()->getFontScale();
-    GLFont::setScale((GLFont::GLFontScale)fontScale);
+    FontScale::setScale((FontScale::Scale)fontScale);
 
     // Init window position from configuration
     int winX = 0, winY = 0, winW = 0, winH = 0;
@@ -685,9 +675,9 @@ wxMenu *AppFrame::makeDisplayMenu() {
 
     int fontScale = wxGetApp().getConfig()->getFontScale();
 
-    fontMenu->AppendRadioItem(wxID_DISPLAY_BASE, "Default")->Check(GLFont::GLFONT_SCALE_NORMAL == fontScale);
-    fontMenu->AppendRadioItem(wxID_DISPLAY_BASE + 1, "1.5x")->Check(GLFont::GLFONT_SCALE_MEDIUM == fontScale);
-    fontMenu->AppendRadioItem(wxID_DISPLAY_BASE + 2, "2.0x")->Check(GLFont::GLFONT_SCALE_LARGE == fontScale);
+    fontMenu->AppendRadioItem(wxID_DISPLAY_BASE, "Default")->Check(FontScale::SCALE_NORMAL == fontScale);
+    fontMenu->AppendRadioItem(wxID_DISPLAY_BASE + 1, "1.5x")->Check(FontScale::SCALE_MEDIUM == fontScale);
+    fontMenu->AppendRadioItem(wxID_DISPLAY_BASE + 2, "2.0x")->Check(FontScale::SCALE_LARGE == fontScale);
 
     dispMenu->AppendSubMenu(fontMenu, "&Text Size");
 
@@ -1561,13 +1551,13 @@ bool AppFrame::actionOnMenuDisplay(int id) {
     }
     //Display : font sizes
     else if (id == wxID_DISPLAY_BASE) {
-        GLFont::setScale(GLFont::GLFONT_SCALE_NORMAL);
+        FontScale::setScale(FontScale::SCALE_NORMAL);
     }
     else if (id == wxID_DISPLAY_BASE + 1) {
-        GLFont::setScale(GLFont::GLFONT_SCALE_MEDIUM);
+        FontScale::setScale(FontScale::SCALE_MEDIUM);
     }
     else if (id == wxID_DISPLAY_BASE + 2) {
-        GLFont::setScale(GLFont::GLFONT_SCALE_LARGE);
+        FontScale::setScale(FontScale::SCALE_LARGE);
     }
     else if (id == wxID_DISPLAY_BOOKMARKS) {
         toggleBookmarks();
@@ -2465,7 +2455,7 @@ void AppFrame::OnClose(wxCloseEvent& event) {
     
     trackWindowGeometry();
     wxGetApp().getConfig()->setTheme(ThemeMgr::mgr.getTheme());
-    wxGetApp().getConfig()->setFontScale(GLFont::getScale());
+    wxGetApp().getConfig()->setFontScale(FontScale::getScale());
     wxGetApp().getConfig()->setSnap(wxGetApp().getFrequencySnap());
     wxGetApp().getConfig()->setCenterFreq(wxGetApp().getFrequency());
     wxGetApp().getConfig()->setSpectrumAvgSpeed(wxGetApp().getSpectrumProcessor()->getFFTAverageRate());

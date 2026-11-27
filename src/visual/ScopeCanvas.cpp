@@ -12,7 +12,7 @@
 #include "DemodMarkers.h"
 #include "SpectrumTicks.h"
 #include "ColorTheme.h"
-#include "GLFont.h"
+#include "FontScale.h"
 #include "CubicSDR.h"
 #include "AppFrame.h"
 
@@ -605,7 +605,7 @@ void ScopeCanvas::drawView(const BgfxEdges &edges, float mx, float my) {
     ThemeColor freqLine{theme->freqLine.r, theme->freqLine.g, theme->freqLine.b};
     ThemeColor text{theme->text.r, theme->text.g, theme->text.b};
     float fillAlpha = theme->fftFill.a;
-    double fontScale = GLFont::getScaleFactor();
+    double fontScale = FontScale::getScaleFactor();
     imguiSetClearColor(packClear(bg));
 
     ImU32 bgTop = packColor(0.0f, 0.0f, 0.0f);

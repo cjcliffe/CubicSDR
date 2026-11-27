@@ -11,12 +11,11 @@
 #include "WaterfallDrag.h"
 #include "TuneRange.h"
 #include "ColorTheme.h"
-#include "GLFont.h"
+#include "FontScale.h"
 #include "CubicSDR.h"
 #include "CubicSDRDefs.h"
 #include "AppFrame.h"
 #include "Frequency.h"
-#include "MouseTracker.h"
 #include "WaterfallCanvas.h"
 
 #include <algorithm>
@@ -542,7 +541,7 @@ void SpectrumCanvas::drawView(const BgfxEdges &edges, float mx, float my) {
         }
     }
 
-    double fontScale = GLFont::getScaleFactor();
+    double fontScale = FontScale::getScaleFactor();
     SpectrumTicks::AxisGeometry axis = SpectrumTicks::axisGeometry(getCenterFrequency(), getBandwidth(),
         (double)wsize.x, (double)wsize.y, fontScale);
     ImU32 textCol = packColor(text.r, text.g, text.b);

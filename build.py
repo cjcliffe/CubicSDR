@@ -2745,8 +2745,6 @@ def build_appimage(args, dry_run=False):
             % os.path.join(appdir, "usr", "lib"))
         log("+ stage SoapySDR modules into %s"
             % os.path.join(appdir, "usr", "bin", "modules"))
-        log("+ mirror GL fonts into %s"
-            % os.path.join(appdir, "usr", "bin", "fonts"))
         log("+ stage SDRplay API notice into %s"
             % os.path.join(appdir, "usr", "share", "doc", "cubicsdr"))
     else:
@@ -2769,14 +2767,6 @@ def build_appimage(args, dry_run=False):
         for mods in glob.glob(os.path.join(prefix, "lib", "SoapySDR", "modules*")):
             for mod in glob.glob(os.path.join(mods, "*.so")):
                 shutil.copy(mod, moddir)
-        # The GL font loader falls back to exe-relative fonts/; mirror the
-        # installed fonts there as on Windows.
-        fontdir = os.path.join(appdir, "usr", "bin", "fonts")
-        os.makedirs(fontdir, exist_ok=True)
-        for font in glob.glob(os.path.join(appdir, "usr", "share",
-                                            "cubicsdr", "fonts", "*")):
-            if os.path.isfile(font):
-                shutil.copy(font, fontdir)
         # License compliance: the SDRplay notice ships wherever its
         # library does.
         if first_glob([os.path.join(prefix, "lib", "SoapySDR", "modules*",

@@ -406,17 +406,13 @@ SET (cubicsdr_sources
     src/util/Gradient.cpp
     src/util/Timer.cpp
     src/util/MouseTracker.cpp
-    src/util/GLExt.cpp
-    src/util/GLFont.cpp
+    src/util/FontScale.cpp
     src/util/DataTree.cpp
     src/util/Frequency.cpp
     src/util/StringUtil.cpp
     src/util/FileUtil.cpp
     src/visual/WaterfallRing.cpp
-    src/panel/MeterPanel.cpp
     src/visual/ColorTheme.cpp
-    src/visual/PrimaryGLContext.cpp
-    src/visual/InteractiveCanvas.cpp
     src/visual/MeterCanvas.cpp
     src/visual/TuningCanvas.cpp
     src/visual/ModeSelectorCanvas.cpp
@@ -432,9 +428,6 @@ SET (cubicsdr_sources
     src/process/FFTVisualDataThread.cpp
     src/process/FFTDataDistributor.cpp
     src/process/SpectrumVisualDataThread.cpp
-    src/ui/GLPanel.cpp
-    src/ui/UITestCanvas.cpp
-    src/ui/UITestContext.cpp
     src/ui/imgui/imgui_bgfx.cpp
     src/ui/imgui/BgfxCanvas.cpp
     ${imgui_SOURCE_DIR}/imgui.cpp
@@ -522,16 +515,12 @@ SET (cubicsdr_headers
     src/util/Timer.h
 	src/util/ThreadBlockingQueue.h
     src/util/MouseTracker.h
-    src/util/GLExt.h
-    src/util/GLFont.h
+    src/util/FontScale.h
     src/util/DataTree.h
     src/util/Frequency.h
 	src/util/SpinMutex.h
     src/visual/WaterfallRing.h
-    src/panel/MeterPanel.h
     src/visual/ColorTheme.h
-    src/visual/PrimaryGLContext.h
-    src/visual/InteractiveCanvas.h
     src/visual/MeterCanvas.h
     src/visual/TuningCanvas.h
     src/visual/ModeSelectorCanvas.h
@@ -547,9 +536,6 @@ SET (cubicsdr_headers
     src/process/FFTVisualDataThread.h
     src/process/FFTDataDistributor.h
     src/process/SpectrumVisualDataThread.h
-    src/ui/GLPanel.h
-    src/ui/UITestCanvas.h
-    src/ui/UITestContext.h    
     src/forms/SDRDevices/SDRDevices.h
     src/forms/SDRDevices/SDRDevicesForm.h
     src/forms/SDRDevices/SDRDeviceAdd.h
@@ -631,30 +617,7 @@ IF (USE_HAMLIB)
 ENDIF()
 
 
-SET (CUBICSDR_FONTS 
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12.fnt
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16.fnt
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18.fnt
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24.fnt
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono27.fnt
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32.fnt
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono36.fnt
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48.fnt
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono64.fnt
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono72.fnt
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono96.fnt
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono12_0.png
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono16_0.png
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono18_0.png
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono24_0.png
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono27_0.png
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono32_0.png
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono36_0.png
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono48_0.png
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono64_0.png
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono72_0.png
-    ${PROJECT_SOURCE_DIR}/font/vera_sans_mono96_0.png
-)
+
 
 set(REG_EXT "[^/]*([.]cpp|[.]c|[.]h|[.]hpp)$")
 
@@ -738,8 +701,6 @@ macro(cubicsdr_apply_target_settings target)
 endmacro()
 
 IF (NOT BUNDLE_APP)
-    configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME}/fonts "*.fnt")
-    configure_files(${PROJECT_SOURCE_DIR}/font ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME}/fonts "*.png")
     configure_files(${PROJECT_SOURCE_DIR}/icon ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} CubicSDR.ico)
     IF(MSVC)
 		configure_files(${PROJECT_SOURCE_DIR}/external/msvc/${EX_PLATFORM_NAME}/ ${CMAKE_BINARY_DIR}/${EX_PLATFORM_NAME} "*.dll")
@@ -831,7 +792,6 @@ IF (APPLE AND BUNDLE_APP)
         MACOSX_BUNDLE 
         ${cubicsdr_sources}
         ${cubicsdr_headers} 
-        ${CUBICSDR_FONTS}
         ${PROJECT_SOURCE_DIR}/icon/CubicSDR.icns
     ) 
     
@@ -839,12 +799,6 @@ IF (APPLE AND BUNDLE_APP)
         ${PROJECT_SOURCE_DIR}/icon/CubicSDR.icns
         PROPERTIES
         MACOSX_PACKAGE_LOCATION Resources
-    )
-
-    SET_SOURCE_FILES_PROPERTIES(
-        ${CUBICSDR_FONTS}
-        PROPERTIES
-        MACOSX_PACKAGE_LOCATION Resources/fonts
     )
 
     target_link_libraries(CubicSDR PRIVATE ${LIQUID_LIB} ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARIES} ${OTHER_LIBRARIES})
@@ -988,10 +942,6 @@ IF(APPLE AND NOT BUNDLE_APP)
             ${PROJECT_SOURCE_DIR}/src/CubicSDR.png
         DESTINATION share/cubicsdr)
 
-        install(FILES 
-            ${CUBICSDR_FONTS}
-        DESTINATION share/cubicsdr/fonts)
-
     CONFIGURE_FILE(
       "${PROJECT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
       "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
@@ -1019,10 +969,6 @@ IF (WIN32 AND NOT BUILD_INSTALLER)
     INSTALL(FILES 
         ${PROJECT_SOURCE_DIR}/src/CubicSDR.png
      DESTINATION share/cubicsdr)
-
-    INSTALL(FILES 
-        ${CUBICSDR_FONTS}
-     DESTINATION share/cubicsdr/fonts)
 
     IF (CUBICSDR_HAS_HEADER_IMAGE)
         INSTALL(FILES 
@@ -1070,10 +1016,6 @@ IF (WIN32 AND BUILD_INSTALLER)
     install(FILES 
         ${PROJECT_SOURCE_DIR}/icon/CubicSDR.ico
         DESTINATION .)
-
-    install(FILES 
-        ${CUBICSDR_FONTS}
-        DESTINATION fonts)
 
     IF (CUBICSDR_HAS_HEADER_IMAGE)
         INSTALL(FILES 
@@ -1169,10 +1111,6 @@ IF (UNIX AND NOT APPLE AND BUILD_DEB)
             ${PROJECT_SOURCE_DIR}/src/CubicSDR.png
         DESTINATION share/cubicsdr)
 
-        install(FILES 
-            ${CUBICSDR_FONTS}
-        DESTINATION share/cubicsdr/fonts)
-        
     INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/CubicSDR.desktop" 
         DESTINATION share/applications)
         
@@ -1195,10 +1133,6 @@ IF(UNIX AND NOT APPLE AND NOT BUILD_DEB)
     INSTALL(FILES 
             ${PROJECT_SOURCE_DIR}/src/CubicSDR.png
             DESTINATION share/cubicsdr)
-
-    INSTALL(FILES 
-            ${CUBICSDR_FONTS}
-            DESTINATION share/cubicsdr/fonts)
 
 
     IF (CUBICSDR_HAS_HEADER_IMAGE)
