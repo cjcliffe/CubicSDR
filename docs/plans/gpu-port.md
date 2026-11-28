@@ -6,9 +6,12 @@ keeping current behavior and opening low-overhead targets (including X-less
 Raspberry Pi via SDL's KMS/DRM path).
 
 Early spikes used Raylib to validate the tested models; the renderer and
-windowing choice has since moved to bgfx plus SDL while ImGui stays. Spikes
-live under `spike/`, each built with `python build.py --spike <name>`. A
-spike passes when it looks and feels like the app widget it mirrors.
+windowing choice has since moved to bgfx plus SDL while ImGui stays. Each
+panel was proven by a spike under `spike/`, built with
+`python build.py --spike <name>`; a spike passed when it looked and felt
+like the app widget it mirrors. The panel spikes have been retired now
+that their migrations are done, and the spike build harness stays so a
+future spike is one dropped-in source file.
 
 ## Completed spikes
 
@@ -37,6 +40,20 @@ spike passes when it looks and feels like the app widget it mirrors.
   plus meter sliders with drag, wheel, double-click/middle-click default
   reset, and right-click squelch snap, reusing the backend and shaders
   unchanged. Verified live.
+- Spectrum on ImGui (`--spike spectrum`): per-pixel fill columns,
+  pre-blended grid, peak hold, and tracked tick labels from
+  `SpectrumTicks`/`DemodMarkers`. Verified live.
+- Waterfall on ImGui (`--spike waterfall`): ring-fed scrolling texture
+  with hover/drag placement and demod overlays from the waterfall
+  models. Verified live.
+- Scope on ImGui (`--spike scope`): waveform/XY/constellation carousel
+  panels with rotating text from `ScopeCarousel`. Verified live.
+- Mode selector on ImGui (`--spike mode`): choice lists from the
+  `ModeSelector` model with toggle, pulse, and disabled states.
+  Verified live.
+
+The panel spikes were removed after their migrations landed; git history
+keeps them and the harness remains for future spikes.
 
 ## Portability findings
 
@@ -62,7 +79,8 @@ spike passes when it looks and feels like the app widget it mirrors.
   textured quads plus scripted-pose screenshots were the workable loop.
 - Decision: bgfx for rendering (explicit views, programs, and state), SDL3
   for windowing and input, ImGui for widgets and panel content drawing. The
-  Raylib spikes stay as model-validation records.
+  Raylib spikes were removed at the pivot, and the ImGui panel spikes were
+  removed after their migrations landed. Git history keeps all of them.
 - Decision: CubicVR math stays stranded in the old shell (it was never
   finished or tested, and its quirks already bit once); all new code uses
   glm, and `external/cubicvr2` goes away with wx.
@@ -94,15 +112,14 @@ spike passes when it looks and feels like the app widget it mirrors.
 - [x] Spike the ImGui backend with the tuner drawn via draw lists.
 - [x] Spike the remaining views (gain/meter) or defer them behind the state
   extraction if they stop teaching anything new.
-- [ ] Extract the application state interface the spikes specified: device and
+- [x] Extract the application state interface the spikes specified: device and
   view frequencies, demodulator list and selection, visual gain, snap, theme,
   and status routing, behind an API both shells can drive.
 - [ ] Spike one ImGui dialog against the state interface to prove the widget
   story before committing to it.
 - [x] Decide the shell strategy: panel-by-panel replacement inside the
   existing frame.
-- [ ] Port panels in dependency order, keeping the wx app working until the
-  swap.
+- [x] Port panels in dependency order, keeping the wx app working throughout.
 
 ## State extraction
 
@@ -152,29 +169,27 @@ Rationale: every step ships a working app, and the hardest part
 
 Hosting design:
 
-- New wxPanel-based host: bgfx renders to the native handle, so
+- New wxWindow-based host: bgfx renders to the native handle, so
   migrating canvases rebase off wxGLCanvas (two GL contexts cannot
   share one window). bgfx inits headless; each host owns a framebuffer
   recreated on resize.
 - One imgui context for all hosted views; one fixed borderless imgui
   window per view. Spike view bodies move over verbatim; wx events
   translate to the spike edge structs.
-- First hosted view pumps `bgfx::frame()` from its paint handler;
-  centralize the pump when the second view lands.
+- Each host pumps `bgfx::frame()` from its own paint handler.
 - Hosted views run without vsync: a vsync wait inside every paint
   stalls the UI thread and pauses the other canvases.
-- View state flows through `CoreState` and `DemodulatorMgr`; canvas
-  zoom members stay until their canvas migrates.
+- View state flows through `CoreState` and `DemodulatorMgr`; zoom
+  stays canvas-local.
 - Where bgfx cannot start, the host paints a flat theme-background
   fill. macOS needs Metal shaders, which are blocked on the pinned
   shaderc until the bgfx update.
 
-Order: tuner (done), gain/meter, spectrum, waterfall, scope, mode selector.
-Spectrum, waterfall, and scope need a small shared bgfx line/texture
-helper layer first; demod views migrate with their main views.
+Order: tuner, gain/meter, spectrum, waterfall, scope, mode selector (all
+done, with demod views). Spectrum, waterfall, and scope share the common
+draw helpers.
 
 ## Open questions
 
-- Which views, if any, still need spikes before extraction starts?
-- What provides dialogs and menus in the interim if panels move first?
+- The frame, dialogs, menus, and layout are still wx; what order do they go in?
 - Which platforms must the new shell cover on day one?

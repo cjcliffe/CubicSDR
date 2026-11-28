@@ -5,10 +5,12 @@ project(CubicSpikes)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include(FetchContent)
-# (Raylib spikes removed with the bgfx pivot; history keeps them.)
+# Drop a <name>_spike.cpp in this directory and build it with
+# `python build.py --spike <name>`; no other edits needed.
+file(GLOB SPIKE_MAINS "*_spike.cpp")
 
-# bgfx stack (bgfx + SDL3 + glm) for the GPU-port spikes.
+include(FetchContent)
+
 option(BGFXSPIKE_PREBUILT_SHADERS "Use committed shader headers instead of building shaderc" ON)
 set(BGFX_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(BGFX_AMALGAMATED ON CACHE BOOL "" FORCE)
@@ -29,11 +31,32 @@ FetchContent_GetProperties(bgfx.cmake SOURCE_DIR BGFX_CMAKE_DIR)
 FetchContent_GetProperties(bgfx SOURCE_DIR BGFX_SRC_DIR)
 if(BGFXSPIKE_PREBUILT_SHADERS)
     set(SHADER_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/generated)
+    set(SHADER_SOURCES "")
 else()
     set(BGFX_SHADER_INCLUDE_PATH ${BGFX_SRC_DIR}/src)
     if(NOT COMMAND bgfx_compile_shaders)
         include(${BGFX_CMAKE_DIR}/cmake/bgfxToolUtils.cmake)
     endif()
+    bgfx_compile_shaders(
+        TYPE VERTEX
+        SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/vs_imgui.sc
+        VARYING_DEF ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/varying.def.sc
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/generated/shaders
+        PROFILES 430 300_es
+        AS_HEADERS
+    )
+    bgfx_compile_shaders(
+        TYPE FRAGMENT
+        SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/fs_imgui.sc
+        VARYING_DEF ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/varying.def.sc
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/generated/shaders
+        PROFILES 430 300_es
+        AS_HEADERS
+    )
+    set(SHADER_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/generated/shaders)
+    set(SHADER_SOURCES
+        ../src/ui/imgui/shaders/vs_imgui.sc
+        ../src/ui/imgui/shaders/fs_imgui.sc)
 endif()
 
 set(SDL_SHARED OFF CACHE BOOL "" FORCE)
@@ -73,215 +96,30 @@ if(NOT imgui_POPULATED)
     FetchContent_Populate(imgui)
 endif()
 
-if(BGFXSPIKE_PREBUILT_SHADERS)
-    add_executable(bgfxscope_spike bgfxscope_spike.cpp)
-else()
-    bgfx_compile_shaders(
-        TYPE VERTEX
-        SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/vs.sc
-        VARYING_DEF ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/varying.def.sc
-        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/generated/shaders
-        PROFILES 430 300_es
-        AS_HEADERS
-    )
-    bgfx_compile_shaders(
-        TYPE FRAGMENT
-        SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/fs.sc
-        VARYING_DEF ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/varying.def.sc
-        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/generated/shaders
-        PROFILES 430 300_es
-        AS_HEADERS
-    )
-    add_executable(bgfxscope_spike bgfxscope_spike.cpp ../src/ui/imgui/shaders/vs.sc ../src/ui/imgui/shaders/fs.sc)
-    set(SHADER_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/generated/shaders)
-endif()
-target_include_directories(bgfxscope_spike PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel
-    ${SHADER_INCLUDE_DIR})
-target_link_libraries(bgfxscope_spike PRIVATE bgfx bx glm::glm)
-if(TARGET SDL3::SDL3)
-    target_link_libraries(bgfxscope_spike PRIVATE SDL3::SDL3)
-else()
-    target_link_libraries(bgfxscope_spike PRIVATE SDL3::SDL3-static)
-endif()
-
 set(IMGUI_SOURCES
-    imgui_spike.cpp
     ../src/ui/imgui/imgui_bgfx.cpp
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
     ${imgui_SOURCE_DIR}/imgui_tables.cpp
     ${imgui_SOURCE_DIR}/imgui_widgets.cpp
     ${imgui_SOURCE_DIR}/imgui_demo.cpp)
-if(BGFXSPIKE_PREBUILT_SHADERS)
-    add_executable(imgui_spike ${IMGUI_SOURCES})
-else()
-    bgfx_compile_shaders(
-        TYPE VERTEX
-        SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/vs_imgui.sc
-        VARYING_DEF ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/varying.def.sc
-        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/generated/shaders
-        PROFILES 430 300_es
-        AS_HEADERS
-    )
-    bgfx_compile_shaders(
-        TYPE FRAGMENT
-        SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/fs_imgui.sc
-        VARYING_DEF ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui/shaders/varying.def.sc
-        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/generated/shaders
-        PROFILES 430 300_es
-        AS_HEADERS
-    )
-    add_executable(imgui_spike ${IMGUI_SOURCES} ../src/ui/imgui/shaders/vs_imgui.sc ../src/ui/imgui/shaders/fs_imgui.sc)
-endif()
-target_include_directories(imgui_spike PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/sdr
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/util
-    ${imgui_SOURCE_DIR}
-    ${SHADER_INCLUDE_DIR})
-target_link_libraries(imgui_spike PRIVATE bgfx bx glm::glm)
-if(TARGET SDL3::SDL3)
-    target_link_libraries(imgui_spike PRIVATE SDL3::SDL3)
-else()
-    target_link_libraries(imgui_spike PRIVATE SDL3::SDL3-static)
-endif()
 
-set(GAINMETER_SOURCES
-    gainmeter_spike.cpp
-    ../src/ui/imgui/imgui_bgfx.cpp
-    ${imgui_SOURCE_DIR}/imgui.cpp
-    ${imgui_SOURCE_DIR}/imgui_draw.cpp
-    ${imgui_SOURCE_DIR}/imgui_tables.cpp
-    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-    ${imgui_SOURCE_DIR}/imgui_demo.cpp)
-if(BGFXSPIKE_PREBUILT_SHADERS)
-    add_executable(gainmeter_spike ${GAINMETER_SOURCES})
-else()
-    add_executable(gainmeter_spike ${GAINMETER_SOURCES} ../src/ui/imgui/shaders/vs_imgui.sc ../src/ui/imgui/shaders/fs_imgui.sc)
-endif()
-target_include_directories(gainmeter_spike PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/demod
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/util
-    ${imgui_SOURCE_DIR}
-    ${SHADER_INCLUDE_DIR})
-target_link_libraries(gainmeter_spike PRIVATE bgfx bx glm::glm)
-if(TARGET SDL3::SDL3)
-    target_link_libraries(gainmeter_spike PRIVATE SDL3::SDL3)
-else()
-    target_link_libraries(gainmeter_spike PRIVATE SDL3::SDL3-static)
-endif()
-
-set(SPECTRUM_SOURCES
-    spectrum_spike.cpp
-    ../src/ui/imgui/imgui_bgfx.cpp
-    ${imgui_SOURCE_DIR}/imgui.cpp
-    ${imgui_SOURCE_DIR}/imgui_draw.cpp
-    ${imgui_SOURCE_DIR}/imgui_tables.cpp
-    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-    ${imgui_SOURCE_DIR}/imgui_demo.cpp)
-if(BGFXSPIKE_PREBUILT_SHADERS)
-    add_executable(spectrum_spike ${SPECTRUM_SOURCES})
-else()
-    add_executable(spectrum_spike ${SPECTRUM_SOURCES} ../src/ui/imgui/shaders/vs_imgui.sc ../src/ui/imgui/shaders/fs_imgui.sc)
-endif()
-target_include_directories(spectrum_spike PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/util
-    ${imgui_SOURCE_DIR}
-    ${SHADER_INCLUDE_DIR})
-target_link_libraries(spectrum_spike PRIVATE bgfx bx glm::glm)
-if(TARGET SDL3::SDL3)
-    target_link_libraries(spectrum_spike PRIVATE SDL3::SDL3)
-else()
-    target_link_libraries(spectrum_spike PRIVATE SDL3::SDL3-static)
-endif()
-
-set(WATERFALL_SOURCES
-    waterfall_spike.cpp
-    ../src/visual/WaterfallRing.cpp
-    ../src/visual/WaterfallPacer.cpp
-    ../src/ui/imgui/imgui_bgfx.cpp
-    ${imgui_SOURCE_DIR}/imgui.cpp
-    ${imgui_SOURCE_DIR}/imgui_draw.cpp
-    ${imgui_SOURCE_DIR}/imgui_tables.cpp
-    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-    ${imgui_SOURCE_DIR}/imgui_demo.cpp)
-if(BGFXSPIKE_PREBUILT_SHADERS)
-    add_executable(waterfall_spike ${WATERFALL_SOURCES})
-else()
-    add_executable(waterfall_spike ${WATERFALL_SOURCES} ../src/ui/imgui/shaders/vs_imgui.sc ../src/ui/imgui/shaders/fs_imgui.sc)
-endif()
-target_include_directories(waterfall_spike PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/visual
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/sdr
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/util
-    ${imgui_SOURCE_DIR}
-    ${SHADER_INCLUDE_DIR})
-target_link_libraries(waterfall_spike PRIVATE bgfx bx glm::glm)
-if(TARGET SDL3::SDL3)
-    target_link_libraries(waterfall_spike PRIVATE SDL3::SDL3)
-else()
-    target_link_libraries(waterfall_spike PRIVATE SDL3::SDL3-static)
-endif()
-
-set(MODE_SOURCES
-    mode_spike.cpp
-    ../src/ui/imgui/imgui_bgfx.cpp
-    ${imgui_SOURCE_DIR}/imgui.cpp
-    ${imgui_SOURCE_DIR}/imgui_draw.cpp
-    ${imgui_SOURCE_DIR}/imgui_tables.cpp
-    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-    ${imgui_SOURCE_DIR}/imgui_demo.cpp)
-if(BGFXSPIKE_PREBUILT_SHADERS)
-    add_executable(mode_spike ${MODE_SOURCES})
-else()
-    add_executable(mode_spike ${MODE_SOURCES} ../src/ui/imgui/shaders/vs_imgui.sc ../src/ui/imgui/shaders/fs_imgui.sc)
-endif()
-target_include_directories(mode_spike PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/util
-    ${imgui_SOURCE_DIR}
-    ${SHADER_INCLUDE_DIR})
-target_link_libraries(mode_spike PRIVATE bgfx bx glm::glm)
-if(TARGET SDL3::SDL3)
-    target_link_libraries(mode_spike PRIVATE SDL3::SDL3)
-else()
-    target_link_libraries(mode_spike PRIVATE SDL3::SDL3-static)
-endif()
-
-set(SCOPE_SOURCES
-    scope_spike.cpp
-    ../src/ui/imgui/imgui_bgfx.cpp
-    ${imgui_SOURCE_DIR}/imgui.cpp
-    ${imgui_SOURCE_DIR}/imgui_draw.cpp
-    ${imgui_SOURCE_DIR}/imgui_tables.cpp
-    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-    ${imgui_SOURCE_DIR}/imgui_demo.cpp)
-if(BGFXSPIKE_PREBUILT_SHADERS)
-    add_executable(scope_spike ${SCOPE_SOURCES})
-else()
-    add_executable(scope_spike ${SCOPE_SOURCES} ../src/ui/imgui/shaders/vs_imgui.sc ../src/ui/imgui/shaders/fs_imgui.sc)
-endif()
-target_include_directories(scope_spike PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/util
-    ${imgui_SOURCE_DIR}
-    ${SHADER_INCLUDE_DIR})
-target_link_libraries(scope_spike PRIVATE bgfx bx glm::glm)
-if(TARGET SDL3::SDL3)
-    target_link_libraries(scope_spike PRIVATE SDL3::SDL3)
-else()
-    target_link_libraries(scope_spike PRIVATE SDL3::SDL3-static)
-endif()
+foreach(SPIKE_MAIN ${SPIKE_MAINS})
+    get_filename_component(SPIKE_NAME ${SPIKE_MAIN} NAME_WE)
+    add_executable(${SPIKE_NAME} ${SPIKE_MAIN} ${IMGUI_SOURCES} ${SHADER_SOURCES})
+    target_include_directories(${SPIKE_NAME} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src/sdr
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src/demod
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src/util
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src
+        ${imgui_SOURCE_DIR}
+        ${SHADER_INCLUDE_DIR})
+    target_link_libraries(${SPIKE_NAME} PRIVATE bgfx bx glm::glm)
+    if(TARGET SDL3::SDL3)
+        target_link_libraries(${SPIKE_NAME} PRIVATE SDL3::SDL3)
+    else()
+        target_link_libraries(${SPIKE_NAME} PRIVATE SDL3::SDL3-static)
+    endif()
+endforeach()
