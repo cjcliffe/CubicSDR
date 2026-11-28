@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "imgui_bgfx.h"
+#include "imgui_draw_util.h"
 
 #include <imgui.h>
 
@@ -37,10 +38,6 @@ const int kFreqCount = 11;
 const int kBwCount = 7;
 
 const long long kChannelizerRateMax = 500000;
-
-struct ThemeColor {
-    float r, g, b;
-};
 
 const ThemeColor kBarLight = {0.2f, 0.2f, 0.9f};
 const ThemeColor kBarDark = {0.0f, 0.0f, 0.35f};
@@ -163,43 +160,9 @@ void stepTuner(AppState &s, HoverState state, bool up, int digit, bool preventCa
     }
 }
 
-ImU32 packColor(float r, float g, float b, float a = 1.0f) {
-    auto clampByte = [](float v) -> uint8_t {
-        if (v < 0.0f) {
-            v = 0.0f;
-        }
-        if (v > 1.0f) {
-            v = 1.0f;
-        }
-        return (uint8_t)(v * 255.0f);
-    };
-    return IM_COL32(clampByte(r), clampByte(g), clampByte(b), clampByte(a));
-}
-
-struct TunerFrame {
-    ImDrawList *dl;
-    float ox, oy, w, h;
-    float px(float x) const {
-        return ox + (x + 1.0f) * 0.5f * w;
-    }
-    float py(float y) const {
-        return oy + (1.0f - y) * 0.5f * h;
-    }
-};
+using TunerFrame = SpecFrame;
 
 const float kBgLift = 26.0f / 255.0f;
-
-void emitVGradient(
-    const TunerFrame &f, float ndx0, float ndx1, ImU32 edge, ImU32 full, bool drawTop, bool drawBottom) {
-    float x0 = f.px(ndx0);
-    float x1 = f.px(ndx1);
-    if (drawTop) {
-        f.dl->AddRectFilledMultiColor(ImVec2(x0, f.py(1.0f)), ImVec2(x1, f.py(0.0f)), edge, edge, full, full);
-    }
-    if (drawBottom) {
-        f.dl->AddRectFilledMultiColor(ImVec2(x0, f.py(0.0f)), ImVec2(x1, f.py(-1.0f)), full, full, edge, edge);
-    }
-}
 
 void drawBarQuads(const TunerFrame &f, const TunerBars &bars, const ThemeColor &color) {
     ImU32 edge = packColor(color.r * 0.5f + kBgLift, color.g * 0.5f + kBgLift, color.b * 0.5f + kBgLift);
@@ -259,11 +222,11 @@ void drawTunerDigits(const TunerFrame &f, long long value, int count, float dp, 
     std::string text = std::to_string(value);
     std::vector<TunerChar> chars = tunerChars(count, (int)text.size(), dp, w);
     ImGui::PushFont(imguiMonoFont(), 32.0f * fontScale);
-    float midY = f.py(0.0f);
+    float midY = f.ny(0.0f);
     for (const TunerChar &ch : chars) {
         char glyph[2] = {text[(size_t)ch.charIndex], '\0'};
         ImVec2 sz = ImGui::CalcTextSize(glyph);
-        f.dl->AddText(ImVec2(f.px(ch.x) - sz.x * 0.5f, midY - sz.y * 0.5f), IM_COL32_WHITE, glyph);
+        f.dl->AddText(ImVec2(f.nx(ch.x) - sz.x * 0.5f, midY - sz.y * 0.5f), IM_COL32_WHITE, glyph);
     }
     ImGui::PopFont();
 }
@@ -272,16 +235,16 @@ void drawTunerGrid(const TunerFrame &f, int count, float dp, float w) {
     std::vector<float> verts = tunerGridVerts(count, dp, w);
     ImU32 col = packColor(0.65f, 0.65f, 0.65f, 0.25f);
     for (size_t i = 0; i + 3 < verts.size(); i += 4) {
-        f.dl->AddLineV(floorf(f.px(verts[i])), f.py(1.0f), f.py(-1.0f), col);
+        f.dl->AddLineV(floorf(f.nx(verts[i])), f.ny(1.0f), f.ny(-1.0f), col);
     }
 }
 
 void drawSnapBox(const TunerFrame &f, int snapExp, float viewHeightPx) {
     std::vector<float> box = tunerDigitBox(snapExp, kFreqCount, kFreqDP, kFreqW, viewHeightPx);
-    float xa = f.px(box[0]);
-    float xb = f.px(box[4]);
-    float ya = f.py(box[1]);
-    float yb = f.py(box[5]);
+    float xa = f.nx(box[0]);
+    float xb = f.nx(box[4]);
+    float ya = f.ny(box[1]);
+    float yb = f.ny(box[5]);
     float x0 = floorf(xa < xb ? xa : xb);
     float x1 = floorf(xa < xb ? xb : xa);
     float y0 = floorf(ya < yb ? ya : yb);

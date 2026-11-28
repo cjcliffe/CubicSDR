@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "imgui_bgfx.h"
+#include "imgui_draw_util.h"
 
 #include <imgui.h>
 
@@ -22,10 +23,6 @@
 #include <vector>
 
 namespace {
-
-struct ThemeColor {
-    float r, g, b, a;
-};
 
 struct SpikeTheme {
     ThemeColor fftBackground;
@@ -101,94 +98,14 @@ struct FrameEdges {
     bool sPressed = false;
 };
 
-uint8_t clampByte(float v) {
-    if (v < 0.0f) {
-        v = 0.0f;
-    }
-    if (v > 1.0f) {
-        v = 1.0f;
-    }
-    return (uint8_t)(v * 255.0f);
-}
-
-ImU32 packColor(float r, float g, float b, float a = 1.0f) {
-    return IM_COL32(clampByte(r), clampByte(g), clampByte(b), clampByte(a));
-}
-
-uint32_t packClear(const ThemeColor &bg) {
-    return ((uint32_t)clampByte(bg.r) << 24) | ((uint32_t)clampByte(bg.g) << 16)
-        | ((uint32_t)clampByte(bg.b) << 8) | 0xFFu;
-}
-
-struct SpecFrame {
-    ImDrawList *dl;
-    float ox, oy, w, h;
-    float nx(float ndcX) const {
-        return ox + (ndcX + 1.0f) * 0.5f * w;
-    }
-    float ny(float ndcY) const {
-        return oy + (1.0f - ndcY) * 0.5f * h;
-    }
-    float px(float x01) const {
-        return ox + x01 * w;
-    }
-    float py(float y01) const {
-        return ny(-0.75f + y01 * 1.5f);
-    }
-};
-
-int utf8CharBytes(const char *p, const char *end) {
-    unsigned char c = (unsigned char)*p;
-    int bytes = 1;
-    if ((c & 0x80) == 0) {
-        bytes = 1;
-    } else if ((c & 0xE0) == 0xC0) {
-        bytes = 2;
-    } else if ((c & 0xF0) == 0xE0) {
-        bytes = 3;
-    } else if ((c & 0xF8) == 0xF0) {
-        bytes = 4;
-    }
-    if (p + bytes > end) {
-        bytes = (int)(end - p);
-    }
-    return bytes;
-}
-
-void drawTrackedText(const SpecFrame &f, const char *text, float xPx, float cyPx, float fontPx, ImU32 col,
-    DemodMarkers::LabelAlign align) {
-    ImGui::PushFont(imguiMonoFont(), fontPx);
-    float adv = fontPx * 0.5f;
-    const char *end = text + std::strlen(text);
-    int count = 0;
-    for (const char *p = text; p < end;) {
-        int bytes = utf8CharBytes(p, end);
-        count++;
-        p += bytes;
-    }
-    float x = xPx;
+TextAlign toTextAlign(DemodMarkers::LabelAlign align) {
     if (align == DemodMarkers::LabelAlign::Right) {
-        x = xPx - adv * (float)count;
-    } else if (align == DemodMarkers::LabelAlign::Center) {
-        x = xPx - adv * (float)count * 0.5f;
+        return TextAlign::Right;
     }
-    float y = cyPx - fontPx * 0.5f;
-    for (const char *p = text; p < end;) {
-        int bytes = utf8CharBytes(p, end);
-        f.dl->AddText(ImVec2(x, y), col, p, p + bytes);
-        x += adv;
-        p += bytes;
+    if (align == DemodMarkers::LabelAlign::Center) {
+        return TextAlign::Center;
     }
-    ImGui::PopFont();
-}
-
-void drawCenterText(const SpecFrame &f, const char *text, float cxPx, float cyPx, float fontPx, ImU32 col) {
-    drawTrackedText(f, text, cxPx, cyPx, fontPx, col, DemodMarkers::LabelAlign::Center);
-}
-
-void drawAlignText(const SpecFrame &f, const char *text, float xPx, float cyPx, float fontPx, ImU32 col,
-    DemodMarkers::LabelAlign align) {
-    drawTrackedText(f, text, xPx, cyPx, fontPx, col, align);
+    return TextAlign::Left;
 }
 
 void initDemods(AppState &s) {
@@ -402,7 +319,7 @@ void drawSpectrum(AppState &s, const FrameEdges &edges, float mx, float my, int 
     ImU32 minorCol =
         packColor(theme.freqLine.r * 0.65f, theme.freqLine.g * 0.65f, theme.freqLine.b * 0.65f);
     for (auto &tick : axis.ticks) {
-        drawCenterText(f, tick.label.c_str(), f.nx((float)tick.x), f.ny((float)axis.hPos),
+        drawCenterText(f.dl, tick.label.c_str(), f.nx((float)tick.x), f.ny((float)axis.hPos),
             (float)axis.fontSize, textCol);
     }
     for (auto &tick : axis.ticks) {
@@ -445,8 +362,8 @@ void drawSpectrum(AppState &s, const FrameEdges &edges, float mx, float my, int 
         }
         std::string demodLabel = geo.prefix;
         demodLabel.append(demod.label);
-        drawAlignText(f, demodLabel.c_str(), f.nx(geo.uxPos), f.ny(geo.hPos), 16.0f,
-            IM_COL32(255, 255, 255, 204), geo.align);
+        drawTrackedText(f.dl, demodLabel.c_str(), f.nx(geo.uxPos), f.ny(geo.hPos), 16.0f,
+            IM_COL32(255, 255, 255, 204), toTextAlign(geo.align));
     }
 
     if (hovered) {
@@ -482,9 +399,11 @@ void drawSpectrum(AppState &s, const FrameEdges &edges, float mx, float my, int 
         float dxPx = geo.shadowDx * wsize.x * 0.5f;
         float dyPx = geo.shadowDy * wsize.y * 0.5f;
         ImU32 mainCol = packColor(color.r, color.g, color.b);
-        drawAlignText(f, geo.freqText.c_str(), lx + dxPx, ly + dyPx, 16.0f, IM_COL32(0, 0, 0, 255), geo.align);
-        drawAlignText(f, geo.freqText.c_str(), lx - dxPx, ly - dyPx, 16.0f, IM_COL32(0, 0, 0, 255), geo.align);
-        drawAlignText(f, geo.freqText.c_str(), lx, ly, 16.0f, mainCol, geo.align);
+        drawTrackedText(
+            f.dl, geo.freqText.c_str(), lx + dxPx, ly + dyPx, 16.0f, IM_COL32(0, 0, 0, 255), toTextAlign(geo.align));
+        drawTrackedText(
+            f.dl, geo.freqText.c_str(), lx - dxPx, ly - dyPx, 16.0f, IM_COL32(0, 0, 0, 255), toTextAlign(geo.align));
+        drawTrackedText(f.dl, geo.freqText.c_str(), lx, ly, 16.0f, mainCol, toTextAlign(geo.align));
     }
 
     if (s.showDb) {
@@ -496,12 +415,12 @@ void drawSpectrum(AppState &s, const FrameEdges &edges, float mx, float my, int 
         float chipH = 14.0f;
         f.dl->AddRectFilledMultiColor(ImVec2(f.ox, f.oy), ImVec2(f.ox + chipW, f.oy + chipH), chipL, chipR, chipR,
             chipL);
-        drawAlignText(f, db.ceil.c_str(), f.ox + chipW * 0.5f, f.oy + chipH * 0.5f, 12.0f, IM_COL32_WHITE,
-            DemodMarkers::LabelAlign::Right);
+        drawTrackedText(f.dl, db.ceil.c_str(), f.ox + chipW * 0.5f, f.oy + chipH * 0.5f, 12.0f,
+            IM_COL32_WHITE, TextAlign::Right);
         f.dl->AddRectFilledMultiColor(ImVec2(f.ox, f.oy + wsize.y - chipH), ImVec2(f.ox + chipW, f.oy + wsize.y),
             chipL, chipR, chipR, chipL);
-        drawAlignText(f, db.floor.c_str(), f.ox + chipW * 0.5f, f.oy + wsize.y - chipH * 0.5f, 12.0f,
-            IM_COL32_WHITE, DemodMarkers::LabelAlign::Right);
+        drawTrackedText(f.dl, db.floor.c_str(), f.ox + chipW * 0.5f, f.oy + wsize.y - chipH * 0.5f, 12.0f,
+            IM_COL32_WHITE, TextAlign::Right);
     }
     ImGui::End();
     ImGui::PopStyleVar(2);

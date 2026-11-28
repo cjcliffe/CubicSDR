@@ -3,6 +3,7 @@
 
 #include "ui/imgui/BgfxCanvas.h"
 #include "ui/imgui/imgui_bgfx.h"
+#include "ui/imgui/imgui_draw_util.h"
 
 #include "ColorTheme.h"
 #include "wx/dcclient.h"
@@ -59,16 +60,6 @@ bool nativeHandles(wxWindow *window, void *&nwh, void *&ndt) {
     ndt = nullptr;
     return false;
 #endif
-}
-
-unsigned char clampByte(float v) {
-    if (v < 0.0f) {
-        v = 0.0f;
-    }
-    if (v > 1.0f) {
-        v = 1.0f;
-    }
-    return (unsigned char)(v * 255.0f);
 }
 
 } // namespace

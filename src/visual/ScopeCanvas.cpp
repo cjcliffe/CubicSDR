@@ -9,6 +9,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "ui/imgui/imgui_bgfx.h"
+#include "ui/imgui/imgui_draw_util.h"
 #include "DemodMarkers.h"
 #include "SpectrumTicks.h"
 #include "ColorTheme.h"
@@ -23,63 +24,6 @@ namespace {
 
 const float FRUSTUM_HALF = 0.82842712f;
 const float EYE_Z = -1.205f;
-
-struct ThemeColor {
-    float r, g, b;
-};
-
-uint8_t clampByte(float v) {
-    if (v < 0.0f) {
-        v = 0.0f;
-    }
-    if (v > 1.0f) {
-        v = 1.0f;
-    }
-    return (uint8_t)(v * 255.0f);
-}
-
-ImU32 packColor(float r, float g, float b, float a = 1.0f) {
-    return IM_COL32(clampByte(r), clampByte(g), clampByte(b), clampByte(a));
-}
-
-uint32_t packClear(const ThemeColor &bg) {
-    return ((uint32_t)clampByte(bg.r) << 24) | ((uint32_t)clampByte(bg.g) << 16)
-        | ((uint32_t)clampByte(bg.b) << 8) | 0xFFu;
-}
-
-struct Proj {
-    glm::mat4 mvp;
-    glm::mat4 invMvp;
-    float ox, oy, w, h;
-    bool project(float lx, float ly, float &sx, float &sy) const {
-        glm::vec4 c = mvp * glm::vec4(lx, ly, 0.0f, 1.0f);
-        if (c.w <= 0.0f) {
-            return false;
-        }
-        float nx = c.x / c.w;
-        float ny = c.y / c.w;
-        sx = ox + (nx + 1.0f) * 0.5f * w;
-        sy = oy + (1.0f - ny) * 0.5f * h;
-        return true;
-    }
-    bool unprojectX(float cx, float &lx) const {
-        float nx = (cx - ox) / w * 2.0f - 1.0f;
-        glm::vec4 a = invMvp * glm::vec4(nx, 0.0f, -1.0f, 1.0f);
-        glm::vec4 b = invMvp * glm::vec4(nx, 0.0f, 1.0f, 1.0f);
-        if (a.w == 0.0f || b.w == 0.0f) {
-            return false;
-        }
-        a /= a.w;
-        b /= b.w;
-        float dz = b.z - a.z;
-        if (fabsf(dz) < 1e-6f) {
-            return false;
-        }
-        float t = -a.z / dz;
-        lx = a.x + t * (b.x - a.x);
-        return true;
-    }
-};
 
 Proj makePanelProj(float posX, float ox, float oy, float w, float h) {
     glm::mat4 proj = glm::frustum(-FRUSTUM_HALF, FRUSTUM_HALF, -FRUSTUM_HALF, FRUSTUM_HALF, 1.0f, 1000.0f);
@@ -98,142 +42,6 @@ Proj makePanelProj(float posX, float ox, float oy, float w, float h) {
     p.w = w;
     p.h = h;
     return p;
-}
-
-int utf8CharBytes(const char *p, const char *end) {
-    unsigned char c = (unsigned char)*p;
-    int bytes = 1;
-    if ((c & 0x80) == 0) {
-        bytes = 1;
-    } else if ((c & 0xE0) == 0xC0) {
-        bytes = 2;
-    } else if ((c & 0xF0) == 0xE0) {
-        bytes = 3;
-    } else if ((c & 0xF8) == 0xF0) {
-        bytes = 4;
-    }
-    if (p + bytes > end) {
-        bytes = (int)(end - p);
-    }
-    return bytes;
-}
-
-unsigned int utf8Decode(const char *p, const char *end, int &bytes) {
-    bytes = utf8CharBytes(p, end);
-    unsigned int c = (unsigned char)p[0];
-    if (bytes == 1) {
-        return c;
-    }
-    if (bytes == 2) {
-        return ((c & 0x1F) << 6) | ((unsigned char)p[1] & 0x3F);
-    }
-    if (bytes == 3) {
-        return ((c & 0x0F) << 12) | (((unsigned char)p[1] & 0x3F) << 6) | ((unsigned char)p[2] & 0x3F);
-    }
-    return ((c & 0x07) << 18) | (((unsigned char)p[1] & 0x3F) << 12) | (((unsigned char)p[2] & 0x3F) << 6)
-        | ((unsigned char)p[3] & 0x3F);
-}
-
-void drawCenterText(ImDrawList *dl, const char *text, float cxPx, float cyPx, float fontPx, ImU32 col) {
-    ImGui::PushFont(imguiMonoFont(), fontPx);
-    float adv = fontPx * 0.5f;
-    const char *end = text + std::strlen(text);
-    int count = 0;
-    for (const char *p = text; p < end;) {
-        int bytes = utf8CharBytes(p, end);
-        count++;
-        p += bytes;
-    }
-    float x = cxPx - adv * (float)count * 0.5f;
-    float y = cyPx - fontPx * 0.5f;
-    for (const char *p = text; p < end;) {
-        int bytes = utf8CharBytes(p, end);
-        dl->AddText(ImVec2(x, y), col, p, p + bytes);
-        x += adv;
-        p += bytes;
-    }
-    ImGui::PopFont();
-}
-
-void drawPanelText(ImDrawList *dl, const Proj &f, const char *text, float ax, float ay, float fontPx,
-    ImU32 col, int align, float vpW, float vpH) {
-    ImFont *font = imguiMonoFont();
-    ImFontBaked *baked = font->GetFontBaked(fontPx);
-    const ImFontGlyph *ref = baked->FindGlyph('0');
-    float refW = font->CalcTextSizeA(fontPx, FLT_MAX, 0.0f, "0", "0" + 1).x;
-    float sc = (ref && ref->AdvanceX > 0.0f) ? refW / ref->AdvanceX : fontPx / 32.0f;
-    float advPx = fontPx * 0.5f;
-    const char *end = text + std::strlen(text);
-    int count = 0;
-    for (const char *p = text; p < end;) {
-        int bytes = utf8CharBytes(p, end);
-        count++;
-        p += bytes;
-    }
-    float penX = 0.0f;
-    if (align > 0) {
-        penX = -advPx * (float)count;
-    } else if (align == 0) {
-        penX = -advPx * (float)count * 0.5f;
-    }
-    float penTop = -fontPx * 0.5f;
-    ImTextureRef texRef = ImGui::GetIO().Fonts->TexRef;
-    for (const char *p = text; p < end;) {
-        int bytes = 0;
-        unsigned int c = utf8Decode(p, end, bytes);
-        const ImFontGlyph *g = baked->FindGlyph((ImWchar)c);
-        if (g && g->Visible) {
-            float qx0 = penX + g->X0 * sc;
-            float qy0 = penTop + g->Y0 * sc;
-            float qx1 = penX + g->X1 * sc;
-            float qy1 = penTop + g->Y1 * sc;
-            float p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y;
-            if (f.project(ax + qx0 * 2.0f / vpW, ay - qy0 * 2.0f / vpH, p0x, p0y)
-                && f.project(ax + qx1 * 2.0f / vpW, ay - qy0 * 2.0f / vpH, p1x, p1y)
-                && f.project(ax + qx1 * 2.0f / vpW, ay - qy1 * 2.0f / vpH, p2x, p2y)
-                && f.project(ax + qx0 * 2.0f / vpW, ay - qy1 * 2.0f / vpH, p3x, p3y)) {
-                dl->AddImageQuad(texRef, ImVec2(p0x, p0y), ImVec2(p1x, p1y), ImVec2(p2x, p2y),
-                    ImVec2(p3x, p3y), ImVec2(g->U0, g->V0), ImVec2(g->U1, g->V0), ImVec2(g->U1, g->V1),
-                    ImVec2(g->U0, g->V1), col);
-            }
-        }
-        penX += advPx;
-        p += bytes;
-    }
-}
-
-float plotX(float x01) {
-    return x01 * 2.0f - 1.0f;
-}
-
-float plotY(float y01) {
-    return -0.75f + y01 * 1.5f;
-}
-
-void drawBarBgColumn(ImDrawList *dl, const Proj &f, float cx, const ThemeColor &c0, const ThemeColor &c1,
-    float yLo, float yHi, float alpha) {
-    float lx;
-    if (!f.unprojectX(cx + 0.5f, lx) || lx < -1.0f || lx > 1.0f) {
-        return;
-    }
-    float x0, yBot, x1, yMid, x2, yTop;
-    if (!f.project(lx, yLo, x0, yBot) || !f.project(lx, (yLo + yHi) * 0.5f, x1, yMid)
-        || !f.project(lx, yHi, x2, yTop)) {
-        return;
-    }
-    ImU32 edge = packColor(c0.r, c0.g, c0.b, alpha);
-    ImU32 mid = packColor(c1.r, c1.g, c1.b, alpha);
-    float top = yBot < yTop ? yBot : yTop;
-    float bottom = yBot < yTop ? yTop : yBot;
-    if (yMid < top) {
-        yMid = top;
-    }
-    if (yMid > bottom) {
-        yMid = bottom;
-    }
-    dl->AddRectFilledMultiColor(
-        ImVec2(f.ox + cx, yMid), ImVec2(f.ox + cx + 1.0f, bottom), mid, mid, edge, edge);
-    dl->AddRectFilledMultiColor(ImVec2(f.ox + cx, top), ImVec2(f.ox + cx + 1.0f, yMid), edge, edge, mid, mid);
 }
 
 void drawScopePanel(ImDrawList *dl, const Proj &f, int mode, const std::vector<float> &wave,
@@ -306,7 +114,7 @@ void drawScopePanel(ImDrawList *dl, const Proj &f, int mode, const std::vector<f
 
     if (!deviceName.empty()) {
         drawPanelText(dl, f, deviceName.c_str(), 1.0f, (viewHPx - 20.0f) / viewHPx,
-            12.0f * (float)fontScale, packColor(0.65f, 0.65f, 0.65f), 1, f.w, f.h);
+            12.0f * (float)fontScale, packColor(0.65f, 0.65f, 0.65f), TextAlign::Right, f.w, f.h);
     }
 }
 
@@ -421,8 +229,8 @@ void drawSpectrumPanel(ImDrawList *dl, const Proj &f, const std::vector<float> &
     ImU32 minorCol = packColor(freqLine.r * 0.65f, freqLine.g * 0.65f, freqLine.b * 0.65f);
     float axisFontPx = (float)axis.fontSize * (float)fontScale;
     for (auto &tick : axis.ticks) {
-        drawPanelText(dl, f, tick.label.c_str(), (float)tick.x, (float)axis.hPos, axisFontPx, textCol, 0,
-            f.w, f.h);
+        drawPanelText(dl, f, tick.label.c_str(), (float)tick.x, (float)axis.hPos, axisFontPx, textCol,
+            TextAlign::Center, f.w, f.h);
     }
     for (auto &tick : axis.ticks) {
         float x0, y0, x1, y1;
@@ -457,7 +265,7 @@ void drawSpectrumPanel(ImDrawList *dl, const Proj &f, const std::vector<float> &
                 dl->AddRectFilled(ImVec2(f.ox + cx, top), ImVec2(f.ox + cx + 1.0f, bottom), col);
             }
             drawPanelText(dl, f, (chip == 0 ? db.ceil : db.floor).c_str(), -1.0f + dbW,
-                (ly0 + ly1) * 0.5f, chipFontPx, IM_COL32_WHITE, 1, f.w, f.h);
+                (ly0 + ly1) * 0.5f, chipFontPx, IM_COL32_WHITE, TextAlign::Right, f.w, f.h);
         }
     }
 }

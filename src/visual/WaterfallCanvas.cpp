@@ -7,6 +7,7 @@
 
 #include <imgui.h>
 
+#include "ui/imgui/imgui_draw_util.h"
 #include "DemodMarkers.h"
 #include "WaterfallDrag.h"
 #include "WaterfallHover.h"
@@ -27,73 +28,9 @@
 
 namespace {
 
-uint8_t clampByte(float v) {
-    if (v < 0.0f) {
-        v = 0.0f;
-    }
-    if (v > 1.0f) {
-        v = 1.0f;
-    }
-    return (uint8_t)(v * 255.0f);
-}
-
-ImU32 packColor(float r, float g, float b, float a = 1.0f) {
-    return IM_COL32(clampByte(r), clampByte(g), clampByte(b), clampByte(a));
-}
-
-struct SpecFrame {
-    ImDrawList *dl;
-    float ox, oy, w, h;
-    float nx(float ndcX) const {
-        return ox + (ndcX + 1.0f) * 0.5f * w;
-    }
-    float ny(float ndcY) const {
-        return oy + (1.0f - ndcY) * 0.5f * h;
-    }
-};
-
-int utf8CharBytes(const char *p, const char *end) {
-    unsigned char c = (unsigned char)*p;
-    int bytes = 1;
-    if ((c & 0x80) == 0) {
-        bytes = 1;
-    } else if ((c & 0xE0) == 0xC0) {
-        bytes = 2;
-    } else if ((c & 0xF0) == 0xE0) {
-        bytes = 3;
-    } else if ((c & 0xF8) == 0xF0) {
-        bytes = 4;
-    }
-    if (p + bytes > end) {
-        bytes = (int)(end - p);
-    }
-    return bytes;
-}
-
-void drawCenterText(const SpecFrame &f, const char *text, float cxPx, float cyPx, float fontPx, ImU32 col) {
-    ImGui::PushFont(imguiMonoFont(), fontPx);
-    float adv = fontPx * 0.5f;
-    const char *end = text + std::strlen(text);
-    int count = 0;
-    for (const char *p = text; p < end;) {
-        int bytes = utf8CharBytes(p, end);
-        count++;
-        p += bytes;
-    }
-    float x = cxPx - adv * (float)count * 0.5f;
-    float y = cyPx - fontPx * 0.5f;
-    for (const char *p = text; p < end;) {
-        int bytes = utf8CharBytes(p, end);
-        f.dl->AddText(ImVec2(x, y), col, p, p + bytes);
-        x += adv;
-        p += bytes;
-    }
-    ImGui::PopFont();
-}
-
 void drawCenterWText(
     const SpecFrame &f, const std::wstring &text, float cxPx, float cyPx, float fontPx, ImU32 col) {
-    drawCenterText(f, wxString(text).ToUTF8().data(), cxPx, cyPx, fontPx, col);
+    drawCenterText(f.dl, wxString(text).ToUTF8().data(), cxPx, cyPx, fontPx, col);
 }
 
 } // namespace

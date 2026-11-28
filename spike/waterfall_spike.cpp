@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "imgui_bgfx.h"
+#include "imgui_draw_util.h"
 
 #include <imgui.h>
 
@@ -89,70 +90,6 @@ struct FrameEdges {
     bool sPressed = false;
     bool yPressed = false;
 };
-
-uint8_t clampByte(float v) {
-    if (v < 0.0f) {
-        v = 0.0f;
-    }
-    if (v > 1.0f) {
-        v = 1.0f;
-    }
-    return (uint8_t)(v * 255.0f);
-}
-
-ImU32 packColor(float r, float g, float b, float a = 1.0f) {
-    return IM_COL32(clampByte(r), clampByte(g), clampByte(b), clampByte(a));
-}
-
-struct SpecFrame {
-    ImDrawList *dl;
-    float ox, oy, w, h;
-    float nx(float ndcX) const {
-        return ox + (ndcX + 1.0f) * 0.5f * w;
-    }
-    float ny(float ndcY) const {
-        return oy + (1.0f - ndcY) * 0.5f * h;
-    }
-};
-
-int utf8CharBytes(const char *p, const char *end) {
-    unsigned char c = (unsigned char)*p;
-    int bytes = 1;
-    if ((c & 0x80) == 0) {
-        bytes = 1;
-    } else if ((c & 0xE0) == 0xC0) {
-        bytes = 2;
-    } else if ((c & 0xF0) == 0xE0) {
-        bytes = 3;
-    } else if ((c & 0xF8) == 0xF0) {
-        bytes = 4;
-    }
-    if (p + bytes > end) {
-        bytes = (int)(end - p);
-    }
-    return bytes;
-}
-
-void drawTrackedText(const SpecFrame &f, const char *text, float xPx, float cyPx, float fontPx, ImU32 col) {
-    ImGui::PushFont(imguiMonoFont(), fontPx);
-    float adv = fontPx * 0.5f;
-    const char *end = text + std::strlen(text);
-    int count = 0;
-    for (const char *p = text; p < end;) {
-        int bytes = utf8CharBytes(p, end);
-        count++;
-        p += bytes;
-    }
-    float x = xPx - adv * (float)count * 0.5f;
-    float y = cyPx - fontPx * 0.5f;
-    for (const char *p = text; p < end;) {
-        int bytes = utf8CharBytes(p, end);
-        f.dl->AddText(ImVec2(x, y), col, p, p + bytes);
-        x += adv;
-        p += bytes;
-    }
-    ImGui::PopFont();
-}
 
 void buildLut(AppState &s) {
     const LutStop *stops = s.theme == 0 ? kTurboStops : kClassicStops;
@@ -291,14 +228,14 @@ void drawDemodEdges(const SpecFrame &f, AppState &s, const FakeDemod &demod, int
     if (demod.userLabel[0] != '\0') {
         float typeY = f.ny(-1.0f + hPos * 1.2f + hPos * 1.2f);
         float userY = f.ny(-1.0f + hPos * 1.2f);
-        drawTrackedText(f, typeLabel.c_str(), labelX + 1.0f, typeY + 1.0f, 16.0f, IM_COL32(0, 0, 0, 255));
-        drawTrackedText(f, typeLabel.c_str(), labelX, typeY, 16.0f, IM_COL32_WHITE);
-        drawTrackedText(f, demod.userLabel, labelX + 1.0f, userY + 1.0f, 16.0f, IM_COL32(0, 0, 0, 255));
-        drawTrackedText(f, demod.userLabel, labelX, userY, 16.0f, IM_COL32_WHITE);
+        drawCenterText(f.dl, typeLabel.c_str(), labelX + 1.0f, typeY + 1.0f, 16.0f, IM_COL32(0, 0, 0, 255));
+        drawCenterText(f.dl, typeLabel.c_str(), labelX, typeY, 16.0f, IM_COL32_WHITE);
+        drawCenterText(f.dl, demod.userLabel, labelX + 1.0f, userY + 1.0f, 16.0f, IM_COL32(0, 0, 0, 255));
+        drawCenterText(f.dl, demod.userLabel, labelX, userY, 16.0f, IM_COL32_WHITE);
     } else {
         float labelY = f.ny(-1.0f + hPos * 1.2f);
-        drawTrackedText(f, typeLabel.c_str(), labelX + 1.0f, labelY + 1.0f, 16.0f, IM_COL32(0, 0, 0, 255));
-        drawTrackedText(f, typeLabel.c_str(), labelX, labelY, 16.0f, IM_COL32_WHITE);
+        drawCenterText(f.dl, typeLabel.c_str(), labelX + 1.0f, labelY + 1.0f, 16.0f, IM_COL32(0, 0, 0, 255));
+        drawCenterText(f.dl, typeLabel.c_str(), labelX, labelY, 16.0f, IM_COL32_WHITE);
     }
 }
 

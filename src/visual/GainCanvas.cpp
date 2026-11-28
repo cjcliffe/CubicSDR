@@ -6,6 +6,7 @@
 #include <imgui.h>
 
 #include "ui/imgui/imgui_bgfx.h"
+#include "ui/imgui/imgui_draw_util.h"
 #include "GainSlider.h"
 #include "ColorTheme.h"
 #include "CubicSDR.h"
@@ -18,72 +19,7 @@
 
 namespace {
 
-struct ThemeColor {
-    float r, g, b;
-};
-
-uint8_t clampByte(float v) {
-    if (v < 0.0f) {
-        v = 0.0f;
-    }
-    if (v > 1.0f) {
-        v = 1.0f;
-    }
-    return (uint8_t)(v * 255.0f);
-}
-
-ImU32 packColor(float r, float g, float b, float a = 1.0f) {
-    return IM_COL32(clampByte(r), clampByte(g), clampByte(b), clampByte(a));
-}
-
-uint32_t packClear(const ThemeColor &bg) {
-    return ((uint32_t)clampByte(bg.r) << 24) | ((uint32_t)clampByte(bg.g) << 16)
-        | ((uint32_t)clampByte(bg.b) << 8) | 0xFFu;
-}
-
-struct PanelFrame {
-    ImDrawList *dl;
-    float ox, oy, w, h;
-    float px(float x) const {
-        return ox + (x + 1.0f) * 0.5f * w;
-    }
-    float py(float y) const {
-        return oy + (1.0f - y) * 0.5f * h;
-    }
-};
-
-float labelFontSize(float bandPx) {
-    if (bandPx <= 16.0f) {
-        return 12.0f;
-    }
-    if (bandPx <= 18.0f) {
-        return 16.0f;
-    }
-    if (bandPx <= 24.0f) {
-        return 18.0f;
-    }
-    if (bandPx <= 32.0f) {
-        return 24.0f;
-    }
-    if (bandPx <= 48.0f) {
-        return 32.0f;
-    }
-    return 48.0f;
-}
-
-void centerText(const PanelFrame &f, const char *text, float cxPx, float cyPx, float fontPx) {
-    ImGui::PushFont(imguiMonoFont(), fontPx);
-    ImVec2 sz = ImGui::CalcTextSize(text);
-    f.dl->AddText(ImVec2(cxPx - sz.x * 0.5f, cyPx - sz.y * 0.5f), IM_COL32_WHITE, text);
-    ImGui::PopFont();
-}
-
-void emitHBar(
-    const PanelFrame &f, float x0, float x1, float yTopPx, float yBotPx, ImU32 edgeL, ImU32 mid, ImU32 edgeR) {
-    float xc = (x0 + x1) * 0.5f;
-    f.dl->AddRectFilledMultiColor(ImVec2(x0, yTopPx), ImVec2(xc, yBotPx), edgeL, mid, mid, edgeL);
-    f.dl->AddRectFilledMultiColor(ImVec2(xc, yTopPx), ImVec2(x1, yBotPx), mid, edgeR, edgeR, mid);
-}
+using PanelFrame = SpecFrame;
 
 } // namespace
 
@@ -278,21 +214,21 @@ void GainCanvas::drawView(const BgfxEdges &edges, float mx, float my) {
     PanelFrame f{ImGui::GetWindowDrawList(), origin.x, origin.y, wsize.x, wsize.y};
     ImU32 bgL = packColor(bg.r, bg.g, bg.b);
     ImU32 bgR = packColor(bg.r * 0.5f, bg.g * 0.5f, bg.b * 0.5f);
-    f.dl->AddRectFilledMultiColor(ImVec2(f.px(-1.0f), f.py(1.0f)), ImVec2(f.px(1.0f), f.py(-1.0f)), bgL, bgR, bgR, bgL);
+    f.dl->AddRectFilledMultiColor(ImVec2(f.nx(-1.0f), f.ny(1.0f)), ImVec2(f.nx(1.0f), f.ny(-1.0f)), bgL, bgR, bgR, bgL);
 
     float fontPx = labelFontSize((float)layout.valH * wsize.y);
     for (size_t i = 0; i < gainStrips.size(); i++) {
         GainStrip &g = gainStrips[i];
         float midX = GainSlider::gainBarMidX(strip, (int)i);
-        float x0 = f.px(midX - strip.barWidth);
-        float x1 = f.px(midX + strip.barWidth);
-        float yTop = f.py(bgH);
-        float yBot = f.py(-bgH);
+        float x0 = f.nx(midX - strip.barWidth);
+        float x1 = f.nx(midX + strip.barWidth);
+        float yTop = f.ny(bgH);
+        float yBot = f.ny(-bgH);
         f.dl->AddRectFilledMultiColor(ImVec2(x0, yTop), ImVec2(x1, yBot), bgL, bgR, bgR, bgL);
         f.dl->AddRect(ImVec2(x0, yTop), ImVec2(x1, yBot), packColor(0.8f, 0.8f, 0.8f), 0.0f, 0, 1.0f);
 
         float lvNorm = GainSlider::levelNorm(g.value, g.low, g.high);
-        float lvTop = f.py(bgH * (-1.0f + 2.0f * lvNorm));
+        float lvTop = f.ny(bgH * (-1.0f + 2.0f * lvNorm));
         ImU32 lvEdgeL = packColor(level.r * 0.5f + bg.r, level.g * 0.5f + bg.g, level.b * 0.5f + bg.b);
         ImU32 lvMid =
             packColor(level.r + bg.r * 0.75f, level.g + bg.g * 0.75f, level.b + bg.b * 0.75f);
@@ -303,7 +239,7 @@ void GainCanvas::drawView(const BgfxEdges &edges, float mx, float my) {
         if (g.highlightVisible) {
             float hiNorm = GainSlider::levelNorm(g.highlight, g.low, g.high);
             float loNorm = lvNorm < hiNorm ? lvNorm : hiNorm;
-            float loTop = f.py(bgH * (-1.0f + 2.0f * loNorm));
+            float loTop = f.ny(bgH * (-1.0f + 2.0f * loNorm));
             ImU32 hiEdgeL = packColor(0.3f + level.r * 0.5f + bg.r, 0.3f + level.g * 0.5f + bg.g,
                 0.3f + level.b * 0.5f + bg.b);
             ImU32 hiMid = packColor(0.65f + level.r + bg.r * 0.75f, 0.65f + level.g + bg.g * 0.75f,
@@ -312,7 +248,7 @@ void GainCanvas::drawView(const BgfxEdges &edges, float mx, float my) {
                 0.3f + level.b * 0.5f + bg.b * 0.5f);
             emitHBar(f, x0 + 1.0f, x1 - 1.0f, loTop, yBot - 1.0f, hiEdgeL, hiMid, hiEdgeR);
             if (hiNorm > loNorm) {
-                float hiTop = f.py(bgH * (-1.0f + 2.0f * hiNorm));
+                float hiTop = f.ny(bgH * (-1.0f + 2.0f * hiNorm));
                 ImU32 gxEdgeL = packColor(0.3f + bg.r, 0.3f + bg.g, 0.3f + bg.b);
                 ImU32 gxMid = packColor(0.65f + bg.r * 0.75f, 0.65f + bg.g * 0.75f, 0.65f + bg.b * 0.75f);
                 ImU32 gxEdgeR =
@@ -321,9 +257,9 @@ void GainCanvas::drawView(const BgfxEdges &edges, float mx, float my) {
             }
         }
 
-        float cx = f.px(midX);
-        centerText(f, g.name.c_str(), cx, f.py((float)layout.labY), fontPx);
-        centerText(f, GainSlider::gainLabelText(g.value).c_str(), cx, f.py((float)layout.valY), fontPx);
+        float cx = f.nx(midX);
+        centerText(f, g.name.c_str(), cx, f.ny((float)layout.labY), fontPx);
+        centerText(f, GainSlider::gainLabelText(g.value).c_str(), cx, f.ny((float)layout.valY), fontPx);
     }
     ImGui::End();
     ImGui::PopStyleVar(2);

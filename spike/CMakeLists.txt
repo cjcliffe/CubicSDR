@@ -138,6 +138,7 @@ target_include_directories(imgui_spike PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/sdr
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/util
     ${imgui_SOURCE_DIR}
     ${SHADER_INCLUDE_DIR})
 target_link_libraries(imgui_spike PRIVATE bgfx bx glm::glm)
@@ -164,6 +165,7 @@ target_include_directories(gainmeter_spike PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/demod
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/util
     ${imgui_SOURCE_DIR}
     ${SHADER_INCLUDE_DIR})
 target_link_libraries(gainmeter_spike PRIVATE bgfx bx glm::glm)
@@ -247,6 +249,7 @@ endif()
 target_include_directories(mode_spike PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/ui/imgui
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/viewmodel
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/util
     ${imgui_SOURCE_DIR}
     ${SHADER_INCLUDE_DIR})
 target_link_libraries(mode_spike PRIVATE bgfx bx glm::glm)

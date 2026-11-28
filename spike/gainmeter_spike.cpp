@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include "imgui_bgfx.h"
+#include "imgui_draw_util.h"
 
 #include <imgui.h>
 
@@ -24,10 +25,6 @@
 using namespace GainSlider;
 
 namespace {
-
-struct ThemeColor {
-    float r, g, b;
-};
 
 const ThemeColor kBg = {0.1f, 0.1f, 0.1f};
 const ThemeColor kMeterLevel = {0.1f, 0.75f, 0.1f};
@@ -75,63 +72,6 @@ struct AppState {
     bool showDemo = false;
     double runTime = 0.0;
 };
-
-ImU32 packColor(float r, float g, float b, float a = 1.0f) {
-    auto clampByte = [](float v) -> uint8_t {
-        if (v < 0.0f) {
-            v = 0.0f;
-        }
-        if (v > 1.0f) {
-            v = 1.0f;
-        }
-        return (uint8_t)(v * 255.0f);
-    };
-    return IM_COL32(clampByte(r), clampByte(g), clampByte(b), clampByte(a));
-}
-
-struct PanelFrame {
-    ImDrawList *dl;
-    float ox, oy, w, h;
-    float px(float x) const {
-        return ox + (x + 1.0f) * 0.5f * w;
-    }
-    float py(float y) const {
-        return oy + (1.0f - y) * 0.5f * h;
-    }
-};
-
-float labelFontSize(float bandPx) {
-    if (bandPx <= 16.0f) {
-        return 12.0f;
-    }
-    if (bandPx <= 18.0f) {
-        return 16.0f;
-    }
-    if (bandPx <= 24.0f) {
-        return 18.0f;
-    }
-    if (bandPx <= 32.0f) {
-        return 24.0f;
-    }
-    if (bandPx <= 48.0f) {
-        return 32.0f;
-    }
-    return 48.0f;
-}
-
-void centerText(const PanelFrame &f, const char *text, float cxPx, float cyPx, float fontPx) {
-    ImGui::PushFont(imguiMonoFont(), fontPx);
-    ImVec2 sz = ImGui::CalcTextSize(text);
-    f.dl->AddText(ImVec2(cxPx - sz.x * 0.5f, cyPx - sz.y * 0.5f), IM_COL32_WHITE, text);
-    ImGui::PopFont();
-}
-
-void emitHBar(
-    const PanelFrame &f, float x0, float x1, float yTopPx, float yBotPx, ImU32 edgeL, ImU32 mid, ImU32 edgeR) {
-    float xc = (x0 + x1) * 0.5f;
-    f.dl->AddRectFilledMultiColor(ImVec2(x0, yTopPx), ImVec2(xc, yBotPx), edgeL, mid, mid, edgeL);
-    f.dl->AddRectFilledMultiColor(ImVec2(xc, yTopPx), ImVec2(x1, yBotPx), mid, edgeR, edgeR, mid);
-}
 
 struct FrameEdges {
     bool leftPressed = false;
@@ -225,25 +165,25 @@ void drawGain(AppState &s, const FrameEdges &edges, float mouseX, float mouseY, 
         }
     }
 
-    PanelFrame f{ImGui::GetWindowDrawList(), origin.x, origin.y, size.x, size.y};
+    SpecFrame f{ImGui::GetWindowDrawList(), origin.x, origin.y, size.x, size.y};
     ImU32 bgL = packColor(kBg.r, kBg.g, kBg.b);
     ImU32 bgR = packColor(kBg.r * 0.5f, kBg.g * 0.5f, kBg.b * 0.5f);
-    f.dl->AddRectFilledMultiColor(ImVec2(f.px(-1.0f), f.py(1.0f)), ImVec2(f.px(1.0f), f.py(-1.0f)), bgL, bgR, bgR, bgL);
+    f.dl->AddRectFilledMultiColor(ImVec2(f.nx(-1.0f), f.ny(1.0f)), ImVec2(f.nx(1.0f), f.ny(-1.0f)), bgL, bgR, bgR, bgL);
 
     float fontPx = labelFontSize((float)layout.valH * size.y);
     for (int i = 0; i < 3; i++) {
         GainStripState &g = s.gains[i];
         float midX = gainBarMidX(strip, i);
-        float x0 = f.px(midX - strip.barWidth);
-        float x1 = f.px(midX + strip.barWidth);
-        float yTop = f.py(bgH);
-        float yBot = f.py(-bgH);
+        float x0 = f.nx(midX - strip.barWidth);
+        float x1 = f.nx(midX + strip.barWidth);
+        float yTop = f.ny(bgH);
+        float yBot = f.ny(-bgH);
         f.dl->AddRectFilledMultiColor(ImVec2(x0, yTop), ImVec2(x1, yBot), bgL, bgR, bgR, bgL);
         f.dl->AddRect(ImVec2(x0, yTop), ImVec2(x1, yBot), packColor(kBorderGray.r, kBorderGray.g, kBorderGray.b),
             0.0f, 0, 1.0f);
 
         float lvNorm = levelNorm(g.value, g.low, g.high);
-        float lvTop = f.py(bgH * (-1.0f + 2.0f * lvNorm));
+        float lvTop = f.ny(bgH * (-1.0f + 2.0f * lvNorm));
         ImU32 lvEdgeL = packColor(kMeterLevel.r * 0.5f + kBg.r, kMeterLevel.g * 0.5f + kBg.g,
             kMeterLevel.b * 0.5f + kBg.b);
         ImU32 lvMid = packColor(kMeterLevel.r + kBg.r * 0.75f, kMeterLevel.g + kBg.g * 0.75f,
@@ -255,7 +195,7 @@ void drawGain(AppState &s, const FrameEdges &edges, float mouseX, float mouseY, 
         if (g.highlightVisible) {
             float hiNorm = levelNorm(g.highlight, g.low, g.high);
             float loNorm = lvNorm < hiNorm ? lvNorm : hiNorm;
-            float loTop = f.py(bgH * (-1.0f + 2.0f * loNorm));
+            float loTop = f.ny(bgH * (-1.0f + 2.0f * loNorm));
             ImU32 hiEdgeL = packColor(kHiDark.r + kMeterLevel.r * 0.5f + kBg.r,
                 kHiDark.g + kMeterLevel.g * 0.5f + kBg.g, kHiDark.b + kMeterLevel.b * 0.5f + kBg.b);
             ImU32 hiMid = packColor(kHiLight.r + kMeterLevel.r + kBg.r * 0.75f,
@@ -264,7 +204,7 @@ void drawGain(AppState &s, const FrameEdges &edges, float mouseX, float mouseY, 
                 kHiDark.g + kMeterLevel.g * 0.5f + kBg.g * 0.5f, kHiDark.b + kMeterLevel.b * 0.5f + kBg.b * 0.5f);
             emitHBar(f, x0 + 1.0f, x1 - 1.0f, loTop, yBot - 1.0f, hiEdgeL, hiMid, hiEdgeR);
             if (hiNorm > loNorm) {
-                float hiTop = f.py(bgH * (-1.0f + 2.0f * hiNorm));
+                float hiTop = f.ny(bgH * (-1.0f + 2.0f * hiNorm));
                 ImU32 gxEdgeL = packColor(
                     kHiDark.r + kBg.r, kHiDark.g + kBg.g, kHiDark.b + kBg.b);
                 ImU32 gxMid = packColor(
@@ -275,9 +215,9 @@ void drawGain(AppState &s, const FrameEdges &edges, float mouseX, float mouseY, 
             }
         }
 
-        float cx = f.px(midX);
-        centerText(f, g.name.c_str(), cx, f.py((float)layout.labY), fontPx);
-        centerText(f, gainLabelText(g.value).c_str(), cx, f.py((float)layout.valY), fontPx);
+        float cx = f.nx(midX);
+        centerText(f, g.name.c_str(), cx, f.ny((float)layout.labY), fontPx);
+        centerText(f, gainLabelText(g.value).c_str(), cx, f.ny((float)layout.valY), fontPx);
     }
     ImGui::End();
     ImGui::PopStyleVar(2);
@@ -403,7 +343,7 @@ void drawMeter(AppState &s, int meterIndex, const char *title, float winX, const
         }
         bands[j + 1] = key;
     }
-    PanelFrame f{ImGui::GetWindowDrawList(), origin.x, origin.y, size.x, size.y};
+    SpecFrame f{ImGui::GetWindowDrawList(), origin.x, origin.y, size.x, size.y};
     float prev = 0.0f;
     for (int i = 0; i < bandCount; i++) {
         float top = bands[i].frac;
@@ -420,7 +360,7 @@ void drawMeter(AppState &s, int meterIndex, const char *title, float winX, const
                     cb += bands[j].color.b;
                 }
             }
-            emitHBar(f, f.px(-1.0f), f.px(1.0f), f.py(-1.0f + 2.0f * top), f.py(-1.0f + 2.0f * prev),
+            emitHBar(f, f.nx(-1.0f), f.nx(1.0f), f.ny(-1.0f + 2.0f * top), f.ny(-1.0f + 2.0f * prev),
                 packColor(er, eg, eb), packColor(cr, cg, cb), packColor(er, eg, eb));
             prev = top;
         }

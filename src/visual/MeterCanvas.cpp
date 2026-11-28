@@ -6,6 +6,7 @@
 #include <imgui.h>
 
 #include "ui/imgui/imgui_bgfx.h"
+#include "ui/imgui/imgui_draw_util.h"
 #include "ColorTheme.h"
 #include "CubicSDR.h"
 #include "AppFrame.h"
@@ -16,46 +17,7 @@
 
 namespace {
 
-struct ThemeColor {
-    float r, g, b;
-};
-
-uint8_t clampByte(float v) {
-    if (v < 0.0f) {
-        v = 0.0f;
-    }
-    if (v > 1.0f) {
-        v = 1.0f;
-    }
-    return (uint8_t)(v * 255.0f);
-}
-
-ImU32 packColor(float r, float g, float b, float a = 1.0f) {
-    return IM_COL32(clampByte(r), clampByte(g), clampByte(b), clampByte(a));
-}
-
-uint32_t packClear(const ThemeColor &bg) {
-    return ((uint32_t)clampByte(bg.r) << 24) | ((uint32_t)clampByte(bg.g) << 16)
-        | ((uint32_t)clampByte(bg.b) << 8) | 0xFFu;
-}
-
-struct PanelFrame {
-    ImDrawList *dl;
-    float ox, oy, w, h;
-    float px(float x) const {
-        return ox + (x + 1.0f) * 0.5f * w;
-    }
-    float py(float y) const {
-        return oy + (1.0f - y) * 0.5f * h;
-    }
-};
-
-void emitHBar(
-    const PanelFrame &f, float x0, float x1, float yTopPx, float yBotPx, ImU32 edgeL, ImU32 mid, ImU32 edgeR) {
-    float xc = (x0 + x1) * 0.5f;
-    f.dl->AddRectFilledMultiColor(ImVec2(x0, yTopPx), ImVec2(xc, yBotPx), edgeL, mid, mid, edgeL);
-    f.dl->AddRectFilledMultiColor(ImVec2(xc, yTopPx), ImVec2(x1, yBotPx), mid, edgeR, edgeR, mid);
-}
+using PanelFrame = SpecFrame;
 
 struct MeterBand {
     float frac;
@@ -254,7 +216,7 @@ void MeterCanvas::drawView(const BgfxEdges &edges, float mx, float my) {
                     cb += bands[j].color.b;
                 }
             }
-            emitHBar(f, f.px(-1.0f), f.px(1.0f), f.py(-1.0f + 2.0f * top), f.py(-1.0f + 2.0f * prev),
+            emitHBar(f, f.nx(-1.0f), f.nx(1.0f), f.ny(-1.0f + 2.0f * top), f.ny(-1.0f + 2.0f * prev),
                 packColor(er, eg, eb), packColor(cr, cg, cb), packColor(er, eg, eb));
             prev = top;
         }
